@@ -9,10 +9,10 @@ import type { ModelsSessionId } from './modelsSessionId';
 import type { ModelsUserId } from './modelsUserId';
 
 /**
- * セッションレスポンス - sessions テーブルの公開カラムを返す。
+ * セッションレスポンス - sessions テーブルの公開カラムと、計算値 current を返す。
  * トークンのハッシュは返さない。サーバーはトークンそのものを保存しないので、
  * トークンは発行したログイン・トークン再発行のレスポンスでのみ返す。
- * プロパティ名と null 許可は DB カラムと一致させている。
+ * current 以外のプロパティ名と null 許可は DB カラムと一致させている。
  */
 export interface ModelsSessionResponse {
   /** セッションを一意に識別するID。 */
@@ -37,4 +37,6 @@ export interface ModelsSessionResponse {
   lastActivityAt: string;
   /** セッション作成日時(ログインした日時)。 */
   createdAt: string;
+  /** このリクエストを認証したセッションかどうか。DB のカラムではなく、リクエストごとに決まる。 */
+  current: boolean;
 }

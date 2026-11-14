@@ -43,6 +43,11 @@ export type ModelRule = {
    */
   embedded?: readonly string[]
   /**
+   * API properties that are not columns of the table by design: values the
+   * server works out for the response and stores nowhere.
+   */
+  computed?: readonly string[]
+  /**
    * Columns the model leaves out on purpose. When given, any other column
    * missing from the model is reported, so that leaving one out is a decision
    * and not an oversight.
@@ -95,7 +100,10 @@ export const compareModel = (
   columns: ReadonlyMap<string, ColumnInfo>,
   properties: ReadonlyMap<string, ApiProperty>,
 ): Finding[] => {
-  const embedded = new Set(rule.embedded ?? [])
+  const withoutColumn = new Set([
+    ...(rule.embedded ?? []),
+    ...(rule.computed ?? []),
+  ])
   const findings: Finding[] = []
   const report = (property: string, kind: FindingKind): void => {
     findings.push({ model: rule.model, property, kind })
@@ -108,7 +116,7 @@ export const compareModel = (
     if (rule.kind !== 'update' && !property.required) {
       report(name, 'shouldBeRequired')
     }
-    if (embedded.has(name)) {
+    if (withoutColumn.has(name)) {
       continue
     }
     const column = columns.get(name)

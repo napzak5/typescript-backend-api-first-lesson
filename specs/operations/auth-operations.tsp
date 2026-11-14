@@ -225,7 +225,7 @@ namespace BeautySalon.Operations {
     }
 
     interface SessionCrud {
-      @doc("ログイン中のユーザーの有効なセッションを、ページネーションを指定して一覧取得します。有効期限切れのセッションは含みません。")
+      @doc("ログイン中のユーザーの終了していないセッションを、新しい順に、ページネーションを指定して一覧取得します。セッションの有効期限(refreshExpiresAt)を過ぎたセッションは含みません。このリクエストを認証したセッションは current が true になります。")
       @summary("List sessions")
       @route("/sessions")
       @get
@@ -237,7 +237,7 @@ namespace BeautySalon.Operations {
         | ProblemResponse<400>
         | SessionErrors;
 
-      @doc("ログイン中のユーザーのセッションを1件無効にします。指定したセッションが存在しない場合、またはほかのユーザーのセッションの場合は404を返します。")
+      @doc("ログイン中のユーザーのセッションを1件無効にします。無効にしたセッションのアクセストークンとリフレッシュトークンは使えなくなります。このリクエストを認証したセッション自身も指定できます(ログアウトと同じ結果になります)。指定したセッションが存在しない場合、ほかのユーザーのセッションの場合、すでに終了している場合は404を返します。")
       @summary("Revoke a session")
       @route("/sessions/{sessionId}")
       @delete
@@ -251,7 +251,7 @@ namespace BeautySalon.Operations {
     }
   }
 
-  @doc("管理者がユーザーアカウントを参照し、ロックの解除や信頼済みIPアドレスの管理を行うAPI操作群です。")
+  @doc("管理者(ロール admin)がユーザーアカウントを参照し、ロックの解除と2要素認証のリセットを行うAPI操作群です。管理者以外が呼び出した場合は403を返します。")
   @route("/api/v1/admin/auth")
   @tag("Admin - Authentication")
   namespace AdminAuthOperations {
@@ -269,7 +269,7 @@ namespace BeautySalon.Operations {
         | ProblemResponse<404>
         | CommonErrors;
 
-      @doc("ロックされたユーザーアカウントのロックを解除します。アカウント状態を active に戻し、lockedUntil を null、failedLoginAttempts を0にします。ロックされていないアカウントを指定した場合は409を返します。")
+      @doc("ロックされたユーザーアカウントのロックを解除します。lockedUntil を null、failedLoginAttempts を0にし、アカウント状態が locked の場合は active に戻します(suspended などほかの状態は変えません)。ロックされていないアカウント(状態が locked でなく、lockedUntil が現在より後でもない)を指定した場合は409を返します。管理者自身のアカウントは指定できません(403)。")
       @summary("Unlock a user account")
       @route("/unlock/{userId}")
       @post
@@ -283,14 +283,11 @@ namespace BeautySalon.Operations {
         | ProblemResponse<409>
         | CommonErrors;
 
-      @doc("ユーザーの信頼済みIPアドレスを追加します。すでに登録されているIPアドレスを指定した場合は409を返します。")
-      @summary("Add a trusted IP address")
-      @route("/trusted-ip/{userId}")
+      @doc("ユーザーの2要素認証を無効にします。認証アプリとバックアップコードの両方を失った利用者が、ログインして設定し直せるようにするための操作です。シークレットとバックアップコードを削除し、利用者にメールで知らせます。利用者のセッションは変更しません。2要素認証が有効でないアカウントを指定した場合は409を返します。管理者自身のアカウントは指定できません(403)。")
+      @summary("Reset two-factor authentication of a user")
+      @route("/reset-two-factor/{userId}")
       @post
-      addTrustedIp(
-        @path userId: UserId,
-        @body request: AuthTrustedIpAddRequest,
-      ):
+      resetTwoFactor(@path userId: UserId):
         | {
             @statusCode statusCode: 200;
             @body response: ApiResponse<UserResponse>;
@@ -298,27 +295,6 @@ namespace BeautySalon.Operations {
         | ProblemResponse<400>
         | ProblemResponse<404>
         | ProblemResponse<409>
-        | RequestBodyErrors
-        | CommonErrors;
-
-      @doc("ユーザーの信頼済みIPアドレスを削除します。ユーザーが存在しない場合、または指定したIPアドレスが登録されていない場合は404を返します。")
-      @summary("Remove a trusted IP address")
-      @route("/trusted-ip/{userId}")
-      @delete
-      removeTrustedIp(
-        @path userId: UserId,
-
-        @doc("削除するIPアドレス。IPv4 または IPv6 の表記で指定する。")
-        @query
-        @minLength(1)
-        @maxLength(50)
-        ipAddress: string,
-      ):
-        | {
-            @statusCode statusCode: 204;
-          }
-        | ProblemResponse<400>
-        | ProblemResponse<404>
         | CommonErrors;
     }
   }

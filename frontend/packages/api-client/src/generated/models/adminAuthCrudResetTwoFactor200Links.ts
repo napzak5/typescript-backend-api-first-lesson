@@ -7,13 +7,7 @@
  */
 
 /**
- * ユーザーの信頼済みIPアドレスを追加するリクエスト。
+ * 関連リソースや次アクションへのリンク情報。リンクがない場合はnull
+ * @nullable
  */
-export interface ModelsAuthTrustedIpAddRequest {
-  /**
-     * 追加するIPアドレス。IPv4 または IPv6 の表記で指定する。
-     * @minLength 1
-     * @maxLength 50
-     */
-  ipAddress: string;
-}
+export type AdminAuthCrudResetTwoFactor200Links = {[key: string]: string} | null;

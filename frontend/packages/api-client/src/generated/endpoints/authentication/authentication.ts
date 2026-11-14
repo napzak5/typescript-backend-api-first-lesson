@@ -1932,7 +1932,7 @@ export const getSessionCrudGetSessionsUrl = (params?: SessionCrudGetSessionsPara
 }
 
 /**
- * ログイン中のユーザーの有効なセッションを、ページネーションを指定して一覧取得します。有効期限切れのセッションは含みません。
+ * ログイン中のユーザーの終了していないセッションを、新しい順に、ページネーションを指定して一覧取得します。セッションの有効期限(refreshExpiresAt)を過ぎたセッションは含みません。このリクエストを認証したセッションは current が true になります。
  * @summary List sessions
  */
 export const sessionCrudGetSessions = async (params?: SessionCrudGetSessionsParams, options?: RequestInit): Promise<sessionCrudGetSessionsResponse> => {
@@ -1980,7 +1980,7 @@ export type SessionCrudGetSessionsQueryError = ModelsProblemDetails
 
 
 /**
- * ログイン中のユーザーの有効なセッションを、ページネーションを指定して一覧取得します。有効期限切れのセッションは含みません。
+ * ログイン中のユーザーの終了していないセッションを、新しい順に、ページネーションを指定して一覧取得します。セッションの有効期限(refreshExpiresAt)を過ぎたセッションは含みません。このリクエストを認証したセッションは current が true になります。
  * @summary List sessions
  */
 export function useSessionCrudGetSessions<TData = Awaited<ReturnType<typeof sessionCrudGetSessions>>, TError = ModelsProblemDetails>(
@@ -1994,7 +1994,7 @@ export function useSessionCrudGetSessions<TData = Awaited<ReturnType<typeof sess
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * ログイン中のユーザーの有効なセッションを、ページネーションを指定して一覧取得します。有効期限切れのセッションは含みません。
+ * ログイン中のユーザーの終了していないセッションを、新しい順に、ページネーションを指定して一覧取得します。セッションの有効期限(refreshExpiresAt)を過ぎたセッションは含みません。このリクエストを認証したセッションは current が true になります。
  * @summary List sessions
  */
 export function useSessionCrudGetSessions<TData = Awaited<ReturnType<typeof sessionCrudGetSessions>>, TError = ModelsProblemDetails>(
@@ -2008,7 +2008,7 @@ export function useSessionCrudGetSessions<TData = Awaited<ReturnType<typeof sess
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * ログイン中のユーザーの有効なセッションを、ページネーションを指定して一覧取得します。有効期限切れのセッションは含みません。
+ * ログイン中のユーザーの終了していないセッションを、新しい順に、ページネーションを指定して一覧取得します。セッションの有効期限(refreshExpiresAt)を過ぎたセッションは含みません。このリクエストを認証したセッションは current が true になります。
  * @summary List sessions
  */
 export function useSessionCrudGetSessions<TData = Awaited<ReturnType<typeof sessionCrudGetSessions>>, TError = ModelsProblemDetails>(
@@ -2016,7 +2016,7 @@ export function useSessionCrudGetSessions<TData = Awaited<ReturnType<typeof sess
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * ログイン中のユーザーの有効なセッションを、ページネーションを指定して一覧取得します。有効期限切れのセッションは含みません。
+ * ログイン中のユーザーの終了していないセッションを、新しい順に、ページネーションを指定して一覧取得します。セッションの有効期限(refreshExpiresAt)を過ぎたセッションは含みません。このリクエストを認証したセッションは current が true になります。
  * @summary List sessions
  */
 export function useSessionCrudGetSessions<TData = Awaited<ReturnType<typeof sessionCrudGetSessions>>, TError = ModelsProblemDetails>(
@@ -2084,7 +2084,7 @@ export const getSessionCrudRevokeSessionUrl = (sessionId: ModelsSessionId,) => {
 }
 
 /**
- * ログイン中のユーザーのセッションを1件無効にします。指定したセッションが存在しない場合、またはほかのユーザーのセッションの場合は404を返します。
+ * ログイン中のユーザーのセッションを1件無効にします。無効にしたセッションのアクセストークンとリフレッシュトークンは使えなくなります。このリクエストを認証したセッション自身も指定できます(ログアウトと同じ結果になります)。指定したセッションが存在しない場合、ほかのユーザーのセッションの場合、すでに終了している場合は404を返します。
  * @summary Revoke a session
  */
 export const sessionCrudRevokeSession = async (sessionId: ModelsSessionId, options?: RequestInit): Promise<sessionCrudRevokeSessionResponse> => {
@@ -2137,7 +2137,7 @@ const {mutation: mutationOptions} = options ?
     export type SessionCrudRevokeSessionMutationVariables = {sessionId: ModelsSessionId}
 
     /**
- * ログイン中のユーザーのセッションを1件無効にします。指定したセッションが存在しない場合、またはほかのユーザーのセッションの場合は404を返します。
+ * ログイン中のユーザーのセッションを1件無効にします。無効にしたセッションのアクセストークンとリフレッシュトークンは使えなくなります。このリクエストを認証したセッション自身も指定できます(ログアウトと同じ結果になります)。指定したセッションが存在しない場合、ほかのユーザーのセッションの場合、すでに終了している場合は404を返します。
  * @summary Revoke a session
  */
 export const useSessionCrudRevokeSession = <TError = ModelsProblemDetails,

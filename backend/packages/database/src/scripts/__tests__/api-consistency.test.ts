@@ -114,6 +114,63 @@ describe('compareModel', () => {
     ).toEqual(['shouldBeRequired:openingHours'])
   })
 
+  it('does not look for a column behind a computed property', () => {
+    const findings = kindsOf(
+      rule({ computed: ['current'], omittedColumns: ['deletedAt'] }),
+      properties({
+        id: {},
+        name: {},
+        description: { nullable: true },
+        current: {},
+      }),
+    )
+
+    expect(findings).toEqual([])
+  })
+
+  it('does not hold a computed property to a column on null either way', () => {
+    const computed = rule({ computed: ['current'] })
+
+    expect(
+      kindsOf(computed, properties({ current: { nullable: true } })),
+    ).toEqual([])
+    expect(
+      kindsOf(computed, properties({ current: { nullable: false } })),
+    ).toEqual([])
+  })
+
+  it.each<ModelKind>(['response', 'create'])(
+    'still requires a computed property of a %s model',
+    (kind) => {
+      const findings = kindsOf(
+        rule({ kind, computed: ['current'] }),
+        properties({ current: { required: false } }),
+      )
+
+      expect(findings).toEqual(['shouldBeRequired:current'])
+    },
+  )
+
+  it('still requires a computed property of an update model to be optional', () => {
+    const computed = rule({ kind: 'update', computed: ['current'] })
+
+    expect(
+      kindsOf(computed, properties({ current: { required: true } })),
+    ).toEqual(['shouldBeOptional:current'])
+    expect(
+      kindsOf(computed, properties({ current: { required: false } })),
+    ).toEqual([])
+  })
+
+  it('still reports a property without a column that is neither computed nor embedded', () => {
+    const findings = kindsOf(
+      rule({ computed: ['current'], embedded: ['openingHours'] }),
+      properties({ current: {}, openingHours: {}, website: {} }),
+    )
+
+    expect(findings).toEqual(['unknownProperty:website'])
+  })
+
   it('reports columns that are neither exposed nor omitted, once omissions are declared', () => {
     const exposed = properties({ id: {}, name: {} })
 
@@ -279,5 +336,13 @@ describe('modelRules', () => {
     const models = modelRules.map((modelRule) => modelRule.model)
 
     expect(models).toEqual([...new Set(models)])
+  })
+
+  it('declares only that a session is the current one as worked out rather than stored', () => {
+    const computed = modelRules
+      .filter((modelRule) => modelRule.computed !== undefined)
+      .map(({ model, computed }) => [model, computed])
+
+    expect(computed).toEqual([['Models.SessionResponse', ['current']]])
   })
 })
