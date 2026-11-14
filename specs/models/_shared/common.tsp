@@ -120,6 +120,8 @@ namespace BeautySalon.Models {
     perm: パーマ - パーマネント、デジタルパーマ等のウェーブ形成サービス
     treatment: トリートメント - ヘアトリートメント、ヘアケア等の補修・改善サービス
     spa: スパ - ヘッドスパ、リラクゼーション等の癒し系サービス
+    styling: スタイリング - セット、アレンジ等のスタイリングサービス
+    extension: エクステンション - ヘアエクステ、増毛等の毛髪追加サービス
     other: その他 - 上記カテゴリーに分類されないサービス
     """)
   enum ServiceCategoryType {
@@ -128,6 +130,8 @@ namespace BeautySalon.Models {
     perm,
     treatment,
     spa,
+    styling,
+    extension,
     other,
   }
 

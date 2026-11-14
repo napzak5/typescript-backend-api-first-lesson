@@ -56,13 +56,64 @@ const salonRules: ModelRule[] = [
  * check.
  */
 
+/**
+ * Columns of `services` that a request never writes. The salon comes from
+ * the path; `requiredProducts` is a jsonb column without a defined structure.
+ */
+const serviceManagedColumns = [
+  'id',
+  'salonId',
+  'requiredProducts',
+  'deletedAt',
+  'createdAt',
+  'updatedAt',
+]
+
 /** Services, their categories and options. */
 const serviceRules: ModelRule[] = [
-  { model: 'Models.Service', table: 'services', kind: 'response' },
   {
-    model: 'Models.CategoryModel',
+    model: 'Models.ServiceResponse',
+    table: 'services',
+    kind: 'response',
+    embedded: ['options'],
+    omittedColumns: ['requiredProducts', 'deletedAt'],
+  },
+  {
+    model: 'Models.ServiceCreateRequest',
+    table: 'services',
+    kind: 'create',
+    omittedColumns: serviceManagedColumns,
+  },
+  {
+    model: 'Models.ServiceUpdateRequest',
+    table: 'services',
+    kind: 'update',
+    omittedColumns: serviceManagedColumns,
+  },
+  {
+    model: 'Models.ServiceOptionResponse',
+    table: 'serviceOptions',
+    kind: 'response',
+    omittedColumns: ['id', 'serviceId', 'createdAt', 'updatedAt'],
+  },
+  {
+    model: 'Models.ServiceCategoryResponse',
     table: 'serviceCategories',
     kind: 'response',
+    omittedColumns: [],
+  },
+  {
+    model: 'Models.ServiceCategoryCreateRequest',
+    table: 'serviceCategories',
+    kind: 'create',
+    omittedColumns: ['id', 'createdAt', 'updatedAt'],
+  },
+  {
+    model: 'Models.ServiceCategoryUpdateRequest',
+    table: 'serviceCategories',
+    kind: 'update',
+    // A category cannot move to another salon.
+    omittedColumns: ['id', 'salonId', 'createdAt', 'updatedAt'],
   },
 ]
 
