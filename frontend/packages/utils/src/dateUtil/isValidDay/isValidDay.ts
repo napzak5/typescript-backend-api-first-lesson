@@ -1,4 +1,4 @@
-import { getYear, isAfter, isBefore, isValid } from 'date-fns'
+import { endOfDay, getYear, isAfter, isBefore, isValid } from 'date-fns'
 import {
   DEFAULT_ENABLE_END_YEAR,
   DEFAULT_ENABLE_START_YEAR,
@@ -26,7 +26,9 @@ export const isValidDay = (
     if (isBefore(inputDay, new Date(DEFAULT_ENABLE_START_YEAR, 0, 1))) {
       return false
     }
-    if (isAfter(inputDay, new Date(DEFAULT_ENABLE_END_YEAR, 11, 31))) {
+    if (
+      isAfter(inputDay, endOfDay(new Date(DEFAULT_ENABLE_END_YEAR, 11, 31)))
+    ) {
       return false
     }
   }

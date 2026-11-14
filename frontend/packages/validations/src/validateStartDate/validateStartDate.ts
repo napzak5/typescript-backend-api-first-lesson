@@ -2,7 +2,7 @@ import { err, ok, type Result } from 'neverthrow'
 import { z } from 'zod'
 
 // 開始日のスキーマ定義
-const StartDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
+const StartDateSchema = z.iso.date()
 
 type StartDate = z.infer<typeof StartDateSchema>
 

@@ -11,8 +11,17 @@ export const isObject = (data: unknown): data is Record<string, unknown> =>
   !(data instanceof Set) &&
   !(data instanceof Map)
 
-export const isPlainObject = (data: unknown): data is Record<string, unknown> =>
-  typeof data === 'object' && data !== null
+export const isPlainObject = (
+  data: unknown,
+): data is Record<string, unknown> => {
+  if (typeof data !== 'object' || data === null) {
+    return false
+  }
+
+  const prototype: unknown = Object.getPrototypeOf(data)
+
+  return prototype === Object.prototype || prototype === null
+}
 
 export const isNullOrUndefined = (data: unknown): data is null | undefined =>
   data === null || data === undefined || data === 'null' || data === 'undefined'
@@ -90,11 +99,10 @@ export const isJSONData = (data: unknown): data is JsonValue => {
   if (data === null) {
     return true
   }
-  if (
-    typeof data === 'string' ||
-    typeof data === 'number' ||
-    typeof data === 'boolean'
-  ) {
+  if (typeof data === 'number') {
+    return Number.isFinite(data)
+  }
+  if (typeof data === 'string' || typeof data === 'boolean') {
     return true
   }
   if (typeof data !== 'object') {
