@@ -687,6 +687,25 @@ describe('UpdateServiceCategoryUseCase', () => {
     expect(result).toEqual({ type: 'success', data: apiCategory })
   })
 
+  it('hands the IDs to the repository in lower case when the request writes the salon, the category and the parent in upper case', async () => {
+    const dependencies = serviceCategoryDependencies()
+
+    const result = await update(
+      dependencies,
+      { parentId: OTHER_CATEGORY_ID.toUpperCase() },
+      CATEGORY_ID.toUpperCase(),
+      SALON_ID.toUpperCase(),
+    )
+
+    expect(result.type).toBe('success')
+    expect(dependencies.salonRepository.exists).toHaveBeenCalledWith(SALON_ID)
+    expect(dependencies.serviceCategoryRepository.update).toHaveBeenCalledWith(
+      SALON_ID,
+      CATEGORY_ID,
+      { parentId: OTHER_CATEGORY_ID },
+    )
+  })
+
   it.each([
     ['a new parent', { parentId: OTHER_CATEGORY_ID }],
     ['no parent', { parentId: null }],
@@ -1060,6 +1079,26 @@ describe('who may manage the service categories of a salon', () => {
       expect(result.type).toBe('success')
       expect(repositoryCalls(dependencies)).toEqual(['salons.exists', write])
     })
+
+    it.each([
+      ['the owner of the salon', actors.ofSalon('owner', SALON_ID)],
+      ['a manager of the salon', actors.ofSalon('manager', SALON_ID)],
+    ])(
+      'lets %s do it when the request writes the ID of the salon in upper case',
+      async (_case, actor) => {
+        const dependencies = serviceCategoryDependencies()
+
+        const result = await execute(dependencies, actor, {
+          salon: SALON_ID.toUpperCase(),
+        })
+
+        expect(result.type).toBe('success')
+        expect(dependencies.salonRepository.exists).toHaveBeenCalledWith(
+          SALON_ID,
+        )
+        expect(repositoryCalls(dependencies)).toEqual(['salons.exists', write])
+      },
+    )
 
     it.each(refused)(
       'forbids %s, and reads and writes nothing',

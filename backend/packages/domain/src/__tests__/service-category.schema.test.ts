@@ -200,6 +200,22 @@ describe('serviceCategoryCreateRequestSchema', () => {
     expect(result).toEqual({ type: 'success', data: request })
   })
 
+  it('reads a parent written in upper case as the lower-case ID, the one the database returns', () => {
+    const result = parseWith(
+      serviceCategoryCreateRequestSchema,
+      {
+        ...serviceCategoryCreateRequest(),
+        parentId: OTHER_CATEGORY_ID.toUpperCase(),
+      },
+      'Invalid',
+    )
+
+    expect(result).toEqual({
+      type: 'success',
+      data: { ...serviceCategoryCreateRequest(), parentId: OTHER_CATEGORY_ID },
+    })
+  })
+
   it('accepts null for the four properties that may be unset and keeps it', () => {
     const request = {
       ...serviceCategoryCreateRequest(),
@@ -339,6 +355,19 @@ describe('serviceCategoryUpdateRequestSchema', () => {
     },
   )
 
+  it('reads a parent written in upper case as the lower-case ID, the one the database returns', () => {
+    const result = parseWith(
+      serviceCategoryUpdateRequestSchema,
+      { parentId: OTHER_CATEGORY_ID.toUpperCase() },
+      'Invalid',
+    )
+
+    expect(result).toEqual({
+      type: 'success',
+      data: { parentId: OTHER_CATEGORY_ID },
+    })
+  })
+
   it('accepts every property together and returns the request unchanged', () => {
     const request = {
       ...serviceCategoryCreateRequest(),
@@ -462,6 +491,16 @@ describe('serviceCategorySearchRequestSchema', () => {
     expect(
       parseWith(serviceCategorySearchRequestSchema, request, 'Invalid'),
     ).toEqual({ type: 'success', data: request })
+  })
+
+  it('reads a cursor written in upper case as the lower-case ID, the one the database returns', () => {
+    expect(
+      parseWith(
+        serviceCategorySearchRequestSchema,
+        { cursor: CATEGORY_ID.toUpperCase() },
+        'Invalid',
+      ),
+    ).toEqual({ type: 'success', data: { cursor: CATEGORY_ID } })
   })
 
   it.each([

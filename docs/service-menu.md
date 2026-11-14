@@ -26,6 +26,7 @@
 - 変更の権限は、パスの `salonId` だけで判定します。規則は [認証と認可](./authentication.md#サロンの下にあるルートの権限) にあります
 - サロンが存在しない、または削除済みのときは、どのオペレーションも 404 です
 - パスのサロンに属さないカテゴリーは 404 です。存在しない ID と区別しません
+- ID（パスの `salonId` と `id`、本文の `parentId`、クエリの `cursor`）は、英字を大文字で書いても同じ ID です。レスポンスの `data` と `meta` の ID は小文字です（ID のスキーマは `backend/packages/domain/src/shared/identifier.ts` の `uuidSchema` から作る）。`links` は、コレクションまでの部分（`/api/v1/salons/{salonId}/service-categories`）をリクエストのパスに書かれたとおりに返します
 
 ### 確認の順序
 

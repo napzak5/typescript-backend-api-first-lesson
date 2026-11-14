@@ -1373,6 +1373,42 @@ describe('Service category API', () => {
       },
     )
 
+    it.each<
+      [
+        string,
+        (tree: Awaited<ReturnType<typeof createTree>>) => [string, string],
+      ]
+    >([
+      [
+        'the request writes the ID of the category itself in upper case',
+        ({ ladies }) => [ladies.id, ladies.id.toUpperCase()],
+      ],
+      [
+        'the request writes the ID of a subcategory in upper case',
+        ({ cut, shortBob }) => [cut.id, shortBob.id.toUpperCase()],
+      ],
+      [
+        'the path writes the ID of the category in upper case and the parent is the category itself',
+        ({ ladies }) => [ladies.id.toUpperCase(), ladies.id],
+      ],
+      [
+        'the path writes the ID of the category in upper case and the parent is a subcategory',
+        ({ cut, shortBob }) => [cut.id.toUpperCase(), shortBob.id],
+      ],
+    ])(
+      'refuses a parent that would close a loop as circular when %s',
+      async (_case, pick) => {
+        const [id, parentId] = pick(await createTree())
+        const before = await storedCategories()
+
+        const response = await patch(asAdmin, id, { parentId })
+
+        expectProblem(response, badRequest)
+        expect(brokenRules(response)).toEqual(['parentId:circular'])
+        expect(await storedCategories()).toEqual(before)
+      },
+    )
+
     it.each<[string, () => Promise<string>]>([
       ['a category that never existed', async () => UNKNOWN_ID],
       [
@@ -1998,6 +2034,61 @@ describe('Service category API', () => {
         expectProblem(response, notFound)
       }
       expect(await storedCategories()).toHaveLength(1)
+    })
+  })
+
+  describe('the ID of a category written in upper case', () => {
+    it('names the same category in the path, and the response writes it in lower case', async () => {
+      const created = await createCategory()
+      const inUpperCase = created.id.toUpperCase()
+      const self = `${categoriesOf(salonId)}/${created.id}`
+
+      const one = await get(inUpperCase)
+      const changed = await patch(asAdmin, inUpperCase, { name: 'Renamed' })
+      const removed = await remove(asAdmin, inUpperCase)
+
+      expect(one.status).toBe(200)
+      expect(one.body.data).toEqual(created)
+      expect(one.body.links.self).toBe(self)
+      expect(changed.status).toBe(200)
+      expect(changed.body.data).toMatchObject({
+        id: created.id,
+        name: 'Renamed',
+      })
+      expect(changed.body.links.self).toBe(self)
+      expect(removed.status).toBe(204)
+      expect(await storedCategories()).toEqual([])
+    })
+
+    it('names the same category as a parent, when a category is created and when one is moved', async () => {
+      const parent = await createCategory()
+      const other = await createCategory()
+      const inUpperCase = parent.id.toUpperCase()
+
+      const added = await post(
+        asAdmin,
+        categoryRequest({ parentId: inUpperCase }),
+      )
+      const moved = await patch(asAdmin, other.id, { parentId: inUpperCase })
+
+      expect(added.status).toBe(201)
+      expect(added.body.data.parentId).toBe(parent.id)
+      expect(moved.status).toBe(200)
+      expect(moved.body.data.parentId).toBe(parent.id)
+    })
+
+    it('names the same category as a cursor, and the page writes it in lower case', async () => {
+      const first = await createCategory({ displayOrder: 1 })
+      const second = await createCategory({ displayOrder: 2 })
+
+      const page = await list(`cursor=${first.id.toUpperCase()}`)
+
+      expect(page.status).toBe(200)
+      expect(page.body.data).toEqual([second])
+      expect(page.body.meta.cursor).toBe(first.id)
+      expect(page.body.links.self).toBe(
+        `${categoriesOf(salonId)}?cursor=${first.id}`,
+      )
     })
   })
 

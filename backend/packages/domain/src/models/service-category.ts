@@ -6,10 +6,10 @@ import {
   Result,
 } from '@beauty-salon-backend/utility'
 import { z } from 'zod'
-import { type DomainError, parseWith } from '../shared'
+import { type DomainError, parseWith, uuidSchema } from '../shared'
 
 // ID: a UUID that has been checked. The contract calls it `CategoryId`.
-export const categoryIdSchema = z.uuid().brand<'CategoryId'>()
+export const categoryIdSchema = uuidSchema.brand<'CategoryId'>()
 export type CategoryId = z.infer<typeof categoryIdSchema>
 
 const categoryIdParameterSchema = z.object({ id: categoryIdSchema })

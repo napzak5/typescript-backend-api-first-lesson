@@ -42,6 +42,19 @@ describe('parseSalonIdOfPath', () => {
     })
   })
 
+  it.each([
+    ['upper case', SALON_ID.toUpperCase()],
+    ['mixed case', '0193A5b8-7C2e-7d4F-8a1B-3c5D7e9f0A1b'],
+  ])(
+    'returns an ID written in %s as the lower-case ID, the one the database returns',
+    (_case, salonId) => {
+      expect(parseSalonIdOfPath(salonId)).toEqual({
+        type: 'success',
+        data: SALON_ID,
+      })
+    },
+  )
+
   it.each(notUuids)(
     'reports %s under salonId, not under id',
     (_case, salonId) => {
@@ -65,6 +78,19 @@ describe('parseCategoryId', () => {
       data: CATEGORY_ID,
     })
   })
+
+  it.each([
+    ['upper case', CATEGORY_ID.toUpperCase()],
+    ['mixed case', '0193A5b8-7C2e-7d4F-8a1B-3c5D7e9f0D01'],
+  ])(
+    'returns an ID written in %s as the lower-case ID, the one the database returns',
+    (_case, id) => {
+      expect(parseCategoryId(id)).toEqual({
+        type: 'success',
+        data: CATEGORY_ID,
+      })
+    },
+  )
 
   it.each(notUuids)('reports %s under id', (_case, id) => {
     expect(rulesOf(parseCategoryId(id))).toEqual(['id:invalid_format'])
