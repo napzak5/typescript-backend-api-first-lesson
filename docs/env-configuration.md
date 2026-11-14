@@ -156,18 +156,19 @@ export const loadEnvFile = (): LoadedEnvFile => {
 
 ## サーバーが読まない変数
 
-`.env.*` ファイルには、上の 14 個以外の変数も多く入っています。
+`.env.*` ファイルには、上の 14 個のほかに次の 5 個だけが入っています。
 
-- **Docker Compose が使うもの**: `POSTGRES_DB`、`POSTGRES_USER`、`POSTGRES_PASSWORD`、`POSTGRES_PORT`、
-  `MAILHOG_SMTP_PORT`、`MAILHOG_WEB_PORT`、`MINIO_ACCESS_KEY_ID`、`MINIO_SECRET_ACCESS_KEY`、
-  `MINIO_BUCKET`、`MINIO_API_PORT`、`MINIO_CONSOLE_PORT`
+- **Docker Compose が使うもの**: `POSTGRES_DB`、`POSTGRES_USER`、`POSTGRES_PASSWORD`、`POSTGRES_PORT`
 - **`getDatabaseUrl()` が `DATABASE_URL` のないときに使うもの**: `POSTGRES_USER`、`POSTGRES_PASSWORD`、
   `DB_HOST`、`POSTGRES_PORT`、`POSTGRES_DB`
-- **どのコードも読まないもの**: `JWT_*`、`SESSION_*`、`EMAIL_*`、`MAILGUN_*`、`SMTP_*`、`STORAGE_*`、
-  `R2_*`、`S3_*`、`CDN_*`、`LOG_FILE_*`、`DATABASE_POOL_MIN`、`DATABASE_POOL_SIZE` など。認証、
-  メール送信、ファイルストレージは実装されていません
 
-`parseAppConfig` は知らない変数を無視するので、これらがあってもなくてもサーバーの起動には影響しません。
+どのコードも読まない変数は、環境ファイルに置きません。`config` パッケージのテスト
+（`backend/packages/config/src/__tests__/app-config.test.ts`）が、すべての環境ファイルについて、
+上の 19 個以外の変数がないことを確認します。変数を増やすときは、それを読むコードと一緒に追加します
+（[変数を追加する](#変数を追加する)）。
+
+`parseAppConfig` は知らない変数を無視するので、プロセスの環境にほかの変数があってもサーバーの起動には
+影響しません。
 
 ## データベーススクリプトとテストの接続先
 

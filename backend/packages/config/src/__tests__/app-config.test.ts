@@ -23,6 +23,18 @@ const variables = {
 
 const variableNames = Object.keys(variables)
 
+/**
+ * What docker-compose.yml and the database scripts read from an environment
+ * file, next to the variables of the server.
+ */
+const databaseVariableNames = [
+  'POSTGRES_DB',
+  'POSTGRES_USER',
+  'POSTGRES_PASSWORD',
+  'POSTGRES_PORT',
+  'DB_HOST',
+]
+
 const rootPath = path.resolve(import.meta.dirname, '../../../../..')
 
 const readEnvFile = (file: string): Record<string, string> =>
@@ -180,6 +192,23 @@ describe('environment files', () => {
         POSTGRES_PORT: composeDefault('POSTGRES_PORT'),
       })
     })
+  })
+
+  it.each([
+    '.env.localhost',
+    '.env.development',
+    '.env.test',
+    '.env.test.ci',
+    '.env.staging',
+    '.env.production',
+    '.env.example',
+    '.env.template',
+  ])('%s should set no variable that nothing reads', (file) => {
+    const known = [...variableNames, ...databaseVariableNames]
+
+    expect(
+      Object.keys(readEnvFile(file)).filter((name) => !known.includes(name)),
+    ).toEqual([])
   })
 
   it('.env.template should list every variable the server reads', () => {
