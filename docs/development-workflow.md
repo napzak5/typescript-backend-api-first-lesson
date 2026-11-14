@@ -164,6 +164,9 @@ pnpm db:generate-sql
 - `pnpm check:db-schema`（`make db-check`）は、データベースを作り直して `schema.ts`、`relations.ts`、
   `sql/setup.sql` を再生成し、コミット済みの内容と一致するかを確認します。**接続先のデータベースの
   中身はすべて削除されます。**
+- マイグレーションを追加しただけで 3・4 を実行していないと、統合テスト（`pnpm test:integration`）が
+  失敗します。`sql/setup.sql` から作ったデータベースにマイグレーションを適用すると、スキーマが
+  変わるからです。
 - 列を変えたら API モデルも合わせます。`pnpm check:api-db` が OpenAPI ドキュメントとスキーマを比較します。
 
 その他のコマンド:

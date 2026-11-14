@@ -109,19 +109,23 @@ export const loadEnvFile = (): LoadedEnvFile => {
 |----------|------|
 | `.env.template` | 変数名の一覧。値は空か、プレースホルダー |
 | `.env.example` | 値の入った記入例 |
-| `.env.localhost` | ローカル開発の既定。`DATABASE_URL` は `make infra-up` が起動する PostgreSQL に合わせてある |
-| `.env.development`、`.env.test`、`.env.staging`、`.env.production` | `NODE_ENV` が対応する値のときに読まれる |
-| `.env.test.ci` | CI 用。CI はテストの前にこれを `.env.test` へコピーし、Docker イメージの起動確認ではコンテナに渡す |
+| `.env.localhost` | ローカル開発の既定 |
+| `.env.development`、`.env.test` | `NODE_ENV` が対応する値のときに読まれる。手元で起動するための設定 |
+| `.env.staging`、`.env.production` | `NODE_ENV` が対応する値のときに読まれる。接続先や秘密の値はプレースホルダー |
+| `.env.test.ci` | CI の Docker イメージの起動確認（`docker-validation.yml`）で、コンテナに渡す設定 |
 | `.env`（Git で追跡されない） | 置けば `.env.<NODE_ENV>` の代わりに読まれる |
 
 注意点:
 
-- `.env.development` と `.env.test` の `DATABASE_URL` は、`make infra-up` が作るものとは別のユーザーと
-  データベースを指しています。これらの環境名で手元のサーバーを起動するときは、該当のデータベースを
-  用意するか、`DATABASE_URL` を環境変数で上書きします。
-- ルートの `.env` は Docker Compose も読みます（[Docker Compose](#docker-compose)）。`.env.example` を
-  コピーして作る場合は、`DATABASE_URL` と `POSTGRES_*` が同じ接続先を表しているか確認してください。
-  `.env.example` のままでは、`DATABASE_URL` のパスワードと `POSTGRES_PASSWORD` が一致していません。
+- `.env.localhost`、`.env.development`、`.env.test`、`.env.example` のデータベース設定は同じで、
+  `make infra-up` が既定値で起動する PostgreSQL（[Docker Compose](#docker-compose)）を指しています。
+  `DATABASE_URL` と `POSTGRES_*` も同じ接続先を表しています。どちらも `config` パッケージのテスト
+  （`backend/packages/config/src/__tests__/app-config.test.ts`）が確認します。
+- そのため `NODE_ENV=test` で起動したサーバーも、ローカル開発と同じデータベースを使います。分けたい
+  ときは `DATABASE_URL` を環境変数で上書きします。統合テストはこの設定を使いません
+  （[データベーススクリプトとテストの接続先](#データベーススクリプトとテストの接続先)）。
+- ルートの `.env` は Docker Compose も読みます。`DATABASE_URL` と `POSTGRES_*` を変えるときは、
+  同じ接続先を表すようにそろえてください。
 
 ## サーバーが読む 14 個の変数
 

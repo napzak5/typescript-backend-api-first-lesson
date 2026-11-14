@@ -123,7 +123,8 @@ The database is the source of truth for the Drizzle schema:
 2. `pnpm db:migrate` applies it, once
 3. `pnpm db:introspect` regenerates `schema.ts` and `relations.ts`
 4. `pnpm db:generate-sql` regenerates `sql/setup.sql`
-5. Commit all of them; `pnpm check:db-schema` fails in CI when they drift
+5. Commit all of them; `pnpm check:db-schema` fails in CI when they drift,
+   and the integration tests fail when `setup.sql` lacks a migration
 
 `pnpm db:migrate` is the one command for every database and safe to run on
 each deployment. It creates an empty database from `sql/setup.sql`, which

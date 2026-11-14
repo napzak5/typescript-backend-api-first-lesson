@@ -100,6 +100,51 @@ const columnsOf = async (table: string): Promise<string[]> => {
   return rows.map((row) => row.column_name)
 }
 
+/**
+ * Everything the public schema defines, one line per column, enum, index and
+ * constraint, so that two states of a database can be compared as a whole.
+ */
+const describeSchema = async (): Promise<string[]> => {
+  const columns = await sql<{ line: string }[]>`
+    SELECT format(
+      'column %s.%s %s nullable=%s default=%s',
+      table_name, column_name, udt_name, is_nullable,
+      coalesce(column_default, '-')
+    ) AS line
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+  `
+  const enums = await sql<{ line: string }[]>`
+    SELECT format(
+      'enum %s: %s',
+      t.typname, string_agg(e.enumlabel, ',' ORDER BY e.enumsortorder)
+    ) AS line
+    FROM pg_type t
+    JOIN pg_enum e ON e.enumtypid = t.oid
+    JOIN pg_namespace n ON n.oid = t.typnamespace
+    WHERE n.nspname = 'public'
+    GROUP BY t.typname
+  `
+  const indexes = await sql<{ line: string }[]>`
+    SELECT format('index %s', indexdef) AS line
+    FROM pg_indexes
+    WHERE schemaname = 'public'
+  `
+  const constraints = await sql<{ line: string }[]>`
+    SELECT format(
+      'constraint %s on %s: %s',
+      c.conname, c.conrelid::regclass, pg_get_constraintdef(c.oid)
+    ) AS line
+    FROM pg_constraint c
+    JOIN pg_namespace n ON n.oid = c.connamespace
+    WHERE n.nspname = 'public'
+  `
+
+  return [...columns, ...enums, ...indexes, ...constraints]
+    .map((row) => row.line)
+    .sort()
+}
+
 const recordedMigrations = async (): Promise<string[]> => {
   const rows = await sql<{ name: string }[]>`
     SELECT name FROM migration_history.applied_migrations ORDER BY name
@@ -293,7 +338,7 @@ describe('the migrations of this repository', () => {
 
   it('should bring a database from before the history up to date without changing the schema', async () => {
     await applyBaseline(sql, plan)
-    const columnsBefore = await columnsOf('salons')
+    const schemaBefore = await describeSchema()
     await dropHistory(sql)
 
     const outcome = await migrate(sql, plan)
@@ -302,6 +347,7 @@ describe('the migrations of this repository', () => {
       type: 'migrated',
       applied: plan.migrations.map(({ name }) => name),
     })
-    expect(await columnsOf('salons')).toEqual(columnsBefore)
+    expect(schemaBefore.length).toBeGreaterThan(100)
+    expect(await describeSchema()).toEqual(schemaBefore)
   })
 })

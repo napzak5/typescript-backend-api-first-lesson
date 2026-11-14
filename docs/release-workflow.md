@@ -138,6 +138,8 @@ Dockerfile やソースを変更するプルリクエストで、4 つのイメ�
   `build:prod` なので、同じコミットの `staging` イメージと `production` イメージは同じ手順で作られ、
   違うのはタグだけです。フロントエンドの `staging` イメージにも `.env.production` の `VITE_*` が入ります。
 
+この 2 点の見直しは GitHub issue #106 で扱います。
+
 ### イメージ名とタグ
 
 | イメージ | 名前 |
