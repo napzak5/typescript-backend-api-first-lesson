@@ -49,7 +49,6 @@ src/
 ├── lib/utils.ts    # cn()
 ├── styles/index.css
 └── index.ts        # パッケージの入口
-components.json     # shadcn/ui の設定
 rslib.config.ts     # ビルド設定
 ```
 
@@ -88,7 +87,7 @@ pnpm --filter @beauty-salon-frontend/ui run build-storybook
 2. `src/index.ts` からエクスポートする
 3. `<name>.test.tsx` と `<name>.stories.tsx` を同じディレクトリに置く
 
-shadcn/ui のコンポーネントを取り込む場合の注意: `components.json` は残っていますが、参照している `tailwind.config.js` はこのパッケージになく、エイリアス（`@/components`、`@/lib/utils`）も `tsconfig.json` の `paths` に定義されていません。現在の設定のまま `shadcn` の CLI でコンポーネントを追加できることは確認していません。取り込んだコードは、既存のコンポーネントと同じく相対パスの import（`../lib/utils`）に直してください。
+shadcn/ui のコンポーネントを取り込む場合の注意: このパッケージには `shadcn` の CLI 用の設定（`components.json`）がありません。コードを手で取り込み、既存のコンポーネントと同じく相対パスの import（`../lib/utils`）に直してください。
 
 ## トラブルシューティング
 

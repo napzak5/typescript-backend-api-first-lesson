@@ -126,6 +126,24 @@ describe('environment files', () => {
     })
   })
 
+  it.each(['.env.localhost', '.env.development'])(
+    '%s should allow the origins of the three frontend applications',
+    (file) => {
+      expect(parseAppConfig(readEnvFile(file))).toMatchObject({
+        type: 'success',
+        data: {
+          cors: {
+            origins: [
+              'http://localhost:3001',
+              'http://localhost:3002',
+              'http://localhost:3003',
+            ],
+          },
+        },
+      })
+    },
+  )
+
   it('.env.template should list every variable the server reads', () => {
     expect(Object.keys(readEnvFile('.env.template'))).toEqual(
       expect.arrayContaining(variableNames),

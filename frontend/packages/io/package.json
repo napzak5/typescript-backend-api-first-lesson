@@ -1,20 +1,17 @@
 {
   "dependencies": {
-    "@beauty-salon-frontend/config": "workspace:*",
-    "@beauty-salon-frontend/stores": "workspace:*",
-    "@beauty-salon-frontend/types": "workspace:*",
-    "@beauty-salon-frontend/utils": "workspace:*",
-    "@tanstack/react-query": "^5.107.1",
-    "neverthrow": "^8.2.0"
+    "@beauty-salon-frontend/config": "workspace:*"
   },
   "devDependencies": {
     "@beauty-salon-shared/config": "workspace:*",
     "@rslib/core": "^1.0.7",
     "@types/node": "^26.6.6",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.0"
   },
   "exports": {
     ".": {
+      "@beauty-salon-frontend/source": "./src/index.ts",
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
     }
@@ -35,7 +32,9 @@
     "build:prod": "NODE_ENV=production rslib build",
     "build:watch": "NODE_ENV=development rslib build --watch",
     "typecheck": "tsc --noEmit",
-    "dev": "NODE_ENV=development rslib build --watch"
+    "dev": "NODE_ENV=development rslib build --watch",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "type": "module",
   "types": "./dist/index.d.ts",

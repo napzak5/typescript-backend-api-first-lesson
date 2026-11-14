@@ -1,6 +1,6 @@
 # フロントエンドAPI統合ガイド（Orval）
 
-このドキュメントは、フロントエンドが API とつながるために現在リポジトリにあるものと、まだないものを説明します。コードは実ファイルからの抜粋で、コメントは省いています（「推奨」の節のサンプルだけは本書のために書いたものです）。
+このドキュメントは、フロントエンドが API とつながるために現在リポジトリにあるものと、まだないものを説明します。コードは実ファイルからの抜粋で、コメントは省いています（「アプリから使う」の節のサンプルだけは本書のために書いたものです）。
 
 ## 現状
 
@@ -9,18 +9,16 @@
 あるもの:
 
 - OpenAPI ドキュメントから Orval が生成した API クライアント（`@beauty-salon-frontend/api-client`）。型、fetch 関数、TanStack Query のフックを含む
-- そのクライアントが HTTP 呼び出しに使う fetch ラッパー（`@beauty-salon-frontend/io` の `customInstance`）
+- そのクライアントが HTTP 呼び出しに使う fetch ラッパー（`@beauty-salon-frontend/io` の `customInstance`）。生成コードが期待するとおりに動くことを、テストと実際のサーバーへの呼び出しで確認している
 - 各アプリの TanStack Query の初期設定（`QueryClientProvider`）
-- 環境変数 `VITE_BACKEND_BASE_URL`
+- 環境変数 `VITE_BACKEND_BASE_URL`（API サーバーのオリジン）
 
 ないもの:
 
 - 生成クライアントを使うコンポーネント、画面、カスタムフック（アプリは `api-client` にも `io` にも依存していない）
-- 認証（バックエンドに認証・認可の実装がない）
-- API のモックと、API 呼び出しを含むテスト
+- 認証（バックエンドに認証・認可の実装がなく、`customInstance` にも `Authorization` ヘッダーを付ける仕組みはない）
+- API のモックサーバーと、ブラウザーから API までを通すテスト
 - Salon とシステムエンドポイント以外のバックエンド実装（クライアントは OpenAPI の全操作について生成されるが、サーバーが応答するのは `/api/v1/salons` 以下と `/api/system/alive`、`/api/system/ready`、`/api/system/health` だけ）
-
-生成クライアントと fetch ラッパーの間には、[既知の不整合](#既知の不整合) に挙げる食い違いがあり、そのままでは接続できません。
 
 ## 構成
 
@@ -39,20 +37,20 @@
 | パッケージ | 役割 | 使っているもの |
 |------------|------|----------------|
 | `api-client` | Orval の生成物（`src/generated/`）と、その再エクスポート | なし |
-| `io` | fetch ラッパー `customInstance`、ヘッダー設定（`setAuthorizationHeader`、`setGlobalHeaders`）、TanStack Query のラッパー（`useAuthedQuery`、`useAuthedMutation`）、セッション取得の骨組み | `api-client` |
+| `io` | fetch ラッパー `customInstance` | `api-client` |
 | `config` | `import.meta.env` を読む `env` オブジェクトと、モード判定関数（`isProductionMode` など） | `io`、`ui`（型のみ） |
-| `types` | `ApplicationError` とエラー表示の補助、ページ番号方式の `Pagination` 型 | `io` |
-| `utils` | 日付、ファイル、書式、クエリ文字列などの汎用関数 | `io`、`types`、`validations` |
+| `types` | `ApplicationError` とエラー表示の補助、ページ番号方式の `Pagination` 型 | なし |
+| `utils` | 日付、ファイル、書式、クエリ文字列などの汎用関数 | `types`、`validations` |
 | `validations` | 入力値の検証関数。結果は `neverthrow` の `Result`（例: `validateEmail` は `Result<Email, z.ZodError>` を返す） | なし |
 | `message` | 画面に出す日本語メッセージ（`messageFactory`） | なし |
-| `stores` | `localStorage` のラッパー | `io` |
+| `stores` | `localStorage` のラッパー | なし |
 | `theme` | Tailwind CSS のプリセットと CSS 変数（`styles/base.css`） | 3つのアプリ、`ui` |
 | `ui` | `Button`、`Card`、`EnvironmentBanner` | 3つのアプリ |
 | `assets` | 画像アセット | なし |
 
 アプリが実際に使っているのは `ui` と `theme` だけです（`ui` は `config` から型を1つ借りています）。`api-client` と `io` は、どのアプリからも使われていません。
 
-各パッケージの TypeScript は rslib でビルドした `dist/` を通して参照されます。`pnpm dev` は最初にフロントエンドのパッケージをビルドしてから、各パッケージの監視ビルドと各アプリの開発サーバー（とバックエンド）を起動します。
+各パッケージの TypeScript は rslib でビルドした `dist/` を通して参照されます。`pnpm dev` は最初にフロントエンドのパッケージをビルドしてから、各パッケージの監視ビルドと各アプリの開発サーバー（とバックエンド）を起動します。テストはビルドを必要としません（[テスト](#テスト)）。
 
 ## 型の流れ（TypeSpec からコンポーネントまで）
 
@@ -133,16 +131,30 @@ export type salonCrudListResponse400 = {
 
 ## fetch ラッパー（`customInstance`）
 
-実装は `frontend/packages/io/src/libs/fetcher/fetcher.ts` です。現在の動作:
+実装は `frontend/packages/io/src/libs/fetcher/fetcher.ts` です。生成コードは、すべてのリクエストでこの関数を呼びます。
 
-- ベース URL は `VITE_BACKEND_BASE_URL` に `/v1` を足したもの
-- タイムアウトは 30 秒。超えるとリクエストを中断する
-- `setAuthorizationHeader(token)` と `setGlobalHeaders(headers)` で設定したヘッダーを毎回付ける
-- レスポンスは `Content-Type` に応じて JSON、テキスト、Blob のいずれかに変換して返す
-- 2xx 以外のステータスでは、Promise が `HTTPError` で reject される
-- 戻り値の Promise には `cancel()` が付いている
+```typescript
+// frontend/packages/io/src/libs/fetcher/fetcher.ts
+export function customInstance<T>(url: string, options: RequestInit): Promise<T>
+```
 
-`useAuthedQuery` と `useAuthedMutation` は、クエリ・ミューテーションの実行前にセッションからトークンを取り出して `Authorization` ヘッダーに設定するラッパーです。ただしセッションを返す `fetchAuthSession`（`frontend/packages/io/src/libs/auth/index.ts`）は固定のダミー値を返す骨組みで、バックエンドにも認証はありません。
+リクエスト:
+
+- URL は `VITE_BACKEND_BASE_URL`（API サーバーのオリジン）に、生成コードのパス（`/api/v1/salons` など）をつなげたもの
+- メソッド、ヘッダー、本文は生成コードが渡したものをそのまま送る。本文は生成コードが JSON にしているので、ここでは変換しない
+- タイムアウトは 30 秒。呼び出し側が渡した `signal` があれば、それとタイムアウトのどちらでも中断される
+
+レスポンス:
+
+- **どの HTTP ステータスでも** `{ data, status, headers }` で resolve する。API のエラー応答は reject ではなく値で、呼び出し側が `status` で分岐する
+- `data` は、`Content-Type` が `application/json` か `+json`（エラーの `application/problem+json`）なら JSON として読んだ値、本文が空（204）なら `undefined`、それ以外は文字列
+- reject するのは、返すレスポンスがないときだけ: ネットワークの失敗、`signal` またはタイムアウトによる中断、`Content-Type` が JSON なのに本文が JSON として読めない、`VITE_BACKEND_BASE_URL` が設定されていない
+
+知っておくべき制約:
+
+- 型引数 `T` は生成コードがその操作について指定するレスポンスの型で、**実行時に本文を `T` と照合してはいません**。クライアントとサーバーが同じ OpenAPI ドキュメントから生成されていることが、型と実際の値が一致する根拠です
+- JSON 以外の本文は文字列で返します。バイナリを返す操作（未実装の顧客エクスポート）を実装するときは、ここに対応が必要です
+- `Authorization` などの共通ヘッダーを付ける仕組みはありません。認証を実装するときに設計します
 
 ## TanStack Query の設定
 
@@ -163,6 +175,8 @@ const queryClient = new QueryClient({
 
 `VITE_MODE` が `production` 以外のときは React Query Devtools も表示します。クエリやミューテーションを実行しているコードはまだありません。
 
+`retry: 3` が再試行するのは、クエリが失敗（reject）したとき、つまり通信そのものが失敗したときです。API のエラー応答は値として返るので、再試行の対象になりません。
+
 ## 環境変数（`VITE_*`）
 
 変数は各アプリのディレクトリにある `.env.<mode>` に置き、Vite がビルド時（開発サーバーでは起動時）に値を埋め込みます。リポジトリ直下の `.env.*` はバックエンド用で、`VITE_*` は入っていません。
@@ -171,40 +185,26 @@ const queryClient = new QueryClient({
 |------|----------------|
 | `VITE_MODE` | `App.tsx` の `EnvironmentBanner` と環境名の表示、`main.tsx` の Devtools の表示判定 |
 | `VITE_APP_TITLE` | `App.tsx` のヘッダー |
-| `VITE_BACKEND_BASE_URL` | `config` パッケージの `env` を通して `customInstance` のベース URL になる。アプリのコードからは使われていない |
+| `VITE_BACKEND_BASE_URL` | API サーバーのオリジン（パスは付けない）。`config` パッケージの `env` を通して `customInstance` が使う。アプリのコードからは使われていない |
 
-- どのファイルが読まれるかは Vite のモードで決まります。開発サーバー（`pnpm dev`）は `development`、`build:test` は `test`、`build:stg` は `staging`、`build:prod` は `production` です。
-- `build:dev` は `--mode dev` でビルドしますが、`.env.dev` はどのアプリにもないため、このビルドでは `VITE_*` が1つも設定されません。
-- `.env.localhost` があるのは admin-app だけです。
-- `src/vite-env.d.ts` と `config` パッケージは `VITE_APP_VERSION` と `VITE_FRONTEND_BASE_URL` も宣言していますが、値を設定しているファイルはありません。
+- どのファイルが読まれるかは Vite のモードで決まります。開発サーバー（`pnpm dev`）と `build:dev` は `development`、`build:localhost` は `localhost`、`build:test` は `test`、`build:stg` は `staging`、`build:prod` は `production` です。3つのアプリとも、この 5 つのモードの `.env.<mode>` を持っています。
+- ローカル用の 3 つ（`localhost`、`development`、`test`）の `VITE_BACKEND_BASE_URL` は `http://localhost:3000` で、リポジトリ直下の `.env.*` の `PORT` と同じです。
+- `config` パッケージの `env` は、設定されていない変数を `undefined` として返します。
 
-## 既知の不整合
+## アプリから使う（未実装）
 
-生成クライアントをそのまま使うと、次の点で動きません。1〜4 は、`fetcher.ts` の `customInstance` を生成コードと同じ引数で呼び出して確認した動作です。
+以下は、最初の画面を API につなぐときの手順と推奨です。リポジトリにはまだ存在しません。対象は実装済みの Salon API です。
 
-1. **戻り値の形**: 生成コードは `customInstance` が `{ data, status, headers }` を返すものとして型を付けていますが、実際に返るのはレスポンス本体だけです。型の上の `response.data` と実行時の値が一致しません。
-2. **エラーの扱い**: 生成された型では 400・404・409 もユニオンの一員（値）ですが、`customInstance` は 2xx 以外で reject します。reject に使われる `HTTPError` クラスはエクスポートされていません。
-3. **リクエスト本体の二重エンコード**: 生成コードは `JSON.stringify` 済みの文字列を `body` に渡し、`customInstance` がそれをもう一度 `JSON.stringify` します。サーバーには JSON の文字列リテラルが届きます。
-4. **URL**: 生成コードの URL は `/api/v1/salons` のように `/api/v1` から始まり、`customInstance` はその前に `VITE_BACKEND_BASE_URL` + `/v1` を付けます。結果は `…/v1/api/v1/salons` になります。
-5. **接続先**: アプリの `.env.localhost` と `.env.development` の `VITE_BACKEND_BASE_URL` は `http://localhost:8787` ですが、API サーバーが待ち受けるのは `PORT` のポートで、リポジトリ直下の `.env.localhost` と `.env.development` では 3000 です。
-6. **依存関係**: アプリの `package.json` に `@beauty-salon-frontend/api-client` がありません。
+準備:
 
-## 最初の統合に向けた推奨（未実装）
-
-以下は推奨であり、リポジトリにはまだ存在しません。対象は実装済みの Salon API です。
-
-先に直すもの:
-
-- `customInstance` を生成コードの期待に合わせる。どのステータスでも `{ data, status, headers }` を返し（2xx 以外でも reject しない）、受け取った `body` を再エンコードしない。これで API のエラーが値として扱え、アプリのコードで例外を使わずに済む
-- ベース URL を API サーバーのオリジンにし（ローカルは `http://localhost:3000`）、`/v1` を足すのをやめる
 - 使うアプリの `package.json` に `@beauty-salon-frontend/api-client` と `ts-pattern` を追加する
-- API サーバーの `CORS_ORIGIN` にそのアプリのオリジンが含まれていることを確認する
+- API サーバーの `CORS_ORIGIN` にそのアプリのオリジンが含まれていることを確認する。リポジトリ直下の `.env.localhost` と `.env.development` は、3つのアプリのオリジン（`http://localhost:3001`〜`3003`）を許可している
 
-そのうえで、コンポーネントは生成されたフックと型だけを使います。レスポンスは `status` で分岐し、`.exhaustive()` で網羅を保証します。
+コンポーネントは生成されたフックと型だけを使います。レスポンスは `status` で分岐し、`.exhaustive()` で網羅を保証します。
 
 ```tsx
 import { useSalonCrudList } from '@beauty-salon-frontend/api-client'
-import { match } from 'ts-pattern'
+import { match, P } from 'ts-pattern'
 
 export function SalonList() {
   const salons = useSalonCrudList({ limit: 20 })
@@ -225,27 +225,31 @@ export function SalonList() {
         ))}
       </ul>
     ))
-    .with({ status: 400 }, ({ data: problem }) => (
+    .with({ status: P.union(400, 429, 500) }, ({ data: problem }) => (
       <p role='alert'>{problem.title}</p>
     ))
     .exhaustive()
 }
 ```
 
-このサンプルは現在の生成クライアントに対して型検査を通ります（実行には上の修正が必要です）。
+この分岐（200 と 400・429・500）は、現在の生成クライアントの型に対して網羅になっています。API 定義に新しいステータスが増えると、`.exhaustive()` が型エラーになって気づけます。
 
 - 型は生成されたものをそのまま使う。`ModelsSalonResponse` と同じ形の型を手書きしない。`any` と型アサーションも使わない
 - 登録・更新・削除は `useSalonCrudCreate` などのミューテーションフックを使い、結果も同じく `status` で分岐する。成功したら `getSalonCrudListQueryKey()` を使って一覧のキャッシュを無効化する
 - フォームの入力検証は `@beauty-salon-frontend/validations`（`neverthrow` の `Result` を返す）で行い、サーバーの検証エラーは `ModelsProblemDetails` の `errors` から表示する
+- 429 のときは、レスポンスの `headers` から `Retry-After`（秒）を読める
 - 未実装のドメイン（Customer、Booking など）のフックは生成されていても呼ばない。サーバーが 404 を返す
 
 ## テスト
 
-フロントエンドのテストは Vitest の単体テストだけです（`pnpm test:frontend`）。
+フロントエンドのテストは Vitest の単体テストです（`pnpm test:frontend`）。パッケージをまたぐ import はソースから解決するので（エクスポート条件 `@beauty-salon-frontend/source`）、ビルドなしで実行できます。
 
 - 各アプリの `src/App.test.tsx`: `MemoryRouter` で画面を描画し、表示内容を検証する
 - `config`、`message`、`stores`、`types`、`ui`、`utils`、`validations` の各パッケージ: モジュールの隣に `*.test.ts(x)`
-- `api-client` と `io` にはテストがありません。API のモックも用意されていません
+- `io` の `src/libs/fetcher/fetcher.test.ts`: `customInstance` を、スタブにした `fetch` に対して検証する（URL、本文、ステータスごとの戻り値、problem details、reject する条件）
+- `api-client` の `src/salons.test.ts`: 生成された Salon の関数を、実際の `customInstance` を通して検証する（リクエストの形、ステータスごとに型が絞られること、通信の失敗、TanStack Query との組み合わせ）
+
+API のモックサーバーと、ブラウザーから API までを通すテストはありません。
 
 ## 関連ドキュメント
 

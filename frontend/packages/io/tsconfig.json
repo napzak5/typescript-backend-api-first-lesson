@@ -8,14 +8,8 @@
     "rootDir": "./src",
     "outDir": "./dist",
     "tsBuildInfoFile": "./tsconfig.tsbuildinfo",
-    "jsx": "react-jsx",
     "lib": ["ESNEXT", "DOM", "DOM.Iterable"]
   },
   "include": ["src/**/*"],
-  "exclude": ["dist", "node_modules"],
-  "references": [
-    { "path": "../types" },
-    { "path": "../utils" },
-    { "path": "../stores" }
-  ]
+  "exclude": ["dist", "node_modules"]
 }

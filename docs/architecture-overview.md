@@ -465,7 +465,8 @@ application, selected with the `APP` build argument. See
 `admin-app` and `dashboard-app` (ports 3001 to 3003 under `pnpm dev`). Each is
 a shell so far. `frontend/packages` holds what they share (UI components,
 theme, stores, utilities, validations) and the API client that orval generates
-into `frontend/packages/api-client`. No application imports the client yet.
+into `frontend/packages/api-client`. The client and its fetch function
+(`frontend/packages/io`) are tested, but no application imports the client yet.
 See [Frontend API Integration](./frontend-api-integration.md).
 
 ## References

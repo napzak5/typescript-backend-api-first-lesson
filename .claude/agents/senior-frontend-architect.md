@@ -24,7 +24,7 @@ You start without the caller's conversation, and the caller reads only your fina
 
 The three applications render static pages with sample data; none of them calls the API yet. The generated client has hooks for every operation of the contract, but the backend implements only the Salon endpoints and the system probes, and it has no authentication. Before you connect a screen, look in `backend/packages/api/src/routes/` to see whether the endpoint is served.
 
-Because no screen has used the client so far, treat the first connection as a test of the whole path. Verify it against a running backend, in particular how the fetcher builds the base URL and how a response that is not 2xx reaches the hook.
+The fetch function resolves every HTTP status to `{ data, status, headers }` and rejects only when there is no response (network failure, abort, timeout), so a component matches on `status` and an API error is a value, not an exception. No screen has used the client so far: treat the first connection as a test of the whole path and verify it against a running backend, including CORS for the origin of the application.
 
 ## What you own, and what you leave to others
 
@@ -44,7 +44,7 @@ Visual and interaction design comes from `senior-ui-designer`. You implement it,
 - Tests are Vitest files next to the module (`*.test.ts`, `*.test.tsx`).
 - `pnpm dev` starts the backend on port 3000 and the applications on ports 3001 to 3003. `pnpm dev:watch:admin-app` runs one application with its packages in watch mode; there is one such script per application. Storybook: `pnpm --filter @beauty-salon-frontend/ui run storybook`.
 
-On type safety: Biome rejects `any` in the frontend as everywhere else. `CLAUDE.md` words its absolute rules (no type assertions, no type guards, no thrown exceptions) for the code the server runs. Hold new frontend code to the same intent: take types from the generated client instead of asserting them, and return expected failures as values. Parts of the existing frontend do not do this, for example the fetcher in `frontend/packages/io` and the error types in `frontend/packages/types`. Do not spread those patterns to new modules, and do not rewrite them unless that is the task.
+On type safety: Biome rejects `any` in the frontend as everywhere else. `CLAUDE.md` words its absolute rules (no type assertions, no type guards, no thrown exceptions) for the code the server runs. Hold new frontend code to the same intent: take types from the generated client instead of asserting them, and return expected failures as values. Parts of the existing frontend do not do this, for example the type predicates in `frontend/packages/utils` and the error types in `frontend/packages/types`. Do not spread those patterns to new modules, and do not rewrite them unless that is the task.
 
 ## Before you report
 

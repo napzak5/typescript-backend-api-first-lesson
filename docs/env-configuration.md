@@ -229,7 +229,7 @@ pnpm --filter @beauty-salon-backend/config run test
 |------|------|
 | `VITE_MODE` | 環境名。環境バナーの表示と、`production` 以外で React Query Devtools を出す判定に使う |
 | `VITE_APP_TITLE` | 画面に表示するアプリ名 |
-| `VITE_BACKEND_BASE_URL` | バックエンドのベース URL |
+| `VITE_BACKEND_BASE_URL` | API サーバーのオリジン（パスは付けない。ローカルは `http://localhost:3000`） |
 
 | 各アプリのスクリプト | Vite のモード | 読まれるファイル |
 |----------------------|---------------|------------------|
@@ -237,8 +237,8 @@ pnpm --filter @beauty-salon-backend/config run test
 | `build:test` | `test` | `.env.test` |
 | `build:stg` | `staging` | `.env.staging` |
 | `build:prod` | `production` | `.env.production` |
-| `build:dev` | `dev` | なし（`.env.dev` はない）。`VITE_*` は未定義になる |
-| `build:localhost` | `localhost` | admin-app にだけ `.env.localhost` がある |
+| `build:dev` | `development` | `.env.development` |
+| `build:localhost` | `localhost` | `.env.localhost` |
 
 変数の型は各アプリの `src/vite-env.d.ts` に宣言します（例: `frontend/apps/admin-app/src/vite-env.d.ts`）。
 変数を追加するときは、各アプリの `.env.<モード>` と `vite-env.d.ts` の両方を更新します。
@@ -254,15 +254,17 @@ pnpm --filter @beauty-salon-backend/config run test
 | `VITE_MODE` | `import.meta.env.MODE`（Vite のモード） |
 | `VITE_APP_TITLE` | `VITE_APP_TITLE` |
 | `VITE_BACKEND_BASE_URL` | `VITE_BACKEND_BASE_URL` |
-| `VITE_APP_VERSION`、`VITE_FRONTEND_BASE_URL` | 同名の変数。どの `.env.*` ファイルにも定義されていない |
+
+設定されていない変数の値は `undefined` です。
 
 現状について:
 
 - `VITE_BACKEND_BASE_URL` を使うのは `frontend/packages/io` の fetcher だけで、3 つのアプリはまだ
   API を呼んでいません。
-- `.env.localhost` と `.env.development` の `VITE_BACKEND_BASE_URL` は、ローカルのバックエンド
-  （`http://localhost:3000`、ルートは `/api/v1` 以下）を指していません。API を呼ぶ実装を入れるときに
-  合わせる必要があります。
+- アプリの `.env.localhost`、`.env.development`、`.env.test` の `VITE_BACKEND_BASE_URL` は、
+  ローカルのバックエンド（`http://localhost:3000`）を指しています。バックエンド側の
+  `.env.localhost` と `.env.development` の `CORS_ORIGIN` は、3 つのアプリのオリジン
+  （`http://localhost:3001`〜`3003`）を許可しています。
 
 ## 秘密情報の扱い
 
