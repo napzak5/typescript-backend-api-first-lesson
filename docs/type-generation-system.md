@@ -61,10 +61,10 @@ options:
 ```
 
 The document describes every domain that is defined in TypeSpec. The backend
-implements only the Salon operations, five authentication operations (`login`,
-`refresh`, `logout`, `logout-all`, `me`) and the system probes (`alive`,
-`ready`, `health`); the types and client functions of everything else are
-generated all the same.
+implements only the Salon operations, twelve authentication operations (login,
+refresh, logout, the current user, registration, email verification, password
+reset and change) and the system probes (`alive`, `ready`, `health`); the
+types and client functions of everything else are generated all the same.
 
 ## Step 2: OpenAPI to backend types
 

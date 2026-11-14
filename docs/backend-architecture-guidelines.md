@@ -7,7 +7,7 @@
 - [アーキテクチャ概要](./architecture-overview.md): システム全体の説明。パッケージの依存関係、型生成の流れ、リクエストの流れ、実装済みの範囲はそちらにあり、本書では繰り返しません。
 - [CLAUDE.md](../CLAUDE.md): 規約とコマンドの正本。Salon ドメインの全レイヤーのシグネチャもそこにまとまっています。本書は規約の適用のしかたと理由を説明します。
 
-バックエンドで実装済みなのは、Salon ドメイン、認証の 5 つのオペレーション（ログイン、トークンの再発行、ログアウト、全セッションのログアウト、自分の情報の取得）、システムエンドポイントだけです。ほかのドメインを実装するときは、Salon のファイルと同じ構成で書いてください。認証と認可の仕様は [認証と認可](./authentication.md) にあり、本書ではコードの書き方だけを扱います。
+バックエンドで実装済みなのは、Salon ドメイン、認証の 12 のオペレーション（ログイン、トークンの再発行、ログアウト、全セッションのログアウト、自分の情報の取得、ユーザー登録、メールアドレスの確認、パスワードの再設定と変更）、システムエンドポイントだけです。ほかのドメインを実装するときは、Salon のファイルと同じ構成で書いてください。認証と認可の仕様は [認証と認可](./authentication.md) にあり、本書ではコードの書き方だけを扱います。
 
 ---
 
@@ -27,7 +27,7 @@
 依存の向きは次のとおりです。
 
 - `domain` は I/O を行うパッケージを import しません。`database` から import するのは型だけです。
-- `infrastructure` は `domain` が宣言したインターフェースを実装します。リポジトリのほか、パスワードのハッシュ（`IPasswordHasher`）とセッショントークンの生成（`ISessionTokenIssuer`）も同じ形です。
+- `infrastructure` は `domain` が宣言したインターフェースを実装します。リポジトリのほか、パスワードのハッシュ（`IPasswordHasher`）、トークンの生成（`ITokenIssuer`。セッションのトークンと、メールで送るトークン）、メールの送信（`IMailer`）も同じ形です。
 - `api` はユースケースを呼び出し、結果を HTTP に変換するだけです。認証も同じで、`Authorization` ヘッダーをユースケースに渡して操作者（`Actor`）を受け取るだけです。ロールや権限は判定しません。
 - 環境変数を読み、プロセスを終了させるのは `backend/apps/server/src/index.ts` だけです。
 
@@ -474,13 +474,14 @@ app.use(
 | 対象 | 種類 | 場所 |
 |------|------|------|
 | スキーマ、マッパー、ユースケース（権限の判定を含む） | ユニット（`pnpm test`） | `backend/packages/domain/src/__tests__` |
-| パスワードのハッシュ、セッションのトークン | ユニット（`pnpm test`） | `backend/packages/infrastructure/src/security/__tests__` |
+| パスワードのハッシュ、トークンの生成 | ユニット（`pnpm test`） | `backend/packages/infrastructure/src/security/__tests__` |
+| SMTP でのメールの送信 | ユニット（`pnpm test`）と統合（`pnpm test:integration`。testcontainers で Mailpit のコンテナを起動する） | `backend/packages/infrastructure/src/mail/__tests__` |
 | クエリの変換、リンク、problem details、ミドルウェア | ユニット（`pnpm test`） | `backend/packages/api/src` の各 `__tests__` |
 | エンドポイント（リポジトリの実装を含む） | 統合（`pnpm test:integration`） | `backend/packages/api/src/__tests__/salon.integration.test.ts`、`auth.integration.test.ts` |
 | リクエスト ID、エラー応答、CORS、レート制限、プローブ | 統合（`pnpm test:integration`） | `backend/packages/api/src/__tests__/app.integration.test.ts` |
 | 起動と停止 | 統合（`pnpm test:integration`） | `backend/apps/server/src/__tests__/server.integration.test.ts` |
 
-- ユースケースのテストでは、リポジトリを `ISalonRepository` を満たすオブジェクトに差し替えます。DB は使いません。認証のユースケースでは、2つのリポジトリ、パスワードのハッシュ、トークンの発行も差し替え、時計を固定します（`backend/packages/domain/src/__tests__/auth-fixtures.ts` の `authDependencies`）。
+- ユースケースのテストでは、リポジトリを `ISalonRepository` を満たすオブジェクトに差し替えます。DB は使いません。認証のユースケースでは、2つのリポジトリ、パスワードのハッシュ、トークンの発行、メールの送信も差し替え、時計を固定します（`backend/packages/domain/src/__tests__/auth-fixtures.ts` の `authDependencies`）。
 - リポジトリの実装は、エンドポイントの統合テストで実際の PostgreSQL に対して検証します。テストごとに専用のスキーマを作り、本番と同じ `createApp` を使います（`backend/packages/api/src/__tests__/_shared/test-helpers.ts` の `createTestApp`）。
 - 統合テストでアクセストークンが必要なときは、ユーザーの行を挿入し、`POST /api/v1/auth/login` でログインします（`backend/packages/api/src/__tests__/_shared/auth-helpers.ts`）。
 - エンドポイントごとに、エラーのシナリオを5つ以上テストします。公開でないエンドポイントでは、トークンのないリクエスト（401）と、許可されていないユーザーからのリクエスト（403）を含めます。

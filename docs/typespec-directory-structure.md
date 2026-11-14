@@ -53,8 +53,8 @@ TypeSpec に定義があっても、バックエンドに実装があるとは�
 |---|---|
 | `models/salon.tsp`、`operations/salon-operations.tsp`（`SalonCrud` の 5 オペレーション） | `backend/packages/api/src/routes/salon/`。定義と実装は一致している |
 | `operations/system-operations.tsp` の `SystemOperations`（`alive`、`ready`、`health`） | `backend/packages/api/src/routes/system/index.ts`。定義と実装は一致している |
-| `models/auth.tsp`、`operations/auth-operations.tsp` の `AuthCrud` のうち `login`、`refreshToken`、`logout`、`logoutAll`、`getCurrentUser` | `backend/packages/api/src/routes/auth/`。この 5 オペレーションは定義と実装が一致している |
-| `operations/auth-operations.tsp` の残り（`AuthCrud` の登録・メールアドレスの確認・パスワードの再設定と変更・2 要素認証、`SessionCrud`、`AdminAuthCrud`） | なし（[認証と認可](./authentication.md#実装範囲)） |
+| `models/auth.tsp`、`operations/auth-operations.tsp` の `AuthCrud` のうち、2 要素認証（`/2fa/*`）以外の 12 オペレーション（`register`、`login`、`refreshToken`、`logout`、`logoutAll`、`getCurrentUser`、`sendEmailVerification`、`confirmEmailVerification`、`forgotPassword`、`verifyResetToken`、`resetPassword`、`changePassword`） | `backend/packages/api/src/routes/auth/`。この 12 オペレーションは定義と実装が一致している |
+| `operations/auth-operations.tsp` の残り（`AuthCrud` の 2 要素認証の 4 オペレーション、`SessionCrud`、`AdminAuthCrud`） | なし（[認証と認可](./authentication.md#実装範囲)） |
 | 上記以外のドメイン（customer、staff、service、booking、review、treatment、payment、inventory） | なし。TypeSpec は DB のテーブルと一致している（`pnpm check:api-db`）が、ドメイン・リポジトリ・ルートのコードはない |
 | attachment、permission と、inventory の発注・アラート、treatment のカルテ | なし。対応するテーブルもまだない（[API-DB型制約マッピング](./api-db-type-constraints-mapping.md#ルールに載せるモデル載せないモデル)） |
 

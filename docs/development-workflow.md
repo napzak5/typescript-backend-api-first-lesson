@@ -32,7 +32,7 @@
 
 ```bash
 pnpm install        # 依存関係をインストールする。husky の pre-commit フックも設定される
-make infra-up       # PostgreSQL を Docker で起動し、接続できるようになるまで待つ
+make infra-up       # PostgreSQL と Mailpit（メールの受信サーバー）を Docker で起動し、両方が使えるようになるまで待つ
 pnpm db:fresh       # sql/setup.sql からスキーマを作成する
 pnpm db:seed        # サンプルデータを投入する（任意）。ログインできるアカウントも作る
 pnpm dev            # バックエンド :3000、フロントエンド :3001〜3003
@@ -49,8 +49,13 @@ pnpm dev            # バックエンド :3000、フロントエンド :3001〜3
   動き、依存先のパッケージを変更してもビルドし直す必要はありません。
 - **`make infra-up` の PostgreSQL** は `docker-compose.yml` の既定値で起動し、`.env.localhost` の
   `DATABASE_URL` はそれに合わせてあります。
+- **`make infra-up` の Mailpit** は、サーバーが送るメール（メールアドレスの確認、パスワードの再設定など）を
+  受け取ります。メールは外へ送られず、`http://localhost:8025` で読めます。`.env.localhost` の `SMTP_*` は
+  この Mailpit に合わせてあります（[メール送信](./email.md#ローカル開発mailpit)）。
 - **Docker を使わない場合**は、PostgreSQL 18 を用意し、シェルで `DATABASE_URL` を設定します
-  （プロセスの環境変数は `.env` ファイルより優先されます）。
+  （プロセスの環境変数は `.env` ファイルより優先されます）。メールを受け取るには SMTP サーバーも用意し、
+  `SMTP_*` を設定します。SMTP サーバーがなくてもサーバーは起動しますが、メールは届かず、送信の失敗が
+  ログに残ります。
 
 ### 環境変数ファイル
 
@@ -70,19 +75,26 @@ pnpm dev            # バックエンド :3000、フロントエンド :3001〜3
 | `pnpm dev:watch:admin-app` | admin-app と、フロントエンドのパッケージの watch ビルドを同時に起動する（`portal-app`、`dashboard-app` も同様） |
 
 バックエンドは起動時に設定を検証し、データベースに接続できることを確認します。どちらかに失敗すると
-起動しません（[トラブルシューティング](#トラブルシューティング)）。
+起動しません（[トラブルシューティング](#トラブルシューティング)）。SMTP サーバーには、メールを送るときに
+だけ接続します。
 
 ```bash
 curl http://localhost:3000/api/system/ready   # データベースに接続できていれば 200
 curl http://localhost:3000/api/v1/salons      # サロン一覧（認証なしで呼べる）
 ```
 
-実装済みの API は、Salon ドメイン、認証の 5 つのオペレーション（`/api/v1/auth` の `login`、`refresh`、
-`logout`、`logout-all`、`me`）、システムエンドポイント（`/api/system/alive`、`/api/system/ready`、
-`/api/system/health`）だけです。他のドメインは TypeSpec とデータベーススキーマにだけ存在します。
+実装済みの API は、Salon ドメイン、認証の 12 のオペレーション（`/api/v1/auth` のログイン、トークンの更新、
+ログアウト、現在のユーザーの取得、ユーザー登録、メールアドレスの確認、パスワードの再設定と変更）、
+システムエンドポイント（`/api/system/alive`、`/api/system/ready`、`/api/system/health`）だけです。
+他のドメインは TypeSpec とデータベーススキーマにだけ存在します。
 
 サロンの作成・更新・削除にはアクセストークンが必要です。シードのアカウントでログインしてトークンを
 取得する手順と、ロールごとの権限は [認証と認可](./authentication.md) を参照してください。
+
+ユーザー登録やパスワードの再設定で送られるメールは Mailpit（`http://localhost:8025`）に届きます。
+メールのリンクが指すページ（`/verify-email`、`/reset-password`）はフロントエンドにまだないので、
+リンクの `#token=` のあとの値を API に送って続けます。手順の例は
+[メール送信](./email.md#ローカル開発mailpit) にあります。
 
 ### Docker Compose で全体を起動する
 
@@ -96,6 +108,8 @@ make docker-clean  # 停止してボリュームも削除する（データベ�
 `docker-compose.yml` の `migration` サービスが、バックエンドの起動前に `db:migrate` と
 `db:seed --if-empty` を実行します。空のデータベースにはスキーマとサンプルデータを作り、
 既存のデータベースには未適用のマイグレーションだけを適用するので、データは保持されます。
+バックエンドのコンテナは、同じ Compose の `mailpit` サービスにメールを送ります
+（`SMTP_HOST` が `mailpit` に上書きされる）。
 
 ### ポート
 
@@ -105,6 +119,7 @@ make docker-clean  # 停止してボリュームも削除する（データベ�
 | portal-app / admin-app / dashboard-app（`pnpm dev`、`pnpm preview:frontend`） | 3001 / 3002 / 3003 |
 | admin / portal / dashboard の Docker イメージ | 4001 / 4002 / 4003 |
 | PostgreSQL | 5432 |
+| Mailpit（SMTP / 受け取ったメールの画面） | 1025 / 8025 |
 
 ## TypeSpec を変更する
 
@@ -261,7 +276,7 @@ pnpm build:prod
 pnpm typecheck
 pnpm knip
 pnpm test
-pnpm test:integration   # Docker、または TEST_DATABASE_URL が指す PostgreSQL が必要
+pnpm test:integration   # Docker が必要（TEST_DATABASE_URL を設定すると PostgreSQL のコンテナは起動しない）
 pnpm audit --audit-level=high
 ```
 
@@ -291,7 +306,7 @@ Docker イメージのビルドも行います。イメージは、手元では 
 | ジョブ | 内容 |
 |--------|------|
 | `quality` | `check:versions`、`check:generated`、`check:api-db`、`lint`、`format:check`、`build:prod`、`typecheck`、`knip`。OpenAPI ドキュメントをアーティファクトとして保存する |
-| `test` | `build:prod` のあと、データベースの用意の仕方を変えて 2 通り実行する。`external`: サービスコンテナの PostgreSQL を `TEST_DATABASE_URL` で使い、単体テスト、統合テスト、`check:db-schema` を実行する。`testcontainers`: テスト自身がコンテナを起動し、統合テストだけを実行する |
+| `test` | `build:prod` のあと、データベースの用意の仕方を変えて 2 通り実行する。`external`: サービスコンテナの PostgreSQL を `TEST_DATABASE_URL` で使い、単体テスト、統合テスト、`check:db-schema` を実行する。`testcontainers`: テスト自身が PostgreSQL のコンテナを起動し、統合テストだけを実行する。メール送信の統合テストは、どちらの場合も Mailpit のコンテナを自分で起動する |
 | `build` | `pnpm build:dev`、`build:test`、`build:stg`、`build:prod` をそれぞれ実行する |
 | `security` | `pnpm audit --audit-level=high` |
 | `publish-staging-images` | `main` への push のときだけ、上の `quality`・`test`・`build` が成功したあとに `publish-images.yml` を呼び出し、staging のイメージを GitHub Container Registry に push する |
@@ -318,6 +333,7 @@ Dockerfile、`backend/`、`frontend/`、`specs/`、`shared-config/`、ロック�
 | バックエンドが `Invalid configuration` を出力して終了する | 環境変数が不足しているか不正。ログの `issues` に変数名と理由が並ぶ（[環境変数設定ガイド](./env-configuration.md)） |
 | バックエンドが `Cannot start: the database is unreachable` を出力して終了する | PostgreSQL が起動していないか、`DATABASE_URL` が違う。`make infra-up` で起動する |
 | フロントエンドの開発サーバーが起動しない | ポート 3001〜3003 が使用中。各アプリは決まったポートでしか起動しない（`strictPort`） |
-| `pnpm test:integration` がコンテナを起動できない | Docker が起動していない。起動するか、`TEST_DATABASE_URL` に既存の PostgreSQL を指定する。Docker Desktop 以外（Colima など）では、ソケットの場所を環境変数で指定する（[API テストガイド](./api-testing-guide.md#running)） |
+| 登録や再設定のメールが届かない | Mailpit が起動していない。`make infra-up` で起動し、`http://localhost:8025` を開く。送信に失敗すると、バックエンドのログに `Failed to deliver mail` が出る（[メール送信](./email.md)）。ログに失敗がなければ、メールを送らない場合に当たっている（すでに登録済みのアドレス、直前に送ったばかりのときなど。[認証と認可](./authentication.md)） |
+| `pnpm test:integration` がコンテナを起動できない | Docker が起動していない。`TEST_DATABASE_URL` に既存の PostgreSQL を指定すれば PostgreSQL のコンテナは不要になるが、`infrastructure` パッケージのメール送信のテストは Mailpit のコンテナを起動するので、全体の実行には Docker が必要。Docker Desktop 以外（Colima など）では、ソケットの場所を環境変数で指定する（[API テストガイド](./api-testing-guide.md#running)） |
 | 生成された型と実装が合わない | `pnpm generate` を実行する |
 | ビルド成果物や `node_modules` が壊れている | `pnpm clean` でビルド成果物を削除する。`pnpm fresh` はビルド成果物と `node_modules` を削除して再インストールする |

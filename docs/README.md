@@ -11,7 +11,8 @@ document is wrong: fix it in the same change.
 - [Backend Architecture Guidelines](./backend-architecture-guidelines.md) - How to write backend code in each layer (日本語)
 - [Domain Implementation Reference](./domain-implementation-reference.md) - The Salon domain layer by layer, as the model for a new domain
 - [API Route Modular Structure](./api-route-modular-structure.md) - One handler file per endpoint in the API package
-- [Authentication and Authorization](./authentication.md) - Sessions, passwords, who may do what, how to protect an operation, the seeded accounts (日本語)
+- [Authentication and Authorization](./authentication.md) - Sessions, passwords, registration, email verification and password reset, who may do what, how to protect an operation, the seeded accounts (日本語)
+- [Email](./email.md) - Which mails the server sends and how: the mailer, SMTP settings, Mailpit for local development (日本語)
 - [Multi-Agent Collaboration Framework](./multi-agent-collaboration-framework.md) - Which AI agent owns what, and the hand-over points
 
 ## 🎯 Core Concepts
@@ -45,8 +46,6 @@ document is wrong: fix it in the same change.
 ## 📝 Planned Features (design only, not implemented)
 These describe features that have no code yet. Their samples predate the
 current conventions and must be revised when the feature is built.
-- [Email Providers](./email-providers.md) (日本語)
-- [Email Send](./email-send.md) (日本語)
 - [Storage Providers](./storage-providers.md) (日本語)
 - [File Upload](./file-upload.md) (日本語)
 

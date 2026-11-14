@@ -17,6 +17,7 @@ You start without the caller's conversation, and the caller reads only your fina
    - `docs/domain-implementation-reference.md` and `docs/api-route-modular-structure.md` for adding a domain or an endpoint
    - `docs/uniform-implementation-guide.md`, `docs/sum-types-pattern-matching.md` and `docs/type-safety-principles.md` for the patterns
    - `docs/authentication.md` for sessions, the `Actor`, who may do what, and how an operation is protected
+   - `docs/email.md` for the mails the server sends and how to add one
    - `docs/testing-requirements.md` and `docs/api-testing-guide.md` for tests
 3. The Salon domain, which is the reference implementation. New code has the same shape, file for file:
    - Models: `backend/packages/domain/src/models/salon.ts`
@@ -33,7 +34,7 @@ You start without the caller's conversation, and the caller reads only your fina
 
 ## What exists
 
-The Salon domain, the system endpoints (`GET /api/system/alive`, `GET /api/system/ready`, `GET /api/system/health`) and five authentication operations (`POST /api/v1/auth/login`, `/refresh`, `/logout`, `/logout-all` and `GET /api/v1/auth/me`) are implemented. The rest of the authentication contract (registration, email verification, password reset and change, two-factor authentication, the session list, `/api/v1/admin/auth`) is not. The other domains (customer, staff, booking, payment and so on) have TypeSpec models and database tables, which agree with each other, but no domain, repository or route code. A few features (roles and permissions, attachments, purchase orders, medical charts) are specified in TypeSpec without any table yet. There is no email sending and no file storage. Look into `backend/packages/domain/src/business-logic/` and `backend/packages/api/src/routes/` before you assume that something exists, and do not build on code that is not there.
+The Salon domain, the system endpoints (`GET /api/system/alive`, `GET /api/system/ready`, `GET /api/system/health`) and twelve authentication operations under `/api/v1/auth` (login, refresh, logout, the current user, registration, email verification, password reset and change) are implemented. The rest of the authentication contract (two-factor authentication, the session list, `/api/v1/admin/auth`) is not. The other domains (customer, staff, booking, payment and so on) have TypeSpec models and database tables, which agree with each other, but no domain, repository or route code. A few features (roles and permissions, attachments, purchase orders, medical charts) are specified in TypeSpec without any table yet. Mail is sent for the authentication flows only: a use case hands a message to the `IMailer` interface of the domain package, and `SmtpMailer` in the infrastructure package delivers it over SMTP (locally to Mailpit, which `make infra-up` starts). There is no file storage. Look into `backend/packages/domain/src/business-logic/` and `backend/packages/api/src/routes/` before you assume that something exists, and do not build on code that is not there.
 
 Authentication is session-based with opaque bearer tokens, and authorization is decided in the use cases. `docs/authentication.md` describes both, including the scope each role has and the seeded accounts to test with. For a new endpoint that means:
 
@@ -79,7 +80,7 @@ Keep the change as small as the task. No abstraction, option or parameter for a 
 
 Run the checks and read their output. Commands need the Node version in `.node-version`.
 
-- `make ci-check` runs the CI checks locally (all but `pnpm check:db-schema`), in order, and stops at the first failure. It starts with a frozen-lockfile install, its integration tests need Docker or `TEST_DATABASE_URL`, and its `pnpm check:generated` step compares the generated files with the last commit, so it fails on a working tree that holds regenerated files which are not committed yet.
+- `make ci-check` runs the CI checks locally (all but `pnpm check:db-schema`), in order, and stops at the first failure. It starts with a frozen-lockfile install, its integration tests need Docker (`TEST_DATABASE_URL` replaces only the PostgreSQL container; the mail delivery tests start a Mailpit container), and its `pnpm check:generated` step compares the generated files with the last commit, so it fails on a working tree that holds regenerated files which are not committed yet.
 - In that case, or while you iterate, run the steps that concern backend code: `pnpm lint`, `pnpm format:check`, `pnpm build:prod`, `pnpm typecheck` (it needs the build), `pnpm knip`, `pnpm test`, `pnpm test:integration`.
 
 If a check cannot run in your environment, say which one and why. Do not describe a check as passed unless you ran it and saw it pass.

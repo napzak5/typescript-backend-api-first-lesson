@@ -177,10 +177,16 @@ staging 向け（`BUILD_SCRIPT=build:stg`）は admin で確認します。イ�
 
 ### 1. 環境変数を設定する
 
-サーバーは 14 個の環境変数をすべて必須とし、起動時に検証します。不足や不正があれば、変数名の一覧を
+サーバーは 21 個の環境変数をすべて必須とし、起動時に検証します。不足や不正があれば、変数名の一覧を
 ログに出力して終了コード 1 で終了します。新しいバージョンが変数を追加している場合は、起動前に
 デプロイ先へ設定します。変数の一覧はルートの [README](../README.md) の "Operating the API Server" と
 [環境変数設定ガイド](./env-configuration.md) にあります。
+
+メールを送るために、SMTP サーバーとその認証情報（`SMTP_HOST`、`SMTP_PORT`、`SMTP_TLS`、`SMTP_USER`、
+`SMTP_PASSWORD`）、差出人（`MAIL_FROM`）、メールのリンクが指す Web アプリケーションのオリジン
+（`PUBLIC_APP_URL`）を設定します。`NODE_ENV` が `staging` か `production` のときは、暗号化しない接続
+（`SMTP_TLS=none`）と `https://` で始まらない `PUBLIC_APP_URL` は不正として扱われ、サーバーは
+起動しません（[メール送信](./email.md#smtp-の設定)）。
 
 ### 2. データベースをマイグレーションする
 
@@ -206,10 +212,12 @@ DATABASE_URL=<対象データベースの接続 URL> pnpm db:migrate
 ここでは定めません。サーバー側で前提にできること:
 
 - 設定が不正な場合と、データベースに接続できない場合は起動せず、終了コード 1 で終了する
+- SMTP サーバーには、メールを送るときにだけ接続する。SMTP サーバーに届かなくてもサーバーは起動し、
+  メールは送られずに、送信の失敗がログに残る
 - `GET /api/system/alive` は生存確認、`GET /api/system/ready` は受付可否の確認に使える
-  （データベースが応答しなければ 503）
-- `SIGTERM` を受けると新しい接続の受付をやめ、処理中のリクエストを最大 10 秒待ち、データベース接続を
-  閉じて終了コード 0 で終了する
+  （データベースが応答しなければ 503。SMTP サーバーは確認しない）
+- `SIGTERM` を受けると新しい接続の受付をやめ、処理中のリクエストを最大 10 秒待ち、送信中のメールが
+  終わるのを待ってから、データベース接続を閉じて終了コード 0 で終了する
 - ログは標準出力に出る
 
 詳細は [README](../README.md) の "Operating the API Server" を参照してください。
@@ -222,7 +230,7 @@ DATABASE_URL=<対象データベースの接続 URL> pnpm db:migrate
 ## リリース前の確認
 
 ```bash
-make ci-check              # CI のチェック（check:db-schema 以外。Docker か TEST_DATABASE_URL が必要）
+make ci-check              # CI のチェック（check:db-schema 以外。Docker が必要）
 make ci-check-dockerfile   # 本番イメージをビルドできるか（Docker が必要）
 ```
 
@@ -230,4 +238,6 @@ make ci-check-dockerfile   # 本番イメージをビルドできるか（Docker
 - [ ] `backend/packages/database/sql/migrations/` に、対象のデータベースへ未適用のマイグレーションがあるか
       把握している
 - [ ] 追加された環境変数があれば、デプロイ先に設定してある
+- [ ] デプロイ先の SMTP の設定でメールを送れることを確認してある（サーバーは起動時にも `/api/system/ready` でも
+      SMTP サーバーを確認しない）
 - [ ] フロントエンドを出す場合、各アプリの `.env.staging` / `.env.production` の `VITE_*` がリリース先に合っている

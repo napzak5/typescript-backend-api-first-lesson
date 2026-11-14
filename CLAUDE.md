@@ -149,7 +149,7 @@ backend/
 ├── apps/server/          # Composition root: configuration, logger, start-up, shutdown
 └── packages/
     ├── domain/           # Pure business logic
-    ├── infrastructure/   # Database access, password hashing, session tokens, logging
+    ├── infrastructure/   # Database access, mail (SMTP), password hashing, tokens, logging
     ├── api/              # HTTP layer
     ├── database/         # DB schema, migrations, seeds
     ├── generated/        # Auto-generated API types
@@ -157,12 +157,14 @@ backend/
     └── utility/          # Result type and shared helpers
 ```
 
-The Salon domain, the system endpoints and five authentication operations
-(`login`, `refresh`, `logout`, `logout-all` and `me` under `/api/v1/auth`) are
-implemented. The rest of the authentication contract and the other domains
-exist in TypeSpec and in the database schema only. Sessions, permissions and
-the seeded accounts are described in
-[docs/authentication.md](docs/authentication.md).
+The Salon domain, the system endpoints and twelve authentication operations
+under `/api/v1/auth` (login, refresh, logout, the current user, registration,
+email verification, password reset and change) are implemented. The rest of
+the authentication contract (two-factor authentication, the list of sessions,
+the administrator operations) and the other domains exist in TypeSpec and in
+the database schema only. Sessions, passwords, permissions and the seeded
+accounts are described in [docs/authentication.md](docs/authentication.md),
+the mails the server sends in [docs/email.md](docs/email.md).
 
 ### Namespace Convention
 - Backend: `@beauty-salon-backend/*`
@@ -242,8 +244,9 @@ pnpm db:generate-sql  # Regenerate sql/setup.sql from schema.ts
 
 # Testing
 pnpm test             # Unit tests (*.test.ts)
-pnpm test:integration # API tests against PostgreSQL (*.integration.test.ts)
-                      # uses TEST_DATABASE_URL when set, otherwise testcontainers
+pnpm test:integration # Tests against PostgreSQL and an SMTP server (*.integration.test.ts)
+                      # PostgreSQL: TEST_DATABASE_URL when set, otherwise testcontainers;
+                      # SMTP: a Mailpit container (testcontainers), so Docker is needed
 
 # Build
 pnpm build            # Production build (same as build:prod)
@@ -276,6 +279,7 @@ The full index is [docs/README.md](docs/README.md).
 - [Backend Architecture](docs/backend-architecture-guidelines.md)
 - [Uniform Implementation](docs/uniform-implementation-guide.md)
 - [Authentication and Authorization](docs/authentication.md)
+- [Email](docs/email.md)
 - [Testing Requirements](docs/testing-requirements.md)
 - [Multi-Agent Collaboration](docs/multi-agent-collaboration-framework.md)
 
@@ -417,7 +421,7 @@ export const createSalonHandler = (
 export const createSalonRouter = (dependencies: SalonUseCaseDependencies, authenticated: Authenticated): Router
 
 // backend/packages/api/src/index.ts: repositories and `authenticated` are created once, here
-export const createApp = ({ database, logger, settings }: AppDependencies): Express
+export const createApp = ({ database, logger, mailer, settings }: AppDependencies): Express
 const authenticated = createAuthenticated(authDependencies)
 app.use(`${API_BASE_PATH}/auth`, createAuthRouter(authDependencies, authenticated))
 app.use(`${API_BASE_PATH}/salons`, createSalonRouter({ salonRepository: new SalonRepository(database) }, authenticated))

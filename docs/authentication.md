@@ -7,11 +7,11 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 | オペレーション | 状態 |
 |---|---|
 | `POST /api/v1/auth/login`、`/refresh`、`/logout`、`/logout-all`、`GET /api/v1/auth/me` | 実装済み |
-| ユーザー登録、メールアドレスの確認、パスワードの再設定・変更 | 未実装（コントラクトのみ） |
+| ユーザー登録（`/register`）、メールアドレスの確認（`/verify-email/send`、`/verify-email/confirm`）、パスワードの再設定（`/forgot-password`、`/reset-password/verify`、`/reset-password`）・変更（`/change-password`） | 実装済み |
 | 2 要素認証 | 未実装（コントラクトのみ）。2 要素認証が有効なアカウントはログインできない |
 | セッションの一覧・無効化、管理者の操作（`/api/v1/admin/auth`） | 未実装（コントラクトのみ） |
 
-ユーザーを作成する API がまだないので、ユーザーはシード（`pnpm db:seed`）か SQL で作ります。
+登録で作れるのは顧客（ロール `customer`）のアカウントだけです。`admin`、`owner`、`manager`、`staff` のアカウントを作る API はまだないので、シード（`pnpm db:seed`）か SQL で作ります。
 
 ## セッション
 
@@ -35,6 +35,29 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 - 保存形式は PHC 文字列（`$argon2id$v=19$m=19456,t=2,p=1$<salt>$<hash>`）。ハッシュがパラメーターを持つので、構成を強くしたあとも古いハッシュは検証でき、次にログインに成功した時点で新しい構成のハッシュに置き換わる
 - Argon2id の PHC 文字列でない値（以前のシードにあった bcrypt など）は、どのパスワードとも一致しない
 
+### 設定するパスワードの規則
+
+登録・再設定・変更で設定するパスワードに適用します。根拠は NIST SP 800-63B-4 3.1.1.2 です。
+
+| 規則 | 内容 |
+|---|---|
+| 長さ | 15〜128 文字。Unicode のコードポイントで数える（絵文字 1 つは 1 文字）。文字種の組み合わせは要求しない |
+| 正規化 | 保存と照合の前に NFC に正規化する。ログインなどで照合するパスワードも同じ |
+| ブロックリスト | 推測されやすいパスワードを拒否する（`rule` は `blocklisted`）。比べるのはパスワード全体で、一部に含むだけなら拒否しない |
+
+ブロックリストの対象は次のとおりです（`business-logic/auth/_shared/password-blocklist.ts`）。
+
+- メールアドレスそのもの、メールアドレスの `@` より前（大文字小文字、空白、記号の違いは無視する）
+- 同じ文字、または 8 文字以下の並びの繰り返し（`aaaaaaaaaaaaaaaa`、`abc123abc123abc123`）
+- 連続した文字の並び（`123456789012345`、`abcdefghijklmnop`）と、キーボードの並び（`qwertyuiopasdfgh`）
+- 長いパスワードの例として広く知られているもの（`correct horse battery staple` など）
+
+流出したパスワードの一覧との照合はしていません（外部のサービスかデータが必要になるため）。
+
+### パスワードの確認と試行回数の制限
+
+パスワードを確認する箇所（ログイン、パスワードの変更）は、同じ制限を共有します（`business-logic/auth/_shared/password-check.ts`）。誤ると `failedLoginAttempts` が増え、連続 5 回で 15 分ロックし、ロック中は正しいパスワードでも確認に失敗します。
+
 ## ログイン
 
 - 失敗は原因を区別せず、同じ 401（コード `1002`）を返す。未登録のメールアドレス、パスワードの誤り、ロック中、メールアドレス未確認、停止中、2 要素認証が有効、のどれでも同じ
@@ -43,6 +66,68 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 - パスワードを連続して 5 回誤ると、アカウントを 15 分ロックする（`status = locked`、`lockedUntil`）。ロック中の試行は数えず、正しいパスワードでも失敗する。ロックが明けたあとは、誤るたびに 15 分ロックする。成功すると失敗回数は 0 に戻り、`status` は `active` に戻る。回数の加算は 1 つの UPDATE で行うので、並行した試行も数え漏らさない
 - ロックは新しいログインだけを止める。すでにあるセッションは使い続けられる（他人の失敗でログイン中の利用者を締め出さないため）
 - ログインと既存のセッションの利用ができるのは、`status` が `active` または `locked`（ロックは上のとおり新しいログインだけを止める）で、削除されていない（`deletedAt` が NULL の）ユーザーだけ。`unverified`、`inactive`、`suspended`、`deleted` のユーザーは、どちらもできない
+
+## ユーザー登録
+
+`POST /api/v1/auth/register` は、メールアドレスが登録済みかどうかにかかわらず 204 を返します（OWASP Authentication Cheat Sheet: 登録の応答からアカウントの有無が分からないようにする）。入力の検証エラー（400）は、アカウントの有無に関係なく返ります。
+
+| メールアドレスの状態 | 動作 |
+|---|---|
+| 未登録 | ロール `customer`、状態 `unverified` のユーザーを作り、確認メールを送る |
+| 登録済みで、状態が `unverified` | 前回の確認メールから 60 秒以上たっていれば、パスワードを今回のものに置き換え、確認メールを送り直す（前のリンクは無効になる）。60 秒以内なら何もしない |
+| それ以外（確認済み、停止中など） | 何も変えず、何も送らない |
+
+- どの場合もパスワードのハッシュを 1 回計算し、メールの送信を待たずに応答するので、応答時間でも区別できない
+- `unverified` のアカウントはログインできない。確認が済むと `active` になる
+- 登録したユーザーは顧客情報（`customers` の行）を持たない（`customerId` は null、操作者の範囲は `none`）。顧客情報の作成は Customer ドメインで扱う
+- 他人のメールアドレスで先に登録されていても、本人があとから登録すればパスワードは本人のものに置き換わる。確認メールのリンクが有効にするのは、最後に登録されたパスワード
+
+## メールで送るトークン
+
+メールアドレスの確認とパスワードの再設定は、メールで送ったトークンで本人を確かめます。
+
+| 項目 | 決まり |
+|---|---|
+| 形式 | セッションのトークンと同じ（CSPRNG の 256 ビット、base64url）。DB には SHA-256 のハッシュだけを保存する（`emailVerificationTokenHash`、`passwordResetTokenHash`） |
+| 有効期間 | メールアドレスの確認は 24 時間、パスワードの再設定は 30 分 |
+| 使える回数 | 1 回。新しいトークンを発行すると、前のトークンは使えなくなる（ユーザーごと・種類ごとに 1 つ） |
+| 送信の間隔 | 同じアカウントへは、種類ごとに 60 秒に 1 通まで。それより短い間隔の要求は、何も送らずに 204 を返す |
+| 無効なトークン | 400（`errors[].field` は `token`、`rule` は `invalid_token`）。存在しない、使用済み、期限切れを区別しない |
+
+リンクは `PUBLIC_APP_URL`（設定値）から組み立てます。リクエストの `Host` ヘッダーは使いません（OWASP Forgot Password Cheat Sheet）。トークンは URL のフラグメントに置くので、サーバーのアクセスログにも `Referer` にも残りません。
+
+| メール | リンク |
+|---|---|
+| メールアドレスの確認 | `<PUBLIC_APP_URL>/verify-email#token=<トークン>` |
+| パスワードの再設定 | `<PUBLIC_APP_URL>/reset-password#token=<トークン>` |
+
+リンク先のページは、フラグメントからトークンを取り出して API（`/verify-email/confirm`、`/reset-password`）に送ります。このページはフロントエンドにまだありません。
+
+メールの送信の仕組みは [メール送信](./email.md) にあります。
+
+### メールアドレスの確認
+
+- `POST /api/v1/auth/verify-email/send`: 確認メールを送り直す。応答は常に 204。送るのは、アカウントがあり、メールアドレスが未確認のときだけ
+- `POST /api/v1/auth/verify-email/confirm`: `emailVerified` を true にし、状態が `unverified` なら `active` にする
+
+### パスワードの再設定
+
+- `POST /api/v1/auth/forgot-password`: 再設定メールを送る。応答は常に 204。送るのは、削除されておらず、状態が `active`・`unverified`・期限付きの `locked` のアカウントだけ。要求しただけでは、アカウントは何も変わらない
+- `POST /api/v1/auth/reset-password/verify`: トークンがまだ使えるかを答える（204 / 400）。トークンは消費しない
+- `POST /api/v1/auth/reset-password`: 新しいパスワードを設定する。同時に次のことが起きる
+  - そのユーザーの全セッションを無効にする
+  - 失敗回数とロックを解除する
+  - メールアドレスを確認済みにする（トークンをメールで受け取れたことが確認になる）。`unverified` のアカウントは `active` になる
+  - パスワードが変更されたことをメールで知らせる
+  - ログインはしない（セッションを発行しない）。2 要素認証の設定は変えない
+
+### パスワードの変更
+
+`POST /api/v1/auth/change-password`（ログイン中のユーザー）は、現在のパスワードを確認してから新しいパスワードを設定します。
+
+- 現在のパスワードの確認は、上の試行回数の制限を通す。確認できなければ 400（`field` は `currentPassword`、`rule` は `incorrect`）
+- 新しいパスワードが現在のものと同じなら 400（`rule` は `unchanged`）
+- 変更すると、そのユーザーのほかのセッションを無効にし（このリクエストのセッションは残す）、未使用の再設定トークンを無効にし、メールで知らせる
 
 ## リクエストの認証
 
@@ -91,10 +176,15 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 3. ハンドラーを `authenticated(...)` で包む（`backend/packages/api/src/shared/authentication.ts`）。包まれたハンドラーだけが `actor` を受け取るので、認証を付け忘れたハンドラーは権限を判定するユースケースを呼べない
 
 ```typescript
+// backend/packages/api/src/routes/salon/update-salon.handler.ts（抜粋）
 export const updateSalonHandler = (
   dependencies: SalonUseCaseDependencies,
   authenticated: Authenticated,
-): RequestHandler<{ id: string }, UpdateSalonResponse | ProblemDetails, unknown> => {
+): RequestHandler<
+  { id: string },
+  UpdateSalonResponse | ProblemDetails,
+  unknown
+> => {
   const useCase = new UpdateSalonUseCase(dependencies)
 
   return authenticated(async (actor, req, res) => {
@@ -130,6 +220,6 @@ curl -s http://localhost:3000/api/v1/auth/login \
 | 層 | ファイル |
 |---|---|
 | コントラクト | `specs/models/auth.tsp`、`specs/operations/auth-operations.tsp`、`specs/models/_shared/common-api-patterns.tsp`（`UnauthenticatedResponse`、`PermissionDeniedResponse`、エラーのエイリアス） |
-| ドメイン | `backend/packages/domain/src/models/auth.ts`（`Actor`）、`business-logic/auth/`、`repositories/{user,session}.repository.ts`、`services/` |
-| インフラ | `backend/packages/infrastructure/src/security/`、`repositories/{user,session}.repository.impl.ts` |
+| ドメイン | `backend/packages/domain/src/models/auth.ts`（`Actor`）、`business-logic/auth/`、`repositories/{user,session}.repository.ts`、`services/`（`IPasswordHasher`、`ITokenIssuer`、`IMailer`） |
+| インフラ | `backend/packages/infrastructure/src/security/`、`mail/smtp-mailer.ts`、`repositories/{user,session}.repository.impl.ts` |
 | API | `backend/packages/api/src/shared/authentication.ts`、`routes/auth/` |

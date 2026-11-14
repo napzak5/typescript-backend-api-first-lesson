@@ -8,7 +8,7 @@
 
 1. [バックエンドの設定の仕組み](#バックエンドの設定の仕組み)
 2. [どのファイルが使われるか](#どのファイルが使われるか)
-3. [サーバーが読む 14 個の変数](#サーバーが読む-14-個の変数)
+3. [サーバーが読む 21 個の変数](#サーバーが読む-21-個の変数)
 4. [サーバーが読まない変数](#サーバーが読まない変数)
 5. [データベーススクリプトとテストの接続先](#データベーススクリプトとテストの接続先)
 6. [Docker Compose](#docker-compose)
@@ -28,7 +28,7 @@
 
 原則:
 
-- サーバーが読む変数は 14 個で、**すべて必須**です。コードの中に既定値はありません。
+- サーバーが読む変数は 21 個で、**すべて必須**です。コードの中に既定値はありません。
 - 検証は起動時に 1 回だけ行い、失敗したらサーバーは起動しません。
 - 環境変数を読むのはエントリーポイント（`backend/apps/server/src/index.ts`）だけです。それ以外の
   アプリケーションコードは `process.env` を読まず、`AppConfig` の値を引数として受け取ります。
@@ -124,10 +124,12 @@ export const loadEnvFile = (): LoadedEnvFile => {
 - そのため `NODE_ENV=test` で起動したサーバーも、ローカル開発と同じデータベースを使います。分けたい
   ときは `DATABASE_URL` を環境変数で上書きします。統合テストはこの設定を使いません
   （[データベーススクリプトとテストの接続先](#データベーススクリプトとテストの接続先)）。
+- 同じ 4 つのファイルのメールの設定（`SMTP_*`）は、`make infra-up` が起動する Mailpit を指しています
+  （[メール送信](./email.md#ローカル開発mailpit)）。送ったメールは外へ出ず、<http://localhost:8025> で読めます。
 - ルートの `.env` は Docker Compose も読みます。`DATABASE_URL` と `POSTGRES_*` を変えるときは、
   同じ接続先を表すようにそろえてください。
 
-## サーバーが読む 14 個の変数
+## サーバーが読む 21 個の変数
 
 `backend/packages/config/src/app-config.ts` の `variablesSchema` が定義です。数値は数字だけの文字列で
 書きます（`3000.5`、`-1`、`30s` は不正）。
@@ -146,17 +148,35 @@ export const loadEnvFile = (): LoadedEnvFile => {
 | `CORS_MAX_AGE` | 0〜86400 | `cors.maxAgeSeconds` | プリフライトの結果をキャッシュできる時間（秒） |
 | `RATE_LIMIT_WINDOW_MS` | 1000〜86400000 | `rateLimit.windowMs` | レート制限のウィンドウ（ミリ秒） |
 | `RATE_LIMIT_MAX_REQUESTS` | 1〜1000000 | `rateLimit.maxRequests` | 1 つのクライアントアドレスがウィンドウ内に送れるリクエスト数（サーバーのインスタンスごとに数える） |
+| `SMTP_HOST` | 空でない文字列 | `mail.host` | メールを送る SMTP サーバーのホスト |
+| `SMTP_PORT` | 1〜65535 | `mail.port` | SMTP サーバーのポート |
+| `SMTP_TLS` | `implicit`、`starttls`、`none` | `mail.tls` | SMTP の接続の暗号化。`implicit` は最初から TLS（465）、`starttls` は STARTTLS で切り替える（587）、`none` は暗号化しない |
+| `SMTP_USER` | 空でない文字列 | `mail.user` | SMTP 認証のユーザー名 |
+| `SMTP_PASSWORD` | 空でない文字列 | `mail.password` | SMTP 認証のパスワード |
+| `MAIL_FROM` | メールアドレス、または `名前 <メールアドレス>` | `mail.from` | すべてのメールの差出人 |
+| `PUBLIC_APP_URL` | オリジン 1 つ | `publicAppUrl` | メールのリンクが指す Web アプリケーションのオリジン |
 | `LOG_LEVEL` | `fatal`、`error`、`warn`、`info`、`debug`、`trace`、`silent` | `logging.level` | 出力するログの最低レベル |
 | `LOG_FORMAT` | `json`、`pretty` | `logging.format` | `json` は 1 行 1 オブジェクト、`pretty` はターミナル向け |
 
 `CORS_ORIGIN` の各要素は `https://example.com` のようなオリジンそのものでなければなりません。
-パスや末尾の `/` が付いたもの、スキームのないもの、`*` は不正です。
+パスや末尾の `/` が付いたもの、スキームのないもの、`*` は不正です。`PUBLIC_APP_URL` も同じ形の
+オリジンです。
+
+`NODE_ENV` が `staging` または `production` のときは、変数どうしの組み合わせも検証します
+（`deployedVariablesSchema`）。次の値ではサーバーは起動しません。
+
+| 変数 | 拒否する値 | 理由 |
+|------|------------|------|
+| `SMTP_TLS` | `none` | SMTP の認証情報と、メールに含まれるトークンが平文で流れる |
+| `PUBLIC_APP_URL` | `https://` で始まらないもの | メールのリンクにトークンが含まれる |
+
+メールの送信の仕組みと、ローカルでのメールの確認は [メール送信](./email.md) にあります。
 
 この表と README の表は同じ内容を保ちます。
 
 ## サーバーが読まない変数
 
-`.env.*` ファイルには、上の 14 個のほかに次の 5 個だけが入っています。
+`.env.*` ファイルには、上の 21 個のほかに次の 5 個だけが入っています。
 
 - **Docker Compose が使うもの**: `POSTGRES_DB`、`POSTGRES_USER`、`POSTGRES_PASSWORD`、`POSTGRES_PORT`
 - **`getDatabaseUrl()` が `DATABASE_URL` のないときに使うもの**: `POSTGRES_USER`、`POSTGRES_PASSWORD`、
@@ -164,7 +184,7 @@ export const loadEnvFile = (): LoadedEnvFile => {
 
 どのコードも読まない変数は、環境ファイルに置きません。`config` パッケージのテスト
 （`backend/packages/config/src/__tests__/app-config.test.ts`）が、すべての環境ファイルについて、
-上の 19 個以外の変数がないことを確認します。変数を増やすときは、それを読むコードと一緒に追加します
+上の 26 個以外の変数がないことを確認します。変数を増やすときは、それを読むコードと一緒に追加します
 （[変数を追加する](#変数を追加する)）。
 
 `parseAppConfig` は知らない変数を無視するので、プロセスの環境にほかの変数があってもサーバーの起動には
@@ -196,8 +216,10 @@ DATABASE_URL=postgres://<user>:<password>@<host>:5432/<database> pnpm db:migrate
 `.env.localhost` は置換には使われません。
 
 - `postgres` サービス: `POSTGRES_DB`、`POSTGRES_USER`、`POSTGRES_PASSWORD`、`POSTGRES_PORT`
+- `mailpit` サービス: 変数を使わない。SMTP（1025）と画面（8025）を `127.0.0.1` に公開する
 - `backend` サービス: `.env.localhost` の内容をコンテナの環境変数として渡したうえで、`NODE_ENV`
-  （既定は `development`）、`PORT`、`DATABASE_URL`（Compose 内の `postgres` サービス宛て）などを上書きする
+  （既定は `development`）、`PORT`、`DATABASE_URL`（Compose 内の `postgres` サービス宛て）、`SMTP_HOST`
+  （Compose 内の `mailpit` サービス宛て）などを上書きする
 - `migration` サービス: `DATABASE_URL` だけを受け取り、`db:migrate` と `db:seed --if-empty` を実行する
 
 ## 変数を追加する

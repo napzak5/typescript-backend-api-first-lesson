@@ -14,7 +14,7 @@ TypeSpec で API のモデルとオペレーションを定義するときのル
 
 すべてのドメインの TypeSpec が、このルールに従っている。テーブルに対応するモデルは、プロパティ名・null 許可・Enum の値が DB と一致しており、`pnpm check:api-db` が検査する（[API-DB型制約マッピング](./api-db-type-constraints-mapping.md)）。
 
-バックエンドに実装があるのは、Salon とシステムのオペレーション、および認証の 5 つのオペレーション（`/api/v1/auth` の `login`、`refresh`、`logout`、`logout-all`、`me`）である。認証の残りのオペレーションとほかのドメインは TypeSpec と DB スキーマにだけ存在する。ロール・権限、添付ファイル、発注、カルテなど、テーブルがまだない機能の TypeSpec もある（一覧は [API-DB型制約マッピング](./api-db-type-constraints-mapping.md#ルールに載せるモデル載せないモデル)）。
+バックエンドに実装があるのは、Salon とシステムのオペレーション、および認証の 12 のオペレーション（`/api/v1/auth` のログイン、トークンの更新、ログアウト、現在のユーザーの取得、ユーザー登録、メールアドレスの確認、パスワードの再設定と変更）である。認証の残りのオペレーション（2 要素認証、セッションの一覧と失効、管理者の操作）とほかのドメインは TypeSpec と DB スキーマにだけ存在する。ロール・権限、添付ファイル、発注、カルテなど、テーブルがまだない機能の TypeSpec もある（一覧は [API-DB型制約マッピング](./api-db-type-constraints-mapping.md#ルールに載せるモデル載せないモデル)）。
 
 規約から外れている箇所は次のとおりで、いずれも意図したものである。
 
@@ -23,6 +23,7 @@ TypeSpec で API のモデルとオペレーションを定義するときのル
 | `PUT /api/v1/salons/{salonId}/staff/{id}/availability` | 更新が `PATCH` ではない | 本文がスケジュールの全行で、スタッフのスケジュールを丸ごと置き換える |
 | `POST /api/v1/customers/bulk`、`POST /api/v1/treatments/{id}/photos` | 201 に `Location` がない | 複数の行を作成するので、指す先が 1 つに決まらない |
 | `DELETE /api/v1/customers/bulk` | 204 ではなく 200 | 削除した ID の一覧を返す |
+| `POST /api/v1/auth/register` | 作成なのに 201 と `Location` ではなく、本文なしの 204 | メールアドレスが登録済みかどうかを、応答から判別できないようにする |
 | `AttachmentCreateRequest` の `salonId`、`tags` | Create なのに Optional | `multipart/form-data` のパートであり、null を値として送れない |
 | `/api/v1/auth/login`、`/api/v1/auth/refresh`、`/api/v1/share/...` | `@useAuth(NoAuth)` なのに 401 を個別に定義している（ログインと再発行は `UnauthenticatedResponse`、共有リンクは `ProblemResponse<401>`） | 認証の失敗そのものがオペレーションの結果である |
 

@@ -17,6 +17,7 @@
 | `OpeningHoursChange` | `backend/packages/domain/src/models/salon.ts` | `keep` / `replace` |
 | `ActorScope` | `backend/packages/domain/src/models/auth.ts` | `platform` / `salon` / `customer` / `none` |
 | `PasswordVerification` | `backend/packages/domain/src/services/password-hasher.ts` | `match` / `mismatch` |
+| `PasswordCheck` | `backend/packages/domain/src/business-logic/auth/_shared/password-check.ts` | `accepted` / `refused` |
 | `StartFailure` | `backend/apps/server/src/server.ts` | `databaseUnreachable` / `listenFailed` |
 
 どの型も同じ書き方に従っています。
@@ -147,7 +148,7 @@ export type DomainError =
 
 | ケース | 作られる場所 | HTTP ステータス |
 |--------|--------------|-----------------|
-| `validation` | `parseWith`（`backend/packages/domain/src/shared/validation.ts`）が Zod の検証結果から作る | 400 |
+| `validation` | `parseWith`（`backend/packages/domain/src/shared/validation.ts`）が Zod の検証結果から作る。認証のユースケースは、スキーマでは確認できない規則（推測されやすいパスワード、現在のパスワードの誤り、使えないトークン）についても作る | 400 |
 | `unauthenticated` | 認証のユースケース（`backend/packages/domain/src/business-logic/auth/`）。有効なアクセストークンがない、ログインやトークンの再発行に失敗したとき。理由は `reason` が持つ | 401 |
 | `forbidden` | ユースケース。操作者にその操作の権限がないとき | 403 |
 | `notFound` | ユースケース。リポジトリが `null`（削除では `false`）を返したとき | 404 |

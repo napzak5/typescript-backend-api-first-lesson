@@ -12,7 +12,7 @@ reference for the tests of every domain that follows.
 | Kind | Command | Files | Needs |
 |------|---------|-------|-------|
 | Unit | `pnpm test` | `*.test.ts` and `*.test.tsx`, in a `__tests__` directory or beside the module | Nothing |
-| Integration | `pnpm test:integration` | `*.integration.test.ts` | A PostgreSQL: the one at `TEST_DATABASE_URL`, otherwise a container started through testcontainers (Docker) |
+| Integration | `pnpm test:integration` | `*.integration.test.ts` | A PostgreSQL: the one at `TEST_DATABASE_URL`, otherwise a container started through testcontainers (Docker). The mail delivery tests of the `infrastructure` package always need Docker: they start a Mailpit container through testcontainers |
 
 Both run on Vitest. Tests resolve the workspace packages they import from
 source (the export condition `@beauty-salon-backend/source`, or
@@ -41,7 +41,8 @@ What the repository does not have:
 | Mappers: both directions, `null` kept as `null`, the changes of representation, and the columns that must not reach a response left out | Unit | `backend/packages/domain/src/__tests__/salon.mapper.test.ts`, `user.mapper.test.ts` |
 | Use cases: the success path, every error passed on unchanged, the repository left untouched by invalid input | Unit, with the interfaces the use case depends on stubbed | `backend/packages/domain/src/__tests__/salon.usecase.test.ts`, `auth.usecase.test.ts` |
 | Permission rules: every kind of actor, allowed or refused, and the repository left untouched by a refused one | Unit, through the use cases | `describe('who may change a salon', …)` in `backend/packages/domain/src/__tests__/salon.usecase.test.ts` |
-| Password hashing and session tokens | Unit | `backend/packages/infrastructure/src/security/__tests__/` |
+| Password hashing and the generation of tokens | Unit | `backend/packages/infrastructure/src/security/__tests__/` |
+| Mail delivery (`SmtpMailer`): what reaches the SMTP server, what is logged and what is kept out of the log, a delivery that fails, closing while deliveries are under way | Unit for what needs no server; integration against a Mailpit container | `backend/packages/infrastructure/src/mail/__tests__/` |
 | Pure helpers of the HTTP layer: links, query decoding, problem details, middleware | Unit | `backend/packages/api/src/routes/salon/_shared/__tests__/`, `backend/packages/api/src/shared/__tests__/problem-details.test.ts`, `backend/packages/api/src/middleware/__tests__/middleware.test.ts` |
 | Every endpoint (see [Requirements per Endpoint](#requirements-per-endpoint)) | Integration | `backend/packages/api/src/__tests__/salon.integration.test.ts`, `auth.integration.test.ts` |
 | The seeded accounts: one of each role signs in with `SEED_PASSWORD`, and the owner and the manager can change the first seeded salon but not the second | Integration | `describe('the seeded accounts', …)` in `backend/packages/api/src/__tests__/auth.integration.test.ts` |
@@ -137,11 +138,16 @@ belongs to a suspended, inactive or deleted user is covered in
   database nothing listens on, a dropped column, a corrupt stored value — not
   by a mock. A test that needs a signed-in user inserts the user and signs in
   through `POST /api/v1/auth/login`
-  (`backend/packages/api/src/__tests__/_shared/auth-helpers.ts`).
+  (`backend/packages/api/src/__tests__/_shared/auth-helpers.ts`). The one
+  substitute is the mailer: the API tests give `createApp` a mailer that
+  keeps the mails for the test (`createTestApp({ mails })` in
+  `backend/packages/api/src/__tests__/_shared/test-helpers.ts`), and
+  delivery over SMTP is tested in the `infrastructure` package against a real
+  SMTP server.
 - **Unit tests of use cases stub only what the use case depends on**: the
   repository interface (`ISalonRepository`), with `vi.fn`; for the
-  authentication use cases the two repositories, the password hasher and the
-  token issuer, with the clock fixed (`authDependencies` in
+  authentication use cases the two repositories, the password hasher, the
+  token issuer and the mailer, with the clock fixed (`authDependencies` in
   `backend/packages/domain/src/__tests__/auth-fixtures.ts`). Schemas and
   mappers are tested without any stub.
 - **Failures are asserted as values**: a use case or mapper through the
@@ -177,10 +183,11 @@ A new domain follows the Salon tests file by file:
 pnpm test                # every unit test (backend and frontend)
 pnpm test:backend        # unit tests of the backend packages
 pnpm test:frontend       # unit and component tests of the frontend
-pnpm test:integration    # integration tests; needs Docker or TEST_DATABASE_URL
+pnpm test:integration    # integration tests; needs Docker (TEST_DATABASE_URL replaces only the PostgreSQL container)
 ```
 
 CI runs the unit tests once and the integration tests twice: against a
-PostgreSQL service through `TEST_DATABASE_URL`, and with testcontainers. How to
+PostgreSQL service through `TEST_DATABASE_URL`, and with testcontainers; the
+mail delivery tests start their Mailpit container in both runs. How to
 run one package, one file or one test is in the
 [API Testing Guide](./api-testing-guide.md).

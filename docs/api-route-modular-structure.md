@@ -9,7 +9,7 @@ The layers below the API (models, validation, mappers, repository, use cases) ar
 ```
 backend/packages/api/src/
 ├── index.ts                        # createApp: middleware order, repositories, authenticated, routers
-├── settings.ts                     # AppSettings: proxy hops, CORS, rate limit
+├── settings.ts                     # AppSettings: proxy hops, CORS, rate limit, origin of the web application
 ├── middleware/
 │   ├── request-logging.ts          # req.id, req.log, X-Request-Id, one log line per request
 │   ├── rate-limiting.ts            # limit per client address
@@ -24,12 +24,19 @@ backend/packages/api/src/
 │   ├── auth/
 │   │   ├── _shared/
 │   │   │   └── types.ts            # response body types, taken from the generated operations
-│   │   ├── login.handler.ts            # POST /api/v1/auth/login
-│   │   ├── refresh-token.handler.ts    # POST /api/v1/auth/refresh
-│   │   ├── logout.handler.ts           # POST /api/v1/auth/logout
-│   │   ├── logout-all.handler.ts       # POST /api/v1/auth/logout-all
-│   │   ├── get-current-user.handler.ts # GET  /api/v1/auth/me
-│   │   └── index.ts                    # createAuthRouter
+│   │   ├── register.handler.ts                   # POST /api/v1/auth/register
+│   │   ├── login.handler.ts                      # POST /api/v1/auth/login
+│   │   ├── refresh-token.handler.ts              # POST /api/v1/auth/refresh
+│   │   ├── logout.handler.ts                     # POST /api/v1/auth/logout
+│   │   ├── logout-all.handler.ts                 # POST /api/v1/auth/logout-all
+│   │   ├── get-current-user.handler.ts           # GET  /api/v1/auth/me
+│   │   ├── send-email-verification.handler.ts    # POST /api/v1/auth/verify-email/send
+│   │   ├── confirm-email-verification.handler.ts # POST /api/v1/auth/verify-email/confirm
+│   │   ├── forgot-password.handler.ts            # POST /api/v1/auth/forgot-password
+│   │   ├── verify-reset-token.handler.ts         # POST /api/v1/auth/reset-password/verify
+│   │   ├── reset-password.handler.ts             # POST /api/v1/auth/reset-password
+│   │   ├── change-password.handler.ts            # POST /api/v1/auth/change-password
+│   │   └── index.ts                              # createAuthRouter
 │   ├── salon/
 │   │   ├── _shared/
 │   │   │   ├── types.ts            # response body types, taken from the generated operations
@@ -47,7 +54,7 @@ backend/packages/api/src/
 └── __tests__/                      # integration tests and their helpers (see Tests)
 ```
 
-There is one handler per operation of the `SalonCrud` interface in `specs/operations/salon-operations.tsp`, and no other salon route. Filtering is part of the list operation; there is no separate search endpoint. Of the `AuthCrud` interface in `specs/operations/auth-operations.tsp`, the five operations above have a handler; the others are not implemented.
+There is one handler per operation of the `SalonCrud` interface in `specs/operations/salon-operations.tsp`, and no other salon route. Filtering is part of the list operation; there is no separate search endpoint. Of the `AuthCrud` interface in `specs/operations/auth-operations.tsp`, the twelve operations above have a handler; the others (two-factor authentication) and the interfaces `SessionCrud` and `AdminAuthCrud` of the same file are not implemented.
 
 ## Key Principles
 
@@ -126,7 +133,7 @@ The five handlers differ only in what they pass on and what they answer:
 | `update-salon.handler.ts` | `PATCH /:id` | Yes | `actor`, `req.params.id`, `req.body` | 200, `{ data, meta, links }` |
 | `delete-salon.handler.ts` | `DELETE /:id` | Yes | `actor`, `req.params.id` | 204, no body |
 
-The authentication handlers in `routes/auth/` have the same shape. `login.handler.ts` and `refresh-token.handler.ts` are not wrapped (they are how a client gets a token); `logout.handler.ts`, `logout-all.handler.ts` and `get-current-user.handler.ts` are wrapped and pass only the `actor`.
+The authentication handlers in `routes/auth/` have the same shape. `login.handler.ts` and `refresh-token.handler.ts` are not wrapped (they are how a client gets a token), and neither are the handlers of registration, email verification and password reset, which a signed-out user calls; `logout.handler.ts`, `logout-all.handler.ts` and `get-current-user.handler.ts` are wrapped and pass only the `actor`, and `change-password.handler.ts` is wrapped and passes the `actor` and `req.body`. Every handler but those of login, refresh and the current user answers 204 without a body.
 
 ### Query parameters
 
@@ -217,7 +224,7 @@ Paths are relative to where the router is mounted, and the router is a function 
 
 ### Mounting in `createApp`
 
-`src/index.ts` is where repositories and `authenticated` are constructed and routers are mounted:
+`src/index.ts` is where repositories and `authenticated` are constructed and routers are mounted. `createApp` is given the database, the logger, the mailer and the settings (`AppDependencies`):
 
 ```typescript
   app.use(requestLogging(logger))
@@ -241,7 +248,9 @@ Paths are relative to where the router is mounted, and the router is a function 
     userRepository: new UserRepository(database),
     sessionRepository: new SessionRepository(database),
     passwordHasher: new Argon2PasswordHasher(),
-    tokenIssuer: new SessionTokenIssuer(),
+    tokenIssuer: new RandomTokenIssuer(),
+    mailer,
+    publicAppUrl: settings.publicAppUrl,
     clock: () => new Date(),
   }
   const authenticated = createAuthenticated(authDependencies)
@@ -320,9 +329,9 @@ The rows down to `database` are the six `DomainError` kinds a use case returns (
 | `shared/__tests__/problem-details.test.ts` | the error mapping |
 | `middleware/__tests__/middleware.test.ts` | the middleware |
 | `__tests__/salon.integration.test.ts` | every salon endpoint against PostgreSQL, including who may call it |
-| `__tests__/auth.integration.test.ts` | the five authentication endpoints, what the server does with an access token, and the seeded accounts |
+| `__tests__/auth.integration.test.ts` | the authentication endpoints, what the server does with an access token, and the seeded accounts |
 | `__tests__/app.integration.test.ts` | request IDs, unreadable requests, a failing database, CORS, rate limit, probes, response headers |
-| `__tests__/_shared/` | `setup.ts` (database, one schema per test), `test-helpers.ts` (`createTestApp`, which calls the production `createApp`), `auth-helpers.ts` (inserting users and signing in), `test-schema-manager.ts` |
+| `__tests__/_shared/` | `setup.ts` (database, one schema per test), `test-helpers.ts` (`createTestApp`, which calls the production `createApp` with a mailer that records the mails instead of sending them), `auth-helpers.ts` (inserting users and signing in), `test-schema-manager.ts` |
 
 ```bash
 pnpm --filter @beauty-salon-backend/api test              # unit tests

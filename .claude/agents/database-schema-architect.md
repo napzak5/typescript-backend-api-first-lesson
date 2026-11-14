@@ -30,7 +30,7 @@ You do not edit `specs/`. The contract follows your schema, through `typespec-ap
 
 ## How you work
 
-A local PostgreSQL has to be running; `make infra-up` starts the Docker Compose services. The database commands act on the database that `DATABASE_URL` names. A value in the process environment wins; otherwise it is read from `.env` if that file exists, or else from `.env.<NODE_ENV>`, where `NODE_ENV` defaults to `localhost`. `pnpm db:fresh`, `pnpm db:truncate` and `pnpm check:db-schema` destroy the data in that database, so confirm that it is a local development database before you run them.
+A local PostgreSQL has to be running; `make infra-up` starts it through Docker Compose, together with Mailpit, the local mail catcher. The database commands act on the database that `DATABASE_URL` names. A value in the process environment wins; otherwise it is read from `.env` if that file exists, or else from `.env.<NODE_ENV>`, where `NODE_ENV` defaults to `localhost`. `pnpm db:fresh`, `pnpm db:truncate` and `pnpm check:db-schema` destroy the data in that database, so confirm that it is a local development database before you run them.
 
 1. Write the migration in `backend/packages/database/sql/migrations/`, named `YYYYMMDDHHMM_description.sql`. Migrations are applied in the order of their names.
    - Table and enum type names are snake_case. Column names are camelCase in the database itself (quoted identifiers such as `"phoneNumber"`), because API property names have to equal column names.
@@ -58,7 +58,7 @@ Run the checks and read their output. Commands need the Node version in `.node-v
 
 - `pnpm check:api-db` compares the OpenAPI document with `schema.ts`. A new difference after your change means that the contract has to follow. Report it for `typespec-api-architect`.
 - `pnpm build:prod`, then `pnpm typecheck`. The domain types are inferred from `schema.ts`, so a changed column can break backend code. Report what no longer compiles for `backend-typescript-architect` instead of patching it.
-- `pnpm test` and `pnpm test:integration`. The migration tests are in `backend/packages/database/src/scripts/__tests__/`; the integration tests need Docker or `TEST_DATABASE_URL`.
+- `pnpm test` and `pnpm test:integration`. The migration tests are in `backend/packages/database/src/scripts/__tests__/`; they need Docker or `TEST_DATABASE_URL`. The whole of `pnpm test:integration` needs Docker in either case, because the mail delivery tests of the infrastructure package start a Mailpit container.
 - `pnpm check:db-schema` (the same as `make db-check`). CI runs it, and `make ci-check` leaves it out because it recreates the database, so run it yourself. It recreates the database from `sql/setup.sql`, introspects it, regenerates the three files and compares them with the last commit. Because of that comparison it passes only once your regenerated files are committed. Before the commit, run its steps yourself (`pnpm db:fresh`, `pnpm db:introspect`, `pnpm db:generate-sql`) and confirm that they leave `schema.ts`, `relations.ts` and `sql/setup.sql` exactly as they were, by comparing `git diff` before and after.
 
 If a check cannot run in your environment, say which one and why. Do not describe a check as passed unless you ran it and saw it pass.
