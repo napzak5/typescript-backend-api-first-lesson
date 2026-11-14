@@ -3,83 +3,51 @@ import {
   type StartedPostgreSqlContainer,
 } from '@testcontainers/postgresql'
 import { afterAll, afterEach, beforeAll, beforeEach } from 'vitest'
-import { type TestSchema, TestSchemaManager } from './test-schema-manager'
+import {
+  openTestDatabases,
+  type TestDatabase,
+  type TestDatabases,
+} from './test-databases'
 
 let container: StartedPostgreSqlContainer | undefined
-let schemaManager: TestSchemaManager
-let currentTestSchema: TestSchema | null = null
+let databases: TestDatabases | undefined
+let current: TestDatabase | undefined
 
 /**
- * Global setup - connect to the database at TEST_DATABASE_URL, or start a
- * PostgreSQL container when it is not set
+ * Once per test file: the instance at TEST_DATABASE_URL, or a PostgreSQL
+ * container when it is not set, and on it the template of the tests' databases.
  */
 beforeAll(async () => {
   const { TEST_DATABASE_URL: externalUrl } = process.env
 
   if (!externalUrl) {
     container = await new PostgreSqlContainer('postgres:18-alpine')
-      .withDatabase('testdb')
-      .withUsername('testuser')
-      .withPassword('testpass')
-      .withExposedPorts(5432)
       .withStartupTimeout(120000)
       .start()
   }
 
-  // Initialize schema manager
-  schemaManager = new TestSchemaManager(
+  databases = await openTestDatabases(
     container?.getConnectionUri() ?? externalUrl ?? '',
   )
-
-  // Initialize enum types once for all test schemas
-  await schemaManager.initializeEnums()
 })
 
-/**
- * Per-test setup - Create isolated schema for each test
- */
-beforeEach(async (context) => {
-  const testName = context.task?.name || 'unknown'
-  console.log(`📦 Creating isolated schema for test: ${testName}`)
+/** Every test starts on a database of its own. */
+beforeEach(async () => {
+  current = await databases?.create()
 
-  // Use simplified setup by default for faster tests
-  currentTestSchema = await schemaManager.createTestSchema(true)
-
-  // Make available to test
-  globalThis.__TEST_DB__ = currentTestSchema.db
-  globalThis.__TEST_DB_CLIENT__ = currentTestSchema.queryClient
-
-  console.log(`✅ Schema ${currentTestSchema.name} created`)
+  globalThis.__TEST_DB__ = current?.db
+  globalThis.__TEST_DB_CLIENT__ = current?.queryClient
 })
 
-/**
- * Per-test teardown - Clean up test schema
- */
 afterEach(async () => {
-  if (currentTestSchema) {
-    console.log(`🧹 Cleaning up schema ${currentTestSchema.name}`)
-    await currentTestSchema.cleanup()
-    currentTestSchema = null
+  await current?.drop()
+  current = undefined
 
-    globalThis.__TEST_DB__ = undefined
-    globalThis.__TEST_DB_CLIENT__ = undefined
-  }
+  globalThis.__TEST_DB__ = undefined
+  globalThis.__TEST_DB_CLIENT__ = undefined
 })
 
-/**
- * Global teardown - Stop container and clean up
- */
 afterAll(async () => {
-  console.log('🛑 Stopping test environment...')
-
-  if (schemaManager) {
-    const stats = schemaManager.getStats()
-    console.log(`📊 Cleaning up ${stats.activeSchemas} remaining schemas`)
-    await schemaManager.cleanupAll()
-  }
-
-  if (container) {
-    await container.stop()
-    console.log('✅ PostgreSQL container stopped')
-  }
+  await databases?.close()
+  await container?.stop()
 })

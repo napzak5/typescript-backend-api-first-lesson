@@ -32,8 +32,8 @@ export default defineConfig({
       DOCKER_CONFIG: '/dev/null',
       TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE: '/var/run/docker.sock',
     },
-    // Every test creates its own schema; run files one at a time to keep the
-    // number of open connections bounded.
+    // Every test has a database of its own; files run one at a time to keep
+    // the number of open connections bounded.
     fileParallelism: false,
   },
 })
