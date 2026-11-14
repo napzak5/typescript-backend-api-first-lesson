@@ -18,8 +18,8 @@ backend/packages/api/
 ├── vitest.integration.config.ts     # integration tests: src/**/*.integration.test.ts
 └── src/__tests__/
     ├── _shared/
-    │   ├── setup.ts                 # the database of the run, a schema for each test
-    │   ├── test-schema-manager.ts   # creates and drops the schemas
+    │   ├── setup.ts                 # the PostgreSQL instance of the run, a database for each test
+    │   ├── test-databases.ts        # the template with the schema; copies and drops the databases
     │   ├── test-helpers.ts          # createTestApp, getTestDb, request
     │   ├── auth-helpers.ts          # users, staff, salons and sessions as rows; signing in
     │   └── two-factor-helpers.ts    # one-time passwords, stored secrets, a user with two-factor authentication
@@ -73,18 +73,17 @@ export DOCKER_HOST=unix://${HOME}/.colima/default/docker.sock
 export TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock
 ```
 
-**`TEST_DATABASE_URL` set.** The setup uses that database and starts no
+**`TEST_DATABASE_URL` set.** The setup uses that PostgreSQL instance and starts no
 container:
 
 ```bash
 TEST_DATABASE_URL=postgres://<user>:<password>@localhost:5432/<database> pnpm test:integration
 ```
 
-The API tests leave the tables in `public` alone, so the database of
-`make infra-up` can be used. They create one schema per test, and the enum
-types in `public` when they are missing. The migration tests of the `database`
-package create and drop a database per test, so the user needs the right to
-create databases.
+The tests change nothing in the database the URL names, so the instance of
+`make infra-up` can be used. They create and drop databases of their own on
+the same instance, one per test, so the user needs the right to create
+databases.
 
 CI runs the integration tests both ways.
 
@@ -99,7 +98,8 @@ server.
 `vitest.integration.config.ts` names `src/__tests__/_shared/setup.ts` as a
 setup file, so its hooks run around every integration test of the package.
 
-Once per test file, the setup picks the database and prepares the enum types:
+Once per test file, the setup picks the PostgreSQL instance and builds a
+template on it:
 
 ```typescript
 // backend/packages/api/src/__tests__/_shared/setup.ts (excerpt)
@@ -108,37 +108,39 @@ beforeAll(async () => {
 
   if (!externalUrl) {
     container = await new PostgreSqlContainer('postgres:18-alpine')
-      .withDatabase('testdb')
-      .withUsername('testuser')
-      .withPassword('testpass')
-      .withExposedPorts(5432)
       .withStartupTimeout(120000)
       .start()
   }
 
-  // Initialize schema manager
-  schemaManager = new TestSchemaManager(
+  databases = await openTestDatabases(
     container?.getConnectionUri() ?? externalUrl ?? '',
   )
-
-  // Initialize enum types once for all test schemas
-  await schemaManager.initializeEnums()
 })
 ```
 
-Around each test, `TestSchemaManager` gives the test a schema of its own:
+`openTestDatabases` (`test-databases.ts`) creates a database named
+`api_test_template_<uuid>`, applies `backend/packages/database/sql/setup.sql`
+to it as it is, and closes the connection. Around each test, the setup gives
+the test a database of its own:
 
-1. Before the test it creates a schema named `test_<uuid>` and opens a
-   connection whose `search_path` is that schema followed by `public`.
-2. It runs the statements of `backend/packages/database/sql/setup.sql` in that
-   schema, without the `CREATE TYPE` statements: the tables are the ones of the
-   committed schema, the enum types are shared from `public`.
-3. After the test it closes the connection and drops the schema.
+1. Before the test it creates a database named `api_test_<uuid>` as a copy of
+   the template (`CREATE DATABASE … TEMPLATE …`) and opens a connection to it.
+2. After the test it closes the connection and drops the database.
 
-Two things follow from this:
+The template is dropped when the file is done.
+
+PostgreSQL copies a database much faster than it applies the schema again
+(about 250 statements), which is why the schema is applied once per file and
+not once per test. A database can only be copied while nothing is connected
+to it, so nothing may connect to the template after it is built.
+
+Three things follow from this:
 
 - Every test starts with empty tables and cleans up nothing. Tests cannot see
-  each other's rows.
+  each other's rows, and a test may change a table's definition without
+  affecting another test.
+- The tables, types and constraints are in `public`, as in a database made by
+  `pnpm db:fresh`.
 - The tests run against `sql/setup.sql`, not against the migrations. After
   writing a migration, regenerate it (`pnpm db:generate-sql`, see the
   [Development Workflow](./development-workflow.md)) or the tests will not see
@@ -193,12 +195,12 @@ export function createTestApp({
 
 | Helper | Use |
 |--------|-----|
-| `createTestApp()` | The application on the test's own schema, with logging silent and mails dropped |
+| `createTestApp()` | The application on the test's own database, with logging silent and mails dropped |
 | `createTestApp({ logs })` | The same, collecting every log line as a parsed object in `logs` |
 | `createTestApp({ mails })` | The same, collecting every mail the application hands to its mailer (`to`, `subject`, `text`) in `mails` |
 | `createTestApp({ rateLimit })` | A lower rate limit, to test the limit itself |
 | `createTestApp({ database })` | Another database, for example an unreachable one |
-| `getTestDb()` | The Drizzle database of the test's schema, to arrange or inspect rows |
+| `getTestDb()` | The Drizzle database of the test's own database, to arrange or inspect rows |
 | `getTestDbClient()` | The postgres.js client under `getTestDb()`, for code that builds a Drizzle instance of its own (the authentication tests run the seed with it) |
 | `connectUnreachableDatabase()` | A connection nothing answers: every query fails at once |
 | `PUBLIC_APP_URL` | The origin of the web application in the test settings: the links in the mails start with it |

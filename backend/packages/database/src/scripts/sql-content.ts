@@ -1,5 +1,5 @@
-// Auto-generated SQL content - DO NOT EDIT
-// This file is generated at build time to embed SQL content
+// Reads the SQL of the package from the `sql` directory, which the build
+// copies next to the bundle.
 
 import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
@@ -21,30 +21,6 @@ export const SETUP_SQL = (() => {
     return readFileSync(join(sqlDir, 'setup.sql'), 'utf-8')
   } catch (error) {
     console.error('Failed to load setup.sql from:', join(sqlDir, 'setup.sql'))
-    console.error('Current directory:', __dirname)
-    console.error('Is built:', isBuilt)
-    console.error('Error:', error)
-    return ''
-  }
-})()
-
-export const DROP_SQL = (() => {
-  try {
-    return readFileSync(join(sqlDir, 'drop.sql'), 'utf-8')
-  } catch (error) {
-    console.error('Failed to load drop.sql from:', join(sqlDir, 'drop.sql'))
-    console.error('Current directory:', __dirname)
-    console.error('Is built:', isBuilt)
-    console.error('Error:', error)
-    return ''
-  }
-})()
-
-export const RESET_SQL = (() => {
-  try {
-    return readFileSync(join(sqlDir, 'reset.sql'), 'utf-8')
-  } catch (error) {
-    console.error('Failed to load reset.sql from:', join(sqlDir, 'reset.sql'))
     console.error('Current directory:', __dirname)
     console.error('Is built:', isBuilt)
     console.error('Error:', error)
