@@ -4,13 +4,10 @@ import {
 } from '@beauty-salon-backend/domain'
 import type { RequestHandler } from 'express'
 import { match } from 'ts-pattern'
+import { pageLinks } from '../../shared/page-links'
 import type { ProblemDetails } from '../../shared/problem-details'
 import { sendProblem } from '../../shared/responses'
-import {
-  decodeSalonSearchQuery,
-  type ListSalonsResponse,
-  salonPageLinks,
-} from './_shared'
+import { decodeSalonSearchQuery, type ListSalonsResponse } from './_shared'
 
 /**
  * GET /api/v1/salons - list salons, newest first, optionally filtered
@@ -33,7 +30,7 @@ export const listSalonsHandler = (
         res.json({
           data: page.data,
           meta: page.meta,
-          links: salonPageLinks(req.baseUrl, req.originalUrl, page.meta),
+          links: pageLinks(req.baseUrl, req.originalUrl, page.meta),
         })
       })
       .with({ type: 'error' }, ({ error }) => sendProblem(req, res, error))
