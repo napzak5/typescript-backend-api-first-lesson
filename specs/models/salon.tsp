@@ -148,11 +148,11 @@ namespace BeautySalon.Models {
     @maxValue(180)
     longitude: float64 | null;
 
-    @doc("代表電話番号")
+    @doc("代表電話番号。数字、空白、ハイフン、+、丸括弧で書き、数字を10個以上含む")
     @maxLength(20)
     phoneNumber: string;
 
-    @doc("予備の電話番号。未設定の場合はnull")
+    @doc("予備の電話番号。数字、空白、ハイフン、+、丸括弧で書き、数字を10個以上含む。未設定の場合はnull")
     @maxLength(20)
     alternativePhone: string | null;
 
@@ -184,7 +184,8 @@ namespace BeautySalon.Models {
     @maxLength(50)
     timezone: string;
 
-    @doc("料金表示に使用する通貨コード(ISO 4217)")
+    @doc("料金表示に使用する通貨コード(ISO 4217)。英大文字3文字")
+    @pattern("^[A-Z]{3}$")
     @minLength(3)
     @maxLength(3)
     currency: string;
@@ -251,11 +252,11 @@ namespace BeautySalon.Models {
     @maxValue(180)
     longitude?: float64 | null;
 
-    @doc("代表電話番号")
+    @doc("代表電話番号。数字、空白、ハイフン、+、丸括弧で書き、数字を10個以上含む")
     @maxLength(20)
     phoneNumber?: string;
 
-    @doc("予備の電話番号。nullでクリア")
+    @doc("予備の電話番号。数字、空白、ハイフン、+、丸括弧で書き、数字を10個以上含む。nullでクリア")
     @maxLength(20)
     alternativePhone?: string | null;
 
@@ -287,7 +288,8 @@ namespace BeautySalon.Models {
     @maxLength(50)
     timezone?: string;
 
-    @doc("料金表示に使用する通貨コード(ISO 4217)")
+    @doc("料金表示に使用する通貨コード(ISO 4217)。英大文字3文字")
+    @pattern("^[A-Z]{3}$")
     @minLength(3)
     @maxLength(3)
     currency?: string;

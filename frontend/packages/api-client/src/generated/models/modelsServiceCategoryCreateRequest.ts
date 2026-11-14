@@ -5,15 +5,13 @@
  * Comprehensive REST API for managing beauty salon operations including salons, staff, services, customers, bookings, treatments, payments, inventory, and access control. Built with TypeSpec for type-safe API-first development.
  * OpenAPI spec version: 2.0
  */
-import type { ModelsSalonId } from './modelsSalonId';
 import type { ModelsServiceCategoryType } from './modelsServiceCategoryType';
 
 /**
- * サービスカテゴリ新規登録リクエスト - 全項目のキーが必須。DB で NULL 許可のカラムのみ null を指定できる
+ * サービスカテゴリ新規登録リクエスト - 全項目のキーが必須。DB で NULL 許可のカラムのみ null を指定できる。
+ * カテゴリを持つサロンはパスの salonId で指定する
  */
 export interface ModelsServiceCategoryCreateRequest {
-  /** カテゴリを持つサロン ID */
-  salonId: ModelsSalonId;
   /**
      * カテゴリ名
      * @minLength 1
@@ -47,6 +45,7 @@ export interface ModelsServiceCategoryCreateRequest {
      * 表示色(#RRGGBB形式)。未設定の場合はnull
      * @maxLength 7
      * @nullable
+     * @pattern ^#[0-9A-Fa-f]{6}$
      */
   color: string | null;
   /** 有効フラグ */

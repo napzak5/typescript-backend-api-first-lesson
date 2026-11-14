@@ -45,6 +45,7 @@ export interface ModelsServiceCategoryUpdateRequest {
      * 表示色(#RRGGBB形式)。nullでクリア
      * @maxLength 7
      * @nullable
+     * @pattern ^#[0-9A-Fa-f]{6}$
      */
   color?: string | null;
   /** 有効フラグ */

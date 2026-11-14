@@ -18,11 +18,13 @@ export interface ModelsOpeningHours {
   /**
      * 開店時刻。HH:mm:ss形式で返す（指定時はHH:mmも可）。終日休業の場合はnull
      * @nullable
+     * @pattern ^([01][0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$
      */
   openTime: string | null;
   /**
      * 閉店時刻。HH:mm:ss形式で返す（指定時はHH:mmも可）。終日休業の場合はnull
      * @nullable
+     * @pattern ^([01][0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$
      */
   closeTime: string | null;
   /** 休業日かどうかを示すフラグ。 */

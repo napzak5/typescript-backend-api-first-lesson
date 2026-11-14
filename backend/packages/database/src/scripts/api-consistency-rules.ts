@@ -64,6 +64,17 @@ const serviceManagedColumns = [
   'updatedAt',
 ]
 
+/**
+ * The salon of a category comes from the path of the request, and a category
+ * cannot move to another salon.
+ */
+const serviceCategoryManagedColumns = [
+  'id',
+  'salonId',
+  'createdAt',
+  'updatedAt',
+]
+
 /** Services, their categories and options. */
 const serviceRules: ModelRule[] = [
   {
@@ -101,14 +112,13 @@ const serviceRules: ModelRule[] = [
     model: 'Models.ServiceCategoryCreateRequest',
     table: 'serviceCategories',
     kind: 'create',
-    omittedColumns: ['id', 'createdAt', 'updatedAt'],
+    omittedColumns: serviceCategoryManagedColumns,
   },
   {
     model: 'Models.ServiceCategoryUpdateRequest',
     table: 'serviceCategories',
     kind: 'update',
-    // A category cannot move to another salon.
-    omittedColumns: ['id', 'salonId', 'createdAt', 'updatedAt'],
+    omittedColumns: serviceCategoryManagedColumns,
   },
 ]
 

@@ -101,51 +101,59 @@ namespace BeautySalon.Operations {
     }
   }
 
-  @doc("施術メニューのカテゴリ体系を整備し、顧客が選びやすい構造を提供するAPI操作群です。")
-  @route("/api/v1/service-categories")
+  @doc("サロンごとに施術メニューのカテゴリ体系を整備し、顧客が選びやすい構造を提供するAPI操作群です。ここに定義した操作はすべて実装済みで、定義と実装は一致しています。一覧と1件の取得は、予約前の閲覧のために認証なしで呼び出せます。作成・更新・削除は admin と、そのサロンの owner / manager が実行でき、ほかのサロンの owner / manager には403を返します。サロンが存在しない場合は404を返します。")
+  @route("/api/v1/salons/{salonId}/service-categories")
   @tag("Services")
   namespace ServiceCategoryOperations {
     interface ServiceCategoryCrud {
-      @doc("登録済みのカテゴリを、絞り込み条件とページネーションを指定して一覧取得し、メニュー分類や表示順を管理します。")
+      @doc("サロンのカテゴリを、絞り込み条件とページネーションを指定して一覧取得します。表示順(displayOrder)の昇順に並びます。cursorがそのサロンのカテゴリを指していない場合(削除された場合を含む)は400を返します。")
       @summary("List service categories")
+      @useAuth(NoAuth)
       @get
-      list(...ServiceCategorySearchRequest):
+      list(@path salonId: SalonId, ...ServiceCategorySearchRequest):
         | {
             @statusCode statusCode: 200;
             @body response: CursorPaginationResponse<ServiceCategoryResponse>;
           }
         | ProblemResponse<400>
-        | CommonErrors;
+        | ProblemResponse<404>
+        | PublicErrors;
 
-      @doc("新しい施術カテゴリを作成し、階層構造や表示順を定義します。salonIdのサロンが存在しない場合や、parentIdに同じサロンのものではないカテゴリを指定した場合は400を返します。")
+      @doc("サロンに新しい施術カテゴリを作成し、階層構造や表示順を定義します。parentIdに同じサロンのものではないカテゴリを指定した場合は400を返します。")
       @summary("Create service category")
       @post
-      create(@body request: ServiceCategoryCreateRequest):
+      create(
+        @path salonId: SalonId,
+        @body request: ServiceCategoryCreateRequest,
+      ):
         | {
             @statusCode statusCode: 201;
             @header("Location") location: string;
             @body response: ApiResponse<ServiceCategoryResponse>;
           }
         | ProblemResponse<400>
+        | ProblemResponse<404>
         | RequestBodyErrors
         | CommonErrors;
 
-      @doc("特定カテゴリの詳細情報を取得し、名称や親子関係、表示順を確認します。")
+      @doc("特定カテゴリの詳細情報を取得し、名称や親子関係、表示順を確認します。カテゴリがそのサロンのものでない場合は404を返します。")
       @summary("Get service category")
+      @useAuth(NoAuth)
       @get
-      get(@path id: CategoryId):
+      get(@path salonId: SalonId, @path id: CategoryId):
         | {
             @statusCode statusCode: 200;
             @body response: ApiResponse<ServiceCategoryResponse>;
           }
         | ProblemResponse<400>
         | ProblemResponse<404>
-        | CommonErrors;
+        | PublicErrors;
 
-      @doc("既存カテゴリの指定した項目だけを更新し、名称や表示順、親子関係を調整します。parentIdに同じサロンのものではないカテゴリや、自身または子孫のカテゴリを指定した場合は400を返します。")
+      @doc("既存カテゴリの指定した項目だけを更新し、名称や表示順、親子関係を調整します。parentIdに同じサロンのものではないカテゴリや、自身または子孫のカテゴリを指定した場合は400を返します。カテゴリがそのサロンのものでない場合は404を返します。")
       @summary("Update service category")
       @patch
       update(
+        @path salonId: SalonId,
         @path id: CategoryId,
         @body request: ServiceCategoryUpdateRequest,
       ):
@@ -158,10 +166,10 @@ namespace BeautySalon.Operations {
         | RequestBodyErrors
         | CommonErrors;
 
-      @doc("利用されなくなったカテゴリを削除し、メニュー構成を整理します。このカテゴリに属するサービスのcategoryIdと、子カテゴリのparentIdはnullになります。")
+      @doc("利用されなくなったカテゴリを削除し、メニュー構成を整理します。このカテゴリに属するサービスのcategoryIdと、子カテゴリのparentIdはnullになります。カテゴリがそのサロンのものでない場合は404を返します。")
       @summary("Delete service category")
       @delete
-      delete(@path id: CategoryId):
+      delete(@path salonId: SalonId, @path id: CategoryId):
         | {
             @statusCode statusCode: 204;
           }
