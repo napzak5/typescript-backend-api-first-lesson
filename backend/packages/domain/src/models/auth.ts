@@ -1,7 +1,12 @@
 import type { sessions, users } from '@beauty-salon-backend/database'
-import type { components } from '@beauty-salon-backend/generated'
-import type { DeepRequired, Omit } from '@beauty-salon-backend/utility'
+import type { components, operations } from '@beauty-salon-backend/generated'
+import {
+  type DeepRequired,
+  type Omit,
+  Result,
+} from '@beauty-salon-backend/utility'
 import { z } from 'zod'
+import { type DomainError, parseWith } from '../shared'
 import { salonIdSchema } from './salon'
 
 // IDs: UUIDs that have been checked.
@@ -17,8 +22,30 @@ export type StaffId = z.infer<typeof staffIdSchema>
 export const customerIdSchema = z.uuid().brand<'CustomerId'>()
 export type CustomerId = z.infer<typeof customerIdSchema>
 
+const userIdParameterSchema = z.object({ userId: userIdSchema })
+
+export const parseUserId = (userId: unknown): Result<UserId, DomainError> =>
+  Result.map(
+    parseWith(userIdParameterSchema, { userId }, 'Invalid user ID'),
+    (parameters) => parameters.userId,
+  )
+
+const sessionIdParameterSchema = z.object({ sessionId: sessionIdSchema })
+
+export const parseSessionId = (
+  sessionId: unknown,
+): Result<SessionId, DomainError> =>
+  Result.map(
+    parseWith(sessionIdParameterSchema, { sessionId }, 'Invalid session ID'),
+    (parameters) => parameters.sessionId,
+  )
+
 // API types, generated from TypeSpec
 export type ApiUserResponse = components['schemas']['Models.UserResponse']
+export type ApiSessionResponse = components['schemas']['Models.SessionResponse']
+export type ApiSessionSearchRequest = NonNullable<
+  operations['SessionCrud_getSessions']['parameters']['query']
+>
 export type ApiAuthLoginRequest =
   components['schemas']['Models.AuthLoginRequest']
 export type ApiAuthLoginResponse =

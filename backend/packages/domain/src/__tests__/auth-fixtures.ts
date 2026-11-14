@@ -67,7 +67,6 @@ export const dbUser = (overrides: Partial<DbUser> = {}): DbUser => ({
   lockedUntil: null,
   lastLoginAt: null,
   lastLoginIp: null,
-  trustedIpAddresses: [],
   customerId: null,
   staffId: null,
   metadata: {},
@@ -87,7 +86,7 @@ export const userAccount = (
  * A row of `sessions` as the driver returns it: its access token has ten
  * minutes left and the session four hours.
  */
-const dbSession = (overrides: Partial<DbSession> = {}): DbSession => ({
+export const dbSession = (overrides: Partial<DbSession> = {}): DbSession => ({
   id: SESSION_ID,
   userId: USER_ID,
   tokenHash: 'sha256(old-access)',
@@ -253,6 +252,7 @@ export const userRepositoryWith = (
   findByPasswordResetToken: vi.fn(async () => Result.success(dbUser())),
   resetPassword: vi.fn(async () => Result.success(dbUser())),
   changePassword: vi.fn(async () => Result.success(true)),
+  unlock: vi.fn(async () => Result.success(dbUser())),
   startTwoFactorSetup: vi.fn(async () => Result.success(true)),
   useTwoFactorStep: vi.fn(async () => Result.success(true)),
   useBackupCode: vi.fn(async () => Result.success(9)),
@@ -278,7 +278,11 @@ export const sessionRepositoryWith = (
   rotate: vi.fn(async (_hash: string, rotation: SessionRotation) =>
     Result.success(dbSession(rotation)),
   ),
+  listOfUser: vi.fn(async () =>
+    Result.success({ sessions: [dbSession()], total: 1, hasMore: false }),
+  ),
   delete: vi.fn(async () => Result.success(true)),
+  deleteOfUser: vi.fn(async () => Result.success(true)),
   deleteAllOfUser: vi.fn(async () => Result.success(null)),
   ...overrides,
 })

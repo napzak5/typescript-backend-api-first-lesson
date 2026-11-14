@@ -32,7 +32,6 @@ const fullyStoredUser = (): DbUser =>
     lockedUntil: '2026-11-14 18:15:00.5+09',
     lastLoginAt: '2026-11-14 08:59:59.123456+00',
     lastLoginIp: '203.0.113.7',
-    trustedIpAddresses: ['203.0.113.0/24'],
     customerId: CUSTOMER_ID,
     staffId: STAFF_ID,
     metadata: { note: 'INTERNAL-NOTE' },
@@ -56,12 +55,23 @@ describe('UserReadMapper.toApiUser', () => {
       lockedUntil: '2026-11-14T09:15:00.500Z',
       lastLoginAt: '2026-11-14T08:59:59.123Z',
       lastLoginIp: '203.0.113.7',
-      trustedIpAddresses: ['203.0.113.0/24'],
       customerId: CUSTOMER_ID,
       staffId: STAFF_ID,
       createdAt: '2026-11-01T01:00:00.000Z',
       updatedAt: '2026-11-01T01:00:00.000Z',
     })
+  })
+
+  it('leaves out a column of the row that the response does not name', () => {
+    const rowWithAnotherColumn = {
+      ...fullyStoredUser(),
+      internalNote: 'kept inside',
+    }
+
+    const presented = dataOf(UserReadMapper.toApiUser(rowWithAnotherColumn))
+
+    expect(presented).not.toHaveProperty('internalNote')
+    expect(JSON.stringify(presented)).not.toContain('kept inside')
   })
 
   it('leaves out the password hash, the secrets, the tokens and the internal columns', () => {
@@ -126,7 +136,6 @@ describe('UserReadMapper.toApiUser', () => {
         lockedUntil: null,
         lastLoginAt: null,
         lastLoginIp: null,
-        trustedIpAddresses: null,
         customerId: null,
         staffId: null,
       }),
@@ -137,7 +146,6 @@ describe('UserReadMapper.toApiUser', () => {
       lockedUntil: null,
       lastLoginAt: null,
       lastLoginIp: null,
-      trustedIpAddresses: null,
       customerId: null,
       staffId: null,
     })
@@ -146,7 +154,6 @@ describe('UserReadMapper.toApiUser', () => {
   it.each<[string, Partial<DbUser>]>([
     ['permissions that are not a list', { permissions: { all: true } }],
     ['permissions that are not names', { permissions: [1, 2] }],
-    ['trusted addresses that are not a list', { trustedIpAddresses: '*' }],
     ['a timestamp that is not one', { lastLoginAt: 'yesterday' }],
   ])(
     'reports a stored user with %s as a database error',

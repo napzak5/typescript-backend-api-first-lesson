@@ -88,6 +88,16 @@ export const twoFactorDisabledMail = (to: string): Mail => ({
   ].join('\n'),
 })
 
+export const twoFactorResetMail = (to: string): Mail => ({
+  to,
+  subject: '2 要素認証が管理者によって無効にされました',
+  text: [
+    '管理者が、アカウントの 2 要素認証を無効にしました。ログインに必要なのはパスワードだけです。認証アプリを使えるようになったら、2 要素認証を設定し直してください。',
+    '',
+    '依頼した覚えがない場合は、ログイン画面からすぐにパスワードを再設定し、2 要素認証を設定し直してください。再設定すると、すべての端末からログアウトされます。',
+  ].join('\n'),
+})
+
 export const backupCodesRegeneratedMail = (to: string): Mail => ({
   to,
   subject: 'バックアップコードが再発行されました',
