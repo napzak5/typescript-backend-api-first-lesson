@@ -49,11 +49,12 @@ Biome プラグイン（`as`、型ガード、`throw`）が検査するのは、
 
 失敗は `Result<T, E>` の値として返します。ユースケース、読み取りマッパー、リポジトリ、設定の読み込み（`parseAppConfig`）、サーバーの起動（`startServer`）は、どれも `Result` を返します。型と関数の一覧は [Sum型とパターンマッチング](./sum-types-pattern-matching.md) を見てください。
 
-アプリケーションコードに `throw` はありません。外から来る例外は次の3か所で値に変えています。
+アプリケーションコードに `throw` はありません。外から来る例外は次の4か所で値に変えています。アプリケーションコードの `try` / `catch` は、最初の 2 つ（`Result.fromPromise` と `Result.fromThrowable`）の中だけです。
 
 | 例外の出どころ | 変換する場所 | 変換後 |
 |----------------|--------------|--------|
-| ライブラリの Promise の reject（Drizzle、postgres.js） | `Result.fromPromise`（`backend/packages/utility/src/result/result.ts`）。アプリケーションコードで唯一の `try` / `catch` | `Result<T, Error>` |
+| ライブラリの Promise の reject（Drizzle、postgres.js） | `Result.fromPromise`（`backend/packages/utility/src/result/result.ts`） | `Result<T, Error>` |
+| 同期の関数が投げる例外（`node:crypto` の復号の失敗） | `Result.fromThrowable`（同じファイル）。`TotpAuthenticator`（`backend/packages/infrastructure/src/security/totp-authenticator.ts`）が使う | `Result<T, Error>` |
 | Express とそのボディパーサーが渡すエラー、ハンドラー内の予期しない例外 | `errorHandler` と `toHttpError`（`backend/packages/api/src/middleware/errors.ts`） | `HttpError` → 問題詳細のレスポンス |
 | どこにも捕捉されなかった例外と reject | `uncaughtException` / `unhandledRejection` のハンドラー（`backend/apps/server/src/index.ts`） | ログに書いてプロセスを終了 |
 
@@ -220,4 +221,4 @@ latitude: latitude === null ? null : toNumeric(latitude),
 - 失敗は `Result` で返し、`type` の比較か ts-pattern で分岐する
 - 型は DB スキーマと生成された API 型から得て、`satisfies` で実装と照合する
 - ID はブランド型にして、検証していない文字列と区別する
-- `any` は Biome が検出する。`as`・型ガード・`throw` はツールが検出しないので、レビューで確認する
+- `any`・`as`・型ガード・`throw` は `pnpm lint`（Biome とそのプラグイン）が検出する

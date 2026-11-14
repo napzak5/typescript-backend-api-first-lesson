@@ -7,7 +7,7 @@
 - [アーキテクチャ概要](./architecture-overview.md): システム全体の説明。パッケージの依存関係、型生成の流れ、リクエストの流れ、実装済みの範囲はそちらにあり、本書では繰り返しません。
 - [CLAUDE.md](../CLAUDE.md): 規約とコマンドの正本。Salon ドメインの全レイヤーのシグネチャもそこにまとまっています。本書は規約の適用のしかたと理由を説明します。
 
-バックエンドで実装済みなのは、Salon ドメイン、認証の 12 のオペレーション（ログイン、トークンの再発行、ログアウト、全セッションのログアウト、自分の情報の取得、ユーザー登録、メールアドレスの確認、パスワードの再設定と変更）、システムエンドポイントだけです。ほかのドメインを実装するときは、Salon のファイルと同じ構成で書いてください。認証と認可の仕様は [認証と認可](./authentication.md) にあり、本書ではコードの書き方だけを扱います。
+バックエンドで実装済みなのは、Salon ドメイン、認証の 16 のオペレーション（ログイン、トークンの再発行、ログアウト、全セッションのログアウト、自分の情報の取得、ユーザー登録、メールアドレスの確認、パスワードの再設定と変更、2 要素認証）、システムエンドポイントだけです。ほかのドメインを実装するときは、Salon のファイルと同じ構成で書いてください。認証と認可の仕様は [認証と認可](./authentication.md) にあり、本書ではコードの書き方だけを扱います。
 
 ---
 
@@ -19,7 +19,7 @@
 |--------|--------------------|
 | `any`、型アサーション（`as`）、型ガードを書かない | 外から来た値は Zod スキーマで検証し、分岐は ts-pattern か `type` プロパティの比較で絞り込む |
 | `throw` しない | 失敗は `Result<T, E>` で返す |
-| `try`/`catch` を新たに書かない | アプリケーションコードの `try`/`catch` は `Result.fromPromise`（`backend/packages/utility/src/result/result.ts`）の1か所だけ。外部ライブラリが投げる例外は、Promise をこれに渡して `Result` に変える。ハンドラーにも書かない（Express 5 は reject された Promise をエラーハンドラーに渡す） |
+| `try`/`catch` を新たに書かない | アプリケーションコードの `try`/`catch` は `Result.fromPromise` と `Result.fromThrowable`（`backend/packages/utility/src/result/result.ts`）の2か所だけ。外部のコードが投げる例外は、Promise なら `fromPromise` に、同期の関数なら `fromThrowable` に渡して `Result` に変える。ハンドラーにも書かない（Express 5 は reject された Promise をエラーハンドラーに渡す） |
 | `process.env` を読まない | 設定は `parseAppConfig` が一度だけ読み、値として引数で渡す |
 | `console` を使わない | リクエスト中は `req.log`、それ以外は注入された `Logger` を使う |
 | グローバルを経由して依存を取り出さない | リポジトリなどの依存は起動時に一度作り、引数で渡す |
@@ -27,7 +27,7 @@
 依存の向きは次のとおりです。
 
 - `domain` は I/O を行うパッケージを import しません。`database` から import するのは型だけです。
-- `infrastructure` は `domain` が宣言したインターフェースを実装します。リポジトリのほか、パスワードのハッシュ（`IPasswordHasher`）、トークンの生成（`ITokenIssuer`。セッションのトークンと、メールで送るトークン）、メールの送信（`IMailer`）も同じ形です。
+- `infrastructure` は `domain` が宣言したインターフェースを実装します。リポジトリのほか、パスワードのハッシュ（`IPasswordHasher`）、トークンの生成（`ITokenIssuer`。セッションのトークンと、メールで送るトークン）、2 要素認証のシークレットとコード（`ITwoFactorAuthenticator`）、メールの送信（`IMailer`）も同じ形です。
 - `api` はユースケースを呼び出し、結果を HTTP に変換するだけです。認証も同じで、`Authorization` ヘッダーをユースケースに渡して操作者（`Actor`）を受け取るだけです。ロールや権限は判定しません。
 - 環境変数を読み、プロセスを終了させるのは `backend/apps/server/src/index.ts` だけです。
 
@@ -62,7 +62,7 @@
 - `backend/packages/infrastructure/src/database/attempt.ts`: 想定している失敗がないクエリを `Result` に変える `attempt`
 - `backend/packages/api/src/shared`: `sendProblem`、`responseMeta`、`toProblemDetails`、`createAuthenticated`（`authenticated` を作る）、生成型から JSON の本文を取り出す `JsonBody`、API バージョン
 - `backend/packages/api/src/middleware`: リクエストログ、レート制限、エラーハンドラー
-- `backend/packages/utility/src`: `Result`（`success`・`error`・`map`・`mapError`・`flatMap`・`fromPromise`）、`DeepRequired`、`Omit`
+- `backend/packages/utility/src`: `Result`（`success`・`error`・`map`・`mapError`・`flatMap`・`fromThrowable`・`fromPromise`）、`DeepRequired`、`Omit`
 
 `domain` パッケージが外に公開するのは、ユースケース、モデル、リポジトリとサービスのインターフェース、エラーと検証の共通部品です（`backend/packages/domain/src/index.ts`）。リクエストのスキーマとマッパーはパッケージの中だけで使います。
 
@@ -435,7 +435,7 @@ app.use(
 
 ## エラー処理
 
-- ユースケースが返すエラーは `DomainError` の6種類（`validation`・`unauthenticated`・`forbidden`・`notFound`・`alreadyExists`・`database`）です。`DomainErrors.*` で作ります（`backend/packages/domain/src/shared/errors.ts`）。
+- ユースケースが返すエラーは `DomainError` の7種類（`validation`・`unauthenticated`・`forbidden`・`notFound`・`alreadyExists`・`conflict`・`database`）です。`DomainErrors.*` で作ります（`backend/packages/domain/src/shared/errors.ts`）。
 - `unauthenticated`（401）を返すのは認証のユースケースだけです。それ以外のユースケースが権限について返すのは `forbidden`（403）です。401 には `sendProblem` が `WWW-Authenticate` ヘッダーを付けます。
 - ユースケースの外で起きる失敗（存在しないルート、読めない本文、レート制限、想定外の例外）は API 層の `HttpError` です。
 - どちらも `sendProblem` を通り、RFC 9457 の problem details になります。エラーの種類と HTTP ステータス・エラーコードの対応は、`backend/packages/api/src/shared/problem-details.ts` の `toProblemDetails` の1か所にあります。
@@ -474,15 +474,15 @@ app.use(
 | 対象 | 種類 | 場所 |
 |------|------|------|
 | スキーマ、マッパー、ユースケース（権限の判定を含む） | ユニット（`pnpm test`） | `backend/packages/domain/src/__tests__` |
-| パスワードのハッシュ、トークンの生成 | ユニット（`pnpm test`） | `backend/packages/infrastructure/src/security/__tests__` |
+| パスワードのハッシュ、トークンの生成、2 要素認証のシークレット・コード・バックアップコード | ユニット（`pnpm test`） | `backend/packages/infrastructure/src/security/__tests__` |
 | SMTP でのメールの送信 | ユニット（`pnpm test`）と統合（`pnpm test:integration`。testcontainers で Mailpit のコンテナを起動する） | `backend/packages/infrastructure/src/mail/__tests__` |
 | クエリの変換、リンク、problem details、ミドルウェア | ユニット（`pnpm test`） | `backend/packages/api/src` の各 `__tests__` |
 | エンドポイント（リポジトリの実装を含む） | 統合（`pnpm test:integration`） | `backend/packages/api/src/__tests__/salon.integration.test.ts`、`auth.integration.test.ts` |
 | リクエスト ID、エラー応答、CORS、レート制限、プローブ | 統合（`pnpm test:integration`） | `backend/packages/api/src/__tests__/app.integration.test.ts` |
 | 起動と停止 | 統合（`pnpm test:integration`） | `backend/apps/server/src/__tests__/server.integration.test.ts` |
 
-- ユースケースのテストでは、リポジトリを `ISalonRepository` を満たすオブジェクトに差し替えます。DB は使いません。認証のユースケースでは、2つのリポジトリ、パスワードのハッシュ、トークンの発行、メールの送信も差し替え、時計を固定します（`backend/packages/domain/src/__tests__/auth-fixtures.ts` の `authDependencies`）。
-- リポジトリの実装は、エンドポイントの統合テストで実際の PostgreSQL に対して検証します。テストごとに専用のスキーマを作り、本番と同じ `createApp` を使います（`backend/packages/api/src/__tests__/_shared/test-helpers.ts` の `createTestApp`）。
+- ユースケースのテストでは、リポジトリを `ISalonRepository` を満たすオブジェクトに差し替えます。DB は使いません。認証のユースケースでは、2つのリポジトリ、パスワードのハッシュ、トークンの発行、2 要素認証のコードの確認、メールの送信も差し替え、時計を固定します（`backend/packages/domain/src/__tests__/auth-fixtures.ts` の `authDependencies`）。
+- リポジトリの実装は、エンドポイントの統合テストで実際の PostgreSQL に対して検証します。テストごとに専用のスキーマを作り、本番と同じ `createApp` を使います（`backend/packages/api/src/__tests__/_shared/test-helpers.ts` の `createTestApp`）。メールは送らずに記録し、2 要素認証には本番と同じ `TotpAuthenticator` を使います。
 - 統合テストでアクセストークンが必要なときは、ユーザーの行を挿入し、`POST /api/v1/auth/login` でログインします（`backend/packages/api/src/__tests__/_shared/auth-helpers.ts`）。
 - エンドポイントごとに、エラーのシナリオを5つ以上テストします。公開でないエンドポイントでは、トークンのないリクエスト（401）と、許可されていないユーザーからのリクエスト（403）を含めます。
 
@@ -513,7 +513,7 @@ app.use(
 - [ ] 公開でないオペレーションは、ハンドラーを `authenticated` で包み、ユースケースが `actor` から最初に権限を判定している（TypeSpec では `SessionErrors` または `CommonErrors`）
 - [ ] 公開のオペレーションは、TypeSpec に `@useAuth(NoAuth)` と `PublicErrors` がある
 - [ ] マッパーでプロパティ名を変えていない。`null` を別の値に置き換えていない
-- [ ] 失敗はすべて `Result` で返している。`throw`、`any`、`as` がなく、`try`/`catch` を新たに書いていない（外部の例外は `Result.fromPromise` で受けている）
+- [ ] 失敗はすべて `Result` で返している。`throw`、`any`、`as` がなく、`try`/`catch` を新たに書いていない（外部の例外は `Result.fromPromise` か `Result.fromThrowable` で受けている）
 - [ ] `match(...).exhaustive()` で分岐している
 - [ ] エラー応答は `sendProblem` だけが返している
 - [ ] `console` と `process.env` を使っていない

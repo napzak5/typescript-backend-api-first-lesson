@@ -11,13 +11,14 @@
 | 型 | 定義場所 | ケース |
 |----|----------|--------|
 | `Result<T, E>` | `backend/packages/utility/src/result/result.ts` | `success` / `error` |
-| `DomainError` | `backend/packages/domain/src/shared/errors.ts` | `validation` / `unauthenticated` / `forbidden` / `notFound` / `alreadyExists` / `database` |
+| `DomainError` | `backend/packages/domain/src/shared/errors.ts` | `validation` / `unauthenticated` / `forbidden` / `notFound` / `alreadyExists` / `conflict` / `database` |
 | `HttpError` | `backend/packages/api/src/shared/problem-details.ts` | `routeNotFound` / `malformedBody` / `unsupportedMediaType` / `bodyTooLarge` / `badRequest` / `rateLimited` / `unexpected` |
 | `ApiError` | 同上 | `DomainError` と `HttpError` の和 |
 | `OpeningHoursChange` | `backend/packages/domain/src/models/salon.ts` | `keep` / `replace` |
 | `ActorScope` | `backend/packages/domain/src/models/auth.ts` | `platform` / `salon` / `customer` / `none` |
 | `PasswordVerification` | `backend/packages/domain/src/services/password-hasher.ts` | `match` / `mismatch` |
 | `PasswordCheck` | `backend/packages/domain/src/business-logic/auth/_shared/password-check.ts` | `accepted` / `refused` |
+| `SecondFactorCheck` | `backend/packages/domain/src/business-logic/auth/_shared/second-factor.ts` | `accepted` / `refused` |
 | `StartFailure` | `backend/apps/server/src/server.ts` | `databaseUnreachable` / `listenFailed` |
 
 どの型も同じ書き方に従っています。
@@ -52,6 +53,7 @@ export type Result<T, E> =
 | `Result.map(result, fn)` | 成功値を変換する |
 | `Result.mapError(result, fn)` | エラーを変換する |
 | `Result.flatMap(result, fn)` | 成功値から次の `Result` を作る |
+| `Result.fromThrowable(fn)` | 失敗を例外で知らせる関数を呼び、投げられた例外を `Result<T, Error>` の `error` にする |
 | `Result.fromPromise(promise)` | Promise の reject を `Result<T, Error>` の `error` にする |
 
 ### 途中の失敗はそのまま返す
@@ -121,11 +123,13 @@ const attempt = async <T>(
   )
 ```
 
-アプリケーションコードで `try` / `catch` を書いているのは `Result.fromPromise` の中だけです。
+同期の関数が例外を投げる場合は `Result.fromThrowable` に渡します。使っているのは `TotpAuthenticator`（`backend/packages/infrastructure/src/security/totp-authenticator.ts`）で、`node:crypto` が復号の失敗を例外で知らせるためです。
+
+アプリケーションコードで `try` / `catch` を書いているのは、`Result.fromPromise` と `Result.fromThrowable` の中だけです。
 
 ## DomainError
 
-ユースケースが返すエラーはこの6種類です。
+ユースケースが返すエラーはこの7種類です。
 
 ```typescript
 // backend/packages/domain/src/shared/errors.ts
@@ -134,6 +138,7 @@ export type AuthenticationFailure =
   | 'invalidToken'
   | 'expiredToken'
   | 'invalidCredentials'
+  | 'twoFactorRequired'
 
 export type DomainError =
   | { type: 'validation'; message: string; issues: ValidationIssue[] }
@@ -141,6 +146,7 @@ export type DomainError =
   | { type: 'forbidden' }
   | { type: 'notFound'; entity: string; id: string }
   | { type: 'alreadyExists'; entity: string; field: string; value: string }
+  | { type: 'conflict'; message: string }
   | { type: 'database'; message: string; cause: unknown }
 ```
 
@@ -148,11 +154,12 @@ export type DomainError =
 
 | ケース | 作られる場所 | HTTP ステータス |
 |--------|--------------|-----------------|
-| `validation` | `parseWith`（`backend/packages/domain/src/shared/validation.ts`）が Zod の検証結果から作る。認証のユースケースは、スキーマでは確認できない規則（推測されやすいパスワード、現在のパスワードの誤り、使えないトークン）についても作る | 400 |
-| `unauthenticated` | 認証のユースケース（`backend/packages/domain/src/business-logic/auth/`）。有効なアクセストークンがない、ログインやトークンの再発行に失敗したとき。理由は `reason` が持つ | 401 |
+| `validation` | `parseWith`（`backend/packages/domain/src/shared/validation.ts`）が Zod の検証結果から作る。認証のユースケースは、スキーマでは確認できない規則（推測されやすいパスワード、現在のパスワードの誤り、使えないトークン、受け付けられない 2 要素認証のコード）についても作る | 400 |
+| `unauthenticated` | 認証のユースケース（`backend/packages/domain/src/business-logic/auth/`）。有効なアクセストークンがない、ログインやトークンの再発行に失敗したとき。2 要素認証が有効なアカウントのログインで、コードがない・受け付けられないときも含む。理由は `reason` が持つ | 401 |
 | `forbidden` | ユースケース。操作者にその操作の権限がないとき | 403 |
 | `notFound` | ユースケース。リポジトリが `null`（削除では `false`）を返したとき | 404 |
 | `alreadyExists` | リポジトリ。メールアドレスの一意制約に違反したとき | 409 |
+| `conflict` | 2 要素認証のユースケース。リクエストは正しいが、対象の状態がその操作を許さないとき（すでに有効なのに設定を開始する、など） | 409 |
 | `database` | リポジトリ（想定外のクエリ失敗）、読み取りマッパー（保存値が API モデルに合わない） | 500 |
 
 `database` の `cause` はログに書くためのもので、レスポンスには含めません。HTTP ステータスへの対応は次節の `toProblem` が決めています。
@@ -201,7 +208,7 @@ export const mayDeleteSalon = (actor: Actor, salonId: SalonId): boolean =>
 
 `toBearerChallenge`（`backend/packages/api/src/shared/problem-details.ts`）は、`unauthenticated` のときだけ `reason` を同じように `match` して `WWW-Authenticate` の値を返し、それ以外のエラーには `null` を返します。
 
-エラーから問題詳細への変換も同じ形です。`ApiError` の13ケースを1つの `match` で扱っています。`unauthenticated` は `reason` によってコードが違うので、`type` と `reason` を1つのパターンに書き、`reason` ごとに分岐しています。
+エラーから問題詳細への変換も同じ形です。`ApiError` の14ケースを1つの `match` で扱っています。`unauthenticated` は `reason` によってコードが違うので、`type` と `reason` を1つのパターンに書き、`reason` ごとに分岐しています。
 
 ```typescript
 // backend/packages/api/src/shared/problem-details.ts（抜粋）
@@ -218,7 +225,7 @@ const toProblem = (error: ApiError): Problem =>
       code: '1001',
       errors: null,
     }))
-    // ... unauthenticated の残りの3つの reason、forbidden
+    // ... unauthenticated の残りの4つの reason、forbidden
     .with({ type: 'notFound' }, ({ entity, id }) => ({
       type: 'urn:beauty-salon:problem:not-found',
       title: 'Resource not found',
@@ -227,7 +234,7 @@ const toProblem = (error: ApiError): Problem =>
       code: '3001',
       errors: null,
     }))
-    // ... alreadyExists、database、HttpError の7ケース
+    // ... alreadyExists、conflict、database、HttpError の7ケース
     .exhaustive()
 ```
 

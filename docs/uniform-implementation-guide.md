@@ -291,11 +291,12 @@ answers 503 with the body its operation defines.
 
 | Error | Raised by | Status | `code` |
 |-------|-----------|--------|--------|
-| `validation` | `parseWith` in a use case; an authentication use case, also for what a schema cannot check (a password that is too easy to guess, a wrong current password, a mailed token that cannot be used) | 400 | `2001` |
-| `unauthenticated` | `AuthenticateUseCase` behind `authenticated`; the login and refresh use cases; the current-user and change-password use cases, when the user of the session no longer exists | 401 | `1001` to `1004`, by `reason` |
+| `validation` | `parseWith` in a use case; an authentication use case, also for what a schema cannot check (a password that is too easy to guess, a wrong current password, a mailed token that cannot be used, a code of two-factor authentication that is not accepted) | 400 | `2001` |
+| `unauthenticated` | `AuthenticateUseCase` behind `authenticated`; the login and refresh use cases; the current-user, change-password and two-factor use cases, when the user of the session no longer exists | 401 | `1001` to `1004` and `1007`, by `reason` |
 | `forbidden` | A use case, when the actor may not do what is asked | 403 | `1005` |
 | `notFound` | A use case, when the repository finds no row | 404 | `3001` |
 | `alreadyExists` | The repository, on the unique index on `email` | 409 | `3002` |
+| `conflict` | A two-factor use case, when the request is fine and the state of the account does not allow it (enabling what is already enabled, for example) | 409 | `3003` |
 | `database` | The repository on an unexpected failure; the read mapper on stored data that does not match the API model | 500 | `4003` |
 | `routeNotFound` | `notFoundHandler` | 404 | `3001` |
 | `malformedBody` | The JSON body parser | 400 | `2002` |
