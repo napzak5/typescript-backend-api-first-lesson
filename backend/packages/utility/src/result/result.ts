@@ -37,6 +37,17 @@ export const Result = {
       .exhaustive()
   },
 
+  /** The outcome of a function that reports failure by throwing, as a Result. */
+  fromThrowable<T>(fn: () => T): Result<T, Error> {
+    try {
+      return Result.success(fn())
+    } catch (error) {
+      return Result.error(
+        error instanceof Error ? error : new Error(String(error)),
+      )
+    }
+  },
+
   async fromPromise<T>(promise: Promise<T>): Promise<Result<T, Error>> {
     try {
       const data = await promise
