@@ -8,7 +8,6 @@
 import type { ModelsCustomerBasicPreferences } from './modelsCustomerBasicPreferences';
 import type { ModelsCustomerGenderType } from './modelsCustomerGenderType';
 import type { ModelsCustomerId } from './modelsCustomerId';
-import type { ModelsCustomerPreferencesResponse } from './modelsCustomerPreferencesResponse';
 import type { ModelsCustomerStatusType } from './modelsCustomerStatusType';
 import type { ModelsHairThicknessType } from './modelsHairThicknessType';
 import type { ModelsHairType } from './modelsHairType';
@@ -16,7 +15,7 @@ import type { ModelsMembershipTierType } from './modelsMembershipTierType';
 import type { ModelsScalpConditionType } from './modelsScalpConditionType';
 
 /**
- * 顧客レスポンス - customers テーブルの公開カラムと、顧客の好み設定(customer_preferences)を返す。
+ * 顧客レスポンス - customers テーブルの公開カラムを返す。スタッフ専用の項目(internalNotes)を含むので、顧客本人には返さない。
  * プロパティ名と null 許可は DB カラムと一致させている。
  * 来店回数やポイントなどの集計値は他の機能が更新し、リクエストでは変更できない
  */
@@ -42,7 +41,7 @@ export interface ModelsCustomerResponse {
      * @nullable
      */
   lastNameKana: string | null;
-  /** 主要連絡先として利用するメールアドレス。削除済みを含むすべての顧客の間で一意 */
+  /** 主要連絡先として利用するメールアドレス。小文字で保存され、削除されていない顧客の間で一意 */
   email: string;
   /** 主要連絡先として利用する電話番号 */
   phoneNumber: string;
@@ -109,18 +108,15 @@ export interface ModelsCustomerResponse {
      * @nullable
      */
   internalNotes: string | null;
+  /** 分類用タグ。顧客をグループ化するためのラベル。タグがない場合は空配列 */
+  tags: string[];
   /**
-     * 分類用タグ。未設定の場合はnull
-     * @nullable
-     */
-  tags: string[] | null;
-  /**
-     * 紹介元顧客ID。紹介ではない場合はnull
+     * 紹介元顧客ID。紹介元の顧客があとで削除されても値は残る。紹介ではない場合はnull
      * @nullable
      */
   referredBy: string | null;
   /**
-     * この顧客が他の顧客を紹介するときに使う紹介コード。顧客の間で一意。未発行の場合はnull
+     * この顧客が他の顧客を紹介するときに使う紹介コード。削除済みを含むすべての顧客の間で一意。未発行の場合はnull
      * @nullable
      */
   referralCode: string | null;
@@ -154,13 +150,8 @@ export interface ModelsCustomerResponse {
   hairThickness: ModelsHairThicknessType | null;
   /** 頭皮の状態。健康状態やケア必要性の分類。未登録の場合はnull */
   scalpCondition: ModelsScalpConditionType | null;
-  /** 顧客ステータス。未設定の場合はnull */
-  customerStatus: ModelsCustomerStatusType | null;
-  /**
-     * 顧客の好み設定。まだ設定されていない場合はnull
-     * @nullable
-     */
-  customerPreferences: ModelsCustomerPreferencesResponse | null;
+  /** 顧客ステータス */
+  customerStatus: ModelsCustomerStatusType;
   /** レコード作成日時(顧客の登録日時) */
   createdAt: string;
   /** レコード最終更新日時 */

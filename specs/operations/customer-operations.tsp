@@ -11,12 +11,12 @@ using TypeSpec.OpenAPI;
 using BeautySalon.Models;
 
 namespace BeautySalon.Operations {
-  @doc("顧客情報の管理とエンゲージメント施策を支えるAPI操作群です。プロフィールから好み設定、統計、個人データの取り扱いまで一貫して扱います。")
+  @doc("顧客台帳を管理するAPI操作群です。台帳はプラットフォーム全体で1つで、サロンごとには分かれていません。実装済みの操作は、一覧・登録・1件の取得・更新・削除です。これらは admin とサロンのスタッフ(owner / manager / staff。所属サロンは問いません)が実行でき、削除は admin と owner / manager だけが実行できます。レスポンスはスタッフ専用の項目を含むので、顧客本人(customer)には403を返します。権限は最初に確認し、権限のないユーザーにはIDや本文が不正でも403を返します。")
   @route("/api/v1/customers")
   @tag("Customers")
   namespace CustomerOperations {
     interface CustomerCrud {
-      @doc("絞り込み条件とページネーションを指定して顧客を一覧取得します。削除済みの顧客は含みません。")
+      @doc("絞り込み条件とページネーションを指定して顧客を一覧取得します。登録日時の新しい順に並びます。削除済みの顧客は含みません。cursorが顧客を指していない場合は400を返します。")
       @summary("List customers")
       @get
       list(...CustomerSearchRequest):
@@ -27,7 +27,7 @@ namespace BeautySalon.Operations {
         | ProblemResponse<400>
         | CommonErrors;
 
-      @doc("顧客を新規登録します。メールアドレスまたは紹介コードが既存の顧客(削除済みを含む)と重複する場合は409を、referredByに存在しない顧客を指定した場合は400を返します。")
+      @doc("顧客を新規登録します。メールアドレスが削除されていない顧客と重複する場合と、紹介コードが既存の顧客(削除済みを含む)と重複する場合は409を、referredByに削除されていない顧客以外を指定した場合は400を返します。")
       @summary("Create a customer")
       @post
       create(@body request: CustomerCreateRequest):
@@ -41,7 +41,7 @@ namespace BeautySalon.Operations {
         | RequestBodyErrors
         | CommonErrors;
 
-      @doc("IDを指定して顧客を1件取得します。好み設定も含めて返します。")
+      @doc("IDを指定して顧客を1件取得します。削除済みの顧客は404を返します。")
       @summary("Get a customer")
       @get
       get(@path id: CustomerId):
@@ -53,7 +53,7 @@ namespace BeautySalon.Operations {
         | ProblemResponse<404>
         | CommonErrors;
 
-      @doc("指定した項目だけを更新します。メールアドレスまたは紹介コードが他の顧客(削除済みを含む)と重複する場合は409を、referredByに存在しない顧客を指定した場合は400を返します。")
+      @doc("指定した項目だけを更新します。メールアドレスが削除されていないほかの顧客と重複する場合と、紹介コードがほかの顧客(削除済みを含む)と重複する場合は409を、referredByに削除されていない顧客以外、またはこの顧客自身を指定した場合は400を返します。")
       @summary("Update a customer")
       @patch
       update(@path id: CustomerId, @body request: CustomerUpdateRequest):
@@ -67,7 +67,7 @@ namespace BeautySalon.Operations {
         | RequestBodyErrors
         | CommonErrors;
 
-      @doc("顧客を論理削除します。削除後は一覧・取得の対象外になります。")
+      @doc("顧客を論理削除します。削除後は一覧・取得の対象外になり、メールアドレスは別の顧客の登録に使えるようになります。admin と、サロンの owner / manager が実行できます。")
       @summary("Delete a customer")
       @delete
       delete(@path id: CustomerId):

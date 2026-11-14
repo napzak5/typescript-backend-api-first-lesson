@@ -163,7 +163,6 @@ const customerRules: ModelRule[] = [
     model: 'Models.CustomerResponse',
     table: 'customers',
     kind: 'response',
-    embedded: ['customerPreferences'],
     omittedColumns: ['deletedAt'],
   },
   {

@@ -43,7 +43,7 @@ export interface ModelsCustomerUpdateRequest {
      */
   lastNameKana?: string | null;
   /**
-     * 主要連絡先として利用するメールアドレス。削除済みを含むすべての顧客の間で一意
+     * 主要連絡先として利用するメールアドレス。小文字にそろえて保存する。削除されていない顧客の間で一意
      * @maxLength 255
      */
   email?: string;
@@ -89,7 +89,7 @@ export interface ModelsCustomerUpdateRequest {
      */
   building?: string | null;
   /**
-     * 生年月日。年齢計算や誕生日特典に使用。nullでクリア
+     * 生年月日。年齢計算や誕生日特典に使用。1900-01-01以降で、未来の日付は指定できない。nullでクリア
      * @nullable
      */
   birthDate?: string | null;
@@ -118,18 +118,15 @@ export interface ModelsCustomerUpdateRequest {
      * @nullable
      */
   internalNotes?: string | null;
+  /** 分類用タグ。指定するとタグの一覧を丸ごと置き換える。同じタグは繰り返せない。空配列でクリア */
+  tags?: string[];
   /**
-     * 分類用タグ。顧客をグループ化するためのラベル。nullでクリア
-     * @nullable
-     */
-  tags?: string[] | null;
-  /**
-     * 紹介元顧客ID。存在する顧客を指定する。nullでクリア
+     * 紹介元顧客ID。削除されていない、この顧客以外の顧客を指定する。nullでクリア
      * @nullable
      */
   referredBy?: string | null;
   /**
-     * この顧客が他の顧客を紹介するときに使う紹介コード。顧客の間で一意。nullでクリア
+     * この顧客が他の顧客を紹介するときに使う紹介コード。削除済みを含むすべての顧客の間で一意。nullでクリア
      * @maxLength 50
      * @nullable
      */
@@ -148,6 +145,6 @@ export interface ModelsCustomerUpdateRequest {
   hairThickness?: ModelsHairThicknessType | null;
   /** 頭皮の状態。健康状態やケア必要性の分類。nullでクリア */
   scalpCondition?: ModelsScalpConditionType | null;
-  /** 顧客ステータス。nullでクリア */
-  customerStatus?: ModelsCustomerStatusType | null;
+  /** 顧客ステータス */
+  customerStatus?: ModelsCustomerStatusType;
 }

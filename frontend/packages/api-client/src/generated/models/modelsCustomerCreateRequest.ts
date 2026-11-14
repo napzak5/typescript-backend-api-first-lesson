@@ -43,7 +43,7 @@ export interface ModelsCustomerCreateRequest {
      */
   lastNameKana: string | null;
   /**
-     * 主要連絡先として利用するメールアドレス。削除済みを含むすべての顧客の間で一意
+     * 主要連絡先として利用するメールアドレス。小文字にそろえて保存する。削除されていない顧客の間で一意
      * @maxLength 255
      */
   email: string;
@@ -89,7 +89,7 @@ export interface ModelsCustomerCreateRequest {
      */
   building: string | null;
   /**
-     * 生年月日。年齢計算や誕生日特典に使用。未登録の場合はnull
+     * 生年月日。年齢計算や誕生日特典に使用。1900-01-01以降で、未来の日付は指定できない。未登録の場合はnull
      * @nullable
      */
   birthDate: string | null;
@@ -118,18 +118,15 @@ export interface ModelsCustomerCreateRequest {
      * @nullable
      */
   internalNotes: string | null;
+  /** 分類用タグ。顧客をグループ化するためのラベル。同じタグは繰り返せない。タグがない場合は空配列 */
+  tags: string[];
   /**
-     * 分類用タグ。顧客をグループ化するためのラベル。未設定の場合はnull
-     * @nullable
-     */
-  tags: string[] | null;
-  /**
-     * 紹介元顧客ID。存在する顧客を指定する。紹介ではない場合はnull
+     * 紹介元顧客ID。削除されていない顧客を指定する。紹介ではない場合はnull
      * @nullable
      */
   referredBy: string | null;
   /**
-     * この顧客が他の顧客を紹介するときに使う紹介コード。顧客の間で一意。未発行の場合はnull
+     * この顧客が他の顧客を紹介するときに使う紹介コード。削除済みを含むすべての顧客の間で一意。未発行の場合はnull
      * @maxLength 50
      * @nullable
      */
@@ -148,6 +145,6 @@ export interface ModelsCustomerCreateRequest {
   hairThickness: ModelsHairThicknessType | null;
   /** 頭皮の状態。健康状態やケア必要性の分類。未登録の場合はnull */
   scalpCondition: ModelsScalpConditionType | null;
-  /** 顧客ステータス。未設定の場合はnull */
-  customerStatus: ModelsCustomerStatusType | null;
+  /** 顧客ステータス */
+  customerStatus: ModelsCustomerStatusType;
 }

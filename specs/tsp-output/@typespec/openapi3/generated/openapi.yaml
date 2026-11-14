@@ -4459,7 +4459,7 @@ paths:
     get:
       operationId: CustomerCrud_list
       summary: List customers
-      description: 絞り込み条件とページネーションを指定して顧客を一覧取得します。削除済みの顧客は含みません。
+      description: 絞り込み条件とページネーションを指定して顧客を一覧取得します。登録日時の新しい順に並びます。削除済みの顧客は含みません。cursorが顧客を指していない場合は400を返します。
       parameters:
         - $ref: '#/components/parameters/Models.CustomerSearchRequest.limit'
         - $ref: '#/components/parameters/Models.CustomerSearchRequest.cursor'
@@ -4550,7 +4550,7 @@ paths:
     post:
       operationId: CustomerCrud_create
       summary: Create a customer
-      description: 顧客を新規登録します。メールアドレスまたは紹介コードが既存の顧客(削除済みを含む)と重複する場合は409を、referredByに存在しない顧客を指定した場合は400を返します。
+      description: 顧客を新規登録します。メールアドレスが削除されていない顧客と重複する場合と、紹介コードが既存の顧客(削除済みを含む)と重複する場合は409を、referredByに削除されていない顧客以外を指定した場合は400を返します。
       parameters: []
       responses:
         '201':
@@ -5331,7 +5331,7 @@ paths:
     get:
       operationId: CustomerCrud_get
       summary: Get a customer
-      description: IDを指定して顧客を1件取得します。好み設定も含めて返します。
+      description: IDを指定して顧客を1件取得します。削除済みの顧客は404を返します。
       parameters:
         - name: id
           in: path
@@ -5428,7 +5428,7 @@ paths:
     patch:
       operationId: CustomerCrud_update
       summary: Update a customer
-      description: 指定した項目だけを更新します。メールアドレスまたは紹介コードが他の顧客(削除済みを含む)と重複する場合は409を、referredByに存在しない顧客を指定した場合は400を返します。
+      description: 指定した項目だけを更新します。メールアドレスが削除されていないほかの顧客と重複する場合と、紹介コードがほかの顧客(削除済みを含む)と重複する場合は409を、referredByに削除されていない顧客以外、またはこの顧客自身を指定した場合は400を返します。
       parameters:
         - name: id
           in: path
@@ -5549,7 +5549,7 @@ paths:
     delete:
       operationId: CustomerCrud_delete
       summary: Delete a customer
-      description: 顧客を論理削除します。削除後は一覧・取得の対象外になります。
+      description: 顧客を論理削除します。削除後は一覧・取得の対象外になり、メールアドレスは別の顧客の登録に使えるようになります。admin と、サロンの owner / manager が実行できます。
       parameters:
         - name: id
           in: path
@@ -17580,7 +17580,7 @@ components:
       name: registeredTo
       in: query
       required: false
-      description: 登録日時(createdAt)の上限による絞り込み。この日時以前に登録された顧客に一致する
+      description: 登録日時(createdAt)の上限による絞り込み。この日時以前に登録された顧客に一致する。registeredFromより前の日時は指定できない
       schema:
         type: string
         format: date-time
@@ -17589,7 +17589,7 @@ components:
       name: search
       in: query
       required: false
-      description: 顧客名(姓・名とそのカナ表記)、メールアドレス、電話番号に対する部分一致キーワード(大文字小文字を区別しない)
+      description: 顧客名(姓・名とそのカナ表記)、メールアドレスに対する部分一致キーワード(大文字小文字を区別しない)。数字・空白・-+()だけのキーワードは、電話番号とも数字だけを取り出して比べる
       schema:
         type: string
         minLength: 1
@@ -20100,7 +20100,7 @@ components:
         email:
           type: string
           maxLength: 255
-          description: 主要連絡先として利用するメールアドレス。削除済みを含むすべての顧客の間で一意
+          description: 主要連絡先として利用するメールアドレス。小文字にそろえて保存する。削除されていない顧客の間で一意
         phoneNumber:
           type: string
           maxLength: 20
@@ -20139,7 +20139,7 @@ components:
           type: string
           format: date
           nullable: true
-          description: 生年月日。年齢計算や誕生日特典に使用。未登録の場合はnull
+          description: 生年月日。年齢計算や誕生日特典に使用。1900-01-01以降で、未来の日付は指定できない。未登録の場合はnull
         gender:
           allOf:
             - $ref: '#/components/schemas/Models.CustomerGenderType'
@@ -20172,19 +20172,18 @@ components:
           type: array
           items:
             type: string
-          nullable: true
-          description: 分類用タグ。顧客をグループ化するためのラベル。未設定の場合はnull
+          description: 分類用タグ。顧客をグループ化するためのラベル。同じタグは繰り返せない。タグがない場合は空配列
         referredBy:
           type: string
           allOf:
             - $ref: '#/components/schemas/Models.CustomerId'
           nullable: true
-          description: 紹介元顧客ID。存在する顧客を指定する。紹介ではない場合はnull
+          description: 紹介元顧客ID。削除されていない顧客を指定する。紹介ではない場合はnull
         referralCode:
           type: string
           nullable: true
           maxLength: 50
-          description: この顧客が他の顧客を紹介するときに使う紹介コード。顧客の間で一意。未発行の場合はnull
+          description: この顧客が他の顧客を紹介するときに使う紹介コード。削除済みを含むすべての顧客の間で一意。未発行の場合はnull
         allowMarketing:
           type: boolean
           description: マーケティング配信を許可するかどうか
@@ -20215,8 +20214,7 @@ components:
         customerStatus:
           allOf:
             - $ref: '#/components/schemas/Models.CustomerStatusType'
-          nullable: true
-          description: 顧客ステータス。未設定の場合はnull
+          description: 顧客ステータス
       description: |-
         顧客新規登録リクエスト - 全項目のキーが必須。DB で NULL 許可のカラムのみ null を指定できる。
         ログインアカウントとの紐づけ、来店回数やポイントなどの集計値は含まない
@@ -20448,7 +20446,7 @@ components:
           nullable: true
           description: 特別なリクエスト。特にない場合はnull
       description: |-
-        顧客の好み設定レスポンス - customer_preferences テーブルの1行。顧客ごとに最大1行で、顧客レスポンスに埋め込んで返す。
+        顧客の好み設定レスポンス - customer_preferences テーブルの1行。顧客ごとに最大1行。
         プロパティ名と null 許可は DB カラムと一致させている
     Models.CustomerPreferencesUpdateRequest:
       type: object
@@ -20531,7 +20529,6 @@ components:
         - hairThickness
         - scalpCondition
         - customerStatus
-        - customerPreferences
         - createdAt
         - updatedAt
       properties:
@@ -20561,7 +20558,7 @@ components:
           description: 姓のカナ表記。未登録の場合はnull
         email:
           type: string
-          description: 主要連絡先として利用するメールアドレス。削除済みを含むすべての顧客の間で一意
+          description: 主要連絡先として利用するメールアドレス。小文字で保存され、削除されていない顧客の間で一意
         phoneNumber:
           type: string
           description: 主要連絡先として利用する電話番号
@@ -20633,18 +20630,17 @@ components:
           type: array
           items:
             type: string
-          nullable: true
-          description: 分類用タグ。未設定の場合はnull
+          description: 分類用タグ。顧客をグループ化するためのラベル。タグがない場合は空配列
         referredBy:
           type: string
           allOf:
             - $ref: '#/components/schemas/Models.CustomerId'
           nullable: true
-          description: 紹介元顧客ID。紹介ではない場合はnull
+          description: 紹介元顧客ID。紹介元の顧客があとで削除されても値は残る。紹介ではない場合はnull
         referralCode:
           type: string
           nullable: true
-          description: この顧客が他の顧客を紹介するときに使う紹介コード。顧客の間で一意。未発行の場合はnull
+          description: この顧客が他の顧客を紹介するときに使う紹介コード。削除済みを含むすべての顧客の間で一意。未発行の場合はnull
         allowMarketing:
           type: boolean
           description: マーケティング配信を許可するかどうか
@@ -20697,14 +20693,7 @@ components:
         customerStatus:
           allOf:
             - $ref: '#/components/schemas/Models.CustomerStatusType'
-          nullable: true
-          description: 顧客ステータス。未設定の場合はnull
-        customerPreferences:
-          type: object
-          allOf:
-            - $ref: '#/components/schemas/Models.CustomerPreferencesResponse'
-          nullable: true
-          description: 顧客の好み設定。まだ設定されていない場合はnull
+          description: 顧客ステータス
         createdAt:
           type: string
           format: date-time
@@ -20714,7 +20703,7 @@ components:
           format: date-time
           description: レコード最終更新日時
       description: |-
-        顧客レスポンス - customers テーブルの公開カラムと、顧客の好み設定(customer_preferences)を返す。
+        顧客レスポンス - customers テーブルの公開カラムを返す。スタッフ専用の項目(internalNotes)を含むので、顧客本人には返さない。
         プロパティ名と null 許可は DB カラムと一致させている。
         来店回数やポイントなどの集計値は他の機能が更新し、リクエストでは変更できない
     Models.CustomerStatisticsResponse:
@@ -20815,7 +20804,7 @@ components:
         email:
           type: string
           maxLength: 255
-          description: 主要連絡先として利用するメールアドレス。削除済みを含むすべての顧客の間で一意
+          description: 主要連絡先として利用するメールアドレス。小文字にそろえて保存する。削除されていない顧客の間で一意
         phoneNumber:
           type: string
           maxLength: 20
@@ -20854,7 +20843,7 @@ components:
           type: string
           format: date
           nullable: true
-          description: 生年月日。年齢計算や誕生日特典に使用。nullでクリア
+          description: 生年月日。年齢計算や誕生日特典に使用。1900-01-01以降で、未来の日付は指定できない。nullでクリア
         gender:
           allOf:
             - $ref: '#/components/schemas/Models.CustomerGenderType'
@@ -20887,19 +20876,18 @@ components:
           type: array
           items:
             type: string
-          nullable: true
-          description: 分類用タグ。顧客をグループ化するためのラベル。nullでクリア
+          description: 分類用タグ。指定するとタグの一覧を丸ごと置き換える。同じタグは繰り返せない。空配列でクリア
         referredBy:
           type: string
           allOf:
             - $ref: '#/components/schemas/Models.CustomerId'
           nullable: true
-          description: 紹介元顧客ID。存在する顧客を指定する。nullでクリア
+          description: 紹介元顧客ID。削除されていない、この顧客以外の顧客を指定する。nullでクリア
         referralCode:
           type: string
           nullable: true
           maxLength: 50
-          description: この顧客が他の顧客を紹介するときに使う紹介コード。顧客の間で一意。nullでクリア
+          description: この顧客が他の顧客を紹介するときに使う紹介コード。削除済みを含むすべての顧客の間で一意。nullでクリア
         allowMarketing:
           type: boolean
           description: マーケティング配信を許可するかどうか
@@ -20930,8 +20918,7 @@ components:
         customerStatus:
           allOf:
             - $ref: '#/components/schemas/Models.CustomerStatusType'
-          nullable: true
-          description: 顧客ステータス。nullでクリア
+          description: 顧客ステータス
       description: |-
         顧客部分更新リクエスト - 指定した項目だけを更新する。DB で NULL 許可のカラムは null でクリアできる。
         ログインアカウントとの紐づけ、来店回数やポイントなどの集計値は変更できない

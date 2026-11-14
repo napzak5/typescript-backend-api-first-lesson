@@ -158,7 +158,7 @@ namespace BeautySalon.Models {
   }
 
   @doc("""
-    顧客レスポンス - customers テーブルの公開カラムと、顧客の好み設定(customer_preferences)を返す。
+    顧客レスポンス - customers テーブルの公開カラムを返す。スタッフ専用の項目(internalNotes)を含むので、顧客本人には返さない。
     プロパティ名と null 許可は DB カラムと一致させている。
     来店回数やポイントなどの集計値は他の機能が更新し、リクエストでは変更できない
     """)
@@ -181,7 +181,7 @@ namespace BeautySalon.Models {
     @doc("姓のカナ表記。未登録の場合はnull")
     lastNameKana: string | null;
 
-    @doc("主要連絡先として利用するメールアドレス。削除済みを含むすべての顧客の間で一意")
+    @doc("主要連絡先として利用するメールアドレス。小文字で保存され、削除されていない顧客の間で一意")
     email: string;
 
     @doc("主要連絡先として利用する電話番号")
@@ -232,13 +232,13 @@ namespace BeautySalon.Models {
     @doc("スタッフ専用の内部メモ。顧客本人に見せることを想定しない情報。メモがない場合はnull")
     internalNotes: string | null;
 
-    @doc("分類用タグ。未設定の場合はnull")
-    tags: string[] | null;
+    @doc("分類用タグ。顧客をグループ化するためのラベル。タグがない場合は空配列")
+    tags: string[];
 
-    @doc("紹介元顧客ID。紹介ではない場合はnull")
+    @doc("紹介元顧客ID。紹介元の顧客があとで削除されても値は残る。紹介ではない場合はnull")
     referredBy: CustomerId | null;
 
-    @doc("この顧客が他の顧客を紹介するときに使う紹介コード。顧客の間で一意。未発行の場合はnull")
+    @doc("この顧客が他の顧客を紹介するときに使う紹介コード。削除済みを含むすべての顧客の間で一意。未発行の場合はnull")
     referralCode: string | null;
 
     @doc("マーケティング配信を許可するかどうか")
@@ -277,11 +277,8 @@ namespace BeautySalon.Models {
     @doc("頭皮の状態。健康状態やケア必要性の分類。未登録の場合はnull")
     scalpCondition: ScalpConditionType | null;
 
-    @doc("顧客ステータス。未設定の場合はnull")
-    customerStatus: CustomerStatusType | null;
-
-    @doc("顧客の好み設定。まだ設定されていない場合はnull")
-    customerPreferences: CustomerPreferencesResponse | null;
+    @doc("顧客ステータス")
+    customerStatus: CustomerStatusType;
 
     @doc("レコード作成日時(顧客の登録日時)")
     createdAt: utcDateTime;
@@ -313,7 +310,7 @@ namespace BeautySalon.Models {
     @maxLength(100)
     lastNameKana: string | null;
 
-    @doc("主要連絡先として利用するメールアドレス。削除済みを含むすべての顧客の間で一意")
+    @doc("主要連絡先として利用するメールアドレス。小文字にそろえて保存する。削除されていない顧客の間で一意")
     @maxLength(255)
     email: string;
 
@@ -345,7 +342,7 @@ namespace BeautySalon.Models {
     @maxLength(255)
     building: string | null;
 
-    @doc("生年月日。年齢計算や誕生日特典に使用。未登録の場合はnull")
+    @doc("生年月日。年齢計算や誕生日特典に使用。1900-01-01以降で、未来の日付は指定できない。未登録の場合はnull")
     birthDate: plainDate | null;
 
     @doc("顧客の性別。未登録または非公開の場合はnull")
@@ -367,13 +364,13 @@ namespace BeautySalon.Models {
     @doc("スタッフ専用の内部メモ。顧客本人に見せることを想定しない情報。メモがない場合はnull")
     internalNotes: string | null;
 
-    @doc("分類用タグ。顧客をグループ化するためのラベル。未設定の場合はnull")
-    tags: string[] | null;
+    @doc("分類用タグ。顧客をグループ化するためのラベル。同じタグは繰り返せない。タグがない場合は空配列")
+    tags: string[];
 
-    @doc("紹介元顧客ID。存在する顧客を指定する。紹介ではない場合はnull")
+    @doc("紹介元顧客ID。削除されていない顧客を指定する。紹介ではない場合はnull")
     referredBy: CustomerId | null;
 
-    @doc("この顧客が他の顧客を紹介するときに使う紹介コード。顧客の間で一意。未発行の場合はnull")
+    @doc("この顧客が他の顧客を紹介するときに使う紹介コード。削除済みを含むすべての顧客の間で一意。未発行の場合はnull")
     @maxLength(50)
     referralCode: string | null;
 
@@ -398,8 +395,8 @@ namespace BeautySalon.Models {
     @doc("頭皮の状態。健康状態やケア必要性の分類。未登録の場合はnull")
     scalpCondition: ScalpConditionType | null;
 
-    @doc("顧客ステータス。未設定の場合はnull")
-    customerStatus: CustomerStatusType | null;
+    @doc("顧客ステータス")
+    customerStatus: CustomerStatusType;
   }
 
   @doc("""
@@ -425,7 +422,7 @@ namespace BeautySalon.Models {
     @maxLength(100)
     lastNameKana?: string | null;
 
-    @doc("主要連絡先として利用するメールアドレス。削除済みを含むすべての顧客の間で一意")
+    @doc("主要連絡先として利用するメールアドレス。小文字にそろえて保存する。削除されていない顧客の間で一意")
     @maxLength(255)
     email?: string;
 
@@ -457,7 +454,7 @@ namespace BeautySalon.Models {
     @maxLength(255)
     building?: string | null;
 
-    @doc("生年月日。年齢計算や誕生日特典に使用。nullでクリア")
+    @doc("生年月日。年齢計算や誕生日特典に使用。1900-01-01以降で、未来の日付は指定できない。nullでクリア")
     birthDate?: plainDate | null;
 
     @doc("顧客の性別。nullでクリア")
@@ -479,13 +476,13 @@ namespace BeautySalon.Models {
     @doc("スタッフ専用の内部メモ。顧客本人に見せることを想定しない情報。nullでクリア")
     internalNotes?: string | null;
 
-    @doc("分類用タグ。顧客をグループ化するためのラベル。nullでクリア")
-    tags?: string[] | null;
+    @doc("分類用タグ。指定するとタグの一覧を丸ごと置き換える。同じタグは繰り返せない。空配列でクリア")
+    tags?: string[];
 
-    @doc("紹介元顧客ID。存在する顧客を指定する。nullでクリア")
+    @doc("紹介元顧客ID。削除されていない、この顧客以外の顧客を指定する。nullでクリア")
     referredBy?: CustomerId | null;
 
-    @doc("この顧客が他の顧客を紹介するときに使う紹介コード。顧客の間で一意。nullでクリア")
+    @doc("この顧客が他の顧客を紹介するときに使う紹介コード。削除済みを含むすべての顧客の間で一意。nullでクリア")
     @maxLength(50)
     referralCode?: string | null;
 
@@ -510,12 +507,13 @@ namespace BeautySalon.Models {
     @doc("頭皮の状態。健康状態やケア必要性の分類。nullでクリア")
     scalpCondition?: ScalpConditionType | null;
 
-    @doc("顧客ステータス。nullでクリア")
-    customerStatus?: CustomerStatusType | null;
+    @doc("顧客ステータス")
+    customerStatus?: CustomerStatusType;
   }
 
   @doc("""
-    顧客一覧・検索リクエスト - 絞り込み条件とページネーションを指定する。条件はすべて AND で結合する
+    顧客一覧・検索リクエスト - 絞り込み条件とページネーションを指定する。条件はすべて AND で結合する。
+    並びは登録日時の新しい順
     """)
   model CustomerSearchRequest {
     @query
@@ -529,7 +527,7 @@ namespace BeautySalon.Models {
     cursor?: string;
 
     @query
-    @doc("顧客名(姓・名とそのカナ表記)、メールアドレス、電話番号に対する部分一致キーワード(大文字小文字を区別しない)")
+    @doc("顧客名(姓・名とそのカナ表記)、メールアドレスに対する部分一致キーワード(大文字小文字を区別しない)。数字・空白・-+()だけのキーワードは、電話番号とも数字だけを取り出して比べる")
     @minLength(1)
     @maxLength(100)
     search?: string;
@@ -543,7 +541,7 @@ namespace BeautySalon.Models {
     registeredFrom?: utcDateTime;
 
     @query
-    @doc("登録日時(createdAt)の上限による絞り込み。この日時以前に登録された顧客に一致する")
+    @doc("登録日時(createdAt)の上限による絞り込み。この日時以前に登録された顧客に一致する。registeredFromより前の日時は指定できない")
     registeredTo?: utcDateTime;
 
     @query
@@ -577,7 +575,7 @@ namespace BeautySalon.Models {
   }
 
   @doc("""
-    顧客の好み設定レスポンス - customer_preferences テーブルの1行。顧客ごとに最大1行で、顧客レスポンスに埋め込んで返す。
+    顧客の好み設定レスポンス - customer_preferences テーブルの1行。顧客ごとに最大1行。
     プロパティ名と null 許可は DB カラムと一致させている
     """)
   model CustomerPreferencesResponse {
