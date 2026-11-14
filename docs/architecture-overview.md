@@ -35,11 +35,12 @@ Before relying on anything, check this table.
 | Area | State |
 |------|-------|
 | Salon API (`/api/v1/salons`) | Implemented in every layer: list, create, get, update, delete. It is the reference implementation for every other domain. List and get are public; create, update and delete need a signed-in user with the permission. |
-| Service categories of a salon (`/api/v1/salons/{salonId}/service-categories`) | Implemented in every layer: list, create, get, update, delete, the five operations of `ServiceCategoryCrud`. They are the part of the Service domain that is implemented, and the example of data that belongs to a salon: the routes are below the salon, and a category that is not of the salon in the path is answered with 404. List and get are public; create, update and delete need a signed-in user with the permission. See [Service Menu](./service-menu.md) (Japanese). |
+| Service categories of a salon (`/api/v1/salons/{salonId}/service-categories`) | Implemented in every layer: list, create, get, update, delete, the five operations of `ServiceCategoryCrud`. They are the example of data that belongs to a salon: the routes are below the salon, and a category that is not of the salon in the path is answered with 404. List and get are public; create, update and delete need a signed-in user with the permission. See [Service Menu](./service-menu.md) (Japanese). |
+| Services of a salon (`/api/v1/salons/{salonId}/services`) | Implemented in every layer: list, create, get, update, bulk update, delete, the six operations of `ServiceCrud`. A service carries its options (the rows of `service_options`) in its requests and responses, and a package names the services it combines. The bulk update changes all the services it names or none of them. A delete keeps the row and marks it with `deletedAt`, and is refused with 409 while a package contains the service. List and get are public; create, update, bulk update and delete need a signed-in user with the permission. `isActive`, `serviceStatus`, `availability`, `bookingRequirements` and `maxBookingsPerDay` are stored and returned, and the list can filter by `isActive`; nothing else reads them: which services can be booked is not decided yet. See [Service Menu](./service-menu.md) (Japanese). |
 | Authentication (`/api/v1/auth`, `/api/v1/admin/auth`) | Implemented: `login`, `refresh`, `logout`, `logout-all` and `me`, on server-side sessions with opaque bearer tokens, and registration of customer accounts, email verification and password reset, each through a single-use token sent by mail, and password change, and two-factor authentication with the one-time passwords of an authenticator app (TOTP) and backup codes, and the list of the signed-in user's sessions with the revocation of one of them, and under `/api/v1/admin/auth` the administrator operations: read a user, unlock an account, reset two-factor authentication. That is every operation in `specs/operations/auth-operations.tsp`: the 16 of `AuthCrud`, the 2 of `SessionCrud` and the 3 of `AdminAuthCrud`. See [Authentication and Authorization](./authentication.md). |
-| Authorization | Implemented for the Salon API (create, update, delete), for the service categories of a salon (create, update, delete) and for the administrator operations. An implemented operation that the contract does not mark `@useAuth(NoAuth)` needs a valid access token, and its use case decides whether the signed-in user may do what is asked. |
+| Authorization | Implemented for the Salon API (create, update, delete), for the service categories of a salon (create, update, delete), for the services of a salon (create, update, bulk update, delete) and for the administrator operations. An implemented operation that the contract does not mark `@useAuth(NoAuth)` needs a valid access token, and its use case decides whether the signed-in user may do what is asked. |
 | System endpoints (`/api/system`) | Implemented: `alive`, `ready` and `health`. |
-| The services of a salon (`ServiceCrud`, `/api/v1/salons/{salonId}/services`) and the other domains (staff, customer, booking, review, treatment, payment, inventory) | Specified in TypeSpec, so their generated types exist, and the database schema has their tables and seed data. The models agree with the tables (`pnpm check:api-db`). There is no domain, repository or route code. A request to one of these routes is answered with 404. The implementation order is in GitHub issue #4. |
+| The other domains (staff, customer, booking, review, treatment, payment, inventory) | Specified in TypeSpec, so their generated types exist, and the database schema has their tables and seed data. The models agree with the tables (`pnpm check:api-db`). There is no domain, repository or route code. A request to one of these routes is answered with 404. The implementation order is in GitHub issue #4. |
 | Attachments, roles and permissions, purchase orders, medical charts | Specified in TypeSpec only. No table exists for them yet. |
 | Email | Implemented for the mails of the authentication flows (confirm the address, reset the password, and the notices: the password was changed, two-factor authentication was enabled, disabled or turned off by an administrator, the backup codes were replaced, a backup code was used to sign in): plain text over SMTP. Docker Compose starts Mailpit, which catches them locally. See [Email](./email.md) (Japanese). |
 | File storage | Not implemented. Docker Compose starts no service for it. |
@@ -134,8 +135,9 @@ Salon files show the pattern:
 domain/src/
 ├── models/salon.ts                    ID, API and database types
 ├── schemas/salon.schema.ts            Zod schema of each request
-├── schemas/rules.ts                   nonBlankText, atLeastOneProperty (the schemas of
-│                                      more than one domain)
+├── schemas/rules.ts                   nonBlankText, MAX_INTEGER, noRepeatedEntries,
+│                                      atLeastOneProperty (the schemas of more than one
+│                                      domain)
 ├── mappers/write/salon.mapper.ts      API request → rows
 ├── mappers/read/salon.mapper.ts       Rows → API response
 ├── mappers/read/columns.ts            numericSchema, timestampSchema (every read mapper)
@@ -222,6 +224,34 @@ api/src/
                                        index.ts (router, mounted below /salons/:salonId)
 ```
 
+The services of a salon are laid out like its service categories. What
+differs comes from their options, their packages and the bulk update:
+
+```
+domain/src/
+├── models/service.ts                  ServiceId, API and database types, a service with
+│                                      its options (ServiceWithOptions)
+├── schemas/service.schema.ts          Zod schema of each request
+├── mappers/write/service.mapper.ts    API request → rows of two tables, the service and
+│                                      its options. No column needs converting
+├── mappers/read/service.mapper.ts     Rows → API response
+├── repositories/service.repository.ts IServiceRepository; what became of a write is a
+│                                      sum type (ServiceCreation, ServiceUpdate,
+│                                      ServiceBulkUpdate, ServiceDeletion)
+└── business-logic/service/            One *.usecase.ts per operation; _shared/ holds the
+                                       dependencies, who may (authorization.ts), the rules
+                                       that tie two properties together (rules.ts) and the
+                                       error for each refusal of the repository
+                                       (refusals.ts)
+
+infrastructure/src/
+└── repositories/service.repository.impl.ts
+
+api/src/
+└── routes/service/                    One *.handler.ts per operation of ServiceCrud,
+                                       index.ts (router, mounted below /salons/:salonId)
+```
+
 ## Layers and Package Dependencies
 
 An arrow means "depends on":
@@ -254,8 +284,8 @@ to the contract surfaces as a type error in the mappers.
 Use cases and domain logic live in one package, `domain`. It imports nothing
 that performs I/O: from `database` it imports types only, and it reaches the
 database through repository interfaces (`ISalonRepository`,
-`IServiceCategoryRepository`, `IUserRepository`, `ISessionRepository`), which
-`infrastructure` implements. Password hashing,
+`IServiceCategoryRepository`, `IServiceRepository`, `IUserRepository`,
+`ISessionRepository`), which `infrastructure` implements. Password hashing,
 token generation, the one-time passwords of two-factor authentication and
 mail are behind interfaces in the same way (`IPasswordHasher`,
 `ITokenIssuer`, `ITwoFactorAuthenticator`, `IMailer`), and the current time
@@ -269,7 +299,7 @@ without a database, a real hash, an authenticator app or a mail server.
 | `config` | `loadEnvFile`, `parseAppConfig` | `utility` |
 | `database` | `schema.ts`, `relations.ts`, `sql/`, the `db:*` scripts, seeds | `config`, `utility` |
 | `domain` | Models, schemas, mappers, use cases, repository and service interfaces, `DomainError` | `database` (types), `generated`, `utility` |
-| `infrastructure` | `connectDatabase`, `pingDatabase`, `SalonRepository`, `ServiceCategoryRepository`, `UserRepository`, `SessionRepository`, `Argon2PasswordHasher`, `RandomTokenIssuer`, `TotpAuthenticator`, `SmtpMailer`, `createLogger` | `database`, `domain`, `utility` |
+| `infrastructure` | `connectDatabase`, `pingDatabase`, `SalonRepository`, `ServiceCategoryRepository`, `ServiceRepository`, `UserRepository`, `SessionRepository`, `Argon2PasswordHasher`, `RandomTokenIssuer`, `TotpAuthenticator`, `SmtpMailer`, `createLogger` | `database`, `domain`, `utility` |
 | `api` | `createApp`, middleware, routes, authentication of a request, problem details | `domain`, `generated`, `infrastructure`, `utility`; `database` in tests |
 | `server` (application) | Entry point and `startServer` | `api`, `config`, `domain`, `infrastructure`, `utility` |
 
@@ -338,11 +368,14 @@ The backend consumes the generated types in two places per domain:
 Authentication does the same in `backend/packages/domain/src/models/auth.ts`,
 `backend/packages/domain/src/schemas/auth.schema.ts`,
 `backend/packages/api/src/routes/auth/_shared/types.ts` and
-`backend/packages/api/src/routes/admin-auth/_shared/types.ts`, and the
+`backend/packages/api/src/routes/admin-auth/_shared/types.ts`, the
 service categories in
 `backend/packages/domain/src/models/service-category.ts`,
 `backend/packages/domain/src/schemas/service-category.schema.ts` and
-`backend/packages/api/src/routes/service-category/_shared/types.ts`.
+`backend/packages/api/src/routes/service-category/_shared/types.ts`, and the
+services in `backend/packages/domain/src/models/service.ts`,
+`backend/packages/domain/src/schemas/service.schema.ts` and
+`backend/packages/api/src/routes/service/_shared/types.ts`.
 
 Model naming and nullability rules are in
 [TypeSpec API Type Rules](./typespec-api-type-rules.md); the pipeline in
@@ -428,8 +461,9 @@ mounts everything in this order. The order is part of the design:
    JSON is rejected with 415, and a body over 100 kB with 413.
 6. The authentication router at `/api/v1/auth`, the router of the
    administrator operations at `/api/v1/admin/auth`, the Salon router at
-   `/api/v1/salons` and the router of the service categories at
-   `/api/v1/salons/:salonId/service-categories`. Each receives
+   `/api/v1/salons`, the router of the service categories at
+   `/api/v1/salons/:salonId/service-categories` and the router of the
+   services at `/api/v1/salons/:salonId/services`. Each receives
    `authenticated`, which `createAuthenticated` builds once from the
    authentication dependencies.
 7. `notFoundHandler` and `errorHandler`: turn what is left over into problem
@@ -528,7 +562,43 @@ through the layers, with one use case per operation
 - **Order of the list.** The list is in the order a menu shows the
   categories: by `displayOrder`, then by ID.
 
-The rules of the service categories are in
+The services of a salon (`/api/v1/salons/{salonId}/services`,
+`business-logic/service/`) are built the same way: the salon of the path,
+the permission from the path (`mayManageServices`), `requireSalon`, a
+repository whose every method takes the salon ID, and a list in the order of
+a menu, by `sortOrder`, then by ID. They add what the categories do not
+have:
+
+- **A write mapper for two tables.** A request holds the service and its
+  options. No column needs converting, but `ServiceWriteMapper`
+  (`mappers/write/service.mapper.ts`) tells the row of `services` from the
+  rows of `service_options`, and says for an update whether the options are
+  kept or replaced.
+- **Rules that tie two properties together.** A discounted price is not
+  above the price; a package names at least two member services, and a
+  service that is not a package names none. An update names only some
+  properties, so such a rule has to hold for the service as it will be
+  stored. `serviceRuleIssues`
+  (`business-logic/service/_shared/rules.ts`) is a pure function: the create
+  use case calls it on the request, and the repository calls it inside the
+  transaction of an update, on the stored row with the changes applied.
+- **More than one refusal.** The repository answers a write with a sum type
+  (`ServiceCreation`, `ServiceUpdate`, `ServiceBulkUpdate`,
+  `ServiceDeletion` in `repositories/service.repository.ts`): what was
+  stored, or why nothing was. `toRefusalError`
+  (`business-logic/service/_shared/refusals.ts`) is the one place that turns
+  a refusal of a create or an update into the error the client gets.
+- **A bulk update.** `PATCH /bulk` applies the same changes to as many as
+  100 services in one transaction, to all of them or to none. The router
+  registers `/bulk` before `/:id`, which would otherwise take `bulk` for the
+  ID of a service.
+- **A soft delete.** A delete sets `deletedAt` and the row stays. A deleted
+  service is answered like one that does not exist, but the cursor of the
+  list may still name it: the page starts after the place the row holds. A
+  service that a package contains is not deleted; the answer is `conflict`,
+  409.
+
+The rules of the service categories and of the services are in
 [Service Menu](./service-menu.md), who may change them in
 [Authentication and Authorization](./authentication.md) (both Japanese).
 
@@ -595,12 +665,12 @@ returns the body the contract defines for it, not problem details.
 
 | Kind | Raised by | Status |
 |------|-----------|--------|
-| `validation` | A use case, when the input breaks a rule of its Zod schema; an authentication use case, also for a rule the schema cannot check (a new password on the blocklist or equal to the current one, a current password that is wrong, a mailed token that cannot be used, a code of two-factor authentication that is not accepted, a cursor of the session list that names no session of the user); a service category use case, for a parent that is not a category of the same salon or that is the category itself or one below it, and for a cursor that names no category of the salon; a list handler, when a query parameter cannot be read as its type | 400 |
+| `validation` | A use case, when the input breaks a rule of its Zod schema; an authentication use case, also for a rule the schema cannot check (a new password on the blocklist or equal to the current one, a current password that is wrong, a mailed token that cannot be used, a code of two-factor authentication that is not accepted, a cursor of the session list that names no session of the user); a service category use case, for a parent that is not a category of the same salon or that is the category itself or one below it, and for a cursor that names no category of the salon; a service use case, for a service that would break a rule tying two of its properties together (a discounted price above the price, member services that do not fit `isPackage`), for a category that is not of the same salon, for a member of a package that is not a service of the same salon, is a package or is the service itself, for making a package of a service that a package contains, and for a cursor that names no service of the salon; a list handler, when a query parameter cannot be read as its type | 400 |
 | `unauthenticated` | `AuthenticateUseCase`, when the request carries no access token that works; the login and refresh use cases, when the credentials are not accepted, which for login includes a missing or refused code of two-factor authentication; the current-user, change-password and two-factor use cases, when the user of the session no longer exists | 401, with a `WWW-Authenticate: Bearer` header |
 | `forbidden` | A use case, when the signed-in user may not do what is asked | 403 |
-| `notFound` | A use case, when what the ID in the path names is not there: a salon or a user that does not exist or is deleted, a service category that does not exist or is not of the salon in the path, a session that is not one of the signed-in user's own sessions that have not ended | 404 |
+| `notFound` | A use case, when what the ID in the path names is not there: a salon or a user that does not exist or is deleted, a service category that does not exist or is not of the salon in the path, a service that does not exist, is deleted or is not of the salon in the path, a session that is not one of the signed-in user's own sessions that have not ended | 404 |
 | `alreadyExists` | The repository, when the unique index on `email` is violated | 409 |
-| `conflict` | A two-factor use case or the use case of an administrator operation, when the state of the account does not allow the operation: enabling what is enabled, confirming when no set-up is under way, disabling, resetting or replacing backup codes when it is not enabled, unlocking an account that is not locked | 409 |
+| `conflict` | A two-factor use case or the use case of an administrator operation, when the state of the account does not allow the operation: enabling what is enabled, confirming when no set-up is under way, disabling, resetting or replacing backup codes when it is not enabled, unlocking an account that is not locked; the use case that deletes a service, when a package contains the service | 409 |
 | `database` | The repository, when a query fails; the read mapper, when a stored row does not match the API model | 500 |
 | `routeNotFound` | `notFoundHandler` | 404 |
 | `malformedBody`, `badRequest` | `errorHandler`, from what the body parser or Express raised | 400 |
@@ -639,10 +709,10 @@ is where each one lives in the code:
 What protects the API today: security headers, the origin allow-list, the
 rate limit, the body size limit, strict validation that rejects unknown
 properties, and bearer-token authentication with a permission check on the
-operations that change a salon or its service categories and on the
-administrator operations. The system endpoints, the salon list, a
-single salon, the service categories of a salon and the authentication
-operations a signed-out user needs
+operations that change a salon, its service categories or its services and
+on the administrator operations. The system endpoints, the salon list, a
+single salon, the service categories and the services of a salon and the
+authentication operations a signed-out user needs
 (register, login, refresh, email verification, password reset) are open to
 anyone who can reach the server.
 See [Authentication and Authorization](./authentication.md).

@@ -7,7 +7,7 @@
 - [アーキテクチャ概要](./architecture-overview.md): システム全体の説明。パッケージの依存関係、型生成の流れ、リクエストの流れ、実装済みの範囲はそちらにあり、本書では繰り返しません。
 - [CLAUDE.md](../CLAUDE.md): 規約とコマンドの正本。Salon ドメインの全レイヤーのシグネチャもそこにまとまっています。本書は規約の適用のしかたと理由を説明します。
 
-バックエンドで実装済みなのは、Salon ドメイン、サロンのサービスカテゴリー（`/api/v1/salons/{salonId}/service-categories`）、認証のすべてのオペレーション（ログイン、トークンの再発行、ログアウト、全セッションのログアウト、自分の情報の取得、ユーザー登録、メールアドレスの確認、パスワードの再設定と変更、2 要素認証、セッションの一覧と無効化、管理者の操作）、システムエンドポイントだけです。ほかのドメインを実装するときは、Salon のファイルと同じ構成で書いてください。データが 1 つのサロンに属するドメインでは、書き方がいくつか変わります。その例がサービスカテゴリーで、違いは「[9. サロンに属するデータ](#9-サロンに属するデータ-サロンはパスで受け取る)」にまとめています。認証と認可の仕様は [認証と認可](./authentication.md)、サービスカテゴリーの規則は [サービスメニュー](./service-menu.md) にあり、本書ではコードの書き方だけを扱います。
+バックエンドで実装済みなのは、Salon ドメイン、サロンのサービスカテゴリー（`/api/v1/salons/{salonId}/service-categories`）、サロンのサービス（`/api/v1/salons/{salonId}/services`）、認証のすべてのオペレーション（ログイン、トークンの再発行、ログアウト、全セッションのログアウト、自分の情報の取得、ユーザー登録、メールアドレスの確認、パスワードの再設定と変更、2 要素認証、セッションの一覧と無効化、管理者の操作）、システムエンドポイントだけです。ほかのドメインを実装するときは、Salon のファイルと同じ構成で書いてください。データが 1 つのサロンに属するドメインでは、書き方がいくつか変わります。その例がサービスカテゴリーで、違いは「[9. サロンに属するデータ](#9-サロンに属するデータ-サロンはパスで受け取る)」にまとめています。サービスカテゴリーにはなくサービスにあるもの（2 つのテーブルの行を含むリクエスト、2 つの項目を結ぶ規則、一括更新、論理削除）も、同じ節にあります。認証と認可の仕様は [認証と認可](./authentication.md)、サービスカテゴリーとサービスの規則は [サービスメニュー](./service-menu.md) にあり、本書ではコードの書き方だけを扱います。
 
 ---
 
@@ -43,7 +43,7 @@
 |----------|----------|--------------------|
 | 型（ID・API 型・DB 型） | `domain/src/models/<domain>.ts` | `backend/packages/domain/src/models/salon.ts` |
 | リクエストの検証スキーマ | `domain/src/schemas/<domain>.schema.ts` | `backend/packages/domain/src/schemas/salon.schema.ts` |
-| API → DB の変換（変換が必要な列があるときだけ） | `domain/src/mappers/write/<domain>.mapper.ts` | `backend/packages/domain/src/mappers/write/salon.mapper.ts` |
+| API → DB の変換（変換が必要な列があるとき、またはリクエストが複数のテーブルの行を含むときだけ） | `domain/src/mappers/write/<domain>.mapper.ts` | `backend/packages/domain/src/mappers/write/salon.mapper.ts` |
 | DB → API の変換 | `domain/src/mappers/read/<domain>.mapper.ts` | `backend/packages/domain/src/mappers/read/salon.mapper.ts` |
 | リポジトリのインターフェース | `domain/src/repositories/<domain>.repository.ts` | `backend/packages/domain/src/repositories/salon.repository.ts` |
 | ユースケース（1操作1ファイル） | `domain/src/business-logic/<domain>/<action>-<domain>.usecase.ts` | `backend/packages/domain/src/business-logic/salon/create-salon.usecase.ts` ほか4つ |
@@ -58,7 +58,7 @@
 
 - `backend/packages/domain/src/shared`: `DomainError`、`DomainErrors`、`parseWith`
 - `backend/packages/domain/src/models/auth.ts`: 操作者を表す `Actor` と `ActorScope`
-- `backend/packages/domain/src/schemas/rules.ts`: 複数のドメインのリクエストスキーマが共通で使うルール（`nonBlankText`、`atLeastOneProperty`）
+- `backend/packages/domain/src/schemas/rules.ts`: 複数のドメインのリクエストスキーマが共通で使うルール（`nonBlankText`、`MAX_INTEGER`、`noRepeatedEntries`、`atLeastOneProperty`）
 - `backend/packages/domain/src/models/salon.ts` の `parseSalonIdOfPath` と `backend/packages/domain/src/business-logic/_shared/existing-salon.ts` の `requireSalon`: サロンの下にあるルートのユースケースが、パスのサロン ID を検証し、サロンが存在することを確かめるのに使う
 - `backend/packages/domain/src/mappers/read/columns.ts`: Read マッパーが共通で使う列の変換（`numericSchema`、`timestampSchema`）
 - `backend/packages/infrastructure/src/database/attempt.ts`: 想定している失敗がないクエリを `Result` に変える `attempt`
@@ -143,8 +143,8 @@ export const atLeastOneProperty = (
 - オブジェクトは `z.strictObject` で定義し、未知のプロパティを拒否します。
 - 文字数の上限は DB の列の長さに、`.nullable()` は DB の NULL 許可に合わせます。
 - Create は全プロパティ必須です（値は `null` でもよい）。Update は Create のスキーマに `.exactPartial()` を付けて全プロパティを省略可能にし、`.check(atLeastOneProperty)` でプロパティが 1 つもないリクエストを拒否します。Search の絞り込み条件は `.exactOptional()` で省略可能にします。
-- 複数の項目にまたがるルールは `.check()` に書き、`context.issues.push` で項目のパスを付けて報告します。
-- 複数のドメインのスキーマが共通で使うルールは `backend/packages/domain/src/schemas/rules.ts` にあります。空白だけの文字列を拒否する `nonBlankText` と、上の `atLeastOneProperty` です。ドメインごとに書き直しません。
+- 複数の項目にまたがるルールは `.check()` に書き、`context.issues.push` で項目のパスを付けて報告します。ただし、部分更新で片方だけを指定できる 2 つの項目を結ぶルールは、リクエストだけでは判定できないので、スキーマには書きません（[9. サロンに属するデータ](#9-サロンに属するデータ-サロンはパスで受け取る) のサービスの `serviceRuleIssues`）。
+- 複数のドメインのスキーマが共通で使うルールは `backend/packages/domain/src/schemas/rules.ts` にあります。空白だけの文字列を拒否する `nonBlankText`、`integer` 列の最大値である `MAX_INTEGER`、同じ値を重ねて指定できない配列のための `noRepeatedEntries`、上の `atLeastOneProperty` です。ドメインごとに書き直しません。
 - スキーマが扱うのは、入力だけで判定できるルールです。DB を見ないと分からないこと（メールアドレスの重複）は、一意制約に任せてリポジトリが報告します。
 
 検証は `parseWith` で実行します。破られたルールはすべて `ValidationIssue`（`field`・`rule`・`message`）になり、`validation` エラーとして返ります。
@@ -226,7 +226,7 @@ const toApiSalon = (
 - `null` を空文字や既定値に置き換えません。
 - Read マッパーは `Result` を返します。保存されているデータが API モデルに合わない場合は、クライアントの誤りではないので `validation` ではなく `database` エラーにします。
 - Update では、リクエストに存在するプロパティだけを変更にします（`fromUpdateRequest`）。プロパティがなければその列に触れず、`null` なら列を NULL にします。
-- Write マッパーを書くのは、表現を変える列があるときだけです。サービスカテゴリーにはありません。リクエストのプロパティがそのまま列で、どの列も API と DB で表現が同じなので、検証済みのリクエストをそのままリポジトリに渡します（`backend/packages/domain/src/models/service-category.ts` の `ServiceCategoryManagedColumn` のコメント）。
+- Write マッパーを書くのは、表現を変える列があるときと、リクエストが複数のテーブルの行を含むときだけです。サービスカテゴリーにはどちらもありません。リクエストのプロパティがそのまま列で、どの列も API と DB で表現が同じなので、検証済みのリクエストをそのままリポジトリに渡します（`backend/packages/domain/src/models/service-category.ts` の `ServiceCategoryManagedColumn` のコメント）。サービスにも表現を変える列はありませんが、リクエストがサービスの行とオプション（`service_options`）の行を含むので、`ServiceWriteMapper`（`backend/packages/domain/src/mappers/write/service.mapper.ts`）がその 2 つを分けます。
 
 ### 4. リポジトリインターフェース: DB 型と Result で宣言する
 
@@ -235,7 +235,7 @@ const toApiSalon = (
 - 引数と戻り値は DB 型（`DbNewSalon`、`SalonWithOpeningHours` など）です。API 型は使いません。
 - すべてのメソッドが `Promise<Result<T, DomainError>>` を返します。
 - 「見つからない」はエラーにせず、`null`（`findById`・`update`）や `false`（`delete`）で返します。それを `notFound` にするのはユースケースです。
-- `null` や `false` では区別できない結果は Sum 型で返します。サービスカテゴリーの `update` の結果は `updated`・`notFound`・`parentNotFound`・`parentWithinSubtree` のどれか（`backend/packages/domain/src/repositories/service-category.repository.ts` の `ServiceCategoryUpdate`）で、ユースケースが `match` で網羅します。
+- `null` や `false` では区別できない結果は Sum 型で返します。サービスカテゴリーの `update` の結果は `updated`・`notFound`・`parentNotFound`・`parentWithinSubtree` のどれか（`backend/packages/domain/src/repositories/service-category.repository.ts` の `ServiceCategoryUpdate`）で、ユースケースが `match` で網羅します。サービスの書き込みは、拒否の理由がさらに多くなります（`backend/packages/domain/src/repositories/service.repository.ts` の `ServiceWriteRefusal`、`ServiceChangeRefusal`）。作成・更新・一括更新の拒否をクライアントに返すエラーに変えるのは、`backend/packages/domain/src/business-logic/service/_shared/refusals.ts` の `toRefusalError` の 1 か所です。
 - 一覧の条件は `SalonListCriteria` のように専用の型で受け取り、「`null` は絞り込まない」ことを型で表します。
 - 論理削除された行（`deletedAt`）は、どのメソッドからも見えません。書き込みは原子的で、サロンと営業日カレンダーは同時に変わるか、どちらも変わりません。
 
@@ -348,12 +348,12 @@ export class SalonRepository implements ISalonRepository {
 ```
 
 - クエリは `attempt` で包みます。ドライバーが投げた例外は `Result.fromPromise` が `Result` に変え、`toDomainError` が `DomainError` に変えます。リポジトリ自身は `try`/`catch` を書きません。
-- 想定している失敗だけを個別のエラーにします。Salon では `email` の一意制約違反が `alreadyExists` になり、それ以外はすべて `database` です。個別にするエラーがないリポジトリ（`user.repository.impl.ts`、`session.repository.impl.ts`、`service-category.repository.impl.ts`）は、共通の `attempt(message, run)`（`backend/packages/infrastructure/src/database/attempt.ts`）を使います。
+- 想定している失敗だけを個別のエラーにします。Salon では `email` の一意制約違反が `alreadyExists` になり、それ以外はすべて `database` です。個別にするエラーがないリポジトリ（`user.repository.impl.ts`、`session.repository.impl.ts`、`service-category.repository.impl.ts`、`service.repository.impl.ts`）は、共通の `attempt(message, run)`（`backend/packages/infrastructure/src/database/attempt.ts`）を使います。
 - `database` エラーの `cause` には `describeDatabaseError`（`backend/packages/infrastructure/src/database/failure.ts`）の結果を入れます。SQL 文と SQLSTATE は残し、バインドされた値は残しません。顧客のデータがログに出ないようにするためです。
 - 複数のテーブルに書き込むときは `this.db.transaction` を使います（`create`・`update`）。
 - 配列の先頭は `const [row] = ...` で取り出し、`row === undefined` を確認します。
-- 一覧はキーセットページネーションです。`(createdAt, id)` の降順に並べ、`limit + 1` 件を取得して次のページがあるかを判定します。並び順は一覧ごとに決めます。サービスカテゴリーの一覧はメニューに表示する順で、`(displayOrder, id)` の昇順です。
-- `deletedAt` 列のあるテーブルでは、削除は論理削除です。`deletedAt` を設定し、すべてのクエリに `notDeleted` の条件を付けます。`deletedAt` 列のない `service_categories` では、行を削除します。
+- 一覧はキーセットページネーションです。`(createdAt, id)` の降順に並べ、`limit + 1` 件を取得して次のページがあるかを判定します。並び順は一覧ごとに決めます。サービスカテゴリーの一覧はメニューに表示する順で、`(displayOrder, id)` の昇順です。サービスの一覧も同じ考え方で、`(sortOrder, id)` の昇順です。
+- `deletedAt` 列のあるテーブルでは、削除は論理削除です。`deletedAt` を設定し、クエリに `notDeleted` の条件を付けて、削除済みの行がどのメソッドの結果にも現れないようにします。`deletedAt` 列のない `service_categories` では、行を削除します。サービスのリポジトリは、結果として返さない行に限って、削除済みの行も読みます。一覧のカーソルが指す行（行が残っているので、削除された後もページの開始位置が分かる）と、書き込みがロックする行（`lockServices`。ロックしてから、削除済みかどうかを判定する）です。
 
 ### 7. ハンドラーとルーター: 依存を受け取り、結果を HTTP に変換する
 
@@ -443,6 +443,13 @@ app.use(
     authenticated,
   ),
 )
+app.use(
+  `${API_BASE_PATH}/salons/:salonId/services`,
+  createServiceRouter(
+    { serviceRepository: new ServiceRepository(database), salonRepository },
+    authenticated,
+  ),
+)
 ```
 
 - リポジトリは `createApp` の中で一度だけ生成し、ルーターに渡します。`authenticated` も一度だけ作り、公開でないオペレーションを持つルーターに渡します。
@@ -492,7 +499,16 @@ async execute(
 - リポジトリのすべてのメソッドがサロンの ID を受け取り、すべてのクエリの条件に入れます。パスのサロンに属さないリソースは、存在しないリソースと同じ 404 です。
 - ルーターは `Router({ mergeParams: true })` で作ります（`backend/packages/api/src/routes/service-category/index.ts`）。`salonId` はマウント先のパスのパラメータなので、この指定がないとハンドラーから見えません。ハンドラーは `req.params.salonId` を検証せずにユースケースに渡します。
 
-権限の規則は [認証と認可](./authentication.md#サロンの下にあるルートの権限)、サービスカテゴリーの規則は [サービスメニュー](./service-menu.md) にあります。
+サービス（`backend/packages/domain/src/business-logic/service`、`backend/packages/api/src/routes/service`）も、上のとおりに書いてあります。サービスカテゴリーにないものは次の点です。
+
+- リクエストが 2 つのテーブルの行を含みます（サービスと、そのオプション）。表現を変える列はありませんが、Write マッパー（`ServiceWriteMapper`）が 2 つを分けます。更新では、オプションを残すか置き換えるか（`ServiceOptionsChange`）もここで決まります。
+- 2 つの項目を結ぶ規則（`discountPrice` は `price` 以下、`isPackage` と `packageServiceIds` の組み合わせ）は、スキーマの `.check()` ではなく、純粋な関数 `serviceRuleIssues`（`backend/packages/domain/src/business-logic/service/_shared/rules.ts`）に書いてあります。部分更新は片方の項目だけを指定できるので、規則は更新後に保存される行に対して判定しなければなりません。作成ではユースケースが検証済みのリクエストに対して呼び、更新ではリポジトリがトランザクションの中で、ロックした行に変更を重ねた値に対して呼びます。
+- リポジトリの書き込みの結果は、拒否の理由が 3 つ以上ある Sum 型です（`ServiceCreation`、`ServiceUpdate`、`ServiceBulkUpdate`、`ServiceDeletion`）。作成・更新・一括更新の拒否は、`_shared/refusals.ts` の `toRefusalError` がエラーに変えます。ユースケースごとには書きません。
+- 一括更新（`PATCH /bulk`）は、指定されたすべてのサービスに同じ変更を 1 つのトランザクションで適用し、1 件でも適用できなければどのサービスも変えません（リポジトリの `updateMany`）。ルーターでは `/bulk` を `/:id` より前に登録します（`backend/packages/api/src/routes/service/index.ts`）。後に登録すると、`/:id` が `bulk` をサービスの ID として受け取ります。
+- 削除は論理削除で、削除済みのサービスは存在しないサービスと同じ 404 です。パッケージに含まれているサービスは削除できず、ユースケースが `DomainErrors.conflict`（409）を返します。
+- DB の制約では保証できないこと（カテゴリーとパッケージの構成サービスが同じサロンのものであること）は、リポジトリが確認と書き込みを 1 つのトランザクションで行います。どの行をどの順にロックするかは、`backend/packages/infrastructure/src/repositories/service.repository.impl.ts` の `lockCategory`、`lockServices`、`applyChanges` のコメントにあります。
+
+権限の規則は [認証と認可](./authentication.md#サロンの下にあるルートの権限)、サービスカテゴリーとサービスの規則は [サービスメニュー](./service-menu.md) にあります。
 
 ---
 
@@ -540,12 +556,12 @@ async execute(
 | パスワードのハッシュ、トークンの生成、2 要素認証のシークレット・コード・バックアップコード | ユニット（`pnpm test`） | `backend/packages/infrastructure/src/security/__tests__` |
 | SMTP でのメールの送信 | ユニット（`pnpm test`）と統合（`pnpm test:integration`。testcontainers で Mailpit のコンテナを起動する） | `backend/packages/infrastructure/src/mail/__tests__` |
 | クエリの変換、リンク、problem details、ミドルウェア | ユニット（`pnpm test`） | `backend/packages/api/src` の各 `__tests__` |
-| エンドポイント（リポジトリの実装を含む） | 統合（`pnpm test:integration`） | `backend/packages/api/src/__tests__/salon.integration.test.ts`、`auth.integration.test.ts`、`service-category.integration.test.ts`（サロンの下にあるルート） |
+| エンドポイント（リポジトリの実装を含む） | 統合（`pnpm test:integration`） | `backend/packages/api/src/__tests__/salon.integration.test.ts`、`auth.integration.test.ts`、`service-category.integration.test.ts`（サロンの下にあるルート）、`service.integration.test.ts`（一括更新、サロンの下にあるリソースの論理削除） |
 | リクエスト ID、エラー応答、CORS、レート制限、プローブ | 統合（`pnpm test:integration`） | `backend/packages/api/src/__tests__/app.integration.test.ts` |
 | 起動と停止 | 統合（`pnpm test:integration`） | `backend/apps/server/src/__tests__/server.integration.test.ts` |
 
 - ユースケースのテストでは、リポジトリを `ISalonRepository` を満たすオブジェクトに差し替えます（`backend/packages/domain/src/__tests__/fixtures.ts` の `salonRepositoryWith`）。DB は使いません。認証のユースケースでは、2つのリポジトリ、パスワードのハッシュ、トークンの発行、2 要素認証のコードの確認、メールの送信も差し替え、時計を固定します（`backend/packages/domain/src/__tests__/auth-fixtures.ts` の `authDependencies`）。
-- リポジトリの実装は、エンドポイントの統合テストで実際の PostgreSQL に対して検証します。テストごとに専用のスキーマを作り、本番と同じ `createApp` を使います（`backend/packages/api/src/__tests__/_shared/test-helpers.ts` の `createTestApp`）。メールは送らずに記録し、2 要素認証には本番と同じ `TotpAuthenticator` を使います。
+- リポジトリの実装は、エンドポイントの統合テストで実際の PostgreSQL に対して検証します。テストごとに専用のスキーマを作り、本番と同じ `createApp` を使います（`backend/packages/api/src/__tests__/_shared/test-helpers.ts` の `createTestApp`）。メールは送らずに記録し、2 要素認証には本番と同じ `TotpAuthenticator` を使います。`service.integration.test.ts` は、同じデータベースに対して `ServiceRepository` を直接呼ぶテストと、テーブルの制約が拒否する行を確かめるテストも含みます。
 - 統合テストでアクセストークンが必要なときは、ユーザーの行を挿入し、`POST /api/v1/auth/login` でログインします（`backend/packages/api/src/__tests__/_shared/auth-helpers.ts`）。
 - エンドポイントごとに、エラーのシナリオを5つ以上テストします。公開でないエンドポイントでは、トークンのないリクエスト（401）と、許可されていないユーザーからのリクエスト（403）を含めます。
 
@@ -595,7 +611,7 @@ async execute(
 - [`docs/api-route-modular-structure.md`](./api-route-modular-structure.md) - ルートのファイル構成
 - [`docs/uniform-implementation-guide.md`](./uniform-implementation-guide.md) - 統一実装パターン
 - [`docs/authentication.md`](./authentication.md) - 認証と認可
-- [`docs/service-menu.md`](./service-menu.md) - サービスメニュー（サービスカテゴリーの規則）
+- [`docs/service-menu.md`](./service-menu.md) - サービスメニュー（サービスカテゴリーとサービスの規則）
 - [`docs/db-driven-domain-model.md`](./db-driven-domain-model.md) - DB駆動ドメインモデル
 - [`docs/sum-types-pattern-matching.md`](./sum-types-pattern-matching.md) - Sum型とパターンマッチング
 - [`docs/type-safety-principles.md`](./type-safety-principles.md) - 型安全性の原則

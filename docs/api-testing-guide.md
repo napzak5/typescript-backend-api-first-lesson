@@ -25,6 +25,7 @@ backend/packages/api/
     │   └── two-factor-helpers.ts    # one-time passwords, stored secrets, a user with two-factor authentication
     ├── salon.integration.test.ts              # the Salon endpoints: the reference
     ├── service-category.integration.test.ts   # the service category endpoints: the reference for routes below a salon
+    ├── service.integration.test.ts            # the service endpoints: a bulk operation, a soft delete below a salon, the repository called directly
     ├── auth.integration.test.ts               # signing in, tokens, the seeded accounts
     ├── auth-registration.integration.test.ts  # registration, email verification, passwords
     ├── auth-sessions.integration.test.ts      # the sessions of the signed-in user

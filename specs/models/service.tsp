@@ -86,31 +86,38 @@ namespace BeautySalon.Models {
 
   @doc("""
     サービスオプション - service_options テーブルの1行。サービスに追加できるオプションを表す。
+    サービスのレスポンスでも、登録・更新リクエストでも同じ形を使う。
     プロパティ名と null 許可は DB カラムと一致させている。
     """)
-  model ServiceOptionResponse {
+  model ServiceOption {
     @doc("オプション名")
+    @minLength(1)
+    @maxLength(255)
     name: string;
 
     @doc("オプションの説明。未設定の場合はnull")
     description: string | null;
 
-    @doc("オプションの種類。未設定の場合はnull")
-    optionType: ServiceOptionType | null;
+    @doc("オプションの種類")
+    optionType: ServiceOptionType;
 
     @doc("追加される施術時間（分）")
+    @minValue(0)
     additionalTime: int32;
 
     @doc("追加料金")
+    @minValue(0)
     additionalPrice: int32;
 
     @doc("1回の予約で選択できる最大数量")
+    @minValue(1)
     maxQuantity: int32;
 
     @doc("必須オプションかどうか")
     isRequired: boolean;
 
     @doc("表示順序")
+    @minValue(0)
     sortOrder: int32;
 
     @doc("有効フラグ")
@@ -152,14 +159,14 @@ namespace BeautySalon.Models {
     @doc("税込価格かどうか")
     taxIncluded: boolean;
 
-    @doc("採用している価格戦略。未設定の場合はnull")
-    pricingStrategy: PricingStrategyType | null;
+    @doc("採用している価格戦略")
+    pricingStrategy: PricingStrategyType;
 
     @doc("画像 URL。画像が登録されていない場合はnull")
     imageUrl: string | null;
 
-    @doc("サービス画像の URL 一覧。画像登録がない場合はnull")
-    imageUrls: string[] | null;
+    @doc("サービス画像の URL 一覧。画像がない場合は空配列")
+    imageUrls: string[];
 
     @doc("必要なスタッフレベル。全スタッフが対応可能な場合はnull")
     requiredStaffLevel: StaffLevelType | null;
@@ -173,32 +180,32 @@ namespace BeautySalon.Models {
     @doc("オンライン予約を受け付けるかどうか")
     allowOnlineBooking: boolean;
 
-    @doc("予約時に必要な要件一覧。特別な要件がない標準サービスの場合はnull")
-    bookingRequirements: BookingRequirementType[] | null;
+    @doc("予約時に必要な要件一覧。特別な要件がない場合は空配列")
+    bookingRequirements: BookingRequirementType[];
 
     @doc("複数のサービスを組み合わせたパッケージかどうか")
     isPackage: boolean;
 
-    @doc("パッケージに含まれるサービスの ID 一覧。未設定の場合はnull")
-    packageServiceIds: ServiceId[] | null;
+    @doc("パッケージに含まれるサービスの ID 一覧。パッケージでない場合は空配列")
+    packageServiceIds: ServiceId[];
 
-    @doc("タグ一覧。タグ付けが不要な場合はnull")
-    tags: string[] | null;
+    @doc("タグ一覧。タグがない場合は空配列")
+    tags: string[];
 
     @doc("表示順序")
     sortOrder: int32;
 
-    @doc("現在の提供ステータス。未設定の場合はnull")
-    serviceStatus: ServiceStatusType | null;
+    @doc("現在の提供ステータス")
+    serviceStatus: ServiceStatusType;
 
-    @doc("提供可能な時期の区分。未設定の場合はnull")
-    availability: ServiceAvailabilityType | null;
+    @doc("提供可能な時期の区分")
+    availability: ServiceAvailabilityType;
 
     @doc("有効フラグ")
     isActive: boolean;
 
     @doc("追加オプションの一覧。sortOrderの昇順で並ぶ。オプションがない場合は空配列")
-    options: ServiceOptionResponse[];
+    options: ServiceOption[];
 
     @doc("レコード作成日時")
     createdAt: utcDateTime;
@@ -236,22 +243,22 @@ namespace BeautySalon.Models {
     @minValue(0)
     price: int32;
 
-    @doc("割引後の料金。割引がない場合はnull")
+    @doc("割引後の料金。price 以下の値を指定する。割引がない場合はnull")
     @minValue(0)
     discountPrice: int32 | null;
 
     @doc("税込価格かどうか")
     taxIncluded: boolean;
 
-    @doc("採用している価格戦略。未設定の場合はnull")
-    pricingStrategy: PricingStrategyType | null;
+    @doc("採用している価格戦略")
+    pricingStrategy: PricingStrategyType;
 
     @doc("画像 URL。画像が登録されていない場合はnull")
     @maxLength(500)
     imageUrl: string | null;
 
-    @doc("サービス画像の URL 一覧。画像登録がない場合はnull")
-    imageUrls: string[] | null;
+    @doc("サービス画像の URL 一覧。画像がない場合は空配列")
+    imageUrls: string[];
 
     @doc("必要なスタッフレベル。全スタッフが対応可能な場合はnull")
     requiredStaffLevel: StaffLevelType | null;
@@ -266,30 +273,34 @@ namespace BeautySalon.Models {
     @doc("オンライン予約を受け付けるかどうか")
     allowOnlineBooking: boolean;
 
-    @doc("予約時に必要な要件一覧。特別な要件がない標準サービスの場合はnull")
-    bookingRequirements: BookingRequirementType[] | null;
+    @doc("予約時に必要な要件一覧。同じ要件を重ねて指定できない。特別な要件がない場合は空配列")
+    bookingRequirements: BookingRequirementType[];
 
-    @doc("複数のサービスを組み合わせたパッケージかどうか")
+    @doc("複数のサービスを組み合わせたパッケージかどうか。trueの場合は packageServiceIds に構成サービスを指定する")
     isPackage: boolean;
 
-    @doc("パッケージに含まれるサービスの ID 一覧。同じサロンのサービスを指定する。未設定の場合はnull")
-    packageServiceIds: ServiceId[] | null;
+    @doc("パッケージに含まれるサービスの ID 一覧。isPackage が true の場合は、同じサロンの、パッケージではないサービスを重複なく2件以上20件以下で指定する。false の場合は空配列")
+    @maxItems(20)
+    packageServiceIds: ServiceId[];
 
-    @doc("タグ一覧。タグ付けが不要な場合はnull")
-    tags: string[] | null;
+    @doc("タグ一覧。タグがない場合は空配列")
+    tags: string[];
 
     @doc("表示順序")
     @minValue(0)
     sortOrder: int32;
 
-    @doc("現在の提供ステータス。未設定の場合はnull")
-    serviceStatus: ServiceStatusType | null;
+    @doc("現在の提供ステータス")
+    serviceStatus: ServiceStatusType;
 
-    @doc("提供可能な時期の区分。未設定の場合はnull")
-    availability: ServiceAvailabilityType | null;
+    @doc("提供可能な時期の区分")
+    availability: ServiceAvailabilityType;
 
     @doc("有効フラグ")
     isActive: boolean;
+
+    @doc("追加オプションの一覧。オプションがない場合は空配列")
+    options: ServiceOption[];
   }
 
   @doc("""
@@ -320,22 +331,22 @@ namespace BeautySalon.Models {
     @minValue(0)
     price?: int32;
 
-    @doc("割引後の料金。nullでクリア")
+    @doc("割引後の料金。更新後の price 以下の値を指定する。nullでクリア")
     @minValue(0)
     discountPrice?: int32 | null;
 
     @doc("税込価格かどうか")
     taxIncluded?: boolean;
 
-    @doc("採用している価格戦略。nullでクリア")
-    pricingStrategy?: PricingStrategyType | null;
+    @doc("採用している価格戦略")
+    pricingStrategy?: PricingStrategyType;
 
     @doc("画像 URL。nullでクリア")
     @maxLength(500)
     imageUrl?: string | null;
 
-    @doc("サービス画像の URL 一覧。nullでクリア")
-    imageUrls?: string[] | null;
+    @doc("サービス画像の URL 一覧。指定した場合は一覧全体を置き換える")
+    imageUrls?: string[];
 
     @doc("必要なスタッフレベル。nullでクリア（全スタッフが対応可能になる）")
     requiredStaffLevel?: StaffLevelType | null;
@@ -350,30 +361,34 @@ namespace BeautySalon.Models {
     @doc("オンライン予約を受け付けるかどうか")
     allowOnlineBooking?: boolean;
 
-    @doc("予約時に必要な要件一覧。nullでクリア")
-    bookingRequirements?: BookingRequirementType[] | null;
+    @doc("予約時に必要な要件一覧。同じ要件を重ねて指定できない。指定した場合は一覧全体を置き換える")
+    bookingRequirements?: BookingRequirementType[];
 
-    @doc("複数のサービスを組み合わせたパッケージかどうか")
+    @doc("複数のサービスを組み合わせたパッケージかどうか。更新後の isPackage と packageServiceIds の組み合わせで検証する")
     isPackage?: boolean;
 
-    @doc("パッケージに含まれるサービスの ID 一覧。同じサロンのサービスを指定する。nullでクリア")
-    packageServiceIds?: ServiceId[] | null;
+    @doc("パッケージに含まれるサービスの ID 一覧。更新後の isPackage が true の場合は、同じサロンの、パッケージではない、このサービス以外のサービスを重複なく2件以上20件以下で指定する。false の場合は空配列")
+    @maxItems(20)
+    packageServiceIds?: ServiceId[];
 
-    @doc("タグ一覧。nullでクリア")
-    tags?: string[] | null;
+    @doc("タグ一覧。指定した場合は一覧全体を置き換える")
+    tags?: string[];
 
     @doc("表示順序")
     @minValue(0)
     sortOrder?: int32;
 
-    @doc("現在の提供ステータス。nullでクリア")
-    serviceStatus?: ServiceStatusType | null;
+    @doc("現在の提供ステータス")
+    serviceStatus?: ServiceStatusType;
 
-    @doc("提供可能な時期の区分。nullでクリア")
-    availability?: ServiceAvailabilityType | null;
+    @doc("提供可能な時期の区分")
+    availability?: ServiceAvailabilityType;
 
     @doc("有効フラグ")
     isActive?: boolean;
+
+    @doc("追加オプションの一覧。指定した場合は一覧全体を置き換える")
+    options?: ServiceOption[];
   }
 
   @doc("""
@@ -393,6 +408,10 @@ namespace BeautySalon.Models {
     @query
     @doc("サービスカテゴリの ID による絞り込み(完全一致)")
     categoryId?: CategoryId;
+
+    @query
+    @doc("有効フラグによる絞り込み。指定しない場合は無効なサービスも返す")
+    isActive?: boolean;
   }
 
   @doc("""
@@ -400,7 +419,7 @@ namespace BeautySalon.Models {
     すべてのサービスを1つのトランザクションで更新し、1件でも更新できない場合はどのサービスも更新しない
     """)
   model ServiceBulkUpdateRequest {
-    @doc("更新対象のサービス ID 一覧。パスの salonId のサロンのサービスを1件以上100件以下で指定する")
+    @doc("更新対象のサービス ID 一覧。パスの salonId のサロンのサービスを重複なく1件以上100件以下で指定する")
     @minItems(1)
     @maxItems(100)
     serviceIds: ServiceId[];
@@ -411,7 +430,7 @@ namespace BeautySalon.Models {
 
   @doc("サービス一括更新の結果 - 更新したサービスの ID 一覧を返す")
   model ServiceBulkUpdateResponse {
-    @doc("更新したサービスの ID 一覧")
+    @doc("更新したサービスの ID 一覧。serviceIds と同じ順に並ぶ")
     updated: ServiceId[];
   }
 

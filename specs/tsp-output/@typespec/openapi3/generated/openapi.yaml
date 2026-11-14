@@ -14185,7 +14185,7 @@ paths:
     get:
       operationId: ServiceCrud_list
       summary: List salon services
-      description: サロン内の提供メニューを、絞り込み条件とページネーションを指定して一覧取得します。削除済みのサービスは含みません。サロンが存在しない場合は404を返します。
+      description: サロン内の提供メニューを、絞り込み条件とページネーションを指定して一覧取得します。表示順(sortOrder)の昇順に並びます。削除済みのサービスは含みません。cursorがそのサロンのサービスを指していない場合は400を返します。
       parameters:
         - name: salonId
           in: path
@@ -14195,6 +14195,7 @@ paths:
         - $ref: '#/components/parameters/Models.ServiceSearchRequest.limit'
         - $ref: '#/components/parameters/Models.ServiceSearchRequest.cursor'
         - $ref: '#/components/parameters/Models.ServiceSearchRequest.categoryId'
+        - $ref: '#/components/parameters/Models.ServiceSearchRequest.isActive'
       responses:
         '200':
           description: The request has succeeded.
@@ -14229,27 +14230,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Models.ProblemDetails'
-        '401':
-          description: |-
-            認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
-            ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
-            WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
-          headers:
-            WWW-Authenticate:
-              required: true
-              description: Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。
-              schema:
-                type: string
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Models.ProblemDetails'
-        '403':
-          description: 認証されているが、この操作を行う権限がない (403)。
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Models.ProblemDetails'
         '404':
           description: The server cannot find the requested resource.
           content:
@@ -14279,10 +14259,12 @@ paths:
                 $ref: '#/components/schemas/Models.ProblemDetails'
       tags:
         - Services
+      security:
+        - {}
     post:
       operationId: ServiceCrud_create
       summary: Create service
-      description: 新しい施術メニューを登録し、価格・施術時間・提供条件を設定します。サロンが存在しない場合は404を、categoryIdやpackageServiceIdsに同じサロンのものではないIDを指定した場合は400を返します。
+      description: 新しい施術メニューを登録し、価格・施術時間・提供条件・追加オプションを設定します。categoryIdに同じサロンのものではないカテゴリを指定した場合と、packageServiceIdsに同じサロンの、削除されていない、パッケージではないサービス以外を指定した場合は400を返します。
       parameters:
         - name: salonId
           in: path
@@ -14403,7 +14385,7 @@ paths:
     patch:
       operationId: ServiceCrud_bulkUpdate
       summary: Bulk update services
-      description: 複数メニューの共通項目を一括更新し、季節キャンペーンや価格調整を効率化します。すべてのサービスを1つのトランザクションで更新し、指定したサービスのいずれかがサロンに存在しない場合は404を返してどのサービスも更新しません。
+      description: 複数メニューの共通項目を一括更新し、季節キャンペーンや価格調整を効率化します。すべてのサービスを1つのトランザクションで更新します。指定したサービスのいずれかがサロンに存在しない場合は404を、更新後の値がいずれかのサービスで規則に反する場合は400を返し、どのサービスも更新しません。
       parameters:
         - name: salonId
           in: path
@@ -14519,7 +14501,7 @@ paths:
     get:
       operationId: ServiceCrud_get
       summary: Get service
-      description: 特定メニューの詳細情報を取得し、予約システムやスタッフ教育に必要な内容を確認します。
+      description: 特定メニューの詳細情報を取得し、予約システムやスタッフ教育に必要な内容を確認します。サービスがそのサロンのものでない場合と、削除済みの場合は404を返します。
       parameters:
         - name: salonId
           in: path
@@ -14568,27 +14550,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Models.ProblemDetails'
-        '401':
-          description: |-
-            認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
-            ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
-            WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
-          headers:
-            WWW-Authenticate:
-              required: true
-              description: Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。
-              schema:
-                type: string
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Models.ProblemDetails'
-        '403':
-          description: 認証されているが、この操作を行う権限がない (403)。
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Models.ProblemDetails'
         '404':
           description: The server cannot find the requested resource.
           content:
@@ -14618,10 +14579,12 @@ paths:
                 $ref: '#/components/schemas/Models.ProblemDetails'
       tags:
         - Services
+      security:
+        - {}
     patch:
       operationId: ServiceCrud_update
       summary: Update service
-      description: 既存メニューの指定した項目だけを更新し、料金改定や提供条件の変更に対応します。categoryIdやpackageServiceIdsに同じサロンのものではないIDを指定した場合は400を返します。
+      description: 既存メニューの指定した項目だけを更新し、料金改定や提供条件の変更に対応します。複数の項目にまたがる規則(discountPriceとprice、isPackageとpackageServiceIds)は、更新後の値の組み合わせで検証します。categoryIdに同じサロンのものではないカテゴリを指定した場合、packageServiceIdsに同じサロンの、削除されていない、パッケージではない、このサービス以外のサービス以外を指定した場合、ほかのパッケージに含まれているサービスをパッケージにしようとした場合は400を返します。
       parameters:
         - name: salonId
           in: path
@@ -14741,7 +14704,7 @@ paths:
     delete:
       operationId: ServiceCrud_delete
       summary: Delete service
-      description: 提供終了となったメニューを論理削除し、予約導線から除外します。削除後は一覧・取得の対象外になります。
+      description: 提供終了となったメニューを論理削除し、予約導線から除外します。削除後は一覧・取得の対象外になります。パッケージに含まれているサービスは削除できず、409を返します。先にパッケージの構成から外してください。
       parameters:
         - name: salonId
           in: path
@@ -14785,6 +14748,12 @@ paths:
                 $ref: '#/components/schemas/Models.ProblemDetails'
         '404':
           description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '409':
+          description: The request conflicts with the current state of the server.
           content:
             application/problem+json:
               schema:
@@ -18469,6 +18438,14 @@ components:
       description: 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する
       schema:
         type: string
+      explode: false
+    Models.ServiceSearchRequest.isActive:
+      name: isActive
+      in: query
+      required: false
+      description: 有効フラグによる絞り込み。指定しない場合は無効なサービスも返す
+      schema:
+        type: boolean
       explode: false
     Models.ServiceSearchRequest.limit:
       name: limit
@@ -24985,7 +24962,7 @@ components:
             $ref: '#/components/schemas/Models.ServiceId'
           minItems: 1
           maxItems: 100
-          description: 更新対象のサービス ID 一覧。パスの salonId のサロンのサービスを1件以上100件以下で指定する
+          description: 更新対象のサービス ID 一覧。パスの salonId のサロンのサービスを重複なく1件以上100件以下で指定する
         updates:
           allOf:
             - $ref: '#/components/schemas/Models.ServiceUpdateRequest'
@@ -25002,7 +24979,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Models.ServiceId'
-          description: 更新したサービスの ID 一覧
+          description: 更新したサービスの ID 一覧。serviceIds と同じ順に並ぶ
       description: サービス一括更新の結果 - 更新したサービスの ID 一覧を返す
     Models.ServiceCategoryCreateRequest:
       type: object
@@ -25216,6 +25193,7 @@ components:
         - serviceStatus
         - availability
         - isActive
+        - options
       properties:
         categoryId:
           type: string
@@ -25253,15 +25231,14 @@ components:
           format: int32
           nullable: true
           minimum: 0
-          description: 割引後の料金。割引がない場合はnull
+          description: 割引後の料金。price 以下の値を指定する。割引がない場合はnull
         taxIncluded:
           type: boolean
           description: 税込価格かどうか
         pricingStrategy:
           allOf:
             - $ref: '#/components/schemas/Models.PricingStrategyType'
-          nullable: true
-          description: 採用している価格戦略。未設定の場合はnull
+          description: 採用している価格戦略
         imageUrl:
           type: string
           nullable: true
@@ -25271,8 +25248,7 @@ components:
           type: array
           items:
             type: string
-          nullable: true
-          description: サービス画像の URL 一覧。画像登録がない場合はnull
+          description: サービス画像の URL 一覧。画像がない場合は空配列
         requiredStaffLevel:
           allOf:
             - $ref: '#/components/schemas/Models.StaffLevelType'
@@ -25294,23 +25270,21 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Models.BookingRequirementType'
-          nullable: true
-          description: 予約時に必要な要件一覧。特別な要件がない標準サービスの場合はnull
+          description: 予約時に必要な要件一覧。同じ要件を重ねて指定できない。特別な要件がない場合は空配列
         isPackage:
           type: boolean
-          description: 複数のサービスを組み合わせたパッケージかどうか
+          description: 複数のサービスを組み合わせたパッケージかどうか。trueの場合は packageServiceIds に構成サービスを指定する
         packageServiceIds:
           type: array
           items:
             $ref: '#/components/schemas/Models.ServiceId'
-          nullable: true
-          description: パッケージに含まれるサービスの ID 一覧。同じサロンのサービスを指定する。未設定の場合はnull
+          maxItems: 20
+          description: パッケージに含まれるサービスの ID 一覧。isPackage が true の場合は、同じサロンの、パッケージではないサービスを重複なく2件以上20件以下で指定する。false の場合は空配列
         tags:
           type: array
           items:
             type: string
-          nullable: true
-          description: タグ一覧。タグ付けが不要な場合はnull
+          description: タグ一覧。タグがない場合は空配列
         sortOrder:
           type: integer
           format: int32
@@ -25319,16 +25293,19 @@ components:
         serviceStatus:
           allOf:
             - $ref: '#/components/schemas/Models.ServiceStatusType'
-          nullable: true
-          description: 現在の提供ステータス。未設定の場合はnull
+          description: 現在の提供ステータス
         availability:
           allOf:
             - $ref: '#/components/schemas/Models.ServiceAvailabilityType'
-          nullable: true
-          description: 提供可能な時期の区分。未設定の場合はnull
+          description: 提供可能な時期の区分
         isActive:
           type: boolean
           description: 有効フラグ
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/Models.ServiceOption'
+          description: 追加オプションの一覧。オプションがない場合は空配列
       description: |-
         サービス新規登録リクエスト - 全項目のキーが必須。DB で NULL 許可のカラムのみ null を指定できる。
         登録先のサロンはパスの salonId で指定する
@@ -25336,7 +25313,7 @@ components:
       type: string
       format: uuid
       description: 提供メニュー・施術サービスを識別するためのブランド付きUUID。
-    Models.ServiceOptionResponse:
+    Models.ServiceOption:
       type: object
       required:
         - name
@@ -25351,6 +25328,8 @@ components:
       properties:
         name:
           type: string
+          minLength: 1
+          maxLength: 255
           description: オプション名
         description:
           type: string
@@ -25359,19 +25338,21 @@ components:
         optionType:
           allOf:
             - $ref: '#/components/schemas/Models.ServiceOptionType'
-          nullable: true
-          description: オプションの種類。未設定の場合はnull
+          description: オプションの種類
         additionalTime:
           type: integer
           format: int32
+          minimum: 0
           description: 追加される施術時間（分）
         additionalPrice:
           type: integer
           format: int32
+          minimum: 0
           description: 追加料金
         maxQuantity:
           type: integer
           format: int32
+          minimum: 1
           description: 1回の予約で選択できる最大数量
         isRequired:
           type: boolean
@@ -25379,12 +25360,14 @@ components:
         sortOrder:
           type: integer
           format: int32
+          minimum: 0
           description: 表示順序
         isActive:
           type: boolean
           description: 有効フラグ
       description: |-
         サービスオプション - service_options テーブルの1行。サービスに追加できるオプションを表す。
+        サービスのレスポンスでも、登録・更新リクエストでも同じ形を使う。
         プロパティ名と null 許可は DB カラムと一致させている。
     Models.ServiceOptionType:
       type: string
@@ -25476,8 +25459,7 @@ components:
         pricingStrategy:
           allOf:
             - $ref: '#/components/schemas/Models.PricingStrategyType'
-          nullable: true
-          description: 採用している価格戦略。未設定の場合はnull
+          description: 採用している価格戦略
         imageUrl:
           type: string
           nullable: true
@@ -25486,8 +25468,7 @@ components:
           type: array
           items:
             type: string
-          nullable: true
-          description: サービス画像の URL 一覧。画像登録がない場合はnull
+          description: サービス画像の URL 一覧。画像がない場合は空配列
         requiredStaffLevel:
           allOf:
             - $ref: '#/components/schemas/Models.StaffLevelType'
@@ -25508,8 +25489,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Models.BookingRequirementType'
-          nullable: true
-          description: 予約時に必要な要件一覧。特別な要件がない標準サービスの場合はnull
+          description: 予約時に必要な要件一覧。特別な要件がない場合は空配列
         isPackage:
           type: boolean
           description: 複数のサービスを組み合わせたパッケージかどうか
@@ -25517,14 +25497,12 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Models.ServiceId'
-          nullable: true
-          description: パッケージに含まれるサービスの ID 一覧。未設定の場合はnull
+          description: パッケージに含まれるサービスの ID 一覧。パッケージでない場合は空配列
         tags:
           type: array
           items:
             type: string
-          nullable: true
-          description: タグ一覧。タグ付けが不要な場合はnull
+          description: タグ一覧。タグがない場合は空配列
         sortOrder:
           type: integer
           format: int32
@@ -25532,20 +25510,18 @@ components:
         serviceStatus:
           allOf:
             - $ref: '#/components/schemas/Models.ServiceStatusType'
-          nullable: true
-          description: 現在の提供ステータス。未設定の場合はnull
+          description: 現在の提供ステータス
         availability:
           allOf:
             - $ref: '#/components/schemas/Models.ServiceAvailabilityType'
-          nullable: true
-          description: 提供可能な時期の区分。未設定の場合はnull
+          description: 提供可能な時期の区分
         isActive:
           type: boolean
           description: 有効フラグ
         options:
           type: array
           items:
-            $ref: '#/components/schemas/Models.ServiceOptionResponse'
+            $ref: '#/components/schemas/Models.ServiceOption'
           description: 追加オプションの一覧。sortOrderの昇順で並ぶ。オプションがない場合は空配列
         createdAt:
           type: string
@@ -25631,15 +25607,14 @@ components:
           format: int32
           nullable: true
           minimum: 0
-          description: 割引後の料金。nullでクリア
+          description: 割引後の料金。更新後の price 以下の値を指定する。nullでクリア
         taxIncluded:
           type: boolean
           description: 税込価格かどうか
         pricingStrategy:
           allOf:
             - $ref: '#/components/schemas/Models.PricingStrategyType'
-          nullable: true
-          description: 採用している価格戦略。nullでクリア
+          description: 採用している価格戦略
         imageUrl:
           type: string
           nullable: true
@@ -25649,8 +25624,7 @@ components:
           type: array
           items:
             type: string
-          nullable: true
-          description: サービス画像の URL 一覧。nullでクリア
+          description: サービス画像の URL 一覧。指定した場合は一覧全体を置き換える
         requiredStaffLevel:
           allOf:
             - $ref: '#/components/schemas/Models.StaffLevelType'
@@ -25672,23 +25646,21 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Models.BookingRequirementType'
-          nullable: true
-          description: 予約時に必要な要件一覧。nullでクリア
+          description: 予約時に必要な要件一覧。同じ要件を重ねて指定できない。指定した場合は一覧全体を置き換える
         isPackage:
           type: boolean
-          description: 複数のサービスを組み合わせたパッケージかどうか
+          description: 複数のサービスを組み合わせたパッケージかどうか。更新後の isPackage と packageServiceIds の組み合わせで検証する
         packageServiceIds:
           type: array
           items:
             $ref: '#/components/schemas/Models.ServiceId'
-          nullable: true
-          description: パッケージに含まれるサービスの ID 一覧。同じサロンのサービスを指定する。nullでクリア
+          maxItems: 20
+          description: パッケージに含まれるサービスの ID 一覧。更新後の isPackage が true の場合は、同じサロンの、パッケージではない、このサービス以外のサービスを重複なく2件以上20件以下で指定する。false の場合は空配列
         tags:
           type: array
           items:
             type: string
-          nullable: true
-          description: タグ一覧。nullでクリア
+          description: タグ一覧。指定した場合は一覧全体を置き換える
         sortOrder:
           type: integer
           format: int32
@@ -25697,16 +25669,19 @@ components:
         serviceStatus:
           allOf:
             - $ref: '#/components/schemas/Models.ServiceStatusType'
-          nullable: true
-          description: 現在の提供ステータス。nullでクリア
+          description: 現在の提供ステータス
         availability:
           allOf:
             - $ref: '#/components/schemas/Models.ServiceAvailabilityType'
-          nullable: true
-          description: 提供可能な時期の区分。nullでクリア
+          description: 提供可能な時期の区分
         isActive:
           type: boolean
           description: 有効フラグ
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/Models.ServiceOption'
+          description: 追加オプションの一覧。指定した場合は一覧全体を置き換える
       description: サービス部分更新リクエスト - 指定した項目だけを更新する。DB で NULL 許可のカラムは null でクリアできる
     Models.SessionId:
       type: string

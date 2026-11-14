@@ -514,7 +514,10 @@ CREATE TABLE "service_options" (
 	"isActive" boolean DEFAULT true NOT NULL,
 	"createdAt" timestamp with time zone DEFAULT now() NOT NULL,
 	"updatedAt" timestamp with time zone DEFAULT now() NOT NULL,
-	"optionType" "service_option_type" DEFAULT 'addon'
+	"optionType" "service_option_type" DEFAULT 'addon' NOT NULL,
+	CONSTRAINT "service_options_additional_price_not_negative" CHECK ("additionalPrice" >= 0),
+	CONSTRAINT "service_options_additional_time_not_negative" CHECK ("additionalTime" >= 0),
+	CONSTRAINT "service_options_max_quantity_positive" CHECK ("maxQuantity" > 0)
 );
 
 CREATE TABLE "services" (
@@ -529,24 +532,29 @@ CREATE TABLE "services" (
 	"discountPrice" integer,
 	"taxIncluded" boolean DEFAULT true NOT NULL,
 	"imageUrl" varchar(500),
-	"imageUrls" jsonb DEFAULT '[]'::jsonb,
+	"imageUrls" text[] NOT NULL,
 	"requiredStaffLevel" "staff_level",
 	"maxBookingsPerDay" integer,
 	"requiresConsultation" boolean DEFAULT false NOT NULL,
 	"allowOnlineBooking" boolean DEFAULT true NOT NULL,
 	"isPackage" boolean DEFAULT false NOT NULL,
-	"packageServiceIds" jsonb DEFAULT '[]'::jsonb,
+	"packageServiceIds" uuid[] NOT NULL,
 	"requiredProducts" jsonb DEFAULT '[]'::jsonb,
-	"tags" jsonb DEFAULT '[]'::jsonb,
+	"tags" text[] NOT NULL,
 	"sortOrder" integer DEFAULT 0 NOT NULL,
 	"isActive" boolean DEFAULT true NOT NULL,
 	"deletedAt" timestamp with time zone,
 	"createdAt" timestamp with time zone DEFAULT now() NOT NULL,
 	"updatedAt" timestamp with time zone DEFAULT now() NOT NULL,
-	"pricingStrategy" "pricing_strategy" DEFAULT 'fixed',
-	"serviceStatus" "service_status" DEFAULT 'active',
-	"availability" "service_availability" DEFAULT 'always',
-	"bookingRequirements" "booking_requirement"[]
+	"pricingStrategy" "pricing_strategy" DEFAULT 'fixed' NOT NULL,
+	"serviceStatus" "service_status" DEFAULT 'active' NOT NULL,
+	"availability" "service_availability" DEFAULT 'always' NOT NULL,
+	"bookingRequirements" "booking_requirement"[] NOT NULL,
+	CONSTRAINT "services_discount_price_within_price" CHECK (("discountPrice" IS NULL) OR (("discountPrice" >= 0) AND ("discountPrice" <= price))),
+	CONSTRAINT "services_duration_positive" CHECK (duration > 0),
+	CONSTRAINT "services_max_bookings_per_day_positive" CHECK (("maxBookingsPerDay" IS NULL) OR ("maxBookingsPerDay" > 0)),
+	CONSTRAINT "services_package_members" CHECK (("isPackage" AND ((cardinality("packageServiceIds") >= 2) AND (cardinality("packageServiceIds") <= 20))) OR ((NOT "isPackage") AND (cardinality("packageServiceIds") = 0))),
+	CONSTRAINT "services_price_not_negative" CHECK (price >= 0)
 );
 
 CREATE TABLE "sessions" (

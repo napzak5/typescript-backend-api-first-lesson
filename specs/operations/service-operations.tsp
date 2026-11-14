@@ -11,13 +11,14 @@ using TypeSpec.OpenAPI;
 using BeautySalon.Models;
 
 namespace BeautySalon.Operations {
-  @doc("各サロンが提供する施術メニューを管理し、価格や所要時間などの情報を一元化するAPI操作群です。")
+  @doc("各サロンが提供する施術メニューを管理し、価格や所要時間などの情報を一元化するAPI操作群です。ここに定義した操作はすべて実装済みで、定義と実装は一致しています。一覧と1件の取得は、予約前の閲覧のために認証なしで呼び出せます。作成・更新・一括更新・削除は admin と、そのサロンの owner / manager が実行でき、ほかのサロンの owner / manager には403を返します。サロンが存在しない場合は404を返します。")
   @route("/api/v1/salons/{salonId}/services")
   @tag("Services")
   namespace ServiceOperations {
     interface ServiceCrud {
-      @doc("サロン内の提供メニューを、絞り込み条件とページネーションを指定して一覧取得します。削除済みのサービスは含みません。サロンが存在しない場合は404を返します。")
+      @doc("サロン内の提供メニューを、絞り込み条件とページネーションを指定して一覧取得します。表示順(sortOrder)の昇順に並びます。削除済みのサービスは含みません。cursorがそのサロンのサービスを指していない場合は400を返します。")
       @summary("List salon services")
+      @useAuth(NoAuth)
       @get
       list(@path salonId: SalonId, ...ServiceSearchRequest):
         | {
@@ -26,9 +27,9 @@ namespace BeautySalon.Operations {
           }
         | ProblemResponse<400>
         | ProblemResponse<404>
-        | CommonErrors;
+        | PublicErrors;
 
-      @doc("新しい施術メニューを登録し、価格・施術時間・提供条件を設定します。サロンが存在しない場合は404を、categoryIdやpackageServiceIdsに同じサロンのものではないIDを指定した場合は400を返します。")
+      @doc("新しい施術メニューを登録し、価格・施術時間・提供条件・追加オプションを設定します。categoryIdに同じサロンのものではないカテゴリを指定した場合と、packageServiceIdsに同じサロンの、削除されていない、パッケージではないサービス以外を指定した場合は400を返します。")
       @summary("Create service")
       @post
       create(@path salonId: SalonId, @body request: ServiceCreateRequest):
@@ -42,8 +43,9 @@ namespace BeautySalon.Operations {
         | RequestBodyErrors
         | CommonErrors;
 
-      @doc("特定メニューの詳細情報を取得し、予約システムやスタッフ教育に必要な内容を確認します。")
+      @doc("特定メニューの詳細情報を取得し、予約システムやスタッフ教育に必要な内容を確認します。サービスがそのサロンのものでない場合と、削除済みの場合は404を返します。")
       @summary("Get service")
+      @useAuth(NoAuth)
       @get
       get(@path salonId: SalonId, @path id: ServiceId):
         | {
@@ -52,9 +54,9 @@ namespace BeautySalon.Operations {
           }
         | ProblemResponse<400>
         | ProblemResponse<404>
-        | CommonErrors;
+        | PublicErrors;
 
-      @doc("既存メニューの指定した項目だけを更新し、料金改定や提供条件の変更に対応します。categoryIdやpackageServiceIdsに同じサロンのものではないIDを指定した場合は400を返します。")
+      @doc("既存メニューの指定した項目だけを更新し、料金改定や提供条件の変更に対応します。複数の項目にまたがる規則(discountPriceとprice、isPackageとpackageServiceIds)は、更新後の値の組み合わせで検証します。categoryIdに同じサロンのものではないカテゴリを指定した場合、packageServiceIdsに同じサロンの、削除されていない、パッケージではない、このサービス以外のサービス以外を指定した場合、ほかのパッケージに含まれているサービスをパッケージにしようとした場合は400を返します。")
       @summary("Update service")
       @patch
       update(
@@ -71,7 +73,7 @@ namespace BeautySalon.Operations {
         | RequestBodyErrors
         | CommonErrors;
 
-      @doc("提供終了となったメニューを論理削除し、予約導線から除外します。削除後は一覧・取得の対象外になります。")
+      @doc("提供終了となったメニューを論理削除し、予約導線から除外します。削除後は一覧・取得の対象外になります。パッケージに含まれているサービスは削除できず、409を返します。先にパッケージの構成から外してください。")
       @summary("Delete service")
       @delete
       delete(@path salonId: SalonId, @path id: ServiceId):
@@ -80,9 +82,10 @@ namespace BeautySalon.Operations {
           }
         | ProblemResponse<400>
         | ProblemResponse<404>
+        | ProblemResponse<409>
         | CommonErrors;
 
-      @doc("複数メニューの共通項目を一括更新し、季節キャンペーンや価格調整を効率化します。すべてのサービスを1つのトランザクションで更新し、指定したサービスのいずれかがサロンに存在しない場合は404を返してどのサービスも更新しません。")
+      @doc("複数メニューの共通項目を一括更新し、季節キャンペーンや価格調整を効率化します。すべてのサービスを1つのトランザクションで更新します。指定したサービスのいずれかがサロンに存在しない場合は404を、更新後の値がいずれかのサービスで規則に反する場合は400を返し、どのサービスも更新しません。")
       @summary("Bulk update services")
       @route("/bulk")
       @patch

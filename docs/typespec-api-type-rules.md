@@ -14,7 +14,7 @@ TypeSpec で API のモデルとオペレーションを定義するときのル
 
 すべてのドメインの TypeSpec が、このルールに従っている。テーブルに対応するモデルは、プロパティ名・null 許可・Enum の値が DB と一致しており、`pnpm check:api-db` が検査する（[API-DB型制約マッピング](./api-db-type-constraints-mapping.md)）。
 
-バックエンドに実装があるのは、Salon とシステムのオペレーション、サロンのサービスカテゴリーのオペレーション（`ServiceCategoryCrud`）、および認証のすべてのオペレーション（`AuthCrud`、`SessionCrud`、`AdminAuthCrud`。`/api/v1/auth` のログイン、トークンの更新、ログアウト、現在のユーザーの取得、ユーザー登録、メールアドレスの確認、パスワードの再設定と変更、2 要素認証、セッションの一覧と無効化、および `/api/v1/admin/auth` の管理者の操作）である。サービスそのもの（`ServiceCrud`）とほかのドメインは TypeSpec と DB スキーマにだけ存在する。ロール・権限、添付ファイル、発注、カルテなど、テーブルがまだない機能の TypeSpec もある（一覧は [API-DB型制約マッピング](./api-db-type-constraints-mapping.md#ルールに載せるモデル載せないモデル)）。
+バックエンドに実装があるのは、Salon とシステムのオペレーション、サロンのサービスカテゴリーとサービスのオペレーション（`ServiceCategoryCrud`、`ServiceCrud`）、および認証のすべてのオペレーション（`AuthCrud`、`SessionCrud`、`AdminAuthCrud`。`/api/v1/auth` のログイン、トークンの更新、ログアウト、現在のユーザーの取得、ユーザー登録、メールアドレスの確認、パスワードの再設定と変更、2 要素認証、セッションの一覧と無効化、および `/api/v1/admin/auth` の管理者の操作）である。ほかのドメインは TypeSpec と DB スキーマにだけ存在する。ロール・権限、添付ファイル、発注、カルテなど、テーブルがまだない機能の TypeSpec もある（一覧は [API-DB型制約マッピング](./api-db-type-constraints-mapping.md#ルールに載せるモデル載せないモデル)）。
 
 規約から外れている箇所は次のとおりで、いずれも意図したものである。
 
@@ -111,7 +111,7 @@ model SalonUpdateRequest {
 | `{ "nameKana": null }` | NULL 許可のカラムをクリアする（NOT NULL のカラムでは検証エラー） |
 | `{ "nameKana": "..." }` | その値に更新する |
 
-子テーブルの行を埋め込むプロパティは、指定すると全件を置き換える（`SalonUpdateRequest.openingHours`）。この区別を実装しているのは `backend/packages/domain/src/mappers/write/salon.mapper.ts` の `fromUpdateRequest` と `backend/packages/domain/src/schemas/salon.schema.ts` の `salonUpdateRequestSchema` で、プロパティをひとつも含まないリクエストは検証エラーになる。
+子テーブルの行を埋め込むプロパティは、指定すると全件を置き換える（`SalonUpdateRequest.openingHours`、`ServiceUpdateRequest.options`）。この区別を実装しているのは `backend/packages/domain/src/mappers/write/salon.mapper.ts` の `fromUpdateRequest` と `backend/packages/domain/src/schemas/salon.schema.ts` の `salonUpdateRequestSchema` で、プロパティをひとつも含まないリクエストは検証エラーになる。
 
 ## DB との一致
 
@@ -272,7 +272,7 @@ namespace SalonOperations {
 | 未認証・権限不足 | 401（`UnauthenticatedResponse`、`WWW-Authenticate` ヘッダー付き）と 403（`PermissionDeniedResponse`）。`ProblemResponse<401>` や `ProblemResponse<403>` を個別に並べず、上の表のエイリアス（`SessionErrors`、`CommonErrors`）で定義する。認証なしのオペレーションで 401 を個別に定義するのは、認証の失敗がそのオペレーションの結果である場合（ログイン、トークンの再発行）だけである |
 | ほかのサロンに属するリソース | 存在を知らせないよう 404。403 にするのは、権限をパスのサロンだけで判定できる操作である。公開情報であるサロンそのものへの操作と、サロンの下にあるルート（`/api/v1/salons/{salonId}/…`）への操作がこれにあたる。サロンの下にあるルートでは、パスのサロンに属さないリソースを 404 にする（[認証と認可](./authentication.md#サロンの下にあるルートの権限)） |
 | 状態の遷移（確定、キャンセル、完了、返金など） | ステータスのカラムを更新リクエストで書き換えず、`POST .../{id}/<action>` のアクションにする。リクエストとレスポンスは `XXX<Action>Request` / `XXX<Action>Response` |
-| 一括操作 | 1 つのトランザクションで全件を処理する。1 件でも失敗すれば全体を失敗させ、成功のレスポンスに件ごとのエラーを入れない |
+| 一括操作 | 1 つのトランザクションで全件を処理する。1 件でも失敗すれば全体を失敗させ、成功のレスポンスに件ごとのエラーを入れない。実装済みの例は、サービスの一括更新（`ServiceCrud` の `bulkUpdate`、`PATCH /api/v1/salons/{salonId}/services/bulk`） |
 | 親で絞り込む一覧 | 一覧の検索リクエストに親の ID のフィルターを持たせる。同じ結果を返すネストしたルート（`/customers/{id}/bookings` など）は作らない |
 | 親がパスにないリソース | 親の ID は、作成リクエストでは本文のプロパティ、検索リクエストでは任意のフィルターにする。更新リクエストには含めない（行は親を変えない） |
 | 親がパスにあるリソース（`/api/v1/salons/{salonId}/service-categories` など） | 親の ID はパスだけで受け取る（`@path salonId: SalonId`）。作成・更新・検索のリクエストには含めず、レスポンスには含める。どのオペレーションにも、親が存在しない場合の 404 を定義する |

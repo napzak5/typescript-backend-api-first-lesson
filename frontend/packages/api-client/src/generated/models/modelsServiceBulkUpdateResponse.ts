@@ -11,6 +11,6 @@ import type { ModelsServiceId } from './modelsServiceId';
  * サービス一括更新の結果 - 更新したサービスの ID 一覧を返す
  */
 export interface ModelsServiceBulkUpdateResponse {
-  /** 更新したサービスの ID 一覧 */
+  /** 更新したサービスの ID 一覧。serviceIds と同じ順に並ぶ */
   updated: ModelsServiceId[];
 }

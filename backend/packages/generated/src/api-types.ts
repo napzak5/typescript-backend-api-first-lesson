@@ -2425,13 +2425,13 @@ export interface paths {
         };
         /**
          * List salon services
-         * @description サロン内の提供メニューを、絞り込み条件とページネーションを指定して一覧取得します。削除済みのサービスは含みません。サロンが存在しない場合は404を返します。
+         * @description サロン内の提供メニューを、絞り込み条件とページネーションを指定して一覧取得します。表示順(sortOrder)の昇順に並びます。削除済みのサービスは含みません。cursorがそのサロンのサービスを指していない場合は400を返します。
          */
         get: operations["ServiceCrud_list"];
         put?: never;
         /**
          * Create service
-         * @description 新しい施術メニューを登録し、価格・施術時間・提供条件を設定します。サロンが存在しない場合は404を、categoryIdやpackageServiceIdsに同じサロンのものではないIDを指定した場合は400を返します。
+         * @description 新しい施術メニューを登録し、価格・施術時間・提供条件・追加オプションを設定します。categoryIdに同じサロンのものではないカテゴリを指定した場合と、packageServiceIdsに同じサロンの、削除されていない、パッケージではないサービス以外を指定した場合は400を返します。
          */
         post: operations["ServiceCrud_create"];
         delete?: never;
@@ -2455,7 +2455,7 @@ export interface paths {
         head?: never;
         /**
          * Bulk update services
-         * @description 複数メニューの共通項目を一括更新し、季節キャンペーンや価格調整を効率化します。すべてのサービスを1つのトランザクションで更新し、指定したサービスのいずれかがサロンに存在しない場合は404を返してどのサービスも更新しません。
+         * @description 複数メニューの共通項目を一括更新し、季節キャンペーンや価格調整を効率化します。すべてのサービスを1つのトランザクションで更新します。指定したサービスのいずれかがサロンに存在しない場合は404を、更新後の値がいずれかのサービスで規則に反する場合は400を返し、どのサービスも更新しません。
          */
         patch: operations["ServiceCrud_bulkUpdate"];
         trace?: never;
@@ -2469,21 +2469,21 @@ export interface paths {
         };
         /**
          * Get service
-         * @description 特定メニューの詳細情報を取得し、予約システムやスタッフ教育に必要な内容を確認します。
+         * @description 特定メニューの詳細情報を取得し、予約システムやスタッフ教育に必要な内容を確認します。サービスがそのサロンのものでない場合と、削除済みの場合は404を返します。
          */
         get: operations["ServiceCrud_get"];
         put?: never;
         post?: never;
         /**
          * Delete service
-         * @description 提供終了となったメニューを論理削除し、予約導線から除外します。削除後は一覧・取得の対象外になります。
+         * @description 提供終了となったメニューを論理削除し、予約導線から除外します。削除後は一覧・取得の対象外になります。パッケージに含まれているサービスは削除できず、409を返します。先にパッケージの構成から外してください。
          */
         delete: operations["ServiceCrud_delete"];
         options?: never;
         head?: never;
         /**
          * Update service
-         * @description 既存メニューの指定した項目だけを更新し、料金改定や提供条件の変更に対応します。categoryIdやpackageServiceIdsに同じサロンのものではないIDを指定した場合は400を返します。
+         * @description 既存メニューの指定した項目だけを更新し、料金改定や提供条件の変更に対応します。複数の項目にまたがる規則(discountPriceとprice、isPackageとpackageServiceIds)は、更新後の値の組み合わせで検証します。categoryIdに同じサロンのものではないカテゴリを指定した場合、packageServiceIdsに同じサロンの、削除されていない、パッケージではない、このサービス以外のサービス以外を指定した場合、ほかのパッケージに含まれているサービスをパッケージにしようとした場合は400を返します。
          */
         patch: operations["ServiceCrud_update"];
         trace?: never;
@@ -7266,14 +7266,14 @@ export interface components {
          *     すべてのサービスを1つのトランザクションで更新し、1件でも更新できない場合はどのサービスも更新しない
          */
         "Models.ServiceBulkUpdateRequest": {
-            /** @description 更新対象のサービス ID 一覧。パスの salonId のサロンのサービスを1件以上100件以下で指定する */
+            /** @description 更新対象のサービス ID 一覧。パスの salonId のサロンのサービスを重複なく1件以上100件以下で指定する */
             serviceIds: components["schemas"]["Models.ServiceId"][];
             /** @description 各サービスに適用する更新内容。指定した項目だけを更新する */
             updates: components["schemas"]["Models.ServiceUpdateRequest"];
         };
         /** @description サービス一括更新の結果 - 更新したサービスの ID 一覧を返す */
         "Models.ServiceBulkUpdateResponse": {
-            /** @description 更新したサービスの ID 一覧 */
+            /** @description 更新したサービスの ID 一覧。serviceIds と同じ順に並ぶ */
             updated: components["schemas"]["Models.ServiceId"][];
         };
         /**
@@ -7435,17 +7435,17 @@ export interface components {
             price: number;
             /**
              * Format: int32
-             * @description 割引後の料金。割引がない場合はnull
+             * @description 割引後の料金。price 以下の値を指定する。割引がない場合はnull
              */
             discountPrice: number | null;
             /** @description 税込価格かどうか */
             taxIncluded: boolean;
-            /** @description 採用している価格戦略。未設定の場合はnull */
-            pricingStrategy: components["schemas"]["Models.PricingStrategyType"] | null;
+            /** @description 採用している価格戦略 */
+            pricingStrategy: components["schemas"]["Models.PricingStrategyType"];
             /** @description 画像 URL。画像が登録されていない場合はnull */
             imageUrl: string | null;
-            /** @description サービス画像の URL 一覧。画像登録がない場合はnull */
-            imageUrls: string[] | null;
+            /** @description サービス画像の URL 一覧。画像がない場合は空配列 */
+            imageUrls: string[];
             /** @description 必要なスタッフレベル。全スタッフが対応可能な場合はnull */
             requiredStaffLevel: components["schemas"]["Models.StaffLevelType"] | null;
             /**
@@ -7457,25 +7457,27 @@ export interface components {
             requiresConsultation: boolean;
             /** @description オンライン予約を受け付けるかどうか */
             allowOnlineBooking: boolean;
-            /** @description 予約時に必要な要件一覧。特別な要件がない標準サービスの場合はnull */
-            bookingRequirements: components["schemas"]["Models.BookingRequirementType"][] | null;
-            /** @description 複数のサービスを組み合わせたパッケージかどうか */
+            /** @description 予約時に必要な要件一覧。同じ要件を重ねて指定できない。特別な要件がない場合は空配列 */
+            bookingRequirements: components["schemas"]["Models.BookingRequirementType"][];
+            /** @description 複数のサービスを組み合わせたパッケージかどうか。trueの場合は packageServiceIds に構成サービスを指定する */
             isPackage: boolean;
-            /** @description パッケージに含まれるサービスの ID 一覧。同じサロンのサービスを指定する。未設定の場合はnull */
-            packageServiceIds: components["schemas"]["Models.ServiceId"][] | null;
-            /** @description タグ一覧。タグ付けが不要な場合はnull */
-            tags: string[] | null;
+            /** @description パッケージに含まれるサービスの ID 一覧。isPackage が true の場合は、同じサロンの、パッケージではないサービスを重複なく2件以上20件以下で指定する。false の場合は空配列 */
+            packageServiceIds: components["schemas"]["Models.ServiceId"][];
+            /** @description タグ一覧。タグがない場合は空配列 */
+            tags: string[];
             /**
              * Format: int32
              * @description 表示順序
              */
             sortOrder: number;
-            /** @description 現在の提供ステータス。未設定の場合はnull */
-            serviceStatus: components["schemas"]["Models.ServiceStatusType"] | null;
-            /** @description 提供可能な時期の区分。未設定の場合はnull */
-            availability: components["schemas"]["Models.ServiceAvailabilityType"] | null;
+            /** @description 現在の提供ステータス */
+            serviceStatus: components["schemas"]["Models.ServiceStatusType"];
+            /** @description 提供可能な時期の区分 */
+            availability: components["schemas"]["Models.ServiceAvailabilityType"];
             /** @description 有効フラグ */
             isActive: boolean;
+            /** @description 追加オプションの一覧。オプションがない場合は空配列 */
+            options: components["schemas"]["Models.ServiceOption"][];
         };
         /**
          * Format: uuid
@@ -7484,15 +7486,16 @@ export interface components {
         "Models.ServiceId": string;
         /**
          * @description サービスオプション - service_options テーブルの1行。サービスに追加できるオプションを表す。
+         *     サービスのレスポンスでも、登録・更新リクエストでも同じ形を使う。
          *     プロパティ名と null 許可は DB カラムと一致させている。
          */
-        "Models.ServiceOptionResponse": {
+        "Models.ServiceOption": {
             /** @description オプション名 */
             name: string;
             /** @description オプションの説明。未設定の場合はnull */
             description: string | null;
-            /** @description オプションの種類。未設定の場合はnull */
-            optionType: components["schemas"]["Models.ServiceOptionType"] | null;
+            /** @description オプションの種類 */
+            optionType: components["schemas"]["Models.ServiceOptionType"];
             /**
              * Format: int32
              * @description 追加される施術時間（分）
@@ -7581,12 +7584,12 @@ export interface components {
             discountPrice: number | null;
             /** @description 税込価格かどうか */
             taxIncluded: boolean;
-            /** @description 採用している価格戦略。未設定の場合はnull */
-            pricingStrategy: components["schemas"]["Models.PricingStrategyType"] | null;
+            /** @description 採用している価格戦略 */
+            pricingStrategy: components["schemas"]["Models.PricingStrategyType"];
             /** @description 画像 URL。画像が登録されていない場合はnull */
             imageUrl: string | null;
-            /** @description サービス画像の URL 一覧。画像登録がない場合はnull */
-            imageUrls: string[] | null;
+            /** @description サービス画像の URL 一覧。画像がない場合は空配列 */
+            imageUrls: string[];
             /** @description 必要なスタッフレベル。全スタッフが対応可能な場合はnull */
             requiredStaffLevel: components["schemas"]["Models.StaffLevelType"] | null;
             /**
@@ -7598,27 +7601,27 @@ export interface components {
             requiresConsultation: boolean;
             /** @description オンライン予約を受け付けるかどうか */
             allowOnlineBooking: boolean;
-            /** @description 予約時に必要な要件一覧。特別な要件がない標準サービスの場合はnull */
-            bookingRequirements: components["schemas"]["Models.BookingRequirementType"][] | null;
+            /** @description 予約時に必要な要件一覧。特別な要件がない場合は空配列 */
+            bookingRequirements: components["schemas"]["Models.BookingRequirementType"][];
             /** @description 複数のサービスを組み合わせたパッケージかどうか */
             isPackage: boolean;
-            /** @description パッケージに含まれるサービスの ID 一覧。未設定の場合はnull */
-            packageServiceIds: components["schemas"]["Models.ServiceId"][] | null;
-            /** @description タグ一覧。タグ付けが不要な場合はnull */
-            tags: string[] | null;
+            /** @description パッケージに含まれるサービスの ID 一覧。パッケージでない場合は空配列 */
+            packageServiceIds: components["schemas"]["Models.ServiceId"][];
+            /** @description タグ一覧。タグがない場合は空配列 */
+            tags: string[];
             /**
              * Format: int32
              * @description 表示順序
              */
             sortOrder: number;
-            /** @description 現在の提供ステータス。未設定の場合はnull */
-            serviceStatus: components["schemas"]["Models.ServiceStatusType"] | null;
-            /** @description 提供可能な時期の区分。未設定の場合はnull */
-            availability: components["schemas"]["Models.ServiceAvailabilityType"] | null;
+            /** @description 現在の提供ステータス */
+            serviceStatus: components["schemas"]["Models.ServiceStatusType"];
+            /** @description 提供可能な時期の区分 */
+            availability: components["schemas"]["Models.ServiceAvailabilityType"];
             /** @description 有効フラグ */
             isActive: boolean;
             /** @description 追加オプションの一覧。sortOrderの昇順で並ぶ。オプションがない場合は空配列 */
-            options: components["schemas"]["Models.ServiceOptionResponse"][];
+            options: components["schemas"]["Models.ServiceOption"][];
             /**
              * Format: date-time
              * @description レコード作成日時
@@ -7693,17 +7696,17 @@ export interface components {
             price?: number;
             /**
              * Format: int32
-             * @description 割引後の料金。nullでクリア
+             * @description 割引後の料金。更新後の price 以下の値を指定する。nullでクリア
              */
             discountPrice?: number | null;
             /** @description 税込価格かどうか */
             taxIncluded?: boolean;
-            /** @description 採用している価格戦略。nullでクリア */
-            pricingStrategy?: components["schemas"]["Models.PricingStrategyType"] | null;
+            /** @description 採用している価格戦略 */
+            pricingStrategy?: components["schemas"]["Models.PricingStrategyType"];
             /** @description 画像 URL。nullでクリア */
             imageUrl?: string | null;
-            /** @description サービス画像の URL 一覧。nullでクリア */
-            imageUrls?: string[] | null;
+            /** @description サービス画像の URL 一覧。指定した場合は一覧全体を置き換える */
+            imageUrls?: string[];
             /** @description 必要なスタッフレベル。nullでクリア（全スタッフが対応可能になる） */
             requiredStaffLevel?: components["schemas"]["Models.StaffLevelType"] | null;
             /**
@@ -7715,25 +7718,27 @@ export interface components {
             requiresConsultation?: boolean;
             /** @description オンライン予約を受け付けるかどうか */
             allowOnlineBooking?: boolean;
-            /** @description 予約時に必要な要件一覧。nullでクリア */
-            bookingRequirements?: components["schemas"]["Models.BookingRequirementType"][] | null;
-            /** @description 複数のサービスを組み合わせたパッケージかどうか */
+            /** @description 予約時に必要な要件一覧。同じ要件を重ねて指定できない。指定した場合は一覧全体を置き換える */
+            bookingRequirements?: components["schemas"]["Models.BookingRequirementType"][];
+            /** @description 複数のサービスを組み合わせたパッケージかどうか。更新後の isPackage と packageServiceIds の組み合わせで検証する */
             isPackage?: boolean;
-            /** @description パッケージに含まれるサービスの ID 一覧。同じサロンのサービスを指定する。nullでクリア */
-            packageServiceIds?: components["schemas"]["Models.ServiceId"][] | null;
-            /** @description タグ一覧。nullでクリア */
-            tags?: string[] | null;
+            /** @description パッケージに含まれるサービスの ID 一覧。更新後の isPackage が true の場合は、同じサロンの、パッケージではない、このサービス以外のサービスを重複なく2件以上20件以下で指定する。false の場合は空配列 */
+            packageServiceIds?: components["schemas"]["Models.ServiceId"][];
+            /** @description タグ一覧。指定した場合は一覧全体を置き換える */
+            tags?: string[];
             /**
              * Format: int32
              * @description 表示順序
              */
             sortOrder?: number;
-            /** @description 現在の提供ステータス。nullでクリア */
-            serviceStatus?: components["schemas"]["Models.ServiceStatusType"] | null;
-            /** @description 提供可能な時期の区分。nullでクリア */
-            availability?: components["schemas"]["Models.ServiceAvailabilityType"] | null;
+            /** @description 現在の提供ステータス */
+            serviceStatus?: components["schemas"]["Models.ServiceStatusType"];
+            /** @description 提供可能な時期の区分 */
+            availability?: components["schemas"]["Models.ServiceAvailabilityType"];
             /** @description 有効フラグ */
             isActive?: boolean;
+            /** @description 追加オプションの一覧。指定した場合は一覧全体を置き換える */
+            options?: components["schemas"]["Models.ServiceOption"][];
         };
         /**
          * Format: uuid
@@ -9022,6 +9027,8 @@ export interface components {
         "Models.ServiceSearchRequest.categoryId": components["schemas"]["Models.CategoryId"];
         /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
         "Models.ServiceSearchRequest.cursor": string;
+        /** @description 有効フラグによる絞り込み。指定しない場合は無効なサービスも返す */
+        "Models.ServiceSearchRequest.isActive": boolean;
         /** @description 1ページあたりの取得件数上限 (1〜100) */
         "Models.ServiceSearchRequest.limit": number;
         /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
@@ -23716,6 +23723,8 @@ export interface operations {
                 cursor?: components["parameters"]["Models.ServiceSearchRequest.cursor"];
                 /** @description サービスカテゴリの ID による絞り込み(完全一致) */
                 categoryId?: components["parameters"]["Models.ServiceSearchRequest.categoryId"];
+                /** @description 有効フラグによる絞り込み。指定しない場合は無効なサービスも返す */
+                isActive?: components["parameters"]["Models.ServiceSearchRequest.isActive"];
             };
             header?: never;
             path: {
@@ -23743,30 +23752,6 @@ export interface operations {
             };
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /**
-             * @description 認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
-             *     ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
-             *     WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
-             */
-            401: {
-                headers: {
-                    /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
-                    "WWW-Authenticate": string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description 認証されているが、この操作を行う権限がない (403)。 */
-            403: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -24084,30 +24069,6 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /**
-             * @description 認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
-             *     ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
-             *     WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
-             */
-            401: {
-                headers: {
-                    /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
-                    "WWW-Authenticate": string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description 認証されているが、この操作を行う権限がない (403)。 */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
@@ -24196,6 +24157,15 @@ export interface operations {
             };
             /** @description The server cannot find the requested resource. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The request conflicts with the current state of the server. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

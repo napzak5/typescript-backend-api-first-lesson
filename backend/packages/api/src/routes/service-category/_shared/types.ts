@@ -1,8 +1,6 @@
 import type { operations } from '@beauty-salon-backend/generated'
-import type { JsonBody } from '../../../shared/operation-types'
+import type { JsonBody, SalonParams } from '../../../shared/operation-types'
 
-/** The salon of the request, from where the routes are mounted. */
-export type SalonParams = { salonId: string }
 /** The salon and the category of the request. */
 export type ServiceCategoryParams = SalonParams & { id: string }
 

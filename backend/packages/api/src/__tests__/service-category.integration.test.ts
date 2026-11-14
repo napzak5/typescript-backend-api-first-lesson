@@ -244,6 +244,10 @@ describe('Service category API', () => {
         name: 'Cut and blow-dry',
         duration: 60,
         price: 6600,
+        imageUrls: [],
+        tags: [],
+        packageServiceIds: [],
+        bookingRequirements: [],
       })
       .returning({ id: services.id })
     if (service === undefined) {

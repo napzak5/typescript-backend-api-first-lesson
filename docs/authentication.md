@@ -278,8 +278,10 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 |---|---|
 | サービスカテゴリーの一覧、1 件の取得 | 認証なし（メニューはサロンと同じ公開情報） |
 | サービスカテゴリーの作成、更新、削除 | `admin`、そのサロンの `owner` / `manager` |
+| サービスの一覧、1 件の取得 | 認証なし |
+| サービスの作成、更新、一括更新、削除 | `admin`、そのサロンの `owner` / `manager` |
 
-カテゴリーの規則は [サービスメニュー](./service-menu.md) にあります。
+カテゴリーとサービスの規則は [サービスメニュー](./service-menu.md) にあります。
 
 ## 管理者の操作
 
@@ -326,7 +328,7 @@ export const updateSalonHandler = (
 }
 ```
 
-サロンに属するデータ（顧客、予約、スタッフなど）を実装するときは、[サロンの下にあるルートの権限](#サロンの下にあるルートの権限) に従います。ユースケースは、パスの ID を `parseSalonIdOfPath`（`backend/packages/domain/src/models/salon.ts`）で検証し、そのサロンで権限を判定してから、`requireSalon`（`business-logic/_shared/existing-salon.ts`）でサロンの存在を確認します。対象は、そのサロンのものだけを検索します。例は `business-logic/service-category/` です。
+サロンに属するデータ（顧客、予約、スタッフなど）を実装するときは、[サロンの下にあるルートの権限](#サロンの下にあるルートの権限) に従います。ユースケースは、パスの ID を `parseSalonIdOfPath`（`backend/packages/domain/src/models/salon.ts`）で検証し、そのサロンで権限を判定してから、`requireSalon`（`business-logic/_shared/existing-salon.ts`）でサロンの存在を確認します。対象は、そのサロンのものだけを検索します。例は `business-logic/service-category/` と `business-logic/service/` です。
 
 ## シードのアカウント
 

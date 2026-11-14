@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { parseSalonIdOfPath } from '../models/salon'
+import { parseServiceId, serviceIdSchema } from '../models/service'
 import { parseCategoryId } from '../models/service-category'
 import type { DomainError } from '../shared'
 import { brokenRules, SALON_ID } from './fixtures'
 import { CATEGORY_ID } from './service-category-fixtures'
+import { SERVICE_ID } from './service-fixtures'
 
 /** The broken rules of a failed result, as `field:rule`; empty for a success. */
 const rulesOf = (result: { type: string; error?: DomainError }): string[] =>
@@ -98,5 +100,51 @@ describe('parseCategoryId', () => {
 
   it.each(notText)('reports %s under id', (_case, id) => {
     expect(rulesOf(parseCategoryId(id))).toEqual(['id:invalid_type'])
+  })
+})
+
+describe('parseServiceId', () => {
+  it('returns the ID of a service as it is', () => {
+    expect(parseServiceId(SERVICE_ID)).toEqual({
+      type: 'success',
+      data: SERVICE_ID,
+    })
+  })
+
+  it.each([
+    ['upper case', SERVICE_ID.toUpperCase()],
+    ['mixed case', '0193A5b8-7C2e-7d4F-8a1B-3c5D7e9f0E01'],
+  ])(
+    'returns an ID written in %s as the lower-case ID, the one the database returns',
+    (_case, id) => {
+      expect(parseServiceId(id)).toEqual({
+        type: 'success',
+        data: SERVICE_ID,
+      })
+    },
+  )
+
+  it.each([...notUuids, ['the word bulk', 'bulk']])(
+    'reports %s under id',
+    (_case, id) => {
+      expect(rulesOf(parseServiceId(id))).toEqual(['id:invalid_format'])
+    },
+  )
+
+  it.each(notText)('reports %s under id', (_case, id) => {
+    expect(rulesOf(parseServiceId(id))).toEqual(['id:invalid_type'])
+  })
+})
+
+describe('serviceIdSchema', () => {
+  it('reads a service ID written in upper case as the lower-case ID', () => {
+    expect(serviceIdSchema.safeParse(SERVICE_ID.toUpperCase())).toEqual({
+      success: true,
+      data: SERVICE_ID,
+    })
+  })
+
+  it.each(notUuids)('rejects %s', (_case, id) => {
+    expect(serviceIdSchema.safeParse(id).success).toBe(false)
   })
 })

@@ -114,6 +114,17 @@ describe('compareModel', () => {
     ).toEqual(['shouldBeRequired:openingHours'])
   })
 
+  it('requires an embedded property of an update model to be optional, and looks for no column behind it', () => {
+    const embedded = rule({ kind: 'update', embedded: ['options'] })
+
+    expect(
+      kindsOf(embedded, properties({ options: { required: false } })),
+    ).toEqual([])
+    expect(
+      kindsOf(embedded, properties({ options: { required: true } })),
+    ).toEqual(['shouldBeOptional:options'])
+  })
+
   it('does not look for a column behind a computed property', () => {
     const findings = kindsOf(
       rule({ computed: ['current'], omittedColumns: ['deletedAt'] }),

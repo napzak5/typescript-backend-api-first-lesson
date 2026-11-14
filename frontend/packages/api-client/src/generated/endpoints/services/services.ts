@@ -805,16 +805,6 @@ export type serviceCrudListResponse400 = {
   status: 400
 }
 
-export type serviceCrudListResponse401 = {
-  data: ModelsProblemDetails
-  status: 401
-}
-
-export type serviceCrudListResponse403 = {
-  data: ModelsProblemDetails
-  status: 403
-}
-
 export type serviceCrudListResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -833,7 +823,7 @@ export type serviceCrudListResponse500 = {
 export type serviceCrudListResponseSuccess = (serviceCrudListResponse200) & {
   headers: Headers;
 };
-export type serviceCrudListResponseError = (serviceCrudListResponse400 | serviceCrudListResponse401 | serviceCrudListResponse403 | serviceCrudListResponse404 | serviceCrudListResponse429 | serviceCrudListResponse500) & {
+export type serviceCrudListResponseError = (serviceCrudListResponse400 | serviceCrudListResponse404 | serviceCrudListResponse429 | serviceCrudListResponse500) & {
   headers: Headers;
 };
 
@@ -856,7 +846,7 @@ export const getServiceCrudListUrl = (salonId: ModelsSalonId,
 }
 
 /**
- * サロン内の提供メニューを、絞り込み条件とページネーションを指定して一覧取得します。削除済みのサービスは含みません。サロンが存在しない場合は404を返します。
+ * サロン内の提供メニューを、絞り込み条件とページネーションを指定して一覧取得します。表示順(sortOrder)の昇順に並びます。削除済みのサービスは含みません。cursorがそのサロンのサービスを指していない場合は400を返します。
  * @summary List salon services
  */
 export const serviceCrudList = async (salonId: ModelsSalonId,
@@ -907,7 +897,7 @@ export type ServiceCrudListQueryError = ModelsProblemDetails
 
 
 /**
- * サロン内の提供メニューを、絞り込み条件とページネーションを指定して一覧取得します。削除済みのサービスは含みません。サロンが存在しない場合は404を返します。
+ * サロン内の提供メニューを、絞り込み条件とページネーションを指定して一覧取得します。表示順(sortOrder)の昇順に並びます。削除済みのサービスは含みません。cursorがそのサロンのサービスを指していない場合は400を返します。
  * @summary List salon services
  */
 export function useServiceCrudList<TData = Awaited<ReturnType<typeof serviceCrudList>>, TError = ModelsProblemDetails>(
@@ -922,7 +912,7 @@ export function useServiceCrudList<TData = Awaited<ReturnType<typeof serviceCrud
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * サロン内の提供メニューを、絞り込み条件とページネーションを指定して一覧取得します。削除済みのサービスは含みません。サロンが存在しない場合は404を返します。
+ * サロン内の提供メニューを、絞り込み条件とページネーションを指定して一覧取得します。表示順(sortOrder)の昇順に並びます。削除済みのサービスは含みません。cursorがそのサロンのサービスを指していない場合は400を返します。
  * @summary List salon services
  */
 export function useServiceCrudList<TData = Awaited<ReturnType<typeof serviceCrudList>>, TError = ModelsProblemDetails>(
@@ -937,7 +927,7 @@ export function useServiceCrudList<TData = Awaited<ReturnType<typeof serviceCrud
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * サロン内の提供メニューを、絞り込み条件とページネーションを指定して一覧取得します。削除済みのサービスは含みません。サロンが存在しない場合は404を返します。
+ * サロン内の提供メニューを、絞り込み条件とページネーションを指定して一覧取得します。表示順(sortOrder)の昇順に並びます。削除済みのサービスは含みません。cursorがそのサロンのサービスを指していない場合は400を返します。
  * @summary List salon services
  */
 export function useServiceCrudList<TData = Awaited<ReturnType<typeof serviceCrudList>>, TError = ModelsProblemDetails>(
@@ -946,7 +936,7 @@ export function useServiceCrudList<TData = Awaited<ReturnType<typeof serviceCrud
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * サロン内の提供メニューを、絞り込み条件とページネーションを指定して一覧取得します。削除済みのサービスは含みません。サロンが存在しない場合は404を返します。
+ * サロン内の提供メニューを、絞り込み条件とページネーションを指定して一覧取得します。表示順(sortOrder)の昇順に並びます。削除済みのサービスは含みません。cursorがそのサロンのサービスを指していない場合は400を返します。
  * @summary List salon services
  */
 export function useServiceCrudList<TData = Awaited<ReturnType<typeof serviceCrudList>>, TError = ModelsProblemDetails>(
@@ -1030,7 +1020,7 @@ export const getServiceCrudCreateUrl = (salonId: ModelsSalonId,) => {
 }
 
 /**
- * 新しい施術メニューを登録し、価格・施術時間・提供条件を設定します。サロンが存在しない場合は404を、categoryIdやpackageServiceIdsに同じサロンのものではないIDを指定した場合は400を返します。
+ * 新しい施術メニューを登録し、価格・施術時間・提供条件・追加オプションを設定します。categoryIdに同じサロンのものではないカテゴリを指定した場合と、packageServiceIdsに同じサロンの、削除されていない、パッケージではないサービス以外を指定した場合は400を返します。
  * @summary Create service
  */
 export const serviceCrudCreate = async (salonId: ModelsSalonId,
@@ -1098,7 +1088,7 @@ const {mutation: mutationOptions} = options ?
     export type ServiceCrudCreateMutationVariables = {salonId: ModelsSalonId;data: ModelsServiceCreateRequest}
 
     /**
- * 新しい施術メニューを登録し、価格・施術時間・提供条件を設定します。サロンが存在しない場合は404を、categoryIdやpackageServiceIdsに同じサロンのものではないIDを指定した場合は400を返します。
+ * 新しい施術メニューを登録し、価格・施術時間・提供条件・追加オプションを設定します。categoryIdに同じサロンのものではないカテゴリを指定した場合と、packageServiceIdsに同じサロンの、削除されていない、パッケージではないサービス以外を指定した場合は400を返します。
  * @summary Create service
  */
 export const useServiceCrudCreate = <TError = ModelsProblemDetails,
@@ -1174,7 +1164,7 @@ export const getServiceCrudBulkUpdateUrl = (salonId: ModelsSalonId,) => {
 }
 
 /**
- * 複数メニューの共通項目を一括更新し、季節キャンペーンや価格調整を効率化します。すべてのサービスを1つのトランザクションで更新し、指定したサービスのいずれかがサロンに存在しない場合は404を返してどのサービスも更新しません。
+ * 複数メニューの共通項目を一括更新し、季節キャンペーンや価格調整を効率化します。すべてのサービスを1つのトランザクションで更新します。指定したサービスのいずれかがサロンに存在しない場合は404を、更新後の値がいずれかのサービスで規則に反する場合は400を返し、どのサービスも更新しません。
  * @summary Bulk update services
  */
 export const serviceCrudBulkUpdate = async (salonId: ModelsSalonId,
@@ -1242,7 +1232,7 @@ const {mutation: mutationOptions} = options ?
     export type ServiceCrudBulkUpdateMutationVariables = {salonId: ModelsSalonId;data: ModelsServiceBulkUpdateRequest}
 
     /**
- * 複数メニューの共通項目を一括更新し、季節キャンペーンや価格調整を効率化します。すべてのサービスを1つのトランザクションで更新し、指定したサービスのいずれかがサロンに存在しない場合は404を返してどのサービスも更新しません。
+ * 複数メニューの共通項目を一括更新し、季節キャンペーンや価格調整を効率化します。すべてのサービスを1つのトランザクションで更新します。指定したサービスのいずれかがサロンに存在しない場合は404を、更新後の値がいずれかのサービスで規則に反する場合は400を返し、どのサービスも更新しません。
  * @summary Bulk update services
  */
 export const useServiceCrudBulkUpdate = <TError = ModelsProblemDetails,
@@ -1265,16 +1255,6 @@ export type serviceCrudGetResponse400 = {
   status: 400
 }
 
-export type serviceCrudGetResponse401 = {
-  data: ModelsProblemDetails
-  status: 401
-}
-
-export type serviceCrudGetResponse403 = {
-  data: ModelsProblemDetails
-  status: 403
-}
-
 export type serviceCrudGetResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -1293,7 +1273,7 @@ export type serviceCrudGetResponse500 = {
 export type serviceCrudGetResponseSuccess = (serviceCrudGetResponse200) & {
   headers: Headers;
 };
-export type serviceCrudGetResponseError = (serviceCrudGetResponse400 | serviceCrudGetResponse401 | serviceCrudGetResponse403 | serviceCrudGetResponse404 | serviceCrudGetResponse429 | serviceCrudGetResponse500) & {
+export type serviceCrudGetResponseError = (serviceCrudGetResponse400 | serviceCrudGetResponse404 | serviceCrudGetResponse429 | serviceCrudGetResponse500) & {
   headers: Headers;
 };
 
@@ -1309,7 +1289,7 @@ export const getServiceCrudGetUrl = (salonId: ModelsSalonId,
 }
 
 /**
- * 特定メニューの詳細情報を取得し、予約システムやスタッフ教育に必要な内容を確認します。
+ * 特定メニューの詳細情報を取得し、予約システムやスタッフ教育に必要な内容を確認します。サービスがそのサロンのものでない場合と、削除済みの場合は404を返します。
  * @summary Get service
  */
 export const serviceCrudGet = async (salonId: ModelsSalonId,
@@ -1360,7 +1340,7 @@ export type ServiceCrudGetQueryError = ModelsProblemDetails
 
 
 /**
- * 特定メニューの詳細情報を取得し、予約システムやスタッフ教育に必要な内容を確認します。
+ * 特定メニューの詳細情報を取得し、予約システムやスタッフ教育に必要な内容を確認します。サービスがそのサロンのものでない場合と、削除済みの場合は404を返します。
  * @summary Get service
  */
 export function useServiceCrudGet<TData = Awaited<ReturnType<typeof serviceCrudGet>>, TError = ModelsProblemDetails>(
@@ -1375,7 +1355,7 @@ export function useServiceCrudGet<TData = Awaited<ReturnType<typeof serviceCrudG
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 特定メニューの詳細情報を取得し、予約システムやスタッフ教育に必要な内容を確認します。
+ * 特定メニューの詳細情報を取得し、予約システムやスタッフ教育に必要な内容を確認します。サービスがそのサロンのものでない場合と、削除済みの場合は404を返します。
  * @summary Get service
  */
 export function useServiceCrudGet<TData = Awaited<ReturnType<typeof serviceCrudGet>>, TError = ModelsProblemDetails>(
@@ -1390,7 +1370,7 @@ export function useServiceCrudGet<TData = Awaited<ReturnType<typeof serviceCrudG
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 特定メニューの詳細情報を取得し、予約システムやスタッフ教育に必要な内容を確認します。
+ * 特定メニューの詳細情報を取得し、予約システムやスタッフ教育に必要な内容を確認します。サービスがそのサロンのものでない場合と、削除済みの場合は404を返します。
  * @summary Get service
  */
 export function useServiceCrudGet<TData = Awaited<ReturnType<typeof serviceCrudGet>>, TError = ModelsProblemDetails>(
@@ -1399,7 +1379,7 @@ export function useServiceCrudGet<TData = Awaited<ReturnType<typeof serviceCrudG
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 特定メニューの詳細情報を取得し、予約システムやスタッフ教育に必要な内容を確認します。
+ * 特定メニューの詳細情報を取得し、予約システムやスタッフ教育に必要な内容を確認します。サービスがそのサロンのものでない場合と、削除済みの場合は404を返します。
  * @summary Get service
  */
 export function useServiceCrudGet<TData = Awaited<ReturnType<typeof serviceCrudGet>>, TError = ModelsProblemDetails>(
@@ -1484,7 +1464,7 @@ export const getServiceCrudUpdateUrl = (salonId: ModelsSalonId,
 }
 
 /**
- * 既存メニューの指定した項目だけを更新し、料金改定や提供条件の変更に対応します。categoryIdやpackageServiceIdsに同じサロンのものではないIDを指定した場合は400を返します。
+ * 既存メニューの指定した項目だけを更新し、料金改定や提供条件の変更に対応します。複数の項目にまたがる規則(discountPriceとprice、isPackageとpackageServiceIds)は、更新後の値の組み合わせで検証します。categoryIdに同じサロンのものではないカテゴリを指定した場合、packageServiceIdsに同じサロンの、削除されていない、パッケージではない、このサービス以外のサービス以外を指定した場合、ほかのパッケージに含まれているサービスをパッケージにしようとした場合は400を返します。
  * @summary Update service
  */
 export const serviceCrudUpdate = async (salonId: ModelsSalonId,
@@ -1553,7 +1533,7 @@ const {mutation: mutationOptions} = options ?
     export type ServiceCrudUpdateMutationVariables = {salonId: ModelsSalonId;id: ModelsServiceId;data: ModelsServiceUpdateRequest}
 
     /**
- * 既存メニューの指定した項目だけを更新し、料金改定や提供条件の変更に対応します。categoryIdやpackageServiceIdsに同じサロンのものではないIDを指定した場合は400を返します。
+ * 既存メニューの指定した項目だけを更新し、料金改定や提供条件の変更に対応します。複数の項目にまたがる規則(discountPriceとprice、isPackageとpackageServiceIds)は、更新後の値の組み合わせで検証します。categoryIdに同じサロンのものではないカテゴリを指定した場合、packageServiceIdsに同じサロンの、削除されていない、パッケージではない、このサービス以外のサービス以外を指定した場合、ほかのパッケージに含まれているサービスをパッケージにしようとした場合は400を返します。
  * @summary Update service
  */
 export const useServiceCrudUpdate = <TError = ModelsProblemDetails,
@@ -1591,6 +1571,11 @@ export type serviceCrudDeleteResponse404 = {
   status: 404
 }
 
+export type serviceCrudDeleteResponse409 = {
+  data: ModelsProblemDetails
+  status: 409
+}
+
 export type serviceCrudDeleteResponse429 = {
   data: ModelsProblemDetails
   status: 429
@@ -1604,7 +1589,7 @@ export type serviceCrudDeleteResponse500 = {
 export type serviceCrudDeleteResponseSuccess = (serviceCrudDeleteResponse204) & {
   headers: Headers;
 };
-export type serviceCrudDeleteResponseError = (serviceCrudDeleteResponse400 | serviceCrudDeleteResponse401 | serviceCrudDeleteResponse403 | serviceCrudDeleteResponse404 | serviceCrudDeleteResponse429 | serviceCrudDeleteResponse500) & {
+export type serviceCrudDeleteResponseError = (serviceCrudDeleteResponse400 | serviceCrudDeleteResponse401 | serviceCrudDeleteResponse403 | serviceCrudDeleteResponse404 | serviceCrudDeleteResponse409 | serviceCrudDeleteResponse429 | serviceCrudDeleteResponse500) & {
   headers: Headers;
 };
 
@@ -1620,7 +1605,7 @@ export const getServiceCrudDeleteUrl = (salonId: ModelsSalonId,
 }
 
 /**
- * 提供終了となったメニューを論理削除し、予約導線から除外します。削除後は一覧・取得の対象外になります。
+ * 提供終了となったメニューを論理削除し、予約導線から除外します。削除後は一覧・取得の対象外になります。パッケージに含まれているサービスは削除できず、409を返します。先にパッケージの構成から外してください。
  * @summary Delete service
  */
 export const serviceCrudDelete = async (salonId: ModelsSalonId,
@@ -1674,7 +1659,7 @@ const {mutation: mutationOptions} = options ?
     export type ServiceCrudDeleteMutationVariables = {salonId: ModelsSalonId;id: ModelsServiceId}
 
     /**
- * 提供終了となったメニューを論理削除し、予約導線から除外します。削除後は一覧・取得の対象外になります。
+ * 提供終了となったメニューを論理削除し、予約導線から除外します。削除後は一覧・取得の対象外になります。パッケージに含まれているサービスは削除できず、409を返します。先にパッケージの構成から外してください。
  * @summary Delete service
  */
 export const useServiceCrudDelete = <TError = ModelsProblemDetails,

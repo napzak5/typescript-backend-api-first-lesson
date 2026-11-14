@@ -14,7 +14,7 @@ PostgreSQL ── pnpm db:introspect ──▶ schema.ts     api-types.ts
                                   DbSalon、DbNewSalon ◀── マッパー ──▶ ApiSalonResponse、ApiSalonCreateRequest
 ```
 
-以下の例はすべて、参照実装である Salon のコードである。認証も同じ方法で型を導出している（`backend/packages/domain/src/models/auth.ts` の `DbUser`、`DbSession`、`DbNewSession`）。サロンのサービスカテゴリーも同じである（`backend/packages/domain/src/models/service-category.ts` の `DbServiceCategory`、`DbNewServiceCategory`）。それ以外のドメインは DB スキーマと TypeSpec にあるだけで、モデルもマッパーもない（TypeSpec は DB と一致させてある）。
+以下の例はすべて、参照実装である Salon のコードである。認証も同じ方法で型を導出している（`backend/packages/domain/src/models/auth.ts` の `DbUser`、`DbSession`、`DbNewSession`）。サロンのサービスカテゴリーとサービスも同じである（`backend/packages/domain/src/models/service-category.ts` の `DbServiceCategory`、`DbNewServiceCategory`、`backend/packages/domain/src/models/service.ts` の `DbService`、`DbNewService`、`DbServiceOption`、`DbNewServiceOption`）。それ以外のドメインは DB スキーマと TypeSpec にあるだけで、モデルもマッパーもない（TypeSpec は DB と一致させてある）。
 
 - 型と制約の層ごとの対応、`pnpm check:api-db`: [API-DB型制約マッピング](./api-db-type-constraints-mapping.md)
 - TypeSpec の書き方: [TypeSpec API型定義ルール](./typespec-api-type-rules.md)
@@ -44,6 +44,7 @@ PostgreSQL ── pnpm db:introspect ──▶ schema.ts     api-types.ts
 - 一度でもどこかの DB に適用したマイグレーションは編集しない。直したいときは新しいマイグレーションを書く
 - すでにその変更を含むスキーマに対して実行しても、何も変えないように書く（`IF EXISTS` / `IF NOT EXISTS` や `information_schema` で確認してから変更する）。適用履歴のない DB を最新にできるようにするためで、統合テスト（`backend/packages/database/src/scripts/__tests__/migrations.integration.test.ts`）が、`sql/setup.sql` から作った DB に全マイグレーションを再実行しても、スキーマ全体（カラム、enum、インデックス、制約）が変わらないことを確認している
 - カラム名は camelCase なので、SQL では二重引用符で囲む
+- CHECK 制約は、`CASE` を使わずに 1 つの論理式（`AND`・`OR`・`NOT`）で書く。`pnpm db:introspect` は `CASE` を含む CHECK 制約を `schema.ts` に再現しないので、`schema.ts` と、そこから生成する `sql/setup.sql` が、マイグレーションを適用した DB と一致しなくなる。場合分けは `OR` でつなぐ（`202611150300_services_columns.sql` の `services_package_members`）
 
 ```sql
 -- backend/packages/database/sql/migrations/202611140900_salon_list_columns_not_null.sql
@@ -182,7 +183,8 @@ DB の型と API の型は、2 つのマッパーでつなぐ。
 - 入力の検証はマッパーの仕事ではない。ユースケースが Zod スキーマで検証したあとの値を、Write マッパーが受け取る
 - Read マッパーは `Result` を返す。保存されている値が API のモデルに合わなければ `database` エラーになる
 - null を空文字や既定値に読み替えない
-- Write マッパーを書くのは、リクエストで書けるカラムに表現を変えるものがあるときだけである。サービスカテゴリーにはないので、ユースケースは検証済みのリクエストをそのままリポジトリに渡す。Read マッパー（`backend/packages/domain/src/mappers/read/service-category.mapper.ts`）はあり、タイムスタンプを変換する
+- Write マッパーを書くのは、リクエストで書けるカラムに表現を変えるものがあるときと、リクエストが複数のテーブルの行を含むときだけである。サービスカテゴリーにはどちらもないので、ユースケースは検証済みのリクエストをそのままリポジトリに渡す。Read マッパー（`backend/packages/domain/src/mappers/read/service-category.mapper.ts`）はあり、タイムスタンプを変換する
+- サービスにも表現を変えるカラムはないが、リクエストが `services` の行と、オプション（`service_options`）の行を含む。`ServiceWriteMapper`（`backend/packages/domain/src/mappers/write/service.mapper.ts`）は値を変換せず、この 2 つを分ける
 
 データの流れ:
 

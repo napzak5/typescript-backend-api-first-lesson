@@ -1,0 +1,18 @@
+import { type DomainError, parseWith } from '@beauty-salon-backend/domain'
+import type { Result } from '@beauty-salon-backend/utility'
+import { z } from 'zod'
+import {
+  booleanParameter,
+  numberParameter,
+} from '../../../shared/query-parameters'
+
+/** The parameters of the service list that are not text, as their types. */
+const serviceSearchQuerySchema = z.looseObject({
+  limit: numberParameter.exactOptional(),
+  isActive: booleanParameter.exactOptional(),
+})
+
+export const decodeServiceSearchQuery = (
+  query: unknown,
+): Result<unknown, DomainError> =>
+  parseWith(serviceSearchQuerySchema, query, 'Invalid service search')

@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
-import { atLeastOneProperty, nonBlankText } from '../schemas/rules'
-import { parseWith } from '../shared'
+import {
+  atLeastOneProperty,
+  MAX_INTEGER,
+  nonBlankText,
+  noRepeatedEntries,
+} from '../schemas/rules'
+import { parseWith, uuidSchema } from '../shared'
 import { brokenRules } from './fixtures'
 
 const rulesBrokenBy = (
@@ -106,5 +111,71 @@ describe('atLeastOneProperty', () => {
 
   it('adds nothing when the empty object already has an issue of its own', () => {
     expect(rulesBrokenBy(createSchema, {})).toEqual(['name:invalid_type'])
+  })
+})
+
+describe('noRepeatedEntries', () => {
+  /** A list of text in which no entry may come twice. */
+  const listSchema = z.array(z.string()).check(noRepeatedEntries)
+
+  it.each([
+    ['an empty list', []],
+    ['a list of one entry', ['cut']],
+    ['a list without repetitions', ['cut', 'color', 'perm']],
+    ['entries that differ in case only', ['cut', 'Cut', 'CUT']],
+  ])('adds nothing to %s and keeps it as it is', (_case, list) => {
+    expect(parseWith(listSchema, list, 'Invalid')).toEqual({
+      type: 'success',
+      data: list,
+    })
+  })
+
+  it('reports an entry that an earlier one equals under its own index', () => {
+    expect(rulesBrokenBy(listSchema, ['cut', 'color', 'cut'])).toEqual([
+      '2:custom',
+    ])
+  })
+
+  it('reports each later repetition under its own index, the first occurrence not at all', () => {
+    expect(
+      rulesBrokenBy(listSchema, ['cut', 'cut', 'color', 'cut', 'color']),
+    ).toEqual(['1:custom', '3:custom', '4:custom'])
+  })
+
+  it('reports the repetition with a message', () => {
+    const result = parseWith(listSchema, ['cut', 'cut'], 'Invalid')
+
+    expect(result).toEqual({
+      type: 'error',
+      error: {
+        type: 'validation',
+        message: 'Invalid',
+        issues: [{ field: '1', rule: 'custom', message: expect.any(String) }],
+      },
+    })
+  })
+
+  it('compares the entries as their schema reads them: a UUID in upper case repeats the same UUID in lower case', () => {
+    const ids = z.array(uuidSchema).check(noRepeatedEntries)
+    const id = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0e01'
+
+    expect(rulesBrokenBy(ids, [id, id.toUpperCase()])).toEqual(['1:custom'])
+  })
+
+  it('reports the repetitions under the path of the list within an object', () => {
+    const schema = z.object({
+      tags: z.array(z.string()).check(noRepeatedEntries),
+    })
+
+    expect(rulesBrokenBy(schema, { tags: ['a', 'b', 'a'] })).toEqual([
+      'tags.2:custom',
+    ])
+  })
+})
+
+describe('MAX_INTEGER', () => {
+  it('is the largest value of a PostgreSQL integer column, 2^31 - 1', () => {
+    expect(MAX_INTEGER).toBe(2_147_483_647)
+    expect(MAX_INTEGER).toBe(2 ** 31 - 1)
   })
 })

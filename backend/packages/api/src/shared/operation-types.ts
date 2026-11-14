@@ -4,3 +4,9 @@ export type JsonBody<Content> = Content extends {
 }
   ? Body
   : never
+
+/**
+ * The salon of a request to a route below a salon
+ * (`/salons/:salonId/...`), from where the router is mounted.
+ */
+export type SalonParams = { salonId: string }

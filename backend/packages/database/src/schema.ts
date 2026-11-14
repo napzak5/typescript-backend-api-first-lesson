@@ -1361,9 +1361,18 @@ export const serviceOptions = pgTable(
     updatedAt: timestamp({ withTimezone: true, mode: 'string' })
       .defaultNow()
       .notNull(),
-    optionType: serviceOptionType().default('addon'),
+    optionType: serviceOptionType().default('addon').notNull(),
   },
   (table) => [
+    check(
+      'service_options_additional_price_not_negative',
+      sql`"additionalPrice" >= 0`,
+    ),
+    check(
+      'service_options_additional_time_not_negative',
+      sql`"additionalTime" >= 0`,
+    ),
+    check('service_options_max_quantity_positive', sql`"maxQuantity" > 0`),
     foreignKey({
       columns: [table.serviceId],
       foreignColumns: [services.id],
@@ -1390,15 +1399,15 @@ export const services = pgTable(
     discountPrice: integer(),
     taxIncluded: boolean().default(true).notNull(),
     imageUrl: varchar({ length: 500 }),
-    imageUrls: jsonb().default([]),
+    imageUrls: text().array().notNull(),
     requiredStaffLevel: staffLevel(),
     maxBookingsPerDay: integer(),
     requiresConsultation: boolean().default(false).notNull(),
     allowOnlineBooking: boolean().default(true).notNull(),
     isPackage: boolean().default(false).notNull(),
-    packageServiceIds: jsonb().default([]),
+    packageServiceIds: uuid().array().notNull(),
     requiredProducts: jsonb().default([]),
-    tags: jsonb().default([]),
+    tags: text().array().notNull(),
     sortOrder: integer().default(0).notNull(),
     isActive: boolean().default(true).notNull(),
     deletedAt: timestamp({ withTimezone: true, mode: 'string' }),
@@ -1408,12 +1417,26 @@ export const services = pgTable(
     updatedAt: timestamp({ withTimezone: true, mode: 'string' })
       .defaultNow()
       .notNull(),
-    pricingStrategy: pricingStrategy().default('fixed'),
-    serviceStatus: serviceStatus().default('active'),
-    availability: serviceAvailability().default('always'),
-    bookingRequirements: bookingRequirement().array(),
+    pricingStrategy: pricingStrategy().default('fixed').notNull(),
+    serviceStatus: serviceStatus().default('active').notNull(),
+    availability: serviceAvailability().default('always').notNull(),
+    bookingRequirements: bookingRequirement().array().notNull(),
   },
   (table) => [
+    check(
+      'services_discount_price_within_price',
+      sql`("discountPrice" IS NULL) OR (("discountPrice" >= 0) AND ("discountPrice" <= price))`,
+    ),
+    check('services_duration_positive', sql`duration > 0`),
+    check(
+      'services_max_bookings_per_day_positive',
+      sql`("maxBookingsPerDay" IS NULL) OR ("maxBookingsPerDay" > 0)`,
+    ),
+    check(
+      'services_package_members',
+      sql`("isPackage" AND ((cardinality("packageServiceIds") >= 2) AND (cardinality("packageServiceIds") <= 20))) OR ((NOT "isPackage") AND (cardinality("packageServiceIds") = 0))`,
+    ),
+    check('services_price_not_negative', sql`price >= 0`),
     foreignKey({
       columns: [table.categoryId],
       foreignColumns: [serviceCategories.id],

@@ -2,7 +2,7 @@
 
 DB のカラムの型と制約が、Drizzle スキーマ、TypeSpec、生成された型、Zod スキーマのそれぞれでどう表されるかの対応表と、その一致を機械的に検査する `pnpm check:api-db` の説明。
 
-対応表は、実装済みの Salon ドメイン（`salons` と `opening_hours`）が実際に行っていることを書いている。認証（`users` と `sessions`）も同じ対応に従っており、Read マッパー（`backend/packages/domain/src/mappers/read/user.mapper.ts`、`session.mapper.ts`）とリクエストの Zod スキーマ（`backend/packages/domain/src/schemas/auth.schema.ts`）を持つ。サロンのサービスカテゴリー（`service_categories`）も同じで、Read マッパー（`backend/packages/domain/src/mappers/read/service-category.mapper.ts`）とリクエストの Zod スキーマ（`backend/packages/domain/src/schemas/service-category.schema.ts`）を持つ。Write マッパーはない（理由は[表現の変換](#表現の変換)）。それ以外のドメインは TypeSpec と DB スキーマにあるだけで、マッパーも Zod スキーマもない。それらの TypeSpec も、この対応表に従って DB と一致させてある。
+対応表は、実装済みの Salon ドメイン（`salons` と `opening_hours`）が実際に行っていることを書いている。認証（`users` と `sessions`）も同じ対応に従っており、Read マッパー（`backend/packages/domain/src/mappers/read/user.mapper.ts`、`session.mapper.ts`）とリクエストの Zod スキーマ（`backend/packages/domain/src/schemas/auth.schema.ts`）を持つ。サロンのサービスカテゴリー（`service_categories`）も同じで、Read マッパー（`backend/packages/domain/src/mappers/read/service-category.mapper.ts`）とリクエストの Zod スキーマ（`backend/packages/domain/src/schemas/service-category.schema.ts`）を持つ。Write マッパーはない（理由は[表現の変換](#表現の変換)）。サロンのサービス（`services` と `service_options`）も同じ対応に従い、Read マッパー（`backend/packages/domain/src/mappers/read/service.mapper.ts`）とリクエストの Zod スキーマ（`backend/packages/domain/src/schemas/service.schema.ts`）を持つ。Write マッパー（`backend/packages/domain/src/mappers/write/service.mapper.ts`）もあるが、値は変換しない（これも[表現の変換](#表現の変換)）。それ以外のドメインは TypeSpec と DB スキーマにあるだけで、マッパーも Zod スキーマもない。それらの TypeSpec も、この対応表に従って DB と一致させてある。
 
 - ルールそのもの（プロパティ名 = カラム名、NULL 許可の一致、Optional の制約）: [CLAUDE.md](../CLAUDE.md)
 - TypeSpec での書き方: [TypeSpec API型定義ルール](./typespec-api-type-rules.md)
@@ -28,6 +28,7 @@ DB のカラムの型と制約が、Drizzle スキーマ、TypeSpec、生成さ�
 | `varchar(n)` | `varchar({ length: n })` | `string` | `string` と `@maxLength(n)` | `string` | `name` |
 | `text` | `text()` | `string` | `string` | `string` | `description` |
 | `text[]` | `text().array()` | `string[]` | `string[]` | `string[]` | `imageUrls` |
+| `uuid[]` | `uuid().array()` | `string[]` | ID スカラーの配列（`ServiceId[]`） | `string[]`（要素は `format: uuid`） | `services.packageServiceIds` |
 | `integer` | `integer()` | `number` | `int32` | `number`（`format: int32`） | `reviewCount` |
 | `boolean` | `boolean()` | `boolean` | `boolean` | `boolean` | `isActive` |
 | `numeric(p, s)` | `numeric({ precision: p, scale: s })` | `string` | `float64` / `float32` | `number`（`format: double` / `float`） | `latitude`、`taxRate`、`rating` |
@@ -36,6 +37,7 @@ DB のカラムの型と制約が、Drizzle スキーマ、TypeSpec、生成さ�
 | `date` | `date()` | `string`（`YYYY-MM-DD`） | `plainDate` | `string`（`format: date`） | `opening_hours.date` |
 | `time` | `time()` | `string`（`HH:mm:ss`） | `string` | `string` | `opening_hours.openTime` |
 | enum 型（`day_of_week`） | `pgEnum('day_of_week', [...])` | 値のユニオン | `enum DayOfWeekType` | 値のユニオン | `opening_hours.dayOfWeek` |
+| enum 型の配列（`booking_requirement[]`） | `bookingRequirement().array()` | 値のユニオンの配列 | `BookingRequirementType[]` | 値のユニオンの配列 | `services.bookingRequirements` |
 
 NULL 許可のカラムは、どの層でも null を許す形になる: `schema.ts` では `.notNull()` なし、行の型と API の型では `| null`、TypeSpec では `Type | null`、OpenAPI では `nullable: true`、Zod では `.nullable()`。
 
@@ -58,9 +60,15 @@ NULL 許可のカラムは、どの層でも null を許す形になる: `schema
 | `time` | `timeOfDaySchema`（`HH:mm` または `HH:mm:ss`） | `openingHours` の `openTime` |
 | enum 型 | 生成された `DayOfWeekTypeSchema`（`@beauty-salon-backend/generated`） | `openingHours` の `dayOfWeek` |
 
-`integer` と `timestamp with time zone` のカラムは、Salon ではリクエストに含まれない（`reviewCount`、`createdAt` など）。`integer` のカラムをリクエストで受けるのはサービスカテゴリーの `displayOrder` で、`z.number().int().min(0).max(MAX_INTEGER)` で検証する（`backend/packages/domain/src/schemas/service-category.schema.ts`。`MAX_INTEGER` は `integer` のカラムの最大値）。
+`integer` と `timestamp with time zone` のカラムは、Salon ではリクエストに含まれない（`reviewCount`、`createdAt` など）。Salon にないカラムの型は、サービスカテゴリーとサービスのスキーマ（`backend/packages/domain/src/schemas/service-category.schema.ts`、`backend/packages/domain/src/schemas/service.schema.ts`）が次のように検証する。
 
-`nonBlankText` は Salon だけのものではない。複数のドメインのスキーマが共通で使うルールとして、`backend/packages/domain/src/schemas/rules.ts` に定義してある。
+| PostgreSQL | Zod | 例 |
+|---|---|---|
+| `integer` | `z.number().int().min(下限).max(MAX_INTEGER)`。`MAX_INTEGER` は `integer` のカラムの最大値。業務上の上限があるカラムは、その値を上限にする（`duration` は 1440） | サービスカテゴリーの `displayOrder`、サービスの `duration`、`price`、`discountPrice`、`maxBookingsPerDay`、`sortOrder`、オプションの `additionalTime`、`additionalPrice`、`maxQuantity`、`sortOrder` |
+| `uuid[]` | ID のスキーマの配列（`z.array(serviceIdSchema)`）。同じ値を重ねて指定できない配列には `.check(noRepeatedEntries)` を付ける | `packageServiceIds` |
+| enum 型の配列 | 生成された enum のスキーマの配列（`z.array(BookingRequirementTypeSchema)`）と `.check(noRepeatedEntries)` | `bookingRequirements` |
+
+`nonBlankText` は Salon だけのものではない。複数のドメインのスキーマが共通で使うルール（`nonBlankText`、`MAX_INTEGER`、`noRepeatedEntries`、`atLeastOneProperty`）は、`backend/packages/domain/src/schemas/rules.ts` に定義してある。
 
 ## 表現の変換
 
@@ -129,6 +137,8 @@ export const SalonWriteMapper = {
 
 リクエストで書けるカラムに上の 3 種類がないテーブルには、Write マッパーを書かない。`service_categories` がその例で、検証済みのリクエストをそのままリポジトリに渡す（`backend/packages/domain/src/models/service-category.ts` の `DbNewServiceCategory`）。Read マッパーが変換するのは `createdAt` と `updatedAt` だけである。
 
+`services` も、リクエストで書けるカラムに上の 3 種類がない。それでも Write マッパー（`backend/packages/domain/src/mappers/write/service.mapper.ts`）があるのは、リクエストが `services` の行と `service_options` の行を含むからで、マッパーは値を変換せず、2 つのテーブルの行に分ける。Read マッパーが変換するのは、ここでも `createdAt` と `updatedAt` だけである。
+
 `time` のカラムは変換しない。DB は `HH:mm:ss` で返し、リクエストは `HH:mm` と `HH:mm:ss` のどちらも受け付ける。
 
 ## 制約の対応
@@ -149,7 +159,7 @@ export const SalonWriteMapper = {
 - `DEFAULT` のあるカラムでも、リクエストで書けるもの（`timezone`、`currency`、`taxRate`、`isActive`）は Create で必須にする。`DbNewSalon` は `DeepRequired` で全キーが必須なので、API は DB の既定値に頼らない
 - DB やほかの機能が値を決めるカラム（`id`、`rating`、`reviewCount`、`createdAt`、`updatedAt` など）は Create / Update に含めない。リクエストのスキーマは `z.strictObject` なので、これらを送ると未知のプロパティとして検証エラーになる
 - 行が属するサロンを指すカラム（`service_categories.salonId`）も Create / Update に含めない。値はパスの `salonId` で決まり、あとから変えられない。`api-consistency-rules.ts` では `omittedColumns` に入れる（`serviceCategoryManagedColumns`）
-- `deletedAt`（論理削除）は API に出さない。リポジトリのすべてのメソッドが `deletedAt IS NULL` の行だけを扱う
+- `deletedAt`（論理削除）は API に出さない。リポジトリのメソッドが返す行と変更する行は、`deletedAt IS NULL` の行だけである。サービスの一覧のカーソルだけは、削除済みのサービスを指していてもよい（行が残っているので、ページの開始位置が分かる）
 
 Zod スキーマは API の型と突き合わせてあるので、TypeSpec の形を変えてスキーマを直し忘れると型検査で失敗する。
 
@@ -169,6 +179,22 @@ export const salonCreateRequestSchema = z.strictObject({
 ```
 
 DB にも TypeSpec にも表せない規則（空白だけの文字列を拒否する、電話番号や URL の形式、営業時間の前後関係、日付と曜日の一致など）は、Zod スキーマだけにある。
+
+### CHECK 制約
+
+`services` と `service_options` には、1 行だけで判定できる規則を CHECK 制約として持たせてある（`backend/packages/database/sql/migrations/202611150300_services_columns.sql`）。リクエストは、DB に届く前に同じ規則で検証する。
+
+| CHECK 制約 | TypeSpec | 同じ規則を検証する場所 |
+|---|---|---|
+| `services_duration_positive`（`duration > 0`） | `@minValue(1)` | スキーマの `duration`（1 以上） |
+| `services_price_not_negative`（`price >= 0`） | `@minValue(0)` | スキーマの `price`（0 以上） |
+| `services_discount_price_within_price`（`discountPrice` は NULL か、0 以上 `price` 以下） | `@minValue(0)`。`price` 以下であることは `@doc` に書く | スキーマの `discountPrice`（0 以上）と、`serviceRuleIssues`（`price` 以下） |
+| `services_max_bookings_per_day_positive`（`maxBookingsPerDay` は NULL か、1 以上） | `@minValue(1)` | スキーマの `maxBookingsPerDay`（1 以上） |
+| `services_package_members`（`isPackage` が true なら `packageServiceIds` は 2〜20 件、false なら 0 件） | `@maxItems(20)`。`isPackage` との組み合わせは `@doc` に書く | スキーマの `packageServiceIds`（20 件以下）と、`serviceRuleIssues`（パッケージは 2 件以上、パッケージでなければ 0 件） |
+| `service_options_additional_time_not_negative`、`service_options_additional_price_not_negative` | `@minValue(0)` | オプションのスキーマの `additionalTime`、`additionalPrice`（0 以上） |
+| `service_options_max_quantity_positive`（`maxQuantity > 0`） | `@minValue(1)` | オプションのスキーマの `maxQuantity`（1 以上） |
+
+1 つのカラムの範囲は `backend/packages/domain/src/schemas/service.schema.ts` のスキーマにあり、2 つのカラムを結ぶ規則は `backend/packages/domain/src/business-logic/service/_shared/rules.ts` の `serviceRuleIssues` にある。部分更新は片方のカラムだけを指定できるので、後者はリクエストではなく、更新後に保存される行に対して判定する。作成ではユースケースが、更新ではリポジトリがトランザクションの中で呼ぶ。どちらの違反も検証エラー（400）になる。
 
 ## `pnpm check:api-db`
 
@@ -245,7 +271,7 @@ const salonRules: ModelRule[] = [
 | モデル | ルール |
 |---|---|
 | `XXXResponse`、`XXXCreateRequest`、`XXXUpdateRequest` | 載せる（`response` / `create` / `update`） |
-| 親に埋め込む子テーブルの行（`OpeningHours`、`ServiceOptionResponse`、`BookingServiceResponse` など） | 載せる。親のルールでは `embedded` にプロパティ名を書く |
+| 親に埋め込む子テーブルの行（`OpeningHours`、`ServiceOption`、`BookingServiceResponse` など） | 載せる。親のルールでは `embedded` にプロパティ名を書く |
 | テーブルの行に、サーバーがレスポンスのたびに求める値を加えたモデル（`SessionResponse` の `current`） | 載せる。ルールの `computed` にそのプロパティ名を書く |
 | 行を追加するアクションのリクエスト（`PointEarnRequest`、`SaleProcessRequest` など） | カラムと 1 対 1 なら `create` として載せる |
 | `XXXSearchRequest` | 載せない |

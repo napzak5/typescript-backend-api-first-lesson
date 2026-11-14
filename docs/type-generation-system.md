@@ -62,7 +62,8 @@ options:
 
 The document describes every domain that is defined in TypeSpec. The backend
 implements only the Salon operations, the operations on the service
-categories of a salon (`ServiceCategoryCrud`), the authentication operations (those of
+categories and on the services of a salon (`ServiceCategoryCrud`,
+`ServiceCrud`), the authentication operations (those of
 `AuthCrud`, `SessionCrud` and `AdminAuthCrud`: login, refresh, logout, the
 current user, registration, email verification, password reset and change,
 two-factor authentication, the session list, the administrator operations)
@@ -197,7 +198,8 @@ both directories) and does not touch YAML. `.tsp` files are formatted with
    `satisfies z.ZodType<…>`, so a property that was added, or whose type
    changed, shows up as a type error in
    `backend/packages/domain/src/schemas/salon.schema.ts` (or
-   `auth.schema.ts` or `service-category.schema.ts` next to it). A property that was
+   `auth.schema.ts`, `service-category.schema.ts` or `service.schema.ts` next to
+   it). A property that was
    removed from a model is not reported there: remove it from the schema
    yourself.
 4. If a model that maps to a table changed, run `pnpm check:api-db`.

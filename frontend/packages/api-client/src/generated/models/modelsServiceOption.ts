@@ -9,27 +9,44 @@ import type { ModelsServiceOptionType } from './modelsServiceOptionType';
 
 /**
  * サービスオプション - service_options テーブルの1行。サービスに追加できるオプションを表す。
+ * サービスのレスポンスでも、登録・更新リクエストでも同じ形を使う。
  * プロパティ名と null 許可は DB カラムと一致させている。
  */
-export interface ModelsServiceOptionResponse {
-  /** オプション名 */
+export interface ModelsServiceOption {
+  /**
+     * オプション名
+     * @minLength 1
+     * @maxLength 255
+     */
   name: string;
   /**
      * オプションの説明。未設定の場合はnull
      * @nullable
      */
   description: string | null;
-  /** オプションの種類。未設定の場合はnull */
-  optionType: ModelsServiceOptionType | null;
-  /** 追加される施術時間（分） */
+  /** オプションの種類 */
+  optionType: ModelsServiceOptionType;
+  /**
+     * 追加される施術時間（分）
+     * @minimum 0
+     */
   additionalTime: number;
-  /** 追加料金 */
+  /**
+     * 追加料金
+     * @minimum 0
+     */
   additionalPrice: number;
-  /** 1回の予約で選択できる最大数量 */
+  /**
+     * 1回の予約で選択できる最大数量
+     * @minimum 1
+     */
   maxQuantity: number;
   /** 必須オプションかどうか */
   isRequired: boolean;
-  /** 表示順序 */
+  /**
+     * 表示順序
+     * @minimum 0
+     */
   sortOrder: number;
   /** 有効フラグ */
   isActive: boolean;
