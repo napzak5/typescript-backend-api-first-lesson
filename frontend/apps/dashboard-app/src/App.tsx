@@ -134,7 +134,11 @@ function Overview() {
                 <CartesianGrid strokeDasharray='3 3' />
                 <XAxis dataKey='month' />
                 <YAxis />
-                <Tooltip formatter={(value) => `$${value.toLocaleString()}`} />
+                <Tooltip
+                  formatter={(value) =>
+                    value === undefined ? '' : `$${value.toLocaleString()}`
+                  }
+                />
                 <Legend />
                 <Area
                   type='monotone'

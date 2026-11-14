@@ -33,69 +33,82 @@ namespace BeautySalon.Operations {
     @doc("施術完了後に顧客がレビューを投稿し、サービス品質の可視化と信頼獲得につなげます。")
     @summary("Create review")
     @post
-    op create(@body review: ReviewCreateRequest): {
-      @statusCode statusCode: 201;
-      @header location: string;
-      @body review: Review;
-    } | {
-      @statusCode statusCode: 400;
-      @body error: Error;
-    } | {
-      @statusCode statusCode: 409;
-      @body error: Error;
-    };
+    op create(@body review: ReviewCreateRequest):
+      | {
+          @statusCode statusCode: 201;
+          @header location: string;
+          @body review: Review;
+        }
+      | {
+          @statusCode statusCode: 400;
+          @body error: Error;
+        }
+      | {
+          @statusCode statusCode: 409;
+          @body error: Error;
+        };
 
     @doc("単一レビューの詳細を表示し、コメント内容や評価指標を確認します。")
     @summary("Get review")
     @get
-    op get(@path id: ReviewId): {
-      @statusCode statusCode: 200;
-      @body review: Review;
-    } | {
-      @statusCode statusCode: 404;
-      @body error: Error;
-    };
+    op get(@path id: ReviewId):
+      | {
+          @statusCode statusCode: 200;
+          @body review: Review;
+        }
+      | {
+          @statusCode statusCode: 404;
+          @body error: Error;
+        };
 
     @doc("顧客が投稿後のレビューを修正し、誤記修正や追記を反映します。")
     @summary("Update review")
     @patch(#{ implicitOptionality: true })
-    op update(@path id: ReviewId, @body updates: ReviewUpdateRequest): {
-      @statusCode statusCode: 200;
-      @body review: Review;
-    } | {
-      @statusCode statusCode: 404;
-      @body error: Error;
-    } | {
-      @statusCode statusCode: 403;
-      @body error: Error;
-    };
+    op update(@path id: ReviewId, @body updates: ReviewUpdateRequest):
+      | {
+          @statusCode statusCode: 200;
+          @body review: Review;
+        }
+      | {
+          @statusCode statusCode: 404;
+          @body error: Error;
+        }
+      | {
+          @statusCode statusCode: 403;
+          @body error: Error;
+        };
 
     @doc("レビューの削除要請に応じて投稿を非表示または除去し、コンプライアンスを維持します。")
     @summary("Delete review")
     @delete
-    op delete(@path id: ReviewId): {
-      @statusCode statusCode: 204;
-    } | {
-      @statusCode statusCode: 404;
-      @body error: Error;
-    } | {
-      @statusCode statusCode: 403;
-      @body error: Error;
-    };
+    op delete(@path id: ReviewId):
+      | {
+          @statusCode statusCode: 204;
+        }
+      | {
+          @statusCode statusCode: 404;
+          @body error: Error;
+        }
+      | {
+          @statusCode statusCode: 403;
+          @body error: Error;
+        };
 
     @doc("他の利用者に役立つレビューをマーキングし、信頼性の高い声を強調します。")
     @summary("Mark review as helpful")
     @route("/{id}/helpful")
     @post
-    op markHelpful(@path id: ReviewId): {
-      @statusCode statusCode: 200;
-      @body response: {
-        helpfulCount: int32;
-      };
-    } | {
-      @statusCode statusCode: 404;
-      @body error: Error;
-    };
+    op markHelpful(@path id: ReviewId):
+      | {
+          @statusCode statusCode: 200;
+          @body response: {
+            helpfulCount: int32;
+          };
+        }
+      | {
+          @statusCode statusCode: 404;
+          @body error: Error;
+        };
 
     @doc("不適切な内容や虚偽が疑われるレビューを通報し、運営による対応フローへ送ります。")
     @summary("Report review")
@@ -107,15 +120,17 @@ namespace BeautySalon.Operations {
         reason: string;
         details?: string;
       },
-    ): {
-      @statusCode statusCode: 200;
-      @body response: {
-        reportId: string;
-      };
-    } | {
-      @statusCode statusCode: 404;
-      @body error: Error;
-    };
+    ):
+      | {
+          @statusCode statusCode: 200;
+          @body response: {
+            reportId: string;
+          };
+        }
+      | {
+          @statusCode statusCode: 404;
+          @body error: Error;
+        };
   }
 
   @doc("サロン単位でのレビュー評価と傾向を集計し、店舗ブランディングと改善施策に活かすAPI操作群です。")

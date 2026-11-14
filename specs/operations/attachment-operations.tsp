@@ -13,9 +13,9 @@ interface AttachmentOperations {
   @doc("スタッフが管理画面からファイル本体を直接アップロードし、予約記録や顧客カルテに紐づけるための操作です。")
   @post
   @route("/upload")
-  uploadFile(
-    @body body: Models.AttachmentCreateRequest,
-  ): Models.Attachment | Models.Error;
+  uploadFile(@body body: Models.AttachmentCreateRequest):
+    | Models.Attachment
+    | Models.Error;
 
   @doc("顧客やスタッフがブラウザから直接クラウドストレージへアップロードできるよう、短時間だけ有効な署名付きURLを発行します。")
   @post

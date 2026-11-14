@@ -1,5 +1,6 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.2.4/schema.json",
+  "root": false,
+  "$schema": "https://biomejs.dev/schemas/2.6.7/schema.json",
   "files": {
     "includes": [
       "**",
@@ -46,6 +47,9 @@
     }
   },
   "css": {
+    "parser": {
+      "tailwindDirectives": true
+    },
     "linter": {
       "enabled": true
     },
@@ -57,7 +61,7 @@
     "enabled": true,
     "includes": ["**", "!**/dist"],
     "rules": {
-      "recommended": true,
+      "preset": "recommended",
       "suspicious": {
         "noExplicitAny": "error",
         "noArrayIndexKey": "warn"

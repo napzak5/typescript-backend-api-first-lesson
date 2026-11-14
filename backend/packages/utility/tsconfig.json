@@ -1,6 +1,7 @@
 {
   "extends": "@beauty-salon-shared/config/tsconfig.lib.json",
   "compilerOptions": {
+    "types": ["node"],
     "composite": true,
     "noEmit": false,
     "declaration": true,

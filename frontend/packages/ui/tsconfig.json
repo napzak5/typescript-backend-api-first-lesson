@@ -8,7 +8,8 @@
     "rootDir": "./src",
     "outDir": "./dist",
     "tsBuildInfoFile": "./tsconfig.tsbuildinfo",
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "types": ["vite/client"]
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]

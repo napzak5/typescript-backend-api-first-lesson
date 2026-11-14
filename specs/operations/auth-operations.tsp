@@ -15,16 +15,19 @@ namespace BeautySalon.Operations {
     @post
     @route("/register")
     @useAuth(NoAuth)
-    op register(@body request: AuthRegisterRequest): {
-      @statusCode statusCode: 201;
-      @body response: User;
-    } | {
-      @statusCode statusCode: 409;
-      @body error: Error;
-    } | {
-      @statusCode statusCode: 400;
-      @body error: Error;
-    };
+    op register(@body request: AuthRegisterRequest):
+      | {
+          @statusCode statusCode: 201;
+          @body response: User;
+        }
+      | {
+          @statusCode statusCode: 409;
+          @body error: Error;
+        }
+      | {
+          @statusCode statusCode: 400;
+          @body error: Error;
+        };
 
     @doc("Login with email and password")
     @post
@@ -56,62 +59,73 @@ namespace BeautySalon.Operations {
     @post
     @route("/refresh")
     @useAuth(NoAuth)
-    op refreshToken(@body request: AuthTokenRefreshRequest): {
-      @statusCode statusCode: 200;
-      @body response: AuthLoginResponse;
-    } | {
-      @statusCode statusCode: 401;
-      @body error: Error;
-    };
+    op refreshToken(@body request: AuthTokenRefreshRequest):
+      | {
+          @statusCode statusCode: 200;
+          @body response: AuthLoginResponse;
+        }
+      | {
+          @statusCode statusCode: 401;
+          @body error: Error;
+        };
 
     @doc("Logout and invalidate session")
     @post
     @route("/logout")
-    op logout(@header("Authorization") authorization: string): {
-      @statusCode statusCode: 200;
-      @body response: AuthSuccessResponse;
-    } | {
-      @statusCode statusCode: 401;
-      @body error: Error;
-    };
+    op logout(@header("Authorization") authorization: string):
+      | {
+          @statusCode statusCode: 200;
+          @body response: AuthSuccessResponse;
+        }
+      | {
+          @statusCode statusCode: 401;
+          @body error: Error;
+        };
 
     @doc("Get current user information")
     @get
     @route("/me")
-    op getCurrentUser(@header("Authorization") authorization: string): {
-      @statusCode statusCode: 200;
-      @body response: User;
-    } | {
-      @statusCode statusCode: 401;
-      @body error: Error;
-    };
+    op getCurrentUser(@header("Authorization") authorization: string):
+      | {
+          @statusCode statusCode: 200;
+          @body response: User;
+        }
+      | {
+          @statusCode statusCode: 401;
+          @body error: Error;
+        };
 
     @doc("Request password reset")
     @post
     @route("/forgot-password")
     @useAuth(NoAuth)
-    op forgotPassword(@body request: AuthPasswordResetRequest): {
-      @statusCode statusCode: 200;
-      @body response: AuthSuccessResponse;
-    } | {
-      @statusCode statusCode: 404;
-      @body error: Error;
-    } | {
-      @statusCode statusCode: 429;
-      @body error: Error;
-    };
+    op forgotPassword(@body request: AuthPasswordResetRequest):
+      | {
+          @statusCode statusCode: 200;
+          @body response: AuthSuccessResponse;
+        }
+      | {
+          @statusCode statusCode: 404;
+          @body error: Error;
+        }
+      | {
+          @statusCode statusCode: 429;
+          @body error: Error;
+        };
 
     @doc("Verify password reset token")
     @get
     @route("/reset-password/verify")
     @useAuth(NoAuth)
-    op verifyResetToken(@query token: string): {
-      @statusCode statusCode: 200;
-      @body response: AuthSuccessResponse;
-    } | {
-      @statusCode statusCode: 400;
-      @body error: Error;
-    };
+    op verifyResetToken(@query token: string):
+      | {
+          @statusCode statusCode: 200;
+          @body response: AuthSuccessResponse;
+        }
+      | {
+          @statusCode statusCode: 400;
+          @body error: Error;
+        };
 
     @doc("Reset password with token")
     @post
@@ -160,13 +174,15 @@ namespace BeautySalon.Operations {
     @post
     @route("/verify-email/confirm")
     @useAuth(NoAuth)
-    op confirmEmailVerification(@body request: AuthEmailVerificationRequest): {
-      @statusCode statusCode: 200;
-      @body response: AuthSuccessResponse;
-    } | {
-      @statusCode statusCode: 400;
-      @body error: Error;
-    };
+    op confirmEmailVerification(@body request: AuthEmailVerificationRequest):
+      | {
+          @statusCode statusCode: 200;
+          @body response: AuthSuccessResponse;
+        }
+      | {
+          @statusCode statusCode: 400;
+          @body error: Error;
+        };
 
     @doc("Change password")
     @post
@@ -223,16 +239,19 @@ namespace BeautySalon.Operations {
     @doc("Get QR code for 2FA setup")
     @get
     @route("/2fa/qr-code")
-    op getTwoFactorQRCode(@header("Authorization") authorization: string): {
-      @statusCode statusCode: 200;
-      @body response: AuthTwoFactorSetupResponse;
-    } | {
-      @statusCode statusCode: 401;
-      @body error: Error;
-    } | {
-      @statusCode statusCode: 400;
-      @body error: Error;
-    };
+    op getTwoFactorQRCode(@header("Authorization") authorization: string):
+      | {
+          @statusCode statusCode: 200;
+          @body response: AuthTwoFactorSetupResponse;
+        }
+      | {
+          @statusCode statusCode: 401;
+          @body error: Error;
+        }
+      | {
+          @statusCode statusCode: 400;
+          @body error: Error;
+        };
 
     @doc("Verify two-factor authentication code")
     @post
@@ -315,13 +334,15 @@ namespace BeautySalon.Operations {
     @doc("Get active sessions")
     @get
     @route("/sessions")
-    op getSessions(@header("Authorization") authorization: string): {
-      @statusCode statusCode: 200;
-      @body response: AuthSessionListResponse;
-    } | {
-      @statusCode statusCode: 401;
-      @body error: Error;
-    };
+    op getSessions(@header("Authorization") authorization: string):
+      | {
+          @statusCode statusCode: 200;
+          @body response: AuthSessionListResponse;
+        }
+      | {
+          @statusCode statusCode: 401;
+          @body error: Error;
+        };
 
     @doc("Revoke a specific session")
     @delete
@@ -329,27 +350,32 @@ namespace BeautySalon.Operations {
     op revokeSession(
       @header("Authorization") authorization: string,
       @path sessionId: string,
-    ): {
-      @statusCode statusCode: 200;
-      @body response: AuthSuccessResponse;
-    } | {
-      @statusCode statusCode: 401;
-      @body error: Error;
-    } | {
-      @statusCode statusCode: 404;
-      @body error: Error;
-    };
+    ):
+      | {
+          @statusCode statusCode: 200;
+          @body response: AuthSuccessResponse;
+        }
+      | {
+          @statusCode statusCode: 401;
+          @body error: Error;
+        }
+      | {
+          @statusCode statusCode: 404;
+          @body error: Error;
+        };
 
     @doc("Logout from all sessions")
     @post
     @route("/logout-all")
-    op logoutAll(@header("Authorization") authorization: string): {
-      @statusCode statusCode: 200;
-      @body response: AuthSuccessResponse;
-    } | {
-      @statusCode statusCode: 401;
-      @body error: Error;
-    };
+    op logoutAll(@header("Authorization") authorization: string):
+      | {
+          @statusCode statusCode: 200;
+          @body response: AuthSuccessResponse;
+        }
+      | {
+          @statusCode statusCode: 401;
+          @body error: Error;
+        };
   }
 
   @route("/api/v1/admin/auth")

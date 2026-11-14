@@ -1,5 +1,5 @@
 import path from 'node:path'
-import react from '@vitejs/plugin-react-swc'
+import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
@@ -24,17 +24,17 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, 'src'),
+      '@': path.resolve(import.meta.dirname, 'src'),
       '@beauty-salon-frontend/api-client': path.resolve(
-        __dirname,
+        import.meta.dirname,
         '../../packages/api-client/src',
       ),
       '@beauty-salon-frontend/types': path.resolve(
-        __dirname,
+        import.meta.dirname,
         '../../packages/types/src',
       ),
       '@beauty-salon-frontend/ui': path.resolve(
-        __dirname,
+        import.meta.dirname,
         '../../packages/ui/src',
       ),
     },

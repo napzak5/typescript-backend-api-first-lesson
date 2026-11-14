@@ -22,7 +22,7 @@ import { updateSalonHandler } from './update-salon.handler'
  * - PUT    /api/v1/salons/:id      → updateSalonHandler   (Update existing salon)
  * - DELETE /api/v1/salons/:id      → deleteSalonHandler   (Soft delete salon)
  */
-const router = Router()
+const router: Router = Router()
 
 // List and Create operations
 router.get('/salons', listSalonsHandler)
