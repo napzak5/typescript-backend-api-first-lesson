@@ -11,8 +11,10 @@ import {
 import type { ClientInfo, DbSession, DbUser } from '../models/auth'
 import { DomainErrors } from '../shared'
 import {
+  APP_CODE,
   actors,
   authDependencies,
+  BACKUP_CODE,
   CUSTOMER_ID,
   DAY,
   dataOf,
@@ -27,6 +29,7 @@ import {
   secondsFromNow,
   sessionRepositoryWith,
   sessionWithAccount,
+  twoFactorUser,
   USER_ID,
   userAccount,
   userRepositoryWith,
@@ -38,6 +41,9 @@ const databaseDown = Result.error(
 )
 const loginFailed = Result.error(
   DomainErrors.unauthenticated('invalidCredentials'),
+)
+const twoFactorRequired = Result.error(
+  DomainErrors.unauthenticated('twoFactorRequired'),
 )
 const invalidToken = Result.error(DomainErrors.unauthenticated('invalidToken'))
 const expiredToken = Result.error(DomainErrors.unauthenticated('expiredToken'))
@@ -385,14 +391,6 @@ describe('LoginUseCase', () => {
     ['an inactive account', { status: 'inactive' }],
     ['a suspended account', { status: 'suspended' }],
     ['an account with the status deleted', { status: 'deleted' }],
-    [
-      'an account with two-factor authentication on',
-      { twoFactorEnabled: true },
-    ],
-    [
-      'an account whose two-factor status is enabled',
-      { twoFactorStatus: 'enabled' },
-    ],
   ])('refuses %s even with the right password', async (_case, user) => {
     const dependencies = withUser(user)
 
@@ -408,21 +406,51 @@ describe('LoginUseCase', () => {
     expect(dependencies.sessionRepository.create).not.toHaveBeenCalled()
   })
 
-  it.each<[string, Partial<DbUser>]>([
-    ['two-factor authentication on', { twoFactorEnabled: true }],
-    ['the two-factor status enabled', { twoFactorStatus: 'enabled' }],
+  it('does not skip the second factor of an account whose two-factor status is enabled: the right password alone starts no session', async () => {
+    const dependencies = withUser(twoFactorUser('enabled'))
+
+    const result = await new LoginUseCase(dependencies).execute(
+      loginRequest(),
+      client,
+    )
+
+    expect(result).toEqual(twoFactorRequired)
+    expect(
+      dependencies.userRepository.recordSuccessfulLogin,
+    ).not.toHaveBeenCalled()
+    expect(dependencies.sessionRepository.create).not.toHaveBeenCalled()
+  })
+
+  it.each<[string, Partial<DbUser>, string | null]>([
+    ['disabled, without a code', {}, null],
+    ['disabled, with a code', {}, '123456'],
+    ['pending, without a code', twoFactorUser('pending'), null],
+    ['pending, with a wrong code', twoFactorUser('pending'), '123456'],
+    ['pending, with the code of the app', twoFactorUser('pending'), APP_CODE],
+    ['pending, with a backup code', twoFactorUser('pending'), BACKUP_CODE],
   ])(
-    'does not skip the second factor of an account with %s when a code is sent',
-    async (_case, user) => {
+    'signs in an account whose two-factor status is %s, and looks at no code',
+    async (_case, user, twoFactorCode) => {
       const dependencies = withUser(user)
 
       const result = await new LoginUseCase(dependencies).execute(
-        loginRequest({ twoFactorCode: '123456' }),
+        loginRequest({ twoFactorCode }),
         client,
       )
 
-      expect(result).toEqual(loginFailed)
-      expect(dependencies.sessionRepository.create).not.toHaveBeenCalled()
+      expect(result.type).toBe('success')
+      expect(dependencies.sessionRepository.create).toHaveBeenCalledTimes(1)
+      expect(
+        dependencies.twoFactorAuthenticator.matchingStep,
+      ).not.toHaveBeenCalled()
+      expect(
+        dependencies.userRepository.useTwoFactorStep,
+      ).not.toHaveBeenCalled()
+      expect(dependencies.userRepository.useBackupCode).not.toHaveBeenCalled()
+      expect(
+        dependencies.userRepository.recordFailedLogin,
+      ).not.toHaveBeenCalled()
+      expect(dependencies.mailer.deliver).not.toHaveBeenCalled()
     },
   )
 

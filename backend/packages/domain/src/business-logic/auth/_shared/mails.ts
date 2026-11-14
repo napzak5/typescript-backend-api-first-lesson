@@ -63,3 +63,52 @@ export const passwordChangedMail = (to: string): Mail => ({
     '変更した覚えがない場合は、ログイン画面からすぐにパスワードを再設定してください。再設定すると、すべての端末からログアウトされます。',
   ].join('\n'),
 })
+
+/** What to do when the user did not do what a notice tells of. */
+const NOT_YOU =
+  '操作した覚えがない場合は、ログイン画面からすぐにパスワードを再設定してください。再設定すると、すべての端末からログアウトされます。'
+
+export const twoFactorEnabledMail = (to: string): Mail => ({
+  to,
+  subject: '2 要素認証が有効になりました',
+  text: [
+    'アカウントの 2 要素認証が有効になりました。次回のログインから、パスワードに加えて認証アプリのコードが必要です。',
+    '',
+    NOT_YOU,
+  ].join('\n'),
+})
+
+export const twoFactorDisabledMail = (to: string): Mail => ({
+  to,
+  subject: '2 要素認証が無効になりました',
+  text: [
+    'アカウントの 2 要素認証が無効になりました。ログインに必要なのはパスワードだけです。',
+    '',
+    NOT_YOU,
+  ].join('\n'),
+})
+
+export const backupCodesRegeneratedMail = (to: string): Mail => ({
+  to,
+  subject: 'バックアップコードが再発行されました',
+  text: [
+    '2 要素認証のバックアップコードが再発行されました。それまでのバックアップコードは使えません。',
+    '',
+    NOT_YOU,
+  ].join('\n'),
+})
+
+export const backupCodeUsedMail = (
+  to: string,
+  backupCodesLeft: number,
+): Mail => ({
+  to,
+  subject: 'バックアップコードでログインしました',
+  text: [
+    `バックアップコードを使ってログインしました。使ったコードはもう使えません。残りのバックアップコードは ${backupCodesLeft} 個です。`,
+    '',
+    '認証アプリを使えなくなった場合は、2 要素認証をいったん無効にして、設定し直してください。',
+    '',
+    NOT_YOU,
+  ].join('\n'),
+})

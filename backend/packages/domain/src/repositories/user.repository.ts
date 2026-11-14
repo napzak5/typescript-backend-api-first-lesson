@@ -42,6 +42,13 @@ export type PasswordChange = {
   keepSessionId: SessionId
 }
 
+/** What is stored when a user starts to set up two-factor authentication. */
+export type TwoFactorSetup = {
+  /** The secret of the authenticator app, encrypted. */
+  sealedSecret: string
+  backupCodeHashes: string[]
+}
+
 /** Persistence of users. Deleted users are invisible to every method. */
 export interface IUserRepository {
   /** `email` is matched as it is stored, in lower case. */
@@ -142,5 +149,59 @@ export interface IUserRepository {
   changePassword(
     id: UserId,
     change: PasswordChange,
+  ): Promise<Result<boolean, DomainError>>
+
+  /**
+   * Stores a new secret and new backup codes and marks two-factor
+   * authentication as being set up, which replaces a setup that was under
+   * way. Resolves to false when it is already enabled.
+   */
+  startTwoFactorSetup(
+    id: UserId,
+    setup: TwoFactorSetup,
+  ): Promise<Result<boolean, DomainError>>
+
+  /**
+   * Notes that the one-time password of this time step was accepted, in a
+   * single statement that only succeeds for a step later than the last one:
+   * a code works once, also when it is sent twice at the same moment.
+   * Resolves to false when this step or a later one was accepted before,
+   * or when the user does not hold `sealedSecret` any more.
+   */
+  useTwoFactorStep(
+    id: string,
+    sealedSecret: string,
+    step: number,
+  ): Promise<Result<boolean, DomainError>>
+
+  /**
+   * Uses a backup code up, in a single statement: of two parallel calls
+   * one succeeds. Resolves to the number of backup codes that are left, or
+   * to null when the user does not hold this one any more.
+   */
+  useBackupCode(
+    id: string,
+    backupCodeHash: string,
+  ): Promise<Result<number | null, DomainError>>
+
+  /**
+   * Turns the setup of `sealedSecret` on. Resolves to false when no setup
+   * is under way, or when the one under way has another secret by now.
+   */
+  enableTwoFactor(
+    id: UserId,
+    sealedSecret: string,
+  ): Promise<Result<boolean, DomainError>>
+
+  /**
+   * Turns two-factor authentication off and forgets its secret and backup
+   * codes. Resolves to false when it is not enabled.
+   */
+  disableTwoFactor(id: UserId): Promise<Result<boolean, DomainError>>
+
+  /** Replaces the backup codes. Resolves to false when two-factor authentication is not enabled. */
+  replaceBackupCodes(
+    id: UserId,
+    backupCodeHashes: string[],
   ): Promise<Result<boolean, DomainError>>
 }

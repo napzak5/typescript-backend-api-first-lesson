@@ -1,7 +1,16 @@
 import { describe, expect, it } from 'vitest'
 import { UserReadMapper } from '../mappers/read/user.mapper'
 import type { DbUser } from '../models/auth'
-import { CUSTOMER_ID, dataOf, dbUser, STAFF_ID, USER_ID } from './auth-fixtures'
+import {
+  BACKUP_CODE_HASH,
+  CUSTOMER_ID,
+  dataOf,
+  dbUser,
+  SEALED_SECRET,
+  STAFF_ID,
+  twoFactorUser,
+  USER_ID,
+} from './auth-fixtures'
 
 /** A user with every column set, the secret ones included. */
 const fullyStoredUser = (): DbUser =>
@@ -15,10 +24,10 @@ const fullyStoredUser = (): DbUser =>
     passwordResetTokenHash: 'password-reset-token-hash',
     passwordResetExpiry: '2026-11-15 10:00:00+00',
     lastPasswordChange: '2026-10-01 12:00:00+09',
-    twoFactorEnabled: true,
     twoFactorStatus: 'enabled',
     twoFactorSecret: 'TOTP-SHARED-SECRET',
     backupCodes: ['BACKUP-CODE-1', 'BACKUP-CODE-2'],
+    twoFactorLastUsedStep: 59_375_001,
     failedLoginAttempts: 3,
     lockedUntil: '2026-11-14 18:15:00.5+09',
     lastLoginAt: '2026-11-14 08:59:59.123456+00',
@@ -42,7 +51,6 @@ describe('UserReadMapper.toApiUser', () => {
       status: 'locked',
       emailVerified: true,
       lastPasswordChange: '2026-10-01T03:00:00.000Z',
-      twoFactorEnabled: true,
       twoFactorStatus: 'enabled',
       failedLoginAttempts: 3,
       lockedUntil: '2026-11-14T09:15:00.500Z',
@@ -65,6 +73,8 @@ describe('UserReadMapper.toApiUser', () => {
       'passwordHash',
       'twoFactorSecret',
       'backupCodes',
+      'twoFactorLastUsedStep',
+      'twoFactorEnabled',
       'emailVerificationTokenHash',
       'emailVerificationExpiry',
       'passwordResetTokenHash',
@@ -85,6 +95,29 @@ describe('UserReadMapper.toApiUser', () => {
       expect(presented).not.toContain(secret)
     }
   })
+
+  it.each<[DbUser['twoFactorStatus'], Partial<DbUser>]>([
+    ['disabled', {}],
+    ['pending', twoFactorUser('pending')],
+    [
+      'enabled',
+      twoFactorUser('enabled', { twoFactorLastUsedStep: 59_821_560 }),
+    ],
+  ])(
+    'presents the two-factor status %s and nothing else of the second factor',
+    (twoFactorStatus, columns) => {
+      const presented = dataOf(UserReadMapper.toApiUser(dbUser(columns)))
+
+      expect(presented.twoFactorStatus).toBe(twoFactorStatus)
+      expect(
+        Object.keys(presented).filter((name) => /factor|backup/i.test(name)),
+      ).toEqual(['twoFactorStatus'])
+      const shown = JSON.stringify(presented)
+      expect(shown).not.toContain(SEALED_SECRET)
+      expect(shown).not.toContain(BACKUP_CODE_HASH)
+      expect(shown).not.toContain('59821560')
+    },
+  )
 
   it('keeps null as null', () => {
     const result = UserReadMapper.toApiUser(

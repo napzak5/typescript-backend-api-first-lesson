@@ -9,6 +9,10 @@ import {
   authPasswordResetVerifyRequestSchema,
   authRegisterRequestSchema,
   authTokenRefreshRequestSchema,
+  authTwoFactorBackupCodesRequestSchema,
+  authTwoFactorDisableRequestSchema,
+  authTwoFactorEnableRequestSchema,
+  authTwoFactorVerifyRequestSchema,
 } from '../schemas/auth.schema'
 import { parseWith } from '../shared'
 import { PASSWORD } from './auth-fixtures'
@@ -66,7 +70,9 @@ describe('authLoginRequestSchema', () => {
     ['a password of one character', { password: 'x' }],
     ['a password of 128 characters', { password: 'p'.repeat(128) }],
     ['a two-factor code', { twoFactorCode: '123456' }],
+    ['a two-factor code of one character', { twoFactorCode: 'c' }],
     ['a two-factor code of 64 characters', { twoFactorCode: 'c'.repeat(64) }],
+    ['no two-factor code', { twoFactorCode: null }],
     ['a remembered session', { rememberMe: true }],
     ['an email of 255 characters', { email: `${'a'.repeat(243)}@example.com` }],
   ])('accepts %s', (_case, change) => {
@@ -74,6 +80,25 @@ describe('authLoginRequestSchema', () => {
       [],
     )
   })
+
+  it.each([
+    ['as it was shown', 'ABCD-EFGH-IJKL-MNOP'],
+    ['in lower case with spaces around and between', ' abcd efgh ijkl mnop '],
+  ])(
+    'returns a backup code typed %s as the two-factor code, unchanged',
+    (_case, twoFactorCode) => {
+      const result = parseWith(
+        authLoginRequestSchema,
+        loginRequest({ twoFactorCode }),
+        'Invalid',
+      )
+
+      expect(result).toMatchObject({
+        type: 'success',
+        data: { twoFactorCode },
+      })
+    },
+  )
 
   it('turns the password into NFC', () => {
     const result = parseWith(
@@ -545,5 +570,214 @@ describe('authPasswordChangeRequestSchema', () => {
     expect(
       rulesBrokenBy(authPasswordChangeRequestSchema, change(overrides)),
     ).toEqual(expected)
+  })
+})
+
+describe('authTwoFactorEnableRequestSchema', () => {
+  it('accepts the password and turns it into NFC', () => {
+    expect(
+      parseWith(
+        authTwoFactorEnableRequestSchema,
+        { password: DECOMPOSED },
+        'Invalid',
+      ),
+    ).toEqual({ type: 'success', data: { password: COMPOSED } })
+  })
+
+  it.each([
+    ['a password of one character', 'x'],
+    [
+      'a password of 128 characters outside the basic plane',
+      BLOSSOM.repeat(128),
+    ],
+    ['a password that may no longer be chosen', PASSWORD],
+  ])('accepts %s', (_case, password) => {
+    expect(
+      rulesBrokenBy(authTwoFactorEnableRequestSchema, { password }),
+    ).toEqual([])
+  })
+
+  it.each([
+    ['a missing password', {}, ['password:invalid_type']],
+    ['an empty password', { password: '' }, ['password:too_small']],
+    [
+      'a password of 129 characters outside the basic plane',
+      { password: BLOSSOM.repeat(129) },
+      ['password:too_big'],
+    ],
+    ['a password that is a number', { password: 1 }, ['password:invalid_type']],
+    ['a password that is null', { password: null }, ['password:invalid_type']],
+    [
+      'an unknown property',
+      { password: PASSWORD, code: '123456' },
+      ['code:unrecognized_keys'],
+    ],
+    ['null as the request', null, [':invalid_type']],
+    ['an array as the request', [{ password: PASSWORD }], [':invalid_type']],
+    ['a string as the request', PASSWORD, [':invalid_type']],
+  ])('rejects %s', (_case, input, expected) => {
+    expect(rulesBrokenBy(authTwoFactorEnableRequestSchema, input)).toEqual(
+      expected,
+    )
+  })
+})
+
+describe('authTwoFactorVerifyRequestSchema', () => {
+  it.each([
+    ['six digits', '492039'],
+    ['six zeros', '000000'],
+    ['six nines', '999999'],
+  ])('accepts %s and returns them unchanged', (_case, code) => {
+    expect(
+      parseWith(authTwoFactorVerifyRequestSchema, { code }, 'Invalid'),
+    ).toEqual({ type: 'success', data: { code } })
+  })
+
+  it.each([
+    ['five digits', { code: '49203' }, ['code:invalid_format']],
+    ['seven digits', { code: '4920390' }, ['code:invalid_format']],
+    ['an empty code', { code: '' }, ['code:invalid_format']],
+    ['six digits with a space', { code: '492 039' }, ['code:invalid_format']],
+    [
+      'six digits with a space before them',
+      { code: ' 492039' },
+      ['code:invalid_format'],
+    ],
+    [
+      'six digits followed by a line break',
+      { code: '492039\n' },
+      ['code:invalid_format'],
+    ],
+    [
+      'six full-width digits',
+      { code: '４９２０３９' },
+      ['code:invalid_format'],
+    ],
+    ['six letters', { code: 'abcdef' }, ['code:invalid_format']],
+    ['a signed number', { code: '-49203' }, ['code:invalid_format']],
+    ['a backup code', { code: 'ABCD-EFGH-IJKL-MNOP' }, ['code:invalid_format']],
+    [
+      'a backup code without hyphens',
+      { code: 'ABCDEFGHIJKLMNOP' },
+      ['code:invalid_format'],
+    ],
+    ['a code that is a number', { code: 492039 }, ['code:invalid_type']],
+    ['a code that is null', { code: null }, ['code:invalid_type']],
+    ['a missing code', {}, ['code:invalid_type']],
+    [
+      'an unknown property',
+      { code: '492039', password: PASSWORD },
+      ['password:unrecognized_keys'],
+    ],
+    ['null as the request', null, [':invalid_type']],
+    ['an array as the request', [{ code: '492039' }], [':invalid_type']],
+  ])('rejects %s', (_case, input, expected) => {
+    expect(rulesBrokenBy(authTwoFactorVerifyRequestSchema, input)).toEqual(
+      expected,
+    )
+  })
+})
+
+describe('authTwoFactorDisableRequestSchema', () => {
+  const disableRequest = (overrides: Record<string, unknown> = {}) => ({
+    password: PASSWORD,
+    code: '492039',
+    ...overrides,
+  })
+
+  it('accepts the password with a code and turns the password into NFC', () => {
+    expect(
+      parseWith(
+        authTwoFactorDisableRequestSchema,
+        disableRequest({ password: DECOMPOSED }),
+        'Invalid',
+      ),
+    ).toEqual({ type: 'success', data: { password: COMPOSED, code: '492039' } })
+  })
+
+  it.each([
+    ['a code of one character', 'c'],
+    ['a code of 64 characters', 'c'.repeat(64)],
+    ['a backup code as it was shown', 'ABCD-EFGH-IJKL-MNOP'],
+    ['a backup code in lower case with spaces', ' abcd efgh ijkl mnop '],
+  ])('accepts %s and returns it unchanged', (_case, code) => {
+    expect(
+      parseWith(
+        authTwoFactorDisableRequestSchema,
+        disableRequest({ code }),
+        'Invalid',
+      ),
+    ).toEqual({ type: 'success', data: { password: PASSWORD, code } })
+  })
+
+  it.each([
+    ['a missing password', { password: undefined }, ['password:invalid_type']],
+    ['an empty password', { password: '' }, ['password:too_small']],
+    [
+      'a password of 129 characters',
+      { password: 'p'.repeat(129) },
+      ['password:too_big'],
+    ],
+    ['a missing code', { code: undefined }, ['code:invalid_type']],
+    ['an empty code', { code: '' }, ['code:too_small']],
+    ['a code of 65 characters', { code: 'c'.repeat(65) }, ['code:too_big']],
+    ['a code that is a number', { code: 492039 }, ['code:invalid_type']],
+    ['a code that is null', { code: null }, ['code:invalid_type']],
+    [
+      'an unknown property',
+      { twoFactorCode: '492039' },
+      ['twoFactorCode:unrecognized_keys'],
+    ],
+    [
+      'an empty password and an empty code',
+      { password: '', code: '' },
+      ['password:too_small', 'code:too_small'],
+    ],
+  ])('rejects %s', (_case, change, expected) => {
+    expect(
+      rulesBrokenBy(authTwoFactorDisableRequestSchema, disableRequest(change)),
+    ).toEqual(expected)
+  })
+
+  it.each([
+    ['null', null],
+    ['an array', [disableRequest()]],
+  ])('rejects %s as the request', (_case, input) => {
+    expect(rulesBrokenBy(authTwoFactorDisableRequestSchema, input)).toEqual([
+      ':invalid_type',
+    ])
+  })
+})
+
+describe('authTwoFactorBackupCodesRequestSchema', () => {
+  it.each([
+    ['the code of an app', '492039'],
+    ['a code of one character', 'c'],
+    ['a code of 64 characters', 'c'.repeat(64)],
+    ['a backup code as it was shown', 'ABCD-EFGH-IJKL-MNOP'],
+    ['a backup code in lower case with spaces', ' abcd efgh ijkl mnop '],
+  ])('accepts %s and returns it unchanged', (_case, code) => {
+    expect(
+      parseWith(authTwoFactorBackupCodesRequestSchema, { code }, 'Invalid'),
+    ).toEqual({ type: 'success', data: { code } })
+  })
+
+  it.each([
+    ['a missing code', {}, ['code:invalid_type']],
+    ['an empty code', { code: '' }, ['code:too_small']],
+    ['a code of 65 characters', { code: 'c'.repeat(65) }, ['code:too_big']],
+    ['a code that is a number', { code: 492039 }, ['code:invalid_type']],
+    ['a code that is null', { code: null }, ['code:invalid_type']],
+    [
+      'a password next to the code',
+      { code: '492039', password: PASSWORD },
+      ['password:unrecognized_keys'],
+    ],
+    ['null as the request', null, [':invalid_type']],
+    ['an array as the request', [{ code: '492039' }], [':invalid_type']],
+  ])('rejects %s', (_case, input, expected) => {
+    expect(rulesBrokenBy(authTwoFactorBackupCodesRequestSchema, input)).toEqual(
+      expected,
+    )
   })
 })
