@@ -76,7 +76,7 @@
 
 ```typescript
 // backend/packages/domain/src/models/salon.ts（抜粋）
-export const salonIdSchema = z.uuid().brand<'SalonId'>()
+export const salonIdSchema = uuidSchema.brand<'SalonId'>()
 export type SalonId = z.infer<typeof salonIdSchema>
 
 // API 型: TypeSpec から生成された型

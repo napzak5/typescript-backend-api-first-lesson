@@ -839,6 +839,13 @@ describe('parseUserId', () => {
     expect(parseUserId(USER_ID)).toEqual({ type: 'success', data: USER_ID })
   })
 
+  it('returns an ID written in upper case as the lower-case ID', () => {
+    expect(parseUserId(USER_ID.toUpperCase())).toEqual({
+      type: 'success',
+      data: USER_ID,
+    })
+  })
+
   it.each<[string, unknown, string]>([
     ['a word', 'me', 'userId:invalid_format'],
     ['an empty ID', '', 'userId:invalid_format'],
@@ -866,6 +873,13 @@ describe('parseUserId', () => {
 describe('parseSessionId', () => {
   it('returns a UUID as the ID of a session', () => {
     expect(parseSessionId(SESSION_ID)).toEqual({
+      type: 'success',
+      data: SESSION_ID,
+    })
+  })
+
+  it('returns an ID written in upper case as the lower-case ID', () => {
+    expect(parseSessionId(SESSION_ID.toUpperCase())).toEqual({
       type: 'success',
       data: SESSION_ID,
     })

@@ -307,7 +307,7 @@ export const salons = pgTable('salons', {...})
 
 // 2. Models: types only, inferred from the DB schema and the generated API types
 // backend/packages/domain/src/models/salon.ts
-export const salonIdSchema = z.uuid().brand<'SalonId'>()
+export const salonIdSchema = uuidSchema.brand<'SalonId'>()
 export type SalonId = z.infer<typeof salonIdSchema>
 
 export type ApiSalonResponse = components['schemas']['Models.SalonResponse']

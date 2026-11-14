@@ -213,7 +213,7 @@ When a domain changes its TypeSpec models or its tables, its block of rules chan
 `backend/packages/domain/src/models/salon.ts` holds the types of the domain and the schema of its ID. No shape is declared by hand: API types come from the generated package, database types from the Drizzle tables.
 
 ```typescript
-export const salonIdSchema = z.uuid().brand<'SalonId'>()
+export const salonIdSchema = uuidSchema.brand<'SalonId'>()
 export type SalonId = z.infer<typeof salonIdSchema>
 
 // ...
@@ -254,6 +254,7 @@ export type OpeningHoursChange =
 ```
 
 - **`SalonId` is a branded UUID.** A plain string is not accepted where a `SalonId` is expected; the only way to get one is to parse a value with `salonIdSchema`. `parseSalonId`, in the same file, does that for a path parameter. It validates `{ id }` instead of the bare value so that a failure is reported under the field `id`.
+- **`uuidSchema` spells every ID the way the database does.** It is `z.uuid().toLowerCase()`, in `backend/packages/domain/src/shared/identifier.ts`. The letters of a UUID may be written in either case, and PostgreSQL always returns them in lower case. An ID is compared as a string in several places (is this the salon of the actor, is this the administrator's own account), so an ID from a request is brought into the lower-case spelling when it is checked. Build the ID schema of a new domain from `uuidSchema`, not from `z.uuid()`.
 - **`SalonManagedColumn`** lists the columns a request never writes: the database assigns them, other features maintain them, or the API does not expose them yet. The same list is the `omittedColumns` of the create and update rules in step 3.
 - **`DeepRequired` on `$inferInsert`.** Drizzle makes a column optional for an insert when it is nullable or has a default. `DeepRequired` makes every column required again, with `null` still allowed where the column allows it. A write therefore states every value, and the defaults of `timezone`, `currency`, `taxRate` and `isActive` are never relied on. This is "Create: every property required" at the type level.
 - **`DbNewOpeningHours` has no `salonId`.** The repository attaches it inside the transaction, once the salon has an ID.

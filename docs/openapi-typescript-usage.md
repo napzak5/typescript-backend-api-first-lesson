@@ -57,7 +57,7 @@ export type ApiPaginationMeta = components['schemas']['Models.PaginationMeta']
 生成型の `Models.SalonId` はただの `string` です。検証済みの ID だけを受け付けるためのブランド型は、同じファイルで Zod から作ります。
 
 ```typescript
-export const salonIdSchema = z.uuid().brand<'SalonId'>()
+export const salonIdSchema = uuidSchema.brand<'SalonId'>()
 export type SalonId = z.infer<typeof salonIdSchema>
 ```
 

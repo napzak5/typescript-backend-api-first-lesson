@@ -132,7 +132,7 @@ export const salons = pgTable(
 
 ```typescript
 // backend/packages/domain/src/models/salon.ts（抜粋）
-export const salonIdSchema = z.uuid().brand<'SalonId'>()
+export const salonIdSchema = uuidSchema.brand<'SalonId'>()
 export type SalonId = z.infer<typeof salonIdSchema>
 
 // TypeSpec から生成された API の型
