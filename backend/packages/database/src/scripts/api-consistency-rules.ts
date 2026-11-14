@@ -144,9 +144,78 @@ const paymentRules: ModelRule[] = [
   { model: 'Models.Payment', table: 'paymentTransactions', kind: 'response' },
 ]
 
+/**
+ * Columns of `reviews` that a request never writes. The system sets
+ * `isVerified`, the helpful and report actions change `helpfulCount` and
+ * `reportCount`, and no operation writes the owner response yet.
+ */
+const reviewManagedColumns = [
+  'id',
+  'isVerified',
+  'helpfulCount',
+  'reportCount',
+  'ownerResponse',
+  'ownerRespondedAt',
+  'createdAt',
+  'updatedAt',
+]
+
 /** Reviews. */
 const reviewRules: ModelRule[] = [
-  { model: 'Models.Review', table: 'reviews', kind: 'response' },
+  {
+    model: 'Models.ReviewResponse',
+    table: 'reviews',
+    kind: 'response',
+    omittedColumns: [],
+  },
+  {
+    model: 'Models.ReviewCreateRequest',
+    table: 'reviews',
+    kind: 'create',
+    omittedColumns: reviewManagedColumns,
+  },
+  {
+    model: 'Models.ReviewUpdateRequest',
+    table: 'reviews',
+    kind: 'update',
+    // A review does not move to another salon, customer, booking or staff
+    // member.
+    omittedColumns: [
+      ...reviewManagedColumns,
+      'salonId',
+      'customerId',
+      'bookingId',
+      'staffId',
+    ],
+  },
+  {
+    model: 'Models.ReviewHelpfulResponse',
+    table: 'reviews',
+    kind: 'response',
+    // The helpful action returns only the counter it changed.
+    omittedColumns: [
+      'id',
+      'salonId',
+      'customerId',
+      'bookingId',
+      'staffId',
+      'overallRating',
+      'serviceRating',
+      'staffRating',
+      'atmosphereRating',
+      'cleanlinessRating',
+      'valueRating',
+      'title',
+      'comment',
+      'imageUrls',
+      'isVerified',
+      'reportCount',
+      'ownerResponse',
+      'ownerRespondedAt',
+      'createdAt',
+      'updatedAt',
+    ],
+  },
 ]
 
 /** Inventory and products. */
