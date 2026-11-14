@@ -395,7 +395,7 @@ export interface paths {
         put?: never;
         /**
          * Regenerate backup codes
-         * @description 認証コードで本人確認を行い、2要素認証のバックアップコードを再発行します。それまでのバックアップコードは使用できなくなります。新しいバックアップコードはこのレスポンスでのみ返します。コードが誤っている場合は400を、2要素認証が有効でない場合は409を返します。
+         * @description コード(認証アプリのコード、またはバックアップコード)で本人確認を行い、2要素認証のバックアップコード(10個)を再発行します。それまでのバックアップコードは使用できなくなります。新しいバックアップコードはこのレスポンスでのみ返し、再発行したことをメールで通知します。コードが誤っている場合は400を、2要素認証が有効でない場合は409を返します。誤ったコードは、ログインと同じ失敗回数に数えます。
          */
         post: operations["AuthCrud_generateBackupCodes"];
         delete?: never;
@@ -415,7 +415,7 @@ export interface paths {
         put?: never;
         /**
          * Disable two-factor authentication
-         * @description パスワードと認証コードで本人確認を行い、2要素認証を無効にします。シークレットとバックアップコードは削除します。パスワードまたはコードが誤っている場合は400を、2要素認証が有効でない場合は409を返します。
+         * @description パスワードとコード(認証アプリのコード、またはバックアップコード)で本人確認を行い、2要素認証を無効にします。シークレットとバックアップコードは削除し、無効にしたことをメールで通知します。パスワードまたはコードが誤っている場合は400を、2要素認証が有効でない場合は409を返します。誤りは、ログインと同じ失敗回数に数えます。
          */
         post: operations["AuthCrud_disableTwoFactor"];
         delete?: never;
@@ -435,7 +435,7 @@ export interface paths {
         put?: never;
         /**
          * Start two-factor authentication setup
-         * @description 2要素認証の設定を開始します。パスワードで本人確認を行い、TOTPのシークレットとバックアップコードを発行して返します。シークレットとバックアップコードはこのレスポンスでのみ返します。設定は verifyTwoFactor で認証コードを確認すると有効になります。設定中に再度呼び出すと、新しいシークレットとバックアップコードを発行します。パスワードが誤っている場合は400を、2要素認証がすでに有効な場合は409を返します。
+         * @description 2要素認証の設定を開始します。パスワードで本人確認を行い、TOTPのシークレットとバックアップコード(10個)を発行して返します。シークレットとバックアップコードはこのレスポンスでのみ返します。設定は verifyTwoFactor で認証コードを確認すると有効になり、それまではログインにコードは要りません。設定中に再度呼び出すと、新しいシークレットとバックアップコードを発行します。パスワードが誤っている場合は400を、2要素認証がすでに有効な場合は409を返します。パスワードの誤りは、ログインと同じ失敗回数に数えます。
          */
         post: operations["AuthCrud_enableTwoFactor"];
         delete?: never;
@@ -455,7 +455,7 @@ export interface paths {
         put?: never;
         /**
          * Confirm two-factor authentication setup
-         * @description 認証アプリが生成したコードを確認し、設定中の2要素認証を有効にします。コードが誤っている場合は400を、設定中の2要素認証がない場合は409を返します。
+         * @description 認証アプリが生成したコードを確認し、設定中の2要素認証を有効にします。有効にしたことをメールで通知します。コードが誤っている場合は400を、設定中の2要素認証がない場合は409を返します。誤ったコードは、ログインと同じ失敗回数に数えます。
          */
         post: operations["AuthCrud_verifyTwoFactor"];
         delete?: never;
@@ -515,7 +515,7 @@ export interface paths {
         put?: never;
         /**
          * Log in
-         * @description メールアドレスとパスワードで認証し、セッションを作成してアクセストークンとリフレッシュトークンを発行します。メールアドレスは大文字と小文字を区別しません。認証に失敗した場合は、原因(メールアドレスが未登録、パスワードの誤り、アカウントのロック、メールアドレス未確認、アカウントの停止)にかかわらず同じ内容の401(コード 1002)を返します。パスワードを連続して5回誤るとアカウントを15分間ロックし、その後も誤るたびに15分間ロックします。ログインに成功すると失敗回数は0に戻ります。2要素認証の検証は未実装で、2要素認証が有効なアカウントは検証を実装するまでログインできません(同じ401を返します)。
+         * @description メールアドレスとパスワードで認証し、セッションを作成してアクセストークンとリフレッシュトークンを発行します。メールアドレスは大文字と小文字を区別しません。認証に失敗した場合は、原因(メールアドレスが未登録、パスワードの誤り、アカウントのロック、メールアドレス未確認、アカウントの停止)にかかわらず同じ内容の401(コード 1002)を返します。パスワードを連続して5回誤るとアカウントを15分間ロックし、その後も誤るたびに15分間ロックします。ログインに成功すると失敗回数は0に戻ります。2要素認証が有効なアカウントでは、パスワードが正しくても、twoFactorCode がない・誤っている・すでに使われている場合は401(コード 1007)を返します。twoFactorCode には認証アプリのコードかバックアップコードを指定します。誤ったコードはパスワードの誤りと同じ失敗回数に数えます。バックアップコードでログインすると、メールで通知します。
          */
         post: operations["AuthCrud_login"];
         delete?: never;
@@ -3162,19 +3162,24 @@ export interface components {
             /** @description 追加するIPアドレス。IPv4 または IPv6 の表記で指定する。 */
             ipAddress: string;
         };
+        /** @description バックアップコードを再発行する際の確認リクエスト。 */
+        "Models.AuthTwoFactorBackupCodesRequest": {
+            /** @description 認証アプリが生成したTOTPコード(6桁の数字)、またはバックアップコード。 */
+            code: string;
+        };
         /**
          * @description バックアップコード再発行のレスポンス。
          *     バックアップコードはこのレスポンスでのみ返し、ほかのレスポンスには含めない
          */
         "Models.AuthTwoFactorBackupCodesResponse": {
-            /** @description 新しく発行した復旧用バックアップコード一覧。それまでのバックアップコードは使用できない。 */
+            /** @description 新しく発行した復旧用バックアップコード一覧(10個)。それまでのバックアップコードは使用できない。 */
             backupCodes: string[];
         };
         /** @description 2要素認証を無効化する際の確認リクエスト。 */
         "Models.AuthTwoFactorDisableRequest": {
             /** @description 本人確認のための現在パスワード。128文字以下。 */
             password: string;
-            /** @description 無効化確認のための現在TOTPコード(6桁の数字)。 */
+            /** @description 認証アプリが生成したTOTPコード(6桁の数字)、またはバックアップコード。 */
             code: string;
         };
         /** @description 2要素認証を有効化する際の認証リクエスト。 */
@@ -3187,19 +3192,16 @@ export interface components {
          *     シークレットとバックアップコードはこのレスポンスでのみ返し、ほかのレスポンスには含めない
          */
         "Models.AuthTwoFactorSetupResponse": {
-            /** @description 認証アプリで読み取るQRコードURL。シークレットを含む。 */
+            /** @description 認証アプリに登録するための otpauth:// URI。QRコードにして表示する。シークレットを含む。 */
             qrCodeUrl: string;
-            /** @description 手動登録用のシークレットキー。 */
+            /** @description 手動登録用のシークレットキー(Base32)。 */
             secret: string;
-            /** @description 復旧用バックアップコード一覧。 */
+            /** @description 復旧用バックアップコード一覧(10個)。認証アプリのコードの代わりに、それぞれ1回だけ使える。 */
             backupCodes: string[];
         };
-        /**
-         * @description 2要素認証コードを検証するリクエスト。
-         *     2要素認証の有効化の確定と、バックアップコードの再発行で本人確認に使用する
-         */
+        /** @description 2要素認証の設定を確定するリクエスト。 */
         "Models.AuthTwoFactorVerifyRequest": {
-            /** @description 認証アプリが生成したTOTPコード(6桁の数字)。 */
+            /** @description 認証アプリが生成したTOTPコード(6桁の数字)。バックアップコードは指定できない。 */
             code: string;
         };
         /** @description 空き状況確認リクエスト - 希望する日時・スタッフ・施術メニューの組み合わせを受け取る。キーは必須 */
@@ -8597,8 +8599,8 @@ export interface components {
         };
         /**
          * @description ユーザーレスポンス - users テーブルの公開カラムを返す。
-         *     パスワードハッシュとパスワード履歴、2要素認証のシークレットとバックアップコード、
-         *     メールアドレス確認とパスワード再設定のトークン(とその有効期限)は返さない。
+         *     パスワードハッシュ、2要素認証のシークレット・バックアップコード・最後に受け付けたコードの時間ステップ、
+         *     メールアドレス確認とパスワード再設定のトークンのハッシュ(とその有効期限)は返さない。
          *     プロパティ名と null 許可は DB カラムと一致させている。
          */
         "Models.UserResponse": {
@@ -8619,9 +8621,7 @@ export interface components {
              * @description 最後にパスワードを変更した日時。パスワード変更履歴がない場合はnull。
              */
             lastPasswordChange: string | null;
-            /** @description 2要素認証が有効かどうか。 */
-            twoFactorEnabled: boolean;
-            /** @description 2要素認証の設定状態。 */
+            /** @description 2要素認証の設定状態。enabled のとき、ログインにコードが必要。 */
             twoFactorStatus: components["schemas"]["Models.TwoFactorStatusType"];
             /**
              * Format: int32
@@ -11099,7 +11099,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["Models.AuthTwoFactorVerifyRequest"];
+                "application/json": components["schemas"]["Models.AuthTwoFactorBackupCodesRequest"];
             };
         };
         responses: {

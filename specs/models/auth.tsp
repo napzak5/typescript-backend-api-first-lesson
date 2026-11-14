@@ -55,8 +55,8 @@ namespace BeautySalon.Models {
 
   @doc("""
     ユーザーレスポンス - users テーブルの公開カラムを返す。
-    パスワードハッシュとパスワード履歴、2要素認証のシークレットとバックアップコード、
-    メールアドレス確認とパスワード再設定のトークン(とその有効期限)は返さない。
+    パスワードハッシュ、2要素認証のシークレット・バックアップコード・最後に受け付けたコードの時間ステップ、
+    メールアドレス確認とパスワード再設定のトークンのハッシュ(とその有効期限)は返さない。
     プロパティ名と null 許可は DB カラムと一致させている。
     """)
   model UserResponse {
@@ -81,10 +81,7 @@ namespace BeautySalon.Models {
     @doc("最後にパスワードを変更した日時。パスワード変更履歴がない場合はnull。")
     lastPasswordChange: utcDateTime | null;
 
-    @doc("2要素認証が有効かどうか。")
-    twoFactorEnabled: boolean;
-
-    @doc("2要素認証の設定状態。")
+    @doc("2要素認証の設定状態。enabled のとき、ログインにコードが必要。")
     twoFactorStatus: TwoFactorStatusType;
 
     @doc("連続したログイン失敗回数。")
@@ -310,24 +307,28 @@ namespace BeautySalon.Models {
     シークレットとバックアップコードはこのレスポンスでのみ返し、ほかのレスポンスには含めない
     """)
   model AuthTwoFactorSetupResponse {
-    @doc("認証アプリで読み取るQRコードURL。シークレットを含む。")
+    @doc("認証アプリに登録するための otpauth:// URI。QRコードにして表示する。シークレットを含む。")
     qrCodeUrl: string;
 
-    @doc("手動登録用のシークレットキー。")
+    @doc("手動登録用のシークレットキー(Base32)。")
     secret: string;
 
-    @doc("復旧用バックアップコード一覧。")
+    @doc("復旧用バックアップコード一覧(10個)。認証アプリのコードの代わりに、それぞれ1回だけ使える。")
     backupCodes: string[];
   }
 
-  @doc("""
-    2要素認証コードを検証するリクエスト。
-    2要素認証の有効化の確定と、バックアップコードの再発行で本人確認に使用する
-    """)
+  @doc("2要素認証の設定を確定するリクエスト。")
   model AuthTwoFactorVerifyRequest {
-    @doc("認証アプリが生成したTOTPコード(6桁の数字)。")
-    @minLength(6)
-    @maxLength(6)
+    @doc("認証アプリが生成したTOTPコード(6桁の数字)。バックアップコードは指定できない。")
+    @pattern("^[0-9]{6}$")
+    code: string;
+  }
+
+  @doc("バックアップコードを再発行する際の確認リクエスト。")
+  model AuthTwoFactorBackupCodesRequest {
+    @doc("認証アプリが生成したTOTPコード(6桁の数字)、またはバックアップコード。")
+    @minLength(1)
+    @maxLength(64)
     code: string;
   }
 
@@ -338,9 +339,9 @@ namespace BeautySalon.Models {
     @maxLength(128)
     password: string;
 
-    @doc("無効化確認のための現在TOTPコード(6桁の数字)。")
-    @minLength(6)
-    @maxLength(6)
+    @doc("認証アプリが生成したTOTPコード(6桁の数字)、またはバックアップコード。")
+    @minLength(1)
+    @maxLength(64)
     code: string;
   }
 
@@ -349,7 +350,7 @@ namespace BeautySalon.Models {
     バックアップコードはこのレスポンスでのみ返し、ほかのレスポンスには含めない
     """)
   model AuthTwoFactorBackupCodesResponse {
-    @doc("新しく発行した復旧用バックアップコード一覧。それまでのバックアップコードは使用できない。")
+    @doc("新しく発行した復旧用バックアップコード一覧(10個)。それまでのバックアップコードは使用できない。")
     backupCodes: string[];
   }
 
