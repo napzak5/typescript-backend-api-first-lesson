@@ -201,7 +201,7 @@ model AuthLoginResponse { ... }         // Login response
 ### Database Workflow
 1. Write a SQL migration in `backend/packages/database/sql/migrations/` (`YYYYMMDDHHMM_description.sql`). Each one is applied once and recorded, so a migration that has been applied anywhere is never edited: write a new one
 2. `pnpm db:migrate` → `pnpm db:introspect` → `pnpm db:generate-sql`
-3. Commit `schema.ts`, `relations.ts` and `sql/setup.sql` (`pnpm check:db-schema` guards this in CI)
+3. Commit `schema.ts`, `relations.ts` and `sql/setup.sql` (`pnpm check:db-schema` guards this in CI, and the integration tests fail when `setup.sql` lacks a migration)
 4. Keep the API models in line with the tables (`pnpm check:api-db` guards this in CI)
 
 ### Code Quality Checks

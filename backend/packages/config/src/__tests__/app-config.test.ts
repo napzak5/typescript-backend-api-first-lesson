@@ -28,6 +28,15 @@ const rootPath = path.resolve(import.meta.dirname, '../../../../..')
 const readEnvFile = (file: string): Record<string, string> =>
   dotenv.parse(fs.readFileSync(path.join(rootPath, file)))
 
+/**
+ * What docker-compose.yml uses for a variable that nothing sets: the
+ * `default` of its first `${NAME:-default}`.
+ */
+const composeDefault = (name: string): string | undefined =>
+  new RegExp(`\\$\\{${name}:-([^}]*)\\}`).exec(
+    fs.readFileSync(path.join(rootPath, 'docker-compose.yml'), 'utf8'),
+  )?.[1]
+
 describe('parseAppConfig', () => {
   it('should read every setting from the variables', () => {
     expect(parseAppConfig(variables)).toEqual({
@@ -143,6 +152,35 @@ describe('environment files', () => {
       })
     },
   )
+
+  describe.each([
+    '.env.localhost',
+    '.env.development',
+    '.env.test',
+    '.env.example',
+  ])('the database of %s', (file) => {
+    const env = readEnvFile(file)
+    const url = new URL(env['DATABASE_URL'] ?? '')
+    const database = {
+      POSTGRES_USER: url.username,
+      POSTGRES_PASSWORD: decodeURIComponent(url.password),
+      POSTGRES_DB: url.pathname.slice(1),
+      POSTGRES_PORT: url.port,
+    }
+
+    it('should be the same in DATABASE_URL and in the POSTGRES_* variables', () => {
+      expect(env).toMatchObject(database)
+    })
+
+    it('should be the PostgreSQL that docker compose starts by default', () => {
+      expect(database).toEqual({
+        POSTGRES_USER: composeDefault('POSTGRES_USER'),
+        POSTGRES_PASSWORD: composeDefault('POSTGRES_PASSWORD'),
+        POSTGRES_DB: composeDefault('POSTGRES_DB'),
+        POSTGRES_PORT: composeDefault('POSTGRES_PORT'),
+      })
+    })
+  })
 
   it('.env.template should list every variable the server reads', () => {
     expect(Object.keys(readEnvFile('.env.template'))).toEqual(

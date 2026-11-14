@@ -115,7 +115,9 @@ Two things follow from this:
 - The tests run against `sql/setup.sql`, not against the migrations. After
   writing a migration, regenerate it (`pnpm db:generate-sql`, see the
   [Development Workflow](./development-workflow.md)) or the tests will not see
-  the change.
+  the change. The migration test fails until you do: it applies every
+  migration to a database created from `setup.sql` and expects the schema to
+  stay the same.
 
 Test files run one at a time (`fileParallelism: false`), which keeps the
 number of open connections bounded. A test may take up to 60 seconds and a

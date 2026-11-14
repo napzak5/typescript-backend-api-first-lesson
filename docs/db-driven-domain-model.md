@@ -42,7 +42,7 @@ PostgreSQL ── pnpm db:introspect ──▶ schema.ts     api-types.ts
 
 - ファイル名は `YYYYMMDDHHMM_description.sql`。ファイル名の順に適用される
 - 一度でもどこかの DB に適用したマイグレーションは編集しない。直したいときは新しいマイグレーションを書く
-- すでにその変更を含むスキーマに対して実行しても、何も変えないように書く（`IF EXISTS` / `IF NOT EXISTS` や `information_schema` で確認してから変更する）。適用履歴のない DB を最新にできるようにするためで、統合テスト（`backend/packages/database/src/scripts/__tests__/migrations.integration.test.ts`）が、全マイグレーションを最新のスキーマに再実行しても `salons` のカラムが変わらないことを確認している
+- すでにその変更を含むスキーマに対して実行しても、何も変えないように書く（`IF EXISTS` / `IF NOT EXISTS` や `information_schema` で確認してから変更する）。適用履歴のない DB を最新にできるようにするためで、統合テスト（`backend/packages/database/src/scripts/__tests__/migrations.integration.test.ts`）が、`sql/setup.sql` から作った DB に全マイグレーションを再実行しても、スキーマ全体（カラム、enum、インデックス、制約）が変わらないことを確認している
 - カラム名は camelCase なので、SQL では二重引用符で囲む
 
 ```sql
@@ -80,7 +80,7 @@ drizzle-kit は、マイグレーションの生成にも適用にも使わな�
 
 - CI では `test` ジョブが実行する。`make ci-check` は CI のほかの検査をすべて実行するが、この検査だけは含まない。ローカルでは `make db-check` で別に実行する
 - 別になっているのは、接続先の DB を作り直すからである。その DB のデータはすべて消える
-- `db:fresh` は `setup.sql` から DB を作るので、マイグレーションを追加しただけで手順 3・4 を実行していない状態は、この検査では検出できない。手順は最後まで実行する
+- `db:fresh` は `setup.sql` から DB を作るので、マイグレーションを追加しただけで手順 3・4 を実行していない状態は、この検査では検出できない。こちらは統合テスト（`pnpm test:integration`）が検出する。`setup.sql` から作った DB にマイグレーションを適用するとスキーマが変わるからである
 
 ## 生成されるファイル
 
