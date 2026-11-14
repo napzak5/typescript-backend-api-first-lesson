@@ -68,35 +68,6 @@ export type AllergyType = z.infer<typeof AllergyTypeSchema>
 
 /**
  * @description
- * 認証状態区分 - セッションの認証状態を表す区分
- *
- *
- * unauthenticated: 未認証 - ログインしていない状態
- *
- * authenticated: 認証済み - 正常にログインしている状態
- *
- * pending_two_factor: 2要素認証待ち - 2要素認証の入力を待っている状態
- *
- * locked: ロック中 - アカウントがロックされている状態
- */
-export const AuthenticationStateTypeSchema = z.enum(['unauthenticated', 'authenticated', 'pending_two_factor', 'locked'])
-/**
- * @description
- * 認証状態区分 - セッションの認証状態を表す区分
- *
- *
- * unauthenticated: 未認証 - ログインしていない状態
- *
- * authenticated: 認証済み - 正常にログインしている状態
- *
- * pending_two_factor: 2要素認証待ち - 2要素認証の入力を待っている状態
- *
- * locked: ロック中 - アカウントがロックされている状態
- */
-export type AuthenticationStateType = z.infer<typeof AuthenticationStateTypeSchema>
-
-/**
- * @description
  * 予約要件タイプ区分 - サービス予約時に必要な条件や制約
  *
  *

@@ -73,6 +73,16 @@ export type staffCrudListResponse400 = {
   status: 400
 }
 
+export type staffCrudListResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type staffCrudListResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type staffCrudListResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -91,7 +101,7 @@ export type staffCrudListResponse500 = {
 export type staffCrudListResponseSuccess = (staffCrudListResponse200) & {
   headers: Headers;
 };
-export type staffCrudListResponseError = (staffCrudListResponse400 | staffCrudListResponse404 | staffCrudListResponse429 | staffCrudListResponse500) & {
+export type staffCrudListResponseError = (staffCrudListResponse400 | staffCrudListResponse401 | staffCrudListResponse403 | staffCrudListResponse404 | staffCrudListResponse429 | staffCrudListResponse500) & {
   headers: Headers;
 };
 
@@ -235,6 +245,16 @@ export type staffCrudCreateResponse400 = {
   status: 400
 }
 
+export type staffCrudCreateResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type staffCrudCreateResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type staffCrudCreateResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -268,7 +288,7 @@ export type staffCrudCreateResponse500 = {
 export type staffCrudCreateResponseSuccess = (staffCrudCreateResponse201) & {
   headers: Headers;
 };
-export type staffCrudCreateResponseError = (staffCrudCreateResponse400 | staffCrudCreateResponse404 | staffCrudCreateResponse409 | staffCrudCreateResponse413 | staffCrudCreateResponse415 | staffCrudCreateResponse429 | staffCrudCreateResponse500) & {
+export type staffCrudCreateResponseError = (staffCrudCreateResponse400 | staffCrudCreateResponse401 | staffCrudCreateResponse403 | staffCrudCreateResponse404 | staffCrudCreateResponse409 | staffCrudCreateResponse413 | staffCrudCreateResponse415 | staffCrudCreateResponse429 | staffCrudCreateResponse500) & {
   headers: Headers;
 };
 
@@ -374,6 +394,16 @@ export type staffCrudGetResponse400 = {
   status: 400
 }
 
+export type staffCrudGetResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type staffCrudGetResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type staffCrudGetResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -392,7 +422,7 @@ export type staffCrudGetResponse500 = {
 export type staffCrudGetResponseSuccess = (staffCrudGetResponse200) & {
   headers: Headers;
 };
-export type staffCrudGetResponseError = (staffCrudGetResponse400 | staffCrudGetResponse404 | staffCrudGetResponse429 | staffCrudGetResponse500) & {
+export type staffCrudGetResponseError = (staffCrudGetResponse400 | staffCrudGetResponse401 | staffCrudGetResponse403 | staffCrudGetResponse404 | staffCrudGetResponse429 | staffCrudGetResponse500) & {
   headers: Headers;
 };
 
@@ -529,6 +559,16 @@ export type staffCrudUpdateResponse400 = {
   status: 400
 }
 
+export type staffCrudUpdateResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type staffCrudUpdateResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type staffCrudUpdateResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -562,7 +602,7 @@ export type staffCrudUpdateResponse500 = {
 export type staffCrudUpdateResponseSuccess = (staffCrudUpdateResponse200) & {
   headers: Headers;
 };
-export type staffCrudUpdateResponseError = (staffCrudUpdateResponse400 | staffCrudUpdateResponse404 | staffCrudUpdateResponse409 | staffCrudUpdateResponse413 | staffCrudUpdateResponse415 | staffCrudUpdateResponse429 | staffCrudUpdateResponse500) & {
+export type staffCrudUpdateResponseError = (staffCrudUpdateResponse400 | staffCrudUpdateResponse401 | staffCrudUpdateResponse403 | staffCrudUpdateResponse404 | staffCrudUpdateResponse409 | staffCrudUpdateResponse413 | staffCrudUpdateResponse415 | staffCrudUpdateResponse429 | staffCrudUpdateResponse500) & {
   headers: Headers;
 };
 
@@ -670,6 +710,16 @@ export type staffCrudDeleteResponse400 = {
   status: 400
 }
 
+export type staffCrudDeleteResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type staffCrudDeleteResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type staffCrudDeleteResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -688,7 +738,7 @@ export type staffCrudDeleteResponse500 = {
 export type staffCrudDeleteResponseSuccess = (staffCrudDeleteResponse204) & {
   headers: Headers;
 };
-export type staffCrudDeleteResponseError = (staffCrudDeleteResponse400 | staffCrudDeleteResponse404 | staffCrudDeleteResponse429 | staffCrudDeleteResponse500) & {
+export type staffCrudDeleteResponseError = (staffCrudDeleteResponse400 | staffCrudDeleteResponse401 | staffCrudDeleteResponse403 | staffCrudDeleteResponse404 | staffCrudDeleteResponse429 | staffCrudDeleteResponse500) & {
   headers: Headers;
 };
 
@@ -781,6 +831,16 @@ export type staffCrudGetAvailabilityResponse400 = {
   status: 400
 }
 
+export type staffCrudGetAvailabilityResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type staffCrudGetAvailabilityResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type staffCrudGetAvailabilityResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -799,7 +859,7 @@ export type staffCrudGetAvailabilityResponse500 = {
 export type staffCrudGetAvailabilityResponseSuccess = (staffCrudGetAvailabilityResponse200) & {
   headers: Headers;
 };
-export type staffCrudGetAvailabilityResponseError = (staffCrudGetAvailabilityResponse400 | staffCrudGetAvailabilityResponse404 | staffCrudGetAvailabilityResponse429 | staffCrudGetAvailabilityResponse500) & {
+export type staffCrudGetAvailabilityResponseError = (staffCrudGetAvailabilityResponse400 | staffCrudGetAvailabilityResponse401 | staffCrudGetAvailabilityResponse403 | staffCrudGetAvailabilityResponse404 | staffCrudGetAvailabilityResponse429 | staffCrudGetAvailabilityResponse500) & {
   headers: Headers;
 };
 
@@ -951,6 +1011,16 @@ export type staffCrudUpdateAvailabilityResponse400 = {
   status: 400
 }
 
+export type staffCrudUpdateAvailabilityResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type staffCrudUpdateAvailabilityResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type staffCrudUpdateAvailabilityResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -979,7 +1049,7 @@ export type staffCrudUpdateAvailabilityResponse500 = {
 export type staffCrudUpdateAvailabilityResponseSuccess = (staffCrudUpdateAvailabilityResponse200) & {
   headers: Headers;
 };
-export type staffCrudUpdateAvailabilityResponseError = (staffCrudUpdateAvailabilityResponse400 | staffCrudUpdateAvailabilityResponse404 | staffCrudUpdateAvailabilityResponse413 | staffCrudUpdateAvailabilityResponse415 | staffCrudUpdateAvailabilityResponse429 | staffCrudUpdateAvailabilityResponse500) & {
+export type staffCrudUpdateAvailabilityResponseError = (staffCrudUpdateAvailabilityResponse400 | staffCrudUpdateAvailabilityResponse401 | staffCrudUpdateAvailabilityResponse403 | staffCrudUpdateAvailabilityResponse404 | staffCrudUpdateAvailabilityResponse413 | staffCrudUpdateAvailabilityResponse415 | staffCrudUpdateAvailabilityResponse429 | staffCrudUpdateAvailabilityResponse500) & {
   headers: Headers;
 };
 
@@ -1087,6 +1157,16 @@ export type globalStaffSearchResponse400 = {
   status: 400
 }
 
+export type globalStaffSearchResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type globalStaffSearchResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type globalStaffSearchResponse429 = {
   data: ModelsProblemDetails
   status: 429
@@ -1100,7 +1180,7 @@ export type globalStaffSearchResponse500 = {
 export type globalStaffSearchResponseSuccess = (globalStaffSearchResponse200) & {
   headers: Headers;
 };
-export type globalStaffSearchResponseError = (globalStaffSearchResponse400 | globalStaffSearchResponse429 | globalStaffSearchResponse500) & {
+export type globalStaffSearchResponseError = (globalStaffSearchResponse400 | globalStaffSearchResponse401 | globalStaffSearchResponse403 | globalStaffSearchResponse429 | globalStaffSearchResponse500) & {
   headers: Headers;
 };
 

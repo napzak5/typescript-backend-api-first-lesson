@@ -89,6 +89,16 @@ export type customerCrudListResponse400 = {
   status: 400
 }
 
+export type customerCrudListResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type customerCrudListResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type customerCrudListResponse429 = {
   data: ModelsProblemDetails
   status: 429
@@ -102,7 +112,7 @@ export type customerCrudListResponse500 = {
 export type customerCrudListResponseSuccess = (customerCrudListResponse200) & {
   headers: Headers;
 };
-export type customerCrudListResponseError = (customerCrudListResponse400 | customerCrudListResponse429 | customerCrudListResponse500) & {
+export type customerCrudListResponseError = (customerCrudListResponse400 | customerCrudListResponse401 | customerCrudListResponse403 | customerCrudListResponse429 | customerCrudListResponse500) & {
   headers: Headers;
 };
 
@@ -246,6 +256,16 @@ export type customerCrudCreateResponse400 = {
   status: 400
 }
 
+export type customerCrudCreateResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type customerCrudCreateResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type customerCrudCreateResponse409 = {
   data: ModelsProblemDetails
   status: 409
@@ -274,7 +294,7 @@ export type customerCrudCreateResponse500 = {
 export type customerCrudCreateResponseSuccess = (customerCrudCreateResponse201) & {
   headers: Headers;
 };
-export type customerCrudCreateResponseError = (customerCrudCreateResponse400 | customerCrudCreateResponse409 | customerCrudCreateResponse413 | customerCrudCreateResponse415 | customerCrudCreateResponse429 | customerCrudCreateResponse500) & {
+export type customerCrudCreateResponseError = (customerCrudCreateResponse400 | customerCrudCreateResponse401 | customerCrudCreateResponse403 | customerCrudCreateResponse409 | customerCrudCreateResponse413 | customerCrudCreateResponse415 | customerCrudCreateResponse429 | customerCrudCreateResponse500) & {
   headers: Headers;
 };
 
@@ -379,6 +399,16 @@ export type customerCrudBatchGetResponse400 = {
   status: 400
 }
 
+export type customerCrudBatchGetResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type customerCrudBatchGetResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type customerCrudBatchGetResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -407,7 +437,7 @@ export type customerCrudBatchGetResponse500 = {
 export type customerCrudBatchGetResponseSuccess = (customerCrudBatchGetResponse200) & {
   headers: Headers;
 };
-export type customerCrudBatchGetResponseError = (customerCrudBatchGetResponse400 | customerCrudBatchGetResponse404 | customerCrudBatchGetResponse413 | customerCrudBatchGetResponse415 | customerCrudBatchGetResponse429 | customerCrudBatchGetResponse500) & {
+export type customerCrudBatchGetResponseError = (customerCrudBatchGetResponse400 | customerCrudBatchGetResponse401 | customerCrudBatchGetResponse403 | customerCrudBatchGetResponse404 | customerCrudBatchGetResponse413 | customerCrudBatchGetResponse415 | customerCrudBatchGetResponse429 | customerCrudBatchGetResponse500) & {
   headers: Headers;
 };
 
@@ -512,6 +542,16 @@ export type customerCrudBulkCreateResponse400 = {
   status: 400
 }
 
+export type customerCrudBulkCreateResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type customerCrudBulkCreateResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type customerCrudBulkCreateResponse409 = {
   data: ModelsProblemDetails
   status: 409
@@ -540,7 +580,7 @@ export type customerCrudBulkCreateResponse500 = {
 export type customerCrudBulkCreateResponseSuccess = (customerCrudBulkCreateResponse201) & {
   headers: Headers;
 };
-export type customerCrudBulkCreateResponseError = (customerCrudBulkCreateResponse400 | customerCrudBulkCreateResponse409 | customerCrudBulkCreateResponse413 | customerCrudBulkCreateResponse415 | customerCrudBulkCreateResponse429 | customerCrudBulkCreateResponse500) & {
+export type customerCrudBulkCreateResponseError = (customerCrudBulkCreateResponse400 | customerCrudBulkCreateResponse401 | customerCrudBulkCreateResponse403 | customerCrudBulkCreateResponse409 | customerCrudBulkCreateResponse413 | customerCrudBulkCreateResponse415 | customerCrudBulkCreateResponse429 | customerCrudBulkCreateResponse500) & {
   headers: Headers;
 };
 
@@ -645,6 +685,16 @@ export type customerCrudBulkUpdateResponse400 = {
   status: 400
 }
 
+export type customerCrudBulkUpdateResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type customerCrudBulkUpdateResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type customerCrudBulkUpdateResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -678,7 +728,7 @@ export type customerCrudBulkUpdateResponse500 = {
 export type customerCrudBulkUpdateResponseSuccess = (customerCrudBulkUpdateResponse200) & {
   headers: Headers;
 };
-export type customerCrudBulkUpdateResponseError = (customerCrudBulkUpdateResponse400 | customerCrudBulkUpdateResponse404 | customerCrudBulkUpdateResponse409 | customerCrudBulkUpdateResponse413 | customerCrudBulkUpdateResponse415 | customerCrudBulkUpdateResponse429 | customerCrudBulkUpdateResponse500) & {
+export type customerCrudBulkUpdateResponseError = (customerCrudBulkUpdateResponse400 | customerCrudBulkUpdateResponse401 | customerCrudBulkUpdateResponse403 | customerCrudBulkUpdateResponse404 | customerCrudBulkUpdateResponse409 | customerCrudBulkUpdateResponse413 | customerCrudBulkUpdateResponse415 | customerCrudBulkUpdateResponse429 | customerCrudBulkUpdateResponse500) & {
   headers: Headers;
 };
 
@@ -783,6 +833,16 @@ export type customerCrudBulkDeleteResponse400 = {
   status: 400
 }
 
+export type customerCrudBulkDeleteResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type customerCrudBulkDeleteResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type customerCrudBulkDeleteResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -811,7 +871,7 @@ export type customerCrudBulkDeleteResponse500 = {
 export type customerCrudBulkDeleteResponseSuccess = (customerCrudBulkDeleteResponse200) & {
   headers: Headers;
 };
-export type customerCrudBulkDeleteResponseError = (customerCrudBulkDeleteResponse400 | customerCrudBulkDeleteResponse404 | customerCrudBulkDeleteResponse413 | customerCrudBulkDeleteResponse415 | customerCrudBulkDeleteResponse429 | customerCrudBulkDeleteResponse500) & {
+export type customerCrudBulkDeleteResponseError = (customerCrudBulkDeleteResponse400 | customerCrudBulkDeleteResponse401 | customerCrudBulkDeleteResponse403 | customerCrudBulkDeleteResponse404 | customerCrudBulkDeleteResponse413 | customerCrudBulkDeleteResponse415 | customerCrudBulkDeleteResponse429 | customerCrudBulkDeleteResponse500) & {
   headers: Headers;
 };
 
@@ -916,6 +976,16 @@ export type customerCrudExportResponse400 = {
   status: 400
 }
 
+export type customerCrudExportResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type customerCrudExportResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type customerCrudExportResponse413 = {
   data: ModelsProblemDetails
   status: 413
@@ -939,7 +1009,7 @@ export type customerCrudExportResponse500 = {
 export type customerCrudExportResponseSuccess = (customerCrudExportResponse202) & {
   headers: Headers;
 };
-export type customerCrudExportResponseError = (customerCrudExportResponse400 | customerCrudExportResponse413 | customerCrudExportResponse415 | customerCrudExportResponse429 | customerCrudExportResponse500) & {
+export type customerCrudExportResponseError = (customerCrudExportResponse400 | customerCrudExportResponse401 | customerCrudExportResponse403 | customerCrudExportResponse413 | customerCrudExportResponse415 | customerCrudExportResponse429 | customerCrudExportResponse500) & {
   headers: Headers;
 };
 
@@ -1044,6 +1114,16 @@ export type customerCrudMergeResponse400 = {
   status: 400
 }
 
+export type customerCrudMergeResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type customerCrudMergeResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type customerCrudMergeResponse409 = {
   data: ModelsProblemDetails
   status: 409
@@ -1072,7 +1152,7 @@ export type customerCrudMergeResponse500 = {
 export type customerCrudMergeResponseSuccess = (customerCrudMergeResponse200) & {
   headers: Headers;
 };
-export type customerCrudMergeResponseError = (customerCrudMergeResponse400 | customerCrudMergeResponse409 | customerCrudMergeResponse413 | customerCrudMergeResponse415 | customerCrudMergeResponse429 | customerCrudMergeResponse500) & {
+export type customerCrudMergeResponseError = (customerCrudMergeResponse400 | customerCrudMergeResponse401 | customerCrudMergeResponse403 | customerCrudMergeResponse409 | customerCrudMergeResponse413 | customerCrudMergeResponse415 | customerCrudMergeResponse429 | customerCrudMergeResponse500) & {
   headers: Headers;
 };
 
@@ -1177,6 +1257,16 @@ export type customerCrudGetResponse400 = {
   status: 400
 }
 
+export type customerCrudGetResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type customerCrudGetResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type customerCrudGetResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -1195,7 +1285,7 @@ export type customerCrudGetResponse500 = {
 export type customerCrudGetResponseSuccess = (customerCrudGetResponse200) & {
   headers: Headers;
 };
-export type customerCrudGetResponseError = (customerCrudGetResponse400 | customerCrudGetResponse404 | customerCrudGetResponse429 | customerCrudGetResponse500) & {
+export type customerCrudGetResponseError = (customerCrudGetResponse400 | customerCrudGetResponse401 | customerCrudGetResponse403 | customerCrudGetResponse404 | customerCrudGetResponse429 | customerCrudGetResponse500) & {
   headers: Headers;
 };
 
@@ -1324,6 +1414,16 @@ export type customerCrudUpdateResponse400 = {
   status: 400
 }
 
+export type customerCrudUpdateResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type customerCrudUpdateResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type customerCrudUpdateResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -1357,7 +1457,7 @@ export type customerCrudUpdateResponse500 = {
 export type customerCrudUpdateResponseSuccess = (customerCrudUpdateResponse200) & {
   headers: Headers;
 };
-export type customerCrudUpdateResponseError = (customerCrudUpdateResponse400 | customerCrudUpdateResponse404 | customerCrudUpdateResponse409 | customerCrudUpdateResponse413 | customerCrudUpdateResponse415 | customerCrudUpdateResponse429 | customerCrudUpdateResponse500) & {
+export type customerCrudUpdateResponseError = (customerCrudUpdateResponse400 | customerCrudUpdateResponse401 | customerCrudUpdateResponse403 | customerCrudUpdateResponse404 | customerCrudUpdateResponse409 | customerCrudUpdateResponse413 | customerCrudUpdateResponse415 | customerCrudUpdateResponse429 | customerCrudUpdateResponse500) & {
   headers: Headers;
 };
 
@@ -1463,6 +1563,16 @@ export type customerCrudDeleteResponse400 = {
   status: 400
 }
 
+export type customerCrudDeleteResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type customerCrudDeleteResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type customerCrudDeleteResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -1481,7 +1591,7 @@ export type customerCrudDeleteResponse500 = {
 export type customerCrudDeleteResponseSuccess = (customerCrudDeleteResponse204) & {
   headers: Headers;
 };
-export type customerCrudDeleteResponseError = (customerCrudDeleteResponse400 | customerCrudDeleteResponse404 | customerCrudDeleteResponse429 | customerCrudDeleteResponse500) & {
+export type customerCrudDeleteResponseError = (customerCrudDeleteResponse400 | customerCrudDeleteResponse401 | customerCrudDeleteResponse403 | customerCrudDeleteResponse404 | customerCrudDeleteResponse429 | customerCrudDeleteResponse500) & {
   headers: Headers;
 };
 
@@ -1572,6 +1682,16 @@ export type customerCrudRequestDeletionResponse400 = {
   status: 400
 }
 
+export type customerCrudRequestDeletionResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type customerCrudRequestDeletionResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type customerCrudRequestDeletionResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -1600,7 +1720,7 @@ export type customerCrudRequestDeletionResponse500 = {
 export type customerCrudRequestDeletionResponseSuccess = (customerCrudRequestDeletionResponse202) & {
   headers: Headers;
 };
-export type customerCrudRequestDeletionResponseError = (customerCrudRequestDeletionResponse400 | customerCrudRequestDeletionResponse404 | customerCrudRequestDeletionResponse413 | customerCrudRequestDeletionResponse415 | customerCrudRequestDeletionResponse429 | customerCrudRequestDeletionResponse500) & {
+export type customerCrudRequestDeletionResponseError = (customerCrudRequestDeletionResponse400 | customerCrudRequestDeletionResponse401 | customerCrudRequestDeletionResponse403 | customerCrudRequestDeletionResponse404 | customerCrudRequestDeletionResponse413 | customerCrudRequestDeletionResponse415 | customerCrudRequestDeletionResponse429 | customerCrudRequestDeletionResponse500) & {
   headers: Headers;
 };
 
@@ -1706,6 +1826,16 @@ export type customerCrudExportDataResponse400 = {
   status: 400
 }
 
+export type customerCrudExportDataResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type customerCrudExportDataResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type customerCrudExportDataResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -1724,7 +1854,7 @@ export type customerCrudExportDataResponse500 = {
 export type customerCrudExportDataResponseSuccess = (customerCrudExportDataResponse200) & {
   headers: Headers;
 };
-export type customerCrudExportDataResponseError = (customerCrudExportDataResponse400 | customerCrudExportDataResponse404 | customerCrudExportDataResponse429 | customerCrudExportDataResponse500) & {
+export type customerCrudExportDataResponseError = (customerCrudExportDataResponse400 | customerCrudExportDataResponse401 | customerCrudExportDataResponse403 | customerCrudExportDataResponse404 | customerCrudExportDataResponse429 | customerCrudExportDataResponse500) & {
   headers: Headers;
 };
 
@@ -1868,6 +1998,16 @@ export type customerCrudGetHistoryResponse400 = {
   status: 400
 }
 
+export type customerCrudGetHistoryResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type customerCrudGetHistoryResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type customerCrudGetHistoryResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -1886,7 +2026,7 @@ export type customerCrudGetHistoryResponse500 = {
 export type customerCrudGetHistoryResponseSuccess = (customerCrudGetHistoryResponse200) & {
   headers: Headers;
 };
-export type customerCrudGetHistoryResponseError = (customerCrudGetHistoryResponse400 | customerCrudGetHistoryResponse404 | customerCrudGetHistoryResponse429 | customerCrudGetHistoryResponse500) & {
+export type customerCrudGetHistoryResponseError = (customerCrudGetHistoryResponse400 | customerCrudGetHistoryResponse401 | customerCrudGetHistoryResponse403 | customerCrudGetHistoryResponse404 | customerCrudGetHistoryResponse429 | customerCrudGetHistoryResponse500) & {
   headers: Headers;
 };
 
@@ -2030,6 +2170,16 @@ export type customerCrudUpdatePreferencesResponse400 = {
   status: 400
 }
 
+export type customerCrudUpdatePreferencesResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type customerCrudUpdatePreferencesResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type customerCrudUpdatePreferencesResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -2058,7 +2208,7 @@ export type customerCrudUpdatePreferencesResponse500 = {
 export type customerCrudUpdatePreferencesResponseSuccess = (customerCrudUpdatePreferencesResponse200) & {
   headers: Headers;
 };
-export type customerCrudUpdatePreferencesResponseError = (customerCrudUpdatePreferencesResponse400 | customerCrudUpdatePreferencesResponse404 | customerCrudUpdatePreferencesResponse413 | customerCrudUpdatePreferencesResponse415 | customerCrudUpdatePreferencesResponse429 | customerCrudUpdatePreferencesResponse500) & {
+export type customerCrudUpdatePreferencesResponseError = (customerCrudUpdatePreferencesResponse400 | customerCrudUpdatePreferencesResponse401 | customerCrudUpdatePreferencesResponse403 | customerCrudUpdatePreferencesResponse404 | customerCrudUpdatePreferencesResponse413 | customerCrudUpdatePreferencesResponse415 | customerCrudUpdatePreferencesResponse429 | customerCrudUpdatePreferencesResponse500) & {
   headers: Headers;
 };
 
@@ -2164,6 +2314,16 @@ export type customerCrudRestoreResponse400 = {
   status: 400
 }
 
+export type customerCrudRestoreResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type customerCrudRestoreResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type customerCrudRestoreResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -2187,7 +2347,7 @@ export type customerCrudRestoreResponse500 = {
 export type customerCrudRestoreResponseSuccess = (customerCrudRestoreResponse200) & {
   headers: Headers;
 };
-export type customerCrudRestoreResponseError = (customerCrudRestoreResponse400 | customerCrudRestoreResponse404 | customerCrudRestoreResponse409 | customerCrudRestoreResponse429 | customerCrudRestoreResponse500) & {
+export type customerCrudRestoreResponseError = (customerCrudRestoreResponse400 | customerCrudRestoreResponse401 | customerCrudRestoreResponse403 | customerCrudRestoreResponse404 | customerCrudRestoreResponse409 | customerCrudRestoreResponse429 | customerCrudRestoreResponse500) & {
   headers: Headers;
 };
 
@@ -2278,6 +2438,16 @@ export type customerCrudGetStatisticsResponse400 = {
   status: 400
 }
 
+export type customerCrudGetStatisticsResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type customerCrudGetStatisticsResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type customerCrudGetStatisticsResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -2296,7 +2466,7 @@ export type customerCrudGetStatisticsResponse500 = {
 export type customerCrudGetStatisticsResponseSuccess = (customerCrudGetStatisticsResponse200) & {
   headers: Headers;
 };
-export type customerCrudGetStatisticsResponseError = (customerCrudGetStatisticsResponse400 | customerCrudGetStatisticsResponse404 | customerCrudGetStatisticsResponse429 | customerCrudGetStatisticsResponse500) & {
+export type customerCrudGetStatisticsResponseError = (customerCrudGetStatisticsResponse400 | customerCrudGetStatisticsResponse401 | customerCrudGetStatisticsResponse403 | customerCrudGetStatisticsResponse404 | customerCrudGetStatisticsResponse429 | customerCrudGetStatisticsResponse500) & {
   headers: Headers;
 };
 
@@ -2440,6 +2610,16 @@ export type customerCrudGetVersionResponse400 = {
   status: 400
 }
 
+export type customerCrudGetVersionResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type customerCrudGetVersionResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type customerCrudGetVersionResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -2458,7 +2638,7 @@ export type customerCrudGetVersionResponse500 = {
 export type customerCrudGetVersionResponseSuccess = (customerCrudGetVersionResponse200) & {
   headers: Headers;
 };
-export type customerCrudGetVersionResponseError = (customerCrudGetVersionResponse400 | customerCrudGetVersionResponse404 | customerCrudGetVersionResponse429 | customerCrudGetVersionResponse500) & {
+export type customerCrudGetVersionResponseError = (customerCrudGetVersionResponse400 | customerCrudGetVersionResponse401 | customerCrudGetVersionResponse403 | customerCrudGetVersionResponse404 | customerCrudGetVersionResponse429 | customerCrudGetVersionResponse500) & {
   headers: Headers;
 };
 

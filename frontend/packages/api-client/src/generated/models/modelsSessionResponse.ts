@@ -5,13 +5,13 @@
  * Comprehensive REST API for managing beauty salon operations including salons, staff, services, customers, bookings, treatments, payments, inventory, and access control. Built with TypeSpec for type-safe API-first development.
  * OpenAPI spec version: 2.0
  */
-import type { ModelsAuthenticationStateType } from './modelsAuthenticationStateType';
 import type { ModelsSessionId } from './modelsSessionId';
 import type { ModelsUserId } from './modelsUserId';
 
 /**
  * セッションレスポンス - sessions テーブルの公開カラムを返す。
- * セッショントークンとリフレッシュトークンは返さない(発行したログイン・トークン再発行のレスポンスでのみ返す)。
+ * トークンのハッシュは返さない。サーバーはトークンそのものを保存しないので、
+ * トークンは発行したログイン・トークン再発行のレスポンスでのみ返す。
  * プロパティ名と null 許可は DB カラムと一致させている。
  */
 export interface ModelsSessionResponse {
@@ -19,26 +19,22 @@ export interface ModelsSessionResponse {
   id: ModelsSessionId;
   /** セッション所有者のユーザーID。 */
   userId: ModelsUserId;
-  /** セッション発行元のIPアドレス。 */
-  ipAddress: string;
-  /** ブラウザやアプリを示すユーザーエージェント文字列。 */
-  userAgent: string;
   /**
-     * セッションを作成した端末の識別子。端末が特定されていない場合はnull
+     * ログインしたときの接続元IPアドレス。取得できなかった場合はnull
      * @nullable
      */
-  deviceId: string | null;
-  /** セッションの有効期限。アクセストークンはこの日時まで使用できる。 */
+  ipAddress: string | null;
+  /**
+     * ログインしたときの User-Agent ヘッダーの値。ヘッダーがなかった場合はnull
+     * @nullable
+     */
+  userAgent: string | null;
+  /** 現在のアクセストークンの有効期限。発行から15分。 */
   expiresAt: string;
-  /**
-     * リフレッシュトークンの有効期限。この日時を過ぎるとアクセストークンを再発行できない。リフレッシュトークンを発行していない場合はnull
-     * @nullable
-     */
-  refreshExpiresAt: string | null;
-  /** 直近のアクティビティ日時。 */
+  /** セッションそのものの有効期限。ログイン時に決まり(通常は8時間後、rememberMe を指定した場合は30日後)、トークンを再発行しても延びない。この日時を過ぎると再発行できない。 */
+  refreshExpiresAt: string;
+  /** 最後にトークンを発行した(ログインまたは再発行した)日時。 */
   lastActivityAt: string;
-  /** セッション作成日時。 */
+  /** セッション作成日時(ログインした日時)。 */
   createdAt: string;
-  /** セッションの認証状態。未設定の場合はnull */
-  authenticationState: ModelsAuthenticationStateType | null;
 }

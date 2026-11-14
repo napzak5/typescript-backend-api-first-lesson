@@ -82,6 +82,16 @@ export type bookingCrudListResponse400 = {
   status: 400
 }
 
+export type bookingCrudListResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type bookingCrudListResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type bookingCrudListResponse429 = {
   data: ModelsProblemDetails
   status: 429
@@ -95,7 +105,7 @@ export type bookingCrudListResponse500 = {
 export type bookingCrudListResponseSuccess = (bookingCrudListResponse200) & {
   headers: Headers;
 };
-export type bookingCrudListResponseError = (bookingCrudListResponse400 | bookingCrudListResponse429 | bookingCrudListResponse500) & {
+export type bookingCrudListResponseError = (bookingCrudListResponse400 | bookingCrudListResponse401 | bookingCrudListResponse403 | bookingCrudListResponse429 | bookingCrudListResponse500) & {
   headers: Headers;
 };
 
@@ -231,6 +241,16 @@ export type bookingCrudCreateResponse400 = {
   status: 400
 }
 
+export type bookingCrudCreateResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type bookingCrudCreateResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type bookingCrudCreateResponse409 = {
   data: ModelsProblemDetails
   status: 409
@@ -259,7 +279,7 @@ export type bookingCrudCreateResponse500 = {
 export type bookingCrudCreateResponseSuccess = (bookingCrudCreateResponse201) & {
   headers: Headers;
 };
-export type bookingCrudCreateResponseError = (bookingCrudCreateResponse400 | bookingCrudCreateResponse409 | bookingCrudCreateResponse413 | bookingCrudCreateResponse415 | bookingCrudCreateResponse429 | bookingCrudCreateResponse500) & {
+export type bookingCrudCreateResponseError = (bookingCrudCreateResponse400 | bookingCrudCreateResponse401 | bookingCrudCreateResponse403 | bookingCrudCreateResponse409 | bookingCrudCreateResponse413 | bookingCrudCreateResponse415 | bookingCrudCreateResponse429 | bookingCrudCreateResponse500) & {
   headers: Headers;
 };
 
@@ -364,6 +384,16 @@ export type bookingServiceCrudCreateResponse400 = {
   status: 400
 }
 
+export type bookingServiceCrudCreateResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type bookingServiceCrudCreateResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type bookingServiceCrudCreateResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -397,7 +427,7 @@ export type bookingServiceCrudCreateResponse500 = {
 export type bookingServiceCrudCreateResponseSuccess = (bookingServiceCrudCreateResponse201) & {
   headers: Headers;
 };
-export type bookingServiceCrudCreateResponseError = (bookingServiceCrudCreateResponse400 | bookingServiceCrudCreateResponse404 | bookingServiceCrudCreateResponse409 | bookingServiceCrudCreateResponse413 | bookingServiceCrudCreateResponse415 | bookingServiceCrudCreateResponse429 | bookingServiceCrudCreateResponse500) & {
+export type bookingServiceCrudCreateResponseError = (bookingServiceCrudCreateResponse400 | bookingServiceCrudCreateResponse401 | bookingServiceCrudCreateResponse403 | bookingServiceCrudCreateResponse404 | bookingServiceCrudCreateResponse409 | bookingServiceCrudCreateResponse413 | bookingServiceCrudCreateResponse415 | bookingServiceCrudCreateResponse429 | bookingServiceCrudCreateResponse500) & {
   headers: Headers;
 };
 
@@ -503,6 +533,16 @@ export type bookingServiceCrudGetResponse400 = {
   status: 400
 }
 
+export type bookingServiceCrudGetResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type bookingServiceCrudGetResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type bookingServiceCrudGetResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -521,7 +561,7 @@ export type bookingServiceCrudGetResponse500 = {
 export type bookingServiceCrudGetResponseSuccess = (bookingServiceCrudGetResponse200) & {
   headers: Headers;
 };
-export type bookingServiceCrudGetResponseError = (bookingServiceCrudGetResponse400 | bookingServiceCrudGetResponse404 | bookingServiceCrudGetResponse429 | bookingServiceCrudGetResponse500) & {
+export type bookingServiceCrudGetResponseError = (bookingServiceCrudGetResponse400 | bookingServiceCrudGetResponse401 | bookingServiceCrudGetResponse403 | bookingServiceCrudGetResponse404 | bookingServiceCrudGetResponse429 | bookingServiceCrudGetResponse500) & {
   headers: Headers;
 };
 
@@ -658,6 +698,16 @@ export type bookingServiceCrudDeleteResponse400 = {
   status: 400
 }
 
+export type bookingServiceCrudDeleteResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type bookingServiceCrudDeleteResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type bookingServiceCrudDeleteResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -681,7 +731,7 @@ export type bookingServiceCrudDeleteResponse500 = {
 export type bookingServiceCrudDeleteResponseSuccess = (bookingServiceCrudDeleteResponse204) & {
   headers: Headers;
 };
-export type bookingServiceCrudDeleteResponseError = (bookingServiceCrudDeleteResponse400 | bookingServiceCrudDeleteResponse404 | bookingServiceCrudDeleteResponse409 | bookingServiceCrudDeleteResponse429 | bookingServiceCrudDeleteResponse500) & {
+export type bookingServiceCrudDeleteResponseError = (bookingServiceCrudDeleteResponse400 | bookingServiceCrudDeleteResponse401 | bookingServiceCrudDeleteResponse403 | bookingServiceCrudDeleteResponse404 | bookingServiceCrudDeleteResponse409 | bookingServiceCrudDeleteResponse429 | bookingServiceCrudDeleteResponse500) & {
   headers: Headers;
 };
 
@@ -774,6 +824,16 @@ export type bookingCrudGetResponse400 = {
   status: 400
 }
 
+export type bookingCrudGetResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type bookingCrudGetResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type bookingCrudGetResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -792,7 +852,7 @@ export type bookingCrudGetResponse500 = {
 export type bookingCrudGetResponseSuccess = (bookingCrudGetResponse200) & {
   headers: Headers;
 };
-export type bookingCrudGetResponseError = (bookingCrudGetResponse400 | bookingCrudGetResponse404 | bookingCrudGetResponse429 | bookingCrudGetResponse500) & {
+export type bookingCrudGetResponseError = (bookingCrudGetResponse400 | bookingCrudGetResponse401 | bookingCrudGetResponse403 | bookingCrudGetResponse404 | bookingCrudGetResponse429 | bookingCrudGetResponse500) & {
   headers: Headers;
 };
 
@@ -921,6 +981,16 @@ export type bookingCrudUpdateResponse400 = {
   status: 400
 }
 
+export type bookingCrudUpdateResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type bookingCrudUpdateResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type bookingCrudUpdateResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -949,7 +1019,7 @@ export type bookingCrudUpdateResponse500 = {
 export type bookingCrudUpdateResponseSuccess = (bookingCrudUpdateResponse200) & {
   headers: Headers;
 };
-export type bookingCrudUpdateResponseError = (bookingCrudUpdateResponse400 | bookingCrudUpdateResponse404 | bookingCrudUpdateResponse413 | bookingCrudUpdateResponse415 | bookingCrudUpdateResponse429 | bookingCrudUpdateResponse500) & {
+export type bookingCrudUpdateResponseError = (bookingCrudUpdateResponse400 | bookingCrudUpdateResponse401 | bookingCrudUpdateResponse403 | bookingCrudUpdateResponse404 | bookingCrudUpdateResponse413 | bookingCrudUpdateResponse415 | bookingCrudUpdateResponse429 | bookingCrudUpdateResponse500) & {
   headers: Headers;
 };
 
@@ -1055,6 +1125,16 @@ export type bookingCrudDeleteResponse400 = {
   status: 400
 }
 
+export type bookingCrudDeleteResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type bookingCrudDeleteResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type bookingCrudDeleteResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -1078,7 +1158,7 @@ export type bookingCrudDeleteResponse500 = {
 export type bookingCrudDeleteResponseSuccess = (bookingCrudDeleteResponse204) & {
   headers: Headers;
 };
-export type bookingCrudDeleteResponseError = (bookingCrudDeleteResponse400 | bookingCrudDeleteResponse404 | bookingCrudDeleteResponse409 | bookingCrudDeleteResponse429 | bookingCrudDeleteResponse500) & {
+export type bookingCrudDeleteResponseError = (bookingCrudDeleteResponse400 | bookingCrudDeleteResponse401 | bookingCrudDeleteResponse403 | bookingCrudDeleteResponse404 | bookingCrudDeleteResponse409 | bookingCrudDeleteResponse429 | bookingCrudDeleteResponse500) & {
   headers: Headers;
 };
 
@@ -1169,6 +1249,16 @@ export type bookingCrudCancelResponse400 = {
   status: 400
 }
 
+export type bookingCrudCancelResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type bookingCrudCancelResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type bookingCrudCancelResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -1202,7 +1292,7 @@ export type bookingCrudCancelResponse500 = {
 export type bookingCrudCancelResponseSuccess = (bookingCrudCancelResponse200) & {
   headers: Headers;
 };
-export type bookingCrudCancelResponseError = (bookingCrudCancelResponse400 | bookingCrudCancelResponse404 | bookingCrudCancelResponse409 | bookingCrudCancelResponse413 | bookingCrudCancelResponse415 | bookingCrudCancelResponse429 | bookingCrudCancelResponse500) & {
+export type bookingCrudCancelResponseError = (bookingCrudCancelResponse400 | bookingCrudCancelResponse401 | bookingCrudCancelResponse403 | bookingCrudCancelResponse404 | bookingCrudCancelResponse409 | bookingCrudCancelResponse413 | bookingCrudCancelResponse415 | bookingCrudCancelResponse429 | bookingCrudCancelResponse500) & {
   headers: Headers;
 };
 
@@ -1308,6 +1398,16 @@ export type bookingCrudCompleteResponse400 = {
   status: 400
 }
 
+export type bookingCrudCompleteResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type bookingCrudCompleteResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type bookingCrudCompleteResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -1341,7 +1441,7 @@ export type bookingCrudCompleteResponse500 = {
 export type bookingCrudCompleteResponseSuccess = (bookingCrudCompleteResponse200) & {
   headers: Headers;
 };
-export type bookingCrudCompleteResponseError = (bookingCrudCompleteResponse400 | bookingCrudCompleteResponse404 | bookingCrudCompleteResponse409 | bookingCrudCompleteResponse413 | bookingCrudCompleteResponse415 | bookingCrudCompleteResponse429 | bookingCrudCompleteResponse500) & {
+export type bookingCrudCompleteResponseError = (bookingCrudCompleteResponse400 | bookingCrudCompleteResponse401 | bookingCrudCompleteResponse403 | bookingCrudCompleteResponse404 | bookingCrudCompleteResponse409 | bookingCrudCompleteResponse413 | bookingCrudCompleteResponse415 | bookingCrudCompleteResponse429 | bookingCrudCompleteResponse500) & {
   headers: Headers;
 };
 
@@ -1447,6 +1547,16 @@ export type bookingCrudConfirmResponse400 = {
   status: 400
 }
 
+export type bookingCrudConfirmResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type bookingCrudConfirmResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type bookingCrudConfirmResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -1470,7 +1580,7 @@ export type bookingCrudConfirmResponse500 = {
 export type bookingCrudConfirmResponseSuccess = (bookingCrudConfirmResponse200) & {
   headers: Headers;
 };
-export type bookingCrudConfirmResponseError = (bookingCrudConfirmResponse400 | bookingCrudConfirmResponse404 | bookingCrudConfirmResponse409 | bookingCrudConfirmResponse429 | bookingCrudConfirmResponse500) & {
+export type bookingCrudConfirmResponseError = (bookingCrudConfirmResponse400 | bookingCrudConfirmResponse401 | bookingCrudConfirmResponse403 | bookingCrudConfirmResponse404 | bookingCrudConfirmResponse409 | bookingCrudConfirmResponse429 | bookingCrudConfirmResponse500) & {
   headers: Headers;
 };
 
@@ -1561,6 +1671,16 @@ export type bookingCrudRescheduleResponse400 = {
   status: 400
 }
 
+export type bookingCrudRescheduleResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type bookingCrudRescheduleResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type bookingCrudRescheduleResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -1594,7 +1714,7 @@ export type bookingCrudRescheduleResponse500 = {
 export type bookingCrudRescheduleResponseSuccess = (bookingCrudRescheduleResponse200) & {
   headers: Headers;
 };
-export type bookingCrudRescheduleResponseError = (bookingCrudRescheduleResponse400 | bookingCrudRescheduleResponse404 | bookingCrudRescheduleResponse409 | bookingCrudRescheduleResponse413 | bookingCrudRescheduleResponse415 | bookingCrudRescheduleResponse429 | bookingCrudRescheduleResponse500) & {
+export type bookingCrudRescheduleResponseError = (bookingCrudRescheduleResponse400 | bookingCrudRescheduleResponse401 | bookingCrudRescheduleResponse403 | bookingCrudRescheduleResponse404 | bookingCrudRescheduleResponse409 | bookingCrudRescheduleResponse413 | bookingCrudRescheduleResponse415 | bookingCrudRescheduleResponse429 | bookingCrudRescheduleResponse500) & {
   headers: Headers;
 };
 
@@ -1700,6 +1820,16 @@ export type availableSlotCrudListResponse400 = {
   status: 400
 }
 
+export type availableSlotCrudListResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type availableSlotCrudListResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type availableSlotCrudListResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -1718,7 +1848,7 @@ export type availableSlotCrudListResponse500 = {
 export type availableSlotCrudListResponseSuccess = (availableSlotCrudListResponse200) & {
   headers: Headers;
 };
-export type availableSlotCrudListResponseError = (availableSlotCrudListResponse400 | availableSlotCrudListResponse404 | availableSlotCrudListResponse429 | availableSlotCrudListResponse500) & {
+export type availableSlotCrudListResponseError = (availableSlotCrudListResponse400 | availableSlotCrudListResponse401 | availableSlotCrudListResponse403 | availableSlotCrudListResponse404 | availableSlotCrudListResponse429 | availableSlotCrudListResponse500) & {
   headers: Headers;
 };
 
@@ -1862,6 +1992,16 @@ export type availableSlotCrudCheckResponse400 = {
   status: 400
 }
 
+export type availableSlotCrudCheckResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type availableSlotCrudCheckResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type availableSlotCrudCheckResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -1890,7 +2030,7 @@ export type availableSlotCrudCheckResponse500 = {
 export type availableSlotCrudCheckResponseSuccess = (availableSlotCrudCheckResponse200) & {
   headers: Headers;
 };
-export type availableSlotCrudCheckResponseError = (availableSlotCrudCheckResponse400 | availableSlotCrudCheckResponse404 | availableSlotCrudCheckResponse413 | availableSlotCrudCheckResponse415 | availableSlotCrudCheckResponse429 | availableSlotCrudCheckResponse500) & {
+export type availableSlotCrudCheckResponseError = (availableSlotCrudCheckResponse400 | availableSlotCrudCheckResponse401 | availableSlotCrudCheckResponse403 | availableSlotCrudCheckResponse404 | availableSlotCrudCheckResponse413 | availableSlotCrudCheckResponse415 | availableSlotCrudCheckResponse429 | availableSlotCrudCheckResponse500) & {
   headers: Headers;
 };
 

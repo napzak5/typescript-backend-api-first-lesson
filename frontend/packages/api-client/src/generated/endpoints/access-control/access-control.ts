@@ -69,6 +69,16 @@ export type accessControlCrudCheckResponse400 = {
   status: 400
 }
 
+export type accessControlCrudCheckResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type accessControlCrudCheckResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type accessControlCrudCheckResponse413 = {
   data: ModelsProblemDetails
   status: 413
@@ -92,7 +102,7 @@ export type accessControlCrudCheckResponse500 = {
 export type accessControlCrudCheckResponseSuccess = (accessControlCrudCheckResponse200) & {
   headers: Headers;
 };
-export type accessControlCrudCheckResponseError = (accessControlCrudCheckResponse400 | accessControlCrudCheckResponse413 | accessControlCrudCheckResponse415 | accessControlCrudCheckResponse429 | accessControlCrudCheckResponse500) & {
+export type accessControlCrudCheckResponseError = (accessControlCrudCheckResponse400 | accessControlCrudCheckResponse401 | accessControlCrudCheckResponse403 | accessControlCrudCheckResponse413 | accessControlCrudCheckResponse415 | accessControlCrudCheckResponse429 | accessControlCrudCheckResponse500) & {
   headers: Headers;
 };
 
@@ -197,6 +207,16 @@ export type accessControlCrudCheckPermissionsResponse400 = {
   status: 400
 }
 
+export type accessControlCrudCheckPermissionsResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type accessControlCrudCheckPermissionsResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type accessControlCrudCheckPermissionsResponse413 = {
   data: ModelsProblemDetails
   status: 413
@@ -220,7 +240,7 @@ export type accessControlCrudCheckPermissionsResponse500 = {
 export type accessControlCrudCheckPermissionsResponseSuccess = (accessControlCrudCheckPermissionsResponse200) & {
   headers: Headers;
 };
-export type accessControlCrudCheckPermissionsResponseError = (accessControlCrudCheckPermissionsResponse400 | accessControlCrudCheckPermissionsResponse413 | accessControlCrudCheckPermissionsResponse415 | accessControlCrudCheckPermissionsResponse429 | accessControlCrudCheckPermissionsResponse500) & {
+export type accessControlCrudCheckPermissionsResponseError = (accessControlCrudCheckPermissionsResponse400 | accessControlCrudCheckPermissionsResponse401 | accessControlCrudCheckPermissionsResponse403 | accessControlCrudCheckPermissionsResponse413 | accessControlCrudCheckPermissionsResponse415 | accessControlCrudCheckPermissionsResponse429 | accessControlCrudCheckPermissionsResponse500) & {
   headers: Headers;
 };
 
@@ -325,6 +345,16 @@ export type accessControlCrudListResourceAccessResponse400 = {
   status: 400
 }
 
+export type accessControlCrudListResourceAccessResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type accessControlCrudListResourceAccessResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type accessControlCrudListResourceAccessResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -343,7 +373,7 @@ export type accessControlCrudListResourceAccessResponse500 = {
 export type accessControlCrudListResourceAccessResponseSuccess = (accessControlCrudListResourceAccessResponse200) & {
   headers: Headers;
 };
-export type accessControlCrudListResourceAccessResponseError = (accessControlCrudListResourceAccessResponse400 | accessControlCrudListResourceAccessResponse404 | accessControlCrudListResourceAccessResponse429 | accessControlCrudListResourceAccessResponse500) & {
+export type accessControlCrudListResourceAccessResponseError = (accessControlCrudListResourceAccessResponse400 | accessControlCrudListResourceAccessResponse401 | accessControlCrudListResourceAccessResponse403 | accessControlCrudListResourceAccessResponse404 | accessControlCrudListResourceAccessResponse429 | accessControlCrudListResourceAccessResponse500) & {
   headers: Headers;
 };
 
@@ -487,6 +517,16 @@ export type accessControlCrudGetUserPermissionsResponse400 = {
   status: 400
 }
 
+export type accessControlCrudGetUserPermissionsResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type accessControlCrudGetUserPermissionsResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type accessControlCrudGetUserPermissionsResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -505,7 +545,7 @@ export type accessControlCrudGetUserPermissionsResponse500 = {
 export type accessControlCrudGetUserPermissionsResponseSuccess = (accessControlCrudGetUserPermissionsResponse200) & {
   headers: Headers;
 };
-export type accessControlCrudGetUserPermissionsResponseError = (accessControlCrudGetUserPermissionsResponse400 | accessControlCrudGetUserPermissionsResponse404 | accessControlCrudGetUserPermissionsResponse429 | accessControlCrudGetUserPermissionsResponse500) & {
+export type accessControlCrudGetUserPermissionsResponseError = (accessControlCrudGetUserPermissionsResponse400 | accessControlCrudGetUserPermissionsResponse401 | accessControlCrudGetUserPermissionsResponse403 | accessControlCrudGetUserPermissionsResponse404 | accessControlCrudGetUserPermissionsResponse429 | accessControlCrudGetUserPermissionsResponse500) & {
   headers: Headers;
 };
 
@@ -649,6 +689,16 @@ export type accessControlCrudValidatePermissionsResponse400 = {
   status: 400
 }
 
+export type accessControlCrudValidatePermissionsResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type accessControlCrudValidatePermissionsResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type accessControlCrudValidatePermissionsResponse413 = {
   data: ModelsProblemDetails
   status: 413
@@ -672,7 +722,7 @@ export type accessControlCrudValidatePermissionsResponse500 = {
 export type accessControlCrudValidatePermissionsResponseSuccess = (accessControlCrudValidatePermissionsResponse200) & {
   headers: Headers;
 };
-export type accessControlCrudValidatePermissionsResponseError = (accessControlCrudValidatePermissionsResponse400 | accessControlCrudValidatePermissionsResponse413 | accessControlCrudValidatePermissionsResponse415 | accessControlCrudValidatePermissionsResponse429 | accessControlCrudValidatePermissionsResponse500) & {
+export type accessControlCrudValidatePermissionsResponseError = (accessControlCrudValidatePermissionsResponse400 | accessControlCrudValidatePermissionsResponse401 | accessControlCrudValidatePermissionsResponse403 | accessControlCrudValidatePermissionsResponse413 | accessControlCrudValidatePermissionsResponse415 | accessControlCrudValidatePermissionsResponse429 | accessControlCrudValidatePermissionsResponse500) & {
   headers: Headers;
 };
 

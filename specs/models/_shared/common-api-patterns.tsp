@@ -68,8 +68,30 @@ namespace BeautySalon.Models {
   @doc("リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。")
   model UnsupportedMediaTypeResponse is ProblemResponse<415>;
 
-  // どのオペレーションでも返りうるエラー
-  alias CommonErrors = RateLimitedResponse | InternalServerErrorResponse;
+  @doc("""
+    認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
+    ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
+    WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+    """)
+  model UnauthenticatedResponse {
+    ...ProblemResponse<401>;
+
+    @doc("Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error=\"invalid_token\" を含む。")
+    @header("WWW-Authenticate")
+    wwwAuthenticate: string;
+  }
+
+  @doc("認証されているが、この操作を行う権限がない (403)。")
+  model PermissionDeniedResponse is ProblemResponse<403>;
+
+  // 認証なしで呼べるオペレーション (@useAuth(NoAuth)) で返りうるエラー
+  alias PublicErrors = RateLimitedResponse | InternalServerErrorResponse;
+
+  // ログインしていれば誰でも呼べるオペレーションで返りうるエラー
+  alias SessionErrors = UnauthenticatedResponse | PublicErrors;
+
+  // ロールやサロンによる権限の確認があるオペレーションで返りうるエラー
+  alias CommonErrors = PermissionDeniedResponse | SessionErrors;
 
   // リクエスト本文を受け取るオペレーションで返りうるエラー
   alias RequestBodyErrors =

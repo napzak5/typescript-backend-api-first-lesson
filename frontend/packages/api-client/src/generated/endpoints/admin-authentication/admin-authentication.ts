@@ -64,6 +64,16 @@ export type adminAuthCrudAddTrustedIpResponse400 = {
   status: 400
 }
 
+export type adminAuthCrudAddTrustedIpResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type adminAuthCrudAddTrustedIpResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type adminAuthCrudAddTrustedIpResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -97,7 +107,7 @@ export type adminAuthCrudAddTrustedIpResponse500 = {
 export type adminAuthCrudAddTrustedIpResponseSuccess = (adminAuthCrudAddTrustedIpResponse200) & {
   headers: Headers;
 };
-export type adminAuthCrudAddTrustedIpResponseError = (adminAuthCrudAddTrustedIpResponse400 | adminAuthCrudAddTrustedIpResponse404 | adminAuthCrudAddTrustedIpResponse409 | adminAuthCrudAddTrustedIpResponse413 | adminAuthCrudAddTrustedIpResponse415 | adminAuthCrudAddTrustedIpResponse429 | adminAuthCrudAddTrustedIpResponse500) & {
+export type adminAuthCrudAddTrustedIpResponseError = (adminAuthCrudAddTrustedIpResponse400 | adminAuthCrudAddTrustedIpResponse401 | adminAuthCrudAddTrustedIpResponse403 | adminAuthCrudAddTrustedIpResponse404 | adminAuthCrudAddTrustedIpResponse409 | adminAuthCrudAddTrustedIpResponse413 | adminAuthCrudAddTrustedIpResponse415 | adminAuthCrudAddTrustedIpResponse429 | adminAuthCrudAddTrustedIpResponse500) & {
   headers: Headers;
 };
 
@@ -203,6 +213,16 @@ export type adminAuthCrudRemoveTrustedIpResponse400 = {
   status: 400
 }
 
+export type adminAuthCrudRemoveTrustedIpResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type adminAuthCrudRemoveTrustedIpResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type adminAuthCrudRemoveTrustedIpResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -221,7 +241,7 @@ export type adminAuthCrudRemoveTrustedIpResponse500 = {
 export type adminAuthCrudRemoveTrustedIpResponseSuccess = (adminAuthCrudRemoveTrustedIpResponse204) & {
   headers: Headers;
 };
-export type adminAuthCrudRemoveTrustedIpResponseError = (adminAuthCrudRemoveTrustedIpResponse400 | adminAuthCrudRemoveTrustedIpResponse404 | adminAuthCrudRemoveTrustedIpResponse429 | adminAuthCrudRemoveTrustedIpResponse500) & {
+export type adminAuthCrudRemoveTrustedIpResponseError = (adminAuthCrudRemoveTrustedIpResponse400 | adminAuthCrudRemoveTrustedIpResponse401 | adminAuthCrudRemoveTrustedIpResponse403 | adminAuthCrudRemoveTrustedIpResponse404 | adminAuthCrudRemoveTrustedIpResponse429 | adminAuthCrudRemoveTrustedIpResponse500) & {
   headers: Headers;
 };
 
@@ -321,6 +341,16 @@ export type adminAuthCrudUnlockAccountResponse400 = {
   status: 400
 }
 
+export type adminAuthCrudUnlockAccountResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type adminAuthCrudUnlockAccountResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type adminAuthCrudUnlockAccountResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -344,7 +374,7 @@ export type adminAuthCrudUnlockAccountResponse500 = {
 export type adminAuthCrudUnlockAccountResponseSuccess = (adminAuthCrudUnlockAccountResponse200) & {
   headers: Headers;
 };
-export type adminAuthCrudUnlockAccountResponseError = (adminAuthCrudUnlockAccountResponse400 | adminAuthCrudUnlockAccountResponse404 | adminAuthCrudUnlockAccountResponse409 | adminAuthCrudUnlockAccountResponse429 | adminAuthCrudUnlockAccountResponse500) & {
+export type adminAuthCrudUnlockAccountResponseError = (adminAuthCrudUnlockAccountResponse400 | adminAuthCrudUnlockAccountResponse401 | adminAuthCrudUnlockAccountResponse403 | adminAuthCrudUnlockAccountResponse404 | adminAuthCrudUnlockAccountResponse409 | adminAuthCrudUnlockAccountResponse429 | adminAuthCrudUnlockAccountResponse500) & {
   headers: Headers;
 };
 
@@ -435,6 +465,16 @@ export type adminAuthCrudGetUserResponse400 = {
   status: 400
 }
 
+export type adminAuthCrudGetUserResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type adminAuthCrudGetUserResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type adminAuthCrudGetUserResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -453,7 +493,7 @@ export type adminAuthCrudGetUserResponse500 = {
 export type adminAuthCrudGetUserResponseSuccess = (adminAuthCrudGetUserResponse200) & {
   headers: Headers;
 };
-export type adminAuthCrudGetUserResponseError = (adminAuthCrudGetUserResponse400 | adminAuthCrudGetUserResponse404 | adminAuthCrudGetUserResponse429 | adminAuthCrudGetUserResponse500) & {
+export type adminAuthCrudGetUserResponseError = (adminAuthCrudGetUserResponse400 | adminAuthCrudGetUserResponse401 | adminAuthCrudGetUserResponse403 | adminAuthCrudGetUserResponse404 | adminAuthCrudGetUserResponse429 | adminAuthCrudGetUserResponse500) & {
   headers: Headers;
 };
 

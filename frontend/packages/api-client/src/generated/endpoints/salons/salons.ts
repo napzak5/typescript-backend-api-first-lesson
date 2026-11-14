@@ -223,6 +223,16 @@ export type salonCrudCreateResponse400 = {
   status: 400
 }
 
+export type salonCrudCreateResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type salonCrudCreateResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type salonCrudCreateResponse409 = {
   data: ModelsProblemDetails
   status: 409
@@ -251,7 +261,7 @@ export type salonCrudCreateResponse500 = {
 export type salonCrudCreateResponseSuccess = (salonCrudCreateResponse201) & {
   headers: Headers;
 };
-export type salonCrudCreateResponseError = (salonCrudCreateResponse400 | salonCrudCreateResponse409 | salonCrudCreateResponse413 | salonCrudCreateResponse415 | salonCrudCreateResponse429 | salonCrudCreateResponse500) & {
+export type salonCrudCreateResponseError = (salonCrudCreateResponse400 | salonCrudCreateResponse401 | salonCrudCreateResponse403 | salonCrudCreateResponse409 | salonCrudCreateResponse413 | salonCrudCreateResponse415 | salonCrudCreateResponse429 | salonCrudCreateResponse500) & {
   headers: Headers;
 };
 
@@ -266,7 +276,7 @@ export const getSalonCrudCreateUrl = () => {
 }
 
 /**
- * サロンを新規登録します。メールアドレスが既存のサロンと重複する場合は409を返します。
+ * サロンを新規登録します。admin だけが実行できます。メールアドレスが既存のサロンと重複する場合は409を返します。
  * @summary Create a salon
  */
 export const salonCrudCreate = async (modelsSalonCreateRequest: ModelsSalonCreateRequest, options?: RequestInit): Promise<salonCrudCreateResponse> => {
@@ -333,7 +343,7 @@ const {mutation: mutationOptions} = options ?
     export type SalonCrudCreateMutationVariables = {data: ModelsSalonCreateRequest}
 
     /**
- * サロンを新規登録します。メールアドレスが既存のサロンと重複する場合は409を返します。
+ * サロンを新規登録します。admin だけが実行できます。メールアドレスが既存のサロンと重複する場合は409を返します。
  * @summary Create a salon
  */
 export const useSalonCrudCreate = <TError = ModelsProblemDetails,
@@ -503,6 +513,16 @@ export type salonCrudUpdateResponse400 = {
   status: 400
 }
 
+export type salonCrudUpdateResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type salonCrudUpdateResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type salonCrudUpdateResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -536,7 +556,7 @@ export type salonCrudUpdateResponse500 = {
 export type salonCrudUpdateResponseSuccess = (salonCrudUpdateResponse200) & {
   headers: Headers;
 };
-export type salonCrudUpdateResponseError = (salonCrudUpdateResponse400 | salonCrudUpdateResponse404 | salonCrudUpdateResponse409 | salonCrudUpdateResponse413 | salonCrudUpdateResponse415 | salonCrudUpdateResponse429 | salonCrudUpdateResponse500) & {
+export type salonCrudUpdateResponseError = (salonCrudUpdateResponse400 | salonCrudUpdateResponse401 | salonCrudUpdateResponse403 | salonCrudUpdateResponse404 | salonCrudUpdateResponse409 | salonCrudUpdateResponse413 | salonCrudUpdateResponse415 | salonCrudUpdateResponse429 | salonCrudUpdateResponse500) & {
   headers: Headers;
 };
 
@@ -551,7 +571,7 @@ export const getSalonCrudUpdateUrl = (id: ModelsSalonId,) => {
 }
 
 /**
- * 指定した項目だけを更新します。openingHoursを指定した場合は営業日カレンダー全体を置き換えます。
+ * 指定した項目だけを更新します。openingHoursを指定した場合は営業日カレンダー全体を置き換えます。admin と、そのサロンの owner / manager が実行できます。ほかのサロンの owner / manager には403を返します。
  * @summary Update a salon
  */
 export const salonCrudUpdate = async (id: ModelsSalonId,
@@ -619,7 +639,7 @@ const {mutation: mutationOptions} = options ?
     export type SalonCrudUpdateMutationVariables = {id: ModelsSalonId;data: ModelsSalonUpdateRequest}
 
     /**
- * 指定した項目だけを更新します。openingHoursを指定した場合は営業日カレンダー全体を置き換えます。
+ * 指定した項目だけを更新します。openingHoursを指定した場合は営業日カレンダー全体を置き換えます。admin と、そのサロンの owner / manager が実行できます。ほかのサロンの owner / manager には403を返します。
  * @summary Update a salon
  */
 export const useSalonCrudUpdate = <TError = ModelsProblemDetails,
@@ -642,6 +662,16 @@ export type salonCrudDeleteResponse400 = {
   status: 400
 }
 
+export type salonCrudDeleteResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type salonCrudDeleteResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type salonCrudDeleteResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -660,7 +690,7 @@ export type salonCrudDeleteResponse500 = {
 export type salonCrudDeleteResponseSuccess = (salonCrudDeleteResponse204) & {
   headers: Headers;
 };
-export type salonCrudDeleteResponseError = (salonCrudDeleteResponse400 | salonCrudDeleteResponse404 | salonCrudDeleteResponse429 | salonCrudDeleteResponse500) & {
+export type salonCrudDeleteResponseError = (salonCrudDeleteResponse400 | salonCrudDeleteResponse401 | salonCrudDeleteResponse403 | salonCrudDeleteResponse404 | salonCrudDeleteResponse429 | salonCrudDeleteResponse500) & {
   headers: Headers;
 };
 
@@ -675,7 +705,7 @@ export const getSalonCrudDeleteUrl = (id: ModelsSalonId,) => {
 }
 
 /**
- * サロンを論理削除します。削除後は一覧・取得の対象外になります。
+ * サロンを論理削除します。削除後は一覧・取得の対象外になります。admin と、そのサロンの owner が実行できます。ほかのサロンの owner には403を返します。
  * @summary Delete a salon
  */
 export const salonCrudDelete = async (id: ModelsSalonId, options?: RequestInit): Promise<salonCrudDeleteResponse> => {
@@ -728,7 +758,7 @@ const {mutation: mutationOptions} = options ?
     export type SalonCrudDeleteMutationVariables = {id: ModelsSalonId}
 
     /**
- * サロンを論理削除します。削除後は一覧・取得の対象外になります。
+ * サロンを論理削除します。削除後は一覧・取得の対象外になります。admin と、そのサロンの owner が実行できます。ほかのサロンの owner には403を返します。
  * @summary Delete a salon
  */
 export const useSalonCrudDelete = <TError = ModelsProblemDetails,

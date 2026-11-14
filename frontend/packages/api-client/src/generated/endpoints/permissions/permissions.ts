@@ -57,6 +57,16 @@ export type permissionCrudListResponse400 = {
   status: 400
 }
 
+export type permissionCrudListResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type permissionCrudListResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type permissionCrudListResponse429 = {
   data: ModelsProblemDetails
   status: 429
@@ -70,7 +80,7 @@ export type permissionCrudListResponse500 = {
 export type permissionCrudListResponseSuccess = (permissionCrudListResponse200) & {
   headers: Headers;
 };
-export type permissionCrudListResponseError = (permissionCrudListResponse400 | permissionCrudListResponse429 | permissionCrudListResponse500) & {
+export type permissionCrudListResponseError = (permissionCrudListResponse400 | permissionCrudListResponse401 | permissionCrudListResponse403 | permissionCrudListResponse429 | permissionCrudListResponse500) & {
   headers: Headers;
 };
 
@@ -201,6 +211,16 @@ export type permissionCrudGetGroupsResponse200 = {
   status: 200
 }
 
+export type permissionCrudGetGroupsResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type permissionCrudGetGroupsResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type permissionCrudGetGroupsResponse429 = {
   data: ModelsProblemDetails
   status: 429
@@ -214,7 +234,7 @@ export type permissionCrudGetGroupsResponse500 = {
 export type permissionCrudGetGroupsResponseSuccess = (permissionCrudGetGroupsResponse200) & {
   headers: Headers;
 };
-export type permissionCrudGetGroupsResponseError = (permissionCrudGetGroupsResponse429 | permissionCrudGetGroupsResponse500) & {
+export type permissionCrudGetGroupsResponseError = (permissionCrudGetGroupsResponse401 | permissionCrudGetGroupsResponse403 | permissionCrudGetGroupsResponse429 | permissionCrudGetGroupsResponse500) & {
   headers: Headers;
 };
 

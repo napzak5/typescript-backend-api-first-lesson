@@ -70,6 +70,16 @@ export type treatmentRecordCrudListResponse400 = {
   status: 400
 }
 
+export type treatmentRecordCrudListResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type treatmentRecordCrudListResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type treatmentRecordCrudListResponse429 = {
   data: ModelsProblemDetails
   status: 429
@@ -83,7 +93,7 @@ export type treatmentRecordCrudListResponse500 = {
 export type treatmentRecordCrudListResponseSuccess = (treatmentRecordCrudListResponse200) & {
   headers: Headers;
 };
-export type treatmentRecordCrudListResponseError = (treatmentRecordCrudListResponse400 | treatmentRecordCrudListResponse429 | treatmentRecordCrudListResponse500) & {
+export type treatmentRecordCrudListResponseError = (treatmentRecordCrudListResponse400 | treatmentRecordCrudListResponse401 | treatmentRecordCrudListResponse403 | treatmentRecordCrudListResponse429 | treatmentRecordCrudListResponse500) & {
   headers: Headers;
 };
 
@@ -219,6 +229,16 @@ export type treatmentRecordCrudCreateResponse400 = {
   status: 400
 }
 
+export type treatmentRecordCrudCreateResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type treatmentRecordCrudCreateResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type treatmentRecordCrudCreateResponse409 = {
   data: ModelsProblemDetails
   status: 409
@@ -247,7 +267,7 @@ export type treatmentRecordCrudCreateResponse500 = {
 export type treatmentRecordCrudCreateResponseSuccess = (treatmentRecordCrudCreateResponse201) & {
   headers: Headers;
 };
-export type treatmentRecordCrudCreateResponseError = (treatmentRecordCrudCreateResponse400 | treatmentRecordCrudCreateResponse409 | treatmentRecordCrudCreateResponse413 | treatmentRecordCrudCreateResponse415 | treatmentRecordCrudCreateResponse429 | treatmentRecordCrudCreateResponse500) & {
+export type treatmentRecordCrudCreateResponseError = (treatmentRecordCrudCreateResponse400 | treatmentRecordCrudCreateResponse401 | treatmentRecordCrudCreateResponse403 | treatmentRecordCrudCreateResponse409 | treatmentRecordCrudCreateResponse413 | treatmentRecordCrudCreateResponse415 | treatmentRecordCrudCreateResponse429 | treatmentRecordCrudCreateResponse500) & {
   headers: Headers;
 };
 
@@ -352,6 +372,16 @@ export type treatmentRecordCrudGetStatisticsResponse400 = {
   status: 400
 }
 
+export type treatmentRecordCrudGetStatisticsResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type treatmentRecordCrudGetStatisticsResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type treatmentRecordCrudGetStatisticsResponse429 = {
   data: ModelsProblemDetails
   status: 429
@@ -365,7 +395,7 @@ export type treatmentRecordCrudGetStatisticsResponse500 = {
 export type treatmentRecordCrudGetStatisticsResponseSuccess = (treatmentRecordCrudGetStatisticsResponse200) & {
   headers: Headers;
 };
-export type treatmentRecordCrudGetStatisticsResponseError = (treatmentRecordCrudGetStatisticsResponse400 | treatmentRecordCrudGetStatisticsResponse429 | treatmentRecordCrudGetStatisticsResponse500) & {
+export type treatmentRecordCrudGetStatisticsResponseError = (treatmentRecordCrudGetStatisticsResponse400 | treatmentRecordCrudGetStatisticsResponse401 | treatmentRecordCrudGetStatisticsResponse403 | treatmentRecordCrudGetStatisticsResponse429 | treatmentRecordCrudGetStatisticsResponse500) & {
   headers: Headers;
 };
 
@@ -501,6 +531,16 @@ export type treatmentRecordCrudGetResponse400 = {
   status: 400
 }
 
+export type treatmentRecordCrudGetResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type treatmentRecordCrudGetResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type treatmentRecordCrudGetResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -519,7 +559,7 @@ export type treatmentRecordCrudGetResponse500 = {
 export type treatmentRecordCrudGetResponseSuccess = (treatmentRecordCrudGetResponse200) & {
   headers: Headers;
 };
-export type treatmentRecordCrudGetResponseError = (treatmentRecordCrudGetResponse400 | treatmentRecordCrudGetResponse404 | treatmentRecordCrudGetResponse429 | treatmentRecordCrudGetResponse500) & {
+export type treatmentRecordCrudGetResponseError = (treatmentRecordCrudGetResponse400 | treatmentRecordCrudGetResponse401 | treatmentRecordCrudGetResponse403 | treatmentRecordCrudGetResponse404 | treatmentRecordCrudGetResponse429 | treatmentRecordCrudGetResponse500) & {
   headers: Headers;
 };
 
@@ -648,6 +688,16 @@ export type treatmentRecordCrudUpdateResponse400 = {
   status: 400
 }
 
+export type treatmentRecordCrudUpdateResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type treatmentRecordCrudUpdateResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type treatmentRecordCrudUpdateResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -676,7 +726,7 @@ export type treatmentRecordCrudUpdateResponse500 = {
 export type treatmentRecordCrudUpdateResponseSuccess = (treatmentRecordCrudUpdateResponse200) & {
   headers: Headers;
 };
-export type treatmentRecordCrudUpdateResponseError = (treatmentRecordCrudUpdateResponse400 | treatmentRecordCrudUpdateResponse404 | treatmentRecordCrudUpdateResponse413 | treatmentRecordCrudUpdateResponse415 | treatmentRecordCrudUpdateResponse429 | treatmentRecordCrudUpdateResponse500) & {
+export type treatmentRecordCrudUpdateResponseError = (treatmentRecordCrudUpdateResponse400 | treatmentRecordCrudUpdateResponse401 | treatmentRecordCrudUpdateResponse403 | treatmentRecordCrudUpdateResponse404 | treatmentRecordCrudUpdateResponse413 | treatmentRecordCrudUpdateResponse415 | treatmentRecordCrudUpdateResponse429 | treatmentRecordCrudUpdateResponse500) & {
   headers: Headers;
 };
 
@@ -782,6 +832,16 @@ export type treatmentRecordCrudDeleteResponse400 = {
   status: 400
 }
 
+export type treatmentRecordCrudDeleteResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type treatmentRecordCrudDeleteResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type treatmentRecordCrudDeleteResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -800,7 +860,7 @@ export type treatmentRecordCrudDeleteResponse500 = {
 export type treatmentRecordCrudDeleteResponseSuccess = (treatmentRecordCrudDeleteResponse204) & {
   headers: Headers;
 };
-export type treatmentRecordCrudDeleteResponseError = (treatmentRecordCrudDeleteResponse400 | treatmentRecordCrudDeleteResponse404 | treatmentRecordCrudDeleteResponse429 | treatmentRecordCrudDeleteResponse500) & {
+export type treatmentRecordCrudDeleteResponseError = (treatmentRecordCrudDeleteResponse400 | treatmentRecordCrudDeleteResponse401 | treatmentRecordCrudDeleteResponse403 | treatmentRecordCrudDeleteResponse404 | treatmentRecordCrudDeleteResponse429 | treatmentRecordCrudDeleteResponse500) & {
   headers: Headers;
 };
 
@@ -891,6 +951,16 @@ export type treatmentRecordCrudAddPhotosResponse400 = {
   status: 400
 }
 
+export type treatmentRecordCrudAddPhotosResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type treatmentRecordCrudAddPhotosResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type treatmentRecordCrudAddPhotosResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -919,7 +989,7 @@ export type treatmentRecordCrudAddPhotosResponse500 = {
 export type treatmentRecordCrudAddPhotosResponseSuccess = (treatmentRecordCrudAddPhotosResponse201) & {
   headers: Headers;
 };
-export type treatmentRecordCrudAddPhotosResponseError = (treatmentRecordCrudAddPhotosResponse400 | treatmentRecordCrudAddPhotosResponse404 | treatmentRecordCrudAddPhotosResponse413 | treatmentRecordCrudAddPhotosResponse415 | treatmentRecordCrudAddPhotosResponse429 | treatmentRecordCrudAddPhotosResponse500) & {
+export type treatmentRecordCrudAddPhotosResponseError = (treatmentRecordCrudAddPhotosResponse400 | treatmentRecordCrudAddPhotosResponse401 | treatmentRecordCrudAddPhotosResponse403 | treatmentRecordCrudAddPhotosResponse404 | treatmentRecordCrudAddPhotosResponse413 | treatmentRecordCrudAddPhotosResponse415 | treatmentRecordCrudAddPhotosResponse429 | treatmentRecordCrudAddPhotosResponse500) & {
   headers: Headers;
 };
 

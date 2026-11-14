@@ -74,6 +74,16 @@ export type userRoleAssignmentCrudCreateResponse400 = {
   status: 400
 }
 
+export type userRoleAssignmentCrudCreateResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type userRoleAssignmentCrudCreateResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type userRoleAssignmentCrudCreateResponse409 = {
   data: ModelsProblemDetails
   status: 409
@@ -102,7 +112,7 @@ export type userRoleAssignmentCrudCreateResponse500 = {
 export type userRoleAssignmentCrudCreateResponseSuccess = (userRoleAssignmentCrudCreateResponse201) & {
   headers: Headers;
 };
-export type userRoleAssignmentCrudCreateResponseError = (userRoleAssignmentCrudCreateResponse400 | userRoleAssignmentCrudCreateResponse409 | userRoleAssignmentCrudCreateResponse413 | userRoleAssignmentCrudCreateResponse415 | userRoleAssignmentCrudCreateResponse429 | userRoleAssignmentCrudCreateResponse500) & {
+export type userRoleAssignmentCrudCreateResponseError = (userRoleAssignmentCrudCreateResponse400 | userRoleAssignmentCrudCreateResponse401 | userRoleAssignmentCrudCreateResponse403 | userRoleAssignmentCrudCreateResponse409 | userRoleAssignmentCrudCreateResponse413 | userRoleAssignmentCrudCreateResponse415 | userRoleAssignmentCrudCreateResponse429 | userRoleAssignmentCrudCreateResponse500) & {
   headers: Headers;
 };
 
@@ -207,6 +217,16 @@ export type userRoleAssignmentCrudBulkCreateResponse400 = {
   status: 400
 }
 
+export type userRoleAssignmentCrudBulkCreateResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type userRoleAssignmentCrudBulkCreateResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type userRoleAssignmentCrudBulkCreateResponse409 = {
   data: ModelsProblemDetails
   status: 409
@@ -235,7 +255,7 @@ export type userRoleAssignmentCrudBulkCreateResponse500 = {
 export type userRoleAssignmentCrudBulkCreateResponseSuccess = (userRoleAssignmentCrudBulkCreateResponse200) & {
   headers: Headers;
 };
-export type userRoleAssignmentCrudBulkCreateResponseError = (userRoleAssignmentCrudBulkCreateResponse400 | userRoleAssignmentCrudBulkCreateResponse409 | userRoleAssignmentCrudBulkCreateResponse413 | userRoleAssignmentCrudBulkCreateResponse415 | userRoleAssignmentCrudBulkCreateResponse429 | userRoleAssignmentCrudBulkCreateResponse500) & {
+export type userRoleAssignmentCrudBulkCreateResponseError = (userRoleAssignmentCrudBulkCreateResponse400 | userRoleAssignmentCrudBulkCreateResponse401 | userRoleAssignmentCrudBulkCreateResponse403 | userRoleAssignmentCrudBulkCreateResponse409 | userRoleAssignmentCrudBulkCreateResponse413 | userRoleAssignmentCrudBulkCreateResponse415 | userRoleAssignmentCrudBulkCreateResponse429 | userRoleAssignmentCrudBulkCreateResponse500) & {
   headers: Headers;
 };
 
@@ -340,6 +360,16 @@ export type userRoleAssignmentCrudListUsersByRoleResponse400 = {
   status: 400
 }
 
+export type userRoleAssignmentCrudListUsersByRoleResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type userRoleAssignmentCrudListUsersByRoleResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type userRoleAssignmentCrudListUsersByRoleResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -358,7 +388,7 @@ export type userRoleAssignmentCrudListUsersByRoleResponse500 = {
 export type userRoleAssignmentCrudListUsersByRoleResponseSuccess = (userRoleAssignmentCrudListUsersByRoleResponse200) & {
   headers: Headers;
 };
-export type userRoleAssignmentCrudListUsersByRoleResponseError = (userRoleAssignmentCrudListUsersByRoleResponse400 | userRoleAssignmentCrudListUsersByRoleResponse404 | userRoleAssignmentCrudListUsersByRoleResponse429 | userRoleAssignmentCrudListUsersByRoleResponse500) & {
+export type userRoleAssignmentCrudListUsersByRoleResponseError = (userRoleAssignmentCrudListUsersByRoleResponse400 | userRoleAssignmentCrudListUsersByRoleResponse401 | userRoleAssignmentCrudListUsersByRoleResponse403 | userRoleAssignmentCrudListUsersByRoleResponse404 | userRoleAssignmentCrudListUsersByRoleResponse429 | userRoleAssignmentCrudListUsersByRoleResponse500) & {
   headers: Headers;
 };
 
@@ -502,6 +532,16 @@ export type userRoleAssignmentCrudListByUserResponse400 = {
   status: 400
 }
 
+export type userRoleAssignmentCrudListByUserResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type userRoleAssignmentCrudListByUserResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type userRoleAssignmentCrudListByUserResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -520,7 +560,7 @@ export type userRoleAssignmentCrudListByUserResponse500 = {
 export type userRoleAssignmentCrudListByUserResponseSuccess = (userRoleAssignmentCrudListByUserResponse200) & {
   headers: Headers;
 };
-export type userRoleAssignmentCrudListByUserResponseError = (userRoleAssignmentCrudListByUserResponse400 | userRoleAssignmentCrudListByUserResponse404 | userRoleAssignmentCrudListByUserResponse429 | userRoleAssignmentCrudListByUserResponse500) & {
+export type userRoleAssignmentCrudListByUserResponseError = (userRoleAssignmentCrudListByUserResponse400 | userRoleAssignmentCrudListByUserResponse401 | userRoleAssignmentCrudListByUserResponse403 | userRoleAssignmentCrudListByUserResponse404 | userRoleAssignmentCrudListByUserResponse429 | userRoleAssignmentCrudListByUserResponse500) & {
   headers: Headers;
 };
 
@@ -664,6 +704,16 @@ export type userRoleAssignmentCrudGetResponse400 = {
   status: 400
 }
 
+export type userRoleAssignmentCrudGetResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type userRoleAssignmentCrudGetResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type userRoleAssignmentCrudGetResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -682,7 +732,7 @@ export type userRoleAssignmentCrudGetResponse500 = {
 export type userRoleAssignmentCrudGetResponseSuccess = (userRoleAssignmentCrudGetResponse200) & {
   headers: Headers;
 };
-export type userRoleAssignmentCrudGetResponseError = (userRoleAssignmentCrudGetResponse400 | userRoleAssignmentCrudGetResponse404 | userRoleAssignmentCrudGetResponse429 | userRoleAssignmentCrudGetResponse500) & {
+export type userRoleAssignmentCrudGetResponseError = (userRoleAssignmentCrudGetResponse400 | userRoleAssignmentCrudGetResponse401 | userRoleAssignmentCrudGetResponse403 | userRoleAssignmentCrudGetResponse404 | userRoleAssignmentCrudGetResponse429 | userRoleAssignmentCrudGetResponse500) & {
   headers: Headers;
 };
 
@@ -834,6 +884,16 @@ export type userRoleAssignmentCrudUpdateResponse400 = {
   status: 400
 }
 
+export type userRoleAssignmentCrudUpdateResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type userRoleAssignmentCrudUpdateResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type userRoleAssignmentCrudUpdateResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -862,7 +922,7 @@ export type userRoleAssignmentCrudUpdateResponse500 = {
 export type userRoleAssignmentCrudUpdateResponseSuccess = (userRoleAssignmentCrudUpdateResponse200) & {
   headers: Headers;
 };
-export type userRoleAssignmentCrudUpdateResponseError = (userRoleAssignmentCrudUpdateResponse400 | userRoleAssignmentCrudUpdateResponse404 | userRoleAssignmentCrudUpdateResponse413 | userRoleAssignmentCrudUpdateResponse415 | userRoleAssignmentCrudUpdateResponse429 | userRoleAssignmentCrudUpdateResponse500) & {
+export type userRoleAssignmentCrudUpdateResponseError = (userRoleAssignmentCrudUpdateResponse400 | userRoleAssignmentCrudUpdateResponse401 | userRoleAssignmentCrudUpdateResponse403 | userRoleAssignmentCrudUpdateResponse404 | userRoleAssignmentCrudUpdateResponse413 | userRoleAssignmentCrudUpdateResponse415 | userRoleAssignmentCrudUpdateResponse429 | userRoleAssignmentCrudUpdateResponse500) & {
   headers: Headers;
 };
 
@@ -979,6 +1039,16 @@ export type userRoleAssignmentCrudDeleteResponse400 = {
   status: 400
 }
 
+export type userRoleAssignmentCrudDeleteResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type userRoleAssignmentCrudDeleteResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type userRoleAssignmentCrudDeleteResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -997,7 +1067,7 @@ export type userRoleAssignmentCrudDeleteResponse500 = {
 export type userRoleAssignmentCrudDeleteResponseSuccess = (userRoleAssignmentCrudDeleteResponse204) & {
   headers: Headers;
 };
-export type userRoleAssignmentCrudDeleteResponseError = (userRoleAssignmentCrudDeleteResponse400 | userRoleAssignmentCrudDeleteResponse404 | userRoleAssignmentCrudDeleteResponse429 | userRoleAssignmentCrudDeleteResponse500) & {
+export type userRoleAssignmentCrudDeleteResponseError = (userRoleAssignmentCrudDeleteResponse400 | userRoleAssignmentCrudDeleteResponse401 | userRoleAssignmentCrudDeleteResponse403 | userRoleAssignmentCrudDeleteResponse404 | userRoleAssignmentCrudDeleteResponse429 | userRoleAssignmentCrudDeleteResponse500) & {
   headers: Headers;
 };
 

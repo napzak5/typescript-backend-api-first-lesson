@@ -69,6 +69,16 @@ export type medicalChartCrudListResponse400 = {
   status: 400
 }
 
+export type medicalChartCrudListResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type medicalChartCrudListResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type medicalChartCrudListResponse429 = {
   data: ModelsProblemDetails
   status: 429
@@ -82,7 +92,7 @@ export type medicalChartCrudListResponse500 = {
 export type medicalChartCrudListResponseSuccess = (medicalChartCrudListResponse200) & {
   headers: Headers;
 };
-export type medicalChartCrudListResponseError = (medicalChartCrudListResponse400 | medicalChartCrudListResponse429 | medicalChartCrudListResponse500) & {
+export type medicalChartCrudListResponseError = (medicalChartCrudListResponse400 | medicalChartCrudListResponse401 | medicalChartCrudListResponse403 | medicalChartCrudListResponse429 | medicalChartCrudListResponse500) & {
   headers: Headers;
 };
 
@@ -218,6 +228,16 @@ export type medicalChartCrudCreateResponse400 = {
   status: 400
 }
 
+export type medicalChartCrudCreateResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type medicalChartCrudCreateResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type medicalChartCrudCreateResponse409 = {
   data: ModelsProblemDetails
   status: 409
@@ -246,7 +266,7 @@ export type medicalChartCrudCreateResponse500 = {
 export type medicalChartCrudCreateResponseSuccess = (medicalChartCrudCreateResponse201) & {
   headers: Headers;
 };
-export type medicalChartCrudCreateResponseError = (medicalChartCrudCreateResponse400 | medicalChartCrudCreateResponse409 | medicalChartCrudCreateResponse413 | medicalChartCrudCreateResponse415 | medicalChartCrudCreateResponse429 | medicalChartCrudCreateResponse500) & {
+export type medicalChartCrudCreateResponseError = (medicalChartCrudCreateResponse400 | medicalChartCrudCreateResponse401 | medicalChartCrudCreateResponse403 | medicalChartCrudCreateResponse409 | medicalChartCrudCreateResponse413 | medicalChartCrudCreateResponse415 | medicalChartCrudCreateResponse429 | medicalChartCrudCreateResponse500) & {
   headers: Headers;
 };
 
@@ -351,6 +371,16 @@ export type medicalChartCrudGetByCustomerResponse400 = {
   status: 400
 }
 
+export type medicalChartCrudGetByCustomerResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type medicalChartCrudGetByCustomerResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type medicalChartCrudGetByCustomerResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -369,7 +399,7 @@ export type medicalChartCrudGetByCustomerResponse500 = {
 export type medicalChartCrudGetByCustomerResponseSuccess = (medicalChartCrudGetByCustomerResponse200) & {
   headers: Headers;
 };
-export type medicalChartCrudGetByCustomerResponseError = (medicalChartCrudGetByCustomerResponse400 | medicalChartCrudGetByCustomerResponse404 | medicalChartCrudGetByCustomerResponse429 | medicalChartCrudGetByCustomerResponse500) & {
+export type medicalChartCrudGetByCustomerResponseError = (medicalChartCrudGetByCustomerResponse400 | medicalChartCrudGetByCustomerResponse401 | medicalChartCrudGetByCustomerResponse403 | medicalChartCrudGetByCustomerResponse404 | medicalChartCrudGetByCustomerResponse429 | medicalChartCrudGetByCustomerResponse500) & {
   headers: Headers;
 };
 
@@ -498,6 +528,16 @@ export type medicalChartCrudListAllergiesResponse400 = {
   status: 400
 }
 
+export type medicalChartCrudListAllergiesResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type medicalChartCrudListAllergiesResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type medicalChartCrudListAllergiesResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -516,7 +556,7 @@ export type medicalChartCrudListAllergiesResponse500 = {
 export type medicalChartCrudListAllergiesResponseSuccess = (medicalChartCrudListAllergiesResponse200) & {
   headers: Headers;
 };
-export type medicalChartCrudListAllergiesResponseError = (medicalChartCrudListAllergiesResponse400 | medicalChartCrudListAllergiesResponse404 | medicalChartCrudListAllergiesResponse429 | medicalChartCrudListAllergiesResponse500) & {
+export type medicalChartCrudListAllergiesResponseError = (medicalChartCrudListAllergiesResponse400 | medicalChartCrudListAllergiesResponse401 | medicalChartCrudListAllergiesResponse403 | medicalChartCrudListAllergiesResponse404 | medicalChartCrudListAllergiesResponse429 | medicalChartCrudListAllergiesResponse500) & {
   headers: Headers;
 };
 
@@ -660,6 +700,16 @@ export type medicalChartCrudUpdateResponse400 = {
   status: 400
 }
 
+export type medicalChartCrudUpdateResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type medicalChartCrudUpdateResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type medicalChartCrudUpdateResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -688,7 +738,7 @@ export type medicalChartCrudUpdateResponse500 = {
 export type medicalChartCrudUpdateResponseSuccess = (medicalChartCrudUpdateResponse200) & {
   headers: Headers;
 };
-export type medicalChartCrudUpdateResponseError = (medicalChartCrudUpdateResponse400 | medicalChartCrudUpdateResponse404 | medicalChartCrudUpdateResponse413 | medicalChartCrudUpdateResponse415 | medicalChartCrudUpdateResponse429 | medicalChartCrudUpdateResponse500) & {
+export type medicalChartCrudUpdateResponseError = (medicalChartCrudUpdateResponse400 | medicalChartCrudUpdateResponse401 | medicalChartCrudUpdateResponse403 | medicalChartCrudUpdateResponse404 | medicalChartCrudUpdateResponse413 | medicalChartCrudUpdateResponse415 | medicalChartCrudUpdateResponse429 | medicalChartCrudUpdateResponse500) & {
   headers: Headers;
 };
 

@@ -79,6 +79,11 @@ export type authCrudGenerateBackupCodesResponse400 = {
   status: 400
 }
 
+export type authCrudGenerateBackupCodesResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
 export type authCrudGenerateBackupCodesResponse409 = {
   data: ModelsProblemDetails
   status: 409
@@ -107,7 +112,7 @@ export type authCrudGenerateBackupCodesResponse500 = {
 export type authCrudGenerateBackupCodesResponseSuccess = (authCrudGenerateBackupCodesResponse200) & {
   headers: Headers;
 };
-export type authCrudGenerateBackupCodesResponseError = (authCrudGenerateBackupCodesResponse400 | authCrudGenerateBackupCodesResponse409 | authCrudGenerateBackupCodesResponse413 | authCrudGenerateBackupCodesResponse415 | authCrudGenerateBackupCodesResponse429 | authCrudGenerateBackupCodesResponse500) & {
+export type authCrudGenerateBackupCodesResponseError = (authCrudGenerateBackupCodesResponse400 | authCrudGenerateBackupCodesResponse401 | authCrudGenerateBackupCodesResponse409 | authCrudGenerateBackupCodesResponse413 | authCrudGenerateBackupCodesResponse415 | authCrudGenerateBackupCodesResponse429 | authCrudGenerateBackupCodesResponse500) & {
   headers: Headers;
 };
 
@@ -212,6 +217,11 @@ export type authCrudDisableTwoFactorResponse400 = {
   status: 400
 }
 
+export type authCrudDisableTwoFactorResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
 export type authCrudDisableTwoFactorResponse409 = {
   data: ModelsProblemDetails
   status: 409
@@ -240,7 +250,7 @@ export type authCrudDisableTwoFactorResponse500 = {
 export type authCrudDisableTwoFactorResponseSuccess = (authCrudDisableTwoFactorResponse204) & {
   headers: Headers;
 };
-export type authCrudDisableTwoFactorResponseError = (authCrudDisableTwoFactorResponse400 | authCrudDisableTwoFactorResponse409 | authCrudDisableTwoFactorResponse413 | authCrudDisableTwoFactorResponse415 | authCrudDisableTwoFactorResponse429 | authCrudDisableTwoFactorResponse500) & {
+export type authCrudDisableTwoFactorResponseError = (authCrudDisableTwoFactorResponse400 | authCrudDisableTwoFactorResponse401 | authCrudDisableTwoFactorResponse409 | authCrudDisableTwoFactorResponse413 | authCrudDisableTwoFactorResponse415 | authCrudDisableTwoFactorResponse429 | authCrudDisableTwoFactorResponse500) & {
   headers: Headers;
 };
 
@@ -345,6 +355,11 @@ export type authCrudEnableTwoFactorResponse400 = {
   status: 400
 }
 
+export type authCrudEnableTwoFactorResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
 export type authCrudEnableTwoFactorResponse409 = {
   data: ModelsProblemDetails
   status: 409
@@ -373,7 +388,7 @@ export type authCrudEnableTwoFactorResponse500 = {
 export type authCrudEnableTwoFactorResponseSuccess = (authCrudEnableTwoFactorResponse200) & {
   headers: Headers;
 };
-export type authCrudEnableTwoFactorResponseError = (authCrudEnableTwoFactorResponse400 | authCrudEnableTwoFactorResponse409 | authCrudEnableTwoFactorResponse413 | authCrudEnableTwoFactorResponse415 | authCrudEnableTwoFactorResponse429 | authCrudEnableTwoFactorResponse500) & {
+export type authCrudEnableTwoFactorResponseError = (authCrudEnableTwoFactorResponse400 | authCrudEnableTwoFactorResponse401 | authCrudEnableTwoFactorResponse409 | authCrudEnableTwoFactorResponse413 | authCrudEnableTwoFactorResponse415 | authCrudEnableTwoFactorResponse429 | authCrudEnableTwoFactorResponse500) & {
   headers: Headers;
 };
 
@@ -478,6 +493,11 @@ export type authCrudVerifyTwoFactorResponse400 = {
   status: 400
 }
 
+export type authCrudVerifyTwoFactorResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
 export type authCrudVerifyTwoFactorResponse409 = {
   data: ModelsProblemDetails
   status: 409
@@ -506,7 +526,7 @@ export type authCrudVerifyTwoFactorResponse500 = {
 export type authCrudVerifyTwoFactorResponseSuccess = (authCrudVerifyTwoFactorResponse204) & {
   headers: Headers;
 };
-export type authCrudVerifyTwoFactorResponseError = (authCrudVerifyTwoFactorResponse400 | authCrudVerifyTwoFactorResponse409 | authCrudVerifyTwoFactorResponse413 | authCrudVerifyTwoFactorResponse415 | authCrudVerifyTwoFactorResponse429 | authCrudVerifyTwoFactorResponse500) & {
+export type authCrudVerifyTwoFactorResponseError = (authCrudVerifyTwoFactorResponse400 | authCrudVerifyTwoFactorResponse401 | authCrudVerifyTwoFactorResponse409 | authCrudVerifyTwoFactorResponse413 | authCrudVerifyTwoFactorResponse415 | authCrudVerifyTwoFactorResponse429 | authCrudVerifyTwoFactorResponse500) & {
   headers: Headers;
 };
 
@@ -611,6 +631,11 @@ export type authCrudChangePasswordResponse400 = {
   status: 400
 }
 
+export type authCrudChangePasswordResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
 export type authCrudChangePasswordResponse413 = {
   data: ModelsProblemDetails
   status: 413
@@ -634,7 +659,7 @@ export type authCrudChangePasswordResponse500 = {
 export type authCrudChangePasswordResponseSuccess = (authCrudChangePasswordResponse204) & {
   headers: Headers;
 };
-export type authCrudChangePasswordResponseError = (authCrudChangePasswordResponse400 | authCrudChangePasswordResponse413 | authCrudChangePasswordResponse415 | authCrudChangePasswordResponse429 | authCrudChangePasswordResponse500) & {
+export type authCrudChangePasswordResponseError = (authCrudChangePasswordResponse400 | authCrudChangePasswordResponse401 | authCrudChangePasswordResponse413 | authCrudChangePasswordResponse415 | authCrudChangePasswordResponse429 | authCrudChangePasswordResponse500) & {
   headers: Headers;
 };
 
@@ -910,7 +935,7 @@ export const getAuthCrudLoginUrl = () => {
 }
 
 /**
- * メールアドレスとパスワードで認証し、セッションを作成してアクセストークンとリフレッシュトークンを発行します。2要素認証が有効なアカウントでは twoFactorCode も検証します。認証に失敗した場合は、原因(メールアドレスが未登録、パスワードや2要素認証コードの誤り、アカウントのロック、メールアドレス未確認など)にかかわらず同じ内容の401を返します。
+ * メールアドレスとパスワードで認証し、セッションを作成してアクセストークンとリフレッシュトークンを発行します。メールアドレスは大文字と小文字を区別しません。認証に失敗した場合は、原因(メールアドレスが未登録、パスワードの誤り、アカウントのロック、メールアドレス未確認、アカウントの停止)にかかわらず同じ内容の401(コード 1002)を返します。パスワードを連続して5回誤るとアカウントを15分間ロックし、その後も誤るたびに15分間ロックします。ログインに成功すると失敗回数は0に戻ります。2要素認証の検証は未実装で、2要素認証が有効なアカウントは検証を実装するまでログインできません(同じ401を返します)。
  * @summary Log in
  */
 export const authCrudLogin = async (modelsAuthLoginRequest: ModelsAuthLoginRequest, options?: RequestInit): Promise<authCrudLoginResponse> => {
@@ -977,7 +1002,7 @@ const {mutation: mutationOptions} = options ?
     export type AuthCrudLoginMutationVariables = {data: ModelsAuthLoginRequest}
 
     /**
- * メールアドレスとパスワードで認証し、セッションを作成してアクセストークンとリフレッシュトークンを発行します。2要素認証が有効なアカウントでは twoFactorCode も検証します。認証に失敗した場合は、原因(メールアドレスが未登録、パスワードや2要素認証コードの誤り、アカウントのロック、メールアドレス未確認など)にかかわらず同じ内容の401を返します。
+ * メールアドレスとパスワードで認証し、セッションを作成してアクセストークンとリフレッシュトークンを発行します。メールアドレスは大文字と小文字を区別しません。認証に失敗した場合は、原因(メールアドレスが未登録、パスワードの誤り、アカウントのロック、メールアドレス未確認、アカウントの停止)にかかわらず同じ内容の401(コード 1002)を返します。パスワードを連続して5回誤るとアカウントを15分間ロックし、その後も誤るたびに15分間ロックします。ログインに成功すると失敗回数は0に戻ります。2要素認証の検証は未実装で、2要素認証が有効なアカウントは検証を実装するまでログインできません(同じ401を返します)。
  * @summary Log in
  */
 export const useAuthCrudLogin = <TError = ModelsProblemDetails,
@@ -995,6 +1020,11 @@ export const useAuthCrudLogin = <TError = ModelsProblemDetails,
   status: 204
 }
 
+export type authCrudLogoutResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
 export type authCrudLogoutResponse429 = {
   data: ModelsProblemDetails
   status: 429
@@ -1008,7 +1038,7 @@ export type authCrudLogoutResponse500 = {
 export type authCrudLogoutResponseSuccess = (authCrudLogoutResponse204) & {
   headers: Headers;
 };
-export type authCrudLogoutResponseError = (authCrudLogoutResponse429 | authCrudLogoutResponse500) & {
+export type authCrudLogoutResponseError = (authCrudLogoutResponse401 | authCrudLogoutResponse429 | authCrudLogoutResponse500) & {
   headers: Headers;
 };
 
@@ -1023,7 +1053,7 @@ export const getAuthCrudLogoutUrl = () => {
 }
 
 /**
- * 現在のセッションを無効にします。
+ * 現在のセッションを無効にします。このセッションのアクセストークンとリフレッシュトークンは以後使用できません。
  * @summary Log out
  */
 export const authCrudLogout = async ( options?: RequestInit): Promise<authCrudLogoutResponse> => {
@@ -1076,7 +1106,7 @@ const {mutation: mutationOptions} = options ?
 
 
     /**
- * 現在のセッションを無効にします。
+ * 現在のセッションを無効にします。このセッションのアクセストークンとリフレッシュトークンは以後使用できません。
  * @summary Log out
  */
 export const useAuthCrudLogout = <TError = ModelsProblemDetails,
@@ -1094,6 +1124,11 @@ export const useAuthCrudLogout = <TError = ModelsProblemDetails,
   status: 204
 }
 
+export type authCrudLogoutAllResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
 export type authCrudLogoutAllResponse429 = {
   data: ModelsProblemDetails
   status: 429
@@ -1107,7 +1142,7 @@ export type authCrudLogoutAllResponse500 = {
 export type authCrudLogoutAllResponseSuccess = (authCrudLogoutAllResponse204) & {
   headers: Headers;
 };
-export type authCrudLogoutAllResponseError = (authCrudLogoutAllResponse429 | authCrudLogoutAllResponse500) & {
+export type authCrudLogoutAllResponseError = (authCrudLogoutAllResponse401 | authCrudLogoutAllResponse429 | authCrudLogoutAllResponse500) & {
   headers: Headers;
 };
 
@@ -1193,6 +1228,11 @@ export const useAuthCrudLogoutAll = <TError = ModelsProblemDetails,
   status: 200
 }
 
+export type authCrudGetCurrentUserResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
 export type authCrudGetCurrentUserResponse429 = {
   data: ModelsProblemDetails
   status: 429
@@ -1206,7 +1246,7 @@ export type authCrudGetCurrentUserResponse500 = {
 export type authCrudGetCurrentUserResponseSuccess = (authCrudGetCurrentUserResponse200) & {
   headers: Headers;
 };
-export type authCrudGetCurrentUserResponseError = (authCrudGetCurrentUserResponse429 | authCrudGetCurrentUserResponse500) & {
+export type authCrudGetCurrentUserResponseError = (authCrudGetCurrentUserResponse401 | authCrudGetCurrentUserResponse429 | authCrudGetCurrentUserResponse500) & {
   headers: Headers;
 };
 
@@ -1378,7 +1418,7 @@ export const getAuthCrudRefreshTokenUrl = () => {
 }
 
 /**
- * リフレッシュトークンを検証し、新しいアクセストークンとリフレッシュトークンを発行します。使用したリフレッシュトークンは以後使用できません。リフレッシュトークンが無効または期限切れの場合は401を返します。
+ * リフレッシュトークンを検証し、同じセッションに新しいアクセストークンとリフレッシュトークンを発行します。使用したリフレッシュトークンと、それまでのアクセストークンは以後使用できません。セッションの有効期限(refreshExpiresAt)は延びません。リフレッシュトークンが無効または期限切れの場合、およびアカウントが利用できない状態の場合は401(コード 1004)を返します。
  * @summary Refresh the access token
  */
 export const authCrudRefreshToken = async (modelsAuthTokenRefreshRequest: ModelsAuthTokenRefreshRequest, options?: RequestInit): Promise<authCrudRefreshTokenResponse> => {
@@ -1445,7 +1485,7 @@ const {mutation: mutationOptions} = options ?
     export type AuthCrudRefreshTokenMutationVariables = {data: ModelsAuthTokenRefreshRequest}
 
     /**
- * リフレッシュトークンを検証し、新しいアクセストークンとリフレッシュトークンを発行します。使用したリフレッシュトークンは以後使用できません。リフレッシュトークンが無効または期限切れの場合は401を返します。
+ * リフレッシュトークンを検証し、同じセッションに新しいアクセストークンとリフレッシュトークンを発行します。使用したリフレッシュトークンと、それまでのアクセストークンは以後使用できません。セッションの有効期限(refreshExpiresAt)は延びません。リフレッシュトークンが無効または期限切れの場合、およびアカウントが利用できない状態の場合は401(コード 1004)を返します。
  * @summary Refresh the access token
  */
 export const useAuthCrudRefreshToken = <TError = ModelsProblemDetails,
@@ -1857,6 +1897,11 @@ export type sessionCrudGetSessionsResponse400 = {
   status: 400
 }
 
+export type sessionCrudGetSessionsResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
 export type sessionCrudGetSessionsResponse429 = {
   data: ModelsProblemDetails
   status: 429
@@ -1870,7 +1915,7 @@ export type sessionCrudGetSessionsResponse500 = {
 export type sessionCrudGetSessionsResponseSuccess = (sessionCrudGetSessionsResponse200) & {
   headers: Headers;
 };
-export type sessionCrudGetSessionsResponseError = (sessionCrudGetSessionsResponse400 | sessionCrudGetSessionsResponse429 | sessionCrudGetSessionsResponse500) & {
+export type sessionCrudGetSessionsResponseError = (sessionCrudGetSessionsResponse400 | sessionCrudGetSessionsResponse401 | sessionCrudGetSessionsResponse429 | sessionCrudGetSessionsResponse500) & {
   headers: Headers;
 };
 
@@ -2006,6 +2051,11 @@ export type sessionCrudRevokeSessionResponse400 = {
   status: 400
 }
 
+export type sessionCrudRevokeSessionResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
 export type sessionCrudRevokeSessionResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -2024,7 +2074,7 @@ export type sessionCrudRevokeSessionResponse500 = {
 export type sessionCrudRevokeSessionResponseSuccess = (sessionCrudRevokeSessionResponse204) & {
   headers: Headers;
 };
-export type sessionCrudRevokeSessionResponseError = (sessionCrudRevokeSessionResponse400 | sessionCrudRevokeSessionResponse404 | sessionCrudRevokeSessionResponse429 | sessionCrudRevokeSessionResponse500) & {
+export type sessionCrudRevokeSessionResponseError = (sessionCrudRevokeSessionResponse400 | sessionCrudRevokeSessionResponse401 | sessionCrudRevokeSessionResponse404 | sessionCrudRevokeSessionResponse429 | sessionCrudRevokeSessionResponse500) & {
   headers: Headers;
 };
 

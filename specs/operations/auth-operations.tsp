@@ -30,9 +30,9 @@ namespace BeautySalon.Operations {
         | ProblemResponse<400>
         | ProblemResponse<409>
         | RequestBodyErrors
-        | CommonErrors;
+        | PublicErrors;
 
-      @doc("メールアドレスとパスワードで認証し、セッションを作成してアクセストークンとリフレッシュトークンを発行します。2要素認証が有効なアカウントでは twoFactorCode も検証します。認証に失敗した場合は、原因(メールアドレスが未登録、パスワードや2要素認証コードの誤り、アカウントのロック、メールアドレス未確認など)にかかわらず同じ内容の401を返します。")
+      @doc("メールアドレスとパスワードで認証し、セッションを作成してアクセストークンとリフレッシュトークンを発行します。メールアドレスは大文字と小文字を区別しません。認証に失敗した場合は、原因(メールアドレスが未登録、パスワードの誤り、アカウントのロック、メールアドレス未確認、アカウントの停止)にかかわらず同じ内容の401(コード 1002)を返します。パスワードを連続して5回誤るとアカウントを15分間ロックし、その後も誤るたびに15分間ロックします。ログインに成功すると失敗回数は0に戻ります。2要素認証の検証は未実装で、2要素認証が有効なアカウントは検証を実装するまでログインできません(同じ401を返します)。")
       @summary("Log in")
       @route("/login")
       @useAuth(NoAuth)
@@ -43,11 +43,11 @@ namespace BeautySalon.Operations {
             @body response: ApiResponse<AuthLoginResponse>;
           }
         | ProblemResponse<400>
-        | ProblemResponse<401>
+        | UnauthenticatedResponse
         | RequestBodyErrors
-        | CommonErrors;
+        | PublicErrors;
 
-      @doc("リフレッシュトークンを検証し、新しいアクセストークンとリフレッシュトークンを発行します。使用したリフレッシュトークンは以後使用できません。リフレッシュトークンが無効または期限切れの場合は401を返します。")
+      @doc("リフレッシュトークンを検証し、同じセッションに新しいアクセストークンとリフレッシュトークンを発行します。使用したリフレッシュトークンと、それまでのアクセストークンは以後使用できません。セッションの有効期限(refreshExpiresAt)は延びません。リフレッシュトークンが無効または期限切れの場合、およびアカウントが利用できない状態の場合は401(コード 1004)を返します。")
       @summary("Refresh the access token")
       @route("/refresh")
       @useAuth(NoAuth)
@@ -58,11 +58,11 @@ namespace BeautySalon.Operations {
             @body response: ApiResponse<AuthLoginResponse>;
           }
         | ProblemResponse<400>
-        | ProblemResponse<401>
+        | UnauthenticatedResponse
         | RequestBodyErrors
-        | CommonErrors;
+        | PublicErrors;
 
-      @doc("現在のセッションを無効にします。")
+      @doc("現在のセッションを無効にします。このセッションのアクセストークンとリフレッシュトークンは以後使用できません。")
       @summary("Log out")
       @route("/logout")
       @post
@@ -70,7 +70,7 @@ namespace BeautySalon.Operations {
         | {
             @statusCode statusCode: 204;
           }
-        | CommonErrors;
+        | SessionErrors;
 
       @doc("ログイン中のユーザーの情報を取得します。")
       @summary("Get the current user")
@@ -81,7 +81,7 @@ namespace BeautySalon.Operations {
             @statusCode statusCode: 200;
             @body response: ApiResponse<UserResponse>;
           }
-        | CommonErrors;
+        | SessionErrors;
 
       @doc("パスワード再設定メールの送信を要求します。指定したメールアドレスのアカウントが存在する場合にだけ再設定トークンを記載したメールを送信しますが、アカウントの有無にかかわらず同じ応答(204)を返します。")
       @summary("Request a password reset")
@@ -94,7 +94,7 @@ namespace BeautySalon.Operations {
           }
         | ProblemResponse<400>
         | RequestBodyErrors
-        | CommonErrors;
+        | PublicErrors;
 
       @doc("パスワード再設定トークンが有効かどうかを確認します。有効な場合は204を、無効または期限切れの場合は400を返します。トークンがURLやアクセスログに残らないよう、リクエスト本文で受け取ります。")
       @summary("Verify a password reset token")
@@ -107,7 +107,7 @@ namespace BeautySalon.Operations {
           }
         | ProblemResponse<400>
         | RequestBodyErrors
-        | CommonErrors;
+        | PublicErrors;
 
       @doc("パスワード再設定トークンを使って新しいパスワードを設定します。成功するとトークンは使用できなくなり、そのユーザーのすべてのセッションを無効にします。トークンが無効または期限切れの場合は400を返します。")
       @summary("Reset the password")
@@ -120,7 +120,7 @@ namespace BeautySalon.Operations {
           }
         | ProblemResponse<400>
         | RequestBodyErrors
-        | CommonErrors;
+        | PublicErrors;
 
       @doc("メールアドレス確認メールの送信を要求します。指定したメールアドレスのアカウントが存在し、メールアドレスが未確認の場合にだけ確認メールを送信しますが、アカウントの有無や確認状態にかかわらず同じ応答(204)を返します。メールアドレスが未確認のアカウントはログインできないため、セッションなしで呼び出せます。")
       @summary("Send a verification email")
@@ -133,7 +133,7 @@ namespace BeautySalon.Operations {
           }
         | ProblemResponse<400>
         | RequestBodyErrors
-        | CommonErrors;
+        | PublicErrors;
 
       @doc("メールで受け取った確認トークンを使ってメールアドレスの確認を完了します。emailVerified を true にし、アカウント状態が unverified の場合は active にします。トークンが無効または期限切れの場合は400を返します。")
       @summary("Confirm the email address")
@@ -148,7 +148,7 @@ namespace BeautySalon.Operations {
           }
         | ProblemResponse<400>
         | RequestBodyErrors
-        | CommonErrors;
+        | PublicErrors;
 
       @doc("現在のパスワードで本人確認を行い、新しいパスワードに変更します。現在のパスワードが誤っている場合は400を返します。")
       @summary("Change the password")
@@ -160,7 +160,7 @@ namespace BeautySalon.Operations {
           }
         | ProblemResponse<400>
         | RequestBodyErrors
-        | CommonErrors;
+        | SessionErrors;
 
       @doc("2要素認証の設定を開始します。パスワードで本人確認を行い、TOTPのシークレットとバックアップコードを発行して返します。シークレットとバックアップコードはこのレスポンスでのみ返します。設定は verifyTwoFactor で認証コードを確認すると有効になります。設定中に再度呼び出すと、新しいシークレットとバックアップコードを発行します。パスワードが誤っている場合は400を、2要素認証がすでに有効な場合は409を返します。")
       @summary("Start two-factor authentication setup")
@@ -174,7 +174,7 @@ namespace BeautySalon.Operations {
         | ProblemResponse<400>
         | ProblemResponse<409>
         | RequestBodyErrors
-        | CommonErrors;
+        | SessionErrors;
 
       @doc("認証アプリが生成したコードを確認し、設定中の2要素認証を有効にします。コードが誤っている場合は400を、設定中の2要素認証がない場合は409を返します。")
       @summary("Confirm two-factor authentication setup")
@@ -187,7 +187,7 @@ namespace BeautySalon.Operations {
         | ProblemResponse<400>
         | ProblemResponse<409>
         | RequestBodyErrors
-        | CommonErrors;
+        | SessionErrors;
 
       @doc("パスワードと認証コードで本人確認を行い、2要素認証を無効にします。シークレットとバックアップコードは削除します。パスワードまたはコードが誤っている場合は400を、2要素認証が有効でない場合は409を返します。")
       @summary("Disable two-factor authentication")
@@ -200,7 +200,7 @@ namespace BeautySalon.Operations {
         | ProblemResponse<400>
         | ProblemResponse<409>
         | RequestBodyErrors
-        | CommonErrors;
+        | SessionErrors;
 
       @doc("認証コードで本人確認を行い、2要素認証のバックアップコードを再発行します。それまでのバックアップコードは使用できなくなります。新しいバックアップコードはこのレスポンスでのみ返します。コードが誤っている場合は400を、2要素認証が有効でない場合は409を返します。")
       @summary("Regenerate backup codes")
@@ -214,7 +214,7 @@ namespace BeautySalon.Operations {
         | ProblemResponse<400>
         | ProblemResponse<409>
         | RequestBodyErrors
-        | CommonErrors;
+        | SessionErrors;
 
       @doc("ログイン中のユーザーのすべてのセッション(現在のセッションを含む)を無効にします。")
       @summary("Log out of all sessions")
@@ -224,7 +224,7 @@ namespace BeautySalon.Operations {
         | {
             @statusCode statusCode: 204;
           }
-        | CommonErrors;
+        | SessionErrors;
     }
 
     interface SessionCrud {
@@ -238,7 +238,7 @@ namespace BeautySalon.Operations {
             @body response: CursorPaginationResponse<SessionResponse>;
           }
         | ProblemResponse<400>
-        | CommonErrors;
+        | SessionErrors;
 
       @doc("ログイン中のユーザーのセッションを1件無効にします。指定したセッションが存在しない場合、またはほかのユーザーのセッションの場合は404を返します。")
       @summary("Revoke a session")
@@ -250,7 +250,7 @@ namespace BeautySalon.Operations {
           }
         | ProblemResponse<400>
         | ProblemResponse<404>
-        | CommonErrors;
+        | SessionErrors;
     }
   }
 
