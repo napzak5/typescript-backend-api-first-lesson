@@ -6,7 +6,7 @@ import {
   type ApiServiceCategoryUpdateRequest,
   categoryIdSchema,
 } from '../models/service-category'
-import { atLeastOneProperty, nonBlankText } from './rules'
+import { atLeastOneProperty, MAX_INTEGER, nonBlankText } from './rules'
 
 /**
  * Validation of service category requests. The shapes are checked against
@@ -15,9 +15,6 @@ import { atLeastOneProperty, nonBlankText } from './rules'
  * category that may be the parent is decided where the categories are
  * stored, together with the write.
  */
-
-/** The largest value of an `integer` column. */
-const MAX_INTEGER = 2_147_483_647
 
 export const serviceCategoryCreateRequestSchema = z.strictObject({
   name: nonBlankText.max(100),
