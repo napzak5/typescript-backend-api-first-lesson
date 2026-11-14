@@ -28,7 +28,7 @@ Sum 型の定義と ts-pattern の書き方は [Sum型とパターンマッチ�
 
 次のものはアプリケーションコードではなく、例外を投げたり `try` / `catch` を使ったり `console` に出力したりしてかまいません。スクリプトは失敗したら異常終了すればよく、テストは例外で失敗を知らせるからです。
 
-- コマンドラインから実行するスクリプト: `backend/packages/database/src/scripts`、`backend/packages/database/src/seeds`、`backend/packages/generated/scripts/generate-types.ts`、リポジトリ直下の `scripts/` と `specs/scripts`
+- コマンドラインから実行するスクリプト: `backend/packages/database/src/scripts`、`backend/packages/database/src/seeds`、`backend/packages/generated/scripts/generate-types.ts`、リポジトリ直下の `scripts/`
 - テスト（`__tests__` ディレクトリと `*.test.ts`）
 
 生成されたファイル（`backend/packages/generated/src`、`backend/packages/database/src/schema.ts`、`backend/packages/database/src/relations.ts`）は手で編集しないので、規則の対象外です。

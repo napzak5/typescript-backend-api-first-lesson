@@ -36,7 +36,8 @@ Before relying on anything, check this table.
 |------|-------|
 | Salon API (`/api/v1/salons`) | Implemented in every layer: list, create, get, update, delete. It is the reference implementation for every other domain. |
 | System endpoints (`/api/system`) | Implemented: `alive`, `ready` and `health`. |
-| Other domains (auth, staff, service, customer, reservation, booking, review, attachment, treatment, payment, inventory, permission) | Specified in TypeSpec, so their generated types exist, and the database schema already has tables and seed data for most of them. There is no domain, repository or route code. A request to one of these routes is answered with 404. Tracked in GitHub issue #91. |
+| Other domains (auth, staff, service, customer, booking, review, treatment, payment, inventory) | Specified in TypeSpec, so their generated types exist, and the database schema has their tables and seed data. The models agree with the tables (`pnpm check:api-db`). There is no domain, repository or route code. A request to one of these routes is answered with 404. The implementation order is in GitHub issue #4. |
+| Attachments, roles and permissions, purchase orders, medical charts | Specified in TypeSpec only. No table exists for them yet. |
 | Authentication and authorization | Not implemented. The OpenAPI document declares bearer authentication for every operation, but the server does not check it. |
 | Email, file storage | Not implemented. Docker Compose starts no service for them. |
 | Frontend | Three application shells and shared packages. The API client is generated, but no application calls the API yet. See [Frontend](#frontend). |
@@ -217,7 +218,7 @@ Each backend package has a single entry point with two targets:
 
 ```
 specs/**/*.tsp
-   │  pnpm generate:spec      tsp compile, then specs/scripts/postprocess-openapi.ts
+   │  pnpm generate:spec      tsp compile
    ▼
 specs/tsp-output/@typespec/openapi3/generated/openapi.yaml
    │
@@ -278,9 +279,8 @@ sql/migrations/*.sql ── pnpm db:migrate ──▶ database
   schema needs no name mapping.
 - `pnpm check:db-schema` fails when `schema.ts`, `relations.ts` or `setup.sql`
   do not match the database. `pnpm check:api-db` compares the OpenAPI document
-  with the schema: property names and nullability must agree. The known
-  differences of the domains that are not implemented yet are recorded in
-  `backend/packages/database/api-consistency-baseline.json`; Salon has none.
+  with the schema: property names, nullability and enum values must agree for
+  every model that is backed by a table. No difference is tolerated.
 
 The workflow step by step is in [CLAUDE.md](../CLAUDE.md) and the
 [README](../README.md); how the domain types are derived from the schema is in

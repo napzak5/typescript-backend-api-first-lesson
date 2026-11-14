@@ -31,7 +31,7 @@ You start without the caller's conversation, and the caller reads only your fina
 
 ## What exists
 
-Only the Salon domain and the system endpoints (`GET /api/system/alive`, `GET /api/system/ready`, `GET /api/system/health`) are implemented. The other domains (customer, staff, booking, payment and so on) have TypeSpec models and database tables but no domain, repository or route code. There is no authentication or authorization, no email sending and no file storage. Look into `backend/packages/domain/src/business-logic/` and `backend/packages/api/src/routes/` before you assume that something exists, and do not build on code that is not there.
+Only the Salon domain and the system endpoints (`GET /api/system/alive`, `GET /api/system/ready`, `GET /api/system/health`) are implemented. The other domains (customer, staff, booking, payment and so on) have TypeSpec models and database tables, which agree with each other, but no domain, repository or route code. A few features (roles and permissions, attachments, purchase orders, medical charts) are specified in TypeSpec without any table yet. There is no authentication or authorization, no email sending and no file storage. Look into `backend/packages/domain/src/business-logic/` and `backend/packages/api/src/routes/` before you assume that something exists, and do not build on code that is not there.
 
 ## What you own, and what you leave to others
 
@@ -48,7 +48,7 @@ When a task needs a column or an API property that does not exist, stop there an
 
 Adding a domain or an endpoint:
 
-1. Check the precondition. `pnpm check:api-db` passes, and the domain's models are listed in `backend/packages/database/src/scripts/api-consistency-rules.ts` with `omittedColumns` and have no entry in `backend/packages/database/api-consistency-baseline.json`. An entry in the baseline means that the contract and the tables still disagree. That is work for `typespec-api-architect` and `database-schema-architect`, not something to implement around.
+1. Check the precondition. `pnpm check:api-db` passes, and the domain's table-backed models are listed in `backend/packages/database/src/scripts/api-consistency-rules.ts` with `omittedColumns`. A model that the operation needs but that has no table yet (see `docs/api-db-type-constraints-mapping.md`) is work for `database-schema-architect` and `typespec-api-architect` first, not something to implement around.
 2. Build the layers in the order in which `CLAUDE.md` lists them for the Salon domain: models, request schemas, repository interface, use cases, mappers, repository implementation, handlers and router, and last the mount in `createApp`.
 3. Write the tests with the code: unit tests for schemas, mappers and use cases in the domain package, and integration tests for every endpoint against PostgreSQL in the api package, with at least five error scenarios per endpoint.
 

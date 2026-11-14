@@ -51,7 +51,7 @@ The definitions are in `.claude/agents/`. The name is what a task is delegated t
 |-------|------|---------------|
 | [`salon-business-expert`](.claude/agents/salon-business-expert.md) | Business requirements | Salon operations and workflows, what a feature must do, validating a design against real practice |
 | [`database-schema-architect`](.claude/agents/database-schema-architect.md) | `backend/packages/database` (schema, migrations, seeds) | Tables, constraints and indexes, SQL migrations, query performance |
-| [`typespec-api-architect`](.claude/agents/typespec-api-architect.md) | `specs/`, and the API–DB consistency rules and baseline in `backend/packages/database` | Models and operations in TypeSpec, the OpenAPI document, type generation |
+| [`typespec-api-architect`](.claude/agents/typespec-api-architect.md) | `specs/`, and the API–DB consistency rules in `backend/packages/database` | Models and operations in TypeSpec, the OpenAPI document, type generation |
 | [`backend-typescript-architect`](.claude/agents/backend-typescript-architect.md) | `backend/packages/{domain,infrastructure,api,config,utility}`, `backend/apps/server` | Use cases, repositories, mappers, handlers, middleware, backend tests |
 | [`senior-frontend-architect`](.claude/agents/senior-frontend-architect.md) | `frontend/` | React components and applications, state, use of the generated API client, frontend tests |
 | [`senior-ui-designer`](.claude/agents/senior-ui-designer.md) | Interface design | Layout, interaction, accessibility, the design system |

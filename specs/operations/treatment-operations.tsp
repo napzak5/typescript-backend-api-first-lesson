@@ -1,129 +1,190 @@
 import "@typespec/http";
 import "@typespec/rest";
-import "../models/_shared/common.tsp";
+import "@typespec/openapi3";
 import "../models/treatment.tsp";
+import "../models/_shared/common.tsp";
+import "../models/_shared/common-api-patterns.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.Rest;
+using TypeSpec.OpenAPI;
 using BeautySalon.Models;
 
 namespace BeautySalon.Operations {
-  @route("/treatments")
+  @doc("顧客の来店ごとの施術内容・使用商材・施術写真を記録し、施術の統計を提供するAPI操作群です。")
+  @route("/api/v1/treatments")
   @tag("Treatments")
-  interface TreatmentOperations {
-    @doc("List treatment records with filters")
-    @get
-    listTreatments(
-      @query salonId?: SalonId,
-      @query customerId?: CustomerId,
-      @query staffId?: StaffId,
-      @query treatment?: TreatmentType,
-      ...DateRangeFilter,
-      ...PaginationParams,
-    ): Result<PaginationResponse<TreatmentRecord>>;
+  namespace TreatmentOperations {
+    interface TreatmentRecordCrud {
+      @doc("絞り込み条件とページネーションを指定して施術記録を一覧取得します。顧客別の施術履歴やスタッフ別の施術一覧は customerId・staffId で絞り込みます。")
+      @summary("List treatment records")
+      @get
+      list(...TreatmentRecordSearchRequest):
+        | {
+            @statusCode statusCode: 200;
+            @body response: CursorPaginationResponse<TreatmentRecordResponse>;
+          }
+        | ProblemResponse<400>
+        | CommonErrors;
 
-    @doc("Get treatment record by ID")
-    @get
-    @route("/{id}")
-    getTreatment(@path id: TreatmentRecordId): Result<TreatmentRecord>;
+      @doc("施術記録を新規登録します。bookingId・customerId・staffId・services・materialsのproductIdに存在しないIDや予約と別のサロンのものを指定した場合、およびcustomerIdが予約の顧客と一致しない場合は400を、予約に施術記録がすでにある場合は409を返します。")
+      @summary("Create a treatment record")
+      @post
+      create(@body request: TreatmentRecordCreateRequest):
+        | {
+            @statusCode statusCode: 201;
+            @header("Location") location: string;
+            @body response: ApiResponse<TreatmentRecordResponse>;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<409>
+        | RequestBodyErrors
+        | CommonErrors;
 
-    @doc("Create new treatment record")
-    @post
-    createTreatment(
-      @body treatment: TreatmentRecordCreateRequest,
-    ): Result<TreatmentRecord>;
+      @doc("IDを指定して施術記録を1件取得します。使用商材と施術写真を含みます。")
+      @summary("Get a treatment record")
+      @get
+      get(@path id: TreatmentRecordId):
+        | {
+            @statusCode statusCode: 200;
+            @body response: ApiResponse<TreatmentRecordResponse>;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<404>
+        | CommonErrors;
 
-    @doc("Update treatment record")
-    @patch
-    @route("/{id}")
-    updateTreatment(
-      @path id: TreatmentRecordId,
-      @body updates: TreatmentRecordUpdateRequest,
-    ): Result<TreatmentRecord>;
+      @doc("指定した項目だけを更新します。materialsを指定した場合は使用商材の一覧全体を置き換えます。servicesやmaterialsのproductIdに存在しないIDや予約と別のサロンのものを指定した場合は400を返します。")
+      @summary("Update a treatment record")
+      @patch
+      update(
+        @path id: TreatmentRecordId,
+        @body request: TreatmentRecordUpdateRequest,
+      ):
+        | {
+            @statusCode statusCode: 200;
+            @body response: ApiResponse<TreatmentRecordResponse>;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<404>
+        | RequestBodyErrors
+        | CommonErrors;
 
-    @doc("Delete treatment record")
-    @delete
-    @route("/{id}")
-    deleteTreatment(@path id: TreatmentRecordId): Result<{}>;
+      @doc("施術記録を削除します。施術記録の使用商材と施術写真も削除されます。")
+      @summary("Delete a treatment record")
+      @delete
+      delete(@path id: TreatmentRecordId):
+        | {
+            @statusCode statusCode: 204;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<404>
+        | CommonErrors;
 
-    @doc("Get treatment history for a customer")
-    @get
-    @route("/customer/{customerId}/history")
-    getCustomerTreatmentHistory(
-      @path customerId: CustomerId,
-      ...DateRangeFilter,
-      ...PaginationParams,
-    ): Result<PaginationResponse<TreatmentRecord>>;
+      @doc("施術記録に写真を追加します。すべての写真を1つのトランザクションで追加し、1件でも追加できない場合はどの写真も追加しません。追加した写真は個別のURLを持たないため、Locationヘッダーは返しません。追加した写真は施術記録の取得結果のphotosに含まれます。")
+      @summary("Add photos to a treatment record")
+      @route("/{id}/photos")
+      @post
+      addPhotos(
+        @path id: TreatmentRecordId,
+        @body request: TreatmentPhotoBulkCreateRequest,
+      ):
+        | {
+            @statusCode statusCode: 201;
+            @body response: ApiResponse<TreatmentPhotoBulkCreateResponse>;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<404>
+        | RequestBodyErrors
+        | CommonErrors;
 
-    @doc("Get treatments by staff member")
-    @get
-    @route("/staff/{staffId}")
-    getStaffTreatments(
-      @path staffId: StaffId,
-      ...DateRangeFilter,
-      ...PaginationParams,
-    ): Result<PaginationResponse<TreatmentRecord>>;
-
-    @doc("Add photos to treatment record")
-    @post
-    @route("/{id}/photos")
-    addTreatmentPhotos(
-      @path id: TreatmentRecordId,
-      @body photos: AttachmentId[],
-    ): Result<TreatmentRecord>;
-
-    @doc("Get treatment statistics")
-    @get
-    @route("/statistics")
-    getTreatmentStatistics(
-      @query salonId: SalonId,
-      ...DateRangeFilter,
-    ): Result<{
-      totalTreatments: int32;
-      treatmentsBy: Record<int32>;
-      averageDuration: float32;
-      topServices: ServiceId[];
-    }>;
+      @doc("サロンの施術記録を集計した統計を取得します。salonIdのサロンが存在しない場合は400を返します。")
+      @summary("Get treatment statistics")
+      @route("/statistics")
+      @get
+      getStatistics(...TreatmentStatisticsGetRequest):
+        | {
+            @statusCode statusCode: 200;
+            @body response: ApiResponse<TreatmentStatisticsResponse>;
+          }
+        | ProblemResponse<400>
+        | CommonErrors;
+    }
   }
 
-  @route("/medical-charts")
+  @doc("顧客ごとのカルテと、施術時に確認するアレルギー情報を扱うAPI操作群です。")
+  @route("/api/v1/medical-charts")
   @tag("Medical Charts")
-  interface MedicalChartOperations {
-    @doc("Get medical chart by customer ID")
-    @get
-    @route("/customer/{customerId}")
-    getCustomerMedicalChart(@path customerId: CustomerId): Result<MedicalChart>;
+  namespace MedicalChartOperations {
+    interface MedicalChartCrud {
+      @doc("絞り込み条件とページネーションを指定してカルテを一覧取得します。")
+      @summary("List medical charts")
+      @get
+      list(...MedicalChartSearchRequest):
+        | {
+            @statusCode statusCode: 200;
+            @body response: CursorPaginationResponse<MedicalChartResponse>;
+          }
+        | ProblemResponse<400>
+        | CommonErrors;
 
-    @doc("Create medical chart for customer")
-    @post
-    createMedicalChart(
-      @body chart: MedicalChartCreateRequest,
-    ): Result<MedicalChart>;
+      @doc("顧客のカルテを新規作成します。customerIdの顧客が存在しない場合は400を、顧客がすでにカルテを持つ場合は409を返します。Locationヘッダーは顧客IDによるカルテ取得のURLを指します。")
+      @summary("Create a medical chart")
+      @post
+      create(@body request: MedicalChartCreateRequest):
+        | {
+            @statusCode statusCode: 201;
+            @header("Location") location: string;
+            @body response: ApiResponse<MedicalChartResponse>;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<409>
+        | RequestBodyErrors
+        | CommonErrors;
 
-    @doc("Update medical chart")
-    @patch
-    @route("/{id}")
-    updateMedicalChart(
-      @path id: MedicalChartId,
-      @body updates: MedicalChartUpdateRequest,
-    ): Result<MedicalChart>;
+      @doc("顧客IDを指定してカルテを取得します。顧客が存在しない場合や、顧客がカルテを持たない場合は404を返します。")
+      @summary("Get the medical chart of a customer")
+      @route("/customer/{customerId}")
+      @get
+      getByCustomer(@path customerId: CustomerId):
+        | {
+            @statusCode statusCode: 200;
+            @body response: ApiResponse<MedicalChartResponse>;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<404>
+        | CommonErrors;
 
-    @doc("Get allergy warnings for customer")
-    @get
-    @route("/customer/{customerId}/allergies")
-    getCustomerAllergies(@path customerId: CustomerId): Result<{
-      customerId: CustomerId;
-      allergies: string[];
-      avoidProducts: string[];
-      lastUpdated: utcDateTime;
-    }>;
+      @doc("指定した項目だけを更新します。")
+      @summary("Update a medical chart")
+      @patch
+      update(
+        @path id: MedicalChartId,
+        @body request: MedicalChartUpdateRequest,
+      ):
+        | {
+            @statusCode statusCode: 200;
+            @body response: ApiResponse<MedicalChartResponse>;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<404>
+        | RequestBodyErrors
+        | CommonErrors;
 
-    @doc("Search medical charts")
-    @get
-    searchMedicalCharts(
-      @query search?: string,
-      @query hasAllergies?: boolean,
-      ...PaginationParams,
-    ): Result<PaginationResponse<MedicalChart>>;
+      @doc("施術時の注意喚起のため、顧客のアレルギー情報を一覧取得します。顧客が存在しない場合は404を返します。")
+      @summary("List the allergies of a customer")
+      @route("/customer/{customerId}/allergies")
+      @get
+      listAllergies(
+        @path customerId: CustomerId,
+        ...CustomerAllergySearchRequest,
+      ):
+        | {
+            @statusCode statusCode: 200;
+            @body response: CursorPaginationResponse<CustomerAllergyResponse>;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<404>
+        | CommonErrors;
+    }
   }
 }

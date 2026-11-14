@@ -12,13 +12,19 @@ TypeSpec で API のモデルとオペレーションを定義するときのル
 
 ## 適用状況
 
-このルールをすべて満たしているのは Salon と、Salon が使う共通モデルだけである。ほかのドメイン（customer、staff、booking、payment など）は TypeSpec と DB スキーマにだけ存在し、バックエンドの実装はない（GitHub issue #91）。それらの TypeSpec には旧い形が残っている。
+すべてのドメインの TypeSpec が、このルールに従っている。テーブルに対応するモデルは、プロパティ名・null 許可・Enum の値が DB と一致しており、`pnpm check:api-db` が検査する（[API-DB型制約マッピング](./api-db-type-constraints-mapping.md)）。
 
-- `Customer`、`Booking` のように、エンティティ名そのままのレスポンスモデル
-- エラーを 200 の本文として返すオペレーション（attachment の `Models.Error`、inventory・payment・permission・treatment の `Result<T>`）
-- DB にカラムのないプロパティ（`pnpm check:api-db` のベースラインに記録されている）
+バックエンドに実装があるのは Salon とシステムのオペレーションだけである。ほかのドメインは TypeSpec と DB スキーマにだけ存在する。ロール・権限、添付ファイル、発注、カルテなど、テーブルがまだない機能の TypeSpec もある（一覧は [API-DB型制約マッピング](./api-db-type-constraints-mapping.md#ルールに載せるモデル載せないモデル)）。
 
-ドメインを実装するときは、最初にその TypeSpec を Salon と同じ形に直す。
+規約から外れている箇所は次のとおりで、いずれも意図したものである。
+
+| 箇所 | 外れている点 | 理由 |
+|---|---|---|
+| `PUT /api/v1/salons/{salonId}/staff/{id}/availability` | 更新が `PATCH` ではない | 本文がスケジュールの全行で、スタッフのスケジュールを丸ごと置き換える |
+| `POST /api/v1/customers/bulk`、`POST /api/v1/treatments/{id}/photos` | 201 に `Location` がない | 複数の行を作成するので、指す先が 1 つに決まらない |
+| `DELETE /api/v1/customers/bulk` | 204 ではなく 200 | 削除した ID の一覧を返す |
+| `AttachmentCreateRequest` の `salonId`、`tags` | Create なのに Optional | `multipart/form-data` のパートであり、null を値として送れない |
+| `/api/v1/auth/login`、`/api/v1/auth/refresh`、`/api/v1/share/...` | 401 を個別に定義している | 認証の失敗そのものがオペレーションの結果である |
 
 ## モデル命名
 
@@ -239,7 +245,25 @@ namespace SalonOperations {
 - エラーのレスポンスはすべて `ProblemResponse<ステータス>` にする。本文は `ProblemDetails`、メディアタイプは `application/problem+json` になる。そのオペレーションのユースケースが返すもの（検証エラー 400、未検出 404、重複 409）をステータスごとに列挙する
 - どのルートでもサーバーが返すエラーも定義に含める。すべてのオペレーションに `CommonErrors`（429、500）を、本文を受け取るオペレーションには `RequestBodyErrors`（413、415）も加える。生成されるクライアントの戻り値はステータスコードのユニオンなので、定義にないステータスはクライアントが扱えない
 - パスの ID は ID スカラーで型付けする（`@path id: SalonId`）
-- Salon では、定義したオペレーションがすべて実装されている。実装しないオペレーションを先に定義しない（YAGNI）
+- オペレーションのファイルは `namespace <Domain>Operations { interface <Resource>Crud { ... } }` の形にし、`@route` と `@tag` は namespace に付ける
+- 新しいオペレーションは、実装する単位で定義する。使う予定のないオペレーションを先に定義しない（YAGNI）
+
+ステータスコードと、オペレーションの切り方は次のように統一している。
+
+| 場面 | 決まり |
+|---|---|
+| パスの ID が存在しない | 404 |
+| 本文の ID が存在しない、または別のサロン・顧客のもの | 400 |
+| 一意制約に違反する | 409 |
+| 現在の状態では実行できない操作（完了した予約のキャンセルなど） | 409 |
+| 未認証・権限不足 | オペレーションごとには定義しない。認証は API 全体のセキュリティスキーム（`specs/main.tsp` の `@useAuth(BearerAuth)`）で、認証なしで呼べるオペレーションには `@useAuth(NoAuth)` を付ける。401 を定義するのは、認証の失敗がそのオペレーションの結果である場合（ログイン）だけである |
+| 状態の遷移（確定、キャンセル、完了、返金など） | ステータスのカラムを更新リクエストで書き換えず、`POST .../{id}/<action>` のアクションにする。リクエストとレスポンスは `XXX<Action>Request` / `XXX<Action>Response` |
+| 一括操作 | 1 つのトランザクションで全件を処理する。1 件でも失敗すれば全体を失敗させ、成功のレスポンスに件ごとのエラーを入れない |
+| 親で絞り込む一覧 | 一覧の検索リクエストに親の ID のフィルターを持たせる。同じ結果を返すネストしたルート（`/customers/{id}/bookings` など）は作らない |
+| 親がパスにないリソース | 親の ID は、作成リクエストでは本文のプロパティ、検索リクエストでは任意のフィルターにする。更新リクエストには含めない（行は親を変えない） |
+| 作成できるリソース | 1 件取得のオペレーションを必ず持つ（`Location` の指す先） |
+| 構造の決まっていない jsonb カラム | 公開しない（`omittedColumns` に入れる）。文字列・ID・Enum の配列は `T[]`、オブジェクトは名前付きモデルにする |
+| 範囲や形式 | カラムで決まるもの（文字数、数値の桁）は TypeSpec に書く。正規表現が必要な形式は `@doc` に書き、検証は Zod スキーマで行う |
 
 共通モデルは `specs/models/_shared/common-api-patterns.tsp` にある。
 

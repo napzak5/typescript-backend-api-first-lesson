@@ -950,9 +950,6 @@ importers:
 
   specs:
     devDependencies:
-      '@types/node':
-        specifier: ^26.6.6
-        version: 26.6.6
       '@typespec/compiler':
         specifier: 1.18.0
         version: 1.18.0(@types/node@26.6.6)
@@ -971,12 +968,6 @@ importers:
       '@typespec/versioning':
         specifier: 0.88.0
         version: 0.88.0(@typespec/compiler@1.18.0(@types/node@26.6.6))
-      typescript:
-        specifier: ^7.0.2
-        version: 7.0.2
-      yaml:
-        specifier: ^2.9.1
-        version: 2.9.1
 
 packages:
 

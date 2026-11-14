@@ -2,257 +2,288 @@ import "@typespec/http";
 import "@typespec/rest";
 import "@typespec/openapi3";
 import "../models/customer.tsp";
-import "../models/reservation.tsp";
-import "../models/booking.tsp";
 import "../models/_shared/common.tsp";
 import "../models/_shared/common-api-patterns.tsp";
-import "./_shared/base-operations.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.Rest;
 using TypeSpec.OpenAPI;
 using BeautySalon.Models;
-using BeautySalon.Operations;
 
 namespace BeautySalon.Operations {
-  @doc("顧客情報の管理とエンゲージメント施策を支えるAPI操作群です。プロフィールから予約履歴、ロイヤルティ施策まで一貫して扱います。")
+  @doc("顧客情報の管理とエンゲージメント施策を支えるAPI操作群です。プロフィールから好み設定、統計、個人データの取り扱いまで一貫して扱います。")
   @route("/api/v1/customers")
   @tag("Customers")
   namespace CustomerOperations {
-    @doc("顧客レコードの登録・更新・検索・監査を包括的に提供し、業務オペレーションの基盤を構築します。")
-    @route("/")
-    interface CustomerCrud
-      extends CrudOperations<
-          Customer,
-          CustomerCreateRequest,
-          CustomerUpdateRequest,
-          CustomerSearchRequest,
-          CustomerId
-        >,
-        BulkOperations<
-          Customer,
-          CustomerCreateRequest,
-          CustomerUpdateRequest,
-          CustomerId
-        >,
-        SearchOperations<Customer, CustomerSearchRequest>,
-        AuditOperations<Customer, CustomerId> {}
+    interface CustomerCrud {
+      @doc("絞り込み条件とページネーションを指定して顧客を一覧取得します。削除済みの顧客は含みません。")
+      @summary("List customers")
+      @get
+      list(...CustomerSearchRequest):
+        | {
+            @statusCode statusCode: 200;
+            @body response: CursorPaginationResponse<CustomerResponse>;
+          }
+        | ProblemResponse<400>
+        | CommonErrors;
 
-    @doc("顧客の基本情報に加え、嗜好や連絡先など拡張情報を取得し、パーソナライズ対応に活かします。")
-    @summary("Get customer profile")
-    @get
-    @route("{id}/profile")
-    op getProfile(
-      @path id: CustomerId,
-      @header("Authorization") authorization?: string,
-    ):
-      | {
-          @statusCode statusCode: 200;
-          @body response: ApiResponse<CustomerProfile>;
-        }
-      | ProblemResponse<401>
-      | ProblemResponse<404>;
+      @doc("顧客を新規登録します。メールアドレスまたは紹介コードが既存の顧客(削除済みを含む)と重複する場合は409を、referredByに存在しない顧客を指定した場合は400を返します。")
+      @summary("Create a customer")
+      @post
+      create(@body request: CustomerCreateRequest):
+        | {
+            @statusCode statusCode: 201;
+            @header("Location") location: string;
+            @body response: ApiResponse<CustomerResponse>;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<409>
+        | RequestBodyErrors
+        | CommonErrors;
 
-    @doc("来店頻度や売上貢献度など顧客指標を集計し、セグメント施策やVIP判定に利用します。")
-    @summary("Get customer statistics")
-    @get
-    @route("{id}/statistics")
-    op getStatistics(
-      @path id: CustomerId,
+      @doc("IDを指定して顧客を1件取得します。好み設定も含めて返します。")
+      @summary("Get a customer")
+      @get
+      get(@path id: CustomerId):
+        | {
+            @statusCode statusCode: 200;
+            @body response: ApiResponse<CustomerResponse>;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<404>
+        | CommonErrors;
 
-      @query
-      @doc("集計対象期間（例: '7d', '1m', '3m', '1y'）")
-      period?: string = "1y",
+      @doc("指定した項目だけを更新します。メールアドレスまたは紹介コードが他の顧客(削除済みを含む)と重複する場合は409を、referredByに存在しない顧客を指定した場合は400を返します。")
+      @summary("Update a customer")
+      @patch
+      update(@path id: CustomerId, @body request: CustomerUpdateRequest):
+        | {
+            @statusCode statusCode: 200;
+            @body response: ApiResponse<CustomerResponse>;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<404>
+        | ProblemResponse<409>
+        | RequestBodyErrors
+        | CommonErrors;
 
-      @header("Authorization") authorization?: string,
-    ):
-      | {
-          @statusCode statusCode: 200;
-          @body response: ApiResponse<CustomerStatistics>;
-        }
-      | ProblemResponse<401>
-      | ProblemResponse<404>;
+      @doc("顧客を論理削除します。削除後は一覧・取得の対象外になります。")
+      @summary("Delete a customer")
+      @delete
+      delete(@path id: CustomerId):
+        | {
+            @statusCode statusCode: 204;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<404>
+        | CommonErrors;
 
-    @doc("顧客が保持する予約履歴を取得し、来店予定や過去施術の確認に利用します。")
-    @summary("Get customer reservations")
-    @get
-    @route("{id}/reservations")
-    op getReservations(
-      @path id: CustomerId,
-      @query status?: ReservationStatusType,
+      @doc("複数の顧客IDをまとめて取得し、一覧画面の遅延読み込みや外部連携に利用します。指定した顧客のいずれかが存在しない場合は404を返します。")
+      @summary("Batch get customers")
+      @post
+      @route("/batch/get")
+      batchGet(@body request: CustomerBatchGetRequest):
+        | {
+            @statusCode statusCode: 200;
+            @body response: ApiResponse<CustomerResponse[]>;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<404>
+        | RequestBodyErrors
+        | CommonErrors;
 
-      @query
-      @doc("取得対象期間の開始日時")
-      from?: utcDateTime,
+      @doc("複数の顧客を一括登録します。すべての顧客を1つのトランザクションで登録し、1件でも登録できない場合はどの顧客も登録しません。メールアドレスまたは紹介コードが既存の顧客やリクエスト内の他の顧客と重複する場合は409を、referredByに存在しない顧客を指定した場合は400を返します。")
+      @summary("Bulk create customers")
+      @post
+      @route("/bulk")
+      bulkCreate(@body request: CustomerBulkCreateRequest):
+        | {
+            @statusCode statusCode: 201;
+            @body response: ApiResponse<CustomerBulkCreateResponse>;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<409>
+        | RequestBodyErrors
+        | CommonErrors;
 
-      @query
-      @doc("取得対象期間の終了日時")
-      to?: utcDateTime,
+      @doc("複数の顧客をそれぞれの更新内容で一括更新します。すべての顧客を1つのトランザクションで更新し、1件でも更新できない場合はどの顧客も更新しません。指定した顧客のいずれかが存在しない場合は404を、メールアドレスまたは紹介コードが重複する場合は409を返します。")
+      @summary("Bulk update customers")
+      @patch
+      @route("/bulk")
+      bulkUpdate(@body request: CustomerBulkUpdateRequest):
+        | {
+            @statusCode statusCode: 200;
+            @body response: ApiResponse<CustomerBulkUpdateResponse>;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<404>
+        | ProblemResponse<409>
+        | RequestBodyErrors
+        | CommonErrors;
 
-      ...CursorPaginationParams,
-      @header("Authorization") authorization?: string,
-    ):
-      | {
-          @statusCode statusCode: 200;
-          @body response: CursorPaginationResponse<ReservationDetail>;
-        }
-      | ProblemResponse<401>
-      | ProblemResponse<404>;
+      @doc("複数の顧客を一括で論理削除します。すべての顧客を1つのトランザクションで削除し、指定した顧客のいずれかが存在しない場合は404を返してどの顧客も削除しません。")
+      @summary("Bulk delete customers")
+      @delete
+      @route("/bulk")
+      bulkDelete(@body request: CustomerBulkDeleteRequest):
+        | {
+            @statusCode statusCode: 200;
+            @body response: ApiResponse<CustomerBulkDeleteResponse>;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<404>
+        | RequestBodyErrors
+        | CommonErrors;
 
-    @doc("顧客単位の予約パッケージ情報を取得し、複数施術を跨いだ利用状況を把握します。")
-    @summary("Get customer bookings")
-    @get
-    @route("{id}/bookings")
-    op getBookings(
-      @path id: CustomerId,
-      @query status?: BookingStatusCodeType,
+      @doc("一覧と同じ絞り込み条件に一致する顧客を指定形式でエクスポートするジョブを受け付け、帳票出力や外部共有に活用します。")
+      @summary("Export customers")
+      @post
+      @route("/export")
+      export(@body request: CustomerExportRequest):
+        | {
+            @statusCode statusCode: 202;
+            @body response: ApiResponse<CustomerExportResponse>;
+          }
+        | ProblemResponse<400>
+        | RequestBodyErrors
+        | CommonErrors;
 
-      @query
-      @doc("取得対象期間の開始日時")
-      from?: utcDateTime,
+      @doc("顧客レコードに対する操作の監査履歴を新しい順に取得し、変更者や変更内容を追跡します。顧客が存在しない場合は404を返します。")
+      @summary("Get customer audit history")
+      @get
+      @route("/{id}/history")
+      getHistory(@path id: CustomerId, ...CustomerAuditEntrySearchRequest):
+        | {
+            @statusCode statusCode: 200;
 
-      @query
-      @doc("取得対象期間の終了日時")
-      to?: utcDateTime,
+            @body
+            response: CursorPaginationResponse<CustomerAuditEntryResponse>;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<404>
+        | CommonErrors;
 
-      ...CursorPaginationParams,
-      @header("Authorization") authorization?: string,
-    ):
-      | {
-          @statusCode statusCode: 200;
-          @body response: CursorPaginationResponse<BookingDetail>;
-        }
-      | ProblemResponse<401>
-      | ProblemResponse<404>;
+      @doc("指定したバージョン時点の顧客情報を取得し、過去状態の確認や比較に利用します。顧客またはバージョンが存在しない場合は404を返します。")
+      @summary("Get customer version")
+      @get
+      @route("/{id}/versions/{version}")
+      getVersion(
+        @path id: CustomerId,
 
-    @doc("顧客の施術好みや連絡手段などの希望設定を更新し、パーソナライズされた提案に反映します。")
-    @summary("Update customer preferences")
-    @put
-    @route("{id}/preferences")
-    op updatePreferences(
-      @path id: CustomerId,
-      @body preferences: CustomerPreferencesUpdateRequest,
-      @header("Authorization") authorization?: string,
-    ):
-      | {
-          @statusCode statusCode: 200;
-          @body response: ApiResponse<CustomerPreferences>;
-        }
-      | ProblemResponse<400>
-      | ProblemResponse<401>
-      | ProblemResponse<404>;
-
-    @doc("重複登録された顧客レコードを統合し、履歴やポイントを一本化します。")
-    @summary("Merge customer records")
-    @post
-    @route("merge")
-    op merge(
-      @body request: {
-        @doc("統合後も残すメイン顧客ID")
-        primaryCustomerId: CustomerId;
-
-        @doc("統合して削除するサブ顧客ID")
-        secondaryCustomerId: CustomerId;
-
-        @doc("重複データの優先ルール")
-        conflictResolution?: "keep_primary" | "keep_secondary" | "keep_newest";
-      },
-      @header("Authorization") authorization?: string,
-    ):
-      | {
-          @statusCode statusCode: 200;
-          @body response: ApiResponse<Customer>;
-        }
-      | ProblemResponse<400>
-      | ProblemResponse<401>
-      | ProblemResponse<404>
-      | ProblemResponse<409>;
-
-    @doc("顧客が自身のデータを取得できるようエクスポートし、GDPR等の個人情報規制に対応します。")
-    @summary("Export customer data")
-    @get
-    @route("{id}/export")
-    op exportData(
-      @path id: CustomerId,
-
-      @query
-      @doc("エクスポート形式")
-      format?: "json" | "csv" | "pdf" = "json",
-
-      @header("Authorization") authorization?: string,
-    ):
-      | {
-          @statusCode statusCode: 200;
-          @body response: bytes;
-          @header("Content-Type") content: string;
-          @header("Content-Disposition") contentDisposition: string;
-        }
-      | ProblemResponse<401>
-      | ProblemResponse<404>;
-
-    @doc("顧客からの削除要請を受け付け、規制に沿った消去フローを開始します。")
-    @summary("Request customer data deletion")
-    @post
-    @route("{id}/deletion-request")
-    op requestDeletion(
-      @path id: CustomerId,
-      @body request: {
-        @doc("削除を希望する理由")
-        reason: string;
-
-        @doc("削除に伴う影響を理解しているか")
-        confirmed: boolean;
-      },
-      @header("Authorization") authorization?: string,
-    ):
-      | {
-          @statusCode statusCode: 202;
-          @body response: ApiResponse<{
-            @doc("削除リクエストID")
-            requestId: string;
-
-            @doc("予定される削除日")
-            scheduledDate: utcDateTime;
-
-            @doc("猶予期間（日数）")
-            gracePeriodDays: int32;
-          }>;
-        }
-      | ProblemResponse<400>
-      | ProblemResponse<401>
-      | ProblemResponse<404>;
-
-    @doc("来店やキャンペーンに応じてロイヤルティポイントを加算し、顧客維持を促進します。")
-    @summary("Add loyalty points")
-    @post
-    @route("{id}/loyalty-points")
-    op addLoyaltyPoints(
-      @path id: CustomerId,
-      @body request: {
-        @doc("加算するポイント数")
+        @doc("取得するバージョン番号")
+        @path
         @minValue(1)
-        points: int32;
+        version: int32,
+      ):
+        | {
+            @statusCode statusCode: 200;
+            @body response: ApiResponse<CustomerResponse>;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<404>
+        | CommonErrors;
 
-        @doc("ポイント加算の理由")
-        reason: string;
+      @doc("論理削除された顧客を復元し、誤削除への迅速なリカバリを可能にします。顧客が存在しない場合は404を、削除されていない顧客を指定した場合は409を返します。")
+      @summary("Restore a deleted customer")
+      @post
+      @route("/{id}/restore")
+      restore(@path id: CustomerId):
+        | {
+            @statusCode statusCode: 200;
+            @body response: ApiResponse<CustomerResponse>;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<404>
+        | ProblemResponse<409>
+        | CommonErrors;
 
-        @doc("関連する参照ID（例: 予約ID）")
-        referenceId?: string;
-      },
-      @header("Authorization") authorization?: string,
-    ):
-      | {
-          @statusCode statusCode: 200;
-          @body response: ApiResponse<{
-            @doc("更新後のポイント残高")
-            balance: int32;
+      @doc("来店頻度や売上貢献度など顧客指標を集計し、セグメント施策やVIP判定に利用します。顧客が存在しない場合は404を返します。")
+      @summary("Get customer statistics")
+      @get
+      @route("/{id}/statistics")
+      getStatistics(
+        @path id: CustomerId,
 
-            @doc("トランザクションID")
-            transactionId: string;
-          }>;
-        }
-      | ProblemResponse<400>
-      | ProblemResponse<401>
-      | ProblemResponse<404>;
+        @query
+        @doc("集計対象期間（例: '7d', '1m', '3m', '1y'）。数値と単位(d: 日、m: 月、y: 年)で指定する")
+        period?: string = "1y",
+      ):
+        | {
+            @statusCode statusCode: 200;
+            @body response: ApiResponse<CustomerStatisticsResponse>;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<404>
+        | CommonErrors;
+
+      @doc("顧客の施術好みや指名スタッフなどの希望設定のうち、指定した項目だけを更新し、パーソナライズされた提案に反映します。好み設定がまだない場合は作成し、指定しなかった項目はnullになります。顧客が存在しない場合は404を、preferredStaffIdやavoidStaffIdsに存在しないスタッフを指定した場合は400を返します。")
+      @summary("Update customer preferences")
+      @patch
+      @route("/{id}/preferences")
+      updatePreferences(
+        @path id: CustomerId,
+        @body request: CustomerPreferencesUpdateRequest,
+      ):
+        | {
+            @statusCode statusCode: 200;
+            @body response: ApiResponse<CustomerPreferencesResponse>;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<404>
+        | RequestBodyErrors
+        | CommonErrors;
+
+      @doc("重複登録された顧客レコードを統合し、履歴やポイントを一本化します。secondaryCustomerIdの顧客は統合後に論理削除されます。存在しない顧客や同じ顧客を指定した場合は400を、両方の顧客が別々のログインアカウントに紐づいている場合は409を返します。")
+      @summary("Merge customer records")
+      @post
+      @route("/merge")
+      merge(@body request: CustomerMergeRequest):
+        | {
+            @statusCode statusCode: 200;
+            @body response: ApiResponse<CustomerResponse>;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<409>
+        | RequestBodyErrors
+        | CommonErrors;
+
+      @doc("顧客が自身のデータを取得できるようエクスポートし、GDPR等の個人情報規制に対応します。顧客が存在しない場合は404を返します。")
+      @summary("Export customer data")
+      @get
+      @route("/{id}/export")
+      exportData(
+        @path id: CustomerId,
+
+        @query
+        @doc("エクスポート形式")
+        format?: CustomerDataExportFormatType = CustomerDataExportFormatType.json,
+      ):
+        | {
+            @statusCode statusCode: 200;
+            @body response: bytes;
+            @header("Content-Type") content: string;
+            @header("Content-Disposition") contentDisposition: string;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<404>
+        | CommonErrors;
+
+      @doc("顧客からの個人データ削除の要請を受け付け、規制に沿った消去フローを開始します。confirmedがtrueでない場合は400を、顧客が存在しない場合は404を返します。")
+      @summary("Request customer data deletion")
+      @post
+      @route("/{id}/deletion-request")
+      requestDeletion(
+        @path id: CustomerId,
+        @body request: CustomerDataDeletionRequest,
+      ):
+        | {
+            @statusCode statusCode: 202;
+            @body response: ApiResponse<CustomerDataDeletionResponse>;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<404>
+        | RequestBodyErrors
+        | CommonErrors;
+    }
   }
 }

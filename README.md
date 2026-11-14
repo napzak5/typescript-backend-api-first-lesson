@@ -138,13 +138,11 @@ recording it.
 
 ### API ↔ Database Consistency
 
-API property names and nullability follow the database columns.
+API property names, nullability and enum values follow the database columns.
 `pnpm check:api-db` compares the generated OpenAPI document with the Drizzle
-schema and fails in CI on any difference that is not recorded in
-`backend/packages/database/api-consistency-baseline.json`. The baseline holds
-the known differences of the domains that are specified but not implemented
-yet; the salon domain, the reference implementation, has none. After fixing a
-recorded difference, run `pnpm check:api-db --update-baseline`.
+schema and fails in CI on any difference. Every API model that is backed by a
+table is covered, in all domains; the rules are in
+`backend/packages/database/src/scripts/api-consistency-rules.ts`.
 
 ### Available Scripts
 

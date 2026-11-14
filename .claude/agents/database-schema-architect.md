@@ -24,7 +24,7 @@ You start without the caller's conversation, and the caller reads only your fina
 
 You own `backend/packages/database/`: the migrations, the generated schema files, `sql/setup.sql`, the seeds and the database scripts.
 
-Two files in that package describe API models and are maintained by `typespec-api-architect`: `backend/packages/database/src/scripts/api-consistency-rules.ts` and `backend/packages/database/api-consistency-baseline.json`. You run the check that reads them; you do not edit them.
+One file in that package describes API models and is maintained by `typespec-api-architect`: `backend/packages/database/src/scripts/api-consistency-rules.ts`. You run the check that reads it (`pnpm check:api-db`); you do not edit it.
 
 You do not edit `specs/`. The contract follows your schema, through `typespec-api-architect`. You do not edit the backend packages that use the schema either: queries, transactions and repositories are work for `backend-typescript-architect`, while tables, column types, constraints and indexes are yours.
 

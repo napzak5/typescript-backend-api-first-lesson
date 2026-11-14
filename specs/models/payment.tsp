@@ -1,7 +1,9 @@
 import "@typespec/http";
 import "./_shared/common.tsp";
+import "./_shared/common-api-patterns.tsp";
 
 using TypeSpec.Http;
+using BeautySalon.Models;
 
 namespace BeautySalon.Models {
   @doc("""
@@ -26,7 +28,7 @@ namespace BeautySalon.Models {
   }
 
   @doc("""
-    支払いステータス区分 - 決済処理の進行状態を表す区分
+    支払いステータス区分 - 決済取引(payment_transactions.status)と売上(sales.paymentStatus)の支払いの進行状態を表す区分
     
     pending: 支払い待ち - 支払いが開始されたがまだ完了していない状態
     processing: 処理中 - 決済処理が進行中の状態
@@ -35,7 +37,7 @@ namespace BeautySalon.Models {
     refunded: 返金済み - 全額返金が完了した状態
     partial_refund: 部分返金 - 一部金額の返金が完了した状態
     """)
-  enum PaymentStatusCodeType {
+  enum PaymentStatusType {
     pending,
     processing,
     completed,
@@ -44,275 +46,654 @@ namespace BeautySalon.Models {
     partial_refund,
   }
 
-  @doc("支払い状態の詳細情報を表すユニオン")
-  union PaymentStatus {
-    pending: PendingPaymentStatus,
-    processing: ProcessingPaymentStatus,
-    completed: CompletedPaymentStatus,
-    failed: FailedPaymentStatus,
-    refunded: RefundedPaymentStatus,
-    partial_refund: PartialRefundPaymentStatus,
+  @doc("""
+    ポイント取引種別区分 - 顧客ポイントの増減(customer_points の1行)の種類
+    
+    earned: 獲得 - 来店や購入などでポイントを付与した取引
+    used: 利用 - 支払いなどでポイントを使用した取引
+    expired: 失効 - 有効期限を過ぎたポイントを失効させた取引
+    adjusted: 調整 - スタッフが手動でポイントを増減した取引
+    transferred: 移行 - 別の顧客との間でポイントを移した取引
+    """)
+  enum PointTransactionType {
+    earned,
+    used,
+    expired,
+    adjusted,
+    transferred,
   }
 
-  @doc("支払い待ち状態の詳細")
-  model PendingPaymentStatus {
-    @doc("状態種別（pending 固定値）")
-    type: "pending";
+  // ---------------------------------------------------------------------------
+  // 売上 (sales、sales_details)
+  // ---------------------------------------------------------------------------
 
-    @doc("支払いが登録された日時")
-    createdAt: utcDateTime;
-  }
+  @doc("""
+    売上明細 - sales_details テーブルの1行。会計の1項目(サービス・商品など)を表す。
+    売上の登録・更新リクエストとレスポンスで共通に使う。プロパティ名と null 許可は DB カラムと一致させている
+    """)
+  model SalesDetail {
+    @doc("明細の種類。service(サービス)、product(商品)など")
+    @minLength(1)
+    @maxLength(50)
+    itemType: string;
 
-  @doc("決済処理中の状態の詳細")
-  model ProcessingPaymentStatus {
-    @doc("状態種別（processing 固定値）")
-    type: "processing";
+    @doc("itemType が指すサービスまたは商品の ID。手入力の項目など、対象の記録がない明細の場合はnull")
+    @format("uuid")
+    itemId: string | null;
 
-    @doc("処理開始日時")
-    startedAt: utcDateTime;
+    @doc("明細名。会計時点の名称を記録する")
+    @minLength(1)
+    @maxLength(255)
+    itemName: string;
 
-    @doc("処理を担当しているスタッフ ID")
-    processorId: StaffId | null;
-  }
+    @doc("数量")
+    @minValue(1)
+    quantity: int32;
 
-  @doc("支払い完了状態の詳細")
-  model CompletedPaymentStatus {
-    @doc("状態種別（completed 固定値）")
-    type: "completed";
+    @doc("税抜の単価")
+    @minValue(0)
+    unitPrice: int32;
 
-    @doc("支払い完了日時")
-    completedAt: utcDateTime;
+    @doc("明細の値引額")
+    @minValue(0)
+    discountAmount: int32;
 
-    @doc("実際に決済された金額")
-    paidAmount: Money;
+    @doc("明細の消費税額")
+    @minValue(0)
+    taxAmount: int32;
 
-    @doc("発行されたレシート番号")
-    receiptNumber: string | null;
-  }
+    @doc("明細の税込合計金額。quantity × unitPrice - discountAmount + taxAmount と一致する必要がある")
+    @minValue(0)
+    totalAmount: int32;
 
-  @doc("支払い失敗状態の詳細")
-  model FailedPaymentStatus {
-    @doc("状態種別（failed 固定値）")
-    type: "failed";
+    @doc("明細を担当したスタッフの ID。売上と同じサロンのスタッフを指定する。担当者を記録しない場合はnull")
+    staffId: StaffId | null;
 
-    @doc("支払いが失敗した日時")
-    failedAt: utcDateTime;
+    @doc("担当スタッフの歩合率(%)。歩合を記録しない場合はnull")
+    @minValue(0)
+    @maxValue(100)
+    commissionRate: float64 | null;
 
-    @doc("失敗理由の説明")
-    reason: string;
+    @doc("担当スタッフの歩合額。歩合を記録しない場合はnull")
+    @minValue(0)
+    commissionAmount: int32 | null;
 
-    @doc("再試行が可能かどうか")
-    retryable: boolean | null = false;
-  }
-
-  @doc("全額返金済み状態の詳細")
-  model RefundedPaymentStatus {
-    @doc("状態種別（refunded 固定値）")
-    type: "refunded";
-
-    @doc("返金が完了した日時")
-    refundedAt: utcDateTime;
-
-    @doc("返金金額")
-    refundAmount: Money;
-
-    @doc("関連する返金 ID")
-    refundId: RefundId | null;
-  }
-
-  @doc("部分返金済み状態の詳細")
-  model PartialRefundPaymentStatus {
-    @doc("状態種別（partial_refund 固定値）")
-    type: "partial_refund";
-
-    @doc("返金が行われた日時")
-    refundedAt: utcDateTime;
-
-    @doc("返金された金額")
-    refundAmount: Money;
-
-    @doc("返金後に残る請求金額")
-    remainingAmount: Money;
-
-    @doc("関連する返金 ID")
-    refundId: RefundId;
-  }
-
-  @doc("請求金額の内訳")
-  model PaymentAmounts {
-    @doc("サービス代金の税抜合計")
-    billed: Money;
-
-    @doc("課税対象額に対する税額")
-    tax: Money | null;
-
-    @doc("割引金額の合計")
-    discount: Money | null;
-
-    @doc("チップとして受領する金額")
-    tip: Money | null;
-
-    @doc("最終的な支払金額")
-    totalPayable: Money;
-  }
-
-  @doc("サロンで発生する支払いを管理する決済記録")
-  model Payment {
-    @doc("決済レコード ID")
-    id: PaymentId;
-
-    @doc("決済が紐づくサロン ID")
-    salonId: SalonId;
-
-    @doc("支払いを行う顧客 ID")
-    customerId: CustomerId;
-
-    @doc("関連する予約 ID")
-    bookingId: BookingId | null;
-
-    @doc("関連する施術記録 ID")
-    treatmentRecordId: TreatmentRecordId | null;
-
-    @doc("使用した支払い方法")
-    method: PaymentMethodType;
-
-    @doc("現在の支払い状態の詳細")
-    status: PaymentStatus;
-
-    @doc("請求金額の内訳情報")
-    amounts: PaymentAmounts;
-
-    @doc("使用したポイント数")
-    pointsUsed: int32 | null;
-
-    @doc("予約時に適用した預り金額")
-    depositApplied: Money | null;
-
-    @doc("未収残高がある場合の金額")
-    outstandingAmount: Money | null;
-
-    @doc("外部決済サービスの参照番号")
-    externalReference: string | null;
-
-    @doc("発行したレシート番号")
-    receiptNumber: string | null;
-
-    @doc("状態変遷の履歴一覧")
-    history: PaymentHistory[];
-
-    @doc("関連する返金記録の一覧")
-    refunds: Refund[] | null;
-
-    @doc("外部サービス連携向けのメタデータ")
-    metadata: Record<unknown> | null;
-
-    @doc("スタッフ用の備考メモ")
+    @doc("明細の備考。未設定の場合はnull")
     notes: string | null;
 
-    ...AuditInfo;
+    @doc("表示順序")
+    @minValue(0)
+    sortOrder: int32;
   }
 
-  @doc("決済状態の変更履歴")
-  model PaymentHistory {
-    @doc("履歴イベント ID")
-    eventId: string;
+  @doc("""
+    売上レスポンス - sales テーブルの全カラムと、売上明細(sales_details)・決済取引(payment_transactions)を返す。
+    1件の売上は1回の来店の会計を表す。プロパティ名と null 許可は DB カラムと一致させている
+    """)
+  model SaleResponse {
+    @doc("売上 ID")
+    id: SaleId;
 
-    @doc("対象となる決済 ID")
-    paymentId: PaymentId;
+    @doc("売上番号。システムが採番し、すべての売上の間で一意")
+    saleNumber: string;
 
-    @doc("変更後の支払い状態")
-    status: PaymentStatus;
-
-    @doc("変更が発生した日時")
-    occurredAt: utcDateTime;
-
-    @doc("操作主体の区分")
-    actor: "system" | "staff" | "customer" | null;
-
-    @doc("操作主体の ID")
-    actorId: string | null;
-
-    @doc("変更内容の補足メモ")
-    note: string | null;
-
-    @doc("履歴に紐づく追加メタデータ")
-    metadata: Record<unknown> | null;
-  }
-
-  @doc("返金処理の記録")
-  model Refund {
-    @doc("返金 ID")
-    id: RefundId;
-
-    @doc("元となる決済 ID")
-    paymentId: PaymentId;
-
-    @doc("返金金額")
-    amount: Money;
-
-    @doc("返金理由")
-    reason: string;
-
-    @doc("返金処理日時")
-    refundedAt: utcDateTime;
-
-    @doc("返金処理の進捗状態")
-    status: "requested" | "processing" | "completed" | "failed";
-
-    @doc("返金処理を担当したスタッフ ID")
-    processedBy: StaffId | null;
-
-    @doc("返金に使用した支払い方法")
-    method: PaymentMethodType | null;
-
-    @doc("外部返金参照コード")
-    referenceCode: string | null;
-
-    @doc("返金処理に関する備考")
-    notes: string | null;
-  }
-
-  @doc("支払金額の内訳プレビュー")
-  model PaymentBreakdown {
-    @doc("商品の税抜小計")
-    subtotal: Money;
-
-    @doc("適用される税額")
-    tax: Money;
-
-    @doc("割引金額")
-    discount: Money;
-
-    @doc("ポイント適用による割引額")
-    pointsDiscount: Money | null;
-
-    @doc("支払総額")
-    total: Money;
-  }
-
-  @doc("決済前の支払見積情報")
-  model PaymentPreview {
-    @doc("見積対象のサロン ID")
+    @doc("会計を行ったサロン ID")
     salonId: SalonId;
 
-    @doc("見積対象の顧客 ID")
+    @doc("会計した顧客の ID。顧客登録のない来店客の場合はnull")
     customerId: CustomerId | null;
 
-    @doc("関連する予約 ID")
+    @doc("会計を担当したスタッフの ID。担当者を記録しない場合はnull")
+    staffId: StaffId | null;
+
+    @doc("売上のもとになった予約の ID。予約のない来店の場合はnull")
     bookingId: BookingId | null;
 
-    @doc("金額内訳のプレビュー")
-    breakdown: PaymentBreakdown;
+    @doc("売上日。saleTime のサロンのタイムゾーンでの日付")
+    saleDate: plainDate;
+
+    @doc("会計日時")
+    saleTime: utcDateTime;
+
+    @doc("小計。明細の quantity × unitPrice の合計")
+    subtotal: int32;
+
+    @doc("値引額。明細の discountAmount の合計")
+    discountAmount: int32;
+
+    @doc("消費税額。明細の taxAmount の合計")
+    taxAmount: int32;
+
+    @doc("合計金額。明細の totalAmount の合計")
+    totalAmount: int32;
+
+    @doc("この会計で利用したポイント数。記録していない場合はnull")
+    pointsUsed: int32 | null;
+
+    @doc("この会計で付与したポイント数。記録していない場合はnull")
+    pointsEarned: int32 | null;
+
+    @doc("支払い状態。決済取引(payments)の処理と返金に応じてシステムが更新する")
+    paymentStatus: PaymentStatusType;
+
+    @doc("取り消された売上かどうか")
+    isVoid: boolean;
+
+    @doc("売上を取り消した日時。取り消していない場合はnull")
+    voidedAt: utcDateTime | null;
+
+    @doc("取消理由。取り消していない場合、または理由を記録していない場合はnull")
+    voidReason: string | null;
+
+    @doc("備考。未設定の場合はnull")
+    notes: string | null;
+
+    @doc("売上明細の一覧。sortOrder の昇順で並ぶ")
+    details: SalesDetail[];
+
+    @doc("この売上に対する決済取引の一覧。作成日時の昇順で並ぶ。支払いがない場合は空配列")
+    payments: PaymentResponse[];
+
+    @doc("レコード作成日時")
+    createdAt: utcDateTime;
+
+    @doc("レコード最終更新日時")
+    updatedAt: utcDateTime;
+  }
+
+  @doc("""
+    売上登録リクエスト - 全項目のキーが必須。DB で NULL 許可のカラムのみ null を指定できる。
+    売上番号・売上日・小計・値引額・消費税額・合計金額・支払い状態はシステムが設定する
+    """)
+  model SaleCreateRequest {
+    @doc("会計を行うサロン ID")
+    salonId: SalonId;
+
+    @doc("会計する顧客の ID。顧客登録のない来店客の場合はnull")
+    customerId: CustomerId | null;
+
+    @doc("会計を担当するスタッフの ID。salonId のサロンのスタッフを指定する。担当者を記録しない場合はnull")
+    staffId: StaffId | null;
+
+    @doc("売上のもとになる予約の ID。salonId のサロンの予約を指定する。予約のない来店の場合はnull")
+    bookingId: BookingId | null;
+
+    @doc("会計日時")
+    saleTime: utcDateTime;
+
+    @doc("この会計で利用したポイント数。記録しない場合はnull")
+    @minValue(0)
+    pointsUsed: int32 | null;
+
+    @doc("この会計で付与したポイント数。記録しない場合はnull")
+    @minValue(0)
+    pointsEarned: int32 | null;
+
+    @doc("備考。未設定の場合はnull")
+    notes: string | null;
+
+    @doc("売上明細の一覧。1件以上100件以下")
+    @minItems(1)
+    @maxItems(100)
+    details: SalesDetail[];
+  }
+
+  @doc("""
+    売上部分更新リクエスト - 指定した項目だけを更新する。DB で NULL 許可のカラムは null でクリアできる。
+    サロンは変更できない。details を指定した場合は明細全体を置き換え、小計・値引額・消費税額・合計金額を再計算する
+    """)
+  model SaleUpdateRequest {
+    @doc("会計した顧客の ID。nullでクリア")
+    customerId?: CustomerId | null;
+
+    @doc("会計を担当したスタッフの ID。売上と同じサロンのスタッフを指定する。nullでクリア")
+    staffId?: StaffId | null;
+
+    @doc("売上のもとになった予約の ID。売上と同じサロンの予約を指定する。nullでクリア")
+    bookingId?: BookingId | null;
+
+    @doc("会計日時。変更すると saleDate も再計算する")
+    saleTime?: utcDateTime;
+
+    @doc("この会計で利用したポイント数。nullでクリア")
+    @minValue(0)
+    pointsUsed?: int32 | null;
+
+    @doc("この会計で付与したポイント数。nullでクリア")
+    @minValue(0)
+    pointsEarned?: int32 | null;
+
+    @doc("備考。nullでクリア")
+    notes?: string | null;
+
+    @doc("売上明細の一覧。指定した場合は全件を置き換える。1件以上100件以下")
+    @minItems(1)
+    @maxItems(100)
+    details?: SalesDetail[];
+  }
+
+  @doc("""
+    売上一覧・検索リクエスト - 絞り込み条件とページネーションを指定する。条件はすべて AND で結合する
+    """)
+  model SaleSearchRequest {
+    @query
+    @doc("1ページあたりの取得件数上限 (1〜100)")
+    @minValue(1)
+    @maxValue(100)
+    limit?: int32 = 20;
+
+    @query
+    @doc("取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する")
+    cursor?: string;
+
+    @query
+    @doc("サロン ID による絞り込み(完全一致)")
+    salonId?: SalonId;
+
+    @query
+    @doc("顧客 ID による絞り込み(完全一致)")
+    customerId?: CustomerId;
+
+    @query
+    @doc("予約 ID による絞り込み(完全一致)")
+    bookingId?: BookingId;
+
+    @query
+    @doc("支払い状態による絞り込み(完全一致)")
+    paymentStatus?: PaymentStatusType;
+
+    @query
+    @doc("売上日(saleDate)の下限。この日付以降の売上に一致する")
+    startDate?: plainDate;
+
+    @query
+    @doc("売上日(saleDate)の上限。この日付以前の売上に一致する")
+    endDate?: plainDate;
+  }
+
+  @doc("売上取消リクエスト - 売上を取り消す理由を指定する")
+  model SaleVoidRequest {
+    @doc("取消理由。理由を記録しない場合はnull")
+    voidReason: string | null;
+  }
+
+  @doc("""
+    売上の支払いリクエスト - 売上に対する1回の支払い(決済取引)の内容を指定する。全項目のキーが必須。
+    取引番号・決済代行会社の応答・処理日時・状態はシステムが設定する
+    """)
+  model SaleProcessRequest {
+    @doc("支払い方法の ID。売上と同じサロンの有効な支払い方法を指定する")
+    paymentMethodId: PaymentMethodId;
+
+    @doc("支払金額。売上の未払い残額以下")
+    @minValue(1)
+    amount: int32;
+
+    @doc("カード番号の下4桁(数字4桁)。カード以外の支払いの場合はnull")
+    @minLength(4)
+    @maxLength(4)
+    cardLastFour: string | null;
+
+    @doc("カードブランド(Visa など)。カード以外の支払いの場合はnull")
+    @maxLength(50)
+    cardBrand: string | null;
+  }
+
+  @doc("売上のレシート - 売上とその明細・決済取引から作成するレシートの内容")
+  model SaleReceiptResponse {
+    @doc("レシート番号")
+    receiptNumber: string;
+
+    @doc("レシートの対象となる売上。明細(details)と決済取引(payments)を含む")
+    sale: SaleResponse;
+
+    @doc("レシートの発行日時")
+    issuedAt: utcDateTime;
+  }
+
+  @doc("""
+    会計金額の試算リクエスト - 選択したサービスと割引・ポイントから、売上を登録する前に請求額を試算する。
+    全項目のキーが必須
+    """)
+  model SaleCalculateRequest {
+    @doc("試算の対象となるサービス ID の一覧")
+    services: ServiceId[];
+
+    @doc("適用する割引コード。割引コードを使わない場合はnull")
+    discountCode: string | null;
+
+    @doc("利用するポイント数。ポイントを使わない場合はnull")
+    @minValue(0)
+    pointsToUse: int32 | null;
+
+    @doc("会計する顧客の ID。顧客を指定しない場合はnull")
+    customerId: CustomerId | null;
+
+    @doc("関連する予約の ID。予約がない場合はnull")
+    bookingId: BookingId | null;
+  }
+
+  @doc("試算した請求金額の内訳")
+  model SaleBreakdownResponse {
+    @doc("サービス代金の税抜小計")
+    subtotal: int32;
+
+    @doc("適用される消費税額")
+    tax: int32;
+
+    @doc("割引金額")
+    discount: int32;
+
+    @doc("ポイント利用による値引額。ポイントを使わない場合はnull")
+    pointsDiscount: int32 | null;
+
+    @doc("支払総額")
+    total: int32;
+  }
+
+  @doc("会計金額の試算結果 - 売上を登録する前の請求金額の見積もり")
+  model SaleCalculateResponse {
+    @doc("試算の対象となるサロン ID")
+    salonId: SalonId;
+
+    @doc("試算の対象となる顧客の ID。顧客を指定しなかった場合はnull")
+    customerId: CustomerId | null;
+
+    @doc("関連する予約の ID。予約を指定しなかった場合はnull")
+    bookingId: BookingId | null;
+
+    @doc("請求金額の内訳")
+    breakdown: SaleBreakdownResponse;
 
     @doc("推奨する支払い方法の一覧")
     recommendedMethods: PaymentMethodType[];
 
-    @doc("顧客・スタッフ向けの備考")
+    @doc("顧客・スタッフ向けの備考。備考がない場合はnull")
     notes: string | null;
   }
 
+  // ---------------------------------------------------------------------------
+  // 決済取引 (payment_transactions)
+  // ---------------------------------------------------------------------------
+
+  @doc("""
+    決済取引レスポンス - payment_transactions テーブルの1行。売上に対する1回の支払いを表す。
+    決済代行会社の応答(processorResponse)と構造の定まっていない metadata は返さない。
+    プロパティ名と null 許可は DB カラムと一致させている
+    """)
+  model PaymentResponse {
+    @doc("決済取引 ID")
+    id: PaymentId;
+
+    @doc("支払いの対象となる売上 ID")
+    saleId: SaleId;
+
+    @doc("使用した支払い方法の ID")
+    paymentMethodId: PaymentMethodId;
+
+    @doc("取引番号。システムが採番し、すべての決済取引の間で一意")
+    transactionNumber: string;
+
+    @doc("支払金額")
+    amount: int32;
+
+    @doc("決済の状態")
+    status: PaymentStatusType;
+
+    @doc("決済代行会社の取引 ID。現金など決済代行会社を介さない支払いの場合、または決済代行会社が受け付けなかった場合はnull")
+    processorTransactionId: string | null;
+
+    @doc("カード番号の下4桁。カード以外の支払いの場合はnull")
+    cardLastFour: string | null;
+
+    @doc("カードブランド。カード以外の支払いの場合はnull")
+    cardBrand: string | null;
+
+    @doc("決済が失敗したときのエラーコード。失敗していない場合はnull")
+    errorCode: string | null;
+
+    @doc("決済が失敗したときのエラーメッセージ。失敗していない場合はnull")
+    errorMessage: string | null;
+
+    @doc("決済が完了した日時。完了していない場合はnull")
+    processedAt: utcDateTime | null;
+
+    @doc("決済が失敗した日時。失敗していない場合はnull")
+    failedAt: utcDateTime | null;
+
+    @doc("返金した日時。返金していない場合はnull")
+    refundedAt: utcDateTime | null;
+
+    @doc("返金額。返金していない場合はnull")
+    refundAmount: int32 | null;
+
+    @doc("返金理由。返金していない場合、または理由を記録していない場合はnull")
+    refundReason: string | null;
+
+    @doc("レコード作成日時")
+    createdAt: utcDateTime;
+
+    @doc("レコード最終更新日時")
+    updatedAt: utcDateTime;
+  }
+
+  @doc("決済取引の返金リクエスト - 返金額と理由を指定する。全項目のキーが必須")
+  model PaymentRefundRequest {
+    @doc("返金額。決済取引の amount 以下。amount と等しい場合は全額返金、少ない場合は部分返金になる")
+    @minValue(1)
+    refundAmount: int32;
+
+    @doc("返金理由。理由を記録しない場合はnull")
+    refundReason: string | null;
+  }
+
+  // ---------------------------------------------------------------------------
+  // ポイント (customer_points)
+  // ---------------------------------------------------------------------------
+
+  @doc("""
+    ポイント取引レスポンス - customer_points テーブルの1行。顧客ポイントの1回の増減と、その後の残高を表す。
+    プロパティ名と null 許可は DB カラムと一致させている
+    """)
+  model PointTransactionResponse {
+    @doc("ポイント取引 ID")
+    id: PointTransactionId;
+
+    @doc("対象顧客の ID")
+    customerId: CustomerId;
+
+    @doc("取引の種別")
+    transactionType: PointTransactionType;
+
+    @doc("ポイントの変動量。獲得は正、利用・失効は負の値")
+    points: int32;
+
+    @doc("この取引の後のポイント残高")
+    balance: int32;
+
+    @doc("取引内容の説明。未設定の場合はnull")
+    description: string | null;
+
+    @doc("取引のもとになった記録の種類(sale、booking など)。参照する記録がない場合はnull")
+    referenceType: string | null;
+
+    @doc("取引のもとになった記録の ID。参照する記録がない場合はnull")
+    @format("uuid")
+    referenceId: string | null;
+
+    @doc("獲得したポイントの有効期限。有効期限のない取引の場合はnull")
+    expiryDate: plainDate | null;
+
+    @doc("取引の発生日時")
+    createdAt: utcDateTime;
+  }
+
+  @doc("""
+    ポイント取引の一覧・検索リクエスト - 絞り込み条件とページネーションを指定する。条件はすべて AND で結合する
+    """)
+  model PointTransactionSearchRequest {
+    @query
+    @doc("1ページあたりの取得件数上限 (1〜100)")
+    @minValue(1)
+    @maxValue(100)
+    limit?: int32 = 20;
+
+    @query
+    @doc("取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する")
+    cursor?: string;
+
+    @query
+    @doc("取引の発生日時(createdAt)の下限。この日時以降の取引に一致する")
+    startDate?: utcDateTime;
+
+    @query
+    @doc("取引の発生日時(createdAt)の上限。この日時以前の取引に一致する")
+    endDate?: utcDateTime;
+  }
+
+  @doc("""
+    ポイント残高レスポンス - 顧客の最新のポイント取引(customer_points)の balance を返す。
+    ポイント取引のない顧客の残高は 0
+    """)
+  model PointBalanceResponse {
+    @doc("対象顧客の ID")
+    customerId: CustomerId;
+
+    @doc("現在のポイント残高")
+    balance: int32;
+  }
+
+  @doc("""
+    ポイント付与リクエスト - 種別 earned のポイント取引を登録する。全項目のキーが必須。
+    DB で NULL 許可のカラムのみ null を指定できる。残高はシステムが計算する
+    """)
+  model PointEarnRequest {
+    @doc("ポイントを付与する顧客の ID")
+    customerId: CustomerId;
+
+    @doc("付与するポイント数")
+    @minValue(1)
+    points: int32;
+
+    @doc("付与の理由。未設定の場合はnull")
+    description: string | null;
+
+    @doc("付与のもとになった記録の種類(sale、booking など)。referenceId と同時に指定する。参照する記録がない場合はnull")
+    @maxLength(50)
+    referenceType: string | null;
+
+    @doc("付与のもとになった記録の ID。referenceType と同時に指定する。参照する記録がない場合はnull")
+    @format("uuid")
+    referenceId: string | null;
+
+    @doc("付与したポイントの有効期限。有効期限を設けない場合はnull")
+    expiryDate: plainDate | null;
+  }
+
+  @doc("""
+    ポイント利用リクエスト - 種別 used のポイント取引を登録する。全項目のキーが必須。
+    DB で NULL 許可のカラムのみ null を指定できる。残高はシステムが計算する
+    """)
+  model PointUseRequest {
+    @doc("ポイントを利用する顧客の ID")
+    customerId: CustomerId;
+
+    @doc("利用するポイント数。現在の残高以下")
+    @minValue(1)
+    points: int32;
+
+    @doc("利用の理由。未設定の場合はnull")
+    description: string | null;
+
+    @doc("利用のもとになった記録の種類(sale など)。referenceId と同時に指定する。参照する記録がない場合はnull")
+    @maxLength(50)
+    referenceType: string | null;
+
+    @doc("利用のもとになった記録の ID。referenceType と同時に指定する。参照する記録がない場合はnull")
+    @format("uuid")
+    referenceId: string | null;
+  }
+
+  @doc("""
+    ポイント調整リクエスト - 種別 adjusted のポイント取引を登録する。全項目のキーが必須。
+    DB で NULL 許可のカラムのみ null を指定できる。残高はシステムが計算する
+    """)
+  model PointAdjustRequest {
+    @doc("ポイントを調整する顧客の ID")
+    customerId: CustomerId;
+
+    @doc("調整するポイント数。増やす場合は正、減らす場合は負の値で、0 は指定できない。調整後の残高が負になる値は指定できない")
+    points: int32;
+
+    @doc("調整の理由。未設定の場合はnull")
+    description: string | null;
+
+    @doc("調整のもとになった記録の種類(sale、booking など)。referenceId と同時に指定する。参照する記録がない場合はnull")
+    @maxLength(50)
+    referenceType: string | null;
+
+    @doc("調整のもとになった記録の ID。referenceType と同時に指定する。参照する記録がない場合はnull")
+    @format("uuid")
+    referenceId: string | null;
+  }
+
+  @doc("失効予定ポイントの集計結果 - 有効期限が近い獲得ポイントの合計と、その取引の一覧")
+  model PointExpiringResponse {
+    @doc("対象顧客の ID")
+    customerId: CustomerId;
+
+    @doc("期間内に失効する予定のポイント数の合計")
+    expiringPoints: int32;
+
+    @doc("期間内で最も早い有効期限。失効予定のポイントがない場合はnull")
+    expirationDate: plainDate | null;
+
+    @doc("期間内に有効期限を迎える獲得ポイントの取引の一覧。expiryDate の昇順で並ぶ")
+    transactions: PointTransactionResponse[];
+  }
+
+  @doc("ポイント失効処理リクエスト - 有効期限を過ぎたポイントを失効させる対象を指定する。全項目のキーが必須")
+  model PointExpireRequest {
+    @doc("対象顧客の ID。すべての顧客を処理する場合はnull")
+    customerId: CustomerId | null;
+
+    @doc("この日付より前に有効期限を迎えたポイントを失効させる。null の場合は処理を実行した日")
+    processBefore: plainDate | null;
+  }
+
+  @doc("ポイント失効処理の結果")
+  model PointExpireResponse {
+    @doc("登録した失効(expired)のポイント取引の件数")
+    processedCount: int32;
+
+    @doc("失効させたポイントの合計")
+    totalPoints: int32;
+  }
+
+  // ---------------------------------------------------------------------------
+  // 売上レポート (sales を集計して作成する。対応するテーブルはない)
+  // 金額はサロンの通貨(salons.currency)の整数値
+  // ---------------------------------------------------------------------------
+
+  @doc("売上レポートの集計条件")
+  model SalesReportGetRequest {
+    @query
+    @doc("集計対象のサロン ID")
+    salonId: SalonId;
+
+    ...DateRangeFilter;
+
+    @query
+    @doc("集計粒度(day: 日／week: 週／month: 月)")
+    groupBy?: "day" | "week" | "month";
+
+    @query
+    @doc("返金取引を集計に含めるかどうか")
+    includeRefunds?: boolean = true;
+  }
+
   @doc("期間内の売上実績を集計したレポート")
-  model SalesReport {
+  model SalesReportResponse {
     @doc("対象サロン ID")
     salonId: SalonId;
 
@@ -323,68 +704,68 @@ namespace BeautySalon.Models {
     periodEnd: utcDateTime;
 
     @doc("総売上額")
-    totalSales: Money;
+    totalSales: int64;
 
     @doc("累計税額")
-    totalTax: Money;
+    totalTax: int64;
 
     @doc("累計割引額")
-    totalDiscounts: Money;
+    totalDiscounts: int64;
 
     @doc("累計返金額")
-    totalRefunds: Money;
+    totalRefunds: int64;
 
     @doc("返金考慮後の純売上額")
-    netSales: Money;
+    netSales: int64;
 
     @doc("取引件数")
     transactionCount: int32;
 
     @doc("平均取引単価")
-    averageTransactionValue: Money;
+    averageTransactionValue: int64;
 
     @doc("支払い方法別の売上内訳")
-    salesByMethod: SalesByMethod[];
+    salesByMethod: SalesByMethodResponse[];
 
     @doc("サービスカテゴリ別の売上内訳")
-    salesByCategory: SalesByCategory[];
+    salesByCategory: SalesByCategoryResponse[];
 
     @doc("売上貢献度の高いスタッフ情報")
-    topStaff: StaffPerformance[];
+    topStaff: SalesByStaffResponse[];
   }
 
   @doc("支払い方法別の売上集計行")
-  model SalesByMethod {
+  model SalesByMethodResponse {
     @doc("支払い方法区分")
     method: PaymentMethodType;
 
     @doc("売上金額")
-    amount: Money;
+    amount: int64;
 
     @doc("取引件数")
     count: int32;
 
-    @doc("総売上に対する構成比率（%）")
+    @doc("総売上に対する構成比率(%)")
     percentage: float32;
   }
 
   @doc("サービスカテゴリ別の売上集計行")
-  model SalesByCategory {
+  model SalesByCategoryResponse {
     @doc("サービスカテゴリ区分")
     category: ServiceCategoryType;
 
     @doc("売上金額")
-    amount: Money;
+    amount: int64;
 
     @doc("提供件数")
     count: int32;
 
-    @doc("総売上に対する構成比率（%）")
+    @doc("総売上に対する構成比率(%)")
     percentage: float32;
   }
 
   @doc("スタッフ別の売上パフォーマンス指標")
-  model StaffPerformance {
+  model SalesByStaffResponse {
     @doc("スタッフ ID")
     staffId: StaffId;
 
@@ -392,175 +773,82 @@ namespace BeautySalon.Models {
     staffName: string;
 
     @doc("担当した売上金額")
-    totalSales: Money;
+    totalSales: int64;
 
     @doc("提供したサービス件数")
     serviceCount: int32;
 
     @doc("平均サービス単価")
-    averageServiceValue: Money;
+    averageServiceValue: int64;
 
-    @doc("顧客満足度評価（任意）")
+    @doc("顧客満足度評価。評価データがない場合はnull")
     customerSatisfaction: float32 | null;
   }
 
-  @doc("顧客ポイントの付与・利用履歴")
-  model PointTransaction {
-    @doc("ポイント取引 ID")
-    id: PointTransactionId;
+  @doc("日次の売上サマリー")
+  model DailySalesResponse {
+    @doc("集計対象日")
+    date: plainDate;
 
-    @doc("対象顧客 ID")
-    customerId: CustomerId;
+    @doc("売上額")
+    sales: int64;
 
-    @doc("取引種別（獲得・利用など）")
-    type: "earn" | "use" | "expire" | "adjust";
+    @doc("取引件数")
+    transactions: int32;
 
-    @doc("ポイント変動量（獲得は正、利用は負）")
-    points: int32;
+    @doc("返金額")
+    refunds: int64;
 
-    @doc("取引後のポイント残高")
-    balanceAfter: int32;
-
-    @doc("関連する決済 ID")
-    paymentId: PaymentId | null;
-
-    @doc("関連する予約 ID")
-    bookingId: BookingId | null;
-
-    @doc("取引内容の説明")
-    description: string;
-
-    @doc("獲得ポイントの有効期限")
-    expiresAt: utcDateTime | null;
-
-    @doc("取引発生日時")
-    transactedAt: utcDateTime;
-
-    ...AuditInfo;
+    @doc("返金考慮後の純売上額")
+    net: int64;
   }
 
-  @doc("決済登録時に利用する入力モデル")
-  model PaymentCreateRequest {
-    @doc("決済を登録するサロン ID")
-    salonId: SalonId;
+  @doc("売上推移 - 期間を区切った単位ごとの売上の時系列。各配列の同じ位置が同じ区切りを表す")
+  model SalesTrendsResponse {
+    @doc("各区切りのラベル")
+    labels: string[];
 
-    @doc("支払う顧客 ID")
-    customerId: CustomerId;
+    @doc("各区切りの売上額")
+    sales: int64[];
 
-    @doc("紐づく予約 ID")
-    bookingId?: BookingId;
+    @doc("各区切りの取引件数")
+    transactions: int32[];
 
-    @doc("紐づく施術記録 ID")
-    treatmentRecordId?: TreatmentRecordId;
-
-    @doc("利用する支払い方法")
-    method: PaymentMethodType;
-
-    @doc("請求金額の内訳")
-    amounts: PaymentAmounts;
-
-    @doc("使用するポイント数")
-    pointsUsed?: int32;
-
-    @doc("適用する預り金額")
-    depositApplied?: Money;
-
-    @doc("外部決済参照番号")
-    externalReference?: string;
-
-    @doc("備考メモ")
-    notes?: string;
-
-    @doc("外部システム連携向けメタデータ")
-    metadata?: Record<unknown>;
+    @doc("各区切りの平均取引単価")
+    average: int64[];
   }
 
-  @doc("決済情報の更新入力モデル")
-  model PaymentUpdateRequest {
-    @doc("変更後の支払い方法")
-    method?: PaymentMethodType;
-
-    @doc("変更後の支払い状態")
-    status?: PaymentStatus;
-
-    @doc("再計算した未収残高")
-    outstandingAmount?: Money;
-
-    @doc("更新後の預り金額（null 指定で解除）")
-    depositApplied?: Money | null;
-
-    @doc("更新後の外部参照番号（null 指定で解除）")
-    externalReference?: string | null;
-
-    @doc("更新後のレシート番号（null 指定で解除）")
-    receiptNumber?: string | null;
-
-    @doc("更新後の備考（null 指定で解除）")
-    notes?: string | null;
-
-    @doc("更新後のメタデータ（null 指定で解除）")
-    metadata?: Record<unknown> | null;
+  @doc("""
+    売上レポート出力形式区分 - 売上レポートを出力するファイルの形式
+    
+    csv: CSV - カンマ区切りのテキストファイル
+    excel: Excel - Excel のブック
+    pdf: PDF - 印刷・配布用の PDF ファイル
+    """)
+  enum SalesReportExportFormatType {
+    csv,
+    excel,
+    pdf,
   }
 
-  @doc("返金処理を開始するための入力モデル")
-  model RefundCreateRequest {
-    @doc("対象となる決済 ID")
-    paymentId: PaymentId;
-
-    @doc("返金する金額")
-    amount: Money;
-
-    @doc("返金理由の説明")
-    reason: string;
-
-    @doc("外部返金参照コード")
-    referenceCode?: string;
-
-    @doc("返金を担当するスタッフ ID")
-    processedBy?: StaffId;
-
-    @doc("返金に関する備考")
-    notes?: string;
-  }
-
-  @doc("ポイント取引を登録する入力モデル")
-  model PointTransactionCreateRequest {
-    @doc("対象顧客 ID")
-    customerId: CustomerId;
-
-    @doc("ポイント取引種別")
-    type: "earn" | "use" | "expire" | "adjust";
-
-    @doc("ポイント変動量")
-    points: int32;
-
-    @doc("関連する決済 ID")
-    paymentId?: PaymentId;
-
-    @doc("関連する予約 ID")
-    bookingId?: BookingId;
-
-    @doc("取引内容の説明")
-    description: string;
-
-    @doc("ポイントの有効期限")
-    expiresAt?: utcDateTime;
-  }
-
-  @doc("売上レポートの集計条件")
-  model SalesReportQuery {
+  @doc("売上レポートの出力リクエスト - 出力する期間と形式を指定する")
+  model SalesReportExportRequest {
     @doc("集計対象のサロン ID")
-    @query
     salonId: SalonId;
 
-    ...DateRangeFilter;
+    @doc("集計期間の開始日時")
+    startDate: utcDateTime;
 
-    @doc("集計粒度（日/週/月）")
-    @query
-    groupBy?: "day" | "week" | "month";
+    @doc("集計期間の終了日時")
+    endDate: utcDateTime;
 
-    @doc("返金取引を集計に含めるかどうか")
-    @query
-    includeRefunds?: boolean = true;
+    @doc("出力形式")
+    format: SalesReportExportFormatType;
+  }
+
+  @doc("売上レポートの出力結果")
+  model SalesReportExportResponse {
+    @doc("出力したファイルのダウンロード URL")
+    downloadUrl: string;
   }
 }

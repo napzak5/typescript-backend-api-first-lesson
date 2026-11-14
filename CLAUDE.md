@@ -463,10 +463,11 @@ schema, the API and the code use one spelling.
 - [ ] No property name transformations in mappers
 - [ ] New API properties trigger DB migration
 
-`pnpm check:api-db` checks the first two for every model listed in
-`backend/packages/database/src/scripts/api-consistency-rules.ts`. A domain is
-done when its models are listed there with `omittedColumns` and have no entry in
-`api-consistency-baseline.json`.
+`pnpm check:api-db` checks the first two, and the values of enum columns, for
+every model listed in
+`backend/packages/database/src/scripts/api-consistency-rules.ts`. Every model
+that is backed by a table is listed there with `omittedColumns`, and any
+difference fails the check: there is no list of tolerated differences.
 
 ### Clean Code Policy
 - Remove unused code immediately
