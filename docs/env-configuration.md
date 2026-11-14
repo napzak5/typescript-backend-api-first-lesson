@@ -112,7 +112,7 @@ export const loadEnvFile = (): LoadedEnvFile => {
 | `.env.localhost` | ローカル開発の既定 |
 | `.env.development`、`.env.test` | `NODE_ENV` が対応する値のときに読まれる。手元で起動するための設定 |
 | `.env.staging`、`.env.production` | `NODE_ENV` が対応する値のときに読まれる。接続先や秘密の値はプレースホルダー |
-| `.env.test.ci` | CI 用。CI はテストの前にこれを `.env.test` へコピーし、Docker イメージの起動確認ではコンテナに渡す |
+| `.env.test.ci` | CI の Docker イメージの起動確認（`docker-validation.yml`）で、コンテナに渡す設定 |
 | `.env`（Git で追跡されない） | 置けば `.env.<NODE_ENV>` の代わりに読まれる |
 
 注意点:
