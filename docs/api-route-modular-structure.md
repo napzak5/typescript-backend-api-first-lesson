@@ -1,6 +1,6 @@
 # API Route Modular Structure Guide
 
-This guide describes how the HTTP layer, `backend/packages/api`, is organised: one handler file per endpoint, one router per domain, and the helpers and middleware they share. Salon is the pattern for the next domain; the authentication routes (`routes/auth/`, `routes/admin-auth/`) follow it too.
+This guide describes how the HTTP layer, `backend/packages/api`, is organised: one handler file per endpoint, one router per domain, and the helpers and middleware they share. Salon is the pattern for the next domain; the authentication routes (`routes/auth/`, `routes/admin-auth/`) follow it too, and so do the routes of the service categories (`routes/service-category/`), which are mounted below a salon.
 
 The layers below the API (models, validation, mappers, repository, use cases) are described in the [Domain Implementation Reference](./domain-implementation-reference.md).
 
@@ -67,12 +67,24 @@ backend/packages/api/src/
 │   │   ├── update-salon.handler.ts # PATCH  /api/v1/salons/:id
 │   │   ├── delete-salon.handler.ts # DELETE /api/v1/salons/:id
 │   │   └── index.ts                # createSalonRouter
+│   ├── service-category/
+│   │   ├── _shared/
+│   │   │   ├── types.ts            # SalonParams, ServiceCategoryParams, and the response body types
+│   │   │   ├── links.ts            # serviceCategoryLinks
+│   │   │   ├── query.ts            # decodeServiceCategorySearchQuery
+│   │   │   └── index.ts            # re-exports the three files above
+│   │   ├── list-service-categories.handler.ts    # GET    /api/v1/salons/:salonId/service-categories
+│   │   ├── create-service-category.handler.ts    # POST   /api/v1/salons/:salonId/service-categories
+│   │   ├── get-service-category.handler.ts       # GET    /api/v1/salons/:salonId/service-categories/:id
+│   │   ├── update-service-category.handler.ts    # PATCH  /api/v1/salons/:salonId/service-categories/:id
+│   │   ├── delete-service-category.handler.ts    # DELETE /api/v1/salons/:salonId/service-categories/:id
+│   │   └── index.ts                              # createServiceCategoryRouter
 │   └── system/
 │       └── index.ts                # GET /api/system/alive, /api/system/ready, /api/system/health
 └── __tests__/                      # integration tests and their helpers (see Tests)
 ```
 
-There is one handler per operation of the `SalonCrud` interface in `specs/operations/salon-operations.tsp`, and no other salon route. Filtering is part of the list operation; there is no separate search endpoint. Each operation in `specs/operations/auth-operations.tsp` has a handler in the same way: those of the interfaces `AuthCrud` and `SessionCrud` in `routes/auth/`, and those of `AdminAuthCrud`, which the contract puts under a path of its own (`/api/v1/admin/auth`), in `routes/admin-auth/`.
+There is one handler per operation of the `SalonCrud` interface in `specs/operations/salon-operations.tsp`, and no other salon route. Filtering is part of the list operation; there is no separate search endpoint. Each operation in `specs/operations/auth-operations.tsp` has a handler in the same way: those of the interfaces `AuthCrud` and `SessionCrud` in `routes/auth/`, and those of `AdminAuthCrud`, which the contract puts under a path of its own (`/api/v1/admin/auth`), in `routes/admin-auth/`. The five operations of `ServiceCategoryCrud` in `specs/operations/service-operations.tsp` have theirs in `routes/service-category/`; `ServiceCrud` in the same file has no handler, because the services are not implemented.
 
 ## Key Principles
 
@@ -155,6 +167,8 @@ The authentication handlers in `routes/auth/` have the same shape. `login.handle
 
 The three handlers in `routes/admin-auth/` are wrapped as well. Each passes the `actor` and `req.params.userId` and answers 200 with the user as `{ data, meta, links }`; that the actor must be an administrator is decided by the use case.
 
+The five handlers in `routes/service-category/` are those of the table above for a resource below a salon: the same two are public, the same three are wrapped, and the answers are the same. Each passes `req.params.salonId` as well, before the ID of the category: the update handler, for example, passes `actor`, `req.params.salonId`, `req.params.id` and `req.body`. Where that parameter comes from is described under [Router](#router).
+
 ### Query parameters
 
 A query string carries text only, so the list handler gives the parameters their types before the use case sees them (`routes/salon/list-salons.handler.ts`):
@@ -185,7 +199,7 @@ export const decodeSalonSearchQuery = (
 - Decoding changes the representation and nothing else: `limit=10` becomes the number 10, `isActive=false` the boolean, `features=color` the list `['color']`. Which values are allowed is decided by the use case.
 - The object is loose on purpose. A parameter the API does not define (`page=2`) is passed on, and the strict schema of the use case rejects it by name, so the list of parameters exists in one place.
 - The result is still `unknown`. A parameter that cannot be decoded (`limit=ten`) is a `validation` error and is answered like every other one.
-- `numberParameter`, `booleanParameter` and `listParameter` are the converters of `shared/query-parameters.ts`, which every list uses. The session list decodes its `limit` with the same `numberParameter` (`decodeSessionSearchQuery` in `routes/auth/_shared/query.ts`).
+- `numberParameter`, `booleanParameter` and `listParameter` are the converters of `shared/query-parameters.ts`, which every list uses. The session list decodes its `limit` with the same `numberParameter` (`decodeSessionSearchQuery` in `routes/auth/_shared/query.ts`), and the list of service categories its `limit` and `isActive` (`decodeServiceCategorySearchQuery` in `routes/service-category/_shared/query.ts`).
 
 ### Response types
 
@@ -209,14 +223,14 @@ export type UpdateSalonResponse = JsonBody<
 >
 ```
 
-`JsonBody` (`shared/operation-types.ts`) picks the `application/json` body out of the `content` of a generated response; `routes/auth/_shared/types.ts` and `routes/admin-auth/_shared/types.ts` use it in the same way. Only response bodies are needed: request bodies are `unknown`, and the delete operation answers without a body. Nothing is declared by hand, so after `pnpm generate` a handler that no longer matches the contract stops compiling.
+`JsonBody` (`shared/operation-types.ts`) picks the `application/json` body out of the `content` of a generated response; `routes/auth/_shared/types.ts`, `routes/admin-auth/_shared/types.ts` and `routes/service-category/_shared/types.ts` use it in the same way. Only response bodies are needed: request bodies are `unknown`, and the delete operation answers without a body. Nothing is declared by hand, so after `pnpm generate` a handler that no longer matches the contract stops compiling.
 
 ### Links
 
 The `links` of a response are built from the mount path:
 
-- `salonLinks(collectionPath, id)` in `routes/salon/_shared/links.ts` returns `{ self, list }` for one salon. `userLinks(basePath, id)` in `routes/admin-auth/_shared/links.ts` returns `{ self }` for a user as an administrator reaches it.
-- `pageLinks(collectionPath, requestUrl, meta)` in `shared/page-links.ts` returns the links of a page: the request's own query string with `cursor` replaced. Pages are only walked forwards, so `prev` and `last` are always `null`. The salon list and the session list both use it.
+- `salonLinks(collectionPath, id)` in `routes/salon/_shared/links.ts` returns `{ self, list }` for one salon. `serviceCategoryLinks(collectionPath, id)` in `routes/service-category/_shared/links.ts` returns the same for one category; its `collectionPath` names the salon, because the mount path does. `userLinks(basePath, id)` in `routes/admin-auth/_shared/links.ts` returns `{ self }` for a user as an administrator reaches it.
+- `pageLinks(collectionPath, requestUrl, meta)` in `shared/page-links.ts` returns the links of a page: the request's own query string with `cursor` replaced. Pages are only walked forwards, so `prev` and `last` are always `null`. The salon list, the list of service categories and the session list use it.
 
 ### Router
 
@@ -242,6 +256,14 @@ export const createSalonRouter = (
 Paths are relative to where the router is mounted, and the router is a function of its dependencies, like the handlers. The router is also where one sees which routes are protected: the handlers that receive `authenticated`.
 
 `routes/auth/index.ts` exports `createAuthRouter(dependencies, authenticated)` in the same way. It additionally sets `Cache-Control: no-store` on every response of its routes, because they carry tokens or the data of one user. `routes/admin-auth/index.ts` exports `createAdminAuthRouter(dependencies, authenticated)`, which sets the same header for the same reason: its responses carry the data of one user.
+
+`routes/service-category/index.ts` exports `createServiceCategoryRouter(dependencies, authenticated)` with the same five routes as the salon router. It is mounted below a salon (`/salons/:salonId/service-categories`), so `:salonId` is a parameter of the mount path, and a router does not see the parameters of its mount path unless it is created to:
+
+```typescript
+  const router = Router({ mergeParams: true })
+```
+
+The handlers declare the parameter in their path parameters (`SalonParams`, and `ServiceCategoryParams` for the routes with an `:id`, both in `routes/service-category/_shared/types.ts`) and pass `req.params.salonId` to the use case unchecked, like every other path parameter. `req.baseUrl` is the mount path with the ID of the salon in it, so the links name the salon without the handler writing a path.
 
 ### Mounting in `createApp`
 
@@ -285,10 +307,18 @@ Paths are relative to where the router is mounted, and the router is a function 
     `${API_BASE_PATH}/admin/auth`,
     createAdminAuthRouter(authDependencies, authenticated),
   )
+  const salonRepository = new SalonRepository(database)
   app.use(
     `${API_BASE_PATH}/salons`,
-    createSalonRouter(
-      { salonRepository: new SalonRepository(database) },
+    createSalonRouter({ salonRepository }, authenticated),
+  )
+  app.use(
+    `${API_BASE_PATH}/salons/:salonId/service-categories`,
+    createServiceCategoryRouter(
+      {
+        serviceCategoryRepository: new ServiceCategoryRepository(database),
+        salonRepository,
+      },
       authenticated,
     ),
   )
@@ -297,7 +327,7 @@ Paths are relative to where the router is mounted, and the router is a function 
   app.use(errorHandler)
 ```
 
-The order matters. Every request gets its ID and logger first. The probes are answered before the rate limit, so monitoring is never throttled. The body is parsed before the domain routers. The two handlers at the end turn whatever is left over into problem details. The router of a new domain is mounted next to the salon router, and receives the same `authenticated` if any of its operations is not public.
+The order matters. Every request gets its ID and logger first. The probes are answered before the rate limit, so monitoring is never throttled. The body is parsed before the domain routers. The two handlers at the end turn whatever is left over into problem details. The router of a new domain is mounted next to the salon router, and receives the same `authenticated` if any of its operations is not public. The router of what belongs to a salon is mounted below the salon, with the parameter in the mount path, as the router of the service categories is. It is given the salon repository of the salon router next to its own, because its use cases ask whether the salon exists.
 
 ## Shared Helpers
 
@@ -357,10 +387,13 @@ The rows down to `database` are the seven `DomainError` kinds a use case returns
 | File (under `backend/packages/api/src/`) | What it covers |
 |------------------------------------------|----------------|
 | `routes/salon/_shared/__tests__/links.test.ts`, `query.test.ts` | the links of a salon and query decoding |
+| `routes/service-category/_shared/__tests__/links.test.ts`, `query.test.ts` | the links of a service category and query decoding |
 | `shared/__tests__/` | the error mapping, the links of a page, the converters of query parameters, the signed-in user of a request |
 | `middleware/__tests__/middleware.test.ts` | the middleware |
 | `__tests__/salon.integration.test.ts` | every salon endpoint against PostgreSQL, including who may call it |
-| `__tests__/auth.integration.test.ts` | the authentication endpoints, what the server does with an access token, and the seeded accounts |
+| `__tests__/service-category.integration.test.ts` | every service category endpoint: the salon of the path, who may call it, the rules on the parent, requests that arrive at the same time |
+| `__tests__/auth.integration.test.ts` | signing in, the tokens, what the server does with an access token, and the seeded accounts |
+| `__tests__/auth-registration.integration.test.ts`, `auth-sessions.integration.test.ts`, `auth-two-factor.integration.test.ts`, `admin-auth.integration.test.ts` | the other authentication endpoints: registration, email verification and passwords; the sessions of the signed-in user; two-factor authentication; what an administrator does to accounts |
 | `__tests__/app.integration.test.ts` | request IDs, unreadable requests, a failing database, CORS, rate limit, probes, response headers |
 | `__tests__/_shared/` | `setup.ts` (database, one schema per test), `test-helpers.ts` (`createTestApp`, which calls the production `createApp` with a mailer that records the mails instead of sending them and with the real `TotpAuthenticator`), `auth-helpers.ts` (inserting users and signing in), `test-schema-manager.ts` |
 
@@ -381,5 +414,6 @@ For the routes of a new domain, with `<domain>` as its name. The operations must
 - [ ] The handler of every operation that is not `@useAuth(NoAuth)` in the contract takes `authenticated`, is wrapped with it and passes the `actor` to the use case
 - [ ] `routes/<domain>/index.ts`: `create<Domain>Router(dependencies, authenticated)` with paths relative to the mount point (without `authenticated` only if every operation is public)
 - [ ] Mount the router in `createApp` under `API_BASE_PATH`, constructing the repository there and passing the `authenticated` that already exists
+- [ ] For a resource that belongs to a salon (`routes/service-category/` is the example): mount the router at `${API_BASE_PATH}/salons/:salonId/<resources>` and pass it the salon repository that exists; create it with `Router({ mergeParams: true })`; declare `salonId` in the path parameters of every handler and pass `req.params.salonId` to the use case
 - [ ] `__tests__/<domain>.integration.test.ts`: every endpoint, with at least five error scenarios each; for an operation that is not public, a request without a token (401) and one from a user who is not allowed (403) are among them
 - [ ] `make ci-check` passes (it includes `pnpm typecheck`, `pnpm knip`, `pnpm test` and `pnpm test:integration`)

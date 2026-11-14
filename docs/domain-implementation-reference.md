@@ -1,6 +1,6 @@
 # Domain Implementation Reference Guide
 
-The Salon domain is the reference for every other domain of the backend. This document walks through it in the order in which a new domain is built, from the API contract to the tests, and explains the decisions the code makes on the way. Authentication, the only other code in these layers, is described in [Authentication and Authorization](./authentication.md) (Japanese); what a domain needs from it is in step 9 (the permission check) and step 10 (the `authenticated` wrapper).
+The Salon domain is the reference for every other domain of the backend. This document walks through it in the order in which a new domain is built, from the API contract to the tests, and explains the decisions the code makes on the way. Authentication is described in [Authentication and Authorization](./authentication.md) (Japanese); what a domain needs from it is in step 9 (the permission check) and step 10 (the `authenticated` wrapper). The service categories of a salon are built in the same steps; what they do differently because their data belongs to a salon is collected in [Data That Belongs to a Salon](#data-that-belongs-to-a-salon).
 
 The excerpts are copied from the file named above each of them and shortened where marked `// ...`; the file is the authority. The rules behind the code (no `any`, no type assertions, no exceptions, API property names equal column names) are stated in [CLAUDE.md](../CLAUDE.md) and are not repeated here.
 
@@ -19,6 +19,7 @@ The excerpts are copied from the file named above each of them and shortened whe
 - [10. Handlers and Router](#10-handlers-and-router)
 - [11. Wiring](#11-wiring)
 - [12. Tests](#12-tests)
+- [Data That Belongs to a Salon](#data-that-belongs-to-a-salon)
 - [Error Handling](#error-handling)
 - [Implementation Checklist](#implementation-checklist)
 
@@ -57,7 +58,7 @@ What the Salon domain consists of:
 
 Steps 1 to 3 belong together. The database is the source of truth for names and nullability, so the contract is written against the table, and `pnpm check:api-db` compares the two.
 
-Shared by every domain and already in place: `Result` (`backend/packages/utility/src/result/result.ts`), `DomainError` and `parseWith` (`backend/packages/domain/src/shared/`), `Actor` (`backend/packages/domain/src/models/auth.ts`), the column conversions of the read mappers (`backend/packages/domain/src/mappers/read/columns.ts`), `describeDatabaseError` and `attempt` (`backend/packages/infrastructure/src/database/`), and the response helpers, the `authenticated` wrapper, the links of a page (`pageLinks`) and the converters of query parameters of the API package (`backend/packages/api/src/shared/`).
+Shared by every domain and already in place: `Result` (`backend/packages/utility/src/result/result.ts`), `DomainError` and `parseWith` (`backend/packages/domain/src/shared/`), `Actor` (`backend/packages/domain/src/models/auth.ts`), the rules that request schemas share (`backend/packages/domain/src/schemas/rules.ts`), the column conversions of the read mappers (`backend/packages/domain/src/mappers/read/columns.ts`), `describeDatabaseError` and `attempt` (`backend/packages/infrastructure/src/database/`), and the response helpers, the `authenticated` wrapper, the links of a page (`pageLinks`) and the converters of query parameters of the API package (`backend/packages/api/src/shared/`).
 
 ## 1. API Contract
 
@@ -281,27 +282,39 @@ export const salonCreateRequestSchema = z.strictObject({
 
 export const salonUpdateRequestSchema = salonCreateRequestSchema
   .exactPartial()
-  .check((context) => {
-    // An unknown property is reported as such, not as an empty request.
-    if (
-      context.issues.length === 0 &&
-      Object.keys(context.value).length === 0
-    ) {
-      context.issues.push({
-        code: 'custom',
-        path: [],
-        message: 'At least one property must be specified',
-        input: context.value,
-      })
-    }
-  }) satisfies z.ZodType<ApiSalonUpdateRequest>
+  .check(atLeastOneProperty) satisfies z.ZodType<ApiSalonUpdateRequest>
+```
+
+`nonBlankText` and `atLeastOneProperty` are not Salon's own. The rules that the request schemas of more than one domain share are in `backend/packages/domain/src/schemas/rules.ts`:
+
+```typescript
+/** A nullable text is either null or says something: '' is not "unset". */
+export const nonBlankText = z.string().regex(/\S/, 'Must not be blank')
+
+/**
+ * For the schema of an update, in which every property may be absent: a
+ * request that names none changes nothing and is refused. An unknown
+ * property is reported as such, not as an empty request.
+ */
+export const atLeastOneProperty = (
+  context: z.core.ParsePayload<object>,
+): void => {
+  if (context.issues.length === 0 && Object.keys(context.value).length === 0) {
+    context.issues.push({
+      code: 'custom',
+      path: [],
+      message: 'At least one property must be specified',
+      input: context.value,
+    })
+  }
+}
 ```
 
 - **`satisfies z.ZodType<...>`** ties the schema to the generated type: what the schema produces must be assignable to the API type. A property that the TypeSpec model adds or retypes is a compile error until the schema follows.
 - **`z.strictObject`** rejects a property the model does not have. A client that sends `rating` gets a validation error naming `rating`; the property is not silently dropped.
 - **Three sources of rules.** The shape comes from the API type, the length limits from the columns (`varchar(255)` → `.max(255)`), and the rest are business rules: text must not be blank, a calendar entry must fall on the day of the week it names, closing must be later than opening.
 - **Cross-field rules use `.check()`** and push an issue with the `path` of the offending property, so the client learns which field to fix.
-- **The update schema is derived** from the create schema with `exactPartial()`: every key may be absent, and a key that is present is checked by the same rule as on create. Its one rule of its own rejects an empty request.
+- **The update schema is derived** from the create schema with `exactPartial()`: every key may be absent, and a key that is present is checked by the same rule as on create. Its one rule of its own, `atLeastOneProperty`, rejects an empty request.
 - **`salonSearchRequestSchema`** validates the list parameters, including `cursor: salonIdSchema.exactOptional()`.
 - **`storedBusinessHoursSchema`** is the shape of the `businessHours` JSON column without the business rules. The request schema extends it with the rules; the read mapper uses it as it is, because stored data is checked for shape only.
 
@@ -414,6 +427,9 @@ export interface ISalonRepository {
     id: SalonId,
   ): Promise<Result<SalonWithOpeningHours | null, DomainError>>
 
+  /** Whether there is such a salon, for what belongs to a salon. */
+  exists(id: SalonId): Promise<Result<boolean, DomainError>>
+
   /** Newest first. */
   list(criteria: SalonListCriteria): Promise<Result<SalonList, DomainError>>
 
@@ -432,6 +448,7 @@ export interface ISalonRepository {
 - **A missing salon is not an error here.** `findById` and `update` resolve to `null` and `delete` to `false`; the use case turns that into `notFound`. The error side of the `Result` is for what went wrong.
 - **Two guarantees**, stated in the comment above the interface: deleted salons are invisible to every method, and each write is atomic, so a salon and its calendar change together or not at all.
 - **`SalonListCriteria` has no optional property.** A filter that is not applied is `null` (or an empty list for `features`), so the use case states every criterion.
+- **`exists` is for the domains whose data belongs to a salon.** Their use cases need to know that the salon is there, not what it holds (see [Data That Belongs to a Salon](#data-that-belongs-to-a-salon)).
 
 ## 8. Repository Implementation
 
@@ -673,7 +690,7 @@ export const mayDeleteSalon = (actor: Actor, salonId: SalonId): boolean =>
     .exhaustive()
 ```
 
-A rule reads `actor.scope`, which the authentication derived from the user's role and the staff member or customer the user is linked to. It needs no repository, so it is tested as a plain function. A domain whose data belongs to a salon compares the salon of the actor with the salon of the data in the same way; what to answer for data of another salon is in [Authentication and Authorization](./authentication.md).
+A rule reads `actor.scope`, which the authentication derived from the user's role and the staff member or customer the user is linked to. It needs no repository, so it is tested as a plain function. A domain whose data belongs to a salon compares the salon of the actor with the salon in the path of the request in the same way (`mayManageServiceCategories` in `business-logic/service-category/_shared/authorization.ts`); what to answer for data of another salon is in [Authentication and Authorization](./authentication.md).
 
 `ListSalonsUseCase` applies the default `limit` of 20, turns absent filters into `null` for the repository and builds `meta`: `nextCursor` is the ID of the last salon of the page when `hasMore` is true, otherwise `null`.
 
@@ -702,16 +719,14 @@ The layout of the API package, the handler pattern, the shared helpers and the m
   const authenticated = createAuthenticated(authDependencies)
 
   // ...
+  const salonRepository = new SalonRepository(database)
   app.use(
     `${API_BASE_PATH}/salons`,
-    createSalonRouter(
-      { salonRepository: new SalonRepository(database) },
-      authenticated,
-    ),
+    createSalonRouter({ salonRepository }, authenticated),
   )
 ```
 
-A new domain adds one such statement next to it, before `notFoundHandler`. Nothing changes in `backend/apps/server`: it reads the configuration, connects the database, creates the mailer and the authenticator of two-factor authentication and calls `createApp({ database, logger, mailer, twoFactorAuthenticator, settings })`.
+A new domain adds one such statement next to it, before `notFoundHandler`. The salon repository has a name because the router of the service categories, mounted in the statement that follows at `${API_BASE_PATH}/salons/:salonId/service-categories`, is given the same instance. Nothing changes in `backend/apps/server`: it reads the configuration, connects the database, creates the mailer and the authenticator of two-factor authentication and calls `createApp({ database, logger, mailer, twoFactorAuthenticator, settings })`.
 
 ## 12. Tests
 
@@ -720,29 +735,34 @@ A new domain adds one such statement next to it, before `notFoundHandler`. Nothi
 | `backend/packages/domain/src/__tests__/salon.schema.test.ts` | unit | the request schemas: what they accept and the rules they reject |
 | `backend/packages/domain/src/__tests__/salon.mapper.test.ts` | unit | both mappers, including stored rows that do not fit |
 | `backend/packages/domain/src/__tests__/salon.usecase.test.ts` | unit | each use case against a stubbed repository, and who may change a salon |
-| `backend/packages/domain/src/__tests__/fixtures.ts` | helper | a valid request, rows as the driver returns them, `brokenRules` |
+| `backend/packages/domain/src/__tests__/fixtures.ts` | helper | a valid request, rows as the driver returns them, `salonRepositoryWith` (the stub of the repository), `brokenRules` |
 | `backend/packages/domain/src/__tests__/auth-fixtures.ts` | helper | `actors`: an admin, a member of a salon by role, a customer, a user without a scope |
 | `backend/packages/api/src/routes/salon/_shared/__tests__/` | unit | link building and query decoding |
 | `backend/packages/api/src/__tests__/salon.integration.test.ts` | integration | every endpoint through HTTP against PostgreSQL, signed in as the user the scenario needs |
 
 The repository has no unit test of its own; its queries, transactions and constraint handling are exercised by the integration tests against a real PostgreSQL.
 
-Use case tests replace the repository with a stub that holds one salon, and a test overrides the method it is about (`salon.usecase.test.ts`):
+Use case tests replace the repository with a stub that holds one salon, and a test overrides the method it is about. The stub is in `backend/packages/domain/src/__tests__/fixtures.ts`, and `salon.usecase.test.ts` imports it as `repositoryWith`:
 
 ```typescript
-/** A repository that holds one salon; a test overrides what it needs. */
-const repositoryWith = (
+/** A salon repository that holds one salon; a test overrides what it needs. */
+export const salonRepositoryWith = (
   overrides: Partial<ISalonRepository> = {},
-): ISalonRepository => ({
-  create: vi.fn(async () => Result.success(stored)),
-  findById: vi.fn(async () => Result.success(stored)),
-  list: vi.fn(async () =>
-    Result.success({ salons: [stored], total: 1, hasMore: false }),
-  ),
-  update: vi.fn(async () => Result.success(stored)),
-  delete: vi.fn(async () => Result.success(true)),
-  ...overrides,
-})
+): ISalonRepository => {
+  const stored = { salon: dbSalon(), openingHours: [dbOpeningHours()] }
+
+  return {
+    create: vi.fn(async () => Result.success(stored)),
+    findById: vi.fn(async () => Result.success(stored)),
+    exists: vi.fn(async () => Result.success(true)),
+    list: vi.fn(async () =>
+      Result.success({ salons: [stored], total: 1, hasMore: false }),
+    ),
+    update: vi.fn(async () => Result.success(stored)),
+    delete: vi.fn(async () => Result.success(true)),
+    ...overrides,
+  }
+}
 ```
 
 For a use case that takes an actor, the actor is one of `actors` from `auth-fixtures.ts`. The tests of what the use case does pass `actors.admin`; the tests of who may do it go through the kinds of actor in a table and assert that a refused one never reaches the repository:
@@ -798,6 +818,25 @@ pnpm test:integration   # integration tests; needs Docker (TEST_DATABASE_URL rep
 
 The conventions are in [Testing Requirements](./testing-requirements.md) and the [API Testing Guide](./api-testing-guide.md).
 
+## Data That Belongs to a Salon
+
+Salon is a resource of its own. A domain whose data belongs to a salon is built in the same twelve steps and differs in the places below. The service categories of a salon are the example to read; their rules are in [Service Menu](./service-menu.md) (Japanese).
+
+| Step | What differs | Where to read it |
+|------|--------------|------------------|
+| 1. API contract | The routes are below the salon, `/api/v1/salons/{salonId}/service-categories`, so the path names the salon. The create and update requests have no `salonId`; the response has. Every operation declares 404, which is also the answer for a salon that does not exist | `specs/operations/service-operations.tsp`, `specs/models/service.tsp` |
+| 3. `pnpm check:api-db` | `salonId` is one of the `omittedColumns` of the create and the update rule | `serviceCategoryManagedColumns` in `backend/packages/database/src/scripts/api-consistency-rules.ts` |
+| 4. Models | The salon of the path has its own parser, `parseSalonIdOfPath`, which reports a failure under the field `salonId`. The ID of the resource is parsed as in Salon (`parseCategoryId`, field `id`) | `backend/packages/domain/src/models/salon.ts`, `models/service-category.ts` |
+| 6. Mappers | There is no write mapper. The properties of the request are the columns and none needs converting, so the repository stores the validated request. A write mapper is written only when a column needs converting, as the `numeric` columns and the calendar of Salon do | `backend/packages/domain/src/mappers/read/service-category.mapper.ts` |
+| 7. Repository interface | Every method takes the salon ID and sees only the rows of that salon. Whether the salon exists is not the repository's question. What a write can come to without having failed is a sum type (`ServiceCategoryCreation`, `ServiceCategoryUpdate`), which the use case matches exhaustively | `backend/packages/domain/src/repositories/service-category.repository.ts` |
+| 8. Repository implementation | Every query carries the salon ID, so a row of another salon is not found. The failures go through the shared `attempt` (`backend/packages/infrastructure/src/database/attempt.ts`), because no constraint violation is an expected outcome | `backend/packages/infrastructure/src/repositories/service-category.repository.impl.ts` |
+| 9. Use cases | The dependencies hold the salon repository next to the domain's own. A use case parses the salon of the path, decides the permission from that salon alone, validates the rest of the input, and then calls `requireSalon`, which returns `notFound` when the salon does not exist or is deleted. Only then does it reach its own repository | `backend/packages/domain/src/business-logic/service-category/`, `business-logic/_shared/existing-salon.ts` |
+| 10. Handlers and router | The router is created with `Router({ mergeParams: true })`, because `salonId` is a parameter of the mount path. The handlers declare it in their path parameters and pass `req.params.salonId` on unchecked | `backend/packages/api/src/routes/service-category/` |
+| 11. Wiring | The router is mounted at `${API_BASE_PATH}/salons/:salonId/service-categories` and is given the salon repository of the salon router | `backend/packages/api/src/index.ts` |
+| 12. Tests | A use case test stubs two repositories: `serviceCategoryDependencies` builds the dependencies from a stub of the domain's repository and from `salonRepositoryWith`, in which the salon exists | `backend/packages/domain/src/__tests__/service-category-fixtures.ts` |
+
+Two answers follow from this for every route below a salon: the permission is decided from the salon in the path, and a resource that is not of that salon is answered with 404, like one that does not exist. Both are stated in [Authentication and Authorization](./authentication.md).
+
 ## Error Handling
 
 A use case fails in one of seven ways (`backend/packages/domain/src/shared/errors.ts`):
@@ -817,10 +856,10 @@ Errors are built with `DomainErrors.validation`, `.unauthenticated`, `.forbidden
 
 | Kind | Where it is created | What the client gets |
 |------|---------------------|----------------------|
-| `validation` | `parseWith`, called by a use case (and by the query decoding of a list handler). The authentication use cases also build it themselves for what a schema cannot check: a password that is too easy to guess, a wrong current password, a mailed token that cannot be used, a code of two-factor authentication that is not accepted, a cursor of the session list that names no session of the user | 400 with the broken rules in `errors` |
+| `validation` | `parseWith`, called by a use case (and by the query decoding of a list handler). The authentication use cases also build it themselves for what a schema cannot check: a password that is too easy to guess, a wrong current password, a mailed token that cannot be used, a code of two-factor authentication that is not accepted, a cursor of the session list that names no session of the user. The service category use cases do so for a parent that is not a category of the same salon or that is the category itself or one below it, and for a cursor that names no category of the salon | 400 with the broken rules in `errors` |
 | `unauthenticated` | the authentication use cases only: `AuthenticateUseCase` behind `authenticated`, login and refresh, and the current-user, change-password and two-factor use cases when the user of the session no longer exists | 401 with a `WWW-Authenticate` header |
 | `forbidden` | a use case, when its permission rule refuses the actor | 403 |
-| `notFound` | a use case, when the repository resolved to `null` or `false` | 404 |
+| `notFound` | a use case, when the repository resolved to `null` or `false` or reported that there is no such row; `requireSalon`, when the salon in the path does not exist | 404 |
 | `alreadyExists` | the repository, from the unique violation | 409 |
 | `conflict` | a use case, when the request is fine and what it acts on is not in a state that allows it; so far only authentication use cases: those of two-factor authentication (enabling what is already enabled, for example) and of the administrator operations (unlocking an account that is not locked, for example) | 409 |
 | `database` | the repository, from a failed query; the read mapper, from a stored row that does not fit | 500 without details; the cause is logged |
@@ -843,23 +882,26 @@ Contract and database:
 Domain package (`backend/packages/domain/src/`):
 
 - [ ] `models/<domain>.ts`: branded ID with its parser, API types, database types
-- [ ] `schemas/<domain>.schema.ts`: one strict schema per request, each with `satisfies z.ZodType<...>`
-- [ ] `mappers/write/<domain>.mapper.ts` and `mappers/read/<domain>.mapper.ts`: no renaming; the read mapper returns a `Result`
+- [ ] `schemas/<domain>.schema.ts`: one strict schema per request, each with `satisfies z.ZodType<...>`; `nonBlankText` and `atLeastOneProperty` come from `schemas/rules.ts`
+- [ ] `mappers/read/<domain>.mapper.ts`, and `mappers/write/<domain>.mapper.ts` only when a column needs converting on the way in: no renaming; the read mapper returns a `Result`
 - [ ] `repositories/<domain>.repository.ts`: the interface
 - [ ] `business-logic/<domain>/`: `_shared/dependencies.ts`, one `<action>-<domain>.usecase.ts` per operation with `execute` taking `unknown`, and `index.ts`
 - [ ] `business-logic/<domain>/_shared/authorization.ts`: one pure function per permission rule; the use case of every operation that is not public takes `actor: Actor` first and returns `DomainErrors.forbidden()` when the rule refuses
 - [ ] The use cases, models and repository interface are exported from `index.ts`
 - [ ] `__tests__/`: schema, mapper and use case tests, the last including every kind of actor for each permission rule
+- [ ] When the data belongs to a salon: the use case parses the salon of the path with `parseSalonIdOfPath`, decides the permission from that salon, and calls `requireSalon` before it reaches its repository; the dependencies hold `salonRepository`; every method of the repository interface takes the salon ID
 
 Infrastructure package (`backend/packages/infrastructure/src/`):
 
 - [ ] `repositories/<domain>.repository.impl.ts`: queries inside a function like `attempt`, writes in transactions, expected constraint violations mapped to domain errors, deleted rows filtered out
 - [ ] The class is exported from `index.ts`
+- [ ] When the data belongs to a salon: every query carries the salon ID
 
 API package:
 
 - [ ] Routes, mounting and integration tests as listed in the [API Route Modular Structure Guide](./api-route-modular-structure.md), with at least five error scenarios per endpoint
 - [ ] The handler of every operation that is not public is wrapped with `authenticated`
+- [ ] When the data belongs to a salon: the router is mounted below `/salons/:salonId` and created with `Router({ mergeParams: true })`
 
 Before the pull request:
 

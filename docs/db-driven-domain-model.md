@@ -14,7 +14,7 @@ PostgreSQL ── pnpm db:introspect ──▶ schema.ts     api-types.ts
                                   DbSalon、DbNewSalon ◀── マッパー ──▶ ApiSalonResponse、ApiSalonCreateRequest
 ```
 
-以下の例はすべて、参照実装である Salon のコードである。認証も同じ方法で型を導出している（`backend/packages/domain/src/models/auth.ts` の `DbUser`、`DbSession`、`DbNewSession`）。ほかのドメインは DB スキーマと TypeSpec にあるだけで、モデルもマッパーもない（TypeSpec は DB と一致させてある）。
+以下の例はすべて、参照実装である Salon のコードである。認証も同じ方法で型を導出している（`backend/packages/domain/src/models/auth.ts` の `DbUser`、`DbSession`、`DbNewSession`）。サロンのサービスカテゴリーも同じである（`backend/packages/domain/src/models/service-category.ts` の `DbServiceCategory`、`DbNewServiceCategory`）。それ以外のドメインは DB スキーマと TypeSpec にあるだけで、モデルもマッパーもない（TypeSpec は DB と一致させてある）。
 
 - 型と制約の層ごとの対応、`pnpm check:api-db`: [API-DB型制約マッピング](./api-db-type-constraints-mapping.md)
 - TypeSpec の書き方: [TypeSpec API型定義ルール](./typespec-api-type-rules.md)
@@ -161,7 +161,7 @@ export type DbSalonChanges = Partial<DbNewSalon>
 ```
 
 - `DeepRequired`（`backend/packages/utility/src/type/typeTools.ts`）は、すべてのキーを必須にする。null を許すかどうかは変えない。`$inferInsert` では NULL 許可のカラムと `DEFAULT` のあるカラムが省略可能なキーになるが、`DeepRequired` によって、新しい行はすべてのカラムの値を明示することになる
-- `SalonManagedColumn` は、リクエストから書かないカラムである。DB が値を決めるもの（`id`、タイムスタンプ）、ほかの機能が管理するもの（`rating`、`reviewCount`）、API がまだ公開していないもの（`cancellationPolicy`、`bookingPolicy`）が入る
+- `SalonManagedColumn` は、リクエストから書かないカラムである。DB が値を決めるもの（`id`、タイムスタンプ）、ほかの機能が管理するもの（`rating`、`reviewCount`）、API がまだ公開していないもの（`cancellationPolicy`、`bookingPolicy`）が入る。サロンに属するデータでは、行が属するサロンのカラムもリクエストから書かない。サロンはパスで決まるからである（`backend/packages/domain/src/models/service-category.ts` の `ServiceCategoryManagedColumn` に `salonId` がある）
 - `Omit` は `@beauty-salon-backend/utility` のもので、型に存在するキーしか受け付けない。カラムが改名されると、ここで型検査が失敗する
 - `DbSalonChanges` は部分更新（PATCH）で変更するカラムを表す
 - ID は検証済みの UUID だけが持てるブランド型にする（`SalonId`）
@@ -182,6 +182,7 @@ DB の型と API の型は、2 つのマッパーでつなぐ。
 - 入力の検証はマッパーの仕事ではない。ユースケースが Zod スキーマで検証したあとの値を、Write マッパーが受け取る
 - Read マッパーは `Result` を返す。保存されている値が API のモデルに合わなければ `database` エラーになる
 - null を空文字や既定値に読み替えない
+- Write マッパーを書くのは、リクエストで書けるカラムに表現を変えるものがあるときだけである。サービスカテゴリーにはないので、ユースケースは検証済みのリクエストをそのままリポジトリに渡す。Read マッパー（`backend/packages/domain/src/mappers/read/service-category.mapper.ts`）はあり、タイムスタンプを変換する
 
 データの流れ:
 

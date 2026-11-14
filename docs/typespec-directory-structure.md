@@ -55,10 +55,11 @@ TypeSpec に定義があっても、バックエンドに実装があるとは�
 | `operations/system-operations.tsp` の `SystemOperations`（`alive`、`ready`、`health`） | `backend/packages/api/src/routes/system/index.ts`。定義と実装は一致している |
 | `models/auth.tsp`、`operations/auth-operations.tsp` の `AuthCrud` の 16 オペレーション（`register`、`login`、`refreshToken`、`logout`、`logoutAll`、`getCurrentUser`、`sendEmailVerification`、`confirmEmailVerification`、`forgotPassword`、`verifyResetToken`、`resetPassword`、`changePassword`、`enableTwoFactor`、`verifyTwoFactor`、`disableTwoFactor`、`generateBackupCodes`）と `SessionCrud` の 2 オペレーション（`getSessions`、`revokeSession`） | `backend/packages/api/src/routes/auth/`。定義と実装は一致している |
 | `operations/auth-operations.tsp` の `AdminAuthCrud` の 3 オペレーション（`getUser`、`unlockAccount`、`resetTwoFactor`） | `backend/packages/api/src/routes/admin-auth/`。定義と実装は一致している（[認証と認可](./authentication.md#管理者の操作)） |
-| 上記以外のドメイン（customer、staff、service、booking、review、treatment、payment、inventory） | なし。TypeSpec は DB のテーブルと一致している（`pnpm check:api-db`）が、ドメイン・リポジトリ・ルートのコードはない |
+| `models/service.tsp` のカテゴリーのモデル、`operations/service-operations.tsp` の `ServiceCategoryCrud` の 5 オペレーション（`list`、`create`、`get`、`update`、`delete`） | `backend/packages/api/src/routes/service-category/`。定義と実装は一致している（[サービスメニュー](./service-menu.md)） |
+| `operations/service-operations.tsp` の `ServiceCrud`（サービスそのもの）と、上記以外のドメイン（customer、staff、booking、review、treatment、payment、inventory） | なし。TypeSpec は DB のテーブルと一致している（`pnpm check:api-db`）が、ドメイン・リポジトリ・ルートのコードはない |
 | attachment、permission と、inventory の発注・アラート、treatment のカルテ | なし。対応するテーブルもまだない（[API-DB型制約マッピング](./api-db-type-constraints-mapping.md#ルールに載せるモデル載せないモデル)） |
 
-`main.tsp` は `@useAuth(BearerAuth)` を宣言しており、認証なしで呼べるオペレーション（システムのオペレーション、サロンの一覧と 1 件の取得、登録・ログインなどの認証フロー、共有リンク）には `@useAuth(NoAuth)` が付いている。実装済みのオペレーションでは、`@useAuth(NoAuth)` のないものをサーバーがアクセストークンで認証し、権限をユースケースで判定する（[認証と認可](./authentication.md)）。
+`main.tsp` は `@useAuth(BearerAuth)` を宣言しており、認証なしで呼べるオペレーション（システムのオペレーション、サロンの一覧と 1 件の取得、サービスカテゴリーの一覧と 1 件の取得、登録・ログインなどの認証フロー、共有リンク）には `@useAuth(NoAuth)` が付いている。実装済みのオペレーションでは、`@useAuth(NoAuth)` のないものをサーバーがアクセストークンで認証し、権限をユースケースで判定する（[認証と認可](./authentication.md)）。
 
 ## 各ファイルの内容
 

@@ -7,7 +7,7 @@ shortened; the file named above each one is the authority.
 
 | Pattern | Where it lives |
 |---------|----------------|
-| [Request validation](#request-validation) | `backend/packages/domain/src/schemas/salon.schema.ts`, `backend/packages/domain/src/shared/validation.ts` |
+| [Request validation](#request-validation) | `backend/packages/domain/src/schemas/salon.schema.ts`, `backend/packages/domain/src/schemas/rules.ts`, `backend/packages/domain/src/shared/validation.ts` |
 | [ID validation](#id-validation) | `backend/packages/domain/src/models/salon.ts` |
 | [Query parameters](#query-parameters) | `backend/packages/api/src/shared/query-parameters.ts`, `backend/packages/api/src/routes/salon/_shared/query.ts` |
 | [Pagination](#pagination) | `list-salons.usecase.ts`, `salon.repository.impl.ts`, `backend/packages/api/src/shared/page-links.ts` |
@@ -40,7 +40,11 @@ and the type rules in [type-safety-principles.md](./type-safety-principles.md).
   properties use `.check()`, or `.refine()` with a `path`, and report the
   issue on the property at fault.
 - The update schema is derived from the create schema with `.exactPartial()`
-  and additionally requires at least one property.
+  and additionally requires at least one property (`atLeastOneProperty`).
+- The rules that the schemas of more than one domain share are in
+  `backend/packages/domain/src/schemas/rules.ts`: `nonBlankText`, for a text
+  that must say something, and `atLeastOneProperty`. A domain imports them
+  and does not write them again.
 
 ```typescript
 // backend/packages/domain/src/schemas/salon.schema.ts
@@ -117,6 +121,33 @@ export const parseSalonId = (id: unknown): Result<SalonId, DomainError> =>
 - IDs are assigned by the database (`uuid().defaultRandom()` in
   `backend/packages/database/src/schema.ts`). A client cannot choose one: the
   create schema has no `id` property.
+
+A route below a salon, such as
+`/api/v1/salons/{salonId}/service-categories/{id}`, has the ID of the salon
+in its path as well. That ID has a parser of its own, so that a failure names
+the field `salonId`:
+
+```typescript
+// backend/packages/domain/src/models/salon.ts
+const salonIdOfPathSchema = z.object({ salonId: salonIdSchema })
+
+export const parseSalonIdOfPath = (
+  salonId: unknown,
+): Result<SalonId, DomainError> =>
+  Result.map(
+    parseWith(salonIdOfPathSchema, { salonId }, 'Invalid salon ID'),
+    (parameters) => parameters.salonId,
+  )
+```
+
+- The ID of the resource itself is parsed by the parser of its domain, for
+  example `parseCategoryId` in
+  `backend/packages/domain/src/models/service-category.ts` (`field: 'id'`).
+- Once the input is valid, the use case calls `requireSalon`
+  (`backend/packages/domain/src/business-logic/_shared/existing-salon.ts`): a
+  salon that does not exist, or that has been deleted, is `notFound` (404).
+- The repository is given both IDs. A well-formed ID of a resource that is not
+  of the salon in the path is `notFound` (404), like one that does not exist.
 
 ## Query parameters
 
@@ -199,9 +230,9 @@ return Result.map(SalonReadMapper.toApiSalons(salons), (data) => ({
 }))
 ```
 
-The repository orders by `(createdAt, id)` descending, starts after the row
-the cursor names, and reads one row more than the limit to learn whether
-another page follows:
+The salon repository orders by `(createdAt, id)` descending, starts after
+the row the cursor names, and reads one row more than the limit to learn
+whether another page follows:
 
 ```typescript
 // backend/packages/infrastructure/src/repositories/salon.repository.impl.ts
@@ -223,9 +254,17 @@ this.db
   .limit(limit + 1)
 ```
 
+The order belongs to the list. The salon list is newest first; the service
+categories of a salon are listed in the order a menu shows them, by
+`(displayOrder, id)` ascending
+(`backend/packages/infrastructure/src/repositories/service-category.repository.impl.ts`).
+
 A cursor is validated as an ID, so `cursor=offset:20` is a 400. A well-formed
-cursor that names no salon yields an empty page (the session list answers
-400 instead; see [authentication.md](./authentication.md#一覧と無効化)). The
+cursor that names no salon yields an empty page. The session list and the
+list of service categories answer 400 instead (`field: 'cursor'`, rule
+`not_found`), because their cursor has to name an item that is still there;
+see [authentication.md](./authentication.md#一覧と無効化) and
+[service-menu.md](./service-menu.md) (both Japanese). The
 page links are built by
 `pageLinks` in `backend/packages/api/src/shared/page-links.ts`, for every
 list, from the request URL with the cursor replaced.
@@ -305,10 +344,10 @@ answers 503 with the body its operation defines.
 
 | Error | Raised by | Status | `code` |
 |-------|-----------|--------|--------|
-| `validation` | `parseWith` in a use case; an authentication use case, also for what a schema cannot check (a password that is too easy to guess, a wrong current password, a mailed token that cannot be used, a code of two-factor authentication that is not accepted, a cursor of the session list that names no session of the user) | 400 | `2001` |
+| `validation` | `parseWith` in a use case; an authentication use case, also for what a schema cannot check (a password that is too easy to guess, a wrong current password, a mailed token that cannot be used, a code of two-factor authentication that is not accepted, a cursor of the session list that names no session of the user); a service category use case, for a parent that is not a category of the same salon or that is the category itself or one below it, and for a cursor that names no category of the salon | 400 | `2001` |
 | `unauthenticated` | `AuthenticateUseCase` behind `authenticated`; the login and refresh use cases; the current-user, change-password and two-factor use cases, when the user of the session no longer exists | 401 | `1001` to `1004` and `1007`, by `reason` |
 | `forbidden` | A use case, when the actor may not do what is asked | 403 | `1005` |
-| `notFound` | A use case, when the repository finds no row | 404 | `3001` |
+| `notFound` | A use case, when the repository finds no row; on a route below a salon, that includes a salon that does not exist and a resource that is not of the salon in the path | 404 | `3001` |
 | `alreadyExists` | The repository, on the unique index on `email` | 409 | `3002` |
 | `conflict` | A two-factor use case or the use case of an administrator operation, when the request is fine and the state of the account does not allow it (enabling what is already enabled, or unlocking an account that is not locked, for example) | 409 | `3003` |
 | `database` | The repository on an unexpected failure; the read mapper on stored data that does not match the API model | 500 | `4003` |
@@ -529,6 +568,13 @@ if (!mayUpdateSalon(actor, salonId.data)) {
 - A rule about one resource compares the salon of the actor with the salon of
   the resource. When the ID in the path is enough to decide, as for a salon,
   the check comes right after the ID is parsed.
+- On a route below a salon, the salon of the resource is the one in the path,
+  and the permission is decided from it alone
+  (`mayManageServiceCategories` in
+  `backend/packages/domain/src/business-logic/service-category/_shared/authorization.ts`).
+  A resource that is not of that salon is answered with 404. The rule is
+  stated in
+  [authentication.md](./authentication.md#サロンの下にあるルートの権限).
 
 **3. The error is a `DomainError`.** Nothing in this pattern builds a
 response by hand.
@@ -563,6 +609,9 @@ In TypeSpec the operation declares the alias of
 - [ ] The handler of an operation that is not public is wrapped with
       `authenticated`
 - [ ] Path IDs go through a branded ID schema
+- [ ] An endpoint below a salon parses the salon of the path with
+      `parseSalonIdOfPath`, decides the permission from that salon, calls
+      `requireSalon`, and gives the salon ID to every repository method
 - [ ] The handler is a factory over its dependencies, takes its response types
       from `operations`, validates nothing, and ends in
       `match(result)...exhaustive()` with `responseMeta` and `sendProblem`

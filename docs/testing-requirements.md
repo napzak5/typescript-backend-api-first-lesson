@@ -37,14 +37,14 @@ What the repository does not have:
 
 | Subject | Kind | Reference |
 |---------|------|-----------|
-| Request schemas: every rule, with a value that passes and one that breaks it | Unit | `backend/packages/domain/src/__tests__/salon.schema.test.ts`, `auth.schema.test.ts` |
+| Request schemas: every rule, with a value that passes and one that breaks it | Unit | `backend/packages/domain/src/__tests__/salon.schema.test.ts`, `auth.schema.test.ts`, `service-category.schema.test.ts`; the rules that the schemas share in `schema-rules.test.ts`, the salon ID of a path in `path-parameters.test.ts` |
 | Mappers: both directions, `null` kept as `null`, the changes of representation, and the columns that must not reach a response left out | Unit | `backend/packages/domain/src/__tests__/salon.mapper.test.ts`, `user.mapper.test.ts` |
-| Use cases: the success path, every error passed on unchanged, the repository left untouched by invalid input | Unit, with the interfaces the use case depends on stubbed | `backend/packages/domain/src/__tests__/salon.usecase.test.ts`, `auth.usecase.test.ts` |
+| Use cases: the success path, every error passed on unchanged, the repository left untouched by invalid input | Unit, with the interfaces the use case depends on stubbed | `backend/packages/domain/src/__tests__/salon.usecase.test.ts`, `auth.usecase.test.ts`, `service-category.usecase.test.ts` |
 | Permission rules: every kind of actor, allowed or refused, and the repository left untouched by a refused one | Unit, through the use cases | `describe('who may change a salon', …)` in `backend/packages/domain/src/__tests__/salon.usecase.test.ts` |
 | Password hashing, the generation of tokens, and the secrets, one-time passwords and backup codes of two-factor authentication | Unit | `backend/packages/infrastructure/src/security/__tests__/` |
 | Mail delivery (`SmtpMailer`): what reaches the SMTP server, what is logged and what is kept out of the log, a delivery that fails, closing while deliveries are under way | Unit for what needs no server; integration against a Mailpit container | `backend/packages/infrastructure/src/mail/__tests__/` |
-| Pure helpers of the HTTP layer: links, query decoding, problem details, middleware | Unit | `backend/packages/api/src/routes/salon/_shared/__tests__/`, `backend/packages/api/src/shared/__tests__/`, `backend/packages/api/src/middleware/__tests__/middleware.test.ts` |
-| Every endpoint (see [Requirements per Endpoint](#requirements-per-endpoint)) | Integration | `backend/packages/api/src/__tests__/salon.integration.test.ts`, `auth.integration.test.ts` |
+| Pure helpers of the HTTP layer: links, query decoding, problem details, middleware | Unit | `backend/packages/api/src/routes/salon/_shared/__tests__/`, `backend/packages/api/src/routes/service-category/_shared/__tests__/`, `backend/packages/api/src/shared/__tests__/`, `backend/packages/api/src/middleware/__tests__/middleware.test.ts` |
+| Every endpoint (see [Requirements per Endpoint](#requirements-per-endpoint)) | Integration | `backend/packages/api/src/__tests__/salon.integration.test.ts`, `auth.integration.test.ts`, `service-category.integration.test.ts` (routes below a salon) |
 | The seeded accounts: one of each role signs in with `SEED_PASSWORD`, and the owner and the manager can change the first seeded salon but not the second | Integration | `describe('the seeded accounts', …)` in `backend/packages/api/src/__tests__/auth.integration.test.ts` |
 | What the application does for every route: request IDs, requests it cannot read, a failing database, CORS, the rate limit, the probes, security headers | Integration | `backend/packages/api/src/__tests__/app.integration.test.ts` |
 | Server start-up and shutdown | Integration | `backend/apps/server/src/__tests__/server.integration.test.ts` |
@@ -146,7 +146,9 @@ belongs to a suspended, inactive or deleted user is covered in
   SMTP server. Two-factor authentication is not substituted: `createTestApp`
   passes the real `TotpAuthenticator`.
 - **Unit tests of use cases stub only what the use case depends on**: the
-  repository interface (`ISalonRepository`), with `vi.fn`; for the
+  repository interface (`ISalonRepository`), with `vi.fn`
+  (`salonRepositoryWith` in
+  `backend/packages/domain/src/__tests__/fixtures.ts`); for the
   authentication use cases the two repositories, the password hasher, the
   token issuer, the authenticator of two-factor authentication and the
   mailer, with the clock fixed (`authDependencies` in
