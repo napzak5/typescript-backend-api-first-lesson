@@ -250,9 +250,9 @@ make ci-check             # Run the CI checks locally (all but the schema check)
 make db-check             # The schema check: recreates the database it is pointed at
 make ci-check-dockerfile  # Test all Docker builds locally before pushing
 
-# Images (GitHub Actions, .github/workflows/deploy.yml)
-# Push to main     → Builds the staging images and pushes them to GitHub Container Registry
-# Manual trigger   → The same for the chosen environment (staging or production)
+# Images (GitHub Actions, .github/workflows/publish-images.yml)
+# Push to main     → After the CI checks pass, builds the staging images and pushes them to GitHub Container Registry
+# Manual trigger   → The same for the chosen environment (staging or production), without the checks
 # Rolling an image out, and running pnpm db:migrate first, is not automated
 ```
 

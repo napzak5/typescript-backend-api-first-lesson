@@ -4,6 +4,10 @@
 #   docker build -f Dockerfile.frontend --build-arg APP=admin  --build-arg APP_PORT=4001 .
 #   docker build -f Dockerfile.frontend --build-arg APP=portal --build-arg APP_PORT=4002 .
 #   docker build -f Dockerfile.frontend --build-arg APP=dashboard --build-arg APP_PORT=4003 .
+#
+# The bundle contains the VITE_* values of one environment. BUILD_SCRIPT selects
+# it: build:prod (the default, .env.production) or build:stg (.env.staging).
+#   docker build -f Dockerfile.frontend --build-arg APP=admin --build-arg BUILD_SCRIPT=build:stg .
 
 # Keep in sync with .node-version (verified by `pnpm check:versions`).
 ARG NODE_VERSION=26.13.1
@@ -13,6 +17,8 @@ FROM node:${NODE_VERSION}-alpine AS builder
 
 # admin | portal | dashboard
 ARG APP=admin
+# build:prod | build:stg
+ARG BUILD_SCRIPT=build:prod
 
 # Set working directory
 WORKDIR /app
@@ -60,8 +66,8 @@ RUN pnpm generate
 # Prepare frontend (generates types for frontend)
 RUN pnpm prepare:frontend
 
-# Build the selected app for production
-RUN pnpm --filter "@beauty-salon-frontend/${APP}-app" build:prod
+# Build the selected app for the selected environment
+RUN pnpm --filter "@beauty-salon-frontend/${APP}-app" run "${BUILD_SCRIPT}"
 
 # Stage 2: Production runtime
 FROM node:${NODE_VERSION}-alpine AS runtime

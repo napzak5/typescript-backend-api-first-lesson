@@ -35,6 +35,8 @@ jobs:
             file: Dockerfile.frontend
             target: runtime
             port: 4001
+            app: admin
+            mode: production
             build-args: |
               APP=admin
               APP_PORT=4001
@@ -42,6 +44,8 @@ jobs:
             file: Dockerfile.frontend
             target: runtime
             port: 4002
+            app: portal
+            mode: production
             build-args: |
               APP=portal
               APP_PORT=4002
@@ -49,9 +53,22 @@ jobs:
             file: Dockerfile.frontend
             target: runtime
             port: 4003
+            app: dashboard
+            mode: production
             build-args: |
               APP=dashboard
               APP_PORT=4003
+          # What CI publishes for staging: the same Dockerfile with BUILD_SCRIPT.
+          - name: frontend-admin-staging
+            file: Dockerfile.frontend
+            target: runtime
+            port: 4001
+            app: admin
+            mode: staging
+            build-args: |
+              APP=admin
+              APP_PORT=4001
+              BUILD_SCRIPT=build:stg
 
     steps:
       - name: Checkout
@@ -94,7 +111,7 @@ jobs:
           docker network create smoke
           docker run --rm -d --name smoke-db --network smoke \
             -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=beauty_salon postgres:18-alpine
-          for attempt in $(seq 1 30); do
+          for _ in $(seq 1 30); do
             if docker exec smoke-db pg_isready --host 127.0.0.1 --username postgres --quiet; then
               break
             fi
@@ -104,7 +121,7 @@ jobs:
             -e NODE_ENV=production \
             -e DATABASE_URL=postgres://postgres:postgres@smoke-db:5432/beauty_salon \
             test-${{ matrix.image.name }}:${{ github.sha }}
-          for attempt in $(seq 1 30); do
+          for _ in $(seq 1 30); do
             if curl --fail --silent --output /dev/null "http://localhost:3000/api/system/ready"; then
               echo "✅ backend is ready on port 3000"
               docker stop smoke
@@ -119,11 +136,28 @@ jobs:
           docker logs smoke
           exit 1
 
+      # A bundle is built for one environment. The application title is a
+      # VITE_* value that every app renders, so the bundle must contain the
+      # title of its environment as a whole string literal.
+      - name: Verify the environment of the ${{ matrix.image.name }} bundle
+        if: matrix.image.name != 'backend'
+        run: |
+          title=$(grep '^VITE_APP_TITLE=' "frontend/apps/${{ matrix.image.app }}-app/.env.${{ matrix.image.mode }}" | cut -d= -f2-)
+          test -n "$title"
+          for quote in '`' '"' "'"; do
+            if docker run --rm test-${{ matrix.image.name }}:${{ github.sha }} grep -rqF "${quote}${title}${quote}" dist; then
+              echo "✅ the bundle shows ${quote}${title}${quote} (${{ matrix.image.mode }})"
+              exit 0
+            fi
+          done
+          echo "❌ the bundle does not contain the title of ${{ matrix.image.mode }}: ${title}"
+          exit 1
+
       - name: Smoke test ${{ matrix.image.name }} container
         if: matrix.image.name != 'backend'
         run: |
           docker run --rm -d --name smoke -p ${{ matrix.image.port }}:${{ matrix.image.port }} test-${{ matrix.image.name }}:${{ github.sha }}
-          for attempt in $(seq 1 20); do
+          for _ in $(seq 1 20); do
             if curl --fail --silent --output /dev/null "http://localhost:${{ matrix.image.port }}/"; then
               echo "✅ ${{ matrix.image.name }} is serving on port ${{ matrix.image.port }}"
               docker stop smoke

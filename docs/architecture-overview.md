@@ -440,8 +440,8 @@ The workflows in `.github/workflows`:
   lint, format check, build, type check, knip, the unit tests, the integration
   tests (once against an external PostgreSQL and once through
   testcontainers), a build for each environment, and a dependency audit. On a
-  push to `main` it also builds the images and pushes them to GitHub Container
-  Registry. `make ci-check` runs the same checks locally, except
+  push to `main`, once the checks have passed, it calls `publish-images.yml`
+  for staging. `make ci-check` runs the same checks locally, except
   `pnpm check:db-schema`, which recreates the database and therefore has a
   target of its own, `make db-check`. Locally the build is the production
   build only.
@@ -449,9 +449,10 @@ The workflows in `.github/workflows`:
   It builds every image and smoke-tests the containers. The backend container
   must become ready against a real database and exit with status 0 when
   stopped.
-- `deploy.yml` builds the images and pushes them to GitHub Container Registry:
-  for staging on a push to `main`, or for the environment chosen in a manual
-  run.
+- `publish-images.yml` builds the images and pushes them to GitHub Container
+  Registry, tagged for one environment: for staging when `ci.yml` calls it, or
+  for the environment chosen in a manual run. The frontend images are built
+  with the `VITE_*` values of that environment.
 
 Nothing in the repository rolls an image out to a host or runs
 `pnpm db:migrate` during a deployment. `Dockerfile.backend` builds the API

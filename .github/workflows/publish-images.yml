@@ -1,0 +1,136 @@
+name: Publish Images
+
+# Builds the backend image and the three frontend images and pushes them to
+# GitHub Container Registry, tagged for one environment. Nothing is deployed.
+#
+# - CI calls this workflow for staging after its checks have passed on main.
+# - A manual run publishes the images of the selected ref for the chosen
+#   environment.
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: 'Environment the images are built and tagged for: staging or production'
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment the images are built and tagged for'
+        required: true
+        default: staging
+        type: choice
+        options:
+          - staging
+          - production
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  backend:
+    name: Publish Backend (${{ inputs.environment }})
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    # One publication per image and environment at a time. A later run waits for
+    # the one in progress and replaces a run that is still waiting, so the
+    # latest tag ends on the newest commit.
+    concurrency:
+      group: publish-${{ inputs.environment }}-backend
+      cancel-in-progress: false
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ghcr.io/${{ github.repository }}-backend
+          tags: |
+            type=raw,value=${{ inputs.environment }}-latest
+            type=sha,prefix=${{ inputs.environment }}-
+
+      # The backend reads its configuration when it starts, so the image is
+      # the same for every environment; only the tags differ.
+      - name: Build and push Backend Docker image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ./Dockerfile.backend
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=backend-publish
+          cache-to: type=gha,mode=max,scope=backend-publish
+          target: production
+
+  frontend:
+    name: Publish Frontend ${{ matrix.app.name }} (${{ inputs.environment }})
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    strategy:
+      matrix:
+        app:
+          - name: admin
+            port: 4001
+          - name: portal
+            port: 4002
+          - name: dashboard
+            port: 4003
+    concurrency:
+      group: publish-${{ inputs.environment }}-frontend-${{ matrix.app.name }}
+      cancel-in-progress: false
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata for ${{ matrix.app.name }} app
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ghcr.io/${{ github.repository }}-frontend-${{ matrix.app.name }}
+          tags: |
+            type=raw,value=${{ inputs.environment }}-latest
+            type=sha,prefix=${{ inputs.environment }}-
+
+      # A frontend bundle contains the VITE_* values of its environment, so
+      # each environment has its own build.
+      - name: Build and push ${{ matrix.app.name }} Docker image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ./Dockerfile.frontend
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=frontend-${{ matrix.app.name }}-publish-${{ inputs.environment }}
+          cache-to: type=gha,mode=max,scope=frontend-${{ matrix.app.name }}-publish-${{ inputs.environment }}
+          build-args: |
+            APP=${{ matrix.app.name }}
+            APP_PORT=${{ matrix.app.port }}
+            BUILD_SCRIPT=${{ inputs.environment == 'production' && 'build:prod' || 'build:stg' }}
