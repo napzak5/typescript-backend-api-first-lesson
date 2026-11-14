@@ -297,10 +297,10 @@ dropped.
 - **Unit tests** (`pnpm test`): pure logic, no external services (Vitest)
 - **Integration tests** (`pnpm test:integration`): the HTTP API, the
   server's start-up and shutdown, and the migration runner against a real
-  PostgreSQL, with one isolated schema per API test and one database per
-  migration test. They start a PostgreSQL
-  container through testcontainers, or use an existing database when
-  `TEST_DATABASE_URL` is set:
+  PostgreSQL, with a database of its own for every test. They start a
+  PostgreSQL container through testcontainers, or use an existing instance
+  when `TEST_DATABASE_URL` is set (its user needs the right to create
+  databases):
 
   ```bash
   TEST_DATABASE_URL=postgres://<user>:<password>@localhost:5432/<database> pnpm test:integration
