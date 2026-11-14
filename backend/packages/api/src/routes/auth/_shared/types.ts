@@ -10,3 +10,9 @@ export type RefreshTokenResponse = JsonBody<
 export type GetCurrentUserResponse = JsonBody<
   operations['AuthCrud_getCurrentUser']['responses'][200]['content']
 >
+export type EnableTwoFactorResponse = JsonBody<
+  operations['AuthCrud_enableTwoFactor']['responses'][200]['content']
+>
+export type GenerateBackupCodesResponse = JsonBody<
+  operations['AuthCrud_generateBackupCodes']['responses'][200]['content']
+>

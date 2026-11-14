@@ -1,6 +1,7 @@
 import type {
   AuthUseCaseDependencies,
   IMailer,
+  ITwoFactorAuthenticator,
 } from '@beauty-salon-backend/domain'
 import {
   Argon2PasswordHasher,
@@ -37,6 +38,8 @@ export type AppDependencies = {
   logger: Logger
   /** Carries the mails of the authentication flows. */
   mailer: IMailer
+  /** Issues and checks the codes of two-factor authentication. */
+  twoFactorAuthenticator: ITwoFactorAuthenticator
   settings: AppSettings
 }
 
@@ -55,6 +58,7 @@ export const createApp = ({
   database,
   logger,
   mailer,
+  twoFactorAuthenticator,
   settings,
 }: AppDependencies): Express => {
   const app = express()
@@ -83,6 +87,7 @@ export const createApp = ({
     sessionRepository: new SessionRepository(database),
     passwordHasher: new Argon2PasswordHasher(),
     tokenIssuer: new RandomTokenIssuer(),
+    twoFactorAuthenticator,
     mailer,
     publicAppUrl: settings.publicAppUrl,
     clock: () => new Date(),
