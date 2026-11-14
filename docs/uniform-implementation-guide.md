@@ -1,607 +1,443 @@
-# Uniform Implementation Guide - Based on Salon Domain Reference
+# Uniform Implementation Guide
 
-このガイドは、Salonドメインの実装から抽出した統一的な実装パターンを定義します。すべてのドメインで一貫性のある実装を実現するための実践的なガイドです。
+The standard patterns that every backend endpoint follows, each with the file
+that implements it. The Salon domain is the only implemented domain and the
+reference for the others, so every excerpt below is taken from it or from the
+shared code. Excerpts are shortened; the file named above each one is the
+authority.
 
-## 📋 Table of Contents
+| Pattern | Where it lives |
+|---------|----------------|
+| [Request validation](#request-validation) | `backend/packages/domain/src/schemas/salon.schema.ts`, `backend/packages/domain/src/shared/validation.ts` |
+| [ID validation](#id-validation) | `backend/packages/domain/src/models/salon.ts` |
+| [Query parameters](#query-parameters) | `backend/packages/api/src/routes/salon/_shared/query.ts` |
+| [Pagination](#pagination) | `list-salons.usecase.ts`, `salon.repository.impl.ts`, `backend/packages/api/src/routes/salon/_shared/links.ts` |
+| [Response formatting](#response-formatting) | `backend/packages/api/src/shared/responses.ts` |
+| [Error handling](#error-handling) | `backend/packages/api/src/shared/problem-details.ts`, `backend/packages/api/src/middleware/errors.ts` |
+| [Logging](#logging) | `backend/packages/infrastructure/src/logging/logger.ts`, `backend/packages/api/src/middleware/request-logging.ts` |
+| [Date and time](#date-and-time) | `backend/packages/domain/src/mappers/read/salon.mapper.ts`, `salon.schema.ts` |
+| [Authorization](#authorization) | Not implemented |
 
-1. [API Layer Patterns](#api-layer-patterns)
-2. [Use Case Patterns](#use-case-patterns)
-3. [Mapper Patterns](#mapper-patterns)
-4. [Error Handling](#error-handling)
-5. [Pagination Implementation](#pagination-implementation)
-6. [Response Formatting](#response-formatting)
-7. [Validation Patterns](#validation-patterns)
-8. [Database Operations](#database-operations)
-9. [Testing Patterns](#testing-patterns)
-10. [Type Safety Patterns](#type-safety-patterns)
+Related documents: the layer-by-layer walk through the Salon domain is in
+[domain-implementation-reference.md](./domain-implementation-reference.md), the
+layout of the route files in
+[api-route-modular-structure.md](./api-route-modular-structure.md), `Result`
+and ts-pattern in [sum-types-pattern-matching.md](./sum-types-pattern-matching.md),
+and the type rules in [type-safety-principles.md](./type-safety-principles.md).
 
-## API Layer Patterns
+## Request validation
 
-### Route Handler Structure
-
-**Critical Rule**: Routes MUST NOT contain validation logic. They only:
-1. Extract types from generated operations
-2. Get dependencies (DB, repository)
-3. Call use case
-4. Handle Result with pattern matching
+- A handler does not validate. It passes `req.body`, typed `unknown`, to the
+  use case, and the use case parses it before doing anything else.
+- There is one Zod schema per request, in
+  `backend/packages/domain/src/schemas/salon.schema.ts`.
+- Each schema is checked against the generated API type with
+  `satisfies z.ZodType<...>`: a schema whose output cannot be used as that
+  type, for example after a TypeSpec change, does not compile.
+- Schemas are `z.strictObject`: a property the API does not define is rejected,
+  not ignored.
+- Length limits are those of the database columns. Rules that span several
+  properties use `.check()`, or `.refine()` with a `path`, and report the
+  issue on the property at fault.
+- The update schema is derived from the create schema with `.exactPartial()`
+  and additionally requires at least one property.
 
 ```typescript
-// ✅ CORRECT: No validation in route
-const createHandler: RequestHandler<
-  Record<string, never>,
-  CreateResponse | ErrorResponse,
-  CreateRequest
-> = async (req, res, next) => {
-  try {
-    const db = req.app.locals.database as Database
-    const repository = new Repository(db)
+// backend/packages/domain/src/schemas/salon.schema.ts
+export const salonCreateRequestSchema = z.strictObject({
+  name: nonBlankText.max(255),
+  nameKana: nonBlankText.max(255).nullable(),
+  // ...
+  email: z.email().max(255),
+  websiteUrl: z.httpUrl().max(500).nullable(),
+  // ...
+  openingHours: openingHoursListSchema,
+}) satisfies z.ZodType<ApiSalonCreateRequest>
+```
 
-    // Use object-based dependency injection
-    const useCase = new CreateUseCase({ repository })
+The use case parses with `parseWith` from
+`backend/packages/domain/src/shared/validation.ts`, which turns a failed parse
+into a `validation` error that lists every broken rule, not only the first:
 
-    // Direct delegation - NO validation here
-    const result = await useCase.execute(req.body)
-
-    match(result)
-      .with({ type: 'success' }, ({ data }) => {
-        const response = buildSuccessResponse(data)
-        res.status(201).json(response)
-      })
-      .with({ type: 'error' }, ({ error }) => {
-        handleDomainError(res as Response<ErrorResponse>, error)
-      })
-      .exhaustive()
-  } catch (error) {
-    next(error)
+```typescript
+// backend/packages/domain/src/business-logic/salon/create-salon.usecase.ts
+async execute(
+  input: unknown,
+): Promise<Result<ApiSalonResponse, DomainError>> {
+  const request = parseWith(salonCreateRequestSchema, input, 'Invalid salon')
+  if (request.type === 'error') {
+    return request
   }
-}
+  // request.data is an ApiSalonCreateRequest from here on
 ```
 
-### Type Extraction Pattern
+Each issue is `{ field, rule, message }`: `field` is the path of the value in
+dot notation (`openingHours.0.closeTime`), `rule` is the Zod issue code
+(`too_big`, `invalid_format`, `unrecognized_keys`, `custom`, ...). The client
+receives them as `errors` of a 400 response (see [Error handling](#error-handling)).
 
-Always extract types from auto-generated operations:
+## ID validation
+
+An entity ID is a UUID carried in a branded type, so that a string that has
+not been checked cannot be passed where an ID is expected.
 
 ```typescript
-// Operations
-type ListOperation = operations['DomainCrud_list']
-type GetOperation = operations['DomainCrud_get']
-type CreateOperation = operations['DomainCrud_create']
-type UpdateOperation = operations['DomainCrud_update']
-type DeleteOperation = operations['DomainCrud_delete']
+// backend/packages/domain/src/models/salon.ts
+export const salonIdSchema = z.uuid().brand<'SalonId'>()
+export type SalonId = z.infer<typeof salonIdSchema>
 
-// Models
-type Domain = components['schemas']['Models.Domain']
-type CreateRequest = components['schemas']['Models.CreateDomainRequest']
-type UpdateRequest = components['schemas']['Models.UpdateDomainRequest']
+const salonIdParameterSchema = z.object({ id: salonIdSchema })
 
-// Response extraction with Extract utility
-type GetResponse = Extract<
-  GetOperation['responses']['200']['content']['application/json'],
-  { data: unknown }
->
-
-// Query params with NonNullable
-type ListQuery = NonNullable<ListOperation['parameters']['query']>
+export const parseSalonId = (id: unknown): Result<SalonId, DomainError> =>
+  Result.map(
+    parseWith(salonIdParameterSchema, { id }, 'Invalid salon ID'),
+    (parameters) => parameters.id,
+  )
 ```
 
-## Use Case Patterns
+- The handler passes `req.params.id` as it is; the use case calls
+  `parseSalonId` first and hands the resulting `SalonId` to the repository,
+  whose methods accept nothing else.
+- An ID that is not a UUID is a `validation` error (400) with `field: 'id'`. A
+  well-formed ID of a salon that does not exist, or that has been deleted, is
+  `notFound` (404).
+- IDs are assigned by the database (`uuid().defaultRandom()` in
+  `backend/packages/database/src/schema.ts`). A client cannot choose one: the
+  create schema has no `id` property.
 
-### Dependency Injection Pattern
+## Query parameters
 
-Use cases use object-based dependency injection for maintainability:
+A query string carries text only, so a list request is read in two steps.
+
+1. The API layer gives the parameters the types the API defines for them and
+   nothing more:
+
+   ```typescript
+   // backend/packages/api/src/routes/salon/_shared/query.ts
+   const salonSearchQuerySchema = z.looseObject({
+     limit: numberParameter.exactOptional(),
+     minRating: numberParameter.exactOptional(),
+     isActive: booleanParameter.exactOptional(),
+     features: listParameter.exactOptional(),
+   })
+
+   export const decodeSalonSearchQuery = (
+     query: unknown,
+   ): Result<unknown, DomainError> =>
+     parseWith(salonSearchQuerySchema, query, 'Invalid salon search')
+   ```
+
+2. The use case validates the result with `salonSearchRequestSchema`
+   (`backend/packages/domain/src/schemas/salon.schema.ts`), which holds the
+   rules for the values and for which parameters exist.
 
 ```typescript
-// Dependencies interface for the domain
-export interface DomainUseCaseDependencies {
-  repository: IDomainRepository
-  // Future dependencies can be added here:
-  // emailService?: IEmailService
-  // notificationService?: INotificationService
-}
-
-// Base use case with dependencies
-export abstract class BaseDomainUseCase {
-  protected readonly repository: DomainUseCaseDependencies['repository']
-
-  constructor(protected readonly dependencies: DomainUseCaseDependencies) {
-    this.repository = dependencies.repository
-  }
-}
+// backend/packages/api/src/routes/salon/list-salons.handler.ts
+const query = decodeSalonSearchQuery(req.query)
+const result =
+  query.type === 'error' ? query : await useCase.execute(query.data)
 ```
 
-### Use Case Structure
+- The decoding schema is a `looseObject`, so text parameters and unknown
+  parameters pass through unchanged; the use case's `strictObject` then rejects
+  a parameter the API does not define (`?page=2` is a 400).
+- A repeated parameter is a list: `features=a` and `features=a&features=b` both
+  become arrays.
+- Every filter is optional (`.exactOptional()`). The use case turns an absent
+  filter into `null` for the repository (`keyword: keyword ?? null`), where
+  `null` means "do not filter".
 
-ALL validation and business logic happens in use cases:
+## Pagination
 
-```typescript
-export class CreateDomainUseCase extends BaseDomainUseCase {
-  async execute(
-    request: ApiCreateDomainRequest
-  ): Promise<Result<ApiDomain, DomainError>> {
-    // 1. Validate request
-    const validation = this.validateRequest(request)
-    if (Result.isError(validation)) {
-      return validation
-    }
+Lists use keyset pagination. There is no page number and no offset.
 
-    // 2. Check business rules
-    const existingCheck = await this.checkDuplicate(request.email)
-    if (Result.isError(existingCheck)) {
-      return existingCheck
-    }
+| Where | Name | Meaning |
+|-------|------|---------|
+| Request | `limit` | Items per page, 1 to 100, 20 when absent |
+| Request | `cursor` | ID of the last item of the previous page, taken from `meta.nextCursor`; absent for the first page |
+| Response | `meta.total` | Number of items that match the filters, across all pages |
+| Response | `meta.limit`, `meta.hasMore` | The limit applied; whether another page follows |
+| Response | `meta.cursor`, `meta.nextCursor` | The cursor of this request; the cursor of the next page, `null` on the last one |
+| Response | `meta.prevCursor` | Always `null`: pages are only walked forwards |
+| Response | `links` | `self`, `first` and `next` as URLs that keep the filters (`next` is `null` on the last page); `prev` and `last` are always `null` |
 
-    // 3. Map API to DB types
-    const dbEntity = DomainWriteMapper.fromCreateRequest(request)
-
-    // 4. Execute database operation
-    const saveResult = await this.repository.create(dbEntity)
-    if (Result.isError(saveResult)) {
-      return saveResult
-    }
-
-    // 5. Map DB to API types
-    const apiEntity = DomainReadMapper.toApiDomain(saveResult.data)
-
-    return Result.success(apiEntity)
-  }
-
-  private validateRequest(
-    request: ApiCreateDomainRequest
-  ): Result<void, DomainError> {
-    const errors: string[] = []
-
-    // Collect all validation errors
-    if (!request.name || request.name.length < 2) {
-      errors.push('Name must be at least 2 characters')
-    }
-
-    if (!this.isValidEmail(request.email)) {
-      errors.push('Invalid email format')
-    }
-
-    if (errors.length > 0) {
-      return Result.error(
-        DomainErrorFactory.validation('Validation failed', errors)
-      )
-    }
-
-    return Result.success(undefined)
-  }
-}
-```
-
-## Mapper Patterns
-
-### Strict Separation of Read and Write Mappers
+The use case builds `meta`:
 
 ```typescript
-// Write Mapper: API → DB
-export const DomainWriteMapper = {
-  fromCreateRequest(request: ApiCreateRequest): DbNewDomain {
-    return {
-      name: request.name,
-      email: request.email,
-      // Map nested objects
-      address: request.address.street,
-      city: request.address.city,
-      // Handle nullable fields
-      description: request.description ?? null,
-    }
-  },
+// backend/packages/domain/src/business-logic/salon/list-salons.usecase.ts
+const { salons, total, hasMore } = listed.data
+const lastSalonId = salons.at(-1)?.salon.id ?? null
 
-  fromUpdateRequest(request: ApiUpdateRequest): Partial<DbDomain> {
-    return {
-      ...(request.name && { name: request.name }),
-      ...(request.email && { email: request.email }),
-      updatedAt: new Date(),
-    }
-  },
-}
-
-// Read Mapper: DB → API
-export const DomainReadMapper = {
-  toApiDomain(dbDomain: DbDomain): ApiDomain {
-    return {
-      id: dbDomain.id,
-      name: dbDomain.name,
-      email: dbDomain.email,
-      // Reconstruct nested objects
-      address: {
-        street: dbDomain.address,
-        city: dbDomain.city,
-        postalCode: dbDomain.postalCode,
-      },
-      // Handle nullable fields
-      description: dbDomain.description,
-      createdAt: dbDomain.createdAt,
-      updatedAt: dbDomain.updatedAt,
-    }
-  },
-
-  toApiDomainList(dbDomains: DbDomain[]): ApiDomain[] {
-    return dbDomains.map((domain) => this.toApiDomain(domain))
-  },
-}
-```
-
-## Error Handling
-
-### Domain Error Factory Pattern
-
-```typescript
-export const DomainErrorFactory = {
-  validation(message: string, details: string[]): DomainError {
-    return {
-      type: 'validation',
-      message,
-      code: 'VALIDATION_ERROR',
-      details,
-    }
-  },
-
-  notFound(entity: string, field: string, value: unknown): DomainError {
-    return {
-      type: 'notFound',
-      entity,
-      field,
-      value,
-    }
-  },
-
-  alreadyExists(entity: string, field: string, value: unknown): DomainError {
-    return {
-      type: 'alreadyExists',
-      entity,
-      field,
-      value,
-    }
-  },
-
-  database(message: string, cause: unknown): DomainError {
-    return {
-      type: 'database',
-      message,
-      cause,
-    }
-  },
-}
-
-// Problem Details conversion
-export function toProblemDetails(error: DomainError): ProblemDetails {
-  return match(error)
-    .with({ type: 'validation' }, (e) => ({
-      type: 'https://example.com/probs/validation-error',
-      title: 'Validation failed',
-      status: 400,
-      detail: e.message,
-      errors: e.details,
-    }))
-    .with({ type: 'notFound' }, (e) => ({
-      type: 'https://example.com/probs/not-found',
-      title: 'Resource not found',
-      status: 404,
-      detail: `${e.entity} with ${e.field} '${e.value}' not found`,
-    }))
-    .with({ type: 'alreadyExists' }, (e) => ({
-      type: 'https://example.com/probs/conflict',
-      title: 'Resource already exists',
-      status: 409,
-      detail: `${e.entity} with ${e.field} '${e.value}' already exists`,
-    }))
-    .exhaustive()
-}
-```
-
-## Pagination Implementation
-
-### Cursor-based Pagination Response
-
-```typescript
-type CursorPaginationResponse<T> = {
-  data: T[]
+return Result.map(SalonReadMapper.toApiSalons(salons), (data) => ({
+  data,
   meta: {
-    total: number
-    limit: number
-    cursor?: string
-    hasMore: boolean
-  }
-  links: {
-    self: string
-    next?: string
-    prev?: string
-  }
-}
-
-// List handler with pagination
-const listHandler: RequestHandler<
-  Record<string, never>,
-  CursorPaginationResponse<Domain> | ErrorResponse,
-  unknown,
-  Partial<ListQuery>
-> = async (req, res, next) => {
-  const limit = Number(req.query.limit) || 20
-  const cursor = req.query.cursor || undefined
-
-  // Convert cursor to page for backward compatibility
-  let page = 1
-  if (cursor?.startsWith('offset:')) {
-    const offset = Number(cursor.replace('offset:', ''))
-    page = Math.floor(offset / limit) + 1
-  }
-
-  const result = await useCase.execute(page, limit)
-
-  match(result)
-    .with({ type: 'success' }, ({ data }) => {
-      const response: CursorPaginationResponse<Domain> = {
-        data: data.data,
-        meta: data.meta,
-        links: data.links,
-      }
-      res.json(response)
-    })
-    .exhaustive()
-}
+    total,
+    limit,
+    hasMore,
+    cursor: cursor ?? null,
+    nextCursor: hasMore ? lastSalonId : null,
+    // Pages are only walked forwards.
+    prevCursor: null,
+  },
+}))
 ```
 
-## Response Formatting
-
-### Standard Response Structures
+The repository orders by `(createdAt, id)` descending, starts after the row
+the cursor names, and reads one row more than the limit to learn whether
+another page follows:
 
 ```typescript
-// Success response with metadata
-interface SuccessResponse<T> {
-  data: T
-  meta: {
-    correlationId: string
-    timestamp: string
-    version: string
-  }
-  links: {
-    self: string
-    [key: string]: string
-  }
-}
+// backend/packages/infrastructure/src/repositories/salon.repository.impl.ts
+const afterCursor =
+  after === null
+    ? undefined
+    : sql`(${salons.createdAt}, ${salons.id}) < (${this.db
+        .select({ createdAt: cursorSalon.createdAt, id: cursorSalon.id })
+        .from(cursorSalon)
+        .where(eq(cursorSalon.id, after))})`
 
-// Error response (Problem Details)
-interface ErrorResponse {
-  type: string
-  title: string
-  status: number
-  detail: string
-  instance?: string
-  errors?: string[]
-}
-
-// Build success response
-function buildSuccessResponse<T>(data: T, id?: string): SuccessResponse<T> {
-  return {
-    data,
-    meta: {
-      correlationId: `req-${Date.now()}`,
-      timestamp: new Date().toISOString(),
-      version: '1.0.0',
-    },
-    links: {
-      self: id ? `/api/v1/domains/${id}` : '/api/v1/domains',
-      ...(id && { list: '/api/v1/domains' }),
-    },
-  }
-}
+// ... inside the query for the page:
+this.db
+  .select()
+  .from(salons)
+  .where(and(filters, afterCursor))
+  .orderBy(desc(salons.createdAt), desc(salons.id))
+  // One extra row tells whether another page follows.
+  .limit(limit + 1)
 ```
 
-## Validation Patterns
+A cursor is validated as an ID, so `cursor=offset:20` is a 400. A well-formed
+cursor that names no salon yields an empty page. The page links are built by
+`salonPageLinks` in `backend/packages/api/src/routes/salon/_shared/links.ts`
+from the request URL with the cursor replaced.
 
-### Centralized in Use Cases
+## Response formatting
 
-```typescript
-class ValidationHelper {
-  static isValidEmail(email: string): boolean {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    return emailRegex.test(email)
-  }
+Every successful response with a body is `{ data, meta, links }`.
 
-  static isValidPhone(phone: string): boolean {
-    // Japanese phone number format
-    const phoneRegex = /^0\d{1,4}-\d{1,4}-\d{4}$/
-    return phoneRegex.test(phone)
-  }
-
-  static isValidPostalCode(code: string): boolean {
-    // Japanese postal code
-    const postalRegex = /^\d{3}-\d{4}$/
-    return postalRegex.test(code)
-  }
-
-  static isValidUUID(id: string): boolean {
-    const uuidRegex =
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-    return uuidRegex.test(id)
-  }
-}
-```
-
-## Database Operations
-
-### Repository Pattern with Result Type
+| Operation | Status | `meta` | `links` | Extra |
+|-----------|--------|--------|---------|-------|
+| Create | 201 | `responseMeta(req)` | `salonLinks(req.baseUrl, data.id)` | `Location` header set to `links.self` |
+| Get, update | 200 | `responseMeta(req)` | `salonLinks(req.baseUrl, data.id)` | |
+| List | 200 | Pagination metadata | `salonPageLinks(...)` | |
+| Delete | 204 | | | No body |
 
 ```typescript
-export interface IDomainRepository {
-  findAll(
-    pagination: PaginationParams
-  ): Promise<Result<PaginatedResult<DbDomain>, DomainError>>
-
-  findById(id: string): Promise<Result<DbDomain | null, DomainError>>
-
-  create(domain: DbNewDomain): Promise<Result<DbDomain, DomainError>>
-
-  update(
-    id: string,
-    updates: Partial<DbDomain>
-  ): Promise<Result<DbDomain, DomainError>>
-
-  delete(id: string): Promise<Result<void, DomainError>>
-}
-
-// Implementation
-export class DomainRepository implements IDomainRepository {
-  constructor(private db: Database) {}
-
-  async findById(id: string): Promise<Result<DbDomain | null, DomainError>> {
-    try {
-      const result = await this.db
-        .select()
-        .from(domains)
-        .where(and(eq(domains.id, id), isNull(domains.deletedAt)))
-        .limit(1)
-
-      return Result.success(result[0] || null)
-    } catch (error) {
-      return Result.error(
-        DomainErrorFactory.database('Failed to fetch domain', error)
-      )
-    }
-  }
-
-  async delete(id: string): Promise<Result<void, DomainError>> {
-    try {
-      // Soft delete pattern
-      await this.db
-        .update(domains)
-        .set({ deletedAt: new Date() })
-        .where(eq(domains.id, id))
-
-      return Result.success(undefined)
-    } catch (error) {
-      return Result.error(
-        DomainErrorFactory.database('Failed to delete domain', error)
-      )
-    }
-  }
-}
-```
-
-## Testing Patterns
-
-### Integration Test Structure
-
-```typescript
-describe('Domain API Integration Tests', () => {
-  let app: Express
-  let db: ReturnType<typeof getTestDb>
-
-  beforeEach(() => {
-    app = createTestApp()
-    db = getTestDb()
-  })
-
-  describe('POST /api/v1/domains', () => {
-    it('should create with valid data', async () => {
-      const data = createValidDomainData()
-
-      const response = await request(app)
-        .post('/api/v1/domains')
-        .send(data)
-
-      expect(response.status).toBe(201)
-      expect(response.body.data).toBeDefined()
-
-      // Always verify DB state
-      const result = await db.execute(sql`SELECT * FROM domains`)
-      expect(result.length).toBe(1)
-      expect(result[0].name).toBe(data.name)
-    })
-
-    it('should return validation error', async () => {
-      const invalidData = {
-        ...createValidDomainData(),
-        email: 'invalid-email',
-      }
-
-      const response = await request(app)
-        .post('/api/v1/domains')
-        .send(invalidData)
-        .expect(400)
-
-      expect(response.body.type).toContain('validation-error')
-      expect(response.body.errors).toContain('Invalid email format')
-    })
-  })
+// backend/packages/api/src/shared/responses.ts
+export const responseMeta = (req: Request): ResponseMeta => ({
+  correlationId: correlationIdOf(req),
+  timestamp: new Date().toISOString(),
+  version: API_VERSION,
 })
 ```
 
-## Type Safety Patterns
-
-### No Type Casting Rule
+- `correlationId` is the request ID (see [Logging](#logging)), not a value made
+  up for the response. A list response has pagination metadata in `meta`
+  instead; its request ID is in the `X-Request-Id` header.
+- Links are built from `req.baseUrl`, the path the router is mounted on, so a
+  handler contains no hard-coded path.
+- The response body types are taken from the generated `operations` type in
+  `backend/packages/api/src/routes/salon/_shared/types.ts` and given to
+  `RequestHandler`, so `res.json(...)` is type-checked against the API
+  contract.
 
 ```typescript
-// ❌ WRONG: Type casting
-const data = result.data as ApiDomain[]
-
-// ✅ CORRECT: Use proper mapper methods
-const data = DomainReadMapper.toApiDomainList(result.data)
-
-// ❌ WRONG: Any type
-const handler: RequestHandler<any, any, any> = async (req, res) => {}
-
-// ✅ CORRECT: Explicit types
-const handler: RequestHandler<
+// backend/packages/api/src/routes/salon/update-salon.handler.ts
+export const updateSalonHandler = (
+  dependencies: SalonUseCaseDependencies,
+): RequestHandler<
   { id: string },
-  GetResponse | ErrorResponse,
-  unknown,
-  Partial<QueryParams>
-> = async (req, res) => {}
+  UpdateSalonResponse | ProblemDetails,
+  unknown
+> => {
+  const useCase = new UpdateSalonUseCase(dependencies)
+
+  return async (req, res) => {
+    const result = await useCase.execute(req.params.id, req.body)
+
+    match(result)
+      .with({ type: 'success' }, ({ data }) => {
+        res.json({
+          data,
+          meta: responseMeta(req),
+          links: salonLinks(req.baseUrl, data.id),
+        })
+      })
+      .with({ type: 'error' }, ({ error }) => sendProblem(req, res, error))
+      .exhaustive()
+  }
+}
 ```
 
-### Exhaustive Pattern Matching
+Property names in `data` are the database column names. The read mapper
+renames nothing; it only changes representations: `numeric` to number,
+`timestamptz` to ISO 8601, and `jsonb` checked against the API model.
+
+## Error handling
+
+A use case returns a `DomainError`
+(`backend/packages/domain/src/shared/errors.ts`). What goes wrong in the HTTP
+layer itself is an `HttpError`. Both are sent by `sendProblem(req, res, error)`
+as RFC 9457 problem details, so every error response of the API has the same
+shape. Nothing in a handler catches exceptions or builds an error body. The
+only other error body is that of a failing probe under `/api/system`, which
+answers 503 with the body its operation defines.
+
+| Error | Raised by | Status | `code` |
+|-------|-----------|--------|--------|
+| `validation` | `parseWith` in a use case | 400 | `2001` |
+| `notFound` | A use case, when the repository finds no row | 404 | `3001` |
+| `alreadyExists` | The repository, on the unique constraint on `email` | 409 | `3002` |
+| `database` | The repository on an unexpected failure; the read mapper on stored data that does not match the API model | 500 | `4003` |
+| `routeNotFound` | `notFoundHandler` | 404 | `3001` |
+| `malformedBody` | The JSON body parser | 400 | `2002` |
+| `unsupportedMediaType` | `requireJsonBody`, the body parser | 415 | `2002` |
+| `bodyTooLarge` | The body parser, above 100,000 bytes | 413 | `2004` |
+| `badRequest` | Any other 4xx error Express raises | 400 | `2002` |
+| `rateLimited` | `rateLimiting` | 429 | `4005` |
+| `unexpected` | `errorHandler`, for anything else that was thrown or rejected | 500 | `4001` |
+
+The mapping is one exhaustive `match` in
+`backend/packages/api/src/shared/problem-details.ts`; a new error kind does not
+compile until it has a status and a code there.
 
 ```typescript
-// Always use .exhaustive() for completeness
-match(result)
-  .with({ type: 'success' }, handleSuccess)
-  .with({ type: 'error' }, handleError)
-  .exhaustive() // Ensures all cases handled
+// backend/packages/api/src/shared/problem-details.ts
+.with({ type: 'alreadyExists' }, ({ entity, field, value }) => ({
+  type: 'urn:beauty-salon:problem:already-exists',
+  title: 'Resource already exists',
+  status: 409,
+  detail: `${entity} with ${field} ${value} already exists`,
+  code: '3002',
+  errors: null,
+}))
+// The cause stays on the server: it may name tables, columns or data.
+.with({ type: 'database' }, () => ({
+  type: 'urn:beauty-salon:problem:database',
+  title: 'Internal server error',
+  status: 500,
+  detail: null,
+  code: '4003',
+  errors: null,
+}))
 ```
 
-## 📋 Implementation Checklist
+`sendProblem` adds what identifies the response: `instance` (the request URL),
+`correlationId` (the request ID) and `timestamp`. `errors` is filled for
+`validation` only, with one entry per broken rule. The body is sent with
+`res.json`, so its media type is `application/json`.
 
-When implementing a new domain:
+A `database` or `unexpected` error never shows its cause to the client. It is
+logged instead: `sendProblem` logs a `database` error with its cause, and
+`errorHandler` logs an unexpected exception with its stack.
 
-### API Layer
-- [ ] Extract all types from operations
-- [ ] NO validation logic in routes
-- [ ] Proper RequestHandler type parameters
-- [ ] Pattern matching with exhaustive
-- [ ] Standard error handler function
+Use cases and repositories do not throw. A repository runs its queries through
+`attempt`, which turns a rejected promise into a `DomainError`:
 
-### Use Case Layer
-- [ ] ALL validation in use cases
-- [ ] Error aggregation pattern
-- [ ] Business rule checks
-- [ ] Result type for all returns
-- [ ] Mapper usage for type conversion
+```typescript
+// backend/packages/infrastructure/src/repositories/salon.repository.impl.ts
+async findById(
+  id: SalonId,
+): Promise<Result<SalonWithOpeningHours | null, DomainError>> {
+  return attempt('Failed to find salon', null, async () => {
+    const [salon] = await this.db
+      .select()
+      .from(salons)
+      .where(and(eq(salons.id, id), notDeleted))
+      .limit(1)
 
-### Mapper Layer
-- [ ] Separate Read and Write mappers
-- [ ] Handle nullable fields correctly
-- [ ] No type casting
-- [ ] Consistent naming patterns
+    return salon === undefined ? null : withOpeningHours(this.db, salon)
+  })
+}
+```
 
-### Testing
-- [ ] Integration tests for all endpoints
-- [ ] Minimum 5 error scenarios
-- [ ] Database state verification
-- [ ] No mocking of repositories
-- [ ] Factory functions for test data
+## Logging
 
-## 🎯 Key Takeaways
+Logging is structured, with pino. Application code never writes to `console`.
 
-1. **Validation belongs in Use Cases, NOT in routes**
-2. **Always use Result type, never throw exceptions**
-3. **Extract types from generated operations**
-4. **Use mappers to avoid type casting**
-5. **Verify database state in tests**
-6. **Pattern match exhaustively**
-7. **Soft delete with deletedAt field**
+- `createLogger` in `backend/packages/infrastructure/src/logging/logger.ts`
+  creates the logger in the server's entry point
+  (`backend/apps/server/src/index.ts`) from `LOG_LEVEL` and `LOG_FORMAT`. It
+  is passed to `createApp`, not imported as a global.
+- `requestLogging` in `backend/packages/api/src/middleware/request-logging.ts`
+  gives every request `req.id` and `req.log`, a logger whose lines carry that
+  ID, and writes one line per completed request (`error` for 5xx, `warn` for
+  4xx, otherwise `info`).
+- Inside a request, log with `req.log`; elsewhere, with the injected `Logger`.
+  The fields come first, the message second:
 
-This guide is based on the proven Salon domain implementation and ensures consistency across all domains.
+  ```typescript
+  // backend/packages/api/src/shared/responses.ts
+  if (error.type === 'database') {
+    req.log.error({ cause: error.cause }, error.message)
+  }
+  ```
+
+- The request ID is the caller's `X-Request-Id` when it is 1 to 128 characters
+  of letters, digits and `_.:-`, otherwise a new UUID. It is returned in the
+  `X-Request-Id` response header and as `meta.correlationId`, or
+  `correlationId` of a problem.
+- Use cases and repositories do not log. They return the failure as a value,
+  and the API layer logs it once.
+- Never logged: request headers and bodies, and the values bound to a failed
+  SQL statement. `describeDatabaseError` in
+  `backend/packages/infrastructure/src/database/failure.ts` keeps the statement
+  with its placeholders and the SQLSTATE and drops the rest.
+- The probes under `/api/system` are not written to the request log.
+
+## Date and time
+
+- **Timestamps** (`timestamptz` columns) are written by the database:
+  `createdAt` and `updatedAt` default to `now()`, and the repository sets
+  `updatedAt` and `deletedAt` with `` sql`now()` ``. Application code does not
+  create a `Date` to store it.
+- Drizzle reads a `timestamptz` as text. The read mapper converts it to
+  ISO 8601 in UTC with date-fns:
+
+  ```typescript
+  // backend/packages/domain/src/mappers/read/salon.mapper.ts
+  const timestampSchema = z
+    .string()
+    .transform((value) => parseISO(value))
+    .pipe(z.date())
+    .transform((value) => value.toISOString())
+  ```
+
+- **Calendar dates and times of day** (`date` and `time` columns) stay strings
+  from the request to the database: `YYYY-MM-DD` checked with `z.iso.date()`,
+  and `HH:mm` or `HH:mm:ss`. Two times of day are compared as strings once both
+  have seconds.
+- Parsing, validity checks and formatting use date-fns (`parseISO`, `isValid`,
+  `format`), not hand-written arithmetic:
+
+  ```typescript
+  // backend/packages/domain/src/schemas/salon.schema.ts
+  const dayOfWeekOf = (date: string): string | null => {
+    const parsed = parseISO(date)
+    return isValid(parsed) ? format(parsed, 'EEEE').toLowerCase() : null
+  }
+  ```
+
+- The `timestamp` of a response or a problem is `new Date().toISOString()`.
+
+## Authorization
+
+Not implemented: the backend has no authentication or authorization code, and
+every endpoint is public. The auth and permission models under `specs/` are a
+contract without an implementation, so there is no pattern to follow yet.
+
+## Checklist for a new endpoint
+
+- [ ] The operation and its models are defined in TypeSpec, and the generated
+      files are committed with them (`pnpm generate`)
+- [ ] The request has a Zod schema that `satisfies` the generated type
+- [ ] The use case takes `unknown`, parses first and returns
+      `Result<..., DomainError>`
+- [ ] Path IDs go through a branded ID schema
+- [ ] The handler is a factory over its dependencies, takes its response types
+      from `operations`, validates nothing, and ends in
+      `match(result)...exhaustive()` with `responseMeta` and `sendProblem`
+- [ ] A list uses `cursor` and `limit` and returns `meta.nextCursor`
+- [ ] Nothing throws, and nothing writes to `console`
+- [ ] The endpoint has integration tests with at least five error scenarios
+      (see [testing-requirements.md](./testing-requirements.md))

@@ -12,7 +12,7 @@ A modern, type-safe beauty salon reservation system built with TypeScript, TypeS
 - [Testing](#-testing)
 - [Documentation](#-documentation)
 
-## 🏗️ Architecture
+## 🧱 Architecture
 
 This project follows Clean Architecture principles with API-First development using TypeSpec for type generation.
 
@@ -34,11 +34,22 @@ This project follows Clean Architecture principles with API-First development us
 ├─────────────────────────────────────────┤
 │        Domain Layer (Pure Logic)        │ ← Business rules, entities
 ├─────────────────────────────────────────┤
-│   Infrastructure Layer (External I/O)   │ ← Database, email, storage
+│   Infrastructure Layer (External I/O)   │ ← Database access, logging
 └─────────────────────────────────────────┘
 ```
 
 For detailed architecture documentation, see [docs/architecture-overview.md](docs/architecture-overview.md).
+
+### Implementation Status
+
+| Area | Status |
+|------|--------|
+| Salon API (`/api/v1/salons`) | Implemented in every layer; the reference for the other domains |
+| System endpoints (`/api/system/alive`, `ready`, `health`) | Implemented |
+| Customers, staff, services, bookings, payments and the other domains | Specified in TypeSpec and present in the database schema; no backend code yet |
+| Authentication and authorization | Not implemented: the API must not be exposed to untrusted networks as it is |
+| Email, file storage | Design documents only |
+| Frontend apps | Application shells; they do not call the API yet |
 
 ## 🚀 Quick Start
 
@@ -54,6 +65,7 @@ For detailed architecture documentation, see [docs/architecture-overview.md](doc
 ```bash
 pnpm install       # Install dependencies and the pre-commit hook
 make infra-up      # Start PostgreSQL, MailHog and MinIO in Docker
+pnpm build:backend # Build the backend packages (the database scripts load them from dist)
 pnpm db:fresh      # Create the schema from sql/setup.sql
 pnpm db:seed       # Insert sample data (optional)
 pnpm dev           # Backend on :3000, frontend apps on :3001-3003
@@ -73,9 +85,9 @@ TypeSpec change. `make help` lists every Makefile target.
 ├── backend/                    # Backend monorepo
 │   ├── packages/
 │   │   ├── domain/           # Business logic layer
-│   │   ├── infrastructure/  # External services
+│   │   ├── infrastructure/  # Database access, logging
 │   │   ├── api/              # HTTP layer
-│   │   ├── database/         # Database schemas
+│   │   ├── database/         # Database schema, migrations, seeds
 │   │   ├── generated/        # Auto-generated types
 │   │   ├── config/           # Configuration
 │   │   └── utility/          # Result type and shared helpers
@@ -91,7 +103,7 @@ TypeSpec change. `make help` lists every Makefile target.
 └── docs/                      # Documentation
 ```
 
-## 🛠️ Development
+## 🔧 Development
 
 ### Type Generation Pipeline
 
@@ -167,7 +179,7 @@ pnpm knip                    # Unused files, exports and dependencies
 pnpm check:generated         # Generated files match the TypeSpec
 pnpm check:db-schema         # schema.ts and setup.sql match the database
 pnpm check:api-db            # API models agree with the database schema
-make ci-check                # Everything CI runs, in the same order
+make ci-check                # The CI checks, in the same order (all but check:db-schema)
 
 # Database
 pnpm db:fresh                # Drop everything and recreate the schema
@@ -203,7 +215,7 @@ them at start-up and exits with the list of what is missing or malformed.
 | `DATABASE_CONNECTION_TIMEOUT` | Connection timeout in milliseconds |
 | `CORS_ORIGIN` | Comma-separated origins allowed to call the API from a browser |
 | `CORS_CREDENTIALS`, `CORS_MAX_AGE` | Whether credentials are allowed; preflight cache time in seconds |
-| `RATE_LIMIT_WINDOW_MS`, `RATE_LIMIT_MAX_REQUESTS` | Requests one client address may make per window (kept per server instance) |
+| `RATE_LIMIT_WINDOW_MS`, `RATE_LIMIT_MAX_REQUESTS` | Requests allowed per client address in each window (counted per server instance) |
 | `LOG_LEVEL` | `fatal`, `error`, `warn`, `info`, `debug`, `trace` or `silent` |
 | `LOG_FORMAT` | `json` (one object per line) or `pretty` (for a terminal) |
 
@@ -225,14 +237,15 @@ log lines.
 Every error response is RFC 9457 problem details, including the ones raised
 before a route runs: unknown route (404), malformed JSON (400), a body that
 is not JSON (415) or over 100 kB (413), too many requests (429) and
-unexpected failures (500, without internal details).
+unexpected failures (500, without internal details). The probes below are the
+one exception: a probe that fails answers 503 with its own body.
 
 ### Probes and Shutdown
 
 | Endpoint | Purpose |
 |----------|---------|
 | `GET /api/system/alive` | Liveness: the process answers |
-| `GET /api/system/ready` | Readiness: 200 while the database answers, otherwise 503 |
+| `GET /api/system/ready` | Readiness: 200 while the database answers, otherwise 503 with `{ "ready": false, "reason": "database" }` |
 | `GET /api/system/health` | The same check with details per dependency |
 
 The probes are not rate limited and not written to the request log. On
@@ -259,11 +272,14 @@ See [docs/testing-requirements.md](docs/testing-requirements.md) for testing gui
 
 ## 📚 Documentation
 
+The full index is [docs/README.md](docs/README.md).
+
 ### Core Documentation
 
+- [Development Guidelines](CLAUDE.md) - The conventions every change follows
 - [Architecture Overview](docs/architecture-overview.md) - System design and architecture
-- [Development Guidelines](CLAUDE.md) - Coding standards and best practices
-- [API Documentation](docs/api-testing-guide.md) - API testing and development
+- [Development Workflow](docs/development-workflow.md) - Set-up, the daily loop, checks
+- [AI Agent Guidelines](AGENTS.md) - Instructions and roles for AI coding agents
 
 ### Development Guides
 
@@ -279,7 +295,9 @@ See [docs/testing-requirements.md](docs/testing-requirements.md) for testing gui
 - [API Route Modular Structure](docs/api-route-modular-structure.md) - Guide for modular route organization
 - [Uniform Implementation](docs/uniform-implementation-guide.md)
 - [Testing Requirements](docs/testing-requirements.md)
+- [API Testing Guide](docs/api-testing-guide.md)
 - [Type Generation System](docs/type-generation-system.md)
+- [Database Commands](backend/packages/database/docs/database-commands.md)
 
 ## 🔑 Key Technologies
 
@@ -291,9 +309,13 @@ See [docs/testing-requirements.md](docs/testing-requirements.md) for testing gui
 - **PostgreSQL** - Relational database
 - **ts-pattern** - Pattern matching
 - **Zod** - Runtime validation
-- **testcontainers** - Integration testing
+- **pino** - Structured logging
+- **Vitest**, **testcontainers** - Unit and integration testing
+- **Biome**, **knip** - Lint, format, unused-code detection
 
 ### Frontend
 - **React** - UI framework
 - **Vite** - Build tool
 - **TanStack Query** - Data fetching
+- **orval** - API client generated from the OpenAPI document
+- **Tailwind CSS** - Styling

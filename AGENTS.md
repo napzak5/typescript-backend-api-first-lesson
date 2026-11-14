@@ -1,258 +1,72 @@
 # AI Agent Guidelines
 
-This document describes the specialized AI agents available for the Beauty Salon Reservation System development.
+Instructions for AI coding agents that work in this repository, and the list
+of the specialized agents defined for it.
+
+## 📏 Rules
+
+[CLAUDE.md](CLAUDE.md) is the one statement of the project's conventions:
+architecture, type-safety rules, naming, API–DB consistency, testing
+requirements, the reference implementation and the definition of done. Every
+agent reads it before changing anything.
+
+This file and the agent definitions do not carry their own copy of those
+conventions. If one of them seems to disagree with `CLAUDE.md`, `CLAUDE.md` is
+right and the other file needs fixing.
+
+The rules that most often decide whether a change is acceptable:
+
+- No `any`, no type assertions (`as`), no type guards, no thrown exceptions in application code
+- State and errors are sum types, handled exhaustively with ts-pattern; functions that can fail return a `Result`
+- The API contract is written in TypeSpec first; types are generated, never written by hand
+- The database schema is the source of truth: API property names are the column names, and a nullable column is a nullable property
+- Nothing is built "for the future" (YAGNI); unused code is removed, not commented out
+
+## 🧭 Working in the Repository
+
+- **Toolchain**: the Node version in `.node-version`, and pnpm (the version in `packageManager` of `package.json`). Lint and format are Biome; tests are Vitest
+- **What exists**: the Salon domain and the system endpoints. The other domains are specified in TypeSpec and present in the database schema, but have no backend code. Follow the Salon files listed in `CLAUDE.md` when adding one
+- **Generated files are never edited by hand**: `specs/tsp-output/`, `backend/packages/generated/src/`, `frontend/packages/api-client/src/generated/` (from `pnpm generate`), and `backend/packages/database/src/schema.ts`, `relations.ts`, `sql/setup.sql` (from `pnpm db:introspect` and `pnpm db:generate-sql`). They are committed together with the change that caused them
+- **A migration that has been applied is never edited**: write a new file in `backend/packages/database/sql/migrations/`
+
+Before reporting a task as done, run the checks CI runs:
+
+```bash
+make ci-check   # install, generated-file and API–DB checks, lint, format, build, typecheck, knip, unit and integration tests, audit
+```
+
+The integration tests need a PostgreSQL: the one at `TEST_DATABASE_URL` when
+it is set, otherwise a container started through Docker. When a change touches
+the database schema, also run `pnpm check:db-schema` (it recreates the database
+it is pointed at). Both `pnpm check:generated` and `pnpm check:db-schema`
+compare the regenerated files with what git has, so they fail until
+regenerated files are committed. If a check cannot be run, say so in the
+report instead of reporting success.
 
 ## 🤖 Available Agents
 
-### 1. Backend TypeScript Architect
+The definitions are in `.claude/agents/`. The name is what a task is delegated to.
 
-**Specialization**: Backend development with TypeScript and Node.js
+| Agent | Owns | Typical tasks |
+|-------|------|---------------|
+| [`salon-business-expert`](.claude/agents/salon-business-expert.md) | Business requirements | Salon operations and workflows, what a feature must do, validating a design against real practice |
+| [`database-schema-architect`](.claude/agents/database-schema-architect.md) | `backend/packages/database` (schema, migrations, seeds) | Tables, constraints and indexes, SQL migrations, query performance |
+| [`typespec-api-architect`](.claude/agents/typespec-api-architect.md) | `specs/`, and the API–DB consistency rules and baseline in `backend/packages/database` | Models and operations in TypeSpec, the OpenAPI document, type generation |
+| [`backend-typescript-architect`](.claude/agents/backend-typescript-architect.md) | `backend/packages/{domain,infrastructure,api,config,utility}`, `backend/apps/server` | Use cases, repositories, mappers, handlers, middleware, backend tests |
+| [`senior-frontend-architect`](.claude/agents/senior-frontend-architect.md) | `frontend/` | React components and applications, state, use of the generated API client, frontend tests |
+| [`senior-ui-designer`](.claude/agents/senior-ui-designer.md) | Interface design | Layout, interaction, accessibility, the design system |
+| [`design-review-architect`](.claude/agents/design-review-architect.md) | Cross-layer review | Agreement between database, API contract, domain code and UI; compliance with `CLAUDE.md` |
+| [`documentation-specialist`](.claude/agents/documentation-specialist.md) | `docs/`, `README.md`, `CLAUDE.md`, this file, `.claude/agents/`, documents inside packages | Keeping the documentation true to the code |
 
-**Use Cases**:
-- API endpoint implementation
-- Business logic development
-- Database integration
-- Server architecture decisions
-- Performance optimization
+## 🔀 Order of Work for a Feature
 
-**Key Expertise**:
-- TypeScript best practices
-- Express.js API development
-- Clean Architecture implementation
-- Sum types and pattern matching
-- Result-based error handling
+1. `salon-business-expert`: requirements and workflows
+2. `database-schema-architect` and `typespec-api-architect`: the tables and the API contract, agreed together because property names, nullability and enums must match
+3. Generation: `pnpm generate`, `pnpm db:introspect`, `pnpm db:generate-sql`, then `pnpm check:api-db`
+4. `backend-typescript-architect`: domain, infrastructure and API layers with their tests
+5. `senior-ui-designer` and `senior-frontend-architect`: the interface, on the generated client
+6. `design-review-architect`: review across the layers
+7. `documentation-specialist`: documentation that the change made untrue
 
-See [.claude/agents/backend-typescript-architect.md](.claude/agents/backend-typescript-architect.md) for detailed guidelines.
-
-### 2. Database Schema Architect
-
-**Specialization**: Database design and optimization
-
-**Use Cases**:
-- Schema design and normalization
-- Migration planning
-- Query optimization
-- Index strategy
-- Data integrity constraints
-
-**Key Expertise**:
-- PostgreSQL optimization
-- Drizzle ORM patterns
-- Database normalization
-- Performance tuning
-- Migration strategies
-
-See [.claude/agents/database-schema-architect.md](.claude/agents/database-schema-architect.md) for detailed guidelines.
-
-### 3. TypeSpec API Architect
-
-**Specialization**: API design using TypeSpec
-
-**Use Cases**:
-- API contract definition
-- OpenAPI specification
-- Request/response schemas
-- Validation rules
-- API versioning
-
-**Key Expertise**:
-- TypeSpec syntax and decorators
-- OpenAPI 3.x specification
-- REST API design patterns
-- Schema validation
-- API documentation
-
-See [.claude/agents/typespec-api-architect.md](.claude/agents/typespec-api-architect.md) for detailed guidelines.
-
-### 4. Salon Business Expert
-
-**Specialization**: Beauty salon domain expertise
-
-**Use Cases**:
-- Business requirement analysis
-- Feature specification
-- Workflow design
-- Customer experience optimization
-- Industry best practices
-
-**Key Expertise**:
-- Salon operations
-- Booking workflows
-- Customer management
-- Service scheduling
-- Staff management
-
-See [.claude/agents/salon-business-expert.md](.claude/agents/salon-business-expert.md) for detailed guidelines.
-
-### 5. Senior Frontend Architect
-
-**Specialization**: Frontend architecture and React development
-
-**Use Cases**:
-- React component architecture
-- State management design
-- TypeScript type safety for UI
-- API integration patterns
-- Frontend performance optimization
-
-**Key Expertise**:
-- React/Next.js architecture
-- TypeScript for frontend
-- API type synchronization
-- Component composition patterns
-- Frontend testing strategies
-
-See [.claude/agents/senior-frontend-architect.md](.claude/agents/senior-frontend-architect.md) for detailed guidelines.
-
-### 6. Senior UI Designer
-
-**Specialization**: UI/UX design and user experience
-
-**Use Cases**:
-- User interface design
-- Interaction patterns
-- Visual hierarchy
-- Accessibility standards
-- Design system architecture
-
-**Key Expertise**:
-- UI component design
-- Responsive design
-- WCAG accessibility
-- Design systems
-- User experience optimization
-
-See [.claude/agents/senior-ui-designer.md](.claude/agents/senior-ui-designer.md) for detailed guidelines.
-
-### 7. Design Review Architect
-
-**Specialization**: Cross-layer design validation
-
-**Use Cases**:
-- Type synchronization validation
-- Architecture compliance review
-- Design consistency checking
-- Integration point validation
-- Cross-layer type alignment
-
-**Key Expertise**:
-- Type system validation
-- Enum synchronization
-- API-DB alignment
-- Architectural patterns
-- Design review protocols
-
-See [.claude/agents/design-review-architect.md](.claude/agents/design-review-architect.md) for detailed guidelines.
-
-## 📋 Agent Selection Guidelines
-
-### When to Use Each Agent
-
-| Task Type | Recommended Agent |
-|-----------|------------------|
-| API endpoint implementation | Backend TypeScript Architect |
-| Database schema design | Database Schema Architect |
-| API contract definition | TypeSpec API Architect |
-| Business logic implementation | Backend TypeScript Architect |
-| Feature requirements | Salon Business Expert |
-| Query optimization | Database Schema Architect |
-| Type generation setup | TypeSpec API Architect |
-| Customer workflow design | Salon Business Expert |
-
-### Collaboration Patterns
-
-**Feature Implementation Flow**:
-1. **Salon Business Expert**: Define requirements and workflows
-2. **TypeSpec API Architect**: Design API contracts
-3. **Database Schema Architect**: Design data models
-4. **Backend TypeScript Architect**: Implement business logic
-
-**Performance Optimization Flow**:
-1. **Database Schema Architect**: Analyze query performance
-2. **Backend TypeScript Architect**: Optimize application code
-3. **TypeSpec API Architect**: Adjust API contracts if needed
-
-For detailed agent collaboration protocols and design validation, see [docs/multi-agent-collaboration-framework.md](docs/multi-agent-collaboration-framework.md).
-
-## 🎯 Common Tasks
-
-### Creating a New Feature
-```
-1. Consult Salon Business Expert for requirements
-2. Use TypeSpec API Architect to define API
-3. Use Database Schema Architect for schema changes
-4. Use Backend TypeScript Architect for implementation
-```
-
-### Optimizing Performance
-```
-1. Use Database Schema Architect for query analysis
-2. Use Backend TypeScript Architect for code optimization
-3. Review with TypeSpec API Architect for API adjustments
-```
-
-### Debugging Issues
-```
-1. Use Backend TypeScript Architect for code issues
-2. Use Database Schema Architect for data issues
-3. Use Salon Business Expert for business logic validation
-```
-
-## 🔧 Agent Configuration
-
-All agents follow these core principles:
-- **Type Safety**: Strict TypeScript with no `any` types
-- **Sum Types**: Use discriminated unions for state
-- **Pattern Matching**: Exhaustive handling with ts-pattern
-- **Result Types**: No exceptions, use Result for errors
-- **Clean Architecture**: Separation of concerns
-- **YAGNI**: No code "for the future"
-
-## 📚 Agent Documentation
-
-Detailed documentation for each agent is available in:
-- [Backend TypeScript Architect](.claude/agents/backend-typescript-architect.md)
-- [Database Schema Architect](.claude/agents/database-schema-architect.md)
-- [TypeSpec API Architect](.claude/agents/typespec-api-architect.md)
-- [Salon Business Expert](.claude/agents/salon-business-expert.md)
-- [Senior Frontend Architect](.claude/agents/senior-frontend-architect.md)
-- [Senior UI Designer](.claude/agents/senior-ui-designer.md)
-- [Design Review Architect](.claude/agents/design-review-architect.md)
-
-## ⚡ Quick Reference
-
-### Backend Development
-```bash
-# Use Backend TypeScript Architect for:
-- Implementing use cases
-- Creating repositories
-- Building API routes
-- Writing mappers
-```
-
-### Database Design
-```bash
-# Use Database Schema Architect for:
-- Creating tables
-- Defining relationships
-- Writing migrations
-- Optimizing queries
-```
-
-### API Design
-```bash
-# Use TypeSpec API Architect for:
-- Defining models
-- Creating operations
-- Setting validation rules
-- Generating types
-```
-
-### Business Logic
-```bash
-# Use Salon Business Expert for:
-- Understanding workflows
-- Defining requirements
-- Validating features
-- Industry best practices
-```
+The hand-over points and the checks at each of them are described in
+[docs/multi-agent-collaboration-framework.md](docs/multi-agent-collaboration-framework.md).

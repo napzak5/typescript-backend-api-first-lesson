@@ -30,6 +30,17 @@ The system follows Clean Architecture with API-First development. See [docs/arch
 - ✅ **USE** ts-pattern for exhaustive matching
 - ✅ **USE** Result types for errors
 
+The rules cover application code, backend and frontend. The backend follows
+them without exception; its one `try`/`catch` is in `Result.fromPromise`,
+which turns an exception of a library into a value. The frontend utility
+packages predate the rules and still contain type guards and assertions: new
+frontend code follows the rules and does not take them as a model.
+
+The database scripts (`backend/packages/database/src/scripts`), the seeds and
+the tests are command-line programs and test code; there a thrown error that
+ends the run with a non-zero status, and `console` output, are the expected
+behaviour.
+
 ### TypeScript Configuration
 ```json
 {
@@ -101,8 +112,8 @@ See [docs/uniform-implementation-guide.md](docs/uniform-implementation-guide.md)
 
 ### Minimum Coverage
 - Unit tests for all domain logic
-- Integration tests with testcontainers
-- E2E tests for critical paths
+- Integration tests against a real PostgreSQL (`TEST_DATABASE_URL` when set, otherwise testcontainers)
+- End-to-end coverage of the critical paths: the API integration tests drive the production app over HTTP, and the server tests start the real server
 - Minimum 5 error scenarios per endpoint
 
 ### Test Structure
@@ -127,14 +138,20 @@ See [docs/testing-requirements.md](docs/testing-requirements.md) for testing pat
 
 ### Backend Packages
 ```
-backend/packages/
-├── domain/           # Pure business logic
-├── infrastructure/   # External services
-├── api/             # HTTP layer
-├── database/        # DB schemas
-├── generated/       # Auto-generated types
-└── config/          # Configuration
+backend/
+├── apps/server/          # Composition root: configuration, logger, start-up, shutdown
+└── packages/
+    ├── domain/           # Pure business logic
+    ├── infrastructure/   # Database access, logging
+    ├── api/              # HTTP layer
+    ├── database/         # DB schema, migrations, seeds
+    ├── generated/        # Auto-generated API types
+    ├── config/           # Configuration
+    └── utility/          # Result type and shared helpers
 ```
+
+Only the Salon domain and the system endpoints are implemented. The other
+domains exist in TypeSpec and in the database schema only.
 
 ### Namespace Convention
 - Backend: `@beauty-salon-backend/*`
@@ -191,7 +208,7 @@ pnpm typecheck     # Type checking (build first)
 pnpm knip          # Unused files, exports and dependencies
 pnpm check:api-db  # API models agree with the database schema
 pnpm test          # Unit tests
-make ci-check      # Everything CI runs, in the same order
+make ci-check      # The CI checks, in the same order (all but check:db-schema)
 ```
 
 ## 🚀 Quick Commands
@@ -224,15 +241,19 @@ pnpm build:stg        # Staging build
 pnpm build:prod       # Production build
 
 # CI/CD Local Testing
-make ci-check             # Run every CI check locally
+make ci-check             # Run the CI checks locally (all but the schema check)
+make db-check             # The schema check: recreates the database it is pointed at
 make ci-check-dockerfile  # Test all Docker builds locally before pushing
 
-# Deployment (GitHub Actions)
-# Push to main     → Automatic staging deployment
-# Manual trigger   → Production deployment via Actions tab
+# Images (GitHub Actions, .github/workflows/deploy.yml)
+# Push to main     → Builds the staging images and pushes them to GitHub Container Registry
+# Manual trigger   → The same for the chosen environment (staging or production)
+# Rolling an image out, and running pnpm db:migrate first, is not automated
 ```
 
 ## 📚 Documentation References
+
+The full index is [docs/README.md](docs/README.md).
 
 ### Core Concepts
 - [Architecture Overview](docs/architecture-overview.md)
@@ -379,12 +400,12 @@ app.use(`${API_BASE_PATH}/salons`, createSalonRouter({ salonRepository: new Salo
 // backend/packages/config/src/app-config.ts
 export const parseAppConfig = (variables: Record<string, string | undefined>): Result<AppConfig, ConfigIssue[]>
 // backend/apps/server/src/server.ts
-export const startServer = (config: AppConfig, logger: Logger): Promise<Result<RunningServer, StartFailure>>
+export const startServer = (config: AppConfig, logger: Logger, shutdownGraceMs?: number): Promise<Result<RunningServer, StartFailure>>
 ```
 
 ### Conventions the reference follows
 - **Validation** happens once, in the use case, with the Zod schema of the request. Cross-field rules use `.check()`
-- **Errors** are `DomainError` values; `api/src/shared/problem-details.ts` maps each kind to an HTTP status and never exposes the cause of a `database` error. What goes wrong outside a use case (unknown route, unreadable body, rate limit, unexpected exception) is an `HttpError` and takes the same path, so every error response is problem details
+- **Errors** are `DomainError` values; `api/src/shared/problem-details.ts` maps each kind to an HTTP status and never exposes the cause of a `database` error. What goes wrong outside a use case (unknown route, unreadable body, rate limit, unexpected exception) is an `HttpError` and takes the same path, so every error response of the API is problem details (a system probe that fails answers 503 with its own body)
 - **Logging** is structured (pino): `req.log` inside a request, the injected `Logger` elsewhere, never `console`. `sendProblem` logs a `database` error with its cause; headers, bodies and bound SQL values are never logged
 - **Request ID**: `req.id` (the caller's `X-Request-Id` or a new UUID) is on every log line of the request, in the response header and in `meta.correlationId` / `correlationId`
 - **Configuration** is read once, by `parseAppConfig`, and passed down as values; application code does not read `process.env`. A new variable is added to the schema, to every `.env.*` file and to the README table
@@ -402,16 +423,20 @@ All Enum types must end with `Type` suffix (e.g., `ServiceCategoryType`, `Paymen
 Database schemas are the source of truth for domain models:
 ```typescript
 // Types are inferred from Drizzle ORM schemas with DeepRequired wrapper
-// backend/packages/domain/src/models/customer.ts
-export type DbCustomer = DeepRequired<typeof customers.$inferSelect>
-export type DbNewCustomer = DeepRequired<Omit<typeof customers.$inferInsert, 'id'>>
+// backend/packages/domain/src/models/salon.ts
+export type DbSalon = DeepRequired<typeof salons.$inferSelect>
+export type DbNewSalon = DeepRequired<Omit<typeof salons.$inferInsert, SalonManagedColumn>>
 ```
+
+`schema.ts` itself is generated from the database by `pnpm db:introspect` and
+is never edited by hand. Column names are camelCase in the database, so the
+schema, the API and the code use one spelling.
 
 ### API-DB Consistency Rules
 
 #### Property Naming
 - API property names MUST match DB column names exactly
-- No UI-driven renaming (e.g., `websiteUrl` not `website` if DB has `website_url`)
+- No UI-driven renaming (e.g., `websiteUrl` not `website` when the column is `websiteUrl`)
 - Mappers must NOT transform property names
 
 #### Type Alignment

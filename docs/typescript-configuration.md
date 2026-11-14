@@ -1,404 +1,207 @@
 # TypeScript設定ガイド
 
-TypeScriptバックエンドおよびフロントエンド開発における設定の詳細と推奨事項を定義します。
+このリポジトリの TypeScript 設定がどのファイルにあり、何を設定していて、ビルドや型検査とどう関係するかを説明します。型の書き方の規則は [型安全性の原則](./type-safety-principles.md) にあります。
 
-## 基本設定（tsconfig.json）
+## バージョン
 
-以下の設定をフロントエンド、バックエンドの両方で使用します：
+- TypeScript 7（`^7.0.2`）を使います。`tsc` を実行するパッケージは、それぞれ自分の `package.json` に `typescript` を持っています
+- `backend/packages/generated` だけは TypeScript `5.9.3` に固定しています。型生成に使う `openapi-typescript` が TypeScript 5 のコンパイラ API を必要とするためです。このパッケージの `typescript` は上げません
+- Node.js は `.node-version` の 26.13.1 です
+
+## 設定ファイルの構成
+
+共通設定は `shared-config/tsconfig/` にあり、`@beauty-salon-shared/config` パッケージとして各パッケージから `extends` で参照します。
+
+| ファイル | 内容 |
+|----------|------|
+| `shared-config/tsconfig/base.json` | すべての基本。型検査のオプションはここで決める |
+| `shared-config/tsconfig/backend.json` | base + Node 向け（`types: ["node"]`） |
+| `shared-config/tsconfig/frontend.json` | base + ブラウザ向け（`lib` に DOM、`jsx: react-jsx`、`types: ["vite/client"]`） |
+| `shared-config/tsconfig/tsconfig.lib.json` | base + ライブラリパッケージ用（`src` を対象にし、`dist` に出力） |
+| `shared-config/tsconfig/tsconfig.app.json` | base + `tsc` で JavaScript を出力するアプリ用 |
+
+各 `tsconfig` がどれを継承しているかは次のとおりです。
+
+| tsconfig | 継承元 |
+|----------|--------|
+| `tsconfig.json`（リポジトリ直下。`scripts/**/*.ts` 用） | `base.json` |
+| `backend/packages/{api,config,infrastructure,utility}/tsconfig.json` | `tsconfig.lib.json` |
+| `backend/packages/domain/tsconfig.json` | `backend.json` |
+| `backend/packages/{database,generated}/tsconfig.json` | `base.json` |
+| `backend/apps/server/tsconfig.json` | `tsconfig.app.json` |
+| `backend/apps/server/tsconfig.build.json` | 同じディレクトリの `tsconfig.json`（テストを除外） |
+| `frontend/packages/*/tsconfig.json` | `tsconfig.lib.json` |
+| `frontend/apps/*/tsconfig.app.json`、`tsconfig.node.json` | `frontend.json` |
+| `specs/scripts/tsconfig.json` | なし（単独） |
+
+## 基本設定（base.json）
 
 ```json
+// shared-config/tsconfig/base.json
 {
   "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
-    // 言語機能
-    "lib": ["esnext"],
     "target": "ESNEXT",
-    "jsx": "react-jsx",
-    
-    // モジュール解決
+    "lib": ["ESNEXT"],
     "module": "ESNext",
     "moduleResolution": "bundler",
     "esModuleInterop": true,
-    "resolveJsonModule": true,
-    "paths": {
-      "@/*": ["./src/*"]
-    },
-    
-    // 型安全性設定（厳格モード）
-    "strict": true,
-    "strictNullChecks": true,
-    "strictFunctionTypes": true,
-    "strictBindCallApply": true,
-    "strictPropertyInitialization": true,
-    "noImplicitThis": true,
-    "useUnknownInCatchVariables": true,
-    "alwaysStrict": true,
-    "exactOptionalPropertyTypes": true,
-    "noUncheckedIndexedAccess": true,
-    "noImplicitReturns": true,
-    "noImplicitOverride": true,
-    "noPropertyAccessFromIndexSignature": true,
-    
-    // 未使用コードの検出
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    
-    // エラー処理
-    "noFallthroughCasesInSwitch": true,
-    "allowUnreachableCode": false,
-    "allowUnusedLabels": false,
-    
-    // 出力設定
-    "declaration": true,
-    "sourceMap": true,
-    "removeComments": true,
-    "newLine": "lf",
-    
-    // その他
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
-    "allowJs": false,
+    "isolatedModules": true,
+    "resolveJsonModule": true,
+    "allowJs": true,
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "noEmit": true,
+    "declaration": false,
+    "declarationMap": false,
+    "sourceMap": false,
+    "removeComments": true,
+    "newLine": "lf",
+    "allowSyntheticDefaultImports": true,
+    "composite": false,
     "incremental": true
-  },
-  "exclude": ["node_modules", "dist", "build", "coverage", ".next"]
-}
-```
-
-## 設定の詳細解説
-
-### 言語機能設定
-
-#### `lib: ["esnext"]` と `target: "ESNEXT"`
-- ESNEXTの最新機能を利用可能
-- Array.prototype.at()、Object.hasOwn()、Error.cause などの機能が使用可能
-- トップレベルawaitのサポート
-
-#### `jsx: "react-jsx"`
-- React 17以降の新しいJSX変換を使用
-- `import React from 'react'` が不要
-
-### モジュール解決設定
-
-#### `module: "ESNext"` と `moduleResolution: "bundler"`
-- 最新のESモジュール機能を使用
-- バンドラー（rslib、viteなど）との互換性を確保
-- package.jsonの`exports`フィールドに対応
-- TypeScript 5.0以降の推奨設定
-
-#### `paths: { "@/*": ["./src/*"] }`
-- 絶対パスインポートを有効化
-- `import { Task } from '@/domain/task'` のような記述が可能
-
-### 型安全性設定（重要）
-
-#### 必須の厳格チェック
-
-```typescript
-// strictNullChecks: true
-let value: string;
-value = null; // ❌ エラー: 'null' is not assignable to type 'string'
-value = undefined; // ❌ エラー
-
-// exactOptionalPropertyTypes: true
-interface User {
-  name?: string;
-}
-const user: User = { name: undefined }; // ❌ エラー
-
-// noUncheckedIndexedAccess: true
-const arr = [1, 2, 3];
-const value = arr[10]; // value の型は number | undefined
-
-// noImplicitReturns: true
-function getValue(flag: boolean): number {
-  if (flag) {
-    return 42;
-  }
-  // ❌ エラー: Not all code paths return a value
-}
-```
-
-#### 配列アクセスの安全性
-
-```typescript
-// noUncheckedIndexedAccess: true により
-const items = ['a', 'b', 'c'];
-const item = items[0]; // item: string | undefined
-
-// 安全な使用方法
-if (item !== undefined) {
-  console.log(item.toUpperCase()); // OK
-}
-
-// またはnon-null assertionを慎重に使用
-const firstItem = items[0]!; // 確実に存在する場合のみ
-```
-
-### プロジェクト別の拡張設定
-
-#### バックエンド向け設定（tsconfig.backend.json）
-
-```json
-{
-  "extends": "./tsconfig.json",
-  "compilerOptions": {
-    "outDir": "./dist",
-    "rootDir": "./src",
-    "types": ["node", "@types/node"],
-    "lib": ["esnext"]
-  },
-  "include": ["src/**/*"],
-  "exclude": ["src/**/*.test.ts", "src/**/*.spec.ts"]
-}
-```
-
-#### フロントエンド向け設定（tsconfig.frontend.json）
-
-```json
-{
-  "extends": "./tsconfig.json",
-  "compilerOptions": {
-    "lib": ["esnext", "dom", "dom.iterable"],
-    "types": ["@types/react", "@types/react-dom"],
-    "jsx": "react-jsx"
-  },
-  "include": ["src/**/*", "next-env.d.ts"],
-  "exclude": ["node_modules", ".next", "out"]
-}
-```
-
-## 型定義の配置
-
-```
-backend/packages/
-├── database/
-│   └── src/
-│       └── schema/       # DBスキーマ定義（Drizzle ORM）
-├── domain/
-│   └── src/
-│       ├── models/               # Sum型エンティティ／値オブジェクト
-│       ├── business-logic/       # UseCase（Result型）
-│       │   └── {entity}/
-│       │       └── *.use-case.ts
-│       ├── mappers/
-│       │   ├── write/            # API → Domain → DB変換
-│       │   └── read/             # DB → Domain → API変換
-│       ├── repositories/         # Repository Interface定義
-│       └── shared/               # result.ts / validators.ts / guards.ts
-├── infrastructure/
-│   └── src/
-│       ├── repositories/         # Repository実装
-│       ├── services/             # Email / Storage / Monitoring
-│       └── adapters/             # 3rd party adapters
-├── generated/
-│   └── src/                      # OpenAPI由来の型定義
-│       └── generated/
-│           └── api-types.ts      # 自動生成されたAPI型
-└── api/
-    └── src/
-        ├── routes/               # エンドポイント定義
-        ├── middleware/           # 共通ミドルウェア
-        ├── presenters/           # Domain Result → HTTP レスポンス
-        └── bootstrap/            # DI・サーバー初期化
-```
-
-## 型安全性のベストプラクティス
-
-### 1. unknown型の適切な使用
-
-```typescript
-// ❌ 避けるべき
-catch (error: any) {
-  console.log(error.message);
-}
-
-// ✅ 推奨
-catch (error: unknown) {
-  if (error instanceof Error) {
-    console.log(error.message);
-  } else {
-    console.log('Unknown error:', error);
   }
 }
 ```
 
-### 2. 型アサーションの回避
+### 型検査のオプション
 
-```typescript
-// ❌ 避けるべき
-const data = response.data as UserData;
+| オプション | 効果 |
+|------------|------|
+| `strict` | `strictNullChecks` などの厳格な検査をまとめて有効にする |
+| `noUncheckedIndexedAccess` | 添字や分割代入で取り出した要素の型に `undefined` を加える。書き方は [型安全性の原則](./type-safety-principles.md) を参照 |
+| `noUnusedLocals` / `noUnusedParameters` | 未使用のローカル変数と引数をエラーにする。使わない引数は `_req` のように `_` で始める |
+| `noFallthroughCasesInSwitch` | `switch` の `case` が次へ抜けるのをエラーにする |
 
-// ✅ 推奨：実行時バリデーション
-import { z } from 'zod';
+型検査を厳しくするオプションでリポジトリが設定しているのは、この表のものだけです。[CLAUDE.md](../CLAUDE.md) の「TypeScript Configuration」には `exactOptionalPropertyTypes` と `noPropertyAccessFromIndexSignature` も挙がっていますが、現在はどの `tsconfig` も有効にしていません。
 
-const UserDataSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  email: z.string().email(),
-});
+### モジュールのオプション
 
-const parseResult = UserDataSchema.safeParse(response.data);
-if (parseResult.success) {
-  const data = parseResult.data; // 型安全
-}
-```
+- `module: "ESNext"` と `moduleResolution: "bundler"`: すべてのパッケージが ES モジュール（`"type": "module"`）で、`package.json` の `exports` を解決に使う
+- `isolatedModules`: ファイル単位で変換できる書き方だけを許す。型だけの import は `import type`（または `import { type X }`）で書く。Biome の `useImportType` / `useExportType` も同じことを検査する
 
-### 3. Genericsの活用
+### 出力のオプション
 
-```typescript
-// 型安全なAPIクライアント
-class ApiClient {
-  async get<T>(
-    path: string,
-    schema: z.ZodSchema<T>
-  ): Promise<Result<T, AppError>> {
-    try {
-      const response = await fetch(path);
-      const data = await response.json();
-      const parsed = schema.safeParse(data);
-      
-      if (parsed.success) {
-        return ok(parsed.data);
-      } else {
-        return err({ type: 'validation', message: 'Invalid response' });
-      }
-    } catch (error) {
-      return err({ type: 'network', message: 'Network error' });
-    }
-  }
-}
-```
+`base.json` は `noEmit: true` です。出力が必要なパッケージが、自分の `tsconfig.json` で `noEmit: false`、`declaration: true`、`outDir`、`rootDir` を設定します。
 
-## パフォーマンス設定
+## パッケージごとの設定とビルド
 
-### インクリメンタルビルド
+| 対象 | JavaScript の出力 | 型定義（`.d.ts`）の出力 |
+|------|-------------------|-------------------------|
+| `backend/packages/{api,config,database,domain,infrastructure,utility}` | rslib（`dist/index.js` に束ねる） | `tsc --emitDeclarationOnly` |
+| `backend/packages/generated` | rslib | rslib（`dts: true`） |
+| `backend/apps/server` | `tsc --project tsconfig.build.json` | 同左 |
+| `frontend/packages/*` | rslib | rslib（`dts: true`） |
+| `frontend/apps/*` | Vite | 出力しない |
+
+### バックエンドのパッケージ
 
 ```json
+// backend/packages/api/tsconfig.json
 {
-  "compilerOptions": {
-    "incremental": true,
-    "tsBuildInfoFile": ".tsbuildinfo"
-  }
-}
-```
-
-### プロジェクト参照（モノレポ向け）
-
-```json
-// packages/database/tsconfig.json
-{
-  "extends": "../../tsconfig.json",
+  "extends": "@beauty-salon-shared/config/tsconfig.lib.json",
   "compilerOptions": {
     "composite": true,
+    "noEmit": false,
+    "declaration": true,
+    "declarationMap": true,
+    "rootDir": "./src",
     "outDir": "./dist",
-    "rootDir": "./src"
-  }
-}
-
-// packages/infrastructure/tsconfig.json
-{
-  "extends": "../../tsconfig.json",
-  "references": [
-    { "path": "../database" },
-    { "path": "../domain" },
-    { "path": "../generated" }
-  ]
-}
-
-// packages/api/tsconfig.json
-{
-  "extends": "../../tsconfig.json",
+    "tsBuildInfoFile": "./dist/.tsbuildinfo",
+    "types": ["vitest/globals", "node"]
+  },
   "references": [
     { "path": "../domain" },
-    { "path": "../infrastructure" },
-    { "path": "../generated" }
-  ]
+    { "path": "../generated" },
+    { "path": "../infrastructure" }
+  ],
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
 }
 ```
 
-## CI/CD向け設定
+ビルドスクリプトは `rslib build && tsc --emitDeclarationOnly` です。rslib（設定は各パッケージの `rslib.config.ts`）が JavaScript を出力し、`tsc` はこの `tsconfig.json` に従って型定義だけを `dist` に出力します。
 
-### 型チェック専用設定
+### サーバーアプリ
+
+`backend/apps/server` は rslib を使わず、`tsc` だけでビルドします。
 
 ```json
-// tsconfig.typecheck.json
+// backend/apps/server/tsconfig.build.json
 {
   "extends": "./tsconfig.json",
-  "compilerOptions": {
-    "noEmit": true
-  },
-  "include": ["src/**/*", "tests/**/*"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "src/**/__tests__/**"
+  ]
 }
 ```
 
-### package.jsonスクリプト
+`tsc` は import の指定子を書き換えず、出力された `dist/index.js` は Node.js がそのまま実行します。Node.js は相対 import の拡張子を補わないので、サーバーアプリの相対 import には `.js` を付けます。
+
+```typescript
+// backend/apps/server/src/index.ts
+import { startServer } from './server.js'
+```
+
+付け忘れても型検査は通り（`moduleResolution: "bundler"` は拡張子なしを許すため）、`pnpm start:backend` で起動したときに初めて失敗します。rslib が1ファイルに束ねるパッケージと、Vitest が実行するテストでは、拡張子は付けません。
+
+### ワークスペースパッケージの解決（`@beauty-salon-backend/source`）
+
+バックエンドの各パッケージは、`exports` に独自の条件を1つ持っています。
 
 ```json
-{
-  "scripts": {
-    "typecheck": "tsc --noEmit",
-    "typecheck:watch": "tsc --noEmit --watch",
-    "build": "tsc",
-    "build:clean": "rm -rf dist && tsc"
+// backend/packages/domain/package.json
+"exports": {
+  ".": {
+    "@beauty-salon-backend/source": "./src/index.ts",
+    "types": "./dist/index.d.ts",
+    "import": "./dist/index.js",
+    "default": "./dist/index.js"
   }
 }
 ```
 
-## トラブルシューティング
+この条件を指定した実行だけが、他のパッケージをビルドせずにソースから読み込みます。
 
-### よくある問題と解決策
+| 実行 | 条件の指定 | 読み込まれるもの |
+|------|------------|------------------|
+| `pnpm dev:backend` | `tsx watch --conditions=@beauty-salon-backend/source` | `src/index.ts` |
+| `pnpm test`、`pnpm test:integration`（api、config、domain、infrastructure、server） | 各 `vitest.config.ts` / `vitest.integration.config.ts` の `ssr.resolve.conditions` | `src/index.ts` |
+| `pnpm typecheck`、各パッケージの `tsc` | なし | `dist/index.d.ts` |
+| `pnpm start:backend`、DB スクリプト（`pnpm db:migrate` など） | なし | `dist/index.js` |
 
-#### 1. モジュール解決エラー
+`tsc` は条件を指定していないので、依存するパッケージの型をビルド成果物から読みます。そのため `pnpm typecheck` の前にビルドが必要です（`make ci-check` と CI は `pnpm build:prod` の後に実行しています）。依存先のパッケージを変更したのに型エラーが古いままのときは、ビルドし直してください。
 
-```typescript
-// ❌ エラー: Cannot find module '@/domain/task'
-import { Task } from '@/domain/task';
+### フロントエンド
 
-// 解決策: tsconfig.jsonのbaseUrlを確認
-{
-  "compilerOptions": {
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["./src/*"]
-    }
-  }
-}
-```
+- アプリ（`frontend/apps/*`）の `tsconfig.json` は `references` だけを持ち、`tsconfig.app.json`（`src` 用。`@/*` を `./src/*` に対応させる `paths` を持つ）と `tsconfig.node.json`（`vite.config.ts` 用）に分かれています。型検査は `tsc --build`、ビルドは Vite です
+- パッケージ（`frontend/packages/*`）は `tsconfig.lib.json` を継承し、必要に応じて `lib` に DOM、`jsx: "react-jsx"` を足しています
 
-#### 2. 型定義の競合
+### Node.js が直接実行するスクリプト
 
-```typescript
-// 複数のパッケージで同じグローバル型が定義されている場合
-{
-  "compilerOptions": {
-    "skipLibCheck": true, // 型定義ファイルのチェックをスキップ
-    "types": ["node"] // 明示的に含める型定義を指定
-  }
-}
-```
+`scripts/*.ts` と `specs/scripts/postprocess-openapi.ts` は、ビルドせずに `node ./scripts/check-versions.ts` のように実行します。リポジトリ直下の `tsconfig.json` と `specs/scripts/tsconfig.json` は、そのための2つのオプションを足しています。
 
-#### 3. ESM/CJS互換性
+- `erasableSyntaxOnly`: 型を取り除くだけで実行できる構文に限る（`enum` などを禁止する）
+- `verbatimModuleSyntax`: 型だけの import / export に `type` を必須にする
 
-```typescript
-// package.json
-{
-  "type": "module", // ESMを使用
-  "exports": {
-    ".": {
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
-    }
-  }
-}
-```
+## コマンド
 
-## まとめ
+| コマンド | 内容 |
+|----------|------|
+| `pnpm typecheck` | リポジトリ直下の `tsconfig.json` を検査し、続けて各パッケージの `typecheck` スクリプト（`tsc --noEmit`、フロントエンドのアプリは `tsc --build`）を実行する。先にビルドが必要 |
+| `pnpm build:dev`、`build:test`、`build:stg`、`build:prod` | 各パッケージを上の表の方法でビルドする |
+| `pnpm dev:backend` | サーバーをソースから起動し、変更のたびに再起動する |
 
-この設定により：
+## TypeScript 7 での注意点
 
-1. **型安全性**: コンパイル時に多くのエラーを検出
-2. **開発効率**: 強力な型推論とエディタサポート
-3. **保守性**: 厳格な型チェックによるリファクタリングの安全性
-4. **互換性**: フロントエンド・バックエンド両方で使用可能
+TypeScript 5 までの設定例をそのまま使うとエラーになるものです。
 
-すべての新規プロジェクトでこの設定を使用し、既存プロジェクトも段階的に移行することを推奨します。
+- **`types` は明示する**: `@types/*` は自動では読み込まれません。Node.js の型を使うパッケージは `"types": ["node"]` を、Vitest のグローバルを使うパッケージは `"vitest/globals"` を指定しています。指定がないと `Cannot find name 'process'` のようなエラーになります
+- **`baseUrl` と `moduleResolution: "node"` は削除された**: 指定すると `tsc` がエラーにします。`paths` は `baseUrl` なしで、`tsconfig` からの相対パス（`"@/*": ["./src/*"]`）で書きます

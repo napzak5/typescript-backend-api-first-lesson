@@ -1,657 +1,224 @@
-# DB駆動ドメインモデルアーキテクチャ
+# DB駆動ドメインモデル
 
 ## 概要
 
-本アーキテクチャでは、データベーステーブルの型定義からドメインモデルを推論し、それを正とする方針を採用します。これにより、DBスキーマが単一の真実の源（Single Source of Truth）となり、型の一貫性が保証されます。
-
-## アーキテクチャの原則
-
-### 設計方針：後方互換性を考慮しない
-
-**重要：本アーキテクチャは後方互換性を一切考慮しません。** 常に現在の最適な設計を追求し、破壊的変更を恐れません。この方針により：
-
-- **技術的負債の蓄積を防止**: 古いAPIやスキーマを維持するコストを排除
-- **設計の簡潔性を維持**: 互換性レイヤーやアダプターパターンが不要
-- **型の一貫性を保証**: 新旧の型定義の混在を防ぐ
-- **迅速な進化**: 最新のベストプラクティスを即座に適用可能
-
-### 1. DBファーストアプローチ
+このシステムでは、データベースのスキーマを唯一の正とする。テーブルの行を表す型は手で書かず、DB から生成した Drizzle スキーマから推論する。API の型は TypeSpec から生成し、2 つをマッパーでつなぐ。
 
 ```
-┌──────────────────────────────────────────┐
-│ Database Schema (Drizzle ORM)            │ ← 型定義の源
-│ - テーブル定義                           │
-│ - カラム型                               │
-│ - リレーション                           │
-└──────────────────────────────────────────┘
-              ↓ 型推論
-┌──────────────────────────────────────────┐
-│ Domain Model                             │ ← DBから推論
-│ - DBテーブル型をそのまま使用             │
-│ - ビジネスロジックを追加                 │
-│ - 計算プロパティを追加                   │
-└──────────────────────────────────────────┘
-              ↓ マッピング
-┌──────────────────────────────────────────┐
-│ API Types (OpenAPI Generated)            │ ← TypeSpecから生成
-│ - リクエスト/レスポンス型                │
-│ - DTOとしての役割                        │
-└──────────────────────────────────────────┘
+SQL マイグレーション                              TypeSpec（specs/）
+   │ pnpm db:migrate                                 │ pnpm generate
+   ▼                                                 ▼
+PostgreSQL ── pnpm db:introspect ──▶ schema.ts     api-types.ts
+                                        │ $inferSelect / $inferInsert と DeepRequired
+                                        ▼
+                                  DbSalon、DbNewSalon ◀── マッパー ──▶ ApiSalonResponse、ApiSalonCreateRequest
 ```
 
-### 2. データフローパターン
+実装されているのは Salon ドメインだけで、以下の例はすべて Salon のコードである。ほかのドメインは DB スキーマと TypeSpec にあるだけで、モデルもマッパーもない（GitHub issue #91）。
 
-#### Write操作（Create/Update）
-```
-API Request (自動生成型)
-    ↓ Validation
-Write Mapper
-    ↓ Transform
-Domain Model (DB推論型)
-    ↓ Business Logic
-Database (Drizzle型)
+- 型と制約の層ごとの対応、`pnpm check:api-db`: [API-DB型制約マッピング](./api-db-type-constraints-mapping.md)
+- TypeSpec の書き方: [TypeSpec API型定義ルール](./typespec-api-type-rules.md)
+- レイヤー全体の構成: [バックエンドアーキテクチャガイドライン](./backend-architecture-guidelines.md)
+
+## 原則
+
+1. **テーブルを変えるのは SQL マイグレーションだけ**。`schema.ts` を書き換えて DB に反映する、という方向の操作はない
+2. **`schema.ts`、`relations.ts`、`sql/setup.sql` は生成物**。手で編集しない
+3. **行の型は推論する**。`DeepRequired<typeof table.$inferSelect>` の形で定義し、テーブルの形を手で書き写さない
+4. **カラム名がそのままプロパティ名になる**。カラム名は DB の中でも camelCase で、DB、Drizzle、ドメイン、API のどこでも同じ名前を使う
+5. **API を DB に合わせる**。API のプロパティ名と NULL 許可はカラムに従う（[CLAUDE.md](../CLAUDE.md) の API-DB Consistency Rules）
+
+## スキーマ変更のワークフロー
+
+1. `backend/packages/database/sql/migrations/` に、`YYYYMMDDHHMM_description.sql` という名前で SQL マイグレーションを書く
+2. `pnpm db:migrate` で適用する
+3. `pnpm db:introspect` で `schema.ts` と `relations.ts` を DB から再生成する
+4. `pnpm db:generate-sql` で `sql/setup.sql` を `schema.ts` から再生成する
+5. マイグレーションと 3 つの生成物を同じコミットに含める
+
+変更が API に現れる場合は、続けて TypeSpec を直し、`pnpm generate` と `pnpm check:api-db` を実行する。
+
+### マイグレーションのルール
+
+- ファイル名は `YYYYMMDDHHMM_description.sql`。ファイル名の順に適用される
+- 一度でもどこかの DB に適用したマイグレーションは編集しない。直したいときは新しいマイグレーションを書く
+- すでにその変更を含むスキーマに対して実行しても、何も変えないように書く（`IF EXISTS` / `IF NOT EXISTS` や `information_schema` で確認してから変更する）。適用履歴のない DB を最新にできるようにするためで、統合テスト（`backend/packages/database/src/scripts/__tests__/migrations.integration.test.ts`）が、全マイグレーションを最新のスキーマに再実行しても `salons` のカラムが変わらないことを確認している
+- カラム名は camelCase なので、SQL では二重引用符で囲む
+
+```sql
+-- backend/packages/database/sql/migrations/202611140900_salon_list_columns_not_null.sql
+-- （DO $$ ... END $$ ブロックの中の抜粋）
+IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = current_schema()
+      AND table_name = 'salons'
+      AND column_name = 'reviewCount'
+      AND is_nullable = 'YES'
+) THEN
+    UPDATE salons SET "reviewCount" = 0 WHERE "reviewCount" IS NULL;
+    ALTER TABLE salons ALTER COLUMN "reviewCount" SET NOT NULL;
+END IF;
 ```
 
-#### Read操作（Get/List）
-```
-Database (Drizzle型)
-    ↓ Query
-Domain Model (DB推論型)
-    ↓ Business Logic
-Read Mapper
-    ↓ Transform
-API Response (自動生成型)
-```
+### `pnpm db:migrate` の動作
 
-## 実装パターン
+実装は `backend/packages/database/src/scripts/migrations.ts` にある。
 
-### 1. ドメインモデル定義
+- **空の DB**（`public` スキーマにテーブルがない）: `sql/setup.sql` からスキーマを作り、`sql/migrations/` のすべてのファイルを適用済みとして記録する。`setup.sql` はすべてのマイグレーションを反映した状態だからである
+- **それ以外の DB**: まだ適用していないマイグレーションを、1 つずつ別のトランザクションで適用する。失敗したマイグレーションはロールバックされ、そこで止まる
+- 適用済みのマイグレーションは `migration_history.applied_migrations` に記録される。`public` とは別のスキーマなので、`pnpm db:introspect` や `pnpm db:truncate` の対象にならない
+- 同時に実行しても、アドバイザリーロックで順番に処理され、同じマイグレーションが 2 回適用されることはない
+- `pnpm db:migrate <file>` は、指定した SQL ファイルを記録せずに実行する。マイグレーションを書いている途中で試すためのもの
+
+`pnpm db:fresh` は、テーブル、enum 型、適用履歴をすべて削除してから `sql/setup.sql` でスキーマを作り直し、すべてのマイグレーションを適用済みとして記録する。
+
+drizzle-kit は、マイグレーションの生成にも適用にも使わない。使うのは `pnpm db:introspect`（`drizzle-kit introspect`）と `pnpm db:generate-sql`（`drizzle-kit export`）だけである。
+
+### `pnpm check:db-schema`
+
+`pnpm db:fresh`、`pnpm db:introspect`、`pnpm db:generate-sql` を順に実行し、`schema.ts`、`relations.ts`、`sql/setup.sql` がコミット済みの内容と違えば失敗する。3 つの生成物が互いに一致していること、つまりどれかが手で編集されたり、一部だけ更新されたりしていないことを確認する検査である。
+
+- CI では `test` ジョブが実行する。`make ci-check` は CI のほかの検査をすべて実行するが、この検査だけは含まない。ローカルでは `make db-check` で別に実行する
+- 別になっているのは、接続先の DB を作り直すからである。その DB のデータはすべて消える
+- `db:fresh` は `setup.sql` から DB を作るので、マイグレーションを追加しただけで手順 3・4 を実行していない状態は、この検査では検出できない。手順は最後まで実行する
+
+## 生成されるファイル
+
+| ファイル | 生成元 | コマンド |
+|---|---|---|
+| `backend/packages/database/src/schema.ts` | DB | `pnpm db:introspect` |
+| `backend/packages/database/src/relations.ts` | DB | `pnpm db:introspect` |
+| `backend/packages/database/sql/setup.sql` | `schema.ts` | `pnpm db:generate-sql` |
+
+`db:introspect` は drizzle-kit の出力をそのまま使わず、宣言や制約の順序を正規化する（`backend/packages/database/src/scripts/canonicalize-introspection.ts`）。そのため、スキーマが変わっていなければ再生成しても差分は出ない。
 
 ```typescript
-// backend/packages/database/src/schema/customer.ts
-import { pgTable, uuid, text, timestamp, integer, pgEnum } from 'drizzle-orm/pg-core'
-
-export const customerStateEnum = pgEnum('customer_state', ['active', 'inactive', 'suspended'])
-
-export const customers = pgTable('customers', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  salonId: uuid('salon_id').references(() => salons.id),
-  firstName: text('first_name').notNull(),
-  lastName: text('last_name').notNull(),
-  email: text('email').notNull().unique(),
-  phoneNumber: text('phone_number'),
-  address: text('address'),
-  state: customerStateEnum('state').notNull().default('active'),
-  loyaltyPoints: integer('loyalty_points').notNull().default(0),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at').notNull().defaultNow(),
-})
-
-// 型推論（基本形 - 参考のみ）
-// 実際の実装では以下のDeepRequiredパターンを使用
-export type CustomerSelect = typeof customers.$inferSelect
-export type CustomerInsert = typeof customers.$inferInsert
-```
-
-### 2. ドメインモデルの拡張
-
-```typescript
-// backend/packages/domain/src/models/customer.ts
-import type { customers } from '@beauty-salon-backend/database'
-import type { DeepRequired, Omit } from '@beauty-salon-backend/utility'
-
-// DeepRequiredパターン：全フィールドを非nullableに
-export type DbCustomer = DeepRequired<typeof customers.$inferSelect>
-export type DbNewCustomer = DeepRequired<Omit<typeof customers.$inferInsert, 'id'>>
-
-// 注意: 実装では、DBから取得したデータの全フィールドが
-// 必ず値を持つことを保証するために DeepRequired を使用
-
-// DBモデルをそのまま使用し、ビジネスロジックを追加
-export type Customer = DbCustomer & {
-  // 計算プロパティ
-  readonly fullName: string
-  readonly isActive: boolean
-  readonly canReserve: boolean
-}
-
-// ドメインロジックを含むファクトリ
-export const createCustomerModel = (dbCustomer: DbCustomer): Customer => {
-  return {
-    ...dbCustomer,
-    get fullName() {
-      return `${dbCustomer.firstName} ${dbCustomer.lastName}`.trim()
-    },
-    get isActive() {
-      return dbCustomer.state === 'active'
-    },
-    get canReserve() {
-      return dbCustomer.state === 'active' && dbCustomer.loyaltyPoints >= 0
-    }
-  }
-}
-```
-
-### 3. Writeマッパー（API → DB）
-
-```typescript
-// backend/packages/domain/src/mappers/write/customer.mapper.ts
-import type { components } from '@beauty-salon-backend/generated'
-import type { NewCustomer } from '@beauty-salon-backend/database'
-import { ok, err, type Result } from '../../shared/result'
-
-type CreateCustomerRequest = components['schemas']['Models.CreateCustomerRequest']
-
-/**
- * APIリクエストをDB挿入用の型に変換
- * バリデーションとデータ変換を担当
- */
-export const mapCreateRequestToDb = (
-  request: CreateCustomerRequest
-): Result<NewCustomer, ValidationError[]> => {
-  const errors: ValidationError[] = []
-
-  // 名前の分割
-  const nameParts = request.name.trim().split(' ')
-  const firstName = nameParts[0]
-  const lastName = nameParts.slice(1).join(' ') || ''
-
-  if (!firstName) {
-    errors.push({
-      field: 'name',
-      message: 'Name must contain at least a first name'
-    })
-  }
-
-  if (!request.email || !request.email.includes('@')) {
-    errors.push({
-      field: 'email',
-      message: 'Valid email is required'
-    })
-  }
-
-  if (errors.length > 0) {
-    return err(errors)
-  }
-
-  // DB型に準拠した形式で返す
-  const newCustomer: NewCustomer = {
-    salonId: request.salonId ?? null,
-    firstName,
-    lastName,
-    email: request.email,
-    phoneNumber: request.phoneNumber ?? null,
-    address: request.address ?? null,
-    state: 'active',
-    loyaltyPoints: 0,
-    // createdAt, updatedAt はDBのデフォルト値を使用
-  }
-
-  return ok(newCustomer)
-}
-
-/**
- * 更新リクエストをDB更新用に変換
- */
-export const mapUpdateRequestToDb = (
-  request: components['schemas']['Models.UpdateCustomerRequest']
-): Result<Partial<NewCustomer>, ValidationError[]> => {
-  const updates: Partial<NewCustomer> = {}
-
-  if (request.name !== undefined) {
-    const nameParts = request.name.trim().split(' ')
-    updates.firstName = nameParts[0]
-    updates.lastName = nameParts.slice(1).join(' ') || ''
-  }
-
-  if (request.email !== undefined) {
-    updates.email = request.email
-  }
-
-  if (request.phoneNumber !== undefined) {
-    updates.phoneNumber = request.phoneNumber
-  }
-
-  if (request.address !== undefined) {
-    updates.address = request.address
-  }
-
-  if (request.state !== undefined) {
-    updates.state = request.state
-  }
-
-  return ok(updates)
-}
-```
-
-### 4. Readマッパー（DB → API）
-
-```typescript
-// backend/packages/domain/src/mappers/read/customer.mapper.ts
-import type { components } from '@beauty-salon-backend/generated'
-import type { Customer as DbCustomer } from '@beauty-salon-backend/database'
-import { createCustomerModel } from '../../models/customer'
-
-type ApiCustomer = components['schemas']['Models.Customer']
-
-/**
- * DBレコードをAPIレスポンス型に変換
- * ドメインロジックを適用してからAPIフォーマットに変換
- */
-export const mapDbToApiResponse = (dbCustomer: DbCustomer): ApiCustomer => {
-  // ドメインモデルを作成（ビジネスロジック適用）
-  const customer = createCustomerModel(dbCustomer)
-
-  // API型に変換
-  return {
-    id: customer.id,
-    salonId: customer.salonId ?? null,
-    name: customer.fullName, // 計算プロパティを使用
-    email: customer.email,
-    phoneNumber: customer.phoneNumber ?? null,
-    address: customer.address ?? null,
-    state: customer.state,
-    loyaltyPoints: customer.loyaltyPoints,
-    isActive: customer.isActive, // ビジネスロジック
-    canReserve: customer.canReserve, // ビジネスロジック
-  }
-}
-
-/**
- * 複数のDBレコードをAPIレスポンスに変換
- */
-export const mapDbListToApiResponse = (
-  dbCustomers: DbCustomer[]
-): ApiCustomer[] => {
-  return dbCustomers.map(mapDbToApiResponse)
-}
-
-/**
- * ページネーション付きレスポンスの変換
- */
-export const mapDbPageToApiResponse = (
-  dbCustomers: DbCustomer[],
-  total: number,
-  page: number,
-  limit: number
-): components['schemas']['Models.CustomerListResponse'] => {
-  return {
-    items: mapDbListToApiResponse(dbCustomers),
-    pagination: {
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit)
-    }
-  }
-}
-```
-
-### 5. リポジトリ実装
-
-```typescript
-// backend/packages/infrastructure/src/repositories/customer.repository.ts
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres'
-import type { PgTransaction } from 'drizzle-orm/pg-core'
-import { customers, type Customer, type NewCustomer } from '@beauty-salon-backend/database'
-import { eq } from 'drizzle-orm'
-import { ok, err, type Result } from '@beauty-salon-backend/domain'
-
-// 統一型定義（命名規則）
-type DatabaseConnection = NodePgDatabase
-type Transaction = PgTransaction
-type DbOrTx = DatabaseConnection | Transaction
-
-export class CustomerRepository {
-  constructor(private readonly db: DatabaseConnection) {}
-
-  /**
-   * 新規顧客作成（通常版）
-   * 内部でトランザクション対応版を呼び出す
-   */
-  async create(data: NewCustomer): Promise<Result<Customer, RepositoryError>> {
-    return this.createWithTx(this.db, data)
-  }
-
-  /**
-   * 新規顧客作成（トランザクション対応版）
-   * 仮引数名 dbOrTx: DB接続またはトランザクションを受け入れる
-   */
-  async createWithTx(
-    dbOrTx: DbOrTx,  // 命名規則: dbOrTx
-    data: NewCustomer
-  ): Promise<Result<Customer, RepositoryError>> {
-    try {
-      const [customer] = await dbOrTx
-        .insert(customers)
-        .values(data)
-        .returning()
-
-      return ok(customer)
-    } catch (error) {
-      return err({
-        type: 'database',
-        message: 'Failed to create customer',
-        cause: error
-      })
-    }
-  }
-
-  /**
-   * ID検索（通常版）
-   */
-  async findById(id: string): Promise<Result<Customer | null, RepositoryError>> {
-    return this.findByIdWithTx(this.db, id)
-  }
-
-  /**
-   * ID検索（トランザクション対応版）
-   */
-  async findByIdWithTx(
-    dbOrTx: DbOrTx,
-    id: string
-  ): Promise<Result<Customer | null, RepositoryError>> {
-    try {
-      const customer = await dbOrTx
-        .select()
-        .from(customers)
-        .where(eq(customers.id, id))
-        .limit(1)
-
-      return ok(customer[0] ?? null)
-    } catch (error) {
-      return err({
-        type: 'database',
-        message: 'Failed to find customer',
-        cause: error
-      })
-    }
-  }
-
-  /**
-   * 更新
-   */
-  async update(
-    id: string,
-    data: Partial<NewCustomer>
-  ): Promise<Result<Customer, RepositoryError>> {
-    try {
-      const [updated] = await db
-        .update(customers)
-        .set({
-          ...data,
-          updatedAt: new Date()
-        })
-        .where(eq(customers.id, id))
-        .returning()
-
-      if (!updated) {
-        return err({
-          type: 'not_found',
-          message: 'Customer not found'
-        })
-      }
-
-      return ok(updated)
-    } catch (error) {
-      return err({
-        type: 'database',
-        message: 'Failed to update customer',
-        cause: error
-      })
-    }
-  }
-
-  /**
-   * リスト取得
-   */
-  async list(
-    filters: {
-      state?: 'active' | 'inactive' | 'suspended'
-      salonId?: string
-    } = {},
-    pagination: {
-      page: number
-      limit: number
-    } = { page: 1, limit: 20 }
-  ): Promise<Result<{ items: Customer[]; total: number }, RepositoryError>> {
-    try {
-      const conditions = []
-
-      if (filters.state) {
-        conditions.push(eq(customers.state, filters.state))
-      }
-
-      if (filters.salonId) {
-        conditions.push(eq(customers.salonId, filters.salonId))
-      }
-
-      const offset = (pagination.page - 1) * pagination.limit
-
-      const [items, [{ count }]] = await Promise.all([
-        db
-          .select()
-          .from(customers)
-          .where(conditions.length > 0 ? and(...conditions) : undefined)
-          .limit(pagination.limit)
-          .offset(offset),
-        db
-          .select({ count: count() })
-          .from(customers)
-          .where(conditions.length > 0 ? and(...conditions) : undefined)
-      ])
-
-      return ok({
-        items,
-        total: Number(count)
-      })
-    } catch (error) {
-      return err({
-        type: 'database',
-        message: 'Failed to list customers',
-        cause: error
-      })
-    }
-  }
-}
-```
-
-### 6. ユースケース実装
-
-```typescript
-// backend/packages/domain/src/business-logic/customer/create-customer.use-case.ts
-import type { components } from '@beauty-salon-backend/generated'
-import { CustomerRepository } from '@beauty-salon-backend/infrastructure'
-import { mapCreateRequestToDb } from '../../mappers/write/customer.mapper'
-import { mapDbToApiResponse } from '../../mappers/read/customer.mapper'
-import { ok, err, type Result } from '../../shared/result'
-
-type CreateCustomerRequest = components['schemas']['Models.CreateCustomerRequest']
-type CustomerResponse = components['schemas']['Models.Customer']
-
-export class CreateCustomerUseCase {
-  private readonly repository: CustomerRepository
-
-  constructor(dependencies: { repository: CustomerRepository }) {
-    this.repository = dependencies.repository
-  }
-
-  async execute(
-    request: CreateCustomerRequest
-  ): Promise<Result<CustomerResponse, UseCaseError>> {
-    // 1. API型 → DB型への変換（Write Mapper）
-    const dbDataResult = mapCreateRequestToDb(request)
-    if (dbDataResult.type === 'err') {
-      return err({
-        type: 'validation',
-        errors: dbDataResult.error
-      })
-    }
-
-    // 2. DBへの保存
-    const saveResult = await this.repository.create(dbDataResult.value)
-    if (saveResult.type === 'err') {
-      return err({
-        type: 'repository',
-        message: saveResult.error.message
-      })
-    }
-
-    // 3. DB型 → API型への変換（Read Mapper）
-    const response = mapDbToApiResponse(saveResult.value)
-
-    return ok(response)
-  }
-}
-```
-
-## 型の流れ
-
-### 1. 型定義の源
-
-- **Database Schema**: Drizzle ORMのテーブル定義が真実の源
-- **API Types**: TypeSpec/OpenAPIから自動生成
-- **Domain Model**: DBスキーマから推論 + ビジネスロジック
-
-### 2. 型変換の責務
-
-| マッパー | 責務 | 入力型 | 出力型 |
-|---------|------|--------|--------|
-| Write Mapper | APIリクエストをDB形式に変換 | API自動生成型 | DB推論型 |
-| Read Mapper | DBデータをAPIレスポンスに変換 | DB推論型 | API自動生成型 |
-
-### 3. バリデーションのタイミング
-
-1. **APIレベル**: OpenAPIスキーマによる基本バリデーション
-2. **Write Mapperレベル**: ビジネスルールのバリデーション
-3. **DBレベル**: 制約による最終バリデーション
-
-## メリット
-
-1. **型の一貫性**: DBスキーマが唯一の真実の源
-2. **簡潔性**: Brand型やID変換、互換性レイヤーの複雑さを排除
-3. **自動化**: DB型推論により手動定義を削減
-4. **保守性**: スキーマ変更が自動的に型に反映
-5. **技術的負債ゼロ**: 後方互換性のコードが存在しない
-6. **高速な開発**: 破壊的変更を前提とした迅速な改善
-
-## ベストプラクティス
-
-### 1. DBファースト設計
-
-```typescript
-// まずDBスキーマを定義
-export const products = pgTable('products', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  name: text('name').notNull(),
-  price: decimal('price', { precision: 10, scale: 2 }).notNull(),
-  // ...
-})
-
-// 型は自動推論（実際の実装ではDeepRequiredパターンを使用）
-export type Product = typeof products.$inferSelect
-```
-
-### 2. マッパーの単一責任
-
-```typescript
-// ❌ 悪い例: マッパーでビジネスロジックを実行
-export const mapToDb = (request) => {
-  // 価格計算などのビジネスロジックを含めない
-  const finalPrice = request.price * 1.1 // 税込計算
-  // ...
-}
-
-// ✅ 良い例: 変換のみに集中
-export const mapToDb = (request) => {
-  return {
-    name: request.name,
-    price: request.price, // そのままマッピング
+// backend/packages/database/src/schema.ts（抜粋）
+export const salons = pgTable(
+  'salons',
+  {
+    id: uuid().defaultRandom().primaryKey().notNull(),
+    name: varchar({ length: 255 }).notNull(),
+    nameKana: varchar({ length: 255 }),
     // ...
-  }
-}
+    latitude: numeric({ precision: 10, scale: 8 }),
+    // ...
+    imageUrls: text().array().notNull(),
+    // ...
+    businessHours: jsonb(),
+    // ...
+    createdAt: timestamp({ withTimezone: true, mode: 'string' })
+      .defaultNow()
+      .notNull(),
+    // ...
+  },
+  (table) => [
+    // ...
+    unique('salons_email_unique').on(table.email),
+  ],
+)
 ```
 
-### 3. エラーハンドリング
+名前の付け方:
+
+- カラム名は DB でも camelCase（`"nameKana"`、`"phoneNumber"`）。`schema.ts` のキーとカラム名が同じなので、カラムの定義に名前の引数はない
+- テーブル名、enum 型名、インデックス名は snake_case（`opening_hours`、`day_of_week`、`idx_salons_email`）。テーブルと enum 型は、`schema.ts` では camelCase の名前で export される（`openingHours`、`dayOfWeek`）
+
+## ドメインモデルの型
+
+ドメインのモデルファイルは、`schema.ts` と生成された API の型から型を導くだけで、テーブルの形を書き写さない。
 
 ```typescript
-// Result型で一貫したエラーハンドリング
-export const mapRequestToDb = (
-  request: ApiRequest
-): Result<DbModel, ValidationError[]> => {
-  if (!isValid(request)) {
-    return err([{ field: 'name', message: 'Invalid name' }])
-  }
+// backend/packages/domain/src/models/salon.ts（抜粋）
+export const salonIdSchema = z.uuid().brand<'SalonId'>()
+export type SalonId = z.infer<typeof salonIdSchema>
 
-  return ok(transformedData)
-}
+// TypeSpec から生成された API の型
+export type ApiSalonResponse = components['schemas']['Models.SalonResponse']
+export type ApiSalonCreateRequest =
+  components['schemas']['Models.SalonCreateRequest']
+
+// Drizzle スキーマから推論した DB の型
+export type DbSalon = DeepRequired<typeof salons.$inferSelect>
+export type DbOpeningHours = DeepRequired<typeof openingHours.$inferSelect>
+
+type SalonManagedColumn =
+  | 'id'
+  | 'rating'
+  | 'reviewCount'
+  | 'cancellationPolicy'
+  | 'bookingPolicy'
+  | 'deletedAt'
+  | 'createdAt'
+  | 'updatedAt'
+
+export type DbNewSalon = DeepRequired<
+  Omit<typeof salons.$inferInsert, SalonManagedColumn>
+>
+export type DbSalonChanges = Partial<DbNewSalon>
 ```
 
-### 4. テスト戦略
+- `DeepRequired`（`backend/packages/utility/src/type/typeTools.ts`）は、すべてのキーを必須にする。null を許すかどうかは変えない。`$inferInsert` では NULL 許可のカラムと `DEFAULT` のあるカラムが省略可能なキーになるが、`DeepRequired` によって、新しい行はすべてのカラムの値を明示することになる
+- `SalonManagedColumn` は、リクエストから書かないカラムである。DB が値を決めるもの（`id`、タイムスタンプ）、ほかの機能が管理するもの（`rating`、`reviewCount`）、API がまだ公開していないもの（`cancellationPolicy`、`bookingPolicy`）が入る
+- `Omit` は `@beauty-salon-backend/utility` のもので、型に存在するキーしか受け付けない。カラムが改名されると、ここで型検査が失敗する
+- `DbSalonChanges` は部分更新（PATCH）で変更するカラムを表す
+- ID は検証済みの UUID だけが持てるブランド型にする（`SalonId`）
+- モデルファイルにビジネスロジックや計算プロパティは置かない
+
+スキーマが変わると、これらの型が変わり、型の合わなくなったマッパー、リポジトリ、テストが型検査で失敗する。
+
+## マッパー
+
+DB の型と API の型は、2 つのマッパーでつなぐ。
+
+| マッパー | 方向 | 場所 |
+|---|---|---|
+| `SalonWriteMapper` | API のリクエスト → DB の行 | `backend/packages/domain/src/mappers/write/salon.mapper.ts` |
+| `SalonReadMapper` | DB の行 → API のレスポンス | `backend/packages/domain/src/mappers/read/salon.mapper.ts` |
+
+- プロパティ名は変えない。変換するのは表現だけである（`numeric` と `number`、`timestamp with time zone` と ISO 8601、`jsonb` の検査）。詳細は [API-DB型制約マッピング](./api-db-type-constraints-mapping.md) を参照
+- 入力の検証はマッパーの仕事ではない。ユースケースが Zod スキーマで検証したあとの値を、Write マッパーが受け取る
+- Read マッパーは `Result` を返す。保存されている値が API のモデルに合わなければ `database` エラーになる
+- null を空文字や既定値に読み替えない
+
+データの流れ:
+
+```
+書き込み: リクエストの本文（unknown）
+  → ユースケースが Zod スキーマで検証（ApiSalonCreateRequest）
+  → SalonWriteMapper（DbNewSalon）
+  → ISalonRepository → PostgreSQL
+
+読み出し: PostgreSQL → ISalonRepository（DbSalon と DbOpeningHours[]）
+  → ユースケースが SalonReadMapper を呼ぶ（Result<ApiSalonResponse, DomainError>）
+  → ハンドラーがレスポンスにする
+```
+
+## ほかのドメインに適用するとき
+
+テーブルがすでに `schema.ts` にあるドメイン（`customers`、`staff`、`bookings` など）は、同じ形でモデルを定義する。次は実在するコードではなく、Salon のパターンを当てはめた例である。
 
 ```typescript
-describe('Customer Mappers', () => {
-  describe('Write Mapper', () => {
-    it('APIリクエストをDB形式に変換できる', () => {
-      const apiRequest = { name: 'John Doe', email: 'john@example.com' }
-      const result = mapCreateRequestToDb(apiRequest)
-
-      expect(result.type).toBe('ok')
-      if (result.type === 'ok') {
-        expect(result.value.firstName).toBe('John')
-        expect(result.value.lastName).toBe('Doe')
-      }
-    })
-  })
-
-  describe('Read Mapper', () => {
-    it('DBレコードをAPIレスポンスに変換できる', () => {
-      const dbRecord = {
-        id: 'uuid',
-        firstName: 'John',
-        lastName: 'Doe',
-        // ...
-      }
-      const apiResponse = mapDbToApiResponse(dbRecord)
-
-      expect(apiResponse.name).toBe('John Doe')
-    })
-  })
-})
+// 例: backend/packages/domain/src/models/<domain>.ts
+export type DbCustomer = DeepRequired<typeof customers.$inferSelect>
+export type DbNewCustomer = DeepRequired<
+  Omit<typeof customers.$inferInsert, CustomerManagedColumn>
+>
 ```
 
-## マイグレーション戦略
+テーブルやカラムが足りない場合は、先に上のワークフローで追加する。API モデルとテーブルの整合を確認する手順は [API-DB型制約マッピング](./api-db-type-constraints-mapping.md) にある。
 
-### 1. スキーマ変更時の対応
+## 互換レイヤーを持たない
 
-1. Drizzleマイグレーションを作成
-2. 型が自動的に更新される
-3. マッパーを必要に応じて調整
-4. テストで検証
+スキーマを変えるときに、旧い形を残すためのコードは書かない。
 
-### 2. 破壊的変更の方針
+- カラムを改名・削除したら、同じ変更の中で TypeSpec、Zod スキーマ、マッパー、テスト、フロントエンドの利用箇所を直す
+- 旧いプロパティ名を残すために、マッパーで別名を付けたり値を合成したりしない
+- DB の変更は、既存のマイグレーションを書き換えるのではなく、新しいマイグレーションとして追加する
 
-**本アーキテクチャでは後方互換性を考慮しません。** スキーマ変更時は以下の方針に従います：
+## 関連ドキュメント
 
-```typescript
-// ❌ 後方互換性のために古いフィールドを維持しない
-export const mapDbToApiResponse = (db: Customer): ApiCustomer => {
-  return {
-    firstName: db.firstName,
-    lastName: db.lastName,
-    // 古いnameフィールドは削除
-    // name: `${db.firstName} ${db.lastName}`.trim(), // 削除
-  }
-}
-```
-
-**破壊的変更の実施手順：**
-1. API仕様を更新（TypeSpec）
-2. DBスキーマを変更（マイグレーション）
-3. マッパーを更新（古いフィールドは削除）
-4. クライアントを同時に更新
-5. 全体をアトミックにデプロイ
-
-## まとめ
-
-DB駆動ドメインモデルアプローチは、データベーススキーマを中心に据えることで、型の一貫性と簡潔性を実現します。Write/Readマッパーパターンにより、各層の責務が明確になり、保守性の高いアーキテクチャを構築できます。
+- [API-DB型制約マッピング](./api-db-type-constraints-mapping.md)
+- [TypeSpec API型定義ルール](./typespec-api-type-rules.md)
+- [バックエンドアーキテクチャガイドライン](./backend-architecture-guidelines.md)
+- [型生成システム](./type-generation-system.md)

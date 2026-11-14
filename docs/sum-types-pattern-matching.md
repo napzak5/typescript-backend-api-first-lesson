@@ -1,489 +1,292 @@
 # Sum型とパターンマッチング
 
-**実装済みのSalonドメイン**で使用されているSum型（判別共用体）とts-patternを使用した網羅的パターンマッチングのガイドです。
+バックエンドで使っている Sum 型（判別共用体）と、それを ts-pattern で処理する書き方をまとめます。
 
-## Result型での ts-pattern 活用（実装版）
+コード例はすべて実装済みのコード（Salon ドメインと共通部分）からの抜粋で、先頭にファイルパスを示しています。コメントは日本語に置き換え、省いた箇所は `// ...` としています。正確な内容は各ファイルを見てください。
 
-### 基本的なResult型パターンマッチング
+この文書が扱うのは Sum 型の定義と `match` の使い方です。`any`・型アサーション・型ガード・例外を使わないという規則と、その代わりに使うもの（境界での Zod による検証、`satisfies`、ブランド型）は [型安全性の原則](./type-safety-principles.md) にあります。
+
+## コードにある Sum 型
+
+| 型 | 定義場所 | ケース |
+|----|----------|--------|
+| `Result<T, E>` | `backend/packages/utility/src/result/result.ts` | `success` / `error` |
+| `DomainError` | `backend/packages/domain/src/shared/errors.ts` | `validation` / `notFound` / `alreadyExists` / `database` |
+| `HttpError` | `backend/packages/api/src/shared/problem-details.ts` | `routeNotFound` / `malformedBody` / `unsupportedMediaType` / `bodyTooLarge` / `badRequest` / `rateLimited` / `unexpected` |
+| `ApiError` | 同上 | `DomainError` と `HttpError` の和 |
+| `OpeningHoursChange` | `backend/packages/domain/src/models/salon.ts` | `keep` / `replace` |
+| `StartFailure` | `backend/apps/server/src/server.ts` | `databaseUnreachable` / `listenFailed` |
+
+どの型も同じ書き方に従っています。
+
+- 判別子は `type` プロパティで、値は camelCase の文字列リテラル
+- ケースごとのデータは `type` と同じ階層に置く（`{ type: 'notFound'; entity: string; id: string }`）
+- 「ある場合とない場合」を optional なプロパティで表さず、ケースを分ける。更新時の営業日カレンダーは `openingHours?: ...` ではなく次の型です
+
+```typescript
+// backend/packages/domain/src/models/salon.ts
+export type OpeningHoursChange =
+  | { type: 'keep' }
+  | { type: 'replace'; openingHours: DbNewOpeningHours[] }
+```
+
+## Result 型
+
+失敗しうる処理は例外を投げず、`Result` を返します。
 
 ```typescript
 // backend/packages/utility/src/result/result.ts
-import { match } from 'ts-pattern'
-
 export type Result<T, E> =
   | { type: 'success'; data: T }
   | { type: 'error'; error: E }
-
-// UseCase でのパターンマッチング例
-export class CreateSalonUseCase {
-  async execute(
-    request: ApiCreateSalonRequest
-  ): Promise<Result<ApiSalon, DomainError>> {
-
-    const validation = this.validate(request)
-    if (Result.isError(validation)) {
-      return validation // エラー時の早期return
-    }
-
-    const emailExists = await this.repository.existsByEmail(request.contactInfo.email)
-    // Result型のネストしたパターンマッチング
-    return match(emailExists)
-      .with({ type: 'success', data: true }, () =>
-        Result.error(DomainErrors.alreadyExists('Salon', 'email', request.contactInfo.email))
-      )
-      .with({ type: 'success', data: false }, async () => {
-        // メイン処理
-        const createResult = await this.repository.create(/* ... */)
-        return createResult
-      })
-      .with({ type: 'error' }, ({ error }) => Result.error(error))
-      .exhaustive()
-  }
-}
 ```
 
-### API層での網羅的エラーハンドリング
+同名のオブジェクト `Result` に、生成と合成の関数があります。関数はこの7つだけです。成功か失敗かを調べる専用の関数はなく、`type` を比較するか `match` を使います。
+
+| 関数 | 用途 |
+|------|------|
+| `Result.success(data)` / `Result.error(error)` | 値を作る |
+| `Result.map(result, fn)` | 成功値を変換する |
+| `Result.mapError(result, fn)` | エラーを変換する |
+| `Result.flatMap(result, fn)` | 成功値から次の `Result` を作る |
+| `Result.fromPromise(promise)` | Promise の reject を `Result<T, Error>` の `error` にする |
+| `Result.unwrapOr(result, defaultValue)` | エラーのとき既定値を返す |
+
+### 途中の失敗はそのまま返す
+
+手順が直列に続くユースケースでは、各手順の結果を `type` で調べ、失敗ならその値をそのまま返します。
 
 ```typescript
-// backend/packages/api/src/routes/salon.routes.ts
-import { match } from 'ts-pattern'
-
-const createSalonHandler: RequestHandler = async (req, res, next) => {
-  try {
-    const db = req.app.locals.database as Database
-    const salonRepository = new SalonRepository(db)
-    const useCase = new CreateSalonUseCase({ salonRepository })
-    const result = await useCase.execute(req.body)
-
-    // Result型の網羅的処理
-    match(result)
-      .with({ type: 'success' }, ({ data }) => {
-        const response: CreateSalonResponse = {
-          data,
-          meta: {
-            correlationId: `req-${Date.now()}`,
-            timestamp: new Date().toISOString(),
-            version: '1.0.0',
-          },
-          links: {
-            self: `/salons/${data.id}`,
-            list: '/salons',
-          },
-        }
-        res.status(201).json(response)
-      })
-      .with({ type: 'error' }, ({ error }) =>
-        handleDomainError(res as Response<ErrorResponse>, error)
-      )
-      .exhaustive() // 全パターンの処理を保証
-  } catch (error) {
-    next(error)
+// backend/packages/domain/src/business-logic/salon/get-salon.usecase.ts
+async execute(id: unknown): Promise<Result<ApiSalonResponse, DomainError>> {
+  const salonId = parseSalonId(id)
+  if (salonId.type === 'error') {
+    return salonId
   }
+
+  const found = await this.dependencies.salonRepository.findById(salonId.data)
+  if (found.type === 'error') {
+    return found
+  }
+  if (found.data === null) {
+    return Result.error(DomainErrors.notFound('Salon', salonId.data))
+  }
+
+  return SalonReadMapper.toApiSalon(found.data.salon, found.data.openingHours)
 }
 ```
 
-## DomainError Sum型パターン（実装版）
+`salonId.type === 'error'` の比較で `salonId` は `{ type: 'error'; error: DomainError }` に絞り込まれるので、成功値の型が違う戻り値型にもそのまま返せます。`if` を抜けた後は `salonId.data` が使えます。この形なら `match` を入れ子にせずに済みます。
 
-### 複数エラー型の判別処理
+### 変換をつなぐ
+
+成功値やエラーを変換するだけなら、分岐を書かずに `Result.map` / `Result.mapError` を使います。
+
+```typescript
+// backend/packages/domain/src/mappers/read/salon.mapper.ts（toApiSalon の戻り値）
+return Result.mapError(
+  Result.map(
+    parseWith(convertedColumnsSchema, salon, 'Invalid stored salon'),
+    (converted) => ({
+      ...columns,
+      ...converted,
+      openingHours: openingHours.map(toApiOpeningHours),
+    }),
+  ),
+  // リクエストは正しく、保存されている行のほうが API モデルに合っていない
+  (error) =>
+    DomainErrors.database(
+      `Stored salon ${salon.id} does not match the API model`,
+      error,
+    ),
+)
+```
+
+### Promise の失敗を値にする
+
+ドライバやライブラリの Promise は reject されることがあります。リポジトリはクエリを次の `attempt` に渡し、reject を `DomainError` に変換します。
+
+```typescript
+// backend/packages/infrastructure/src/repositories/salon.repository.impl.ts
+const attempt = async <T>(
+  message: string,
+  email: string | null,
+  run: () => Promise<T>,
+): Promise<Result<T, DomainError>> =>
+  Result.mapError(
+    await Result.fromPromise(run()),
+    toDomainError(message, email),
+  )
+```
+
+アプリケーションコードで `try` / `catch` を書いているのは `Result.fromPromise` の中だけです。
+
+## DomainError
+
+ユースケースが返すエラーはこの4種類です。
 
 ```typescript
 // backend/packages/domain/src/shared/errors.ts
 export type DomainError =
-  | { type: 'validation'; message: string; code: string; details: string[] }
+  | { type: 'validation'; message: string; issues: ValidationIssue[] }
   | { type: 'notFound'; entity: string; id: string }
   | { type: 'alreadyExists'; entity: string; field: string; value: string }
-  | { type: 'businessRule'; rule: string; message: string }
-  | { type: 'database'; message: string; cause?: unknown }
+  | { type: 'database'; message: string; cause: unknown }
+```
 
-// エラーハンドリングでの判別処理
-const handleDomainError = (res: Response, error: DomainError): Response => {
-  const problemDetails = match(error)
-    .with({ type: 'validation' }, ({ message, code, details }) => ({
-      type: 'https://example.com/probs/validation-error',
-      title: 'Validation Error',
-      status: 400,
-      detail: message,
-      code,
-      errors: details,
-      timestamp: new Date().toISOString(),
-    }))
+値は同じファイルの `DomainErrors.validation(...)`、`DomainErrors.notFound(...)` などで作ります。
+
+| ケース | 作られる場所 | HTTP ステータス |
+|--------|--------------|-----------------|
+| `validation` | `parseWith`（`backend/packages/domain/src/shared/validation.ts`）が Zod の検証結果から作る | 400 |
+| `notFound` | ユースケース。リポジトリが `null`（削除では `false`）を返したとき | 404 |
+| `alreadyExists` | リポジトリ。メールアドレスの一意制約に違反したとき | 409 |
+| `database` | リポジトリ（想定外のクエリ失敗）、読み取りマッパー（保存値が API モデルに合わない） | 500 |
+
+`database` の `cause` はログに書くためのもので、レスポンスには含めません。HTTP ステータスへの対応は次節の `toProblem` が決めています。
+
+## `match` の使い方
+
+### ケースを列挙できる型は `.exhaustive()` で終える
+
+```typescript
+// backend/packages/api/src/routes/salon/create-salon.handler.ts
+const result = await useCase.execute(req.body)
+
+match(result)
+  .with({ type: 'success' }, ({ data }) => {
+    const links = salonLinks(req.baseUrl, data.id)
+    res
+      .status(201)
+      .location(links.self)
+      .json({ data, meta: responseMeta(req), links })
+  })
+  .with({ type: 'error' }, ({ error }) => sendProblem(req, res, error))
+  .exhaustive()
+```
+
+`.exhaustive()` は、型のケースがすべて `.with()` で扱われていなければコンパイルエラーにします。`.otherwise()` で終えるとケースを足しても検出されないので、ケースを列挙できる型には使いません。
+
+エラーから問題詳細への変換も同じ形です。`ApiError` の11ケースを1つの `match` で扱っています。
+
+```typescript
+// backend/packages/api/src/shared/problem-details.ts（抜粋）
+const toProblem = (error: ApiError): Problem =>
+  match(error)
+    .returnType<Problem>()
+    // ... validation
     .with({ type: 'notFound' }, ({ entity, id }) => ({
-      type: 'https://example.com/probs/not-found',
-      title: 'Not Found',
+      type: 'urn:beauty-salon:problem:not-found',
+      title: 'Resource not found',
       status: 404,
-      detail: `${entity} with ID ${id} not found`,
-      code: 'NOT_FOUND',
-      timestamp: new Date().toISOString(),
+      detail: `${entity} ${id} was not found`,
+      code: '3001',
+      errors: null,
     }))
-    .with({ type: 'alreadyExists' }, ({ entity, field, value }) => ({
-      type: 'https://example.com/probs/already-exists',
-      title: 'Already Exists',
-      status: 409,
-      detail: `${entity} with ${field} '${value}' already exists`,
-      code: 'ALREADY_EXISTS',
-      timestamp: new Date().toISOString(),
-    }))
-    .with({ type: 'businessRule' }, ({ rule, message }) => ({
-      type: 'https://example.com/probs/business-rule',
-      title: 'Business Rule Violation',
-      status: 422,
-      detail: message,
-      code: rule.toUpperCase(),
-      timestamp: new Date().toISOString(),
-    }))
-    .with({ type: 'database' }, ({ message }) => ({
-      type: 'https://example.com/probs/internal-error',
-      title: 'Internal Server Error',
-      status: 500,
-      detail: 'An internal error occurred',
-      code: 'INTERNAL_ERROR',
-      timestamp: new Date().toISOString(),
-    }))
+    // ... alreadyExists、database、HttpError の7ケース
     .exhaustive()
-
-  return res.status(problemDetails.status).json(problemDetails)
-}
 ```
 
-## Repository Result型パターン（実装版）
+`.returnType<Problem>()` を付けると、各分岐の戻り値が `Problem` に合うかどうかが分岐ごとに検査されます。オブジェクトリテラルを返す分岐で、`code` のようなリテラル型のプロパティを型アサーションなしで書けます。
 
-### データベース操作での Result パターン
+判別子が `type` でないライブラリの共用体も同じように扱えます。`parseWith` は Zod の `safeParse` の結果を `{ success: true }` / `{ success: false }` で分岐しています。
+
+### 入れ子のケースをまとめて書く
+
+`Result` の中のエラーがさらに Sum 型のときは、外側と内側の判別子を1つのパターンに書きます。
 
 ```typescript
-// backend/packages/infrastructure/src/repositories/salon.repository.impl.ts
-export class SalonRepository implements ISalonRepository {
-  async findById(id: SalonId): Promise<Result<DbSalon | null, DomainError>> {
-    try {
-      const [salon] = await this.db
-        .select()
-        .from(salons)
-        .where(and(eq(salons.id, id), isNull(salons.deletedAt)))
-        .limit(1)
-
-      return Result.success(salon ?? null)
-    } catch (error) {
-      return Result.error(
-        DomainErrors.database(
-          'Failed to find salon by ID',
-          JSON.stringify(error, null, 2)
-        )
+// backend/apps/server/src/index.ts（抜粋）
+match(started)
+  .with({ type: 'success' }, ({ data: server }) => {
+    // ... 起動のログ出力とシグナルハンドラの登録
+  })
+  .with(
+    { type: 'error', error: { type: 'databaseUnreachable' } },
+    ({ error }) => {
+      logger.fatal(
+        { error: error.error },
+        'Cannot start: the database is unreachable',
       )
-    }
-  }
-
-  async existsByEmail(email: string): Promise<Result<boolean, DomainError>> {
-    try {
-      const [result] = await this.db
-        .select({ count: sql<number>`count(*)::int` })
-        .from(salons)
-        .where(and(eq(salons.email, email), isNull(salons.deletedAt)))
-
-      return Result.success((result?.count ?? 0) > 0)
-    } catch (error) {
-      return Result.error(
-        DomainErrors.database(
-          'Failed to check salon email existence',
-          JSON.stringify(error, null, 2)
-        )
-      )
-    }
-  }
-}
+      process.exit(1)
+    },
+  )
+  .with({ type: 'error', error: { type: 'listenFailed' } }, ({ error }) => {
+    logger.fatal({ err: error.error }, 'Cannot start: cannot listen')
+    process.exit(1)
+  })
+  .exhaustive()
 ```
 
-## 高度なパターンマッチング（実装可能パターン）
+### 分岐の中で非同期処理をする
 
-### ガード付きパターンマッチング
+各分岐を `async` 関数にし、`match` 全体を `await` します。
 
 ```typescript
-import { match, P } from 'ts-pattern'
+// backend/packages/infrastructure/src/repositories/salon.repository.impl.ts（update のトランザクション内）
+await match(openingHoursChange)
+  .with({ type: 'keep' }, async () => undefined)
+  .with({ type: 'replace' }, async (replacement) => {
+    await tx.delete(openingHours).where(eq(openingHours.salonId, id))
+    await insertOpeningHours(tx, id, replacement.openingHours)
+  })
+  .exhaustive()
+```
 
-type SalonState =
-  | { type: 'active'; salon: DbSalon }
-  | { type: 'inactive'; salon: DbSalon; reason: string }
-  | { type: 'pending'; salon: DbSalon; reviewDate: string }
+### 形のわからない値は `P` のパターンで調べる
 
-const processSalonState = (state: SalonState): string => {
-  return match(state)
-    .with({ type: 'active' }, ({ salon }) =>
-      `Active salon: ${salon.name}`
-    )
+`unknown` の値（ミドルウェアに渡されたエラー、ドライバのエラーオブジェクト、リクエストヘッダー）は、型ガードを書かずに `P` のパターンで形を調べます。こちらはケースを列挙できないので `.otherwise()` で終えます。
+
+```typescript
+// backend/packages/api/src/middleware/errors.ts
+export const toHttpError = (error: unknown): HttpError =>
+  match(error)
+    .returnType<HttpError>()
+    .with({ type: 'entity.parse.failed' }, () => ({ type: 'malformedBody' }))
+    .with({ type: 'entity.too.large' }, () => ({ type: 'bodyTooLarge' }))
     .with(
-      { type: 'pending', reviewDate: P.when(date =>
-        new Date(date) < new Date()
-      )},
-      ({ salon }) => `Review overdue for: ${salon.name}`
+      { type: P.union('encoding.unsupported', 'charset.unsupported') },
+      () => ({ type: 'unsupportedMediaType' }),
     )
-    .with({ type: 'pending' }, ({ salon, reviewDate }) =>
-      `Pending review: ${salon.name} (${reviewDate})`
-    )
-    .with({ type: 'inactive' }, ({ salon, reason }) =>
-      `Inactive: ${salon.name} (${reason})`
-    )
-    .exhaustive()
-}
+    .with({ status: P.number.between(400, 499) }, () => ({
+      type: 'badRequest',
+    }))
+    .otherwise(() => ({ type: 'unexpected' }))
 ```
 
-### 配列パターンマッチング
+コードで使っている `P` のパターンは次のとおりです。
+
+| パターン | 用途 | 使用箇所 |
+|----------|------|----------|
+| `P.string` / `P.number` | プロパティがその型のときだけ取り出す | `describeDatabaseError`（`backend/packages/infrastructure/src/database/failure.ts`）、`portOf`（`backend/apps/server/src/server.ts`） |
+| `P.select()` | 一致した値の一部だけを分岐に渡す | `describeDatabaseError` |
+| `P.union(...)` | 複数の形のどれか | `toHttpError`、`toDomainError`（`backend/packages/infrastructure/src/repositories/salon.repository.impl.ts`） |
+| `P.string.regex(...)` | 文字列の形式 | `assignRequestId`（`backend/packages/api/src/middleware/request-logging.ts`） |
+| `P.number.between(...)` / `P.number.gte(...)` | 数値の範囲 | `toHttpError`、`requestLogging` のログレベル判定 |
+
+### `if` で足りるとき
+
+1つのケースだけを特別に扱うなら、`type` の比較で十分です。
 
 ```typescript
-type ValidationResult =
-  | { type: 'success'; data: unknown }
-  | { type: 'error'; errors: string[] }
-
-const handleValidationErrors = (result: ValidationResult): string => {
-  return match(result)
-    .with({ type: 'success' }, () => 'Validation passed')
-    .with({ type: 'error', errors: [] }, () => 'No specific errors')
-    .with({ type: 'error', errors: [P.string] }, ({ errors }) =>
-      `Single error: ${errors[0]}`
-    )
-    .with({ type: 'error', errors: P.array(P.string) }, ({ errors }) =>
-      `Multiple errors: ${errors.join(', ')}`
-    )
-    .exhaustive()
+// backend/packages/api/src/shared/responses.ts（sendProblem の冒頭）
+if (error.type === 'database') {
+  req.log.error({ cause: error.cause }, error.message)
 }
 ```
 
-interface Context {
-  event: PaymentEvent;
-  userRole: UserRole;
-  timestamp: Date;
-}
+使い分けは次のとおりです。
 
-// 複数の条件を組み合わせたパターンマッチング
-function processPaymentEvent(context: Context): void {
-  match(context)
-    .with(
-      { event: { type: 'failed', retryable: true }, userRole: 'admin' },
-      ({ event }) => {
-        // 管理者の場合、リトライ可能な失敗を自動リトライ
-        console.log(`Admin retry for: ${event.reason}`);
-      }
-    )
-    .with(
-      { event: { type: 'failed' }, userRole: P.not('admin') },
-      ({ event, userRole }) => {
-        // 一般ユーザーの場合、サポートに通知
-        console.log(`Notify support for ${userRole}: ${event.reason}`);
-      }
-    )
-    .with(
-      { event: { type: 'completed' } },
-      ({ event }) => {
-        // 完了イベントの処理
-        console.log(`Payment completed: ${event.transactionId}`);
-      }
-    )
-    .with(
-      { event: { type: P.union('initiated', 'processing') } },
-      ({ event }) => {
-        // 進行中のイベント
-        console.log(`Payment in progress: ${event.type}`);
-      }
-    )
-    .exhaustive();
-}
-```
+- すべてのケースで違うことをする: `match(...).exhaustive()`
+- 失敗をそのまま呼び出し元へ返す、または1ケースだけ扱う: `if (x.type === '...')`
+- 成功値やエラーを変換するだけ: `Result.map` / `Result.mapError` / `Result.flatMap`
 
-## ガード付きパターンマッチング
+## ケースを追加するとき
 
-```typescript
-type ValidationResult<T> = 
-  | { success: true; value: T }
-  | { success: false; errors: string[] };
+`DomainError` または `HttpError` にケースを足す手順です。
 
-function processValidation<T>(
-  result: ValidationResult<T>,
-  constraints: { minValue?: number; maxLength?: number }
-): string {
-  return match(result)
-    .with(
-      { 
-        success: true, 
-        value: P.when((v): v is number => 
-          typeof v === 'number' && 
-          constraints.minValue !== undefined && 
-          v < constraints.minValue
-        ) 
-      },
-      () => 'Value is below minimum'
-    )
-    .with(
-      { success: true },
-      ({ value }) => `Valid: ${value}`
-    )
-    .with(
-      { success: false, errors: P.array(P.string) },
-      ({ errors }) => `Errors: ${errors.join(', ')}`
-    )
-    .exhaustive();
-}
-```
+1. 型にケースを足す（`DomainError` なら `DomainErrors` にファクトリも足す）
+2. `toProblem` の `.exhaustive()` がコンパイルエラーになるので、ステータス・`code`・`detail` を決めて分岐を足す。api パッケージは domain パッケージの型をビルド成果物から読むため、ビルドしてから `pnpm typecheck` を実行する（理由は [TypeScript設定ガイド](./typescript-configuration.md)）
+3. `backend/packages/api/src/shared/__tests__/problem-details.test.ts` に、そのケースのテストを足す
 
-## Result型を使用したエラーハンドリング
-
-```typescript
-// Result型の定義
-export type Result<T, E = AppError> = 
-  | { type: 'ok'; value: T }
-  | { type: 'err'; error: E };
-
-export function ok<T>(value: T): Extract<Result<T>, { type: 'ok' }> {
-  return { type: 'ok', value };
-}
-
-export function err<E>(error: E): Extract<Result<never, E>, { type: 'err' }> {
-  return { type: 'err', error };
-}
-
-// 使用例
-function divide(a: number, b: number): Result<number, string> {
-  if (b === 0) {
-    return err('Division by zero');
-  }
-  return ok(a / b);
-}
-
-// パターンマッチングでの処理
-const result = divide(10, 2);
-const message = match(result)
-  .with({ type: 'ok' }, ({ value }) => `Result: ${value}`)
-  .with({ type: 'err' }, ({ error }) => `Error: ${error}`)
-  .exhaustive();
-```
-
-## Sum型設計のベストプラクティス
-
-### 1. 状態遷移の表現
-
-```typescript
-type Task = 
-  | { type: 'draft'; id: string; title: string }
-  | { type: 'assigned'; id: string; title: string; assignee: User; dueDate: Date }
-  | { type: 'inProgress'; id: string; title: string; assignee: User; startedAt: Date }
-  | { type: 'completed'; id: string; title: string; assignee: User; completedAt: Date };
-
-// 状態遷移関数
-function assignTask(task: Extract<Task, { type: 'draft' }>, assignee: User, dueDate: Date): Extract<Task, { type: 'assigned' }> {
-  return {
-    type: 'assigned',
-    id: task.id,
-    title: task.title,
-    assignee,
-    dueDate
-  };
-}
-```
-
-### 2. APIレスポンスの型安全な処理
-
-```typescript
-type ApiResponse<T> = 
-  | { type: 'success'; data: T; meta: ResponseMeta }
-  | { type: 'error'; error: ErrorDetail; meta: ResponseMeta }
-  | { type: 'validationError'; errors: ValidationError[]; meta: ResponseMeta };
-
-// レスポンスのHTTPステータスコード決定
-export function getResponseStatus<T>(response: ApiResponse<T>): number {
-  return match(response)
-    .with({ type: 'success' }, () => 200)
-    .with({ type: 'validationError' }, () => 400)
-    .with({ type: 'error' }, ({ error }) => 
-      match(error.code)
-        .with('NOT_FOUND', () => 404)
-        .with('UNAUTHORIZED', () => 401)
-        .with('FORBIDDEN', () => 403)
-        .otherwise(() => 500)
-    )
-    .exhaustive();
-}
-```
-
-### 3. 複雑なビジネスロジックの表現
-
-```typescript
-type OrderState = 
-  | { type: 'pending'; items: Item[]; createdAt: Date }
-  | { type: 'paid'; items: Item[]; paidAt: Date; paymentId: string }
-  | { type: 'shipped'; items: Item[]; shippedAt: Date; trackingNumber: string }
-  | { type: 'delivered'; items: Item[]; deliveredAt: Date }
-  | { type: 'cancelled'; reason: string; cancelledAt: Date };
-
-function canCancelOrder(order: OrderState): boolean {
-  return match(order)
-    .with({ type: P.union('pending', 'paid') }, () => true)
-    .with({ type: P.union('shipped', 'delivered', 'cancelled') }, () => false)
-    .exhaustive();
-}
-
-function getOrderActions(order: OrderState): string[] {
-  return match(order)
-    .with({ type: 'pending' }, () => ['pay', 'cancel'])
-    .with({ type: 'paid' }, () => ['ship', 'cancel', 'refund'])
-    .with({ type: 'shipped' }, () => ['track', 'report_issue'])
-    .with({ type: 'delivered' }, () => ['review', 'return'])
-    .with({ type: 'cancelled' }, () => ['reorder'])
-    .exhaustive();
-}
-```
-
-## パターンマッチングのアンチパターンと解決策
-
-### アンチパターン: 不完全なマッチング
-
-```typescript
-// ❌ exhaustive()を使わない
-function badHandle(response: ApiResponse<any>): string {
-  return match(response)
-    .with({ status: 'success' }, () => 'Success')
-    .with({ status: 'error' }, () => 'Error')
-    .otherwise(() => 'Unknown'); // 新しいケースが追加されても気付かない
-}
-
-// ✅ exhaustive()を使用
-function goodHandle(response: ApiResponse<any>): string {
-  return match(response)
-    .with({ status: 'success' }, () => 'Success')
-    .with({ status: 'error' }, () => 'Error')
-    .with({ status: 'loading' }, () => 'Loading')
-    .with({ status: 'notFound' }, () => 'Not Found')
-    .exhaustive(); // 新しいケースが追加されるとコンパイルエラー
-}
-```
-
-### アンチパターン: 型の絞り込み不足
-
-```typescript
-// ❌ 型の絞り込みが不十分
-type User = { id: string; name: string; role?: 'admin' | 'user' };
-
-function greetUser(user: User): string {
-  if (user.role) {
-    return `Hello ${user.role}`;
-  }
-  return 'Hello guest';
-}
-
-// ✅ Sum型で明確に表現
-type User = 
-  | { id: string; name: string; role: 'admin' }
-  | { id: string; name: string; role: 'user' }
-  | { id: string; name: string; role: 'guest' };
-
-function greetUser(user: User): string {
-  return match(user)
-    .with({ role: 'admin' }, ({ name }) => `Hello Admin ${name}`)
-    .with({ role: 'user' }, ({ name }) => `Hello ${name}`)
-    .with({ role: 'guest' }, () => 'Hello Guest')
-    .exhaustive();
-}
-```
-
-## まとめ
-
-- **Sum型（判別共用体）**を使用して、可能な状態を明確に定義する
-- **ts-pattern**の`match`と`exhaustive()`で網羅的な処理を保証する
-- **ネストを避け**、フラットな構造で型の絞り込みを容易にする
-- **Result型**で例外の代わりに型安全なエラーハンドリングを実現する
-- **状態遷移**をSum型で表現し、不正な状態を作れないようにする
+`.otherwise()` で終えている `match`（`toHttpError` など）は、ケースを足してもコンパイラが教えてくれません。`HttpError` にケースを足したときは、それを作る場所も自分で足します。

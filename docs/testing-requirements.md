@@ -1,348 +1,161 @@
-# Testing Requirements - Salon Domain Reference Implementation
+# Testing Requirements
 
-このドキュメントは、Salonドメインの実装を完全なリファレンスとして、テスト要件とパターンを定義します。
+What must be tested in this repository, and to what standard. How to write an
+API integration test with the helpers that exist here is in the
+[API Testing Guide](./api-testing-guide.md).
 
-## 🎯 Testing Philosophy
+The Salon domain is the reference implementation, and its tests are the
+reference for the tests of every domain that follows.
 
-### Core Principles
-1. **Production-like Testing**: Testcontainersで実際のPostgreSQLを使用
-2. **Complete Isolation**: 各テストが独立したスキーマで実行
-3. **No Mocking**: 実装とリアルな依存関係でテスト
-4. **Type Safety**: テスト全体で型の流れを維持
-5. **Fast Feedback**: 高速なテスト実行を最適化
+## Kinds of Tests
 
-## 📊 Coverage Requirements
+| Kind | Command | Files | Needs |
+|------|---------|-------|-------|
+| Unit | `pnpm test` | `*.test.ts` and `*.test.tsx`, in a `__tests__` directory or beside the module | A build (`pnpm build`): some packages load their workspace dependencies from `dist` |
+| Integration | `pnpm test:integration` | `*.integration.test.ts` | A PostgreSQL: the one at `TEST_DATABASE_URL`, otherwise a container started through testcontainers (Docker) |
 
-### Minimum Coverage Targets
-| Layer | Coverage | Test Type |
-|-------|----------|-----------|
-| API Routes | 100% | Integration |
-| Use Cases | 95% | Integration |
-| Utilities | 90% | Unit |
-| Mappers | 90% | Integration |
+Both run on Vitest. The tests of the `api`, `config`, `domain` and
+`infrastructure` packages and of the server resolve the workspace packages they
+import from source (the export condition `@beauty-salon-backend/source` in
+their Vitest configuration), so a change in one package reaches the tests of
+another without a rebuild. The `database` package and the frontend have no such
+setting and use the last build of their workspace dependencies; CI and
+`make ci-check` build everything before they run the tests.
 
-### Required Test Scenarios per Endpoint
-- **Success cases**: 最低2パターン
-- **Error cases**: 最低5パターン
-- **Edge cases**: 最低2パターン
-- **DB verification**: 全mutation操作後
+What the repository does not have:
 
-## 🏗️ Test Infrastructure
+- A separate end-to-end suite. `CLAUDE.md` asks for end-to-end coverage of
+  the critical paths, and the integration tests provide it: the API tests
+  drive the production Express application over HTTP against a real database,
+  and the server tests start the real server. Nothing tests the frontend
+  against a running API.
+- A coverage threshold. Coverage is not measured in CI; the requirements below
+  are stated per behaviour instead of as a percentage.
+- A request mocking library, in the backend or the frontend.
 
-### Schema Isolation Architecture
+## What Must Be Tested
 
-```typescript
-// backend/packages/api/src/__tests__/_shared/setup.ts
-beforeAll:
-  - Start PostgreSQL container (once)
-  - Initialize shared enums (once)
+### Backend
 
-beforeEach:
-  - Create test-specific schema
-  - Apply migrations to schema
-  - Set search_path for isolation
+| Subject | Kind | Reference |
+|---------|------|-----------|
+| Request schemas: every rule, with a value that passes and one that breaks it | Unit | `backend/packages/domain/src/__tests__/salon.schema.test.ts` |
+| Mappers: both directions, `null` kept as `null`, the changes of representation | Unit | `backend/packages/domain/src/__tests__/salon.mapper.test.ts` |
+| Use cases: the success path, every error passed on unchanged, the repository left untouched by invalid input | Unit, with the repository interface stubbed | `backend/packages/domain/src/__tests__/salon.usecase.test.ts` |
+| Pure helpers of the HTTP layer: links, query decoding, problem details, middleware | Unit | `backend/packages/api/src/routes/salon/_shared/__tests__/`, `backend/packages/api/src/shared/__tests__/problem-details.test.ts`, `backend/packages/api/src/middleware/__tests__/middleware.test.ts` |
+| Every endpoint (see [Requirements per Endpoint](#requirements-per-endpoint)) | Integration | `backend/packages/api/src/__tests__/salon.integration.test.ts` |
+| What the application does for every route: request IDs, requests it cannot read, a failing database, CORS, the rate limit, the probes, security headers | Integration | `backend/packages/api/src/__tests__/app.integration.test.ts` |
+| Server start-up and shutdown | Integration | `backend/apps/server/src/__tests__/server.integration.test.ts` |
+| The migration runner, and the migrations of the repository | Integration | `backend/packages/database/src/scripts/__tests__/migrations.integration.test.ts` |
+| Configuration: every variable, and every environment file in the repository | Unit | `backend/packages/config/src/__tests__/app-config.test.ts` |
+| Shared helpers: `Result`, the logger, the description of database failures | Unit | `backend/packages/utility/src/__tests__/result.test.ts`, `backend/packages/infrastructure/src/logging/__tests__/logger.test.ts`, `backend/packages/infrastructure/src/database/__tests__/failure.test.ts` |
 
-afterEach:
-  - Drop test schema CASCADE
-  - Clean up connections
+The repository implementation
+(`backend/packages/infrastructure/src/repositories/salon.repository.impl.ts`)
+has no test file of its own. Its behaviour — transactions, the unique
+violation that becomes `alreadyExists`, soft delete, keyset pagination — is
+required to be covered through the endpoint tests, against a real database.
 
-afterAll:
-  - Stop container
-```
+### Frontend
 
-### Test Helpers Structure
+| Subject | Kind | Reference |
+|---------|------|-----------|
+| Utilities, validations, stores, messages, shared types | Unit, beside the module | `frontend/packages/validations/src/validateEmail/validateEmail.test.ts` |
+| UI components | Component test | `frontend/packages/ui/src/components/button.test.tsx` |
+| Applications: routes, navigation, what depends on the environment | Component test | `frontend/apps/admin-app/src/App.test.tsx` |
 
-```
-backend/packages/api/src/__tests__/_shared/
-├── setup.ts              # Global test setup
-├── test-helpers.ts       # Utility functions
-├── test-schema-manager.ts # Schema management
-└── app.ts               # Express app factory
-```
+The frontend tests render with `renderToStaticMarkup` from `react-dom/server`.
+A file that needs a DOM opts in with `// @vitest-environment jsdom` on its
+first line, and environment variables are set with `vi.stubEnv`. There are no
+browser-driven tests.
 
-## 🧪 Reference Implementation: Salon Domain
+## Requirements per Endpoint
 
-### 1. Integration Test Structure
+Every endpoint has integration tests in the `api` package that cover:
 
-```typescript
-// backend/packages/api/src/__tests__/salon.test.ts
-describe('Salon API Integration Tests', () => {
-  let app: Express
-  let db: ReturnType<typeof getTestDb>
+1. **Success**: at least one scenario that asserts the whole response — status,
+   headers that matter (such as `Location`), and the complete body (`data`,
+   `meta`, `links`), not a sample of its properties.
+2. **At least five error scenarios.** Each row of an `it.each` table is one
+   scenario. Between them they cover every kind of error the endpoint can
+   answer with: validation (400), not found (404), conflict (409) and, where
+   stored data can be at fault, the 500 that reveals nothing.
+3. **Problem details**: every error scenario asserts the status, the `type`
+   and the `code` of the problem, and a validation error also asserts which
+   rule of which field was broken.
+4. **State**: after a rejected write nothing has changed; after an accepted
+   one, what is stored is what was returned. Verify through the API or through
+   the test's database connection.
+5. **Deleted resources**: a soft-deleted row is invisible to every endpoint,
+   so each endpoint that takes an ID has a scenario for a deleted resource.
 
-  beforeEach(() => {
-    app = createTestApp()
-    db = getTestDb()
-  })
+### The Salon Endpoints as the Example
 
-  // CRUD Operations
-  describe('POST /api/v1/salons', () => {
-    it('should create a salon with valid data', async () => {
-      const salonData = createFullSalonData()
+Error scenarios in `backend/packages/api/src/__tests__/salon.integration.test.ts`:
 
-      const response = await request(app)
-        .post('/api/v1/salons')
-        .send(salonData)
+| Endpoint | Error scenarios | Count |
+|----------|-----------------|-------|
+| `POST /api/v1/salons` | Seven invalid bodies (a missing property, a property the client may not set, `null` for a NOT NULL column, a value longer than its column, several invalid values, a calendar entry on the wrong day of the week, a calendar that repeats a date); a body that is not an object; an email that another salon uses (409); the email of a deleted salon (409) | 10 |
+| `GET /api/v1/salons/:id` | Three malformed IDs (400); an ID that no salon has (404); a deleted salon (404); a stored salon that is corrupt (500 without details) | 6 |
+| `GET /api/v1/salons` | Eight invalid queries: a limit of 0, over 100, or not a number; a boolean that is not `true` or `false`; a cursor that is not an ID; a rating above 5; an empty keyword; a parameter that does not exist | 8 |
+| `PATCH /api/v1/salons/:id` | An ID that is not a UUID, an empty request, `null` for a NOT NULL column, a property the client may not set, an invalid calendar (400); an ID that no salon has (404); a deleted salon (404); the email of another salon (409) | 8 |
+| `DELETE /api/v1/salons/:id` | Three malformed IDs (400); an ID that no salon has (404); a salon that is already deleted (404) | 5 |
 
-      expect(response.status).toBe(201)
-      expect(response.body.data).toBeDefined()
+## Standards for Every Test
 
-      // DB verification
-      const result = await db.execute(sql`SELECT * FROM salons`)
-      expect(result.length).toBe(1)
-    })
+- **The name states the expected behaviour**, as the sentence that follows
+  "it". Names from the repository:
+  `it('should report every missing variable at once', …)`,
+  `it('rejects an email that another salon uses', …)`,
+  `it('keeps null as null', …)`.
+  Related inputs go into one `it.each` table whose title names the case, such
+  as `'rejects %s and stores nothing'`.
+- **Arrange, Act, Assert**, in that order and visibly apart, one behaviour per
+  test. The frontend tests mark the steps with comments; the backend tests
+  separate them with blank lines.
+- **Independent**: no test relies on another having run. Every API test gets a
+  schema of its own and every migration test a database of its own.
+- **Integration tests use the real thing**: the production `createApp`, the
+  real repository, a real PostgreSQL. A failure is produced by real means — a
+  database nothing listens on, a dropped column, a corrupt stored value — not
+  by a mock.
+- **Unit tests of use cases stub one thing**: the repository interface
+  (`ISalonRepository`), with `vi.fn`. Schemas and mappers are tested without
+  any stub.
+- **Failures are asserted as values**: a use case or mapper through the
+  `Result` it returns, an endpoint through its problem details.
+- **Nothing internal leaks**: a test of a server-side failure asserts that the
+  response carries no detail, and a test of logging asserts that the bound
+  values of a statement and the request headers stay out of the log.
+- **Test data is explicit**: a builder returns a complete valid request and a
+  test overrides what it is about (`salonRequest(overrides)` in the endpoint
+  tests, `salonCreateRequest()` in
+  `backend/packages/domain/src/__tests__/fixtures.ts`). Dates are fixed, never
+  taken from the clock.
+- **The type rules apply to backend test code**: no `any`, no `as`. Tests are
+  scripts, not application code, so a helper may `throw` when its
+  precondition is not met.
 
-    it('should return validation error for invalid email', async () => {
-      const invalidData = {
-        ...createFullSalonData(),
-        contactInfo: { email: 'invalid-email' }
-      }
+## Checklist for a New Domain
 
-      const response = await request(app)
-        .post('/api/v1/salons')
-        .send(invalidData)
-        .expect(400)
+A new domain follows the Salon tests file by file:
 
-      expect(response.body.type).toContain('validation-error')
-    })
-  })
-})
-```
+- [ ] Schema tests: every rule of every request schema, accepted and rejected
+- [ ] Mapper tests: write and read mappers, including `null` and every change of representation
+- [ ] Use case tests: success, each error passed on, no repository call on invalid input
+- [ ] `backend/packages/api/src/__tests__/<domain>.integration.test.ts` meeting the [requirements per endpoint](#requirements-per-endpoint)
+- [ ] `pnpm test` and `pnpm test:integration` pass
 
-### 2. Test Data Patterns
-
-```typescript
-// Factory functions for complete objects
-export const createFullSalonData = (): CreateSalonRequest => ({
-  name: 'Test Salon',
-  description: 'A test salon',
-  address: {
-    street: '千代田1-1-1',
-    city: '千代田区',
-    prefecture: '東京都',
-    postalCode: '100-0001',
-    country: 'Japan',
-  },
-  contactInfo: {
-    email: 'test@salon.com',
-    phoneNumber: '03-1234-5678',
-    alternativePhone: null,
-    websiteUrl: null,
-  },
-  openingHours: generateOpeningHours(),
-  businessHours: null,
-  imageUrls: null,
-  features: null,
-})
-
-// Direct DB insertion for existing data
-const insertTestSalon = async (db: Database, data: Partial<DbSalon>) => {
-  const id = data.id || createId()
-  await db.execute(sql`
-    INSERT INTO salons (id, name, ...)
-    VALUES (${id}, ${data.name}, ...)
-  `)
-  return id
-}
-```
-
-### 3. Response Assertions
-
-```typescript
-// CursorPaginationResponse structure
-expect(response.body).toMatchObject({
-  data: expect.arrayContaining([]),
-  meta: {
-    total: expect.any(Number),
-    limit: expect.any(Number),
-    hasMore: expect.any(Boolean),
-  },
-  links: expect.any(Object),
-})
-
-// Problem Details error format
-expect(response.body).toMatchObject({
-  type: 'https://example.com/probs/validation-error',
-  title: 'Validation failed',
-  status: 400,
-  detail: expect.stringContaining('Invalid'),
-})
-```
-
-## 📝 Implementation Patterns from Salon
-
-### API Route Pattern (No Validation in Routes)
-
-```typescript
-// backend/packages/api/src/routes/salon.routes.ts
-const createSalonHandler: RequestHandler<
-  Record<string, never>,
-  CreateSalonResponse | ErrorResponse,
-  CreateSalonRequest
-> = async (req, res, next) => {
-  try {
-    const db = req.app.locals.database as Database
-    const salonRepository = new SalonRepository(db)
-    const useCase = new CreateSalonUseCase({ salonRepository })
-
-    // Direct delegation to use case
-    const result = await useCase.execute(req.body)
-
-    match(result)
-      .with({ type: 'success' }, ({ data }) => {
-        res.status(201).json({ data, meta: {...}, links: {...} })
-      })
-      .with({ type: 'error' }, ({ error }) => {
-        handleDomainError(res as Response<ErrorResponse>, error)
-      })
-      .exhaustive()
-  } catch (error) {
-    next(error)
-  }
-}
-```
-
-### Use Case with Mapper Pattern
-
-```typescript
-// backend/packages/domain/src/business-logic/salon/list-salons.usecase.ts
-export class ListSalonsUseCase extends BaseSalonUseCase {
-  async execute(
-    page = 1,
-    limit = 20
-  ): Promise<Result<PaginatedResult<ApiSalon>, DomainError>> {
-    const salonsResult = await this.repository.findAll(...)
-
-    if (Result.isError(salonsResult)) {
-      return salonsResult
-    }
-
-    // Mapper returns correct type
-    const apiSalons = SalonReadMapper.toApiSalonFullList(
-      salonsResult.data.data,
-      new Map()
-    )
-
-    return Result.success({
-      data: apiSalons, // No type casting needed
-      meta: salonsResult.data.meta,
-      links: salonsResult.data.links,
-    })
-  }
-}
-```
-
-## ✅ Test Implementation Checklist
-
-### For Each New Domain
-
-#### Setup Phase
-- [ ] Create `__tests__/[domain].test.ts`
-- [ ] Import test helpers and utilities
-- [ ] Setup beforeEach hooks
-
-#### CRUD Test Coverage
-- [ ] **POST**: Create with valid data
-- [ ] **POST**: Validation errors (5+ cases)
-- [ ] **GET**: List all with pagination
-- [ ] **GET**: Empty list scenario
-- [ ] **GET**: Single item by ID
-- [ ] **GET**: 404 for non-existent
-- [ ] **GET**: 400 for invalid UUID
-- [ ] **PUT**: Update existing
-- [ ] **PUT**: 404 for non-existent
-- [ ] **DELETE**: Soft delete
-- [ ] **DELETE**: 404 for non-existent
-
-#### Search/Filter (if applicable)
-- [ ] Search by keyword
-- [ ] Filter by category
-- [ ] Combined filters
-- [ ] Empty results
-
-#### Database Verification
-- [ ] Verify INSERT after POST
-- [ ] Verify UPDATE after PUT
-- [ ] Verify soft delete (deletedAt)
-- [ ] Check related data
-
-## 🚀 Test Execution
+## Running the Tests
 
 ```bash
-# Run salon tests (reference)
-pnpm test salon.test.ts
-
-# Run all API tests
-cd backend/packages/api && pnpm test
-
-# Run with coverage
-pnpm test --coverage
-
-# Watch mode during development
-pnpm test --watch
+pnpm test                # every unit test (backend and frontend)
+pnpm test:backend        # unit tests of the backend packages
+pnpm test:frontend       # unit and component tests of the frontend
+pnpm test:integration    # integration tests; needs Docker or TEST_DATABASE_URL
 ```
 
-## 📈 Performance Benchmarks (Salon Domain)
-
-| Operation | Tests | Time | Per Test |
-|-----------|-------|------|----------|
-| Full Suite | 15 | 4.89s | 326ms |
-| POST | 3 | 272ms | 91ms |
-| GET List | 3 | 284ms | 95ms |
-| GET Single | 3 | 245ms | 82ms |
-| PUT | 2 | 184ms | 92ms |
-| DELETE | 2 | 254ms | 127ms |
-| Search | 2 | 200ms | 100ms |
-
-Target: < 500ms per integration test
-
-## 🔍 Key Lessons from Salon Implementation
-
-### What Works
-1. **Schema isolation**: 完全な並行実行が可能
-2. **No mocking**: 実際のDBで信頼性の高いテスト
-3. **Type safety**: キャストなしで型の流れを維持
-4. **Fast execution**: 15テストで5秒未満
-
-### Patterns to Replicate
-1. **Test data factories**: 再利用可能なデータ生成
-2. **Direct DB insertion**: 既存データシナリオ用
-3. **Response structure validation**: API仕様の保証
-4. **Error format consistency**: Problem Details準拠
-
-### Anti-patterns to Avoid
-- ❌ Type casting in tests
-- ❌ Test interdependencies
-- ❌ Hardcoded test data
-- ❌ Missing DB verification
-- ❌ Incomplete error scenarios
-
-## 🎓 Applying to Other Domains
-
-When implementing Customer, Staff, Service domains:
-
-1. **Copy Structure**: Salonテストファイルをテンプレートとして使用
-2. **Adapt Fields**: ドメイン固有のフィールドに調整
-3. **Business Rules**: ドメイン特有のビジネスルールを追加
-4. **Maintain Patterns**: 同じアサーションと検証パターンを維持
-
-Example adaptation for Customer domain:
-```typescript
-// backend/packages/api/src/__tests__/customer.test.ts
-describe('Customer API Integration Tests', () => {
-  // Same structure as salon.test.ts
-  // Adapt fields: email, phoneNumber, loyaltyPoints, etc.
-  // Add customer-specific tests: email verification, loyalty program
-})
-```
-
-## 📋 Summary
-
-Salon domain demonstrates a complete, production-ready test implementation with:
-- 100% endpoint coverage
-- Real database testing
-- Type-safe patterns
-- Fast execution
-- Clear structure
-
-Use this as the authoritative reference for all domain test implementations.
+CI runs the unit tests once and the integration tests twice: against a
+PostgreSQL service through `TEST_DATABASE_URL`, and with testcontainers. How to
+run one package, one file or one test is in the
+[API Testing Guide](./api-testing-guide.md).

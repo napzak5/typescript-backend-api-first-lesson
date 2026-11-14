@@ -1,514 +1,302 @@
 # TypeSpec API型定義ルール
 
-TypeSpecでAPIの入出力型を定義する際の厳格なルールとBeauty Salon Reservation SystemにおけるAPI命名規則の完全リファレンス。
+TypeSpec で API のモデルとオペレーションを定義するときのルールと、その書き方をまとめる。
 
-## 🔴 必須要件: Nullableプロパティの@doc
+ルールそのもの（モデル命名、Optional / Nullable、API と DB の一致）の正は [CLAUDE.md](../CLAUDE.md) にある。このドキュメントは、それを TypeSpec でどう書くかを、リファレンス実装である Salon の定義（`specs/models/salon.tsp`、`specs/operations/salon-operations.tsp`）からの抜粋で示す。
 
-**重要**: すべてのnullableプロパティ（`Type | null`）は、`@doc`アノテーション内でnullになる条件を必ず説明しなければなりません。これはコードレビューの必須チェック項目です。
+| 知りたいこと | 参照先 |
+|---|---|
+| `specs/` のファイル構成、生成コマンド | [TypeSpecディレクトリ構成ガイド](./typespec-directory-structure.md) |
+| PostgreSQL / Drizzle / TypeSpec / Zod の型の対応、`pnpm check:api-db` | [API-DB型制約マッピング](./api-db-type-constraints-mapping.md) |
+| DB を正とする考え方、スキーマ変更の手順 | [DB駆動ドメインモデル](./db-driven-domain-model.md) |
 
-例: `@doc("メールアドレス。メール通知不要の場合はnull")`
+## 適用状況
 
-詳細は[Nullableプロパティの@doc必須要件](#nullableプロパティのdoc必須要件)セクションを参照。
+このルールをすべて満たしているのは Salon と、Salon が使う共通モデルだけである。ほかのドメイン（customer、staff、booking、payment など）は TypeSpec と DB スキーマにだけ存在し、バックエンドの実装はない（GitHub issue #91）。それらの TypeSpec には旧い形が残っている。
 
-## 📝 モデル命名規則
+- `CreateStaffRequest`、`UpdateServiceRequest` のような旧い語順のモデル名
+- `Customer`、`Booking` のように、エンティティ名そのままのレスポンスモデル
+- DB にカラムのないプロパティ（`pnpm check:api-db` のベースラインに記録されている）
 
-### 入力モデル（Request）
+ドメインを実装するときは、最初にその TypeSpec を Salon と同じ形に直す。
 
-| 操作 | パターン | 例 |
-|-----|---------|-----|
-| 作成 | `{Domain}CreateRequest` | `CustomerCreateRequest` |
-| 更新 | `{Domain}UpdateRequest` | `CustomerUpdateRequest` |
-| 削除 | `{Domain}DeleteRequest` | `CustomerDeleteRequest` |
-| 一括作成 | `{Domain}BulkCreateRequest` | `CustomerBulkCreateRequest` |
-| 一括更新 | `{Domain}BulkUpdateRequest` | `CustomerBulkUpdateRequest` |
-| 一括削除 | `{Domain}BulkDeleteRequest` | `CustomerBulkDeleteRequest` |
-| 取得 | `{Domain}{Context}GetRequest` | `CustomerBookingsGetRequest` |
-| 検索 | `{Domain}SearchRequest` | `CustomerSearchRequest` |
+## モデル命名
 
-### 出力モデル（Response）
+| 用途 | 名前 | Salon での定義 |
+|---|---|---|
+| 作成 | `{Domain}CreateRequest` | `SalonCreateRequest` |
+| 更新 | `{Domain}UpdateRequest` | `SalonUpdateRequest` |
+| 一覧・検索 | `{Domain}SearchRequest` | `SalonSearchRequest` |
+| レスポンス | `{Domain}Response` | `SalonResponse` |
 
-- **統一パターン**: `{Domain}Response` (例: `CustomerResponse`)
-- **特殊操作**: `{Prefix}{Action}Response` (必要な場合のみ)
+削除・取得・一括操作の名前（`XXXDeleteRequest`、`XXXGetRequest`、`XXXBulkCreateRequest` など）は CLAUDE.md の一覧に従う。Salon の取得と削除はパスの `id` だけを受け取るので、リクエストモデルを持たない。
 
-### 特殊操作パターン
-
-- **認証/アクション系**: `{Prefix}{Action}Request`
-  - 例: `AuthLoginRequest`, `AuthRegisterRequest`, `AuthPasswordResetRequest`
-
-## 🔒 Nullable と Optional ルール
-
-### ベースモデル（エンティティ）の定義
-
-| フィールド性質 | TypeSpec定義 | 説明 |
-|--------------|-------------|------|
-| 必須（NOT NULL） | `field: Type` | 常に値が存在 |
-| 任意（NULLABLE） | `field: Type \| null` | 未設定可能（DBでNULLABLE） |
-| 配列 | `field: Type[] \| null` | 空配列でなくnullで未設定表現 |
-| オブジェクト | `field: Type \| null` | 空オブジェクトでなくnullで未設定表現 |
-
-**⚠️ 重要**: ベースモデルでOptional (`?`) は使用禁止
-- ❌ `description?: string`
-- ✅ `description: string | null`
-
-**適用対象**: ドメインエンティティ、共有モデル、ラッパーモデル、サブモデル
-**例外**: 検索パラメータモデルはOptional可
-
-### 例
+ID は `specs/models/_shared/common.tsp` のスカラーを使う。素の `string` で ID を表さない。
 
 ```typespec
-// ベースモデル
-model InventoryItem {
-  id: InventoryId;
-  productName: string;
-  description: string | null;    // ✅ nullableで未設定表現
+// specs/models/_shared/common.tsp
+@doc("サロン店舗・拠点を識別するためのブランド付きUUID。")
+@format("uuid")
+scalar SalonId extends string;
+```
+
+## Optional と Nullable
+
+| モデル | キー | 値 |
+|---|---|---|
+| `XXXResponse` | すべて必須 | DB で NULL 許可のカラムだけ `Type \| null` |
+| `XXXCreateRequest` | すべて必須 | 同上 |
+| `XXXUpdateRequest` | すべて Optional（`?`） | 同上。`null` はクリアを意味する |
+| `XXXSearchRequest` | 絞り込み条件は Optional の `@query` | `null` は使わない |
+
+`?` を使えるのは Update と Search だけである。Response と Create、およびそれらに埋め込むサブモデル（`OpeningHours`、`BusinessHours` など）では、未設定を `?` ではなく `Type | null` で表す。カラムに対応するプロパティを `Type | null` にできるのは、そのカラムが NULL を許可している場合に限る。
+
+同じカラムが 3 つのモデルでどう書かれるか（`//` のコメントは説明のために足したもの）:
+
+```typespec
+// specs/models/salon.tsp（抜粋）
+model SalonResponse {
+  @doc("公式名称またはブランド名称")
+  name: string;                           // name は NOT NULL
+
+  @doc("名称のカナ表記。未設定の場合はnull")
+  nameKana: string | null;                // nameKana は NULL 許可
+
+  @doc("店舗写真や内装画像のURL一覧")
+  imageUrls: string[];                    // text[] NOT NULL。空は [] で表す
+
+  @doc("曜日別の通常営業時間。未設定の場合はnull")
+  businessHours: BusinessHours[] | null;  // jsonb、NULL 許可
 }
 
-// 検索リクエスト
-model InventorySearchRequest {
-  @query salonId: SalonId;       // 必須
-  @query category?: string;      // ✅ @queryはOptional可
+model SalonCreateRequest {
+  @doc("公式名称またはブランド名称")
+  @minLength(1)
+  @maxLength(255)
+  name: string;
+
+  @doc("名称のカナ表記。未設定の場合はnull")
+  @maxLength(255)
+  nameKana: string | null;                // キーは必須。値に null を指定できる
 }
 
-// 更新リクエスト
-model InventoryItemUpdateRequest {
-  productName?: string;           // ✅ 更新はOptional
-  description?: string | null;    // ✅ nullリセット可
+model SalonUpdateRequest {
+  @doc("公式名称またはブランド名称")
+  @minLength(1)
+  @maxLength(255)
+  name?: string;                          // 省略できるが、null にはできない
+
+  @doc("名称のカナ表記。nullでクリア")
+  @maxLength(255)
+  nameKana?: string | null;
 }
 ```
 
-### Optional フィールドの使用制約
+配列やオブジェクトも同じで、NULL 許可かどうかは DB のカラムで決まる。NOT NULL の配列を `Type[] | null` にしたり、`null` を空文字や既定値に読み替えたりしない。
 
-| モデル種別 | パターン | Optional使用 | 理由 |
-|----------|---------|------------|------|
-| **更新リクエスト** | `*UpdateRequest` | ✅ すべてOptional | 部分更新 |
-| **検索リクエスト** | `*SearchRequest` | ✅ @queryのみOptional | 柔軟な検索 |
-| **@queryパラメータ** | 任意のモデル内 | ✅ @queryのみOptional | URLパラメータ |
-| **ベースモデル** | エンティティ名のみ | ❌ 禁止（nullableを使用） | 形状の一貫性 |
-| **作成リクエスト** | `*CreateRequest` | ❌ 禁止（すべて必須） | 明示的設定 |
-| **レスポンス** | `*Response` | ❌ 禁止（すべて必須） | 一貫性保証 |
+### 更新（PATCH）での 3 つの状態
 
-## 📋 API種別ごとのルールサマリー
+更新は `PATCH` で、リクエストに含まれるプロパティだけを変更する。
 
-| API種別 | キー | 値 | 例 |
-|--------|-----|-----|-----|
-| **作成** | すべて必須 | nullable | `name: string \| null` |
-| **更新** | すべてOptional | 基本モデルに従う | `name?: string` (NOT NULL)<br>`email?: string \| null` (nullable) |
-| **検索** | 必須フィールド以外Optional | 通常の型 | `tenantId: string`<br>`keyword?: string` |
-| **レスポンス** | すべて必須 | nullable可 | `email: string \| null` |
+| リクエスト | 意味 |
+|---|---|
+| キーなし | そのカラムを変更しない |
+| `{ "nameKana": null }` | NULL 許可のカラムをクリアする（NOT NULL のカラムでは検証エラー） |
+| `{ "nameKana": "..." }` | その値に更新する |
 
-### 更新APIにおける3つの状態
+子テーブルの行を埋め込むプロパティは、指定すると全件を置き換える（`SalonUpdateRequest.openingHours`）。この区別を実装しているのは `backend/packages/domain/src/mappers/write/salon.mapper.ts` の `fromUpdateRequest` と `backend/packages/domain/src/schemas/salon.schema.ts` の `salonUpdateRequestSchema` で、プロパティをひとつも含まないリクエストは検証エラーになる。
 
-| 状態 | TypeScript表現 | 意味 | 処理 |
-|-----|---------------|------|------|
-| 省略 | `undefined`（キーなし） | 更新しない | スキップ |
-| null設定 | `{ field: null }` | 初期値に戻す | DBにnull設定 |
-| 値設定 | `{ field: "value" }` | 新しい値で更新 | DBに値設定 |
+## DB との一致
 
-## 💡 実装のポイント
+API モデルは DB のテーブルに合わせて書く。
 
-### 更新処理での3状態の扱い
+- プロパティ名はカラム名と同じにする（`websiteUrl`、`alternativePhone`）。画面の都合で改名しない
+- NULL 許可は上の表のとおりカラムに合わせる
+- 文字列長はカラムの長さと同じ値を `@maxLength` で書く。数値の範囲（`@minValue` / `@maxValue`）は、カラムに収まる範囲で業務上の下限・上限を書く
+- DB やほかの機能が値を決めるカラム（`id`、`createdAt`、`rating` など）は Create / Update に含めない
+- API に新しいプロパティを足すときは、先にマイグレーションでカラムを足す
 
-```typescript
-// UpdateRequestでの処理例
-Object.entries(request).forEach(([key, value]) => {
-  if (value === undefined) return;     // 省略 = 更新しない
-  if (value === null) updates[key] = null;  // null = 初期値リセット
-  else updates[key] = value;           // 値 = 更新
-});
+```typespec
+// specs/models/salon.tsp（SalonCreateRequest の抜粋）
+@doc("公式サイトのURL。未設定の場合はnull")
+@maxLength(500)                 // websiteUrl は varchar(500)
+websiteUrl: string | null;
+
+@doc("消費税率(%)")
+@minValue(0)
+@maxValue(100)                  // numeric(5, 2) に収まる業務上の範囲
+taxRate: float64;
 ```
 
-### レスポンスの一貫性確保
+名前・NULL 許可・必須 / Optional は `pnpm check:api-db` が検査する。型の対応と検査の詳細は [API-DB型制約マッピング](./api-db-type-constraints-mapping.md) を参照。
 
-```typescript
-// undefinedをnullに統一
-return {
-  id: customer.id,
-  email: customer.email ?? null,  // undefined → null変換
-  tags: customer.tags ?? [],      // undefined → 空配列
-};
+## `@doc`
+
+- モデル、プロパティ、Enum、オペレーションのすべてに日本語の `@doc` を付ける
+- nullable なプロパティ（`Type | null`）には、null になる条件を必ず書く
+- Update モデルでは、null を指定したときの効果を書く（「nullでクリア」）
+
+`@doc` の有無や内容を検査するツールはない。レビューで確認する。
+
+```typespec
+// ✅ null になる条件がわかる（specs/models/salon.tsp、specs/models/_shared/common.tsp）
+@doc("顧客レビューから算出した平均評価。レビュー未登録の場合はnull")
+rating: float32 | null;
+
+@doc("開店時刻。HH:mm:ss形式で返す（指定時はHH:mmも可）。終日休業の場合はnull")
+openTime: string | null;
+
+// ❌ nullable なのに条件がない
+@doc("平均評価")
+rating: float32 | null;
 ```
 
-## 🔧 DB-API整合性ルール
+モデル自体の `@doc` には、そのモデルが何を表し、キーと null をどう扱うかを書く。
 
-### プロパティ名の一貫性
+```typespec
+// specs/models/salon.tsp
+@doc("""
+  サロン新規登録リクエスト - 全項目のキーが必須。DB で NULL 許可のカラムのみ null を指定できる
+  """)
+model SalonCreateRequest {
+```
 
-**原則**: プロパティ名はDB定義と完全一致させる
+spread（`...Model`）には `@doc` を付けられない（`invalid-decorator-location: Cannot decorate spread property.`）。説明は spread 元のモデルのプロパティに書く。
 
-| DB定義 | API定義 | 判定 |
-|--------|---------|------|
-| `websiteUrl` | `websiteUrl` | ✅ |
-| `websiteUrl` | ~~`website`~~ | ❌ |
-| `alternativePhone` | `alternativePhone` | ✅ |
-| `alternativePhone` | ~~`altPhone`~~ | ❌ |
+## Enum
 
-**Mapperでの実装**:
-```typescript
-// ✅ 正しい: 名前変換なし
-toApiContact(db): ApiContact {
-  return {
-    websiteUrl: db.websiteUrl,
-    alternativePhone: db.alternativePhone
+- 名前は `Type` で終える（`DayOfWeekType`、`ServiceCategoryType`）。`specs/` の Enum はすべてこの形になっている
+- `@doc` は「1 行目に全体の説明、空行、`値: 日本語名`（必要なら続けて ` - 説明`）を 1 行ずつ」の形で書く
+
+```typespec
+// specs/models/_shared/common.tsp
+@doc("""
+  曜日区分 - 営業日やスケジュール管理で使用される曜日の定義
+
+  monday: 月曜日
+  tuesday: 火曜日
+  wednesday: 水曜日
+  thursday: 木曜日
+  friday: 金曜日
+  saturday: 土曜日
+  sunday: 日曜日
+  """)
+enum DayOfWeekType {
+  monday,
+  tuesday,
+  wednesday,
+  thursday,
+  friday,
+  saturday,
+  sunday,
+}
+```
+
+この形にそろえるのは、`backend/packages/generated/scripts/generate-types.ts` が `値:` で始まる行を目印にして、生成する型と Zod スキーマ（`DayOfWeekTypeSchema` など）の JSDoc を整形するからである。
+
+Enum の値は、対応する DB の enum 型（`DayOfWeekType` なら `day_of_week`）と同じにする。実装済みのドメインではマッパーが値をそのまま受け渡すので、値がずれると型検査で失敗する。
+
+## オペレーション
+
+```typespec
+// specs/operations/salon-operations.tsp（抜粋）
+@route("/api/v1/salons")
+@tag("Salons")
+namespace SalonOperations {
+  interface SalonCrud {
+    @doc("絞り込み条件とページネーションを指定してサロンを一覧取得します。削除済みのサロンは含みません。")
+    @summary("List salons")
+    @get
+    list(...SalonSearchRequest):
+      | {
+          @statusCode statusCode: 200;
+          @body response: CursorPaginationResponse<SalonResponse>;
+        }
+      | {
+          @statusCode statusCode: 400;
+          @body error: ProblemDetails;
+        };
+
+    @doc("サロンを新規登録します。メールアドレスが既存のサロンと重複する場合は409を返します。")
+    @summary("Create a salon")
+    @post
+    create(@body request: SalonCreateRequest):
+      | {
+          @statusCode statusCode: 201;
+          @header("Location") location: string;
+          @body response: ApiResponse<SalonResponse>;
+        }
+      | {
+          @statusCode statusCode: 400;
+          @body error: ProblemDetails;
+        }
+      | {
+          @statusCode statusCode: 409;
+          @body error: ProblemDetails;
+        };
   }
 }
 ```
 
-### Nullable性の統一
+- モデルは `specs/models/` に定義し、オペレーションのファイルではモデルを定義しない
+- 1 件を返すレスポンスは `ApiResponse<XXXResponse>`、一覧は `CursorPaginationResponse<XXXResponse>` で包む
+- 作成は 201 と `Location` ヘッダー、削除は本文なしの 204 を返す
+- 更新は `@patch` にする（部分更新）
+- エラーのレスポンスはすべて `ProblemDetails` にする。そのオペレーションのユースケースが返すもの（検証エラー 400、未検出 404、重複 409）をステータスごとに列挙する
+- パスの ID は ID スカラーで型付けする（`@path id: SalonId`）
+- Salon では、定義したオペレーションがすべて実装されている。実装しないオペレーションを先に定義しない（YAGNI）
 
-**原則**: DB定義のNullable性とAPI定義を完全一致させる
+共通モデルは `specs/models/_shared/common-api-patterns.tsp` にある。
 
-| DB定義 | API定義 | 判定 |
-|--------|---------|------|
-| `text('name')` | `name: string \| null` | ✅ |
-| `text('name').notNull()` | `name: string` | ✅ |
-| `numeric('rating')` | `rating: number \| null` | ✅ |
-| `text('desc')` | ~~`desc: string`~~ | ❌ |
+| モデル | 内容 |
+|---|---|
+| `ApiResponse<T>` | `data`、`meta`（`correlationId` / `timestamp` / `version`）、`links` |
+| `CursorPaginationResponse<T>` | `data: T[]`、`meta: PaginationMeta`、`links: PaginationLinks` |
+| `PaginationMeta` | `total`、`limit`、`hasMore`、`cursor`、`nextCursor`、`prevCursor` |
+| `ProblemDetails` | RFC 9457（旧 RFC 7807）の problem details に `code`、`errors`、`correlationId`、`timestamp` を加えたもの |
+| `HealthStatus`、`SystemReadyResponse` | `/api/system/health`、`/api/system/ready` のレスポンス |
 
-**型変換時の注意**:
-```typescript
-// ✅ 正しい: Nullable性維持
-rating: dbSalon.rating
-  ? Number.parseFloat(dbSalon.rating)
-  : null,
+### 検索リクエスト
 
-// ❌ 誤り: nullを空文字列に変換
-description: dbSalon.description ?? '',
-```
-
-### API-DB整合性の検証
-
-**チェックリスト**:
-- [ ] APIプロパティに対応するDBカラムが存在
-- [ ] Nullable性が一致
-- [ ] 新規プロパティ追加時にマイグレーション作成
-
-## 📝 日本語@docアノテーション要件
-
-### 基本ルール
-
-**すべてのモデルプロパティに日本語`@doc`アノテーションを必須とする**
-
-これは以下のすべてに適用されます:
-- ベースモデルのプロパティ
-- リクエストモデルのプロパティ
-- レスポンスモデルのプロパティ
-- サブモデルのプロパティ
-- Enum型の定義と値
-
-### 🔴 Nullableプロパティの@doc必須要件
-
-**すべてのnullableプロパティ（`Type | null`）は、`@doc`内でnullになる条件を必ず説明すること**
-
-これはコードレビューにおける必須チェック項目です。nullableプロパティで条件説明がない場合、レビューを通過できません。
-
-#### Nullableプロパティの説明パターン
-
-| パターン | 使用場面 | 例 |
-|---------|----------|-----|
-| 未設定の場合null | 任意項目 | `@doc("サロンの説明文。未設定の場合はnull")` |
-| 初回登録時はnull | 段階的入力 | `@doc("メールアドレス。初回登録時はnull")` |
-| オプション項目のためnull可 | 追加情報 | `@doc("代替連絡先。オプション項目のためnull可")` |
-| 未確定の場合null | 状態遷移 | `@doc("承認日時。未承認の場合はnull")` |
-| 該当なしの場合null | 条件付き | `@doc("キャンセル理由。キャンセル以外はnull")` |
-| システム未設定時null | 自動設定 | `@doc("システム生成ID。生成前はnull")` |
-
-#### ✅ 正しい例
+一覧の条件は `XXXSearchRequest` に `@query` として定義し、オペレーションの引数に spread する。ページネーションはキーセット方式で、`limit` と `cursor` を持つ。`cursor` には前のページの `meta.nextCursor` を渡す。
 
 ```typespec
-model Customer {
-  @doc("顧客を一意に識別するID")
-  id: CustomerId;
+// specs/models/salon.tsp（抜粋）
+model SalonSearchRequest {
+  #suppress "@typespec/http/metadata-ignored" "Treated as queryParams"
+  @query
+  @doc("1ページあたりの取得件数上限 (1〜100)")
+  @minValue(1)
+  @maxValue(100)
+  limit?: int32 = 20;
 
-  @doc("顧客の正式な氏名（姓と名の間に半角スペース）")
-  name: string;
+  #suppress "@typespec/http/metadata-ignored" "Treated as queryParams"
+  @query
+  @doc("取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する")
+  cursor?: string;
 
-  @doc("メールアドレス。メール通知不要の顧客はnull")
-  email: string | null;
-
-  @doc("電話番号。緊急連絡先として必須")
-  phoneNumber: string;
-
-  @doc("代替電話番号。未登録の場合はnull")
-  alternativePhoneNumber: string | null;
-
-  @doc("誕生日。プロフィール未入力の場合はnull")
-  birthDate: plainDate | null;
-
-  @doc("最終来店日。初回予約前はnull")
-  lastVisitDate: utcDateTime | null;
-
-  @doc("お気に入りスタイリストID。未指定の場合はnull")
-  favoriteStaffId: StaffId | null;
-
-  @doc("アレルギー情報。申告なしの場合はnull")
-  allergyInfo: AllergyDetail[] | null;
+  #suppress "@typespec/http/metadata-ignored" "Treated as queryParams"
+  @query(#{ explode: true })
+  @doc("特徴タグによる絞り込み。指定したタグをすべて持つサロンに一致する")
+  features?: string[];
 }
 ```
 
-#### ❌ 誤った例（null条件の説明なし）
+絞り込み条件の `@doc` には、一致の仕方（完全一致、部分一致、複数指定時の扱い）を書く。
 
-```typespec
-model Customer {
-  @doc("顧客ID")  // ✅ NOT NULLなので説明不要
-  id: CustomerId;
+## 変更したあとの確認
 
-  @doc("メールアドレス")  // ❌ nullableなのに条件説明なし
-  email: string | null;
-
-  @doc("代替連絡先")  // ❌ nullableなのに条件説明なし
-  alternativePhoneNumber: string | null;
-
-  @doc("誕生日")  // ❌ nullableなのに条件説明なし
-  birthDate: plainDate | null;
-
-  @doc("アレルギー情報")  // ❌ nullableなのに条件説明なし
-  allergyInfo: AllergyDetail[] | null;
-}
+```bash
+pnpm generate        # OpenAPI、フロントエンドの API クライアント、バックエンドの型を再生成
+pnpm format:check    # TypeSpec のフォーマットを含む
+pnpm check:api-db    # API モデルと DB スキーマの一致
 ```
 
-#### 複雑なビジネスロジックの説明
+生成物は TypeSpec の変更と同じコミットに含める。CI では `pnpm check:generated` が、生成物がコミット済みの内容と一致することを確認する。
 
-ビジネスルールが複雑な場合は、より詳細な説明を記載:
+## 関連ドキュメント
 
-```typespec
-model Reservation {
-  @doc("予約確定日時。仮予約中はnull、確定後にシステムが自動設定")
-  confirmedAt: utcDateTime | null;
-
-  @doc("キャンセル日時。有効な予約の場合はnull、キャンセル処理時に記録")
-  cancelledAt: utcDateTime | null;
-
-  @doc("ノーショウフラグ設定日時。来店した場合はnull、無断キャンセル時に設定")
-  noShowAt: utcDateTime | null;
-
-  @doc("実際のサービス開始時刻。予約時点では未確定のためnull、来店後に記録")
-  actualStartTime: plainTime | null;
-
-  @doc("割引適用情報。通常料金の場合はnull、キャンペーン適用時のみ設定")
-  discountInfo: DiscountDetail | null;
-}
-```
-
-#### コードレビューチェックリスト
-
-Nullableプロパティのレビュー時に確認すること:
-
-- [ ] すべての`Type | null`プロパティに`@doc`が存在
-- [ ] `@doc`内でnull条件が明確に説明されている
-- [ ] null条件がビジネスロジックと一致している
-- [ ] 説明が具体的で曖昧さがない
-- [ ] DB定義のNULLABLE制約と整合性がある
-
-### モデルプロパティへの@doc適用
-
-**形式**: 日本語での簡潔な説明を記載
-
-```typespec
-// ベースモデルの例
-model Salon {
-  @doc("サロンを一意に識別するID")
-  id: SalonId;
-
-  @doc("公式名称またはブランド名称")
-  name: string;
-
-  @doc("サロンの特徴やコンセプトを伝える説明文。未設定の場合はnull")
-  description: string | null;
-
-  @doc("所在地・アクセス・郵便番号等を含む住所情報")
-  address: Address;
-
-  @doc("電話・メール・SNS等の問い合わせ窓口情報")
-  contactInfo: ContactInfo;
-}
-
-// リクエストモデルの例
-model CreateSalonRequest {
-  @doc("新規登録時に必須となるサロン名")
-  name: string;
-
-  @doc("サロン紹介文。未設定の場合はnullで送信")
-  description: string | null;
-
-  @doc("店舗の正規住所・連絡先配送先")
-  address: Address;
-}
-
-// 更新リクエストの例
-model UpdateSalonRequest {
-  @doc("名称変更を行う場合に指定")
-  name?: string;
-
-  @doc("紹介文を更新する場合に指定（null指定で初期化可能）")
-  description?: string | null;
-}
-
-// サブモデルの例
-model Address {
-  @doc("郵便番号（ハイフンなし7桁）")
-  postalCode: string;
-
-  @doc("都道府県名")
-  prefecture: string;
-
-  @doc("市区町村名")
-  city: string;
-
-  @doc("町名・番地・建物名など")
-  streetAddress: string;
-
-  @doc("建物名・部屋番号など。未入力の場合はnull")
-  buildingName: string | null;
-}
-```
-
-### モデル全体への@doc適用
-
-モデル定義自体にも説明を付与:
-
-```typespec
-@doc("""
-  サロン基本情報モデル - 美容室の店舗情報、顧客向け公開情報、運営に必要な基礎データを一元管理する
-  """)
-model Salon { ... }
-
-@doc("""
-  サロン新規登録リクエスト - 全項目のキーが必須で、値は業務要件に応じてnull許可
-  """)
-model CreateSalonRequest { ... }
-
-@doc("""
-  住所情報モデル - 配送先や店舗所在地を表現する共通構造
-  """)
-model Address { ... }
-```
-
-### @docアノテーションのベストプラクティス
-
-1. **簡潔性**: プロパティの目的を端的に説明
-2. **一貫性**: 同じ概念には同じ表現を使用
-3. **完全性**: null許可やデフォルト値について明記（**nullableは必須**）
-4. **業務文脈**: ビジネスロジックとの関連を説明
-
-```typespec
-// ❌ 不適切: 説明が不足
-@doc("名前")
-name: string;
-
-// ✅ 適切: 具体的で明確
-@doc("顧客の姓名（姓と名の間に半角スペース）")
-name: string;
-
-// ❌ 不適切: null可能性の説明なし（コードレビューで却下）
-@doc("電話番号")
-phone: string | null;
-
-// ✅ 適切: null条件を明記
-@doc("緊急連絡先電話番号。未登録の場合はnull")
-phone: string | null;
-
-// ❌ 不適切: 業務的な意味が不明
-@doc("フラグ")
-isActive: boolean;
-
-// ✅ 適切: 業務上の意味が明確
-@doc("アカウントの有効状態。falseの場合ログイン不可")
-isActive: boolean;
-```
-
-## 🏷️ Enum型の規則
-
-### 命名規則
-
-**すべてのEnum型に`Type`サフィックスを付ける**
-
-```typespec
-enum ServiceCategoryType { ... }
-enum PaymentMethodType { ... }
-enum ReservationStatusType { ... }
-```
-
-### Enum型への日本語@docアノテーション
-
-```typespec
-@doc("""
-  アレルギー重篤度区分 - アレルギー反応の重篤度を表し、対応レベルを決定
-
-  mild: 軽度 - 軽いかゆみや赤み程度、通常の施術で注意すれば対応可能
-  moderate: 中等度 - 明確な皮膚反応、特別な配慮や代替品の使用が必要
-  severe: 重度 - 激しい反応、特定の施術を避けるべきレベル
-  """)
-enum AllergySeverityType { mild, moderate, severe }
-
-@doc("""
-  認証状態区分 - ユーザーの認証状態を表す区分
-
-  notAuthenticated: 未認証 - 認証が完了していない状態
-  authenticated: 認証済み - 正常に認証された状態
-  sessionExpired: セッション失効 - セッションがタイムアウトした状態
-  accountLocked: アカウントロック - セキュリティ理由でロックされた状態
-  """)
-enum AuthenticationStateType { notAuthenticated, authenticated, sessionExpired, accountLocked }
-```
-
-**Enumフォーマット**:
-1. 1行目: Enum全体の説明
-2. 空行
-3. 各値: `値名: 日本語名 - 詳細説明`
-
-### 既知の問題
-
-TypeSpecでEnum名に`Type`を付けると重複エラー警告が出るが、実際の型生成には影響なし。CIは正常動作。
-
-
-## ⚠️ TypeSpec制約事項
-
-### Spread演算子の@doc制限
-
-```typespec
-// ❌ エラー: spread演算子に@doc不可
-model MyModel {
-  @doc("共通プロパティ")  // エラー
-  ...CommonProperties;
-}
-
-// ✅ 正しい: 参照元で@doc定義
-@doc("監査情報")
-model AuditInfo {
-  @doc("作成日時") createdAt: utcDateTime;
-  @doc("更新日時") updatedAt: utcDateTime;
-}
-
-model Salon {
-  @doc("サロンID") id: SalonId;
-  ...AuditInfo;  // @docなし
-}
-```
-
-## 📂 モデル定義の配置ルール
-
-### 検索リクエストモデル
-
-**命名**: `{Domain}SearchRequest` (例: `SalonSearchRequest`)
-**継承**: `AdvancedSearchParams`を継承
-**配置**: `specs/models/{domain}.tsp`
-
-### ファイル構成
-
-```
-specs/
-├── models/              # すべてのモデル定義
-│   ├── _shared/        # 共通定義
-│   └── {domain}.tsp    # 各ドメインのモデル
-└── operations/         # オペレーション定義のみ
-```
-
-**原則**:
-- Operationsネームスペース内でモデル定義禁止
-- ドメインごとに専用ファイル
-- 関連モデルは同一ファイルに集約
-
-## 📚 関連ドキュメント
-
-- [Backend Architecture Guidelines](./backend-architecture-guidelines.md)
-- [Multi-Agent Collaboration Framework](./multi-agent-collaboration-framework.md)
-- [API Testing Guide](./api-testing-guide.md)
+- [CLAUDE.md](../CLAUDE.md) - 命名規則と API-DB 整合性ルールの正
+- [TypeSpecディレクトリ構成ガイド](./typespec-directory-structure.md)
+- [API-DB型制約マッピング](./api-db-type-constraints-mapping.md)
+- [型生成システム](./type-generation-system.md)

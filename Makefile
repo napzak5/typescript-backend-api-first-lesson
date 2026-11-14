@@ -97,7 +97,7 @@ audit: ## Fail on high or critical vulnerabilities
 api-db-check: ## Verify API models agree with the database schema
 	pnpm check:api-db
 
-ci-check: ## Run the same checks as the CI workflow
+ci-check: ## Run the checks of the CI workflow (all but db-check, which recreates the database)
 	pnpm install --frozen-lockfile
 	pnpm check:versions
 	pnpm check:generated
@@ -141,7 +141,7 @@ infra-up: ## Start PostgreSQL, MailHog and MinIO and wait for the database
 	$(COMPOSE) up -d $(INFRA_SERVICES)
 	$(COMPOSE) up -d --wait postgres
 
-docker-up: ## Start every service, including the backend container (recreates the database)
+docker-up: ## Start every service, including the backend container (migrates the database, keeps its data)
 	$(COMPOSE) up -d
 	@echo "Backend: http://localhost:3000  MailHog: http://localhost:8025  MinIO: http://localhost:9001"
 
