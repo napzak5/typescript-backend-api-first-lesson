@@ -173,9 +173,106 @@ const staffRules: ModelRule[] = [
   },
 ]
 
-/** Bookings (the booking and reservation operations). */
+/**
+ * Columns of `bookings` that a request never writes. The system numbers the
+ * booking, derives its times and amounts from the service lines, records the
+ * request's IP address and user agent, and the actions (confirm, cancel,
+ * complete, reschedule) set the status and the columns of each transition.
+ */
+const bookingSystemColumns = [
+  'id',
+  'bookingNumber',
+  'bookingDate',
+  'startTime',
+  'endTime',
+  'duration',
+  'status',
+  'subtotal',
+  'discountAmount',
+  'taxAmount',
+  'totalAmount',
+  'pointsUsed',
+  'pointsEarned',
+  'reminderSent',
+  'reminderSentAt',
+  'cancelledAt',
+  'cancelledBy',
+  'cancellationReason',
+  'cancellationFee',
+  'completedAt',
+  'actualStartTime',
+  'actualEndTime',
+  'ipAddress',
+  'userAgent',
+  'createdAt',
+  'updatedAt',
+]
+
+/**
+ * Columns of `booking_services` that a request never writes: the end time,
+ * duration and prices come from the service, the order from the position of
+ * the line, completion from the complete action. `selectedOptions` is a jsonb
+ * column without a defined structure.
+ */
+const bookingServiceSystemColumns = [
+  'id',
+  'bookingId',
+  'endTime',
+  'duration',
+  'price',
+  'discountAmount',
+  'finalPrice',
+  'selectedOptions',
+  'isCompleted',
+  'completedAt',
+  'sortOrder',
+  'createdAt',
+  'updatedAt',
+]
+
+/**
+ * Bookings and their service lines. The status history
+ * (`bookingStatusHistories`) is written by the actions and not exposed.
+ */
 const bookingRules: ModelRule[] = [
-  { model: 'Models.Booking', table: 'bookings', kind: 'response' },
+  {
+    model: 'Models.BookingResponse',
+    table: 'bookings',
+    kind: 'response',
+    embedded: ['services'],
+    omittedColumns: ['ipAddress', 'userAgent'],
+  },
+  {
+    model: 'Models.BookingCreateRequest',
+    table: 'bookings',
+    kind: 'create',
+    embedded: ['services'],
+    omittedColumns: bookingSystemColumns,
+  },
+  {
+    model: 'Models.BookingUpdateRequest',
+    table: 'bookings',
+    kind: 'update',
+    // A booking keeps its salon and customer; reschedule changes the staff.
+    omittedColumns: [
+      ...bookingSystemColumns,
+      'salonId',
+      'customerId',
+      'staffId',
+    ],
+  },
+  {
+    model: 'Models.BookingServiceResponse',
+    table: 'bookingServices',
+    kind: 'response',
+    omittedColumns: ['bookingId', 'selectedOptions', 'createdAt', 'updatedAt'],
+  },
+  {
+    model: 'Models.BookingServiceCreateRequest',
+    table: 'bookingServices',
+    kind: 'create',
+    omittedColumns: bookingServiceSystemColumns,
+  },
 ]
 
 /** Payments, points and sales. */

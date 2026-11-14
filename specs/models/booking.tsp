@@ -1,13 +1,13 @@
 import "@typespec/http";
 import "./_shared/common.tsp";
-import "./payment.tsp";
+import "./_shared/common-api-patterns.tsp";
 
 using TypeSpec.Http;
 using BeautySalon.Models;
 
 namespace BeautySalon.Models {
   @doc("""
-    予約ステータスコード区分 - 予約の詳細な進行状態を表す区分
+    予約ステータス区分 - 予約の詳細な進行状態を表す区分
     
     draft: 下書き - 予約内容を作成中、まだ確定していない状態
     pending: 保留中 - 予約リクエストを受付、確認待ちの状態
@@ -17,7 +17,7 @@ namespace BeautySalon.Models {
     cancelled: キャンセル - 予約がキャンセルされた状態
     no_show: 無断キャンセル - 顧客が連絡なしに来店しなかった状態
     """)
-  enum BookingStatusCodeType {
+  enum BookingStatusType {
     draft,
     pending,
     confirmed,
@@ -27,308 +27,365 @@ namespace BeautySalon.Models {
     no_show,
   }
 
-  @doc("予約の進行状況ごとに保持する詳細情報ユニオン。")
-  union BookingStatus {
-    @doc("下書き状態の詳細情報。")
-    draft: DraftBookingStatus,
+  @doc("""
+    予約の施術明細レスポンス - booking_services テーブルの1行。予約に含まれる1つの施術メニューと、
+    その担当スタッフ・時間・料金を表す。プロパティ名と null 許可は DB カラムと一致させている
+    """)
+  model BookingServiceResponse {
+    @doc("施術明細を一意に識別するID")
+    id: BookingServiceId;
 
-    @doc("保留状態の詳細情報。")
-    pending: PendingBookingStatus,
+    @doc("予約された施術メニューのID")
+    serviceId: ServiceId;
 
-    @doc("確定状態の詳細情報。")
-    confirmed: ConfirmedBookingStatus,
+    @doc("この施術を担当するスタッフのID。担当スタッフが決まっていない場合はnull")
+    staffId: StaffId | null;
 
-    @doc("施術中状態の詳細情報。")
-    in_progress: InProgressBookingStatus,
+    @doc("施術開始予定日時 (UTC)")
+    startTime: utcDateTime;
 
-    @doc("完了状態の詳細情報。")
-    completed: CompletedBookingStatus,
+    @doc("施術終了予定日時 (UTC)")
+    endTime: utcDateTime;
 
-    @doc("キャンセル状態の詳細情報。")
-    cancelled: CancelledBookingStatus,
+    @doc("施術時間（分）。明細を追加した時点のサービスの施術時間")
+    duration: int32;
 
-    @doc("無断キャンセル状態の詳細情報。")
-    no_show: NoShowBookingStatus,
+    @doc("施術料金。明細を追加した時点のサービスの料金")
+    price: int32;
+
+    @doc("施術料金からの割引額。明細を追加した時点のサービスの割引後料金から算出する")
+    discountAmount: int32;
+
+    @doc("割引適用後の施術料金 (price − discountAmount)")
+    finalPrice: int32;
+
+    @doc("施術が完了したかどうか")
+    isCompleted: boolean;
+
+    @doc("施術が完了した日時。完了していない場合はnull")
+    completedAt: utcDateTime | null;
+
+    @doc("この施術に関するメモ。メモがない場合はnull")
+    notes: string | null;
+
+    @doc("予約内での表示順序。予約作成時は services の指定順になり、あとから追加した明細は末尾に並ぶ")
+    sortOrder: int32;
   }
 
-  @doc("予約が下書き段階にある場合の状態情報。")
-  model DraftBookingStatus {
-    @doc("固定値draft。下書き状態であることを示す。")
-    type: "draft";
+  @doc("""
+    施術明細の追加リクエスト - 全項目のキーが必須。DB で NULL 許可のカラムのみ null を指定できる。
+    終了日時・施術時間・料金・割引額は、指定したサービスの登録内容から算出する
+    """)
+  model BookingServiceCreateRequest {
+    @doc("予約する施術メニューのID。予約と同じサロンのサービスを指定する")
+    serviceId: ServiceId;
 
-    @doc("下書きが作成された日時。")
-    createdAt: utcDateTime;
+    @doc("この施術を担当するスタッフのID。予約と同じサロンのスタッフを指定する。担当スタッフを決めない場合はnull")
+    staffId: StaffId | null;
 
-    @doc("下書きの有効期限。無期限の場合はnull。")
-    expiresAt: utcDateTime | null;
-  }
+    @doc("施術開始予定日時 (UTC)")
+    startTime: utcDateTime;
 
-  @doc("予約が確認待ち段階にある場合の状態情報。")
-  model PendingBookingStatus {
-    @doc("固定値pending。保留状態であることを示す。")
-    type: "pending";
-
-    @doc("顧客から予約リクエストを受け付けた日時。")
-    requestedAt: utcDateTime;
-
-    @doc("保留状態の有効期限。無期限の場合はnull。")
-    holdExpiresAt: utcDateTime | null;
-
-    @doc("仮割り当てされたスタッフID。スタッフが未確定の場合はnull。")
-    assignedStaffId: StaffId | null;
-  }
-
-  @doc("予約が確定済みの場合の状態情報。")
-  model ConfirmedBookingStatus {
-    @doc("固定値confirmed。確定状態であることを示す。")
-    type: "confirmed";
-
-    @doc("予約を確定した日時。")
-    confirmedAt: utcDateTime;
-
-    @doc("担当するスタッフID。")
-    staffId: StaffId;
-
-    @doc("施術開始予定日時。")
-    expectedStart: utcDateTime;
-  }
-
-  @doc("施術が進行中の場合の状態情報。")
-  model InProgressBookingStatus {
-    @doc("固定値in_progress。施術中であることを示す。")
-    type: "in_progress";
-
-    @doc("施術を開始した日時。")
-    startedAt: utcDateTime;
-
-    @doc("施術を行っているブースや席の名称。席が指定されていない場合はnull。")
-    stationName: string | null;
-  }
-
-  @doc("施術が完了した場合の状態情報。")
-  model CompletedBookingStatus {
-    @doc("固定値completed。完了状態であることを示す。")
-    type: "completed";
-
-    @doc("施術が完了した日時。")
-    completedAt: utcDateTime;
-
-    @doc("関連する決済ID。支払いが未完了または不要の場合はnull。")
-    paymentId: PaymentId | null;
-
-    @doc("施術内容のサマリーメモ。メモを記録していない場合はnull。")
-    serviceSummary: string | null;
-  }
-
-  @doc("予約がキャンセルされた場合の状態情報。")
-  model CancelledBookingStatus {
-    @doc("固定値cancelled。キャンセル状態であることを示す。")
-    type: "cancelled";
-
-    @doc("キャンセルが登録された日時。")
-    cancelledAt: utcDateTime;
-
-    @doc("キャンセル理由のメモ。理由が記録されていない場合はnull。")
-    reason: string | null;
-
-    @doc("キャンセルを実行した主体（customer: 顧客／salon: サロン側／system: システム判断）。")
-    cancelledBy: "customer" | "salon" | "system";
-  }
-
-  @doc("来店が確認できなかった場合の状態情報。")
-  model NoShowBookingStatus {
-    @doc("固定値no_show。無断キャンセル状態であることを示す。")
-    type: "no_show";
-
-    @doc("無断キャンセルとして記録した日時。")
-    recordedAt: utcDateTime;
-
-    @doc("ペナルティを適用したかどうか。既定値はfalse。")
-    penaltyApplied: boolean = false;
-  }
-
-  @doc("予約確定前に預かるデポジット情報。")
-  model BookingDeposit {
-    @doc("預かり金額。")
-    amount: Money;
-
-    @doc("デポジットの状態区分（pending: 入金待ち／paid: 入金済み／refunded: 返金済み／forfeited: 没収）。")
-    status: "pending" | "paid" | "refunded" | "forfeited";
-
-    @doc("支払い期日。即時支払いまたは期日が未設定の場合はnull。")
-    dueDate: utcDateTime | null;
-
-    @doc("入金が確認された日時。未入金の場合はnull。")
-    paidAt: utcDateTime | null;
-
-    @doc("返金した日時。返金していない場合はnull。")
-    refundedAt: utcDateTime | null;
-
-    @doc("紐づく決済ID。決済がない場合はnull。")
-    paymentId: PaymentId | null;
-
-    @doc("デポジットに関する備考。備考がない場合はnull。")
+    @doc("この施術に関するメモ。メモがない場合はnull")
     notes: string | null;
   }
 
-  @doc("ウェイティングリストに登録された顧客情報。")
-  model WaitlistEntry {
-    @doc("現在の待機順序。")
-    position: int32;
-
-    @doc("呼び出し予想時刻。時刻が未確定の場合はnull。")
-    estimatedTime: utcDateTime | null;
-
-    @doc("ウェイティングリストに参加した日時。")
-    joinedAt: utcDateTime;
-
-    @doc("待機権が失効する日時。無期限の場合はnull。")
-    expiresAt: utcDateTime | null;
-
-    @doc("呼び出し通知を送信した日時。未通知の場合はnull。")
-    notifiedAt: utcDateTime | null;
-
-    @doc("希望スタッフID。指名なしの場合はnull。")
-    preferredStaffId: StaffId | null;
-
-    @doc("希望サービスID。サービスを指定していない場合はnull。")
-    preferredServiceId: ServiceId | null;
-
-    @doc("追加メモ。メモがない場合はnull。")
-    notes: string | null;
-  }
-
-  @doc("サロンで確定管理する予約の集約モデル。")
-  model Booking {
-    @doc("予約を一意に識別するID。")
+  @doc("""
+    予約レスポンス - bookings テーブルの公開カラムと、施術明細(booking_services)を返す。
+    プロパティ名と null 許可は DB カラムと一致させている。監査用の ipAddress と userAgent は返さない
+    """)
+  model BookingResponse {
+    @doc("予約を一意に識別するID")
     id: BookingId;
 
-    @doc("予約が紐づくサロンID。")
+    @doc("予約番号。システムが採番し、すべての予約の間で一意")
+    bookingNumber: string;
+
+    @doc("予約が紐づくサロンのID")
     salonId: SalonId;
 
-    @doc("予約を行った顧客ID。")
+    @doc("予約を行った顧客のID")
     customerId: CustomerId;
 
-    @doc("関連する予約リクエストID一覧。")
-    reservationIds: ReservationId[];
+    @doc("予約の担当スタッフのID")
+    staffId: StaffId;
 
-    @doc("進行状況ごとの詳細情報。")
-    status: BookingStatus;
+    @doc("来店日。startTime をサロンのタイムゾーンで表した日付")
+    bookingDate: plainDate;
 
-    @doc("現在のステータスコード。")
-    statusCode: BookingStatusCodeType;
+    @doc("予約の開始予定日時 (UTC)。施術明細の最も早い開始日時")
+    startTime: utcDateTime;
 
-    @doc("ウェイティングリスト情報。ウェイティングリストに登録されていない場合はnull。")
-    waitlistEntry: WaitlistEntry | null;
+    @doc("予約の終了予定日時 (UTC)。施術明細の最も遅い終了日時")
+    endTime: utcDateTime;
 
-    @doc("預かり金に関する情報。デポジットが不要な場合はnull。")
-    deposit: BookingDeposit | null;
+    @doc("予約全体の所要時間（分）。startTime から endTime までの分数")
+    duration: int32;
 
-    @doc("割引適用前の合計金額。")
-    totalAmount: Money;
+    @doc("予約の現在ステータス")
+    status: BookingStatusType;
 
-    @doc("適用された割引額")
-    discountAmount: Money;
+    @doc("小計。施術明細の料金(price)の合計")
+    subtotal: int32;
 
-    @doc("最終的に請求する金額。")
-    finalAmount: Money;
+    @doc("割引額の合計。施術明細の割引額と予約単位の割引を含む")
+    discountAmount: int32;
 
-    @doc("未収金額。支払いが完了している場合はnull。")
-    balanceDue: Money | null;
+    @doc("消費税額")
+    taxAmount: int32;
 
-    @doc("予定している支払い方法。当日決定または未選択の場合はnull")
-    paymentMethod: PaymentMethodType | null;
+    @doc("請求金額 (subtotal − discountAmount + taxAmount)")
+    totalAmount: int32;
 
-    @doc("支払いの進捗ステータス。支払いが未開始の場合はnull。")
-    paymentStatus: PaymentStatusCodeType | null;
+    @doc("事前に受領する内金・デポジット金額。未設定の場合はnull")
+    depositAmount: int32 | null;
 
-    @doc("スタッフ・顧客間で共有するメモ。メモがない場合はnull。")
-    notes: string | null;
+    @doc("この予約の支払いで利用したポイント数。未設定の場合はnull")
+    pointsUsed: int32 | null;
 
-    ...AuditInfo;
+    @doc("この予約で獲得したポイント数。未設定の場合はnull")
+    pointsEarned: int32 | null;
+
+    @doc("顧客からの要望や特記事項。要望がない場合はnull")
+    customerRequest: string | null;
+
+    @doc("サロン内で共有するメモ。メモがない場合はnull")
+    internalNotes: string | null;
+
+    @doc("リマインダーを送信済みかどうか")
+    reminderSent: boolean;
+
+    @doc("リマインダーを送信した日時。送信していない場合はnull")
+    reminderSentAt: utcDateTime | null;
+
+    @doc("予約がキャンセルされた日時。キャンセルされていない場合はnull")
+    cancelledAt: utcDateTime | null;
+
+    @doc("キャンセルを実行した利用者のID。キャンセルされていない場合、またはシステムがキャンセルした場合はnull")
+    cancelledBy: UserId | null;
+
+    @doc("キャンセルが発生した場合の理由。キャンセルされていない場合、または理由が記録されていない場合はnull")
+    cancellationReason: string | null;
+
+    @doc("キャンセル料。未設定の場合はnull")
+    cancellationFee: int32 | null;
+
+    @doc("予約の施術が完了した日時。完了していない場合はnull")
+    completedAt: utcDateTime | null;
+
+    @doc("実際の施術開始日時。記録されていない場合はnull")
+    actualStartTime: utcDateTime | null;
+
+    @doc("実際の施術終了日時。記録されていない場合はnull")
+    actualEndTime: utcDateTime | null;
+
+    @doc("予約の受付経路（例: online、phone）。未設定の場合はnull")
+    source: string | null;
+
+    @doc("施術明細の一覧。sortOrder の昇順で並ぶ。1件以上")
+    services: BookingServiceResponse[];
+
+    @doc("レコード作成日時")
+    createdAt: utcDateTime;
+
+    @doc("レコード最終更新日時")
+    updatedAt: utcDateTime;
   }
 
-  @doc("予約を新規作成する際のリクエスト。")
+  @doc("""
+    予約新規作成リクエスト - 全項目のキーが必須。DB で NULL 許可のカラムのみ null を指定できる。
+    作成した予約のステータスは pending になる。予約番号、日時・所要時間、金額は、システムが採番・算出する
+    """)
   model BookingCreateRequest {
-    @doc("予約対象のサロンID。")
+    @doc("予約対象のサロンID")
     salonId: SalonId;
 
-    @doc("予約を申し込む顧客ID。")
+    @doc("予約を申し込む顧客ID")
     customerId: CustomerId;
 
-    @doc("紐付ける予約リクエストID一覧。")
-    reservationIds: ReservationId[];
+    @doc("予約の担当スタッフのID。salonId のサロンのスタッフを指定する")
+    staffId: StaffId;
 
-    @doc("ウェイティングリスト情報。ウェイティングリストに登録していない場合はnull。")
-    waitlistEntry: WaitlistEntry | null;
+    @doc("事前に受領する内金・デポジット金額。未設定の場合はnull")
+    @minValue(0)
+    depositAmount: int32 | null;
 
-    @doc("預かり金設定。デポジットが不要な場合はnull。")
-    deposit: BookingDeposit | null;
+    @doc("顧客からの要望や特記事項。要望がない場合はnull")
+    customerRequest: string | null;
 
-    @doc("適用する割引額")
-    discountAmount: Money;
+    @doc("サロン内で共有するメモ。メモがない場合はnull")
+    internalNotes: string | null;
 
-    @doc("予定している支払い方法。当日決定または未選択の場合はnull")
-    paymentMethod: PaymentMethodType | null;
+    @doc("予約の受付経路（例: online、phone）。未設定の場合はnull")
+    @maxLength(50)
+    source: string | null;
 
-    @doc("スタッフ向けの備考。備考がない場合はnull。")
-    notes: string | null;
-
-    @doc("外部連携や業務用に保持する任意メタデータ。追加情報が不要の場合はnull。")
-    metadata: Record<unknown> | null;
+    @doc("施術明細の一覧。1件以上20件以下で指定する。指定した順に sortOrder を振る")
+    @minItems(1)
+    @maxItems(20)
+    services: BookingServiceCreateRequest[];
   }
 
-  @doc("予約情報を部分更新するためのリクエスト。null指定で値をリセット可能。")
+  @doc("""
+    予約部分更新リクエスト - 指定した項目だけを更新する。DB で NULL 許可のカラムは null でクリアできる。
+    サロン・顧客は変更できない。日時と担当スタッフは reschedule、ステータスは confirm などのアクションで変更する
+    """)
   model BookingUpdateRequest {
-    @doc("ステータス詳細の更新。")
-    status?: BookingStatus;
+    @doc("事前に受領する内金・デポジット金額。nullでクリア")
+    @minValue(0)
+    depositAmount?: int32 | null;
 
-    @doc("ステータスコードの更新。")
-    statusCode?: BookingStatusCodeType;
+    @doc("顧客からの要望や特記事項。nullでクリア")
+    customerRequest?: string | null;
 
-    @doc("ウェイティングリスト情報の更新またはリセット。")
-    waitlistEntry?: WaitlistEntry | null;
+    @doc("サロン内で共有するメモ。nullでクリア")
+    internalNotes?: string | null;
 
-    @doc("デポジット情報の更新またはリセット。")
-    deposit?: BookingDeposit | null;
-
-    @doc("支払い方法の更新またはリセット。")
-    paymentMethod?: PaymentMethodType | null;
-
-    @doc("支払いステータスの更新またはリセット。")
-    paymentStatus?: PaymentStatusCodeType | null;
-
-    @doc("割引額の更新")
-    discountAmount?: Money;
-
-    @doc("最終請求額の更新。")
-    finalAmount?: Money;
-
-    @doc("未収金額の更新またはリセット。")
-    balanceDue?: Money | null;
-
-    @doc("備考の更新またはリセット。")
-    notes?: string | null;
-
-    @doc("任意メタデータの更新。")
-    metadata?: Record<unknown>;
+    @doc("予約の受付経路（例: online、phone）。nullでクリア")
+    @maxLength(50)
+    source?: string | null;
   }
 
-  @doc("予約と関連情報をまとめた詳細ビュー。")
-  model BookingDetail extends Booking {
-    @doc("紐づく予約リクエストの詳細一覧。")
-    reservations: ReservationDetail[];
+  @doc("""
+    予約一覧・検索リクエスト - 絞り込み条件とページネーションを指定する。条件はすべて AND で結合する
+    """)
+  model BookingSearchRequest {
+    @query
+    @doc("1ページあたりの取得件数上限 (1〜100)")
+    @minValue(1)
+    @maxValue(100)
+    limit?: int32 = 20;
 
-    @doc("顧客の表示名。")
-    customerName: string;
+    @query
+    @doc("取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する")
+    cursor?: string;
 
-    @doc("サロンの表示名。")
-    salonName: string;
+    @query
+    @doc("サロンのIDによる絞り込み(完全一致)")
+    salonId?: SalonId;
 
-    @doc("決済履歴の一覧。決済履歴がない場合はnull。")
-    paymentHistory: PaymentHistory[] | null;
+    @query
+    @doc("顧客のIDによる絞り込み(完全一致)")
+    customerId?: CustomerId;
 
-    @doc("ウェイティングリストの履歴。ウェイティングリストに登録したことがない場合はnull。")
-    waitlistHistory: WaitlistEntry[] | null;
+    @query
+    @doc("スタッフのIDによる絞り込み。予約の担当スタッフ、またはいずれかの施術明細の担当スタッフが一致する予約に一致する")
+    staffId?: StaffId;
+
+    @query
+    @doc("ステータスによる絞り込み(完全一致)")
+    status?: BookingStatusType;
+
+    @query
+    @doc("来店日(bookingDate)の範囲の開始日。この日以降の予約に一致する。bookingDateTo より後の日付は指定できない")
+    bookingDateFrom?: plainDate;
+
+    @query
+    @doc("来店日(bookingDate)の範囲の終了日。この日以前の予約に一致する")
+    bookingDateTo?: plainDate;
+  }
+
+  @doc("""
+    予約キャンセルリクエスト - キャンセル理由を受け取る。キーは必須
+    """)
+  model BookingCancelRequest {
+    @doc("キャンセルが発生した場合の理由。理由を記録しない場合はnull")
+    cancellationReason: string | null;
+  }
+
+  @doc("""
+    予約完了リクエスト - 実際の施術開始・終了日時を受け取る。キーは必須で、記録しない日時は null を指定する
+    """)
+  model BookingCompleteRequest {
+    @doc("実際の施術開始日時。記録しない場合はnull")
+    actualStartTime: utcDateTime | null;
+
+    @doc("実際の施術終了日時。actualStartTime より後の日時を指定する。記録しない場合はnull")
+    actualEndTime: utcDateTime | null;
+  }
+
+  @doc("""
+    予約日時変更リクエスト - 変更後の開始日時と担当スタッフを受け取る。キーは必須
+    """)
+  model BookingRescheduleRequest {
+    @doc("変更後の予約開始日時 (UTC)")
+    startTime: utcDateTime;
+
+    @doc("変更後の担当スタッフのID。予約と同じサロンのスタッフを指定する。担当を変えない場合は現在の担当スタッフのIDを指定する")
+    staffId: StaffId;
+  }
+
+  @doc("""
+    空き枠検索リクエスト - サロンの指定日の予約可能枠を算出する条件とページネーションを指定する。
+    serviceId と date は必須
+    """)
+  model AvailableSlotSearchRequest {
+    @query
+    @doc("1ページあたりの取得件数上限 (1〜100)")
+    @minValue(1)
+    @maxValue(100)
+    limit?: int32 = 20;
+
+    @query
+    @doc("取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する")
+    cursor?: string;
+
+    @query
+    @doc("空き枠を探すスタッフのID。指定しない場合はサロンのすべてのスタッフの空き枠を返す")
+    staffId?: StaffId;
+
+    @query
+    @doc("予約したい施術メニューのID。パスのサロンのサービスを指定する")
+    serviceId: ServiceId;
+
+    @query
+    @doc("空き枠を探す日付")
+    date: plainDate;
+
+    @query
+    @doc("必要な施術時間（分）。指定しない場合はサービスの施術時間を使う")
+    @minValue(1)
+    @maxValue(1440)
+    duration?: int32;
+  }
+
+  @doc("""
+    空き枠レスポンス - スタッフごとの提供可能時間帯を表し、予約可能枠の算出結果として返す。
+    テーブルには保存せず、予約・スタッフのスケジュール・営業時間から算出する
+    """)
+  model AvailableSlotResponse {
+    @doc("対象スタッフのID")
+    staffId: StaffId;
+
+    @doc("空き枠の開始日時 (UTC)")
+    startTime: utcDateTime;
+
+    @doc("空き枠の終了日時 (UTC)")
+    endTime: utcDateTime;
+  }
+
+  @doc("""
+    空き状況確認リクエスト - 希望する日時・スタッフ・施術メニューの組み合わせを受け取る。キーは必須
+    """)
+  model AvailableSlotCheckRequest {
+    @doc("担当を希望するスタッフのID。パスのサロンのスタッフを指定する")
+    staffId: StaffId;
+
+    @doc("予約したい施術メニューのID。パスのサロンのサービスを指定する")
+    serviceId: ServiceId;
+
+    @doc("希望する施術開始日時 (UTC)")
+    startTime: utcDateTime;
+  }
+
+  @doc("""
+    空き状況確認レスポンス - 希望した組み合わせが予約可能かどうかと、重なっている予約を返す
+    """)
+  model AvailableSlotCheckResponse {
+    @doc("予約可能かどうか")
+    isAvailable: boolean;
+
+    @doc("希望した時間帯に重なっている予約のID一覧。重なりがない場合は空配列")
+    conflicts: BookingId[];
   }
 }

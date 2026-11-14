@@ -36,6 +36,10 @@ namespace BeautySalon.Models {
   @format("uuid")
   scalar BookingId extends string;
 
+  @doc("予約に含まれる施術明細（booking_services の1行）を識別するブランド付きUUID。")
+  @format("uuid")
+  scalar BookingServiceId extends string;
+
   @doc("顧客レビューや口コミを識別するブランド付きUUID。")
   @format("uuid")
   scalar ReviewId extends string;
