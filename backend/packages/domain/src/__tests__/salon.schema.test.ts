@@ -293,6 +293,16 @@ describe('salonCreateRequestSchema', () => {
         },
         ['businessHours.0.effectivePeriod.endDate:custom'],
       ],
+      [
+        'a period that ends half a second before it starts',
+        {
+          effectivePeriod: {
+            startDate: '2026-11-01T00:00:00.500Z',
+            endDate: '2026-11-01T00:00:00Z',
+          },
+        },
+        ['businessHours.0.effectivePeriod.endDate:custom'],
+      ],
     ])('rejects %s', (_case, change, expected) => {
       const rules = rulesBrokenBy(salonCreateRequestSchema, {
         ...salonCreateRequest(),
@@ -300,6 +310,30 @@ describe('salonCreateRequestSchema', () => {
       })
 
       expect(rules).toEqual(expected)
+    })
+
+    it.each([
+      [
+        'ends half a second after it starts',
+        {
+          startDate: '2026-11-01T00:00:00Z',
+          endDate: '2026-11-01T00:00:00.500Z',
+        },
+      ],
+      [
+        'starts and ends at one moment written in two ways',
+        {
+          startDate: '2026-11-01T00:00:00Z',
+          endDate: '2026-11-01T00:00:00.000Z',
+        },
+      ],
+    ])('accepts a period that %s', (_case, effectivePeriod) => {
+      const rules = rulesBrokenBy(salonCreateRequestSchema, {
+        ...salonCreateRequest(),
+        businessHours: [{ ...businessDay(), effectivePeriod }],
+      })
+
+      expect(rules).toEqual([])
     })
 
     it('rejects two entries for the same day of the week', () => {

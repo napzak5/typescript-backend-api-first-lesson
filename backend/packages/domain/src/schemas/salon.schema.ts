@@ -147,11 +147,15 @@ const businessHoursSchema = storedBusinessHoursSchema
   .extend({
     operatingSlots: z.array(orderedTimeSlotSchema),
     breakSlots: z.array(orderedTimeSlotSchema).nullable(),
+    // Compared as times: as text, `…:00Z` sorts after `…:00.500Z`.
     effectivePeriod: dateRangeSchema
-      .refine((period) => period.startDate <= period.endDate, {
-        path: ['endDate'],
-        message: 'Must not be earlier than startDate',
-      })
+      .refine(
+        (period) => parseISO(period.startDate) <= parseISO(period.endDate),
+        {
+          path: ['endDate'],
+          message: 'Must not be earlier than startDate',
+        },
+      )
       .nullable(),
   })
   .refine((hours) => !hours.isClosed || hours.operatingSlots.length === 0, {
