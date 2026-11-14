@@ -86,7 +86,6 @@ export const WithFooter: Story = {
           <div className='grid items-center w-full gap-4'>
             <div className='flex flex-col space-y-1.5'>
               <label htmlFor='name'>Name</label>
-              {/** biome-ignore lint/correctness/useUniqueElementIds: For storybook */}
               <input
                 id='name'
                 placeholder='Name of your project'
@@ -95,7 +94,6 @@ export const WithFooter: Story = {
             </div>
             <div className='flex flex-col space-y-1.5'>
               <label htmlFor='framework'>Framework</label>
-              {/** biome-ignore lint/correctness/useUniqueElementIds: For storybook */}
               <select
                 id='framework'
                 className='flex w-full h-10 px-3 py-2 text-sm border rounded-md border-input bg-background ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'

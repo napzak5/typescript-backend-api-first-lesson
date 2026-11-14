@@ -10,8 +10,8 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  lint-and-typecheck:
-    name: Lint and Type Check
+  quality:
+    name: Lint, Format and Type Check
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -32,24 +32,44 @@ jobs:
       - name: Check toolchain versions are in sync
         run: pnpm check:versions
 
-      - name: Generate API specifications and types
-        run: pnpm generate
+      - name: Check generated API files are up to date
+        run: pnpm check:generated
 
-      - name: Build all packages
-        run: pnpm run --recursive --workspace-concurrency=1 build:prod
-
-      - name: Run Biome lint
+      - name: Lint
         run: pnpm lint
 
       - name: Check formatting
-        run: pnpm format
+        run: pnpm format:check
 
-      - name: Run type check
+      - name: Build all packages
+        run: pnpm build:prod
+
+      - name: Type check
         run: pnpm typecheck
 
+      - name: Check for unused files, exports and dependencies
+        run: pnpm knip
+
+      - name: Upload API specification
+        uses: actions/upload-artifact@v7
+        with:
+          name: api-spec
+          path: specs/tsp-output/@typespec/openapi3/generated/openapi.yaml
+          retention-days: 30
+
   test:
-    name: Test
+    name: Test (${{ matrix.database }} database)
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # external: the PostgreSQL service below, through TEST_DATABASE_URL
+        # testcontainers: a container started by the test setup itself
+        database: [external, testcontainers]
+    env:
+      CI: true
+      NODE_ENV: test
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/beauty_salon_test
     services:
       postgres:
         image: postgres:18-alpine
@@ -81,37 +101,24 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Generate API specifications and types
-        run: pnpm generate
-
-      - name: Build packages for tests
-        run: pnpm run --recursive --workspace-concurrency=1 build:prod
+      - name: Build all packages
+        run: pnpm build:prod
 
       - name: Copy test environment variables
         run: cp .env.test.ci .env.test
 
-      - name: Setup test database extensions
-        run: |
-          PGPASSWORD=postgres psql -h localhost -U postgres -d beauty_salon_test -c "CREATE EXTENSION IF NOT EXISTS pgcrypto;"
-          PGPASSWORD=postgres psql -h localhost -U postgres -d beauty_salon_test -c "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";"
+      - name: Run unit tests
+        if: matrix.database == 'external'
+        run: pnpm test
 
-      - name: Run backend tests
-        run: |
-          CI=true NODE_ENV=test pnpm --filter "@beauty-salon-backend/api" --filter "@beauty-salon-backend/utility" test
+      - name: Run integration tests
+        run: pnpm test:integration
         env:
-          DATABASE_URL: postgres://postgres:postgres@localhost:5432/beauty_salon_test
-          CI: true
-          NODE_ENV: test
+          TEST_DATABASE_URL: ${{ matrix.database == 'external' && 'postgres://postgres:postgres@localhost:5432/beauty_salon_test' || '' }}
 
-      - name: Run frontend tests
-        run: |
-          CI=true NODE_ENV=test pnpm --filter "@beauty-salon-frontend/*" test
-          CI=true NODE_ENV=test pnpm --filter "@beauty-salon/portal-app" test
-          CI=true NODE_ENV=test pnpm --filter "@beauty-salon/dashboard-app" test
-          CI=true NODE_ENV=test pnpm --filter "@beauty-salon/admin-app" test
-        env:
-          CI: true
-          NODE_ENV: test
+      - name: Check the database schema files are up to date
+        if: matrix.database == 'external'
+        run: pnpm check:db-schema
 
   build:
     name: Build
@@ -135,62 +142,23 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Generate API specifications and types
-        run: pnpm generate
-
       - name: Build for ${{ matrix.environment }}
-        run: pnpm run --recursive --workspace-concurrency=1 build:${{ matrix.environment }}
+        run: pnpm build:${{ matrix.environment }}
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v7
         with:
           name: build-${{ matrix.environment }}
           path: |
-            backend/dist
             backend/packages/*/dist
             backend/apps/*/dist
             frontend/apps/*/dist
           retention-days: 7
 
-  api-spec:
-    name: API Specification
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v6
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version-file: .node-version
-          cache: "pnpm"
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Generate API specification
-        run: pnpm generate:spec
-
-      - name: Verify API client generation
-        run: pnpm generate:api
-
-      - name: Verify backend types generation
-        run: pnpm generate:backend
-
-      - name: Upload API specification
-        uses: actions/upload-artifact@v7
-        with:
-          name: api-spec
-          path: specs/tsp-output/@typespec/openapi3/generated/openapi.yaml
-          retention-days: 30
-
   docker-backend:
     name: Docker Build - Backend
     runs-on: ubuntu-latest
-    needs: [lint-and-typecheck, test, build]
+    needs: [quality, test, build]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     permissions:
@@ -237,7 +205,7 @@ jobs:
   docker-frontend-apps:
     name: Docker Build - Frontend Apps
     runs-on: ubuntu-latest
-    needs: [lint-and-typecheck, test, build]
+    needs: [quality, test, build]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     strategy:
       matrix:

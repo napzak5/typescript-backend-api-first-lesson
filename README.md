@@ -43,26 +43,23 @@ For detailed architecture documentation, see [docs/architecture-overview.md](doc
 
 ### Prerequisites
 
-- Node.js 26.13.1+ (`.node-version`)
+- Node.js 26.13.1 (`.node-version`)
 - pnpm 12.18.0 (`package.json#packageManager`)
-- Docker (for local PostgreSQL)
-- PostgreSQL 15
+- PostgreSQL 18, either through Docker (`make infra-up`) or any instance that
+  `DATABASE_URL` in `.env.localhost` points to
 
 ### Installation
 
 ```bash
-# Install dependencies
-pnpm install
-
-# Setup database
-pnpm db:fresh
-
-# Generate types from TypeSpec
-pnpm generate
-
-# Start development server
-pnpm dev
+pnpm install       # Install dependencies and the pre-commit hook
+make infra-up      # Start PostgreSQL, MailHog and MinIO in Docker
+pnpm db:fresh      # Create the schema from sql/setup.sql
+pnpm db:seed       # Insert sample data (optional)
+pnpm dev           # Backend on :3000, frontend apps on :3001-3003
 ```
+
+Generated files are checked in, so `pnpm generate` is only needed after a
+TypeSpec change. `make help` lists every Makefile target.
 
 ## 📁 Project Structure
 
@@ -79,7 +76,8 @@ pnpm dev
 │   │   ├── api/              # HTTP layer
 │   │   ├── database/         # Database schemas
 │   │   ├── generated/        # Auto-generated types
-│   │   └── config/           # Configuration
+│   │   ├── config/           # Configuration
+│   │   └── utility/          # Result type and shared helpers
 │   └── apps/
 │       └── server/           # Express application
 │
@@ -87,6 +85,8 @@ pnpm dev
 │   ├── packages/             # Shared frontend packages
 │   └── apps/                 # Frontend applications
 │
+├── shared-config/              # Shared TypeScript configuration
+├── scripts/                    # Repository scripts (run with node)
 └── docs/                      # Documentation
 ```
 
@@ -95,50 +95,82 @@ pnpm dev
 ### Type Generation Pipeline
 
 1. Define API contracts in TypeSpec (`specs/`)
-2. Generate OpenAPI specification: `pnpm generate:spec`
-3. Generate TypeScript types: `pnpm generate:backend`
+2. Run `pnpm generate` (or `pnpm generate:watch` while editing), which
+   - compiles TypeSpec to OpenAPI (`pnpm generate:spec`)
+   - generates the frontend API client (`pnpm generate:api`)
+   - generates the backend types and Zod schemas (`pnpm generate:backend`)
+3. Commit the generated files together with the TypeSpec change;
+   `pnpm check:generated` fails in CI when they drift
+
+### Database Workflow
+
+The database is the source of truth for the Drizzle schema:
+
+1. Write a SQL migration in `backend/packages/database/sql/migrations/`
+2. `pnpm db:migrate` applies it
+3. `pnpm db:introspect` regenerates `schema.ts` and `relations.ts`
+4. `pnpm db:generate-sql` regenerates `sql/setup.sql`
+5. Commit all of them; `pnpm check:db-schema` fails in CI when they drift
 
 ### Available Scripts
 
 ```bash
 # Development
-pnpm dev                     # Start all development servers
-pnpm dev:backend             # Start backend only
-pnpm prepare:frontend        # Build frontend packages
-pnpm dev:watch:admin-app     # Start frontend for admin
-pnpm dev:watch:portal-app    # Start frontend for portal
-pnpm dev:watch:dashboard-app # Start frontend for dashboard
-pnpm build:frontend          # Build frontend packages + apps
-pnpm preview:frontend        # Serve frontend apps
+pnpm dev                     # Backend and every frontend app in watch mode
+pnpm dev:backend             # Backend only, reloading on source changes
+pnpm dev:watch:admin-app     # Admin app with its packages in watch mode
+pnpm dev:watch:portal-app    # Portal app with its packages in watch mode
+pnpm dev:watch:dashboard-app # Dashboard app with its packages in watch mode
+pnpm generate                # TypeSpec → OpenAPI → backend types + API client
+pnpm generate:watch          # Regenerate on every TypeSpec change
 
 # Building
-pnpm build:prod         # Production build
+pnpm build                   # Production build of every package
+pnpm build:dev               # Also build:test, build:stg, build:prod
+pnpm build:backend           # Backend only
+pnpm build:frontend          # Frontend packages and apps
+pnpm start:backend           # Run the built backend
+pnpm preview:frontend        # Serve the built frontend apps
 
 # Testing
-pnpm test               # Run unit tests
-pnpm test:integration   # Run integration tests
-pnpm test:e2e          # Run end-to-end tests
+pnpm test                    # Unit tests
+pnpm test:integration        # API tests against PostgreSQL (see Testing)
 
 # Code Quality
-pnpm lint               # Lint code
-pnpm typecheck          # TypeScript type checking
-pnpm format:fix         # Auto-format code
+pnpm lint                    # Biome lint
+pnpm format:check            # Check formatting (Biome and TypeSpec)
+pnpm format:fix              # Apply formatting, import sorting and safe fixes
+pnpm typecheck               # Type check (run a build first)
+pnpm knip                    # Unused files, exports and dependencies
+pnpm check:generated         # Generated files match the TypeSpec
+pnpm check:db-schema         # schema.ts and setup.sql match the database
+make ci-check                # Everything CI runs, in the same order
 
 # Database
-pnpm db:migrate         # Run migrations
-pnpm db:seed           # Seed database
-pnpm db:fresh          # Complete reset with schema and seed
-pnpm db:truncate       # Clear all table data
-pnpm db:introspect     # Generate TypeScript schema from DB
+pnpm db:fresh                # Drop everything and recreate the schema
+pnpm db:migrate              # Apply the SQL migrations
+pnpm db:seed                 # Insert sample data
+pnpm db:truncate             # Delete all rows, keep the schema
+pnpm db:introspect           # Regenerate schema.ts from the database
+pnpm db:generate-sql         # Regenerate sql/setup.sql from schema.ts
+
+# Maintenance
+pnpm clean                   # Remove build outputs
+pnpm fresh                   # Remove build outputs and node_modules, reinstall
+pnpm update:check            # List dependencies with newer releases
 ```
 
 ## 🧪 Testing
 
-The project uses a comprehensive testing strategy:
+- **Unit tests** (`pnpm test`): pure logic, no external services (Vitest)
+- **Integration tests** (`pnpm test:integration`): the HTTP API against a real
+  PostgreSQL, with one isolated schema per test. They start a PostgreSQL
+  container through testcontainers, or use an existing database when
+  `TEST_DATABASE_URL` is set:
 
-- **Unit Tests**: Domain logic and pure functions (Vitest)
-- **Integration Tests**: Repository and service layers (testcontainers)
-- **E2E Tests**: Complete API flows
+  ```bash
+  TEST_DATABASE_URL=postgres://<user>:<password>@localhost:5432/<database> pnpm test:integration
+  ```
 
 See [docs/testing-requirements.md](docs/testing-requirements.md) for testing guidelines.
 

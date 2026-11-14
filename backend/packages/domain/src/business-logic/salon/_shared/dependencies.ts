@@ -18,12 +18,3 @@ export interface SalonUseCaseDependencies {
   // notificationService?: INotificationService
   // emailService?: IEmailService
 }
-
-/**
- * Type guard to validate that all required dependencies are provided
- */
-export function validateDependencies(
-  deps: Partial<SalonUseCaseDependencies>,
-): deps is SalonUseCaseDependencies {
-  return deps.salonRepository != null
-}

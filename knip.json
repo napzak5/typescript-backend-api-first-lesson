@@ -1,0 +1,22 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "workspaces": {
+    ".": {
+      "entry": ["scripts/*.ts", "taze.config.js"],
+      "ignoreDependencies": ["concurrently"]
+    },
+    "specs": {
+      "entry": ["scripts/postprocess-openapi.ts"],
+      "ignoreDependencies": [
+        "@typespec/http",
+        "@typespec/openapi",
+        "@typespec/openapi3",
+        "@typespec/rest",
+        "@typespec/versioning"
+      ]
+    },
+    "frontend/packages/ui": {
+      "ignoreDependencies": ["@beauty-salon-frontend/theme"]
+    }
+  }
+}

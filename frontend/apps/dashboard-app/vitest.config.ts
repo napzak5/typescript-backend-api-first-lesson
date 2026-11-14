@@ -25,14 +25,6 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(import.meta.dirname, 'src'),
-      '@beauty-salon-frontend/api-client': path.resolve(
-        import.meta.dirname,
-        '../../packages/api-client/src',
-      ),
-      '@beauty-salon-frontend/types': path.resolve(
-        import.meta.dirname,
-        '../../packages/types/src',
-      ),
       '@beauty-salon-frontend/ui': path.resolve(
         import.meta.dirname,
         '../../packages/ui/src',

@@ -46,10 +46,8 @@ import type {
   TreatmentOperationsUpdateTreatment200
 } from '../../models';
 
-import { customInstance } from '../../../../../io/src/libs/fetcher/fetcher';
+import { customInstance } from '../../../mutator';
 
-
-type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 
 
@@ -98,7 +96,7 @@ export const getTreatmentOperationsListTreatmentsUrl = (params?: TreatmentOperat
 /**
  * List treatment records with filters
  */
-export const treatmentOperationsListTreatments = async (params?: TreatmentOperationsListTreatmentsParams, options?: Parameters<typeof customInstance>[1]): Promise<treatmentOperationsListTreatmentsResponse> => {
+export const treatmentOperationsListTreatments = async (params?: TreatmentOperationsListTreatmentsParams, options?: RequestInit): Promise<treatmentOperationsListTreatmentsResponse> => {
 
   return customInstance<treatmentOperationsListTreatmentsResponse>(getTreatmentOperationsListTreatmentsUrl(params),
   {
@@ -120,16 +118,16 @@ export const getTreatmentOperationsListTreatmentsQueryKey = (params?: TreatmentO
     }
 
 
-export const getTreatmentOperationsListTreatmentsQueryOptions = <TData = Awaited<ReturnType<typeof treatmentOperationsListTreatments>>, TError = unknown>(params?: TreatmentOperationsListTreatmentsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof treatmentOperationsListTreatments>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getTreatmentOperationsListTreatmentsQueryOptions = <TData = Awaited<ReturnType<typeof treatmentOperationsListTreatments>>, TError = unknown>(params?: TreatmentOperationsListTreatmentsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof treatmentOperationsListTreatments>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getTreatmentOperationsListTreatmentsQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof treatmentOperationsListTreatments>>> = ({ signal }) => treatmentOperationsListTreatments(params, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof treatmentOperationsListTreatments>>> = ({ signal }) => treatmentOperationsListTreatments(params, { signal });
 
 
 
@@ -150,7 +148,7 @@ export function useTreatmentOperationsListTreatments<TData = Awaited<ReturnType<
           TError,
           Awaited<ReturnType<typeof treatmentOperationsListTreatments>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** List treatment records with filters */
@@ -161,17 +159,17 @@ export function useTreatmentOperationsListTreatments<TData = Awaited<ReturnType<
           TError,
           Awaited<ReturnType<typeof treatmentOperationsListTreatments>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** List treatment records with filters */
 export function useTreatmentOperationsListTreatments<TData = Awaited<ReturnType<typeof treatmentOperationsListTreatments>>, TError = unknown>(
- params?: TreatmentOperationsListTreatmentsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof treatmentOperationsListTreatments>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ params?: TreatmentOperationsListTreatmentsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof treatmentOperationsListTreatments>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** List treatment records with filters */
 export function useTreatmentOperationsListTreatments<TData = Awaited<ReturnType<typeof treatmentOperationsListTreatments>>, TError = unknown>(
- params?: TreatmentOperationsListTreatmentsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof treatmentOperationsListTreatments>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ params?: TreatmentOperationsListTreatmentsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof treatmentOperationsListTreatments>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -210,7 +208,7 @@ export const getTreatmentOperationsCreateTreatmentUrl = () => {
 /**
  * Create new treatment record
  */
-export const treatmentOperationsCreateTreatment = async (modelsTreatmentRecordCreateRequest: ModelsTreatmentRecordCreateRequest, options?: Parameters<typeof customInstance>[1]): Promise<treatmentOperationsCreateTreatmentResponse> => {
+export const treatmentOperationsCreateTreatment = async (modelsTreatmentRecordCreateRequest: ModelsTreatmentRecordCreateRequest, options?: RequestInit): Promise<treatmentOperationsCreateTreatmentResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -242,15 +240,15 @@ return customInstance<treatmentOperationsCreateTreatmentResponse>(getTreatmentOp
 export const getTreatmentOperationsCreateTreatmentMutationKey = () => ['treatmentOperationsCreateTreatment'] as const;
 
 export const getTreatmentOperationsCreateTreatmentMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof treatmentOperationsCreateTreatment>>, TError,TreatmentOperationsCreateTreatmentMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof treatmentOperationsCreateTreatment>>, TError,TreatmentOperationsCreateTreatmentMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof treatmentOperationsCreateTreatment>>, TError,TreatmentOperationsCreateTreatmentMutationVariables, TContext> => {
 
 const mutationKey = getTreatmentOperationsCreateTreatmentMutationKey();
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -258,7 +256,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof treatmentOperationsCreateTreatment>>, TreatmentOperationsCreateTreatmentMutationVariables> = (props) => {
           const {data} = props ?? {};
 
-          return  treatmentOperationsCreateTreatment(data,requestOptions)
+          return  treatmentOperationsCreateTreatment(data,)
         }
 
 
@@ -275,7 +273,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     /** Create new treatment record */
 export const useTreatmentOperationsCreateTreatment = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof treatmentOperationsCreateTreatment>>, TError,TreatmentOperationsCreateTreatmentMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof treatmentOperationsCreateTreatment>>, TError,TreatmentOperationsCreateTreatmentMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof treatmentOperationsCreateTreatment>>,
         TError,
@@ -316,7 +314,7 @@ export const getTreatmentOperationsGetCustomerTreatmentHistoryUrl = (customerId:
  * Get treatment history for a customer
  */
 export const treatmentOperationsGetCustomerTreatmentHistory = async (customerId: ModelsCustomerId,
-    params?: TreatmentOperationsGetCustomerTreatmentHistoryParams, options?: Parameters<typeof customInstance>[1]): Promise<treatmentOperationsGetCustomerTreatmentHistoryResponse> => {
+    params?: TreatmentOperationsGetCustomerTreatmentHistoryParams, options?: RequestInit): Promise<treatmentOperationsGetCustomerTreatmentHistoryResponse> => {
 
   return customInstance<treatmentOperationsGetCustomerTreatmentHistoryResponse>(getTreatmentOperationsGetCustomerTreatmentHistoryUrl(customerId,params),
   {
@@ -340,16 +338,16 @@ export const getTreatmentOperationsGetCustomerTreatmentHistoryQueryKey = (custom
 
 
 export const getTreatmentOperationsGetCustomerTreatmentHistoryQueryOptions = <TData = Awaited<ReturnType<typeof treatmentOperationsGetCustomerTreatmentHistory>>, TError = unknown>(customerId: ModelsCustomerId,
-    params?: TreatmentOperationsGetCustomerTreatmentHistoryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof treatmentOperationsGetCustomerTreatmentHistory>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+    params?: TreatmentOperationsGetCustomerTreatmentHistoryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof treatmentOperationsGetCustomerTreatmentHistory>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getTreatmentOperationsGetCustomerTreatmentHistoryQueryKey(customerId,params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof treatmentOperationsGetCustomerTreatmentHistory>>> = ({ signal }) => treatmentOperationsGetCustomerTreatmentHistory(customerId,params, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof treatmentOperationsGetCustomerTreatmentHistory>>> = ({ signal }) => treatmentOperationsGetCustomerTreatmentHistory(customerId,params, { signal });
 
 
 
@@ -371,7 +369,7 @@ export function useTreatmentOperationsGetCustomerTreatmentHistory<TData = Awaite
           TError,
           Awaited<ReturnType<typeof treatmentOperationsGetCustomerTreatmentHistory>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Get treatment history for a customer */
@@ -383,19 +381,19 @@ export function useTreatmentOperationsGetCustomerTreatmentHistory<TData = Awaite
           TError,
           Awaited<ReturnType<typeof treatmentOperationsGetCustomerTreatmentHistory>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Get treatment history for a customer */
 export function useTreatmentOperationsGetCustomerTreatmentHistory<TData = Awaited<ReturnType<typeof treatmentOperationsGetCustomerTreatmentHistory>>, TError = unknown>(
  customerId: ModelsCustomerId,
-    params?: TreatmentOperationsGetCustomerTreatmentHistoryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof treatmentOperationsGetCustomerTreatmentHistory>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+    params?: TreatmentOperationsGetCustomerTreatmentHistoryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof treatmentOperationsGetCustomerTreatmentHistory>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Get treatment history for a customer */
 export function useTreatmentOperationsGetCustomerTreatmentHistory<TData = Awaited<ReturnType<typeof treatmentOperationsGetCustomerTreatmentHistory>>, TError = unknown>(
  customerId: ModelsCustomerId,
-    params?: TreatmentOperationsGetCustomerTreatmentHistoryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof treatmentOperationsGetCustomerTreatmentHistory>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+    params?: TreatmentOperationsGetCustomerTreatmentHistoryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof treatmentOperationsGetCustomerTreatmentHistory>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -443,7 +441,7 @@ export const getTreatmentOperationsGetStaffTreatmentsUrl = (staffId: ModelsStaff
  * Get treatments by staff member
  */
 export const treatmentOperationsGetStaffTreatments = async (staffId: ModelsStaffId,
-    params?: TreatmentOperationsGetStaffTreatmentsParams, options?: Parameters<typeof customInstance>[1]): Promise<treatmentOperationsGetStaffTreatmentsResponse> => {
+    params?: TreatmentOperationsGetStaffTreatmentsParams, options?: RequestInit): Promise<treatmentOperationsGetStaffTreatmentsResponse> => {
 
   return customInstance<treatmentOperationsGetStaffTreatmentsResponse>(getTreatmentOperationsGetStaffTreatmentsUrl(staffId,params),
   {
@@ -467,16 +465,16 @@ export const getTreatmentOperationsGetStaffTreatmentsQueryKey = (staffId: Models
 
 
 export const getTreatmentOperationsGetStaffTreatmentsQueryOptions = <TData = Awaited<ReturnType<typeof treatmentOperationsGetStaffTreatments>>, TError = unknown>(staffId: ModelsStaffId,
-    params?: TreatmentOperationsGetStaffTreatmentsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof treatmentOperationsGetStaffTreatments>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+    params?: TreatmentOperationsGetStaffTreatmentsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof treatmentOperationsGetStaffTreatments>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getTreatmentOperationsGetStaffTreatmentsQueryKey(staffId,params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof treatmentOperationsGetStaffTreatments>>> = ({ signal }) => treatmentOperationsGetStaffTreatments(staffId,params, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof treatmentOperationsGetStaffTreatments>>> = ({ signal }) => treatmentOperationsGetStaffTreatments(staffId,params, { signal });
 
 
 
@@ -498,7 +496,7 @@ export function useTreatmentOperationsGetStaffTreatments<TData = Awaited<ReturnT
           TError,
           Awaited<ReturnType<typeof treatmentOperationsGetStaffTreatments>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Get treatments by staff member */
@@ -510,19 +508,19 @@ export function useTreatmentOperationsGetStaffTreatments<TData = Awaited<ReturnT
           TError,
           Awaited<ReturnType<typeof treatmentOperationsGetStaffTreatments>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Get treatments by staff member */
 export function useTreatmentOperationsGetStaffTreatments<TData = Awaited<ReturnType<typeof treatmentOperationsGetStaffTreatments>>, TError = unknown>(
  staffId: ModelsStaffId,
-    params?: TreatmentOperationsGetStaffTreatmentsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof treatmentOperationsGetStaffTreatments>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+    params?: TreatmentOperationsGetStaffTreatmentsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof treatmentOperationsGetStaffTreatments>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Get treatments by staff member */
 export function useTreatmentOperationsGetStaffTreatments<TData = Awaited<ReturnType<typeof treatmentOperationsGetStaffTreatments>>, TError = unknown>(
  staffId: ModelsStaffId,
-    params?: TreatmentOperationsGetStaffTreatmentsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof treatmentOperationsGetStaffTreatments>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+    params?: TreatmentOperationsGetStaffTreatmentsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof treatmentOperationsGetStaffTreatments>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -568,7 +566,7 @@ export const getTreatmentOperationsGetTreatmentStatisticsUrl = (params: Treatmen
 /**
  * Get treatment statistics
  */
-export const treatmentOperationsGetTreatmentStatistics = async (params: TreatmentOperationsGetTreatmentStatisticsParams, options?: Parameters<typeof customInstance>[1]): Promise<treatmentOperationsGetTreatmentStatisticsResponse> => {
+export const treatmentOperationsGetTreatmentStatistics = async (params: TreatmentOperationsGetTreatmentStatisticsParams, options?: RequestInit): Promise<treatmentOperationsGetTreatmentStatisticsResponse> => {
 
   return customInstance<treatmentOperationsGetTreatmentStatisticsResponse>(getTreatmentOperationsGetTreatmentStatisticsUrl(params),
   {
@@ -590,16 +588,16 @@ export const getTreatmentOperationsGetTreatmentStatisticsQueryKey = (params?: Tr
     }
 
 
-export const getTreatmentOperationsGetTreatmentStatisticsQueryOptions = <TData = Awaited<ReturnType<typeof treatmentOperationsGetTreatmentStatistics>>, TError = unknown>(params: TreatmentOperationsGetTreatmentStatisticsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof treatmentOperationsGetTreatmentStatistics>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getTreatmentOperationsGetTreatmentStatisticsQueryOptions = <TData = Awaited<ReturnType<typeof treatmentOperationsGetTreatmentStatistics>>, TError = unknown>(params: TreatmentOperationsGetTreatmentStatisticsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof treatmentOperationsGetTreatmentStatistics>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getTreatmentOperationsGetTreatmentStatisticsQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof treatmentOperationsGetTreatmentStatistics>>> = ({ signal }) => treatmentOperationsGetTreatmentStatistics(params, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof treatmentOperationsGetTreatmentStatistics>>> = ({ signal }) => treatmentOperationsGetTreatmentStatistics(params, { signal });
 
 
 
@@ -620,7 +618,7 @@ export function useTreatmentOperationsGetTreatmentStatistics<TData = Awaited<Ret
           TError,
           Awaited<ReturnType<typeof treatmentOperationsGetTreatmentStatistics>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Get treatment statistics */
@@ -631,17 +629,17 @@ export function useTreatmentOperationsGetTreatmentStatistics<TData = Awaited<Ret
           TError,
           Awaited<ReturnType<typeof treatmentOperationsGetTreatmentStatistics>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Get treatment statistics */
 export function useTreatmentOperationsGetTreatmentStatistics<TData = Awaited<ReturnType<typeof treatmentOperationsGetTreatmentStatistics>>, TError = unknown>(
- params: TreatmentOperationsGetTreatmentStatisticsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof treatmentOperationsGetTreatmentStatistics>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ params: TreatmentOperationsGetTreatmentStatisticsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof treatmentOperationsGetTreatmentStatistics>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Get treatment statistics */
 export function useTreatmentOperationsGetTreatmentStatistics<TData = Awaited<ReturnType<typeof treatmentOperationsGetTreatmentStatistics>>, TError = unknown>(
- params: TreatmentOperationsGetTreatmentStatisticsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof treatmentOperationsGetTreatmentStatistics>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ params: TreatmentOperationsGetTreatmentStatisticsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof treatmentOperationsGetTreatmentStatistics>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -680,7 +678,7 @@ export const getTreatmentOperationsGetTreatmentUrl = (id: ModelsTreatmentRecordI
 /**
  * Get treatment record by ID
  */
-export const treatmentOperationsGetTreatment = async (id: ModelsTreatmentRecordId, options?: Parameters<typeof customInstance>[1]): Promise<treatmentOperationsGetTreatmentResponse> => {
+export const treatmentOperationsGetTreatment = async (id: ModelsTreatmentRecordId, options?: RequestInit): Promise<treatmentOperationsGetTreatmentResponse> => {
 
   return customInstance<treatmentOperationsGetTreatmentResponse>(getTreatmentOperationsGetTreatmentUrl(id),
   {
@@ -702,16 +700,16 @@ export const getTreatmentOperationsGetTreatmentQueryKey = (id: ModelsTreatmentRe
     }
 
 
-export const getTreatmentOperationsGetTreatmentQueryOptions = <TData = Awaited<ReturnType<typeof treatmentOperationsGetTreatment>>, TError = unknown>(id: ModelsTreatmentRecordId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof treatmentOperationsGetTreatment>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getTreatmentOperationsGetTreatmentQueryOptions = <TData = Awaited<ReturnType<typeof treatmentOperationsGetTreatment>>, TError = unknown>(id: ModelsTreatmentRecordId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof treatmentOperationsGetTreatment>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getTreatmentOperationsGetTreatmentQueryKey(id);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof treatmentOperationsGetTreatment>>> = ({ signal }) => treatmentOperationsGetTreatment(id, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof treatmentOperationsGetTreatment>>> = ({ signal }) => treatmentOperationsGetTreatment(id, { signal });
 
 
 
@@ -732,7 +730,7 @@ export function useTreatmentOperationsGetTreatment<TData = Awaited<ReturnType<ty
           TError,
           Awaited<ReturnType<typeof treatmentOperationsGetTreatment>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Get treatment record by ID */
@@ -743,17 +741,17 @@ export function useTreatmentOperationsGetTreatment<TData = Awaited<ReturnType<ty
           TError,
           Awaited<ReturnType<typeof treatmentOperationsGetTreatment>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Get treatment record by ID */
 export function useTreatmentOperationsGetTreatment<TData = Awaited<ReturnType<typeof treatmentOperationsGetTreatment>>, TError = unknown>(
- id: ModelsTreatmentRecordId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof treatmentOperationsGetTreatment>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ id: ModelsTreatmentRecordId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof treatmentOperationsGetTreatment>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Get treatment record by ID */
 export function useTreatmentOperationsGetTreatment<TData = Awaited<ReturnType<typeof treatmentOperationsGetTreatment>>, TError = unknown>(
- id: ModelsTreatmentRecordId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof treatmentOperationsGetTreatment>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ id: ModelsTreatmentRecordId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof treatmentOperationsGetTreatment>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -793,7 +791,7 @@ export const getTreatmentOperationsUpdateTreatmentUrl = (id: ModelsTreatmentReco
  * Update treatment record
  */
 export const treatmentOperationsUpdateTreatment = async (id: ModelsTreatmentRecordId,
-    modelsTreatmentRecordUpdateRequest: ModelsTreatmentRecordUpdateRequest, options?: Parameters<typeof customInstance>[1]): Promise<treatmentOperationsUpdateTreatmentResponse> => {
+    modelsTreatmentRecordUpdateRequest: ModelsTreatmentRecordUpdateRequest, options?: RequestInit): Promise<treatmentOperationsUpdateTreatmentResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -825,15 +823,15 @@ return customInstance<treatmentOperationsUpdateTreatmentResponse>(getTreatmentOp
 export const getTreatmentOperationsUpdateTreatmentMutationKey = () => ['treatmentOperationsUpdateTreatment'] as const;
 
 export const getTreatmentOperationsUpdateTreatmentMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof treatmentOperationsUpdateTreatment>>, TError,TreatmentOperationsUpdateTreatmentMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof treatmentOperationsUpdateTreatment>>, TError,TreatmentOperationsUpdateTreatmentMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof treatmentOperationsUpdateTreatment>>, TError,TreatmentOperationsUpdateTreatmentMutationVariables, TContext> => {
 
 const mutationKey = getTreatmentOperationsUpdateTreatmentMutationKey();
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -841,7 +839,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof treatmentOperationsUpdateTreatment>>, TreatmentOperationsUpdateTreatmentMutationVariables> = (props) => {
           const {id,data} = props ?? {};
 
-          return  treatmentOperationsUpdateTreatment(id,data,requestOptions)
+          return  treatmentOperationsUpdateTreatment(id,data,)
         }
 
 
@@ -858,7 +856,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     /** Update treatment record */
 export const useTreatmentOperationsUpdateTreatment = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof treatmentOperationsUpdateTreatment>>, TError,TreatmentOperationsUpdateTreatmentMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof treatmentOperationsUpdateTreatment>>, TError,TreatmentOperationsUpdateTreatmentMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof treatmentOperationsUpdateTreatment>>,
         TError,
@@ -890,7 +888,7 @@ export const getTreatmentOperationsDeleteTreatmentUrl = (id: ModelsTreatmentReco
 /**
  * Delete treatment record
  */
-export const treatmentOperationsDeleteTreatment = async (id: ModelsTreatmentRecordId, options?: Parameters<typeof customInstance>[1]): Promise<treatmentOperationsDeleteTreatmentResponse> => {
+export const treatmentOperationsDeleteTreatment = async (id: ModelsTreatmentRecordId, options?: RequestInit): Promise<treatmentOperationsDeleteTreatmentResponse> => {
 
   return customInstance<treatmentOperationsDeleteTreatmentResponse>(getTreatmentOperationsDeleteTreatmentUrl(id),
   {
@@ -908,15 +906,15 @@ export const treatmentOperationsDeleteTreatment = async (id: ModelsTreatmentReco
 export const getTreatmentOperationsDeleteTreatmentMutationKey = () => ['treatmentOperationsDeleteTreatment'] as const;
 
 export const getTreatmentOperationsDeleteTreatmentMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof treatmentOperationsDeleteTreatment>>, TError,TreatmentOperationsDeleteTreatmentMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof treatmentOperationsDeleteTreatment>>, TError,TreatmentOperationsDeleteTreatmentMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof treatmentOperationsDeleteTreatment>>, TError,TreatmentOperationsDeleteTreatmentMutationVariables, TContext> => {
 
 const mutationKey = getTreatmentOperationsDeleteTreatmentMutationKey();
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -924,7 +922,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof treatmentOperationsDeleteTreatment>>, TreatmentOperationsDeleteTreatmentMutationVariables> = (props) => {
           const {id} = props ?? {};
 
-          return  treatmentOperationsDeleteTreatment(id,requestOptions)
+          return  treatmentOperationsDeleteTreatment(id,)
         }
 
 
@@ -941,7 +939,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     /** Delete treatment record */
 export const useTreatmentOperationsDeleteTreatment = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof treatmentOperationsDeleteTreatment>>, TError,TreatmentOperationsDeleteTreatmentMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof treatmentOperationsDeleteTreatment>>, TError,TreatmentOperationsDeleteTreatmentMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof treatmentOperationsDeleteTreatment>>,
         TError,
@@ -974,7 +972,7 @@ export const getTreatmentOperationsAddTreatmentPhotosUrl = (id: ModelsTreatmentR
  * Add photos to treatment record
  */
 export const treatmentOperationsAddTreatmentPhotos = async (id: ModelsTreatmentRecordId,
-    modelsAttachmentId: ModelsAttachmentId[], options?: Parameters<typeof customInstance>[1]): Promise<treatmentOperationsAddTreatmentPhotosResponse> => {
+    modelsAttachmentId: ModelsAttachmentId[], options?: RequestInit): Promise<treatmentOperationsAddTreatmentPhotosResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -1006,15 +1004,15 @@ return customInstance<treatmentOperationsAddTreatmentPhotosResponse>(getTreatmen
 export const getTreatmentOperationsAddTreatmentPhotosMutationKey = () => ['treatmentOperationsAddTreatmentPhotos'] as const;
 
 export const getTreatmentOperationsAddTreatmentPhotosMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof treatmentOperationsAddTreatmentPhotos>>, TError,TreatmentOperationsAddTreatmentPhotosMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof treatmentOperationsAddTreatmentPhotos>>, TError,TreatmentOperationsAddTreatmentPhotosMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof treatmentOperationsAddTreatmentPhotos>>, TError,TreatmentOperationsAddTreatmentPhotosMutationVariables, TContext> => {
 
 const mutationKey = getTreatmentOperationsAddTreatmentPhotosMutationKey();
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -1022,7 +1020,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof treatmentOperationsAddTreatmentPhotos>>, TreatmentOperationsAddTreatmentPhotosMutationVariables> = (props) => {
           const {id,data} = props ?? {};
 
-          return  treatmentOperationsAddTreatmentPhotos(id,data,requestOptions)
+          return  treatmentOperationsAddTreatmentPhotos(id,data,)
         }
 
 
@@ -1039,7 +1037,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     /** Add photos to treatment record */
 export const useTreatmentOperationsAddTreatmentPhotos = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof treatmentOperationsAddTreatmentPhotos>>, TError,TreatmentOperationsAddTreatmentPhotosMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof treatmentOperationsAddTreatmentPhotos>>, TError,TreatmentOperationsAddTreatmentPhotosMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof treatmentOperationsAddTreatmentPhotos>>,
         TError,

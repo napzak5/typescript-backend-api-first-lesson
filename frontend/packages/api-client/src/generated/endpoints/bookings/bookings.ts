@@ -40,10 +40,8 @@ import type {
   ModelsReservationId
 } from '../../models';
 
-import { customInstance } from '../../../../../io/src/libs/fetcher/fetcher';
+import { customInstance } from '../../../mutator';
 
-
-type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 
 
@@ -93,7 +91,7 @@ export const getBookingOperationsListUrl = (params?: BookingOperationsListParams
  * サロン・顧客・ステータスなどの条件で予約パッケージを一覧表示し、受付状況を俯瞰します。
  * @summary List bookings
  */
-export const bookingOperationsList = async (params?: BookingOperationsListParams, options?: Parameters<typeof customInstance>[1]): Promise<bookingOperationsListResponse> => {
+export const bookingOperationsList = async (params?: BookingOperationsListParams, options?: RequestInit): Promise<bookingOperationsListResponse> => {
 
   return customInstance<bookingOperationsListResponse>(getBookingOperationsListUrl(params),
   {
@@ -115,16 +113,16 @@ export const getBookingOperationsListQueryKey = (params?: BookingOperationsListP
     }
 
 
-export const getBookingOperationsListQueryOptions = <TData = Awaited<ReturnType<typeof bookingOperationsList>>, TError = unknown>(params?: BookingOperationsListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof bookingOperationsList>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getBookingOperationsListQueryOptions = <TData = Awaited<ReturnType<typeof bookingOperationsList>>, TError = unknown>(params?: BookingOperationsListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof bookingOperationsList>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getBookingOperationsListQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof bookingOperationsList>>> = ({ signal }) => bookingOperationsList(params, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof bookingOperationsList>>> = ({ signal }) => bookingOperationsList(params, { signal });
 
 
 
@@ -148,7 +146,7 @@ export function useBookingOperationsList<TData = Awaited<ReturnType<typeof booki
           TError,
           Awaited<ReturnType<typeof bookingOperationsList>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -162,7 +160,7 @@ export function useBookingOperationsList<TData = Awaited<ReturnType<typeof booki
           TError,
           Awaited<ReturnType<typeof bookingOperationsList>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -170,7 +168,7 @@ export function useBookingOperationsList<TData = Awaited<ReturnType<typeof booki
  * @summary List bookings
  */
 export function useBookingOperationsList<TData = Awaited<ReturnType<typeof bookingOperationsList>>, TError = unknown>(
- params?: BookingOperationsListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof bookingOperationsList>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ params?: BookingOperationsListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof bookingOperationsList>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -178,7 +176,7 @@ export function useBookingOperationsList<TData = Awaited<ReturnType<typeof booki
  * @summary List bookings
  */
 export function useBookingOperationsList<TData = Awaited<ReturnType<typeof bookingOperationsList>>, TError = unknown>(
- params?: BookingOperationsListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof bookingOperationsList>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ params?: BookingOperationsListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof bookingOperationsList>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -230,7 +228,7 @@ export const getBookingOperationsCreateUrl = () => {
  * 新規の予約パッケージを作成し、施術メニューと顧客情報を紐づけて確定します。
  * @summary Create booking
  */
-export const bookingOperationsCreate = async (modelsCreateBookingRequest: ModelsCreateBookingRequest, options?: Parameters<typeof customInstance>[1]): Promise<bookingOperationsCreateResponse> => {
+export const bookingOperationsCreate = async (modelsCreateBookingRequest: ModelsCreateBookingRequest, options?: RequestInit): Promise<bookingOperationsCreateResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -262,15 +260,15 @@ return customInstance<bookingOperationsCreateResponse>(getBookingOperationsCreat
 export const getBookingOperationsCreateMutationKey = () => ['bookingOperationsCreate'] as const;
 
 export const getBookingOperationsCreateMutationOptions = <TError = ModelsError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsCreate>>, TError,BookingOperationsCreateMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsCreate>>, TError,BookingOperationsCreateMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsCreate>>, TError,BookingOperationsCreateMutationVariables, TContext> => {
 
 const mutationKey = getBookingOperationsCreateMutationKey();
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -278,7 +276,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof bookingOperationsCreate>>, BookingOperationsCreateMutationVariables> = (props) => {
           const {data} = props ?? {};
 
-          return  bookingOperationsCreate(data,requestOptions)
+          return  bookingOperationsCreate(data,)
         }
 
 
@@ -298,7 +296,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  * @summary Create booking
  */
 export const useBookingOperationsCreate = <TError = ModelsError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsCreate>>, TError,BookingOperationsCreateMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsCreate>>, TError,BookingOperationsCreateMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof bookingOperationsCreate>>,
         TError,
@@ -338,7 +336,7 @@ export const getBookingOperationsGetUrl = (id: ModelsBookingId,) => {
  * 個別の予約パッケージ詳細を取得し、関連する予約枠や支払い状況を確認します。
  * @summary Get booking
  */
-export const bookingOperationsGet = async (id: ModelsBookingId, options?: Parameters<typeof customInstance>[1]): Promise<bookingOperationsGetResponse> => {
+export const bookingOperationsGet = async (id: ModelsBookingId, options?: RequestInit): Promise<bookingOperationsGetResponse> => {
 
   return customInstance<bookingOperationsGetResponse>(getBookingOperationsGetUrl(id),
   {
@@ -360,16 +358,16 @@ export const getBookingOperationsGetQueryKey = (id: ModelsBookingId,) => {
     }
 
 
-export const getBookingOperationsGetQueryOptions = <TData = Awaited<ReturnType<typeof bookingOperationsGet>>, TError = ModelsError>(id: ModelsBookingId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof bookingOperationsGet>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getBookingOperationsGetQueryOptions = <TData = Awaited<ReturnType<typeof bookingOperationsGet>>, TError = ModelsError>(id: ModelsBookingId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof bookingOperationsGet>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getBookingOperationsGetQueryKey(id);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof bookingOperationsGet>>> = ({ signal }) => bookingOperationsGet(id, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof bookingOperationsGet>>> = ({ signal }) => bookingOperationsGet(id, { signal });
 
 
 
@@ -393,7 +391,7 @@ export function useBookingOperationsGet<TData = Awaited<ReturnType<typeof bookin
           TError,
           Awaited<ReturnType<typeof bookingOperationsGet>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -407,7 +405,7 @@ export function useBookingOperationsGet<TData = Awaited<ReturnType<typeof bookin
           TError,
           Awaited<ReturnType<typeof bookingOperationsGet>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -415,7 +413,7 @@ export function useBookingOperationsGet<TData = Awaited<ReturnType<typeof bookin
  * @summary Get booking
  */
 export function useBookingOperationsGet<TData = Awaited<ReturnType<typeof bookingOperationsGet>>, TError = ModelsError>(
- id: ModelsBookingId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof bookingOperationsGet>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ id: ModelsBookingId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof bookingOperationsGet>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -423,7 +421,7 @@ export function useBookingOperationsGet<TData = Awaited<ReturnType<typeof bookin
  * @summary Get booking
  */
 export function useBookingOperationsGet<TData = Awaited<ReturnType<typeof bookingOperationsGet>>, TError = ModelsError>(
- id: ModelsBookingId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof bookingOperationsGet>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ id: ModelsBookingId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof bookingOperationsGet>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -476,7 +474,7 @@ export const getBookingOperationsUpdateUrl = (id: ModelsBookingId,) => {
  * @summary Update booking
  */
 export const bookingOperationsUpdate = async (id: ModelsBookingId,
-    modelsBookingUpdateRequest: ModelsBookingUpdateRequest, options?: Parameters<typeof customInstance>[1]): Promise<bookingOperationsUpdateResponse> => {
+    modelsBookingUpdateRequest: ModelsBookingUpdateRequest, options?: RequestInit): Promise<bookingOperationsUpdateResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -508,15 +506,15 @@ return customInstance<bookingOperationsUpdateResponse>(getBookingOperationsUpdat
 export const getBookingOperationsUpdateMutationKey = () => ['bookingOperationsUpdate'] as const;
 
 export const getBookingOperationsUpdateMutationOptions = <TError = ModelsError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsUpdate>>, TError,BookingOperationsUpdateMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsUpdate>>, TError,BookingOperationsUpdateMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsUpdate>>, TError,BookingOperationsUpdateMutationVariables, TContext> => {
 
 const mutationKey = getBookingOperationsUpdateMutationKey();
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -524,7 +522,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof bookingOperationsUpdate>>, BookingOperationsUpdateMutationVariables> = (props) => {
           const {id,data} = props ?? {};
 
-          return  bookingOperationsUpdate(id,data,requestOptions)
+          return  bookingOperationsUpdate(id,data,)
         }
 
 
@@ -544,7 +542,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  * @summary Update booking
  */
 export const useBookingOperationsUpdate = <TError = ModelsError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsUpdate>>, TError,BookingOperationsUpdateMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsUpdate>>, TError,BookingOperationsUpdateMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof bookingOperationsUpdate>>,
         TError,
@@ -589,7 +587,7 @@ export const getBookingOperationsDeleteUrl = (id: ModelsBookingId,) => {
  * 予約パッケージを削除し、誤登録や無効となった複数予約を整理します。
  * @summary Delete booking
  */
-export const bookingOperationsDelete = async (id: ModelsBookingId, options?: Parameters<typeof customInstance>[1]): Promise<bookingOperationsDeleteResponse> => {
+export const bookingOperationsDelete = async (id: ModelsBookingId, options?: RequestInit): Promise<bookingOperationsDeleteResponse> => {
 
   return customInstance<bookingOperationsDeleteResponse>(getBookingOperationsDeleteUrl(id),
   {
@@ -607,15 +605,15 @@ export const bookingOperationsDelete = async (id: ModelsBookingId, options?: Par
 export const getBookingOperationsDeleteMutationKey = () => ['bookingOperationsDelete'] as const;
 
 export const getBookingOperationsDeleteMutationOptions = <TError = ModelsError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsDelete>>, TError,BookingOperationsDeleteMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsDelete>>, TError,BookingOperationsDeleteMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsDelete>>, TError,BookingOperationsDeleteMutationVariables, TContext> => {
 
 const mutationKey = getBookingOperationsDeleteMutationKey();
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -623,7 +621,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof bookingOperationsDelete>>, BookingOperationsDeleteMutationVariables> = (props) => {
           const {id} = props ?? {};
 
-          return  bookingOperationsDelete(id,requestOptions)
+          return  bookingOperationsDelete(id,)
         }
 
 
@@ -643,7 +641,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  * @summary Delete booking
  */
 export const useBookingOperationsDelete = <TError = ModelsError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsDelete>>, TError,BookingOperationsDeleteMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsDelete>>, TError,BookingOperationsDeleteMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof bookingOperationsDelete>>,
         TError,
@@ -689,7 +687,7 @@ export const getBookingOperationsCancelUrl = (id: ModelsBookingId,) => {
  * @summary Cancel booking
  */
 export const bookingOperationsCancel = async (id: ModelsBookingId,
-    bookingOperationsCancelBody: BookingOperationsCancelBody, options?: Parameters<typeof customInstance>[1]): Promise<bookingOperationsCancelResponse> => {
+    bookingOperationsCancelBody: BookingOperationsCancelBody, options?: RequestInit): Promise<bookingOperationsCancelResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -721,15 +719,15 @@ return customInstance<bookingOperationsCancelResponse>(getBookingOperationsCance
 export const getBookingOperationsCancelMutationKey = () => ['bookingOperationsCancel'] as const;
 
 export const getBookingOperationsCancelMutationOptions = <TError = ModelsError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsCancel>>, TError,BookingOperationsCancelMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsCancel>>, TError,BookingOperationsCancelMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsCancel>>, TError,BookingOperationsCancelMutationVariables, TContext> => {
 
 const mutationKey = getBookingOperationsCancelMutationKey();
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -737,7 +735,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof bookingOperationsCancel>>, BookingOperationsCancelMutationVariables> = (props) => {
           const {id,data} = props ?? {};
 
-          return  bookingOperationsCancel(id,data,requestOptions)
+          return  bookingOperationsCancel(id,data,)
         }
 
 
@@ -757,7 +755,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  * @summary Cancel booking
  */
 export const useBookingOperationsCancel = <TError = ModelsError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsCancel>>, TError,BookingOperationsCancelMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsCancel>>, TError,BookingOperationsCancelMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof bookingOperationsCancel>>,
         TError,
@@ -802,7 +800,7 @@ export const getBookingOperationsConfirmUrl = (id: ModelsBookingId,) => {
  * 仮状態の予約パッケージを確定ステータスへ変更し、顧客への案内やリソース確保を開始します。
  * @summary Confirm booking
  */
-export const bookingOperationsConfirm = async (id: ModelsBookingId, options?: Parameters<typeof customInstance>[1]): Promise<bookingOperationsConfirmResponse> => {
+export const bookingOperationsConfirm = async (id: ModelsBookingId, options?: RequestInit): Promise<bookingOperationsConfirmResponse> => {
 
   return customInstance<bookingOperationsConfirmResponse>(getBookingOperationsConfirmUrl(id),
   {
@@ -820,15 +818,15 @@ export const bookingOperationsConfirm = async (id: ModelsBookingId, options?: Pa
 export const getBookingOperationsConfirmMutationKey = () => ['bookingOperationsConfirm'] as const;
 
 export const getBookingOperationsConfirmMutationOptions = <TError = ModelsError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsConfirm>>, TError,BookingOperationsConfirmMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsConfirm>>, TError,BookingOperationsConfirmMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsConfirm>>, TError,BookingOperationsConfirmMutationVariables, TContext> => {
 
 const mutationKey = getBookingOperationsConfirmMutationKey();
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -836,7 +834,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof bookingOperationsConfirm>>, BookingOperationsConfirmMutationVariables> = (props) => {
           const {id} = props ?? {};
 
-          return  bookingOperationsConfirm(id,requestOptions)
+          return  bookingOperationsConfirm(id,)
         }
 
 
@@ -856,7 +854,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  * @summary Confirm booking
  */
 export const useBookingOperationsConfirm = <TError = ModelsError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsConfirm>>, TError,BookingOperationsConfirmMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsConfirm>>, TError,BookingOperationsConfirmMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof bookingOperationsConfirm>>,
         TError,
@@ -902,7 +900,7 @@ export const getBookingOperationsProcessPaymentUrl = (id: ModelsBookingId,) => {
  * @summary Process payment
  */
 export const bookingOperationsProcessPayment = async (id: ModelsBookingId,
-    bookingOperationsProcessPaymentBody: BookingOperationsProcessPaymentBody, options?: Parameters<typeof customInstance>[1]): Promise<bookingOperationsProcessPaymentResponse> => {
+    bookingOperationsProcessPaymentBody: BookingOperationsProcessPaymentBody, options?: RequestInit): Promise<bookingOperationsProcessPaymentResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -934,15 +932,15 @@ return customInstance<bookingOperationsProcessPaymentResponse>(getBookingOperati
 export const getBookingOperationsProcessPaymentMutationKey = () => ['bookingOperationsProcessPayment'] as const;
 
 export const getBookingOperationsProcessPaymentMutationOptions = <TError = ModelsError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsProcessPayment>>, TError,BookingOperationsProcessPaymentMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsProcessPayment>>, TError,BookingOperationsProcessPaymentMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsProcessPayment>>, TError,BookingOperationsProcessPaymentMutationVariables, TContext> => {
 
 const mutationKey = getBookingOperationsProcessPaymentMutationKey();
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -950,7 +948,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof bookingOperationsProcessPayment>>, BookingOperationsProcessPaymentMutationVariables> = (props) => {
           const {id,data} = props ?? {};
 
-          return  bookingOperationsProcessPayment(id,data,requestOptions)
+          return  bookingOperationsProcessPayment(id,data,)
         }
 
 
@@ -970,7 +968,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  * @summary Process payment
  */
 export const useBookingOperationsProcessPayment = <TError = ModelsError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsProcessPayment>>, TError,BookingOperationsProcessPaymentMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsProcessPayment>>, TError,BookingOperationsProcessPaymentMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof bookingOperationsProcessPayment>>,
         TError,
@@ -1016,7 +1014,7 @@ export const getBookingOperationsAddReservationUrl = (id: ModelsBookingId,) => {
  * @summary Add reservation to booking
  */
 export const bookingOperationsAddReservation = async (id: ModelsBookingId,
-    bookingOperationsAddReservationBody: BookingOperationsAddReservationBody, options?: Parameters<typeof customInstance>[1]): Promise<bookingOperationsAddReservationResponse> => {
+    bookingOperationsAddReservationBody: BookingOperationsAddReservationBody, options?: RequestInit): Promise<bookingOperationsAddReservationResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -1048,15 +1046,15 @@ return customInstance<bookingOperationsAddReservationResponse>(getBookingOperati
 export const getBookingOperationsAddReservationMutationKey = () => ['bookingOperationsAddReservation'] as const;
 
 export const getBookingOperationsAddReservationMutationOptions = <TError = ModelsError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsAddReservation>>, TError,BookingOperationsAddReservationMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsAddReservation>>, TError,BookingOperationsAddReservationMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsAddReservation>>, TError,BookingOperationsAddReservationMutationVariables, TContext> => {
 
 const mutationKey = getBookingOperationsAddReservationMutationKey();
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -1064,7 +1062,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof bookingOperationsAddReservation>>, BookingOperationsAddReservationMutationVariables> = (props) => {
           const {id,data} = props ?? {};
 
-          return  bookingOperationsAddReservation(id,data,requestOptions)
+          return  bookingOperationsAddReservation(id,data,)
         }
 
 
@@ -1084,7 +1082,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  * @summary Add reservation to booking
  */
 export const useBookingOperationsAddReservation = <TError = ModelsError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsAddReservation>>, TError,BookingOperationsAddReservationMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsAddReservation>>, TError,BookingOperationsAddReservationMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof bookingOperationsAddReservation>>,
         TError,
@@ -1126,7 +1124,7 @@ export const getBookingOperationsRemoveReservationUrl = (id: ModelsBookingId,
  * @summary Remove reservation from booking
  */
 export const bookingOperationsRemoveReservation = async (id: ModelsBookingId,
-    reservationId: ModelsReservationId, options?: Parameters<typeof customInstance>[1]): Promise<bookingOperationsRemoveReservationResponse> => {
+    reservationId: ModelsReservationId, options?: RequestInit): Promise<bookingOperationsRemoveReservationResponse> => {
 
   return customInstance<bookingOperationsRemoveReservationResponse>(getBookingOperationsRemoveReservationUrl(id,reservationId),
   {
@@ -1144,15 +1142,15 @@ export const bookingOperationsRemoveReservation = async (id: ModelsBookingId,
 export const getBookingOperationsRemoveReservationMutationKey = () => ['bookingOperationsRemoveReservation'] as const;
 
 export const getBookingOperationsRemoveReservationMutationOptions = <TError = ModelsError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsRemoveReservation>>, TError,BookingOperationsRemoveReservationMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsRemoveReservation>>, TError,BookingOperationsRemoveReservationMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsRemoveReservation>>, TError,BookingOperationsRemoveReservationMutationVariables, TContext> => {
 
 const mutationKey = getBookingOperationsRemoveReservationMutationKey();
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -1160,7 +1158,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof bookingOperationsRemoveReservation>>, BookingOperationsRemoveReservationMutationVariables> = (props) => {
           const {id,reservationId} = props ?? {};
 
-          return  bookingOperationsRemoveReservation(id,reservationId,requestOptions)
+          return  bookingOperationsRemoveReservation(id,reservationId,)
         }
 
 
@@ -1180,7 +1178,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  * @summary Remove reservation from booking
  */
 export const useBookingOperationsRemoveReservation = <TError = ModelsError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsRemoveReservation>>, TError,BookingOperationsRemoveReservationMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsRemoveReservation>>, TError,BookingOperationsRemoveReservationMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof bookingOperationsRemoveReservation>>,
         TError,

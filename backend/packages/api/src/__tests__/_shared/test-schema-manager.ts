@@ -208,24 +208,6 @@ export class TestSchemaManager {
   }
 
   /**
-   * Apply seed data to a test schema
-   */
-  async applySeedData(schemaName: string) {
-    const schema = this.schemas.get(schemaName)
-    if (!schema) {
-      throw new Error(`Schema ${schemaName} not found`)
-    }
-
-    try {
-      // TODO: Implement seed data when available
-      console.log('Seed data application not yet implemented')
-    } catch (error) {
-      console.warn('Seed data not available or failed:', error)
-      // Continue without seed data
-    }
-  }
-
-  /**
    * Drop a schema and all its contents
    */
   private async dropSchema(schemaName: string) {

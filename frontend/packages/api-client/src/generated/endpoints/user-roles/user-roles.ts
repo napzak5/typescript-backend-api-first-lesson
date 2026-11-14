@@ -40,10 +40,8 @@ import type {
   UserRoleTypeOperationsUpdateUserRoleTypeBody
 } from '../../models';
 
-import { customInstance } from '../../../../../io/src/libs/fetcher/fetcher';
+import { customInstance } from '../../../mutator';
 
-
-type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 
 
@@ -85,7 +83,7 @@ export const getUserRoleTypeOperationsAssignUserRoleTypeUrl = () => {
 /**
  * Assign role to user
  */
-export const userRoleTypeOperationsAssignUserRoleType = async (modelsUserRoleAssignRequest: ModelsUserRoleAssignRequest, options?: Parameters<typeof customInstance>[1]): Promise<userRoleTypeOperationsAssignUserRoleTypeResponse> => {
+export const userRoleTypeOperationsAssignUserRoleType = async (modelsUserRoleAssignRequest: ModelsUserRoleAssignRequest, options?: RequestInit): Promise<userRoleTypeOperationsAssignUserRoleTypeResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -117,15 +115,15 @@ return customInstance<userRoleTypeOperationsAssignUserRoleTypeResponse>(getUserR
 export const getUserRoleTypeOperationsAssignUserRoleTypeMutationKey = () => ['userRoleTypeOperationsAssignUserRoleType'] as const;
 
 export const getUserRoleTypeOperationsAssignUserRoleTypeMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof userRoleTypeOperationsAssignUserRoleType>>, TError,UserRoleTypeOperationsAssignUserRoleTypeMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof userRoleTypeOperationsAssignUserRoleType>>, TError,UserRoleTypeOperationsAssignUserRoleTypeMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof userRoleTypeOperationsAssignUserRoleType>>, TError,UserRoleTypeOperationsAssignUserRoleTypeMutationVariables, TContext> => {
 
 const mutationKey = getUserRoleTypeOperationsAssignUserRoleTypeMutationKey();
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -133,7 +131,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof userRoleTypeOperationsAssignUserRoleType>>, UserRoleTypeOperationsAssignUserRoleTypeMutationVariables> = (props) => {
           const {data} = props ?? {};
 
-          return  userRoleTypeOperationsAssignUserRoleType(data,requestOptions)
+          return  userRoleTypeOperationsAssignUserRoleType(data,)
         }
 
 
@@ -150,7 +148,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     /** Assign role to user */
 export const useUserRoleTypeOperationsAssignUserRoleType = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof userRoleTypeOperationsAssignUserRoleType>>, TError,UserRoleTypeOperationsAssignUserRoleTypeMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof userRoleTypeOperationsAssignUserRoleType>>, TError,UserRoleTypeOperationsAssignUserRoleTypeMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof userRoleTypeOperationsAssignUserRoleType>>,
         TError,
@@ -182,7 +180,7 @@ export const getUserRoleTypeOperationsBulkAssignRolesUrl = () => {
 /**
  * Bulk assign roles
  */
-export const userRoleTypeOperationsBulkAssignRoles = async (userRoleTypeOperationsBulkAssignRolesBody: UserRoleTypeOperationsBulkAssignRolesBody, options?: Parameters<typeof customInstance>[1]): Promise<userRoleTypeOperationsBulkAssignRolesResponse> => {
+export const userRoleTypeOperationsBulkAssignRoles = async (userRoleTypeOperationsBulkAssignRolesBody: UserRoleTypeOperationsBulkAssignRolesBody, options?: RequestInit): Promise<userRoleTypeOperationsBulkAssignRolesResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -214,15 +212,15 @@ return customInstance<userRoleTypeOperationsBulkAssignRolesResponse>(getUserRole
 export const getUserRoleTypeOperationsBulkAssignRolesMutationKey = () => ['userRoleTypeOperationsBulkAssignRoles'] as const;
 
 export const getUserRoleTypeOperationsBulkAssignRolesMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof userRoleTypeOperationsBulkAssignRoles>>, TError,UserRoleTypeOperationsBulkAssignRolesMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof userRoleTypeOperationsBulkAssignRoles>>, TError,UserRoleTypeOperationsBulkAssignRolesMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof userRoleTypeOperationsBulkAssignRoles>>, TError,UserRoleTypeOperationsBulkAssignRolesMutationVariables, TContext> => {
 
 const mutationKey = getUserRoleTypeOperationsBulkAssignRolesMutationKey();
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -230,7 +228,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof userRoleTypeOperationsBulkAssignRoles>>, UserRoleTypeOperationsBulkAssignRolesMutationVariables> = (props) => {
           const {data} = props ?? {};
 
-          return  userRoleTypeOperationsBulkAssignRoles(data,requestOptions)
+          return  userRoleTypeOperationsBulkAssignRoles(data,)
         }
 
 
@@ -247,7 +245,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     /** Bulk assign roles */
 export const useUserRoleTypeOperationsBulkAssignRoles = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof userRoleTypeOperationsBulkAssignRoles>>, TError,UserRoleTypeOperationsBulkAssignRolesMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof userRoleTypeOperationsBulkAssignRoles>>, TError,UserRoleTypeOperationsBulkAssignRolesMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof userRoleTypeOperationsBulkAssignRoles>>,
         TError,
@@ -288,7 +286,7 @@ export const getUserRoleTypeOperationsGetUsersByRoleUrl = (roleId: ModelsRoleId,
  * Get users by role
  */
 export const userRoleTypeOperationsGetUsersByRole = async (roleId: ModelsRoleId,
-    params?: UserRoleTypeOperationsGetUsersByRoleParams, options?: Parameters<typeof customInstance>[1]): Promise<userRoleTypeOperationsGetUsersByRoleResponse> => {
+    params?: UserRoleTypeOperationsGetUsersByRoleParams, options?: RequestInit): Promise<userRoleTypeOperationsGetUsersByRoleResponse> => {
 
   return customInstance<userRoleTypeOperationsGetUsersByRoleResponse>(getUserRoleTypeOperationsGetUsersByRoleUrl(roleId,params),
   {
@@ -312,16 +310,16 @@ export const getUserRoleTypeOperationsGetUsersByRoleQueryKey = (roleId: ModelsRo
 
 
 export const getUserRoleTypeOperationsGetUsersByRoleQueryOptions = <TData = Awaited<ReturnType<typeof userRoleTypeOperationsGetUsersByRole>>, TError = unknown>(roleId: ModelsRoleId,
-    params?: UserRoleTypeOperationsGetUsersByRoleParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof userRoleTypeOperationsGetUsersByRole>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+    params?: UserRoleTypeOperationsGetUsersByRoleParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof userRoleTypeOperationsGetUsersByRole>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getUserRoleTypeOperationsGetUsersByRoleQueryKey(roleId,params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof userRoleTypeOperationsGetUsersByRole>>> = ({ signal }) => userRoleTypeOperationsGetUsersByRole(roleId,params, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof userRoleTypeOperationsGetUsersByRole>>> = ({ signal }) => userRoleTypeOperationsGetUsersByRole(roleId,params, { signal });
 
 
 
@@ -343,7 +341,7 @@ export function useUserRoleTypeOperationsGetUsersByRole<TData = Awaited<ReturnTy
           TError,
           Awaited<ReturnType<typeof userRoleTypeOperationsGetUsersByRole>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Get users by role */
@@ -355,19 +353,19 @@ export function useUserRoleTypeOperationsGetUsersByRole<TData = Awaited<ReturnTy
           TError,
           Awaited<ReturnType<typeof userRoleTypeOperationsGetUsersByRole>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Get users by role */
 export function useUserRoleTypeOperationsGetUsersByRole<TData = Awaited<ReturnType<typeof userRoleTypeOperationsGetUsersByRole>>, TError = unknown>(
  roleId: ModelsRoleId,
-    params?: UserRoleTypeOperationsGetUsersByRoleParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof userRoleTypeOperationsGetUsersByRole>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+    params?: UserRoleTypeOperationsGetUsersByRoleParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof userRoleTypeOperationsGetUsersByRole>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Get users by role */
 export function useUserRoleTypeOperationsGetUsersByRole<TData = Awaited<ReturnType<typeof userRoleTypeOperationsGetUsersByRole>>, TError = unknown>(
  roleId: ModelsRoleId,
-    params?: UserRoleTypeOperationsGetUsersByRoleParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof userRoleTypeOperationsGetUsersByRole>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+    params?: UserRoleTypeOperationsGetUsersByRoleParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof userRoleTypeOperationsGetUsersByRole>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -415,7 +413,7 @@ export const getUserRoleTypeOperationsGetUserRoleTypesUrl = (userId: string,
  * Get user roles
  */
 export const userRoleTypeOperationsGetUserRoleTypes = async (userId: string,
-    params?: UserRoleTypeOperationsGetUserRoleTypesParams, options?: Parameters<typeof customInstance>[1]): Promise<userRoleTypeOperationsGetUserRoleTypesResponse> => {
+    params?: UserRoleTypeOperationsGetUserRoleTypesParams, options?: RequestInit): Promise<userRoleTypeOperationsGetUserRoleTypesResponse> => {
 
   return customInstance<userRoleTypeOperationsGetUserRoleTypesResponse>(getUserRoleTypeOperationsGetUserRoleTypesUrl(userId,params),
   {
@@ -439,16 +437,16 @@ export const getUserRoleTypeOperationsGetUserRoleTypesQueryKey = (userId: string
 
 
 export const getUserRoleTypeOperationsGetUserRoleTypesQueryOptions = <TData = Awaited<ReturnType<typeof userRoleTypeOperationsGetUserRoleTypes>>, TError = unknown>(userId: string,
-    params?: UserRoleTypeOperationsGetUserRoleTypesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof userRoleTypeOperationsGetUserRoleTypes>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+    params?: UserRoleTypeOperationsGetUserRoleTypesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof userRoleTypeOperationsGetUserRoleTypes>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getUserRoleTypeOperationsGetUserRoleTypesQueryKey(userId,params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof userRoleTypeOperationsGetUserRoleTypes>>> = ({ signal }) => userRoleTypeOperationsGetUserRoleTypes(userId,params, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof userRoleTypeOperationsGetUserRoleTypes>>> = ({ signal }) => userRoleTypeOperationsGetUserRoleTypes(userId,params, { signal });
 
 
 
@@ -470,7 +468,7 @@ export function useUserRoleTypeOperationsGetUserRoleTypes<TData = Awaited<Return
           TError,
           Awaited<ReturnType<typeof userRoleTypeOperationsGetUserRoleTypes>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Get user roles */
@@ -482,19 +480,19 @@ export function useUserRoleTypeOperationsGetUserRoleTypes<TData = Awaited<Return
           TError,
           Awaited<ReturnType<typeof userRoleTypeOperationsGetUserRoleTypes>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Get user roles */
 export function useUserRoleTypeOperationsGetUserRoleTypes<TData = Awaited<ReturnType<typeof userRoleTypeOperationsGetUserRoleTypes>>, TError = unknown>(
  userId: string,
-    params?: UserRoleTypeOperationsGetUserRoleTypesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof userRoleTypeOperationsGetUserRoleTypes>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+    params?: UserRoleTypeOperationsGetUserRoleTypesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof userRoleTypeOperationsGetUserRoleTypes>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Get user roles */
 export function useUserRoleTypeOperationsGetUserRoleTypes<TData = Awaited<ReturnType<typeof userRoleTypeOperationsGetUserRoleTypes>>, TError = unknown>(
  userId: string,
-    params?: UserRoleTypeOperationsGetUserRoleTypesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof userRoleTypeOperationsGetUserRoleTypes>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+    params?: UserRoleTypeOperationsGetUserRoleTypesParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof userRoleTypeOperationsGetUserRoleTypes>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -544,7 +542,7 @@ export const getUserRoleTypeOperationsRevokeUserRoleTypeUrl = (userId: string,
  */
 export const userRoleTypeOperationsRevokeUserRoleType = async (userId: string,
     roleId: ModelsRoleId,
-    params?: UserRoleTypeOperationsRevokeUserRoleTypeParams, options?: Parameters<typeof customInstance>[1]): Promise<userRoleTypeOperationsRevokeUserRoleTypeResponse> => {
+    params?: UserRoleTypeOperationsRevokeUserRoleTypeParams, options?: RequestInit): Promise<userRoleTypeOperationsRevokeUserRoleTypeResponse> => {
 
   return customInstance<userRoleTypeOperationsRevokeUserRoleTypeResponse>(getUserRoleTypeOperationsRevokeUserRoleTypeUrl(userId,roleId,params),
   {
@@ -562,15 +560,15 @@ export const userRoleTypeOperationsRevokeUserRoleType = async (userId: string,
 export const getUserRoleTypeOperationsRevokeUserRoleTypeMutationKey = () => ['userRoleTypeOperationsRevokeUserRoleType'] as const;
 
 export const getUserRoleTypeOperationsRevokeUserRoleTypeMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof userRoleTypeOperationsRevokeUserRoleType>>, TError,UserRoleTypeOperationsRevokeUserRoleTypeMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof userRoleTypeOperationsRevokeUserRoleType>>, TError,UserRoleTypeOperationsRevokeUserRoleTypeMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof userRoleTypeOperationsRevokeUserRoleType>>, TError,UserRoleTypeOperationsRevokeUserRoleTypeMutationVariables, TContext> => {
 
 const mutationKey = getUserRoleTypeOperationsRevokeUserRoleTypeMutationKey();
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -578,7 +576,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof userRoleTypeOperationsRevokeUserRoleType>>, UserRoleTypeOperationsRevokeUserRoleTypeMutationVariables> = (props) => {
           const {userId,roleId,params} = props ?? {};
 
-          return  userRoleTypeOperationsRevokeUserRoleType(userId,roleId,params,requestOptions)
+          return  userRoleTypeOperationsRevokeUserRoleType(userId,roleId,params,)
         }
 
 
@@ -595,7 +593,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     /** Revoke user role */
 export const useUserRoleTypeOperationsRevokeUserRoleType = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof userRoleTypeOperationsRevokeUserRoleType>>, TError,UserRoleTypeOperationsRevokeUserRoleTypeMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof userRoleTypeOperationsRevokeUserRoleType>>, TError,UserRoleTypeOperationsRevokeUserRoleTypeMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof userRoleTypeOperationsRevokeUserRoleType>>,
         TError,
@@ -630,7 +628,7 @@ export const getUserRoleTypeOperationsUpdateUserRoleTypeUrl = (userId: string,
  */
 export const userRoleTypeOperationsUpdateUserRoleType = async (userId: string,
     roleId: ModelsRoleId,
-    userRoleTypeOperationsUpdateUserRoleTypeBody: UserRoleTypeOperationsUpdateUserRoleTypeBody, options?: Parameters<typeof customInstance>[1]): Promise<userRoleTypeOperationsUpdateUserRoleTypeResponse> => {
+    userRoleTypeOperationsUpdateUserRoleTypeBody: UserRoleTypeOperationsUpdateUserRoleTypeBody, options?: RequestInit): Promise<userRoleTypeOperationsUpdateUserRoleTypeResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -662,15 +660,15 @@ return customInstance<userRoleTypeOperationsUpdateUserRoleTypeResponse>(getUserR
 export const getUserRoleTypeOperationsUpdateUserRoleTypeMutationKey = () => ['userRoleTypeOperationsUpdateUserRoleType'] as const;
 
 export const getUserRoleTypeOperationsUpdateUserRoleTypeMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof userRoleTypeOperationsUpdateUserRoleType>>, TError,UserRoleTypeOperationsUpdateUserRoleTypeMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof userRoleTypeOperationsUpdateUserRoleType>>, TError,UserRoleTypeOperationsUpdateUserRoleTypeMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof userRoleTypeOperationsUpdateUserRoleType>>, TError,UserRoleTypeOperationsUpdateUserRoleTypeMutationVariables, TContext> => {
 
 const mutationKey = getUserRoleTypeOperationsUpdateUserRoleTypeMutationKey();
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -678,7 +676,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof userRoleTypeOperationsUpdateUserRoleType>>, UserRoleTypeOperationsUpdateUserRoleTypeMutationVariables> = (props) => {
           const {userId,roleId,data} = props ?? {};
 
-          return  userRoleTypeOperationsUpdateUserRoleType(userId,roleId,data,requestOptions)
+          return  userRoleTypeOperationsUpdateUserRoleType(userId,roleId,data,)
         }
 
 
@@ -695,7 +693,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     /** Update user role */
 export const useUserRoleTypeOperationsUpdateUserRoleType = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof userRoleTypeOperationsUpdateUserRoleType>>, TError,UserRoleTypeOperationsUpdateUserRoleTypeMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof userRoleTypeOperationsUpdateUserRoleType>>, TError,UserRoleTypeOperationsUpdateUserRoleTypeMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof userRoleTypeOperationsUpdateUserRoleType>>,
         TError,

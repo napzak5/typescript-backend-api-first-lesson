@@ -34,10 +34,8 @@ import type {
   ModelsInventoryId
 } from '../../models';
 
-import { customInstance } from '../../../../../io/src/libs/fetcher/fetcher';
+import { customInstance } from '../../../mutator';
 
-
-type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 
 
@@ -86,7 +84,7 @@ export const getInventoryAlertOperationsGetActiveAlertsUrl = (params: InventoryA
 /**
  * Get active inventory alerts
  */
-export const inventoryAlertOperationsGetActiveAlerts = async (params: InventoryAlertOperationsGetActiveAlertsParams, options?: Parameters<typeof customInstance>[1]): Promise<inventoryAlertOperationsGetActiveAlertsResponse> => {
+export const inventoryAlertOperationsGetActiveAlerts = async (params: InventoryAlertOperationsGetActiveAlertsParams, options?: RequestInit): Promise<inventoryAlertOperationsGetActiveAlertsResponse> => {
 
   return customInstance<inventoryAlertOperationsGetActiveAlertsResponse>(getInventoryAlertOperationsGetActiveAlertsUrl(params),
   {
@@ -108,16 +106,16 @@ export const getInventoryAlertOperationsGetActiveAlertsQueryKey = (params?: Inve
     }
 
 
-export const getInventoryAlertOperationsGetActiveAlertsQueryOptions = <TData = Awaited<ReturnType<typeof inventoryAlertOperationsGetActiveAlerts>>, TError = unknown>(params: InventoryAlertOperationsGetActiveAlertsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryAlertOperationsGetActiveAlerts>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getInventoryAlertOperationsGetActiveAlertsQueryOptions = <TData = Awaited<ReturnType<typeof inventoryAlertOperationsGetActiveAlerts>>, TError = unknown>(params: InventoryAlertOperationsGetActiveAlertsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryAlertOperationsGetActiveAlerts>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getInventoryAlertOperationsGetActiveAlertsQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof inventoryAlertOperationsGetActiveAlerts>>> = ({ signal }) => inventoryAlertOperationsGetActiveAlerts(params, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof inventoryAlertOperationsGetActiveAlerts>>> = ({ signal }) => inventoryAlertOperationsGetActiveAlerts(params, { signal });
 
 
 
@@ -138,7 +136,7 @@ export function useInventoryAlertOperationsGetActiveAlerts<TData = Awaited<Retur
           TError,
           Awaited<ReturnType<typeof inventoryAlertOperationsGetActiveAlerts>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Get active inventory alerts */
@@ -149,17 +147,17 @@ export function useInventoryAlertOperationsGetActiveAlerts<TData = Awaited<Retur
           TError,
           Awaited<ReturnType<typeof inventoryAlertOperationsGetActiveAlerts>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Get active inventory alerts */
 export function useInventoryAlertOperationsGetActiveAlerts<TData = Awaited<ReturnType<typeof inventoryAlertOperationsGetActiveAlerts>>, TError = unknown>(
- params: InventoryAlertOperationsGetActiveAlertsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryAlertOperationsGetActiveAlerts>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ params: InventoryAlertOperationsGetActiveAlertsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryAlertOperationsGetActiveAlerts>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Get active inventory alerts */
 export function useInventoryAlertOperationsGetActiveAlerts<TData = Awaited<ReturnType<typeof inventoryAlertOperationsGetActiveAlerts>>, TError = unknown>(
- params: InventoryAlertOperationsGetActiveAlertsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryAlertOperationsGetActiveAlerts>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ params: InventoryAlertOperationsGetActiveAlertsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryAlertOperationsGetActiveAlerts>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -205,7 +203,7 @@ export const getInventoryAlertOperationsGetAlertSummaryUrl = (params: InventoryA
 /**
  * Get alert summary
  */
-export const inventoryAlertOperationsGetAlertSummary = async (params: InventoryAlertOperationsGetAlertSummaryParams, options?: Parameters<typeof customInstance>[1]): Promise<inventoryAlertOperationsGetAlertSummaryResponse> => {
+export const inventoryAlertOperationsGetAlertSummary = async (params: InventoryAlertOperationsGetAlertSummaryParams, options?: RequestInit): Promise<inventoryAlertOperationsGetAlertSummaryResponse> => {
 
   return customInstance<inventoryAlertOperationsGetAlertSummaryResponse>(getInventoryAlertOperationsGetAlertSummaryUrl(params),
   {
@@ -227,16 +225,16 @@ export const getInventoryAlertOperationsGetAlertSummaryQueryKey = (params?: Inve
     }
 
 
-export const getInventoryAlertOperationsGetAlertSummaryQueryOptions = <TData = Awaited<ReturnType<typeof inventoryAlertOperationsGetAlertSummary>>, TError = unknown>(params: InventoryAlertOperationsGetAlertSummaryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryAlertOperationsGetAlertSummary>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getInventoryAlertOperationsGetAlertSummaryQueryOptions = <TData = Awaited<ReturnType<typeof inventoryAlertOperationsGetAlertSummary>>, TError = unknown>(params: InventoryAlertOperationsGetAlertSummaryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryAlertOperationsGetAlertSummary>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getInventoryAlertOperationsGetAlertSummaryQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof inventoryAlertOperationsGetAlertSummary>>> = ({ signal }) => inventoryAlertOperationsGetAlertSummary(params, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof inventoryAlertOperationsGetAlertSummary>>> = ({ signal }) => inventoryAlertOperationsGetAlertSummary(params, { signal });
 
 
 
@@ -257,7 +255,7 @@ export function useInventoryAlertOperationsGetAlertSummary<TData = Awaited<Retur
           TError,
           Awaited<ReturnType<typeof inventoryAlertOperationsGetAlertSummary>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Get alert summary */
@@ -268,17 +266,17 @@ export function useInventoryAlertOperationsGetAlertSummary<TData = Awaited<Retur
           TError,
           Awaited<ReturnType<typeof inventoryAlertOperationsGetAlertSummary>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Get alert summary */
 export function useInventoryAlertOperationsGetAlertSummary<TData = Awaited<ReturnType<typeof inventoryAlertOperationsGetAlertSummary>>, TError = unknown>(
- params: InventoryAlertOperationsGetAlertSummaryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryAlertOperationsGetAlertSummary>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ params: InventoryAlertOperationsGetAlertSummaryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryAlertOperationsGetAlertSummary>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Get alert summary */
 export function useInventoryAlertOperationsGetAlertSummary<TData = Awaited<ReturnType<typeof inventoryAlertOperationsGetAlertSummary>>, TError = unknown>(
- params: InventoryAlertOperationsGetAlertSummaryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryAlertOperationsGetAlertSummary>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ params: InventoryAlertOperationsGetAlertSummaryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryAlertOperationsGetAlertSummary>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -318,7 +316,7 @@ export const getInventoryAlertOperationsAcknowledgeAlertUrl = (inventoryId: Mode
  * Acknowledge alert
  */
 export const inventoryAlertOperationsAcknowledgeAlert = async (inventoryId: ModelsInventoryId,
-    inventoryAlertOperationsAcknowledgeAlertBody: InventoryAlertOperationsAcknowledgeAlertBody, options?: Parameters<typeof customInstance>[1]): Promise<inventoryAlertOperationsAcknowledgeAlertResponse> => {
+    inventoryAlertOperationsAcknowledgeAlertBody: InventoryAlertOperationsAcknowledgeAlertBody, options?: RequestInit): Promise<inventoryAlertOperationsAcknowledgeAlertResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -350,15 +348,15 @@ return customInstance<inventoryAlertOperationsAcknowledgeAlertResponse>(getInven
 export const getInventoryAlertOperationsAcknowledgeAlertMutationKey = () => ['inventoryAlertOperationsAcknowledgeAlert'] as const;
 
 export const getInventoryAlertOperationsAcknowledgeAlertMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof inventoryAlertOperationsAcknowledgeAlert>>, TError,InventoryAlertOperationsAcknowledgeAlertMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof inventoryAlertOperationsAcknowledgeAlert>>, TError,InventoryAlertOperationsAcknowledgeAlertMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof inventoryAlertOperationsAcknowledgeAlert>>, TError,InventoryAlertOperationsAcknowledgeAlertMutationVariables, TContext> => {
 
 const mutationKey = getInventoryAlertOperationsAcknowledgeAlertMutationKey();
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -366,7 +364,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof inventoryAlertOperationsAcknowledgeAlert>>, InventoryAlertOperationsAcknowledgeAlertMutationVariables> = (props) => {
           const {inventoryId,data} = props ?? {};
 
-          return  inventoryAlertOperationsAcknowledgeAlert(inventoryId,data,requestOptions)
+          return  inventoryAlertOperationsAcknowledgeAlert(inventoryId,data,)
         }
 
 
@@ -383,7 +381,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     /** Acknowledge alert */
 export const useInventoryAlertOperationsAcknowledgeAlert = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof inventoryAlertOperationsAcknowledgeAlert>>, TError,InventoryAlertOperationsAcknowledgeAlertMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof inventoryAlertOperationsAcknowledgeAlert>>, TError,InventoryAlertOperationsAcknowledgeAlertMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof inventoryAlertOperationsAcknowledgeAlert>>,
         TError,

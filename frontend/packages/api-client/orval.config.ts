@@ -16,13 +16,10 @@ export default defineConfig({
       mock: false,
       override: {
         mutator: {
-          path: '../io/src/libs/fetcher/fetcher.ts',
+          path: './src/mutator.ts',
           name: 'customInstance',
         },
       },
-    },
-    hooks: {
-      afterAllFilesWrite: 'pnpm run format',
     },
   },
 })

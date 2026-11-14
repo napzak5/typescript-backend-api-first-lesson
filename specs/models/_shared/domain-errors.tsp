@@ -4,18 +4,18 @@ using TypeSpec.Http;
 
 namespace BeautySalon.Models {
   @doc("""
-  ドメインエラータイプ区分 - ビジネスロジック層で発生するエラーの分類
-
-  VALIDATION_ERROR: 検証エラー - 入力値の検証で失敗
-  NOT_FOUND: 未検出 - 指定されたリソースが存在しない
-  ALREADY_EXISTS: 既存 - リソースが既に存在し、重複が許可されない
-  BUSINESS_RULE_VIOLATION: ビジネスルール違反 - ビジネスロジックの制約に違反
-  UNAUTHORIZED: 未認証 - 認証が必要であるが認証されていない
-  FORBIDDEN: 禁止 - 認証されているが権限が不足
-  INTERNAL_ERROR: 内部エラー - システム内部で予期しないエラーが発生
-  DATABASE_ERROR: データベースエラー - データベース操作中のエラー
-  EXTERNAL_SERVICE_ERROR: 外部サービスエラー - 外部APIやサービスでのエラー
-  """)
+    ドメインエラータイプ区分 - ビジネスロジック層で発生するエラーの分類
+    
+    VALIDATION_ERROR: 検証エラー - 入力値の検証で失敗
+    NOT_FOUND: 未検出 - 指定されたリソースが存在しない
+    ALREADY_EXISTS: 既存 - リソースが既に存在し、重複が許可されない
+    BUSINESS_RULE_VIOLATION: ビジネスルール違反 - ビジネスロジックの制約に違反
+    UNAUTHORIZED: 未認証 - 認証が必要であるが認証されていない
+    FORBIDDEN: 禁止 - 認証されているが権限が不足
+    INTERNAL_ERROR: 内部エラー - システム内部で予期しないエラーが発生
+    DATABASE_ERROR: データベースエラー - データベース操作中のエラー
+    EXTERNAL_SERVICE_ERROR: 外部サービスエラー - 外部APIやサービスでのエラー
+    """)
   enum DomainErrorType {
     VALIDATION_ERROR: "VALIDATION_ERROR",
     NOT_FOUND: "NOT_FOUND",
@@ -29,9 +29,9 @@ namespace BeautySalon.Models {
   }
 
   @doc("""
-  ドメインエラーの詳細情報モデル。
-  予約・顧客・サロンなどビジネスロジック層で発生したエラーを分類し、運用チームが原因分析しやすい形で保持する。
-  """)
+    ドメインエラーの詳細情報モデル。
+    予約・顧客・サロンなどビジネスロジック層で発生したエラーを分類し、運用チームが原因分析しやすい形で保持する。
+    """)
   model DomainErrorDetails {
     @doc("エラー分類タイプ。上位のビジネスルールカテゴリを特定する。")
     type: DomainErrorType;
@@ -59,9 +59,9 @@ namespace BeautySalon.Models {
   }
 
   @doc("""
-  ドメインエラータイプとシステム標準エラーコードの対応表モデル。
-  内部ロジックとHTTPレスポンスの整合性を保つために利用する。
-  """)
+    ドメインエラータイプとシステム標準エラーコードの対応表モデル。
+    内部ロジックとHTTPレスポンスの整合性を保つために利用する。
+    """)
   model DomainErrorMapping {
     @doc("ドメインエラータイプ。ビジネス層で識別されるカテゴリ。")
     domainType: DomainErrorType;
@@ -74,9 +74,9 @@ namespace BeautySalon.Models {
   }
 
   @doc("""
-  ドメインエラー生成の標準設定モデル。
-  各カテゴリごとの既定コードと HTTP ステータスを定義し、再利用可能なエラーファクトリーを構築する。
-  """)
+    ドメインエラー生成の標準設定モデル。
+    各カテゴリごとの既定コードと HTTP ステータスを定義し、再利用可能なエラーファクトリーを構築する。
+    """)
   model DomainErrorFactory {
     @doc("検証エラーを生成するための設定。")
     validation: {
@@ -143,9 +143,9 @@ namespace BeautySalon.Models {
   }
 
   @doc("""
-  ドメイン操作で発生したエラーのコンテキストモデル。
-  ビジネス層の例外情報と HTTP レイヤーの問題詳細を紐づけ、ログ出力やモニタリングを容易にする。
-  """)
+    ドメイン操作で発生したエラーのコンテキストモデル。
+    ビジネス層の例外情報と HTTP レイヤーの問題詳細を紐づけ、ログ出力やモニタリングを容易にする。
+    """)
   model DomainOperationError {
     @doc("ドメインエラーの詳細情報。ビジネスロジック層で発生した要因を保持する。")
     domainError: DomainErrorDetails;

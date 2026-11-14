@@ -37,10 +37,8 @@ import type {
   ModelsMedicalChartUpdateRequest
 } from '../../models';
 
-import { customInstance } from '../../../../../io/src/libs/fetcher/fetcher';
+import { customInstance } from '../../../mutator';
 
-
-type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 
 
@@ -82,7 +80,7 @@ export const getMedicalChartOperationsCreateMedicalChartUrl = () => {
 /**
  * Create medical chart for customer
  */
-export const medicalChartOperationsCreateMedicalChart = async (modelsMedicalChartCreateRequest: ModelsMedicalChartCreateRequest, options?: Parameters<typeof customInstance>[1]): Promise<medicalChartOperationsCreateMedicalChartResponse> => {
+export const medicalChartOperationsCreateMedicalChart = async (modelsMedicalChartCreateRequest: ModelsMedicalChartCreateRequest, options?: RequestInit): Promise<medicalChartOperationsCreateMedicalChartResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -114,15 +112,15 @@ return customInstance<medicalChartOperationsCreateMedicalChartResponse>(getMedic
 export const getMedicalChartOperationsCreateMedicalChartMutationKey = () => ['medicalChartOperationsCreateMedicalChart'] as const;
 
 export const getMedicalChartOperationsCreateMedicalChartMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof medicalChartOperationsCreateMedicalChart>>, TError,MedicalChartOperationsCreateMedicalChartMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof medicalChartOperationsCreateMedicalChart>>, TError,MedicalChartOperationsCreateMedicalChartMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof medicalChartOperationsCreateMedicalChart>>, TError,MedicalChartOperationsCreateMedicalChartMutationVariables, TContext> => {
 
 const mutationKey = getMedicalChartOperationsCreateMedicalChartMutationKey();
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -130,7 +128,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof medicalChartOperationsCreateMedicalChart>>, MedicalChartOperationsCreateMedicalChartMutationVariables> = (props) => {
           const {data} = props ?? {};
 
-          return  medicalChartOperationsCreateMedicalChart(data,requestOptions)
+          return  medicalChartOperationsCreateMedicalChart(data,)
         }
 
 
@@ -147,7 +145,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     /** Create medical chart for customer */
 export const useMedicalChartOperationsCreateMedicalChart = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof medicalChartOperationsCreateMedicalChart>>, TError,MedicalChartOperationsCreateMedicalChartMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof medicalChartOperationsCreateMedicalChart>>, TError,MedicalChartOperationsCreateMedicalChartMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof medicalChartOperationsCreateMedicalChart>>,
         TError,
@@ -186,7 +184,7 @@ export const getMedicalChartOperationsSearchMedicalChartsUrl = (params?: Medical
 /**
  * Search medical charts
  */
-export const medicalChartOperationsSearchMedicalCharts = async (params?: MedicalChartOperationsSearchMedicalChartsParams, options?: Parameters<typeof customInstance>[1]): Promise<medicalChartOperationsSearchMedicalChartsResponse> => {
+export const medicalChartOperationsSearchMedicalCharts = async (params?: MedicalChartOperationsSearchMedicalChartsParams, options?: RequestInit): Promise<medicalChartOperationsSearchMedicalChartsResponse> => {
 
   return customInstance<medicalChartOperationsSearchMedicalChartsResponse>(getMedicalChartOperationsSearchMedicalChartsUrl(params),
   {
@@ -208,16 +206,16 @@ export const getMedicalChartOperationsSearchMedicalChartsQueryKey = (params?: Me
     }
 
 
-export const getMedicalChartOperationsSearchMedicalChartsQueryOptions = <TData = Awaited<ReturnType<typeof medicalChartOperationsSearchMedicalCharts>>, TError = unknown>(params?: MedicalChartOperationsSearchMedicalChartsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof medicalChartOperationsSearchMedicalCharts>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getMedicalChartOperationsSearchMedicalChartsQueryOptions = <TData = Awaited<ReturnType<typeof medicalChartOperationsSearchMedicalCharts>>, TError = unknown>(params?: MedicalChartOperationsSearchMedicalChartsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof medicalChartOperationsSearchMedicalCharts>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getMedicalChartOperationsSearchMedicalChartsQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof medicalChartOperationsSearchMedicalCharts>>> = ({ signal }) => medicalChartOperationsSearchMedicalCharts(params, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof medicalChartOperationsSearchMedicalCharts>>> = ({ signal }) => medicalChartOperationsSearchMedicalCharts(params, { signal });
 
 
 
@@ -238,7 +236,7 @@ export function useMedicalChartOperationsSearchMedicalCharts<TData = Awaited<Ret
           TError,
           Awaited<ReturnType<typeof medicalChartOperationsSearchMedicalCharts>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Search medical charts */
@@ -249,17 +247,17 @@ export function useMedicalChartOperationsSearchMedicalCharts<TData = Awaited<Ret
           TError,
           Awaited<ReturnType<typeof medicalChartOperationsSearchMedicalCharts>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Search medical charts */
 export function useMedicalChartOperationsSearchMedicalCharts<TData = Awaited<ReturnType<typeof medicalChartOperationsSearchMedicalCharts>>, TError = unknown>(
- params?: MedicalChartOperationsSearchMedicalChartsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof medicalChartOperationsSearchMedicalCharts>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ params?: MedicalChartOperationsSearchMedicalChartsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof medicalChartOperationsSearchMedicalCharts>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Search medical charts */
 export function useMedicalChartOperationsSearchMedicalCharts<TData = Awaited<ReturnType<typeof medicalChartOperationsSearchMedicalCharts>>, TError = unknown>(
- params?: MedicalChartOperationsSearchMedicalChartsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof medicalChartOperationsSearchMedicalCharts>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ params?: MedicalChartOperationsSearchMedicalChartsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof medicalChartOperationsSearchMedicalCharts>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -298,7 +296,7 @@ export const getMedicalChartOperationsGetCustomerMedicalChartUrl = (customerId: 
 /**
  * Get medical chart by customer ID
  */
-export const medicalChartOperationsGetCustomerMedicalChart = async (customerId: ModelsCustomerId, options?: Parameters<typeof customInstance>[1]): Promise<medicalChartOperationsGetCustomerMedicalChartResponse> => {
+export const medicalChartOperationsGetCustomerMedicalChart = async (customerId: ModelsCustomerId, options?: RequestInit): Promise<medicalChartOperationsGetCustomerMedicalChartResponse> => {
 
   return customInstance<medicalChartOperationsGetCustomerMedicalChartResponse>(getMedicalChartOperationsGetCustomerMedicalChartUrl(customerId),
   {
@@ -320,16 +318,16 @@ export const getMedicalChartOperationsGetCustomerMedicalChartQueryKey = (custome
     }
 
 
-export const getMedicalChartOperationsGetCustomerMedicalChartQueryOptions = <TData = Awaited<ReturnType<typeof medicalChartOperationsGetCustomerMedicalChart>>, TError = unknown>(customerId: ModelsCustomerId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof medicalChartOperationsGetCustomerMedicalChart>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getMedicalChartOperationsGetCustomerMedicalChartQueryOptions = <TData = Awaited<ReturnType<typeof medicalChartOperationsGetCustomerMedicalChart>>, TError = unknown>(customerId: ModelsCustomerId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof medicalChartOperationsGetCustomerMedicalChart>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getMedicalChartOperationsGetCustomerMedicalChartQueryKey(customerId);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof medicalChartOperationsGetCustomerMedicalChart>>> = ({ signal }) => medicalChartOperationsGetCustomerMedicalChart(customerId, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof medicalChartOperationsGetCustomerMedicalChart>>> = ({ signal }) => medicalChartOperationsGetCustomerMedicalChart(customerId, { signal });
 
 
 
@@ -350,7 +348,7 @@ export function useMedicalChartOperationsGetCustomerMedicalChart<TData = Awaited
           TError,
           Awaited<ReturnType<typeof medicalChartOperationsGetCustomerMedicalChart>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Get medical chart by customer ID */
@@ -361,17 +359,17 @@ export function useMedicalChartOperationsGetCustomerMedicalChart<TData = Awaited
           TError,
           Awaited<ReturnType<typeof medicalChartOperationsGetCustomerMedicalChart>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Get medical chart by customer ID */
 export function useMedicalChartOperationsGetCustomerMedicalChart<TData = Awaited<ReturnType<typeof medicalChartOperationsGetCustomerMedicalChart>>, TError = unknown>(
- customerId: ModelsCustomerId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof medicalChartOperationsGetCustomerMedicalChart>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ customerId: ModelsCustomerId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof medicalChartOperationsGetCustomerMedicalChart>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Get medical chart by customer ID */
 export function useMedicalChartOperationsGetCustomerMedicalChart<TData = Awaited<ReturnType<typeof medicalChartOperationsGetCustomerMedicalChart>>, TError = unknown>(
- customerId: ModelsCustomerId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof medicalChartOperationsGetCustomerMedicalChart>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ customerId: ModelsCustomerId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof medicalChartOperationsGetCustomerMedicalChart>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -410,7 +408,7 @@ export const getMedicalChartOperationsGetCustomerAllergiesUrl = (customerId: Mod
 /**
  * Get allergy warnings for customer
  */
-export const medicalChartOperationsGetCustomerAllergies = async (customerId: ModelsCustomerId, options?: Parameters<typeof customInstance>[1]): Promise<medicalChartOperationsGetCustomerAllergiesResponse> => {
+export const medicalChartOperationsGetCustomerAllergies = async (customerId: ModelsCustomerId, options?: RequestInit): Promise<medicalChartOperationsGetCustomerAllergiesResponse> => {
 
   return customInstance<medicalChartOperationsGetCustomerAllergiesResponse>(getMedicalChartOperationsGetCustomerAllergiesUrl(customerId),
   {
@@ -432,16 +430,16 @@ export const getMedicalChartOperationsGetCustomerAllergiesQueryKey = (customerId
     }
 
 
-export const getMedicalChartOperationsGetCustomerAllergiesQueryOptions = <TData = Awaited<ReturnType<typeof medicalChartOperationsGetCustomerAllergies>>, TError = unknown>(customerId: ModelsCustomerId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof medicalChartOperationsGetCustomerAllergies>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getMedicalChartOperationsGetCustomerAllergiesQueryOptions = <TData = Awaited<ReturnType<typeof medicalChartOperationsGetCustomerAllergies>>, TError = unknown>(customerId: ModelsCustomerId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof medicalChartOperationsGetCustomerAllergies>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getMedicalChartOperationsGetCustomerAllergiesQueryKey(customerId);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof medicalChartOperationsGetCustomerAllergies>>> = ({ signal }) => medicalChartOperationsGetCustomerAllergies(customerId, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof medicalChartOperationsGetCustomerAllergies>>> = ({ signal }) => medicalChartOperationsGetCustomerAllergies(customerId, { signal });
 
 
 
@@ -462,7 +460,7 @@ export function useMedicalChartOperationsGetCustomerAllergies<TData = Awaited<Re
           TError,
           Awaited<ReturnType<typeof medicalChartOperationsGetCustomerAllergies>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Get allergy warnings for customer */
@@ -473,17 +471,17 @@ export function useMedicalChartOperationsGetCustomerAllergies<TData = Awaited<Re
           TError,
           Awaited<ReturnType<typeof medicalChartOperationsGetCustomerAllergies>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Get allergy warnings for customer */
 export function useMedicalChartOperationsGetCustomerAllergies<TData = Awaited<ReturnType<typeof medicalChartOperationsGetCustomerAllergies>>, TError = unknown>(
- customerId: ModelsCustomerId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof medicalChartOperationsGetCustomerAllergies>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ customerId: ModelsCustomerId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof medicalChartOperationsGetCustomerAllergies>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Get allergy warnings for customer */
 export function useMedicalChartOperationsGetCustomerAllergies<TData = Awaited<ReturnType<typeof medicalChartOperationsGetCustomerAllergies>>, TError = unknown>(
- customerId: ModelsCustomerId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof medicalChartOperationsGetCustomerAllergies>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ customerId: ModelsCustomerId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof medicalChartOperationsGetCustomerAllergies>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -523,7 +521,7 @@ export const getMedicalChartOperationsUpdateMedicalChartUrl = (id: ModelsMedical
  * Update medical chart
  */
 export const medicalChartOperationsUpdateMedicalChart = async (id: ModelsMedicalChartId,
-    modelsMedicalChartUpdateRequest: ModelsMedicalChartUpdateRequest, options?: Parameters<typeof customInstance>[1]): Promise<medicalChartOperationsUpdateMedicalChartResponse> => {
+    modelsMedicalChartUpdateRequest: ModelsMedicalChartUpdateRequest, options?: RequestInit): Promise<medicalChartOperationsUpdateMedicalChartResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -555,15 +553,15 @@ return customInstance<medicalChartOperationsUpdateMedicalChartResponse>(getMedic
 export const getMedicalChartOperationsUpdateMedicalChartMutationKey = () => ['medicalChartOperationsUpdateMedicalChart'] as const;
 
 export const getMedicalChartOperationsUpdateMedicalChartMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof medicalChartOperationsUpdateMedicalChart>>, TError,MedicalChartOperationsUpdateMedicalChartMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof medicalChartOperationsUpdateMedicalChart>>, TError,MedicalChartOperationsUpdateMedicalChartMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof medicalChartOperationsUpdateMedicalChart>>, TError,MedicalChartOperationsUpdateMedicalChartMutationVariables, TContext> => {
 
 const mutationKey = getMedicalChartOperationsUpdateMedicalChartMutationKey();
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -571,7 +569,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof medicalChartOperationsUpdateMedicalChart>>, MedicalChartOperationsUpdateMedicalChartMutationVariables> = (props) => {
           const {id,data} = props ?? {};
 
-          return  medicalChartOperationsUpdateMedicalChart(id,data,requestOptions)
+          return  medicalChartOperationsUpdateMedicalChart(id,data,)
         }
 
 
@@ -588,7 +586,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     /** Update medical chart */
 export const useMedicalChartOperationsUpdateMedicalChart = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof medicalChartOperationsUpdateMedicalChart>>, TError,MedicalChartOperationsUpdateMedicalChartMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof medicalChartOperationsUpdateMedicalChart>>, TError,MedicalChartOperationsUpdateMedicalChartMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof medicalChartOperationsUpdateMedicalChart>>,
         TError,

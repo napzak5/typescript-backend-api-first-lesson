@@ -2,18 +2,72 @@
 import { exec } from 'node:child_process'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
-import { fileURLToPath } from 'node:url'
 import { promisify } from 'node:util'
 import { getDatabaseUrl, loadEnvConfig } from '@beauty-salon-backend/config'
+import { Result } from '@beauty-salon-backend/utility'
+import postgres from 'postgres'
+import {
+  canonicalizeRelations,
+  canonicalizeSchema,
+  type UniqueConstraintColumns,
+} from './canonicalize-introspection'
 
 const execAsync = promisify(exec)
 
-// Get directory paths
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
+const packageDir = path.resolve(import.meta.dirname, '../..')
+const migrationsDir = path.join(packageDir, 'migrations')
+const schemaPath = path.join(packageDir, 'src/schema.ts')
+const relationsPath = path.join(packageDir, 'src/relations.ts')
 
 // Load environment-specific configuration
 const environment = loadEnvConfig()
+
+/**
+ * Reads the columns of every unique constraint in declaration order.
+ * drizzle-kit reports them alphabetically, which is not the order the
+ * constraint (and its backing index) was created with.
+ */
+async function readUniqueConstraintColumns(
+  databaseUrl: string,
+): Promise<Result<UniqueConstraintColumns, Error>> {
+  const sql = postgres(databaseUrl, { max: 1 })
+  const rows = await Result.fromPromise(
+    sql<{ key: string; columns: string[] }[]>`
+      SELECT
+        rel.relname || '.' || con.conname AS key,
+        array_agg(att.attname::text ORDER BY cols.position) AS columns
+      FROM pg_constraint con
+      JOIN pg_class rel ON rel.oid = con.conrelid
+      JOIN pg_namespace nsp ON nsp.oid = rel.relnamespace
+      CROSS JOIN LATERAL unnest(con.conkey) WITH ORDINALITY AS cols(attnum, position)
+      JOIN pg_attribute att
+        ON att.attrelid = con.conrelid AND att.attnum = cols.attnum
+      WHERE con.contype = 'u' AND nsp.nspname = 'public'
+      GROUP BY rel.relname, con.conname
+    `,
+  )
+  await sql.end()
+  return Result.map(
+    rows,
+    (constraints) =>
+      new Map(constraints.map(({ key, columns }) => [key, columns])),
+  )
+}
+
+/**
+ * Formats the generated files and drops the imports drizzle-kit emits but does
+ * not use, which the linter would otherwise reject.
+ */
+async function formatGeneratedFiles(): Promise<void> {
+  const files = 'src/schema.ts src/relations.ts'
+  await execAsync(
+    `pnpm exec biome lint --write --unsafe --only=correctness/noUnusedImports ${files}`,
+    { cwd: packageDir },
+  )
+  await execAsync(`pnpm exec biome check --write ${files}`, {
+    cwd: packageDir,
+  })
+}
 
 async function main() {
   console.log(
@@ -31,7 +85,7 @@ async function main() {
     // Run Drizzle introspection
     console.log('📝 Running drizzle-kit introspect...')
     const { stdout, stderr } = await execAsync('pnpm drizzle-kit introspect', {
-      cwd: path.resolve(__dirname, '../..'),
+      cwd: packageDir,
       env: {
         ...process.env,
         DATABASE_URL: databaseUrl,
@@ -45,34 +99,41 @@ async function main() {
       console.error(stderr)
     }
 
-    // Move generated files to src directory
-    const migrationsDir = path.resolve(__dirname, '../../migrations')
-    const srcDir = path.resolve(__dirname, '..')
+    console.log('📦 Moving generated files to src/...')
+    fs.copyFileSync(path.join(migrationsDir, 'schema.ts'), schemaPath)
+    fs.copyFileSync(path.join(migrationsDir, 'relations.ts'), relationsPath)
 
-    // Check if migration files were generated
-    if (fs.existsSync(path.join(migrationsDir, 'schema.ts'))) {
-      console.log('📦 Moving generated schema.ts to src/schema.ts...')
-      const schemaContent = fs.readFileSync(
-        path.join(migrationsDir, 'schema.ts'),
-        'utf8',
+    console.log('🧹 Cleaning up temporary migrations directory...')
+    fs.rmSync(migrationsDir, { recursive: true, force: true })
+
+    console.log('🧮 Rewriting the generated files into their canonical form...')
+    await formatGeneratedFiles()
+    const uniqueColumns = await readUniqueConstraintColumns(databaseUrl)
+    if (uniqueColumns.type === 'error') {
+      console.error(
+        '❌ Failed to read unique constraints:',
+        uniqueColumns.error,
       )
-      fs.writeFileSync(path.join(srcDir, 'schema.ts'), schemaContent)
+      process.exit(1)
     }
-
-    if (fs.existsSync(path.join(migrationsDir, 'relations.ts'))) {
-      console.log('📦 Moving generated relations.ts to src/relations.ts...')
-      const relationsContent = fs.readFileSync(
-        path.join(migrationsDir, 'relations.ts'),
-        'utf8',
+    const schema = canonicalizeSchema(
+      fs.readFileSync(schemaPath, 'utf8'),
+      uniqueColumns.data,
+    )
+    const relations = canonicalizeRelations(
+      fs.readFileSync(relationsPath, 'utf8'),
+    )
+    if (schema.type === 'error' || relations.type === 'error') {
+      console.error(
+        '❌ Failed to canonicalize the introspection result:',
+        schema.type === 'error' ? schema.error : '',
+        relations.type === 'error' ? relations.error : '',
       )
-      fs.writeFileSync(path.join(srcDir, 'relations.ts'), relationsContent)
+      process.exit(1)
     }
-
-    // Clean up migrations directory if it was created
-    if (fs.existsSync(migrationsDir)) {
-      console.log('🧹 Cleaning up temporary migrations directory...')
-      fs.rmSync(migrationsDir, { recursive: true, force: true })
-    }
+    fs.writeFileSync(schemaPath, schema.data)
+    fs.writeFileSync(relationsPath, relations.data)
+    await formatGeneratedFiles()
 
     console.log('✅ Introspection completed successfully!')
     console.log('')

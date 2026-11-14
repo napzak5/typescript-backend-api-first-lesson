@@ -1,5 +1,6 @@
 {
-  "*.{ts,tsx,js,jsx,json,css,md}": [
+  "*.{ts,tsx,js,jsx,json,jsonc,css}": [
     "biome check --write --no-errors-on-unmatched"
-  ]
+  ],
+  "*.tsp": ["pnpm --filter @beauty-salon/specs exec tsp format"]
 }

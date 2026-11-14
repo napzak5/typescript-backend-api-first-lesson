@@ -38,6 +38,3 @@ export const getDb = () => {
   }
   return db
 }
-
-// Export db conditionally for backward compatibility
-export { db }

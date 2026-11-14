@@ -63,5 +63,3 @@ export const themePreset: Config = {
   },
   plugins: [tailwindcssAnimate],
 }
-
-export default themePreset

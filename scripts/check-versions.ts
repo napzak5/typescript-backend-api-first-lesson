@@ -32,7 +32,9 @@ const enginesMismatches =
 const mismatches = [...dockerfileMismatches, ...enginesMismatches]
 
 if (mismatches.length > 0) {
-  console.error(`Node.js version drift detected (.node-version is ${nodeVersion}):`)
+  console.error(
+    `Node.js version drift detected (.node-version is ${nodeVersion}):`,
+  )
   for (const mismatch of mismatches) {
     console.error(`  - ${mismatch}`)
   }

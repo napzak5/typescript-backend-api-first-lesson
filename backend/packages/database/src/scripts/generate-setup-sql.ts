@@ -52,7 +52,6 @@ async function main() {
 -- - All tables with columns, constraints, and defaults
 -- - All foreign key relationships
 -- - All indexes
--- Generated on: ${new Date().toISOString()}
 -- Source: backend/packages/database/src/schema.ts
 
 `
@@ -77,9 +76,7 @@ async function main() {
     console.log(`📊 File size: ${finalSql.length} characters`)
     console.log('📋 Generated from schema: src/schema.ts')
     console.log('')
-    console.log('ℹ️  You can now use this file with:')
-    console.log('   pnpm db:setup    # Execute the generated setup.sql')
-    console.log('   pnpm db:reset    # Reset database and run setup.sql')
+    console.log('ℹ️  Recreate the database from this file with: pnpm db:fresh')
   } catch (error) {
     console.error('❌ Failed to generate setup.sql:', error)
     process.exit(1)

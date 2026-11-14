@@ -85,6 +85,3 @@ export const TestTailwind: React.FC = () => {
     </div>
   )
 }
-
-// Export for Storybook
-export default TestTailwind

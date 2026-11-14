@@ -39,10 +39,8 @@ import type {
   StaffOperationsListParams
 } from '../../models';
 
-import { customInstance } from '../../../../../io/src/libs/fetcher/fetcher';
+import { customInstance } from '../../../mutator';
 
-
-type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 
 
@@ -94,7 +92,7 @@ export const getStaffOperationsListUrl = (salonId: ModelsSalonId,
  * @summary List staff members
  */
 export const staffOperationsList = async (salonId: ModelsSalonId,
-    params?: StaffOperationsListParams, options?: Parameters<typeof customInstance>[1]): Promise<staffOperationsListResponse> => {
+    params?: StaffOperationsListParams, options?: RequestInit): Promise<staffOperationsListResponse> => {
 
   return customInstance<staffOperationsListResponse>(getStaffOperationsListUrl(salonId,params),
   {
@@ -118,16 +116,16 @@ export const getStaffOperationsListQueryKey = (salonId: ModelsSalonId,
 
 
 export const getStaffOperationsListQueryOptions = <TData = Awaited<ReturnType<typeof staffOperationsList>>, TError = unknown>(salonId: ModelsSalonId,
-    params?: StaffOperationsListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffOperationsList>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+    params?: StaffOperationsListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffOperationsList>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getStaffOperationsListQueryKey(salonId,params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof staffOperationsList>>> = ({ signal }) => staffOperationsList(salonId,params, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof staffOperationsList>>> = ({ signal }) => staffOperationsList(salonId,params, { signal });
 
 
 
@@ -152,7 +150,7 @@ export function useStaffOperationsList<TData = Awaited<ReturnType<typeof staffOp
           TError,
           Awaited<ReturnType<typeof staffOperationsList>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -167,7 +165,7 @@ export function useStaffOperationsList<TData = Awaited<ReturnType<typeof staffOp
           TError,
           Awaited<ReturnType<typeof staffOperationsList>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -176,7 +174,7 @@ export function useStaffOperationsList<TData = Awaited<ReturnType<typeof staffOp
  */
 export function useStaffOperationsList<TData = Awaited<ReturnType<typeof staffOperationsList>>, TError = unknown>(
  salonId: ModelsSalonId,
-    params?: StaffOperationsListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffOperationsList>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+    params?: StaffOperationsListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffOperationsList>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -185,7 +183,7 @@ export function useStaffOperationsList<TData = Awaited<ReturnType<typeof staffOp
  */
 export function useStaffOperationsList<TData = Awaited<ReturnType<typeof staffOperationsList>>, TError = unknown>(
  salonId: ModelsSalonId,
-    params?: StaffOperationsListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffOperationsList>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+    params?: StaffOperationsListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffOperationsList>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -233,7 +231,7 @@ export const getStaffOperationsCreateUrl = (salonId: ModelsSalonId,) => {
  * @summary Create staff member
  */
 export const staffOperationsCreate = async (salonId: ModelsSalonId,
-    modelsCreateStaffRequest: ModelsCreateStaffRequest, options?: Parameters<typeof customInstance>[1]): Promise<staffOperationsCreateResponse> => {
+    modelsCreateStaffRequest: ModelsCreateStaffRequest, options?: RequestInit): Promise<staffOperationsCreateResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -265,15 +263,15 @@ return customInstance<staffOperationsCreateResponse>(getStaffOperationsCreateUrl
 export const getStaffOperationsCreateMutationKey = () => ['staffOperationsCreate'] as const;
 
 export const getStaffOperationsCreateMutationOptions = <TError = ModelsError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffOperationsCreate>>, TError,StaffOperationsCreateMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffOperationsCreate>>, TError,StaffOperationsCreateMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof staffOperationsCreate>>, TError,StaffOperationsCreateMutationVariables, TContext> => {
 
 const mutationKey = getStaffOperationsCreateMutationKey();
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -281,7 +279,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof staffOperationsCreate>>, StaffOperationsCreateMutationVariables> = (props) => {
           const {salonId,data} = props ?? {};
 
-          return  staffOperationsCreate(salonId,data,requestOptions)
+          return  staffOperationsCreate(salonId,data,)
         }
 
 
@@ -301,7 +299,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  * @summary Create staff member
  */
 export const useStaffOperationsCreate = <TError = ModelsError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffOperationsCreate>>, TError,StaffOperationsCreateMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffOperationsCreate>>, TError,StaffOperationsCreateMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof staffOperationsCreate>>,
         TError,
@@ -343,7 +341,7 @@ export const getStaffOperationsGetUrl = (salonId: ModelsSalonId,
  * @summary Get staff member
  */
 export const staffOperationsGet = async (salonId: ModelsSalonId,
-    id: ModelsStaffId, options?: Parameters<typeof customInstance>[1]): Promise<staffOperationsGetResponse> => {
+    id: ModelsStaffId, options?: RequestInit): Promise<staffOperationsGetResponse> => {
 
   return customInstance<staffOperationsGetResponse>(getStaffOperationsGetUrl(salonId,id),
   {
@@ -367,16 +365,16 @@ export const getStaffOperationsGetQueryKey = (salonId: ModelsSalonId,
 
 
 export const getStaffOperationsGetQueryOptions = <TData = Awaited<ReturnType<typeof staffOperationsGet>>, TError = ModelsError>(salonId: ModelsSalonId,
-    id: ModelsStaffId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffOperationsGet>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+    id: ModelsStaffId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffOperationsGet>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getStaffOperationsGetQueryKey(salonId,id);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof staffOperationsGet>>> = ({ signal }) => staffOperationsGet(salonId,id, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof staffOperationsGet>>> = ({ signal }) => staffOperationsGet(salonId,id, { signal });
 
 
 
@@ -401,7 +399,7 @@ export function useStaffOperationsGet<TData = Awaited<ReturnType<typeof staffOpe
           TError,
           Awaited<ReturnType<typeof staffOperationsGet>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -416,7 +414,7 @@ export function useStaffOperationsGet<TData = Awaited<ReturnType<typeof staffOpe
           TError,
           Awaited<ReturnType<typeof staffOperationsGet>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -425,7 +423,7 @@ export function useStaffOperationsGet<TData = Awaited<ReturnType<typeof staffOpe
  */
 export function useStaffOperationsGet<TData = Awaited<ReturnType<typeof staffOperationsGet>>, TError = ModelsError>(
  salonId: ModelsSalonId,
-    id: ModelsStaffId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffOperationsGet>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+    id: ModelsStaffId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffOperationsGet>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -434,7 +432,7 @@ export function useStaffOperationsGet<TData = Awaited<ReturnType<typeof staffOpe
  */
 export function useStaffOperationsGet<TData = Awaited<ReturnType<typeof staffOperationsGet>>, TError = ModelsError>(
  salonId: ModelsSalonId,
-    id: ModelsStaffId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffOperationsGet>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+    id: ModelsStaffId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffOperationsGet>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -489,7 +487,7 @@ export const getStaffOperationsUpdateUrl = (salonId: ModelsSalonId,
  */
 export const staffOperationsUpdate = async (salonId: ModelsSalonId,
     id: ModelsStaffId,
-    modelsUpdateStaffRequest: ModelsUpdateStaffRequest, options?: Parameters<typeof customInstance>[1]): Promise<staffOperationsUpdateResponse> => {
+    modelsUpdateStaffRequest: ModelsUpdateStaffRequest, options?: RequestInit): Promise<staffOperationsUpdateResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -521,15 +519,15 @@ return customInstance<staffOperationsUpdateResponse>(getStaffOperationsUpdateUrl
 export const getStaffOperationsUpdateMutationKey = () => ['staffOperationsUpdate'] as const;
 
 export const getStaffOperationsUpdateMutationOptions = <TError = ModelsError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffOperationsUpdate>>, TError,StaffOperationsUpdateMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffOperationsUpdate>>, TError,StaffOperationsUpdateMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof staffOperationsUpdate>>, TError,StaffOperationsUpdateMutationVariables, TContext> => {
 
 const mutationKey = getStaffOperationsUpdateMutationKey();
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -537,7 +535,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof staffOperationsUpdate>>, StaffOperationsUpdateMutationVariables> = (props) => {
           const {salonId,id,data} = props ?? {};
 
-          return  staffOperationsUpdate(salonId,id,data,requestOptions)
+          return  staffOperationsUpdate(salonId,id,data,)
         }
 
 
@@ -557,7 +555,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  * @summary Update staff member
  */
 export const useStaffOperationsUpdate = <TError = ModelsError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffOperationsUpdate>>, TError,StaffOperationsUpdateMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffOperationsUpdate>>, TError,StaffOperationsUpdateMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof staffOperationsUpdate>>,
         TError,
@@ -599,7 +597,7 @@ export const getStaffOperationsDeleteUrl = (salonId: ModelsSalonId,
  * @summary Delete staff member
  */
 export const staffOperationsDelete = async (salonId: ModelsSalonId,
-    id: ModelsStaffId, options?: Parameters<typeof customInstance>[1]): Promise<staffOperationsDeleteResponse> => {
+    id: ModelsStaffId, options?: RequestInit): Promise<staffOperationsDeleteResponse> => {
 
   return customInstance<staffOperationsDeleteResponse>(getStaffOperationsDeleteUrl(salonId,id),
   {
@@ -617,15 +615,15 @@ export const staffOperationsDelete = async (salonId: ModelsSalonId,
 export const getStaffOperationsDeleteMutationKey = () => ['staffOperationsDelete'] as const;
 
 export const getStaffOperationsDeleteMutationOptions = <TError = ModelsError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffOperationsDelete>>, TError,StaffOperationsDeleteMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffOperationsDelete>>, TError,StaffOperationsDeleteMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof staffOperationsDelete>>, TError,StaffOperationsDeleteMutationVariables, TContext> => {
 
 const mutationKey = getStaffOperationsDeleteMutationKey();
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -633,7 +631,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof staffOperationsDelete>>, StaffOperationsDeleteMutationVariables> = (props) => {
           const {salonId,id} = props ?? {};
 
-          return  staffOperationsDelete(salonId,id,requestOptions)
+          return  staffOperationsDelete(salonId,id,)
         }
 
 
@@ -653,7 +651,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  * @summary Delete staff member
  */
 export const useStaffOperationsDelete = <TError = ModelsError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffOperationsDelete>>, TError,StaffOperationsDeleteMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffOperationsDelete>>, TError,StaffOperationsDeleteMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof staffOperationsDelete>>,
         TError,
@@ -697,7 +695,7 @@ export const getStaffOperationsGetAvailabilityUrl = (salonId: ModelsSalonId,
  */
 export const staffOperationsGetAvailability = async (salonId: ModelsSalonId,
     id: ModelsStaffId,
-    params: StaffOperationsGetAvailabilityParams, options?: Parameters<typeof customInstance>[1]): Promise<staffOperationsGetAvailabilityResponse> => {
+    params: StaffOperationsGetAvailabilityParams, options?: RequestInit): Promise<staffOperationsGetAvailabilityResponse> => {
 
   return customInstance<staffOperationsGetAvailabilityResponse>(getStaffOperationsGetAvailabilityUrl(salonId,id,params),
   {
@@ -723,16 +721,16 @@ export const getStaffOperationsGetAvailabilityQueryKey = (salonId: ModelsSalonId
 
 export const getStaffOperationsGetAvailabilityQueryOptions = <TData = Awaited<ReturnType<typeof staffOperationsGetAvailability>>, TError = unknown>(salonId: ModelsSalonId,
     id: ModelsStaffId,
-    params: StaffOperationsGetAvailabilityParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffOperationsGetAvailability>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+    params: StaffOperationsGetAvailabilityParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffOperationsGetAvailability>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getStaffOperationsGetAvailabilityQueryKey(salonId,id,params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof staffOperationsGetAvailability>>> = ({ signal }) => staffOperationsGetAvailability(salonId,id,params, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof staffOperationsGetAvailability>>> = ({ signal }) => staffOperationsGetAvailability(salonId,id,params, { signal });
 
 
 
@@ -758,7 +756,7 @@ export function useStaffOperationsGetAvailability<TData = Awaited<ReturnType<typ
           TError,
           Awaited<ReturnType<typeof staffOperationsGetAvailability>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -774,7 +772,7 @@ export function useStaffOperationsGetAvailability<TData = Awaited<ReturnType<typ
           TError,
           Awaited<ReturnType<typeof staffOperationsGetAvailability>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -784,7 +782,7 @@ export function useStaffOperationsGetAvailability<TData = Awaited<ReturnType<typ
 export function useStaffOperationsGetAvailability<TData = Awaited<ReturnType<typeof staffOperationsGetAvailability>>, TError = unknown>(
  salonId: ModelsSalonId,
     id: ModelsStaffId,
-    params: StaffOperationsGetAvailabilityParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffOperationsGetAvailability>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+    params: StaffOperationsGetAvailabilityParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffOperationsGetAvailability>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -794,7 +792,7 @@ export function useStaffOperationsGetAvailability<TData = Awaited<ReturnType<typ
 export function useStaffOperationsGetAvailability<TData = Awaited<ReturnType<typeof staffOperationsGetAvailability>>, TError = unknown>(
  salonId: ModelsSalonId,
     id: ModelsStaffId,
-    params: StaffOperationsGetAvailabilityParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffOperationsGetAvailability>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+    params: StaffOperationsGetAvailabilityParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffOperationsGetAvailability>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -844,7 +842,7 @@ export const getStaffOperationsUpdateAvailabilityUrl = (salonId: ModelsSalonId,
  */
 export const staffOperationsUpdateAvailability = async (salonId: ModelsSalonId,
     id: ModelsStaffId,
-    modelsStaffAvailability: ModelsStaffAvailability[], options?: Parameters<typeof customInstance>[1]): Promise<staffOperationsUpdateAvailabilityResponse> => {
+    modelsStaffAvailability: ModelsStaffAvailability[], options?: RequestInit): Promise<staffOperationsUpdateAvailabilityResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -876,15 +874,15 @@ return customInstance<staffOperationsUpdateAvailabilityResponse>(getStaffOperati
 export const getStaffOperationsUpdateAvailabilityMutationKey = () => ['staffOperationsUpdateAvailability'] as const;
 
 export const getStaffOperationsUpdateAvailabilityMutationOptions = <TError = ModelsError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffOperationsUpdateAvailability>>, TError,StaffOperationsUpdateAvailabilityMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffOperationsUpdateAvailability>>, TError,StaffOperationsUpdateAvailabilityMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof staffOperationsUpdateAvailability>>, TError,StaffOperationsUpdateAvailabilityMutationVariables, TContext> => {
 
 const mutationKey = getStaffOperationsUpdateAvailabilityMutationKey();
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -892,7 +890,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof staffOperationsUpdateAvailability>>, StaffOperationsUpdateAvailabilityMutationVariables> = (props) => {
           const {salonId,id,data} = props ?? {};
 
-          return  staffOperationsUpdateAvailability(salonId,id,data,requestOptions)
+          return  staffOperationsUpdateAvailability(salonId,id,data,)
         }
 
 
@@ -912,7 +910,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  * @summary Update staff availability
  */
 export const useStaffOperationsUpdateAvailability = <TError = ModelsError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffOperationsUpdateAvailability>>, TError,StaffOperationsUpdateAvailabilityMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffOperationsUpdateAvailability>>, TError,StaffOperationsUpdateAvailabilityMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof staffOperationsUpdateAvailability>>,
         TError,
@@ -952,7 +950,7 @@ export const getGlobalStaffOperationsSearchStaffUrl = (params?: GlobalStaffOpera
  * 専門分野や地域条件でスタッフを横断検索し、顧客の指名ニーズに応えます。
  * @summary Search staff across all salons
  */
-export const globalStaffOperationsSearchStaff = async (params?: GlobalStaffOperationsSearchStaffParams, options?: Parameters<typeof customInstance>[1]): Promise<globalStaffOperationsSearchStaffResponse> => {
+export const globalStaffOperationsSearchStaff = async (params?: GlobalStaffOperationsSearchStaffParams, options?: RequestInit): Promise<globalStaffOperationsSearchStaffResponse> => {
 
   return customInstance<globalStaffOperationsSearchStaffResponse>(getGlobalStaffOperationsSearchStaffUrl(params),
   {
@@ -974,16 +972,16 @@ export const getGlobalStaffOperationsSearchStaffQueryKey = (params?: GlobalStaff
     }
 
 
-export const getGlobalStaffOperationsSearchStaffQueryOptions = <TData = Awaited<ReturnType<typeof globalStaffOperationsSearchStaff>>, TError = unknown>(params?: GlobalStaffOperationsSearchStaffParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof globalStaffOperationsSearchStaff>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getGlobalStaffOperationsSearchStaffQueryOptions = <TData = Awaited<ReturnType<typeof globalStaffOperationsSearchStaff>>, TError = unknown>(params?: GlobalStaffOperationsSearchStaffParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof globalStaffOperationsSearchStaff>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getGlobalStaffOperationsSearchStaffQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof globalStaffOperationsSearchStaff>>> = ({ signal }) => globalStaffOperationsSearchStaff(params, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof globalStaffOperationsSearchStaff>>> = ({ signal }) => globalStaffOperationsSearchStaff(params, { signal });
 
 
 
@@ -1007,7 +1005,7 @@ export function useGlobalStaffOperationsSearchStaff<TData = Awaited<ReturnType<t
           TError,
           Awaited<ReturnType<typeof globalStaffOperationsSearchStaff>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -1021,7 +1019,7 @@ export function useGlobalStaffOperationsSearchStaff<TData = Awaited<ReturnType<t
           TError,
           Awaited<ReturnType<typeof globalStaffOperationsSearchStaff>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -1029,7 +1027,7 @@ export function useGlobalStaffOperationsSearchStaff<TData = Awaited<ReturnType<t
  * @summary Search staff across all salons
  */
 export function useGlobalStaffOperationsSearchStaff<TData = Awaited<ReturnType<typeof globalStaffOperationsSearchStaff>>, TError = unknown>(
- params?: GlobalStaffOperationsSearchStaffParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof globalStaffOperationsSearchStaff>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ params?: GlobalStaffOperationsSearchStaffParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof globalStaffOperationsSearchStaff>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -1037,7 +1035,7 @@ export function useGlobalStaffOperationsSearchStaff<TData = Awaited<ReturnType<t
  * @summary Search staff across all salons
  */
 export function useGlobalStaffOperationsSearchStaff<TData = Awaited<ReturnType<typeof globalStaffOperationsSearchStaff>>, TError = unknown>(
- params?: GlobalStaffOperationsSearchStaffParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof globalStaffOperationsSearchStaff>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ params?: GlobalStaffOperationsSearchStaffParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof globalStaffOperationsSearchStaff>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 

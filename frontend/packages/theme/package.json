@@ -18,22 +18,18 @@
   },
   "scripts": {
     "dev": "rslib build --watch",
-    "build": "rslib build",
     "build:dev": "NODE_ENV=development rslib build",
     "build:test": "NODE_ENV=test rslib build",
     "build:stg": "NODE_ENV=staging rslib build",
     "build:prod": "NODE_ENV=production rslib build",
     "clean": "rm -rf dist *.tsbuildinfo",
-    "typecheck": "tsc --noEmit",
-    "format": "biome format --write .",
-    "format:fix": "biome check . --fix --unsafe"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
     "@beauty-salon-shared/config": "workspace:*",
-    "@biomejs/biome": "^2.6.7",
     "@rslib/core": "^1.0.7",
     "@types/node": "^26.6.6",
     "tailwindcss": "^4.3.5",

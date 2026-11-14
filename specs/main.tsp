@@ -42,19 +42,17 @@ using TypeSpec.OpenAPI;
 using TypeSpec.Versioning;
 
 @doc("""
-APIバージョン区分 - ビューティーサロンサービスのAPIバージョン管理
-
-v1: バージョン1.0.0 - 初回リリース、基本機能を提供
-v2: バージョン2.0.0 - 拡張機能を追加、パフォーマンス最適化
-""")
+  APIバージョン区分 - ビューティーサロンサービスのAPIバージョン管理
+  
+  v1: バージョン1.0.0 - 初回リリース、基本機能を提供
+  v2: バージョン2.0.0 - 拡張機能を追加、パフォーマンス最適化
+  """)
 enum VersionType {
   v1: "1.0",
   v2: "2.0",
 }
 
-@service(#{
-  title: "Beauty Salon API"
-})
+@service(#{ title: "Beauty Salon API" })
 @server("https://api.beauty-salon.com", "Production API Server")
 @server("https://staging-api.beauty-salon.com", "Staging API Server")
 @server("http://localhost:3000", "Local Development Server")
@@ -62,14 +60,15 @@ enum VersionType {
 @useAuth(BearerAuth)
 @doc("Comprehensive REST API for managing beauty salon operations including salons, staff, services, customers, reservations, bookings, treatments, payments, inventory, and access control. Built with TypeSpec for type-safe API-first development.")
 namespace BeautySalon {
-  // All models and operations are imported from separate files
-  // This namespace serves as the root for all API resources
-  
-  // The API follows REST best practices with:
-  // - Consistent resource naming and URL patterns
-  // - Standard HTTP methods and status codes
-  // - Comprehensive error handling with Result types
-  // - Pagination support for list operations
-  // - Filtering and sorting capabilities
-  // - Role-based access control
+// All models and operations are imported from separate files
+// This namespace serves as the root for all API resources
+
+// The API follows REST best practices with:
+// - Consistent resource naming and URL patterns
+// - Standard HTTP methods and status codes
+// - Comprehensive error handling with Result types
+// - Pagination support for list operations
+// - Filtering and sorting capabilities
+// - Role-based access control
+
 }

@@ -297,6 +297,3 @@ export const setAuthorizationHeader = (token: string) => {
 export const setGlobalHeaders = (headers: Record<string, string>) => {
   currentGlobalHeaders = { ...currentGlobalHeaders, ...headers }
 }
-
-// Default export for orval
-export default customInstance

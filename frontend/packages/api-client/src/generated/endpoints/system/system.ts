@@ -29,10 +29,8 @@ import type {
   SystemOperationsVersion200
 } from '../../models';
 
-import { customInstance } from '../../../../../io/src/libs/fetcher/fetcher';
+import { customInstance } from '../../../mutator';
 
-
-type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 
 
@@ -75,7 +73,7 @@ export const getSystemOperationsAliveUrl = () => {
  * プロセスが生存しているかを判定するエンドポイントで、異常時は再起動判定に利用されます。
  * @summary Check API liveness
  */
-export const systemOperationsAlive = async ( options?: Parameters<typeof customInstance>[1]): Promise<systemOperationsAliveResponse> => {
+export const systemOperationsAlive = async ( options?: RequestInit): Promise<systemOperationsAliveResponse> => {
 
   return customInstance<systemOperationsAliveResponse>(getSystemOperationsAliveUrl(),
   {
@@ -97,16 +95,16 @@ export const getSystemOperationsAliveQueryKey = () => {
     }
 
 
-export const getSystemOperationsAliveQueryOptions = <TData = Awaited<ReturnType<typeof systemOperationsAlive>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof systemOperationsAlive>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getSystemOperationsAliveQueryOptions = <TData = Awaited<ReturnType<typeof systemOperationsAlive>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof systemOperationsAlive>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getSystemOperationsAliveQueryKey();
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof systemOperationsAlive>>> = ({ signal }) => systemOperationsAlive({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof systemOperationsAlive>>> = ({ signal }) => systemOperationsAlive({ signal });
 
 
 
@@ -130,7 +128,7 @@ export function useSystemOperationsAlive<TData = Awaited<ReturnType<typeof syste
           TError,
           Awaited<ReturnType<typeof systemOperationsAlive>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -144,7 +142,7 @@ export function useSystemOperationsAlive<TData = Awaited<ReturnType<typeof syste
           TError,
           Awaited<ReturnType<typeof systemOperationsAlive>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -152,7 +150,7 @@ export function useSystemOperationsAlive<TData = Awaited<ReturnType<typeof syste
  * @summary Check API liveness
  */
 export function useSystemOperationsAlive<TData = Awaited<ReturnType<typeof systemOperationsAlive>>, TError = unknown>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof systemOperationsAlive>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof systemOperationsAlive>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -160,7 +158,7 @@ export function useSystemOperationsAlive<TData = Awaited<ReturnType<typeof syste
  * @summary Check API liveness
  */
 export function useSystemOperationsAlive<TData = Awaited<ReturnType<typeof systemOperationsAlive>>, TError = unknown>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof systemOperationsAlive>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof systemOperationsAlive>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -207,7 +205,7 @@ export const getSystemOperationsHealthUrl = () => {
  * APIが正常稼働しているかを判定し、監視ツールやロードバランサーから参照します。
  * @summary Check API health
  */
-export const systemOperationsHealth = async ( options?: Parameters<typeof customInstance>[1]): Promise<systemOperationsHealthResponse> => {
+export const systemOperationsHealth = async ( options?: RequestInit): Promise<systemOperationsHealthResponse> => {
 
   return customInstance<systemOperationsHealthResponse>(getSystemOperationsHealthUrl(),
   {
@@ -229,16 +227,16 @@ export const getSystemOperationsHealthQueryKey = () => {
     }
 
 
-export const getSystemOperationsHealthQueryOptions = <TData = Awaited<ReturnType<typeof systemOperationsHealth>>, TError = ModelsHealthStatus>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof systemOperationsHealth>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getSystemOperationsHealthQueryOptions = <TData = Awaited<ReturnType<typeof systemOperationsHealth>>, TError = ModelsHealthStatus>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof systemOperationsHealth>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getSystemOperationsHealthQueryKey();
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof systemOperationsHealth>>> = ({ signal }) => systemOperationsHealth({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof systemOperationsHealth>>> = ({ signal }) => systemOperationsHealth({ signal });
 
 
 
@@ -262,7 +260,7 @@ export function useSystemOperationsHealth<TData = Awaited<ReturnType<typeof syst
           TError,
           Awaited<ReturnType<typeof systemOperationsHealth>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -276,7 +274,7 @@ export function useSystemOperationsHealth<TData = Awaited<ReturnType<typeof syst
           TError,
           Awaited<ReturnType<typeof systemOperationsHealth>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -284,7 +282,7 @@ export function useSystemOperationsHealth<TData = Awaited<ReturnType<typeof syst
  * @summary Check API health
  */
 export function useSystemOperationsHealth<TData = Awaited<ReturnType<typeof systemOperationsHealth>>, TError = ModelsHealthStatus>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof systemOperationsHealth>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof systemOperationsHealth>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -292,7 +290,7 @@ export function useSystemOperationsHealth<TData = Awaited<ReturnType<typeof syst
  * @summary Check API health
  */
 export function useSystemOperationsHealth<TData = Awaited<ReturnType<typeof systemOperationsHealth>>, TError = ModelsHealthStatus>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof systemOperationsHealth>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof systemOperationsHealth>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -339,7 +337,7 @@ export const getSystemOperationsMetricsUrl = () => {
  * Prometheus形式のメトリクスを返却し、監視基盤での可視化やアラート設定に用います。
  * @summary Get API metrics
  */
-export const systemOperationsMetrics = async ( options?: Parameters<typeof customInstance>[1]): Promise<systemOperationsMetricsResponse> => {
+export const systemOperationsMetrics = async ( options?: RequestInit): Promise<systemOperationsMetricsResponse> => {
 
   return customInstance<systemOperationsMetricsResponse>(getSystemOperationsMetricsUrl(),
   {
@@ -361,16 +359,16 @@ export const getSystemOperationsMetricsQueryKey = () => {
     }
 
 
-export const getSystemOperationsMetricsQueryOptions = <TData = Awaited<ReturnType<typeof systemOperationsMetrics>>, TError = ModelsProblemDetails>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof systemOperationsMetrics>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getSystemOperationsMetricsQueryOptions = <TData = Awaited<ReturnType<typeof systemOperationsMetrics>>, TError = ModelsProblemDetails>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof systemOperationsMetrics>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getSystemOperationsMetricsQueryKey();
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof systemOperationsMetrics>>> = ({ signal }) => systemOperationsMetrics({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof systemOperationsMetrics>>> = ({ signal }) => systemOperationsMetrics({ signal });
 
 
 
@@ -394,7 +392,7 @@ export function useSystemOperationsMetrics<TData = Awaited<ReturnType<typeof sys
           TError,
           Awaited<ReturnType<typeof systemOperationsMetrics>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -408,7 +406,7 @@ export function useSystemOperationsMetrics<TData = Awaited<ReturnType<typeof sys
           TError,
           Awaited<ReturnType<typeof systemOperationsMetrics>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -416,7 +414,7 @@ export function useSystemOperationsMetrics<TData = Awaited<ReturnType<typeof sys
  * @summary Get API metrics
  */
 export function useSystemOperationsMetrics<TData = Awaited<ReturnType<typeof systemOperationsMetrics>>, TError = ModelsProblemDetails>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof systemOperationsMetrics>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof systemOperationsMetrics>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -424,7 +422,7 @@ export function useSystemOperationsMetrics<TData = Awaited<ReturnType<typeof sys
  * @summary Get API metrics
  */
 export function useSystemOperationsMetrics<TData = Awaited<ReturnType<typeof systemOperationsMetrics>>, TError = ModelsProblemDetails>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof systemOperationsMetrics>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof systemOperationsMetrics>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -471,7 +469,7 @@ export const getSystemOperationsReadyUrl = () => {
  * Kubernetes等のオーケストレーターがトラフィック受信可否を判断するための準備完了チェックです。
  * @summary Check API readiness
  */
-export const systemOperationsReady = async ( options?: Parameters<typeof customInstance>[1]): Promise<systemOperationsReadyResponse> => {
+export const systemOperationsReady = async ( options?: RequestInit): Promise<systemOperationsReadyResponse> => {
 
   return customInstance<systemOperationsReadyResponse>(getSystemOperationsReadyUrl(),
   {
@@ -493,16 +491,16 @@ export const getSystemOperationsReadyQueryKey = () => {
     }
 
 
-export const getSystemOperationsReadyQueryOptions = <TData = Awaited<ReturnType<typeof systemOperationsReady>>, TError = SystemOperationsReady503>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof systemOperationsReady>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getSystemOperationsReadyQueryOptions = <TData = Awaited<ReturnType<typeof systemOperationsReady>>, TError = SystemOperationsReady503>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof systemOperationsReady>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getSystemOperationsReadyQueryKey();
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof systemOperationsReady>>> = ({ signal }) => systemOperationsReady({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof systemOperationsReady>>> = ({ signal }) => systemOperationsReady({ signal });
 
 
 
@@ -526,7 +524,7 @@ export function useSystemOperationsReady<TData = Awaited<ReturnType<typeof syste
           TError,
           Awaited<ReturnType<typeof systemOperationsReady>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -540,7 +538,7 @@ export function useSystemOperationsReady<TData = Awaited<ReturnType<typeof syste
           TError,
           Awaited<ReturnType<typeof systemOperationsReady>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -548,7 +546,7 @@ export function useSystemOperationsReady<TData = Awaited<ReturnType<typeof syste
  * @summary Check API readiness
  */
 export function useSystemOperationsReady<TData = Awaited<ReturnType<typeof systemOperationsReady>>, TError = SystemOperationsReady503>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof systemOperationsReady>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof systemOperationsReady>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -556,7 +554,7 @@ export function useSystemOperationsReady<TData = Awaited<ReturnType<typeof syste
  * @summary Check API readiness
  */
 export function useSystemOperationsReady<TData = Awaited<ReturnType<typeof systemOperationsReady>>, TError = SystemOperationsReady503>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof systemOperationsReady>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof systemOperationsReady>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -596,7 +594,7 @@ export const getSystemOperationsVersionUrl = () => {
  * APIのバージョンやビルド情報を返し、障害解析やデプロイ確認に活用します。
  * @summary Get API version
  */
-export const systemOperationsVersion = async ( options?: Parameters<typeof customInstance>[1]): Promise<systemOperationsVersionResponse> => {
+export const systemOperationsVersion = async ( options?: RequestInit): Promise<systemOperationsVersionResponse> => {
 
   return customInstance<systemOperationsVersionResponse>(getSystemOperationsVersionUrl(),
   {
@@ -618,16 +616,16 @@ export const getSystemOperationsVersionQueryKey = () => {
     }
 
 
-export const getSystemOperationsVersionQueryOptions = <TData = Awaited<ReturnType<typeof systemOperationsVersion>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof systemOperationsVersion>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getSystemOperationsVersionQueryOptions = <TData = Awaited<ReturnType<typeof systemOperationsVersion>>, TError = unknown>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof systemOperationsVersion>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getSystemOperationsVersionQueryKey();
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof systemOperationsVersion>>> = ({ signal }) => systemOperationsVersion({ signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof systemOperationsVersion>>> = ({ signal }) => systemOperationsVersion({ signal });
 
 
 
@@ -651,7 +649,7 @@ export function useSystemOperationsVersion<TData = Awaited<ReturnType<typeof sys
           TError,
           Awaited<ReturnType<typeof systemOperationsVersion>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -665,7 +663,7 @@ export function useSystemOperationsVersion<TData = Awaited<ReturnType<typeof sys
           TError,
           Awaited<ReturnType<typeof systemOperationsVersion>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -673,7 +671,7 @@ export function useSystemOperationsVersion<TData = Awaited<ReturnType<typeof sys
  * @summary Get API version
  */
 export function useSystemOperationsVersion<TData = Awaited<ReturnType<typeof systemOperationsVersion>>, TError = unknown>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof systemOperationsVersion>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof systemOperationsVersion>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -681,7 +679,7 @@ export function useSystemOperationsVersion<TData = Awaited<ReturnType<typeof sys
  * @summary Get API version
  */
 export function useSystemOperationsVersion<TData = Awaited<ReturnType<typeof systemOperationsVersion>>, TError = unknown>(
-  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof systemOperationsVersion>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof systemOperationsVersion>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
