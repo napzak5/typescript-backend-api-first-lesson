@@ -33,6 +33,7 @@ import { alias } from 'drizzle-orm/pg-core'
 import { match, P } from 'ts-pattern'
 import { describeDatabaseError } from '../database/failure'
 import type { Database, DatabaseExecutor } from '../database/index'
+import { containing } from '../database/like'
 
 const emailUniqueViolation = {
   code: '23505',
@@ -71,10 +72,6 @@ const attempt = async <T>(
     await Result.fromPromise(run()),
     toDomainError(message, email),
   )
-
-/** A LIKE pattern that matches `keyword` literally, anywhere in the text. */
-const containing = (keyword: string): string =>
-  `%${keyword.replace(/[\\%_]/g, '\\$&')}%`
 
 const notDeleted = isNull(salons.deletedAt)
 
