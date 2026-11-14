@@ -131,7 +131,7 @@ export const SalonWriteMapper = {
 | `varchar(n)` | `@maxLength(n)` | `.max(n)` | 超過は検証エラー（400） |
 | `numeric(p, s)` | `@minValue` / `@maxValue` | `.min()` / `.max()`。`taxRate` は `.multipleOf(0.01)` | 範囲外は検証エラー（400） |
 | `uuid` の主キー | ID スカラー | `z.uuid().brand<'SalonId'>()`（`salonIdSchema`） | UUID でない ID は検証エラー（400） |
-| `UNIQUE`（`salons_email_unique`） | `@doc` に「サロン間で一意」と書き、オペレーションに 409 を列挙する | 検証しない | リポジトリが一意制約違反（SQLSTATE `23505`）を `alreadyExists` に変換する（409） |
+| 一意インデックス（`salons_email_unique`。削除されていない行が対象） | `@doc` に「削除されていないサロンの間で一意」と書き、オペレーションに 409 を列挙する | 検証しない | リポジトリが一意性の違反（SQLSTATE `23505`）を `alreadyExists` に変換する（409） |
 | 外部キー（`opening_hours.salonId`、`ON DELETE CASCADE`） | 親モデルに `openingHours` として埋め込む | 配列として検証する | リポジトリが親と子を 1 つのトランザクションで書く |
 
 リクエストで書けるカラムと書けないカラムの扱い:

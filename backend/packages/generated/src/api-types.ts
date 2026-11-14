@@ -7159,7 +7159,7 @@ export interface components {
             phoneNumber: string;
             /** @description 予備の電話番号。未設定の場合はnull */
             alternativePhone: string | null;
-            /** @description 問い合わせ用メールアドレス。サロン間で一意 */
+            /** @description 問い合わせ用メールアドレス。削除されていないサロンの間で一意 */
             email: string;
             /** @description 公式サイトのURL。未設定の場合はnull */
             websiteUrl: string | null;
@@ -7229,7 +7229,7 @@ export interface components {
             phoneNumber: string;
             /** @description 予備の電話番号。未設定の場合はnull */
             alternativePhone: string | null;
-            /** @description 問い合わせ用メールアドレス。サロン間で一意 */
+            /** @description 問い合わせ用メールアドレス。削除されていないサロンの間で一意 */
             email: string;
             /** @description 公式サイトのURL。未設定の場合はnull */
             websiteUrl: string | null;
@@ -7312,7 +7312,7 @@ export interface components {
             phoneNumber?: string;
             /** @description 予備の電話番号。nullでクリア */
             alternativePhone?: string | null;
-            /** @description 問い合わせ用メールアドレス。サロン間で一意 */
+            /** @description 問い合わせ用メールアドレス。削除されていないサロンの間で一意 */
             email?: string;
             /** @description 公式サイトのURL。nullでクリア */
             websiteUrl?: string | null;

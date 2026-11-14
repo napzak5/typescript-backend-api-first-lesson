@@ -61,7 +61,7 @@ export interface ModelsSalonResponse {
      * @nullable
      */
   alternativePhone: string | null;
-  /** 問い合わせ用メールアドレス。サロン間で一意 */
+  /** 問い合わせ用メールアドレス。削除されていないサロンの間で一意 */
   email: string;
   /**
      * 公式サイトのURL。未設定の場合はnull

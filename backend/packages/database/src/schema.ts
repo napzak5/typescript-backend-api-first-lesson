@@ -1,3 +1,4 @@
+import { sql } from 'drizzle-orm'
 import {
   boolean,
   date,
@@ -12,6 +13,7 @@ import {
   time,
   timestamp,
   unique,
+  uniqueIndex,
   uuid,
   varchar,
 } from 'drizzle-orm/pg-core'
@@ -1298,7 +1300,9 @@ export const salons = pgTable(
       'btree',
       table.reviewCount.asc().nullsLast().op('int4_ops'),
     ),
-    unique('salons_email_unique').on(table.email),
+    uniqueIndex('salons_email_unique')
+      .using('btree', table.email.asc().nullsLast().op('text_ops'))
+      .where(sql`("deletedAt" IS NULL)`),
   ],
 )
 

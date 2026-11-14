@@ -40,9 +40,10 @@ const emailUniqueViolation = {
 }
 
 /**
- * Turns a failed write into a domain error. The unique constraint on `email`
- * is the only expected failure; drizzle wraps the driver error, so the
- * constraint is looked for on the error and on its cause. Anything else is
+ * Turns a failed write into a domain error. The unique index on `email`,
+ * which covers the salons that are not deleted, is the only expected failure;
+ * drizzle wraps the driver error, so the violation is looked for on the error
+ * and on its cause. Anything else is
  * unexpected and keeps a description that is safe to log.
  */
 const toDomainError =

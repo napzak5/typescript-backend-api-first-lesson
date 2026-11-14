@@ -114,7 +114,9 @@ export const salons = pgTable(
   },
   (table) => [
     // ...
-    unique('salons_email_unique').on(table.email),
+    uniqueIndex('salons_email_unique')
+      .using('btree', table.email.asc().nullsLast().op('text_ops'))
+      .where(sql`("deletedAt" IS NULL)`),
   ],
 )
 ```

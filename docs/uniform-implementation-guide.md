@@ -287,7 +287,7 @@ answers 503 with the body its operation defines.
 |-------|-----------|--------|--------|
 | `validation` | `parseWith` in a use case | 400 | `2001` |
 | `notFound` | A use case, when the repository finds no row | 404 | `3001` |
-| `alreadyExists` | The repository, on the unique constraint on `email` | 409 | `3002` |
+| `alreadyExists` | The repository, on the unique index on `email` | 409 | `3002` |
 | `database` | The repository on an unexpected failure; the read mapper on stored data that does not match the API model | 500 | `4003` |
 | `routeNotFound` | `notFoundHandler` | 404 | `3001` |
 | `malformedBody` | The JSON body parser | 400 | `2002` |
