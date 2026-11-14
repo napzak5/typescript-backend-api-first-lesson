@@ -30,7 +30,6 @@ import type {
   AuthCrudGetCurrentUser200,
   AuthCrudLogin200,
   AuthCrudRefreshToken200,
-  AuthCrudRegister201,
   ModelsAuthEmailVerificationConfirmRequest,
   ModelsAuthEmailVerificationSendRequest,
   ModelsAuthLoginRequest,
@@ -674,7 +673,7 @@ export const getAuthCrudChangePasswordUrl = () => {
 }
 
 /**
- * 現在のパスワードで本人確認を行い、新しいパスワードに変更します。現在のパスワードが誤っている場合は400を返します。
+ * 現在のパスワードで本人確認を行い、新しいパスワードに変更します。成功すると、そのユーザーのほかのセッションを無効にし(このリクエストのセッションは有効なまま)、パスワードが変更されたことをメールで通知します。現在のパスワードの確認には、ログインと同じ失敗回数の制限を適用します(連続5回の誤りでアカウントを15分間ロックし、ロック中は正しいパスワードでも確認に失敗します)。現在のパスワードが誤っている場合、新しいパスワードが現在のパスワードと同じ場合、新しいパスワードが規則を満たさない場合は400を返します。
  * @summary Change the password
  */
 export const authCrudChangePassword = async (modelsAuthPasswordChangeRequest: ModelsAuthPasswordChangeRequest, options?: RequestInit): Promise<authCrudChangePasswordResponse> => {
@@ -741,7 +740,7 @@ const {mutation: mutationOptions} = options ?
     export type AuthCrudChangePasswordMutationVariables = {data: ModelsAuthPasswordChangeRequest}
 
     /**
- * 現在のパスワードで本人確認を行い、新しいパスワードに変更します。現在のパスワードが誤っている場合は400を返します。
+ * 現在のパスワードで本人確認を行い、新しいパスワードに変更します。成功すると、そのユーザーのほかのセッションを無効にし(このリクエストのセッションは有効なまま)、パスワードが変更されたことをメールで通知します。現在のパスワードの確認には、ログインと同じ失敗回数の制限を適用します(連続5回の誤りでアカウントを15分間ロックし、ロック中は正しいパスワードでも確認に失敗します)。現在のパスワードが誤っている場合、新しいパスワードが現在のパスワードと同じ場合、新しいパスワードが規則を満たさない場合は400を返します。
  * @summary Change the password
  */
 export const useAuthCrudChangePassword = <TError = ModelsProblemDetails,
@@ -802,7 +801,7 @@ export const getAuthCrudForgotPasswordUrl = () => {
 }
 
 /**
- * パスワード再設定メールの送信を要求します。指定したメールアドレスのアカウントが存在する場合にだけ再設定トークンを記載したメールを送信しますが、アカウントの有無にかかわらず同じ応答(204)を返します。
+ * パスワード再設定メールの送信を要求します。アカウントの有無にかかわらず同じ応答(204)を返します。メールを送信するのは、指定したメールアドレスのアカウントが存在し、アカウント状態が active、locked、unverified のいずれかの場合だけです。再設定トークンの有効期間は30分で、1回だけ使用できます。再度要求すると、それまでのトークンは無効になります。同じアカウントへの送信は60秒に1通までで、それより短い間隔の要求では何も送信しません。
  * @summary Request a password reset
  */
 export const authCrudForgotPassword = async (modelsAuthPasswordForgotRequest: ModelsAuthPasswordForgotRequest, options?: RequestInit): Promise<authCrudForgotPasswordResponse> => {
@@ -869,7 +868,7 @@ const {mutation: mutationOptions} = options ?
     export type AuthCrudForgotPasswordMutationVariables = {data: ModelsAuthPasswordForgotRequest}
 
     /**
- * パスワード再設定メールの送信を要求します。指定したメールアドレスのアカウントが存在する場合にだけ再設定トークンを記載したメールを送信しますが、アカウントの有無にかかわらず同じ応答(204)を返します。
+ * パスワード再設定メールの送信を要求します。アカウントの有無にかかわらず同じ応答(204)を返します。メールを送信するのは、指定したメールアドレスのアカウントが存在し、アカウント状態が active、locked、unverified のいずれかの場合だけです。再設定トークンの有効期間は30分で、1回だけ使用できます。再度要求すると、それまでのトークンは無効になります。同じアカウントへの送信は60秒に1通までで、それより短い間隔の要求では何も送信しません。
  * @summary Request a password reset
  */
 export const useAuthCrudForgotPassword = <TError = ModelsProblemDetails,
@@ -1498,19 +1497,14 @@ export const useAuthCrudRefreshToken = <TError = ModelsProblemDetails,
       > => {
       return useMutation(getAuthCrudRefreshTokenMutationOptions(options), queryClient);
     }
-    export type authCrudRegisterResponse201 = {
-  data: AuthCrudRegister201
-  status: 201
+    export type authCrudRegisterResponse204 = {
+  data: void
+  status: 204
 }
 
 export type authCrudRegisterResponse400 = {
   data: ModelsProblemDetails
   status: 400
-}
-
-export type authCrudRegisterResponse409 = {
-  data: ModelsProblemDetails
-  status: 409
 }
 
 export type authCrudRegisterResponse413 = {
@@ -1533,10 +1527,10 @@ export type authCrudRegisterResponse500 = {
   status: 500
 }
 
-export type authCrudRegisterResponseSuccess = (authCrudRegisterResponse201) & {
+export type authCrudRegisterResponseSuccess = (authCrudRegisterResponse204) & {
   headers: Headers;
 };
-export type authCrudRegisterResponseError = (authCrudRegisterResponse400 | authCrudRegisterResponse409 | authCrudRegisterResponse413 | authCrudRegisterResponse415 | authCrudRegisterResponse429 | authCrudRegisterResponse500) & {
+export type authCrudRegisterResponseError = (authCrudRegisterResponse400 | authCrudRegisterResponse413 | authCrudRegisterResponse415 | authCrudRegisterResponse429 | authCrudRegisterResponse500) & {
   headers: Headers;
 };
 
@@ -1551,7 +1545,7 @@ export const getAuthCrudRegisterUrl = () => {
 }
 
 /**
- * 新しいユーザーアカウントを登録します。ロールは customer、アカウント状態は unverified で作成し、登録したメールアドレスに確認メールを送信します。メールアドレスの確認が完了するまでログインできません。セッションは発行しません。メールアドレスが既存のユーザー(削除済みを含む)と重複する場合は409を返します。
+ * ユーザーアカウントの登録を受け付けます。メールアドレスが登録済みかどうかにかかわらず同じ応答(204)を返し、応答から登録の有無を判別できないようにします。メールアドレスが未登録の場合は、ロール customer、アカウント状態 unverified のユーザーを作成し、確認メールを送信します。メールアドレスの確認が完了するまでログインできません。メールアドレスが未確認のまま登録されている場合は、前回の確認メールから60秒以上たっていれば、パスワードを今回の値に置き換えて確認メールを送り直します(それまでの確認トークンは無効になります)。60秒以内の場合と、確認済みのメールアドレスの場合は、何も変更せず、何も送信しません。セッションは発行しません。
  * @summary Register a user
  */
 export const authCrudRegister = async (modelsAuthRegisterRequest: ModelsAuthRegisterRequest, options?: RequestInit): Promise<authCrudRegisterResponse> => {
@@ -1618,7 +1612,7 @@ const {mutation: mutationOptions} = options ?
     export type AuthCrudRegisterMutationVariables = {data: ModelsAuthRegisterRequest}
 
     /**
- * 新しいユーザーアカウントを登録します。ロールは customer、アカウント状態は unverified で作成し、登録したメールアドレスに確認メールを送信します。メールアドレスの確認が完了するまでログインできません。セッションは発行しません。メールアドレスが既存のユーザー(削除済みを含む)と重複する場合は409を返します。
+ * ユーザーアカウントの登録を受け付けます。メールアドレスが登録済みかどうかにかかわらず同じ応答(204)を返し、応答から登録の有無を判別できないようにします。メールアドレスが未登録の場合は、ロール customer、アカウント状態 unverified のユーザーを作成し、確認メールを送信します。メールアドレスの確認が完了するまでログインできません。メールアドレスが未確認のまま登録されている場合は、前回の確認メールから60秒以上たっていれば、パスワードを今回の値に置き換えて確認メールを送り直します(それまでの確認トークンは無効になります)。60秒以内の場合と、確認済みのメールアドレスの場合は、何も変更せず、何も送信しません。セッションは発行しません。
  * @summary Register a user
  */
 export const useAuthCrudRegister = <TError = ModelsProblemDetails,
@@ -1679,7 +1673,7 @@ export const getAuthCrudResetPasswordUrl = () => {
 }
 
 /**
- * パスワード再設定トークンを使って新しいパスワードを設定します。成功するとトークンは使用できなくなり、そのユーザーのすべてのセッションを無効にします。トークンが無効または期限切れの場合は400を返します。
+ * パスワード再設定トークンを使って新しいパスワードを設定します。成功するとトークンは使用できなくなり、そのユーザーのすべてのセッションを無効にします。ログインの失敗回数とアカウントのロックを解除し、メールアドレスが未確認の場合は確認済みにします(トークンをメールで受け取れたことが、メールアドレスの確認になるため)。セッションは発行しません。パスワードが変更されたことをメールで通知します。トークンが無効または期限切れの場合と、新しいパスワードが規則を満たさない場合は400を返します。
  * @summary Reset the password
  */
 export const authCrudResetPassword = async (modelsAuthPasswordResetConfirmRequest: ModelsAuthPasswordResetConfirmRequest, options?: RequestInit): Promise<authCrudResetPasswordResponse> => {
@@ -1746,7 +1740,7 @@ const {mutation: mutationOptions} = options ?
     export type AuthCrudResetPasswordMutationVariables = {data: ModelsAuthPasswordResetConfirmRequest}
 
     /**
- * パスワード再設定トークンを使って新しいパスワードを設定します。成功するとトークンは使用できなくなり、そのユーザーのすべてのセッションを無効にします。トークンが無効または期限切れの場合は400を返します。
+ * パスワード再設定トークンを使って新しいパスワードを設定します。成功するとトークンは使用できなくなり、そのユーザーのすべてのセッションを無効にします。ログインの失敗回数とアカウントのロックを解除し、メールアドレスが未確認の場合は確認済みにします(トークンをメールで受け取れたことが、メールアドレスの確認になるため)。セッションは発行しません。パスワードが変更されたことをメールで通知します。トークンが無効または期限切れの場合と、新しいパスワードが規則を満たさない場合は400を返します。
  * @summary Reset the password
  */
 export const useAuthCrudResetPassword = <TError = ModelsProblemDetails,
@@ -2203,7 +2197,7 @@ export const getAuthCrudConfirmEmailVerificationUrl = () => {
 }
 
 /**
- * メールで受け取った確認トークンを使ってメールアドレスの確認を完了します。emailVerified を true にし、アカウント状態が unverified の場合は active にします。トークンが無効または期限切れの場合は400を返します。
+ * メールで受け取った確認トークンを使ってメールアドレスの確認を完了します。emailVerified を true にし、アカウント状態が unverified の場合は active にします。トークンは1回だけ使用できます。トークンが無効または期限切れの場合は400を返します。
  * @summary Confirm the email address
  */
 export const authCrudConfirmEmailVerification = async (modelsAuthEmailVerificationConfirmRequest: ModelsAuthEmailVerificationConfirmRequest, options?: RequestInit): Promise<authCrudConfirmEmailVerificationResponse> => {
@@ -2270,7 +2264,7 @@ const {mutation: mutationOptions} = options ?
     export type AuthCrudConfirmEmailVerificationMutationVariables = {data: ModelsAuthEmailVerificationConfirmRequest}
 
     /**
- * メールで受け取った確認トークンを使ってメールアドレスの確認を完了します。emailVerified を true にし、アカウント状態が unverified の場合は active にします。トークンが無効または期限切れの場合は400を返します。
+ * メールで受け取った確認トークンを使ってメールアドレスの確認を完了します。emailVerified を true にし、アカウント状態が unverified の場合は active にします。トークンは1回だけ使用できます。トークンが無効または期限切れの場合は400を返します。
  * @summary Confirm the email address
  */
 export const useAuthCrudConfirmEmailVerification = <TError = ModelsProblemDetails,
@@ -2331,7 +2325,7 @@ export const getAuthCrudSendEmailVerificationUrl = () => {
 }
 
 /**
- * メールアドレス確認メールの送信を要求します。指定したメールアドレスのアカウントが存在し、メールアドレスが未確認の場合にだけ確認メールを送信しますが、アカウントの有無や確認状態にかかわらず同じ応答(204)を返します。メールアドレスが未確認のアカウントはログインできないため、セッションなしで呼び出せます。
+ * メールアドレス確認メールの送信を要求します。アカウントの有無や確認状態にかかわらず同じ応答(204)を返します。メールを送信するのは、指定したメールアドレスのアカウントが存在し、メールアドレスが未確認の場合だけです。確認トークンの有効期間は24時間で、送信するたびにそれまでのトークンは無効になります。同じアカウントへの送信は60秒に1通までで、それより短い間隔の要求では何も送信しません。メールアドレスが未確認のアカウントはログインできないため、セッションなしで呼び出せます。
  * @summary Send a verification email
  */
 export const authCrudSendEmailVerification = async (modelsAuthEmailVerificationSendRequest: ModelsAuthEmailVerificationSendRequest, options?: RequestInit): Promise<authCrudSendEmailVerificationResponse> => {
@@ -2398,7 +2392,7 @@ const {mutation: mutationOptions} = options ?
     export type AuthCrudSendEmailVerificationMutationVariables = {data: ModelsAuthEmailVerificationSendRequest}
 
     /**
- * メールアドレス確認メールの送信を要求します。指定したメールアドレスのアカウントが存在し、メールアドレスが未確認の場合にだけ確認メールを送信しますが、アカウントの有無や確認状態にかかわらず同じ応答(204)を返します。メールアドレスが未確認のアカウントはログインできないため、セッションなしで呼び出せます。
+ * メールアドレス確認メールの送信を要求します。アカウントの有無や確認状態にかかわらず同じ応答(204)を返します。メールを送信するのは、指定したメールアドレスのアカウントが存在し、メールアドレスが未確認の場合だけです。確認トークンの有効期間は24時間で、送信するたびにそれまでのトークンは無効になります。同じアカウントへの送信は60秒に1通までで、それより短い間隔の要求では何も送信しません。メールアドレスが未確認のアカウントはログインできないため、セッションなしで呼び出せます。
  * @summary Send a verification email
  */
 export const useAuthCrudSendEmailVerification = <TError = ModelsProblemDetails,

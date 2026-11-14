@@ -45,8 +45,6 @@ export * from './authCrudLogin200';
 export * from './authCrudLogin200Links';
 export * from './authCrudRefreshToken200';
 export * from './authCrudRefreshToken200Links';
-export * from './authCrudRegister201';
-export * from './authCrudRegister201Links';
 export * from './availableSlotCrudCheck200';
 export * from './availableSlotCrudCheck200Links';
 export * from './availableSlotCrudList200';

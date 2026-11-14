@@ -221,7 +221,7 @@ export interface paths {
         };
         /**
          * Get a user
-         * @description IDを指定してユーザーを1件取得します。ユーザー登録のレスポンスの Location ヘッダーはこのURLを指します。削除済みのユーザーは含みません。
+         * @description IDを指定してユーザーを1件取得します。削除済みのユーザーは含みません。
          */
         get: operations["AdminAuthCrud_getUser"];
         put?: never;
@@ -475,7 +475,7 @@ export interface paths {
         put?: never;
         /**
          * Change the password
-         * @description 現在のパスワードで本人確認を行い、新しいパスワードに変更します。現在のパスワードが誤っている場合は400を返します。
+         * @description 現在のパスワードで本人確認を行い、新しいパスワードに変更します。成功すると、そのユーザーのほかのセッションを無効にし(このリクエストのセッションは有効なまま)、パスワードが変更されたことをメールで通知します。現在のパスワードの確認には、ログインと同じ失敗回数の制限を適用します(連続5回の誤りでアカウントを15分間ロックし、ロック中は正しいパスワードでも確認に失敗します)。現在のパスワードが誤っている場合、新しいパスワードが現在のパスワードと同じ場合、新しいパスワードが規則を満たさない場合は400を返します。
          */
         post: operations["AuthCrud_changePassword"];
         delete?: never;
@@ -495,7 +495,7 @@ export interface paths {
         put?: never;
         /**
          * Request a password reset
-         * @description パスワード再設定メールの送信を要求します。指定したメールアドレスのアカウントが存在する場合にだけ再設定トークンを記載したメールを送信しますが、アカウントの有無にかかわらず同じ応答(204)を返します。
+         * @description パスワード再設定メールの送信を要求します。アカウントの有無にかかわらず同じ応答(204)を返します。メールを送信するのは、指定したメールアドレスのアカウントが存在し、アカウント状態が active、locked、unverified のいずれかの場合だけです。再設定トークンの有効期間は30分で、1回だけ使用できます。再度要求すると、それまでのトークンは無効になります。同じアカウントへの送信は60秒に1通までで、それより短い間隔の要求では何も送信しません。
          */
         post: operations["AuthCrud_forgotPassword"];
         delete?: never;
@@ -615,7 +615,7 @@ export interface paths {
         put?: never;
         /**
          * Register a user
-         * @description 新しいユーザーアカウントを登録します。ロールは customer、アカウント状態は unverified で作成し、登録したメールアドレスに確認メールを送信します。メールアドレスの確認が完了するまでログインできません。セッションは発行しません。メールアドレスが既存のユーザー(削除済みを含む)と重複する場合は409を返します。
+         * @description ユーザーアカウントの登録を受け付けます。メールアドレスが登録済みかどうかにかかわらず同じ応答(204)を返し、応答から登録の有無を判別できないようにします。メールアドレスが未登録の場合は、ロール customer、アカウント状態 unverified のユーザーを作成し、確認メールを送信します。メールアドレスの確認が完了するまでログインできません。メールアドレスが未確認のまま登録されている場合は、前回の確認メールから60秒以上たっていれば、パスワードを今回の値に置き換えて確認メールを送り直します(それまでの確認トークンは無効になります)。60秒以内の場合と、確認済みのメールアドレスの場合は、何も変更せず、何も送信しません。セッションは発行しません。
          */
         post: operations["AuthCrud_register"];
         delete?: never;
@@ -635,7 +635,7 @@ export interface paths {
         put?: never;
         /**
          * Reset the password
-         * @description パスワード再設定トークンを使って新しいパスワードを設定します。成功するとトークンは使用できなくなり、そのユーザーのすべてのセッションを無効にします。トークンが無効または期限切れの場合は400を返します。
+         * @description パスワード再設定トークンを使って新しいパスワードを設定します。成功するとトークンは使用できなくなり、そのユーザーのすべてのセッションを無効にします。ログインの失敗回数とアカウントのロックを解除し、メールアドレスが未確認の場合は確認済みにします(トークンをメールで受け取れたことが、メールアドレスの確認になるため)。セッションは発行しません。パスワードが変更されたことをメールで通知します。トークンが無効または期限切れの場合と、新しいパスワードが規則を満たさない場合は400を返します。
          */
         post: operations["AuthCrud_resetPassword"];
         delete?: never;
@@ -715,7 +715,7 @@ export interface paths {
         put?: never;
         /**
          * Confirm the email address
-         * @description メールで受け取った確認トークンを使ってメールアドレスの確認を完了します。emailVerified を true にし、アカウント状態が unverified の場合は active にします。トークンが無効または期限切れの場合は400を返します。
+         * @description メールで受け取った確認トークンを使ってメールアドレスの確認を完了します。emailVerified を true にし、アカウント状態が unverified の場合は active にします。トークンは1回だけ使用できます。トークンが無効または期限切れの場合は400を返します。
          */
         post: operations["AuthCrud_confirmEmailVerification"];
         delete?: never;
@@ -735,7 +735,7 @@ export interface paths {
         put?: never;
         /**
          * Send a verification email
-         * @description メールアドレス確認メールの送信を要求します。指定したメールアドレスのアカウントが存在し、メールアドレスが未確認の場合にだけ確認メールを送信しますが、アカウントの有無や確認状態にかかわらず同じ応答(204)を返します。メールアドレスが未確認のアカウントはログインできないため、セッションなしで呼び出せます。
+         * @description メールアドレス確認メールの送信を要求します。アカウントの有無や確認状態にかかわらず同じ応答(204)を返します。メールを送信するのは、指定したメールアドレスのアカウントが存在し、メールアドレスが未確認の場合だけです。確認トークンの有効期間は24時間で、送信するたびにそれまでのトークンは無効になります。同じアカウントへの送信は60秒に1通までで、それより短い間隔の要求では何も送信しません。メールアドレスが未確認のアカウントはログインできないため、セッションなしで呼び出せます。
          */
         post: operations["AuthCrud_sendEmailVerification"];
         delete?: never;
@@ -3115,10 +3115,7 @@ export interface components {
         "Models.AuthPasswordChangeRequest": {
             /** @description 本人確認のための現在パスワード。128文字以下。 */
             currentPassword: string;
-            /**
-             * @description 変更後の新しいパスワード。15文字以上128文字以下で、文字種の組み合わせは要求しない。
-             *     OWASP Authentication Cheat Sheet と NIST SP 800-63B に従い、パスワードが唯一の認証要素となる場合の最小長を15文字とし、64文字以上のパスワードも受け付ける
-             */
+            /** @description 変更後の新しいパスワード。規則は登録時のパスワード(AuthRegisterRequest.password)と同じ。現在のパスワードと同じ値は指定できない */
             newPassword: string;
         };
         /**
@@ -3133,10 +3130,7 @@ export interface components {
         "Models.AuthPasswordResetConfirmRequest": {
             /** @description メールで受け取った再設定トークン。 */
             token: string;
-            /**
-             * @description 新しいパスワード。15文字以上128文字以下で、文字種の組み合わせは要求しない。
-             *     OWASP Authentication Cheat Sheet と NIST SP 800-63B に従い、パスワードが唯一の認証要素となる場合の最小長を15文字とし、64文字以上のパスワードも受け付ける
-             */
+            /** @description 新しいパスワード。規則は登録時のパスワード(AuthRegisterRequest.password)と同じ */
             newPassword: string;
         };
         /** @description パスワード再設定トークンが有効かどうかを確認するリクエスト。 */
@@ -3149,11 +3143,12 @@ export interface components {
          *     登録したユーザーのロールは customer になる。ロールはリクエストで指定できない
          */
         "Models.AuthRegisterRequest": {
-            /** @description 登録に使用するメールアドレス。削除済みを含むすべてのユーザーの間で一意 */
+            /** @description 登録に使用するメールアドレス。大文字と小文字を区別せず、小文字で保存する */
             email: string;
             /**
-             * @description セキュリティ基準を満たすパスワード。15文字以上128文字以下で、文字種の組み合わせは要求しない。
-             *     OWASP Authentication Cheat Sheet と NIST SP 800-63B に従い、パスワードが唯一の認証要素となる場合の最小長を15文字とし、64文字以上のパスワードも受け付ける
+             * @description 設定するパスワード。15文字以上128文字以下(Unicode のコードポイントで数える)で、文字種の組み合わせは要求しない。NFC に正規化して扱う。
+             *     推測されやすいパスワードは拒否する(rule は blocklisted): メールアドレスまたはその @ より前と同じもの、同じ文字や短い並びの繰り返し、連続した文字の並び、よく知られたパスワード。
+             *     NIST SP 800-63B と OWASP Authentication Cheat Sheet に従い、パスワードが唯一の認証要素となる場合の最小長を15文字とし、64文字以上のパスワードも受け付ける
              */
             password: string;
         };
@@ -8609,7 +8604,7 @@ export interface components {
         "Models.UserResponse": {
             /** @description ユーザーを一意に識別するID。 */
             id: components["schemas"]["Models.UserId"];
-            /** @description ログインに利用するメールアドレス。削除済みを含むすべてのユーザーの間で一意。 */
+            /** @description ログインに利用するメールアドレス。小文字で保存する。削除されていないユーザーの間で一意。 */
             email: string;
             /** @description 認証システム上での役割区分。 */
             role: components["schemas"]["Models.UserRoleType"];
@@ -12048,36 +12043,15 @@ export interface operations {
             };
         };
         responses: {
-            /** @description The request has succeeded and a new resource has been created as a result. */
-            201: {
+            /** @description There is no content to send for this request, but the headers may be useful. */
+            204: {
                 headers: {
-                    Location: string;
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
-                        data: components["schemas"]["Models.UserResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
-                        meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
-                        links: {
-                            [key: string]: string;
-                        } | null;
-                    };
-                };
+                content?: never;
             };
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description The request conflicts with the current state of the server. */
-            409: {
                 headers: {
                     [name: string]: unknown;
                 };

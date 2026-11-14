@@ -508,7 +508,7 @@ export const getAdminAuthCrudGetUserUrl = (userId: ModelsUserId,) => {
 }
 
 /**
- * IDを指定してユーザーを1件取得します。ユーザー登録のレスポンスの Location ヘッダーはこのURLを指します。削除済みのユーザーは含みません。
+ * IDを指定してユーザーを1件取得します。削除済みのユーザーは含みません。
  * @summary Get a user
  */
 export const adminAuthCrudGetUser = async (userId: ModelsUserId, options?: RequestInit): Promise<adminAuthCrudGetUserResponse> => {
@@ -556,7 +556,7 @@ export type AdminAuthCrudGetUserQueryError = ModelsProblemDetails
 
 
 /**
- * IDを指定してユーザーを1件取得します。ユーザー登録のレスポンスの Location ヘッダーはこのURLを指します。削除済みのユーザーは含みません。
+ * IDを指定してユーザーを1件取得します。削除済みのユーザーは含みません。
  * @summary Get a user
  */
 export function useAdminAuthCrudGetUser<TData = Awaited<ReturnType<typeof adminAuthCrudGetUser>>, TError = ModelsProblemDetails>(
@@ -570,7 +570,7 @@ export function useAdminAuthCrudGetUser<TData = Awaited<ReturnType<typeof adminA
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * IDを指定してユーザーを1件取得します。ユーザー登録のレスポンスの Location ヘッダーはこのURLを指します。削除済みのユーザーは含みません。
+ * IDを指定してユーザーを1件取得します。削除済みのユーザーは含みません。
  * @summary Get a user
  */
 export function useAdminAuthCrudGetUser<TData = Awaited<ReturnType<typeof adminAuthCrudGetUser>>, TError = ModelsProblemDetails>(
@@ -584,7 +584,7 @@ export function useAdminAuthCrudGetUser<TData = Awaited<ReturnType<typeof adminA
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * IDを指定してユーザーを1件取得します。ユーザー登録のレスポンスの Location ヘッダーはこのURLを指します。削除済みのユーザーは含みません。
+ * IDを指定してユーザーを1件取得します。削除済みのユーザーは含みません。
  * @summary Get a user
  */
 export function useAdminAuthCrudGetUser<TData = Awaited<ReturnType<typeof adminAuthCrudGetUser>>, TError = ModelsProblemDetails>(
@@ -592,7 +592,7 @@ export function useAdminAuthCrudGetUser<TData = Awaited<ReturnType<typeof adminA
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * IDを指定してユーザーを1件取得します。ユーザー登録のレスポンスの Location ヘッダーはこのURLを指します。削除済みのユーザーは含みません。
+ * IDを指定してユーザーを1件取得します。削除済みのユーザーは含みません。
  * @summary Get a user
  */
 export function useAdminAuthCrudGetUser<TData = Awaited<ReturnType<typeof adminAuthCrudGetUser>>, TError = ModelsProblemDetails>(
