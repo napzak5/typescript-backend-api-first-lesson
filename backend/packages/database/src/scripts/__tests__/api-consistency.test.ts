@@ -13,11 +13,22 @@ import {
 } from '../api-consistency'
 
 const columns = new Map<string, ColumnInfo>([
-  ['id', { notNull: true }],
-  ['name', { notNull: true }],
-  ['description', { notNull: false }],
-  ['deletedAt', { notNull: false }],
+  ['id', { notNull: true, enumValues: null }],
+  ['name', { notNull: true, enumValues: null }],
+  ['description', { notNull: false, enumValues: null }],
+  ['deletedAt', { notNull: false, enumValues: null }],
 ])
+
+/** A table whose `status` is a column of an enum type. */
+const columnsWithEnum = new Map<string, ColumnInfo>([
+  ['name', { notNull: true, enumValues: null }],
+  ['status', { notNull: true, enumValues: ['open', 'closed'] }],
+])
+
+const enumFindings = (apiProperties: Map<string, ApiProperty>): string[] =>
+  compareModel(rule(), columnsWithEnum, apiProperties).map(
+    ({ kind, property }) => `${kind}:${property}`,
+  )
 
 const properties = (
   entries: Record<string, Partial<ApiProperty>>,
@@ -25,7 +36,7 @@ const properties = (
   new Map(
     Object.entries(entries).map(([name, property]) => [
       name,
-      { nullable: false, required: true, ...property },
+      { nullable: false, required: true, enumValues: null, ...property },
     ]),
   )
 
@@ -112,6 +123,32 @@ describe('compareModel', () => {
     expect(kindsOf(rule({ omittedColumns: ['deletedAt'] }), exposed)).toEqual([
       'missingColumn:description',
     ])
+  })
+
+  it('accepts a property with exactly the values of the enum of its column, in any order', () => {
+    const findings = enumFindings(
+      properties({ status: { enumValues: ['closed', 'open'] } }),
+    )
+
+    expect(findings).toEqual([])
+  })
+
+  it.each([
+    ['is not an enum', null],
+    ['lacks a value', ['open']],
+    ['has a value the database does not know', ['open', 'closed', 'paused']],
+  ])('reports a property of an enum column that %s', (_case, enumValues) => {
+    expect(enumFindings(properties({ status: { enumValues } }))).toEqual([
+      'enumMismatch:status',
+    ])
+  })
+
+  it('lets the API limit a column that is not an enum', () => {
+    const findings = enumFindings(
+      properties({ name: { enumValues: ['Aoyama', 'Ginza'] } }),
+    )
+
+    expect(findings).toEqual([])
   })
 
   it('orders findings by kind and property so that the baseline is stable', () => {
@@ -216,8 +253,8 @@ describe('modelProperties', () => {
   it('reads whether each property is required and whether it allows null', () => {
     expect(modelProperties(schemas, 'Models.Audited')).toEqual(
       new Map([
-        ['createdAt', { nullable: false, required: true }],
-        ['deletedAt', { nullable: true, required: false }],
+        ['createdAt', { nullable: false, required: true, enumValues: null }],
+        ['deletedAt', { nullable: true, required: false, enumValues: null }],
       ]),
     )
   })
@@ -236,11 +273,47 @@ describe('modelProperties', () => {
     expect(inherited?.get('createdAt')).toEqual({
       nullable: false,
       required: true,
+      enumValues: null,
     })
     expect(inherited?.get('nickname')).toEqual({
       nullable: true,
       required: false,
+      enumValues: null,
     })
+  })
+
+  it('reads the enum values of a property, however the document refers to them', () => {
+    const withEnums = {
+      'Models.DayOfWeekType': { enum: ['monday', 'tuesday'] },
+      'Models.OpeningHours': {
+        properties: {
+          inline: { enum: ['open', 'closed'] },
+          referenced: { $ref: '#/components/schemas/Models.DayOfWeekType' },
+          nullable: {
+            allOf: [{ $ref: '#/components/schemas/Models.DayOfWeekType' }],
+            nullable: true,
+          },
+          list: {
+            items: { $ref: '#/components/schemas/Models.DayOfWeekType' },
+          },
+          numeric: { enum: [1, 2] },
+          text: {},
+        },
+      },
+    }
+
+    const enumValues = [
+      ...(modelProperties(withEnums, 'Models.OpeningHours') ?? []),
+    ].map(([name, property]) => [name, property.enumValues])
+
+    expect(enumValues).toEqual([
+      ['inline', ['open', 'closed']],
+      ['referenced', ['monday', 'tuesday']],
+      ['nullable', ['monday', 'tuesday']],
+      ['list', ['monday', 'tuesday']],
+      ['numeric', ['1', '2']],
+      ['text', null],
+    ])
   })
 
   it('returns null for a model the document does not define', () => {

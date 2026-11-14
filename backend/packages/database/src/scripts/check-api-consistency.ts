@@ -2,8 +2,8 @@
 
 /**
  * Checks that the API models agree with the database tables behind them:
- * same property names, same nullability, and the optionality that the kind
- * of model calls for.
+ * same property names, same nullability, the same values for a column of an
+ * enum type, and the optionality that the kind of model calls for.
  *
  *   pnpm check:api-db                       fail on any difference that is not in the baseline
  *   pnpm check:api-db --update-baseline     record the current differences as the baseline
@@ -12,7 +12,7 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { getTableColumns, is } from 'drizzle-orm'
-import { PgTable } from 'drizzle-orm/pg-core'
+import { PgArray, type PgColumn, PgTable } from 'drizzle-orm/pg-core'
 import { parse } from 'yaml'
 import { z } from 'zod'
 import * as schema from '../schema'
@@ -39,6 +39,10 @@ const openApiSchema: z.ZodType<OpenApiSchema> = z.looseObject({
   $ref: z.string().optional(),
   nullable: z.boolean().optional(),
   required: z.array(z.string()).optional(),
+  enum: z.array(z.unknown()).optional(),
+  get items() {
+    return openApiSchema.optional()
+  },
   get allOf() {
     return z.array(openApiSchema).optional()
   },
@@ -53,6 +57,11 @@ const openApiDocumentSchema = z.object({
 
 const baselineSchema = z.record(z.string(), z.array(z.string()))
 
+/** The values of the enum type of a column, or of its elements when it is a list. */
+const enumValuesOf = (column: PgColumn): readonly string[] | null =>
+  (is(column, PgArray) ? column.baseColumn.enumValues : column.enumValues) ??
+  null
+
 const tableColumns = new Map<string, ReadonlyMap<string, ColumnInfo>>(
   Object.entries(schema).flatMap(([exportName, value]) =>
     is(value, PgTable)
@@ -62,7 +71,7 @@ const tableColumns = new Map<string, ReadonlyMap<string, ColumnInfo>>(
             new Map(
               Object.entries(getTableColumns(value)).map(([name, column]) => [
                 name,
-                { notNull: column.notNull },
+                { notNull: column.notNull, enumValues: enumValuesOf(column) },
               ]),
             ),
           ],

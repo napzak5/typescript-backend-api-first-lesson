@@ -2,16 +2,26 @@
  * Compares API models with the database tables they are backed by.
  *
  * The database is the source of truth, so for every API property that has a
- * column the two must agree on the name and on whether null is allowed. The
+ * column the two must agree on the name, on whether null is allowed and, for
+ * a column of an enum type, on the values. The
  * functions here are pure; `check-api-consistency.ts` feeds them the Drizzle
  * schema and the generated OpenAPI document.
  */
 
 /** What the comparison needs to know about a column. */
-export type ColumnInfo = { notNull: boolean }
+export type ColumnInfo = {
+  notNull: boolean
+  /** The values of the column's enum type; null when it is not an enum. */
+  enumValues: readonly string[] | null
+}
 
 /** What the comparison needs to know about a property of an API model. */
-export type ApiProperty = { nullable: boolean; required: boolean }
+export type ApiProperty = {
+  nullable: boolean
+  required: boolean
+  /** The values the property is limited to; null when it is not an enum. */
+  enumValues: readonly string[] | null
+}
 
 /**
  * How a model relates to its table:
@@ -47,6 +57,7 @@ type FindingKind =
   | 'shouldBeOptional'
   | 'shouldBeNullable'
   | 'shouldNotBeNullable'
+  | 'enumMismatch'
 
 export type Finding = { model: string; property: string; kind: FindingKind }
 
@@ -65,9 +76,19 @@ export const describeFinding = (finding: Finding): string => {
     shouldBeOptional: 'must be optional',
     shouldBeNullable: 'must allow null because the column does',
     shouldNotBeNullable: 'must not allow null because the column is NOT NULL',
+    enumMismatch: 'must have exactly the values of the enum type of its column',
   }
   return `${finding.model}.${finding.property} ${descriptions[finding.kind]}`
 }
+
+/** Whether the property is limited to exactly the values of the enum type. */
+const hasValuesOf = (
+  enumValues: readonly string[],
+  property: ApiProperty,
+): boolean =>
+  property.enumValues !== null &&
+  new Set(enumValues).symmetricDifference(new Set(property.enumValues)).size ===
+    0
 
 export const compareModel = (
   rule: ModelRule,
@@ -100,6 +121,12 @@ export const compareModel = (
     }
     if (!column.notNull && !property.nullable) {
       report(name, 'shouldBeNullable')
+    }
+    if (
+      column.enumValues !== null &&
+      !hasValuesOf(column.enumValues, property)
+    ) {
+      report(name, 'enumMismatch')
     }
   }
 
@@ -170,6 +197,8 @@ export type OpenApiSchema = {
   properties?: Record<string, OpenApiSchema> | undefined
   required?: string[] | undefined
   nullable?: boolean | undefined
+  enum?: unknown[] | undefined
+  items?: OpenApiSchema | undefined
 }
 
 const SCHEMA_REF_PREFIX = '#/components/schemas/'
@@ -187,20 +216,39 @@ export const modelProperties = (
     return null
   }
 
-  const nullable = new Map<string, boolean>()
+  const referencedBy = (schema: OpenApiSchema): OpenApiSchema | undefined =>
+    schema.$ref === undefined
+      ? undefined
+      : schemas[schema.$ref.replace(SCHEMA_REF_PREFIX, '')]
+
+  /**
+   * The enum values of a property: its own, those of the schema it refers to
+   * (directly or through `allOf`, which is how a nullable reference is
+   * written), or those of its items when it is a list.
+   */
+  const enumValuesOf = (schema: OpenApiSchema): readonly string[] | null =>
+    schema.enum !== undefined
+      ? schema.enum.map(String)
+      : ([referencedBy(schema), schema.items, ...(schema.allOf ?? [])]
+          .flatMap((part) => (part === undefined ? [] : [enumValuesOf(part)]))
+          .find((values) => values !== null) ?? null)
+
+  const found = new Map<
+    string,
+    { nullable: boolean; enumValues: readonly string[] | null }
+  >()
   const required = new Set<string>()
   const visit = (schema: OpenApiSchema): void => {
-    const referenced =
-      schema.$ref === undefined
-        ? undefined
-        : schemas[schema.$ref.replace(SCHEMA_REF_PREFIX, '')]
-    for (const part of [referenced, ...(schema.allOf ?? [])]) {
+    for (const part of [referencedBy(schema), ...(schema.allOf ?? [])]) {
       if (part !== undefined) {
         visit(part)
       }
     }
     for (const [name, property] of Object.entries(schema.properties ?? {})) {
-      nullable.set(name, property.nullable === true)
+      found.set(name, {
+        nullable: property.nullable === true,
+        enumValues: enumValuesOf(property),
+      })
     }
     for (const name of schema.required ?? []) {
       required.add(name)
@@ -209,9 +257,9 @@ export const modelProperties = (
   visit(root)
 
   return new Map(
-    [...nullable].map(([name, isNullable]) => [
+    [...found].map(([name, property]) => [
       name,
-      { nullable: isNullable, required: required.has(name) },
+      { ...property, required: required.has(name) },
     ]),
   )
 }

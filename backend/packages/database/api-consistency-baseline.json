@@ -1,5 +1,6 @@
 {
   "Models.Booking": [
+    "enumMismatch:status",
     "unknownProperty:balanceDue",
     "unknownProperty:createdBy",
     "unknownProperty:deposit",
@@ -58,6 +59,7 @@
     "unknownProperty:type"
   ],
   "Models.Payment": [
+    "enumMismatch:status",
     "unknownProperty:amounts",
     "unknownProperty:bookingId",
     "unknownProperty:createdBy",
@@ -77,6 +79,8 @@
   ],
   "Models.Review": ["unknownProperty:createdBy", "unknownProperty:updatedBy"],
   "Models.Service": [
+    "enumMismatch:availability",
+    "enumMismatch:requiredStaffLevel",
     "unknownProperty:associations",
     "unknownProperty:category",
     "unknownProperty:createdBy",
@@ -122,6 +126,8 @@
     "unknownProperty:usedMaterials"
   ],
   "Models.User": [
+    "enumMismatch:role",
+    "enumMismatch:status",
     "unknownProperty:authState",
     "unknownProperty:emailVerificationState",
     "unknownProperty:emailVerificationTokenExpiry",
