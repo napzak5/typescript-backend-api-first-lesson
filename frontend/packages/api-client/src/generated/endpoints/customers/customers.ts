@@ -142,7 +142,7 @@ export const getCustomerCrudListUrl = (params?: CustomerCrudListParams,) => {
 }
 
 /**
- * 絞り込み条件とページネーションを指定して顧客を一覧取得します。削除済みの顧客は含みません。
+ * 絞り込み条件とページネーションを指定して顧客を一覧取得します。登録日時の新しい順に並びます。削除済みの顧客は含みません。cursorが顧客を指していない場合は400を返します。
  * @summary List customers
  */
 export const customerCrudList = async (params?: CustomerCrudListParams, options?: RequestInit): Promise<customerCrudListResponse> => {
@@ -190,7 +190,7 @@ export type CustomerCrudListQueryError = ModelsProblemDetails
 
 
 /**
- * 絞り込み条件とページネーションを指定して顧客を一覧取得します。削除済みの顧客は含みません。
+ * 絞り込み条件とページネーションを指定して顧客を一覧取得します。登録日時の新しい順に並びます。削除済みの顧客は含みません。cursorが顧客を指していない場合は400を返します。
  * @summary List customers
  */
 export function useCustomerCrudList<TData = Awaited<ReturnType<typeof customerCrudList>>, TError = ModelsProblemDetails>(
@@ -204,7 +204,7 @@ export function useCustomerCrudList<TData = Awaited<ReturnType<typeof customerCr
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 絞り込み条件とページネーションを指定して顧客を一覧取得します。削除済みの顧客は含みません。
+ * 絞り込み条件とページネーションを指定して顧客を一覧取得します。登録日時の新しい順に並びます。削除済みの顧客は含みません。cursorが顧客を指していない場合は400を返します。
  * @summary List customers
  */
 export function useCustomerCrudList<TData = Awaited<ReturnType<typeof customerCrudList>>, TError = ModelsProblemDetails>(
@@ -218,7 +218,7 @@ export function useCustomerCrudList<TData = Awaited<ReturnType<typeof customerCr
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 絞り込み条件とページネーションを指定して顧客を一覧取得します。削除済みの顧客は含みません。
+ * 絞り込み条件とページネーションを指定して顧客を一覧取得します。登録日時の新しい順に並びます。削除済みの顧客は含みません。cursorが顧客を指していない場合は400を返します。
  * @summary List customers
  */
 export function useCustomerCrudList<TData = Awaited<ReturnType<typeof customerCrudList>>, TError = ModelsProblemDetails>(
@@ -226,7 +226,7 @@ export function useCustomerCrudList<TData = Awaited<ReturnType<typeof customerCr
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 絞り込み条件とページネーションを指定して顧客を一覧取得します。削除済みの顧客は含みません。
+ * 絞り込み条件とページネーションを指定して顧客を一覧取得します。登録日時の新しい順に並びます。削除済みの顧客は含みません。cursorが顧客を指していない場合は400を返します。
  * @summary List customers
  */
 export function useCustomerCrudList<TData = Awaited<ReturnType<typeof customerCrudList>>, TError = ModelsProblemDetails>(
@@ -309,7 +309,7 @@ export const getCustomerCrudCreateUrl = () => {
 }
 
 /**
- * 顧客を新規登録します。メールアドレスまたは紹介コードが既存の顧客(削除済みを含む)と重複する場合は409を、referredByに存在しない顧客を指定した場合は400を返します。
+ * 顧客を新規登録します。メールアドレスが削除されていない顧客と重複する場合と、紹介コードが既存の顧客(削除済みを含む)と重複する場合は409を、referredByに削除されていない顧客以外を指定した場合は400を返します。
  * @summary Create a customer
  */
 export const customerCrudCreate = async (modelsCustomerCreateRequest: ModelsCustomerCreateRequest, options?: RequestInit): Promise<customerCrudCreateResponse> => {
@@ -376,7 +376,7 @@ const {mutation: mutationOptions} = options ?
     export type CustomerCrudCreateMutationVariables = {data: ModelsCustomerCreateRequest}
 
     /**
- * 顧客を新規登録します。メールアドレスまたは紹介コードが既存の顧客(削除済みを含む)と重複する場合は409を、referredByに存在しない顧客を指定した場合は400を返します。
+ * 顧客を新規登録します。メールアドレスが削除されていない顧客と重複する場合と、紹介コードが既存の顧客(削除済みを含む)と重複する場合は409を、referredByに削除されていない顧客以外を指定した場合は400を返します。
  * @summary Create a customer
  */
 export const useCustomerCrudCreate = <TError = ModelsProblemDetails,
@@ -1300,7 +1300,7 @@ export const getCustomerCrudGetUrl = (id: ModelsCustomerId,) => {
 }
 
 /**
- * IDを指定して顧客を1件取得します。好み設定も含めて返します。
+ * IDを指定して顧客を1件取得します。削除済みの顧客は404を返します。
  * @summary Get a customer
  */
 export const customerCrudGet = async (id: ModelsCustomerId, options?: RequestInit): Promise<customerCrudGetResponse> => {
@@ -1348,7 +1348,7 @@ export type CustomerCrudGetQueryError = ModelsProblemDetails
 
 
 /**
- * IDを指定して顧客を1件取得します。好み設定も含めて返します。
+ * IDを指定して顧客を1件取得します。削除済みの顧客は404を返します。
  * @summary Get a customer
  */
 export function useCustomerCrudGet<TData = Awaited<ReturnType<typeof customerCrudGet>>, TError = ModelsProblemDetails>(
@@ -1362,7 +1362,7 @@ export function useCustomerCrudGet<TData = Awaited<ReturnType<typeof customerCru
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * IDを指定して顧客を1件取得します。好み設定も含めて返します。
+ * IDを指定して顧客を1件取得します。削除済みの顧客は404を返します。
  * @summary Get a customer
  */
 export function useCustomerCrudGet<TData = Awaited<ReturnType<typeof customerCrudGet>>, TError = ModelsProblemDetails>(
@@ -1376,7 +1376,7 @@ export function useCustomerCrudGet<TData = Awaited<ReturnType<typeof customerCru
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * IDを指定して顧客を1件取得します。好み設定も含めて返します。
+ * IDを指定して顧客を1件取得します。削除済みの顧客は404を返します。
  * @summary Get a customer
  */
 export function useCustomerCrudGet<TData = Awaited<ReturnType<typeof customerCrudGet>>, TError = ModelsProblemDetails>(
@@ -1384,7 +1384,7 @@ export function useCustomerCrudGet<TData = Awaited<ReturnType<typeof customerCru
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * IDを指定して顧客を1件取得します。好み設定も含めて返します。
+ * IDを指定して顧客を1件取得します。削除済みの顧客は404を返します。
  * @summary Get a customer
  */
 export function useCustomerCrudGet<TData = Awaited<ReturnType<typeof customerCrudGet>>, TError = ModelsProblemDetails>(
@@ -1472,7 +1472,7 @@ export const getCustomerCrudUpdateUrl = (id: ModelsCustomerId,) => {
 }
 
 /**
- * 指定した項目だけを更新します。メールアドレスまたは紹介コードが他の顧客(削除済みを含む)と重複する場合は409を、referredByに存在しない顧客を指定した場合は400を返します。
+ * 指定した項目だけを更新します。メールアドレスが削除されていないほかの顧客と重複する場合と、紹介コードがほかの顧客(削除済みを含む)と重複する場合は409を、referredByに削除されていない顧客以外、またはこの顧客自身を指定した場合は400を返します。
  * @summary Update a customer
  */
 export const customerCrudUpdate = async (id: ModelsCustomerId,
@@ -1540,7 +1540,7 @@ const {mutation: mutationOptions} = options ?
     export type CustomerCrudUpdateMutationVariables = {id: ModelsCustomerId;data: ModelsCustomerUpdateRequest}
 
     /**
- * 指定した項目だけを更新します。メールアドレスまたは紹介コードが他の顧客(削除済みを含む)と重複する場合は409を、referredByに存在しない顧客を指定した場合は400を返します。
+ * 指定した項目だけを更新します。メールアドレスが削除されていないほかの顧客と重複する場合と、紹介コードがほかの顧客(削除済みを含む)と重複する場合は409を、referredByに削除されていない顧客以外、またはこの顧客自身を指定した場合は400を返します。
  * @summary Update a customer
  */
 export const useCustomerCrudUpdate = <TError = ModelsProblemDetails,
@@ -1606,7 +1606,7 @@ export const getCustomerCrudDeleteUrl = (id: ModelsCustomerId,) => {
 }
 
 /**
- * 顧客を論理削除します。削除後は一覧・取得の対象外になります。
+ * 顧客を論理削除します。削除後は一覧・取得の対象外になり、メールアドレスは別の顧客の登録に使えるようになります。admin と、サロンの owner / manager が実行できます。
  * @summary Delete a customer
  */
 export const customerCrudDelete = async (id: ModelsCustomerId, options?: RequestInit): Promise<customerCrudDeleteResponse> => {
@@ -1659,7 +1659,7 @@ const {mutation: mutationOptions} = options ?
     export type CustomerCrudDeleteMutationVariables = {id: ModelsCustomerId}
 
     /**
- * 顧客を論理削除します。削除後は一覧・取得の対象外になります。
+ * 顧客を論理削除します。削除後は一覧・取得の対象外になり、メールアドレスは別の顧客の登録に使えるようになります。admin と、サロンの owner / manager が実行できます。
  * @summary Delete a customer
  */
 export const useCustomerCrudDelete = <TError = ModelsProblemDetails,

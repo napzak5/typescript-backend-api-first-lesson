@@ -37,10 +37,11 @@ Before relying on anything, check this table.
 | Salon API (`/api/v1/salons`) | Implemented in every layer: list, create, get, update, delete. It is the reference implementation for every other domain. List and get are public; create, update and delete need a signed-in user with the permission. |
 | Service categories of a salon (`/api/v1/salons/{salonId}/service-categories`) | Implemented in every layer: list, create, get, update, delete, the five operations of `ServiceCategoryCrud`. They are the example of data that belongs to a salon: the routes are below the salon, and a category that is not of the salon in the path is answered with 404. List and get are public; create, update and delete need a signed-in user with the permission. See [Service Menu](./service-menu.md) (Japanese). |
 | Services of a salon (`/api/v1/salons/{salonId}/services`) | Implemented in every layer: list, create, get, update, bulk update, delete, the six operations of `ServiceCrud`. A service carries its options (the rows of `service_options`) in its requests and responses, and a package names the services it combines. The bulk update changes all the services it names or none of them. A delete keeps the row and marks it with `deletedAt`, and is refused with 409 while a package contains the service. List and get are public; create, update, bulk update and delete need a signed-in user with the permission. `isActive`, `serviceStatus`, `availability`, `bookingRequirements` and `maxBookingsPerDay` are stored and returned, and the list can filter by `isActive`; nothing else reads them: which services can be booked is not decided yet. See [Service Menu](./service-menu.md) (Japanese). |
+| Customer ledger (`/api/v1/customers`) | Implemented in every layer: list, create, get, update, delete, five of the 18 operations of `CustomerCrud`. A customer belongs to no salon: the ledger is one for the whole platform, and its routes are not below a salon. No operation is public: list, create, get and update need a signed-in administrator or member of a salon (owner, manager or staff of any salon), delete an administrator, an owner or a manager. A delete keeps the row and marks it with `deletedAt`. The other 13 operations of `CustomerCrud` are not implemented: the preferences (`PATCH /api/v1/customers/{id}/preferences`), batch get, bulk create, bulk update, bulk delete, restore, merge, audit history, versions, the two exports, statistics and the data deletion request. A customer has no route to their own record: a signed-in customer cannot create, read or change it, and a registered user has no customer record. `isActive` and `customerStatus` are stored and returned, and the list can filter by `customerStatus`; nothing else reads them: which customers can book is not decided yet. Nothing maintains the points, the lifetime value or the visit counters. See [Customer Ledger](./customers.md) (Japanese). |
 | Authentication (`/api/v1/auth`, `/api/v1/admin/auth`) | Implemented: `login`, `refresh`, `logout`, `logout-all` and `me`, on server-side sessions with opaque bearer tokens, and registration of customer accounts, email verification and password reset, each through a single-use token sent by mail, and password change, and two-factor authentication with the one-time passwords of an authenticator app (TOTP) and backup codes, and the list of the signed-in user's sessions with the revocation of one of them, and under `/api/v1/admin/auth` the administrator operations: read a user, unlock an account, reset two-factor authentication. That is every operation in `specs/operations/auth-operations.tsp`: the 16 of `AuthCrud`, the 2 of `SessionCrud` and the 3 of `AdminAuthCrud`. See [Authentication and Authorization](./authentication.md). |
-| Authorization | Implemented for the Salon API (create, update, delete), for the service categories of a salon (create, update, delete), for the services of a salon (create, update, bulk update, delete) and for the administrator operations. An implemented operation that the contract does not mark `@useAuth(NoAuth)` needs a valid access token, and its use case decides whether the signed-in user may do what is asked. |
+| Authorization | Implemented for the Salon API (create, update, delete), for the service categories of a salon (create, update, delete), for the services of a salon (create, update, bulk update, delete), for the customer ledger (every operation) and for the administrator operations. An implemented operation that the contract does not mark `@useAuth(NoAuth)` needs a valid access token, and its use case decides whether the signed-in user may do what is asked. |
 | System endpoints (`/api/system`) | Implemented: `alive`, `ready` and `health`. |
-| The other domains (staff, customer, booking, review, treatment, payment, inventory) | Specified in TypeSpec, so their generated types exist, and the database schema has their tables and seed data. The models agree with the tables (`pnpm check:api-db`). There is no domain, repository or route code. A request to one of these routes is answered with 404. The implementation order is in GitHub issue #4. |
+| The other domains (staff, booking, review, treatment, payment, inventory) | Specified in TypeSpec, so their generated types exist, and the database schema has their tables and seed data. The models agree with the tables (`pnpm check:api-db`). There is no domain, repository or route code. A request to one of these routes is answered with 404. The implementation order is in GitHub issue #4. |
 | Attachments, roles and permissions, purchase orders, medical charts | Specified in TypeSpec only. No table exists for them yet. |
 | Email | Implemented for the mails of the authentication flows (confirm the address, reset the password, and the notices: the password was changed, two-factor authentication was enabled, disabled or turned off by an administrator, the backup codes were replaced, a backup code was used to sign in): plain text over SMTP. Docker Compose starts Mailpit, which catches them locally. See [Email](./email.md) (Japanese). |
 | File storage | Not implemented. Docker Compose starts no service for it. |
@@ -135,9 +136,9 @@ Salon files show the pattern:
 domain/src/
 ├── models/salon.ts                    ID, API and database types
 ├── schemas/salon.schema.ts            Zod schema of each request
-├── schemas/rules.ts                   nonBlankText, MAX_INTEGER, noRepeatedEntries,
-│                                      atLeastOneProperty (the schemas of more than one
-│                                      domain)
+├── schemas/rules.ts                   nonBlankText, lowerCaseEmail, phoneNumber, MAX_INTEGER,
+│                                      noRepeatedEntries, atLeastOneProperty (the schemas of
+│                                      more than one domain)
 ├── mappers/write/salon.mapper.ts      API request → rows
 ├── mappers/read/salon.mapper.ts       Rows → API response
 ├── mappers/read/columns.ts            numericSchema, timestampSchema (every read mapper)
@@ -147,7 +148,8 @@ domain/src/
 └── shared/                            DomainError, parseWith
 
 infrastructure/src/
-├── database/                          Connection, ping, attempt, log-safe failure description
+├── database/                          Connection, ping, attempt, log-safe failure description,
+│                                      the LIKE pattern of a keyword (containing)
 ├── logging/logger.ts                  createLogger
 └── repositories/salon.repository.impl.ts
 
@@ -252,6 +254,37 @@ api/src/
                                        index.ts (router, mounted below /salons/:salonId)
 ```
 
+The customer ledger has the layout of Salon. A customer belongs to no salon,
+so nothing of it takes a salon ID:
+
+```
+domain/src/
+├── models/customer.ts                 CustomerId, API and database types
+├── schemas/customer.schema.ts         Zod schema of each request, and of the stored
+│                                      preferences
+├── mappers/write/customer.mapper.ts   API request → row. Nothing is converted: the
+│                                      request is the row
+├── mappers/read/customer.mapper.ts    Row → API response
+├── repositories/customer.repository.ts
+│                                      ICustomerRepository; what became of a create or an
+│                                      update is a sum type (CustomerCreation,
+│                                      CustomerUpdate)
+└── business-logic/customer/           One *.usecase.ts per operation; _shared/ holds the
+                                       dependencies (the repository and the clock), who
+                                       may (authorization.ts), the rules that need the
+                                       current time or another customer (rules.ts) and
+                                       the reading of a keyword as a phone number
+                                       (search.ts)
+
+infrastructure/src/
+└── repositories/customer.repository.impl.ts
+
+api/src/
+└── routes/customer/                   One *.handler.ts per implemented operation of
+                                       CustomerCrud, index.ts (router, mounted at
+                                       /customers)
+```
+
 ## Layers and Package Dependencies
 
 An arrow means "depends on":
@@ -284,13 +317,14 @@ to the contract surfaces as a type error in the mappers.
 Use cases and domain logic live in one package, `domain`. It imports nothing
 that performs I/O: from `database` it imports types only, and it reaches the
 database through repository interfaces (`ISalonRepository`,
-`IServiceCategoryRepository`, `IServiceRepository`, `IUserRepository`,
-`ISessionRepository`), which `infrastructure` implements. Password hashing,
-token generation, the one-time passwords of two-factor authentication and
-mail are behind interfaces in the same way (`IPasswordHasher`,
-`ITokenIssuer`, `ITwoFactorAuthenticator`, `IMailer`), and the current time
-is a dependency (`clock`), so the authentication use cases are unit-tested
-without a database, a real hash, an authenticator app or a mail server.
+`IServiceCategoryRepository`, `IServiceRepository`, `ICustomerRepository`,
+`IUserRepository`, `ISessionRepository`), which `infrastructure` implements.
+Password hashing, token generation, the one-time passwords of two-factor
+authentication and mail are behind interfaces in the same way
+(`IPasswordHasher`, `ITokenIssuer`, `ITwoFactorAuthenticator`, `IMailer`),
+and the current time is a dependency (`clock`), so the authentication use
+cases are unit-tested without a database, a real hash, an authenticator app
+or a mail server.
 
 | Package (`@beauty-salon-backend/…`) | Contains | Workspace packages it depends on |
 |-------------------------------------|----------|----------------------------------|
@@ -299,7 +333,7 @@ without a database, a real hash, an authenticator app or a mail server.
 | `config` | `loadEnvFile`, `parseAppConfig` | `utility` |
 | `database` | `schema.ts`, `relations.ts`, `sql/`, the `db:*` scripts, seeds | `config`, `utility` |
 | `domain` | Models, schemas, mappers, use cases, repository and service interfaces, `DomainError` | `database` (types), `generated`, `utility` |
-| `infrastructure` | `connectDatabase`, `pingDatabase`, `SalonRepository`, `ServiceCategoryRepository`, `ServiceRepository`, `UserRepository`, `SessionRepository`, `Argon2PasswordHasher`, `RandomTokenIssuer`, `TotpAuthenticator`, `SmtpMailer`, `createLogger` | `database`, `domain`, `utility` |
+| `infrastructure` | `connectDatabase`, `pingDatabase`, `SalonRepository`, `ServiceCategoryRepository`, `ServiceRepository`, `CustomerRepository`, `UserRepository`, `SessionRepository`, `Argon2PasswordHasher`, `RandomTokenIssuer`, `TotpAuthenticator`, `SmtpMailer`, `createLogger` | `database`, `domain`, `utility` |
 | `api` | `createApp`, middleware, routes, authentication of a request, problem details | `domain`, `generated`, `infrastructure`, `utility`; `database` in tests |
 | `server` (application) | Entry point and `startServer` | `api`, `config`, `domain`, `infrastructure`, `utility` |
 
@@ -372,10 +406,13 @@ Authentication does the same in `backend/packages/domain/src/models/auth.ts`,
 service categories in
 `backend/packages/domain/src/models/service-category.ts`,
 `backend/packages/domain/src/schemas/service-category.schema.ts` and
-`backend/packages/api/src/routes/service-category/_shared/types.ts`, and the
+`backend/packages/api/src/routes/service-category/_shared/types.ts`, the
 services in `backend/packages/domain/src/models/service.ts`,
 `backend/packages/domain/src/schemas/service.schema.ts` and
-`backend/packages/api/src/routes/service/_shared/types.ts`.
+`backend/packages/api/src/routes/service/_shared/types.ts`, and the
+customers in `backend/packages/domain/src/models/customer.ts`,
+`backend/packages/domain/src/schemas/customer.schema.ts` and
+`backend/packages/api/src/routes/customer/_shared/types.ts`.
 
 Model naming and nullability rules are in
 [TypeSpec API Type Rules](./typespec-api-type-rules.md); the pipeline in
@@ -445,8 +482,9 @@ reads the environment or ends the process.
 ### Middleware Order
 
 `createApp` in `backend/packages/api/src/index.ts` creates the repositories,
-the password hasher and the token issuer once, takes the mailer and the
-authenticator of two-factor authentication as dependencies
+the password hasher, the token issuer and the clock (`clock`, the current
+time of the authentication and the customer use cases) once, takes the
+mailer and the authenticator of two-factor authentication as dependencies
 (`AppDependencies.mailer`, `AppDependencies.twoFactorAuthenticator`), and
 mounts everything in this order. The order is part of the design:
 
@@ -462,8 +500,9 @@ mounts everything in this order. The order is part of the design:
 6. The authentication router at `/api/v1/auth`, the router of the
    administrator operations at `/api/v1/admin/auth`, the Salon router at
    `/api/v1/salons`, the router of the service categories at
-   `/api/v1/salons/:salonId/service-categories` and the router of the
-   services at `/api/v1/salons/:salonId/services`. Each receives
+   `/api/v1/salons/:salonId/service-categories`, the router of the
+   services at `/api/v1/salons/:salonId/services` and the router of the
+   customer ledger at `/api/v1/customers`. Each receives
    `authenticated`, which `createAuthenticated` builds once from the
    authentication dependencies.
 7. `notFoundHandler` and `errorHandler`: turn what is left over into problem
@@ -602,6 +641,54 @@ The rules of the service categories and of the services are in
 [Service Menu](./service-menu.md), who may change them in
 [Authentication and Authorization](./authentication.md) (both Japanese).
 
+### A Customer Request
+
+A customer belongs to no salon, and the customer ledger is not public. Its
+routes are flat (`/api/v1/customers`), every handler is wrapped with
+`authenticated`, and a request takes the same path through the layers, with
+one use case per operation (`business-logic/customer/`). What that changes:
+
+- **Permission first, from the actor alone.** Who may is decided from the
+  actor and nothing in the request (`mayHandleCustomers`, and
+  `mayDeleteCustomers` for a delete, in
+  `business-logic/customer/_shared/authorization.ts`), so every use case
+  decides it before the ID, the query and the body are looked at. An actor
+  who may not is answered with 403 whatever else is wrong with the request.
+  (The update and the delete of a salon decide after the ID is parsed,
+  because the permission depends on the salon; the routes below a salon
+  decide from the `salonId` of the path.)
+- **A query the use case answers.** The list handler gives the query
+  parameters their types (`decodeCustomerSearchQuery` in
+  `routes/customer/_shared/query.ts`) and passes the outcome on as it is:
+  `ListCustomersUseCase.execute(actor, query)` takes the decoded query as a
+  `Result`. A query that cannot be decoded is an error of the request, and
+  the use case returns it only to an actor who may list customers.
+- **The current time.** A birth date is not in the future, so the create and
+  the update use case read the time from `clock` in
+  `CustomerUseCaseDependencies`. `createApp` builds one `clock` and hands it
+  to the authentication and the customer use cases.
+- **Two unique values.** The email is unique among the customers that are
+  not deleted (a partial unique index), the referral code among all
+  customers, deleted ones included (a unique constraint). The repository
+  tells the two apart by the name of the violated constraint and returns
+  `alreadyExists` for either: 409.
+- **A write mapper that converts nothing.** The properties of the request
+  are the columns, and every column has the representation of the API.
+  `CustomerWriteMapper` (`mappers/write/customer.mapper.ts`) returns the
+  request as the row: it is where the compiler checks that the two agree.
+- **Times at the precision of a response.** The list filters by the time of
+  registration (`registeredFrom`, `registeredTo`). The schema compares the
+  two as times, not as text (`schemas/customer.schema.ts`), and the
+  repository compares them with `createdAt` cut to milliseconds
+  (`date_trunc('milliseconds', …)` in
+  `repositories/customer.repository.impl.ts`): the column keeps
+  microseconds, and a response shows milliseconds.
+
+The list is newest first, and a delete keeps the row and marks it with
+`deletedAt`, as for a salon. The rules of the customer ledger are in
+[Customer Ledger](./customers.md), who may use it in
+[Authentication and Authorization](./authentication.md) (both Japanese).
+
 ### An Authentication Request
 
 The authentication operations take the same path through the layers. Every
@@ -665,11 +752,11 @@ returns the body the contract defines for it, not problem details.
 
 | Kind | Raised by | Status |
 |------|-----------|--------|
-| `validation` | A use case, when the input breaks a rule of its Zod schema; an authentication use case, also for a rule the schema cannot check (a new password on the blocklist or equal to the current one, a current password that is wrong, a mailed token that cannot be used, a code of two-factor authentication that is not accepted, a cursor of the session list that names no session of the user); a service category use case, for a parent that is not a category of the same salon or that is the category itself or one below it, and for a cursor that names no category of the salon; a service use case, for a service that would break a rule tying two of its properties together (a discounted price above the price, member services that do not fit `isPackage`), for a category that is not of the same salon, for a member of a package that is not a service of the same salon, is a package or is the service itself, for making a package of a service that a package contains, and for a cursor that names no service of the salon; a list handler, when a query parameter cannot be read as its type | 400 |
+| `validation` | A use case, when the input breaks a rule of its Zod schema; an authentication use case, also for a rule the schema cannot check (a new password on the blocklist or equal to the current one, a current password that is wrong, a mailed token that cannot be used, a code of two-factor authentication that is not accepted, a cursor of the session list that names no session of the user); a service category use case, for a parent that is not a category of the same salon or that is the category itself or one below it, and for a cursor that names no category of the salon; a service use case, for a service that would break a rule tying two of its properties together (a discounted price above the price, member services that do not fit `isPackage`), for a category that is not of the same salon, for a member of a package that is not a service of the same salon, is a package or is the service itself, for making a package of a service that a package contains, and for a cursor that names no service of the salon; a customer use case, for a birth date before 1900 or in the future, for a referrer that does not exist, is deleted or is the customer itself, and for a cursor that names no customer; a list handler, when a query parameter cannot be read as its type (the handler of the customer list hands that error to its use case, which returns it only to an actor who may list customers) | 400 |
 | `unauthenticated` | `AuthenticateUseCase`, when the request carries no access token that works; the login and refresh use cases, when the credentials are not accepted, which for login includes a missing or refused code of two-factor authentication; the current-user, change-password and two-factor use cases, when the user of the session no longer exists | 401, with a `WWW-Authenticate: Bearer` header |
 | `forbidden` | A use case, when the signed-in user may not do what is asked | 403 |
-| `notFound` | A use case, when what the ID in the path names is not there: a salon or a user that does not exist or is deleted, a service category that does not exist or is not of the salon in the path, a service that does not exist, is deleted or is not of the salon in the path, a session that is not one of the signed-in user's own sessions that have not ended | 404 |
-| `alreadyExists` | The repository, when the unique index on `email` is violated | 409 |
+| `notFound` | A use case, when what the ID in the path names is not there: a salon or a user that does not exist or is deleted, a service category that does not exist or is not of the salon in the path, a service that does not exist, is deleted or is not of the salon in the path, a customer that does not exist or is deleted, a session that is not one of the signed-in user's own sessions that have not ended | 404 |
+| `alreadyExists` | The repository, when a write violates a unique index or constraint: the `email` of a salon among the salons that are not deleted, the `email` of a customer among the customers that are not deleted, the `referralCode` of a customer among all customers | 409 |
 | `conflict` | A two-factor use case or the use case of an administrator operation, when the state of the account does not allow the operation: enabling what is enabled, confirming when no set-up is under way, disabling, resetting or replacing backup codes when it is not enabled, unlocking an account that is not locked; the use case that deletes a service, when a package contains the service | 409 |
 | `database` | The repository, when a query fails; the read mapper, when a stored row does not match the API model | 500 |
 | `routeNotFound` | `notFoundHandler` | 404 |
@@ -709,8 +796,9 @@ is where each one lives in the code:
 What protects the API today: security headers, the origin allow-list, the
 rate limit, the body size limit, strict validation that rejects unknown
 properties, and bearer-token authentication with a permission check on the
-operations that change a salon, its service categories or its services and
-on the administrator operations. The system endpoints, the salon list, a
+operations that change a salon, its service categories or its services, on
+every operation of the customer ledger and on the administrator operations.
+The system endpoints, the salon list, a
 single salon, the service categories and the services of a salon and the
 authentication operations a signed-out user needs
 (register, login, refresh, email verification, password reset) are open to
@@ -778,6 +866,7 @@ See [Frontend API Integration](./frontend-api-integration.md).
 - [Domain Implementation Reference](./domain-implementation-reference.md)
 - [Authentication and Authorization](./authentication.md) (Japanese)
 - [Service Menu](./service-menu.md) (Japanese)
+- [Customer Ledger](./customers.md) (Japanese)
 - [Email](./email.md) (Japanese)
 - [Type Generation System](./type-generation-system.md)
 - [TypeSpec API Type Rules](./typespec-api-type-rules.md)

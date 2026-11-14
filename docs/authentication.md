@@ -107,7 +107,7 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 
 - どの場合もパスワードのハッシュを 1 回計算し、メールの送信を待たずに応答するので、応答時間でも区別できない
 - `unverified` のアカウントはログインできない。確認が済むと `active` になる
-- 登録したユーザーは顧客情報（`customers` の行）を持たない（`customerId` は null、操作者の範囲は `none`）。顧客情報の作成は Customer ドメインで扱う
+- 登録したユーザーは顧客情報（`customers` の行）を持たない（`customerId` は null、操作者の範囲は `none`）。本人が自分の顧客情報を作るルートは、まだない（[顧客台帳](./customers.md)）
 - 他人のメールアドレスで先に登録されていても、本人があとから登録すればパスワードは本人のものに置き換わる。確認メールのリンクが有効にするのは、最後に登録されたパスワード
 
 ## メールで送るトークン
@@ -246,9 +246,9 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 
 | 範囲 | 対象 | 届くもの |
 |---|---|---|
-| `platform` | `admin` | すべてのサロン |
-| `salon` | `owner`、`manager`、`staff`。`users.staffId` が指すスタッフが有効（`isActive`、未削除）で、そのサロンが未削除であること | そのサロン。範囲はロール・サロン ID・スタッフ ID を持つ |
-| `customer` | `customer`。`users.customerId` があること | 自分の顧客情報 |
+| `platform` | `admin` | すべてのサロンと、顧客台帳 |
+| `salon` | `owner`、`manager`、`staff`。`users.staffId` が指すスタッフが有効（`isActive`、未削除）で、そのサロンが未削除であること | そのサロンと、顧客台帳。範囲はロール・サロン ID・スタッフ ID を持つ |
+| `customer` | `customer`。`users.customerId` があること | 自分の顧客情報。本人用のルートはまだないので、いまは範囲を必要とするものには届かない |
 | `none` | 上のどれにも当たらない（スタッフ情報が削除された `staff` など） | 範囲を必要とするものには届かない。ログインはできる |
 
 - ロールは `users.role` の固定 5 種。`users.permissions` は保存しているだけで、判定には使わない
@@ -282,6 +282,20 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 | サービスの作成、更新、一括更新、削除 | `admin`、そのサロンの `owner` / `manager` |
 
 カテゴリーとサービスの規則は [サービスメニュー](./service-menu.md) にあります。
+
+### 顧客台帳の権限
+
+顧客（`customers`）はサロンに属さず、台帳はプラットフォーム全体で 1 つです。ルートは `/api/v1/customers` で、権限は**操作者だけ**で判定します（`business-logic/customer/_shared/authorization.ts`）。
+
+| オペレーション | 許可 |
+|---|---|
+| 顧客の一覧、登録、1 件の取得、更新 | `admin`、サロンの `owner` / `manager` / `staff`（所属サロンは問わない） |
+| 顧客の削除 | `admin`、サロンの `owner` / `manager` |
+
+- 判定は最初に行う。権限のないユーザーには、ID、クエリ、本文が不正でも、顧客が存在しなくても 403 を返す
+- ロール `customer` のユーザーは、自分の顧客情報にも届かない。レスポンスがスタッフ専用の項目（`internalNotes`）を含むため
+
+台帳の規則は [顧客台帳](./customers.md) にあります。
 
 ## 管理者の操作
 
@@ -328,7 +342,9 @@ export const updateSalonHandler = (
 }
 ```
 
-サロンに属するデータ（顧客、予約、スタッフなど）を実装するときは、[サロンの下にあるルートの権限](#サロンの下にあるルートの権限) に従います。ユースケースは、パスの ID を `parseSalonIdOfPath`（`backend/packages/domain/src/models/salon.ts`）で検証し、そのサロンで権限を判定してから、`requireSalon`（`business-logic/_shared/existing-salon.ts`）でサロンの存在を確認します。対象は、そのサロンのものだけを検索します。例は `business-logic/service-category/` と `business-logic/service/` です。
+サロンに属するデータ（予約、スタッフなど）を実装するときは、[サロンの下にあるルートの権限](#サロンの下にあるルートの権限) に従います。ユースケースは、パスの ID を `parseSalonIdOfPath`（`backend/packages/domain/src/models/salon.ts`）で検証し、そのサロンで権限を判定してから、`requireSalon`（`business-logic/_shared/existing-salon.ts`）でサロンの存在を確認します。対象は、そのサロンのものだけを検索します。例は `business-logic/service-category/` と `business-logic/service/` です。
+
+サロンに属さないデータは、操作者だけで権限を判定し、最初に判定します。例は `business-logic/customer/`（[顧客台帳の権限](#顧客台帳の権限)）です。
 
 ## シードのアカウント
 
@@ -341,7 +357,7 @@ export const updateSalonHandler = (
 | `manager@beautysalon.jp` | `manager` | 1 つ目のサロン |
 | `stylist1@beautysalon.jp`、`stylist2@beautysalon.jp` | `staff` | 1 つ目のサロン |
 | `therapist@beautysalon.jp` | `staff` | 2 つ目のサロン |
-| `customer1@example.com` 〜 `customer3@example.com`、`vip.customer@example.com` | `customer` | 自分の顧客情報 |
+| `customer1@example.com` 〜 `customer3@example.com`、`vip.customer@example.com` | `customer` | 自分の顧客情報（届くルートはまだない） |
 
 ```bash
 curl -s http://localhost:3000/api/v1/auth/login \

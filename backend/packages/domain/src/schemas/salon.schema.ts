@@ -8,24 +8,13 @@ import {
   type ApiSalonUpdateRequest,
   salonIdSchema,
 } from '../models/salon'
-import { atLeastOneProperty, nonBlankText } from './rules'
+import { atLeastOneProperty, nonBlankText, phoneNumber } from './rules'
 
 /**
  * Validation of salon requests. The shapes are checked against the generated
  * API types, the length limits are those of the database columns, and the
  * remaining rules are business rules.
  */
-
-const MIN_PHONE_DIGITS = 10
-
-const phoneNumberSchema = z
-  .string()
-  .max(20)
-  .regex(/^[\d\s\-+()]+$/, 'Must be a phone number')
-  .refine(
-    (value) => value.replace(/\D/g, '').length >= MIN_PHONE_DIGITS,
-    `Must contain at least ${MIN_PHONE_DIGITS} digits`,
-  )
 
 /** Time of a `time` column; the database returns it as HH:mm:ss. */
 const timeOfDaySchema = z
@@ -192,8 +181,8 @@ export const salonCreateRequestSchema = z.strictObject({
   building: nonBlankText.max(255).nullable(),
   latitude: z.number().min(-90).max(90).nullable(),
   longitude: z.number().min(-180).max(180).nullable(),
-  phoneNumber: phoneNumberSchema,
-  alternativePhone: phoneNumberSchema.nullable(),
+  phoneNumber,
+  alternativePhone: phoneNumber.nullable(),
   email: z.email().max(255),
   websiteUrl: z.httpUrl().max(500).nullable(),
   logoUrl: z.httpUrl().max(500).nullable(),

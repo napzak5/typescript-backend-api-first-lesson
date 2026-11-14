@@ -598,3 +598,43 @@ describe('the services of a salon', () => {
     },
   )
 })
+
+describe('the customer ledger', () => {
+  /** A UUID that no customer has: the request is refused before it is looked up. */
+  const SOME_ID = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1b'
+  const CUSTOMERS = '/api/v1/customers'
+
+  it('should answer each of its five routes with 401 when no access token is sent', async () => {
+    const { server } = await start(createConfig().config)
+    const routes: [string, string][] = [
+      ['GET', CUSTOMERS],
+      ['POST', CUSTOMERS],
+      ['GET', `${CUSTOMERS}/${SOME_ID}`],
+      ['PATCH', `${CUSTOMERS}/${SOME_ID}`],
+      ['DELETE', `${CUSTOMERS}/${SOME_ID}`],
+    ]
+
+    const answers: Record<string, unknown>[] = []
+    for (const [method, path] of routes) {
+      const response = await fetch(`http://127.0.0.1:${server.port}${path}`, {
+        method,
+      })
+      answers.push({
+        route: `${method} ${path}`,
+        status: response.status,
+        challenge: response.headers.get('www-authenticate'),
+        problem: await response.json(),
+      })
+    }
+    await server.stop()
+
+    expect(answers).toEqual(
+      routes.map(([method, path]) => ({
+        route: `${method} ${path}`,
+        status: 401,
+        challenge: 'Bearer realm="beauty-salon-api"',
+        problem: expect.objectContaining({ status: 401, code: '1001' }),
+      })),
+    )
+  })
+})

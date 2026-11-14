@@ -9,12 +9,12 @@ shortened; the file named above each one is the authority.
 |---------|----------------|
 | [Request validation](#request-validation) | `backend/packages/domain/src/schemas/salon.schema.ts`, `backend/packages/domain/src/schemas/rules.ts`, `backend/packages/domain/src/shared/validation.ts` |
 | [ID validation](#id-validation) | `backend/packages/domain/src/models/salon.ts` |
-| [Query parameters](#query-parameters) | `backend/packages/api/src/shared/query-parameters.ts`, `backend/packages/api/src/routes/salon/_shared/query.ts` |
+| [Query parameters](#query-parameters) | `backend/packages/api/src/shared/query-parameters.ts`, `backend/packages/api/src/routes/salon/_shared/query.ts`, `backend/packages/api/src/routes/customer/list-customers.handler.ts` (a list with a permission check) |
 | [Pagination](#pagination) | `list-salons.usecase.ts`, `salon.repository.impl.ts`, `backend/packages/api/src/shared/page-links.ts` |
 | [Response formatting](#response-formatting) | `backend/packages/api/src/shared/responses.ts` |
 | [Error handling](#error-handling) | `backend/packages/api/src/shared/problem-details.ts`, `backend/packages/api/src/middleware/errors.ts` |
 | [Logging](#logging) | `backend/packages/infrastructure/src/logging/logger.ts`, `backend/packages/api/src/middleware/request-logging.ts` |
-| [Date and time](#date-and-time) | `backend/packages/domain/src/mappers/read/columns.ts`, `salon.schema.ts` |
+| [Date and time](#date-and-time) | `backend/packages/domain/src/mappers/read/columns.ts`, `salon.schema.ts`, `customer.schema.ts`, `customer.repository.impl.ts` |
 | [Authorization](#authorization) | `backend/packages/api/src/shared/authentication.ts`, `backend/packages/domain/src/business-logic/salon/_shared/authorization.ts` |
 
 Related documents: the layer-by-layer walk through the Salon domain is in
@@ -45,14 +45,20 @@ and the type rules in [type-safety-principles.md](./type-safety-principles.md).
   `backend/packages/domain/src/business-logic/service/_shared/rules.ts`,
   which the use case calls for a create and the repository calls inside its
   transaction for an update.
+- A rule that needs the current time is not in a schema either. The use case
+  checks it with the time its dependencies give it (see
+  [Date and time](#date-and-time)): `customerRuleIssues` in
+  `backend/packages/domain/src/business-logic/customer/_shared/rules.ts`
+  refuses a birth date in the future.
 - The update schema is derived from the create schema with `.exactPartial()`
   and additionally requires at least one property (`atLeastOneProperty`).
 - The rules that the schemas of more than one domain share are in
   `backend/packages/domain/src/schemas/rules.ts`: `nonBlankText`, for a text
-  that must say something, `MAX_INTEGER`, the largest value of an `integer`
-  column, `noRepeatedEntries`, for a list in which no entry may come twice,
-  and `atLeastOneProperty`. A domain imports them and does not write them
-  again.
+  that must say something, `lowerCaseEmail`, for an address that is stored
+  and compared in lower case, `phoneNumber`, for a phone number as people
+  write it, `MAX_INTEGER`, the largest value of an `integer` column,
+  `noRepeatedEntries`, for a list in which no entry may come twice, and
+  `atLeastOneProperty`. A domain imports them and does not write them again.
 
 ```typescript
 // backend/packages/domain/src/schemas/salon.schema.ts
@@ -120,9 +126,14 @@ export const parseSalonId = (id: unknown): Result<SalonId, DomainError> =>
   case, and PostgreSQL always returns them in lower case, so an ID from a
   request is brought into that spelling when it is checked. An ID is compared
   as a string in several places (is this the salon of the actor, is this the
-  administrator's own account), and both sides then spell the same ID the
-  same way. Every ID schema is built from `uuidSchema`; do not call
-  `z.uuid()` for an ID.
+  administrator's own account, is the referrer of a customer the customer
+  itself), and both sides then spell the same ID the same way. Every ID
+  schema is built from `uuidSchema`; do not call `z.uuid()` for an ID.
+- Every domain has a parser of this form for the ID in its path:
+  `parseCustomerId` in `backend/packages/domain/src/models/customer.ts` is
+  the one of `/api/v1/customers/{id}`. A customer use case calls it after
+  the permission check, which does not need the ID (see
+  [Authorization](#authorization)).
 - An ID that is not a UUID is a `validation` error (400) with `field: 'id'`. A
   well-formed ID of a salon that does not exist, or that has been deleted, is
   `notFound` (404).
@@ -203,6 +214,14 @@ const result =
 - Every filter is optional (`.exactOptional()`). The use case turns an absent
   filter into `null` for the repository (`keyword: keyword ?? null`), where
   `null` means "do not filter".
+- A list with a permission check answers a query that cannot be decoded
+  only after that check: an actor who may not list is told that and nothing
+  about the request. The handler of the customer list therefore does not
+  answer the error itself. It hands the decoded query on as the `Result` it
+  is (`useCase.execute(actor, decodeCustomerSearchQuery(req.query))` in
+  `backend/packages/api/src/routes/customer/list-customers.handler.ts`),
+  and `ListCustomersUseCase` returns the error once it has decided that the
+  actor may list customers.
 
 ## Pagination
 
@@ -263,8 +282,10 @@ this.db
   .limit(limit + 1)
 ```
 
-The order belongs to the list. The salon list is newest first; the service
-categories of a salon are listed in the order a menu shows them, by
+The order belongs to the list. The salon list is newest first, and so is the
+customer list, by `(createdAt, id)` descending
+(`backend/packages/infrastructure/src/repositories/customer.repository.impl.ts`);
+the service categories of a salon are listed in the order a menu shows them, by
 `(displayOrder, id)` ascending
 (`backend/packages/infrastructure/src/repositories/service-category.repository.impl.ts`),
 and so are its services, by `(sortOrder, id)` ascending
@@ -278,7 +299,10 @@ see [authentication.md](./authentication.md#一覧と無効化) and
 [service-menu.md](./service-menu.md) (both Japanese). The list of services
 answers 400 in the same way for a cursor that names no service of the salon.
 A service that was deleted keeps its row, so a cursor that names one is
-accepted and still says where the next page begins. The
+accepted and still says where the next page begins. The customer list does
+both as well: it answers 400 for a cursor that names no customer, and a
+deleted customer still says where the next page begins
+([customers.md](./customers.md), Japanese). The
 page links are built by
 `pageLinks` in `backend/packages/api/src/shared/page-links.ts`, for every
 list, from the request URL with the cursor replaced.
@@ -359,11 +383,11 @@ answers 503 with the body its operation defines.
 
 | Error | Raised by | Status | `code` |
 |-------|-----------|--------|--------|
-| `validation` | `parseWith` in a use case; an authentication use case, also for what a schema cannot check (a password that is too easy to guess, a wrong current password, a mailed token that cannot be used, a code of two-factor authentication that is not accepted, a cursor of the session list that names no session of the user); a service category use case, for a parent that is not a category of the same salon or that is the category itself or one below it, and for a cursor that names no category of the salon; a service use case, for a service that would break a rule tying two of its properties together, for a category that is not of the same salon, for a member of a package that is not a service of the same salon, is a package or is the service itself, for making a package of a service that a package contains, and for a cursor that names no service of the salon | 400 | `2001` |
+| `validation` | `parseWith` in a use case; an authentication use case, also for what a schema cannot check (a password that is too easy to guess, a wrong current password, a mailed token that cannot be used, a code of two-factor authentication that is not accepted, a cursor of the session list that names no session of the user); a service category use case, for a parent that is not a category of the same salon or that is the category itself or one below it, and for a cursor that names no category of the salon; a service use case, for a service that would break a rule tying two of its properties together, for a category that is not of the same salon, for a member of a package that is not a service of the same salon, is a package or is the service itself, for making a package of a service that a package contains, and for a cursor that names no service of the salon; a customer use case, for a birth date before 1900 or in the future, for a referrer who does not exist, is deleted or is the customer itself, and for a cursor that names no customer | 400 | `2001` |
 | `unauthenticated` | `AuthenticateUseCase` behind `authenticated`; the login and refresh use cases; the current-user, change-password and two-factor use cases, when the user of the session no longer exists | 401 | `1001` to `1004` and `1007`, by `reason` |
 | `forbidden` | A use case, when the actor may not do what is asked | 403 | `1005` |
 | `notFound` | A use case, when the repository finds no row; on a route below a salon, that includes a salon that does not exist and a resource that is not of the salon in the path | 404 | `3001` |
-| `alreadyExists` | The repository, on the unique index on `email` | 409 | `3002` |
+| `alreadyExists` | The repository, from the name of the constraint that a write violated: the unique index on the `email` of a salon; for a customer, the unique index on `email`, which covers the customers that are not deleted, and the unique constraint on `referralCode`, which covers every customer | 409 | `3002` |
 | `conflict` | A two-factor use case or the use case of an administrator operation, when the request is fine and the state of the account does not allow it (enabling what is already enabled, or unlocking an account that is not locked, for example); the use case that deletes a service, when a package contains the service | 409 | `3003` |
 | `database` | The repository on an unexpected failure; the read mapper on stored data that does not match the API model | 500 | `4003` |
 | `routeNotFound` | `notFoundHandler` | 404 | `3001` |
@@ -512,6 +536,25 @@ Logging is structured, with pino. Application code never writes to `console`.
   ```
 
 - The `timestamp` of a response or a problem is `new Date().toISOString()`.
+- A use case that needs the current time does not call `new Date()`. It takes
+  the time from its dependencies: `clock: () => Date` in
+  `AuthUseCaseDependencies` and in `CustomerUseCaseDependencies`. `createApp`
+  (`backend/packages/api/src/index.ts`) builds one clock and hands it to
+  both.
+- The two date-times of the customer search, `registeredFrom` and
+  `registeredTo`, are compared as times, not as text: as text, the same
+  second with and without a fraction would compare the wrong way round.
+  `customerSearchRequestSchema`
+  (`backend/packages/domain/src/schemas/customer.schema.ts`) parses both
+  with `parseISO` before it compares them.
+- A date-time filter is compared at the precision a response shows. A
+  `timestamptz` column keeps microseconds and a response milliseconds, so
+  the customer repository truncates `createdAt` with
+  `date_trunc('milliseconds', …)` before it compares it with
+  `registeredFrom` and `registeredTo`
+  (`backend/packages/infrastructure/src/repositories/customer.repository.impl.ts`).
+  Compared as stored, a customer would not be found "until" the very time
+  their own response states.
 
 ## Authorization
 
@@ -592,6 +635,15 @@ if (!mayUpdateSalon(actor, salonId.data)) {
   A resource that is not of that salon is answered with 404. The rule is
   stated in
   [authentication.md](./authentication.md#サロンの下にあるルートの権限).
+- A rule that needs the actor alone is decided first, before the ID, the
+  query and the body are looked at, as `mayCreateSalon` is. The customer
+  ledger does not belong to a salon and none of its operations is public, so
+  each of its use cases begins that way (`mayHandleCustomers` and
+  `mayDeleteCustomers` in
+  `backend/packages/domain/src/business-logic/customer/_shared/authorization.ts`).
+  A user who is not allowed is answered with 403 whatever else is wrong with
+  the request, and whether or not the customer exists. The rule is stated in
+  [authentication.md](./authentication.md#顧客台帳の権限).
 
 **3. The error is a `DomainError`.** Nothing in this pattern builds a
 response by hand.

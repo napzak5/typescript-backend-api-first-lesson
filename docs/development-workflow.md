@@ -85,16 +85,19 @@ curl http://localhost:3000/api/v1/salons      # サロン一覧（認証なし�
 
 実装済みの API は、Salon ドメイン、サロンのサービスカテゴリー
 （`/api/v1/salons/{salonId}/service-categories`）、サロンのサービス
-（`/api/v1/salons/{salonId}/services`）、認証のすべてのオペレーション（`/api/v1/auth` のログイン、トークンの更新、
+（`/api/v1/salons/{salonId}/services`）、顧客台帳（`/api/v1/customers` の一覧、登録、1 件の取得、
+更新、削除）、認証のすべてのオペレーション（`/api/v1/auth` のログイン、トークンの更新、
 ログアウト、現在のユーザーの取得、ユーザー登録、メールアドレスの確認、パスワードの再設定と変更、
 2 要素認証、セッションの一覧と無効化、および `/api/v1/admin/auth` の管理者の操作）、
 システムエンドポイント（`/api/system/alive`、`/api/system/ready`、`/api/system/health`）だけです。
-他のドメインは、TypeSpec とデータベーススキーマにだけ存在します。
+顧客のそれ以外のオペレーションと他のドメインは、TypeSpec とデータベーススキーマにだけ存在します。
 
 サロン、サービスカテゴリー、サービスの作成・更新・削除（サービスは一括更新も）にはアクセストークンが
-必要です。シードのアカウントでログインしてトークンを取得する手順と、ロールごとの権限は
+必要です。顧客台帳は、一覧と取得を含むすべてのオペレーションに、`admin` か、サロンの `owner`・
+`manager`・`staff` のアクセストークンが必要です（削除は `staff` にはできません）。
+シードのアカウントでログインしてトークンを取得する手順と、ロールごとの権限は
 [認証と認可](./authentication.md) を、サービスカテゴリーとサービスの規則は
-[サービスメニュー](./service-menu.md) を参照してください。
+[サービスメニュー](./service-menu.md) を、顧客台帳の規則は [顧客台帳](./customers.md) を参照してください。
 
 ユーザー登録やパスワードの再設定で送られるメールは Mailpit（`http://localhost:8025`）に届きます。
 メールのリンクが指すページ（`/verify-email`、`/reset-password`）はフロントエンドにまだないので、
@@ -217,7 +220,7 @@ Salon ドメインがリファレンス実装です。新しいドメインは�
 | 2 | モデルと操作を TypeSpec に定義し、生成する（[TypeSpec を変更する](#typespec-を変更する)） | `specs/models/salon.tsp`、`specs/operations/salon-operations.tsp` |
 | 3 | モデルの型（DB スキーマと生成された API 型から導出） | `backend/packages/domain/src/models/salon.ts` |
 | 4 | リクエストの Zod スキーマ | `backend/packages/domain/src/schemas/salon.schema.ts` |
-| 5 | マッパー（Write マッパーは、表現を変える列があるときと、リクエストが複数のテーブルの行を含むときだけ） | `backend/packages/domain/src/mappers/read/salon.mapper.ts`、`backend/packages/domain/src/mappers/write/salon.mapper.ts` |
+| 5 | マッパー（Write マッパーがリクエストを作り替えるのは、表現を変える列があるときと、リクエストが複数のテーブルの行を含むときだけ。どちらもないサービスカテゴリーには Write マッパーがなく、顧客の Write マッパーはリクエストをそのまま行として返す） | `backend/packages/domain/src/mappers/read/salon.mapper.ts`、`backend/packages/domain/src/mappers/write/salon.mapper.ts` |
 | 6 | リポジトリのインターフェースと実装 | `backend/packages/domain/src/repositories/salon.repository.ts`、`backend/packages/infrastructure/src/repositories/salon.repository.impl.ts` |
 | 7 | ユースケースと権限の判定（公開でないオペレーションは `actor` を受け取り、最初に権限を判定する） | `backend/packages/domain/src/business-logic/salon/`、その中の `_shared/authorization.ts` |
 | 8 | ハンドラーとルーター、アプリへの登録（公開でないオペレーションのハンドラーは `authenticated` で包む） | `backend/packages/api/src/routes/salon/`、`backend/packages/api/src/index.ts` |
@@ -231,6 +234,12 @@ Salon ドメインがリファレンス実装です。新しいドメインは�
 サービスカテゴリーにないもの（2 つのテーブルの行を含むリクエスト、2 つの項目を結ぶ規則、一括更新、
 論理削除）は、サービス（`backend/packages/domain/src/business-logic/service/`、
 `backend/packages/api/src/routes/service/`）が手本で、同じ節に挙げてあります。
+
+サロンに属さず、公開もしないデータは、ルートをサロンの下に置かず、すべてのオペレーションを
+`authenticated` で包みます。権限は操作者だけで決まるので、ユースケースは ID、クエリ、本文を見る前に
+判定します。手本は顧客台帳（`backend/packages/domain/src/business-logic/customer/`、
+`backend/packages/api/src/routes/customer/`）で、権限は
+[認証と認可](./authentication.md#顧客台帳の権限)、規則は [顧客台帳](./customers.md) にあります。
 
 テストの基準は [テスト要件](./testing-requirements.md)、統合テストの書き方は
 [API テストガイド](./api-testing-guide.md) を参照してください。

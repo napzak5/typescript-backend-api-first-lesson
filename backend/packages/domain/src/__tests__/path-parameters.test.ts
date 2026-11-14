@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest'
+import { customerIdSchema, parseCustomerId } from '../models/customer'
 import { parseSalonIdOfPath } from '../models/salon'
 import { parseServiceId, serviceIdSchema } from '../models/service'
 import { parseCategoryId } from '../models/service-category'
 import type { DomainError } from '../shared'
+import { CUSTOMER_ID } from './auth-fixtures'
 import { brokenRules, SALON_ID } from './fixtures'
 import { CATEGORY_ID } from './service-category-fixtures'
 import { SERVICE_ID } from './service-fixtures'
@@ -146,5 +148,55 @@ describe('serviceIdSchema', () => {
 
   it.each(notUuids)('rejects %s', (_case, id) => {
     expect(serviceIdSchema.safeParse(id).success).toBe(false)
+  })
+})
+
+describe('parseCustomerId', () => {
+  it('returns the ID of a customer as it is', () => {
+    expect(parseCustomerId(CUSTOMER_ID)).toEqual({
+      type: 'success',
+      data: CUSTOMER_ID,
+    })
+  })
+
+  it.each([
+    ['upper case', CUSTOMER_ID.toUpperCase()],
+    ['mixed case', '0193A5b8-7C2e-7d4F-8a1B-3c5D7e9f0C04'],
+  ])(
+    'returns an ID written in %s as the lower-case ID, the one the database returns',
+    (_case, id) => {
+      expect(parseCustomerId(id)).toEqual({
+        type: 'success',
+        data: CUSTOMER_ID,
+      })
+    },
+  )
+
+  it.each(notUuids)('reports %s under id', (_case, id) => {
+    expect(rulesOf(parseCustomerId(id))).toEqual(['id:invalid_format'])
+  })
+
+  it.each(notText)('reports %s under id', (_case, id) => {
+    expect(rulesOf(parseCustomerId(id))).toEqual(['id:invalid_type'])
+  })
+
+  it('reports the failure as a validation error', () => {
+    expect(parseCustomerId('latest')).toMatchObject({
+      type: 'error',
+      error: { type: 'validation', message: expect.any(String) },
+    })
+  })
+})
+
+describe('customerIdSchema', () => {
+  it('reads a customer ID written in upper case as the lower-case ID', () => {
+    expect(customerIdSchema.safeParse(CUSTOMER_ID.toUpperCase())).toEqual({
+      success: true,
+      data: CUSTOMER_ID,
+    })
+  })
+
+  it.each(notUuids)('rejects %s', (_case, id) => {
+    expect(customerIdSchema.safeParse(id).success).toBe(false)
   })
 })
