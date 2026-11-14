@@ -41,7 +41,7 @@ const connect = (): postgres.Sql => {
 }
 
 beforeAll(async () => {
-  const externalUrl = process.env.TEST_DATABASE_URL
+  const { TEST_DATABASE_URL: externalUrl } = process.env
 
   if (!externalUrl) {
     container = await new PostgreSqlContainer('postgres:18-alpine')

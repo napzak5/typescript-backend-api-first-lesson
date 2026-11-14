@@ -63,11 +63,12 @@
       "style": {
         "useImportType": "error",
         "useExportType": "error",
-        "noNonNullAssertion": "warn"
+        "noNonNullAssertion": "error"
       },
       "complexity": {
         "noBannedTypes": "error",
-        "noUselessFragments": "error"
+        "noUselessFragments": "error",
+        "useLiteralKeys": "off"
       },
       "correctness": {
         "noUnusedVariables": "error",
@@ -100,6 +101,30 @@
           "enabled": false
         }
       }
+    },
+    {
+      "includes": [
+        "backend/packages/*/src/**",
+        "backend/apps/*/src/**",
+        "frontend/packages/*/src/**",
+        "frontend/apps/*/src/**",
+        "!**/__tests__/**",
+        "!**/*.test.ts",
+        "!**/*.test.tsx",
+        "!**/*.stories.tsx",
+        "!backend/packages/database/src/scripts/**",
+        "!backend/packages/database/src/seeds/**",
+        "!frontend/apps/*/src/main.tsx",
+        "!frontend/packages/message/src/**",
+        "!frontend/packages/types/src/**",
+        "!frontend/packages/utils/src/**",
+        "!frontend/packages/validations/src/**"
+      ],
+      "plugins": [
+        "./shared-config/biome/no-type-assertion.grit",
+        "./shared-config/biome/no-type-guard.grit",
+        "./shared-config/biome/no-throw.grit"
+      ]
     }
   ]
 }

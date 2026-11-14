@@ -310,7 +310,7 @@ describe('rate limit', () => {
     const response = await request(createTestApp({ rateLimit })).get(SALONS)
 
     expect(response.status).toBe(200)
-    expect(response.headers.ratelimit).toContain('r=1')
+    expect(response.headers['ratelimit']).toContain('r=1')
     expect(response.headers['ratelimit-policy']).toContain('q=2')
   })
 

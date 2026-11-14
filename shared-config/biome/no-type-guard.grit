@@ -1,0 +1,9 @@
+language js
+
+// CLAUDE.md, absolute rules: no type guards (`value is T`, `asserts value`).
+or {
+  TsPredicateReturnType(),
+  TsAssertsReturnType()
+} as $predicate where {
+  register_diagnostic(span=$predicate, message="Type guards are not allowed in application code (CLAUDE.md). Model the cases as a sum type and match on its discriminant, or parse the value with a schema.", severity="error")
+}

@@ -29,7 +29,7 @@
 | `backend/packages/domain/tsconfig.json` | `backend.json` |
 | `backend/packages/{database,generated}/tsconfig.json` | `base.json` |
 | `backend/apps/server/tsconfig.json` | `tsconfig.app.json` |
-| `backend/apps/server/tsconfig.build.json` | 同じディレクトリの `tsconfig.json`（テストを除外） |
+| `backend/packages/*/tsconfig.build.json`、`backend/apps/server/tsconfig.build.json`、`frontend/packages/*/tsconfig.build.json` | 同じディレクトリの `tsconfig.json`（ビルド用。テストを除外） |
 | `frontend/packages/*/tsconfig.json` | `tsconfig.lib.json` |
 | `frontend/apps/*/tsconfig.app.json`、`tsconfig.node.json` | `frontend.json` |
 | `specs/scripts/tsconfig.json` | なし（単独） |
@@ -56,6 +56,8 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noPropertyAccessFromIndexSignature": true,
     "noEmit": true,
     "declaration": false,
     "declarationMap": false,
@@ -75,10 +77,14 @@
 |------------|------|
 | `strict` | `strictNullChecks` などの厳格な検査をまとめて有効にする |
 | `noUncheckedIndexedAccess` | 添字や分割代入で取り出した要素の型に `undefined` を加える。書き方は [型安全性の原則](./type-safety-principles.md) を参照 |
+| `exactOptionalPropertyTypes` | 省略可能なプロパティ（`name?: string`）に `undefined` を明示的に代入することをエラーにする。「ない」と「`undefined` が入っている」を区別する |
+| `noPropertyAccessFromIndexSignature` | インデックスシグネチャから来るプロパティ（`process.env` や HTTP ヘッダーなど）をドットで読むことをエラーにする。分割代入（`const { NODE_ENV } = process.env`）か、ブラケット（`headers['location']`）で読む |
 | `noUnusedLocals` / `noUnusedParameters` | 未使用のローカル変数と引数をエラーにする。使わない引数は `_req` のように `_` で始める |
 | `noFallthroughCasesInSwitch` | `switch` の `case` が次へ抜けるのをエラーにする |
 
-型検査を厳しくするオプションでリポジトリが設定しているのは、この表のものだけです。[CLAUDE.md](../CLAUDE.md) の「TypeScript Configuration」には `exactOptionalPropertyTypes` と `noPropertyAccessFromIndexSignature` も挙がっていますが、現在はどの `tsconfig` も有効にしていません。
+[CLAUDE.md](../CLAUDE.md) の「TypeScript Configuration」が挙げる 4 つ（`strict`、`noUncheckedIndexedAccess`、`exactOptionalPropertyTypes`、`noPropertyAccessFromIndexSignature`）は、すべて `base.json` で有効で、`base.json` を継承するすべての `tsconfig` に効きます。
+
+`noPropertyAccessFromIndexSignature` はブラケットでの参照を求めるので、それをドットに書き換えさせる Biome のルール `useLiteralKeys` は `biome.json` で無効にしています。
 
 ### モジュールのオプション
 
@@ -96,7 +102,7 @@
 | `backend/packages/{api,config,database,domain,infrastructure,utility}` | rslib（`dist/index.js` に束ねる） | `tsc --emitDeclarationOnly --project tsconfig.build.json` |
 | `backend/packages/generated` | rslib | rslib（`dts: true`） |
 | `backend/apps/server` | `tsc --project tsconfig.build.json` | 同左 |
-| `frontend/packages/*` | rslib | rslib（`dts: true`） |
+| `frontend/packages/*` | rslib | rslib（`dts: true`。`tsconfig.build.json` を使う） |
 | `frontend/apps/*` | Vite | 出力しない |
 
 ### バックエンドのパッケージ
@@ -183,7 +189,7 @@ import { startServer } from './server.js'
 ### フロントエンド
 
 - アプリ（`frontend/apps/*`）の `tsconfig.json` は `references` だけを持ち、`tsconfig.app.json`（`src` 用。`@/*` を `./src/*` に対応させる `paths` を持つ）と `tsconfig.node.json`（`vite.config.ts` 用）に分かれています。型検査は `tsc --build`、ビルドは Vite です
-- パッケージ（`frontend/packages/*`）は `tsconfig.lib.json` を継承し、必要に応じて `lib` に DOM、`jsx: "react-jsx"` を足しています
+- パッケージ（`frontend/packages/*`）は `tsconfig.lib.json` を継承し、必要に応じて `lib` に DOM、`jsx: "react-jsx"` を足しています。rslib は `tsconfig.build.json`（`*.test.ts(x)` と `*.stories.tsx` を除外）で型定義を出力するので、テストの型定義は `dist` に入りません。型検査（`pnpm typecheck`）は `tsconfig.json` を使い、テストも検査します
 
 ### Node.js が直接実行するスクリプト
 

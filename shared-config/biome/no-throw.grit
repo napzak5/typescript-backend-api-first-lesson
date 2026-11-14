@@ -1,0 +1,6 @@
+language js
+
+// CLAUDE.md, absolute rules: no thrown exceptions.
+JsThrowStatement() as $statement where {
+  register_diagnostic(span=$statement, message="Application code does not throw (CLAUDE.md). Return the failure as a Result.", severity="error")
+}

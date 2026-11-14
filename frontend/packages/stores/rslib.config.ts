@@ -13,7 +13,7 @@ export default defineConfig({
         entry: {
           index: 'src/index.ts',
         },
-        tsconfigPath: './tsconfig.json',
+        tsconfigPath: './tsconfig.build.json',
       },
       format: 'esm',
       syntax: 'esnext',

@@ -40,9 +40,8 @@ const loadFile = (file: string): string | null => {
  * unknown. `.env` is read when it exists; otherwise `.env.<environment>`.
  */
 export const loadEnvFile = (): LoadedEnvFile => {
-  const environment = environmentSchema
-    .catch('localhost')
-    .parse(process.env.NODE_ENV)
+  const { NODE_ENV } = process.env
+  const environment = environmentSchema.catch('localhost').parse(NODE_ENV)
 
   return {
     environment,
@@ -54,10 +53,22 @@ export const loadEnvFile = (): LoadedEnvFile => {
 export const loadEnvConfig = (): Environment => loadEnvFile().environment
 
 /** Connection URL for the database scripts. */
-export const getDatabaseUrl = (): string =>
-  process.env.DATABASE_URL ||
-  `postgres://${process.env.POSTGRES_USER || 'postgres'}:${
-    process.env.POSTGRES_PASSWORD || 'postgres'
-  }@${process.env.DB_HOST || 'localhost'}:${
-    process.env.POSTGRES_PORT || 5432
-  }/${process.env.POSTGRES_DB || 'beauty_salon'}`
+export const getDatabaseUrl = (): string => {
+  const {
+    DATABASE_URL,
+    POSTGRES_USER,
+    POSTGRES_PASSWORD,
+    DB_HOST,
+    POSTGRES_PORT,
+    POSTGRES_DB,
+  } = process.env
+
+  return (
+    DATABASE_URL ||
+    `postgres://${POSTGRES_USER || 'postgres'}:${
+      POSTGRES_PASSWORD || 'postgres'
+    }@${DB_HOST || 'localhost'}:${POSTGRES_PORT || 5432}/${
+      POSTGRES_DB || 'beauty_salon'
+    }`
+  )
+}

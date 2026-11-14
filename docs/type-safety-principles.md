@@ -11,11 +11,13 @@ Sum 型の定義と ts-pattern の書き方は [Sum型とパターンマッチ�
 | 禁止 | 代わりに使うもの | 機械的な検査 |
 |------|------------------|--------------|
 | `any` 型 | `unknown` で受けて Zod で検証する。型は生成された API 型と DB スキーマから得る | Biome `noExplicitAny`（error） |
-| 型アサーション（`as`、非 null アサーション `!`） | Zod の検証結果、`satisfies`、ts-pattern、`=== undefined` などの比較 | `!` のみ Biome `noNonNullAssertion`（warn）。`as` はレビューで確認 |
-| 型ガード（`value is T` を返す関数） | 判別共用体の `type` の比較、ts-pattern、Zod | なし。レビューで確認 |
-| 例外を投げる（`throw`） | `Result` 型を返す | なし。レビューで確認 |
+| 型アサーション（`as`、`as const`、`<T>value`、非 null アサーション `!`） | Zod の検証結果、`satisfies`、ts-pattern、`=== undefined` などの比較 | `as` などは Biome プラグイン `no-type-assertion`、`!` は Biome `noNonNullAssertion`（どちらも error） |
+| 型ガード（`value is T`、`asserts value is T` を返す関数） | 判別共用体の `type` の比較、ts-pattern、Zod | Biome プラグイン `no-type-guard`（error） |
+| 例外を投げる（`throw`） | `Result` 型を返す | Biome プラグイン `no-throw`（error） |
 
 `typeof` や `instanceof`、`=== null` といった言語組み込みの絞り込みは型ガードの禁止に含まれません。禁じているのは、検査の正しさをコンパイラが確かめられない自作の型述語です。
+
+検査はどれも `pnpm lint`（`make ci-check`、CI、コミット時の lint-staged）で行われ、違反があると失敗します。プラグインは `shared-config/biome/` にある GritQL のファイルで、`biome.json` の `overrides` がアプリケーションコードにだけ適用しています（対象は [機械的な検査の対象](#機械的な検査の対象)）。
 
 ## 適用範囲
 
@@ -32,6 +34,19 @@ Sum 型の定義と ts-pattern の書き方は [Sum型とパターンマッチ�
 生成されたファイル（`backend/packages/generated/src`、`backend/packages/database/src/schema.ts`、`backend/packages/database/src/relations.ts`）は手で編集しないので、規則の対象外です。
 
 フロントエンド（`frontend/`）には、この規則を満たしていない箇所があります（型述語は `frontend/packages/utils/src/typeUtil/typeUtil.ts`、ブランド型への `as` は `frontend/packages/validations/src/validateEmail/validateEmail.ts` など）。これらは手本にせず、新しく書くコードは規則に従います。なお、フロントエンドの `Result` は neverthrow のもので、バックエンドの `Result` とは別の型です。
+
+### 機械的な検査の対象
+
+Biome プラグイン（`as`、型ガード、`throw`）が検査するのは、`backend/packages/*/src`、`backend/apps/*/src`、`frontend/packages/*/src`、`frontend/apps/*/src` です。新しいパッケージは、何もしなくても対象になります。次のものは `biome.json` で対象から外しています。
+
+| 対象外 | 理由 |
+|--------|------|
+| `__tests__` ディレクトリ、`*.test.ts(x)`、`*.stories.tsx` | テストコード |
+| `backend/packages/database/src/scripts`、`backend/packages/database/src/seeds` | コマンドラインから実行するスクリプトとシードデータ |
+| `frontend/apps/*/src/main.tsx` | アプリの起動点。描画先の要素がないときに `throw` で起動を止める |
+| `frontend/packages/{message,types,utils,validations}/src` | 規則より前に書かれたコードで、型述語や `as` が残っている。規則に合わせて書き直すか削除するまでの扱い |
+
+`backend/packages/generated/src` と `frontend/packages/api-client/src/generated` は、Biome の対象そのものから外れています。`any` と `!` の検査（`noExplicitAny`、`noNonNullAssertion`）は、Biome が見るすべてのファイルに適用されます。
 
 ## 例外を投げない
 

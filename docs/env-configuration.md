@@ -76,9 +76,8 @@ export const parseAppConfig = (
 ```typescript
 // backend/packages/config/src/env-loader.ts（抜粋）
 export const loadEnvFile = (): LoadedEnvFile => {
-  const environment = environmentSchema
-    .catch('localhost')
-    .parse(process.env.NODE_ENV)
+  const { NODE_ENV } = process.env
+  const environment = environmentSchema.catch('localhost').parse(NODE_ENV)
 
   return {
     environment,
