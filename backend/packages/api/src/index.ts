@@ -9,6 +9,7 @@ import {
   type Logger,
   RandomTokenIssuer,
   SalonRepository,
+  ServiceCategoryRepository,
   SessionRepository,
   UserRepository,
 } from '@beauty-salon-backend/infrastructure'
@@ -26,6 +27,7 @@ import { requestLogging } from './middleware/request-logging'
 import { createAdminAuthRouter } from './routes/admin-auth'
 import { createAuthRouter } from './routes/auth'
 import { createSalonRouter } from './routes/salon'
+import { createServiceCategoryRouter } from './routes/service-category'
 import { createSystemRouter } from './routes/system'
 import type { AppSettings } from './settings'
 import { API_BASE_PATH, SYSTEM_BASE_PATH } from './shared/api-version'
@@ -103,10 +105,18 @@ export const createApp = ({
     `${API_BASE_PATH}/admin/auth`,
     createAdminAuthRouter(authDependencies, authenticated),
   )
+  const salonRepository = new SalonRepository(database)
   app.use(
     `${API_BASE_PATH}/salons`,
-    createSalonRouter(
-      { salonRepository: new SalonRepository(database) },
+    createSalonRouter({ salonRepository }, authenticated),
+  )
+  app.use(
+    `${API_BASE_PATH}/salons/:salonId/service-categories`,
+    createServiceCategoryRouter(
+      {
+        serviceCategoryRepository: new ServiceCategoryRepository(database),
+        salonRepository,
+      },
       authenticated,
     ),
   )
