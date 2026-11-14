@@ -221,6 +221,7 @@ export const insertCustomer = async (db: Database): Promise<string> => {
       lastName: 'Suzuki',
       email: `customer-${randomUUID()}@example.com`,
       phoneNumber: '090-8765-4321',
+      tags: [],
     })
     .returning({ id: customers.id })
   if (customer === undefined) {

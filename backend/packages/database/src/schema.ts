@@ -530,10 +530,10 @@ export const customers = pgTable(
     membershipTier: membershipTier().default('regular').notNull(),
     loyaltyPoints: integer().default(0).notNull(),
     lifetimeValue: integer().default(0).notNull(),
-    preferences: jsonb().default({}),
+    preferences: jsonb(),
     notes: text(),
     internalNotes: text(),
-    tags: jsonb().default([]),
+    tags: text().array().notNull(),
     referredBy: uuid(),
     referralCode: varchar({ length: 50 }),
     allowMarketing: boolean().default(true).notNull(),
@@ -555,9 +555,22 @@ export const customers = pgTable(
     hairType: hairType(),
     hairThickness: hairThickness(),
     scalpCondition: scalpCondition(),
-    customerStatus: customerStatus().default('active'),
+    customerStatus: customerStatus().default('active').notNull(),
   },
   (table) => [
+    check(
+      'customers_email_lower_case',
+      sql`(email)::text = lower((email)::text)`,
+    ),
+    check(
+      'customers_gender_known',
+      sql`(gender)::text = ANY (ARRAY['male'::text, 'female'::text, 'other'::text, 'prefer_not_to_say'::text])`,
+    ),
+    check('customers_not_referred_by_itself', sql`"referredBy" <> id`),
+    check(
+      'customers_preferences_is_an_object',
+      sql`jsonb_typeof(preferences) = 'object'::text`,
+    ),
     foreignKey({
       columns: [table.referredBy],
       foreignColumns: [table.id],
@@ -591,8 +604,10 @@ export const customers = pgTable(
       'btree',
       table.userId.asc().nullsLast().op('uuid_ops'),
     ),
-    unique('customers_email_unique').on(table.email),
     unique('customers_referral_code_unique').on(table.referralCode),
+    uniqueIndex('customers_email_unique')
+      .using('btree', table.email.asc().nullsLast().op('text_ops'))
+      .where(sql`("deletedAt" IS NULL)`),
   ],
 )
 
