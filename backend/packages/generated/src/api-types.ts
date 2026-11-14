@@ -1509,15 +1509,15 @@ export interface paths {
         };
         /**
          * List salon services
-         * @description サロン内の提供メニューをカテゴリ別に一覧し、予約画面や在庫管理との連携に活用します。
+         * @description サロン内の提供メニューを、絞り込み条件とページネーションを指定して一覧取得します。削除済みのサービスは含みません。サロンが存在しない場合は404を返します。
          */
-        get: operations["ServiceOperations_list"];
+        get: operations["ServiceCrud_list"];
         put?: never;
         /**
          * Create service
-         * @description 新しい施術メニューを登録し、価格・施術時間・提供条件を設定します。
+         * @description 新しい施術メニューを登録し、価格・施術時間・提供条件を設定します。サロンが存在しない場合は404を、categoryIdやpackageServiceIdsに同じサロンのものではないIDを指定した場合は400を返します。
          */
-        post: operations["ServiceOperations_create"];
+        post: operations["ServiceCrud_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1539,9 +1539,9 @@ export interface paths {
         head?: never;
         /**
          * Bulk update services
-         * @description 複数メニューの共通項目を一括更新し、季節キャンペーンや価格調整を効率化します。
+         * @description 複数メニューの共通項目を一括更新し、季節キャンペーンや価格調整を効率化します。すべてのサービスを1つのトランザクションで更新し、指定したサービスのいずれかがサロンに存在しない場合は404を返してどのサービスも更新しません。
          */
-        patch: operations["ServiceOperations_bulkUpdate"];
+        patch: operations["ServiceCrud_bulkUpdate"];
         trace?: never;
     };
     "/api/v1/salons/{salonId}/services/{id}": {
@@ -1555,21 +1555,21 @@ export interface paths {
          * Get service
          * @description 特定メニューの詳細情報を取得し、予約システムやスタッフ教育に必要な内容を確認します。
          */
-        get: operations["ServiceOperations_get"];
-        /**
-         * Update service
-         * @description 既存メニューの内容を更新し、料金改定や提供条件の変更に対応します。
-         */
-        put: operations["ServiceOperations_update"];
+        get: operations["ServiceCrud_get"];
+        put?: never;
         post?: never;
         /**
          * Delete service
-         * @description 提供終了となったメニューを削除し、予約導線から除外します。
+         * @description 提供終了となったメニューを論理削除し、予約導線から除外します。削除後は一覧・取得の対象外になります。
          */
-        delete: operations["ServiceOperations_delete"];
+        delete: operations["ServiceCrud_delete"];
         options?: never;
         head?: never;
-        patch?: never;
+        /**
+         * Update service
+         * @description 既存メニューの指定した項目だけを更新し、料金改定や提供条件の変更に対応します。categoryIdやpackageServiceIdsに同じサロンのものではないIDを指定した場合は400を返します。
+         */
+        patch: operations["ServiceCrud_update"];
         trace?: never;
     };
     "/api/v1/salons/{salonId}/staff": {
@@ -1657,15 +1657,15 @@ export interface paths {
         };
         /**
          * List service categories
-         * @description 登録済みのカテゴリ一覧を取得し、メニュー分類や表示順を管理します。
+         * @description 登録済みのカテゴリを、絞り込み条件とページネーションを指定して一覧取得し、メニュー分類や表示順を管理します。
          */
-        get: operations["CategoryOperations_listCategories"];
+        get: operations["ServiceCategoryCrud_list"];
         put?: never;
         /**
          * Create service category
-         * @description 新しい施術カテゴリを作成し、階層構造や表示順を定義します。
+         * @description 新しい施術カテゴリを作成し、階層構造や表示順を定義します。salonIdのサロンが存在しない場合や、parentIdに同じサロンのものではないカテゴリを指定した場合は400を返します。
          */
-        post: operations["CategoryOperations_createCategory"];
+        post: operations["ServiceCategoryCrud_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1679,21 +1679,25 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
         /**
-         * Update service category
-         * @description 既存カテゴリを更新し、名称や表示順、親子関係を調整します。
+         * Get service category
+         * @description 特定カテゴリの詳細情報を取得し、名称や親子関係、表示順を確認します。
          */
-        put: operations["CategoryOperations_updateCategory"];
+        get: operations["ServiceCategoryCrud_get"];
+        put?: never;
         post?: never;
         /**
          * Delete service category
-         * @description 利用されなくなったカテゴリを削除し、メニュー構成を整理します。
+         * @description 利用されなくなったカテゴリを削除し、メニュー構成を整理します。このカテゴリに属するサービスのcategoryIdと、子カテゴリのparentIdはnullになります。
          */
-        delete: operations["CategoryOperations_deleteCategory"];
+        delete: operations["ServiceCategoryCrud_delete"];
         options?: never;
         head?: never;
-        patch?: never;
+        /**
+         * Update service category
+         * @description 既存カテゴリの指定した項目だけを更新し、名称や表示順、親子関係を調整します。parentIdに同じサロンのものではないカテゴリや、自身または子孫のカテゴリを指定した場合は400を返します。
+         */
+        patch: operations["ServiceCategoryCrud_update"];
         trace?: never;
     };
     "/api/v1/share/{shareToken}": {
@@ -3477,62 +3481,6 @@ export interface components {
          * @description 確定済みの予約（スケジュール確保）を識別するブランド付きUUID。
          */
         "Models.BookingId": string;
-        /** @description 顧客単位の予約回数制限 */
-        "Models.BookingLimit": {
-            /**
-             * @description 制限期間の単位
-             * @enum {string}
-             */
-            period: "day" | "week" | "month";
-            /**
-             * Format: int32
-             * @description 期間内の最大予約可能数
-             */
-            count: number;
-        };
-        /** @description サービス予約時に必要な要件詳細 */
-        "Models.BookingRequirementDetail": {
-            /** @description 要件の種類 */
-            type: components["schemas"]["Models.BookingRequirementType"];
-            /**
-             * Format: int32
-             * @description 金額要件（例: デポジット額）。金額指定が不要な要件の場合はnull
-             */
-            amount: number | null;
-            /**
-             * Format: int32
-             * @description 割合で設定する要件（%）。固定額または割合設定が不要な要件の場合はnull
-             */
-            percentage: number | null;
-            /** @description 必須かどうか。デフォルトで任意の要件の場合はnull（falseと同義） */
-            required: boolean | null;
-            /**
-             * Format: int32
-             * @description 所要時間や準備時間（分）。時間指定が不要な要件の場合はnull
-             */
-            duration: number | null;
-            /**
-             * Format: int32
-             * @description 何日前までに対応が必要か。事前対応が不要な要件の場合はnull
-             */
-            daysInAdvance: number | null;
-            /**
-             * Format: int32
-             * @description 利用可能な最低年齢。年齢制限がない要件の場合はnull
-             */
-            minAge: number | null;
-            /**
-             * Format: int32
-             * @description 利用可能な最高年齢。年齢上限がない要件の場合はnull
-             */
-            maxAge: number | null;
-            /** @description 利用可能な性別の制限。性別制限がない要件の場合はnull */
-            allowedGenders: string[] | null;
-            /** @description 必要な会員ランク。会員限定でない、またはランク指定がない要件の場合はnull */
-            requiredTier: string | null;
-            /** @description 顧客への具体的な指示。特別な準備や指示が不要な要件の場合はnull */
-            instructions: string[] | null;
-        };
         /**
 
          * @description
@@ -3543,37 +3491,25 @@ export interface components {
 
          *
 
-         * deposit: デポジット - 予約時に支払う予約金
+         * consultation_required: 事前カウンセリング必須 - 施術前の相談・カウンセリングが必要
 
          *
 
-         * consultation: 事前カウンセリング - 施術前の相談・カウンセリング
+         * patch_test_required: パッチテスト必須 - アレルギー確認のための事前テストが必要
 
          *
 
-         * patch_test: パッチテスト - アレルギー確認のための事前テスト
+         * advance_booking_required: 事前予約必須 - 当日予約を受け付けず、事前の予約が必要
 
          *
 
-         * age_restriction: 年齢制限 - 年齢による利用制限
-
-         *
-
-         * gender_restriction: 性別制限 - 性別による利用制限
-
-         *
-
-         * membership: 会員限定 - 特定の会員ランク以上の制限
-
-         *
-
-         * preparation: 事前準備 - 顧客が事前に行うべき準備
+         * deposit_required: デポジット必須 - 予約時に予約金の支払いが必要
 
          * @enum {string}
 
          */
 
-        "Models.BookingRequirementType": "deposit" | "consultation" | "patch_test" | "age_restriction" | "gender_restriction" | "membership" | "preparation";
+        "Models.BookingRequirementType": "consultation_required" | "patch_test_required" | "advance_booking_required" | "deposit_required";
         /** @description 予約の進行状況ごとに保持する詳細情報ユニオン。 */
         "Models.BookingStatus": components["schemas"]["Models.DraftBookingStatus"] | components["schemas"]["Models.PendingBookingStatus"] | components["schemas"]["Models.ConfirmedBookingStatus"] | components["schemas"]["Models.InProgressBookingStatus"] | components["schemas"]["Models.CompletedBookingStatus"] | components["schemas"]["Models.CancelledBookingStatus"] | components["schemas"]["Models.NoShowBookingStatus"];
         /**
@@ -3688,24 +3624,6 @@ export interface components {
             /** @description 営業基準となるタイムゾーンID。サロン既定値を使用する場合はnull */
             timezone: string | null;
         };
-        /** @description キャンセル料金のルール */
-        "Models.CancellationFee": {
-            /**
-             * Format: int32
-             * @description キャンセル料金を適用する期限（時間）
-             */
-            hours: number;
-            /**
-             * Format: int32
-             * @description キャンセル料金率（%）
-             */
-            percentage: number;
-            /**
-             * Format: int32
-             * @description 固定額で設定するキャンセル料金。パーセンテージベースの料金設定の場合はnull
-             */
-            fixedAmount: number | null;
-        };
         /** @description 予約がキャンセルされた場合の状態情報。 */
         "Models.CancelledBookingStatus": {
             /**
@@ -3731,83 +3649,6 @@ export interface components {
          * @description サービスカテゴリやメニュー分類を識別するブランド付きUUID。
          */
         "Models.CategoryId": string;
-        /** @description サービスカテゴリの管理モデル */
-        "Models.CategoryModel": {
-            /** @description カテゴリ ID */
-            id: components["schemas"]["Models.CategoryId"];
-            /** @description カテゴリ名 */
-            name: string;
-            /** @description カテゴリ説明。未設定の場合はnull */
-            description: string | null;
-            /** @description 親カテゴリ ID。最上位カテゴリの場合はnull */
-            parentId: (string & components["schemas"]["Models.CategoryId"]) | null;
-            /**
-             * Format: int32
-             * @description 表示順序
-             */
-            displayOrder: number;
-            /** @description 有効フラグ */
-            isActive: boolean;
-            /**
-             * Format: date-time
-             * @description レコード作成日時。
-             */
-            createdAt: string;
-            /** @description レコードを作成したユーザーID。システム自動作成または匿名作成の場合はnull */
-            createdBy: string | null;
-            /**
-             * Format: date-time
-             * @description レコード最終更新日時。
-             */
-            updatedAt: string;
-            /** @description レコードを最後に更新したユーザーID。システム自動更新または匿名更新の場合はnull */
-            updatedBy: string | null;
-        };
-        /**
-
-         * @description
-
-         * カラーサブカテゴリー区分 - ヘアカラーリングサービスの詳細分類
-
-         *
-
-         *
-
-         * full_color: フルカラー - 髪全体を染めるサービス
-
-         *
-
-         * root_touch: リタッチ - 根元の伸びた部分のみを染めるサービス
-
-         *
-
-         * highlights: ハイライト - 部分的に明るい色を入れるサービス
-
-         *
-
-         * lowlights: ローライト - 部分的に暗い色を入れるサービス
-
-         *
-
-         * balayage: バレイヤージュ - グラデーション染め技法
-
-         *
-
-         * ombre: オンブレ - 根元から毛先にかけてグラデーション染め
-
-         *
-
-         * bleach: ブリーチ - 髪の色を抜く脱色サービス
-
-         *
-
-         * color_correction: カラーコレクション - 色ムラや失敗したカラーの修正
-
-         * @enum {string}
-
-         */
-
-        "Models.ColorSubCategoryType": "full_color" | "root_touch" | "highlights" | "lowlights" | "balayage" | "ombre" | "bleach" | "color_correction";
         /** @description 施術が完了した場合の状態情報。 */
         "Models.CompletedBookingStatus": {
             /**
@@ -4345,39 +4186,6 @@ export interface components {
              */
             birthDate?: string | null;
         };
-        /**
-
-         * @description
-
-         * カットサブカテゴリー区分 - カットサービスの詳細分類
-
-         *
-
-         *
-
-         * mens_cut: メンズカット - 男性向けヘアカットサービス
-
-         *
-
-         * womens_cut: レディースカット - 女性向けヘアカットサービス
-
-         *
-
-         * kids_cut: キッズカット - 子供向けヘアカットサービス
-
-         *
-
-         * bang_trim: 前髪カット - 前髪のみのカットサービス
-
-         *
-
-         * beard_trim: 髭トリミング - 髭の整えサービス
-
-         * @enum {string}
-
-         */
-
-        "Models.CutSubCategoryType": "mens_cut" | "womens_cut" | "kids_cut" | "bang_trim" | "beard_trim";
         /** @description 期間指定や有効期間に利用する共通レンジ型。 */
         "Models.DateRange": {
             /**
@@ -5136,35 +4944,6 @@ export interface components {
          */
 
         "Models.LoyaltyTierType": "bronze" | "silver" | "gold" | "platinum";
-        /**
-
-         * @description
-
-         * メイクアップサブカテゴリー区分 - メイクアップサービスの詳細分類
-
-         *
-
-         *
-
-         * everyday_makeup: デイリーメイク - 普段使いのナチュラルメイク
-
-         *
-
-         * event_makeup: イベントメイク - パーティーやイベント用の華やかなメイク
-
-         *
-
-         * bridal_makeup: ブライダルメイク - 花嫁向けの特別なメイクアップ
-
-         *
-
-         * photoshoot_makeup: 撮影用メイク - 写真撮影用のプロフェッショナルメイク
-
-         * @enum {string}
-
-         */
-
-        "Models.MakeupSubCategoryType": "everyday_makeup" | "event_makeup" | "bridal_makeup" | "photoshoot_makeup";
         /** @description 施術で使用した資材の記録 */
         "Models.MaterialUsage": {
             /** @description 使用した在庫 ID */
@@ -5413,39 +5192,6 @@ export interface components {
             /** @description 適用税率。税率が適用されない場合はnull */
             taxRate: (number & components["schemas"]["Models.decimal"]) | null;
         };
-        /**
-
-         * @description
-
-         * ネイルサブカテゴリー区分 - ネイルケアサービスの詳細分類
-
-         *
-
-         *
-
-         * manicure: マニキュア - 手の爪のケアと装飾
-
-         *
-
-         * pedicure: ペディキュア - 足の爪のケアと装飾
-
-         *
-
-         * gel_nail: ジェルネイル - UV/LEDライトで硬化させるジェルネイル
-
-         *
-
-         * nail_art: ネイルアート - デザインや装飾を施したアートネイル
-
-         *
-
-         * nail_removal: ネイルリムーバル - ジェルやマニキュアの除去サービス
-
-         * @enum {string}
-
-         */
-
-        "Models.NailSubCategoryType": "manicure" | "pedicure" | "gel_nail" | "nail_art" | "nail_removal";
         /** @description 来店が確認できなかった場合の状態情報。 */
         "Models.NoShowBookingStatus": {
             /**
@@ -6060,39 +5806,6 @@ export interface components {
              */
             createdAt: string;
         };
-        /**
-
-         * @description
-
-         * パーマサブカテゴリー区分 - パーマネントサービスの詳細分類
-
-         *
-
-         *
-
-         * regular_perm: 通常パーマ - コールドパーマ等の標準的なパーマ
-
-         *
-
-         * digital_perm: デジタルパーマ - 熱を使った形状記憶パーマ
-
-         *
-
-         * spiral_perm: スパイラルパーマ - 螺旋状の強いカールを作るパーマ
-
-         *
-
-         * body_wave: ボディウェーブ - 大きなウェーブを作るパーマ
-
-         *
-
-         * straightening: ストレートパーマ - 縮毛矯正や髪をストレートにする施術
-
-         * @enum {string}
-
-         */
-
-        "Models.PermSubCategoryType": "regular_perm" | "digital_perm" | "spiral_perm" | "body_wave" | "straightening";
         /** @description 操作権限の定義 */
         "Models.Permission": {
             /** @description 権限 ID */
@@ -6281,83 +5994,6 @@ export interface components {
              */
             maxPrice?: number;
         };
-        /** @description 段階制価格の設定情報 */
-        "Models.PriceTier": {
-            /** @description 価格段階の名称 */
-            name: string;
-            /** @description 段階の説明。詳細な説明が不要なシンプルな価格設定の場合はnull */
-            description: string | null;
-            /**
-             * Format: int32
-             * @description 適用価格（税抜）
-             */
-            price: number;
-            /**
-             * Format: int32
-             * @description この段階での施術時間（分）。価格段階による時間変更がない場合はnull
-             */
-            duration: number | null;
-            /** @description 適用条件の説明リスト。特別な条件がない場合はnull */
-            conditions: string[] | null;
-        };
-        /** @description 料金調整に使用する変動要因 */
-        "Models.PricingFactor": {
-            /**
-             * @description 変動要因の種類
-             * @enum {string}
-             */
-            type: "day_of_week" | "time_of_day" | "staff_level" | "demand" | "season";
-            /** @description 条件に応じた倍率設定。固定倍率または他の計算方法を使用する場合はnull */
-            multipliers: {
-                [key: string]: components["schemas"]["Models.decimal"];
-            } | null;
-            /** @description ピーク時間帯の指定（HH:mm形式）。時間帯による料金変動がない場合はnull */
-            peakHours: string[] | null;
-            /** @description ピーク時間帯に適用する倍率。ピーク時間設定がない場合はnull */
-            peakMultiplier: (number & components["schemas"]["Models.decimal"]) | null;
-            /**
-             * Format: int32
-             * @description 需要に応じた閾値設定。需要ベースの料金調整を行わない場合はnull
-             */
-            threshold: number | null;
-            /** @description 季節要因の詳細設定。季節による価格変動がない場合はnull */
-            seasons: components["schemas"]["Models.Season"][] | null;
-        };
-        /** @description 採用している価格戦略の詳細 */
-        "Models.PricingStrategyDetail": {
-            /** @description 価格戦略タイプ */
-            type: components["schemas"]["Models.PricingStrategyType"];
-            /**
-             * Format: int32
-             * @description 固定価格型の場合の金額。固定価格戦略以外の場合はnull
-             */
-            amount: number | null;
-            /** @description 段階価格の設定一覧。段階価格戦略以外の場合はnull */
-            tiers: components["schemas"]["Models.PriceTier"][] | null;
-            /**
-             * Format: int32
-             * @description 基準価格。動的価格やカスタム価格など基準価格を持たない戦略の場合はnull
-             */
-            basePrice: number | null;
-            /** @description 価格変動要因の設定。動的価格戦略以外の場合はnull */
-            factors: components["schemas"]["Models.PricingFactor"][] | null;
-            /** @description セット対象となるサービス ID。パッケージ価格戦略以外の場合はnull */
-            services: components["schemas"]["Models.ServiceId"][] | null;
-            /** @description 割引率（%）。割引設定がない、または固定額割引の場合はnull */
-            discountRate: (number & components["schemas"]["Models.decimal"]) | null;
-            /**
-             * Format: int32
-             * @description 会員向け特別価格。会員価格戦略以外の場合はnull
-             */
-            memberPrice: number | null;
-            /**
-             * Format: int32
-             * @description 非会員向け価格。会員価格戦略以外の場合はnull
-             */
-            nonMemberPrice: number | null;
-            /** @description 戦略の説明。説明が不要な標準的な価格戦略の場合はnull */
-            description: string | null;
-        };
         /**
 
          * @description
@@ -6372,6 +6008,10 @@ export interface components {
 
          *
 
+         * variable: 変動価格 - 髪の長さや量など施術内容に応じて価格が変わる
+
+         *
+
          * tiered: 段階価格 - 条件によって価格が変わる段階制
 
          *
@@ -6380,21 +6020,13 @@ export interface components {
 
          *
 
-         * package: パッケージ価格 - 複数サービスをセットで提供
-
-         *
-
-         * membership: 会員価格 - 会員ランクに応じた特別価格
-
-         *
-
-         * custom: カスタム価格 - 個別に設定される特別価格
+         * consultation_based: 要相談 - カウンセリング後に価格を決定する
 
          * @enum {string}
 
          */
 
-        "Models.PricingStrategyType": "fixed" | "tiered" | "dynamic" | "package" | "membership" | "custom";
+        "Models.PricingStrategyType": "fixed" | "variable" | "tiered" | "dynamic" | "consultation_based";
         /**
          * @description RFC 9457 (Problem Details for HTTP APIs) に準拠した標準エラーレスポンスモデル。
          *     美容サロン予約システム全体で一貫したエラー情報を提供し、顧客・スタッフ双方の操作ログと連携する。
@@ -7415,126 +7047,6 @@ export interface components {
             /** @description 関連度スコアの範囲。ランキング調整やチューニングに活用する。 */
             scoreRange?: components["schemas"]["Models.ScoreRange"];
         };
-        /** @description 季節要因の定義 */
-        "Models.Season": {
-            /** @description 季節名 */
-            name: string;
-            /**
-             * Format: int32
-             * @description 開始月
-             */
-            startMonth: number;
-            /**
-             * Format: int32
-             * @description 終了月
-             */
-            endMonth: number;
-            /** @description 適用倍率 */
-            multiplier: components["schemas"]["Models.decimal"];
-        };
-        /** @description サロンで提供するサービスの統合モデル */
-        "Models.Service": {
-            /** @description サービス ID */
-            id: components["schemas"]["Models.ServiceId"];
-            /** @description サービスを提供するサロン ID */
-            salonId: components["schemas"]["Models.SalonId"];
-            /** @description サービスの紹介情報 */
-            info: components["schemas"]["Models.ServiceInfo"];
-            /** @description サービスカテゴリ区分 */
-            category: components["schemas"]["Models.ServiceCategoryType"];
-            /** @description カテゴリ ID（分類ツリー連携用）。サービスカテゴリ区分のみで分類される場合はnull */
-            categoryId: (string & components["schemas"]["Models.CategoryId"]) | null;
-            /** @description 料金設定情報 */
-            pricing: components["schemas"]["Models.ServicePricing"];
-            /** @description 提供時間の設定 */
-            duration: components["schemas"]["Models.ServiceDuration"];
-            /** @description 提供可能条件の設定。常時提供で特別な制約がない場合はnull */
-            availability: components["schemas"]["Models.ServiceAvailabilityDetail"] | null;
-            /** @description 予約時に必要な要件一覧。特別な要件がない標準サービスの場合はnull */
-            requirements: components["schemas"]["Models.BookingRequirementDetail"][] | null;
-            /** @description 追加オプション設定。オプションがないシンプルなサービスの場合はnull */
-            options: components["schemas"]["Models.ServiceOptionDetail"][] | null;
-            /** @description 提供上の制約条件。制約がないサービスの場合はnull */
-            restrictions: components["schemas"]["Models.ServiceRestrictions"] | null;
-            /** @description サービス実績の指標。新サービスで実績データがない場合はnull */
-            performance: components["schemas"]["Models.ServicePerformance"] | null;
-            /** @description 関連サービス・担当者情報。関連設定がない独立したサービスの場合はnull */
-            associations: components["schemas"]["Models.ServiceAssociations"] | null;
-            /** @description メタデータ・表示設定。特別な表示設定が不要な場合はnull */
-            metadata: components["schemas"]["Models.ServiceMetadata"] | null;
-            /** @description 現在の提供ステータス */
-            status: components["schemas"]["Models.ServiceStatusDetail"];
-            /** @description サービス名 */
-            name: string;
-            /** @description 説明文。未設定の場合はnull */
-            description: string | null;
-            /**
-             * Format: int32
-             * @description 料金
-             */
-            price: number;
-            /** @description 画像 URL。画像が登録されていない場合はnull */
-            imageUrl: string | null;
-            /**
-             * Format: int32
-             * @description スタッフレベル。全スタッフが対応可能な場合はnull
-             */
-            requiredStaffLevel: number | null;
-            /** @description 有効フラグ */
-            isActive: boolean;
-            /**
-             * Format: date-time
-             * @description レコード作成日時。
-             */
-            createdAt: string;
-            /** @description レコードを作成したユーザーID。システム自動作成または匿名作成の場合はnull */
-            createdBy: string | null;
-            /**
-             * Format: date-time
-             * @description レコード最終更新日時。
-             */
-            updatedAt: string;
-            /** @description レコードを最後に更新したユーザーID。システム自動更新または匿名更新の場合はnull */
-            updatedBy: string | null;
-        };
-        /** @description サービス間・スタッフとの関連情報 */
-        "Models.ServiceAssociations": {
-            /** @description 紐づくカテゴリ ID */
-            categoryId: components["schemas"]["Models.CategoryId"];
-            /** @description 親サービス ID。独立したサービスで親を持たない場合はnull */
-            parentServiceId: (string & components["schemas"]["Models.ServiceId"]) | null;
-            /** @description 子サービス ID 一覧。子サービスを持たない場合はnull */
-            childServiceIds: components["schemas"]["Models.ServiceId"][] | null;
-            /** @description 予約時に必須のサービス ID。前提サービスがない独立したサービスの場合はnull */
-            requiredServiceIds: components["schemas"]["Models.ServiceId"][] | null;
-            /** @description 併用を推奨するサービス ID。推奨する組み合わせがない場合はnull */
-            recommendedServiceIds: components["schemas"]["Models.ServiceId"][] | null;
-            /** @description 施術資格を持つスタッフ ID。全スタッフが対応可能な場合はnull */
-            qualifiedStaffIds: components["schemas"]["Models.StaffId"][] | null;
-            /** @description 優先的に担当させたいスタッフ ID。特定の優先スタッフがいない場合はnull */
-            preferredStaffIds: components["schemas"]["Models.StaffId"][] | null;
-        };
-        /** @description サービスの提供可否設定 */
-        "Models.ServiceAvailabilityDetail": {
-            /** @description 提供可否タイプ */
-            type: components["schemas"]["Models.ServiceAvailabilityType"];
-            /** @description 曜日・時間帯のスケジュール。常時提供または予約制の場合はnull */
-            schedule: components["schemas"]["Models.ServiceSchedule"][] | null;
-            /** @description 事前承認が必要かどうか。即時予約可能な場合はnull（falseと同義） */
-            requiresApproval: boolean | null;
-            /** @description 季節限定時の季節設定。季節限定以外の提供タイプの場合はnull */
-            seasons: components["schemas"]["Models.Season"][] | null;
-            /**
-             * Format: int32
-             * @description 1 日あたりの提供上限。日次制限がない場合はnull
-             */
-            maxPerDay: number | null;
-            /**
-             * Format: int32
-             * @description 1 週間あたりの提供上限。週次制限がない場合はnull
-             */
-            maxPerWeek: number | null;
-        };
         /**
 
          * @description
@@ -7549,25 +7061,103 @@ export interface components {
 
          *
 
-         * scheduled: スケジュール制 - 特定の時間帯のみ提供
+         * weekdays_only: 平日のみ - 平日に限り提供するサービス
 
          *
 
-         * by_appointment: 予約制 - 事前予約が必要なサービス
+         * weekends_only: 週末のみ - 土曜日・日曜日に限り提供するサービス
+
+         *
+
+         * by_appointment_only: 予約制 - 事前予約がある場合のみ提供するサービス
 
          *
 
          * seasonal: 季節限定 - 特定の季節のみ提供
 
-         *
-
-         * limited: 数量限定 - 提供数に制限があるサービス
-
          * @enum {string}
 
          */
 
-        "Models.ServiceAvailabilityType": "always" | "scheduled" | "by_appointment" | "seasonal" | "limited";
+        "Models.ServiceAvailabilityType": "always" | "weekdays_only" | "weekends_only" | "by_appointment_only" | "seasonal";
+        /**
+         * @description サービス一括更新リクエスト - 指定した複数のサービスに同じ更新内容を適用する。
+         *     すべてのサービスを1つのトランザクションで更新し、1件でも更新できない場合はどのサービスも更新しない
+         */
+        "Models.ServiceBulkUpdateRequest": {
+            /** @description 更新対象のサービス ID 一覧。パスの salonId のサロンのサービスを1件以上100件以下で指定する */
+            serviceIds: components["schemas"]["Models.ServiceId"][];
+            /** @description 各サービスに適用する更新内容。指定した項目だけを更新する */
+            updates: components["schemas"]["Models.ServiceUpdateRequest"];
+        };
+        /** @description サービス一括更新の結果 - 更新したサービスの ID 一覧を返す */
+        "Models.ServiceBulkUpdateResponse": {
+            /** @description 更新したサービスの ID 一覧 */
+            updated: components["schemas"]["Models.ServiceId"][];
+        };
+        /** @description サービスカテゴリ新規登録リクエスト - 全項目のキーが必須。DB で NULL 許可のカラムのみ null を指定できる */
+        "Models.ServiceCategoryCreateRequest": {
+            /** @description カテゴリを持つサロン ID */
+            salonId: components["schemas"]["Models.SalonId"];
+            /** @description カテゴリ名 */
+            name: string;
+            /** @description カテゴリ説明。未設定の場合はnull */
+            description: string | null;
+            /** @description 親カテゴリ ID。同じサロンのカテゴリを指定する。最上位カテゴリの場合はnull */
+            parentId: (string & components["schemas"]["Models.CategoryId"]) | null;
+            /** @description サービスカテゴリ区分 */
+            category: components["schemas"]["Models.ServiceCategoryType"];
+            /**
+             * Format: int32
+             * @description 表示順序
+             */
+            displayOrder: number;
+            /** @description アイコン画像の URL。未設定の場合はnull */
+            iconUrl: string | null;
+            /** @description 表示色(#RRGGBB形式)。未設定の場合はnull */
+            color: string | null;
+            /** @description 有効フラグ */
+            isActive: boolean;
+        };
+        /**
+         * @description サービスカテゴリレスポンス - service_categories テーブルの全カラムを返す。
+         *     プロパティ名と null 許可は DB カラムと一致させている。
+         */
+        "Models.ServiceCategoryResponse": {
+            /** @description カテゴリ ID */
+            id: components["schemas"]["Models.CategoryId"];
+            /** @description カテゴリを持つサロン ID */
+            salonId: components["schemas"]["Models.SalonId"];
+            /** @description カテゴリ名 */
+            name: string;
+            /** @description カテゴリ説明。未設定の場合はnull */
+            description: string | null;
+            /** @description 親カテゴリ ID。最上位カテゴリの場合はnull */
+            parentId: (string & components["schemas"]["Models.CategoryId"]) | null;
+            /** @description サービスカテゴリ区分 */
+            category: components["schemas"]["Models.ServiceCategoryType"];
+            /**
+             * Format: int32
+             * @description 表示順序
+             */
+            displayOrder: number;
+            /** @description アイコン画像の URL。未設定の場合はnull */
+            iconUrl: string | null;
+            /** @description 表示色(#RRGGBB形式)。未設定の場合はnull */
+            color: string | null;
+            /** @description 有効フラグ */
+            isActive: boolean;
+            /**
+             * Format: date-time
+             * @description レコード作成日時
+             */
+            createdAt: string;
+            /**
+             * Format: date-time
+             * @description レコード最終更新日時
+             */
+            updatedAt: string;
+        };
         /**
 
          * @description
@@ -7598,21 +7188,59 @@ export interface components {
 
          *
 
+         * styling: スタイリング - セット、アレンジ等のスタイリングサービス
+
+         *
+
+         * extension: エクステンション - ヘアエクステ、増毛等の毛髪追加サービス
+
+         *
+
          * other: その他 - 上記カテゴリーに分類されないサービス
 
          * @enum {string}
 
          */
 
-        "Models.ServiceCategoryType": "cut" | "color" | "perm" | "treatment" | "spa" | "other";
-        /** @description サービスを新規登録するリクエスト */
+        "Models.ServiceCategoryType": "cut" | "color" | "perm" | "treatment" | "spa" | "styling" | "extension" | "other";
+        /**
+         * @description サービスカテゴリ部分更新リクエスト - 指定した項目だけを更新する。DB で NULL 許可のカラムは null でクリアできる。
+         *     カテゴリを持つサロンは変更できない
+         */
+        "Models.ServiceCategoryUpdateRequest": {
+            /** @description カテゴリ名 */
+            name?: string;
+            /** @description カテゴリ説明。nullでクリア */
+            description?: string | null;
+            /** @description 親カテゴリ ID。同じサロンのカテゴリを指定する。nullでクリア（最上位カテゴリになる） */
+            parentId?: (string & components["schemas"]["Models.CategoryId"]) | null;
+            /** @description サービスカテゴリ区分 */
+            category?: components["schemas"]["Models.ServiceCategoryType"];
+            /**
+             * Format: int32
+             * @description 表示順序
+             */
+            displayOrder?: number;
+            /** @description アイコン画像の URL。nullでクリア */
+            iconUrl?: string | null;
+            /** @description 表示色(#RRGGBB形式)。nullでクリア */
+            color?: string | null;
+            /** @description 有効フラグ */
+            isActive?: boolean;
+        };
+        /**
+         * @description サービス新規登録リクエスト - 全項目のキーが必須。DB で NULL 許可のカラムのみ null を指定できる。
+         *     登録先のサロンはパスの salonId で指定する
+         */
         "Models.ServiceCreateRequest": {
-            /** @description サービスを登録するサロン ID */
-            salonId: components["schemas"]["Models.SalonId"];
+            /** @description 所属するサービスカテゴリの ID。同じサロンのカテゴリを指定する。カテゴリに属さない場合はnull */
+            categoryId: (string & components["schemas"]["Models.CategoryId"]) | null;
             /** @description サービス名 */
             name: string;
-            /** @description サービスの説明文 */
-            description: string;
+            /** @description 説明文。未設定の場合はnull */
+            description: string | null;
+            /** @description 短めの紹介文。詳細説明で十分な場合はnull */
+            shortDescription: string | null;
             /**
              * Format: int32
              * @description 施術時間（分）
@@ -7620,157 +7248,93 @@ export interface components {
             duration: number;
             /**
              * Format: int32
-             * @description 料金（税抜）
+             * @description 料金。税込かどうかは taxIncluded で示す
              */
             price: number;
-            /** @description サービスカテゴリ区分 */
-            category: components["schemas"]["Models.ServiceCategoryType"];
-            /** @description カテゴリ ID。サービスカテゴリ区分のみで分類する場合はnull */
-            categoryId: (string & components["schemas"]["Models.CategoryId"]) | null;
-            /** @description サービス画像 URL。画像がない場合はnull */
+            /**
+             * Format: int32
+             * @description 割引後の料金。割引がない場合はnull
+             */
+            discountPrice: number | null;
+            /** @description 税込価格かどうか */
+            taxIncluded: boolean;
+            /** @description 採用している価格戦略。未設定の場合はnull */
+            pricingStrategy: components["schemas"]["Models.PricingStrategyType"] | null;
+            /** @description 画像 URL。画像が登録されていない場合はnull */
             imageUrl: string | null;
+            /** @description サービス画像の URL 一覧。画像登録がない場合はnull */
+            imageUrls: string[] | null;
+            /** @description 必要なスタッフレベル。全スタッフが対応可能な場合はnull */
+            requiredStaffLevel: components["schemas"]["Models.StaffLevelType"] | null;
             /**
              * Format: int32
-             * @description 必要スタッフレベル。全スタッフが対応可能な場合はnull
+             * @description 1 日あたりの提供上限。日次制限がない場合はnull
              */
-            requiredStaffLevel: number | null;
+            maxBookingsPerDay: number | null;
+            /** @description 施術前にカウンセリングが必要かどうか */
+            requiresConsultation: boolean;
+            /** @description オンライン予約を受け付けるかどうか */
+            allowOnlineBooking: boolean;
+            /** @description 予約時に必要な要件一覧。特別な要件がない標準サービスの場合はnull */
+            bookingRequirements: components["schemas"]["Models.BookingRequirementType"][] | null;
+            /** @description 複数のサービスを組み合わせたパッケージかどうか */
+            isPackage: boolean;
+            /** @description パッケージに含まれるサービスの ID 一覧。同じサロンのサービスを指定する。未設定の場合はnull */
+            packageServiceIds: components["schemas"]["Models.ServiceId"][] | null;
+            /** @description タグ一覧。タグ付けが不要な場合はnull */
+            tags: string[] | null;
             /**
              * Format: int32
-             * @description 必要なデポジット額。デポジットが不要な場合はnull
+             * @description 表示順序
              */
-            depositAmount: number | null;
-            /** @description 有効フラグ。未指定時はデフォルトでtrueとして扱う場合null */
-            isActive: boolean | null;
-            /**
-             * Format: int32
-             * @description 最大全日予約可能日数。予約可能期間に制限がない場合はnull
-             */
-            maxAdvanceBookingDays: number | null;
-            /**
-             * Format: int32
-             * @description 最短予約受付時間（時間）。即時予約可能な場合はnull
-             */
-            minAdvanceBookingHours: number | null;
-        };
-        /** @description サービス提供時間の設定 */
-        "Models.ServiceDuration": {
-            /**
-             * Format: int32
-             * @description 標準施術時間（分）
-             */
-            standard: number;
-            /**
-             * Format: int32
-             * @description 最短施術時間（分）。固定時間制で短縮不可の場合はnull
-             */
-            minimum: number | null;
-            /**
-             * Format: int32
-             * @description 最長施術時間（分）。固定時間制で延長不可の場合はnull
-             */
-            maximum: number | null;
-            /**
-             * Format: int32
-             * @description 施術前のバッファ時間（分）。準備時間が不要な場合はnull
-             */
-            bufferBefore: number | null;
-            /**
-             * Format: int32
-             * @description 施術後のバッファ時間（分）。片付け時間が不要な場合はnull
-             */
-            bufferAfter: number | null;
-            /** @description カウンセリング時間を含むか */
-            includesConsultation: boolean;
+            sortOrder: number;
+            /** @description 現在の提供ステータス。未設定の場合はnull */
+            serviceStatus: components["schemas"]["Models.ServiceStatusType"] | null;
+            /** @description 提供可能な時期の区分。未設定の場合はnull */
+            availability: components["schemas"]["Models.ServiceAvailabilityType"] | null;
+            /** @description 有効フラグ */
+            isActive: boolean;
         };
         /**
          * Format: uuid
          * @description 提供メニュー・施術サービスを識別するためのブランド付きUUID。
          */
         "Models.ServiceId": string;
-        /** @description サービスの基本的な紹介情報 */
-        "Models.ServiceInfo": {
-            /** @description サービス名称 */
+        /**
+         * @description サービスオプション - service_options テーブルの1行。サービスに追加できるオプションを表す。
+         *     プロパティ名と null 許可は DB カラムと一致させている。
+         */
+        "Models.ServiceOptionResponse": {
+            /** @description オプション名 */
             name: string;
-            /** @description サービス名の読み仮名。外国語サービス名など読み仮名が不要な場合はnull */
-            nameKana: string | null;
-            /** @description サービス詳細説明文 */
-            description: string;
-            /** @description 短めの紹介文。詳細説明で十分な場合はnull */
-            shortDescription: string | null;
-            /** @description 提供価値・メリットの一覧。特別なメリット説明が不要な基本サービスの場合はnull */
-            benefits: string[] | null;
-            /** @description 主な対象顧客層。全顧客対象で特定層を限定しない場合はnull */
-            targetCustomer: string | null;
-            /** @description サービス画像の URL 一覧。画像登録がない場合はnull */
-            imageUrls: string[] | null;
-            /** @description 紹介動画の URL。動画コンテンツがない場合はnull */
-            videoUrl: string | null;
-        };
-        /** @description サービスのメタデータ情報 */
-        "Models.ServiceMetadata": {
-            /** @description タグ一覧。タグ付けが不要な場合はnull */
-            tags: string[] | null;
-            /** @description 検索キーワード。追加の検索キーワードが不要な場合はnull */
-            keywords: string[] | null;
-            /** @description SEO 用タイトル。デフォルトのサービス名を使用する場合はnull */
-            seoTitle: string | null;
-            /** @description SEO 用ディスクリプション。デフォルトの説明文を使用する場合はnull */
-            seoDescription: string | null;
-            /** @description 内部向けメモ。特記事項がない場合はnull */
-            internalNotes: string | null;
-            /**
-             * Format: int32
-             * @description 表示順序。自動ソートまたはデフォルト順序の場合はnull
-             */
-            sortOrder: number | null;
-            /** @description 注目サービスとして表示するか。通常表示の場合はnull（falseと同義） */
-            featured: boolean | null;
-            /** @description メニュー非表示フラグ。通常表示の場合はnull（falseと同義） */
-            hideFromMenu: boolean | null;
-        };
-        /** @description サービスに付随するオプション設定 */
-        "Models.ServiceOptionDetail": {
-            /** @description オプションの種類 */
-            type: components["schemas"]["Models.ServiceOptionType"];
-            /** @description オプション名。タイプから自明な名称の場合はnull */
-            name: string | null;
-            /**
-             * Format: int32
-             * @description オプション料金。無料オプションまたは他の料金設定方法の場合はnull
-             */
-            price: number | null;
-            /**
-             * Format: int32
-             * @description 追加される施術時間（分）。時間追加がないオプションの場合はnull
-             */
-            duration: number | null;
-            /** @description オプションの説明。説明が不要な自明なオプションの場合はnull */
+            /** @description オプションの説明。未設定の場合はnull */
             description: string | null;
-            /** @description アップグレード元のレベル。アップグレード型以外のオプションの場合はnull */
-            fromLevel: string | null;
-            /** @description アップグレード先のレベル。アップグレード型以外のオプションの場合はnull */
-            toLevel: string | null;
+            /** @description オプションの種類。未設定の場合はnull */
+            optionType: components["schemas"]["Models.ServiceOptionType"] | null;
             /**
              * Format: int32
-             * @description 追加料金。基本料金に含まれる、または他の料金設定の場合はnull
+             * @description 追加される施術時間（分）
              */
-            additionalPrice: number | null;
+            additionalTime: number;
             /**
              * Format: int32
-             * @description 時間延長（分）。時間延長型以外のオプションの場合はnull
+             * @description 追加料金
              */
-            extension: number | null;
-            /** @description 関連商品 ID。商品追加型以外のオプションの場合はnull */
-            productId: string | null;
-            /** @description 必須オプションかどうか。任意選択の標準的なオプションの場合はnull（falseと同義） */
-            required: boolean | null;
-            /** @description 同時予約が必要なサービス ID。コンボ型以外のオプションの場合はnull */
-            withService: (string & components["schemas"]["Models.ServiceId"]) | null;
+            additionalPrice: number;
             /**
              * Format: int32
-             * @description 割引金額。割引がない、またはパーセンテージ割引の場合はnull
+             * @description 1回の予約で選択できる最大数量
              */
-            discountAmount: number | null;
+            maxQuantity: number;
+            /** @description 必須オプションかどうか */
+            isRequired: boolean;
+            /**
+             * Format: int32
+             * @description 表示順序
+             */
+            sortOrder: number;
+            /** @description 有効フラグ */
+            isActive: boolean;
         };
         /**
 
@@ -7790,47 +7354,17 @@ export interface components {
 
          *
 
-         * duration: 時間延長 - サービス時間を延長するオプション
+         * duration_extension: 時間延長 - サービス時間を延長するオプション
 
          *
 
-         * product: 商品追加 - サービスに商品を含めるオプション
-
-         *
-
-         * combo: コンボ - 複数サービスの組み合わせオプション
+         * product_choice: 商品選択 - 施術に使用する商品を選ぶオプション
 
          * @enum {string}
 
          */
 
-        "Models.ServiceOptionType": "addon" | "upgrade" | "duration" | "product" | "combo";
-        /** @description サービスの実績指標 */
-        "Models.ServicePerformance": {
-            /**
-             * Format: int32
-             * @description 予約件数
-             */
-            bookingCount: number;
-            /** @description 施術完了率 */
-            completionRate: components["schemas"]["Models.decimal"];
-            /** @description 平均評価スコア。まだ評価がない新サービスの場合はnull */
-            averageRating: (number & components["schemas"]["Models.decimal"]) | null;
-            /**
-             * Format: int32
-             * @description レビュー件数
-             */
-            reviewCount: number;
-            /**
-             * Format: int64
-             * @description 売上実績（円）
-             */
-            revenue: number;
-            /** @description 人気度スコア。算出に必要なデータが不足している場合はnull */
-            popularityScore: (number & components["schemas"]["Models.decimal"]) | null;
-            /** @description リピート率（%）。リピート実績がない新サービスの場合はnull */
-            repeatRate: (number & components["schemas"]["Models.decimal"]) | null;
-        };
+        "Models.ServiceOptionType": "addon" | "upgrade" | "duration_extension" | "product_choice";
         "Models.ServicePreference": {
             /** @description お気に入りサービス一覧。特にない場合はnull */
             favoriteServices: components["schemas"]["Models.ServiceId"][] | null;
@@ -7844,104 +7378,88 @@ export interface components {
             /** @description 希望価格帯。特に希望がない場合はnull */
             preferredPriceRange: components["schemas"]["Models.PriceRangeFilter"] | null;
         };
-        /** @description サービスの料金設定情報 */
-        "Models.ServicePricing": {
-            /** @description 採用している価格戦略 */
-            strategy: components["schemas"]["Models.PricingStrategyDetail"];
+        /**
+         * @description サービスレスポンス - services テーブルの公開カラムと、サービスオプション(service_options)を返す。
+         *     プロパティ名と null 許可は DB カラムと一致させている。
+         */
+        "Models.ServiceResponse": {
+            /** @description サービス ID */
+            id: components["schemas"]["Models.ServiceId"];
+            /** @description サービスを提供するサロン ID */
+            salonId: components["schemas"]["Models.SalonId"];
+            /** @description 所属するサービスカテゴリの ID。カテゴリ未設定、またはカテゴリが削除された場合はnull */
+            categoryId: (string & components["schemas"]["Models.CategoryId"]) | null;
+            /** @description サービス名 */
+            name: string;
+            /** @description 説明文。未設定の場合はnull */
+            description: string | null;
+            /** @description 短めの紹介文。詳細説明で十分な場合はnull */
+            shortDescription: string | null;
+            /**
+             * Format: int32
+             * @description 施術時間（分）
+             */
+            duration: number;
+            /**
+             * Format: int32
+             * @description 料金。税込かどうかは taxIncluded で示す
+             */
+            price: number;
+            /**
+             * Format: int32
+             * @description 割引後の料金。割引がない場合はnull
+             */
+            discountPrice: number | null;
             /** @description 税込価格かどうか */
             taxIncluded: boolean;
-            /** @description 通貨コード */
-            currency: components["schemas"]["Models.CurrencyCodeType"];
-            /**
-             * Format: int32
-             * @description 設定されている最低料金。最低料金制限がない場合はnull
-             */
-            minimumPrice: number | null;
-            /**
-             * Format: int32
-             * @description 設定されている最高料金。最高料金制限がない場合はnull
-             */
-            maximumPrice: number | null;
-            /** @description 予約時にデポジットが必要か */
-            depositRequired: boolean;
-            /**
-             * Format: int32
-             * @description 必要なデポジット金額。デポジットが不要な場合はnull
-             */
-            depositAmount: number | null;
-            /** @description キャンセル料金の設定。キャンセル料が発生しない場合はnull */
-            cancellationFee: components["schemas"]["Models.CancellationFee"] | null;
-        };
-        /** @description サービス提供時の制約条件 */
-        "Models.ServiceRestrictions": {
+            /** @description 採用している価格戦略。未設定の場合はnull */
+            pricingStrategy: components["schemas"]["Models.PricingStrategyType"] | null;
+            /** @description 画像 URL。画像が登録されていない場合はnull */
+            imageUrl: string | null;
+            /** @description サービス画像の URL 一覧。画像登録がない場合はnull */
+            imageUrls: string[] | null;
             /** @description 必要なスタッフレベル。全スタッフが対応可能な場合はnull */
             requiredStaffLevel: components["schemas"]["Models.StaffLevelType"] | null;
-            /** @description 必要資格の一覧。特別な資格が不要な場合はnull */
-            requiredCertifications: string[] | null;
             /**
              * Format: int32
-             * @description 同時提供可能な最大件数。同時提供制限がない場合はnull
+             * @description 1 日あたりの提供上限。日次制限がない場合はnull
              */
-            maxConcurrent: number | null;
+            maxBookingsPerDay: number | null;
+            /** @description 施術前にカウンセリングが必要かどうか */
+            requiresConsultation: boolean;
+            /** @description オンライン予約を受け付けるかどうか */
+            allowOnlineBooking: boolean;
+            /** @description 予約時に必要な要件一覧。特別な要件がない標準サービスの場合はnull */
+            bookingRequirements: components["schemas"]["Models.BookingRequirementType"][] | null;
+            /** @description 複数のサービスを組み合わせたパッケージかどうか */
+            isPackage: boolean;
+            /** @description パッケージに含まれるサービスの ID 一覧。未設定の場合はnull */
+            packageServiceIds: components["schemas"]["Models.ServiceId"][] | null;
+            /** @description タグ一覧。タグ付けが不要な場合はnull */
+            tags: string[] | null;
             /**
              * Format: int32
-             * @description 再予約までの最短間隔（日）。連続予約可能な場合はnull
+             * @description 表示順序
              */
-            minIntervalDays: number | null;
-            /** @description 顧客ごとの予約上限設定。予約回数制限がない場合はnull */
-            maxBookingsPerCustomer: components["schemas"]["Models.BookingLimit"] | null;
-            /** @description 提供不可日（ブラックアウト）一覧。特定の除外日がない場合はnull */
-            blackoutDates: string[] | null;
-        };
-        /** @description サービス提供スケジュール */
-        "Models.ServiceSchedule": {
-            /** @description 曜日 */
-            dayOfWeek: components["schemas"]["Models.DayOfWeekType"];
-            /** @description 提供開始時刻（HH:mm） */
-            startTime: string;
-            /** @description 提供終了時刻（HH:mm） */
-            endTime: string;
-            /**
-             * Format: int32
-             * @description 予約受け入れ上限数。予約数制限がない場合はnull
-             */
-            maxBookings: number | null;
-        };
-        /** @description サービスの提供状態の詳細 */
-        "Models.ServiceStatusDetail": {
-            /** @description ステータス区分 */
-            type: components["schemas"]["Models.ServiceStatusType"];
-            /** @description ステータス変更理由。理由の記録が不要な通常変更の場合はnull */
-            reason: string | null;
+            sortOrder: number;
+            /** @description 現在の提供ステータス。未設定の場合はnull */
+            serviceStatus: components["schemas"]["Models.ServiceStatusType"] | null;
+            /** @description 提供可能な時期の区分。未設定の場合はnull */
+            availability: components["schemas"]["Models.ServiceAvailabilityType"] | null;
+            /** @description 有効フラグ */
+            isActive: boolean;
+            /** @description 追加オプションの一覧。sortOrderの昇順で並ぶ。オプションがない場合は空配列 */
+            options: components["schemas"]["Models.ServiceOptionResponse"][];
             /**
              * Format: date-time
-             * @description この状態が開始した日時。開始日時の記録が不要な場合はnull
+             * @description レコード作成日時
              */
-            since: string | null;
-            /** @description 提供可能な月の一覧（1-12）。季節限定以外のステータスの場合はnull */
-            availableMonths: number[] | null;
+            createdAt: string;
             /**
              * Format: date-time
-             * @description 提供終了予定日。終了予定が未定または無期限の場合はnull
+             * @description レコード最終更新日時
              */
-            availableUntil: string | null;
-            /**
-             * Format: int32
-             * @description 残り提供可能枠数。数量限定以外のステータスの場合はnull
-             */
-            remainingSlots: number | null;
-            /**
-             * Format: date-time
-             * @description 廃止日時。廃止ステータス以外の場合はnull
-             */
-            discontinuedAt: string | null;
-            /** @description 代替サービス ID。廃止時に代替サービスがない場合はnull */
-            replacementId: (string & components["schemas"]["Models.ServiceId"]) | null;
-            /**
-             * Format: date-time
-             * @description 公開予定日。近日公開以外のステータス、または予定日未定の場合はnull
-             */
-            launchDate: string | null;
+            updatedAt: string;
         };
         /**
 
@@ -7961,25 +7479,17 @@ export interface components {
 
          *
 
-         * seasonal: 季節限定 - 特定の季節のみ提供されるサービス
-
-         *
-
-         * limited: 数量限定 - 残りわずかなサービス
+         * coming_soon: 近日公開 - 近々提供予定のサービス
 
          *
 
          * discontinued: 廃止 - 提供を終了したサービス
 
-         *
-
-         * coming_soon: 近日公開 - 近々提供予定のサービス
-
          * @enum {string}
 
          */
 
-        "Models.ServiceStatusType": "active" | "inactive" | "seasonal" | "limited" | "discontinued" | "coming_soon";
+        "Models.ServiceStatusType": "active" | "inactive" | "coming_soon" | "discontinued";
         /** @description サービスメニューを一覧表示や候補選択で参照する際の要約情報。 */
         "Models.ServiceSummary": {
             /** @description サービスメニューを識別するID。 */
@@ -7992,50 +7502,69 @@ export interface components {
              */
             bookingCount: number | null;
         };
-        /** @description サービス情報を部分更新するリクエスト。null指定で値をリセット可能 */
+        /** @description サービス部分更新リクエスト - 指定した項目だけを更新する。DB で NULL 許可のカラムは null でクリアできる */
         "Models.ServiceUpdateRequest": {
-            /** @description 更新後のサービス名 */
+            /** @description 所属するサービスカテゴリの ID。同じサロンのカテゴリを指定する。nullでクリア */
+            categoryId?: (string & components["schemas"]["Models.CategoryId"]) | null;
+            /** @description サービス名 */
             name?: string;
-            /** @description 更新後の説明文。null指定で説明文をクリア（空文字列にリセット） */
-            description: string | null;
+            /** @description 説明文。nullでクリア */
+            description?: string | null;
+            /** @description 短めの紹介文。nullでクリア */
+            shortDescription?: string | null;
             /**
              * Format: int32
-             * @description 更新後の施術時間。null指定で時間設定をクリア（デフォルト値にリセット）
+             * @description 施術時間（分）
              */
-            duration: number | null;
+            duration?: number;
             /**
              * Format: int32
-             * @description 更新後の料金
+             * @description 料金。税込かどうかは taxIncluded で示す
              */
             price?: number;
-            /** @description 更新後のサービスカテゴリ */
-            category?: components["schemas"]["Models.ServiceCategoryType"];
-            /** @description 更新後のカテゴリ ID（null 指定で解除） */
-            categoryId?: (string & components["schemas"]["Models.CategoryId"]) | null;
-            /** @description 更新後の画像 URL（null 指定で解除） */
+            /**
+             * Format: int32
+             * @description 割引後の料金。nullでクリア
+             */
+            discountPrice?: number | null;
+            /** @description 税込価格かどうか */
+            taxIncluded?: boolean;
+            /** @description 採用している価格戦略。nullでクリア */
+            pricingStrategy?: components["schemas"]["Models.PricingStrategyType"] | null;
+            /** @description 画像 URL。nullでクリア */
             imageUrl?: string | null;
+            /** @description サービス画像の URL 一覧。nullでクリア */
+            imageUrls?: string[] | null;
+            /** @description 必要なスタッフレベル。nullでクリア（全スタッフが対応可能になる） */
+            requiredStaffLevel?: components["schemas"]["Models.StaffLevelType"] | null;
             /**
              * Format: int32
-             * @description 更新後の必要スタッフレベル（null 指定で解除）
+             * @description 1 日あたりの提供上限。nullでクリア（日次制限なし）
              */
-            requiredStaffLevel?: number | null;
+            maxBookingsPerDay?: number | null;
+            /** @description 施術前にカウンセリングが必要かどうか */
+            requiresConsultation?: boolean;
+            /** @description オンライン予約を受け付けるかどうか */
+            allowOnlineBooking?: boolean;
+            /** @description 予約時に必要な要件一覧。nullでクリア */
+            bookingRequirements?: components["schemas"]["Models.BookingRequirementType"][] | null;
+            /** @description 複数のサービスを組み合わせたパッケージかどうか */
+            isPackage?: boolean;
+            /** @description パッケージに含まれるサービスの ID 一覧。同じサロンのサービスを指定する。nullでクリア */
+            packageServiceIds?: components["schemas"]["Models.ServiceId"][] | null;
+            /** @description タグ一覧。nullでクリア */
+            tags?: string[] | null;
             /**
              * Format: int32
-             * @description 更新後のデポジット額（null 指定で解除）
+             * @description 表示順序
              */
-            depositAmount?: number | null;
-            /** @description 更新後の有効フラグ */
+            sortOrder?: number;
+            /** @description 現在の提供ステータス。nullでクリア */
+            serviceStatus?: components["schemas"]["Models.ServiceStatusType"] | null;
+            /** @description 提供可能な時期の区分。nullでクリア */
+            availability?: components["schemas"]["Models.ServiceAvailabilityType"] | null;
+            /** @description 有効フラグ */
             isActive?: boolean;
-            /**
-             * Format: int32
-             * @description 更新後の最大予約日数（null 指定で解除）
-             */
-            maxAdvanceBookingDays?: number | null;
-            /**
-             * Format: int32
-             * @description 更新後の最短予約受付時間（null 指定で解除）
-             */
-            minAdvanceBookingHours?: number | null;
         };
         /** @description ログインセッションの状態と追跡情報。 */
         "Models.Session": {
@@ -8152,35 +7681,6 @@ export interface components {
             /** @description 削除理由や補足メモ。カスタマーサポート対応に利用する。理由が不要または削除されていない場合はnull */
             deletionReason: string | null;
         };
-        /**
-
-         * @description
-
-         * スパサブカテゴリー区分 - スパ・リラクゼーションサービスの詳細分類
-
-         *
-
-         *
-
-         * head_spa: ヘッドスパ - 頭部のマッサージと頭皮ケアを組み合わせたスパ
-
-         *
-
-         * scalp_massage: スカルプマッサージ - 頭皮の血行促進マッサージ
-
-         *
-
-         * aromatherapy: アロマテラピー - アロマオイルを使用したリラクゼーション
-
-         *
-
-         * relaxation: リラクゼーション - ストレス解消を目的とした総合的なケア
-
-         * @enum {string}
-
-         */
-
-        "Models.SpaSubCategoryType": "head_spa" | "scalp_massage" | "aromatherapy" | "relaxation";
         /** @description スタッフモデル - サロンに所属するスタッフのプロフィール・資格・スケジュール・権限を統合管理する */
         "Models.Staff": {
             /** @description スタッフを一意に識別するID */
@@ -8540,39 +8040,6 @@ export interface components {
             inspirationImages: string[] | null;
         };
         /**
-
-         * @description
-
-         * スタイリングサブカテゴリー区分 - ヘアスタイリングサービスの詳細分類
-
-         *
-
-         *
-
-         * blowout: ブローアウト - ブロードライでボリュームを出すスタイリング
-
-         *
-
-         * updo: アップスタイル - まとめ髪、シニヨン等のヘアアレンジ
-
-         *
-
-         * braiding: 編み込み - 三つ編み、編み込みアレンジ等
-
-         *
-
-         * extensions: エクステンション - ヘアエクステの装着サービス
-
-         *
-
-         * event_styling: イベントスタイリング - 結婚式、パーティー等の特別なスタイリング
-
-         * @enum {string}
-
-         */
-
-        "Models.StylingSubCategoryType": "blowout" | "updo" | "braiding" | "extensions" | "event_styling";
-        /**
          * @description 準備完了チェックの結果モデル。
          *     オーケストレーターやロードバランサーが、トラフィックを振り分けてよいかを判断するために利用する。
          */
@@ -8771,39 +8238,6 @@ export interface components {
             /** @description 施術前後写真 ID - 写真撮影を希望しない顧客や撮影が不要な施術の場合はnull、null指定で値をリセット可能 */
             photos?: components["schemas"]["Models.AttachmentId"][] | null;
         };
-        /**
-
-         * @description
-
-         * トリートメントサブカテゴリー区分 - ヘアトリートメントサービスの詳細分類
-
-         *
-
-         *
-
-         * deep_conditioning: ディープコンディショニング - 髪の内部まで栄養を浸透させるトリートメント
-
-         *
-
-         * protein_treatment: プロテイントリートメント - タンパク質を補給し髪を強化するトリートメント
-
-         *
-
-         * scalp_treatment: スカルプトリートメント - 頭皮ケアに特化したトリートメント
-
-         *
-
-         * keratin_treatment: ケラチントリートメント - ケラチンを補充し髪をストレートにするトリートメント
-
-         *
-
-         * olaplex: オラプレックス - ダメージした髪の内部結合を修復するトリートメント
-
-         * @enum {string}
-
-         */
-
-        "Models.TreatmentSubCategoryType": "deep_conditioning" | "protein_treatment" | "scalp_treatment" | "keratin_treatment" | "olaplex";
         /**
 
          * @description
@@ -9334,6 +8768,18 @@ export interface components {
         "Models.SearchParams.sortBy": string;
         /** @description 昇順ascまたは降順descの指定。 */
         "Models.SearchParams.sortOrder": "asc" | "desc";
+        /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+        "Models.ServiceCategorySearchRequest.cursor": string;
+        /** @description 1ページあたりの取得件数上限 (1〜100) */
+        "Models.ServiceCategorySearchRequest.limit": number;
+        /** @description カテゴリを持つサロンの ID による絞り込み(完全一致) */
+        "Models.ServiceCategorySearchRequest.salonId": components["schemas"]["Models.SalonId"];
+        /** @description サービスカテゴリの ID による絞り込み(完全一致) */
+        "Models.ServiceSearchRequest.categoryId": components["schemas"]["Models.CategoryId"];
+        /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+        "Models.ServiceSearchRequest.cursor": string;
+        /** @description 1ページあたりの取得件数上限 (1〜100) */
+        "Models.ServiceSearchRequest.limit": number;
     };
     requestBodies: never;
     headers: never;
@@ -14067,14 +13513,15 @@ export interface operations {
             };
         };
     };
-    ServiceOperations_list: {
+    ServiceCrud_list: {
         parameters: {
             query?: {
-                category?: components["schemas"]["Models.ServiceCategoryType"];
-                /** @description 1ページあたりの取得件数。省略時は20件。 */
-                limit?: components["parameters"]["Models.PaginationParams.limit"];
-                /** @description 取得開始位置を表すオフセット。省略時は0。 */
-                offset?: components["parameters"]["Models.PaginationParams.offset"];
+                /** @description 1ページあたりの取得件数上限 (1〜100) */
+                limit?: components["parameters"]["Models.ServiceSearchRequest.limit"];
+                /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+                cursor?: components["parameters"]["Models.ServiceSearchRequest.cursor"];
+                /** @description サービスカテゴリの ID による絞り込み(完全一致) */
+                categoryId?: components["parameters"]["Models.ServiceSearchRequest.categoryId"];
             };
             header?: never;
             path: {
@@ -14091,29 +13538,59 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description 取得した要素の配列。 */
-                        data: components["schemas"]["Models.Service"][];
-                        /**
-                         * Format: int32
-                         * @description 条件に一致する全件数。
-                         */
-                        total: number;
-                        /**
-                         * Format: int32
-                         * @description 1ページあたりの件数。
-                         */
-                        limit: number;
-                        /**
-                         * Format: int32
-                         * @description 取得開始位置のオフセット。
-                         */
-                        offset: number;
+                        /** @description 現在ページで取得したデータ配列。サロン一覧や予約履歴の実データを格納する。 */
+                        data: components["schemas"]["Models.ServiceResponse"][];
+                        /** @description ページング状態を示すメタ情報。次ページの有無やカーソル値を含む。 */
+                        meta: components["schemas"]["Models.PaginationMeta"];
+                        /** @description 関連するページ遷移リンク。HATEOAS 連携や外部連携向けに利用する。 */
+                        links: components["schemas"]["Models.PaginationLinks"];
                     };
+                };
+            };
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The server cannot find the requested resource. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
+             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+             */
+            429: {
+                headers: {
+                    /** @description 再試行できるようになるまでの秒数。 */
+                    "Retry-After": number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
     };
-    ServiceOperations_create: {
+    ServiceCrud_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -14131,11 +13608,20 @@ export interface operations {
             /** @description The request has succeeded and a new resource has been created as a result. */
             201: {
                 headers: {
-                    location: string;
+                    Location: string;
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Service"];
+                    "application/json": {
+                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        data: components["schemas"]["Models.ServiceResponse"];
+                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        meta: components["schemas"]["Models.ResponseMeta"] | null;
+                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        links: {
+                            [key: string]: string;
+                        } | null;
+                    };
                 };
             };
             /** @description The server could not understand the request due to invalid syntax. */
@@ -14147,9 +13633,59 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
+            /** @description The server cannot find the requested resource. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description リクエスト本文が UTF-8 の JSON ではない (415)。 */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
+             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+             */
+            429: {
+                headers: {
+                    /** @description 再試行できるようになるまでの秒数。 */
+                    "Retry-After": number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
         };
     };
-    ServiceOperations_bulkUpdate: {
+    ServiceCrud_bulkUpdate: {
         parameters: {
             query?: never;
             header?: never;
@@ -14160,10 +13696,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": {
-                    serviceIds: components["schemas"]["Models.ServiceId"][];
-                    updates: components["schemas"]["Models.ServiceUpdateRequest"];
-                };
+                "application/json": components["schemas"]["Models.ServiceBulkUpdateRequest"];
             };
         };
         responses: {
@@ -14174,17 +13707,79 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        updated: components["schemas"]["Models.ServiceId"][];
-                        failed: {
-                            serviceId: components["schemas"]["Models.ServiceId"];
-                            error: string;
-                        }[];
+                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        data: components["schemas"]["Models.ServiceBulkUpdateResponse"];
+                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        meta: components["schemas"]["Models.ResponseMeta"] | null;
+                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        links: {
+                            [key: string]: string;
+                        } | null;
                     };
+                };
+            };
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The server cannot find the requested resource. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description リクエスト本文が UTF-8 の JSON ではない (415)。 */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
+             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+             */
+            429: {
+                headers: {
+                    /** @description 再試行できるようになるまでの秒数。 */
+                    "Retry-After": number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
     };
-    ServiceOperations_get: {
+    ServiceCrud_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -14202,7 +13797,25 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Service"];
+                    "application/json": {
+                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        data: components["schemas"]["Models.ServiceResponse"];
+                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        meta: components["schemas"]["Models.ResponseMeta"] | null;
+                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        links: {
+                            [key: string]: string;
+                        } | null;
+                    };
+                };
+            };
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description The server cannot find the requested resource. */
@@ -14214,9 +13827,94 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
+            /**
+             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
+             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+             */
+            429: {
+                headers: {
+                    /** @description 再試行できるようになるまでの秒数。 */
+                    "Retry-After": number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
         };
     };
-    ServiceOperations_update: {
+    ServiceCrud_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                salonId: components["schemas"]["Models.SalonId"];
+                id: components["schemas"]["Models.ServiceId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description There is no content to send for this request, but the headers may be useful. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The server cannot find the requested resource. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
+             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+             */
+            429: {
+                headers: {
+                    /** @description 再試行できるようになるまでの秒数。 */
+                    "Retry-After": number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+        };
+    };
+    ServiceCrud_update: {
         parameters: {
             query?: never;
             header?: never;
@@ -14238,7 +13936,16 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Service"];
+                    "application/json": {
+                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        data: components["schemas"]["Models.ServiceResponse"];
+                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        meta: components["schemas"]["Models.ResponseMeta"] | null;
+                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        links: {
+                            [key: string]: string;
+                        } | null;
+                    };
                 };
             };
             /** @description The server could not understand the request due to invalid syntax. */
@@ -14259,29 +13966,40 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-        };
-    };
-    ServiceOperations_delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                salonId: components["schemas"]["Models.SalonId"];
-                id: components["schemas"]["Models.ServiceId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description There is no content to send for this request, but the headers may be useful. */
-            204: {
+            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            413: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
             };
-            /** @description The server cannot find the requested resource. */
-            404: {
+            /** @description リクエスト本文が UTF-8 の JSON ではない (415)。 */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
+             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+             */
+            429: {
+                headers: {
+                    /** @description 再試行できるようになるまでの秒数。 */
+                    "Retry-After": number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -14540,13 +14258,15 @@ export interface operations {
             };
         };
     };
-    CategoryOperations_listCategories: {
+    ServiceCategoryCrud_list: {
         parameters: {
             query?: {
-                /** @description 1ページあたりの取得件数。省略時は20件。 */
-                limit?: components["parameters"]["Models.PaginationParams.limit"];
-                /** @description 取得開始位置を表すオフセット。省略時は0。 */
-                offset?: components["parameters"]["Models.PaginationParams.offset"];
+                /** @description 1ページあたりの取得件数上限 (1〜100) */
+                limit?: components["parameters"]["Models.ServiceCategorySearchRequest.limit"];
+                /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+                cursor?: components["parameters"]["Models.ServiceCategorySearchRequest.cursor"];
+                /** @description カテゴリを持つサロンの ID による絞り込み(完全一致) */
+                salonId?: components["parameters"]["Models.ServiceCategorySearchRequest.salonId"];
             };
             header?: never;
             path?: never;
@@ -14561,54 +14281,13 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        /** @description 取得した要素の配列。 */
-                        data: components["schemas"]["Models.CategoryModel"][];
-                        /**
-                         * Format: int32
-                         * @description 条件に一致する全件数。
-                         */
-                        total: number;
-                        /**
-                         * Format: int32
-                         * @description 1ページあたりの件数。
-                         */
-                        limit: number;
-                        /**
-                         * Format: int32
-                         * @description 取得開始位置のオフセット。
-                         */
-                        offset: number;
+                        /** @description 現在ページで取得したデータ配列。サロン一覧や予約履歴の実データを格納する。 */
+                        data: components["schemas"]["Models.ServiceCategoryResponse"][];
+                        /** @description ページング状態を示すメタ情報。次ページの有無やカーソル値を含む。 */
+                        meta: components["schemas"]["Models.PaginationMeta"];
+                        /** @description 関連するページ遷移リンク。HATEOAS 連携や外部連携向けに利用する。 */
+                        links: components["schemas"]["Models.PaginationLinks"];
                     };
-                };
-            };
-        };
-    };
-    CategoryOperations_createCategory: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    name: string;
-                    description: string;
-                    parentId?: components["schemas"]["Models.CategoryId"];
-                    /** Format: int32 */
-                    displayOrder: number;
-                };
-            };
-        };
-        responses: {
-            /** @description The request has succeeded and a new resource has been created as a result. */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Models.CategoryModel"];
                 };
             };
             /** @description The server could not understand the request due to invalid syntax. */
@@ -14620,9 +14299,116 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
+            /**
+             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
+             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+             */
+            429: {
+                headers: {
+                    /** @description 再試行できるようになるまでの秒数。 */
+                    "Retry-After": number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
         };
     };
-    CategoryOperations_updateCategory: {
+    ServiceCategoryCrud_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Models.ServiceCategoryCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description The request has succeeded and a new resource has been created as a result. */
+            201: {
+                headers: {
+                    Location: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        data: components["schemas"]["Models.ServiceCategoryResponse"];
+                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        meta: components["schemas"]["Models.ResponseMeta"] | null;
+                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        links: {
+                            [key: string]: string;
+                        } | null;
+                    };
+                };
+            };
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description リクエスト本文が UTF-8 の JSON ではない (415)。 */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
+             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+             */
+            429: {
+                headers: {
+                    /** @description 再試行できるようになるまでの秒数。 */
+                    "Retry-After": number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+        };
+    };
+    ServiceCategoryCrud_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -14631,18 +14417,7 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody: {
-            content: {
-                "application/json": {
-                    name?: string;
-                    description?: string;
-                    parentId?: components["schemas"]["Models.CategoryId"];
-                    /** Format: int32 */
-                    displayOrder?: number;
-                    isActive?: boolean;
-                };
-            };
-        };
+        requestBody?: never;
         responses: {
             /** @description The request has succeeded. */
             200: {
@@ -14650,7 +14425,25 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.CategoryModel"];
+                    "application/json": {
+                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        data: components["schemas"]["Models.ServiceCategoryResponse"];
+                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        meta: components["schemas"]["Models.ResponseMeta"] | null;
+                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        links: {
+                            [key: string]: string;
+                        } | null;
+                    };
+                };
+            };
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description The server cannot find the requested resource. */
@@ -14662,9 +14455,32 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
+            /**
+             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
+             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+             */
+            429: {
+                headers: {
+                    /** @description 再試行できるようになるまでの秒数。 */
+                    "Retry-After": number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
         };
     };
-    CategoryOperations_deleteCategory: {
+    ServiceCategoryCrud_delete: {
         parameters: {
             query?: never;
             header?: never;
@@ -14682,6 +14498,15 @@ export interface operations {
                 };
                 content?: never;
             };
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
@@ -14691,8 +14516,116 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description The request conflicts with the current state of the server. */
-            409: {
+            /**
+             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
+             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+             */
+            429: {
+                headers: {
+                    /** @description 再試行できるようになるまでの秒数。 */
+                    "Retry-After": number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+        };
+    };
+    ServiceCategoryCrud_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["schemas"]["Models.CategoryId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Models.ServiceCategoryUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description The request has succeeded. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        data: components["schemas"]["Models.ServiceCategoryResponse"];
+                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        meta: components["schemas"]["Models.ResponseMeta"] | null;
+                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        links: {
+                            [key: string]: string;
+                        } | null;
+                    };
+                };
+            };
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The server cannot find the requested resource. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description リクエスト本文が UTF-8 の JSON ではない (415)。 */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
+             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+             */
+            429: {
+                headers: {
+                    /** @description 再試行できるようになるまでの秒数。 */
+                    "Retry-After": number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };

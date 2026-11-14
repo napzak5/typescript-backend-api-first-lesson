@@ -10,18 +10,18 @@
  * サービス提供可能性タイプ区分 - サービスが提供される時期や条件
  *
  * always: 常時提供 - いつでも利用可能なサービス
- * scheduled: スケジュール制 - 特定の時間帯のみ提供
- * by_appointment: 予約制 - 事前予約が必要なサービス
+ * weekdays_only: 平日のみ - 平日に限り提供するサービス
+ * weekends_only: 週末のみ - 土曜日・日曜日に限り提供するサービス
+ * by_appointment_only: 予約制 - 事前予約がある場合のみ提供するサービス
  * seasonal: 季節限定 - 特定の季節のみ提供
- * limited: 数量限定 - 提供数に制限があるサービス
  */
 export type ModelsServiceAvailabilityType = typeof ModelsServiceAvailabilityType[keyof typeof ModelsServiceAvailabilityType];
 
 
 export const ModelsServiceAvailabilityType = {
   always: 'always',
-  scheduled: 'scheduled',
-  by_appointment: 'by_appointment',
+  weekdays_only: 'weekdays_only',
+  weekends_only: 'weekends_only',
+  by_appointment_only: 'by_appointment_only',
   seasonal: 'seasonal',
-  limited: 'limited',
 } as const;

@@ -13,10 +13,6 @@
     "unknownProperty:updatedBy",
     "unknownProperty:waitlistEntry"
   ],
-  "Models.CategoryModel": [
-    "unknownProperty:createdBy",
-    "unknownProperty:updatedBy"
-  ],
   "Models.Customer": [
     "unknownProperty:associations",
     "unknownProperty:contactInfo",
@@ -78,22 +74,6 @@
     "unknownProperty:updatedBy"
   ],
   "Models.Review": ["unknownProperty:createdBy", "unknownProperty:updatedBy"],
-  "Models.Service": [
-    "enumMismatch:availability",
-    "enumMismatch:requiredStaffLevel",
-    "unknownProperty:associations",
-    "unknownProperty:category",
-    "unknownProperty:createdBy",
-    "unknownProperty:info",
-    "unknownProperty:metadata",
-    "unknownProperty:options",
-    "unknownProperty:performance",
-    "unknownProperty:pricing",
-    "unknownProperty:requirements",
-    "unknownProperty:restrictions",
-    "unknownProperty:status",
-    "unknownProperty:updatedBy"
-  ],
   "Models.Session": ["unknownProperty:rememberMe"],
   "Models.Staff": [
     "unknownProperty:contactInfo",

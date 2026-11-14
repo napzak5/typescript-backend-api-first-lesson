@@ -5100,23 +5100,18 @@ paths:
         - Reviews
   /api/v1/salons/{salonId}/services:
     get:
-      operationId: ServiceOperations_list
+      operationId: ServiceCrud_list
       summary: List salon services
-      description: サロン内の提供メニューをカテゴリ別に一覧し、予約画面や在庫管理との連携に活用します。
+      description: サロン内の提供メニューを、絞り込み条件とページネーションを指定して一覧取得します。削除済みのサービスは含みません。サロンが存在しない場合は404を返します。
       parameters:
         - name: salonId
           in: path
           required: true
           schema:
             $ref: "#/components/schemas/Models.SalonId"
-        - name: category
-          in: query
-          required: false
-          schema:
-            $ref: "#/components/schemas/Models.ServiceCategoryType"
-          explode: false
-        - $ref: "#/components/parameters/Models.PaginationParams.limit"
-        - $ref: "#/components/parameters/Models.PaginationParams.offset"
+        - $ref: "#/components/parameters/Models.ServiceSearchRequest.limit"
+        - $ref: "#/components/parameters/Models.ServiceSearchRequest.cursor"
+        - $ref: "#/components/parameters/Models.ServiceSearchRequest.categoryId"
       responses:
         "200":
           description: The request has succeeded.
@@ -5126,34 +5121,64 @@ paths:
                 type: object
                 required:
                   - data
-                  - total
-                  - limit
-                  - offset
+                  - meta
+                  - links
                 properties:
                   data:
                     type: array
                     items:
-                      $ref: "#/components/schemas/Models.Service"
-                    description: 取得した要素の配列。
-                  total:
-                    type: integer
-                    format: int32
-                    description: 条件に一致する全件数。
-                  limit:
-                    type: integer
-                    format: int32
-                    description: 1ページあたりの件数。
-                  offset:
-                    type: integer
-                    format: int32
-                    description: 取得開始位置のオフセット。
-                description: ページネーションされた一覧レスポンスの共通構造。
+                      $ref: "#/components/schemas/Models.ServiceResponse"
+                    description: 現在ページで取得したデータ配列。サロン一覧や予約履歴の実データを格納する。
+                  meta:
+                    allOf:
+                      - $ref: "#/components/schemas/Models.PaginationMeta"
+                    description: ページング状態を示すメタ情報。次ページの有無やカーソル値を含む。
+                  links:
+                    allOf:
+                      - $ref: "#/components/schemas/Models.PaginationLinks"
+                    description: 関連するページ遷移リンク。HATEOAS 連携や外部連携向けに利用する。
+                description: |-
+                  カーソル方式のページネーションレスポンスモデル。
+                  `CursorPaginationParams` を受けたAPIが検索結果とページング状態をまとめて返却する際に利用する。
+        "400":
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Models.ProblemDetails"
+        "404":
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Models.ProblemDetails"
+        "429":
+          description: |-
+            リクエスト数の上限を超えたときのエラーレスポンス (429)。
+            クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+          headers:
+            Retry-After:
+              required: true
+              description: 再試行できるようになるまでの秒数。
+              schema:
+                type: integer
+                format: int32
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Models.ProblemDetails"
+        "500":
+          description: サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Services
     post:
-      operationId: ServiceOperations_create
+      operationId: ServiceCrud_create
       summary: Create service
-      description: 新しい施術メニューを登録し、価格・施術時間・提供条件を設定します。
+      description: 新しい施術メニューを登録し、価格・施術時間・提供条件を設定します。サロンが存在しない場合は404を、categoryIdやpackageServiceIdsに同じサロンのものではないIDを指定した場合は400を返します。
       parameters:
         - name: salonId
           in: path
@@ -5164,16 +5189,79 @@ paths:
         "201":
           description: The request has succeeded and a new resource has been created as a result.
           headers:
-            location:
+            Location:
               required: true
               schema:
                 type: string
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Models.Service"
+                type: object
+                required:
+                  - data
+                  - meta
+                  - links
+                properties:
+                  data:
+                    allOf:
+                      - $ref: "#/components/schemas/Models.ServiceResponse"
+                    description: レスポンスの主体となるビジネスデータ。
+                  meta:
+                    type: object
+                    allOf:
+                      - $ref: "#/components/schemas/Models.ResponseMeta"
+                    nullable: true
+                    description: リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull
+                  links:
+                    type: object
+                    additionalProperties:
+                      type: string
+                    nullable: true
+                    description: 関連リソースや次アクションへのリンク情報。リンクがない場合はnull
+                description: |-
+                  API 成功レスポンスの共通ラッパーモデル。
+                  サロン検索や予約登録など多様なユースケースで応答形式を統一し、クライアント実装を簡潔に保つ。
         "400":
           description: The server could not understand the request due to invalid syntax.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Models.ProblemDetails"
+        "404":
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Models.ProblemDetails"
+        "413":
+          description: リクエスト本文がサイズ上限を超えている (413)。
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Models.ProblemDetails"
+        "415":
+          description: リクエスト本文が UTF-8 の JSON ではない (415)。
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Models.ProblemDetails"
+        "429":
+          description: |-
+            リクエスト数の上限を超えたときのエラーレスポンス (429)。
+            クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+          headers:
+            Retry-After:
+              required: true
+              description: 再試行できるようになるまでの秒数。
+              schema:
+                type: integer
+                format: int32
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Models.ProblemDetails"
+        "500":
+          description: サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。
           content:
             application/problem+json:
               schema:
@@ -5188,9 +5276,9 @@ paths:
               $ref: "#/components/schemas/Models.ServiceCreateRequest"
   /api/v1/salons/{salonId}/services/bulk:
     patch:
-      operationId: ServiceOperations_bulkUpdate
+      operationId: ServiceCrud_bulkUpdate
       summary: Bulk update services
-      description: 複数メニューの共通項目を一括更新し、季節キャンペーンや価格調整を効率化します。
+      description: 複数メニューの共通項目を一括更新し、季節キャンペーンや価格調整を効率化します。すべてのサービスを1つのトランザクションで更新し、指定したサービスのいずれかがサロンに存在しない場合は404を返してどのサービスも更新しません。
       parameters:
         - name: salonId
           in: path
@@ -5204,26 +5292,75 @@ paths:
             application/json:
               schema:
                 type: object
-                properties:
-                  updated:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/Models.ServiceId"
-                  failed:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        serviceId:
-                          $ref: "#/components/schemas/Models.ServiceId"
-                        error:
-                          type: string
-                      required:
-                        - serviceId
-                        - error
                 required:
-                  - updated
-                  - failed
+                  - data
+                  - meta
+                  - links
+                properties:
+                  data:
+                    allOf:
+                      - $ref: "#/components/schemas/Models.ServiceBulkUpdateResponse"
+                    description: レスポンスの主体となるビジネスデータ。
+                  meta:
+                    type: object
+                    allOf:
+                      - $ref: "#/components/schemas/Models.ResponseMeta"
+                    nullable: true
+                    description: リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull
+                  links:
+                    type: object
+                    additionalProperties:
+                      type: string
+                    nullable: true
+                    description: 関連リソースや次アクションへのリンク情報。リンクがない場合はnull
+                description: |-
+                  API 成功レスポンスの共通ラッパーモデル。
+                  サロン検索や予約登録など多様なユースケースで応答形式を統一し、クライアント実装を簡潔に保つ。
+        "400":
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Models.ProblemDetails"
+        "404":
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Models.ProblemDetails"
+        "413":
+          description: リクエスト本文がサイズ上限を超えている (413)。
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Models.ProblemDetails"
+        "415":
+          description: リクエスト本文が UTF-8 の JSON ではない (415)。
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Models.ProblemDetails"
+        "429":
+          description: |-
+            リクエスト数の上限を超えたときのエラーレスポンス (429)。
+            クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+          headers:
+            Retry-After:
+              required: true
+              description: 再試行できるようになるまでの秒数。
+              schema:
+                type: integer
+                format: int32
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Models.ProblemDetails"
+        "500":
+          description: サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Services
       requestBody:
@@ -5231,20 +5368,10 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                serviceIds:
-                  type: array
-                  items:
-                    $ref: "#/components/schemas/Models.ServiceId"
-                updates:
-                  $ref: "#/components/schemas/Models.ServiceUpdateRequest"
-              required:
-                - serviceIds
-                - updates
+              $ref: "#/components/schemas/Models.ServiceBulkUpdateRequest"
   /api/v1/salons/{salonId}/services/{id}:
     get:
-      operationId: ServiceOperations_get
+      operationId: ServiceCrud_get
       summary: Get service
       description: 特定メニューの詳細情報を取得し、予約システムやスタッフ教育に必要な内容を確認します。
       parameters:
@@ -5264,19 +5391,70 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Models.Service"
+                type: object
+                required:
+                  - data
+                  - meta
+                  - links
+                properties:
+                  data:
+                    allOf:
+                      - $ref: "#/components/schemas/Models.ServiceResponse"
+                    description: レスポンスの主体となるビジネスデータ。
+                  meta:
+                    type: object
+                    allOf:
+                      - $ref: "#/components/schemas/Models.ResponseMeta"
+                    nullable: true
+                    description: リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull
+                  links:
+                    type: object
+                    additionalProperties:
+                      type: string
+                    nullable: true
+                    description: 関連リソースや次アクションへのリンク情報。リンクがない場合はnull
+                description: |-
+                  API 成功レスポンスの共通ラッパーモデル。
+                  サロン検索や予約登録など多様なユースケースで応答形式を統一し、クライアント実装を簡潔に保つ。
+        "400":
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Models.ProblemDetails"
         "404":
           description: The server cannot find the requested resource.
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
+        "429":
+          description: |-
+            リクエスト数の上限を超えたときのエラーレスポンス (429)。
+            クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+          headers:
+            Retry-After:
+              required: true
+              description: 再試行できるようになるまでの秒数。
+              schema:
+                type: integer
+                format: int32
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Models.ProblemDetails"
+        "500":
+          description: サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Services
-    put:
-      operationId: ServiceOperations_update
+    patch:
+      operationId: ServiceCrud_update
       summary: Update service
-      description: 既存メニューの内容を更新し、料金改定や提供条件の変更に対応します。
+      description: 既存メニューの指定した項目だけを更新し、料金改定や提供条件の変更に対応します。categoryIdやpackageServiceIdsに同じサロンのものではないIDを指定した場合は400を返します。
       parameters:
         - name: salonId
           in: path
@@ -5294,7 +5472,31 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Models.Service"
+                type: object
+                required:
+                  - data
+                  - meta
+                  - links
+                properties:
+                  data:
+                    allOf:
+                      - $ref: "#/components/schemas/Models.ServiceResponse"
+                    description: レスポンスの主体となるビジネスデータ。
+                  meta:
+                    type: object
+                    allOf:
+                      - $ref: "#/components/schemas/Models.ResponseMeta"
+                    nullable: true
+                    description: リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull
+                  links:
+                    type: object
+                    additionalProperties:
+                      type: string
+                    nullable: true
+                    description: 関連リソースや次アクションへのリンク情報。リンクがない場合はnull
+                description: |-
+                  API 成功レスポンスの共通ラッパーモデル。
+                  サロン検索や予約登録など多様なユースケースで応答形式を統一し、クライアント実装を簡潔に保つ。
         "400":
           description: The server could not understand the request due to invalid syntax.
           content:
@@ -5303,6 +5505,39 @@ paths:
                 $ref: "#/components/schemas/Models.ProblemDetails"
         "404":
           description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Models.ProblemDetails"
+        "413":
+          description: リクエスト本文がサイズ上限を超えている (413)。
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Models.ProblemDetails"
+        "415":
+          description: リクエスト本文が UTF-8 の JSON ではない (415)。
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Models.ProblemDetails"
+        "429":
+          description: |-
+            リクエスト数の上限を超えたときのエラーレスポンス (429)。
+            クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+          headers:
+            Retry-After:
+              required: true
+              description: 再試行できるようになるまでの秒数。
+              schema:
+                type: integer
+                format: int32
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Models.ProblemDetails"
+        "500":
+          description: サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。
           content:
             application/problem+json:
               schema:
@@ -5316,9 +5551,9 @@ paths:
             schema:
               $ref: "#/components/schemas/Models.ServiceUpdateRequest"
     delete:
-      operationId: ServiceOperations_delete
+      operationId: ServiceCrud_delete
       summary: Delete service
-      description: 提供終了となったメニューを削除し、予約導線から除外します。
+      description: 提供終了となったメニューを論理削除し、予約導線から除外します。削除後は一覧・取得の対象外になります。
       parameters:
         - name: salonId
           in: path
@@ -5333,8 +5568,35 @@ paths:
       responses:
         "204":
           description: "There is no content to send for this request, but the headers may be useful. "
+        "400":
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Models.ProblemDetails"
         "404":
           description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Models.ProblemDetails"
+        "429":
+          description: |-
+            リクエスト数の上限を超えたときのエラーレスポンス (429)。
+            クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+          headers:
+            Retry-After:
+              required: true
+              description: 再試行できるようになるまでの秒数。
+              schema:
+                type: integer
+                format: int32
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Models.ProblemDetails"
+        "500":
+          description: サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。
           content:
             application/problem+json:
               schema:
@@ -5598,12 +5860,13 @@ paths:
                 $ref: "#/components/schemas/Models.StaffAvailability"
   /api/v1/service-categories:
     get:
-      operationId: CategoryOperations_listCategories
+      operationId: ServiceCategoryCrud_list
       summary: List service categories
-      description: 登録済みのカテゴリ一覧を取得し、メニュー分類や表示順を管理します。
+      description: 登録済みのカテゴリを、絞り込み条件とページネーションを指定して一覧取得し、メニュー分類や表示順を管理します。
       parameters:
-        - $ref: "#/components/parameters/Models.PaginationParams.limit"
-        - $ref: "#/components/parameters/Models.PaginationParams.offset"
+        - $ref: "#/components/parameters/Models.ServiceCategorySearchRequest.limit"
+        - $ref: "#/components/parameters/Models.ServiceCategorySearchRequest.cursor"
+        - $ref: "#/components/parameters/Models.ServiceCategorySearchRequest.salonId"
       responses:
         "200":
           description: The request has succeeded.
@@ -5613,44 +5876,130 @@ paths:
                 type: object
                 required:
                   - data
-                  - total
-                  - limit
-                  - offset
+                  - meta
+                  - links
                 properties:
                   data:
                     type: array
                     items:
-                      $ref: "#/components/schemas/Models.CategoryModel"
-                    description: 取得した要素の配列。
-                  total:
-                    type: integer
-                    format: int32
-                    description: 条件に一致する全件数。
-                  limit:
-                    type: integer
-                    format: int32
-                    description: 1ページあたりの件数。
-                  offset:
-                    type: integer
-                    format: int32
-                    description: 取得開始位置のオフセット。
-                description: ページネーションされた一覧レスポンスの共通構造。
+                      $ref: "#/components/schemas/Models.ServiceCategoryResponse"
+                    description: 現在ページで取得したデータ配列。サロン一覧や予約履歴の実データを格納する。
+                  meta:
+                    allOf:
+                      - $ref: "#/components/schemas/Models.PaginationMeta"
+                    description: ページング状態を示すメタ情報。次ページの有無やカーソル値を含む。
+                  links:
+                    allOf:
+                      - $ref: "#/components/schemas/Models.PaginationLinks"
+                    description: 関連するページ遷移リンク。HATEOAS 連携や外部連携向けに利用する。
+                description: |-
+                  カーソル方式のページネーションレスポンスモデル。
+                  `CursorPaginationParams` を受けたAPIが検索結果とページング状態をまとめて返却する際に利用する。
+        "400":
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Models.ProblemDetails"
+        "429":
+          description: |-
+            リクエスト数の上限を超えたときのエラーレスポンス (429)。
+            クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+          headers:
+            Retry-After:
+              required: true
+              description: 再試行できるようになるまでの秒数。
+              schema:
+                type: integer
+                format: int32
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Models.ProblemDetails"
+        "500":
+          description: サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Services
     post:
-      operationId: CategoryOperations_createCategory
+      operationId: ServiceCategoryCrud_create
       summary: Create service category
-      description: 新しい施術カテゴリを作成し、階層構造や表示順を定義します。
+      description: 新しい施術カテゴリを作成し、階層構造や表示順を定義します。salonIdのサロンが存在しない場合や、parentIdに同じサロンのものではないカテゴリを指定した場合は400を返します。
       parameters: []
       responses:
         "201":
           description: The request has succeeded and a new resource has been created as a result.
+          headers:
+            Location:
+              required: true
+              schema:
+                type: string
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Models.CategoryModel"
+                type: object
+                required:
+                  - data
+                  - meta
+                  - links
+                properties:
+                  data:
+                    allOf:
+                      - $ref: "#/components/schemas/Models.ServiceCategoryResponse"
+                    description: レスポンスの主体となるビジネスデータ。
+                  meta:
+                    type: object
+                    allOf:
+                      - $ref: "#/components/schemas/Models.ResponseMeta"
+                    nullable: true
+                    description: リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull
+                  links:
+                    type: object
+                    additionalProperties:
+                      type: string
+                    nullable: true
+                    description: 関連リソースや次アクションへのリンク情報。リンクがない場合はnull
+                description: |-
+                  API 成功レスポンスの共通ラッパーモデル。
+                  サロン検索や予約登録など多様なユースケースで応答形式を統一し、クライアント実装を簡潔に保つ。
         "400":
           description: The server could not understand the request due to invalid syntax.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Models.ProblemDetails"
+        "413":
+          description: リクエスト本文がサイズ上限を超えている (413)。
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Models.ProblemDetails"
+        "415":
+          description: リクエスト本文が UTF-8 の JSON ではない (415)。
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Models.ProblemDetails"
+        "429":
+          description: |-
+            リクエスト数の上限を超えたときのエラーレスポンス (429)。
+            クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+          headers:
+            Retry-After:
+              required: true
+              description: 再試行できるようになるまでの秒数。
+              schema:
+                type: integer
+                format: int32
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Models.ProblemDetails"
+        "500":
+          description: サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。
           content:
             application/problem+json:
               schema:
@@ -5662,26 +6011,12 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                name:
-                  type: string
-                description:
-                  type: string
-                parentId:
-                  $ref: "#/components/schemas/Models.CategoryId"
-                displayOrder:
-                  type: integer
-                  format: int32
-              required:
-                - name
-                - description
-                - displayOrder
+              $ref: "#/components/schemas/Models.ServiceCategoryCreateRequest"
   /api/v1/service-categories/{id}:
-    put:
-      operationId: CategoryOperations_updateCategory
-      summary: Update service category
-      description: 既存カテゴリを更新し、名称や表示順、親子関係を調整します。
+    get:
+      operationId: ServiceCategoryCrud_get
+      summary: Get service category
+      description: 特定カテゴリの詳細情報を取得し、名称や親子関係、表示順を確認します。
       parameters:
         - name: id
           in: path
@@ -5694,9 +6029,148 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Models.CategoryModel"
+                type: object
+                required:
+                  - data
+                  - meta
+                  - links
+                properties:
+                  data:
+                    allOf:
+                      - $ref: "#/components/schemas/Models.ServiceCategoryResponse"
+                    description: レスポンスの主体となるビジネスデータ。
+                  meta:
+                    type: object
+                    allOf:
+                      - $ref: "#/components/schemas/Models.ResponseMeta"
+                    nullable: true
+                    description: リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull
+                  links:
+                    type: object
+                    additionalProperties:
+                      type: string
+                    nullable: true
+                    description: 関連リソースや次アクションへのリンク情報。リンクがない場合はnull
+                description: |-
+                  API 成功レスポンスの共通ラッパーモデル。
+                  サロン検索や予約登録など多様なユースケースで応答形式を統一し、クライアント実装を簡潔に保つ。
+        "400":
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Models.ProblemDetails"
         "404":
           description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Models.ProblemDetails"
+        "429":
+          description: |-
+            リクエスト数の上限を超えたときのエラーレスポンス (429)。
+            クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+          headers:
+            Retry-After:
+              required: true
+              description: 再試行できるようになるまでの秒数。
+              schema:
+                type: integer
+                format: int32
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Models.ProblemDetails"
+        "500":
+          description: サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Models.ProblemDetails"
+      tags:
+        - Services
+    patch:
+      operationId: ServiceCategoryCrud_update
+      summary: Update service category
+      description: 既存カテゴリの指定した項目だけを更新し、名称や表示順、親子関係を調整します。parentIdに同じサロンのものではないカテゴリや、自身または子孫のカテゴリを指定した場合は400を返します。
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/Models.CategoryId"
+      responses:
+        "200":
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                  - links
+                properties:
+                  data:
+                    allOf:
+                      - $ref: "#/components/schemas/Models.ServiceCategoryResponse"
+                    description: レスポンスの主体となるビジネスデータ。
+                  meta:
+                    type: object
+                    allOf:
+                      - $ref: "#/components/schemas/Models.ResponseMeta"
+                    nullable: true
+                    description: リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull
+                  links:
+                    type: object
+                    additionalProperties:
+                      type: string
+                    nullable: true
+                    description: 関連リソースや次アクションへのリンク情報。リンクがない場合はnull
+                description: |-
+                  API 成功レスポンスの共通ラッパーモデル。
+                  サロン検索や予約登録など多様なユースケースで応答形式を統一し、クライアント実装を簡潔に保つ。
+        "400":
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Models.ProblemDetails"
+        "404":
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Models.ProblemDetails"
+        "413":
+          description: リクエスト本文がサイズ上限を超えている (413)。
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Models.ProblemDetails"
+        "415":
+          description: リクエスト本文が UTF-8 の JSON ではない (415)。
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Models.ProblemDetails"
+        "429":
+          description: |-
+            リクエスト数の上限を超えたときのエラーレスポンス (429)。
+            クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+          headers:
+            Retry-After:
+              required: true
+              description: 再試行できるようになるまでの秒数。
+              schema:
+                type: integer
+                format: int32
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Models.ProblemDetails"
+        "500":
+          description: サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。
           content:
             application/problem+json:
               schema:
@@ -5708,23 +6182,11 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                name:
-                  type: string
-                description:
-                  type: string
-                parentId:
-                  $ref: "#/components/schemas/Models.CategoryId"
-                displayOrder:
-                  type: integer
-                  format: int32
-                isActive:
-                  type: boolean
+              $ref: "#/components/schemas/Models.ServiceCategoryUpdateRequest"
     delete:
-      operationId: CategoryOperations_deleteCategory
+      operationId: ServiceCategoryCrud_delete
       summary: Delete service category
-      description: 利用されなくなったカテゴリを削除し、メニュー構成を整理します。
+      description: 利用されなくなったカテゴリを削除し、メニュー構成を整理します。このカテゴリに属するサービスのcategoryIdと、子カテゴリのparentIdはnullになります。
       parameters:
         - name: id
           in: path
@@ -5734,14 +6196,35 @@ paths:
       responses:
         "204":
           description: "There is no content to send for this request, but the headers may be useful. "
+        "400":
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Models.ProblemDetails"
         "404":
           description: The server cannot find the requested resource.
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
-        "409":
-          description: The request conflicts with the current state of the server.
+        "429":
+          description: |-
+            リクエスト数の上限を超えたときのエラーレスポンス (429)。
+            クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+          headers:
+            Retry-After:
+              required: true
+              description: 再試行できるようになるまでの秒数。
+              schema:
+                type: integer
+                format: int32
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Models.ProblemDetails"
+        "500":
+          description: サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。
           content:
             application/problem+json:
               schema:
@@ -10944,6 +11427,62 @@ components:
           - asc
           - desc
       explode: false
+    Models.ServiceCategorySearchRequest.cursor:
+      name: cursor
+      in: query
+      required: false
+      description: 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する
+      schema:
+        type: string
+      explode: false
+    Models.ServiceCategorySearchRequest.limit:
+      name: limit
+      in: query
+      required: false
+      description: 1ページあたりの取得件数上限 (1〜100)
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+        maximum: 100
+        default: 20
+      explode: false
+    Models.ServiceCategorySearchRequest.salonId:
+      name: salonId
+      in: query
+      required: false
+      description: カテゴリを持つサロンの ID による絞り込み(完全一致)
+      schema:
+        $ref: "#/components/schemas/Models.SalonId"
+      explode: false
+    Models.ServiceSearchRequest.categoryId:
+      name: categoryId
+      in: query
+      required: false
+      description: サービスカテゴリの ID による絞り込み(完全一致)
+      schema:
+        $ref: "#/components/schemas/Models.CategoryId"
+      explode: false
+    Models.ServiceSearchRequest.cursor:
+      name: cursor
+      in: query
+      required: false
+      description: 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する
+      schema:
+        type: string
+      explode: false
+    Models.ServiceSearchRequest.limit:
+      name: limit
+      in: query
+      required: false
+      description: 1ページあたりの取得件数上限 (1〜100)
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+        maximum: 100
+        default: 20
+      explode: false
   schemas:
     Models.AccessCheck:
       type: object
@@ -11932,114 +12471,20 @@ components:
       type: string
       format: uuid
       description: 確定済みの予約（スケジュール確保）を識別するブランド付きUUID。
-    Models.BookingLimit:
-      type: object
-      required:
-        - period
-        - count
-      properties:
-        period:
-          type: string
-          enum:
-            - day
-            - week
-            - month
-          description: 制限期間の単位
-        count:
-          type: integer
-          format: int32
-          description: 期間内の最大予約可能数
-      description: 顧客単位の予約回数制限
-    Models.BookingRequirementDetail:
-      type: object
-      required:
-        - type
-        - amount
-        - percentage
-        - required
-        - duration
-        - daysInAdvance
-        - minAge
-        - maxAge
-        - allowedGenders
-        - requiredTier
-        - instructions
-      properties:
-        type:
-          allOf:
-            - $ref: "#/components/schemas/Models.BookingRequirementType"
-          description: 要件の種類
-        amount:
-          type: integer
-          format: int32
-          nullable: true
-          description: "金額要件（例: デポジット額）。金額指定が不要な要件の場合はnull"
-        percentage:
-          type: integer
-          format: int32
-          nullable: true
-          description: 割合で設定する要件（%）。固定額または割合設定が不要な要件の場合はnull
-        required:
-          type: boolean
-          nullable: true
-          description: 必須かどうか。デフォルトで任意の要件の場合はnull（falseと同義）
-        duration:
-          type: integer
-          format: int32
-          nullable: true
-          description: 所要時間や準備時間（分）。時間指定が不要な要件の場合はnull
-        daysInAdvance:
-          type: integer
-          format: int32
-          nullable: true
-          description: 何日前までに対応が必要か。事前対応が不要な要件の場合はnull
-        minAge:
-          type: integer
-          format: int32
-          nullable: true
-          description: 利用可能な最低年齢。年齢制限がない要件の場合はnull
-        maxAge:
-          type: integer
-          format: int32
-          nullable: true
-          description: 利用可能な最高年齢。年齢上限がない要件の場合はnull
-        allowedGenders:
-          type: array
-          items:
-            type: string
-          nullable: true
-          description: 利用可能な性別の制限。性別制限がない要件の場合はnull
-        requiredTier:
-          type: string
-          nullable: true
-          description: 必要な会員ランク。会員限定でない、またはランク指定がない要件の場合はnull
-        instructions:
-          type: array
-          items:
-            type: string
-          nullable: true
-          description: 顧客への具体的な指示。特別な準備や指示が不要な要件の場合はnull
-      description: サービス予約時に必要な要件詳細
     Models.BookingRequirementType:
       type: string
       enum:
-        - deposit
-        - consultation
-        - patch_test
-        - age_restriction
-        - gender_restriction
-        - membership
-        - preparation
+        - consultation_required
+        - patch_test_required
+        - advance_booking_required
+        - deposit_required
       description: |-
         予約要件タイプ区分 - サービス予約時に必要な条件や制約
 
-        deposit: デポジット - 予約時に支払う予約金
-        consultation: 事前カウンセリング - 施術前の相談・カウンセリング
-        patch_test: パッチテスト - アレルギー確認のための事前テスト
-        age_restriction: 年齢制限 - 年齢による利用制限
-        gender_restriction: 性別制限 - 性別による利用制限
-        membership: 会員限定 - 特定の会員ランク以上の制限
-        preparation: 事前準備 - 顧客が事前に行うべき準備
+        consultation_required: 事前カウンセリング必須 - 施術前の相談・カウンセリングが必要
+        patch_test_required: パッチテスト必須 - アレルギー確認のための事前テストが必要
+        advance_booking_required: 事前予約必須 - 当日予約を受け付けず、事前の予約が必要
+        deposit_required: デポジット必須 - 予約時に予約金の支払いが必要
     Models.BookingStatus:
       anyOf:
         - $ref: "#/components/schemas/Models.DraftBookingStatus"
@@ -12193,27 +12638,6 @@ components:
           nullable: true
           description: 営業基準となるタイムゾーンID。サロン既定値を使用する場合はnull
       description: 曜日単位で管理する営業スケジュール設定。
-    Models.CancellationFee:
-      type: object
-      required:
-        - hours
-        - percentage
-        - fixedAmount
-      properties:
-        hours:
-          type: integer
-          format: int32
-          description: キャンセル料金を適用する期限（時間）
-        percentage:
-          type: integer
-          format: int32
-          description: キャンセル料金率（%）
-        fixedAmount:
-          type: integer
-          format: int32
-          nullable: true
-          description: 固定額で設定するキャンセル料金。パーセンテージベースの料金設定の場合はnull
-      description: キャンセル料金のルール
     Models.CancelledBookingStatus:
       type: object
       required:
@@ -12247,83 +12671,6 @@ components:
       type: string
       format: uuid
       description: サービスカテゴリやメニュー分類を識別するブランド付きUUID。
-    Models.CategoryModel:
-      type: object
-      required:
-        - id
-        - name
-        - description
-        - parentId
-        - displayOrder
-        - isActive
-        - createdAt
-        - createdBy
-        - updatedAt
-        - updatedBy
-      properties:
-        id:
-          allOf:
-            - $ref: "#/components/schemas/Models.CategoryId"
-          description: カテゴリ ID
-        name:
-          type: string
-          description: カテゴリ名
-        description:
-          type: string
-          nullable: true
-          description: カテゴリ説明。未設定の場合はnull
-        parentId:
-          type: string
-          allOf:
-            - $ref: "#/components/schemas/Models.CategoryId"
-          nullable: true
-          description: 親カテゴリ ID。最上位カテゴリの場合はnull
-        displayOrder:
-          type: integer
-          format: int32
-          description: 表示順序
-        isActive:
-          type: boolean
-          description: 有効フラグ
-        createdAt:
-          type: string
-          format: date-time
-          description: レコード作成日時。
-        createdBy:
-          type: string
-          nullable: true
-          description: レコードを作成したユーザーID。システム自動作成または匿名作成の場合はnull
-        updatedAt:
-          type: string
-          format: date-time
-          description: レコード最終更新日時。
-        updatedBy:
-          type: string
-          nullable: true
-          description: レコードを最後に更新したユーザーID。システム自動更新または匿名更新の場合はnull
-      description: サービスカテゴリの管理モデル
-    Models.ColorSubCategoryType:
-      type: string
-      enum:
-        - full_color
-        - root_touch
-        - highlights
-        - lowlights
-        - balayage
-        - ombre
-        - bleach
-        - color_correction
-      description: |-
-        カラーサブカテゴリー区分 - ヘアカラーリングサービスの詳細分類
-
-        full_color: フルカラー - 髪全体を染めるサービス
-        root_touch: リタッチ - 根元の伸びた部分のみを染めるサービス
-        highlights: ハイライト - 部分的に明るい色を入れるサービス
-        lowlights: ローライト - 部分的に暗い色を入れるサービス
-        balayage: バレイヤージュ - グラデーション染め技法
-        ombre: オンブレ - 根元から毛先にかけてグラデーション染め
-        bleach: ブリーチ - 髪の色を抜く脱色サービス
-        color_correction: カラーコレクション - 色ムラや失敗したカラーの修正
     Models.CompletedBookingStatus:
       type: object
       required:
@@ -13178,22 +13525,6 @@ components:
           nullable: true
           description: 生年月日。年齢計算や誕生日特典に使用。null指定でリセット可能
       description: 顧客更新リクエスト。部分更新のためのオプションフィールドを含む。null指定で値をリセット可能
-    Models.CutSubCategoryType:
-      type: string
-      enum:
-        - mens_cut
-        - womens_cut
-        - kids_cut
-        - bang_trim
-        - beard_trim
-      description: |-
-        カットサブカテゴリー区分 - カットサービスの詳細分類
-
-        mens_cut: メンズカット - 男性向けヘアカットサービス
-        womens_cut: レディースカット - 女性向けヘアカットサービス
-        kids_cut: キッズカット - 子供向けヘアカットサービス
-        bang_trim: 前髪カット - 前髪のみのカットサービス
-        beard_trim: 髭トリミング - 髭の整えサービス
     Models.DateRange:
       type: object
       required:
@@ -14014,20 +14345,6 @@ components:
         silver: シルバー - 中級会員ランク、標準的な特典を提供
         gold: ゴールド - 上級会員ランク、優待特典を提供
         platinum: プラチナ - 最上級会員ランク、最高レベルの特典を提供
-    Models.MakeupSubCategoryType:
-      type: string
-      enum:
-        - everyday_makeup
-        - event_makeup
-        - bridal_makeup
-        - photoshoot_makeup
-      description: |-
-        メイクアップサブカテゴリー区分 - メイクアップサービスの詳細分類
-
-        everyday_makeup: デイリーメイク - 普段使いのナチュラルメイク
-        event_makeup: イベントメイク - パーティーやイベント用の華やかなメイク
-        bridal_makeup: ブライダルメイク - 花嫁向けの特別なメイクアップ
-        photoshoot_makeup: 撮影用メイク - 写真撮影用のプロフェッショナルメイク
     Models.MaterialUsage:
       type: object
       required:
@@ -14405,22 +14722,6 @@ components:
           nullable: true
           description: 適用税率。税率が適用されない場合はnull
       description: 税抜・税込計算に利用する金額モデル。
-    Models.NailSubCategoryType:
-      type: string
-      enum:
-        - manicure
-        - pedicure
-        - gel_nail
-        - nail_art
-        - nail_removal
-      description: |-
-        ネイルサブカテゴリー区分 - ネイルケアサービスの詳細分類
-
-        manicure: マニキュア - 手の爪のケアと装飾
-        pedicure: ペディキュア - 足の爪のケアと装飾
-        gel_nail: ジェルネイル - UV/LEDライトで硬化させるジェルネイル
-        nail_art: ネイルアート - デザインや装飾を施したアートネイル
-        nail_removal: ネイルリムーバル - ジェルやマニキュアの除去サービス
     Models.NoShowBookingStatus:
       type: object
       required:
@@ -15272,22 +15573,6 @@ components:
           format: date-time
           description: 支払いが登録された日時
       description: 支払い待ち状態の詳細
-    Models.PermSubCategoryType:
-      type: string
-      enum:
-        - regular_perm
-        - digital_perm
-        - spiral_perm
-        - body_wave
-        - straightening
-      description: |-
-        パーマサブカテゴリー区分 - パーマネントサービスの詳細分類
-
-        regular_perm: 通常パーマ - コールドパーマ等の標準的なパーマ
-        digital_perm: デジタルパーマ - 熱を使った形状記憶パーマ
-        spiral_perm: スパイラルパーマ - 螺旋状の強いカールを作るパーマ
-        body_wave: ボディウェーブ - 大きなウェーブを作るパーマ
-        straightening: ストレートパーマ - 縮毛矯正や髪をストレートにする施術
     Models.Permission:
       type: object
       required:
@@ -15580,172 +15865,22 @@ components:
           format: float
           description: 上限価格。未指定の場合は制限なし。
       description: 金額レンジで絞り込むための共通クエリモデル。
-    Models.PriceTier:
-      type: object
-      required:
-        - name
-        - description
-        - price
-        - duration
-        - conditions
-      properties:
-        name:
-          type: string
-          description: 価格段階の名称
-        description:
-          type: string
-          nullable: true
-          description: 段階の説明。詳細な説明が不要なシンプルな価格設定の場合はnull
-        price:
-          type: integer
-          format: int32
-          description: 適用価格（税抜）
-        duration:
-          type: integer
-          format: int32
-          nullable: true
-          description: この段階での施術時間（分）。価格段階による時間変更がない場合はnull
-        conditions:
-          type: array
-          items:
-            type: string
-          nullable: true
-          description: 適用条件の説明リスト。特別な条件がない場合はnull
-      description: 段階制価格の設定情報
-    Models.PricingFactor:
-      type: object
-      required:
-        - type
-        - multipliers
-        - peakHours
-        - peakMultiplier
-        - threshold
-        - seasons
-      properties:
-        type:
-          type: string
-          enum:
-            - day_of_week
-            - time_of_day
-            - staff_level
-            - demand
-            - season
-          description: 変動要因の種類
-        multipliers:
-          type: object
-          additionalProperties:
-            $ref: "#/components/schemas/Models.decimal"
-          nullable: true
-          description: 条件に応じた倍率設定。固定倍率または他の計算方法を使用する場合はnull
-        peakHours:
-          type: array
-          items:
-            type: string
-          nullable: true
-          description: ピーク時間帯の指定（HH:mm形式）。時間帯による料金変動がない場合はnull
-        peakMultiplier:
-          type: number
-          allOf:
-            - $ref: "#/components/schemas/Models.decimal"
-          nullable: true
-          description: ピーク時間帯に適用する倍率。ピーク時間設定がない場合はnull
-        threshold:
-          type: integer
-          format: int32
-          nullable: true
-          description: 需要に応じた閾値設定。需要ベースの料金調整を行わない場合はnull
-        seasons:
-          type: array
-          items:
-            $ref: "#/components/schemas/Models.Season"
-          nullable: true
-          description: 季節要因の詳細設定。季節による価格変動がない場合はnull
-      description: 料金調整に使用する変動要因
-    Models.PricingStrategyDetail:
-      type: object
-      required:
-        - type
-        - amount
-        - tiers
-        - basePrice
-        - factors
-        - services
-        - discountRate
-        - memberPrice
-        - nonMemberPrice
-        - description
-      properties:
-        type:
-          allOf:
-            - $ref: "#/components/schemas/Models.PricingStrategyType"
-          description: 価格戦略タイプ
-        amount:
-          type: integer
-          format: int32
-          nullable: true
-          description: 固定価格型の場合の金額。固定価格戦略以外の場合はnull
-        tiers:
-          type: array
-          items:
-            $ref: "#/components/schemas/Models.PriceTier"
-          nullable: true
-          description: 段階価格の設定一覧。段階価格戦略以外の場合はnull
-        basePrice:
-          type: integer
-          format: int32
-          nullable: true
-          description: 基準価格。動的価格やカスタム価格など基準価格を持たない戦略の場合はnull
-        factors:
-          type: array
-          items:
-            $ref: "#/components/schemas/Models.PricingFactor"
-          nullable: true
-          description: 価格変動要因の設定。動的価格戦略以外の場合はnull
-        services:
-          type: array
-          items:
-            $ref: "#/components/schemas/Models.ServiceId"
-          nullable: true
-          description: セット対象となるサービス ID。パッケージ価格戦略以外の場合はnull
-        discountRate:
-          type: number
-          allOf:
-            - $ref: "#/components/schemas/Models.decimal"
-          nullable: true
-          description: 割引率（%）。割引設定がない、または固定額割引の場合はnull
-        memberPrice:
-          type: integer
-          format: int32
-          nullable: true
-          description: 会員向け特別価格。会員価格戦略以外の場合はnull
-        nonMemberPrice:
-          type: integer
-          format: int32
-          nullable: true
-          description: 非会員向け価格。会員価格戦略以外の場合はnull
-        description:
-          type: string
-          nullable: true
-          description: 戦略の説明。説明が不要な標準的な価格戦略の場合はnull
-      description: 採用している価格戦略の詳細
     Models.PricingStrategyType:
       type: string
       enum:
         - fixed
+        - variable
         - tiered
         - dynamic
-        - package
-        - membership
-        - custom
+        - consultation_based
       description: |-
         価格戦略タイプ区分 - サービスの価格設定方法を定義
 
         fixed: 固定価格 - 常に同じ価格で提供
+        variable: 変動価格 - 髪の長さや量など施術内容に応じて価格が変わる
         tiered: 段階価格 - 条件によって価格が変わる段階制
         dynamic: 動的価格 - 需要や時間帯によって変動する価格
-        package: パッケージ価格 - 複数サービスをセットで提供
-        membership: 会員価格 - 会員ランクに応じた特別価格
-        custom: カスタム価格 - 個別に設定される特別価格
+        consultation_based: 要相談 - カウンセリング後に価格を決定する
     Models.ProblemDetails:
       type: object
       required:
@@ -17368,284 +17503,175 @@ components:
       description: |-
         検索処理に関するメタ情報モデル。
         件数や所要時間を記録し、UX 改善やパフォーマンス監視に利用する。
-    Models.Season:
+    Models.ServiceAvailabilityType:
+      type: string
+      enum:
+        - always
+        - weekdays_only
+        - weekends_only
+        - by_appointment_only
+        - seasonal
+      description: |-
+        サービス提供可能性タイプ区分 - サービスが提供される時期や条件
+
+        always: 常時提供 - いつでも利用可能なサービス
+        weekdays_only: 平日のみ - 平日に限り提供するサービス
+        weekends_only: 週末のみ - 土曜日・日曜日に限り提供するサービス
+        by_appointment_only: 予約制 - 事前予約がある場合のみ提供するサービス
+        seasonal: 季節限定 - 特定の季節のみ提供
+    Models.ServiceBulkUpdateRequest:
       type: object
       required:
-        - name
-        - startMonth
-        - endMonth
-        - multiplier
+        - serviceIds
+        - updates
       properties:
-        name:
-          type: string
-          description: 季節名
-        startMonth:
-          type: integer
-          format: int32
-          description: 開始月
-        endMonth:
-          type: integer
-          format: int32
-          description: 終了月
-        multiplier:
+        serviceIds:
+          type: array
+          items:
+            $ref: "#/components/schemas/Models.ServiceId"
+          minItems: 1
+          maxItems: 100
+          description: 更新対象のサービス ID 一覧。パスの salonId のサロンのサービスを1件以上100件以下で指定する
+        updates:
           allOf:
-            - $ref: "#/components/schemas/Models.decimal"
-          description: 適用倍率
-      description: 季節要因の定義
-    Models.Service:
+            - $ref: "#/components/schemas/Models.ServiceUpdateRequest"
+          description: 各サービスに適用する更新内容。指定した項目だけを更新する
+      description: |-
+        サービス一括更新リクエスト - 指定した複数のサービスに同じ更新内容を適用する。
+        すべてのサービスを1つのトランザクションで更新し、1件でも更新できない場合はどのサービスも更新しない
+    Models.ServiceBulkUpdateResponse:
       type: object
       required:
-        - id
+        - updated
+      properties:
+        updated:
+          type: array
+          items:
+            $ref: "#/components/schemas/Models.ServiceId"
+          description: 更新したサービスの ID 一覧
+      description: サービス一括更新の結果 - 更新したサービスの ID 一覧を返す
+    Models.ServiceCategoryCreateRequest:
+      type: object
+      required:
         - salonId
-        - info
-        - category
-        - categoryId
-        - pricing
-        - duration
-        - availability
-        - requirements
-        - options
-        - restrictions
-        - performance
-        - associations
-        - metadata
-        - status
         - name
         - description
-        - price
-        - imageUrl
-        - requiredStaffLevel
+        - parentId
+        - category
+        - displayOrder
+        - iconUrl
+        - color
         - isActive
-        - createdAt
-        - createdBy
-        - updatedAt
-        - updatedBy
       properties:
-        id:
-          allOf:
-            - $ref: "#/components/schemas/Models.ServiceId"
-          description: サービス ID
         salonId:
           allOf:
             - $ref: "#/components/schemas/Models.SalonId"
-          description: サービスを提供するサロン ID
-        info:
-          allOf:
-            - $ref: "#/components/schemas/Models.ServiceInfo"
-          description: サービスの紹介情報
-        category:
-          allOf:
-            - $ref: "#/components/schemas/Models.ServiceCategoryType"
-          description: サービスカテゴリ区分
-        categoryId:
+          description: カテゴリを持つサロン ID
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: カテゴリ名
+        description:
+          type: string
+          nullable: true
+          description: カテゴリ説明。未設定の場合はnull
+        parentId:
           type: string
           allOf:
             - $ref: "#/components/schemas/Models.CategoryId"
           nullable: true
-          description: カテゴリ ID（分類ツリー連携用）。サービスカテゴリ区分のみで分類される場合はnull
-        pricing:
+          description: 親カテゴリ ID。同じサロンのカテゴリを指定する。最上位カテゴリの場合はnull
+        category:
           allOf:
-            - $ref: "#/components/schemas/Models.ServicePricing"
-          description: 料金設定情報
-        duration:
-          allOf:
-            - $ref: "#/components/schemas/Models.ServiceDuration"
-          description: 提供時間の設定
-        availability:
-          type: object
-          allOf:
-            - $ref: "#/components/schemas/Models.ServiceAvailabilityDetail"
+            - $ref: "#/components/schemas/Models.ServiceCategoryType"
+          description: サービスカテゴリ区分
+        displayOrder:
+          type: integer
+          format: int32
+          minimum: 0
+          description: 表示順序
+        iconUrl:
+          type: string
           nullable: true
-          description: 提供可能条件の設定。常時提供で特別な制約がない場合はnull
-        requirements:
-          type: array
-          items:
-            $ref: "#/components/schemas/Models.BookingRequirementDetail"
+          maxLength: 500
+          description: アイコン画像の URL。未設定の場合はnull
+        color:
+          type: string
           nullable: true
-          description: 予約時に必要な要件一覧。特別な要件がない標準サービスの場合はnull
-        options:
-          type: array
-          items:
-            $ref: "#/components/schemas/Models.ServiceOptionDetail"
-          nullable: true
-          description: 追加オプション設定。オプションがないシンプルなサービスの場合はnull
-        restrictions:
-          type: object
+          maxLength: 7
+          description: 表示色(#RRGGBB形式)。未設定の場合はnull
+        isActive:
+          type: boolean
+          description: 有効フラグ
+      description: サービスカテゴリ新規登録リクエスト - 全項目のキーが必須。DB で NULL 許可のカラムのみ null を指定できる
+    Models.ServiceCategoryResponse:
+      type: object
+      required:
+        - id
+        - salonId
+        - name
+        - description
+        - parentId
+        - category
+        - displayOrder
+        - iconUrl
+        - color
+        - isActive
+        - createdAt
+        - updatedAt
+      properties:
+        id:
           allOf:
-            - $ref: "#/components/schemas/Models.ServiceRestrictions"
-          nullable: true
-          description: 提供上の制約条件。制約がないサービスの場合はnull
-        performance:
-          type: object
+            - $ref: "#/components/schemas/Models.CategoryId"
+          description: カテゴリ ID
+        salonId:
           allOf:
-            - $ref: "#/components/schemas/Models.ServicePerformance"
-          nullable: true
-          description: サービス実績の指標。新サービスで実績データがない場合はnull
-        associations:
-          type: object
-          allOf:
-            - $ref: "#/components/schemas/Models.ServiceAssociations"
-          nullable: true
-          description: 関連サービス・担当者情報。関連設定がない独立したサービスの場合はnull
-        metadata:
-          type: object
-          allOf:
-            - $ref: "#/components/schemas/Models.ServiceMetadata"
-          nullable: true
-          description: メタデータ・表示設定。特別な表示設定が不要な場合はnull
-        status:
-          allOf:
-            - $ref: "#/components/schemas/Models.ServiceStatusDetail"
-          description: 現在の提供ステータス
+            - $ref: "#/components/schemas/Models.SalonId"
+          description: カテゴリを持つサロン ID
         name:
           type: string
-          description: サービス名
+          description: カテゴリ名
         description:
           type: string
           nullable: true
-          description: 説明文。未設定の場合はnull
-        price:
+          description: カテゴリ説明。未設定の場合はnull
+        parentId:
+          type: string
+          allOf:
+            - $ref: "#/components/schemas/Models.CategoryId"
+          nullable: true
+          description: 親カテゴリ ID。最上位カテゴリの場合はnull
+        category:
+          allOf:
+            - $ref: "#/components/schemas/Models.ServiceCategoryType"
+          description: サービスカテゴリ区分
+        displayOrder:
           type: integer
           format: int32
-          description: 料金
-        imageUrl:
+          description: 表示順序
+        iconUrl:
           type: string
           nullable: true
-          description: 画像 URL。画像が登録されていない場合はnull
-        requiredStaffLevel:
-          type: integer
-          format: int32
+          description: アイコン画像の URL。未設定の場合はnull
+        color:
+          type: string
           nullable: true
-          description: スタッフレベル。全スタッフが対応可能な場合はnull
+          description: 表示色(#RRGGBB形式)。未設定の場合はnull
         isActive:
           type: boolean
           description: 有効フラグ
         createdAt:
           type: string
           format: date-time
-          description: レコード作成日時。
-        createdBy:
-          type: string
-          nullable: true
-          description: レコードを作成したユーザーID。システム自動作成または匿名作成の場合はnull
+          description: レコード作成日時
         updatedAt:
           type: string
           format: date-time
-          description: レコード最終更新日時。
-        updatedBy:
-          type: string
-          nullable: true
-          description: レコードを最後に更新したユーザーID。システム自動更新または匿名更新の場合はnull
-      description: サロンで提供するサービスの統合モデル
-    Models.ServiceAssociations:
-      type: object
-      required:
-        - categoryId
-        - parentServiceId
-        - childServiceIds
-        - requiredServiceIds
-        - recommendedServiceIds
-        - qualifiedStaffIds
-        - preferredStaffIds
-      properties:
-        categoryId:
-          allOf:
-            - $ref: "#/components/schemas/Models.CategoryId"
-          description: 紐づくカテゴリ ID
-        parentServiceId:
-          type: string
-          allOf:
-            - $ref: "#/components/schemas/Models.ServiceId"
-          nullable: true
-          description: 親サービス ID。独立したサービスで親を持たない場合はnull
-        childServiceIds:
-          type: array
-          items:
-            $ref: "#/components/schemas/Models.ServiceId"
-          nullable: true
-          description: 子サービス ID 一覧。子サービスを持たない場合はnull
-        requiredServiceIds:
-          type: array
-          items:
-            $ref: "#/components/schemas/Models.ServiceId"
-          nullable: true
-          description: 予約時に必須のサービス ID。前提サービスがない独立したサービスの場合はnull
-        recommendedServiceIds:
-          type: array
-          items:
-            $ref: "#/components/schemas/Models.ServiceId"
-          nullable: true
-          description: 併用を推奨するサービス ID。推奨する組み合わせがない場合はnull
-        qualifiedStaffIds:
-          type: array
-          items:
-            $ref: "#/components/schemas/Models.StaffId"
-          nullable: true
-          description: 施術資格を持つスタッフ ID。全スタッフが対応可能な場合はnull
-        preferredStaffIds:
-          type: array
-          items:
-            $ref: "#/components/schemas/Models.StaffId"
-          nullable: true
-          description: 優先的に担当させたいスタッフ ID。特定の優先スタッフがいない場合はnull
-      description: サービス間・スタッフとの関連情報
-    Models.ServiceAvailabilityDetail:
-      type: object
-      required:
-        - type
-        - schedule
-        - requiresApproval
-        - seasons
-        - maxPerDay
-        - maxPerWeek
-      properties:
-        type:
-          allOf:
-            - $ref: "#/components/schemas/Models.ServiceAvailabilityType"
-          description: 提供可否タイプ
-        schedule:
-          type: array
-          items:
-            $ref: "#/components/schemas/Models.ServiceSchedule"
-          nullable: true
-          description: 曜日・時間帯のスケジュール。常時提供または予約制の場合はnull
-        requiresApproval:
-          type: boolean
-          nullable: true
-          description: 事前承認が必要かどうか。即時予約可能な場合はnull（falseと同義）
-        seasons:
-          type: array
-          items:
-            $ref: "#/components/schemas/Models.Season"
-          nullable: true
-          description: 季節限定時の季節設定。季節限定以外の提供タイプの場合はnull
-        maxPerDay:
-          type: integer
-          format: int32
-          nullable: true
-          description: 1 日あたりの提供上限。日次制限がない場合はnull
-        maxPerWeek:
-          type: integer
-          format: int32
-          nullable: true
-          description: 1 週間あたりの提供上限。週次制限がない場合はnull
-      description: サービスの提供可否設定
-    Models.ServiceAvailabilityType:
-      type: string
-      enum:
-        - always
-        - scheduled
-        - by_appointment
-        - seasonal
-        - limited
+          description: レコード最終更新日時
       description: |-
-        サービス提供可能性タイプ区分 - サービスが提供される時期や条件
-
-        always: 常時提供 - いつでも利用可能なサービス
-        scheduled: スケジュール制 - 特定の時間帯のみ提供
-        by_appointment: 予約制 - 事前予約が必要なサービス
-        seasonal: 季節限定 - 特定の季節のみ提供
-        limited: 数量限定 - 提供数に制限があるサービス
+        サービスカテゴリレスポンス - service_categories テーブルの全カラムを返す。
+        プロパティ名と null 許可は DB カラムと一致させている。
     Models.ServiceCategoryType:
       type: string
       enum:
@@ -17654,6 +17680,8 @@ components:
         - perm
         - treatment
         - spa
+        - styling
+        - extension
         - other
       description: |-
         サービスカテゴリー区分 - サロンで提供される主要なサービスカテゴリーの定義
@@ -17663,359 +17691,262 @@ components:
         perm: パーマ - パーマネント、デジタルパーマ等のウェーブ形成サービス
         treatment: トリートメント - ヘアトリートメント、ヘアケア等の補修・改善サービス
         spa: スパ - ヘッドスパ、リラクゼーション等の癒し系サービス
+        styling: スタイリング - セット、アレンジ等のスタイリングサービス
+        extension: エクステンション - ヘアエクステ、増毛等の毛髪追加サービス
         other: その他 - 上記カテゴリーに分類されないサービス
-    Models.ServiceCreateRequest:
+    Models.ServiceCategoryUpdateRequest:
       type: object
-      required:
-        - salonId
-        - name
-        - description
-        - duration
-        - price
-        - category
-        - categoryId
-        - imageUrl
-        - requiredStaffLevel
-        - depositAmount
-        - isActive
-        - maxAdvanceBookingDays
-        - minAdvanceBookingHours
       properties:
-        salonId:
-          allOf:
-            - $ref: "#/components/schemas/Models.SalonId"
-          description: サービスを登録するサロン ID
         name:
           type: string
-          description: サービス名
+          minLength: 1
+          maxLength: 100
+          description: カテゴリ名
         description:
           type: string
-          description: サービスの説明文
-        duration:
-          type: integer
-          format: int32
-          description: 施術時間（分）
-        price:
-          type: integer
-          format: int32
-          description: 料金（税抜）
+          nullable: true
+          description: カテゴリ説明。nullでクリア
+        parentId:
+          type: string
+          allOf:
+            - $ref: "#/components/schemas/Models.CategoryId"
+          nullable: true
+          description: 親カテゴリ ID。同じサロンのカテゴリを指定する。nullでクリア（最上位カテゴリになる）
         category:
           allOf:
             - $ref: "#/components/schemas/Models.ServiceCategoryType"
           description: サービスカテゴリ区分
+        displayOrder:
+          type: integer
+          format: int32
+          minimum: 0
+          description: 表示順序
+        iconUrl:
+          type: string
+          nullable: true
+          maxLength: 500
+          description: アイコン画像の URL。nullでクリア
+        color:
+          type: string
+          nullable: true
+          maxLength: 7
+          description: 表示色(#RRGGBB形式)。nullでクリア
+        isActive:
+          type: boolean
+          description: 有効フラグ
+      description: |-
+        サービスカテゴリ部分更新リクエスト - 指定した項目だけを更新する。DB で NULL 許可のカラムは null でクリアできる。
+        カテゴリを持つサロンは変更できない
+    Models.ServiceCreateRequest:
+      type: object
+      required:
+        - categoryId
+        - name
+        - description
+        - shortDescription
+        - duration
+        - price
+        - discountPrice
+        - taxIncluded
+        - pricingStrategy
+        - imageUrl
+        - imageUrls
+        - requiredStaffLevel
+        - maxBookingsPerDay
+        - requiresConsultation
+        - allowOnlineBooking
+        - bookingRequirements
+        - isPackage
+        - packageServiceIds
+        - tags
+        - sortOrder
+        - serviceStatus
+        - availability
+        - isActive
+      properties:
         categoryId:
           type: string
           allOf:
             - $ref: "#/components/schemas/Models.CategoryId"
           nullable: true
-          description: カテゴリ ID。サービスカテゴリ区分のみで分類する場合はnull
-        imageUrl:
-          type: string
-          nullable: true
-          description: サービス画像 URL。画像がない場合はnull
-        requiredStaffLevel:
-          type: integer
-          format: int32
-          nullable: true
-          description: 必要スタッフレベル。全スタッフが対応可能な場合はnull
-        depositAmount:
-          type: integer
-          format: int32
-          nullable: true
-          description: 必要なデポジット額。デポジットが不要な場合はnull
-        isActive:
-          type: boolean
-          nullable: true
-          description: 有効フラグ。未指定時はデフォルトでtrueとして扱う場合null
-        maxAdvanceBookingDays:
-          type: integer
-          format: int32
-          nullable: true
-          description: 最大全日予約可能日数。予約可能期間に制限がない場合はnull
-        minAdvanceBookingHours:
-          type: integer
-          format: int32
-          nullable: true
-          description: 最短予約受付時間（時間）。即時予約可能な場合はnull
-      description: サービスを新規登録するリクエスト
-    Models.ServiceDuration:
-      type: object
-      required:
-        - standard
-        - minimum
-        - maximum
-        - bufferBefore
-        - bufferAfter
-        - includesConsultation
-      properties:
-        standard:
-          type: integer
-          format: int32
-          description: 標準施術時間（分）
-        minimum:
-          type: integer
-          format: int32
-          nullable: true
-          description: 最短施術時間（分）。固定時間制で短縮不可の場合はnull
-        maximum:
-          type: integer
-          format: int32
-          nullable: true
-          description: 最長施術時間（分）。固定時間制で延長不可の場合はnull
-        bufferBefore:
-          type: integer
-          format: int32
-          nullable: true
-          description: 施術前のバッファ時間（分）。準備時間が不要な場合はnull
-        bufferAfter:
-          type: integer
-          format: int32
-          nullable: true
-          description: 施術後のバッファ時間（分）。片付け時間が不要な場合はnull
-        includesConsultation:
-          type: boolean
-          description: カウンセリング時間を含むか
-      description: サービス提供時間の設定
-    Models.ServiceId:
-      type: string
-      format: uuid
-      description: 提供メニュー・施術サービスを識別するためのブランド付きUUID。
-    Models.ServiceInfo:
-      type: object
-      required:
-        - name
-        - nameKana
-        - description
-        - shortDescription
-        - benefits
-        - targetCustomer
-        - imageUrls
-        - videoUrl
-      properties:
+          description: 所属するサービスカテゴリの ID。同じサロンのカテゴリを指定する。カテゴリに属さない場合はnull
         name:
           type: string
-          description: サービス名称
-        nameKana:
-          type: string
-          nullable: true
-          description: サービス名の読み仮名。外国語サービス名など読み仮名が不要な場合はnull
+          minLength: 1
+          maxLength: 255
+          description: サービス名
         description:
           type: string
-          description: サービス詳細説明文
+          nullable: true
+          description: 説明文。未設定の場合はnull
         shortDescription:
           type: string
           nullable: true
+          maxLength: 500
           description: 短めの紹介文。詳細説明で十分な場合はnull
-        benefits:
-          type: array
-          items:
-            type: string
+        duration:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 1440
+          description: 施術時間（分）
+        price:
+          type: integer
+          format: int32
+          minimum: 0
+          description: 料金。税込かどうかは taxIncluded で示す
+        discountPrice:
+          type: integer
+          format: int32
           nullable: true
-          description: 提供価値・メリットの一覧。特別なメリット説明が不要な基本サービスの場合はnull
-        targetCustomer:
+          minimum: 0
+          description: 割引後の料金。割引がない場合はnull
+        taxIncluded:
+          type: boolean
+          description: 税込価格かどうか
+        pricingStrategy:
+          allOf:
+            - $ref: "#/components/schemas/Models.PricingStrategyType"
+          nullable: true
+          description: 採用している価格戦略。未設定の場合はnull
+        imageUrl:
           type: string
           nullable: true
-          description: 主な対象顧客層。全顧客対象で特定層を限定しない場合はnull
+          maxLength: 500
+          description: 画像 URL。画像が登録されていない場合はnull
         imageUrls:
           type: array
           items:
             type: string
           nullable: true
           description: サービス画像の URL 一覧。画像登録がない場合はnull
-        videoUrl:
-          type: string
+        requiredStaffLevel:
+          allOf:
+            - $ref: "#/components/schemas/Models.StaffLevelType"
           nullable: true
-          description: 紹介動画の URL。動画コンテンツがない場合はnull
-      description: サービスの基本的な紹介情報
-    Models.ServiceMetadata:
-      type: object
-      required:
-        - tags
-        - keywords
-        - seoTitle
-        - seoDescription
-        - internalNotes
-        - sortOrder
-        - featured
-        - hideFromMenu
-      properties:
+          description: 必要なスタッフレベル。全スタッフが対応可能な場合はnull
+        maxBookingsPerDay:
+          type: integer
+          format: int32
+          nullable: true
+          minimum: 1
+          description: 1 日あたりの提供上限。日次制限がない場合はnull
+        requiresConsultation:
+          type: boolean
+          description: 施術前にカウンセリングが必要かどうか
+        allowOnlineBooking:
+          type: boolean
+          description: オンライン予約を受け付けるかどうか
+        bookingRequirements:
+          type: array
+          items:
+            $ref: "#/components/schemas/Models.BookingRequirementType"
+          nullable: true
+          description: 予約時に必要な要件一覧。特別な要件がない標準サービスの場合はnull
+        isPackage:
+          type: boolean
+          description: 複数のサービスを組み合わせたパッケージかどうか
+        packageServiceIds:
+          type: array
+          items:
+            $ref: "#/components/schemas/Models.ServiceId"
+          nullable: true
+          description: パッケージに含まれるサービスの ID 一覧。同じサロンのサービスを指定する。未設定の場合はnull
         tags:
           type: array
           items:
             type: string
           nullable: true
           description: タグ一覧。タグ付けが不要な場合はnull
-        keywords:
-          type: array
-          items:
-            type: string
-          nullable: true
-          description: 検索キーワード。追加の検索キーワードが不要な場合はnull
-        seoTitle:
-          type: string
-          nullable: true
-          description: SEO 用タイトル。デフォルトのサービス名を使用する場合はnull
-        seoDescription:
-          type: string
-          nullable: true
-          description: SEO 用ディスクリプション。デフォルトの説明文を使用する場合はnull
-        internalNotes:
-          type: string
-          nullable: true
-          description: 内部向けメモ。特記事項がない場合はnull
         sortOrder:
           type: integer
           format: int32
+          minimum: 0
+          description: 表示順序
+        serviceStatus:
+          allOf:
+            - $ref: "#/components/schemas/Models.ServiceStatusType"
           nullable: true
-          description: 表示順序。自動ソートまたはデフォルト順序の場合はnull
-        featured:
+          description: 現在の提供ステータス。未設定の場合はnull
+        availability:
+          allOf:
+            - $ref: "#/components/schemas/Models.ServiceAvailabilityType"
+          nullable: true
+          description: 提供可能な時期の区分。未設定の場合はnull
+        isActive:
           type: boolean
-          nullable: true
-          description: 注目サービスとして表示するか。通常表示の場合はnull（falseと同義）
-        hideFromMenu:
-          type: boolean
-          nullable: true
-          description: メニュー非表示フラグ。通常表示の場合はnull（falseと同義）
-      description: サービスのメタデータ情報
-    Models.ServiceOptionDetail:
+          description: 有効フラグ
+      description: |-
+        サービス新規登録リクエスト - 全項目のキーが必須。DB で NULL 許可のカラムのみ null を指定できる。
+        登録先のサロンはパスの salonId で指定する
+    Models.ServiceId:
+      type: string
+      format: uuid
+      description: 提供メニュー・施術サービスを識別するためのブランド付きUUID。
+    Models.ServiceOptionResponse:
       type: object
       required:
-        - type
         - name
-        - price
-        - duration
         - description
-        - fromLevel
-        - toLevel
+        - optionType
+        - additionalTime
         - additionalPrice
-        - extension
-        - productId
-        - required
-        - withService
-        - discountAmount
+        - maxQuantity
+        - isRequired
+        - sortOrder
+        - isActive
       properties:
-        type:
-          allOf:
-            - $ref: "#/components/schemas/Models.ServiceOptionType"
-          description: オプションの種類
         name:
           type: string
-          nullable: true
-          description: オプション名。タイプから自明な名称の場合はnull
-        price:
-          type: integer
-          format: int32
-          nullable: true
-          description: オプション料金。無料オプションまたは他の料金設定方法の場合はnull
-        duration:
-          type: integer
-          format: int32
-          nullable: true
-          description: 追加される施術時間（分）。時間追加がないオプションの場合はnull
+          description: オプション名
         description:
           type: string
           nullable: true
-          description: オプションの説明。説明が不要な自明なオプションの場合はnull
-        fromLevel:
-          type: string
+          description: オプションの説明。未設定の場合はnull
+        optionType:
+          allOf:
+            - $ref: "#/components/schemas/Models.ServiceOptionType"
           nullable: true
-          description: アップグレード元のレベル。アップグレード型以外のオプションの場合はnull
-        toLevel:
-          type: string
-          nullable: true
-          description: アップグレード先のレベル。アップグレード型以外のオプションの場合はnull
+          description: オプションの種類。未設定の場合はnull
+        additionalTime:
+          type: integer
+          format: int32
+          description: 追加される施術時間（分）
         additionalPrice:
           type: integer
           format: int32
-          nullable: true
-          description: 追加料金。基本料金に含まれる、または他の料金設定の場合はnull
-        extension:
+          description: 追加料金
+        maxQuantity:
           type: integer
           format: int32
-          nullable: true
-          description: 時間延長（分）。時間延長型以外のオプションの場合はnull
-        productId:
-          type: string
-          nullable: true
-          description: 関連商品 ID。商品追加型以外のオプションの場合はnull
-        required:
+          description: 1回の予約で選択できる最大数量
+        isRequired:
           type: boolean
-          nullable: true
-          description: 必須オプションかどうか。任意選択の標準的なオプションの場合はnull（falseと同義）
-        withService:
-          type: string
-          allOf:
-            - $ref: "#/components/schemas/Models.ServiceId"
-          nullable: true
-          description: 同時予約が必要なサービス ID。コンボ型以外のオプションの場合はnull
-        discountAmount:
+          description: 必須オプションかどうか
+        sortOrder:
           type: integer
           format: int32
-          nullable: true
-          description: 割引金額。割引がない、またはパーセンテージ割引の場合はnull
-      description: サービスに付随するオプション設定
+          description: 表示順序
+        isActive:
+          type: boolean
+          description: 有効フラグ
+      description: |-
+        サービスオプション - service_options テーブルの1行。サービスに追加できるオプションを表す。
+        プロパティ名と null 許可は DB カラムと一致させている。
     Models.ServiceOptionType:
       type: string
       enum:
         - addon
         - upgrade
-        - duration
-        - product
-        - combo
+        - duration_extension
+        - product_choice
       description: |-
         サービスオプションタイプ区分 - サービスに追加できるオプションの種類
 
         addon: アドオン - 基本サービスに追加できるオプション
         upgrade: アップグレード - サービスのグレードを上げるオプション
-        duration: 時間延長 - サービス時間を延長するオプション
-        product: 商品追加 - サービスに商品を含めるオプション
-        combo: コンボ - 複数サービスの組み合わせオプション
-    Models.ServicePerformance:
-      type: object
-      required:
-        - bookingCount
-        - completionRate
-        - averageRating
-        - reviewCount
-        - revenue
-        - popularityScore
-        - repeatRate
-      properties:
-        bookingCount:
-          type: integer
-          format: int32
-          description: 予約件数
-        completionRate:
-          allOf:
-            - $ref: "#/components/schemas/Models.decimal"
-          description: 施術完了率
-        averageRating:
-          type: number
-          allOf:
-            - $ref: "#/components/schemas/Models.decimal"
-          nullable: true
-          description: 平均評価スコア。まだ評価がない新サービスの場合はnull
-        reviewCount:
-          type: integer
-          format: int32
-          description: レビュー件数
-        revenue:
-          type: integer
-          format: int64
-          description: 売上実績（円）
-        popularityScore:
-          type: number
-          allOf:
-            - $ref: "#/components/schemas/Models.decimal"
-          nullable: true
-          description: 人気度スコア。算出に必要なデータが不足している場合はnull
-        repeatRate:
-          type: number
-          allOf:
-            - $ref: "#/components/schemas/Models.decimal"
-          nullable: true
-          description: リピート率（%）。リピート実績がない新サービスの場合はnull
-      description: サービスの実績指標
+        duration_extension: 時間延長 - サービス時間を延長するオプション
+        product_choice: 商品選択 - 施術に使用する商品を選ぶオプション
     Models.ServicePreference:
       type: object
       required:
@@ -18047,201 +17978,178 @@ components:
             - $ref: "#/components/schemas/Models.PriceRangeFilter"
           nullable: true
           description: 希望価格帯。特に希望がない場合はnull
-    Models.ServicePricing:
+    Models.ServiceResponse:
       type: object
       required:
-        - strategy
+        - id
+        - salonId
+        - categoryId
+        - name
+        - description
+        - shortDescription
+        - duration
+        - price
+        - discountPrice
         - taxIncluded
-        - currency
-        - minimumPrice
-        - maximumPrice
-        - depositRequired
-        - depositAmount
-        - cancellationFee
+        - pricingStrategy
+        - imageUrl
+        - imageUrls
+        - requiredStaffLevel
+        - maxBookingsPerDay
+        - requiresConsultation
+        - allowOnlineBooking
+        - bookingRequirements
+        - isPackage
+        - packageServiceIds
+        - tags
+        - sortOrder
+        - serviceStatus
+        - availability
+        - isActive
+        - options
+        - createdAt
+        - updatedAt
       properties:
-        strategy:
+        id:
           allOf:
-            - $ref: "#/components/schemas/Models.PricingStrategyDetail"
-          description: 採用している価格戦略
+            - $ref: "#/components/schemas/Models.ServiceId"
+          description: サービス ID
+        salonId:
+          allOf:
+            - $ref: "#/components/schemas/Models.SalonId"
+          description: サービスを提供するサロン ID
+        categoryId:
+          type: string
+          allOf:
+            - $ref: "#/components/schemas/Models.CategoryId"
+          nullable: true
+          description: 所属するサービスカテゴリの ID。カテゴリ未設定、またはカテゴリが削除された場合はnull
+        name:
+          type: string
+          description: サービス名
+        description:
+          type: string
+          nullable: true
+          description: 説明文。未設定の場合はnull
+        shortDescription:
+          type: string
+          nullable: true
+          description: 短めの紹介文。詳細説明で十分な場合はnull
+        duration:
+          type: integer
+          format: int32
+          description: 施術時間（分）
+        price:
+          type: integer
+          format: int32
+          description: 料金。税込かどうかは taxIncluded で示す
+        discountPrice:
+          type: integer
+          format: int32
+          nullable: true
+          description: 割引後の料金。割引がない場合はnull
         taxIncluded:
           type: boolean
           description: 税込価格かどうか
-        currency:
+        pricingStrategy:
           allOf:
-            - $ref: "#/components/schemas/Models.CurrencyCodeType"
-          description: 通貨コード
-        minimumPrice:
-          type: integer
-          format: int32
+            - $ref: "#/components/schemas/Models.PricingStrategyType"
           nullable: true
-          description: 設定されている最低料金。最低料金制限がない場合はnull
-        maximumPrice:
-          type: integer
-          format: int32
+          description: 採用している価格戦略。未設定の場合はnull
+        imageUrl:
+          type: string
           nullable: true
-          description: 設定されている最高料金。最高料金制限がない場合はnull
-        depositRequired:
-          type: boolean
-          description: 予約時にデポジットが必要か
-        depositAmount:
-          type: integer
-          format: int32
+          description: 画像 URL。画像が登録されていない場合はnull
+        imageUrls:
+          type: array
+          items:
+            type: string
           nullable: true
-          description: 必要なデポジット金額。デポジットが不要な場合はnull
-        cancellationFee:
-          type: object
-          allOf:
-            - $ref: "#/components/schemas/Models.CancellationFee"
-          nullable: true
-          description: キャンセル料金の設定。キャンセル料が発生しない場合はnull
-      description: サービスの料金設定情報
-    Models.ServiceRestrictions:
-      type: object
-      required:
-        - requiredStaffLevel
-        - requiredCertifications
-        - maxConcurrent
-        - minIntervalDays
-        - maxBookingsPerCustomer
-        - blackoutDates
-      properties:
+          description: サービス画像の URL 一覧。画像登録がない場合はnull
         requiredStaffLevel:
           allOf:
             - $ref: "#/components/schemas/Models.StaffLevelType"
           nullable: true
           description: 必要なスタッフレベル。全スタッフが対応可能な場合はnull
-        requiredCertifications:
+        maxBookingsPerDay:
+          type: integer
+          format: int32
+          nullable: true
+          description: 1 日あたりの提供上限。日次制限がない場合はnull
+        requiresConsultation:
+          type: boolean
+          description: 施術前にカウンセリングが必要かどうか
+        allowOnlineBooking:
+          type: boolean
+          description: オンライン予約を受け付けるかどうか
+        bookingRequirements:
+          type: array
+          items:
+            $ref: "#/components/schemas/Models.BookingRequirementType"
+          nullable: true
+          description: 予約時に必要な要件一覧。特別な要件がない標準サービスの場合はnull
+        isPackage:
+          type: boolean
+          description: 複数のサービスを組み合わせたパッケージかどうか
+        packageServiceIds:
+          type: array
+          items:
+            $ref: "#/components/schemas/Models.ServiceId"
+          nullable: true
+          description: パッケージに含まれるサービスの ID 一覧。未設定の場合はnull
+        tags:
           type: array
           items:
             type: string
           nullable: true
-          description: 必要資格の一覧。特別な資格が不要な場合はnull
-        maxConcurrent:
+          description: タグ一覧。タグ付けが不要な場合はnull
+        sortOrder:
           type: integer
           format: int32
-          nullable: true
-          description: 同時提供可能な最大件数。同時提供制限がない場合はnull
-        minIntervalDays:
-          type: integer
-          format: int32
-          nullable: true
-          description: 再予約までの最短間隔（日）。連続予約可能な場合はnull
-        maxBookingsPerCustomer:
-          type: object
-          allOf:
-            - $ref: "#/components/schemas/Models.BookingLimit"
-          nullable: true
-          description: 顧客ごとの予約上限設定。予約回数制限がない場合はnull
-        blackoutDates:
-          type: array
-          items:
-            type: string
-            format: date-time
-          nullable: true
-          description: 提供不可日（ブラックアウト）一覧。特定の除外日がない場合はnull
-      description: サービス提供時の制約条件
-    Models.ServiceSchedule:
-      type: object
-      required:
-        - dayOfWeek
-        - startTime
-        - endTime
-        - maxBookings
-      properties:
-        dayOfWeek:
-          allOf:
-            - $ref: "#/components/schemas/Models.DayOfWeekType"
-          description: 曜日
-        startTime:
-          type: string
-          description: 提供開始時刻（HH:mm）
-        endTime:
-          type: string
-          description: 提供終了時刻（HH:mm）
-        maxBookings:
-          type: integer
-          format: int32
-          nullable: true
-          description: 予約受け入れ上限数。予約数制限がない場合はnull
-      description: サービス提供スケジュール
-    Models.ServiceStatusDetail:
-      type: object
-      required:
-        - type
-        - reason
-        - since
-        - availableMonths
-        - availableUntil
-        - remainingSlots
-        - discontinuedAt
-        - replacementId
-        - launchDate
-      properties:
-        type:
+          description: 表示順序
+        serviceStatus:
           allOf:
             - $ref: "#/components/schemas/Models.ServiceStatusType"
-          description: ステータス区分
-        reason:
-          type: string
           nullable: true
-          description: ステータス変更理由。理由の記録が不要な通常変更の場合はnull
-        since:
-          type: string
-          format: date-time
+          description: 現在の提供ステータス。未設定の場合はnull
+        availability:
+          allOf:
+            - $ref: "#/components/schemas/Models.ServiceAvailabilityType"
           nullable: true
-          description: この状態が開始した日時。開始日時の記録が不要な場合はnull
-        availableMonths:
+          description: 提供可能な時期の区分。未設定の場合はnull
+        isActive:
+          type: boolean
+          description: 有効フラグ
+        options:
           type: array
           items:
-            type: integer
-            format: int32
-          nullable: true
-          description: 提供可能な月の一覧（1-12）。季節限定以外のステータスの場合はnull
-        availableUntil:
+            $ref: "#/components/schemas/Models.ServiceOptionResponse"
+          description: 追加オプションの一覧。sortOrderの昇順で並ぶ。オプションがない場合は空配列
+        createdAt:
           type: string
           format: date-time
-          nullable: true
-          description: 提供終了予定日。終了予定が未定または無期限の場合はnull
-        remainingSlots:
-          type: integer
-          format: int32
-          nullable: true
-          description: 残り提供可能枠数。数量限定以外のステータスの場合はnull
-        discontinuedAt:
+          description: レコード作成日時
+        updatedAt:
           type: string
           format: date-time
-          nullable: true
-          description: 廃止日時。廃止ステータス以外の場合はnull
-        replacementId:
-          type: string
-          allOf:
-            - $ref: "#/components/schemas/Models.ServiceId"
-          nullable: true
-          description: 代替サービス ID。廃止時に代替サービスがない場合はnull
-        launchDate:
-          type: string
-          format: date-time
-          nullable: true
-          description: 公開予定日。近日公開以外のステータス、または予定日未定の場合はnull
-      description: サービスの提供状態の詳細
+          description: レコード最終更新日時
+      description: |-
+        サービスレスポンス - services テーブルの公開カラムと、サービスオプション(service_options)を返す。
+        プロパティ名と null 許可は DB カラムと一致させている。
     Models.ServiceStatusType:
       type: string
       enum:
         - active
         - inactive
-        - seasonal
-        - limited
-        - discontinued
         - coming_soon
+        - discontinued
       description: |-
         サービスステータス区分 - サービスの提供状態を表す区分
 
         active: 有効 - 現在提供中のサービス
         inactive: 一時停止 - 一時的に提供を停止しているサービス
-        seasonal: 季節限定 - 特定の季節のみ提供されるサービス
-        limited: 数量限定 - 残りわずかなサービス
-        discontinued: 廃止 - 提供を終了したサービス
         coming_soon: 近日公開 - 近々提供予定のサービス
+        discontinued: 廃止 - 提供を終了したサービス
     Models.ServiceSummary:
       type: object
       required:
@@ -18264,64 +18172,120 @@ components:
       description: サービスメニューを一覧表示や候補選択で参照する際の要約情報。
     Models.ServiceUpdateRequest:
       type: object
-      required:
-        - description
-        - duration
       properties:
-        name:
-          type: string
-          description: 更新後のサービス名
-        description:
-          type: string
-          nullable: true
-          description: 更新後の説明文。null指定で説明文をクリア（空文字列にリセット）
-        duration:
-          type: integer
-          format: int32
-          nullable: true
-          description: 更新後の施術時間。null指定で時間設定をクリア（デフォルト値にリセット）
-        price:
-          type: integer
-          format: int32
-          description: 更新後の料金
-        category:
-          allOf:
-            - $ref: "#/components/schemas/Models.ServiceCategoryType"
-          description: 更新後のサービスカテゴリ
         categoryId:
           type: string
           allOf:
             - $ref: "#/components/schemas/Models.CategoryId"
           nullable: true
-          description: 更新後のカテゴリ ID（null 指定で解除）
+          description: 所属するサービスカテゴリの ID。同じサロンのカテゴリを指定する。nullでクリア
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: サービス名
+        description:
+          type: string
+          nullable: true
+          description: 説明文。nullでクリア
+        shortDescription:
+          type: string
+          nullable: true
+          maxLength: 500
+          description: 短めの紹介文。nullでクリア
+        duration:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 1440
+          description: 施術時間（分）
+        price:
+          type: integer
+          format: int32
+          minimum: 0
+          description: 料金。税込かどうかは taxIncluded で示す
+        discountPrice:
+          type: integer
+          format: int32
+          nullable: true
+          minimum: 0
+          description: 割引後の料金。nullでクリア
+        taxIncluded:
+          type: boolean
+          description: 税込価格かどうか
+        pricingStrategy:
+          allOf:
+            - $ref: "#/components/schemas/Models.PricingStrategyType"
+          nullable: true
+          description: 採用している価格戦略。nullでクリア
         imageUrl:
           type: string
           nullable: true
-          description: 更新後の画像 URL（null 指定で解除）
+          maxLength: 500
+          description: 画像 URL。nullでクリア
+        imageUrls:
+          type: array
+          items:
+            type: string
+          nullable: true
+          description: サービス画像の URL 一覧。nullでクリア
         requiredStaffLevel:
+          allOf:
+            - $ref: "#/components/schemas/Models.StaffLevelType"
+          nullable: true
+          description: 必要なスタッフレベル。nullでクリア（全スタッフが対応可能になる）
+        maxBookingsPerDay:
           type: integer
           format: int32
           nullable: true
-          description: 更新後の必要スタッフレベル（null 指定で解除）
-        depositAmount:
+          minimum: 1
+          description: 1 日あたりの提供上限。nullでクリア（日次制限なし）
+        requiresConsultation:
+          type: boolean
+          description: 施術前にカウンセリングが必要かどうか
+        allowOnlineBooking:
+          type: boolean
+          description: オンライン予約を受け付けるかどうか
+        bookingRequirements:
+          type: array
+          items:
+            $ref: "#/components/schemas/Models.BookingRequirementType"
+          nullable: true
+          description: 予約時に必要な要件一覧。nullでクリア
+        isPackage:
+          type: boolean
+          description: 複数のサービスを組み合わせたパッケージかどうか
+        packageServiceIds:
+          type: array
+          items:
+            $ref: "#/components/schemas/Models.ServiceId"
+          nullable: true
+          description: パッケージに含まれるサービスの ID 一覧。同じサロンのサービスを指定する。nullでクリア
+        tags:
+          type: array
+          items:
+            type: string
+          nullable: true
+          description: タグ一覧。nullでクリア
+        sortOrder:
           type: integer
           format: int32
+          minimum: 0
+          description: 表示順序
+        serviceStatus:
+          allOf:
+            - $ref: "#/components/schemas/Models.ServiceStatusType"
           nullable: true
-          description: 更新後のデポジット額（null 指定で解除）
+          description: 現在の提供ステータス。nullでクリア
+        availability:
+          allOf:
+            - $ref: "#/components/schemas/Models.ServiceAvailabilityType"
+          nullable: true
+          description: 提供可能な時期の区分。nullでクリア
         isActive:
           type: boolean
-          description: 更新後の有効フラグ
-        maxAdvanceBookingDays:
-          type: integer
-          format: int32
-          nullable: true
-          description: 更新後の最大予約日数（null 指定で解除）
-        minAdvanceBookingHours:
-          type: integer
-          format: int32
-          nullable: true
-          description: 更新後の最短予約受付時間（null 指定で解除）
-      description: サービス情報を部分更新するリクエスト。null指定で値をリセット可能
+          description: 有効フラグ
+      description: サービス部分更新リクエスト - 指定した項目だけを更新する。DB で NULL 許可のカラムは null でクリアできる
     Models.Session:
       type: object
       required:
@@ -18494,20 +18458,6 @@ components:
       description: |-
         ソフトデリート情報モデル。
         論理削除されたレコードの状態や削除理由を記録し、監査ログや復旧オペレーションに活用する。
-    Models.SpaSubCategoryType:
-      type: string
-      enum:
-        - head_spa
-        - scalp_massage
-        - aromatherapy
-        - relaxation
-      description: |-
-        スパサブカテゴリー区分 - スパ・リラクゼーションサービスの詳細分類
-
-        head_spa: ヘッドスパ - 頭部のマッサージと頭皮ケアを組み合わせたスパ
-        scalp_massage: スカルプマッサージ - 頭皮の血行促進マッサージ
-        aromatherapy: アロマテラピー - アロマオイルを使用したリラクゼーション
-        relaxation: リラクゼーション - ストレス解消を目的とした総合的なケア
     Models.Staff:
       type: object
       required:
@@ -19152,22 +19102,6 @@ components:
             type: string
           nullable: true
           description: 参考画像URL一覧。画像がない場合はnull
-    Models.StylingSubCategoryType:
-      type: string
-      enum:
-        - blowout
-        - updo
-        - braiding
-        - extensions
-        - event_styling
-      description: |-
-        スタイリングサブカテゴリー区分 - ヘアスタイリングサービスの詳細分類
-
-        blowout: ブローアウト - ブロードライでボリュームを出すスタイリング
-        updo: アップスタイル - まとめ髪、シニヨン等のヘアアレンジ
-        braiding: 編み込み - 三つ編み、編み込みアレンジ等
-        extensions: エクステンション - ヘアエクステの装着サービス
-        event_styling: イベントスタイリング - 結婚式、パーティー等の特別なスタイリング
     Models.SystemReadyResponse:
       type: object
       required:
@@ -19464,22 +19398,6 @@ components:
           nullable: true
           description: 施術前後写真 ID - 写真撮影を希望しない顧客や撮影が不要な施術の場合はnull、null指定で値をリセット可能
       description: 施術記録を更新する入力モデル
-    Models.TreatmentSubCategoryType:
-      type: string
-      enum:
-        - deep_conditioning
-        - protein_treatment
-        - scalp_treatment
-        - keratin_treatment
-        - olaplex
-      description: |-
-        トリートメントサブカテゴリー区分 - ヘアトリートメントサービスの詳細分類
-
-        deep_conditioning: ディープコンディショニング - 髪の内部まで栄養を浸透させるトリートメント
-        protein_treatment: プロテイントリートメント - タンパク質を補給し髪を強化するトリートメント
-        scalp_treatment: スカルプトリートメント - 頭皮ケアに特化したトリートメント
-        keratin_treatment: ケラチントリートメント - ケラチンを補充し髪をストレートにするトリートメント
-        olaplex: オラプレックス - ダメージした髪の内部結合を修復するトリートメント
     Models.TreatmentType:
       type: string
       enum:

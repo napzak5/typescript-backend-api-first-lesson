@@ -130,6 +130,18 @@ namespace BeautySalon.Operations {
         | RequestBodyErrors
         | CommonErrors;
 
+      @doc("特定カテゴリの詳細情報を取得し、名称や親子関係、表示順を確認します。")
+      @summary("Get service category")
+      @get
+      get(@path id: CategoryId):
+        | {
+            @statusCode statusCode: 200;
+            @body response: ApiResponse<ServiceCategoryResponse>;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<404>
+        | CommonErrors;
+
       @doc("既存カテゴリの指定した項目だけを更新し、名称や表示順、親子関係を調整します。parentIdに同じサロンのものではないカテゴリや、自身または子孫のカテゴリを指定した場合は400を返します。")
       @summary("Update service category")
       @patch

@@ -121,47 +121,32 @@ export type AuthenticationStateType = z.infer<typeof AuthenticationStateTypeSche
  * 予約要件タイプ区分 - サービス予約時に必要な条件や制約
  *
  *
- * deposit: デポジット - 予約時に支払う予約金
+ * consultation_required: 事前カウンセリング必須 - 施術前の相談・カウンセリングが必要
  *
- * consultation: 事前カウンセリング - 施術前の相談・カウンセリング
+ * patch_test_required: パッチテスト必須 - アレルギー確認のための事前テストが必要
  *
- * patch_test: パッチテスト - アレルギー確認のための事前テスト
+ * advance_booking_required: 事前予約必須 - 当日予約を受け付けず、事前の予約が必要
  *
- * age_restriction: 年齢制限 - 年齢による利用制限
- *
- * gender_restriction: 性別制限 - 性別による利用制限
- *
- * membership: 会員限定 - 特定の会員ランク以上の制限
- *
- * preparation: 事前準備 - 顧客が事前に行うべき準備
+ * deposit_required: デポジット必須 - 予約時に予約金の支払いが必要
  */
 export const BookingRequirementTypeSchema = z.enum([
-  'deposit',
-  'consultation',
-  'patch_test',
-  'age_restriction',
-  'gender_restriction',
-  'membership',
-  'preparation'
+  'consultation_required',
+  'patch_test_required',
+  'advance_booking_required',
+  'deposit_required'
 ])
 /**
  * @description
  * 予約要件タイプ区分 - サービス予約時に必要な条件や制約
  *
  *
- * deposit: デポジット - 予約時に支払う予約金
+ * consultation_required: 事前カウンセリング必須 - 施術前の相談・カウンセリングが必要
  *
- * consultation: 事前カウンセリング - 施術前の相談・カウンセリング
+ * patch_test_required: パッチテスト必須 - アレルギー確認のための事前テストが必要
  *
- * patch_test: パッチテスト - アレルギー確認のための事前テスト
+ * advance_booking_required: 事前予約必須 - 当日予約を受け付けず、事前の予約が必要
  *
- * age_restriction: 年齢制限 - 年齢による利用制限
- *
- * gender_restriction: 性別制限 - 性別による利用制限
- *
- * membership: 会員限定 - 特定の会員ランク以上の制限
- *
- * preparation: 事前準備 - 顧客が事前に行うべき準備
+ * deposit_required: デポジット必須 - 予約時に予約金の支払いが必要
  */
 export type BookingRequirementType = z.infer<typeof BookingRequirementTypeSchema>
 
@@ -213,60 +198,6 @@ export const BookingStatusCodeTypeSchema = z.enum([
  * no_show: 無断キャンセル - 顧客が連絡なしに来店しなかった状態
  */
 export type BookingStatusCodeType = z.infer<typeof BookingStatusCodeTypeSchema>
-
-/**
- * @description
- * カラーサブカテゴリー区分 - ヘアカラーリングサービスの詳細分類
- *
- *
- * full_color: フルカラー - 髪全体を染めるサービス
- *
- * root_touch: リタッチ - 根元の伸びた部分のみを染めるサービス
- *
- * highlights: ハイライト - 部分的に明るい色を入れるサービス
- *
- * lowlights: ローライト - 部分的に暗い色を入れるサービス
- *
- * balayage: バレイヤージュ - グラデーション染め技法
- *
- * ombre: オンブレ - 根元から毛先にかけてグラデーション染め
- *
- * bleach: ブリーチ - 髪の色を抜く脱色サービス
- *
- * color_correction: カラーコレクション - 色ムラや失敗したカラーの修正
- */
-export const ColorSubCategoryTypeSchema = z.enum([
-  'full_color',
-  'root_touch',
-  'highlights',
-  'lowlights',
-  'balayage',
-  'ombre',
-  'bleach',
-  'color_correction'
-])
-/**
- * @description
- * カラーサブカテゴリー区分 - ヘアカラーリングサービスの詳細分類
- *
- *
- * full_color: フルカラー - 髪全体を染めるサービス
- *
- * root_touch: リタッチ - 根元の伸びた部分のみを染めるサービス
- *
- * highlights: ハイライト - 部分的に明るい色を入れるサービス
- *
- * lowlights: ローライト - 部分的に暗い色を入れるサービス
- *
- * balayage: バレイヤージュ - グラデーション染め技法
- *
- * ombre: オンブレ - 根元から毛先にかけてグラデーション染め
- *
- * bleach: ブリーチ - 髪の色を抜く脱色サービス
- *
- * color_correction: カラーコレクション - 色ムラや失敗したカラーの修正
- */
-export type ColorSubCategoryType = z.infer<typeof ColorSubCategoryTypeSchema>
 
 /**
  * @description
@@ -411,39 +342,6 @@ export const CustomerStatusTypeSchema = z.enum(['active', 'inactive', 'suspended
  * blacklisted: ブラックリスト - 利用を禁止された状態
  */
 export type CustomerStatusType = z.infer<typeof CustomerStatusTypeSchema>
-
-/**
- * @description
- * カットサブカテゴリー区分 - カットサービスの詳細分類
- *
- *
- * mens_cut: メンズカット - 男性向けヘアカットサービス
- *
- * womens_cut: レディースカット - 女性向けヘアカットサービス
- *
- * kids_cut: キッズカット - 子供向けヘアカットサービス
- *
- * bang_trim: 前髪カット - 前髪のみのカットサービス
- *
- * beard_trim: 髭トリミング - 髭の整えサービス
- */
-export const CutSubCategoryTypeSchema = z.enum(['mens_cut', 'womens_cut', 'kids_cut', 'bang_trim', 'beard_trim'])
-/**
- * @description
- * カットサブカテゴリー区分 - カットサービスの詳細分類
- *
- *
- * mens_cut: メンズカット - 男性向けヘアカットサービス
- *
- * womens_cut: レディースカット - 女性向けヘアカットサービス
- *
- * kids_cut: キッズカット - 子供向けヘアカットサービス
- *
- * bang_trim: 前髪カット - 前髪のみのカットサービス
- *
- * beard_trim: 髭トリミング - 髭の整えサービス
- */
-export type CutSubCategoryType = z.infer<typeof CutSubCategoryTypeSchema>
 
 /**
  * @description
@@ -796,35 +694,6 @@ export type LoyaltyTierType = z.infer<typeof LoyaltyTierTypeSchema>
 
 /**
  * @description
- * メイクアップサブカテゴリー区分 - メイクアップサービスの詳細分類
- *
- *
- * everyday_makeup: デイリーメイク - 普段使いのナチュラルメイク
- *
- * event_makeup: イベントメイク - パーティーやイベント用の華やかなメイク
- *
- * bridal_makeup: ブライダルメイク - 花嫁向けの特別なメイクアップ
- *
- * photoshoot_makeup: 撮影用メイク - 写真撮影用のプロフェッショナルメイク
- */
-export const MakeupSubCategoryTypeSchema = z.enum(['everyday_makeup', 'event_makeup', 'bridal_makeup', 'photoshoot_makeup'])
-/**
- * @description
- * メイクアップサブカテゴリー区分 - メイクアップサービスの詳細分類
- *
- *
- * everyday_makeup: デイリーメイク - 普段使いのナチュラルメイク
- *
- * event_makeup: イベントメイク - パーティーやイベント用の華やかなメイク
- *
- * bridal_makeup: ブライダルメイク - 花嫁向けの特別なメイクアップ
- *
- * photoshoot_makeup: 撮影用メイク - 写真撮影用のプロフェッショナルメイク
- */
-export type MakeupSubCategoryType = z.infer<typeof MakeupSubCategoryTypeSchema>
-
-/**
- * @description
  * 会員特典タイプ区分 - 会員ランクに応じて提供される特典の種類
  *
  *
@@ -899,39 +768,6 @@ export const MembershipTierTypeSchema = z.enum(['regular', 'silver', 'gold', 'pl
  * vip: VIP会員 - 特別会員、完全カスタマイズされた特別待遇を提供
  */
 export type MembershipTierType = z.infer<typeof MembershipTierTypeSchema>
-
-/**
- * @description
- * ネイルサブカテゴリー区分 - ネイルケアサービスの詳細分類
- *
- *
- * manicure: マニキュア - 手の爪のケアと装飾
- *
- * pedicure: ペディキュア - 足の爪のケアと装飾
- *
- * gel_nail: ジェルネイル - UV/LEDライトで硬化させるジェルネイル
- *
- * nail_art: ネイルアート - デザインや装飾を施したアートネイル
- *
- * nail_removal: ネイルリムーバル - ジェルやマニキュアの除去サービス
- */
-export const NailSubCategoryTypeSchema = z.enum(['manicure', 'pedicure', 'gel_nail', 'nail_art', 'nail_removal'])
-/**
- * @description
- * ネイルサブカテゴリー区分 - ネイルケアサービスの詳細分類
- *
- *
- * manicure: マニキュア - 手の爪のケアと装飾
- *
- * pedicure: ペディキュア - 足の爪のケアと装飾
- *
- * gel_nail: ジェルネイル - UV/LEDライトで硬化させるジェルネイル
- *
- * nail_art: ネイルアート - デザインや装飾を施したアートネイル
- *
- * nail_removal: ネイルリムーバル - ジェルやマニキュアの除去サービス
- */
-export type NailSubCategoryType = z.infer<typeof NailSubCategoryTypeSchema>
 
 /**
  * @description
@@ -1116,37 +952,20 @@ export type PaymentStatusCodeType = z.infer<typeof PaymentStatusCodeTypeSchema>
 
 /**
  * @description
- * パーマサブカテゴリー区分 - パーマネントサービスの詳細分類
+ * 価格戦略タイプ区分 - サービスの価格設定方法を定義
  *
  *
- * regular_perm: 通常パーマ - コールドパーマ等の標準的なパーマ
+ * fixed: 固定価格 - 常に同じ価格で提供
  *
- * digital_perm: デジタルパーマ - 熱を使った形状記憶パーマ
+ * variable: 変動価格 - 髪の長さや量など施術内容に応じて価格が変わる
  *
- * spiral_perm: スパイラルパーマ - 螺旋状の強いカールを作るパーマ
+ * tiered: 段階価格 - 条件によって価格が変わる段階制
  *
- * body_wave: ボディウェーブ - 大きなウェーブを作るパーマ
+ * dynamic: 動的価格 - 需要や時間帯によって変動する価格
  *
- * straightening: ストレートパーマ - 縮毛矯正や髪をストレートにする施術
+ * consultation_based: 要相談 - カウンセリング後に価格を決定する
  */
-export const PermSubCategoryTypeSchema = z.enum(['regular_perm', 'digital_perm', 'spiral_perm', 'body_wave', 'straightening'])
-/**
- * @description
- * パーマサブカテゴリー区分 - パーマネントサービスの詳細分類
- *
- *
- * regular_perm: 通常パーマ - コールドパーマ等の標準的なパーマ
- *
- * digital_perm: デジタルパーマ - 熱を使った形状記憶パーマ
- *
- * spiral_perm: スパイラルパーマ - 螺旋状の強いカールを作るパーマ
- *
- * body_wave: ボディウェーブ - 大きなウェーブを作るパーマ
- *
- * straightening: ストレートパーマ - 縮毛矯正や髪をストレートにする施術
- */
-export type PermSubCategoryType = z.infer<typeof PermSubCategoryTypeSchema>
-
+export const PricingStrategyTypeSchema = z.enum(['fixed', 'variable', 'tiered', 'dynamic', 'consultation_based'])
 /**
  * @description
  * 価格戦略タイプ区分 - サービスの価格設定方法を定義
@@ -1154,33 +973,13 @@ export type PermSubCategoryType = z.infer<typeof PermSubCategoryTypeSchema>
  *
  * fixed: 固定価格 - 常に同じ価格で提供
  *
- * tiered: 段階価格 - 条件によって価格が変わる段階制
- *
- * dynamic: 動的価格 - 需要や時間帯によって変動する価格
- *
- * package: パッケージ価格 - 複数サービスをセットで提供
- *
- * membership: 会員価格 - 会員ランクに応じた特別価格
- *
- * custom: カスタム価格 - 個別に設定される特別価格
- */
-export const PricingStrategyTypeSchema = z.enum(['fixed', 'tiered', 'dynamic', 'package', 'membership', 'custom'])
-/**
- * @description
- * 価格戦略タイプ区分 - サービスの価格設定方法を定義
- *
- *
- * fixed: 固定価格 - 常に同じ価格で提供
+ * variable: 変動価格 - 髪の長さや量など施術内容に応じて価格が変わる
  *
  * tiered: 段階価格 - 条件によって価格が変わる段階制
  *
  * dynamic: 動的価格 - 需要や時間帯によって変動する価格
  *
- * package: パッケージ価格 - 複数サービスをセットで提供
- *
- * membership: 会員価格 - 会員ランクに応じた特別価格
- *
- * custom: カスタム価格 - 個別に設定される特別価格
+ * consultation_based: 要相談 - カウンセリング後に価格を決定する
  */
 export type PricingStrategyType = z.infer<typeof PricingStrategyTypeSchema>
 
@@ -1287,15 +1086,15 @@ export type ScalpConditionType = z.infer<typeof ScalpConditionTypeSchema>
  *
  * always: 常時提供 - いつでも利用可能なサービス
  *
- * scheduled: スケジュール制 - 特定の時間帯のみ提供
+ * weekdays_only: 平日のみ - 平日に限り提供するサービス
  *
- * by_appointment: 予約制 - 事前予約が必要なサービス
+ * weekends_only: 週末のみ - 土曜日・日曜日に限り提供するサービス
+ *
+ * by_appointment_only: 予約制 - 事前予約がある場合のみ提供するサービス
  *
  * seasonal: 季節限定 - 特定の季節のみ提供
- *
- * limited: 数量限定 - 提供数に制限があるサービス
  */
-export const ServiceAvailabilityTypeSchema = z.enum(['always', 'scheduled', 'by_appointment', 'seasonal', 'limited'])
+export const ServiceAvailabilityTypeSchema = z.enum(['always', 'weekdays_only', 'weekends_only', 'by_appointment_only', 'seasonal'])
 /**
  * @description
  * サービス提供可能性タイプ区分 - サービスが提供される時期や条件
@@ -1303,13 +1102,13 @@ export const ServiceAvailabilityTypeSchema = z.enum(['always', 'scheduled', 'by_
  *
  * always: 常時提供 - いつでも利用可能なサービス
  *
- * scheduled: スケジュール制 - 特定の時間帯のみ提供
+ * weekdays_only: 平日のみ - 平日に限り提供するサービス
  *
- * by_appointment: 予約制 - 事前予約が必要なサービス
+ * weekends_only: 週末のみ - 土曜日・日曜日に限り提供するサービス
+ *
+ * by_appointment_only: 予約制 - 事前予約がある場合のみ提供するサービス
  *
  * seasonal: 季節限定 - 特定の季節のみ提供
- *
- * limited: 数量限定 - 提供数に制限があるサービス
  */
 export type ServiceAvailabilityType = z.infer<typeof ServiceAvailabilityTypeSchema>
 
@@ -1328,9 +1127,13 @@ export type ServiceAvailabilityType = z.infer<typeof ServiceAvailabilityTypeSche
  *
  * spa: スパ - ヘッドスパ、リラクゼーション等の癒し系サービス
  *
+ * styling: スタイリング - セット、アレンジ等のスタイリングサービス
+ *
+ * extension: エクステンション - ヘアエクステ、増毛等の毛髪追加サービス
+ *
  * other: その他 - 上記カテゴリーに分類されないサービス
  */
-export const ServiceCategoryTypeSchema = z.enum(['cut', 'color', 'perm', 'treatment', 'spa', 'other'])
+export const ServiceCategoryTypeSchema = z.enum(['cut', 'color', 'perm', 'treatment', 'spa', 'styling', 'extension', 'other'])
 /**
  * @description
  * サービスカテゴリー区分 - サロンで提供される主要なサービスカテゴリーの定義
@@ -1346,6 +1149,10 @@ export const ServiceCategoryTypeSchema = z.enum(['cut', 'color', 'perm', 'treatm
  *
  * spa: スパ - ヘッドスパ、リラクゼーション等の癒し系サービス
  *
+ * styling: スタイリング - セット、アレンジ等のスタイリングサービス
+ *
+ * extension: エクステンション - ヘアエクステ、増毛等の毛髪追加サービス
+ *
  * other: その他 - 上記カテゴリーに分類されないサービス
  */
 export type ServiceCategoryType = z.infer<typeof ServiceCategoryTypeSchema>
@@ -1359,13 +1166,11 @@ export type ServiceCategoryType = z.infer<typeof ServiceCategoryTypeSchema>
  *
  * upgrade: アップグレード - サービスのグレードを上げるオプション
  *
- * duration: 時間延長 - サービス時間を延長するオプション
+ * duration_extension: 時間延長 - サービス時間を延長するオプション
  *
- * product: 商品追加 - サービスに商品を含めるオプション
- *
- * combo: コンボ - 複数サービスの組み合わせオプション
+ * product_choice: 商品選択 - 施術に使用する商品を選ぶオプション
  */
-export const ServiceOptionTypeSchema = z.enum(['addon', 'upgrade', 'duration', 'product', 'combo'])
+export const ServiceOptionTypeSchema = z.enum(['addon', 'upgrade', 'duration_extension', 'product_choice'])
 /**
  * @description
  * サービスオプションタイプ区分 - サービスに追加できるオプションの種類
@@ -1375,11 +1180,9 @@ export const ServiceOptionTypeSchema = z.enum(['addon', 'upgrade', 'duration', '
  *
  * upgrade: アップグレード - サービスのグレードを上げるオプション
  *
- * duration: 時間延長 - サービス時間を延長するオプション
+ * duration_extension: 時間延長 - サービス時間を延長するオプション
  *
- * product: 商品追加 - サービスに商品を含めるオプション
- *
- * combo: コンボ - 複数サービスの組み合わせオプション
+ * product_choice: 商品選択 - 施術に使用する商品を選ぶオプション
  */
 export type ServiceOptionType = z.infer<typeof ServiceOptionTypeSchema>
 
@@ -1392,15 +1195,11 @@ export type ServiceOptionType = z.infer<typeof ServiceOptionTypeSchema>
  *
  * inactive: 一時停止 - 一時的に提供を停止しているサービス
  *
- * seasonal: 季節限定 - 特定の季節のみ提供されるサービス
- *
- * limited: 数量限定 - 残りわずかなサービス
+ * coming_soon: 近日公開 - 近々提供予定のサービス
  *
  * discontinued: 廃止 - 提供を終了したサービス
- *
- * coming_soon: 近日公開 - 近々提供予定のサービス
  */
-export const ServiceStatusTypeSchema = z.enum(['active', 'inactive', 'seasonal', 'limited', 'discontinued', 'coming_soon'])
+export const ServiceStatusTypeSchema = z.enum(['active', 'inactive', 'coming_soon', 'discontinued'])
 /**
  * @description
  * サービスステータス区分 - サービスの提供状態を表す区分
@@ -1410,44 +1209,11 @@ export const ServiceStatusTypeSchema = z.enum(['active', 'inactive', 'seasonal',
  *
  * inactive: 一時停止 - 一時的に提供を停止しているサービス
  *
- * seasonal: 季節限定 - 特定の季節のみ提供されるサービス
- *
- * limited: 数量限定 - 残りわずかなサービス
+ * coming_soon: 近日公開 - 近々提供予定のサービス
  *
  * discontinued: 廃止 - 提供を終了したサービス
- *
- * coming_soon: 近日公開 - 近々提供予定のサービス
  */
 export type ServiceStatusType = z.infer<typeof ServiceStatusTypeSchema>
-
-/**
- * @description
- * スパサブカテゴリー区分 - スパ・リラクゼーションサービスの詳細分類
- *
- *
- * head_spa: ヘッドスパ - 頭部のマッサージと頭皮ケアを組み合わせたスパ
- *
- * scalp_massage: スカルプマッサージ - 頭皮の血行促進マッサージ
- *
- * aromatherapy: アロマテラピー - アロマオイルを使用したリラクゼーション
- *
- * relaxation: リラクゼーション - ストレス解消を目的とした総合的なケア
- */
-export const SpaSubCategoryTypeSchema = z.enum(['head_spa', 'scalp_massage', 'aromatherapy', 'relaxation'])
-/**
- * @description
- * スパサブカテゴリー区分 - スパ・リラクゼーションサービスの詳細分類
- *
- *
- * head_spa: ヘッドスパ - 頭部のマッサージと頭皮ケアを組み合わせたスパ
- *
- * scalp_massage: スカルプマッサージ - 頭皮の血行促進マッサージ
- *
- * aromatherapy: アロマテラピー - アロマオイルを使用したリラクゼーション
- *
- * relaxation: リラクゼーション - ストレス解消を目的とした総合的なケア
- */
-export type SpaSubCategoryType = z.infer<typeof SpaSubCategoryTypeSchema>
 
 /**
  * @description
@@ -1481,39 +1247,6 @@ export const StaffLevelTypeSchema = z.enum(['junior', 'stylist', 'senior', 'expe
  * director: ディレクター - 管理職レベル、サロンの技術的な指導を担当
  */
 export type StaffLevelType = z.infer<typeof StaffLevelTypeSchema>
-
-/**
- * @description
- * スタイリングサブカテゴリー区分 - ヘアスタイリングサービスの詳細分類
- *
- *
- * blowout: ブローアウト - ブロードライでボリュームを出すスタイリング
- *
- * updo: アップスタイル - まとめ髪、シニヨン等のヘアアレンジ
- *
- * braiding: 編み込み - 三つ編み、編み込みアレンジ等
- *
- * extensions: エクステンション - ヘアエクステの装着サービス
- *
- * event_styling: イベントスタイリング - 結婚式、パーティー等の特別なスタイリング
- */
-export const StylingSubCategoryTypeSchema = z.enum(['blowout', 'updo', 'braiding', 'extensions', 'event_styling'])
-/**
- * @description
- * スタイリングサブカテゴリー区分 - ヘアスタイリングサービスの詳細分類
- *
- *
- * blowout: ブローアウト - ブロードライでボリュームを出すスタイリング
- *
- * updo: アップスタイル - まとめ髪、シニヨン等のヘアアレンジ
- *
- * braiding: 編み込み - 三つ編み、編み込みアレンジ等
- *
- * extensions: エクステンション - ヘアエクステの装着サービス
- *
- * event_styling: イベントスタイリング - 結婚式、パーティー等の特別なスタイリング
- */
-export type StylingSubCategoryType = z.infer<typeof StylingSubCategoryTypeSchema>
 
 /**
  * @description
@@ -1568,45 +1301,6 @@ export const SystemRoleTypeSchema = z.enum([
  * guest: ゲスト - 限定的なゲストアクセス権限
  */
 export type SystemRoleType = z.infer<typeof SystemRoleTypeSchema>
-
-/**
- * @description
- * トリートメントサブカテゴリー区分 - ヘアトリートメントサービスの詳細分類
- *
- *
- * deep_conditioning: ディープコンディショニング - 髪の内部まで栄養を浸透させるトリートメント
- *
- * protein_treatment: プロテイントリートメント - タンパク質を補給し髪を強化するトリートメント
- *
- * scalp_treatment: スカルプトリートメント - 頭皮ケアに特化したトリートメント
- *
- * keratin_treatment: ケラチントリートメント - ケラチンを補充し髪をストレートにするトリートメント
- *
- * olaplex: オラプレックス - ダメージした髪の内部結合を修復するトリートメント
- */
-export const TreatmentSubCategoryTypeSchema = z.enum([
-  'deep_conditioning',
-  'protein_treatment',
-  'scalp_treatment',
-  'keratin_treatment',
-  'olaplex'
-])
-/**
- * @description
- * トリートメントサブカテゴリー区分 - ヘアトリートメントサービスの詳細分類
- *
- *
- * deep_conditioning: ディープコンディショニング - 髪の内部まで栄養を浸透させるトリートメント
- *
- * protein_treatment: プロテイントリートメント - タンパク質を補給し髪を強化するトリートメント
- *
- * scalp_treatment: スカルプトリートメント - 頭皮ケアに特化したトリートメント
- *
- * keratin_treatment: ケラチントリートメント - ケラチンを補充し髪をストレートにするトリートメント
- *
- * olaplex: オラプレックス - ダメージした髪の内部結合を修復するトリートメント
- */
-export type TreatmentSubCategoryType = z.infer<typeof TreatmentSubCategoryTypeSchema>
 
 /**
  * @description

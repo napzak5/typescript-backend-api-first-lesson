@@ -10,20 +10,18 @@
  * 価格戦略タイプ区分 - サービスの価格設定方法を定義
  *
  * fixed: 固定価格 - 常に同じ価格で提供
+ * variable: 変動価格 - 髪の長さや量など施術内容に応じて価格が変わる
  * tiered: 段階価格 - 条件によって価格が変わる段階制
  * dynamic: 動的価格 - 需要や時間帯によって変動する価格
- * package: パッケージ価格 - 複数サービスをセットで提供
- * membership: 会員価格 - 会員ランクに応じた特別価格
- * custom: カスタム価格 - 個別に設定される特別価格
+ * consultation_based: 要相談 - カウンセリング後に価格を決定する
  */
 export type ModelsPricingStrategyType = typeof ModelsPricingStrategyType[keyof typeof ModelsPricingStrategyType];
 
 
 export const ModelsPricingStrategyType = {
   fixed: 'fixed',
+  variable: 'variable',
   tiered: 'tiered',
   dynamic: 'dynamic',
-  package: 'package',
-  membership: 'membership',
-  custom: 'custom',
+  consultation_based: 'consultation_based',
 } as const;
