@@ -159,15 +159,17 @@ backend/
     └── utility/          # Result type and shared helpers
 ```
 
-The Salon domain, the system endpoints and the sixteen authentication
-operations of `AuthCrud` under `/api/v1/auth` (login, refresh, logout, the
-current user, registration, email verification, password reset and change,
-two-factor authentication) are implemented. The rest of the authentication
-contract (the list of sessions, the administrator operations) and the other
-domains exist in TypeSpec and in the database schema only. Sessions,
-passwords, two-factor authentication, permissions and the seeded accounts are
-described in [docs/authentication.md](docs/authentication.md), the mails the
-server sends in [docs/email.md](docs/email.md).
+The Salon domain, the system endpoints and every operation of the
+authentication contract are implemented: under `/api/v1/auth` login, refresh,
+logout, the current user, registration, email verification, password reset
+and change, two-factor authentication, and the list of the signed-in user's
+sessions with the revocation of one of them; under `/api/v1/admin/auth` the
+administrator operations (read a user, unlock an account, reset two-factor
+authentication). The other domains exist in TypeSpec and in the database
+schema only. Sessions, passwords, two-factor authentication, permissions, the
+administrator operations and the seeded accounts are described in
+[docs/authentication.md](docs/authentication.md), the mails the server sends
+in [docs/email.md](docs/email.md).
 
 ### Namespace Convention
 - Backend: `@beauty-salon-backend/*`

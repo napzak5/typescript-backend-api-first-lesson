@@ -152,6 +152,15 @@ export interface IUserRepository {
   ): Promise<Result<boolean, DomainError>>
 
   /**
+   * Lifts the lock of an account, in a single statement: the count of
+   * failed logins and the time the lock holds until are cleared, and an
+   * account with the status `locked` becomes active again (any other status
+   * stays). Resolves to null when the account is not locked at `now`: its
+   * status is not `locked` and no lock holds beyond `now`.
+   */
+  unlock(id: UserId, now: string): Promise<Result<DbUser | null, DomainError>>
+
+  /**
    * Stores a new secret and new backup codes and marks two-factor
    * authentication as being set up, which replaces a setup that was under
    * way. Resolves to false when it is already enabled.

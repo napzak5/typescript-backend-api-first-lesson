@@ -464,3 +464,34 @@ describe('two-factor authentication', () => {
     expect(JSON.stringify(logs)).not.toContain(sealed)
   })
 })
+
+describe('sessions and the operations of administrators on accounts', () => {
+  /** A UUID that names nothing: the request is refused before it is looked up. */
+  const SOME_ID = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1b'
+
+  it.each([
+    ['GET', '/api/v1/auth/sessions'],
+    ['DELETE', `/api/v1/auth/sessions/${SOME_ID}`],
+    ['GET', `/api/v1/admin/auth/users/${SOME_ID}`],
+    ['POST', `/api/v1/admin/auth/unlock/${SOME_ID}`],
+    ['POST', `/api/v1/admin/auth/reset-two-factor/${SOME_ID}`],
+  ])(
+    'should answer %s %s with 401 when no access token is sent',
+    async (method, path) => {
+      const { server } = await start(createConfig().config)
+
+      const response = await fetch(`http://127.0.0.1:${server.port}${path}`, {
+        method,
+      })
+      const problem = await response.json()
+      await server.stop()
+
+      expect(response.status).toBe(401)
+      expect(response.headers.get('www-authenticate')).toBe(
+        'Bearer realm="beauty-salon-api"',
+      )
+      expect(response.headers.get('cache-control')).toBe('no-store')
+      expect(problem).toMatchObject({ status: 401, code: '1001' })
+    },
+  )
+})

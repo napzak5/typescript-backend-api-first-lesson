@@ -208,6 +208,8 @@ const authRules: ModelRule[] = [
     model: 'Models.SessionResponse',
     table: 'sessions',
     kind: 'response',
+    // Whether the session is the one of the request that lists it.
+    computed: ['current'],
     omittedColumns: ['tokenHash', 'refreshTokenHash'],
   },
 ]

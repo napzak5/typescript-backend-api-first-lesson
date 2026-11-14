@@ -17,12 +17,16 @@ import { request } from './test-helpers'
 
 export const AUTH = '/api/v1/auth'
 
+/** Where the operations of administrators on accounts are mounted. */
+export const ADMIN_AUTH = '/api/v1/admin/auth'
+
 /** The password of every user the helpers insert. */
 export const PASSWORD = 'correct horse battery staple'
 
 type NewUser = typeof users.$inferInsert
 type NewStaff = typeof staff.$inferInsert
 type NewSalon = typeof salons.$inferInsert
+type NewSession = typeof sessions.$inferInsert
 
 /** What the server stores of a token: its SHA-256 in hex. */
 export const sha256 = (token: string): string =>
@@ -80,6 +84,69 @@ export const epochMs = (column: SQLWrapper) =>
 /** The seconds from one timestamp column to another. */
 const secondsBetween = (from: SQLWrapper, to: SQLWrapper) =>
   sql<number>`extract(epoch from ${to} - ${from})::float8`.mapWith(Number)
+
+/** A session that a test stored itself, with the tokens that belong to it. */
+type StoredSession = {
+  id: string
+  accessToken: string
+  refreshToken: string
+  /** The value of the Authorization header that carries the access token. */
+  authorization: string
+}
+
+/**
+ * Stores a session of the user directly, for times that no login produces:
+ * by default one that started an hour ago, whose access token has ten
+ * minutes and the session seven hours left. Its tokens work like those of a
+ * login.
+ */
+export const insertSession = async (
+  db: Database,
+  userId: string,
+  overrides: Partial<NewSession> = {},
+): Promise<StoredSession> => {
+  const accessToken = randomBytes(32).toString('base64url')
+  const refreshToken = randomBytes(32).toString('base64url')
+  const [session] = await db
+    .insert(sessions)
+    .values({
+      userId,
+      tokenHash: sha256(accessToken),
+      refreshTokenHash: sha256(refreshToken),
+      ipAddress: '203.0.113.7',
+      userAgent: 'SalonTest/1.0',
+      expiresAt: minutesFromNow(10),
+      refreshExpiresAt: minutesFromNow(7 * 60),
+      lastActivityAt: minutesFromNow(-5),
+      createdAt: minutesFromNow(-60),
+      ...overrides,
+    })
+    .returning({ id: sessions.id })
+  if (session === undefined) {
+    throw new Error('No session was inserted')
+  }
+  return {
+    id: session.id,
+    accessToken,
+    refreshToken,
+    authorization: `Bearer ${accessToken}`,
+  }
+}
+
+/** The ID of the stored session that an access token belongs to. */
+export const sessionIdOf = async (
+  db: Database,
+  accessToken: string,
+): Promise<string> => {
+  const [session] = await db
+    .select({ id: sessions.id })
+    .from(sessions)
+    .where(eq(sessions.tokenHash, sha256(accessToken)))
+  if (session === undefined) {
+    throw new Error('No stored session has this access token')
+  }
+  return session.id
+}
 
 /** Every stored session, with how long its access token and the session itself last. */
 export const storedSessions = (db: Database) =>

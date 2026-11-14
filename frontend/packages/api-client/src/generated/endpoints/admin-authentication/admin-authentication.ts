@@ -25,11 +25,9 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
-  AdminAuthCrudAddTrustedIp200,
   AdminAuthCrudGetUser200,
-  AdminAuthCrudRemoveTrustedIpParams,
+  AdminAuthCrudResetTwoFactor200,
   AdminAuthCrudUnlockAccount200,
-  ModelsAuthTrustedIpAddRequest,
   ModelsProblemDetails,
   ModelsUserId
 } from '../../models';
@@ -54,226 +52,73 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   return result;
 };
 
-export type adminAuthCrudAddTrustedIpResponse200 = {
-  data: AdminAuthCrudAddTrustedIp200
+export type adminAuthCrudResetTwoFactorResponse200 = {
+  data: AdminAuthCrudResetTwoFactor200
   status: 200
 }
 
-export type adminAuthCrudAddTrustedIpResponse400 = {
+export type adminAuthCrudResetTwoFactorResponse400 = {
   data: ModelsProblemDetails
   status: 400
 }
 
-export type adminAuthCrudAddTrustedIpResponse401 = {
+export type adminAuthCrudResetTwoFactorResponse401 = {
   data: ModelsProblemDetails
   status: 401
 }
 
-export type adminAuthCrudAddTrustedIpResponse403 = {
+export type adminAuthCrudResetTwoFactorResponse403 = {
   data: ModelsProblemDetails
   status: 403
 }
 
-export type adminAuthCrudAddTrustedIpResponse404 = {
+export type adminAuthCrudResetTwoFactorResponse404 = {
   data: ModelsProblemDetails
   status: 404
 }
 
-export type adminAuthCrudAddTrustedIpResponse409 = {
+export type adminAuthCrudResetTwoFactorResponse409 = {
   data: ModelsProblemDetails
   status: 409
 }
 
-export type adminAuthCrudAddTrustedIpResponse413 = {
-  data: ModelsProblemDetails
-  status: 413
-}
-
-export type adminAuthCrudAddTrustedIpResponse415 = {
-  data: ModelsProblemDetails
-  status: 415
-}
-
-export type adminAuthCrudAddTrustedIpResponse429 = {
+export type adminAuthCrudResetTwoFactorResponse429 = {
   data: ModelsProblemDetails
   status: 429
 }
 
-export type adminAuthCrudAddTrustedIpResponse500 = {
+export type adminAuthCrudResetTwoFactorResponse500 = {
   data: ModelsProblemDetails
   status: 500
 }
 
-export type adminAuthCrudAddTrustedIpResponseSuccess = (adminAuthCrudAddTrustedIpResponse200) & {
+export type adminAuthCrudResetTwoFactorResponseSuccess = (adminAuthCrudResetTwoFactorResponse200) & {
   headers: Headers;
 };
-export type adminAuthCrudAddTrustedIpResponseError = (adminAuthCrudAddTrustedIpResponse400 | adminAuthCrudAddTrustedIpResponse401 | adminAuthCrudAddTrustedIpResponse403 | adminAuthCrudAddTrustedIpResponse404 | adminAuthCrudAddTrustedIpResponse409 | adminAuthCrudAddTrustedIpResponse413 | adminAuthCrudAddTrustedIpResponse415 | adminAuthCrudAddTrustedIpResponse429 | adminAuthCrudAddTrustedIpResponse500) & {
+export type adminAuthCrudResetTwoFactorResponseError = (adminAuthCrudResetTwoFactorResponse400 | adminAuthCrudResetTwoFactorResponse401 | adminAuthCrudResetTwoFactorResponse403 | adminAuthCrudResetTwoFactorResponse404 | adminAuthCrudResetTwoFactorResponse409 | adminAuthCrudResetTwoFactorResponse429 | adminAuthCrudResetTwoFactorResponse500) & {
   headers: Headers;
 };
 
-export type adminAuthCrudAddTrustedIpResponse = (adminAuthCrudAddTrustedIpResponseSuccess | adminAuthCrudAddTrustedIpResponseError)
+export type adminAuthCrudResetTwoFactorResponse = (adminAuthCrudResetTwoFactorResponseSuccess | adminAuthCrudResetTwoFactorResponseError)
 
-export const getAdminAuthCrudAddTrustedIpUrl = (userId: ModelsUserId,) => {
-
-
+export const getAdminAuthCrudResetTwoFactorUrl = (userId: ModelsUserId,) => {
 
 
-  return `/api/v1/admin/auth/trusted-ip/${userId}`
+
+
+  return `/api/v1/admin/auth/reset-two-factor/${userId}`
 }
 
 /**
- * ユーザーの信頼済みIPアドレスを追加します。すでに登録されているIPアドレスを指定した場合は409を返します。
- * @summary Add a trusted IP address
+ * ユーザーの2要素認証を無効にします。認証アプリとバックアップコードの両方を失った利用者が、ログインして設定し直せるようにするための操作です。シークレットとバックアップコードを削除し、利用者にメールで知らせます。利用者のセッションは変更しません。2要素認証が有効でないアカウントを指定した場合は409を返します。管理者自身のアカウントは指定できません(403)。
+ * @summary Reset two-factor authentication of a user
  */
-export const adminAuthCrudAddTrustedIp = async (userId: ModelsUserId,
-    modelsAuthTrustedIpAddRequest: ModelsAuthTrustedIpAddRequest, options?: RequestInit): Promise<adminAuthCrudAddTrustedIpResponse> => {
+export const adminAuthCrudResetTwoFactor = async (userId: ModelsUserId, options?: RequestInit): Promise<adminAuthCrudResetTwoFactorResponse> => {
 
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return customInstance<adminAuthCrudAddTrustedIpResponse>(getAdminAuthCrudAddTrustedIpUrl(userId),
+  return customInstance<adminAuthCrudResetTwoFactorResponse>(getAdminAuthCrudResetTwoFactorUrl(userId),
   {
     ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(modelsAuthTrustedIpAddRequest)
-  }
-);}
-
-
-
-
-
-export const getAdminAuthCrudAddTrustedIpMutationKey = () => ['adminAuthCrudAddTrustedIp'] as const;
-
-export const getAdminAuthCrudAddTrustedIpMutationOptions = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminAuthCrudAddTrustedIp>>, TError,AdminAuthCrudAddTrustedIpMutationVariables, TContext>, }
-): UseMutationOptions<Awaited<ReturnType<typeof adminAuthCrudAddTrustedIp>>, TError,AdminAuthCrudAddTrustedIpMutationVariables, TContext> => {
-
-const mutationKey = getAdminAuthCrudAddTrustedIpMutationKey();
-const {mutation: mutationOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof adminAuthCrudAddTrustedIp>>, AdminAuthCrudAddTrustedIpMutationVariables> = (props) => {
-          const {userId,data} = props ?? {};
-
-          return  adminAuthCrudAddTrustedIp(userId,data,)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type AdminAuthCrudAddTrustedIpMutationResult = NonNullable<Awaited<ReturnType<typeof adminAuthCrudAddTrustedIp>>>
-    export type AdminAuthCrudAddTrustedIpMutationBody = ModelsAuthTrustedIpAddRequest
-    export type AdminAuthCrudAddTrustedIpMutationError = ModelsProblemDetails
-    export type AdminAuthCrudAddTrustedIpMutationVariables = {userId: ModelsUserId;data: ModelsAuthTrustedIpAddRequest}
-
-    /**
- * ユーザーの信頼済みIPアドレスを追加します。すでに登録されているIPアドレスを指定した場合は409を返します。
- * @summary Add a trusted IP address
- */
-export const useAdminAuthCrudAddTrustedIp = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminAuthCrudAddTrustedIp>>, TError,AdminAuthCrudAddTrustedIpMutationVariables, TContext>, }
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof adminAuthCrudAddTrustedIp>>,
-        TError,
-        AdminAuthCrudAddTrustedIpMutationVariables,
-        TContext
-      > => {
-      return useMutation(getAdminAuthCrudAddTrustedIpMutationOptions(options), queryClient);
-    }
-    export type adminAuthCrudRemoveTrustedIpResponse204 = {
-  data: void
-  status: 204
-}
-
-export type adminAuthCrudRemoveTrustedIpResponse400 = {
-  data: ModelsProblemDetails
-  status: 400
-}
-
-export type adminAuthCrudRemoveTrustedIpResponse401 = {
-  data: ModelsProblemDetails
-  status: 401
-}
-
-export type adminAuthCrudRemoveTrustedIpResponse403 = {
-  data: ModelsProblemDetails
-  status: 403
-}
-
-export type adminAuthCrudRemoveTrustedIpResponse404 = {
-  data: ModelsProblemDetails
-  status: 404
-}
-
-export type adminAuthCrudRemoveTrustedIpResponse429 = {
-  data: ModelsProblemDetails
-  status: 429
-}
-
-export type adminAuthCrudRemoveTrustedIpResponse500 = {
-  data: ModelsProblemDetails
-  status: 500
-}
-
-export type adminAuthCrudRemoveTrustedIpResponseSuccess = (adminAuthCrudRemoveTrustedIpResponse204) & {
-  headers: Headers;
-};
-export type adminAuthCrudRemoveTrustedIpResponseError = (adminAuthCrudRemoveTrustedIpResponse400 | adminAuthCrudRemoveTrustedIpResponse401 | adminAuthCrudRemoveTrustedIpResponse403 | adminAuthCrudRemoveTrustedIpResponse404 | adminAuthCrudRemoveTrustedIpResponse429 | adminAuthCrudRemoveTrustedIpResponse500) & {
-  headers: Headers;
-};
-
-export type adminAuthCrudRemoveTrustedIpResponse = (adminAuthCrudRemoveTrustedIpResponseSuccess | adminAuthCrudRemoveTrustedIpResponseError)
-
-export const getAdminAuthCrudRemoveTrustedIpUrl = (userId: ModelsUserId,
-    params: AdminAuthCrudRemoveTrustedIpParams,) => {
-  const normalizedParams = new URLSearchParams();
-
-  Object.entries(params || {}).forEach(([key, value]) => {
-
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : String(value))
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0 ? `/api/v1/admin/auth/trusted-ip/${userId}?${stringifiedParams}` : `/api/v1/admin/auth/trusted-ip/${userId}`
-}
-
-/**
- * ユーザーの信頼済みIPアドレスを削除します。ユーザーが存在しない場合、または指定したIPアドレスが登録されていない場合は404を返します。
- * @summary Remove a trusted IP address
- */
-export const adminAuthCrudRemoveTrustedIp = async (userId: ModelsUserId,
-    params: AdminAuthCrudRemoveTrustedIpParams, options?: RequestInit): Promise<adminAuthCrudRemoveTrustedIpResponse> => {
-
-  return customInstance<adminAuthCrudRemoveTrustedIpResponse>(getAdminAuthCrudRemoveTrustedIpUrl(userId,params),
-  {
-    ...options,
-    method: 'DELETE'
+    method: 'POST'
 
 
   }
@@ -283,13 +128,13 @@ export const adminAuthCrudRemoveTrustedIp = async (userId: ModelsUserId,
 
 
 
-export const getAdminAuthCrudRemoveTrustedIpMutationKey = () => ['adminAuthCrudRemoveTrustedIp'] as const;
+export const getAdminAuthCrudResetTwoFactorMutationKey = () => ['adminAuthCrudResetTwoFactor'] as const;
 
-export const getAdminAuthCrudRemoveTrustedIpMutationOptions = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminAuthCrudRemoveTrustedIp>>, TError,AdminAuthCrudRemoveTrustedIpMutationVariables, TContext>, }
-): UseMutationOptions<Awaited<ReturnType<typeof adminAuthCrudRemoveTrustedIp>>, TError,AdminAuthCrudRemoveTrustedIpMutationVariables, TContext> => {
+export const getAdminAuthCrudResetTwoFactorMutationOptions = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminAuthCrudResetTwoFactor>>, TError,AdminAuthCrudResetTwoFactorMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof adminAuthCrudResetTwoFactor>>, TError,AdminAuthCrudResetTwoFactorMutationVariables, TContext> => {
 
-const mutationKey = getAdminAuthCrudRemoveTrustedIpMutationKey();
+const mutationKey = getAdminAuthCrudResetTwoFactorMutationKey();
 const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -299,10 +144,10 @@ const {mutation: mutationOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof adminAuthCrudRemoveTrustedIp>>, AdminAuthCrudRemoveTrustedIpMutationVariables> = (props) => {
-          const {userId,params} = props ?? {};
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof adminAuthCrudResetTwoFactor>>, AdminAuthCrudResetTwoFactorMutationVariables> = (props) => {
+          const {userId} = props ?? {};
 
-          return  adminAuthCrudRemoveTrustedIp(userId,params,)
+          return  adminAuthCrudResetTwoFactor(userId,)
         }
 
 
@@ -312,24 +157,24 @@ const {mutation: mutationOptions} = options ?
 
   return  { mutationFn, ...mutationOptions }}
 
-    export type AdminAuthCrudRemoveTrustedIpMutationResult = NonNullable<Awaited<ReturnType<typeof adminAuthCrudRemoveTrustedIp>>>
+    export type AdminAuthCrudResetTwoFactorMutationResult = NonNullable<Awaited<ReturnType<typeof adminAuthCrudResetTwoFactor>>>
 
-    export type AdminAuthCrudRemoveTrustedIpMutationError = ModelsProblemDetails
-    export type AdminAuthCrudRemoveTrustedIpMutationVariables = {userId: ModelsUserId;params: AdminAuthCrudRemoveTrustedIpParams}
+    export type AdminAuthCrudResetTwoFactorMutationError = ModelsProblemDetails
+    export type AdminAuthCrudResetTwoFactorMutationVariables = {userId: ModelsUserId}
 
     /**
- * ユーザーの信頼済みIPアドレスを削除します。ユーザーが存在しない場合、または指定したIPアドレスが登録されていない場合は404を返します。
- * @summary Remove a trusted IP address
+ * ユーザーの2要素認証を無効にします。認証アプリとバックアップコードの両方を失った利用者が、ログインして設定し直せるようにするための操作です。シークレットとバックアップコードを削除し、利用者にメールで知らせます。利用者のセッションは変更しません。2要素認証が有効でないアカウントを指定した場合は409を返します。管理者自身のアカウントは指定できません(403)。
+ * @summary Reset two-factor authentication of a user
  */
-export const useAdminAuthCrudRemoveTrustedIp = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminAuthCrudRemoveTrustedIp>>, TError,AdminAuthCrudRemoveTrustedIpMutationVariables, TContext>, }
+export const useAdminAuthCrudResetTwoFactor = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminAuthCrudResetTwoFactor>>, TError,AdminAuthCrudResetTwoFactorMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof adminAuthCrudRemoveTrustedIp>>,
+        Awaited<ReturnType<typeof adminAuthCrudResetTwoFactor>>,
         TError,
-        AdminAuthCrudRemoveTrustedIpMutationVariables,
+        AdminAuthCrudResetTwoFactorMutationVariables,
         TContext
       > => {
-      return useMutation(getAdminAuthCrudRemoveTrustedIpMutationOptions(options), queryClient);
+      return useMutation(getAdminAuthCrudResetTwoFactorMutationOptions(options), queryClient);
     }
     export type adminAuthCrudUnlockAccountResponse200 = {
   data: AdminAuthCrudUnlockAccount200
@@ -389,7 +234,7 @@ export const getAdminAuthCrudUnlockAccountUrl = (userId: ModelsUserId,) => {
 }
 
 /**
- * ロックされたユーザーアカウントのロックを解除します。アカウント状態を active に戻し、lockedUntil を null、failedLoginAttempts を0にします。ロックされていないアカウントを指定した場合は409を返します。
+ * ロックされたユーザーアカウントのロックを解除します。lockedUntil を null、failedLoginAttempts を0にし、アカウント状態が locked の場合は active に戻します(suspended などほかの状態は変えません)。ロックされていないアカウント(状態が locked でなく、lockedUntil が現在より後でもない)を指定した場合は409を返します。管理者自身のアカウントは指定できません(403)。
  * @summary Unlock a user account
  */
 export const adminAuthCrudUnlockAccount = async (userId: ModelsUserId, options?: RequestInit): Promise<adminAuthCrudUnlockAccountResponse> => {
@@ -442,7 +287,7 @@ const {mutation: mutationOptions} = options ?
     export type AdminAuthCrudUnlockAccountMutationVariables = {userId: ModelsUserId}
 
     /**
- * ロックされたユーザーアカウントのロックを解除します。アカウント状態を active に戻し、lockedUntil を null、failedLoginAttempts を0にします。ロックされていないアカウントを指定した場合は409を返します。
+ * ロックされたユーザーアカウントのロックを解除します。lockedUntil を null、failedLoginAttempts を0にし、アカウント状態が locked の場合は active に戻します(suspended などほかの状態は変えません)。ロックされていないアカウント(状態が locked でなく、lockedUntil が現在より後でもない)を指定した場合は409を返します。管理者自身のアカウントは指定できません(403)。
  * @summary Unlock a user account
  */
 export const useAdminAuthCrudUnlockAccount = <TError = ModelsProblemDetails,

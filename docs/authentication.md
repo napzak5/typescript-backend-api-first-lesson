@@ -9,7 +9,10 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 | `POST /api/v1/auth/login`、`/refresh`、`/logout`、`/logout-all`、`GET /api/v1/auth/me` | 実装済み |
 | ユーザー登録（`/register`）、メールアドレスの確認（`/verify-email/send`、`/verify-email/confirm`）、パスワードの再設定（`/forgot-password`、`/reset-password/verify`、`/reset-password`）・変更（`/change-password`） | 実装済み |
 | 2 要素認証（`/2fa/enable`、`/2fa/verify`、`/2fa/disable`、`/2fa/backup-codes`）と、ログインでのコードの確認 | 実装済み |
-| セッションの一覧・無効化（`/api/v1/auth/sessions`）、管理者の操作（`/api/v1/admin/auth`） | 未実装（コントラクトのみ） |
+| セッションの一覧（`GET /api/v1/auth/sessions`）と無効化（`DELETE /api/v1/auth/sessions/{sessionId}`） | 実装済み |
+| 管理者の操作（`/api/v1/admin/auth` のユーザーの参照、ロックの解除、2 要素認証のリセット） | 実装済み |
+
+コントラクトの認証のオペレーション（`AuthCrud`、`SessionCrud`、`AdminAuthCrud`）は、すべて実装されています。
 
 登録で作れるのは顧客（ロール `customer`）のアカウントだけです。`admin`、`owner`、`manager`、`staff` のアカウントを作る API はまだないので、シード（`pnpm db:seed`）か SQL で作ります。
 
@@ -28,6 +31,29 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 | `lastActivityAt` | 最後にトークンを発行した（ログインまたは再発行した）日時。リクエストごとには更新しない |
 
 根拠: セッション ID のエントロピーと、検証用の値だけを保存することは OWASP Session Management Cheat Sheet。不透明なトークンは長くランダムなので、保存に必要なのは SHA-256 で、パスワード用のハッシュは要りません。
+
+### 一覧と無効化
+
+ログイン中のユーザーは、自分のアカウントがどこでログインしているかを確かめ、セッションを 1 件ずつ無効にできます（OWASP Session Management Cheat Sheet: 利用者が有効なセッションの詳細を確認し、離れた場所から終了できるようにする）。1 人のユーザーが同時に持てるセッションの数に上限はありません。
+
+`GET /api/v1/auth/sessions`
+
+| 項目 | 決まり |
+|---|---|
+| 対象 | リクエストしたユーザーの、終了していないセッション（`refreshExpiresAt` が現在より後）。アクセストークンの期限が切れていても、再発行できる間は含む。ほかのユーザーのセッションは含まない |
+| 並び | 新しい順（`createdAt`、`id` の降順） |
+| 項目 | `id`、`userId`、`ipAddress`、`userAgent`、`expiresAt`、`refreshExpiresAt`、`lastActivityAt`、`createdAt`、`current`。トークンのハッシュは返さない |
+| `current` | このリクエストのセッションなら true。クライアントはセッションの ID を知らないので、「この端末」を示すにはこの値を使う。DB のカラムではなく、応答のたびに決める値 |
+| ページ | `limit` は 1〜100（省略時 20）。`cursor` は前のページの最後のセッションの ID。`meta.total` は終了していないセッションの総数。前へは戻れない（`prevCursor` は常に null） |
+| 無効な `cursor` | 400（`field` は `cursor`）。UUID でなければ `rule` は `invalid_format`、そのユーザーのセッションを指していなければ `not_found`。無効にされたセッションは行ごと消えるので、それを指す `cursor` も `not_found` になる。クライアントは先頭から読み直す |
+
+`DELETE /api/v1/auth/sessions/{sessionId}`
+
+- 自分の、終了していないセッションを削除する（204）。そのセッションのアクセストークンもリフレッシュトークンも、すぐに使えなくなる
+- リクエスト自身のセッションも指定できる。結果はログアウトと同じ
+- 存在しない、ほかのユーザーのもの、すでに終了しているものは、区別せず 404。ID が UUID でなければ 400（`field` は `sessionId`）
+- 所有者と期限を条件に含めた 1 つの DELETE で行うので、同じセッションを同時に 2 回無効にしても、204 になるのは 1 回
+- メールは送らない。すべてのセッションを無効にするのは `POST /api/v1/auth/logout-all`
 
 ## パスワード
 
@@ -66,6 +92,7 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 - メールアドレスは小文字で保存し、小文字にそろえて照合する
 - パスワードを連続して 5 回誤ると、アカウントを 15 分ロックする（`status = locked`、`lockedUntil`）。ロック中の試行は数えず、正しいパスワードでも失敗する。ロックが明けたあとは、誤るたびに 15 分ロックする。成功すると失敗回数は 0 に戻り、`status` は `active` に戻る。回数の加算は 1 つの UPDATE で行うので、並行した試行も数え漏らさない
 - ロックは新しいログインだけを止める。すでにあるセッションは使い続けられる（他人の失敗でログイン中の利用者を締め出さないため）
+- ロックは時間がたてば明ける。待たずに解除できるのは、パスワードの再設定と、管理者によるロックの解除（[管理者の操作](#管理者の操作)）
 - ログインと既存のセッションの利用ができるのは、`status` が `active` または `locked`（ロックは上のとおり新しいログインだけを止める）で、削除されていない（`deletedAt` が NULL の）ユーザーだけ。`unverified`、`inactive`、`suspended`、`deleted` のユーザーは、どちらもできない
 
 ## ユーザー登録
@@ -173,6 +200,7 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 - 有効にしても無効にしても、セッションはそのまま残る
 - 有効にしたとき、無効にしたとき、バックアップコードを発行し直したときは、メールで知らせる（[メール送信](./email.md#送るメール)）
 - 認証アプリを使えなくなった利用者は、バックアップコードでログインし、バックアップコードで無効化してから設定し直す
+- 認証アプリもバックアップコードも失った利用者は、自分では解除できない。管理者が 2 要素認証をリセットする（[管理者の操作](#管理者の操作)）
 
 ### ログインでの確認
 
@@ -192,7 +220,6 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 
 ### していないこと
 
-- **認証アプリもバックアップコードも失った利用者の復旧**: 利用者が自分で解除する方法はない。管理者の操作（未実装）が要る
 - **鍵の交換**: `TWO_FACTOR_ENCRYPTION_KEY` を変えると、保存済みのシークレットはどれも復号できなくなり、コードを確認できなくなる（バックアップコードは使える）。鍵を切り替える仕組みはない
 - **ロールごとの必須化、信頼する端末の記憶、SMS やメールでのコード、パスキー**
 
@@ -207,7 +234,9 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 | アクセストークンの有効期限切れ（リフレッシュトークンで再発行できる） | 401 | `1003` | 同上 |
 | 認証されているが権限がない | 403 | `1005` | なし |
 
-401 には必ず `WWW-Authenticate` を付けます（RFC 9110 15.5.2）。`/api/v1/auth` 以下のレスポンスには `Cache-Control: no-store` を付けます。
+401 には必ず `WWW-Authenticate` を付けます（RFC 9110 15.5.2）。`/api/v1/auth` と `/api/v1/admin/auth` 以下のレスポンスには `Cache-Control: no-store` を付けます。
+
+認証されたリクエストのログ行（`request completed`）には、ユーザーの ID（`userId`）が入ります。応答が 403 や 404 でも入るので、誰がどの操作を試みたかを、リクエスト ID と合わせて追えます。認証されなかったリクエストの行には入りません。トークンとそのハッシュはログに出力しません（OWASP Session Management Cheat Sheet: セッション ID そのものを記録しない。この API でそれに当たるのはトークン）。`sessions` の行の ID は認証に使えない値で、セッションを無効にするリクエストのパスや、一覧の `cursor` としてログ行の `url` に残ります。
 
 ## 認可
 
@@ -235,6 +264,26 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 | 削除 | `admin`、そのサロンの `owner` |
 
 権限は、リクエストの本文を検証する前、対象を検索する前に判定します。ほかのサロンの `owner` が更新しようとすると、そのサロンが存在しなくても 403 です（サロンは公開情報なので、存在を隠す必要がない）。
+
+## 管理者の操作
+
+`/api/v1/admin/auth` は、ほかのユーザーのアカウントを参照し、利用者が自分では直せない状態を直すためのものです。使えるのは操作者の範囲が `platform`（ロール `admin`）のユーザーだけで、それ以外は 403 です（`business-logic/auth/_shared/authorization.ts` の `mayAdministerAccounts`）。
+
+| オペレーション | 動作 | 状態が合わないとき |
+|---|---|---|
+| `GET /users/{userId}` | ユーザーを返す（`GET /api/v1/auth/me` と同じ `UserResponse`）。自分自身も指定できる | — |
+| `POST /unlock/{userId}` | ロックを解除する。`failedLoginAttempts` を 0、`lockedUntil` を null にし、状態が `locked` なら `active` に戻す。ほかの状態（`suspended` など）は変えない | ロックされていなければ 409 |
+| `POST /reset-two-factor/{userId}` | 2 要素認証を無効にする（状態を `disabled` にし、シークレットとバックアップコードを削除する）。利用者にメールで知らせる | 状態が `enabled` でなければ 409（設定中の `pending` には触れない） |
+
+- 「ロックされている」とは、状態が `locked` であるか、`lockedUntil` が現在より後であること。期限が過ぎても状態が `locked` のままのアカウント（次に誤ると、すぐにまたロックされる）も解除できる
+- 確認の順序は、権限（403）→ ID の形式（400）→ 自分自身でないこと（403）→ ユーザーの存在（404。削除済みも同じ）→ 状態（409）。権限のないユーザーには、ID が不正でも 403 を返す
+- **管理者は、自分のアカウントのロック解除と 2 要素認証のリセットはできない**（403）。できると、管理者のセッションを奪った者が、試行回数の制限と 2 つ目の要素を自分で外せる（OWASP Multifactor Authentication Cheat Sheet: 要素の変更を、有効なセッションだけに頼らない）。管理者自身の復旧は、別の管理者が行う
+- どちらの変更も、条件を WHERE に含めた 1 つの UPDATE で行う。同じアカウントに同時に 2 回要求しても、成功するのは 1 回で、もう 1 回は 409
+- ロックの解除も 2 要素認証のリセットも、そのユーザーのセッションとパスワードは変えない。リセットのあと、利用者はパスワードだけでログインし、2 要素認証を設定し直す
+- 2 要素認証のリセットは、認証アプリもバックアップコードも失った利用者のための手段。**依頼してきた人が本人であることの確認は、管理者（サポート）の手続きで行う**。システムは確認しない（OWASP: サポートが本人確認を厳格に行う手続きを持つこと）。メールでの通知（[メール送信](./email.md#送るメール)）は、本人の依頼でなかったときに気づけるようにするためのもの
+- 誰が操作したかは、リクエストのログ行の `userId`（[リクエストの認証](#リクエストの認証)）と、パスに含まれる対象のユーザー ID から分かる
+
+アカウントの作成、ロールや状態の変更、停止、削除を行う API はありません。
 
 ## 新しいオペレーションを保護する
 
@@ -289,4 +338,4 @@ curl -s http://localhost:3000/api/v1/auth/login \
 | コントラクト | `specs/models/auth.tsp`、`specs/operations/auth-operations.tsp`、`specs/models/_shared/common-api-patterns.tsp`（`UnauthenticatedResponse`、`PermissionDeniedResponse`、エラーのエイリアス） |
 | ドメイン | `backend/packages/domain/src/models/auth.ts`（`Actor`）、`business-logic/auth/`、`repositories/{user,session}.repository.ts`、`services/`（`IPasswordHasher`、`ITokenIssuer`、`ITwoFactorAuthenticator`、`IMailer`） |
 | インフラ | `backend/packages/infrastructure/src/security/`（`Argon2PasswordHasher`、`RandomTokenIssuer`、`TotpAuthenticator`）、`mail/smtp-mailer.ts`、`repositories/{user,session}.repository.impl.ts` |
-| API | `backend/packages/api/src/shared/authentication.ts`、`routes/auth/` |
+| API | `backend/packages/api/src/shared/authentication.ts`、`shared/signed-in-user.ts`（ログ行の `userId`）、`routes/auth/`、`routes/admin-auth/` |

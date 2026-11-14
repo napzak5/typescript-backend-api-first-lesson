@@ -8,12 +8,14 @@ import { enableTwoFactorHandler } from './enable-two-factor.handler'
 import { forgotPasswordHandler } from './forgot-password.handler'
 import { generateBackupCodesHandler } from './generate-backup-codes.handler'
 import { getCurrentUserHandler } from './get-current-user.handler'
+import { listSessionsHandler } from './list-sessions.handler'
 import { loginHandler } from './login.handler'
 import { logoutHandler } from './logout.handler'
 import { logoutAllHandler } from './logout-all.handler'
 import { refreshTokenHandler } from './refresh-token.handler'
 import { registerHandler } from './register.handler'
 import { resetPasswordHandler } from './reset-password.handler'
+import { revokeSessionHandler } from './revoke-session.handler'
 import { sendEmailVerificationHandler } from './send-email-verification.handler'
 import { verifyResetTokenHandler } from './verify-reset-token.handler'
 import { verifyTwoFactorHandler } from './verify-two-factor.handler'
@@ -29,7 +31,8 @@ const neverStored: RequestHandler = (_req, res, next) => {
 
 /**
  * Authentication routes, relative to where the router is mounted. One
- * handler per operation of `AuthCrud` in the TypeSpec definition.
+ * handler per operation of `AuthCrud` and `SessionCrud` in the TypeSpec
+ * definition.
  *
  * - POST /register               register
  * - POST /login                  login
@@ -47,6 +50,8 @@ const neverStored: RequestHandler = (_req, res, next) => {
  * - POST /2fa/verify             verifyTwoFactor           (authenticated)
  * - POST /2fa/disable            disableTwoFactor          (authenticated)
  * - POST /2fa/backup-codes       generateBackupCodes       (authenticated)
+ * - GET  /sessions               getSessions               (authenticated)
+ * - DELETE /sessions/:sessionId  revokeSession             (authenticated)
  */
 export const createAuthRouter = (
   dependencies: AuthUseCaseDependencies,
@@ -89,6 +94,11 @@ export const createAuthRouter = (
   router.post(
     '/2fa/backup-codes',
     generateBackupCodesHandler(dependencies, authenticated),
+  )
+  router.get('/sessions', listSessionsHandler(dependencies, authenticated))
+  router.delete(
+    '/sessions/:sessionId',
+    revokeSessionHandler(dependencies, authenticated),
   )
 
   return router

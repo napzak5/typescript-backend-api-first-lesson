@@ -5,6 +5,7 @@ import type { RequestHandler } from 'express'
 import { pinoHttp } from 'pino-http'
 import { match, P } from 'ts-pattern'
 import { SYSTEM_BASE_PATH } from '../shared/api-version'
+import { signedInUserOf } from '../shared/signed-in-user'
 
 const REQUEST_ID_HEADER = 'X-Request-Id'
 
@@ -40,7 +41,9 @@ const assignRequestId = (req: IncomingMessage, res: ServerResponse): string => {
 
 /**
  * Logs one line per completed request and gives each request `req.id` and
- * `req.log`, a logger whose lines carry that ID.
+ * `req.log`, a logger whose lines carry that ID. The line of a request that
+ * was authenticated names the user (`userId`), which is what tells afterwards
+ * who did something. No token is logged.
  *
  * Headers and bodies are not logged: they hold credentials and the personal
  * data of customers. Probes are not logged either; they arrive every few
@@ -66,6 +69,11 @@ export const requestLogging = (logger: Logger): RequestHandler =>
       res: line.res,
       responseTime: line.responseTime,
     }),
+    // Asked again when the request completes, by when it is known who made it.
+    customProps: (req) => {
+      const userId = signedInUserOf(req)
+      return userId === undefined ? {} : { userId }
+    },
     serializers: {
       req: ({ id, method, url, remoteAddress }: SerializedRequest) => ({
         id,

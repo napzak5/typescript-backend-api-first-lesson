@@ -1849,7 +1849,6 @@ export const users = pgTable(
     lockedUntil: timestamp({ withTimezone: true, mode: 'string' }),
     lastLoginAt: timestamp({ withTimezone: true, mode: 'string' }),
     lastLoginIp: varchar({ length: 50 }),
-    trustedIpAddresses: jsonb().default([]),
     customerId: uuid(),
     staffId: uuid(),
     metadata: jsonb().default({}),

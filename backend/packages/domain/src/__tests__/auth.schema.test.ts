@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { parseSessionId, parseUserId } from '../models/auth'
 import {
   authEmailVerificationConfirmRequestSchema,
   authEmailVerificationSendRequestSchema,
@@ -13,9 +14,10 @@ import {
   authTwoFactorDisableRequestSchema,
   authTwoFactorEnableRequestSchema,
   authTwoFactorVerifyRequestSchema,
+  sessionSearchRequestSchema,
 } from '../schemas/auth.schema'
 import { parseWith } from '../shared'
-import { PASSWORD } from './auth-fixtures'
+import { PASSWORD, SESSION_ID, USER_ID } from './auth-fixtures'
 import { brokenRules } from './fixtures'
 
 const rulesBrokenBy = (
@@ -779,5 +781,115 @@ describe('authTwoFactorBackupCodesRequestSchema', () => {
     expect(rulesBrokenBy(authTwoFactorBackupCodesRequestSchema, input)).toEqual(
       expected,
     )
+  })
+})
+
+describe('sessionSearchRequestSchema', () => {
+  it.each([
+    ['no parameter', {}],
+    ['a limit of 1', { limit: 1 }],
+    ['a limit of 100', { limit: 100 }],
+    ['a cursor that is the ID of a session', { cursor: SESSION_ID }],
+    ['a limit and a cursor', { limit: 20, cursor: SESSION_ID }],
+  ])('accepts %s and returns it unchanged', (_case, query) => {
+    expect(parseWith(sessionSearchRequestSchema, query, 'Invalid')).toEqual({
+      type: 'success',
+      data: query,
+    })
+  })
+
+  it.each([
+    ['a limit of 0', { limit: 0 }, ['limit:too_small']],
+    ['a negative limit', { limit: -1 }, ['limit:too_small']],
+    ['a limit of 101', { limit: 101 }, ['limit:too_big']],
+    [
+      'a limit that is not a whole number',
+      { limit: 1.5 },
+      ['limit:invalid_type'],
+    ],
+    ['a limit that is text', { limit: '10' }, ['limit:invalid_type']],
+    ['a limit that is null', { limit: null }, ['limit:invalid_type']],
+    [
+      'a cursor that is not a UUID',
+      { cursor: 'offset:20' },
+      ['cursor:invalid_format'],
+    ],
+    ['an empty cursor', { cursor: '' }, ['cursor:invalid_format']],
+    ['a cursor that is a number', { cursor: 20 }, ['cursor:invalid_type']],
+    ['an unknown parameter', { page: 2 }, ['page:unrecognized_keys']],
+    [
+      'two unknown parameters',
+      { page: 2, sort: 'createdAt' },
+      ['page:unrecognized_keys', 'sort:unrecognized_keys'],
+    ],
+    [
+      'a limit and a cursor that are both wrong',
+      { limit: 0, cursor: 'x' },
+      ['limit:too_small', 'cursor:invalid_format'],
+    ],
+    ['null as the query', null, [':invalid_type']],
+    ['an array as the query', [{ limit: 1 }], [':invalid_type']],
+  ])('rejects %s', (_case, query, expected) => {
+    expect(rulesBrokenBy(sessionSearchRequestSchema, query)).toEqual(expected)
+  })
+})
+
+describe('parseUserId', () => {
+  it('returns a UUID as the ID of a user', () => {
+    expect(parseUserId(USER_ID)).toEqual({ type: 'success', data: USER_ID })
+  })
+
+  it.each<[string, unknown, string]>([
+    ['a word', 'me', 'userId:invalid_format'],
+    ['an empty ID', '', 'userId:invalid_format'],
+    [
+      'a UUID with a character too many',
+      `${USER_ID}0`,
+      'userId:invalid_format',
+    ],
+    ['a UUID with spaces around it', ` ${USER_ID} `, 'userId:invalid_format'],
+    ['a number', 42, 'userId:invalid_type'],
+    ['nothing', undefined, 'userId:invalid_type'],
+  ])('rejects %s as a validation error of userId', (_case, id, rule) => {
+    const result = parseUserId(id)
+
+    expect(result).toMatchObject({
+      type: 'error',
+      error: { type: 'validation' },
+    })
+    expect(result.type === 'error' ? brokenRules(result.error) : []).toEqual([
+      rule,
+    ])
+  })
+})
+
+describe('parseSessionId', () => {
+  it('returns a UUID as the ID of a session', () => {
+    expect(parseSessionId(SESSION_ID)).toEqual({
+      type: 'success',
+      data: SESSION_ID,
+    })
+  })
+
+  it.each<[string, unknown, string]>([
+    ['a word', 'current', 'sessionId:invalid_format'],
+    ['an empty ID', '', 'sessionId:invalid_format'],
+    [
+      'a UUID with a character too many',
+      `${SESSION_ID}0`,
+      'sessionId:invalid_format',
+    ],
+    ['a number', 42, 'sessionId:invalid_type'],
+    ['nothing', undefined, 'sessionId:invalid_type'],
+  ])('rejects %s as a validation error of sessionId', (_case, id, rule) => {
+    const result = parseSessionId(id)
+
+    expect(result).toMatchObject({
+      type: 'error',
+      error: { type: 'validation' },
+    })
+    expect(result.type === 'error' ? brokenRules(result.error) : []).toEqual([
+      rule,
+    ])
   })
 })

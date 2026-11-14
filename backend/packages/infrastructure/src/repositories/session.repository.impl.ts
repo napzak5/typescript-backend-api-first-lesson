@@ -6,12 +6,14 @@ import {
   DomainErrors,
   type ISessionRepository,
   type SessionId,
+  type SessionList,
+  type SessionListCriteria,
   type SessionRotation,
   type SessionWithAccount,
   type UserId,
 } from '@beauty-salon-backend/domain'
 import { Result } from '@beauty-salon-backend/utility'
-import { and, eq, lte, type SQL } from 'drizzle-orm'
+import { and, count, desc, eq, gt, lte, type SQL, sql } from 'drizzle-orm'
 import { attempt } from '../database/attempt'
 import type { Database } from '../database/index'
 import {
@@ -76,11 +78,80 @@ export class SessionRepository implements ISessionRepository {
     })
   }
 
+  async listOfUser({
+    userId,
+    now,
+    limit,
+    after,
+  }: SessionListCriteria): Promise<Result<SessionList | null, DomainError>> {
+    const notEnded = and(
+      eq(sessions.userId, userId),
+      gt(sessions.refreshExpiresAt, now),
+    )
+
+    return attempt('Failed to list sessions', async () => {
+      // Keyset pagination on (createdAt, id): the page starts after the
+      // session the cursor names, which must still be there to say where.
+      const [cursor] =
+        after === null
+          ? []
+          : await this.db
+              .select({ createdAt: sessions.createdAt, id: sessions.id })
+              .from(sessions)
+              .where(and(eq(sessions.id, after), eq(sessions.userId, userId)))
+      if (after !== null && cursor === undefined) {
+        return null
+      }
+      const afterCursor =
+        cursor === undefined
+          ? undefined
+          : sql`(${sessions.createdAt}, ${sessions.id}) < (${cursor.createdAt}::timestamptz, ${cursor.id}::uuid)`
+
+      const [page, [matching]] = await Promise.all([
+        this.db
+          .select()
+          .from(sessions)
+          .where(and(notEnded, afterCursor))
+          .orderBy(desc(sessions.createdAt), desc(sessions.id))
+          // One extra row tells whether another page follows.
+          .limit(limit + 1),
+        this.db.select({ total: count() }).from(sessions).where(notEnded),
+      ])
+
+      return {
+        sessions: page.slice(0, limit),
+        total: matching?.total ?? 0,
+        hasMore: page.length > limit,
+      }
+    })
+  }
+
   async delete(id: SessionId): Promise<Result<boolean, DomainError>> {
     return attempt('Failed to delete session', async () => {
       const deleted = await this.db
         .delete(sessions)
         .where(eq(sessions.id, id))
+        .returning({ id: sessions.id })
+
+      return deleted.length > 0
+    })
+  }
+
+  async deleteOfUser(
+    id: SessionId,
+    userId: UserId,
+    now: string,
+  ): Promise<Result<boolean, DomainError>> {
+    return attempt('Failed to delete session of user', async () => {
+      const deleted = await this.db
+        .delete(sessions)
+        .where(
+          and(
+            eq(sessions.id, id),
+            eq(sessions.userId, userId),
+            gt(sessions.refreshExpiresAt, now),
+          ),
+        )
         .returning({ id: sessions.id })
 
       return deleted.length > 0

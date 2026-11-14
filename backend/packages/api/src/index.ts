@@ -23,6 +23,7 @@ import {
 } from './middleware/errors'
 import { rateLimiting } from './middleware/rate-limiting'
 import { requestLogging } from './middleware/request-logging'
+import { createAdminAuthRouter } from './routes/admin-auth'
 import { createAuthRouter } from './routes/auth'
 import { createSalonRouter } from './routes/salon'
 import { createSystemRouter } from './routes/system'
@@ -97,6 +98,10 @@ export const createApp = ({
   app.use(
     `${API_BASE_PATH}/auth`,
     createAuthRouter(authDependencies, authenticated),
+  )
+  app.use(
+    `${API_BASE_PATH}/admin/auth`,
+    createAdminAuthRouter(authDependencies, authenticated),
   )
   app.use(
     `${API_BASE_PATH}/salons`,

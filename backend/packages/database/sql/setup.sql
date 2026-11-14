@@ -727,7 +727,6 @@ CREATE TABLE "users" (
 	"lockedUntil" timestamp with time zone,
 	"lastLoginAt" timestamp with time zone,
 	"lastLoginIp" varchar(50),
-	"trustedIpAddresses" jsonb DEFAULT '[]'::jsonb,
 	"customerId" uuid,
 	"staffId" uuid,
 	"metadata" jsonb DEFAULT '{}'::jsonb,

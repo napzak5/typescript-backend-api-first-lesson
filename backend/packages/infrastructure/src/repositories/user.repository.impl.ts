@@ -428,6 +428,33 @@ export class UserRepository implements IUserRepository {
     })
   }
 
+  async unlock(
+    id: UserId,
+    now: string,
+  ): Promise<Result<DbUser | null, DomainError>> {
+    return attempt('Failed to unlock account', async () => {
+      const [unlocked] = await this.db
+        .update(users)
+        .set({
+          failedLoginAttempts: 0,
+          lockedUntil: null,
+          // A suspended account whose guesses ran out stays suspended.
+          status: sql`case when ${users.status} = 'locked' then 'active' else ${users.status} end`,
+          updatedAt: sql`now()`,
+        })
+        .where(
+          and(
+            eq(users.id, id),
+            or(eq(users.status, 'locked'), gt(users.lockedUntil, now)),
+            userNotDeleted,
+          ),
+        )
+        .returning()
+
+      return unlocked ?? null
+    })
+  }
+
   async disableTwoFactor(id: UserId): Promise<Result<boolean, DomainError>> {
     return attempt('Failed to disable two-factor authentication', async () => {
       const disabled = await this.db

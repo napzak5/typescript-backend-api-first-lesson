@@ -12,7 +12,6 @@ import { timestampSchema } from './columns'
 
 const convertedColumnsSchema = z.object({
   permissions: z.array(z.string()),
-  trustedIpAddresses: z.array(z.string()).nullable(),
   lastPasswordChange: timestampSchema.nullable(),
   lockedUntil: timestampSchema.nullable(),
   lastLoginAt: timestampSchema.nullable(),

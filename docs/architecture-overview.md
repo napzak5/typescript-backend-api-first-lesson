@@ -35,12 +35,12 @@ Before relying on anything, check this table.
 | Area | State |
 |------|-------|
 | Salon API (`/api/v1/salons`) | Implemented in every layer: list, create, get, update, delete. It is the reference implementation for every other domain. List and get are public; create, update and delete need a signed-in user with the permission. |
-| Authentication (`/api/v1/auth`) | Implemented: `login`, `refresh`, `logout`, `logout-all` and `me`, on server-side sessions with opaque bearer tokens, and registration of customer accounts, email verification and password reset, each through a single-use token sent by mail, and password change, and two-factor authentication with the one-time passwords of an authenticator app (TOTP) and backup codes. That is every operation of `AuthCrud`, 16 of the 22 operations in `specs/operations/auth-operations.tsp`. The others (session list and revocation, `/api/v1/admin/auth`) are specified in TypeSpec only and answered with 404. See [Authentication and Authorization](./authentication.md). |
-| Authorization | Implemented for the Salon API. An implemented operation that the contract does not mark `@useAuth(NoAuth)` needs a valid access token, and its use case decides whether the signed-in user may do what is asked. |
+| Authentication (`/api/v1/auth`, `/api/v1/admin/auth`) | Implemented: `login`, `refresh`, `logout`, `logout-all` and `me`, on server-side sessions with opaque bearer tokens, and registration of customer accounts, email verification and password reset, each through a single-use token sent by mail, and password change, and two-factor authentication with the one-time passwords of an authenticator app (TOTP) and backup codes, and the list of the signed-in user's sessions with the revocation of one of them, and under `/api/v1/admin/auth` the administrator operations: read a user, unlock an account, reset two-factor authentication. That is every operation in `specs/operations/auth-operations.tsp`: the 16 of `AuthCrud`, the 2 of `SessionCrud` and the 3 of `AdminAuthCrud`. See [Authentication and Authorization](./authentication.md). |
+| Authorization | Implemented for the Salon API (create, update, delete) and for the administrator operations. An implemented operation that the contract does not mark `@useAuth(NoAuth)` needs a valid access token, and its use case decides whether the signed-in user may do what is asked. |
 | System endpoints (`/api/system`) | Implemented: `alive`, `ready` and `health`. |
 | Other domains (staff, service, customer, booking, review, treatment, payment, inventory) | Specified in TypeSpec, so their generated types exist, and the database schema has their tables and seed data. The models agree with the tables (`pnpm check:api-db`). There is no domain, repository or route code. A request to one of these routes is answered with 404. The implementation order is in GitHub issue #4. |
 | Attachments, roles and permissions, purchase orders, medical charts | Specified in TypeSpec only. No table exists for them yet. |
-| Email | Implemented for the mails of the authentication flows (confirm the address, reset the password, and the notices: the password was changed, two-factor authentication was enabled or disabled, the backup codes were replaced, a backup code was used to sign in): plain text over SMTP. Docker Compose starts Mailpit, which catches them locally. See [Email](./email.md) (Japanese). |
+| Email | Implemented for the mails of the authentication flows (confirm the address, reset the password, and the notices: the password was changed, two-factor authentication was enabled, disabled or turned off by an administrator, the backup codes were replaced, a backup code was used to sign in): plain text over SMTP. Docker Compose starts Mailpit, which catches them locally. See [Email](./email.md) (Japanese). |
 | File storage | Not implemented. Docker Compose starts no service for it. |
 | Frontend | Three application shells and shared packages. The API client is generated, but no application calls the API yet. See [Frontend](#frontend). |
 
@@ -153,7 +153,9 @@ api/src/
 ├── routes/salon/                      One *.handler.ts per operation, index.ts (router)
 ├── routes/system/index.ts             alive, ready, health
 └── shared/                            Problem details, response helpers, API version,
-                                       authentication (authenticated), JsonBody
+                                       authentication (authenticated), JsonBody, the links
+                                       of a page (pageLinks), the converters of query
+                                       parameters, the signed-in user of a request
 ```
 
 Authentication has the same layout, with what only it needs added:
@@ -163,6 +165,7 @@ domain/src/
 ├── models/auth.ts                     IDs, API and database types, Actor and ActorScope
 ├── schemas/auth.schema.ts             Zod schema of each request
 ├── mappers/read/user.mapper.ts        Row of users → API response
+├── mappers/read/session.mapper.ts     Rows of sessions → API response
 ├── repositories/user.repository.ts    IUserRepository
 ├── repositories/session.repository.ts ISessionRepository
 ├── services/                          IPasswordHasher, ITokenIssuer, ITwoFactorAuthenticator,
@@ -172,7 +175,8 @@ domain/src/
                                        session policy, password check and blocklist, the limit
                                        on guesses, the check of the second factor, the set-up
                                        of two-factor authentication, the answer for a session
-                                       whose user is gone, mailed tokens, the texts of the mails
+                                       whose user is gone, mailed tokens, the texts of the mails,
+                                       who may administer accounts (authorization.ts)
 
 infrastructure/src/
 ├── repositories/user.repository.impl.ts, session.repository.impl.ts, account.ts
@@ -180,7 +184,10 @@ infrastructure/src/
 └── mail/smtp-mailer.ts                SmtpMailer
 
 api/src/
-└── routes/auth/                       One *.handler.ts per operation, index.ts (router)
+├── routes/auth/                       One *.handler.ts per operation of AuthCrud and
+│                                      SessionCrud, index.ts (router)
+└── routes/admin-auth/                 One *.handler.ts per operation of AdminAuthCrud,
+                                       index.ts (router)
 ```
 
 ## Layers and Package Dependencies
@@ -296,8 +303,9 @@ The backend consumes the generated types in two places per domain:
   `operations['SalonCrud_create']`.
 
 Authentication does the same in `backend/packages/domain/src/models/auth.ts`,
-`backend/packages/domain/src/schemas/auth.schema.ts` and
-`backend/packages/api/src/routes/auth/_shared/types.ts`.
+`backend/packages/domain/src/schemas/auth.schema.ts`,
+`backend/packages/api/src/routes/auth/_shared/types.ts` and
+`backend/packages/api/src/routes/admin-auth/_shared/types.ts`.
 
 Model naming and nullability rules are in
 [TypeSpec API Type Rules](./typespec-api-type-rules.md); the pipeline in
@@ -381,8 +389,9 @@ mounts everything in this order. The order is part of the design:
 4. `rateLimiting`: requests per client address and window.
 5. `compression`, `requireJsonBody` and `express.json`: a body that is not
    JSON is rejected with 415, and a body over 100 kB with 413.
-6. The authentication router at `/api/v1/auth` and the Salon router at
-   `/api/v1/salons`. Both receive `authenticated`, which
+6. The authentication router at `/api/v1/auth`, the router of the
+   administrator operations at `/api/v1/admin/auth` and the Salon router at
+   `/api/v1/salons`. Each receives `authenticated`, which
    `createAuthenticated` builds once from the authentication dependencies.
 7. `notFoundHandler` and `errorHandler`: turn what is left over into problem
    details.
@@ -433,7 +442,7 @@ The five operations follow the same path:
 | Update | `PATCH /api/v1/salons/{id}` | `admin`, or the `owner` or a `manager` of that salon | `UpdateSalonUseCase` | 200. An absent property is left alone, `null` clears a nullable column |
 | Delete | `DELETE /api/v1/salons/{id}` | `admin`, or the `owner` of that salon | `DeleteSalonUseCase` | 204. The row is kept and marked with `deletedAt` |
 
-Four things differ from create:
+Five things differ from create:
 
 - **Public operations.** List and get are marked `@useAuth(NoAuth)` in the
   contract. Their handlers are not wrapped with `authenticated`, and their
@@ -446,7 +455,8 @@ Four things differ from create:
   turns it into a `SalonId` (a branded UUID) with `parseSalonId`.
 - **Query string.** A query string carries text only, so the list handler
   first gives the parameters their types (`decodeSalonSearchQuery` in
-  `routes/salon/_shared/query.ts`). The rules for the values are still the
+  `routes/salon/_shared/query.ts`, built from the converters in
+  `shared/query-parameters.ts`). The rules for the values are still the
   use case's.
 - **Pagination.** Lists use keyset pagination, newest first. `cursor` is the
   ID of the last salon of the previous page, returned as `meta.nextCursor`.
@@ -454,7 +464,8 @@ Four things differ from create:
 ### An Authentication Request
 
 The authentication operations take the same path through the layers. Every
-response under `/api/v1/auth` carries `Cache-Control: no-store`.
+response under `/api/v1/auth` and `/api/v1/admin/auth` carries
+`Cache-Control: no-store`.
 
 | Operation | Route | Access token | Use case | Success |
 |-----------|-------|--------------|----------|---------|
@@ -474,6 +485,19 @@ response under `/api/v1/auth` carries `Cache-Control: no-store`.
 | Confirm the set-up | `POST /api/v1/auth/2fa/verify` | Needed | `VerifyTwoFactorUseCase` | 204 |
 | Disable two-factor authentication | `POST /api/v1/auth/2fa/disable` | Needed | `DisableTwoFactorUseCase` | 204 |
 | Replace the backup codes | `POST /api/v1/auth/2fa/backup-codes` | Needed | `GenerateBackupCodesUseCase` | 200 with the new backup codes |
+| List the sessions | `GET /api/v1/auth/sessions` | Needed | `ListSessionsUseCase` | 200, a page of the user's own sessions: `{ data, meta, links }` |
+| Revoke a session | `DELETE /api/v1/auth/sessions/{sessionId}` | Needed | `RevokeSessionUseCase` | 204 |
+| Read a user | `GET /api/v1/admin/auth/users/{userId}` | Needed, of an `admin` | `GetUserUseCase` | 200 |
+| Unlock an account | `POST /api/v1/admin/auth/unlock/{userId}` | Needed, of an `admin` | `UnlockAccountUseCase` | 200 with the user |
+| Reset the two-factor authentication of a user | `POST /api/v1/admin/auth/reset-two-factor/{userId}` | Needed, of an `admin` | `ResetTwoFactorUseCase` | 200 with the user |
+
+The session list reads its query string the way the salon list does
+(`decodeSessionSearchQuery` in `routes/auth/_shared/query.ts`), and both
+lists build the links of a page with `pageLinks` (`shared/page-links.ts`).
+The three administrator operations have a router of their own
+(`routes/admin-auth/`), and their use cases start with the permission rule
+`mayAdministerAccounts` (`business-logic/auth/_shared/authorization.ts`):
+a signed-in user who is not an `admin` is answered with 403.
 
 The use cases that send a mail hand it to `IMailer.deliver` and do not wait
 for the delivery, so the response does not depend on it. Login asks an
@@ -484,7 +508,8 @@ port `ITwoFactorAuthenticator`; its implementation `TotpAuthenticator` uses
 `node:crypto` only (TOTP of RFC 6238) and returns each secret encrypted
 (AES-256-GCM) under a key derived from `TWO_FACTOR_ENCRYPTION_KEY`, which is
 the form the database keeps. How sessions, tokens, passwords, the lockout, registration,
-the mailed tokens and two-factor authentication work is in
+the mailed tokens, two-factor authentication, the session list and the
+administrator operations work is in
 [Authentication and Authorization](./authentication.md); how the mails are
 sent is in [Email](./email.md).
 
@@ -499,12 +524,12 @@ returns the body the contract defines for it, not problem details.
 
 | Kind | Raised by | Status |
 |------|-----------|--------|
-| `validation` | A use case, when the input breaks a rule of its Zod schema; an authentication use case, also for a rule the schema cannot check (a new password on the blocklist or equal to the current one, a current password that is wrong, a mailed token that cannot be used, a code of two-factor authentication that is not accepted); the list handler, when a query parameter cannot be read as its type | 400 |
+| `validation` | A use case, when the input breaks a rule of its Zod schema; an authentication use case, also for a rule the schema cannot check (a new password on the blocklist or equal to the current one, a current password that is wrong, a mailed token that cannot be used, a code of two-factor authentication that is not accepted, a cursor of the session list that names no session of the user); a list handler, when a query parameter cannot be read as its type | 400 |
 | `unauthenticated` | `AuthenticateUseCase`, when the request carries no access token that works; the login and refresh use cases, when the credentials are not accepted, which for login includes a missing or refused code of two-factor authentication; the current-user, change-password and two-factor use cases, when the user of the session no longer exists | 401, with a `WWW-Authenticate: Bearer` header |
 | `forbidden` | A use case, when the signed-in user may not do what is asked | 403 |
-| `notFound` | A use case, when the salon does not exist or is deleted | 404 |
+| `notFound` | A use case, when what the ID in the path names is not there: a salon or a user that does not exist or is deleted, a session that is not one of the signed-in user's own sessions that have not ended | 404 |
 | `alreadyExists` | The repository, when the unique index on `email` is violated | 409 |
-| `conflict` | A two-factor use case, when the state of the account does not allow the operation: enabling what is enabled, confirming when no set-up is under way, disabling or replacing backup codes when it is not enabled | 409 |
+| `conflict` | A two-factor use case or the use case of an administrator operation, when the state of the account does not allow the operation: enabling what is enabled, confirming when no set-up is under way, disabling, resetting or replacing backup codes when it is not enabled, unlocking an account that is not locked | 409 |
 | `database` | The repository, when a query fails; the read mapper, when a stored row does not match the API model | 500 |
 | `routeNotFound` | `notFoundHandler` | 404 |
 | `malformedBody`, `badRequest` | `errorHandler`, from what the body parser or Express raised | 400 |
@@ -534,7 +559,7 @@ is where each one lives in the code:
 |---------|-------|-------|
 | Configuration | `backend/packages/config/src/app-config.ts` | `parseAppConfig` validates 22 variables, all required, and returns `Result<AppConfig, ConfigIssue[]>`. When `NODE_ENV` is `staging` or `production` it also refuses `SMTP_TLS=none` and a `PUBLIC_APP_URL` that does not start with `https://`. Application code receives values and does not read the environment. |
 | Environment files | `backend/packages/config/src/env-loader.ts` | One file per environment at the repository root: `.env.localhost`, `.env.development`, `.env.test`, `.env.staging`, `.env.production`. `.env.template` and `.env.example` are templates, and `.env.test.ci` is what CI uses as `.env.test`. A deployment sets the variables directly and needs no file. |
-| Logging | `backend/packages/infrastructure/src/logging/logger.ts`, `backend/packages/api/src/middleware/request-logging.ts` | Structured logs (pino) on standard output: one line per request, one line per failure. Headers, bodies and the values bound to a SQL statement are never logged. There is no `console` call in application code. |
+| Logging | `backend/packages/infrastructure/src/logging/logger.ts`, `backend/packages/api/src/middleware/request-logging.ts` | Structured logs (pino) on standard output: one line per request, one line per failure. The line of a request that was authenticated carries the ID of the signed-in user as `userId`: `authenticated` notes it (`backend/packages/api/src/shared/signed-in-user.ts`) and the middleware puts it on the line when the request completes. The line of a request that was not authenticated has no `userId`. Headers, bodies and the values bound to a SQL statement are never logged, and so no token is. There is no `console` call in application code. |
 | Request ID | `backend/packages/api/src/middleware/request-logging.ts` | The caller's `X-Request-Id` or a new UUID. It is on every log line of the request, in the response header, and in the body as `meta.correlationId` (`correlationId` in an error). |
 | Mail | `backend/packages/domain/src/services/mailer.ts`, `backend/packages/infrastructure/src/mail/smtp-mailer.ts` | The use cases know the port `IMailer`; `SmtpMailer` (nodemailer) sends through the SMTP server of `config.mail`. `deliver` returns at once. A delivery is logged with the subject of the message, never its recipient or text, and a failed one is not retried. See [Email](./email.md). |
 | Probes | `backend/packages/api/src/routes/system/index.ts` | `GET /api/system/alive` (the process answers), `GET /api/system/ready` (200 while the database answers, otherwise 503), `GET /api/system/health` (the same check with details). Not rate limited and not written to the request log. The SMTP server is not probed. |
@@ -543,7 +568,8 @@ is where each one lives in the code:
 What protects the API today: security headers, the origin allow-list, the
 rate limit, the body size limit, strict validation that rejects unknown
 properties, and bearer-token authentication with a permission check on the
-operations that change a salon. The system endpoints, the salon list, a
+operations that change a salon and on the administrator operations. The
+system endpoints, the salon list, a
 single salon and the authentication operations a signed-out user needs
 (register, login, refresh, email verification, password reset) are open to
 anyone who can reach the server.

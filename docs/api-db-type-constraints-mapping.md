@@ -2,7 +2,7 @@
 
 DB のカラムの型と制約が、Drizzle スキーマ、TypeSpec、生成された型、Zod スキーマのそれぞれでどう表されるかの対応表と、その一致を機械的に検査する `pnpm check:api-db` の説明。
 
-対応表は、実装済みの Salon ドメイン（`salons` と `opening_hours`）が実際に行っていることを書いている。認証（`users` と `sessions`）も同じ対応に従っており、Read マッパー（`backend/packages/domain/src/mappers/read/user.mapper.ts`）とリクエストの Zod スキーマ（`backend/packages/domain/src/schemas/auth.schema.ts`）を持つ。ほかのドメインは TypeSpec と DB スキーマにあるだけで、マッパーも Zod スキーマもない。それらの TypeSpec も、この対応表に従って DB と一致させてある。
+対応表は、実装済みの Salon ドメイン（`salons` と `opening_hours`）が実際に行っていることを書いている。認証（`users` と `sessions`）も同じ対応に従っており、Read マッパー（`backend/packages/domain/src/mappers/read/user.mapper.ts`、`session.mapper.ts`）とリクエストの Zod スキーマ（`backend/packages/domain/src/schemas/auth.schema.ts`）を持つ。ほかのドメインは TypeSpec と DB スキーマにあるだけで、マッパーも Zod スキーマもない。それらの TypeSpec も、この対応表に従って DB と一致させてある。
 
 - ルールそのもの（プロパティ名 = カラム名、NULL 許可の一致、Optional の制約）: [CLAUDE.md](../CLAUDE.md)
 - TypeSpec での書き方: [TypeSpec API型定義ルール](./typespec-api-type-rules.md)
@@ -207,13 +207,14 @@ const salonRules: ModelRule[] = [
 | `table` | `schema.ts` でのテーブルの export 名（`salons`、`openingHours`） |
 | `kind` | `response` / `create`（全プロパティ必須）、`update`（全プロパティ Optional） |
 | `embedded` | カラムではないプロパティ（子テーブルの行を埋め込んだもの）。カラムとの照合を省く |
+| `computed` | カラムではないプロパティ（サーバーがレスポンスのたびに求め、どこにも保存しない値）。カラムとの照合を省く。`SessionResponse` の `current` に使っている |
 | `omittedColumns` | モデルが意図して含めないカラム。それ以外のカラムがモデルにない場合は報告される。すべてのルールが指定する（テストで確認している） |
 
 報告される食い違い:
 
 | 種類 | 内容 |
 |---|---|
-| `unknownProperty` | API のプロパティと同じ名前のカラムがない |
+| `unknownProperty` | API のプロパティと同じ名前のカラムがない（`embedded` と `computed` に挙げたプロパティを除く） |
 | `missingColumn` | モデルにも `omittedColumns` にもないカラムがある |
 | `shouldBeRequired` | `response` / `create` のプロパティが Optional になっている |
 | `shouldBeOptional` | `update` のプロパティが必須になっている |
@@ -239,6 +240,7 @@ const salonRules: ModelRule[] = [
 |---|---|
 | `XXXResponse`、`XXXCreateRequest`、`XXXUpdateRequest` | 載せる（`response` / `create` / `update`） |
 | 親に埋め込む子テーブルの行（`OpeningHours`、`ServiceOptionResponse`、`BookingServiceResponse` など） | 載せる。親のルールでは `embedded` にプロパティ名を書く |
+| テーブルの行に、サーバーがレスポンスのたびに求める値を加えたモデル（`SessionResponse` の `current`） | 載せる。ルールの `computed` にそのプロパティ名を書く |
 | 行を追加するアクションのリクエスト（`PointEarnRequest`、`SaleProcessRequest` など） | カラムと 1 対 1 なら `create` として載せる |
 | `XXXSearchRequest` | 載せない |
 | 既存の行の一部だけを書き換えるアクションのリクエスト（`BookingCancelRequest`、`PaymentRefundRequest` など） | 載せない。プロパティ名と null 許可はカラムに合わせる |

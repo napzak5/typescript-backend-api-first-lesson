@@ -7,6 +7,7 @@ import type { Request, RequestHandler, Response } from 'express'
 import { match } from 'ts-pattern'
 import type { ProblemDetails } from './problem-details'
 import { sendProblem } from './responses'
+import { noteSignedInUser } from './signed-in-user'
 
 /** A handler that runs only for a signed-in user and is told who that is. */
 type AuthenticatedHandler<Params, ResBody, ReqBody = unknown> = (
@@ -37,7 +38,10 @@ export const createAuthenticated = (
     const authenticated = await useCase.execute(req.headers.authorization)
 
     await match(authenticated)
-      .with({ type: 'success' }, ({ data: actor }) => handler(actor, req, res))
+      .with({ type: 'success' }, ({ data: actor }) => {
+        noteSignedInUser(req, actor.userId)
+        return handler(actor, req, res)
+      })
       .with({ type: 'error' }, async ({ error }) =>
         sendProblem(req, res, error),
       )

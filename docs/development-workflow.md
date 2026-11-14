@@ -83,9 +83,10 @@ curl http://localhost:3000/api/system/ready   # データベースに接続で�
 curl http://localhost:3000/api/v1/salons      # サロン一覧（認証なしで呼べる）
 ```
 
-実装済みの API は、Salon ドメイン、認証の 16 のオペレーション（`/api/v1/auth` のログイン、トークンの更新、
+実装済みの API は、Salon ドメイン、認証のすべてのオペレーション（`/api/v1/auth` のログイン、トークンの更新、
 ログアウト、現在のユーザーの取得、ユーザー登録、メールアドレスの確認、パスワードの再設定と変更、
-2 要素認証）、システムエンドポイント（`/api/system/alive`、`/api/system/ready`、`/api/system/health`）だけです。
+2 要素認証、セッションの一覧と無効化、および `/api/v1/admin/auth` の管理者の操作）、
+システムエンドポイント（`/api/system/alive`、`/api/system/ready`、`/api/system/health`）だけです。
 他のドメインは TypeSpec とデータベーススキーマにだけ存在します。
 
 サロンの作成・更新・削除にはアクセストークンが必要です。シードのアカウントでログインしてトークンを

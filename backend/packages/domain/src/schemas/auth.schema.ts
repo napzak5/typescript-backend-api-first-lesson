@@ -1,18 +1,20 @@
 import { z } from 'zod'
-import type {
-  ApiAuthEmailVerificationConfirmRequest,
-  ApiAuthEmailVerificationSendRequest,
-  ApiAuthLoginRequest,
-  ApiAuthPasswordChangeRequest,
-  ApiAuthPasswordForgotRequest,
-  ApiAuthPasswordResetConfirmRequest,
-  ApiAuthPasswordResetVerifyRequest,
-  ApiAuthRegisterRequest,
-  ApiAuthTokenRefreshRequest,
-  ApiAuthTwoFactorBackupCodesRequest,
-  ApiAuthTwoFactorDisableRequest,
-  ApiAuthTwoFactorEnableRequest,
-  ApiAuthTwoFactorVerifyRequest,
+import {
+  type ApiAuthEmailVerificationConfirmRequest,
+  type ApiAuthEmailVerificationSendRequest,
+  type ApiAuthLoginRequest,
+  type ApiAuthPasswordChangeRequest,
+  type ApiAuthPasswordForgotRequest,
+  type ApiAuthPasswordResetConfirmRequest,
+  type ApiAuthPasswordResetVerifyRequest,
+  type ApiAuthRegisterRequest,
+  type ApiAuthTokenRefreshRequest,
+  type ApiAuthTwoFactorBackupCodesRequest,
+  type ApiAuthTwoFactorDisableRequest,
+  type ApiAuthTwoFactorEnableRequest,
+  type ApiAuthTwoFactorVerifyRequest,
+  type ApiSessionSearchRequest,
+  sessionIdSchema,
 } from '../models/auth'
 
 /**
@@ -139,3 +141,9 @@ export const authTwoFactorDisableRequestSchema = z.strictObject({
 export const authTwoFactorBackupCodesRequestSchema = z.strictObject({
   code: secondFactorCodeSchema,
 }) satisfies z.ZodType<ApiAuthTwoFactorBackupCodesRequest>
+
+/** The cursor of a page is the ID of the last session of the page before. */
+export const sessionSearchRequestSchema = z.strictObject({
+  limit: z.number().int().min(1).max(100).exactOptional(),
+  cursor: sessionIdSchema.exactOptional(),
+}) satisfies z.ZodType<ApiSessionSearchRequest>

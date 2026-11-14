@@ -54,11 +54,6 @@ export interface ModelsUserResponse {
      */
   lastLoginIp: string | null;
   /**
-     * 信頼済みIPアドレスのリスト。登録がない場合は空配列。値が保存されていない場合はnull。
-     * @nullable
-     */
-  trustedIpAddresses: string[] | null;
-  /**
      * ユーザーが顧客の場合の顧客プロファイルID。顧客以外の役割の場合、または顧客プロファイルと紐づいていない場合はnull。
      * @nullable
      */

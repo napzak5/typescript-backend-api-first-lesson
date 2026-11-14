@@ -168,7 +168,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/auth/trusted-ip/{userId}": {
+    "/api/v1/admin/auth/reset-two-factor/{userId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -178,15 +178,11 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Add a trusted IP address
-         * @description ユーザーの信頼済みIPアドレスを追加します。すでに登録されているIPアドレスを指定した場合は409を返します。
+         * Reset two-factor authentication of a user
+         * @description ユーザーの2要素認証を無効にします。認証アプリとバックアップコードの両方を失った利用者が、ログインして設定し直せるようにするための操作です。シークレットとバックアップコードを削除し、利用者にメールで知らせます。利用者のセッションは変更しません。2要素認証が有効でないアカウントを指定した場合は409を返します。管理者自身のアカウントは指定できません(403)。
          */
-        post: operations["AdminAuthCrud_addTrustedIp"];
-        /**
-         * Remove a trusted IP address
-         * @description ユーザーの信頼済みIPアドレスを削除します。ユーザーが存在しない場合、または指定したIPアドレスが登録されていない場合は404を返します。
-         */
-        delete: operations["AdminAuthCrud_removeTrustedIp"];
+        post: operations["AdminAuthCrud_resetTwoFactor"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -203,7 +199,7 @@ export interface paths {
         put?: never;
         /**
          * Unlock a user account
-         * @description ロックされたユーザーアカウントのロックを解除します。アカウント状態を active に戻し、lockedUntil を null、failedLoginAttempts を0にします。ロックされていないアカウントを指定した場合は409を返します。
+         * @description ロックされたユーザーアカウントのロックを解除します。lockedUntil を null、failedLoginAttempts を0にし、アカウント状態が locked の場合は active に戻します(suspended などほかの状態は変えません)。ロックされていないアカウント(状態が locked でなく、lockedUntil が現在より後でもない)を指定した場合は409を返します。管理者自身のアカウントは指定できません(403)。
          */
         post: operations["AdminAuthCrud_unlockAccount"];
         delete?: never;
@@ -673,7 +669,7 @@ export interface paths {
         };
         /**
          * List sessions
-         * @description ログイン中のユーザーの有効なセッションを、ページネーションを指定して一覧取得します。有効期限切れのセッションは含みません。
+         * @description ログイン中のユーザーの終了していないセッションを、新しい順に、ページネーションを指定して一覧取得します。セッションの有効期限(refreshExpiresAt)を過ぎたセッションは含みません。このリクエストを認証したセッションは current が true になります。
          */
         get: operations["SessionCrud_getSessions"];
         put?: never;
@@ -696,7 +692,7 @@ export interface paths {
         post?: never;
         /**
          * Revoke a session
-         * @description ログイン中のユーザーのセッションを1件無効にします。指定したセッションが存在しない場合、またはほかのユーザーのセッションの場合は404を返します。
+         * @description ログイン中のユーザーのセッションを1件無効にします。無効にしたセッションのアクセストークンとリフレッシュトークンは使えなくなります。このリクエストを認証したセッション自身も指定できます(ログアウトと同じ結果になります)。指定したセッションが存在しない場合、ほかのユーザーのセッションの場合、すでに終了している場合は404を返します。
          */
         delete: operations["SessionCrud_revokeSession"];
         options?: never;
@@ -3156,11 +3152,6 @@ export interface components {
         "Models.AuthTokenRefreshRequest": {
             /** @description ログインまたは前回の再発行で受け取ったリフレッシュトークン。 */
             refreshToken: string;
-        };
-        /** @description ユーザーの信頼済みIPアドレスを追加するリクエスト。 */
-        "Models.AuthTrustedIpAddRequest": {
-            /** @description 追加するIPアドレス。IPv4 または IPv6 の表記で指定する。 */
-            ipAddress: string;
         };
         /** @description バックアップコードを再発行する際の確認リクエスト。 */
         "Models.AuthTwoFactorBackupCodesRequest": {
@@ -7749,10 +7740,10 @@ export interface components {
          */
         "Models.SessionId": string;
         /**
-         * @description セッションレスポンス - sessions テーブルの公開カラムを返す。
+         * @description セッションレスポンス - sessions テーブルの公開カラムと、計算値 current を返す。
          *     トークンのハッシュは返さない。サーバーはトークンそのものを保存しないので、
          *     トークンは発行したログイン・トークン再発行のレスポンスでのみ返す。
-         *     プロパティ名と null 許可は DB カラムと一致させている。
+         *     current 以外のプロパティ名と null 許可は DB カラムと一致させている。
          */
         "Models.SessionResponse": {
             /** @description セッションを一意に識別するID。 */
@@ -7783,6 +7774,8 @@ export interface components {
              * @description セッション作成日時(ログインした日時)。
              */
             createdAt: string;
+            /** @description このリクエストを認証したセッションかどうか。DB のカラムではなく、リクエストごとに決まる。 */
+            current: boolean;
         };
         /**
          * @description 共有リンク発行リクエスト - 添付ファイルの共有リンクを新規発行する。
@@ -8640,8 +8633,6 @@ export interface components {
             lastLoginAt: string | null;
             /** @description 直近ログイン時のIPアドレス。ログイン履歴がない場合はnull。 */
             lastLoginIp: string | null;
-            /** @description 信頼済みIPアドレスのリスト。登録がない場合は空配列。値が保存されていない場合はnull。 */
-            trustedIpAddresses: string[] | null;
             /** @description ユーザーが顧客の場合の顧客プロファイルID。顧客以外の役割の場合、または顧客プロファイルと紐づいていない場合はnull。 */
             customerId: (string & components["schemas"]["Models.CustomerId"]) | null;
             /** @description ユーザーがスタッフの場合のスタッフプロファイルID。スタッフ以外の役割の場合、またはスタッフプロファイルと紐づいていない場合はnull。 */
@@ -9690,7 +9681,7 @@ export interface operations {
             };
         };
     };
-    AdminAuthCrud_addTrustedIp: {
+    AdminAuthCrud_resetTwoFactor: {
         parameters: {
             query?: never;
             header?: never;
@@ -9699,11 +9690,7 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["Models.AuthTrustedIpAddRequest"];
-            };
-        };
+        requestBody?: never;
         responses: {
             /** @description The request has succeeded. */
             200: {
@@ -9767,112 +9754,6 @@ export interface operations {
             };
             /** @description The request conflicts with the current state of the server. */
             409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
-            413: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
-            415: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /**
-             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
-             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
-             */
-            429: {
-                headers: {
-                    /** @description 再試行できるようになるまでの秒数。 */
-                    "Retry-After": number;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-        };
-    };
-    AdminAuthCrud_removeTrustedIp: {
-        parameters: {
-            query: {
-                /** @description 削除するIPアドレス。IPv4 または IPv6 の表記で指定する。 */
-                ipAddress: string;
-            };
-            header?: never;
-            path: {
-                userId: components["schemas"]["Models.UserId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description There is no content to send for this request, but the headers may be useful. */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description The server could not understand the request due to invalid syntax. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /**
-             * @description 認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
-             *     ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
-             *     WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
-             */
-            401: {
-                headers: {
-                    /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
-                    "WWW-Authenticate": string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description 認証されているが、この操作を行う権限がない (403)。 */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description The server cannot find the requested resource. */
-            404: {
                 headers: {
                     [name: string]: unknown;
                 };

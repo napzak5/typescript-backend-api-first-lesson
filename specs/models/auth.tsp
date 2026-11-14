@@ -96,9 +96,6 @@ namespace BeautySalon.Models {
     @doc("直近ログイン時のIPアドレス。ログイン履歴がない場合はnull。")
     lastLoginIp: string | null;
 
-    @doc("信頼済みIPアドレスのリスト。登録がない場合は空配列。値が保存されていない場合はnull。")
-    trustedIpAddresses: string[] | null;
-
     @doc("ユーザーが顧客の場合の顧客プロファイルID。顧客以外の役割の場合、または顧客プロファイルと紐づいていない場合はnull。")
     customerId: CustomerId | null;
 
@@ -113,10 +110,10 @@ namespace BeautySalon.Models {
   }
 
   @doc("""
-    セッションレスポンス - sessions テーブルの公開カラムを返す。
+    セッションレスポンス - sessions テーブルの公開カラムと、計算値 current を返す。
     トークンのハッシュは返さない。サーバーはトークンそのものを保存しないので、
     トークンは発行したログイン・トークン再発行のレスポンスでのみ返す。
-    プロパティ名と null 許可は DB カラムと一致させている。
+    current 以外のプロパティ名と null 許可は DB カラムと一致させている。
     """)
   model SessionResponse {
     @doc("セッションを一意に識別するID。")
@@ -142,6 +139,9 @@ namespace BeautySalon.Models {
 
     @doc("セッション作成日時(ログインした日時)。")
     createdAt: utcDateTime;
+
+    @doc("このリクエストを認証したセッションかどうか。DB のカラムではなく、リクエストごとに決まる。")
+    current: boolean;
   }
 
   @doc("""
@@ -352,13 +352,5 @@ namespace BeautySalon.Models {
   model AuthTwoFactorBackupCodesResponse {
     @doc("新しく発行した復旧用バックアップコード一覧(10個)。それまでのバックアップコードは使用できない。")
     backupCodes: string[];
-  }
-
-  @doc("ユーザーの信頼済みIPアドレスを追加するリクエスト。")
-  model AuthTrustedIpAddRequest {
-    @doc("追加するIPアドレス。IPv4 または IPv6 の表記で指定する。")
-    @minLength(1)
-    @maxLength(50)
-    ipAddress: string;
   }
 }

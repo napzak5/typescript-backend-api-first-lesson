@@ -57,7 +57,7 @@ What the Salon domain consists of:
 
 Steps 1 to 3 belong together. The database is the source of truth for names and nullability, so the contract is written against the table, and `pnpm check:api-db` compares the two.
 
-Shared by every domain and already in place: `Result` (`backend/packages/utility/src/result/result.ts`), `DomainError` and `parseWith` (`backend/packages/domain/src/shared/`), `Actor` (`backend/packages/domain/src/models/auth.ts`), the column conversions of the read mappers (`backend/packages/domain/src/mappers/read/columns.ts`), `describeDatabaseError` and `attempt` (`backend/packages/infrastructure/src/database/`), and the response helpers and the `authenticated` wrapper of the API package.
+Shared by every domain and already in place: `Result` (`backend/packages/utility/src/result/result.ts`), `DomainError` and `parseWith` (`backend/packages/domain/src/shared/`), `Actor` (`backend/packages/domain/src/models/auth.ts`), the column conversions of the read mappers (`backend/packages/domain/src/mappers/read/columns.ts`), `describeDatabaseError` and `attempt` (`backend/packages/infrastructure/src/database/`), and the response helpers, the `authenticated` wrapper, the links of a page (`pageLinks`) and the converters of query parameters of the API package (`backend/packages/api/src/shared/`).
 
 ## 1. API Contract
 
@@ -201,6 +201,7 @@ const salonRules: ModelRule[] = [
 ```
 
 - `embedded` names properties that are rows of a child table, not columns.
+- `computed` names properties that are not columns either: values the server works out for the response and stores nowhere. Salon has none; the rule of `Models.SessionResponse` names `current` this way.
 - `omittedColumns` names the columns the model leaves out on purpose. Once it is given, every other column must be in the model, so leaving a column out is a decision and not an oversight.
 
 The same file has one block of rules per domain. The table-backed models of every domain are listed there with `omittedColumns` and agree with their tables, including the domains whose backend is not implemented yet. Any difference fails the check; there is no list of tolerated differences. Models without a table (computed reports, action requests, and features whose tables do not exist yet, such as permissions and attachments) have no rule.
@@ -815,12 +816,12 @@ Errors are built with `DomainErrors.validation`, `.unauthenticated`, `.forbidden
 
 | Kind | Where it is created | What the client gets |
 |------|---------------------|----------------------|
-| `validation` | `parseWith`, called by a use case (and by the query decoding of the list handler). The authentication use cases also build it themselves for what a schema cannot check: a password that is too easy to guess, a wrong current password, a mailed token that cannot be used, a code of two-factor authentication that is not accepted | 400 with the broken rules in `errors` |
+| `validation` | `parseWith`, called by a use case (and by the query decoding of a list handler). The authentication use cases also build it themselves for what a schema cannot check: a password that is too easy to guess, a wrong current password, a mailed token that cannot be used, a code of two-factor authentication that is not accepted, a cursor of the session list that names no session of the user | 400 with the broken rules in `errors` |
 | `unauthenticated` | the authentication use cases only: `AuthenticateUseCase` behind `authenticated`, login and refresh, and the current-user, change-password and two-factor use cases when the user of the session no longer exists | 401 with a `WWW-Authenticate` header |
 | `forbidden` | a use case, when its permission rule refuses the actor | 403 |
 | `notFound` | a use case, when the repository resolved to `null` or `false` | 404 |
 | `alreadyExists` | the repository, from the unique violation | 409 |
-| `conflict` | a use case, when the request is fine and what it acts on is not in a state that allows it; so far only the two-factor use cases (enabling what is already enabled, for example) | 409 |
+| `conflict` | a use case, when the request is fine and what it acts on is not in a state that allows it; so far only authentication use cases: those of two-factor authentication (enabling what is already enabled, for example) and of the administrator operations (unlocking an account that is not locked, for example) | 409 |
 | `database` | the repository, from a failed query; the read mapper, from a stored row that does not fit | 500 without details; the cause is logged |
 
 The API package maps the kind to a status and a problem details body (`backend/packages/api/src/shared/problem-details.ts`). A domain adds nothing there unless it introduces a new kind of error, and then the exhaustive match in that file stops compiling until the new kind has a status.
