@@ -6,7 +6,6 @@
       "ignoreDependencies": ["concurrently"]
     },
     "specs": {
-      "entry": ["scripts/postprocess-openapi.ts"],
       "ignoreDependencies": [
         "@typespec/http",
         "@typespec/openapi",

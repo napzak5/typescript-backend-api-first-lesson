@@ -9,7 +9,6 @@ import type { ModelsInventoryId } from './modelsInventoryId';
 import type { ModelsInventoryTransactionMetadata } from './modelsInventoryTransactionMetadata';
 import type { ModelsInventoryTransactionType } from './modelsInventoryTransactionType';
 import type { ModelsSalonId } from './modelsSalonId';
-import type { ModelsStaffId } from './modelsStaffId';
 
 /**
  * 在庫の入出庫トランザクション
@@ -25,10 +24,16 @@ export interface ModelsInventoryTransaction {
   type: ModelsInventoryTransactionType;
   /** 操作した数量 */
   quantity: number;
-  /** 操作理由 */
-  reason: string;
-  /** 操作を担当したスタッフ ID */
-  performedBy: ModelsStaffId;
+  /**
+     * 操作理由。未設定の場合はnull
+     * @nullable
+     */
+  reason: string | null;
+  /**
+     * 操作を担当したスタッフ ID。未設定の場合はnull
+     * @nullable
+     */
+  performedBy: string | null;
   /** 操作日時 */
   occurredAt: string;
   /**

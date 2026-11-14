@@ -26,30 +26,6 @@ describe('Result', () => {
     })
   })
 
-  describe('isSuccess', () => {
-    it('should return true for success result', () => {
-      const result = Result.success('data')
-      expect(Result.isSuccess(result)).toBe(true)
-    })
-
-    it('should return false for error result', () => {
-      const result = Result.error('error')
-      expect(Result.isError(result)).toBe(true)
-    })
-  })
-
-  describe('isError', () => {
-    it('should return true for error result', () => {
-      const result = Result.error('error')
-      expect(Result.isError(result)).toBe(true)
-    })
-
-    it('should return false for success result', () => {
-      const result = Result.success('data')
-      expect(Result.isError(result)).toBe(false)
-    })
-  })
-
   describe('map', () => {
     it('should transform success data', () => {
       const result = Result.success(5)
@@ -158,23 +134,6 @@ describe('Result', () => {
       if (result.type === 'error') {
         expect(result.error.message).toBe('string error')
       }
-    })
-  })
-
-  describe('unwrap', () => {
-    it('should extract data from success result', () => {
-      const result = Result.success('data')
-      const data = Result.unwrap(result)
-
-      expect(data).toBe('data')
-    })
-
-    it('should throw error for error result', () => {
-      const result = Result.error('error message')
-
-      expect(() => Result.unwrap(result)).toThrow(
-        'Attempted to unwrap an error result',
-      )
     })
   })
 

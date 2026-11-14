@@ -41,6 +41,7 @@
     "knip:fix": "knip --fix",
     "check:versions": "node ./scripts/check-versions.ts",
     "check:generated": "pnpm generate && node ./scripts/check-clean.ts specs/tsp-output backend/packages/generated/src frontend/packages/api-client/src/generated",
+    "check:api-db": "pnpm --filter @beauty-salon-backend/database run check:api-consistency",
     "check:db-schema": "pnpm db:fresh && pnpm db:introspect && pnpm db:generate-sql && node ./scripts/check-clean.ts backend/packages/database/src/schema.ts backend/packages/database/src/relations.ts backend/packages/database/sql/setup.sql",
     "update:check": "taze major -r",
     "update:install": "taze major -r -w --install",

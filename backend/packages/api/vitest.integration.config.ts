@@ -6,6 +6,17 @@ import { defineConfig } from 'vitest/config'
  * testcontainers (which needs a running Docker daemon).
  */
 export default defineConfig({
+  // Workspace packages are tested from source, not from their last build.
+  ssr: {
+    resolve: {
+      conditions: [
+        '@beauty-salon-backend/source',
+        'module',
+        'node',
+        'development|production',
+      ],
+    },
+  },
   test: {
     globals: true,
     environment: 'node',

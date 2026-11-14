@@ -7,6 +7,6 @@
  */
 
 /**
- * 市区町村名による絞り込み
+ * 市区町村名による絞り込み(完全一致)
  */
 export type ModelsSalonSearchRequestCityParameter = string;

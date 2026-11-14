@@ -23,7 +23,12 @@ export default defineConfig({
         minify: isProduction,
         sourceMap: isDevelopment || isTest || isStaging || isLocalhost,
         target: 'node',
-        externals: [/^@beauty-salon-backend\//, 'ts-pattern', 'uuid', 'zod'],
+        externals: [
+          /^@beauty-salon-backend\//,
+          'date-fns',
+          'ts-pattern',
+          'zod',
+        ],
       },
     },
   ],

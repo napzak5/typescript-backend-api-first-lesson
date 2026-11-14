@@ -7,7 +7,6 @@
  */
 import type { ModelsInventoryId } from './modelsInventoryId';
 import type { ModelsSalonId } from './modelsSalonId';
-import type { ModelsStaffId } from './modelsStaffId';
 import type { ModelsStockMovementMetadata } from './modelsStockMovementMetadata';
 import type { ModelsStockMovementType } from './modelsStockMovementType';
 
@@ -25,10 +24,16 @@ export interface ModelsStockMovement {
   type: ModelsStockMovementType;
   /** 操作した数量 */
   quantity: number;
-  /** 操作理由 */
-  reason: string;
-  /** 操作を担当したスタッフ ID */
-  performedBy: ModelsStaffId;
+  /**
+     * 操作理由。未設定の場合はnull
+     * @nullable
+     */
+  reason: string | null;
+  /**
+     * 操作を担当したスタッフ ID。未設定の場合はnull
+     * @nullable
+     */
+  performedBy: string | null;
   /** 操作日時 */
   occurredAt: string;
   /**

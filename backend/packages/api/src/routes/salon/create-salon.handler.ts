@@ -1,58 +1,37 @@
-import { CreateSalonUseCase } from '@beauty-salon-backend/domain'
-import type { Database } from '@beauty-salon-backend/infrastructure'
-import { SalonRepository } from '@beauty-salon-backend/infrastructure'
-import type { RequestHandler, Response } from 'express'
+import {
+  CreateSalonUseCase,
+  type SalonUseCaseDependencies,
+} from '@beauty-salon-backend/domain'
+import type { RequestHandler } from 'express'
 import { match } from 'ts-pattern'
-import type {
-  CreateSalonRequest,
-  CreateSalonResponse,
-  ErrorResponse,
-} from './_shared'
-import { handleDomainError } from './_shared'
+import type { ProblemDetails } from '../../shared/problem-details'
+import { responseMeta, sendProblem } from '../../shared/responses'
+import { type CreateSalonResponse, salonLinks } from './_shared'
 
 /**
- * POST /api/v1/salons - Create a new salon
- *
- * Features:
- * - Validates all required fields in use case
- * - Creates salon with opening hours
- * - Returns created salon with metadata and links
+ * POST /api/v1/salons - create a salon
  */
-export const createSalonHandler: RequestHandler<
+export const createSalonHandler = (
+  dependencies: SalonUseCaseDependencies,
+): RequestHandler<
   Record<string, never>,
-  CreateSalonResponse | ErrorResponse,
-  CreateSalonRequest
-> = async (req, res, next) => {
-  try {
-    // Get dependencies and execute use case
-    const db = req.app.locals.database as Database
-    const salonRepository = new SalonRepository(db)
-    const useCase = new CreateSalonUseCase({ salonRepository })
+  CreateSalonResponse | ProblemDetails,
+  unknown
+> => {
+  const useCase = new CreateSalonUseCase(dependencies)
 
+  return async (req, res) => {
     const result = await useCase.execute(req.body)
 
-    // Handle result with pattern matching
     match(result)
       .with({ type: 'success' }, ({ data }) => {
-        const response: CreateSalonResponse = {
-          data,
-          meta: {
-            correlationId: `req-${Date.now()}`,
-            timestamp: new Date().toISOString(),
-            version: '1.0.0',
-          },
-          links: {
-            self: `/salons/${data.id}`,
-            list: '/salons',
-          },
-        }
-        res.status(201).json(response)
+        const links = salonLinks(req.baseUrl, data.id)
+        res
+          .status(201)
+          .location(links.self)
+          .json({ data, meta: responseMeta(), links })
       })
-      .with({ type: 'error' }, ({ error }) =>
-        handleDomainError(res as Response<ErrorResponse>, error),
-      )
+      .with({ type: 'error' }, ({ error }) => sendProblem(req, res, error))
       .exhaustive()
-  } catch (error) {
-    next(error)
   }
 }

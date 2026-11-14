@@ -1,39 +1,31 @@
+import type { SalonUseCaseDependencies } from '@beauty-salon-backend/domain'
 import { Router } from 'express'
-
-// Import all handlers
 import { createSalonHandler } from './create-salon.handler'
 import { deleteSalonHandler } from './delete-salon.handler'
 import { getSalonHandler } from './get-salon.handler'
 import { listSalonsHandler } from './list-salons.handler'
-import { searchSalonsHandler } from './search-salons.handler'
 import { updateSalonHandler } from './update-salon.handler'
 
 /**
- * Salon Routes Configuration
+ * Salon routes, relative to where the router is mounted. One handler per
+ * operation of `SalonCrud` in the TypeSpec definition:
  *
- * This module aggregates all salon-related routes and handlers.
- * Each handler is in its own file for better maintainability.
- *
- * Routes:
- * - GET    /api/v1/salons          → listSalonsHandler    (List all salons with pagination)
- * - POST   /api/v1/salons          → createSalonHandler   (Create a new salon)
- * - GET    /api/v1/salons/search   → searchSalonsHandler  (Search salons with filters)
- * - GET    /api/v1/salons/:id      → getSalonHandler      (Get single salon by ID)
- * - PUT    /api/v1/salons/:id      → updateSalonHandler   (Update existing salon)
- * - DELETE /api/v1/salons/:id      → deleteSalonHandler   (Soft delete salon)
+ * - GET    /     list
+ * - POST   /     create
+ * - GET    /:id  get
+ * - PATCH  /:id  update
+ * - DELETE /:id  delete
  */
-const router: Router = Router()
+export const createSalonRouter = (
+  dependencies: SalonUseCaseDependencies,
+): Router => {
+  const router = Router()
 
-// List and Create operations
-router.get('/salons', listSalonsHandler)
-router.post('/salons', createSalonHandler)
+  router.get('/', listSalonsHandler(dependencies))
+  router.post('/', createSalonHandler(dependencies))
+  router.get('/:id', getSalonHandler(dependencies))
+  router.patch('/:id', updateSalonHandler(dependencies))
+  router.delete('/:id', deleteSalonHandler(dependencies))
 
-// Search operation (before :id to avoid route conflicts)
-router.get('/salons/search', searchSalonsHandler)
-
-// Single resource operations
-router.get('/salons/:id', getSalonHandler)
-router.put('/salons/:id', updateSalonHandler)
-router.delete('/salons/:id', deleteSalonHandler)
-
-export default router
+  return router
+}

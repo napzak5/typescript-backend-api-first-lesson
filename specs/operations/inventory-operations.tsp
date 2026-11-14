@@ -29,7 +29,7 @@ namespace BeautySalon.Operations {
     ): Result<InventoryItem>;
 
     @doc("Update inventory item")
-    @patch(#{ implicitOptionality: true })
+    @patch
     @route("/{id}")
     updateInventoryItem(
       @path id: InventoryId,
@@ -137,7 +137,7 @@ namespace BeautySalon.Operations {
     ): Result<PurchaseOrder>;
 
     @doc("Update purchase order")
-    @patch(#{ implicitOptionality: true })
+    @patch
     @route("/{id}")
     updatePurchaseOrder(
       @path id: OrderId,

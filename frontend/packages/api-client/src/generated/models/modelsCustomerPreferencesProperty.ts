@@ -7,6 +7,7 @@
  */
 
 /**
- * 顧客の好みや要望
+ * 顧客の好みや要望。未設定の場合はnull
+ * @nullable
  */
-export type ModelsCustomerPreferencesProperty = {[key: string]: unknown};
+export type ModelsCustomerPreferencesProperty = {[key: string]: unknown} | null;

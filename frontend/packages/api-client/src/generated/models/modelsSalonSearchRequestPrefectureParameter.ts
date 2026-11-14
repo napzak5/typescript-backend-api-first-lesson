@@ -7,6 +7,6 @@
  */
 
 /**
- * 都道府県名による絞り込み
+ * 都道府県名による絞り込み(完全一致)
  */
 export type ModelsSalonSearchRequestPrefectureParameter = string;

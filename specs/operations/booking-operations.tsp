@@ -63,7 +63,7 @@ namespace BeautySalon.Operations {
 
     @doc("既存の予約パッケージ内容を部分的に更新し、顧客要望の変更に対応します。")
     @summary("Update booking")
-    @patch(#{ implicitOptionality: true })
+    @patch
     op update(@path id: BookingId, @body updates: BookingUpdateRequest):
       | {
           @statusCode statusCode: 200;

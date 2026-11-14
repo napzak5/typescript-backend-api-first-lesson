@@ -1,27 +1,25 @@
-/**
- * Express Application Setup
- */
-
+import {
+  type Database,
+  SalonRepository,
+} from '@beauty-salon-backend/infrastructure'
 import compression from 'compression'
 import cors from 'cors'
 import express, { type Express } from 'express'
 import helmet from 'helmet'
-import salonRoutes from './routes/salon'
+import { createSalonRouter } from './routes/salon'
+import { API_BASE_PATH } from './shared/api-version'
 
-// 依存関係の型
 export type AppDependencies = {
-  database: import('@beauty-salon-backend/infrastructure').Database
-  logger?: ReturnType<typeof import('pino').pino>
+  database: Database
 }
 
-export const createApp = (deps: AppDependencies): Express => {
+/**
+ * Builds the Express application. Repositories are created here, once, and
+ * handed to the routes, so that a handler never reaches for a global.
+ */
+export const createApp = ({ database }: AppDependencies): Express => {
   const app = express()
 
-  // Store dependencies in app.locals for route access
-  app.locals.database = deps.database
-  app.locals.logger = deps.logger
-
-  // Basic middleware
   app.use(helmet())
   app.use(
     cors({
@@ -33,13 +31,14 @@ export const createApp = (deps: AppDependencies): Express => {
   app.use(express.json())
   app.use(express.urlencoded({ extended: true }))
 
-  // Health check
   app.get('/health', (_req, res) => {
     res.json({ status: 'ok' })
   })
 
-  // API routes
-  app.use('/api/v1', salonRoutes)
+  app.use(
+    `${API_BASE_PATH}/salons`,
+    createSalonRouter({ salonRepository: new SalonRepository(database) }),
+  )
 
   return app
 }

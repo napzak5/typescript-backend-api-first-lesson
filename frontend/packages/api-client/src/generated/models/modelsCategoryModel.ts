@@ -15,8 +15,11 @@ export interface ModelsCategoryModel {
   id: ModelsCategoryId;
   /** カテゴリ名 */
   name: string;
-  /** カテゴリ説明 */
-  description: string;
+  /**
+     * カテゴリ説明。未設定の場合はnull
+     * @nullable
+     */
+  description: string | null;
   /**
      * 親カテゴリ ID。最上位カテゴリの場合はnull
      * @nullable

@@ -69,7 +69,7 @@ backend-start-%: infra-up ## Start the built backend with the <env> configuratio
 	NODE_ENV=$(NODE_ENV_$*) pnpm start:backend
 
 ## Quality
-.PHONY: lint format format-check typecheck knip test test-integration audit ci-check
+.PHONY: lint format format-check typecheck knip test test-integration audit api-db-check ci-check
 lint: ## Lint with Biome
 	pnpm lint
 
@@ -94,10 +94,14 @@ test-integration: ## Run API integration tests (needs Docker or TEST_DATABASE_UR
 audit: ## Fail on high or critical vulnerabilities
 	pnpm audit --audit-level=high
 
+api-db-check: ## Verify API models agree with the database schema
+	pnpm check:api-db
+
 ci-check: ## Run the same checks as the CI workflow
 	pnpm install --frozen-lockfile
 	pnpm check:versions
 	pnpm check:generated
+	pnpm check:api-db
 	pnpm lint
 	pnpm format:check
 	pnpm build:prod

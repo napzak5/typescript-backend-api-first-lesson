@@ -135,7 +135,7 @@ namespace BeautySalon.Operations {
 
     @doc("必要なフィールドのみを部分更新し、変更差分を効率的に反映します。")
     @summary("Partially update {Name}")
-    @patch(#{ implicitOptionality: true })
+    @patch
     patch(
       @path id: TId,
       @body request: TUpdateRequest,

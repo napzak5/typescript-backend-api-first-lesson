@@ -80,8 +80,11 @@ export interface ModelsService {
   status: ModelsServiceStatusDetail;
   /** サービス名 */
   name: string;
-  /** 説明文 */
-  description: string;
+  /**
+     * 説明文。未設定の場合はnull
+     * @nullable
+     */
+  description: string | null;
   /** 料金 */
   price: number;
   /**

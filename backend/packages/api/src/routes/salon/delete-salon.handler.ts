@@ -1,45 +1,28 @@
-import type { SalonId } from '@beauty-salon-backend/domain'
-import { DeleteSalonUseCase } from '@beauty-salon-backend/domain'
-import type { Database } from '@beauty-salon-backend/infrastructure'
-import { SalonRepository } from '@beauty-salon-backend/infrastructure'
-import type { RequestHandler, Response } from 'express'
+import {
+  DeleteSalonUseCase,
+  type SalonUseCaseDependencies,
+} from '@beauty-salon-backend/domain'
+import type { RequestHandler } from 'express'
 import { match } from 'ts-pattern'
-import type { DeleteSalonResponse, ErrorResponse } from './_shared'
-import { handleDomainError } from './_shared'
+import type { ProblemDetails } from '../../shared/problem-details'
+import { sendProblem } from '../../shared/responses'
 
 /**
- * DELETE /api/v1/salons/:id - Delete a salon (soft delete)
- *
- * Features:
- * - Performs soft delete (sets deletedAt timestamp)
- * - Returns 204 No Content on success
- * - Returns 404 if salon not found
- * - Idempotent - deleting already deleted salon succeeds
+ * DELETE /api/v1/salons/:id - delete a salon (the row is kept and hidden)
  */
-export const deleteSalonHandler: RequestHandler<
-  { id: SalonId },
-  DeleteSalonResponse | ErrorResponse
-> = async (req, res, next) => {
-  try {
-    const { id } = req.params
+export const deleteSalonHandler = (
+  dependencies: SalonUseCaseDependencies,
+): RequestHandler<{ id: string }, ProblemDetails> => {
+  const useCase = new DeleteSalonUseCase(dependencies)
 
-    // Get dependencies and execute use case
-    const db = req.app.locals.database as Database
-    const salonRepository = new SalonRepository(db)
-    const useCase = new DeleteSalonUseCase({ salonRepository })
+  return async (req, res) => {
+    const result = await useCase.execute(req.params.id)
 
-    const result = await useCase.execute(id)
-
-    // Handle result with pattern matching
     match(result)
       .with({ type: 'success' }, () => {
-        res.status(204).send()
+        res.status(204).end()
       })
-      .with({ type: 'error' }, ({ error }) =>
-        handleDomainError(res as Response<ErrorResponse>, error),
-      )
+      .with({ type: 'error' }, ({ error }) => sendProblem(req, res, error))
       .exhaustive()
-  } catch (error) {
-    next(error)
   }
 }

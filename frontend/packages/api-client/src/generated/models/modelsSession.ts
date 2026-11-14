@@ -15,8 +15,11 @@ export interface ModelsSession {
   id: string;
   /** セッション所有者のユーザーID。 */
   userId: ModelsUserId;
-  /** アクセストークン再発行に使用するリフレッシュトークン。 */
-  refreshToken: string;
+  /**
+     * アクセストークン再発行に使用するリフレッシュトークン。未設定の場合はnull
+     * @nullable
+     */
+  refreshToken: string | null;
   /** セッション発行元のIPアドレス。 */
   ipAddress: string;
   /** ブラウザやアプリを示すユーザーエージェント文字列。 */

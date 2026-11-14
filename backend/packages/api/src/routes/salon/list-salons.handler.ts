@@ -1,58 +1,42 @@
-import { ListSalonsUseCase } from '@beauty-salon-backend/domain'
-import type { Database } from '@beauty-salon-backend/infrastructure'
-import { SalonRepository } from '@beauty-salon-backend/infrastructure'
-import type { RequestHandler, Response } from 'express'
+import {
+  ListSalonsUseCase,
+  type SalonUseCaseDependencies,
+} from '@beauty-salon-backend/domain'
+import type { RequestHandler } from 'express'
 import { match } from 'ts-pattern'
-import type {
-  CursorPaginationResponse,
-  ErrorResponse,
-  ListSalonsQuery,
-  Salon,
+import type { ProblemDetails } from '../../shared/problem-details'
+import { sendProblem } from '../../shared/responses'
+import {
+  decodeSalonSearchQuery,
+  type ListSalonsResponse,
+  salonPageLinks,
 } from './_shared'
-import { cursorToPage, handleDomainError } from './_shared'
 
 /**
- * GET /api/v1/salons - List all salons with pagination
- *
- * Features:
- * - Cursor-based pagination with backward compatibility
- * - Configurable page size via limit parameter
- * - Returns salons sorted by creation date (newest first)
+ * GET /api/v1/salons - list salons, newest first, optionally filtered
  */
-export const listSalonsHandler: RequestHandler<
+export const listSalonsHandler = (
+  dependencies: SalonUseCaseDependencies,
+): RequestHandler<
   Record<string, never>,
-  CursorPaginationResponse<Salon> | ErrorResponse,
-  unknown,
-  Partial<ListSalonsQuery>
-> = async (req, res, next) => {
-  try {
-    // Extract pagination parameters
-    const limit = Number(req.query.limit) || 20
-    const cursor = req.query.cursor || undefined
-    const page = cursorToPage(cursor, limit)
+  ListSalonsResponse | ProblemDetails
+> => {
+  const useCase = new ListSalonsUseCase(dependencies)
 
-    // Get dependencies and execute use case
-    const db = req.app.locals.database as Database
-    const salonRepository = new SalonRepository(db)
-    const useCase = new ListSalonsUseCase({ salonRepository })
+  return async (req, res) => {
+    const query = decodeSalonSearchQuery(req.query)
+    const result =
+      query.type === 'error' ? query : await useCase.execute(query.data)
 
-    const result = await useCase.execute(page, limit)
-
-    // Handle result with pattern matching
     match(result)
-      .with({ type: 'success' }, ({ data }) => {
-        const response: CursorPaginationResponse<Salon> = {
-          data: data.data,
-          meta: data.meta,
-          links: data.links,
-        }
-        res.json(response)
+      .with({ type: 'success' }, ({ data: page }) => {
+        res.json({
+          data: page.data,
+          meta: page.meta,
+          links: salonPageLinks(req.baseUrl, req.originalUrl, page.meta),
+        })
       })
-      .with({ type: 'error' }, ({ error }) =>
-        handleDomainError(res as Response<ErrorResponse>, error),
-      )
+      .with({ type: 'error' }, ({ error }) => sendProblem(req, res, error))
       .exhaustive()
-  } catch (error) {
-    next(error)
   }
 }

@@ -13,8 +13,8 @@ import type { ModelsTimeSlot } from './modelsTimeSlot';
  * スタッフシフトモデル - 通常勤務スケジュールと休憩時間、適用期間を定義し、予約可能時間の算出に利用する
  */
 export interface ModelsStaffSchedule {
-  /** 対象となる曜日 */
-  dayOfWeek: ModelsDayOfWeekType;
+  /** 対象となる曜日。未設定の場合はnull */
+  dayOfWeek: ModelsDayOfWeekType | null;
   /** 勤務開始時刻 (フォーマット例: HH:mm) */
   startTime: string;
   /** 勤務終了時刻 (フォーマット例: HH:mm) */

@@ -1,69 +1,18 @@
-import type { components, operations } from '@beauty-salon-backend/generated'
+import type { operations } from '@beauty-salon-backend/generated'
 
-// ============================================================================
-// Operation Types - Maps to API endpoints
-// ============================================================================
-type ListSalonsOperation = operations['SalonCrud_list']
-type GetSalonOperation = operations['SalonCrud_get']
-type DeleteSalonOperation = operations['SalonCrud_delete']
-type CreateSalonOperation = operations['SalonCrud_create']
-type UpdateSalonOperation = operations['SalonCrud_update']
-type SearchSalonsOperation = operations['SalonCrud_search']
+type JsonBody<Content> = Content extends { 'application/json': infer Body }
+  ? Body
+  : never
 
-// ============================================================================
-// Model Types - Core domain models
-// ============================================================================
-export type Salon = components['schemas']['Models.Salon']
-export type CreateSalonRequest =
-  components['schemas']['Models.CreateSalonRequest']
-export type UpdateSalonRequest =
-  components['schemas']['Models.UpdateSalonRequest']
-export type ServiceCategoryType =
-  components['schemas']['Models.ServiceCategoryType']
-
-// ============================================================================
-// Response Types - API response structures
-// ============================================================================
-export type CursorPaginationResponse<T> = {
-  data: T[]
-  meta: components['schemas']['Models.PaginationMeta']
-  links: components['schemas']['Models.PaginationLinks']
-}
-
-export type GetSalonResponse = Extract<
-  GetSalonOperation['responses']['200']['content']['application/json'],
-  { data: unknown }
+export type ListSalonsResponse = JsonBody<
+  operations['SalonCrud_list']['responses'][200]['content']
 >
-
-export type CreateSalonResponse = Extract<
-  CreateSalonOperation['responses']['201']['content']['application/json'],
-  { data: unknown }
+export type CreateSalonResponse = JsonBody<
+  operations['SalonCrud_create']['responses'][201]['content']
 >
-
-export type UpdateSalonResponse = Extract<
-  UpdateSalonOperation['responses']['200']['content']['application/json'],
-  { data: unknown }
+export type GetSalonResponse = JsonBody<
+  operations['SalonCrud_get']['responses'][200]['content']
 >
-
-export type DeleteSalonResponse =
-  DeleteSalonOperation['responses']['204']['content']
-
-export type SearchSalonsResponse = Extract<
-  SearchSalonsOperation['responses']['200']['content']['application/json'],
-  { results: unknown }
+export type UpdateSalonResponse = JsonBody<
+  operations['SalonCrud_update']['responses'][200]['content']
 >
-
-// ============================================================================
-// Query Parameter Types
-// ============================================================================
-export type ListSalonsQuery = NonNullable<
-  ListSalonsOperation['parameters']['query']
->
-export type SearchSalonsQuery = NonNullable<
-  SearchSalonsOperation['parameters']['query']
->
-
-// ============================================================================
-// Error Types
-// ============================================================================
-export type ErrorResponse = components['schemas']['Models.ProblemDetails']

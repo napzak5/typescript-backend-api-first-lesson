@@ -1,10 +1,104 @@
-import { createId } from '@beauty-salon-backend/utility'
-import { sql } from 'drizzle-orm'
+import { openingHours, salons } from '@beauty-salon-backend/database'
+import { eq } from 'drizzle-orm'
 import type { Express } from 'express'
+import type { Response } from 'supertest'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createTestApp, getTestDb, request } from './_shared/test-helpers'
 
-describe('Salon API Integration Tests', () => {
+const SALONS = '/api/v1/salons'
+const UNKNOWN_ID = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1b'
+const UUID = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/
+const ISO_TIMESTAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/
+
+// 2026-11-16 and 2026-11-23 are Mondays.
+const workingMonday = {
+  dayOfWeek: 'monday',
+  date: '2026-11-16',
+  openTime: '10:00',
+  closeTime: '19:00',
+  isHoliday: false,
+  holidayName: null,
+  notes: null,
+}
+
+const holidayMonday = {
+  dayOfWeek: 'monday',
+  date: '2026-11-23',
+  openTime: null,
+  closeTime: null,
+  isHoliday: true,
+  holidayName: '勤労感謝の日',
+  notes: 'Closed all day',
+}
+
+/** A request that satisfies every rule. */
+const salonRequest = (overrides: Record<string, unknown> = {}) => ({
+  name: 'Hair Studio Aoyama',
+  nameKana: 'ヘアスタジオアオヤマ',
+  description: 'A calm salon near Omotesando',
+  postalCode: '107-0062',
+  prefecture: '東京都',
+  city: '港区',
+  address: '南青山1-2-3',
+  building: 'Aoyama Building 2F',
+  latitude: 35.6654,
+  longitude: 139.7121,
+  phoneNumber: '03-1234-5678',
+  alternativePhone: null,
+  email: 'aoyama@example.com',
+  websiteUrl: 'https://aoyama.example.com',
+  logoUrl: null,
+  imageUrls: ['https://aoyama.example.com/front.jpg'],
+  features: ['color', 'kids'],
+  amenities: ['wifi'],
+  businessHours: [
+    {
+      dayOfWeek: 'monday',
+      operatingSlots: [{ startTime: '10:00', endTime: '19:00' }],
+      breakSlots: null,
+      isClosed: false,
+      effectivePeriod: null,
+      timezone: null,
+    },
+  ],
+  timezone: 'Asia/Tokyo',
+  currency: 'JPY',
+  taxRate: 10,
+  isActive: true,
+  openingHours: [workingMonday, holidayMonday],
+  ...overrides,
+})
+
+/** The calendar of `salonRequest` as the API returns it: times get seconds. */
+const storedCalendar = [
+  { ...workingMonday, openTime: '10:00:00', closeTime: '19:00:00' },
+  holidayMonday,
+]
+
+const brokenRules = (response: Response): string[] =>
+  response.body.errors.map(
+    ({ field, rule }: { field: string; rule: string }) => `${field}:${rule}`,
+  )
+
+const expectProblem = (
+  response: Response,
+  expected: { status: number; code: string; type: string },
+): void => {
+  expect(response.status).toBe(expected.status)
+  expect(response.body).toMatchObject({
+    type: `urn:beauty-salon:problem:${expected.type}`,
+    status: expected.status,
+    code: expected.code,
+    instance: response.request.url.replace(/^https?:\/\/[^/]+/, ''),
+    timestamp: expect.stringMatching(ISO_TIMESTAMP),
+  })
+}
+
+const badRequest = { status: 400, code: '2001', type: 'validation' }
+const notFound = { status: 404, code: '3001', type: 'not-found' }
+const conflict = { status: 409, code: '3002', type: 'already-exists' }
+
+describe('Salon API', () => {
   let app: Express
   let db: ReturnType<typeof getTestDb>
 
@@ -13,542 +107,603 @@ describe('Salon API Integration Tests', () => {
     db = getTestDb()
   })
 
+  const createSalon = async (overrides: Record<string, unknown> = {}) => {
+    const response = await request(app)
+      .post(SALONS)
+      .send(salonRequest(overrides))
+    expect(response.status).toBe(201)
+    return response.body.data
+  }
+
+  const deleteSalon = async (id: string) => {
+    const response = await request(app).delete(`${SALONS}/${id}`)
+    expect(response.status).toBe(204)
+  }
+
   describe('POST /api/v1/salons', () => {
-    it('should create a salon with valid data', async () => {
-      // Helper to get dates for each day of the week
-      const getNextDate = (dayOffset: number): string => {
-        const date = new Date()
-        date.setDate(date.getDate() + dayOffset)
-        const [dateStr = '2020-10-08'] = date.toISOString().split('T')
-        return dateStr
-      }
-
-      const salonData = {
-        name: 'Test Salon',
-        description: 'A test salon',
-        address: {
-          street: '千代田1-1-1 テストビル2F',
-          city: '千代田区',
-          prefecture: '東京都',
-          postalCode: '100-0001',
-          country: 'Japan',
-        },
-        contactInfo: {
-          email: 'test@salon.com',
-          phoneNumber: '03-1234-5678',
-          alternativePhone: null,
-          websiteUrl: 'https://test-salon.com',
-        },
-        openingHours: [
-          {
-            dayOfWeek: 'monday',
-            date: getNextDate(1),
-            openTime: '10:00',
-            closeTime: '20:00',
-            isHoliday: false,
-            holidayName: null,
-            notes: null,
-          },
-          {
-            dayOfWeek: 'tuesday',
-            date: getNextDate(2),
-            openTime: '10:00',
-            closeTime: '20:00',
-            isHoliday: false,
-            holidayName: null,
-            notes: null,
-          },
-          {
-            dayOfWeek: 'wednesday',
-            date: getNextDate(3),
-            openTime: '10:00',
-            closeTime: '20:00',
-            isHoliday: false,
-            holidayName: null,
-            notes: null,
-          },
-          {
-            dayOfWeek: 'thursday',
-            date: getNextDate(4),
-            openTime: '10:00',
-            closeTime: '20:00',
-            isHoliday: false,
-            holidayName: null,
-            notes: null,
-          },
-          {
-            dayOfWeek: 'friday',
-            date: getNextDate(5),
-            openTime: '10:00',
-            closeTime: '20:00',
-            isHoliday: false,
-            holidayName: null,
-            notes: null,
-          },
-          {
-            dayOfWeek: 'saturday',
-            date: getNextDate(6),
-            openTime: '10:00',
-            closeTime: '18:00',
-            isHoliday: false,
-            holidayName: null,
-            notes: null,
-          },
-          {
-            dayOfWeek: 'sunday',
-            date: getNextDate(7),
-            openTime: '10:00',
-            closeTime: '18:00',
-            isHoliday: false,
-            holidayName: null,
-            notes: null,
-          },
-        ],
-        businessHours: null,
-        imageUrls: null,
-        features: null,
-      }
-
-      const response = await request(app).post('/api/v1/salons').send(salonData)
-
-      // Debug: Log the response to see what's wrong
-      if (response.status !== 201) {
-        console.error('Create salon failed:', response.status, response.body)
-      }
+    it('creates the salon and returns it with what the server assigned', async () => {
+      const response = await request(app).post(SALONS).send(salonRequest())
 
       expect(response.status).toBe(201)
-      expect(response.body.data).toBeDefined()
-      expect(response.body.data.name).toBe(salonData.name)
-      expect(response.body.data.contactInfo?.email).toBe(
-        salonData.contactInfo.email,
-      )
+      const { data, meta, links } = response.body
+      expect(data).toEqual({
+        ...salonRequest(),
+        openingHours: storedCalendar,
+        id: expect.stringMatching(UUID),
+        rating: null,
+        reviewCount: 0,
+        createdAt: expect.stringMatching(ISO_TIMESTAMP),
+        updatedAt: expect.stringMatching(ISO_TIMESTAMP),
+      })
+      expect(response.headers.location).toBe(`${SALONS}/${data.id}`)
+      expect(links).toEqual({ self: `${SALONS}/${data.id}`, list: SALONS })
+      expect(meta).toEqual({
+        correlationId: expect.stringMatching(UUID),
+        timestamp: expect.stringMatching(ISO_TIMESTAMP),
+        version: 'v1',
+      })
 
-      // Verify database state
-      const result = await db.execute(sql`SELECT * FROM salons`)
-      expect(result.length).toBe(1)
-      expect(result[0]?.name).toBe(salonData.name)
+      const stored = await request(app).get(`${SALONS}/${data.id}`)
+      expect(stored.body.data).toEqual(data)
     })
 
-    it('should return validation error for invalid email', async () => {
-      const invalidData = {
-        name: 'Test Salon',
+    it('stores null and empty lists as they are given', async () => {
+      const unset = {
+        nameKana: null,
         description: null,
-        address: {
-          street: '千代田1-1-1',
-          city: '千代田区',
-          prefecture: '東京都',
-          postalCode: '100-0001',
-          country: 'Japan',
-        },
-        contactInfo: {
-          email: 'invalid-email', // Invalid email
-          phoneNumber: '03-1234-5678',
-          alternativePhone: null,
-          websiteUrl: null,
-        },
-        openingHours: [
-          {
-            dayOfWeek: 'monday',
-            date: null,
-            openTime: '10:00',
-            closeTime: '20:00',
-            isHoliday: false,
-            holidayName: null,
-            notes: null,
-          },
-        ],
+        postalCode: null,
+        building: null,
+        latitude: null,
+        longitude: null,
+        alternativePhone: null,
+        websiteUrl: null,
+        logoUrl: null,
+        imageUrls: [],
+        features: [],
+        amenities: [],
         businessHours: null,
-        imageUrls: null,
-        features: null,
+        openingHours: [],
       }
 
-      const response = await request(app)
-        .post('/api/v1/salons')
-        .send(invalidData)
-        .expect(400)
+      const response = await request(app).post(SALONS).send(salonRequest(unset))
 
-      expect(response.body.type).toBe(
-        'https://example.com/probs/validation-error',
-      )
-      expect(response.body.detail).toContain('Validation failed')
+      expect(response.status).toBe(201)
+      expect(response.body.data).toMatchObject(unset)
     })
 
-    it('should return validation error for missing required fields', async () => {
-      const response = await request(app)
-        .post('/api/v1/salons')
-        .send({})
-        .expect(400)
-
-      expect(response.body.type).toBe(
-        'https://example.com/probs/validation-error',
-      )
-      expect(response.body.detail).toContain('Validation failed')
-    })
-  })
-
-  describe('GET /api/v1/salons', () => {
-    it('should list all salons', async () => {
-      // Create test salons
-      const testSalons = [
+    it.each([
+      ['a missing property', { city: undefined }, ['city:invalid_type']],
+      [
+        'a property the client may not set',
+        { rating: 5 },
+        ['rating:unrecognized_keys'],
+      ],
+      ['null for a NOT NULL column', { name: null }, ['name:invalid_type']],
+      [
+        'a value longer than its column',
+        { postalCode: '123-4567-890' },
+        ['postalCode:too_big'],
+      ],
+      [
+        'several invalid values',
+        { email: 'nope', taxRate: 101 },
+        ['email:invalid_format', 'taxRate:too_big'],
+      ],
+      [
+        'a calendar entry on the wrong day of the week',
         {
-          id: createId(),
-          name: 'Salon A',
-          nameKana: 'サロンエー',
-          postalCode: '100-0001',
-          prefecture: '東京都',
-          city: '千代田区',
-          addressLine1: '千代田1-1-1',
-          phone: '03-1111-1111',
-          email: 'salon-a@test.com',
+          openingHours: [{ ...workingMonday, dayOfWeek: 'sunday' }],
         },
+        ['openingHours.0.dayOfWeek:custom'],
+      ],
+      [
+        'a calendar that repeats a date',
         {
-          id: createId(),
-          name: 'Salon B',
-          nameKana: 'サロンビー',
-          postalCode: '150-0001',
-          prefecture: '東京都',
-          city: '渋谷区',
-          addressLine1: '渋谷2-2-2',
-          phone: '03-2222-2222',
-          email: 'salon-b@test.com',
+          openingHours: [workingMonday, workingMonday],
         },
-      ]
+        ['openingHours.1.date:custom'],
+      ],
+    ])('rejects %s and stores nothing', async (_case, change, expected) => {
+      const response = await request(app)
+        .post(SALONS)
+        .send(salonRequest(change))
 
-      // Insert test data using raw SQL
-      for (const salon of testSalons) {
-        await db.execute(sql`
-          INSERT INTO salons (id, name, "nameKana", "postalCode", prefecture, city, address, "phoneNumber", email)
-          VALUES (${salon.id}, ${salon.name}, ${salon.nameKana}, ${salon.postalCode}, ${salon.prefecture}, ${salon.city}, ${salon.addressLine1}, ${salon.phone}, ${salon.email})
-        `)
-      }
-
-      const response = await request(app).get('/api/v1/salons').expect(200)
-
-      // Response should follow CursorPaginationResponse structure
-      expect(response.body.data).toBeDefined()
-      expect(response.body.data).toHaveLength(2)
-      expect(response.body.meta).toBeDefined()
-      expect(response.body.meta.total).toBe(2)
-      expect(response.body.meta.hasMore).toBe(false)
-      expect(response.body.links).toBeDefined()
-      // Results are sorted by createdAt DESC, so Salon B (created second) comes first
-      expect(response.body.data[0]?.name).toBe('Salon B')
-      expect(response.body.data[1]?.name).toBe('Salon A')
+      expectProblem(response, badRequest)
+      expect(brokenRules(response)).toEqual(expected)
+      expect(await db.$count(salons)).toBe(0)
     })
 
-    it('should return empty list when no salons exist', async () => {
-      const response = await request(app).get('/api/v1/salons').expect(200)
+    it('rejects a body that is not an object', async () => {
+      const response = await request(app).post(SALONS).send([salonRequest()])
 
-      // Response should follow CursorPaginationResponse structure
-      expect(response.body.data).toBeDefined()
-      expect(response.body.data).toHaveLength(0)
-      expect(response.body.meta).toBeDefined()
-      expect(response.body.meta.total).toBe(0)
-      expect(response.body.meta.hasMore).toBe(false)
-      expect(response.body.links).toBeDefined()
+      expectProblem(response, badRequest)
+      expect(brokenRules(response)).toEqual([':invalid_type'])
     })
 
-    it('should support pagination', async () => {
-      // Create 5 test salons
-      const testSalons = Array.from({ length: 5 }, (_, i) => ({
-        id: createId(),
-        name: `Salon ${i + 1}`,
-        nameKana: `サロン${i + 1}`,
-        postalCode: '100-0001',
-        prefecture: '東京都',
-        city: '千代田区',
-        addressLine1: `千代田1-${i + 1}-1`,
-        phone: `03-1111-${String(i + 1).padStart(4, '0')}`,
-        email: `salon${i + 1}@test.com`,
-      }))
-
-      // Insert test data using raw SQL
-      for (const salon of testSalons) {
-        await db.execute(sql`
-          INSERT INTO salons (id, name, "nameKana", "postalCode", prefecture, city, address, "phoneNumber", email)
-          VALUES (${salon.id}, ${salon.name}, ${salon.nameKana}, ${salon.postalCode}, ${salon.prefecture}, ${salon.city}, ${salon.addressLine1}, ${salon.phone}, ${salon.email})
-        `)
-      }
+    it('rejects an email that another salon uses', async () => {
+      await createSalon()
 
       const response = await request(app)
-        .get('/api/v1/salons?limit=2')
-        .expect(200)
+        .post(SALONS)
+        .send(salonRequest({ name: 'Second salon' }))
 
-      // Response should follow CursorPaginationResponse structure
-      expect(response.body.data).toBeDefined()
-      expect(response.body.data).toHaveLength(2)
-      expect(response.body.meta).toBeDefined()
-      expect(response.body.meta.limit).toBe(2)
-      expect(response.body.meta.hasMore).toBe(true)
-      expect(response.body.links).toBeDefined()
+      expectProblem(response, conflict)
+      expect(response.body.detail).toBe(
+        'Salon with email aoyama@example.com already exists',
+      )
+      expect(await db.$count(salons)).toBe(1)
+    })
+
+    it('rejects the email of a deleted salon, whose row still holds it', async () => {
+      const deleted = await createSalon()
+      await deleteSalon(deleted.id)
+
+      const response = await request(app).post(SALONS).send(salonRequest())
+
+      expectProblem(response, conflict)
     })
   })
 
   describe('GET /api/v1/salons/:id', () => {
-    it('should get a salon by ID', async () => {
-      const salonId = createId()
-      const testSalon = {
-        id: salonId,
-        name: 'Test Salon',
-        nameKana: 'テストサロン',
-        postalCode: '100-0001',
-        prefecture: '東京都',
-        city: '千代田区',
-        addressLine1: '千代田1-1-1',
-        phone: '03-1234-5678',
-        email: 'test@salon.com',
-      }
+    it('returns the salon with its calendar in date order', async () => {
+      const created = await createSalon({
+        openingHours: [holidayMonday, workingMonday],
+      })
 
-      await db.execute(sql`
-        INSERT INTO salons (id, name, "nameKana", "postalCode", prefecture, city, address, "phoneNumber", email)
-        VALUES (${testSalon.id}, ${testSalon.name}, ${testSalon.nameKana}, ${testSalon.postalCode}, ${testSalon.prefecture}, ${testSalon.city}, ${testSalon.addressLine1}, ${testSalon.phone}, ${testSalon.email})
-      `)
+      const response = await request(app).get(`${SALONS}/${created.id}`)
 
-      const response = await request(app)
-        .get(`/api/v1/salons/${salonId}`)
-        .expect(200)
-
-      // Response should follow ApiResponse structure
-      expect(response.body.data).toBeDefined()
-      expect(response.body.data.id).toBe(salonId)
-      expect(response.body.data.name).toBe(testSalon.name)
-      expect(response.body.meta).toBeDefined()
-      expect(response.body.links).toBeDefined()
-      expect(response.body.links.self).toBe(`/salons/${salonId}`)
+      expect(response.status).toBe(200)
+      expect(response.body.data).toEqual({
+        ...created,
+        openingHours: storedCalendar,
+      })
+      expect(response.body.links).toEqual({
+        self: `${SALONS}/${created.id}`,
+        list: SALONS,
+      })
     })
 
-    it('should return 404 for non-existent salon', async () => {
-      const nonExistentId = createId()
+    it.each([
+      ['a word', 'latest'],
+      ['a number', '42'],
+      ['a UUID with something appended', `${UNKNOWN_ID}0`],
+    ])('rejects %s as the ID', async (_case, id) => {
+      const response = await request(app).get(`${SALONS}/${id}`)
 
-      const response = await request(app)
-        .get(`/api/v1/salons/${nonExistentId}`)
-        .expect(404)
-
-      expect(response.body.status).toBe(404)
-      expect(response.body.type).toContain('not-found')
+      expectProblem(response, badRequest)
+      expect(brokenRules(response)).toEqual(['id:invalid_format'])
     })
 
-    it('should return 400 for invalid UUID', async () => {
-      const response = await request(app)
-        .get('/api/v1/salons/invalid-uuid')
-        .expect(400)
+    it('reports an ID that no salon has as not found', async () => {
+      const response = await request(app).get(`${SALONS}/${UNKNOWN_ID}`)
 
-      expect(response.body.type).toBe(
-        'https://example.com/probs/validation-error',
-      )
+      expectProblem(response, notFound)
+      expect(response.body.detail).toBe(`Salon ${UNKNOWN_ID} was not found`)
+    })
+
+    it('reports a deleted salon as not found', async () => {
+      const created = await createSalon()
+      await deleteSalon(created.id)
+
+      const response = await request(app).get(`${SALONS}/${created.id}`)
+
+      expectProblem(response, notFound)
+    })
+
+    it('answers 500 without details when the stored salon is corrupt', async () => {
+      const created = await createSalon()
+      await db
+        .update(salons)
+        .set({ businessHours: { monday: 'ten to seven' } })
+        .where(eq(salons.id, created.id))
+
+      const response = await request(app).get(`${SALONS}/${created.id}`)
+
+      expectProblem(response, { status: 500, code: '4003', type: 'database' })
+      expect(response.body.detail).toBeNull()
+      expect(JSON.stringify(response.body)).not.toContain('ten to seven')
     })
   })
 
-  describe('PUT /api/v1/salons/:id', () => {
-    it('should update a salon', async () => {
-      const salonId = createId()
-      const originalSalon = {
-        id: salonId,
-        name: 'Original Salon',
-        nameKana: 'オリジナルサロン',
-        postalCode: '100-0001',
+  describe('GET /api/v1/salons', () => {
+    /** Three salons, created in the order A, B, C; lists return newest first. */
+    const createThreeSalons = async () => {
+      const a = await createSalon({
+        name: 'A Aoyama Hair',
+        description: 'Quiet, 100% organic',
+        email: 'a@example.com',
         prefecture: '東京都',
-        city: '千代田区',
-        addressLine1: '千代田1-1-1',
-        phone: '03-1234-5678',
-        email: 'original@salon.com',
-      }
+        city: '港区',
+        features: ['color', 'kids'],
+        isActive: true,
+      })
+      const b = await createSalon({
+        name: 'B Namba Cuts',
+        description: null,
+        email: 'b@example.com',
+        prefecture: '大阪府',
+        city: '大阪市',
+        features: ['color'],
+        isActive: false,
+      })
+      const c = await createSalon({
+        name: 'C Shibuya Style',
+        description: 'Stylists trained in aoyama',
+        email: 'c@example.com',
+        prefecture: '東京都',
+        city: '渋谷区',
+        features: [],
+        isActive: true,
+      })
+      await db.update(salons).set({ rating: '4.50' }).where(eq(salons.id, a.id))
+      await db.update(salons).set({ rating: '3.00' }).where(eq(salons.id, b.id))
+      return { a, b, c }
+    }
 
-      await db.execute(sql`
-        INSERT INTO salons (id, name, "nameKana", "postalCode", prefecture, city, address, "phoneNumber", email)
-        VALUES (${originalSalon.id}, ${originalSalon.name}, ${originalSalon.nameKana}, ${originalSalon.postalCode}, ${originalSalon.prefecture}, ${originalSalon.city}, ${originalSalon.addressLine1}, ${originalSalon.phone}, ${originalSalon.email})
-      `)
+    const namesOf = (response: Response): string[] =>
+      response.body.data.map(({ name }: { name: string }) => name.slice(0, 1))
 
-      const updateData = {
-        name: 'Updated Salon',
-        contactInfo: {
-          email: 'updated@salon.com',
-          phoneNumber: '03-1234-5678',
-          alternativePhone: null,
-          websiteUrl: null,
+    it('returns an empty page when there are no salons', async () => {
+      const response = await request(app).get(SALONS)
+
+      expect(response.status).toBe(200)
+      expect(response.body).toEqual({
+        data: [],
+        meta: {
+          total: 0,
+          limit: 20,
+          hasMore: false,
+          cursor: null,
+          nextCursor: null,
+          prevCursor: null,
         },
-      }
-
-      const response = await request(app)
-        .put(`/api/v1/salons/${salonId}`)
-        .send(updateData)
-        .expect(200)
-
-      // Response should follow ApiResponse structure
-      expect(response.body.data).toBeDefined()
-      expect(response.body.data.name).toBe(updateData.name)
-      expect(response.body.meta).toBeDefined()
-      expect(response.body.links).toBeDefined()
-      expect(response.body.links.self).toBe(`/salons/${salonId}`)
-      expect(response.body.data.contactInfo.email).toBe(
-        updateData.contactInfo.email,
-      )
-
-      // Verify database state
-      const result = await db.execute(
-        sql`SELECT * FROM salons WHERE id = ${salonId}`,
-      )
-      expect(result[0]?.name).toBe(updateData.name)
-      expect(result[0]?.email).toBe(updateData.contactInfo.email)
-      // Unchanged fields should remain the same (phoneNumber is the actual column name)
-      expect(result[0]?.phoneNumber).toBe(originalSalon.phone)
+        links: {
+          self: SALONS,
+          first: SALONS,
+          last: null,
+          next: null,
+          prev: null,
+        },
+      })
     })
 
-    it('should return 404 when updating non-existent salon', async () => {
-      const nonExistentId = createId()
+    it('returns salons newest first, each with its calendar', async () => {
+      const { a, c } = await createThreeSalons()
+
+      const response = await request(app).get(SALONS)
+
+      expect(namesOf(response)).toEqual(['C', 'B', 'A'])
+      expect(response.body.meta).toMatchObject({ total: 3, hasMore: false })
+      expect(response.body.data[0]).toEqual(c)
+      expect(response.body.data[2]).toEqual({ ...a, rating: 4.5 })
+    })
+
+    it('walks through the pages with the cursor of the previous page', async () => {
+      const { b } = await createThreeSalons()
+
+      const first = await request(app).get(`${SALONS}?limit=2`)
+
+      expect(namesOf(first)).toEqual(['C', 'B'])
+      expect(first.body.meta).toEqual({
+        total: 3,
+        limit: 2,
+        hasMore: true,
+        cursor: null,
+        nextCursor: b.id,
+        prevCursor: null,
+      })
+      expect(first.body.links).toEqual({
+        self: `${SALONS}?limit=2`,
+        first: `${SALONS}?limit=2`,
+        last: null,
+        next: `${SALONS}?limit=2&cursor=${b.id}`,
+        prev: null,
+      })
+
+      const second = await request(app).get(first.body.links.next)
+
+      expect(namesOf(second)).toEqual(['A'])
+      expect(second.body.meta).toEqual({
+        total: 3,
+        limit: 2,
+        hasMore: false,
+        cursor: b.id,
+        nextCursor: null,
+        prevCursor: null,
+      })
+    })
+
+    it('keeps a page stable when a salon is added while walking', async () => {
+      const { b } = await createThreeSalons()
+      await createSalon({ name: 'D Newcomer', email: 'd@example.com' })
+
+      const second = await request(app).get(`${SALONS}?limit=2&cursor=${b.id}`)
+
+      expect(namesOf(second)).toEqual(['A'])
+    })
+
+    it.each([
+      [
+        'a keyword in the name or description, ignoring case',
+        'keyword=AOYAMA',
+        ['C', 'A'],
+      ],
+      ['a keyword with % taken literally', 'keyword=100%25', ['A']],
+      ['a keyword with _ taken literally', 'keyword=A_yama', []],
+      [
+        'a prefecture',
+        `prefecture=${encodeURIComponent('東京都')}`,
+        ['C', 'A'],
+      ],
+      ['a city', `city=${encodeURIComponent('大阪市')}`, ['B']],
+      ['inactive salons', 'isActive=false', ['B']],
+      [
+        'a minimum rating, leaving out unrated salons',
+        'minRating=3',
+        ['B', 'A'],
+      ],
+      ['one feature', 'features=color', ['B', 'A']],
+      ['every feature listed', 'features=color&features=kids', ['A']],
+      [
+        'all filters together',
+        'isActive=true&features=color&minRating=4',
+        ['A'],
+      ],
+      ['filters that match nothing', 'keyword=nowhere', []],
+    ])('filters by %s', async (_case, query, expected) => {
+      await createThreeSalons()
+
+      const response = await request(app).get(`${SALONS}?${query}`)
+
+      expect(response.status).toBe(200)
+      expect(namesOf(response)).toEqual(expected)
+      expect(response.body.meta.total).toBe(expected.length)
+    })
+
+    it('leaves out deleted salons', async () => {
+      const { b } = await createThreeSalons()
+      await deleteSalon(b.id)
+
+      const response = await request(app).get(SALONS)
+
+      expect(namesOf(response)).toEqual(['C', 'A'])
+      expect(response.body.meta.total).toBe(2)
+    })
+
+    it('returns an empty page for a cursor that names no salon', async () => {
+      await createThreeSalons()
+
+      const response = await request(app).get(`${SALONS}?cursor=${UNKNOWN_ID}`)
+
+      expect(response.status).toBe(200)
+      expect(namesOf(response)).toEqual([])
+      expect(response.body.meta).toMatchObject({ total: 3, hasMore: false })
+    })
+
+    it.each([
+      ['a limit of 0', 'limit=0', ['limit:too_small']],
+      ['a limit over 100', 'limit=101', ['limit:too_big']],
+      ['a limit that is not a number', 'limit=ten', ['limit:invalid_format']],
+      [
+        'a boolean that is not true or false',
+        'isActive=yes',
+        ['isActive:invalid_value'],
+      ],
+      [
+        'a cursor that is not an ID',
+        'cursor=offset:20',
+        ['cursor:invalid_format'],
+      ],
+      ['a rating above 5', 'minRating=6', ['minRating:too_big']],
+      ['an empty keyword', 'keyword=', ['keyword:invalid_format']],
+      ['a parameter that does not exist', 'page=2', ['page:unrecognized_keys']],
+    ])('rejects %s', async (_case, query, expected) => {
+      const response = await request(app).get(`${SALONS}?${query}`)
+
+      expectProblem(response, badRequest)
+      expect(brokenRules(response)).toEqual(expected)
+    })
+  })
+
+  describe('PATCH /api/v1/salons/:id', () => {
+    it('changes the given properties and nothing else', async () => {
+      const created = await createSalon()
 
       const response = await request(app)
-        .put(`/api/v1/salons/${nonExistentId}`)
-        .send({ name: 'Updated' })
-        .expect(404)
+        .patch(`${SALONS}/${created.id}`)
+        .send({ name: 'Renamed', taxRate: 8.5 })
 
-      expect(response.body.status).toBe(404)
-      expect(response.body.type).toContain('not-found')
+      expect(response.status).toBe(200)
+      expect(response.body.data).toEqual({
+        ...created,
+        name: 'Renamed',
+        taxRate: 8.5,
+        updatedAt: expect.stringMatching(ISO_TIMESTAMP),
+      })
+      const [row] = await db
+        .select({ createdAt: salons.createdAt, updatedAt: salons.updatedAt })
+        .from(salons)
+      expect(row?.updatedAt).not.toBe(row?.createdAt)
+    })
+
+    it('clears a nullable property that is given as null', async () => {
+      const created = await createSalon()
+      const cleared = {
+        description: null,
+        building: null,
+        latitude: null,
+        longitude: null,
+        websiteUrl: null,
+        businessHours: null,
+      }
+
+      const response = await request(app)
+        .patch(`${SALONS}/${created.id}`)
+        .send(cleared)
+
+      expect(response.status).toBe(200)
+      expect(response.body.data).toMatchObject({
+        ...cleared,
+        name: created.name,
+        openingHours: storedCalendar,
+      })
+    })
+
+    it('replaces the whole calendar when openingHours is given', async () => {
+      const created = await createSalon()
+      const tuesday = {
+        dayOfWeek: 'tuesday',
+        date: '2026-11-17',
+        openTime: '09:00:00',
+        closeTime: '18:00:00',
+        isHoliday: false,
+        holidayName: null,
+        notes: 'New schedule',
+      }
+
+      const replaced = await request(app)
+        .patch(`${SALONS}/${created.id}`)
+        .send({ openingHours: [tuesday] })
+      expect(replaced.body.data.openingHours).toEqual([tuesday])
+
+      const emptied = await request(app)
+        .patch(`${SALONS}/${created.id}`)
+        .send({ openingHours: [] })
+      expect(emptied.body.data.openingHours).toEqual([])
+      expect(await db.$count(openingHours)).toBe(0)
+    })
+
+    it('accepts the email the salon already has', async () => {
+      const created = await createSalon()
+
+      const response = await request(app)
+        .patch(`${SALONS}/${created.id}`)
+        .send({ email: created.email })
+
+      expect(response.status).toBe(200)
+    })
+
+    it.each([
+      [
+        'an ID that is not a UUID',
+        'latest',
+        { name: 'Renamed' },
+        ['id:invalid_format'],
+      ],
+      ['an empty request', null, {}, [':custom']],
+      [
+        'null for a NOT NULL column',
+        null,
+        { prefecture: null },
+        ['prefecture:invalid_type'],
+      ],
+      [
+        'a property the client may not set',
+        null,
+        { reviewCount: 99 },
+        ['reviewCount:unrecognized_keys'],
+      ],
+      [
+        'an invalid calendar',
+        null,
+        {
+          openingHours: [{ ...workingMonday, closeTime: '09:00' }],
+        },
+        ['openingHours.0.closeTime:custom'],
+      ],
+    ])('rejects %s and changes nothing', async (_case, id, body, expected) => {
+      const created = await createSalon()
+
+      const response = await request(app)
+        .patch(`${SALONS}/${id ?? created.id}`)
+        .send(body)
+
+      expectProblem(response, badRequest)
+      expect(brokenRules(response)).toEqual(expected)
+      const stored = await request(app).get(`${SALONS}/${created.id}`)
+      expect(stored.body.data).toEqual(created)
+    })
+
+    it('reports an ID that no salon has as not found', async () => {
+      const response = await request(app)
+        .patch(`${SALONS}/${UNKNOWN_ID}`)
+        .send({ name: 'Renamed' })
+
+      expectProblem(response, notFound)
+    })
+
+    it('reports a deleted salon as not found', async () => {
+      const created = await createSalon()
+      await deleteSalon(created.id)
+
+      const response = await request(app)
+        .patch(`${SALONS}/${created.id}`)
+        .send({ name: 'Renamed' })
+
+      expectProblem(response, notFound)
+    })
+
+    it('rejects the email of another salon and applies none of the request', async () => {
+      await createSalon({ email: 'taken@example.com' })
+      const created = await createSalon()
+
+      const response = await request(app)
+        .patch(`${SALONS}/${created.id}`)
+        .send({ name: 'Renamed', email: 'taken@example.com', openingHours: [] })
+
+      expectProblem(response, conflict)
+      expect(response.body.detail).toBe(
+        'Salon with email taken@example.com already exists',
+      )
+      const stored = await request(app).get(`${SALONS}/${created.id}`)
+      expect(stored.body.data).toEqual(created)
     })
   })
 
   describe('DELETE /api/v1/salons/:id', () => {
-    it('should delete a salon', async () => {
-      const salonId = createId()
-      const testSalon = {
-        id: salonId,
-        name: 'To Delete',
-        nameKana: '削除用',
-        postalCode: '100-0001',
-        prefecture: '東京都',
-        city: '千代田区',
-        addressLine1: '千代田1-1-1',
-        phone: '03-1234-5678',
-        email: 'delete@salon.com',
-      }
+    it('hides the salon and keeps its row and calendar', async () => {
+      const created = await createSalon()
 
-      await db.execute(sql`
-        INSERT INTO salons (id, name, "nameKana", "postalCode", prefecture, city, address, "phoneNumber", email)
-        VALUES (${testSalon.id}, ${testSalon.name}, ${testSalon.nameKana}, ${testSalon.postalCode}, ${testSalon.prefecture}, ${testSalon.city}, ${testSalon.addressLine1}, ${testSalon.phone}, ${testSalon.email})
-      `)
+      const response = await request(app).delete(`${SALONS}/${created.id}`)
 
-      const response = await request(app)
-        .delete(`/api/v1/salons/${salonId}`)
-        .expect(204)
-
-      expect(response.body).toEqual({})
-
-      // Verify salon is soft-deleted (deletedAt is set, not actually removed)
-      const result = await db.execute(
-        sql`SELECT * FROM salons WHERE id = ${salonId}`,
-      )
-      expect(result).toHaveLength(1)
-      expect(result[0]?.deletedAt).not.toBeNull()
+      expect(response.status).toBe(204)
+      expect(response.text).toBe('')
+      const [row] = await db
+        .select({ deletedAt: salons.deletedAt })
+        .from(salons)
+        .where(eq(salons.id, created.id))
+      expect(row?.deletedAt).not.toBeNull()
+      expect(await db.$count(openingHours)).toBe(2)
     })
 
-    it('should return 404 when deleting non-existent salon', async () => {
-      const nonExistentId = createId()
+    it.each([
+      ['a word', 'all'],
+      ['a number', '1'],
+      ['a UUID with something appended', `${UNKNOWN_ID}-1`],
+    ])('rejects %s as the ID', async (_case, id) => {
+      const created = await createSalon()
 
-      const response = await request(app)
-        .delete(`/api/v1/salons/${nonExistentId}`)
-        .expect(404)
+      const response = await request(app).delete(`${SALONS}/${id}`)
 
-      expect(response.body.status).toBe(404)
-      expect(response.body.type).toContain('not-found')
-    })
-  })
-
-  describe('GET /api/v1/salons/search', () => {
-    it('should search salons by name', async () => {
-      const testSalons = [
-        {
-          id: createId(),
-          name: 'Beauty Salon Tokyo',
-          nameKana: 'ビューティーサロントウキョウ',
-          postalCode: '100-0001',
-          prefecture: '東京都',
-          city: '千代田区',
-          addressLine1: '千代田1-1-1',
-          phone: '03-1111-1111',
-          email: 'beauty@salon.com',
-        },
-        {
-          id: createId(),
-          name: 'Hair Salon Osaka',
-          nameKana: 'ヘアサロンオオサカ',
-          postalCode: '530-0001',
-          prefecture: '大阪府',
-          city: '大阪市',
-          addressLine1: '北区1-1-1',
-          phone: '06-2222-2222',
-          email: 'hair@salon.com',
-        },
-      ]
-
-      // Insert test data using raw SQL
-      for (const salon of testSalons) {
-        await db.execute(sql`
-          INSERT INTO salons (id, name, "nameKana", "postalCode", prefecture, city, address, "phoneNumber", email)
-          VALUES (${salon.id}, ${salon.name}, ${salon.nameKana}, ${salon.postalCode}, ${salon.prefecture}, ${salon.city}, ${salon.addressLine1}, ${salon.phone}, ${salon.email})
-        `)
-      }
-
-      const response = await request(app)
-        .get('/api/v1/salons/search?keyword=Beauty')
-        .expect(200)
-
-      expect(response.body.results).toBeDefined()
-      expect(response.body.results).toHaveLength(1)
-      expect(response.body.results[0]?.name).toBe('Beauty Salon Tokyo')
+      expectProblem(response, badRequest)
+      expect(brokenRules(response)).toEqual(['id:invalid_format'])
+      const stored = await request(app).get(`${SALONS}/${created.id}`)
+      expect(stored.status).toBe(200)
     })
 
-    it('should search salons by prefecture', async () => {
-      const testSalons = [
-        {
-          id: createId(),
-          name: 'Tokyo Salon 1',
-          nameKana: 'トウキョウサロン1',
-          postalCode: '100-0001',
-          prefecture: '東京都',
-          city: '千代田区',
-          addressLine1: '千代田1-1-1',
-          phone: '03-1111-1111',
-          email: 'tokyo1@salon.com',
-        },
-        {
-          id: createId(),
-          name: 'Tokyo Salon 2',
-          nameKana: 'トウキョウサロン2',
-          postalCode: '150-0001',
-          prefecture: '東京都',
-          city: '渋谷区',
-          addressLine1: '渋谷2-2-2',
-          phone: '03-2222-2222',
-          email: 'tokyo2@salon.com',
-        },
-        {
-          id: createId(),
-          name: 'Osaka Salon',
-          nameKana: 'オオサカサロン',
-          postalCode: '530-0001',
-          prefecture: '大阪府',
-          city: '大阪市',
-          addressLine1: '北区1-1-1',
-          phone: '06-3333-3333',
-          email: 'osaka@salon.com',
-        },
-      ]
+    it('reports an ID that no salon has as not found', async () => {
+      const response = await request(app).delete(`${SALONS}/${UNKNOWN_ID}`)
 
-      // Insert test data using raw SQL
-      for (const salon of testSalons) {
-        await db.execute(sql`
-          INSERT INTO salons (id, name, "nameKana", "postalCode", prefecture, city, address, "phoneNumber", email)
-          VALUES (${salon.id}, ${salon.name}, ${salon.nameKana}, ${salon.postalCode}, ${salon.prefecture}, ${salon.city}, ${salon.addressLine1}, ${salon.phone}, ${salon.email})
-        `)
-      }
+      expectProblem(response, notFound)
+    })
 
-      const response = await request(app)
-        .get('/api/v1/salons/search?city=千代田区')
-        .expect(200)
+    it('reports a salon that is already deleted as not found', async () => {
+      const created = await createSalon()
+      await deleteSalon(created.id)
 
-      expect(response.body.results).toBeDefined()
-      expect(response.body.results).toHaveLength(1)
-      expect(response.body.results[0]?.name).toBe('Tokyo Salon 1')
+      const response = await request(app).delete(`${SALONS}/${created.id}`)
+
+      expectProblem(response, notFound)
     })
   })
 })

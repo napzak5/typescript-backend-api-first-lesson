@@ -1,27 +1,29 @@
 import { Result } from '@beauty-salon-backend/utility'
-import type { SalonId } from '../../models/salon'
-import type { DomainError } from '../../shared'
-import { DomainErrors } from '../../shared'
-import { BaseSalonUseCase } from './_shared/base-salon.usecase'
+import { parseSalonId, type SalonId } from '../../models/salon'
+import { type DomainError, DomainErrors } from '../../shared'
+import type { SalonUseCaseDependencies } from './_shared/dependencies'
 
-export class DeleteSalonUseCase extends BaseSalonUseCase {
-  async execute(id: SalonId): Promise<Result<boolean, DomainError>> {
-    if (!this.isValidUuid(id)) {
-      return Result.error(
-        DomainErrors.validation('Invalid salon ID format', 'INVALID_SALON_ID'),
-      )
+export class DeleteSalonUseCase {
+  constructor(private readonly dependencies: SalonUseCaseDependencies) {}
+
+  /**
+   * Marks the salon as deleted; its row and calendar are kept. Resolves to
+   * the ID of the deleted salon.
+   */
+  async execute(id: unknown): Promise<Result<SalonId, DomainError>> {
+    const salonId = parseSalonId(id)
+    if (salonId.type === 'error') {
+      return salonId
     }
 
-    const exists = await this.salonRepository.exists(id)
-    if (Result.isError(exists)) {
-      return exists
+    const deleted = await this.dependencies.salonRepository.delete(salonId.data)
+    if (deleted.type === 'error') {
+      return deleted
+    }
+    if (!deleted.data) {
+      return Result.error(DomainErrors.notFound('Salon', salonId.data))
     }
 
-    if (!exists.data) {
-      return Result.error(DomainErrors.notFound('Salon', id))
-    }
-
-    const deleteResult = await this.salonRepository.delete(id)
-    return deleteResult
+    return salonId
   }
 }

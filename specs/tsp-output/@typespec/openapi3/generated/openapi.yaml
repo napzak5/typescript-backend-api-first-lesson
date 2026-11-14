@@ -7,10 +7,10 @@ tags:
   - name: Authentication
   - name: Admin - Authentication
   - name: Salons
-  - name: System
   - name: Staff
   - name: Services
   - name: Customers
+  - name: System
   - name: Reservations
   - name: Bookings
   - name: Reviews
@@ -3145,7 +3145,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Models.CustomerUpdateRequestUpdate"
+              $ref: "#/components/schemas/Models.CustomerUpdateRequest"
     delete:
       operationId: CustomerCrud_delete
       summary: Delete {Name}
@@ -4599,68 +4599,23 @@ paths:
                   type: string
               required:
                 - reason
-  /api/v1/salons/:
+  /api/v1/salons:
     get:
       operationId: SalonCrud_list
-      summary: List {Name} resources
-      description: ページネーションやフィルター条件を指定して対象リソースを一覧取得します。業務画面のリスト表示に利用します。
+      summary: List salons
+      description: 絞り込み条件とページネーションを指定してサロンを一覧取得します。削除済みのサロンは含みません。
       parameters:
+        - $ref: "#/components/parameters/Models.SalonSearchRequest.limit"
+        - $ref: "#/components/parameters/Models.SalonSearchRequest.cursor"
         - $ref: "#/components/parameters/Models.SalonSearchRequest.keyword"
-        - $ref: "#/components/parameters/Models.SalonSearchRequest.city"
         - $ref: "#/components/parameters/Models.SalonSearchRequest.prefecture"
-        - $ref: "#/components/parameters/Models.SalonSearchRequest.categories"
-        - $ref: "#/components/parameters/Models.SalonSearchRequest.features"
+        - $ref: "#/components/parameters/Models.SalonSearchRequest.city"
         - $ref: "#/components/parameters/Models.SalonSearchRequest.isActive"
         - $ref: "#/components/parameters/Models.SalonSearchRequest.minRating"
-        - $ref: "#/components/parameters/Models.SalonSearchRequest.maxDistance"
-        - $ref: "#/components/parameters/Models.SalonSearchRequest.lat"
-        - $ref: "#/components/parameters/Models.SalonSearchRequest.lon"
-        - $ref: "#/components/parameters/Models.SalonSearchRequest.openNow"
-        - $ref: "#/components/parameters/Models.SalonSearchRequest.openAt"
-        - $ref: "#/components/parameters/Models.AdvancedSearchParams.q"
-        - $ref: "#/components/parameters/Models.AdvancedSearchParams.filter"
-        - $ref: "#/components/parameters/Models.AdvancedSearchParams.fields"
-        - $ref: "#/components/parameters/Models.AdvancedSearchParams.exclude"
-        - $ref: "#/components/parameters/Models.AdvancedSearchParams.facets"
-        - $ref: "#/components/parameters/Models.AdvancedSearchParams.facetFields"
-        - $ref: "#/components/parameters/Models.CursorPaginationParams.limit"
-        - $ref: "#/components/parameters/Models.CursorPaginationParams.cursor"
-        - $ref: "#/components/parameters/Models.CursorPaginationParams.sortBy"
-        - $ref: "#/components/parameters/Models.CursorPaginationParams.sortOrder"
-        - name: Authorization
-          in: header
-          required: false
-          schema:
-            type: string
+        - $ref: "#/components/parameters/Models.SalonSearchRequest.features"
       responses:
         "200":
           description: The request has succeeded.
-          headers:
-            X-RateLimit-Limit:
-              required: true
-              description: 一定期間内に許可されるリクエスト上限値。
-              schema:
-                type: integer
-                format: int32
-            X-RateLimit-Remaining:
-              required: true
-              description: 現在のウィンドウで残っているリクエスト回数。
-              schema:
-                type: integer
-                format: int32
-            X-RateLimit-Reset:
-              required: true
-              description: リミットがリセットされる時刻 (UNIX 時間)。
-              schema:
-                type: integer
-                format: int32
-            Retry-After:
-              required: true
-              description: レート制限に達した際に再試行可能となるまでの秒数。制限に達していない場合はnull
-              schema:
-                type: integer
-                format: int32
-                nullable: true
           content:
             application/json:
               schema:
@@ -4673,7 +4628,7 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: "#/components/schemas/Models.Salon"
+                      $ref: "#/components/schemas/Models.SalonResponse"
                     description: 現在ページで取得したデータ配列。サロン一覧や予約履歴の実データを格納する。
                   meta:
                     allOf:
@@ -4688,44 +4643,6 @@ paths:
                   `CursorPaginationParams` を受けたAPIが検索結果とページング状態をまとめて返却する際に利用する。
         "400":
           description: The server could not understand the request due to invalid syntax.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Models.ProblemDetails"
-        "401":
-          description: Access is unauthorized.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Models.ProblemDetails"
-        "429":
-          description: Client error
-          headers:
-            X-RateLimit-Limit:
-              required: true
-              description: 一定期間内に許可されるリクエスト上限値。
-              schema:
-                type: integer
-                format: int32
-            X-RateLimit-Remaining:
-              required: true
-              description: 現在のウィンドウで残っているリクエスト回数。
-              schema:
-                type: integer
-                format: int32
-            X-RateLimit-Reset:
-              required: true
-              description: リミットがリセットされる時刻 (UNIX 時間)。
-              schema:
-                type: integer
-                format: int32
-            Retry-After:
-              required: true
-              description: レート制限に達した際に再試行可能となるまでの秒数。制限に達していない場合はnull
-              schema:
-                type: integer
-                format: int32
-                nullable: true
           content:
             application/json:
               schema:
@@ -4734,19 +4651,9 @@ paths:
         - Salons
     post:
       operationId: SalonCrud_create
-      summary: Create new {Name}
-      description: 新規リソースを作成し、作成時のバリデーションや重複チェック結果を返却します。
-      parameters:
-        - name: Authorization
-          in: header
-          required: false
-          schema:
-            type: string
-        - name: Idempotency-Key
-          in: header
-          required: false
-          schema:
-            type: string
+      summary: Create a salon
+      description: サロンを新規登録します。メールアドレスが既存のサロンと重複する場合は409を返します。
+      parameters: []
       responses:
         "201":
           description: The request has succeeded and a new resource has been created as a result.
@@ -4766,7 +4673,7 @@ paths:
                 properties:
                   data:
                     allOf:
-                      - $ref: "#/components/schemas/Models.Salon"
+                      - $ref: "#/components/schemas/Models.SalonResponse"
                     description: レスポンスの主体となるビジネスデータ。
                   meta:
                     type: object
@@ -4785,12 +4692,6 @@ paths:
                   サロン検索や予約登録など多様なユースケースで応答形式を統一し、クライアント実装を簡潔に保つ。
         "400":
           description: The server could not understand the request due to invalid syntax.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Models.ProblemDetails"
-        "401":
-          description: Access is unauthorized.
           content:
             application/json:
               schema:
@@ -4801,12 +4702,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
-        "422":
-          description: Client error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Salons
       requestBody:
@@ -4814,886 +4709,21 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Models.CreateSalonRequest"
-  /api/v1/salons/batch/get:
-    post:
-      operationId: SalonCrud_batchGet
-      summary: Batch get {Name} resources
-      description: 複数IDをまとめて取得し、一覧画面の遅延読み込みや外部連携に利用します。
-      parameters:
-        - name: Authorization
-          in: header
-          required: false
-          schema:
-            type: string
-      responses:
-        "200":
-          description: The request has succeeded.
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - data
-                  - meta
-                  - links
-                properties:
-                  data:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/Models.Salon"
-                    description: レスポンスの主体となるビジネスデータ。
-                  meta:
-                    type: object
-                    allOf:
-                      - $ref: "#/components/schemas/Models.ResponseMeta"
-                    nullable: true
-                    description: リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull
-                  links:
-                    type: object
-                    additionalProperties:
-                      type: string
-                    nullable: true
-                    description: 関連リソースや次アクションへのリンク情報。リンクがない場合はnull
-                description: |-
-                  API 成功レスポンスの共通ラッパーモデル。
-                  サロン検索や予約登録など多様なユースケースで応答形式を統一し、クライアント実装を簡潔に保つ。
-        "400":
-          description: The server could not understand the request due to invalid syntax.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Models.ProblemDetails"
-        "401":
-          description: Access is unauthorized.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Models.ProblemDetails"
-      tags:
-        - Salons
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/Models.BatchGetRequest"
-  /api/v1/salons/bulk:
-    post:
-      operationId: SalonCrud_bulkCreate
-      summary: Bulk create {Name} resources
-      description: 複数リソースを一括作成し、結果を成功・失敗に分けて返却します。
-      parameters:
-        - name: Authorization
-          in: header
-          required: false
-          schema:
-            type: string
-        - name: Idempotency-Key
-          in: header
-          required: false
-          schema:
-            type: string
-      responses:
-        "207":
-          description: Successful
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - succeeded
-                  - failed
-                  - summary
-                properties:
-                  succeeded:
-                    type: array
-                    items:
-                      type: object
-                      required:
-                        - index
-                        - result
-                      properties:
-                        index:
-                          type: integer
-                          format: int32
-                          description: 元リクエスト内でのインデックス。0 始まり。
-                        result:
-                          allOf:
-                            - $ref: "#/components/schemas/Models.Salon"
-                          description: 処理後のビジネス結果。ID 付与や更新後の値などを含む。
-                      description: |-
-                        一括処理で成功した単一アイテムの結果モデル。
-                        元リクエストにおける位置と処理結果を紐づける。
-                    description: 正常に処理されたアイテムの一覧。ビジネス結果を含む。
-                  failed:
-                    type: array
-                    items:
-                      type: object
-                      required:
-                        - index
-                        - error
-                      properties:
-                        index:
-                          type: integer
-                          format: int32
-                          description: 元リクエスト内でのインデックス。0 始まり。
-                        error:
-                          allOf:
-                            - $ref: "#/components/schemas/Models.ProblemDetails"
-                          description: 発生したエラー詳細。既定では `ProblemDetails` を使用する。
-                      description: |-
-                        一括処理で失敗した単一アイテムのエラーモデル。
-                        問題箇所を特定し再実行方針を検討する際に利用する。
-                    description: エラーとなったアイテムの一覧。問題の詳細を確認できる。
-                  summary:
-                    allOf:
-                      - $ref: "#/components/schemas/Models.BulkSummary"
-                    description: 処理件数や所要時間をまとめた統計情報。
-                description: |-
-                  一括処理の結果を表すレスポンスモデル。
-                  成功・失敗の詳細と要約統計を返し、業務オペレーターの振り返りを支援する。
-        "400":
-          description: The server could not understand the request due to invalid syntax.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Models.ProblemDetails"
-        "401":
-          description: Access is unauthorized.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Models.ProblemDetails"
-      tags:
-        - Salons
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - items
-                - continueOnError
-                - transactional
-              properties:
-                items:
-                  type: array
-                  items:
-                    $ref: "#/components/schemas/Models.CreateSalonRequest"
-                  minItems: 1
-                  maxItems: 100
-                  description: 処理対象となるアイテムの配列。1件以上100件以下に制限する。
-                continueOnError:
-                  type: boolean
-                  description: 途中でエラーが発生しても処理を継続するかどうか。既定は false。
-                  default: false
-                transactional:
-                  type: boolean
-                  description: トランザクション内で一括処理を行うかどうか。既定は true。
-                  default: true
-              description: |-
-                一括処理のリクエストモデル。
-                顧客データの一括更新や予約枠のまとめ登録など、複数レコードをまとめて処理する際に利用する。
-    put:
-      operationId: SalonCrud_bulkUpdate
-      summary: Bulk update {Name} resources
-      description: 複数リソースの更新をまとめて受け付け、バージョン整合性を保ちながら処理します。
-      parameters:
-        - name: Authorization
-          in: header
-          required: false
-          schema:
-            type: string
-      responses:
-        "207":
-          description: Successful
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - succeeded
-                  - failed
-                  - summary
-                properties:
-                  succeeded:
-                    type: array
-                    items:
-                      type: object
-                      required:
-                        - index
-                        - result
-                      properties:
-                        index:
-                          type: integer
-                          format: int32
-                          description: 元リクエスト内でのインデックス。0 始まり。
-                        result:
-                          allOf:
-                            - $ref: "#/components/schemas/Models.Salon"
-                          description: 処理後のビジネス結果。ID 付与や更新後の値などを含む。
-                      description: |-
-                        一括処理で成功した単一アイテムの結果モデル。
-                        元リクエストにおける位置と処理結果を紐づける。
-                    description: 正常に処理されたアイテムの一覧。ビジネス結果を含む。
-                  failed:
-                    type: array
-                    items:
-                      type: object
-                      required:
-                        - index
-                        - error
-                      properties:
-                        index:
-                          type: integer
-                          format: int32
-                          description: 元リクエスト内でのインデックス。0 始まり。
-                        error:
-                          allOf:
-                            - $ref: "#/components/schemas/Models.ProblemDetails"
-                          description: 発生したエラー詳細。既定では `ProblemDetails` を使用する。
-                      description: |-
-                        一括処理で失敗した単一アイテムのエラーモデル。
-                        問題箇所を特定し再実行方針を検討する際に利用する。
-                    description: エラーとなったアイテムの一覧。問題の詳細を確認できる。
-                  summary:
-                    allOf:
-                      - $ref: "#/components/schemas/Models.BulkSummary"
-                    description: 処理件数や所要時間をまとめた統計情報。
-                description: |-
-                  一括処理の結果を表すレスポンスモデル。
-                  成功・失敗の詳細と要約統計を返し、業務オペレーターの振り返りを支援する。
-        "400":
-          description: The server could not understand the request due to invalid syntax.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Models.ProblemDetails"
-        "401":
-          description: Access is unauthorized.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Models.ProblemDetails"
-      tags:
-        - Salons
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - items
-                - continueOnError
-                - transactional
-              properties:
-                items:
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      name:
-                        type: string
-                        description: 名称変更を行う場合に指定
-                      description:
-                        type: string
-                        nullable: true
-                        description: 紹介文を更新する場合に指定（null指定で初期化可能）
-                      address:
-                        allOf:
-                          - $ref: "#/components/schemas/Models.Address"
-                        description: 住所情報の差し替えが必要な場合に指定
-                      contactInfo:
-                        allOf:
-                          - $ref: "#/components/schemas/Models.ContactInfo"
-                        description: 電話番号やメールアドレス等の連絡先を更新する場合に指定
-                      openingHours:
-                        type: array
-                        items:
-                          $ref: "#/components/schemas/Models.OpeningHours"
-                        description: 通常営業時間の更新が必要な場合に指定
-                      businessHours:
-                        type: array
-                        items:
-                          $ref: "#/components/schemas/Models.BusinessHours"
-                        nullable: true
-                        description: 特別営業時間やシフト設定の更新に利用（null指定で初期化可能）
-                      imageUrls:
-                        type: array
-                        items:
-                          type: string
-                        description: 画像URLリストを更新する場合に指定
-                      features:
-                        type: array
-                        items:
-                          type: string
-                        description: 特徴タグの追加・削除を行う場合に指定
-                      id:
-                        $ref: "#/components/schemas/Models.SalonId"
-                    required:
-                      - id
-                  minItems: 1
-                  maxItems: 100
-                  description: 処理対象となるアイテムの配列。1件以上100件以下に制限する。
-                continueOnError:
-                  type: boolean
-                  description: 途中でエラーが発生しても処理を継続するかどうか。既定は false。
-                  default: false
-                transactional:
-                  type: boolean
-                  description: トランザクション内で一括処理を行うかどうか。既定は true。
-                  default: true
-              description: |-
-                一括処理のリクエストモデル。
-                顧客データの一括更新や予約枠のまとめ登録など、複数レコードをまとめて処理する際に利用する。
-    delete:
-      operationId: SalonCrud_bulkDelete
-      summary: Bulk delete {Name} resources
-      description: 複数リソースを一括削除し、成功可否ごとの結果を返却します。
-      parameters:
-        - name: Authorization
-          in: header
-          required: false
-          schema:
-            type: string
-      responses:
-        "207":
-          description: Successful
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - succeeded
-                  - failed
-                  - summary
-                properties:
-                  succeeded:
-                    type: array
-                    items:
-                      type: object
-                      required:
-                        - index
-                        - result
-                      properties:
-                        index:
-                          type: integer
-                          format: int32
-                          description: 元リクエスト内でのインデックス。0 始まり。
-                        result:
-                          type: object
-                          properties:
-                            id:
-                              $ref: "#/components/schemas/Models.SalonId"
-                            deleted:
-                              type: boolean
-                          required:
-                            - id
-                            - deleted
-                          description: 処理後のビジネス結果。ID 付与や更新後の値などを含む。
-                      description: |-
-                        一括処理で成功した単一アイテムの結果モデル。
-                        元リクエストにおける位置と処理結果を紐づける。
-                    description: 正常に処理されたアイテムの一覧。ビジネス結果を含む。
-                  failed:
-                    type: array
-                    items:
-                      type: object
-                      required:
-                        - index
-                        - error
-                      properties:
-                        index:
-                          type: integer
-                          format: int32
-                          description: 元リクエスト内でのインデックス。0 始まり。
-                        error:
-                          allOf:
-                            - $ref: "#/components/schemas/Models.ProblemDetails"
-                          description: 発生したエラー詳細。既定では `ProblemDetails` を使用する。
-                      description: |-
-                        一括処理で失敗した単一アイテムのエラーモデル。
-                        問題箇所を特定し再実行方針を検討する際に利用する。
-                    description: エラーとなったアイテムの一覧。問題の詳細を確認できる。
-                  summary:
-                    allOf:
-                      - $ref: "#/components/schemas/Models.BulkSummary"
-                    description: 処理件数や所要時間をまとめた統計情報。
-                description: |-
-                  一括処理の結果を表すレスポンスモデル。
-                  成功・失敗の詳細と要約統計を返し、業務オペレーターの振り返りを支援する。
-        "400":
-          description: The server could not understand the request due to invalid syntax.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Models.ProblemDetails"
-        "401":
-          description: Access is unauthorized.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Models.ProblemDetails"
-      tags:
-        - Salons
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                ids:
-                  type: array
-                  items:
-                    $ref: "#/components/schemas/Models.SalonId"
-                permanent:
-                  type: boolean
-              required:
-                - ids
-  /api/v1/salons/export:
-    post:
-      operationId: SalonCrud_export
-      summary: Export {Name} search results
-      description: 検索結果を指定形式でエクスポートし、帳票出力や外部共有に活用します。
-      parameters:
-        - name: Authorization
-          in: header
-          required: false
-          schema:
-            type: string
-      responses:
-        "202":
-          description: The request has been accepted for processing, but processing has not yet completed.
-          headers:
-            Location:
-              required: true
-              schema:
-                type: string
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  jobId:
-                    type: string
-                  status:
-                    type: string
-                    enum:
-                      - pending
-                  estimatedTime:
-                    type: integer
-                    format: int32
-                required:
-                  - jobId
-                  - status
-        "400":
-          description: The server could not understand the request due to invalid syntax.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Models.ProblemDetails"
-        "401":
-          description: Access is unauthorized.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Models.ProblemDetails"
-      tags:
-        - Salons
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                keyword:
-                  type: string
-                  description: 検索キーワード。qパラメータのエイリアス
-                city:
-                  type: string
-                  description: 市区町村名による絞り込み
-                prefecture:
-                  type: string
-                  description: 都道府県名による絞り込み
-                categories:
-                  type: array
-                  items:
-                    $ref: "#/components/schemas/Models.ServiceCategoryType"
-                  description: サービスカテゴリ（カット・カラー等）による絞り込み
-                features:
-                  type: array
-                  items:
-                    type: string
-                  description: 設備やこだわり条件などの特徴タグによる絞り込み
-                isActive:
-                  type: boolean
-                  description: 営業中サロンのみを対象にするかどうか
-                minRating:
-                  type: number
-                  format: float
-                  minimum: 0
-                  maximum: 5
-                  description: 最低評価値による絞り込み
-                maxDistance:
-                  type: number
-                  format: float
-                  minimum: 0
-                  description: 検索基点からの最大距離（km）
-                lat:
-                  type: number
-                  format: double
-                  description: 距離計算に使用する基準緯度
-                lon:
-                  type: number
-                  format: double
-                  description: 距離計算に使用する基準経度
-                openNow:
-                  type: boolean
-                  description: 現在営業中かどうかで絞り込むフラグ
-                openAt:
-                  type: string
-                  format: date-time
-                  description: 特定日時に営業しているサロンを探すための基準日時
-                q:
-                  type: string
-                  description: 全文検索キーワード。名称や説明文を横断的に検索する。
-                filter:
-                  type: string
-                  description: "フィルター式。例: `status:active AND category:premium`。属性条件を組み合わせた絞り込みに使用。"
-                fields:
-                  type: string
-                  description: レスポンスに含めるフィールドのカンマ区切りリスト。データ転送量の最適化に活用。
-                exclude:
-                  type: string
-                  description: レスポンスから除外したいフィールドのカンマ区切りリスト。不要情報を除く場合に利用。
-                facets:
-                  type: boolean
-                  description: ファセット集計を有効化するかどうか。true で各項目の件数を集計する。
-                  default: false
-                facetFields:
-                  type: array
-                  items:
-                    type: string
-                  description: 集計対象とするファセットフィールドの一覧。カテゴリや価格帯などを指定する。
-                limit:
-                  type: integer
-                  format: int32
-                  minimum: 1
-                  maximum: 100
-                  description: 1ページあたりの取得件数上限 (1〜100)。指定が無い場合は既定値 20 を適用。
-                  default: 20
-                cursor:
-                  type: string
-                  description: 次ページを指し示すカーソル。前回レスポンスの `meta.nextCursor` を設定する。
-                sortBy:
-                  type: string
-                  description: ソート対象フィールド。予約日時や作成日時など業務軸を指定する。
-                sortOrder:
-                  type: string
-                  enum:
-                    - asc
-                    - desc
-                  description: ソート順序。`asc` は昇順、`desc` は降順を表す。
-                  default: asc
-                format:
-                  type: string
-                  enum:
-                    - csv
-                    - json
-                    - excel
-                exportFields:
-                  type: array
-                  items:
-                    type: string
-              required:
-                - format
-  /api/v1/salons/nearby:
-    get:
-      operationId: SalonOperations_getNearby
-      summary: Get nearby salons
-      description: 位置情報と希望条件から近隣サロンを検索し、顧客に最適な選択肢を提示します。
-      parameters:
-        - name: lat
-          in: query
-          required: true
-          description: 緯度
-          schema:
-            type: number
-            format: double
-          explode: false
-        - name: lon
-          in: query
-          required: true
-          description: 経度
-          schema:
-            type: number
-            format: double
-          explode: false
-        - name: radius
-          in: query
-          required: false
-          description: 検索半径（キロメートル）
-          schema:
-            type: number
-            format: float
-            minimum: 0.1
-            maximum: 100
-            default: 5
-          explode: false
-        - name: categories
-          in: query
-          required: false
-          description: 対象サービスカテゴリのフィルター
-          schema:
-            type: array
-            items:
-              $ref: "#/components/schemas/Models.ServiceCategoryType"
-          explode: false
-        - $ref: "#/components/parameters/Models.CursorPaginationParams.limit"
-        - $ref: "#/components/parameters/Models.CursorPaginationParams.cursor"
-        - $ref: "#/components/parameters/Models.CursorPaginationParams.sortBy"
-        - $ref: "#/components/parameters/Models.CursorPaginationParams.sortOrder"
-        - name: Authorization
-          in: header
-          required: false
-          schema:
-            type: string
-      responses:
-        "200":
-          description: The request has succeeded.
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - data
-                  - meta
-                  - links
-                properties:
-                  data:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/Models.SalonWithDistance"
-                    description: 現在ページで取得したデータ配列。サロン一覧や予約履歴の実データを格納する。
-                  meta:
-                    allOf:
-                      - $ref: "#/components/schemas/Models.PaginationMeta"
-                    description: ページング状態を示すメタ情報。次ページの有無やカーソル値を含む。
-                  links:
-                    allOf:
-                      - $ref: "#/components/schemas/Models.PaginationLinks"
-                    description: 関連するページ遷移リンク。HATEOAS 連携や外部連携向けに利用する。
-                description: |-
-                  カーソル方式のページネーションレスポンスモデル。
-                  `CursorPaginationParams` を受けたAPIが検索結果とページング状態をまとめて返却する際に利用する。
-        "400":
-          description: The server could not understand the request due to invalid syntax.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Models.ProblemDetails"
-      tags:
-        - Salons
-  /api/v1/salons/recommendations:
-    get:
-      operationId: SalonOperations_getRecommendations
-      summary: Get personalized salon recommendations
-      description: 顧客の嗜好や履歴にもとづきおすすめサロンを提示し、再来店促進や新規獲得を支援します。
-      parameters:
-        - name: customerId
-          in: query
-          required: false
-          description: パーソナライズ対象となる顧客ID
-          schema:
-            $ref: "#/components/schemas/Models.CustomerId"
-          explode: false
-        - name: categories
-          in: query
-          required: false
-          description: 興味のあるサービスカテゴリ
-          schema:
-            type: array
-            items:
-              $ref: "#/components/schemas/Models.ServiceCategoryType"
-          explode: false
-        - name: priceRange
-          in: query
-          required: false
-          description: 希望する価格帯
-          schema:
-            type: string
-            enum:
-              - budget
-              - medium
-              - premium
-          explode: false
-        - $ref: "#/components/parameters/Models.CursorPaginationParams.limit"
-        - $ref: "#/components/parameters/Models.CursorPaginationParams.cursor"
-        - $ref: "#/components/parameters/Models.CursorPaginationParams.sortBy"
-        - $ref: "#/components/parameters/Models.CursorPaginationParams.sortOrder"
-        - name: Authorization
-          in: header
-          required: false
-          schema:
-            type: string
-      responses:
-        "200":
-          description: The request has succeeded.
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - data
-                  - meta
-                  - links
-                properties:
-                  data:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/Models.SalonRecommendation"
-                    description: 現在ページで取得したデータ配列。サロン一覧や予約履歴の実データを格納する。
-                  meta:
-                    allOf:
-                      - $ref: "#/components/schemas/Models.PaginationMeta"
-                    description: ページング状態を示すメタ情報。次ページの有無やカーソル値を含む。
-                  links:
-                    allOf:
-                      - $ref: "#/components/schemas/Models.PaginationLinks"
-                    description: 関連するページ遷移リンク。HATEOAS 連携や外部連携向けに利用する。
-                description: |-
-                  カーソル方式のページネーションレスポンスモデル。
-                  `CursorPaginationParams` を受けたAPIが検索結果とページング状態をまとめて返却する際に利用する。
-        "401":
-          description: Access is unauthorized.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Models.ProblemDetails"
-      tags:
-        - Salons
-  /api/v1/salons/search:
-    get:
-      operationId: SalonCrud_search
-      summary: Search {Name} resources
-      description: ファセットや複合条件を利用してリソースを検索し、結果と統計情報を返却します。
-      parameters:
-        - $ref: "#/components/parameters/Models.SalonSearchRequest.keyword"
-        - $ref: "#/components/parameters/Models.SalonSearchRequest.city"
-        - $ref: "#/components/parameters/Models.SalonSearchRequest.prefecture"
-        - $ref: "#/components/parameters/Models.SalonSearchRequest.categories"
-        - $ref: "#/components/parameters/Models.SalonSearchRequest.features"
-        - $ref: "#/components/parameters/Models.SalonSearchRequest.isActive"
-        - $ref: "#/components/parameters/Models.SalonSearchRequest.minRating"
-        - $ref: "#/components/parameters/Models.SalonSearchRequest.maxDistance"
-        - $ref: "#/components/parameters/Models.SalonSearchRequest.lat"
-        - $ref: "#/components/parameters/Models.SalonSearchRequest.lon"
-        - $ref: "#/components/parameters/Models.SalonSearchRequest.openNow"
-        - $ref: "#/components/parameters/Models.SalonSearchRequest.openAt"
-        - $ref: "#/components/parameters/Models.AdvancedSearchParams.q"
-        - $ref: "#/components/parameters/Models.AdvancedSearchParams.filter"
-        - $ref: "#/components/parameters/Models.AdvancedSearchParams.fields"
-        - $ref: "#/components/parameters/Models.AdvancedSearchParams.exclude"
-        - $ref: "#/components/parameters/Models.AdvancedSearchParams.facets"
-        - $ref: "#/components/parameters/Models.AdvancedSearchParams.facetFields"
-        - $ref: "#/components/parameters/Models.CursorPaginationParams.limit"
-        - $ref: "#/components/parameters/Models.CursorPaginationParams.cursor"
-        - $ref: "#/components/parameters/Models.CursorPaginationParams.sortBy"
-        - $ref: "#/components/parameters/Models.CursorPaginationParams.sortOrder"
-        - name: Authorization
-          in: header
-          required: false
-          schema:
-            type: string
-      responses:
-        "200":
-          description: The request has succeeded.
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - results
-                  - meta
-                  - facets
-                properties:
-                  results:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/Models.Salon"
-                    description: 検索でヒットした結果一覧。サロンカードやメニュー一覧に利用。
-                  meta:
-                    allOf:
-                      - $ref: "#/components/schemas/Models.SearchMeta"
-                    description: 検索条件や件数などのメタ情報。ページングやログ解析に活用する。
-                  facets:
-                    type: object
-                    additionalProperties:
-                      type: array
-                      items:
-                        $ref: "#/components/schemas/Models.Facet"
-                    description: ファセット集計結果。各フィールドごとの件数分布を保持する。
-                description: |-
-                  検索結果とファセット集計をまとめたレスポンスモデル。
-                  キーワード検索の結果表示と、絞り込み条件の提示を同時に実現する。
-        "400":
-          description: The server could not understand the request due to invalid syntax.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Models.ProblemDetails"
-        "401":
-          description: Access is unauthorized.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Models.ProblemDetails"
-      tags:
-        - Salons
+              $ref: "#/components/schemas/Models.SalonCreateRequest"
   /api/v1/salons/{id}:
     get:
       operationId: SalonCrud_get
-      summary: Get {Name} by ID
-      description: IDを指定して単一リソースを取得し、詳細表示や編集フォームの初期値に使用します。
+      summary: Get a salon
+      description: IDを指定してサロンを1件取得します。
       parameters:
         - name: id
           in: path
           required: true
           schema:
             $ref: "#/components/schemas/Models.SalonId"
-        - name: fields
-          in: query
-          required: false
-          schema:
-            type: string
-          explode: false
-        - name: Authorization
-          in: header
-          required: false
-          schema:
-            type: string
-        - name: If-None-Match
-          in: header
-          required: false
-          schema:
-            type: string
       responses:
         "200":
           description: The request has succeeded.
-          headers:
-            ETag:
-              required: true
-              schema:
-                type: string
-            Last-Modified:
-              required: true
-              schema:
-                type: string
           content:
             application/json:
               schema:
@@ -5705,79 +4735,7 @@ paths:
                 properties:
                   data:
                     allOf:
-                      - $ref: "#/components/schemas/Models.Salon"
-                    description: レスポンスの主体となるビジネスデータ。
-                  meta:
-                    type: object
-                    allOf:
-                      - $ref: "#/components/schemas/Models.ResponseMeta"
-                    nullable: true
-                    description: リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull
-                  links:
-                    type: object
-                    additionalProperties:
-                      type: string
-                    nullable: true
-                    description: 関連リソースや次アクションへのリンク情報。リンクがない場合はnull
-                description: |-
-                  API 成功レスポンスの共通ラッパーモデル。
-                  サロン検索や予約登録など多様なユースケースで応答形式を統一し、クライアント実装を簡潔に保つ。
-        "304":
-          description: The client has made a conditional request and the resource has not been modified.
-        "401":
-          description: Access is unauthorized.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Models.ProblemDetails"
-        "404":
-          description: The server cannot find the requested resource.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Models.ProblemDetails"
-      tags:
-        - Salons
-    put:
-      operationId: SalonCrud_update
-      summary: Update {Name}
-      description: 既存リソースを全項目更新し、最新状態とバージョン情報を返却します。
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Models.SalonId"
-        - name: Authorization
-          in: header
-          required: false
-          schema:
-            type: string
-        - name: If-Match
-          in: header
-          required: false
-          schema:
-            type: string
-      responses:
-        "200":
-          description: The request has succeeded.
-          headers:
-            ETag:
-              required: true
-              schema:
-                type: string
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - data
-                  - meta
-                  - links
-                properties:
-                  data:
-                    allOf:
-                      - $ref: "#/components/schemas/Models.Salon"
+                      - $ref: "#/components/schemas/Models.SalonResponse"
                     description: レスポンスの主体となるビジネスデータ。
                   meta:
                     type: object
@@ -5800,67 +4758,27 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
-        "401":
-          description: Access is unauthorized.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Models.ProblemDetails"
         "404":
           description: The server cannot find the requested resource.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
-        "409":
-          description: The request conflicts with the current state of the server.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Models.ProblemDetails"
-        "422":
-          description: Client error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Salons
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/Models.UpdateSalonRequest"
     patch:
-      operationId: SalonCrud_patch
-      summary: Partially update {Name}
-      description: 必要なフィールドのみを部分更新し、変更差分を効率的に反映します。
+      operationId: SalonCrud_update
+      summary: Update a salon
+      description: 指定した項目だけを更新します。openingHoursを指定した場合は営業日カレンダー全体を置き換えます。
       parameters:
         - name: id
           in: path
           required: true
           schema:
             $ref: "#/components/schemas/Models.SalonId"
-        - name: Authorization
-          in: header
-          required: false
-          schema:
-            type: string
-        - name: If-Match
-          in: header
-          required: false
-          schema:
-            type: string
-        - $ref: "#/components/parameters/Models.FieldMask"
       responses:
         "200":
           description: The request has succeeded.
-          headers:
-            ETag:
-              required: true
-              schema:
-                type: string
           content:
             application/json:
               schema:
@@ -5872,7 +4790,7 @@ paths:
                 properties:
                   data:
                     allOf:
-                      - $ref: "#/components/schemas/Models.Salon"
+                      - $ref: "#/components/schemas/Models.SalonResponse"
                     description: レスポンスの主体となるビジネスデータ。
                   meta:
                     type: object
@@ -5895,12 +4813,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
-        "401":
-          description: Access is unauthorized.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Models.ProblemDetails"
         "404":
           description: The server cannot find the requested resource.
           content:
@@ -5913,12 +4825,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
-        "422":
-          description: Client error
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Salons
       requestBody:
@@ -5926,578 +4832,22 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Models.UpdateSalonRequestUpdate"
+              $ref: "#/components/schemas/Models.SalonUpdateRequest"
     delete:
       operationId: SalonCrud_delete
-      summary: Delete {Name}
-      description: リソースを削除し、必要に応じて論理削除か物理削除かを選択します。
+      summary: Delete a salon
+      description: サロンを論理削除します。削除後は一覧・取得の対象外になります。
       parameters:
         - name: id
           in: path
           required: true
           schema:
             $ref: "#/components/schemas/Models.SalonId"
-        - name: permanent
-          in: query
-          required: false
-          schema:
-            type: boolean
-            default: false
-          explode: false
-        - name: Authorization
-          in: header
-          required: false
-          schema:
-            type: string
-        - name: If-Match
-          in: header
-          required: false
-          schema:
-            type: string
       responses:
         "204":
           description: "There is no content to send for this request, but the headers may be useful. "
-        "401":
-          description: Access is unauthorized.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Models.ProblemDetails"
-        "404":
-          description: The server cannot find the requested resource.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Models.ProblemDetails"
-        "409":
-          description: The request conflicts with the current state of the server.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Models.ProblemDetails"
-      tags:
-        - Salons
-  /api/v1/salons/{id}/availability:
-    post:
-      operationId: SalonOperations_checkAvailability
-      summary: Check salon availability
-      description: 希望日時にサロン全体で対応可能な枠があるかを判定し、予約導線での可用性表示に利用します。
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Models.SalonId"
-        - name: Authorization
-          in: header
-          required: false
-          schema:
-            type: string
-      responses:
-        "200":
-          description: The request has succeeded.
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - data
-                  - meta
-                  - links
-                properties:
-                  data:
-                    allOf:
-                      - $ref: "#/components/schemas/Models.SalonAvailabilityResponse"
-                    description: レスポンスの主体となるビジネスデータ。
-                  meta:
-                    type: object
-                    allOf:
-                      - $ref: "#/components/schemas/Models.ResponseMeta"
-                    nullable: true
-                    description: リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull
-                  links:
-                    type: object
-                    additionalProperties:
-                      type: string
-                    nullable: true
-                    description: 関連リソースや次アクションへのリンク情報。リンクがない場合はnull
-                description: |-
-                  API 成功レスポンスの共通ラッパーモデル。
-                  サロン検索や予約登録など多様なユースケースで応答形式を統一し、クライアント実装を簡潔に保つ。
         "400":
           description: The server could not understand the request due to invalid syntax.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Models.ProblemDetails"
-        "404":
-          description: The server cannot find the requested resource.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Models.ProblemDetails"
-      tags:
-        - Salons
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/Models.SalonAvailabilityRequest"
-  /api/v1/salons/{id}/history:
-    get:
-      operationId: SalonCrud_getHistory
-      summary: Get {Name} audit history
-      description: 対象リソースの監査履歴を取得し、変更者や変更内容を追跡します。
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Models.SalonId"
-        - $ref: "#/components/parameters/Models.CursorPaginationParams.limit"
-        - $ref: "#/components/parameters/Models.CursorPaginationParams.cursor"
-        - $ref: "#/components/parameters/Models.CursorPaginationParams.sortBy"
-        - $ref: "#/components/parameters/Models.CursorPaginationParams.sortOrder"
-        - name: Authorization
-          in: header
-          required: false
-          schema:
-            type: string
-      responses:
-        "200":
-          description: The request has succeeded.
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - data
-                  - meta
-                  - links
-                properties:
-                  data:
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/Operations.AuditEntry"
-                    description: 現在ページで取得したデータ配列。サロン一覧や予約履歴の実データを格納する。
-                  meta:
-                    allOf:
-                      - $ref: "#/components/schemas/Models.PaginationMeta"
-                    description: ページング状態を示すメタ情報。次ページの有無やカーソル値を含む。
-                  links:
-                    allOf:
-                      - $ref: "#/components/schemas/Models.PaginationLinks"
-                    description: 関連するページ遷移リンク。HATEOAS 連携や外部連携向けに利用する。
-                description: |-
-                  カーソル方式のページネーションレスポンスモデル。
-                  `CursorPaginationParams` を受けたAPIが検索結果とページング状態をまとめて返却する際に利用する。
-        "401":
-          description: Access is unauthorized.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Models.ProblemDetails"
-        "404":
-          description: The server cannot find the requested resource.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Models.ProblemDetails"
-      tags:
-        - Salons
-  /api/v1/salons/{id}/images/{imageId}:
-    delete:
-      operationId: SalonOperations_deleteImage
-      summary: Delete salon image
-      description: 掲載中のサロン画像を削除し、ブランドトーンの統一や情報更新を行います。
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Models.SalonId"
-        - name: imageId
-          in: path
-          required: true
-          schema:
-            type: string
-        - name: Authorization
-          in: header
-          required: false
-          schema:
-            type: string
-      responses:
-        "204":
-          description: "There is no content to send for this request, but the headers may be useful. "
-        "401":
-          description: Access is unauthorized.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Models.ProblemDetails"
-        "404":
-          description: The server cannot find the requested resource.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Models.ProblemDetails"
-      tags:
-        - Salons
-  /api/v1/salons/{id}/restore:
-    post:
-      operationId: SalonCrud_restore
-      summary: Restore deleted {Name}
-      description: 削除済みリソースを復元し、誤削除への迅速なリカバリを可能にします。
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Models.SalonId"
-        - name: Authorization
-          in: header
-          required: false
-          schema:
-            type: string
-      responses:
-        "200":
-          description: The request has succeeded.
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - data
-                  - meta
-                  - links
-                properties:
-                  data:
-                    allOf:
-                      - $ref: "#/components/schemas/Models.Salon"
-                    description: レスポンスの主体となるビジネスデータ。
-                  meta:
-                    type: object
-                    allOf:
-                      - $ref: "#/components/schemas/Models.ResponseMeta"
-                    nullable: true
-                    description: リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull
-                  links:
-                    type: object
-                    additionalProperties:
-                      type: string
-                    nullable: true
-                    description: 関連リソースや次アクションへのリンク情報。リンクがない場合はnull
-                description: |-
-                  API 成功レスポンスの共通ラッパーモデル。
-                  サロン検索や予約登録など多様なユースケースで応答形式を統一し、クライアント実装を簡潔に保つ。
-        "401":
-          description: Access is unauthorized.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Models.ProblemDetails"
-        "404":
-          description: The server cannot find the requested resource.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Models.ProblemDetails"
-        "409":
-          description: The request conflicts with the current state of the server.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Models.ProblemDetails"
-      tags:
-        - Salons
-  /api/v1/salons/{id}/staff/{staffId}/schedule:
-    put:
-      operationId: SalonOperations_updateStaffSchedule
-      summary: Update staff schedule
-      description: サロン所属スタッフのシフトを更新し、予約枠や勤怠管理との整合を取ります。
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Models.SalonId"
-        - name: staffId
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Models.StaffId"
-        - name: Authorization
-          in: header
-          required: false
-          schema:
-            type: string
-      responses:
-        "200":
-          description: The request has succeeded.
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - data
-                  - meta
-                  - links
-                properties:
-                  data:
-                    allOf:
-                      - $ref: "#/components/schemas/Models.StaffScheduleManagement"
-                    description: レスポンスの主体となるビジネスデータ。
-                  meta:
-                    type: object
-                    allOf:
-                      - $ref: "#/components/schemas/Models.ResponseMeta"
-                    nullable: true
-                    description: リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull
-                  links:
-                    type: object
-                    additionalProperties:
-                      type: string
-                    nullable: true
-                    description: 関連リソースや次アクションへのリンク情報。リンクがない場合はnull
-                description: |-
-                  API 成功レスポンスの共通ラッパーモデル。
-                  サロン検索や予約登録など多様なユースケースで応答形式を統一し、クライアント実装を簡潔に保つ。
-        "400":
-          description: The server could not understand the request due to invalid syntax.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Models.ProblemDetails"
-        "401":
-          description: Access is unauthorized.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Models.ProblemDetails"
-        "404":
-          description: The server cannot find the requested resource.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Models.ProblemDetails"
-        "409":
-          description: The request conflicts with the current state of the server.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Models.ProblemDetails"
-      tags:
-        - Salons
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/Models.StaffScheduleUpdateRequest"
-  /api/v1/salons/{id}/statistics:
-    get:
-      operationId: SalonOperations_getStatistics
-      summary: Get salon statistics
-      description: サロンの売上や予約件数など主要指標を取得し、経営判断や施策検討に活用します。
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Models.SalonId"
-        - name: period
-          in: query
-          required: false
-          description: "集計期間（例: '7d', '1m', '3m'）"
-          schema:
-            type: string
-            default: 1m
-          explode: false
-        - name: Authorization
-          in: header
-          required: false
-          schema:
-            type: string
-      responses:
-        "200":
-          description: The request has succeeded.
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - data
-                  - meta
-                  - links
-                properties:
-                  data:
-                    allOf:
-                      - $ref: "#/components/schemas/Models.SalonStatistics"
-                    description: レスポンスの主体となるビジネスデータ。
-                  meta:
-                    type: object
-                    allOf:
-                      - $ref: "#/components/schemas/Models.ResponseMeta"
-                    nullable: true
-                    description: リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull
-                  links:
-                    type: object
-                    additionalProperties:
-                      type: string
-                    nullable: true
-                    description: 関連リソースや次アクションへのリンク情報。リンクがない場合はnull
-                description: |-
-                  API 成功レスポンスの共通ラッパーモデル。
-                  サロン検索や予約登録など多様なユースケースで応答形式を統一し、クライアント実装を簡潔に保つ。
-        "401":
-          description: Access is unauthorized.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Models.ProblemDetails"
-        "404":
-          description: The server cannot find the requested resource.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Models.ProblemDetails"
-      tags:
-        - Salons
-  /api/v1/salons/{id}/subscribe:
-    post:
-      operationId: SalonOperations_subscribe
-      summary: Subscribe to salon updates
-      description: サロンのニュースやキャンペーン更新を購読登録し、ロイヤル顧客との接点を強化します。
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Models.SalonId"
-        - name: Authorization
-          in: header
-          required: false
-          schema:
-            type: string
-      responses:
-        "201":
-          description: The request has succeeded and a new resource has been created as a result.
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - data
-                  - meta
-                  - links
-                properties:
-                  data:
-                    allOf:
-                      - $ref: "#/components/schemas/Models.SalonSubscriptionResponse"
-                    description: レスポンスの主体となるビジネスデータ。
-                  meta:
-                    type: object
-                    allOf:
-                      - $ref: "#/components/schemas/Models.ResponseMeta"
-                    nullable: true
-                    description: リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull
-                  links:
-                    type: object
-                    additionalProperties:
-                      type: string
-                    nullable: true
-                    description: 関連リソースや次アクションへのリンク情報。リンクがない場合はnull
-                description: |-
-                  API 成功レスポンスの共通ラッパーモデル。
-                  サロン検索や予約登録など多様なユースケースで応答形式を統一し、クライアント実装を簡潔に保つ。
-        "400":
-          description: The server could not understand the request due to invalid syntax.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Models.ProblemDetails"
-        "401":
-          description: Access is unauthorized.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Models.ProblemDetails"
-        "404":
-          description: The server cannot find the requested resource.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Models.ProblemDetails"
-        "409":
-          description: The request conflicts with the current state of the server.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Models.ProblemDetails"
-      tags:
-        - Salons
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/Models.SalonSubscriptionRequest"
-  /api/v1/salons/{id}/versions/{version}:
-    get:
-      operationId: SalonCrud_getVersion
-      summary: Get {Name} version
-      description: 指定したバージョンのリソース状態を取得し、過去状態の確認や比較に利用します。
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            $ref: "#/components/schemas/Models.SalonId"
-        - name: version
-          in: path
-          required: true
-          schema:
-            type: integer
-            format: int32
-        - name: Authorization
-          in: header
-          required: false
-          schema:
-            type: string
-      responses:
-        "200":
-          description: The request has succeeded.
-          content:
-            application/json:
-              schema:
-                type: object
-                required:
-                  - data
-                  - meta
-                  - links
-                properties:
-                  data:
-                    allOf:
-                      - $ref: "#/components/schemas/Models.Salon"
-                    description: レスポンスの主体となるビジネスデータ。
-                  meta:
-                    type: object
-                    allOf:
-                      - $ref: "#/components/schemas/Models.ResponseMeta"
-                    nullable: true
-                    description: リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull
-                  links:
-                    type: object
-                    additionalProperties:
-                      type: string
-                    nullable: true
-                    description: 関連リソースや次アクションへのリンク情報。リンクがない場合はnull
-                description: |-
-                  API 成功レスポンスの共通ラッパーモデル。
-                  サロン検索や予約登録など多様なユースケースで応答形式を統一し、クライアント実装を簡潔に保つ。
-        "401":
-          description: Access is unauthorized.
           content:
             application/json:
               schema:
@@ -6827,7 +5177,10 @@ paths:
                   items:
                     $ref: "#/components/schemas/Models.ServiceId"
                 updates:
-                  $ref: "#/components/schemas/Models.UpdateServiceRequestUpdate"
+                  $ref: "#/components/schemas/Models.UpdateServiceRequest"
+              required:
+                - serviceIds
+                - updates
   /api/v1/salons/{salonId}/services/{id}:
     get:
       operationId: ServiceOperations_get
@@ -12429,21 +10782,19 @@ components:
       schema:
         $ref: "#/components/schemas/Models.SalonId"
       explode: false
-    Models.SalonSearchRequest.categories:
-      name: categories
-      in: query
-      required: false
-      description: サービスカテゴリ（カット・カラー等）による絞り込み
-      schema:
-        type: array
-        items:
-          $ref: "#/components/schemas/Models.ServiceCategoryType"
-      explode: false
     Models.SalonSearchRequest.city:
       name: city
       in: query
       required: false
-      description: 市区町村名による絞り込み
+      description: 市区町村名による絞り込み(完全一致)
+      schema:
+        type: string
+      explode: false
+    Models.SalonSearchRequest.cursor:
+      name: cursor
+      in: query
+      required: false
+      description: 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する
       schema:
         type: string
       explode: false
@@ -12451,17 +10802,16 @@ components:
       name: features
       in: query
       required: false
-      description: 設備やこだわり条件などの特徴タグによる絞り込み
+      description: 特徴タグによる絞り込み。指定したタグをすべて持つサロンに一致する
       schema:
         type: array
         items:
           type: string
-      explode: false
     Models.SalonSearchRequest.isActive:
       name: isActive
       in: query
       required: false
-      description: 営業中サロンのみを対象にするかどうか
+      description: 予約受付中かどうかによる絞り込み
       schema:
         type: boolean
       explode: false
@@ -12469,71 +10819,40 @@ components:
       name: keyword
       in: query
       required: false
-      description: 検索キーワード。qパラメータのエイリアス
+      description: 名称・説明文に対する部分一致キーワード(大文字小文字を区別しない)
       schema:
         type: string
+        minLength: 1
+        maxLength: 100
       explode: false
-    Models.SalonSearchRequest.lat:
-      name: lat
+    Models.SalonSearchRequest.limit:
+      name: limit
       in: query
       required: false
-      description: 距離計算に使用する基準緯度
+      description: 1ページあたりの取得件数上限 (1〜100)
       schema:
-        type: number
-        format: double
-      explode: false
-    Models.SalonSearchRequest.lon:
-      name: lon
-      in: query
-      required: false
-      description: 距離計算に使用する基準経度
-      schema:
-        type: number
-        format: double
-      explode: false
-    Models.SalonSearchRequest.maxDistance:
-      name: maxDistance
-      in: query
-      required: false
-      description: 検索基点からの最大距離（km）
-      schema:
-        type: number
-        format: float
-        minimum: 0
+        type: integer
+        format: int32
+        minimum: 1
+        maximum: 100
+        default: 20
       explode: false
     Models.SalonSearchRequest.minRating:
       name: minRating
       in: query
       required: false
-      description: 最低評価値による絞り込み
+      description: 最低評価値による絞り込み。評価のないサロンは除外される
       schema:
         type: number
         format: float
         minimum: 0
         maximum: 5
       explode: false
-    Models.SalonSearchRequest.openAt:
-      name: openAt
-      in: query
-      required: false
-      description: 特定日時に営業しているサロンを探すための基準日時
-      schema:
-        type: string
-        format: date-time
-      explode: false
-    Models.SalonSearchRequest.openNow:
-      name: openNow
-      in: query
-      required: false
-      description: 現在営業中かどうかで絞り込むフラグ
-      schema:
-        type: boolean
-      explode: false
     Models.SalonSearchRequest.prefecture:
       name: prefecture
       in: query
       required: false
-      description: 都道府県名による絞り込み
+      description: 都道府県名による絞り込み(完全一致)
       schema:
         type: string
       explode: false
@@ -12630,27 +10949,6 @@ components:
         - prefecture
         - postalCode
         - country
-      properties:
-        street:
-          type: string
-          description: 番地や建物名を含む詳細住所。
-        city:
-          type: string
-          description: 市区町村名。
-        prefecture:
-          type: string
-          description: 都道府県名。
-        postalCode:
-          type: string
-          nullable: true
-          description: 郵便番号。未登録の場合はnull
-        country:
-          type: string
-          description: 国名。既定値はJapan。
-          default: Japan
-      description: サロンや顧客の住所情報を表す共通モデル。
-    Models.AddressUpdate:
-      type: object
       properties:
         street:
           type: string
@@ -13299,32 +11597,6 @@ components:
           format: date-time
           description: 空き枠の終了日時 (UTC)
       description: 空き枠情報モデル - スタッフごとの提供可能時間帯を表し、予約可能枠の算出に使用する
-    Models.AvailableTimeSlot:
-      type: object
-      required:
-        - startTime
-        - endTime
-        - availableStaff
-        - availability
-      properties:
-        startTime:
-          type: string
-          format: date-time
-          description: 開始日時
-        endTime:
-          type: string
-          format: date-time
-          description: 終了日時
-        availableStaff:
-          type: array
-          items:
-            $ref: "#/components/schemas/Models.StaffSummary"
-          description: 対応可能なスタッフの一覧
-        availability:
-          type: integer
-          format: int32
-          description: 対応可能枠の充足率（%）
-      description: 予約可能な時間帯の詳細情報モデル
     Models.BatchGetRequest:
       type: object
       required:
@@ -13468,47 +11740,6 @@ components:
         amount:
           allOf:
             - $ref: "#/components/schemas/Models.Money"
-          description: 預かり金額。
-        status:
-          type: string
-          enum:
-            - pending
-            - paid
-            - refunded
-            - forfeited
-          description: "デポジットの状態区分（pending: 入金待ち／paid: 入金済み／refunded: 返金済み／forfeited: 没収）。"
-        dueDate:
-          type: string
-          format: date-time
-          nullable: true
-          description: 支払い期日。即時支払いまたは期日が未設定の場合はnull。
-        paidAt:
-          type: string
-          format: date-time
-          nullable: true
-          description: 入金が確認された日時。未入金の場合はnull。
-        refundedAt:
-          type: string
-          format: date-time
-          nullable: true
-          description: 返金した日時。返金していない場合はnull。
-        paymentId:
-          type: string
-          allOf:
-            - $ref: "#/components/schemas/Models.PaymentId"
-          nullable: true
-          description: 紐づく決済ID。決済がない場合はnull。
-        notes:
-          type: string
-          nullable: true
-          description: デポジットに関する備考。備考がない場合はnull。
-      description: 予約確定前に預かるデポジット情報。
-    Models.BookingDepositUpdate:
-      type: object
-      properties:
-        amount:
-          allOf:
-            - $ref: "#/components/schemas/Models.MoneyUpdate"
           description: 預かり金額。
         status:
           type: string
@@ -13721,22 +11952,12 @@ components:
         completed: 完了 - サービス提供が終了した状態
         cancelled: キャンセル - 予約がキャンセルされた状態
         no_show: 無断キャンセル - 顧客が連絡なしに来店しなかった状態
-    Models.BookingStatusUpdate:
-      anyOf:
-        - $ref: "#/components/schemas/Models.DraftBookingStatusUpdate"
-        - $ref: "#/components/schemas/Models.PendingBookingStatusUpdate"
-        - $ref: "#/components/schemas/Models.ConfirmedBookingStatusUpdate"
-        - $ref: "#/components/schemas/Models.InProgressBookingStatusUpdate"
-        - $ref: "#/components/schemas/Models.CompletedBookingStatusUpdate"
-        - $ref: "#/components/schemas/Models.CancelledBookingStatusUpdate"
-        - $ref: "#/components/schemas/Models.NoShowBookingStatusUpdate"
-      description: 予約の進行状況ごとに保持する詳細情報ユニオン。
     Models.BookingUpdateRequest:
       type: object
       properties:
         status:
           allOf:
-            - $ref: "#/components/schemas/Models.BookingStatusUpdate"
+            - $ref: "#/components/schemas/Models.BookingStatus"
           description: ステータス詳細の更新。
         statusCode:
           allOf:
@@ -13745,13 +11966,13 @@ components:
         waitlistEntry:
           type: object
           allOf:
-            - $ref: "#/components/schemas/Models.WaitlistEntryUpdate"
+            - $ref: "#/components/schemas/Models.WaitlistEntry"
           nullable: true
           description: ウェイティングリスト情報の更新またはリセット。
         deposit:
           type: object
           allOf:
-            - $ref: "#/components/schemas/Models.BookingDepositUpdate"
+            - $ref: "#/components/schemas/Models.BookingDeposit"
           nullable: true
           description: デポジット情報の更新またはリセット。
         paymentMethod:
@@ -13766,16 +11987,16 @@ components:
           description: 支払いステータスの更新またはリセット。
         discountAmount:
           allOf:
-            - $ref: "#/components/schemas/Models.MoneyUpdate"
+            - $ref: "#/components/schemas/Models.Money"
           description: 割引額の更新
         finalAmount:
           allOf:
-            - $ref: "#/components/schemas/Models.MoneyUpdate"
+            - $ref: "#/components/schemas/Models.Money"
           description: 最終請求額の更新。
         balanceDue:
           type: object
           allOf:
-            - $ref: "#/components/schemas/Models.MoneyUpdate"
+            - $ref: "#/components/schemas/Models.Money"
           nullable: true
           description: 未収金額の更新またはリセット。
         notes:
@@ -13904,30 +12125,6 @@ components:
             - system
           description: "キャンセルを実行した主体（customer: 顧客／salon: サロン側／system: システム判断）。"
       description: 予約がキャンセルされた場合の状態情報。
-    Models.CancelledBookingStatusUpdate:
-      type: object
-      properties:
-        type:
-          type: string
-          enum:
-            - cancelled
-          description: 固定値cancelled。キャンセル状態であることを示す。
-        cancelledAt:
-          type: string
-          format: date-time
-          description: キャンセルが登録された日時。
-        reason:
-          type: string
-          nullable: true
-          description: キャンセル理由のメモ。理由が記録されていない場合はnull。
-        cancelledBy:
-          type: string
-          enum:
-            - customer
-            - salon
-            - system
-          description: "キャンセルを実行した主体（customer: 顧客／salon: サロン側／system: システム判断）。"
-      description: 予約がキャンセルされた場合の状態情報。
     Models.CategoryId:
       type: string
       format: uuid
@@ -13955,7 +12152,8 @@ components:
           description: カテゴリ名
         description:
           type: string
-          description: カテゴリ説明
+          nullable: true
+          description: カテゴリ説明。未設定の場合はnull
         parentId:
           type: string
           allOf:
@@ -14036,29 +12234,6 @@ components:
           nullable: true
           description: 施術内容のサマリーメモ。メモを記録していない場合はnull。
       description: 施術が完了した場合の状態情報。
-    Models.CompletedBookingStatusUpdate:
-      type: object
-      properties:
-        type:
-          type: string
-          enum:
-            - completed
-          description: 固定値completed。完了状態であることを示す。
-        completedAt:
-          type: string
-          format: date-time
-          description: 施術が完了した日時。
-        paymentId:
-          type: string
-          allOf:
-            - $ref: "#/components/schemas/Models.PaymentId"
-          nullable: true
-          description: 関連する決済ID。支払いが未完了または不要の場合はnull。
-        serviceSummary:
-          type: string
-          nullable: true
-          description: 施術内容のサマリーメモ。メモを記録していない場合はnull。
-      description: 施術が完了した場合の状態情報。
     Models.CompletedPaymentStatus:
       type: object
       required:
@@ -14079,27 +12254,6 @@ components:
         paidAmount:
           allOf:
             - $ref: "#/components/schemas/Models.Money"
-          description: 実際に決済された金額
-        receiptNumber:
-          type: string
-          nullable: true
-          description: 発行されたレシート番号
-      description: 支払い完了状態の詳細
-    Models.CompletedPaymentStatusUpdate:
-      type: object
-      properties:
-        type:
-          type: string
-          enum:
-            - completed
-          description: 状態種別（completed 固定値）
-        completedAt:
-          type: string
-          format: date-time
-          description: 支払い完了日時
-        paidAmount:
-          allOf:
-            - $ref: "#/components/schemas/Models.MoneyUpdate"
           description: 実際に決済された金額
         receiptNumber:
           type: string
@@ -14132,27 +12286,6 @@ components:
           format: date-time
           description: 施術開始予定日時。
       description: 予約が確定済みの場合の状態情報。
-    Models.ConfirmedBookingStatusUpdate:
-      type: object
-      properties:
-        type:
-          type: string
-          enum:
-            - confirmed
-          description: 固定値confirmed。確定状態であることを示す。
-        confirmedAt:
-          type: string
-          format: date-time
-          description: 予約を確定した日時。
-        staffId:
-          allOf:
-            - $ref: "#/components/schemas/Models.StaffId"
-          description: 担当するスタッフID。
-        expectedStart:
-          type: string
-          format: date-time
-          description: 施術開始予定日時。
-      description: 予約が確定済みの場合の状態情報。
     Models.ContactInfo:
       type: object
       required:
@@ -14160,24 +12293,6 @@ components:
         - phoneNumber
         - alternativePhone
         - websiteUrl
-      properties:
-        email:
-          type: string
-          description: 主要連絡先として利用するメールアドレス。
-        phoneNumber:
-          type: string
-          description: 主要連絡先として利用する電話番号。
-        alternativePhone:
-          type: string
-          nullable: true
-          description: 緊急連絡用などの予備電話番号。未登録の場合はnull
-        websiteUrl:
-          type: string
-          nullable: true
-          description: 公式サイトや予約ページのURL。ウェブサイトがない場合はnull
-      description: 顧客やサロンの連絡先情報を表す共通モデル。
-    Models.ContactInfoUpdate:
-      type: object
       properties:
         email:
           type: string
@@ -14300,55 +12415,6 @@ components:
           nullable: true
           description: 顧客要望や注意事項のメモ - 特記事項がない標準予約の場合はnull
       description: 予約作成リクエスト - 新規予約登録時に必要なサロン・顧客・メニュー・希望日時の情報を受け取る
-    Models.CreateSalonRequest:
-      type: object
-      required:
-        - name
-        - description
-        - address
-        - contactInfo
-        - openingHours
-        - businessHours
-        - imageUrls
-        - features
-      properties:
-        name:
-          type: string
-          description: 新規登録時に必須となるサロン名
-        description:
-          type: string
-          nullable: true
-          description: サロン紹介文。未設定の場合はnull
-        address:
-          allOf:
-            - $ref: "#/components/schemas/Models.Address"
-          description: 店舗の正規住所・連絡先配送先
-        contactInfo:
-          allOf:
-            - $ref: "#/components/schemas/Models.ContactInfo"
-          description: 顧客問い合わせ用の電話やメール情報
-        openingHours:
-          type: array
-          items:
-            $ref: "#/components/schemas/Models.OpeningHours"
-          description: 通常営業日の営業時間設定一覧
-        businessHours:
-          type: array
-          items:
-            $ref: "#/components/schemas/Models.BusinessHours"
-          nullable: true
-          description: 特別営業スケジュールやシフト連動の営業時間。通常営業時間のみの場合はnull
-        imageUrls:
-          type: array
-          items:
-            type: string
-          description: 店舗写真やメニュー画像のURL一覧
-        features:
-          type: array
-          items:
-            type: string
-          description: バリアフリー対応や個室有無などの特徴タグ一覧
-      description: サロン新規登録リクエスト - 全項目のキーが必須で、値は業務要件に応じてnull許可
     Models.CreateServiceRequest:
       type: object
       required:
@@ -14578,7 +12644,8 @@ components:
         preferences:
           type: object
           additionalProperties: {}
-          description: 顧客の好みや要望
+          nullable: true
+          description: 顧客の好みや要望。未設定の場合はnull
         notes:
           type: string
           nullable: true
@@ -14587,7 +12654,8 @@ components:
           type: array
           items:
             type: string
-          description: 分類用タグ
+          nullable: true
+          description: 分類用タグ。未設定の場合はnull
         loyaltyPoints:
           type: integer
           format: int32
@@ -15227,35 +13295,6 @@ components:
           nullable: true
           description: 生年月日。年齢計算や誕生日特典に使用。null指定でリセット可能
       description: 顧客更新リクエスト。部分更新のためのオプションフィールドを含む。null指定で値をリセット可能
-    Models.CustomerUpdateRequestUpdate:
-      type: object
-      properties:
-        name:
-          type: string
-          description: 顧客氏名。フルネームまたは通称名
-        contactInfo:
-          allOf:
-            - $ref: "#/components/schemas/Models.ContactInfoUpdate"
-          description: 連絡先情報。メール、電話番号等の連絡手段
-        preferences:
-          type: object
-          additionalProperties: {}
-          description: 顧客の好みや要望。カスタム設定情報
-        notes:
-          type: string
-          nullable: true
-          description: 内部メモ。スタッフ用の顧客に関する備考。null指定でリセット可能
-        tags:
-          type: array
-          items:
-            type: string
-          description: 分類用タグ。顧客をグループ化するためのラベル
-        birthDate:
-          type: string
-          format: date
-          nullable: true
-          description: 生年月日。年齢計算や誕生日特典に使用。null指定でリセット可能
-      description: 顧客更新リクエスト。部分更新のためのオプションフィールドを含む。null指定で値をリセット可能
     Models.CutSubCategoryType:
       type: string
       enum:
@@ -15649,24 +13688,6 @@ components:
           nullable: true
           description: 下書きの有効期限。無期限の場合はnull。
       description: 予約が下書き段階にある場合の状態情報。
-    Models.DraftBookingStatusUpdate:
-      type: object
-      properties:
-        type:
-          type: string
-          enum:
-            - draft
-          description: 固定値draft。下書き状態であることを示す。
-        createdAt:
-          type: string
-          format: date-time
-          description: 下書きが作成された日時。
-        expiresAt:
-          type: string
-          format: date-time
-          nullable: true
-          description: 下書きの有効期限。無期限の場合はnull。
-      description: 予約が下書き段階にある場合の状態情報。
     Models.EmailVerificationStateDetail:
       type: object
       required:
@@ -15834,27 +13855,6 @@ components:
           description: 再試行が可能かどうか
           default: false
       description: 支払い失敗状態の詳細
-    Models.FailedPaymentStatusUpdate:
-      type: object
-      properties:
-        type:
-          type: string
-          enum:
-            - failed
-          description: 状態種別（failed 固定値）
-        failedAt:
-          type: string
-          format: date-time
-          description: 支払いが失敗した日時
-        reason:
-          type: string
-          description: 失敗理由の説明
-        retryable:
-          type: boolean
-          nullable: true
-          description: 再試行が可能かどうか
-          default: false
-      description: 支払い失敗状態の詳細
     Models.FileType:
       type: string
       enum:
@@ -16002,23 +14002,6 @@ components:
         - type
         - startedAt
         - stationName
-      properties:
-        type:
-          type: string
-          enum:
-            - in_progress
-          description: 固定値in_progress。施術中であることを示す。
-        startedAt:
-          type: string
-          format: date-time
-          description: 施術を開始した日時。
-        stationName:
-          type: string
-          nullable: true
-          description: 施術を行っているブースや席の名称。席が指定されていない場合はnull。
-      description: 施術が進行中の場合の状態情報。
-    Models.InProgressBookingStatusUpdate:
-      type: object
       properties:
         type:
           type: string
@@ -16424,11 +14407,14 @@ components:
           description: 操作した数量
         reason:
           type: string
-          description: 操作理由
+          nullable: true
+          description: 操作理由。未設定の場合はnull
         performedBy:
+          type: string
           allOf:
             - $ref: "#/components/schemas/Models.StaffId"
-          description: 操作を担当したスタッフ ID
+          nullable: true
+          description: 操作を担当したスタッフ ID。未設定の場合はnull
         occurredAt:
           type: string
           format: date-time
@@ -16856,24 +14842,6 @@ components:
           nullable: true
           description: 適用税率。税率が適用されない場合はnull
       description: 税抜・税込計算に利用する金額モデル。
-    Models.MoneyUpdate:
-      type: object
-      properties:
-        value:
-          type: integer
-          format: int64
-          description: 通貨の最小単位で表現した金額値。
-        currency:
-          allOf:
-            - $ref: "#/components/schemas/Models.CurrencyCodeType"
-          description: 使用する通貨コード。
-        taxRate:
-          type: number
-          allOf:
-            - $ref: "#/components/schemas/Models.decimal"
-          nullable: true
-          description: 適用税率。税率が適用されない場合はnull
-      description: 税抜・税込計算に利用する金額モデル。
     Models.NailSubCategoryType:
       type: string
       enum:
@@ -16896,23 +14864,6 @@ components:
         - type
         - recordedAt
         - penaltyApplied
-      properties:
-        type:
-          type: string
-          enum:
-            - no_show
-          description: 固定値no_show。無断キャンセル状態であることを示す。
-        recordedAt:
-          type: string
-          format: date-time
-          description: 無断キャンセルとして記録した日時。
-        penaltyApplied:
-          type: boolean
-          description: ペナルティを適用したかどうか。既定値はfalse。
-          default: false
-      description: 来店が確認できなかった場合の状態情報。
-    Models.NoShowBookingStatusUpdate:
-      type: object
       properties:
         type:
           type: string
@@ -17028,7 +14979,7 @@ components:
         dayOfWeek:
           allOf:
             - $ref: "#/components/schemas/Models.DayOfWeekType"
-          description: 対象となる曜日
+          description: dateの曜日。dateと一致している必要がある
         date:
           type: string
           format: date
@@ -17036,11 +14987,11 @@ components:
         openTime:
           type: string
           nullable: true
-          description: 開店時刻（HH:mm形式）。休業日の場合はnull
+          description: 開店時刻。HH:mm:ss形式で返す（指定時はHH:mmも可）。終日休業の場合はnull
         closeTime:
           type: string
           nullable: true
-          description: 閉店時刻（HH:mm形式）。休業日の場合はnull
+          description: 閉店時刻。HH:mm:ss形式で返す（指定時はHH:mmも可）。終日休業の場合はnull
         isHoliday:
           type: boolean
           description: 休業日かどうかを示すフラグ。
@@ -17052,7 +15003,7 @@ components:
           type: string
           nullable: true
           description: 備考や注意事項。特記事項がない場合はnull
-      description: 曜日別の営業時間を管理するモデル。
+      description: 特定の日付の営業時間（営業日カレンダーの1日分）を表すモデル。
     Models.OrderId:
       type: string
       format: uuid
@@ -17241,31 +15192,6 @@ components:
         remainingAmount:
           allOf:
             - $ref: "#/components/schemas/Models.Money"
-          description: 返金後に残る請求金額
-        refundId:
-          allOf:
-            - $ref: "#/components/schemas/Models.RefundId"
-          description: 関連する返金 ID
-      description: 部分返金済み状態の詳細
-    Models.PartialRefundPaymentStatusUpdate:
-      type: object
-      properties:
-        type:
-          type: string
-          enum:
-            - partial_refund
-          description: 状態種別（partial_refund 固定値）
-        refundedAt:
-          type: string
-          format: date-time
-          description: 返金が行われた日時
-        refundAmount:
-          allOf:
-            - $ref: "#/components/schemas/Models.MoneyUpdate"
-          description: 返金された金額
-        remainingAmount:
-          allOf:
-            - $ref: "#/components/schemas/Models.MoneyUpdate"
           description: 返金後に残る請求金額
         refundId:
           allOf:
@@ -17699,15 +15625,6 @@ components:
         failed: 失敗 - 支払い処理が失敗した状態
         refunded: 返金済み - 全額返金が完了した状態
         partial_refund: 部分返金 - 一部金額の返金が完了した状態
-    Models.PaymentStatusUpdate:
-      anyOf:
-        - $ref: "#/components/schemas/Models.PendingPaymentStatusUpdate"
-        - $ref: "#/components/schemas/Models.ProcessingPaymentStatusUpdate"
-        - $ref: "#/components/schemas/Models.CompletedPaymentStatusUpdate"
-        - $ref: "#/components/schemas/Models.FailedPaymentStatusUpdate"
-        - $ref: "#/components/schemas/Models.RefundedPaymentStatusUpdate"
-        - $ref: "#/components/schemas/Models.PartialRefundPaymentStatusUpdate"
-      description: 支払い状態の詳細情報を表すユニオン
     Models.PaymentUpdateRequest:
       type: object
       properties:
@@ -17717,16 +15634,16 @@ components:
           description: 変更後の支払い方法
         status:
           allOf:
-            - $ref: "#/components/schemas/Models.PaymentStatusUpdate"
+            - $ref: "#/components/schemas/Models.PaymentStatus"
           description: 変更後の支払い状態
         outstandingAmount:
           allOf:
-            - $ref: "#/components/schemas/Models.MoneyUpdate"
+            - $ref: "#/components/schemas/Models.Money"
           description: 再計算した未収残高
         depositApplied:
           type: object
           allOf:
-            - $ref: "#/components/schemas/Models.MoneyUpdate"
+            - $ref: "#/components/schemas/Models.Money"
           nullable: true
           description: 更新後の預り金額（null 指定で解除）
         externalReference:
@@ -17776,48 +15693,11 @@ components:
           nullable: true
           description: 仮割り当てされたスタッフID。スタッフが未確定の場合はnull。
       description: 予約が確認待ち段階にある場合の状態情報。
-    Models.PendingBookingStatusUpdate:
-      type: object
-      properties:
-        type:
-          type: string
-          enum:
-            - pending
-          description: 固定値pending。保留状態であることを示す。
-        requestedAt:
-          type: string
-          format: date-time
-          description: 顧客から予約リクエストを受け付けた日時。
-        holdExpiresAt:
-          type: string
-          format: date-time
-          nullable: true
-          description: 保留状態の有効期限。無期限の場合はnull。
-        assignedStaffId:
-          type: string
-          allOf:
-            - $ref: "#/components/schemas/Models.StaffId"
-          nullable: true
-          description: 仮割り当てされたスタッフID。スタッフが未確定の場合はnull。
-      description: 予約が確認待ち段階にある場合の状態情報。
     Models.PendingPaymentStatus:
       type: object
       required:
         - type
         - createdAt
-      properties:
-        type:
-          type: string
-          enum:
-            - pending
-          description: 状態種別（pending 固定値）
-        createdAt:
-          type: string
-          format: date-time
-          description: 支払いが登録された日時
-      description: 支払い待ち状態の詳細
-    Models.PendingPaymentStatusUpdate:
-      type: object
       properties:
         type:
           type: string
@@ -18378,25 +16258,6 @@ components:
           nullable: true
           description: 処理を担当しているスタッフ ID
       description: 決済処理中の状態の詳細
-    Models.ProcessingPaymentStatusUpdate:
-      type: object
-      properties:
-        type:
-          type: string
-          enum:
-            - processing
-          description: 状態種別（processing 固定値）
-        startedAt:
-          type: string
-          format: date-time
-          description: 処理開始日時
-        processorId:
-          type: string
-          allOf:
-            - $ref: "#/components/schemas/Models.StaffId"
-          nullable: true
-          description: 処理を担当しているスタッフ ID
-      description: 決済処理中の状態の詳細
     Models.PurchaseOrder:
       type: object
       required:
@@ -18559,6 +16420,10 @@ components:
       description: 仕入れ発注を作成する入力モデル
     Models.PurchaseOrderUpdateRequest:
       type: object
+      required:
+        - expectedDelivery
+        - actualDelivery
+        - deliveryNotes
       properties:
         status:
           allOf:
@@ -18701,29 +16566,6 @@ components:
         refundAmount:
           allOf:
             - $ref: "#/components/schemas/Models.Money"
-          description: 返金金額
-        refundId:
-          type: string
-          allOf:
-            - $ref: "#/components/schemas/Models.RefundId"
-          nullable: true
-          description: 関連する返金 ID
-      description: 全額返金済み状態の詳細
-    Models.RefundedPaymentStatusUpdate:
-      type: object
-      properties:
-        type:
-          type: string
-          enum:
-            - refunded
-          description: 状態種別（refunded 固定値）
-        refundedAt:
-          type: string
-          format: date-time
-          description: 返金が完了した日時
-        refundAmount:
-          allOf:
-            - $ref: "#/components/schemas/Models.MoneyUpdate"
           description: 返金金額
         refundId:
           type: string
@@ -19396,55 +17238,110 @@ components:
             $ref: "#/components/schemas/Models.StaffPerformance"
           description: 売上貢献度の高いスタッフ情報
       description: 期間内の売上実績を集計したレポート
-    Models.Salon:
+    Models.SalonCreateRequest:
       type: object
       required:
-        - id
         - name
+        - nameKana
         - description
+        - postalCode
+        - prefecture
+        - city
         - address
-        - contactInfo
-        - openingHours
-        - businessHours
+        - building
+        - latitude
+        - longitude
+        - phoneNumber
+        - alternativePhone
+        - email
+        - websiteUrl
+        - logoUrl
         - imageUrls
         - features
-        - rating
-        - reviewCount
-        - createdAt
-        - createdBy
-        - updatedAt
-        - updatedBy
+        - amenities
+        - businessHours
+        - timezone
+        - currency
+        - taxRate
+        - isActive
+        - openingHours
       properties:
-        id:
-          allOf:
-            - $ref: "#/components/schemas/Models.SalonId"
-          description: サロンを一意に識別するID
         name:
           type: string
+          minLength: 1
+          maxLength: 255
           description: 公式名称またはブランド名称
+        nameKana:
+          type: string
+          nullable: true
+          maxLength: 255
+          description: 名称のカナ表記。未設定の場合はnull
         description:
           type: string
           nullable: true
-          description: サロンの特徴やコンセプトを伝える説明文。未設定の場合はnull
-        address:
-          allOf:
-            - $ref: "#/components/schemas/Models.Address"
-          description: 所在地・アクセス・郵便番号等を含む住所情報
-        contactInfo:
-          allOf:
-            - $ref: "#/components/schemas/Models.ContactInfo"
-          description: 電話・メール・SNS等の問い合わせ窓口情報
-        openingHours:
-          type: array
-          items:
-            $ref: "#/components/schemas/Models.OpeningHours"
-          description: 曜日別の基本営業時間帯一覧
-        businessHours:
-          type: array
-          items:
-            $ref: "#/components/schemas/Models.BusinessHours"
+          description: サロン紹介文。未設定の場合はnull
+        postalCode:
+          type: string
           nullable: true
-          description: 季節やキャンペーン等に合わせた営業スケジュール。通常営業時間のみの場合はnull
+          maxLength: 10
+          description: 郵便番号。未設定の場合はnull
+        prefecture:
+          type: string
+          minLength: 1
+          maxLength: 50
+          description: 都道府県名
+        city:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: 市区町村名
+        address:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: 町名・番地
+        building:
+          type: string
+          nullable: true
+          maxLength: 255
+          description: 建物名・部屋番号。未設定の場合はnull
+        latitude:
+          type: number
+          format: double
+          nullable: true
+          minimum: -90
+          maximum: 90
+          description: 緯度(十進度)。未設定の場合はnull
+        longitude:
+          type: number
+          format: double
+          nullable: true
+          minimum: -180
+          maximum: 180
+          description: 経度(十進度)。未設定の場合はnull
+        phoneNumber:
+          type: string
+          maxLength: 20
+          description: 代表電話番号
+        alternativePhone:
+          type: string
+          nullable: true
+          maxLength: 20
+          description: 予備の電話番号。未設定の場合はnull
+        email:
+          type: string
+          maxLength: 255
+          description: 問い合わせ用メールアドレス。サロン間で一意
+        websiteUrl:
+          type: string
+          nullable: true
+          maxLength: 500
+          description: 公式サイトのURL。未設定の場合はnull
+        logoUrl:
+          type: string
+          nullable: true
+          maxLength: 500
+          description: ロゴ画像のURL。未設定の場合はnull
         imageUrls:
           type: array
           items:
@@ -19454,7 +17351,160 @@ components:
           type: array
           items:
             type: string
-          description: 設備・サービス・こだわりポイント等の特徴タグ一覧
+          description: サービスやこだわりポイント等の特徴タグ一覧
+        amenities:
+          type: array
+          items:
+            type: string
+          description: Wi-Fi・駐車場などの設備タグ一覧
+        businessHours:
+          type: array
+          items:
+            $ref: "#/components/schemas/Models.BusinessHours"
+          nullable: true
+          description: 曜日別の通常営業時間。未設定の場合はnull
+        timezone:
+          type: string
+          maxLength: 50
+          description: 営業時間の基準となるIANAタイムゾーンID
+        currency:
+          type: string
+          minLength: 3
+          maxLength: 3
+          description: 料金表示に使用する通貨コード(ISO 4217)
+        taxRate:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 100
+          description: 消費税率(%)
+        isActive:
+          type: boolean
+          description: 予約受付中かどうか
+        openingHours:
+          type: array
+          items:
+            $ref: "#/components/schemas/Models.OpeningHours"
+          description: 日付単位の営業日カレンダー
+      description: サロン新規登録リクエスト - 全項目のキーが必須。DB で NULL 許可のカラムのみ null を指定できる
+    Models.SalonId:
+      type: string
+      format: uuid
+      description: サロン店舗・拠点を識別するためのブランド付きUUID。
+    Models.SalonResponse:
+      type: object
+      required:
+        - id
+        - name
+        - nameKana
+        - description
+        - postalCode
+        - prefecture
+        - city
+        - address
+        - building
+        - latitude
+        - longitude
+        - phoneNumber
+        - alternativePhone
+        - email
+        - websiteUrl
+        - logoUrl
+        - imageUrls
+        - features
+        - amenities
+        - businessHours
+        - rating
+        - reviewCount
+        - timezone
+        - currency
+        - taxRate
+        - isActive
+        - openingHours
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          allOf:
+            - $ref: "#/components/schemas/Models.SalonId"
+          description: サロンを一意に識別するID
+        name:
+          type: string
+          description: 公式名称またはブランド名称
+        nameKana:
+          type: string
+          nullable: true
+          description: 名称のカナ表記。未設定の場合はnull
+        description:
+          type: string
+          nullable: true
+          description: サロンの特徴やコンセプトを伝える説明文。未設定の場合はnull
+        postalCode:
+          type: string
+          nullable: true
+          description: 郵便番号。未設定の場合はnull
+        prefecture:
+          type: string
+          description: 都道府県名
+        city:
+          type: string
+          description: 市区町村名
+        address:
+          type: string
+          description: 町名・番地
+        building:
+          type: string
+          nullable: true
+          description: 建物名・部屋番号。未設定の場合はnull
+        latitude:
+          type: number
+          format: double
+          nullable: true
+          description: 緯度(十進度)。未設定の場合はnull
+        longitude:
+          type: number
+          format: double
+          nullable: true
+          description: 経度(十進度)。未設定の場合はnull
+        phoneNumber:
+          type: string
+          description: 代表電話番号
+        alternativePhone:
+          type: string
+          nullable: true
+          description: 予備の電話番号。未設定の場合はnull
+        email:
+          type: string
+          description: 問い合わせ用メールアドレス。サロン間で一意
+        websiteUrl:
+          type: string
+          nullable: true
+          description: 公式サイトのURL。未設定の場合はnull
+        logoUrl:
+          type: string
+          nullable: true
+          description: ロゴ画像のURL。未設定の場合はnull
+        imageUrls:
+          type: array
+          items:
+            type: string
+          description: 店舗写真や内装画像のURL一覧
+        features:
+          type: array
+          items:
+            type: string
+          description: サービスやこだわりポイント等の特徴タグ一覧
+        amenities:
+          type: array
+          items:
+            type: string
+          description: Wi-Fi・駐車場などの設備タグ一覧
+        businessHours:
+          type: array
+          items:
+            $ref: "#/components/schemas/Models.BusinessHours"
+          nullable: true
+          description: 曜日別の通常営業時間。未設定の場合はnull
         rating:
           type: number
           format: float
@@ -19463,245 +17513,162 @@ components:
         reviewCount:
           type: integer
           format: int32
-          nullable: true
-          description: 蓄積されたレビュー件数。レビュー未登録の場合はnull
+          description: 蓄積されたレビュー件数
+        timezone:
+          type: string
+          description: 営業時間の基準となるIANAタイムゾーンID
+        currency:
+          type: string
+          description: 料金表示に使用する通貨コード(ISO 4217)
+        taxRate:
+          type: number
+          format: double
+          description: 消費税率(%)
+        isActive:
+          type: boolean
+          description: 予約受付中かどうか
+        openingHours:
+          type: array
+          items:
+            $ref: "#/components/schemas/Models.OpeningHours"
+          description: 日付単位の営業日カレンダー
         createdAt:
           type: string
           format: date-time
-          description: レコード作成日時。
-        createdBy:
-          type: string
-          nullable: true
-          description: レコードを作成したユーザーID。システム自動作成または匿名作成の場合はnull
+          description: レコード作成日時
         updatedAt:
           type: string
           format: date-time
-          description: レコード最終更新日時。
-        updatedBy:
+          description: レコード最終更新日時
+      description: |-
+        サロンレスポンス - salons テーブルの公開カラムと、営業日カレンダー(opening_hours)を返す。
+        プロパティ名と null 許可は DB カラムと一致させている。
+    Models.SalonUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: 公式名称またはブランド名称
+        nameKana:
           type: string
           nullable: true
-          description: レコードを最後に更新したユーザーID。システム自動更新または匿名更新の場合はnull
-      description: サロン基本情報モデル - 美容室の店舗情報、顧客向け公開情報、運営に必要な基礎データを一元管理する
-    Models.SalonAvailabilityRequest:
-      type: object
-      required:
-        - serviceId
-        - date
-      properties:
-        serviceId:
-          allOf:
-            - $ref: "#/components/schemas/Models.ServiceId"
-          description: 空き状況を確認したいサービスのID
-        date:
+          maxLength: 255
+          description: 名称のカナ表記。nullでクリア
+        description:
           type: string
-          format: date
-          description: 希望する施術日
-        timeSlot:
-          allOf:
-            - $ref: "#/components/schemas/Models.TimeSlot"
-          description: 希望する時間帯。未指定の場合は全時間帯を対象
-        staffId:
-          allOf:
-            - $ref: "#/components/schemas/Models.StaffId"
-          description: 指名したいスタッフのID。指名なしの場合はnull
-        slots:
-          type: integer
-          format: int32
-          minimum: 1
-          description: 必要な枠数。デフォルトは1枠
-          default: 1
-      description: 指定した条件でサロンの予約枠の空き状況を確認するためのリクエスト
-    Models.SalonAvailabilityResponse:
-      type: object
-      required:
-        - availableSlots
-        - nextAvailableDate
-        - waitlistAvailable
-      properties:
-        availableSlots:
-          type: array
-          items:
-            $ref: "#/components/schemas/Models.AvailableTimeSlot"
-          description: 予約可能な時間帯候補一覧
-        nextAvailableDate:
-          type: string
-          format: date
           nullable: true
-          description: 希望日が満席の場合に提示する次の空き日。空きがない場合はnull
-        waitlistAvailable:
-          type: boolean
-          description: ウェイトリスト登録の可否
-      description: サロンの空き状況照会結果を返すレスポンス
-    Models.SalonId:
-      type: string
-      format: uuid
-      description: サロン店舗・拠点を識別するためのブランド付きUUID。
-    Models.SalonRecommendation:
-      type: object
-      required:
-        - score
-        - reasons
-        - matchingServices
-      properties:
-        score:
-          type: integer
-          format: int32
-          description: サロン推薦スコア（0-100）
-        reasons:
+          description: サロン紹介文。nullでクリア
+        postalCode:
+          type: string
+          nullable: true
+          maxLength: 10
+          description: 郵便番号。nullでクリア
+        prefecture:
+          type: string
+          minLength: 1
+          maxLength: 50
+          description: 都道府県名
+        city:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: 市区町村名
+        address:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: 町名・番地
+        building:
+          type: string
+          nullable: true
+          maxLength: 255
+          description: 建物名・部屋番号。nullでクリア
+        latitude:
+          type: number
+          format: double
+          nullable: true
+          minimum: -90
+          maximum: 90
+          description: 緯度(十進度)。nullでクリア
+        longitude:
+          type: number
+          format: double
+          nullable: true
+          minimum: -180
+          maximum: 180
+          description: 経度(十進度)。nullでクリア
+        phoneNumber:
+          type: string
+          maxLength: 20
+          description: 代表電話番号
+        alternativePhone:
+          type: string
+          nullable: true
+          maxLength: 20
+          description: 予備の電話番号。nullでクリア
+        email:
+          type: string
+          maxLength: 255
+          description: 問い合わせ用メールアドレス。サロン間で一意
+        websiteUrl:
+          type: string
+          nullable: true
+          maxLength: 500
+          description: 公式サイトのURL。nullでクリア
+        logoUrl:
+          type: string
+          nullable: true
+          maxLength: 500
+          description: ロゴ画像のURL。nullでクリア
+        imageUrls:
           type: array
           items:
             type: string
-          description: 推薦理由のリスト
-        matchingServices:
+          description: 店舗写真や内装画像のURL一覧
+        features:
           type: array
           items:
-            $ref: "#/components/schemas/Models.ServiceSummary"
-          description: 要望に合致したサービス一覧
-      allOf:
-        - $ref: "#/components/schemas/Models.SalonSummary"
-      description: パーソナライズされたおすすめ度スコアを含むサロン推薦モデル
-    Models.SalonStatistics:
-      type: object
-      required:
-        - totalServices
-        - totalStaff
-        - averageRating
-        - totalReviews
-        - monthlyBookings
-        - monthlyRevenue
-        - popularServices
-        - busyHours
-      properties:
-        totalServices:
-          type: integer
-          format: int32
-          description: 登録されている提供メニューの総数
-        totalStaff:
-          type: integer
-          format: int32
-          description: 在籍スタッフの総数
-        averageRating:
+            type: string
+          description: サービスやこだわりポイント等の特徴タグ一覧
+        amenities:
+          type: array
+          items:
+            type: string
+          description: Wi-Fi・駐車場などの設備タグ一覧
+        businessHours:
+          type: array
+          items:
+            $ref: "#/components/schemas/Models.BusinessHours"
+          nullable: true
+          description: 曜日別の通常営業時間。nullでクリア
+        timezone:
+          type: string
+          maxLength: 50
+          description: 営業時間の基準となるIANAタイムゾーンID
+        currency:
+          type: string
+          minLength: 3
+          maxLength: 3
+          description: 料金表示に使用する通貨コード(ISO 4217)
+        taxRate:
           type: number
-          format: float
-          nullable: true
-          description: レビューから算出した平均評価。レビュー未登録の場合はnull
-        totalReviews:
-          type: integer
-          format: int32
-          description: 累計レビュー件数
-        monthlyBookings:
-          type: integer
-          format: int32
-          description: 当月の予約件数合計
-        monthlyRevenue:
-          type: object
-          allOf:
-            - $ref: "#/components/schemas/Models.Money"
-          nullable: true
-          description: 当月の売上総額。売上未集計の場合はnull
-        popularServices:
+          format: double
+          minimum: 0
+          maximum: 100
+          description: 消費税率(%)
+        isActive:
+          type: boolean
+          description: 予約受付中かどうか
+        openingHours:
           type: array
           items:
-            $ref: "#/components/schemas/Models.ServiceSummary"
-          description: 人気の高いサービス一覧
-        busyHours:
-          type: array
-          items:
-            $ref: "#/components/schemas/Models.TimeSlot"
-          description: 予約が集中する時間帯の一覧
-      description: サロン運営指標を集計したダッシュボード向けレスポンスモデル
-    Models.SalonSubscriptionRequest:
-      type: object
-      required:
-        - customerId
-        - notificationTypes
-        - categories
-      properties:
-        customerId:
-          allOf:
-            - $ref: "#/components/schemas/Models.CustomerId"
-          description: 通知を受け取る顧客ID
-        notificationTypes:
-          type: array
-          items:
-            $ref: "#/components/schemas/Models.NotificationType"
-          description: 希望する通知カテゴリの種類一覧
-        categories:
-          type: array
-          items:
-            $ref: "#/components/schemas/Models.ServiceCategoryType"
-          description: 関心の高いサービスカテゴリ。未指定の場合は全カテゴリ対象
-      description: サロンからの最新情報通知を希望する顧客の購読リクエスト
-    Models.SalonSubscriptionResponse:
-      type: object
-      required:
-        - subscriptionId
-        - status
-        - expiresAt
-      properties:
-        subscriptionId:
-          type: string
-          description: 購読設定を一意に識別するID
-        status:
-          type: string
-          enum:
-            - active
-          description: 購読状態（常にactiveを返却）
-        expiresAt:
-          type: string
-          format: date-time
-          nullable: true
-          description: 購読の有効期限。無期限の場合はnull
-      description: サロン通知購読の作成結果を返すレスポンスモデル
-    Models.SalonSummary:
-      type: object
-      required:
-        - id
-        - name
-        - address
-        - rating
-        - reviewCount
-      properties:
-        id:
-          allOf:
-            - $ref: "#/components/schemas/Models.SalonId"
-          description: 対象サロンの一意なID
-        name:
-          type: string
-          description: 表示用のサロン名称
-        address:
-          allOf:
-            - $ref: "#/components/schemas/Models.Address"
-          description: ユーザーに提示する所在地情報
-        rating:
-          type: number
-          format: float
-          nullable: true
-          description: レビュー平均値。レビュー未登録の場合はnull
-        reviewCount:
-          type: integer
-          format: int32
-          nullable: true
-          description: レビュー件数。レビュー未登録の場合はnull
-      description: サロン概要モデル - リスト表示や検索結果に必要な要約情報を提供
-    Models.SalonWithDistance:
-      type: object
-      required:
-        - distance
-        - travelTime
-      properties:
-        distance:
-          type: number
-          format: float
-          description: 基準地点からの距離（km）
-        travelTime:
-          type: integer
-          format: int32
-          nullable: true
-          description: 想定移動時間（分）。計算不可の場合はnull
-      allOf:
-        - $ref: "#/components/schemas/Models.Salon"
-      description: 検索基準地点からの距離情報を付与したサロンモデル
+            $ref: "#/components/schemas/Models.OpeningHours"
+          description: 日付単位の営業日カレンダー。指定した場合は全件を置き換える
+      description: |-
+        サロン部分更新リクエスト - 指定した項目だけを更新する。DB で NULL 許可のカラムは null でクリアできる。
+        openingHours を指定した場合は営業日カレンダー全体を置き換える
     Models.ScalpConditionType:
       type: string
       enum:
@@ -19737,38 +17704,6 @@ components:
           type: string
           nullable: true
           description: 頭皮に関する備考。特記事項がない場合はnull
-    Models.ScheduleException:
-      type: object
-      required:
-        - date
-        - type
-        - description
-        - alternativeStaffId
-      properties:
-        date:
-          type: string
-          format: date
-          description: 例外が適用される日付
-        type:
-          type: string
-          enum:
-            - holiday
-            - sick_leave
-            - vacation
-            - training
-            - other
-          description: 例外の種別（休暇・病欠など）
-        description:
-          type: string
-          nullable: true
-          description: 補足説明や注意事項。特記事項がない場合はnull
-        alternativeStaffId:
-          type: string
-          allOf:
-            - $ref: "#/components/schemas/Models.StaffId"
-          nullable: true
-          description: 代替対応するスタッフのID。代替スタッフ未手配の場合はnull
-      description: スタッフに発生する例外スケジュール（休暇・研修等）を表すモデル
     Models.ScoreRange:
       type: object
       required:
@@ -19949,7 +17884,8 @@ components:
           description: サービス名
         description:
           type: string
-          description: 説明文
+          nullable: true
+          description: 説明文。未設定の場合はnull
         price:
           type: integer
           format: int32
@@ -20656,7 +18592,8 @@ components:
           description: セッション所有者のユーザーID。
         refreshToken:
           type: string
-          description: アクセストークン再発行に使用するリフレッシュトークン。
+          nullable: true
+          description: アクセストークン再発行に使用するリフレッシュトークン。未設定の場合はnull
         ipAddress:
           type: string
           description: セッション発行元のIPアドレス。
@@ -20859,7 +18796,8 @@ components:
           type: array
           items:
             type: string
-          description: 得意分野や専門メニューの一覧
+          nullable: true
+          description: 得意分野や専門メニューの一覧。未設定の場合はnull
         imageUrl:
           type: string
           nullable: true
@@ -21073,7 +19011,8 @@ components:
         dayOfWeek:
           allOf:
             - $ref: "#/components/schemas/Models.DayOfWeekType"
-          description: 対象となる曜日
+          nullable: true
+          description: 対象となる曜日。未設定の場合はnull
         startTime:
           type: string
           description: "勤務開始時刻 (フォーマット例: HH:mm)"
@@ -21093,117 +19032,6 @@ components:
           nullable: true
           description: シフトが有効となる期間 - 無期限スケジュールの場合はnull
       description: スタッフシフトモデル - 通常勤務スケジュールと休憩時間、適用期間を定義し、予約可能時間の算出に利用する
-    Models.StaffScheduleManagement:
-      type: object
-      required:
-        - staffId
-        - salonId
-        - regularHours
-        - exceptions
-        - effectiveFrom
-        - effectiveTo
-        - createdAt
-        - createdBy
-        - updatedAt
-        - updatedBy
-        - version
-        - isDeleted
-        - deletedAt
-        - deletedBy
-        - deletionReason
-      properties:
-        staffId:
-          allOf:
-            - $ref: "#/components/schemas/Models.StaffId"
-          description: 対象スタッフのID
-        salonId:
-          allOf:
-            - $ref: "#/components/schemas/Models.SalonId"
-          description: 所属サロンのID
-        regularHours:
-          type: array
-          items:
-            $ref: "#/components/schemas/Models.BusinessHours"
-          description: 通常勤務時間帯の一覧
-        exceptions:
-          type: array
-          items:
-            $ref: "#/components/schemas/Models.ScheduleException"
-          description: 休暇や研修などの例外設定一覧
-        effectiveFrom:
-          type: string
-          format: date-time
-          description: スケジュールが有効になる開始日時
-        effectiveTo:
-          type: string
-          format: date-time
-          nullable: true
-          description: スケジュールの終了日時。無期限の場合はnull
-        createdAt:
-          type: string
-          format: date-time
-          description: レコード作成日時 (UTC)。
-        createdBy:
-          type: string
-          description: レコードを作成したユーザーID またはサービス名。
-        updatedAt:
-          type: string
-          format: date-time
-          description: 最終更新日時 (UTC)。
-        updatedBy:
-          type: string
-          description: 最後に更新したユーザーID またはサービス名。
-        version:
-          type: integer
-          format: int32
-          description: 楽観的ロックに使用するバージョン番号。
-        isDeleted:
-          type: boolean
-          description: 論理削除フラグ。true の場合は通常の検索結果から除外する。
-          default: false
-        deletedAt:
-          type: string
-          format: date-time
-          nullable: true
-          description: 削除操作が実行された日時 (UTC)。削除されていない場合はnull
-        deletedBy:
-          type: string
-          nullable: true
-          description: 削除操作を実施したユーザーID またはサービス名。削除されていない場合はnull
-        deletionReason:
-          type: string
-          nullable: true
-          description: 削除理由や補足メモ。カスタマーサポート対応に利用する。理由が不要または削除されていない場合はnull
-      description: スタッフの勤務スケジュールと例外設定を管理するモデル
-    Models.StaffScheduleUpdateRequest:
-      type: object
-      required:
-        - regularHours
-        - exceptions
-        - effectiveFrom
-        - effectiveTo
-      properties:
-        regularHours:
-          type: array
-          items:
-            $ref: "#/components/schemas/Models.BusinessHours"
-          description: 更新後の通常勤務時間帯一覧
-        exceptions:
-          type: array
-          items:
-            $ref: "#/components/schemas/Models.ScheduleException"
-          nullable: true
-          description: 休暇や特例などの例外設定一覧。例外がない場合はnull
-        effectiveFrom:
-          type: string
-          format: date-time
-          description: 更新内容の適用開始日時
-        effectiveTo:
-          type: string
-          format: date-time
-          nullable: true
-          description: 適用終了日時。無期限の場合はnull
-      description: スタッフの勤務スケジュールを更新するためのリクエスト
     Models.StaffSummary:
       type: object
       required:
@@ -21304,11 +19132,14 @@ components:
           description: 操作した数量
         reason:
           type: string
-          description: 操作理由
+          nullable: true
+          description: 操作理由。未設定の場合はnull
         performedBy:
+          type: string
           allOf:
             - $ref: "#/components/schemas/Models.StaffId"
-          description: 操作を担当したスタッフ ID
+          nullable: true
+          description: 操作を担当したスタッフ ID。未設定の場合はnull
         occurredAt:
           type: string
           format: date-time
@@ -21829,148 +19660,11 @@ components:
             - $ref: "#/components/schemas/Models.StaffId"
           description: 再割当先のスタッフID
       description: 予約更新リクエスト - 部分更新に対応した任意項目の変更指示を受け取り、既存予約を調整する。null指定で値をリセット可能
-    Models.UpdateSalonRequest:
-      type: object
-      properties:
-        name:
-          type: string
-          description: 名称変更を行う場合に指定
-        description:
-          type: string
-          nullable: true
-          description: 紹介文を更新する場合に指定（null指定で初期化可能）
-        address:
-          allOf:
-            - $ref: "#/components/schemas/Models.Address"
-          description: 住所情報の差し替えが必要な場合に指定
-        contactInfo:
-          allOf:
-            - $ref: "#/components/schemas/Models.ContactInfo"
-          description: 電話番号やメールアドレス等の連絡先を更新する場合に指定
-        openingHours:
-          type: array
-          items:
-            $ref: "#/components/schemas/Models.OpeningHours"
-          description: 通常営業時間の更新が必要な場合に指定
-        businessHours:
-          type: array
-          items:
-            $ref: "#/components/schemas/Models.BusinessHours"
-          nullable: true
-          description: 特別営業時間やシフト設定の更新に利用（null指定で初期化可能）
-        imageUrls:
-          type: array
-          items:
-            type: string
-          description: 画像URLリストを更新する場合に指定
-        features:
-          type: array
-          items:
-            type: string
-          description: 特徴タグの追加・削除を行う場合に指定
-      description: サロン情報を部分更新するためのリクエスト。null指定で値をリセット可能
-    Models.UpdateSalonRequestUpdate:
-      type: object
-      properties:
-        name:
-          type: string
-          description: 名称変更を行う場合に指定
-        description:
-          type: string
-          nullable: true
-          description: 紹介文を更新する場合に指定（null指定で初期化可能）
-        address:
-          allOf:
-            - $ref: "#/components/schemas/Models.AddressUpdate"
-          description: 住所情報の差し替えが必要な場合に指定
-        contactInfo:
-          allOf:
-            - $ref: "#/components/schemas/Models.ContactInfoUpdate"
-          description: 電話番号やメールアドレス等の連絡先を更新する場合に指定
-        openingHours:
-          type: array
-          items:
-            $ref: "#/components/schemas/Models.OpeningHours"
-          description: 通常営業時間の更新が必要な場合に指定
-        businessHours:
-          type: array
-          items:
-            $ref: "#/components/schemas/Models.BusinessHours"
-          nullable: true
-          description: 特別営業時間やシフト設定の更新に利用（null指定で初期化可能）
-        imageUrls:
-          type: array
-          items:
-            type: string
-          description: 画像URLリストを更新する場合に指定
-        features:
-          type: array
-          items:
-            type: string
-          description: 特徴タグの追加・削除を行う場合に指定
-      description: サロン情報を部分更新するためのリクエスト。null指定で値をリセット可能
     Models.UpdateServiceRequest:
       type: object
       required:
         - description
         - duration
-      properties:
-        name:
-          type: string
-          description: 更新後のサービス名
-        description:
-          type: string
-          nullable: true
-          description: 更新後の説明文。null指定で説明文をクリア（空文字列にリセット）
-        duration:
-          type: integer
-          format: int32
-          nullable: true
-          description: 更新後の施術時間。null指定で時間設定をクリア（デフォルト値にリセット）
-        price:
-          type: integer
-          format: int32
-          description: 更新後の料金
-        category:
-          allOf:
-            - $ref: "#/components/schemas/Models.ServiceCategoryType"
-          description: 更新後のサービスカテゴリ
-        categoryId:
-          type: string
-          allOf:
-            - $ref: "#/components/schemas/Models.CategoryId"
-          nullable: true
-          description: 更新後のカテゴリ ID（null 指定で解除）
-        imageUrl:
-          type: string
-          nullable: true
-          description: 更新後の画像 URL（null 指定で解除）
-        requiredStaffLevel:
-          type: integer
-          format: int32
-          nullable: true
-          description: 更新後の必要スタッフレベル（null 指定で解除）
-        depositAmount:
-          type: integer
-          format: int32
-          nullable: true
-          description: 更新後のデポジット額（null 指定で解除）
-        isActive:
-          type: boolean
-          description: 更新後の有効フラグ
-        maxAdvanceBookingDays:
-          type: integer
-          format: int32
-          nullable: true
-          description: 更新後の最大予約日数（null 指定で解除）
-        minAdvanceBookingHours:
-          type: integer
-          format: int32
-          nullable: true
-          description: 更新後の最短予約受付時間（null 指定で解除）
-      description: サービス情報を部分更新するリクエスト。null指定で値をリセット可能
-    Models.UpdateServiceRequestUpdate:
-      type: object
       properties:
         name:
           type: string
@@ -22146,7 +19840,8 @@ components:
         twoFactorStatus:
           allOf:
             - $ref: "#/components/schemas/Models.TwoFactorStatusType"
-          description: 2要素認証の設定状態。
+          nullable: true
+          description: 2要素認証の設定状態。未設定の場合はnull
         twoFactorSecret:
           type: string
           nullable: true
@@ -22467,49 +20162,6 @@ components:
         - preferredStaffId
         - preferredServiceId
         - notes
-      properties:
-        position:
-          type: integer
-          format: int32
-          description: 現在の待機順序。
-        estimatedTime:
-          type: string
-          format: date-time
-          nullable: true
-          description: 呼び出し予想時刻。時刻が未確定の場合はnull。
-        joinedAt:
-          type: string
-          format: date-time
-          description: ウェイティングリストに参加した日時。
-        expiresAt:
-          type: string
-          format: date-time
-          nullable: true
-          description: 待機権が失効する日時。無期限の場合はnull。
-        notifiedAt:
-          type: string
-          format: date-time
-          nullable: true
-          description: 呼び出し通知を送信した日時。未通知の場合はnull。
-        preferredStaffId:
-          type: string
-          allOf:
-            - $ref: "#/components/schemas/Models.StaffId"
-          nullable: true
-          description: 希望スタッフID。指名なしの場合はnull。
-        preferredServiceId:
-          type: string
-          allOf:
-            - $ref: "#/components/schemas/Models.ServiceId"
-          nullable: true
-          description: 希望サービスID。サービスを指定していない場合はnull。
-        notes:
-          type: string
-          nullable: true
-          description: 追加メモ。メモがない場合はnull。
-      description: ウェイティングリストに登録された顧客情報。
-    Models.WaitlistEntryUpdate:
-      type: object
       properties:
         position:
           type: integer

@@ -487,14 +487,14 @@ namespace BeautySalon.Models {
     @doc("住所情報。未登録の場合はnull")
     address: Address | null;
 
-    @doc("顧客の好みや要望")
-    preferences: Record<unknown>;
+    @doc("顧客の好みや要望。未設定の場合はnull")
+    preferences: Record<unknown> | null;
 
     @doc("内部メモ。メモがない場合はnull")
     notes: string | null;
 
-    @doc("分類用タグ")
-    tags: string[];
+    @doc("分類用タグ。未設定の場合はnull")
+    tags: string[] | null;
 
     @doc("現在のロイヤルティポイント")
     loyaltyPoints: int32;

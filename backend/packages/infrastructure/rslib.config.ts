@@ -24,7 +24,12 @@ export default defineConfig({
         minify: isProduction,
         sourceMap: isDevelopment || isTest || isStaging || isLocalhost,
         target: 'node',
-        externals: [/^@beauty-salon\//, 'drizzle-orm', 'postgres'],
+        externals: [
+          /^@beauty-salon-backend\//,
+          'drizzle-orm',
+          'postgres',
+          'ts-pattern',
+        ],
       },
     },
   ],

@@ -77,6 +77,7 @@ export async function seedSalons(
         ],
         rating: '4.8',
         reviewCount: 324,
+        amenities: [],
         features: ['Hair Styling', 'Hair Color', 'Treatment', 'Head Spa'],
         imageUrls: [
           'https://example.com/images/salon1-1.jpg',
@@ -153,6 +154,7 @@ export async function seedSalons(
         ],
         rating: '4.6',
         reviewCount: 189,
+        amenities: [],
         features: ['Hair Cut', 'Spa', 'Color', 'Perm', 'Treatment'],
         imageUrls: [
           'https://example.com/images/salon2-1.jpg',

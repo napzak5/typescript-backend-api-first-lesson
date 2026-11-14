@@ -7,6 +7,6 @@
  */
 
 /**
- * 最低評価値による絞り込み
+ * 最低評価値による絞り込み。評価のないサロンは除外される
  */
 export type ModelsSalonSearchRequestMinRatingParameter = number;

@@ -1,7 +1,7 @@
 import type { Database } from '@beauty-salon-backend/infrastructure'
 import type { Express } from 'express'
 import request from 'supertest'
-import { createApp } from './app'
+import { createApp } from '../../index'
 
 // Global type declarations for testing
 declare global {

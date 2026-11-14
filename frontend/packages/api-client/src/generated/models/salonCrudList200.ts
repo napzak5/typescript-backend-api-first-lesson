@@ -7,7 +7,7 @@
  */
 import type { ModelsPaginationLinks } from './modelsPaginationLinks';
 import type { ModelsPaginationMeta } from './modelsPaginationMeta';
-import type { ModelsSalon } from './modelsSalon';
+import type { ModelsSalonResponse } from './modelsSalonResponse';
 
 /**
  * カーソル方式のページネーションレスポンスモデル。
@@ -15,7 +15,7 @@ import type { ModelsSalon } from './modelsSalon';
  */
 export type SalonCrudList200 = {
   /** 現在ページで取得したデータ配列。サロン一覧や予約履歴の実データを格納する。 */
-  data: ModelsSalon[];
+  data: ModelsSalonResponse[];
   /** ページング状態を示すメタ情報。次ページの有無やカーソル値を含む。 */
   meta: ModelsPaginationMeta;
   /** 関連するページ遷移リンク。HATEOAS 連携や外部連携向けに利用する。 */

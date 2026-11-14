@@ -7,6 +7,6 @@
  */
 
 /**
- * 検索キーワード。qパラメータのエイリアス
+ * 名称・説明文に対する部分一致キーワード(大文字小文字を区別しない)
  */
 export type ModelsSalonSearchRequestKeywordParameter = string;

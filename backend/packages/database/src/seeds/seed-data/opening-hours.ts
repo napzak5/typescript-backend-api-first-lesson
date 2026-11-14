@@ -1,3 +1,4 @@
+import { type Day, format, nextDay } from 'date-fns'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import * as schema from '../../schema'
 
@@ -16,23 +17,20 @@ export async function seedOpeningHours(
     'sunday',
   ] as const
 
-  // Helper function to get next occurrence of a day
-  const getNextOccurrence = (
-    dayOfWeek: (typeof daysOfWeek)[number],
-  ): string => {
-    const today = new Date()
-    const dayIndex = daysOfWeek.indexOf(dayOfWeek)
-    const currentDay = today.getDay()
-    const targetDay = dayIndex === 6 ? 0 : dayIndex + 1 // Convert to JS day (0=Sunday)
-    const daysToAdd = (targetDay - currentDay + 7) % 7 || 7
-    const nextDate = new Date(today)
-    nextDate.setDate(today.getDate() + daysToAdd)
-    const dateString = nextDate.toISOString().split('T')[0]
-    if (!dateString) {
-      throw new Error('Failed to format date')
-    }
-    return dateString
+  const dayIndexes: Record<(typeof daysOfWeek)[number], Day> = {
+    sunday: 0,
+    monday: 1,
+    tuesday: 2,
+    wednesday: 3,
+    thursday: 4,
+    friday: 5,
+    saturday: 6,
   }
+
+  // The next date that falls on the given day, as a local calendar date so
+  // that it agrees with dayOfWeek whatever the time of day.
+  const getNextOccurrence = (dayOfWeek: (typeof daysOfWeek)[number]): string =>
+    format(nextDay(new Date(), dayIndexes[dayOfWeek]), 'yyyy-MM-dd')
 
   for (const salonId of salonIds) {
     // Regular weekday hours
