@@ -41,6 +41,13 @@ import {
   request,
   UUID,
 } from './_shared/test-helpers'
+import {
+  SECRET,
+  sealSecret,
+  stepAt,
+  totp,
+  twoFactorUser,
+} from './_shared/two-factor-helpers'
 
 const LOGIN = `${AUTH}/login`
 const REFRESH = `${AUTH}/refresh`
@@ -101,7 +108,6 @@ const USER_PROPERTIES = [
   'staffId',
   'status',
   'trustedIpAddresses',
-  'twoFactorEnabled',
   'twoFactorStatus',
   'updatedAt',
 ]
@@ -118,6 +124,11 @@ const authenticationRequired = {
 }
 const tokenExpired = { status: 401, code: '1003', type: 'token-expired' }
 const invalidToken = { status: 401, code: '1004', type: 'invalid-token' }
+const twoFactorRequired = {
+  status: 401,
+  code: '1007',
+  type: 'two-factor-required',
+}
 const badRequest = { status: 400, code: '2001', type: 'validation' }
 const forbidden = { status: 403, code: '1005', type: 'forbidden' }
 
@@ -195,7 +206,6 @@ describe('Authentication API', () => {
             status: 'active',
             emailVerified: true,
             lastPasswordChange: null,
-            twoFactorEnabled: false,
             twoFactorStatus: 'disabled',
             failedLoginAttempts: 0,
             lockedUntil: null,
@@ -459,24 +469,13 @@ describe('Authentication API', () => {
         ['an account with the status deleted', { status: 'deleted' }, {}],
         ['a deleted user', { deletedAt: aMinuteAgo }, {}],
         [
-          'an account with two-factor authentication on',
-          { twoFactorEnabled: true },
-          {},
-        ],
-        [
-          'an account whose two-factor status is enabled',
-          { twoFactorStatus: 'enabled' },
-          {},
-        ],
-        [
-          'an account with two-factor authentication on, even with a code',
-          { twoFactorEnabled: true },
-          { twoFactorCode: '123456' },
-        ],
-        [
-          'an account whose two-factor status is enabled, even with a code',
-          { twoFactorStatus: 'enabled' },
-          { twoFactorCode: '123456' },
+          'a wrong password of an account whose two-factor status is enabled',
+          {
+            twoFactorStatus: 'enabled',
+            twoFactorSecret: sealSecret(SECRET),
+            backupCodes: [],
+          },
+          { password: 'wrong password' },
         ],
         [
           'an account whose stored hash is not Argon2id',
@@ -515,6 +514,55 @@ describe('Authentication API', () => {
         expect(stored?.lastLoginAt).toBeNull()
       },
     )
+
+    it.each<[string, (step: number) => string | null]>([
+      ['no code', () => null],
+      [
+        'a code that is not the current one of the app',
+        (step) => totp(SECRET, step - 2),
+      ],
+    ])(
+      'asks an account whose two-factor status is enabled for the code when %s comes with the right password, and starts no session',
+      async (_case, codeAtStep) => {
+        await insertUser(
+          db,
+          await twoFactorUser('enabled', { email: 'hanako@example.com' }),
+        )
+
+        const response = await request(app)
+          .post(LOGIN)
+          .send(
+            loginBody('hanako@example.com', {
+              twoFactorCode: codeAtStep(stepAt()),
+            }),
+          )
+
+        expectProblem(response, twoFactorRequired)
+        expect(response.body.title).toBe('Two-factor authentication required')
+        expect(response.headers['www-authenticate']).toBe(CHALLENGE)
+        expect(response.headers['cache-control']).toBe('no-store')
+        expect(await db.$count(sessions)).toBe(0)
+        const [stored] = await db
+          .select({ lastLoginAt: users.lastLoginAt })
+          .from(users)
+        expect(stored?.lastLoginAt).toBeNull()
+      },
+    )
+
+    it('signs an account whose two-factor status is enabled in when the code of the app comes with the right password', async () => {
+      const user = await insertUser(db, await twoFactorUser('enabled'))
+
+      const response = await request(app)
+        .post(LOGIN)
+        .send(loginBody(user.email, { twoFactorCode: totp(SECRET, stepAt()) }))
+
+      expect(response.status).toBe(200)
+      expect(response.body.data.user).toMatchObject({
+        id: user.id,
+        twoFactorStatus: 'enabled',
+      })
+      expect(await db.$count(sessions)).toBe(1)
+    })
 
     it('counts every one of five wrong passwords sent at once and locks the account', async () => {
       const user = await insertUser(db)
@@ -798,8 +846,10 @@ describe('Authentication API', () => {
 
     it('shows no password hash, secret, token column or internal column of the user', async () => {
       const user = await insertUser(db, {
+        twoFactorStatus: 'pending',
         twoFactorSecret: 'TOTP-SHARED-SECRET',
         backupCodes: ['BACKUP-CODE-1'],
+        twoFactorLastUsedStep: 59_031_337,
         metadata: { note: 'INTERNAL-NOTE' },
         emailVerificationTokenHash: 'email-verification-token-hash',
         emailVerificationExpiry: '2026-11-15T09:00:00.000Z',
@@ -826,6 +876,7 @@ describe('Authentication API', () => {
         stored?.passwordHash ?? 'missing hash',
         'TOTP-SHARED-SECRET',
         'BACKUP-CODE-1',
+        '59031337',
         'INTERNAL-NOTE',
         'email-verification-token',
         'password-reset-token',

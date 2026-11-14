@@ -8,7 +8,7 @@
 
 1. [バックエンドの設定の仕組み](#バックエンドの設定の仕組み)
 2. [どのファイルが使われるか](#どのファイルが使われるか)
-3. [サーバーが読む 21 個の変数](#サーバーが読む-21-個の変数)
+3. [サーバーが読む 22 個の変数](#サーバーが読む-22-個の変数)
 4. [サーバーが読まない変数](#サーバーが読まない変数)
 5. [データベーススクリプトとテストの接続先](#データベーススクリプトとテストの接続先)
 6. [Docker Compose](#docker-compose)
@@ -28,7 +28,7 @@
 
 原則:
 
-- サーバーが読む変数は 21 個で、**すべて必須**です。コードの中に既定値はありません。
+- サーバーが読む変数は 22 個で、**すべて必須**です。コードの中に既定値はありません。
 - 検証は起動時に 1 回だけ行い、失敗したらサーバーは起動しません。
 - 環境変数を読むのはエントリーポイント（`backend/apps/server/src/index.ts`）だけです。それ以外の
   アプリケーションコードは `process.env` を読まず、`AppConfig` の値を引数として受け取ります。
@@ -129,7 +129,7 @@ export const loadEnvFile = (): LoadedEnvFile => {
 - ルートの `.env` は Docker Compose も読みます。`DATABASE_URL` と `POSTGRES_*` を変えるときは、
   同じ接続先を表すようにそろえてください。
 
-## サーバーが読む 21 個の変数
+## サーバーが読む 22 個の変数
 
 `backend/packages/config/src/app-config.ts` の `variablesSchema` が定義です。数値は数字だけの文字列で
 書きます（`3000.5`、`-1`、`30s` は不正）。
@@ -155,6 +155,7 @@ export const loadEnvFile = (): LoadedEnvFile => {
 | `SMTP_PASSWORD` | 空でない文字列 | `mail.password` | SMTP 認証のパスワード |
 | `MAIL_FROM` | メールアドレス、または `名前 <メールアドレス>` | `mail.from` | すべてのメールの差出人 |
 | `PUBLIC_APP_URL` | オリジン 1 つ | `publicAppUrl` | メールのリンクが指す Web アプリケーションのオリジン |
+| `TWO_FACTOR_ENCRYPTION_KEY` | 32 文字以上の文字列 | `twoFactor.encryptionKey` | 2 要素認証のシークレットを暗号化して保存するための鍵 |
 | `LOG_LEVEL` | `fatal`、`error`、`warn`、`info`、`debug`、`trace`、`silent` | `logging.level` | 出力するログの最低レベル |
 | `LOG_FORMAT` | `json`、`pretty` | `logging.format` | `json` は 1 行 1 オブジェクト、`pretty` はターミナル向け |
 
@@ -172,11 +173,21 @@ export const loadEnvFile = (): LoadedEnvFile => {
 
 メールの送信の仕組みと、ローカルでのメールの確認は [メール送信](./email.md) にあります。
 
+`TWO_FACTOR_ENCRYPTION_KEY` は、認証アプリのシークレットを DB に保存するときの暗号化に使います
+（[認証と認可](./authentication.md#2-要素認証)）。
+
+- 環境ごとに別の、ランダムな値にします。例: `openssl rand -base64 32`
+- 値を変えると、保存済みのシークレットはどれも復号できなくなり、2 要素認証を有効にしている利用者は
+  認証アプリのコードでログインできなくなります（バックアップコードは使えます）。鍵を切り替える仕組みは
+  ないので、いちど使い始めた値は変えません
+- リポジトリの `.env.*` ファイルに入っている値は、誰でも読める値です。`.env.staging` と
+  `.env.production` の値はプレースホルダーで、デプロイ先では必ず環境変数で置き換えます
+
 この表と README の表は同じ内容を保ちます。
 
 ## サーバーが読まない変数
 
-`.env.*` ファイルには、上の 21 個のほかに次の 5 個だけが入っています。
+`.env.*` ファイルには、上の 22 個のほかに次の 5 個だけが入っています。
 
 - **Docker Compose が使うもの**: `POSTGRES_DB`、`POSTGRES_USER`、`POSTGRES_PASSWORD`、`POSTGRES_PORT`
 - **`getDatabaseUrl()` が `DATABASE_URL` のないときに使うもの**: `POSTGRES_USER`、`POSTGRES_PASSWORD`、
@@ -184,7 +195,7 @@ export const loadEnvFile = (): LoadedEnvFile => {
 
 どのコードも読まない変数は、環境ファイルに置きません。`config` パッケージのテスト
 （`backend/packages/config/src/__tests__/app-config.test.ts`）が、すべての環境ファイルについて、
-上の 26 個以外の変数がないことを確認します。変数を増やすときは、それを読むコードと一緒に追加します
+上の 27 個以外の変数がないことを確認します。変数を増やすときは、それを読むコードと一緒に追加します
 （[変数を追加する](#変数を追加する)）。
 
 `parseAppConfig` は知らない変数を無視するので、プロセスの環境にほかの変数があってもサーバーの起動には
@@ -234,7 +245,8 @@ DATABASE_URL=postgres://<user>:<password>@<host>:5432/<database> pnpm db:migrate
    ケースを `should reject` の表に足す。このテストは、上の各ファイルがサーバーを完全に設定できること、
    `.env.template` がすべての変数名を含むことも確認する
 4. **値を渡す**: `AppConfig` から、使う場所まで引数で渡す（`backend/apps/server/src/server.ts` の
-   `startServer` → `createApp` の `settings`）。アプリケーションコードで `process.env` を読まない
+   `startServer` → `createApp` の `settings`、または設定から作った部品。例: `TotpAuthenticator`）。
+   アプリケーションコードで `process.env` を読まない
 5. **ドキュメント**: README の表と、このガイドの表に追加する
 6. **デプロイ先**: 新しいバージョンを起動する前に変数を設定する。設定されていなければサーバーは
    起動しない

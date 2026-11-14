@@ -31,8 +31,9 @@ The system follows Clean Architecture with API-First development. See [docs/arch
 - ✅ **USE** Result types for errors
 
 The rules cover application code, backend and frontend. The backend follows
-them without exception; its one `try`/`catch` is in `Result.fromPromise`,
-which turns an exception of a library into a value. The frontend utility
+them without exception; its two `try`/`catch` are in `Result.fromPromise` and
+`Result.fromThrowable`, which turn an exception of a library into a value.
+The frontend utility
 packages predate the rules and still contain type guards and assertions: new
 frontend code follows the rules and does not take them as a model.
 
@@ -77,6 +78,7 @@ export type DomainError =
   | { type: 'forbidden' }
   | { type: 'notFound'; entity: string; id: string }
   | { type: 'alreadyExists'; entity: string; field: string; value: string }
+  | { type: 'conflict'; message: string }
   | { type: 'database'; message: string; cause: unknown }
 
 // Exhaustive handling in API routes
@@ -149,7 +151,7 @@ backend/
 ├── apps/server/          # Composition root: configuration, logger, start-up, shutdown
 └── packages/
     ├── domain/           # Pure business logic
-    ├── infrastructure/   # Database access, mail (SMTP), password hashing, tokens, logging
+    ├── infrastructure/   # Database access, mail (SMTP), password hashing, tokens, one-time passwords, logging
     ├── api/              # HTTP layer
     ├── database/         # DB schema, migrations, seeds
     ├── generated/        # Auto-generated API types
@@ -157,14 +159,15 @@ backend/
     └── utility/          # Result type and shared helpers
 ```
 
-The Salon domain, the system endpoints and twelve authentication operations
-under `/api/v1/auth` (login, refresh, logout, the current user, registration,
-email verification, password reset and change) are implemented. The rest of
-the authentication contract (two-factor authentication, the list of sessions,
-the administrator operations) and the other domains exist in TypeSpec and in
-the database schema only. Sessions, passwords, permissions and the seeded
-accounts are described in [docs/authentication.md](docs/authentication.md),
-the mails the server sends in [docs/email.md](docs/email.md).
+The Salon domain, the system endpoints and the sixteen authentication
+operations of `AuthCrud` under `/api/v1/auth` (login, refresh, logout, the
+current user, registration, email verification, password reset and change,
+two-factor authentication) are implemented. The rest of the authentication
+contract (the list of sessions, the administrator operations) and the other
+domains exist in TypeSpec and in the database schema only. Sessions,
+passwords, two-factor authentication, permissions and the seeded accounts are
+described in [docs/authentication.md](docs/authentication.md), the mails the
+server sends in [docs/email.md](docs/email.md).
 
 ### Namespace Convention
 - Backend: `@beauty-salon-backend/*`
@@ -421,7 +424,7 @@ export const createSalonHandler = (
 export const createSalonRouter = (dependencies: SalonUseCaseDependencies, authenticated: Authenticated): Router
 
 // backend/packages/api/src/index.ts: repositories and `authenticated` are created once, here
-export const createApp = ({ database, logger, mailer, settings }: AppDependencies): Express
+export const createApp = ({ database, logger, mailer, twoFactorAuthenticator, settings }: AppDependencies): Express
 const authenticated = createAuthenticated(authDependencies)
 app.use(`${API_BASE_PATH}/auth`, createAuthRouter(authDependencies, authenticated))
 app.use(`${API_BASE_PATH}/salons`, createSalonRouter({ salonRepository: new SalonRepository(database) }, authenticated))

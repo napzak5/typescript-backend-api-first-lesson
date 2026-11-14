@@ -45,7 +45,7 @@ For detailed architecture documentation, see [docs/architecture-overview.md](doc
 | Area | Status |
 |------|--------|
 | Salon API (`/api/v1/salons`) | Implemented in every layer; the reference for the other domains. List and get are public; create, update and delete need a signed-in user who is allowed to |
-| Authentication (`/api/v1/auth`) | Implemented: `login`, `refresh`, `logout`, `logout-all` and `me`, on server-side sessions with bearer tokens; registration of customer accounts, email verification, password reset and password change, with the links sent by mail. Two-factor authentication, the session list and `/api/v1/admin/auth` are specified in TypeSpec only |
+| Authentication (`/api/v1/auth`) | Implemented: `login`, `refresh`, `logout`, `logout-all` and `me`, on server-side sessions with bearer tokens; registration of customer accounts, email verification, password reset and password change, with the links sent by mail; two-factor authentication with the codes of an authenticator app (TOTP) and backup codes. The session list and `/api/v1/admin/auth` are specified in TypeSpec only |
 | Authorization | Decided in the use cases from the role and the salon of the signed-in user; applied to the Salon API. See [docs/authentication.md](docs/authentication.md) |
 | System endpoints (`/api/system/alive`, `ready`, `health`) | Implemented |
 | Customers, staff, services, bookings, payments and the other domains | Specified in TypeSpec and present in the database schema; no backend code yet |
@@ -100,7 +100,7 @@ accounts and their roles are listed in
 ├── backend/                    # Backend monorepo
 │   ├── packages/
 │   │   ├── domain/           # Business logic layer
-│   │   ├── infrastructure/  # Database access, mail (SMTP), password hashing, tokens, logging
+│   │   ├── infrastructure/  # Database access, mail (SMTP), password hashing, tokens, one-time passwords, logging
 │   │   ├── api/              # HTTP layer
 │   │   ├── database/         # Database schema, migrations, seeds
 │   │   ├── generated/        # Auto-generated types
@@ -235,6 +235,7 @@ them at start-up and exits with the list of what is missing or malformed.
 | `SMTP_USER`, `SMTP_PASSWORD` | Credentials for the SMTP server; the server always signs in |
 | `MAIL_FROM` | Sender of every mail: an address, or `Name <address>` |
 | `PUBLIC_APP_URL` | Origin of the web application that the links in mails point at |
+| `TWO_FACTOR_ENCRYPTION_KEY` | Key under which the secrets of authenticator apps (two-factor authentication) are encrypted in the database: 32 characters or more, random and kept secret. Changing it makes every stored secret unusable: the codes of the authenticator apps are no longer accepted |
 | `LOG_LEVEL` | `fatal`, `error`, `warn`, `info`, `debug`, `trace` or `silent` |
 | `LOG_FORMAT` | `json` (one object per line) or `pretty` (for a terminal) |
 
@@ -330,7 +331,7 @@ The full index is [docs/README.md](docs/README.md).
 - [Domain Implementation Reference](docs/domain-implementation-reference.md) - Complete reference for implementing new domains
 - [API Route Modular Structure](docs/api-route-modular-structure.md) - Guide for modular route organization
 - [Uniform Implementation](docs/uniform-implementation-guide.md)
-- [Authentication and Authorization](docs/authentication.md) - Sessions, passwords, registration, permissions, seeded accounts (日本語)
+- [Authentication and Authorization](docs/authentication.md) - Sessions, passwords, registration, two-factor authentication, permissions, seeded accounts (日本語)
 - [Email](docs/email.md) - Which mails are sent, SMTP settings, Mailpit for local development (日本語)
 - [Testing Requirements](docs/testing-requirements.md)
 - [API Testing Guide](docs/api-testing-guide.md)

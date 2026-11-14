@@ -12,8 +12,8 @@ import type { ModelsUserRoleType } from './modelsUserRoleType';
 
 /**
  * ユーザーレスポンス - users テーブルの公開カラムを返す。
- * パスワードハッシュとパスワード履歴、2要素認証のシークレットとバックアップコード、
- * メールアドレス確認とパスワード再設定のトークン(とその有効期限)は返さない。
+ * パスワードハッシュ、2要素認証のシークレット・バックアップコード・最後に受け付けたコードの時間ステップ、
+ * メールアドレス確認とパスワード再設定のトークンのハッシュ(とその有効期限)は返さない。
  * プロパティ名と null 許可は DB カラムと一致させている。
  */
 export interface ModelsUserResponse {
@@ -34,9 +34,7 @@ export interface ModelsUserResponse {
      * @nullable
      */
   lastPasswordChange: string | null;
-  /** 2要素認証が有効かどうか。 */
-  twoFactorEnabled: boolean;
-  /** 2要素認証の設定状態。 */
+  /** 2要素認証の設定状態。enabled のとき、ログインにコードが必要。 */
   twoFactorStatus: ModelsTwoFactorStatusType;
   /** 連続したログイン失敗回数。 */
   failedLoginAttempts: number;

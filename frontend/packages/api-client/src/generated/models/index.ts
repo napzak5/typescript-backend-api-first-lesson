@@ -172,6 +172,7 @@ export * from './modelsAuthPasswordResetVerifyRequest';
 export * from './modelsAuthRegisterRequest';
 export * from './modelsAuthTokenRefreshRequest';
 export * from './modelsAuthTrustedIpAddRequest';
+export * from './modelsAuthTwoFactorBackupCodesRequest';
 export * from './modelsAuthTwoFactorBackupCodesResponse';
 export * from './modelsAuthTwoFactorDisableRequest';
 export * from './modelsAuthTwoFactorEnableRequest';

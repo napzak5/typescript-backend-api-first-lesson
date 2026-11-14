@@ -246,6 +246,94 @@ describe('toProblemDetails for authentication and authorization', () => {
 
     expect(problem.detail).toBe('Invalid email or password')
   })
+
+  it('presents a login that needs a two-factor code as 401 with the code 1007', () => {
+    const problem = toProblemDetails(
+      DomainErrors.unauthenticated('twoFactorRequired'),
+      context,
+    )
+
+    expect(problem).toEqual({
+      type: 'urn:beauty-salon:problem:two-factor-required',
+      title: 'Two-factor authentication required',
+      status: 401,
+      detail: expect.any(String),
+      code: '1007',
+      errors: null,
+      ...context,
+    })
+  })
+
+  it('does not present a login that needs a two-factor code as a failed login', () => {
+    const needsCode = toProblemDetails(
+      DomainErrors.unauthenticated('twoFactorRequired'),
+      context,
+    )
+    const failed = toProblemDetails(
+      DomainErrors.unauthenticated('invalidCredentials'),
+      context,
+    )
+
+    expect(needsCode.code).not.toBe(failed.code)
+    expect(needsCode.type).not.toBe(failed.type)
+    expect(needsCode.title).not.toBe(failed.title)
+    expect(needsCode.detail).not.toBe(failed.detail)
+  })
+
+  it('says of a login that needs a two-factor code nothing about a code that was sent', () => {
+    const problem = toProblemDetails(
+      DomainErrors.unauthenticated('twoFactorRequired'),
+      context,
+    )
+
+    expect(problem.detail).not.toMatch(
+      /wrong|incorrect|invalid code|used|expired|missing/i,
+    )
+  })
+})
+
+describe('toProblemDetails for an operation that the state does not allow', () => {
+  it('presents a conflict as 409 with the code 3003 and its message as the detail', () => {
+    const problem = toProblemDetails(
+      DomainErrors.conflict('Two-factor authentication is already enabled'),
+      context,
+    )
+
+    expect(problem).toEqual({
+      type: 'urn:beauty-salon:problem:operation-not-allowed',
+      title: 'Operation not allowed',
+      status: 409,
+      detail: 'Two-factor authentication is already enabled',
+      code: '3003',
+      errors: null,
+      ...context,
+    })
+  })
+
+  it.each([
+    'Two-factor authentication is not being set up',
+    'Two-factor authentication is not enabled',
+    '',
+  ])(
+    'gives the message %j of a conflict as the detail, unchanged',
+    (message) => {
+      const problem = toProblemDetails(DomainErrors.conflict(message), context)
+
+      expect(problem.detail).toBe(message)
+    },
+  )
+
+  it('does not present a conflict as a duplicate, which is the other 409', () => {
+    const conflict = toProblemDetails(DomainErrors.conflict('No'), context)
+    const duplicate = toProblemDetails(
+      DomainErrors.alreadyExists('Salon', 'email', 'aoyama@example.com'),
+      context,
+    )
+
+    expect(conflict.status).toBe(duplicate.status)
+    expect(conflict.code).not.toBe(duplicate.code)
+    expect(conflict.type).not.toBe(duplicate.type)
+  })
 })
 
 describe('toBearerChallenge', () => {
@@ -261,6 +349,11 @@ describe('toBearerChallenge', () => {
     [
       'a failed login',
       DomainErrors.unauthenticated('invalidCredentials'),
+      plain,
+    ],
+    [
+      'a login that needs a two-factor code',
+      DomainErrors.unauthenticated('twoFactorRequired'),
       plain,
     ],
     [
@@ -282,6 +375,7 @@ describe('toBearerChallenge', () => {
     ['a validation error', DomainErrors.validation('Invalid', [])],
     ['a missing entity', DomainErrors.notFound('Salon', 'x')],
     ['a duplicate', DomainErrors.alreadyExists('Salon', 'email', 'a@b.jp')],
+    ['a conflict', DomainErrors.conflict('Not allowed in this state')],
     ['a database error', DomainErrors.database('Failed', null)],
     ['an unknown route', { type: 'routeNotFound', method: 'GET', path: '/' }],
     ['a malformed body', { type: 'malformedBody' }],

@@ -36,6 +36,10 @@ backend/packages/api/src/
 │   │   ├── verify-reset-token.handler.ts         # POST /api/v1/auth/reset-password/verify
 │   │   ├── reset-password.handler.ts             # POST /api/v1/auth/reset-password
 │   │   ├── change-password.handler.ts            # POST /api/v1/auth/change-password
+│   │   ├── enable-two-factor.handler.ts          # POST /api/v1/auth/2fa/enable
+│   │   ├── verify-two-factor.handler.ts          # POST /api/v1/auth/2fa/verify
+│   │   ├── disable-two-factor.handler.ts         # POST /api/v1/auth/2fa/disable
+│   │   ├── generate-backup-codes.handler.ts      # POST /api/v1/auth/2fa/backup-codes
 │   │   └── index.ts                              # createAuthRouter
 │   ├── salon/
 │   │   ├── _shared/
@@ -54,7 +58,7 @@ backend/packages/api/src/
 └── __tests__/                      # integration tests and their helpers (see Tests)
 ```
 
-There is one handler per operation of the `SalonCrud` interface in `specs/operations/salon-operations.tsp`, and no other salon route. Filtering is part of the list operation; there is no separate search endpoint. Of the `AuthCrud` interface in `specs/operations/auth-operations.tsp`, the twelve operations above have a handler; the others (two-factor authentication) and the interfaces `SessionCrud` and `AdminAuthCrud` of the same file are not implemented.
+There is one handler per operation of the `SalonCrud` interface in `specs/operations/salon-operations.tsp`, and no other salon route. Filtering is part of the list operation; there is no separate search endpoint. Each of the sixteen operations of the `AuthCrud` interface in `specs/operations/auth-operations.tsp` has a handler in the same way; the interfaces `SessionCrud` and `AdminAuthCrud` of the same file are not implemented.
 
 ## Key Principles
 
@@ -133,7 +137,7 @@ The five handlers differ only in what they pass on and what they answer:
 | `update-salon.handler.ts` | `PATCH /:id` | Yes | `actor`, `req.params.id`, `req.body` | 200, `{ data, meta, links }` |
 | `delete-salon.handler.ts` | `DELETE /:id` | Yes | `actor`, `req.params.id` | 204, no body |
 
-The authentication handlers in `routes/auth/` have the same shape. `login.handler.ts` and `refresh-token.handler.ts` are not wrapped (they are how a client gets a token), and neither are the handlers of registration, email verification and password reset, which a signed-out user calls; `logout.handler.ts`, `logout-all.handler.ts` and `get-current-user.handler.ts` are wrapped and pass only the `actor`, and `change-password.handler.ts` is wrapped and passes the `actor` and `req.body`. Every handler but those of login, refresh and the current user answers 204 without a body.
+The authentication handlers in `routes/auth/` have the same shape. `login.handler.ts` and `refresh-token.handler.ts` are not wrapped (they are how a client gets a token), and neither are the handlers of registration, email verification and password reset, which a signed-out user calls; `logout.handler.ts`, `logout-all.handler.ts` and `get-current-user.handler.ts` are wrapped and pass only the `actor`, and `change-password.handler.ts` and the four handlers of two-factor authentication are wrapped and pass the `actor` and `req.body`. The handlers of login, refresh, the current user, `enable-two-factor.handler.ts` and `generate-backup-codes.handler.ts` answer 200 with a body; every other one answers 204 without a body.
 
 ### Query parameters
 
@@ -224,7 +228,7 @@ Paths are relative to where the router is mounted, and the router is a function 
 
 ### Mounting in `createApp`
 
-`src/index.ts` is where repositories and `authenticated` are constructed and routers are mounted. `createApp` is given the database, the logger, the mailer and the settings (`AppDependencies`):
+`src/index.ts` is where repositories and `authenticated` are constructed and routers are mounted. `createApp` is given the database, the logger, the mailer, the authenticator of two-factor authentication and the settings (`AppDependencies`):
 
 ```typescript
   app.use(requestLogging(logger))
@@ -249,6 +253,7 @@ Paths are relative to where the router is mounted, and the router is a function 
     sessionRepository: new SessionRepository(database),
     passwordHasher: new Argon2PasswordHasher(),
     tokenIssuer: new RandomTokenIssuer(),
+    twoFactorAuthenticator,
     mailer,
     publicAppUrl: settings.publicAppUrl,
     clock: () => new Date(),
@@ -292,9 +297,11 @@ The order matters. Every request gets its ID and logger first. The probes are an
 | `unauthenticated`, reason `invalidCredentials` | 401 | `1002` | `invalid-credentials` |
 | `unauthenticated`, reason `expiredToken` | 401 | `1003` | `token-expired` |
 | `unauthenticated`, reason `invalidToken` | 401 | `1004` | `invalid-token` |
+| `unauthenticated`, reason `twoFactorRequired` | 401 | `1007` | `two-factor-required` |
 | `forbidden` | 403 | `1005` | `forbidden` |
 | `notFound` | 404 | `3001` | `not-found` |
 | `alreadyExists` | 409 | `3002` | `already-exists` |
+| `conflict` | 409 | `3003` | `operation-not-allowed` |
 | `database` | 500 | `4003` | `database` |
 | `routeNotFound` | 404 | `3001` | `route-not-found` |
 | `malformedBody` | 400 | `2002` | `malformed-body` |
@@ -304,7 +311,7 @@ The order matters. Every request gets its ID and logger first. The probes are an
 | `rateLimited` | 429 | `4005` | `rate-limited` |
 | `unexpected` | 500 | `4001` | `internal` |
 
-The rows down to `database` are the six `DomainError` kinds a use case returns (`unauthenticated` has one row per `reason`); the rest are `HttpError`. A `validation` problem lists the broken rules in `errors`. In the two 500 responses `detail` is `null`, so nothing about the failure leaves the server. When each 401 is returned is in [Authentication and Authorization](./authentication.md).
+The rows down to `database` are the seven `DomainError` kinds a use case returns (`unauthenticated` has one row per `reason`); the rest are `HttpError`. A `validation` problem lists the broken rules in `errors`. In the two 500 responses `detail` is `null`, so nothing about the failure leaves the server. When each 401 is returned is in [Authentication and Authorization](./authentication.md).
 
 ## Middleware
 
@@ -331,7 +338,7 @@ The rows down to `database` are the six `DomainError` kinds a use case returns (
 | `__tests__/salon.integration.test.ts` | every salon endpoint against PostgreSQL, including who may call it |
 | `__tests__/auth.integration.test.ts` | the authentication endpoints, what the server does with an access token, and the seeded accounts |
 | `__tests__/app.integration.test.ts` | request IDs, unreadable requests, a failing database, CORS, rate limit, probes, response headers |
-| `__tests__/_shared/` | `setup.ts` (database, one schema per test), `test-helpers.ts` (`createTestApp`, which calls the production `createApp` with a mailer that records the mails instead of sending them), `auth-helpers.ts` (inserting users and signing in), `test-schema-manager.ts` |
+| `__tests__/_shared/` | `setup.ts` (database, one schema per test), `test-helpers.ts` (`createTestApp`, which calls the production `createApp` with a mailer that records the mails instead of sending them and with the real `TotpAuthenticator`), `auth-helpers.ts` (inserting users and signing in), `test-schema-manager.ts` |
 
 ```bash
 pnpm --filter @beauty-salon-backend/api test              # unit tests

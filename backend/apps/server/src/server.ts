@@ -7,6 +7,7 @@ import {
   type Logger,
   pingDatabase,
   SmtpMailer,
+  TotpAuthenticator,
 } from '@beauty-salon-backend/infrastructure'
 import { Result } from '@beauty-salon-backend/utility'
 import { match, P } from 'ts-pattern'
@@ -102,6 +103,9 @@ export const startServer = async (
     database: connection.database,
     logger,
     mailer,
+    twoFactorAuthenticator: new TotpAuthenticator(
+      config.twoFactor.encryptionKey,
+    ),
     settings: {
       trustProxyHops: config.server.trustProxyHops,
       cors: config.cors,

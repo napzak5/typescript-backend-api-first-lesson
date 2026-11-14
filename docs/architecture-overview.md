@@ -35,12 +35,12 @@ Before relying on anything, check this table.
 | Area | State |
 |------|-------|
 | Salon API (`/api/v1/salons`) | Implemented in every layer: list, create, get, update, delete. It is the reference implementation for every other domain. List and get are public; create, update and delete need a signed-in user with the permission. |
-| Authentication (`/api/v1/auth`) | Implemented: `login`, `refresh`, `logout`, `logout-all` and `me`, on server-side sessions with opaque bearer tokens, and registration of customer accounts, email verification and password reset, each through a single-use token sent by mail, and password change. That is 12 of the 22 operations in `specs/operations/auth-operations.tsp`. The others (two-factor authentication, session list and revocation, `/api/v1/admin/auth`) are specified in TypeSpec only and answered with 404. See [Authentication and Authorization](./authentication.md). |
+| Authentication (`/api/v1/auth`) | Implemented: `login`, `refresh`, `logout`, `logout-all` and `me`, on server-side sessions with opaque bearer tokens, and registration of customer accounts, email verification and password reset, each through a single-use token sent by mail, and password change, and two-factor authentication with the one-time passwords of an authenticator app (TOTP) and backup codes. That is every operation of `AuthCrud`, 16 of the 22 operations in `specs/operations/auth-operations.tsp`. The others (session list and revocation, `/api/v1/admin/auth`) are specified in TypeSpec only and answered with 404. See [Authentication and Authorization](./authentication.md). |
 | Authorization | Implemented for the Salon API. An implemented operation that the contract does not mark `@useAuth(NoAuth)` needs a valid access token, and its use case decides whether the signed-in user may do what is asked. |
 | System endpoints (`/api/system`) | Implemented: `alive`, `ready` and `health`. |
 | Other domains (staff, service, customer, booking, review, treatment, payment, inventory) | Specified in TypeSpec, so their generated types exist, and the database schema has their tables and seed data. The models agree with the tables (`pnpm check:api-db`). There is no domain, repository or route code. A request to one of these routes is answered with 404. The implementation order is in GitHub issue #4. |
 | Attachments, roles and permissions, purchase orders, medical charts | Specified in TypeSpec only. No table exists for them yet. |
-| Email | Implemented for the mails of the authentication flows (confirm the address, reset the password, the password was changed): plain text over SMTP. Docker Compose starts Mailpit, which catches them locally. See [Email](./email.md) (Japanese). |
+| Email | Implemented for the mails of the authentication flows (confirm the address, reset the password, and the notices: the password was changed, two-factor authentication was enabled or disabled, the backup codes were replaced, a backup code was used to sign in): plain text over SMTP. Docker Compose starts Mailpit, which catches them locally. See [Email](./email.md) (Japanese). |
 | File storage | Not implemented. Docker Compose starts no service for it. |
 | Frontend | Three application shells and shared packages. The API client is generated, but no application calls the API yet. See [Frontend](#frontend). |
 
@@ -73,10 +73,12 @@ shape the system, and why:
   rule. See [Authentication and Authorization](./authentication.md).
 - **Errors are values.** Every operation that can fail returns a
   `Result<T, E>`, so its signature states how it can fail. Application code
-  does not throw, and it contains exactly one `try`/`catch`:
-  `Result.fromPromise` in `backend/packages/utility/src/result/result.ts`,
-  which turns what third-party code throws (in practice the database driver)
-  into a `Result`. Whatever still escapes a route, such as an unreadable body
+  does not throw, and it contains exactly two `try`/`catch`:
+  `Result.fromPromise` and `Result.fromThrowable` in
+  `backend/packages/utility/src/result/result.ts`, which turn what code
+  outside the application throws (in practice the database driver, and
+  `node:crypto` when a stored secret cannot be decrypted) into a `Result`.
+  Whatever still escapes a route, such as an unreadable body
   or a defect, is forwarded by Express to the error-handling middleware at
   the end of the chain.
 - **Sum types, matched exhaustively.** Results, errors and other states are
@@ -108,7 +110,8 @@ shape the system, and why:
 │   │   ├── domain/          Models, validation schemas, mappers, use cases,
 │   │   │                    repository and service interfaces, errors
 │   │   ├── infrastructure/  Database connection, repository implementations,
-│   │   │                    password hashing, tokens, mail over SMTP, logger
+│   │   │                    password hashing, tokens, one-time passwords,
+│   │   │                    mail over SMTP, logger
 │   │   └── api/             Express application: middleware, routes,
 │   │                        authentication, error responses
 │   └── apps/
@@ -162,15 +165,18 @@ domain/src/
 ├── mappers/read/user.mapper.ts        Row of users → API response
 ├── repositories/user.repository.ts    IUserRepository
 ├── repositories/session.repository.ts ISessionRepository
-├── services/                          IPasswordHasher, ITokenIssuer, IMailer
+├── services/                          IPasswordHasher, ITokenIssuer, ITwoFactorAuthenticator,
+│                                      IMailer
 └── business-logic/auth/               One *.usecase.ts per operation, AuthenticateUseCase;
                                        _shared/ holds what they share: dependencies, the actor,
-                                       session policy, password check and blocklist, mailed
-                                       tokens, the texts of the mails
+                                       session policy, password check and blocklist, the limit
+                                       on guesses, the check of the second factor, the set-up
+                                       of two-factor authentication, the answer for a session
+                                       whose user is gone, mailed tokens, the texts of the mails
 
 infrastructure/src/
 ├── repositories/user.repository.impl.ts, session.repository.impl.ts, account.ts
-├── security/                          Argon2PasswordHasher, RandomTokenIssuer
+├── security/                          Argon2PasswordHasher, RandomTokenIssuer, TotpAuthenticator
 └── mail/smtp-mailer.ts                SmtpMailer
 
 api/src/
@@ -189,7 +195,7 @@ An arrow means "depends on":
         ┌───────┴─────────┐
         ▼                 │
  infrastructure           │           I/O: database connection, repositories,
-  ┌─────┴─────────┐       │           password hashing, tokens, mail, logger
+  ┌─────┴─────────┐       │           password hashing, tokens, one-time passwords, mail, logger
   │               ▼       ▼
   │                domain             rules: use cases, schemas, mappers,
   │     ┌─────────────┴───────┐       repository and service interfaces
@@ -210,10 +216,11 @@ Use cases and domain logic live in one package, `domain`. It imports nothing
 that performs I/O: from `database` it imports types only, and it reaches the
 database through repository interfaces (`ISalonRepository`, `IUserRepository`,
 `ISessionRepository`), which `infrastructure` implements. Password hashing,
-token generation and mail are behind interfaces in the same way
-(`IPasswordHasher`, `ITokenIssuer`, `IMailer`), and the current time is a
-dependency (`clock`), so the authentication use cases are unit-tested without
-a database, a real hash or a mail server.
+token generation, the one-time passwords of two-factor authentication and
+mail are behind interfaces in the same way (`IPasswordHasher`,
+`ITokenIssuer`, `ITwoFactorAuthenticator`, `IMailer`), and the current time
+is a dependency (`clock`), so the authentication use cases are unit-tested
+without a database, a real hash, an authenticator app or a mail server.
 
 | Package (`@beauty-salon-backend/…`) | Contains | Workspace packages it depends on |
 |-------------------------------------|----------|----------------------------------|
@@ -222,7 +229,7 @@ a database, a real hash or a mail server.
 | `config` | `loadEnvFile`, `parseAppConfig` | `utility` |
 | `database` | `schema.ts`, `relations.ts`, `sql/`, the `db:*` scripts, seeds | `config`, `utility` |
 | `domain` | Models, schemas, mappers, use cases, repository and service interfaces, `DomainError` | `database` (types), `generated`, `utility` |
-| `infrastructure` | `connectDatabase`, `pingDatabase`, `SalonRepository`, `UserRepository`, `SessionRepository`, `Argon2PasswordHasher`, `RandomTokenIssuer`, `SmtpMailer`, `createLogger` | `database`, `domain`, `utility` |
+| `infrastructure` | `connectDatabase`, `pingDatabase`, `SalonRepository`, `UserRepository`, `SessionRepository`, `Argon2PasswordHasher`, `RandomTokenIssuer`, `TotpAuthenticator`, `SmtpMailer`, `createLogger` | `database`, `domain`, `utility` |
 | `api` | `createApp`, middleware, routes, authentication of a request, problem details | `domain`, `generated`, `infrastructure`, `utility`; `database` in tests |
 | `server` (application) | Entry point and `startServer` | `api`, `config`, `domain`, `infrastructure`, `utility` |
 
@@ -344,8 +351,11 @@ reads the environment or ends the process.
 3. `createLogger(...)` creates the pino logger.
 4. `startServer(config, logger)` in `backend/apps/server/src/server.ts`
    connects to the database and pings it, creates the mailer (`SmtpMailer`,
-   from `config.mail`), builds the application with
-   `createApp({ database, logger, mailer, settings })`, and listens. It
+   from `config.mail`) and the authenticator of two-factor authentication
+   (`TotpAuthenticator`, from `config.twoFactor.encryptionKey`), builds the
+   application with
+   `createApp({ database, logger, mailer, twoFactorAuthenticator, settings })`,
+   and listens. It
    returns a `Result`: the server does not start when the database is
    unreachable or the port cannot be bound. The SMTP server is not contacted
    at start-up; the mailer connects when a mail goes out.
@@ -357,9 +367,10 @@ reads the environment or ends the process.
 ### Middleware Order
 
 `createApp` in `backend/packages/api/src/index.ts` creates the repositories,
-the password hasher and the token issuer once, takes the mailer as a
-dependency (`AppDependencies.mailer`), and mounts everything in this order.
-The order is part of the design:
+the password hasher and the token issuer once, takes the mailer and the
+authenticator of two-factor authentication as dependencies
+(`AppDependencies.mailer`, `AppDependencies.twoFactorAuthenticator`), and
+mounts everything in this order. The order is part of the design:
 
 1. `requestLogging`: gives every request its ID (`req.id`) and logger
    (`req.log`), first, so that everything after it can log and answer with
@@ -459,10 +470,21 @@ response under `/api/v1/auth` carries `Cache-Control: no-store`.
 | Check a reset token | `POST /api/v1/auth/reset-password/verify` | Not needed; the body carries the mailed token | `VerifyResetTokenUseCase` | 204 |
 | Reset the password | `POST /api/v1/auth/reset-password` | Not needed; the body carries the mailed token | `ResetPasswordUseCase` | 204 |
 | Change the password | `POST /api/v1/auth/change-password` | Needed | `ChangePasswordUseCase` | 204 |
+| Start the set-up of two-factor authentication | `POST /api/v1/auth/2fa/enable` | Needed | `EnableTwoFactorUseCase` | 200 with the secret for the authenticator app and the backup codes |
+| Confirm the set-up | `POST /api/v1/auth/2fa/verify` | Needed | `VerifyTwoFactorUseCase` | 204 |
+| Disable two-factor authentication | `POST /api/v1/auth/2fa/disable` | Needed | `DisableTwoFactorUseCase` | 204 |
+| Replace the backup codes | `POST /api/v1/auth/2fa/backup-codes` | Needed | `GenerateBackupCodesUseCase` | 200 with the new backup codes |
 
 The use cases that send a mail hand it to `IMailer.deliver` and do not wait
-for the delivery, so the response does not depend on it. How sessions,
-tokens, passwords, the lockout, registration and the mailed tokens work is in
+for the delivery, so the response does not depend on it. Login asks an
+account that has two-factor authentication enabled for a code as well
+(`twoFactorCode` in the body) and answers 401 with the code `1007` until it
+gets one it accepts. The use cases reach the one-time passwords through the
+port `ITwoFactorAuthenticator`; its implementation `TotpAuthenticator` uses
+`node:crypto` only (TOTP of RFC 6238) and returns each secret encrypted
+(AES-256-GCM) under a key derived from `TWO_FACTOR_ENCRYPTION_KEY`, which is
+the form the database keeps. How sessions, tokens, passwords, the lockout, registration,
+the mailed tokens and two-factor authentication work is in
 [Authentication and Authorization](./authentication.md); how the mails are
 sent is in [Email](./email.md).
 
@@ -477,11 +499,12 @@ returns the body the contract defines for it, not problem details.
 
 | Kind | Raised by | Status |
 |------|-----------|--------|
-| `validation` | A use case, when the input breaks a rule of its Zod schema; an authentication use case, also for a rule the schema cannot check (a new password on the blocklist or equal to the current one, a current password that is wrong, a mailed token that cannot be used); the list handler, when a query parameter cannot be read as its type | 400 |
-| `unauthenticated` | `AuthenticateUseCase`, when the request carries no access token that works; the login and refresh use cases, when the credentials are not accepted; the current-user and change-password use cases, when the user of the session no longer exists | 401, with a `WWW-Authenticate: Bearer` header |
+| `validation` | A use case, when the input breaks a rule of its Zod schema; an authentication use case, also for a rule the schema cannot check (a new password on the blocklist or equal to the current one, a current password that is wrong, a mailed token that cannot be used, a code of two-factor authentication that is not accepted); the list handler, when a query parameter cannot be read as its type | 400 |
+| `unauthenticated` | `AuthenticateUseCase`, when the request carries no access token that works; the login and refresh use cases, when the credentials are not accepted, which for login includes a missing or refused code of two-factor authentication; the current-user, change-password and two-factor use cases, when the user of the session no longer exists | 401, with a `WWW-Authenticate: Bearer` header |
 | `forbidden` | A use case, when the signed-in user may not do what is asked | 403 |
 | `notFound` | A use case, when the salon does not exist or is deleted | 404 |
 | `alreadyExists` | The repository, when the unique index on `email` is violated | 409 |
+| `conflict` | A two-factor use case, when the state of the account does not allow the operation: enabling what is enabled, confirming when no set-up is under way, disabling or replacing backup codes when it is not enabled | 409 |
 | `database` | The repository, when a query fails; the read mapper, when a stored row does not match the API model | 500 |
 | `routeNotFound` | `notFoundHandler` | 404 |
 | `malformedBody`, `badRequest` | `errorHandler`, from what the body parser or Express raised | 400 |
@@ -490,10 +513,11 @@ returns the body the contract defines for it, not problem details.
 | `rateLimited` | `rateLimiting` | 429 |
 | `unexpected` | `errorHandler`, for anything it does not recognize | 500 |
 
-The first six are the `DomainError` union
+The first seven are the `DomainError` union
 (`backend/packages/domain/src/shared/errors.ts`); the others are the
 `HttpError` union of the API layer. `unauthenticated` carries a `reason`,
-which decides the code of the problem (`1001` to `1004`) and the challenge in
+which decides the code of the problem (`1001` to `1004`, and `1007` when a
+login still needs a code of two-factor authentication) and the challenge in
 the header (`toBearerChallenge`); the table of them is in
 [Authentication and Authorization](./authentication.md). A 500 response never
 carries the cause.
@@ -508,7 +532,7 @@ is where each one lives in the code:
 
 | Concern | Where | Notes |
 |---------|-------|-------|
-| Configuration | `backend/packages/config/src/app-config.ts` | `parseAppConfig` validates 21 variables, all required, and returns `Result<AppConfig, ConfigIssue[]>`. When `NODE_ENV` is `staging` or `production` it also refuses `SMTP_TLS=none` and a `PUBLIC_APP_URL` that does not start with `https://`. Application code receives values and does not read the environment. |
+| Configuration | `backend/packages/config/src/app-config.ts` | `parseAppConfig` validates 22 variables, all required, and returns `Result<AppConfig, ConfigIssue[]>`. When `NODE_ENV` is `staging` or `production` it also refuses `SMTP_TLS=none` and a `PUBLIC_APP_URL` that does not start with `https://`. Application code receives values and does not read the environment. |
 | Environment files | `backend/packages/config/src/env-loader.ts` | One file per environment at the repository root: `.env.localhost`, `.env.development`, `.env.test`, `.env.staging`, `.env.production`. `.env.template` and `.env.example` are templates, and `.env.test.ci` is what CI uses as `.env.test`. A deployment sets the variables directly and needs no file. |
 | Logging | `backend/packages/infrastructure/src/logging/logger.ts`, `backend/packages/api/src/middleware/request-logging.ts` | Structured logs (pino) on standard output: one line per request, one line per failure. Headers, bodies and the values bound to a SQL statement are never logged. There is no `console` call in application code. |
 | Request ID | `backend/packages/api/src/middleware/request-logging.ts` | The caller's `X-Request-Id` or a new UUID. It is on every log line of the request, in the response header, and in the body as `meta.correlationId` (`correlationId` in an error). |

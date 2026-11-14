@@ -21,6 +21,7 @@ import type {
   PasswordVerification,
 } from '../services/password-hasher'
 import type { IssuedToken, ITokenIssuer } from '../services/token-issuer'
+import type { ITwoFactorAuthenticator } from '../services/two-factor-authenticator'
 import type { DomainError } from '../shared'
 import { SALON_ID } from './fixtures'
 
@@ -59,9 +60,9 @@ export const dbUser = (overrides: Partial<DbUser> = {}): DbUser => ({
   passwordResetTokenHash: null,
   passwordResetExpiry: null,
   lastPasswordChange: null,
-  twoFactorEnabled: false,
   twoFactorSecret: null,
   backupCodes: null,
+  twoFactorLastUsedStep: null,
   failedLoginAttempts: 0,
   lockedUntil: null,
   lastLoginAt: null,
@@ -164,6 +165,69 @@ const fakeTokenIssuer = (): ITokenIssuer => {
   }
 }
 
+/** The 30-second step that `NOW` falls in. */
+export const CURRENT_STEP = Math.floor(NOW.getTime() / 30_000)
+
+/** The code that the authenticator below accepts, at the step of the clock. */
+export const APP_CODE = '492039'
+
+/**
+ * An authenticator whose values can be read: its secrets are `SECRET-1`,
+ * `SECRET-2`, … and are sealed as `sealed:<secret>`, every set of backup codes
+ * is the same ten, and only `APP_CODE` matches, at the step of the time given.
+ */
+export const fakeTwoFactorAuthenticator = (
+  overrides: Partial<ITwoFactorAuthenticator> = {},
+): ITwoFactorAuthenticator => {
+  let issued = 0
+
+  return {
+    issueSecret: vi.fn(() => {
+      issued += 1
+      const secret = `SECRET-${issued}`
+      return { secret, sealed: `sealed:${secret}` }
+    }),
+    issueBackupCodes: vi.fn(() =>
+      ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'].map(
+        (letter) => `${letter.repeat(4)}-2222-3333-4444`,
+      ),
+    ),
+    matchingStep: vi.fn((_sealed: string, code: string, now: Date) =>
+      code === APP_CODE ? Math.floor(now.getTime() / 30_000) : null,
+    ),
+    ...overrides,
+  }
+}
+
+/** The secret of the user below, as it is stored. */
+export const SEALED_SECRET = 'sealed:SECRET-0'
+
+/** A backup code of the user below, as it was shown. */
+export const BACKUP_CODE = 'ABCD-EFGH-IJKL-MNOP'
+
+/** What `fakePasswordHasher` stores of `BACKUP_CODE`: the hash of its normalised form. */
+export const BACKUP_CODE_HASH = 'hashed:ABCDEFGHIJKLMNOP'
+
+/**
+ * The columns of a user whose two-factor authentication is being set up
+ * (`pending`) or on (`enabled`): the secret, three backup codes that are
+ * left, the second of them `BACKUP_CODE`, and no code accepted yet.
+ */
+export const twoFactorUser = (
+  twoFactorStatus: 'pending' | 'enabled',
+  overrides: Partial<DbUser> = {},
+): Partial<DbUser> => ({
+  twoFactorStatus,
+  twoFactorSecret: SEALED_SECRET,
+  backupCodes: [
+    'hashed:QRST2345UVWX6723',
+    BACKUP_CODE_HASH,
+    'hashed:YZ234567ABCDEFGH',
+  ],
+  twoFactorLastUsedStep: null,
+  ...overrides,
+})
+
 /** A user repository that finds the admin above; a test overrides what it needs. */
 export const userRepositoryWith = (
   overrides: Partial<IUserRepository> = {},
@@ -189,6 +253,12 @@ export const userRepositoryWith = (
   findByPasswordResetToken: vi.fn(async () => Result.success(dbUser())),
   resetPassword: vi.fn(async () => Result.success(dbUser())),
   changePassword: vi.fn(async () => Result.success(true)),
+  startTwoFactorSetup: vi.fn(async () => Result.success(true)),
+  useTwoFactorStep: vi.fn(async () => Result.success(true)),
+  useBackupCode: vi.fn(async () => Result.success(9)),
+  enableTwoFactor: vi.fn(async () => Result.success(true)),
+  disableTwoFactor: vi.fn(async () => Result.success(true)),
+  replaceBackupCodes: vi.fn(async () => Result.success(true)),
   ...overrides,
 })
 
@@ -221,6 +291,7 @@ export const authDependencies = (
   sessionRepository: sessionRepositoryWith(),
   passwordHasher: fakePasswordHasher(),
   tokenIssuer: fakeTokenIssuer(),
+  twoFactorAuthenticator: fakeTwoFactorAuthenticator(),
   mailer: { deliver: vi.fn() },
   publicAppUrl: PUBLIC_APP_URL,
   clock: () => NOW,

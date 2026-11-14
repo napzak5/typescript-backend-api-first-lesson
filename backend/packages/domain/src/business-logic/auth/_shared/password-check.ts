@@ -2,7 +2,8 @@ import { Result } from '@beauty-salon-backend/utility'
 import type { DbUser } from '../../../models/auth'
 import type { DomainError } from '../../../shared'
 import type { AuthUseCaseDependencies } from './dependencies'
-import { isLocked, LOCK_THRESHOLD, lockEnd } from './session-policy'
+import { countWrongGuess } from './guess-limit'
+import { isLocked } from './session-policy'
 
 export type PasswordCheck =
   /** `needsRehash`: the stored hash was made with weaker parameters than the current ones. */
@@ -33,10 +34,7 @@ export const checkPassword = async (
     return Result.success({ type: 'refused' })
   }
   if (verified.data.type === 'mismatch') {
-    const counted = await userRepository.recordFailedLogin(user.id, {
-      threshold: LOCK_THRESHOLD,
-      lockedUntil: lockEnd(now).toISOString(),
-    })
+    const counted = await countWrongGuess(userRepository, user.id, now)
     return counted.type === 'error'
       ? counted
       : Result.success({ type: 'refused' })

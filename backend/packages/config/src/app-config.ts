@@ -85,6 +85,7 @@ const variablesSchema = z.object({
   PUBLIC_APP_URL: z
     .string()
     .refine(isOrigin, 'Must be an origin such as https://example.com'),
+  TWO_FACTOR_ENCRYPTION_KEY: z.string().min(32),
   LOG_LEVEL: logLevelSchema,
   LOG_FORMAT: logFormatSchema,
 })
@@ -153,6 +154,10 @@ export type AppConfig = {
   }
   /** The origin of the web application that the links in mails point at. */
   publicAppUrl: string
+  twoFactor: {
+    /** What the secrets of authenticator apps are encrypted under. */
+    encryptionKey: string
+  }
   logging: {
     level: LogLevel
     format: LogFormat
@@ -197,6 +202,9 @@ const toAppConfig = (
     from: variables.MAIL_FROM,
   },
   publicAppUrl: variables.PUBLIC_APP_URL,
+  twoFactor: {
+    encryptionKey: variables.TWO_FACTOR_ENCRYPTION_KEY,
+  },
   logging: {
     level: variables.LOG_LEVEL,
     format: variables.LOG_FORMAT,

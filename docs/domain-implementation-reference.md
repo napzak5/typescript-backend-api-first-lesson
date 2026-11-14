@@ -709,7 +709,7 @@ The layout of the API package, the handler pattern, the shared helpers and the m
   )
 ```
 
-A new domain adds one such statement next to it, before `notFoundHandler`. Nothing changes in `backend/apps/server`: it reads the configuration, connects the database, creates the mailer and calls `createApp({ database, logger, mailer, settings })`.
+A new domain adds one such statement next to it, before `notFoundHandler`. Nothing changes in `backend/apps/server`: it reads the configuration, connects the database, creates the mailer and the authenticator of two-factor authentication and calls `createApp({ database, logger, mailer, twoFactorAuthenticator, settings })`.
 
 ## 12. Tests
 
@@ -798,7 +798,7 @@ The conventions are in [Testing Requirements](./testing-requirements.md) and the
 
 ## Error Handling
 
-A use case fails in one of six ways (`backend/packages/domain/src/shared/errors.ts`):
+A use case fails in one of seven ways (`backend/packages/domain/src/shared/errors.ts`):
 
 ```typescript
 export type DomainError =
@@ -807,18 +807,20 @@ export type DomainError =
   | { type: 'forbidden' }
   | { type: 'notFound'; entity: string; id: string }
   | { type: 'alreadyExists'; entity: string; field: string; value: string }
+  | { type: 'conflict'; message: string }
   | { type: 'database'; message: string; cause: unknown }
 ```
 
-Errors are built with `DomainErrors.validation`, `.unauthenticated`, `.forbidden`, `.notFound`, `.alreadyExists` and `.database`. Where each kind comes from:
+Errors are built with `DomainErrors.validation`, `.unauthenticated`, `.forbidden`, `.notFound`, `.alreadyExists`, `.conflict` and `.database`. Where each kind comes from:
 
 | Kind | Where it is created | What the client gets |
 |------|---------------------|----------------------|
-| `validation` | `parseWith`, called by a use case (and by the query decoding of the list handler). The authentication use cases also build it themselves for what a schema cannot check: a password that is too easy to guess, a wrong current password, a mailed token that cannot be used | 400 with the broken rules in `errors` |
-| `unauthenticated` | the authentication use cases only: `AuthenticateUseCase` behind `authenticated`, login and refresh, and the current-user and change-password use cases when the user of the session no longer exists | 401 with a `WWW-Authenticate` header |
+| `validation` | `parseWith`, called by a use case (and by the query decoding of the list handler). The authentication use cases also build it themselves for what a schema cannot check: a password that is too easy to guess, a wrong current password, a mailed token that cannot be used, a code of two-factor authentication that is not accepted | 400 with the broken rules in `errors` |
+| `unauthenticated` | the authentication use cases only: `AuthenticateUseCase` behind `authenticated`, login and refresh, and the current-user, change-password and two-factor use cases when the user of the session no longer exists | 401 with a `WWW-Authenticate` header |
 | `forbidden` | a use case, when its permission rule refuses the actor | 403 |
 | `notFound` | a use case, when the repository resolved to `null` or `false` | 404 |
 | `alreadyExists` | the repository, from the unique violation | 409 |
+| `conflict` | a use case, when the request is fine and what it acts on is not in a state that allows it; so far only the two-factor use cases (enabling what is already enabled, for example) | 409 |
 | `database` | the repository, from a failed query; the read mapper, from a stored row that does not fit | 500 without details; the cause is logged |
 
 The API package maps the kind to a status and a problem details body (`backend/packages/api/src/shared/problem-details.ts`). A domain adds nothing there unless it introduces a new kind of error, and then the exhaustive match in that file stops compiling until the new kind has a status.

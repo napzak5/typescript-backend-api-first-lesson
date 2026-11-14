@@ -15,6 +15,7 @@ export * from './repositories/user.repository'
 export * from './services/mailer'
 export * from './services/password-hasher'
 export * from './services/token-issuer'
+export * from './services/two-factor-authenticator'
 
 // Errors and validation
 export * from './shared'

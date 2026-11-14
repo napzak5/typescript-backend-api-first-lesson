@@ -30,6 +30,12 @@ import {
   PUBLIC_APP_URL,
   request,
 } from './_shared/test-helpers'
+import {
+  SECRET,
+  stepAt,
+  totp,
+  twoFactorUser,
+} from './_shared/two-factor-helpers'
 
 const REGISTER = `${AUTH}/register`
 const SEND_VERIFICATION = `${AUTH}/verify-email/send`
@@ -69,6 +75,11 @@ const authenticationRequired = {
 }
 const tokenExpired = { status: 401, code: '1003', type: 'token-expired' }
 const invalidToken = { status: 401, code: '1004', type: 'invalid-token' }
+const twoFactorRequired = {
+  status: 401,
+  code: '1007',
+  type: 'two-factor-required',
+}
 
 const VERIFICATION_SUBJECT = 'メールアドレスの確認'
 const RESET_SUBJECT = 'パスワードの再設定'
@@ -342,7 +353,7 @@ describe('Registration, email verification and passwords', () => {
         emailVerified: true,
         customerId: null,
         staffId: null,
-        twoFactorEnabled: false,
+        twoFactorStatus: 'disabled',
       })
       for (const column of [
         'passwordHash',
@@ -1185,23 +1196,54 @@ describe('Registration, email verification and passwords', () => {
       expect((await login(EMAIL, NEW_PASSWORD)).status).toBe(200)
     })
 
-    it('leaves two-factor authentication as it is, which still refuses the login', async () => {
-      const { id, token } = await resetRequested({
-        email: EMAIL,
-        twoFactorEnabled: true,
-        twoFactorStatus: 'enabled',
-        twoFactorSecret: 'TOTP-SHARED-SECRET',
-      })
+    it('leaves two-factor authentication as it is: the login with the new password still needs the code', async () => {
+      const step = stepAt()
+      const { id, token } = await resetRequested(
+        await twoFactorUser('enabled', {
+          email: EMAIL,
+          twoFactorLastUsedStep: step - 1,
+        }),
+      )
+      const before = await userRow(id)
 
       const response = await reset(token)
 
       expectNoContent(response)
       expect(await userRow(id)).toMatchObject({
-        twoFactorEnabled: true,
         twoFactorStatus: 'enabled',
-        twoFactorSecret: 'TOTP-SHARED-SECRET',
+        twoFactorSecret: before.twoFactorSecret,
+        backupCodes: before.backupCodes,
+        twoFactorLastUsedStep: step - 1,
       })
-      expectProblem(await login(EMAIL, NEW_PASSWORD), invalidCredentials)
+      const withoutCode = await login(EMAIL, NEW_PASSWORD)
+      expectProblem(withoutCode, twoFactorRequired)
+      expect(await db.$count(sessions)).toBe(0)
+      const withCode = await post(
+        LOGIN,
+        loginBody(EMAIL, {
+          password: NEW_PASSWORD,
+          twoFactorCode: totp(SECRET, step),
+        }),
+      )
+      expect(withCode.status).toBe(200)
+    })
+
+    it('leaves a setup of two-factor authentication that is pending as it is', async () => {
+      const { id, token } = await resetRequested(
+        await twoFactorUser('pending', { email: EMAIL }),
+      )
+      const before = await userRow(id)
+
+      const response = await reset(token)
+
+      expectNoContent(response)
+      expect(await userRow(id)).toMatchObject({
+        twoFactorStatus: 'pending',
+        twoFactorSecret: before.twoFactorSecret,
+        backupCodes: before.backupCodes,
+        twoFactorLastUsedStep: null,
+      })
+      expect((await login(EMAIL, NEW_PASSWORD)).status).toBe(200)
     })
 
     it('lets the token work once', async () => {
@@ -1387,6 +1429,40 @@ describe('Registration, email verification and passwords', () => {
       ])
       expectProblem(await login(EMAIL, OTHER_PASSWORD), invalidCredentials)
       expect((await login(EMAIL, NEW_PASSWORD)).status).toBe(200)
+    })
+
+    it('leaves two-factor authentication as it is: the login with the new password still needs the code', async () => {
+      const signedIn = await signedInWithOtherPassword({ email: EMAIL })
+      const step = stepAt()
+      await updateUser(
+        db,
+        signedIn.id,
+        await twoFactorUser('enabled', { twoFactorLastUsedStep: step - 1 }),
+      )
+      const before = await userRow(signedIn.id)
+
+      const response = await changePassword(
+        signedIn.authorization,
+        changeBody(),
+      )
+
+      expectNoContent(response)
+      expect(await userRow(signedIn.id)).toMatchObject({
+        twoFactorStatus: 'enabled',
+        twoFactorSecret: before.twoFactorSecret,
+        backupCodes: before.backupCodes,
+        twoFactorLastUsedStep: step - 1,
+      })
+      expect((await me(signedIn.authorization)).status).toBe(200)
+      expectProblem(await login(EMAIL, NEW_PASSWORD), twoFactorRequired)
+      const withCode = await post(
+        LOGIN,
+        loginBody(EMAIL, {
+          password: NEW_PASSWORD,
+          twoFactorCode: totp(SECRET, step),
+        }),
+      )
+      expect(withCode.status).toBe(200)
     })
 
     it('makes an outstanding password reset link stop working', async () => {

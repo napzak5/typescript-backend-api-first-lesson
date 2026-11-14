@@ -4,7 +4,12 @@ import type { ApiAuthLoginResponse, ClientInfo } from '../../models/auth'
 import { authLoginRequestSchema } from '../../schemas/auth.schema'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import type { AuthUseCaseDependencies } from './_shared/dependencies'
+import { backupCodeUsedMail } from './_shared/mails'
 import { checkPassword } from './_shared/password-check'
+import {
+  checkSecondFactor,
+  type SecondFactorCheck,
+} from './_shared/second-factor'
 import {
   issueSessionTokens,
   maySignIn,
@@ -16,6 +21,21 @@ const loginFailed = Result.error(
   DomainErrors.unauthenticated('invalidCredentials'),
 )
 
+/**
+ * The answer when the password was right and the second factor is missing
+ * or was not accepted. It tells the client to ask for the code; it tells
+ * nobody else anything, because only the right password gets this far.
+ */
+const twoFactorRequired = Result.error(
+  DomainErrors.unauthenticated('twoFactorRequired'),
+)
+
+/** An account without two-factor authentication has nothing more to show. */
+const noSecondFactor: Result<SecondFactorCheck, DomainError> = Result.success({
+  type: 'accepted',
+  backupCodesLeft: null,
+})
+
 export class LoginUseCase {
   constructor(private readonly dependencies: AuthUseCaseDependencies) {}
 
@@ -26,8 +46,9 @@ export class LoginUseCase {
    *   time the answer takes does not tell whether the email is registered.
    * - The password is checked under the limit on guesses (`checkPassword`):
    *   wrong passwords count and lock the account for a while.
-   * - An account with two-factor authentication cannot sign in: the second
-   *   factor cannot be checked yet, and it is not skipped.
+   * - An account with two-factor authentication also needs a code of the
+   *   authenticator app or a backup code, under the same limit on guesses.
+   *   A backup code is used up, and the user is told by mail.
    */
   async execute(
     input: unknown,
@@ -37,13 +58,14 @@ export class LoginUseCase {
     if (request.type === 'error') {
       return request
     }
-    const { email, password, rememberMe } = request.data
+    const { email, password, rememberMe, twoFactorCode } = request.data
 
     const {
       userRepository,
       sessionRepository,
       passwordHasher,
       tokenIssuer,
+      mailer,
       clock,
     } = this.dependencies
     const now = clock()
@@ -62,14 +84,25 @@ export class LoginUseCase {
     if (checked.type === 'error') {
       return checked
     }
-    if (
-      checked.data.type === 'refused' ||
-      !maySignIn(user) ||
-      user.twoFactorEnabled ||
-      user.twoFactorStatus === 'enabled'
-    ) {
+    if (checked.data.type === 'refused' || !maySignIn(user)) {
       return loginFailed
     }
+
+    const hasSecondFactor = user.twoFactorStatus === 'enabled'
+    if (hasSecondFactor && twoFactorCode === null) {
+      return twoFactorRequired
+    }
+    const secondFactor =
+      hasSecondFactor && twoFactorCode !== null
+        ? await checkSecondFactor(this.dependencies, user, twoFactorCode, now)
+        : noSecondFactor
+    if (secondFactor.type === 'error') {
+      return secondFactor
+    }
+    if (secondFactor.data.type === 'refused') {
+      return twoFactorRequired
+    }
+    const { backupCodesLeft } = secondFactor.data
 
     const rehashed = checked.data.needsRehash
       ? await passwordHasher.hash(password)
@@ -101,6 +134,9 @@ export class LoginUseCase {
     })
     if (created.type === 'error') {
       return created
+    }
+    if (backupCodesLeft !== null) {
+      mailer.deliver(backupCodeUsedMail(user.email, backupCodesLeft))
     }
 
     return Result.map(UserReadMapper.toApiUser(signedIn.data), (apiUser) => ({

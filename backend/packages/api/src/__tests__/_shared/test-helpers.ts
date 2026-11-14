@@ -4,6 +4,7 @@ import {
   createLogger,
   type Database,
   type DatabaseConnection,
+  TotpAuthenticator,
 } from '@beauty-salon-backend/infrastructure'
 import type { Express } from 'express'
 import type postgres from 'postgres'
@@ -47,6 +48,9 @@ export const ALLOWED_ORIGIN = 'https://salon.example'
 /** Where the links in mails point. */
 export const PUBLIC_APP_URL = 'https://app.salon.example'
 
+/** What the application under test encrypts the secrets of authenticator apps under. */
+export const TWO_FACTOR_ENCRYPTION_KEY = 'key-of-the-api-integration-tests-only'
+
 const settings: AppSettings = {
   trustProxyHops: 0,
   cors: {
@@ -81,6 +85,7 @@ export function createTestApp({
     database,
     settings: { ...settings, rateLimit },
     mailer: { deliver: (mail) => mails?.push(mail) },
+    twoFactorAuthenticator: new TotpAuthenticator(TWO_FACTOR_ENCRYPTION_KEY),
     logger: createLogger(
       {
         level: logs === undefined ? 'silent' : 'info',

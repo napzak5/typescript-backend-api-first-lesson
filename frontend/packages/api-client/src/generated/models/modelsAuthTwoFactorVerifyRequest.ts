@@ -7,14 +7,12 @@
  */
 
 /**
- * 2要素認証コードを検証するリクエスト。
- * 2要素認証の有効化の確定と、バックアップコードの再発行で本人確認に使用する
+ * 2要素認証の設定を確定するリクエスト。
  */
 export interface ModelsAuthTwoFactorVerifyRequest {
   /**
-     * 認証アプリが生成したTOTPコード(6桁の数字)。
-     * @minLength 6
-     * @maxLength 6
+     * 認証アプリが生成したTOTPコード(6桁の数字)。バックアップコードは指定できない。
+     * @pattern ^[0-9]{6}$
      */
   code: string;
 }

@@ -26,3 +26,4 @@ export { UserRepository } from './repositories/user.repository.impl'
 // Passwords and tokens
 export { Argon2PasswordHasher } from './security/argon2-password-hasher'
 export { RandomTokenIssuer } from './security/random-token-issuer'
+export { TotpAuthenticator } from './security/totp-authenticator'

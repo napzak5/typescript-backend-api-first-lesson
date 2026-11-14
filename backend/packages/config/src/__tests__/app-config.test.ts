@@ -24,6 +24,7 @@ const variables = {
   SMTP_PASSWORD: 'hunter2',
   MAIL_FROM: 'Beauty Salon <no-reply@salon.example>',
   PUBLIC_APP_URL: 'https://salon.example',
+  TWO_FACTOR_ENCRYPTION_KEY: 'Zm9yLXRoZS10ZXN0cy1vZi10aGUtY29uZmlnLXBhY2thZ2U',
   LOG_LEVEL: 'info',
   LOG_FORMAT: 'json',
 }
@@ -83,6 +84,9 @@ describe('parseAppConfig', () => {
           from: 'Beauty Salon <no-reply@salon.example>',
         },
         publicAppUrl: 'https://salon.example',
+        twoFactor: {
+          encryptionKey: 'Zm9yLXRoZS10ZXN0cy1vZi10aGUtY29uZmlnLXBhY2thZ2U',
+        },
         logging: { level: 'info', format: 'json' },
       },
     })
@@ -101,6 +105,13 @@ describe('parseAppConfig', () => {
     expect(
       result.type === 'error' && result.error.map(({ variable }) => variable),
     ).toEqual(variableNames)
+  })
+
+  it('should read 22 variables, the key of two-factor authentication among them', () => {
+    const result = parseAppConfig({})
+
+    expect(result.type === 'error' && result.error).toHaveLength(22)
+    expect(variableNames).toContain('TWO_FACTOR_ENCRYPTION_KEY')
   })
 
   it.each([
@@ -146,6 +157,7 @@ describe('parseAppConfig', () => {
     'SMTP_PASSWORD',
     'MAIL_FROM',
     'PUBLIC_APP_URL',
+    'TWO_FACTOR_ENCRYPTION_KEY',
   ])('should report a missing %s by its name', (variable) => {
     const rest = Object.fromEntries(
       Object.entries(variables).filter(([name]) => name !== variable),
@@ -183,6 +195,11 @@ describe('parseAppConfig', () => {
     ['PUBLIC_APP_URL', 'https://salon.example?ref=mail'],
     ['PUBLIC_APP_URL', 'https://salon.example#top'],
     ['PUBLIC_APP_URL', 'https://user:secret@salon.example'],
+    ['TWO_FACTOR_ENCRYPTION_KEY', ''],
+    ['TWO_FACTOR_ENCRYPTION_KEY', 'short'],
+    // 31 characters
+    ['TWO_FACTOR_ENCRYPTION_KEY', 'k'.repeat(31)],
+    ['TWO_FACTOR_ENCRYPTION_KEY', 'Zm9yLXRoZS10ZXN0cy1vZi10aGUtY29'],
   ])('should reject %s=%j by its name', (variable, value) => {
     const result = parseAppConfig({ ...variables, [variable]: value })
 
@@ -218,6 +235,31 @@ describe('parseAppConfig', () => {
       'https://book.salon.example:8443',
       { publicAppUrl: 'https://book.salon.example:8443' },
     ],
+    // 32 characters
+    [
+      'TWO_FACTOR_ENCRYPTION_KEY',
+      'k'.repeat(32),
+      { twoFactor: { encryptionKey: 'k'.repeat(32) } },
+    ],
+    [
+      'TWO_FACTOR_ENCRYPTION_KEY',
+      'Zm9yLXRoZS10ZXN0cy1vZi10aGUtY29u',
+      { twoFactor: { encryptionKey: 'Zm9yLXRoZS10ZXN0cy1vZi10aGUtY29u' } },
+    ],
+    [
+      'TWO_FACTOR_ENCRYPTION_KEY',
+      'k'.repeat(200),
+      { twoFactor: { encryptionKey: 'k'.repeat(200) } },
+    ],
+    [
+      'TWO_FACTOR_ENCRYPTION_KEY',
+      ' a key with spaces, +/= and $ signs, kept as it is ',
+      {
+        twoFactor: {
+          encryptionKey: ' a key with spaces, +/= and $ signs, kept as it is ',
+        },
+      },
+    ],
   ])('should accept %s=%j', (variable, value, expected) => {
     expect(parseAppConfig({ ...variables, [variable]: value })).toMatchObject({
       type: 'success',
@@ -230,6 +272,7 @@ describe('parseAppConfig', () => {
     ['SMTP_TLS', 'tls-value-31337'],
     ['MAIL_FROM', 'Sender <from-value-31337>'],
     ['PUBLIC_APP_URL', 'https://url-value-31337.example/path'],
+    ['TWO_FACTOR_ENCRYPTION_KEY', 'key-value-31337-is-too-short'],
   ])(
     'should keep the rejected value of %s out of the report',
     (variable, value) => {
@@ -318,6 +361,34 @@ describe('parseAppConfig', () => {
 
     expect(JSON.stringify(result)).not.toContain('hunter2')
   })
+
+  it('should keep a valid key of two-factor authentication out of the report of another variable', () => {
+    const result = parseAppConfig({
+      ...variables,
+      TWO_FACTOR_ENCRYPTION_KEY: 'key-value-31337-that-is-long-enough-to-pass',
+      PORT: 'abc',
+    })
+
+    expect(
+      result.type === 'error' && result.error.map((issue) => issue.variable),
+    ).toEqual(['PORT'])
+    expect(JSON.stringify(result)).not.toContain('31337')
+  })
+
+  it.each(['localhost', 'development', 'test', 'staging', 'production'])(
+    'should require a key of two-factor authentication of 32 characters in %s',
+    (environment) => {
+      const result = parseAppConfig({
+        ...variables,
+        NODE_ENV: environment,
+        TWO_FACTOR_ENCRYPTION_KEY: 'k'.repeat(31),
+      })
+
+      expect(
+        result.type === 'error' && result.error.map((issue) => issue.variable),
+      ).toEqual(['TWO_FACTOR_ENCRYPTION_KEY'])
+    },
+  )
 })
 
 describe('environment files', () => {
@@ -342,6 +413,24 @@ describe('environment files', () => {
         NODE_ENV: 'production',
       }),
     ).toMatchObject({ type: 'success' })
+  })
+
+  it.each([
+    '.env.localhost',
+    '.env.development',
+    '.env.test',
+    '.env.test.ci',
+    '.env.staging',
+    '.env.production',
+    '.env.example',
+  ])('%s should set a key of two-factor authentication', (file) => {
+    const key = readEnvFile(file)['TWO_FACTOR_ENCRYPTION_KEY'] ?? ''
+
+    expect(key.length).toBeGreaterThanOrEqual(32)
+    expect(parseAppConfig(readEnvFile(file))).toMatchObject({
+      type: 'success',
+      data: { twoFactor: { encryptionKey: key } },
+    })
   })
 
   it.each(['.env.localhost', '.env.development'])(

@@ -9,6 +9,10 @@ import type {
   ApiAuthPasswordResetVerifyRequest,
   ApiAuthRegisterRequest,
   ApiAuthTokenRefreshRequest,
+  ApiAuthTwoFactorBackupCodesRequest,
+  ApiAuthTwoFactorDisableRequest,
+  ApiAuthTwoFactorEnableRequest,
+  ApiAuthTwoFactorVerifyRequest,
 } from '../models/auth'
 
 /**
@@ -71,11 +75,17 @@ const newPasswordSchema = passwordOf(MIN_NEW_PASSWORD_LENGTH)
 /** A token that was mailed; what it must look like is not told. */
 const mailedTokenSchema = z.string().min(1).max(255)
 
+/** The code of an authenticator app, or a backup code typed in any spacing. */
+const secondFactorCodeSchema = z.string().min(1).max(64)
+
+/** The code of an authenticator app and nothing else. */
+const appCodeSchema = z.string().regex(/^[0-9]{6}$/)
+
 export const authLoginRequestSchema = z.strictObject({
   email: emailSchema,
   password: presentedPasswordSchema,
   rememberMe: z.boolean(),
-  twoFactorCode: z.string().min(1).max(64).nullable(),
+  twoFactorCode: secondFactorCodeSchema.nullable(),
 }) satisfies z.ZodType<ApiAuthLoginRequest>
 
 export const authTokenRefreshRequestSchema = z.strictObject({
@@ -112,3 +122,20 @@ export const authPasswordChangeRequestSchema = z.strictObject({
   currentPassword: presentedPasswordSchema,
   newPassword: newPasswordSchema,
 }) satisfies z.ZodType<ApiAuthPasswordChangeRequest>
+
+export const authTwoFactorEnableRequestSchema = z.strictObject({
+  password: presentedPasswordSchema,
+}) satisfies z.ZodType<ApiAuthTwoFactorEnableRequest>
+
+export const authTwoFactorVerifyRequestSchema = z.strictObject({
+  code: appCodeSchema,
+}) satisfies z.ZodType<ApiAuthTwoFactorVerifyRequest>
+
+export const authTwoFactorDisableRequestSchema = z.strictObject({
+  password: presentedPasswordSchema,
+  code: secondFactorCodeSchema,
+}) satisfies z.ZodType<ApiAuthTwoFactorDisableRequest>
+
+export const authTwoFactorBackupCodesRequestSchema = z.strictObject({
+  code: secondFactorCodeSchema,
+}) satisfies z.ZodType<ApiAuthTwoFactorBackupCodesRequest>

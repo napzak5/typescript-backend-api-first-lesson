@@ -85,6 +85,17 @@ const toProblem = (error: ApiError): Problem =>
       code: '1002',
       errors: null,
     }))
+    // The password was right. Says nothing about the code: missing, wrong and
+    // already used are answered alike.
+    .with({ type: 'unauthenticated', reason: 'twoFactorRequired' }, () => ({
+      type: 'urn:beauty-salon:problem:two-factor-required',
+      title: 'Two-factor authentication required',
+      status: 401,
+      detail:
+        'Send a valid code of the authenticator app, or a backup code, as twoFactorCode',
+      code: '1007',
+      errors: null,
+    }))
     .with({ type: 'forbidden' }, () => ({
       type: 'urn:beauty-salon:problem:forbidden',
       title: 'Forbidden',
@@ -107,6 +118,14 @@ const toProblem = (error: ApiError): Problem =>
       status: 409,
       detail: `${entity} with ${field} ${value} already exists`,
       code: '3002',
+      errors: null,
+    }))
+    .with({ type: 'conflict' }, ({ message }) => ({
+      type: 'urn:beauty-salon:problem:operation-not-allowed',
+      title: 'Operation not allowed',
+      status: 409,
+      detail: message,
+      code: '3003',
       errors: null,
     }))
     // The cause stays on the server: it may name tables, columns or data.
@@ -191,6 +210,7 @@ export const toBearerChallenge = (error: ApiError): string | null =>
         .with(
           'missingCredentials',
           'invalidCredentials',
+          'twoFactorRequired',
           () => `Bearer realm="${BEARER_REALM}"`,
         )
         .with(

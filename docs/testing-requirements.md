@@ -41,7 +41,7 @@ What the repository does not have:
 | Mappers: both directions, `null` kept as `null`, the changes of representation, and the columns that must not reach a response left out | Unit | `backend/packages/domain/src/__tests__/salon.mapper.test.ts`, `user.mapper.test.ts` |
 | Use cases: the success path, every error passed on unchanged, the repository left untouched by invalid input | Unit, with the interfaces the use case depends on stubbed | `backend/packages/domain/src/__tests__/salon.usecase.test.ts`, `auth.usecase.test.ts` |
 | Permission rules: every kind of actor, allowed or refused, and the repository left untouched by a refused one | Unit, through the use cases | `describe('who may change a salon', …)` in `backend/packages/domain/src/__tests__/salon.usecase.test.ts` |
-| Password hashing and the generation of tokens | Unit | `backend/packages/infrastructure/src/security/__tests__/` |
+| Password hashing, the generation of tokens, and the secrets, one-time passwords and backup codes of two-factor authentication | Unit | `backend/packages/infrastructure/src/security/__tests__/` |
 | Mail delivery (`SmtpMailer`): what reaches the SMTP server, what is logged and what is kept out of the log, a delivery that fails, closing while deliveries are under way | Unit for what needs no server; integration against a Mailpit container | `backend/packages/infrastructure/src/mail/__tests__/` |
 | Pure helpers of the HTTP layer: links, query decoding, problem details, middleware | Unit | `backend/packages/api/src/routes/salon/_shared/__tests__/`, `backend/packages/api/src/shared/__tests__/problem-details.test.ts`, `backend/packages/api/src/middleware/__tests__/middleware.test.ts` |
 | Every endpoint (see [Requirements per Endpoint](#requirements-per-endpoint)) | Integration | `backend/packages/api/src/__tests__/salon.integration.test.ts`, `auth.integration.test.ts` |
@@ -143,12 +143,15 @@ belongs to a suspended, inactive or deleted user is covered in
   keeps the mails for the test (`createTestApp({ mails })` in
   `backend/packages/api/src/__tests__/_shared/test-helpers.ts`), and
   delivery over SMTP is tested in the `infrastructure` package against a real
-  SMTP server.
+  SMTP server. Two-factor authentication is not substituted: `createTestApp`
+  passes the real `TotpAuthenticator`.
 - **Unit tests of use cases stub only what the use case depends on**: the
   repository interface (`ISalonRepository`), with `vi.fn`; for the
   authentication use cases the two repositories, the password hasher, the
-  token issuer and the mailer, with the clock fixed (`authDependencies` in
-  `backend/packages/domain/src/__tests__/auth-fixtures.ts`). Schemas and
+  token issuer, the authenticator of two-factor authentication and the
+  mailer, with the clock fixed (`authDependencies` in
+  `backend/packages/domain/src/__tests__/auth-fixtures.ts`; its
+  `fakeTwoFactorAuthenticator` accepts the one code `APP_CODE`). Schemas and
   mappers are tested without any stub.
 - **Failures are asserted as values**: a use case or mapper through the
   `Result` it returns, an endpoint through its problem details.

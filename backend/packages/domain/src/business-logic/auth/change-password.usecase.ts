@@ -6,11 +6,9 @@ import type { AuthUseCaseDependencies } from './_shared/dependencies'
 import { passwordChangedMail } from './_shared/mails'
 import { blocklistIssue } from './_shared/password-blocklist'
 import { checkPassword } from './_shared/password-check'
+import { sessionGone } from './_shared/session-gone'
 
 const MESSAGE = 'Invalid password change'
-
-/** A user who was deleted since the request was authenticated has no session any more. */
-const sessionGone = Result.error(DomainErrors.unauthenticated('invalidToken'))
 
 export class ChangePasswordUseCase {
   constructor(private readonly dependencies: AuthUseCaseDependencies) {}

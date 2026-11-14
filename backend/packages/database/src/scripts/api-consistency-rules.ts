@@ -193,6 +193,7 @@ const authRules: ModelRule[] = [
     omittedColumns: [
       'passwordHash',
       'twoFactorSecret',
+      'twoFactorLastUsedStep',
       'backupCodes',
       'emailVerificationTokenHash',
       'emailVerificationExpiry',

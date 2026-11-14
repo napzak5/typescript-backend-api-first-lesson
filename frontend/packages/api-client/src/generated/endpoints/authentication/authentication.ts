@@ -39,6 +39,7 @@ import type {
   ModelsAuthPasswordResetVerifyRequest,
   ModelsAuthRegisterRequest,
   ModelsAuthTokenRefreshRequest,
+  ModelsAuthTwoFactorBackupCodesRequest,
   ModelsAuthTwoFactorDisableRequest,
   ModelsAuthTwoFactorEnableRequest,
   ModelsAuthTwoFactorVerifyRequest,
@@ -126,10 +127,10 @@ export const getAuthCrudGenerateBackupCodesUrl = () => {
 }
 
 /**
- * 認証コードで本人確認を行い、2要素認証のバックアップコードを再発行します。それまでのバックアップコードは使用できなくなります。新しいバックアップコードはこのレスポンスでのみ返します。コードが誤っている場合は400を、2要素認証が有効でない場合は409を返します。
+ * コード(認証アプリのコード、またはバックアップコード)で本人確認を行い、2要素認証のバックアップコード(10個)を再発行します。それまでのバックアップコードは使用できなくなります。新しいバックアップコードはこのレスポンスでのみ返し、再発行したことをメールで通知します。コードが誤っている場合は400を、2要素認証が有効でない場合は409を返します。誤ったコードは、ログインと同じ失敗回数に数えます。
  * @summary Regenerate backup codes
  */
-export const authCrudGenerateBackupCodes = async (modelsAuthTwoFactorVerifyRequest: ModelsAuthTwoFactorVerifyRequest, options?: RequestInit): Promise<authCrudGenerateBackupCodesResponse> => {
+export const authCrudGenerateBackupCodes = async (modelsAuthTwoFactorBackupCodesRequest: ModelsAuthTwoFactorBackupCodesRequest, options?: RequestInit): Promise<authCrudGenerateBackupCodesResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -150,7 +151,7 @@ return customInstance<authCrudGenerateBackupCodesResponse>(getAuthCrudGenerateBa
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(modelsAuthTwoFactorVerifyRequest)
+    body: JSON.stringify(modelsAuthTwoFactorBackupCodesRequest)
   }
 );}
 
@@ -188,12 +189,12 @@ const {mutation: mutationOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type AuthCrudGenerateBackupCodesMutationResult = NonNullable<Awaited<ReturnType<typeof authCrudGenerateBackupCodes>>>
-    export type AuthCrudGenerateBackupCodesMutationBody = ModelsAuthTwoFactorVerifyRequest
+    export type AuthCrudGenerateBackupCodesMutationBody = ModelsAuthTwoFactorBackupCodesRequest
     export type AuthCrudGenerateBackupCodesMutationError = ModelsProblemDetails
-    export type AuthCrudGenerateBackupCodesMutationVariables = {data: ModelsAuthTwoFactorVerifyRequest}
+    export type AuthCrudGenerateBackupCodesMutationVariables = {data: ModelsAuthTwoFactorBackupCodesRequest}
 
     /**
- * 認証コードで本人確認を行い、2要素認証のバックアップコードを再発行します。それまでのバックアップコードは使用できなくなります。新しいバックアップコードはこのレスポンスでのみ返します。コードが誤っている場合は400を、2要素認証が有効でない場合は409を返します。
+ * コード(認証アプリのコード、またはバックアップコード)で本人確認を行い、2要素認証のバックアップコード(10個)を再発行します。それまでのバックアップコードは使用できなくなります。新しいバックアップコードはこのレスポンスでのみ返し、再発行したことをメールで通知します。コードが誤っている場合は400を、2要素認証が有効でない場合は409を返します。誤ったコードは、ログインと同じ失敗回数に数えます。
  * @summary Regenerate backup codes
  */
 export const useAuthCrudGenerateBackupCodes = <TError = ModelsProblemDetails,
@@ -264,7 +265,7 @@ export const getAuthCrudDisableTwoFactorUrl = () => {
 }
 
 /**
- * パスワードと認証コードで本人確認を行い、2要素認証を無効にします。シークレットとバックアップコードは削除します。パスワードまたはコードが誤っている場合は400を、2要素認証が有効でない場合は409を返します。
+ * パスワードとコード(認証アプリのコード、またはバックアップコード)で本人確認を行い、2要素認証を無効にします。シークレットとバックアップコードは削除し、無効にしたことをメールで通知します。パスワードまたはコードが誤っている場合は400を、2要素認証が有効でない場合は409を返します。誤りは、ログインと同じ失敗回数に数えます。
  * @summary Disable two-factor authentication
  */
 export const authCrudDisableTwoFactor = async (modelsAuthTwoFactorDisableRequest: ModelsAuthTwoFactorDisableRequest, options?: RequestInit): Promise<authCrudDisableTwoFactorResponse> => {
@@ -331,7 +332,7 @@ const {mutation: mutationOptions} = options ?
     export type AuthCrudDisableTwoFactorMutationVariables = {data: ModelsAuthTwoFactorDisableRequest}
 
     /**
- * パスワードと認証コードで本人確認を行い、2要素認証を無効にします。シークレットとバックアップコードは削除します。パスワードまたはコードが誤っている場合は400を、2要素認証が有効でない場合は409を返します。
+ * パスワードとコード(認証アプリのコード、またはバックアップコード)で本人確認を行い、2要素認証を無効にします。シークレットとバックアップコードは削除し、無効にしたことをメールで通知します。パスワードまたはコードが誤っている場合は400を、2要素認証が有効でない場合は409を返します。誤りは、ログインと同じ失敗回数に数えます。
  * @summary Disable two-factor authentication
  */
 export const useAuthCrudDisableTwoFactor = <TError = ModelsProblemDetails,
@@ -402,7 +403,7 @@ export const getAuthCrudEnableTwoFactorUrl = () => {
 }
 
 /**
- * 2要素認証の設定を開始します。パスワードで本人確認を行い、TOTPのシークレットとバックアップコードを発行して返します。シークレットとバックアップコードはこのレスポンスでのみ返します。設定は verifyTwoFactor で認証コードを確認すると有効になります。設定中に再度呼び出すと、新しいシークレットとバックアップコードを発行します。パスワードが誤っている場合は400を、2要素認証がすでに有効な場合は409を返します。
+ * 2要素認証の設定を開始します。パスワードで本人確認を行い、TOTPのシークレットとバックアップコード(10個)を発行して返します。シークレットとバックアップコードはこのレスポンスでのみ返します。設定は verifyTwoFactor で認証コードを確認すると有効になり、それまではログインにコードは要りません。設定中に再度呼び出すと、新しいシークレットとバックアップコードを発行します。パスワードが誤っている場合は400を、2要素認証がすでに有効な場合は409を返します。パスワードの誤りは、ログインと同じ失敗回数に数えます。
  * @summary Start two-factor authentication setup
  */
 export const authCrudEnableTwoFactor = async (modelsAuthTwoFactorEnableRequest: ModelsAuthTwoFactorEnableRequest, options?: RequestInit): Promise<authCrudEnableTwoFactorResponse> => {
@@ -469,7 +470,7 @@ const {mutation: mutationOptions} = options ?
     export type AuthCrudEnableTwoFactorMutationVariables = {data: ModelsAuthTwoFactorEnableRequest}
 
     /**
- * 2要素認証の設定を開始します。パスワードで本人確認を行い、TOTPのシークレットとバックアップコードを発行して返します。シークレットとバックアップコードはこのレスポンスでのみ返します。設定は verifyTwoFactor で認証コードを確認すると有効になります。設定中に再度呼び出すと、新しいシークレットとバックアップコードを発行します。パスワードが誤っている場合は400を、2要素認証がすでに有効な場合は409を返します。
+ * 2要素認証の設定を開始します。パスワードで本人確認を行い、TOTPのシークレットとバックアップコード(10個)を発行して返します。シークレットとバックアップコードはこのレスポンスでのみ返します。設定は verifyTwoFactor で認証コードを確認すると有効になり、それまではログインにコードは要りません。設定中に再度呼び出すと、新しいシークレットとバックアップコードを発行します。パスワードが誤っている場合は400を、2要素認証がすでに有効な場合は409を返します。パスワードの誤りは、ログインと同じ失敗回数に数えます。
  * @summary Start two-factor authentication setup
  */
 export const useAuthCrudEnableTwoFactor = <TError = ModelsProblemDetails,
@@ -540,7 +541,7 @@ export const getAuthCrudVerifyTwoFactorUrl = () => {
 }
 
 /**
- * 認証アプリが生成したコードを確認し、設定中の2要素認証を有効にします。コードが誤っている場合は400を、設定中の2要素認証がない場合は409を返します。
+ * 認証アプリが生成したコードを確認し、設定中の2要素認証を有効にします。有効にしたことをメールで通知します。コードが誤っている場合は400を、設定中の2要素認証がない場合は409を返します。誤ったコードは、ログインと同じ失敗回数に数えます。
  * @summary Confirm two-factor authentication setup
  */
 export const authCrudVerifyTwoFactor = async (modelsAuthTwoFactorVerifyRequest: ModelsAuthTwoFactorVerifyRequest, options?: RequestInit): Promise<authCrudVerifyTwoFactorResponse> => {
@@ -607,7 +608,7 @@ const {mutation: mutationOptions} = options ?
     export type AuthCrudVerifyTwoFactorMutationVariables = {data: ModelsAuthTwoFactorVerifyRequest}
 
     /**
- * 認証アプリが生成したコードを確認し、設定中の2要素認証を有効にします。コードが誤っている場合は400を、設定中の2要素認証がない場合は409を返します。
+ * 認証アプリが生成したコードを確認し、設定中の2要素認証を有効にします。有効にしたことをメールで通知します。コードが誤っている場合は400を、設定中の2要素認証がない場合は409を返します。誤ったコードは、ログインと同じ失敗回数に数えます。
  * @summary Confirm two-factor authentication setup
  */
 export const useAuthCrudVerifyTwoFactor = <TError = ModelsProblemDetails,
@@ -934,7 +935,7 @@ export const getAuthCrudLoginUrl = () => {
 }
 
 /**
- * メールアドレスとパスワードで認証し、セッションを作成してアクセストークンとリフレッシュトークンを発行します。メールアドレスは大文字と小文字を区別しません。認証に失敗した場合は、原因(メールアドレスが未登録、パスワードの誤り、アカウントのロック、メールアドレス未確認、アカウントの停止)にかかわらず同じ内容の401(コード 1002)を返します。パスワードを連続して5回誤るとアカウントを15分間ロックし、その後も誤るたびに15分間ロックします。ログインに成功すると失敗回数は0に戻ります。2要素認証の検証は未実装で、2要素認証が有効なアカウントは検証を実装するまでログインできません(同じ401を返します)。
+ * メールアドレスとパスワードで認証し、セッションを作成してアクセストークンとリフレッシュトークンを発行します。メールアドレスは大文字と小文字を区別しません。認証に失敗した場合は、原因(メールアドレスが未登録、パスワードの誤り、アカウントのロック、メールアドレス未確認、アカウントの停止)にかかわらず同じ内容の401(コード 1002)を返します。パスワードを連続して5回誤るとアカウントを15分間ロックし、その後も誤るたびに15分間ロックします。ログインに成功すると失敗回数は0に戻ります。2要素認証が有効なアカウントでは、パスワードが正しくても、twoFactorCode がない・誤っている・すでに使われている場合は401(コード 1007)を返します。twoFactorCode には認証アプリのコードかバックアップコードを指定します。誤ったコードはパスワードの誤りと同じ失敗回数に数えます。バックアップコードでログインすると、メールで通知します。
  * @summary Log in
  */
 export const authCrudLogin = async (modelsAuthLoginRequest: ModelsAuthLoginRequest, options?: RequestInit): Promise<authCrudLoginResponse> => {
@@ -1001,7 +1002,7 @@ const {mutation: mutationOptions} = options ?
     export type AuthCrudLoginMutationVariables = {data: ModelsAuthLoginRequest}
 
     /**
- * メールアドレスとパスワードで認証し、セッションを作成してアクセストークンとリフレッシュトークンを発行します。メールアドレスは大文字と小文字を区別しません。認証に失敗した場合は、原因(メールアドレスが未登録、パスワードの誤り、アカウントのロック、メールアドレス未確認、アカウントの停止)にかかわらず同じ内容の401(コード 1002)を返します。パスワードを連続して5回誤るとアカウントを15分間ロックし、その後も誤るたびに15分間ロックします。ログインに成功すると失敗回数は0に戻ります。2要素認証の検証は未実装で、2要素認証が有効なアカウントは検証を実装するまでログインできません(同じ401を返します)。
+ * メールアドレスとパスワードで認証し、セッションを作成してアクセストークンとリフレッシュトークンを発行します。メールアドレスは大文字と小文字を区別しません。認証に失敗した場合は、原因(メールアドレスが未登録、パスワードの誤り、アカウントのロック、メールアドレス未確認、アカウントの停止)にかかわらず同じ内容の401(コード 1002)を返します。パスワードを連続して5回誤るとアカウントを15分間ロックし、その後も誤るたびに15分間ロックします。ログインに成功すると失敗回数は0に戻ります。2要素認証が有効なアカウントでは、パスワードが正しくても、twoFactorCode がない・誤っている・すでに使われている場合は401(コード 1007)を返します。twoFactorCode には認証アプリのコードかバックアップコードを指定します。誤ったコードはパスワードの誤りと同じ失敗回数に数えます。バックアップコードでログインすると、メールで通知します。
  * @summary Log in
  */
 export const useAuthCrudLogin = <TError = ModelsProblemDetails,

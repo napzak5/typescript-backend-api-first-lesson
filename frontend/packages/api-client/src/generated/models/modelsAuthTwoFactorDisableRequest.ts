@@ -17,9 +17,9 @@ export interface ModelsAuthTwoFactorDisableRequest {
      */
   password: string;
   /**
-     * 無効化確認のための現在TOTPコード(6桁の数字)。
-     * @minLength 6
-     * @maxLength 6
+     * 認証アプリが生成したTOTPコード(6桁の数字)、またはバックアップコード。
+     * @minLength 1
+     * @maxLength 64
      */
   code: string;
 }

@@ -105,6 +105,39 @@ describe('Result', () => {
     })
   })
 
+  describe('fromThrowable', () => {
+    it('should wrap the returned value in success', () => {
+      const result = Result.fromThrowable(
+        () => new URL('https://salon.example/booking').hostname,
+      )
+
+      expect(result).toEqual({
+        type: 'success',
+        data: 'salon.example',
+      })
+    })
+
+    it('should wrap a thrown error in error', () => {
+      const result = Result.fromThrowable(() => new URL('not a url'))
+
+      expect(result.type).toBe('error')
+      if (result.type === 'error') {
+        expect(result.error).toBeInstanceOf(TypeError)
+      }
+    })
+
+    it('should handle values thrown that are not errors', () => {
+      const result = Result.fromThrowable(() => {
+        throw 'string error'
+      })
+
+      expect(result.type).toBe('error')
+      if (result.type === 'error') {
+        expect(result.error.message).toBe('string error')
+      }
+    })
+  })
+
   describe('fromPromise', () => {
     it('should wrap resolved promise in success', async () => {
       const promise = Promise.resolve('async data')

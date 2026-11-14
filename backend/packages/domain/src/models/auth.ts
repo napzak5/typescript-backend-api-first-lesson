@@ -39,6 +39,18 @@ export type ApiAuthPasswordResetConfirmRequest =
   components['schemas']['Models.AuthPasswordResetConfirmRequest']
 export type ApiAuthPasswordChangeRequest =
   components['schemas']['Models.AuthPasswordChangeRequest']
+export type ApiAuthTwoFactorEnableRequest =
+  components['schemas']['Models.AuthTwoFactorEnableRequest']
+export type ApiAuthTwoFactorSetupResponse =
+  components['schemas']['Models.AuthTwoFactorSetupResponse']
+export type ApiAuthTwoFactorVerifyRequest =
+  components['schemas']['Models.AuthTwoFactorVerifyRequest']
+export type ApiAuthTwoFactorDisableRequest =
+  components['schemas']['Models.AuthTwoFactorDisableRequest']
+export type ApiAuthTwoFactorBackupCodesRequest =
+  components['schemas']['Models.AuthTwoFactorBackupCodesRequest']
+export type ApiAuthTwoFactorBackupCodesResponse =
+  components['schemas']['Models.AuthTwoFactorBackupCodesResponse']
 
 // Database types, inferred from the Drizzle schema
 export type DbUser = DeepRequired<typeof users.$inferSelect>

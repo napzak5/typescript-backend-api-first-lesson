@@ -146,7 +146,8 @@ hook up to 120, enough for the first start of the container.
 ## The Application under Test
 
 `test-helpers.ts` builds the same application the server runs, with a mailer
-that hands the mails to the test:
+that hands the mails to the test and with the real `TotpAuthenticator` under
+a key of its own (`TWO_FACTOR_ENCRYPTION_KEY`):
 
 ```typescript
 // backend/packages/api/src/__tests__/_shared/test-helpers.ts (excerpt)
@@ -170,6 +171,7 @@ export function createTestApp({
     database,
     settings: { ...settings, rateLimit },
     mailer: { deliver: (mail) => mails?.push(mail) },
+    twoFactorAuthenticator: new TotpAuthenticator(TWO_FACTOR_ENCRYPTION_KEY),
     logger: createLogger(
       {
         level: logs === undefined ? 'silent' : 'info',
@@ -193,6 +195,7 @@ export function createTestApp({
 | `getTestDbClient()` | The postgres.js client under `getTestDb()`, for code that builds a Drizzle instance of its own (the authentication tests run the seed with it) |
 | `connectUnreachableDatabase()` | A connection nothing answers: every query fails at once |
 | `PUBLIC_APP_URL` | The origin of the web application in the test settings: the links in the mails start with it |
+| `TWO_FACTOR_ENCRYPTION_KEY` | The key under which the application under test encrypts the secrets of authenticator apps |
 | `request` | supertest |
 
 Every operation that is not public needs an access token, and the tests get
@@ -213,7 +216,7 @@ rules).
 | `signedInUser(app, db, overrides)` | Inserts a user (an active customer unless overridden), signs in and returns the user with the tokens and the header value |
 | `insertUser(db, overrides)`, `insertMember(db, role, salonId)` | A user row; with `insertMember`, an owner, manager or staff user linked to a new staff member of the salon |
 | `insertSalon(db)`, `insertCustomer(db)` | The rows a user's role refers to, each returning the ID |
-| `signIn(app, email)` | `POST /api/v1/auth/login` with `PASSWORD`; returns `accessToken`, `refreshToken`, `authorization` and the user |
+| `signIn(app, email)` | `POST /api/v1/auth/login` with `PASSWORD`; returns `accessToken`, `refreshToken`, `authorization` and the user. A third argument overrides properties of the login request, for example `{ twoFactorCode }` for an account with two-factor authentication |
 
 ## Writing a Test
 
@@ -383,9 +386,11 @@ The kinds of error an endpoint test meets:
 | No access token | 401 | `authentication-required` | `1001` | `null` |
 | A token the server does not accept | 401 | `invalid-token`, or `token-expired` for an access token past its end | `1004`, `1003` | `null` |
 | Wrong email or password (login only) | 401 | `invalid-credentials` | `1002` | `null` |
+| Right password, and the code of two-factor authentication is missing or refused (login only) | 401 | `two-factor-required` | `1007` | `null` |
 | Not allowed | 403 | `forbidden` | `1005` | `null` |
 | Not found | 404 | `not-found` | `3001` | `null` |
 | Already exists | 409 | `already-exists` | `3002` | `null` |
+| The state does not allow the operation (the two-factor operations) | 409 | `operation-not-allowed` | `3003` | `null` |
 | Database failure or corrupt stored data | 500 | `database` | `4003` | `null`, and `detail` is `null` too |
 
 Every 401 also carries a `WWW-Authenticate` header.
