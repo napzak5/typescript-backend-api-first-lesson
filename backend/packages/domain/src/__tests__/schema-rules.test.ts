@@ -5,6 +5,7 @@ import {
   MAX_INTEGER,
   nonBlankText,
   noRepeatedEntries,
+  phoneNumber,
 } from '../schemas/rules'
 import { parseWith, uuidSchema } from '../shared'
 import { brokenRules } from './fixtures'
@@ -170,6 +171,36 @@ describe('noRepeatedEntries', () => {
     expect(rulesBrokenBy(schema, { tags: ['a', 'b', 'a'] })).toEqual([
       'tags.2:custom',
     ])
+  })
+})
+
+describe('phoneNumber', () => {
+  it.each([
+    ['exactly 10 digits', '0312345678'],
+    ['digits separated by hyphens', '03-1234-5678'],
+    ['digits separated by spaces', '03 1234 5678'],
+    ['an international number', '+81 3 1234 5678'],
+    ['an area code in parentheses', '(03)1234-5678'],
+    ['20 characters', '090-1234-5678-901234'],
+  ])('accepts %s and keeps it as it is', (_case, number) => {
+    expect(parseWith(phoneNumber, number, 'Invalid')).toEqual({
+      type: 'success',
+      data: number,
+    })
+  })
+
+  it.each([
+    ['9 digits', '031234567', [':custom']],
+    ['21 characters', '090-1234-5678-9012345', [':too_big']],
+    [
+      'a letter among 10 digits, which still has enough digits',
+      '03-1234-5678 ext',
+      [':invalid_format'],
+    ],
+    ['a dot as a separator', '03.1234.5678', [':invalid_format']],
+    ['null', null, [':invalid_type']],
+  ])('refuses %s', (_case, number, expected) => {
+    expect(rulesBrokenBy(phoneNumber, number)).toEqual(expected)
   })
 })
 
