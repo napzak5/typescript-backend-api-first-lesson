@@ -2,7 +2,7 @@
 
 DB のカラムの型と制約が、Drizzle スキーマ、TypeSpec、生成された型、Zod スキーマのそれぞれでどう表されるかの対応表と、その一致を機械的に検査する `pnpm check:api-db` の説明。
 
-対応表は、実装済みの Salon ドメイン（`salons` と `opening_hours`）が実際に行っていることを書いている。ほかのドメインは TypeSpec と DB スキーマにあるだけで、マッパーも Zod スキーマもない（GitHub issue #91）。
+対応表は、実装済みの Salon ドメイン（`salons` と `opening_hours`）が実際に行っていることを書いている。ほかのドメインは TypeSpec と DB スキーマにあるだけで、マッパーも Zod スキーマもない。それらの TypeSpec も、この対応表に従って DB と一致させてある。
 
 - ルールそのもの（プロパティ名 = カラム名、NULL 許可の一致、Optional の制約）: [CLAUDE.md](../CLAUDE.md)
 - TypeSpec での書き方: [TypeSpec API型定義ルール](./typespec-api-type-rules.md)
@@ -165,10 +165,11 @@ DB にも TypeSpec にも表せない規則（空白だけの文字列を拒否�
 
 | ファイル | 役割 |
 |---|---|
-| `backend/packages/database/src/scripts/api-consistency-rules.ts` | どの API モデルがどのテーブルに対応するか（`modelRules`） |
+| `backend/packages/database/src/scripts/api-consistency-rules.ts` | どの API モデルがどのテーブルに対応するか（`modelRules`）。ドメインごとのブロックに分かれている |
 | `backend/packages/database/src/scripts/api-consistency.ts` | 比較の関数（副作用なし）。テストは `backend/packages/database/src/scripts/__tests__/api-consistency.test.ts` |
 | `backend/packages/database/src/scripts/check-api-consistency.ts` | ファイルを読み、比較し、結果を出力する |
-| `backend/packages/database/api-consistency-baseline.json` | いまは許容している食い違い（ベースライン） |
+
+食い違いを許容する仕組み（ベースライン）はない。テーブルに対応するモデルはすべてルールに載っており、1 件でも食い違えば失敗する。
 
 ### 検査する内容
 
@@ -201,65 +202,61 @@ const salonRules: ModelRule[] = [
 | `table` | `schema.ts` でのテーブルの export 名（`salons`、`openingHours`） |
 | `kind` | `response` / `create`（全プロパティ必須）、`update`（全プロパティ Optional） |
 | `embedded` | カラムではないプロパティ（子テーブルの行を埋め込んだもの）。カラムとの照合を省く |
-| `omittedColumns` | モデルが意図して含めないカラム。指定すると、それ以外のカラムがモデルにない場合も報告される |
+| `omittedColumns` | モデルが意図して含めないカラム。それ以外のカラムがモデルにない場合は報告される。すべてのルールが指定する（テストで確認している） |
 
 報告される食い違い:
 
 | 種類 | 内容 |
 |---|---|
 | `unknownProperty` | API のプロパティと同じ名前のカラムがない |
-| `missingColumn` | `omittedColumns` を指定したモデルで、モデルにも `omittedColumns` にもないカラムがある |
+| `missingColumn` | モデルにも `omittedColumns` にもないカラムがある |
 | `shouldBeRequired` | `response` / `create` のプロパティが Optional になっている |
 | `shouldBeOptional` | `update` のプロパティが必須になっている |
 | `shouldBeNullable` | カラムが NULL 許可なのに、API が null を許していない |
 | `shouldNotBeNullable` | カラムが `NOT NULL` なのに、API が null を許している |
+| `enumMismatch` | カラムが PostgreSQL の Enum 型（またはその配列）なのに、API のプロパティが取りうる値がその Enum の値と一致しない |
 
 検査しないもの:
 
-- 型の対応（`numeric` と `number` など）、文字列長、Enum の値。実装済みのドメインでは、マッパーと `satisfies` を通じて型検査が検出する
+- 型の対応（`numeric` と `number` など）と文字列長。実装済みのドメインでは、マッパーと `satisfies` を通じて型検査が検出する
 - `XXXSearchRequest`（クエリパラメーターはカラムと 1 対 1 ではない）
 - ルールに載っていないモデルと、プロパティの内側にネストしたオブジェクト
 
 ルールが存在しないテーブルやモデルを指している場合も失敗する。
 
-### ベースライン
-
-`api-consistency-baseline.json` は、検出されても失敗にしない食い違いを、モデルごとに `種類:プロパティ名` の形で記録する。次はその一部である。
-
-```json
-{
-  "Models.Review": ["unknownProperty:createdBy", "unknownProperty:updatedBy"],
-  "Models.Session": ["unknownProperty:rememberMe"]
-}
-```
-
-記録されているのは、仕様だけがあって実装のないドメイン（`api-consistency-rules.ts` の `specifiedOnlyRules`: `Customer`、`Staff`、`Booking`、`Payment` など）の既知の食い違いで、現在はすべて `unknownProperty` である。Salon の 4 モデル（`SalonResponse`、`SalonCreateRequest`、`SalonUpdateRequest`、`OpeningHours`）にエントリはない。
-
-検査は次のどちらでも失敗する。
-
-- ベースラインにない食い違いが見つかった（新しい不整合）
-- ベースラインにあるエントリが、もう検出されない（直したのにベースラインが古い）
-
-つまりベースラインは、現在の食い違いと常に一致している必要がある。
-
-### ベースラインの更新
-
-```bash
-pnpm check:api-db                     # 検査
-pnpm check:api-db --update-baseline   # 現在の食い違いをベースラインとして書き出す
-```
-
-`--update-baseline` を使うのは、記録済みの食い違いを解消してエントリを減らすときである。新しい食い違いを受け入れるために使わない。新しい食い違いは、TypeSpec を直すか、マイグレーションでテーブルを変えて解消する。
-
 検査は生成済みのファイルを読むので、TypeSpec を変えたあとは `pnpm generate`、テーブルを変えたあとは `pnpm db:introspect` を先に実行する。
+
+### ルールに載せるモデル、載せないモデル
+
+テーブルの行を読み書きするモデルは、必ずルールに載せる。
+
+| モデル | ルール |
+|---|---|
+| `XXXResponse`、`XXXCreateRequest`、`XXXUpdateRequest` | 載せる（`response` / `create` / `update`） |
+| 親に埋め込む子テーブルの行（`OpeningHours`、`ServiceOptionResponse`、`BookingServiceResponse` など） | 載せる。親のルールでは `embedded` にプロパティ名を書く |
+| 行を追加するアクションのリクエスト（`PointEarnRequest`、`SaleProcessRequest` など） | カラムと 1 対 1 なら `create` として載せる |
+| `XXXSearchRequest` | 載せない |
+| 既存の行の一部だけを書き換えるアクションのリクエスト（`BookingCancelRequest`、`PaymentRefundRequest` など） | 載せない。プロパティ名と null 許可はカラムに合わせる |
+| 集計・計算結果（`ReviewSummaryResponse`、`SalesReportResponse` など） | 載せない |
+| テーブルがまだない機能のモデル（下の表） | 載せない |
+
+テーブルがまだない機能は次のとおりである。これらの TypeSpec は命名・レスポンスの形・エラーの規約には従っているが、プロパティを照合する相手がない。実装するときは、先にテーブルを設計してマイグレーションを書き、モデルをルールに載せる。
+
+| 機能 | TypeSpec |
+|---|---|
+| ロール、権限、ロールの割り当て、アクセス判定 | `specs/models/permission.tsp` |
+| 添付ファイル、共有リンク | `specs/models/attachment.tsp` |
+| 発注（purchase orders）、在庫アラート | `specs/models/inventory.tsp` の `PurchaseOrder*`、`InventoryAlert*`、`ReorderSuggestion*` |
+| カルテ（medical charts） | `specs/models/treatment.tsp` の `MedicalChart*` |
+| 顧客の監査履歴・版、エクスポートジョブ、データ削除リクエスト | `specs/models/customer.tsp` の `CustomerAuditEntry*`、`CustomerExport*`、`CustomerDataDeletion*` |
 
 ### ドメインを実装するとき
 
-ドメインは、そのモデルが `omittedColumns` 付きでルールに載り、ベースラインにエントリがなくなった時点で、API と DB の整合が取れたとみなす。
+TypeSpec のモデルは、全ドメインで DB と一致している。ドメインを実装するときに API か DB を変える場合は、次の順に進める。
 
-1. TypeSpec のモデルを DB に合わせて直す（必要ならマイグレーションでカラムを足す）。Response に加えて Create / Update のモデルもそろえる
-2. `api-consistency-rules.ts` で、そのモデルのルールを `specifiedOnlyRules` から外し、`kind`、`embedded`、`omittedColumns` を指定したルールとして書く
-3. `pnpm generate` のあと `pnpm check:api-db --update-baseline` を実行し、ベースラインの差分がそのドメインのエントリの削除だけであることを確認する
+1. カラムを足す・変える必要があれば、マイグレーションを書き、`pnpm db:migrate` と `pnpm db:introspect` で `schema.ts` を更新する
+2. TypeSpec のモデルを直し、`api-consistency-rules.ts` の該当ドメインのブロックを合わせる（新しいカラムを公開しない場合は `omittedColumns` に足す）
+3. `pnpm generate` のあと `pnpm check:api-db` が成功することを確認する
 
 ## 関連ドキュメント
 

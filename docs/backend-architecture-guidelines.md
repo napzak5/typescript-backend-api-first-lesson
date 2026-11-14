@@ -410,7 +410,7 @@ app.use(
 
 1. **API 契約**: `specs/models/<domain>.tsp` と `specs/operations/<domain>-operations.tsp` を確認し、必要なら直して `pnpm generate` を実行します。モデル名や nullable の決まりは [TypeSpec API型定義ルール](./typespec-api-type-rules.md) にあります。
 2. **データベース**: テーブルを変える必要があれば SQL マイグレーションを書き、`pnpm db:migrate`、`pnpm db:introspect`、`pnpm db:generate-sql` の順に実行します。
-3. **API と DB の整合**: `backend/packages/database/src/scripts/api-consistency-rules.ts` にモデルを `omittedColumns` 付きで登録し、`backend/packages/database/api-consistency-baseline.json` からそのドメインの項目がなくなるまで、API か DB を直します。差分を直したら `pnpm check:api-db --update-baseline` でベースラインを更新します。
+3. **API と DB の整合**: テーブルに対応するモデルは `backend/packages/database/src/scripts/api-consistency-rules.ts` に `omittedColumns` 付きで登録されています。TypeSpec かテーブルを変えたら、そのドメインのルールを合わせ、`pnpm check:api-db` が成功することを確認します。食い違いを許容する仕組みはありません。
 4. **domain**: モデル、スキーマ、マッパー、リポジトリインターフェース、ユースケースの順に書き、ユニットテストを付けます。公開するものを `backend/packages/domain/src/index.ts` に追加します。
 5. **infrastructure**: リポジトリを実装し、`backend/packages/infrastructure/src/index.ts` から公開します。
 6. **api**: ハンドラーとルーターを書き、`createApp` にマウントして、統合テストを付けます。

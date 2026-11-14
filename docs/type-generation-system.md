@@ -9,7 +9,7 @@ and all three are committed to the repository.
 ```
 specs/main.tsp, specs/models/*.tsp, specs/operations/*.tsp
     │
-    │  pnpm generate:spec       tsp compile, then specs/scripts/postprocess-openapi.ts
+    │  pnpm generate:spec       tsp compile
     ▼
 specs/tsp-output/@typespec/openapi3/generated/openapi.yaml
     │
@@ -46,7 +46,7 @@ operation file in `specs/operations/`. The `compile` script in
 `specs/package.json` is:
 
 ```
-tsp compile . && node ./scripts/postprocess-openapi.ts
+tsp compile .
 ```
 
 `specs/tspconfig.yaml` selects the emitter and the file name:
@@ -59,11 +59,6 @@ options:
   "@typespec/openapi3":
     output-file: "generated/openapi.yaml"
 ```
-
-`specs/scripts/postprocess-openapi.ts` then rewrites the emitted file: where
-the emitter has inlined a copy of the enums `ServiceCategoryType`,
-`CustomerStatusType` or `LoyaltyTierType`, the copy is replaced by a `$ref` to
-the shared schema, so the generated code refers to the named enum.
 
 The document describes every domain that is defined in TypeSpec. The backend
 implements only the Salon operations and the system probes (`alive`, `ready`,

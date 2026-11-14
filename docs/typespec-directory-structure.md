@@ -8,7 +8,7 @@ API 定義（TypeSpec）は `specs/` にある。このドキュメントは、�
 specs/
 ├── main.tsp                  # エントリーポイント
 ├── tspconfig.yaml            # エミッターの設定
-├── package.json              # @beauty-salon/specs（compile / format / format:check / typecheck）
+├── package.json              # @beauty-salon/specs（compile / format / format:check）
 ├── models/                   # モデル定義（namespace BeautySalon.Models）
 │   ├── _shared/
 │   │   ├── common.tsp               # ID スカラー、共通 Enum、共通モデル
@@ -20,15 +20,12 @@ specs/
 │   ├── inventory.tsp
 │   ├── payment.tsp
 │   ├── permission.tsp
-│   ├── reservation.tsp
 │   ├── review.tsp
 │   ├── salon.tsp
 │   ├── service.tsp
 │   ├── staff.tsp
 │   └── treatment.tsp
 ├── operations/               # オペレーション定義（namespace BeautySalon.Operations）
-│   ├── _shared/
-│   │   └── base-operations.tsp      # 汎用 CRUD インターフェース、SystemOperations
 │   ├── attachment-operations.tsp
 │   ├── auth-operations.tsp
 │   ├── booking-operations.tsp
@@ -36,20 +33,17 @@ specs/
 │   ├── inventory-operations.tsp
 │   ├── payment-operations.tsp
 │   ├── permission-operations.tsp
-│   ├── reservation-operations.tsp
 │   ├── review-operations.tsp
 │   ├── salon-operations.tsp
 │   ├── service-operations.tsp
 │   ├── staff-operations.tsp
+│   ├── system-operations.tsp        # /api/system の alive / ready / health
 │   └── treatment-operations.tsp
-├── scripts/
-│   ├── postprocess-openapi.ts       # コンパイル後に OpenAPI を書き換える
-│   └── tsconfig.json
 └── tsp-output/               # 生成物（コミットする）
     └── @typespec/openapi3/generated/openapi.yaml
 ```
 
-ドメインごとに、モデルを `models/<domain>.tsp`、オペレーションを `operations/<domain>-operations.tsp` に置き、両方を `main.tsp` から import する。
+ドメインごとに、モデルを `models/<domain>.tsp`、オペレーションを `operations/<domain>-operations.tsp` に置き、両方を `main.tsp` から import する。予約（booking）は、予約とその施術明細（旧 reservation）を 1 つのドメインとして `booking.tsp` に定義している。
 
 ## 定義と実装の対応
 
@@ -58,10 +52,11 @@ TypeSpec に定義があっても、バックエンドに実装があるとは�
 | 定義 | バックエンドの実装 |
 |---|---|
 | `models/salon.tsp`、`operations/salon-operations.tsp`（`SalonCrud` の 5 オペレーション） | `backend/packages/api/src/routes/salon/`。定義と実装は一致している |
-| `operations/_shared/base-operations.tsp` の `SystemOperations`（`alive`、`ready`、`health`） | `backend/packages/api/src/routes/system/index.ts`。定義と実装は一致している |
-| 上記以外のドメイン（auth、customer、staff、service、reservation、booking、review、attachment、treatment、payment、inventory、permission） | なし（GitHub issue #91）。customers、staff、bookings などは DB スキーマにテーブルがあるが、attachment、permission、reservation に対応するテーブルはない |
+| `operations/system-operations.tsp` の `SystemOperations`（`alive`、`ready`、`health`） | `backend/packages/api/src/routes/system/index.ts`。定義と実装は一致している |
+| 上記以外のドメイン（auth、customer、staff、service、booking、review、treatment、payment、inventory） | なし。TypeSpec は DB のテーブルと一致している（`pnpm check:api-db`）が、ドメイン・リポジトリ・ルートのコードはない |
+| attachment、permission と、inventory の発注・アラート、treatment のカルテ | なし。対応するテーブルもまだない（[API-DB型制約マッピング](./api-db-type-constraints-mapping.md#ルールに載せるモデル載せないモデル)） |
 
-`main.tsp` は `@useAuth(BearerAuth)` を宣言しているが、バックエンドに認証・認可のコードはない。
+`main.tsp` は `@useAuth(BearerAuth)` を宣言しているが、バックエンドに認証・認可のコードはない。認証なしで呼べるオペレーション（システムのオペレーション、登録・ログインなどの認証フロー、共有リンク）には `@useAuth(NoAuth)` が付いている。
 
 ## 各ファイルの内容
 
@@ -76,7 +71,7 @@ import "./models/auth.tsp";
 import "./models/salon.tsp";
 // ...
 
-import "./operations/_shared/base-operations.tsp";
+import "./operations/system-operations.tsp";
 import "./operations/auth-operations.tsp";
 import "./operations/salon-operations.tsp";
 // ...
@@ -94,16 +89,16 @@ namespace BeautySalon {
 
 ### `models/_shared/`
 
-| ファイル | 内容 | Salon とシステムエンドポイントが使うもの |
-|---|---|---|
-| `common.tsp` | ID スカラー（`SalonId`、`CustomerId` など。`@format("uuid")`）、共通 Enum（`DayOfWeekType`、`ServiceCategoryType` など）、共通モデル（`OpeningHours`、`BusinessHours`、`Address`、`AuditInfo`、`Money` など） | `SalonId`、`DayOfWeekType`、`OpeningHours`、`BusinessHours`、`TimeSlot`、`DateRange` |
-| `common-api-patterns.tsp` | `ProblemDetails`、`ProblemResponse<TStatus>`、`CommonErrors`、`RequestBodyErrors`、`ErrorCodeType`、`ValidationError`、ページネーション（`CursorPaginationParams`、`CursorPaginationResponse<T>`、`PaginationMeta`、`PaginationLinks`）、`ApiResponse<T>`、`ResponseMeta`、一括操作、`AdvancedSearchParams`、ヘルスチェック（`HealthStatus`、`HealthCheck`、`SystemReadyResponse`）など | `ProblemDetails`、`ProblemResponse<TStatus>`、`CommonErrors`、`RequestBodyErrors`、`ErrorCodeType`、`ValidationError`、`CursorPaginationResponse<T>`、`PaginationMeta`、`PaginationLinks`、`ApiResponse<T>`、`ResponseMeta`、`HealthStatus`、`HealthCheck`、`SystemReadyResponse` |
+| ファイル | 内容 |
+|---|---|
+| `common.tsp` | ID スカラー（`SalonId`、`CustomerId` など。`@format("uuid")`）、複数のドメインが使う Enum（`DayOfWeekType`、`StaffLevelType`、`ServiceCategoryType` など）、複数のドメインが使うモデル（`OpeningHours`、`BusinessHours`、`TimeSlot`、`AuditInfo`、`Money` など） |
+| `common-api-patterns.tsp` | エラー（`ProblemDetails`、`ProblemResponse<TStatus>`、`CommonErrors`、`RequestBodyErrors`、`ErrorCodeType`、`ValidationError`）、レスポンスのラッパー（`ApiResponse<T>`、`ResponseMeta`、`CursorPaginationResponse<T>`、`PaginationMeta`、`PaginationLinks`）、ヘルスチェック（`HealthStatus`、`HealthCheck`、`SystemReadyResponse`） |
 
-### `operations/_shared/base-operations.tsp`
+1 つのドメインだけが使う Enum やモデルは、そのドメインのファイルに置く。どこからも参照されない定義は残さない（TypeSpec は参照されないモデルも OpenAPI に出力する）。
 
-- `CrudOperations`、`BulkOperations`、`SearchOperations`、`AuditOperations`: 汎用のインターフェース。使っているのは `customer-operations.tsp` だけで、Salon は使っていない（`SalonCrud` は必要なオペレーションだけを直接定義している）
-- `AuditEntry`、`ChangeSet`: `AuditOperations` が使うモデル
-- `SystemOperations`: `/api/system` 以下の運用系オペレーション（`alive`、`ready`、`health`）。503 のレスポンスは `ProblemDetails` ではなく、200 と同じモデルを返す
+### `operations/system-operations.tsp`
+
+`SystemOperations`: `/api/system` 以下の運用系オペレーション（`alive`、`ready`、`health`）。認証は不要で、503 のレスポンスは `ProblemDetails` ではなく、200 と同じモデルを返す。
 
 ### モデルファイルとオペレーションファイル
 
@@ -163,15 +158,11 @@ options:
 
 エミッターは `@typespec/openapi3` だけで、OpenAPI 3.0 のドキュメントを `specs/tsp-output/@typespec/openapi3/generated/openapi.yaml` に出力する。
 
-### 後処理スクリプト（`postprocess-openapi.ts`）
-
-`specs/package.json` の `compile` スクリプトは、`tsp compile .` のあとに `specs/scripts/postprocess-openapi.ts` を実行する。このスクリプトは出力された `openapi.yaml` を読み、インラインで書かれた文字列 Enum のうち、値の集合が `ServiceCategoryType`、`CustomerStatusType`、`LoyaltyTierType` のどれかと一致するものを、そのスキーマ（`#/components/schemas/Models.*`）への `$ref` に置き換えて書き戻す。後処理だけを実行するスクリプトは用意されていない。`pnpm generate:spec` を実行すれば、コンパイルと後処理の両方が走る。
-
 ## 生成コマンド
 
 | コマンド | 実行内容 | 出力 |
 |---|---|---|
-| `pnpm generate:spec` | `specs` の `compile`（`tsp compile .` と後処理） | `specs/tsp-output/@typespec/openapi3/generated/openapi.yaml` |
+| `pnpm generate:spec` | `specs` の `compile`（`tsp compile .`） | `specs/tsp-output/@typespec/openapi3/generated/openapi.yaml` |
 | `pnpm generate:api` | orval（`frontend/packages/api-client/orval.config.ts`） | `frontend/packages/api-client/src/generated/`（`endpoints/`、`models/`） |
 | `pnpm generate:backend` | `backend/packages/generated/scripts/generate-types.ts`（openapi-typescript） | `backend/packages/generated/src/` の `api-types.ts`、`schema.ts`（Enum の Zod スキーマ）、`index.ts` |
 | `pnpm generate` | 上の 3 つを順に実行 | |

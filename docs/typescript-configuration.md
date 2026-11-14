@@ -32,7 +32,6 @@
 | `backend/packages/*/tsconfig.build.json`、`backend/apps/server/tsconfig.build.json`、`frontend/packages/*/tsconfig.build.json` | 同じディレクトリの `tsconfig.json`（ビルド用。テストを除外） |
 | `frontend/packages/*/tsconfig.json` | `tsconfig.lib.json` |
 | `frontend/apps/*/tsconfig.app.json`、`tsconfig.node.json` | `frontend.json` |
-| `specs/scripts/tsconfig.json` | なし（単独） |
 
 ## 基本設定（base.json）
 
@@ -193,7 +192,7 @@ import { startServer } from './server.js'
 
 ### Node.js が直接実行するスクリプト
 
-`scripts/*.ts` と `specs/scripts/postprocess-openapi.ts` は、ビルドせずに `node ./scripts/check-versions.ts` のように実行します。リポジトリ直下の `tsconfig.json` と `specs/scripts/tsconfig.json` は、そのための2つのオプションを足しています。
+`scripts/*.ts` は、ビルドせずに `node ./scripts/check-versions.ts` のように実行します。リポジトリ直下の `tsconfig.json` は、そのための2つのオプションを足しています。
 
 - `erasableSyntaxOnly`: 型を取り除くだけで実行できる構文に限る（`enum` などを禁止する）
 - `verbatimModuleSyntax`: 型だけの import / export に `type` を必須にする

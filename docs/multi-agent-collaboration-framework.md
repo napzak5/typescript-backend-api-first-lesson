@@ -12,7 +12,7 @@
 |---|---|---|
 | `salon-business-expert` | 業務要件 | なし（要件を返す） |
 | `database-schema-architect` | データベーススキーマ | `backend/packages/database/`（SQL マイグレーション、生成される `schema.ts`・`relations.ts`・`sql/setup.sql`、シード） |
-| `typespec-api-architect` | API コントラクト | `specs/` と、そこから生成されるファイル。API モデルとテーブルの対応を定める `backend/packages/database/src/scripts/api-consistency-rules.ts` と `backend/packages/database/api-consistency-baseline.json` |
+| `typespec-api-architect` | API コントラクト | `specs/` と、そこから生成されるファイル。API モデルとテーブルの対応を定める `backend/packages/database/src/scripts/api-consistency-rules.ts` |
 | `backend-typescript-architect` | バックエンド実装 | `backend/packages/{domain,infrastructure,api,config,utility}`、`backend/apps/server` |
 | `senior-ui-designer` | 画面と操作の設計 | なし（設計仕様を返す） |
 | `senior-frontend-architect` | フロントエンド実装 | `frontend/`（生成された API クライアントを除く） |
@@ -109,7 +109,7 @@ flowchart LR
 
 確認する点:
 
-- `pnpm check:api-db` が成功すること。ドメインを新しく実装する場合は、そのモデルが `api-consistency-rules.ts` に `omittedColumns` 付きで登録され、`api-consistency-baseline.json` に差分が残っていないこと（`CLAUDE.md` が定める完了の条件）。
+- `pnpm check:api-db` が成功すること。テーブルに対応するモデルは、すべて `api-consistency-rules.ts` に `omittedColumns` 付きで登録されていること（`CLAUDE.md` が定める完了の条件）。食い違いを許容する仕組みはありません。
 - `pnpm check:db-schema` と `pnpm check:generated` は、再生成した結果を直前のコミットと比較します。生成物をコミットする前に実行すると、変更された生成物の一覧を出して失敗します。その一覧が、マイグレーションや `.tsp` と同じコミットに含めるファイルです。コミットの後に成功することを確認します。
 - `pnpm check:db-schema` は `DATABASE_URL` が指すデータベースを作り直します。ローカルの開発用データベースであることを確かめてから実行します。CI では実行されますが、`make ci-check` には含まれません（`make db-check` が同じコマンドです）。
 - マイグレーションのテストは `pnpm test:integration` に含まれます。
@@ -157,7 +157,7 @@ flowchart LR
 ## 現在の実装範囲
 
 - バックエンドに実装されているのは、Salon ドメイン（`/api/v1/salons`）とシステムエンドポイント（`GET /api/system/alive`、`GET /api/system/ready`、`GET /api/system/health`）だけです。Salon が、ほかのドメインを実装するときの手本です。
-- ほかのドメイン（customer、staff、booking、payment など）は TypeSpec とデータベーススキーマにだけあり、ドメイン・リポジトリ・ルートのコードはありません。それらの API モデルとテーブルの既知の差分は `backend/packages/database/api-consistency-baseline.json` に記録されています（GitHub issue #91）。新しいドメインは、工程 2 でこの差分を解消するところから始めます。
+- ほかのドメイン（customer、staff、booking、payment など）は TypeSpec とデータベーススキーマにだけあり、ドメイン・リポジトリ・ルートのコードはありません。それらの TypeSpec はテーブルと一致しています（`pnpm check:api-db`）。ロール・権限、添付ファイル、発注、カルテなどは、テーブルもまだありません。
 - フロントエンドの 3 つのアプリケーションは、サンプルデータを表示する静的な画面で、まだ API を呼んでいません。
 - 認証・認可、メール送信、ファイルストレージのコードはありません。
 

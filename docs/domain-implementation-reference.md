@@ -201,9 +201,9 @@ const salonRules: ModelRule[] = [
 - `embedded` names properties that are rows of a child table, not columns.
 - `omittedColumns` names the columns the model leaves out on purpose. Once it is given, every other column must be in the model, so leaving a column out is a decision and not an oversight.
 
-The domains that are specified but not implemented are listed in the same file under `specifiedOnlyRules`, without `omittedColumns`. Their TypeSpec models and their tables both exist and disagree; the known differences are recorded in `backend/packages/database/api-consistency-baseline.json` (GitHub issue #91). A new difference fails the check, and so does a baseline entry that no longer occurs.
+The same file has one block of rules per domain. The table-backed models of every domain are listed there with `omittedColumns` and agree with their tables, including the domains whose backend is not implemented yet. Any difference fails the check; there is no list of tolerated differences. Models without a table (computed reports, action requests, and features whose tables do not exist yet, such as permissions and attachments) have no rule.
 
-A domain is done when its models are listed with `omittedColumns` and have no entry in the baseline. After the differences are fixed in TypeSpec or with a migration, `pnpm check:api-db --update-baseline` records what still differs as the new baseline, which drops the resolved entries. It records every remaining difference, new ones included, so read the diff of the baseline file before committing it.
+When a domain changes its TypeSpec models or its tables, its block of rules changes with them, and `pnpm check:api-db` must pass before the change is committed.
 
 ## 4. Models
 
@@ -730,7 +730,7 @@ Contract and database:
 - [ ] `specs/operations/<domain>-operations.tsp` defines only the operations that will be implemented, each with its success response and the error responses its use case can produce; both files are imported in `specs/main.tsp`
 - [ ] `pnpm generate` has been run and the generated files are committed
 - [ ] If the table must change: a migration, then `pnpm db:migrate`, `pnpm db:introspect` and `pnpm db:generate-sql`, with the regenerated files committed and the seed data in `backend/packages/database/src/seeds/seed-data/` adjusted
-- [ ] The models are listed in `api-consistency-rules.ts` with `omittedColumns`, `pnpm check:api-db` passes, and the domain has no entry left in `api-consistency-baseline.json`
+- [ ] The models that are backed by a table are listed in `api-consistency-rules.ts` with `omittedColumns`, and `pnpm check:api-db` passes
 
 Domain package (`backend/packages/domain/src/`):
 
