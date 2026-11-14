@@ -1,91 +1,101 @@
 import "@typespec/http";
 import "./_shared/common.tsp";
+import "./auth.tsp";
 
 using TypeSpec.Http;
 using BeautySalon.Models;
 
 namespace BeautySalon.Models {
   @doc("""
-    スタッフシフトモデル - 通常勤務スケジュールと休憩時間、適用期間を定義し、予約可能時間の算出に利用する
+    スタッフ勤務スケジュール - staff_schedules テーブルの1行。勤務時間と休憩時間を表し、予約可能時間の算出に利用する。
+    毎週繰り返す行(isRecurring が true)は dayOfWeek の曜日に、単日の行(isRecurring が false)は date の日付だけに適用する。
+    同じ日付に単日の行がある場合は、その日付については毎週繰り返す行より単日の行を優先する。
+    プロパティ名と null 許可は DB カラムと一致させている
     """)
   model StaffSchedule {
-    @doc("対象となる曜日。未設定の場合はnull")
+    @doc("毎週繰り返す行が適用される曜日。単日の行の場合はnull")
     dayOfWeek: DayOfWeekType | null;
 
-    @doc("勤務開始時刻 (フォーマット例: HH:mm)")
+    @doc("単日の行が適用される日付。毎週繰り返す行の場合はnull")
+    date: plainDate | null;
+
+    @doc("勤務開始時刻。HH:mm:ss形式で返す（指定時はHH:mmも可）。endTimeより前の時刻を指定する")
     startTime: string;
 
-    @doc("勤務終了時刻 (フォーマット例: HH:mm)")
+    @doc("勤務終了時刻。HH:mm:ss形式で返す（指定時はHH:mmも可）")
     endTime: string;
 
-    @doc("当日の休憩時間帯リスト - 休憩なしのフル勤務の場合はnull")
-    breakTime: TimeSlot[] | null;
+    @doc("休憩開始時刻。HH:mm:ss形式で返す（指定時はHH:mmも可）。breakEndTimeと組で、勤務時間内の時刻を指定する。休憩がない場合はnull")
+    breakStartTime: string | null;
 
-    @doc("シフトが有効となる期間 - 無期限スケジュールの場合はnull")
-    effectivePeriod: DateRange | null;
+    @doc("休憩終了時刻。HH:mm:ss形式で返す（指定時はHH:mmも可）。breakStartTimeと組で指定する。休憩がない場合はnull")
+    breakEndTime: string | null;
+
+    @doc("毎週 dayOfWeek の曜日に繰り返す行かどうか。falseの場合は date の日付だけに適用する")
+    isRecurring: boolean;
+
+    @doc("勤務可能かどうか。falseの場合は休み(臨時休みなど)を表す")
+    isAvailable: boolean;
+
+    @doc("シフト変更の理由などの備考。特記事項がない場合はnull")
+    notes: string | null;
   }
 
   @doc("""
-    スタッフ資格モデル - 保有資格や認定情報を管理し、サービス提供に必要なスキル証明を保持する
+    スタッフレスポンス - staff テーブルの公開カラムと、勤務スケジュール(staff_schedules)を返す。
+    プロパティ名と null 許可は DB カラムと一致させている。
     """)
-  model StaffQualification {
-    @doc("資格・認定の名称")
-    name: string;
-
-    @doc("資格を取得した日付")
-    certificationDate: plainDate;
-
-    @doc("資格の有効期限 - 無期限資格や更新不要の資格の場合はnull")
-    expiryDate: plainDate | null;
-
-    @doc("資格を発行した機関名 - 発行機関が不明または未記録の場合はnull")
-    issuer: string | null;
-
-    @doc("資格証明番号などの識別子 - 証明番号がない内部認定やサロン独自資格の場合はnull")
-    credentialId: string | null;
-  }
-
-  @doc("""
-    スタッフ権限モデル - スタッフアカウントに付与された操作対象と権限範囲を定義する
-    """)
-  model StaffPermission {
-    @doc("操作対象リソースの識別子")
-    resource: string;
-
-    @doc("許可されたアクションの一覧")
-    actions: string[];
-
-    @doc("権限が適用される範囲や条件 - 全体権限の場合や特定範囲がない場合はnull")
-    scope: string | null;
-
-    @doc("権限の有効期限 (UTC) - 無期限権限の場合はnull")
-    expiresAt: utcDateTime | null;
-  }
-
-  @doc("""
-    スタッフモデル - サロンに所属するスタッフのプロフィール・資格・スケジュール・権限を統合管理する
-    """)
-  model Staff {
+  model StaffResponse {
     @doc("スタッフを一意に識別するID")
     id: StaffId;
 
     @doc("所属サロンのID")
     salonId: SalonId;
 
-    @doc("スタッフの氏名")
-    name: string;
+    @doc("スタッフがログインに使うユーザーアカウントのID。ログインアカウントと紐づいていない場合はnull")
+    userId: UserId | null;
 
-    @doc("連絡先情報 (電話・メール等)")
-    contactInfo: ContactInfo;
+    @doc("名")
+    firstName: string;
+
+    @doc("姓")
+    lastName: string;
+
+    @doc("名のカナ表記。未設定の場合はnull")
+    firstNameKana: string | null;
+
+    @doc("姓のカナ表記。未設定の場合はnull")
+    lastNameKana: string | null;
+
+    @doc("顧客向けに表示するスタッフ名")
+    displayName: string;
+
+    @doc("連絡用メールアドレス。削除済みを含むすべてのスタッフの間で一意")
+    email: string;
+
+    @doc("連絡用電話番号")
+    phoneNumber: string;
+
+    @doc("予備の電話番号。未設定の場合はnull")
+    alternativePhone: string | null;
+
+    @doc("サロン内でスタッフを識別するコード(社員番号など)。同じサロンの削除済みを含むスタッフの間で一意。未設定の場合はnull")
+    staffCode: string | null;
+
+    @doc("技術レベル")
+    level: StaffLevelType;
+
+    @doc("役職名。未設定の場合はnull")
+    position: string | null;
 
     @doc("得意分野や専門メニューの一覧。未設定の場合はnull")
     specialties: string[] | null;
 
-    @doc("プロフィール画像のURL - プロフィール画像未設定の場合はnull")
-    imageUrl: string | null;
-
     @doc("自己紹介や経歴の概要 - プロフィール未記入の新人スタッフの場合はnull")
     bio: string | null;
+
+    @doc("プロフィール画像のURL - プロフィール画像未設定の場合はnull")
+    imageUrl: string | null;
 
     @doc("実務経験年数 - 経験年数未記載またはアシスタントスタッフの場合はnull")
     yearsOfExperience: int32 | null;
@@ -93,117 +103,298 @@ namespace BeautySalon.Models {
     @doc("保有資格名の一覧 (テキスト管理) - 資格なしの新人やアシスタントの場合はnull")
     certifications: string[] | null;
 
-    @doc("詳細な資格情報の一覧 - 詳細資格情報未登録の場合はnull")
-    qualifications: StaffQualification[] | null;
+    @doc("入社日。未設定の場合はnull")
+    hireDate: plainDate | null;
 
-    @doc("通常勤務スケジュールの一覧 - スケジュール未設定やフリーランススタッフの場合はnull")
-    schedules: StaffSchedule[] | null;
+    @doc("雇用形態(full-time など)。未設定の場合はnull")
+    employmentType: string | null;
+
+    @doc("基本給。未設定の場合はnull")
+    baseSalary: int32 | null;
+
+    @doc("歩合率(%)。未設定の場合はnull")
+    commissionRate: float64 | null;
+
+    @doc("予約を受け付けるかどうか")
+    canReceiveBookings: boolean;
+
+    @doc("同時に担当できる予約の上限数")
+    maxConcurrentBookings: int32;
+
+    @doc("予約の前に確保する準備時間(分)。未設定の場合はnull")
+    bufferTimeBefore: int32 | null;
+
+    @doc("予約の後に確保する片付け時間(分)。未設定の場合はnull")
+    bufferTimeAfter: int32 | null;
 
     @doc("現在スタッフがアクティブに勤務可能かを示すフラグ")
     isActive: boolean;
 
-    @doc("システム上で付与されている追加権限一覧 - 特別権限がない一般スタッフの場合はnull")
-    permissions: StaffPermission[] | null;
+    @doc("勤務スケジュールの一覧。毎週繰り返す行と単日の行を含む。スケジュールが登録されていない場合は空配列")
+    schedules: StaffSchedule[];
 
-    ...AuditInfo;
+    @doc("レコード作成日時")
+    createdAt: utcDateTime;
+
+    @doc("レコード最終更新日時")
+    updatedAt: utcDateTime;
   }
 
   @doc("""
-    スタッフ作成リクエスト - 新規スタッフ登録時に必要なプロフィール・連絡先・スケジュール情報を受け取る
+    スタッフ新規登録リクエスト - 全項目のキーが必須。DB で NULL 許可のカラムのみ null を指定できる。
+    所属サロンはパスの salonId で指定する。勤務スケジュールは勤務スケジュール更新(updateAvailability)で登録する
     """)
   model StaffCreateRequest {
-    @doc("所属サロンのID")
-    salonId: SalonId;
+    @doc("スタッフがログインに使うユーザーアカウントのID。存在するユーザーを指定する。ログインアカウントと紐づけない場合はnull")
+    userId: UserId | null;
 
-    @doc("スタッフの氏名")
-    name: string;
+    @doc("名")
+    @minLength(1)
+    @maxLength(100)
+    firstName: string;
 
-    @doc("連絡先情報")
-    contactInfo: ContactInfo;
+    @doc("姓")
+    @minLength(1)
+    @maxLength(100)
+    lastName: string;
 
-    @doc("得意分野や専門メニューの一覧")
-    specialties: string[];
+    @doc("名のカナ表記。未設定の場合はnull")
+    @maxLength(100)
+    firstNameKana: string | null;
 
-    @doc("プロフィール画像のURL - プロフィール画像未設定の場合はnull")
-    imageUrl: string | null;
+    @doc("姓のカナ表記。未設定の場合はnull")
+    @maxLength(100)
+    lastNameKana: string | null;
+
+    @doc("顧客向けに表示するスタッフ名")
+    @minLength(1)
+    @maxLength(255)
+    displayName: string;
+
+    @doc("連絡用メールアドレス。削除済みを含むすべてのスタッフの間で一意")
+    @maxLength(255)
+    email: string;
+
+    @doc("連絡用電話番号")
+    @maxLength(20)
+    phoneNumber: string;
+
+    @doc("予備の電話番号。未設定の場合はnull")
+    @maxLength(20)
+    alternativePhone: string | null;
+
+    @doc("サロン内でスタッフを識別するコード(社員番号など)。同じサロンの削除済みを含むスタッフの間で一意。未設定の場合はnull")
+    @maxLength(50)
+    staffCode: string | null;
+
+    @doc("技術レベル")
+    level: StaffLevelType;
+
+    @doc("役職名。未設定の場合はnull")
+    @maxLength(100)
+    position: string | null;
+
+    @doc("得意分野や専門メニューの一覧。未設定の場合はnull")
+    specialties: string[] | null;
 
     @doc("自己紹介や経歴の概要 - プロフィール未記入の新人スタッフの場合はnull")
     bio: string | null;
 
+    @doc("プロフィール画像のURL - プロフィール画像未設定の場合はnull")
+    @maxLength(500)
+    imageUrl: string | null;
+
     @doc("実務経験年数 - 経験年数未記載またはアシスタントスタッフの場合はnull")
+    @minValue(0)
+    @maxValue(100)
     yearsOfExperience: int32 | null;
 
-    @doc("保有資格名の一覧 - 資格なしの新人やアシスタントの場合はnull")
+    @doc("保有資格名の一覧 (テキスト管理) - 資格なしの新人やアシスタントの場合はnull")
     certifications: string[] | null;
 
-    @doc("詳細な資格情報の一覧 - 詳細資格情報未登録の場合はnull")
-    qualifications: StaffQualification[] | null;
+    @doc("入社日。未設定の場合はnull")
+    hireDate: plainDate | null;
 
-    @doc("通常勤務スケジュールの一覧 - スケジュール未設定やフリーランススタッフの場合はnull")
-    schedules: StaffSchedule[] | null;
+    @doc("雇用形態(full-time など)。未設定の場合はnull")
+    @maxLength(50)
+    employmentType: string | null;
 
-    @doc("付与する権限の一覧 - 特別権限がない一般スタッフの場合はnull")
-    permissions: StaffPermission[] | null;
+    @doc("基本給。未設定の場合はnull")
+    @minValue(0)
+    baseSalary: int32 | null;
+
+    @doc("歩合率(%)。未設定の場合はnull")
+    @minValue(0)
+    @maxValue(100)
+    commissionRate: float64 | null;
+
+    @doc("予約を受け付けるかどうか")
+    canReceiveBookings: boolean;
+
+    @doc("同時に担当できる予約の上限数")
+    @minValue(1)
+    @maxValue(10)
+    maxConcurrentBookings: int32;
+
+    @doc("予約の前に確保する準備時間(分)。未設定の場合はnull")
+    @minValue(0)
+    @maxValue(120)
+    bufferTimeBefore: int32 | null;
+
+    @doc("予約の後に確保する片付け時間(分)。未設定の場合はnull")
+    @minValue(0)
+    @maxValue(120)
+    bufferTimeAfter: int32 | null;
+
+    @doc("現在スタッフがアクティブに勤務可能かを示すフラグ")
+    isActive: boolean;
   }
 
   @doc("""
-    スタッフ更新リクエスト - 任意項目を部分更新し、プロフィールや勤務状況を柔軟に調整する。null指定で値をリセット可能
+    スタッフ部分更新リクエスト - 指定した項目だけを更新する。DB で NULL 許可のカラムは null でクリアできる。
+    所属サロンは変更できない。勤務スケジュールは勤務スケジュール更新(updateAvailability)で更新する
     """)
   model StaffUpdateRequest {
-    @doc("スタッフ名の更新")
-    name?: string;
+    @doc("スタッフがログインに使うユーザーアカウントのID。存在するユーザーを指定する。nullでクリア(ログインアカウントとの紐づけを外す)")
+    userId?: UserId | null;
 
-    @doc("連絡先情報の更新")
-    contactInfo?: ContactInfo;
+    @doc("名")
+    @minLength(1)
+    @maxLength(100)
+    firstName?: string;
 
-    @doc("得意分野一覧の更新")
-    specialties?: string[];
+    @doc("姓")
+    @minLength(1)
+    @maxLength(100)
+    lastName?: string;
 
-    @doc("プロフィール画像URLの更新（null指定で初期化可能）")
-    imageUrl?: string | null;
+    @doc("名のカナ表記。nullでクリア")
+    @maxLength(100)
+    firstNameKana?: string | null;
 
-    @doc("自己紹介文の更新（null指定で初期化可能）")
+    @doc("姓のカナ表記。nullでクリア")
+    @maxLength(100)
+    lastNameKana?: string | null;
+
+    @doc("顧客向けに表示するスタッフ名")
+    @minLength(1)
+    @maxLength(255)
+    displayName?: string;
+
+    @doc("連絡用メールアドレス。削除済みを含むすべてのスタッフの間で一意")
+    @maxLength(255)
+    email?: string;
+
+    @doc("連絡用電話番号")
+    @maxLength(20)
+    phoneNumber?: string;
+
+    @doc("予備の電話番号。nullでクリア")
+    @maxLength(20)
+    alternativePhone?: string | null;
+
+    @doc("サロン内でスタッフを識別するコード(社員番号など)。同じサロンの削除済みを含むスタッフの間で一意。nullでクリア")
+    @maxLength(50)
+    staffCode?: string | null;
+
+    @doc("技術レベル")
+    level?: StaffLevelType;
+
+    @doc("役職名。nullでクリア")
+    @maxLength(100)
+    position?: string | null;
+
+    @doc("得意分野や専門メニューの一覧。nullでクリア")
+    specialties?: string[] | null;
+
+    @doc("自己紹介や経歴の概要。nullでクリア")
     bio?: string | null;
 
-    @doc("経験年数の更新（null指定で初期化可能）")
+    @doc("プロフィール画像のURL。nullでクリア")
+    @maxLength(500)
+    imageUrl?: string | null;
+
+    @doc("実務経験年数。nullでクリア")
+    @minValue(0)
+    @maxValue(100)
     yearsOfExperience?: int32 | null;
 
-    @doc("資格名一覧の更新（null指定で初期化可能）")
+    @doc("保有資格名の一覧 (テキスト管理)。nullでクリア")
     certifications?: string[] | null;
 
-    @doc("資格詳細一覧の更新（null指定で初期化可能）")
-    qualifications?: StaffQualification[] | null;
+    @doc("入社日。nullでクリア")
+    hireDate?: plainDate | null;
 
-    @doc("勤務スケジュール一覧の更新（null指定で初期化可能）")
-    schedules?: StaffSchedule[] | null;
+    @doc("雇用形態(full-time など)。nullでクリア")
+    @maxLength(50)
+    employmentType?: string | null;
 
-    @doc("付与権限一覧の更新（null指定で初期化可能）")
-    permissions?: StaffPermission[] | null;
+    @doc("基本給。nullでクリア")
+    @minValue(0)
+    baseSalary?: int32 | null;
 
-    @doc("アクティブ状態の更新")
+    @doc("歩合率(%)。nullでクリア")
+    @minValue(0)
+    @maxValue(100)
+    commissionRate?: float64 | null;
+
+    @doc("予約を受け付けるかどうか")
+    canReceiveBookings?: boolean;
+
+    @doc("同時に担当できる予約の上限数")
+    @minValue(1)
+    @maxValue(10)
+    maxConcurrentBookings?: int32;
+
+    @doc("予約の前に確保する準備時間(分)。nullでクリア")
+    @minValue(0)
+    @maxValue(120)
+    bufferTimeBefore?: int32 | null;
+
+    @doc("予約の後に確保する片付け時間(分)。nullでクリア")
+    @minValue(0)
+    @maxValue(120)
+    bufferTimeAfter?: int32 | null;
+
+    @doc("現在スタッフがアクティブに勤務可能かを示すフラグ")
     isActive?: boolean;
   }
 
   @doc("""
-    スタッフ空き状況モデル - 個別時間帯の空き枠を表し、スポット予約や検索レスポンスに利用する
+    サロン内スタッフ一覧リクエスト - ページネーションを指定する
     """)
-  model StaffAvailability {
-    @doc("対象スタッフのID")
-    staffId: StaffId;
+  model StaffSearchRequest {
+    @query
+    @doc("1ページあたりの取得件数上限 (1〜100)")
+    @minValue(1)
+    @maxValue(100)
+    limit?: int32 = 20;
 
-    @doc("対象曜日")
-    dayOfWeek: DayOfWeekType;
+    @query
+    @doc("取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する")
+    cursor?: string;
+  }
 
-    @doc("空き枠の開始時刻 (HH:mm)")
-    startTime: string;
+  @doc("""
+    サロン横断スタッフ検索リクエスト - 全サロンのスタッフを対象に、絞り込み条件とページネーションを指定する。条件はすべて AND で結合する
+    """)
+  model StaffGlobalSearchRequest {
+    @query
+    @doc("1ページあたりの取得件数上限 (1〜100)")
+    @minValue(1)
+    @maxValue(100)
+    limit?: int32 = 20;
 
-    @doc("空き枠の終了時刻 (HH:mm)")
-    endTime: string;
+    @query
+    @doc("取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する")
+    cursor?: string;
 
-    @doc("休憩などの開始時刻 - 休憩なしの連続勤務の場合はnull")
-    breakStart: string | null;
+    @query
+    @doc("得意分野による絞り込み。specialtiesに指定した値(完全一致)を含むスタッフに一致する")
+    specialty?: string;
 
-    @doc("休憩などの終了時刻 - 休憩なしの連続勤務の場合はnull")
-    breakEnd: string | null;
+    @query
+    @doc("所属サロンの市区町村名による絞り込み(完全一致)")
+    city?: string;
   }
 }

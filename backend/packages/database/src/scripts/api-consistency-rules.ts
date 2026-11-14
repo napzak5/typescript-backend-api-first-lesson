@@ -128,10 +128,49 @@ const authRules: ModelRule[] = [
   { model: 'Models.Session', table: 'sessions', kind: 'response' },
 ]
 
-/** Staff and their schedules. */
+/**
+ * Columns of `staff` that a request never writes. The salon comes from the
+ * path; `awards` is a jsonb column without a defined structure.
+ */
+const staffManagedColumns = [
+  'id',
+  'salonId',
+  'awards',
+  'deletedAt',
+  'createdAt',
+  'updatedAt',
+]
+
+/**
+ * Staff and their schedules. The schedules are written by the availability
+ * operation, which replaces all rows of a staff member.
+ */
 const staffRules: ModelRule[] = [
-  { model: 'Models.Staff', table: 'staff', kind: 'response' },
-  { model: 'Models.StaffSchedule', table: 'staffSchedules', kind: 'response' },
+  {
+    model: 'Models.StaffResponse',
+    table: 'staff',
+    kind: 'response',
+    embedded: ['schedules'],
+    omittedColumns: ['awards', 'deletedAt'],
+  },
+  {
+    model: 'Models.StaffCreateRequest',
+    table: 'staff',
+    kind: 'create',
+    omittedColumns: staffManagedColumns,
+  },
+  {
+    model: 'Models.StaffUpdateRequest',
+    table: 'staff',
+    kind: 'update',
+    omittedColumns: staffManagedColumns,
+  },
+  {
+    model: 'Models.StaffSchedule',
+    table: 'staffSchedules',
+    kind: 'response',
+    omittedColumns: ['id', 'staffId', 'createdAt', 'updatedAt'],
+  },
 ]
 
 /** Bookings (the booking and reservation operations). */
