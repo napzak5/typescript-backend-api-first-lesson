@@ -1,0 +1,103 @@
+import { Result } from '@beauty-salon-backend/utility'
+import type { Actor } from '../../models/auth'
+import { authPasswordChangeRequestSchema } from '../../schemas/auth.schema'
+import { type DomainError, DomainErrors, parseWith } from '../../shared'
+import type { AuthUseCaseDependencies } from './_shared/dependencies'
+import { passwordChangedMail } from './_shared/mails'
+import { blocklistIssue } from './_shared/password-blocklist'
+import { checkPassword } from './_shared/password-check'
+
+const MESSAGE = 'Invalid password change'
+
+/** A user who was deleted since the request was authenticated has no session any more. */
+const sessionGone = Result.error(DomainErrors.unauthenticated('invalidToken'))
+
+export class ChangePasswordUseCase {
+  constructor(private readonly dependencies: AuthUseCaseDependencies) {}
+
+  /**
+   * Changes the password of the actor, who proves once more who they are
+   * with the current one. That check shares the limit on guesses with the
+   * login, so a session in the wrong hands cannot be used to try passwords
+   * without end. The actor's other sessions end, this one goes on, and the
+   * user is told by mail.
+   */
+  async execute(
+    actor: Actor,
+    input: unknown,
+  ): Promise<Result<null, DomainError>> {
+    const request = parseWith(authPasswordChangeRequestSchema, input, MESSAGE)
+    if (request.type === 'error') {
+      return request
+    }
+    const { currentPassword, newPassword } = request.data
+
+    const { userRepository, passwordHasher, mailer, clock } = this.dependencies
+    const now = clock()
+
+    const found = await userRepository.findById(actor.userId)
+    if (found.type === 'error') {
+      return found
+    }
+    if (found.data === null) {
+      return sessionGone
+    }
+    const user = found.data
+
+    const checked = await checkPassword(
+      this.dependencies,
+      user,
+      currentPassword,
+      now,
+    )
+    if (checked.type === 'error') {
+      return checked
+    }
+    if (checked.data.type === 'refused') {
+      return Result.error(
+        DomainErrors.validation(MESSAGE, [
+          {
+            field: 'currentPassword',
+            rule: 'incorrect',
+            message: 'The current password could not be confirmed',
+          },
+        ]),
+      )
+    }
+    if (newPassword === currentPassword) {
+      return Result.error(
+        DomainErrors.validation(MESSAGE, [
+          {
+            field: 'newPassword',
+            rule: 'unchanged',
+            message: 'Must differ from the current password',
+          },
+        ]),
+      )
+    }
+    const blocked = blocklistIssue('newPassword', newPassword, user.email)
+    if (blocked !== null) {
+      return Result.error(DomainErrors.validation(MESSAGE, [blocked]))
+    }
+
+    const passwordHash = await passwordHasher.hash(newPassword)
+    if (passwordHash.type === 'error') {
+      return passwordHash
+    }
+
+    const changed = await userRepository.changePassword(actor.userId, {
+      passwordHash: passwordHash.data,
+      at: now.toISOString(),
+      keepSessionId: actor.sessionId,
+    })
+    if (changed.type === 'error') {
+      return changed
+    }
+    if (!changed.data) {
+      return sessionGone
+    }
+    mailer.deliver(passwordChangedMail(user.email))
+
+    return Result.success(null)
+  }
+}

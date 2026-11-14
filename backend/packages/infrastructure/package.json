@@ -25,6 +25,7 @@
     "build:watch": "NODE_ENV=development rslib build --watch",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -32,6 +33,7 @@
     "@beauty-salon-backend/domain": "workspace:*",
     "@beauty-salon-backend/utility": "workspace:*",
     "drizzle-orm": "^0.45.4",
+    "nodemailer": "^10.5.0",
     "pino": "^10.4.0",
     "pino-pretty": "^13.2.0",
     "postgres": "^4.1.1",
@@ -41,6 +43,7 @@
     "@beauty-salon-shared/config": "workspace:*",
     "@rslib/core": "^1.0.7",
     "@types/node": "^26.6.6",
+    "testcontainers": "^12.2.1",
     "typescript": "^7.0.2",
     "vitest": "^5.1.0"
   }

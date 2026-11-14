@@ -1,4 +1,4 @@
-/** How the application treats the network in front of it. */
+/** How the application treats the network in front of it and where its users find it. */
 export type AppSettings = {
   /**
    * Reverse proxies between the clients and the server. The client address,
@@ -18,4 +18,9 @@ export type AppSettings = {
     /** Requests one client address may make per window. */
     maxRequests: number
   }
+  /**
+   * The origin of the web application. The links in mails point there; it
+   * is configuration, so that a request cannot choose where they lead.
+   */
+  publicAppUrl: string
 }

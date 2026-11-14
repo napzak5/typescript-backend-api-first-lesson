@@ -1,5 +1,5 @@
 import type { Result } from '@beauty-salon-backend/utility'
-import type { DbUser, UserAccount, UserId } from '../models/auth'
+import type { DbUser, SessionId, UserAccount, UserId } from '../models/auth'
 import type { DomainError } from '../shared'
 
 /** When repeated failed logins lock an account. */
@@ -15,6 +15,31 @@ export type SuccessfulLogin = {
   ipAddress: string | null
   /** The password hashed with the current parameters; null keeps the stored hash. */
   passwordHash: string | null
+}
+
+/** What is stored of a mailed token: its hash and until when it works. */
+export type MailedToken = {
+  tokenHash: string
+  expiresAt: string
+}
+
+/** An account as a registration leaves it: a customer who has yet to confirm the address. */
+export type Registration = {
+  email: string
+  passwordHash: string
+  emailVerification: MailedToken
+}
+
+export type PasswordReset = {
+  passwordHash: string
+  at: string
+}
+
+export type PasswordChange = {
+  passwordHash: string
+  at: string
+  /** The session that goes on; the user's other sessions end. */
+  keepSessionId: SessionId
 }
 
 /** Persistence of users. Deleted users are invisible to every method. */
@@ -42,4 +67,80 @@ export interface IUserRepository {
     id: string,
     login: SuccessfulLogin,
   ): Promise<Result<DbUser | null, DomainError>>
+
+  /**
+   * Stores a new customer account that is unverified. Resolves to false
+   * when a user already has the email, which a parallel registration can
+   * bring about after the caller looked.
+   */
+  createUnverified(
+    registration: Registration,
+  ): Promise<Result<boolean, DomainError>>
+
+  /**
+   * Makes an account that is still unverified the one of a later
+   * registration: its password and its verification token are replaced.
+   * Resolves to false when the account is not unverified any more.
+   */
+  renewRegistration(
+    id: string,
+    registration: Omit<Registration, 'email'>,
+  ): Promise<Result<boolean, DomainError>>
+
+  /**
+   * Gives a user whose address is not verified a new verification token,
+   * which replaces the one before. Resolves to false when the address has
+   * been verified meanwhile.
+   */
+  issueEmailVerification(
+    id: string,
+    token: MailedToken,
+  ): Promise<Result<boolean, DomainError>>
+
+  /**
+   * Marks the address of the user who holds this token as verified, makes
+   * an unverified account active and uses the token up, in a single
+   * statement: of two parallel calls one gets the user. Resolves to null
+   * when no user holds the token or it ended at or before `now`.
+   */
+  confirmEmail(
+    tokenHash: string,
+    now: string,
+  ): Promise<Result<DbUser | null, DomainError>>
+
+  /** Gives a user a new password reset token, which replaces the one before. */
+  issuePasswordReset(
+    id: string,
+    token: MailedToken,
+  ): Promise<Result<boolean, DomainError>>
+
+  /** The user who holds this password reset token, unless it ended at or before `now`. */
+  findByPasswordResetToken(
+    tokenHash: string,
+    now: string,
+  ): Promise<Result<DbUser | null, DomainError>>
+
+  /**
+   * Sets the password of the user who holds this token and uses the token
+   * up. The mailbox is thereby proven, so the address counts as verified
+   * and an unverified account becomes active; the count of failed logins
+   * and a lock are cleared; every session of the user ends. All of it
+   * happens in one transaction. Resolves to null when no user holds the
+   * token or it ended at or before `reset.at`.
+   */
+  resetPassword(
+    tokenHash: string,
+    reset: PasswordReset,
+  ): Promise<Result<DbUser | null, DomainError>>
+
+  /**
+   * Sets a new password, clears the count of failed logins, drops a
+   * password reset token that is still out and ends the sessions of the
+   * user other than `keepSessionId`, in one transaction. Resolves to false
+   * when the user no longer exists.
+   */
+  changePassword(
+    id: UserId,
+    change: PasswordChange,
+  ): Promise<Result<boolean, DomainError>>
 }
