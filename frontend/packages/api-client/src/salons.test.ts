@@ -1,14 +1,6 @@
 import { QueryClient } from '@tanstack/react-query'
 import { match, P } from 'ts-pattern'
-import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  type Mock,
-  vi,
-} from 'vitest'
+import { afterEach, describe, expect, it, type Mock, vi } from 'vitest'
 import type {
   ModelsProblemDetails,
   ModelsSalonCreateRequest,
@@ -19,8 +11,15 @@ import type {
   salonCrudCreateResponse,
   salonCrudDeleteResponse,
 } from './index'
+import {
+  getSalonCrudListQueryOptions,
+  salonCrudCreate,
+  salonCrudDelete,
+  salonCrudGet,
+  salonCrudList,
+  salonCrudUpdate,
+} from './index'
 
-const API_ORIGIN = 'http://localhost:3000'
 const SALON_ID = '0193a5b2-7c4e-7d1a-9f3b-2a6c8e4d1f07'
 
 const SALON_INPUT: ModelsSalonCreateRequest = {
@@ -149,14 +148,6 @@ const RATE_LIMITED_PROBLEM: ModelsProblemDetails = {
   timestamp: '2026-11-14T00:00:00.000Z',
 }
 
-const loadClient = async () => {
-  vi.resetModules()
-
-  return import('./index')
-}
-
-type Client = Awaited<ReturnType<typeof loadClient>>
-
 const stubFetch = (implementation: typeof fetch) => {
   const fetchMock = vi.fn<typeof fetch>(implementation)
   vi.stubGlobal('fetch', fetchMock)
@@ -206,12 +197,7 @@ const sentRequest = (fetchMock: Mock<typeof fetch>) => {
 }
 
 describe('generated Salon client', () => {
-  beforeEach(() => {
-    vi.stubEnv('VITE_BACKEND_BASE_URL', API_ORIGIN)
-  })
-
   afterEach(() => {
-    vi.unstubAllEnvs()
     vi.unstubAllGlobals()
   })
 
@@ -219,7 +205,6 @@ describe('generated Salon client', () => {
     it('should GET the salons of the API origin with the search as a query string', async () => {
       // Arrange
       const fetchMock = stubFetch(respondWithJson(200, SALON_PAGE))
-      const { salonCrudList } = await loadClient()
 
       // Act
       await salonCrudList({
@@ -238,7 +223,6 @@ describe('generated Salon client', () => {
     it('should return the page of salons with status 200', async () => {
       // Arrange
       stubFetch(respondWithJson(200, SALON_PAGE))
-      const { salonCrudList } = await loadClient()
 
       // Act
       const response = await salonCrudList()
@@ -254,7 +238,6 @@ describe('generated Salon client', () => {
     it('should return the problem details with status 400 for an invalid search', async () => {
       // Arrange
       stubFetch(respondWithProblem(VALIDATION_PROBLEM))
-      const { salonCrudList } = await loadClient()
 
       // Act
       const response = await salonCrudList({ limit: 0 })
@@ -272,7 +255,6 @@ describe('generated Salon client', () => {
     it('should POST the salon to the API origin as JSON that is encoded once', async () => {
       // Arrange
       const fetchMock = stubFetch(respondWithJson(201, SALON_DOCUMENT))
-      const { salonCrudCreate } = await loadClient()
 
       // Act
       await salonCrudCreate(SALON_INPUT)
@@ -289,7 +271,6 @@ describe('generated Salon client', () => {
     it('should send the headers of the caller next to the content type', async () => {
       // Arrange
       const fetchMock = stubFetch(respondWithJson(201, SALON_DOCUMENT))
-      const { salonCrudCreate } = await loadClient()
 
       // Act
       await salonCrudCreate(SALON_INPUT, {
@@ -306,7 +287,6 @@ describe('generated Salon client', () => {
     it('should return the created salon with status 201', async () => {
       // Arrange
       stubFetch(respondWithJson(201, SALON_DOCUMENT))
-      const { salonCrudCreate } = await loadClient()
 
       // Act
       const response = await salonCrudCreate(SALON_INPUT)
@@ -327,7 +307,6 @@ describe('generated Salon client', () => {
       async (_case, problem) => {
         // Arrange
         stubFetch(respondWithProblem(problem))
-        const { salonCrudCreate } = await loadClient()
 
         // Act
         const response = await salonCrudCreate(SALON_INPUT)
@@ -346,7 +325,6 @@ describe('generated Salon client', () => {
     it('should GET the salon with the given ID from the API origin', async () => {
       // Arrange
       const fetchMock = stubFetch(respondWithJson(200, SALON_DOCUMENT))
-      const { salonCrudGet } = await loadClient()
 
       // Act
       await salonCrudGet(SALON_ID)
@@ -361,7 +339,6 @@ describe('generated Salon client', () => {
     it('should return the salon with status 200', async () => {
       // Arrange
       stubFetch(respondWithJson(200, SALON_DOCUMENT))
-      const { salonCrudGet } = await loadClient()
 
       // Act
       const response = await salonCrudGet(SALON_ID)
@@ -382,7 +359,6 @@ describe('generated Salon client', () => {
       async (_case, problem) => {
         // Arrange
         stubFetch(respondWithProblem(problem))
-        const { salonCrudGet } = await loadClient()
 
         // Act
         const response = await salonCrudGet(SALON_ID)
@@ -401,7 +377,6 @@ describe('generated Salon client', () => {
     it('should PATCH the salon with the changes as JSON that is encoded once', async () => {
       // Arrange
       const fetchMock = stubFetch(respondWithJson(200, SALON_DOCUMENT))
-      const { salonCrudUpdate } = await loadClient()
 
       // Act
       await salonCrudUpdate(SALON_ID, SALON_CHANGES)
@@ -418,7 +393,6 @@ describe('generated Salon client', () => {
     it('should return the updated salon with status 200', async () => {
       // Arrange
       stubFetch(respondWithJson(200, SALON_DOCUMENT))
-      const { salonCrudUpdate } = await loadClient()
 
       // Act
       const response = await salonCrudUpdate(SALON_ID, SALON_CHANGES)
@@ -440,7 +414,6 @@ describe('generated Salon client', () => {
       async (_case, problem) => {
         // Arrange
         stubFetch(respondWithProblem(problem))
-        const { salonCrudUpdate } = await loadClient()
 
         // Act
         const response = await salonCrudUpdate(SALON_ID, SALON_CHANGES)
@@ -459,7 +432,6 @@ describe('generated Salon client', () => {
     it('should DELETE the salon with the given ID on the API origin', async () => {
       // Arrange
       const fetchMock = stubFetch(respondWithNoContent)
-      const { salonCrudDelete } = await loadClient()
 
       // Act
       await salonCrudDelete(SALON_ID)
@@ -474,7 +446,6 @@ describe('generated Salon client', () => {
     it('should return no data with status 204', async () => {
       // Arrange
       stubFetch(respondWithNoContent)
-      const { salonCrudDelete } = await loadClient()
 
       // Act
       const response = await salonCrudDelete(SALON_ID)
@@ -495,7 +466,6 @@ describe('generated Salon client', () => {
       async (_case, problem) => {
         // Arrange
         stubFetch(respondWithProblem(problem))
-        const { salonCrudDelete } = await loadClient()
 
         // Act
         const response = await salonCrudDelete(SALON_ID)
@@ -536,7 +506,6 @@ describe('generated Salon client', () => {
     it('should narrow a 201 response to the created salon', async () => {
       // Arrange
       stubFetch(respondWithJson(201, SALON_DOCUMENT))
-      const { salonCrudCreate } = await loadClient()
 
       // Act
       const response = await salonCrudCreate(SALON_INPUT)
@@ -548,7 +517,6 @@ describe('generated Salon client', () => {
     it('should narrow a 409 response to the problem details', async () => {
       // Arrange
       stubFetch(respondWithProblem(CONFLICT_PROBLEM))
-      const { salonCrudCreate } = await loadClient()
 
       // Act
       const response = await salonCrudCreate(SALON_INPUT)
@@ -562,7 +530,6 @@ describe('generated Salon client', () => {
     it('should narrow a 429 response, which every operation can answer, to the problem details', async () => {
       // Arrange
       stubFetch(respondWithProblem(RATE_LIMITED_PROBLEM))
-      const { salonCrudCreate, salonCrudDelete } = await loadClient()
 
       // Act
       const created = await salonCrudCreate(SALON_INPUT)
@@ -576,7 +543,6 @@ describe('generated Salon client', () => {
     it('should narrow a 204 response to a success without data', async () => {
       // Arrange
       stubFetch(respondWithNoContent)
-      const { salonCrudDelete } = await loadClient()
 
       // Act
       const response = await salonCrudDelete(SALON_ID)
@@ -588,26 +554,19 @@ describe('generated Salon client', () => {
 
   describe('transport failure', () => {
     it.each([
-      ['salonCrudList', (client: Client) => client.salonCrudList()],
-      [
-        'salonCrudCreate',
-        (client: Client) => client.salonCrudCreate(SALON_INPUT),
-      ],
-      ['salonCrudGet', (client: Client) => client.salonCrudGet(SALON_ID)],
-      [
-        'salonCrudUpdate',
-        (client: Client) => client.salonCrudUpdate(SALON_ID, SALON_CHANGES),
-      ],
-      ['salonCrudDelete', (client: Client) => client.salonCrudDelete(SALON_ID)],
+      ['salonCrudList', () => salonCrudList()],
+      ['salonCrudCreate', () => salonCrudCreate(SALON_INPUT)],
+      ['salonCrudGet', () => salonCrudGet(SALON_ID)],
+      ['salonCrudUpdate', () => salonCrudUpdate(SALON_ID, SALON_CHANGES)],
+      ['salonCrudDelete', () => salonCrudDelete(SALON_ID)],
     ])(
       'should reject %s when the server cannot be reached',
       async (_name, call) => {
         // Arrange
         stubFetch(failToConnect)
-        const client = await loadClient()
 
         // Act
-        const result = call(client)
+        const result = call()
 
         // Assert
         await expect(result).rejects.toThrow('fetch failed')
@@ -617,7 +576,6 @@ describe('generated Salon client', () => {
     it('should reject when the signal of the caller aborts the request', async () => {
       // Arrange
       stubFetch(hangUntilAborted)
-      const { salonCrudGet } = await loadClient()
       const controller = new AbortController()
 
       // Act
@@ -633,7 +591,6 @@ describe('generated Salon client', () => {
     it('should hand a problem response to the query as data', async () => {
       // Arrange
       stubFetch(respondWithProblem(VALIDATION_PROBLEM))
-      const { getSalonCrudListQueryOptions } = await loadClient()
       const queryClient = new QueryClient()
 
       // Act
@@ -652,7 +609,6 @@ describe('generated Salon client', () => {
     it('should fail the query when the server cannot be reached', async () => {
       // Arrange
       stubFetch(failToConnect)
-      const { getSalonCrudListQueryOptions } = await loadClient()
       const queryClient = new QueryClient()
 
       // Act

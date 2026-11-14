@@ -65,8 +65,9 @@ required to be covered through the endpoint tests, against a real database.
 
 The frontend tests render with `renderToStaticMarkup` from `react-dom/server`.
 A file that needs a DOM opts in with `// @vitest-environment jsdom` on its
-first line, and environment variables are set with `vi.stubEnv`. There are no
-browser-driven tests.
+first line. Environment variables are set with `vi.stubEnv`, or with `test.env`
+in the Vitest configuration of the package when every test of it needs the same
+value (`frontend/packages/api-client`). There are no browser-driven tests.
 
 ## Requirements per Endpoint
 
