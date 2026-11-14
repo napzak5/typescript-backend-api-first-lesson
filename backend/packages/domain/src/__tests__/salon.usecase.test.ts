@@ -135,6 +135,17 @@ describe('GetSalonUseCase', () => {
     expect(result).toMatchObject({ type: 'success', data: { id: SALON_ID } })
   })
 
+  it('looks the salon up by the lower-case ID when the request writes it in upper case', async () => {
+    const salonRepository = repositoryWith()
+
+    const result = await new GetSalonUseCase({ salonRepository }).execute(
+      SALON_ID.toUpperCase(),
+    )
+
+    expect(salonRepository.findById).toHaveBeenCalledWith(SALON_ID)
+    expect(result.type).toBe('success')
+  })
+
   it('rejects an ID that is not a UUID without touching the repository', async () => {
     const salonRepository = repositoryWith()
 
@@ -245,6 +256,22 @@ describe('ListSalonsUseCase', () => {
       isActive: false,
       minRating: 4,
       features: ['color', 'kids'],
+    })
+  })
+
+  it('reads a cursor written in upper case as the lower-case ID', async () => {
+    const salonRepository = repositoryWith()
+
+    const result = await new ListSalonsUseCase({ salonRepository }).execute({
+      cursor: OTHER_SALON_ID.toUpperCase(),
+    })
+
+    expect(salonRepository.list).toHaveBeenCalledWith(
+      expect.objectContaining({ after: OTHER_SALON_ID }),
+    )
+    expect(result).toMatchObject({
+      type: 'success',
+      data: { meta: { cursor: OTHER_SALON_ID } },
     })
   })
 
@@ -540,6 +567,29 @@ describe('who may change a salon', () => {
   })
 
   it.each<[string, Actor]>([
+    ['the owner of the salon', actors.ofSalon('owner', SALON_ID)],
+    ['a manager of the salon', actors.ofSalon('manager', SALON_ID)],
+  ])(
+    'lets %s change the salon when the request writes its ID in upper case',
+    async (_case, actor) => {
+      const salonRepository = repositoryWith()
+
+      const result = await new UpdateSalonUseCase({ salonRepository }).execute(
+        actor,
+        SALON_ID.toUpperCase(),
+        { name: 'Renamed' },
+      )
+
+      expect(result.type).toBe('success')
+      expect(salonRepository.update).toHaveBeenCalledWith(
+        SALON_ID,
+        { name: 'Renamed' },
+        { type: 'keep' },
+      )
+    },
+  )
+
+  it.each<[string, Actor]>([
     ['the owner of another salon', ownerOfOtherSalon],
     ['a manager of another salon', managerOfOtherSalon],
     ['a staff member of the salon', actors.ofSalon('staff', SALON_ID)],
@@ -592,6 +642,18 @@ describe('who may change a salon', () => {
     )
 
     expect(result).toEqual({ type: 'success', data: SALON_ID })
+  })
+
+  it('lets the owner delete the salon when the request writes its ID in upper case', async () => {
+    const salonRepository = repositoryWith()
+
+    const result = await new DeleteSalonUseCase({ salonRepository }).execute(
+      actors.ofSalon('owner', SALON_ID),
+      SALON_ID.toUpperCase(),
+    )
+
+    expect(result).toEqual({ type: 'success', data: SALON_ID })
+    expect(salonRepository.delete).toHaveBeenCalledWith(SALON_ID)
   })
 
   it.each<[string, Actor]>([

@@ -542,6 +542,33 @@ describe('Administrator operations on accounts', () => {
       },
     )
 
+    it.each(lockedOrNot)(
+      'forbids an administrator their own account when the path writes the ID in upper case and it is %s',
+      async (_case, state) => {
+        const admin = await signInAsAdmin()
+        await updateUser(db, admin.id, state())
+        const before = await userRow(admin.id)
+
+        const response = await unlock(
+          admin.authorization,
+          admin.id.toUpperCase(),
+        )
+
+        expectAdminProblem(response, forbidden)
+        expect(await userRow(admin.id)).toEqual(before)
+      },
+    )
+
+    it('unlocks another user whose ID the path writes in upper case, and answers with the ID in lower case', async () => {
+      const admin = await signInAsAdmin()
+      const user = await insertUser(db, lockedAhead())
+
+      const response = await unlock(admin.authorization, user.id.toUpperCase())
+
+      expectUser(response, user.id)
+      expect(response.body.data).toMatchObject({ status: 'active' })
+    })
+
     it('lets another administrator unlock an administrator', async () => {
       const locked = await signInAsAdmin()
       await updateUser(db, locked.id, {
@@ -804,6 +831,21 @@ describe('Administrator operations on accounts', () => {
       const before = await userRow(admin.id)
 
       const response = await resetTwoFactor(admin.authorization, admin.id)
+
+      expectAdminProblem(response, forbidden)
+      expect(await userRow(admin.id)).toEqual(before)
+      expect(mails).toEqual([])
+    })
+
+    it('forbids an administrator their own account when the path writes the ID in upper case', async () => {
+      const admin = await signInAsAdmin()
+      await updateUser(db, admin.id, await twoFactorUser('enabled'))
+      const before = await userRow(admin.id)
+
+      const response = await resetTwoFactor(
+        admin.authorization,
+        admin.id.toUpperCase(),
+      )
 
       expectAdminProblem(response, forbidden)
       expect(await userRow(admin.id)).toEqual(before)

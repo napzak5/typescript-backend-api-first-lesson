@@ -6,11 +6,11 @@ import {
   Result,
 } from '@beauty-salon-backend/utility'
 import { z } from 'zod'
-import { type DomainError, parseWith } from '../shared'
+import { type DomainError, parseWith, uuidSchema } from '../shared'
 
 // ID: a UUID that has been checked, so that an unchecked string cannot be
 // passed where a salon ID is expected.
-export const salonIdSchema = z.uuid().brand<'SalonId'>()
+export const salonIdSchema = uuidSchema.brand<'SalonId'>()
 export type SalonId = z.infer<typeof salonIdSchema>
 
 const salonIdParameterSchema = z.object({ id: salonIdSchema })

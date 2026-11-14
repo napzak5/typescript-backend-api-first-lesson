@@ -287,6 +287,21 @@ describe('Salon API', () => {
       })
     })
 
+    it('returns the salon for its ID written in upper case, with the ID in lower case', async () => {
+      const created = await createSalon()
+
+      const response = await request(app).get(
+        `${SALONS}/${created.id.toUpperCase()}`,
+      )
+
+      expect(response.status).toBe(200)
+      expect(response.body.data).toEqual(created)
+      expect(response.body.links).toEqual({
+        self: `${SALONS}/${created.id}`,
+        list: SALONS,
+      })
+    })
+
     it.each([
       ['a word', 'latest'],
       ['a number', '42'],
@@ -913,6 +928,33 @@ describe('Salon API', () => {
         })
       })
 
+      it.each<[string, SignInAs]>([
+        ['the owner of the salon', member('owner')],
+        ['a manager of the salon', member('manager')],
+      ])(
+        'lets %s change the salon when the path writes its ID in upper case',
+        async (_case, signInAs) => {
+          const created = await createSalon()
+          const authorization = await signInAs(
+            created.id,
+            await insertSalon(db),
+          )
+
+          const response = await patchAs(
+            authorization,
+            created.id.toUpperCase(),
+            { name: 'Renamed' },
+          )
+
+          expect(response.status).toBe(200)
+          expect(response.body.data).toMatchObject({
+            id: created.id,
+            name: 'Renamed',
+          })
+          expect(response.body.links.self).toBe(`${SALONS}/${created.id}`)
+        },
+      )
+
       it.each(mayNotUpdate)(
         'forbids %s to change the salon and changes nothing',
         async (_case, signInAs) => {
@@ -1000,6 +1042,21 @@ describe('Salon API', () => {
 
         const response = await request(app)
           .delete(`${SALONS}/${created.id}`)
+          .set('Authorization', owner)
+
+        expect(response.status).toBe(204)
+        expectProblem(
+          await request(app).get(`${SALONS}/${created.id}`),
+          notFound,
+        )
+      })
+
+      it('lets the owner of the salon delete it when the path writes its ID in upper case', async () => {
+        const created = await createSalon()
+        const owner = await member('owner')(created.id)
+
+        const response = await request(app)
+          .delete(`${SALONS}/${created.id.toUpperCase()}`)
           .set('Authorization', owner)
 
         expect(response.status).toBe(204)

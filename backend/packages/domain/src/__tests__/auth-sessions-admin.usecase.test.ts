@@ -493,6 +493,19 @@ describe('RevokeSessionUseCase', () => {
     expect(mails).toEqual([])
   })
 
+  it('names the session by its lower-case ID when the request writes it in upper case', async () => {
+    const { dependencies } = withRepositories()
+
+    const result = await revoke(dependencies, OTHER_SESSION_ID.toUpperCase())
+
+    expect(result).toEqual({ type: 'success', data: null })
+    expect(dependencies.sessionRepository.deleteOfUser).toHaveBeenCalledWith(
+      OTHER_SESSION_ID,
+      USER_ID,
+      NOW.toISOString(),
+    )
+  })
+
   it('removes the session of the request itself', async () => {
     const { dependencies } = withRepositories()
 
@@ -783,6 +796,32 @@ describe('UnlockAccountUseCase', () => {
     expect(result).toEqual(forbidden)
   })
 
+  it('forbids an administrator their own account when the ID is written in upper case', async () => {
+    const { dependencies, mails } = withRepositories(
+      lockedThenUnlocked({
+        findById: vi.fn(async () =>
+          Result.success(dbUser({ status: 'locked', lockedUntil: null })),
+        ),
+      }),
+    )
+
+    const result = await unlock(dependencies, USER_ID.toUpperCase())
+
+    expect(result).toEqual(forbidden)
+    expectNothingReadOrChanged(dependencies, mails)
+  })
+
+  it('looks another user up by the lower-case ID when it is written in upper case', async () => {
+    const { dependencies } = withRepositories(lockedThenUnlocked())
+
+    const result = await unlock(dependencies, OTHER_USER_ID.toUpperCase())
+
+    expect(result.type).toBe('success')
+    expect(dependencies.userRepository.findById).toHaveBeenCalledWith(
+      OTHER_USER_ID,
+    )
+  })
+
   it.each(malformedIds)(
     'rejects %s as the ID without looking anything up',
     async (_case, id) => {
@@ -944,6 +983,17 @@ describe('ResetTwoFactorUseCase', () => {
     )
 
     const result = await reset(dependencies, USER_ID)
+
+    expect(result).toEqual(forbidden)
+    expectNothingReadOrChanged(dependencies, mails)
+  })
+
+  it('forbids an administrator their own account when the ID is written in upper case', async () => {
+    const { dependencies, mails } = withRepositories(
+      turningOff(dbUser(twoFactorUser('enabled')), dbUser()),
+    )
+
+    const result = await reset(dependencies, USER_ID.toUpperCase())
 
     expect(result).toEqual(forbidden)
     expectNothingReadOrChanged(dependencies, mails)

@@ -426,6 +426,23 @@ describe('Sessions of the signed-in user', () => {
       })
     })
 
+    it('starts the page after a cursor written in upper case, and reports the cursor in lower case', async () => {
+      const user = await signedInUser(app, db)
+      const ownId = await sessionIdOf(db, user.accessToken)
+      const older = await insertSession(db, user.id, {
+        createdAt: minutesFromNow(-10),
+      })
+
+      const response = await list(
+        user.authorization,
+        `cursor=${ownId.toUpperCase()}`,
+      )
+
+      expect(response.status).toBe(200)
+      expect(idsOf(response)).toEqual([older.id])
+      expect(response.body.meta).toMatchObject({ total: 2, cursor: ownId })
+    })
+
     it('starts the page after a cursor that names an ended session of the user that is still stored', async () => {
       const user = await signedInUser(app, db)
       await insertSession(db, user.id, { createdAt: minutesFromNow(-10) })
@@ -538,6 +555,18 @@ describe('Sessions of the signed-in user', () => {
       expect((await me(third.authorization)).status).toBe(200)
       expect((await refresh(app, third.refreshToken)).status).toBe(200)
       expect(mails).toEqual([])
+    })
+
+    it('ends the session whose ID the path writes in upper case', async () => {
+      const user = await signedInUser(app, db)
+      const other = await insertSession(db, user.id)
+      const ownId = await sessionIdOf(db, user.accessToken)
+
+      const response = await revoke(user.authorization, other.id.toUpperCase())
+
+      expectNoContent(response)
+      expect(await storedIds()).toEqual([ownId])
+      expectAuthProblem(await me(other.authorization), invalidToken)
     })
 
     it('ends the session of the request itself, whose tokens are then refused as after a logout', async () => {
