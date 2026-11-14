@@ -33,19 +33,16 @@
 ```bash
 pnpm install        # 依存関係をインストールする。husky の pre-commit フックも設定される
 make infra-up       # PostgreSQL・MailHog・MinIO を Docker で起動し、DB の準備を待つ
-pnpm build:backend  # バックエンドのパッケージをビルドする（理由は下記）
 pnpm db:fresh       # sql/setup.sql からスキーマを作成する
 pnpm db:seed        # サンプルデータを投入する（任意）
 pnpm dev            # バックエンド :3000、フロントエンド :3001〜3003
 ```
 
 - **生成ファイルはコミット済み**です。TypeSpec を変更しない限り `pnpm generate` は不要です。
-- **データベースのコマンド（`pnpm db:fresh` など）と `pnpm typecheck` はビルド成果物を参照します。** データベースのスクリプトは
-  tsx で実行され、`@beauty-salon-backend/config` を `dist` から読み込みます。クローン直後は
-  `dist` がないため、先に `pnpm build:backend`（全パッケージなら `pnpm build:dev`）を実行します。
-  `pnpm dev:backend` と、`api`・`config`・`domain`・`infrastructure`・サーバーのテストは、
-  エクスポート条件 `@beauty-salon-backend/source` によってワークスペースパッケージをソースから
-  読むので、ビルドし直さなくても変更が反映されます。
+- **ビルドが必要なのは `pnpm typecheck` とビルド済みサーバーの起動（`pnpm start:backend`）だけ**です。
+  `pnpm dev:backend`、データベースのコマンド（`pnpm db:fresh` など）、テストは、エクスポート条件
+  `@beauty-salon-backend/source` によってワークスペースパッケージをソースから読みます。クローン直後でも
+  動き、依存先のパッケージを変更してもビルドし直す必要はありません。
 - **`make infra-up` の PostgreSQL** は `docker-compose.yml` の既定値で起動し、`.env.localhost` の
   `DATABASE_URL` はそれに合わせてあります。MailHog と MinIO も起動しますが、現在のアプリケーション
   コードはどちらも使っていません。
@@ -239,7 +236,7 @@ pnpm --filter @beauty-salon-backend/api run test:integration salon       # 統�
 pnpm format:fix    # Biome の整形・import の並べ替え・安全な修正を適用し、TypeSpec も整形する
 pnpm lint          # Biome の lint
 pnpm typecheck     # 型チェック（先にビルドが必要）
-pnpm test          # 単体テスト（先にビルドが必要）
+pnpm test          # 単体テスト
 ```
 
 まとめて確認するには `make ci-check` を使います。CI ワークフローのチェックを、次の順に実行します。

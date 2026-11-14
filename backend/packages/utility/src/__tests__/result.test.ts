@@ -137,22 +137,6 @@ describe('Result', () => {
     })
   })
 
-  describe('unwrapOr', () => {
-    it('should extract data from success result', () => {
-      const result = Result.success('data')
-      const data = Result.unwrapOr(result, 'default')
-
-      expect(data).toBe('data')
-    })
-
-    it('should return default value for error result', () => {
-      const result = Result.error('error')
-      const data = Result.unwrapOr(result, 'default')
-
-      expect(data).toBe('default')
-    })
-  })
-
   describe('complex scenarios', () => {
     it('should chain multiple operations', () => {
       const result = Result.success(10)

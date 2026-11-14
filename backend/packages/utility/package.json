@@ -17,19 +17,18 @@
   },
   "scripts": {
     "clean": "rm -rf dist *.tsbuildinfo",
-    "build:localhost": "NODE_ENV=localhost rslib build && tsc --emitDeclarationOnly",
-    "build:dev": "NODE_ENV=development rslib build && tsc --emitDeclarationOnly",
-    "build:test": "NODE_ENV=test rslib build && tsc --emitDeclarationOnly",
-    "build:stg": "NODE_ENV=staging rslib build && tsc --emitDeclarationOnly",
-    "build:prod": "NODE_ENV=production rslib build && tsc --emitDeclarationOnly",
+    "build:localhost": "NODE_ENV=localhost rslib build && tsc --emitDeclarationOnly --project tsconfig.build.json",
+    "build:dev": "NODE_ENV=development rslib build && tsc --emitDeclarationOnly --project tsconfig.build.json",
+    "build:test": "NODE_ENV=test rslib build && tsc --emitDeclarationOnly --project tsconfig.build.json",
+    "build:stg": "NODE_ENV=staging rslib build && tsc --emitDeclarationOnly --project tsconfig.build.json",
+    "build:prod": "NODE_ENV=production rslib build && tsc --emitDeclarationOnly --project tsconfig.build.json",
     "build:watch": "NODE_ENV=development rslib build --watch",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest"
   },
   "dependencies": {
-    "ts-pattern": "^5.9.2",
-    "uuid": "^14.0.3"
+    "ts-pattern": "^5.9.2"
   },
   "devDependencies": {
     "@beauty-salon-shared/config": "workspace:*",

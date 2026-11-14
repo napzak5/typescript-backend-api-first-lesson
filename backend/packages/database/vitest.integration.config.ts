@@ -7,6 +7,17 @@ import { defineConfig } from 'vitest/config'
  * database of its own, so the instance needs a user that may create them.
  */
 export default defineConfig({
+  // Workspace packages are tested from source, not from their last build.
+  ssr: {
+    resolve: {
+      conditions: [
+        '@beauty-salon-backend/source',
+        'module',
+        'node',
+        'development|production',
+      ],
+    },
+  },
   test: {
     environment: 'node',
     include: ['src/**/*.integration.test.ts'],

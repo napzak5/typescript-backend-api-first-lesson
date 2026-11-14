@@ -50,7 +50,6 @@ export type Result<T, E> =
 | `Result.mapError(result, fn)` | エラーを変換する |
 | `Result.flatMap(result, fn)` | 成功値から次の `Result` を作る |
 | `Result.fromPromise(promise)` | Promise の reject を `Result<T, Error>` の `error` にする |
-| `Result.unwrapOr(result, defaultValue)` | エラーのとき既定値を返す |
 
 ### 途中の失敗はそのまま返す
 
