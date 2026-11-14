@@ -20,7 +20,7 @@ import "./models/inventory.tsp";
 import "./models/permission.tsp";
 
 // Import all operations
-import "./operations/_shared/base-operations.tsp";
+import "./operations/system-operations.tsp";
 import "./operations/auth-operations.tsp";
 import "./operations/salon-operations.tsp";
 import "./operations/staff-operations.tsp";
@@ -56,7 +56,7 @@ enum VersionType {
 @server("http://localhost:3000", "Local Development Server")
 @versioned(VersionType)
 @useAuth(BearerAuth)
-@doc("Comprehensive REST API for managing beauty salon operations including salons, staff, services, customers, reservations, bookings, treatments, payments, inventory, and access control. Built with TypeSpec for type-safe API-first development.")
+@doc("Comprehensive REST API for managing beauty salon operations including salons, staff, services, customers, bookings, treatments, payments, inventory, and access control. Built with TypeSpec for type-safe API-first development.")
 namespace BeautySalon {
 // All models and operations are imported from separate files
 // This namespace serves as the root for all API resources

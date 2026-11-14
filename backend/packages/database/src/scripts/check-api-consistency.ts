@@ -5,11 +5,13 @@
  * same property names, same nullability, the same values for a column of an
  * enum type, and the optionality that the kind of model calls for.
  *
- *   pnpm check:api-db                       fail on any difference that is not in the baseline
- *   pnpm check:api-db --update-baseline     record the current differences as the baseline
+ * Every model listed in `api-consistency-rules.ts` is compared; any difference
+ * fails the check.
+ *
+ *   pnpm check:api-db
  */
 
-import { readFileSync, writeFileSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { getTableColumns, is } from 'drizzle-orm'
 import { PgArray, type PgColumn, PgTable } from 'drizzle-orm/pg-core'
@@ -19,12 +21,10 @@ import * as schema from '../schema'
 import {
   type ColumnInfo,
   compareModel,
-  compareWithBaseline,
   describeFinding,
   type Finding,
   modelProperties,
   type OpenApiSchema,
-  toBaseline,
 } from './api-consistency'
 import { modelRules } from './api-consistency-rules'
 
@@ -33,7 +33,6 @@ const openApiPath = resolve(
   packageDir,
   '../../../specs/tsp-output/@typespec/openapi3/generated/openapi.yaml',
 )
-const baselinePath = resolve(packageDir, 'api-consistency-baseline.json')
 
 const openApiSchema: z.ZodType<OpenApiSchema> = z.looseObject({
   $ref: z.string().optional(),
@@ -54,8 +53,6 @@ const openApiSchema: z.ZodType<OpenApiSchema> = z.looseObject({
 const openApiDocumentSchema = z.object({
   components: z.object({ schemas: z.record(z.string(), openApiSchema) }),
 })
-
-const baselineSchema = z.record(z.string(), z.array(z.string()))
 
 /** The values of the enum type of a column, or of its elements when it is a list. */
 const enumValuesOf = (column: PgColumn): readonly string[] | null =>
@@ -83,14 +80,8 @@ const tableColumns = new Map<string, ReadonlyMap<string, ColumnInfo>>(
 const document = openApiDocumentSchema.safeParse(
   parse(readFileSync(openApiPath, 'utf8')),
 )
-const baseline = baselineSchema.safeParse(
-  JSON.parse(readFileSync(baselinePath, 'utf8')),
-)
 
-const check = (
-  schemas: Readonly<Record<string, OpenApiSchema>>,
-  accepted: Readonly<Record<string, readonly string[]>>,
-): void => {
+const check = (schemas: Readonly<Record<string, OpenApiSchema>>): void => {
   const unknownRules: string[] = []
   const findings: Finding[] = []
   for (const rule of modelRules) {
@@ -114,53 +105,24 @@ const check = (
     return
   }
 
-  if (process.argv.includes('--update-baseline')) {
-    writeFileSync(
-      baselinePath,
-      `${JSON.stringify(toBaseline(findings), null, 2)}\n`,
-    )
-    console.log(
-      `Recorded ${findings.length} differences in ${modelRules.length} models as the baseline.`,
-    )
-    return
-  }
-
-  const { unexpected, resolved } = compareWithBaseline(findings, accepted)
-
-  if (unexpected.length > 0) {
+  if (findings.length > 0) {
     console.error('API models that disagree with the database:')
-    for (const finding of unexpected) {
+    for (const finding of findings) {
       console.error(`  - ${describeFinding(finding)}`)
     }
     console.error(
       '\nThe database is the source of truth: fix the TypeSpec model, or change the\ntable with a migration, then run `pnpm generate`.',
     )
-  }
-  if (resolved.length > 0) {
-    console.error('Baseline entries that no longer occur:')
-    for (const { model, entry } of resolved) {
-      console.error(`  - ${model}: ${entry}`)
-    }
-    console.error(
-      '\nRemove them with `pnpm check:api-db --update-baseline` so that they cannot come back.',
-    )
-  }
-  if (unexpected.length > 0 || resolved.length > 0) {
     process.exitCode = 1
     return
   }
 
-  console.log(
-    `${modelRules.length} API models agree with the database (${findings.length} known differences in the baseline).`,
-  )
+  console.log(`${modelRules.length} API models agree with the database.`)
 }
 
 if (!document.success) {
   console.error(`Cannot read ${openApiPath}: ${document.error.message}`)
   process.exitCode = 1
-} else if (!baseline.success) {
-  console.error(`Cannot read ${baselinePath}: ${baseline.error.message}`)
-  process.exitCode = 1
 } else {
-  check(document.data.components.schemas, baseline.data)
+  check(document.data.components.schemas)
 }

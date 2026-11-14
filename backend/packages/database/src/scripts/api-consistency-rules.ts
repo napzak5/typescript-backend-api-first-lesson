@@ -3,9 +3,10 @@ import type { ModelRule } from './api-consistency'
 /**
  * Which API model is backed by which table.
  *
- * A domain that is implemented lists the columns it leaves out
- * (`omittedColumns`), so that every column is either exposed or deliberately
- * hidden, and has no entry in the baseline. Salon is the reference.
+ * Every rule lists the columns its model leaves out (`omittedColumns`), so
+ * that every column is either exposed or deliberately hidden. Salon is the
+ * reference. A model that is not backed by a table (computed reports, action
+ * requests, features whose tables do not exist yet) has no rule.
  */
 
 /** Columns of `salons` that a request never writes. */
@@ -49,12 +50,6 @@ const salonRules: ModelRule[] = [
     omittedColumns: ['id', 'salonId', 'createdAt', 'updatedAt'],
   },
 ]
-
-/*
- * The domains below have a specification but no implementation yet. Their
- * known differences are recorded in the baseline; a new difference fails the
- * check.
- */
 
 /**
  * Columns of `services` that a request never writes. The salon comes from

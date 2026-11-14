@@ -28,11 +28,7 @@ namespace BeautySalon.Models {
   @format("uuid")
   scalar CustomerId extends string;
 
-  @doc("予約申込レコードを識別するためのブランド付きUUID。")
-  @format("uuid")
-  scalar ReservationId extends string;
-
-  @doc("確定済みの予約（スケジュール確保）を識別するブランド付きUUID。")
+  @doc("予約（bookings の1行）を識別するブランド付きUUID。")
   @format("uuid")
   scalar BookingId extends string;
 
@@ -100,14 +96,6 @@ namespace BeautySalon.Models {
   @format("uuid")
   scalar PointTransactionId extends string;
 
-  @doc("ロイヤルティプログラムの会員ランクを識別するブランド付きUUID。")
-  @format("uuid")
-  scalar LoyaltyTierId extends string;
-
-  @doc("返金処理のトランザクションを識別するブランド付きUUID。")
-  @format("uuid")
-  scalar RefundId extends string;
-
   @doc("税率や金額計算で用いる汎用小数型。")
   scalar decimal extends float64;
 
@@ -133,6 +121,23 @@ namespace BeautySalon.Models {
   }
 
   @doc("""
+    スタッフレベル区分 - スタッフの技術レベルや経験を表す階層
+    
+    junior: ジュニア - 新人・見習いレベル、基本的な施術が可能
+    stylist: スタイリスト - 標準レベル、一般的な施術が可能
+    senior: シニア - 上級レベル、高度な技術と経験を保有
+    expert: エキスパート - 専門家レベル、特殊技術や指導が可能
+    director: ディレクター - 管理職レベル、サロンの技術的な指導を担当
+    """)
+  enum StaffLevelType {
+    junior,
+    stylist,
+    senior,
+    expert,
+    director,
+  }
+
+  @doc("""
     サービスカテゴリー区分 - サロンで提供される主要なサービスカテゴリーの定義
     
     cut: カット - ヘアカット、トリミング等の切断系サービス
@@ -153,23 +158,6 @@ namespace BeautySalon.Models {
     styling,
     extension,
     other,
-  }
-
-  @doc("""
-    予約ステータス区分 - 予約の進行状態を表す状態定義
-    
-    pending: 保留中 - 予約申込を受け付けたが、まだ確定していない状態
-    confirmed: 確定済み - サロン側で予約が承認・確定された状態
-    cancelled: キャンセル済み - 顧客またはサロン側により予約が取り消された状態
-    completed: 完了 - 予約された施術が実施され、サービス提供が完了した状態
-    no_show: 無断キャンセル - 顧客が事前連絡なしに来店しなかった状態
-    """)
-  enum ReservationStatusType {
-    pending,
-    confirmed,
-    cancelled,
-    completed,
-    no_show,
   }
 
   @doc("""
@@ -197,23 +185,6 @@ namespace BeautySalon.Models {
     KRW,
     SGD,
     TWD,
-  }
-
-  @doc("""
-    在庫ステータス区分 - 商品・材料の在庫状態を表す区分
-    
-    in_stock: 在庫あり - 十分な在庫量がある状態
-    low_stock: 在庫僅少 - 在庫量が設定された最小量に近づいている状態
-    out_of_stock: 在庫切れ - 在庫がゼロになった状態
-    ordered: 発注済み - 補充のための発注が行われた状態
-    discontinued: 廃番 - 商品の取り扱いを終了した状態
-    """)
-  enum InventoryStatusType {
-    in_stock,
-    low_stock,
-    out_of_stock,
-    ordered,
-    discontinued,
   }
 
   @doc("""
@@ -279,84 +250,6 @@ namespace BeautySalon.Models {
     other,
   }
 
-  @doc("""
-    通知タイプ区分 - 顧客への通知・連絡手段の種類
-    
-    email: Eメール - 電子メールによる通知
-    sms: SMS - ショートメッセージサービスによる通知
-    push: プッシュ通知 - モバイルアプリのプッシュ通知
-    line: LINE - LINEメッセージングサービスによる通知
-    """)
-  enum NotificationType {
-    email,
-    sms,
-    push,
-    line,
-  }
-
-  @doc("""
-    リマインダータイミング区分 - 予約リマインダーを送信するタイミングの設定
-    
-    one_day_before: 1日前 - 予約日の24時間前に通知
-    three_hours_before: 3時間前 - 予約時刻の3時間前に通知
-    one_hour_before: 1時間前 - 予約時刻の1時間前に通知
-    thirty_minutes_before: 30分前 - 予約時刻の30分前に通知
-    """)
-  enum ReminderTimingType {
-    one_day_before,
-    three_hours_before,
-    one_hour_before,
-    thirty_minutes_before,
-  }
-
-  @doc("API全体で共通利用する業務エラーの基本モデル。")
-  model Error {
-    @doc("エラーの種類を特定するアプリケーション固有コード。")
-    code: string;
-
-    @doc("ユーザーまたはオペレーターに提示するエラーメッセージ。")
-    message: string;
-
-    @doc("デバッグやサポート対応に役立つ追加情報。追加情報がない場合はnull")
-    details: Record<unknown> | null;
-  }
-
-  @doc("認証されていないアクセスを表す標準エラーモデル。")
-  @error
-  model UnauthorizedError {
-    @doc("固定値UNAUTHORIZED。クライアントでのハンドリングを容易にする識別子。")
-    code: "UNAUTHORIZED";
-
-    @doc("エラー内容を伝えるメッセージ。")
-    message: string;
-  }
-
-  @doc("一覧取得APIで利用するページネーション共通パラメータ。")
-  model PaginationParams {
-    @query
-    @doc("1ページあたりの取得件数。省略時は20件。")
-    limit?: int32 = 20;
-
-    @query
-    @doc("取得開始位置を表すオフセット。省略時は0。")
-    offset?: int32 = 0;
-  }
-
-  @doc("ページネーションされた一覧レスポンスの共通構造。")
-  model PaginationResponse<T> {
-    @doc("取得した要素の配列。")
-    data: T[];
-
-    @doc("条件に一致する全件数。")
-    total: int32;
-
-    @doc("1ページあたりの件数。")
-    limit: int32;
-
-    @doc("取得開始位置のオフセット。")
-    offset: int32;
-  }
-
   @doc("特定の日付の営業時間（営業日カレンダーの1日分）を表すモデル。")
   model OpeningHours {
     @doc("dateの曜日。dateと一致している必要がある")
@@ -381,39 +274,6 @@ namespace BeautySalon.Models {
     notes: string | null;
   }
 
-  @doc("サロンや顧客の住所情報を表す共通モデル。")
-  model Address {
-    @doc("番地や建物名を含む詳細住所。")
-    street: string;
-
-    @doc("市区町村名。")
-    city: string;
-
-    @doc("都道府県名。")
-    prefecture: string;
-
-    @doc("郵便番号。未登録の場合はnull")
-    postalCode: string | null;
-
-    @doc("国名。既定値はJapan。")
-    country: string = "Japan";
-  }
-
-  @doc("顧客やサロンの連絡先情報を表す共通モデル。")
-  model ContactInfo {
-    @doc("主要連絡先として利用するメールアドレス。")
-    email: string;
-
-    @doc("主要連絡先として利用する電話番号。")
-    phoneNumber: string;
-
-    @doc("緊急連絡用などの予備電話番号。未登録の場合はnull")
-    alternativePhone: string | null;
-
-    @doc("公式サイトや予約ページのURL。ウェブサイトがない場合はnull")
-    websiteUrl: string | null;
-  }
-
   @doc("作成・更新ユーザーとタイムスタンプを保持する共通監査情報。")
   model AuditInfo {
     @doc("レコード作成日時。")
@@ -427,49 +287,6 @@ namespace BeautySalon.Models {
 
     @doc("レコードを最後に更新したユーザーID。システム自動更新または匿名更新の場合はnull")
     updatedBy: string | null;
-  }
-
-  /**
-   * ビジネスロジックの成功・失敗を明示する共通Result型。
-   * テンプレートのインスタンスごとに名前付きスキーマを生成しないよう、union ではなく alias で定義する。
-   */
-  alias Result<TSuccess, TError = Error> =
-    | SuccessResult<TSuccess>
-    | ErrorResult<TError>;
-
-  @doc("成功時のデータとステータスを保持するモデル。")
-  model SuccessResult<T> {
-    @doc("固定値success。成功結果であることを示す。")
-    status: "success";
-
-    @doc("成功時に返却するドメインデータ。")
-    data: T;
-  }
-
-  @doc("失敗時のエラー情報とステータスを保持するモデル。")
-  model ErrorResult<T = Error> {
-    @doc("固定値error。エラー結果であることを示す。")
-    status: "error";
-
-    @doc("失敗時に返却するエラー情報。")
-    error: T;
-  }
-
-  @doc("一覧検索で使用する共通クエリパラメータセット。")
-  model SearchParams {
-    @query
-    @doc("フリーワード検索用キーワード。")
-    q?: string;
-
-    @query
-    @doc("並び替え対象カラム名。")
-    sortBy?: string;
-
-    @query
-    @doc("昇順ascまたは降順descの指定。")
-    sortOrder?: "asc" | "desc";
-
-    ...PaginationParams;
   }
 
   @doc("期間指定や有効期間に利用する共通レンジ型。")
@@ -504,17 +321,6 @@ namespace BeautySalon.Models {
     endDate?: utcDateTime;
   }
 
-  @doc("金額レンジで絞り込むための共通クエリモデル。")
-  model PriceRangeFilter {
-    @query
-    @doc("下限価格。未指定の場合は制限なし。")
-    minPrice?: float32;
-
-    @query
-    @doc("上限価格。未指定の場合は制限なし。")
-    maxPrice?: float32;
-  }
-
   @doc("営業時間や休憩時間を表現する単一の時間帯スロット。")
   model TimeSlot {
     @doc("開始時刻（HH:mm形式、24時間表記）。")
@@ -545,36 +351,6 @@ namespace BeautySalon.Models {
     timezone: string | null;
   }
 
-  @doc("顧客への通知チャネルとリマインダー設定をまとめたモデル。")
-  model NotificationSettings {
-    @doc("利用を許可する通知チャネルの一覧。")
-    types: NotificationType[];
-
-    @doc("リマインダー送信タイミングの一覧。")
-    reminderTimings: ReminderTimingType[];
-
-    @doc("通知機能全体の有効・無効フラグ。")
-    enabled: boolean;
-  }
-
-  @doc("顧客ロイヤルティポイントの累積状況を表すモデル。")
-  model PointInfo {
-    @doc("現在保持している有効ポイント数。")
-    currentPoints: int32;
-
-    @doc("累計で獲得したポイント総数。")
-    totalEarnedPoints: int32;
-
-    @doc("累計で利用（消費）したポイント総数。")
-    totalUsedPoints: int32;
-
-    @doc("失効予定のポイント数。失効予定がない場合はnull")
-    expiringPoints: int32 | null;
-
-    @doc("最も早く失効するポイントの失効日。失効予定がない場合はnull")
-    expirationDate: utcDateTime | null;
-  }
-
   @doc("サービスメニューを一覧表示や候補選択で参照する際の要約情報。")
   model ServiceSummary {
     @doc("サービスメニューを識別するID。")
@@ -600,35 +376,5 @@ namespace BeautySalon.Models {
 
     @doc("担当した予約件数。統計未計算の場合はnull")
     bookingCount: int32 | null;
-  }
-
-  @doc("""
-    ロイヤルティティア区分 - 顧客ロイヤルティプログラムの会員ランク
-    
-    bronze: ブロンズ - 基本会員ランク、初期段階の特典を提供
-    silver: シルバー - 中級会員ランク、標準的な特典を提供
-    gold: ゴールド - 上級会員ランク、優待特典を提供
-    platinum: プラチナ - 最上級会員ランク、最高レベルの特典を提供
-    """)
-  enum LoyaltyTierType {
-    bronze: "bronze",
-    silver: "silver",
-    gold: "gold",
-    platinum: "platinum",
-  }
-
-  @doc("""
-    連絡方法区分 - 顧客との連絡・コミュニケーション手段の優先設定
-    
-    email: Eメール - 電子メールによる連絡方法
-    sms: SMS - ショートメッセージサービスによる連絡方法
-    phone: 電話 - 音声通話による連絡方法
-    push: プッシュ通知 - アプリ内プッシュ通知による連絡方法
-    """)
-  enum ContactMethodType {
-    email: "email",
-    sms: "sms",
-    phone: "phone",
-    push: "push",
   }
 }

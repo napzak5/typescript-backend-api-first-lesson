@@ -3,14 +3,12 @@ import {
   type ApiProperty,
   type ColumnInfo,
   compareModel,
-  compareWithBaseline,
   describeFinding,
-  type Finding,
   type ModelKind,
   type ModelRule,
   modelProperties,
-  toBaseline,
 } from '../api-consistency'
+import { modelRules } from '../api-consistency-rules'
 
 const columns = new Map<string, ColumnInfo>([
   ['id', { notNull: true, enumValues: null }],
@@ -151,7 +149,7 @@ describe('compareModel', () => {
     expect(findings).toEqual([])
   })
 
-  it('orders findings by kind and property so that the baseline is stable', () => {
+  it('orders findings by kind and property so that the report is stable', () => {
     const findings = kindsOf(
       rule(),
       properties({ zebra: {}, description: {}, alpha: {} }),
@@ -176,59 +174,6 @@ describe('describeFinding', () => {
     ).toBe(
       'Models.SalonResponse.description must allow null because the column does',
     )
-  })
-})
-
-describe('baseline', () => {
-  const findings: Finding[] = [
-    { model: 'Models.Staff', property: 'bio', kind: 'shouldBeNullable' },
-    { model: 'Models.Customer', property: 'tags', kind: 'unknownProperty' },
-    { model: 'Models.Customer', property: 'age', kind: 'unknownProperty' },
-  ]
-
-  it('records findings by model, both in a stable order', () => {
-    expect(JSON.stringify(toBaseline(findings))).toBe(
-      JSON.stringify({
-        'Models.Customer': ['unknownProperty:age', 'unknownProperty:tags'],
-        'Models.Staff': ['shouldBeNullable:bio'],
-      }),
-    )
-  })
-
-  it('accepts exactly the findings it records', () => {
-    expect(compareWithBaseline(findings, toBaseline(findings))).toEqual({
-      unexpected: [],
-      resolved: [],
-    })
-  })
-
-  it('reports a finding that the baseline does not record', () => {
-    const { unexpected, resolved } = compareWithBaseline(findings, {
-      'Models.Customer': ['unknownProperty:age', 'unknownProperty:tags'],
-    })
-
-    expect(unexpected).toEqual([findings[0]])
-    expect(resolved).toEqual([])
-  })
-
-  it('does not accept a finding because another model has the same one', () => {
-    const { unexpected } = compareWithBaseline(
-      [{ model: 'Models.Staff', property: 'age', kind: 'unknownProperty' }],
-      { 'Models.Customer': ['unknownProperty:age'] },
-    )
-
-    expect(unexpected).toHaveLength(1)
-  })
-
-  it('reports a recorded finding that no longer occurs', () => {
-    const { unexpected, resolved } = compareWithBaseline(findings.slice(1), {
-      ...toBaseline(findings),
-    })
-
-    expect(unexpected).toEqual([])
-    expect(resolved).toEqual([
-      { model: 'Models.Staff', entry: 'shouldBeNullable:bio' },
-    ])
   })
 })
 
@@ -318,5 +263,21 @@ describe('modelProperties', () => {
 
   it('returns null for a model the document does not define', () => {
     expect(modelProperties(schemas, 'Models.Unknown')).toBeNull()
+  })
+})
+
+describe('modelRules', () => {
+  it('lists the omitted columns of every model, so that no column is left out by oversight', () => {
+    const withoutOmittedColumns = modelRules
+      .filter((modelRule) => modelRule.omittedColumns === undefined)
+      .map((modelRule) => modelRule.model)
+
+    expect(withoutOmittedColumns).toEqual([])
+  })
+
+  it('names every model once', () => {
+    const models = modelRules.map((modelRule) => modelRule.model)
+
+    expect(models).toEqual([...new Set(models)])
   })
 })

@@ -1,6 +1,5 @@
 import "@typespec/http";
 import "./_shared/common.tsp";
-import "./auth.tsp";
 
 using TypeSpec.Http;
 using BeautySalon.Models;

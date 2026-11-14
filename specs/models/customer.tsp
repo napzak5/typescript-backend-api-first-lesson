@@ -43,40 +43,6 @@ namespace BeautySalon.Models {
   }
 
   @doc("""
-    アレルギータイプ区分 - 顧客が持つアレルギーの種類を分類、施術時の注意事項として使用
-    
-    chemical: 化学物質 - カラー剤、パーマ剤等の化学薬品に対するアレルギー
-    fragrance: 香料 - 香水、シャンプー等の香料成分に対するアレルギー
-    metal: 金属 - ヘアピン、ハサミ等の金属製品に対するアレルギー
-    latex: ラテックス - 手袋等のゴム製品に対するアレルギー
-    plant: 植物 - ヘナ、ハーブ等の植物由来成分に対するアレルギー
-    other: その他 - 上記に分類されないアレルギー
-    """)
-  enum AllergyType {
-    chemical,
-    fragrance,
-    metal,
-    latex,
-    plant,
-    other,
-  }
-
-  @doc("""
-    アレルギー重篤度区分 - アレルギー反応の重篤度を表し、対応レベルを決定
-    
-    mild: 軽度 - 軽いかゆみや赤み程度、通常の施術で注意すれば対応可能
-    moderate: 中等度 - 明確な皮膚反応、特別な配慮や代替品の使用が必要
-    severe: 重度 - 激しい反応、特定の施術を避けるべきレベル
-    life_threatening: 生命に関わる - アナフィラキシー等の危険があり、該当する商材・施術を一切使用できないレベル
-    """)
-  enum AllergySeverityType {
-    mild,
-    moderate,
-    severe,
-    life_threatening,
-  }
-
-  @doc("""
     髪質タイプ区分 - 顧客の髪のクセや形状を分類、適切な施術提案に使用
     
     straight: ストレート - 直毛、クセがほとんどない髪質
@@ -779,34 +745,34 @@ namespace BeautySalon.Models {
 
   @doc("""
     顧客一覧エクスポートリクエスト - 一覧と同じ絞り込み条件に一致する顧客をファイルに出力する。
-    絞り込み条件は省略でき、条件はすべて AND で結合する
+    全項目のキーが必須で、使わない絞り込み条件には null を指定する。条件はすべて AND で結合する
     """)
   model CustomerExportRequest {
     @doc("エクスポート形式")
     format: CustomerExportFormatType;
 
-    @doc("出力する項目(CustomerResponse のプロパティ名)の一覧。省略した場合は全項目を出力する")
-    exportFields?: string[];
+    @doc("出力する項目(CustomerResponse のプロパティ名)の一覧。nullの場合は全項目を出力する")
+    exportFields: string[] | null;
 
-    @doc("顧客名(姓・名とそのカナ表記)、メールアドレス、電話番号に対する部分一致キーワード(大文字小文字を区別しない)")
+    @doc("顧客名(姓・名とそのカナ表記)、メールアドレス、電話番号に対する部分一致キーワード(大文字小文字を区別しない)。nullの場合はキーワードで絞り込まない")
     @minLength(1)
     @maxLength(100)
-    search?: string;
+    search: string | null;
 
-    @doc("タグによる絞り込み。指定したタグをすべて持つ顧客に一致する")
-    tags?: string[];
+    @doc("タグによる絞り込み。指定したタグをすべて持つ顧客に一致する。nullの場合はタグで絞り込まない")
+    tags: string[] | null;
 
-    @doc("登録日時(createdAt)の下限による絞り込み。この日時以降に登録された顧客に一致する")
-    registeredFrom?: utcDateTime;
+    @doc("登録日時(createdAt)の下限による絞り込み。この日時以降に登録された顧客に一致する。nullの場合は下限なし")
+    registeredFrom: utcDateTime | null;
 
-    @doc("登録日時(createdAt)の上限による絞り込み。この日時以前に登録された顧客に一致する")
-    registeredTo?: utcDateTime;
+    @doc("登録日時(createdAt)の上限による絞り込み。この日時以前に登録された顧客に一致する。nullの場合は上限なし")
+    registeredTo: utcDateTime | null;
 
-    @doc("顧客ステータスによる絞り込み(完全一致)")
-    customerStatus?: CustomerStatusType;
+    @doc("顧客ステータスによる絞り込み(完全一致)。nullの場合はステータスで絞り込まない")
+    customerStatus: CustomerStatusType | null;
 
-    @doc("会員ランクによる絞り込み(完全一致)")
-    membershipTier?: MembershipTierType;
+    @doc("会員ランクによる絞り込み(完全一致)。nullの場合は会員ランクで絞り込まない")
+    membershipTier: MembershipTierType | null;
   }
 
   @doc("""

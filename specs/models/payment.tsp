@@ -818,6 +818,19 @@ namespace BeautySalon.Models {
     average: int64[];
   }
 
+  @doc("""
+    売上レポート出力形式区分 - 売上レポートを出力するファイルの形式
+    
+    csv: CSV - カンマ区切りのテキストファイル
+    excel: Excel - Excel のブック
+    pdf: PDF - 印刷・配布用の PDF ファイル
+    """)
+  enum SalesReportExportFormatType {
+    csv,
+    excel,
+    pdf,
+  }
+
   @doc("売上レポートの出力リクエスト - 出力する期間と形式を指定する")
   model SalesReportExportRequest {
     @doc("集計対象のサロン ID")
@@ -829,142 +842,13 @@ namespace BeautySalon.Models {
     @doc("集計期間の終了日時")
     endDate: utcDateTime;
 
-    @doc("出力形式(csv: CSV／excel: Excel／pdf: PDF)")
-    format: "csv" | "excel" | "pdf";
+    @doc("出力形式")
+    format: SalesReportExportFormatType;
   }
 
   @doc("売上レポートの出力結果")
   model SalesReportExportResponse {
     @doc("出力したファイルのダウンロード URL")
     downloadUrl: string;
-  }
-
-  // ---------------------------------------------------------------------------
-  // specs/models/booking.tsp が参照している旧モデル。支払いのオペレーションでは使わず、
-  // 対応するテーブルもない。booking ドメインの整理で参照がなくなったら削除する (#91)
-  // ---------------------------------------------------------------------------
-
-  // 旧名。booking.tsp の paymentStatus が参照している
-  alias PaymentStatusCodeType = PaymentStatusType;
-
-  @doc("支払い状態の詳細情報を表すユニオン")
-  union PaymentStatus {
-    pending: PendingPaymentStatus,
-    processing: ProcessingPaymentStatus,
-    completed: CompletedPaymentStatus,
-    failed: FailedPaymentStatus,
-    refunded: RefundedPaymentStatus,
-    partial_refund: PartialRefundPaymentStatus,
-  }
-
-  @doc("支払い待ち状態の詳細")
-  model PendingPaymentStatus {
-    @doc("状態種別（pending 固定値）")
-    type: "pending";
-
-    @doc("支払いが登録された日時")
-    createdAt: utcDateTime;
-  }
-
-  @doc("決済処理中の状態の詳細")
-  model ProcessingPaymentStatus {
-    @doc("状態種別（processing 固定値）")
-    type: "processing";
-
-    @doc("処理開始日時")
-    startedAt: utcDateTime;
-
-    @doc("処理を担当しているスタッフ ID")
-    processorId: StaffId | null;
-  }
-
-  @doc("支払い完了状態の詳細")
-  model CompletedPaymentStatus {
-    @doc("状態種別（completed 固定値）")
-    type: "completed";
-
-    @doc("支払い完了日時")
-    completedAt: utcDateTime;
-
-    @doc("実際に決済された金額")
-    paidAmount: Money;
-
-    @doc("発行されたレシート番号")
-    receiptNumber: string | null;
-  }
-
-  @doc("支払い失敗状態の詳細")
-  model FailedPaymentStatus {
-    @doc("状態種別（failed 固定値）")
-    type: "failed";
-
-    @doc("支払いが失敗した日時")
-    failedAt: utcDateTime;
-
-    @doc("失敗理由の説明")
-    reason: string;
-
-    @doc("再試行が可能かどうか")
-    retryable: boolean | null = false;
-  }
-
-  @doc("全額返金済み状態の詳細")
-  model RefundedPaymentStatus {
-    @doc("状態種別（refunded 固定値）")
-    type: "refunded";
-
-    @doc("返金が完了した日時")
-    refundedAt: utcDateTime;
-
-    @doc("返金金額")
-    refundAmount: Money;
-
-    @doc("関連する返金 ID")
-    refundId: RefundId | null;
-  }
-
-  @doc("部分返金済み状態の詳細")
-  model PartialRefundPaymentStatus {
-    @doc("状態種別（partial_refund 固定値）")
-    type: "partial_refund";
-
-    @doc("返金が行われた日時")
-    refundedAt: utcDateTime;
-
-    @doc("返金された金額")
-    refundAmount: Money;
-
-    @doc("返金後に残る請求金額")
-    remainingAmount: Money;
-
-    @doc("関連する返金 ID")
-    refundId: RefundId;
-  }
-
-  @doc("決済状態の変更履歴")
-  model PaymentHistory {
-    @doc("履歴イベント ID")
-    eventId: string;
-
-    @doc("対象となる決済 ID")
-    paymentId: PaymentId;
-
-    @doc("変更後の支払い状態")
-    status: PaymentStatus;
-
-    @doc("変更が発生した日時")
-    occurredAt: utcDateTime;
-
-    @doc("操作主体の区分")
-    actor: "system" | "staff" | "customer" | null;
-
-    @doc("操作主体の ID")
-    actorId: string | null;
-
-    @doc("変更内容の補足メモ")
-    note: string | null;
-
-    @doc("履歴に紐づく追加メタデータ")
-    metadata: Record<unknown> | null;
   }
 }

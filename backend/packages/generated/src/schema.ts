@@ -10,8 +10,10 @@ import { z } from 'zod'
  * moderate: 中等度 - 明確な皮膚反応、特別な配慮や代替品の使用が必要
  *
  * severe: 重度 - 激しい反応、特定の施術を避けるべきレベル
+ *
+ * life_threatening: 生命に関わる - アナフィラキシー等の危険があり、該当する商材・施術を一切使用できないレベル
  */
-export const AllergySeverityTypeSchema = z.enum(['mild', 'moderate', 'severe'])
+export const AllergySeverityTypeSchema = z.enum(['mild', 'moderate', 'severe', 'life_threatening'])
 /**
  * @description
  * アレルギー重篤度区分 - アレルギー反応の重篤度を表し、対応レベルを決定
@@ -22,6 +24,8 @@ export const AllergySeverityTypeSchema = z.enum(['mild', 'moderate', 'severe'])
  * moderate: 中等度 - 明確な皮膚反応、特別な配慮や代替品の使用が必要
  *
  * severe: 重度 - 激しい反応、特定の施術を避けるべきレベル
+ *
+ * life_threatening: 生命に関わる - アナフィラキシー等の危険があり、該当する商材・施術を一切使用できないレベル
  */
 export type AllergySeverityType = z.infer<typeof AllergySeverityTypeSchema>
 
@@ -64,32 +68,7 @@ export type AllergyType = z.infer<typeof AllergyTypeSchema>
 
 /**
  * @description
- * 認証ユーザーロール区分 - 認証システムにおけるユーザーの役割
- *
- *
- * customer: 顧客ロール - サービスの予約が可能
- *
- * staff: スタッフロール - 自身のスケジュールと予約を管理可能
- *
- * admin: 管理者ロール - システムのフルアクセス権限
- */
-export const AuthUserRoleTypeSchema = z.enum(['customer', 'staff', 'admin'])
-/**
- * @description
- * 認証ユーザーロール区分 - 認証システムにおけるユーザーの役割
- *
- *
- * customer: 顧客ロール - サービスの予約が可能
- *
- * staff: スタッフロール - 自身のスケジュールと予約を管理可能
- *
- * admin: 管理者ロール - システムのフルアクセス権限
- */
-export type AuthUserRoleType = z.infer<typeof AuthUserRoleTypeSchema>
-
-/**
- * @description
- * 認証状態区分 - ユーザーの認証状態を表す区分
+ * 認証状態区分 - セッションの認証状態を表す区分
  *
  *
  * unauthenticated: 未認証 - ログインしていない状態
@@ -103,7 +82,7 @@ export type AuthUserRoleType = z.infer<typeof AuthUserRoleTypeSchema>
 export const AuthenticationStateTypeSchema = z.enum(['unauthenticated', 'authenticated', 'pending_two_factor', 'locked'])
 /**
  * @description
- * 認証状態区分 - ユーザーの認証状態を表す区分
+ * 認証状態区分 - セッションの認証状態を表す区分
  *
  *
  * unauthenticated: 未認証 - ログインしていない状態
@@ -152,7 +131,7 @@ export type BookingRequirementType = z.infer<typeof BookingRequirementTypeSchema
 
 /**
  * @description
- * 予約ステータスコード区分 - 予約の詳細な進行状態を表す区分
+ * 予約ステータス区分 - 予約の詳細な進行状態を表す区分
  *
  *
  * draft: 下書き - 予約内容を作成中、まだ確定していない状態
@@ -169,7 +148,7 @@ export type BookingRequirementType = z.infer<typeof BookingRequirementTypeSchema
  *
  * no_show: 無断キャンセル - 顧客が連絡なしに来店しなかった状態
  */
-export const BookingStatusCodeTypeSchema = z.enum([
+export const BookingStatusTypeSchema = z.enum([
   'draft',
   'pending',
   'confirmed',
@@ -180,7 +159,7 @@ export const BookingStatusCodeTypeSchema = z.enum([
 ])
 /**
  * @description
- * 予約ステータスコード区分 - 予約の詳細な進行状態を表す区分
+ * 予約ステータス区分 - 予約の詳細な進行状態を表す区分
  *
  *
  * draft: 下書き - 予約内容を作成中、まだ確定していない状態
@@ -197,36 +176,7 @@ export const BookingStatusCodeTypeSchema = z.enum([
  *
  * no_show: 無断キャンセル - 顧客が連絡なしに来店しなかった状態
  */
-export type BookingStatusCodeType = z.infer<typeof BookingStatusCodeTypeSchema>
-
-/**
- * @description
- * 連絡方法区分 - 顧客との連絡・コミュニケーション手段の優先設定
- *
- *
- * email: Eメール - 電子メールによる連絡方法
- *
- * sms: SMS - ショートメッセージサービスによる連絡方法
- *
- * phone: 電話 - 音声通話による連絡方法
- *
- * push: プッシュ通知 - アプリ内プッシュ通知による連絡方法
- */
-export const ContactMethodTypeSchema = z.enum(['email', 'sms', 'phone', 'push'])
-/**
- * @description
- * 連絡方法区分 - 顧客との連絡・コミュニケーション手段の優先設定
- *
- *
- * email: Eメール - 電子メールによる連絡方法
- *
- * sms: SMS - ショートメッセージサービスによる連絡方法
- *
- * phone: 電話 - 音声通話による連絡方法
- *
- * push: プッシュ通知 - アプリ内プッシュ通知による連絡方法
- */
-export type ContactMethodType = z.infer<typeof ContactMethodTypeSchema>
+export type BookingStatusType = z.infer<typeof BookingStatusTypeSchema>
 
 /**
  * @description
@@ -283,6 +233,85 @@ export type CurrencyCodeType = z.infer<typeof CurrencyCodeTypeSchema>
 
 /**
  * @description
+ * 顧客監査操作区分 - 監査履歴に記録される顧客レコードへの操作の種類
+ *
+ *
+ * create: 作成 - 顧客を新規登録した
+ *
+ * update: 更新 - 顧客情報を更新した
+ *
+ * delete: 削除 - 顧客を論理削除した
+ *
+ * restore: 復元 - 論理削除された顧客を復元した
+ */
+export const CustomerAuditOperationTypeSchema = z.enum(['create', 'update', 'delete', 'restore'])
+/**
+ * @description
+ * 顧客監査操作区分 - 監査履歴に記録される顧客レコードへの操作の種類
+ *
+ *
+ * create: 作成 - 顧客を新規登録した
+ *
+ * update: 更新 - 顧客情報を更新した
+ *
+ * delete: 削除 - 顧客を論理削除した
+ *
+ * restore: 復元 - 論理削除された顧客を復元した
+ */
+export type CustomerAuditOperationType = z.infer<typeof CustomerAuditOperationTypeSchema>
+
+/**
+ * @description
+ * 顧客データエクスポート形式区分 - 顧客本人のデータを出力するファイル形式
+ *
+ *
+ * json: JSON - JSON形式
+ *
+ * csv: CSV - カンマ区切りテキスト
+ *
+ * pdf: PDF - PDF文書
+ */
+export const CustomerDataExportFormatTypeSchema = z.enum(['json', 'csv', 'pdf'])
+/**
+ * @description
+ * 顧客データエクスポート形式区分 - 顧客本人のデータを出力するファイル形式
+ *
+ *
+ * json: JSON - JSON形式
+ *
+ * csv: CSV - カンマ区切りテキスト
+ *
+ * pdf: PDF - PDF文書
+ */
+export type CustomerDataExportFormatType = z.infer<typeof CustomerDataExportFormatTypeSchema>
+
+/**
+ * @description
+ * 顧客一覧エクスポート形式区分 - 検索結果のエクスポートで出力するファイル形式
+ *
+ *
+ * csv: CSV - カンマ区切りテキスト
+ *
+ * json: JSON - JSON形式
+ *
+ * excel: Excel - Excelブック形式
+ */
+export const CustomerExportFormatTypeSchema = z.enum(['csv', 'json', 'excel'])
+/**
+ * @description
+ * 顧客一覧エクスポート形式区分 - 検索結果のエクスポートで出力するファイル形式
+ *
+ *
+ * csv: CSV - カンマ区切りテキスト
+ *
+ * json: JSON - JSON形式
+ *
+ * excel: Excel - Excelブック形式
+ */
+export type CustomerExportFormatType = z.infer<typeof CustomerExportFormatTypeSchema>
+
+/**
+ * @description
  * 性別区分 - 顧客の性別を表す区分（多様性に配慮した選択肢を含む）
  *
  *
@@ -312,20 +341,29 @@ export type CustomerGenderType = z.infer<typeof CustomerGenderTypeSchema>
 
 /**
  * @description
- * 顧客ステータス区分 - 顧客アカウントの活動状態や利用可否を表す区分
+ * 顧客統合時の競合解決方針区分 - 2件の顧客レコードで値が異なる項目をどちらに合わせるか
  *
  *
- * active: アクティブ - 通常利用可能な状態
+ * keep_primary: メイン優先 - 統合後も残す顧客(primaryCustomerId)の値を使う
  *
- * inactive: 休眠中 - 長期間利用がないがアカウントは維持されている状態
+ * keep_secondary: サブ優先 - 統合して削除する顧客(secondaryCustomerId)の値を使う
  *
- * suspended: 停止中 - 一時的に利用が停止されている状態
- *
- * deleted: 削除済み - アカウントが論理削除された状態
- *
- * blacklisted: ブラックリスト - 利用を禁止された状態
+ * keep_newest: 新しい方優先 - 最後に更新された顧客の値を使う
  */
-export const CustomerStatusTypeSchema = z.enum(['active', 'inactive', 'suspended', 'deleted', 'blacklisted'])
+export const CustomerMergeConflictResolutionTypeSchema = z.enum(['keep_primary', 'keep_secondary', 'keep_newest'])
+/**
+ * @description
+ * 顧客統合時の競合解決方針区分 - 2件の顧客レコードで値が異なる項目をどちらに合わせるか
+ *
+ *
+ * keep_primary: メイン優先 - 統合後も残す顧客(primaryCustomerId)の値を使う
+ *
+ * keep_secondary: サブ優先 - 統合して削除する顧客(secondaryCustomerId)の値を使う
+ *
+ * keep_newest: 新しい方優先 - 最後に更新された顧客の値を使う
+ */
+export type CustomerMergeConflictResolutionType = z.infer<typeof CustomerMergeConflictResolutionTypeSchema>
+
 /**
  * @description
  * 顧客ステータス区分 - 顧客アカウントの活動状態や利用可否を表す区分
@@ -335,9 +373,21 @@ export const CustomerStatusTypeSchema = z.enum(['active', 'inactive', 'suspended
  *
  * inactive: 休眠中 - 長期間利用がないがアカウントは維持されている状態
  *
- * suspended: 停止中 - 一時的に利用が停止されている状態
+ * vip: VIP - 特別な対応が必要な重要顧客として扱う状態
  *
- * deleted: 削除済み - アカウントが論理削除された状態
+ * blacklisted: ブラックリスト - 利用を禁止された状態
+ */
+export const CustomerStatusTypeSchema = z.enum(['active', 'inactive', 'vip', 'blacklisted'])
+/**
+ * @description
+ * 顧客ステータス区分 - 顧客アカウントの活動状態や利用可否を表す区分
+ *
+ *
+ * active: アクティブ - 通常利用可能な状態
+ *
+ * inactive: 休眠中 - 長期間利用がないがアカウントは維持されている状態
+ *
+ * vip: VIP - 特別な対応が必要な重要顧客として扱う状態
  *
  * blacklisted: ブラックリスト - 利用を禁止された状態
  */
@@ -383,31 +433,6 @@ export const DayOfWeekTypeSchema = z.enum(['monday', 'tuesday', 'wednesday', 'th
  * sunday: 日曜日
  */
 export type DayOfWeekType = z.infer<typeof DayOfWeekTypeSchema>
-
-/**
- * @description
- * メール確認状態区分 - メールアドレスの確認状態を表す区分
- *
- *
- * verified: 確認済み - メールアドレスが確認された状態
- *
- * unverified: 未確認 - メールアドレスが未確認の状態
- *
- * pending: 確認中 - 確認メールを送信し、確認待ちの状態
- */
-export const EmailVerificationStateTypeSchema = z.enum(['verified', 'unverified', 'pending'])
-/**
- * @description
- * メール確認状態区分 - メールアドレスの確認状態を表す区分
- *
- *
- * verified: 確認済み - メールアドレスが確認された状態
- *
- * unverified: 未確認 - メールアドレスが未確認の状態
- *
- * pending: 確認中 - 確認メールを送信し、確認待ちの状態
- */
-export type EmailVerificationStateType = z.infer<typeof EmailVerificationStateTypeSchema>
 
 /**
  * @description
@@ -553,47 +578,22 @@ export type ErrorCodeType = z.infer<typeof ErrorCodeTypeSchema>
 
 /**
  * @description
- * ファイルタイプ区分 - アップロードされるファイルの種類を分類
- *
- *
- * image: 画像 - 写真やイラスト等の画像ファイル（jpg, png, gif等）
- *
- * document: ドキュメント - PDF、Word、Excel等の文書ファイル
- *
- * other: その他 - 上記に分類されないファイル
- */
-export const FileTypeSchema = z.enum(['image', 'document', 'other'])
-/**
- * @description
- * ファイルタイプ区分 - アップロードされるファイルの種類を分類
- *
- *
- * image: 画像 - 写真やイラスト等の画像ファイル（jpg, png, gif等）
- *
- * document: ドキュメント - PDF、Word、Excel等の文書ファイル
- *
- * other: その他 - 上記に分類されないファイル
- */
-export type FileType = z.infer<typeof FileTypeSchema>
-
-/**
- * @description
  * 髪の太さ区分 - 髪の毛一本の太さを分類、カットやスタイリングの参考に使用
  *
  *
- * fine: 細毛 - 柔らかく細い髪、ボリュームが出にくい
+ * thin: 細毛 - 柔らかく細い髪、ボリュームが出にくい
  *
  * medium: 普通毛 - 平均的な太さの髪、扱いやすい
  *
  * thick: 太毛 - しっかりとした太い髪、ボリュームが出やすい
  */
-export const HairThicknessTypeSchema = z.enum(['fine', 'medium', 'thick'])
+export const HairThicknessTypeSchema = z.enum(['thin', 'medium', 'thick'])
 /**
  * @description
  * 髪の太さ区分 - 髪の毛一本の太さを分類、カットやスタイリングの参考に使用
  *
  *
- * fine: 細毛 - 柔らかく細い髪、ボリュームが出にくい
+ * thin: 細毛 - 柔らかく細い髪、ボリュームが出にくい
  *
  * medium: 普通毛 - 平均的な太さの髪、扱いやすい
  *
@@ -632,109 +632,98 @@ export type HairType = z.infer<typeof HairTypeSchema>
 
 /**
  * @description
- * 在庫ステータス区分 - 商品・材料の在庫状態を表す区分
+ * アラート重要度区分 - 在庫アラートの重要度
  *
  *
- * in_stock: 在庫あり - 十分な在庫量がある状態
+ * info: 情報 - 対応を急がない通知
  *
- * low_stock: 在庫僅少 - 在庫量が設定された最小量に近づいている状態
+ * warning: 警告 - 早めの対応が必要な通知
  *
- * out_of_stock: 在庫切れ - 在庫がゼロになった状態
- *
- * ordered: 発注済み - 補充のための発注が行われた状態
- *
- * discontinued: 廃番 - 商品の取り扱いを終了した状態
+ * critical: 重大 - 直ちに対応が必要な通知
  */
-export const InventoryStatusTypeSchema = z.enum(['in_stock', 'low_stock', 'out_of_stock', 'ordered', 'discontinued'])
+export const InventoryAlertSeverityTypeSchema = z.enum(['info', 'warning', 'critical'])
 /**
  * @description
- * 在庫ステータス区分 - 商品・材料の在庫状態を表す区分
+ * アラート重要度区分 - 在庫アラートの重要度
  *
  *
- * in_stock: 在庫あり - 十分な在庫量がある状態
+ * info: 情報 - 対応を急がない通知
  *
- * low_stock: 在庫僅少 - 在庫量が設定された最小量に近づいている状態
+ * warning: 警告 - 早めの対応が必要な通知
  *
- * out_of_stock: 在庫切れ - 在庫がゼロになった状態
- *
- * ordered: 発注済み - 補充のための発注が行われた状態
- *
- * discontinued: 廃番 - 商品の取り扱いを終了した状態
+ * critical: 重大 - 直ちに対応が必要な通知
  */
-export type InventoryStatusType = z.infer<typeof InventoryStatusTypeSchema>
+export type InventoryAlertSeverityType = z.infer<typeof InventoryAlertSeverityTypeSchema>
 
 /**
  * @description
- * ロイヤルティティア区分 - 顧客ロイヤルティプログラムの会員ランク
+ * 在庫アラート種別区分 - 在庫に対して発生するアラートの種類
  *
  *
- * bronze: ブロンズ - 基本会員ランク、初期段階の特典を提供
+ * low_stock: 在庫僅少 - 在庫数が閾値を下回った状態
  *
- * silver: シルバー - 中級会員ランク、標準的な特典を提供
+ * expiring: 期限間近 - 使用期限が近づいている状態
  *
- * gold: ゴールド - 上級会員ランク、優待特典を提供
+ * expired: 期限切れ - 使用期限を過ぎた状態
  *
- * platinum: プラチナ - 最上級会員ランク、最高レベルの特典を提供
+ * overstock: 過剰在庫 - 在庫数が上限を超えた状態
  */
-export const LoyaltyTierTypeSchema = z.enum(['bronze', 'silver', 'gold', 'platinum'])
+export const InventoryAlertTypeSchema = z.enum(['low_stock', 'expiring', 'expired', 'overstock'])
 /**
  * @description
- * ロイヤルティティア区分 - 顧客ロイヤルティプログラムの会員ランク
+ * 在庫アラート種別区分 - 在庫に対して発生するアラートの種類
  *
  *
- * bronze: ブロンズ - 基本会員ランク、初期段階の特典を提供
+ * low_stock: 在庫僅少 - 在庫数が閾値を下回った状態
  *
- * silver: シルバー - 中級会員ランク、標準的な特典を提供
+ * expiring: 期限間近 - 使用期限が近づいている状態
  *
- * gold: ゴールド - 上級会員ランク、優待特典を提供
+ * expired: 期限切れ - 使用期限を過ぎた状態
  *
- * platinum: プラチナ - 最上級会員ランク、最高レベルの特典を提供
+ * overstock: 過剰在庫 - 在庫数が上限を超えた状態
  */
-export type LoyaltyTierType = z.infer<typeof LoyaltyTierTypeSchema>
+export type InventoryAlertType = z.infer<typeof InventoryAlertTypeSchema>
 
 /**
  * @description
- * 会員特典タイプ区分 - 会員ランクに応じて提供される特典の種類
+ * 在庫移動種別区分 - 在庫数を増減させた操作の種類を表す区分
  *
  *
- * discount_rate: 割引率 - サービス料金に対するパーセンテージ割引
+ * purchase: 仕入 - 仕入先から商品を受け入れた入庫
  *
- * point_multiplier: ポイント倍率 - 通常のポイント付与率に対する乗数
+ * sale: 販売 - 顧客への店頭販売による出庫
  *
- * priority_booking: 優先予約 - 一般公開前の優先的な予約権利
+ * use: 施術使用 - 施術の材料として消費した出庫
  *
- * free_service: 無料サービス - 特定サービスの無料提供
+ * adjustment: 調整 - 棚卸差異や破損などの補正による増減
  *
- * birthday_special: 誕生日特典 - 誕生月に提供される特別サービス
+ * return: 返品 - 仕入先への返品または顧客からの返品による増減
  *
- * exclusive_access: 特別アクセス権 - VIP専用メニューや特別イベントへの参加権
+ * disposal: 廃棄 - 期限切れや破損による廃棄
+ *
+ * transfer: 移動 - ほかの保管場所・店舗との間の移動による増減
  */
-export const MembershipBenefitTypeSchema = z.enum([
-  'discount_rate',
-  'point_multiplier',
-  'priority_booking',
-  'free_service',
-  'birthday_special',
-  'exclusive_access'
-])
+export const InventoryTransactionTypeSchema = z.enum(['purchase', 'sale', 'use', 'adjustment', 'return', 'disposal', 'transfer'])
 /**
  * @description
- * 会員特典タイプ区分 - 会員ランクに応じて提供される特典の種類
+ * 在庫移動種別区分 - 在庫数を増減させた操作の種類を表す区分
  *
  *
- * discount_rate: 割引率 - サービス料金に対するパーセンテージ割引
+ * purchase: 仕入 - 仕入先から商品を受け入れた入庫
  *
- * point_multiplier: ポイント倍率 - 通常のポイント付与率に対する乗数
+ * sale: 販売 - 顧客への店頭販売による出庫
  *
- * priority_booking: 優先予約 - 一般公開前の優先的な予約権利
+ * use: 施術使用 - 施術の材料として消費した出庫
  *
- * free_service: 無料サービス - 特定サービスの無料提供
+ * adjustment: 調整 - 棚卸差異や破損などの補正による増減
  *
- * birthday_special: 誕生日特典 - 誕生月に提供される特別サービス
+ * return: 返品 - 仕入先への返品または顧客からの返品による増減
  *
- * exclusive_access: 特別アクセス権 - VIP専用メニューや特別イベントへの参加権
+ * disposal: 廃棄 - 期限切れや破損による廃棄
+ *
+ * transfer: 移動 - ほかの保管場所・店舗との間の移動による増減
  */
-export type MembershipBenefitType = z.infer<typeof MembershipBenefitTypeSchema>
+export type InventoryTransactionType = z.infer<typeof InventoryTransactionTypeSchema>
 
 /**
  * @description
@@ -768,35 +757,6 @@ export const MembershipTierTypeSchema = z.enum(['regular', 'silver', 'gold', 'pl
  * vip: VIP会員 - 特別会員、完全カスタマイズされた特別待遇を提供
  */
 export type MembershipTierType = z.infer<typeof MembershipTierTypeSchema>
-
-/**
- * @description
- * 通知タイプ区分 - 顧客への通知・連絡手段の種類
- *
- *
- * email: Eメール - 電子メールによる通知
- *
- * sms: SMS - ショートメッセージサービスによる通知
- *
- * push: プッシュ通知 - モバイルアプリのプッシュ通知
- *
- * line: LINE - LINEメッセージングサービスによる通知
- */
-export const NotificationTypeSchema = z.enum(['email', 'sms', 'push', 'line'])
-/**
- * @description
- * 通知タイプ区分 - 顧客への通知・連絡手段の種類
- *
- *
- * email: Eメール - 電子メールによる通知
- *
- * sms: SMS - ショートメッセージサービスによる通知
- *
- * push: プッシュ通知 - モバイルアプリのプッシュ通知
- *
- * line: LINE - LINEメッセージングサービスによる通知
- */
-export type NotificationType = z.infer<typeof NotificationTypeSchema>
 
 /**
  * @description
@@ -838,31 +798,6 @@ export const OrderStatusTypeSchema = z.enum(['draft', 'pending', 'approved', 'or
  * cancelled: キャンセル - 発注が取り消された状態
  */
 export type OrderStatusType = z.infer<typeof OrderStatusTypeSchema>
-
-/**
- * @description
- * パスワードリセット状態区分 - パスワードリセットの進行状態を表す区分
- *
- *
- * none: なし - パスワードリセットが要求されていない状態
- *
- * requested: リクエスト中 - パスワードリセットが要求された状態
- *
- * completed: 完了 - パスワードリセットが完了した状態
- */
-export const PasswordResetStateTypeSchema = z.enum(['none', 'requested', 'completed'])
-/**
- * @description
- * パスワードリセット状態区分 - パスワードリセットの進行状態を表す区分
- *
- *
- * none: なし - パスワードリセットが要求されていない状態
- *
- * requested: リクエスト中 - パスワードリセットが要求された状態
- *
- * completed: 完了 - パスワードリセットが完了した状態
- */
-export type PasswordResetStateType = z.infer<typeof PasswordResetStateTypeSchema>
 
 /**
  * @description
@@ -915,7 +850,7 @@ export type PaymentMethodType = z.infer<typeof PaymentMethodTypeSchema>
 
 /**
  * @description
- * 支払いステータス区分 - 決済処理の進行状態を表す区分
+ * 支払いステータス区分 - 決済取引(payment_transactions.status)と売上(sales.paymentStatus)の支払いの進行状態を表す区分
  *
  *
  * pending: 支払い待ち - 支払いが開始されたがまだ完了していない状態
@@ -930,10 +865,10 @@ export type PaymentMethodType = z.infer<typeof PaymentMethodTypeSchema>
  *
  * partial_refund: 部分返金 - 一部金額の返金が完了した状態
  */
-export const PaymentStatusCodeTypeSchema = z.enum(['pending', 'processing', 'completed', 'failed', 'refunded', 'partial_refund'])
+export const PaymentStatusTypeSchema = z.enum(['pending', 'processing', 'completed', 'failed', 'refunded', 'partial_refund'])
 /**
  * @description
- * 支払いステータス区分 - 決済処理の進行状態を表す区分
+ * 支払いステータス区分 - 決済取引(payment_transactions.status)と売上(sales.paymentStatus)の支払いの進行状態を表す区分
  *
  *
  * pending: 支払い待ち - 支払いが開始されたがまだ完了していない状態
@@ -948,7 +883,65 @@ export const PaymentStatusCodeTypeSchema = z.enum(['pending', 'processing', 'com
  *
  * partial_refund: 部分返金 - 一部金額の返金が完了した状態
  */
-export type PaymentStatusCodeType = z.infer<typeof PaymentStatusCodeTypeSchema>
+export type PaymentStatusType = z.infer<typeof PaymentStatusTypeSchema>
+
+/**
+ * @description
+ * 権限適用範囲区分 - 権限が及ぶデータの範囲を表す
+ *
+ *
+ * own: 本人 - 操作するユーザー自身に関係するデータだけに適用される
+ *
+ * salon: サロン - 対象サロンのデータに適用される
+ *
+ * all: 全体 - すべてのサロンのデータに適用される
+ */
+export const PermissionScopeTypeSchema = z.enum(['own', 'salon', 'all'])
+/**
+ * @description
+ * 権限適用範囲区分 - 権限が及ぶデータの範囲を表す
+ *
+ *
+ * own: 本人 - 操作するユーザー自身に関係するデータだけに適用される
+ *
+ * salon: サロン - 対象サロンのデータに適用される
+ *
+ * all: 全体 - すべてのサロンのデータに適用される
+ */
+export type PermissionScopeType = z.infer<typeof PermissionScopeTypeSchema>
+
+/**
+ * @description
+ * ポイント取引種別区分 - 顧客ポイントの増減(customer_points の1行)の種類
+ *
+ *
+ * earned: 獲得 - 来店や購入などでポイントを付与した取引
+ *
+ * used: 利用 - 支払いなどでポイントを使用した取引
+ *
+ * expired: 失効 - 有効期限を過ぎたポイントを失効させた取引
+ *
+ * adjusted: 調整 - スタッフが手動でポイントを増減した取引
+ *
+ * transferred: 移行 - 別の顧客との間でポイントを移した取引
+ */
+export const PointTransactionTypeSchema = z.enum(['earned', 'used', 'expired', 'adjusted', 'transferred'])
+/**
+ * @description
+ * ポイント取引種別区分 - 顧客ポイントの増減(customer_points の1行)の種類
+ *
+ *
+ * earned: 獲得 - 来店や購入などでポイントを付与した取引
+ *
+ * used: 利用 - 支払いなどでポイントを使用した取引
+ *
+ * expired: 失効 - 有効期限を過ぎたポイントを失効させた取引
+ *
+ * adjusted: 調整 - スタッフが手動でポイントを増減した取引
+ *
+ * transferred: 移行 - 別の顧客との間でポイントを移した取引
+ */
+export type PointTransactionType = z.infer<typeof PointTransactionTypeSchema>
 
 /**
  * @description
@@ -985,70 +978,53 @@ export type PricingStrategyType = z.infer<typeof PricingStrategyTypeSchema>
 
 /**
  * @description
- * リマインダータイミング区分 - 予約リマインダーを送信するタイミングの設定
+ * レビュー並び順区分 - レビュー一覧の並び順を表す
  *
  *
- * one_day_before: 1日前 - 予約日の24時間前に通知
+ * recent: 新着順 - 投稿日時(createdAt)の新しい順
  *
- * three_hours_before: 3時間前 - 予約時刻の3時間前に通知
+ * rating: 評価順 - 総合評価(overallRating)の高い順
  *
- * one_hour_before: 1時間前 - 予約時刻の1時間前に通知
- *
- * thirty_minutes_before: 30分前 - 予約時刻の30分前に通知
+ * helpful: 参考になった順 - 参考になった数(helpfulCount)の多い順
  */
-export const ReminderTimingTypeSchema = z.enum([
-  'one_day_before',
-  'three_hours_before',
-  'one_hour_before',
-  'thirty_minutes_before'
-])
+export const ReviewSortTypeSchema = z.enum(['recent', 'rating', 'helpful'])
 /**
  * @description
- * リマインダータイミング区分 - 予約リマインダーを送信するタイミングの設定
+ * レビュー並び順区分 - レビュー一覧の並び順を表す
  *
  *
- * one_day_before: 1日前 - 予約日の24時間前に通知
+ * recent: 新着順 - 投稿日時(createdAt)の新しい順
  *
- * three_hours_before: 3時間前 - 予約時刻の3時間前に通知
+ * rating: 評価順 - 総合評価(overallRating)の高い順
  *
- * one_hour_before: 1時間前 - 予約時刻の1時間前に通知
- *
- * thirty_minutes_before: 30分前 - 予約時刻の30分前に通知
+ * helpful: 参考になった順 - 参考になった数(helpfulCount)の多い順
  */
-export type ReminderTimingType = z.infer<typeof ReminderTimingTypeSchema>
+export type ReviewSortType = z.infer<typeof ReviewSortTypeSchema>
 
 /**
  * @description
- * 予約ステータス区分 - 予約の進行状態を表す状態定義
+ * 売上レポート出力形式区分 - 売上レポートを出力するファイルの形式
  *
  *
- * pending: 保留中 - 予約申込を受け付けたが、まだ確定していない状態
+ * csv: CSV - カンマ区切りのテキストファイル
  *
- * confirmed: 確定済み - サロン側で予約が承認・確定された状態
+ * excel: Excel - Excel のブック
  *
- * cancelled: キャンセル済み - 顧客またはサロン側により予約が取り消された状態
- *
- * completed: 完了 - 予約された施術が実施され、サービス提供が完了した状態
- *
- * no_show: 無断キャンセル - 顧客が事前連絡なしに来店しなかった状態
+ * pdf: PDF - 印刷・配布用の PDF ファイル
  */
-export const ReservationStatusTypeSchema = z.enum(['pending', 'confirmed', 'cancelled', 'completed', 'no_show'])
+export const SalesReportExportFormatTypeSchema = z.enum(['csv', 'excel', 'pdf'])
 /**
  * @description
- * 予約ステータス区分 - 予約の進行状態を表す状態定義
+ * 売上レポート出力形式区分 - 売上レポートを出力するファイルの形式
  *
  *
- * pending: 保留中 - 予約申込を受け付けたが、まだ確定していない状態
+ * csv: CSV - カンマ区切りのテキストファイル
  *
- * confirmed: 確定済み - サロン側で予約が承認・確定された状態
+ * excel: Excel - Excel のブック
  *
- * cancelled: キャンセル済み - 顧客またはサロン側により予約が取り消された状態
- *
- * completed: 完了 - 予約された施術が実施され、サービス提供が完了した状態
- *
- * no_show: 無断キャンセル - 顧客が事前連絡なしに来店しなかった状態
+ * pdf: PDF - 印刷・配布用の PDF ファイル
  */
-export type ReservationStatusType = z.infer<typeof ReservationStatusTypeSchema>
+export type SalesReportExportFormatType = z.infer<typeof SalesReportExportFormatTypeSchema>
 
 /**
  * @description
@@ -1062,6 +1038,8 @@ export type ReservationStatusType = z.infer<typeof ReservationStatusTypeSchema>
  * oily: 脂性 - 皮脂分泌が多い頭皮、洗浄力のあるケアが必要
  *
  * sensitive: 敏感 - 刺激に弱い頭皮、低刺激の製品使用が必要
+ *
+ * dandruff: フケ - フケが出やすい頭皮、フケ対策のケアが必要
  */
 export const ScalpConditionTypeSchema = z.enum(['normal', 'dry', 'oily', 'sensitive', 'dandruff'])
 /**
@@ -1076,6 +1054,8 @@ export const ScalpConditionTypeSchema = z.enum(['normal', 'dry', 'oily', 'sensit
  * oily: 脂性 - 皮脂分泌が多い頭皮、洗浄力のあるケアが必要
  *
  * sensitive: 敏感 - 刺激に弱い頭皮、低刺激の製品使用が必要
+ *
+ * dandruff: フケ - フケが出やすい頭皮、フケ対策のケアが必要
  */
 export type ScalpConditionType = z.infer<typeof ScalpConditionTypeSchema>
 
@@ -1250,60 +1230,6 @@ export type StaffLevelType = z.infer<typeof StaffLevelTypeSchema>
 
 /**
  * @description
- * システムロールタイプ区分 - システムで事前定義されたロールの種類
- *
- *
- * super_admin: スーパー管理者 - システム全体へのフルアクセス権限
- *
- * salon_owner: サロンオーナー - サロン全体へのフルアクセス権限
- *
- * salon_manager: サロンマネージャー - サロンの管理業務権限
- *
- * senior_staff: シニアスタッフ - 上級スタイリスト・セラピストの権限
- *
- * staff: スタッフ - 一般スタッフの権限
- *
- * receptionist: 受付 - フロントデスク業務の権限
- *
- * customer: 顧客 - 顧客セルフサービスの権限
- *
- * guest: ゲスト - 限定的なゲストアクセス権限
- */
-export const SystemRoleTypeSchema = z.enum([
-  'super_admin',
-  'salon_owner',
-  'salon_manager',
-  'senior_staff',
-  'staff',
-  'receptionist',
-  'customer',
-  'guest'
-])
-/**
- * @description
- * システムロールタイプ区分 - システムで事前定義されたロールの種類
- *
- *
- * super_admin: スーパー管理者 - システム全体へのフルアクセス権限
- *
- * salon_owner: サロンオーナー - サロン全体へのフルアクセス権限
- *
- * salon_manager: サロンマネージャー - サロンの管理業務権限
- *
- * senior_staff: シニアスタッフ - 上級スタイリスト・セラピストの権限
- *
- * staff: スタッフ - 一般スタッフの権限
- *
- * receptionist: 受付 - フロントデスク業務の権限
- *
- * customer: 顧客 - 顧客セルフサービスの権限
- *
- * guest: ゲスト - 限定的なゲストアクセス権限
- */
-export type SystemRoleType = z.infer<typeof SystemRoleTypeSchema>
-
-/**
- * @description
  * 施術タイプ区分 - サロンで提供される具体的な施術の種類
  *
  *
@@ -1400,13 +1326,15 @@ export type TwoFactorStatusType = z.infer<typeof TwoFactorStatusTypeSchema>
  *
  * unverified: メール未確認 - メールアドレスが確認されていないアカウント
  *
+ * inactive: 非アクティブ - 利用が休止されているアカウント
+ *
  * locked: ロック - ログイン失敗回数超過によりロックされたアカウント
  *
  * suspended: 停止 - 管理者によって停止されたアカウント
  *
  * deleted: 削除済み - 削除されたアカウント
  */
-export const UserAccountStatusTypeSchema = z.enum(['active', 'unverified', 'locked', 'suspended', 'deleted'])
+export const UserAccountStatusTypeSchema = z.enum(['active', 'unverified', 'inactive', 'locked', 'suspended', 'deleted'])
 /**
  * @description
  * ユーザーアカウントステータス区分 - アカウントの利用可否状態
@@ -1415,6 +1343,8 @@ export const UserAccountStatusTypeSchema = z.enum(['active', 'unverified', 'lock
  * active: アクティブ - 正常に利用可能なアカウント
  *
  * unverified: メール未確認 - メールアドレスが確認されていないアカウント
+ *
+ * inactive: 非アクティブ - 利用が休止されているアカウント
  *
  * locked: ロック - ログイン失敗回数超過によりロックされたアカウント
  *

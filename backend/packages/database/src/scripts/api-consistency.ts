@@ -64,7 +64,7 @@ export type Finding = { model: string; property: string; kind: FindingKind }
 const compareText = (left: string, right: string): number =>
   Number(left > right) - Number(left < right)
 
-/** Stable text form of a finding, used as its identity in the baseline. */
+/** Text form of a finding, used to report findings in a stable order. */
 const formatFinding = (finding: Finding): string =>
   `${finding.kind}:${finding.property}`
 
@@ -142,52 +142,6 @@ export const compareModel = (
   return findings.toSorted((left, right) =>
     compareText(formatFinding(left), formatFinding(right)),
   )
-}
-
-/** Findings accepted for now, as `formatFinding` texts keyed by model. */
-export type Baseline = Readonly<Record<string, readonly string[]>>
-
-export type BaselineComparison = {
-  /** Findings that are not in the baseline: new inconsistencies. */
-  unexpected: Finding[]
-  /** Baseline entries that no longer occur and must be removed from it. */
-  resolved: { model: string; entry: string }[]
-}
-
-export const toBaseline = (findings: readonly Finding[]): Baseline => {
-  const grouped = Map.groupBy(findings, (finding) => finding.model)
-  return Object.fromEntries(
-    [...grouped]
-      .toSorted(([left], [right]) => compareText(left, right))
-      .map(([model, modelFindings]) => [
-        model,
-        modelFindings.map(formatFinding).toSorted(compareText),
-      ]),
-  )
-}
-
-export const compareWithBaseline = (
-  findings: readonly Finding[],
-  baseline: Baseline,
-): BaselineComparison => {
-  const accepted = new Set(
-    Object.entries(baseline).flatMap(([model, entries]) =>
-      entries.map((entry) => `${model}|${entry}`),
-    ),
-  )
-  const found = new Set(
-    findings.map((finding) => `${finding.model}|${formatFinding(finding)}`),
-  )
-  return {
-    unexpected: findings.filter(
-      (finding) => !accepted.has(`${finding.model}|${formatFinding(finding)}`),
-    ),
-    resolved: Object.entries(baseline).flatMap(([model, entries]) =>
-      entries
-        .filter((entry) => !found.has(`${model}|${entry}`))
-        .map((entry) => ({ model, entry })),
-    ),
-  }
 }
 
 /** The parts of an OpenAPI 3.0 schema object that the comparison reads. */
