@@ -2,7 +2,6 @@
 # workflows that have no pnpm equivalent. `make help` lists every target.
 
 COMPOSE := docker compose
-INFRA_SERVICES := postgres mailhog minio minio-init
 
 # Node environment for each build flavour (used by backend-start-<env>)
 NODE_ENV_dev := development
@@ -41,10 +40,10 @@ backend-build: ## Generate types and build the backend
 	pnpm generate
 	pnpm build:backend
 
-backend-start: infra-up ## Start the built backend against the local services
+backend-start: infra-up ## Start the built backend against the local database
 	pnpm start:backend
 
-backend-dev: infra-up ## Start the backend in watch mode against the local services
+backend-dev: infra-up ## Start the backend in watch mode against the local database
 	pnpm dev:backend
 
 frontend-build: ## Generate the API client and build the frontend
@@ -137,13 +136,12 @@ db-check: ## Verify schema.ts, relations.ts and setup.sql agree (recreates the d
 
 ## Local services (Docker Compose)
 .PHONY: infra-up docker-up docker-down docker-build docker-logs docker-clean
-infra-up: ## Start PostgreSQL, MailHog and MinIO and wait for the database
-	$(COMPOSE) up -d $(INFRA_SERVICES)
+infra-up: ## Start PostgreSQL and wait until it accepts connections
 	$(COMPOSE) up -d --wait postgres
 
 docker-up: ## Start every service, including the backend container (migrates the database, keeps its data)
 	$(COMPOSE) up -d
-	@echo "Backend: http://localhost:3000  MailHog: http://localhost:8025  MinIO: http://localhost:9001"
+	@echo "Backend: http://localhost:3000"
 
 docker-down: ## Stop all services
 	$(COMPOSE) down

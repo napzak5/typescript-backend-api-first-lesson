@@ -38,7 +38,7 @@ Before relying on anything, check this table.
 | System endpoints (`/api/system`) | Implemented: `alive`, `ready` and `health`. |
 | Other domains (auth, staff, service, customer, reservation, booking, review, attachment, treatment, payment, inventory, permission) | Specified in TypeSpec, so their generated types exist, and the database schema already has tables and seed data for most of them. There is no domain, repository or route code. A request to one of these routes is answered with 404. Tracked in GitHub issue #91. |
 | Authentication and authorization | Not implemented. The OpenAPI document declares bearer authentication for every operation, but the server does not check it. |
-| Email, file storage | Not implemented. `make infra-up` starts MailHog and MinIO next to PostgreSQL, but the server uses neither. |
+| Email, file storage | Not implemented. Docker Compose starts no service for them. |
 | Frontend | Three application shells and shared packages. The API client is generated, but no application calls the API yet. See [Frontend](#frontend). |
 
 ## Architecture Principles

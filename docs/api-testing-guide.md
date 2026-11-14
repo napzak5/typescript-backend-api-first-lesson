@@ -52,6 +52,17 @@ The integration tests need a PostgreSQL. There are two ways to give them one.
 **Docker running, nothing set.** The setup starts a `postgres:18-alpine`
 container through testcontainers and stops it afterwards.
 
+Testcontainers finds Docker Desktop by itself. Another runtime has to be
+named, or the run ends with `Could not find a working container runtime
+strategy`. For Colima, the
+[testcontainers documentation](https://node.testcontainers.org/supported-container-runtimes/)
+gives these two variables:
+
+```bash
+export DOCKER_HOST=unix://${HOME}/.colima/default/docker.sock
+export TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock
+```
+
 **`TEST_DATABASE_URL` set.** The setup uses that database and starts no
 container:
 

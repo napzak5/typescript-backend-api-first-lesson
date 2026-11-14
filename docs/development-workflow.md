@@ -32,7 +32,7 @@
 
 ```bash
 pnpm install        # 依存関係をインストールする。husky の pre-commit フックも設定される
-make infra-up       # PostgreSQL・MailHog・MinIO を Docker で起動し、DB の準備を待つ
+make infra-up       # PostgreSQL を Docker で起動し、接続できるようになるまで待つ
 pnpm db:fresh       # sql/setup.sql からスキーマを作成する
 pnpm db:seed        # サンプルデータを投入する（任意）
 pnpm dev            # バックエンド :3000、フロントエンド :3001〜3003
@@ -44,8 +44,7 @@ pnpm dev            # バックエンド :3000、フロントエンド :3001〜3
   `@beauty-salon-backend/source` によってワークスペースパッケージをソースから読みます。クローン直後でも
   動き、依存先のパッケージを変更してもビルドし直す必要はありません。
 - **`make infra-up` の PostgreSQL** は `docker-compose.yml` の既定値で起動し、`.env.localhost` の
-  `DATABASE_URL` はそれに合わせてあります。MailHog と MinIO も起動しますが、現在のアプリケーション
-  コードはどちらも使っていません。
+  `DATABASE_URL` はそれに合わせてあります。
 - **Docker を使わない場合**は、PostgreSQL 18 を用意し、シェルで `DATABASE_URL` を設定します
   （プロセスの環境変数は `.env` ファイルより優先されます）。
 
@@ -98,8 +97,6 @@ make docker-clean  # 停止してボリュームも削除する（データベ�
 | portal-app / admin-app / dashboard-app（`pnpm dev`、`pnpm preview:frontend`） | 3001 / 3002 / 3003 |
 | admin / portal / dashboard の Docker イメージ | 4001 / 4002 / 4003 |
 | PostgreSQL | 5432 |
-| MailHog（SMTP / Web UI） | 1025 / 8025 |
-| MinIO（API / コンソール） | 9000 / 9001 |
 
 ## TypeSpec を変更する
 
@@ -311,6 +308,6 @@ Dockerfile、`backend/`、`frontend/`、`specs/`、`shared-config/`、ロック�
 | バックエンドが `Invalid configuration` を出力して終了する | 環境変数が不足しているか不正。ログの `issues` に変数名と理由が並ぶ（[環境変数設定ガイド](./env-configuration.md)） |
 | バックエンドが `Cannot start: the database is unreachable` を出力して終了する | PostgreSQL が起動していないか、`DATABASE_URL` が違う。`make infra-up` で起動する |
 | フロントエンドの開発サーバーが起動しない | ポート 3001〜3003 が使用中。各アプリは決まったポートでしか起動しない（`strictPort`） |
-| `pnpm test:integration` がコンテナを起動できない | Docker が起動していない。起動するか、`TEST_DATABASE_URL` に既存の PostgreSQL を指定する |
+| `pnpm test:integration` がコンテナを起動できない | Docker が起動していない。起動するか、`TEST_DATABASE_URL` に既存の PostgreSQL を指定する。Docker Desktop 以外（Colima など）では、ソケットの場所を環境変数で指定する（[API テストガイド](./api-testing-guide.md#running)） |
 | 生成された型と実装が合わない | `pnpm generate` を実行する |
 | ビルド成果物や `node_modules` が壊れている | `pnpm clean` でビルド成果物を削除する。`pnpm fresh` はビルド成果物と `node_modules` を削除して再インストールする |
