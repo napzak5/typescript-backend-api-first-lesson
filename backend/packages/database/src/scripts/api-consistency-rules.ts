@@ -443,13 +443,52 @@ const reviewRules: ModelRule[] = [
   },
 ]
 
-/** Inventory and products. */
+/**
+ * Columns of `inventory` that a request never writes. The stock levels and
+ * the last count change only through stock movements and stock counts.
+ */
+const inventoryManagedColumns = [
+  'id',
+  'currentStock',
+  'availableStock',
+  'reservedStock',
+  'lastCountedAt',
+  'lastCountedBy',
+  'createdAt',
+  'updatedAt',
+]
+
+/**
+ * Inventory (the stock of a product at a salon) and its stock movements.
+ * `products` has no API model: no operation creates or returns product rows.
+ * Stock movements are written by actions (movement, stock count, receiving a
+ * purchase order), so `inventoryTransactions` has only a response model.
+ */
 const inventoryRules: ModelRule[] = [
-  { model: 'Models.InventoryItem', table: 'inventory', kind: 'response' },
   {
-    model: 'Models.InventoryTransaction',
+    model: 'Models.InventoryResponse',
+    table: 'inventory',
+    kind: 'response',
+    omittedColumns: [],
+  },
+  {
+    model: 'Models.InventoryCreateRequest',
+    table: 'inventory',
+    kind: 'create',
+    omittedColumns: inventoryManagedColumns,
+  },
+  {
+    model: 'Models.InventoryUpdateRequest',
+    table: 'inventory',
+    kind: 'update',
+    // A stock row does not move to another salon or product.
+    omittedColumns: [...inventoryManagedColumns, 'salonId', 'productId'],
+  },
+  {
+    model: 'Models.InventoryTransactionResponse',
     table: 'inventoryTransactions',
     kind: 'response',
+    omittedColumns: [],
   },
 ]
 
