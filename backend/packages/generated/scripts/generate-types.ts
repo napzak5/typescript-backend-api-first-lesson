@@ -1,313 +1,157 @@
 #!/usr/bin/env tsx
 
 import { execSync } from 'node:child_process'
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { parse } from 'yaml'
+import { z } from 'zod'
 
-const __dirname = dirname(fileURLToPath(import.meta.url))
+const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
+const openApiPath = resolve(
+  packageRoot,
+  '../../../specs/tsp-output/@typespec/openapi3/generated/openapi.yaml',
+)
+const outputDir = join(packageRoot, 'src')
+const tempOutput = join(outputDir, 'api-types-temp.ts')
 
-// Configuration
-const CONFIG = {
-  openApiPath: resolve(
-    __dirname,
-    '../../../../specs/tsp-output/@typespec/openapi3/generated/openapi.yaml',
-  ),
-  outputDir: resolve(__dirname, '../src'),
-  tempFile: 'api-types-temp.ts',
+/** The part of the OpenAPI document that this script reads itself. */
+const documentSchema = z.object({
+  components: z.object({
+    schemas: z.record(z.string(), z.unknown()),
+  }),
+})
+
+/** A string enum among `components.schemas`. */
+const stringEnumSchema = z.object({
+  type: z.literal('string'),
+  enum: z.array(z.string()),
+  description: z.string().optional(),
+})
+
+type StringEnum = {
+  /** Name of the schema without the `Models.` prefix. */
+  name: string
+  values: string[]
+  description: string | undefined
 }
 
-/**
- * Main type generation function using openapi-typescript
- */
-async function generateTypesFromOpenAPI(): Promise<void> {
-  const { openApiPath, outputDir, tempFile } = CONFIG
-  const tempOutput = join(outputDir, tempFile)
-
-  // Ensure OpenAPI file exists
-  if (!existsSync(openApiPath)) {
-    console.error(`❌ OpenAPI file not found at: ${openApiPath}`)
-    console.error('Please run "pnpm generate:spec" first')
+const readStringEnums = (): StringEnum[] => {
+  const document = documentSchema.safeParse(
+    parse(readFileSync(openApiPath, 'utf-8')),
+  )
+  if (!document.success) {
+    console.error(`❌ Unexpected OpenAPI document at: ${openApiPath}`)
+    console.error(z.prettifyError(document.error))
     process.exit(1)
   }
 
-  // Create output directory
-  mkdirSync(outputDir, { recursive: true })
-
-  console.log('🔧 Generating types from OpenAPI specification...')
-  console.log(`📄 Input: ${openApiPath}`)
-  console.log(`📁 Output: ${outputDir}`)
-
-  // Generate types using openapi-typescript CLI
-  try {
-    execSync(`npx openapi-typescript "${openApiPath}" -o "${tempOutput}"`, {
-      stdio: 'inherit',
-      cwd: dirname(__dirname), // Run from package root
-    })
-  } catch (error) {
-    console.error('❌ Failed to generate types:', error)
-    process.exit(1)
-  }
-
-  // Read and enhance generated types
-  const baseTypes = readFileSync(tempOutput, 'utf-8')
-
-  // Create final api-types.ts directly in src/
-  const apiTypesContent = createApiTypesFile(baseTypes)
-  writeFileSync(join(outputDir, 'api-types.ts'), apiTypesContent)
-
-  // Generate additional files
-  await generateAdditionalFiles(openApiPath, outputDir)
-
-  // Clean up temp file
-  try {
-    const fs = await import('node:fs/promises')
-    await fs.unlink(tempOutput)
-  } catch {
-    // Ignore cleanup errors
-  }
-
-  // Create index file
-  createIndexFile(outputDir)
-
-  console.log('✅ Type generation complete!')
-  console.log(`📦 Generated files in: ${outputDir}`)
-  console.log('  - api-types.ts')
-  console.log('  - schema.ts')
-  console.log('  - index.ts')
+  return Object.entries(document.data.components.schemas).flatMap(
+    ([key, schema]) => {
+      const stringEnum = stringEnumSchema.safeParse(schema)
+      return stringEnum.success
+        ? [
+            {
+              name: key.split('.').pop() ?? key,
+              values: stringEnum.data.enum,
+              description: stringEnum.data.description,
+            },
+          ]
+        : []
+    },
+  )
 }
 
 /**
- * Create the main api-types.ts file with enhanced JSDoc comments
+ * Lays out an enum description for the hover text of an editor: the lines
+ * that describe a value (`value: text`) are separated by an empty line, and
+ * the first of them from the heading by two.
  */
-function createApiTypesFile(baseTypes: string): string {
-  // Read OpenAPI to get enum descriptions
-  const openApiContent = readFileSync(CONFIG.openApiPath, 'utf-8')
-  const openApi = parse(openApiContent)
-  const schemas = openApi.components?.schemas ?? {}
+const formatEnumDescription = (description: string): string => {
+  const lines = description
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line !== '')
 
-  // Extract enum descriptions
-  const enumDescriptions = new Map<string, string>()
-  for (const [key, schema] of Object.entries(schemas)) {
-    const name = key.split('.').pop() ?? key
-    if (
-      // biome-ignore lint/suspicious/noExplicitAny: OpenAPI schema objects from YAML parsing have complex types
-      (schema as any).type === 'string' &&
-      // biome-ignore lint/suspicious/noExplicitAny: Accessing dynamic properties from parsed YAML
-      (schema as any).enum &&
-      // biome-ignore lint/suspicious/noExplicitAny: Schema description from dynamic YAML structure
-      (schema as any).description
-    ) {
-      // biome-ignore lint/suspicious/noExplicitAny: Accessing dynamic properties from parsed YAML
-      enumDescriptions.set(name, (schema as any).description)
+  const formatted: string[] = []
+  let inHeading = true
+  for (const line of lines) {
+    if (/^[A-Za-z0-9_]+:/.test(line)) {
+      formatted.push(...(inHeading ? ['', ''] : ['']))
+      inHeading = false
     }
+    formatted.push(line)
   }
 
-  // Process base types to enhance JSDoc comments for enums
-  let processedTypes = baseTypes
+  return formatted.join('\n')
+}
 
-  // Replace existing enum JSDoc comments with properly formatted ones
-  for (const [enumName, description] of enumDescriptions) {
-    // Format description for JSDoc with proper line breaks
-    const formattedDescription = formatEnumDescription(description)
+/** The `@description` lines of a JSDoc comment, each starting with `indent`. */
+const descriptionLines = (description: string, indent: string): string =>
+  [
+    `${indent} * @description\n`,
+    ...formatEnumDescription(description)
+      .split('\n')
+      .map((line) => (line === '' ? `${indent} *\n` : `${indent} * ${line}\n`)),
+  ].join('')
 
-    // Create the full enum name as it appears in the generated types
-    const fullEnumName = `"Models.${enumName}"`
+/**
+ * `api-types.ts`: the output of openapi-typescript, with the JSDoc of every
+ * described enum replaced by one that puts each value on a line of its own.
+ */
+const apiTypesFile = (baseTypes: string, enums: StringEnum[]): string => {
+  const types = enums.reduce((result, { name, description }) => {
+    if (description === undefined || description === '') {
+      return result
+    }
 
-    // Create a regex to match the JSDoc comment followed by the enum definition
-    // This will match:
-    // /**
-    //  * @description ...
-    //  * @enum {string}
-    //  */
-    // "Models.EnumName": ...
-    const enumRegex = new RegExp(
-      `(\\s*)/\\*\\*[^*]*\\*+(?:[^/*][^*]*\\*+)*/\\s*${fullEnumName.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}:`,
+    const property = `"Models.${name}"`
+    const documentedProperty = new RegExp(
+      `(\\s*)/\\*\\*[^*]*\\*+(?:[^/*][^*]*\\*+)*/\\s*${property.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}:`,
       'gm',
     )
 
-    processedTypes = processedTypes.replace(enumRegex, (_match, indent) => {
-      // Extract just the enum definition part (after the colon)
-      const enumDefinition = `${fullEnumName}:`
-
-      // Build the new JSDoc comment with proper formatting
-      const docLines = formattedDescription.split('\n')
-      let jsdocComment = `${indent}/**\n`
-      jsdocComment += `${indent} * @description\n`
-
-      for (const line of docLines) {
-        if (line === '') {
-          jsdocComment += `${indent} *\n`
-        } else {
-          jsdocComment += `${indent} * ${line}\n`
-        }
-      }
-
-      jsdocComment += `${indent} * @enum {string}\n`
-      jsdocComment += `${indent} */\n`
-      jsdocComment += `${indent}${enumDefinition}`
-
-      return jsdocComment
-    })
-  }
+    return result.replace(
+      documentedProperty,
+      (_match: string, indent: string) =>
+        `${indent}/**\n${descriptionLines(description, indent)}${indent} * @enum {string}\n${indent} */\n${indent}${property}:`,
+    )
+  }, baseTypes)
 
   return `// Generated from TypeSpec/OpenAPI using openapi-typescript
 // DO NOT EDIT MANUALLY
 
 // Base types from OpenAPI
-${processedTypes}
+${types}
 `
 }
 
-/**
- * Generate additional supporting files
- */
-async function generateAdditionalFiles(
-  openApiPath: string,
-  outputDir: string,
-): Promise<void> {
-  const openApiContent = readFileSync(openApiPath, 'utf-8')
-  const openApi = parse(openApiContent)
+/** A Zod schema and the type inferred from it, both with the enum's JSDoc. */
+const zodEnum = ({ name, values, description }: StringEnum): string => {
+  const jsDoc =
+    description === undefined || description === ''
+      ? ''
+      : `/**\n${descriptionLines(description, '')} */\n`
+  const inline = values.map((value) => `'${value}'`).join(', ')
+  const list =
+    inline.length > 80
+      ? `[\n${values.map((value) => `  '${value}'`).join(',\n')}\n]`
+      : `[${inline}]`
 
-  // Generate Zod schemas for validation - output as schema.ts
-  const zodSchemas = generateZodSchemas(openApi)
-  writeFileSync(join(outputDir, 'schema.ts'), zodSchemas)
-
-  // NOTE: Removed brand-helpers.ts generation - completely unused
-  // Domain package has its own brand implementation
+  return `${jsDoc}export const ${name}Schema = z.enum(${list})\n${jsDoc}export type ${name} = z.infer<typeof ${name}Schema>\n\n`
 }
 
-/**
- * Format enum description for JSDoc comments
- * Ensures proper line breaks for VSCode hover display
- */
-function formatEnumDescription(description: string): string {
-  // Split by newlines to preserve formatting
-  const lines = description
-    .split('\n')
-    .map((line) => line.trim())
-    .filter(Boolean)
+/** `schema.ts`: a Zod schema for every string enum of the document. */
+const schemaFile = (enums: StringEnum[]): string =>
+  `import { z } from 'zod'\n\n${enums.map(zodEnum).join('')}`
 
-  // Find lines with key:value format and add proper spacing
-  const formattedLines: string[] = []
-  let isHeaderSection = true
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i]
-
-    if (line) {
-      // Check if this line contains an enum value description (has colon after a key)
-      // Pattern: "KEY: description" or "number: description" or "lowercase_key: description"
-      if (line.match(/^[A-Za-z0-9_]+:|^\d+:/)) {
-        // We're now in the values section
-        if (isHeaderSection) {
-          // Add two empty lines after header before first value
-          formattedLines.push('')
-          formattedLines.push('')
-          isHeaderSection = false
-        } else {
-          // Add one empty line between each enum value
-          formattedLines.push('')
-        }
-        formattedLines.push(line)
-      } else {
-        // Header or continuation lines
-        formattedLines.push(line)
-      }
-    }
-  }
-
-  return formattedLines.join('\n')
-}
-
-/**
- * Generate Zod validation schemas with JSDoc comments
- * NOTE: Removed unused schemas per YAGNI principle
- * - Brand ID schemas: domain has its own brand implementation
- * - Common schemas: not used anywhere in codebase
- * Only keeping enum schemas that are generated from OpenAPI
- */
-// biome-ignore lint/suspicious/noExplicitAny: OpenAPI spec from YAML parsing has dynamic structure
-function generateZodSchemas(openApi: any): string {
-  const schemas = openApi.components?.schemas ?? {}
-
-  let content = `import { z } from 'zod'
-
-`
-
-  // Generate enum schemas with JSDoc comments
-  for (const [key, schema] of Object.entries(schemas)) {
-    const name = key.split('.').pop() ?? key
-    // biome-ignore lint/suspicious/noExplicitAny: OpenAPI schema objects from YAML parsing have complex types
-    if ((schema as any).type === 'string' && (schema as any).enum) {
-      // biome-ignore lint/suspicious/noExplicitAny: Enum values from dynamic YAML structure
-      const enumValues = (schema as any).enum as string[]
-      // biome-ignore lint/suspicious/noExplicitAny: Description field from parsed schema
-      const description = (schema as any).description
-
-      // Add JSDoc comment for the Schema export
-      if (description) {
-        const formattedDescription = formatEnumDescription(description)
-        const docLines = formattedDescription.split('\n')
-
-        content += '/**\n'
-        content += ' * @description\n'
-        for (const line of docLines) {
-          // Preserve empty lines in JSDoc comments
-          if (line === '') {
-            content += ' *\n'
-          } else {
-            content += ` * ${line}\n`
-          }
-        }
-        content += ' */\n'
-      }
-
-      // Generate schema
-      const enumValuesFormatted = enumValues.map((v) => `'${v}'`).join(', ')
-
-      // Split long enum arrays across multiple lines for readability
-      if (enumValuesFormatted.length > 80) {
-        const formattedValues = enumValues.map((v) => `  '${v}'`).join(',\n')
-        content += `export const ${name}Schema = z.enum([\n${formattedValues}\n])\n`
-      } else {
-        content += `export const ${name}Schema = z.enum([${enumValuesFormatted}])\n`
-      }
-
-      // Add the same JSDoc comment for the Type export
-      if (description) {
-        const formattedDescription = formatEnumDescription(description)
-        const docLines = formattedDescription.split('\n')
-
-        content += '/**\n'
-        content += ' * @description\n'
-        for (const line of docLines) {
-          // Preserve empty lines in JSDoc comments
-          if (line === '') {
-            content += ' *\n'
-          } else {
-            content += ` * ${line}\n`
-          }
-        }
-        content += ' */\n'
-      }
-
-      content += `export type ${name} = z.infer<typeof ${name}Schema>\n\n`
-    }
-  }
-
-  return content
-}
-
-// Removed generateBrandHelpers function - completely unused
-// Domain package has its own brand implementation
-
-/**
- * Create index file for clean exports
- */
-function createIndexFile(outputDir: string): void {
-  const indexContent = `// Generated from TypeSpec/OpenAPI
+const indexFile = `// Generated from TypeSpec/OpenAPI
 // DO NOT EDIT MANUALLY
 
 // Main API types and utilities
@@ -317,15 +161,40 @@ export * from './api-types';
 export * from './schema';
 `
 
-  writeFileSync(join(outputDir, 'index.ts'), indexContent)
+if (!existsSync(openApiPath)) {
+  console.error(`❌ OpenAPI file not found at: ${openApiPath}`)
+  console.error('Please run "pnpm generate:spec" first')
+  process.exit(1)
 }
 
-// Main execution
-if (import.meta.url === `file://${process.argv[1]}`) {
-  generateTypesFromOpenAPI().catch((error) => {
-    console.error('❌ Type generation failed:', error)
-    process.exit(1)
+mkdirSync(outputDir, { recursive: true })
+
+console.log('🔧 Generating types from OpenAPI specification...')
+console.log(`📄 Input: ${openApiPath}`)
+console.log(`📁 Output: ${outputDir}`)
+
+try {
+  execSync(`npx openapi-typescript "${openApiPath}" -o "${tempOutput}"`, {
+    stdio: 'inherit',
+    cwd: packageRoot,
   })
+} catch (error) {
+  console.error('❌ Failed to generate types:', error)
+  process.exit(1)
 }
 
-export { generateTypesFromOpenAPI }
+const enums = readStringEnums()
+
+writeFileSync(
+  join(outputDir, 'api-types.ts'),
+  apiTypesFile(readFileSync(tempOutput, 'utf-8'), enums),
+)
+rmSync(tempOutput, { force: true })
+writeFileSync(join(outputDir, 'schema.ts'), schemaFile(enums))
+writeFileSync(join(outputDir, 'index.ts'), indexFile)
+
+console.log('✅ Type generation complete!')
+console.log(`📦 Generated files in: ${outputDir}`)
+console.log('  - api-types.ts')
+console.log('  - schema.ts')
+console.log('  - index.ts')

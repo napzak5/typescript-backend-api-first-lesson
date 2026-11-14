@@ -77,7 +77,8 @@ Package: `@beauty-salon-backend/generated` (`backend/packages/generated`).
 ```
 backend/packages/generated/
 ├── scripts/
-│   └── generate-types.ts   # the generator, run with tsx
+│   ├── generate-types.ts   # the generator, run with tsx
+│   └── tsconfig.json       # type-checks the generator (`pnpm typecheck`)
 ├── src/                    # generated, committed, never edited by hand
 │   ├── api-types.ts        # paths, components, operations
 │   ├── schema.ts           # one Zod schema and type per string enum
@@ -90,13 +91,15 @@ backend/packages/generated/
 
 1. stops with an error if the OpenAPI document does not exist;
 2. runs the `openapi-typescript` CLI (version 7) on the document;
-3. writes `src/api-types.ts`: the CLI output (`paths`, `components`,
+3. reads `components.schemas` of the document through a Zod schema, and stops
+   with an error when the document does not have it;
+4. writes `src/api-types.ts`: the CLI output (`paths`, `components`,
    `operations`), with the JSDoc of every documented enum schema reformatted
    so that each enum value is described on its own line;
-4. writes `src/schema.ts`: for every string enum in `components.schemas`, a Zod
+5. writes `src/schema.ts`: for every string enum in `components.schemas`, a Zod
    schema and the type inferred from it, named after the enum without the
    `Models.` prefix (`DayOfWeekTypeSchema`, `DayOfWeekType`);
-5. writes `src/index.ts`.
+6. writes `src/index.ts`.
 
 This package alone pins `typescript` to 5.9.3, because `openapi-typescript` 7
 uses the TypeScript compiler API and declares `typescript ^5.x` as its peer
