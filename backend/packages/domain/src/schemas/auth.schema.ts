@@ -16,6 +16,7 @@ import {
   type ApiSessionSearchRequest,
   sessionIdSchema,
 } from '../models/auth'
+import { lowerCaseEmail } from './rules'
 
 /**
  * Validation of authentication requests. The length limits are those of the
@@ -23,12 +24,6 @@ import {
  * passwords; which new passwords are refused as too easy to guess is decided
  * by the use case, which knows whose password it is.
  */
-
-/** Addresses are stored and compared in lower case. */
-const emailSchema = z
-  .email()
-  .max(255)
-  .transform((value) => value.toLowerCase())
 
 const MAX_PASSWORD_LENGTH = 128
 const MIN_NEW_PASSWORD_LENGTH = 15
@@ -84,7 +79,7 @@ const secondFactorCodeSchema = z.string().min(1).max(64)
 const appCodeSchema = z.string().regex(/^[0-9]{6}$/)
 
 export const authLoginRequestSchema = z.strictObject({
-  email: emailSchema,
+  email: lowerCaseEmail,
   password: presentedPasswordSchema,
   rememberMe: z.boolean(),
   twoFactorCode: secondFactorCodeSchema.nullable(),
@@ -95,12 +90,12 @@ export const authTokenRefreshRequestSchema = z.strictObject({
 }) satisfies z.ZodType<ApiAuthTokenRefreshRequest>
 
 export const authRegisterRequestSchema = z.strictObject({
-  email: emailSchema,
+  email: lowerCaseEmail,
   password: newPasswordSchema,
 }) satisfies z.ZodType<ApiAuthRegisterRequest>
 
 export const authEmailVerificationSendRequestSchema = z.strictObject({
-  email: emailSchema,
+  email: lowerCaseEmail,
 }) satisfies z.ZodType<ApiAuthEmailVerificationSendRequest>
 
 export const authEmailVerificationConfirmRequestSchema = z.strictObject({
@@ -108,7 +103,7 @@ export const authEmailVerificationConfirmRequestSchema = z.strictObject({
 }) satisfies z.ZodType<ApiAuthEmailVerificationConfirmRequest>
 
 export const authPasswordForgotRequestSchema = z.strictObject({
-  email: emailSchema,
+  email: lowerCaseEmail,
 }) satisfies z.ZodType<ApiAuthPasswordForgotRequest>
 
 export const authPasswordResetVerifyRequestSchema = z.strictObject({

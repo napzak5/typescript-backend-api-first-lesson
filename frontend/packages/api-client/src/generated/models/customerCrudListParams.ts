@@ -24,7 +24,7 @@ export type CustomerCrudListParams = {
   /** 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
   cursor?: ModelsCustomerSearchRequestCursorParameter;
   /**
-   * 顧客名(姓・名とそのカナ表記)、メールアドレス、電話番号に対する部分一致キーワード(大文字小文字を区別しない)
+   * 顧客名(姓・名とそのカナ表記)、メールアドレスに対する部分一致キーワード(大文字小文字を区別しない)。数字・空白・-+()だけのキーワードは、電話番号とも数字だけを取り出して比べる
    * @minLength 1
    * @maxLength 100
    */
@@ -33,7 +33,7 @@ export type CustomerCrudListParams = {
   tags?: ModelsCustomerSearchRequestTagsParameter;
   /** 登録日時(createdAt)の下限による絞り込み。この日時以降に登録された顧客に一致する */
   registeredFrom?: ModelsCustomerSearchRequestRegisteredFromParameter;
-  /** 登録日時(createdAt)の上限による絞り込み。この日時以前に登録された顧客に一致する */
+  /** 登録日時(createdAt)の上限による絞り込み。この日時以前に登録された顧客に一致する。registeredFromより前の日時は指定できない */
   registeredTo?: ModelsCustomerSearchRequestRegisteredToParameter;
   /**
    * 顧客ステータス区分 - 顧客アカウントの活動状態や利用可否を表す区分

@@ -162,10 +162,10 @@ CREATE TABLE "customers" (
 	"membershipTier" "membership_tier" DEFAULT 'regular' NOT NULL,
 	"loyaltyPoints" integer DEFAULT 0 NOT NULL,
 	"lifetimeValue" integer DEFAULT 0 NOT NULL,
-	"preferences" jsonb DEFAULT '{}'::jsonb,
+	"preferences" jsonb,
 	"notes" text,
 	"internalNotes" text,
-	"tags" jsonb DEFAULT '[]'::jsonb,
+	"tags" text[] NOT NULL,
 	"referredBy" uuid,
 	"referralCode" varchar(50),
 	"allowMarketing" boolean DEFAULT true NOT NULL,
@@ -183,9 +183,12 @@ CREATE TABLE "customers" (
 	"hairType" "hair_type",
 	"hairThickness" "hair_thickness",
 	"scalpCondition" "scalp_condition",
-	"customerStatus" "customer_status" DEFAULT 'active',
-	CONSTRAINT "customers_email_unique" UNIQUE("email"),
-	CONSTRAINT "customers_referral_code_unique" UNIQUE("referralCode")
+	"customerStatus" "customer_status" DEFAULT 'active' NOT NULL,
+	CONSTRAINT "customers_referral_code_unique" UNIQUE("referralCode"),
+	CONSTRAINT "customers_email_lower_case" CHECK ((email)::text = lower((email)::text)),
+	CONSTRAINT "customers_gender_known" CHECK ((gender)::text = ANY (ARRAY['male'::text, 'female'::text, 'other'::text, 'prefer_not_to_say'::text])),
+	CONSTRAINT "customers_not_referred_by_itself" CHECK ("referredBy" <> id),
+	CONSTRAINT "customers_preferences_is_an_object" CHECK (jsonb_typeof(preferences) = 'object'::text)
 );
 
 CREATE TABLE "daily_summaries" (
@@ -828,6 +831,7 @@ CREATE INDEX "idx_customers_hair_type" ON "customers" USING btree ("hairType" en
 CREATE INDEX "idx_customers_membership_tier" ON "customers" USING btree ("membershipTier" enum_ops);
 CREATE INDEX "idx_customers_phone_number" ON "customers" USING btree ("phoneNumber" text_ops);
 CREATE INDEX "idx_customers_user_id" ON "customers" USING btree ("userId" uuid_ops);
+CREATE UNIQUE INDEX "customers_email_unique" ON "customers" USING btree ("email" text_ops) WHERE ("deletedAt" IS NULL);
 CREATE INDEX "idx_daily_summaries_salon_id" ON "daily_summaries" USING btree ("salonId" uuid_ops);
 CREATE INDEX "idx_daily_summaries_summary_date" ON "daily_summaries" USING btree ("summaryDate" date_ops);
 CREATE INDEX "idx_inventory_expiry_date" ON "inventory" USING btree ("expiryDate" date_ops);

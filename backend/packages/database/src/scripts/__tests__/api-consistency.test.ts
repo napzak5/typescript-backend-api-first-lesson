@@ -382,4 +382,51 @@ describe('modelRules', () => {
       },
     })
   })
+
+  it('lets a request for a customer leave out the columns the server manages, and the response only deletedAt, with every other property a column of customers', () => {
+    const managed = [
+      'id',
+      'userId',
+      'loyaltyPoints',
+      'lifetimeValue',
+      'firstVisitDate',
+      'lastVisitDate',
+      'visitCount',
+      'noShowCount',
+      'cancellationCount',
+      'deletedAt',
+      'createdAt',
+      'updatedAt',
+    ]
+
+    const rules = Object.fromEntries(
+      modelRules
+        .filter((modelRule) => modelRule.table === 'customers')
+        .map(({ model, kind, omittedColumns, embedded, computed }) => [
+          model,
+          { kind, omittedColumns, embedded, computed },
+        ]),
+    )
+
+    expect(rules).toEqual({
+      'Models.CustomerResponse': {
+        kind: 'response',
+        omittedColumns: ['deletedAt'],
+        embedded: undefined,
+        computed: undefined,
+      },
+      'Models.CustomerCreateRequest': {
+        kind: 'create',
+        omittedColumns: managed,
+        embedded: undefined,
+        computed: undefined,
+      },
+      'Models.CustomerUpdateRequest': {
+        kind: 'update',
+        omittedColumns: managed,
+        embedded: undefined,
+        computed: undefined,
+      },
+    })
+  })
 })

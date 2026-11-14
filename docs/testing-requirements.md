@@ -135,8 +135,8 @@ belongs to a suspended, inactive or deleted user is covered in
 - **Arrange, Act, Assert**, in that order and visibly apart, one behaviour per
   test. The frontend tests mark the steps with comments; the backend tests
   separate them with blank lines.
-- **Independent**: no test relies on another having run. Every API test gets a
-  schema of its own and every migration test a database of its own.
+- **Independent**: no test relies on another having run. Every API test and
+  every migration test gets a database of its own.
 - **Integration tests use the real thing**: the production `createApp`, the
   real repository, a real PostgreSQL. A failure is produced by real means — a
   database nothing listens on, a dropped column, a corrupt stored value — not

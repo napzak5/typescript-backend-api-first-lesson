@@ -7,6 +7,24 @@ import { z } from 'zod'
 /** A nullable text is either null or says something: '' is not "unset". */
 export const nonBlankText = z.string().regex(/\S/, 'Must not be blank')
 
+/** An address that is stored and compared in lower case. */
+export const lowerCaseEmail = z
+  .email()
+  .max(255)
+  .transform((value) => value.toLowerCase())
+
+const MIN_PHONE_DIGITS = 10
+
+/** A phone number as people write it: digits with the usual separators. */
+export const phoneNumber = z
+  .string()
+  .max(20)
+  .regex(/^[\d\s\-+()]+$/, 'Must be a phone number')
+  .refine(
+    (value) => value.replace(/\D/g, '').length >= MIN_PHONE_DIGITS,
+    `Must contain at least ${MIN_PHONE_DIGITS} digits`,
+  )
+
 /** The largest value of an `integer` column. */
 export const MAX_INTEGER = 2_147_483_647
 

@@ -10,7 +10,7 @@ import type { ModelsStylePreference } from './modelsStylePreference';
 import type { ModelsTimeSlot } from './modelsTimeSlot';
 
 /**
- * 顧客の好み設定レスポンス - customer_preferences テーブルの1行。顧客ごとに最大1行で、顧客レスポンスに埋め込んで返す。
+ * 顧客の好み設定レスポンス - customer_preferences テーブルの1行。顧客ごとに最大1行。
  * プロパティ名と null 許可は DB カラムと一致させている
  */
 export interface ModelsCustomerPreferencesResponse {

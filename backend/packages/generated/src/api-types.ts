@@ -925,13 +925,13 @@ export interface paths {
         };
         /**
          * List customers
-         * @description 絞り込み条件とページネーションを指定して顧客を一覧取得します。削除済みの顧客は含みません。
+         * @description 絞り込み条件とページネーションを指定して顧客を一覧取得します。登録日時の新しい順に並びます。削除済みの顧客は含みません。cursorが顧客を指していない場合は400を返します。
          */
         get: operations["CustomerCrud_list"];
         put?: never;
         /**
          * Create a customer
-         * @description 顧客を新規登録します。メールアドレスまたは紹介コードが既存の顧客(削除済みを含む)と重複する場合は409を、referredByに存在しない顧客を指定した場合は400を返します。
+         * @description 顧客を新規登録します。メールアドレスが削除されていない顧客と重複する場合と、紹介コードが既存の顧客(削除済みを含む)と重複する場合は409を、referredByに削除されていない顧客以外を指定した場合は400を返します。
          */
         post: operations["CustomerCrud_create"];
         delete?: never;
@@ -1037,21 +1037,21 @@ export interface paths {
         };
         /**
          * Get a customer
-         * @description IDを指定して顧客を1件取得します。好み設定も含めて返します。
+         * @description IDを指定して顧客を1件取得します。削除済みの顧客は404を返します。
          */
         get: operations["CustomerCrud_get"];
         put?: never;
         post?: never;
         /**
          * Delete a customer
-         * @description 顧客を論理削除します。削除後は一覧・取得の対象外になります。
+         * @description 顧客を論理削除します。削除後は一覧・取得の対象外になり、メールアドレスは別の顧客の登録に使えるようになります。admin と、サロンの owner / manager が実行できます。
          */
         delete: operations["CustomerCrud_delete"];
         options?: never;
         head?: never;
         /**
          * Update a customer
-         * @description 指定した項目だけを更新します。メールアドレスまたは紹介コードが他の顧客(削除済みを含む)と重複する場合は409を、referredByに存在しない顧客を指定した場合は400を返します。
+         * @description 指定した項目だけを更新します。メールアドレスが削除されていないほかの顧客と重複する場合と、紹介コードがほかの顧客(削除済みを含む)と重複する場合は409を、referredByに削除されていない顧客以外、またはこの顧客自身を指定した場合は400を返します。
          */
         patch: operations["CustomerCrud_update"];
         trace?: never;
@@ -3835,7 +3835,7 @@ export interface components {
             firstNameKana: string | null;
             /** @description 姓のカナ表記。未登録の場合はnull */
             lastNameKana: string | null;
-            /** @description 主要連絡先として利用するメールアドレス。削除済みを含むすべての顧客の間で一意 */
+            /** @description 主要連絡先として利用するメールアドレス。小文字にそろえて保存する。削除されていない顧客の間で一意 */
             email: string;
             /** @description 主要連絡先として利用する電話番号 */
             phoneNumber: string;
@@ -3853,7 +3853,7 @@ export interface components {
             building: string | null;
             /**
              * Format: date
-             * @description 生年月日。年齢計算や誕生日特典に使用。未登録の場合はnull
+             * @description 生年月日。年齢計算や誕生日特典に使用。1900-01-01以降で、未来の日付は指定できない。未登録の場合はnull
              */
             birthDate: string | null;
             /** @description 顧客の性別。未登録または非公開の場合はnull */
@@ -3868,11 +3868,11 @@ export interface components {
             notes: string | null;
             /** @description スタッフ専用の内部メモ。顧客本人に見せることを想定しない情報。メモがない場合はnull */
             internalNotes: string | null;
-            /** @description 分類用タグ。顧客をグループ化するためのラベル。未設定の場合はnull */
-            tags: string[] | null;
-            /** @description 紹介元顧客ID。存在する顧客を指定する。紹介ではない場合はnull */
+            /** @description 分類用タグ。顧客をグループ化するためのラベル。同じタグは繰り返せない。タグがない場合は空配列 */
+            tags: string[];
+            /** @description 紹介元顧客ID。削除されていない顧客を指定する。紹介ではない場合はnull */
             referredBy: (string & components["schemas"]["Models.CustomerId"]) | null;
-            /** @description この顧客が他の顧客を紹介するときに使う紹介コード。顧客の間で一意。未発行の場合はnull */
+            /** @description この顧客が他の顧客を紹介するときに使う紹介コード。削除済みを含むすべての顧客の間で一意。未発行の場合はnull */
             referralCode: string | null;
             /** @description マーケティング配信を許可するかどうか */
             allowMarketing: boolean;
@@ -3888,8 +3888,8 @@ export interface components {
             hairThickness: components["schemas"]["Models.HairThicknessType"] | null;
             /** @description 頭皮の状態。健康状態やケア必要性の分類。未登録の場合はnull */
             scalpCondition: components["schemas"]["Models.ScalpConditionType"] | null;
-            /** @description 顧客ステータス。未設定の場合はnull */
-            customerStatus: components["schemas"]["Models.CustomerStatusType"] | null;
+            /** @description 顧客ステータス */
+            customerStatus: components["schemas"]["Models.CustomerStatusType"];
         };
         /** @description 顧客データ削除要請リクエスト - 顧客本人からの個人データ削除の要請を受け付ける */
         "Models.CustomerDataDeletionRequest": {
@@ -4075,7 +4075,7 @@ export interface components {
             conflictResolution: components["schemas"]["Models.CustomerMergeConflictResolutionType"];
         };
         /**
-         * @description 顧客の好み設定レスポンス - customer_preferences テーブルの1行。顧客ごとに最大1行で、顧客レスポンスに埋め込んで返す。
+         * @description 顧客の好み設定レスポンス - customer_preferences テーブルの1行。顧客ごとに最大1行。
          *     プロパティ名と null 許可は DB カラムと一致させている
          */
         "Models.CustomerPreferencesResponse": {
@@ -4111,7 +4111,7 @@ export interface components {
             specialRequests?: string | null;
         };
         /**
-         * @description 顧客レスポンス - customers テーブルの公開カラムと、顧客の好み設定(customer_preferences)を返す。
+         * @description 顧客レスポンス - customers テーブルの公開カラムを返す。スタッフ専用の項目(internalNotes)を含むので、顧客本人には返さない。
          *     プロパティ名と null 許可は DB カラムと一致させている。
          *     来店回数やポイントなどの集計値は他の機能が更新し、リクエストでは変更できない
          */
@@ -4128,7 +4128,7 @@ export interface components {
             firstNameKana: string | null;
             /** @description 姓のカナ表記。未登録の場合はnull */
             lastNameKana: string | null;
-            /** @description 主要連絡先として利用するメールアドレス。削除済みを含むすべての顧客の間で一意 */
+            /** @description 主要連絡先として利用するメールアドレス。小文字で保存され、削除されていない顧客の間で一意 */
             email: string;
             /** @description 主要連絡先として利用する電話番号 */
             phoneNumber: string;
@@ -4171,11 +4171,11 @@ export interface components {
             notes: string | null;
             /** @description スタッフ専用の内部メモ。顧客本人に見せることを想定しない情報。メモがない場合はnull */
             internalNotes: string | null;
-            /** @description 分類用タグ。未設定の場合はnull */
-            tags: string[] | null;
-            /** @description 紹介元顧客ID。紹介ではない場合はnull */
+            /** @description 分類用タグ。顧客をグループ化するためのラベル。タグがない場合は空配列 */
+            tags: string[];
+            /** @description 紹介元顧客ID。紹介元の顧客があとで削除されても値は残る。紹介ではない場合はnull */
             referredBy: (string & components["schemas"]["Models.CustomerId"]) | null;
-            /** @description この顧客が他の顧客を紹介するときに使う紹介コード。顧客の間で一意。未発行の場合はnull */
+            /** @description この顧客が他の顧客を紹介するときに使う紹介コード。削除済みを含むすべての顧客の間で一意。未発行の場合はnull */
             referralCode: string | null;
             /** @description マーケティング配信を許可するかどうか */
             allowMarketing: boolean;
@@ -4216,10 +4216,8 @@ export interface components {
             hairThickness: components["schemas"]["Models.HairThicknessType"] | null;
             /** @description 頭皮の状態。健康状態やケア必要性の分類。未登録の場合はnull */
             scalpCondition: components["schemas"]["Models.ScalpConditionType"] | null;
-            /** @description 顧客ステータス。未設定の場合はnull */
-            customerStatus: components["schemas"]["Models.CustomerStatusType"] | null;
-            /** @description 顧客の好み設定。まだ設定されていない場合はnull */
-            customerPreferences: components["schemas"]["Models.CustomerPreferencesResponse"] | null;
+            /** @description 顧客ステータス */
+            customerStatus: components["schemas"]["Models.CustomerStatusType"];
             /**
              * Format: date-time
              * @description レコード作成日時(顧客の登録日時)
@@ -4314,7 +4312,7 @@ export interface components {
             firstNameKana?: string | null;
             /** @description 姓のカナ表記。nullでクリア */
             lastNameKana?: string | null;
-            /** @description 主要連絡先として利用するメールアドレス。削除済みを含むすべての顧客の間で一意 */
+            /** @description 主要連絡先として利用するメールアドレス。小文字にそろえて保存する。削除されていない顧客の間で一意 */
             email?: string;
             /** @description 主要連絡先として利用する電話番号 */
             phoneNumber?: string;
@@ -4332,7 +4330,7 @@ export interface components {
             building?: string | null;
             /**
              * Format: date
-             * @description 生年月日。年齢計算や誕生日特典に使用。nullでクリア
+             * @description 生年月日。年齢計算や誕生日特典に使用。1900-01-01以降で、未来の日付は指定できない。nullでクリア
              */
             birthDate?: string | null;
             /** @description 顧客の性別。nullでクリア */
@@ -4347,11 +4345,11 @@ export interface components {
             notes?: string | null;
             /** @description スタッフ専用の内部メモ。顧客本人に見せることを想定しない情報。nullでクリア */
             internalNotes?: string | null;
-            /** @description 分類用タグ。顧客をグループ化するためのラベル。nullでクリア */
-            tags?: string[] | null;
-            /** @description 紹介元顧客ID。存在する顧客を指定する。nullでクリア */
+            /** @description 分類用タグ。指定するとタグの一覧を丸ごと置き換える。同じタグは繰り返せない。空配列でクリア */
+            tags?: string[];
+            /** @description 紹介元顧客ID。削除されていない、この顧客以外の顧客を指定する。nullでクリア */
             referredBy?: (string & components["schemas"]["Models.CustomerId"]) | null;
-            /** @description この顧客が他の顧客を紹介するときに使う紹介コード。顧客の間で一意。nullでクリア */
+            /** @description この顧客が他の顧客を紹介するときに使う紹介コード。削除済みを含むすべての顧客の間で一意。nullでクリア */
             referralCode?: string | null;
             /** @description マーケティング配信を許可するかどうか */
             allowMarketing?: boolean;
@@ -4367,8 +4365,8 @@ export interface components {
             hairThickness?: components["schemas"]["Models.HairThicknessType"] | null;
             /** @description 頭皮の状態。健康状態やケア必要性の分類。nullでクリア */
             scalpCondition?: components["schemas"]["Models.ScalpConditionType"] | null;
-            /** @description 顧客ステータス。nullでクリア */
-            customerStatus?: components["schemas"]["Models.CustomerStatusType"] | null;
+            /** @description 顧客ステータス */
+            customerStatus?: components["schemas"]["Models.CustomerStatusType"];
         };
         /** @description 日次の売上サマリー */
         "Models.DailySalesResponse": {
@@ -8839,9 +8837,9 @@ export interface components {
         "Models.CustomerSearchRequest.membershipTier": components["schemas"]["Models.MembershipTierType"];
         /** @description 登録日時(createdAt)の下限による絞り込み。この日時以降に登録された顧客に一致する */
         "Models.CustomerSearchRequest.registeredFrom": string;
-        /** @description 登録日時(createdAt)の上限による絞り込み。この日時以前に登録された顧客に一致する */
+        /** @description 登録日時(createdAt)の上限による絞り込み。この日時以前に登録された顧客に一致する。registeredFromより前の日時は指定できない */
         "Models.CustomerSearchRequest.registeredTo": string;
-        /** @description 顧客名(姓・名とそのカナ表記)、メールアドレス、電話番号に対する部分一致キーワード(大文字小文字を区別しない) */
+        /** @description 顧客名(姓・名とそのカナ表記)、メールアドレスに対する部分一致キーワード(大文字小文字を区別しない)。数字・空白・-+()だけのキーワードは、電話番号とも数字だけを取り出して比べる */
         "Models.CustomerSearchRequest.search": string;
         /** @description タグによる絞り込み。指定したタグをすべて持つ顧客に一致する */
         "Models.CustomerSearchRequest.tags": string[];
@@ -13772,13 +13770,13 @@ export interface operations {
                 limit?: components["parameters"]["Models.CustomerSearchRequest.limit"];
                 /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
                 cursor?: components["parameters"]["Models.CustomerSearchRequest.cursor"];
-                /** @description 顧客名(姓・名とそのカナ表記)、メールアドレス、電話番号に対する部分一致キーワード(大文字小文字を区別しない) */
+                /** @description 顧客名(姓・名とそのカナ表記)、メールアドレスに対する部分一致キーワード(大文字小文字を区別しない)。数字・空白・-+()だけのキーワードは、電話番号とも数字だけを取り出して比べる */
                 search?: components["parameters"]["Models.CustomerSearchRequest.search"];
                 /** @description タグによる絞り込み。指定したタグをすべて持つ顧客に一致する */
                 tags?: components["parameters"]["Models.CustomerSearchRequest.tags"];
                 /** @description 登録日時(createdAt)の下限による絞り込み。この日時以降に登録された顧客に一致する */
                 registeredFrom?: components["parameters"]["Models.CustomerSearchRequest.registeredFrom"];
-                /** @description 登録日時(createdAt)の上限による絞り込み。この日時以前に登録された顧客に一致する */
+                /** @description 登録日時(createdAt)の上限による絞り込み。この日時以前に登録された顧客に一致する。registeredFromより前の日時は指定できない */
                 registeredTo?: components["parameters"]["Models.CustomerSearchRequest.registeredTo"];
                 /** @description 顧客ステータスによる絞り込み(完全一致) */
                 customerStatus?: components["parameters"]["Models.CustomerSearchRequest.customerStatus"];

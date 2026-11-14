@@ -7,6 +7,7 @@ import {
 } from '@beauty-salon-backend/utility'
 import { z } from 'zod'
 import { type DomainError, parseWith, uuidSchema } from '../shared'
+import { customerIdSchema } from './customer'
 import { salonIdSchema } from './salon'
 
 // IDs: UUIDs that have been checked.
@@ -18,9 +19,6 @@ export type SessionId = z.infer<typeof sessionIdSchema>
 
 export const staffIdSchema = uuidSchema.brand<'StaffId'>()
 export type StaffId = z.infer<typeof staffIdSchema>
-
-export const customerIdSchema = uuidSchema.brand<'CustomerId'>()
-export type CustomerId = z.infer<typeof customerIdSchema>
 
 const userIdParameterSchema = z.object({ userId: userIdSchema })
 

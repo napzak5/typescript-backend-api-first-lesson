@@ -2,7 +2,7 @@
 
 DB のカラムの型と制約が、Drizzle スキーマ、TypeSpec、生成された型、Zod スキーマのそれぞれでどう表されるかの対応表と、その一致を機械的に検査する `pnpm check:api-db` の説明。
 
-対応表は、実装済みの Salon ドメイン（`salons` と `opening_hours`）が実際に行っていることを書いている。認証（`users` と `sessions`）も同じ対応に従っており、Read マッパー（`backend/packages/domain/src/mappers/read/user.mapper.ts`、`session.mapper.ts`）とリクエストの Zod スキーマ（`backend/packages/domain/src/schemas/auth.schema.ts`）を持つ。サロンのサービスカテゴリー（`service_categories`）も同じで、Read マッパー（`backend/packages/domain/src/mappers/read/service-category.mapper.ts`）とリクエストの Zod スキーマ（`backend/packages/domain/src/schemas/service-category.schema.ts`）を持つ。Write マッパーはない（理由は[表現の変換](#表現の変換)）。サロンのサービス（`services` と `service_options`）も同じ対応に従い、Read マッパー（`backend/packages/domain/src/mappers/read/service.mapper.ts`）とリクエストの Zod スキーマ（`backend/packages/domain/src/schemas/service.schema.ts`）を持つ。Write マッパー（`backend/packages/domain/src/mappers/write/service.mapper.ts`）もあるが、値は変換しない（これも[表現の変換](#表現の変換)）。それ以外のドメインは TypeSpec と DB スキーマにあるだけで、マッパーも Zod スキーマもない。それらの TypeSpec も、この対応表に従って DB と一致させてある。
+対応表は、実装済みの Salon ドメイン（`salons` と `opening_hours`）が実際に行っていることを書いている。認証（`users` と `sessions`）も同じ対応に従っており、Read マッパー（`backend/packages/domain/src/mappers/read/user.mapper.ts`、`session.mapper.ts`）とリクエストの Zod スキーマ（`backend/packages/domain/src/schemas/auth.schema.ts`）を持つ。サロンのサービスカテゴリー（`service_categories`）も同じで、Read マッパー（`backend/packages/domain/src/mappers/read/service-category.mapper.ts`）とリクエストの Zod スキーマ（`backend/packages/domain/src/schemas/service-category.schema.ts`）を持つ。Write マッパーはない（理由は[表現の変換](#表現の変換)）。サロンのサービス（`services` と `service_options`）も同じ対応に従い、Read マッパー（`backend/packages/domain/src/mappers/read/service.mapper.ts`）とリクエストの Zod スキーマ（`backend/packages/domain/src/schemas/service.schema.ts`）を持つ。Write マッパー（`backend/packages/domain/src/mappers/write/service.mapper.ts`）もあるが、値は変換しない（これも[表現の変換](#表現の変換)）。顧客台帳（`customers`）も同じ対応に従い、Read マッパー（`backend/packages/domain/src/mappers/read/customer.mapper.ts`）とリクエストの Zod スキーマ（`backend/packages/domain/src/schemas/customer.schema.ts`）を持つ。Write マッパー（`backend/packages/domain/src/mappers/write/customer.mapper.ts`）は、リクエストをそのまま行として返す（これも[表現の変換](#表現の変換)）。それ以外のドメインは TypeSpec と DB スキーマにあるだけで、マッパーも Zod スキーマもない。それらの TypeSpec も、この対応表に従って DB と一致させてある。
 
 - ルールそのもの（プロパティ名 = カラム名、NULL 許可の一致、Optional の制約）: [CLAUDE.md](../CLAUDE.md)
 - TypeSpec での書き方: [TypeSpec API型定義ルール](./typespec-api-type-rules.md)
@@ -50,7 +50,7 @@ NULL 許可のカラムは、どの層でも null を許す形になる: `schema
 | PostgreSQL | Zod | 例 |
 |---|---|---|
 | `uuid`（ID） | `uuidSchema.brand<'SalonId'>()`（`models/salon.ts` の `salonIdSchema`。`uuidSchema` は `shared/identifier.ts` にあり、UUID を検証して小文字にそろえる） | パスの `id`、`cursor` |
-| `varchar(n)` | `nonBlankText.max(n)`。内容に応じて `z.email().max(n)`、`z.httpUrl().max(n)`、`phoneNumberSchema` | `name`、`email`、`websiteUrl`、`phoneNumber` |
+| `varchar(n)` | `nonBlankText.max(n)`。内容に応じて `z.email().max(n)`、`z.httpUrl().max(n)`、`phoneNumber`（`schemas/rules.ts`） | `name`、`email`、`websiteUrl`、`phoneNumber` |
 | `text` | `nonBlankText`（空白だけの文字列を拒否する `z.string()`） | `description` |
 | `text[]` | `z.array(nonBlankText)`、`z.array(z.httpUrl())` | `features`、`imageUrls` |
 | `boolean` | `z.boolean()` | `isActive` |
@@ -68,11 +68,18 @@ NULL 許可のカラムは、どの層でも null を許す形になる: `schema
 | `uuid[]` | ID のスキーマの配列（`z.array(serviceIdSchema)`）。同じ値を重ねて指定できない配列には `.check(noRepeatedEntries)` を付ける | `packageServiceIds` |
 | enum 型の配列 | 生成された enum のスキーマの配列（`z.array(BookingRequirementTypeSchema)`）と `.check(noRepeatedEntries)` | `bookingRequirements` |
 
-`nonBlankText` は Salon だけのものではない。複数のドメインのスキーマが共通で使うルール（`nonBlankText`、`MAX_INTEGER`、`noRepeatedEntries`、`atLeastOneProperty`）は、`backend/packages/domain/src/schemas/rules.ts` に定義してある。
+顧客のスキーマ（`backend/packages/domain/src/schemas/customer.schema.ts`）には、`varchar(n)` のカラムのうち、DB が CHECK 制約で値を限っているものがある。
+
+| PostgreSQL | Zod | 例 |
+|---|---|---|
+| `varchar(255)`。小文字で保存するメールアドレス（CHECK 制約 `customers_email_lower_case`） | `lowerCaseEmail`（メールアドレスとして検証し、小文字にそろえる） | 顧客の `email` |
+| `varchar(20)`。決まった値のどれか（CHECK 制約 `customers_gender_known`）で、API では Enum | 生成された Enum のスキーマ（`CustomerGenderTypeSchema`） | 顧客の `gender` |
+
+`nonBlankText` は Salon だけのものではない。複数のドメインのスキーマが共通で使うルール（`nonBlankText`、`lowerCaseEmail`、`phoneNumber`、`MAX_INTEGER`、`noRepeatedEntries`、`atLeastOneProperty`）は、`backend/packages/domain/src/schemas/rules.ts` に定義してある。
 
 ## 表現の変換
 
-型が層によって違うのは `numeric`、`timestamp with time zone`、`jsonb` の 3 種類だけで、マッパーはこの 3 種類だけを変換する。それ以外のカラムは値をそのまま受け渡し、プロパティ名はどのカラムでも変えない。
+型が層によって違うのは `numeric`、`timestamp with time zone`、`jsonb` の 3 種類だけで、マッパーはこの 3 種類だけを変換する。それ以外のカラムは値をそのまま受け渡し、プロパティ名はどのカラムでも変えない。例外は顧客の `gender`（DB では `varchar`、API では Enum）だけで、この節の最後に書く。
 
 | カラムの型 | DB → API（`SalonReadMapper`） | API → DB（`SalonWriteMapper`） |
 |---|---|---|
@@ -139,7 +146,11 @@ export const SalonWriteMapper = {
 
 `services` も、リクエストで書けるカラムに上の 3 種類がない。それでも Write マッパー（`backend/packages/domain/src/mappers/write/service.mapper.ts`）があるのは、リクエストが `services` の行と `service_options` の行を含むからで、マッパーは値を変換せず、2 つのテーブルの行に分ける。Read マッパーが変換するのは、ここでも `createdAt` と `updatedAt` だけである。
 
+`customers` は、リクエストで書けるカラムに `jsonb`（`preferences`）があるが、`numeric` はなく、`jsonb` は書き込みでは変換しない。`CustomerWriteMapper`（`backend/packages/domain/src/mappers/write/customer.mapper.ts`）は何も変換せず、リクエストをそのまま `DbNewCustomer` として返す。プロパティ名と表現が行と一致していることを、型検査がここで確認する。Read マッパー（`backend/packages/domain/src/mappers/read/customer.mapper.ts`）は、`createdAt` と `updatedAt` を変換し、`preferences` を検査する。
+
 `time` のカラムは変換しない。DB は `HH:mm:ss` で返し、リクエストは `HH:mm` と `HH:mm:ss` のどちらも受け付ける。
+
+顧客の `gender` は、DB では `varchar(20)`（行の型は `string`）、API では `CustomerGenderType` である。CHECK 制約 `customers_gender_known` が、値を Enum の 4 つのどれかに限っている。Read マッパーは、保存されている値を生成された `CustomerGenderTypeSchema` で検査する。書き込みでは変換しない（Enum の値は、そのまま文字列として保存できる）。
 
 ## 制約の対応
 
@@ -151,6 +162,7 @@ export const SalonWriteMapper = {
 | `numeric(p, s)` | `@minValue` / `@maxValue` | `.min()` / `.max()`。`taxRate` は `.multipleOf(0.01)` | 範囲外は検証エラー（400） |
 | `uuid` の主キー | ID スカラー | `uuidSchema.brand<'SalonId'>()`（`salonIdSchema`） | UUID でない ID は検証エラー（400）。大文字で書かれた ID は小文字にそろえる |
 | 一意インデックス（`salons_email_unique`。削除されていない行が対象） | `@doc` に「削除されていないサロンの間で一意」と書き、オペレーションに 409 を列挙する | 検証しない | リポジトリが一意性の違反（SQLSTATE `23505`）を `alreadyExists` に変換する（409） |
+| 範囲の違う 2 つの一意性（`customers_email_unique` は削除されていない行だけが対象の一意インデックス、`customers_referral_code_unique` は削除済みの行も対象の一意制約） | それぞれの `@doc` に範囲を書き（「削除されていない顧客の間で一意」、「削除済みを含むすべての顧客の間で一意」）、オペレーションに 409 を列挙する | 検証しない | リポジトリが、違反した制約の名前でどちらの値かを見分け、`alreadyExists` に変換する（409） |
 | 外部キー（`opening_hours.salonId`、`ON DELETE CASCADE`） | 親モデルに `openingHours` として埋め込む | 配列として検証する | リポジトリが親と子を 1 つのトランザクションで書く |
 | 外部キー（`service_categories.salonId`、`ON DELETE CASCADE`）。サロンの下のルートを持つリソース | パスの `salonId`。Create / Update のモデルには含めず、Response には含める | パスの値を `parseSalonIdOfPath`（`models/salon.ts`）で検証する | サロンがなければ 404。リポジトリはすべてのクエリにサロンの ID を付けるので、ほかのサロンの行は見つからない（404） |
 
@@ -159,7 +171,7 @@ export const SalonWriteMapper = {
 - `DEFAULT` のあるカラムでも、リクエストで書けるもの（`timezone`、`currency`、`taxRate`、`isActive`）は Create で必須にする。`DbNewSalon` は `DeepRequired` で全キーが必須なので、API は DB の既定値に頼らない
 - DB やほかの機能が値を決めるカラム（`id`、`rating`、`reviewCount`、`createdAt`、`updatedAt` など）は Create / Update に含めない。リクエストのスキーマは `z.strictObject` なので、これらを送ると未知のプロパティとして検証エラーになる
 - 行が属するサロンを指すカラム（`service_categories.salonId`）も Create / Update に含めない。値はパスの `salonId` で決まり、あとから変えられない。`api-consistency-rules.ts` では `omittedColumns` に入れる（`serviceCategoryManagedColumns`）
-- `deletedAt`（論理削除）は API に出さない。リポジトリのメソッドが返す行と変更する行は、`deletedAt IS NULL` の行だけである。サービスの一覧のカーソルだけは、削除済みのサービスを指していてもよい（行が残っているので、ページの開始位置が分かる）
+- `deletedAt`（論理削除）は API に出さない。リポジトリのメソッドが返す行と変更する行は、`deletedAt IS NULL` の行だけである。一覧のカーソルだけは、削除済みの行を指していてもよい（サロン、サービス、顧客の一覧。行が残っているので、ページの開始位置が分かる）
 
 Zod スキーマは API の型と突き合わせてあるので、TypeSpec の形を変えてスキーマを直し忘れると型検査で失敗する。
 
@@ -195,6 +207,15 @@ DB にも TypeSpec にも表せない規則（空白だけの文字列を拒否�
 | `service_options_max_quantity_positive`（`maxQuantity > 0`） | `@minValue(1)` | オプションのスキーマの `maxQuantity`（1 以上） |
 
 1 つのカラムの範囲は `backend/packages/domain/src/schemas/service.schema.ts` のスキーマにあり、2 つのカラムを結ぶ規則は `backend/packages/domain/src/business-logic/service/_shared/rules.ts` の `serviceRuleIssues` にある。部分更新は片方のカラムだけを指定できるので、後者はリクエストではなく、更新後に保存される行に対して判定する。作成ではユースケースが、更新ではリポジトリがトランザクションの中で呼ぶ。どちらの違反も検証エラー（400）になる。
+
+`customers` にも CHECK 制約が 4 つある（`backend/packages/database/sql/migrations/202611150900_customers_columns.sql`）。
+
+| CHECK 制約 | TypeSpec | 同じ規則を検証する場所 |
+|---|---|---|
+| `customers_email_lower_case`（`email` は小文字） | `@doc` に「小文字にそろえて保存する」と書く | スキーマの `email`（`lowerCaseEmail` が小文字にそろえる。大文字を含むリクエストは拒否せず、小文字にして保存する） |
+| `customers_gender_known`（`gender` は NULL か、`male`、`female`、`other`、`prefer_not_to_say` のどれか） | `CustomerGenderType \| null` | スキーマの `gender`（生成された `CustomerGenderTypeSchema`） |
+| `customers_not_referred_by_itself`（`referredBy` は NULL か、その行の `id` 以外） | 更新リクエストの `@doc` に「この顧客以外の顧客を指定する」と書く | `referredByItself`（`backend/packages/domain/src/business-logic/customer/_shared/rules.ts`）。更新のユースケースが呼ぶ。登録では `id` を DB が決めるので、自分自身は指定できない |
+| `customers_preferences_is_an_object`（`preferences` は NULL かオブジェクト） | `CustomerBasicPreferences \| null` | スキーマの `preferences`。オブジェクトの中の形（`preferredServices` と `notes`）は DB では保証できないので、リクエストはスキーマが検証し、保存されている値は Read マッパーが読み出すときに検査する |
 
 ## `pnpm check:api-db`
 

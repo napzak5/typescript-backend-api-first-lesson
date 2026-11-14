@@ -14,7 +14,7 @@ PostgreSQL ── pnpm db:introspect ──▶ schema.ts     api-types.ts
                                   DbSalon、DbNewSalon ◀── マッパー ──▶ ApiSalonResponse、ApiSalonCreateRequest
 ```
 
-以下の例はすべて、参照実装である Salon のコードである。認証も同じ方法で型を導出している（`backend/packages/domain/src/models/auth.ts` の `DbUser`、`DbSession`、`DbNewSession`）。サロンのサービスカテゴリーとサービスも同じである（`backend/packages/domain/src/models/service-category.ts` の `DbServiceCategory`、`DbNewServiceCategory`、`backend/packages/domain/src/models/service.ts` の `DbService`、`DbNewService`、`DbServiceOption`、`DbNewServiceOption`）。それ以外のドメインは DB スキーマと TypeSpec にあるだけで、モデルもマッパーもない（TypeSpec は DB と一致させてある）。
+以下の例はすべて、参照実装である Salon のコードである。認証も同じ方法で型を導出している（`backend/packages/domain/src/models/auth.ts` の `DbUser`、`DbSession`、`DbNewSession`）。サロンのサービスカテゴリーとサービスも同じである（`backend/packages/domain/src/models/service-category.ts` の `DbServiceCategory`、`DbNewServiceCategory`、`backend/packages/domain/src/models/service.ts` の `DbService`、`DbNewService`、`DbServiceOption`、`DbNewServiceOption`）。顧客台帳も同じである（`backend/packages/domain/src/models/customer.ts` の `DbCustomer`、`DbNewCustomer`、`DbCustomerChanges`）。それ以外のドメインは DB スキーマと TypeSpec にあるだけで、モデルもマッパーもない（TypeSpec は DB と一致させてある）。
 
 - 型と制約の層ごとの対応、`pnpm check:api-db`: [API-DB型制約マッピング](./api-db-type-constraints-mapping.md)
 - TypeSpec の書き方: [TypeSpec API型定義ルール](./typespec-api-type-rules.md)
@@ -45,6 +45,7 @@ PostgreSQL ── pnpm db:introspect ──▶ schema.ts     api-types.ts
 - すでにその変更を含むスキーマに対して実行しても、何も変えないように書く（`IF EXISTS` / `IF NOT EXISTS` や `information_schema` で確認してから変更する）。適用履歴のない DB を最新にできるようにするためで、統合テスト（`backend/packages/database/src/scripts/__tests__/migrations.integration.test.ts`）が、`sql/setup.sql` から作った DB に全マイグレーションを再実行しても、スキーマ全体（カラム、enum、インデックス、制約）が変わらないことを確認している
 - カラム名は camelCase なので、SQL では二重引用符で囲む
 - CHECK 制約は、`CASE` を使わずに 1 つの論理式（`AND`・`OR`・`NOT`）で書く。`pnpm db:introspect` は `CASE` を含む CHECK 制約を `schema.ts` に再現しないので、`schema.ts` と、そこから生成する `sql/setup.sql` が、マイグレーションを適用した DB と一致しなくなる。場合分けは `OR` でつなぐ（`202611150300_services_columns.sql` の `services_package_members`）
+- `varchar` 列を値の一覧と比べる CHECK 制約は、列を `text` にしてから比べる（`gender::text IN ('male', …)`）。`gender IN (…)` と書くと、PostgreSQL が保存する式（`… = ANY ((ARRAY['male'::character varying, …])::text[])`）は、その式から作り直したときに別の表記（`ARRAY[('male'::character varying)::text, …]`）になる。マイグレーションを適用した DB と `sql/setup.sql` から作った DB で `schema.ts` が食い違い、`pnpm check:db-schema` が失敗する（`202611150900_customers_columns.sql` の `customers_gender_known`）
 
 ```sql
 -- backend/packages/database/sql/migrations/202611140900_salon_list_columns_not_null.sql
@@ -183,8 +184,9 @@ DB の型と API の型は、2 つのマッパーでつなぐ。
 - 入力の検証はマッパーの仕事ではない。ユースケースが Zod スキーマで検証したあとの値を、Write マッパーが受け取る
 - Read マッパーは `Result` を返す。保存されている値が API のモデルに合わなければ `database` エラーになる
 - null を空文字や既定値に読み替えない
-- Write マッパーを書くのは、リクエストで書けるカラムに表現を変えるものがあるときと、リクエストが複数のテーブルの行を含むときだけである。サービスカテゴリーにはどちらもないので、ユースケースは検証済みのリクエストをそのままリポジトリに渡す。Read マッパー（`backend/packages/domain/src/mappers/read/service-category.mapper.ts`）はあり、タイムスタンプを変換する
+- Write マッパーがリクエストを作り替えるのは、リクエストで書けるカラムに表現を変えるものがあるときと、リクエストが複数のテーブルの行を含むときだけである。サービスカテゴリーにはどちらもなく、Write マッパーがない。ユースケースは検証済みのリクエストをそのままリポジトリに渡す。Read マッパー（`backend/packages/domain/src/mappers/read/service-category.mapper.ts`）はあり、タイムスタンプを変換する
 - サービスにも表現を変えるカラムはないが、リクエストが `services` の行と、オプション（`service_options`）の行を含む。`ServiceWriteMapper`（`backend/packages/domain/src/mappers/write/service.mapper.ts`）は値を変換せず、この 2 つを分ける
+- 顧客にも表現を変えるカラムはなく、リクエストは `customers` の 1 行である。`CustomerWriteMapper`（`backend/packages/domain/src/mappers/write/customer.mapper.ts`）は何も変換せず、リクエストをそのまま行として返す。プロパティ名と表現が行と一致していることを、型検査がここで確認する。Read マッパー（`backend/packages/domain/src/mappers/read/customer.mapper.ts`）は、タイムスタンプのほかに、`jsonb` の `preferences` と、DB では文字列で API では Enum の `gender` を検査する
 
 データの流れ:
 
@@ -201,15 +203,33 @@ DB の型と API の型は、2 つのマッパーでつなぐ。
 
 ## ほかのドメインに適用するとき
 
-テーブルがすでに `schema.ts` にあるドメイン（`customers`、`staff`、`bookings` など）は、同じ形でモデルを定義する。次は実在するコードではなく、Salon のパターンを当てはめた例である。
+テーブルがすでに `schema.ts` にあるドメイン（`staff`、`bookings` など）は、同じ形でモデルを定義する。顧客台帳（`customers`）のモデルが、Salon のパターンをそのまま当てはめた例である。
 
 ```typescript
-// 例: backend/packages/domain/src/models/<domain>.ts
+// backend/packages/domain/src/models/customer.ts（抜粋）
 export type DbCustomer = DeepRequired<typeof customers.$inferSelect>
+
+type CustomerManagedColumn =
+  | 'id'
+  | 'userId'
+  | 'loyaltyPoints'
+  | 'lifetimeValue'
+  | 'firstVisitDate'
+  | 'lastVisitDate'
+  | 'visitCount'
+  | 'noShowCount'
+  | 'cancellationCount'
+  | 'deletedAt'
+  | 'createdAt'
+  | 'updatedAt'
+
 export type DbNewCustomer = DeepRequired<
   Omit<typeof customers.$inferInsert, CustomerManagedColumn>
 >
+export type DbCustomerChanges = Partial<DbNewCustomer>
 ```
+
+`CustomerManagedColumn` は、リクエストから書かないカラムである。DB が値を決めるもの（`id`、タイムスタンプ）と `deletedAt` のほかに、ログインアカウントとの紐づけ（`userId`）と、予約や会計から決まる値（ポイント、累計利用金額、来店日、来店・無断キャンセル・キャンセルの回数）が入る。これらを書く機能（顧客本人の登録、予約、会計）はまだ実装がないので、値は行を作ったときのままである。それ以外のカラムは、リクエストの値をそのまま保存する。
 
 テーブルやカラムが足りない場合は、先に上のワークフローで追加する。API モデルとテーブルの整合を確認する手順は [API-DB型制約マッピング](./api-db-type-constraints-mapping.md) にある。
 
