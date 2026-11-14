@@ -2,7 +2,7 @@
 
 DB のカラムの型と制約が、Drizzle スキーマ、TypeSpec、生成された型、Zod スキーマのそれぞれでどう表されるかの対応表と、その一致を機械的に検査する `pnpm check:api-db` の説明。
 
-対応表は、実装済みの Salon ドメイン（`salons` と `opening_hours`）が実際に行っていることを書いている。認証（`users` と `sessions`）も同じ対応に従っており、Read マッパー（`backend/packages/domain/src/mappers/read/user.mapper.ts`、`session.mapper.ts`）とリクエストの Zod スキーマ（`backend/packages/domain/src/schemas/auth.schema.ts`）を持つ。ほかのドメインは TypeSpec と DB スキーマにあるだけで、マッパーも Zod スキーマもない。それらの TypeSpec も、この対応表に従って DB と一致させてある。
+対応表は、実装済みの Salon ドメイン（`salons` と `opening_hours`）が実際に行っていることを書いている。認証（`users` と `sessions`）も同じ対応に従っており、Read マッパー（`backend/packages/domain/src/mappers/read/user.mapper.ts`、`session.mapper.ts`）とリクエストの Zod スキーマ（`backend/packages/domain/src/schemas/auth.schema.ts`）を持つ。サロンのサービスカテゴリー（`service_categories`）も同じで、Read マッパー（`backend/packages/domain/src/mappers/read/service-category.mapper.ts`）とリクエストの Zod スキーマ（`backend/packages/domain/src/schemas/service-category.schema.ts`）を持つ。Write マッパーはない（理由は[表現の変換](#表現の変換)）。それ以外のドメインは TypeSpec と DB スキーマにあるだけで、マッパーも Zod スキーマもない。それらの TypeSpec も、この対応表に従って DB と一致させてある。
 
 - ルールそのもの（プロパティ名 = カラム名、NULL 許可の一致、Optional の制約）: [CLAUDE.md](../CLAUDE.md)
 - TypeSpec での書き方: [TypeSpec API型定義ルール](./typespec-api-type-rules.md)
@@ -58,7 +58,9 @@ NULL 許可のカラムは、どの層でも null を許す形になる: `schema
 | `time` | `timeOfDaySchema`（`HH:mm` または `HH:mm:ss`） | `openingHours` の `openTime` |
 | enum 型 | 生成された `DayOfWeekTypeSchema`（`@beauty-salon-backend/generated`） | `openingHours` の `dayOfWeek` |
 
-`integer` と `timestamp with time zone` のカラムは、Salon ではリクエストに含まれない（`reviewCount`、`createdAt` など）。
+`integer` と `timestamp with time zone` のカラムは、Salon ではリクエストに含まれない（`reviewCount`、`createdAt` など）。`integer` のカラムをリクエストで受けるのはサービスカテゴリーの `displayOrder` で、`z.number().int().min(0).max(MAX_INTEGER)` で検証する（`backend/packages/domain/src/schemas/service-category.schema.ts`。`MAX_INTEGER` は `integer` のカラムの最大値）。
+
+`nonBlankText` は Salon だけのものではない。複数のドメインのスキーマが共通で使うルールとして、`backend/packages/domain/src/schemas/rules.ts` に定義してある。
 
 ## 表現の変換
 
@@ -125,6 +127,8 @@ export const SalonWriteMapper = {
 
 `...columns` でリクエストをそのまま行にできるのは、プロパティ名と NULL 許可が DB と一致しているからである。どちらかがずれると、`DbNewSalon` に代入できず型検査で失敗する。
 
+リクエストで書けるカラムに上の 3 種類がないテーブルには、Write マッパーを書かない。`service_categories` がその例で、検証済みのリクエストをそのままリポジトリに渡す（`backend/packages/domain/src/models/service-category.ts` の `DbNewServiceCategory`）。Read マッパーが変換するのは `createdAt` と `updatedAt` だけである。
+
 `time` のカラムは変換しない。DB は `HH:mm:ss` で返し、リクエストは `HH:mm` と `HH:mm:ss` のどちらも受け付ける。
 
 ## 制約の対応
@@ -138,11 +142,13 @@ export const SalonWriteMapper = {
 | `uuid` の主キー | ID スカラー | `uuidSchema.brand<'SalonId'>()`（`salonIdSchema`） | UUID でない ID は検証エラー（400）。大文字で書かれた ID は小文字にそろえる |
 | 一意インデックス（`salons_email_unique`。削除されていない行が対象） | `@doc` に「削除されていないサロンの間で一意」と書き、オペレーションに 409 を列挙する | 検証しない | リポジトリが一意性の違反（SQLSTATE `23505`）を `alreadyExists` に変換する（409） |
 | 外部キー（`opening_hours.salonId`、`ON DELETE CASCADE`） | 親モデルに `openingHours` として埋め込む | 配列として検証する | リポジトリが親と子を 1 つのトランザクションで書く |
+| 外部キー（`service_categories.salonId`、`ON DELETE CASCADE`）。サロンの下のルートを持つリソース | パスの `salonId`。Create / Update のモデルには含めず、Response には含める | パスの値を `parseSalonIdOfPath`（`models/salon.ts`）で検証する | サロンがなければ 404。リポジトリはすべてのクエリにサロンの ID を付けるので、ほかのサロンの行は見つからない（404） |
 
 リクエストで書けるカラムと書けないカラムの扱い:
 
 - `DEFAULT` のあるカラムでも、リクエストで書けるもの（`timezone`、`currency`、`taxRate`、`isActive`）は Create で必須にする。`DbNewSalon` は `DeepRequired` で全キーが必須なので、API は DB の既定値に頼らない
 - DB やほかの機能が値を決めるカラム（`id`、`rating`、`reviewCount`、`createdAt`、`updatedAt` など）は Create / Update に含めない。リクエストのスキーマは `z.strictObject` なので、これらを送ると未知のプロパティとして検証エラーになる
+- 行が属するサロンを指すカラム（`service_categories.salonId`）も Create / Update に含めない。値はパスの `salonId` で決まり、あとから変えられない。`api-consistency-rules.ts` では `omittedColumns` に入れる（`serviceCategoryManagedColumns`）
 - `deletedAt`（論理削除）は API に出さない。リポジトリのすべてのメソッドが `deletedAt IS NULL` の行だけを扱う
 
 Zod スキーマは API の型と突き合わせてあるので、TypeSpec の形を変えてスキーマを直し忘れると型検査で失敗する。

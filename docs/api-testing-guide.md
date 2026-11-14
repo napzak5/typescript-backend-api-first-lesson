@@ -21,10 +21,16 @@ backend/packages/api/
     │   ├── setup.ts                 # the database of the run, a schema for each test
     │   ├── test-schema-manager.ts   # creates and drops the schemas
     │   ├── test-helpers.ts          # createTestApp, getTestDb, request
-    │   └── auth-helpers.ts          # users, staff, salons and sessions as rows; signing in
-    ├── salon.integration.test.ts    # the Salon endpoints: the reference
-    ├── auth.integration.test.ts     # the authentication endpoints
-    └── app.integration.test.ts      # what the application does for every route
+    │   ├── auth-helpers.ts          # users, staff, salons and sessions as rows; signing in
+    │   └── two-factor-helpers.ts    # one-time passwords, stored secrets, a user with two-factor authentication
+    ├── salon.integration.test.ts              # the Salon endpoints: the reference
+    ├── service-category.integration.test.ts   # the service category endpoints: the reference for routes below a salon
+    ├── auth.integration.test.ts               # signing in, tokens, the seeded accounts
+    ├── auth-registration.integration.test.ts  # registration, email verification, passwords
+    ├── auth-sessions.integration.test.ts      # the sessions of the signed-in user
+    ├── auth-two-factor.integration.test.ts    # two-factor authentication
+    ├── admin-auth.integration.test.ts         # what an administrator does to accounts
+    └── app.integration.test.ts                # what the application does for every route
 ```
 
 Unit tests of the same package (problem details, middleware, links, query

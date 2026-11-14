@@ -74,12 +74,12 @@ export interface ModelsSalonCreateRequest {
      */
   longitude: number | null;
   /**
-     * 代表電話番号
+     * 代表電話番号。数字、空白、ハイフン、+、丸括弧で書き、数字を10個以上含む
      * @maxLength 20
      */
   phoneNumber: string;
   /**
-     * 予備の電話番号。未設定の場合はnull
+     * 予備の電話番号。数字、空白、ハイフン、+、丸括弧で書き、数字を10個以上含む。未設定の場合はnull
      * @maxLength 20
      * @nullable
      */
@@ -118,9 +118,10 @@ export interface ModelsSalonCreateRequest {
      */
   timezone: string;
   /**
-     * 料金表示に使用する通貨コード(ISO 4217)
+     * 料金表示に使用する通貨コード(ISO 4217)。英大文字3文字
      * @minLength 3
      * @maxLength 3
+     * @pattern ^[A-Z]{3}$
      */
   currency: string;
   /**

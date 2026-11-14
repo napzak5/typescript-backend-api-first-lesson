@@ -15,6 +15,8 @@
 | `HttpError` | `backend/packages/api/src/shared/problem-details.ts` | `routeNotFound` / `malformedBody` / `unsupportedMediaType` / `bodyTooLarge` / `badRequest` / `rateLimited` / `unexpected` |
 | `ApiError` | 同上 | `DomainError` と `HttpError` の和 |
 | `OpeningHoursChange` | `backend/packages/domain/src/models/salon.ts` | `keep` / `replace` |
+| `ServiceCategoryCreation` | `backend/packages/domain/src/repositories/service-category.repository.ts` | `created` / `parentNotFound` |
+| `ServiceCategoryUpdate` | 同上 | `updated` / `notFound` / `parentNotFound` / `parentWithinSubtree` |
 | `ActorScope` | `backend/packages/domain/src/models/auth.ts` | `platform` / `salon` / `customer` / `none` |
 | `PasswordVerification` | `backend/packages/domain/src/services/password-hasher.ts` | `match` / `mismatch` |
 | `PasswordCheck` | `backend/packages/domain/src/business-logic/auth/_shared/password-check.ts` | `accepted` / `refused` |
@@ -154,10 +156,10 @@ export type DomainError =
 
 | ケース | 作られる場所 | HTTP ステータス |
 |--------|--------------|-----------------|
-| `validation` | `parseWith`（`backend/packages/domain/src/shared/validation.ts`）が Zod の検証結果から作る。認証のユースケースは、スキーマでは確認できない規則（推測されやすいパスワード、現在のパスワードの誤り、使えないトークン、受け付けられない 2 要素認証のコード、そのユーザーのセッションを指していないセッション一覧のカーソル）についても作る | 400 |
+| `validation` | `parseWith`（`backend/packages/domain/src/shared/validation.ts`）が Zod の検証結果から作る。認証のユースケースは、スキーマでは確認できない規則（推測されやすいパスワード、現在のパスワードの誤り、使えないトークン、受け付けられない 2 要素認証のコード、そのユーザーのセッションを指していないセッション一覧のカーソル）についても作る。サービスカテゴリーのユースケースも、親にできないカテゴリーを指す `parentId`（同じサロンのカテゴリーでない、またはそのカテゴリー自身かその下位のカテゴリー）と、そのサロンのカテゴリーを指していない一覧のカーソルについて作る | 400 |
 | `unauthenticated` | 認証のユースケース（`backend/packages/domain/src/business-logic/auth/`）。有効なアクセストークンがない、ログインやトークンの再発行に失敗したとき。2 要素認証が有効なアカウントのログインで、コードがない・受け付けられないときも含む。理由は `reason` が持つ | 401 |
 | `forbidden` | ユースケース。操作者にその操作の権限がないとき | 403 |
-| `notFound` | ユースケース。リポジトリが `null`（削除では `false`）を返したとき | 404 |
+| `notFound` | ユースケース。リポジトリが `null`（削除では `false`）を返したとき、またはリポジトリの結果が `notFound` のケースだったとき（`ServiceCategoryUpdate`）。サロンの下にあるルートでは、パスのサロンが存在しないときも作る（`backend/packages/domain/src/business-logic/_shared/existing-salon.ts` の `requireSalon`） | 404 |
 | `alreadyExists` | リポジトリ。メールアドレスの一意制約に違反したとき | 409 |
 | `conflict` | 2 要素認証のユースケースと、管理者の操作のユースケース。リクエストは正しいが、対象の状態がその操作を許さないとき（すでに有効なのに設定を開始する、ロックされていないアカウントのロックを解除する、など） | 409 |
 | `database` | リポジトリ（想定外のクエリ失敗）、読み取りマッパー（保存値が API モデルに合わない） | 500 |
@@ -311,7 +313,7 @@ export const toHttpError = (error: unknown): HttpError =>
 |----------|------|----------|
 | `P.string` / `P.number` | プロパティがその型のときだけ取り出す | `describeDatabaseError`（`backend/packages/infrastructure/src/database/failure.ts`）、`portOf`（`backend/apps/server/src/server.ts`） |
 | `P.select()` | 一致した値の一部だけを分岐に渡す | `describeDatabaseError` |
-| `P.union(...)` | 複数の形のどれか | `toHttpError`、`toDomainError`（`backend/packages/infrastructure/src/repositories/salon.repository.impl.ts`）、`mayUpdateSalon`、`mayDeleteSalon` |
+| `P.union(...)` | 複数の形のどれか | `toHttpError`、`toDomainError`（`backend/packages/infrastructure/src/repositories/salon.repository.impl.ts`）、`mayUpdateSalon`、`mayDeleteSalon`、`mayManageServiceCategories` |
 | `P.string.regex(...)` | 文字列の形式 | `assignRequestId`（`backend/packages/api/src/middleware/request-logging.ts`） |
 | `P.number.between(...)` / `P.number.gte(...)` | 数値の範囲 | `toHttpError`、`requestLogging` のログレベル判定 |
 

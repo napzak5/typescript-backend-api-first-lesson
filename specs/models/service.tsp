@@ -458,12 +458,10 @@ namespace BeautySalon.Models {
   }
 
   @doc("""
-    サービスカテゴリ新規登録リクエスト - 全項目のキーが必須。DB で NULL 許可のカラムのみ null を指定できる
+    サービスカテゴリ新規登録リクエスト - 全項目のキーが必須。DB で NULL 許可のカラムのみ null を指定できる。
+    カテゴリを持つサロンはパスの salonId で指定する
     """)
   model ServiceCategoryCreateRequest {
-    @doc("カテゴリを持つサロン ID")
-    salonId: SalonId;
-
     @doc("カテゴリ名")
     @minLength(1)
     @maxLength(100)
@@ -487,6 +485,7 @@ namespace BeautySalon.Models {
     iconUrl: string | null;
 
     @doc("表示色(#RRGGBB形式)。未設定の場合はnull")
+    @pattern("^#[0-9A-Fa-f]{6}$")
     @maxLength(7)
     color: string | null;
 
@@ -522,6 +521,7 @@ namespace BeautySalon.Models {
     iconUrl?: string | null;
 
     @doc("表示色(#RRGGBB形式)。nullでクリア")
+    @pattern("^#[0-9A-Fa-f]{6}$")
     @maxLength(7)
     color?: string | null;
 
@@ -544,7 +544,7 @@ namespace BeautySalon.Models {
     cursor?: string;
 
     @query
-    @doc("カテゴリを持つサロンの ID による絞り込み(完全一致)")
-    salonId?: SalonId;
+    @doc("有効フラグによる絞り込み。指定しない場合は無効なカテゴリも返す")
+    isActive?: boolean;
   }
 }

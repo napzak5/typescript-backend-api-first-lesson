@@ -6,8 +6,8 @@
  * OpenAPI spec version: 2.0
  */
 import type { ModelsServiceCategorySearchRequestCursorParameter } from './modelsServiceCategorySearchRequestCursorParameter';
+import type { ModelsServiceCategorySearchRequestIsActiveParameter } from './modelsServiceCategorySearchRequestIsActiveParameter';
 import type { ModelsServiceCategorySearchRequestLimitParameter } from './modelsServiceCategorySearchRequestLimitParameter';
-import type { ModelsServiceCategorySearchRequestSalonIdParameter } from './modelsServiceCategorySearchRequestSalonIdParameter';
 
 export type ServiceCategoryCrudListParams = {
   /**
@@ -18,6 +18,6 @@ export type ServiceCategoryCrudListParams = {
   limit?: ModelsServiceCategorySearchRequestLimitParameter;
   /** 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
   cursor?: ModelsServiceCategorySearchRequestCursorParameter;
-  /** サロン店舗・拠点を識別するためのブランド付きUUID。 */
-  salonId?: ModelsServiceCategorySearchRequestSalonIdParameter;
+  /** 有効フラグによる絞り込み。指定しない場合は無効なカテゴリも返す */
+  isActive?: ModelsServiceCategorySearchRequestIsActiveParameter;
 };

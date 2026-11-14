@@ -67,7 +67,735 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   return result;
 };
 
-export type serviceCrudListResponse200 = {
+export type serviceCategoryCrudListResponse200 = {
+  data: ServiceCategoryCrudList200
+  status: 200
+}
+
+export type serviceCategoryCrudListResponse400 = {
+  data: ModelsProblemDetails
+  status: 400
+}
+
+export type serviceCategoryCrudListResponse404 = {
+  data: ModelsProblemDetails
+  status: 404
+}
+
+export type serviceCategoryCrudListResponse429 = {
+  data: ModelsProblemDetails
+  status: 429
+}
+
+export type serviceCategoryCrudListResponse500 = {
+  data: ModelsProblemDetails
+  status: 500
+}
+
+export type serviceCategoryCrudListResponseSuccess = (serviceCategoryCrudListResponse200) & {
+  headers: Headers;
+};
+export type serviceCategoryCrudListResponseError = (serviceCategoryCrudListResponse400 | serviceCategoryCrudListResponse404 | serviceCategoryCrudListResponse429 | serviceCategoryCrudListResponse500) & {
+  headers: Headers;
+};
+
+export type serviceCategoryCrudListResponse = (serviceCategoryCrudListResponseSuccess | serviceCategoryCrudListResponseError)
+
+export const getServiceCategoryCrudListUrl = (salonId: ModelsSalonId,
+    params?: ServiceCategoryCrudListParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/salons/${salonId}/service-categories?${stringifiedParams}` : `/api/v1/salons/${salonId}/service-categories`
+}
+
+/**
+ * サロンのカテゴリを、絞り込み条件とページネーションを指定して一覧取得します。表示順(displayOrder)の昇順に並びます。cursorがそのサロンのカテゴリを指していない場合(削除された場合を含む)は400を返します。
+ * @summary List service categories
+ */
+export const serviceCategoryCrudList = async (salonId: ModelsSalonId,
+    params?: ServiceCategoryCrudListParams, options?: RequestInit): Promise<serviceCategoryCrudListResponse> => {
+
+  return customInstance<serviceCategoryCrudListResponse>(getServiceCategoryCrudListUrl(salonId,params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getServiceCategoryCrudListQueryKey = (salonId: ModelsSalonId,
+    params?: ServiceCategoryCrudListParams,) => {
+    return [
+    `/api/v1/salons/${salonId}/service-categories`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getServiceCategoryCrudListQueryOptions = <TData = Awaited<ReturnType<typeof serviceCategoryCrudList>>, TError = ModelsProblemDetails>(salonId: ModelsSalonId,
+    params?: ServiceCategoryCrudListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof serviceCategoryCrudList>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getServiceCategoryCrudListQueryKey(salonId,params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof serviceCategoryCrudList>>> = ({ signal }) => serviceCategoryCrudList(salonId,params, { signal });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: salonId !== null && salonId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof serviceCategoryCrudList>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ServiceCategoryCrudListQueryResult = NonNullable<Awaited<ReturnType<typeof serviceCategoryCrudList>>>
+export type ServiceCategoryCrudListQueryError = ModelsProblemDetails
+
+
+/**
+ * サロンのカテゴリを、絞り込み条件とページネーションを指定して一覧取得します。表示順(displayOrder)の昇順に並びます。cursorがそのサロンのカテゴリを指していない場合(削除された場合を含む)は400を返します。
+ * @summary List service categories
+ */
+export function useServiceCategoryCrudList<TData = Awaited<ReturnType<typeof serviceCategoryCrudList>>, TError = ModelsProblemDetails>(
+ salonId: ModelsSalonId,
+    params: undefined |  ServiceCategoryCrudListParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof serviceCategoryCrudList>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof serviceCategoryCrudList>>,
+          TError,
+          Awaited<ReturnType<typeof serviceCategoryCrudList>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * サロンのカテゴリを、絞り込み条件とページネーションを指定して一覧取得します。表示順(displayOrder)の昇順に並びます。cursorがそのサロンのカテゴリを指していない場合(削除された場合を含む)は400を返します。
+ * @summary List service categories
+ */
+export function useServiceCategoryCrudList<TData = Awaited<ReturnType<typeof serviceCategoryCrudList>>, TError = ModelsProblemDetails>(
+ salonId: ModelsSalonId,
+    params?: ServiceCategoryCrudListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof serviceCategoryCrudList>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof serviceCategoryCrudList>>,
+          TError,
+          Awaited<ReturnType<typeof serviceCategoryCrudList>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * サロンのカテゴリを、絞り込み条件とページネーションを指定して一覧取得します。表示順(displayOrder)の昇順に並びます。cursorがそのサロンのカテゴリを指していない場合(削除された場合を含む)は400を返します。
+ * @summary List service categories
+ */
+export function useServiceCategoryCrudList<TData = Awaited<ReturnType<typeof serviceCategoryCrudList>>, TError = ModelsProblemDetails>(
+ salonId: ModelsSalonId,
+    params?: ServiceCategoryCrudListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof serviceCategoryCrudList>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * サロンのカテゴリを、絞り込み条件とページネーションを指定して一覧取得します。表示順(displayOrder)の昇順に並びます。cursorがそのサロンのカテゴリを指していない場合(削除された場合を含む)は400を返します。
+ * @summary List service categories
+ */
+export function useServiceCategoryCrudList<TData = Awaited<ReturnType<typeof serviceCategoryCrudList>>, TError = ModelsProblemDetails>(
+ salonId: ModelsSalonId,
+    params?: ServiceCategoryCrudListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof serviceCategoryCrudList>>, TError, TData>>, }
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getServiceCategoryCrudListQueryOptions(salonId,params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type serviceCategoryCrudCreateResponse201 = {
+  data: ServiceCategoryCrudCreate201
+  status: 201
+}
+
+export type serviceCategoryCrudCreateResponse400 = {
+  data: ModelsProblemDetails
+  status: 400
+}
+
+export type serviceCategoryCrudCreateResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type serviceCategoryCrudCreateResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
+export type serviceCategoryCrudCreateResponse404 = {
+  data: ModelsProblemDetails
+  status: 404
+}
+
+export type serviceCategoryCrudCreateResponse413 = {
+  data: ModelsProblemDetails
+  status: 413
+}
+
+export type serviceCategoryCrudCreateResponse415 = {
+  data: ModelsProblemDetails
+  status: 415
+}
+
+export type serviceCategoryCrudCreateResponse429 = {
+  data: ModelsProblemDetails
+  status: 429
+}
+
+export type serviceCategoryCrudCreateResponse500 = {
+  data: ModelsProblemDetails
+  status: 500
+}
+
+export type serviceCategoryCrudCreateResponseSuccess = (serviceCategoryCrudCreateResponse201) & {
+  headers: Headers;
+};
+export type serviceCategoryCrudCreateResponseError = (serviceCategoryCrudCreateResponse400 | serviceCategoryCrudCreateResponse401 | serviceCategoryCrudCreateResponse403 | serviceCategoryCrudCreateResponse404 | serviceCategoryCrudCreateResponse413 | serviceCategoryCrudCreateResponse415 | serviceCategoryCrudCreateResponse429 | serviceCategoryCrudCreateResponse500) & {
+  headers: Headers;
+};
+
+export type serviceCategoryCrudCreateResponse = (serviceCategoryCrudCreateResponseSuccess | serviceCategoryCrudCreateResponseError)
+
+export const getServiceCategoryCrudCreateUrl = (salonId: ModelsSalonId,) => {
+
+
+
+
+  return `/api/v1/salons/${salonId}/service-categories`
+}
+
+/**
+ * サロンに新しい施術カテゴリを作成し、階層構造や表示順を定義します。parentIdに同じサロンのものではないカテゴリを指定した場合は400を返します。
+ * @summary Create service category
+ */
+export const serviceCategoryCrudCreate = async (salonId: ModelsSalonId,
+    modelsServiceCategoryCreateRequest: ModelsServiceCategoryCreateRequest, options?: RequestInit): Promise<serviceCategoryCrudCreateResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customInstance<serviceCategoryCrudCreateResponse>(getServiceCategoryCrudCreateUrl(salonId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(modelsServiceCategoryCreateRequest)
+  }
+);}
+
+
+
+
+
+export const getServiceCategoryCrudCreateMutationKey = () => ['serviceCategoryCrudCreate'] as const;
+
+export const getServiceCategoryCrudCreateMutationOptions = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof serviceCategoryCrudCreate>>, TError,ServiceCategoryCrudCreateMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof serviceCategoryCrudCreate>>, TError,ServiceCategoryCrudCreateMutationVariables, TContext> => {
+
+const mutationKey = getServiceCategoryCrudCreateMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof serviceCategoryCrudCreate>>, ServiceCategoryCrudCreateMutationVariables> = (props) => {
+          const {salonId,data} = props ?? {};
+
+          return  serviceCategoryCrudCreate(salonId,data,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ServiceCategoryCrudCreateMutationResult = NonNullable<Awaited<ReturnType<typeof serviceCategoryCrudCreate>>>
+    export type ServiceCategoryCrudCreateMutationBody = ModelsServiceCategoryCreateRequest
+    export type ServiceCategoryCrudCreateMutationError = ModelsProblemDetails
+    export type ServiceCategoryCrudCreateMutationVariables = {salonId: ModelsSalonId;data: ModelsServiceCategoryCreateRequest}
+
+    /**
+ * サロンに新しい施術カテゴリを作成し、階層構造や表示順を定義します。parentIdに同じサロンのものではないカテゴリを指定した場合は400を返します。
+ * @summary Create service category
+ */
+export const useServiceCategoryCrudCreate = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof serviceCategoryCrudCreate>>, TError,ServiceCategoryCrudCreateMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof serviceCategoryCrudCreate>>,
+        TError,
+        ServiceCategoryCrudCreateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getServiceCategoryCrudCreateMutationOptions(options), queryClient);
+    }
+    export type serviceCategoryCrudGetResponse200 = {
+  data: ServiceCategoryCrudGet200
+  status: 200
+}
+
+export type serviceCategoryCrudGetResponse400 = {
+  data: ModelsProblemDetails
+  status: 400
+}
+
+export type serviceCategoryCrudGetResponse404 = {
+  data: ModelsProblemDetails
+  status: 404
+}
+
+export type serviceCategoryCrudGetResponse429 = {
+  data: ModelsProblemDetails
+  status: 429
+}
+
+export type serviceCategoryCrudGetResponse500 = {
+  data: ModelsProblemDetails
+  status: 500
+}
+
+export type serviceCategoryCrudGetResponseSuccess = (serviceCategoryCrudGetResponse200) & {
+  headers: Headers;
+};
+export type serviceCategoryCrudGetResponseError = (serviceCategoryCrudGetResponse400 | serviceCategoryCrudGetResponse404 | serviceCategoryCrudGetResponse429 | serviceCategoryCrudGetResponse500) & {
+  headers: Headers;
+};
+
+export type serviceCategoryCrudGetResponse = (serviceCategoryCrudGetResponseSuccess | serviceCategoryCrudGetResponseError)
+
+export const getServiceCategoryCrudGetUrl = (salonId: ModelsSalonId,
+    id: ModelsCategoryId,) => {
+
+
+
+
+  return `/api/v1/salons/${salonId}/service-categories/${id}`
+}
+
+/**
+ * 特定カテゴリの詳細情報を取得し、名称や親子関係、表示順を確認します。カテゴリがそのサロンのものでない場合は404を返します。
+ * @summary Get service category
+ */
+export const serviceCategoryCrudGet = async (salonId: ModelsSalonId,
+    id: ModelsCategoryId, options?: RequestInit): Promise<serviceCategoryCrudGetResponse> => {
+
+  return customInstance<serviceCategoryCrudGetResponse>(getServiceCategoryCrudGetUrl(salonId,id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getServiceCategoryCrudGetQueryKey = (salonId: ModelsSalonId,
+    id: ModelsCategoryId,) => {
+    return [
+    `/api/v1/salons/${salonId}/service-categories/${id}`
+    ] as const;
+    }
+
+
+export const getServiceCategoryCrudGetQueryOptions = <TData = Awaited<ReturnType<typeof serviceCategoryCrudGet>>, TError = ModelsProblemDetails>(salonId: ModelsSalonId,
+    id: ModelsCategoryId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof serviceCategoryCrudGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getServiceCategoryCrudGetQueryKey(salonId,id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof serviceCategoryCrudGet>>> = ({ signal }) => serviceCategoryCrudGet(salonId,id, { signal });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: salonId !== null && salonId !== undefined && id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof serviceCategoryCrudGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ServiceCategoryCrudGetQueryResult = NonNullable<Awaited<ReturnType<typeof serviceCategoryCrudGet>>>
+export type ServiceCategoryCrudGetQueryError = ModelsProblemDetails
+
+
+/**
+ * 特定カテゴリの詳細情報を取得し、名称や親子関係、表示順を確認します。カテゴリがそのサロンのものでない場合は404を返します。
+ * @summary Get service category
+ */
+export function useServiceCategoryCrudGet<TData = Awaited<ReturnType<typeof serviceCategoryCrudGet>>, TError = ModelsProblemDetails>(
+ salonId: ModelsSalonId,
+    id: ModelsCategoryId, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof serviceCategoryCrudGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof serviceCategoryCrudGet>>,
+          TError,
+          Awaited<ReturnType<typeof serviceCategoryCrudGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * 特定カテゴリの詳細情報を取得し、名称や親子関係、表示順を確認します。カテゴリがそのサロンのものでない場合は404を返します。
+ * @summary Get service category
+ */
+export function useServiceCategoryCrudGet<TData = Awaited<ReturnType<typeof serviceCategoryCrudGet>>, TError = ModelsProblemDetails>(
+ salonId: ModelsSalonId,
+    id: ModelsCategoryId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof serviceCategoryCrudGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof serviceCategoryCrudGet>>,
+          TError,
+          Awaited<ReturnType<typeof serviceCategoryCrudGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * 特定カテゴリの詳細情報を取得し、名称や親子関係、表示順を確認します。カテゴリがそのサロンのものでない場合は404を返します。
+ * @summary Get service category
+ */
+export function useServiceCategoryCrudGet<TData = Awaited<ReturnType<typeof serviceCategoryCrudGet>>, TError = ModelsProblemDetails>(
+ salonId: ModelsSalonId,
+    id: ModelsCategoryId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof serviceCategoryCrudGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * 特定カテゴリの詳細情報を取得し、名称や親子関係、表示順を確認します。カテゴリがそのサロンのものでない場合は404を返します。
+ * @summary Get service category
+ */
+export function useServiceCategoryCrudGet<TData = Awaited<ReturnType<typeof serviceCategoryCrudGet>>, TError = ModelsProblemDetails>(
+ salonId: ModelsSalonId,
+    id: ModelsCategoryId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof serviceCategoryCrudGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getServiceCategoryCrudGetQueryOptions(salonId,id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type serviceCategoryCrudUpdateResponse200 = {
+  data: ServiceCategoryCrudUpdate200
+  status: 200
+}
+
+export type serviceCategoryCrudUpdateResponse400 = {
+  data: ModelsProblemDetails
+  status: 400
+}
+
+export type serviceCategoryCrudUpdateResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type serviceCategoryCrudUpdateResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
+export type serviceCategoryCrudUpdateResponse404 = {
+  data: ModelsProblemDetails
+  status: 404
+}
+
+export type serviceCategoryCrudUpdateResponse413 = {
+  data: ModelsProblemDetails
+  status: 413
+}
+
+export type serviceCategoryCrudUpdateResponse415 = {
+  data: ModelsProblemDetails
+  status: 415
+}
+
+export type serviceCategoryCrudUpdateResponse429 = {
+  data: ModelsProblemDetails
+  status: 429
+}
+
+export type serviceCategoryCrudUpdateResponse500 = {
+  data: ModelsProblemDetails
+  status: 500
+}
+
+export type serviceCategoryCrudUpdateResponseSuccess = (serviceCategoryCrudUpdateResponse200) & {
+  headers: Headers;
+};
+export type serviceCategoryCrudUpdateResponseError = (serviceCategoryCrudUpdateResponse400 | serviceCategoryCrudUpdateResponse401 | serviceCategoryCrudUpdateResponse403 | serviceCategoryCrudUpdateResponse404 | serviceCategoryCrudUpdateResponse413 | serviceCategoryCrudUpdateResponse415 | serviceCategoryCrudUpdateResponse429 | serviceCategoryCrudUpdateResponse500) & {
+  headers: Headers;
+};
+
+export type serviceCategoryCrudUpdateResponse = (serviceCategoryCrudUpdateResponseSuccess | serviceCategoryCrudUpdateResponseError)
+
+export const getServiceCategoryCrudUpdateUrl = (salonId: ModelsSalonId,
+    id: ModelsCategoryId,) => {
+
+
+
+
+  return `/api/v1/salons/${salonId}/service-categories/${id}`
+}
+
+/**
+ * 既存カテゴリの指定した項目だけを更新し、名称や表示順、親子関係を調整します。parentIdに同じサロンのものではないカテゴリや、自身または子孫のカテゴリを指定した場合は400を返します。カテゴリがそのサロンのものでない場合は404を返します。
+ * @summary Update service category
+ */
+export const serviceCategoryCrudUpdate = async (salonId: ModelsSalonId,
+    id: ModelsCategoryId,
+    modelsServiceCategoryUpdateRequest: ModelsServiceCategoryUpdateRequest, options?: RequestInit): Promise<serviceCategoryCrudUpdateResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customInstance<serviceCategoryCrudUpdateResponse>(getServiceCategoryCrudUpdateUrl(salonId,id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(modelsServiceCategoryUpdateRequest)
+  }
+);}
+
+
+
+
+
+export const getServiceCategoryCrudUpdateMutationKey = () => ['serviceCategoryCrudUpdate'] as const;
+
+export const getServiceCategoryCrudUpdateMutationOptions = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof serviceCategoryCrudUpdate>>, TError,ServiceCategoryCrudUpdateMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof serviceCategoryCrudUpdate>>, TError,ServiceCategoryCrudUpdateMutationVariables, TContext> => {
+
+const mutationKey = getServiceCategoryCrudUpdateMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof serviceCategoryCrudUpdate>>, ServiceCategoryCrudUpdateMutationVariables> = (props) => {
+          const {salonId,id,data} = props ?? {};
+
+          return  serviceCategoryCrudUpdate(salonId,id,data,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ServiceCategoryCrudUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof serviceCategoryCrudUpdate>>>
+    export type ServiceCategoryCrudUpdateMutationBody = ModelsServiceCategoryUpdateRequest
+    export type ServiceCategoryCrudUpdateMutationError = ModelsProblemDetails
+    export type ServiceCategoryCrudUpdateMutationVariables = {salonId: ModelsSalonId;id: ModelsCategoryId;data: ModelsServiceCategoryUpdateRequest}
+
+    /**
+ * 既存カテゴリの指定した項目だけを更新し、名称や表示順、親子関係を調整します。parentIdに同じサロンのものではないカテゴリや、自身または子孫のカテゴリを指定した場合は400を返します。カテゴリがそのサロンのものでない場合は404を返します。
+ * @summary Update service category
+ */
+export const useServiceCategoryCrudUpdate = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof serviceCategoryCrudUpdate>>, TError,ServiceCategoryCrudUpdateMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof serviceCategoryCrudUpdate>>,
+        TError,
+        ServiceCategoryCrudUpdateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getServiceCategoryCrudUpdateMutationOptions(options), queryClient);
+    }
+    export type serviceCategoryCrudDeleteResponse204 = {
+  data: void
+  status: 204
+}
+
+export type serviceCategoryCrudDeleteResponse400 = {
+  data: ModelsProblemDetails
+  status: 400
+}
+
+export type serviceCategoryCrudDeleteResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type serviceCategoryCrudDeleteResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
+export type serviceCategoryCrudDeleteResponse404 = {
+  data: ModelsProblemDetails
+  status: 404
+}
+
+export type serviceCategoryCrudDeleteResponse429 = {
+  data: ModelsProblemDetails
+  status: 429
+}
+
+export type serviceCategoryCrudDeleteResponse500 = {
+  data: ModelsProblemDetails
+  status: 500
+}
+
+export type serviceCategoryCrudDeleteResponseSuccess = (serviceCategoryCrudDeleteResponse204) & {
+  headers: Headers;
+};
+export type serviceCategoryCrudDeleteResponseError = (serviceCategoryCrudDeleteResponse400 | serviceCategoryCrudDeleteResponse401 | serviceCategoryCrudDeleteResponse403 | serviceCategoryCrudDeleteResponse404 | serviceCategoryCrudDeleteResponse429 | serviceCategoryCrudDeleteResponse500) & {
+  headers: Headers;
+};
+
+export type serviceCategoryCrudDeleteResponse = (serviceCategoryCrudDeleteResponseSuccess | serviceCategoryCrudDeleteResponseError)
+
+export const getServiceCategoryCrudDeleteUrl = (salonId: ModelsSalonId,
+    id: ModelsCategoryId,) => {
+
+
+
+
+  return `/api/v1/salons/${salonId}/service-categories/${id}`
+}
+
+/**
+ * 利用されなくなったカテゴリを削除し、メニュー構成を整理します。このカテゴリに属するサービスのcategoryIdと、子カテゴリのparentIdはnullになります。カテゴリがそのサロンのものでない場合は404を返します。
+ * @summary Delete service category
+ */
+export const serviceCategoryCrudDelete = async (salonId: ModelsSalonId,
+    id: ModelsCategoryId, options?: RequestInit): Promise<serviceCategoryCrudDeleteResponse> => {
+
+  return customInstance<serviceCategoryCrudDeleteResponse>(getServiceCategoryCrudDeleteUrl(salonId,id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getServiceCategoryCrudDeleteMutationKey = () => ['serviceCategoryCrudDelete'] as const;
+
+export const getServiceCategoryCrudDeleteMutationOptions = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof serviceCategoryCrudDelete>>, TError,ServiceCategoryCrudDeleteMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof serviceCategoryCrudDelete>>, TError,ServiceCategoryCrudDeleteMutationVariables, TContext> => {
+
+const mutationKey = getServiceCategoryCrudDeleteMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof serviceCategoryCrudDelete>>, ServiceCategoryCrudDeleteMutationVariables> = (props) => {
+          const {salonId,id} = props ?? {};
+
+          return  serviceCategoryCrudDelete(salonId,id,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ServiceCategoryCrudDeleteMutationResult = NonNullable<Awaited<ReturnType<typeof serviceCategoryCrudDelete>>>
+
+    export type ServiceCategoryCrudDeleteMutationError = ModelsProblemDetails
+    export type ServiceCategoryCrudDeleteMutationVariables = {salonId: ModelsSalonId;id: ModelsCategoryId}
+
+    /**
+ * 利用されなくなったカテゴリを削除し、メニュー構成を整理します。このカテゴリに属するサービスのcategoryIdと、子カテゴリのparentIdはnullになります。カテゴリがそのサロンのものでない場合は404を返します。
+ * @summary Delete service category
+ */
+export const useServiceCategoryCrudDelete = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof serviceCategoryCrudDelete>>, TError,ServiceCategoryCrudDeleteMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof serviceCategoryCrudDelete>>,
+        TError,
+        ServiceCategoryCrudDeleteMutationVariables,
+        TContext
+      > => {
+      return useMutation(getServiceCategoryCrudDeleteMutationOptions(options), queryClient);
+    }
+    export type serviceCrudListResponse200 = {
   data: ServiceCrudList200
   status: 200
 }
@@ -958,721 +1686,4 @@ export const useServiceCrudDelete = <TError = ModelsProblemDetails,
         TContext
       > => {
       return useMutation(getServiceCrudDeleteMutationOptions(options), queryClient);
-    }
-    export type serviceCategoryCrudListResponse200 = {
-  data: ServiceCategoryCrudList200
-  status: 200
-}
-
-export type serviceCategoryCrudListResponse400 = {
-  data: ModelsProblemDetails
-  status: 400
-}
-
-export type serviceCategoryCrudListResponse401 = {
-  data: ModelsProblemDetails
-  status: 401
-}
-
-export type serviceCategoryCrudListResponse403 = {
-  data: ModelsProblemDetails
-  status: 403
-}
-
-export type serviceCategoryCrudListResponse429 = {
-  data: ModelsProblemDetails
-  status: 429
-}
-
-export type serviceCategoryCrudListResponse500 = {
-  data: ModelsProblemDetails
-  status: 500
-}
-
-export type serviceCategoryCrudListResponseSuccess = (serviceCategoryCrudListResponse200) & {
-  headers: Headers;
-};
-export type serviceCategoryCrudListResponseError = (serviceCategoryCrudListResponse400 | serviceCategoryCrudListResponse401 | serviceCategoryCrudListResponse403 | serviceCategoryCrudListResponse429 | serviceCategoryCrudListResponse500) & {
-  headers: Headers;
-};
-
-export type serviceCategoryCrudListResponse = (serviceCategoryCrudListResponseSuccess | serviceCategoryCrudListResponseError)
-
-export const getServiceCategoryCrudListUrl = (params?: ServiceCategoryCrudListParams,) => {
-  const normalizedParams = new URLSearchParams();
-
-  Object.entries(params || {}).forEach(([key, value]) => {
-
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : String(value))
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0 ? `/api/v1/service-categories?${stringifiedParams}` : `/api/v1/service-categories`
-}
-
-/**
- * 登録済みのカテゴリを、絞り込み条件とページネーションを指定して一覧取得し、メニュー分類や表示順を管理します。
- * @summary List service categories
- */
-export const serviceCategoryCrudList = async (params?: ServiceCategoryCrudListParams, options?: RequestInit): Promise<serviceCategoryCrudListResponse> => {
-
-  return customInstance<serviceCategoryCrudListResponse>(getServiceCategoryCrudListUrl(params),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getServiceCategoryCrudListQueryKey = (params?: ServiceCategoryCrudListParams,) => {
-    return [
-    `/api/v1/service-categories`, ...(params ? [params] : [])
-    ] as const;
-    }
-
-
-export const getServiceCategoryCrudListQueryOptions = <TData = Awaited<ReturnType<typeof serviceCategoryCrudList>>, TError = ModelsProblemDetails>(params?: ServiceCategoryCrudListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof serviceCategoryCrudList>>, TError, TData>>, }
-) => {
-
-const {query: queryOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getServiceCategoryCrudListQueryKey(params);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof serviceCategoryCrudList>>> = ({ signal }) => serviceCategoryCrudList(params, { signal });
-
-
-
-
-
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof serviceCategoryCrudList>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type ServiceCategoryCrudListQueryResult = NonNullable<Awaited<ReturnType<typeof serviceCategoryCrudList>>>
-export type ServiceCategoryCrudListQueryError = ModelsProblemDetails
-
-
-/**
- * 登録済みのカテゴリを、絞り込み条件とページネーションを指定して一覧取得し、メニュー分類や表示順を管理します。
- * @summary List service categories
- */
-export function useServiceCategoryCrudList<TData = Awaited<ReturnType<typeof serviceCategoryCrudList>>, TError = ModelsProblemDetails>(
- params: undefined |  ServiceCategoryCrudListParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof serviceCategoryCrudList>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof serviceCategoryCrudList>>,
-          TError,
-          Awaited<ReturnType<typeof serviceCategoryCrudList>>
-        > , 'initialData'
-      >, }
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * 登録済みのカテゴリを、絞り込み条件とページネーションを指定して一覧取得し、メニュー分類や表示順を管理します。
- * @summary List service categories
- */
-export function useServiceCategoryCrudList<TData = Awaited<ReturnType<typeof serviceCategoryCrudList>>, TError = ModelsProblemDetails>(
- params?: ServiceCategoryCrudListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof serviceCategoryCrudList>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof serviceCategoryCrudList>>,
-          TError,
-          Awaited<ReturnType<typeof serviceCategoryCrudList>>
-        > , 'initialData'
-      >, }
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * 登録済みのカテゴリを、絞り込み条件とページネーションを指定して一覧取得し、メニュー分類や表示順を管理します。
- * @summary List service categories
- */
-export function useServiceCategoryCrudList<TData = Awaited<ReturnType<typeof serviceCategoryCrudList>>, TError = ModelsProblemDetails>(
- params?: ServiceCategoryCrudListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof serviceCategoryCrudList>>, TError, TData>>, }
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * 登録済みのカテゴリを、絞り込み条件とページネーションを指定して一覧取得し、メニュー分類や表示順を管理します。
- * @summary List service categories
- */
-export function useServiceCategoryCrudList<TData = Awaited<ReturnType<typeof serviceCategoryCrudList>>, TError = ModelsProblemDetails>(
- params?: ServiceCategoryCrudListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof serviceCategoryCrudList>>, TError, TData>>, }
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-
-  const queryOptions = getServiceCategoryCrudListQueryOptions(params,options)
-
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return withQueryKey(query, queryOptions.queryKey);
-}
-
-
-
-
-
-
-export type serviceCategoryCrudCreateResponse201 = {
-  data: ServiceCategoryCrudCreate201
-  status: 201
-}
-
-export type serviceCategoryCrudCreateResponse400 = {
-  data: ModelsProblemDetails
-  status: 400
-}
-
-export type serviceCategoryCrudCreateResponse401 = {
-  data: ModelsProblemDetails
-  status: 401
-}
-
-export type serviceCategoryCrudCreateResponse403 = {
-  data: ModelsProblemDetails
-  status: 403
-}
-
-export type serviceCategoryCrudCreateResponse413 = {
-  data: ModelsProblemDetails
-  status: 413
-}
-
-export type serviceCategoryCrudCreateResponse415 = {
-  data: ModelsProblemDetails
-  status: 415
-}
-
-export type serviceCategoryCrudCreateResponse429 = {
-  data: ModelsProblemDetails
-  status: 429
-}
-
-export type serviceCategoryCrudCreateResponse500 = {
-  data: ModelsProblemDetails
-  status: 500
-}
-
-export type serviceCategoryCrudCreateResponseSuccess = (serviceCategoryCrudCreateResponse201) & {
-  headers: Headers;
-};
-export type serviceCategoryCrudCreateResponseError = (serviceCategoryCrudCreateResponse400 | serviceCategoryCrudCreateResponse401 | serviceCategoryCrudCreateResponse403 | serviceCategoryCrudCreateResponse413 | serviceCategoryCrudCreateResponse415 | serviceCategoryCrudCreateResponse429 | serviceCategoryCrudCreateResponse500) & {
-  headers: Headers;
-};
-
-export type serviceCategoryCrudCreateResponse = (serviceCategoryCrudCreateResponseSuccess | serviceCategoryCrudCreateResponseError)
-
-export const getServiceCategoryCrudCreateUrl = () => {
-
-
-
-
-  return `/api/v1/service-categories`
-}
-
-/**
- * 新しい施術カテゴリを作成し、階層構造や表示順を定義します。salonIdのサロンが存在しない場合や、parentIdに同じサロンのものではないカテゴリを指定した場合は400を返します。
- * @summary Create service category
- */
-export const serviceCategoryCrudCreate = async (modelsServiceCategoryCreateRequest: ModelsServiceCategoryCreateRequest, options?: RequestInit): Promise<serviceCategoryCrudCreateResponse> => {
-
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return customInstance<serviceCategoryCrudCreateResponse>(getServiceCategoryCrudCreateUrl(),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(modelsServiceCategoryCreateRequest)
-  }
-);}
-
-
-
-
-
-export const getServiceCategoryCrudCreateMutationKey = () => ['serviceCategoryCrudCreate'] as const;
-
-export const getServiceCategoryCrudCreateMutationOptions = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof serviceCategoryCrudCreate>>, TError,ServiceCategoryCrudCreateMutationVariables, TContext>, }
-): UseMutationOptions<Awaited<ReturnType<typeof serviceCategoryCrudCreate>>, TError,ServiceCategoryCrudCreateMutationVariables, TContext> => {
-
-const mutationKey = getServiceCategoryCrudCreateMutationKey();
-const {mutation: mutationOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof serviceCategoryCrudCreate>>, ServiceCategoryCrudCreateMutationVariables> = (props) => {
-          const {data} = props ?? {};
-
-          return  serviceCategoryCrudCreate(data,)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type ServiceCategoryCrudCreateMutationResult = NonNullable<Awaited<ReturnType<typeof serviceCategoryCrudCreate>>>
-    export type ServiceCategoryCrudCreateMutationBody = ModelsServiceCategoryCreateRequest
-    export type ServiceCategoryCrudCreateMutationError = ModelsProblemDetails
-    export type ServiceCategoryCrudCreateMutationVariables = {data: ModelsServiceCategoryCreateRequest}
-
-    /**
- * 新しい施術カテゴリを作成し、階層構造や表示順を定義します。salonIdのサロンが存在しない場合や、parentIdに同じサロンのものではないカテゴリを指定した場合は400を返します。
- * @summary Create service category
- */
-export const useServiceCategoryCrudCreate = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof serviceCategoryCrudCreate>>, TError,ServiceCategoryCrudCreateMutationVariables, TContext>, }
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof serviceCategoryCrudCreate>>,
-        TError,
-        ServiceCategoryCrudCreateMutationVariables,
-        TContext
-      > => {
-      return useMutation(getServiceCategoryCrudCreateMutationOptions(options), queryClient);
-    }
-    export type serviceCategoryCrudGetResponse200 = {
-  data: ServiceCategoryCrudGet200
-  status: 200
-}
-
-export type serviceCategoryCrudGetResponse400 = {
-  data: ModelsProblemDetails
-  status: 400
-}
-
-export type serviceCategoryCrudGetResponse401 = {
-  data: ModelsProblemDetails
-  status: 401
-}
-
-export type serviceCategoryCrudGetResponse403 = {
-  data: ModelsProblemDetails
-  status: 403
-}
-
-export type serviceCategoryCrudGetResponse404 = {
-  data: ModelsProblemDetails
-  status: 404
-}
-
-export type serviceCategoryCrudGetResponse429 = {
-  data: ModelsProblemDetails
-  status: 429
-}
-
-export type serviceCategoryCrudGetResponse500 = {
-  data: ModelsProblemDetails
-  status: 500
-}
-
-export type serviceCategoryCrudGetResponseSuccess = (serviceCategoryCrudGetResponse200) & {
-  headers: Headers;
-};
-export type serviceCategoryCrudGetResponseError = (serviceCategoryCrudGetResponse400 | serviceCategoryCrudGetResponse401 | serviceCategoryCrudGetResponse403 | serviceCategoryCrudGetResponse404 | serviceCategoryCrudGetResponse429 | serviceCategoryCrudGetResponse500) & {
-  headers: Headers;
-};
-
-export type serviceCategoryCrudGetResponse = (serviceCategoryCrudGetResponseSuccess | serviceCategoryCrudGetResponseError)
-
-export const getServiceCategoryCrudGetUrl = (id: ModelsCategoryId,) => {
-
-
-
-
-  return `/api/v1/service-categories/${id}`
-}
-
-/**
- * 特定カテゴリの詳細情報を取得し、名称や親子関係、表示順を確認します。
- * @summary Get service category
- */
-export const serviceCategoryCrudGet = async (id: ModelsCategoryId, options?: RequestInit): Promise<serviceCategoryCrudGetResponse> => {
-
-  return customInstance<serviceCategoryCrudGetResponse>(getServiceCategoryCrudGetUrl(id),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getServiceCategoryCrudGetQueryKey = (id: ModelsCategoryId,) => {
-    return [
-    `/api/v1/service-categories/${id}`
-    ] as const;
-    }
-
-
-export const getServiceCategoryCrudGetQueryOptions = <TData = Awaited<ReturnType<typeof serviceCategoryCrudGet>>, TError = ModelsProblemDetails>(id: ModelsCategoryId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof serviceCategoryCrudGet>>, TError, TData>>, }
-) => {
-
-const {query: queryOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getServiceCategoryCrudGetQueryKey(id);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof serviceCategoryCrudGet>>> = ({ signal }) => serviceCategoryCrudGet(id, { signal });
-
-
-
-
-
-   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof serviceCategoryCrudGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type ServiceCategoryCrudGetQueryResult = NonNullable<Awaited<ReturnType<typeof serviceCategoryCrudGet>>>
-export type ServiceCategoryCrudGetQueryError = ModelsProblemDetails
-
-
-/**
- * 特定カテゴリの詳細情報を取得し、名称や親子関係、表示順を確認します。
- * @summary Get service category
- */
-export function useServiceCategoryCrudGet<TData = Awaited<ReturnType<typeof serviceCategoryCrudGet>>, TError = ModelsProblemDetails>(
- id: ModelsCategoryId, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof serviceCategoryCrudGet>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof serviceCategoryCrudGet>>,
-          TError,
-          Awaited<ReturnType<typeof serviceCategoryCrudGet>>
-        > , 'initialData'
-      >, }
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * 特定カテゴリの詳細情報を取得し、名称や親子関係、表示順を確認します。
- * @summary Get service category
- */
-export function useServiceCategoryCrudGet<TData = Awaited<ReturnType<typeof serviceCategoryCrudGet>>, TError = ModelsProblemDetails>(
- id: ModelsCategoryId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof serviceCategoryCrudGet>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof serviceCategoryCrudGet>>,
-          TError,
-          Awaited<ReturnType<typeof serviceCategoryCrudGet>>
-        > , 'initialData'
-      >, }
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * 特定カテゴリの詳細情報を取得し、名称や親子関係、表示順を確認します。
- * @summary Get service category
- */
-export function useServiceCategoryCrudGet<TData = Awaited<ReturnType<typeof serviceCategoryCrudGet>>, TError = ModelsProblemDetails>(
- id: ModelsCategoryId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof serviceCategoryCrudGet>>, TError, TData>>, }
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * 特定カテゴリの詳細情報を取得し、名称や親子関係、表示順を確認します。
- * @summary Get service category
- */
-export function useServiceCategoryCrudGet<TData = Awaited<ReturnType<typeof serviceCategoryCrudGet>>, TError = ModelsProblemDetails>(
- id: ModelsCategoryId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof serviceCategoryCrudGet>>, TError, TData>>, }
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-
-  const queryOptions = getServiceCategoryCrudGetQueryOptions(id,options)
-
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return withQueryKey(query, queryOptions.queryKey);
-}
-
-
-
-
-
-
-export type serviceCategoryCrudUpdateResponse200 = {
-  data: ServiceCategoryCrudUpdate200
-  status: 200
-}
-
-export type serviceCategoryCrudUpdateResponse400 = {
-  data: ModelsProblemDetails
-  status: 400
-}
-
-export type serviceCategoryCrudUpdateResponse401 = {
-  data: ModelsProblemDetails
-  status: 401
-}
-
-export type serviceCategoryCrudUpdateResponse403 = {
-  data: ModelsProblemDetails
-  status: 403
-}
-
-export type serviceCategoryCrudUpdateResponse404 = {
-  data: ModelsProblemDetails
-  status: 404
-}
-
-export type serviceCategoryCrudUpdateResponse413 = {
-  data: ModelsProblemDetails
-  status: 413
-}
-
-export type serviceCategoryCrudUpdateResponse415 = {
-  data: ModelsProblemDetails
-  status: 415
-}
-
-export type serviceCategoryCrudUpdateResponse429 = {
-  data: ModelsProblemDetails
-  status: 429
-}
-
-export type serviceCategoryCrudUpdateResponse500 = {
-  data: ModelsProblemDetails
-  status: 500
-}
-
-export type serviceCategoryCrudUpdateResponseSuccess = (serviceCategoryCrudUpdateResponse200) & {
-  headers: Headers;
-};
-export type serviceCategoryCrudUpdateResponseError = (serviceCategoryCrudUpdateResponse400 | serviceCategoryCrudUpdateResponse401 | serviceCategoryCrudUpdateResponse403 | serviceCategoryCrudUpdateResponse404 | serviceCategoryCrudUpdateResponse413 | serviceCategoryCrudUpdateResponse415 | serviceCategoryCrudUpdateResponse429 | serviceCategoryCrudUpdateResponse500) & {
-  headers: Headers;
-};
-
-export type serviceCategoryCrudUpdateResponse = (serviceCategoryCrudUpdateResponseSuccess | serviceCategoryCrudUpdateResponseError)
-
-export const getServiceCategoryCrudUpdateUrl = (id: ModelsCategoryId,) => {
-
-
-
-
-  return `/api/v1/service-categories/${id}`
-}
-
-/**
- * 既存カテゴリの指定した項目だけを更新し、名称や表示順、親子関係を調整します。parentIdに同じサロンのものではないカテゴリや、自身または子孫のカテゴリを指定した場合は400を返します。
- * @summary Update service category
- */
-export const serviceCategoryCrudUpdate = async (id: ModelsCategoryId,
-    modelsServiceCategoryUpdateRequest: ModelsServiceCategoryUpdateRequest, options?: RequestInit): Promise<serviceCategoryCrudUpdateResponse> => {
-
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return customInstance<serviceCategoryCrudUpdateResponse>(getServiceCategoryCrudUpdateUrl(id),
-  {
-    ...options,
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(modelsServiceCategoryUpdateRequest)
-  }
-);}
-
-
-
-
-
-export const getServiceCategoryCrudUpdateMutationKey = () => ['serviceCategoryCrudUpdate'] as const;
-
-export const getServiceCategoryCrudUpdateMutationOptions = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof serviceCategoryCrudUpdate>>, TError,ServiceCategoryCrudUpdateMutationVariables, TContext>, }
-): UseMutationOptions<Awaited<ReturnType<typeof serviceCategoryCrudUpdate>>, TError,ServiceCategoryCrudUpdateMutationVariables, TContext> => {
-
-const mutationKey = getServiceCategoryCrudUpdateMutationKey();
-const {mutation: mutationOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof serviceCategoryCrudUpdate>>, ServiceCategoryCrudUpdateMutationVariables> = (props) => {
-          const {id,data} = props ?? {};
-
-          return  serviceCategoryCrudUpdate(id,data,)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type ServiceCategoryCrudUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof serviceCategoryCrudUpdate>>>
-    export type ServiceCategoryCrudUpdateMutationBody = ModelsServiceCategoryUpdateRequest
-    export type ServiceCategoryCrudUpdateMutationError = ModelsProblemDetails
-    export type ServiceCategoryCrudUpdateMutationVariables = {id: ModelsCategoryId;data: ModelsServiceCategoryUpdateRequest}
-
-    /**
- * 既存カテゴリの指定した項目だけを更新し、名称や表示順、親子関係を調整します。parentIdに同じサロンのものではないカテゴリや、自身または子孫のカテゴリを指定した場合は400を返します。
- * @summary Update service category
- */
-export const useServiceCategoryCrudUpdate = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof serviceCategoryCrudUpdate>>, TError,ServiceCategoryCrudUpdateMutationVariables, TContext>, }
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof serviceCategoryCrudUpdate>>,
-        TError,
-        ServiceCategoryCrudUpdateMutationVariables,
-        TContext
-      > => {
-      return useMutation(getServiceCategoryCrudUpdateMutationOptions(options), queryClient);
-    }
-    export type serviceCategoryCrudDeleteResponse204 = {
-  data: void
-  status: 204
-}
-
-export type serviceCategoryCrudDeleteResponse400 = {
-  data: ModelsProblemDetails
-  status: 400
-}
-
-export type serviceCategoryCrudDeleteResponse401 = {
-  data: ModelsProblemDetails
-  status: 401
-}
-
-export type serviceCategoryCrudDeleteResponse403 = {
-  data: ModelsProblemDetails
-  status: 403
-}
-
-export type serviceCategoryCrudDeleteResponse404 = {
-  data: ModelsProblemDetails
-  status: 404
-}
-
-export type serviceCategoryCrudDeleteResponse429 = {
-  data: ModelsProblemDetails
-  status: 429
-}
-
-export type serviceCategoryCrudDeleteResponse500 = {
-  data: ModelsProblemDetails
-  status: 500
-}
-
-export type serviceCategoryCrudDeleteResponseSuccess = (serviceCategoryCrudDeleteResponse204) & {
-  headers: Headers;
-};
-export type serviceCategoryCrudDeleteResponseError = (serviceCategoryCrudDeleteResponse400 | serviceCategoryCrudDeleteResponse401 | serviceCategoryCrudDeleteResponse403 | serviceCategoryCrudDeleteResponse404 | serviceCategoryCrudDeleteResponse429 | serviceCategoryCrudDeleteResponse500) & {
-  headers: Headers;
-};
-
-export type serviceCategoryCrudDeleteResponse = (serviceCategoryCrudDeleteResponseSuccess | serviceCategoryCrudDeleteResponseError)
-
-export const getServiceCategoryCrudDeleteUrl = (id: ModelsCategoryId,) => {
-
-
-
-
-  return `/api/v1/service-categories/${id}`
-}
-
-/**
- * 利用されなくなったカテゴリを削除し、メニュー構成を整理します。このカテゴリに属するサービスのcategoryIdと、子カテゴリのparentIdはnullになります。
- * @summary Delete service category
- */
-export const serviceCategoryCrudDelete = async (id: ModelsCategoryId, options?: RequestInit): Promise<serviceCategoryCrudDeleteResponse> => {
-
-  return customInstance<serviceCategoryCrudDeleteResponse>(getServiceCategoryCrudDeleteUrl(id),
-  {
-    ...options,
-    method: 'DELETE'
-
-
-  }
-);}
-
-
-
-
-
-export const getServiceCategoryCrudDeleteMutationKey = () => ['serviceCategoryCrudDelete'] as const;
-
-export const getServiceCategoryCrudDeleteMutationOptions = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof serviceCategoryCrudDelete>>, TError,ServiceCategoryCrudDeleteMutationVariables, TContext>, }
-): UseMutationOptions<Awaited<ReturnType<typeof serviceCategoryCrudDelete>>, TError,ServiceCategoryCrudDeleteMutationVariables, TContext> => {
-
-const mutationKey = getServiceCategoryCrudDeleteMutationKey();
-const {mutation: mutationOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof serviceCategoryCrudDelete>>, ServiceCategoryCrudDeleteMutationVariables> = (props) => {
-          const {id} = props ?? {};
-
-          return  serviceCategoryCrudDelete(id,)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type ServiceCategoryCrudDeleteMutationResult = NonNullable<Awaited<ReturnType<typeof serviceCategoryCrudDelete>>>
-
-    export type ServiceCategoryCrudDeleteMutationError = ModelsProblemDetails
-    export type ServiceCategoryCrudDeleteMutationVariables = {id: ModelsCategoryId}
-
-    /**
- * 利用されなくなったカテゴリを削除し、メニュー構成を整理します。このカテゴリに属するサービスのcategoryIdと、子カテゴリのparentIdはnullになります。
- * @summary Delete service category
- */
-export const useServiceCategoryCrudDelete = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof serviceCategoryCrudDelete>>, TError,ServiceCategoryCrudDeleteMutationVariables, TContext>, }
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof serviceCategoryCrudDelete>>,
-        TError,
-        ServiceCategoryCrudDeleteMutationVariables,
-        TContext
-      > => {
-      return useMutation(getServiceCategoryCrudDeleteMutationOptions(options), queryClient);
     }

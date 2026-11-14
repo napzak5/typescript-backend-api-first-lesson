@@ -2364,6 +2364,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/salons/{salonId}/service-categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List service categories
+         * @description サロンのカテゴリを、絞り込み条件とページネーションを指定して一覧取得します。表示順(displayOrder)の昇順に並びます。cursorがそのサロンのカテゴリを指していない場合(削除された場合を含む)は400を返します。
+         */
+        get: operations["ServiceCategoryCrud_list"];
+        put?: never;
+        /**
+         * Create service category
+         * @description サロンに新しい施術カテゴリを作成し、階層構造や表示順を定義します。parentIdに同じサロンのものではないカテゴリを指定した場合は400を返します。
+         */
+        post: operations["ServiceCategoryCrud_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/salons/{salonId}/service-categories/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get service category
+         * @description 特定カテゴリの詳細情報を取得し、名称や親子関係、表示順を確認します。カテゴリがそのサロンのものでない場合は404を返します。
+         */
+        get: operations["ServiceCategoryCrud_get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete service category
+         * @description 利用されなくなったカテゴリを削除し、メニュー構成を整理します。このカテゴリに属するサービスのcategoryIdと、子カテゴリのparentIdはnullになります。カテゴリがそのサロンのものでない場合は404を返します。
+         */
+        delete: operations["ServiceCategoryCrud_delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Update service category
+         * @description 既存カテゴリの指定した項目だけを更新し、名称や表示順、親子関係を調整します。parentIdに同じサロンのものではないカテゴリや、自身または子孫のカテゴリを指定した場合は400を返します。カテゴリがそのサロンのものでない場合は404を返します。
+         */
+        patch: operations["ServiceCategoryCrud_update"];
+        trace?: never;
+    };
     "/api/v1/salons/{salonId}/services": {
         parameters: {
             query?: never;
@@ -2510,58 +2562,6 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
-        trace?: never;
-    };
-    "/api/v1/service-categories": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List service categories
-         * @description 登録済みのカテゴリを、絞り込み条件とページネーションを指定して一覧取得し、メニュー分類や表示順を管理します。
-         */
-        get: operations["ServiceCategoryCrud_list"];
-        put?: never;
-        /**
-         * Create service category
-         * @description 新しい施術カテゴリを作成し、階層構造や表示順を定義します。salonIdのサロンが存在しない場合や、parentIdに同じサロンのものではないカテゴリを指定した場合は400を返します。
-         */
-        post: operations["ServiceCategoryCrud_create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/service-categories/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get service category
-         * @description 特定カテゴリの詳細情報を取得し、名称や親子関係、表示順を確認します。
-         */
-        get: operations["ServiceCategoryCrud_get"];
-        put?: never;
-        post?: never;
-        /**
-         * Delete service category
-         * @description 利用されなくなったカテゴリを削除し、メニュー構成を整理します。このカテゴリに属するサービスのcategoryIdと、子カテゴリのparentIdはnullになります。
-         */
-        delete: operations["ServiceCategoryCrud_delete"];
-        options?: never;
-        head?: never;
-        /**
-         * Update service category
-         * @description 既存カテゴリの指定した項目だけを更新し、名称や表示順、親子関係を調整します。parentIdに同じサロンのものではないカテゴリや、自身または子孫のカテゴリを指定した場合は400を返します。
-         */
-        patch: operations["ServiceCategoryCrud_update"];
         trace?: never;
     };
     "/api/v1/share/{shareToken}": {
@@ -7010,9 +7010,9 @@ export interface components {
              * @description 経度(十進度)。未設定の場合はnull
              */
             longitude: number | null;
-            /** @description 代表電話番号 */
+            /** @description 代表電話番号。数字、空白、ハイフン、+、丸括弧で書き、数字を10個以上含む */
             phoneNumber: string;
-            /** @description 予備の電話番号。未設定の場合はnull */
+            /** @description 予備の電話番号。数字、空白、ハイフン、+、丸括弧で書き、数字を10個以上含む。未設定の場合はnull */
             alternativePhone: string | null;
             /** @description 問い合わせ用メールアドレス。削除されていないサロンの間で一意 */
             email: string;
@@ -7030,7 +7030,7 @@ export interface components {
             businessHours: components["schemas"]["Models.BusinessHours"][] | null;
             /** @description 営業時間の基準となるIANAタイムゾーンID */
             timezone: string;
-            /** @description 料金表示に使用する通貨コード(ISO 4217) */
+            /** @description 料金表示に使用する通貨コード(ISO 4217)。英大文字3文字 */
             currency: string;
             /**
              * Format: double
@@ -7163,9 +7163,9 @@ export interface components {
              * @description 経度(十進度)。nullでクリア
              */
             longitude?: number | null;
-            /** @description 代表電話番号 */
+            /** @description 代表電話番号。数字、空白、ハイフン、+、丸括弧で書き、数字を10個以上含む */
             phoneNumber?: string;
-            /** @description 予備の電話番号。nullでクリア */
+            /** @description 予備の電話番号。数字、空白、ハイフン、+、丸括弧で書き、数字を10個以上含む。nullでクリア */
             alternativePhone?: string | null;
             /** @description 問い合わせ用メールアドレス。削除されていないサロンの間で一意 */
             email?: string;
@@ -7183,7 +7183,7 @@ export interface components {
             businessHours?: components["schemas"]["Models.BusinessHours"][] | null;
             /** @description 営業時間の基準となるIANAタイムゾーンID */
             timezone?: string;
-            /** @description 料金表示に使用する通貨コード(ISO 4217) */
+            /** @description 料金表示に使用する通貨コード(ISO 4217)。英大文字3文字 */
             currency?: string;
             /**
              * Format: double
@@ -7276,10 +7276,11 @@ export interface components {
             /** @description 更新したサービスの ID 一覧 */
             updated: components["schemas"]["Models.ServiceId"][];
         };
-        /** @description サービスカテゴリ新規登録リクエスト - 全項目のキーが必須。DB で NULL 許可のカラムのみ null を指定できる */
+        /**
+         * @description サービスカテゴリ新規登録リクエスト - 全項目のキーが必須。DB で NULL 許可のカラムのみ null を指定できる。
+         *     カテゴリを持つサロンはパスの salonId で指定する
+         */
         "Models.ServiceCategoryCreateRequest": {
-            /** @description カテゴリを持つサロン ID */
-            salonId: components["schemas"]["Models.SalonId"];
             /** @description カテゴリ名 */
             name: string;
             /** @description カテゴリ説明。未設定の場合はnull */
@@ -9013,10 +9014,10 @@ export interface components {
         "Models.SalonSearchRequest.prefecture": string;
         /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
         "Models.ServiceCategorySearchRequest.cursor": string;
+        /** @description 有効フラグによる絞り込み。指定しない場合は無効なカテゴリも返す */
+        "Models.ServiceCategorySearchRequest.isActive": boolean;
         /** @description 1ページあたりの取得件数上限 (1〜100) */
         "Models.ServiceCategorySearchRequest.limit": number;
-        /** @description カテゴリを持つサロンの ID による絞り込み(完全一致) */
-        "Models.ServiceCategorySearchRequest.salonId": components["schemas"]["Models.SalonId"];
         /** @description サービスカテゴリの ID による絞り込み(完全一致) */
         "Models.ServiceSearchRequest.categoryId": components["schemas"]["Models.CategoryId"];
         /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
@@ -23232,6 +23233,480 @@ export interface operations {
             };
         };
     };
+    ServiceCategoryCrud_list: {
+        parameters: {
+            query?: {
+                /** @description 1ページあたりの取得件数上限 (1〜100) */
+                limit?: components["parameters"]["Models.ServiceCategorySearchRequest.limit"];
+                /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+                cursor?: components["parameters"]["Models.ServiceCategorySearchRequest.cursor"];
+                /** @description 有効フラグによる絞り込み。指定しない場合は無効なカテゴリも返す */
+                isActive?: components["parameters"]["Models.ServiceCategorySearchRequest.isActive"];
+            };
+            header?: never;
+            path: {
+                salonId: components["schemas"]["Models.SalonId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The request has succeeded. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description 現在ページで取得したデータ配列。サロン一覧や予約履歴の実データを格納する。 */
+                        data: components["schemas"]["Models.ServiceCategoryResponse"][];
+                        /** @description ページング状態を示すメタ情報。次ページの有無やカーソル値を含む。 */
+                        meta: components["schemas"]["Models.PaginationMeta"];
+                        /** @description 関連するページ遷移リンク。HATEOAS 連携や外部連携向けに利用する。 */
+                        links: components["schemas"]["Models.PaginationLinks"];
+                    };
+                };
+            };
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The server cannot find the requested resource. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
+             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+             */
+            429: {
+                headers: {
+                    /** @description 再試行できるようになるまでの秒数。 */
+                    "Retry-After": number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+        };
+    };
+    ServiceCategoryCrud_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                salonId: components["schemas"]["Models.SalonId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Models.ServiceCategoryCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description The request has succeeded and a new resource has been created as a result. */
+            201: {
+                headers: {
+                    Location: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        data: components["schemas"]["Models.ServiceCategoryResponse"];
+                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        meta: components["schemas"]["Models.ResponseMeta"] | null;
+                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        links: {
+                            [key: string]: string;
+                        } | null;
+                    };
+                };
+            };
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description 認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
+             *     ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
+             *     WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+             */
+            401: {
+                headers: {
+                    /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
+                    "WWW-Authenticate": string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description 認証されているが、この操作を行う権限がない (403)。 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The server cannot find the requested resource. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
+             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+             */
+            429: {
+                headers: {
+                    /** @description 再試行できるようになるまでの秒数。 */
+                    "Retry-After": number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+        };
+    };
+    ServiceCategoryCrud_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                salonId: components["schemas"]["Models.SalonId"];
+                id: components["schemas"]["Models.CategoryId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The request has succeeded. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        data: components["schemas"]["Models.ServiceCategoryResponse"];
+                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        meta: components["schemas"]["Models.ResponseMeta"] | null;
+                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        links: {
+                            [key: string]: string;
+                        } | null;
+                    };
+                };
+            };
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The server cannot find the requested resource. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
+             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+             */
+            429: {
+                headers: {
+                    /** @description 再試行できるようになるまでの秒数。 */
+                    "Retry-After": number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+        };
+    };
+    ServiceCategoryCrud_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                salonId: components["schemas"]["Models.SalonId"];
+                id: components["schemas"]["Models.CategoryId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description There is no content to send for this request, but the headers may be useful. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description 認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
+             *     ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
+             *     WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+             */
+            401: {
+                headers: {
+                    /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
+                    "WWW-Authenticate": string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description 認証されているが、この操作を行う権限がない (403)。 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The server cannot find the requested resource. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
+             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+             */
+            429: {
+                headers: {
+                    /** @description 再試行できるようになるまでの秒数。 */
+                    "Retry-After": number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+        };
+    };
+    ServiceCategoryCrud_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                salonId: components["schemas"]["Models.SalonId"];
+                id: components["schemas"]["Models.CategoryId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Models.ServiceCategoryUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description The request has succeeded. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        data: components["schemas"]["Models.ServiceCategoryResponse"];
+                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        meta: components["schemas"]["Models.ResponseMeta"] | null;
+                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        links: {
+                            [key: string]: string;
+                        } | null;
+                    };
+                };
+            };
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description 認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
+             *     ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
+             *     WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+             */
+            401: {
+                headers: {
+                    /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
+                    "WWW-Authenticate": string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description 認証されているが、この操作を行う権限がない (403)。 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The server cannot find the requested resource. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
+             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+             */
+            429: {
+                headers: {
+                    /** @description 再試行できるようになるまでの秒数。 */
+                    "Retry-After": number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+        };
+    };
     ServiceCrud_list: {
         parameters: {
             query?: {
@@ -24535,503 +25010,6 @@ export interface operations {
                     "application/json": {
                         /** @description レスポンスの主体となるビジネスデータ。 */
                         data: components["schemas"]["Models.StaffSchedule"][];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
-                        meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
-                        links: {
-                            [key: string]: string;
-                        } | null;
-                    };
-                };
-            };
-            /** @description The server could not understand the request due to invalid syntax. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /**
-             * @description 認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
-             *     ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
-             *     WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
-             */
-            401: {
-                headers: {
-                    /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
-                    "WWW-Authenticate": string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description 認証されているが、この操作を行う権限がない (403)。 */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description The server cannot find the requested resource. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
-            413: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
-            415: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /**
-             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
-             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
-             */
-            429: {
-                headers: {
-                    /** @description 再試行できるようになるまでの秒数。 */
-                    "Retry-After": number;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-        };
-    };
-    ServiceCategoryCrud_list: {
-        parameters: {
-            query?: {
-                /** @description 1ページあたりの取得件数上限 (1〜100) */
-                limit?: components["parameters"]["Models.ServiceCategorySearchRequest.limit"];
-                /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
-                cursor?: components["parameters"]["Models.ServiceCategorySearchRequest.cursor"];
-                /** @description カテゴリを持つサロンの ID による絞り込み(完全一致) */
-                salonId?: components["parameters"]["Models.ServiceCategorySearchRequest.salonId"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The request has succeeded. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /** @description 現在ページで取得したデータ配列。サロン一覧や予約履歴の実データを格納する。 */
-                        data: components["schemas"]["Models.ServiceCategoryResponse"][];
-                        /** @description ページング状態を示すメタ情報。次ページの有無やカーソル値を含む。 */
-                        meta: components["schemas"]["Models.PaginationMeta"];
-                        /** @description 関連するページ遷移リンク。HATEOAS 連携や外部連携向けに利用する。 */
-                        links: components["schemas"]["Models.PaginationLinks"];
-                    };
-                };
-            };
-            /** @description The server could not understand the request due to invalid syntax. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /**
-             * @description 認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
-             *     ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
-             *     WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
-             */
-            401: {
-                headers: {
-                    /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
-                    "WWW-Authenticate": string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description 認証されているが、この操作を行う権限がない (403)。 */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /**
-             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
-             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
-             */
-            429: {
-                headers: {
-                    /** @description 再試行できるようになるまでの秒数。 */
-                    "Retry-After": number;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-        };
-    };
-    ServiceCategoryCrud_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["Models.ServiceCategoryCreateRequest"];
-            };
-        };
-        responses: {
-            /** @description The request has succeeded and a new resource has been created as a result. */
-            201: {
-                headers: {
-                    Location: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
-                        data: components["schemas"]["Models.ServiceCategoryResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
-                        meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
-                        links: {
-                            [key: string]: string;
-                        } | null;
-                    };
-                };
-            };
-            /** @description The server could not understand the request due to invalid syntax. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /**
-             * @description 認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
-             *     ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
-             *     WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
-             */
-            401: {
-                headers: {
-                    /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
-                    "WWW-Authenticate": string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description 認証されているが、この操作を行う権限がない (403)。 */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
-            413: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
-            415: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /**
-             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
-             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
-             */
-            429: {
-                headers: {
-                    /** @description 再試行できるようになるまでの秒数。 */
-                    "Retry-After": number;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-        };
-    };
-    ServiceCategoryCrud_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: components["schemas"]["Models.CategoryId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The request has succeeded. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
-                        data: components["schemas"]["Models.ServiceCategoryResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
-                        meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
-                        links: {
-                            [key: string]: string;
-                        } | null;
-                    };
-                };
-            };
-            /** @description The server could not understand the request due to invalid syntax. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /**
-             * @description 認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
-             *     ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
-             *     WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
-             */
-            401: {
-                headers: {
-                    /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
-                    "WWW-Authenticate": string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description 認証されているが、この操作を行う権限がない (403)。 */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description The server cannot find the requested resource. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /**
-             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
-             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
-             */
-            429: {
-                headers: {
-                    /** @description 再試行できるようになるまでの秒数。 */
-                    "Retry-After": number;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-        };
-    };
-    ServiceCategoryCrud_delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: components["schemas"]["Models.CategoryId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description There is no content to send for this request, but the headers may be useful. */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description The server could not understand the request due to invalid syntax. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /**
-             * @description 認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
-             *     ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
-             *     WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
-             */
-            401: {
-                headers: {
-                    /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
-                    "WWW-Authenticate": string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description 認証されているが、この操作を行う権限がない (403)。 */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description The server cannot find the requested resource. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /**
-             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
-             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
-             */
-            429: {
-                headers: {
-                    /** @description 再試行できるようになるまでの秒数。 */
-                    "Retry-After": number;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-        };
-    };
-    ServiceCategoryCrud_update: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: components["schemas"]["Models.CategoryId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["Models.ServiceCategoryUpdateRequest"];
-            };
-        };
-        responses: {
-            /** @description The request has succeeded. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
-                        data: components["schemas"]["Models.ServiceCategoryResponse"];
                         /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
                         /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */

@@ -21,6 +21,20 @@ export const parseSalonId = (id: unknown): Result<SalonId, DomainError> =>
     (parameters) => parameters.id,
   )
 
+const salonIdOfPathSchema = z.object({ salonId: salonIdSchema })
+
+/**
+ * The salon in the path of a route below a salon
+ * (`/salons/{salonId}/...`); a failure is reported under `salonId`.
+ */
+export const parseSalonIdOfPath = (
+  salonId: unknown,
+): Result<SalonId, DomainError> =>
+  Result.map(
+    parseWith(salonIdOfPathSchema, { salonId }, 'Invalid salon ID'),
+    (parameters) => parameters.salonId,
+  )
+
 // API types, generated from TypeSpec
 export type ApiSalonResponse = components['schemas']['Models.SalonResponse']
 export type ApiSalonCreateRequest =

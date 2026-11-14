@@ -345,4 +345,30 @@ describe('modelRules', () => {
 
     expect(computed).toEqual([['Models.SessionResponse', ['current']]])
   })
+
+  it('lets a request for a service category leave out what the database assigns and the salon, which the path names, and the response nothing', () => {
+    const omitted = Object.fromEntries(
+      modelRules
+        .filter((modelRule) => modelRule.table === 'serviceCategories')
+        .map(({ model, kind, omittedColumns }) => [
+          model,
+          { kind, omittedColumns },
+        ]),
+    )
+
+    expect(omitted).toEqual({
+      'Models.ServiceCategoryResponse': {
+        kind: 'response',
+        omittedColumns: [],
+      },
+      'Models.ServiceCategoryCreateRequest': {
+        kind: 'create',
+        omittedColumns: ['id', 'salonId', 'createdAt', 'updatedAt'],
+      },
+      'Models.ServiceCategoryUpdateRequest': {
+        kind: 'update',
+        omittedColumns: ['id', 'salonId', 'createdAt', 'updatedAt'],
+      },
+    })
+  })
 })

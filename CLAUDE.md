@@ -165,10 +165,13 @@ logout, the current user, registration, email verification, password reset
 and change, two-factor authentication, and the list of the signed-in user's
 sessions with the revocation of one of them; under `/api/v1/admin/auth` the
 administrator operations (read a user, unlock an account, reset two-factor
-authentication). The other domains exist in TypeSpec and in the database
+authentication). Of the Service domain, the service categories of a salon are
+implemented (`/api/v1/salons/{salonId}/service-categories`); the services
+themselves are not. The other domains exist in TypeSpec and in the database
 schema only. Sessions, passwords, two-factor authentication, permissions, the
 administrator operations and the seeded accounts are described in
-[docs/authentication.md](docs/authentication.md), the mails the server sends
+[docs/authentication.md](docs/authentication.md), the service categories in
+[docs/service-menu.md](docs/service-menu.md), the mails the server sends
 in [docs/email.md](docs/email.md).
 
 ### Namespace Convention
@@ -284,6 +287,7 @@ The full index is [docs/README.md](docs/README.md).
 - [Backend Architecture](docs/backend-architecture-guidelines.md)
 - [Uniform Implementation](docs/uniform-implementation-guide.md)
 - [Authentication and Authorization](docs/authentication.md)
+- [Service Menu](docs/service-menu.md)
 - [Email](docs/email.md)
 - [Testing Requirements](docs/testing-requirements.md)
 - [Multi-Agent Collaboration](docs/multi-agent-collaboration-framework.md)
@@ -325,13 +329,16 @@ export const salonCreateRequestSchema = z.strictObject({
   // ...
 }) satisfies z.ZodType<ApiSalonCreateRequest>
 
-export const salonUpdateRequestSchema = salonCreateRequestSchema.exactPartial()
+// The rules that the schemas of more than one domain share (nonBlankText,
+// atLeastOneProperty) are in backend/packages/domain/src/schemas/rules.ts
+export const salonUpdateRequestSchema = salonCreateRequestSchema.exactPartial().check(atLeastOneProperty)
 
 // 4. Repository Interface
 // backend/packages/domain/src/repositories/salon.repository.ts
 export interface ISalonRepository {
   create(salon: DbNewSalon, openingHours: DbNewOpeningHours[]): Promise<Result<SalonWithOpeningHours, DomainError>>
   findById(id: SalonId): Promise<Result<SalonWithOpeningHours | null, DomainError>>
+  exists(id: SalonId): Promise<Result<boolean, DomainError>>
   list(criteria: SalonListCriteria): Promise<Result<SalonList, DomainError>>
   update(id: SalonId, changes: DbSalonChanges, openingHours: OpeningHoursChange): Promise<Result<SalonWithOpeningHours | null, DomainError>>
   delete(id: SalonId): Promise<Result<boolean, DomainError>>
@@ -429,7 +436,10 @@ export const createSalonRouter = (dependencies: SalonUseCaseDependencies, authen
 export const createApp = ({ database, logger, mailer, twoFactorAuthenticator, settings }: AppDependencies): Express
 const authenticated = createAuthenticated(authDependencies)
 app.use(`${API_BASE_PATH}/auth`, createAuthRouter(authDependencies, authenticated))
-app.use(`${API_BASE_PATH}/salons`, createSalonRouter({ salonRepository: new SalonRepository(database) }, authenticated))
+const salonRepository = new SalonRepository(database)
+app.use(`${API_BASE_PATH}/salons`, createSalonRouter({ salonRepository }, authenticated))
+// The router of what belongs to a salon is mounted below the salon and is given the same salon repository
+app.use(`${API_BASE_PATH}/salons/:salonId/service-categories`, createServiceCategoryRouter({ serviceCategoryRepository: new ServiceCategoryRepository(database), salonRepository }, authenticated))
 
 // 11. Composition root: the only code that reads the environment or ends the process
 // backend/apps/server/src/index.ts
@@ -450,6 +460,7 @@ export const startServer = (config: AppConfig, logger: Logger, shutdownGraceMs?:
 - **Partial update** is `PATCH`: a property that is absent is left alone, `null` clears a nullable column
 - **Lists** use keyset pagination: `cursor` is the ID of the last item of the previous page (`meta.nextCursor`)
 - **Deleted rows** (`deletedAt`) are invisible to every repository method
+- **Data that belongs to a salon** is served below the salon; the service categories (`business-logic/service-category/`, `routes/service-category/`) are the example to read. The router is mounted at `/salons/:salonId/...` and created with `Router({ mergeParams: true })`, so its handlers see `salonId`. The use case reads the salon of the path with `parseSalonIdOfPath`, decides the permission from that salon alone, and answers 404 through `requireSalon` when the salon does not exist. Every repository method takes the salon ID, so a resource of another salon is not found (404). The create and update requests do not carry `salonId`. A write mapper exists only where a column needs converting: the service categories have none. See [docs/authentication.md](docs/authentication.md) and [docs/service-menu.md](docs/service-menu.md)
 - **Tests**: unit tests for schemas, mappers and use cases in the domain package; integration tests per endpoint against PostgreSQL in the api package
 
 ## ⚠️ Important Notes
