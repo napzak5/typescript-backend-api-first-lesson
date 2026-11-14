@@ -54,23 +54,29 @@ export type Result<T, E> =
   | { type: 'success'; data: T }
   | { type: 'error'; error: E }
 
-// Domain error types
+// Domain error types (backend/packages/domain/src/shared/errors.ts)
 export type DomainError =
-  | { type: 'validation'; message: string; code: string; details: string[] }
-  | { type: 'notFound'; entity: string; field: string; value: unknown }
-  | { type: 'alreadyExists'; entity: string; field: string; value: unknown }
+  | { type: 'validation'; message: string; issues: ValidationIssue[] }
+  | { type: 'notFound'; entity: string; id: string }
+  | { type: 'alreadyExists'; entity: string; field: string; value: string }
   | { type: 'database'; message: string; cause: unknown }
 
 // Exhaustive handling in API routes
 match(result)
   .with({ type: 'success' }, ({ data }) => {
-    res.status(201).json({ data, meta: {...}, links: {...} })
+    res.status(201).json({ data, meta: responseMeta(), links })
   })
-  .with({ type: 'error' }, ({ error }) => {
-    const problemDetails = toProblemDetails(error)
-    res.status(problemDetails.status).json(problemDetails)
-  })
+  .with({ type: 'error' }, ({ error }) => sendProblem(req, res, error))
   .exhaustive()
+```
+
+Inside a function, a failed step is returned as it is:
+
+```typescript
+const found = await repository.findById(id)
+if (found.type === 'error') {
+  return found
+}
 ```
 
 See [docs/sum-types-pattern-matching.md](docs/sum-types-pattern-matching.md) for patterns.
@@ -84,7 +90,7 @@ All implementations must follow standardized patterns for:
 - Error handling
 - Date/time processing (date-fns)
 - Query parameters
-- Request validation (Zod v4 with `z.custom<T>().check()`)
+- Request validation (Zod v4 schemas typed against the generated API types)
 - Authorization
 - Logging
 - ID validation
@@ -174,6 +180,7 @@ model AuthLoginResponse { ... }         // Login response
 1. Write a SQL migration in `backend/packages/database/sql/migrations/`
 2. `pnpm db:migrate` → `pnpm db:introspect` → `pnpm db:generate-sql`
 3. Commit `schema.ts`, `relations.ts` and `sql/setup.sql` (`pnpm check:db-schema` guards this in CI)
+4. Keep the API models in line with the tables (`pnpm check:api-db` guards this in CI)
 
 ### Code Quality Checks
 ```bash
@@ -182,6 +189,7 @@ pnpm format:check  # Formatting (Biome and TypeSpec), read-only
 pnpm format:fix    # Apply formatting, import sorting and safe fixes
 pnpm typecheck     # Type checking (build first)
 pnpm knip          # Unused files, exports and dependencies
+pnpm check:api-db  # API models agree with the database schema
 pnpm test          # Unit tests
 make ci-check      # Everything CI runs, in the same order
 ```
@@ -244,7 +252,9 @@ make ci-check-dockerfile  # Test all Docker builds locally before pushing
 
 ## 📖 Reference Implementation (Salon Domain)
 
-The salon domain serves as the reference implementation for all other domains:
+The salon domain serves as the reference implementation for all other domains.
+Every operation in `specs/operations/salon-operations.tsp` is implemented, and
+nothing else is specified.
 
 ### Layer Structure:
 ```typescript
@@ -252,92 +262,122 @@ The salon domain serves as the reference implementation for all other domains:
 // backend/packages/database/src/schema.ts
 export const salons = pgTable('salons', {...})
 
+// 2. Models: types only, inferred from the DB schema and the generated API types
 // backend/packages/domain/src/models/salon.ts
-// Type inference with DeepRequired - NO manual type definitions
-export type DbSalon = DeepRequired<typeof salons.$inferSelect>
-export type DbNewSalon = DeepRequired<Omit<typeof salons.$inferInsert, 'id'>>
+export const salonIdSchema = z.uuid().brand<'SalonId'>()
+export type SalonId = z.infer<typeof salonIdSchema>
 
-// 2. Repository Interface
+export type ApiSalonResponse = components['schemas']['Models.SalonResponse']
+export type ApiSalonCreateRequest = components['schemas']['Models.SalonCreateRequest']
+
+export type DbSalon = DeepRequired<typeof salons.$inferSelect>
+// Without the columns the database or other features fill in
+export type DbNewSalon = DeepRequired<Omit<typeof salons.$inferInsert, SalonManagedColumn>>
+
+// 3. Validation: one Zod schema per request, checked against the generated type
+// backend/packages/domain/src/schemas/salon.schema.ts
+export const salonCreateRequestSchema = z.strictObject({
+  name: nonBlankText.max(255),          // limits are those of the columns
+  nameKana: nonBlankText.max(255).nullable(),
+  // ...
+}) satisfies z.ZodType<ApiSalonCreateRequest>
+
+export const salonUpdateRequestSchema = salonCreateRequestSchema.exactPartial()
+
+// 4. Repository Interface
 // backend/packages/domain/src/repositories/salon.repository.ts
 export interface ISalonRepository {
-  create(salon: DbSalon, openingHours?: DbNewOpeningHours[]): Promise<Result<DbSalon, DomainError>>
-  findById(id: SalonId): Promise<Result<DbSalon | null, DomainError>>
+  create(salon: DbNewSalon, openingHours: DbNewOpeningHours[]): Promise<Result<SalonWithOpeningHours, DomainError>>
+  findById(id: SalonId): Promise<Result<SalonWithOpeningHours | null, DomainError>>
+  list(criteria: SalonListCriteria): Promise<Result<SalonList, DomainError>>
+  update(id: SalonId, changes: DbSalonChanges, openingHours: OpeningHoursChange): Promise<Result<SalonWithOpeningHours | null, DomainError>>
+  delete(id: SalonId): Promise<Result<boolean, DomainError>>
 }
 
-// 3. Dependencies Interface (Object-based DI)
+// 5. Dependencies Interface (Object-based DI)
 // backend/packages/domain/src/business-logic/salon/_shared/dependencies.ts
 export interface SalonUseCaseDependencies {
   salonRepository: ISalonRepository
-  // Future dependencies can be added here:
-  // userRepository?: IUserRepository
-  // notificationService?: INotificationService
 }
 
-// 4. Use Case with Dependencies
+// 6. Use Case: untrusted input in, API model or DomainError out
 // backend/packages/domain/src/business-logic/salon/create-salon.usecase.ts
-export class CreateSalonUseCase extends BaseSalonUseCase {
-  constructor(dependencies: SalonUseCaseDependencies) {
-    super(dependencies)
-  }
+export class CreateSalonUseCase {
+  constructor(private readonly dependencies: SalonUseCaseDependencies) {}
 
-  async execute(request: ApiCreateSalonRequest): Promise<Result<ApiSalon, DomainError>> {
-    // Validate → Check business rules → Map API→DB → Save → Map DB→API → Return
+  async execute(input: unknown): Promise<Result<ApiSalonResponse, DomainError>> {
+    // Validate → Map API→DB → Save → Map DB→API → Return
+    const request = parseWith(salonCreateRequestSchema, input, 'Invalid salon')
+    if (request.type === 'error') {
+      return request
+    }
+    const { salon, openingHours } = SalonWriteMapper.fromCreateRequest(request.data)
+    const created = await this.dependencies.salonRepository.create(salon, openingHours)
+    if (created.type === 'error') {
+      return created
+    }
+    return SalonReadMapper.toApiSalon(created.data.salon, created.data.openingHours)
   }
 }
 
-// 5. Mappers
+// 7. Mappers: property names are the column names; only representations change
 // backend/packages/domain/src/mappers/write/salon.mapper.ts
 export const SalonWriteMapper = {
-  fromCreateRequest(request: ApiCreateSalonRequest): { salon: DbNewSalon; openingHours: DbNewOpeningHours[] }
+  fromCreateRequest(request: ApiSalonCreateRequest): { salon: DbNewSalon; openingHours: DbNewOpeningHours[] }
+  fromUpdateRequest(request: ApiSalonUpdateRequest): { changes: DbSalonChanges; openingHours: OpeningHoursChange }
 }
 // backend/packages/domain/src/mappers/read/salon.mapper.ts
+// numeric → number, timestamptz → ISO 8601, jsonb → checked against the API model
 export const SalonReadMapper = {
-  toApiSalon(dbSalon: DbSalon, openingHours: DbOpeningHours[]): ApiSalon
+  toApiSalon(salon: DbSalon, openingHours: DbOpeningHours[]): Result<ApiSalonResponse, DomainError>
 }
 
-// 6. API Route with Dependency Injection (Modular Handler Pattern)
+// 8. Repository Implementation: no throw, no cast; writes are transactions
+// backend/packages/infrastructure/src/repositories/salon.repository.impl.ts
+export class SalonRepository implements ISalonRepository {
+  constructor(private readonly db: Database) {}
+}
+
+// 9. API Route with Dependency Injection (Modular Handler Pattern)
 // backend/packages/api/src/routes/salon/create-salon.handler.ts
-// Note: Each endpoint has its own handler file following [action]-[domain].handler.ts pattern
-// See docs/api-route-modular-structure.md for full modular structure details
-export const createSalonHandler: RequestHandler<
-  Record<string, never>,                    // Path params
-  CreateSalonResponse | ErrorResponse,      // Response body types
-  CreateSalonRequest                        // Request body type
-> = async (req, res, next) => {
-  try {
-    // Instantiate dependencies
-    const db = req.app.locals.database as Database
-    const salonRepository = new SalonRepository(db)
+// Each endpoint has its own handler file following [action]-[domain].handler.ts.
+// A handler is created from its dependencies; it never reaches for a global.
+export const createSalonHandler = (
+  dependencies: SalonUseCaseDependencies,
+): RequestHandler<
+  Record<string, never>,                 // Path params
+  CreateSalonResponse | ProblemDetails,  // Response body types
+  unknown                                // Request body: validated by the use case
+> => {
+  const useCase = new CreateSalonUseCase(dependencies)
 
-    // Create use case with dependencies object
-    const useCase = new CreateSalonUseCase({ salonRepository })
-
+  return async (req, res) => {
     const result = await useCase.execute(req.body)
+
     match(result)
       .with({ type: 'success' }, ({ data }) => {
-        const response: CreateSalonResponse = {
-          data,
-          meta: {
-            correlationId: `req-${Date.now()}`,
-            timestamp: new Date().toISOString(),
-            version: '1.0.0',
-          },
-          links: {
-            self: `/salons/${data.id}`,
-            list: '/salons',
-          },
-        }
-        res.status(201).json(response)
+        const links = salonLinks(req.baseUrl, data.id)
+        res.status(201).location(links.self).json({ data, meta: responseMeta(), links })
       })
-      .with({ type: 'error' }, ({ error }) =>
-        handleDomainError(res as Response<ErrorResponse>, error)
-      )
+      .with({ type: 'error' }, ({ error }) => sendProblem(req, res, error))
       .exhaustive()
-  } catch (error) {
-    next(error)
   }
 }
+
+// backend/packages/api/src/routes/salon/index.ts
+export const createSalonRouter = (dependencies: SalonUseCaseDependencies): Router
+
+// backend/packages/api/src/index.ts: repositories are created once, here
+app.use(`${API_BASE_PATH}/salons`, createSalonRouter({ salonRepository: new SalonRepository(database) }))
 ```
+
+### Conventions the reference follows
+- **Validation** happens once, in the use case, with the Zod schema of the request. Cross-field rules use `.check()`
+- **Errors** are `DomainError` values; `api/src/shared/problem-details.ts` maps each kind to an HTTP status and never exposes the cause of a `database` error
+- **Partial update** is `PATCH`: a property that is absent is left alone, `null` clears a nullable column
+- **Lists** use keyset pagination: `cursor` is the ID of the last item of the previous page (`meta.nextCursor`)
+- **Deleted rows** (`deletedAt`) are invisible to every repository method
+- **Tests**: unit tests for schemas, mappers and use cases in the domain package; integration tests per endpoint against PostgreSQL in the api package
 
 ## ⚠️ Important Notes
 
@@ -378,6 +418,11 @@ export type DbNewCustomer = DeepRequired<Omit<typeof customers.$inferInsert, 'id
 - [ ] Nullable consistency between API and DB
 - [ ] No property name transformations in mappers
 - [ ] New API properties trigger DB migration
+
+`pnpm check:api-db` checks the first two for every model listed in
+`backend/packages/database/src/scripts/api-consistency-rules.ts`. A domain is
+done when its models are listed there with `omittedColumns` and have no entry in
+`api-consistency-baseline.json`.
 
 ### Clean Code Policy
 - Remove unused code immediately

@@ -1408,7 +1408,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/salons/": {
+    "/api/v1/salons": {
         parameters: {
             query?: never;
             header?: never;
@@ -1416,144 +1416,16 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * List {Name} resources
-         * @description ページネーションやフィルター条件を指定して対象リソースを一覧取得します。業務画面のリスト表示に利用します。
+         * List salons
+         * @description 絞り込み条件とページネーションを指定してサロンを一覧取得します。削除済みのサロンは含みません。
          */
         get: operations["SalonCrud_list"];
         put?: never;
         /**
-         * Create new {Name}
-         * @description 新規リソースを作成し、作成時のバリデーションや重複チェック結果を返却します。
+         * Create a salon
+         * @description サロンを新規登録します。メールアドレスが既存のサロンと重複する場合は409を返します。
          */
         post: operations["SalonCrud_create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/salons/batch/get": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Batch get {Name} resources
-         * @description 複数IDをまとめて取得し、一覧画面の遅延読み込みや外部連携に利用します。
-         */
-        post: operations["SalonCrud_batchGet"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/salons/bulk": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * Bulk update {Name} resources
-         * @description 複数リソースの更新をまとめて受け付け、バージョン整合性を保ちながら処理します。
-         */
-        put: operations["SalonCrud_bulkUpdate"];
-        /**
-         * Bulk create {Name} resources
-         * @description 複数リソースを一括作成し、結果を成功・失敗に分けて返却します。
-         */
-        post: operations["SalonCrud_bulkCreate"];
-        /**
-         * Bulk delete {Name} resources
-         * @description 複数リソースを一括削除し、成功可否ごとの結果を返却します。
-         */
-        delete: operations["SalonCrud_bulkDelete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/salons/export": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Export {Name} search results
-         * @description 検索結果を指定形式でエクスポートし、帳票出力や外部共有に活用します。
-         */
-        post: operations["SalonCrud_export"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/salons/nearby": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get nearby salons
-         * @description 位置情報と希望条件から近隣サロンを検索し、顧客に最適な選択肢を提示します。
-         */
-        get: operations["SalonOperations_getNearby"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/salons/recommendations": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get personalized salon recommendations
-         * @description 顧客の嗜好や履歴にもとづきおすすめサロンを提示し、再来店促進や新規獲得を支援します。
-         */
-        get: operations["SalonOperations_getRecommendations"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/salons/search": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Search {Name} resources
-         * @description ファセットや複合条件を利用してリソースを検索し、結果と統計情報を返却します。
-         */
-        get: operations["SalonCrud_search"];
-        put?: never;
-        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1568,188 +1440,24 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get {Name} by ID
-         * @description IDを指定して単一リソースを取得し、詳細表示や編集フォームの初期値に使用します。
+         * Get a salon
+         * @description IDを指定してサロンを1件取得します。
          */
         get: operations["SalonCrud_get"];
-        /**
-         * Update {Name}
-         * @description 既存リソースを全項目更新し、最新状態とバージョン情報を返却します。
-         */
-        put: operations["SalonCrud_update"];
+        put?: never;
         post?: never;
         /**
-         * Delete {Name}
-         * @description リソースを削除し、必要に応じて論理削除か物理削除かを選択します。
+         * Delete a salon
+         * @description サロンを論理削除します。削除後は一覧・取得の対象外になります。
          */
         delete: operations["SalonCrud_delete"];
         options?: never;
         head?: never;
         /**
-         * Partially update {Name}
-         * @description 必要なフィールドのみを部分更新し、変更差分を効率的に反映します。
+         * Update a salon
+         * @description 指定した項目だけを更新します。openingHoursを指定した場合は営業日カレンダー全体を置き換えます。
          */
-        patch: operations["SalonCrud_patch"];
-        trace?: never;
-    };
-    "/api/v1/salons/{id}/availability": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Check salon availability
-         * @description 希望日時にサロン全体で対応可能な枠があるかを判定し、予約導線での可用性表示に利用します。
-         */
-        post: operations["SalonOperations_checkAvailability"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/salons/{id}/history": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get {Name} audit history
-         * @description 対象リソースの監査履歴を取得し、変更者や変更内容を追跡します。
-         */
-        get: operations["SalonCrud_getHistory"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/salons/{id}/images/{imageId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /**
-         * Delete salon image
-         * @description 掲載中のサロン画像を削除し、ブランドトーンの統一や情報更新を行います。
-         */
-        delete: operations["SalonOperations_deleteImage"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/salons/{id}/restore": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Restore deleted {Name}
-         * @description 削除済みリソースを復元し、誤削除への迅速なリカバリを可能にします。
-         */
-        post: operations["SalonCrud_restore"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/salons/{id}/staff/{staffId}/schedule": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /**
-         * Update staff schedule
-         * @description サロン所属スタッフのシフトを更新し、予約枠や勤怠管理との整合を取ります。
-         */
-        put: operations["SalonOperations_updateStaffSchedule"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/salons/{id}/statistics": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get salon statistics
-         * @description サロンの売上や予約件数など主要指標を取得し、経営判断や施策検討に活用します。
-         */
-        get: operations["SalonOperations_getStatistics"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/salons/{id}/subscribe": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Subscribe to salon updates
-         * @description サロンのニュースやキャンペーン更新を購読登録し、ロイヤル顧客との接点を強化します。
-         */
-        post: operations["SalonOperations_subscribe"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/salons/{id}/versions/{version}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get {Name} version
-         * @description 指定したバージョンのリソース状態を取得し、過去状態の確認や比較に利用します。
-         */
-        get: operations["SalonCrud_getVersion"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
+        patch: operations["SalonCrud_update"];
         trace?: never;
     };
     "/api/v1/salons/{salonId}/available-slots": {
@@ -3201,22 +2909,6 @@ export interface components {
              */
             country: string;
         };
-        /** @description サロンや顧客の住所情報を表す共通モデル。 */
-        "Models.AddressUpdate": {
-            /** @description 番地や建物名を含む詳細住所。 */
-            street?: string;
-            /** @description 市区町村名。 */
-            city?: string;
-            /** @description 都道府県名。 */
-            prefecture?: string;
-            /** @description 郵便番号。未登録の場合はnull */
-            postalCode?: string | null;
-            /**
-             * @description 国名。既定値はJapan。
-             * @default Japan
-             */
-            country: string;
-        };
         "Models.AllergyInfo": {
             /** @description アレルギーのタイプ分類。物質の種類を示す */
             type: components["schemas"]["Models.AllergyType"];
@@ -3698,26 +3390,6 @@ export interface components {
              */
             endTime: string;
         };
-        /** @description 予約可能な時間帯の詳細情報モデル */
-        "Models.AvailableTimeSlot": {
-            /**
-             * Format: date-time
-             * @description 開始日時
-             */
-            startTime: string;
-            /**
-             * Format: date-time
-             * @description 終了日時
-             */
-            endTime: string;
-            /** @description 対応可能なスタッフの一覧 */
-            availableStaff: components["schemas"]["Models.StaffSummary"][];
-            /**
-             * Format: int32
-             * @description 対応可能枠の充足率（%）
-             */
-            availability: number;
-        };
         /**
          * @description 複数リソースをまとめて取得するリクエストモデル。
          *     顧客IDや予約IDを複数指定して最小回数のAPI呼び出しで情報を取得する用途に利用。
@@ -3803,35 +3475,6 @@ export interface components {
             paymentId: (string & components["schemas"]["Models.PaymentId"]) | null;
             /** @description デポジットに関する備考。備考がない場合はnull。 */
             notes: string | null;
-        };
-        /** @description 予約確定前に預かるデポジット情報。 */
-        "Models.BookingDepositUpdate": {
-            /** @description 預かり金額。 */
-            amount?: components["schemas"]["Models.MoneyUpdate"];
-            /**
-             * @description デポジットの状態区分（pending: 入金待ち／paid: 入金済み／refunded: 返金済み／forfeited: 没収）。
-             * @enum {string}
-             */
-            status?: "pending" | "paid" | "refunded" | "forfeited";
-            /**
-             * Format: date-time
-             * @description 支払い期日。即時支払いまたは期日が未設定の場合はnull。
-             */
-            dueDate?: string | null;
-            /**
-             * Format: date-time
-             * @description 入金が確認された日時。未入金の場合はnull。
-             */
-            paidAt?: string | null;
-            /**
-             * Format: date-time
-             * @description 返金した日時。返金していない場合はnull。
-             */
-            refundedAt?: string | null;
-            /** @description 紐づく決済ID。決済がない場合はnull。 */
-            paymentId?: (string & components["schemas"]["Models.PaymentId"]) | null;
-            /** @description デポジットに関する備考。備考がない場合はnull。 */
-            notes?: string | null;
         };
         /** @description 予約と関連情報をまとめた詳細ビュー。 */
         "Models.BookingDetail": {
@@ -3991,28 +3634,26 @@ export interface components {
          */
 
         "Models.BookingStatusCodeType": "draft" | "pending" | "confirmed" | "in_progress" | "completed" | "cancelled" | "no_show";
-        /** @description 予約の進行状況ごとに保持する詳細情報ユニオン。 */
-        "Models.BookingStatusUpdate": components["schemas"]["Models.DraftBookingStatusUpdate"] | components["schemas"]["Models.PendingBookingStatusUpdate"] | components["schemas"]["Models.ConfirmedBookingStatusUpdate"] | components["schemas"]["Models.InProgressBookingStatusUpdate"] | components["schemas"]["Models.CompletedBookingStatusUpdate"] | components["schemas"]["Models.CancelledBookingStatusUpdate"] | components["schemas"]["Models.NoShowBookingStatusUpdate"];
         /** @description 予約情報を部分更新するためのリクエスト。null指定で値をリセット可能。 */
         "Models.BookingUpdateRequest": {
             /** @description ステータス詳細の更新。 */
-            status?: components["schemas"]["Models.BookingStatusUpdate"];
+            status?: components["schemas"]["Models.BookingStatus"];
             /** @description ステータスコードの更新。 */
             statusCode?: components["schemas"]["Models.BookingStatusCodeType"];
             /** @description ウェイティングリスト情報の更新またはリセット。 */
-            waitlistEntry?: components["schemas"]["Models.WaitlistEntryUpdate"] | null;
+            waitlistEntry?: components["schemas"]["Models.WaitlistEntry"] | null;
             /** @description デポジット情報の更新またはリセット。 */
-            deposit?: components["schemas"]["Models.BookingDepositUpdate"] | null;
+            deposit?: components["schemas"]["Models.BookingDeposit"] | null;
             /** @description 支払い方法の更新またはリセット。 */
             paymentMethod?: components["schemas"]["Models.PaymentMethodType"] | null;
             /** @description 支払いステータスの更新またはリセット。 */
             paymentStatus?: components["schemas"]["Models.PaymentStatusCodeType"] | null;
             /** @description 割引額の更新 */
-            discountAmount?: components["schemas"]["Models.MoneyUpdate"];
+            discountAmount?: components["schemas"]["Models.Money"];
             /** @description 最終請求額の更新。 */
-            finalAmount?: components["schemas"]["Models.MoneyUpdate"];
+            finalAmount?: components["schemas"]["Models.Money"];
             /** @description 未収金額の更新またはリセット。 */
-            balanceDue?: components["schemas"]["Models.MoneyUpdate"] | null;
+            balanceDue?: components["schemas"]["Models.Money"] | null;
             /** @description 備考の更新またはリセット。 */
             notes?: string | null;
             /** @description 任意メタデータの更新。 */
@@ -4102,26 +3743,6 @@ export interface components {
              */
             cancelledBy: "customer" | "salon" | "system";
         };
-        /** @description 予約がキャンセルされた場合の状態情報。 */
-        "Models.CancelledBookingStatusUpdate": {
-            /**
-             * @description 固定値cancelled。キャンセル状態であることを示す。
-             * @enum {string}
-             */
-            type?: "cancelled";
-            /**
-             * Format: date-time
-             * @description キャンセルが登録された日時。
-             */
-            cancelledAt?: string;
-            /** @description キャンセル理由のメモ。理由が記録されていない場合はnull。 */
-            reason?: string | null;
-            /**
-             * @description キャンセルを実行した主体（customer: 顧客／salon: サロン側／system: システム判断）。
-             * @enum {string}
-             */
-            cancelledBy?: "customer" | "salon" | "system";
-        };
         /**
          * Format: uuid
          * @description サービスカテゴリやメニュー分類を識別するブランド付きUUID。
@@ -4133,8 +3754,8 @@ export interface components {
             id: components["schemas"]["Models.CategoryId"];
             /** @description カテゴリ名 */
             name: string;
-            /** @description カテゴリ説明 */
-            description: string;
+            /** @description カテゴリ説明。未設定の場合はnull */
+            description: string | null;
             /** @description 親カテゴリ ID。最上位カテゴリの場合はnull */
             parentId: (string & components["schemas"]["Models.CategoryId"]) | null;
             /**
@@ -4221,23 +3842,6 @@ export interface components {
             /** @description 施術内容のサマリーメモ。メモを記録していない場合はnull。 */
             serviceSummary: string | null;
         };
-        /** @description 施術が完了した場合の状態情報。 */
-        "Models.CompletedBookingStatusUpdate": {
-            /**
-             * @description 固定値completed。完了状態であることを示す。
-             * @enum {string}
-             */
-            type?: "completed";
-            /**
-             * Format: date-time
-             * @description 施術が完了した日時。
-             */
-            completedAt?: string;
-            /** @description 関連する決済ID。支払いが未完了または不要の場合はnull。 */
-            paymentId?: (string & components["schemas"]["Models.PaymentId"]) | null;
-            /** @description 施術内容のサマリーメモ。メモを記録していない場合はnull。 */
-            serviceSummary?: string | null;
-        };
         /** @description 支払い完了状態の詳細 */
         "Models.CompletedPaymentStatus": {
             /**
@@ -4254,23 +3858,6 @@ export interface components {
             paidAmount: components["schemas"]["Models.Money"];
             /** @description 発行されたレシート番号 */
             receiptNumber: string | null;
-        };
-        /** @description 支払い完了状態の詳細 */
-        "Models.CompletedPaymentStatusUpdate": {
-            /**
-             * @description 状態種別（completed 固定値）
-             * @enum {string}
-             */
-            type?: "completed";
-            /**
-             * Format: date-time
-             * @description 支払い完了日時
-             */
-            completedAt?: string;
-            /** @description 実際に決済された金額 */
-            paidAmount?: components["schemas"]["Models.MoneyUpdate"];
-            /** @description 発行されたレシート番号 */
-            receiptNumber?: string | null;
         };
         /** @description 予約が確定済みの場合の状態情報。 */
         "Models.ConfirmedBookingStatus": {
@@ -4292,26 +3879,6 @@ export interface components {
              */
             expectedStart: string;
         };
-        /** @description 予約が確定済みの場合の状態情報。 */
-        "Models.ConfirmedBookingStatusUpdate": {
-            /**
-             * @description 固定値confirmed。確定状態であることを示す。
-             * @enum {string}
-             */
-            type?: "confirmed";
-            /**
-             * Format: date-time
-             * @description 予約を確定した日時。
-             */
-            confirmedAt?: string;
-            /** @description 担当するスタッフID。 */
-            staffId?: components["schemas"]["Models.StaffId"];
-            /**
-             * Format: date-time
-             * @description 施術開始予定日時。
-             */
-            expectedStart?: string;
-        };
         /** @description 顧客やサロンの連絡先情報を表す共通モデル。 */
         "Models.ContactInfo": {
             /** @description 主要連絡先として利用するメールアドレス。 */
@@ -4322,17 +3889,6 @@ export interface components {
             alternativePhone: string | null;
             /** @description 公式サイトや予約ページのURL。ウェブサイトがない場合はnull */
             websiteUrl: string | null;
-        };
-        /** @description 顧客やサロンの連絡先情報を表す共通モデル。 */
-        "Models.ContactInfoUpdate": {
-            /** @description 主要連絡先として利用するメールアドレス。 */
-            email?: string;
-            /** @description 主要連絡先として利用する電話番号。 */
-            phoneNumber?: string;
-            /** @description 緊急連絡用などの予備電話番号。未登録の場合はnull */
-            alternativePhone?: string | null;
-            /** @description 公式サイトや予約ページのURL。ウェブサイトがない場合はnull */
-            websiteUrl?: string | null;
         };
         /**
 
@@ -4403,25 +3959,6 @@ export interface components {
             startTime: string;
             /** @description 顧客要望や注意事項のメモ - 特記事項がない標準予約の場合はnull */
             notes: string | null;
-        };
-        /** @description サロン新規登録リクエスト - 全項目のキーが必須で、値は業務要件に応じてnull許可 */
-        "Models.CreateSalonRequest": {
-            /** @description 新規登録時に必須となるサロン名 */
-            name: string;
-            /** @description サロン紹介文。未設定の場合はnull */
-            description: string | null;
-            /** @description 店舗の正規住所・連絡先配送先 */
-            address: components["schemas"]["Models.Address"];
-            /** @description 顧客問い合わせ用の電話やメール情報 */
-            contactInfo: components["schemas"]["Models.ContactInfo"];
-            /** @description 通常営業日の営業時間設定一覧 */
-            openingHours: components["schemas"]["Models.OpeningHours"][];
-            /** @description 特別営業スケジュールやシフト連動の営業時間。通常営業時間のみの場合はnull */
-            businessHours: components["schemas"]["Models.BusinessHours"][] | null;
-            /** @description 店舗写真やメニュー画像のURL一覧 */
-            imageUrls: string[];
-            /** @description バリアフリー対応や個室有無などの特徴タグ一覧 */
-            features: string[];
         };
         /** @description サービスを新規登録するリクエスト */
         "Models.CreateServiceRequest": {
@@ -4567,14 +4104,14 @@ export interface components {
             birthDate: string | null;
             /** @description 住所情報。未登録の場合はnull */
             address: components["schemas"]["Models.Address"] | null;
-            /** @description 顧客の好みや要望 */
+            /** @description 顧客の好みや要望。未設定の場合はnull */
             preferences: {
                 [key: string]: unknown;
-            };
+            } | null;
             /** @description 内部メモ。メモがない場合はnull */
             notes: string | null;
-            /** @description 分類用タグ */
-            tags: string[];
+            /** @description 分類用タグ。未設定の場合はnull */
+            tags: string[] | null;
             /**
              * Format: int32
              * @description 現在のロイヤルティポイント
@@ -4941,26 +4478,6 @@ export interface components {
              */
             birthDate?: string | null;
         };
-        /** @description 顧客更新リクエスト。部分更新のためのオプションフィールドを含む。null指定で値をリセット可能 */
-        "Models.CustomerUpdateRequestUpdate": {
-            /** @description 顧客氏名。フルネームまたは通称名 */
-            name?: string;
-            /** @description 連絡先情報。メール、電話番号等の連絡手段 */
-            contactInfo?: components["schemas"]["Models.ContactInfoUpdate"];
-            /** @description 顧客の好みや要望。カスタム設定情報 */
-            preferences?: {
-                [key: string]: unknown;
-            };
-            /** @description 内部メモ。スタッフ用の顧客に関する備考。null指定でリセット可能 */
-            notes?: string | null;
-            /** @description 分類用タグ。顧客をグループ化するためのラベル */
-            tags?: string[];
-            /**
-             * Format: date
-             * @description 生年月日。年齢計算や誕生日特典に使用。null指定でリセット可能
-             */
-            birthDate?: string | null;
-        };
         /**
 
          * @description
@@ -5260,24 +4777,6 @@ export interface components {
              */
             expiresAt: string | null;
         };
-        /** @description 予約が下書き段階にある場合の状態情報。 */
-        "Models.DraftBookingStatusUpdate": {
-            /**
-             * @description 固定値draft。下書き状態であることを示す。
-             * @enum {string}
-             */
-            type?: "draft";
-            /**
-             * Format: date-time
-             * @description 下書きが作成された日時。
-             */
-            createdAt?: string;
-            /**
-             * Format: date-time
-             * @description 下書きの有効期限。無期限の場合はnull。
-             */
-            expiresAt?: string | null;
-        };
         /** @description メールアドレス確認フローの進行状況を保持するモデル。 */
         "Models.EmailVerificationStateDetail": {
             /** @description 現在の確認状態区分。 */
@@ -5486,26 +4985,6 @@ export interface components {
              */
             retryable: boolean | null;
         };
-        /** @description 支払い失敗状態の詳細 */
-        "Models.FailedPaymentStatusUpdate": {
-            /**
-             * @description 状態種別（failed 固定値）
-             * @enum {string}
-             */
-            type?: "failed";
-            /**
-             * Format: date-time
-             * @description 支払いが失敗した日時
-             */
-            failedAt?: string;
-            /** @description 失敗理由の説明 */
-            reason?: string;
-            /**
-             * @description 再試行が可能かどうか
-             * @default false
-             */
-            retryable: boolean | null;
-        };
         /**
 
          * @description
@@ -5659,21 +5138,6 @@ export interface components {
             startedAt: string;
             /** @description 施術を行っているブースや席の名称。席が指定されていない場合はnull。 */
             stationName: string | null;
-        };
-        /** @description 施術が進行中の場合の状態情報。 */
-        "Models.InProgressBookingStatusUpdate": {
-            /**
-             * @description 固定値in_progress。施術中であることを示す。
-             * @enum {string}
-             */
-            type?: "in_progress";
-            /**
-             * Format: date-time
-             * @description 施術を開始した日時。
-             */
-            startedAt?: string;
-            /** @description 施術を行っているブースや席の名称。席が指定されていない場合はnull。 */
-            stationName?: string | null;
         };
         /** @description 在庫に関するアラート情報 */
         "Models.InventoryAlert": {
@@ -5947,10 +5411,10 @@ export interface components {
              * @description 操作した数量
              */
             quantity: number;
-            /** @description 操作理由 */
-            reason: string;
-            /** @description 操作を担当したスタッフ ID */
-            performedBy: components["schemas"]["Models.StaffId"];
+            /** @description 操作理由。未設定の場合はnull */
+            reason: string | null;
+            /** @description 操作を担当したスタッフ ID。未設定の場合はnull */
+            performedBy: (string & components["schemas"]["Models.StaffId"]) | null;
             /**
              * Format: date-time
              * @description 操作日時
@@ -6276,18 +5740,6 @@ export interface components {
             /** @description 適用税率。税率が適用されない場合はnull */
             taxRate: (number & components["schemas"]["Models.decimal"]) | null;
         };
-        /** @description 税抜・税込計算に利用する金額モデル。 */
-        "Models.MoneyUpdate": {
-            /**
-             * Format: int64
-             * @description 通貨の最小単位で表現した金額値。
-             */
-            value?: number;
-            /** @description 使用する通貨コード。 */
-            currency?: components["schemas"]["Models.CurrencyCodeType"];
-            /** @description 適用税率。税率が適用されない場合はnull */
-            taxRate?: (number & components["schemas"]["Models.decimal"]) | null;
-        };
         /**
 
          * @description
@@ -6333,24 +5785,6 @@ export interface components {
              * @description 無断キャンセルとして記録した日時。
              */
             recordedAt: string;
-            /**
-             * @description ペナルティを適用したかどうか。既定値はfalse。
-             * @default false
-             */
-            penaltyApplied: boolean;
-        };
-        /** @description 来店が確認できなかった場合の状態情報。 */
-        "Models.NoShowBookingStatusUpdate": {
-            /**
-             * @description 固定値no_show。無断キャンセル状態であることを示す。
-             * @enum {string}
-             */
-            type?: "no_show";
-            /**
-             * Format: date-time
-             * @description 無断キャンセルとして記録した日時。
-             */
-            recordedAt?: string;
             /**
              * @description ペナルティを適用したかどうか。既定値はfalse。
              * @default false
@@ -6435,18 +5869,18 @@ export interface components {
              */
             sortOrder: "asc" | "desc";
         };
-        /** @description 曜日別の営業時間を管理するモデル。 */
+        /** @description 特定の日付の営業時間（営業日カレンダーの1日分）を表すモデル。 */
         "Models.OpeningHours": {
-            /** @description 対象となる曜日 */
+            /** @description dateの曜日。dateと一致している必要がある */
             dayOfWeek: components["schemas"]["Models.DayOfWeekType"];
             /**
              * Format: date
              * @description 日付
              */
             date: string;
-            /** @description 開店時刻（HH:mm形式）。休業日の場合はnull */
+            /** @description 開店時刻。HH:mm:ss形式で返す（指定時はHH:mmも可）。終日休業の場合はnull */
             openTime: string | null;
-            /** @description 閉店時刻（HH:mm形式）。休業日の場合はnull */
+            /** @description 閉店時刻。HH:mm:ss形式で返す（指定時はHH:mmも可）。終日休業の場合はnull */
             closeTime: string | null;
             /** @description 休業日かどうかを示すフラグ。 */
             isHoliday: boolean;
@@ -6612,25 +6046,6 @@ export interface components {
             remainingAmount: components["schemas"]["Models.Money"];
             /** @description 関連する返金 ID */
             refundId: components["schemas"]["Models.RefundId"];
-        };
-        /** @description 部分返金済み状態の詳細 */
-        "Models.PartialRefundPaymentStatusUpdate": {
-            /**
-             * @description 状態種別（partial_refund 固定値）
-             * @enum {string}
-             */
-            type?: "partial_refund";
-            /**
-             * Format: date-time
-             * @description 返金が行われた日時
-             */
-            refundedAt?: string;
-            /** @description 返金された金額 */
-            refundAmount?: components["schemas"]["Models.MoneyUpdate"];
-            /** @description 返金後に残る請求金額 */
-            remainingAmount?: components["schemas"]["Models.MoneyUpdate"];
-            /** @description 関連する返金 ID */
-            refundId?: components["schemas"]["Models.RefundId"];
         };
         /** @description パスワード再設定リクエストの状態管理モデル。 */
         "Models.PasswordResetStateDetail": {
@@ -6918,18 +6333,16 @@ export interface components {
          */
 
         "Models.PaymentStatusCodeType": "pending" | "processing" | "completed" | "failed" | "refunded" | "partial_refund";
-        /** @description 支払い状態の詳細情報を表すユニオン */
-        "Models.PaymentStatusUpdate": components["schemas"]["Models.PendingPaymentStatusUpdate"] | components["schemas"]["Models.ProcessingPaymentStatusUpdate"] | components["schemas"]["Models.CompletedPaymentStatusUpdate"] | components["schemas"]["Models.FailedPaymentStatusUpdate"] | components["schemas"]["Models.RefundedPaymentStatusUpdate"] | components["schemas"]["Models.PartialRefundPaymentStatusUpdate"];
         /** @description 決済情報の更新入力モデル */
         "Models.PaymentUpdateRequest": {
             /** @description 変更後の支払い方法 */
             method?: components["schemas"]["Models.PaymentMethodType"];
             /** @description 変更後の支払い状態 */
-            status?: components["schemas"]["Models.PaymentStatusUpdate"];
+            status?: components["schemas"]["Models.PaymentStatus"];
             /** @description 再計算した未収残高 */
-            outstandingAmount?: components["schemas"]["Models.MoneyUpdate"];
+            outstandingAmount?: components["schemas"]["Models.Money"];
             /** @description 更新後の預り金額（null 指定で解除） */
-            depositApplied?: components["schemas"]["Models.MoneyUpdate"] | null;
+            depositApplied?: components["schemas"]["Models.Money"] | null;
             /** @description 更新後の外部参照番号（null 指定で解除） */
             externalReference?: string | null;
             /** @description 更新後のレシート番号（null 指定で解除） */
@@ -6961,26 +6374,6 @@ export interface components {
             /** @description 仮割り当てされたスタッフID。スタッフが未確定の場合はnull。 */
             assignedStaffId: (string & components["schemas"]["Models.StaffId"]) | null;
         };
-        /** @description 予約が確認待ち段階にある場合の状態情報。 */
-        "Models.PendingBookingStatusUpdate": {
-            /**
-             * @description 固定値pending。保留状態であることを示す。
-             * @enum {string}
-             */
-            type?: "pending";
-            /**
-             * Format: date-time
-             * @description 顧客から予約リクエストを受け付けた日時。
-             */
-            requestedAt?: string;
-            /**
-             * Format: date-time
-             * @description 保留状態の有効期限。無期限の場合はnull。
-             */
-            holdExpiresAt?: string | null;
-            /** @description 仮割り当てされたスタッフID。スタッフが未確定の場合はnull。 */
-            assignedStaffId?: (string & components["schemas"]["Models.StaffId"]) | null;
-        };
         /** @description 支払い待ち状態の詳細 */
         "Models.PendingPaymentStatus": {
             /**
@@ -6993,19 +6386,6 @@ export interface components {
              * @description 支払いが登録された日時
              */
             createdAt: string;
-        };
-        /** @description 支払い待ち状態の詳細 */
-        "Models.PendingPaymentStatusUpdate": {
-            /**
-             * @description 状態種別（pending 固定値）
-             * @enum {string}
-             */
-            type?: "pending";
-            /**
-             * Format: date-time
-             * @description 支払いが登録された日時
-             */
-            createdAt?: string;
         };
         /**
 
@@ -7387,21 +6767,6 @@ export interface components {
             /** @description 処理を担当しているスタッフ ID */
             processorId: (string & components["schemas"]["Models.StaffId"]) | null;
         };
-        /** @description 決済処理中の状態の詳細 */
-        "Models.ProcessingPaymentStatusUpdate": {
-            /**
-             * @description 状態種別（processing 固定値）
-             * @enum {string}
-             */
-            type?: "processing";
-            /**
-             * Format: date-time
-             * @description 処理開始日時
-             */
-            startedAt?: string;
-            /** @description 処理を担当しているスタッフ ID */
-            processorId?: (string & components["schemas"]["Models.StaffId"]) | null;
-        };
         /** @description 仕入れ発注の基本情報 */
         "Models.PurchaseOrder": {
             /** @description 発注 ID */
@@ -7513,14 +6878,14 @@ export interface components {
              * Format: date-time
              * @description 更新後の予定納期
              */
-            expectedDelivery?: string | null;
+            expectedDelivery: string | null;
             /**
              * Format: date-time
              * @description 実際の納品日
              */
-            actualDelivery?: string | null;
+            actualDelivery: string | null;
             /** @description 納品関連の備考 */
-            deliveryNotes?: string | null;
+            deliveryNotes: string | null;
             /** @description その他の備考 */
             notes?: string;
         };
@@ -7594,23 +6959,6 @@ export interface components {
             refundAmount: components["schemas"]["Models.Money"];
             /** @description 関連する返金 ID */
             refundId: (string & components["schemas"]["Models.RefundId"]) | null;
-        };
-        /** @description 全額返金済み状態の詳細 */
-        "Models.RefundedPaymentStatusUpdate": {
-            /**
-             * @description 状態種別（refunded 固定値）
-             * @enum {string}
-             */
-            type?: "refunded";
-            /**
-             * Format: date-time
-             * @description 返金が完了した日時
-             */
-            refundedAt?: string;
-            /** @description 返金金額 */
-            refundAmount?: components["schemas"]["Models.MoneyUpdate"];
-            /** @description 関連する返金 ID */
-            refundId?: (string & components["schemas"]["Models.RefundId"]) | null;
         };
         /**
 
@@ -8074,26 +7422,122 @@ export interface components {
             /** @description 売上貢献度の高いスタッフ情報 */
             topStaff: components["schemas"]["Models.StaffPerformance"][];
         };
-        /** @description サロン基本情報モデル - 美容室の店舗情報、顧客向け公開情報、運営に必要な基礎データを一元管理する */
-        "Models.Salon": {
+        /** @description サロン新規登録リクエスト - 全項目のキーが必須。DB で NULL 許可のカラムのみ null を指定できる */
+        "Models.SalonCreateRequest": {
+            /** @description 公式名称またはブランド名称 */
+            name: string;
+            /** @description 名称のカナ表記。未設定の場合はnull */
+            nameKana: string | null;
+            /** @description サロン紹介文。未設定の場合はnull */
+            description: string | null;
+            /** @description 郵便番号。未設定の場合はnull */
+            postalCode: string | null;
+            /** @description 都道府県名 */
+            prefecture: string;
+            /** @description 市区町村名 */
+            city: string;
+            /** @description 町名・番地 */
+            address: string;
+            /** @description 建物名・部屋番号。未設定の場合はnull */
+            building: string | null;
+            /**
+             * Format: double
+             * @description 緯度(十進度)。未設定の場合はnull
+             */
+            latitude: number | null;
+            /**
+             * Format: double
+             * @description 経度(十進度)。未設定の場合はnull
+             */
+            longitude: number | null;
+            /** @description 代表電話番号 */
+            phoneNumber: string;
+            /** @description 予備の電話番号。未設定の場合はnull */
+            alternativePhone: string | null;
+            /** @description 問い合わせ用メールアドレス。サロン間で一意 */
+            email: string;
+            /** @description 公式サイトのURL。未設定の場合はnull */
+            websiteUrl: string | null;
+            /** @description ロゴ画像のURL。未設定の場合はnull */
+            logoUrl: string | null;
+            /** @description 店舗写真や内装画像のURL一覧 */
+            imageUrls: string[];
+            /** @description サービスやこだわりポイント等の特徴タグ一覧 */
+            features: string[];
+            /** @description Wi-Fi・駐車場などの設備タグ一覧 */
+            amenities: string[];
+            /** @description 曜日別の通常営業時間。未設定の場合はnull */
+            businessHours: components["schemas"]["Models.BusinessHours"][] | null;
+            /** @description 営業時間の基準となるIANAタイムゾーンID */
+            timezone: string;
+            /** @description 料金表示に使用する通貨コード(ISO 4217) */
+            currency: string;
+            /**
+             * Format: double
+             * @description 消費税率(%)
+             */
+            taxRate: number;
+            /** @description 予約受付中かどうか */
+            isActive: boolean;
+            /** @description 日付単位の営業日カレンダー */
+            openingHours: components["schemas"]["Models.OpeningHours"][];
+        };
+        /**
+         * Format: uuid
+         * @description サロン店舗・拠点を識別するためのブランド付きUUID。
+         */
+        "Models.SalonId": string;
+        /**
+         * @description サロンレスポンス - salons テーブルの公開カラムと、営業日カレンダー(opening_hours)を返す。
+         *     プロパティ名と null 許可は DB カラムと一致させている。
+         */
+        "Models.SalonResponse": {
             /** @description サロンを一意に識別するID */
             id: components["schemas"]["Models.SalonId"];
             /** @description 公式名称またはブランド名称 */
             name: string;
+            /** @description 名称のカナ表記。未設定の場合はnull */
+            nameKana: string | null;
             /** @description サロンの特徴やコンセプトを伝える説明文。未設定の場合はnull */
             description: string | null;
-            /** @description 所在地・アクセス・郵便番号等を含む住所情報 */
-            address: components["schemas"]["Models.Address"];
-            /** @description 電話・メール・SNS等の問い合わせ窓口情報 */
-            contactInfo: components["schemas"]["Models.ContactInfo"];
-            /** @description 曜日別の基本営業時間帯一覧 */
-            openingHours: components["schemas"]["Models.OpeningHours"][];
-            /** @description 季節やキャンペーン等に合わせた営業スケジュール。通常営業時間のみの場合はnull */
-            businessHours: components["schemas"]["Models.BusinessHours"][] | null;
+            /** @description 郵便番号。未設定の場合はnull */
+            postalCode: string | null;
+            /** @description 都道府県名 */
+            prefecture: string;
+            /** @description 市区町村名 */
+            city: string;
+            /** @description 町名・番地 */
+            address: string;
+            /** @description 建物名・部屋番号。未設定の場合はnull */
+            building: string | null;
+            /**
+             * Format: double
+             * @description 緯度(十進度)。未設定の場合はnull
+             */
+            latitude: number | null;
+            /**
+             * Format: double
+             * @description 経度(十進度)。未設定の場合はnull
+             */
+            longitude: number | null;
+            /** @description 代表電話番号 */
+            phoneNumber: string;
+            /** @description 予備の電話番号。未設定の場合はnull */
+            alternativePhone: string | null;
+            /** @description 問い合わせ用メールアドレス。サロン間で一意 */
+            email: string;
+            /** @description 公式サイトのURL。未設定の場合はnull */
+            websiteUrl: string | null;
+            /** @description ロゴ画像のURL。未設定の場合はnull */
+            logoUrl: string | null;
             /** @description 店舗写真や内装画像のURL一覧 */
             imageUrls: string[];
-            /** @description 設備・サービス・こだわりポイント等の特徴タグ一覧 */
+            /** @description サービスやこだわりポイント等の特徴タグ一覧 */
             features: string[];
+            /** @description Wi-Fi・駐車場などの設備タグ一覧 */
+            amenities: string[];
+            /** @description 曜日別の通常営業時間。未設定の場合はnull */
+            businessHours: components["schemas"]["Models.BusinessHours"][] | null;
             /**
              * Format: float
              * @description 顧客レビューから算出した平均評価。レビュー未登録の場合はnull
@@ -8101,163 +7545,96 @@ export interface components {
             rating: number | null;
             /**
              * Format: int32
-             * @description 蓄積されたレビュー件数。レビュー未登録の場合はnull
+             * @description 蓄積されたレビュー件数
              */
-            reviewCount: number | null;
+            reviewCount: number;
+            /** @description 営業時間の基準となるIANAタイムゾーンID */
+            timezone: string;
+            /** @description 料金表示に使用する通貨コード(ISO 4217) */
+            currency: string;
+            /**
+             * Format: double
+             * @description 消費税率(%)
+             */
+            taxRate: number;
+            /** @description 予約受付中かどうか */
+            isActive: boolean;
+            /** @description 日付単位の営業日カレンダー */
+            openingHours: components["schemas"]["Models.OpeningHours"][];
             /**
              * Format: date-time
-             * @description レコード作成日時。
+             * @description レコード作成日時
              */
             createdAt: string;
-            /** @description レコードを作成したユーザーID。システム自動作成または匿名作成の場合はnull */
-            createdBy: string | null;
             /**
              * Format: date-time
-             * @description レコード最終更新日時。
+             * @description レコード最終更新日時
              */
             updatedAt: string;
-            /** @description レコードを最後に更新したユーザーID。システム自動更新または匿名更新の場合はnull */
-            updatedBy: string | null;
-        };
-        /** @description 指定した条件でサロンの予約枠の空き状況を確認するためのリクエスト */
-        "Models.SalonAvailabilityRequest": {
-            /** @description 空き状況を確認したいサービスのID */
-            serviceId: components["schemas"]["Models.ServiceId"];
-            /**
-             * Format: date
-             * @description 希望する施術日
-             */
-            date: string;
-            /** @description 希望する時間帯。未指定の場合は全時間帯を対象 */
-            timeSlot?: components["schemas"]["Models.TimeSlot"];
-            /** @description 指名したいスタッフのID。指名なしの場合はnull */
-            staffId?: components["schemas"]["Models.StaffId"];
-            /**
-             * Format: int32
-             * @description 必要な枠数。デフォルトは1枠
-             * @default 1
-             */
-            slots: number;
-        };
-        /** @description サロンの空き状況照会結果を返すレスポンス */
-        "Models.SalonAvailabilityResponse": {
-            /** @description 予約可能な時間帯候補一覧 */
-            availableSlots: components["schemas"]["Models.AvailableTimeSlot"][];
-            /**
-             * Format: date
-             * @description 希望日が満席の場合に提示する次の空き日。空きがない場合はnull
-             */
-            nextAvailableDate: string | null;
-            /** @description ウェイトリスト登録の可否 */
-            waitlistAvailable: boolean;
         };
         /**
-         * Format: uuid
-         * @description サロン店舗・拠点を識別するためのブランド付きUUID。
+         * @description サロン部分更新リクエスト - 指定した項目だけを更新する。DB で NULL 許可のカラムは null でクリアできる。
+         *     openingHours を指定した場合は営業日カレンダー全体を置き換える
          */
-        "Models.SalonId": string;
-        /** @description パーソナライズされたおすすめ度スコアを含むサロン推薦モデル */
-        "Models.SalonRecommendation": {
+        "Models.SalonUpdateRequest": {
+            /** @description 公式名称またはブランド名称 */
+            name?: string;
+            /** @description 名称のカナ表記。nullでクリア */
+            nameKana?: string | null;
+            /** @description サロン紹介文。nullでクリア */
+            description?: string | null;
+            /** @description 郵便番号。nullでクリア */
+            postalCode?: string | null;
+            /** @description 都道府県名 */
+            prefecture?: string;
+            /** @description 市区町村名 */
+            city?: string;
+            /** @description 町名・番地 */
+            address?: string;
+            /** @description 建物名・部屋番号。nullでクリア */
+            building?: string | null;
             /**
-             * Format: int32
-             * @description サロン推薦スコア（0-100）
+             * Format: double
+             * @description 緯度(十進度)。nullでクリア
              */
-            score: number;
-            /** @description 推薦理由のリスト */
-            reasons: string[];
-            /** @description 要望に合致したサービス一覧 */
-            matchingServices: components["schemas"]["Models.ServiceSummary"][];
-        } & components["schemas"]["Models.SalonSummary"];
-        /** @description サロン運営指標を集計したダッシュボード向けレスポンスモデル */
-        "Models.SalonStatistics": {
+            latitude?: number | null;
             /**
-             * Format: int32
-             * @description 登録されている提供メニューの総数
+             * Format: double
+             * @description 経度(十進度)。nullでクリア
              */
-            totalServices: number;
+            longitude?: number | null;
+            /** @description 代表電話番号 */
+            phoneNumber?: string;
+            /** @description 予備の電話番号。nullでクリア */
+            alternativePhone?: string | null;
+            /** @description 問い合わせ用メールアドレス。サロン間で一意 */
+            email?: string;
+            /** @description 公式サイトのURL。nullでクリア */
+            websiteUrl?: string | null;
+            /** @description ロゴ画像のURL。nullでクリア */
+            logoUrl?: string | null;
+            /** @description 店舗写真や内装画像のURL一覧 */
+            imageUrls?: string[];
+            /** @description サービスやこだわりポイント等の特徴タグ一覧 */
+            features?: string[];
+            /** @description Wi-Fi・駐車場などの設備タグ一覧 */
+            amenities?: string[];
+            /** @description 曜日別の通常営業時間。nullでクリア */
+            businessHours?: components["schemas"]["Models.BusinessHours"][] | null;
+            /** @description 営業時間の基準となるIANAタイムゾーンID */
+            timezone?: string;
+            /** @description 料金表示に使用する通貨コード(ISO 4217) */
+            currency?: string;
             /**
-             * Format: int32
-             * @description 在籍スタッフの総数
+             * Format: double
+             * @description 消費税率(%)
              */
-            totalStaff: number;
-            /**
-             * Format: float
-             * @description レビューから算出した平均評価。レビュー未登録の場合はnull
-             */
-            averageRating: number | null;
-            /**
-             * Format: int32
-             * @description 累計レビュー件数
-             */
-            totalReviews: number;
-            /**
-             * Format: int32
-             * @description 当月の予約件数合計
-             */
-            monthlyBookings: number;
-            /** @description 当月の売上総額。売上未集計の場合はnull */
-            monthlyRevenue: components["schemas"]["Models.Money"] | null;
-            /** @description 人気の高いサービス一覧 */
-            popularServices: components["schemas"]["Models.ServiceSummary"][];
-            /** @description 予約が集中する時間帯の一覧 */
-            busyHours: components["schemas"]["Models.TimeSlot"][];
+            taxRate?: number;
+            /** @description 予約受付中かどうか */
+            isActive?: boolean;
+            /** @description 日付単位の営業日カレンダー。指定した場合は全件を置き換える */
+            openingHours?: components["schemas"]["Models.OpeningHours"][];
         };
-        /** @description サロンからの最新情報通知を希望する顧客の購読リクエスト */
-        "Models.SalonSubscriptionRequest": {
-            /** @description 通知を受け取る顧客ID */
-            customerId: components["schemas"]["Models.CustomerId"];
-            /** @description 希望する通知カテゴリの種類一覧 */
-            notificationTypes: components["schemas"]["Models.NotificationType"][];
-            /** @description 関心の高いサービスカテゴリ。未指定の場合は全カテゴリ対象 */
-            categories: components["schemas"]["Models.ServiceCategoryType"][];
-        };
-        /** @description サロン通知購読の作成結果を返すレスポンスモデル */
-        "Models.SalonSubscriptionResponse": {
-            /** @description 購読設定を一意に識別するID */
-            subscriptionId: string;
-            /**
-             * @description 購読状態（常にactiveを返却）
-             * @enum {string}
-             */
-            status: "active";
-            /**
-             * Format: date-time
-             * @description 購読の有効期限。無期限の場合はnull
-             */
-            expiresAt: string | null;
-        };
-        /** @description サロン概要モデル - リスト表示や検索結果に必要な要約情報を提供 */
-        "Models.SalonSummary": {
-            /** @description 対象サロンの一意なID */
-            id: components["schemas"]["Models.SalonId"];
-            /** @description 表示用のサロン名称 */
-            name: string;
-            /** @description ユーザーに提示する所在地情報 */
-            address: components["schemas"]["Models.Address"];
-            /**
-             * Format: float
-             * @description レビュー平均値。レビュー未登録の場合はnull
-             */
-            rating: number | null;
-            /**
-             * Format: int32
-             * @description レビュー件数。レビュー未登録の場合はnull
-             */
-            reviewCount: number | null;
-        };
-        /** @description 検索基準地点からの距離情報を付与したサロンモデル */
-        "Models.SalonWithDistance": {
-            /**
-             * Format: float
-             * @description 基準地点からの距離（km）
-             */
-            distance: number;
-            /**
-             * Format: int32
-             * @description 想定移動時間（分）。計算不可の場合はnull
-             */
-            travelTime: number | null;
-        } & components["schemas"]["Models.Salon"];
         /**
 
          * @description
@@ -8294,23 +7671,6 @@ export interface components {
             sensitivities: string[];
             /** @description 頭皮に関する備考。特記事項がない場合はnull */
             notes: string | null;
-        };
-        /** @description スタッフに発生する例外スケジュール（休暇・研修等）を表すモデル */
-        "Models.ScheduleException": {
-            /**
-             * Format: date
-             * @description 例外が適用される日付
-             */
-            date: string;
-            /**
-             * @description 例外の種別（休暇・病欠など）
-             * @enum {string}
-             */
-            type: "holiday" | "sick_leave" | "vacation" | "training" | "other";
-            /** @description 補足説明や注意事項。特記事項がない場合はnull */
-            description: string | null;
-            /** @description 代替対応するスタッフのID。代替スタッフ未手配の場合はnull */
-            alternativeStaffId: (string & components["schemas"]["Models.StaffId"]) | null;
         };
         /**
          * @description 検索結果の関連度スコア範囲を表すモデル。
@@ -8401,8 +7761,8 @@ export interface components {
             status: components["schemas"]["Models.ServiceStatusDetail"];
             /** @description サービス名 */
             name: string;
-            /** @description 説明文 */
-            description: string;
+            /** @description 説明文。未設定の場合はnull */
+            description: string | null;
             /**
              * Format: int32
              * @description 料金
@@ -8886,8 +8246,8 @@ export interface components {
             id: string;
             /** @description セッション所有者のユーザーID。 */
             userId: components["schemas"]["Models.UserId"];
-            /** @description アクセストークン再発行に使用するリフレッシュトークン。 */
-            refreshToken: string;
+            /** @description アクセストークン再発行に使用するリフレッシュトークン。未設定の場合はnull */
+            refreshToken: string | null;
             /** @description セッション発行元のIPアドレス。 */
             ipAddress: string;
             /** @description ブラウザやアプリを示すユーザーエージェント文字列。 */
@@ -9034,8 +8394,8 @@ export interface components {
             name: string;
             /** @description 連絡先情報 (電話・メール等) */
             contactInfo: components["schemas"]["Models.ContactInfo"];
-            /** @description 得意分野や専門メニューの一覧 */
-            specialties: string[];
+            /** @description 得意分野や専門メニューの一覧。未設定の場合はnull */
+            specialties: string[] | null;
             /** @description プロフィール画像のURL - プロフィール画像未設定の場合はnull */
             imageUrl: string | null;
             /** @description 自己紹介や経歴の概要 - プロフィール未記入の新人スタッフの場合はnull */
@@ -9179,8 +8539,8 @@ export interface components {
         };
         /** @description スタッフシフトモデル - 通常勤務スケジュールと休憩時間、適用期間を定義し、予約可能時間の算出に利用する */
         "Models.StaffSchedule": {
-            /** @description 対象となる曜日 */
-            dayOfWeek: components["schemas"]["Models.DayOfWeekType"];
+            /** @description 対象となる曜日。未設定の場合はnull */
+            dayOfWeek: components["schemas"]["Models.DayOfWeekType"] | null;
             /** @description 勤務開始時刻 (フォーマット例: HH:mm) */
             startTime: string;
             /** @description 勤務終了時刻 (フォーマット例: HH:mm) */
@@ -9189,77 +8549,6 @@ export interface components {
             breakTime: components["schemas"]["Models.TimeSlot"][] | null;
             /** @description シフトが有効となる期間 - 無期限スケジュールの場合はnull */
             effectivePeriod: components["schemas"]["Models.DateRange"] | null;
-        };
-        /** @description スタッフの勤務スケジュールと例外設定を管理するモデル */
-        "Models.StaffScheduleManagement": {
-            /** @description 対象スタッフのID */
-            staffId: components["schemas"]["Models.StaffId"];
-            /** @description 所属サロンのID */
-            salonId: components["schemas"]["Models.SalonId"];
-            /** @description 通常勤務時間帯の一覧 */
-            regularHours: components["schemas"]["Models.BusinessHours"][];
-            /** @description 休暇や研修などの例外設定一覧 */
-            exceptions: components["schemas"]["Models.ScheduleException"][];
-            /**
-             * Format: date-time
-             * @description スケジュールが有効になる開始日時
-             */
-            effectiveFrom: string;
-            /**
-             * Format: date-time
-             * @description スケジュールの終了日時。無期限の場合はnull
-             */
-            effectiveTo: string | null;
-            /**
-             * Format: date-time
-             * @description レコード作成日時 (UTC)。
-             */
-            createdAt: string;
-            /** @description レコードを作成したユーザーID またはサービス名。 */
-            createdBy: string;
-            /**
-             * Format: date-time
-             * @description 最終更新日時 (UTC)。
-             */
-            updatedAt: string;
-            /** @description 最後に更新したユーザーID またはサービス名。 */
-            updatedBy: string;
-            /**
-             * Format: int32
-             * @description 楽観的ロックに使用するバージョン番号。
-             */
-            version: number;
-            /**
-             * @description 論理削除フラグ。true の場合は通常の検索結果から除外する。
-             * @default false
-             */
-            isDeleted: boolean;
-            /**
-             * Format: date-time
-             * @description 削除操作が実行された日時 (UTC)。削除されていない場合はnull
-             */
-            deletedAt: string | null;
-            /** @description 削除操作を実施したユーザーID またはサービス名。削除されていない場合はnull */
-            deletedBy: string | null;
-            /** @description 削除理由や補足メモ。カスタマーサポート対応に利用する。理由が不要または削除されていない場合はnull */
-            deletionReason: string | null;
-        };
-        /** @description スタッフの勤務スケジュールを更新するためのリクエスト */
-        "Models.StaffScheduleUpdateRequest": {
-            /** @description 更新後の通常勤務時間帯一覧 */
-            regularHours: components["schemas"]["Models.BusinessHours"][];
-            /** @description 休暇や特例などの例外設定一覧。例外がない場合はnull */
-            exceptions: components["schemas"]["Models.ScheduleException"][] | null;
-            /**
-             * Format: date-time
-             * @description 更新内容の適用開始日時
-             */
-            effectiveFrom: string;
-            /**
-             * Format: date-time
-             * @description 適用終了日時。無期限の場合はnull
-             */
-            effectiveTo: string | null;
         };
         /** @description スタッフ一覧や選択候補で利用する要約情報。 */
         "Models.StaffSummary": {
@@ -9316,10 +8605,10 @@ export interface components {
              * @description 操作した数量
              */
             quantity: number;
-            /** @description 操作理由 */
-            reason: string;
-            /** @description 操作を担当したスタッフ ID */
-            performedBy: components["schemas"]["Models.StaffId"];
+            /** @description 操作理由。未設定の場合はnull */
+            reason: string | null;
+            /** @description 操作を担当したスタッフ ID。未設定の場合はnull */
+            performedBy: (string & components["schemas"]["Models.StaffId"]) | null;
             /**
              * Format: date-time
              * @description 操作日時
@@ -9754,44 +9043,6 @@ export interface components {
             /** @description 再割当先のスタッフID */
             staffId?: components["schemas"]["Models.StaffId"];
         };
-        /** @description サロン情報を部分更新するためのリクエスト。null指定で値をリセット可能 */
-        "Models.UpdateSalonRequest": {
-            /** @description 名称変更を行う場合に指定 */
-            name?: string;
-            /** @description 紹介文を更新する場合に指定（null指定で初期化可能） */
-            description?: string | null;
-            /** @description 住所情報の差し替えが必要な場合に指定 */
-            address?: components["schemas"]["Models.Address"];
-            /** @description 電話番号やメールアドレス等の連絡先を更新する場合に指定 */
-            contactInfo?: components["schemas"]["Models.ContactInfo"];
-            /** @description 通常営業時間の更新が必要な場合に指定 */
-            openingHours?: components["schemas"]["Models.OpeningHours"][];
-            /** @description 特別営業時間やシフト設定の更新に利用（null指定で初期化可能） */
-            businessHours?: components["schemas"]["Models.BusinessHours"][] | null;
-            /** @description 画像URLリストを更新する場合に指定 */
-            imageUrls?: string[];
-            /** @description 特徴タグの追加・削除を行う場合に指定 */
-            features?: string[];
-        };
-        /** @description サロン情報を部分更新するためのリクエスト。null指定で値をリセット可能 */
-        "Models.UpdateSalonRequestUpdate": {
-            /** @description 名称変更を行う場合に指定 */
-            name?: string;
-            /** @description 紹介文を更新する場合に指定（null指定で初期化可能） */
-            description?: string | null;
-            /** @description 住所情報の差し替えが必要な場合に指定 */
-            address?: components["schemas"]["Models.AddressUpdate"];
-            /** @description 電話番号やメールアドレス等の連絡先を更新する場合に指定 */
-            contactInfo?: components["schemas"]["Models.ContactInfoUpdate"];
-            /** @description 通常営業時間の更新が必要な場合に指定 */
-            openingHours?: components["schemas"]["Models.OpeningHours"][];
-            /** @description 特別営業時間やシフト設定の更新に利用（null指定で初期化可能） */
-            businessHours?: components["schemas"]["Models.BusinessHours"][] | null;
-            /** @description 画像URLリストを更新する場合に指定 */
-            imageUrls?: string[];
-            /** @description 特徴タグの追加・削除を行う場合に指定 */
-            features?: string[];
-        };
         /** @description サービス情報を部分更新するリクエスト。null指定で値をリセット可能 */
         "Models.UpdateServiceRequest": {
             /** @description 更新後のサービス名 */
@@ -9803,51 +9054,6 @@ export interface components {
              * @description 更新後の施術時間。null指定で時間設定をクリア（デフォルト値にリセット）
              */
             duration: number | null;
-            /**
-             * Format: int32
-             * @description 更新後の料金
-             */
-            price?: number;
-            /** @description 更新後のサービスカテゴリ */
-            category?: components["schemas"]["Models.ServiceCategoryType"];
-            /** @description 更新後のカテゴリ ID（null 指定で解除） */
-            categoryId?: (string & components["schemas"]["Models.CategoryId"]) | null;
-            /** @description 更新後の画像 URL（null 指定で解除） */
-            imageUrl?: string | null;
-            /**
-             * Format: int32
-             * @description 更新後の必要スタッフレベル（null 指定で解除）
-             */
-            requiredStaffLevel?: number | null;
-            /**
-             * Format: int32
-             * @description 更新後のデポジット額（null 指定で解除）
-             */
-            depositAmount?: number | null;
-            /** @description 更新後の有効フラグ */
-            isActive?: boolean;
-            /**
-             * Format: int32
-             * @description 更新後の最大予約日数（null 指定で解除）
-             */
-            maxAdvanceBookingDays?: number | null;
-            /**
-             * Format: int32
-             * @description 更新後の最短予約受付時間（null 指定で解除）
-             */
-            minAdvanceBookingHours?: number | null;
-        };
-        /** @description サービス情報を部分更新するリクエスト。null指定で値をリセット可能 */
-        "Models.UpdateServiceRequestUpdate": {
-            /** @description 更新後のサービス名 */
-            name?: string;
-            /** @description 更新後の説明文。null指定で説明文をクリア（空文字列にリセット） */
-            description?: string | null;
-            /**
-             * Format: int32
-             * @description 更新後の施術時間。null指定で時間設定をクリア（デフォルト値にリセット）
-             */
-            duration?: number | null;
             /**
              * Format: int32
              * @description 更新後の料金
@@ -9931,8 +9137,8 @@ export interface components {
              * @description メール確認トークンの有効期限。トークンが発行されていない場合はnull。
              */
             emailVerificationTokenExpiry: string | null;
-            /** @description 2要素認証の設定状態。 */
-            twoFactorStatus: components["schemas"]["Models.TwoFactorStatusType"];
+            /** @description 2要素認証の設定状態。未設定の場合はnull */
+            twoFactorStatus: components["schemas"]["Models.TwoFactorStatusType"] | null;
             /** @description 暗号化された2要素認証シークレット。2要素認証が無効の場合はnull。 */
             twoFactorSecret: string | null;
             /** @description 2要素認証の復旧用バックアップコード一覧。2要素認証が無効の場合はnull。 */
@@ -10219,40 +9425,6 @@ export interface components {
             /** @description 追加メモ。メモがない場合はnull。 */
             notes: string | null;
         };
-        /** @description ウェイティングリストに登録された顧客情報。 */
-        "Models.WaitlistEntryUpdate": {
-            /**
-             * Format: int32
-             * @description 現在の待機順序。
-             */
-            position?: number;
-            /**
-             * Format: date-time
-             * @description 呼び出し予想時刻。時刻が未確定の場合はnull。
-             */
-            estimatedTime?: string | null;
-            /**
-             * Format: date-time
-             * @description ウェイティングリストに参加した日時。
-             */
-            joinedAt?: string;
-            /**
-             * Format: date-time
-             * @description 待機権が失効する日時。無期限の場合はnull。
-             */
-            expiresAt?: string | null;
-            /**
-             * Format: date-time
-             * @description 呼び出し通知を送信した日時。未通知の場合はnull。
-             */
-            notifiedAt?: string | null;
-            /** @description 希望スタッフID。指名なしの場合はnull。 */
-            preferredStaffId?: (string & components["schemas"]["Models.StaffId"]) | null;
-            /** @description 希望サービスID。サービスを指定していない場合はnull。 */
-            preferredServiceId?: (string & components["schemas"]["Models.ServiceId"]) | null;
-            /** @description 追加メモ。メモがない場合はnull。 */
-            notes?: string | null;
-        };
         /**
          * Format: double
          * @description 税率や金額計算で用いる汎用小数型。
@@ -10364,29 +9536,21 @@ export interface components {
         "Models.SalesReportQuery.includeRefunds": boolean;
         /** @description 集計対象のサロン ID */
         "Models.SalesReportQuery.salonId": components["schemas"]["Models.SalonId"];
-        /** @description サービスカテゴリ（カット・カラー等）による絞り込み */
-        "Models.SalonSearchRequest.categories": components["schemas"]["Models.ServiceCategoryType"][];
-        /** @description 市区町村名による絞り込み */
+        /** @description 市区町村名による絞り込み(完全一致) */
         "Models.SalonSearchRequest.city": string;
-        /** @description 設備やこだわり条件などの特徴タグによる絞り込み */
+        /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+        "Models.SalonSearchRequest.cursor": string;
+        /** @description 特徴タグによる絞り込み。指定したタグをすべて持つサロンに一致する */
         "Models.SalonSearchRequest.features": string[];
-        /** @description 営業中サロンのみを対象にするかどうか */
+        /** @description 予約受付中かどうかによる絞り込み */
         "Models.SalonSearchRequest.isActive": boolean;
-        /** @description 検索キーワード。qパラメータのエイリアス */
+        /** @description 名称・説明文に対する部分一致キーワード(大文字小文字を区別しない) */
         "Models.SalonSearchRequest.keyword": string;
-        /** @description 距離計算に使用する基準緯度 */
-        "Models.SalonSearchRequest.lat": number;
-        /** @description 距離計算に使用する基準経度 */
-        "Models.SalonSearchRequest.lon": number;
-        /** @description 検索基点からの最大距離（km） */
-        "Models.SalonSearchRequest.maxDistance": number;
-        /** @description 最低評価値による絞り込み */
+        /** @description 1ページあたりの取得件数上限 (1〜100) */
+        "Models.SalonSearchRequest.limit": number;
+        /** @description 最低評価値による絞り込み。評価のないサロンは除外される */
         "Models.SalonSearchRequest.minRating": number;
-        /** @description 特定日時に営業しているサロンを探すための基準日時 */
-        "Models.SalonSearchRequest.openAt": string;
-        /** @description 現在営業中かどうかで絞り込むフラグ */
-        "Models.SalonSearchRequest.openNow": boolean;
-        /** @description 都道府県名による絞り込み */
+        /** @description 都道府県名による絞り込み(完全一致) */
         "Models.SalonSearchRequest.prefecture": string;
         /** @description フリーワード検索用キーワード。 */
         "Models.SearchParams.q": string;
@@ -13313,7 +12477,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["Models.CustomerUpdateRequestUpdate"];
+                "application/json": components["schemas"]["Models.CustomerUpdateRequest"];
             };
         };
         responses: {
@@ -14650,54 +13814,24 @@ export interface operations {
     SalonCrud_list: {
         parameters: {
             query?: {
-                /** @description 検索キーワード。qパラメータのエイリアス */
+                /** @description 1ページあたりの取得件数上限 (1〜100) */
+                limit?: components["parameters"]["Models.SalonSearchRequest.limit"];
+                /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+                cursor?: components["parameters"]["Models.SalonSearchRequest.cursor"];
+                /** @description 名称・説明文に対する部分一致キーワード(大文字小文字を区別しない) */
                 keyword?: components["parameters"]["Models.SalonSearchRequest.keyword"];
-                /** @description 市区町村名による絞り込み */
-                city?: components["parameters"]["Models.SalonSearchRequest.city"];
-                /** @description 都道府県名による絞り込み */
+                /** @description 都道府県名による絞り込み(完全一致) */
                 prefecture?: components["parameters"]["Models.SalonSearchRequest.prefecture"];
-                /** @description サービスカテゴリ（カット・カラー等）による絞り込み */
-                categories?: components["parameters"]["Models.SalonSearchRequest.categories"];
-                /** @description 設備やこだわり条件などの特徴タグによる絞り込み */
-                features?: components["parameters"]["Models.SalonSearchRequest.features"];
-                /** @description 営業中サロンのみを対象にするかどうか */
+                /** @description 市区町村名による絞り込み(完全一致) */
+                city?: components["parameters"]["Models.SalonSearchRequest.city"];
+                /** @description 予約受付中かどうかによる絞り込み */
                 isActive?: components["parameters"]["Models.SalonSearchRequest.isActive"];
-                /** @description 最低評価値による絞り込み */
+                /** @description 最低評価値による絞り込み。評価のないサロンは除外される */
                 minRating?: components["parameters"]["Models.SalonSearchRequest.minRating"];
-                /** @description 検索基点からの最大距離（km） */
-                maxDistance?: components["parameters"]["Models.SalonSearchRequest.maxDistance"];
-                /** @description 距離計算に使用する基準緯度 */
-                lat?: components["parameters"]["Models.SalonSearchRequest.lat"];
-                /** @description 距離計算に使用する基準経度 */
-                lon?: components["parameters"]["Models.SalonSearchRequest.lon"];
-                /** @description 現在営業中かどうかで絞り込むフラグ */
-                openNow?: components["parameters"]["Models.SalonSearchRequest.openNow"];
-                /** @description 特定日時に営業しているサロンを探すための基準日時 */
-                openAt?: components["parameters"]["Models.SalonSearchRequest.openAt"];
-                /** @description 全文検索キーワード。名称や説明文を横断的に検索する。 */
-                q?: components["parameters"]["Models.AdvancedSearchParams.q"];
-                /** @description フィルター式。例: `status:active AND category:premium`。属性条件を組み合わせた絞り込みに使用。 */
-                filter?: components["parameters"]["Models.AdvancedSearchParams.filter"];
-                /** @description レスポンスに含めるフィールドのカンマ区切りリスト。データ転送量の最適化に活用。 */
-                fields?: components["parameters"]["Models.AdvancedSearchParams.fields"];
-                /** @description レスポンスから除外したいフィールドのカンマ区切りリスト。不要情報を除く場合に利用。 */
-                exclude?: components["parameters"]["Models.AdvancedSearchParams.exclude"];
-                /** @description ファセット集計を有効化するかどうか。true で各項目の件数を集計する。 */
-                facets?: components["parameters"]["Models.AdvancedSearchParams.facets"];
-                /** @description 集計対象とするファセットフィールドの一覧。カテゴリや価格帯などを指定する。 */
-                facetFields?: components["parameters"]["Models.AdvancedSearchParams.facetFields"];
-                /** @description 1ページあたりの取得件数上限 (1〜100)。指定が無い場合は既定値 20 を適用。 */
-                limit?: components["parameters"]["Models.CursorPaginationParams.limit"];
-                /** @description 次ページを指し示すカーソル。前回レスポンスの `meta.nextCursor` を設定する。 */
-                cursor?: components["parameters"]["Models.CursorPaginationParams.cursor"];
-                /** @description ソート対象フィールド。予約日時や作成日時など業務軸を指定する。 */
-                sortBy?: components["parameters"]["Models.CursorPaginationParams.sortBy"];
-                /** @description ソート順序。`asc` は昇順、`desc` は降順を表す。 */
-                sortOrder?: components["parameters"]["Models.CursorPaginationParams.sortOrder"];
+                /** @description 特徴タグによる絞り込み。指定したタグをすべて持つサロンに一致する */
+                features?: components["parameters"]["Models.SalonSearchRequest.features"];
             };
-            header?: {
-                Authorization?: string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -14706,20 +13840,12 @@ export interface operations {
             /** @description The request has succeeded. */
             200: {
                 headers: {
-                    /** @description 一定期間内に許可されるリクエスト上限値。 */
-                    "X-RateLimit-Limit": number;
-                    /** @description 現在のウィンドウで残っているリクエスト回数。 */
-                    "X-RateLimit-Remaining": number;
-                    /** @description リミットがリセットされる時刻 (UNIX 時間)。 */
-                    "X-RateLimit-Reset": number;
-                    /** @description レート制限に達した際に再試行可能となるまでの秒数。制限に達していない場合はnull */
-                    "Retry-After": number | null;
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": {
                         /** @description 現在ページで取得したデータ配列。サロン一覧や予約履歴の実データを格納する。 */
-                        data: components["schemas"]["Models.Salon"][];
+                        data: components["schemas"]["Models.SalonResponse"][];
                         /** @description ページング状態を示すメタ情報。次ページの有無やカーソル値を含む。 */
                         meta: components["schemas"]["Models.PaginationMeta"];
                         /** @description 関連するページ遷移リンク。HATEOAS 連携や外部連携向けに利用する。 */
@@ -14736,47 +13862,18 @@ export interface operations {
                     "application/json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description Access is unauthorized. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description Client error */
-            429: {
-                headers: {
-                    /** @description 一定期間内に許可されるリクエスト上限値。 */
-                    "X-RateLimit-Limit": number;
-                    /** @description 現在のウィンドウで残っているリクエスト回数。 */
-                    "X-RateLimit-Remaining": number;
-                    /** @description リミットがリセットされる時刻 (UNIX 時間)。 */
-                    "X-RateLimit-Reset": number;
-                    /** @description レート制限に達した際に再試行可能となるまでの秒数。制限に達していない場合はnull */
-                    "Retry-After": number | null;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
         };
     };
     SalonCrud_create: {
         parameters: {
             query?: never;
-            header?: {
-                Authorization?: string;
-                "Idempotency-Key"?: string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["Models.CreateSalonRequest"];
+                "application/json": components["schemas"]["Models.SalonCreateRequest"];
             };
         };
         responses: {
@@ -14789,7 +13886,7 @@ export interface operations {
                 content: {
                     "application/json": {
                         /** @description レスポンスの主体となるビジネスデータ。 */
-                        data: components["schemas"]["Models.Salon"];
+                        data: components["schemas"]["Models.SalonResponse"];
                         /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
                         /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
@@ -14801,15 +13898,6 @@ export interface operations {
             };
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description Access is unauthorized. */
-            401: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -14826,658 +13914,12 @@ export interface operations {
                     "application/json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description Client error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-        };
-    };
-    SalonCrud_batchGet: {
-        parameters: {
-            query?: never;
-            header?: {
-                Authorization?: string;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["Models.BatchGetRequest"];
-            };
-        };
-        responses: {
-            /** @description The request has succeeded. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
-                        data: components["schemas"]["Models.Salon"][];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
-                        meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
-                        links: {
-                            [key: string]: string;
-                        } | null;
-                    };
-                };
-            };
-            /** @description The server could not understand the request due to invalid syntax. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description Access is unauthorized. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-        };
-    };
-    SalonCrud_bulkUpdate: {
-        parameters: {
-            query?: never;
-            header?: {
-                Authorization?: string;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    /** @description 処理対象となるアイテムの配列。1件以上100件以下に制限する。 */
-                    items: {
-                        /** @description 名称変更を行う場合に指定 */
-                        name?: string;
-                        /** @description 紹介文を更新する場合に指定（null指定で初期化可能） */
-                        description?: string | null;
-                        /** @description 住所情報の差し替えが必要な場合に指定 */
-                        address?: components["schemas"]["Models.Address"];
-                        /** @description 電話番号やメールアドレス等の連絡先を更新する場合に指定 */
-                        contactInfo?: components["schemas"]["Models.ContactInfo"];
-                        /** @description 通常営業時間の更新が必要な場合に指定 */
-                        openingHours?: components["schemas"]["Models.OpeningHours"][];
-                        /** @description 特別営業時間やシフト設定の更新に利用（null指定で初期化可能） */
-                        businessHours?: components["schemas"]["Models.BusinessHours"][] | null;
-                        /** @description 画像URLリストを更新する場合に指定 */
-                        imageUrls?: string[];
-                        /** @description 特徴タグの追加・削除を行う場合に指定 */
-                        features?: string[];
-                        id: components["schemas"]["Models.SalonId"];
-                    }[];
-                    /**
-                     * @description 途中でエラーが発生しても処理を継続するかどうか。既定は false。
-                     * @default false
-                     */
-                    continueOnError: boolean;
-                    /**
-                     * @description トランザクション内で一括処理を行うかどうか。既定は true。
-                     * @default true
-                     */
-                    transactional: boolean;
-                };
-            };
-        };
-        responses: {
-            /** @description Successful */
-            207: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /** @description 正常に処理されたアイテムの一覧。ビジネス結果を含む。 */
-                        succeeded: {
-                            /**
-                             * Format: int32
-                             * @description 元リクエスト内でのインデックス。0 始まり。
-                             */
-                            index: number;
-                            /** @description 処理後のビジネス結果。ID 付与や更新後の値などを含む。 */
-                            result: components["schemas"]["Models.Salon"];
-                        }[];
-                        /** @description エラーとなったアイテムの一覧。問題の詳細を確認できる。 */
-                        failed: {
-                            /**
-                             * Format: int32
-                             * @description 元リクエスト内でのインデックス。0 始まり。
-                             */
-                            index: number;
-                            /** @description 発生したエラー詳細。既定では `ProblemDetails` を使用する。 */
-                            error: components["schemas"]["Models.ProblemDetails"];
-                        }[];
-                        /** @description 処理件数や所要時間をまとめた統計情報。 */
-                        summary: components["schemas"]["Models.BulkSummary"];
-                    };
-                };
-            };
-            /** @description The server could not understand the request due to invalid syntax. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description Access is unauthorized. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-        };
-    };
-    SalonCrud_bulkCreate: {
-        parameters: {
-            query?: never;
-            header?: {
-                Authorization?: string;
-                "Idempotency-Key"?: string;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    /** @description 処理対象となるアイテムの配列。1件以上100件以下に制限する。 */
-                    items: components["schemas"]["Models.CreateSalonRequest"][];
-                    /**
-                     * @description 途中でエラーが発生しても処理を継続するかどうか。既定は false。
-                     * @default false
-                     */
-                    continueOnError: boolean;
-                    /**
-                     * @description トランザクション内で一括処理を行うかどうか。既定は true。
-                     * @default true
-                     */
-                    transactional: boolean;
-                };
-            };
-        };
-        responses: {
-            /** @description Successful */
-            207: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /** @description 正常に処理されたアイテムの一覧。ビジネス結果を含む。 */
-                        succeeded: {
-                            /**
-                             * Format: int32
-                             * @description 元リクエスト内でのインデックス。0 始まり。
-                             */
-                            index: number;
-                            /** @description 処理後のビジネス結果。ID 付与や更新後の値などを含む。 */
-                            result: components["schemas"]["Models.Salon"];
-                        }[];
-                        /** @description エラーとなったアイテムの一覧。問題の詳細を確認できる。 */
-                        failed: {
-                            /**
-                             * Format: int32
-                             * @description 元リクエスト内でのインデックス。0 始まり。
-                             */
-                            index: number;
-                            /** @description 発生したエラー詳細。既定では `ProblemDetails` を使用する。 */
-                            error: components["schemas"]["Models.ProblemDetails"];
-                        }[];
-                        /** @description 処理件数や所要時間をまとめた統計情報。 */
-                        summary: components["schemas"]["Models.BulkSummary"];
-                    };
-                };
-            };
-            /** @description The server could not understand the request due to invalid syntax. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description Access is unauthorized. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-        };
-    };
-    SalonCrud_bulkDelete: {
-        parameters: {
-            query?: never;
-            header?: {
-                Authorization?: string;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    ids: components["schemas"]["Models.SalonId"][];
-                    permanent?: boolean;
-                };
-            };
-        };
-        responses: {
-            /** @description Successful */
-            207: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /** @description 正常に処理されたアイテムの一覧。ビジネス結果を含む。 */
-                        succeeded: {
-                            /**
-                             * Format: int32
-                             * @description 元リクエスト内でのインデックス。0 始まり。
-                             */
-                            index: number;
-                            /** @description 処理後のビジネス結果。ID 付与や更新後の値などを含む。 */
-                            result: {
-                                id: components["schemas"]["Models.SalonId"];
-                                deleted: boolean;
-                            };
-                        }[];
-                        /** @description エラーとなったアイテムの一覧。問題の詳細を確認できる。 */
-                        failed: {
-                            /**
-                             * Format: int32
-                             * @description 元リクエスト内でのインデックス。0 始まり。
-                             */
-                            index: number;
-                            /** @description 発生したエラー詳細。既定では `ProblemDetails` を使用する。 */
-                            error: components["schemas"]["Models.ProblemDetails"];
-                        }[];
-                        /** @description 処理件数や所要時間をまとめた統計情報。 */
-                        summary: components["schemas"]["Models.BulkSummary"];
-                    };
-                };
-            };
-            /** @description The server could not understand the request due to invalid syntax. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description Access is unauthorized. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-        };
-    };
-    SalonCrud_export: {
-        parameters: {
-            query?: never;
-            header?: {
-                Authorization?: string;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": {
-                    /** @description 検索キーワード。qパラメータのエイリアス */
-                    keyword?: string;
-                    /** @description 市区町村名による絞り込み */
-                    city?: string;
-                    /** @description 都道府県名による絞り込み */
-                    prefecture?: string;
-                    /** @description サービスカテゴリ（カット・カラー等）による絞り込み */
-                    categories?: components["schemas"]["Models.ServiceCategoryType"][];
-                    /** @description 設備やこだわり条件などの特徴タグによる絞り込み */
-                    features?: string[];
-                    /** @description 営業中サロンのみを対象にするかどうか */
-                    isActive?: boolean;
-                    /**
-                     * Format: float
-                     * @description 最低評価値による絞り込み
-                     */
-                    minRating?: number;
-                    /**
-                     * Format: float
-                     * @description 検索基点からの最大距離（km）
-                     */
-                    maxDistance?: number;
-                    /**
-                     * Format: double
-                     * @description 距離計算に使用する基準緯度
-                     */
-                    lat?: number;
-                    /**
-                     * Format: double
-                     * @description 距離計算に使用する基準経度
-                     */
-                    lon?: number;
-                    /** @description 現在営業中かどうかで絞り込むフラグ */
-                    openNow?: boolean;
-                    /**
-                     * Format: date-time
-                     * @description 特定日時に営業しているサロンを探すための基準日時
-                     */
-                    openAt?: string;
-                    /** @description 全文検索キーワード。名称や説明文を横断的に検索する。 */
-                    q?: string;
-                    /** @description フィルター式。例: `status:active AND category:premium`。属性条件を組み合わせた絞り込みに使用。 */
-                    filter?: string;
-                    /** @description レスポンスに含めるフィールドのカンマ区切りリスト。データ転送量の最適化に活用。 */
-                    fields?: string;
-                    /** @description レスポンスから除外したいフィールドのカンマ区切りリスト。不要情報を除く場合に利用。 */
-                    exclude?: string;
-                    /**
-                     * @description ファセット集計を有効化するかどうか。true で各項目の件数を集計する。
-                     * @default false
-                     */
-                    facets?: boolean;
-                    /** @description 集計対象とするファセットフィールドの一覧。カテゴリや価格帯などを指定する。 */
-                    facetFields?: string[];
-                    /**
-                     * Format: int32
-                     * @description 1ページあたりの取得件数上限 (1〜100)。指定が無い場合は既定値 20 を適用。
-                     * @default 20
-                     */
-                    limit?: number;
-                    /** @description 次ページを指し示すカーソル。前回レスポンスの `meta.nextCursor` を設定する。 */
-                    cursor?: string;
-                    /** @description ソート対象フィールド。予約日時や作成日時など業務軸を指定する。 */
-                    sortBy?: string;
-                    /**
-                     * @description ソート順序。`asc` は昇順、`desc` は降順を表す。
-                     * @default asc
-                     * @enum {string}
-                     */
-                    sortOrder?: "asc" | "desc";
-                    /** @enum {string} */
-                    format: "csv" | "json" | "excel";
-                    exportFields?: string[];
-                };
-            };
-        };
-        responses: {
-            /** @description The request has been accepted for processing, but processing has not yet completed. */
-            202: {
-                headers: {
-                    Location: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        jobId: string;
-                        /** @enum {string} */
-                        status: "pending";
-                        /** Format: int32 */
-                        estimatedTime?: number;
-                    };
-                };
-            };
-            /** @description The server could not understand the request due to invalid syntax. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description Access is unauthorized. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-        };
-    };
-    SalonOperations_getNearby: {
-        parameters: {
-            query: {
-                /** @description 緯度 */
-                lat: number;
-                /** @description 経度 */
-                lon: number;
-                /** @description 検索半径（キロメートル） */
-                radius?: number;
-                /** @description 対象サービスカテゴリのフィルター */
-                categories?: components["schemas"]["Models.ServiceCategoryType"][];
-                /** @description 1ページあたりの取得件数上限 (1〜100)。指定が無い場合は既定値 20 を適用。 */
-                limit?: components["parameters"]["Models.CursorPaginationParams.limit"];
-                /** @description 次ページを指し示すカーソル。前回レスポンスの `meta.nextCursor` を設定する。 */
-                cursor?: components["parameters"]["Models.CursorPaginationParams.cursor"];
-                /** @description ソート対象フィールド。予約日時や作成日時など業務軸を指定する。 */
-                sortBy?: components["parameters"]["Models.CursorPaginationParams.sortBy"];
-                /** @description ソート順序。`asc` は昇順、`desc` は降順を表す。 */
-                sortOrder?: components["parameters"]["Models.CursorPaginationParams.sortOrder"];
-            };
-            header?: {
-                Authorization?: string;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The request has succeeded. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /** @description 現在ページで取得したデータ配列。サロン一覧や予約履歴の実データを格納する。 */
-                        data: components["schemas"]["Models.SalonWithDistance"][];
-                        /** @description ページング状態を示すメタ情報。次ページの有無やカーソル値を含む。 */
-                        meta: components["schemas"]["Models.PaginationMeta"];
-                        /** @description 関連するページ遷移リンク。HATEOAS 連携や外部連携向けに利用する。 */
-                        links: components["schemas"]["Models.PaginationLinks"];
-                    };
-                };
-            };
-            /** @description The server could not understand the request due to invalid syntax. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-        };
-    };
-    SalonOperations_getRecommendations: {
-        parameters: {
-            query?: {
-                /** @description パーソナライズ対象となる顧客ID */
-                customerId?: components["schemas"]["Models.CustomerId"];
-                /** @description 興味のあるサービスカテゴリ */
-                categories?: components["schemas"]["Models.ServiceCategoryType"][];
-                /** @description 希望する価格帯 */
-                priceRange?: "budget" | "medium" | "premium";
-                /** @description 1ページあたりの取得件数上限 (1〜100)。指定が無い場合は既定値 20 を適用。 */
-                limit?: components["parameters"]["Models.CursorPaginationParams.limit"];
-                /** @description 次ページを指し示すカーソル。前回レスポンスの `meta.nextCursor` を設定する。 */
-                cursor?: components["parameters"]["Models.CursorPaginationParams.cursor"];
-                /** @description ソート対象フィールド。予約日時や作成日時など業務軸を指定する。 */
-                sortBy?: components["parameters"]["Models.CursorPaginationParams.sortBy"];
-                /** @description ソート順序。`asc` は昇順、`desc` は降順を表す。 */
-                sortOrder?: components["parameters"]["Models.CursorPaginationParams.sortOrder"];
-            };
-            header?: {
-                Authorization?: string;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The request has succeeded. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /** @description 現在ページで取得したデータ配列。サロン一覧や予約履歴の実データを格納する。 */
-                        data: components["schemas"]["Models.SalonRecommendation"][];
-                        /** @description ページング状態を示すメタ情報。次ページの有無やカーソル値を含む。 */
-                        meta: components["schemas"]["Models.PaginationMeta"];
-                        /** @description 関連するページ遷移リンク。HATEOAS 連携や外部連携向けに利用する。 */
-                        links: components["schemas"]["Models.PaginationLinks"];
-                    };
-                };
-            };
-            /** @description Access is unauthorized. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-        };
-    };
-    SalonCrud_search: {
-        parameters: {
-            query?: {
-                /** @description 検索キーワード。qパラメータのエイリアス */
-                keyword?: components["parameters"]["Models.SalonSearchRequest.keyword"];
-                /** @description 市区町村名による絞り込み */
-                city?: components["parameters"]["Models.SalonSearchRequest.city"];
-                /** @description 都道府県名による絞り込み */
-                prefecture?: components["parameters"]["Models.SalonSearchRequest.prefecture"];
-                /** @description サービスカテゴリ（カット・カラー等）による絞り込み */
-                categories?: components["parameters"]["Models.SalonSearchRequest.categories"];
-                /** @description 設備やこだわり条件などの特徴タグによる絞り込み */
-                features?: components["parameters"]["Models.SalonSearchRequest.features"];
-                /** @description 営業中サロンのみを対象にするかどうか */
-                isActive?: components["parameters"]["Models.SalonSearchRequest.isActive"];
-                /** @description 最低評価値による絞り込み */
-                minRating?: components["parameters"]["Models.SalonSearchRequest.minRating"];
-                /** @description 検索基点からの最大距離（km） */
-                maxDistance?: components["parameters"]["Models.SalonSearchRequest.maxDistance"];
-                /** @description 距離計算に使用する基準緯度 */
-                lat?: components["parameters"]["Models.SalonSearchRequest.lat"];
-                /** @description 距離計算に使用する基準経度 */
-                lon?: components["parameters"]["Models.SalonSearchRequest.lon"];
-                /** @description 現在営業中かどうかで絞り込むフラグ */
-                openNow?: components["parameters"]["Models.SalonSearchRequest.openNow"];
-                /** @description 特定日時に営業しているサロンを探すための基準日時 */
-                openAt?: components["parameters"]["Models.SalonSearchRequest.openAt"];
-                /** @description 全文検索キーワード。名称や説明文を横断的に検索する。 */
-                q?: components["parameters"]["Models.AdvancedSearchParams.q"];
-                /** @description フィルター式。例: `status:active AND category:premium`。属性条件を組み合わせた絞り込みに使用。 */
-                filter?: components["parameters"]["Models.AdvancedSearchParams.filter"];
-                /** @description レスポンスに含めるフィールドのカンマ区切りリスト。データ転送量の最適化に活用。 */
-                fields?: components["parameters"]["Models.AdvancedSearchParams.fields"];
-                /** @description レスポンスから除外したいフィールドのカンマ区切りリスト。不要情報を除く場合に利用。 */
-                exclude?: components["parameters"]["Models.AdvancedSearchParams.exclude"];
-                /** @description ファセット集計を有効化するかどうか。true で各項目の件数を集計する。 */
-                facets?: components["parameters"]["Models.AdvancedSearchParams.facets"];
-                /** @description 集計対象とするファセットフィールドの一覧。カテゴリや価格帯などを指定する。 */
-                facetFields?: components["parameters"]["Models.AdvancedSearchParams.facetFields"];
-                /** @description 1ページあたりの取得件数上限 (1〜100)。指定が無い場合は既定値 20 を適用。 */
-                limit?: components["parameters"]["Models.CursorPaginationParams.limit"];
-                /** @description 次ページを指し示すカーソル。前回レスポンスの `meta.nextCursor` を設定する。 */
-                cursor?: components["parameters"]["Models.CursorPaginationParams.cursor"];
-                /** @description ソート対象フィールド。予約日時や作成日時など業務軸を指定する。 */
-                sortBy?: components["parameters"]["Models.CursorPaginationParams.sortBy"];
-                /** @description ソート順序。`asc` は昇順、`desc` は降順を表す。 */
-                sortOrder?: components["parameters"]["Models.CursorPaginationParams.sortOrder"];
-            };
-            header?: {
-                Authorization?: string;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The request has succeeded. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /** @description 検索でヒットした結果一覧。サロンカードやメニュー一覧に利用。 */
-                        results: components["schemas"]["Models.Salon"][];
-                        /** @description 検索条件や件数などのメタ情報。ページングやログ解析に活用する。 */
-                        meta: components["schemas"]["Models.SearchMeta"];
-                        /** @description ファセット集計結果。各フィールドごとの件数分布を保持する。 */
-                        facets: {
-                            [key: string]: components["schemas"]["Models.Facet"][];
-                        };
-                    };
-                };
-            };
-            /** @description The server could not understand the request due to invalid syntax. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description Access is unauthorized. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
         };
     };
     SalonCrud_get: {
         parameters: {
-            query?: {
-                fields?: string;
-            };
-            header?: {
-                Authorization?: string;
-                "If-None-Match"?: string;
-            };
+            query?: never;
+            header?: never;
             path: {
                 id: components["schemas"]["Models.SalonId"];
             };
@@ -15488,14 +13930,12 @@ export interface operations {
             /** @description The request has succeeded. */
             200: {
                 headers: {
-                    ETag: string;
-                    "Last-Modified": string;
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": {
                         /** @description レスポンスの主体となるビジネスデータ。 */
-                        data: components["schemas"]["Models.Salon"];
+                        data: components["schemas"]["Models.SalonResponse"];
                         /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
                         /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
@@ -15505,15 +13945,46 @@ export interface operations {
                     };
                 };
             };
-            /** @description The client has made a conditional request and the resource has not been modified. */
-            304: {
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The server cannot find the requested resource. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+        };
+    };
+    SalonCrud_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["schemas"]["Models.SalonId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description There is no content to send for this request, but the headers may be useful. */
+            204: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
             };
-            /** @description Access is unauthorized. */
-            401: {
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -15535,10 +14006,7 @@ export interface operations {
     SalonCrud_update: {
         parameters: {
             query?: never;
-            header?: {
-                Authorization?: string;
-                "If-Match"?: string;
-            };
+            header?: never;
             path: {
                 id: components["schemas"]["Models.SalonId"];
             };
@@ -15546,229 +14014,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["Models.UpdateSalonRequest"];
-            };
-        };
-        responses: {
-            /** @description The request has succeeded. */
-            200: {
-                headers: {
-                    ETag: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
-                        data: components["schemas"]["Models.Salon"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
-                        meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
-                        links: {
-                            [key: string]: string;
-                        } | null;
-                    };
-                };
-            };
-            /** @description The server could not understand the request due to invalid syntax. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description Access is unauthorized. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description The server cannot find the requested resource. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description The request conflicts with the current state of the server. */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description Client error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-        };
-    };
-    SalonCrud_delete: {
-        parameters: {
-            query?: {
-                permanent?: boolean;
-            };
-            header?: {
-                Authorization?: string;
-                "If-Match"?: string;
-            };
-            path: {
-                id: components["schemas"]["Models.SalonId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description There is no content to send for this request, but the headers may be useful. */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Access is unauthorized. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description The server cannot find the requested resource. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description The request conflicts with the current state of the server. */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-        };
-    };
-    SalonCrud_patch: {
-        parameters: {
-            query?: {
-                /** @description 更新対象フィールドをカンマ区切りで列挙した文字列。例: `name,address.street`。 */
-                updateMask?: components["parameters"]["Models.FieldMask"];
-            };
-            header?: {
-                Authorization?: string;
-                "If-Match"?: string;
-            };
-            path: {
-                id: components["schemas"]["Models.SalonId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["Models.UpdateSalonRequestUpdate"];
-            };
-        };
-        responses: {
-            /** @description The request has succeeded. */
-            200: {
-                headers: {
-                    ETag: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
-                        data: components["schemas"]["Models.Salon"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
-                        meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
-                        links: {
-                            [key: string]: string;
-                        } | null;
-                    };
-                };
-            };
-            /** @description The server could not understand the request due to invalid syntax. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description Access is unauthorized. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description The server cannot find the requested resource. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description The request conflicts with the current state of the server. */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description Client error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-        };
-    };
-    SalonOperations_checkAvailability: {
-        parameters: {
-            query?: never;
-            header?: {
-                Authorization?: string;
-            };
-            path: {
-                id: components["schemas"]["Models.SalonId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["Models.SalonAvailabilityRequest"];
+                "application/json": components["schemas"]["Models.SalonUpdateRequest"];
             };
         };
         responses: {
@@ -15780,7 +14026,7 @@ export interface operations {
                 content: {
                     "application/json": {
                         /** @description レスポンスの主体となるビジネスデータ。 */
-                        data: components["schemas"]["Models.SalonAvailabilityResponse"];
+                        data: components["schemas"]["Models.SalonResponse"];
                         /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
                         /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
@@ -15808,411 +14054,8 @@ export interface operations {
                     "application/json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-        };
-    };
-    SalonCrud_getHistory: {
-        parameters: {
-            query?: {
-                /** @description 1ページあたりの取得件数上限 (1〜100)。指定が無い場合は既定値 20 を適用。 */
-                limit?: components["parameters"]["Models.CursorPaginationParams.limit"];
-                /** @description 次ページを指し示すカーソル。前回レスポンスの `meta.nextCursor` を設定する。 */
-                cursor?: components["parameters"]["Models.CursorPaginationParams.cursor"];
-                /** @description ソート対象フィールド。予約日時や作成日時など業務軸を指定する。 */
-                sortBy?: components["parameters"]["Models.CursorPaginationParams.sortBy"];
-                /** @description ソート順序。`asc` は昇順、`desc` は降順を表す。 */
-                sortOrder?: components["parameters"]["Models.CursorPaginationParams.sortOrder"];
-            };
-            header?: {
-                Authorization?: string;
-            };
-            path: {
-                id: components["schemas"]["Models.SalonId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The request has succeeded. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /** @description 現在ページで取得したデータ配列。サロン一覧や予約履歴の実データを格納する。 */
-                        data: components["schemas"]["Operations.AuditEntry"][];
-                        /** @description ページング状態を示すメタ情報。次ページの有無やカーソル値を含む。 */
-                        meta: components["schemas"]["Models.PaginationMeta"];
-                        /** @description 関連するページ遷移リンク。HATEOAS 連携や外部連携向けに利用する。 */
-                        links: components["schemas"]["Models.PaginationLinks"];
-                    };
-                };
-            };
-            /** @description Access is unauthorized. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description The server cannot find the requested resource. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-        };
-    };
-    SalonOperations_deleteImage: {
-        parameters: {
-            query?: never;
-            header?: {
-                Authorization?: string;
-            };
-            path: {
-                id: components["schemas"]["Models.SalonId"];
-                imageId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description There is no content to send for this request, but the headers may be useful. */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Access is unauthorized. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description The server cannot find the requested resource. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-        };
-    };
-    SalonCrud_restore: {
-        parameters: {
-            query?: never;
-            header?: {
-                Authorization?: string;
-            };
-            path: {
-                id: components["schemas"]["Models.SalonId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The request has succeeded. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
-                        data: components["schemas"]["Models.Salon"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
-                        meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
-                        links: {
-                            [key: string]: string;
-                        } | null;
-                    };
-                };
-            };
-            /** @description Access is unauthorized. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description The server cannot find the requested resource. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
             /** @description The request conflicts with the current state of the server. */
             409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-        };
-    };
-    SalonOperations_updateStaffSchedule: {
-        parameters: {
-            query?: never;
-            header?: {
-                Authorization?: string;
-            };
-            path: {
-                id: components["schemas"]["Models.SalonId"];
-                staffId: components["schemas"]["Models.StaffId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["Models.StaffScheduleUpdateRequest"];
-            };
-        };
-        responses: {
-            /** @description The request has succeeded. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
-                        data: components["schemas"]["Models.StaffScheduleManagement"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
-                        meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
-                        links: {
-                            [key: string]: string;
-                        } | null;
-                    };
-                };
-            };
-            /** @description The server could not understand the request due to invalid syntax. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description Access is unauthorized. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description The server cannot find the requested resource. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description The request conflicts with the current state of the server. */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-        };
-    };
-    SalonOperations_getStatistics: {
-        parameters: {
-            query?: {
-                /** @description 集計期間（例: '7d', '1m', '3m'） */
-                period?: string;
-            };
-            header?: {
-                Authorization?: string;
-            };
-            path: {
-                id: components["schemas"]["Models.SalonId"];
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The request has succeeded. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
-                        data: components["schemas"]["Models.SalonStatistics"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
-                        meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
-                        links: {
-                            [key: string]: string;
-                        } | null;
-                    };
-                };
-            };
-            /** @description Access is unauthorized. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description The server cannot find the requested resource. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-        };
-    };
-    SalonOperations_subscribe: {
-        parameters: {
-            query?: never;
-            header?: {
-                Authorization?: string;
-            };
-            path: {
-                id: components["schemas"]["Models.SalonId"];
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["Models.SalonSubscriptionRequest"];
-            };
-        };
-        responses: {
-            /** @description The request has succeeded and a new resource has been created as a result. */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
-                        data: components["schemas"]["Models.SalonSubscriptionResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
-                        meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
-                        links: {
-                            [key: string]: string;
-                        } | null;
-                    };
-                };
-            };
-            /** @description The server could not understand the request due to invalid syntax. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description Access is unauthorized. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description The server cannot find the requested resource. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description The request conflicts with the current state of the server. */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-        };
-    };
-    SalonCrud_getVersion: {
-        parameters: {
-            query?: never;
-            header?: {
-                Authorization?: string;
-            };
-            path: {
-                id: components["schemas"]["Models.SalonId"];
-                version: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The request has succeeded. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
-                        data: components["schemas"]["Models.Salon"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
-                        meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
-                        links: {
-                            [key: string]: string;
-                        } | null;
-                    };
-                };
-            };
-            /** @description Access is unauthorized. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description The server cannot find the requested resource. */
-            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -16454,8 +14297,8 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": {
-                    serviceIds?: components["schemas"]["Models.ServiceId"][];
-                    updates?: components["schemas"]["Models.UpdateServiceRequestUpdate"];
+                    serviceIds: components["schemas"]["Models.ServiceId"][];
+                    updates: components["schemas"]["Models.UpdateServiceRequest"];
                 };
             };
         };

@@ -1,89 +1,98 @@
+import { Result } from '@beauty-salon-backend/utility'
+import { parseISO } from 'date-fns'
+import { z } from 'zod'
 import type {
-  ApiAddress,
-  ApiContactInfo,
   ApiOpeningHours,
-  ApiSalon,
-  ApiSalonSummary,
+  ApiSalonResponse,
   DbOpeningHours,
   DbSalon,
+  SalonWithOpeningHours,
 } from '../../models/salon'
+import { storedBusinessHoursSchema } from '../../schemas/salon.schema'
+import { type DomainError, DomainErrors, parseWith } from '../../shared'
+
+/**
+ * Database rows → API response. Property names are the column names; what
+ * changes is the representation of three kinds of column:
+ * - `numeric` is read as a string and returned as a number
+ * - `timestamptz` is read in PostgreSQL's text format and returned as ISO 8601
+ * - `jsonb` is untyped in the database and is checked against the API model
+ */
+
+const numericSchema = z.string().transform(Number).pipe(z.number())
+
+const timestampSchema = z
+  .string()
+  .transform((value) => parseISO(value))
+  .pipe(z.date())
+  .transform((value) => value.toISOString())
+
+const convertedColumnsSchema = z.object({
+  latitude: numericSchema.nullable(),
+  longitude: numericSchema.nullable(),
+  rating: numericSchema.nullable(),
+  taxRate: numericSchema,
+  businessHours: z.array(storedBusinessHoursSchema).nullable(),
+  createdAt: timestampSchema,
+  updatedAt: timestampSchema,
+})
+
+const toApiOpeningHours = ({
+  dayOfWeek,
+  date,
+  openTime,
+  closeTime,
+  isHoliday,
+  holidayName,
+  notes,
+}: DbOpeningHours): ApiOpeningHours => ({
+  dayOfWeek,
+  date,
+  openTime,
+  closeTime,
+  isHoliday,
+  holidayName,
+  notes,
+})
+
+const toApiSalon = (
+  salon: DbSalon,
+  openingHours: DbOpeningHours[],
+): Result<ApiSalonResponse, DomainError> => {
+  const { deletedAt, cancellationPolicy, bookingPolicy, ...columns } = salon
+
+  return Result.mapError(
+    Result.map(
+      parseWith(convertedColumnsSchema, salon, 'Invalid stored salon'),
+      (converted) => ({
+        ...columns,
+        ...converted,
+        openingHours: openingHours.map(toApiOpeningHours),
+      }),
+    ),
+    // The request was fine; the stored row is not.
+    (error) =>
+      DomainErrors.database(
+        `Stored salon ${salon.id} does not match the API model`,
+        error,
+      ),
+  )
+}
 
 export const SalonReadMapper = {
-  toApiSalon(dbSalon: DbSalon, openingHours: DbOpeningHours[] = []): ApiSalon {
-    return {
-      id: dbSalon.id,
-      name: dbSalon.name,
-      description: dbSalon.description,
-      address: this.toApiAddress(dbSalon),
-      contactInfo: this.toApiContactInfo(dbSalon),
-      openingHours: openingHours.map((oh) => this.toApiOpeningHours(oh)),
-      businessHours: dbSalon.businessHours as ApiSalon['businessHours'], // jsonb field cast to API type
-      imageUrls: Array.isArray(dbSalon.imageUrls)
-        ? (dbSalon.imageUrls as string[])
-        : [],
-      features: Array.isArray(dbSalon.features)
-        ? (dbSalon.features as string[])
-        : [],
-      rating: dbSalon.rating ? Number.parseFloat(dbSalon.rating) : null, // Convert numeric to float
-      reviewCount: dbSalon.reviewCount,
-      createdAt: dbSalon.createdAt,
-      createdBy: 'Demo user',
-      updatedAt: dbSalon.updatedAt,
-      updatedBy: 'Demo user',
+  toApiSalon,
+
+  toApiSalons(
+    salons: SalonWithOpeningHours[],
+  ): Result<ApiSalonResponse[], DomainError> {
+    const apiSalons: ApiSalonResponse[] = []
+    for (const { salon, openingHours } of salons) {
+      const mapped = toApiSalon(salon, openingHours)
+      if (mapped.type === 'error') {
+        return mapped
+      }
+      apiSalons.push(mapped.data)
     }
-  },
-
-  toApiSalonSummary(dbSalon: DbSalon): ApiSalonSummary {
-    return {
-      id: dbSalon.id,
-      name: dbSalon.name,
-      address: this.toApiAddress(dbSalon),
-      rating: dbSalon.rating ? Number.parseFloat(dbSalon.rating) : null, // Convert numeric to float
-      reviewCount: dbSalon.reviewCount,
-    }
-  },
-
-  toApiAddress(dbSalon: DbSalon): ApiAddress {
-    return {
-      street: dbSalon.address,
-      city: dbSalon.city,
-      prefecture: dbSalon.prefecture,
-      postalCode: dbSalon.postalCode,
-      country: 'Japan',
-    }
-  },
-
-  toApiContactInfo(dbSalon: DbSalon): ApiContactInfo {
-    return {
-      phoneNumber: dbSalon.phoneNumber,
-      alternativePhone: dbSalon.alternativePhone,
-      email: dbSalon.email,
-      websiteUrl: dbSalon.websiteUrl,
-    }
-  },
-
-  toApiOpeningHours(dbOpeningHours: DbOpeningHours): ApiOpeningHours {
-    return {
-      dayOfWeek: dbOpeningHours.dayOfWeek,
-      date: dbOpeningHours.date,
-      openTime: dbOpeningHours.openTime,
-      closeTime: dbOpeningHours.closeTime,
-      isHoliday: dbOpeningHours.isHoliday,
-      holidayName: dbOpeningHours.holidayName,
-      notes: dbOpeningHours.notes,
-    }
-  },
-
-  toApiSalonFullList(
-    dbSalons: DbSalon[],
-    openingHoursMap: Map<string, DbOpeningHours[]> = new Map(),
-  ): ApiSalon[] {
-    return dbSalons.map((salon) =>
-      this.toApiSalon(salon, openingHoursMap.get(salon.id) ?? []),
-    )
-  },
-
-  toApiSalonList(dbSalons: DbSalon[]): ApiSalonSummary[] {
-    return dbSalons.map((salon) => this.toApiSalonSummary(salon))
+    return Result.success(apiSalons)
   },
 }

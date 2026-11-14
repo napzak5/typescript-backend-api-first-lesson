@@ -13,16 +13,6 @@ export const Result = {
     return { type: 'error', error }
   },
 
-  isSuccess<T, E>(
-    result: Result<T, E>,
-  ): result is { type: 'success'; data: T } {
-    return result.type === 'success'
-  },
-
-  isError<T, E>(result: Result<T, E>): result is { type: 'error'; error: E } {
-    return result.type === 'error'
-  },
-
   map<T, E, U>(result: Result<T, E>, fn: (data: T) => U): Result<U, E> {
     return match(result)
       .with({ type: 'success' }, ({ data }) => Result.success(fn(data)))
@@ -56,17 +46,6 @@ export const Result = {
         error instanceof Error ? error : new Error(String(error)),
       )
     }
-  },
-
-  unwrap<T, E>(result: Result<T, E>): T {
-    return match(result)
-      .with({ type: 'success' }, ({ data }) => data)
-      .with({ type: 'error' }, ({ error }) => {
-        throw new Error(
-          `Attempted to unwrap an error result: ${JSON.stringify(error)}`,
-        )
-      })
-      .exhaustive()
   },
 
   unwrapOr<T, E>(result: Result<T, E>, defaultValue: T): T {

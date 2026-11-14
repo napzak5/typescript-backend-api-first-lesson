@@ -29,7 +29,7 @@ namespace BeautySalon.Operations {
     createRole(@body role: RoleCreateRequest): Result<Role>;
 
     @doc("Update role")
-    @patch(#{ implicitOptionality: true })
+    @patch
     @route("/{id}")
     updateRole(
       @path id: RoleId,
@@ -109,7 +109,7 @@ namespace BeautySalon.Operations {
     ): Result<{}>;
 
     @doc("Update user role")
-    @patch(#{ implicitOptionality: true })
+    @patch
     @route("/user/{userId}/role/{roleId}")
     updateUserRoleType(
       @path userId: string,

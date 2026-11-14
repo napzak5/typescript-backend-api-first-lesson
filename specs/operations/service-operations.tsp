@@ -95,7 +95,7 @@ namespace BeautySalon.Operations {
     @doc("複数メニューの共通項目を一括更新し、季節キャンペーンや価格調整を効率化します。")
     @summary("Bulk update services")
     @route("/bulk")
-    @patch(#{ implicitOptionality: true })
+    @patch
     op bulkUpdate(
       @path salonId: SalonId,
       @body updates: {

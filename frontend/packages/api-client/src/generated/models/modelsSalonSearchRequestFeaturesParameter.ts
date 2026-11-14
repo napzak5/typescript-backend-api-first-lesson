@@ -7,6 +7,6 @@
  */
 
 /**
- * 設備やこだわり条件などの特徴タグによる絞り込み
+ * 特徴タグによる絞り込み。指定したタグをすべて持つサロンに一致する
  */
 export type ModelsSalonSearchRequestFeaturesParameter = string[];

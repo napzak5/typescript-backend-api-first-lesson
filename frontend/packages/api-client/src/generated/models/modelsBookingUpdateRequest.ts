@@ -5,46 +5,46 @@
  * Comprehensive REST API for managing beauty salon operations including salons, staff, services, customers, reservations, bookings, treatments, payments, inventory, and access control. Built with TypeSpec for type-safe API-first development.
  * OpenAPI spec version: 2.0
  */
-import type { ModelsBookingDepositUpdate } from './modelsBookingDepositUpdate';
+import type { ModelsBookingDeposit } from './modelsBookingDeposit';
+import type { ModelsBookingStatus } from './modelsBookingStatus';
 import type { ModelsBookingStatusCodeType } from './modelsBookingStatusCodeType';
-import type { ModelsBookingStatusUpdate } from './modelsBookingStatusUpdate';
 import type { ModelsBookingUpdateRequestMetadata } from './modelsBookingUpdateRequestMetadata';
-import type { ModelsMoneyUpdate } from './modelsMoneyUpdate';
+import type { ModelsMoney } from './modelsMoney';
 import type { ModelsPaymentMethodType } from './modelsPaymentMethodType';
 import type { ModelsPaymentStatusCodeType } from './modelsPaymentStatusCodeType';
-import type { ModelsWaitlistEntryUpdate } from './modelsWaitlistEntryUpdate';
+import type { ModelsWaitlistEntry } from './modelsWaitlistEntry';
 
 /**
  * 予約情報を部分更新するためのリクエスト。null指定で値をリセット可能。
  */
 export interface ModelsBookingUpdateRequest {
   /** ステータス詳細の更新。 */
-  status?: ModelsBookingStatusUpdate;
+  status?: ModelsBookingStatus;
   /** ステータスコードの更新。 */
   statusCode?: ModelsBookingStatusCodeType;
   /**
      * ウェイティングリスト情報の更新またはリセット。
      * @nullable
      */
-  waitlistEntry?: ModelsWaitlistEntryUpdate | null;
+  waitlistEntry?: ModelsWaitlistEntry | null;
   /**
      * デポジット情報の更新またはリセット。
      * @nullable
      */
-  deposit?: ModelsBookingDepositUpdate | null;
+  deposit?: ModelsBookingDeposit | null;
   /** 支払い方法の更新またはリセット。 */
   paymentMethod?: ModelsPaymentMethodType | null;
   /** 支払いステータスの更新またはリセット。 */
   paymentStatus?: ModelsPaymentStatusCodeType | null;
   /** 割引額の更新 */
-  discountAmount?: ModelsMoneyUpdate;
+  discountAmount?: ModelsMoney;
   /** 最終請求額の更新。 */
-  finalAmount?: ModelsMoneyUpdate;
+  finalAmount?: ModelsMoney;
   /**
      * 未収金額の更新またはリセット。
      * @nullable
      */
-  balanceDue?: ModelsMoneyUpdate | null;
+  balanceDue?: ModelsMoney | null;
   /**
      * 備考の更新またはリセット。
      * @nullable

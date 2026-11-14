@@ -39,15 +39,21 @@ export interface ModelsCustomer {
      * @nullable
      */
   address: ModelsAddress | null;
-  /** 顧客の好みや要望 */
+  /**
+     * 顧客の好みや要望。未設定の場合はnull
+     * @nullable
+     */
   preferences: ModelsCustomerPreferencesProperty;
   /**
      * 内部メモ。メモがない場合はnull
      * @nullable
      */
   notes: string | null;
-  /** 分類用タグ */
-  tags: string[];
+  /**
+     * 分類用タグ。未設定の場合はnull
+     * @nullable
+     */
+  tags: string[] | null;
   /** 現在のロイヤルティポイント */
   loyaltyPoints: number;
   /**

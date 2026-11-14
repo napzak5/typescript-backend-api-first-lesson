@@ -112,6 +112,16 @@ The database is the source of truth for the Drizzle schema:
 4. `pnpm db:generate-sql` regenerates `sql/setup.sql`
 5. Commit all of them; `pnpm check:db-schema` fails in CI when they drift
 
+### API ↔ Database Consistency
+
+API property names and nullability follow the database columns.
+`pnpm check:api-db` compares the generated OpenAPI document with the Drizzle
+schema and fails in CI on any difference that is not recorded in
+`backend/packages/database/api-consistency-baseline.json`. The baseline holds
+the known differences of the domains that are specified but not implemented
+yet; the salon domain, the reference implementation, has none. After fixing a
+recorded difference, run `pnpm check:api-db --update-baseline`.
+
 ### Available Scripts
 
 ```bash
@@ -144,6 +154,7 @@ pnpm typecheck               # Type check (run a build first)
 pnpm knip                    # Unused files, exports and dependencies
 pnpm check:generated         # Generated files match the TypeSpec
 pnpm check:db-schema         # schema.ts and setup.sql match the database
+pnpm check:api-db            # API models agree with the database schema
 make ci-check                # Everything CI runs, in the same order
 
 # Database

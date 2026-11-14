@@ -63,7 +63,7 @@ namespace BeautySalon.Operations {
 
     @doc("予約内容を部分的に更新し、サービス内容や担当スタッフの変更に対応します。")
     @summary("Update reservation")
-    @patch(#{ implicitOptionality: true })
+    @patch
     op update(
       @path id: ReservationId,
       @body updates: UpdateReservationRequest,

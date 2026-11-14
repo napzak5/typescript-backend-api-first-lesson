@@ -1,80 +1,41 @@
-import { createId, Result } from '@beauty-salon-backend/utility'
+import type { Result } from '@beauty-salon-backend/utility'
 import { SalonReadMapper } from '../../mappers/read/salon.mapper'
 import { SalonWriteMapper } from '../../mappers/write/salon.mapper'
-import {
-  type ApiCreateSalonRequest,
-  type ApiSalon,
-  toSalonID,
-} from '../../models/salon'
-import type { DomainError } from '../../shared'
-import { DomainErrors } from '../../shared'
-import { BaseSalonUseCase } from './_shared/base-salon.usecase'
+import type { ApiSalonResponse } from '../../models/salon'
+import { salonCreateRequestSchema } from '../../schemas/salon.schema'
+import { type DomainError, parseWith } from '../../shared'
+import type { SalonUseCaseDependencies } from './_shared/dependencies'
 
-export class CreateSalonUseCase extends BaseSalonUseCase {
+export class CreateSalonUseCase {
+  constructor(private readonly dependencies: SalonUseCaseDependencies) {}
+
+  /**
+   * Validate → map API to DB → save → map DB to API. A second salon with the
+   * same email is rejected by the unique constraint, which the repository
+   * reports as `alreadyExists`.
+   */
   async execute(
-    request: ApiCreateSalonRequest,
-  ): Promise<Result<ApiSalon, DomainError>> {
-    const validation = this.validate(request)
-    if (Result.isError(validation)) {
-      return validation
+    input: unknown,
+  ): Promise<Result<ApiSalonResponse, DomainError>> {
+    const request = parseWith(salonCreateRequestSchema, input, 'Invalid salon')
+    if (request.type === 'error') {
+      return request
     }
 
-    const emailExists = await this.salonRepository.existsByEmail(
-      request.contactInfo.email,
+    const { salon, openingHours } = SalonWriteMapper.fromCreateRequest(
+      request.data,
     )
-    if (Result.isError(emailExists)) {
-      return emailExists
-    }
-
-    if (emailExists.data) {
-      return Result.error(
-        DomainErrors.alreadyExists('Salon', 'email', request.contactInfo.email),
-      )
-    }
-
-    const { salon, openingHours } = SalonWriteMapper.fromCreateRequest(request)
-
-    const createResult = await this.salonRepository.create(
-      { ...salon, id: toSalonID(createId()) },
+    const created = await this.dependencies.salonRepository.create(
+      salon,
       openingHours,
     )
-    if (Result.isError(createResult)) {
-      return createResult
+    if (created.type === 'error') {
+      return created
     }
 
-    const openingHoursResult = await this.salonRepository.findOpeningHours(
-      toSalonID(createResult.data.id),
+    return SalonReadMapper.toApiSalon(
+      created.data.salon,
+      created.data.openingHours,
     )
-    const apiSalon = SalonReadMapper.toApiSalon(
-      createResult.data,
-      Result.isSuccess(openingHoursResult) ? openingHoursResult.data : [],
-    )
-
-    return Result.success(apiSalon)
-  }
-
-  private validate(request: ApiCreateSalonRequest): Result<true, DomainError> {
-    const errors: string[] = []
-
-    errors.push(...this.validateName(request.name))
-    errors.push(...this.validateDescription(request.description))
-    errors.push(...this.validateAddress(request.address))
-    errors.push(...this.validateContactInfo(request.contactInfo))
-
-    if (!request.openingHours || request.openingHours.length === 0) {
-      errors.push('Opening hours are required')
-    }
-
-    if (errors.length > 0) {
-      return Result.error(
-        DomainErrors.validation(
-          'Validation failed',
-          'SALON_VALIDATION_ERROR',
-          errors,
-        ),
-      )
-    }
-
-    return Result.success(true)
   }
 }

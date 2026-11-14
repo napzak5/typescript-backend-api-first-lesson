@@ -9,8 +9,8 @@ namespace BeautySalon.Models {
     スタッフシフトモデル - 通常勤務スケジュールと休憩時間、適用期間を定義し、予約可能時間の算出に利用する
     """)
   model StaffSchedule {
-    @doc("対象となる曜日")
-    dayOfWeek: DayOfWeekType;
+    @doc("対象となる曜日。未設定の場合はnull")
+    dayOfWeek: DayOfWeekType | null;
 
     @doc("勤務開始時刻 (フォーマット例: HH:mm)")
     startTime: string;
@@ -78,8 +78,8 @@ namespace BeautySalon.Models {
     @doc("連絡先情報 (電話・メール等)")
     contactInfo: ContactInfo;
 
-    @doc("得意分野や専門メニューの一覧")
-    specialties: string[];
+    @doc("得意分野や専門メニューの一覧。未設定の場合はnull")
+    specialties: string[] | null;
 
     @doc("プロフィール画像のURL - プロフィール画像未設定の場合はnull")
     imageUrl: string | null;

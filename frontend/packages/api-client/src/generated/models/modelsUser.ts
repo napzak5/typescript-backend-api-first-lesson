@@ -39,8 +39,8 @@ export interface ModelsUser {
      * @nullable
      */
   emailVerificationTokenExpiry: string | null;
-  /** 2要素認証の設定状態。 */
-  twoFactorStatus: ModelsTwoFactorStatusType;
+  /** 2要素認証の設定状態。未設定の場合はnull */
+  twoFactorStatus: ModelsTwoFactorStatusType | null;
   /**
      * 暗号化された2要素認証シークレット。2要素認証が無効の場合はnull。
      * @nullable

@@ -709,8 +709,8 @@ namespace BeautySalon.Models {
     @doc("サービス名")
     name: string;
 
-    @doc("説明文")
-    description: string;
+    @doc("説明文。未設定の場合はnull")
+    description: string | null;
 
     @doc("料金")
     price: int32;
@@ -816,8 +816,8 @@ namespace BeautySalon.Models {
     @doc("カテゴリ名")
     name: string;
 
-    @doc("カテゴリ説明")
-    description: string;
+    @doc("カテゴリ説明。未設定の場合はnull")
+    description: string | null;
 
     @doc("親カテゴリ ID。最上位カテゴリの場合はnull")
     parentId: CategoryId | null;

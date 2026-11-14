@@ -35,6 +35,9 @@ jobs:
       - name: Check generated API files are up to date
         run: pnpm check:generated
 
+      - name: Check API models agree with the database schema
+        run: pnpm check:api-db
+
       - name: Lint
         run: pnpm lint
 

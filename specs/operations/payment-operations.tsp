@@ -32,7 +32,7 @@ namespace BeautySalon.Operations {
     createPayment(@body payment: PaymentCreateRequest): Result<Payment>;
 
     @doc("Update payment status")
-    @patch(#{ implicitOptionality: true })
+    @patch
     @route("/{id}")
     updatePayment(
       @path id: PaymentId,

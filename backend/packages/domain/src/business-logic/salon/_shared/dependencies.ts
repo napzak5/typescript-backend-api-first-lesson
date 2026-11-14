@@ -1,20 +1,10 @@
 import type { ISalonRepository } from '../../../repositories/salon.repository'
 
 /**
- * Dependencies required for salon use cases.
- * This interface defines all repositories and services needed by salon-related use cases.
- *
- * Using object-based dependency injection provides:
- * - Explicit declaration of all dependencies
- * - No concern about argument order when instantiating use cases
- * - Easy addition of new dependencies without breaking existing code
- * - Better testability with partial mocks
+ * Everything the salon use cases need from the outside. Passing one object
+ * keeps construction independent of argument order and lets a test replace
+ * a single dependency.
  */
 export interface SalonUseCaseDependencies {
   salonRepository: ISalonRepository
-  // Future dependencies can be added here:
-  // userRepository?: IUserRepository
-  // bookingRepository?: IBookingRepository
-  // notificationService?: INotificationService
-  // emailService?: IEmailService
 }

@@ -1,396 +1,255 @@
 import { openingHours, salons } from '@beauty-salon-backend/database'
-import type {
-  DbNewOpeningHours,
-  DbOpeningHours,
-  DbSalon,
-  ISalonRepository,
-  SalonId,
-  SalonSearchParams,
-} from '@beauty-salon-backend/domain'
 import {
+  type DbNewOpeningHours,
+  type DbNewSalon,
+  type DbOpeningHours,
+  type DbSalon,
+  type DbSalonChanges,
   type DomainError,
   DomainErrors,
-  type PaginatedResult,
-  Pagination,
-  type PaginationParams,
+  type ISalonRepository,
+  type OpeningHoursChange,
+  type SalonId,
+  type SalonList,
+  type SalonListCriteria,
+  type SalonWithOpeningHours,
 } from '@beauty-salon-backend/domain'
 import { Result } from '@beauty-salon-backend/utility'
-import { and, asc, desc, eq, isNull, like, or, sql } from 'drizzle-orm'
-import type { Database } from '../database/index'
+import {
+  and,
+  arrayContains,
+  asc,
+  count,
+  desc,
+  eq,
+  gte,
+  ilike,
+  inArray,
+  isNull,
+  or,
+  sql,
+} from 'drizzle-orm'
+import { alias } from 'drizzle-orm/pg-core'
+import { match, P } from 'ts-pattern'
+import type { Database, DatabaseExecutor } from '../database/index'
+
+const emailUniqueViolation = {
+  code: '23505',
+  constraint_name: 'salons_email_unique',
+}
+
+/**
+ * Turns a failed write into a domain error. The unique constraint on `email`
+ * is the only expected failure; drizzle wraps the driver error, so the
+ * constraint is looked for on the error and on its cause.
+ */
+const toDomainError =
+  (message: string, email: string | null) =>
+  (cause: unknown): DomainError =>
+    match({ cause, email })
+      .with(
+        {
+          email: P.string,
+          cause: P.union(emailUniqueViolation, { cause: emailUniqueViolation }),
+        },
+        (violation) =>
+          DomainErrors.alreadyExists('Salon', 'email', violation.email),
+      )
+      .otherwise(() => DomainErrors.database(message, cause))
+
+const attempt = async <T>(
+  message: string,
+  email: string | null,
+  run: () => Promise<T>,
+): Promise<Result<T, DomainError>> =>
+  Result.mapError(
+    await Result.fromPromise(run()),
+    toDomainError(message, email),
+  )
+
+/** A LIKE pattern that matches `keyword` literally, anywhere in the text. */
+const containing = (keyword: string): string =>
+  `%${keyword.replace(/[\\%_]/g, '\\$&')}%`
+
+const notDeleted = isNull(salons.deletedAt)
+
+const selectOpeningHours = async (
+  executor: DatabaseExecutor,
+  salonIds: string[],
+): Promise<DbOpeningHours[]> =>
+  salonIds.length === 0
+    ? []
+    : executor
+        .select()
+        .from(openingHours)
+        .where(inArray(openingHours.salonId, salonIds))
+        .orderBy(asc(openingHours.date), asc(openingHours.id))
+
+const insertOpeningHours = async (
+  executor: DatabaseExecutor,
+  salonId: string,
+  rows: DbNewOpeningHours[],
+): Promise<void> => {
+  if (rows.length > 0) {
+    await executor
+      .insert(openingHours)
+      .values(rows.map((row) => ({ ...row, salonId })))
+  }
+}
+
+const withOpeningHours = async (
+  executor: DatabaseExecutor,
+  salon: DbSalon,
+): Promise<SalonWithOpeningHours> => ({
+  salon,
+  openingHours: await selectOpeningHours(executor, [salon.id]),
+})
 
 export class SalonRepository implements ISalonRepository {
   constructor(private readonly db: Database) {}
 
   async create(
-    salon: DbSalon,
-    openingHoursData?: DbNewOpeningHours[],
-  ): Promise<Result<DbSalon, DomainError>> {
-    try {
-      const result = await this.db.transaction(async (tx) => {
-        const inserted = await tx.insert(salons).values(salon).returning()
-
-        const insertedSalon = inserted[0]
-        if (!insertedSalon) {
-          throw new Error('Failed to insert salon')
+    salon: DbNewSalon,
+    newOpeningHours: DbNewOpeningHours[],
+  ): Promise<Result<SalonWithOpeningHours, DomainError>> {
+    const created = await attempt('Failed to create salon', salon.email, () =>
+      this.db.transaction(async (tx) => {
+        const [inserted] = await tx.insert(salons).values(salon).returning()
+        if (inserted === undefined) {
+          return null
         }
+        await insertOpeningHours(tx, inserted.id, newOpeningHours)
+        return withOpeningHours(tx, inserted)
+      }),
+    )
 
-        if (openingHoursData && openingHoursData.length > 0) {
-          const openingHoursWithSalonId = openingHoursData.map((oh) => ({
-            ...oh,
-            salonId: insertedSalon.id,
-          }))
-          await tx.insert(openingHours).values(openingHoursWithSalonId)
-        }
-
-        return insertedSalon
-      })
-
-      return Result.success(result)
-    } catch (error) {
-      return Result.error(
-        DomainErrors.database(
-          'Failed to create salon',
-          JSON.stringify(error, null, 2),
-        ),
-      )
-    }
+    return Result.flatMap(created, (data) =>
+      data === null
+        ? Result.error(
+            DomainErrors.database('Insert of salon returned no row', null),
+          )
+        : Result.success(data),
+    )
   }
 
-  async findById(id: SalonId): Promise<Result<DbSalon | null, DomainError>> {
-    try {
+  async findById(
+    id: SalonId,
+  ): Promise<Result<SalonWithOpeningHours | null, DomainError>> {
+    return attempt('Failed to find salon', null, async () => {
       const [salon] = await this.db
         .select()
         .from(salons)
-        .where(and(eq(salons.id, id), isNull(salons.deletedAt)))
+        .where(and(eq(salons.id, id), notDeleted))
         .limit(1)
 
-      return Result.success(salon ?? null)
-    } catch (error) {
-      return Result.error(
-        DomainErrors.database(
-          'Failed to find salon by ID',
-          JSON.stringify(error, null, 2),
-        ),
-      )
-    }
+      return salon === undefined ? null : withOpeningHours(this.db, salon)
+    })
   }
 
-  async findByEmail(
-    email: string,
-  ): Promise<Result<DbSalon | null, DomainError>> {
-    try {
-      const [salon] = await this.db
-        .select()
-        .from(salons)
-        .where(and(eq(salons.email, email), isNull(salons.deletedAt)))
-        .limit(1)
+  async list(
+    criteria: SalonListCriteria,
+  ): Promise<Result<SalonList, DomainError>> {
+    const { limit, after, keyword, prefecture, city, isActive, minRating } =
+      criteria
 
-      return Result.success(salon ?? null)
-    } catch (error) {
-      return Result.error(
-        DomainErrors.database(
-          'Failed to find salon by email',
-          JSON.stringify(error, null, 2),
-        ),
-      )
-    }
-  }
+    const filters = and(
+      notDeleted,
+      keyword === null
+        ? undefined
+        : or(
+            ilike(salons.name, containing(keyword)),
+            ilike(salons.description, containing(keyword)),
+          ),
+      prefecture === null ? undefined : eq(salons.prefecture, prefecture),
+      city === null ? undefined : eq(salons.city, city),
+      isActive === null ? undefined : eq(salons.isActive, isActive),
+      minRating === null ? undefined : gte(salons.rating, String(minRating)),
+      criteria.features.length === 0
+        ? undefined
+        : arrayContains(salons.features, criteria.features),
+    )
 
-  async findAll(
-    params: PaginationParams,
-  ): Promise<Result<PaginatedResult<DbSalon>, DomainError>> {
-    try {
-      const offset = Pagination.getOffset(params)
+    // Keyset pagination on (createdAt, id): the page starts after the row
+    // the cursor names, wherever that row is by now.
+    const cursorSalon = alias(salons, 'cursor_salon')
+    const afterCursor =
+      after === null
+        ? undefined
+        : sql`(${salons.createdAt}, ${salons.id}) < (${this.db
+            .select({ createdAt: cursorSalon.createdAt, id: cursorSalon.id })
+            .from(cursorSalon)
+            .where(eq(cursorSalon.id, after))})`
 
-      const [salonsList, countResult] = await Promise.all([
+    return attempt('Failed to list salons', null, async () => {
+      const [page, [matching]] = await Promise.all([
         this.db
           .select()
           .from(salons)
-          .where(isNull(salons.deletedAt))
-          .orderBy(desc(salons.createdAt))
-          .limit(params.limit)
-          .offset(offset),
-        this.db
-          .select({ count: sql<number>`count(*)::int` })
-          .from(salons)
-          .where(isNull(salons.deletedAt)),
+          .where(and(filters, afterCursor))
+          .orderBy(desc(salons.createdAt), desc(salons.id))
+          // One extra row tells whether another page follows.
+          .limit(limit + 1),
+        this.db.select({ total: count() }).from(salons).where(filters),
       ])
 
-      const totalItems = countResult[0]?.count ?? 0
-      const result = Pagination.createResult(
-        salonsList as DbSalon[],
-        totalItems,
-        params,
+      const pageSalons = page.slice(0, limit)
+      const calendars = Map.groupBy(
+        await selectOpeningHours(
+          this.db,
+          pageSalons.map((salon) => salon.id),
+        ),
+        (row) => row.salonId,
       )
 
-      return Result.success(result)
-    } catch (error) {
-      return Result.error(
-        DomainErrors.database(
-          'Failed to list salons',
-          JSON.stringify(error, null, 2),
-        ),
-      )
-    }
+      return {
+        salons: pageSalons.map((salon) => ({
+          salon,
+          openingHours: calendars.get(salon.id) ?? [],
+        })),
+        total: matching?.total ?? 0,
+        hasMore: page.length > limit,
+      }
+    })
   }
 
   async update(
     id: SalonId,
-    salon: Partial<DbSalon>,
-  ): Promise<Result<DbSalon, DomainError>> {
-    try {
-      const [updatedSalon] = await this.db
-        .update(salons)
-        .set(salon)
-        .where(and(eq(salons.id, id), isNull(salons.deletedAt)))
-        .returning()
+    changes: DbSalonChanges,
+    openingHoursChange: OpeningHoursChange,
+  ): Promise<Result<SalonWithOpeningHours | null, DomainError>> {
+    return attempt('Failed to update salon', changes.email ?? null, () =>
+      this.db.transaction(async (tx) => {
+        const [updated] = await tx
+          .update(salons)
+          .set({ ...changes, updatedAt: sql`now()` })
+          .where(and(eq(salons.id, id), notDeleted))
+          .returning()
+        if (updated === undefined) {
+          return null
+        }
 
-      if (!updatedSalon) {
-        return Result.error(DomainErrors.notFound('Salon', id))
-      }
+        await match(openingHoursChange)
+          .with({ type: 'keep' }, async () => undefined)
+          .with({ type: 'replace' }, async (replacement) => {
+            await tx.delete(openingHours).where(eq(openingHours.salonId, id))
+            await insertOpeningHours(tx, id, replacement.openingHours)
+          })
+          .exhaustive()
 
-      return Result.success(updatedSalon)
-    } catch (error) {
-      return Result.error(
-        DomainErrors.database(
-          'Failed to update salon',
-          JSON.stringify(error, null, 2),
-        ),
-      )
-    }
+        return withOpeningHours(tx, updated)
+      }),
+    )
   }
 
   async delete(id: SalonId): Promise<Result<boolean, DomainError>> {
-    try {
-      const [deletedSalon] = await this.db
+    return attempt('Failed to delete salon', null, async () => {
+      const deleted = await this.db
         .update(salons)
-        .set({ deletedAt: new Date().toISOString() })
-        .where(and(eq(salons.id, id), isNull(salons.deletedAt)))
-        .returning()
+        .set({ deletedAt: sql`now()`, updatedAt: sql`now()` })
+        .where(and(eq(salons.id, id), notDeleted))
+        .returning({ id: salons.id })
 
-      return Result.success(!!deletedSalon)
-    } catch (error) {
-      return Result.error(
-        DomainErrors.database(
-          'Failed to delete salon',
-          JSON.stringify(error, null, 2),
-        ),
-      )
-    }
-  }
-
-  async search(
-    params: SalonSearchParams,
-    pagination: PaginationParams,
-  ): Promise<Result<PaginatedResult<DbSalon>, DomainError>> {
-    try {
-      const conditions = [isNull(salons.deletedAt)]
-
-      if (params.keyword) {
-        const keywordCondition = or(
-          like(salons.name, `%${params.keyword}%`),
-          like(salons.description, `%${params.keyword}%`),
-        )
-        if (keywordCondition) {
-          conditions.push(keywordCondition)
-        }
-      }
-
-      if (params.city) {
-        conditions.push(eq(salons.city, params.city))
-      }
-
-      if (params.prefecture) {
-        conditions.push(eq(salons.prefecture, params.prefecture))
-      }
-
-      if (params.isActive !== undefined) {
-        conditions.push(eq(salons.isActive, params.isActive))
-      }
-
-      const whereClause = and(...conditions)
-      const offset = Pagination.getOffset(pagination)
-
-      const [salonsList, countResult] = await Promise.all([
-        this.db
-          .select()
-          .from(salons)
-          .where(whereClause)
-          .orderBy(desc(salons.createdAt))
-          .limit(pagination.limit)
-          .offset(offset),
-        this.db
-          .select({ count: sql<number>`count(*)::int` })
-          .from(salons)
-          .where(whereClause),
-      ])
-
-      const totalItems = countResult[0]?.count ?? 0
-      const result = Pagination.createResult(
-        salonsList as DbSalon[],
-        totalItems,
-        pagination,
-      )
-
-      return Result.success(result)
-    } catch (error) {
-      return Result.error(
-        DomainErrors.database(
-          'Failed to search salons',
-          JSON.stringify(error, null, 2),
-        ),
-      )
-    }
-  }
-
-  async findOpeningHours(
-    salonId: SalonId,
-  ): Promise<Result<DbOpeningHours[], DomainError>> {
-    try {
-      const hours = await this.db
-        .select()
-        .from(openingHours)
-        .where(eq(openingHours.salonId, salonId))
-        .orderBy(asc(openingHours.dayOfWeek))
-
-      return Result.success(hours)
-    } catch (error) {
-      return Result.error(
-        DomainErrors.database(
-          'Failed to find opening hours',
-          JSON.stringify(error, null, 2),
-        ),
-      )
-    }
-  }
-
-  async createOpeningHours(
-    openingHoursData: DbNewOpeningHours[],
-  ): Promise<Result<DbOpeningHours[], DomainError>> {
-    try {
-      if (openingHoursData.length === 0) {
-        return Result.success([])
-      }
-
-      const inserted = await this.db
-        .insert(openingHours)
-        .values(openingHoursData)
-        .returning()
-
-      return Result.success(inserted)
-    } catch (error) {
-      return Result.error(
-        DomainErrors.database(
-          'Failed to create opening hours',
-          JSON.stringify(error, null, 2),
-        ),
-      )
-    }
-  }
-
-  async updateOpeningHours(
-    salonId: SalonId,
-    openingHoursData: DbNewOpeningHours[],
-  ): Promise<Result<DbOpeningHours[], DomainError>> {
-    try {
-      const result = await this.db.transaction(async (tx) => {
-        await tx.delete(openingHours).where(eq(openingHours.salonId, salonId))
-
-        if (openingHoursData.length === 0) {
-          return []
-        }
-
-        const openingHoursWithSalonId = openingHoursData.map((oh) => ({
-          ...oh,
-          salonId,
-        }))
-
-        return await tx
-          .insert(openingHours)
-          .values(openingHoursWithSalonId)
-          .returning()
-      })
-
-      return Result.success(result)
-    } catch (error) {
-      return Result.error(
-        DomainErrors.database(
-          'Failed to update opening hours',
-          JSON.stringify(error, null, 2),
-        ),
-      )
-    }
-  }
-
-  async deleteOpeningHours(
-    salonId: SalonId,
-  ): Promise<Result<boolean, DomainError>> {
-    try {
-      await this.db
-        .delete(openingHours)
-        .where(eq(openingHours.salonId, salonId))
-      return Result.success(true)
-    } catch (error) {
-      return Result.error(
-        DomainErrors.database(
-          'Failed to delete opening hours',
-          JSON.stringify(error, null, 2),
-        ),
-      )
-    }
-  }
-
-  async exists(id: SalonId): Promise<Result<boolean, DomainError>> {
-    try {
-      const [result] = await this.db
-        .select({ count: sql<number>`count(*)::int` })
-        .from(salons)
-        .where(and(eq(salons.id, id), isNull(salons.deletedAt)))
-
-      return Result.success((result?.count ?? 0) > 0)
-    } catch (error) {
-      return Result.error(
-        DomainErrors.database(
-          'Failed to check salon existence',
-          JSON.stringify(error, null, 2),
-        ),
-      )
-    }
-  }
-
-  async existsByEmail(email: string): Promise<Result<boolean, DomainError>> {
-    try {
-      const [result] = await this.db
-        .select({ count: sql<number>`count(*)::int` })
-        .from(salons)
-        .where(and(eq(salons.email, email), isNull(salons.deletedAt)))
-
-      return Result.success((result?.count ?? 0) > 0)
-    } catch (error) {
-      return Result.error(
-        DomainErrors.database(
-          'Failed to check salon email existence',
-          JSON.stringify(error, null, 2),
-        ),
-      )
-    }
-  }
-
-  async countActive(): Promise<Result<number, DomainError>> {
-    try {
-      const [result] = await this.db
-        .select({ count: sql<number>`count(*)::int` })
-        .from(salons)
-        .where(and(isNull(salons.deletedAt), eq(salons.isActive, true)))
-
-      return Result.success(result?.count ?? 0)
-    } catch (error) {
-      return Result.error(
-        DomainErrors.database(
-          'Failed to count active salons',
-          JSON.stringify(error, null, 2),
-        ),
-      )
-    }
+      return deleted.length > 0
+    })
   }
 }

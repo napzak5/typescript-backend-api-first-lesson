@@ -25,49 +25,15 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
-  ModelsBatchGetRequest,
-  ModelsCreateSalonRequest,
   ModelsProblemDetails,
-  ModelsSalonAvailabilityRequest,
+  ModelsSalonCreateRequest,
   ModelsSalonId,
-  ModelsSalonSubscriptionRequest,
-  ModelsStaffId,
-  ModelsStaffScheduleUpdateRequest,
-  ModelsUpdateSalonRequest,
-  ModelsUpdateSalonRequestUpdate,
-  SalonCrudBatchGet200,
-  SalonCrudBulkCreate207,
-  SalonCrudBulkCreateBody,
-  SalonCrudBulkDelete207,
-  SalonCrudBulkDeleteBody,
-  SalonCrudBulkUpdate207,
-  SalonCrudBulkUpdateBody,
+  ModelsSalonUpdateRequest,
   SalonCrudCreate201,
-  SalonCrudDeleteParams,
-  SalonCrudExport202,
-  SalonCrudExportBody,
   SalonCrudGet200,
-  SalonCrudGetHistory200,
-  SalonCrudGetHistoryParams,
-  SalonCrudGetParams,
-  SalonCrudGetVersion200,
   SalonCrudList200,
   SalonCrudListParams,
-  SalonCrudPatch200,
-  SalonCrudPatchParams,
-  SalonCrudRestore200,
-  SalonCrudSearch200,
-  SalonCrudSearchParams,
-  SalonCrudUpdate200,
-  SalonOperationsCheckAvailability200,
-  SalonOperationsGetNearby200,
-  SalonOperationsGetNearbyParams,
-  SalonOperationsGetRecommendations200,
-  SalonOperationsGetRecommendationsParams,
-  SalonOperationsGetStatistics200,
-  SalonOperationsGetStatisticsParams,
-  SalonOperationsSubscribe201,
-  SalonOperationsUpdateStaffSchedule200
+  SalonCrudUpdate200
 } from '../../models';
 
 import { customInstance } from '../../../mutator';
@@ -100,20 +66,10 @@ export type salonCrudListResponse400 = {
   status: 400
 }
 
-export type salonCrudListResponse401 = {
-  data: ModelsProblemDetails
-  status: 401
-}
-
-export type salonCrudListResponse429 = {
-  data: ModelsProblemDetails
-  status: 429
-}
-
 export type salonCrudListResponseSuccess = (salonCrudListResponse200) & {
   headers: Headers;
 };
-export type salonCrudListResponseError = (salonCrudListResponse400 | salonCrudListResponse401 | salonCrudListResponse429) & {
+export type salonCrudListResponseError = (salonCrudListResponse400) & {
   headers: Headers;
 };
 
@@ -123,6 +79,14 @@ export const getSalonCrudListUrl = (params?: SalonCrudListParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
+    const explodeParameters = ["features"];
+
+    if (Array.isArray(value) && explodeParameters.includes(key)) {
+      value.forEach((v) => {
+        normalizedParams.append(key, v === null ? 'null' : String(v));
+      });
+      return;
+    }
 
     if (value !== undefined) {
       normalizedParams.append(key, value === null ? 'null' : String(value))
@@ -131,12 +95,12 @@ export const getSalonCrudListUrl = (params?: SalonCrudListParams,) => {
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/salons/?${stringifiedParams}` : `/api/v1/salons/`
+  return stringifiedParams.length > 0 ? `/api/v1/salons?${stringifiedParams}` : `/api/v1/salons`
 }
 
 /**
- * ページネーションやフィルター条件を指定して対象リソースを一覧取得します。業務画面のリスト表示に利用します。
- * @summary List {Name} resources
+ * 絞り込み条件とページネーションを指定してサロンを一覧取得します。削除済みのサロンは含みません。
+ * @summary List salons
  */
 export const salonCrudList = async (params?: SalonCrudListParams, options?: RequestInit): Promise<salonCrudListResponse> => {
 
@@ -155,7 +119,7 @@ export const salonCrudList = async (params?: SalonCrudListParams, options?: Requ
 
 export const getSalonCrudListQueryKey = (params?: SalonCrudListParams,) => {
     return [
-    `/api/v1/salons/`, ...(params ? [params] : [])
+    `/api/v1/salons`, ...(params ? [params] : [])
     ] as const;
     }
 
@@ -183,8 +147,8 @@ export type SalonCrudListQueryError = ModelsProblemDetails
 
 
 /**
- * ページネーションやフィルター条件を指定して対象リソースを一覧取得します。業務画面のリスト表示に利用します。
- * @summary List {Name} resources
+ * 絞り込み条件とページネーションを指定してサロンを一覧取得します。削除済みのサロンは含みません。
+ * @summary List salons
  */
 export function useSalonCrudList<TData = Awaited<ReturnType<typeof salonCrudList>>, TError = ModelsProblemDetails>(
  params: undefined |  SalonCrudListParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof salonCrudList>>, TError, TData>> & Pick<
@@ -197,8 +161,8 @@ export function useSalonCrudList<TData = Awaited<ReturnType<typeof salonCrudList
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * ページネーションやフィルター条件を指定して対象リソースを一覧取得します。業務画面のリスト表示に利用します。
- * @summary List {Name} resources
+ * 絞り込み条件とページネーションを指定してサロンを一覧取得します。削除済みのサロンは含みません。
+ * @summary List salons
  */
 export function useSalonCrudList<TData = Awaited<ReturnType<typeof salonCrudList>>, TError = ModelsProblemDetails>(
  params?: SalonCrudListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof salonCrudList>>, TError, TData>> & Pick<
@@ -211,16 +175,16 @@ export function useSalonCrudList<TData = Awaited<ReturnType<typeof salonCrudList
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * ページネーションやフィルター条件を指定して対象リソースを一覧取得します。業務画面のリスト表示に利用します。
- * @summary List {Name} resources
+ * 絞り込み条件とページネーションを指定してサロンを一覧取得します。削除済みのサロンは含みません。
+ * @summary List salons
  */
 export function useSalonCrudList<TData = Awaited<ReturnType<typeof salonCrudList>>, TError = ModelsProblemDetails>(
  params?: SalonCrudListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof salonCrudList>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * ページネーションやフィルター条件を指定して対象リソースを一覧取得します。業務画面のリスト表示に利用します。
- * @summary List {Name} resources
+ * 絞り込み条件とページネーションを指定してサロンを一覧取得します。削除済みのサロンは含みません。
+ * @summary List salons
  */
 export function useSalonCrudList<TData = Awaited<ReturnType<typeof salonCrudList>>, TError = ModelsProblemDetails>(
  params?: SalonCrudListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof salonCrudList>>, TError, TData>>, }
@@ -249,25 +213,15 @@ export type salonCrudCreateResponse400 = {
   status: 400
 }
 
-export type salonCrudCreateResponse401 = {
-  data: ModelsProblemDetails
-  status: 401
-}
-
 export type salonCrudCreateResponse409 = {
   data: ModelsProblemDetails
   status: 409
 }
 
-export type salonCrudCreateResponse422 = {
-  data: ModelsProblemDetails
-  status: 422
-}
-
 export type salonCrudCreateResponseSuccess = (salonCrudCreateResponse201) & {
   headers: Headers;
 };
-export type salonCrudCreateResponseError = (salonCrudCreateResponse400 | salonCrudCreateResponse401 | salonCrudCreateResponse409 | salonCrudCreateResponse422) & {
+export type salonCrudCreateResponseError = (salonCrudCreateResponse400 | salonCrudCreateResponse409) & {
   headers: Headers;
 };
 
@@ -278,14 +232,14 @@ export const getSalonCrudCreateUrl = () => {
 
 
 
-  return `/api/v1/salons/`
+  return `/api/v1/salons`
 }
 
 /**
- * 新規リソースを作成し、作成時のバリデーションや重複チェック結果を返却します。
- * @summary Create new {Name}
+ * サロンを新規登録します。メールアドレスが既存のサロンと重複する場合は409を返します。
+ * @summary Create a salon
  */
-export const salonCrudCreate = async (modelsCreateSalonRequest: ModelsCreateSalonRequest, options?: RequestInit): Promise<salonCrudCreateResponse> => {
+export const salonCrudCreate = async (modelsSalonCreateRequest: ModelsSalonCreateRequest, options?: RequestInit): Promise<salonCrudCreateResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -306,7 +260,7 @@ return customInstance<salonCrudCreateResponse>(getSalonCrudCreateUrl(),
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(modelsCreateSalonRequest)
+    body: JSON.stringify(modelsSalonCreateRequest)
   }
 );}
 
@@ -344,13 +298,13 @@ const {mutation: mutationOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type SalonCrudCreateMutationResult = NonNullable<Awaited<ReturnType<typeof salonCrudCreate>>>
-    export type SalonCrudCreateMutationBody = ModelsCreateSalonRequest
+    export type SalonCrudCreateMutationBody = ModelsSalonCreateRequest
     export type SalonCrudCreateMutationError = ModelsProblemDetails
-    export type SalonCrudCreateMutationVariables = {data: ModelsCreateSalonRequest}
+    export type SalonCrudCreateMutationVariables = {data: ModelsSalonCreateRequest}
 
     /**
- * 新規リソースを作成し、作成時のバリデーションや重複チェック結果を返却します。
- * @summary Create new {Name}
+ * サロンを新規登録します。メールアドレスが既存のサロンと重複する場合は409を返します。
+ * @summary Create a salon
  */
 export const useSalonCrudCreate = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof salonCrudCreate>>, TError,SalonCrudCreateMutationVariables, TContext>, }
@@ -362,1006 +316,14 @@ export const useSalonCrudCreate = <TError = ModelsProblemDetails,
       > => {
       return useMutation(getSalonCrudCreateMutationOptions(options), queryClient);
     }
-    export type salonCrudBatchGetResponse200 = {
-  data: SalonCrudBatchGet200
-  status: 200
-}
-
-export type salonCrudBatchGetResponse400 = {
-  data: ModelsProblemDetails
-  status: 400
-}
-
-export type salonCrudBatchGetResponse401 = {
-  data: ModelsProblemDetails
-  status: 401
-}
-
-export type salonCrudBatchGetResponseSuccess = (salonCrudBatchGetResponse200) & {
-  headers: Headers;
-};
-export type salonCrudBatchGetResponseError = (salonCrudBatchGetResponse400 | salonCrudBatchGetResponse401) & {
-  headers: Headers;
-};
-
-export type salonCrudBatchGetResponse = (salonCrudBatchGetResponseSuccess | salonCrudBatchGetResponseError)
-
-export const getSalonCrudBatchGetUrl = () => {
-
-
-
-
-  return `/api/v1/salons/batch/get`
-}
-
-/**
- * 複数IDをまとめて取得し、一覧画面の遅延読み込みや外部連携に利用します。
- * @summary Batch get {Name} resources
- */
-export const salonCrudBatchGet = async (modelsBatchGetRequest: ModelsBatchGetRequest, options?: RequestInit): Promise<salonCrudBatchGetResponse> => {
-
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return customInstance<salonCrudBatchGetResponse>(getSalonCrudBatchGetUrl(),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(modelsBatchGetRequest)
-  }
-);}
-
-
-
-
-
-export const getSalonCrudBatchGetMutationKey = () => ['salonCrudBatchGet'] as const;
-
-export const getSalonCrudBatchGetMutationOptions = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof salonCrudBatchGet>>, TError,SalonCrudBatchGetMutationVariables, TContext>, }
-): UseMutationOptions<Awaited<ReturnType<typeof salonCrudBatchGet>>, TError,SalonCrudBatchGetMutationVariables, TContext> => {
-
-const mutationKey = getSalonCrudBatchGetMutationKey();
-const {mutation: mutationOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof salonCrudBatchGet>>, SalonCrudBatchGetMutationVariables> = (props) => {
-          const {data} = props ?? {};
-
-          return  salonCrudBatchGet(data,)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type SalonCrudBatchGetMutationResult = NonNullable<Awaited<ReturnType<typeof salonCrudBatchGet>>>
-    export type SalonCrudBatchGetMutationBody = ModelsBatchGetRequest
-    export type SalonCrudBatchGetMutationError = ModelsProblemDetails
-    export type SalonCrudBatchGetMutationVariables = {data: ModelsBatchGetRequest}
-
-    /**
- * 複数IDをまとめて取得し、一覧画面の遅延読み込みや外部連携に利用します。
- * @summary Batch get {Name} resources
- */
-export const useSalonCrudBatchGet = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof salonCrudBatchGet>>, TError,SalonCrudBatchGetMutationVariables, TContext>, }
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof salonCrudBatchGet>>,
-        TError,
-        SalonCrudBatchGetMutationVariables,
-        TContext
-      > => {
-      return useMutation(getSalonCrudBatchGetMutationOptions(options), queryClient);
-    }
-    export type salonCrudBulkCreateResponse207 = {
-  data: SalonCrudBulkCreate207
-  status: 207
-}
-
-export type salonCrudBulkCreateResponse400 = {
-  data: ModelsProblemDetails
-  status: 400
-}
-
-export type salonCrudBulkCreateResponse401 = {
-  data: ModelsProblemDetails
-  status: 401
-}
-
-export type salonCrudBulkCreateResponseSuccess = (salonCrudBulkCreateResponse207) & {
-  headers: Headers;
-};
-export type salonCrudBulkCreateResponseError = (salonCrudBulkCreateResponse400 | salonCrudBulkCreateResponse401) & {
-  headers: Headers;
-};
-
-export type salonCrudBulkCreateResponse = (salonCrudBulkCreateResponseSuccess | salonCrudBulkCreateResponseError)
-
-export const getSalonCrudBulkCreateUrl = () => {
-
-
-
-
-  return `/api/v1/salons/bulk`
-}
-
-/**
- * 複数リソースを一括作成し、結果を成功・失敗に分けて返却します。
- * @summary Bulk create {Name} resources
- */
-export const salonCrudBulkCreate = async (salonCrudBulkCreateBody: SalonCrudBulkCreateBody, options?: RequestInit): Promise<salonCrudBulkCreateResponse> => {
-
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return customInstance<salonCrudBulkCreateResponse>(getSalonCrudBulkCreateUrl(),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(salonCrudBulkCreateBody)
-  }
-);}
-
-
-
-
-
-export const getSalonCrudBulkCreateMutationKey = () => ['salonCrudBulkCreate'] as const;
-
-export const getSalonCrudBulkCreateMutationOptions = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof salonCrudBulkCreate>>, TError,SalonCrudBulkCreateMutationVariables, TContext>, }
-): UseMutationOptions<Awaited<ReturnType<typeof salonCrudBulkCreate>>, TError,SalonCrudBulkCreateMutationVariables, TContext> => {
-
-const mutationKey = getSalonCrudBulkCreateMutationKey();
-const {mutation: mutationOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof salonCrudBulkCreate>>, SalonCrudBulkCreateMutationVariables> = (props) => {
-          const {data} = props ?? {};
-
-          return  salonCrudBulkCreate(data,)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type SalonCrudBulkCreateMutationResult = NonNullable<Awaited<ReturnType<typeof salonCrudBulkCreate>>>
-    export type SalonCrudBulkCreateMutationBody = SalonCrudBulkCreateBody
-    export type SalonCrudBulkCreateMutationError = ModelsProblemDetails
-    export type SalonCrudBulkCreateMutationVariables = {data: SalonCrudBulkCreateBody}
-
-    /**
- * 複数リソースを一括作成し、結果を成功・失敗に分けて返却します。
- * @summary Bulk create {Name} resources
- */
-export const useSalonCrudBulkCreate = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof salonCrudBulkCreate>>, TError,SalonCrudBulkCreateMutationVariables, TContext>, }
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof salonCrudBulkCreate>>,
-        TError,
-        SalonCrudBulkCreateMutationVariables,
-        TContext
-      > => {
-      return useMutation(getSalonCrudBulkCreateMutationOptions(options), queryClient);
-    }
-    export type salonCrudBulkUpdateResponse207 = {
-  data: SalonCrudBulkUpdate207
-  status: 207
-}
-
-export type salonCrudBulkUpdateResponse400 = {
-  data: ModelsProblemDetails
-  status: 400
-}
-
-export type salonCrudBulkUpdateResponse401 = {
-  data: ModelsProblemDetails
-  status: 401
-}
-
-export type salonCrudBulkUpdateResponseSuccess = (salonCrudBulkUpdateResponse207) & {
-  headers: Headers;
-};
-export type salonCrudBulkUpdateResponseError = (salonCrudBulkUpdateResponse400 | salonCrudBulkUpdateResponse401) & {
-  headers: Headers;
-};
-
-export type salonCrudBulkUpdateResponse = (salonCrudBulkUpdateResponseSuccess | salonCrudBulkUpdateResponseError)
-
-export const getSalonCrudBulkUpdateUrl = () => {
-
-
-
-
-  return `/api/v1/salons/bulk`
-}
-
-/**
- * 複数リソースの更新をまとめて受け付け、バージョン整合性を保ちながら処理します。
- * @summary Bulk update {Name} resources
- */
-export const salonCrudBulkUpdate = async (salonCrudBulkUpdateBody: SalonCrudBulkUpdateBody, options?: RequestInit): Promise<salonCrudBulkUpdateResponse> => {
-
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return customInstance<salonCrudBulkUpdateResponse>(getSalonCrudBulkUpdateUrl(),
-  {
-    ...options,
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(salonCrudBulkUpdateBody)
-  }
-);}
-
-
-
-
-
-export const getSalonCrudBulkUpdateMutationKey = () => ['salonCrudBulkUpdate'] as const;
-
-export const getSalonCrudBulkUpdateMutationOptions = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof salonCrudBulkUpdate>>, TError,SalonCrudBulkUpdateMutationVariables, TContext>, }
-): UseMutationOptions<Awaited<ReturnType<typeof salonCrudBulkUpdate>>, TError,SalonCrudBulkUpdateMutationVariables, TContext> => {
-
-const mutationKey = getSalonCrudBulkUpdateMutationKey();
-const {mutation: mutationOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof salonCrudBulkUpdate>>, SalonCrudBulkUpdateMutationVariables> = (props) => {
-          const {data} = props ?? {};
-
-          return  salonCrudBulkUpdate(data,)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type SalonCrudBulkUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof salonCrudBulkUpdate>>>
-    export type SalonCrudBulkUpdateMutationBody = SalonCrudBulkUpdateBody
-    export type SalonCrudBulkUpdateMutationError = ModelsProblemDetails
-    export type SalonCrudBulkUpdateMutationVariables = {data: SalonCrudBulkUpdateBody}
-
-    /**
- * 複数リソースの更新をまとめて受け付け、バージョン整合性を保ちながら処理します。
- * @summary Bulk update {Name} resources
- */
-export const useSalonCrudBulkUpdate = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof salonCrudBulkUpdate>>, TError,SalonCrudBulkUpdateMutationVariables, TContext>, }
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof salonCrudBulkUpdate>>,
-        TError,
-        SalonCrudBulkUpdateMutationVariables,
-        TContext
-      > => {
-      return useMutation(getSalonCrudBulkUpdateMutationOptions(options), queryClient);
-    }
-    export type salonCrudBulkDeleteResponse207 = {
-  data: SalonCrudBulkDelete207
-  status: 207
-}
-
-export type salonCrudBulkDeleteResponse400 = {
-  data: ModelsProblemDetails
-  status: 400
-}
-
-export type salonCrudBulkDeleteResponse401 = {
-  data: ModelsProblemDetails
-  status: 401
-}
-
-export type salonCrudBulkDeleteResponseSuccess = (salonCrudBulkDeleteResponse207) & {
-  headers: Headers;
-};
-export type salonCrudBulkDeleteResponseError = (salonCrudBulkDeleteResponse400 | salonCrudBulkDeleteResponse401) & {
-  headers: Headers;
-};
-
-export type salonCrudBulkDeleteResponse = (salonCrudBulkDeleteResponseSuccess | salonCrudBulkDeleteResponseError)
-
-export const getSalonCrudBulkDeleteUrl = () => {
-
-
-
-
-  return `/api/v1/salons/bulk`
-}
-
-/**
- * 複数リソースを一括削除し、成功可否ごとの結果を返却します。
- * @summary Bulk delete {Name} resources
- */
-export const salonCrudBulkDelete = async (salonCrudBulkDeleteBody: SalonCrudBulkDeleteBody, options?: RequestInit): Promise<salonCrudBulkDeleteResponse> => {
-
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return customInstance<salonCrudBulkDeleteResponse>(getSalonCrudBulkDeleteUrl(),
-  {
-    ...options,
-    method: 'DELETE',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(salonCrudBulkDeleteBody)
-  }
-);}
-
-
-
-
-
-export const getSalonCrudBulkDeleteMutationKey = () => ['salonCrudBulkDelete'] as const;
-
-export const getSalonCrudBulkDeleteMutationOptions = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof salonCrudBulkDelete>>, TError,SalonCrudBulkDeleteMutationVariables, TContext>, }
-): UseMutationOptions<Awaited<ReturnType<typeof salonCrudBulkDelete>>, TError,SalonCrudBulkDeleteMutationVariables, TContext> => {
-
-const mutationKey = getSalonCrudBulkDeleteMutationKey();
-const {mutation: mutationOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof salonCrudBulkDelete>>, SalonCrudBulkDeleteMutationVariables> = (props) => {
-          const {data} = props ?? {};
-
-          return  salonCrudBulkDelete(data,)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type SalonCrudBulkDeleteMutationResult = NonNullable<Awaited<ReturnType<typeof salonCrudBulkDelete>>>
-    export type SalonCrudBulkDeleteMutationBody = SalonCrudBulkDeleteBody
-    export type SalonCrudBulkDeleteMutationError = ModelsProblemDetails
-    export type SalonCrudBulkDeleteMutationVariables = {data: SalonCrudBulkDeleteBody}
-
-    /**
- * 複数リソースを一括削除し、成功可否ごとの結果を返却します。
- * @summary Bulk delete {Name} resources
- */
-export const useSalonCrudBulkDelete = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof salonCrudBulkDelete>>, TError,SalonCrudBulkDeleteMutationVariables, TContext>, }
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof salonCrudBulkDelete>>,
-        TError,
-        SalonCrudBulkDeleteMutationVariables,
-        TContext
-      > => {
-      return useMutation(getSalonCrudBulkDeleteMutationOptions(options), queryClient);
-    }
-    export type salonCrudExportResponse202 = {
-  data: SalonCrudExport202
-  status: 202
-}
-
-export type salonCrudExportResponse400 = {
-  data: ModelsProblemDetails
-  status: 400
-}
-
-export type salonCrudExportResponse401 = {
-  data: ModelsProblemDetails
-  status: 401
-}
-
-export type salonCrudExportResponseSuccess = (salonCrudExportResponse202) & {
-  headers: Headers;
-};
-export type salonCrudExportResponseError = (salonCrudExportResponse400 | salonCrudExportResponse401) & {
-  headers: Headers;
-};
-
-export type salonCrudExportResponse = (salonCrudExportResponseSuccess | salonCrudExportResponseError)
-
-export const getSalonCrudExportUrl = () => {
-
-
-
-
-  return `/api/v1/salons/export`
-}
-
-/**
- * 検索結果を指定形式でエクスポートし、帳票出力や外部共有に活用します。
- * @summary Export {Name} search results
- */
-export const salonCrudExport = async (salonCrudExportBody: SalonCrudExportBody, options?: RequestInit): Promise<salonCrudExportResponse> => {
-
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return customInstance<salonCrudExportResponse>(getSalonCrudExportUrl(),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(salonCrudExportBody)
-  }
-);}
-
-
-
-
-
-export const getSalonCrudExportMutationKey = () => ['salonCrudExport'] as const;
-
-export const getSalonCrudExportMutationOptions = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof salonCrudExport>>, TError,SalonCrudExportMutationVariables, TContext>, }
-): UseMutationOptions<Awaited<ReturnType<typeof salonCrudExport>>, TError,SalonCrudExportMutationVariables, TContext> => {
-
-const mutationKey = getSalonCrudExportMutationKey();
-const {mutation: mutationOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof salonCrudExport>>, SalonCrudExportMutationVariables> = (props) => {
-          const {data} = props ?? {};
-
-          return  salonCrudExport(data,)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type SalonCrudExportMutationResult = NonNullable<Awaited<ReturnType<typeof salonCrudExport>>>
-    export type SalonCrudExportMutationBody = SalonCrudExportBody
-    export type SalonCrudExportMutationError = ModelsProblemDetails
-    export type SalonCrudExportMutationVariables = {data: SalonCrudExportBody}
-
-    /**
- * 検索結果を指定形式でエクスポートし、帳票出力や外部共有に活用します。
- * @summary Export {Name} search results
- */
-export const useSalonCrudExport = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof salonCrudExport>>, TError,SalonCrudExportMutationVariables, TContext>, }
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof salonCrudExport>>,
-        TError,
-        SalonCrudExportMutationVariables,
-        TContext
-      > => {
-      return useMutation(getSalonCrudExportMutationOptions(options), queryClient);
-    }
-    export type salonOperationsGetNearbyResponse200 = {
-  data: SalonOperationsGetNearby200
-  status: 200
-}
-
-export type salonOperationsGetNearbyResponse400 = {
-  data: ModelsProblemDetails
-  status: 400
-}
-
-export type salonOperationsGetNearbyResponseSuccess = (salonOperationsGetNearbyResponse200) & {
-  headers: Headers;
-};
-export type salonOperationsGetNearbyResponseError = (salonOperationsGetNearbyResponse400) & {
-  headers: Headers;
-};
-
-export type salonOperationsGetNearbyResponse = (salonOperationsGetNearbyResponseSuccess | salonOperationsGetNearbyResponseError)
-
-export const getSalonOperationsGetNearbyUrl = (params: SalonOperationsGetNearbyParams,) => {
-  const normalizedParams = new URLSearchParams();
-
-  Object.entries(params || {}).forEach(([key, value]) => {
-
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : String(value))
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0 ? `/api/v1/salons/nearby?${stringifiedParams}` : `/api/v1/salons/nearby`
-}
-
-/**
- * 位置情報と希望条件から近隣サロンを検索し、顧客に最適な選択肢を提示します。
- * @summary Get nearby salons
- */
-export const salonOperationsGetNearby = async (params: SalonOperationsGetNearbyParams, options?: RequestInit): Promise<salonOperationsGetNearbyResponse> => {
-
-  return customInstance<salonOperationsGetNearbyResponse>(getSalonOperationsGetNearbyUrl(params),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getSalonOperationsGetNearbyQueryKey = (params?: SalonOperationsGetNearbyParams,) => {
-    return [
-    `/api/v1/salons/nearby`, ...(params ? [params] : [])
-    ] as const;
-    }
-
-
-export const getSalonOperationsGetNearbyQueryOptions = <TData = Awaited<ReturnType<typeof salonOperationsGetNearby>>, TError = ModelsProblemDetails>(params: SalonOperationsGetNearbyParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof salonOperationsGetNearby>>, TError, TData>>, }
-) => {
-
-const {query: queryOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getSalonOperationsGetNearbyQueryKey(params);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof salonOperationsGetNearby>>> = ({ signal }) => salonOperationsGetNearby(params, { signal });
-
-
-
-
-
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof salonOperationsGetNearby>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type SalonOperationsGetNearbyQueryResult = NonNullable<Awaited<ReturnType<typeof salonOperationsGetNearby>>>
-export type SalonOperationsGetNearbyQueryError = ModelsProblemDetails
-
-
-/**
- * 位置情報と希望条件から近隣サロンを検索し、顧客に最適な選択肢を提示します。
- * @summary Get nearby salons
- */
-export function useSalonOperationsGetNearby<TData = Awaited<ReturnType<typeof salonOperationsGetNearby>>, TError = ModelsProblemDetails>(
- params: SalonOperationsGetNearbyParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof salonOperationsGetNearby>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof salonOperationsGetNearby>>,
-          TError,
-          Awaited<ReturnType<typeof salonOperationsGetNearby>>
-        > , 'initialData'
-      >, }
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * 位置情報と希望条件から近隣サロンを検索し、顧客に最適な選択肢を提示します。
- * @summary Get nearby salons
- */
-export function useSalonOperationsGetNearby<TData = Awaited<ReturnType<typeof salonOperationsGetNearby>>, TError = ModelsProblemDetails>(
- params: SalonOperationsGetNearbyParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof salonOperationsGetNearby>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof salonOperationsGetNearby>>,
-          TError,
-          Awaited<ReturnType<typeof salonOperationsGetNearby>>
-        > , 'initialData'
-      >, }
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * 位置情報と希望条件から近隣サロンを検索し、顧客に最適な選択肢を提示します。
- * @summary Get nearby salons
- */
-export function useSalonOperationsGetNearby<TData = Awaited<ReturnType<typeof salonOperationsGetNearby>>, TError = ModelsProblemDetails>(
- params: SalonOperationsGetNearbyParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof salonOperationsGetNearby>>, TError, TData>>, }
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * 位置情報と希望条件から近隣サロンを検索し、顧客に最適な選択肢を提示します。
- * @summary Get nearby salons
- */
-export function useSalonOperationsGetNearby<TData = Awaited<ReturnType<typeof salonOperationsGetNearby>>, TError = ModelsProblemDetails>(
- params: SalonOperationsGetNearbyParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof salonOperationsGetNearby>>, TError, TData>>, }
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-
-  const queryOptions = getSalonOperationsGetNearbyQueryOptions(params,options)
-
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return withQueryKey(query, queryOptions.queryKey);
-}
-
-
-
-
-
-
-export type salonOperationsGetRecommendationsResponse200 = {
-  data: SalonOperationsGetRecommendations200
-  status: 200
-}
-
-export type salonOperationsGetRecommendationsResponse401 = {
-  data: ModelsProblemDetails
-  status: 401
-}
-
-export type salonOperationsGetRecommendationsResponseSuccess = (salonOperationsGetRecommendationsResponse200) & {
-  headers: Headers;
-};
-export type salonOperationsGetRecommendationsResponseError = (salonOperationsGetRecommendationsResponse401) & {
-  headers: Headers;
-};
-
-export type salonOperationsGetRecommendationsResponse = (salonOperationsGetRecommendationsResponseSuccess | salonOperationsGetRecommendationsResponseError)
-
-export const getSalonOperationsGetRecommendationsUrl = (params?: SalonOperationsGetRecommendationsParams,) => {
-  const normalizedParams = new URLSearchParams();
-
-  Object.entries(params || {}).forEach(([key, value]) => {
-
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : String(value))
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0 ? `/api/v1/salons/recommendations?${stringifiedParams}` : `/api/v1/salons/recommendations`
-}
-
-/**
- * 顧客の嗜好や履歴にもとづきおすすめサロンを提示し、再来店促進や新規獲得を支援します。
- * @summary Get personalized salon recommendations
- */
-export const salonOperationsGetRecommendations = async (params?: SalonOperationsGetRecommendationsParams, options?: RequestInit): Promise<salonOperationsGetRecommendationsResponse> => {
-
-  return customInstance<salonOperationsGetRecommendationsResponse>(getSalonOperationsGetRecommendationsUrl(params),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getSalonOperationsGetRecommendationsQueryKey = (params?: SalonOperationsGetRecommendationsParams,) => {
-    return [
-    `/api/v1/salons/recommendations`, ...(params ? [params] : [])
-    ] as const;
-    }
-
-
-export const getSalonOperationsGetRecommendationsQueryOptions = <TData = Awaited<ReturnType<typeof salonOperationsGetRecommendations>>, TError = ModelsProblemDetails>(params?: SalonOperationsGetRecommendationsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof salonOperationsGetRecommendations>>, TError, TData>>, }
-) => {
-
-const {query: queryOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getSalonOperationsGetRecommendationsQueryKey(params);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof salonOperationsGetRecommendations>>> = ({ signal }) => salonOperationsGetRecommendations(params, { signal });
-
-
-
-
-
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof salonOperationsGetRecommendations>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type SalonOperationsGetRecommendationsQueryResult = NonNullable<Awaited<ReturnType<typeof salonOperationsGetRecommendations>>>
-export type SalonOperationsGetRecommendationsQueryError = ModelsProblemDetails
-
-
-/**
- * 顧客の嗜好や履歴にもとづきおすすめサロンを提示し、再来店促進や新規獲得を支援します。
- * @summary Get personalized salon recommendations
- */
-export function useSalonOperationsGetRecommendations<TData = Awaited<ReturnType<typeof salonOperationsGetRecommendations>>, TError = ModelsProblemDetails>(
- params: undefined |  SalonOperationsGetRecommendationsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof salonOperationsGetRecommendations>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof salonOperationsGetRecommendations>>,
-          TError,
-          Awaited<ReturnType<typeof salonOperationsGetRecommendations>>
-        > , 'initialData'
-      >, }
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * 顧客の嗜好や履歴にもとづきおすすめサロンを提示し、再来店促進や新規獲得を支援します。
- * @summary Get personalized salon recommendations
- */
-export function useSalonOperationsGetRecommendations<TData = Awaited<ReturnType<typeof salonOperationsGetRecommendations>>, TError = ModelsProblemDetails>(
- params?: SalonOperationsGetRecommendationsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof salonOperationsGetRecommendations>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof salonOperationsGetRecommendations>>,
-          TError,
-          Awaited<ReturnType<typeof salonOperationsGetRecommendations>>
-        > , 'initialData'
-      >, }
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * 顧客の嗜好や履歴にもとづきおすすめサロンを提示し、再来店促進や新規獲得を支援します。
- * @summary Get personalized salon recommendations
- */
-export function useSalonOperationsGetRecommendations<TData = Awaited<ReturnType<typeof salonOperationsGetRecommendations>>, TError = ModelsProblemDetails>(
- params?: SalonOperationsGetRecommendationsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof salonOperationsGetRecommendations>>, TError, TData>>, }
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * 顧客の嗜好や履歴にもとづきおすすめサロンを提示し、再来店促進や新規獲得を支援します。
- * @summary Get personalized salon recommendations
- */
-export function useSalonOperationsGetRecommendations<TData = Awaited<ReturnType<typeof salonOperationsGetRecommendations>>, TError = ModelsProblemDetails>(
- params?: SalonOperationsGetRecommendationsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof salonOperationsGetRecommendations>>, TError, TData>>, }
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-
-  const queryOptions = getSalonOperationsGetRecommendationsQueryOptions(params,options)
-
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return withQueryKey(query, queryOptions.queryKey);
-}
-
-
-
-
-
-
-export type salonCrudSearchResponse200 = {
-  data: SalonCrudSearch200
-  status: 200
-}
-
-export type salonCrudSearchResponse400 = {
-  data: ModelsProblemDetails
-  status: 400
-}
-
-export type salonCrudSearchResponse401 = {
-  data: ModelsProblemDetails
-  status: 401
-}
-
-export type salonCrudSearchResponseSuccess = (salonCrudSearchResponse200) & {
-  headers: Headers;
-};
-export type salonCrudSearchResponseError = (salonCrudSearchResponse400 | salonCrudSearchResponse401) & {
-  headers: Headers;
-};
-
-export type salonCrudSearchResponse = (salonCrudSearchResponseSuccess | salonCrudSearchResponseError)
-
-export const getSalonCrudSearchUrl = (params?: SalonCrudSearchParams,) => {
-  const normalizedParams = new URLSearchParams();
-
-  Object.entries(params || {}).forEach(([key, value]) => {
-
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : String(value))
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0 ? `/api/v1/salons/search?${stringifiedParams}` : `/api/v1/salons/search`
-}
-
-/**
- * ファセットや複合条件を利用してリソースを検索し、結果と統計情報を返却します。
- * @summary Search {Name} resources
- */
-export const salonCrudSearch = async (params?: SalonCrudSearchParams, options?: RequestInit): Promise<salonCrudSearchResponse> => {
-
-  return customInstance<salonCrudSearchResponse>(getSalonCrudSearchUrl(params),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getSalonCrudSearchQueryKey = (params?: SalonCrudSearchParams,) => {
-    return [
-    `/api/v1/salons/search`, ...(params ? [params] : [])
-    ] as const;
-    }
-
-
-export const getSalonCrudSearchQueryOptions = <TData = Awaited<ReturnType<typeof salonCrudSearch>>, TError = ModelsProblemDetails>(params?: SalonCrudSearchParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof salonCrudSearch>>, TError, TData>>, }
-) => {
-
-const {query: queryOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getSalonCrudSearchQueryKey(params);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof salonCrudSearch>>> = ({ signal }) => salonCrudSearch(params, { signal });
-
-
-
-
-
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof salonCrudSearch>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type SalonCrudSearchQueryResult = NonNullable<Awaited<ReturnType<typeof salonCrudSearch>>>
-export type SalonCrudSearchQueryError = ModelsProblemDetails
-
-
-/**
- * ファセットや複合条件を利用してリソースを検索し、結果と統計情報を返却します。
- * @summary Search {Name} resources
- */
-export function useSalonCrudSearch<TData = Awaited<ReturnType<typeof salonCrudSearch>>, TError = ModelsProblemDetails>(
- params: undefined |  SalonCrudSearchParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof salonCrudSearch>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof salonCrudSearch>>,
-          TError,
-          Awaited<ReturnType<typeof salonCrudSearch>>
-        > , 'initialData'
-      >, }
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * ファセットや複合条件を利用してリソースを検索し、結果と統計情報を返却します。
- * @summary Search {Name} resources
- */
-export function useSalonCrudSearch<TData = Awaited<ReturnType<typeof salonCrudSearch>>, TError = ModelsProblemDetails>(
- params?: SalonCrudSearchParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof salonCrudSearch>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof salonCrudSearch>>,
-          TError,
-          Awaited<ReturnType<typeof salonCrudSearch>>
-        > , 'initialData'
-      >, }
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * ファセットや複合条件を利用してリソースを検索し、結果と統計情報を返却します。
- * @summary Search {Name} resources
- */
-export function useSalonCrudSearch<TData = Awaited<ReturnType<typeof salonCrudSearch>>, TError = ModelsProblemDetails>(
- params?: SalonCrudSearchParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof salonCrudSearch>>, TError, TData>>, }
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * ファセットや複合条件を利用してリソースを検索し、結果と統計情報を返却します。
- * @summary Search {Name} resources
- */
-export function useSalonCrudSearch<TData = Awaited<ReturnType<typeof salonCrudSearch>>, TError = ModelsProblemDetails>(
- params?: SalonCrudSearchParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof salonCrudSearch>>, TError, TData>>, }
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-
-  const queryOptions = getSalonCrudSearchQueryOptions(params,options)
-
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return withQueryKey(query, queryOptions.queryKey);
-}
-
-
-
-
-
-
-export type salonCrudGetResponse200 = {
+    export type salonCrudGetResponse200 = {
   data: SalonCrudGet200
   status: 200
 }
 
-export type salonCrudGetResponse304 = {
-  data: void
-  status: 304
-}
-
-export type salonCrudGetResponse401 = {
+export type salonCrudGetResponse400 = {
   data: ModelsProblemDetails
-  status: 401
+  status: 400
 }
 
 export type salonCrudGetResponse404 = {
@@ -1372,36 +334,27 @@ export type salonCrudGetResponse404 = {
 export type salonCrudGetResponseSuccess = (salonCrudGetResponse200) & {
   headers: Headers;
 };
-export type salonCrudGetResponseError = (salonCrudGetResponse304 | salonCrudGetResponse401 | salonCrudGetResponse404) & {
+export type salonCrudGetResponseError = (salonCrudGetResponse400 | salonCrudGetResponse404) & {
   headers: Headers;
 };
 
 export type salonCrudGetResponse = (salonCrudGetResponseSuccess | salonCrudGetResponseError)
 
-export const getSalonCrudGetUrl = (id: ModelsSalonId,
-    params?: SalonCrudGetParams,) => {
-  const normalizedParams = new URLSearchParams();
+export const getSalonCrudGetUrl = (id: ModelsSalonId,) => {
 
-  Object.entries(params || {}).forEach(([key, value]) => {
 
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : String(value))
-    }
-  });
 
-  const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/salons/${id}?${stringifiedParams}` : `/api/v1/salons/${id}`
+  return `/api/v1/salons/${id}`
 }
 
 /**
- * IDを指定して単一リソースを取得し、詳細表示や編集フォームの初期値に使用します。
- * @summary Get {Name} by ID
+ * IDを指定してサロンを1件取得します。
+ * @summary Get a salon
  */
-export const salonCrudGet = async (id: ModelsSalonId,
-    params?: SalonCrudGetParams, options?: RequestInit): Promise<salonCrudGetResponse> => {
+export const salonCrudGet = async (id: ModelsSalonId, options?: RequestInit): Promise<salonCrudGetResponse> => {
 
-  return customInstance<salonCrudGetResponse>(getSalonCrudGetUrl(id,params),
+  return customInstance<salonCrudGetResponse>(getSalonCrudGetUrl(id),
   {
     ...options,
     method: 'GET'
@@ -1414,25 +367,23 @@ export const salonCrudGet = async (id: ModelsSalonId,
 
 
 
-export const getSalonCrudGetQueryKey = (id: ModelsSalonId,
-    params?: SalonCrudGetParams,) => {
+export const getSalonCrudGetQueryKey = (id: ModelsSalonId,) => {
     return [
-    `/api/v1/salons/${id}`, ...(params ? [params] : [])
+    `/api/v1/salons/${id}`
     ] as const;
     }
 
 
-export const getSalonCrudGetQueryOptions = <TData = Awaited<ReturnType<typeof salonCrudGet>>, TError = void | ModelsProblemDetails>(id: ModelsSalonId,
-    params?: SalonCrudGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof salonCrudGet>>, TError, TData>>, }
+export const getSalonCrudGetQueryOptions = <TData = Awaited<ReturnType<typeof salonCrudGet>>, TError = ModelsProblemDetails>(id: ModelsSalonId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof salonCrudGet>>, TError, TData>>, }
 ) => {
 
 const {query: queryOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getSalonCrudGetQueryKey(id,params);
+  const queryKey =  queryOptions?.queryKey ?? getSalonCrudGetQueryKey(id);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof salonCrudGet>>> = ({ signal }) => salonCrudGet(id,params, { signal });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof salonCrudGet>>> = ({ signal }) => salonCrudGet(id, { signal });
 
 
 
@@ -1442,16 +393,15 @@ const {query: queryOptions} = options ?? {};
 }
 
 export type SalonCrudGetQueryResult = NonNullable<Awaited<ReturnType<typeof salonCrudGet>>>
-export type SalonCrudGetQueryError = void | ModelsProblemDetails
+export type SalonCrudGetQueryError = ModelsProblemDetails
 
 
 /**
- * IDを指定して単一リソースを取得し、詳細表示や編集フォームの初期値に使用します。
- * @summary Get {Name} by ID
+ * IDを指定してサロンを1件取得します。
+ * @summary Get a salon
  */
-export function useSalonCrudGet<TData = Awaited<ReturnType<typeof salonCrudGet>>, TError = void | ModelsProblemDetails>(
- id: ModelsSalonId,
-    params: undefined |  SalonCrudGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof salonCrudGet>>, TError, TData>> & Pick<
+export function useSalonCrudGet<TData = Awaited<ReturnType<typeof salonCrudGet>>, TError = ModelsProblemDetails>(
+ id: ModelsSalonId, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof salonCrudGet>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof salonCrudGet>>,
           TError,
@@ -1461,12 +411,11 @@ export function useSalonCrudGet<TData = Awaited<ReturnType<typeof salonCrudGet>>
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * IDを指定して単一リソースを取得し、詳細表示や編集フォームの初期値に使用します。
- * @summary Get {Name} by ID
+ * IDを指定してサロンを1件取得します。
+ * @summary Get a salon
  */
-export function useSalonCrudGet<TData = Awaited<ReturnType<typeof salonCrudGet>>, TError = void | ModelsProblemDetails>(
- id: ModelsSalonId,
-    params?: SalonCrudGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof salonCrudGet>>, TError, TData>> & Pick<
+export function useSalonCrudGet<TData = Awaited<ReturnType<typeof salonCrudGet>>, TError = ModelsProblemDetails>(
+ id: ModelsSalonId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof salonCrudGet>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof salonCrudGet>>,
           TError,
@@ -1476,25 +425,23 @@ export function useSalonCrudGet<TData = Awaited<ReturnType<typeof salonCrudGet>>
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * IDを指定して単一リソースを取得し、詳細表示や編集フォームの初期値に使用します。
- * @summary Get {Name} by ID
+ * IDを指定してサロンを1件取得します。
+ * @summary Get a salon
  */
-export function useSalonCrudGet<TData = Awaited<ReturnType<typeof salonCrudGet>>, TError = void | ModelsProblemDetails>(
- id: ModelsSalonId,
-    params?: SalonCrudGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof salonCrudGet>>, TError, TData>>, }
+export function useSalonCrudGet<TData = Awaited<ReturnType<typeof salonCrudGet>>, TError = ModelsProblemDetails>(
+ id: ModelsSalonId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof salonCrudGet>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * IDを指定して単一リソースを取得し、詳細表示や編集フォームの初期値に使用します。
- * @summary Get {Name} by ID
+ * IDを指定してサロンを1件取得します。
+ * @summary Get a salon
  */
-export function useSalonCrudGet<TData = Awaited<ReturnType<typeof salonCrudGet>>, TError = void | ModelsProblemDetails>(
- id: ModelsSalonId,
-    params?: SalonCrudGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof salonCrudGet>>, TError, TData>>, }
+export function useSalonCrudGet<TData = Awaited<ReturnType<typeof salonCrudGet>>, TError = ModelsProblemDetails>(
+ id: ModelsSalonId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof salonCrudGet>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const queryOptions = getSalonCrudGetQueryOptions(id,params,options)
+  const queryOptions = getSalonCrudGetQueryOptions(id,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
@@ -1516,11 +463,6 @@ export type salonCrudUpdateResponse400 = {
   status: 400
 }
 
-export type salonCrudUpdateResponse401 = {
-  data: ModelsProblemDetails
-  status: 401
-}
-
 export type salonCrudUpdateResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -1531,15 +473,10 @@ export type salonCrudUpdateResponse409 = {
   status: 409
 }
 
-export type salonCrudUpdateResponse422 = {
-  data: ModelsProblemDetails
-  status: 422
-}
-
 export type salonCrudUpdateResponseSuccess = (salonCrudUpdateResponse200) & {
   headers: Headers;
 };
-export type salonCrudUpdateResponseError = (salonCrudUpdateResponse400 | salonCrudUpdateResponse401 | salonCrudUpdateResponse404 | salonCrudUpdateResponse409 | salonCrudUpdateResponse422) & {
+export type salonCrudUpdateResponseError = (salonCrudUpdateResponse400 | salonCrudUpdateResponse404 | salonCrudUpdateResponse409) & {
   headers: Headers;
 };
 
@@ -1554,11 +491,11 @@ export const getSalonCrudUpdateUrl = (id: ModelsSalonId,) => {
 }
 
 /**
- * 既存リソースを全項目更新し、最新状態とバージョン情報を返却します。
- * @summary Update {Name}
+ * 指定した項目だけを更新します。openingHoursを指定した場合は営業日カレンダー全体を置き換えます。
+ * @summary Update a salon
  */
 export const salonCrudUpdate = async (id: ModelsSalonId,
-    modelsUpdateSalonRequest: ModelsUpdateSalonRequest, options?: RequestInit): Promise<salonCrudUpdateResponse> => {
+    modelsSalonUpdateRequest: ModelsSalonUpdateRequest, options?: RequestInit): Promise<salonCrudUpdateResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -1577,9 +514,9 @@ export const salonCrudUpdate = async (id: ModelsSalonId,
 return customInstance<salonCrudUpdateResponse>(getSalonCrudUpdateUrl(id),
   {
     ...options,
-    method: 'PUT',
+    method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(modelsUpdateSalonRequest)
+    body: JSON.stringify(modelsSalonUpdateRequest)
   }
 );}
 
@@ -1617,13 +554,13 @@ const {mutation: mutationOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type SalonCrudUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof salonCrudUpdate>>>
-    export type SalonCrudUpdateMutationBody = ModelsUpdateSalonRequest
+    export type SalonCrudUpdateMutationBody = ModelsSalonUpdateRequest
     export type SalonCrudUpdateMutationError = ModelsProblemDetails
-    export type SalonCrudUpdateMutationVariables = {id: ModelsSalonId;data: ModelsUpdateSalonRequest}
+    export type SalonCrudUpdateMutationVariables = {id: ModelsSalonId;data: ModelsSalonUpdateRequest}
 
     /**
- * 既存リソースを全項目更新し、最新状態とバージョン情報を返却します。
- * @summary Update {Name}
+ * 指定した項目だけを更新します。openingHoursを指定した場合は営業日カレンダー全体を置き換えます。
+ * @summary Update a salon
  */
 export const useSalonCrudUpdate = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof salonCrudUpdate>>, TError,SalonCrudUpdateMutationVariables, TContext>, }
@@ -1635,152 +572,14 @@ export const useSalonCrudUpdate = <TError = ModelsProblemDetails,
       > => {
       return useMutation(getSalonCrudUpdateMutationOptions(options), queryClient);
     }
-    export type salonCrudPatchResponse200 = {
-  data: SalonCrudPatch200
-  status: 200
-}
-
-export type salonCrudPatchResponse400 = {
-  data: ModelsProblemDetails
-  status: 400
-}
-
-export type salonCrudPatchResponse401 = {
-  data: ModelsProblemDetails
-  status: 401
-}
-
-export type salonCrudPatchResponse404 = {
-  data: ModelsProblemDetails
-  status: 404
-}
-
-export type salonCrudPatchResponse409 = {
-  data: ModelsProblemDetails
-  status: 409
-}
-
-export type salonCrudPatchResponse422 = {
-  data: ModelsProblemDetails
-  status: 422
-}
-
-export type salonCrudPatchResponseSuccess = (salonCrudPatchResponse200) & {
-  headers: Headers;
-};
-export type salonCrudPatchResponseError = (salonCrudPatchResponse400 | salonCrudPatchResponse401 | salonCrudPatchResponse404 | salonCrudPatchResponse409 | salonCrudPatchResponse422) & {
-  headers: Headers;
-};
-
-export type salonCrudPatchResponse = (salonCrudPatchResponseSuccess | salonCrudPatchResponseError)
-
-export const getSalonCrudPatchUrl = (id: ModelsSalonId,
-    params?: SalonCrudPatchParams,) => {
-  const normalizedParams = new URLSearchParams();
-
-  Object.entries(params || {}).forEach(([key, value]) => {
-
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : String(value))
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0 ? `/api/v1/salons/${id}?${stringifiedParams}` : `/api/v1/salons/${id}`
-}
-
-/**
- * 必要なフィールドのみを部分更新し、変更差分を効率的に反映します。
- * @summary Partially update {Name}
- */
-export const salonCrudPatch = async (id: ModelsSalonId,
-    modelsUpdateSalonRequestUpdate: ModelsUpdateSalonRequestUpdate,
-    params?: SalonCrudPatchParams, options?: RequestInit): Promise<salonCrudPatchResponse> => {
-
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return customInstance<salonCrudPatchResponse>(getSalonCrudPatchUrl(id,params),
-  {
-    ...options,
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(modelsUpdateSalonRequestUpdate)
-  }
-);}
-
-
-
-
-
-export const getSalonCrudPatchMutationKey = () => ['salonCrudPatch'] as const;
-
-export const getSalonCrudPatchMutationOptions = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof salonCrudPatch>>, TError,SalonCrudPatchMutationVariables, TContext>, }
-): UseMutationOptions<Awaited<ReturnType<typeof salonCrudPatch>>, TError,SalonCrudPatchMutationVariables, TContext> => {
-
-const mutationKey = getSalonCrudPatchMutationKey();
-const {mutation: mutationOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof salonCrudPatch>>, SalonCrudPatchMutationVariables> = (props) => {
-          const {id,data,params} = props ?? {};
-
-          return  salonCrudPatch(id,data,params,)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type SalonCrudPatchMutationResult = NonNullable<Awaited<ReturnType<typeof salonCrudPatch>>>
-    export type SalonCrudPatchMutationBody = ModelsUpdateSalonRequestUpdate
-    export type SalonCrudPatchMutationError = ModelsProblemDetails
-    export type SalonCrudPatchMutationVariables = {id: ModelsSalonId;data: ModelsUpdateSalonRequestUpdate;params?: SalonCrudPatchParams}
-
-    /**
- * 必要なフィールドのみを部分更新し、変更差分を効率的に反映します。
- * @summary Partially update {Name}
- */
-export const useSalonCrudPatch = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof salonCrudPatch>>, TError,SalonCrudPatchMutationVariables, TContext>, }
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof salonCrudPatch>>,
-        TError,
-        SalonCrudPatchMutationVariables,
-        TContext
-      > => {
-      return useMutation(getSalonCrudPatchMutationOptions(options), queryClient);
-    }
     export type salonCrudDeleteResponse204 = {
   data: void
   status: 204
 }
 
-export type salonCrudDeleteResponse401 = {
+export type salonCrudDeleteResponse400 = {
   data: ModelsProblemDetails
-  status: 401
+  status: 400
 }
 
 export type salonCrudDeleteResponse404 = {
@@ -1788,44 +587,30 @@ export type salonCrudDeleteResponse404 = {
   status: 404
 }
 
-export type salonCrudDeleteResponse409 = {
-  data: ModelsProblemDetails
-  status: 409
-}
-
 export type salonCrudDeleteResponseSuccess = (salonCrudDeleteResponse204) & {
   headers: Headers;
 };
-export type salonCrudDeleteResponseError = (salonCrudDeleteResponse401 | salonCrudDeleteResponse404 | salonCrudDeleteResponse409) & {
+export type salonCrudDeleteResponseError = (salonCrudDeleteResponse400 | salonCrudDeleteResponse404) & {
   headers: Headers;
 };
 
 export type salonCrudDeleteResponse = (salonCrudDeleteResponseSuccess | salonCrudDeleteResponseError)
 
-export const getSalonCrudDeleteUrl = (id: ModelsSalonId,
-    params?: SalonCrudDeleteParams,) => {
-  const normalizedParams = new URLSearchParams();
+export const getSalonCrudDeleteUrl = (id: ModelsSalonId,) => {
 
-  Object.entries(params || {}).forEach(([key, value]) => {
 
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : String(value))
-    }
-  });
 
-  const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/salons/${id}?${stringifiedParams}` : `/api/v1/salons/${id}`
+  return `/api/v1/salons/${id}`
 }
 
 /**
- * リソースを削除し、必要に応じて論理削除か物理削除かを選択します。
- * @summary Delete {Name}
+ * サロンを論理削除します。削除後は一覧・取得の対象外になります。
+ * @summary Delete a salon
  */
-export const salonCrudDelete = async (id: ModelsSalonId,
-    params?: SalonCrudDeleteParams, options?: RequestInit): Promise<salonCrudDeleteResponse> => {
+export const salonCrudDelete = async (id: ModelsSalonId, options?: RequestInit): Promise<salonCrudDeleteResponse> => {
 
-  return customInstance<salonCrudDeleteResponse>(getSalonCrudDeleteUrl(id,params),
+  return customInstance<salonCrudDeleteResponse>(getSalonCrudDeleteUrl(id),
   {
     ...options,
     method: 'DELETE'
@@ -1855,9 +640,9 @@ const {mutation: mutationOptions} = options ?
 
 
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof salonCrudDelete>>, SalonCrudDeleteMutationVariables> = (props) => {
-          const {id,params} = props ?? {};
+          const {id} = props ?? {};
 
-          return  salonCrudDelete(id,params,)
+          return  salonCrudDelete(id,)
         }
 
 
@@ -1870,11 +655,11 @@ const {mutation: mutationOptions} = options ?
     export type SalonCrudDeleteMutationResult = NonNullable<Awaited<ReturnType<typeof salonCrudDelete>>>
 
     export type SalonCrudDeleteMutationError = ModelsProblemDetails
-    export type SalonCrudDeleteMutationVariables = {id: ModelsSalonId;params?: SalonCrudDeleteParams}
+    export type SalonCrudDeleteMutationVariables = {id: ModelsSalonId}
 
     /**
- * リソースを削除し、必要に応じて論理削除か物理削除かを選択します。
- * @summary Delete {Name}
+ * サロンを論理削除します。削除後は一覧・取得の対象外になります。
+ * @summary Delete a salon
  */
 export const useSalonCrudDelete = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof salonCrudDelete>>, TError,SalonCrudDeleteMutationVariables, TContext>, }
@@ -1886,1021 +671,3 @@ export const useSalonCrudDelete = <TError = ModelsProblemDetails,
       > => {
       return useMutation(getSalonCrudDeleteMutationOptions(options), queryClient);
     }
-    export type salonOperationsCheckAvailabilityResponse200 = {
-  data: SalonOperationsCheckAvailability200
-  status: 200
-}
-
-export type salonOperationsCheckAvailabilityResponse400 = {
-  data: ModelsProblemDetails
-  status: 400
-}
-
-export type salonOperationsCheckAvailabilityResponse404 = {
-  data: ModelsProblemDetails
-  status: 404
-}
-
-export type salonOperationsCheckAvailabilityResponseSuccess = (salonOperationsCheckAvailabilityResponse200) & {
-  headers: Headers;
-};
-export type salonOperationsCheckAvailabilityResponseError = (salonOperationsCheckAvailabilityResponse400 | salonOperationsCheckAvailabilityResponse404) & {
-  headers: Headers;
-};
-
-export type salonOperationsCheckAvailabilityResponse = (salonOperationsCheckAvailabilityResponseSuccess | salonOperationsCheckAvailabilityResponseError)
-
-export const getSalonOperationsCheckAvailabilityUrl = (id: ModelsSalonId,) => {
-
-
-
-
-  return `/api/v1/salons/${id}/availability`
-}
-
-/**
- * 希望日時にサロン全体で対応可能な枠があるかを判定し、予約導線での可用性表示に利用します。
- * @summary Check salon availability
- */
-export const salonOperationsCheckAvailability = async (id: ModelsSalonId,
-    modelsSalonAvailabilityRequest: ModelsSalonAvailabilityRequest, options?: RequestInit): Promise<salonOperationsCheckAvailabilityResponse> => {
-
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return customInstance<salonOperationsCheckAvailabilityResponse>(getSalonOperationsCheckAvailabilityUrl(id),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(modelsSalonAvailabilityRequest)
-  }
-);}
-
-
-
-
-
-export const getSalonOperationsCheckAvailabilityMutationKey = () => ['salonOperationsCheckAvailability'] as const;
-
-export const getSalonOperationsCheckAvailabilityMutationOptions = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof salonOperationsCheckAvailability>>, TError,SalonOperationsCheckAvailabilityMutationVariables, TContext>, }
-): UseMutationOptions<Awaited<ReturnType<typeof salonOperationsCheckAvailability>>, TError,SalonOperationsCheckAvailabilityMutationVariables, TContext> => {
-
-const mutationKey = getSalonOperationsCheckAvailabilityMutationKey();
-const {mutation: mutationOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof salonOperationsCheckAvailability>>, SalonOperationsCheckAvailabilityMutationVariables> = (props) => {
-          const {id,data} = props ?? {};
-
-          return  salonOperationsCheckAvailability(id,data,)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type SalonOperationsCheckAvailabilityMutationResult = NonNullable<Awaited<ReturnType<typeof salonOperationsCheckAvailability>>>
-    export type SalonOperationsCheckAvailabilityMutationBody = ModelsSalonAvailabilityRequest
-    export type SalonOperationsCheckAvailabilityMutationError = ModelsProblemDetails
-    export type SalonOperationsCheckAvailabilityMutationVariables = {id: ModelsSalonId;data: ModelsSalonAvailabilityRequest}
-
-    /**
- * 希望日時にサロン全体で対応可能な枠があるかを判定し、予約導線での可用性表示に利用します。
- * @summary Check salon availability
- */
-export const useSalonOperationsCheckAvailability = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof salonOperationsCheckAvailability>>, TError,SalonOperationsCheckAvailabilityMutationVariables, TContext>, }
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof salonOperationsCheckAvailability>>,
-        TError,
-        SalonOperationsCheckAvailabilityMutationVariables,
-        TContext
-      > => {
-      return useMutation(getSalonOperationsCheckAvailabilityMutationOptions(options), queryClient);
-    }
-    export type salonCrudGetHistoryResponse200 = {
-  data: SalonCrudGetHistory200
-  status: 200
-}
-
-export type salonCrudGetHistoryResponse401 = {
-  data: ModelsProblemDetails
-  status: 401
-}
-
-export type salonCrudGetHistoryResponse404 = {
-  data: ModelsProblemDetails
-  status: 404
-}
-
-export type salonCrudGetHistoryResponseSuccess = (salonCrudGetHistoryResponse200) & {
-  headers: Headers;
-};
-export type salonCrudGetHistoryResponseError = (salonCrudGetHistoryResponse401 | salonCrudGetHistoryResponse404) & {
-  headers: Headers;
-};
-
-export type salonCrudGetHistoryResponse = (salonCrudGetHistoryResponseSuccess | salonCrudGetHistoryResponseError)
-
-export const getSalonCrudGetHistoryUrl = (id: ModelsSalonId,
-    params?: SalonCrudGetHistoryParams,) => {
-  const normalizedParams = new URLSearchParams();
-
-  Object.entries(params || {}).forEach(([key, value]) => {
-
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : String(value))
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0 ? `/api/v1/salons/${id}/history?${stringifiedParams}` : `/api/v1/salons/${id}/history`
-}
-
-/**
- * 対象リソースの監査履歴を取得し、変更者や変更内容を追跡します。
- * @summary Get {Name} audit history
- */
-export const salonCrudGetHistory = async (id: ModelsSalonId,
-    params?: SalonCrudGetHistoryParams, options?: RequestInit): Promise<salonCrudGetHistoryResponse> => {
-
-  return customInstance<salonCrudGetHistoryResponse>(getSalonCrudGetHistoryUrl(id,params),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getSalonCrudGetHistoryQueryKey = (id: ModelsSalonId,
-    params?: SalonCrudGetHistoryParams,) => {
-    return [
-    `/api/v1/salons/${id}/history`, ...(params ? [params] : [])
-    ] as const;
-    }
-
-
-export const getSalonCrudGetHistoryQueryOptions = <TData = Awaited<ReturnType<typeof salonCrudGetHistory>>, TError = ModelsProblemDetails>(id: ModelsSalonId,
-    params?: SalonCrudGetHistoryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof salonCrudGetHistory>>, TError, TData>>, }
-) => {
-
-const {query: queryOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getSalonCrudGetHistoryQueryKey(id,params);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof salonCrudGetHistory>>> = ({ signal }) => salonCrudGetHistory(id,params, { signal });
-
-
-
-
-
-   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof salonCrudGetHistory>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type SalonCrudGetHistoryQueryResult = NonNullable<Awaited<ReturnType<typeof salonCrudGetHistory>>>
-export type SalonCrudGetHistoryQueryError = ModelsProblemDetails
-
-
-/**
- * 対象リソースの監査履歴を取得し、変更者や変更内容を追跡します。
- * @summary Get {Name} audit history
- */
-export function useSalonCrudGetHistory<TData = Awaited<ReturnType<typeof salonCrudGetHistory>>, TError = ModelsProblemDetails>(
- id: ModelsSalonId,
-    params: undefined |  SalonCrudGetHistoryParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof salonCrudGetHistory>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof salonCrudGetHistory>>,
-          TError,
-          Awaited<ReturnType<typeof salonCrudGetHistory>>
-        > , 'initialData'
-      >, }
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * 対象リソースの監査履歴を取得し、変更者や変更内容を追跡します。
- * @summary Get {Name} audit history
- */
-export function useSalonCrudGetHistory<TData = Awaited<ReturnType<typeof salonCrudGetHistory>>, TError = ModelsProblemDetails>(
- id: ModelsSalonId,
-    params?: SalonCrudGetHistoryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof salonCrudGetHistory>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof salonCrudGetHistory>>,
-          TError,
-          Awaited<ReturnType<typeof salonCrudGetHistory>>
-        > , 'initialData'
-      >, }
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * 対象リソースの監査履歴を取得し、変更者や変更内容を追跡します。
- * @summary Get {Name} audit history
- */
-export function useSalonCrudGetHistory<TData = Awaited<ReturnType<typeof salonCrudGetHistory>>, TError = ModelsProblemDetails>(
- id: ModelsSalonId,
-    params?: SalonCrudGetHistoryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof salonCrudGetHistory>>, TError, TData>>, }
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * 対象リソースの監査履歴を取得し、変更者や変更内容を追跡します。
- * @summary Get {Name} audit history
- */
-export function useSalonCrudGetHistory<TData = Awaited<ReturnType<typeof salonCrudGetHistory>>, TError = ModelsProblemDetails>(
- id: ModelsSalonId,
-    params?: SalonCrudGetHistoryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof salonCrudGetHistory>>, TError, TData>>, }
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-
-  const queryOptions = getSalonCrudGetHistoryQueryOptions(id,params,options)
-
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return withQueryKey(query, queryOptions.queryKey);
-}
-
-
-
-
-
-
-export type salonOperationsDeleteImageResponse204 = {
-  data: void
-  status: 204
-}
-
-export type salonOperationsDeleteImageResponse401 = {
-  data: ModelsProblemDetails
-  status: 401
-}
-
-export type salonOperationsDeleteImageResponse404 = {
-  data: ModelsProblemDetails
-  status: 404
-}
-
-export type salonOperationsDeleteImageResponseSuccess = (salonOperationsDeleteImageResponse204) & {
-  headers: Headers;
-};
-export type salonOperationsDeleteImageResponseError = (salonOperationsDeleteImageResponse401 | salonOperationsDeleteImageResponse404) & {
-  headers: Headers;
-};
-
-export type salonOperationsDeleteImageResponse = (salonOperationsDeleteImageResponseSuccess | salonOperationsDeleteImageResponseError)
-
-export const getSalonOperationsDeleteImageUrl = (id: ModelsSalonId,
-    imageId: string,) => {
-
-
-
-
-  return `/api/v1/salons/${id}/images/${imageId}`
-}
-
-/**
- * 掲載中のサロン画像を削除し、ブランドトーンの統一や情報更新を行います。
- * @summary Delete salon image
- */
-export const salonOperationsDeleteImage = async (id: ModelsSalonId,
-    imageId: string, options?: RequestInit): Promise<salonOperationsDeleteImageResponse> => {
-
-  return customInstance<salonOperationsDeleteImageResponse>(getSalonOperationsDeleteImageUrl(id,imageId),
-  {
-    ...options,
-    method: 'DELETE'
-
-
-  }
-);}
-
-
-
-
-
-export const getSalonOperationsDeleteImageMutationKey = () => ['salonOperationsDeleteImage'] as const;
-
-export const getSalonOperationsDeleteImageMutationOptions = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof salonOperationsDeleteImage>>, TError,SalonOperationsDeleteImageMutationVariables, TContext>, }
-): UseMutationOptions<Awaited<ReturnType<typeof salonOperationsDeleteImage>>, TError,SalonOperationsDeleteImageMutationVariables, TContext> => {
-
-const mutationKey = getSalonOperationsDeleteImageMutationKey();
-const {mutation: mutationOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof salonOperationsDeleteImage>>, SalonOperationsDeleteImageMutationVariables> = (props) => {
-          const {id,imageId} = props ?? {};
-
-          return  salonOperationsDeleteImage(id,imageId,)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type SalonOperationsDeleteImageMutationResult = NonNullable<Awaited<ReturnType<typeof salonOperationsDeleteImage>>>
-
-    export type SalonOperationsDeleteImageMutationError = ModelsProblemDetails
-    export type SalonOperationsDeleteImageMutationVariables = {id: ModelsSalonId;imageId: string}
-
-    /**
- * 掲載中のサロン画像を削除し、ブランドトーンの統一や情報更新を行います。
- * @summary Delete salon image
- */
-export const useSalonOperationsDeleteImage = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof salonOperationsDeleteImage>>, TError,SalonOperationsDeleteImageMutationVariables, TContext>, }
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof salonOperationsDeleteImage>>,
-        TError,
-        SalonOperationsDeleteImageMutationVariables,
-        TContext
-      > => {
-      return useMutation(getSalonOperationsDeleteImageMutationOptions(options), queryClient);
-    }
-    export type salonCrudRestoreResponse200 = {
-  data: SalonCrudRestore200
-  status: 200
-}
-
-export type salonCrudRestoreResponse401 = {
-  data: ModelsProblemDetails
-  status: 401
-}
-
-export type salonCrudRestoreResponse404 = {
-  data: ModelsProblemDetails
-  status: 404
-}
-
-export type salonCrudRestoreResponse409 = {
-  data: ModelsProblemDetails
-  status: 409
-}
-
-export type salonCrudRestoreResponseSuccess = (salonCrudRestoreResponse200) & {
-  headers: Headers;
-};
-export type salonCrudRestoreResponseError = (salonCrudRestoreResponse401 | salonCrudRestoreResponse404 | salonCrudRestoreResponse409) & {
-  headers: Headers;
-};
-
-export type salonCrudRestoreResponse = (salonCrudRestoreResponseSuccess | salonCrudRestoreResponseError)
-
-export const getSalonCrudRestoreUrl = (id: ModelsSalonId,) => {
-
-
-
-
-  return `/api/v1/salons/${id}/restore`
-}
-
-/**
- * 削除済みリソースを復元し、誤削除への迅速なリカバリを可能にします。
- * @summary Restore deleted {Name}
- */
-export const salonCrudRestore = async (id: ModelsSalonId, options?: RequestInit): Promise<salonCrudRestoreResponse> => {
-
-  return customInstance<salonCrudRestoreResponse>(getSalonCrudRestoreUrl(id),
-  {
-    ...options,
-    method: 'POST'
-
-
-  }
-);}
-
-
-
-
-
-export const getSalonCrudRestoreMutationKey = () => ['salonCrudRestore'] as const;
-
-export const getSalonCrudRestoreMutationOptions = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof salonCrudRestore>>, TError,SalonCrudRestoreMutationVariables, TContext>, }
-): UseMutationOptions<Awaited<ReturnType<typeof salonCrudRestore>>, TError,SalonCrudRestoreMutationVariables, TContext> => {
-
-const mutationKey = getSalonCrudRestoreMutationKey();
-const {mutation: mutationOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof salonCrudRestore>>, SalonCrudRestoreMutationVariables> = (props) => {
-          const {id} = props ?? {};
-
-          return  salonCrudRestore(id,)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type SalonCrudRestoreMutationResult = NonNullable<Awaited<ReturnType<typeof salonCrudRestore>>>
-
-    export type SalonCrudRestoreMutationError = ModelsProblemDetails
-    export type SalonCrudRestoreMutationVariables = {id: ModelsSalonId}
-
-    /**
- * 削除済みリソースを復元し、誤削除への迅速なリカバリを可能にします。
- * @summary Restore deleted {Name}
- */
-export const useSalonCrudRestore = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof salonCrudRestore>>, TError,SalonCrudRestoreMutationVariables, TContext>, }
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof salonCrudRestore>>,
-        TError,
-        SalonCrudRestoreMutationVariables,
-        TContext
-      > => {
-      return useMutation(getSalonCrudRestoreMutationOptions(options), queryClient);
-    }
-    export type salonOperationsUpdateStaffScheduleResponse200 = {
-  data: SalonOperationsUpdateStaffSchedule200
-  status: 200
-}
-
-export type salonOperationsUpdateStaffScheduleResponse400 = {
-  data: ModelsProblemDetails
-  status: 400
-}
-
-export type salonOperationsUpdateStaffScheduleResponse401 = {
-  data: ModelsProblemDetails
-  status: 401
-}
-
-export type salonOperationsUpdateStaffScheduleResponse404 = {
-  data: ModelsProblemDetails
-  status: 404
-}
-
-export type salonOperationsUpdateStaffScheduleResponse409 = {
-  data: ModelsProblemDetails
-  status: 409
-}
-
-export type salonOperationsUpdateStaffScheduleResponseSuccess = (salonOperationsUpdateStaffScheduleResponse200) & {
-  headers: Headers;
-};
-export type salonOperationsUpdateStaffScheduleResponseError = (salonOperationsUpdateStaffScheduleResponse400 | salonOperationsUpdateStaffScheduleResponse401 | salonOperationsUpdateStaffScheduleResponse404 | salonOperationsUpdateStaffScheduleResponse409) & {
-  headers: Headers;
-};
-
-export type salonOperationsUpdateStaffScheduleResponse = (salonOperationsUpdateStaffScheduleResponseSuccess | salonOperationsUpdateStaffScheduleResponseError)
-
-export const getSalonOperationsUpdateStaffScheduleUrl = (id: ModelsSalonId,
-    staffId: ModelsStaffId,) => {
-
-
-
-
-  return `/api/v1/salons/${id}/staff/${staffId}/schedule`
-}
-
-/**
- * サロン所属スタッフのシフトを更新し、予約枠や勤怠管理との整合を取ります。
- * @summary Update staff schedule
- */
-export const salonOperationsUpdateStaffSchedule = async (id: ModelsSalonId,
-    staffId: ModelsStaffId,
-    modelsStaffScheduleUpdateRequest: ModelsStaffScheduleUpdateRequest, options?: RequestInit): Promise<salonOperationsUpdateStaffScheduleResponse> => {
-
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return customInstance<salonOperationsUpdateStaffScheduleResponse>(getSalonOperationsUpdateStaffScheduleUrl(id,staffId),
-  {
-    ...options,
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(modelsStaffScheduleUpdateRequest)
-  }
-);}
-
-
-
-
-
-export const getSalonOperationsUpdateStaffScheduleMutationKey = () => ['salonOperationsUpdateStaffSchedule'] as const;
-
-export const getSalonOperationsUpdateStaffScheduleMutationOptions = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof salonOperationsUpdateStaffSchedule>>, TError,SalonOperationsUpdateStaffScheduleMutationVariables, TContext>, }
-): UseMutationOptions<Awaited<ReturnType<typeof salonOperationsUpdateStaffSchedule>>, TError,SalonOperationsUpdateStaffScheduleMutationVariables, TContext> => {
-
-const mutationKey = getSalonOperationsUpdateStaffScheduleMutationKey();
-const {mutation: mutationOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof salonOperationsUpdateStaffSchedule>>, SalonOperationsUpdateStaffScheduleMutationVariables> = (props) => {
-          const {id,staffId,data} = props ?? {};
-
-          return  salonOperationsUpdateStaffSchedule(id,staffId,data,)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type SalonOperationsUpdateStaffScheduleMutationResult = NonNullable<Awaited<ReturnType<typeof salonOperationsUpdateStaffSchedule>>>
-    export type SalonOperationsUpdateStaffScheduleMutationBody = ModelsStaffScheduleUpdateRequest
-    export type SalonOperationsUpdateStaffScheduleMutationError = ModelsProblemDetails
-    export type SalonOperationsUpdateStaffScheduleMutationVariables = {id: ModelsSalonId;staffId: ModelsStaffId;data: ModelsStaffScheduleUpdateRequest}
-
-    /**
- * サロン所属スタッフのシフトを更新し、予約枠や勤怠管理との整合を取ります。
- * @summary Update staff schedule
- */
-export const useSalonOperationsUpdateStaffSchedule = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof salonOperationsUpdateStaffSchedule>>, TError,SalonOperationsUpdateStaffScheduleMutationVariables, TContext>, }
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof salonOperationsUpdateStaffSchedule>>,
-        TError,
-        SalonOperationsUpdateStaffScheduleMutationVariables,
-        TContext
-      > => {
-      return useMutation(getSalonOperationsUpdateStaffScheduleMutationOptions(options), queryClient);
-    }
-    export type salonOperationsGetStatisticsResponse200 = {
-  data: SalonOperationsGetStatistics200
-  status: 200
-}
-
-export type salonOperationsGetStatisticsResponse401 = {
-  data: ModelsProblemDetails
-  status: 401
-}
-
-export type salonOperationsGetStatisticsResponse404 = {
-  data: ModelsProblemDetails
-  status: 404
-}
-
-export type salonOperationsGetStatisticsResponseSuccess = (salonOperationsGetStatisticsResponse200) & {
-  headers: Headers;
-};
-export type salonOperationsGetStatisticsResponseError = (salonOperationsGetStatisticsResponse401 | salonOperationsGetStatisticsResponse404) & {
-  headers: Headers;
-};
-
-export type salonOperationsGetStatisticsResponse = (salonOperationsGetStatisticsResponseSuccess | salonOperationsGetStatisticsResponseError)
-
-export const getSalonOperationsGetStatisticsUrl = (id: ModelsSalonId,
-    params?: SalonOperationsGetStatisticsParams,) => {
-  const normalizedParams = new URLSearchParams();
-
-  Object.entries(params || {}).forEach(([key, value]) => {
-
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : String(value))
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0 ? `/api/v1/salons/${id}/statistics?${stringifiedParams}` : `/api/v1/salons/${id}/statistics`
-}
-
-/**
- * サロンの売上や予約件数など主要指標を取得し、経営判断や施策検討に活用します。
- * @summary Get salon statistics
- */
-export const salonOperationsGetStatistics = async (id: ModelsSalonId,
-    params?: SalonOperationsGetStatisticsParams, options?: RequestInit): Promise<salonOperationsGetStatisticsResponse> => {
-
-  return customInstance<salonOperationsGetStatisticsResponse>(getSalonOperationsGetStatisticsUrl(id,params),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getSalonOperationsGetStatisticsQueryKey = (id: ModelsSalonId,
-    params?: SalonOperationsGetStatisticsParams,) => {
-    return [
-    `/api/v1/salons/${id}/statistics`, ...(params ? [params] : [])
-    ] as const;
-    }
-
-
-export const getSalonOperationsGetStatisticsQueryOptions = <TData = Awaited<ReturnType<typeof salonOperationsGetStatistics>>, TError = ModelsProblemDetails>(id: ModelsSalonId,
-    params?: SalonOperationsGetStatisticsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof salonOperationsGetStatistics>>, TError, TData>>, }
-) => {
-
-const {query: queryOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getSalonOperationsGetStatisticsQueryKey(id,params);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof salonOperationsGetStatistics>>> = ({ signal }) => salonOperationsGetStatistics(id,params, { signal });
-
-
-
-
-
-   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof salonOperationsGetStatistics>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type SalonOperationsGetStatisticsQueryResult = NonNullable<Awaited<ReturnType<typeof salonOperationsGetStatistics>>>
-export type SalonOperationsGetStatisticsQueryError = ModelsProblemDetails
-
-
-/**
- * サロンの売上や予約件数など主要指標を取得し、経営判断や施策検討に活用します。
- * @summary Get salon statistics
- */
-export function useSalonOperationsGetStatistics<TData = Awaited<ReturnType<typeof salonOperationsGetStatistics>>, TError = ModelsProblemDetails>(
- id: ModelsSalonId,
-    params: undefined |  SalonOperationsGetStatisticsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof salonOperationsGetStatistics>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof salonOperationsGetStatistics>>,
-          TError,
-          Awaited<ReturnType<typeof salonOperationsGetStatistics>>
-        > , 'initialData'
-      >, }
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * サロンの売上や予約件数など主要指標を取得し、経営判断や施策検討に活用します。
- * @summary Get salon statistics
- */
-export function useSalonOperationsGetStatistics<TData = Awaited<ReturnType<typeof salonOperationsGetStatistics>>, TError = ModelsProblemDetails>(
- id: ModelsSalonId,
-    params?: SalonOperationsGetStatisticsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof salonOperationsGetStatistics>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof salonOperationsGetStatistics>>,
-          TError,
-          Awaited<ReturnType<typeof salonOperationsGetStatistics>>
-        > , 'initialData'
-      >, }
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * サロンの売上や予約件数など主要指標を取得し、経営判断や施策検討に活用します。
- * @summary Get salon statistics
- */
-export function useSalonOperationsGetStatistics<TData = Awaited<ReturnType<typeof salonOperationsGetStatistics>>, TError = ModelsProblemDetails>(
- id: ModelsSalonId,
-    params?: SalonOperationsGetStatisticsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof salonOperationsGetStatistics>>, TError, TData>>, }
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * サロンの売上や予約件数など主要指標を取得し、経営判断や施策検討に活用します。
- * @summary Get salon statistics
- */
-export function useSalonOperationsGetStatistics<TData = Awaited<ReturnType<typeof salonOperationsGetStatistics>>, TError = ModelsProblemDetails>(
- id: ModelsSalonId,
-    params?: SalonOperationsGetStatisticsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof salonOperationsGetStatistics>>, TError, TData>>, }
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-
-  const queryOptions = getSalonOperationsGetStatisticsQueryOptions(id,params,options)
-
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return withQueryKey(query, queryOptions.queryKey);
-}
-
-
-
-
-
-
-export type salonOperationsSubscribeResponse201 = {
-  data: SalonOperationsSubscribe201
-  status: 201
-}
-
-export type salonOperationsSubscribeResponse400 = {
-  data: ModelsProblemDetails
-  status: 400
-}
-
-export type salonOperationsSubscribeResponse401 = {
-  data: ModelsProblemDetails
-  status: 401
-}
-
-export type salonOperationsSubscribeResponse404 = {
-  data: ModelsProblemDetails
-  status: 404
-}
-
-export type salonOperationsSubscribeResponse409 = {
-  data: ModelsProblemDetails
-  status: 409
-}
-
-export type salonOperationsSubscribeResponseSuccess = (salonOperationsSubscribeResponse201) & {
-  headers: Headers;
-};
-export type salonOperationsSubscribeResponseError = (salonOperationsSubscribeResponse400 | salonOperationsSubscribeResponse401 | salonOperationsSubscribeResponse404 | salonOperationsSubscribeResponse409) & {
-  headers: Headers;
-};
-
-export type salonOperationsSubscribeResponse = (salonOperationsSubscribeResponseSuccess | salonOperationsSubscribeResponseError)
-
-export const getSalonOperationsSubscribeUrl = (id: ModelsSalonId,) => {
-
-
-
-
-  return `/api/v1/salons/${id}/subscribe`
-}
-
-/**
- * サロンのニュースやキャンペーン更新を購読登録し、ロイヤル顧客との接点を強化します。
- * @summary Subscribe to salon updates
- */
-export const salonOperationsSubscribe = async (id: ModelsSalonId,
-    modelsSalonSubscriptionRequest: ModelsSalonSubscriptionRequest, options?: RequestInit): Promise<salonOperationsSubscribeResponse> => {
-
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return customInstance<salonOperationsSubscribeResponse>(getSalonOperationsSubscribeUrl(id),
-  {
-    ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(modelsSalonSubscriptionRequest)
-  }
-);}
-
-
-
-
-
-export const getSalonOperationsSubscribeMutationKey = () => ['salonOperationsSubscribe'] as const;
-
-export const getSalonOperationsSubscribeMutationOptions = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof salonOperationsSubscribe>>, TError,SalonOperationsSubscribeMutationVariables, TContext>, }
-): UseMutationOptions<Awaited<ReturnType<typeof salonOperationsSubscribe>>, TError,SalonOperationsSubscribeMutationVariables, TContext> => {
-
-const mutationKey = getSalonOperationsSubscribeMutationKey();
-const {mutation: mutationOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof salonOperationsSubscribe>>, SalonOperationsSubscribeMutationVariables> = (props) => {
-          const {id,data} = props ?? {};
-
-          return  salonOperationsSubscribe(id,data,)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type SalonOperationsSubscribeMutationResult = NonNullable<Awaited<ReturnType<typeof salonOperationsSubscribe>>>
-    export type SalonOperationsSubscribeMutationBody = ModelsSalonSubscriptionRequest
-    export type SalonOperationsSubscribeMutationError = ModelsProblemDetails
-    export type SalonOperationsSubscribeMutationVariables = {id: ModelsSalonId;data: ModelsSalonSubscriptionRequest}
-
-    /**
- * サロンのニュースやキャンペーン更新を購読登録し、ロイヤル顧客との接点を強化します。
- * @summary Subscribe to salon updates
- */
-export const useSalonOperationsSubscribe = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof salonOperationsSubscribe>>, TError,SalonOperationsSubscribeMutationVariables, TContext>, }
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof salonOperationsSubscribe>>,
-        TError,
-        SalonOperationsSubscribeMutationVariables,
-        TContext
-      > => {
-      return useMutation(getSalonOperationsSubscribeMutationOptions(options), queryClient);
-    }
-    export type salonCrudGetVersionResponse200 = {
-  data: SalonCrudGetVersion200
-  status: 200
-}
-
-export type salonCrudGetVersionResponse401 = {
-  data: ModelsProblemDetails
-  status: 401
-}
-
-export type salonCrudGetVersionResponse404 = {
-  data: ModelsProblemDetails
-  status: 404
-}
-
-export type salonCrudGetVersionResponseSuccess = (salonCrudGetVersionResponse200) & {
-  headers: Headers;
-};
-export type salonCrudGetVersionResponseError = (salonCrudGetVersionResponse401 | salonCrudGetVersionResponse404) & {
-  headers: Headers;
-};
-
-export type salonCrudGetVersionResponse = (salonCrudGetVersionResponseSuccess | salonCrudGetVersionResponseError)
-
-export const getSalonCrudGetVersionUrl = (id: ModelsSalonId,
-    version: number,) => {
-
-
-
-
-  return `/api/v1/salons/${id}/versions/${version}`
-}
-
-/**
- * 指定したバージョンのリソース状態を取得し、過去状態の確認や比較に利用します。
- * @summary Get {Name} version
- */
-export const salonCrudGetVersion = async (id: ModelsSalonId,
-    version: number, options?: RequestInit): Promise<salonCrudGetVersionResponse> => {
-
-  return customInstance<salonCrudGetVersionResponse>(getSalonCrudGetVersionUrl(id,version),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getSalonCrudGetVersionQueryKey = (id: ModelsSalonId,
-    version: number,) => {
-    return [
-    `/api/v1/salons/${id}/versions/${version}`
-    ] as const;
-    }
-
-
-export const getSalonCrudGetVersionQueryOptions = <TData = Awaited<ReturnType<typeof salonCrudGetVersion>>, TError = ModelsProblemDetails>(id: ModelsSalonId,
-    version: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof salonCrudGetVersion>>, TError, TData>>, }
-) => {
-
-const {query: queryOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getSalonCrudGetVersionQueryKey(id,version);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof salonCrudGetVersion>>> = ({ signal }) => salonCrudGetVersion(id,version, { signal });
-
-
-
-
-
-   return  { queryKey, queryFn, enabled: id !== null && id !== undefined && version !== null && version !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof salonCrudGetVersion>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type SalonCrudGetVersionQueryResult = NonNullable<Awaited<ReturnType<typeof salonCrudGetVersion>>>
-export type SalonCrudGetVersionQueryError = ModelsProblemDetails
-
-
-/**
- * 指定したバージョンのリソース状態を取得し、過去状態の確認や比較に利用します。
- * @summary Get {Name} version
- */
-export function useSalonCrudGetVersion<TData = Awaited<ReturnType<typeof salonCrudGetVersion>>, TError = ModelsProblemDetails>(
- id: ModelsSalonId,
-    version: number, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof salonCrudGetVersion>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof salonCrudGetVersion>>,
-          TError,
-          Awaited<ReturnType<typeof salonCrudGetVersion>>
-        > , 'initialData'
-      >, }
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * 指定したバージョンのリソース状態を取得し、過去状態の確認や比較に利用します。
- * @summary Get {Name} version
- */
-export function useSalonCrudGetVersion<TData = Awaited<ReturnType<typeof salonCrudGetVersion>>, TError = ModelsProblemDetails>(
- id: ModelsSalonId,
-    version: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof salonCrudGetVersion>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof salonCrudGetVersion>>,
-          TError,
-          Awaited<ReturnType<typeof salonCrudGetVersion>>
-        > , 'initialData'
-      >, }
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * 指定したバージョンのリソース状態を取得し、過去状態の確認や比較に利用します。
- * @summary Get {Name} version
- */
-export function useSalonCrudGetVersion<TData = Awaited<ReturnType<typeof salonCrudGetVersion>>, TError = ModelsProblemDetails>(
- id: ModelsSalonId,
-    version: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof salonCrudGetVersion>>, TError, TData>>, }
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * 指定したバージョンのリソース状態を取得し、過去状態の確認や比較に利用します。
- * @summary Get {Name} version
- */
-export function useSalonCrudGetVersion<TData = Awaited<ReturnType<typeof salonCrudGetVersion>>, TError = ModelsProblemDetails>(
- id: ModelsSalonId,
-    version: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof salonCrudGetVersion>>, TError, TData>>, }
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-
-  const queryOptions = getSalonCrudGetVersionQueryOptions(id,version,options)
-
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return withQueryKey(query, queryOptions.queryKey);
-}
-
-
-
-
-
-

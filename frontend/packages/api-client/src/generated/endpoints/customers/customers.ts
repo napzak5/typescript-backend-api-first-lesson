@@ -69,7 +69,6 @@ import type {
   ModelsCustomerId,
   ModelsCustomerPreferencesUpdateRequest,
   ModelsCustomerUpdateRequest,
-  ModelsCustomerUpdateRequestUpdate,
   ModelsProblemDetails
 } from '../../models';
 
@@ -1543,7 +1542,7 @@ export const getCustomerCrudPatchUrl = (id: ModelsCustomerId,
  * @summary Partially update {Name}
  */
 export const customerCrudPatch = async (id: ModelsCustomerId,
-    modelsCustomerUpdateRequestUpdate: ModelsCustomerUpdateRequestUpdate,
+    modelsCustomerUpdateRequest: ModelsCustomerUpdateRequest,
     params?: CustomerCrudPatchParams, options?: RequestInit): Promise<customerCrudPatchResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
@@ -1565,7 +1564,7 @@ return customInstance<customerCrudPatchResponse>(getCustomerCrudPatchUrl(id,para
     ...options,
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(modelsCustomerUpdateRequestUpdate)
+    body: JSON.stringify(modelsCustomerUpdateRequest)
   }
 );}
 
@@ -1603,9 +1602,9 @@ const {mutation: mutationOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type CustomerCrudPatchMutationResult = NonNullable<Awaited<ReturnType<typeof customerCrudPatch>>>
-    export type CustomerCrudPatchMutationBody = ModelsCustomerUpdateRequestUpdate
+    export type CustomerCrudPatchMutationBody = ModelsCustomerUpdateRequest
     export type CustomerCrudPatchMutationError = ModelsProblemDetails
-    export type CustomerCrudPatchMutationVariables = {id: ModelsCustomerId;data: ModelsCustomerUpdateRequestUpdate;params?: CustomerCrudPatchParams}
+    export type CustomerCrudPatchMutationVariables = {id: ModelsCustomerId;data: ModelsCustomerUpdateRequest;params?: CustomerCrudPatchParams}
 
     /**
  * 必要なフィールドのみを部分更新し、変更差分を効率的に反映します。

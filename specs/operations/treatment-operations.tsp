@@ -34,7 +34,7 @@ namespace BeautySalon.Operations {
     ): Result<TreatmentRecord>;
 
     @doc("Update treatment record")
-    @patch(#{ implicitOptionality: true })
+    @patch
     @route("/{id}")
     updateTreatment(
       @path id: TreatmentRecordId,
@@ -101,7 +101,7 @@ namespace BeautySalon.Operations {
     ): Result<MedicalChart>;
 
     @doc("Update medical chart")
-    @patch(#{ implicitOptionality: true })
+    @patch
     @route("/{id}")
     updateMedicalChart(
       @path id: MedicalChartId,

@@ -1,33 +1,26 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { SalonReadMapper } from '../../mappers/read/salon.mapper'
-import type { ApiSalon, SalonId } from '../../models/salon'
-import type { DomainError } from '../../shared'
-import { DomainErrors } from '../../shared'
-import { BaseSalonUseCase } from './_shared/base-salon.usecase'
+import { type ApiSalonResponse, parseSalonId } from '../../models/salon'
+import { type DomainError, DomainErrors } from '../../shared'
+import type { SalonUseCaseDependencies } from './_shared/dependencies'
 
-export class GetSalonUseCase extends BaseSalonUseCase {
-  async execute(id: SalonId): Promise<Result<ApiSalon, DomainError>> {
-    if (!this.isValidUuid(id)) {
-      return Result.error(
-        DomainErrors.validation('Invalid salon ID format', 'INVALID_SALON_ID'),
-      )
+export class GetSalonUseCase {
+  constructor(private readonly dependencies: SalonUseCaseDependencies) {}
+
+  async execute(id: unknown): Promise<Result<ApiSalonResponse, DomainError>> {
+    const salonId = parseSalonId(id)
+    if (salonId.type === 'error') {
+      return salonId
     }
 
-    const salonResult = await this.salonRepository.findById(id)
-    if (Result.isError(salonResult)) {
-      return salonResult
+    const found = await this.dependencies.salonRepository.findById(salonId.data)
+    if (found.type === 'error') {
+      return found
+    }
+    if (found.data === null) {
+      return Result.error(DomainErrors.notFound('Salon', salonId.data))
     }
 
-    if (!salonResult.data) {
-      return Result.error(DomainErrors.notFound('Salon', id))
-    }
-
-    const openingHoursResult = await this.salonRepository.findOpeningHours(id)
-    const openingHours = Result.isSuccess(openingHoursResult)
-      ? openingHoursResult.data
-      : []
-
-    const apiSalon = SalonReadMapper.toApiSalon(salonResult.data, openingHours)
-    return Result.success(apiSalon)
+    return SalonReadMapper.toApiSalon(found.data.salon, found.data.openingHours)
   }
 }

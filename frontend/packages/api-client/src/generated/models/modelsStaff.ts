@@ -24,8 +24,11 @@ export interface ModelsStaff {
   name: string;
   /** 連絡先情報 (電話・メール等) */
   contactInfo: ModelsContactInfo;
-  /** 得意分野や専門メニューの一覧 */
-  specialties: string[];
+  /**
+     * 得意分野や専門メニューの一覧。未設定の場合はnull
+     * @nullable
+     */
+  specialties: string[] | null;
   /**
      * プロフィール画像のURL - プロフィール画像未設定の場合はnull
      * @nullable

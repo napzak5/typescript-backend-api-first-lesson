@@ -63,7 +63,7 @@ namespace BeautySalon.Operations {
 
     @doc("顧客が投稿後のレビューを修正し、誤記修正や追記を反映します。")
     @summary("Update review")
-    @patch(#{ implicitOptionality: true })
+    @patch
     op update(@path id: ReviewId, @body updates: ReviewUpdateRequest):
       | {
           @statusCode statusCode: 200;

@@ -242,8 +242,8 @@ namespace BeautySalon.Models {
     @doc("メール確認トークンの有効期限。トークンが発行されていない場合はnull。")
     emailVerificationTokenExpiry: utcDateTime | null;
 
-    @doc("2要素認証の設定状態。")
-    twoFactorStatus: TwoFactorStatusType;
+    @doc("2要素認証の設定状態。未設定の場合はnull")
+    twoFactorStatus: TwoFactorStatusType | null;
 
     @doc("暗号化された2要素認証シークレット。2要素認証が無効の場合はnull。")
     twoFactorSecret: string | null;
@@ -312,8 +312,8 @@ namespace BeautySalon.Models {
     @doc("セッション所有者のユーザーID。")
     userId: UserId;
 
-    @doc("アクセストークン再発行に使用するリフレッシュトークン。")
-    refreshToken: string;
+    @doc("アクセストークン再発行に使用するリフレッシュトークン。未設定の場合はnull")
+    refreshToken: string | null;
 
     @doc("セッション発行元のIPアドレス。")
     ipAddress: string;

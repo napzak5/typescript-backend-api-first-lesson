@@ -7,6 +7,6 @@
  */
 
 /**
- * 営業中サロンのみを対象にするかどうか
+ * 予約受付中かどうかによる絞り込み
  */
 export type ModelsSalonSearchRequestIsActiveParameter = boolean;

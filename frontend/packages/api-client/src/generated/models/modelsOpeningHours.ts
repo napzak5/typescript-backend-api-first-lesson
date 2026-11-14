@@ -8,20 +8,20 @@
 import type { ModelsDayOfWeekType } from './modelsDayOfWeekType';
 
 /**
- * 曜日別の営業時間を管理するモデル。
+ * 特定の日付の営業時間（営業日カレンダーの1日分）を表すモデル。
  */
 export interface ModelsOpeningHours {
-  /** 対象となる曜日 */
+  /** dateの曜日。dateと一致している必要がある */
   dayOfWeek: ModelsDayOfWeekType;
   /** 日付 */
   date: string;
   /**
-     * 開店時刻（HH:mm形式）。休業日の場合はnull
+     * 開店時刻。HH:mm:ss形式で返す（指定時はHH:mmも可）。終日休業の場合はnull
      * @nullable
      */
   openTime: string | null;
   /**
-     * 閉店時刻（HH:mm形式）。休業日の場合はnull
+     * 閉店時刻。HH:mm:ss形式で返す（指定時はHH:mmも可）。終日休業の場合はnull
      * @nullable
      */
   closeTime: string | null;

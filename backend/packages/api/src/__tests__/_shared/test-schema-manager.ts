@@ -1,10 +1,11 @@
 import console from 'node:console'
 import { randomUUID } from 'node:crypto'
-import * as schema from '@beauty-salon-backend/database'
 import { SqlScripts } from '@beauty-salon-backend/database'
-import type { Database } from '@beauty-salon-backend/infrastructure'
+import {
+  createDatabase,
+  type Database,
+} from '@beauty-salon-backend/infrastructure'
 import { sql } from 'drizzle-orm'
-import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 
 export interface TestSchema {
@@ -25,7 +26,7 @@ export class TestSchemaManager {
 
   constructor(private connectionUri: string) {
     this.adminClient = postgres(connectionUri)
-    this.adminDb = drizzle(this.adminClient, { schema }) as Database
+    this.adminDb = createDatabase(this.adminClient)
   }
 
   /**
@@ -120,7 +121,7 @@ export class TestSchemaManager {
       schemaUrl.searchParams.set('search_path', `${schemaName},public`)
 
       const queryClient = postgres(schemaUrl.toString())
-      const db = drizzle(queryClient, { schema }) as Database
+      const db = createDatabase(queryClient)
 
       // Apply database setup SQL
       await this.applyDatabaseSetup(db, schemaName, useSimplifiedSetup)

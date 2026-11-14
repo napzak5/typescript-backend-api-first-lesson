@@ -31,7 +31,8 @@
     "@beauty-salon-backend/domain": "workspace:*",
     "@beauty-salon-backend/utility": "workspace:*",
     "drizzle-orm": "^0.45.4",
-    "postgres": "^4.1.1"
+    "postgres": "^4.1.1",
+    "ts-pattern": "^5.9.2"
   },
   "devDependencies": {
     "@beauty-salon-shared/config": "workspace:*",

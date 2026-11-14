@@ -83,11 +83,11 @@ namespace BeautySalon.Models {
     @doc("操作した数量")
     quantity: float32;
 
-    @doc("操作理由")
-    reason: string;
+    @doc("操作理由。未設定の場合はnull")
+    reason: string | null;
 
-    @doc("操作を担当したスタッフ ID")
-    performedBy: StaffId;
+    @doc("操作を担当したスタッフ ID。未設定の場合はnull")
+    performedBy: StaffId | null;
 
     @doc("操作日時")
     occurredAt: utcDateTime;
