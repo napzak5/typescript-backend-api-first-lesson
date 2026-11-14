@@ -1,9 +1,9 @@
 #!/usr/bin/env tsx
-import * as fs from 'node:fs'
 import * as path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { getDatabaseUrl, loadEnvConfig } from '@beauty-salon-backend/config'
 import postgres from 'postgres'
+import { applyBaseline, readBaseline, readMigrationFiles } from './migrations'
 
 // Get directory paths
 const __filename = fileURLToPath(import.meta.url)
@@ -26,18 +26,18 @@ async function main() {
   const sql = postgres(databaseUrl, { max: 1 })
 
   try {
-    // Read setup SQL file
-    const sqlPath = path.join(__dirname, '../../sql/setup.sql')
-    const sqlContent = fs.readFileSync(sqlPath, 'utf8')
+    const sqlDirectory = path.join(__dirname, '../../sql')
+    const baseline = readBaseline(path.join(sqlDirectory, 'setup.sql'))
 
-    // Remove the --> statement-breakpoint comments from the SQL
-    const cleanedSql = sqlContent.replace(/-->\s*statement-breakpoint/g, '')
+    console.log(`📝 Executing setup SQL (${baseline.length} characters)...`)
 
-    console.log(`📝 Executing setup SQL (${cleanedSql.length} characters)...`)
+    // setup.sql contains every migration, so all of them count as applied
+    const recorded = await applyBaseline(sql, {
+      baseline,
+      migrations: readMigrationFiles(path.join(sqlDirectory, 'migrations')),
+    })
 
-    // Execute SQL
-    await sql.unsafe(cleanedSql)
-
+    console.log(`📝 Recorded ${recorded.length} migrations as already applied`)
     console.log('✅ Database setup completed successfully!')
   } catch (error) {
     console.error('❌ Setup failed:', error)

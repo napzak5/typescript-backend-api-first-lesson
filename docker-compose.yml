@@ -83,11 +83,13 @@ services:
         condition: service_healthy
     networks:
       - beauty-salon-network
-    # Recreates the schema from sql/setup.sql and loads the sample data
+    # Keeps what is in the database: creates the schema when the database is
+    # empty, otherwise applies the migrations that are missing, and loads the
+    # sample data only into a database without data
     command: >
       sh -c "
-      pnpm --filter @beauty-salon-backend/database run db:fresh &&
-      pnpm --filter @beauty-salon-backend/database run db:seed
+      pnpm --filter @beauty-salon-backend/database run db:migrate &&
+      pnpm --filter @beauty-salon-backend/database run db:seed --if-empty
       "
 
   mailhog:

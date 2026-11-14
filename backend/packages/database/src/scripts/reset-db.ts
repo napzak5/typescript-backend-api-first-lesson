@@ -1,6 +1,7 @@
 #!/usr/bin/env tsx
 import { getDatabaseUrl, loadEnvConfig } from '@beauty-salon-backend/config'
 import postgres from 'postgres'
+import { dropHistory } from './migrations'
 
 // Load environment-specific configuration
 const environment = loadEnvConfig()
@@ -46,8 +47,9 @@ async function main() {
       await sql.unsafe(`DROP TYPE IF EXISTS "${type.typname}" CASCADE`)
     }
 
-    // Drop drizzle migration table if exists
-    await sql`DROP TABLE IF EXISTS drizzle_migrations CASCADE`
+    // Nothing is applied any more, so forget what was
+    console.log('📝 Dropping the migration history...')
+    await dropHistory(sql)
 
     console.log('✅ Database reset completed successfully!')
   } catch (error) {

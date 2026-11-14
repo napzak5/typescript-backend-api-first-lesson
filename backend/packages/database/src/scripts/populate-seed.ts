@@ -13,6 +13,7 @@ const environment = loadEnvConfig()
 const args = process.argv.slice(2)
 const resetIndex = args.findIndex((arg) => arg === '--reset' || arg === '-r')
 const shouldReset = resetIndex !== -1
+const onlyIfEmpty = args.includes('--if-empty')
 
 // Get database URL from environment
 const databaseUrl = getDatabaseUrl()
@@ -28,6 +29,12 @@ async function main() {
   const db = drizzle(sql, { schema })
 
   try {
+    if (onlyIfEmpty && (await db.$count(schema.salons)) > 0) {
+      console.log('⏭️  The database already has data, nothing to seed')
+      await sql.end()
+      process.exit(0)
+    }
+
     await seed(db, {
       environment: environment === 'production' ? 'production' : 'development',
       includeSampleData: environment !== 'production',
@@ -167,11 +174,13 @@ Usage: pnpm db:seed [options]
 
 Options:
   --reset, -r         Reset database before seeding
+  --if-empty          Do nothing when the database already has data
   --help, -h          Show this help message
 
 Examples:
   pnpm db:seed                    # Populate database with seed data
   pnpm db:seed --reset            # Reset and populate database
+  pnpm db:seed --if-empty         # Populate only a database without data
 `)
   process.exit(0)
 }

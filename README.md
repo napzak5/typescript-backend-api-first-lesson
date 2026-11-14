@@ -107,11 +107,22 @@ TypeSpec change. `make help` lists every Makefile target.
 
 The database is the source of truth for the Drizzle schema:
 
-1. Write a SQL migration in `backend/packages/database/sql/migrations/`
-2. `pnpm db:migrate` applies it
+1. Write a SQL migration in `backend/packages/database/sql/migrations/`,
+   named `YYYYMMDDHHMM_description.sql`
+2. `pnpm db:migrate` applies it, once
 3. `pnpm db:introspect` regenerates `schema.ts` and `relations.ts`
 4. `pnpm db:generate-sql` regenerates `sql/setup.sql`
 5. Commit all of them; `pnpm check:db-schema` fails in CI when they drift
+
+`pnpm db:migrate` is the one command for every database and safe to run on
+each deployment. It creates an empty database from `sql/setup.sql`, which
+already contains every migration; on any other database it applies the
+migrations that are missing, in the order of their names and each in its own
+transaction. What has been applied is recorded in
+`migration_history.applied_migrations`, and concurrent runs wait for each
+other. A migration that has been applied anywhere is never edited: write a new
+one. While writing a migration, `pnpm db:migrate <file>` runs it without
+recording it.
 
 ### API ↔ Database Consistency
 
@@ -160,8 +171,8 @@ make ci-check                # Everything CI runs, in the same order
 
 # Database
 pnpm db:fresh                # Drop everything and recreate the schema
-pnpm db:migrate              # Apply the SQL migrations
-pnpm db:seed                 # Insert sample data
+pnpm db:migrate              # Create the schema or apply the missing migrations
+pnpm db:seed                 # Insert sample data (--if-empty: only without data)
 pnpm db:truncate             # Delete all rows, keep the schema
 pnpm db:introspect           # Regenerate schema.ts from the database
 pnpm db:generate-sql         # Regenerate sql/setup.sql from schema.ts
@@ -233,9 +244,10 @@ unreachable.
 ## 🧪 Testing
 
 - **Unit tests** (`pnpm test`): pure logic, no external services (Vitest)
-- **Integration tests** (`pnpm test:integration`): the HTTP API and the
-  server's start-up and shutdown against a real PostgreSQL, with one isolated
-  schema per API test. They start a PostgreSQL
+- **Integration tests** (`pnpm test:integration`): the HTTP API, the
+  server's start-up and shutdown, and the migration runner against a real
+  PostgreSQL, with one isolated schema per API test and one database per
+  migration test. They start a PostgreSQL
   container through testcontainers, or use an existing database when
   `TEST_DATABASE_URL` is set:
 

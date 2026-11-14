@@ -177,7 +177,7 @@ model AuthLoginResponse { ... }         // Login response
 4. Commit the generated files with the TypeSpec change (`pnpm check:generated` guards this in CI)
 
 ### Database Workflow
-1. Write a SQL migration in `backend/packages/database/sql/migrations/`
+1. Write a SQL migration in `backend/packages/database/sql/migrations/` (`YYYYMMDDHHMM_description.sql`). Each one is applied once and recorded, so a migration that has been applied anywhere is never edited: write a new one
 2. `pnpm db:migrate` → `pnpm db:introspect` → `pnpm db:generate-sql`
 3. Commit `schema.ts`, `relations.ts` and `sql/setup.sql` (`pnpm check:db-schema` guards this in CI)
 4. Keep the API models in line with the tables (`pnpm check:api-db` guards this in CI)
@@ -205,7 +205,7 @@ pnpm generate:watch   # Regenerate on every TypeSpec change
 
 # Database
 pnpm db:fresh         # Drop everything and recreate the schema from sql/setup.sql
-pnpm db:migrate       # Apply the SQL migrations
+pnpm db:migrate       # Create the schema from setup.sql, or apply the migrations not applied yet
 pnpm db:seed          # Seed data with statistics
 pnpm db:truncate      # Clear all table data
 pnpm db:introspect    # Regenerate schema.ts and relations.ts from the DB
