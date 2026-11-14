@@ -16,3 +16,6 @@ export type EnableTwoFactorResponse = JsonBody<
 export type GenerateBackupCodesResponse = JsonBody<
   operations['AuthCrud_generateBackupCodes']['responses'][200]['content']
 >
+export type ListSessionsResponse = JsonBody<
+  operations['SessionCrud_getSessions']['responses'][200]['content']
+>

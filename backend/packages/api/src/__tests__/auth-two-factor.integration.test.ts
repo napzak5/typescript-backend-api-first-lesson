@@ -132,7 +132,6 @@ const USER_PROPERTIES = [
   'role',
   'staffId',
   'status',
-  'trustedIpAddresses',
   'twoFactorStatus',
   'updatedAt',
 ]

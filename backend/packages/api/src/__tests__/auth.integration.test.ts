@@ -107,7 +107,6 @@ const USER_PROPERTIES = [
   'role',
   'staffId',
   'status',
-  'trustedIpAddresses',
   'twoFactorStatus',
   'updatedAt',
 ]
@@ -211,7 +210,6 @@ describe('Authentication API', () => {
             lockedUntil: null,
             lastLoginAt: expect.stringMatching(ISO_TIMESTAMP),
             lastLoginIp: expect.stringMatching(LOOPBACK),
-            trustedIpAddresses: [],
             customerId: null,
             staffId: null,
             createdAt: expect.stringMatching(ISO_TIMESTAMP),

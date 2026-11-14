@@ -1,6 +1,21 @@
 import { sql } from 'drizzle-orm'
+import type { Express } from 'express'
+import type { Test } from 'supertest'
+import { match } from 'ts-pattern'
 import { describe, expect, it } from 'vitest'
-import { signInAsAdmin } from './_shared/auth-helpers'
+import {
+  ADMIN_AUTH,
+  AUTH,
+  insertSession,
+  insertUser,
+  loginBody,
+  minutesFromNow,
+  type Session,
+  sha256,
+  signedInUser,
+  signInAsAdmin,
+  type TestUser,
+} from './_shared/auth-helpers'
 import {
   ALLOWED_ORIGIN,
   connectUnreachableDatabase,
@@ -485,4 +500,317 @@ describe('response headers', () => {
     )
     expect(response.headers).not.toHaveProperty('x-powered-by')
   })
+})
+
+describe('the user on the line of a request', () => {
+  const REQUEST_ID = 'logged-request'
+
+  type SignedIn = TestUser & Session
+
+  type Context = {
+    app: Express
+    db: ReturnType<typeof getTestDb>
+    logs: unknown[]
+    admin: SignedIn
+    customer: SignedIn
+  }
+
+  /** An app that logs into `logs`, with an administrator and a customer signed in. */
+  const withTwoUsersSignedIn = async (): Promise<Context> => {
+    const logs: unknown[] = []
+    const app = createTestApp({ logs })
+    const db = getTestDb()
+    return {
+      app,
+      db,
+      logs,
+      admin: await signedInUser(app, db, { role: 'admin' }),
+      customer: await signedInUser(app, db),
+    }
+  }
+
+  /** The line the request with this ID completed with. */
+  const lineOf = (logs: unknown[], requestId: string): object => {
+    for (const logged of logs) {
+      const found = match(logged)
+        .with(
+          { msg: 'request completed', req: { id: requestId } },
+          (line) => line,
+        )
+        .otherwise(() => null)
+      if (found !== null) {
+        return found
+      }
+    }
+    throw new Error(`No line for request ${requestId}`)
+  }
+
+  /** The tokens of a session, and what the server stores of them. */
+  const secretsOf = ({
+    accessToken,
+    refreshToken,
+  }: {
+    accessToken: string
+    refreshToken: string
+  }): string[] => [
+    accessToken,
+    refreshToken,
+    sha256(accessToken),
+    sha256(refreshToken),
+  ]
+
+  const expectNoSecretIn = (logs: unknown[], secrets: string[]): void => {
+    const logged = JSON.stringify(logs)
+    for (const secret of secrets) {
+      expect(logged).not.toContain(secret)
+    }
+  }
+
+  it.each<[string, number, (context: Context) => Promise<[SignedIn, Test]>]>([
+    [
+      'reads the current user',
+      200,
+      async ({ app, customer }) => [
+        customer,
+        request(app)
+          .get(`${AUTH}/me`)
+          .set('Authorization', customer.authorization),
+      ],
+    ],
+    [
+      'lists the sessions of the user',
+      200,
+      async ({ app, customer }) => [
+        customer,
+        request(app)
+          .get(`${AUTH}/sessions`)
+          .set('Authorization', customer.authorization),
+      ],
+    ],
+    [
+      'lists the sessions after one that it names',
+      200,
+      async ({ app, db, customer }) => {
+        const { id } = await insertSession(db, customer.id)
+        return [
+          customer,
+          request(app)
+            .get(`${AUTH}/sessions?cursor=${id}`)
+            .set('Authorization', customer.authorization),
+        ]
+      },
+    ],
+    [
+      'ends a session that it names',
+      204,
+      async ({ app, db, customer }) => {
+        const { id } = await insertSession(db, customer.id)
+        return [
+          customer,
+          request(app)
+            .delete(`${AUTH}/sessions/${id}`)
+            .set('Authorization', customer.authorization),
+        ]
+      },
+    ],
+    [
+      'creates a salon',
+      201,
+      async ({ app, admin }) => [
+        admin,
+        request(app)
+          .post(SALONS)
+          .set('Authorization', admin.authorization)
+          .send({ ...salon, email: 'logged@example.com' }),
+      ],
+    ],
+    [
+      'breaks a rule of the query',
+      400,
+      async ({ app, customer }) => [
+        customer,
+        request(app)
+          .get(`${AUTH}/sessions?limit=0`)
+          .set('Authorization', customer.authorization),
+      ],
+    ],
+    [
+      'asks for what only an administrator may do',
+      403,
+      async ({ app, admin, customer }) => [
+        customer,
+        request(app)
+          .get(`${ADMIN_AUTH}/users/${admin.id}`)
+          .set('Authorization', customer.authorization),
+      ],
+    ],
+    [
+      'names a user that does not exist',
+      404,
+      async ({ app, admin }) => [
+        admin,
+        request(app)
+          .get(`${ADMIN_AUTH}/users/${UNKNOWN_ID}`)
+          .set('Authorization', admin.authorization),
+      ],
+    ],
+    [
+      'unlocks an account that is not locked',
+      409,
+      async ({ app, admin, customer }) => [
+        admin,
+        request(app)
+          .post(`${ADMIN_AUTH}/unlock/${customer.id}`)
+          .set('Authorization', admin.authorization),
+      ],
+    ],
+  ])(
+    'should name the signed-in user, and no session or token, on the line of a request that %s (%i)',
+    async (_case, status, arrange) => {
+      const context = await withTwoUsersSignedIn()
+      const [actor, pending] = await arrange(context)
+
+      const response = await pending.set('X-Request-Id', REQUEST_ID)
+
+      expect(response.status).toBe(status)
+      const line = lineOf(context.logs, REQUEST_ID)
+      expect(line).toMatchObject({
+        res: { statusCode: status },
+        userId: actor.id,
+      })
+      expect(line).not.toHaveProperty('sessionId')
+      expectNoSecretIn(context.logs, [
+        ...secretsOf(context.admin),
+        ...secretsOf(context.customer),
+      ])
+    },
+  )
+
+  it('should add nothing but the user to the line of an authenticated request', async () => {
+    const { app, logs, customer } = await withTwoUsersSignedIn()
+
+    await request(app)
+      .get(`${AUTH}/me`)
+      .set('Authorization', customer.authorization)
+      .set('X-Request-Id', 'authenticated')
+    await request(app).get(SALONS).set('X-Request-Id', 'public')
+
+    expect(Object.keys(lineOf(logs, 'authenticated')).sort()).toEqual(
+      [...Object.keys(lineOf(logs, 'public')), 'userId'].sort(),
+    )
+  })
+
+  it('should keep the users of requests at the same moment apart', async () => {
+    const { app, logs, admin, customer } = await withTwoUsersSignedIn()
+
+    await Promise.all([
+      request(app)
+        .get(`${AUTH}/me`)
+        .set('Authorization', admin.authorization)
+        .set('X-Request-Id', 'of-the-admin'),
+      request(app)
+        .get(`${AUTH}/me`)
+        .set('Authorization', customer.authorization)
+        .set('X-Request-Id', 'of-the-customer'),
+      request(app).get(`${AUTH}/me`).set('X-Request-Id', 'of-nobody'),
+    ])
+
+    expect(lineOf(logs, 'of-the-admin')).toMatchObject({ userId: admin.id })
+    expect(lineOf(logs, 'of-the-customer')).toMatchObject({
+      userId: customer.id,
+    })
+    expect(lineOf(logs, 'of-nobody')).not.toHaveProperty('userId')
+  })
+
+  it.each<
+    [string, string, (context: Context) => Promise<[string | null, string[]]>]
+  >([
+    ['no access token', '1001', async () => [null, []]],
+    [
+      'a token that names no session',
+      '1004',
+      async () => {
+        const token = 't'.repeat(43)
+        return [`Bearer ${token}`, [token, sha256(token)]]
+      },
+    ],
+    [
+      'a refresh token',
+      '1004',
+      async ({ customer }) => [`Bearer ${customer.refreshToken}`, []],
+    ],
+    [
+      'an access token that has run out',
+      '1003',
+      async ({ db, customer }) => {
+        const expired = await insertSession(db, customer.id, {
+          expiresAt: minutesFromNow(-1),
+        })
+        return [expired.authorization, secretsOf(expired)]
+      },
+    ],
+  ])(
+    'should name no user, and log no token, for a request refused with 401 for %s',
+    async (_case, code, arrange) => {
+      const context = await withTwoUsersSignedIn()
+      const [authorization, secrets] = await arrange(context)
+      const pending = request(context.app)
+        .get(`${AUTH}/sessions`)
+        .set('X-Request-Id', REQUEST_ID)
+
+      const response = await (authorization === null
+        ? pending
+        : pending.set('Authorization', authorization))
+
+      expect(response.status).toBe(401)
+      expect(response.body.code).toBe(code)
+      const line = lineOf(context.logs, REQUEST_ID)
+      expect(line).toMatchObject({ res: { statusCode: 401 } })
+      expect(line).not.toHaveProperty('userId')
+      expect(line).not.toHaveProperty('sessionId')
+      expectNoSecretIn(context.logs, [
+        ...secrets,
+        ...secretsOf(context.admin),
+        ...secretsOf(context.customer),
+      ])
+    },
+  )
+
+  it('should name no user, and log no token it issues, on the line of a login', async () => {
+    const logs: unknown[] = []
+    const app = createTestApp({ logs })
+    const { email } = await insertUser(getTestDb())
+
+    const response = await request(app)
+      .post(`${AUTH}/login`)
+      .set('X-Request-Id', REQUEST_ID)
+      .send(loginBody(email))
+
+    expect(response.status).toBe(200)
+    const { accessToken, refreshToken } = response.body.data
+    const line = lineOf(logs, REQUEST_ID)
+    expect(line).toMatchObject({ res: { statusCode: 200 } })
+    expect(line).not.toHaveProperty('userId')
+    expectNoSecretIn(logs, secretsOf({ accessToken, refreshToken }))
+  })
+
+  it.each([
+    ['without a token', false],
+    ['with the token of a signed-in user', true],
+  ])(
+    'should name no user on the line of the list of salons, asked for %s',
+    async (_case, withToken) => {
+      const context = await withTwoUsersSignedIn()
+      const pending = request(context.app)
+        .get(SALONS)
+        .set('X-Request-Id', REQUEST_ID)
+
+      const response = await (withToken
+        ? pending.set('Authorization', context.customer.authorization)
+        : pending)
+
+      expect(response.status).toBe(200)
+      expect(lineOf(context.logs, REQUEST_ID)).not.toHaveProperty('userId')
+    },
+  )
 })

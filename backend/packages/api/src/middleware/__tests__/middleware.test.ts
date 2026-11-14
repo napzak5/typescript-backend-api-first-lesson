@@ -1,7 +1,9 @@
 import { createLogger } from '@beauty-salon-backend/infrastructure'
 import express, { type Express, type RequestHandler } from 'express'
 import request from 'supertest'
+import { match, P } from 'ts-pattern'
 import { describe, expect, it } from 'vitest'
+import { noteSignedInUser } from '../../shared/signed-in-user'
 import { errorHandler, notFoundHandler, toHttpError } from '../errors'
 import { requestLogging } from '../request-logging'
 
@@ -126,6 +128,99 @@ describe('request logging', () => {
     await request(app).get('/elsewhere')
 
     expect(logs).toMatchObject([{ level: 'warn', res: { statusCode: 404 } }])
+  })
+})
+
+describe('the user on the line of a request', () => {
+  const USER_ID = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0c01'
+  const OTHER_USER_ID = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0c11'
+
+  /** Notes the user named in `?user=` as signed in, then answers with `?status=`. */
+  const signedInRoute: RequestHandler = (req, res) => {
+    match(req.query['user'])
+      .with(P.string, (user) => noteSignedInUser(req, user))
+      .otherwise(() => undefined)
+    res
+      .status(
+        match(req.query['status'])
+          .with(P.string, (status) => Number(status))
+          .otherwise(() => 200),
+      )
+      .json({})
+  }
+
+  it('should name the signed-in user on the line of the request', async () => {
+    const { app, logs } = createAppWith(signedInRoute)
+
+    await request(app).get(`/route?user=${USER_ID}`)
+
+    expect(logs).toEqual([
+      expect.objectContaining({
+        level: 'info',
+        msg: 'request completed',
+        userId: USER_ID,
+      }),
+    ])
+    expect(logs[0]).not.toHaveProperty('sessionId')
+  })
+
+  it.each([403, 404, 409, 400])(
+    'should name the signed-in user on the line of a request answered with %i',
+    async (status) => {
+      const { app, logs } = createAppWith(signedInRoute)
+
+      await request(app).get(`/route?user=${USER_ID}&status=${status}`)
+
+      expect(logs).toEqual([
+        expect.objectContaining({
+          level: 'warn',
+          msg: 'request completed',
+          res: { statusCode: status },
+          userId: USER_ID,
+        }),
+      ])
+    },
+  )
+
+  it('should name no user on the line of a request nobody signed in for', async () => {
+    const { app, logs } = createAppWith(signedInRoute)
+
+    await request(app).get('/route')
+
+    expect(logs).toHaveLength(1)
+    expect(logs[0]).toMatchObject({ msg: 'request completed' })
+    expect(logs[0]).not.toHaveProperty('userId')
+  })
+
+  it('should name no user on the line of a request that reached no route', async () => {
+    const { app, logs } = createAppWith(signedInRoute)
+
+    await request(app).get(`/elsewhere?user=${USER_ID}`)
+
+    expect(logs).toHaveLength(1)
+    expect(logs[0]).not.toHaveProperty('userId')
+  })
+
+  it('should keep the users of different requests apart', async () => {
+    const { app, logs } = createAppWith(signedInRoute)
+
+    await Promise.all([
+      request(app).get(`/route?user=${USER_ID}`),
+      request(app).get(`/route?user=${OTHER_USER_ID}`),
+      request(app).get('/route'),
+    ])
+
+    const lineOf = (url: string): unknown =>
+      logs.find((line) => JSON.stringify(line).includes(`"url":"${url}"`))
+    expect(logs).toHaveLength(3)
+    expect(lineOf(`/route?user=${USER_ID}`)).toMatchObject({
+      userId: USER_ID,
+    })
+    expect(lineOf(`/route?user=${OTHER_USER_ID}`)).toMatchObject({
+      userId: OTHER_USER_ID,
+    })
+    expect(lineOf('/route')).toMatchObject({ msg: 'request completed' })
+    expect(lineOf('/route')).not.toHaveProperty('userId')
   })
 })
 
