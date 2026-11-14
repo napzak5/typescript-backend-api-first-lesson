@@ -286,18 +286,20 @@ Docker イメージのビルドも行います。イメージは、手元では 
 | `test` | `build:prod` のあと、データベースの用意の仕方を変えて 2 通り実行する。`external`: サービスコンテナの PostgreSQL を `TEST_DATABASE_URL` で使い、単体テスト、統合テスト、`check:db-schema` を実行する。`testcontainers`: テスト自身がコンテナを起動し、統合テストだけを実行する |
 | `build` | `pnpm build:dev`、`build:test`、`build:stg`、`build:prod` をそれぞれ実行する |
 | `security` | `pnpm audit --audit-level=high` |
-| `docker-backend`、`docker-frontend-apps` | `main` への push のときだけ、上の `quality`・`test`・`build` が成功したあとにイメージをビルドして GitHub Container Registry に push する |
+| `publish-staging-images` | `main` への push のときだけ、上の `quality`・`test`・`build` が成功したあとに `publish-images.yml` を呼び出し、staging のイメージを GitHub Container Registry に push する |
 
 ### `.github/workflows/docker-validation.yml`
 
 Dockerfile、`backend/`、`frontend/`、`specs/`、`shared-config/`、ロックファイルなどを変更する
 プルリクエストで実行されます。バックエンドと 3 つのフロントエンドのイメージをビルドし、コンテナを
 起動して応答を確認します。バックエンドは `/api/system/ready` が応答することと、停止時の終了コードが
-0 であることを確認します。
+0 であることを確認します。フロントエンドは、バンドルにその環境の `VITE_*` の値が入っていることも
+確認します（staging 向けのビルドは admin で確認）。
 
-### `.github/workflows/deploy.yml`
+### `.github/workflows/publish-images.yml`
 
-イメージをビルドして GitHub Container Registry に push します。内容と、自動化されていない作業は
+イメージをビルドして GitHub Container Registry に push します。`ci.yml` から呼び出されるほか、
+手動でも実行できます。内容と、自動化されていない作業は
 [リリースワークフローガイド](./release-workflow.md) を参照してください。
 
 ## トラブルシューティング

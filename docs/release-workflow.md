@@ -23,7 +23,7 @@
 |------|--------|------|
 | lint・型チェック・テストなどの品質チェック | されている | `.github/workflows/ci.yml` |
 | プルリクエストでのイメージのビルドと起動確認 | されている | `.github/workflows/docker-validation.yml` |
-| イメージのビルドとレジストリへの push | されている | `.github/workflows/ci.yml`、`.github/workflows/deploy.yml` |
+| イメージのビルドとレジストリへの push | されている | `.github/workflows/publish-images.yml`（`ci.yml` から呼び出すか、手動で実行する） |
 | デプロイ先の環境変数の設定 | されていない | 運用者 |
 | データベースのマイグレーション | されていない | 運用者が `pnpm db:migrate` を実行する |
 | イメージのデプロイ先への展開 | されていない | 運用者 |
@@ -86,11 +86,16 @@ pnpm preview:frontend   # ビルド済みのフロントエンドアプリを :3
 ### フロントエンド（`Dockerfile.frontend`）
 
 1 つの Dockerfile で 3 つのアプリをビルドします。ビルド引数 `APP`（`admin`、`portal`、`dashboard`）で
-アプリを、`APP_PORT`（4001、4002、4003）でポートを選びます。
+アプリを、`APP_PORT`（4001、4002、4003）でポートを、`BUILD_SCRIPT` で環境を選びます。
 
-- ビルドステージは `pnpm generate`、`pnpm prepare:frontend` のあと、選んだアプリを **常に
-  `build:prod`** でビルドする。`VITE_*` の値は `frontend/apps/<app>-app/.env.production` のものが
-  埋め込まれる
+| `BUILD_SCRIPT` | 埋め込まれる `VITE_*` の値 |
+|----------------|---------------------------|
+| `build:prod`（既定） | `frontend/apps/<app>-app/.env.production` |
+| `build:stg` | `frontend/apps/<app>-app/.env.staging` |
+
+- ビルドステージは `pnpm generate`、`pnpm prepare:frontend` のあと、選んだアプリを `BUILD_SCRIPT` の
+  スクリプトでビルドする。`VITE_*` の値はバンドルに埋め込まれるので、フロントエンドのイメージは
+  環境ごとに別のものになる
 - 実行ステージは、ビルドした静的ファイルを `serve` の SPA モードで配信する。非 root ユーザーで動き、
   `HEALTHCHECK` は `/` を確認する
 
@@ -108,37 +113,38 @@ make docker-check-frontend   # フロントエンド 3 つだけ
 
 `main`・`develop` への push とプルリクエストで品質チェックを実行します（内容は
 [開発ワークフローガイド](./development-workflow.md) を参照）。`main` への push では、`quality`・`test`・
-`build` の各ジョブが成功したあとに、`docker-backend` と `docker-frontend-apps` がイメージをビルドして
-push します。
+`build` の各ジョブが成功したあとに、`publish-staging-images` ジョブが Publish Images を `staging` で
+呼び出します。チェックが失敗したコミットからは、イメージは作られません。
 
 ### Docker Build Validation（`.github/workflows/docker-validation.yml`）
 
 Dockerfile やソースを変更するプルリクエストで、4 つのイメージをビルドし、コンテナを起動して確認します。
 バックエンドは、`.env` ファイルなしで環境変数だけを渡して起動し、`/api/system/ready` が応答すること、
-停止時に終了コード 0 で終わることを確認します。イメージは push しません。
+停止時に終了コード 0 で終わることを確認します。フロントエンドは、アプリのタイトル（`VITE_APP_TITLE`）が
+その環境の `.env` の値でバンドルに入っていることを確認します。本番向けは 3 つのアプリすべて、
+staging 向け（`BUILD_SCRIPT=build:stg`）は admin で確認します。イメージは push しません。
 
-### Deploy（`.github/workflows/deploy.yml`）
+### Publish Images（`.github/workflows/publish-images.yml`）
 
-名前は Deploy ですが、行うのはイメージのビルドと push です。
+4 つのイメージをビルドし、1 つの環境のタグを付けて push します。デプロイはしません。
 
-- **きっかけ**: `main` への push（環境は `staging`）、または手動実行（`staging` か `production` を選ぶ）
+- **きっかけ**: CI からの呼び出し（`main` への push でチェックが成功したあと。環境は `staging`）、
+  または手動実行（`staging` か `production` を選ぶ）
 - **実行環境**: 選ばれた環境と同じ名前の GitHub Environment でジョブが動く
-- **バックエンド**: ランナー上で `build:stg` または `build:prod` を実行したあと、`Dockerfile.backend` の
-  `production` ステージをビルドして push する
-- **フロントエンド**: アプリごとに `pnpm generate`、`pnpm prepare:frontend`、`build:prod` を実行したあと、
-  `Dockerfile.frontend` をビルドして push する
-- **最後のステップ**はメッセージを出力するだけで、どこにもデプロイしない
+- **バックエンド**: `Dockerfile.backend` の `production` ステージをビルドする。設定は起動時に環境変数から
+  読むので、イメージの中身はどの環境向けでも同じで、違うのはタグだけ
+- **フロントエンド**: `Dockerfile.frontend` を、`staging` では `BUILD_SCRIPT=build:stg`、`production` では
+  `build:prod` でビルドする
+- **同時実行**: 同じ環境・同じイメージの push は、同時に 1 つだけ実行する。実行中のものがあれば次の
+  実行は待ち、待っている実行は、あとから来た実行に置き換えられる。`<環境>-latest` は、最後に完了した
+  実行のイメージを指す
 
 知っておくべき点:
 
-- Deploy は CI とは別のワークフローで、CI の結果を待ちません。`main` への push で両方が同時に
-  始まるので、CI が失敗したコミットでも `staging` のイメージは作られます。
-- イメージの中身は Dockerfile がソースからビルドします（`.dockerignore` が `dist` を除外するため、
-  ランナー上のビルド結果は使われません）。バックエンドもフロントエンドも Dockerfile 内では常に
-  `build:prod` なので、同じコミットの `staging` イメージと `production` イメージは同じ手順で作られ、
-  違うのはタグだけです。フロントエンドの `staging` イメージにも `.env.production` の `VITE_*` が入ります。
-
-この 2 点の見直しは GitHub issue #106 で扱います。
+- 手動実行は CI を待ちません。Actions の画面で選んだブランチの先頭のコミットから、そのままイメージを
+  作ります。そのコミットの CI が成功していることは、実行する人が確認します。
+- `production` という GitHub Environment は、まだ作られていません。最初に `production` で実行したときに
+  GitHub が作成します。承認などの保護ルールを付ける場合は、先にリポジトリの設定で作成します。
 
 ### イメージ名とタグ
 
@@ -147,18 +153,20 @@ Dockerfile やソースを変更するプルリクエストで、4 つのイメ�
 | バックエンド | `ghcr.io/<owner>/<repository>-backend` |
 | フロントエンド | `ghcr.io/<owner>/<repository>-frontend-admin`、`-frontend-portal`、`-frontend-dashboard` |
 
-| ワークフロー | きっかけ | タグ |
-|--------------|----------|------|
-| CI | `main` への push（チェック成功後） | `main`、`main-<短縮 SHA>`、`latest` |
-| Deploy | `main` への push | `staging-latest`、`staging-<短縮 SHA>` |
-| Deploy | 手動実行 | `<環境>-latest`、`<環境>-<短縮 SHA>` |
+| きっかけ | タグ |
+|----------|------|
+| `main` への push（CI のチェック成功後） | `staging-latest`、`staging-<短縮 SHA>` |
+| 手動実行 | `<環境>-latest`、`<環境>-<短縮 SHA>` |
+
+以前のワークフローが push していた `main`、`main-<短縮 SHA>`、`latest` のタグは、更新されなくなりました。
+レジストリに残っているこれらのタグは、古いコミットのイメージです。
 
 ## リリースの流れ
 
-1. プルリクエストを `main` にマージする。CI と Deploy が動き、`staging-latest` と
+1. プルリクエストを `main` にマージする。CI のチェックが成功すると、`staging-latest` と
    `staging-<短縮 SHA>` のイメージが push される
-2. 本番用のイメージが必要なら、GitHub の Actions タブで Deploy ワークフローを選び、
-   「Run workflow」で `production` を指定して実行する。`production-latest` と
+2. 本番用のイメージが必要なら、GitHub の Actions タブで Publish Images ワークフローを選び、
+   「Run workflow」で `main` ブランチと `production` を指定して実行する。`production-latest` と
    `production-<短縮 SHA>` のイメージが push される
 3. ここから先は自動化されていない。次の節の作業を運用者が行う
 
@@ -218,8 +226,8 @@ make ci-check              # CI のチェック（check:db-schema 以外。Docke
 make ci-check-dockerfile   # 本番イメージをビルドできるか（Docker が必要）
 ```
 
-- [ ] `main` の CI が成功している（Deploy は CI を待たないので、自分で確認する）
+- [ ] `main` の CI が成功している（Publish Images の手動実行は CI を待たないので、自分で確認する）
 - [ ] `backend/packages/database/sql/migrations/` に、対象のデータベースへ未適用のマイグレーションがあるか
       把握している
 - [ ] 追加された環境変数があれば、デプロイ先に設定してある
-- [ ] フロントエンドを出す場合、各アプリの `.env.production` の `VITE_*` がリリース先に合っている
+- [ ] フロントエンドを出す場合、各アプリの `.env.staging` / `.env.production` の `VITE_*` がリリース先に合っている

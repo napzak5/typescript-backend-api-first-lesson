@@ -155,110 +155,17 @@ jobs:
             frontend/apps/*/dist
           retention-days: 7
 
-  docker-backend:
-    name: Docker Build - Backend
-    runs-on: ubuntu-latest
+  # The images are published only for a commit on main whose checks passed.
+  publish-staging-images:
+    name: Publish Staging Images
     needs: [quality, test, build]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-
     permissions:
       contents: read
       packages: write
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
-
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v4
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v6
-        with:
-          images: ghcr.io/${{ github.repository }}-backend
-          tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=sha,prefix={{branch}}-
-            type=raw,value=latest,enable={{is_default_branch}}
-
-      - name: Build and push Backend Docker image
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          file: ./Dockerfile.backend
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=backend-prod-buildx
-          cache-to: type=gha,mode=max,scope=backend-prod-buildx
-          target: production
-
-  docker-frontend-apps:
-    name: Docker Build - Frontend Apps
-    runs-on: ubuntu-latest
-    needs: [quality, test, build]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    strategy:
-      matrix:
-        app:
-          - name: admin
-            port: 4001
-          - name: portal
-            port: 4002
-          - name: dashboard
-            port: 4003
-
-    permissions:
-      contents: read
-      packages: write
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
-
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v4
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract metadata for ${{ matrix.app.name }} app
-        id: meta
-        uses: docker/metadata-action@v6
-        with:
-          images: ghcr.io/${{ github.repository }}-frontend-${{ matrix.app.name }}
-          tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=sha,prefix={{branch}}-
-            type=raw,value=latest,enable={{is_default_branch}}
-
-      - name: Build and push ${{ matrix.app.name }} Docker image
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          file: ./Dockerfile.frontend
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=frontend-${{ matrix.app.name }}-buildx
-          cache-to: type=gha,mode=max,scope=frontend-${{ matrix.app.name }}-buildx
-          build-args: |
-            APP=${{ matrix.app.name }}
-            APP_PORT=${{ matrix.app.port }}
+    uses: ./.github/workflows/publish-images.yml
+    with:
+      environment: staging
 
   security:
     name: Security Audit
