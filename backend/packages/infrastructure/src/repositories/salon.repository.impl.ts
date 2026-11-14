@@ -151,6 +151,18 @@ export class SalonRepository implements ISalonRepository {
     })
   }
 
+  async exists(id: SalonId): Promise<Result<boolean, DomainError>> {
+    return attempt('Failed to look for salon', null, async () => {
+      const [found] = await this.db
+        .select({ id: salons.id })
+        .from(salons)
+        .where(and(eq(salons.id, id), notDeleted))
+        .limit(1)
+
+      return found !== undefined
+    })
+  }
+
   async list(
     criteria: SalonListCriteria,
   ): Promise<Result<SalonList, DomainError>> {

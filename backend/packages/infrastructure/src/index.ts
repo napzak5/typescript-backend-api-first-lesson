@@ -20,6 +20,7 @@ export { SmtpMailer, type SmtpSettings } from './mail/smtp-mailer'
 
 // Repositories
 export { SalonRepository } from './repositories/salon.repository.impl'
+export { ServiceCategoryRepository } from './repositories/service-category.repository.impl'
 export { SessionRepository } from './repositories/session.repository.impl'
 export { UserRepository } from './repositories/user.repository.impl'
 
