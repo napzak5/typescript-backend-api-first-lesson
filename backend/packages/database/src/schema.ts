@@ -1843,7 +1843,6 @@ export const users = pgTable(
     passwordResetTokenHash: varchar({ length: 255 }),
     passwordResetExpiry: timestamp({ withTimezone: true, mode: 'string' }),
     lastPasswordChange: timestamp({ withTimezone: true, mode: 'string' }),
-    twoFactorEnabled: boolean().default(false).notNull(),
     twoFactorSecret: text(),
     backupCodes: jsonb(),
     failedLoginAttempts: integer().default(0).notNull(),
@@ -1862,8 +1861,17 @@ export const users = pgTable(
       .defaultNow()
       .notNull(),
     twoFactorStatus: twoFactorStatus().default('disabled').notNull(),
+    twoFactorLastUsedStep: integer(),
   },
   (table) => [
+    check(
+      'users_backup_codes_are_a_list',
+      sql`jsonb_typeof("backupCodes") = 'array'::text`,
+    ),
+    check(
+      'users_backup_codes_match_status',
+      sql`("twoFactorStatus" = 'disabled'::two_factor_status) = ("backupCodes" IS NULL)`,
+    ),
     check('users_email_lower_case', sql`(email)::text = lower((email)::text)`),
     check(
       'users_email_verification_token_complete',
@@ -1872,6 +1880,14 @@ export const users = pgTable(
     check(
       'users_password_reset_token_complete',
       sql`("passwordResetTokenHash" IS NULL) = ("passwordResetExpiry" IS NULL)`,
+    ),
+    check(
+      'users_two_factor_secret_matches_status',
+      sql`("twoFactorStatus" = 'disabled'::two_factor_status) = ("twoFactorSecret" IS NULL)`,
+    ),
+    check(
+      'users_two_factor_step_needs_secret',
+      sql`("twoFactorLastUsedStep" IS NULL) OR ("twoFactorSecret" IS NOT NULL)`,
     ),
     foreignKey({
       columns: [table.customerId],

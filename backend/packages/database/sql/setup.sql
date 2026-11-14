@@ -721,7 +721,6 @@ CREATE TABLE "users" (
 	"passwordResetTokenHash" varchar(255),
 	"passwordResetExpiry" timestamp with time zone,
 	"lastPasswordChange" timestamp with time zone,
-	"twoFactorEnabled" boolean DEFAULT false NOT NULL,
 	"twoFactorSecret" text,
 	"backupCodes" jsonb,
 	"failedLoginAttempts" integer DEFAULT 0 NOT NULL,
@@ -736,9 +735,14 @@ CREATE TABLE "users" (
 	"createdAt" timestamp with time zone DEFAULT now() NOT NULL,
 	"updatedAt" timestamp with time zone DEFAULT now() NOT NULL,
 	"twoFactorStatus" "two_factor_status" DEFAULT 'disabled' NOT NULL,
+	"twoFactorLastUsedStep" integer,
+	CONSTRAINT "users_backup_codes_are_a_list" CHECK (jsonb_typeof("backupCodes") = 'array'::text),
+	CONSTRAINT "users_backup_codes_match_status" CHECK (("twoFactorStatus" = 'disabled'::two_factor_status) = ("backupCodes" IS NULL)),
 	CONSTRAINT "users_email_lower_case" CHECK ((email)::text = lower((email)::text)),
 	CONSTRAINT "users_email_verification_token_complete" CHECK (("emailVerificationTokenHash" IS NULL) = ("emailVerificationExpiry" IS NULL)),
-	CONSTRAINT "users_password_reset_token_complete" CHECK (("passwordResetTokenHash" IS NULL) = ("passwordResetExpiry" IS NULL))
+	CONSTRAINT "users_password_reset_token_complete" CHECK (("passwordResetTokenHash" IS NULL) = ("passwordResetExpiry" IS NULL)),
+	CONSTRAINT "users_two_factor_secret_matches_status" CHECK (("twoFactorStatus" = 'disabled'::two_factor_status) = ("twoFactorSecret" IS NULL)),
+	CONSTRAINT "users_two_factor_step_needs_secret" CHECK (("twoFactorLastUsedStep" IS NULL) OR ("twoFactorSecret" IS NOT NULL))
 );
 
 ALTER TABLE "booking_services" ADD CONSTRAINT "booking_services_booking_id_fk" FOREIGN KEY ("bookingId") REFERENCES "public"."bookings"("id") ON DELETE cascade ON UPDATE no action;
