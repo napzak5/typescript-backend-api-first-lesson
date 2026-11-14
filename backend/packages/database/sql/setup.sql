@@ -716,12 +716,11 @@ CREATE TABLE "users" (
 	"permissions" jsonb DEFAULT '[]'::jsonb NOT NULL,
 	"status" "account_status" DEFAULT 'active' NOT NULL,
 	"emailVerified" boolean DEFAULT false NOT NULL,
-	"emailVerificationToken" varchar(255),
+	"emailVerificationTokenHash" varchar(255),
 	"emailVerificationExpiry" timestamp with time zone,
-	"passwordResetToken" varchar(255),
+	"passwordResetTokenHash" varchar(255),
 	"passwordResetExpiry" timestamp with time zone,
 	"lastPasswordChange" timestamp with time zone,
-	"passwordHistory" jsonb DEFAULT '[]'::jsonb,
 	"twoFactorEnabled" boolean DEFAULT false NOT NULL,
 	"twoFactorSecret" text,
 	"backupCodes" jsonb,
@@ -737,7 +736,9 @@ CREATE TABLE "users" (
 	"createdAt" timestamp with time zone DEFAULT now() NOT NULL,
 	"updatedAt" timestamp with time zone DEFAULT now() NOT NULL,
 	"twoFactorStatus" "two_factor_status" DEFAULT 'disabled' NOT NULL,
-	CONSTRAINT "users_email_unique" UNIQUE("email")
+	CONSTRAINT "users_email_lower_case" CHECK ((email)::text = lower((email)::text)),
+	CONSTRAINT "users_email_verification_token_complete" CHECK (("emailVerificationTokenHash" IS NULL) = ("emailVerificationExpiry" IS NULL)),
+	CONSTRAINT "users_password_reset_token_complete" CHECK (("passwordResetTokenHash" IS NULL) = ("passwordResetExpiry" IS NULL))
 );
 
 ALTER TABLE "booking_services" ADD CONSTRAINT "booking_services_booking_id_fk" FOREIGN KEY ("bookingId") REFERENCES "public"."bookings"("id") ON DELETE cascade ON UPDATE no action;
@@ -892,6 +893,8 @@ CREATE INDEX "idx_treatment_records_customer_id" ON "treatment_records" USING bt
 CREATE INDEX "idx_treatment_records_staff_id" ON "treatment_records" USING btree ("staffId" uuid_ops);
 CREATE INDEX "idx_users_customer_id" ON "users" USING btree ("customerId" uuid_ops);
 CREATE INDEX "idx_users_deleted_at" ON "users" USING btree ("deletedAt" timestamptz_ops);
-CREATE INDEX "idx_users_email" ON "users" USING btree ("email" text_ops);
 CREATE INDEX "idx_users_staff_id" ON "users" USING btree ("staffId" uuid_ops);
 CREATE INDEX "idx_users_two_factor_status" ON "users" USING btree ("twoFactorStatus" enum_ops);
+CREATE UNIQUE INDEX "users_email_unique" ON "users" USING btree ("email" text_ops) WHERE ("deletedAt" IS NULL);
+CREATE UNIQUE INDEX "users_email_verification_token_hash_unique" ON "users" USING btree ("emailVerificationTokenHash" text_ops);
+CREATE UNIQUE INDEX "users_password_reset_token_hash_unique" ON "users" USING btree ("passwordResetTokenHash" text_ops);
