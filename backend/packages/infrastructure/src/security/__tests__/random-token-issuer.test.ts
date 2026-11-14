@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto'
 import { describe, expect, it } from 'vitest'
-import { SessionTokenIssuer } from '../session-token-issuer'
+import { RandomTokenIssuer } from '../random-token-issuer'
 
 /** 32 random bytes in base64url without padding. */
 const TOKEN = /^[A-Za-z0-9_-]{43}$/
@@ -9,8 +9,8 @@ const SHA256_HEX = /^[0-9a-f]{64}$/
 const sha256Hex = (value: string): string =>
   createHash('sha256').update(value, 'utf8').digest('hex')
 
-describe('SessionTokenIssuer', () => {
-  const issuer = new SessionTokenIssuer()
+describe('RandomTokenIssuer', () => {
+  const issuer = new RandomTokenIssuer()
 
   it('issues a token of 43 base64url characters', () => {
     const { token } = issuer.issue()
@@ -37,7 +37,7 @@ describe('SessionTokenIssuer', () => {
     const { token, hash } = issuer.issue()
 
     expect(issuer.hashOf(token)).toBe(hash)
-    expect(new SessionTokenIssuer().hashOf(token)).toBe(hash)
+    expect(new RandomTokenIssuer().hashOf(token)).toBe(hash)
   })
 
   it('hashes with SHA-256', () => {

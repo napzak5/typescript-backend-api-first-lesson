@@ -6,6 +6,7 @@ import {
   staff,
   users,
 } from '@beauty-salon-backend/database'
+import { Argon2PasswordHasher } from '@beauty-salon-backend/infrastructure'
 import { eq, inArray } from 'drizzle-orm'
 import { drizzle, type PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import type { Express } from 'express'
@@ -18,6 +19,7 @@ import {
   loginBody,
   minutesFromNow,
   PASSWORD,
+  passwordHashOf,
   refresh,
   type Session,
   sha256,
@@ -56,6 +58,19 @@ const INVALID_TOKEN_CHALLENGE =
   'Bearer realm="beauty-salon-api", error="invalid_token"'
 
 const FIFTEEN_MINUTES_MS = 15 * 60_000
+
+/** "café …" as one code point for é (NFC) and as e followed by a combining accent (NFD). */
+const COMPOSED = 'caf\u00e9 au lait at dawn'
+const DECOMPOSED = 'cafe\u0301 au lait at dawn'
+
+/**
+ * `length` characters outside the basic plane, each one code point and two
+ * UTF-16 units; three apart, so that they form no run and repeat nothing.
+ */
+const pictographs = (length: number): string =>
+  Array.from({ length }, (_, index) =>
+    String.fromCodePoint(0x1f300 + 3 * index),
+  ).join('')
 
 /**
  * The schema `seed` is declared with: the tables of the database package
@@ -322,6 +337,89 @@ describe('Authentication API', () => {
           .map(({ accessToken }) => sha256(accessToken))
           .sort(),
       )
+    })
+
+    it.each([
+      ['decomposed (NFD)', DECOMPOSED],
+      ['composed (NFC)', COMPOSED],
+    ])(
+      'signs in with a password stored in NFC that is sent %s',
+      async (_case, password) => {
+        const user = await insertUser(db, {
+          passwordHash: await passwordHashOf(COMPOSED),
+        })
+
+        const response = await request(app)
+          .post(LOGIN)
+          .send(loginBody(user.email, { password }))
+
+        expect(response.status).toBe(200)
+      },
+    )
+
+    it.each([
+      ['set decomposed and sent composed', DECOMPOSED, COMPOSED],
+      ['set composed and sent decomposed', COMPOSED, DECOMPOSED],
+    ])(
+      'signs in with a password %s, which is hashed in NFC',
+      async (_case, set, sent) => {
+        const signedIn = await signedInUser(app, db)
+        const changed = await request(app)
+          .post(`${AUTH}/change-password`)
+          .set('Authorization', signedIn.authorization)
+          .send({ currentPassword: PASSWORD, newPassword: set })
+
+        const response = await request(app)
+          .post(LOGIN)
+          .send(loginBody(signedIn.email, { password: sent }))
+
+        expect(changed.status).toBe(204)
+        expect(response.status).toBe(200)
+        const [stored] = await db
+          .select({ passwordHash: users.passwordHash })
+          .from(users)
+          .where(eq(users.id, signedIn.id))
+        const hasher = new Argon2PasswordHasher()
+        expect(
+          await hasher.verify(COMPOSED, stored?.passwordHash ?? ''),
+        ).toMatchObject({ type: 'success', data: { type: 'match' } })
+        expect(
+          await hasher.verify(DECOMPOSED, stored?.passwordHash ?? ''),
+        ).toMatchObject({ type: 'success', data: { type: 'mismatch' } })
+      },
+    )
+
+    it('counts the length of a password in code points: 128 characters outside the basic plane sign in, 129 are too long', async () => {
+      const signedIn = await signedInUser(app, db)
+      const longest = pictographs(128)
+      const changed = await request(app)
+        .post(`${AUTH}/change-password`)
+        .set('Authorization', signedIn.authorization)
+        .send({ currentPassword: PASSWORD, newPassword: longest })
+
+      const accepted = await request(app)
+        .post(LOGIN)
+        .send(loginBody(signedIn.email, { password: longest }))
+      const tooLong = await request(app)
+        .post(LOGIN)
+        .send(loginBody(signedIn.email, { password: pictographs(129) }))
+
+      expect(changed.status).toBe(204)
+      expect(accepted.status).toBe(200)
+      expectProblem(tooLong, badRequest)
+      expect(brokenRules(tooLong)).toEqual(['password:too_big'])
+    })
+
+    it('still signs in with a well-known password that may no longer be set', async () => {
+      const user = await insertUser(db)
+
+      const response = await request(app)
+        .post(LOGIN)
+        .send(
+          loginBody(user.email, { password: 'correct horse battery staple' }),
+        )
+
+      expect(response.status).toBe(200)
     })
 
     it('replaces a hash made with weaker parameters by one made with the current parameters', async () => {
@@ -702,10 +800,11 @@ describe('Authentication API', () => {
       const user = await insertUser(db, {
         twoFactorSecret: 'TOTP-SHARED-SECRET',
         backupCodes: ['BACKUP-CODE-1'],
-        passwordHistory: ['$argon2id$previous-password-hash'],
         metadata: { note: 'INTERNAL-NOTE' },
-        emailVerificationToken: 'email-verification-token',
-        passwordResetToken: 'password-reset-token',
+        emailVerificationTokenHash: 'email-verification-token-hash',
+        emailVerificationExpiry: '2026-11-15T09:00:00.000Z',
+        passwordResetTokenHash: 'password-reset-token-hash',
+        passwordResetExpiry: '2026-11-15T10:00:00.000Z',
       })
       const login = await request(app).post(LOGIN).send(loginBody(user.email))
       const { accessToken, refreshToken } = login.body.data
@@ -727,7 +826,6 @@ describe('Authentication API', () => {
         stored?.passwordHash ?? 'missing hash',
         'TOTP-SHARED-SECRET',
         'BACKUP-CODE-1',
-        'previous-password-hash',
         'INTERNAL-NOTE',
         'email-verification-token',
         'password-reset-token',

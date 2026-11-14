@@ -20,10 +20,7 @@ import type {
   IPasswordHasher,
   PasswordVerification,
 } from '../services/password-hasher'
-import type {
-  ISessionTokenIssuer,
-  IssuedToken,
-} from '../services/session-token-issuer'
+import type { IssuedToken, ITokenIssuer } from '../services/token-issuer'
 import type { DomainError } from '../shared'
 import { SALON_ID } from './fixtures'
 
@@ -33,6 +30,9 @@ export const STAFF_ID = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0c03'
 export const CUSTOMER_ID = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0c04'
 
 export const PASSWORD = 'correct horse battery staple'
+
+/** Where the links in mails point. */
+export const PUBLIC_APP_URL = 'https://app.salon.example'
 
 /** The time on the clock of every use case test. */
 export const NOW = new Date('2026-11-14T09:00:00.000Z')
@@ -54,12 +54,11 @@ export const dbUser = (overrides: Partial<DbUser> = {}): DbUser => ({
   permissions: [],
   status: 'active',
   emailVerified: true,
-  emailVerificationToken: null,
+  emailVerificationTokenHash: null,
   emailVerificationExpiry: null,
-  passwordResetToken: null,
+  passwordResetTokenHash: null,
   passwordResetExpiry: null,
   lastPasswordChange: null,
-  passwordHistory: [],
   twoFactorEnabled: false,
   twoFactorSecret: null,
   backupCodes: null,
@@ -151,7 +150,7 @@ export const fakePasswordHasher = (
 })
 
 /** Issues `token-1`, `token-2`, …; the hash of a token is `sha256(<token>)`. */
-const fakeTokenIssuer = (): ISessionTokenIssuer => {
+const fakeTokenIssuer = (): ITokenIssuer => {
   const hashOf = (token: string): string => `sha256(${token})`
   let issued = 0
 
@@ -182,6 +181,14 @@ export const userRepositoryWith = (
       }),
     ),
   ),
+  createUnverified: vi.fn(async () => Result.success(true)),
+  renewRegistration: vi.fn(async () => Result.success(true)),
+  issueEmailVerification: vi.fn(async () => Result.success(true)),
+  confirmEmail: vi.fn(async () => Result.success(dbUser())),
+  issuePasswordReset: vi.fn(async () => Result.success(true)),
+  findByPasswordResetToken: vi.fn(async () => Result.success(dbUser())),
+  resetPassword: vi.fn(async () => Result.success(dbUser())),
+  changePassword: vi.fn(async () => Result.success(true)),
   ...overrides,
 })
 
@@ -214,6 +221,8 @@ export const authDependencies = (
   sessionRepository: sessionRepositoryWith(),
   passwordHasher: fakePasswordHasher(),
   tokenIssuer: fakeTokenIssuer(),
+  mailer: { deliver: vi.fn() },
+  publicAppUrl: PUBLIC_APP_URL,
   clock: () => NOW,
   ...overrides,
 })

@@ -10,12 +10,11 @@ const fullyStoredUser = (): DbUser =>
     permissions: ['manage_staff', 'view_reports'],
     status: 'locked',
     passwordHash: '$argon2id$v=19$m=19456,t=2,p=1$c2FsdHNhbHQ$dGFndGFn',
-    emailVerificationToken: 'email-verification-token',
+    emailVerificationTokenHash: 'email-verification-token-hash',
     emailVerificationExpiry: '2026-11-15 09:00:00+00',
-    passwordResetToken: 'password-reset-token',
+    passwordResetTokenHash: 'password-reset-token-hash',
     passwordResetExpiry: '2026-11-15 10:00:00+00',
     lastPasswordChange: '2026-10-01 12:00:00+09',
-    passwordHistory: ['$argon2id$previous-password-hash'],
     twoFactorEnabled: true,
     twoFactorStatus: 'enabled',
     twoFactorSecret: 'TOTP-SHARED-SECRET',
@@ -64,12 +63,11 @@ describe('UserReadMapper.toApiUser', () => {
 
     for (const column of [
       'passwordHash',
-      'passwordHistory',
       'twoFactorSecret',
       'backupCodes',
-      'emailVerificationToken',
+      'emailVerificationTokenHash',
       'emailVerificationExpiry',
-      'passwordResetToken',
+      'passwordResetTokenHash',
       'passwordResetExpiry',
       'metadata',
       'deletedAt',
@@ -78,7 +76,6 @@ describe('UserReadMapper.toApiUser', () => {
     }
     for (const secret of [
       stored.passwordHash,
-      'previous-password-hash',
       'TOTP-SHARED-SECRET',
       'BACKUP-CODE-1',
       'email-verification-token',

@@ -201,6 +201,61 @@ describe('LoginUseCase', () => {
     )
   })
 
+  it.each([
+    ['decomposed (NFD)', 'cafe\u0301 au lait at dawn'],
+    ['composed (NFC)', 'caf\u00e9 au lait at dawn'],
+  ])(
+    'compares a password sent %s in NFC with the stored hash',
+    async (_case, password) => {
+      const dependencies = withUser({
+        passwordHash: 'hashed:caf\u00e9 au lait at dawn',
+      })
+
+      const result = await new LoginUseCase(dependencies).execute(
+        loginRequest({ password }),
+        client,
+      )
+
+      expect(result.type).toBe('success')
+      expect(dependencies.passwordHasher.verify).toHaveBeenCalledWith(
+        'caf\u00e9 au lait at dawn',
+        'hashed:caf\u00e9 au lait at dawn',
+      )
+    },
+  )
+
+  it('hashes a password with weaker parameters again in NFC', async () => {
+    const dependencies = withUser({
+      passwordHash: 'weak:caf\u00e9 au lait at dawn',
+    })
+
+    await new LoginUseCase(dependencies).execute(
+      loginRequest({ password: 'cafe\u0301 au lait at dawn' }),
+      client,
+    )
+
+    expect(dependencies.passwordHasher.hash).toHaveBeenCalledWith(
+      'caf\u00e9 au lait at dawn',
+    )
+  })
+
+  it('hashes the password of an unknown email in NFC', async () => {
+    const dependencies = authDependencies({
+      userRepository: userRepositoryWith({
+        findByEmail: async () => Result.success(null),
+      }),
+    })
+
+    await new LoginUseCase(dependencies).execute(
+      loginRequest({ password: 'cafe\u0301 au lait at dawn' }),
+      client,
+    )
+
+    expect(dependencies.passwordHasher.hash).toHaveBeenCalledWith(
+      'caf\u00e9 au lait at dawn',
+    )
+  })
+
   it('hashes the password for an unknown email and fails as for a wrong password', async () => {
     const dependencies = authDependencies({
       userRepository: userRepositoryWith({

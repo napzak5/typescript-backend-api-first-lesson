@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto'
+import { readFileSync } from 'node:fs'
 import { type ClientRequest, request as httpRequest } from 'node:http'
 import type { AppConfig } from '@beauty-salon-backend/config'
 import { createLogger } from '@beauty-salon-backend/infrastructure'
@@ -56,6 +57,16 @@ const createConfig = (
         maxAgeSeconds: 600,
       },
       rateLimit: { windowMs: 60_000, maxRequests: 1000 },
+      // Nothing listens there: a mail handed over fails to be delivered.
+      mail: {
+        host: '127.0.0.1',
+        port: 1,
+        tls: 'none',
+        user: 'nobody',
+        password: 'nothing',
+        from: 'no-reply@salon.example',
+      },
+      publicAppUrl: 'https://salon.example',
       logging: { level: 'info', format: 'json' },
     },
   }
@@ -224,5 +235,71 @@ describe('stop', () => {
         graceMs: 200,
       }),
     )
+  })
+})
+
+describe('stop with mail under way', () => {
+  /** The schema of the application, as the database package generates it. */
+  const setupSql = readFileSync(
+    new URL('../../../../packages/database/sql/setup.sql', import.meta.url),
+    'utf8',
+  )
+
+  /** A database of the test's own with the application's tables, so that a registration gets as far as its mail. */
+  const createSchemaDatabase = async (): Promise<{
+    url: string
+    drop: () => Promise<void>
+  }> => {
+    const name = `server_mail_${randomUUID().replaceAll('-', '')}`
+    await observer.unsafe(`CREATE DATABASE ${name}`)
+    const url = new URL(databaseUrl)
+    url.pathname = `/${name}`
+    const setup = postgres(url.toString(), {
+      max: 1,
+      onnotice: () => undefined,
+    })
+    await setup.unsafe(setupSql)
+    await setup.end()
+
+    return {
+      url: url.toString(),
+      drop: async () => {
+        await observer.unsafe(`DROP DATABASE ${name} WITH (FORCE)`)
+      },
+    }
+  }
+
+  it('should resolve after a registration handed a mail to an SMTP server nobody listens on, once the delivery has ended', async () => {
+    const database = await createSchemaDatabase()
+    const { config } = createConfig()
+    const { server, logs } = await start({
+      ...config,
+      database: { ...config.database, url: database.url },
+    })
+    const response = await fetch(
+      `http://127.0.0.1:${server.port}/api/v1/auth/register`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: 'hanako@example.com',
+          password: 'violet tram under the bridge',
+        }),
+      },
+    )
+
+    await server.stop()
+    await database.drop()
+
+    expect(response.status).toBe(204)
+    expect(logs).toContainEqual(
+      expect.objectContaining({
+        level: 'error',
+        msg: 'Failed to deliver mail',
+        subject: 'メールアドレスの確認',
+        failure: expect.objectContaining({ code: 'ESOCKET', command: 'CONN' }),
+      }),
+    )
+    expect(JSON.stringify(logs)).not.toContain('hanako@example.com')
   })
 })

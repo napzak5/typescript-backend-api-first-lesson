@@ -1,3 +1,4 @@
+import type { Mail } from '@beauty-salon-backend/domain'
 import {
   connectDatabase,
   createLogger,
@@ -43,6 +44,9 @@ export function getTestDbClient(): postgres.Sql {
 
 export const ALLOWED_ORIGIN = 'https://salon.example'
 
+/** Where the links in mails point. */
+export const PUBLIC_APP_URL = 'https://app.salon.example'
+
 const settings: AppSettings = {
   trustProxyHops: 0,
   cors: {
@@ -51,6 +55,7 @@ const settings: AppSettings = {
     maxAgeSeconds: 600,
   },
   rateLimit: { windowMs: 60_000, maxRequests: 1000 },
+  publicAppUrl: PUBLIC_APP_URL,
 }
 
 export type TestAppOptions = {
@@ -59,6 +64,8 @@ export type TestAppOptions = {
   rateLimit?: AppSettings['rateLimit']
   /** Receives every line the application logs, parsed. Not logged if absent. */
   logs?: unknown[]
+  /** Receives every mail the application hands over. Dropped if absent. */
+  mails?: Mail[]
 }
 
 /**
@@ -68,10 +75,12 @@ export function createTestApp({
   database = getTestDb(),
   rateLimit = settings.rateLimit,
   logs,
+  mails,
 }: TestAppOptions = {}): Express {
   return createApp({
     database,
     settings: { ...settings, rateLimit },
+    mailer: { deliver: (mail) => mails?.push(mail) },
     logger: createLogger(
       {
         level: logs === undefined ? 'silent' : 'info',
