@@ -10,6 +10,7 @@ import {
   RandomTokenIssuer,
   SalonRepository,
   ServiceCategoryRepository,
+  ServiceRepository,
   SessionRepository,
   UserRepository,
 } from '@beauty-salon-backend/infrastructure'
@@ -27,6 +28,7 @@ import { requestLogging } from './middleware/request-logging'
 import { createAdminAuthRouter } from './routes/admin-auth'
 import { createAuthRouter } from './routes/auth'
 import { createSalonRouter } from './routes/salon'
+import { createServiceRouter } from './routes/service'
 import { createServiceCategoryRouter } from './routes/service-category'
 import { createSystemRouter } from './routes/system'
 import type { AppSettings } from './settings'
@@ -117,6 +119,13 @@ export const createApp = ({
         serviceCategoryRepository: new ServiceCategoryRepository(database),
         salonRepository,
       },
+      authenticated,
+    ),
+  )
+  app.use(
+    `${API_BASE_PATH}/salons/:salonId/services`,
+    createServiceRouter(
+      { serviceRepository: new ServiceRepository(database), salonRepository },
       authenticated,
     ),
   )

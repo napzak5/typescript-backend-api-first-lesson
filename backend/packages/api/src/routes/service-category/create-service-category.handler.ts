@@ -5,11 +5,11 @@ import {
 import type { RequestHandler } from 'express'
 import { match } from 'ts-pattern'
 import type { Authenticated } from '../../shared/authentication'
+import type { SalonParams } from '../../shared/operation-types'
 import type { ProblemDetails } from '../../shared/problem-details'
 import { responseMeta, sendProblem } from '../../shared/responses'
 import {
   type CreateServiceCategoryResponse,
-  type SalonParams,
   serviceCategoryLinks,
 } from './_shared'
 

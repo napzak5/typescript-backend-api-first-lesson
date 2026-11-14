@@ -4,13 +4,13 @@ import {
 } from '@beauty-salon-backend/domain'
 import type { RequestHandler } from 'express'
 import { match } from 'ts-pattern'
+import type { SalonParams } from '../../shared/operation-types'
 import { pageLinks } from '../../shared/page-links'
 import type { ProblemDetails } from '../../shared/problem-details'
 import { sendProblem } from '../../shared/responses'
 import {
   decodeServiceCategorySearchQuery,
   type ListServiceCategoriesResponse,
-  type SalonParams,
 } from './_shared'
 
 /**
