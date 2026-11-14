@@ -9,7 +9,6 @@
 CREATE TYPE "public"."account_status" AS ENUM('active', 'unverified', 'inactive', 'locked', 'suspended', 'deleted');
 CREATE TYPE "public"."allergy_severity" AS ENUM('mild', 'moderate', 'severe', 'life_threatening');
 CREATE TYPE "public"."allergy_type" AS ENUM('chemical', 'fragrance', 'metal', 'latex', 'plant', 'other');
-CREATE TYPE "public"."authentication_state" AS ENUM('unauthenticated', 'authenticated', 'pending_two_factor', 'locked');
 CREATE TYPE "public"."booking_requirement" AS ENUM('consultation_required', 'patch_test_required', 'advance_booking_required', 'deposit_required');
 CREATE TYPE "public"."booking_status" AS ENUM('draft', 'pending', 'confirmed', 'in_progress', 'completed', 'cancelled', 'no_show');
 CREATE TYPE "public"."customer_status" AS ENUM('active', 'inactive', 'vip', 'blacklisted');
@@ -553,18 +552,16 @@ CREATE TABLE "services" (
 CREATE TABLE "sessions" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"userId" uuid NOT NULL,
-	"token" text NOT NULL,
-	"refreshToken" text,
-	"ipAddress" varchar(50) NOT NULL,
-	"userAgent" text NOT NULL,
-	"deviceId" varchar(255),
+	"tokenHash" text NOT NULL,
+	"refreshTokenHash" text NOT NULL,
+	"ipAddress" varchar(50),
+	"userAgent" text,
 	"expiresAt" timestamp with time zone NOT NULL,
-	"refreshExpiresAt" timestamp with time zone,
+	"refreshExpiresAt" timestamp with time zone NOT NULL,
 	"lastActivityAt" timestamp with time zone DEFAULT now() NOT NULL,
 	"createdAt" timestamp with time zone DEFAULT now() NOT NULL,
-	"authenticationState" "authentication_state" DEFAULT 'authenticated',
-	CONSTRAINT "sessions_refresh_token_unique" UNIQUE("refreshToken"),
-	CONSTRAINT "sessions_token_unique" UNIQUE("token")
+	CONSTRAINT "sessions_refresh_token_hash_unique" UNIQUE("refreshTokenHash"),
+	CONSTRAINT "sessions_token_hash_unique" UNIQUE("tokenHash")
 );
 
 CREATE TABLE "staff" (
@@ -716,7 +713,7 @@ CREATE TABLE "users" (
 	"email" varchar(255) NOT NULL,
 	"passwordHash" text NOT NULL,
 	"role" "user_role" DEFAULT 'customer' NOT NULL,
-	"permissions" jsonb DEFAULT '[]'::jsonb,
+	"permissions" jsonb DEFAULT '[]'::jsonb NOT NULL,
 	"status" "account_status" DEFAULT 'active' NOT NULL,
 	"emailVerified" boolean DEFAULT false NOT NULL,
 	"emailVerificationToken" varchar(255),
@@ -739,7 +736,7 @@ CREATE TABLE "users" (
 	"deletedAt" timestamp with time zone,
 	"createdAt" timestamp with time zone DEFAULT now() NOT NULL,
 	"updatedAt" timestamp with time zone DEFAULT now() NOT NULL,
-	"twoFactorStatus" "two_factor_status" DEFAULT 'disabled',
+	"twoFactorStatus" "two_factor_status" DEFAULT 'disabled' NOT NULL,
 	CONSTRAINT "users_email_unique" UNIQUE("email")
 );
 
@@ -872,10 +869,7 @@ CREATE INDEX "idx_services_deleted_at" ON "services" USING btree ("deletedAt" ti
 CREATE INDEX "idx_services_pricing_strategy" ON "services" USING btree ("pricingStrategy" enum_ops);
 CREATE INDEX "idx_services_salon_id" ON "services" USING btree ("salonId" uuid_ops);
 CREATE INDEX "idx_services_service_status" ON "services" USING btree ("serviceStatus" enum_ops);
-CREATE INDEX "idx_sessions_authentication_state" ON "sessions" USING btree ("authenticationState" enum_ops);
 CREATE INDEX "idx_sessions_expires_at" ON "sessions" USING btree ("expiresAt" timestamptz_ops);
-CREATE INDEX "idx_sessions_refresh_token" ON "sessions" USING btree ("refreshToken" text_ops);
-CREATE INDEX "idx_sessions_token" ON "sessions" USING btree ("token" text_ops);
 CREATE INDEX "idx_sessions_user_id" ON "sessions" USING btree ("userId" uuid_ops);
 CREATE INDEX "idx_staff_deleted_at" ON "staff" USING btree ("deletedAt" timestamptz_ops);
 CREATE INDEX "idx_staff_email" ON "staff" USING btree ("email" text_ops);

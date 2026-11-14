@@ -5,7 +5,7 @@
 | コマンド | 内容 | 既存データ |
 |---|---|---|
 | `pnpm db:migrate` | スキーマを最新にする | 保持 |
-| `pnpm db:seed` | サンプルデータを投入する | 空の DB が前提 |
+| `pnpm db:seed` | サンプルデータを投入する(ログインできるアカウントを含む。本番環境では実行を拒否する) | 空の DB が前提 |
 | `pnpm db:truncate` | 全テーブルのデータを消す | 削除 |
 | `pnpm db:fresh` | すべて削除してスキーマを作り直す | 削除 |
 | `pnpm db:introspect` | DB から `schema.ts` / `relations.ts` を生成する | 読み取りのみ |
@@ -52,6 +52,8 @@ pnpm db:truncate          # 全テーブルのデータを削除
 ```
 
 シードは重複を読み飛ばしません。データがある DB にオプションなしで実行すると、一意制約の違反で失敗します(既存のデータは変わりません)。入れ直すときは `--reset` を使います。
+
+シードはログインできるアカウント(`admin@beautysalon.jp`、`owner@beautysalon.jp` など)を作ります。パスワードはすべて同じで、`src/seeds/seed-data/users.ts` の `SEED_PASSWORD` です。リポジトリで公開されているパスワードなので、`NODE_ENV=production` のときは、オプションにかかわらず `pnpm db:seed` は何もせずにエラーで終了します。アカウントの一覧とロールは [認証と認可](../../../../docs/authentication.md#シードのアカウント) にあります。
 
 ## 3. 作り直し
 

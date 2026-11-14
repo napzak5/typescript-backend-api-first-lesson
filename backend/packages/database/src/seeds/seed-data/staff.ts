@@ -13,6 +13,8 @@ export async function seedStaff(
   salonIds: string[],
   userIds?: {
     staffUserIds: string[]
+    ownerUserId: string
+    managerUserId: string
   },
 ): Promise<StaffSeedResult> {
   const salonId1 = salonIds[0]
@@ -141,6 +143,58 @@ export async function seedStaff(
       const userId = userIds.staffUserIds[i]
       const staffId = staff[i]?.id
       if (userId && staffId) {
+        await db
+          .update(schema.users)
+          .set({ staffId })
+          .where(eq(schema.users.id, userId))
+      }
+    }
+  }
+
+  // The owner and the manager of the first salon. They belong to the salon
+  // through a staff member, like everybody who works there, but take no
+  // bookings and are left out of the IDs the other seeds draw from.
+  if (userIds) {
+    const management = await db
+      .insert(schema.staff)
+      .values([
+        {
+          salonId: salonId1,
+          userId: userIds.ownerUserId,
+          firstName: 'Akiko',
+          lastName: 'Mori',
+          firstNameKana: 'アキコ',
+          lastNameKana: 'モリ',
+          displayName: 'Akiko Mori',
+          email: 'owner@beautysalon.jp',
+          phoneNumber: '+81-90-3333-4444',
+          staffCode: 'STF900',
+          level: 'director',
+          position: 'Owner',
+          canReceiveBookings: false,
+          isActive: true,
+        },
+        {
+          salonId: salonId1,
+          userId: userIds.managerUserId,
+          firstName: 'Kenji',
+          lastName: 'Sato',
+          firstNameKana: 'ケンジ',
+          lastNameKana: 'サトウ',
+          displayName: 'Kenji Sato',
+          email: 'manager@beautysalon.jp',
+          phoneNumber: '+81-90-5555-6666',
+          staffCode: 'STF901',
+          level: 'director',
+          position: 'Salon Manager',
+          canReceiveBookings: false,
+          isActive: true,
+        },
+      ])
+      .returning({ id: schema.staff.id, userId: schema.staff.userId })
+
+    for (const { id: staffId, userId } of management) {
+      if (userId) {
         await db
           .update(schema.users)
           .set({ staffId })

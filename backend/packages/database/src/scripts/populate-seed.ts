@@ -19,6 +19,14 @@ const onlyIfEmpty = args.includes('--if-empty')
 const databaseUrl = getDatabaseUrl()
 
 async function main() {
+  // Every seeded account has the password published in the seed data.
+  if (environment === 'production') {
+    console.error(
+      '❌ The seed creates accounts with a published password and does not run against production.',
+    )
+    process.exit(1)
+  }
+
   console.log(
     `🌱 Populating database with seed data in ${environment.toUpperCase()} environment...`,
   )
@@ -35,11 +43,7 @@ async function main() {
       process.exit(0)
     }
 
-    await seed(db, {
-      environment: environment === 'production' ? 'production' : 'development',
-      includeSampleData: environment !== 'production',
-      reset: shouldReset,
-    })
+    await seed(db, { reset: shouldReset })
 
     console.log('')
     console.log('📊 Collecting seeding statistics...')
