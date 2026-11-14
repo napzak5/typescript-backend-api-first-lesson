@@ -141,7 +141,7 @@ export const salonCreateRequestSchema = z.strictObject({
 
 ```typescript
 // backend/packages/domain/src/models/salon.ts
-export const salonIdSchema = z.uuid().brand<'SalonId'>()
+export const salonIdSchema = uuidSchema.brand<'SalonId'>()
 export type SalonId = z.infer<typeof salonIdSchema>
 
 const salonIdParameterSchema = z.object({ id: salonIdSchema })
@@ -154,6 +154,8 @@ export const parseSalonId = (id: unknown): Result<SalonId, DomainError> =>
 ```
 
 `SalonId` を得る方法は、スキーマで検証することだけです。リポジトリのメソッドは `id: SalonId` を受け取るので、検証していない `string` を渡すとコンパイルエラーになります。一覧のカーソルも `salonIdSchema` で検証しています。
+
+`uuidSchema`（`backend/packages/domain/src/shared/identifier.ts`）は、UUID であることを検証し、小文字にそろえます。UUID の英字は大文字でも小文字でも書けますが、PostgreSQL は常に小文字で返します。ID は文字列として比べる箇所がある（操作者のサロンか、管理者自身のアカウントか）ので、検証済みの ID は必ず DB の値と同じ表記にします。ID のスキーマは、すべて `uuidSchema` から作ります。
 
 ## 型は宣言せず、推論と生成で得る
 

@@ -47,7 +47,7 @@ NULL 許可のカラムは、どの層でも null を許す形になる: `schema
 
 | PostgreSQL | Zod | 例 |
 |---|---|---|
-| `uuid`（ID） | `z.uuid().brand<'SalonId'>()`（`models/salon.ts` の `salonIdSchema`） | パスの `id`、`cursor` |
+| `uuid`（ID） | `uuidSchema.brand<'SalonId'>()`（`models/salon.ts` の `salonIdSchema`。`uuidSchema` は `shared/identifier.ts` にあり、UUID を検証して小文字にそろえる） | パスの `id`、`cursor` |
 | `varchar(n)` | `nonBlankText.max(n)`。内容に応じて `z.email().max(n)`、`z.httpUrl().max(n)`、`phoneNumberSchema` | `name`、`email`、`websiteUrl`、`phoneNumber` |
 | `text` | `nonBlankText`（空白だけの文字列を拒否する `z.string()`） | `description` |
 | `text[]` | `z.array(nonBlankText)`、`z.array(z.httpUrl())` | `features`、`imageUrls` |
@@ -135,7 +135,7 @@ export const SalonWriteMapper = {
 | NULL 許可 | `Type \| null` | `.nullable()` | null をそのまま保存し、そのまま返す |
 | `varchar(n)` | `@maxLength(n)` | `.max(n)` | 超過は検証エラー（400） |
 | `numeric(p, s)` | `@minValue` / `@maxValue` | `.min()` / `.max()`。`taxRate` は `.multipleOf(0.01)` | 範囲外は検証エラー（400） |
-| `uuid` の主キー | ID スカラー | `z.uuid().brand<'SalonId'>()`（`salonIdSchema`） | UUID でない ID は検証エラー（400） |
+| `uuid` の主キー | ID スカラー | `uuidSchema.brand<'SalonId'>()`（`salonIdSchema`） | UUID でない ID は検証エラー（400）。大文字で書かれた ID は小文字にそろえる |
 | 一意インデックス（`salons_email_unique`。削除されていない行が対象） | `@doc` に「削除されていないサロンの間で一意」と書き、オペレーションに 409 を列挙する | 検証しない | リポジトリが一意性の違反（SQLSTATE `23505`）を `alreadyExists` に変換する（409） |
 | 外部キー（`opening_hours.salonId`、`ON DELETE CASCADE`） | 親モデルに `openingHours` として埋め込む | 配列として検証する | リポジトリが親と子を 1 つのトランザクションで書く |
 

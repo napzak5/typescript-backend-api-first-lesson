@@ -88,7 +88,7 @@ not been checked cannot be passed where an ID is expected.
 
 ```typescript
 // backend/packages/domain/src/models/salon.ts
-export const salonIdSchema = z.uuid().brand<'SalonId'>()
+export const salonIdSchema = uuidSchema.brand<'SalonId'>()
 export type SalonId = z.infer<typeof salonIdSchema>
 
 const salonIdParameterSchema = z.object({ id: salonIdSchema })
@@ -103,6 +103,14 @@ export const parseSalonId = (id: unknown): Result<SalonId, DomainError> =>
 - The handler passes `req.params.id` as it is; the use case calls
   `parseSalonId` first and hands the resulting `SalonId` to the repository,
   whose methods accept nothing else.
+- `uuidSchema` (`backend/packages/domain/src/shared/identifier.ts`) is
+  `z.uuid().toLowerCase()`. The letters of a UUID may be written in either
+  case, and PostgreSQL always returns them in lower case, so an ID from a
+  request is brought into that spelling when it is checked. An ID is compared
+  as a string in several places (is this the salon of the actor, is this the
+  administrator's own account), and both sides then spell the same ID the
+  same way. Every ID schema is built from `uuidSchema`; do not call
+  `z.uuid()` for an ID.
 - An ID that is not a UUID is a `validation` error (400) with `field: 'id'`. A
   well-formed ID of a salon that does not exist, or that has been deleted, is
   `notFound` (404).
