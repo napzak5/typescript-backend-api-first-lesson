@@ -23,6 +23,8 @@
 | `ServiceCreation` | 同上 | `created` と、`ServiceWriteRefusal` のケース |
 | `ServiceUpdate`、`ServiceBulkUpdate` | 同上 | `updated` と、`ServiceChangeRefusal` のケース |
 | `ServiceDeletion` | 同上 | `deleted` / `notFound` / `containedInPackage` |
+| `CustomerCreation` | `backend/packages/domain/src/repositories/customer.repository.ts` | `created` / `referrerNotFound` |
+| `CustomerUpdate` | 同上 | `updated` / `notFound` / `referrerNotFound` |
 | `ActorScope` | `backend/packages/domain/src/models/auth.ts` | `platform` / `salon` / `customer` / `none` |
 | `PasswordVerification` | `backend/packages/domain/src/services/password-hasher.ts` | `match` / `mismatch` |
 | `PasswordCheck` | `backend/packages/domain/src/business-logic/auth/_shared/password-check.ts` | `accepted` / `refused` |
@@ -162,11 +164,11 @@ export type DomainError =
 
 | ケース | 作られる場所 | HTTP ステータス |
 |--------|--------------|-----------------|
-| `validation` | `parseWith`（`backend/packages/domain/src/shared/validation.ts`）が Zod の検証結果から作る。認証のユースケースは、スキーマでは確認できない規則（推測されやすいパスワード、現在のパスワードの誤り、使えないトークン、受け付けられない 2 要素認証のコード、そのユーザーのセッションを指していないセッション一覧のカーソル）についても作る。サービスカテゴリーのユースケースも、親にできないカテゴリーを指す `parentId`（同じサロンのカテゴリーでない、またはそのカテゴリー自身かその下位のカテゴリー）と、そのサロンのカテゴリーを指していない一覧のカーソルについて作る。サービスのユースケースも、2 つの項目を結ぶ規則（`discountPrice` と `price`、`isPackage` と `packageServiceIds`）に反するサービス、同じサロンのものでないカテゴリー、パッケージの構成にできないサービス、パッケージに含まれているサービスをパッケージにする変更、そのサロンのサービスを指していない一覧のカーソルについて作る。リポジトリの拒否（`ServiceChangeRefusal`）から作る場所は、`backend/packages/domain/src/business-logic/service/_shared/refusals.ts` の `toRefusalError` の 1 か所である | 400 |
+| `validation` | `parseWith`（`backend/packages/domain/src/shared/validation.ts`）が Zod の検証結果から作る。認証のユースケースは、スキーマでは確認できない規則（推測されやすいパスワード、現在のパスワードの誤り、使えないトークン、受け付けられない 2 要素認証のコード、そのユーザーのセッションを指していないセッション一覧のカーソル）についても作る。サービスカテゴリーのユースケースも、親にできないカテゴリーを指す `parentId`（同じサロンのカテゴリーでない、またはそのカテゴリー自身かその下位のカテゴリー）と、そのサロンのカテゴリーを指していない一覧のカーソルについて作る。サービスのユースケースも、2 つの項目を結ぶ規則（`discountPrice` と `price`、`isPackage` と `packageServiceIds`）に反するサービス、同じサロンのものでないカテゴリー、パッケージの構成にできないサービス、パッケージに含まれているサービスをパッケージにする変更、そのサロンのサービスを指していない一覧のカーソルについて作る。リポジトリの拒否（`ServiceChangeRefusal`）から作る場所は、`backend/packages/domain/src/business-logic/service/_shared/refusals.ts` の `toRefusalError` の 1 か所である。顧客のユースケースも、生年月日の範囲（1900-01-01 以降で、未来の日付でない。未来かどうかは、依存の `clock` が返す現在時刻で決まる）、紹介元にできない顧客を指す `referredBy`（その顧客自身、または存在しないか削除済みの顧客）、顧客を指していない一覧のカーソルについて作る | 400 |
 | `unauthenticated` | 認証のユースケース（`backend/packages/domain/src/business-logic/auth/`）。有効なアクセストークンがない、ログインやトークンの再発行に失敗したとき。2 要素認証が有効なアカウントのログインで、コードがない・受け付けられないときも含む。理由は `reason` が持つ | 401 |
 | `forbidden` | ユースケース。操作者にその操作の権限がないとき | 403 |
-| `notFound` | ユースケース。リポジトリが `null`（削除では `false`）を返したとき、またはリポジトリの結果が `notFound` のケースだったとき（`ServiceCategoryUpdate`、`ServiceUpdate`、`ServiceBulkUpdate`、`ServiceDeletion`）。サロンの下にあるルートでは、パスのサロンが存在しないときも作る（`backend/packages/domain/src/business-logic/_shared/existing-salon.ts` の `requireSalon`） | 404 |
-| `alreadyExists` | リポジトリ。メールアドレスの一意制約に違反したとき | 409 |
+| `notFound` | ユースケース。リポジトリが `null`（削除では `false`）を返したとき、またはリポジトリの結果が `notFound` のケースだったとき（`ServiceCategoryUpdate`、`ServiceUpdate`、`ServiceBulkUpdate`、`ServiceDeletion`、`CustomerUpdate`）。サロンの下にあるルートでは、パスのサロンが存在しないときも作る（`backend/packages/domain/src/business-logic/_shared/existing-salon.ts` の `requireSalon`） | 404 |
+| `alreadyExists` | リポジトリ。書き込みが一意性に違反したとき。サロンのメールアドレス、顧客のメールアドレス（削除されていない顧客の間で一意）、顧客の紹介コード（削除済みを含むすべての顧客の間で一意）。どれに違反したかは、違反した制約の名前で見分ける | 409 |
 | `conflict` | 2 要素認証のユースケースと、管理者の操作のユースケース。リクエストは正しいが、対象の状態がその操作を許さないとき（すでに有効なのに設定を開始する、ロックされていないアカウントのロックを解除する、など）。サービスの削除のユースケースも、パッケージに含まれているサービスについて作る | 409 |
 | `database` | リポジトリ（想定外のクエリ失敗）、読み取りマッパー（保存値が API モデルに合わない） | 500 |
 
@@ -319,7 +321,7 @@ export const toHttpError = (error: unknown): HttpError =>
 |----------|------|----------|
 | `P.string` / `P.number` | プロパティがその型のときだけ取り出す | `describeDatabaseError`（`backend/packages/infrastructure/src/database/failure.ts`）、`portOf`（`backend/apps/server/src/server.ts`） |
 | `P.select()` | 一致した値の一部だけを分岐に渡す | `describeDatabaseError` |
-| `P.union(...)` | 複数の形のどれか | `toHttpError`、`toDomainError`（`backend/packages/infrastructure/src/repositories/salon.repository.impl.ts`）、`mayUpdateSalon`、`mayDeleteSalon`、`mayManageServiceCategories`、`mayManageServices`、`CreateServiceUseCase`（リポジトリが拒否した理由をまとめて受ける） |
+| `P.union(...)` | 複数の形のどれか | `toHttpError`、`toDomainError`（`backend/packages/infrastructure/src/repositories/salon.repository.impl.ts`、`customer.repository.impl.ts`）、`mayUpdateSalon`、`mayDeleteSalon`、`mayManageServiceCategories`、`mayManageServices`、`mayDeleteCustomers`、`CreateServiceUseCase`（リポジトリが拒否した理由をまとめて受ける） |
 | `P.not(...)` | 1 つの値以外のすべて | `UpdateServiceUseCase`、`BulkUpdateServicesUseCase`（`updated` 以外の結果、つまり拒否をまとめて `toRefusalError` に渡す。拒否の理由は `toRefusalError` の `match` が網羅する） |
 | `P.array()` | 配列であること | `describeDatabaseError` |
 | `P.string.regex(...)` | 文字列の形式 | `assignRequestId`（`backend/packages/api/src/middleware/request-logging.ts`） |

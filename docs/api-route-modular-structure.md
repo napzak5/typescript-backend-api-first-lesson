@@ -1,6 +1,6 @@
 # API Route Modular Structure Guide
 
-This guide describes how the HTTP layer, `backend/packages/api`, is organised: one handler file per endpoint, one router per domain, and the helpers and middleware they share. Salon is the pattern for the next domain; the authentication routes (`routes/auth/`, `routes/admin-auth/`) follow it too, and so do the routes of the service categories (`routes/service-category/`) and of the services (`routes/service/`), which are mounted below a salon.
+This guide describes how the HTTP layer, `backend/packages/api`, is organised: one handler file per endpoint, one router per domain, and the helpers and middleware they share. Salon is the pattern for the next domain; the authentication routes (`routes/auth/`, `routes/admin-auth/`) follow it too, and so do the routes of the service categories (`routes/service-category/`) and of the services (`routes/service/`), which are mounted below a salon, and the routes of the customer ledger (`routes/customer/`), none of which is public.
 
 The layers below the API (models, validation, mappers, repository, use cases) are described in the [Domain Implementation Reference](./domain-implementation-reference.md).
 
@@ -8,7 +8,7 @@ The layers below the API (models, validation, mappers, repository, use cases) ar
 
 ```
 backend/packages/api/src/
-├── index.ts                        # createApp: middleware order, repositories, authenticated, routers
+├── index.ts                        # createApp: middleware order, repositories, clock, authenticated, routers
 ├── settings.ts                     # AppSettings: proxy hops, CORS, rate limit, origin of the web application
 ├── middleware/
 │   ├── request-logging.ts          # req.id, req.log, X-Request-Id, one log line per request
@@ -55,6 +55,18 @@ backend/packages/api/src/
 │   │   ├── list-sessions.handler.ts              # GET  /api/v1/auth/sessions
 │   │   ├── revoke-session.handler.ts             # DELETE /api/v1/auth/sessions/:sessionId
 │   │   └── index.ts                              # createAuthRouter
+│   ├── customer/
+│   │   ├── _shared/
+│   │   │   ├── types.ts            # CustomerParams, and the response body types
+│   │   │   ├── links.ts            # customerLinks
+│   │   │   ├── query.ts            # decodeCustomerSearchQuery
+│   │   │   └── index.ts            # re-exports the three files above
+│   │   ├── list-customers.handler.ts             # GET    /api/v1/customers
+│   │   ├── create-customer.handler.ts            # POST   /api/v1/customers
+│   │   ├── get-customer.handler.ts               # GET    /api/v1/customers/:id
+│   │   ├── update-customer.handler.ts            # PATCH  /api/v1/customers/:id
+│   │   ├── delete-customer.handler.ts            # DELETE /api/v1/customers/:id
+│   │   └── index.ts                              # createCustomerRouter
 │   ├── salon/
 │   │   ├── _shared/
 │   │   │   ├── types.ts            # response body types, taken from the generated operations
@@ -97,7 +109,7 @@ backend/packages/api/src/
 └── __tests__/                      # integration tests and their helpers (see Tests)
 ```
 
-There is one handler per operation of the `SalonCrud` interface in `specs/operations/salon-operations.tsp`, and no other salon route. Filtering is part of the list operation; there is no separate search endpoint. Each operation in `specs/operations/auth-operations.tsp` has a handler in the same way: those of the interfaces `AuthCrud` and `SessionCrud` in `routes/auth/`, and those of `AdminAuthCrud`, which the contract puts under a path of its own (`/api/v1/admin/auth`), in `routes/admin-auth/`. The five operations of `ServiceCategoryCrud` in `specs/operations/service-operations.tsp` have theirs in `routes/service-category/`, and the six operations of `ServiceCrud` in the same file have theirs in `routes/service/`.
+There is one handler per operation of the `SalonCrud` interface in `specs/operations/salon-operations.tsp`, and no other salon route. Filtering is part of the list operation; there is no separate search endpoint. Each operation in `specs/operations/auth-operations.tsp` has a handler in the same way: those of the interfaces `AuthCrud` and `SessionCrud` in `routes/auth/`, and those of `AdminAuthCrud`, which the contract puts under a path of its own (`/api/v1/admin/auth`), in `routes/admin-auth/`. The five operations of `ServiceCategoryCrud` in `specs/operations/service-operations.tsp` have theirs in `routes/service-category/`, and the six operations of `ServiceCrud` in the same file have theirs in `routes/service/`. Of the 18 operations of `CustomerCrud` in `specs/operations/customer-operations.tsp`, the five that are implemented (list, create, get, update, delete) have theirs in `routes/customer/`; the other 13 have no handler.
 
 ## Key Principles
 
@@ -184,6 +196,8 @@ The five handlers in `routes/service-category/` are those of the table above for
 
 The six handlers in `routes/service/` are the same five for the services of a salon, and one more. `bulk-update-services.handler.ts` (`PATCH /bulk`) is wrapped, passes `actor`, `req.params.salonId` and `req.body`, and answers 200 with `{ data, meta, links }`: `data.updated` lists the IDs of the services that were changed, and `links` holds `list` only.
 
+The five handlers in `routes/customer/` are those of the table above with one difference: none is public. All five are wrapped with `authenticated` and pass the `actor` first; the get handler, for example, passes `actor` and `req.params.id`. The answers are the same. What the list handler passes next to the `actor` is described under [Query parameters](#query-parameters).
+
 ### Query parameters
 
 A query string carries text only, so the list handler gives the parameters their types before the use case sees them (`routes/salon/list-salons.handler.ts`):
@@ -214,7 +228,19 @@ export const decodeSalonSearchQuery = (
 - Decoding changes the representation and nothing else: `limit=10` becomes the number 10, `isActive=false` the boolean, `features=color` the list `['color']`. Which values are allowed is decided by the use case.
 - The object is loose on purpose. A parameter the API does not define (`page=2`) is passed on, and the strict schema of the use case rejects it by name, so the list of parameters exists in one place.
 - The result is still `unknown`. A parameter that cannot be decoded (`limit=ten`) is a `validation` error and is answered like every other one.
-- `numberParameter`, `booleanParameter` and `listParameter` are the converters of `shared/query-parameters.ts`, which every list uses. The session list decodes its `limit` with the same `numberParameter` (`decodeSessionSearchQuery` in `routes/auth/_shared/query.ts`), and the list of service categories and the list of services their `limit` and `isActive` (`decodeServiceCategorySearchQuery` in `routes/service-category/_shared/query.ts`, `decodeServiceSearchQuery` in `routes/service/_shared/query.ts`).
+- `numberParameter`, `booleanParameter` and `listParameter` are the converters of `shared/query-parameters.ts`, which every list uses. The session list decodes its `limit` with the same `numberParameter` (`decodeSessionSearchQuery` in `routes/auth/_shared/query.ts`), and the list of service categories and the list of services their `limit` and `isActive` (`decodeServiceCategorySearchQuery` in `routes/service-category/_shared/query.ts`, `decodeServiceSearchQuery` in `routes/service/_shared/query.ts`). The customer list decodes its `limit` and its `tags` (`decodeCustomerSearchQuery` in `routes/customer/_shared/query.ts`).
+
+The salon list is public, so its handler answers a query that cannot be decoded itself. The customer list is not public, and a user who may not list customers is told that and nothing about the request. Its handler therefore passes the outcome of the decoding on as it is, and the use case, which takes the decoded query as a `Result`, returns a decoding error only after it has decided the permission (`routes/customer/list-customers.handler.ts`):
+
+```typescript
+  return authenticated(async (actor, req, res) => {
+    // A query that cannot be decoded is the use case's to answer: it says
+    // so only to an actor who may list customers.
+    const result = await useCase.execute(
+      actor,
+      decodeCustomerSearchQuery(req.query),
+    )
+```
 
 ### Response types
 
@@ -238,14 +264,14 @@ export type UpdateSalonResponse = JsonBody<
 >
 ```
 
-`JsonBody` (`shared/operation-types.ts`) picks the `application/json` body out of the `content` of a generated response; `routes/auth/_shared/types.ts`, `routes/admin-auth/_shared/types.ts`, `routes/service-category/_shared/types.ts` and `routes/service/_shared/types.ts` use it in the same way. Only response bodies are needed: request bodies are `unknown`, and the delete operation answers without a body. Nothing is declared by hand, so after `pnpm generate` a handler that no longer matches the contract stops compiling.
+`JsonBody` (`shared/operation-types.ts`) picks the `application/json` body out of the `content` of a generated response; `routes/auth/_shared/types.ts`, `routes/admin-auth/_shared/types.ts`, `routes/service-category/_shared/types.ts`, `routes/service/_shared/types.ts` and `routes/customer/_shared/types.ts` use it in the same way. Only response bodies are needed: request bodies are `unknown`, and the delete operation answers without a body. Nothing is declared by hand, so after `pnpm generate` a handler that no longer matches the contract stops compiling.
 
 ### Links
 
 The `links` of a response are built from the mount path:
 
-- `salonLinks(collectionPath, id)` in `routes/salon/_shared/links.ts` returns `{ self, list }` for one salon. `serviceCategoryLinks(collectionPath, id)` in `routes/service-category/_shared/links.ts` returns the same for one category, and `serviceLinks(collectionPath, id)` in `routes/service/_shared/links.ts` for one service; their `collectionPath` names the salon, because the mount path does. `userLinks(basePath, id)` in `routes/admin-auth/_shared/links.ts` returns `{ self }` for a user as an administrator reaches it.
-- `pageLinks(collectionPath, requestUrl, meta)` in `shared/page-links.ts` returns the links of a page: the request's own query string with `cursor` replaced. Pages are only walked forwards, so `prev` and `last` are always `null`. The salon list, the list of service categories, the list of services and the session list use it.
+- `salonLinks(collectionPath, id)` in `routes/salon/_shared/links.ts` returns `{ self, list }` for one salon. `serviceCategoryLinks(collectionPath, id)` in `routes/service-category/_shared/links.ts` returns the same for one category, and `serviceLinks(collectionPath, id)` in `routes/service/_shared/links.ts` for one service; their `collectionPath` names the salon, because the mount path does. `customerLinks(collectionPath, id)` in `routes/customer/_shared/links.ts` returns `{ self, list }` for one customer. `userLinks(basePath, id)` in `routes/admin-auth/_shared/links.ts` returns `{ self }` for a user as an administrator reaches it.
+- `pageLinks(collectionPath, requestUrl, meta)` in `shared/page-links.ts` returns the links of a page: the request's own query string with `cursor` replaced. Pages are only walked forwards, so `prev` and `last` are always `null`. The salon list, the list of service categories, the list of services, the customer list and the session list use it.
 
 ### Router
 
@@ -290,9 +316,19 @@ The handlers declare the parameter in their path parameters (`SalonParams` in `s
 
 Express tries the routes in the order in which they were registered, so `/bulk` is registered before `/:id`, which would otherwise take `bulk` for the ID of a service.
 
+`routes/customer/index.ts` exports `createCustomerRouter(dependencies, authenticated)` with the same five routes as the salon router. A customer belongs to no salon, so the router is mounted at `/customers` and is a plain `Router()`; its handlers with an `:id` declare `CustomerParams` (`routes/customer/_shared/types.ts`). No operation of the customer ledger is public, so every handler receives `authenticated`:
+
+```typescript
+  router.get('/', listCustomersHandler(dependencies, authenticated))
+  router.post('/', createCustomerHandler(dependencies, authenticated))
+  router.get('/:id', getCustomerHandler(dependencies, authenticated))
+  router.patch('/:id', updateCustomerHandler(dependencies, authenticated))
+  router.delete('/:id', deleteCustomerHandler(dependencies, authenticated))
+```
+
 ### Mounting in `createApp`
 
-`src/index.ts` is where repositories and `authenticated` are constructed and routers are mounted. `createApp` is given the database, the logger, the mailer, the authenticator of two-factor authentication and the settings (`AppDependencies`):
+`src/index.ts` is where repositories, the clock and `authenticated` are constructed and routers are mounted. `createApp` is given the database, the logger, the mailer, the authenticator of two-factor authentication and the settings (`AppDependencies`):
 
 ```typescript
   app.use(requestLogging(logger))
@@ -312,6 +348,8 @@ Express tries the routes in the order in which they were registered, so `/bulk` 
   app.use(requireJsonBody)
   app.use(express.json({ limit: BODY_LIMIT_BYTES }))
 
+  const clock = (): Date => new Date()
+
   const authDependencies: AuthUseCaseDependencies = {
     userRepository: new UserRepository(database),
     sessionRepository: new SessionRepository(database),
@@ -320,7 +358,7 @@ Express tries the routes in the order in which they were registered, so `/bulk` 
     twoFactorAuthenticator,
     mailer,
     publicAppUrl: settings.publicAppUrl,
-    clock: () => new Date(),
+    clock,
   }
   const authenticated = createAuthenticated(authDependencies)
 
@@ -355,11 +393,19 @@ Express tries the routes in the order in which they were registered, so `/bulk` 
     ),
   )
 
+  app.use(
+    `${API_BASE_PATH}/customers`,
+    createCustomerRouter(
+      { customerRepository: new CustomerRepository(database), clock },
+      authenticated,
+    ),
+  )
+
   app.use(notFoundHandler)
   app.use(errorHandler)
 ```
 
-The order matters. Every request gets its ID and logger first. The probes are answered before the rate limit, so monitoring is never throttled. The body is parsed before the domain routers. The two handlers at the end turn whatever is left over into problem details. The router of a new domain is mounted next to the salon router, and receives the same `authenticated` if any of its operations is not public. The router of what belongs to a salon is mounted below the salon, with the parameter in the mount path, as the routers of the service categories and of the services are. It is given the salon repository of the salon router next to its own, because its use cases ask whether the salon exists.
+The order matters. Every request gets its ID and logger first. The probes are answered before the rate limit, so monitoring is never throttled. The body is parsed before the domain routers. The two handlers at the end turn whatever is left over into problem details. The router of a new domain is mounted next to the salon router, and receives the same `authenticated` if any of its operations is not public. The router of what belongs to a salon is mounted below the salon, with the parameter in the mount path, as the routers of the service categories and of the services are. It is given the salon repository of the salon router next to its own, because its use cases ask whether the salon exists. The router of the customer ledger is mounted at `/customers`, because a customer belongs to no salon. The use cases that write a customer need the current time, so the router is given the `clock` that the authentication use cases have: `createApp` builds one and hands it to both.
 
 ## Shared Helpers
 
@@ -446,6 +492,7 @@ For the routes of a new domain, with `<domain>` as its name. The operations must
 - [ ] `routes/<domain>/_shared/links.ts` for the links of one resource, and `query.ts` if an operation has query parameters, each with unit tests. The links of a page come from `pageLinks` (`shared/page-links.ts`), and `query.ts` builds its schema from the converters of `shared/query-parameters.ts`; neither is written again
 - [ ] One `<action>-<domain>.handler.ts` per operation: a factory over the dependencies that passes the raw input to the use case and matches the `Result` exhaustively
 - [ ] The handler of every operation that is not `@useAuth(NoAuth)` in the contract takes `authenticated`, is wrapped with it and passes the `actor` to the use case
+- [ ] The handler of a list that only some users may read passes the outcome of decoding the query to the use case as it is (`routes/customer/list-customers.handler.ts`), so that a query that cannot be decoded is answered only after the permission is decided
 - [ ] `routes/<domain>/index.ts`: `create<Domain>Router(dependencies, authenticated)` with paths relative to the mount point (without `authenticated` only if every operation is public)
 - [ ] Mount the router in `createApp` under `API_BASE_PATH`, constructing the repository there and passing the `authenticated` that already exists
 - [ ] For a resource that belongs to a salon (`routes/service-category/` is the example): mount the router at `${API_BASE_PATH}/salons/:salonId/<resources>` and pass it the salon repository that exists; create it with `Router({ mergeParams: true })`; declare `salonId` in the path parameters of every handler and pass `req.params.salonId` to the use case

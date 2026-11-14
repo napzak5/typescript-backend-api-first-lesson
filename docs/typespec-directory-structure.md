@@ -57,8 +57,10 @@ TypeSpec に定義があっても、バックエンドに実装があるとは�
 | `operations/auth-operations.tsp` の `AdminAuthCrud` の 3 オペレーション（`getUser`、`unlockAccount`、`resetTwoFactor`） | `backend/packages/api/src/routes/admin-auth/`。定義と実装は一致している（[認証と認可](./authentication.md#管理者の操作)） |
 | `models/service.tsp` のカテゴリーのモデル、`operations/service-operations.tsp` の `ServiceCategoryCrud` の 5 オペレーション（`list`、`create`、`get`、`update`、`delete`） | `backend/packages/api/src/routes/service-category/`。定義と実装は一致している（[サービスメニュー](./service-menu.md)） |
 | `models/service.tsp` のサービスのモデル、`operations/service-operations.tsp` の `ServiceCrud` の 6 オペレーション（`list`、`create`、`get`、`update`、`delete`、`bulkUpdate`） | `backend/packages/api/src/routes/service/`。定義と実装は一致している（[サービスメニュー](./service-menu.md)） |
-| 上記以外のドメイン（customer、staff、booking、review、treatment、payment、inventory） | なし。TypeSpec は DB のテーブルと一致している（`pnpm check:api-db`）が、ドメイン・リポジトリ・ルートのコードはない |
-| attachment、permission と、inventory の発注・アラート、treatment のカルテ | なし。対応するテーブルもまだない（[API-DB型制約マッピング](./api-db-type-constraints-mapping.md#ルールに載せるモデル載せないモデル)） |
+| `models/customer.tsp` の顧客のモデル（`CustomerResponse`、`CustomerCreateRequest`、`CustomerUpdateRequest`、`CustomerSearchRequest`）、`operations/customer-operations.tsp` の `CustomerCrud` の 18 オペレーションのうち 5 つ（`list`、`create`、`get`、`update`、`delete`） | `backend/packages/api/src/routes/customer/`。この 5 つは、定義と実装が一致している（[顧客台帳](./customers.md)） |
+| `CustomerCrud` の残りの 13 オペレーション（`batchGet`、`bulkCreate`、`bulkUpdate`、`bulkDelete`、`export`、`getHistory`、`getVersion`、`restore`、`getStatistics`、`updatePreferences`、`merge`、`exportData`、`requestDeletion`） | なし |
+| 上記以外のドメイン（staff、booking、review、treatment、payment、inventory） | なし。TypeSpec は DB のテーブルと一致している（`pnpm check:api-db`）が、ドメイン・リポジトリ・ルートのコードはない |
+| attachment、permission と、inventory の発注・アラート、treatment のカルテ、customer の監査履歴・エクスポート・データ削除リクエスト | なし。対応するテーブルもまだない（[API-DB型制約マッピング](./api-db-type-constraints-mapping.md#ルールに載せるモデル載せないモデル)） |
 
 `main.tsp` は `@useAuth(BearerAuth)` を宣言しており、認証なしで呼べるオペレーション（システムのオペレーション、サロンの一覧と 1 件の取得、サービスカテゴリーの一覧と 1 件の取得、サービスの一覧と 1 件の取得、登録・ログインなどの認証フロー、共有リンク）には `@useAuth(NoAuth)` が付いている。実装済みのオペレーションでは、`@useAuth(NoAuth)` のないものをサーバーがアクセストークンで認証し、権限をユースケースで判定する（[認証と認可](./authentication.md)）。
 

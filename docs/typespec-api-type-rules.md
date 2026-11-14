@@ -14,7 +14,7 @@ TypeSpec で API のモデルとオペレーションを定義するときのル
 
 すべてのドメインの TypeSpec が、このルールに従っている。テーブルに対応するモデルは、プロパティ名・null 許可・Enum の値が DB と一致しており、`pnpm check:api-db` が検査する（[API-DB型制約マッピング](./api-db-type-constraints-mapping.md)）。
 
-バックエンドに実装があるのは、Salon とシステムのオペレーション、サロンのサービスカテゴリーとサービスのオペレーション（`ServiceCategoryCrud`、`ServiceCrud`）、および認証のすべてのオペレーション（`AuthCrud`、`SessionCrud`、`AdminAuthCrud`。`/api/v1/auth` のログイン、トークンの更新、ログアウト、現在のユーザーの取得、ユーザー登録、メールアドレスの確認、パスワードの再設定と変更、2 要素認証、セッションの一覧と無効化、および `/api/v1/admin/auth` の管理者の操作）である。ほかのドメインは TypeSpec と DB スキーマにだけ存在する。ロール・権限、添付ファイル、発注、カルテなど、テーブルがまだない機能の TypeSpec もある（一覧は [API-DB型制約マッピング](./api-db-type-constraints-mapping.md#ルールに載せるモデル載せないモデル)）。
+バックエンドに実装があるのは、Salon とシステムのオペレーション、サロンのサービスカテゴリーとサービスのオペレーション（`ServiceCategoryCrud`、`ServiceCrud`）、顧客台帳の 5 つのオペレーション（`CustomerCrud` の `list`、`create`、`get`、`update`、`delete`）、および認証のすべてのオペレーション（`AuthCrud`、`SessionCrud`、`AdminAuthCrud`。`/api/v1/auth` のログイン、トークンの更新、ログアウト、現在のユーザーの取得、ユーザー登録、メールアドレスの確認、パスワードの再設定と変更、2 要素認証、セッションの一覧と無効化、および `/api/v1/admin/auth` の管理者の操作）である。`CustomerCrud` の残りのオペレーション（[顧客台帳](./customers.md#実装範囲)）と、ほかのドメインは TypeSpec と DB スキーマにだけ存在する。ロール・権限、添付ファイル、発注、カルテなど、テーブルがまだない機能の TypeSpec もある（一覧は [API-DB型制約マッピング](./api-db-type-constraints-mapping.md#ルールに載せるモデル載せないモデル)）。
 
 規約から外れている箇所は次のとおりで、いずれも意図したものである。
 
@@ -203,6 +203,8 @@ enum DayOfWeekType {
 
 Enum の値は、対応する DB の enum 型（`DayOfWeekType` なら `day_of_week`）と同じにする。実装済みのドメインではマッパーが値をそのまま受け渡すので、値がずれると型検査で失敗する。
 
+DB のカラムが enum 型ではなく、`varchar` と CHECK 制約で値を限っている場合（`customers.gender` と `CustomerGenderType`）は、Enum の値を CHECK 制約の値と同じにする。この組み合わせのずれは、型検査も `pnpm check:api-db` も検出しない。保存されている値は、Read マッパーが Enum のスキーマで検査する（`backend/packages/domain/src/mappers/read/customer.mapper.ts`）。
+
 ## オペレーション
 
 ```typespec
@@ -271,6 +273,7 @@ namespace SalonOperations {
 | 現在の状態では実行できない操作（完了した予約のキャンセルなど） | 409 |
 | 未認証・権限不足 | 401（`UnauthenticatedResponse`、`WWW-Authenticate` ヘッダー付き）と 403（`PermissionDeniedResponse`）。`ProblemResponse<401>` や `ProblemResponse<403>` を個別に並べず、上の表のエイリアス（`SessionErrors`、`CommonErrors`）で定義する。認証なしのオペレーションで 401 を個別に定義するのは、認証の失敗がそのオペレーションの結果である場合（ログイン、トークンの再発行）だけである |
 | ほかのサロンに属するリソース | 存在を知らせないよう 404。403 にするのは、権限をパスのサロンだけで判定できる操作である。公開情報であるサロンそのものへの操作と、サロンの下にあるルート（`/api/v1/salons/{salonId}/…`）への操作がこれにあたる。サロンの下にあるルートでは、パスのサロンに属さないリソースを 404 にする（[認証と認可](./authentication.md#サロンの下にあるルートの権限)） |
+| サロンに属さず、公開もしないリソース（顧客台帳。`/api/v1/customers`） | ルートをサロンの下に置かない。一覧と 1 件の取得を含めて、どのオペレーションにも `@useAuth(NoAuth)` を付けず、`CommonErrors` を加える。権限は操作者だけで決まり、最初に確認するので、権限のないユーザーには、ID や本文が不正でも、対象が存在しなくても 403 になる。`specs/operations/customer-operations.tsp` では、これを namespace の `@doc` に書いている（[認証と認可](./authentication.md#顧客台帳の権限)） |
 | 状態の遷移（確定、キャンセル、完了、返金など） | ステータスのカラムを更新リクエストで書き換えず、`POST .../{id}/<action>` のアクションにする。リクエストとレスポンスは `XXX<Action>Request` / `XXX<Action>Response` |
 | 一括操作 | 1 つのトランザクションで全件を処理する。1 件でも失敗すれば全体を失敗させ、成功のレスポンスに件ごとのエラーを入れない。実装済みの例は、サービスの一括更新（`ServiceCrud` の `bulkUpdate`、`PATCH /api/v1/salons/{salonId}/services/bulk`） |
 | 親で絞り込む一覧 | 一覧の検索リクエストに親の ID のフィルターを持たせる。同じ結果を返すネストしたルート（`/customers/{id}/bookings` など）は作らない |
