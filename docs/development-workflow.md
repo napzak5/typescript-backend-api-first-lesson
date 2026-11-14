@@ -501,8 +501,10 @@ docker build -f Dockerfile.backend --target production -t beauty-salon-backend:p
 ### ヘルスチェック
 
 ```bash
-# バックエンド
-curl http://localhost:3000/health
+# バックエンド（生存確認 / 受付可否 / 詳細）
+curl http://localhost:3000/api/system/alive
+curl http://localhost:3000/api/system/ready
+curl http://localhost:3000/api/system/health
 
 # フロントエンドアプリ（静的ファイル）
 curl http://localhost:4001/

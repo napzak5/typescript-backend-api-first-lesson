@@ -1,28 +1,43 @@
-import type { DomainError } from '@beauty-salon-backend/domain'
 import type { components } from '@beauty-salon-backend/generated'
-import { createId } from '@beauty-salon-backend/utility'
 import type { Request, Response } from 'express'
 import { API_VERSION } from './api-version'
-import { type ProblemDetails, toProblemDetails } from './problem-details'
+import {
+  type ApiError,
+  type ProblemDetails,
+  toProblemDetails,
+} from './problem-details'
 
 type ResponseMeta = components['schemas']['Models.ResponseMeta']
 
+/**
+ * The ID of the request, which is also on its log lines and in the
+ * `X-Request-Id` response header. The request logging middleware assigns it.
+ */
+const correlationIdOf = (req: Request): string => String(req.id)
+
 /** Metadata of a successful response. */
-export const responseMeta = (): ResponseMeta => ({
-  correlationId: createId(),
+export const responseMeta = (req: Request): ResponseMeta => ({
+  correlationId: correlationIdOf(req),
   timestamp: new Date().toISOString(),
   version: API_VERSION,
 })
 
-/** Sends a domain error as problem details with the matching status. */
+/**
+ * Sends an error as problem details with the matching status. A database
+ * error is logged here, because its cause never reaches the response.
+ */
 export const sendProblem = (
   req: Request,
   res: Response<ProblemDetails>,
-  error: DomainError,
+  error: ApiError,
 ): void => {
+  if (error.type === 'database') {
+    req.log.error({ cause: error.cause }, error.message)
+  }
+
   const problem = toProblemDetails(error, {
     instance: req.originalUrl,
-    correlationId: createId(),
+    correlationId: correlationIdOf(req),
     timestamp: new Date().toISOString(),
   })
   res.status(problem.status).json(problem)

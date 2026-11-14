@@ -448,6 +448,18 @@ namespace BeautySalon.Models {
   }
 
   @doc("""
+    準備完了チェックの結果モデル。
+    オーケストレーターやロードバランサーが、トラフィックを振り分けてよいかを判断するために利用する。
+    """)
+  model SystemReadyResponse {
+    @doc("リクエストを処理できる状態であればtrue。")
+    ready: boolean;
+
+    @doc("準備ができていない原因となっている依存コンポーネント名 (例: `database`)。準備完了時はnull")
+    reason: string | null;
+  }
+
+  @doc("""
     個別サービスのヘルスチェック結果モデル。
     外部サービス連携や内部マイクロサービスごとの状態を把握する。
     """)

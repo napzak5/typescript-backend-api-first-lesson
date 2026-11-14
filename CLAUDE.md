@@ -64,7 +64,7 @@ export type DomainError =
 // Exhaustive handling in API routes
 match(result)
   .with({ type: 'success' }, ({ data }) => {
-    res.status(201).json({ data, meta: responseMeta(), links })
+    res.status(201).json({ data, meta: responseMeta(req), links })
   })
   .with({ type: 'error' }, ({ error }) => sendProblem(req, res, error))
   .exhaustive()
@@ -332,7 +332,9 @@ export const SalonReadMapper = {
   toApiSalon(salon: DbSalon, openingHours: DbOpeningHours[]): Result<ApiSalonResponse, DomainError>
 }
 
-// 8. Repository Implementation: no throw, no cast; writes are transactions
+// 8. Repository Implementation: no throw, no cast; writes are transactions.
+// An unexpected failure becomes a `database` error whose cause is safe to log
+// (the statement and the SQLSTATE, never the bound values).
 // backend/packages/infrastructure/src/repositories/salon.repository.impl.ts
 export class SalonRepository implements ISalonRepository {
   constructor(private readonly db: Database) {}
@@ -357,7 +359,7 @@ export const createSalonHandler = (
     match(result)
       .with({ type: 'success' }, ({ data }) => {
         const links = salonLinks(req.baseUrl, data.id)
-        res.status(201).location(links.self).json({ data, meta: responseMeta(), links })
+        res.status(201).location(links.self).json({ data, meta: responseMeta(req), links })
       })
       .with({ type: 'error' }, ({ error }) => sendProblem(req, res, error))
       .exhaustive()
@@ -368,12 +370,24 @@ export const createSalonHandler = (
 export const createSalonRouter = (dependencies: SalonUseCaseDependencies): Router
 
 // backend/packages/api/src/index.ts: repositories are created once, here
+export const createApp = ({ database, logger, settings }: AppDependencies): Express
 app.use(`${API_BASE_PATH}/salons`, createSalonRouter({ salonRepository: new SalonRepository(database) }))
+
+// 10. Composition root: the only code that reads the environment or ends the process
+// backend/apps/server/src/index.ts
+// loadEnvFile() → parseAppConfig(process.env) → createLogger(...) → startServer(config, logger)
+// backend/packages/config/src/app-config.ts
+export const parseAppConfig = (variables: Record<string, string | undefined>): Result<AppConfig, ConfigIssue[]>
+// backend/apps/server/src/server.ts
+export const startServer = (config: AppConfig, logger: Logger): Promise<Result<RunningServer, StartFailure>>
 ```
 
 ### Conventions the reference follows
 - **Validation** happens once, in the use case, with the Zod schema of the request. Cross-field rules use `.check()`
-- **Errors** are `DomainError` values; `api/src/shared/problem-details.ts` maps each kind to an HTTP status and never exposes the cause of a `database` error
+- **Errors** are `DomainError` values; `api/src/shared/problem-details.ts` maps each kind to an HTTP status and never exposes the cause of a `database` error. What goes wrong outside a use case (unknown route, unreadable body, rate limit, unexpected exception) is an `HttpError` and takes the same path, so every error response is problem details
+- **Logging** is structured (pino): `req.log` inside a request, the injected `Logger` elsewhere, never `console`. `sendProblem` logs a `database` error with its cause; headers, bodies and bound SQL values are never logged
+- **Request ID**: `req.id` (the caller's `X-Request-Id` or a new UUID) is on every log line of the request, in the response header and in `meta.correlationId` / `correlationId`
+- **Configuration** is read once, by `parseAppConfig`, and passed down as values; application code does not read `process.env`. A new variable is added to the schema, to every `.env.*` file and to the README table
 - **Partial update** is `PATCH`: a property that is absent is left alone, `null` clears a nullable column
 - **Lists** use keyset pagination: `cursor` is the ID of the last item of the previous page (`meta.nextCursor`)
 - **Deleted rows** (`deletedAt`) are invisible to every repository method

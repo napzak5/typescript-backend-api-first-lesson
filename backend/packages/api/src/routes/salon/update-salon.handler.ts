@@ -27,7 +27,7 @@ export const updateSalonHandler = (
       .with({ type: 'success' }, ({ data }) => {
         res.json({
           data,
-          meta: responseMeta(),
+          meta: responseMeta(req),
           links: salonLinks(req.baseUrl, data.id),
         })
       })

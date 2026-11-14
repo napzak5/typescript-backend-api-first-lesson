@@ -85,6 +85,40 @@ jobs:
             test -f backend/packages/api/dist/index.js
           '
 
+      # The image holds no .env file: the container is configured by its
+      # environment alone, starts only when the database answers, and a
+      # graceful shutdown ends with status 0.
+      - name: Smoke test backend container
+        if: matrix.image.name == 'backend'
+        run: |
+          docker network create smoke
+          docker run --rm -d --name smoke-db --network smoke \
+            -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=beauty_salon postgres:18-alpine
+          for attempt in $(seq 1 30); do
+            if docker exec smoke-db pg_isready --host 127.0.0.1 --username postgres --quiet; then
+              break
+            fi
+            sleep 1
+          done
+          docker run -d --name smoke --network smoke -p 3000:3000 --env-file .env.test.ci \
+            -e NODE_ENV=production \
+            -e DATABASE_URL=postgres://postgres:postgres@smoke-db:5432/beauty_salon \
+            test-${{ matrix.image.name }}:${{ github.sha }}
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent --output /dev/null "http://localhost:3000/api/system/ready"; then
+              echo "✅ backend is ready on port 3000"
+              docker stop smoke
+              exit_code=$(docker inspect smoke --format '{{.State.ExitCode}}')
+              echo "backend stopped with status $exit_code"
+              docker logs smoke
+              test "$exit_code" = "0"
+              exit 0
+            fi
+            sleep 1
+          done
+          docker logs smoke
+          exit 1
+
       - name: Smoke test ${{ matrix.image.name }} container
         if: matrix.image.name != 'backend'
         run: |

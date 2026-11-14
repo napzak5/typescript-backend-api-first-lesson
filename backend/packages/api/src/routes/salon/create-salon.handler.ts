@@ -29,7 +29,7 @@ export const createSalonHandler = (
         res
           .status(201)
           .location(links.self)
-          .json({ data, meta: responseMeta(), links })
+          .json({ data, meta: responseMeta(req), links })
       })
       .with({ type: 'error' }, ({ error }) => sendProblem(req, res, error))
       .exhaustive()
