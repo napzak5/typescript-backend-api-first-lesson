@@ -9,11 +9,12 @@ import type {
   PasswordReset,
   Registration,
   SuccessfulLogin,
+  TwoFactorSetup,
   UserAccount,
   UserId,
 } from '@beauty-salon-backend/domain'
 import type { Result } from '@beauty-salon-backend/utility'
-import { and, eq, gt, ne, sql } from 'drizzle-orm'
+import { and, eq, gt, isNull, lt, ne, or, sql } from 'drizzle-orm'
 import { attempt } from '../database/attempt'
 import type { Database } from '../database/index'
 import {
@@ -37,6 +38,13 @@ const noEmailVerification = {
 const noPasswordReset = {
   passwordResetTokenHash: null,
   passwordResetExpiry: null,
+}
+
+/** What an account without two-factor authentication holds of it. */
+const noTwoFactor = {
+  twoFactorSecret: null,
+  backupCodes: null,
+  twoFactorLastUsedStep: null,
 }
 
 /** An account that only waited for its address to be confirmed can be used now. */
@@ -315,5 +323,151 @@ export class UserRepository implements IUserRepository {
         return true
       }),
     )
+  }
+
+  async startTwoFactorSetup(
+    id: UserId,
+    { sealedSecret, backupCodeHashes }: TwoFactorSetup,
+  ): Promise<Result<boolean, DomainError>> {
+    return attempt('Failed to start two-factor setup', async () => {
+      const started = await this.db
+        .update(users)
+        .set({
+          twoFactorStatus: 'pending',
+          twoFactorSecret: sealedSecret,
+          backupCodes: backupCodeHashes,
+          twoFactorLastUsedStep: null,
+          updatedAt: sql`now()`,
+        })
+        .where(
+          and(
+            eq(users.id, id),
+            ne(users.twoFactorStatus, 'enabled'),
+            userNotDeleted,
+          ),
+        )
+        .returning({ id: users.id })
+
+      return started.length > 0
+    })
+  }
+
+  async useTwoFactorStep(
+    id: string,
+    sealedSecret: string,
+    step: number,
+  ): Promise<Result<boolean, DomainError>> {
+    return attempt('Failed to use two-factor code', async () => {
+      const used = await this.db
+        .update(users)
+        .set({ twoFactorLastUsedStep: step })
+        .where(
+          and(
+            eq(users.id, id),
+            eq(users.twoFactorSecret, sealedSecret),
+            or(
+              isNull(users.twoFactorLastUsedStep),
+              lt(users.twoFactorLastUsedStep, step),
+            ),
+            userNotDeleted,
+          ),
+        )
+        .returning({ id: users.id })
+
+      return used.length > 0
+    })
+  }
+
+  async useBackupCode(
+    id: string,
+    backupCodeHash: string,
+  ): Promise<Result<number | null, DomainError>> {
+    return attempt('Failed to use backup code', async () => {
+      // The list holds the hash as a string; `-` takes that string out.
+      const [user] = await this.db
+        .update(users)
+        .set({
+          backupCodes: sql`${users.backupCodes} - ${backupCodeHash}::text`,
+        })
+        .where(
+          and(
+            eq(users.id, id),
+            sql`${users.backupCodes} @> to_jsonb(${backupCodeHash}::text)`,
+            userNotDeleted,
+          ),
+        )
+        .returning({
+          left: sql<number>`jsonb_array_length(${users.backupCodes})`.mapWith(
+            Number,
+          ),
+        })
+
+      return user === undefined ? null : user.left
+    })
+  }
+
+  async enableTwoFactor(
+    id: UserId,
+    sealedSecret: string,
+  ): Promise<Result<boolean, DomainError>> {
+    return attempt('Failed to enable two-factor authentication', async () => {
+      const enabled = await this.db
+        .update(users)
+        .set({ twoFactorStatus: 'enabled', updatedAt: sql`now()` })
+        .where(
+          and(
+            eq(users.id, id),
+            eq(users.twoFactorStatus, 'pending'),
+            eq(users.twoFactorSecret, sealedSecret),
+            userNotDeleted,
+          ),
+        )
+        .returning({ id: users.id })
+
+      return enabled.length > 0
+    })
+  }
+
+  async disableTwoFactor(id: UserId): Promise<Result<boolean, DomainError>> {
+    return attempt('Failed to disable two-factor authentication', async () => {
+      const disabled = await this.db
+        .update(users)
+        .set({
+          twoFactorStatus: 'disabled',
+          ...noTwoFactor,
+          updatedAt: sql`now()`,
+        })
+        .where(
+          and(
+            eq(users.id, id),
+            eq(users.twoFactorStatus, 'enabled'),
+            userNotDeleted,
+          ),
+        )
+        .returning({ id: users.id })
+
+      return disabled.length > 0
+    })
+  }
+
+  async replaceBackupCodes(
+    id: UserId,
+    backupCodeHashes: string[],
+  ): Promise<Result<boolean, DomainError>> {
+    return attempt('Failed to replace backup codes', async () => {
+      const replaced = await this.db
+        .update(users)
+        .set({ backupCodes: backupCodeHashes, updatedAt: sql`now()` })
+        .where(
+          and(
+            eq(users.id, id),
+            eq(users.twoFactorStatus, 'enabled'),
+            userNotDeleted,
+          ),
+        )
+        .returning({ id: users.id })
+
+      return replaced.length > 0
+    })
   }
 }
