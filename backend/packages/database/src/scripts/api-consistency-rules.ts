@@ -117,9 +117,72 @@ const serviceRules: ModelRule[] = [
   },
 ]
 
-/** Customers. */
+/**
+ * Columns of `customers` that a request never writes. The login link
+ * (`userId`) is set by the auth domain; the points, lifetime value and visit
+ * counters are maintained by other features.
+ */
+const customerManagedColumns = [
+  'id',
+  'userId',
+  'loyaltyPoints',
+  'lifetimeValue',
+  'firstVisitDate',
+  'lastVisitDate',
+  'visitCount',
+  'noShowCount',
+  'cancellationCount',
+  'deletedAt',
+  'createdAt',
+  'updatedAt',
+]
+
+/**
+ * Columns of `customer_preferences` that no model exposes. The row is
+ * addressed through its customer; `preferredServices` is a jsonb column
+ * without a defined structure.
+ */
+const customerPreferencesOmittedColumns = [
+  'id',
+  'customerId',
+  'preferredServices',
+  'createdAt',
+  'updatedAt',
+]
+
+/** Customers and their preferences. */
 const customerRules: ModelRule[] = [
-  { model: 'Models.Customer', table: 'customers', kind: 'response' },
+  {
+    model: 'Models.CustomerResponse',
+    table: 'customers',
+    kind: 'response',
+    embedded: ['customerPreferences'],
+    omittedColumns: ['deletedAt'],
+  },
+  {
+    model: 'Models.CustomerCreateRequest',
+    table: 'customers',
+    kind: 'create',
+    omittedColumns: customerManagedColumns,
+  },
+  {
+    model: 'Models.CustomerUpdateRequest',
+    table: 'customers',
+    kind: 'update',
+    omittedColumns: customerManagedColumns,
+  },
+  {
+    model: 'Models.CustomerPreferencesResponse',
+    table: 'customerPreferences',
+    kind: 'response',
+    omittedColumns: customerPreferencesOmittedColumns,
+  },
+  {
+    model: 'Models.CustomerPreferencesUpdateRequest',
+    table: 'customerPreferences',
+    kind: 'update',
+    omittedColumns: customerPreferencesOmittedColumns,
+  },
 ]
 
 /**
