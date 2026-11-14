@@ -1,6 +1,10 @@
 import { DomainErrors } from '@beauty-salon-backend/domain'
 import { describe, expect, it } from 'vitest'
-import { toProblemDetails } from '../problem-details'
+import {
+  type HttpError,
+  type ProblemDetails,
+  toProblemDetails,
+} from '../problem-details'
 
 const context = {
   instance: '/api/v1/salons',
@@ -94,4 +98,82 @@ describe('toProblemDetails', () => {
     })
     expect(JSON.stringify(problem)).not.toContain('salons" does not exist')
   })
+
+  it.each<
+    [HttpError, Pick<ProblemDetails, 'type' | 'status' | 'code' | 'detail'>]
+  >([
+    [
+      { type: 'routeNotFound', method: 'PUT', path: '/api/v1/salons' },
+      {
+        type: 'urn:beauty-salon:problem:route-not-found',
+        status: 404,
+        code: '3001',
+        detail: 'PUT /api/v1/salons is not part of the API',
+      },
+    ],
+    [
+      { type: 'malformedBody' },
+      {
+        type: 'urn:beauty-salon:problem:malformed-body',
+        status: 400,
+        code: '2002',
+        detail: 'The request body is not valid JSON',
+      },
+    ],
+    [
+      { type: 'unsupportedMediaType' },
+      {
+        type: 'urn:beauty-salon:problem:unsupported-media-type',
+        status: 415,
+        code: '2002',
+        detail: 'The request body must be application/json in UTF-8',
+      },
+    ],
+    [
+      { type: 'bodyTooLarge' },
+      {
+        type: 'urn:beauty-salon:problem:body-too-large',
+        status: 413,
+        code: '2004',
+        detail: 'The request body exceeds 100000 bytes',
+      },
+    ],
+    [
+      { type: 'badRequest' },
+      {
+        type: 'urn:beauty-salon:problem:bad-request',
+        status: 400,
+        code: '2002',
+        detail: null,
+      },
+    ],
+    [
+      { type: 'rateLimited' },
+      {
+        type: 'urn:beauty-salon:problem:rate-limited',
+        status: 429,
+        code: '4005',
+        detail: 'Wait for the time in the Retry-After header before retrying',
+      },
+    ],
+    [
+      { type: 'unexpected' },
+      {
+        type: 'urn:beauty-salon:problem:internal',
+        status: 500,
+        code: '4001',
+        detail: null,
+      },
+    ],
+  ])(
+    'presents the HTTP error %j with its own type, status and code',
+    (error, expected) => {
+      expect(toProblemDetails(error, context)).toEqual({
+        ...expected,
+        title: expect.any(String),
+        errors: null,
+        ...context,
+      })
+    },
+  )
 })

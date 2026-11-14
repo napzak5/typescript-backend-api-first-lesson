@@ -8720,6 +8720,16 @@ export interface components {
 
         "Models.StylingSubCategoryType": "blowout" | "updo" | "braiding" | "extensions" | "event_styling";
         /**
+         * @description 準備完了チェックの結果モデル。
+         *     オーケストレーターやロードバランサーが、トラフィックを振り分けてよいかを判断するために利用する。
+         */
+        "Models.SystemReadyResponse": {
+            /** @description リクエストを処理できる状態であればtrue。 */
+            ready: boolean;
+            /** @description 準備ができていない原因となっている依存コンポーネント名 (例: `database`)。準備完了時はnull */
+            reason: string | null;
+        };
+        /**
 
          * @description
 
@@ -9884,9 +9894,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        ready: boolean;
-                    };
+                    "application/json": components["schemas"]["Models.SystemReadyResponse"];
                 };
             };
             /** @description Service unavailable. */
@@ -9895,10 +9903,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        ready: boolean;
-                        reason?: string;
-                    };
+                    "application/json": components["schemas"]["Models.SystemReadyResponse"];
                 };
             };
         };

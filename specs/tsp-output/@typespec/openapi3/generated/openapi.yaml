@@ -443,25 +443,13 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  ready:
-                    type: boolean
-                required:
-                  - ready
+                $ref: "#/components/schemas/Models.SystemReadyResponse"
         "503":
           description: Service unavailable.
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  ready:
-                    type: boolean
-                  reason:
-                    type: string
-                required:
-                  - ready
+                $ref: "#/components/schemas/Models.SystemReadyResponse"
       tags:
         - System
   /api/system/version:
@@ -19291,6 +19279,22 @@ components:
         braiding: 編み込み - 三つ編み、編み込みアレンジ等
         extensions: エクステンション - ヘアエクステの装着サービス
         event_styling: イベントスタイリング - 結婚式、パーティー等の特別なスタイリング
+    Models.SystemReadyResponse:
+      type: object
+      required:
+        - ready
+        - reason
+      properties:
+        ready:
+          type: boolean
+          description: リクエストを処理できる状態であればtrue。
+        reason:
+          type: string
+          nullable: true
+          description: "準備ができていない原因となっている依存コンポーネント名 (例: `database`)。準備完了時はnull"
+      description: |-
+        準備完了チェックの結果モデル。
+        オーケストレーターやロードバランサーが、トラフィックを振り分けてよいかを判断するために利用する。
     Models.SystemRoleType:
       type: string
       enum:

@@ -930,7 +930,7 @@ pnpm build:prod
 
 ### Health Checks
 All services include health endpoints for monitoring:
-- Backend: `/health` endpoint
+- Backend: `/api/system/alive` (liveness), `/api/system/ready` (readiness, checks the database) and `/api/system/health` (details)
 - Frontend: Root path availability
 
 ## Key Design Decisions

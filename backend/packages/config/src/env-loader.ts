@@ -2,83 +2,62 @@ import * as fs from 'node:fs'
 import * as path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import * as dotenv from 'dotenv'
-import type { Environment } from './env'
-
-// Get the directory of this file
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
+import { type Environment, environmentSchema } from './environment'
 
 /**
- * Load environment-specific configuration file
- * @param environment - The target environment (defaults to NODE_ENV or 'localhost')
- * @returns The loaded environment
+ * The repository root, where the `.env` files are. Derived from the module
+ * URL because drizzle-kit loads this file through a bundler that provides
+ * nothing else of `import.meta`.
  */
-export function loadEnvConfig(environment?: Environment): Environment {
-  // Determine the environment
-  const env =
-    environment || (process.env.NODE_ENV as Environment) || 'localhost'
+const rootPath = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+  '..',
+  '..',
+  '..',
+)
 
-  // Validate environment
-  const validEnvironments: Environment[] = [
-    'production',
-    'staging',
-    'development',
-    'test',
-    'localhost',
-  ]
-  if (!validEnvironments.includes(env)) {
-    console.warn(`Invalid environment: ${env}, falling back to localhost`)
-    return loadEnvConfig('localhost')
+export type LoadedEnvFile = {
+  environment: Environment
+  /** Name of the file that was read; null when none exists. */
+  file: string | null
+}
+
+const loadFile = (file: string): string | null => {
+  const filePath = path.join(rootPath, file)
+  if (!fs.existsSync(filePath)) {
+    return null
   }
-
-  // Find the root path (where .env files are located)
-  // From backend/packages/config/src to root is 4 levels up
-  const rootPath = path.resolve(__dirname, '..', '..', '..', '..')
-
-  // Priority 1: Check if .env file exists (highest priority)
-  const baseEnvPath = path.join(rootPath, '.env')
-  if (fs.existsSync(baseEnvPath)) {
-    console.log(`Loading base .env file (priority override)`)
-    dotenv.config({ path: baseEnvPath })
-
-    // Still return the intended environment for consistency
-    // but the values will be from .env file
-    return env
-  }
-
-  // Priority 2: Load environment-specific file
-  const envFile = `.env.${env}`
-  const envPath = path.join(rootPath, envFile)
-
-  // Check if environment file exists
-  if (!fs.existsSync(envPath)) {
-    console.warn(
-      `Environment file ${envFile} not found at ${envPath}, falling back to .env.localhost`,
-    )
-    const localhostPath = path.join(rootPath, '.env.localhost')
-    if (fs.existsSync(localhostPath)) {
-      dotenv.config({ path: localhostPath })
-      return 'localhost'
-    }
-  }
-
-  // Load the environment file
-  console.log(`Loading environment: ${env} from ${envFile}`)
-  dotenv.config({ path: envPath })
-
-  return env
+  dotenv.config({ path: filePath, quiet: true })
+  return file
 }
 
 /**
- * Get database connection URL based on environment
+ * Reads the environment file into `process.env`. Variables that are already
+ * set win, so a deployment configures the process directly and needs no file.
+ *
+ * The environment is `NODE_ENV`, or `localhost` when that is unset or
+ * unknown. `.env` is read when it exists; otherwise `.env.<environment>`.
  */
-export function getDatabaseUrl(): string {
-  return (
-    process.env.DATABASE_URL ||
-    `postgres://${process.env.POSTGRES_USER || 'postgres'}:${
-      process.env.POSTGRES_PASSWORD || 'postgres'
-    }@${process.env.DB_HOST || 'localhost'}:${
-      process.env.POSTGRES_PORT || 5432
-    }/${process.env.POSTGRES_DB || 'beauty_salon'}`
-  )
+export const loadEnvFile = (): LoadedEnvFile => {
+  const environment = environmentSchema
+    .catch('localhost')
+    .parse(process.env.NODE_ENV)
+
+  return {
+    environment,
+    file: loadFile('.env') ?? loadFile(`.env.${environment}`),
+  }
 }
+
+/** Reads the environment file and returns the environment it belongs to. */
+export const loadEnvConfig = (): Environment => loadEnvFile().environment
+
+/** Connection URL for the database scripts. */
+export const getDatabaseUrl = (): string =>
+  process.env.DATABASE_URL ||
+  `postgres://${process.env.POSTGRES_USER || 'postgres'}:${
+    process.env.POSTGRES_PASSWORD || 'postgres'
+  }@${process.env.DB_HOST || 'localhost'}:${
+    process.env.POSTGRES_PORT || 5432
+  }/${process.env.POSTGRES_DB || 'beauty_salon'}`

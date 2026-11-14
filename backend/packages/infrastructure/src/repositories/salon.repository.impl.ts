@@ -31,6 +31,7 @@ import {
 } from 'drizzle-orm'
 import { alias } from 'drizzle-orm/pg-core'
 import { match, P } from 'ts-pattern'
+import { describeDatabaseError } from '../database/failure'
 import type { Database, DatabaseExecutor } from '../database/index'
 
 const emailUniqueViolation = {
@@ -41,7 +42,8 @@ const emailUniqueViolation = {
 /**
  * Turns a failed write into a domain error. The unique constraint on `email`
  * is the only expected failure; drizzle wraps the driver error, so the
- * constraint is looked for on the error and on its cause.
+ * constraint is looked for on the error and on its cause. Anything else is
+ * unexpected and keeps a description that is safe to log.
  */
 const toDomainError =
   (message: string, email: string | null) =>
@@ -55,7 +57,9 @@ const toDomainError =
         (violation) =>
           DomainErrors.alreadyExists('Salon', 'email', violation.email),
       )
-      .otherwise(() => DomainErrors.database(message, cause))
+      .otherwise(() =>
+        DomainErrors.database(message, describeDatabaseError(cause)),
+      )
 
 const attempt = async <T>(
   message: string,

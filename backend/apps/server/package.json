@@ -5,23 +5,30 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch --conditions=@beauty-salon-backend/source src/index.ts",
-    "build:dev": "tsc",
-    "build:test": "tsc",
-    "build:stg": "tsc",
-    "build:prod": "tsc",
+    "build:dev": "tsc --project tsconfig.build.json",
+    "build:test": "tsc --project tsconfig.build.json",
+    "build:stg": "tsc --project tsconfig.build.json",
+    "build:prod": "tsc --project tsconfig.build.json",
     "start": "node dist/index.js",
     "clean": "rm -rf dist *.tsbuildinfo",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@beauty-salon-backend/api": "workspace:*",
     "@beauty-salon-backend/config": "workspace:*",
-    "@beauty-salon-backend/infrastructure": "workspace:*"
+    "@beauty-salon-backend/domain": "workspace:*",
+    "@beauty-salon-backend/infrastructure": "workspace:*",
+    "@beauty-salon-backend/utility": "workspace:*",
+    "ts-pattern": "^5.9.2"
   },
   "devDependencies": {
     "@beauty-salon-shared/config": "workspace:*",
+    "@testcontainers/postgresql": "^12.2.1",
     "@types/node": "^26.6.6",
+    "postgres": "^4.1.1",
     "tsx": "^4.23.15",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.0"
   }
 }

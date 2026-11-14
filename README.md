@@ -8,6 +8,7 @@ A modern, type-safe beauty salon reservation system built with TypeScript, TypeS
 - [Quick Start](#-quick-start)
 - [Project Structure](#-project-structure)
 - [Development](#-development)
+- [Operating the API Server](#-operating-the-api-server)
 - [Testing](#-testing)
 - [Documentation](#-documentation)
 
@@ -171,11 +172,70 @@ pnpm fresh                   # Remove build outputs and node_modules, reinstall
 pnpm update:check            # List dependencies with newer releases
 ```
 
+## 🚦 Operating the API Server
+
+### Configuration
+
+The server reads its configuration from environment variables. The file
+`.env.<NODE_ENV>` (or `.env` when it exists) fills in what the process
+environment does not set, so a deployment sets the variables directly and
+needs no file. Every variable below is required; the server validates all of
+them at start-up and exits with the list of what is missing or malformed.
+
+| Variable | Meaning |
+|----------|---------|
+| `NODE_ENV` | `production`, `staging`, `development`, `test` or `localhost` |
+| `HOST`, `PORT` | Address and port to listen on |
+| `TRUST_PROXY_HOPS` | Reverse proxies in front of the server (0 = clients connect directly). The rate limit counts by client address, which is only right when this matches the deployment |
+| `DATABASE_URL` | `postgres://` connection URL |
+| `DATABASE_POOL_MAX` | Largest number of pooled connections |
+| `DATABASE_CONNECTION_TIMEOUT` | Connection timeout in milliseconds |
+| `CORS_ORIGIN` | Comma-separated origins allowed to call the API from a browser |
+| `CORS_CREDENTIALS`, `CORS_MAX_AGE` | Whether credentials are allowed; preflight cache time in seconds |
+| `RATE_LIMIT_WINDOW_MS`, `RATE_LIMIT_MAX_REQUESTS` | Requests one client address may make per window (kept per server instance) |
+| `LOG_LEVEL` | `fatal`, `error`, `warn`, `info`, `debug`, `trace` or `silent` |
+| `LOG_FORMAT` | `json` (one object per line) or `pretty` (for a terminal) |
+
+### Logs and Request IDs
+
+The server writes structured logs (pino) to standard output: one line per
+request with method, URL, status and duration, and one line for every
+failure with its cause. Request headers and bodies, and the values bound to
+a failed SQL statement, are never logged.
+
+Every request has an ID: the caller's `X-Request-Id` if it sent one,
+otherwise a new UUID. The ID is on every log line of the request, in the
+`X-Request-Id` response header, and in the body as `meta.correlationId`
+(or `correlationId` of an error), so a reported error leads straight to its
+log lines.
+
+### Errors
+
+Every error response is RFC 9457 problem details, including the ones raised
+before a route runs: unknown route (404), malformed JSON (400), a body that
+is not JSON (415) or over 100 kB (413), too many requests (429) and
+unexpected failures (500, without internal details).
+
+### Probes and Shutdown
+
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /api/system/alive` | Liveness: the process answers |
+| `GET /api/system/ready` | Readiness: 200 while the database answers, otherwise 503 |
+| `GET /api/system/health` | The same check with details per dependency |
+
+The probes are not rate limited and not written to the request log. On
+`SIGTERM` or `SIGINT` the server stops accepting connections, lets requests
+in flight finish (for up to 10 seconds), closes the database connections and
+exits with status 0. It does not start at all when the database is
+unreachable.
+
 ## 🧪 Testing
 
 - **Unit tests** (`pnpm test`): pure logic, no external services (Vitest)
-- **Integration tests** (`pnpm test:integration`): the HTTP API against a real
-  PostgreSQL, with one isolated schema per test. They start a PostgreSQL
+- **Integration tests** (`pnpm test:integration`): the HTTP API and the
+  server's start-up and shutdown against a real PostgreSQL, with one isolated
+  schema per API test. They start a PostgreSQL
   container through testcontainers, or use an existing database when
   `TEST_DATABASE_URL` is set:
 

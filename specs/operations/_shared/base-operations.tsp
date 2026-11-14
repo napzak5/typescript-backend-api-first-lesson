@@ -494,16 +494,11 @@ namespace BeautySalon.Operations {
     op ready():
       | {
           @statusCode statusCode: 200;
-          @body response: {
-            ready: boolean;
-          };
+          @body response: SystemReadyResponse;
         }
       | {
           @statusCode statusCode: 503;
-          @body response: {
-            ready: boolean;
-            reason?: string;
-          };
+          @body response: SystemReadyResponse;
         };
 
     @doc("プロセスが生存しているかを判定するエンドポイントで、異常時は再起動判定に利用されます。")

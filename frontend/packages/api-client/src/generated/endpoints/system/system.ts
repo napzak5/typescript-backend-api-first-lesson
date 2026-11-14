@@ -23,9 +23,8 @@ import type {
 import type {
   ModelsHealthStatus,
   ModelsProblemDetails,
+  ModelsSystemReadyResponse,
   SystemOperationsAlive200,
-  SystemOperationsReady200,
-  SystemOperationsReady503,
   SystemOperationsVersion200
 } from '../../models';
 
@@ -439,12 +438,12 @@ export function useSystemOperationsMetrics<TData = Awaited<ReturnType<typeof sys
 
 
 export type systemOperationsReadyResponse200 = {
-  data: SystemOperationsReady200
+  data: ModelsSystemReadyResponse
   status: 200
 }
 
 export type systemOperationsReadyResponse503 = {
-  data: SystemOperationsReady503
+  data: ModelsSystemReadyResponse
   status: 503
 }
 
@@ -491,7 +490,7 @@ export const getSystemOperationsReadyQueryKey = () => {
     }
 
 
-export const getSystemOperationsReadyQueryOptions = <TData = Awaited<ReturnType<typeof systemOperationsReady>>, TError = SystemOperationsReady503>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof systemOperationsReady>>, TError, TData>>, }
+export const getSystemOperationsReadyQueryOptions = <TData = Awaited<ReturnType<typeof systemOperationsReady>>, TError = ModelsSystemReadyResponse>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof systemOperationsReady>>, TError, TData>>, }
 ) => {
 
 const {query: queryOptions} = options ?? {};
@@ -510,14 +509,14 @@ const {query: queryOptions} = options ?? {};
 }
 
 export type SystemOperationsReadyQueryResult = NonNullable<Awaited<ReturnType<typeof systemOperationsReady>>>
-export type SystemOperationsReadyQueryError = SystemOperationsReady503
+export type SystemOperationsReadyQueryError = ModelsSystemReadyResponse
 
 
 /**
  * Kubernetes等のオーケストレーターがトラフィック受信可否を判断するための準備完了チェックです。
  * @summary Check API readiness
  */
-export function useSystemOperationsReady<TData = Awaited<ReturnType<typeof systemOperationsReady>>, TError = SystemOperationsReady503>(
+export function useSystemOperationsReady<TData = Awaited<ReturnType<typeof systemOperationsReady>>, TError = ModelsSystemReadyResponse>(
   options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof systemOperationsReady>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof systemOperationsReady>>,
@@ -531,7 +530,7 @@ export function useSystemOperationsReady<TData = Awaited<ReturnType<typeof syste
  * Kubernetes等のオーケストレーターがトラフィック受信可否を判断するための準備完了チェックです。
  * @summary Check API readiness
  */
-export function useSystemOperationsReady<TData = Awaited<ReturnType<typeof systemOperationsReady>>, TError = SystemOperationsReady503>(
+export function useSystemOperationsReady<TData = Awaited<ReturnType<typeof systemOperationsReady>>, TError = ModelsSystemReadyResponse>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof systemOperationsReady>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof systemOperationsReady>>,
@@ -545,7 +544,7 @@ export function useSystemOperationsReady<TData = Awaited<ReturnType<typeof syste
  * Kubernetes等のオーケストレーターがトラフィック受信可否を判断するための準備完了チェックです。
  * @summary Check API readiness
  */
-export function useSystemOperationsReady<TData = Awaited<ReturnType<typeof systemOperationsReady>>, TError = SystemOperationsReady503>(
+export function useSystemOperationsReady<TData = Awaited<ReturnType<typeof systemOperationsReady>>, TError = ModelsSystemReadyResponse>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof systemOperationsReady>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
@@ -553,7 +552,7 @@ export function useSystemOperationsReady<TData = Awaited<ReturnType<typeof syste
  * Kubernetes等のオーケストレーターがトラフィック受信可否を判断するための準備完了チェックです。
  * @summary Check API readiness
  */
-export function useSystemOperationsReady<TData = Awaited<ReturnType<typeof systemOperationsReady>>, TError = SystemOperationsReady503>(
+export function useSystemOperationsReady<TData = Awaited<ReturnType<typeof systemOperationsReady>>, TError = ModelsSystemReadyResponse>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof systemOperationsReady>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
