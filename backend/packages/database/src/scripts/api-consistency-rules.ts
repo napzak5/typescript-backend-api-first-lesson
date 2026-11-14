@@ -267,12 +267,84 @@ const inventoryRules: ModelRule[] = [
   },
 ]
 
-/** Treatment records. */
+/**
+ * jsonb columns of `treatment_records` without a defined structure. They are
+ * left out of every model until their structure is defined.
+ */
+const treatmentRecordUndefinedJsonColumns = [
+  'techniques',
+  'scalpCondition',
+  'hairCondition',
+  'colorFormula',
+  'beforePhotos',
+  'afterPhotos',
+  'nextRecommendedServices',
+]
+
+/** Columns of `treatment_records` that a create request never writes. */
+const treatmentRecordManagedColumns = [
+  'id',
+  ...treatmentRecordUndefinedJsonColumns,
+  'createdAt',
+  'updatedAt',
+]
+
+/** Columns of a child row of a treatment record that no model exposes. */
+const treatmentChildManagedColumns = ['id', 'treatmentRecordId', 'createdAt']
+
+/** Treatment records, their materials and photos, and customer allergies. */
 const treatmentRules: ModelRule[] = [
   {
-    model: 'Models.TreatmentRecord',
+    model: 'Models.TreatmentRecordResponse',
     table: 'treatmentRecords',
     kind: 'response',
+    embedded: ['materials', 'photos'],
+    omittedColumns: treatmentRecordUndefinedJsonColumns,
+  },
+  {
+    model: 'Models.TreatmentRecordCreateRequest',
+    table: 'treatmentRecords',
+    kind: 'create',
+    embedded: ['materials'],
+    omittedColumns: treatmentRecordManagedColumns,
+  },
+  {
+    model: 'Models.TreatmentRecordUpdateRequest',
+    table: 'treatmentRecords',
+    kind: 'update',
+    embedded: ['materials'],
+    // A record does not move to another booking, customer or staff member.
+    omittedColumns: [
+      ...treatmentRecordManagedColumns,
+      'bookingId',
+      'customerId',
+      'staffId',
+    ],
+  },
+  {
+    model: 'Models.TreatmentMaterial',
+    table: 'treatmentMaterials',
+    kind: 'response',
+    omittedColumns: treatmentChildManagedColumns,
+  },
+  {
+    model: 'Models.TreatmentPhotoResponse',
+    table: 'treatmentPhotos',
+    kind: 'response',
+    omittedColumns: treatmentChildManagedColumns,
+  },
+  {
+    model: 'Models.TreatmentPhotoCreateRequest',
+    table: 'treatmentPhotos',
+    kind: 'create',
+    omittedColumns: treatmentChildManagedColumns,
+  },
+  {
+    model: 'Models.CustomerAllergyResponse',
+    table: 'customerAllergies',
+    kind: 'response',
+    // The customer is in the path and no operation addresses one allergy.
+    omittedColumns: ['id', 'customerId', 'createdAt'],
   },
 ]
 

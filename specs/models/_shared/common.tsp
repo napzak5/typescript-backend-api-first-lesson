@@ -48,6 +48,10 @@ namespace BeautySalon.Models {
   @format("uuid")
   scalar InventoryId extends string;
 
+  @doc("商品（店販品・施術用商材）を識別するブランド付きUUID。")
+  @format("uuid")
+  scalar ProductId extends string;
+
   @doc("サプライヤー発注・仕入れオーダーを識別するブランド付きUUID。")
   @format("uuid")
   scalar OrderId extends string;

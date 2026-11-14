@@ -169,11 +169,13 @@ namespace BeautySalon.Models {
     mild: 軽度 - 軽いかゆみや赤み程度、通常の施術で注意すれば対応可能
     moderate: 中等度 - 明確な皮膚反応、特別な配慮や代替品の使用が必要
     severe: 重度 - 激しい反応、特定の施術を避けるべきレベル
+    life_threatening: 生命に関わる - アナフィラキシー等の危険があり、該当する商材・施術を一切使用できないレベル
     """)
   enum AllergySeverityType {
     mild,
     moderate,
     severe,
+    life_threatening,
   }
 
   model AllergyInfo {
