@@ -2,7 +2,7 @@ import { err, ok, type Result } from 'neverthrow'
 import { z } from 'zod'
 
 // 生年月日のスキーマ定義
-const BirthdaySchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
+const BirthdaySchema = z.iso.date()
 
 type Birthday = z.infer<typeof BirthdaySchema>
 

@@ -2,7 +2,7 @@ import { err, ok, type Result } from 'neverthrow'
 import { z } from 'zod'
 
 // 終了日のスキーマ定義
-const EndDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
+const EndDateSchema = z.iso.date()
 
 type EndDate = z.infer<typeof EndDateSchema>
 

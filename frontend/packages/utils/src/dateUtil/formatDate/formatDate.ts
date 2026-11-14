@@ -19,7 +19,7 @@ export const formatDate = (
   // 文字列かつUTC保持モードの場合
   if (typeof date === 'string' && preserveUTC) {
     // ISO 8601形式の文字列（例: '1992-07-31T15:00:00.000Z'）の場合
-    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/.test(date)) {
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/.test(date)) {
       const dateObj = new Date(date)
       const year = dateObj.getUTCFullYear()
       const month = String(dateObj.getUTCMonth() + 1).padStart(2, '0')

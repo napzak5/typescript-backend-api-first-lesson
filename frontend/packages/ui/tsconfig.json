@@ -9,6 +9,7 @@
     "outDir": "./dist",
     "tsBuildInfoFile": "./tsconfig.tsbuildinfo",
     "jsx": "react-jsx",
+    "lib": ["ESNEXT", "DOM", "DOM.Iterable"],
     "types": ["vite/client"]
   },
   "include": ["src/**/*"],
