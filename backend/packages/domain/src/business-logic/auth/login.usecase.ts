@@ -4,11 +4,9 @@ import type { ApiAuthLoginResponse, ClientInfo } from '../../models/auth'
 import { authLoginRequestSchema } from '../../schemas/auth.schema'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import type { AuthUseCaseDependencies } from './_shared/dependencies'
+import { checkPassword } from './_shared/password-check'
 import {
-  isLocked,
   issueSessionTokens,
-  LOCK_THRESHOLD,
-  lockEnd,
   maySignIn,
   sessionEnd,
 } from './_shared/session-policy'
@@ -26,9 +24,8 @@ export class LoginUseCase {
    *
    * - The password is hashed even when no user has the email, so that the
    *   time the answer takes does not tell whether the email is registered.
-   * - While an account is locked nothing is counted and nothing succeeds.
-   *   Otherwise a wrong password counts, and the failure that reaches the
-   *   threshold locks the account for a while.
+   * - The password is checked under the limit on guesses (`checkPassword`):
+   *   wrong passwords count and lock the account for a while.
    * - An account with two-factor authentication cannot sign in: the second
    *   factor cannot be checked yet, and it is not skipped.
    */
@@ -61,21 +58,12 @@ export class LoginUseCase {
     }
     const { user } = found.data
 
-    const verified = await passwordHasher.verify(password, user.passwordHash)
-    if (verified.type === 'error') {
-      return verified
-    }
-    if (isLocked(user, now)) {
-      return loginFailed
-    }
-    if (verified.data.type === 'mismatch') {
-      const counted = await userRepository.recordFailedLogin(user.id, {
-        threshold: LOCK_THRESHOLD,
-        lockedUntil: lockEnd(now).toISOString(),
-      })
-      return counted.type === 'error' ? counted : loginFailed
+    const checked = await checkPassword(this.dependencies, user, password, now)
+    if (checked.type === 'error') {
+      return checked
     }
     if (
+      checked.data.type === 'refused' ||
       !maySignIn(user) ||
       user.twoFactorEnabled ||
       user.twoFactorStatus === 'enabled'
@@ -83,7 +71,7 @@ export class LoginUseCase {
       return loginFailed
     }
 
-    const rehashed = verified.data.needsRehash
+    const rehashed = checked.data.needsRehash
       ? await passwordHasher.hash(password)
       : Result.success(null)
     if (rehashed.type === 'error') {

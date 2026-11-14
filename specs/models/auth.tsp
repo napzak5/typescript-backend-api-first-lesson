@@ -63,7 +63,7 @@ namespace BeautySalon.Models {
     @doc("ユーザーを一意に識別するID。")
     id: UserId;
 
-    @doc("ログインに利用するメールアドレス。削除済みを含むすべてのユーザーの間で一意。")
+    @doc("ログインに利用するメールアドレス。小文字で保存する。削除されていないユーザーの間で一意。")
     email: string;
 
     @doc("認証システム上での役割区分。")
@@ -167,13 +167,14 @@ namespace BeautySalon.Models {
     登録したユーザーのロールは customer になる。ロールはリクエストで指定できない
     """)
   model AuthRegisterRequest {
-    @doc("登録に使用するメールアドレス。削除済みを含むすべてのユーザーの間で一意")
+    @doc("登録に使用するメールアドレス。大文字と小文字を区別せず、小文字で保存する")
     @maxLength(255)
     email: string;
 
     @doc("""
-      セキュリティ基準を満たすパスワード。15文字以上128文字以下で、文字種の組み合わせは要求しない。
-      OWASP Authentication Cheat Sheet と NIST SP 800-63B に従い、パスワードが唯一の認証要素となる場合の最小長を15文字とし、64文字以上のパスワードも受け付ける
+      設定するパスワード。15文字以上128文字以下(Unicode のコードポイントで数える)で、文字種の組み合わせは要求しない。NFC に正規化して扱う。
+      推測されやすいパスワードは拒否する(rule は blocklisted): メールアドレスまたはその @ より前と同じもの、同じ文字や短い並びの繰り返し、連続した文字の並び、よく知られたパスワード。
+      NIST SP 800-63B と OWASP Authentication Cheat Sheet に従い、パスワードが唯一の認証要素となる場合の最小長を15文字とし、64文字以上のパスワードも受け付ける
       """)
     @minLength(15)
     @maxLength(128)
@@ -259,10 +260,7 @@ namespace BeautySalon.Models {
     @maxLength(255)
     token: string;
 
-    @doc("""
-      新しいパスワード。15文字以上128文字以下で、文字種の組み合わせは要求しない。
-      OWASP Authentication Cheat Sheet と NIST SP 800-63B に従い、パスワードが唯一の認証要素となる場合の最小長を15文字とし、64文字以上のパスワードも受け付ける
-      """)
+    @doc("新しいパスワード。規則は登録時のパスワード(AuthRegisterRequest.password)と同じ")
     @minLength(15)
     @maxLength(128)
     newPassword: string;
@@ -293,10 +291,7 @@ namespace BeautySalon.Models {
     @maxLength(128)
     currentPassword: string;
 
-    @doc("""
-      変更後の新しいパスワード。15文字以上128文字以下で、文字種の組み合わせは要求しない。
-      OWASP Authentication Cheat Sheet と NIST SP 800-63B に従い、パスワードが唯一の認証要素となる場合の最小長を15文字とし、64文字以上のパスワードも受け付ける
-      """)
+    @doc("変更後の新しいパスワード。規則は登録時のパスワード(AuthRegisterRequest.password)と同じ。現在のパスワードと同じ値は指定できない")
     @minLength(15)
     @maxLength(128)
     newPassword: string;

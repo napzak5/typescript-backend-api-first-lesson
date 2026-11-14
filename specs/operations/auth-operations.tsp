@@ -16,19 +16,16 @@ namespace BeautySalon.Operations {
   @tag("Authentication")
   namespace AuthOperations {
     interface AuthCrud {
-      @doc("新しいユーザーアカウントを登録します。ロールは customer、アカウント状態は unverified で作成し、登録したメールアドレスに確認メールを送信します。メールアドレスの確認が完了するまでログインできません。セッションは発行しません。メールアドレスが既存のユーザー(削除済みを含む)と重複する場合は409を返します。")
+      @doc("ユーザーアカウントの登録を受け付けます。メールアドレスが登録済みかどうかにかかわらず同じ応答(204)を返し、応答から登録の有無を判別できないようにします。メールアドレスが未登録の場合は、ロール customer、アカウント状態 unverified のユーザーを作成し、確認メールを送信します。メールアドレスの確認が完了するまでログインできません。メールアドレスが未確認のまま登録されている場合は、前回の確認メールから60秒以上たっていれば、パスワードを今回の値に置き換えて確認メールを送り直します(それまでの確認トークンは無効になります)。60秒以内の場合と、確認済みのメールアドレスの場合は、何も変更せず、何も送信しません。セッションは発行しません。")
       @summary("Register a user")
       @route("/register")
       @useAuth(NoAuth)
       @post
       register(@body request: AuthRegisterRequest):
         | {
-            @statusCode statusCode: 201;
-            @header("Location") location: string;
-            @body response: ApiResponse<UserResponse>;
+            @statusCode statusCode: 204;
           }
         | ProblemResponse<400>
-        | ProblemResponse<409>
         | RequestBodyErrors
         | PublicErrors;
 
@@ -83,7 +80,7 @@ namespace BeautySalon.Operations {
           }
         | SessionErrors;
 
-      @doc("パスワード再設定メールの送信を要求します。指定したメールアドレスのアカウントが存在する場合にだけ再設定トークンを記載したメールを送信しますが、アカウントの有無にかかわらず同じ応答(204)を返します。")
+      @doc("パスワード再設定メールの送信を要求します。アカウントの有無にかかわらず同じ応答(204)を返します。メールを送信するのは、指定したメールアドレスのアカウントが存在し、アカウント状態が active、locked、unverified のいずれかの場合だけです。再設定トークンの有効期間は30分で、1回だけ使用できます。再度要求すると、それまでのトークンは無効になります。同じアカウントへの送信は60秒に1通までで、それより短い間隔の要求では何も送信しません。")
       @summary("Request a password reset")
       @route("/forgot-password")
       @useAuth(NoAuth)
@@ -109,7 +106,7 @@ namespace BeautySalon.Operations {
         | RequestBodyErrors
         | PublicErrors;
 
-      @doc("パスワード再設定トークンを使って新しいパスワードを設定します。成功するとトークンは使用できなくなり、そのユーザーのすべてのセッションを無効にします。トークンが無効または期限切れの場合は400を返します。")
+      @doc("パスワード再設定トークンを使って新しいパスワードを設定します。成功するとトークンは使用できなくなり、そのユーザーのすべてのセッションを無効にします。ログインの失敗回数とアカウントのロックを解除し、メールアドレスが未確認の場合は確認済みにします(トークンをメールで受け取れたことが、メールアドレスの確認になるため)。セッションは発行しません。パスワードが変更されたことをメールで通知します。トークンが無効または期限切れの場合と、新しいパスワードが規則を満たさない場合は400を返します。")
       @summary("Reset the password")
       @route("/reset-password")
       @useAuth(NoAuth)
@@ -122,7 +119,7 @@ namespace BeautySalon.Operations {
         | RequestBodyErrors
         | PublicErrors;
 
-      @doc("メールアドレス確認メールの送信を要求します。指定したメールアドレスのアカウントが存在し、メールアドレスが未確認の場合にだけ確認メールを送信しますが、アカウントの有無や確認状態にかかわらず同じ応答(204)を返します。メールアドレスが未確認のアカウントはログインできないため、セッションなしで呼び出せます。")
+      @doc("メールアドレス確認メールの送信を要求します。アカウントの有無や確認状態にかかわらず同じ応答(204)を返します。メールを送信するのは、指定したメールアドレスのアカウントが存在し、メールアドレスが未確認の場合だけです。確認トークンの有効期間は24時間で、送信するたびにそれまでのトークンは無効になります。同じアカウントへの送信は60秒に1通までで、それより短い間隔の要求では何も送信しません。メールアドレスが未確認のアカウントはログインできないため、セッションなしで呼び出せます。")
       @summary("Send a verification email")
       @route("/verify-email/send")
       @useAuth(NoAuth)
@@ -135,7 +132,7 @@ namespace BeautySalon.Operations {
         | RequestBodyErrors
         | PublicErrors;
 
-      @doc("メールで受け取った確認トークンを使ってメールアドレスの確認を完了します。emailVerified を true にし、アカウント状態が unverified の場合は active にします。トークンが無効または期限切れの場合は400を返します。")
+      @doc("メールで受け取った確認トークンを使ってメールアドレスの確認を完了します。emailVerified を true にし、アカウント状態が unverified の場合は active にします。トークンは1回だけ使用できます。トークンが無効または期限切れの場合は400を返します。")
       @summary("Confirm the email address")
       @route("/verify-email/confirm")
       @useAuth(NoAuth)
@@ -150,7 +147,7 @@ namespace BeautySalon.Operations {
         | RequestBodyErrors
         | PublicErrors;
 
-      @doc("現在のパスワードで本人確認を行い、新しいパスワードに変更します。現在のパスワードが誤っている場合は400を返します。")
+      @doc("現在のパスワードで本人確認を行い、新しいパスワードに変更します。成功すると、そのユーザーのほかのセッションを無効にし(このリクエストのセッションは有効なまま)、パスワードが変更されたことをメールで通知します。現在のパスワードの確認には、ログインと同じ失敗回数の制限を適用します(連続5回の誤りでアカウントを15分間ロックし、ロック中は正しいパスワードでも確認に失敗します)。現在のパスワードが誤っている場合、新しいパスワードが現在のパスワードと同じ場合、新しいパスワードが規則を満たさない場合は400を返します。")
       @summary("Change the password")
       @route("/change-password")
       @post
@@ -259,7 +256,7 @@ namespace BeautySalon.Operations {
   @tag("Admin - Authentication")
   namespace AdminAuthOperations {
     interface AdminAuthCrud {
-      @doc("IDを指定してユーザーを1件取得します。ユーザー登録のレスポンスの Location ヘッダーはこのURLを指します。削除済みのユーザーは含みません。")
+      @doc("IDを指定してユーザーを1件取得します。削除済みのユーザーは含みません。")
       @summary("Get a user")
       @route("/users/{userId}")
       @get

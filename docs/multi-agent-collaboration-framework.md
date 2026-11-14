@@ -122,7 +122,7 @@ flowchart LR
 
 - 始める条件: 工程 3 の確認が済んでいること。カラムや API のプロパティが足りない場合は、マッパーで補わずに工程 2 へ戻します。
 - 公開（`@useAuth(NoAuth)`）でないオペレーションは、ハンドラーを `authenticated` で包み、ユースケースが `Actor` を受け取って権限を判定します（[authentication.md](./authentication.md) の「新しいオペレーションを保護する」）。
-- 確認: 表のコマンド。`pnpm typecheck` はビルドの後に実行します。`pnpm test:integration` には Docker または `TEST_DATABASE_URL` が必要です。
+- 確認: 表のコマンド。`pnpm typecheck` はビルドの後に実行します。`pnpm test:integration` には Docker が必要です（`TEST_DATABASE_URL` を設定すると、PostgreSQL のコンテナは起動しません）。
 - 次へ渡すもの: 変更したファイル、各エンドポイントの挙動、実行した確認とその結果。
 
 ### 5. フロントエンド
@@ -157,11 +157,12 @@ flowchart LR
 
 ## 現在の実装範囲
 
-- バックエンドに実装されているのは、Salon ドメイン（`/api/v1/salons`）、認証の 5 つのオペレーション（`/api/v1/auth` の `login`、`refresh`、`logout`、`logout-all`、`me`）、システムエンドポイント（`GET /api/system/alive`、`GET /api/system/ready`、`GET /api/system/health`）だけです。Salon が、ほかのドメインを実装するときの手本です。
-- 認証はサーバー側のセッションとベアラートークンで行い、認可はユースケースが操作者（`Actor`）から判定します。認可が適用されているのは Salon API（作成・更新・削除）です。ユーザー登録、パスワードの再設定・変更、2 要素認証、セッションの一覧、管理者の操作は TypeSpec にだけあります。詳細は [authentication.md](./authentication.md) を参照してください。
+- バックエンドに実装されているのは、Salon ドメイン（`/api/v1/salons`）、認証の 12 のオペレーション（`/api/v1/auth` のログイン、トークンの更新、ログアウト、現在のユーザーの取得、ユーザー登録、メールアドレスの確認、パスワードの再設定と変更）、システムエンドポイント（`GET /api/system/alive`、`GET /api/system/ready`、`GET /api/system/health`）だけです。Salon が、ほかのドメインを実装するときの手本です。
+- 認証はサーバー側のセッションとベアラートークンで行い、認可はユースケースが操作者（`Actor`）から判定します。認可が適用されているのは Salon API（作成・更新・削除）です。ユーザー登録で作られるのは `customer` ロールのアカウントだけです。2 要素認証、セッションの一覧と失効、管理者の操作は TypeSpec にだけあります。詳細は [authentication.md](./authentication.md) を参照してください。
 - ほかのドメイン（customer、staff、booking、payment など）は TypeSpec とデータベーススキーマにだけあり、ドメイン・リポジトリ・ルートのコードはありません。それらの TypeSpec はテーブルと一致しています（`pnpm check:api-db`）。ロール・権限、添付ファイル、発注、カルテなどは、テーブルもまだありません。
-- フロントエンドの 3 つのアプリケーションは、サンプルデータを表示する静的な画面で、まだ API を呼んでいません。ログインやトークンを扱うコードもありません。
-- メール送信、ファイルストレージのコードはありません。
+- フロントエンドの 3 つのアプリケーションは、サンプルデータを表示する静的な画面で、まだ API を呼んでいません。ログインやトークンを扱うコードも、メールのリンクが指すページ（`/verify-email`、`/reset-password`）もありません。
+- メールは、認証のメール（メールアドレスの確認、パスワードの再設定、パスワードの変更の通知）だけを SMTP で送ります。詳細は [email.md](./email.md) を参照してください。
+- ファイルストレージのコードはありません。
 
 ## 参照
 

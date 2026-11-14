@@ -87,7 +87,7 @@ knip: ## Report unused files, exports and dependencies
 test: ## Run unit tests
 	pnpm test
 
-test-integration: ## Run API integration tests (needs Docker or TEST_DATABASE_URL)
+test-integration: ## Run integration tests (needs Docker; PostgreSQL can be given through TEST_DATABASE_URL)
 	pnpm test:integration
 
 audit: ## Fail on high or critical vulnerabilities
@@ -136,8 +136,9 @@ db-check: ## Verify schema.ts, relations.ts and setup.sql agree (recreates the d
 
 ## Local services (Docker Compose)
 .PHONY: infra-up docker-up docker-down docker-build docker-logs docker-clean
-infra-up: ## Start PostgreSQL and wait until it accepts connections
-	$(COMPOSE) up -d --wait postgres
+infra-up: ## Start PostgreSQL and the mail catcher (Mailpit) and wait until both are ready
+	$(COMPOSE) up -d --wait postgres mailpit
+	@echo "Mails the backend sends: http://localhost:8025"
 
 docker-up: ## Start every service, including the backend container (migrates the database, keeps its data)
 	$(COMPOSE) up -d

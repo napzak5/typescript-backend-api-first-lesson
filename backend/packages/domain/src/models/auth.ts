@@ -25,6 +25,20 @@ export type ApiAuthLoginResponse =
   components['schemas']['Models.AuthLoginResponse']
 export type ApiAuthTokenRefreshRequest =
   components['schemas']['Models.AuthTokenRefreshRequest']
+export type ApiAuthRegisterRequest =
+  components['schemas']['Models.AuthRegisterRequest']
+export type ApiAuthEmailVerificationSendRequest =
+  components['schemas']['Models.AuthEmailVerificationSendRequest']
+export type ApiAuthEmailVerificationConfirmRequest =
+  components['schemas']['Models.AuthEmailVerificationConfirmRequest']
+export type ApiAuthPasswordForgotRequest =
+  components['schemas']['Models.AuthPasswordForgotRequest']
+export type ApiAuthPasswordResetVerifyRequest =
+  components['schemas']['Models.AuthPasswordResetVerifyRequest']
+export type ApiAuthPasswordResetConfirmRequest =
+  components['schemas']['Models.AuthPasswordResetConfirmRequest']
+export type ApiAuthPasswordChangeRequest =
+  components['schemas']['Models.AuthPasswordChangeRequest']
 
 // Database types, inferred from the Drizzle schema
 export type DbUser = DeepRequired<typeof users.$inferSelect>

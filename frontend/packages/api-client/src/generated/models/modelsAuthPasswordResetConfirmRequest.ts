@@ -17,8 +17,7 @@ export interface ModelsAuthPasswordResetConfirmRequest {
      */
   token: string;
   /**
-     * 新しいパスワード。15文字以上128文字以下で、文字種の組み合わせは要求しない。
-     * OWASP Authentication Cheat Sheet と NIST SP 800-63B に従い、パスワードが唯一の認証要素となる場合の最小長を15文字とし、64文字以上のパスワードも受け付ける
+     * 新しいパスワード。規則は登録時のパスワード(AuthRegisterRequest.password)と同じ
      * @minLength 15
      * @maxLength 128
      */

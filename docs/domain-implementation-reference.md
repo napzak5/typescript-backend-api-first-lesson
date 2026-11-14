@@ -709,7 +709,7 @@ The layout of the API package, the handler pattern, the shared helpers and the m
   )
 ```
 
-A new domain adds one such statement next to it, before `notFoundHandler`. Nothing changes in `backend/apps/server`: it reads the configuration, connects the database and calls `createApp({ database, logger, settings })`.
+A new domain adds one such statement next to it, before `notFoundHandler`. Nothing changes in `backend/apps/server`: it reads the configuration, connects the database, creates the mailer and calls `createApp({ database, logger, mailer, settings })`.
 
 ## 12. Tests
 
@@ -791,7 +791,7 @@ Each endpoint has at least five error scenarios, most of them rows of an `it.eac
 
 ```bash
 pnpm test               # unit tests of every package
-pnpm test:integration   # integration tests; uses TEST_DATABASE_URL, otherwise testcontainers (Docker)
+pnpm test:integration   # integration tests; needs Docker (TEST_DATABASE_URL replaces only the PostgreSQL container)
 ```
 
 The conventions are in [Testing Requirements](./testing-requirements.md) and the [API Testing Guide](./api-testing-guide.md).
@@ -814,8 +814,8 @@ Errors are built with `DomainErrors.validation`, `.unauthenticated`, `.forbidden
 
 | Kind | Where it is created | What the client gets |
 |------|---------------------|----------------------|
-| `validation` | `parseWith`, called by a use case (and by the query decoding of the list handler) | 400 with the broken rules in `errors` |
-| `unauthenticated` | the authentication use cases only: `AuthenticateUseCase` behind `authenticated`, login and refresh | 401 with a `WWW-Authenticate` header |
+| `validation` | `parseWith`, called by a use case (and by the query decoding of the list handler). The authentication use cases also build it themselves for what a schema cannot check: a password that is too easy to guess, a wrong current password, a mailed token that cannot be used | 400 with the broken rules in `errors` |
+| `unauthenticated` | the authentication use cases only: `AuthenticateUseCase` behind `authenticated`, login and refresh, and the current-user and change-password use cases when the user of the session no longer exists | 401 with a `WWW-Authenticate` header |
 | `forbidden` | a use case, when its permission rule refuses the actor | 403 |
 | `notFound` | a use case, when the repository resolved to `null` or `false` | 404 |
 | `alreadyExists` | the repository, from the unique violation | 409 |

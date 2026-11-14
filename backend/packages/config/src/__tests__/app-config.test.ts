@@ -17,6 +17,13 @@ const variables = {
   CORS_MAX_AGE: '86400',
   RATE_LIMIT_WINDOW_MS: '900000',
   RATE_LIMIT_MAX_REQUESTS: '100',
+  SMTP_HOST: 'smtp.mail.example',
+  SMTP_PORT: '587',
+  SMTP_TLS: 'starttls',
+  SMTP_USER: 'salon-api',
+  SMTP_PASSWORD: 'hunter2',
+  MAIL_FROM: 'Beauty Salon <no-reply@salon.example>',
+  PUBLIC_APP_URL: 'https://salon.example',
   LOG_LEVEL: 'info',
   LOG_FORMAT: 'json',
 }
@@ -67,6 +74,15 @@ describe('parseAppConfig', () => {
           maxAgeSeconds: 86400,
         },
         rateLimit: { windowMs: 900000, maxRequests: 100 },
+        mail: {
+          host: 'smtp.mail.example',
+          port: 587,
+          tls: 'starttls',
+          user: 'salon-api',
+          password: 'hunter2',
+          from: 'Beauty Salon <no-reply@salon.example>',
+        },
+        publicAppUrl: 'https://salon.example',
         logging: { level: 'info', format: 'json' },
       },
     })
@@ -122,6 +138,178 @@ describe('parseAppConfig', () => {
     ).toEqual([variable])
   })
 
+  it.each([
+    'SMTP_HOST',
+    'SMTP_PORT',
+    'SMTP_TLS',
+    'SMTP_USER',
+    'SMTP_PASSWORD',
+    'MAIL_FROM',
+    'PUBLIC_APP_URL',
+  ])('should report a missing %s by its name', (variable) => {
+    const rest = Object.fromEntries(
+      Object.entries(variables).filter(([name]) => name !== variable),
+    )
+
+    const result = parseAppConfig(rest)
+
+    expect(
+      result.type === 'error' && result.error.map((issue) => issue.variable),
+    ).toEqual([variable])
+  })
+
+  it.each([
+    ['SMTP_HOST', ''],
+    ['SMTP_PORT', ''],
+    ['SMTP_PORT', '0'],
+    ['SMTP_PORT', '65536'],
+    ['SMTP_PORT', 'smtp'],
+    ['SMTP_PORT', '587.5'],
+    ['SMTP_TLS', ''],
+    ['SMTP_TLS', 'tls'],
+    ['SMTP_TLS', 'ssl'],
+    ['SMTP_TLS', 'true'],
+    ['SMTP_USER', ''],
+    ['SMTP_PASSWORD', ''],
+    ['MAIL_FROM', ''],
+    ['MAIL_FROM', 'no-reply'],
+    ['MAIL_FROM', 'Beauty Salon'],
+    ['MAIL_FROM', 'Beauty Salon <no-reply>'],
+    ['MAIL_FROM', 'Beauty Salon <no-reply@salon.example> and more'],
+    ['PUBLIC_APP_URL', ''],
+    ['PUBLIC_APP_URL', 'salon.example'],
+    ['PUBLIC_APP_URL', 'https://salon.example/'],
+    ['PUBLIC_APP_URL', 'https://salon.example/app'],
+    ['PUBLIC_APP_URL', 'https://salon.example?ref=mail'],
+    ['PUBLIC_APP_URL', 'https://salon.example#top'],
+    ['PUBLIC_APP_URL', 'https://user:secret@salon.example'],
+  ])('should reject %s=%j by its name', (variable, value) => {
+    const result = parseAppConfig({ ...variables, [variable]: value })
+
+    expect(
+      result.type === 'error' && result.error.map((issue) => issue.variable),
+    ).toEqual([variable])
+  })
+
+  it.each([
+    ['SMTP_PORT', '1', { mail: expect.objectContaining({ port: 1 }) }],
+    ['SMTP_PORT', '65535', { mail: expect.objectContaining({ port: 65535 }) }],
+    [
+      'SMTP_TLS',
+      'implicit',
+      { mail: expect.objectContaining({ tls: 'implicit' }) },
+    ],
+    [
+      'MAIL_FROM',
+      'no-reply@salon.example',
+      { mail: expect.objectContaining({ from: 'no-reply@salon.example' }) },
+    ],
+    [
+      'MAIL_FROM',
+      'ビューティーサロン青山 <no-reply@salon.example>',
+      {
+        mail: expect.objectContaining({
+          from: 'ビューティーサロン青山 <no-reply@salon.example>',
+        }),
+      },
+    ],
+    [
+      'PUBLIC_APP_URL',
+      'https://book.salon.example:8443',
+      { publicAppUrl: 'https://book.salon.example:8443' },
+    ],
+  ])('should accept %s=%j', (variable, value, expected) => {
+    expect(parseAppConfig({ ...variables, [variable]: value })).toMatchObject({
+      type: 'success',
+      data: expected,
+    })
+  })
+
+  it.each([
+    ['SMTP_PORT', 'port-value-31337x'],
+    ['SMTP_TLS', 'tls-value-31337'],
+    ['MAIL_FROM', 'Sender <from-value-31337>'],
+    ['PUBLIC_APP_URL', 'https://url-value-31337.example/path'],
+  ])(
+    'should keep the rejected value of %s out of the report',
+    (variable, value) => {
+      const result = parseAppConfig({ ...variables, [variable]: value })
+
+      expect(result).toMatchObject({ type: 'error' })
+      expect(JSON.stringify(result)).not.toContain('31337')
+    },
+  )
+
+  describe.each(['staging', 'production'])('in %s', (environment) => {
+    const deployed = { ...variables, NODE_ENV: environment }
+
+    it('should refuse to send mail without encryption', () => {
+      const result = parseAppConfig({ ...deployed, SMTP_TLS: 'none' })
+
+      expect(
+        result.type === 'error' && result.error.map((issue) => issue.variable),
+      ).toEqual(['SMTP_TLS'])
+    })
+
+    it('should refuse links to the web application that are not https', () => {
+      const result = parseAppConfig({
+        ...deployed,
+        PUBLIC_APP_URL: 'http://app-31337.salon.example',
+      })
+
+      expect(
+        result.type === 'error' && result.error.map((issue) => issue.variable),
+      ).toEqual(['PUBLIC_APP_URL'])
+      expect(JSON.stringify(result)).not.toContain('31337')
+    })
+
+    it('should report both at once', () => {
+      const result = parseAppConfig({
+        ...deployed,
+        SMTP_TLS: 'none',
+        PUBLIC_APP_URL: 'http://salon.example',
+      })
+
+      expect(
+        result.type === 'error' &&
+          result.error.map((issue) => issue.variable).sort(),
+      ).toEqual(['PUBLIC_APP_URL', 'SMTP_TLS'])
+    })
+
+    it.each(['implicit', 'starttls'])(
+      'should accept SMTP_TLS=%s with an https link',
+      (tls) => {
+        expect(
+          parseAppConfig({
+            ...deployed,
+            SMTP_TLS: tls,
+            PUBLIC_APP_URL: 'https://salon.example',
+          }),
+        ).toMatchObject({ type: 'success' })
+      },
+    )
+  })
+
+  it.each(['localhost', 'development', 'test'])(
+    'should accept unencrypted mail and an http link in %s',
+    (environment) => {
+      expect(
+        parseAppConfig({
+          ...variables,
+          NODE_ENV: environment,
+          SMTP_TLS: 'none',
+          PUBLIC_APP_URL: 'http://localhost:3001',
+        }),
+      ).toMatchObject({
+        type: 'success',
+        data: {
+          mail: expect.objectContaining({ tls: 'none' }),
+          publicAppUrl: 'http://localhost:3001',
+        },
+      })
+    },
+  )
+
   it('should keep the rejected value out of the report', () => {
     const result = parseAppConfig({
       ...variables,
@@ -145,6 +333,15 @@ describe('environment files', () => {
     expect(parseAppConfig(readEnvFile(file))).toMatchObject({
       type: 'success',
     })
+  })
+
+  it('.env.test.ci should configure the server as production, which is how the Docker smoke test runs it', () => {
+    expect(
+      parseAppConfig({
+        ...readEnvFile('.env.test.ci'),
+        NODE_ENV: 'production',
+      }),
+    ).toMatchObject({ type: 'success' })
   })
 
   it.each(['.env.localhost', '.env.development'])(

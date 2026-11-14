@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm'
 import {
   boolean,
+  check,
   date,
   foreignKey,
   index,
@@ -1837,12 +1838,11 @@ export const users = pgTable(
     permissions: jsonb().default([]).notNull(),
     status: accountStatus().default('active').notNull(),
     emailVerified: boolean().default(false).notNull(),
-    emailVerificationToken: varchar({ length: 255 }),
+    emailVerificationTokenHash: varchar({ length: 255 }),
     emailVerificationExpiry: timestamp({ withTimezone: true, mode: 'string' }),
-    passwordResetToken: varchar({ length: 255 }),
+    passwordResetTokenHash: varchar({ length: 255 }),
     passwordResetExpiry: timestamp({ withTimezone: true, mode: 'string' }),
     lastPasswordChange: timestamp({ withTimezone: true, mode: 'string' }),
-    passwordHistory: jsonb().default([]),
     twoFactorEnabled: boolean().default(false).notNull(),
     twoFactorSecret: text(),
     backupCodes: jsonb(),
@@ -1864,6 +1864,15 @@ export const users = pgTable(
     twoFactorStatus: twoFactorStatus().default('disabled').notNull(),
   },
   (table) => [
+    check('users_email_lower_case', sql`(email)::text = lower((email)::text)`),
+    check(
+      'users_email_verification_token_complete',
+      sql`("emailVerificationTokenHash" IS NULL) = ("emailVerificationExpiry" IS NULL)`,
+    ),
+    check(
+      'users_password_reset_token_complete',
+      sql`("passwordResetTokenHash" IS NULL) = ("passwordResetExpiry" IS NULL)`,
+    ),
     foreignKey({
       columns: [table.customerId],
       foreignColumns: [customers.id],
@@ -1882,10 +1891,6 @@ export const users = pgTable(
       'btree',
       table.deletedAt.asc().nullsLast().op('timestamptz_ops'),
     ),
-    index('idx_users_email').using(
-      'btree',
-      table.email.asc().nullsLast().op('text_ops'),
-    ),
     index('idx_users_staff_id').using(
       'btree',
       table.staffId.asc().nullsLast().op('uuid_ops'),
@@ -1894,6 +1899,16 @@ export const users = pgTable(
       'btree',
       table.twoFactorStatus.asc().nullsLast().op('enum_ops'),
     ),
-    unique('users_email_unique').on(table.email),
+    uniqueIndex('users_email_unique')
+      .using('btree', table.email.asc().nullsLast().op('text_ops'))
+      .where(sql`("deletedAt" IS NULL)`),
+    uniqueIndex('users_email_verification_token_hash_unique').using(
+      'btree',
+      table.emailVerificationTokenHash.asc().nullsLast().op('text_ops'),
+    ),
+    uniqueIndex('users_password_reset_token_hash_unique').using(
+      'btree',
+      table.passwordResetTokenHash.asc().nullsLast().op('text_ops'),
+    ),
   ],
 )

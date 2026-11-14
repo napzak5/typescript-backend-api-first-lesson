@@ -25,8 +25,9 @@ The rules that most often decide whether a change is acceptable:
 ## 🧭 Working in the Repository
 
 - **Toolchain**: the Node version in `.node-version`, and pnpm (the version in `packageManager` of `package.json`). Lint and format are Biome; tests are Vitest
-- **What exists**: the Salon domain, the system endpoints, and five authentication operations (`login`, `refresh`, `logout`, `logout-all`, `me` under `/api/v1/auth`). The rest of the authentication contract and the other domains are specified in TypeSpec and present in the database schema, but have no backend code. Follow the Salon files listed in `CLAUDE.md` when adding one
+- **What exists**: the Salon domain, the system endpoints, and twelve authentication operations under `/api/v1/auth` (login, refresh, logout, the current user, registration, email verification, password reset and change). The rest of the authentication contract (two-factor authentication, the list of sessions, the administrator operations) and the other domains are specified in TypeSpec and present in the database schema, but have no backend code. Follow the Salon files listed in `CLAUDE.md` when adding one
 - **Authentication and authorization**: the server checks the bearer token of every handler wrapped with `authenticated`, and the use case decides from the `Actor` whether the request is allowed. A new endpoint that is not public follows that pattern; see [docs/authentication.md](docs/authentication.md)
+- **Mail**: the server sends the mails of the authentication flows over SMTP. Locally `make infra-up` starts Mailpit next to PostgreSQL, which keeps the mails and shows them at `http://localhost:8025`; see [docs/email.md](docs/email.md)
 - **Generated files are never edited by hand**: `specs/tsp-output/`, `backend/packages/generated/src/`, `frontend/packages/api-client/src/generated/` (from `pnpm generate`), and `backend/packages/database/src/schema.ts`, `relations.ts`, `sql/setup.sql` (from `pnpm db:introspect` and `pnpm db:generate-sql`). They are committed together with the change that caused them
 - **A migration that has been applied is never edited**: write a new file in `backend/packages/database/sql/migrations/`
 
@@ -37,7 +38,8 @@ make ci-check   # install, generated-file and API–DB checks, lint, format, bui
 ```
 
 The integration tests need a PostgreSQL: the one at `TEST_DATABASE_URL` when
-it is set, otherwise a container started through Docker. When a change touches
+it is set, otherwise a container started through Docker. The mail delivery
+tests always start a Mailpit container, so the full run needs Docker. When a change touches
 the database schema, also run `pnpm check:db-schema` (it recreates the database
 it is pointed at). Both `pnpm check:generated` and `pnpm check:db-schema`
 compare the regenerated files with what git has, so they fail until

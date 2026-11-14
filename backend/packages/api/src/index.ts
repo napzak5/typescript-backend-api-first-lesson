@@ -1,11 +1,14 @@
-import type { AuthUseCaseDependencies } from '@beauty-salon-backend/domain'
+import type {
+  AuthUseCaseDependencies,
+  IMailer,
+} from '@beauty-salon-backend/domain'
 import {
   Argon2PasswordHasher,
   type Database,
   type Logger,
+  RandomTokenIssuer,
   SalonRepository,
   SessionRepository,
-  SessionTokenIssuer,
   UserRepository,
 } from '@beauty-salon-backend/infrastructure'
 import compression from 'compression'
@@ -32,6 +35,8 @@ export type { AppSettings } from './settings'
 export type AppDependencies = {
   database: Database
   logger: Logger
+  /** Carries the mails of the authentication flows. */
+  mailer: IMailer
   settings: AppSettings
 }
 
@@ -49,6 +54,7 @@ export type AppDependencies = {
 export const createApp = ({
   database,
   logger,
+  mailer,
   settings,
 }: AppDependencies): Express => {
   const app = express()
@@ -76,7 +82,9 @@ export const createApp = ({
     userRepository: new UserRepository(database),
     sessionRepository: new SessionRepository(database),
     passwordHasher: new Argon2PasswordHasher(),
-    tokenIssuer: new SessionTokenIssuer(),
+    tokenIssuer: new RandomTokenIssuer(),
+    mailer,
+    publicAppUrl: settings.publicAppUrl,
     clock: () => new Date(),
   }
   const authenticated = createAuthenticated(authDependencies)

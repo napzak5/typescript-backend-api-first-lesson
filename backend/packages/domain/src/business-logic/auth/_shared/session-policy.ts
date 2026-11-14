@@ -8,7 +8,7 @@ import {
   parseISO,
 } from 'date-fns'
 import type { DbUser, SessionRotation } from '../../../models/auth'
-import type { ISessionTokenIssuer } from '../../../services/session-token-issuer'
+import type { ITokenIssuer } from '../../../services/token-issuer'
 
 /** How long an access token works. */
 const ACCESS_TOKEN_MINUTES = 15
@@ -64,7 +64,7 @@ export type IssuedSessionTokens = {
  * never outlives the session.
  */
 export const issueSessionTokens = (
-  tokenIssuer: ISessionTokenIssuer,
+  tokenIssuer: ITokenIssuer,
   now: Date,
   sessionEndsAt: Date,
 ): IssuedSessionTokens => {

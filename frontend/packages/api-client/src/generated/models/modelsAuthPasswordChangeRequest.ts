@@ -17,8 +17,7 @@ export interface ModelsAuthPasswordChangeRequest {
      */
   currentPassword: string;
   /**
-     * 変更後の新しいパスワード。15文字以上128文字以下で、文字種の組み合わせは要求しない。
-     * OWASP Authentication Cheat Sheet と NIST SP 800-63B に従い、パスワードが唯一の認証要素となる場合の最小長を15文字とし、64文字以上のパスワードも受け付ける
+     * 変更後の新しいパスワード。規則は登録時のパスワード(AuthRegisterRequest.password)と同じ。現在のパスワードと同じ値は指定できない
      * @minLength 15
      * @maxLength 128
      */

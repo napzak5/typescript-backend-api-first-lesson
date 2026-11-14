@@ -7,7 +7,8 @@ mechanics, with the Salon tests as the example.
 
 An API integration test sends HTTP requests to the production Express
 application (`createApp`) and lets it work on a real PostgreSQL. Nothing is
-mocked.
+mocked; the one part that is replaced is the mailer, which keeps the mails
+for the test instead of sending them.
 
 ## Where the Tests Are
 
@@ -33,7 +34,7 @@ database.
 ## Running
 
 ```bash
-# Every integration test of the workspace (api, server, database)
+# Every integration test of the workspace (api, server, database, infrastructure)
 pnpm test:integration
 
 # The API package only
@@ -79,6 +80,12 @@ package create and drop a database per test, so the user needs the right to
 create databases.
 
 CI runs the integration tests both ways.
+
+The integration tests of the `infrastructure` package send mail to a real
+SMTP server and use no database. They always start a Mailpit container
+through testcontainers, so `pnpm test:integration` for the whole workspace
+needs Docker even when `TEST_DATABASE_URL` is set. The API tests need no SMTP
+server.
 
 ## How a Test Gets Its Database
 
@@ -138,7 +145,8 @@ hook up to 120, enough for the first start of the container.
 
 ## The Application under Test
 
-`test-helpers.ts` builds the same application the server runs:
+`test-helpers.ts` builds the same application the server runs, with a mailer
+that hands the mails to the test:
 
 ```typescript
 // backend/packages/api/src/__tests__/_shared/test-helpers.ts (excerpt)
@@ -148,16 +156,20 @@ export type TestAppOptions = {
   rateLimit?: AppSettings['rateLimit']
   /** Receives every line the application logs, parsed. Not logged if absent. */
   logs?: unknown[]
+  /** Receives every mail the application hands over. Dropped if absent. */
+  mails?: Mail[]
 }
 
 export function createTestApp({
   database = getTestDb(),
   rateLimit = settings.rateLimit,
   logs,
+  mails,
 }: TestAppOptions = {}): Express {
   return createApp({
     database,
     settings: { ...settings, rateLimit },
+    mailer: { deliver: (mail) => mails?.push(mail) },
     logger: createLogger(
       {
         level: logs === undefined ? 'silent' : 'info',
@@ -172,20 +184,28 @@ export function createTestApp({
 
 | Helper | Use |
 |--------|-----|
-| `createTestApp()` | The application on the test's own schema, with logging silent |
+| `createTestApp()` | The application on the test's own schema, with logging silent and mails dropped |
 | `createTestApp({ logs })` | The same, collecting every log line as a parsed object in `logs` |
+| `createTestApp({ mails })` | The same, collecting every mail the application hands to its mailer (`to`, `subject`, `text`) in `mails` |
 | `createTestApp({ rateLimit })` | A lower rate limit, to test the limit itself |
 | `createTestApp({ database })` | Another database, for example an unreachable one |
 | `getTestDb()` | The Drizzle database of the test's schema, to arrange or inspect rows |
 | `getTestDbClient()` | The postgres.js client under `getTestDb()`, for code that builds a Drizzle instance of its own (the authentication tests run the seed with it) |
 | `connectUnreachableDatabase()` | A connection nothing answers: every query fails at once |
+| `PUBLIC_APP_URL` | The origin of the web application in the test settings: the links in the mails start with it |
 | `request` | supertest |
 
 Every operation that is not public needs an access token, and the tests get
 one the way a client does: by signing in. `auth-helpers.ts` has the helpers.
-No implemented operation creates a user, so the users are inserted as rows,
+Registration creates customer accounts only, and such an account cannot sign
+in before its email address is confirmed, so the users are inserted as rows,
 with a password hashed by the hasher the application uses
-(`Argon2PasswordHasher`).
+(`Argon2PasswordHasher`). That password, `PASSWORD`
+(`'correct horse battery staple'`), signs the inserted users in, but the API
+refuses it as a new password because it is a well-known one: a test that
+registers a user or sets a password through the API has to send a different
+one (see [Authentication and Authorization](./authentication.md) for the
+rules).
 
 | Helper of `auth-helpers.ts` | Use |
 |-----------------------------|-----|
@@ -481,8 +501,8 @@ repeats one such case only, a token that names no session.
 ### 6. Write to the database only for what the API cannot produce
 
 `getTestDb()` is for inspecting rows and for states no request can create,
-such as a user (no implemented operation creates one) or a stored value that
-does not have the shape the schema promises:
+such as an admin (registration creates customer accounts only) or a stored
+value that does not have the shape the schema promises:
 
 ```typescript
 it('answers 500 without details when the stored salon is corrupt', async () => {

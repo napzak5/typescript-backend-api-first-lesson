@@ -192,12 +192,11 @@ const authRules: ModelRule[] = [
     kind: 'response',
     omittedColumns: [
       'passwordHash',
-      'passwordHistory',
       'twoFactorSecret',
       'backupCodes',
-      'emailVerificationToken',
+      'emailVerificationTokenHash',
       'emailVerificationExpiry',
-      'passwordResetToken',
+      'passwordResetTokenHash',
       'passwordResetExpiry',
       // a jsonb object without a defined structure
       'metadata',

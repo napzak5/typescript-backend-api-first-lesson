@@ -35,12 +35,13 @@ Before relying on anything, check this table.
 | Area | State |
 |------|-------|
 | Salon API (`/api/v1/salons`) | Implemented in every layer: list, create, get, update, delete. It is the reference implementation for every other domain. List and get are public; create, update and delete need a signed-in user with the permission. |
-| Authentication (`/api/v1/auth`) | Implemented: `login`, `refresh`, `logout`, `logout-all` and `me`, on server-side sessions with opaque bearer tokens. The other operations of the contract (registration, email verification, password reset and change, two-factor authentication, session list and revocation, `/api/v1/admin/auth`) are specified in TypeSpec only and answered with 404. See [Authentication and Authorization](./authentication.md). |
+| Authentication (`/api/v1/auth`) | Implemented: `login`, `refresh`, `logout`, `logout-all` and `me`, on server-side sessions with opaque bearer tokens, and registration of customer accounts, email verification and password reset, each through a single-use token sent by mail, and password change. That is 12 of the 22 operations in `specs/operations/auth-operations.tsp`. The others (two-factor authentication, session list and revocation, `/api/v1/admin/auth`) are specified in TypeSpec only and answered with 404. See [Authentication and Authorization](./authentication.md). |
 | Authorization | Implemented for the Salon API. An implemented operation that the contract does not mark `@useAuth(NoAuth)` needs a valid access token, and its use case decides whether the signed-in user may do what is asked. |
 | System endpoints (`/api/system`) | Implemented: `alive`, `ready` and `health`. |
 | Other domains (staff, service, customer, booking, review, treatment, payment, inventory) | Specified in TypeSpec, so their generated types exist, and the database schema has their tables and seed data. The models agree with the tables (`pnpm check:api-db`). There is no domain, repository or route code. A request to one of these routes is answered with 404. The implementation order is in GitHub issue #4. |
 | Attachments, roles and permissions, purchase orders, medical charts | Specified in TypeSpec only. No table exists for them yet. |
-| Email, file storage | Not implemented. Docker Compose starts no service for them. |
+| Email | Implemented for the mails of the authentication flows (confirm the address, reset the password, the password was changed): plain text over SMTP. Docker Compose starts Mailpit, which catches them locally. See [Email](./email.md) (Japanese). |
+| File storage | Not implemented. Docker Compose starts no service for it. |
 | Frontend | Three application shells and shared packages. The API client is generated, but no application calls the API yet. See [Frontend](#frontend). |
 
 ## Architecture Principles
@@ -107,7 +108,7 @@ shape the system, and why:
 │   │   ├── domain/          Models, validation schemas, mappers, use cases,
 │   │   │                    repository and service interfaces, errors
 │   │   ├── infrastructure/  Database connection, repository implementations,
-│   │   │                    password hashing and session tokens, logger
+│   │   │                    password hashing, tokens, mail over SMTP, logger
 │   │   └── api/             Express application: middleware, routes,
 │   │                        authentication, error responses
 │   └── apps/
@@ -157,16 +158,20 @@ Authentication has the same layout, with what only it needs added:
 ```
 domain/src/
 ├── models/auth.ts                     IDs, API and database types, Actor and ActorScope
-├── schemas/auth.schema.ts             Zod schema of the login and refresh requests
+├── schemas/auth.schema.ts             Zod schema of each request
 ├── mappers/read/user.mapper.ts        Row of users → API response
 ├── repositories/user.repository.ts    IUserRepository
 ├── repositories/session.repository.ts ISessionRepository
-├── services/                          IPasswordHasher, ISessionTokenIssuer
-└── business-logic/auth/               One *.usecase.ts per operation, AuthenticateUseCase
+├── services/                          IPasswordHasher, ITokenIssuer, IMailer
+└── business-logic/auth/               One *.usecase.ts per operation, AuthenticateUseCase;
+                                       _shared/ holds what they share: dependencies, the actor,
+                                       session policy, password check and blocklist, mailed
+                                       tokens, the texts of the mails
 
 infrastructure/src/
 ├── repositories/user.repository.impl.ts, session.repository.impl.ts, account.ts
-└── security/                          Argon2PasswordHasher, SessionTokenIssuer
+├── security/                          Argon2PasswordHasher, RandomTokenIssuer
+└── mail/smtp-mailer.ts                SmtpMailer
 
 api/src/
 └── routes/auth/                       One *.handler.ts per operation, index.ts (router)
@@ -184,7 +189,7 @@ An arrow means "depends on":
         ┌───────┴─────────┐
         ▼                 │
  infrastructure           │           I/O: database connection, repositories,
-  ┌─────┴─────────┐       │           password hashing, session tokens, logger
+  ┌─────┴─────────┐       │           password hashing, tokens, mail, logger
   │               ▼       ▼
   │                domain             rules: use cases, schemas, mappers,
   │     ┌─────────────┴───────┐       repository and service interfaces
@@ -204,10 +209,11 @@ to the contract surfaces as a type error in the mappers.
 Use cases and domain logic live in one package, `domain`. It imports nothing
 that performs I/O: from `database` it imports types only, and it reaches the
 database through repository interfaces (`ISalonRepository`, `IUserRepository`,
-`ISessionRepository`), which `infrastructure` implements. Password hashing and
-token generation are behind interfaces in the same way (`IPasswordHasher`,
-`ISessionTokenIssuer`), and the current time is a dependency (`clock`), so the
-authentication use cases are unit-tested without a database or a real hash.
+`ISessionRepository`), which `infrastructure` implements. Password hashing,
+token generation and mail are behind interfaces in the same way
+(`IPasswordHasher`, `ITokenIssuer`, `IMailer`), and the current time is a
+dependency (`clock`), so the authentication use cases are unit-tested without
+a database, a real hash or a mail server.
 
 | Package (`@beauty-salon-backend/…`) | Contains | Workspace packages it depends on |
 |-------------------------------------|----------|----------------------------------|
@@ -216,7 +222,7 @@ authentication use cases are unit-tested without a database or a real hash.
 | `config` | `loadEnvFile`, `parseAppConfig` | `utility` |
 | `database` | `schema.ts`, `relations.ts`, `sql/`, the `db:*` scripts, seeds | `config`, `utility` |
 | `domain` | Models, schemas, mappers, use cases, repository and service interfaces, `DomainError` | `database` (types), `generated`, `utility` |
-| `infrastructure` | `connectDatabase`, `pingDatabase`, `SalonRepository`, `UserRepository`, `SessionRepository`, `Argon2PasswordHasher`, `SessionTokenIssuer`, `createLogger` | `database`, `domain`, `utility` |
+| `infrastructure` | `connectDatabase`, `pingDatabase`, `SalonRepository`, `UserRepository`, `SessionRepository`, `Argon2PasswordHasher`, `RandomTokenIssuer`, `SmtpMailer`, `createLogger` | `database`, `domain`, `utility` |
 | `api` | `createApp`, middleware, routes, authentication of a request, problem details | `domain`, `generated`, `infrastructure`, `utility`; `database` in tests |
 | `server` (application) | Entry point and `startServer` | `api`, `config`, `domain`, `infrastructure`, `utility` |
 
@@ -337,19 +343,23 @@ reads the environment or ends the process.
    `Result`. On an error the server logs every issue and exits.
 3. `createLogger(...)` creates the pino logger.
 4. `startServer(config, logger)` in `backend/apps/server/src/server.ts`
-   connects to the database and pings it, builds the application with
-   `createApp({ database, logger, settings })`, and listens. It returns a
-   `Result`: the server does not start when the database is unreachable or
-   the port cannot be bound.
+   connects to the database and pings it, creates the mailer (`SmtpMailer`,
+   from `config.mail`), builds the application with
+   `createApp({ database, logger, mailer, settings })`, and listens. It
+   returns a `Result`: the server does not start when the database is
+   unreachable or the port cannot be bound. The SMTP server is not contacted
+   at start-up; the mailer connects when a mail goes out.
 5. On `SIGTERM` or `SIGINT` the server stops accepting connections, lets
-   requests in flight finish (for up to 10 seconds), closes the database
+   requests in flight finish (for up to 10 seconds), waits for the mails
+   that are still being delivered, closes the mailer and the database
    connections and exits with status 0.
 
 ### Middleware Order
 
 `createApp` in `backend/packages/api/src/index.ts` creates the repositories,
-the password hasher and the token issuer once and mounts everything in this
-order. The order is part of the design:
+the password hasher and the token issuer once, takes the mailer as a
+dependency (`AppDependencies.mailer`), and mounts everything in this order.
+The order is part of the design:
 
 1. `requestLogging`: gives every request its ID (`req.id`) and logger
    (`req.log`), first, so that everything after it can log and answer with
@@ -442,9 +452,19 @@ response under `/api/v1/auth` carries `Cache-Control: no-store`.
 | Logout | `POST /api/v1/auth/logout` | Needed | `LogoutUseCase` | 204 |
 | Logout everywhere | `POST /api/v1/auth/logout-all` | Needed | `LogoutAllUseCase` | 204 |
 | Current user | `GET /api/v1/auth/me` | Needed | `GetCurrentUserUseCase` | 200 |
+| Register | `POST /api/v1/auth/register` | Not needed | `RegisterUseCase` | 204 |
+| Send the verification mail again | `POST /api/v1/auth/verify-email/send` | Not needed | `SendEmailVerificationUseCase` | 204 |
+| Confirm the email address | `POST /api/v1/auth/verify-email/confirm` | Not needed; the body carries the mailed token | `ConfirmEmailVerificationUseCase` | 204 |
+| Request a password reset | `POST /api/v1/auth/forgot-password` | Not needed | `ForgotPasswordUseCase` | 204 |
+| Check a reset token | `POST /api/v1/auth/reset-password/verify` | Not needed; the body carries the mailed token | `VerifyResetTokenUseCase` | 204 |
+| Reset the password | `POST /api/v1/auth/reset-password` | Not needed; the body carries the mailed token | `ResetPasswordUseCase` | 204 |
+| Change the password | `POST /api/v1/auth/change-password` | Needed | `ChangePasswordUseCase` | 204 |
 
-How sessions, tokens, passwords and the lockout work is in
-[Authentication and Authorization](./authentication.md).
+The use cases that send a mail hand it to `IMailer.deliver` and do not wait
+for the delivery, so the response does not depend on it. How sessions,
+tokens, passwords, the lockout, registration and the mailed tokens work is in
+[Authentication and Authorization](./authentication.md); how the mails are
+sent is in [Email](./email.md).
 
 ## Errors
 
@@ -457,8 +477,8 @@ returns the body the contract defines for it, not problem details.
 
 | Kind | Raised by | Status |
 |------|-----------|--------|
-| `validation` | A use case, when the input breaks a rule of its Zod schema; the list handler, when a query parameter cannot be read as its type | 400 |
-| `unauthenticated` | `AuthenticateUseCase`, when the request carries no access token that works; the login and refresh use cases, when the credentials are not accepted | 401, with a `WWW-Authenticate: Bearer` header |
+| `validation` | A use case, when the input breaks a rule of its Zod schema; an authentication use case, also for a rule the schema cannot check (a new password on the blocklist or equal to the current one, a current password that is wrong, a mailed token that cannot be used); the list handler, when a query parameter cannot be read as its type | 400 |
+| `unauthenticated` | `AuthenticateUseCase`, when the request carries no access token that works; the login and refresh use cases, when the credentials are not accepted; the current-user and change-password use cases, when the user of the session no longer exists | 401, with a `WWW-Authenticate: Bearer` header |
 | `forbidden` | A use case, when the signed-in user may not do what is asked | 403 |
 | `notFound` | A use case, when the salon does not exist or is deleted | 404 |
 | `alreadyExists` | The repository, when the unique index on `email` is violated | 409 |
@@ -488,18 +508,21 @@ is where each one lives in the code:
 
 | Concern | Where | Notes |
 |---------|-------|-------|
-| Configuration | `backend/packages/config/src/app-config.ts` | `parseAppConfig` validates 14 variables, all required, and returns `Result<AppConfig, ConfigIssue[]>`. Application code receives values and does not read the environment. |
+| Configuration | `backend/packages/config/src/app-config.ts` | `parseAppConfig` validates 21 variables, all required, and returns `Result<AppConfig, ConfigIssue[]>`. When `NODE_ENV` is `staging` or `production` it also refuses `SMTP_TLS=none` and a `PUBLIC_APP_URL` that does not start with `https://`. Application code receives values and does not read the environment. |
 | Environment files | `backend/packages/config/src/env-loader.ts` | One file per environment at the repository root: `.env.localhost`, `.env.development`, `.env.test`, `.env.staging`, `.env.production`. `.env.template` and `.env.example` are templates, and `.env.test.ci` is what CI uses as `.env.test`. A deployment sets the variables directly and needs no file. |
 | Logging | `backend/packages/infrastructure/src/logging/logger.ts`, `backend/packages/api/src/middleware/request-logging.ts` | Structured logs (pino) on standard output: one line per request, one line per failure. Headers, bodies and the values bound to a SQL statement are never logged. There is no `console` call in application code. |
 | Request ID | `backend/packages/api/src/middleware/request-logging.ts` | The caller's `X-Request-Id` or a new UUID. It is on every log line of the request, in the response header, and in the body as `meta.correlationId` (`correlationId` in an error). |
-| Probes | `backend/packages/api/src/routes/system/index.ts` | `GET /api/system/alive` (the process answers), `GET /api/system/ready` (200 while the database answers, otherwise 503), `GET /api/system/health` (the same check with details). Not rate limited and not written to the request log. |
+| Mail | `backend/packages/domain/src/services/mailer.ts`, `backend/packages/infrastructure/src/mail/smtp-mailer.ts` | The use cases know the port `IMailer`; `SmtpMailer` (nodemailer) sends through the SMTP server of `config.mail`. `deliver` returns at once. A delivery is logged with the subject of the message, never its recipient or text, and a failed one is not retried. See [Email](./email.md). |
+| Probes | `backend/packages/api/src/routes/system/index.ts` | `GET /api/system/alive` (the process answers), `GET /api/system/ready` (200 while the database answers, otherwise 503), `GET /api/system/health` (the same check with details). Not rate limited and not written to the request log. The SMTP server is not probed. |
 | Shutdown | `backend/apps/server/src/server.ts` | See [Start-up](#start-up). |
 
 What protects the API today: security headers, the origin allow-list, the
 rate limit, the body size limit, strict validation that rejects unknown
 properties, and bearer-token authentication with a permission check on the
 operations that change a salon. The system endpoints, the salon list, a
-single salon, login and refresh are open to anyone who can reach the server.
+single salon and the authentication operations a signed-out user needs
+(register, login, refresh, email verification, password reset) are open to
+anyone who can reach the server.
 See [Authentication and Authorization](./authentication.md).
 
 ## Tests, CI and Images
@@ -507,7 +530,7 @@ See [Authentication and Authorization](./authentication.md).
 | Command | What runs | Where the tests are |
 |---------|-----------|---------------------|
 | `pnpm test` | Unit tests (Vitest), no external services | Next to the code: in `__tests__` directories, or as `*.test.ts(x)` files beside the module |
-| `pnpm test:integration` | Tests against a real PostgreSQL: the one at `TEST_DATABASE_URL`, otherwise a testcontainers container | `backend/packages/api/src/__tests__` (the HTTP API through the production `createApp`, one schema per test), `backend/apps/server/src/__tests__` (start-up and shutdown), `backend/packages/database/src/scripts/__tests__` (the migration runner) |
+| `pnpm test:integration` | Tests against a real PostgreSQL: the one at `TEST_DATABASE_URL`, otherwise a testcontainers container. The tests of the infrastructure package send mail to a real SMTP server instead: a Mailpit container they start through testcontainers | `backend/packages/api/src/__tests__` (the HTTP API through the production `createApp`, one schema per test), `backend/apps/server/src/__tests__` (start-up and shutdown), `backend/packages/database/src/scripts/__tests__` (the migration runner), `backend/packages/infrastructure/src/mail/__tests__` (mail delivery) |
 
 There is no separate end-to-end suite: the API integration tests drive the
 production application over HTTP, and the server tests start the real server.
@@ -551,7 +574,8 @@ theme, configuration, assets) and the API client that orval generates
 into `frontend/packages/api-client`. The client and its fetch function
 (`frontend/packages/io`) are tested, but no application imports the client yet.
 Nothing in the frontend signs in, stores a token or sends an `Authorization`
-header.
+header, and the pages that the links in the mails point at (`/verify-email`
+and `/reset-password` under `PUBLIC_APP_URL`) do not exist yet.
 See [Frontend API Integration](./frontend-api-integration.md).
 
 ## References
@@ -561,6 +585,7 @@ See [Frontend API Integration](./frontend-api-integration.md).
 - [Backend Architecture Guidelines](./backend-architecture-guidelines.md)
 - [Domain Implementation Reference](./domain-implementation-reference.md)
 - [Authentication and Authorization](./authentication.md) (Japanese)
+- [Email](./email.md) (Japanese)
 - [Type Generation System](./type-generation-system.md)
 - [TypeSpec API Type Rules](./typespec-api-type-rules.md)
 - [DB-Driven Domain Model](./db-driven-domain-model.md)

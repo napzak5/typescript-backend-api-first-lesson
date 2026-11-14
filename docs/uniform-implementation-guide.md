@@ -291,8 +291,8 @@ answers 503 with the body its operation defines.
 
 | Error | Raised by | Status | `code` |
 |-------|-----------|--------|--------|
-| `validation` | `parseWith` in a use case | 400 | `2001` |
-| `unauthenticated` | `AuthenticateUseCase` behind `authenticated`; the login and refresh use cases | 401 | `1001` to `1004`, by `reason` |
+| `validation` | `parseWith` in a use case; an authentication use case, also for what a schema cannot check (a password that is too easy to guess, a wrong current password, a mailed token that cannot be used) | 400 | `2001` |
+| `unauthenticated` | `AuthenticateUseCase` behind `authenticated`; the login and refresh use cases; the current-user and change-password use cases, when the user of the session no longer exists | 401 | `1001` to `1004`, by `reason` |
 | `forbidden` | A use case, when the actor may not do what is asked | 403 | `1005` |
 | `notFound` | A use case, when the repository finds no row | 404 | `3001` |
 | `alreadyExists` | The repository, on the unique index on `email` | 409 | `3002` |
@@ -393,6 +393,11 @@ Logging is structured, with pino. Application code never writes to `console`.
   `correlationId` of a problem.
 - Use cases and repositories do not log. They return the failure as a value,
   and the API layer logs it once.
+- The mailer logs by itself, with the injected `Logger`: a delivery goes on
+  after the use case has returned, so its outcome cannot be a returned value.
+  `SmtpMailer` (`backend/packages/infrastructure/src/mail/smtp-mailer.ts`)
+  writes `Mail delivered` or `Failed to deliver mail` with the subject of the
+  message, never its recipient or text.
 - Never logged: request headers and bodies, and the values bound to a failed
   SQL statement. `describeDatabaseError` in
   `backend/packages/infrastructure/src/database/failure.ts` keeps the statement

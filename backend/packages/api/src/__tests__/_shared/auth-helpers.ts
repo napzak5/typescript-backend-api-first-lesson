@@ -60,6 +60,15 @@ const passwordHash = (): Promise<string> => {
   return hashOfPassword
 }
 
+/** `password` hashed by the API's hasher, as the API would store it. */
+export const passwordHashOf = async (password: string): Promise<string> => {
+  const hashed = await new Argon2PasswordHasher().hash(password)
+  if (hashed.type === 'error') {
+    throw new Error('Hashing a test password failed')
+  }
+  return hashed.data
+}
+
 /** An instant relative to now, in ISO 8601. */
 export const minutesFromNow = (minutes: number): string =>
   new Date(Date.now() + minutes * 60_000).toISOString()

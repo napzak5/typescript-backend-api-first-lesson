@@ -6,6 +6,7 @@ import {
   connectDatabase,
   type Logger,
   pingDatabase,
+  SmtpMailer,
 } from '@beauty-salon-backend/infrastructure'
 import { Result } from '@beauty-salon-backend/utility'
 import { match, P } from 'ts-pattern'
@@ -20,8 +21,9 @@ export type RunningServer = {
   /** The port the server listens on. */
   port: number
   /**
-   * Stops accepting requests, lets the ones in flight finish and closes the
-   * database connections. Resolves when nothing is left open.
+   * Stops accepting requests, lets the ones in flight finish, waits for the
+   * mails they handed over and closes the database connections. Resolves
+   * when nothing is left open.
    */
   stop(): Promise<void>
 }
@@ -92,18 +94,25 @@ export const startServer = async (
     })
   }
 
+  // Connects when the first mail goes out: a mail server that is down
+  // does not keep the API from starting.
+  const mailer = new SmtpMailer(config.mail, logger)
+
   const app = createApp({
     database: connection.database,
     logger,
+    mailer,
     settings: {
       trustProxyHops: config.server.trustProxyHops,
       cors: config.cors,
       rateLimit: config.rateLimit,
+      publicAppUrl: config.publicAppUrl,
     },
   })
 
   const listening = await listen(app, config.server)
   if (listening.type === 'error') {
+    await mailer.close()
     await closeDatabase()
     return Result.error({ type: 'listenFailed', error: listening.error })
   }
@@ -114,6 +123,7 @@ export const startServer = async (
     port: portOf(server),
     stop: async () => {
       await close(server, logger, shutdownGraceMs)
+      await mailer.close()
       await closeDatabase()
     },
   })

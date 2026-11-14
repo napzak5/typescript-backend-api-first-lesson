@@ -37,6 +37,18 @@ const isPostgresUrl = (value: string): boolean =>
   URL.canParse(value) &&
   ['postgres:', 'postgresql:'].includes(new URL(value).protocol)
 
+const smtpTlsSchema = z.enum(['implicit', 'starttls', 'none'])
+
+/** `no-reply@example.com`, or with a display name: `Beauty Salon <no-reply@example.com>`. */
+const isSender = (value: string): boolean => {
+  const address = /^[^<>]+<([^<>\s]+)>$/.exec(value)?.[1] ?? value
+  return z.email().safeParse(address).success
+}
+
+/** Environments that real users reach: nothing may travel unencrypted there. */
+const isDeployed = (environment: Environment): boolean =>
+  environment === 'production' || environment === 'staging'
+
 const logLevelSchema = z.enum([
   'fatal',
   'error',
@@ -62,10 +74,49 @@ const variablesSchema = z.object({
   CORS_MAX_AGE: wholeNumber(0, 86_400),
   RATE_LIMIT_WINDOW_MS: wholeNumber(1000, 86_400_000),
   RATE_LIMIT_MAX_REQUESTS: wholeNumber(1, 1_000_000),
+  SMTP_HOST: z.string().min(1),
+  SMTP_PORT: wholeNumber(1, 65535),
+  SMTP_TLS: smtpTlsSchema,
+  SMTP_USER: z.string().min(1),
+  SMTP_PASSWORD: z.string().min(1),
+  MAIL_FROM: z
+    .string()
+    .refine(isSender, 'Must be an address such as Name <user@example.com>'),
+  PUBLIC_APP_URL: z
+    .string()
+    .refine(isOrigin, 'Must be an origin such as https://example.com'),
   LOG_LEVEL: logLevelSchema,
   LOG_FORMAT: logFormatSchema,
 })
 
+/** What a single variable cannot tell: rules that depend on the environment. */
+const deployedVariablesSchema = variablesSchema.check((context) => {
+  const { NODE_ENV, SMTP_TLS, PUBLIC_APP_URL } = context.value
+  // Only variables that are well-formed on their own are compared.
+  if (context.issues.length > 0 || !isDeployed(NODE_ENV)) {
+    return
+  }
+
+  if (SMTP_TLS === 'none') {
+    context.issues.push({
+      code: 'custom',
+      path: ['SMTP_TLS'],
+      message: `Must be implicit or starttls in ${NODE_ENV}`,
+      input: SMTP_TLS,
+    })
+  }
+  // The links in mails carry tokens.
+  if (!PUBLIC_APP_URL.startsWith('https://')) {
+    context.issues.push({
+      code: 'custom',
+      path: ['PUBLIC_APP_URL'],
+      message: `Must use https in ${NODE_ENV}`,
+      input: PUBLIC_APP_URL,
+    })
+  }
+})
+
+type SmtpTls = z.infer<typeof smtpTlsSchema>
 export type LogLevel = z.infer<typeof logLevelSchema>
 export type LogFormat = z.infer<typeof logFormatSchema>
 
@@ -91,6 +142,17 @@ export type AppConfig = {
     windowMs: number
     maxRequests: number
   }
+  mail: {
+    host: string
+    port: number
+    tls: SmtpTls
+    user: string
+    password: string
+    /** The sender of every message. */
+    from: string
+  }
+  /** The origin of the web application that the links in mails point at. */
+  publicAppUrl: string
   logging: {
     level: LogLevel
     format: LogFormat
@@ -126,6 +188,15 @@ const toAppConfig = (
     windowMs: variables.RATE_LIMIT_WINDOW_MS,
     maxRequests: variables.RATE_LIMIT_MAX_REQUESTS,
   },
+  mail: {
+    host: variables.SMTP_HOST,
+    port: variables.SMTP_PORT,
+    tls: variables.SMTP_TLS,
+    user: variables.SMTP_USER,
+    password: variables.SMTP_PASSWORD,
+    from: variables.MAIL_FROM,
+  },
+  publicAppUrl: variables.PUBLIC_APP_URL,
   logging: {
     level: variables.LOG_LEVEL,
     format: variables.LOG_FORMAT,
@@ -136,7 +207,7 @@ const toAppConfig = (
 export const parseAppConfig = (
   variables: Record<string, string | undefined>,
 ): Result<AppConfig, ConfigIssue[]> => {
-  const parsed = variablesSchema.safeParse(variables)
+  const parsed = deployedVariablesSchema.safeParse(variables)
 
   return parsed.success
     ? Result.success(toAppConfig(parsed.data))

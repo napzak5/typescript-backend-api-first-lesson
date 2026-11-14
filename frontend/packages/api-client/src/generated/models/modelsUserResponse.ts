@@ -19,7 +19,7 @@ import type { ModelsUserRoleType } from './modelsUserRoleType';
 export interface ModelsUserResponse {
   /** ユーザーを一意に識別するID。 */
   id: ModelsUserId;
-  /** ログインに利用するメールアドレス。削除済みを含むすべてのユーザーの間で一意。 */
+  /** ログインに利用するメールアドレス。小文字で保存する。削除されていないユーザーの間で一意。 */
   email: string;
   /** 認証システム上での役割区分。 */
   role: ModelsUserRoleType;

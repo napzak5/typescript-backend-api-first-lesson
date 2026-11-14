@@ -111,7 +111,7 @@ pnpm typecheck        # 型エラーなし（先にビルドが必要）
 pnpm knip             # 未使用のファイル・export・依存関係なし
 pnpm check:generated  # 生成ファイルが TypeSpec と一致
 pnpm test             # 単体テストがすべて成功
-pnpm test:integration # 統合テストがすべて成功（Docker か TEST_DATABASE_URL が必要）
+pnpm test:integration # 統合テストがすべて成功（Docker が必要）
 ```
 
 `make ci-check` は、依存関係のインストールから監査（`pnpm audit`）まで、CI の検査を同じ順で実行します。データベースを作り直す `pnpm check:db-schema` だけは含みません。
