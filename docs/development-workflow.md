@@ -276,7 +276,8 @@ curl -X POST http://localhost:3000/api/v1/staff \
 # 1. SQLマイグレーションファイルを作成
 echo "ALTER TABLE users ADD COLUMN age INT;" > backend/packages/database/sql/migrations/$(date +%Y%m%d%H%M)_add_age.sql
 
-# 2. マイグレーションを実行
+# 2. マイグレーションを実行（未適用のものだけが、1ファイル1トランザクションで適用される）
+#    作成中に試すだけなら: pnpm db:migrate <ファイル> （適用済みとして記録しない）
 pnpm db:migrate
 
 # 3. TypeScript型を生成

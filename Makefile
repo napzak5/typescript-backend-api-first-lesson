@@ -117,7 +117,7 @@ ci-check: ## Run the same checks as the CI workflow
 db-fresh: ## Drop everything and recreate the schema from sql/setup.sql
 	pnpm db:fresh
 
-db-migrate: ## Apply the SQL migrations
+db-migrate: ## Create the schema, or apply the migrations not applied yet
 	pnpm db:migrate
 
 db-seed: ## Insert sample data
