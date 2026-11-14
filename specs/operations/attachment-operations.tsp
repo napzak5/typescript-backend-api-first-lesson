@@ -177,7 +177,7 @@ namespace BeautySalon.Operations {
       ):
         | {
             @statusCode statusCode: 200;
-            @body response: ApiResponse<AttachmentResponse>;
+            @body response: ApiResponse<SharedFileResponse>;
           }
         | ProblemResponse<401>
         | ProblemResponse<404>

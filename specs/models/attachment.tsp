@@ -10,19 +10,6 @@ namespace BeautySalon.Models {
   scalar ShareLinkId extends string;
 
   @doc("""
-    ファイルタイプ区分 - アップロードされるファイルの種類を分類
-    
-    image: 画像 - 写真やイラスト等の画像ファイル（jpg, png, gif等）
-    document: ドキュメント - PDF、Word、Excel等の文書ファイル
-    other: その他 - 上記に分類されないファイル
-    """)
-  enum FileType {
-    image: "image",
-    document: "document",
-    other: "other",
-  }
-
-  @doc("""
     添付ファイルレスポンス - サロンシステムで管理するアップロード済みファイルのメタ情報を返す。
     対応するテーブルはまだない。全項目のキーが必須で、値がない項目は null を返す
     """)
@@ -41,9 +28,6 @@ namespace BeautySalon.Models {
 
     @doc("ファイルサイズ（バイト単位）。")
     size: int32;
-
-    @doc("ファイルの実体情報。ダウンロードや共有レスポンスで利用。")
-    file: File;
 
     @doc("ファイルをアップロードしたユーザーID。")
     uploadedBy: UserId;
@@ -227,6 +211,21 @@ namespace BeautySalon.Models {
     @query
     @doc("取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する")
     cursor?: string;
+  }
+
+  @doc("""
+    共有ファイルレスポンス - 共有リンクの閲覧者に示す、公開対象ファイルのメタ情報を返す。
+    認証なしで取得できるため、保存先のキーやアップロードしたユーザーなどの内部情報は含めない
+    """)
+  model SharedFileResponse {
+    @doc("利用者がアップロードした元のファイル名。")
+    filename: string;
+
+    @doc("ファイルのMIMEタイプ（Content-Type）。")
+    content: string;
+
+    @doc("ファイルサイズ（バイト単位）。")
+    size: int32;
   }
 
   @doc("""

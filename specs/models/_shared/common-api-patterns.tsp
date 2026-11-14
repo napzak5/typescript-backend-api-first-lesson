@@ -65,7 +65,7 @@ namespace BeautySalon.Models {
   @doc("リクエスト本文がサイズ上限を超えている (413)。")
   model PayloadTooLargeResponse is ProblemResponse<413>;
 
-  @doc("リクエスト本文が UTF-8 の JSON ではない (415)。")
+  @doc("リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。")
   model UnsupportedMediaTypeResponse is ProblemResponse<415>;
 
   // どのオペレーションでも返りうるエラー
