@@ -475,7 +475,7 @@ The rows down to `database` are the seven `DomainError` kinds a use case returns
 | `__tests__/auth.integration.test.ts` | signing in, the tokens, what the server does with an access token, and the seeded accounts |
 | `__tests__/auth-registration.integration.test.ts`, `auth-sessions.integration.test.ts`, `auth-two-factor.integration.test.ts`, `admin-auth.integration.test.ts` | the other authentication endpoints: registration, email verification and passwords; the sessions of the signed-in user; two-factor authentication; what an administrator does to accounts |
 | `__tests__/app.integration.test.ts` | request IDs, unreadable requests, a failing database, CORS, rate limit, probes, response headers |
-| `__tests__/_shared/` | `setup.ts` and `test-databases.ts` (a database for every test, copied from a template that has the schema), `test-helpers.ts` (`createTestApp`, which calls the production `createApp` with a mailer that records the mails instead of sending them and with the real `TotpAuthenticator`), `auth-helpers.ts` (inserting users and signing in), `test-schema-manager.ts` |
+| `__tests__/_shared/` | `setup.ts` and `test-databases.ts` (a database for every test, copied from a template that has the schema), `test-helpers.ts` (`createTestApp`, which calls the production `createApp` with a mailer that records the mails instead of sending them and with the real `TotpAuthenticator`), `auth-helpers.ts` (inserting users and signing in) |
 
 ```bash
 pnpm --filter @beauty-salon-backend/api test              # unit tests
