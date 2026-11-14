@@ -46,10 +46,11 @@ For detailed architecture documentation, see [docs/architecture-overview.md](doc
 |------|--------|
 | Salon API (`/api/v1/salons`) | Implemented in every layer; the reference for the other domains. List and get are public; create, update and delete need a signed-in user who is allowed to |
 | Service categories of a salon (`/api/v1/salons/{salonId}/service-categories`) | Implemented in every layer; the example of data that belongs to a salon. List and get are public; create, update and delete need a signed-in user who is allowed to. See [docs/service-menu.md](docs/service-menu.md) |
+| Services of a salon (`/api/v1/salons/{salonId}/services`) | Implemented in every layer, with their options and packages: list, create, get, update, bulk update and delete. List and get are public; create, update, bulk update and delete need a signed-in user who is allowed to. A service cannot be booked yet. See [docs/service-menu.md](docs/service-menu.md) |
 | Authentication (`/api/v1/auth`, `/api/v1/admin/auth`) | Implemented, every operation of the contract: `login`, `refresh`, `logout`, `logout-all` and `me`, on server-side sessions with bearer tokens; registration of customer accounts, email verification, password reset and password change, with the links sent by mail; two-factor authentication with the codes of an authenticator app (TOTP) and backup codes; the list of the signed-in user's sessions and revoking one of them; and, for administrators, reading a user's account, unlocking it and resetting its two-factor authentication |
-| Authorization | Decided in the use cases from the role and the salon of the signed-in user; applied to the Salon API (create, update, delete), to the service categories of a salon (create, update, delete) and to the administrator operations (`/api/v1/admin/auth`). See [docs/authentication.md](docs/authentication.md) |
+| Authorization | Decided in the use cases from the role and the salon of the signed-in user; applied to the Salon API (create, update, delete), to the service categories of a salon (create, update, delete), to the services of a salon (create, update, bulk update, delete) and to the administrator operations (`/api/v1/admin/auth`). See [docs/authentication.md](docs/authentication.md) |
 | System endpoints (`/api/system/alive`, `ready`, `health`) | Implemented |
-| Services of a salon (`/api/v1/salons/{salonId}/services`), customers, staff, bookings, payments and the other domains | Specified in TypeSpec and present in the database schema; no backend code yet |
+| Customers, staff, bookings, payments and the other domains | Specified in TypeSpec and present in the database schema; no backend code yet |
 | Email | Implemented for the mails of the authentication flows: plain text over SMTP. Locally they are caught by Mailpit. See [docs/email.md](docs/email.md) |
 | File storage | Design documents only |
 | Frontend apps | Application shells; they do not call the API yet, and nothing in them signs in or sends a token. The pages that the links in the mails point at do not exist yet |
@@ -335,7 +336,7 @@ The full index is [docs/README.md](docs/README.md).
 - [API Route Modular Structure](docs/api-route-modular-structure.md) - Guide for modular route organization
 - [Uniform Implementation](docs/uniform-implementation-guide.md)
 - [Authentication and Authorization](docs/authentication.md) - Sessions, passwords, registration, two-factor authentication, permissions, seeded accounts (日本語)
-- [Service Menu](docs/service-menu.md) - The service categories of a salon: who may change them, the list, the validation rules, parent and child categories, what a delete does (日本語)
+- [Service Menu](docs/service-menu.md) - The service categories of a salon: who may change them, the list, the validation rules, parent and child categories, what a delete does. The services of a salon: the rules for each property, options, packages, bulk update, what a delete does (日本語)
 - [Email](docs/email.md) - Which mails are sent, SMTP settings, Mailpit for local development (日本語)
 - [Testing Requirements](docs/testing-requirements.md)
 - [API Testing Guide](docs/api-testing-guide.md)

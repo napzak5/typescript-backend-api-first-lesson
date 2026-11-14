@@ -2,7 +2,7 @@
 
 このドキュメントは、OpenAPI から生成した TypeScript 型（`@beauty-salon-backend/generated`）をバックエンドがどう使っているかを説明します。生成の手順とコマンドは [Type Generation System](./type-generation-system.md) を参照してください。
 
-バックエンドで実装されているのは Salon ドメイン、サロンのサービスカテゴリー（[サービスメニュー](./service-menu.md)）、認証（[認証と認可](./authentication.md)）、システムエンドポイントです。認証とサービスカテゴリーも生成型を同じ形で使っているので（`backend/packages/domain/src/models/auth.ts`、`backend/packages/api/src/routes/auth/_shared/types.ts`、`backend/packages/domain/src/models/service-category.ts`、`backend/packages/api/src/routes/service-category/_shared/types.ts`）、例はすべて参照実装である Salon の実コードからの抜粋です。コード中のコメントは説明用に日本語で付けています。
+バックエンドで実装されているのは Salon ドメイン、サロンのサービスカテゴリーとサービス（[サービスメニュー](./service-menu.md)）、認証（[認証と認可](./authentication.md)）、システムエンドポイントです。認証、サービスカテゴリー、サービスも生成型を同じ形で使っているので（`backend/packages/domain/src/models/auth.ts`、`backend/packages/api/src/routes/auth/_shared/types.ts`、`backend/packages/domain/src/models/service-category.ts`、`backend/packages/api/src/routes/service-category/_shared/types.ts`、`backend/packages/domain/src/models/service.ts`、`backend/packages/api/src/routes/service/_shared/types.ts`）、例はすべて参照実装である Salon の実コードからの抜粋です。コード中のコメントは説明用に日本語で付けています。
 
 ## 生成されるもの
 
@@ -95,7 +95,7 @@ export const salonSearchRequestSchema = z.strictObject({
 }) satisfies z.ZodType<ApiSalonSearchRequest>
 ```
 
-長さの上限は DB カラムのもの、それ以外はビジネスルールです。生成型が表すのは形だけなので、値の規則はこのスキーマに書きます。`atLeastOneProperty` はプロパティが 1 つもない更新リクエストを拒否するルールで、`nonBlankText` とともに `backend/packages/domain/src/schemas/rules.ts` にあります。複数のドメインのスキーマがこのファイルから import します。
+長さの上限は DB カラムのもの、それ以外はビジネスルールです。生成型が表すのは形だけなので、値の規則はこのスキーマに書きます。`atLeastOneProperty` はプロパティが 1 つもない更新リクエストを拒否するルールで、`nonBlankText` とともに `backend/packages/domain/src/schemas/rules.ts` にあります。複数のドメインのスキーマがこのファイルから import します（ほかに、`integer` 列の最大値 `MAX_INTEGER` と、同じ値を重ねて指定できない配列のための `noRepeatedEntries` があります）。
 
 ### 4. enum は生成された Zod スキーマを使う
 
@@ -218,7 +218,7 @@ export const createSalonHandler = (
 | `ResponseMeta` | `backend/packages/api/src/shared/responses.ts` | `components['schemas']['Models.ResponseMeta']` |
 | `PaginationMeta` / `PaginationLinks` | `backend/packages/api/src/shared/page-links.ts` | `components['schemas']['Models.PaginationMeta']` / `['Models.PaginationLinks']` |
 
-認証のルート（`backend/packages/api/src/routes/auth/_shared/types.ts`、`backend/packages/api/src/routes/admin-auth/_shared/types.ts`）、サービスカテゴリーのルート（`backend/packages/api/src/routes/service-category/_shared/types.ts`）、システムエンドポイント（`backend/packages/api/src/routes/system/index.ts`）も、同じ `JsonBody<operations[...]>` の形でレスポンス型を取り出しています。
+認証のルート（`backend/packages/api/src/routes/auth/_shared/types.ts`、`backend/packages/api/src/routes/admin-auth/_shared/types.ts`）、サービスカテゴリーのルート（`backend/packages/api/src/routes/service-category/_shared/types.ts`）、サービスのルート（`backend/packages/api/src/routes/service/_shared/types.ts`）、システムエンドポイント（`backend/packages/api/src/routes/system/index.ts`）も、同じ `JsonBody<operations[...]>` の形でレスポンス型を取り出しています。
 
 ## TypeSpec の定義と生成型の対応
 
@@ -255,7 +255,7 @@ export const createSalonHandler = (
 
 ## 他のドメインを実装するとき
 
-Salon、認証、サロンのサービスカテゴリー以外はこれから実装するものです。実装するときは Salon と同じ配置にします（`<domain>` はドメイン名で、サービスカテゴリーでは `service-category` です）。
+Salon、認証、サロンのサービスカテゴリーとサービス以外はこれから実装するものです。実装するときは Salon と同じ配置にします（`<domain>` はドメイン名で、サービスカテゴリーでは `service-category`、サービスでは `service` です）。
 
 - `backend/packages/domain/src/models/<domain>.ts`: 生成型の別名と DB 型
 - `backend/packages/domain/src/schemas/<domain>.schema.ts`: `satisfies z.ZodType<…>` を付けた Zod スキーマ

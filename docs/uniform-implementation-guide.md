@@ -39,12 +39,20 @@ and the type rules in [type-safety-principles.md](./type-safety-principles.md).
 - Length limits are those of the database columns. Rules that span several
   properties use `.check()`, or `.refine()` with a `path`, and report the
   issue on the property at fault.
+- A rule that ties two properties of which a partial update may name only
+  one cannot be decided from the request. It is a pure function of the
+  domain, checked for the row as it will be stored: `serviceRuleIssues` in
+  `backend/packages/domain/src/business-logic/service/_shared/rules.ts`,
+  which the use case calls for a create and the repository calls inside its
+  transaction for an update.
 - The update schema is derived from the create schema with `.exactPartial()`
   and additionally requires at least one property (`atLeastOneProperty`).
 - The rules that the schemas of more than one domain share are in
   `backend/packages/domain/src/schemas/rules.ts`: `nonBlankText`, for a text
-  that must say something, and `atLeastOneProperty`. A domain imports them
-  and does not write them again.
+  that must say something, `MAX_INTEGER`, the largest value of an `integer`
+  column, `noRepeatedEntries`, for a list in which no entry may come twice,
+  and `atLeastOneProperty`. A domain imports them and does not write them
+  again.
 
 ```typescript
 // backend/packages/domain/src/schemas/salon.schema.ts
@@ -140,9 +148,10 @@ export const parseSalonIdOfPath = (
   )
 ```
 
-- The ID of the resource itself is parsed by the parser of its domain, for
-  example `parseCategoryId` in
-  `backend/packages/domain/src/models/service-category.ts` (`field: 'id'`).
+- The ID of the resource itself is parsed by the parser of its domain:
+  `parseCategoryId` in
+  `backend/packages/domain/src/models/service-category.ts`, `parseServiceId`
+  in `backend/packages/domain/src/models/service.ts` (`field: 'id'`).
 - Once the input is valid, the use case calls `requireSalon`
   (`backend/packages/domain/src/business-logic/_shared/existing-salon.ts`): a
   salon that does not exist, or that has been deleted, is `notFound` (404).
@@ -257,14 +266,19 @@ this.db
 The order belongs to the list. The salon list is newest first; the service
 categories of a salon are listed in the order a menu shows them, by
 `(displayOrder, id)` ascending
-(`backend/packages/infrastructure/src/repositories/service-category.repository.impl.ts`).
+(`backend/packages/infrastructure/src/repositories/service-category.repository.impl.ts`),
+and so are its services, by `(sortOrder, id)` ascending
+(`backend/packages/infrastructure/src/repositories/service.repository.impl.ts`).
 
 A cursor is validated as an ID, so `cursor=offset:20` is a 400. A well-formed
 cursor that names no salon yields an empty page. The session list and the
 list of service categories answer 400 instead (`field: 'cursor'`, rule
 `not_found`), because their cursor has to name an item that is still there;
 see [authentication.md](./authentication.md#一覧と無効化) and
-[service-menu.md](./service-menu.md) (both Japanese). The
+[service-menu.md](./service-menu.md) (both Japanese). The list of services
+answers 400 in the same way for a cursor that names no service of the salon.
+A service that was deleted keeps its row, so a cursor that names one is
+accepted and still says where the next page begins. The
 page links are built by
 `pageLinks` in `backend/packages/api/src/shared/page-links.ts`, for every
 list, from the request URL with the cursor replaced.
@@ -278,6 +292,7 @@ Every successful response with a body is `{ data, meta, links }`.
 | Create | 201 | `responseMeta(req)` | `salonLinks(req.baseUrl, data.id)` | `Location` header set to `links.self` |
 | Get, update | 200 | `responseMeta(req)` | `salonLinks(req.baseUrl, data.id)` | |
 | List | 200 | Pagination metadata | `pageLinks(...)` | |
+| Bulk update (services) | 200 | `responseMeta(req)` | `{ list: req.baseUrl }` | `data.updated` holds the IDs of what was changed |
 | Delete | 204 | | | No body |
 
 ```typescript
@@ -344,12 +359,12 @@ answers 503 with the body its operation defines.
 
 | Error | Raised by | Status | `code` |
 |-------|-----------|--------|--------|
-| `validation` | `parseWith` in a use case; an authentication use case, also for what a schema cannot check (a password that is too easy to guess, a wrong current password, a mailed token that cannot be used, a code of two-factor authentication that is not accepted, a cursor of the session list that names no session of the user); a service category use case, for a parent that is not a category of the same salon or that is the category itself or one below it, and for a cursor that names no category of the salon | 400 | `2001` |
+| `validation` | `parseWith` in a use case; an authentication use case, also for what a schema cannot check (a password that is too easy to guess, a wrong current password, a mailed token that cannot be used, a code of two-factor authentication that is not accepted, a cursor of the session list that names no session of the user); a service category use case, for a parent that is not a category of the same salon or that is the category itself or one below it, and for a cursor that names no category of the salon; a service use case, for a service that would break a rule tying two of its properties together, for a category that is not of the same salon, for a member of a package that is not a service of the same salon, is a package or is the service itself, for making a package of a service that a package contains, and for a cursor that names no service of the salon | 400 | `2001` |
 | `unauthenticated` | `AuthenticateUseCase` behind `authenticated`; the login and refresh use cases; the current-user, change-password and two-factor use cases, when the user of the session no longer exists | 401 | `1001` to `1004` and `1007`, by `reason` |
 | `forbidden` | A use case, when the actor may not do what is asked | 403 | `1005` |
 | `notFound` | A use case, when the repository finds no row; on a route below a salon, that includes a salon that does not exist and a resource that is not of the salon in the path | 404 | `3001` |
 | `alreadyExists` | The repository, on the unique index on `email` | 409 | `3002` |
-| `conflict` | A two-factor use case or the use case of an administrator operation, when the request is fine and the state of the account does not allow it (enabling what is already enabled, or unlocking an account that is not locked, for example) | 409 | `3003` |
+| `conflict` | A two-factor use case or the use case of an administrator operation, when the request is fine and the state of the account does not allow it (enabling what is already enabled, or unlocking an account that is not locked, for example); the use case that deletes a service, when a package contains the service | 409 | `3003` |
 | `database` | The repository on an unexpected failure; the read mapper on stored data that does not match the API model | 500 | `4003` |
 | `routeNotFound` | `notFoundHandler` | 404 | `3001` |
 | `malformedBody` | The JSON body parser | 400 | `2002` |
@@ -571,7 +586,9 @@ if (!mayUpdateSalon(actor, salonId.data)) {
 - On a route below a salon, the salon of the resource is the one in the path,
   and the permission is decided from it alone
   (`mayManageServiceCategories` in
-  `backend/packages/domain/src/business-logic/service-category/_shared/authorization.ts`).
+  `backend/packages/domain/src/business-logic/service-category/_shared/authorization.ts`,
+  `mayManageServices` in
+  `backend/packages/domain/src/business-logic/service/_shared/authorization.ts`).
   A resource that is not of that salon is answered with 404. The rule is
   stated in
   [authentication.md](./authentication.md#サロンの下にあるルートの権限).

@@ -165,14 +165,15 @@ logout, the current user, registration, email verification, password reset
 and change, two-factor authentication, and the list of the signed-in user's
 sessions with the revocation of one of them; under `/api/v1/admin/auth` the
 administrator operations (read a user, unlock an account, reset two-factor
-authentication). Of the Service domain, the service categories of a salon are
-implemented (`/api/v1/salons/{salonId}/service-categories`); the services
-themselves are not. The other domains exist in TypeSpec and in the database
-schema only. Sessions, passwords, two-factor authentication, permissions, the
-administrator operations and the seeded accounts are described in
-[docs/authentication.md](docs/authentication.md), the service categories in
-[docs/service-menu.md](docs/service-menu.md), the mails the server sends
-in [docs/email.md](docs/email.md).
+authentication). So is the Service domain: the service categories of a salon
+(`/api/v1/salons/{salonId}/service-categories`) and its services, with their
+options and packages (`/api/v1/salons/{salonId}/services`). The other domains
+exist in TypeSpec and in the database schema only. Sessions, passwords,
+two-factor authentication, permissions, the administrator operations and the
+seeded accounts are described in
+[docs/authentication.md](docs/authentication.md), the service categories and
+the services in [docs/service-menu.md](docs/service-menu.md), the mails the
+server sends in [docs/email.md](docs/email.md).
 
 ### Namespace Convention
 - Backend: `@beauty-salon-backend/*`
@@ -329,8 +330,8 @@ export const salonCreateRequestSchema = z.strictObject({
   // ...
 }) satisfies z.ZodType<ApiSalonCreateRequest>
 
-// The rules that the schemas of more than one domain share (nonBlankText,
-// atLeastOneProperty) are in backend/packages/domain/src/schemas/rules.ts
+// The rules that the schemas of more than one domain share (nonBlankText, MAX_INTEGER,
+// noRepeatedEntries, atLeastOneProperty) are in backend/packages/domain/src/schemas/rules.ts
 export const salonUpdateRequestSchema = salonCreateRequestSchema.exactPartial().check(atLeastOneProperty)
 
 // 4. Repository Interface
@@ -438,8 +439,9 @@ const authenticated = createAuthenticated(authDependencies)
 app.use(`${API_BASE_PATH}/auth`, createAuthRouter(authDependencies, authenticated))
 const salonRepository = new SalonRepository(database)
 app.use(`${API_BASE_PATH}/salons`, createSalonRouter({ salonRepository }, authenticated))
-// The router of what belongs to a salon is mounted below the salon and is given the same salon repository
+// The routers of what belongs to a salon are mounted below the salon and are given the same salon repository
 app.use(`${API_BASE_PATH}/salons/:salonId/service-categories`, createServiceCategoryRouter({ serviceCategoryRepository: new ServiceCategoryRepository(database), salonRepository }, authenticated))
+app.use(`${API_BASE_PATH}/salons/:salonId/services`, createServiceRouter({ serviceRepository: new ServiceRepository(database), salonRepository }, authenticated))
 
 // 11. Composition root: the only code that reads the environment or ends the process
 // backend/apps/server/src/index.ts
@@ -451,7 +453,7 @@ export const startServer = (config: AppConfig, logger: Logger, shutdownGraceMs?:
 ```
 
 ### Conventions the reference follows
-- **Validation** happens once, in the use case, with the Zod schema of the request. Cross-field rules use `.check()`
+- **Validation** happens once, in the use case, with the Zod schema of the request. Cross-field rules use `.check()`; a rule that ties two properties of which a partial update may name only one cannot be checked on the request and is a pure function of the domain instead (the services, below)
 - **Authentication** is the wrapper `authenticated`: it turns `Authorization: Bearer <access token>` into an `Actor` (`backend/packages/domain/src/models/auth.ts`) or answers 401. **Authorization** is decided in the use case, first, from the actor; the rules are pure functions in `business-logic/<domain>/_shared/authorization.ts`, and a refusal is `DomainErrors.forbidden()` (403). In TypeSpec a public operation has `@useAuth(NoAuth)` and `PublicErrors`, one that any signed-in user may call has `SessionErrors`, and one with a permission check has `CommonErrors`. See [docs/authentication.md](docs/authentication.md)
 - **Errors** are `DomainError` values; `api/src/shared/problem-details.ts` maps each kind to an HTTP status and never exposes the cause of a `database` error. What goes wrong outside a use case (unknown route, unreadable body, rate limit, unexpected exception) is an `HttpError` and takes the same path, so every error response of the API is problem details (a system probe that fails answers 503 with its own body)
 - **Logging** is structured (pino): `req.log` inside a request, the injected `Logger` elsewhere, never `console`. `sendProblem` logs a `database` error with its cause; headers, bodies and bound SQL values are never logged
@@ -459,8 +461,8 @@ export const startServer = (config: AppConfig, logger: Logger, shutdownGraceMs?:
 - **Configuration** is read once, by `parseAppConfig`, and passed down as values; application code does not read `process.env`. A new variable is added to the schema, to every `.env.*` file and to the README table
 - **Partial update** is `PATCH`: a property that is absent is left alone, `null` clears a nullable column
 - **Lists** use keyset pagination: `cursor` is the ID of the last item of the previous page (`meta.nextCursor`)
-- **Deleted rows** (`deletedAt`) are invisible to every repository method
-- **Data that belongs to a salon** is served below the salon; the service categories (`business-logic/service-category/`, `routes/service-category/`) are the example to read. The router is mounted at `/salons/:salonId/...` and created with `Router({ mergeParams: true })`, so its handlers see `salonId`. The use case reads the salon of the path with `parseSalonIdOfPath`, decides the permission from that salon alone, and answers 404 through `requireSalon` when the salon does not exist. Every repository method takes the salon ID, so a resource of another salon is not found (404). The create and update requests do not carry `salonId`. A write mapper exists only where a column needs converting: the service categories have none. See [docs/authentication.md](docs/authentication.md) and [docs/service-menu.md](docs/service-menu.md)
+- **Deleted rows** (`deletedAt`) are invisible to every repository method. The cursor of the service list may still name a deleted service: the row stays, so the page starts after its place
+- **Data that belongs to a salon** is served below the salon; the service categories (`business-logic/service-category/`, `routes/service-category/`) are the example to read. The router is mounted at `/salons/:salonId/...` and created with `Router({ mergeParams: true })`, so its handlers see `salonId`. The use case reads the salon of the path with `parseSalonIdOfPath`, decides the permission from that salon alone, and answers 404 through `requireSalon` when the salon does not exist. Every repository method takes the salon ID, so a resource of another salon is not found (404). The create and update requests do not carry `salonId`. A write mapper exists only where a column needs converting or a request holds the rows of more than one table: the service categories have none, and the services (`business-logic/service/`, `routes/service/`) have one that tells the service from its options. The services also show what the categories do not: rules that tie two properties together, checked for the row as it will be stored after a partial update (`serviceRuleIssues` in `business-logic/service/_shared/rules.ts`, called by the use case for a create and by the repository inside its transaction for an update); a bulk update that changes all the services or none, whose route `/bulk` is registered before `/:id`; a soft delete; and a delete that is refused with `DomainErrors.conflict` (409). See [docs/authentication.md](docs/authentication.md) and [docs/service-menu.md](docs/service-menu.md)
 - **Tests**: unit tests for schemas, mappers and use cases in the domain package; integration tests per endpoint against PostgreSQL in the api package
 
 ## ⚠️ Important Notes

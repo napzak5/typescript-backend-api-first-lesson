@@ -1,6 +1,6 @@
 # Domain Implementation Reference Guide
 
-The Salon domain is the reference for every other domain of the backend. This document walks through it in the order in which a new domain is built, from the API contract to the tests, and explains the decisions the code makes on the way. Authentication is described in [Authentication and Authorization](./authentication.md) (Japanese); what a domain needs from it is in step 9 (the permission check) and step 10 (the `authenticated` wrapper). The service categories of a salon are built in the same steps; what they do differently because their data belongs to a salon is collected in [Data That Belongs to a Salon](#data-that-belongs-to-a-salon).
+The Salon domain is the reference for every other domain of the backend. This document walks through it in the order in which a new domain is built, from the API contract to the tests, and explains the decisions the code makes on the way. Authentication is described in [Authentication and Authorization](./authentication.md) (Japanese); what a domain needs from it is in step 9 (the permission check) and step 10 (the `authenticated` wrapper). The service categories of a salon are built in the same steps; what they do differently because their data belongs to a salon is collected in [Data That Belongs to a Salon](#data-that-belongs-to-a-salon). So are the services of a salon; the same section names what they show that neither Salon nor the service categories do.
 
 The excerpts are copied from the file named above each of them and shortened where marked `// ...`; the file is the authority. The rules behind the code (no `any`, no type assertions, no exceptions, API property names equal column names) are stated in [CLAUDE.md](../CLAUDE.md) and are not repeated here.
 
@@ -201,7 +201,7 @@ const salonRules: ModelRule[] = [
 ]
 ```
 
-- `embedded` names properties that are rows of a child table, not columns.
+- `embedded` names properties that are rows of a child table, not columns. The model of one such row has a rule of its own (`Models.OpeningHours`). The rules of the service response and of the service create and update requests name `options` in the same way, with `Models.ServiceOption` as the model of a row.
 - `computed` names properties that are not columns either: values the server works out for the response and stores nowhere. Salon has none; the rule of `Models.SessionResponse` names `current` this way.
 - `omittedColumns` names the columns the model leaves out on purpose. Once it is given, every other column must be in the model, so leaving a column out is a decision and not an oversight.
 
@@ -285,11 +285,13 @@ export const salonUpdateRequestSchema = salonCreateRequestSchema
   .check(atLeastOneProperty) satisfies z.ZodType<ApiSalonUpdateRequest>
 ```
 
-`nonBlankText` and `atLeastOneProperty` are not Salon's own. The rules that the request schemas of more than one domain share are in `backend/packages/domain/src/schemas/rules.ts`:
+`nonBlankText` and `atLeastOneProperty` are not Salon's own. The rules that the request schemas of more than one domain share are in `backend/packages/domain/src/schemas/rules.ts`. The file also holds `MAX_INTEGER`, the largest value of an `integer` column, and `noRepeatedEntries`, for a list in which no entry may come twice; Salon needs neither.
 
 ```typescript
 /** A nullable text is either null or says something: '' is not "unset". */
 export const nonBlankText = z.string().regex(/\S/, 'Must not be blank')
+
+// ...
 
 /**
  * For the schema of an update, in which every property may be absent: a
@@ -726,7 +728,7 @@ The layout of the API package, the handler pattern, the shared helpers and the m
   )
 ```
 
-A new domain adds one such statement next to it, before `notFoundHandler`. The salon repository has a name because the router of the service categories, mounted in the statement that follows at `${API_BASE_PATH}/salons/:salonId/service-categories`, is given the same instance. Nothing changes in `backend/apps/server`: it reads the configuration, connects the database, creates the mailer and the authenticator of two-factor authentication and calls `createApp({ database, logger, mailer, twoFactorAuthenticator, settings })`.
+A new domain adds one such statement next to it, before `notFoundHandler`. The salon repository has a name because the routers of the service categories and of the services, mounted in the two statements that follow at `${API_BASE_PATH}/salons/:salonId/service-categories` and `${API_BASE_PATH}/salons/:salonId/services`, are given the same instance. Nothing changes in `backend/apps/server`: it reads the configuration, connects the database, creates the mailer and the authenticator of two-factor authentication and calls `createApp({ database, logger, mailer, twoFactorAuthenticator, settings })`.
 
 ## 12. Tests
 
@@ -827,7 +829,7 @@ Salon is a resource of its own. A domain whose data belongs to a salon is built 
 | 1. API contract | The routes are below the salon, `/api/v1/salons/{salonId}/service-categories`, so the path names the salon. The create and update requests have no `salonId`; the response has. Every operation declares 404, which is also the answer for a salon that does not exist | `specs/operations/service-operations.tsp`, `specs/models/service.tsp` |
 | 3. `pnpm check:api-db` | `salonId` is one of the `omittedColumns` of the create and the update rule | `serviceCategoryManagedColumns` in `backend/packages/database/src/scripts/api-consistency-rules.ts` |
 | 4. Models | The salon of the path has its own parser, `parseSalonIdOfPath`, which reports a failure under the field `salonId`. The ID of the resource is parsed as in Salon (`parseCategoryId`, field `id`) | `backend/packages/domain/src/models/salon.ts`, `models/service-category.ts` |
-| 6. Mappers | There is no write mapper. The properties of the request are the columns and none needs converting, so the repository stores the validated request. A write mapper is written only when a column needs converting, as the `numeric` columns and the calendar of Salon do | `backend/packages/domain/src/mappers/read/service-category.mapper.ts` |
+| 6. Mappers | There is no write mapper. The properties of the request are the columns and none needs converting, so the repository stores the validated request. A write mapper is written only when a column needs converting, as the `numeric` columns and the calendar of Salon do, or when a request holds the rows of more than one table, as that of a service does (below) | `backend/packages/domain/src/mappers/read/service-category.mapper.ts` |
 | 7. Repository interface | Every method takes the salon ID and sees only the rows of that salon. Whether the salon exists is not the repository's question. What a write can come to without having failed is a sum type (`ServiceCategoryCreation`, `ServiceCategoryUpdate`), which the use case matches exhaustively | `backend/packages/domain/src/repositories/service-category.repository.ts` |
 | 8. Repository implementation | Every query carries the salon ID, so a row of another salon is not found. The failures go through the shared `attempt` (`backend/packages/infrastructure/src/database/attempt.ts`), because no constraint violation is an expected outcome | `backend/packages/infrastructure/src/repositories/service-category.repository.impl.ts` |
 | 9. Use cases | The dependencies hold the salon repository next to the domain's own. A use case parses the salon of the path, decides the permission from that salon alone, validates the rest of the input, and then calls `requireSalon`, which returns `notFound` when the salon does not exist or is deleted. Only then does it reach its own repository | `backend/packages/domain/src/business-logic/service-category/`, `business-logic/_shared/existing-salon.ts` |
@@ -836,6 +838,20 @@ Salon is a resource of its own. A domain whose data belongs to a salon is built 
 | 12. Tests | A use case test stubs two repositories: `serviceCategoryDependencies` builds the dependencies from a stub of the domain's repository and from `salonRepositoryWith`, in which the salon exists | `backend/packages/domain/src/__tests__/service-category-fixtures.ts` |
 
 Two answers follow from this for every route below a salon: the permission is decided from the salon in the path, and a resource that is not of that salon is answered with 404, like one that does not exist. Both are stated in [Authentication and Authorization](./authentication.md).
+
+The services of a salon (`/api/v1/salons/{salonId}/services`; their rules are in [Service Menu](./service-menu.md) too) differ from Salon in the same places. Read them for what neither Salon nor the service categories have:
+
+| Step | What the services show | Where to read it |
+|------|------------------------|------------------|
+| 1. API contract | A bulk operation, `bulkUpdate` at `PATCH /bulk`, with a request and a response model of its own (`ServiceBulkUpdateRequest`, `ServiceBulkUpdateResponse`). A delete that declares 409. One model, `ServiceOption`, for the rows of the child table in the requests and in the response | `specs/operations/service-operations.tsp`, `specs/models/service.tsp` |
+| 3. `pnpm check:api-db` | The create and the update request hold the rows of a child table, so `options` is `embedded` in their rules as it is in the rule of the response | `serviceRules` in `backend/packages/database/src/scripts/api-consistency-rules.ts` |
+| 5. Validation schemas | A rule that ties two properties together is not a `.check()` of the request schema: the update schema is derived from the create schema, and an update may name only one of the two properties. The schemas check each property by itself. A list in which no entry may come twice uses `noRepeatedEntries` | `backend/packages/domain/src/schemas/service.schema.ts` |
+| 6. Mappers | A write mapper, although no column needs converting: a request holds the rows of two tables, the service and its options, and the mapper tells them apart. For an update it says whether the options are kept or replaced (`ServiceOptionsChange`) | `backend/packages/domain/src/mappers/write/service.mapper.ts` |
+| 7. Repository interface | Outcomes with more than two refusals (`ServiceWriteRefusal`, `ServiceChangeRefusal`, and the outcome of each write that is built from them). A method for several rows, `updateMany`, which changes all of them or none. A deleted service is one that does not exist, except that the cursor of the list may still name it | `backend/packages/domain/src/repositories/service.repository.ts` |
+| 8. Repository implementation | A write checks what the database cannot guarantee (the category and the member services of a package are of the same salon, and a package does not contain a package) and writes in one transaction, holding the rows it looked at; the comments on `lockCategory`, `lockServices` and `applyChanges` say which rows a write locks and in which order. An update checks the rules that tie two properties together for the stored row with the changes applied, by calling `serviceRuleIssues` of the domain | `backend/packages/infrastructure/src/repositories/service.repository.impl.ts` |
+| 9. Use cases | The rules that tie two properties together are a pure function, `serviceRuleIssues`, which the use case of the create calls on the validated request. Every refusal of the repository becomes the error for the client in one place, `toRefusalError`. The use case of the delete answers `DomainErrors.conflict` for a service that a package contains | `backend/packages/domain/src/business-logic/service/`, with `_shared/rules.ts` and `_shared/refusals.ts` |
+| 10. Handlers and router | A route whose path is a fixed segment, `/bulk`, is registered before `/:id`, which would otherwise take `bulk` for the ID of a service | `backend/packages/api/src/routes/service/index.ts` |
+| 12. Tests | The rules that tie two properties together are tested as the pure function they are. `serviceDependencies` builds the dependencies of a use case test, as `serviceCategoryDependencies` does. The integration test also calls `ServiceRepository` directly, and writes rows past it to show what the constraints of the two tables refuse | `backend/packages/domain/src/__tests__/service.rules.test.ts`, `backend/packages/domain/src/__tests__/service-fixtures.ts`, `backend/packages/api/src/__tests__/service.integration.test.ts` |
 
 ## Error Handling
 
@@ -856,12 +872,12 @@ Errors are built with `DomainErrors.validation`, `.unauthenticated`, `.forbidden
 
 | Kind | Where it is created | What the client gets |
 |------|---------------------|----------------------|
-| `validation` | `parseWith`, called by a use case (and by the query decoding of a list handler). The authentication use cases also build it themselves for what a schema cannot check: a password that is too easy to guess, a wrong current password, a mailed token that cannot be used, a code of two-factor authentication that is not accepted, a cursor of the session list that names no session of the user. The service category use cases do so for a parent that is not a category of the same salon or that is the category itself or one below it, and for a cursor that names no category of the salon | 400 with the broken rules in `errors` |
+| `validation` | `parseWith`, called by a use case (and by the query decoding of a list handler). The authentication use cases also build it themselves for what a schema cannot check: a password that is too easy to guess, a wrong current password, a mailed token that cannot be used, a code of two-factor authentication that is not accepted, a cursor of the session list that names no session of the user. The service category use cases do so for a parent that is not a category of the same salon or that is the category itself or one below it, and for a cursor that names no category of the salon. The service use cases do so for a service that would break a rule tying two of its properties together, for a category that is not of the same salon, for a member of a package that is not a service of the same salon, is a package or is the service itself, for making a package of a service that a package contains, and for a cursor that names no service of the salon; `toRefusalError` (`backend/packages/domain/src/business-logic/service/_shared/refusals.ts`) builds the ones that answer a refusal of the repository | 400 with the broken rules in `errors` |
 | `unauthenticated` | the authentication use cases only: `AuthenticateUseCase` behind `authenticated`, login and refresh, and the current-user, change-password and two-factor use cases when the user of the session no longer exists | 401 with a `WWW-Authenticate` header |
 | `forbidden` | a use case, when its permission rule refuses the actor | 403 |
 | `notFound` | a use case, when the repository resolved to `null` or `false` or reported that there is no such row; `requireSalon`, when the salon in the path does not exist | 404 |
 | `alreadyExists` | the repository, from the unique violation | 409 |
-| `conflict` | a use case, when the request is fine and what it acts on is not in a state that allows it; so far only authentication use cases: those of two-factor authentication (enabling what is already enabled, for example) and of the administrator operations (unlocking an account that is not locked, for example) | 409 |
+| `conflict` | a use case, when the request is fine and what it acts on is not in a state that allows it: the use cases of two-factor authentication (enabling what is already enabled, for example), those of the administrator operations (unlocking an account that is not locked, for example), and the use case that deletes a service, when a package contains the service | 409 |
 | `database` | the repository, from a failed query; the read mapper, from a stored row that does not fit | 500 without details; the cause is logged |
 
 The API package maps the kind to a status and a problem details body (`backend/packages/api/src/shared/problem-details.ts`). A domain adds nothing there unless it introduces a new kind of error, and then the exhaustive match in that file stops compiling until the new kind has a status.
@@ -882,8 +898,8 @@ Contract and database:
 Domain package (`backend/packages/domain/src/`):
 
 - [ ] `models/<domain>.ts`: branded ID with its parser, API types, database types
-- [ ] `schemas/<domain>.schema.ts`: one strict schema per request, each with `satisfies z.ZodType<...>`; `nonBlankText` and `atLeastOneProperty` come from `schemas/rules.ts`
-- [ ] `mappers/read/<domain>.mapper.ts`, and `mappers/write/<domain>.mapper.ts` only when a column needs converting on the way in: no renaming; the read mapper returns a `Result`
+- [ ] `schemas/<domain>.schema.ts`: one strict schema per request, each with `satisfies z.ZodType<...>`; the rules that more than one domain needs (`nonBlankText`, `MAX_INTEGER`, `noRepeatedEntries`, `atLeastOneProperty`) come from `schemas/rules.ts`
+- [ ] `mappers/read/<domain>.mapper.ts`, and `mappers/write/<domain>.mapper.ts` only when a column needs converting on the way in or a request holds the rows of more than one table: no renaming; the read mapper returns a `Result`
 - [ ] `repositories/<domain>.repository.ts`: the interface
 - [ ] `business-logic/<domain>/`: `_shared/dependencies.ts`, one `<action>-<domain>.usecase.ts` per operation with `execute` taking `unknown`, and `index.ts`
 - [ ] `business-logic/<domain>/_shared/authorization.ts`: one pure function per permission rule; the use case of every operation that is not public takes `actor: Actor` first and returns `DomainErrors.forbidden()` when the rule refuses
