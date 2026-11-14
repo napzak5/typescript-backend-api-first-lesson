@@ -546,3 +546,55 @@ describe('the service categories of a salon', () => {
     },
   )
 })
+
+describe('the services of a salon', () => {
+  /** A UUID that neither a salon nor a service has. */
+  const SOME_ID = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1b'
+  const SERVICES = `/api/v1/salons/${SOME_ID}/services`
+
+  it('should answer the list of a salon that does not exist with 404 when no access token is sent', async () => {
+    const database = await createSchemaDatabase()
+    const { config } = createConfig()
+    const { server } = await start({
+      ...config,
+      database: { ...config.database, url: database.url },
+    })
+
+    const response = await fetch(`http://127.0.0.1:${server.port}${SERVICES}`)
+    const problem = await response.json()
+    await server.stop()
+    await database.drop()
+
+    expect(response.status).toBe(404)
+    expect(problem).toMatchObject({
+      type: 'urn:beauty-salon:problem:not-found',
+      status: 404,
+      code: '3001',
+      detail: `Salon ${SOME_ID} was not found`,
+    })
+  })
+
+  it.each([
+    ['POST', SERVICES],
+    ['PATCH', `${SERVICES}/bulk`],
+    ['PATCH', `${SERVICES}/${SOME_ID}`],
+    ['DELETE', `${SERVICES}/${SOME_ID}`],
+  ])(
+    'should answer %s %s with 401 when no access token is sent',
+    async (method, path) => {
+      const { server } = await start(createConfig().config)
+
+      const response = await fetch(`http://127.0.0.1:${server.port}${path}`, {
+        method,
+      })
+      const problem = await response.json()
+      await server.stop()
+
+      expect(response.status).toBe(401)
+      expect(response.headers.get('www-authenticate')).toBe(
+        'Bearer realm="beauty-salon-api"',
+      )
+      expect(problem).toMatchObject({ status: 401, code: '1001' })
+    },
+  )
+})
