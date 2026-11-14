@@ -122,10 +122,36 @@ const customerRules: ModelRule[] = [
   { model: 'Models.Customer', table: 'customers', kind: 'response' },
 ]
 
-/** Users and their sessions. */
+/**
+ * Users and their sessions. Secrets are never part of a response: a token is
+ * returned only by the action that issues it. Registration, login and the
+ * other flows use action models, which are not backed by a table.
+ */
 const authRules: ModelRule[] = [
-  { model: 'Models.User', table: 'users', kind: 'response' },
-  { model: 'Models.Session', table: 'sessions', kind: 'response' },
+  {
+    model: 'Models.UserResponse',
+    table: 'users',
+    kind: 'response',
+    omittedColumns: [
+      'passwordHash',
+      'passwordHistory',
+      'twoFactorSecret',
+      'backupCodes',
+      'emailVerificationToken',
+      'emailVerificationExpiry',
+      'passwordResetToken',
+      'passwordResetExpiry',
+      // a jsonb object without a defined structure
+      'metadata',
+      'deletedAt',
+    ],
+  },
+  {
+    model: 'Models.SessionResponse',
+    table: 'sessions',
+    kind: 'response',
+    omittedColumns: ['token', 'refreshToken'],
+  },
 ]
 
 /**
