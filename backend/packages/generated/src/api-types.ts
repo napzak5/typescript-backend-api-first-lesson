@@ -1,6 +1,6 @@
 // Generated from TypeSpec/OpenAPI using openapi-typescript
 // DO NOT EDIT MANUALLY
-// Last generated: 2025-09-30T10:20:57.922Z
+// Last generated: 2026-11-14T03:41:15.744Z
 
 // Base types from OpenAPI
 /**
@@ -3454,8 +3454,10 @@ export interface components {
       /** @description レコードを最後に更新したユーザーID。システム自動更新または匿名更新の場合はnull */
       updatedBy: string | null
     }
-    /** @description 監査情報モデル。
-     *     レコードの作成・更新履歴を保持し、内部統制や変更追跡を実現する。 */
+    /**
+     * @description 監査情報モデル。
+     *     レコードの作成・更新履歴を保持し、内部統制や変更追跡を実現する。
+     */
     'Models.AuditTrail': {
       /**
        * Format: date-time
@@ -3727,8 +3729,10 @@ export interface components {
        */
       availability: number
     }
-    /** @description 複数リソースをまとめて取得するリクエストモデル。
-     *     顧客IDや予約IDを複数指定して最小回数のAPI呼び出しで情報を取得する用途に利用。  */
+    /**
+     * @description 複数リソースをまとめて取得するリクエストモデル。
+     *     顧客IDや予約IDを複数指定して最小回数のAPI呼び出しで情報を取得する用途に利用。
+     */
     'Models.BatchGetRequest': {
       /** @description 取得対象となるリソースIDの配列。1件以上100件以下。 */
       ids: string[]
@@ -4059,8 +4063,10 @@ export interface components {
         [key: string]: unknown
       }
     }
-    /** @description 一括処理全体の集計情報モデル。
-     *     成功件数・失敗件数を俯瞰し、運用レポートに反映する。 */
+    /**
+     * @description 一括処理全体の集計情報モデル。
+     *     成功件数・失敗件数を俯瞰し、運用レポートに反映する。
+     */
     'Models.BulkSummary': {
       /**
        * Format: int32
@@ -5143,8 +5149,10 @@ export interface components {
       | 'friday'
       | 'saturday'
       | 'sunday'
-    /** @description ドメインエラーの詳細情報モデル。
-     *     予約・顧客・サロンなどビジネスロジック層で発生したエラーを分類し、運用チームが原因分析しやすい形で保持する。 */
+    /**
+     * @description ドメインエラーの詳細情報モデル。
+     *     予約・顧客・サロンなどビジネスロジック層で発生したエラーを分類し、運用チームが原因分析しやすい形で保持する。
+     */
     'Models.DomainErrorDetails': {
       /** @description エラー分類タイプ。上位のビジネスルールカテゴリを特定する。 */
       type: components['schemas']['Models.DomainErrorType']
@@ -5165,8 +5173,10 @@ export interface components {
       /** @description 外部サービスエラー時の対象サービス名。連携先の切り分けに役立つ。外部サービスに関係ない場合はnull */
       service: string | null
     }
-    /** @description ドメインエラー生成の標準設定モデル。
-     *     各カテゴリごとの既定コードと HTTP ステータスを定義し、再利用可能なエラーファクトリーを構築する。 */
+    /**
+     * @description ドメインエラー生成の標準設定モデル。
+     *     各カテゴリごとの既定コードと HTTP ステータスを定義し、再利用可能なエラーファクトリーを構築する。
+     */
     'Models.DomainErrorFactory': {
       /** @description 検証エラーを生成するための設定。 */
       validation: {
@@ -5250,8 +5260,10 @@ export interface components {
         httpStatus: 502
       }
     }
-    /** @description ドメインエラータイプとシステム標準エラーコードの対応表モデル。
-     *     内部ロジックとHTTPレスポンスの整合性を保つために利用する。 */
+    /**
+     * @description ドメインエラータイプとシステム標準エラーコードの対応表モデル。
+     *     内部ロジックとHTTPレスポンスの整合性を保つために利用する。
+     */
     'Models.DomainErrorMapping': {
       /** @description ドメインエラータイプ。ビジネス層で識別されるカテゴリ。 */
       domainType: components['schemas']['Models.DomainErrorType']
@@ -5321,8 +5333,10 @@ export interface components {
       | 'INTERNAL_ERROR'
       | 'DATABASE_ERROR'
       | 'EXTERNAL_SERVICE_ERROR'
-    /** @description ドメイン操作で発生したエラーのコンテキストモデル。
-     *     ビジネス層の例外情報と HTTP レイヤーの問題詳細を紐づけ、ログ出力やモニタリングを容易にする。 */
+    /**
+     * @description ドメイン操作で発生したエラーのコンテキストモデル。
+     *     ビジネス層の例外情報と HTTP レイヤーの問題詳細を紐づけ、ログ出力やモニタリングを容易にする。
+     */
     'Models.DomainOperationError': {
       /** @description ドメインエラーの詳細情報。ビジネスロジック層で発生した要因を保持する。 */
       domainError: components['schemas']['Models.DomainErrorDetails']
@@ -5573,8 +5587,10 @@ export interface components {
       | '4003'
       | '4004'
       | '4005'
-    /** @description ファセット集計の単一要素を表すモデル。
-     *     カテゴリや価格帯などの値と、その件数を組みで保持する。 */
+    /**
+     * @description ファセット集計の単一要素を表すモデル。
+     *     カテゴリや価格帯などの値と、その件数を組みで保持する。
+     */
     'Models.Facet': {
       /** @description ファセットの値。例: `メンズ向け` や `個室あり`。 */
       value: string
@@ -5715,8 +5731,10 @@ export interface components {
          */
 
     'Models.HairType': 'straight' | 'wavy' | 'curly' | 'coily'
-    /** @description 個別サービスのヘルスチェック結果モデル。
-     *     外部サービス連携や内部マイクロサービスごとの状態を把握する。 */
+    /**
+     * @description 個別サービスのヘルスチェック結果モデル。
+     *     外部サービス連携や内部マイクロサービスごとの状態を把握する。
+     */
     'Models.HealthCheck': {
       /** @description 対象サービス名またはコンポーネント識別子。 */
       name: string
@@ -5737,8 +5755,10 @@ export interface components {
         [key: string]: unknown
       } | null
     }
-    /** @description API ヘルスチェック結果モデル。
-     *     監視基盤や運用ダッシュボードにシステム状態を提供し、早期異常検知を実現する。 */
+    /**
+     * @description API ヘルスチェック結果モデル。
+     *     監視基盤や運用ダッシュボードにシステム状態を提供し、早期異常検知を実現する。
+     */
     'Models.HealthStatus': {
       /**
        * @description システム全体の稼働状態。`healthy` は正常、`degraded` は性能低下、`unhealthy` は停止を表す。
@@ -6554,8 +6574,10 @@ export interface components {
          */
 
     'Models.NotificationType': 'email' | 'sms' | 'push' | 'line'
-    /** @description オフセット方式のページネーション指定モデル。
-     *     既存基盤や BI 連携でカーソル方式に移行できないケース向けの互換パラメータを提供する。 */
+    /**
+     * @description オフセット方式のページネーション指定モデル。
+     *     既存基盤や BI 連携でカーソル方式に移行できないケース向けの互換パラメータを提供する。
+     */
     'Models.OffsetPaginationParams': {
       /**
        * Format: int32
@@ -6704,8 +6726,10 @@ export interface components {
        */
       totalPages: number
     }
-    /** @description ページ遷移に利用するリンク情報モデル。
-     *     API クライアントや外部連携がRESTフローで次・前のリソースを辿る際に利用する。 */
+    /**
+     * @description ページ遷移に利用するリンク情報モデル。
+     *     API クライアントや外部連携がRESTフローで次・前のリソースを辿る際に利用する。
+     */
     'Models.PaginationLinks': {
       /** @description 現在ページを指すリンク。 */
       self: string
@@ -6718,8 +6742,10 @@ export interface components {
       /** @description 前ページへのリンク。初回ページまたは戻り操作が不要な場合はnull */
       prev: string | null
     }
-    /** @description ページネーションに関する統計情報モデル。
-     *     総件数やカーソル位置を保持し、フロントエンドの続き取得や無限スクロールの制御に利用する。 */
+    /**
+     * @description ページネーションに関する統計情報モデル。
+     *     総件数やカーソル位置を保持し、フロントエンドの続き取得や無限スクロールの制御に利用する。
+     */
     'Models.PaginationMeta': {
       /**
        * Format: int32
@@ -7528,8 +7554,10 @@ export interface components {
       | 'package'
       | 'membership'
       | 'custom'
-    /** @description RFC 7807 に準拠した標準エラーレスポンスモデル。
-     *     美容サロン予約システム全体で一貫したエラー情報を提供し、顧客・スタッフ双方の操作ログと連携する。 */
+    /**
+     * @description RFC 7807 に準拠した標準エラーレスポンスモデル。
+     *     美容サロン予約システム全体で一貫したエラー情報を提供し、顧客・スタッフ双方の操作ログと連携する。
+     */
     'Models.ProblemDetails': {
       /** @description エラー種別を特定するための URI。参照することで関連ドキュメントに誘導できる。 */
       type: string
@@ -7708,8 +7736,10 @@ export interface components {
       /** @description その他の備考 */
       notes?: string
     }
-    /** @description レート制限に関する HTTP ヘッダ情報モデル。
-     *     API 呼び出し頻度をクライアントに通知し、適切なリトライ制御を促す。 */
+    /**
+     * @description レート制限に関する HTTP ヘッダ情報モデル。
+     *     API 呼び出し頻度をクライアントに通知し、適切なリトライ制御を促す。
+     */
     'Models.RateLimitInfo': Record<string, never>
     /** @description 返金処理の記録 */
     'Models.Refund': {
@@ -7941,8 +7971,10 @@ export interface components {
       | 'cancelled'
       | 'completed'
       | 'no_show'
-    /** @description レスポンス共通メタデータモデル。
-     *     問い合わせ対応やロギングで必要となる識別情報を保持する。 */
+    /**
+     * @description レスポンス共通メタデータモデル。
+     *     問い合わせ対応やロギングで必要となる識別情報を保持する。
+     */
     'Models.ResponseMeta': {
       /** @description リクエストを一意に紐づける相関 ID。ログ横断調査に使用する。 */
       correlationId: string
@@ -8508,8 +8540,10 @@ export interface components {
         | (string & components['schemas']['Models.StaffId'])
         | null
     }
-    /** @description 検索結果の関連度スコア範囲を表すモデル。
-     *     スコアの分布を把握し、しきい値設定を検討する際に利用する。 */
+    /**
+     * @description 検索結果の関連度スコア範囲を表すモデル。
+     *     スコアの分布を把握し、しきい値設定を検討する際に利用する。
+     */
     'Models.ScoreRange': {
       /**
        * Format: float
@@ -8522,8 +8556,10 @@ export interface components {
        */
       max: number
     }
-    /** @description 検索処理に関するメタ情報モデル。
-     *     件数や所要時間を記録し、UX 改善やパフォーマンス監視に利用する。 */
+    /**
+     * @description 検索処理に関するメタ情報モデル。
+     *     件数や所要時間を記録し、UX 改善やパフォーマンス監視に利用する。
+     */
     'Models.SearchMeta': {
       /**
        * Format: int32
@@ -9199,8 +9235,10 @@ export interface components {
       /** @description アクセスを許可するメールアドレス一覧。制限なしの場合はnull。 */
       allowedEmails: string[] | null
     }
-    /** @description ソフトデリート情報モデル。
-     *     論理削除されたレコードの状態や削除理由を記録し、監査ログや復旧オペレーションに活用する。 */
+    /**
+     * @description ソフトデリート情報モデル。
+     *     論理削除されたレコードの状態や削除理由を記録し、監査ログや復旧オペレーションに活用する。
+     */
     'Models.SoftDelete': {
       /**
        * @description 論理削除フラグ。true の場合は通常の検索結果から除外する。
@@ -10387,8 +10425,10 @@ export interface components {
          */
 
     'Models.UserRoleType': 'customer' | 'staff' | 'manager' | 'admin' | 'owner'
-    /** @description 入力検証での失敗内容を表すモデル。
-     *     画面入力フォームやAPI連携時のフィールド単位のエラー詳細を格納し、顧客やスタッフへのフィードバックに利用する。 */
+    /**
+     * @description 入力検証での失敗内容を表すモデル。
+     *     画面入力フォームやAPI連携時のフィールド単位のエラー詳細を格納し、顧客やスタッフへのフィードバックに利用する。
+     */
     'Models.ValidationError': {
       /** @description 検証に失敗したフィールドパス。ネストしたキーをドット記法で表現する。 */
       field: string
@@ -10401,8 +10441,10 @@ export interface components {
       /** @description 期待される値や制約条件。入力補助やUI表示のガイダンスに使用する。制約が明示不要な場合はnull */
       constraint: unknown
     }
-    /** @description 楽観的ロックを実現するためのバージョン管理モデル。
-     *     エンティティの更新競合を検知し、整合性を担保する。 */
+    /**
+     * @description 楽観的ロックを実現するためのバージョン管理モデル。
+     *     エンティティの更新競合を検知し、整合性を担保する。
+     */
     'Models.Versioned': {
       /**
        * Format: int32
@@ -11284,7 +11326,7 @@ export interface operations {
             | components['schemas']['Models.Error']
         }
       }
-      /** @description There is no content to send for this request, but the headers may be useful.  */
+      /** @description There is no content to send for this request, but the headers may be useful. */
       204: {
         headers: {
           [name: string]: unknown
@@ -11396,7 +11438,7 @@ export interface operations {
             | components['schemas']['Models.Error']
         }
       }
-      /** @description There is no content to send for this request, but the headers may be useful.  */
+      /** @description There is no content to send for this request, but the headers may be useful. */
       204: {
         headers: {
           [name: string]: unknown
@@ -12389,7 +12431,7 @@ export interface operations {
     }
     requestBody?: never
     responses: {
-      /** @description There is no content to send for this request, but the headers may be useful.  */
+      /** @description There is no content to send for this request, but the headers may be useful. */
       204: {
         headers: {
           [name: string]: unknown
@@ -13601,7 +13643,7 @@ export interface operations {
     }
     requestBody?: never
     responses: {
-      /** @description There is no content to send for this request, but the headers may be useful.  */
+      /** @description There is no content to send for this request, but the headers may be useful. */
       204: {
         headers: {
           [name: string]: unknown
@@ -14843,7 +14885,7 @@ export interface operations {
     }
     requestBody?: never
     responses: {
-      /** @description There is no content to send for this request, but the headers may be useful.  */
+      /** @description There is no content to send for this request, but the headers may be useful. */
       204: {
         headers: {
           [name: string]: unknown
@@ -15975,7 +16017,7 @@ export interface operations {
     }
     requestBody?: never
     responses: {
-      /** @description There is no content to send for this request, but the headers may be useful.  */
+      /** @description There is no content to send for this request, but the headers may be useful. */
       204: {
         headers: {
           [name: string]: unknown
@@ -16225,7 +16267,7 @@ export interface operations {
     }
     requestBody?: never
     responses: {
-      /** @description There is no content to send for this request, but the headers may be useful.  */
+      /** @description There is no content to send for this request, but the headers may be useful. */
       204: {
         headers: {
           [name: string]: unknown
@@ -16909,7 +16951,7 @@ export interface operations {
     }
     requestBody?: never
     responses: {
-      /** @description There is no content to send for this request, but the headers may be useful.  */
+      /** @description There is no content to send for this request, but the headers may be useful. */
       204: {
         headers: {
           [name: string]: unknown
@@ -17097,7 +17139,7 @@ export interface operations {
     }
     requestBody?: never
     responses: {
-      /** @description There is no content to send for this request, but the headers may be useful.  */
+      /** @description There is no content to send for this request, but the headers may be useful. */
       204: {
         headers: {
           [name: string]: unknown
@@ -17311,7 +17353,7 @@ export interface operations {
     }
     requestBody?: never
     responses: {
-      /** @description There is no content to send for this request, but the headers may be useful.  */
+      /** @description There is no content to send for this request, but the headers may be useful. */
       204: {
         headers: {
           [name: string]: unknown

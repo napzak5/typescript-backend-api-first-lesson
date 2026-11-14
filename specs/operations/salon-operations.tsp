@@ -43,16 +43,19 @@ namespace BeautySalon.Operations {
       period?: string = "1m",
 
       @header("Authorization") authorization?: string,
-    ): {
-      @statusCode statusCode: 200;
-      @body response: ApiResponse<SalonStatistics>;
-    } | {
-      @statusCode statusCode: 401;
-      @body error: ProblemDetails;
-    } | {
-      @statusCode statusCode: 404;
-      @body error: ProblemDetails;
-    };
+    ):
+      | {
+          @statusCode statusCode: 200;
+          @body response: ApiResponse<SalonStatistics>;
+        }
+      | {
+          @statusCode statusCode: 401;
+          @body error: ProblemDetails;
+        }
+      | {
+          @statusCode statusCode: 404;
+          @body error: ProblemDetails;
+        };
 
     @doc("希望日時にサロン全体で対応可能な枠があるかを判定し、予約導線での可用性表示に利用します。")
     @summary("Check salon availability")
@@ -62,16 +65,19 @@ namespace BeautySalon.Operations {
       @path id: SalonId,
       @body request: SalonAvailabilityRequest,
       @header("Authorization") authorization?: string,
-    ): {
-      @statusCode statusCode: 200;
-      @body response: ApiResponse<SalonAvailabilityResponse>;
-    } | {
-      @statusCode statusCode: 400;
-      @body error: ProblemDetails;
-    } | {
-      @statusCode statusCode: 404;
-      @body error: ProblemDetails;
-    };
+    ):
+      | {
+          @statusCode statusCode: 200;
+          @body response: ApiResponse<SalonAvailabilityResponse>;
+        }
+      | {
+          @statusCode statusCode: 400;
+          @body error: ProblemDetails;
+        }
+      | {
+          @statusCode statusCode: 404;
+          @body error: ProblemDetails;
+        };
 
     @doc("位置情報と希望条件から近隣サロンを検索し、顧客に最適な選択肢を提示します。")
     @summary("Get nearby salons")
@@ -98,13 +104,15 @@ namespace BeautySalon.Operations {
 
       ...CursorPaginationParams,
       @header("Authorization") authorization?: string,
-    ): {
-      @statusCode statusCode: 200;
-      @body response: CursorPaginationResponse<SalonWithDistance>;
-    } | {
-      @statusCode statusCode: 400;
-      @body error: ProblemDetails;
-    };
+    ):
+      | {
+          @statusCode statusCode: 200;
+          @body response: CursorPaginationResponse<SalonWithDistance>;
+        }
+      | {
+          @statusCode statusCode: 400;
+          @body error: ProblemDetails;
+        };
 
     @doc("掲載中のサロン画像を削除し、ブランドトーンの統一や情報更新を行います。")
     @summary("Delete salon image")
@@ -114,15 +122,18 @@ namespace BeautySalon.Operations {
       @path id: SalonId,
       @path imageId: string,
       @header("Authorization") authorization?: string,
-    ): {
-      @statusCode statusCode: 204;
-    } | {
-      @statusCode statusCode: 401;
-      @body error: ProblemDetails;
-    } | {
-      @statusCode statusCode: 404;
-      @body error: ProblemDetails;
-    };
+    ):
+      | {
+          @statusCode statusCode: 204;
+        }
+      | {
+          @statusCode statusCode: 401;
+          @body error: ProblemDetails;
+        }
+      | {
+          @statusCode statusCode: 404;
+          @body error: ProblemDetails;
+        };
 
     @doc("顧客の嗜好や履歴にもとづきおすすめサロンを提示し、再来店促進や新規獲得を支援します。")
     @summary("Get personalized salon recommendations")
@@ -143,13 +154,15 @@ namespace BeautySalon.Operations {
 
       ...CursorPaginationParams,
       @header("Authorization") authorization?: string,
-    ): {
-      @statusCode statusCode: 200;
-      @body response: CursorPaginationResponse<SalonRecommendation>;
-    } | {
-      @statusCode statusCode: 401;
-      @body error: ProblemDetails;
-    };
+    ):
+      | {
+          @statusCode statusCode: 200;
+          @body response: CursorPaginationResponse<SalonRecommendation>;
+        }
+      | {
+          @statusCode statusCode: 401;
+          @body error: ProblemDetails;
+        };
 
     @doc("サロンのニュースやキャンペーン更新を購読登録し、ロイヤル顧客との接点を強化します。")
     @summary("Subscribe to salon updates")

@@ -56,25 +56,25 @@ src/
 
 ```tsx
 // src/components/button.tsx
-const buttonVariants = cva("...", {
+const buttonVariants = cva('...', {
   variants: {
     variant: {
-      default: "...",
+      default: '...',
       // カスタム追加
-      brand: "bg-brand-500 hover:bg-brand-600"
-    }
-  }
+      brand: 'bg-brand-500 hover:bg-brand-600',
+    },
+  },
 })
 ```
 
 ## トラブルシューティング
 
-| 問題 | 解決方法 |
-|------|----------|
-| パスエラー | `tsconfig.json`の`paths`確認 |
-| スタイル未適用 | `index.css`に`@tailwind`ディレクティブ確認 |
-| 依存関係エラー | `pnpm install` |
-| TypeScriptエラー | `pnpm typecheck` |
+| 問題             | 解決方法                                   |
+| ---------------- | ------------------------------------------ |
+| パスエラー       | `tsconfig.json`の`paths`確認               |
+| スタイル未適用   | `index.css`に`@tailwind`ディレクティブ確認 |
+| 依存関係エラー   | `pnpm install`                             |
+| TypeScriptエラー | `pnpm typecheck`                           |
 
 ## リンク
 

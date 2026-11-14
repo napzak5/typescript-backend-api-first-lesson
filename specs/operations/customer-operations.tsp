@@ -45,16 +45,19 @@ namespace BeautySalon.Operations {
     op getProfile(
       @path id: CustomerId,
       @header("Authorization") authorization?: string,
-    ): {
-      @statusCode statusCode: 200;
-      @body response: ApiResponse<CustomerProfile>;
-    } | {
-      @statusCode statusCode: 401;
-      @body error: ProblemDetails;
-    } | {
-      @statusCode statusCode: 404;
-      @body error: ProblemDetails;
-    };
+    ):
+      | {
+          @statusCode statusCode: 200;
+          @body response: ApiResponse<CustomerProfile>;
+        }
+      | {
+          @statusCode statusCode: 401;
+          @body error: ProblemDetails;
+        }
+      | {
+          @statusCode statusCode: 404;
+          @body error: ProblemDetails;
+        };
 
     @doc("来店頻度や売上貢献度など顧客指標を集計し、セグメント施策やVIP判定に利用します。")
     @summary("Get customer statistics")
@@ -68,16 +71,19 @@ namespace BeautySalon.Operations {
       period?: string = "1y",
 
       @header("Authorization") authorization?: string,
-    ): {
-      @statusCode statusCode: 200;
-      @body response: ApiResponse<CustomerStatistics>;
-    } | {
-      @statusCode statusCode: 401;
-      @body error: ProblemDetails;
-    } | {
-      @statusCode statusCode: 404;
-      @body error: ProblemDetails;
-    };
+    ):
+      | {
+          @statusCode statusCode: 200;
+          @body response: ApiResponse<CustomerStatistics>;
+        }
+      | {
+          @statusCode statusCode: 401;
+          @body error: ProblemDetails;
+        }
+      | {
+          @statusCode statusCode: 404;
+          @body error: ProblemDetails;
+        };
 
     @doc("顧客が保持する予約履歴を取得し、来店予定や過去施術の確認に利用します。")
     @summary("Get customer reservations")
@@ -97,16 +103,19 @@ namespace BeautySalon.Operations {
 
       ...CursorPaginationParams,
       @header("Authorization") authorization?: string,
-    ): {
-      @statusCode statusCode: 200;
-      @body response: CursorPaginationResponse<ReservationDetail>;
-    } | {
-      @statusCode statusCode: 401;
-      @body error: ProblemDetails;
-    } | {
-      @statusCode statusCode: 404;
-      @body error: ProblemDetails;
-    };
+    ):
+      | {
+          @statusCode statusCode: 200;
+          @body response: CursorPaginationResponse<ReservationDetail>;
+        }
+      | {
+          @statusCode statusCode: 401;
+          @body error: ProblemDetails;
+        }
+      | {
+          @statusCode statusCode: 404;
+          @body error: ProblemDetails;
+        };
 
     @doc("顧客単位の予約パッケージ情報を取得し、複数施術を跨いだ利用状況を把握します。")
     @summary("Get customer bookings")
@@ -126,16 +135,19 @@ namespace BeautySalon.Operations {
 
       ...CursorPaginationParams,
       @header("Authorization") authorization?: string,
-    ): {
-      @statusCode statusCode: 200;
-      @body response: CursorPaginationResponse<BookingDetail>;
-    } | {
-      @statusCode statusCode: 401;
-      @body error: ProblemDetails;
-    } | {
-      @statusCode statusCode: 404;
-      @body error: ProblemDetails;
-    };
+    ):
+      | {
+          @statusCode statusCode: 200;
+          @body response: CursorPaginationResponse<BookingDetail>;
+        }
+      | {
+          @statusCode statusCode: 401;
+          @body error: ProblemDetails;
+        }
+      | {
+          @statusCode statusCode: 404;
+          @body error: ProblemDetails;
+        };
 
     @doc("顧客の施術好みや連絡手段などの希望設定を更新し、パーソナライズされた提案に反映します。")
     @summary("Update customer preferences")
@@ -213,18 +225,21 @@ namespace BeautySalon.Operations {
       format?: "json" | "csv" | "pdf" = "json",
 
       @header("Authorization") authorization?: string,
-    ): {
-      @statusCode statusCode: 200;
-      @body response: bytes;
-      @header("Content-Type") content: string;
-      @header("Content-Disposition") contentDisposition: string;
-    } | {
-      @statusCode statusCode: 401;
-      @body error: ProblemDetails;
-    } | {
-      @statusCode statusCode: 404;
-      @body error: ProblemDetails;
-    };
+    ):
+      | {
+          @statusCode statusCode: 200;
+          @body response: bytes;
+          @header("Content-Type") content: string;
+          @header("Content-Disposition") contentDisposition: string;
+        }
+      | {
+          @statusCode statusCode: 401;
+          @body error: ProblemDetails;
+        }
+      | {
+          @statusCode statusCode: 404;
+          @body error: ProblemDetails;
+        };
 
     @doc("顧客からの削除要請を受け付け、規制に沿った消去フローを開始します。")
     @summary("Request customer data deletion")

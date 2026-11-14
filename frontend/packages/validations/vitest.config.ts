@@ -13,7 +13,7 @@ export default defineConfig({
     environment: 'jsdom',
     exclude: ['node_modules'],
     alias: {
-      '@': resolve(__dirname, './src'),
+      '@': resolve(import.meta.dirname, './src'),
     },
   },
 })

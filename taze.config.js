@@ -2,7 +2,7 @@ import { defineConfig } from 'taze'
 
 export default defineConfig({
   // Exclude specific packages from updates
-  exclude: ['storybook', '@storybook/react', '@storybook/react-vite'],
+  exclude: [],
 
   // Force fetch latest package info without cache
   force: true,

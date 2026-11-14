@@ -13,9 +13,7 @@ packages:
 # none of them needs to run its install script.
 allowBuilds:
   '@parcel/watcher': false
-  '@swc/core': false
   '@tailwindcss/oxide': false
-  core-js: false
   cpu-features: false
   esbuild: false
   msw: false
@@ -23,6 +21,11 @@ allowBuilds:
   protobufjs: false
   ssh2: false
 
+# drizzle-kit still depends on the deprecated @esbuild-kit loader, which pins an
+# esbuild release with a known dev-server advisory.
 overrides:
-  cookie@<0.7.0: '>=0.7.0'
   esbuild@<=0.24.2: '>=0.25.0'
+
+permissions:
+  taze:
+    skills: false

@@ -407,14 +407,13 @@ namespace BeautySalon.Models {
     updatedBy: string | null;
   }
 
-  @doc("ビジネスロジックの成功・失敗を明示する共通Result型。")
-  union Result<TSuccess, TError = Error> {
-    @doc("成功時の戻り値をラップした結果。")
-    success: SuccessResult<TSuccess>,
-
-    @doc("失敗時のエラー情報をラップした結果。")
-    error: ErrorResult<TError>,
-  }
+  /**
+   * ビジネスロジックの成功・失敗を明示する共通Result型。
+   * テンプレートのインスタンスごとに名前付きスキーマを生成しないよう、union ではなく alias で定義する。
+   */
+  alias Result<TSuccess, TError = Error> =
+    | SuccessResult<TSuccess>
+    | ErrorResult<TError>;
 
   @doc("成功時のデータとステータスを保持するモデル。")
   model SuccessResult<T> {
