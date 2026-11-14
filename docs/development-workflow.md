@@ -304,7 +304,7 @@ Dockerfile、`backend/`、`frontend/`、`specs/`、`shared-config/`、ロック�
 
 | 症状 | 原因と対処 |
 |------|-----------|
-| `pnpm db:fresh` などのデータベースコマンドや `pnpm typecheck` が `@beauty-salon-backend/*` を解決できずに失敗する | パッケージがビルドされていない。`pnpm build:backend`（または `pnpm build:dev`）を実行する |
+| `pnpm typecheck` が `@beauty-salon-backend/*` や `@beauty-salon-frontend/*` を解決できずに失敗する | パッケージがビルドされていない。型検査はビルドした型定義を参照する。`pnpm build:dev` を実行する |
 | バックエンドが `Invalid configuration` を出力して終了する | 環境変数が不足しているか不正。ログの `issues` に変数名と理由が並ぶ（[環境変数設定ガイド](./env-configuration.md)） |
 | バックエンドが `Cannot start: the database is unreachable` を出力して終了する | PostgreSQL が起動していないか、`DATABASE_URL` が違う。`make infra-up` で起動する |
 | フロントエンドの開発サーバーが起動しない | ポート 3001〜3003 が使用中。各アプリは決まったポートでしか起動しない（`strictPort`） |

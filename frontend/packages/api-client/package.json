@@ -20,7 +20,9 @@
     "build:watch": "NODE_ENV=development rslib build --watch",
     "dev": "NODE_ENV=development rslib build --watch",
     "typecheck": "tsc --noEmit",
-    "generate": "orval"
+    "generate": "orval",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@beauty-salon-frontend/io": "workspace:*",
@@ -31,6 +33,8 @@
     "@rslib/core": "^1.0.7",
     "@types/node": "^26.6.6",
     "orval": "^8.47.0",
-    "typescript": "^7.0.2"
+    "ts-pattern": "^5.9.2",
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.0"
   }
 }

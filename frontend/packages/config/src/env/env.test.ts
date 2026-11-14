@@ -26,8 +26,6 @@ describe('env', () => {
   it('should read the application settings from the VITE_ variables', async () => {
     // Arrange
     vi.stubEnv('VITE_APP_TITLE', 'Beauty Salon Portal')
-    vi.stubEnv('VITE_APP_VERSION', '1.2.3')
-    vi.stubEnv('VITE_FRONTEND_BASE_URL', 'https://portal.example.com')
     vi.stubEnv('VITE_BACKEND_BASE_URL', 'https://api.example.com')
 
     // Act
@@ -36,14 +34,28 @@ describe('env', () => {
     // Assert
     expect({
       title: env.VITE_APP_TITLE.value,
-      version: env.VITE_APP_VERSION.value,
-      frontendBaseUrl: env.VITE_FRONTEND_BASE_URL.value,
       backendBaseUrl: env.VITE_BACKEND_BASE_URL.value,
     }).toEqual({
       title: 'Beauty Salon Portal',
-      version: '1.2.3',
-      frontendBaseUrl: 'https://portal.example.com',
       backendBaseUrl: 'https://api.example.com',
+    })
+  })
+
+  it('should leave a variable that is not set undefined', async () => {
+    // Arrange
+    vi.stubEnv('VITE_APP_TITLE', undefined)
+    vi.stubEnv('VITE_BACKEND_BASE_URL', undefined)
+
+    // Act
+    const env = await loadEnv()
+
+    // Assert
+    expect({
+      title: env.VITE_APP_TITLE.value,
+      backendBaseUrl: env.VITE_BACKEND_BASE_URL.value,
+    }).toEqual({
+      title: undefined,
+      backendBaseUrl: undefined,
     })
   })
 

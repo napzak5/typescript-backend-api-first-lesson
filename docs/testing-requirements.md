@@ -45,7 +45,7 @@ What the repository does not have:
 | What the application does for every route: request IDs, requests it cannot read, a failing database, CORS, the rate limit, the probes, security headers | Integration | `backend/packages/api/src/__tests__/app.integration.test.ts` |
 | Server start-up and shutdown | Integration | `backend/apps/server/src/__tests__/server.integration.test.ts` |
 | The migration runner, and the migrations of the repository | Integration | `backend/packages/database/src/scripts/__tests__/migrations.integration.test.ts` |
-| Configuration: every variable, and every environment file in the repository | Unit | `backend/packages/config/src/__tests__/app-config.test.ts` |
+| Configuration: every variable, and every environment file in the repository (the local ones allow the origins of the frontend applications) | Unit | `backend/packages/config/src/__tests__/app-config.test.ts` |
 | Shared helpers: `Result`, the logger, the description of database failures | Unit | `backend/packages/utility/src/__tests__/result.test.ts`, `backend/packages/infrastructure/src/logging/__tests__/logger.test.ts`, `backend/packages/infrastructure/src/database/__tests__/failure.test.ts` |
 
 The repository implementation
@@ -59,6 +59,7 @@ required to be covered through the endpoint tests, against a real database.
 | Subject | Kind | Reference |
 |---------|------|-----------|
 | Utilities, validations, stores, messages, shared types | Unit, beside the module | `frontend/packages/validations/src/validateEmail/validateEmail.test.ts` |
+| The fetch function, and the generated API client through it: the request, every status as a typed value, transport failures | Unit, with `fetch` stubbed | `frontend/packages/io/src/libs/fetcher/fetcher.test.ts`, `frontend/packages/api-client/src/salons.test.ts` |
 | UI components | Component test | `frontend/packages/ui/src/components/button.test.tsx` |
 | Applications: routes, navigation, what depends on the environment | Component test | `frontend/apps/admin-app/src/App.test.tsx` |
 

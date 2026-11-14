@@ -7,7 +7,7 @@
     "clean": "rm -rf dist *.tsbuildinfo",
     "dev": "vite --force --port 3002",
     "build:localhost": "vite build --mode localhost",
-    "build:dev": "vite build --mode dev",
+    "build:dev": "vite build --mode development",
     "build:test": "vite build --mode test",
     "build:stg": "vite build --mode staging",
     "build:prod": "vite build --mode production",
