@@ -50,14 +50,8 @@ namespace BeautySalon.Operations {
           @statusCode statusCode: 200;
           @body response: ApiResponse<CustomerProfile>;
         }
-      | {
-          @statusCode statusCode: 401;
-          @body error: ProblemDetails;
-        }
-      | {
-          @statusCode statusCode: 404;
-          @body error: ProblemDetails;
-        };
+      | ProblemResponse<401>
+      | ProblemResponse<404>;
 
     @doc("来店頻度や売上貢献度など顧客指標を集計し、セグメント施策やVIP判定に利用します。")
     @summary("Get customer statistics")
@@ -76,14 +70,8 @@ namespace BeautySalon.Operations {
           @statusCode statusCode: 200;
           @body response: ApiResponse<CustomerStatistics>;
         }
-      | {
-          @statusCode statusCode: 401;
-          @body error: ProblemDetails;
-        }
-      | {
-          @statusCode statusCode: 404;
-          @body error: ProblemDetails;
-        };
+      | ProblemResponse<401>
+      | ProblemResponse<404>;
 
     @doc("顧客が保持する予約履歴を取得し、来店予定や過去施術の確認に利用します。")
     @summary("Get customer reservations")
@@ -108,14 +96,8 @@ namespace BeautySalon.Operations {
           @statusCode statusCode: 200;
           @body response: CursorPaginationResponse<ReservationDetail>;
         }
-      | {
-          @statusCode statusCode: 401;
-          @body error: ProblemDetails;
-        }
-      | {
-          @statusCode statusCode: 404;
-          @body error: ProblemDetails;
-        };
+      | ProblemResponse<401>
+      | ProblemResponse<404>;
 
     @doc("顧客単位の予約パッケージ情報を取得し、複数施術を跨いだ利用状況を把握します。")
     @summary("Get customer bookings")
@@ -140,14 +122,8 @@ namespace BeautySalon.Operations {
           @statusCode statusCode: 200;
           @body response: CursorPaginationResponse<BookingDetail>;
         }
-      | {
-          @statusCode statusCode: 401;
-          @body error: ProblemDetails;
-        }
-      | {
-          @statusCode statusCode: 404;
-          @body error: ProblemDetails;
-        };
+      | ProblemResponse<401>
+      | ProblemResponse<404>;
 
     @doc("顧客の施術好みや連絡手段などの希望設定を更新し、パーソナライズされた提案に反映します。")
     @summary("Update customer preferences")
@@ -162,18 +138,9 @@ namespace BeautySalon.Operations {
           @statusCode statusCode: 200;
           @body response: ApiResponse<CustomerPreferences>;
         }
-      | {
-          @statusCode statusCode: 400;
-          @body error: ProblemDetails;
-        }
-      | {
-          @statusCode statusCode: 401;
-          @body error: ProblemDetails;
-        }
-      | {
-          @statusCode statusCode: 404;
-          @body error: ProblemDetails;
-        };
+      | ProblemResponse<400>
+      | ProblemResponse<401>
+      | ProblemResponse<404>;
 
     @doc("重複登録された顧客レコードを統合し、履歴やポイントを一本化します。")
     @summary("Merge customer records")
@@ -196,22 +163,10 @@ namespace BeautySalon.Operations {
           @statusCode statusCode: 200;
           @body response: ApiResponse<Customer>;
         }
-      | {
-          @statusCode statusCode: 400;
-          @body error: ProblemDetails;
-        }
-      | {
-          @statusCode statusCode: 401;
-          @body error: ProblemDetails;
-        }
-      | {
-          @statusCode statusCode: 404;
-          @body error: ProblemDetails;
-        }
-      | {
-          @statusCode statusCode: 409;
-          @body error: ProblemDetails;
-        };
+      | ProblemResponse<400>
+      | ProblemResponse<401>
+      | ProblemResponse<404>
+      | ProblemResponse<409>;
 
     @doc("顧客が自身のデータを取得できるようエクスポートし、GDPR等の個人情報規制に対応します。")
     @summary("Export customer data")
@@ -232,14 +187,8 @@ namespace BeautySalon.Operations {
           @header("Content-Type") content: string;
           @header("Content-Disposition") contentDisposition: string;
         }
-      | {
-          @statusCode statusCode: 401;
-          @body error: ProblemDetails;
-        }
-      | {
-          @statusCode statusCode: 404;
-          @body error: ProblemDetails;
-        };
+      | ProblemResponse<401>
+      | ProblemResponse<404>;
 
     @doc("顧客からの削除要請を受け付け、規制に沿った消去フローを開始します。")
     @summary("Request customer data deletion")
@@ -269,18 +218,9 @@ namespace BeautySalon.Operations {
             gracePeriodDays: int32;
           }>;
         }
-      | {
-          @statusCode statusCode: 400;
-          @body error: ProblemDetails;
-        }
-      | {
-          @statusCode statusCode: 401;
-          @body error: ProblemDetails;
-        }
-      | {
-          @statusCode statusCode: 404;
-          @body error: ProblemDetails;
-        };
+      | ProblemResponse<400>
+      | ProblemResponse<401>
+      | ProblemResponse<404>;
 
     @doc("来店やキャンペーンに応じてロイヤルティポイントを加算し、顧客維持を促進します。")
     @summary("Add loyalty points")
@@ -311,17 +251,8 @@ namespace BeautySalon.Operations {
             transactionId: string;
           }>;
         }
-      | {
-          @statusCode statusCode: 400;
-          @body error: ProblemDetails;
-        }
-      | {
-          @statusCode statusCode: 401;
-          @body error: ProblemDetails;
-        }
-      | {
-          @statusCode statusCode: 404;
-          @body error: ProblemDetails;
-        };
+      | ProblemResponse<400>
+      | ProblemResponse<401>
+      | ProblemResponse<404>;
   }
 }

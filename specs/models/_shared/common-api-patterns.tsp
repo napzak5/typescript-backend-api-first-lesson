@@ -6,7 +6,7 @@ using TypeSpec.OpenAPI;
 
 namespace BeautySalon.Models {
   @doc("""
-    RFC 7807 に準拠した標準エラーレスポンスモデル。
+    RFC 9457 (Problem Details for HTTP APIs) に準拠した標準エラーレスポンスモデル。
     美容サロン予約システム全体で一貫したエラー情報を提供し、顧客・スタッフ双方の操作ログと連携する。
     """)
   model ProblemDetails {
@@ -37,6 +37,44 @@ namespace BeautySalon.Models {
     @doc("エラー発生日時 (UTC)。サーバーログの検索キーとして使用する。")
     timestamp: utcDateTime;
   }
+
+  // エラーレスポンス。本体は ProblemDetails で、メディアタイプは RFC 9457 が定める application/problem+json。
+  // TStatus には HTTP ステータスコードを指定する。
+  // @doc を付けないのは、OpenAPI のレスポンスの説明をステータスコードごとの既定の文にするため。
+  model ProblemResponse<TStatus> {
+    @statusCode statusCode: TStatus;
+    @header contentType: "application/problem+json";
+    @body error: ProblemDetails;
+  }
+
+  @doc("""
+    リクエスト数の上限を超えたときのエラーレスポンス (429)。
+    クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+    """)
+  model RateLimitedResponse {
+    ...ProblemResponse<429>;
+
+    @doc("再試行できるようになるまでの秒数。")
+    @header("Retry-After")
+    retryAfter: int32;
+  }
+
+  @doc("サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。")
+  model InternalServerErrorResponse is ProblemResponse<500>;
+
+  @doc("リクエスト本文がサイズ上限を超えている (413)。")
+  model PayloadTooLargeResponse is ProblemResponse<413>;
+
+  @doc("リクエスト本文が UTF-8 の JSON ではない (415)。")
+  model UnsupportedMediaTypeResponse is ProblemResponse<415>;
+
+  // どのオペレーションでも返りうるエラー
+  alias CommonErrors = RateLimitedResponse | InternalServerErrorResponse;
+
+  // リクエスト本文を受け取るオペレーションで返りうるエラー
+  alias RequestBodyErrors =
+    | PayloadTooLargeResponse
+    | UnsupportedMediaTypeResponse;
 
   @doc("""
     エラーコードタイプ区分 - 一貫したエラー処理のための標準化されたエラーコード
@@ -137,24 +175,24 @@ namespace BeautySalon.Models {
     予約一覧や顧客検索など大量データを扱う画面で、連続的かつ高速に結果を取得するための共通クエリパラメータを定義する。
     """)
   model CursorPaginationParams {
-    #suppress "@typespec/http/metadata-ignored" "Treated as queryParams"
+    #suppress "@typespec/http/metadata-ignored" "A query parameter of the search operation and a body property of the export operation"
     @query
     @doc("1ページあたりの取得件数上限 (1〜100)。指定が無い場合は既定値 20 を適用。")
     @minValue(1)
     @maxValue(100)
     limit?: int32 = 20;
 
-    #suppress "@typespec/http/metadata-ignored" "Treated as queryParams"
+    #suppress "@typespec/http/metadata-ignored" "A query parameter of the search operation and a body property of the export operation"
     @query
     @doc("次ページを指し示すカーソル。前回レスポンスの `meta.nextCursor` を設定する。")
     cursor?: string;
 
-    #suppress "@typespec/http/metadata-ignored" "Treated as queryParams"
+    #suppress "@typespec/http/metadata-ignored" "A query parameter of the search operation and a body property of the export operation"
     @query
     @doc("ソート対象フィールド。予約日時や作成日時など業務軸を指定する。")
     sortBy?: string;
 
-    #suppress "@typespec/http/metadata-ignored" "Treated as queryParams"
+    #suppress "@typespec/http/metadata-ignored" "A query parameter of the search operation and a body property of the export operation"
     @query
     @doc("ソート順序。`asc` は昇順、`desc` は降順を表す。")
     sortOrder?: "asc" | "desc" = "asc";
@@ -165,25 +203,21 @@ namespace BeautySalon.Models {
     既存基盤や BI 連携でカーソル方式に移行できないケース向けの互換パラメータを提供する。
     """)
   model OffsetPaginationParams {
-    #suppress "@typespec/http/metadata-ignored" "Treated as queryParams"
     @query
     @doc("1ページあたりの取得件数上限 (1〜100)。指定が無い場合は既定値 20 を適用。")
     @minValue(1)
     @maxValue(100)
     limit?: int32 = 20;
 
-    #suppress "@typespec/http/metadata-ignored" "Treated as queryParams"
     @query
     @doc("スキップする件数。リスト冒頭からのオフセット値を指定する。")
     @minValue(0)
     offset?: int32 = 0;
 
-    #suppress "@typespec/http/metadata-ignored" "Treated as queryParams"
     @query
     @doc("ソート対象フィールド。予約一覧や顧客一覧の表示順を決定する。")
     sortBy?: string;
 
-    #suppress "@typespec/http/metadata-ignored" "Treated as queryParams"
     @query
     @doc("ソート順序。`asc` は昇順、`desc` は降順を表す。")
     sortOrder?: "asc" | "desc" = "asc";
@@ -403,7 +437,6 @@ namespace BeautySalon.Models {
     部分更新や取得フィールド制御を行う際に、対象フィールドをドット区切りで列挙する。
     """)
   model FieldMask {
-    #suppress "@typespec/http/metadata-ignored" "Treated as queryParams"
     @doc("更新対象フィールドをカンマ区切りで列挙した文字列。例: `name,address.street`。")
     @query
     @example("name,address.street,contactInfo.email")
@@ -420,9 +453,7 @@ namespace BeautySalon.Models {
     @maxItems(100)
     ids: string[];
 
-    #suppress "@typespec/http/metadata-ignored" "Treated as queryParams"
     @doc("レスポンスに含めたいフィールドのカンマ区切りリスト。パフォーマンス最適化に活用する。全フィールド取得の場合はnull")
-    @query
     fields: string | null;
   }
 
@@ -485,32 +516,32 @@ namespace BeautySalon.Models {
     サロン・スタッフ・顧客など複数ドメインで全文検索、属性フィルター、ファセット集計を一貫して扱うために利用する。
     """)
   model AdvancedSearchParams {
-    #suppress "@typespec/http/metadata-ignored" "Treated as queryParams"
+    #suppress "@typespec/http/metadata-ignored" "A query parameter of the search operation and a body property of the export operation"
     @query
     @doc("全文検索キーワード。名称や説明文を横断的に検索する。")
     q?: string;
 
-    #suppress "@typespec/http/metadata-ignored" "Treated as queryParams"
+    #suppress "@typespec/http/metadata-ignored" "A query parameter of the search operation and a body property of the export operation"
     @query
     @doc("フィルター式。例: `status:active AND category:premium`。属性条件を組み合わせた絞り込みに使用。")
     filter?: string;
 
-    #suppress "@typespec/http/metadata-ignored" "Treated as queryParams"
+    #suppress "@typespec/http/metadata-ignored" "A query parameter of the search operation and a body property of the export operation"
     @query
     @doc("レスポンスに含めるフィールドのカンマ区切りリスト。データ転送量の最適化に活用。")
     fields?: string;
 
-    #suppress "@typespec/http/metadata-ignored" "Treated as queryParams"
+    #suppress "@typespec/http/metadata-ignored" "A query parameter of the search operation and a body property of the export operation"
     @query
     @doc("レスポンスから除外したいフィールドのカンマ区切りリスト。不要情報を除く場合に利用。")
     exclude?: string;
 
-    #suppress "@typespec/http/metadata-ignored" "Treated as queryParams"
+    #suppress "@typespec/http/metadata-ignored" "A query parameter of the search operation and a body property of the export operation"
     @query
     @doc("ファセット集計を有効化するかどうか。true で各項目の件数を集計する。")
     facets?: boolean = false;
 
-    #suppress "@typespec/http/metadata-ignored" "Treated as queryParams"
+    #suppress "@typespec/http/metadata-ignored" "A query parameter of the search operation and a body property of the export operation"
     @query
     @doc("集計対象とするファセットフィールドの一覧。カテゴリや価格帯などを指定する。")
     facetFields?: string[];

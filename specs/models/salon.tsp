@@ -308,48 +308,40 @@ namespace BeautySalon.Models {
     サロン一覧・検索リクエスト - 絞り込み条件とページネーションを指定する。条件はすべて AND で結合する
     """)
   model SalonSearchRequest {
-    #suppress "@typespec/http/metadata-ignored" "Treated as queryParams"
     @query
     @doc("1ページあたりの取得件数上限 (1〜100)")
     @minValue(1)
     @maxValue(100)
     limit?: int32 = 20;
 
-    #suppress "@typespec/http/metadata-ignored" "Treated as queryParams"
     @query
     @doc("取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する")
     cursor?: string;
 
-    #suppress "@typespec/http/metadata-ignored" "Treated as queryParams"
     @query
     @doc("名称・説明文に対する部分一致キーワード(大文字小文字を区別しない)")
     @minLength(1)
     @maxLength(100)
     keyword?: string;
 
-    #suppress "@typespec/http/metadata-ignored" "Treated as queryParams"
     @query
     @doc("都道府県名による絞り込み(完全一致)")
     prefecture?: string;
 
-    #suppress "@typespec/http/metadata-ignored" "Treated as queryParams"
     @query
     @doc("市区町村名による絞り込み(完全一致)")
     city?: string;
 
-    #suppress "@typespec/http/metadata-ignored" "Treated as queryParams"
     @query
     @doc("予約受付中かどうかによる絞り込み")
     isActive?: boolean;
 
-    #suppress "@typespec/http/metadata-ignored" "Treated as queryParams"
     @query
     @doc("最低評価値による絞り込み。評価のないサロンは除外される")
     @minValue(0)
     @maxValue(5)
     minRating?: float32;
 
-    #suppress "@typespec/http/metadata-ignored" "Treated as queryParams"
     @query(#{ explode: true })
     @doc("特徴タグによる絞り込み。指定したタグをすべて持つサロンに一致する")
     features?: string[];

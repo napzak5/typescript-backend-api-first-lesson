@@ -111,7 +111,7 @@ namespace BeautySalon.Models {
   @doc("""
     スタッフ作成リクエスト - 新規スタッフ登録時に必要なプロフィール・連絡先・スケジュール情報を受け取る
     """)
-  model CreateStaffRequest {
+  model StaffCreateRequest {
     @doc("所属サロンのID")
     salonId: SalonId;
 
@@ -149,7 +149,7 @@ namespace BeautySalon.Models {
   @doc("""
     スタッフ更新リクエスト - 任意項目を部分更新し、プロフィールや勤務状況を柔軟に調整する。null指定で値をリセット可能
     """)
-  model UpdateStaffRequest {
+  model StaffUpdateRequest {
     @doc("スタッフ名の更新")
     name?: string;
 

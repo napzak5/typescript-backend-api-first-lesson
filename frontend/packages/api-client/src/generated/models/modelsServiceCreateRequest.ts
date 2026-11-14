@@ -11,7 +11,7 @@ import type { ModelsServiceCategoryType } from './modelsServiceCategoryType';
 /**
  * サービスを新規登録するリクエスト
  */
-export interface ModelsCreateServiceRequest {
+export interface ModelsServiceCreateRequest {
   /** サービスを登録するサロン ID */
   salonId: ModelsSalonId;
   /** サービス名 */

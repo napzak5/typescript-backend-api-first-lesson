@@ -33,20 +33,14 @@ namespace BeautySalon.Operations {
     @doc("新しい施術予約を登録し、枠の確保と関連リソースの仮押さえを行います。")
     @summary("Create reservation")
     @post
-    op create(@body reservation: CreateReservationRequest):
+    op create(@body reservation: ReservationCreateRequest):
       | {
           @statusCode statusCode: 201;
           @header location: string;
           @body reservation: Reservation;
         }
-      | {
-          @statusCode statusCode: 400;
-          @body error: Error;
-        }
-      | {
-          @statusCode statusCode: 409;
-          @body error: Error;
-        };
+      | ProblemResponse<400>
+      | ProblemResponse<409>;
 
     @doc("個別予約の詳細情報を取得し、施術内容や担当者、タイムラインを確認します。")
     @summary("Get reservation")
@@ -56,34 +50,22 @@ namespace BeautySalon.Operations {
           @statusCode statusCode: 200;
           @body reservation: ReservationDetail;
         }
-      | {
-          @statusCode statusCode: 404;
-          @body error: Error;
-        };
+      | ProblemResponse<404>;
 
     @doc("予約内容を部分的に更新し、サービス内容や担当スタッフの変更に対応します。")
     @summary("Update reservation")
     @patch
     op update(
       @path id: ReservationId,
-      @body updates: UpdateReservationRequest,
+      @body updates: ReservationUpdateRequest,
     ):
       | {
           @statusCode statusCode: 200;
           @body reservation: Reservation;
         }
-      | {
-          @statusCode statusCode: 404;
-          @body error: Error;
-        }
-      | {
-          @statusCode statusCode: 400;
-          @body error: Error;
-        }
-      | {
-          @statusCode statusCode: 409;
-          @body error: Error;
-        };
+      | ProblemResponse<404>
+      | ProblemResponse<400>
+      | ProblemResponse<409>;
 
     @doc("確定済みの予約をキャンセルし、理由の記録と枠の開放を行います。")
     @summary("Cancel reservation")
@@ -99,14 +81,8 @@ namespace BeautySalon.Operations {
           @statusCode statusCode: 200;
           @body reservation: Reservation;
         }
-      | {
-          @statusCode statusCode: 404;
-          @body error: Error;
-        }
-      | {
-          @statusCode statusCode: 409;
-          @body error: Error;
-        };
+      | ProblemResponse<404>
+      | ProblemResponse<409>;
 
     @doc("施術完了を登録し、実績データや売上計上に利用するステータスへ更新します。")
     @summary("Complete reservation")
@@ -117,14 +93,8 @@ namespace BeautySalon.Operations {
           @statusCode statusCode: 200;
           @body reservation: Reservation;
         }
-      | {
-          @statusCode statusCode: 404;
-          @body error: Error;
-        }
-      | {
-          @statusCode statusCode: 409;
-          @body error: Error;
-        };
+      | ProblemResponse<404>
+      | ProblemResponse<409>;
 
     @doc("予約日時や担当者の調整が必要な際に、新しいスケジュールへ付け替えます。")
     @summary("Reschedule reservation")
@@ -141,14 +111,8 @@ namespace BeautySalon.Operations {
           @statusCode statusCode: 200;
           @body reservation: Reservation;
         }
-      | {
-          @statusCode statusCode: 404;
-          @body error: Error;
-        }
-      | {
-          @statusCode statusCode: 409;
-          @body error: Error;
-        };
+      | ProblemResponse<404>
+      | ProblemResponse<409>;
   }
 
   @doc("各サロンの予約可能時間帯を算出し、オンライン予約枠表示やスタッフ提案に使用するAPI操作群です。")
@@ -169,10 +133,7 @@ namespace BeautySalon.Operations {
           @statusCode statusCode: 200;
           @body slots: AvailableSlot[];
         }
-      | {
-          @statusCode statusCode: 400;
-          @body error: Error;
-        };
+      | ProblemResponse<400>;
 
     @doc("希望する日時・スタッフの組み合わせが予約可能か即時判定し、ダブルブッキングを防ぎます。")
     @summary("Check availability")

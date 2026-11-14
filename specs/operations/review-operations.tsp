@@ -39,14 +39,8 @@ namespace BeautySalon.Operations {
           @header location: string;
           @body review: Review;
         }
-      | {
-          @statusCode statusCode: 400;
-          @body error: Error;
-        }
-      | {
-          @statusCode statusCode: 409;
-          @body error: Error;
-        };
+      | ProblemResponse<400>
+      | ProblemResponse<409>;
 
     @doc("単一レビューの詳細を表示し、コメント内容や評価指標を確認します。")
     @summary("Get review")
@@ -56,10 +50,7 @@ namespace BeautySalon.Operations {
           @statusCode statusCode: 200;
           @body review: Review;
         }
-      | {
-          @statusCode statusCode: 404;
-          @body error: Error;
-        };
+      | ProblemResponse<404>;
 
     @doc("顧客が投稿後のレビューを修正し、誤記修正や追記を反映します。")
     @summary("Update review")
@@ -69,14 +60,8 @@ namespace BeautySalon.Operations {
           @statusCode statusCode: 200;
           @body review: Review;
         }
-      | {
-          @statusCode statusCode: 404;
-          @body error: Error;
-        }
-      | {
-          @statusCode statusCode: 403;
-          @body error: Error;
-        };
+      | ProblemResponse<404>
+      | ProblemResponse<403>;
 
     @doc("レビューの削除要請に応じて投稿を非表示または除去し、コンプライアンスを維持します。")
     @summary("Delete review")
@@ -85,14 +70,8 @@ namespace BeautySalon.Operations {
       | {
           @statusCode statusCode: 204;
         }
-      | {
-          @statusCode statusCode: 404;
-          @body error: Error;
-        }
-      | {
-          @statusCode statusCode: 403;
-          @body error: Error;
-        };
+      | ProblemResponse<404>
+      | ProblemResponse<403>;
 
     @doc("他の利用者に役立つレビューをマーキングし、信頼性の高い声を強調します。")
     @summary("Mark review as helpful")
@@ -105,10 +84,7 @@ namespace BeautySalon.Operations {
             helpfulCount: int32;
           };
         }
-      | {
-          @statusCode statusCode: 404;
-          @body error: Error;
-        };
+      | ProblemResponse<404>;
 
     @doc("不適切な内容や虚偽が疑われるレビューを通報し、運営による対応フローへ送ります。")
     @summary("Report review")
@@ -127,10 +103,7 @@ namespace BeautySalon.Operations {
             reportId: string;
           };
         }
-      | {
-          @statusCode statusCode: 404;
-          @body error: Error;
-        };
+      | ProblemResponse<404>;
   }
 
   @doc("サロン単位でのレビュー評価と傾向を集計し、店舗ブランディングと改善施策に活かすAPI操作群です。")

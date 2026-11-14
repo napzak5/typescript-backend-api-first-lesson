@@ -14,7 +14,7 @@ import type { ModelsStaffSchedule } from './modelsStaffSchedule';
 /**
  * スタッフ作成リクエスト - 新規スタッフ登録時に必要なプロフィール・連絡先・スケジュール情報を受け取る
  */
-export interface ModelsCreateStaffRequest {
+export interface ModelsStaffCreateRequest {
   /** 所属サロンのID */
   salonId: ModelsSalonId;
   /** スタッフの氏名 */

@@ -9,7 +9,7 @@ import type { ModelsErrorCodeType } from './modelsErrorCodeType';
 import type { ModelsValidationError } from './modelsValidationError';
 
 /**
- * RFC 7807 に準拠した標準エラーレスポンスモデル。
+ * RFC 9457 (Problem Details for HTTP APIs) に準拠した標準エラーレスポンスモデル。
  * 美容サロン予約システム全体で一貫したエラー情報を提供し、顧客・スタッフ双方の操作ログと連携する。
  */
 export interface ModelsProblemDetails {

@@ -32,11 +32,11 @@ import type {
   BookingOperationsProcessPayment200,
   BookingOperationsProcessPaymentBody,
   ModelsBooking,
+  ModelsBookingCreateRequest,
   ModelsBookingDetail,
   ModelsBookingId,
   ModelsBookingUpdateRequest,
-  ModelsCreateBookingRequest,
-  ModelsError,
+  ModelsProblemDetails,
   ModelsReservationId
 } from '../../models';
 
@@ -198,12 +198,12 @@ export type bookingOperationsCreateResponse201 = {
 }
 
 export type bookingOperationsCreateResponse400 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 400
 }
 
 export type bookingOperationsCreateResponse409 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 409
 }
 
@@ -228,7 +228,7 @@ export const getBookingOperationsCreateUrl = () => {
  * 新規の予約パッケージを作成し、施術メニューと顧客情報を紐づけて確定します。
  * @summary Create booking
  */
-export const bookingOperationsCreate = async (modelsCreateBookingRequest: ModelsCreateBookingRequest, options?: RequestInit): Promise<bookingOperationsCreateResponse> => {
+export const bookingOperationsCreate = async (modelsBookingCreateRequest: ModelsBookingCreateRequest, options?: RequestInit): Promise<bookingOperationsCreateResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -249,7 +249,7 @@ return customInstance<bookingOperationsCreateResponse>(getBookingOperationsCreat
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(modelsCreateBookingRequest)
+    body: JSON.stringify(modelsBookingCreateRequest)
   }
 );}
 
@@ -259,7 +259,7 @@ return customInstance<bookingOperationsCreateResponse>(getBookingOperationsCreat
 
 export const getBookingOperationsCreateMutationKey = () => ['bookingOperationsCreate'] as const;
 
-export const getBookingOperationsCreateMutationOptions = <TError = ModelsError,
+export const getBookingOperationsCreateMutationOptions = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsCreate>>, TError,BookingOperationsCreateMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsCreate>>, TError,BookingOperationsCreateMutationVariables, TContext> => {
 
@@ -287,15 +287,15 @@ const {mutation: mutationOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type BookingOperationsCreateMutationResult = NonNullable<Awaited<ReturnType<typeof bookingOperationsCreate>>>
-    export type BookingOperationsCreateMutationBody = ModelsCreateBookingRequest
-    export type BookingOperationsCreateMutationError = ModelsError
-    export type BookingOperationsCreateMutationVariables = {data: ModelsCreateBookingRequest}
+    export type BookingOperationsCreateMutationBody = ModelsBookingCreateRequest
+    export type BookingOperationsCreateMutationError = ModelsProblemDetails
+    export type BookingOperationsCreateMutationVariables = {data: ModelsBookingCreateRequest}
 
     /**
  * 新規の予約パッケージを作成し、施術メニューと顧客情報を紐づけて確定します。
  * @summary Create booking
  */
-export const useBookingOperationsCreate = <TError = ModelsError,
+export const useBookingOperationsCreate = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsCreate>>, TError,BookingOperationsCreateMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof bookingOperationsCreate>>,
@@ -311,7 +311,7 @@ export const useBookingOperationsCreate = <TError = ModelsError,
 }
 
 export type bookingOperationsGetResponse404 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 404
 }
 
@@ -358,7 +358,7 @@ export const getBookingOperationsGetQueryKey = (id: ModelsBookingId,) => {
     }
 
 
-export const getBookingOperationsGetQueryOptions = <TData = Awaited<ReturnType<typeof bookingOperationsGet>>, TError = ModelsError>(id: ModelsBookingId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof bookingOperationsGet>>, TError, TData>>, }
+export const getBookingOperationsGetQueryOptions = <TData = Awaited<ReturnType<typeof bookingOperationsGet>>, TError = ModelsProblemDetails>(id: ModelsBookingId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof bookingOperationsGet>>, TError, TData>>, }
 ) => {
 
 const {query: queryOptions} = options ?? {};
@@ -377,14 +377,14 @@ const {query: queryOptions} = options ?? {};
 }
 
 export type BookingOperationsGetQueryResult = NonNullable<Awaited<ReturnType<typeof bookingOperationsGet>>>
-export type BookingOperationsGetQueryError = ModelsError
+export type BookingOperationsGetQueryError = ModelsProblemDetails
 
 
 /**
  * 個別の予約パッケージ詳細を取得し、関連する予約枠や支払い状況を確認します。
  * @summary Get booking
  */
-export function useBookingOperationsGet<TData = Awaited<ReturnType<typeof bookingOperationsGet>>, TError = ModelsError>(
+export function useBookingOperationsGet<TData = Awaited<ReturnType<typeof bookingOperationsGet>>, TError = ModelsProblemDetails>(
  id: ModelsBookingId, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof bookingOperationsGet>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof bookingOperationsGet>>,
@@ -398,7 +398,7 @@ export function useBookingOperationsGet<TData = Awaited<ReturnType<typeof bookin
  * 個別の予約パッケージ詳細を取得し、関連する予約枠や支払い状況を確認します。
  * @summary Get booking
  */
-export function useBookingOperationsGet<TData = Awaited<ReturnType<typeof bookingOperationsGet>>, TError = ModelsError>(
+export function useBookingOperationsGet<TData = Awaited<ReturnType<typeof bookingOperationsGet>>, TError = ModelsProblemDetails>(
  id: ModelsBookingId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof bookingOperationsGet>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof bookingOperationsGet>>,
@@ -412,7 +412,7 @@ export function useBookingOperationsGet<TData = Awaited<ReturnType<typeof bookin
  * 個別の予約パッケージ詳細を取得し、関連する予約枠や支払い状況を確認します。
  * @summary Get booking
  */
-export function useBookingOperationsGet<TData = Awaited<ReturnType<typeof bookingOperationsGet>>, TError = ModelsError>(
+export function useBookingOperationsGet<TData = Awaited<ReturnType<typeof bookingOperationsGet>>, TError = ModelsProblemDetails>(
  id: ModelsBookingId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof bookingOperationsGet>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
@@ -420,7 +420,7 @@ export function useBookingOperationsGet<TData = Awaited<ReturnType<typeof bookin
  * 個別の予約パッケージ詳細を取得し、関連する予約枠や支払い状況を確認します。
  * @summary Get booking
  */
-export function useBookingOperationsGet<TData = Awaited<ReturnType<typeof bookingOperationsGet>>, TError = ModelsError>(
+export function useBookingOperationsGet<TData = Awaited<ReturnType<typeof bookingOperationsGet>>, TError = ModelsProblemDetails>(
  id: ModelsBookingId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof bookingOperationsGet>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
@@ -443,12 +443,12 @@ export type bookingOperationsUpdateResponse200 = {
 }
 
 export type bookingOperationsUpdateResponse400 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 400
 }
 
 export type bookingOperationsUpdateResponse404 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 404
 }
 
@@ -505,7 +505,7 @@ return customInstance<bookingOperationsUpdateResponse>(getBookingOperationsUpdat
 
 export const getBookingOperationsUpdateMutationKey = () => ['bookingOperationsUpdate'] as const;
 
-export const getBookingOperationsUpdateMutationOptions = <TError = ModelsError,
+export const getBookingOperationsUpdateMutationOptions = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsUpdate>>, TError,BookingOperationsUpdateMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsUpdate>>, TError,BookingOperationsUpdateMutationVariables, TContext> => {
 
@@ -534,14 +534,14 @@ const {mutation: mutationOptions} = options ?
 
     export type BookingOperationsUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof bookingOperationsUpdate>>>
     export type BookingOperationsUpdateMutationBody = ModelsBookingUpdateRequest
-    export type BookingOperationsUpdateMutationError = ModelsError
+    export type BookingOperationsUpdateMutationError = ModelsProblemDetails
     export type BookingOperationsUpdateMutationVariables = {id: ModelsBookingId;data: ModelsBookingUpdateRequest}
 
     /**
  * 既存の予約パッケージ内容を部分的に更新し、顧客要望の変更に対応します。
  * @summary Update booking
  */
-export const useBookingOperationsUpdate = <TError = ModelsError,
+export const useBookingOperationsUpdate = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsUpdate>>, TError,BookingOperationsUpdateMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof bookingOperationsUpdate>>,
@@ -557,12 +557,12 @@ export const useBookingOperationsUpdate = <TError = ModelsError,
 }
 
 export type bookingOperationsDeleteResponse404 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 404
 }
 
 export type bookingOperationsDeleteResponse409 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 409
 }
 
@@ -604,7 +604,7 @@ export const bookingOperationsDelete = async (id: ModelsBookingId, options?: Req
 
 export const getBookingOperationsDeleteMutationKey = () => ['bookingOperationsDelete'] as const;
 
-export const getBookingOperationsDeleteMutationOptions = <TError = ModelsError,
+export const getBookingOperationsDeleteMutationOptions = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsDelete>>, TError,BookingOperationsDeleteMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsDelete>>, TError,BookingOperationsDeleteMutationVariables, TContext> => {
 
@@ -633,14 +633,14 @@ const {mutation: mutationOptions} = options ?
 
     export type BookingOperationsDeleteMutationResult = NonNullable<Awaited<ReturnType<typeof bookingOperationsDelete>>>
 
-    export type BookingOperationsDeleteMutationError = ModelsError
+    export type BookingOperationsDeleteMutationError = ModelsProblemDetails
     export type BookingOperationsDeleteMutationVariables = {id: ModelsBookingId}
 
     /**
  * 予約パッケージを削除し、誤登録や無効となった複数予約を整理します。
  * @summary Delete booking
  */
-export const useBookingOperationsDelete = <TError = ModelsError,
+export const useBookingOperationsDelete = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsDelete>>, TError,BookingOperationsDeleteMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof bookingOperationsDelete>>,
@@ -656,12 +656,12 @@ export const useBookingOperationsDelete = <TError = ModelsError,
 }
 
 export type bookingOperationsCancelResponse404 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 404
 }
 
 export type bookingOperationsCancelResponse409 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 409
 }
 
@@ -718,7 +718,7 @@ return customInstance<bookingOperationsCancelResponse>(getBookingOperationsCance
 
 export const getBookingOperationsCancelMutationKey = () => ['bookingOperationsCancel'] as const;
 
-export const getBookingOperationsCancelMutationOptions = <TError = ModelsError,
+export const getBookingOperationsCancelMutationOptions = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsCancel>>, TError,BookingOperationsCancelMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsCancel>>, TError,BookingOperationsCancelMutationVariables, TContext> => {
 
@@ -747,14 +747,14 @@ const {mutation: mutationOptions} = options ?
 
     export type BookingOperationsCancelMutationResult = NonNullable<Awaited<ReturnType<typeof bookingOperationsCancel>>>
     export type BookingOperationsCancelMutationBody = BookingOperationsCancelBody
-    export type BookingOperationsCancelMutationError = ModelsError
+    export type BookingOperationsCancelMutationError = ModelsProblemDetails
     export type BookingOperationsCancelMutationVariables = {id: ModelsBookingId;data: BookingOperationsCancelBody}
 
     /**
  * 確定済みの予約パッケージをキャンセルし、理由と連動予約の取り扱いを記録します。
  * @summary Cancel booking
  */
-export const useBookingOperationsCancel = <TError = ModelsError,
+export const useBookingOperationsCancel = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsCancel>>, TError,BookingOperationsCancelMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof bookingOperationsCancel>>,
@@ -770,12 +770,12 @@ export const useBookingOperationsCancel = <TError = ModelsError,
 }
 
 export type bookingOperationsConfirmResponse404 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 404
 }
 
 export type bookingOperationsConfirmResponse409 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 409
 }
 
@@ -817,7 +817,7 @@ export const bookingOperationsConfirm = async (id: ModelsBookingId, options?: Re
 
 export const getBookingOperationsConfirmMutationKey = () => ['bookingOperationsConfirm'] as const;
 
-export const getBookingOperationsConfirmMutationOptions = <TError = ModelsError,
+export const getBookingOperationsConfirmMutationOptions = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsConfirm>>, TError,BookingOperationsConfirmMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsConfirm>>, TError,BookingOperationsConfirmMutationVariables, TContext> => {
 
@@ -846,14 +846,14 @@ const {mutation: mutationOptions} = options ?
 
     export type BookingOperationsConfirmMutationResult = NonNullable<Awaited<ReturnType<typeof bookingOperationsConfirm>>>
 
-    export type BookingOperationsConfirmMutationError = ModelsError
+    export type BookingOperationsConfirmMutationError = ModelsProblemDetails
     export type BookingOperationsConfirmMutationVariables = {id: ModelsBookingId}
 
     /**
  * 仮状態の予約パッケージを確定ステータスへ変更し、顧客への案内やリソース確保を開始します。
  * @summary Confirm booking
  */
-export const useBookingOperationsConfirm = <TError = ModelsError,
+export const useBookingOperationsConfirm = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsConfirm>>, TError,BookingOperationsConfirmMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof bookingOperationsConfirm>>,
@@ -869,12 +869,12 @@ export const useBookingOperationsConfirm = <TError = ModelsError,
 }
 
 export type bookingOperationsProcessPaymentResponse400 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 400
 }
 
 export type bookingOperationsProcessPaymentResponse404 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 404
 }
 
@@ -931,7 +931,7 @@ return customInstance<bookingOperationsProcessPaymentResponse>(getBookingOperati
 
 export const getBookingOperationsProcessPaymentMutationKey = () => ['bookingOperationsProcessPayment'] as const;
 
-export const getBookingOperationsProcessPaymentMutationOptions = <TError = ModelsError,
+export const getBookingOperationsProcessPaymentMutationOptions = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsProcessPayment>>, TError,BookingOperationsProcessPaymentMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsProcessPayment>>, TError,BookingOperationsProcessPaymentMutationVariables, TContext> => {
 
@@ -960,14 +960,14 @@ const {mutation: mutationOptions} = options ?
 
     export type BookingOperationsProcessPaymentMutationResult = NonNullable<Awaited<ReturnType<typeof bookingOperationsProcessPayment>>>
     export type BookingOperationsProcessPaymentMutationBody = BookingOperationsProcessPaymentBody
-    export type BookingOperationsProcessPaymentMutationError = ModelsError
+    export type BookingOperationsProcessPaymentMutationError = ModelsProblemDetails
     export type BookingOperationsProcessPaymentMutationVariables = {id: ModelsBookingId;data: BookingOperationsProcessPaymentBody}
 
     /**
  * 予約パッケージに対する決済を処理し、支払い手段・金額・トランザクションIDを保存します。
  * @summary Process payment
  */
-export const useBookingOperationsProcessPayment = <TError = ModelsError,
+export const useBookingOperationsProcessPayment = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsProcessPayment>>, TError,BookingOperationsProcessPaymentMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof bookingOperationsProcessPayment>>,
@@ -983,12 +983,12 @@ export const useBookingOperationsProcessPayment = <TError = ModelsError,
 }
 
 export type bookingOperationsAddReservationResponse404 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 404
 }
 
 export type bookingOperationsAddReservationResponse409 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 409
 }
 
@@ -1045,7 +1045,7 @@ return customInstance<bookingOperationsAddReservationResponse>(getBookingOperati
 
 export const getBookingOperationsAddReservationMutationKey = () => ['bookingOperationsAddReservation'] as const;
 
-export const getBookingOperationsAddReservationMutationOptions = <TError = ModelsError,
+export const getBookingOperationsAddReservationMutationOptions = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsAddReservation>>, TError,BookingOperationsAddReservationMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsAddReservation>>, TError,BookingOperationsAddReservationMutationVariables, TContext> => {
 
@@ -1074,14 +1074,14 @@ const {mutation: mutationOptions} = options ?
 
     export type BookingOperationsAddReservationMutationResult = NonNullable<Awaited<ReturnType<typeof bookingOperationsAddReservation>>>
     export type BookingOperationsAddReservationMutationBody = BookingOperationsAddReservationBody
-    export type BookingOperationsAddReservationMutationError = ModelsError
+    export type BookingOperationsAddReservationMutationError = ModelsProblemDetails
     export type BookingOperationsAddReservationMutationVariables = {id: ModelsBookingId;data: BookingOperationsAddReservationBody}
 
     /**
  * 既存の予約パッケージに個別の予約枠を追加し、まとめて管理します。
  * @summary Add reservation to booking
  */
-export const useBookingOperationsAddReservation = <TError = ModelsError,
+export const useBookingOperationsAddReservation = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsAddReservation>>, TError,BookingOperationsAddReservationMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof bookingOperationsAddReservation>>,
@@ -1097,7 +1097,7 @@ export const useBookingOperationsAddReservation = <TError = ModelsError,
 }
 
 export type bookingOperationsRemoveReservationResponse404 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 404
 }
 
@@ -1141,7 +1141,7 @@ export const bookingOperationsRemoveReservation = async (id: ModelsBookingId,
 
 export const getBookingOperationsRemoveReservationMutationKey = () => ['bookingOperationsRemoveReservation'] as const;
 
-export const getBookingOperationsRemoveReservationMutationOptions = <TError = ModelsError,
+export const getBookingOperationsRemoveReservationMutationOptions = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsRemoveReservation>>, TError,BookingOperationsRemoveReservationMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsRemoveReservation>>, TError,BookingOperationsRemoveReservationMutationVariables, TContext> => {
 
@@ -1170,14 +1170,14 @@ const {mutation: mutationOptions} = options ?
 
     export type BookingOperationsRemoveReservationMutationResult = NonNullable<Awaited<ReturnType<typeof bookingOperationsRemoveReservation>>>
 
-    export type BookingOperationsRemoveReservationMutationError = ModelsError
+    export type BookingOperationsRemoveReservationMutationError = ModelsProblemDetails
     export type BookingOperationsRemoveReservationMutationVariables = {id: ModelsBookingId;reservationId: ModelsReservationId}
 
     /**
  * 予約パッケージから紐づく予約枠を外し、構成内容を調整します。
  * @summary Remove reservation from booking
  */
-export const useBookingOperationsRemoveReservation = <TError = ModelsError,
+export const useBookingOperationsRemoveReservation = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bookingOperationsRemoveReservation>>, TError,BookingOperationsRemoveReservationMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof bookingOperationsRemoveReservation>>,

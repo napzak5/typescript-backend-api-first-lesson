@@ -13,7 +13,7 @@ import type { ModelsStaffId } from './modelsStaffId';
 /**
  * 予約作成リクエスト - 新規予約登録時に必要なサロン・顧客・メニュー・希望日時の情報を受け取る
  */
-export interface ModelsCreateReservationRequest {
+export interface ModelsReservationCreateRequest {
   /** 予約対象のサロンID */
   salonId: ModelsSalonId;
   /** 予約を申し込む顧客ID */

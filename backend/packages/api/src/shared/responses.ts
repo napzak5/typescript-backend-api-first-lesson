@@ -22,6 +22,9 @@ export const responseMeta = (req: Request): ResponseMeta => ({
   version: API_VERSION,
 })
 
+/** The media type of problem details (RFC 9457). */
+const PROBLEM_MEDIA_TYPE = 'application/problem+json'
+
 /**
  * Sends an error as problem details with the matching status. A database
  * error is logged here, because its cause never reaches the response.
@@ -40,5 +43,5 @@ export const sendProblem = (
     correlationId: correlationIdOf(req),
     timestamp: new Date().toISOString(),
   })
-  res.status(problem.status).json(problem)
+  res.status(problem.status).type(PROBLEM_MEDIA_TYPE).json(problem)
 }

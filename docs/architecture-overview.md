@@ -35,7 +35,7 @@ Before relying on anything, check this table.
 | Area | State |
 |------|-------|
 | Salon API (`/api/v1/salons`) | Implemented in every layer: list, create, get, update, delete. It is the reference implementation for every other domain. |
-| System endpoints (`/api/system`) | `alive`, `ready` and `health` are implemented. `metrics` and `version` are specified only. |
+| System endpoints (`/api/system`) | Implemented: `alive`, `ready` and `health`. |
 | Other domains (auth, staff, service, customer, reservation, booking, review, attachment, treatment, payment, inventory, permission) | Specified in TypeSpec, so their generated types exist, and the database schema already has tables and seed data for most of them. There is no domain, repository or route code. A request to one of these routes is answered with 404. Tracked in GitHub issue #91. |
 | Authentication and authorization | Not implemented. The OpenAPI document declares bearer authentication for every operation, but the server does not check it. |
 | Email, file storage | Not implemented. `make infra-up` starts MailHog and MinIO next to PostgreSQL, but the server uses neither. |
@@ -203,7 +203,7 @@ Each backend package has a single entry point with two targets:
 }
 ```
 
-- `pnpm dev:backend`, the database scripts (`pnpm db:*`) and the Vitest
+- `pnpm dev:backend`, the database scripts (`pnpm db:migrate` and the others) and the Vitest
   configurations of the packages that import other workspace packages resolve
   with the custom condition `@beauty-salon-backend/source`, so development,
   database commands and tests run the workspace packages from source and need
@@ -374,8 +374,8 @@ Three things differ from create:
 
 ## Errors
 
-Every error response is RFC 9457 problem details, whatever raised it.
-`sendProblem` in `backend/packages/api/src/shared/responses.ts` is the only
+Every error response is RFC 9457 problem details with the media type
+`application/problem+json`, whatever raised it. `sendProblem` in `backend/packages/api/src/shared/responses.ts` is the only
 place that sends one, and `toProblemDetails` in
 `backend/packages/api/src/shared/problem-details.ts` maps each kind of error
 to its status and code. The one exception is a probe that answers 503: it

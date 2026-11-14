@@ -299,7 +299,10 @@ answers 503 with the body its operation defines.
 
 The mapping is one exhaustive `match` in
 `backend/packages/api/src/shared/problem-details.ts`; a new error kind does not
-compile until it has a status and a code there.
+compile until it has a status and a code there. Every status of this table
+that an operation can answer is declared on it in TypeSpec: the kinds of the
+use case one by one, 429 and 500 through `CommonErrors`, and 413 and 415
+through `RequestBodyErrors` on the operations that take a body.
 
 ```typescript
 // backend/packages/api/src/shared/problem-details.ts
@@ -324,8 +327,9 @@ compile until it has a status and a code there.
 
 `sendProblem` adds what identifies the response: `instance` (the request URL),
 `correlationId` (the request ID) and `timestamp`. `errors` is filled for
-`validation` only, with one entry per broken rule. The body is sent with
-`res.json`, so its media type is `application/json`.
+`validation` only, with one entry per broken rule. The response is sent with
+the media type `application/problem+json` (RFC 9457); a successful response is
+`application/json`.
 
 A `database` or `unexpected` error never shows its cause to the client. It is
 logged instead: `sendProblem` logs a `database` error with its cause, and

@@ -27,17 +27,10 @@ namespace BeautySalon.Operations {
           @body response: CursorPaginationResponse<TEntity>;
           ...RateLimitInfo;
         }
+      | ProblemResponse<400>
+      | ProblemResponse<401>
       | {
-          @statusCode statusCode: 400;
-          @body error: ProblemDetails;
-        }
-      | {
-          @statusCode statusCode: 401;
-          @body error: ProblemDetails;
-        }
-      | {
-          @statusCode statusCode: 429;
-          @body error: ProblemDetails;
+          ...ProblemResponse<429>;
           ...RateLimitInfo;
         };
 
@@ -59,14 +52,8 @@ namespace BeautySalon.Operations {
       | {
           @statusCode statusCode: 304; // Not Modified
         }
-      | {
-          @statusCode statusCode: 404;
-          @body error: ProblemDetails;
-        }
-      | {
-          @statusCode statusCode: 401;
-          @body error: ProblemDetails;
-        };
+      | ProblemResponse<404>
+      | ProblemResponse<401>;
 
     @doc("新規リソースを作成し、作成時のバリデーションや重複チェック結果を返却します。")
     @summary("Create new {Name}")
@@ -81,22 +68,10 @@ namespace BeautySalon.Operations {
           @header("Location") location: string;
           @body response: ApiResponse<TEntity>;
         }
-      | {
-          @statusCode statusCode: 400;
-          @body error: ProblemDetails;
-        }
-      | {
-          @statusCode statusCode: 401;
-          @body error: ProblemDetails;
-        }
-      | {
-          @statusCode statusCode: 409;
-          @body error: ProblemDetails;
-        }
-      | {
-          @statusCode statusCode: 422;
-          @body error: ProblemDetails;
-        };
+      | ProblemResponse<400>
+      | ProblemResponse<401>
+      | ProblemResponse<409>
+      | ProblemResponse<422>;
 
     @doc("既存リソースを全項目更新し、最新状態とバージョン情報を返却します。")
     @summary("Update {Name}")
@@ -112,26 +87,11 @@ namespace BeautySalon.Operations {
           @body response: ApiResponse<TEntity>;
           @header("ETag") etag: string;
         }
-      | {
-          @statusCode statusCode: 400;
-          @body error: ProblemDetails;
-        }
-      | {
-          @statusCode statusCode: 401;
-          @body error: ProblemDetails;
-        }
-      | {
-          @statusCode statusCode: 404;
-          @body error: ProblemDetails;
-        }
-      | {
-          @statusCode statusCode: 409; // Conflict (version mismatch)
-          @body error: ProblemDetails;
-        }
-      | {
-          @statusCode statusCode: 422;
-          @body error: ProblemDetails;
-        };
+      | ProblemResponse<400>
+      | ProblemResponse<401>
+      | ProblemResponse<404> // Conflict (version mismatch)
+      | ProblemResponse<409>
+      | ProblemResponse<422>;
 
     @doc("必要なフィールドのみを部分更新し、変更差分を効率的に反映します。")
     @summary("Partially update {Name}")
@@ -148,26 +108,11 @@ namespace BeautySalon.Operations {
           @body response: ApiResponse<TEntity>;
           @header("ETag") etag: string;
         }
-      | {
-          @statusCode statusCode: 400;
-          @body error: ProblemDetails;
-        }
-      | {
-          @statusCode statusCode: 401;
-          @body error: ProblemDetails;
-        }
-      | {
-          @statusCode statusCode: 404;
-          @body error: ProblemDetails;
-        }
-      | {
-          @statusCode statusCode: 409;
-          @body error: ProblemDetails;
-        }
-      | {
-          @statusCode statusCode: 422;
-          @body error: ProblemDetails;
-        };
+      | ProblemResponse<400>
+      | ProblemResponse<401>
+      | ProblemResponse<404>
+      | ProblemResponse<409>
+      | ProblemResponse<422>;
 
     @doc("リソースを削除し、必要に応じて論理削除か物理削除かを選択します。")
     @summary("Delete {Name}")
@@ -181,18 +126,9 @@ namespace BeautySalon.Operations {
       | {
           @statusCode statusCode: 204;
         }
-      | {
-          @statusCode statusCode: 401;
-          @body error: ProblemDetails;
-        }
-      | {
-          @statusCode statusCode: 404;
-          @body error: ProblemDetails;
-        }
-      | {
-          @statusCode statusCode: 409;
-          @body error: ProblemDetails;
-        };
+      | ProblemResponse<401>
+      | ProblemResponse<404>
+      | ProblemResponse<409>;
   }
 
   @doc("複数リソースをまとめて処理し、業務バッチや大量更新を効率化する操作群です。")
@@ -214,14 +150,8 @@ namespace BeautySalon.Operations {
           @statusCode statusCode: 200;
           @body response: ApiResponse<TEntity[]>;
         }
-      | {
-          @statusCode statusCode: 400;
-          @body error: ProblemDetails;
-        }
-      | {
-          @statusCode statusCode: 401;
-          @body error: ProblemDetails;
-        };
+      | ProblemResponse<400>
+      | ProblemResponse<401>;
 
     @doc("複数リソースを一括作成し、結果を成功・失敗に分けて返却します。")
     @summary("Bulk create {Name} resources")
@@ -236,14 +166,8 @@ namespace BeautySalon.Operations {
           @statusCode statusCode: 207; // Multi-Status
           @body response: BulkResponse<TEntity>;
         }
-      | {
-          @statusCode statusCode: 400;
-          @body error: ProblemDetails;
-        }
-      | {
-          @statusCode statusCode: 401;
-          @body error: ProblemDetails;
-        };
+      | ProblemResponse<400>
+      | ProblemResponse<401>;
 
     @doc("複数リソースの更新をまとめて受け付け、バージョン整合性を保ちながら処理します。")
     @summary("Bulk update {Name} resources")
@@ -259,14 +183,8 @@ namespace BeautySalon.Operations {
           @statusCode statusCode: 207;
           @body response: BulkResponse<TEntity>;
         }
-      | {
-          @statusCode statusCode: 400;
-          @body error: ProblemDetails;
-        }
-      | {
-          @statusCode statusCode: 401;
-          @body error: ProblemDetails;
-        };
+      | ProblemResponse<400>
+      | ProblemResponse<401>;
 
     @doc("複数リソースを一括削除し、成功可否ごとの結果を返却します。")
     @summary("Bulk delete {Name} resources")
@@ -286,14 +204,8 @@ namespace BeautySalon.Operations {
             deleted: boolean;
           }>;
         }
-      | {
-          @statusCode statusCode: 400;
-          @body error: ProblemDetails;
-        }
-      | {
-          @statusCode statusCode: 401;
-          @body error: ProblemDetails;
-        };
+      | ProblemResponse<400>
+      | ProblemResponse<401>;
   }
 
   @doc("高度な検索条件や集計を扱い、業務分析や顧客検索を柔軟に実現する操作群です。")
@@ -307,14 +219,8 @@ namespace BeautySalon.Operations {
           @statusCode statusCode: 200;
           @body response: SearchResponse<TEntity>;
         }
-      | {
-          @statusCode statusCode: 400;
-          @body error: ProblemDetails;
-        }
-      | {
-          @statusCode statusCode: 401;
-          @body error: ProblemDetails;
-        };
+      | ProblemResponse<400>
+      | ProblemResponse<401>;
 
     @doc("検索結果を指定形式でエクスポートし、帳票出力や外部共有に活用します。")
     @summary("Export {Name} search results")
@@ -337,14 +243,8 @@ namespace BeautySalon.Operations {
             estimatedTime?: int32;
           };
         }
-      | {
-          @statusCode statusCode: 400;
-          @body error: ProblemDetails;
-        }
-      | {
-          @statusCode statusCode: 401;
-          @body error: ProblemDetails;
-        };
+      | ProblemResponse<400>
+      | ProblemResponse<401>;
   }
 
   @doc("操作履歴やバージョン管理を提供し、監査対応や変更追跡を可能にする操作群です。")
@@ -362,14 +262,8 @@ namespace BeautySalon.Operations {
           @statusCode statusCode: 200;
           @body response: CursorPaginationResponse<AuditEntry>;
         }
-      | {
-          @statusCode statusCode: 401;
-          @body error: ProblemDetails;
-        }
-      | {
-          @statusCode statusCode: 404;
-          @body error: ProblemDetails;
-        };
+      | ProblemResponse<401>
+      | ProblemResponse<404>;
 
     @doc("指定したバージョンのリソース状態を取得し、過去状態の確認や比較に利用します。")
     @summary("Get {Name} version")
@@ -384,14 +278,8 @@ namespace BeautySalon.Operations {
           @statusCode statusCode: 200;
           @body response: ApiResponse<TEntity>;
         }
-      | {
-          @statusCode statusCode: 401;
-          @body error: ProblemDetails;
-        }
-      | {
-          @statusCode statusCode: 404;
-          @body error: ProblemDetails;
-        };
+      | ProblemResponse<401>
+      | ProblemResponse<404>;
 
     @doc("削除済みリソースを復元し、誤削除への迅速なリカバリを可能にします。")
     @summary("Restore deleted {Name}")
@@ -402,18 +290,9 @@ namespace BeautySalon.Operations {
           @statusCode statusCode: 200;
           @body response: ApiResponse<TEntity>;
         }
-      | {
-          @statusCode statusCode: 401;
-          @body error: ProblemDetails;
-        }
-      | {
-          @statusCode statusCode: 404;
-          @body error: ProblemDetails;
-        }
-      | {
-          @statusCode statusCode: 409;
-          @body error: ProblemDetails;
-        };
+      | ProblemResponse<401>
+      | ProblemResponse<404>
+      | ProblemResponse<409>;
   }
 
   @doc("監査ログ1件分の詳細を保持するモデルです。誰がいつどのような変更を行ったかを記録します。")
@@ -509,35 +388,6 @@ namespace BeautySalon.Operations {
       @statusCode statusCode: 200;
       @body response: {
         alive: true;
-      };
-    };
-
-    @doc("Prometheus形式のメトリクスを返却し、監視基盤での可視化やアラート設定に用います。")
-    @summary("Get API metrics")
-    @get
-    @route("metrics")
-    op metrics(@header("Authorization") authorization?: string):
-      | {
-          @statusCode statusCode: 200;
-          @body response: string; // Prometheus format
-        }
-      | {
-          @statusCode statusCode: 401;
-          @body error: ProblemDetails;
-        };
-
-    @doc("APIのバージョンやビルド情報を返し、障害解析やデプロイ確認に活用します。")
-    @summary("Get API version")
-    @get
-    @route("version")
-    op version(): {
-      @statusCode statusCode: 200;
-      @body response: {
-        version: string;
-        buildTime: utcDateTime;
-        gitCommit?: string;
-        gitBranch?: string;
-        environment?: string;
       };
     };
   }

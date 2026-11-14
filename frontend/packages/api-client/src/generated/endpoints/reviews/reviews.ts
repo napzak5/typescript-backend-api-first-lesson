@@ -25,7 +25,7 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
-  ModelsError,
+  ModelsProblemDetails,
   ModelsReview,
   ModelsReviewCreateRequest,
   ModelsReviewId,
@@ -202,12 +202,12 @@ export type reviewOperationsCreateResponse201 = {
 }
 
 export type reviewOperationsCreateResponse400 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 400
 }
 
 export type reviewOperationsCreateResponse409 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 409
 }
 
@@ -263,7 +263,7 @@ return customInstance<reviewOperationsCreateResponse>(getReviewOperationsCreateU
 
 export const getReviewOperationsCreateMutationKey = () => ['reviewOperationsCreate'] as const;
 
-export const getReviewOperationsCreateMutationOptions = <TError = ModelsError,
+export const getReviewOperationsCreateMutationOptions = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviewOperationsCreate>>, TError,ReviewOperationsCreateMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof reviewOperationsCreate>>, TError,ReviewOperationsCreateMutationVariables, TContext> => {
 
@@ -292,14 +292,14 @@ const {mutation: mutationOptions} = options ?
 
     export type ReviewOperationsCreateMutationResult = NonNullable<Awaited<ReturnType<typeof reviewOperationsCreate>>>
     export type ReviewOperationsCreateMutationBody = ModelsReviewCreateRequest
-    export type ReviewOperationsCreateMutationError = ModelsError
+    export type ReviewOperationsCreateMutationError = ModelsProblemDetails
     export type ReviewOperationsCreateMutationVariables = {data: ModelsReviewCreateRequest}
 
     /**
  * 施術完了後に顧客がレビューを投稿し、サービス品質の可視化と信頼獲得につなげます。
  * @summary Create review
  */
-export const useReviewOperationsCreate = <TError = ModelsError,
+export const useReviewOperationsCreate = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviewOperationsCreate>>, TError,ReviewOperationsCreateMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof reviewOperationsCreate>>,
@@ -315,7 +315,7 @@ export const useReviewOperationsCreate = <TError = ModelsError,
 }
 
 export type reviewOperationsGetResponse404 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 404
 }
 
@@ -362,7 +362,7 @@ export const getReviewOperationsGetQueryKey = (id: ModelsReviewId,) => {
     }
 
 
-export const getReviewOperationsGetQueryOptions = <TData = Awaited<ReturnType<typeof reviewOperationsGet>>, TError = ModelsError>(id: ModelsReviewId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof reviewOperationsGet>>, TError, TData>>, }
+export const getReviewOperationsGetQueryOptions = <TData = Awaited<ReturnType<typeof reviewOperationsGet>>, TError = ModelsProblemDetails>(id: ModelsReviewId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof reviewOperationsGet>>, TError, TData>>, }
 ) => {
 
 const {query: queryOptions} = options ?? {};
@@ -381,14 +381,14 @@ const {query: queryOptions} = options ?? {};
 }
 
 export type ReviewOperationsGetQueryResult = NonNullable<Awaited<ReturnType<typeof reviewOperationsGet>>>
-export type ReviewOperationsGetQueryError = ModelsError
+export type ReviewOperationsGetQueryError = ModelsProblemDetails
 
 
 /**
  * 単一レビューの詳細を表示し、コメント内容や評価指標を確認します。
  * @summary Get review
  */
-export function useReviewOperationsGet<TData = Awaited<ReturnType<typeof reviewOperationsGet>>, TError = ModelsError>(
+export function useReviewOperationsGet<TData = Awaited<ReturnType<typeof reviewOperationsGet>>, TError = ModelsProblemDetails>(
  id: ModelsReviewId, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof reviewOperationsGet>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof reviewOperationsGet>>,
@@ -402,7 +402,7 @@ export function useReviewOperationsGet<TData = Awaited<ReturnType<typeof reviewO
  * 単一レビューの詳細を表示し、コメント内容や評価指標を確認します。
  * @summary Get review
  */
-export function useReviewOperationsGet<TData = Awaited<ReturnType<typeof reviewOperationsGet>>, TError = ModelsError>(
+export function useReviewOperationsGet<TData = Awaited<ReturnType<typeof reviewOperationsGet>>, TError = ModelsProblemDetails>(
  id: ModelsReviewId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof reviewOperationsGet>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof reviewOperationsGet>>,
@@ -416,7 +416,7 @@ export function useReviewOperationsGet<TData = Awaited<ReturnType<typeof reviewO
  * 単一レビューの詳細を表示し、コメント内容や評価指標を確認します。
  * @summary Get review
  */
-export function useReviewOperationsGet<TData = Awaited<ReturnType<typeof reviewOperationsGet>>, TError = ModelsError>(
+export function useReviewOperationsGet<TData = Awaited<ReturnType<typeof reviewOperationsGet>>, TError = ModelsProblemDetails>(
  id: ModelsReviewId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof reviewOperationsGet>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
@@ -424,7 +424,7 @@ export function useReviewOperationsGet<TData = Awaited<ReturnType<typeof reviewO
  * 単一レビューの詳細を表示し、コメント内容や評価指標を確認します。
  * @summary Get review
  */
-export function useReviewOperationsGet<TData = Awaited<ReturnType<typeof reviewOperationsGet>>, TError = ModelsError>(
+export function useReviewOperationsGet<TData = Awaited<ReturnType<typeof reviewOperationsGet>>, TError = ModelsProblemDetails>(
  id: ModelsReviewId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof reviewOperationsGet>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
@@ -447,12 +447,12 @@ export type reviewOperationsUpdateResponse200 = {
 }
 
 export type reviewOperationsUpdateResponse403 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 403
 }
 
 export type reviewOperationsUpdateResponse404 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 404
 }
 
@@ -509,7 +509,7 @@ return customInstance<reviewOperationsUpdateResponse>(getReviewOperationsUpdateU
 
 export const getReviewOperationsUpdateMutationKey = () => ['reviewOperationsUpdate'] as const;
 
-export const getReviewOperationsUpdateMutationOptions = <TError = ModelsError,
+export const getReviewOperationsUpdateMutationOptions = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviewOperationsUpdate>>, TError,ReviewOperationsUpdateMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof reviewOperationsUpdate>>, TError,ReviewOperationsUpdateMutationVariables, TContext> => {
 
@@ -538,14 +538,14 @@ const {mutation: mutationOptions} = options ?
 
     export type ReviewOperationsUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof reviewOperationsUpdate>>>
     export type ReviewOperationsUpdateMutationBody = ModelsReviewUpdateRequest
-    export type ReviewOperationsUpdateMutationError = ModelsError
+    export type ReviewOperationsUpdateMutationError = ModelsProblemDetails
     export type ReviewOperationsUpdateMutationVariables = {id: ModelsReviewId;data: ModelsReviewUpdateRequest}
 
     /**
  * 顧客が投稿後のレビューを修正し、誤記修正や追記を反映します。
  * @summary Update review
  */
-export const useReviewOperationsUpdate = <TError = ModelsError,
+export const useReviewOperationsUpdate = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviewOperationsUpdate>>, TError,ReviewOperationsUpdateMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof reviewOperationsUpdate>>,
@@ -561,12 +561,12 @@ export const useReviewOperationsUpdate = <TError = ModelsError,
 }
 
 export type reviewOperationsDeleteResponse403 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 403
 }
 
 export type reviewOperationsDeleteResponse404 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 404
 }
 
@@ -608,7 +608,7 @@ export const reviewOperationsDelete = async (id: ModelsReviewId, options?: Reque
 
 export const getReviewOperationsDeleteMutationKey = () => ['reviewOperationsDelete'] as const;
 
-export const getReviewOperationsDeleteMutationOptions = <TError = ModelsError,
+export const getReviewOperationsDeleteMutationOptions = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviewOperationsDelete>>, TError,ReviewOperationsDeleteMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof reviewOperationsDelete>>, TError,ReviewOperationsDeleteMutationVariables, TContext> => {
 
@@ -637,14 +637,14 @@ const {mutation: mutationOptions} = options ?
 
     export type ReviewOperationsDeleteMutationResult = NonNullable<Awaited<ReturnType<typeof reviewOperationsDelete>>>
 
-    export type ReviewOperationsDeleteMutationError = ModelsError
+    export type ReviewOperationsDeleteMutationError = ModelsProblemDetails
     export type ReviewOperationsDeleteMutationVariables = {id: ModelsReviewId}
 
     /**
  * レビューの削除要請に応じて投稿を非表示または除去し、コンプライアンスを維持します。
  * @summary Delete review
  */
-export const useReviewOperationsDelete = <TError = ModelsError,
+export const useReviewOperationsDelete = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviewOperationsDelete>>, TError,ReviewOperationsDeleteMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof reviewOperationsDelete>>,
@@ -660,7 +660,7 @@ export const useReviewOperationsDelete = <TError = ModelsError,
 }
 
 export type reviewOperationsMarkHelpfulResponse404 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 404
 }
 
@@ -702,7 +702,7 @@ export const reviewOperationsMarkHelpful = async (id: ModelsReviewId, options?: 
 
 export const getReviewOperationsMarkHelpfulMutationKey = () => ['reviewOperationsMarkHelpful'] as const;
 
-export const getReviewOperationsMarkHelpfulMutationOptions = <TError = ModelsError,
+export const getReviewOperationsMarkHelpfulMutationOptions = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviewOperationsMarkHelpful>>, TError,ReviewOperationsMarkHelpfulMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof reviewOperationsMarkHelpful>>, TError,ReviewOperationsMarkHelpfulMutationVariables, TContext> => {
 
@@ -731,14 +731,14 @@ const {mutation: mutationOptions} = options ?
 
     export type ReviewOperationsMarkHelpfulMutationResult = NonNullable<Awaited<ReturnType<typeof reviewOperationsMarkHelpful>>>
 
-    export type ReviewOperationsMarkHelpfulMutationError = ModelsError
+    export type ReviewOperationsMarkHelpfulMutationError = ModelsProblemDetails
     export type ReviewOperationsMarkHelpfulMutationVariables = {id: ModelsReviewId}
 
     /**
  * 他の利用者に役立つレビューをマーキングし、信頼性の高い声を強調します。
  * @summary Mark review as helpful
  */
-export const useReviewOperationsMarkHelpful = <TError = ModelsError,
+export const useReviewOperationsMarkHelpful = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviewOperationsMarkHelpful>>, TError,ReviewOperationsMarkHelpfulMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof reviewOperationsMarkHelpful>>,
@@ -754,7 +754,7 @@ export const useReviewOperationsMarkHelpful = <TError = ModelsError,
 }
 
 export type reviewOperationsReportResponse404 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 404
 }
 
@@ -811,7 +811,7 @@ return customInstance<reviewOperationsReportResponse>(getReviewOperationsReportU
 
 export const getReviewOperationsReportMutationKey = () => ['reviewOperationsReport'] as const;
 
-export const getReviewOperationsReportMutationOptions = <TError = ModelsError,
+export const getReviewOperationsReportMutationOptions = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviewOperationsReport>>, TError,ReviewOperationsReportMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof reviewOperationsReport>>, TError,ReviewOperationsReportMutationVariables, TContext> => {
 
@@ -840,14 +840,14 @@ const {mutation: mutationOptions} = options ?
 
     export type ReviewOperationsReportMutationResult = NonNullable<Awaited<ReturnType<typeof reviewOperationsReport>>>
     export type ReviewOperationsReportMutationBody = ReviewOperationsReportBody
-    export type ReviewOperationsReportMutationError = ModelsError
+    export type ReviewOperationsReportMutationError = ModelsProblemDetails
     export type ReviewOperationsReportMutationVariables = {id: ModelsReviewId;data: ReviewOperationsReportBody}
 
     /**
  * 不適切な内容や虚偽が疑われるレビューを通報し、運営による対応フローへ送ります。
  * @summary Report review
  */
-export const useReviewOperationsReport = <TError = ModelsError,
+export const useReviewOperationsReport = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviewOperationsReport>>, TError,ReviewOperationsReportMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof reviewOperationsReport>>,

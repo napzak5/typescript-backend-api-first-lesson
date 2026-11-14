@@ -11,7 +11,7 @@ import type { ModelsStaffId } from './modelsStaffId';
 /**
  * 予約更新リクエスト - 部分更新に対応した任意項目の変更指示を受け取り、既存予約を調整する。null指定で値をリセット可能
  */
-export interface ModelsUpdateReservationRequest {
+export interface ModelsReservationUpdateRequest {
   /** 更新後の予約ステータス */
   status?: ModelsReservationStatusType;
   /**

@@ -5,8 +5,8 @@
  * Comprehensive REST API for managing beauty salon operations including salons, staff, services, customers, reservations, bookings, treatments, payments, inventory, and access control. Built with TypeSpec for type-safe API-first development.
  * OpenAPI spec version: 2.0
  */
+import type { ModelsBookingCreateRequestMetadata } from './modelsBookingCreateRequestMetadata';
 import type { ModelsBookingDeposit } from './modelsBookingDeposit';
-import type { ModelsCreateBookingRequestMetadata } from './modelsCreateBookingRequestMetadata';
 import type { ModelsCustomerId } from './modelsCustomerId';
 import type { ModelsMoney } from './modelsMoney';
 import type { ModelsPaymentMethodType } from './modelsPaymentMethodType';
@@ -17,7 +17,7 @@ import type { ModelsWaitlistEntry } from './modelsWaitlistEntry';
 /**
  * 予約を新規作成する際のリクエスト。
  */
-export interface ModelsCreateBookingRequest {
+export interface ModelsBookingCreateRequest {
   /** 予約対象のサロンID。 */
   salonId: ModelsSalonId;
   /** 予約を申し込む顧客ID。 */
@@ -47,5 +47,5 @@ export interface ModelsCreateBookingRequest {
      * 外部連携や業務用に保持する任意メタデータ。追加情報が不要の場合はnull。
      * @nullable
      */
-  metadata: ModelsCreateBookingRequestMetadata;
+  metadata: ModelsBookingCreateRequestMetadata;
 }

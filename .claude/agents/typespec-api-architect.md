@@ -47,7 +47,7 @@ You do not change the database schema. If a property needs a column that does no
 - Models are named `XXXCreateRequest`, `XXXUpdateRequest`, `XXXSearchRequest` and `XXXResponse`. Enums end with `Type`.
 - Property names equal column names. A property is nullable exactly when its column is.
 - Create: every property is required, and the value may be null where the column allows it. Update: one model per entity, every property optional, `| null` only where the column is nullable. Response: every property is required. Search: optional filters as query parameters.
-- Partial update is `PATCH`. Lists use keyset pagination (`cursor`, `limit`, `meta.nextCursor`). Every error response is `ProblemDetails`.
+- Partial update is `PATCH`. Lists use keyset pagination (`cursor`, `limit`, `meta.nextCursor`). Every error response is `ProblemResponse<status>`: `ProblemDetails` as `application/problem+json`. Every operation also declares `CommonErrors` (429, 500), and one that takes a body `RequestBodyErrors` (413, 415), because the server answers them on every route.
 - Every model, property, operation and enum has a Japanese `@doc`. For a nullable property it says what null means. The `@doc` of an enum describes the enum and then each value.
 
 ## Before you report

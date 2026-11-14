@@ -41,7 +41,7 @@ import type {
   ModelsAuthTwoFactorEnableRequest,
   ModelsAuthTwoFactorSetupResponse,
   ModelsAuthTwoFactorVerifyRequest,
-  ModelsError,
+  ModelsProblemDetails,
   ModelsUser
 } from '../../models';
 
@@ -71,12 +71,12 @@ export type authOperationsGenerateBackupCodesResponse200 = {
 }
 
 export type authOperationsGenerateBackupCodesResponse400 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 400
 }
 
 export type authOperationsGenerateBackupCodesResponse401 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 401
 }
 
@@ -131,7 +131,7 @@ return customInstance<authOperationsGenerateBackupCodesResponse>(getAuthOperatio
 
 export const getAuthOperationsGenerateBackupCodesMutationKey = () => ['authOperationsGenerateBackupCodes'] as const;
 
-export const getAuthOperationsGenerateBackupCodesMutationOptions = <TError = ModelsError,
+export const getAuthOperationsGenerateBackupCodesMutationOptions = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authOperationsGenerateBackupCodes>>, TError,AuthOperationsGenerateBackupCodesMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof authOperationsGenerateBackupCodes>>, TError,AuthOperationsGenerateBackupCodesMutationVariables, TContext> => {
 
@@ -160,11 +160,11 @@ const {mutation: mutationOptions} = options ?
 
     export type AuthOperationsGenerateBackupCodesMutationResult = NonNullable<Awaited<ReturnType<typeof authOperationsGenerateBackupCodes>>>
     export type AuthOperationsGenerateBackupCodesMutationBody = ModelsAuthTwoFactorVerifyRequest
-    export type AuthOperationsGenerateBackupCodesMutationError = ModelsError
+    export type AuthOperationsGenerateBackupCodesMutationError = ModelsProblemDetails
     export type AuthOperationsGenerateBackupCodesMutationVariables = {data: ModelsAuthTwoFactorVerifyRequest}
 
     /** Generate new backup codes for 2FA */
-export const useAuthOperationsGenerateBackupCodes = <TError = ModelsError,
+export const useAuthOperationsGenerateBackupCodes = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authOperationsGenerateBackupCodes>>, TError,AuthOperationsGenerateBackupCodesMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof authOperationsGenerateBackupCodes>>,
@@ -180,12 +180,12 @@ export const useAuthOperationsGenerateBackupCodes = <TError = ModelsError,
 }
 
 export type authOperationsDisableTwoFactorResponse400 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 400
 }
 
 export type authOperationsDisableTwoFactorResponse401 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 401
 }
 
@@ -240,7 +240,7 @@ return customInstance<authOperationsDisableTwoFactorResponse>(getAuthOperationsD
 
 export const getAuthOperationsDisableTwoFactorMutationKey = () => ['authOperationsDisableTwoFactor'] as const;
 
-export const getAuthOperationsDisableTwoFactorMutationOptions = <TError = ModelsError,
+export const getAuthOperationsDisableTwoFactorMutationOptions = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authOperationsDisableTwoFactor>>, TError,AuthOperationsDisableTwoFactorMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof authOperationsDisableTwoFactor>>, TError,AuthOperationsDisableTwoFactorMutationVariables, TContext> => {
 
@@ -269,11 +269,11 @@ const {mutation: mutationOptions} = options ?
 
     export type AuthOperationsDisableTwoFactorMutationResult = NonNullable<Awaited<ReturnType<typeof authOperationsDisableTwoFactor>>>
     export type AuthOperationsDisableTwoFactorMutationBody = ModelsAuthTwoFactorDisableRequest
-    export type AuthOperationsDisableTwoFactorMutationError = ModelsError
+    export type AuthOperationsDisableTwoFactorMutationError = ModelsProblemDetails
     export type AuthOperationsDisableTwoFactorMutationVariables = {data: ModelsAuthTwoFactorDisableRequest}
 
     /** Disable two-factor authentication */
-export const useAuthOperationsDisableTwoFactor = <TError = ModelsError,
+export const useAuthOperationsDisableTwoFactor = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authOperationsDisableTwoFactor>>, TError,AuthOperationsDisableTwoFactorMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof authOperationsDisableTwoFactor>>,
@@ -289,12 +289,12 @@ export const useAuthOperationsDisableTwoFactor = <TError = ModelsError,
 }
 
 export type authOperationsEnableTwoFactorResponse400 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 400
 }
 
 export type authOperationsEnableTwoFactorResponse401 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 401
 }
 
@@ -349,7 +349,7 @@ return customInstance<authOperationsEnableTwoFactorResponse>(getAuthOperationsEn
 
 export const getAuthOperationsEnableTwoFactorMutationKey = () => ['authOperationsEnableTwoFactor'] as const;
 
-export const getAuthOperationsEnableTwoFactorMutationOptions = <TError = ModelsError,
+export const getAuthOperationsEnableTwoFactorMutationOptions = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authOperationsEnableTwoFactor>>, TError,AuthOperationsEnableTwoFactorMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof authOperationsEnableTwoFactor>>, TError,AuthOperationsEnableTwoFactorMutationVariables, TContext> => {
 
@@ -378,11 +378,11 @@ const {mutation: mutationOptions} = options ?
 
     export type AuthOperationsEnableTwoFactorMutationResult = NonNullable<Awaited<ReturnType<typeof authOperationsEnableTwoFactor>>>
     export type AuthOperationsEnableTwoFactorMutationBody = ModelsAuthTwoFactorEnableRequest
-    export type AuthOperationsEnableTwoFactorMutationError = ModelsError
+    export type AuthOperationsEnableTwoFactorMutationError = ModelsProblemDetails
     export type AuthOperationsEnableTwoFactorMutationVariables = {data: ModelsAuthTwoFactorEnableRequest}
 
     /** Enable two-factor authentication */
-export const useAuthOperationsEnableTwoFactor = <TError = ModelsError,
+export const useAuthOperationsEnableTwoFactor = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authOperationsEnableTwoFactor>>, TError,AuthOperationsEnableTwoFactorMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof authOperationsEnableTwoFactor>>,
@@ -398,12 +398,12 @@ export const useAuthOperationsEnableTwoFactor = <TError = ModelsError,
 }
 
 export type authOperationsGetTwoFactorQRCodeResponse400 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 400
 }
 
 export type authOperationsGetTwoFactorQRCodeResponse401 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 401
 }
 
@@ -449,7 +449,7 @@ export const getAuthOperationsGetTwoFactorQRCodeQueryKey = () => {
     }
 
 
-export const getAuthOperationsGetTwoFactorQRCodeQueryOptions = <TData = Awaited<ReturnType<typeof authOperationsGetTwoFactorQRCode>>, TError = ModelsError>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof authOperationsGetTwoFactorQRCode>>, TError, TData>>, }
+export const getAuthOperationsGetTwoFactorQRCodeQueryOptions = <TData = Awaited<ReturnType<typeof authOperationsGetTwoFactorQRCode>>, TError = ModelsProblemDetails>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof authOperationsGetTwoFactorQRCode>>, TError, TData>>, }
 ) => {
 
 const {query: queryOptions} = options ?? {};
@@ -468,11 +468,11 @@ const {query: queryOptions} = options ?? {};
 }
 
 export type AuthOperationsGetTwoFactorQRCodeQueryResult = NonNullable<Awaited<ReturnType<typeof authOperationsGetTwoFactorQRCode>>>
-export type AuthOperationsGetTwoFactorQRCodeQueryError = ModelsError
+export type AuthOperationsGetTwoFactorQRCodeQueryError = ModelsProblemDetails
 
 
 /** Get QR code for 2FA setup */
-export function useAuthOperationsGetTwoFactorQRCode<TData = Awaited<ReturnType<typeof authOperationsGetTwoFactorQRCode>>, TError = ModelsError>(
+export function useAuthOperationsGetTwoFactorQRCode<TData = Awaited<ReturnType<typeof authOperationsGetTwoFactorQRCode>>, TError = ModelsProblemDetails>(
   options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof authOperationsGetTwoFactorQRCode>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof authOperationsGetTwoFactorQRCode>>,
@@ -483,7 +483,7 @@ export function useAuthOperationsGetTwoFactorQRCode<TData = Awaited<ReturnType<t
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Get QR code for 2FA setup */
-export function useAuthOperationsGetTwoFactorQRCode<TData = Awaited<ReturnType<typeof authOperationsGetTwoFactorQRCode>>, TError = ModelsError>(
+export function useAuthOperationsGetTwoFactorQRCode<TData = Awaited<ReturnType<typeof authOperationsGetTwoFactorQRCode>>, TError = ModelsProblemDetails>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof authOperationsGetTwoFactorQRCode>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof authOperationsGetTwoFactorQRCode>>,
@@ -494,12 +494,12 @@ export function useAuthOperationsGetTwoFactorQRCode<TData = Awaited<ReturnType<t
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Get QR code for 2FA setup */
-export function useAuthOperationsGetTwoFactorQRCode<TData = Awaited<ReturnType<typeof authOperationsGetTwoFactorQRCode>>, TError = ModelsError>(
+export function useAuthOperationsGetTwoFactorQRCode<TData = Awaited<ReturnType<typeof authOperationsGetTwoFactorQRCode>>, TError = ModelsProblemDetails>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof authOperationsGetTwoFactorQRCode>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Get QR code for 2FA setup */
-export function useAuthOperationsGetTwoFactorQRCode<TData = Awaited<ReturnType<typeof authOperationsGetTwoFactorQRCode>>, TError = ModelsError>(
+export function useAuthOperationsGetTwoFactorQRCode<TData = Awaited<ReturnType<typeof authOperationsGetTwoFactorQRCode>>, TError = ModelsProblemDetails>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof authOperationsGetTwoFactorQRCode>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
@@ -522,12 +522,12 @@ export type authOperationsVerifyTwoFactorResponse200 = {
 }
 
 export type authOperationsVerifyTwoFactorResponse400 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 400
 }
 
 export type authOperationsVerifyTwoFactorResponse401 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 401
 }
 
@@ -582,7 +582,7 @@ return customInstance<authOperationsVerifyTwoFactorResponse>(getAuthOperationsVe
 
 export const getAuthOperationsVerifyTwoFactorMutationKey = () => ['authOperationsVerifyTwoFactor'] as const;
 
-export const getAuthOperationsVerifyTwoFactorMutationOptions = <TError = ModelsError,
+export const getAuthOperationsVerifyTwoFactorMutationOptions = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authOperationsVerifyTwoFactor>>, TError,AuthOperationsVerifyTwoFactorMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof authOperationsVerifyTwoFactor>>, TError,AuthOperationsVerifyTwoFactorMutationVariables, TContext> => {
 
@@ -611,11 +611,11 @@ const {mutation: mutationOptions} = options ?
 
     export type AuthOperationsVerifyTwoFactorMutationResult = NonNullable<Awaited<ReturnType<typeof authOperationsVerifyTwoFactor>>>
     export type AuthOperationsVerifyTwoFactorMutationBody = ModelsAuthTwoFactorVerifyRequest
-    export type AuthOperationsVerifyTwoFactorMutationError = ModelsError
+    export type AuthOperationsVerifyTwoFactorMutationError = ModelsProblemDetails
     export type AuthOperationsVerifyTwoFactorMutationVariables = {data: ModelsAuthTwoFactorVerifyRequest}
 
     /** Verify two-factor authentication code */
-export const useAuthOperationsVerifyTwoFactor = <TError = ModelsError,
+export const useAuthOperationsVerifyTwoFactor = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authOperationsVerifyTwoFactor>>, TError,AuthOperationsVerifyTwoFactorMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof authOperationsVerifyTwoFactor>>,
@@ -631,12 +631,12 @@ export const useAuthOperationsVerifyTwoFactor = <TError = ModelsError,
 }
 
 export type authOperationsChangePasswordResponse400 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 400
 }
 
 export type authOperationsChangePasswordResponse401 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 401
 }
 
@@ -691,7 +691,7 @@ return customInstance<authOperationsChangePasswordResponse>(getAuthOperationsCha
 
 export const getAuthOperationsChangePasswordMutationKey = () => ['authOperationsChangePassword'] as const;
 
-export const getAuthOperationsChangePasswordMutationOptions = <TError = ModelsError,
+export const getAuthOperationsChangePasswordMutationOptions = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authOperationsChangePassword>>, TError,AuthOperationsChangePasswordMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof authOperationsChangePassword>>, TError,AuthOperationsChangePasswordMutationVariables, TContext> => {
 
@@ -720,11 +720,11 @@ const {mutation: mutationOptions} = options ?
 
     export type AuthOperationsChangePasswordMutationResult = NonNullable<Awaited<ReturnType<typeof authOperationsChangePassword>>>
     export type AuthOperationsChangePasswordMutationBody = ModelsAuthPasswordChangeRequest
-    export type AuthOperationsChangePasswordMutationError = ModelsError
+    export type AuthOperationsChangePasswordMutationError = ModelsProblemDetails
     export type AuthOperationsChangePasswordMutationVariables = {data: ModelsAuthPasswordChangeRequest}
 
     /** Change password */
-export const useAuthOperationsChangePassword = <TError = ModelsError,
+export const useAuthOperationsChangePassword = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authOperationsChangePassword>>, TError,AuthOperationsChangePasswordMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof authOperationsChangePassword>>,
@@ -740,12 +740,12 @@ export const useAuthOperationsChangePassword = <TError = ModelsError,
 }
 
 export type authOperationsForgotPasswordResponse404 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 404
 }
 
 export type authOperationsForgotPasswordResponse429 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 429
 }
 
@@ -800,7 +800,7 @@ return customInstance<authOperationsForgotPasswordResponse>(getAuthOperationsFor
 
 export const getAuthOperationsForgotPasswordMutationKey = () => ['authOperationsForgotPassword'] as const;
 
-export const getAuthOperationsForgotPasswordMutationOptions = <TError = ModelsError,
+export const getAuthOperationsForgotPasswordMutationOptions = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authOperationsForgotPassword>>, TError,AuthOperationsForgotPasswordMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof authOperationsForgotPassword>>, TError,AuthOperationsForgotPasswordMutationVariables, TContext> => {
 
@@ -829,11 +829,11 @@ const {mutation: mutationOptions} = options ?
 
     export type AuthOperationsForgotPasswordMutationResult = NonNullable<Awaited<ReturnType<typeof authOperationsForgotPassword>>>
     export type AuthOperationsForgotPasswordMutationBody = ModelsAuthPasswordResetRequest
-    export type AuthOperationsForgotPasswordMutationError = ModelsError
+    export type AuthOperationsForgotPasswordMutationError = ModelsProblemDetails
     export type AuthOperationsForgotPasswordMutationVariables = {data: ModelsAuthPasswordResetRequest}
 
     /** Request password reset */
-export const useAuthOperationsForgotPassword = <TError = ModelsError,
+export const useAuthOperationsForgotPassword = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authOperationsForgotPassword>>, TError,AuthOperationsForgotPasswordMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof authOperationsForgotPassword>>,
@@ -849,22 +849,22 @@ export const useAuthOperationsForgotPassword = <TError = ModelsError,
 }
 
 export type authOperationsLoginResponse400 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 400
 }
 
 export type authOperationsLoginResponse401 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 401
 }
 
 export type authOperationsLoginResponse403 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 403
 }
 
 export type authOperationsLoginResponse423 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 423
 }
 
@@ -919,7 +919,7 @@ return customInstance<authOperationsLoginResponse>(getAuthOperationsLoginUrl(),
 
 export const getAuthOperationsLoginMutationKey = () => ['authOperationsLogin'] as const;
 
-export const getAuthOperationsLoginMutationOptions = <TError = ModelsError,
+export const getAuthOperationsLoginMutationOptions = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authOperationsLogin>>, TError,AuthOperationsLoginMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof authOperationsLogin>>, TError,AuthOperationsLoginMutationVariables, TContext> => {
 
@@ -948,11 +948,11 @@ const {mutation: mutationOptions} = options ?
 
     export type AuthOperationsLoginMutationResult = NonNullable<Awaited<ReturnType<typeof authOperationsLogin>>>
     export type AuthOperationsLoginMutationBody = ModelsAuthLoginRequest
-    export type AuthOperationsLoginMutationError = ModelsError
+    export type AuthOperationsLoginMutationError = ModelsProblemDetails
     export type AuthOperationsLoginMutationVariables = {data: ModelsAuthLoginRequest}
 
     /** Login with email and password */
-export const useAuthOperationsLogin = <TError = ModelsError,
+export const useAuthOperationsLogin = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authOperationsLogin>>, TError,AuthOperationsLoginMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof authOperationsLogin>>,
@@ -968,7 +968,7 @@ export const useAuthOperationsLogin = <TError = ModelsError,
 }
 
 export type authOperationsLogoutResponse401 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 401
 }
 
@@ -1009,7 +1009,7 @@ export const authOperationsLogout = async ( options?: RequestInit): Promise<auth
 
 export const getAuthOperationsLogoutMutationKey = () => ['authOperationsLogout'] as const;
 
-export const getAuthOperationsLogoutMutationOptions = <TError = ModelsError,
+export const getAuthOperationsLogoutMutationOptions = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authOperationsLogout>>, TError,void, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof authOperationsLogout>>, TError,void, TContext> => {
 
@@ -1038,11 +1038,11 @@ const {mutation: mutationOptions} = options ?
 
     export type AuthOperationsLogoutMutationResult = NonNullable<Awaited<ReturnType<typeof authOperationsLogout>>>
 
-    export type AuthOperationsLogoutMutationError = ModelsError
+    export type AuthOperationsLogoutMutationError = ModelsProblemDetails
 
 
     /** Logout and invalidate session */
-export const useAuthOperationsLogout = <TError = ModelsError,
+export const useAuthOperationsLogout = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authOperationsLogout>>, TError,void, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof authOperationsLogout>>,
@@ -1058,7 +1058,7 @@ export const useAuthOperationsLogout = <TError = ModelsError,
 }
 
 export type authOperationsLogoutAllResponse401 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 401
 }
 
@@ -1099,7 +1099,7 @@ export const authOperationsLogoutAll = async ( options?: RequestInit): Promise<a
 
 export const getAuthOperationsLogoutAllMutationKey = () => ['authOperationsLogoutAll'] as const;
 
-export const getAuthOperationsLogoutAllMutationOptions = <TError = ModelsError,
+export const getAuthOperationsLogoutAllMutationOptions = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authOperationsLogoutAll>>, TError,void, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof authOperationsLogoutAll>>, TError,void, TContext> => {
 
@@ -1128,11 +1128,11 @@ const {mutation: mutationOptions} = options ?
 
     export type AuthOperationsLogoutAllMutationResult = NonNullable<Awaited<ReturnType<typeof authOperationsLogoutAll>>>
 
-    export type AuthOperationsLogoutAllMutationError = ModelsError
+    export type AuthOperationsLogoutAllMutationError = ModelsProblemDetails
 
 
     /** Logout from all sessions */
-export const useAuthOperationsLogoutAll = <TError = ModelsError,
+export const useAuthOperationsLogoutAll = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authOperationsLogoutAll>>, TError,void, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof authOperationsLogoutAll>>,
@@ -1148,7 +1148,7 @@ export const useAuthOperationsLogoutAll = <TError = ModelsError,
 }
 
 export type authOperationsGetCurrentUserResponse401 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 401
 }
 
@@ -1194,7 +1194,7 @@ export const getAuthOperationsGetCurrentUserQueryKey = () => {
     }
 
 
-export const getAuthOperationsGetCurrentUserQueryOptions = <TData = Awaited<ReturnType<typeof authOperationsGetCurrentUser>>, TError = ModelsError>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof authOperationsGetCurrentUser>>, TError, TData>>, }
+export const getAuthOperationsGetCurrentUserQueryOptions = <TData = Awaited<ReturnType<typeof authOperationsGetCurrentUser>>, TError = ModelsProblemDetails>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof authOperationsGetCurrentUser>>, TError, TData>>, }
 ) => {
 
 const {query: queryOptions} = options ?? {};
@@ -1213,11 +1213,11 @@ const {query: queryOptions} = options ?? {};
 }
 
 export type AuthOperationsGetCurrentUserQueryResult = NonNullable<Awaited<ReturnType<typeof authOperationsGetCurrentUser>>>
-export type AuthOperationsGetCurrentUserQueryError = ModelsError
+export type AuthOperationsGetCurrentUserQueryError = ModelsProblemDetails
 
 
 /** Get current user information */
-export function useAuthOperationsGetCurrentUser<TData = Awaited<ReturnType<typeof authOperationsGetCurrentUser>>, TError = ModelsError>(
+export function useAuthOperationsGetCurrentUser<TData = Awaited<ReturnType<typeof authOperationsGetCurrentUser>>, TError = ModelsProblemDetails>(
   options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof authOperationsGetCurrentUser>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof authOperationsGetCurrentUser>>,
@@ -1228,7 +1228,7 @@ export function useAuthOperationsGetCurrentUser<TData = Awaited<ReturnType<typeo
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Get current user information */
-export function useAuthOperationsGetCurrentUser<TData = Awaited<ReturnType<typeof authOperationsGetCurrentUser>>, TError = ModelsError>(
+export function useAuthOperationsGetCurrentUser<TData = Awaited<ReturnType<typeof authOperationsGetCurrentUser>>, TError = ModelsProblemDetails>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof authOperationsGetCurrentUser>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof authOperationsGetCurrentUser>>,
@@ -1239,12 +1239,12 @@ export function useAuthOperationsGetCurrentUser<TData = Awaited<ReturnType<typeo
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Get current user information */
-export function useAuthOperationsGetCurrentUser<TData = Awaited<ReturnType<typeof authOperationsGetCurrentUser>>, TError = ModelsError>(
+export function useAuthOperationsGetCurrentUser<TData = Awaited<ReturnType<typeof authOperationsGetCurrentUser>>, TError = ModelsProblemDetails>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof authOperationsGetCurrentUser>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Get current user information */
-export function useAuthOperationsGetCurrentUser<TData = Awaited<ReturnType<typeof authOperationsGetCurrentUser>>, TError = ModelsError>(
+export function useAuthOperationsGetCurrentUser<TData = Awaited<ReturnType<typeof authOperationsGetCurrentUser>>, TError = ModelsProblemDetails>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof authOperationsGetCurrentUser>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
@@ -1267,7 +1267,7 @@ export type authOperationsRefreshTokenResponse200 = {
 }
 
 export type authOperationsRefreshTokenResponse401 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 401
 }
 
@@ -1322,7 +1322,7 @@ return customInstance<authOperationsRefreshTokenResponse>(getAuthOperationsRefre
 
 export const getAuthOperationsRefreshTokenMutationKey = () => ['authOperationsRefreshToken'] as const;
 
-export const getAuthOperationsRefreshTokenMutationOptions = <TError = ModelsError,
+export const getAuthOperationsRefreshTokenMutationOptions = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authOperationsRefreshToken>>, TError,AuthOperationsRefreshTokenMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof authOperationsRefreshToken>>, TError,AuthOperationsRefreshTokenMutationVariables, TContext> => {
 
@@ -1351,11 +1351,11 @@ const {mutation: mutationOptions} = options ?
 
     export type AuthOperationsRefreshTokenMutationResult = NonNullable<Awaited<ReturnType<typeof authOperationsRefreshToken>>>
     export type AuthOperationsRefreshTokenMutationBody = ModelsAuthTokenRefreshRequest
-    export type AuthOperationsRefreshTokenMutationError = ModelsError
+    export type AuthOperationsRefreshTokenMutationError = ModelsProblemDetails
     export type AuthOperationsRefreshTokenMutationVariables = {data: ModelsAuthTokenRefreshRequest}
 
     /** Refresh access token */
-export const useAuthOperationsRefreshToken = <TError = ModelsError,
+export const useAuthOperationsRefreshToken = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authOperationsRefreshToken>>, TError,AuthOperationsRefreshTokenMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof authOperationsRefreshToken>>,
@@ -1371,12 +1371,12 @@ export const useAuthOperationsRefreshToken = <TError = ModelsError,
 }
 
 export type authOperationsRegisterResponse400 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 400
 }
 
 export type authOperationsRegisterResponse409 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 409
 }
 
@@ -1431,7 +1431,7 @@ return customInstance<authOperationsRegisterResponse>(getAuthOperationsRegisterU
 
 export const getAuthOperationsRegisterMutationKey = () => ['authOperationsRegister'] as const;
 
-export const getAuthOperationsRegisterMutationOptions = <TError = ModelsError,
+export const getAuthOperationsRegisterMutationOptions = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authOperationsRegister>>, TError,AuthOperationsRegisterMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof authOperationsRegister>>, TError,AuthOperationsRegisterMutationVariables, TContext> => {
 
@@ -1460,11 +1460,11 @@ const {mutation: mutationOptions} = options ?
 
     export type AuthOperationsRegisterMutationResult = NonNullable<Awaited<ReturnType<typeof authOperationsRegister>>>
     export type AuthOperationsRegisterMutationBody = ModelsAuthRegisterRequest
-    export type AuthOperationsRegisterMutationError = ModelsError
+    export type AuthOperationsRegisterMutationError = ModelsProblemDetails
     export type AuthOperationsRegisterMutationVariables = {data: ModelsAuthRegisterRequest}
 
     /** Register a new user account */
-export const useAuthOperationsRegister = <TError = ModelsError,
+export const useAuthOperationsRegister = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authOperationsRegister>>, TError,AuthOperationsRegisterMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof authOperationsRegister>>,
@@ -1480,7 +1480,7 @@ export const useAuthOperationsRegister = <TError = ModelsError,
 }
 
 export type authOperationsResetPasswordResponse400 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 400
 }
 
@@ -1535,7 +1535,7 @@ return customInstance<authOperationsResetPasswordResponse>(getAuthOperationsRese
 
 export const getAuthOperationsResetPasswordMutationKey = () => ['authOperationsResetPassword'] as const;
 
-export const getAuthOperationsResetPasswordMutationOptions = <TError = ModelsError,
+export const getAuthOperationsResetPasswordMutationOptions = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authOperationsResetPassword>>, TError,AuthOperationsResetPasswordMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof authOperationsResetPassword>>, TError,AuthOperationsResetPasswordMutationVariables, TContext> => {
 
@@ -1564,11 +1564,11 @@ const {mutation: mutationOptions} = options ?
 
     export type AuthOperationsResetPasswordMutationResult = NonNullable<Awaited<ReturnType<typeof authOperationsResetPassword>>>
     export type AuthOperationsResetPasswordMutationBody = ModelsAuthPasswordResetConfirmRequest
-    export type AuthOperationsResetPasswordMutationError = ModelsError
+    export type AuthOperationsResetPasswordMutationError = ModelsProblemDetails
     export type AuthOperationsResetPasswordMutationVariables = {data: ModelsAuthPasswordResetConfirmRequest}
 
     /** Reset password with token */
-export const useAuthOperationsResetPassword = <TError = ModelsError,
+export const useAuthOperationsResetPassword = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authOperationsResetPassword>>, TError,AuthOperationsResetPasswordMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof authOperationsResetPassword>>,
@@ -1584,7 +1584,7 @@ export const useAuthOperationsResetPassword = <TError = ModelsError,
 }
 
 export type authOperationsVerifyResetTokenResponse400 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 400
 }
 
@@ -1637,7 +1637,7 @@ export const getAuthOperationsVerifyResetTokenQueryKey = (params?: AuthOperation
     }
 
 
-export const getAuthOperationsVerifyResetTokenQueryOptions = <TData = Awaited<ReturnType<typeof authOperationsVerifyResetToken>>, TError = ModelsError>(params: AuthOperationsVerifyResetTokenParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof authOperationsVerifyResetToken>>, TError, TData>>, }
+export const getAuthOperationsVerifyResetTokenQueryOptions = <TData = Awaited<ReturnType<typeof authOperationsVerifyResetToken>>, TError = ModelsProblemDetails>(params: AuthOperationsVerifyResetTokenParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof authOperationsVerifyResetToken>>, TError, TData>>, }
 ) => {
 
 const {query: queryOptions} = options ?? {};
@@ -1656,11 +1656,11 @@ const {query: queryOptions} = options ?? {};
 }
 
 export type AuthOperationsVerifyResetTokenQueryResult = NonNullable<Awaited<ReturnType<typeof authOperationsVerifyResetToken>>>
-export type AuthOperationsVerifyResetTokenQueryError = ModelsError
+export type AuthOperationsVerifyResetTokenQueryError = ModelsProblemDetails
 
 
 /** Verify password reset token */
-export function useAuthOperationsVerifyResetToken<TData = Awaited<ReturnType<typeof authOperationsVerifyResetToken>>, TError = ModelsError>(
+export function useAuthOperationsVerifyResetToken<TData = Awaited<ReturnType<typeof authOperationsVerifyResetToken>>, TError = ModelsProblemDetails>(
  params: AuthOperationsVerifyResetTokenParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof authOperationsVerifyResetToken>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof authOperationsVerifyResetToken>>,
@@ -1671,7 +1671,7 @@ export function useAuthOperationsVerifyResetToken<TData = Awaited<ReturnType<typ
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Verify password reset token */
-export function useAuthOperationsVerifyResetToken<TData = Awaited<ReturnType<typeof authOperationsVerifyResetToken>>, TError = ModelsError>(
+export function useAuthOperationsVerifyResetToken<TData = Awaited<ReturnType<typeof authOperationsVerifyResetToken>>, TError = ModelsProblemDetails>(
  params: AuthOperationsVerifyResetTokenParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof authOperationsVerifyResetToken>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof authOperationsVerifyResetToken>>,
@@ -1682,12 +1682,12 @@ export function useAuthOperationsVerifyResetToken<TData = Awaited<ReturnType<typ
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Verify password reset token */
-export function useAuthOperationsVerifyResetToken<TData = Awaited<ReturnType<typeof authOperationsVerifyResetToken>>, TError = ModelsError>(
+export function useAuthOperationsVerifyResetToken<TData = Awaited<ReturnType<typeof authOperationsVerifyResetToken>>, TError = ModelsProblemDetails>(
  params: AuthOperationsVerifyResetTokenParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof authOperationsVerifyResetToken>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Verify password reset token */
-export function useAuthOperationsVerifyResetToken<TData = Awaited<ReturnType<typeof authOperationsVerifyResetToken>>, TError = ModelsError>(
+export function useAuthOperationsVerifyResetToken<TData = Awaited<ReturnType<typeof authOperationsVerifyResetToken>>, TError = ModelsProblemDetails>(
  params: AuthOperationsVerifyResetTokenParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof authOperationsVerifyResetToken>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
@@ -1710,7 +1710,7 @@ export type authOperationsGetSessionsResponse200 = {
 }
 
 export type authOperationsGetSessionsResponse401 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 401
 }
 
@@ -1756,7 +1756,7 @@ export const getAuthOperationsGetSessionsQueryKey = () => {
     }
 
 
-export const getAuthOperationsGetSessionsQueryOptions = <TData = Awaited<ReturnType<typeof authOperationsGetSessions>>, TError = ModelsError>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof authOperationsGetSessions>>, TError, TData>>, }
+export const getAuthOperationsGetSessionsQueryOptions = <TData = Awaited<ReturnType<typeof authOperationsGetSessions>>, TError = ModelsProblemDetails>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof authOperationsGetSessions>>, TError, TData>>, }
 ) => {
 
 const {query: queryOptions} = options ?? {};
@@ -1775,11 +1775,11 @@ const {query: queryOptions} = options ?? {};
 }
 
 export type AuthOperationsGetSessionsQueryResult = NonNullable<Awaited<ReturnType<typeof authOperationsGetSessions>>>
-export type AuthOperationsGetSessionsQueryError = ModelsError
+export type AuthOperationsGetSessionsQueryError = ModelsProblemDetails
 
 
 /** Get active sessions */
-export function useAuthOperationsGetSessions<TData = Awaited<ReturnType<typeof authOperationsGetSessions>>, TError = ModelsError>(
+export function useAuthOperationsGetSessions<TData = Awaited<ReturnType<typeof authOperationsGetSessions>>, TError = ModelsProblemDetails>(
   options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof authOperationsGetSessions>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof authOperationsGetSessions>>,
@@ -1790,7 +1790,7 @@ export function useAuthOperationsGetSessions<TData = Awaited<ReturnType<typeof a
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Get active sessions */
-export function useAuthOperationsGetSessions<TData = Awaited<ReturnType<typeof authOperationsGetSessions>>, TError = ModelsError>(
+export function useAuthOperationsGetSessions<TData = Awaited<ReturnType<typeof authOperationsGetSessions>>, TError = ModelsProblemDetails>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof authOperationsGetSessions>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof authOperationsGetSessions>>,
@@ -1801,12 +1801,12 @@ export function useAuthOperationsGetSessions<TData = Awaited<ReturnType<typeof a
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Get active sessions */
-export function useAuthOperationsGetSessions<TData = Awaited<ReturnType<typeof authOperationsGetSessions>>, TError = ModelsError>(
+export function useAuthOperationsGetSessions<TData = Awaited<ReturnType<typeof authOperationsGetSessions>>, TError = ModelsProblemDetails>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof authOperationsGetSessions>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Get active sessions */
-export function useAuthOperationsGetSessions<TData = Awaited<ReturnType<typeof authOperationsGetSessions>>, TError = ModelsError>(
+export function useAuthOperationsGetSessions<TData = Awaited<ReturnType<typeof authOperationsGetSessions>>, TError = ModelsProblemDetails>(
   options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof authOperationsGetSessions>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
@@ -1829,12 +1829,12 @@ export type authOperationsRevokeSessionResponse200 = {
 }
 
 export type authOperationsRevokeSessionResponse401 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 401
 }
 
 export type authOperationsRevokeSessionResponse404 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 404
 }
 
@@ -1875,7 +1875,7 @@ export const authOperationsRevokeSession = async (sessionId: string, options?: R
 
 export const getAuthOperationsRevokeSessionMutationKey = () => ['authOperationsRevokeSession'] as const;
 
-export const getAuthOperationsRevokeSessionMutationOptions = <TError = ModelsError,
+export const getAuthOperationsRevokeSessionMutationOptions = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authOperationsRevokeSession>>, TError,AuthOperationsRevokeSessionMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof authOperationsRevokeSession>>, TError,AuthOperationsRevokeSessionMutationVariables, TContext> => {
 
@@ -1904,11 +1904,11 @@ const {mutation: mutationOptions} = options ?
 
     export type AuthOperationsRevokeSessionMutationResult = NonNullable<Awaited<ReturnType<typeof authOperationsRevokeSession>>>
 
-    export type AuthOperationsRevokeSessionMutationError = ModelsError
+    export type AuthOperationsRevokeSessionMutationError = ModelsProblemDetails
     export type AuthOperationsRevokeSessionMutationVariables = {sessionId: string}
 
     /** Revoke a specific session */
-export const useAuthOperationsRevokeSession = <TError = ModelsError,
+export const useAuthOperationsRevokeSession = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authOperationsRevokeSession>>, TError,AuthOperationsRevokeSessionMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof authOperationsRevokeSession>>,
@@ -1924,7 +1924,7 @@ export const useAuthOperationsRevokeSession = <TError = ModelsError,
 }
 
 export type authOperationsConfirmEmailVerificationResponse400 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 400
 }
 
@@ -1979,7 +1979,7 @@ return customInstance<authOperationsConfirmEmailVerificationResponse>(getAuthOpe
 
 export const getAuthOperationsConfirmEmailVerificationMutationKey = () => ['authOperationsConfirmEmailVerification'] as const;
 
-export const getAuthOperationsConfirmEmailVerificationMutationOptions = <TError = ModelsError,
+export const getAuthOperationsConfirmEmailVerificationMutationOptions = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authOperationsConfirmEmailVerification>>, TError,AuthOperationsConfirmEmailVerificationMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof authOperationsConfirmEmailVerification>>, TError,AuthOperationsConfirmEmailVerificationMutationVariables, TContext> => {
 
@@ -2008,11 +2008,11 @@ const {mutation: mutationOptions} = options ?
 
     export type AuthOperationsConfirmEmailVerificationMutationResult = NonNullable<Awaited<ReturnType<typeof authOperationsConfirmEmailVerification>>>
     export type AuthOperationsConfirmEmailVerificationMutationBody = ModelsAuthEmailVerificationRequest
-    export type AuthOperationsConfirmEmailVerificationMutationError = ModelsError
+    export type AuthOperationsConfirmEmailVerificationMutationError = ModelsProblemDetails
     export type AuthOperationsConfirmEmailVerificationMutationVariables = {data: ModelsAuthEmailVerificationRequest}
 
     /** Confirm email verification */
-export const useAuthOperationsConfirmEmailVerification = <TError = ModelsError,
+export const useAuthOperationsConfirmEmailVerification = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authOperationsConfirmEmailVerification>>, TError,AuthOperationsConfirmEmailVerificationMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof authOperationsConfirmEmailVerification>>,
@@ -2028,17 +2028,17 @@ export const useAuthOperationsConfirmEmailVerification = <TError = ModelsError,
 }
 
 export type authOperationsSendEmailVerificationResponse400 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 400
 }
 
 export type authOperationsSendEmailVerificationResponse401 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 401
 }
 
 export type authOperationsSendEmailVerificationResponse429 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 429
 }
 
@@ -2079,7 +2079,7 @@ export const authOperationsSendEmailVerification = async ( options?: RequestInit
 
 export const getAuthOperationsSendEmailVerificationMutationKey = () => ['authOperationsSendEmailVerification'] as const;
 
-export const getAuthOperationsSendEmailVerificationMutationOptions = <TError = ModelsError,
+export const getAuthOperationsSendEmailVerificationMutationOptions = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authOperationsSendEmailVerification>>, TError,void, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof authOperationsSendEmailVerification>>, TError,void, TContext> => {
 
@@ -2108,11 +2108,11 @@ const {mutation: mutationOptions} = options ?
 
     export type AuthOperationsSendEmailVerificationMutationResult = NonNullable<Awaited<ReturnType<typeof authOperationsSendEmailVerification>>>
 
-    export type AuthOperationsSendEmailVerificationMutationError = ModelsError
+    export type AuthOperationsSendEmailVerificationMutationError = ModelsProblemDetails
 
 
     /** Send email verification */
-export const useAuthOperationsSendEmailVerification = <TError = ModelsError,
+export const useAuthOperationsSendEmailVerification = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authOperationsSendEmailVerification>>, TError,void, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof authOperationsSendEmailVerification>>,

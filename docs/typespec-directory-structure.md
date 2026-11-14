@@ -12,8 +12,7 @@ specs/
 ├── models/                   # モデル定義（namespace BeautySalon.Models）
 │   ├── _shared/
 │   │   ├── common.tsp               # ID スカラー、共通 Enum、共通モデル
-│   │   ├── common-api-patterns.tsp  # エラー、ページネーション、レスポンスの共通ラッパー
-│   │   └── domain-errors.tsp        # DomainErrorType ほか
+│   │   └── common-api-patterns.tsp  # エラー、ページネーション、レスポンスの共通ラッパー
 │   ├── attachment.tsp
 │   ├── auth.tsp
 │   ├── booking.tsp
@@ -59,8 +58,7 @@ TypeSpec に定義があっても、バックエンドに実装があるとは�
 | 定義 | バックエンドの実装 |
 |---|---|
 | `models/salon.tsp`、`operations/salon-operations.tsp`（`SalonCrud` の 5 オペレーション） | `backend/packages/api/src/routes/salon/`。定義と実装は一致している |
-| `operations/_shared/base-operations.tsp` の `SystemOperations` のうち `alive`、`ready`、`health` | `backend/packages/api/src/routes/system/index.ts` |
-| `SystemOperations` の `metrics`、`version` | なし |
+| `operations/_shared/base-operations.tsp` の `SystemOperations`（`alive`、`ready`、`health`） | `backend/packages/api/src/routes/system/index.ts`。定義と実装は一致している |
 | 上記以外のドメイン（auth、customer、staff、service、reservation、booking、review、attachment、treatment、payment、inventory、permission） | なし（GitHub issue #91）。customers、staff、bookings などは DB スキーマにテーブルがあるが、attachment、permission、reservation に対応するテーブルはない |
 
 `main.tsp` は `@useAuth(BearerAuth)` を宣言しているが、バックエンドに認証・認可のコードはない。
@@ -74,11 +72,11 @@ TypeSpec に定義があっても、バックエンドに実装があるとは�
 ```typespec
 // specs/main.tsp（抜粋）
 import "./models/_shared/common-api-patterns.tsp";
-import "./models/_shared/domain-errors.tsp";
 import "./models/auth.tsp";
 import "./models/salon.tsp";
 // ...
 
+import "./operations/_shared/base-operations.tsp";
 import "./operations/auth-operations.tsp";
 import "./operations/salon-operations.tsp";
 // ...
@@ -92,21 +90,20 @@ import "./operations/salon-operations.tsp";
 namespace BeautySalon {
 ```
 
-`models/_shared/common.tsp` は各モデルファイルが import するので、`main.tsp` には書かれていない。`operations/_shared/base-operations.tsp` も `main.tsp` からは直接 import されず、`customer-operations.tsp` 経由で読み込まれる。
+`models/_shared/common.tsp` は各モデルファイルが import するので、`main.tsp` には書かれていない。
 
 ### `models/_shared/`
 
 | ファイル | 内容 | Salon とシステムエンドポイントが使うもの |
 |---|---|---|
 | `common.tsp` | ID スカラー（`SalonId`、`CustomerId` など。`@format("uuid")`）、共通 Enum（`DayOfWeekType`、`ServiceCategoryType` など）、共通モデル（`OpeningHours`、`BusinessHours`、`Address`、`AuditInfo`、`Money` など） | `SalonId`、`DayOfWeekType`、`OpeningHours`、`BusinessHours`、`TimeSlot`、`DateRange` |
-| `common-api-patterns.tsp` | `ProblemDetails`、`ErrorCodeType`、`ValidationError`、ページネーション（`CursorPaginationParams`、`CursorPaginationResponse<T>`、`PaginationMeta`、`PaginationLinks`）、`ApiResponse<T>`、`ResponseMeta`、一括操作、`AdvancedSearchParams`、ヘルスチェック（`HealthStatus`、`HealthCheck`、`SystemReadyResponse`）など | `ProblemDetails`、`ErrorCodeType`、`ValidationError`、`CursorPaginationResponse<T>`、`PaginationMeta`、`PaginationLinks`、`ApiResponse<T>`、`ResponseMeta`、`HealthStatus`、`HealthCheck`、`SystemReadyResponse` |
-| `domain-errors.tsp` | `DomainErrorType`、`DomainErrorDetails` など | なし。どのオペレーションからも参照されておらず、バックエンドのエラー型（`backend/packages/domain/src/shared/errors.ts`）とも別物である |
+| `common-api-patterns.tsp` | `ProblemDetails`、`ProblemResponse<TStatus>`、`CommonErrors`、`RequestBodyErrors`、`ErrorCodeType`、`ValidationError`、ページネーション（`CursorPaginationParams`、`CursorPaginationResponse<T>`、`PaginationMeta`、`PaginationLinks`）、`ApiResponse<T>`、`ResponseMeta`、一括操作、`AdvancedSearchParams`、ヘルスチェック（`HealthStatus`、`HealthCheck`、`SystemReadyResponse`）など | `ProblemDetails`、`ProblemResponse<TStatus>`、`CommonErrors`、`RequestBodyErrors`、`ErrorCodeType`、`ValidationError`、`CursorPaginationResponse<T>`、`PaginationMeta`、`PaginationLinks`、`ApiResponse<T>`、`ResponseMeta`、`HealthStatus`、`HealthCheck`、`SystemReadyResponse` |
 
 ### `operations/_shared/base-operations.tsp`
 
 - `CrudOperations`、`BulkOperations`、`SearchOperations`、`AuditOperations`: 汎用のインターフェース。使っているのは `customer-operations.tsp` だけで、Salon は使っていない（`SalonCrud` は必要なオペレーションだけを直接定義している）
 - `AuditEntry`、`ChangeSet`: `AuditOperations` が使うモデル
-- `SystemOperations`: `/api/system` 以下の運用系オペレーション
+- `SystemOperations`: `/api/system` 以下の運用系オペレーション（`alive`、`ready`、`health`）。503 のレスポンスは `ProblemDetails` ではなく、200 と同じモデルを返す
 
 ### モデルファイルとオペレーションファイル
 

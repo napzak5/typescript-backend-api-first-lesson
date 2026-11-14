@@ -6,9 +6,9 @@
  * OpenAPI spec version: 2.0
  */
 import type { ModelsServiceId } from './modelsServiceId';
-import type { ModelsUpdateServiceRequest } from './modelsUpdateServiceRequest';
+import type { ModelsServiceUpdateRequest } from './modelsServiceUpdateRequest';
 
 export type ServiceOperationsBulkUpdateBody = {
   serviceIds: ModelsServiceId[];
-  updates: ModelsUpdateServiceRequest;
+  updates: ModelsServiceUpdateRequest;
 };

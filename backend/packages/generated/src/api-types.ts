@@ -133,26 +133,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/system/metrics": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get API metrics
-         * @description Prometheus形式のメトリクスを返却し、監視基盤での可視化やアラート設定に用います。
-         */
-        get: operations["SystemOperations_metrics"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/system/ready": {
         parameters: {
             query?: never;
@@ -165,26 +145,6 @@ export interface paths {
          * @description Kubernetes等のオーケストレーターがトラフィック受信可否を判断するための準備完了チェックです。
          */
         get: operations["SystemOperations_ready"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/system/version": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get API version
-         * @description APIのバージョンやビルド情報を返し、障害解析やデプロイ確認に活用します。
-         */
-        get: operations["SystemOperations_version"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3447,6 +3407,29 @@ export interface components {
             /** @description レコードを最後に更新したユーザーID。システム自動更新または匿名更新の場合はnull */
             updatedBy: string | null;
         };
+        /** @description 予約を新規作成する際のリクエスト。 */
+        "Models.BookingCreateRequest": {
+            /** @description 予約対象のサロンID。 */
+            salonId: components["schemas"]["Models.SalonId"];
+            /** @description 予約を申し込む顧客ID。 */
+            customerId: components["schemas"]["Models.CustomerId"];
+            /** @description 紐付ける予約リクエストID一覧。 */
+            reservationIds: components["schemas"]["Models.ReservationId"][];
+            /** @description ウェイティングリスト情報。ウェイティングリストに登録していない場合はnull。 */
+            waitlistEntry: components["schemas"]["Models.WaitlistEntry"] | null;
+            /** @description 預かり金設定。デポジットが不要な場合はnull。 */
+            deposit: components["schemas"]["Models.BookingDeposit"] | null;
+            /** @description 適用する割引額 */
+            discountAmount: components["schemas"]["Models.Money"];
+            /** @description 予定している支払い方法。当日決定または未選択の場合はnull */
+            paymentMethod: components["schemas"]["Models.PaymentMethodType"] | null;
+            /** @description スタッフ向けの備考。備考がない場合はnull。 */
+            notes: string | null;
+            /** @description 外部連携や業務用に保持する任意メタデータ。追加情報が不要の場合はnull。 */
+            metadata: {
+                [key: string]: unknown;
+            } | null;
+        };
         /** @description 予約確定前に預かるデポジット情報。 */
         "Models.BookingDeposit": {
             /** @description 預かり金額。 */
@@ -3919,122 +3902,6 @@ export interface components {
          */
 
         "Models.ContactMethodType": "email" | "sms" | "phone" | "push";
-        /** @description 予約を新規作成する際のリクエスト。 */
-        "Models.CreateBookingRequest": {
-            /** @description 予約対象のサロンID。 */
-            salonId: components["schemas"]["Models.SalonId"];
-            /** @description 予約を申し込む顧客ID。 */
-            customerId: components["schemas"]["Models.CustomerId"];
-            /** @description 紐付ける予約リクエストID一覧。 */
-            reservationIds: components["schemas"]["Models.ReservationId"][];
-            /** @description ウェイティングリスト情報。ウェイティングリストに登録していない場合はnull。 */
-            waitlistEntry: components["schemas"]["Models.WaitlistEntry"] | null;
-            /** @description 預かり金設定。デポジットが不要な場合はnull。 */
-            deposit: components["schemas"]["Models.BookingDeposit"] | null;
-            /** @description 適用する割引額 */
-            discountAmount: components["schemas"]["Models.Money"];
-            /** @description 予定している支払い方法。当日決定または未選択の場合はnull */
-            paymentMethod: components["schemas"]["Models.PaymentMethodType"] | null;
-            /** @description スタッフ向けの備考。備考がない場合はnull。 */
-            notes: string | null;
-            /** @description 外部連携や業務用に保持する任意メタデータ。追加情報が不要の場合はnull。 */
-            metadata: {
-                [key: string]: unknown;
-            } | null;
-        };
-        /** @description 予約作成リクエスト - 新規予約登録時に必要なサロン・顧客・メニュー・希望日時の情報を受け取る */
-        "Models.CreateReservationRequest": {
-            /** @description 予約対象のサロンID */
-            salonId: components["schemas"]["Models.SalonId"];
-            /** @description 予約を申し込む顧客ID */
-            customerId: components["schemas"]["Models.CustomerId"];
-            /** @description 担当予定のスタッフID */
-            staffId: components["schemas"]["Models.StaffId"];
-            /** @description 希望する施術メニューID */
-            serviceId: components["schemas"]["Models.ServiceId"];
-            /**
-             * Format: date-time
-             * @description 希望する施術開始日時 (UTC)
-             */
-            startTime: string;
-            /** @description 顧客要望や注意事項のメモ - 特記事項がない標準予約の場合はnull */
-            notes: string | null;
-        };
-        /** @description サービスを新規登録するリクエスト */
-        "Models.CreateServiceRequest": {
-            /** @description サービスを登録するサロン ID */
-            salonId: components["schemas"]["Models.SalonId"];
-            /** @description サービス名 */
-            name: string;
-            /** @description サービスの説明文 */
-            description: string;
-            /**
-             * Format: int32
-             * @description 施術時間（分）
-             */
-            duration: number;
-            /**
-             * Format: int32
-             * @description 料金（税抜）
-             */
-            price: number;
-            /** @description サービスカテゴリ区分 */
-            category: components["schemas"]["Models.ServiceCategoryType"];
-            /** @description カテゴリ ID。サービスカテゴリ区分のみで分類する場合はnull */
-            categoryId: (string & components["schemas"]["Models.CategoryId"]) | null;
-            /** @description サービス画像 URL。画像がない場合はnull */
-            imageUrl: string | null;
-            /**
-             * Format: int32
-             * @description 必要スタッフレベル。全スタッフが対応可能な場合はnull
-             */
-            requiredStaffLevel: number | null;
-            /**
-             * Format: int32
-             * @description 必要なデポジット額。デポジットが不要な場合はnull
-             */
-            depositAmount: number | null;
-            /** @description 有効フラグ。未指定時はデフォルトでtrueとして扱う場合null */
-            isActive: boolean | null;
-            /**
-             * Format: int32
-             * @description 最大全日予約可能日数。予約可能期間に制限がない場合はnull
-             */
-            maxAdvanceBookingDays: number | null;
-            /**
-             * Format: int32
-             * @description 最短予約受付時間（時間）。即時予約可能な場合はnull
-             */
-            minAdvanceBookingHours: number | null;
-        };
-        /** @description スタッフ作成リクエスト - 新規スタッフ登録時に必要なプロフィール・連絡先・スケジュール情報を受け取る */
-        "Models.CreateStaffRequest": {
-            /** @description 所属サロンのID */
-            salonId: components["schemas"]["Models.SalonId"];
-            /** @description スタッフの氏名 */
-            name: string;
-            /** @description 連絡先情報 */
-            contactInfo: components["schemas"]["Models.ContactInfo"];
-            /** @description 得意分野や専門メニューの一覧 */
-            specialties: string[];
-            /** @description プロフィール画像のURL - プロフィール画像未設定の場合はnull */
-            imageUrl: string | null;
-            /** @description 自己紹介や経歴の概要 - プロフィール未記入の新人スタッフの場合はnull */
-            bio: string | null;
-            /**
-             * Format: int32
-             * @description 実務経験年数 - 経験年数未記載またはアシスタントスタッフの場合はnull
-             */
-            yearsOfExperience: number | null;
-            /** @description 保有資格名の一覧 - 資格なしの新人やアシスタントの場合はnull */
-            certifications: string[] | null;
-            /** @description 詳細な資格情報の一覧 - 詳細資格情報未登録の場合はnull */
-            qualifications: components["schemas"]["Models.StaffQualification"][] | null;
-            /** @description 通常勤務スケジュールの一覧 - スケジュール未設定やフリーランススタッフの場合はnull */
-            schedules: components["schemas"]["Models.StaffSchedule"][] | null;
-            /** @description 付与する権限の一覧 - 特別権限がない一般スタッフの場合はnull */
-            permissions: components["schemas"]["Models.StaffPermission"][] | null;
-        };
         /**
 
          * @description
@@ -4565,200 +4432,6 @@ export interface components {
          */
 
         "Models.DayOfWeekType": "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday";
-        /**
-         * @description ドメインエラーの詳細情報モデル。
-         *     予約・顧客・サロンなどビジネスロジック層で発生したエラーを分類し、運用チームが原因分析しやすい形で保持する。
-         */
-        "Models.DomainErrorDetails": {
-            /** @description エラー分類タイプ。上位のビジネスルールカテゴリを特定する。 */
-            type: components["schemas"]["Models.DomainErrorType"];
-            /** @description 業務担当者が理解しやすい説明文。ユーザー通知にも使用可能。 */
-            message: string;
-            /** @description 機械判読可能なエラーコード。外部連携やログ分析に利用する。 */
-            code: string;
-            /** @description 追加のエラー文脈。入力値や関連設定など柔軟に格納する。追加情報がない場合はnull */
-            details: {
-                [key: string]: unknown;
-            } | null;
-            /** @description 関連するエンティティ名。例: `Reservation` や `Customer`。特定のエンティティに関連しない場合はnull */
-            entity: string | null;
-            /** @description 問題が発生したフィールド名。入力フォームとの紐付けに利用。フィールド特定が不要な場合はnull */
-            field: string | null;
-            /** @description 問題があった値。マスキングが不要なケースのみ保持する。値を出力しない場合はnull */
-            value: string | null;
-            /** @description 外部サービスエラー時の対象サービス名。連携先の切り分けに役立つ。外部サービスに関係ない場合はnull */
-            service: string | null;
-        };
-        /**
-         * @description ドメインエラー生成の標準設定モデル。
-         *     各カテゴリごとの既定コードと HTTP ステータスを定義し、再利用可能なエラーファクトリーを構築する。
-         */
-        "Models.DomainErrorFactory": {
-            /** @description 検証エラーを生成するための設定。 */
-            validation: {
-                /** @enum {string} */
-                type: "VALIDATION_ERROR";
-                /** @enum {string} */
-                defaultCode: "VALIDATION_FAILED";
-                /** @enum {number} */
-                httpStatus: 400;
-            };
-            /** @description リソース未検出エラーを生成するための設定。 */
-            notFound: {
-                /** @enum {string} */
-                type: "NOT_FOUND";
-                /** @enum {string} */
-                defaultCode: "RESOURCE_NOT_FOUND";
-                /** @enum {number} */
-                httpStatus: 404;
-            };
-            /** @description 重複登録エラーを生成するための設定。 */
-            alreadyExists: {
-                /** @enum {string} */
-                type: "ALREADY_EXISTS";
-                /** @enum {string} */
-                defaultCode: "RESOURCE_ALREADY_EXISTS";
-                /** @enum {number} */
-                httpStatus: 409;
-            };
-            /** @description ビジネスルール違反エラーを生成するための設定。 */
-            businessRule: {
-                /** @enum {string} */
-                type: "BUSINESS_RULE_VIOLATION";
-                /** @enum {string} */
-                defaultCode: "BUSINESS_RULE_VIOLATION";
-                /** @enum {number} */
-                httpStatus: 422;
-            };
-            /** @description 未認証エラーを生成するための設定。 */
-            unauthorized: {
-                /** @enum {string} */
-                type: "UNAUTHORIZED";
-                /** @enum {string} */
-                defaultCode: "AUTHENTICATION_REQUIRED";
-                /** @enum {number} */
-                httpStatus: 401;
-            };
-            /** @description 権限不足エラーを生成するための設定。 */
-            forbidden: {
-                /** @enum {string} */
-                type: "FORBIDDEN";
-                /** @enum {string} */
-                defaultCode: "INSUFFICIENT_PERMISSIONS";
-                /** @enum {number} */
-                httpStatus: 403;
-            };
-            /** @description 内部サーバーエラーを生成するための設定。 */
-            internal: {
-                /** @enum {string} */
-                type: "INTERNAL_ERROR";
-                /** @enum {string} */
-                defaultCode: "INTERNAL_SERVER_ERROR";
-                /** @enum {number} */
-                httpStatus: 500;
-            };
-            /** @description データベースエラーを生成するための設定。 */
-            database: {
-                /** @enum {string} */
-                type: "DATABASE_ERROR";
-                /** @enum {string} */
-                defaultCode: "DATABASE_ERROR";
-                /** @enum {number} */
-                httpStatus: 500;
-            };
-            /** @description 外部サービス連携エラーを生成するための設定。 */
-            externalService: {
-                /** @enum {string} */
-                type: "EXTERNAL_SERVICE_ERROR";
-                /** @enum {string} */
-                defaultCode: "EXTERNAL_SERVICE_ERROR";
-                /** @enum {number} */
-                httpStatus: 502;
-            };
-        };
-        /**
-         * @description ドメインエラータイプとシステム標準エラーコードの対応表モデル。
-         *     内部ロジックとHTTPレスポンスの整合性を保つために利用する。
-         */
-        "Models.DomainErrorMapping": {
-            /** @description ドメインエラータイプ。ビジネス層で識別されるカテゴリ。 */
-            domainType: components["schemas"]["Models.DomainErrorType"];
-            /** @description 対応する標準エラーコード。`ErrorCodeType` を参照する。 */
-            errorCode: components["schemas"]["Models.ErrorCodeType"];
-            /**
-             * Format: int32
-             * @description レスポンスに適用する HTTP ステータスコード。
-             */
-            httpStatus: number;
-        };
-        /**
-
-         * @description
-
-         * ドメインエラータイプ区分 - ビジネスロジック層で発生するエラーの分類
-
-         *
-
-         *
-
-         * VALIDATION_ERROR: 検証エラー - 入力値の検証で失敗
-
-         *
-
-         * NOT_FOUND: 未検出 - 指定されたリソースが存在しない
-
-         *
-
-         * ALREADY_EXISTS: 既存 - リソースが既に存在し、重複が許可されない
-
-         *
-
-         * BUSINESS_RULE_VIOLATION: ビジネスルール違反 - ビジネスロジックの制約に違反
-
-         *
-
-         * UNAUTHORIZED: 未認証 - 認証が必要であるが認証されていない
-
-         *
-
-         * FORBIDDEN: 禁止 - 認証されているが権限が不足
-
-         *
-
-         * INTERNAL_ERROR: 内部エラー - システム内部で予期しないエラーが発生
-
-         *
-
-         * DATABASE_ERROR: データベースエラー - データベース操作中のエラー
-
-         *
-
-         * EXTERNAL_SERVICE_ERROR: 外部サービスエラー - 外部APIやサービスでのエラー
-
-         * @enum {string}
-
-         */
-
-        "Models.DomainErrorType": "VALIDATION_ERROR" | "NOT_FOUND" | "ALREADY_EXISTS" | "BUSINESS_RULE_VIOLATION" | "UNAUTHORIZED" | "FORBIDDEN" | "INTERNAL_ERROR" | "DATABASE_ERROR" | "EXTERNAL_SERVICE_ERROR";
-        /**
-         * @description ドメイン操作で発生したエラーのコンテキストモデル。
-         *     ビジネス層の例外情報と HTTP レイヤーの問題詳細を紐づけ、ログ出力やモニタリングを容易にする。
-         */
-        "Models.DomainOperationError": {
-            /** @description ドメインエラーの詳細情報。ビジネスロジック層で発生した要因を保持する。 */
-            domainError: components["schemas"]["Models.DomainErrorDetails"];
-            /** @description HTTP レスポンスとして返却可能な ProblemDetails。クライアントへの通知に使用。 */
-            problemDetails: components["schemas"]["Models.ProblemDetails"];
-            /**
-             * Format: date-time
-             * @description エラーが発生した日時 (UTC)。再発防止のタイムライン分析に活用。
-             */
-            occurredAt: string;
-            /** @description エラーが発生した操作名やユースケース。例: `CreateReservation`。操作名が特定できない場合はnull */
-            operation: string | null;
-            /** @description デバッグ用のスタックトレース。開発・検証環境のみで出力する。本番環境ではnull */
-            stackTrace: string | null;
-        };
         /** @description 予約が下書き段階にある場合の状態情報。 */
         "Models.DraftBookingStatus": {
             /**
@@ -6723,7 +6396,7 @@ export interface components {
 
         "Models.PricingStrategyType": "fixed" | "tiered" | "dynamic" | "package" | "membership" | "custom";
         /**
-         * @description RFC 7807 に準拠した標準エラーレスポンスモデル。
+         * @description RFC 9457 (Problem Details for HTTP APIs) に準拠した標準エラーレスポンスモデル。
          *     美容サロン予約システム全体で一貫したエラー情報を提供し、顧客・スタッフ双方の操作ログと連携する。
          */
         "Models.ProblemDetails": {
@@ -7044,6 +6717,24 @@ export interface components {
             /** @description レコードを最後に更新したユーザーID。システム自動更新または匿名更新の場合はnull */
             updatedBy: string | null;
         };
+        /** @description 予約作成リクエスト - 新規予約登録時に必要なサロン・顧客・メニュー・希望日時の情報を受け取る */
+        "Models.ReservationCreateRequest": {
+            /** @description 予約対象のサロンID */
+            salonId: components["schemas"]["Models.SalonId"];
+            /** @description 予約を申し込む顧客ID */
+            customerId: components["schemas"]["Models.CustomerId"];
+            /** @description 担当予定のスタッフID */
+            staffId: components["schemas"]["Models.StaffId"];
+            /** @description 希望する施術メニューID */
+            serviceId: components["schemas"]["Models.ServiceId"];
+            /**
+             * Format: date-time
+             * @description 希望する施術開始日時 (UTC)
+             */
+            startTime: string;
+            /** @description 顧客要望や注意事項のメモ - 特記事項がない標準予約の場合はnull */
+            notes: string | null;
+        };
         /** @description 予約詳細モデル - 基本予約情報に顧客・スタッフ・メニュー名称やカテゴリなどの表示用情報を付加した拡張ビュー */
         "Models.ReservationDetail": {
             /** @description 顧客の表示名 */
@@ -7098,6 +6789,20 @@ export interface components {
          */
 
         "Models.ReservationStatusType": "pending" | "confirmed" | "cancelled" | "completed" | "no_show";
+        /** @description 予約更新リクエスト - 部分更新に対応した任意項目の変更指示を受け取り、既存予約を調整する。null指定で値をリセット可能 */
+        "Models.ReservationUpdateRequest": {
+            /** @description 更新後の予約ステータス */
+            status?: components["schemas"]["Models.ReservationStatusType"];
+            /** @description 最新の顧客メモや社内備考（null指定で初期化可能） */
+            notes?: string | null;
+            /**
+             * Format: date-time
+             * @description 調整後の施術開始日時 (UTC)
+             */
+            startTime?: string;
+            /** @description 再割当先のスタッフID */
+            staffId?: components["schemas"]["Models.StaffId"];
+        };
         /**
          * @description レスポンス共通メタデータモデル。
          *     問い合わせ対応やロギングで必要となる識別情報を保持する。
@@ -7900,6 +7605,53 @@ export interface components {
          */
 
         "Models.ServiceCategoryType": "cut" | "color" | "perm" | "treatment" | "spa" | "other";
+        /** @description サービスを新規登録するリクエスト */
+        "Models.ServiceCreateRequest": {
+            /** @description サービスを登録するサロン ID */
+            salonId: components["schemas"]["Models.SalonId"];
+            /** @description サービス名 */
+            name: string;
+            /** @description サービスの説明文 */
+            description: string;
+            /**
+             * Format: int32
+             * @description 施術時間（分）
+             */
+            duration: number;
+            /**
+             * Format: int32
+             * @description 料金（税抜）
+             */
+            price: number;
+            /** @description サービスカテゴリ区分 */
+            category: components["schemas"]["Models.ServiceCategoryType"];
+            /** @description カテゴリ ID。サービスカテゴリ区分のみで分類する場合はnull */
+            categoryId: (string & components["schemas"]["Models.CategoryId"]) | null;
+            /** @description サービス画像 URL。画像がない場合はnull */
+            imageUrl: string | null;
+            /**
+             * Format: int32
+             * @description 必要スタッフレベル。全スタッフが対応可能な場合はnull
+             */
+            requiredStaffLevel: number | null;
+            /**
+             * Format: int32
+             * @description 必要なデポジット額。デポジットが不要な場合はnull
+             */
+            depositAmount: number | null;
+            /** @description 有効フラグ。未指定時はデフォルトでtrueとして扱う場合null */
+            isActive: boolean | null;
+            /**
+             * Format: int32
+             * @description 最大全日予約可能日数。予約可能期間に制限がない場合はnull
+             */
+            maxAdvanceBookingDays: number | null;
+            /**
+             * Format: int32
+             * @description 最短予約受付時間（時間）。即時予約可能な場合はnull
+             */
+            minAdvanceBookingHours: number | null;
+        };
         /** @description サービス提供時間の設定 */
         "Models.ServiceDuration": {
             /**
@@ -8240,6 +7992,51 @@ export interface components {
              */
             bookingCount: number | null;
         };
+        /** @description サービス情報を部分更新するリクエスト。null指定で値をリセット可能 */
+        "Models.ServiceUpdateRequest": {
+            /** @description 更新後のサービス名 */
+            name?: string;
+            /** @description 更新後の説明文。null指定で説明文をクリア（空文字列にリセット） */
+            description: string | null;
+            /**
+             * Format: int32
+             * @description 更新後の施術時間。null指定で時間設定をクリア（デフォルト値にリセット）
+             */
+            duration: number | null;
+            /**
+             * Format: int32
+             * @description 更新後の料金
+             */
+            price?: number;
+            /** @description 更新後のサービスカテゴリ */
+            category?: components["schemas"]["Models.ServiceCategoryType"];
+            /** @description 更新後のカテゴリ ID（null 指定で解除） */
+            categoryId?: (string & components["schemas"]["Models.CategoryId"]) | null;
+            /** @description 更新後の画像 URL（null 指定で解除） */
+            imageUrl?: string | null;
+            /**
+             * Format: int32
+             * @description 更新後の必要スタッフレベル（null 指定で解除）
+             */
+            requiredStaffLevel?: number | null;
+            /**
+             * Format: int32
+             * @description 更新後のデポジット額（null 指定で解除）
+             */
+            depositAmount?: number | null;
+            /** @description 更新後の有効フラグ */
+            isActive?: boolean;
+            /**
+             * Format: int32
+             * @description 更新後の最大予約日数（null 指定で解除）
+             */
+            maxAdvanceBookingDays?: number | null;
+            /**
+             * Format: int32
+             * @description 更新後の最短予約受付時間（null 指定で解除）
+             */
+            minAdvanceBookingHours?: number | null;
+        };
         /** @description ログインセッションの状態と追跡情報。 */
         "Models.Session": {
             /** @description セッションを一意に識別するID。 */
@@ -8445,6 +8242,34 @@ export interface components {
             /** @description 休憩などの終了時刻 - 休憩なしの連続勤務の場合はnull */
             breakEnd: string | null;
         };
+        /** @description スタッフ作成リクエスト - 新規スタッフ登録時に必要なプロフィール・連絡先・スケジュール情報を受け取る */
+        "Models.StaffCreateRequest": {
+            /** @description 所属サロンのID */
+            salonId: components["schemas"]["Models.SalonId"];
+            /** @description スタッフの氏名 */
+            name: string;
+            /** @description 連絡先情報 */
+            contactInfo: components["schemas"]["Models.ContactInfo"];
+            /** @description 得意分野や専門メニューの一覧 */
+            specialties: string[];
+            /** @description プロフィール画像のURL - プロフィール画像未設定の場合はnull */
+            imageUrl: string | null;
+            /** @description 自己紹介や経歴の概要 - プロフィール未記入の新人スタッフの場合はnull */
+            bio: string | null;
+            /**
+             * Format: int32
+             * @description 実務経験年数 - 経験年数未記載またはアシスタントスタッフの場合はnull
+             */
+            yearsOfExperience: number | null;
+            /** @description 保有資格名の一覧 - 資格なしの新人やアシスタントの場合はnull */
+            certifications: string[] | null;
+            /** @description 詳細な資格情報の一覧 - 詳細資格情報未登録の場合はnull */
+            qualifications: components["schemas"]["Models.StaffQualification"][] | null;
+            /** @description 通常勤務スケジュールの一覧 - スケジュール未設定やフリーランススタッフの場合はnull */
+            schedules: components["schemas"]["Models.StaffSchedule"][] | null;
+            /** @description 付与する権限の一覧 - 特別権限がない一般スタッフの場合はnull */
+            permissions: components["schemas"]["Models.StaffPermission"][] | null;
+        };
         /**
          * Format: uuid
          * @description 施術スタッフや従業員を識別するためのブランド付きUUID。
@@ -8566,6 +8391,34 @@ export interface components {
              * @description 担当した予約件数。統計未計算の場合はnull
              */
             bookingCount: number | null;
+        };
+        /** @description スタッフ更新リクエスト - 任意項目を部分更新し、プロフィールや勤務状況を柔軟に調整する。null指定で値をリセット可能 */
+        "Models.StaffUpdateRequest": {
+            /** @description スタッフ名の更新 */
+            name?: string;
+            /** @description 連絡先情報の更新 */
+            contactInfo?: components["schemas"]["Models.ContactInfo"];
+            /** @description 得意分野一覧の更新 */
+            specialties?: string[];
+            /** @description プロフィール画像URLの更新（null指定で初期化可能） */
+            imageUrl?: string | null;
+            /** @description 自己紹介文の更新（null指定で初期化可能） */
+            bio?: string | null;
+            /**
+             * Format: int32
+             * @description 経験年数の更新（null指定で初期化可能）
+             */
+            yearsOfExperience?: number | null;
+            /** @description 資格名一覧の更新（null指定で初期化可能） */
+            certifications?: string[] | null;
+            /** @description 資格詳細一覧の更新（null指定で初期化可能） */
+            qualifications?: components["schemas"]["Models.StaffQualification"][] | null;
+            /** @description 勤務スケジュール一覧の更新（null指定で初期化可能） */
+            schedules?: components["schemas"]["Models.StaffSchedule"][] | null;
+            /** @description 付与権限一覧の更新（null指定で初期化可能） */
+            permissions?: components["schemas"]["Models.StaffPermission"][] | null;
+            /** @description アクティブ状態の更新 */
+            isActive?: boolean;
         };
         /** @description 在庫残量の閾値警告 */
         "Models.StockAlert": {
@@ -9038,93 +8891,6 @@ export interface components {
             code: "UNAUTHORIZED";
             /** @description エラー内容を伝えるメッセージ。 */
             message: string;
-        };
-        /** @description 予約更新リクエスト - 部分更新に対応した任意項目の変更指示を受け取り、既存予約を調整する。null指定で値をリセット可能 */
-        "Models.UpdateReservationRequest": {
-            /** @description 更新後の予約ステータス */
-            status?: components["schemas"]["Models.ReservationStatusType"];
-            /** @description 最新の顧客メモや社内備考（null指定で初期化可能） */
-            notes?: string | null;
-            /**
-             * Format: date-time
-             * @description 調整後の施術開始日時 (UTC)
-             */
-            startTime?: string;
-            /** @description 再割当先のスタッフID */
-            staffId?: components["schemas"]["Models.StaffId"];
-        };
-        /** @description サービス情報を部分更新するリクエスト。null指定で値をリセット可能 */
-        "Models.UpdateServiceRequest": {
-            /** @description 更新後のサービス名 */
-            name?: string;
-            /** @description 更新後の説明文。null指定で説明文をクリア（空文字列にリセット） */
-            description: string | null;
-            /**
-             * Format: int32
-             * @description 更新後の施術時間。null指定で時間設定をクリア（デフォルト値にリセット）
-             */
-            duration: number | null;
-            /**
-             * Format: int32
-             * @description 更新後の料金
-             */
-            price?: number;
-            /** @description 更新後のサービスカテゴリ */
-            category?: components["schemas"]["Models.ServiceCategoryType"];
-            /** @description 更新後のカテゴリ ID（null 指定で解除） */
-            categoryId?: (string & components["schemas"]["Models.CategoryId"]) | null;
-            /** @description 更新後の画像 URL（null 指定で解除） */
-            imageUrl?: string | null;
-            /**
-             * Format: int32
-             * @description 更新後の必要スタッフレベル（null 指定で解除）
-             */
-            requiredStaffLevel?: number | null;
-            /**
-             * Format: int32
-             * @description 更新後のデポジット額（null 指定で解除）
-             */
-            depositAmount?: number | null;
-            /** @description 更新後の有効フラグ */
-            isActive?: boolean;
-            /**
-             * Format: int32
-             * @description 更新後の最大予約日数（null 指定で解除）
-             */
-            maxAdvanceBookingDays?: number | null;
-            /**
-             * Format: int32
-             * @description 更新後の最短予約受付時間（null 指定で解除）
-             */
-            minAdvanceBookingHours?: number | null;
-        };
-        /** @description スタッフ更新リクエスト - 任意項目を部分更新し、プロフィールや勤務状況を柔軟に調整する。null指定で値をリセット可能 */
-        "Models.UpdateStaffRequest": {
-            /** @description スタッフ名の更新 */
-            name?: string;
-            /** @description 連絡先情報の更新 */
-            contactInfo?: components["schemas"]["Models.ContactInfo"];
-            /** @description 得意分野一覧の更新 */
-            specialties?: string[];
-            /** @description プロフィール画像URLの更新（null指定で初期化可能） */
-            imageUrl?: string | null;
-            /** @description 自己紹介文の更新（null指定で初期化可能） */
-            bio?: string | null;
-            /**
-             * Format: int32
-             * @description 経験年数の更新（null指定で初期化可能）
-             */
-            yearsOfExperience?: number | null;
-            /** @description 資格名一覧の更新（null指定で初期化可能） */
-            certifications?: string[] | null;
-            /** @description 資格詳細一覧の更新（null指定で初期化可能） */
-            qualifications?: components["schemas"]["Models.StaffQualification"][] | null;
-            /** @description 勤務スケジュール一覧の更新（null指定で初期化可能） */
-            schedules?: components["schemas"]["Models.StaffSchedule"][] | null;
-            /** @description 付与権限一覧の更新（null指定で初期化可能） */
-            permissions?: components["schemas"]["Models.StaffPermission"][] | null;
-            /** @description アクティブ状態の更新 */
-            isActive?: boolean;
         };
         /** @description 認証基盤で管理するユーザーアカウント情報。 */
         "Models.User": {
@@ -9848,37 +9614,6 @@ export interface operations {
             };
         };
     };
-    SystemOperations_metrics: {
-        parameters: {
-            query?: never;
-            header?: {
-                Authorization?: string;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The request has succeeded. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "text/plain": string;
-                };
-            };
-            /** @description Access is unauthorized. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-        };
-    };
     SystemOperations_ready: {
         parameters: {
             query?: never;
@@ -9904,33 +9639,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Models.SystemReadyResponse"];
-                };
-            };
-        };
-    };
-    SystemOperations_version: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The request has succeeded. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        version: string;
-                        /** Format: date-time */
-                        buildTime: string;
-                        gitCommit?: string;
-                        gitBranch?: string;
-                        environment?: string;
-                    };
                 };
             };
         };
@@ -9969,7 +9677,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description Access is unauthorized. */
@@ -9978,7 +9686,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description Access is forbidden. */
@@ -9987,7 +9695,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description The server cannot find the requested resource. */
@@ -9996,7 +9704,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -10031,7 +9739,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description Access is forbidden. */
@@ -10040,7 +9748,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description The server cannot find the requested resource. */
@@ -10049,7 +9757,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -10082,7 +9790,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description Access is unauthorized. */
@@ -10091,7 +9799,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description Access is forbidden. */
@@ -10100,7 +9808,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description The server cannot find the requested resource. */
@@ -10109,7 +9817,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -10370,7 +10078,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"] | components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"] | components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description Access is unauthorized. */
@@ -10379,7 +10087,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -10414,7 +10122,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"] | components["schemas"]["Models.Error"] | components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"] | components["schemas"]["Models.ProblemDetails"] | components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description Access is unauthorized. */
@@ -10423,7 +10131,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -10458,7 +10166,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"] | components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"] | components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description Access is unauthorized. */
@@ -10467,7 +10175,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -10498,7 +10206,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description Access is unauthorized. */
@@ -10507,7 +10215,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -10542,7 +10250,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"] | components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"] | components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description Access is unauthorized. */
@@ -10551,7 +10259,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -10586,7 +10294,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"] | components["schemas"]["Models.Error"] | components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"] | components["schemas"]["Models.ProblemDetails"] | components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description Access is unauthorized. */
@@ -10595,7 +10303,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -10628,7 +10336,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description Client error */
@@ -10637,7 +10345,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -10670,7 +10378,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description Access is unauthorized. */
@@ -10679,7 +10387,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description Access is forbidden. */
@@ -10688,7 +10396,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description Client error */
@@ -10697,7 +10405,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -10728,7 +10436,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -10759,7 +10467,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -10790,7 +10498,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -10823,7 +10531,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -10856,7 +10564,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description The request conflicts with the current state of the server. */
@@ -10865,7 +10573,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -10898,7 +10606,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"] | components["schemas"]["Models.Error"] | components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"] | components["schemas"]["Models.ProblemDetails"] | components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -10929,7 +10637,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -10960,7 +10668,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -10993,7 +10701,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description The server cannot find the requested resource. */
@@ -11002,7 +10710,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -11035,7 +10743,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -11066,7 +10774,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description Access is unauthorized. */
@@ -11075,7 +10783,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description Client error */
@@ -11084,7 +10792,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -11146,7 +10854,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["Models.CreateBookingRequest"];
+                "application/json": components["schemas"]["Models.BookingCreateRequest"];
             };
         };
         responses: {
@@ -11166,7 +10874,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description The request conflicts with the current state of the server. */
@@ -11175,7 +10883,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -11206,7 +10914,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -11235,7 +10943,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description The request conflicts with the current state of the server. */
@@ -11244,7 +10952,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -11279,7 +10987,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description The server cannot find the requested resource. */
@@ -11288,7 +10996,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -11326,7 +11034,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description The request conflicts with the current state of the server. */
@@ -11335,7 +11043,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -11366,7 +11074,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description The request conflicts with the current state of the server. */
@@ -11375,7 +11083,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -11417,7 +11125,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description The server cannot find the requested resource. */
@@ -11426,7 +11134,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -11463,7 +11171,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description The request conflicts with the current state of the server. */
@@ -11472,7 +11180,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -11504,7 +11212,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -11583,7 +11291,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description Access is unauthorized. */
@@ -11592,7 +11300,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description Client error */
@@ -11609,7 +11317,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -11655,7 +11363,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description Access is unauthorized. */
@@ -11664,7 +11372,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description The request conflicts with the current state of the server. */
@@ -11673,7 +11381,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description Client error */
@@ -11682,7 +11390,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -11726,7 +11434,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description Access is unauthorized. */
@@ -11735,7 +11443,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -11825,7 +11533,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description Access is unauthorized. */
@@ -11834,7 +11542,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -11906,7 +11614,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description Access is unauthorized. */
@@ -11915,7 +11623,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -11979,7 +11687,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description Access is unauthorized. */
@@ -11988,7 +11696,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -12089,7 +11797,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description Access is unauthorized. */
@@ -12098,7 +11806,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -12152,7 +11860,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description Access is unauthorized. */
@@ -12161,7 +11869,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description The server cannot find the requested resource. */
@@ -12170,7 +11878,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description The request conflicts with the current state of the server. */
@@ -12179,7 +11887,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -12252,7 +11960,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description Access is unauthorized. */
@@ -12261,7 +11969,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -12315,7 +12023,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description The server cannot find the requested resource. */
@@ -12324,7 +12032,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -12372,7 +12080,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description Access is unauthorized. */
@@ -12381,7 +12089,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description The server cannot find the requested resource. */
@@ -12390,7 +12098,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description The request conflicts with the current state of the server. */
@@ -12399,7 +12107,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description Client error */
@@ -12408,7 +12116,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -12442,7 +12150,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description The server cannot find the requested resource. */
@@ -12451,7 +12159,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description The request conflicts with the current state of the server. */
@@ -12460,7 +12168,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -12511,7 +12219,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description Access is unauthorized. */
@@ -12520,7 +12228,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description The server cannot find the requested resource. */
@@ -12529,7 +12237,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description The request conflicts with the current state of the server. */
@@ -12538,7 +12246,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description Client error */
@@ -12547,7 +12255,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -12601,7 +12309,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description The server cannot find the requested resource. */
@@ -12610,7 +12318,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -12674,7 +12382,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description Access is unauthorized. */
@@ -12683,7 +12391,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description The server cannot find the requested resource. */
@@ -12692,7 +12400,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -12729,7 +12437,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description The server cannot find the requested resource. */
@@ -12738,7 +12446,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -12787,7 +12495,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description The server cannot find the requested resource. */
@@ -12796,7 +12504,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -12860,7 +12568,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description Access is unauthorized. */
@@ -12869,7 +12577,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description The server cannot find the requested resource. */
@@ -12878,7 +12586,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -12924,7 +12632,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description Access is unauthorized. */
@@ -12933,7 +12641,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description The server cannot find the requested resource. */
@@ -12942,7 +12650,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -12984,7 +12692,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description The server cannot find the requested resource. */
@@ -12993,7 +12701,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -13047,7 +12755,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description The server cannot find the requested resource. */
@@ -13056,7 +12764,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -13098,7 +12806,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description The server cannot find the requested resource. */
@@ -13107,7 +12815,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description The request conflicts with the current state of the server. */
@@ -13116,7 +12824,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -13161,7 +12869,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description The server cannot find the requested resource. */
@@ -13170,7 +12878,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -13213,7 +12921,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description The server cannot find the requested resource. */
@@ -13222,7 +12930,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -13285,7 +12993,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["Models.CreateReservationRequest"];
+                "application/json": components["schemas"]["Models.ReservationCreateRequest"];
             };
         };
         responses: {
@@ -13305,7 +13013,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description The request conflicts with the current state of the server. */
@@ -13314,7 +13022,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -13345,7 +13053,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -13361,7 +13069,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["Models.UpdateReservationRequest"];
+                "application/json": components["schemas"]["Models.ReservationUpdateRequest"];
             };
         };
         responses: {
@@ -13380,7 +13088,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description The server cannot find the requested resource. */
@@ -13389,7 +13097,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description The request conflicts with the current state of the server. */
@@ -13398,7 +13106,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -13435,7 +13143,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description The request conflicts with the current state of the server. */
@@ -13444,7 +13152,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -13475,7 +13183,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description The request conflicts with the current state of the server. */
@@ -13484,7 +13192,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -13523,7 +13231,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description The request conflicts with the current state of the server. */
@@ -13532,7 +13240,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -13615,7 +13323,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description The request conflicts with the current state of the server. */
@@ -13624,7 +13332,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -13655,7 +13363,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -13684,7 +13392,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description The server cannot find the requested resource. */
@@ -13693,7 +13401,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -13728,7 +13436,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description The server cannot find the requested resource. */
@@ -13737,7 +13445,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -13771,7 +13479,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -13811,7 +13519,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -13864,7 +13572,30 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
+             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+             */
+            429: {
+                headers: {
+                    /** @description 再試行できるようになるまでの秒数。 */
+                    "Retry-After": number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -13907,7 +13638,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description The request conflicts with the current state of the server. */
@@ -13916,7 +13647,48 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description リクエスト本文が UTF-8 の JSON ではない (415)。 */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
+             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+             */
+            429: {
+                headers: {
+                    /** @description 再試行できるようになるまでの秒数。 */
+                    "Retry-After": number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -13956,7 +13728,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description The server cannot find the requested resource. */
@@ -13965,7 +13737,30 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
+             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+             */
+            429: {
+                headers: {
+                    /** @description 再試行できるようになるまでの秒数。 */
+                    "Retry-After": number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -13994,7 +13789,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description The server cannot find the requested resource. */
@@ -14003,7 +13798,30 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
+             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+             */
+            429: {
+                headers: {
+                    /** @description 再試行できるようになるまでの秒数。 */
+                    "Retry-After": number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -14047,7 +13865,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description The server cannot find the requested resource. */
@@ -14056,7 +13874,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description The request conflicts with the current state of the server. */
@@ -14065,7 +13883,48 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.ProblemDetails"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description リクエスト本文が UTF-8 の JSON ではない (415)。 */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
+             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+             */
+            429: {
+                headers: {
+                    /** @description 再試行できるようになるまでの秒数。 */
+                    "Retry-After": number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -14101,7 +13960,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -14265,7 +14124,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["Models.CreateServiceRequest"];
+                "application/json": components["schemas"]["Models.ServiceCreateRequest"];
             };
         };
         responses: {
@@ -14285,7 +14144,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -14303,7 +14162,7 @@ export interface operations {
             content: {
                 "application/json": {
                     serviceIds: components["schemas"]["Models.ServiceId"][];
-                    updates: components["schemas"]["Models.UpdateServiceRequest"];
+                    updates: components["schemas"]["Models.ServiceUpdateRequest"];
                 };
             };
         };
@@ -14352,7 +14211,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -14369,7 +14228,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["Models.UpdateServiceRequest"];
+                "application/json": components["schemas"]["Models.ServiceUpdateRequest"];
             };
         };
         responses: {
@@ -14388,7 +14247,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description The server cannot find the requested resource. */
@@ -14397,7 +14256,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -14427,7 +14286,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -14488,7 +14347,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["Models.CreateStaffRequest"];
+                "application/json": components["schemas"]["Models.StaffCreateRequest"];
             };
         };
         responses: {
@@ -14508,7 +14367,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -14540,7 +14399,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -14557,7 +14416,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["Models.UpdateStaffRequest"];
+                "application/json": components["schemas"]["Models.StaffUpdateRequest"];
             };
         };
         responses: {
@@ -14576,7 +14435,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description The server cannot find the requested resource. */
@@ -14585,7 +14444,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -14615,7 +14474,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -14676,7 +14535,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -14758,7 +14617,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -14800,7 +14659,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };
@@ -14829,7 +14688,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
             /** @description The request conflicts with the current state of the server. */
@@ -14838,7 +14697,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Models.Error"];
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
         };

@@ -13,7 +13,7 @@ import type { ModelsStaffSchedule } from './modelsStaffSchedule';
 /**
  * スタッフ更新リクエスト - 任意項目を部分更新し、プロフィールや勤務状況を柔軟に調整する。null指定で値をリセット可能
  */
-export interface ModelsUpdateStaffRequest {
+export interface ModelsStaffUpdateRequest {
   /** スタッフ名の更新 */
   name?: string;
   /** 連絡先情報の更新 */

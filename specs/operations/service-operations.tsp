@@ -35,16 +35,13 @@ namespace BeautySalon.Operations {
     @doc("新しい施術メニューを登録し、価格・施術時間・提供条件を設定します。")
     @summary("Create service")
     @post
-    op create(@path salonId: SalonId, @body service: CreateServiceRequest):
+    op create(@path salonId: SalonId, @body service: ServiceCreateRequest):
       | {
           @statusCode statusCode: 201;
           @header location: string;
           @body service: Service;
         }
-      | {
-          @statusCode statusCode: 400;
-          @body error: Error;
-        };
+      | ProblemResponse<400>;
 
     @doc("特定メニューの詳細情報を取得し、予約システムやスタッフ教育に必要な内容を確認します。")
     @summary("Get service")
@@ -54,10 +51,7 @@ namespace BeautySalon.Operations {
           @statusCode statusCode: 200;
           @body service: Service;
         }
-      | {
-          @statusCode statusCode: 404;
-          @body error: Error;
-        };
+      | ProblemResponse<404>;
 
     @doc("既存メニューの内容を更新し、料金改定や提供条件の変更に対応します。")
     @summary("Update service")
@@ -65,20 +59,14 @@ namespace BeautySalon.Operations {
     op update(
       @path salonId: SalonId,
       @path id: ServiceId,
-      @body updates: UpdateServiceRequest,
+      @body updates: ServiceUpdateRequest,
     ):
       | {
           @statusCode statusCode: 200;
           @body service: Service;
         }
-      | {
-          @statusCode statusCode: 404;
-          @body error: Error;
-        }
-      | {
-          @statusCode statusCode: 400;
-          @body error: Error;
-        };
+      | ProblemResponse<404>
+      | ProblemResponse<400>;
 
     @doc("提供終了となったメニューを削除し、予約導線から除外します。")
     @summary("Delete service")
@@ -87,10 +75,7 @@ namespace BeautySalon.Operations {
       | {
           @statusCode statusCode: 204;
         }
-      | {
-          @statusCode statusCode: 404;
-          @body error: Error;
-        };
+      | ProblemResponse<404>;
 
     @doc("複数メニューの共通項目を一括更新し、季節キャンペーンや価格調整を効率化します。")
     @summary("Bulk update services")
@@ -100,7 +85,7 @@ namespace BeautySalon.Operations {
       @path salonId: SalonId,
       @body updates: {
         serviceIds: ServiceId[];
-        updates: UpdateServiceRequest;
+        updates: ServiceUpdateRequest;
       },
     ): {
       @statusCode statusCode: 200;
@@ -141,10 +126,7 @@ namespace BeautySalon.Operations {
           @statusCode statusCode: 201;
           @body category: CategoryModel;
         }
-      | {
-          @statusCode statusCode: 400;
-          @body error: Error;
-        };
+      | ProblemResponse<400>;
 
     @doc("既存カテゴリを更新し、名称や表示順、親子関係を調整します。")
     @summary("Update service category")
@@ -163,10 +145,7 @@ namespace BeautySalon.Operations {
           @statusCode statusCode: 200;
           @body category: CategoryModel;
         }
-      | {
-          @statusCode statusCode: 404;
-          @body error: Error;
-        };
+      | ProblemResponse<404>;
 
     @doc("利用されなくなったカテゴリを削除し、メニュー構成を整理します。")
     @summary("Delete service category")
@@ -175,13 +154,7 @@ namespace BeautySalon.Operations {
       | {
           @statusCode statusCode: 204;
         }
-      | {
-          @statusCode statusCode: 404;
-          @body error: Error;
-        }
-      | {
-          @statusCode statusCode: 409;
-          @body error: Error;
-        };
+      | ProblemResponse<404>
+      | ProblemResponse<409>;
   }
 }

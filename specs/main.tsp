@@ -6,7 +6,6 @@ import "@typespec/versioning";
 // Import all models
 // common.tsp is imported by each model file, so we don't need to import it here
 import "./models/_shared/common-api-patterns.tsp";
-import "./models/_shared/domain-errors.tsp";
 import "./models/auth.tsp";
 import "./models/salon.tsp";
 import "./models/staff.tsp";
@@ -22,6 +21,7 @@ import "./models/inventory.tsp";
 import "./models/permission.tsp";
 
 // Import all operations
+import "./operations/_shared/base-operations.tsp";
 import "./operations/auth-operations.tsp";
 import "./operations/salon-operations.tsp";
 import "./operations/staff-operations.tsp";

@@ -14,8 +14,8 @@ TypeSpec で API のモデルとオペレーションを定義するときのル
 
 このルールをすべて満たしているのは Salon と、Salon が使う共通モデルだけである。ほかのドメイン（customer、staff、booking、payment など）は TypeSpec と DB スキーマにだけ存在し、バックエンドの実装はない（GitHub issue #91）。それらの TypeSpec には旧い形が残っている。
 
-- `CreateStaffRequest`、`UpdateServiceRequest` のような旧い語順のモデル名
 - `Customer`、`Booking` のように、エンティティ名そのままのレスポンスモデル
+- エラーを 200 の本文として返すオペレーション（attachment の `Models.Error`、inventory・payment・permission・treatment の `Result<T>`）
 - DB にカラムのないプロパティ（`pnpm check:api-db` のベースラインに記録されている）
 
 ドメインを実装するときは、最初にその TypeSpec を Salon と同じ形に直す。
@@ -212,10 +212,8 @@ namespace SalonOperations {
           @statusCode statusCode: 200;
           @body response: CursorPaginationResponse<SalonResponse>;
         }
-      | {
-          @statusCode statusCode: 400;
-          @body error: ProblemDetails;
-        };
+      | ProblemResponse<400>
+      | CommonErrors;
 
     @doc("サロンを新規登録します。メールアドレスが既存のサロンと重複する場合は409を返します。")
     @summary("Create a salon")
@@ -226,14 +224,10 @@ namespace SalonOperations {
           @header("Location") location: string;
           @body response: ApiResponse<SalonResponse>;
         }
-      | {
-          @statusCode statusCode: 400;
-          @body error: ProblemDetails;
-        }
-      | {
-          @statusCode statusCode: 409;
-          @body error: ProblemDetails;
-        };
+      | ProblemResponse<400>
+      | ProblemResponse<409>
+      | RequestBodyErrors
+      | CommonErrors;
   }
 }
 ```
@@ -242,7 +236,8 @@ namespace SalonOperations {
 - 1 件を返すレスポンスは `ApiResponse<XXXResponse>`、一覧は `CursorPaginationResponse<XXXResponse>` で包む
 - 作成は 201 と `Location` ヘッダー、削除は本文なしの 204 を返す
 - 更新は `@patch` にする（部分更新）
-- エラーのレスポンスはすべて `ProblemDetails` にする。そのオペレーションのユースケースが返すもの（検証エラー 400、未検出 404、重複 409）をステータスごとに列挙する
+- エラーのレスポンスはすべて `ProblemResponse<ステータス>` にする。本文は `ProblemDetails`、メディアタイプは `application/problem+json` になる。そのオペレーションのユースケースが返すもの（検証エラー 400、未検出 404、重複 409）をステータスごとに列挙する
+- どのルートでもサーバーが返すエラーも定義に含める。すべてのオペレーションに `CommonErrors`（429、500）を、本文を受け取るオペレーションには `RequestBodyErrors`（413、415）も加える。生成されるクライアントの戻り値はステータスコードのユニオンなので、定義にないステータスはクライアントが扱えない
 - パスの ID は ID スカラーで型付けする（`@path id: SalonId`）
 - Salon では、定義したオペレーションがすべて実装されている。実装しないオペレーションを先に定義しない（YAGNI）
 
@@ -254,6 +249,9 @@ namespace SalonOperations {
 | `CursorPaginationResponse<T>` | `data: T[]`、`meta: PaginationMeta`、`links: PaginationLinks` |
 | `PaginationMeta` | `total`、`limit`、`hasMore`、`cursor`、`nextCursor`、`prevCursor` |
 | `ProblemDetails` | RFC 9457（旧 RFC 7807）の problem details に `code`、`errors`、`correlationId`、`timestamp` を加えたもの |
+| `ProblemResponse<TStatus>` | ステータス `TStatus` で `ProblemDetails` を `application/problem+json` として返すエラーレスポンス |
+| `CommonErrors` | `RateLimitedResponse`（429、`Retry-After` ヘッダー付き）と `InternalServerErrorResponse`（500） |
+| `RequestBodyErrors` | `PayloadTooLargeResponse`（413）と `UnsupportedMediaTypeResponse`（415） |
 | `HealthStatus`、`SystemReadyResponse` | `/api/system/health`、`/api/system/ready` のレスポンス |
 
 ### 検索リクエスト
@@ -263,19 +261,16 @@ namespace SalonOperations {
 ```typespec
 // specs/models/salon.tsp（抜粋）
 model SalonSearchRequest {
-  #suppress "@typespec/http/metadata-ignored" "Treated as queryParams"
   @query
   @doc("1ページあたりの取得件数上限 (1〜100)")
   @minValue(1)
   @maxValue(100)
   limit?: int32 = 20;
 
-  #suppress "@typespec/http/metadata-ignored" "Treated as queryParams"
   @query
   @doc("取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する")
   cursor?: string;
 
-  #suppress "@typespec/http/metadata-ignored" "Treated as queryParams"
   @query(#{ explode: true })
   @doc("特徴タグによる絞り込み。指定したタグをすべて持つサロンに一致する")
   features?: string[];
