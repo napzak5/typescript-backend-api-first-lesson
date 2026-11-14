@@ -14,7 +14,7 @@ let currentTestSchema: TestSchema | null = null
  * PostgreSQL container when it is not set
  */
 beforeAll(async () => {
-  const externalUrl = process.env.TEST_DATABASE_URL
+  const { TEST_DATABASE_URL: externalUrl } = process.env
 
   if (!externalUrl) {
     container = await new PostgreSqlContainer('postgres:18-alpine')

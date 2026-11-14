@@ -1,0 +1,10 @@
+language js
+
+// CLAUDE.md, absolute rules: no type assertions. `as const` is one of them;
+// `satisfies` is not.
+or {
+  TsAsExpression(),
+  TsTypeAssertionExpression()
+} as $assertion where {
+  register_diagnostic(span=$assertion, message="Type assertions are not allowed in application code (CLAUDE.md). Let the type follow from the value: parse it with a schema, annotate the declaration, or use `satisfies`.", severity="error")
+}

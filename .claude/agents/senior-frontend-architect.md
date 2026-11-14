@@ -44,7 +44,7 @@ Visual and interaction design comes from `senior-ui-designer`. You implement it,
 - Tests are Vitest files next to the module (`*.test.ts`, `*.test.tsx`).
 - `pnpm dev` starts the backend on port 3000 and the applications on ports 3001 to 3003. `pnpm dev:watch:admin-app` runs one application with its packages in watch mode; there is one such script per application. Storybook: `pnpm --filter @beauty-salon-frontend/ui run storybook`.
 
-On type safety: Biome rejects `any` in the frontend as everywhere else. `CLAUDE.md` words its absolute rules (no type assertions, no type guards, no thrown exceptions) for the code the server runs. Hold new frontend code to the same intent: take types from the generated client instead of asserting them, and return expected failures as values. Parts of the existing frontend do not do this, for example the type predicates in `frontend/packages/utils` and the error types in `frontend/packages/types`. Do not spread those patterns to new modules, and do not rewrite them unless that is the task.
+On type safety: the absolute rules of `CLAUDE.md` (no `any`, no type assertions, no type guards, no thrown exceptions) apply to frontend code, and `pnpm lint` fails on them. Take types from the generated client instead of asserting them, and return expected failures as values. Four older packages are exempt from the lint until they are rewritten or removed: `message`, `types`, `utils` and `validations` in `frontend/packages` (for example the type predicates in `frontend/packages/utils`). Do not spread their patterns to new modules, and do not rewrite them unless that is the task.
 
 ## Before you report
 

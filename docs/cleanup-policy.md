@@ -35,6 +35,7 @@ export interface SalonUseCaseDependencies {
 | 検出するもの | ツール | コマンド |
 |--------------|--------|----------|
 | 未使用の変数と import、`any` | Biome | `pnpm lint` |
+| アプリケーションコードの型アサーション、型ガード、`throw`（[型安全性の原則](./type-safety-principles.md)） | Biome のプラグイン（`shared-config/biome/`） | `pnpm lint` |
 | 未使用のローカル変数と引数 | TypeScript | `pnpm typecheck` |
 | 未使用のファイル・export・依存関係 | knip | `pnpm knip` |
 | TypeSpec と食い違っている生成ファイル | `scripts/check-clean.ts` | `pnpm check:generated` |

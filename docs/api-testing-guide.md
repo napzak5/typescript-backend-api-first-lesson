@@ -77,7 +77,7 @@ Once per test file, the setup picks the database and prepares the enum types:
 ```typescript
 // backend/packages/api/src/__tests__/_shared/setup.ts (excerpt)
 beforeAll(async () => {
-  const externalUrl = process.env.TEST_DATABASE_URL
+  const { TEST_DATABASE_URL: externalUrl } = process.env
 
   if (!externalUrl) {
     container = await new PostgreSqlContainer('postgres:18-alpine')

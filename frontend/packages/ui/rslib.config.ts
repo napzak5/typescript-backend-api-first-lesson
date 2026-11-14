@@ -23,7 +23,7 @@ export default defineConfig({
     entry: {
       index: './src/index.ts',
     },
-    tsconfigPath: './tsconfig.json',
+    tsconfigPath: './tsconfig.build.json',
   },
   output: {
     externals: ['react', 'react-dom', 'react/jsx-runtime'],

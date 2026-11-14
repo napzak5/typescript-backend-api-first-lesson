@@ -36,6 +36,11 @@ which turns an exception of a library into a value. The frontend utility
 packages predate the rules and still contain type guards and assertions: new
 frontend code follows the rules and does not take them as a model.
 
+`pnpm lint` enforces the four prohibitions: `any` and `!` everywhere, and
+type assertions, type guards and `throw` in application code, through the
+Biome plugins in `shared-config/biome/`. What is exempt is listed in
+[docs/type-safety-principles.md](docs/type-safety-principles.md).
+
 The database scripts (`backend/packages/database/src/scripts`), the seeds and
 the tests are command-line programs and test code; there a thrown error that
 ends the run with a non-zero status, and `console` output, are the expected

@@ -138,7 +138,7 @@ describe('Salon API', () => {
         createdAt: expect.stringMatching(ISO_TIMESTAMP),
         updatedAt: expect.stringMatching(ISO_TIMESTAMP),
       })
-      expect(response.headers.location).toBe(`${SALONS}/${data.id}`)
+      expect(response.headers['location']).toBe(`${SALONS}/${data.id}`)
       expect(links).toEqual({ self: `${SALONS}/${data.id}`, list: SALONS })
       expect(meta).toEqual({
         correlationId: expect.stringMatching(UUID),

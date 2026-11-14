@@ -22,7 +22,7 @@ async function main() {
   try {
     // Drop all tables in cascade mode
     console.log('📝 Dropping all tables...')
-    const tables = await sql`
+    const tables = await sql<{ tablename: string }[]>`
       SELECT tablename 
       FROM pg_tables 
       WHERE schemaname = 'public'
@@ -35,7 +35,7 @@ async function main() {
 
     // Drop all types
     console.log('📝 Dropping all custom types...')
-    const types = await sql`
+    const types = await sql<{ typname: string }[]>`
       SELECT typname 
       FROM pg_type 
       WHERE typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
