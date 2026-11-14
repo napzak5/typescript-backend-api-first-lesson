@@ -490,11 +490,11 @@ ci-check-dockerfile:
 	@echo ""
 	@echo "━━━ FRONTEND ADMIN DOCKER TESTS ━━━"
 	@echo "Step 5/15: Building Frontend Admin builder stage..."
-	@docker build -f Dockerfile.frontend.admin --target builder -t test-frontend-admin-builder . || (echo "❌ Frontend Admin builder stage failed" && exit 1)
+	@docker build -f Dockerfile.frontend --build-arg APP=admin --build-arg APP_PORT=4001 --target builder -t test-frontend-admin-builder . || (echo "❌ Frontend Admin builder stage failed" && exit 1)
 	@echo "✅ Frontend Admin builder stage successful"
 	@echo ""
 	@echo "Step 6/15: Building Frontend Admin runtime stage..."
-	@docker build -f Dockerfile.frontend.admin --target runtime -t test-frontend-admin-runtime . || (echo "❌ Frontend Admin runtime stage failed" && exit 1)
+	@docker build -f Dockerfile.frontend --build-arg APP=admin --build-arg APP_PORT=4001 --target runtime -t test-frontend-admin-runtime . || (echo "❌ Frontend Admin runtime stage failed" && exit 1)
 	@echo "✅ Frontend Admin runtime stage successful"
 	@echo ""
 	@echo "Step 7/15: Testing Frontend Admin runtime container..."
@@ -504,11 +504,11 @@ ci-check-dockerfile:
 	@echo ""
 	@echo "━━━ FRONTEND PORTAL DOCKER TESTS ━━━"
 	@echo "Step 8/15: Building Frontend Portal builder stage..."
-	@docker build -f Dockerfile.frontend.portal --target builder -t test-frontend-portal-builder . || (echo "❌ Frontend Portal builder stage failed" && exit 1)
+	@docker build -f Dockerfile.frontend --build-arg APP=portal --build-arg APP_PORT=4002 --target builder -t test-frontend-portal-builder . || (echo "❌ Frontend Portal builder stage failed" && exit 1)
 	@echo "✅ Frontend Portal builder stage successful"
 	@echo ""
 	@echo "Step 9/15: Building Frontend Portal runtime stage..."
-	@docker build -f Dockerfile.frontend.portal --target runtime -t test-frontend-portal-runtime . || (echo "❌ Frontend Portal runtime stage failed" && exit 1)
+	@docker build -f Dockerfile.frontend --build-arg APP=portal --build-arg APP_PORT=4002 --target runtime -t test-frontend-portal-runtime . || (echo "❌ Frontend Portal runtime stage failed" && exit 1)
 	@echo "✅ Frontend Portal runtime stage successful"
 	@echo ""
 	@echo "Step 10/15: Testing Frontend Portal runtime container..."
@@ -518,11 +518,11 @@ ci-check-dockerfile:
 	@echo ""
 	@echo "━━━ FRONTEND DASHBOARD DOCKER TESTS ━━━"
 	@echo "Step 11/15: Building Frontend Dashboard builder stage..."
-	@docker build -f Dockerfile.frontend.dashboard --target builder -t test-frontend-dashboard-builder . || (echo "❌ Frontend Dashboard builder stage failed" && exit 1)
+	@docker build -f Dockerfile.frontend --build-arg APP=dashboard --build-arg APP_PORT=4003 --target builder -t test-frontend-dashboard-builder . || (echo "❌ Frontend Dashboard builder stage failed" && exit 1)
 	@echo "✅ Frontend Dashboard builder stage successful"
 	@echo ""
 	@echo "Step 12/15: Building Frontend Dashboard runtime stage..."
-	@docker build -f Dockerfile.frontend.dashboard --target runtime -t test-frontend-dashboard-runtime . || (echo "❌ Frontend Dashboard runtime stage failed" && exit 1)
+	@docker build -f Dockerfile.frontend --build-arg APP=dashboard --build-arg APP_PORT=4003 --target runtime -t test-frontend-dashboard-runtime . || (echo "❌ Frontend Dashboard runtime stage failed" && exit 1)
 	@echo "✅ Frontend Dashboard runtime stage successful"
 	@echo ""
 	@echo "Step 13/15: Testing Frontend Dashboard runtime container..."
@@ -560,15 +560,15 @@ docker-check-quick:
 	@echo "✅ Backend OK"
 	@echo ""
 	@echo "Frontend Admin builder stage..."
-	@docker build -f Dockerfile.frontend.admin --target builder -t test-frontend-admin-quick . || (echo "❌ Frontend Admin builder failed" && exit 1)
+	@docker build -f Dockerfile.frontend --build-arg APP=admin --build-arg APP_PORT=4001 --target builder -t test-frontend-admin-quick . || (echo "❌ Frontend Admin builder failed" && exit 1)
 	@echo "✅ Frontend Admin OK"
 	@echo ""
 	@echo "Frontend Portal builder stage..."
-	@docker build -f Dockerfile.frontend.portal --target builder -t test-frontend-portal-quick . || (echo "❌ Frontend Portal builder failed" && exit 1)
+	@docker build -f Dockerfile.frontend --build-arg APP=portal --build-arg APP_PORT=4002 --target builder -t test-frontend-portal-quick . || (echo "❌ Frontend Portal builder failed" && exit 1)
 	@echo "✅ Frontend Portal OK"
 	@echo ""
 	@echo "Frontend Dashboard builder stage..."
-	@docker build -f Dockerfile.frontend.dashboard --target builder -t test-frontend-dashboard-quick . || (echo "❌ Frontend Dashboard builder failed" && exit 1)
+	@docker build -f Dockerfile.frontend --build-arg APP=dashboard --build-arg APP_PORT=4003 --target builder -t test-frontend-dashboard-quick . || (echo "❌ Frontend Dashboard builder failed" && exit 1)
 	@echo "✅ Frontend Dashboard OK"
 	@echo ""
 	@echo "Cleaning up..."
@@ -591,11 +591,11 @@ docker-check-backend:
 # Docker Check for Frontend only
 docker-check-frontend:
 	@echo "Testing Frontend Docker builds (all apps)..."
-	@docker build -f Dockerfile.frontend.admin --target runtime -t test-admin . || (echo "❌ Admin failed" && exit 1)
+	@docker build -f Dockerfile.frontend --build-arg APP=admin --build-arg APP_PORT=4001 --target runtime -t test-admin . || (echo "❌ Admin failed" && exit 1)
 	@echo "✅ Admin OK"
-	@docker build -f Dockerfile.frontend.portal --target runtime -t test-portal . || (echo "❌ Portal failed" && exit 1)
+	@docker build -f Dockerfile.frontend --build-arg APP=portal --build-arg APP_PORT=4002 --target runtime -t test-portal . || (echo "❌ Portal failed" && exit 1)
 	@echo "✅ Portal OK"
-	@docker build -f Dockerfile.frontend.dashboard --target runtime -t test-dashboard . || (echo "❌ Dashboard failed" && exit 1)
+	@docker build -f Dockerfile.frontend --build-arg APP=dashboard --build-arg APP_PORT=4003 --target runtime -t test-dashboard . || (echo "❌ Dashboard failed" && exit 1)
 	@echo "✅ Dashboard OK"
 	@docker rmi test-admin test-portal test-dashboard 2>/dev/null || true
 	@echo "✅ All Frontend Docker builds successful!"
@@ -611,15 +611,15 @@ docker-check-prod:
 	@echo "✅ Backend production OK"
 	@echo ""
 	@echo "Frontend Admin runtime..."
-	@docker build -f Dockerfile.frontend.admin --target runtime -t test-frontend-admin-prod . || (echo "❌ Frontend Admin runtime failed" && exit 1)
+	@docker build -f Dockerfile.frontend --build-arg APP=admin --build-arg APP_PORT=4001 --target runtime -t test-frontend-admin-prod . || (echo "❌ Frontend Admin runtime failed" && exit 1)
 	@echo "✅ Frontend Admin runtime OK"
 	@echo ""
 	@echo "Frontend Portal runtime..."
-	@docker build -f Dockerfile.frontend.portal --target runtime -t test-frontend-portal-prod . || (echo "❌ Frontend Portal runtime failed" && exit 1)
+	@docker build -f Dockerfile.frontend --build-arg APP=portal --build-arg APP_PORT=4002 --target runtime -t test-frontend-portal-prod . || (echo "❌ Frontend Portal runtime failed" && exit 1)
 	@echo "✅ Frontend Portal runtime OK"
 	@echo ""
 	@echo "Frontend Dashboard runtime..."
-	@docker build -f Dockerfile.frontend.dashboard --target runtime -t test-frontend-dashboard-prod . || (echo "❌ Frontend Dashboard runtime failed" && exit 1)
+	@docker build -f Dockerfile.frontend --build-arg APP=dashboard --build-arg APP_PORT=4003 --target runtime -t test-frontend-dashboard-prod . || (echo "❌ Frontend Dashboard runtime failed" && exit 1)
 	@echo "✅ Frontend Dashboard runtime OK"
 	@echo ""
 	@echo "Cleaning up..."

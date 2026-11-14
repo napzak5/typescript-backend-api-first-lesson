@@ -8,6 +8,21 @@ packages:
   - shared-config
   - specs
 
+# Dependency lifecycle scripts are denied unless listed as `true` here.
+# Every package below ships prebuilt binaries (or only prints a banner), so
+# none of them needs to run its install script.
+allowBuilds:
+  '@parcel/watcher': false
+  '@swc/core': false
+  '@tailwindcss/oxide': false
+  core-js: false
+  cpu-features: false
+  esbuild: false
+  msw: false
+  oxc-resolver: false
+  protobufjs: false
+  ssh2: false
+
 overrides:
   cookie@<0.7.0: '>=0.7.0'
   esbuild@<=0.24.2: '>=0.25.0'

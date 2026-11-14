@@ -43,8 +43,8 @@ For detailed architecture documentation, see [docs/architecture-overview.md](doc
 
 ### Prerequisites
 
-- Node.js 24+
-- pnpm 10+
+- Node.js 26.13.1+ (`.node-version`)
+- pnpm 12.18.0 (`package.json#packageManager`)
 - Docker (for local PostgreSQL)
 - PostgreSQL 15
 

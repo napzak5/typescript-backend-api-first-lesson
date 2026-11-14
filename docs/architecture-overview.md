@@ -884,9 +884,8 @@ The system uses Docker containers for deployment with separate images for each c
 
 ```
 ├── Dockerfile.backend           # Backend API server
-├── Dockerfile.frontend.admin    # Admin dashboard (port 4001)
-├── Dockerfile.frontend.portal   # Customer portal (port 4002)
-└── Dockerfile.frontend.dashboard # Main dashboard (port 4003)
+└── Dockerfile.frontend          # All frontend apps, selected with --build-arg APP=admin|portal|dashboard
+                                 #   admin: port 4001 / portal: port 4002 / dashboard: port 4003
 ```
 
 ### Multi-Stage Builds

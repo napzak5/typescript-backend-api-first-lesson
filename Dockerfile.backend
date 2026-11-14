@@ -1,16 +1,19 @@
-# Build stage
-FROM node:24.4.0-alpine AS builder
+# syntax=docker/dockerfile:1
 
-# Install pnpm and TypeScript globally with specific versions
-ENV PNPM_VERSION=10.13.1
-ENV TYPESCRIPT_VERSION=5.9.2
-RUN npm install -g pnpm@${PNPM_VERSION} typescript@${TYPESCRIPT_VERSION}
+# Keep in sync with .node-version (verified by `pnpm check:versions`).
+ARG NODE_VERSION=26.13.1
 
-# Set working directory
+# Base stage: Node.js + the pnpm version pinned in package.json#packageManager
+FROM node:${NODE_VERSION}-alpine AS base
 WORKDIR /app
+COPY package.json ./
+RUN npm install -g "pnpm@$(node -p "require('./package.json').packageManager.split('@')[1]")"
+
+# Build stage
+FROM base AS builder
 
 # Copy package files for better caching
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY shared-config/package.json ./shared-config/
 
 # Copy backend package.json files
@@ -39,31 +42,18 @@ RUN pnpm --filter "./backend/packages/**" run build:prod && \
     pnpm --filter "@beauty-salon-backend/server" run build
 
 # Development stage
-FROM node:24.4.0-alpine AS development
+FROM base AS development
 
-# Install pnpm globally and development tools
-ENV PNPM_VERSION=10.13.1
-RUN apk add --no-cache bash wget && \
-    npm install -g pnpm@${PNPM_VERSION}
+RUN apk add --no-cache bash wget
 
 # Create non-root user
 RUN adduser -D -s /bin/sh appuser
-
-# Set working directory
-WORKDIR /app
-
-# Copy root package.json first to get packageManager
-COPY --chown=appuser:appuser package.json ./
 
 # Copy everything for development
 COPY --chown=appuser:appuser . .
 
 # Install all dependencies (including dev)
 RUN pnpm install --frozen-lockfile
-
-# Setup pnpm and install TypeScript globally for the build process
-ENV PNPM_HOME=/usr/local/bin
-RUN npm install -g typescript
 
 # Build all packages in development for tsx to work properly
 RUN pnpm --filter "./backend/packages/**" run build:prod
@@ -78,22 +68,17 @@ EXPOSE 3000
 CMD ["pnpm", "--filter", "@beauty-salon-backend/server", "dev"]
 
 # Production stage
-FROM node:24.4.0-alpine AS production
+FROM base AS production
 
 # Set production environment
 ENV NODE_ENV=production
-ENV PNPM_VERSION=10.13.1
-RUN apk add --no-cache bash wget && \
-    npm install -g pnpm@${PNPM_VERSION}
+RUN apk add --no-cache bash wget
 
 # Create non-root user
 RUN adduser -D -s /bin/sh appuser
 
-# Set working directory
-WORKDIR /app
-
 # Copy remaining package files
-COPY --chown=appuser:appuser package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY --chown=appuser:appuser pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY --chown=appuser:appuser shared-config/package.json ./shared-config/
 
 # Copy backend package.json files
