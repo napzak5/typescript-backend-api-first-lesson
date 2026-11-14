@@ -49,6 +49,50 @@ const toProblem = (error: ApiError): Problem =>
         constraint: null,
       })),
     }))
+    .with({ type: 'unauthenticated', reason: 'missingCredentials' }, () => ({
+      type: 'urn:beauty-salon:problem:authentication-required',
+      title: 'Authentication required',
+      status: 401,
+      detail:
+        'Send the access token in the Authorization header as a Bearer token',
+      code: '1001',
+      errors: null,
+    }))
+    .with({ type: 'unauthenticated', reason: 'invalidToken' }, () => ({
+      type: 'urn:beauty-salon:problem:invalid-token',
+      title: 'Invalid token',
+      status: 401,
+      detail: 'The token cannot be used; sign in again',
+      code: '1004',
+      errors: null,
+    }))
+    .with({ type: 'unauthenticated', reason: 'expiredToken' }, () => ({
+      type: 'urn:beauty-salon:problem:token-expired',
+      title: 'Token expired',
+      status: 401,
+      detail:
+        'The access token has expired; get a new one with the refresh token',
+      code: '1003',
+      errors: null,
+    }))
+    // The same for every cause, so that the answer does not say whether the
+    // email is registered or what is wrong with the account.
+    .with({ type: 'unauthenticated', reason: 'invalidCredentials' }, () => ({
+      type: 'urn:beauty-salon:problem:invalid-credentials',
+      title: 'Login failed',
+      status: 401,
+      detail: 'Invalid email or password',
+      code: '1002',
+      errors: null,
+    }))
+    .with({ type: 'forbidden' }, () => ({
+      type: 'urn:beauty-salon:problem:forbidden',
+      title: 'Forbidden',
+      status: 403,
+      detail: 'This account is not allowed to do this',
+      code: '1005',
+      errors: null,
+    }))
     .with({ type: 'notFound' }, ({ entity, id }) => ({
       type: 'urn:beauty-salon:problem:not-found',
       title: 'Resource not found',
@@ -132,6 +176,30 @@ const toProblem = (error: ApiError): Problem =>
       errors: null,
     }))
     .exhaustive()
+
+const BEARER_REALM = 'beauty-salon-api'
+
+/**
+ * The `WWW-Authenticate` challenge of a 401 response, which RFC 9110 requires
+ * (section 15.5.2); null for every other error. `error="invalid_token"` is
+ * added when a token was sent and did not work, and left out when none was
+ * sent (RFC 6750, section 3).
+ */
+export const toBearerChallenge = (error: ApiError): string | null =>
+  error.type === 'unauthenticated'
+    ? match(error.reason)
+        .with(
+          'missingCredentials',
+          'invalidCredentials',
+          () => `Bearer realm="${BEARER_REALM}"`,
+        )
+        .with(
+          'invalidToken',
+          'expiredToken',
+          () => `Bearer realm="${BEARER_REALM}", error="invalid_token"`,
+        )
+        .exhaustive()
+    : null
 
 /** Error → RFC 9457 problem details. */
 export const toProblemDetails = (

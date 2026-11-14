@@ -5,12 +5,15 @@ import {
   type DatabaseConnection,
 } from '@beauty-salon-backend/infrastructure'
 import type { Express } from 'express'
-import request from 'supertest'
+import type postgres from 'postgres'
+import request, { type Response } from 'supertest'
+import { expect } from 'vitest'
 import { type AppSettings, createApp } from '../../index'
 
 // Global type declarations for testing
 declare global {
   var __TEST_DB__: Database | undefined
+  var __TEST_DB_CLIENT__: postgres.Sql | undefined
 }
 
 /**
@@ -23,6 +26,19 @@ export function getTestDb(): Database {
     )
   }
   return globalThis.__TEST_DB__
+}
+
+/**
+ * The postgres.js client under `getTestDb()`, for code that builds its own
+ * Drizzle instance on the test's schema.
+ */
+export function getTestDbClient(): postgres.Sql {
+  if (globalThis.__TEST_DB_CLIENT__ === undefined) {
+    throw new Error(
+      'Test database not initialized. Make sure setup.ts has run.',
+    )
+  }
+  return globalThis.__TEST_DB_CLIENT__
 }
 
 export const ALLOWED_ORIGIN = 'https://salon.example'
@@ -75,5 +91,35 @@ export function connectUnreachableDatabase(): DatabaseConnection {
     connectTimeoutMs: 1000,
   })
 }
+
+export const UUID = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/
+export const ISO_TIMESTAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/
+
+/** What tells one problem from another; `type` is the last part of the URN. */
+export type ExpectedProblem = { status: number; code: string; type: string }
+
+/** Checks that a response is the expected problem, in the form every problem has. */
+export const expectProblem = (
+  response: Response,
+  expected: ExpectedProblem,
+): void => {
+  expect(response.status).toBe(expected.status)
+  expect(response.headers['content-type']).toBe(
+    'application/problem+json; charset=utf-8',
+  )
+  expect(response.body).toMatchObject({
+    type: `urn:beauty-salon:problem:${expected.type}`,
+    status: expected.status,
+    code: expected.code,
+    instance: response.request.url.replace(/^https?:\/\/[^/]+/, ''),
+    timestamp: expect.stringMatching(ISO_TIMESTAMP),
+  })
+}
+
+/** The rules a validation problem reports, as `field:rule`. */
+export const brokenRules = (response: Response): string[] =>
+  response.body.errors.map(
+    ({ field, rule }: { field: string; rule: string }) => `${field}:${rule}`,
+  )
 
 export { request }

@@ -1,8 +1,5 @@
 import type { operations } from '@beauty-salon-backend/generated'
-
-type JsonBody<Content> = Content extends { 'application/json': infer Body }
-  ? Body
-  : never
+import type { JsonBody } from '../../../shared/operation-types'
 
 export type ListSalonsResponse = JsonBody<
   operations['SalonCrud_list']['responses'][200]['content']

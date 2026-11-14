@@ -136,6 +136,18 @@ const CONFLICT_PROBLEM: ModelsProblemDetails = {
   timestamp: '2026-11-14T00:00:00.000Z',
 }
 
+const FORBIDDEN_PROBLEM: ModelsProblemDetails = {
+  type: 'urn:beauty-salon:problem:forbidden',
+  title: 'Forbidden',
+  status: 403,
+  detail: 'This account is not allowed to do this',
+  instance: `/api/v1/salons/${SALON_ID}`,
+  code: '1005',
+  errors: null,
+  correlationId: 'req-1',
+  timestamp: '2026-11-14T00:00:00.000Z',
+}
+
 const RATE_LIMITED_PROBLEM: ModelsProblemDetails = {
   type: 'urn:beauty-salon:problem:rate-limited',
   title: 'Too many requests',
@@ -485,6 +497,10 @@ describe('generated Salon client', () => {
       match(response)
         .with({ status: 201 }, ({ data }) => `created ${data.data.name}`)
         .with({ status: 400 }, ({ data }) => `invalid: ${data.title}`)
+        .with(
+          { status: P.union(401, 403) },
+          ({ data }) => `refused: ${data.detail}`,
+        )
         .with({ status: 409 }, ({ data }) => `conflict: ${data.detail}`)
         .with(
           { status: P.union(413, 415, 429, 500) },
@@ -496,6 +512,10 @@ describe('generated Salon client', () => {
       match(response)
         .with({ status: 204 }, () => 'deleted')
         .with({ status: 400 }, ({ data }) => `invalid: ${data.title}`)
+        .with(
+          { status: P.union(401, 403) },
+          ({ data }) => `refused: ${data.detail}`,
+        )
         .with({ status: 404 }, ({ data }) => `missing: ${data.detail}`)
         .with(
           { status: P.union(429, 500) },
@@ -538,6 +558,19 @@ describe('generated Salon client', () => {
       // Assert
       expect(describeCreated(created)).toBe('failed: Too many requests')
       expect(describeDeleted(deleted)).toBe('failed: Too many requests')
+    })
+
+    it('should narrow a 403 response, which a write by a user without the right can answer, to the problem details', async () => {
+      // Arrange
+      stubFetch(respondWithProblem(FORBIDDEN_PROBLEM))
+
+      // Act
+      const response = await salonCrudDelete(SALON_ID)
+
+      // Assert
+      expect(describeDeleted(response)).toBe(
+        'refused: This account is not allowed to do this',
+      )
     })
 
     it('should narrow a 204 response to a success without data', async () => {
