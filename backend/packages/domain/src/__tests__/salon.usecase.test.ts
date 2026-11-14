@@ -1,5 +1,5 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import {
   CreateSalonUseCase,
   DeleteSalonUseCase,
@@ -8,7 +8,6 @@ import {
   UpdateSalonUseCase,
 } from '../business-logic/salon'
 import type { Actor } from '../models/auth'
-import type { ISalonRepository } from '../repositories/salon.repository'
 import { DomainErrors } from '../shared'
 import { actors } from './auth-fixtures'
 import {
@@ -16,6 +15,7 @@ import {
   dbOpeningHours,
   dbSalon,
   OTHER_SALON_ID,
+  salonRepositoryWith as repositoryWith,
   SALON_ID,
   salonCreateRequest,
 } from './fixtures'
@@ -24,20 +24,6 @@ const stored = { salon: dbSalon(), openingHours: [dbOpeningHours()] }
 const databaseDown = Result.error(
   DomainErrors.database('Connection lost', null),
 )
-
-/** A repository that holds one salon; a test overrides what it needs. */
-const repositoryWith = (
-  overrides: Partial<ISalonRepository> = {},
-): ISalonRepository => ({
-  create: vi.fn(async () => Result.success(stored)),
-  findById: vi.fn(async () => Result.success(stored)),
-  list: vi.fn(async () =>
-    Result.success({ salons: [stored], total: 1, hasMore: false }),
-  ),
-  update: vi.fn(async () => Result.success(stored)),
-  delete: vi.fn(async () => Result.success(true)),
-  ...overrides,
-})
 
 describe('CreateSalonUseCase', () => {
   it('saves the mapped salon with its calendar and returns the stored salon', async () => {

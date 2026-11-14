@@ -8,6 +8,7 @@ import {
   type ApiSalonUpdateRequest,
   salonIdSchema,
 } from '../models/salon'
+import { atLeastOneProperty, nonBlankText } from './rules'
 
 /**
  * Validation of salon requests. The shapes are checked against the generated
@@ -16,9 +17,6 @@ import {
  */
 
 const MIN_PHONE_DIGITS = 10
-
-/** A nullable text is either null or says something: '' is not "unset". */
-const nonBlankText = z.string().regex(/\S/, 'Must not be blank')
 
 const phoneNumberSchema = z
   .string()
@@ -211,20 +209,7 @@ export const salonCreateRequestSchema = z.strictObject({
 
 export const salonUpdateRequestSchema = salonCreateRequestSchema
   .exactPartial()
-  .check((context) => {
-    // An unknown property is reported as such, not as an empty request.
-    if (
-      context.issues.length === 0 &&
-      Object.keys(context.value).length === 0
-    ) {
-      context.issues.push({
-        code: 'custom',
-        path: [],
-        message: 'At least one property must be specified',
-        input: context.value,
-      })
-    }
-  }) satisfies z.ZodType<ApiSalonUpdateRequest>
+  .check(atLeastOneProperty) satisfies z.ZodType<ApiSalonUpdateRequest>
 
 export const salonSearchRequestSchema = z.strictObject({
   limit: z.number().int().min(1).max(100).exactOptional(),

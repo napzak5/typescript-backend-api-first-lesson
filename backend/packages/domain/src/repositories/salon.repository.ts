@@ -45,6 +45,9 @@ export interface ISalonRepository {
     id: SalonId,
   ): Promise<Result<SalonWithOpeningHours | null, DomainError>>
 
+  /** Whether there is such a salon, for what belongs to a salon. */
+  exists(id: SalonId): Promise<Result<boolean, DomainError>>
+
   /** Newest first. */
   list(criteria: SalonListCriteria): Promise<Result<SalonList, DomainError>>
 

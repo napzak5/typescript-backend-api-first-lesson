@@ -1,8 +1,11 @@
+import { Result } from '@beauty-salon-backend/utility'
+import { vi } from 'vitest'
 import type {
   ApiSalonCreateRequest,
   DbOpeningHours,
   DbSalon,
 } from '../models/salon'
+import type { ISalonRepository } from '../repositories/salon.repository'
 import type { DomainError } from '../shared'
 
 export const SALON_ID = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1b'
@@ -116,6 +119,25 @@ export const dbOpeningHours = (
   updatedAt: '2026-11-14 18:00:00.123456+09',
   ...overrides,
 })
+
+/** A salon repository that holds one salon; a test overrides what it needs. */
+export const salonRepositoryWith = (
+  overrides: Partial<ISalonRepository> = {},
+): ISalonRepository => {
+  const stored = { salon: dbSalon(), openingHours: [dbOpeningHours()] }
+
+  return {
+    create: vi.fn(async () => Result.success(stored)),
+    findById: vi.fn(async () => Result.success(stored)),
+    exists: vi.fn(async () => Result.success(true)),
+    list: vi.fn(async () =>
+      Result.success({ salons: [stored], total: 1, hasMore: false }),
+    ),
+    update: vi.fn(async () => Result.success(stored)),
+    delete: vi.fn(async () => Result.success(true)),
+    ...overrides,
+  }
+}
 
 /** The broken rules of a validation error as `field:rule`; empty for anything else. */
 export const brokenRules = (error: DomainError): string[] =>

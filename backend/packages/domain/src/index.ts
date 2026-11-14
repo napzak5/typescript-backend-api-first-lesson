@@ -1,13 +1,16 @@
 // Use cases
 export * from './business-logic/auth'
 export * from './business-logic/salon'
+export * from './business-logic/service-category'
 
 // Models
 export * from './models/auth'
 export * from './models/salon'
+export * from './models/service-category'
 
 // Repositories
 export * from './repositories/salon.repository'
+export * from './repositories/service-category.repository'
 export * from './repositories/session.repository'
 export * from './repositories/user.repository'
 
