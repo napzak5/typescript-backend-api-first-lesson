@@ -11,16 +11,14 @@ reference for the tests of every domain that follows.
 
 | Kind | Command | Files | Needs |
 |------|---------|-------|-------|
-| Unit | `pnpm test` | `*.test.ts` and `*.test.tsx`, in a `__tests__` directory or beside the module | A build (`pnpm build`): some packages load their workspace dependencies from `dist` |
+| Unit | `pnpm test` | `*.test.ts` and `*.test.tsx`, in a `__tests__` directory or beside the module | Nothing |
 | Integration | `pnpm test:integration` | `*.integration.test.ts` | A PostgreSQL: the one at `TEST_DATABASE_URL`, otherwise a container started through testcontainers (Docker) |
 
-Both run on Vitest. The tests of the `api`, `config`, `domain` and
-`infrastructure` packages and of the server resolve the workspace packages they
-import from source (the export condition `@beauty-salon-backend/source` in
-their Vitest configuration), so a change in one package reaches the tests of
-another without a rebuild. The `database` package and the frontend have no such
-setting and use the last build of their workspace dependencies; CI and
-`make ci-check` build everything before they run the tests.
+Both run on Vitest. Tests resolve the workspace packages they import from
+source (the export condition `@beauty-salon-backend/source`, or
+`@beauty-salon-frontend/source` in the frontend, in the Vitest configuration),
+so they run on a fresh clone and a change in one package reaches the tests of
+another without a rebuild.
 
 What the repository does not have:
 

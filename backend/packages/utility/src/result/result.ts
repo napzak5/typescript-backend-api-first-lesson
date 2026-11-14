@@ -47,11 +47,4 @@ export const Result = {
       )
     }
   },
-
-  unwrapOr<T, E>(result: Result<T, E>, defaultValue: T): T {
-    return match(result)
-      .with({ type: 'success' }, ({ data }) => data)
-      .with({ type: 'error' }, () => defaultValue)
-      .exhaustive()
-  },
 }

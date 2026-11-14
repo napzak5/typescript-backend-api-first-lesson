@@ -58,7 +58,7 @@
 - `backend/packages/domain/src/shared`: `DomainError`、`DomainErrors`、`parseWith`
 - `backend/packages/api/src/shared`: `sendProblem`、`responseMeta`、`toProblemDetails`、API バージョン
 - `backend/packages/api/src/middleware`: リクエストログ、レート制限、エラーハンドラー
-- `backend/packages/utility/src`: `Result`（`success`・`error`・`map`・`mapError`・`flatMap`・`fromPromise`・`unwrapOr`）、`DeepRequired`、`Omit`
+- `backend/packages/utility/src`: `Result`（`success`・`error`・`map`・`mapError`・`flatMap`・`fromPromise`）、`DeepRequired`、`Omit`
 
 `domain` パッケージが外に公開するのは、ユースケース、モデル、リポジトリインターフェース、エラーと検証の共通部品です（`backend/packages/domain/src/index.ts`）。リクエストのスキーマとマッパーはパッケージの中だけで使います。
 

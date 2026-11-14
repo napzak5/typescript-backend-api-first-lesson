@@ -93,7 +93,7 @@
 
 | 対象 | JavaScript の出力 | 型定義（`.d.ts`）の出力 |
 |------|-------------------|-------------------------|
-| `backend/packages/{api,config,database,domain,infrastructure,utility}` | rslib（`dist/index.js` に束ねる） | `tsc --emitDeclarationOnly` |
+| `backend/packages/{api,config,database,domain,infrastructure,utility}` | rslib（`dist/index.js` に束ねる） | `tsc --emitDeclarationOnly --project tsconfig.build.json` |
 | `backend/packages/generated` | rslib | rslib（`dts: true`） |
 | `backend/apps/server` | `tsc --project tsconfig.build.json` | 同左 |
 | `frontend/packages/*` | rslib | rslib（`dts: true`） |
@@ -125,7 +125,7 @@
 }
 ```
 
-ビルドスクリプトは `rslib build && tsc --emitDeclarationOnly` です。rslib（設定は各パッケージの `rslib.config.ts`）が JavaScript を出力し、`tsc` はこの `tsconfig.json` に従って型定義だけを `dist` に出力します。
+ビルドスクリプトは `rslib build && tsc --emitDeclarationOnly --project tsconfig.build.json` です。rslib（設定は各パッケージの `rslib.config.ts`）が JavaScript を出力し、`tsc` が型定義だけを `dist` に出力します。`tsconfig.build.json` はこの `tsconfig.json` を継承し、`src/**/__tests__/**` を除外するだけのファイルです（テストの型定義を `dist` に出さないため）。型検査（`pnpm typecheck`）は `tsconfig.json` を使うので、テストも検査されます。
 
 ### サーバーアプリ
 
@@ -173,9 +173,10 @@ import { startServer } from './server.js'
 | 実行 | 条件の指定 | 読み込まれるもの |
 |------|------------|------------------|
 | `pnpm dev:backend` | `tsx watch --conditions=@beauty-salon-backend/source` | `src/index.ts` |
-| `pnpm test`、`pnpm test:integration`（api、config、domain、infrastructure、server） | 各 `vitest.config.ts` / `vitest.integration.config.ts` の `ssr.resolve.conditions` | `src/index.ts` |
+| `pnpm test`、`pnpm test:integration`（api、config、database、domain、infrastructure、server） | 各 `vitest.config.ts` / `vitest.integration.config.ts` の `ssr.resolve.conditions` | `src/index.ts` |
+| DB スクリプト（`pnpm db:migrate` など） | `tsx --conditions=@beauty-salon-backend/source` | `src/index.ts` |
 | `pnpm typecheck`、各パッケージの `tsc` | なし | `dist/index.d.ts` |
-| `pnpm start:backend`、DB スクリプト（`pnpm db:migrate` など） | なし | `dist/index.js` |
+| `pnpm start:backend` | なし | `dist/index.js` |
 
 `tsc` は条件を指定していないので、依存するパッケージの型をビルド成果物から読みます。そのため `pnpm typecheck` の前にビルドが必要です（`make ci-check` と CI は `pnpm build:prod` の後に実行しています）。依存先のパッケージを変更したのに型エラーが古いままのときは、ビルドし直してください。
 

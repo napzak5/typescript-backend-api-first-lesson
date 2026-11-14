@@ -1,23 +1,16 @@
-import { getDatabaseUrl, loadEnvConfig } from '@beauty-salon-backend/config'
 import type { Config } from 'drizzle-kit'
 
-// Load environment-specific configuration
-const environment = loadEnvConfig()
-
-// Get database URL from environment
-const databaseUrl = getDatabaseUrl()
-
-// Log which environment is being used
-console.log(
-  `Using ${environment.toUpperCase()} environment for Drizzle configuration`,
-)
-
+/**
+ * Used by `pnpm db:introspect` only, which passes the connection URL in
+ * DATABASE_URL. The file imports no workspace package, so the tools that load
+ * it (drizzle-kit, knip) need no build.
+ */
 export default {
   schema: './src/schema.ts',
   out: './migrations',
   dialect: 'postgresql',
   dbCredentials: {
-    url: databaseUrl,
+    url: process.env.DATABASE_URL ?? '',
   },
   verbose: true,
   strict: true,

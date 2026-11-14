@@ -176,7 +176,7 @@ database through `ISalonRepository`, which `infrastructure` implements.
 
 | Package (`@beauty-salon-backend/…`) | Contains | Workspace packages it depends on |
 |-------------------------------------|----------|----------------------------------|
-| `utility` | `Result`, `DeepRequired`, `Omit`, `createId` | none |
+| `utility` | `Result`, `DeepRequired`, `Omit` | none |
 | `generated` | `api-types.ts` (`paths`, `components`, `operations`) and `schema.ts` (a Zod schema per enum) | none |
 | `config` | `loadEnvFile`, `parseAppConfig` | `utility` |
 | `database` | `schema.ts`, `relations.ts`, `sql/`, the `db:*` scripts, seeds | `config`, `utility` |
@@ -203,10 +203,11 @@ Each backend package has a single entry point with two targets:
 }
 ```
 
-- `pnpm dev:backend` and the Vitest configurations of the packages that import
-  other workspace packages resolve with the custom condition
-  `@beauty-salon-backend/source`, so development and tests run the workspace
-  packages from source and need no build.
+- `pnpm dev:backend`, the database scripts (`pnpm db:*`) and the Vitest
+  configurations of the packages that import other workspace packages resolve
+  with the custom condition `@beauty-salon-backend/source`, so development,
+  database commands and tests run the workspace packages from source and need
+  no build.
 - Everything else resolves to `dist`: the built server, and `pnpm typecheck`,
   which is why a build must come first.
 - The packages are built by rslib. The server application is built by `tsc`

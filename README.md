@@ -65,7 +65,6 @@ For detailed architecture documentation, see [docs/architecture-overview.md](doc
 ```bash
 pnpm install       # Install dependencies and the pre-commit hook
 make infra-up      # Start PostgreSQL, MailHog and MinIO in Docker
-pnpm build:backend # Build the backend packages (the database scripts load them from dist)
 pnpm db:fresh      # Create the schema from sql/setup.sql
 pnpm db:seed       # Insert sample data (optional)
 pnpm dev           # Backend on :3000, frontend apps on :3001-3003
