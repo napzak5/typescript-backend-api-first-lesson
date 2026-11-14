@@ -64,9 +64,17 @@ namespace BeautySalon.Models {
   @format("uuid")
   scalar OrderId extends string;
 
-  @doc("決済取引や請求のレコードを識別するブランド付きUUID。")
+  @doc("決済取引（売上に対する1回の支払い）を識別するブランド付きUUID。")
   @format("uuid")
   scalar PaymentId extends string;
+
+  @doc("売上（1回の来店の会計）を識別するブランド付きUUID。")
+  @format("uuid")
+  scalar SaleId extends string;
+
+  @doc("サロンが受け付ける支払い方法の設定を識別するブランド付きUUID。")
+  @format("uuid")
+  scalar PaymentMethodId extends string;
 
   @doc("施術記録やカウンセリングメモを識別するブランド付きUUID。")
   @format("uuid")

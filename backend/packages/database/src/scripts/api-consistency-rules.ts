@@ -364,9 +364,140 @@ const bookingRules: ModelRule[] = [
   },
 ]
 
-/** Payments, points and sales. */
+/**
+ * Columns of `sales` that a request never writes: set by the system
+ * (`saleNumber`, and `saleDate` from `saleTime`), computed from the lines
+ * (`subtotal`, `discountAmount`, `taxAmount`, `totalAmount`) or set by the
+ * process, void and refund actions.
+ */
+const saleManagedColumns = [
+  'id',
+  'saleNumber',
+  'saleDate',
+  'subtotal',
+  'discountAmount',
+  'taxAmount',
+  'totalAmount',
+  'paymentStatus',
+  'isVoid',
+  'voidedAt',
+  'voidReason',
+  'createdAt',
+  'updatedAt',
+]
+
+/**
+ * Columns of `customer_points` that the point actions set: the type comes
+ * from the action and the balance is computed.
+ */
+const pointManagedColumns = ['id', 'transactionType', 'balance', 'createdAt']
+
+/**
+ * Sales, their payments, and points. `daily_summaries` and `payment_methods`
+ * back no model: the daily report returns values that `daily_summaries` does
+ * not hold, and no operation exposes the payment methods.
+ */
 const paymentRules: ModelRule[] = [
-  { model: 'Models.Payment', table: 'paymentTransactions', kind: 'response' },
+  {
+    model: 'Models.SaleResponse',
+    table: 'sales',
+    kind: 'response',
+    embedded: ['details', 'payments'],
+    omittedColumns: [],
+  },
+  {
+    model: 'Models.SaleCreateRequest',
+    table: 'sales',
+    kind: 'create',
+    embedded: ['details'],
+    omittedColumns: saleManagedColumns,
+  },
+  {
+    model: 'Models.SaleUpdateRequest',
+    table: 'sales',
+    kind: 'update',
+    embedded: ['details'],
+    // A sale does not move to another salon.
+    omittedColumns: [...saleManagedColumns, 'salonId'],
+  },
+  {
+    model: 'Models.SalesDetail',
+    table: 'salesDetails',
+    kind: 'response',
+    omittedColumns: ['id', 'saleId', 'createdAt'],
+  },
+  {
+    model: 'Models.PaymentResponse',
+    table: 'paymentTransactions',
+    kind: 'response',
+    // jsonb columns without a defined structure.
+    omittedColumns: ['processorResponse', 'metadata'],
+  },
+  {
+    // Inserts one payment transaction for the sale in the path.
+    model: 'Models.SaleProcessRequest',
+    table: 'paymentTransactions',
+    kind: 'create',
+    omittedColumns: [
+      'id',
+      'saleId',
+      'transactionNumber',
+      'status',
+      'processorTransactionId',
+      'processorResponse',
+      'errorCode',
+      'errorMessage',
+      'processedAt',
+      'failedAt',
+      'refundedAt',
+      'refundAmount',
+      'refundReason',
+      'metadata',
+      'createdAt',
+      'updatedAt',
+    ],
+  },
+  {
+    model: 'Models.PointTransactionResponse',
+    table: 'customerPoints',
+    kind: 'response',
+    omittedColumns: [],
+  },
+  {
+    // The latest row of the customer.
+    model: 'Models.PointBalanceResponse',
+    table: 'customerPoints',
+    kind: 'response',
+    omittedColumns: [
+      'id',
+      'transactionType',
+      'points',
+      'description',
+      'referenceType',
+      'referenceId',
+      'expiryDate',
+      'createdAt',
+    ],
+  },
+  {
+    model: 'Models.PointEarnRequest',
+    table: 'customerPoints',
+    kind: 'create',
+    omittedColumns: pointManagedColumns,
+  },
+  {
+    // Used points do not expire.
+    model: 'Models.PointUseRequest',
+    table: 'customerPoints',
+    kind: 'create',
+    omittedColumns: [...pointManagedColumns, 'expiryDate'],
+  },
+  {
+    model: 'Models.PointAdjustRequest',
+    table: 'customerPoints',
+    kind: 'create',
+    omittedColumns: [...pointManagedColumns, 'expiryDate'],
+  },
 ]
 
 /**
