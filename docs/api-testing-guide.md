@@ -192,7 +192,7 @@ with a password hashed by the hasher the application uses
 | `signInAsAdmin(app, db)` | Inserts an admin, signs in and returns the value of the `Authorization` header |
 | `signedInUser(app, db, overrides)` | Inserts a user (an active customer unless overridden), signs in and returns the user with the tokens and the header value |
 | `insertUser(db, overrides)`, `insertMember(db, role, salonId)` | A user row; with `insertMember`, an owner, manager or staff user linked to a new staff member of the salon |
-| `insertSalon(db)`, `insertStaff(db, salonId)`, `insertCustomer(db)` | The rows a user's role refers to, each returning the ID |
+| `insertSalon(db)`, `insertCustomer(db)` | The rows a user's role refers to, each returning the ID |
 | `signIn(app, email)` | `POST /api/v1/auth/login` with `PASSWORD`; returns `accessToken`, `refreshToken`, `authorization` and the user |
 
 ## Writing a Test

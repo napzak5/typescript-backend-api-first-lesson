@@ -114,7 +114,7 @@ export const insertSalon = async (
   return salon.id
 }
 
-export const insertStaff = async (
+const insertStaff = async (
   db: Database,
   salonId: string,
   overrides: Partial<NewStaff> = {},

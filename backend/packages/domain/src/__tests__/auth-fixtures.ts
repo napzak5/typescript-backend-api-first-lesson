@@ -87,7 +87,7 @@ export const userAccount = (
  * A row of `sessions` as the driver returns it: its access token has ten
  * minutes left and the session four hours.
  */
-export const dbSession = (overrides: Partial<DbSession> = {}): DbSession => ({
+const dbSession = (overrides: Partial<DbSession> = {}): DbSession => ({
   id: SESSION_ID,
   userId: USER_ID,
   tokenHash: 'sha256(old-access)',
@@ -111,7 +111,7 @@ export const sessionWithAccount = (
 })
 
 /** The actor of a test: the user and session above, with the given scope. */
-export const actorWith = (scope: unknown): Actor =>
+const actorWith = (scope: unknown): Actor =>
   actorSchema.parse({ userId: USER_ID, sessionId: SESSION_ID, scope })
 
 export const actors = {
@@ -151,7 +151,7 @@ export const fakePasswordHasher = (
 })
 
 /** Issues `token-1`, `token-2`, …; the hash of a token is `sha256(<token>)`. */
-export const fakeTokenIssuer = (): ISessionTokenIssuer => {
+const fakeTokenIssuer = (): ISessionTokenIssuer => {
   const hashOf = (token: string): string => `sha256(${token})`
   let issued = 0
 

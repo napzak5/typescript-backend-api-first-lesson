@@ -9,7 +9,7 @@ import type { ProblemDetails } from './problem-details'
 import { sendProblem } from './responses'
 
 /** A handler that runs only for a signed-in user and is told who that is. */
-export type AuthenticatedHandler<Params, ResBody, ReqBody = unknown> = (
+type AuthenticatedHandler<Params, ResBody, ReqBody = unknown> = (
   actor: Actor,
   req: Request<Params, ResBody | ProblemDetails, ReqBody>,
   res: Response<ResBody | ProblemDetails>,
