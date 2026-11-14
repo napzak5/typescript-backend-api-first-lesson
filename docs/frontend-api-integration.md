@@ -39,11 +39,6 @@
 | `api-client` | Orval の生成物（`src/generated/`）と、その再エクスポート | なし |
 | `io` | fetch ラッパー `customInstance` | `api-client` |
 | `config` | `import.meta.env` を読む `env` オブジェクトと、モード判定関数（`isProductionMode` など） | `io`、`ui`（型のみ） |
-| `types` | `ApplicationError` とエラー表示の補助、ページ番号方式の `Pagination` 型 | なし |
-| `utils` | 日付、ファイル、書式、クエリ文字列などの汎用関数 | `types`、`validations` |
-| `validations` | 入力値の検証関数。結果は `neverthrow` の `Result`（例: `validateEmail` は `Result<Email, z.ZodError>` を返す） | なし |
-| `message` | 画面に出す日本語メッセージ（`messageFactory`） | なし |
-| `stores` | `localStorage` のラッパー | なし |
 | `theme` | Tailwind CSS のプリセットと CSS 変数（`styles/base.css`） | 3つのアプリ、`ui` |
 | `ui` | `Button`、`Card`、`EnvironmentBanner` | 3つのアプリ |
 | `assets` | 画像アセット | なし |
@@ -127,7 +122,7 @@ export type salonCrudListResponse400 = {
 }
 ```
 
-一覧はキーセット方式のページネーションです。次のページは `SalonCrudList200` の `meta.nextCursor` を `cursor` に渡して取得します。`types` パッケージの `Pagination` 型（`page` / `per_page` / `total`）はこの API の形ではありません。
+一覧はキーセット方式のページネーションです。次のページは `SalonCrudList200` の `meta.nextCursor` を `cursor` に渡して取得します。
 
 ## fetch ラッパー（`customInstance`）
 
@@ -236,7 +231,7 @@ export function SalonList() {
 
 - 型は生成されたものをそのまま使う。`ModelsSalonResponse` と同じ形の型を手書きしない。`any` と型アサーションも使わない
 - 登録・更新・削除は `useSalonCrudCreate` などのミューテーションフックを使い、結果も同じく `status` で分岐する。成功したら `getSalonCrudListQueryKey()` を使って一覧のキャッシュを無効化する
-- フォームの入力検証は `@beauty-salon-frontend/validations`（`neverthrow` の `Result` を返す）で行い、サーバーの検証エラーは `ModelsProblemDetails` の `errors` から表示する
+- サーバーの検証エラーは `ModelsProblemDetails` の `errors`（項目ごとの `field`・`rule`・`message`）から表示する
 - 429 のときは、レスポンスの `headers` から `Retry-After`（秒）を読める
 - 未実装のドメイン（Customer、Booking など）のフックは生成されていても呼ばない。サーバーが 404 を返す
 
@@ -245,7 +240,7 @@ export function SalonList() {
 フロントエンドのテストは Vitest の単体テストです（`pnpm test:frontend`）。パッケージをまたぐ import はソースから解決するので（エクスポート条件 `@beauty-salon-frontend/source`）、ビルドなしで実行できます。
 
 - 各アプリの `src/App.test.tsx`: `MemoryRouter` で画面を描画し、表示内容を検証する
-- `config`、`message`、`stores`、`types`、`ui`、`utils`、`validations` の各パッケージ: モジュールの隣に `*.test.ts(x)`
+- `config` と `ui` の各パッケージ: モジュールの隣に `*.test.ts(x)`
 - `io` の `src/libs/fetcher/fetcher.test.ts`: `customInstance` を、スタブにした `fetch` に対して検証する（URL、本文、ステータスごとの戻り値、problem details、reject する条件）
 - `api-client` の `src/salons.test.ts`: 生成された Salon の関数を、実際の `customInstance` を通して検証する（リクエストの形、ステータスごとに型が絞られること、通信の失敗、TanStack Query との組み合わせ）
 

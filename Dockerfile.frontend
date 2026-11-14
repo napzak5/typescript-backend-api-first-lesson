@@ -39,13 +39,8 @@ COPY frontend/packages/api-client/package.json ./frontend/packages/api-client/
 COPY frontend/packages/assets/package.json ./frontend/packages/assets/
 COPY frontend/packages/config/package.json ./frontend/packages/config/
 COPY frontend/packages/io/package.json ./frontend/packages/io/
-COPY frontend/packages/message/package.json ./frontend/packages/message/
-COPY frontend/packages/stores/package.json ./frontend/packages/stores/
 COPY frontend/packages/theme/package.json ./frontend/packages/theme/
-COPY frontend/packages/types/package.json ./frontend/packages/types/
 COPY frontend/packages/ui/package.json ./frontend/packages/ui/
-COPY frontend/packages/utils/package.json ./frontend/packages/utils/
-COPY frontend/packages/validations/package.json ./frontend/packages/validations/
 
 # Copy the selected app
 COPY frontend/apps/${APP}-app/package.json ./frontend/apps/${APP}-app/

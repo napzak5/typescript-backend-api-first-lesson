@@ -33,8 +33,6 @@ Sum 型の定義と ts-pattern の書き方は [Sum型とパターンマッチ�
 
 生成されたファイル（`backend/packages/generated/src`、`backend/packages/database/src/schema.ts`、`backend/packages/database/src/relations.ts`）は手で編集しないので、規則の対象外です。
 
-フロントエンド（`frontend/`）には、この規則を満たしていない箇所があります（型述語は `frontend/packages/utils/src/typeUtil/typeUtil.ts`、ブランド型への `as` は `frontend/packages/validations/src/validateEmail/validateEmail.ts` など）。これらは手本にせず、新しく書くコードは規則に従います。なお、フロントエンドの `Result` は neverthrow のもので、バックエンドの `Result` とは別の型です。
-
 ### 機械的な検査の対象
 
 Biome プラグイン（`as`、型ガード、`throw`）が検査するのは、`backend/packages/*/src`、`backend/apps/*/src`、`frontend/packages/*/src`、`frontend/apps/*/src` です。新しいパッケージは、何もしなくても対象になります。次のものは `biome.json` で対象から外しています。
@@ -44,7 +42,6 @@ Biome プラグイン（`as`、型ガード、`throw`）が検査するのは、
 | `__tests__` ディレクトリ、`*.test.ts(x)`、`*.stories.tsx` | テストコード |
 | `backend/packages/database/src/scripts`、`backend/packages/database/src/seeds` | コマンドラインから実行するスクリプトとシードデータ |
 | `frontend/apps/*/src/main.tsx` | アプリの起動点。描画先の要素がないときに `throw` で起動を止める |
-| `frontend/packages/{message,types,utils,validations}/src` | 規則より前に書かれたコードで、型述語や `as` が残っている。規則に合わせて書き直すか削除するまでの扱い |
 
 `backend/packages/generated/src` と `frontend/packages/api-client/src/generated` は、Biome の対象そのものから外れています。`any` と `!` の検査（`noExplicitAny`、`noNonNullAssertion`）は、Biome が見るすべてのファイルに適用されます。
 

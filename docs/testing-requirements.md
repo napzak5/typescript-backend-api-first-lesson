@@ -58,7 +58,7 @@ required to be covered through the endpoint tests, against a real database.
 
 | Subject | Kind | Reference |
 |---------|------|-----------|
-| Utilities, validations, stores, messages, shared types | Unit, beside the module | `frontend/packages/validations/src/validateEmail/validateEmail.test.ts` |
+| Configuration read from the environment | Unit, beside the module | `frontend/packages/config/src/env/env.test.ts` |
 | The fetch function, and the generated API client through it: the request, every status as a typed value, transport failures | Unit, with `fetch` stubbed | `frontend/packages/io/src/libs/fetcher/fetcher.test.ts`, `frontend/packages/api-client/src/salons.test.ts` |
 | UI components | Component test | `frontend/packages/ui/src/components/button.test.tsx` |
 | Applications: routes, navigation, what depends on the environment | Component test | `frontend/apps/admin-app/src/App.test.tsx` |

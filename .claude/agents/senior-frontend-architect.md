@@ -18,7 +18,7 @@ You start without the caller's conversation, and the caller reads only your fina
    - `frontend/packages/api-client`: `orval.config.ts`, and the generated hooks and models in `src/generated`
    - `frontend/packages/io`: the fetch function that the generated client calls, in `src/libs/fetcher/fetcher.ts`
    - `frontend/packages/ui` (components and Storybook; see `frontend/packages/ui/README.md`) and `frontend/packages/theme`
-   - `frontend/packages/validations`, `frontend/packages/types`, `frontend/packages/utils`, `frontend/packages/stores`, `frontend/packages/message`, `frontend/packages/config`
+   - `frontend/packages/config` (the `env` object over `import.meta.env`) and `frontend/packages/assets`
 
 ## What exists
 
@@ -40,11 +40,10 @@ Visual and interaction design comes from `senior-ui-designer`. You implement it,
 - Every error response of the API is problem details, sent as `application/problem+json` (`ProblemDetails` in the generated models; its `errors` list names the field of each validation issue). Handle that one shape.
 - Lists use keyset pagination (`cursor`, `limit`, `meta.nextCursor`).
 - A component that several applications use goes into `frontend/packages/ui`, with a test and a story like the existing ones. A component of one application stays in that application.
-- Validation helpers are in `frontend/packages/validations` and return neverthrow results.
 - Tests are Vitest files next to the module (`*.test.ts`, `*.test.tsx`).
 - `pnpm dev` starts the backend on port 3000 and the applications on ports 3001 to 3003. `pnpm dev:watch:admin-app` runs one application with its packages in watch mode; there is one such script per application. Storybook: `pnpm --filter @beauty-salon-frontend/ui run storybook`.
 
-On type safety: the absolute rules of `CLAUDE.md` (no `any`, no type assertions, no type guards, no thrown exceptions) apply to frontend code, and `pnpm lint` fails on them. Take types from the generated client instead of asserting them, and return expected failures as values. Four older packages are exempt from the lint until they are rewritten or removed: `message`, `types`, `utils` and `validations` in `frontend/packages` (for example the type predicates in `frontend/packages/utils`). Do not spread their patterns to new modules, and do not rewrite them unless that is the task.
+On type safety: the absolute rules of `CLAUDE.md` (no `any`, no type assertions, no type guards, no thrown exceptions) apply to frontend code, and `pnpm lint` fails on them. Take types from the generated client instead of asserting them, and return expected failures as values.
 
 ## Before you report
 
