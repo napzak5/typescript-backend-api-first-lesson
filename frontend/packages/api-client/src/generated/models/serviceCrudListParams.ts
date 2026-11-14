@@ -7,6 +7,7 @@
  */
 import type { ModelsServiceSearchRequestCategoryIdParameter } from './modelsServiceSearchRequestCategoryIdParameter';
 import type { ModelsServiceSearchRequestCursorParameter } from './modelsServiceSearchRequestCursorParameter';
+import type { ModelsServiceSearchRequestIsActiveParameter } from './modelsServiceSearchRequestIsActiveParameter';
 import type { ModelsServiceSearchRequestLimitParameter } from './modelsServiceSearchRequestLimitParameter';
 
 export type ServiceCrudListParams = {
@@ -20,4 +21,6 @@ export type ServiceCrudListParams = {
   cursor?: ModelsServiceSearchRequestCursorParameter;
   /** サービスカテゴリやメニュー分類を識別するブランド付きUUID。 */
   categoryId?: ModelsServiceSearchRequestCategoryIdParameter;
+  /** 有効フラグによる絞り込み。指定しない場合は無効なサービスも返す */
+  isActive?: ModelsServiceSearchRequestIsActiveParameter;
 };

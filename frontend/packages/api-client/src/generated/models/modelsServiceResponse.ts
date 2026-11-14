@@ -10,7 +10,7 @@ import type { ModelsPricingStrategyType } from './modelsPricingStrategyType';
 import type { ModelsSalonId } from './modelsSalonId';
 import type { ModelsServiceAvailabilityType } from './modelsServiceAvailabilityType';
 import type { ModelsServiceId } from './modelsServiceId';
-import type { ModelsServiceOptionResponse } from './modelsServiceOptionResponse';
+import type { ModelsServiceOption } from './modelsServiceOption';
 import type { ModelsServiceStatusType } from './modelsServiceStatusType';
 import type { ModelsStaffLevelType } from './modelsStaffLevelType';
 
@@ -51,18 +51,15 @@ export interface ModelsServiceResponse {
   discountPrice: number | null;
   /** 税込価格かどうか */
   taxIncluded: boolean;
-  /** 採用している価格戦略。未設定の場合はnull */
-  pricingStrategy: ModelsPricingStrategyType | null;
+  /** 採用している価格戦略 */
+  pricingStrategy: ModelsPricingStrategyType;
   /**
      * 画像 URL。画像が登録されていない場合はnull
      * @nullable
      */
   imageUrl: string | null;
-  /**
-     * サービス画像の URL 一覧。画像登録がない場合はnull
-     * @nullable
-     */
-  imageUrls: string[] | null;
+  /** サービス画像の URL 一覧。画像がない場合は空配列 */
+  imageUrls: string[];
   /** 必要なスタッフレベル。全スタッフが対応可能な場合はnull */
   requiredStaffLevel: ModelsStaffLevelType | null;
   /**
@@ -74,33 +71,24 @@ export interface ModelsServiceResponse {
   requiresConsultation: boolean;
   /** オンライン予約を受け付けるかどうか */
   allowOnlineBooking: boolean;
-  /**
-     * 予約時に必要な要件一覧。特別な要件がない標準サービスの場合はnull
-     * @nullable
-     */
-  bookingRequirements: ModelsBookingRequirementType[] | null;
+  /** 予約時に必要な要件一覧。特別な要件がない場合は空配列 */
+  bookingRequirements: ModelsBookingRequirementType[];
   /** 複数のサービスを組み合わせたパッケージかどうか */
   isPackage: boolean;
-  /**
-     * パッケージに含まれるサービスの ID 一覧。未設定の場合はnull
-     * @nullable
-     */
-  packageServiceIds: ModelsServiceId[] | null;
-  /**
-     * タグ一覧。タグ付けが不要な場合はnull
-     * @nullable
-     */
-  tags: string[] | null;
+  /** パッケージに含まれるサービスの ID 一覧。パッケージでない場合は空配列 */
+  packageServiceIds: ModelsServiceId[];
+  /** タグ一覧。タグがない場合は空配列 */
+  tags: string[];
   /** 表示順序 */
   sortOrder: number;
-  /** 現在の提供ステータス。未設定の場合はnull */
-  serviceStatus: ModelsServiceStatusType | null;
-  /** 提供可能な時期の区分。未設定の場合はnull */
-  availability: ModelsServiceAvailabilityType | null;
+  /** 現在の提供ステータス */
+  serviceStatus: ModelsServiceStatusType;
+  /** 提供可能な時期の区分 */
+  availability: ModelsServiceAvailabilityType;
   /** 有効フラグ */
   isActive: boolean;
   /** 追加オプションの一覧。sortOrderの昇順で並ぶ。オプションがない場合は空配列 */
-  options: ModelsServiceOptionResponse[];
+  options: ModelsServiceOption[];
   /** レコード作成日時 */
   createdAt: string;
   /** レコード最終更新日時 */

@@ -9,6 +9,7 @@ import type { ModelsBookingRequirementType } from './modelsBookingRequirementTyp
 import type { ModelsPricingStrategyType } from './modelsPricingStrategyType';
 import type { ModelsServiceAvailabilityType } from './modelsServiceAvailabilityType';
 import type { ModelsServiceId } from './modelsServiceId';
+import type { ModelsServiceOption } from './modelsServiceOption';
 import type { ModelsServiceStatusType } from './modelsServiceStatusType';
 import type { ModelsStaffLevelType } from './modelsStaffLevelType';
 
@@ -51,26 +52,23 @@ export interface ModelsServiceCreateRequest {
      */
   price: number;
   /**
-     * 割引後の料金。割引がない場合はnull
+     * 割引後の料金。price 以下の値を指定する。割引がない場合はnull
      * @minimum 0
      * @nullable
      */
   discountPrice: number | null;
   /** 税込価格かどうか */
   taxIncluded: boolean;
-  /** 採用している価格戦略。未設定の場合はnull */
-  pricingStrategy: ModelsPricingStrategyType | null;
+  /** 採用している価格戦略 */
+  pricingStrategy: ModelsPricingStrategyType;
   /**
      * 画像 URL。画像が登録されていない場合はnull
      * @maxLength 500
      * @nullable
      */
   imageUrl: string | null;
-  /**
-     * サービス画像の URL 一覧。画像登録がない場合はnull
-     * @nullable
-     */
-  imageUrls: string[] | null;
+  /** サービス画像の URL 一覧。画像がない場合は空配列 */
+  imageUrls: string[];
   /** 必要なスタッフレベル。全スタッフが対応可能な場合はnull */
   requiredStaffLevel: ModelsStaffLevelType | null;
   /**
@@ -83,32 +81,28 @@ export interface ModelsServiceCreateRequest {
   requiresConsultation: boolean;
   /** オンライン予約を受け付けるかどうか */
   allowOnlineBooking: boolean;
-  /**
-     * 予約時に必要な要件一覧。特別な要件がない標準サービスの場合はnull
-     * @nullable
-     */
-  bookingRequirements: ModelsBookingRequirementType[] | null;
-  /** 複数のサービスを組み合わせたパッケージかどうか */
+  /** 予約時に必要な要件一覧。同じ要件を重ねて指定できない。特別な要件がない場合は空配列 */
+  bookingRequirements: ModelsBookingRequirementType[];
+  /** 複数のサービスを組み合わせたパッケージかどうか。trueの場合は packageServiceIds に構成サービスを指定する */
   isPackage: boolean;
   /**
-     * パッケージに含まれるサービスの ID 一覧。同じサロンのサービスを指定する。未設定の場合はnull
-     * @nullable
+     * パッケージに含まれるサービスの ID 一覧。isPackage が true の場合は、同じサロンの、パッケージではないサービスを重複なく2件以上20件以下で指定する。false の場合は空配列
+     * @maxItems 20
      */
-  packageServiceIds: ModelsServiceId[] | null;
-  /**
-     * タグ一覧。タグ付けが不要な場合はnull
-     * @nullable
-     */
-  tags: string[] | null;
+  packageServiceIds: ModelsServiceId[];
+  /** タグ一覧。タグがない場合は空配列 */
+  tags: string[];
   /**
      * 表示順序
      * @minimum 0
      */
   sortOrder: number;
-  /** 現在の提供ステータス。未設定の場合はnull */
-  serviceStatus: ModelsServiceStatusType | null;
-  /** 提供可能な時期の区分。未設定の場合はnull */
-  availability: ModelsServiceAvailabilityType | null;
+  /** 現在の提供ステータス */
+  serviceStatus: ModelsServiceStatusType;
+  /** 提供可能な時期の区分 */
+  availability: ModelsServiceAvailabilityType;
   /** 有効フラグ */
   isActive: boolean;
+  /** 追加オプションの一覧。オプションがない場合は空配列 */
+  options: ModelsServiceOption[];
 }

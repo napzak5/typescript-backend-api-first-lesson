@@ -14,7 +14,7 @@ import type { ModelsServiceUpdateRequest } from './modelsServiceUpdateRequest';
  */
 export interface ModelsServiceBulkUpdateRequest {
   /**
-     * 更新対象のサービス ID 一覧。パスの salonId のサロンのサービスを1件以上100件以下で指定する
+     * 更新対象のサービス ID 一覧。パスの salonId のサロンのサービスを重複なく1件以上100件以下で指定する
      * @minItems 1
      * @maxItems 100
      */
