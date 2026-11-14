@@ -19,7 +19,7 @@ beforeAll(async () => {
   process.env.TESTCONTAINERS_RYUK_DISABLED = 'true'
   process.env.DOCKER_CONFIG = '/dev/null'
 
-  container = await new PostgreSqlContainer('postgres:15-alpine')
+  container = await new PostgreSqlContainer('postgres:18-alpine')
     .withDatabase('testdb')
     .withUsername('testuser')
     .withPassword('testpass')

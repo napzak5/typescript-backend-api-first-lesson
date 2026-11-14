@@ -37,7 +37,7 @@ import { afterAll, afterEach, beforeAll, beforeEach } from 'vitest'
 
 beforeAll(async () => {
   // Single container for all tests
-  const container = await new PostgreSqlContainer('postgres:15-alpine')
+  const container = await new PostgreSqlContainer('postgres:18-alpine')
     .withDatabase('testdb')
     .start()
 

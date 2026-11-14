@@ -448,9 +448,9 @@ pnpm --filter "@beauty-salon/admin-app" build:prod
 docker build -f Dockerfile.backend -t beauty-salon-backend:latest .
 
 # フロントエンドイメージ
-docker build -f Dockerfile.frontend.admin -t beauty-salon-admin:latest .
-docker build -f Dockerfile.frontend.portal -t beauty-salon-portal:latest .
-docker build -f Dockerfile.frontend.dashboard -t beauty-salon-dashboard:latest .
+docker build -f Dockerfile.frontend --build-arg APP=admin --build-arg APP_PORT=4001 -t beauty-salon-admin:latest .
+docker build -f Dockerfile.frontend --build-arg APP=portal --build-arg APP_PORT=4002 -t beauty-salon-portal:latest .
+docker build -f Dockerfile.frontend --build-arg APP=dashboard --build-arg APP_PORT=4003 -t beauty-salon-dashboard:latest .
 
 # 本番用ビルド（multi-stage）
 docker build -f Dockerfile.backend --target production -t beauty-salon-backend:prod .

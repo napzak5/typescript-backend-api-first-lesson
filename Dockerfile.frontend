@@ -1,17 +1,28 @@
-# Multi-stage build for Dashboard App
-# Stage 1: Build stage
-FROM node:24.4.0-alpine AS builder
+# syntax=docker/dockerfile:1
 
-# Install pnpm and TypeScript globally with specific versions
-ENV PNPM_VERSION=10.13.1
-ENV TYPESCRIPT_VERSION=5.9.2
-RUN npm install -g pnpm@${PNPM_VERSION} typescript@${TYPESCRIPT_VERSION}
+# One Dockerfile for all three frontend apps. Select the app at build time:
+#   docker build -f Dockerfile.frontend --build-arg APP=admin  --build-arg APP_PORT=4001 .
+#   docker build -f Dockerfile.frontend --build-arg APP=portal --build-arg APP_PORT=4002 .
+#   docker build -f Dockerfile.frontend --build-arg APP=dashboard --build-arg APP_PORT=4003 .
+
+# Keep in sync with .node-version (verified by `pnpm check:versions`).
+ARG NODE_VERSION=26.13.1
+
+# Stage 1: Build stage
+FROM node:${NODE_VERSION}-alpine AS builder
+
+# admin | portal | dashboard
+ARG APP=admin
 
 # Set working directory
 WORKDIR /app
 
+# pnpm version comes from package.json#packageManager
+COPY package.json ./
+RUN npm install -g "pnpm@$(node -p "require('./package.json').packageManager.split('@')[1]")"
+
 # Copy package files for better caching
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY shared-config/package.json ./shared-config/
 
 # Copy backend packages needed for type generation
@@ -36,8 +47,8 @@ COPY frontend/packages/ui/package.json ./frontend/packages/ui/
 COPY frontend/packages/utils/package.json ./frontend/packages/utils/
 COPY frontend/packages/validations/package.json ./frontend/packages/validations/
 
-# Copy dashboard app
-COPY frontend/apps/dashboard-app/package.json ./frontend/apps/dashboard-app/
+# Copy the selected app
+COPY frontend/apps/${APP}-app/package.json ./frontend/apps/${APP}-app/
 
 # Copy specs
 COPY specs/package.json ./specs/
@@ -54,11 +65,15 @@ RUN pnpm generate
 # Prepare frontend (generates types for frontend)
 RUN pnpm prepare:frontend
 
-# Build dashboard app for production
-RUN pnpm --filter "@beauty-salon-frontend/dashboard-app" build:prod
+# Build the selected app for production
+RUN pnpm --filter "@beauty-salon-frontend/${APP}-app" build:prod
 
 # Stage 2: Production runtime
-FROM node:24.4.0-alpine AS runtime
+FROM node:${NODE_VERSION}-alpine AS runtime
+
+ARG APP=admin
+ARG APP_PORT=4001
+ENV PORT=${APP_PORT}
 
 # Install serve for static file serving
 RUN npm install -g serve@14 && npm cache clean --force
@@ -71,7 +86,7 @@ RUN addgroup -g 1001 -S nodejs && \
 WORKDIR /app
 
 # Copy built application from builder stage
-COPY --from=builder --chown=appuser:nodejs /app/frontend/apps/dashboard-app/dist/ ./dist/
+COPY --from=builder --chown=appuser:nodejs /app/frontend/apps/${APP}-app/dist/ ./dist/
 
 # Create logs directory
 RUN mkdir -p /app/logs && chown appuser:nodejs /app/logs
@@ -79,12 +94,11 @@ RUN mkdir -p /app/logs && chown appuser:nodejs /app/logs
 # Switch to non-root user
 USER appuser
 
-# Expose port 4003 for dashboard app
-EXPOSE 4003
+EXPOSE ${APP_PORT}
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:4003/ || exit 1
+    CMD wget --no-verbose --tries=1 --spider "http://localhost:${PORT}/" || exit 1
 
-# Start serve in SPA mode
-CMD ["serve", "-s", "dist", "-l", "4003"]
+# Start serve in SPA mode (shell form so that $PORT is expanded)
+CMD ["sh", "-c", "exec serve -s dist -l \"${PORT}\""]
