@@ -237,13 +237,15 @@ describe('Salon API', () => {
       expect(await db.$count(salons)).toBe(1)
     })
 
-    it('rejects the email of a deleted salon, whose row still holds it', async () => {
+    it('accepts the email of a deleted salon', async () => {
       const deleted = await createSalon()
       await deleteSalon(deleted.id)
 
       const response = await request(app).post(SALONS).send(salonRequest())
 
-      expectProblem(response, conflict)
+      expect(response.status).toBe(201)
+      expect(response.body.data.email).toBe(deleted.email)
+      expect(await db.$count(salons)).toBe(2)
     })
   })
 
@@ -584,6 +586,19 @@ describe('Salon API', () => {
         .send({ email: created.email })
 
       expect(response.status).toBe(200)
+    })
+
+    it('accepts the email of a deleted salon', async () => {
+      const deleted = await createSalon({ email: 'former@example.com' })
+      await deleteSalon(deleted.id)
+      const created = await createSalon()
+
+      const response = await request(app)
+        .patch(`${SALONS}/${created.id}`)
+        .send({ email: 'former@example.com' })
+
+      expect(response.status).toBe(200)
+      expect(response.body.data.email).toBe('former@example.com')
     })
 
     it.each([

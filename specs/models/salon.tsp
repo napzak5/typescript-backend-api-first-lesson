@@ -50,7 +50,7 @@ namespace BeautySalon.Models {
     @doc("予備の電話番号。未設定の場合はnull")
     alternativePhone: string | null;
 
-    @doc("問い合わせ用メールアドレス。サロン間で一意")
+    @doc("問い合わせ用メールアドレス。削除されていないサロンの間で一意")
     email: string;
 
     @doc("公式サイトのURL。未設定の場合はnull")
@@ -156,7 +156,7 @@ namespace BeautySalon.Models {
     @maxLength(20)
     alternativePhone: string | null;
 
-    @doc("問い合わせ用メールアドレス。サロン間で一意")
+    @doc("問い合わせ用メールアドレス。削除されていないサロンの間で一意")
     @maxLength(255)
     email: string;
 
@@ -259,7 +259,7 @@ namespace BeautySalon.Models {
     @maxLength(20)
     alternativePhone?: string | null;
 
-    @doc("問い合わせ用メールアドレス。サロン間で一意")
+    @doc("問い合わせ用メールアドレス。削除されていないサロンの間で一意")
     @maxLength(255)
     email?: string;
 

@@ -85,7 +85,7 @@ export interface ModelsSalonCreateRequest {
      */
   alternativePhone: string | null;
   /**
-     * 問い合わせ用メールアドレス。サロン間で一意
+     * 問い合わせ用メールアドレス。削除されていないサロンの間で一意
      * @maxLength 255
      */
   email: string;

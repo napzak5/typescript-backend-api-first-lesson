@@ -385,7 +385,7 @@ returns the body the contract defines for it, not problem details.
 |------|-----------|--------|
 | `validation` | A use case, when the input breaks a rule of its Zod schema; the list handler, when a query parameter cannot be read as its type | 400 |
 | `notFound` | A use case, when the salon does not exist or is deleted | 404 |
-| `alreadyExists` | The repository, when the unique constraint on `email` is violated | 409 |
+| `alreadyExists` | The repository, when the unique index on `email` is violated | 409 |
 | `database` | The repository, when a query fails; the read mapper, when a stored row does not match the API model | 500 |
 | `routeNotFound` | `notFoundHandler` | 404 |
 | `malformedBody`, `badRequest` | `errorHandler`, from what the body parser or Express raised | 400 |

@@ -16949,7 +16949,7 @@ components:
         email:
           type: string
           maxLength: 255
-          description: 問い合わせ用メールアドレス。サロン間で一意
+          description: 問い合わせ用メールアドレス。削除されていないサロンの間で一意
         websiteUrl:
           type: string
           nullable: true
@@ -17093,7 +17093,7 @@ components:
           description: 予備の電話番号。未設定の場合はnull
         email:
           type: string
-          description: 問い合わせ用メールアドレス。サロン間で一意
+          description: 問い合わせ用メールアドレス。削除されていないサロンの間で一意
         websiteUrl:
           type: string
           nullable: true
@@ -17229,7 +17229,7 @@ components:
         email:
           type: string
           maxLength: 255
-          description: 問い合わせ用メールアドレス。サロン間で一意
+          description: 問い合わせ用メールアドレス。削除されていないサロンの間で一意
         websiteUrl:
           type: string
           nullable: true

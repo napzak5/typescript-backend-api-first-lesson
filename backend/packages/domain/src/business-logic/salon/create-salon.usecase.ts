@@ -11,8 +11,9 @@ export class CreateSalonUseCase {
 
   /**
    * Validate → map API to DB → save → map DB to API. A second salon with the
-   * same email is rejected by the unique constraint, which the repository
-   * reports as `alreadyExists`.
+   * same email is rejected by the unique index, which the repository reports
+   * as `alreadyExists`. The index leaves out deleted salons, so their email
+   * can be used again.
    */
   async execute(
     input: unknown,

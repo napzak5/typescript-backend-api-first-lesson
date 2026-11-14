@@ -484,8 +484,7 @@ CREATE TABLE "salons" (
 	"isActive" boolean DEFAULT true NOT NULL,
 	"deletedAt" timestamp with time zone,
 	"createdAt" timestamp with time zone DEFAULT now() NOT NULL,
-	"updatedAt" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "salons_email_unique" UNIQUE("email")
+	"updatedAt" timestamp with time zone DEFAULT now() NOT NULL
 );
 
 CREATE TABLE "service_categories" (
@@ -863,6 +862,7 @@ CREATE INDEX "idx_salons_deleted_at" ON "salons" USING btree ("deletedAt" timest
 CREATE INDEX "idx_salons_email" ON "salons" USING btree ("email" text_ops);
 CREATE INDEX "idx_salons_rating" ON "salons" USING btree ("rating" numeric_ops);
 CREATE INDEX "idx_salons_review_count" ON "salons" USING btree ("reviewCount" int4_ops);
+CREATE UNIQUE INDEX "salons_email_unique" ON "salons" USING btree ("email" text_ops) WHERE ("deletedAt" IS NULL);
 CREATE INDEX "idx_service_categories_parent_id" ON "service_categories" USING btree ("parentId" uuid_ops);
 CREATE INDEX "idx_service_categories_salon_id" ON "service_categories" USING btree ("salonId" uuid_ops);
 CREATE INDEX "idx_service_options_service_id" ON "service_options" USING btree ("serviceId" uuid_ops);

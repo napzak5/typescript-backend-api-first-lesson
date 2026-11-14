@@ -95,7 +95,7 @@ Error scenarios in `backend/packages/api/src/__tests__/salon.integration.test.ts
 
 | Endpoint | Error scenarios | Count |
 |----------|-----------------|-------|
-| `POST /api/v1/salons` | Seven invalid bodies (a missing property, a property the client may not set, `null` for a NOT NULL column, a value longer than its column, several invalid values, a calendar entry on the wrong day of the week, a calendar that repeats a date); a body that is not an object; an email that another salon uses (409); the email of a deleted salon (409) | 10 |
+| `POST /api/v1/salons` | Seven invalid bodies (a missing property, a property the client may not set, `null` for a NOT NULL column, a value longer than its column, several invalid values, a calendar entry on the wrong day of the week, a calendar that repeats a date); a body that is not an object; an email that another salon uses (409) | 9 |
 | `GET /api/v1/salons/:id` | Three malformed IDs (400); an ID that no salon has (404); a deleted salon (404); a stored salon that is corrupt (500 without details) | 6 |
 | `GET /api/v1/salons` | Eight invalid queries: a limit of 0, over 100, or not a number; a boolean that is not `true` or `false`; a cursor that is not an ID; a rating above 5; an empty keyword; a parameter that does not exist | 8 |
 | `PATCH /api/v1/salons/:id` | An ID that is not a UUID, an empty request, `null` for a NOT NULL column, a property the client may not set, an invalid calendar (400); an ID that no salon has (404); a deleted salon (404); the email of another salon (409) | 8 |

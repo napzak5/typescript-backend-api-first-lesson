@@ -146,7 +146,9 @@ export const salons = pgTable(
   },
   (table) => [
     // ...
-    unique('salons_email_unique').on(table.email),
+    uniqueIndex('salons_email_unique')
+      .using('btree', table.email.asc().nullsLast().op('text_ops'))
+      .where(sql`("deletedAt" IS NULL)`),
   ],
 )
 ```
@@ -168,7 +170,7 @@ The table decides much of what the layers above look like:
 | `numeric` columns (`latitude`, `longitude`, `rating`, `taxRate`) | The driver reads and writes them as strings; the mappers convert (step 6) |
 | `timestamp` with `mode: 'string'` | Timestamps arrive in PostgreSQL's text format; the read mapper converts them to ISO 8601 |
 | `jsonb` (`businessHours`) | The value is `unknown` to TypeScript; the read mapper checks it |
-| `unique('salons_email_unique')` | The source of the `alreadyExists` error (step 8) |
+| `uniqueIndex('salons_email_unique')` over the rows that are not deleted | The source of the `alreadyExists` error (step 8); the email of a deleted salon is free again |
 | `deletedAt` | Delete is a soft delete; the repository hides deleted rows |
 | `opening_hours.salonId` references `salons.id` | The calendar is a child table, embedded in the API model as `openingHours` |
 
@@ -462,10 +464,10 @@ const attempt = async <T>(
 
 Every method runs its queries inside `attempt`. `Result.fromPromise`, in the utility package, is the one place where a rejected query is caught and turned into a value; `toDomainError` classifies it:
 
-- **The unique constraint is the uniqueness check.** There is no "does this email exist" query before the insert, which would leave a gap between the check and the write. The repository recognises SQLSTATE `23505` on the constraint `salons_email_unique`, on the error or on its `cause`, because Drizzle wraps the driver's error.
+- **The unique index is the uniqueness check.** There is no "does this email exist" query before the insert, which would leave a gap between the check and the write. The repository recognises SQLSTATE `23505` on the index `salons_email_unique` (PostgreSQL reports its name as `constraint_name`), on the error or on its `cause`, because Drizzle wraps the driver's error.
 - **The value in the error comes from the caller.** `attempt` is given the email being written (`salon.email` on create, `changes.email ?? null` on update), so nothing is parsed out of PostgreSQL's message. A method that writes no email passes `null`, and a violation there is not an expected failure.
 - **Everything else is a `database` error** whose cause is `describeDatabaseError(cause)`: the driver's message, the SQLSTATE, the constraint, table and column names, and the statement with placeholders. The bound values are left out, so the cause is safe to log.
-- **The deleted row keeps its email.** Delete is a soft delete, so the email of a deleted salon still conflicts.
+- **A deleted salon gives its email back.** Delete is a soft delete and the row keeps its email, but the index covers only the rows whose `deletedAt` is null, so another salon can take the email.
 
 ### Keyset pagination
 
