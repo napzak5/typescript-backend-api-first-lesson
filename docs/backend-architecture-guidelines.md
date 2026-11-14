@@ -7,7 +7,7 @@
 - [アーキテクチャ概要](./architecture-overview.md): システム全体の説明。パッケージの依存関係、型生成の流れ、リクエストの流れ、実装済みの範囲はそちらにあり、本書では繰り返しません。
 - [CLAUDE.md](../CLAUDE.md): 規約とコマンドの正本。Salon ドメインの全レイヤーのシグネチャもそこにまとまっています。本書は規約の適用のしかたと理由を説明します。
 
-バックエンドで実装済みなのは、Salon ドメイン、認証の 16 のオペレーション（ログイン、トークンの再発行、ログアウト、全セッションのログアウト、自分の情報の取得、ユーザー登録、メールアドレスの確認、パスワードの再設定と変更、2 要素認証）、システムエンドポイントだけです。ほかのドメインを実装するときは、Salon のファイルと同じ構成で書いてください。認証と認可の仕様は [認証と認可](./authentication.md) にあり、本書ではコードの書き方だけを扱います。
+バックエンドで実装済みなのは、Salon ドメイン、認証のすべてのオペレーション（ログイン、トークンの再発行、ログアウト、全セッションのログアウト、自分の情報の取得、ユーザー登録、メールアドレスの確認、パスワードの再設定と変更、2 要素認証、セッションの一覧と無効化、管理者の操作）、システムエンドポイントだけです。ほかのドメインを実装するときは、Salon のファイルと同じ構成で書いてください。認証と認可の仕様は [認証と認可](./authentication.md) にあり、本書ではコードの書き方だけを扱います。
 
 ---
 
@@ -60,7 +60,7 @@
 - `backend/packages/domain/src/models/auth.ts`: 操作者を表す `Actor` と `ActorScope`
 - `backend/packages/domain/src/mappers/read/columns.ts`: Read マッパーが共通で使う列の変換（`numericSchema`、`timestampSchema`）
 - `backend/packages/infrastructure/src/database/attempt.ts`: 想定している失敗がないクエリを `Result` に変える `attempt`
-- `backend/packages/api/src/shared`: `sendProblem`、`responseMeta`、`toProblemDetails`、`createAuthenticated`（`authenticated` を作る）、生成型から JSON の本文を取り出す `JsonBody`、API バージョン
+- `backend/packages/api/src/shared`: `sendProblem`、`responseMeta`、`toProblemDetails`、`createAuthenticated`（`authenticated` を作る）、生成型から JSON の本文を取り出す `JsonBody`、一覧のページのリンクを作る `pageLinks`、クエリパラメータを型に直す部品（`numberParameter`、`booleanParameter`、`listParameter`）、API バージョン
 - `backend/packages/api/src/middleware`: リクエストログ、レート制限、エラーハンドラー
 - `backend/packages/utility/src`: `Result`（`success`・`error`・`map`・`mapError`・`flatMap`・`fromThrowable`・`fromPromise`）、`DeepRequired`、`Omit`
 
@@ -374,9 +374,9 @@ export const getSalonHandler = (
 - ハンドラーは、依存を受け取って `RequestHandler` を返す関数です。ユースケースは最初に一度だけ生成します。
 - `RequestHandler` の型引数で、パスパラメータとレスポンス本文の型を決めます。レスポンスの型は `_shared/types.ts` で生成型の `operations` から取り出します。リクエスト本文の型は `unknown` です。
 - ハンドラーは検証しません。`req.body` と `req.params.id` をそのままユースケースに渡します。
-- クエリ文字列だけは例外です。文字列しか運べないので、一覧のハンドラーは `decodeSalonSearchQuery`（`_shared/query.ts`）で数値・真偽値・配列に直してから渡します。値のルールを判定するのはユースケースです。
+- クエリ文字列だけは例外です。文字列しか運べないので、一覧のハンドラーは `decodeSalonSearchQuery`（`_shared/query.ts`）で数値・真偽値・配列に直してから渡します。変換の部品はどの一覧でも同じで、`backend/packages/api/src/shared/query-parameters.ts` にあります。値のルールを判定するのはユースケースです。
 - 結果は `match(result)…exhaustive()` で分岐します。成功は `{ data, meta: responseMeta(req), links }`、失敗は必ず `sendProblem(req, res, error)` です。ハンドラーでステータスコードとエラーの対応を書きません。
-- リンクは `req.baseUrl` から組み立てます。マウント先のパスをハンドラーに書きません。
+- リンクは `req.baseUrl` から組み立てます。マウント先のパスをハンドラーに書きません。一覧のページのリンクは、どの一覧でも `pageLinks`（`backend/packages/api/src/shared/page-links.ts`）で作ります。
 - ルーターは `createSalonRouter(dependencies, authenticated)` のように依存と `authenticated` を受け取り、各ハンドラーに渡します。
 
 公開でないオペレーションのハンドラーは、`authenticated` で包みます（`backend/packages/api/src/shared/authentication.ts`）。

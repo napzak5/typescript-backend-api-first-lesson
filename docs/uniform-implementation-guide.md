@@ -9,8 +9,8 @@ shortened; the file named above each one is the authority.
 |---------|----------------|
 | [Request validation](#request-validation) | `backend/packages/domain/src/schemas/salon.schema.ts`, `backend/packages/domain/src/shared/validation.ts` |
 | [ID validation](#id-validation) | `backend/packages/domain/src/models/salon.ts` |
-| [Query parameters](#query-parameters) | `backend/packages/api/src/routes/salon/_shared/query.ts` |
-| [Pagination](#pagination) | `list-salons.usecase.ts`, `salon.repository.impl.ts`, `backend/packages/api/src/routes/salon/_shared/links.ts` |
+| [Query parameters](#query-parameters) | `backend/packages/api/src/shared/query-parameters.ts`, `backend/packages/api/src/routes/salon/_shared/query.ts` |
+| [Pagination](#pagination) | `list-salons.usecase.ts`, `salon.repository.impl.ts`, `backend/packages/api/src/shared/page-links.ts` |
 | [Response formatting](#response-formatting) | `backend/packages/api/src/shared/responses.ts` |
 | [Error handling](#error-handling) | `backend/packages/api/src/shared/problem-details.ts`, `backend/packages/api/src/middleware/errors.ts` |
 | [Logging](#logging) | `backend/packages/infrastructure/src/logging/logger.ts`, `backend/packages/api/src/middleware/request-logging.ts` |
@@ -132,6 +132,10 @@ A query string carries text only, so a list request is read in two steps.
      parseWith(salonSearchQuerySchema, query, 'Invalid salon search')
    ```
 
+   `numberParameter`, `booleanParameter` and `listParameter` are defined
+   once, in `backend/packages/api/src/shared/query-parameters.ts`; the
+   decoding schema of every list is built from them.
+
 2. The use case validates the result with `salonSearchRequestSchema`
    (`backend/packages/domain/src/schemas/salon.schema.ts`), which holds the
    rules for the values and for which parameters exist.
@@ -212,9 +216,11 @@ this.db
 ```
 
 A cursor is validated as an ID, so `cursor=offset:20` is a 400. A well-formed
-cursor that names no salon yields an empty page. The page links are built by
-`salonPageLinks` in `backend/packages/api/src/routes/salon/_shared/links.ts`
-from the request URL with the cursor replaced.
+cursor that names no salon yields an empty page (the session list answers
+400 instead; see [authentication.md](./authentication.md#一覧と無効化)). The
+page links are built by
+`pageLinks` in `backend/packages/api/src/shared/page-links.ts`, for every
+list, from the request URL with the cursor replaced.
 
 ## Response formatting
 
@@ -224,7 +230,7 @@ Every successful response with a body is `{ data, meta, links }`.
 |-----------|--------|--------|---------|-------|
 | Create | 201 | `responseMeta(req)` | `salonLinks(req.baseUrl, data.id)` | `Location` header set to `links.self` |
 | Get, update | 200 | `responseMeta(req)` | `salonLinks(req.baseUrl, data.id)` | |
-| List | 200 | Pagination metadata | `salonPageLinks(...)` | |
+| List | 200 | Pagination metadata | `pageLinks(...)` | |
 | Delete | 204 | | | No body |
 
 ```typescript
@@ -291,12 +297,12 @@ answers 503 with the body its operation defines.
 
 | Error | Raised by | Status | `code` |
 |-------|-----------|--------|--------|
-| `validation` | `parseWith` in a use case; an authentication use case, also for what a schema cannot check (a password that is too easy to guess, a wrong current password, a mailed token that cannot be used, a code of two-factor authentication that is not accepted) | 400 | `2001` |
+| `validation` | `parseWith` in a use case; an authentication use case, also for what a schema cannot check (a password that is too easy to guess, a wrong current password, a mailed token that cannot be used, a code of two-factor authentication that is not accepted, a cursor of the session list that names no session of the user) | 400 | `2001` |
 | `unauthenticated` | `AuthenticateUseCase` behind `authenticated`; the login and refresh use cases; the current-user, change-password and two-factor use cases, when the user of the session no longer exists | 401 | `1001` to `1004` and `1007`, by `reason` |
 | `forbidden` | A use case, when the actor may not do what is asked | 403 | `1005` |
 | `notFound` | A use case, when the repository finds no row | 404 | `3001` |
 | `alreadyExists` | The repository, on the unique index on `email` | 409 | `3002` |
-| `conflict` | A two-factor use case, when the request is fine and the state of the account does not allow it (enabling what is already enabled, for example) | 409 | `3003` |
+| `conflict` | A two-factor use case or the use case of an administrator operation, when the request is fine and the state of the account does not allow it (enabling what is already enabled, or unlocking an account that is not locked, for example) | 409 | `3003` |
 | `database` | The repository on an unexpected failure; the read mapper on stored data that does not match the API model | 500 | `4003` |
 | `routeNotFound` | `notFoundHandler` | 404 | `3001` |
 | `malformedBody` | The JSON body parser | 400 | `2002` |
@@ -378,6 +384,11 @@ Logging is structured, with pino. Application code never writes to `console`.
   gives every request `req.id` and `req.log`, a logger whose lines carry that
   ID, and writes one line per completed request (`error` for 5xx, `warn` for
   4xx, otherwise `info`).
+- The line of a request that was authenticated carries the ID of the
+  signed-in user as `userId`. `authenticated` notes it for the request
+  (`noteSignedInUser` in `backend/packages/api/src/shared/signed-in-user.ts`)
+  and `requestLogging` reads it when the request completes. The line of a
+  request that was not authenticated has no `userId`.
 - Inside a request, log with `req.log`; elsewhere, with the injected `Logger`.
   The fields come first, the message second:
 

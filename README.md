@@ -45,8 +45,8 @@ For detailed architecture documentation, see [docs/architecture-overview.md](doc
 | Area | Status |
 |------|--------|
 | Salon API (`/api/v1/salons`) | Implemented in every layer; the reference for the other domains. List and get are public; create, update and delete need a signed-in user who is allowed to |
-| Authentication (`/api/v1/auth`) | Implemented: `login`, `refresh`, `logout`, `logout-all` and `me`, on server-side sessions with bearer tokens; registration of customer accounts, email verification, password reset and password change, with the links sent by mail; two-factor authentication with the codes of an authenticator app (TOTP) and backup codes. The session list and `/api/v1/admin/auth` are specified in TypeSpec only |
-| Authorization | Decided in the use cases from the role and the salon of the signed-in user; applied to the Salon API. See [docs/authentication.md](docs/authentication.md) |
+| Authentication (`/api/v1/auth`, `/api/v1/admin/auth`) | Implemented, every operation of the contract: `login`, `refresh`, `logout`, `logout-all` and `me`, on server-side sessions with bearer tokens; registration of customer accounts, email verification, password reset and password change, with the links sent by mail; two-factor authentication with the codes of an authenticator app (TOTP) and backup codes; the list of the signed-in user's sessions and revoking one of them; and, for administrators, reading a user's account, unlocking it and resetting its two-factor authentication |
+| Authorization | Decided in the use cases from the role and the salon of the signed-in user; applied to the Salon API (create, update, delete) and to the administrator operations (`/api/v1/admin/auth`). See [docs/authentication.md](docs/authentication.md) |
 | System endpoints (`/api/system/alive`, `ready`, `health`) | Implemented |
 | Customers, staff, services, bookings, payments and the other domains | Specified in TypeSpec and present in the database schema; no backend code yet |
 | Email | Implemented for the mails of the authentication flows: plain text over SMTP. Locally they are caught by Mailpit. See [docs/email.md](docs/email.md) |
@@ -249,7 +249,9 @@ sent is in [docs/email.md](docs/email.md).
 
 The server writes structured logs (pino) to standard output: one line per
 request with method, URL, status and duration, and one line for every
-failure with its cause. Request headers and bodies, and the values bound to
+failure with its cause. The line of a request that was authenticated also
+names the signed-in user (`userId`), which tells afterwards who did what.
+Request headers and bodies, and the values bound to
 a failed SQL statement, are never logged. Every mail leaves one line,
 `Mail delivered` or `Failed to deliver mail`, with the subject of the message
 and without its recipient or text.

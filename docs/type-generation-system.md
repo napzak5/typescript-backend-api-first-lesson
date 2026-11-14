@@ -61,11 +61,12 @@ options:
 ```
 
 The document describes every domain that is defined in TypeSpec. The backend
-implements only the Salon operations, the sixteen authentication operations
-of `AuthCrud` (login, refresh, logout, the current user, registration, email
-verification, password reset and change, two-factor authentication) and the
-system probes (`alive`, `ready`, `health`); the types and client functions of
-everything else are generated all the same.
+implements only the Salon operations, the authentication operations (those of
+`AuthCrud`, `SessionCrud` and `AdminAuthCrud`: login, refresh, logout, the
+current user, registration, email verification, password reset and change,
+two-factor authentication, the session list, the administrator operations)
+and the system probes (`alive`, `ready`, `health`); the types and client
+functions of everything else are generated all the same.
 
 ## Step 2: OpenAPI to backend types
 

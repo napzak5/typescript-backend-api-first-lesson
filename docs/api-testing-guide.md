@@ -21,7 +21,7 @@ backend/packages/api/
     │   ├── setup.ts                 # the database of the run, a schema for each test
     │   ├── test-schema-manager.ts   # creates and drops the schemas
     │   ├── test-helpers.ts          # createTestApp, getTestDb, request
-    │   └── auth-helpers.ts          # users, staff and salons as rows; signing in
+    │   └── auth-helpers.ts          # users, staff, salons and sessions as rows; signing in
     ├── salon.integration.test.ts    # the Salon endpoints: the reference
     ├── auth.integration.test.ts     # the authentication endpoints
     └── app.integration.test.ts      # what the application does for every route
@@ -217,6 +217,8 @@ rules).
 | `insertUser(db, overrides)`, `insertMember(db, role, salonId)` | A user row; with `insertMember`, an owner, manager or staff user linked to a new staff member of the salon |
 | `insertSalon(db)`, `insertCustomer(db)` | The rows a user's role refers to, each returning the ID |
 | `signIn(app, email)` | `POST /api/v1/auth/login` with `PASSWORD`; returns `accessToken`, `refreshToken`, `authorization` and the user. A third argument overrides properties of the login request, for example `{ twoFactorCode }` for an account with two-factor authentication |
+| `insertSession(db, userId, overrides)` | Stores a session of the user as a row, for times that no login produces (by default it started an hour ago); returns `id`, `accessToken`, `refreshToken` and `authorization`, and the tokens work like those of a login |
+| `sessionIdOf(db, accessToken)` | The ID of the stored session that an access token belongs to |
 
 ## Writing a Test
 
