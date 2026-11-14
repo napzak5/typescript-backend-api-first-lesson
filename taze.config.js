@@ -1,37 +1,16 @@
 import { defineConfig } from 'taze'
 
 export default defineConfig({
-  // Exclude specific packages from updates
-  exclude: [],
-
-  // Force fetch latest package info without cache
+  // Always ask the registry instead of trusting the local cache
   force: true,
 
-  // Write updates directly to package.json
+  // `pnpm update:check` only reports; `pnpm update:install` passes -w --install
   write: false,
-
-  // Install after updating
   install: false,
 
-  // Ignore specific paths when searching for package.json files
-  ignorePaths: [
-    '**/node_modules/**',
-    '**/dist/**',
-    '**/build/**',
-    '**/.next/**',
-  ],
+  ignorePaths: ['**/node_modules/**', '**/dist/**', '**/build/**'],
 
-  // Package-specific update strategies
-  // You can override the global behavior for specific packages if needed
-  packageMode: {
-    // Keep these packages at their current major version
-    // 'tailwindcss': 'ignore',  // Already in exclude
-    // '@biomejs/biome': 'ignore',  // Already in exclude
-    // Force specific update strategies for other packages if needed
-    // Example: 'typescript': 'minor'
-  },
-
-  // Control which dependency fields to check
+  // packageManager and the pnpm overrides are maintained by hand
   depFields: {
     dependencies: true,
     devDependencies: true,

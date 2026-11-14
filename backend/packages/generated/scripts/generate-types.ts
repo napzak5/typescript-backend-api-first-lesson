@@ -154,7 +154,6 @@ function createApiTypesFile(baseTypes: string): string {
 
   return `// Generated from TypeSpec/OpenAPI using openapi-typescript
 // DO NOT EDIT MANUALLY
-// Last generated: ${new Date().toISOString()}
 
 // Base types from OpenAPI
 ${processedTypes}
@@ -310,7 +309,6 @@ function generateZodSchemas(openApi: any): string {
 function createIndexFile(outputDir: string): void {
   const indexContent = `// Generated from TypeSpec/OpenAPI
 // DO NOT EDIT MANUALLY
-// Last generated: ${new Date().toISOString()}
 
 // Main API types and utilities
 export * from './api-types';

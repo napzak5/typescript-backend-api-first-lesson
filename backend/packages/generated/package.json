@@ -9,6 +9,7 @@
   ],
   "exports": {
     ".": {
+      "@beauty-salon-backend/source": "./src/index.ts",
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
@@ -24,22 +25,14 @@
     "build:stg": "NODE_ENV=staging rslib build",
     "build:prod": "NODE_ENV=production rslib build",
     "build:watch": "NODE_ENV=development rslib build --watch",
-    "dev": "NODE_ENV=development rslib build --watch",
     "generate": "tsx scripts/generate-types.ts",
-    "typecheck": "tsc --noEmit",
-    "format": "biome format --write .",
-    "format:fix": "biome check . --fix --unsafe",
-    "lint": "biome lint .",
-    "lint:fix": "biome lint . --write"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@beauty-salon-backend/database": "workspace:*",
-    "@beauty-salon-backend/utility": "workspace:*",
     "zod": "^4.6.7"
   },
   "devDependencies": {
     "@beauty-salon-shared/config": "workspace:*",
-    "@biomejs/biome": "^2.6.7",
     "@rslib/core": "^1.0.7",
     "@types/node": "^26.6.6",
     "openapi-typescript": "^7.13.0",

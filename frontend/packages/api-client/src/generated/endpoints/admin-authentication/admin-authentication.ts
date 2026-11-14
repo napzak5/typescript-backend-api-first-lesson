@@ -22,10 +22,8 @@ import type {
   ModelsError
 } from '../../models';
 
-import { customInstance } from '../../../../../io/src/libs/fetcher/fetcher';
+import { customInstance } from '../../../mutator';
 
-
-type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 
 
@@ -75,7 +73,7 @@ export const getAdminAuthOperationsAddTrustedIpUrl = (userId: string,) => {
  * Add trusted IP address for a user
  */
 export const adminAuthOperationsAddTrustedIp = async (userId: string,
-    adminAuthOperationsAddTrustedIpBody: AdminAuthOperationsAddTrustedIpBody, options?: Parameters<typeof customInstance>[1]): Promise<adminAuthOperationsAddTrustedIpResponse> => {
+    adminAuthOperationsAddTrustedIpBody: AdminAuthOperationsAddTrustedIpBody, options?: RequestInit): Promise<adminAuthOperationsAddTrustedIpResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -107,15 +105,15 @@ return customInstance<adminAuthOperationsAddTrustedIpResponse>(getAdminAuthOpera
 export const getAdminAuthOperationsAddTrustedIpMutationKey = () => ['adminAuthOperationsAddTrustedIp'] as const;
 
 export const getAdminAuthOperationsAddTrustedIpMutationOptions = <TError = ModelsError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminAuthOperationsAddTrustedIp>>, TError,AdminAuthOperationsAddTrustedIpMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminAuthOperationsAddTrustedIp>>, TError,AdminAuthOperationsAddTrustedIpMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof adminAuthOperationsAddTrustedIp>>, TError,AdminAuthOperationsAddTrustedIpMutationVariables, TContext> => {
 
 const mutationKey = getAdminAuthOperationsAddTrustedIpMutationKey();
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -123,7 +121,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof adminAuthOperationsAddTrustedIp>>, AdminAuthOperationsAddTrustedIpMutationVariables> = (props) => {
           const {userId,data} = props ?? {};
 
-          return  adminAuthOperationsAddTrustedIp(userId,data,requestOptions)
+          return  adminAuthOperationsAddTrustedIp(userId,data,)
         }
 
 
@@ -140,7 +138,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     /** Add trusted IP address for a user */
 export const useAdminAuthOperationsAddTrustedIp = <TError = ModelsError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminAuthOperationsAddTrustedIp>>, TError,AdminAuthOperationsAddTrustedIpMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminAuthOperationsAddTrustedIp>>, TError,AdminAuthOperationsAddTrustedIpMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof adminAuthOperationsAddTrustedIp>>,
         TError,
@@ -198,7 +196,7 @@ export const getAdminAuthOperationsRemoveTrustedIpUrl = (userId: string,
  * Remove trusted IP address for a user
  */
 export const adminAuthOperationsRemoveTrustedIp = async (userId: string,
-    params: AdminAuthOperationsRemoveTrustedIpParams, options?: Parameters<typeof customInstance>[1]): Promise<adminAuthOperationsRemoveTrustedIpResponse> => {
+    params: AdminAuthOperationsRemoveTrustedIpParams, options?: RequestInit): Promise<adminAuthOperationsRemoveTrustedIpResponse> => {
 
   return customInstance<adminAuthOperationsRemoveTrustedIpResponse>(getAdminAuthOperationsRemoveTrustedIpUrl(userId,params),
   {
@@ -216,15 +214,15 @@ export const adminAuthOperationsRemoveTrustedIp = async (userId: string,
 export const getAdminAuthOperationsRemoveTrustedIpMutationKey = () => ['adminAuthOperationsRemoveTrustedIp'] as const;
 
 export const getAdminAuthOperationsRemoveTrustedIpMutationOptions = <TError = ModelsError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminAuthOperationsRemoveTrustedIp>>, TError,AdminAuthOperationsRemoveTrustedIpMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminAuthOperationsRemoveTrustedIp>>, TError,AdminAuthOperationsRemoveTrustedIpMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof adminAuthOperationsRemoveTrustedIp>>, TError,AdminAuthOperationsRemoveTrustedIpMutationVariables, TContext> => {
 
 const mutationKey = getAdminAuthOperationsRemoveTrustedIpMutationKey();
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -232,7 +230,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof adminAuthOperationsRemoveTrustedIp>>, AdminAuthOperationsRemoveTrustedIpMutationVariables> = (props) => {
           const {userId,params} = props ?? {};
 
-          return  adminAuthOperationsRemoveTrustedIp(userId,params,requestOptions)
+          return  adminAuthOperationsRemoveTrustedIp(userId,params,)
         }
 
 
@@ -249,7 +247,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     /** Remove trusted IP address for a user */
 export const useAdminAuthOperationsRemoveTrustedIp = <TError = ModelsError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminAuthOperationsRemoveTrustedIp>>, TError,AdminAuthOperationsRemoveTrustedIpMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminAuthOperationsRemoveTrustedIp>>, TError,AdminAuthOperationsRemoveTrustedIpMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof adminAuthOperationsRemoveTrustedIp>>,
         TError,
@@ -303,7 +301,7 @@ export const getAdminAuthOperationsUnlockAccountUrl = (userId: string,) => {
 /**
  * Unlock a locked user account
  */
-export const adminAuthOperationsUnlockAccount = async (userId: string, options?: Parameters<typeof customInstance>[1]): Promise<adminAuthOperationsUnlockAccountResponse> => {
+export const adminAuthOperationsUnlockAccount = async (userId: string, options?: RequestInit): Promise<adminAuthOperationsUnlockAccountResponse> => {
 
   return customInstance<adminAuthOperationsUnlockAccountResponse>(getAdminAuthOperationsUnlockAccountUrl(userId),
   {
@@ -321,15 +319,15 @@ export const adminAuthOperationsUnlockAccount = async (userId: string, options?:
 export const getAdminAuthOperationsUnlockAccountMutationKey = () => ['adminAuthOperationsUnlockAccount'] as const;
 
 export const getAdminAuthOperationsUnlockAccountMutationOptions = <TError = ModelsError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminAuthOperationsUnlockAccount>>, TError,AdminAuthOperationsUnlockAccountMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminAuthOperationsUnlockAccount>>, TError,AdminAuthOperationsUnlockAccountMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof adminAuthOperationsUnlockAccount>>, TError,AdminAuthOperationsUnlockAccountMutationVariables, TContext> => {
 
 const mutationKey = getAdminAuthOperationsUnlockAccountMutationKey();
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -337,7 +335,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof adminAuthOperationsUnlockAccount>>, AdminAuthOperationsUnlockAccountMutationVariables> = (props) => {
           const {userId} = props ?? {};
 
-          return  adminAuthOperationsUnlockAccount(userId,requestOptions)
+          return  adminAuthOperationsUnlockAccount(userId,)
         }
 
 
@@ -354,7 +352,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     /** Unlock a locked user account */
 export const useAdminAuthOperationsUnlockAccount = <TError = ModelsError,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminAuthOperationsUnlockAccount>>, TError,AdminAuthOperationsUnlockAccountMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof adminAuthOperationsUnlockAccount>>, TError,AdminAuthOperationsUnlockAccountMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof adminAuthOperationsUnlockAccount>>,
         TError,

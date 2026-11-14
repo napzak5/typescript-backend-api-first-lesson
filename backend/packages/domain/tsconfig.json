@@ -1,5 +1,5 @@
 {
-  "extends": "../../../shared-config/tsconfig/backend.json",
+  "extends": "@beauty-salon-shared/config/backend.json",
   "compilerOptions": {
     "composite": true,
     "rootDir": "./src",

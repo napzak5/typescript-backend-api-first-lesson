@@ -5,40 +5,34 @@ import {
 import { afterAll, afterEach, beforeAll, beforeEach } from 'vitest'
 import { type TestSchema, TestSchemaManager } from './test-schema-manager'
 
-let container: StartedPostgreSqlContainer
+let container: StartedPostgreSqlContainer | undefined
 let schemaManager: TestSchemaManager
 let currentTestSchema: TestSchema | null = null
 
 /**
- * Global setup - Start PostgreSQL container once for all tests
+ * Global setup - connect to the database at TEST_DATABASE_URL, or start a
+ * PostgreSQL container when it is not set
  */
 beforeAll(async () => {
-  console.log('🚀 Starting PostgreSQL container...')
+  const externalUrl = process.env.TEST_DATABASE_URL
 
-  // Set environment variables to bypass Docker credential helpers
-  process.env.TESTCONTAINERS_RYUK_DISABLED = 'true'
-  process.env.DOCKER_CONFIG = '/dev/null'
-
-  container = await new PostgreSqlContainer('postgres:18-alpine')
-    .withDatabase('testdb')
-    .withUsername('testuser')
-    .withPassword('testpass')
-    .withExposedPorts(5432)
-    .withStartupTimeout(120000)
-    .start()
-
-  const connectionUri = container.getConnectionUri()
-  console.log('✅ PostgreSQL container started')
+  if (!externalUrl) {
+    container = await new PostgreSqlContainer('postgres:18-alpine')
+      .withDatabase('testdb')
+      .withUsername('testuser')
+      .withPassword('testpass')
+      .withExposedPorts(5432)
+      .withStartupTimeout(120000)
+      .start()
+  }
 
   // Initialize schema manager
-  schemaManager = new TestSchemaManager(connectionUri)
+  schemaManager = new TestSchemaManager(
+    container?.getConnectionUri() ?? externalUrl ?? '',
+  )
 
   // Initialize enum types once for all test schemas
   await schemaManager.initializeEnums()
-
-  // Store in global for tests to access
-  globalThis.__TEST_CONTAINER__ = container
-  globalThis.__SCHEMA_MANAGER__ = schemaManager
 })
 
 /**
@@ -53,8 +47,6 @@ beforeEach(async (context) => {
 
   // Make available to test
   globalThis.__TEST_DB__ = currentTestSchema.db
-  globalThis.__TEST_QUERY_CLIENT__ = currentTestSchema.queryClient
-  globalThis.__TEST_SCHEMA__ = currentTestSchema
 
   console.log(`✅ Schema ${currentTestSchema.name} created`)
 })
@@ -68,10 +60,7 @@ afterEach(async () => {
     await currentTestSchema.cleanup()
     currentTestSchema = null
 
-    // Clear globals
     globalThis.__TEST_DB__ = undefined
-    globalThis.__TEST_QUERY_CLIENT__ = undefined
-    globalThis.__TEST_SCHEMA__ = undefined
   }
 })
 

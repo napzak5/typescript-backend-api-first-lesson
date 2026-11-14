@@ -48,10 +48,8 @@ import type {
   ModelsStockMovementCreateRequest
 } from '../../models';
 
-import { customInstance } from '../../../../../io/src/libs/fetcher/fetcher';
+import { customInstance } from '../../../mutator';
 
-
-type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 
 
@@ -100,7 +98,7 @@ export const getInventoryOperationsListInventoryItemsUrl = (params: InventoryOpe
 /**
  * List inventory items with filters
  */
-export const inventoryOperationsListInventoryItems = async (params: InventoryOperationsListInventoryItemsParams, options?: Parameters<typeof customInstance>[1]): Promise<inventoryOperationsListInventoryItemsResponse> => {
+export const inventoryOperationsListInventoryItems = async (params: InventoryOperationsListInventoryItemsParams, options?: RequestInit): Promise<inventoryOperationsListInventoryItemsResponse> => {
 
   return customInstance<inventoryOperationsListInventoryItemsResponse>(getInventoryOperationsListInventoryItemsUrl(params),
   {
@@ -122,16 +120,16 @@ export const getInventoryOperationsListInventoryItemsQueryKey = (params?: Invent
     }
 
 
-export const getInventoryOperationsListInventoryItemsQueryOptions = <TData = Awaited<ReturnType<typeof inventoryOperationsListInventoryItems>>, TError = unknown>(params: InventoryOperationsListInventoryItemsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryOperationsListInventoryItems>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getInventoryOperationsListInventoryItemsQueryOptions = <TData = Awaited<ReturnType<typeof inventoryOperationsListInventoryItems>>, TError = unknown>(params: InventoryOperationsListInventoryItemsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryOperationsListInventoryItems>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getInventoryOperationsListInventoryItemsQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof inventoryOperationsListInventoryItems>>> = ({ signal }) => inventoryOperationsListInventoryItems(params, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof inventoryOperationsListInventoryItems>>> = ({ signal }) => inventoryOperationsListInventoryItems(params, { signal });
 
 
 
@@ -152,7 +150,7 @@ export function useInventoryOperationsListInventoryItems<TData = Awaited<ReturnT
           TError,
           Awaited<ReturnType<typeof inventoryOperationsListInventoryItems>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** List inventory items with filters */
@@ -163,17 +161,17 @@ export function useInventoryOperationsListInventoryItems<TData = Awaited<ReturnT
           TError,
           Awaited<ReturnType<typeof inventoryOperationsListInventoryItems>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** List inventory items with filters */
 export function useInventoryOperationsListInventoryItems<TData = Awaited<ReturnType<typeof inventoryOperationsListInventoryItems>>, TError = unknown>(
- params: InventoryOperationsListInventoryItemsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryOperationsListInventoryItems>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ params: InventoryOperationsListInventoryItemsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryOperationsListInventoryItems>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** List inventory items with filters */
 export function useInventoryOperationsListInventoryItems<TData = Awaited<ReturnType<typeof inventoryOperationsListInventoryItems>>, TError = unknown>(
- params: InventoryOperationsListInventoryItemsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryOperationsListInventoryItems>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ params: InventoryOperationsListInventoryItemsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryOperationsListInventoryItems>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -212,7 +210,7 @@ export const getInventoryOperationsCreateInventoryItemUrl = () => {
 /**
  * Create new inventory item
  */
-export const inventoryOperationsCreateInventoryItem = async (modelsInventoryItemCreateRequest: ModelsInventoryItemCreateRequest, options?: Parameters<typeof customInstance>[1]): Promise<inventoryOperationsCreateInventoryItemResponse> => {
+export const inventoryOperationsCreateInventoryItem = async (modelsInventoryItemCreateRequest: ModelsInventoryItemCreateRequest, options?: RequestInit): Promise<inventoryOperationsCreateInventoryItemResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -244,15 +242,15 @@ return customInstance<inventoryOperationsCreateInventoryItemResponse>(getInvento
 export const getInventoryOperationsCreateInventoryItemMutationKey = () => ['inventoryOperationsCreateInventoryItem'] as const;
 
 export const getInventoryOperationsCreateInventoryItemMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof inventoryOperationsCreateInventoryItem>>, TError,InventoryOperationsCreateInventoryItemMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof inventoryOperationsCreateInventoryItem>>, TError,InventoryOperationsCreateInventoryItemMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof inventoryOperationsCreateInventoryItem>>, TError,InventoryOperationsCreateInventoryItemMutationVariables, TContext> => {
 
 const mutationKey = getInventoryOperationsCreateInventoryItemMutationKey();
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -260,7 +258,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof inventoryOperationsCreateInventoryItem>>, InventoryOperationsCreateInventoryItemMutationVariables> = (props) => {
           const {data} = props ?? {};
 
-          return  inventoryOperationsCreateInventoryItem(data,requestOptions)
+          return  inventoryOperationsCreateInventoryItem(data,)
         }
 
 
@@ -277,7 +275,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     /** Create new inventory item */
 export const useInventoryOperationsCreateInventoryItem = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof inventoryOperationsCreateInventoryItem>>, TError,InventoryOperationsCreateInventoryItemMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof inventoryOperationsCreateInventoryItem>>, TError,InventoryOperationsCreateInventoryItemMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof inventoryOperationsCreateInventoryItem>>,
         TError,
@@ -316,7 +314,7 @@ export const getInventoryOperationsGetExpiringItemsUrl = (params: InventoryOpera
 /**
  * Get expiring items
  */
-export const inventoryOperationsGetExpiringItems = async (params: InventoryOperationsGetExpiringItemsParams, options?: Parameters<typeof customInstance>[1]): Promise<inventoryOperationsGetExpiringItemsResponse> => {
+export const inventoryOperationsGetExpiringItems = async (params: InventoryOperationsGetExpiringItemsParams, options?: RequestInit): Promise<inventoryOperationsGetExpiringItemsResponse> => {
 
   return customInstance<inventoryOperationsGetExpiringItemsResponse>(getInventoryOperationsGetExpiringItemsUrl(params),
   {
@@ -338,16 +336,16 @@ export const getInventoryOperationsGetExpiringItemsQueryKey = (params?: Inventor
     }
 
 
-export const getInventoryOperationsGetExpiringItemsQueryOptions = <TData = Awaited<ReturnType<typeof inventoryOperationsGetExpiringItems>>, TError = unknown>(params: InventoryOperationsGetExpiringItemsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryOperationsGetExpiringItems>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getInventoryOperationsGetExpiringItemsQueryOptions = <TData = Awaited<ReturnType<typeof inventoryOperationsGetExpiringItems>>, TError = unknown>(params: InventoryOperationsGetExpiringItemsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryOperationsGetExpiringItems>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getInventoryOperationsGetExpiringItemsQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof inventoryOperationsGetExpiringItems>>> = ({ signal }) => inventoryOperationsGetExpiringItems(params, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof inventoryOperationsGetExpiringItems>>> = ({ signal }) => inventoryOperationsGetExpiringItems(params, { signal });
 
 
 
@@ -368,7 +366,7 @@ export function useInventoryOperationsGetExpiringItems<TData = Awaited<ReturnTyp
           TError,
           Awaited<ReturnType<typeof inventoryOperationsGetExpiringItems>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Get expiring items */
@@ -379,17 +377,17 @@ export function useInventoryOperationsGetExpiringItems<TData = Awaited<ReturnTyp
           TError,
           Awaited<ReturnType<typeof inventoryOperationsGetExpiringItems>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Get expiring items */
 export function useInventoryOperationsGetExpiringItems<TData = Awaited<ReturnType<typeof inventoryOperationsGetExpiringItems>>, TError = unknown>(
- params: InventoryOperationsGetExpiringItemsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryOperationsGetExpiringItems>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ params: InventoryOperationsGetExpiringItemsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryOperationsGetExpiringItems>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Get expiring items */
 export function useInventoryOperationsGetExpiringItems<TData = Awaited<ReturnType<typeof inventoryOperationsGetExpiringItems>>, TError = unknown>(
- params: InventoryOperationsGetExpiringItemsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryOperationsGetExpiringItems>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ params: InventoryOperationsGetExpiringItemsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryOperationsGetExpiringItems>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -435,7 +433,7 @@ export const getInventoryOperationsGetLowStockItemsUrl = (params: InventoryOpera
 /**
  * Get low stock items
  */
-export const inventoryOperationsGetLowStockItems = async (params: InventoryOperationsGetLowStockItemsParams, options?: Parameters<typeof customInstance>[1]): Promise<inventoryOperationsGetLowStockItemsResponse> => {
+export const inventoryOperationsGetLowStockItems = async (params: InventoryOperationsGetLowStockItemsParams, options?: RequestInit): Promise<inventoryOperationsGetLowStockItemsResponse> => {
 
   return customInstance<inventoryOperationsGetLowStockItemsResponse>(getInventoryOperationsGetLowStockItemsUrl(params),
   {
@@ -457,16 +455,16 @@ export const getInventoryOperationsGetLowStockItemsQueryKey = (params?: Inventor
     }
 
 
-export const getInventoryOperationsGetLowStockItemsQueryOptions = <TData = Awaited<ReturnType<typeof inventoryOperationsGetLowStockItems>>, TError = unknown>(params: InventoryOperationsGetLowStockItemsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryOperationsGetLowStockItems>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getInventoryOperationsGetLowStockItemsQueryOptions = <TData = Awaited<ReturnType<typeof inventoryOperationsGetLowStockItems>>, TError = unknown>(params: InventoryOperationsGetLowStockItemsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryOperationsGetLowStockItems>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getInventoryOperationsGetLowStockItemsQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof inventoryOperationsGetLowStockItems>>> = ({ signal }) => inventoryOperationsGetLowStockItems(params, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof inventoryOperationsGetLowStockItems>>> = ({ signal }) => inventoryOperationsGetLowStockItems(params, { signal });
 
 
 
@@ -487,7 +485,7 @@ export function useInventoryOperationsGetLowStockItems<TData = Awaited<ReturnTyp
           TError,
           Awaited<ReturnType<typeof inventoryOperationsGetLowStockItems>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Get low stock items */
@@ -498,17 +496,17 @@ export function useInventoryOperationsGetLowStockItems<TData = Awaited<ReturnTyp
           TError,
           Awaited<ReturnType<typeof inventoryOperationsGetLowStockItems>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Get low stock items */
 export function useInventoryOperationsGetLowStockItems<TData = Awaited<ReturnType<typeof inventoryOperationsGetLowStockItems>>, TError = unknown>(
- params: InventoryOperationsGetLowStockItemsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryOperationsGetLowStockItems>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ params: InventoryOperationsGetLowStockItemsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryOperationsGetLowStockItems>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Get low stock items */
 export function useInventoryOperationsGetLowStockItems<TData = Awaited<ReturnType<typeof inventoryOperationsGetLowStockItems>>, TError = unknown>(
- params: InventoryOperationsGetLowStockItemsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryOperationsGetLowStockItems>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ params: InventoryOperationsGetLowStockItemsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryOperationsGetLowStockItems>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -547,7 +545,7 @@ export const getInventoryOperationsRecordStockMovementUrl = () => {
 /**
  * Record stock movement
  */
-export const inventoryOperationsRecordStockMovement = async (modelsStockMovementCreateRequest: ModelsStockMovementCreateRequest, options?: Parameters<typeof customInstance>[1]): Promise<inventoryOperationsRecordStockMovementResponse> => {
+export const inventoryOperationsRecordStockMovement = async (modelsStockMovementCreateRequest: ModelsStockMovementCreateRequest, options?: RequestInit): Promise<inventoryOperationsRecordStockMovementResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -579,15 +577,15 @@ return customInstance<inventoryOperationsRecordStockMovementResponse>(getInvento
 export const getInventoryOperationsRecordStockMovementMutationKey = () => ['inventoryOperationsRecordStockMovement'] as const;
 
 export const getInventoryOperationsRecordStockMovementMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof inventoryOperationsRecordStockMovement>>, TError,InventoryOperationsRecordStockMovementMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof inventoryOperationsRecordStockMovement>>, TError,InventoryOperationsRecordStockMovementMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof inventoryOperationsRecordStockMovement>>, TError,InventoryOperationsRecordStockMovementMutationVariables, TContext> => {
 
 const mutationKey = getInventoryOperationsRecordStockMovementMutationKey();
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -595,7 +593,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof inventoryOperationsRecordStockMovement>>, InventoryOperationsRecordStockMovementMutationVariables> = (props) => {
           const {data} = props ?? {};
 
-          return  inventoryOperationsRecordStockMovement(data,requestOptions)
+          return  inventoryOperationsRecordStockMovement(data,)
         }
 
 
@@ -612,7 +610,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     /** Record stock movement */
 export const useInventoryOperationsRecordStockMovement = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof inventoryOperationsRecordStockMovement>>, TError,InventoryOperationsRecordStockMovementMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof inventoryOperationsRecordStockMovement>>, TError,InventoryOperationsRecordStockMovementMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof inventoryOperationsRecordStockMovement>>,
         TError,
@@ -644,7 +642,7 @@ export const getInventoryOperationsPerformStockCountUrl = () => {
 /**
  * Perform stock count
  */
-export const inventoryOperationsPerformStockCount = async (inventoryOperationsPerformStockCountBody: InventoryOperationsPerformStockCountBody, options?: Parameters<typeof customInstance>[1]): Promise<inventoryOperationsPerformStockCountResponse> => {
+export const inventoryOperationsPerformStockCount = async (inventoryOperationsPerformStockCountBody: InventoryOperationsPerformStockCountBody, options?: RequestInit): Promise<inventoryOperationsPerformStockCountResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -676,15 +674,15 @@ return customInstance<inventoryOperationsPerformStockCountResponse>(getInventory
 export const getInventoryOperationsPerformStockCountMutationKey = () => ['inventoryOperationsPerformStockCount'] as const;
 
 export const getInventoryOperationsPerformStockCountMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof inventoryOperationsPerformStockCount>>, TError,InventoryOperationsPerformStockCountMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof inventoryOperationsPerformStockCount>>, TError,InventoryOperationsPerformStockCountMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof inventoryOperationsPerformStockCount>>, TError,InventoryOperationsPerformStockCountMutationVariables, TContext> => {
 
 const mutationKey = getInventoryOperationsPerformStockCountMutationKey();
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -692,7 +690,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof inventoryOperationsPerformStockCount>>, InventoryOperationsPerformStockCountMutationVariables> = (props) => {
           const {data} = props ?? {};
 
-          return  inventoryOperationsPerformStockCount(data,requestOptions)
+          return  inventoryOperationsPerformStockCount(data,)
         }
 
 
@@ -709,7 +707,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     /** Perform stock count */
 export const useInventoryOperationsPerformStockCount = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof inventoryOperationsPerformStockCount>>, TError,InventoryOperationsPerformStockCountMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof inventoryOperationsPerformStockCount>>, TError,InventoryOperationsPerformStockCountMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof inventoryOperationsPerformStockCount>>,
         TError,
@@ -748,7 +746,7 @@ export const getInventoryOperationsGetInventoryValueReportUrl = (params: Invento
 /**
  * Get inventory value report
  */
-export const inventoryOperationsGetInventoryValueReport = async (params: InventoryOperationsGetInventoryValueReportParams, options?: Parameters<typeof customInstance>[1]): Promise<inventoryOperationsGetInventoryValueReportResponse> => {
+export const inventoryOperationsGetInventoryValueReport = async (params: InventoryOperationsGetInventoryValueReportParams, options?: RequestInit): Promise<inventoryOperationsGetInventoryValueReportResponse> => {
 
   return customInstance<inventoryOperationsGetInventoryValueReportResponse>(getInventoryOperationsGetInventoryValueReportUrl(params),
   {
@@ -770,16 +768,16 @@ export const getInventoryOperationsGetInventoryValueReportQueryKey = (params?: I
     }
 
 
-export const getInventoryOperationsGetInventoryValueReportQueryOptions = <TData = Awaited<ReturnType<typeof inventoryOperationsGetInventoryValueReport>>, TError = unknown>(params: InventoryOperationsGetInventoryValueReportParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryOperationsGetInventoryValueReport>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getInventoryOperationsGetInventoryValueReportQueryOptions = <TData = Awaited<ReturnType<typeof inventoryOperationsGetInventoryValueReport>>, TError = unknown>(params: InventoryOperationsGetInventoryValueReportParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryOperationsGetInventoryValueReport>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getInventoryOperationsGetInventoryValueReportQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof inventoryOperationsGetInventoryValueReport>>> = ({ signal }) => inventoryOperationsGetInventoryValueReport(params, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof inventoryOperationsGetInventoryValueReport>>> = ({ signal }) => inventoryOperationsGetInventoryValueReport(params, { signal });
 
 
 
@@ -800,7 +798,7 @@ export function useInventoryOperationsGetInventoryValueReport<TData = Awaited<Re
           TError,
           Awaited<ReturnType<typeof inventoryOperationsGetInventoryValueReport>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Get inventory value report */
@@ -811,17 +809,17 @@ export function useInventoryOperationsGetInventoryValueReport<TData = Awaited<Re
           TError,
           Awaited<ReturnType<typeof inventoryOperationsGetInventoryValueReport>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Get inventory value report */
 export function useInventoryOperationsGetInventoryValueReport<TData = Awaited<ReturnType<typeof inventoryOperationsGetInventoryValueReport>>, TError = unknown>(
- params: InventoryOperationsGetInventoryValueReportParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryOperationsGetInventoryValueReport>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ params: InventoryOperationsGetInventoryValueReportParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryOperationsGetInventoryValueReport>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Get inventory value report */
 export function useInventoryOperationsGetInventoryValueReport<TData = Awaited<ReturnType<typeof inventoryOperationsGetInventoryValueReport>>, TError = unknown>(
- params: InventoryOperationsGetInventoryValueReportParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryOperationsGetInventoryValueReport>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ params: InventoryOperationsGetInventoryValueReportParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryOperationsGetInventoryValueReport>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -860,7 +858,7 @@ export const getInventoryOperationsGetInventoryItemUrl = (id: ModelsInventoryId,
 /**
  * Get inventory item by ID
  */
-export const inventoryOperationsGetInventoryItem = async (id: ModelsInventoryId, options?: Parameters<typeof customInstance>[1]): Promise<inventoryOperationsGetInventoryItemResponse> => {
+export const inventoryOperationsGetInventoryItem = async (id: ModelsInventoryId, options?: RequestInit): Promise<inventoryOperationsGetInventoryItemResponse> => {
 
   return customInstance<inventoryOperationsGetInventoryItemResponse>(getInventoryOperationsGetInventoryItemUrl(id),
   {
@@ -882,16 +880,16 @@ export const getInventoryOperationsGetInventoryItemQueryKey = (id: ModelsInvento
     }
 
 
-export const getInventoryOperationsGetInventoryItemQueryOptions = <TData = Awaited<ReturnType<typeof inventoryOperationsGetInventoryItem>>, TError = unknown>(id: ModelsInventoryId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryOperationsGetInventoryItem>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getInventoryOperationsGetInventoryItemQueryOptions = <TData = Awaited<ReturnType<typeof inventoryOperationsGetInventoryItem>>, TError = unknown>(id: ModelsInventoryId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryOperationsGetInventoryItem>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getInventoryOperationsGetInventoryItemQueryKey(id);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof inventoryOperationsGetInventoryItem>>> = ({ signal }) => inventoryOperationsGetInventoryItem(id, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof inventoryOperationsGetInventoryItem>>> = ({ signal }) => inventoryOperationsGetInventoryItem(id, { signal });
 
 
 
@@ -912,7 +910,7 @@ export function useInventoryOperationsGetInventoryItem<TData = Awaited<ReturnTyp
           TError,
           Awaited<ReturnType<typeof inventoryOperationsGetInventoryItem>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Get inventory item by ID */
@@ -923,17 +921,17 @@ export function useInventoryOperationsGetInventoryItem<TData = Awaited<ReturnTyp
           TError,
           Awaited<ReturnType<typeof inventoryOperationsGetInventoryItem>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Get inventory item by ID */
 export function useInventoryOperationsGetInventoryItem<TData = Awaited<ReturnType<typeof inventoryOperationsGetInventoryItem>>, TError = unknown>(
- id: ModelsInventoryId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryOperationsGetInventoryItem>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ id: ModelsInventoryId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryOperationsGetInventoryItem>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Get inventory item by ID */
 export function useInventoryOperationsGetInventoryItem<TData = Awaited<ReturnType<typeof inventoryOperationsGetInventoryItem>>, TError = unknown>(
- id: ModelsInventoryId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryOperationsGetInventoryItem>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ id: ModelsInventoryId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryOperationsGetInventoryItem>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -973,7 +971,7 @@ export const getInventoryOperationsUpdateInventoryItemUrl = (id: ModelsInventory
  * Update inventory item
  */
 export const inventoryOperationsUpdateInventoryItem = async (id: ModelsInventoryId,
-    modelsInventoryItemUpdateRequest: ModelsInventoryItemUpdateRequest, options?: Parameters<typeof customInstance>[1]): Promise<inventoryOperationsUpdateInventoryItemResponse> => {
+    modelsInventoryItemUpdateRequest: ModelsInventoryItemUpdateRequest, options?: RequestInit): Promise<inventoryOperationsUpdateInventoryItemResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -1005,15 +1003,15 @@ return customInstance<inventoryOperationsUpdateInventoryItemResponse>(getInvento
 export const getInventoryOperationsUpdateInventoryItemMutationKey = () => ['inventoryOperationsUpdateInventoryItem'] as const;
 
 export const getInventoryOperationsUpdateInventoryItemMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof inventoryOperationsUpdateInventoryItem>>, TError,InventoryOperationsUpdateInventoryItemMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof inventoryOperationsUpdateInventoryItem>>, TError,InventoryOperationsUpdateInventoryItemMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof inventoryOperationsUpdateInventoryItem>>, TError,InventoryOperationsUpdateInventoryItemMutationVariables, TContext> => {
 
 const mutationKey = getInventoryOperationsUpdateInventoryItemMutationKey();
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -1021,7 +1019,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof inventoryOperationsUpdateInventoryItem>>, InventoryOperationsUpdateInventoryItemMutationVariables> = (props) => {
           const {id,data} = props ?? {};
 
-          return  inventoryOperationsUpdateInventoryItem(id,data,requestOptions)
+          return  inventoryOperationsUpdateInventoryItem(id,data,)
         }
 
 
@@ -1038,7 +1036,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     /** Update inventory item */
 export const useInventoryOperationsUpdateInventoryItem = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof inventoryOperationsUpdateInventoryItem>>, TError,InventoryOperationsUpdateInventoryItemMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof inventoryOperationsUpdateInventoryItem>>, TError,InventoryOperationsUpdateInventoryItemMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof inventoryOperationsUpdateInventoryItem>>,
         TError,
@@ -1070,7 +1068,7 @@ export const getInventoryOperationsDeleteInventoryItemUrl = (id: ModelsInventory
 /**
  * Delete inventory item
  */
-export const inventoryOperationsDeleteInventoryItem = async (id: ModelsInventoryId, options?: Parameters<typeof customInstance>[1]): Promise<inventoryOperationsDeleteInventoryItemResponse> => {
+export const inventoryOperationsDeleteInventoryItem = async (id: ModelsInventoryId, options?: RequestInit): Promise<inventoryOperationsDeleteInventoryItemResponse> => {
 
   return customInstance<inventoryOperationsDeleteInventoryItemResponse>(getInventoryOperationsDeleteInventoryItemUrl(id),
   {
@@ -1088,15 +1086,15 @@ export const inventoryOperationsDeleteInventoryItem = async (id: ModelsInventory
 export const getInventoryOperationsDeleteInventoryItemMutationKey = () => ['inventoryOperationsDeleteInventoryItem'] as const;
 
 export const getInventoryOperationsDeleteInventoryItemMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof inventoryOperationsDeleteInventoryItem>>, TError,InventoryOperationsDeleteInventoryItemMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof inventoryOperationsDeleteInventoryItem>>, TError,InventoryOperationsDeleteInventoryItemMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof inventoryOperationsDeleteInventoryItem>>, TError,InventoryOperationsDeleteInventoryItemMutationVariables, TContext> => {
 
 const mutationKey = getInventoryOperationsDeleteInventoryItemMutationKey();
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -1104,7 +1102,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof inventoryOperationsDeleteInventoryItem>>, InventoryOperationsDeleteInventoryItemMutationVariables> = (props) => {
           const {id} = props ?? {};
 
-          return  inventoryOperationsDeleteInventoryItem(id,requestOptions)
+          return  inventoryOperationsDeleteInventoryItem(id,)
         }
 
 
@@ -1121,7 +1119,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     /** Delete inventory item */
 export const useInventoryOperationsDeleteInventoryItem = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof inventoryOperationsDeleteInventoryItem>>, TError,InventoryOperationsDeleteInventoryItemMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof inventoryOperationsDeleteInventoryItem>>, TError,InventoryOperationsDeleteInventoryItemMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof inventoryOperationsDeleteInventoryItem>>,
         TError,
@@ -1162,7 +1160,7 @@ export const getInventoryOperationsGetStockMovementsUrl = (id: ModelsInventoryId
  * Get stock movement history
  */
 export const inventoryOperationsGetStockMovements = async (id: ModelsInventoryId,
-    params?: InventoryOperationsGetStockMovementsParams, options?: Parameters<typeof customInstance>[1]): Promise<inventoryOperationsGetStockMovementsResponse> => {
+    params?: InventoryOperationsGetStockMovementsParams, options?: RequestInit): Promise<inventoryOperationsGetStockMovementsResponse> => {
 
   return customInstance<inventoryOperationsGetStockMovementsResponse>(getInventoryOperationsGetStockMovementsUrl(id,params),
   {
@@ -1186,16 +1184,16 @@ export const getInventoryOperationsGetStockMovementsQueryKey = (id: ModelsInvent
 
 
 export const getInventoryOperationsGetStockMovementsQueryOptions = <TData = Awaited<ReturnType<typeof inventoryOperationsGetStockMovements>>, TError = unknown>(id: ModelsInventoryId,
-    params?: InventoryOperationsGetStockMovementsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryOperationsGetStockMovements>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+    params?: InventoryOperationsGetStockMovementsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryOperationsGetStockMovements>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getInventoryOperationsGetStockMovementsQueryKey(id,params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof inventoryOperationsGetStockMovements>>> = ({ signal }) => inventoryOperationsGetStockMovements(id,params, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof inventoryOperationsGetStockMovements>>> = ({ signal }) => inventoryOperationsGetStockMovements(id,params, { signal });
 
 
 
@@ -1217,7 +1215,7 @@ export function useInventoryOperationsGetStockMovements<TData = Awaited<ReturnTy
           TError,
           Awaited<ReturnType<typeof inventoryOperationsGetStockMovements>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Get stock movement history */
@@ -1229,19 +1227,19 @@ export function useInventoryOperationsGetStockMovements<TData = Awaited<ReturnTy
           TError,
           Awaited<ReturnType<typeof inventoryOperationsGetStockMovements>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Get stock movement history */
 export function useInventoryOperationsGetStockMovements<TData = Awaited<ReturnType<typeof inventoryOperationsGetStockMovements>>, TError = unknown>(
  id: ModelsInventoryId,
-    params?: InventoryOperationsGetStockMovementsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryOperationsGetStockMovements>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+    params?: InventoryOperationsGetStockMovementsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryOperationsGetStockMovements>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** Get stock movement history */
 export function useInventoryOperationsGetStockMovements<TData = Awaited<ReturnType<typeof inventoryOperationsGetStockMovements>>, TError = unknown>(
  id: ModelsInventoryId,
-    params?: InventoryOperationsGetStockMovementsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryOperationsGetStockMovements>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+    params?: InventoryOperationsGetStockMovementsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryOperationsGetStockMovements>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 

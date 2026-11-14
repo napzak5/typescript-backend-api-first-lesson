@@ -1,8 +1,3 @@
-tsconfig.tsbuildinfo
-tsconfig.tsbuildinfo*
-vite.config.ts.timestamp*
-storybook-static
-
 # Dependencies
 node_modules/
 .pnpm-store/
@@ -10,14 +5,10 @@ node_modules/
 # Build outputs
 dist/
 build/
-.next/
 out/
+storybook-static/
 *.tsbuildinfo
-.turbo
-
-# Shared config should not have dist
-shared-config/**/dist/
-specs/scripts/dist/
+vite.config.ts.timestamp*
 
 # Environment variables
 .env

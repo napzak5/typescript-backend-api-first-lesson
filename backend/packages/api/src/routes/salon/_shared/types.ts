@@ -3,12 +3,12 @@ import type { components, operations } from '@beauty-salon-backend/generated'
 // ============================================================================
 // Operation Types - Maps to API endpoints
 // ============================================================================
-export type ListSalonsOperation = operations['SalonCrud_list']
-export type GetSalonOperation = operations['SalonCrud_get']
-export type DeleteSalonOperation = operations['SalonCrud_delete']
-export type CreateSalonOperation = operations['SalonCrud_create']
-export type UpdateSalonOperation = operations['SalonCrud_update']
-export type SearchSalonsOperation = operations['SalonCrud_search']
+type ListSalonsOperation = operations['SalonCrud_list']
+type GetSalonOperation = operations['SalonCrud_get']
+type DeleteSalonOperation = operations['SalonCrud_delete']
+type CreateSalonOperation = operations['SalonCrud_create']
+type UpdateSalonOperation = operations['SalonCrud_update']
+type SearchSalonsOperation = operations['SalonCrud_search']
 
 // ============================================================================
 // Model Types - Core domain models

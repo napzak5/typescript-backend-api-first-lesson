@@ -9,16 +9,10 @@
   ],
   "exports": {
     ".": {
+      "@beauty-salon-backend/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
-    },
-    "./src/test/db-test-helper": {
-      "import": "./dist/test/db-test-helper.js",
-      "types": "./dist/test/db-test-helper.d.ts"
-    },
-    "./test/db-test-helper": {
-      "import": "./dist/test/db-test-helper.js",
-      "types": "./dist/test/db-test-helper.d.ts"
+      "default": "./dist/index.js"
     }
   },
   "scripts": {
@@ -29,27 +23,18 @@
     "build:stg": "NODE_ENV=staging rslib build && tsc --emitDeclarationOnly",
     "build:prod": "NODE_ENV=production rslib build && tsc --emitDeclarationOnly",
     "build:watch": "NODE_ENV=development rslib build --watch",
-    "dev": "NODE_ENV=development rslib build --watch",
-    "dev:tsc": "tsc --build --watch",
-    "typecheck": "tsc --noEmit",
-    "format": "biome format --write .",
-    "format:fix": "biome check . --fix --unsafe",
-    "lint": "biome lint .",
-    "lint:fix": "biome lint . --write"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@beauty-salon-backend/config": "workspace:*",
     "@beauty-salon-backend/database": "workspace:*",
     "@beauty-salon-backend/domain": "workspace:*",
-    "@beauty-salon-backend/generated": "workspace:*",
     "@beauty-salon-backend/utility": "workspace:*",
     "drizzle-orm": "^0.45.4",
     "postgres": "^4.1.1"
   },
   "devDependencies": {
-    "@beauty-salon-backend/database": "workspace:*",
     "@beauty-salon-shared/config": "workspace:*",
-    "@biomejs/biome": "^2.6.7",
     "@rslib/core": "^1.0.7",
     "@types/node": "^26.6.6",
     "typescript": "^7.0.2"

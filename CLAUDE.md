@@ -166,44 +166,57 @@ model AuthLoginResponse { ... }         // Login response
 
 ### Type Generation Pipeline
 1. Define models in TypeSpec (`specs/`)
-2. Generate OpenAPI: `pnpm generate:spec`
-3. Generate types: `pnpm generate:backend`
-4. Implement with generated types
+2. Run `pnpm generate` (OpenAPI → frontend API client → backend types)
+3. Implement with generated types
+4. Commit the generated files with the TypeSpec change (`pnpm check:generated` guards this in CI)
+
+### Database Workflow
+1. Write a SQL migration in `backend/packages/database/sql/migrations/`
+2. `pnpm db:migrate` → `pnpm db:introspect` → `pnpm db:generate-sql`
+3. Commit `schema.ts`, `relations.ts` and `sql/setup.sql` (`pnpm check:db-schema` guards this in CI)
 
 ### Code Quality Checks
 ```bash
-pnpm lint        # Linting
-pnpm typecheck   # Type checking
-pnpm test        # Unit tests
-pnpm format:fix  # Auto-format
+pnpm lint          # Biome lint
+pnpm format:check  # Formatting (Biome and TypeSpec), read-only
+pnpm format:fix    # Apply formatting, import sorting and safe fixes
+pnpm typecheck     # Type checking (build first)
+pnpm knip          # Unused files, exports and dependencies
+pnpm test          # Unit tests
+make ci-check      # Everything CI runs, in the same order
 ```
 
 ## 🚀 Quick Commands
 
 ```bash
 # Development
-pnpm dev              # Start all services
+pnpm dev              # Backend (:3000) and frontend apps (:3001-3003) in watch mode
+pnpm dev:backend      # Backend only, runs workspace packages from source
 pnpm generate         # Generate all types
+pnpm generate:watch   # Regenerate on every TypeSpec change
 
 # Database
-pnpm db:fresh         # Complete reset with schema and seed
-pnpm db:migrate       # Run migrations (Drizzle + SQL files)
+pnpm db:fresh         # Drop everything and recreate the schema from sql/setup.sql
+pnpm db:migrate       # Apply the SQL migrations
 pnpm db:seed          # Seed data with statistics
 pnpm db:truncate      # Clear all table data
-pnpm db:introspect    # Generate TypeScript schema from DB
+pnpm db:introspect    # Regenerate schema.ts and relations.ts from the DB
+pnpm db:generate-sql  # Regenerate sql/setup.sql from schema.ts
 
 # Testing
-pnpm test             # Unit tests
-pnpm test:integration # Integration tests
-pnpm test:e2e        # End-to-end tests
+pnpm test             # Unit tests (*.test.ts)
+pnpm test:integration # API tests against PostgreSQL (*.integration.test.ts)
+                      # uses TEST_DATABASE_URL when set, otherwise testcontainers
 
 # Build
-pnpm build:dev       # Development build
-pnpm build:test      # Test build
-pnpm build:stg       # Staging build
-pnpm build:prod      # Production build
+pnpm build            # Production build (same as build:prod)
+pnpm build:dev        # Development build
+pnpm build:test       # Test build
+pnpm build:stg        # Staging build
+pnpm build:prod       # Production build
 
 # CI/CD Local Testing
+make ci-check             # Run every CI check locally
 make ci-check-dockerfile  # Test all Docker builds locally before pushing
 
 # Deployment (GitHub Actions)

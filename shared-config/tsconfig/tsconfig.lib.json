@@ -7,14 +7,14 @@
     "declaration": false,
     "declarationMap": false,
     "sourceMap": false,
-    "outDir": "./dist",
-    "rootDir": "./src",
-    "tsBuildInfoFile": "./dist/tsconfig.tsbuildinfo"
+    "outDir": "${configDir}/dist",
+    "rootDir": "${configDir}/src",
+    "tsBuildInfoFile": "${configDir}/dist/tsconfig.tsbuildinfo"
   },
-  "include": ["src/**/*"],
+  "include": ["${configDir}/src/**/*"],
   "exclude": [
-    "node_modules",
-    "dist",
+    "${configDir}/node_modules",
+    "${configDir}/dist",
     "**/*.test.ts",
     "**/*.spec.ts",
     "**/*.integration.test.ts"

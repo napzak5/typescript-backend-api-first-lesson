@@ -23,7 +23,11 @@ export default defineConfig({
         minify: isProduction,
         sourceMap: isDevelopment || isTest || isStaging || isLocalhost,
         target: 'web',
-        externals: ['react', '@tanstack/react-query'],
+        externals: [
+          /^@beauty-salon-frontend\//,
+          'react',
+          '@tanstack/react-query',
+        ],
       },
     },
   ],

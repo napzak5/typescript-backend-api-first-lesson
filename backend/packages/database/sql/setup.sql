@@ -4,7 +4,6 @@
 -- - All tables with columns, constraints, and defaults
 -- - All foreign key relationships
 -- - All indexes
--- Generated on: 2025-09-30T10:21:01.955Z
 -- Source: backend/packages/database/src/schema.ts
 
 CREATE TYPE "public"."account_status" AS ENUM('active', 'unverified', 'inactive', 'locked', 'suspended', 'deleted');
@@ -565,8 +564,8 @@ CREATE TABLE "sessions" (
 	"lastActivityAt" timestamp with time zone DEFAULT now() NOT NULL,
 	"createdAt" timestamp with time zone DEFAULT now() NOT NULL,
 	"authenticationState" "authentication_state" DEFAULT 'authenticated',
-	CONSTRAINT "sessions_token_unique" UNIQUE("token"),
-	CONSTRAINT "sessions_refresh_token_unique" UNIQUE("refreshToken")
+	CONSTRAINT "sessions_refresh_token_unique" UNIQUE("refreshToken"),
+	CONSTRAINT "sessions_token_unique" UNIQUE("token")
 );
 
 CREATE TABLE "staff" (
@@ -749,8 +748,8 @@ ALTER TABLE "booking_services" ADD CONSTRAINT "booking_services_booking_id_fk" F
 ALTER TABLE "booking_services" ADD CONSTRAINT "booking_services_service_id_fk" FOREIGN KEY ("serviceId") REFERENCES "public"."services"("id") ON DELETE restrict ON UPDATE no action;
 ALTER TABLE "booking_services" ADD CONSTRAINT "booking_services_staff_id_fk" FOREIGN KEY ("staffId") REFERENCES "public"."staff"("id") ON DELETE restrict ON UPDATE no action;
 ALTER TABLE "booking_status_histories" ADD CONSTRAINT "booking_status_histories_booking_id_fk" FOREIGN KEY ("bookingId") REFERENCES "public"."bookings"("id") ON DELETE cascade ON UPDATE no action;
-ALTER TABLE "bookings" ADD CONSTRAINT "bookings_salon_id_fk" FOREIGN KEY ("salonId") REFERENCES "public"."salons"("id") ON DELETE restrict ON UPDATE no action;
 ALTER TABLE "bookings" ADD CONSTRAINT "bookings_customer_id_fk" FOREIGN KEY ("customerId") REFERENCES "public"."customers"("id") ON DELETE restrict ON UPDATE no action;
+ALTER TABLE "bookings" ADD CONSTRAINT "bookings_salon_id_fk" FOREIGN KEY ("salonId") REFERENCES "public"."salons"("id") ON DELETE restrict ON UPDATE no action;
 ALTER TABLE "bookings" ADD CONSTRAINT "bookings_staff_id_fk" FOREIGN KEY ("staffId") REFERENCES "public"."staff"("id") ON DELETE restrict ON UPDATE no action;
 ALTER TABLE "customer_allergies" ADD CONSTRAINT "customer_allergies_customer_id_fk" FOREIGN KEY ("customerId") REFERENCES "public"."customers"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "customer_points" ADD CONSTRAINT "customer_points_customer_id_fk" FOREIGN KEY ("customerId") REFERENCES "public"."customers"("id") ON DELETE cascade ON UPDATE no action;
@@ -758,39 +757,39 @@ ALTER TABLE "customer_preferences" ADD CONSTRAINT "customer_preferences_customer
 ALTER TABLE "customer_preferences" ADD CONSTRAINT "customer_preferences_staff_id_fk" FOREIGN KEY ("preferredStaffId") REFERENCES "public"."staff"("id") ON DELETE set null ON UPDATE no action;
 ALTER TABLE "customers" ADD CONSTRAINT "customers_referred_by_fk" FOREIGN KEY ("referredBy") REFERENCES "public"."customers"("id") ON DELETE set null ON UPDATE no action;
 ALTER TABLE "daily_summaries" ADD CONSTRAINT "daily_summaries_salon_id_fk" FOREIGN KEY ("salonId") REFERENCES "public"."salons"("id") ON DELETE cascade ON UPDATE no action;
-ALTER TABLE "inventory" ADD CONSTRAINT "inventory_salon_id_fk" FOREIGN KEY ("salonId") REFERENCES "public"."salons"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "inventory" ADD CONSTRAINT "inventory_product_id_fk" FOREIGN KEY ("productId") REFERENCES "public"."products"("id") ON DELETE cascade ON UPDATE no action;
-ALTER TABLE "inventory_transactions" ADD CONSTRAINT "inventory_transactions_salon_id_fk" FOREIGN KEY ("salonId") REFERENCES "public"."salons"("id") ON DELETE cascade ON UPDATE no action;
-ALTER TABLE "inventory_transactions" ADD CONSTRAINT "inventory_transactions_product_id_fk" FOREIGN KEY ("productId") REFERENCES "public"."products"("id") ON DELETE restrict ON UPDATE no action;
+ALTER TABLE "inventory" ADD CONSTRAINT "inventory_salon_id_fk" FOREIGN KEY ("salonId") REFERENCES "public"."salons"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "inventory_transactions" ADD CONSTRAINT "inventory_transactions_inventory_id_fk" FOREIGN KEY ("inventoryId") REFERENCES "public"."inventory"("id") ON DELETE set null ON UPDATE no action;
+ALTER TABLE "inventory_transactions" ADD CONSTRAINT "inventory_transactions_product_id_fk" FOREIGN KEY ("productId") REFERENCES "public"."products"("id") ON DELETE restrict ON UPDATE no action;
+ALTER TABLE "inventory_transactions" ADD CONSTRAINT "inventory_transactions_salon_id_fk" FOREIGN KEY ("salonId") REFERENCES "public"."salons"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "membership_tiers" ADD CONSTRAINT "membership_tiers_salon_id_fk" FOREIGN KEY ("salonId") REFERENCES "public"."salons"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "opening_hours" ADD CONSTRAINT "opening_hours_salon_id_fk" FOREIGN KEY ("salonId") REFERENCES "public"."salons"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "payment_methods" ADD CONSTRAINT "payment_methods_salon_id_fk" FOREIGN KEY ("salonId") REFERENCES "public"."salons"("id") ON DELETE cascade ON UPDATE no action;
-ALTER TABLE "payment_transactions" ADD CONSTRAINT "payment_transactions_sale_id_fk" FOREIGN KEY ("saleId") REFERENCES "public"."sales"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "payment_transactions" ADD CONSTRAINT "payment_transactions_payment_method_id_fk" FOREIGN KEY ("paymentMethodId") REFERENCES "public"."payment_methods"("id") ON DELETE restrict ON UPDATE no action;
+ALTER TABLE "payment_transactions" ADD CONSTRAINT "payment_transactions_sale_id_fk" FOREIGN KEY ("saleId") REFERENCES "public"."sales"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "products" ADD CONSTRAINT "products_salon_id_fk" FOREIGN KEY ("salonId") REFERENCES "public"."salons"("id") ON DELETE cascade ON UPDATE no action;
-ALTER TABLE "reviews" ADD CONSTRAINT "reviews_salon_id_fk" FOREIGN KEY ("salonId") REFERENCES "public"."salons"("id") ON DELETE cascade ON UPDATE no action;
-ALTER TABLE "reviews" ADD CONSTRAINT "reviews_customer_id_fk" FOREIGN KEY ("customerId") REFERENCES "public"."customers"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "reviews" ADD CONSTRAINT "reviews_booking_id_fk" FOREIGN KEY ("bookingId") REFERENCES "public"."bookings"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "reviews" ADD CONSTRAINT "reviews_customer_id_fk" FOREIGN KEY ("customerId") REFERENCES "public"."customers"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "reviews" ADD CONSTRAINT "reviews_salon_id_fk" FOREIGN KEY ("salonId") REFERENCES "public"."salons"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "reviews" ADD CONSTRAINT "reviews_staff_id_fk" FOREIGN KEY ("staffId") REFERENCES "public"."staff"("id") ON DELETE set null ON UPDATE no action;
-ALTER TABLE "sales" ADD CONSTRAINT "sales_salon_id_fk" FOREIGN KEY ("salonId") REFERENCES "public"."salons"("id") ON DELETE restrict ON UPDATE no action;
-ALTER TABLE "sales" ADD CONSTRAINT "sales_customer_id_fk" FOREIGN KEY ("customerId") REFERENCES "public"."customers"("id") ON DELETE restrict ON UPDATE no action;
-ALTER TABLE "sales" ADD CONSTRAINT "sales_staff_id_fk" FOREIGN KEY ("staffId") REFERENCES "public"."staff"("id") ON DELETE restrict ON UPDATE no action;
 ALTER TABLE "sales" ADD CONSTRAINT "sales_booking_id_fk" FOREIGN KEY ("bookingId") REFERENCES "public"."bookings"("id") ON DELETE restrict ON UPDATE no action;
+ALTER TABLE "sales" ADD CONSTRAINT "sales_customer_id_fk" FOREIGN KEY ("customerId") REFERENCES "public"."customers"("id") ON DELETE restrict ON UPDATE no action;
+ALTER TABLE "sales" ADD CONSTRAINT "sales_salon_id_fk" FOREIGN KEY ("salonId") REFERENCES "public"."salons"("id") ON DELETE restrict ON UPDATE no action;
+ALTER TABLE "sales" ADD CONSTRAINT "sales_staff_id_fk" FOREIGN KEY ("staffId") REFERENCES "public"."staff"("id") ON DELETE restrict ON UPDATE no action;
 ALTER TABLE "sales_details" ADD CONSTRAINT "sales_details_sale_id_fk" FOREIGN KEY ("saleId") REFERENCES "public"."sales"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "sales_details" ADD CONSTRAINT "sales_details_staff_id_fk" FOREIGN KEY ("staffId") REFERENCES "public"."staff"("id") ON DELETE restrict ON UPDATE no action;
-ALTER TABLE "service_categories" ADD CONSTRAINT "service_categories_salon_id_fk" FOREIGN KEY ("salonId") REFERENCES "public"."salons"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "service_categories" ADD CONSTRAINT "service_categories_parent_id_fk" FOREIGN KEY ("parentId") REFERENCES "public"."service_categories"("id") ON DELETE set null ON UPDATE no action;
+ALTER TABLE "service_categories" ADD CONSTRAINT "service_categories_salon_id_fk" FOREIGN KEY ("salonId") REFERENCES "public"."salons"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "service_options" ADD CONSTRAINT "service_options_service_id_fk" FOREIGN KEY ("serviceId") REFERENCES "public"."services"("id") ON DELETE cascade ON UPDATE no action;
-ALTER TABLE "services" ADD CONSTRAINT "services_salon_id_fk" FOREIGN KEY ("salonId") REFERENCES "public"."salons"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "services" ADD CONSTRAINT "services_category_id_fk" FOREIGN KEY ("categoryId") REFERENCES "public"."service_categories"("id") ON DELETE set null ON UPDATE no action;
+ALTER TABLE "services" ADD CONSTRAINT "services_salon_id_fk" FOREIGN KEY ("salonId") REFERENCES "public"."salons"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "sessions" ADD CONSTRAINT "sessions_user_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "staff" ADD CONSTRAINT "staff_salon_id_fk" FOREIGN KEY ("salonId") REFERENCES "public"."salons"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "staff_performances" ADD CONSTRAINT "staff_performances_staff_id_fk" FOREIGN KEY ("staffId") REFERENCES "public"."staff"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "staff_schedules" ADD CONSTRAINT "staff_schedules_staff_id_fk" FOREIGN KEY ("staffId") REFERENCES "public"."staff"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "staff_skills" ADD CONSTRAINT "staff_skills_staff_id_fk" FOREIGN KEY ("staffId") REFERENCES "public"."staff"("id") ON DELETE cascade ON UPDATE no action;
-ALTER TABLE "treatment_materials" ADD CONSTRAINT "treatment_materials_treatment_record_id_fk" FOREIGN KEY ("treatmentRecordId") REFERENCES "public"."treatment_records"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "treatment_materials" ADD CONSTRAINT "treatment_materials_product_id_fk" FOREIGN KEY ("productId") REFERENCES "public"."products"("id") ON DELETE restrict ON UPDATE no action;
+ALTER TABLE "treatment_materials" ADD CONSTRAINT "treatment_materials_treatment_record_id_fk" FOREIGN KEY ("treatmentRecordId") REFERENCES "public"."treatment_records"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "treatment_photos" ADD CONSTRAINT "treatment_photos_treatment_record_id_fk" FOREIGN KEY ("treatmentRecordId") REFERENCES "public"."treatment_records"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "treatment_records" ADD CONSTRAINT "treatment_records_booking_id_fk" FOREIGN KEY ("bookingId") REFERENCES "public"."bookings"("id") ON DELETE restrict ON UPDATE no action;
 ALTER TABLE "treatment_records" ADD CONSTRAINT "treatment_records_customer_id_fk" FOREIGN KEY ("customerId") REFERENCES "public"."customers"("id") ON DELETE restrict ON UPDATE no action;

@@ -83,16 +83,11 @@ services:
         condition: service_healthy
     networks:
       - beauty-salon-network
+    # Recreates the schema from sql/setup.sql and loads the sample data
     command: >
       sh -c "
-      pnpm --filter @beauty-salon-backend/database run db:reset &&
-      pnpm --filter @beauty-salon-backend/database run db:setup &&
-      pnpm --filter @beauty-salon-backend/database run db:migrate &&
-      pnpm --filter @beauty-salon-backend/database run db:introspect &&
-      pnpm --filter @beauty-salon-backend/database run db:generate-sql &&
-      pnpm --filter @beauty-salon-backend/database run db:truncate &&
-      pnpm --filter @beauty-salon-backend/database run db:seed &&
-      pnpm --filter @beauty-salon-backend/database run format:fix
+      pnpm --filter @beauty-salon-backend/database run db:fresh &&
+      pnpm --filter @beauty-salon-backend/database run db:seed
       "
 
   mailhog:

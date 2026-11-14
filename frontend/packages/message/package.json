@@ -1,7 +1,6 @@
 {
   "devDependencies": {
     "@beauty-salon-shared/config": "workspace:*",
-    "@biomejs/biome": "^2.6.7",
     "@rslib/core": "^1.0.7",
     "@types/node": "^26.6.6",
     "typescript": "^7.0.2",
@@ -28,12 +27,10 @@
     "build:stg": "NODE_ENV=staging rslib build",
     "build:prod": "NODE_ENV=production rslib build",
     "build:watch": "NODE_ENV=development rslib build --watch",
-    "typecheck": "tsc --build",
-    "format": "biome format --write .",
-    "format:fix": "biome check . --fix --unsafe",
+    "typecheck": "tsc --noEmit",
     "dev": "NODE_ENV=development rslib build --watch",
-    "dev:tsc": "tsc --build --watch",
-    "test": "vitest"
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "type": "module",
   "types": "./dist/index.d.ts",

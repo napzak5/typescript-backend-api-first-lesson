@@ -28,10 +28,8 @@ import type {
   ShareOperationsGetSharedFileParams
 } from '../../models';
 
-import { customInstance } from '../../../../../io/src/libs/fetcher/fetcher';
+import { customInstance } from '../../../mutator';
 
-
-type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 
 
@@ -82,7 +80,7 @@ export const getShareOperationsGetSharedFileUrl = (shareToken: string,
  * 共有リンクとパスワードを確認し、公開対象ファイルのメタ情報を閲覧者に提示します。
  */
 export const shareOperationsGetSharedFile = async (shareToken: string,
-    params?: ShareOperationsGetSharedFileParams, options?: Parameters<typeof customInstance>[1]): Promise<shareOperationsGetSharedFileResponse> => {
+    params?: ShareOperationsGetSharedFileParams, options?: RequestInit): Promise<shareOperationsGetSharedFileResponse> => {
 
   return customInstance<shareOperationsGetSharedFileResponse>(getShareOperationsGetSharedFileUrl(shareToken,params),
   {
@@ -106,16 +104,16 @@ export const getShareOperationsGetSharedFileQueryKey = (shareToken: string,
 
 
 export const getShareOperationsGetSharedFileQueryOptions = <TData = Awaited<ReturnType<typeof shareOperationsGetSharedFile>>, TError = unknown>(shareToken: string,
-    params?: ShareOperationsGetSharedFileParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shareOperationsGetSharedFile>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+    params?: ShareOperationsGetSharedFileParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shareOperationsGetSharedFile>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getShareOperationsGetSharedFileQueryKey(shareToken,params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof shareOperationsGetSharedFile>>> = ({ signal }) => shareOperationsGetSharedFile(shareToken,params, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof shareOperationsGetSharedFile>>> = ({ signal }) => shareOperationsGetSharedFile(shareToken,params, { signal });
 
 
 
@@ -137,7 +135,7 @@ export function useShareOperationsGetSharedFile<TData = Awaited<ReturnType<typeo
           TError,
           Awaited<ReturnType<typeof shareOperationsGetSharedFile>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** 共有リンクとパスワードを確認し、公開対象ファイルのメタ情報を閲覧者に提示します。 */
@@ -149,19 +147,19 @@ export function useShareOperationsGetSharedFile<TData = Awaited<ReturnType<typeo
           TError,
           Awaited<ReturnType<typeof shareOperationsGetSharedFile>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** 共有リンクとパスワードを確認し、公開対象ファイルのメタ情報を閲覧者に提示します。 */
 export function useShareOperationsGetSharedFile<TData = Awaited<ReturnType<typeof shareOperationsGetSharedFile>>, TError = unknown>(
  shareToken: string,
-    params?: ShareOperationsGetSharedFileParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shareOperationsGetSharedFile>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+    params?: ShareOperationsGetSharedFileParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shareOperationsGetSharedFile>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** 共有リンクとパスワードを確認し、公開対象ファイルのメタ情報を閲覧者に提示します。 */
 export function useShareOperationsGetSharedFile<TData = Awaited<ReturnType<typeof shareOperationsGetSharedFile>>, TError = unknown>(
  shareToken: string,
-    params?: ShareOperationsGetSharedFileParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shareOperationsGetSharedFile>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+    params?: ShareOperationsGetSharedFileParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shareOperationsGetSharedFile>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -209,7 +207,7 @@ export const getShareOperationsDownloadSharedFileUrl = (shareToken: string,
  * 共有リンク利用者が安全にファイル本体を取得できるよう、署名付きダウンロードURLを返却します。
  */
 export const shareOperationsDownloadSharedFile = async (shareToken: string,
-    params?: ShareOperationsDownloadSharedFileParams, options?: Parameters<typeof customInstance>[1]): Promise<shareOperationsDownloadSharedFileResponse> => {
+    params?: ShareOperationsDownloadSharedFileParams, options?: RequestInit): Promise<shareOperationsDownloadSharedFileResponse> => {
 
   return customInstance<shareOperationsDownloadSharedFileResponse>(getShareOperationsDownloadSharedFileUrl(shareToken,params),
   {
@@ -233,16 +231,16 @@ export const getShareOperationsDownloadSharedFileQueryKey = (shareToken: string,
 
 
 export const getShareOperationsDownloadSharedFileQueryOptions = <TData = Awaited<ReturnType<typeof shareOperationsDownloadSharedFile>>, TError = unknown>(shareToken: string,
-    params?: ShareOperationsDownloadSharedFileParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shareOperationsDownloadSharedFile>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+    params?: ShareOperationsDownloadSharedFileParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shareOperationsDownloadSharedFile>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getShareOperationsDownloadSharedFileQueryKey(shareToken,params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof shareOperationsDownloadSharedFile>>> = ({ signal }) => shareOperationsDownloadSharedFile(shareToken,params, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof shareOperationsDownloadSharedFile>>> = ({ signal }) => shareOperationsDownloadSharedFile(shareToken,params, { signal });
 
 
 
@@ -264,7 +262,7 @@ export function useShareOperationsDownloadSharedFile<TData = Awaited<ReturnType<
           TError,
           Awaited<ReturnType<typeof shareOperationsDownloadSharedFile>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** 共有リンク利用者が安全にファイル本体を取得できるよう、署名付きダウンロードURLを返却します。 */
@@ -276,19 +274,19 @@ export function useShareOperationsDownloadSharedFile<TData = Awaited<ReturnType<
           TError,
           Awaited<ReturnType<typeof shareOperationsDownloadSharedFile>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** 共有リンク利用者が安全にファイル本体を取得できるよう、署名付きダウンロードURLを返却します。 */
 export function useShareOperationsDownloadSharedFile<TData = Awaited<ReturnType<typeof shareOperationsDownloadSharedFile>>, TError = unknown>(
  shareToken: string,
-    params?: ShareOperationsDownloadSharedFileParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shareOperationsDownloadSharedFile>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+    params?: ShareOperationsDownloadSharedFileParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shareOperationsDownloadSharedFile>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** 共有リンク利用者が安全にファイル本体を取得できるよう、署名付きダウンロードURLを返却します。 */
 export function useShareOperationsDownloadSharedFile<TData = Awaited<ReturnType<typeof shareOperationsDownloadSharedFile>>, TError = unknown>(
  shareToken: string,
-    params?: ShareOperationsDownloadSharedFileParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shareOperationsDownloadSharedFile>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+    params?: ShareOperationsDownloadSharedFileParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof shareOperationsDownloadSharedFile>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 

@@ -12,25 +12,23 @@
     }
   },
   "scripts": {
-    "dev": "tsc --watch",
-    "build": "tsc",
-    "build:rslib": "rslib build",
     "clean": "rm -rf dist *.tsbuildinfo",
+    "build:dev": "NODE_ENV=development rslib build",
+    "build:test": "NODE_ENV=test rslib build",
+    "build:stg": "NODE_ENV=staging rslib build",
+    "build:prod": "NODE_ENV=production rslib build",
+    "build:watch": "NODE_ENV=development rslib build --watch",
+    "dev": "NODE_ENV=development rslib build --watch",
     "typecheck": "tsc --noEmit",
-    "format": "biome format --write .",
-    "format:fix": "biome check . --fix --unsafe",
     "generate": "orval"
   },
   "dependencies": {
     "@beauty-salon-frontend/io": "workspace:*",
-    "@beauty-salon-frontend/types": "workspace:*",
-    "@biomejs/biome": "^2.6.7",
-    "@rslib/core": "^1.0.7",
     "@tanstack/react-query": "^5.107.1"
   },
   "devDependencies": {
     "@beauty-salon-shared/config": "workspace:*",
-    "@biomejs/biome": "^2.6.7",
+    "@rslib/core": "^1.0.7",
     "@types/node": "^26.6.6",
     "orval": "^8.47.0",
     "typescript": "^7.0.2"

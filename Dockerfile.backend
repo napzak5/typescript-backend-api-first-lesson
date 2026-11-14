@@ -37,9 +37,8 @@ RUN pnpm install --frozen-lockfile
 # Copy source code
 COPY . .
 
-# Build backend packages (packages use build:prod, server app uses build)
-RUN pnpm --filter "./backend/packages/**" run build:prod && \
-    pnpm --filter "@beauty-salon-backend/server" run build
+# Build the backend packages and the server in dependency order
+RUN pnpm --filter "./backend/**" run build:prod
 
 # Development stage
 FROM base AS development

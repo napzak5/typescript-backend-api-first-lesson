@@ -175,6 +175,9 @@ importers:
       '@biomejs/biome':
         specifier: ^2.6.7
         version: 2.6.7
+      '@types/node':
+        specifier: ^26.6.6
+        version: 26.6.6
       concurrently:
         specifier: ^10.0.7
         version: 10.0.7
@@ -209,9 +212,6 @@ importers:
       '@beauty-salon-shared/config':
         specifier: workspace:*
         version: link:../../../shared-config
-      '@biomejs/biome':
-        specifier: ^2.6.7
-        version: 2.6.7
       '@types/node':
         specifier: ^26.6.6
         version: 26.6.6
@@ -224,9 +224,6 @@ importers:
 
   backend/packages/api:
     dependencies:
-      '@beauty-salon-backend/config':
-        specifier: workspace:*
-        version: link:../config
       '@beauty-salon-backend/database':
         specifier: workspace:*
         version: link:../database
@@ -270,9 +267,6 @@ importers:
       '@beauty-salon-shared/config':
         specifier: workspace:*
         version: link:../../../shared-config
-      '@biomejs/biome':
-        specifier: ^2.6.7
-        version: 2.6.7
       '@rslib/core':
         specifier: ^1.0.7
         version: 1.0.7(typescript@7.0.2)
@@ -313,9 +307,6 @@ importers:
       '@beauty-salon-shared/config':
         specifier: workspace:*
         version: link:../../../shared-config
-      '@biomejs/biome':
-        specifier: ^2.6.7
-        version: 2.6.7
       '@rslib/core':
         specifier: ^1.0.7
         version: 1.0.7(typescript@7.0.2)
@@ -344,9 +335,6 @@ importers:
       '@beauty-salon-shared/config':
         specifier: workspace:*
         version: link:../../../shared-config
-      '@biomejs/biome':
-        specifier: ^2.6.7
-        version: 2.6.7
       '@rslib/core':
         specifier: ^1.0.7
         version: 1.0.7(typescript@7.0.2)
@@ -362,6 +350,9 @@ importers:
       typescript:
         specifier: ^7.0.2
         version: 7.0.2
+      vitest:
+        specifier: ^5.1.0
+        version: 5.1.0(@types/node@26.6.6)(@vitest/coverage-v8@5.1.0)(@vitest/ui@5.1.0)(jsdom@31.0.0(@noble/hashes@1.8.0))(msw@3.0.5(@types/node@26.6.6)(supports-color@10.2.2)(typescript@7.0.2)(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(sass-embedded@1.108.2)(sass@1.108.2)(tsx@4.23.15)(yaml@2.9.1)))(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(sass-embedded@1.108.2)(sass@1.108.2)(tsx@4.23.15)(yaml@2.9.1))
 
   backend/packages/domain:
     dependencies:
@@ -378,9 +369,6 @@ importers:
       '@beauty-salon-shared/config':
         specifier: workspace:*
         version: link:../../../shared-config
-      '@biomejs/biome':
-        specifier: ^2.6.7
-        version: 2.6.7
       '@rslib/core':
         specifier: ^1.0.7
         version: 1.0.7(typescript@7.0.2)
@@ -390,18 +378,9 @@ importers:
       typescript:
         specifier: ^7.0.2
         version: 7.0.2
-      vitest:
-        specifier: ^5.1.0
-        version: 5.1.0(@types/node@26.6.6)(@vitest/coverage-v8@5.1.0)(@vitest/ui@5.1.0)(jsdom@31.0.0(@noble/hashes@1.8.0))(msw@3.0.5(@types/node@26.6.6)(supports-color@10.2.2)(typescript@7.0.2)(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(sass-embedded@1.108.2)(sass@1.108.2)(tsx@4.23.15)(yaml@2.9.1)))(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(sass-embedded@1.108.2)(sass@1.108.2)(tsx@4.23.15)(yaml@2.9.1))
 
   backend/packages/generated:
     dependencies:
-      '@beauty-salon-backend/database':
-        specifier: workspace:*
-        version: link:../database
-      '@beauty-salon-backend/utility':
-        specifier: workspace:*
-        version: link:../utility
       zod:
         specifier: ^4.6.7
         version: 4.6.7
@@ -409,9 +388,6 @@ importers:
       '@beauty-salon-shared/config':
         specifier: workspace:*
         version: link:../../../shared-config
-      '@biomejs/biome':
-        specifier: ^2.6.7
-        version: 2.6.7
       '@rslib/core':
         specifier: ^1.0.7
         version: 1.0.7(typescript@5.9.3)
@@ -442,9 +418,6 @@ importers:
       '@beauty-salon-backend/domain':
         specifier: workspace:*
         version: link:../domain
-      '@beauty-salon-backend/generated':
-        specifier: workspace:*
-        version: link:../generated
       '@beauty-salon-backend/utility':
         specifier: workspace:*
         version: link:../utility
@@ -458,9 +431,6 @@ importers:
       '@beauty-salon-shared/config':
         specifier: workspace:*
         version: link:../../../shared-config
-      '@biomejs/biome':
-        specifier: ^2.6.7
-        version: 2.6.7
       '@rslib/core':
         specifier: ^1.0.7
         version: 1.0.7(typescript@7.0.2)
@@ -483,9 +453,6 @@ importers:
       '@beauty-salon-shared/config':
         specifier: workspace:*
         version: link:../../../shared-config
-      '@biomejs/biome':
-        specifier: ^2.6.7
-        version: 2.6.7
       '@rslib/core':
         specifier: ^1.0.7
         version: 1.0.7(typescript@7.0.2)
@@ -507,15 +474,9 @@ importers:
 
   frontend/apps/admin-app:
     dependencies:
-      '@beauty-salon-frontend/api-client':
-        specifier: workspace:*
-        version: link:../../packages/api-client
       '@beauty-salon-frontend/theme':
         specifier: workspace:*
         version: link:../../packages/theme
-      '@beauty-salon-frontend/types':
-        specifier: workspace:*
-        version: link:../../packages/types
       '@beauty-salon-frontend/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -538,9 +499,6 @@ importers:
       '@beauty-salon-shared/config':
         specifier: workspace:*
         version: link:../../../shared-config
-      '@biomejs/biome':
-        specifier: ^2.6.7
-        version: 2.6.7
       '@tailwindcss/vite':
         specifier: ^4.3.5
         version: 4.3.5(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(sass-embedded@1.108.2)(sass@1.108.2)(tsx@4.23.15)(yaml@2.9.1))
@@ -589,15 +547,9 @@ importers:
 
   frontend/apps/dashboard-app:
     dependencies:
-      '@beauty-salon-frontend/api-client':
-        specifier: workspace:*
-        version: link:../../packages/api-client
       '@beauty-salon-frontend/theme':
         specifier: workspace:*
         version: link:../../packages/theme
-      '@beauty-salon-frontend/types':
-        specifier: workspace:*
-        version: link:../../packages/types
       '@beauty-salon-frontend/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -623,9 +575,6 @@ importers:
       '@beauty-salon-shared/config':
         specifier: workspace:*
         version: link:../../../shared-config
-      '@biomejs/biome':
-        specifier: ^2.6.7
-        version: 2.6.7
       '@tailwindcss/vite':
         specifier: ^4.3.5
         version: 4.3.5(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(sass-embedded@1.108.2)(sass@1.108.2)(tsx@4.23.15)(yaml@2.9.1))
@@ -671,15 +620,9 @@ importers:
 
   frontend/apps/portal-app:
     dependencies:
-      '@beauty-salon-frontend/api-client':
-        specifier: workspace:*
-        version: link:../../packages/api-client
       '@beauty-salon-frontend/theme':
         specifier: workspace:*
         version: link:../../packages/theme
-      '@beauty-salon-frontend/types':
-        specifier: workspace:*
-        version: link:../../packages/types
       '@beauty-salon-frontend/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -699,9 +642,6 @@ importers:
       '@beauty-salon-shared/config':
         specifier: workspace:*
         version: link:../../../shared-config
-      '@biomejs/biome':
-        specifier: ^2.6.7
-        version: 2.6.7
       '@tailwindcss/vite':
         specifier: ^4.3.5
         version: 4.3.5(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(sass-embedded@1.108.2)(sass@1.108.2)(tsx@4.23.15)(yaml@2.9.1))
@@ -750,15 +690,6 @@ importers:
       '@beauty-salon-frontend/io':
         specifier: workspace:*
         version: link:../io
-      '@beauty-salon-frontend/types':
-        specifier: workspace:*
-        version: link:../types
-      '@biomejs/biome':
-        specifier: ^2.6.7
-        version: 2.6.7
-      '@rslib/core':
-        specifier: ^1.0.7
-        version: 1.0.7(typescript@7.0.2)
       '@tanstack/react-query':
         specifier: ^5.107.1
         version: 5.107.1(@types/react@19.3.0)(react@19.3.1)
@@ -766,6 +697,9 @@ importers:
       '@beauty-salon-shared/config':
         specifier: workspace:*
         version: link:../../../shared-config
+      '@rslib/core':
+        specifier: ^1.0.7
+        version: 1.0.7(typescript@7.0.2)
       '@types/node':
         specifier: ^26.6.6
         version: 26.6.6
@@ -781,9 +715,6 @@ importers:
       '@beauty-salon-shared/config':
         specifier: workspace:*
         version: link:../../../shared-config
-      '@biomejs/biome':
-        specifier: ^2.6.7
-        version: 2.6.7
       '@rslib/core':
         specifier: ^1.0.7
         version: 1.0.7(typescript@7.0.2)
@@ -795,17 +726,10 @@ importers:
         version: 7.0.2
 
   frontend/packages/config:
-    dependencies:
-      '@beauty-salon-frontend/utils':
-        specifier: workspace:*
-        version: link:../utils
     devDependencies:
       '@beauty-salon-shared/config':
         specifier: workspace:*
         version: link:../../../shared-config
-      '@biomejs/biome':
-        specifier: ^2.6.7
-        version: 2.6.7
       '@rslib/core':
         specifier: ^1.0.7
         version: 1.0.7(typescript@7.0.2)
@@ -846,9 +770,6 @@ importers:
       '@beauty-salon-shared/config':
         specifier: workspace:*
         version: link:../../../shared-config
-      '@biomejs/biome':
-        specifier: ^2.6.7
-        version: 2.6.7
       '@rslib/core':
         specifier: ^1.0.7
         version: 1.0.7(typescript@7.0.2)
@@ -864,9 +785,6 @@ importers:
       '@beauty-salon-shared/config':
         specifier: workspace:*
         version: link:../../../shared-config
-      '@biomejs/biome':
-        specifier: ^2.6.7
-        version: 2.6.7
       '@rslib/core':
         specifier: ^1.0.7
         version: 1.0.7(typescript@7.0.2)
@@ -889,9 +807,6 @@ importers:
       '@beauty-salon-shared/config':
         specifier: workspace:*
         version: link:../../../shared-config
-      '@biomejs/biome':
-        specifier: ^2.6.7
-        version: 2.6.7
       '@rslib/core':
         specifier: ^1.0.7
         version: 1.0.7(typescript@7.0.2)
@@ -914,9 +829,6 @@ importers:
       '@beauty-salon-shared/config':
         specifier: workspace:*
         version: link:../../../shared-config
-      '@biomejs/biome':
-        specifier: ^2.6.7
-        version: 2.6.7
       '@rslib/core':
         specifier: ^1.0.7
         version: 1.0.7(typescript@7.0.2)
@@ -945,9 +857,6 @@ importers:
       '@beauty-salon-shared/config':
         specifier: workspace:*
         version: link:../../../shared-config
-      '@biomejs/biome':
-        specifier: ^2.6.7
-        version: 2.6.7
       '@rslib/core':
         specifier: ^1.0.7
         version: 1.0.7(typescript@7.0.2)
@@ -1000,9 +909,6 @@ importers:
       '@beauty-salon-shared/config':
         specifier: workspace:*
         version: link:../../../shared-config
-      '@biomejs/biome':
-        specifier: ^2.6.7
-        version: 2.6.7
       '@rslib/core':
         specifier: ^1.0.7
         version: 1.0.7(typescript@7.0.2)
@@ -1085,9 +991,6 @@ importers:
       '@beauty-salon-shared/config':
         specifier: workspace:*
         version: link:../../../shared-config
-      '@biomejs/biome':
-        specifier: ^2.6.7
-        version: 2.6.7
       '@rslib/core':
         specifier: ^1.0.7
         version: 1.0.7(typescript@7.0.2)
@@ -1118,12 +1021,6 @@ importers:
 
   frontend/packages/validations:
     dependencies:
-      '@beauty-salon-frontend/message':
-        specifier: workspace:*
-        version: link:../message
-      '@beauty-salon-frontend/types':
-        specifier: workspace:*
-        version: link:../types
       '@beauty-salon-frontend/utils':
         specifier: workspace:*
         version: link:../utils
@@ -1137,9 +1034,6 @@ importers:
       '@beauty-salon-shared/config':
         specifier: workspace:*
         version: link:../../../shared-config
-      '@biomejs/biome':
-        specifier: ^2.6.7
-        version: 2.6.7
       '@rslib/core':
         specifier: ^1.0.7
         version: 1.0.7(typescript@7.0.2)

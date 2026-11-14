@@ -1,5 +1,0 @@
-{
-  "root": false,
-  "$schema": "https://biomejs.dev/schemas/2.6.7/schema.json",
-  "extends": ["@beauty-salon-shared/config/biome"]
-}

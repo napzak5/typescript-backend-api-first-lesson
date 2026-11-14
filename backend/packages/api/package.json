@@ -9,8 +9,10 @@
   ],
   "exports": {
     ".": {
+      "@beauty-salon-backend/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "default": "./dist/index.js"
     }
   },
   "scripts": {
@@ -21,19 +23,12 @@
     "build:stg": "NODE_ENV=staging rslib build && tsc --emitDeclarationOnly",
     "build:prod": "NODE_ENV=production rslib build && tsc --emitDeclarationOnly",
     "build:watch": "NODE_ENV=development rslib build --watch",
-    "dev": "NODE_ENV=development rslib build --watch",
-    "dev:tsc": "tsc --build --watch",
-    "test": "vitest",
-    "test:ui": "vitest --ui",
-    "test:run": "vitest run",
-    "typecheck": "tsc --noEmit",
-    "format": "biome format --write .",
-    "format:fix": "biome check . --fix --unsafe",
-    "lint": "biome lint .",
-    "lint:fix": "biome lint . --write"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@beauty-salon-backend/config": "workspace:*",
     "@beauty-salon-backend/database": "workspace:*",
     "@beauty-salon-backend/domain": "workspace:*",
     "@beauty-salon-backend/generated": "workspace:*",
@@ -50,7 +45,6 @@
   },
   "devDependencies": {
     "@beauty-salon-shared/config": "workspace:*",
-    "@biomejs/biome": "^2.6.7",
     "@rslib/core": "^1.0.7",
     "@testcontainers/postgresql": "^12.2.1",
     "@types/compression": "^1.8.1",

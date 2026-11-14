@@ -8,9 +8,7 @@
     "./base.json": "./tsconfig/base.json",
     "./backend.json": "./tsconfig/backend.json",
     "./frontend.json": "./tsconfig/frontend.json",
-    "./nextjs.json": "./tsconfig/nextjs.json",
     "./tsconfig.lib.json": "./tsconfig/tsconfig.lib.json",
-    "./tsconfig.app.json": "./tsconfig/tsconfig.app.json",
-    "./biome": "./biome.json"
+    "./tsconfig.app.json": "./tsconfig/tsconfig.app.json"
   }
 }

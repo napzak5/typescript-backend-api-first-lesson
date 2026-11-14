@@ -38,10 +38,8 @@ import type {
   ModelsShareLinkCreateRequest
 } from '../../models';
 
-import { customInstance } from '../../../../../io/src/libs/fetcher/fetcher';
+import { customInstance } from '../../../mutator';
 
-
-type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 
 
@@ -90,7 +88,7 @@ export const getAttachmentOperationsListUrl = (params?: AttachmentOperationsList
 /**
  * サロンまたは顧客単位で登録済みの添付ファイルを一覧し、施術履歴の確認や資料整理に活用します。
  */
-export const attachmentOperationsList = async (params?: AttachmentOperationsListParams, options?: Parameters<typeof customInstance>[1]): Promise<attachmentOperationsListResponse> => {
+export const attachmentOperationsList = async (params?: AttachmentOperationsListParams, options?: RequestInit): Promise<attachmentOperationsListResponse> => {
 
   return customInstance<attachmentOperationsListResponse>(getAttachmentOperationsListUrl(params),
   {
@@ -112,16 +110,16 @@ export const getAttachmentOperationsListQueryKey = (params?: AttachmentOperation
     }
 
 
-export const getAttachmentOperationsListQueryOptions = <TData = Awaited<ReturnType<typeof attachmentOperationsList>>, TError = unknown>(params?: AttachmentOperationsListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof attachmentOperationsList>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getAttachmentOperationsListQueryOptions = <TData = Awaited<ReturnType<typeof attachmentOperationsList>>, TError = unknown>(params?: AttachmentOperationsListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof attachmentOperationsList>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getAttachmentOperationsListQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof attachmentOperationsList>>> = ({ signal }) => attachmentOperationsList(params, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof attachmentOperationsList>>> = ({ signal }) => attachmentOperationsList(params, { signal });
 
 
 
@@ -142,7 +140,7 @@ export function useAttachmentOperationsList<TData = Awaited<ReturnType<typeof at
           TError,
           Awaited<ReturnType<typeof attachmentOperationsList>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** サロンまたは顧客単位で登録済みの添付ファイルを一覧し、施術履歴の確認や資料整理に活用します。 */
@@ -153,17 +151,17 @@ export function useAttachmentOperationsList<TData = Awaited<ReturnType<typeof at
           TError,
           Awaited<ReturnType<typeof attachmentOperationsList>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** サロンまたは顧客単位で登録済みの添付ファイルを一覧し、施術履歴の確認や資料整理に活用します。 */
 export function useAttachmentOperationsList<TData = Awaited<ReturnType<typeof attachmentOperationsList>>, TError = unknown>(
- params?: AttachmentOperationsListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof attachmentOperationsList>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ params?: AttachmentOperationsListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof attachmentOperationsList>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** サロンまたは顧客単位で登録済みの添付ファイルを一覧し、施術履歴の確認や資料整理に活用します。 */
 export function useAttachmentOperationsList<TData = Awaited<ReturnType<typeof attachmentOperationsList>>, TError = unknown>(
- params?: AttachmentOperationsListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof attachmentOperationsList>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ params?: AttachmentOperationsListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof attachmentOperationsList>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -207,7 +205,7 @@ export const getAttachmentOperationsDeleteShareLinkUrl = (shareLinkId: string,) 
 /**
  * 不要になった共有リンクを失効させ、アクセス制御を適切に保ちます。
  */
-export const attachmentOperationsDeleteShareLink = async (shareLinkId: string, options?: Parameters<typeof customInstance>[1]): Promise<attachmentOperationsDeleteShareLinkResponse> => {
+export const attachmentOperationsDeleteShareLink = async (shareLinkId: string, options?: RequestInit): Promise<attachmentOperationsDeleteShareLinkResponse> => {
 
   return customInstance<attachmentOperationsDeleteShareLinkResponse>(getAttachmentOperationsDeleteShareLinkUrl(shareLinkId),
   {
@@ -225,15 +223,15 @@ export const attachmentOperationsDeleteShareLink = async (shareLinkId: string, o
 export const getAttachmentOperationsDeleteShareLinkMutationKey = () => ['attachmentOperationsDeleteShareLink'] as const;
 
 export const getAttachmentOperationsDeleteShareLinkMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof attachmentOperationsDeleteShareLink>>, TError,AttachmentOperationsDeleteShareLinkMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof attachmentOperationsDeleteShareLink>>, TError,AttachmentOperationsDeleteShareLinkMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof attachmentOperationsDeleteShareLink>>, TError,AttachmentOperationsDeleteShareLinkMutationVariables, TContext> => {
 
 const mutationKey = getAttachmentOperationsDeleteShareLinkMutationKey();
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -241,7 +239,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof attachmentOperationsDeleteShareLink>>, AttachmentOperationsDeleteShareLinkMutationVariables> = (props) => {
           const {shareLinkId} = props ?? {};
 
-          return  attachmentOperationsDeleteShareLink(shareLinkId,requestOptions)
+          return  attachmentOperationsDeleteShareLink(shareLinkId,)
         }
 
 
@@ -258,7 +256,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     /** 不要になった共有リンクを失効させ、アクセス制御を適切に保ちます。 */
 export const useAttachmentOperationsDeleteShareLink = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof attachmentOperationsDeleteShareLink>>, TError,AttachmentOperationsDeleteShareLinkMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof attachmentOperationsDeleteShareLink>>, TError,AttachmentOperationsDeleteShareLinkMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof attachmentOperationsDeleteShareLink>>,
         TError,
@@ -290,7 +288,7 @@ export const getAttachmentOperationsUploadFileUrl = () => {
 /**
  * スタッフが管理画面からファイル本体を直接アップロードし、予約記録や顧客カルテに紐づけるための操作です。
  */
-export const attachmentOperationsUploadFile = async (modelsAttachmentCreateRequest: ModelsAttachmentCreateRequest, options?: Parameters<typeof customInstance>[1]): Promise<attachmentOperationsUploadFileResponse> => {
+export const attachmentOperationsUploadFile = async (modelsAttachmentCreateRequest: ModelsAttachmentCreateRequest, options?: RequestInit): Promise<attachmentOperationsUploadFileResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -322,15 +320,15 @@ return customInstance<attachmentOperationsUploadFileResponse>(getAttachmentOpera
 export const getAttachmentOperationsUploadFileMutationKey = () => ['attachmentOperationsUploadFile'] as const;
 
 export const getAttachmentOperationsUploadFileMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof attachmentOperationsUploadFile>>, TError,AttachmentOperationsUploadFileMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof attachmentOperationsUploadFile>>, TError,AttachmentOperationsUploadFileMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof attachmentOperationsUploadFile>>, TError,AttachmentOperationsUploadFileMutationVariables, TContext> => {
 
 const mutationKey = getAttachmentOperationsUploadFileMutationKey();
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -338,7 +336,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof attachmentOperationsUploadFile>>, AttachmentOperationsUploadFileMutationVariables> = (props) => {
           const {data} = props ?? {};
 
-          return  attachmentOperationsUploadFile(data,requestOptions)
+          return  attachmentOperationsUploadFile(data,)
         }
 
 
@@ -355,7 +353,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     /** スタッフが管理画面からファイル本体を直接アップロードし、予約記録や顧客カルテに紐づけるための操作です。 */
 export const useAttachmentOperationsUploadFile = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof attachmentOperationsUploadFile>>, TError,AttachmentOperationsUploadFileMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof attachmentOperationsUploadFile>>, TError,AttachmentOperationsUploadFileMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof attachmentOperationsUploadFile>>,
         TError,
@@ -387,7 +385,7 @@ export const getAttachmentOperationsGetUploadUrlUrl = () => {
 /**
  * 顧客やスタッフがブラウザから直接クラウドストレージへアップロードできるよう、短時間だけ有効な署名付きURLを発行します。
  */
-export const attachmentOperationsGetUploadUrl = async (modelsAttachmentUploadUrlGetRequest: ModelsAttachmentUploadUrlGetRequest, options?: Parameters<typeof customInstance>[1]): Promise<attachmentOperationsGetUploadUrlResponse> => {
+export const attachmentOperationsGetUploadUrl = async (modelsAttachmentUploadUrlGetRequest: ModelsAttachmentUploadUrlGetRequest, options?: RequestInit): Promise<attachmentOperationsGetUploadUrlResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -419,15 +417,15 @@ return customInstance<attachmentOperationsGetUploadUrlResponse>(getAttachmentOpe
 export const getAttachmentOperationsGetUploadUrlMutationKey = () => ['attachmentOperationsGetUploadUrl'] as const;
 
 export const getAttachmentOperationsGetUploadUrlMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof attachmentOperationsGetUploadUrl>>, TError,AttachmentOperationsGetUploadUrlMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof attachmentOperationsGetUploadUrl>>, TError,AttachmentOperationsGetUploadUrlMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof attachmentOperationsGetUploadUrl>>, TError,AttachmentOperationsGetUploadUrlMutationVariables, TContext> => {
 
 const mutationKey = getAttachmentOperationsGetUploadUrlMutationKey();
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -435,7 +433,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof attachmentOperationsGetUploadUrl>>, AttachmentOperationsGetUploadUrlMutationVariables> = (props) => {
           const {data} = props ?? {};
 
-          return  attachmentOperationsGetUploadUrl(data,requestOptions)
+          return  attachmentOperationsGetUploadUrl(data,)
         }
 
 
@@ -452,7 +450,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     /** 顧客やスタッフがブラウザから直接クラウドストレージへアップロードできるよう、短時間だけ有効な署名付きURLを発行します。 */
 export const useAttachmentOperationsGetUploadUrl = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof attachmentOperationsGetUploadUrl>>, TError,AttachmentOperationsGetUploadUrlMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof attachmentOperationsGetUploadUrl>>, TError,AttachmentOperationsGetUploadUrlMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof attachmentOperationsGetUploadUrl>>,
         TError,
@@ -484,7 +482,7 @@ export const getAttachmentOperationsGetUrl = (attachmentId: string,) => {
 /**
  * 指定した添付ファイルの詳細情報を取得し、プレビュー表示や関連予約の確認に用います。
  */
-export const attachmentOperationsGet = async (attachmentId: string, options?: Parameters<typeof customInstance>[1]): Promise<attachmentOperationsGetResponse> => {
+export const attachmentOperationsGet = async (attachmentId: string, options?: RequestInit): Promise<attachmentOperationsGetResponse> => {
 
   return customInstance<attachmentOperationsGetResponse>(getAttachmentOperationsGetUrl(attachmentId),
   {
@@ -506,16 +504,16 @@ export const getAttachmentOperationsGetQueryKey = (attachmentId: string,) => {
     }
 
 
-export const getAttachmentOperationsGetQueryOptions = <TData = Awaited<ReturnType<typeof attachmentOperationsGet>>, TError = unknown>(attachmentId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof attachmentOperationsGet>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getAttachmentOperationsGetQueryOptions = <TData = Awaited<ReturnType<typeof attachmentOperationsGet>>, TError = unknown>(attachmentId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof attachmentOperationsGet>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getAttachmentOperationsGetQueryKey(attachmentId);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof attachmentOperationsGet>>> = ({ signal }) => attachmentOperationsGet(attachmentId, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof attachmentOperationsGet>>> = ({ signal }) => attachmentOperationsGet(attachmentId, { signal });
 
 
 
@@ -536,7 +534,7 @@ export function useAttachmentOperationsGet<TData = Awaited<ReturnType<typeof att
           TError,
           Awaited<ReturnType<typeof attachmentOperationsGet>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** 指定した添付ファイルの詳細情報を取得し、プレビュー表示や関連予約の確認に用います。 */
@@ -547,17 +545,17 @@ export function useAttachmentOperationsGet<TData = Awaited<ReturnType<typeof att
           TError,
           Awaited<ReturnType<typeof attachmentOperationsGet>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** 指定した添付ファイルの詳細情報を取得し、プレビュー表示や関連予約の確認に用います。 */
 export function useAttachmentOperationsGet<TData = Awaited<ReturnType<typeof attachmentOperationsGet>>, TError = unknown>(
- attachmentId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof attachmentOperationsGet>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ attachmentId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof attachmentOperationsGet>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** 指定した添付ファイルの詳細情報を取得し、プレビュー表示や関連予約の確認に用います。 */
 export function useAttachmentOperationsGet<TData = Awaited<ReturnType<typeof attachmentOperationsGet>>, TError = unknown>(
- attachmentId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof attachmentOperationsGet>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ attachmentId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof attachmentOperationsGet>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -601,7 +599,7 @@ export const getAttachmentOperationsDeleteUrl = (attachmentId: string,) => {
 /**
  * 不要になった添付ファイルを削除し、ストレージ容量の最適化と情報漏えいリスクの低減を図ります。
  */
-export const attachmentOperationsDelete = async (attachmentId: string, options?: Parameters<typeof customInstance>[1]): Promise<attachmentOperationsDeleteResponse> => {
+export const attachmentOperationsDelete = async (attachmentId: string, options?: RequestInit): Promise<attachmentOperationsDeleteResponse> => {
 
   return customInstance<attachmentOperationsDeleteResponse>(getAttachmentOperationsDeleteUrl(attachmentId),
   {
@@ -619,15 +617,15 @@ export const attachmentOperationsDelete = async (attachmentId: string, options?:
 export const getAttachmentOperationsDeleteMutationKey = () => ['attachmentOperationsDelete'] as const;
 
 export const getAttachmentOperationsDeleteMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof attachmentOperationsDelete>>, TError,AttachmentOperationsDeleteMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof attachmentOperationsDelete>>, TError,AttachmentOperationsDeleteMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof attachmentOperationsDelete>>, TError,AttachmentOperationsDeleteMutationVariables, TContext> => {
 
 const mutationKey = getAttachmentOperationsDeleteMutationKey();
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -635,7 +633,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof attachmentOperationsDelete>>, AttachmentOperationsDeleteMutationVariables> = (props) => {
           const {attachmentId} = props ?? {};
 
-          return  attachmentOperationsDelete(attachmentId,requestOptions)
+          return  attachmentOperationsDelete(attachmentId,)
         }
 
 
@@ -652,7 +650,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     /** 不要になった添付ファイルを削除し、ストレージ容量の最適化と情報漏えいリスクの低減を図ります。 */
 export const useAttachmentOperationsDelete = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof attachmentOperationsDelete>>, TError,AttachmentOperationsDeleteMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof attachmentOperationsDelete>>, TError,AttachmentOperationsDeleteMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof attachmentOperationsDelete>>,
         TError,
@@ -693,7 +691,7 @@ export const getAttachmentOperationsGetDownloadUrlUrl = (attachmentId: string,
  * 閲覧権限を持つ利用者がファイルを安全に取得できるよう、短時間有効なダウンロードURLを発行します。
  */
 export const attachmentOperationsGetDownloadUrl = async (attachmentId: string,
-    params?: AttachmentOperationsGetDownloadUrlParams, options?: Parameters<typeof customInstance>[1]): Promise<attachmentOperationsGetDownloadUrlResponse> => {
+    params?: AttachmentOperationsGetDownloadUrlParams, options?: RequestInit): Promise<attachmentOperationsGetDownloadUrlResponse> => {
 
   return customInstance<attachmentOperationsGetDownloadUrlResponse>(getAttachmentOperationsGetDownloadUrlUrl(attachmentId,params),
   {
@@ -717,16 +715,16 @@ export const getAttachmentOperationsGetDownloadUrlQueryKey = (attachmentId: stri
 
 
 export const getAttachmentOperationsGetDownloadUrlQueryOptions = <TData = Awaited<ReturnType<typeof attachmentOperationsGetDownloadUrl>>, TError = unknown>(attachmentId: string,
-    params?: AttachmentOperationsGetDownloadUrlParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof attachmentOperationsGetDownloadUrl>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+    params?: AttachmentOperationsGetDownloadUrlParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof attachmentOperationsGetDownloadUrl>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getAttachmentOperationsGetDownloadUrlQueryKey(attachmentId,params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof attachmentOperationsGetDownloadUrl>>> = ({ signal }) => attachmentOperationsGetDownloadUrl(attachmentId,params, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof attachmentOperationsGetDownloadUrl>>> = ({ signal }) => attachmentOperationsGetDownloadUrl(attachmentId,params, { signal });
 
 
 
@@ -748,7 +746,7 @@ export function useAttachmentOperationsGetDownloadUrl<TData = Awaited<ReturnType
           TError,
           Awaited<ReturnType<typeof attachmentOperationsGetDownloadUrl>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** 閲覧権限を持つ利用者がファイルを安全に取得できるよう、短時間有効なダウンロードURLを発行します。 */
@@ -760,19 +758,19 @@ export function useAttachmentOperationsGetDownloadUrl<TData = Awaited<ReturnType
           TError,
           Awaited<ReturnType<typeof attachmentOperationsGetDownloadUrl>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** 閲覧権限を持つ利用者がファイルを安全に取得できるよう、短時間有効なダウンロードURLを発行します。 */
 export function useAttachmentOperationsGetDownloadUrl<TData = Awaited<ReturnType<typeof attachmentOperationsGetDownloadUrl>>, TError = unknown>(
  attachmentId: string,
-    params?: AttachmentOperationsGetDownloadUrlParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof attachmentOperationsGetDownloadUrl>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+    params?: AttachmentOperationsGetDownloadUrlParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof attachmentOperationsGetDownloadUrl>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** 閲覧権限を持つ利用者がファイルを安全に取得できるよう、短時間有効なダウンロードURLを発行します。 */
 export function useAttachmentOperationsGetDownloadUrl<TData = Awaited<ReturnType<typeof attachmentOperationsGetDownloadUrl>>, TError = unknown>(
  attachmentId: string,
-    params?: AttachmentOperationsGetDownloadUrlParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof attachmentOperationsGetDownloadUrl>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+    params?: AttachmentOperationsGetDownloadUrlParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof attachmentOperationsGetDownloadUrl>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -812,7 +810,7 @@ export const getAttachmentOperationsCreateShareLinkUrl = (attachmentId: string,)
  * 施術前後の写真や資料を外部パートナーや顧客と共有するためのリンクを発行します。必要に応じてパスワード保護も適用します。
  */
 export const attachmentOperationsCreateShareLink = async (attachmentId: string,
-    modelsShareLinkCreateRequest: ModelsShareLinkCreateRequest, options?: Parameters<typeof customInstance>[1]): Promise<attachmentOperationsCreateShareLinkResponse> => {
+    modelsShareLinkCreateRequest: ModelsShareLinkCreateRequest, options?: RequestInit): Promise<attachmentOperationsCreateShareLinkResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -844,15 +842,15 @@ return customInstance<attachmentOperationsCreateShareLinkResponse>(getAttachment
 export const getAttachmentOperationsCreateShareLinkMutationKey = () => ['attachmentOperationsCreateShareLink'] as const;
 
 export const getAttachmentOperationsCreateShareLinkMutationOptions = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof attachmentOperationsCreateShareLink>>, TError,AttachmentOperationsCreateShareLinkMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof attachmentOperationsCreateShareLink>>, TError,AttachmentOperationsCreateShareLinkMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof attachmentOperationsCreateShareLink>>, TError,AttachmentOperationsCreateShareLinkMutationVariables, TContext> => {
 
 const mutationKey = getAttachmentOperationsCreateShareLinkMutationKey();
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -860,7 +858,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof attachmentOperationsCreateShareLink>>, AttachmentOperationsCreateShareLinkMutationVariables> = (props) => {
           const {attachmentId,data} = props ?? {};
 
-          return  attachmentOperationsCreateShareLink(attachmentId,data,requestOptions)
+          return  attachmentOperationsCreateShareLink(attachmentId,data,)
         }
 
 
@@ -877,7 +875,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
 
     /** 施術前後の写真や資料を外部パートナーや顧客と共有するためのリンクを発行します。必要に応じてパスワード保護も適用します。 */
 export const useAttachmentOperationsCreateShareLink = <TError = unknown,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof attachmentOperationsCreateShareLink>>, TError,AttachmentOperationsCreateShareLinkMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof attachmentOperationsCreateShareLink>>, TError,AttachmentOperationsCreateShareLinkMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof attachmentOperationsCreateShareLink>>,
         TError,
@@ -909,7 +907,7 @@ export const getAttachmentOperationsListShareLinksUrl = (attachmentId: string,) 
 /**
  * 対象ファイルに対して発行済みの共有リンクを一覧し、公開状況や有効期限の管理を行います。
  */
-export const attachmentOperationsListShareLinks = async (attachmentId: string, options?: Parameters<typeof customInstance>[1]): Promise<attachmentOperationsListShareLinksResponse> => {
+export const attachmentOperationsListShareLinks = async (attachmentId: string, options?: RequestInit): Promise<attachmentOperationsListShareLinksResponse> => {
 
   return customInstance<attachmentOperationsListShareLinksResponse>(getAttachmentOperationsListShareLinksUrl(attachmentId),
   {
@@ -931,16 +929,16 @@ export const getAttachmentOperationsListShareLinksQueryKey = (attachmentId: stri
     }
 
 
-export const getAttachmentOperationsListShareLinksQueryOptions = <TData = Awaited<ReturnType<typeof attachmentOperationsListShareLinks>>, TError = unknown>(attachmentId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof attachmentOperationsListShareLinks>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getAttachmentOperationsListShareLinksQueryOptions = <TData = Awaited<ReturnType<typeof attachmentOperationsListShareLinks>>, TError = unknown>(attachmentId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof attachmentOperationsListShareLinks>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getAttachmentOperationsListShareLinksQueryKey(attachmentId);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof attachmentOperationsListShareLinks>>> = ({ signal }) => attachmentOperationsListShareLinks(attachmentId, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof attachmentOperationsListShareLinks>>> = ({ signal }) => attachmentOperationsListShareLinks(attachmentId, { signal });
 
 
 
@@ -961,7 +959,7 @@ export function useAttachmentOperationsListShareLinks<TData = Awaited<ReturnType
           TError,
           Awaited<ReturnType<typeof attachmentOperationsListShareLinks>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** 対象ファイルに対して発行済みの共有リンクを一覧し、公開状況や有効期限の管理を行います。 */
@@ -972,17 +970,17 @@ export function useAttachmentOperationsListShareLinks<TData = Awaited<ReturnType
           TError,
           Awaited<ReturnType<typeof attachmentOperationsListShareLinks>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** 対象ファイルに対して発行済みの共有リンクを一覧し、公開状況や有効期限の管理を行います。 */
 export function useAttachmentOperationsListShareLinks<TData = Awaited<ReturnType<typeof attachmentOperationsListShareLinks>>, TError = unknown>(
- attachmentId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof attachmentOperationsListShareLinks>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ attachmentId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof attachmentOperationsListShareLinks>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /** 対象ファイルに対して発行済みの共有リンクを一覧し、公開状況や有効期限の管理を行います。 */
 export function useAttachmentOperationsListShareLinks<TData = Awaited<ReturnType<typeof attachmentOperationsListShareLinks>>, TError = unknown>(
- attachmentId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof attachmentOperationsListShareLinks>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ attachmentId: string, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof attachmentOperationsListShareLinks>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 

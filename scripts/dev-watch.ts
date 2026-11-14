@@ -1,11 +1,9 @@
-#!/usr/bin/env node --experimental-strip-types
-
-import { spawn } from "node:child_process"
-import { dirname, join } from "node:path"
-import { fileURLToPath } from "node:url"
+import { spawn } from 'node:child_process'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const rootDir = join(__dirname, "..")
+const rootDir = join(__dirname, '..')
 
 interface PackageGroup {
   name: string
@@ -17,34 +15,34 @@ interface PackageGroup {
 // Define package groups with their colors
 const PACKAGE_GROUPS: readonly PackageGroup[] = [
   {
-    name: "core",
-    filter: "./frontend/packages/{config,utils,validations}",
-    color: "yellow",
-    description: "Core utilities",
+    name: 'core',
+    filter: './frontend/packages/{config,utils,validations}',
+    color: 'yellow',
+    description: 'Core utilities',
   },
   {
-    name: "ui",
-    filter: "./frontend/packages/{theme,ui,assets}",
-    color: "magenta",
-    description: "UI libraries",
+    name: 'ui',
+    filter: './frontend/packages/{theme,ui,assets}',
+    color: 'magenta',
+    description: 'UI libraries',
   },
   {
-    name: "features",
-    filter: "./frontend/packages/{features,stores,api-client}",
-    color: "cyan",
-    description: "Feature modules",
+    name: 'features',
+    filter: './frontend/packages/{stores,api-client}',
+    color: 'cyan',
+    description: 'Feature modules',
   },
 ] as const
 
 // Parse command line arguments
 const args = process.argv.slice(2)
-const appName = args[0] || "admin-app"
+const appName = args[0] || 'admin-app'
 
 // Validate app name
-const validApps = ["admin-app", "portal-app", "dashboard-app"]
+const validApps = ['admin-app', 'portal-app', 'dashboard-app']
 if (!validApps.includes(appName)) {
   console.error(`❌ Invalid app name: ${appName}`)
-  console.error(`Valid options: ${validApps.join(", ")}`)
+  console.error(`Valid options: ${validApps.join(', ')}`)
   process.exit(1)
 }
 
@@ -65,28 +63,30 @@ for (const group of PACKAGE_GROUPS) {
 // Add app dev server
 concurrentCommands.push(`"pnpm --filter ${appFilter} dev"`)
 names.push(appName)
-colors.push("blue")
+colors.push('blue')
 
 // Build the final command
-const command = `concurrently ${concurrentCommands.join(" ")} --names "${names.join(",")}" --prefix-colors "${colors.join(",")}"`
+const command = `concurrently ${concurrentCommands.join(' ')} --names "${names.join(',')}" --prefix-colors "${colors.join(',')}"`
 
-console.log("🚀 Starting development environment...")
-console.log(`📦 Building packages: ${PACKAGE_GROUPS.map((g) => g.description).join(", ")}`)
+console.log('🚀 Starting development environment...')
+console.log(
+  `📦 Building packages: ${PACKAGE_GROUPS.map((g) => g.description).join(', ')}`,
+)
 console.log(`🎯 Running app: ${appName}`)
-console.log("")
+console.log('')
 
 // Execute the command
 const child = spawn(command, {
   shell: true,
-  stdio: "inherit",
+  stdio: 'inherit',
   cwd: rootDir,
 })
 
-child.on("error", (error: Error) => {
-  console.error("Failed to start:", error)
+child.on('error', (error: Error) => {
+  console.error('Failed to start:', error)
   process.exit(1)
 })
 
-child.on("exit", (code: number | null) => {
+child.on('exit', (code: number | null) => {
   process.exit(code ?? 0)
 })

@@ -33,79 +33,6 @@ import {
   users,
 } from './schema'
 
-export const bookingsRelations = relations(bookings, ({ one, many }) => ({
-  salon: one(salons, {
-    fields: [bookings.salonId],
-    references: [salons.id],
-  }),
-  customer: one(customers, {
-    fields: [bookings.customerId],
-    references: [customers.id],
-  }),
-  staff: one(staff, {
-    fields: [bookings.staffId],
-    references: [staff.id],
-  }),
-  bookingServices: many(bookingServices),
-  bookingStatusHistories: many(bookingStatusHistories),
-  sales: many(sales),
-  reviews: many(reviews),
-  treatmentRecords: many(treatmentRecords),
-}))
-
-export const salonsRelations = relations(salons, ({ many }) => ({
-  bookings: many(bookings),
-  services: many(services),
-  staff: many(staff),
-  dailySummaries: many(dailySummaries),
-  inventories: many(inventory),
-  products: many(products),
-  inventoryTransactions: many(inventoryTransactions),
-  membershipTiers: many(membershipTiers),
-  openingHours: many(openingHours),
-  paymentMethods: many(paymentMethods),
-  sales: many(sales),
-  reviews: many(reviews),
-  serviceCategories: many(serviceCategories),
-}))
-
-export const customersRelations = relations(customers, ({ one, many }) => ({
-  bookings: many(bookings),
-  customer: one(customers, {
-    fields: [customers.referredBy],
-    references: [customers.id],
-    relationName: 'customers_referredBy_customers_id',
-  }),
-  customers: many(customers, {
-    relationName: 'customers_referredBy_customers_id',
-  }),
-  customerAllergies: many(customerAllergies),
-  customerPoints: many(customerPoints),
-  customerPreferences: many(customerPreferences),
-  sales: many(sales),
-  reviews: many(reviews),
-  users: many(users),
-  treatmentRecords: many(treatmentRecords),
-}))
-
-export const staffRelations = relations(staff, ({ one, many }) => ({
-  bookings: many(bookings),
-  bookingServices: many(bookingServices),
-  salon: one(salons, {
-    fields: [staff.salonId],
-    references: [salons.id],
-  }),
-  customerPreferences: many(customerPreferences),
-  sales: many(sales),
-  reviews: many(reviews),
-  salesDetails: many(salesDetails),
-  users: many(users),
-  staffPerformances: many(staffPerformances),
-  staffSchedules: many(staffSchedules),
-  staffSkills: many(staffSkills),
-  treatmentRecords: many(treatmentRecords),
-}))
-
 export const bookingServicesRelations = relations(
   bookingServices,
   ({ one }) => ({
@@ -124,38 +51,6 @@ export const bookingServicesRelations = relations(
   }),
 )
 
-export const servicesRelations = relations(services, ({ one, many }) => ({
-  bookingServices: many(bookingServices),
-  salon: one(salons, {
-    fields: [services.salonId],
-    references: [salons.id],
-  }),
-  serviceCategory: one(serviceCategories, {
-    fields: [services.categoryId],
-    references: [serviceCategories.id],
-  }),
-  serviceOptions: many(serviceOptions),
-}))
-
-export const serviceCategoriesRelations = relations(
-  serviceCategories,
-  ({ one, many }) => ({
-    services: many(services),
-    salon: one(salons, {
-      fields: [serviceCategories.salonId],
-      references: [salons.id],
-    }),
-    serviceCategory: one(serviceCategories, {
-      fields: [serviceCategories.parentId],
-      references: [serviceCategories.id],
-      relationName: 'serviceCategories_parentId_serviceCategories_id',
-    }),
-    serviceCategories: many(serviceCategories, {
-      relationName: 'serviceCategories_parentId_serviceCategories_id',
-    }),
-  }),
-)
-
 export const bookingStatusHistoriesRelations = relations(
   bookingStatusHistories,
   ({ one }) => ({
@@ -165,6 +60,26 @@ export const bookingStatusHistoriesRelations = relations(
     }),
   }),
 )
+
+export const bookingsRelations = relations(bookings, ({ one, many }) => ({
+  bookingServices: many(bookingServices),
+  bookingStatusHistories: many(bookingStatusHistories),
+  customer: one(customers, {
+    fields: [bookings.customerId],
+    references: [customers.id],
+  }),
+  reviews: many(reviews),
+  sales: many(sales),
+  salon: one(salons, {
+    fields: [bookings.salonId],
+    references: [salons.id],
+  }),
+  staff: one(staff, {
+    fields: [bookings.staffId],
+    references: [staff.id],
+  }),
+  treatmentRecords: many(treatmentRecords),
+}))
 
 export const customerAllergiesRelations = relations(
   customerAllergies,
@@ -197,6 +112,25 @@ export const customerPreferencesRelations = relations(
   }),
 )
 
+export const customersRelations = relations(customers, ({ one, many }) => ({
+  bookings: many(bookings),
+  customer: one(customers, {
+    fields: [customers.referredBy],
+    references: [customers.id],
+    relationName: 'customers_referredBy_customers_id',
+  }),
+  customerAllergies: many(customerAllergies),
+  customerPoints: many(customerPoints),
+  customerPreferences: many(customerPreferences),
+  customers: many(customers, {
+    relationName: 'customers_referredBy_customers_id',
+  }),
+  reviews: many(reviews),
+  sales: many(sales),
+  treatmentRecords: many(treatmentRecords),
+  users: many(users),
+}))
+
 export const dailySummariesRelations = relations(dailySummaries, ({ one }) => ({
   salon: one(salons, {
     fields: [dailySummaries.salonId],
@@ -205,41 +139,31 @@ export const dailySummariesRelations = relations(dailySummaries, ({ one }) => ({
 }))
 
 export const inventoryRelations = relations(inventory, ({ one, many }) => ({
-  salon: one(salons, {
-    fields: [inventory.salonId],
-    references: [salons.id],
-  }),
+  inventoryTransactions: many(inventoryTransactions),
   product: one(products, {
     fields: [inventory.productId],
     references: [products.id],
   }),
-  inventoryTransactions: many(inventoryTransactions),
-}))
-
-export const productsRelations = relations(products, ({ one, many }) => ({
-  inventories: many(inventory),
   salon: one(salons, {
-    fields: [products.salonId],
+    fields: [inventory.salonId],
     references: [salons.id],
   }),
-  inventoryTransactions: many(inventoryTransactions),
-  treatmentMaterials: many(treatmentMaterials),
 }))
 
 export const inventoryTransactionsRelations = relations(
   inventoryTransactions,
   ({ one }) => ({
-    salon: one(salons, {
-      fields: [inventoryTransactions.salonId],
-      references: [salons.id],
+    inventory: one(inventory, {
+      fields: [inventoryTransactions.inventoryId],
+      references: [inventory.id],
     }),
     product: one(products, {
       fields: [inventoryTransactions.productId],
       references: [products.id],
     }),
-    inventory: one(inventory, {
-      fields: [inventoryTransactions.inventoryId],
-      references: [inventory.id],
+    salon: one(salons, {
+      fields: [inventoryTransactions.salonId],
+      references: [salons.id],
     }),
   }),
 )
@@ -264,61 +188,50 @@ export const openingHoursRelations = relations(openingHours, ({ one }) => ({
 export const paymentMethodsRelations = relations(
   paymentMethods,
   ({ one, many }) => ({
+    paymentTransactions: many(paymentTransactions),
     salon: one(salons, {
       fields: [paymentMethods.salonId],
       references: [salons.id],
     }),
-    paymentTransactions: many(paymentTransactions),
   }),
 )
-
-export const salesRelations = relations(sales, ({ one, many }) => ({
-  salon: one(salons, {
-    fields: [sales.salonId],
-    references: [salons.id],
-  }),
-  customer: one(customers, {
-    fields: [sales.customerId],
-    references: [customers.id],
-  }),
-  staff: one(staff, {
-    fields: [sales.staffId],
-    references: [staff.id],
-  }),
-  booking: one(bookings, {
-    fields: [sales.bookingId],
-    references: [bookings.id],
-  }),
-  paymentTransactions: many(paymentTransactions),
-  salesDetails: many(salesDetails),
-}))
 
 export const paymentTransactionsRelations = relations(
   paymentTransactions,
   ({ one }) => ({
-    sale: one(sales, {
-      fields: [paymentTransactions.saleId],
-      references: [sales.id],
-    }),
     paymentMethod: one(paymentMethods, {
       fields: [paymentTransactions.paymentMethodId],
       references: [paymentMethods.id],
     }),
+    sale: one(sales, {
+      fields: [paymentTransactions.saleId],
+      references: [sales.id],
+    }),
   }),
 )
 
-export const reviewsRelations = relations(reviews, ({ one }) => ({
+export const productsRelations = relations(products, ({ one, many }) => ({
+  inventories: many(inventory),
+  inventoryTransactions: many(inventoryTransactions),
   salon: one(salons, {
-    fields: [reviews.salonId],
+    fields: [products.salonId],
     references: [salons.id],
+  }),
+  treatmentMaterials: many(treatmentMaterials),
+}))
+
+export const reviewsRelations = relations(reviews, ({ one }) => ({
+  booking: one(bookings, {
+    fields: [reviews.bookingId],
+    references: [bookings.id],
   }),
   customer: one(customers, {
     fields: [reviews.customerId],
     references: [customers.id],
   }),
-  booking: one(bookings, {
-    fields: [reviews.bookingId],
-    references: [bookings.id],
+  salon: one(salons, {
+    fields: [reviews.salonId],
+    references: [salons.id],
   }),
   staff: one(staff, {
     fields: [reviews.staffId],
@@ -337,6 +250,62 @@ export const salesDetailsRelations = relations(salesDetails, ({ one }) => ({
   }),
 }))
 
+export const salesRelations = relations(sales, ({ one, many }) => ({
+  booking: one(bookings, {
+    fields: [sales.bookingId],
+    references: [bookings.id],
+  }),
+  customer: one(customers, {
+    fields: [sales.customerId],
+    references: [customers.id],
+  }),
+  paymentTransactions: many(paymentTransactions),
+  salesDetails: many(salesDetails),
+  salon: one(salons, {
+    fields: [sales.salonId],
+    references: [salons.id],
+  }),
+  staff: one(staff, {
+    fields: [sales.staffId],
+    references: [staff.id],
+  }),
+}))
+
+export const salonsRelations = relations(salons, ({ many }) => ({
+  bookings: many(bookings),
+  dailySummaries: many(dailySummaries),
+  inventories: many(inventory),
+  inventoryTransactions: many(inventoryTransactions),
+  membershipTiers: many(membershipTiers),
+  openingHours: many(openingHours),
+  paymentMethods: many(paymentMethods),
+  products: many(products),
+  reviews: many(reviews),
+  sales: many(sales),
+  serviceCategories: many(serviceCategories),
+  services: many(services),
+  staff: many(staff),
+}))
+
+export const serviceCategoriesRelations = relations(
+  serviceCategories,
+  ({ one, many }) => ({
+    salon: one(salons, {
+      fields: [serviceCategories.salonId],
+      references: [salons.id],
+    }),
+    serviceCategories: many(serviceCategories, {
+      relationName: 'serviceCategories_parentId_serviceCategories_id',
+    }),
+    serviceCategory: one(serviceCategories, {
+      fields: [serviceCategories.parentId],
+      references: [serviceCategories.id],
+      relationName: 'serviceCategories_parentId_serviceCategories_id',
+    }),
+    services: many(services),
+  }),
+)
+
 export const serviceOptionsRelations = relations(serviceOptions, ({ one }) => ({
   service: one(services, {
     fields: [serviceOptions.serviceId],
@@ -344,16 +313,17 @@ export const serviceOptionsRelations = relations(serviceOptions, ({ one }) => ({
   }),
 }))
 
-export const usersRelations = relations(users, ({ one, many }) => ({
-  customer: one(customers, {
-    fields: [users.customerId],
-    references: [customers.id],
+export const servicesRelations = relations(services, ({ one, many }) => ({
+  bookingServices: many(bookingServices),
+  salon: one(salons, {
+    fields: [services.salonId],
+    references: [salons.id],
   }),
-  staff: one(staff, {
-    fields: [users.staffId],
-    references: [staff.id],
+  serviceCategory: one(serviceCategories, {
+    fields: [services.categoryId],
+    references: [serviceCategories.id],
   }),
-  sessions: many(sessions),
+  serviceOptions: many(serviceOptions),
 }))
 
 export const sessionsRelations = relations(sessions, ({ one }) => ({
@@ -373,6 +343,24 @@ export const staffPerformancesRelations = relations(
   }),
 )
 
+export const staffRelations = relations(staff, ({ one, many }) => ({
+  bookingServices: many(bookingServices),
+  bookings: many(bookings),
+  customerPreferences: many(customerPreferences),
+  reviews: many(reviews),
+  sales: many(sales),
+  salesDetails: many(salesDetails),
+  salon: one(salons, {
+    fields: [staff.salonId],
+    references: [salons.id],
+  }),
+  staffPerformances: many(staffPerformances),
+  staffSchedules: many(staffSchedules),
+  staffSkills: many(staffSkills),
+  treatmentRecords: many(treatmentRecords),
+  users: many(users),
+}))
+
 export const staffSchedulesRelations = relations(staffSchedules, ({ one }) => ({
   staff: one(staff, {
     fields: [staffSchedules.staffId],
@@ -386,6 +374,30 @@ export const staffSkillsRelations = relations(staffSkills, ({ one }) => ({
     references: [staff.id],
   }),
 }))
+
+export const treatmentMaterialsRelations = relations(
+  treatmentMaterials,
+  ({ one }) => ({
+    product: one(products, {
+      fields: [treatmentMaterials.productId],
+      references: [products.id],
+    }),
+    treatmentRecord: one(treatmentRecords, {
+      fields: [treatmentMaterials.treatmentRecordId],
+      references: [treatmentRecords.id],
+    }),
+  }),
+)
+
+export const treatmentPhotosRelations = relations(
+  treatmentPhotos,
+  ({ one }) => ({
+    treatmentRecord: one(treatmentRecords, {
+      fields: [treatmentPhotos.treatmentRecordId],
+      references: [treatmentRecords.id],
+    }),
+  }),
+)
 
 export const treatmentRecordsRelations = relations(
   treatmentRecords,
@@ -407,26 +419,14 @@ export const treatmentRecordsRelations = relations(
   }),
 )
 
-export const treatmentMaterialsRelations = relations(
-  treatmentMaterials,
-  ({ one }) => ({
-    treatmentRecord: one(treatmentRecords, {
-      fields: [treatmentMaterials.treatmentRecordId],
-      references: [treatmentRecords.id],
-    }),
-    product: one(products, {
-      fields: [treatmentMaterials.productId],
-      references: [products.id],
-    }),
+export const usersRelations = relations(users, ({ one, many }) => ({
+  customer: one(customers, {
+    fields: [users.customerId],
+    references: [customers.id],
   }),
-)
-
-export const treatmentPhotosRelations = relations(
-  treatmentPhotos,
-  ({ one }) => ({
-    treatmentRecord: one(treatmentRecords, {
-      fields: [treatmentPhotos.treatmentRecordId],
-      references: [treatmentRecords.id],
-    }),
+  sessions: many(sessions),
+  staff: one(staff, {
+    fields: [users.staffId],
+    references: [staff.id],
   }),
-)
+}))

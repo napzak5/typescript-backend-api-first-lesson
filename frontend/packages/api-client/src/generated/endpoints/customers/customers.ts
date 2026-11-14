@@ -73,10 +73,8 @@ import type {
   ModelsProblemDetails
 } from '../../models';
 
-import { customInstance } from '../../../../../io/src/libs/fetcher/fetcher';
+import { customInstance } from '../../../mutator';
 
-
-type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 
 
@@ -143,7 +141,7 @@ export const getCustomerCrudListUrl = (params?: CustomerCrudListParams,) => {
  * ページネーションやフィルター条件を指定して対象リソースを一覧取得します。業務画面のリスト表示に利用します。
  * @summary List {Name} resources
  */
-export const customerCrudList = async (params?: CustomerCrudListParams, options?: Parameters<typeof customInstance>[1]): Promise<customerCrudListResponse> => {
+export const customerCrudList = async (params?: CustomerCrudListParams, options?: RequestInit): Promise<customerCrudListResponse> => {
 
   return customInstance<customerCrudListResponse>(getCustomerCrudListUrl(params),
   {
@@ -165,16 +163,16 @@ export const getCustomerCrudListQueryKey = (params?: CustomerCrudListParams,) =>
     }
 
 
-export const getCustomerCrudListQueryOptions = <TData = Awaited<ReturnType<typeof customerCrudList>>, TError = ModelsProblemDetails>(params?: CustomerCrudListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudList>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getCustomerCrudListQueryOptions = <TData = Awaited<ReturnType<typeof customerCrudList>>, TError = ModelsProblemDetails>(params?: CustomerCrudListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudList>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getCustomerCrudListQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof customerCrudList>>> = ({ signal }) => customerCrudList(params, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof customerCrudList>>> = ({ signal }) => customerCrudList(params, { signal });
 
 
 
@@ -198,7 +196,7 @@ export function useCustomerCrudList<TData = Awaited<ReturnType<typeof customerCr
           TError,
           Awaited<ReturnType<typeof customerCrudList>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -212,7 +210,7 @@ export function useCustomerCrudList<TData = Awaited<ReturnType<typeof customerCr
           TError,
           Awaited<ReturnType<typeof customerCrudList>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -220,7 +218,7 @@ export function useCustomerCrudList<TData = Awaited<ReturnType<typeof customerCr
  * @summary List {Name} resources
  */
 export function useCustomerCrudList<TData = Awaited<ReturnType<typeof customerCrudList>>, TError = ModelsProblemDetails>(
- params?: CustomerCrudListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudList>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ params?: CustomerCrudListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudList>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -228,7 +226,7 @@ export function useCustomerCrudList<TData = Awaited<ReturnType<typeof customerCr
  * @summary List {Name} resources
  */
 export function useCustomerCrudList<TData = Awaited<ReturnType<typeof customerCrudList>>, TError = ModelsProblemDetails>(
- params?: CustomerCrudListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudList>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ params?: CustomerCrudListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudList>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -290,7 +288,7 @@ export const getCustomerCrudCreateUrl = () => {
  * 新規リソースを作成し、作成時のバリデーションや重複チェック結果を返却します。
  * @summary Create new {Name}
  */
-export const customerCrudCreate = async (modelsCustomerCreateRequest: ModelsCustomerCreateRequest, options?: Parameters<typeof customInstance>[1]): Promise<customerCrudCreateResponse> => {
+export const customerCrudCreate = async (modelsCustomerCreateRequest: ModelsCustomerCreateRequest, options?: RequestInit): Promise<customerCrudCreateResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -322,15 +320,15 @@ return customInstance<customerCrudCreateResponse>(getCustomerCrudCreateUrl(),
 export const getCustomerCrudCreateMutationKey = () => ['customerCrudCreate'] as const;
 
 export const getCustomerCrudCreateMutationOptions = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerCrudCreate>>, TError,CustomerCrudCreateMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerCrudCreate>>, TError,CustomerCrudCreateMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof customerCrudCreate>>, TError,CustomerCrudCreateMutationVariables, TContext> => {
 
 const mutationKey = getCustomerCrudCreateMutationKey();
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -338,7 +336,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof customerCrudCreate>>, CustomerCrudCreateMutationVariables> = (props) => {
           const {data} = props ?? {};
 
-          return  customerCrudCreate(data,requestOptions)
+          return  customerCrudCreate(data,)
         }
 
 
@@ -358,7 +356,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  * @summary Create new {Name}
  */
 export const useCustomerCrudCreate = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerCrudCreate>>, TError,CustomerCrudCreateMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerCrudCreate>>, TError,CustomerCrudCreateMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof customerCrudCreate>>,
         TError,
@@ -403,7 +401,7 @@ export const getCustomerCrudBatchGetUrl = () => {
  * 複数IDをまとめて取得し、一覧画面の遅延読み込みや外部連携に利用します。
  * @summary Batch get {Name} resources
  */
-export const customerCrudBatchGet = async (modelsBatchGetRequest: ModelsBatchGetRequest, options?: Parameters<typeof customInstance>[1]): Promise<customerCrudBatchGetResponse> => {
+export const customerCrudBatchGet = async (modelsBatchGetRequest: ModelsBatchGetRequest, options?: RequestInit): Promise<customerCrudBatchGetResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -435,15 +433,15 @@ return customInstance<customerCrudBatchGetResponse>(getCustomerCrudBatchGetUrl()
 export const getCustomerCrudBatchGetMutationKey = () => ['customerCrudBatchGet'] as const;
 
 export const getCustomerCrudBatchGetMutationOptions = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerCrudBatchGet>>, TError,CustomerCrudBatchGetMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerCrudBatchGet>>, TError,CustomerCrudBatchGetMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof customerCrudBatchGet>>, TError,CustomerCrudBatchGetMutationVariables, TContext> => {
 
 const mutationKey = getCustomerCrudBatchGetMutationKey();
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -451,7 +449,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof customerCrudBatchGet>>, CustomerCrudBatchGetMutationVariables> = (props) => {
           const {data} = props ?? {};
 
-          return  customerCrudBatchGet(data,requestOptions)
+          return  customerCrudBatchGet(data,)
         }
 
 
@@ -471,7 +469,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  * @summary Batch get {Name} resources
  */
 export const useCustomerCrudBatchGet = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerCrudBatchGet>>, TError,CustomerCrudBatchGetMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerCrudBatchGet>>, TError,CustomerCrudBatchGetMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof customerCrudBatchGet>>,
         TError,
@@ -516,7 +514,7 @@ export const getCustomerCrudBulkCreateUrl = () => {
  * 複数リソースを一括作成し、結果を成功・失敗に分けて返却します。
  * @summary Bulk create {Name} resources
  */
-export const customerCrudBulkCreate = async (customerCrudBulkCreateBody: CustomerCrudBulkCreateBody, options?: Parameters<typeof customInstance>[1]): Promise<customerCrudBulkCreateResponse> => {
+export const customerCrudBulkCreate = async (customerCrudBulkCreateBody: CustomerCrudBulkCreateBody, options?: RequestInit): Promise<customerCrudBulkCreateResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -548,15 +546,15 @@ return customInstance<customerCrudBulkCreateResponse>(getCustomerCrudBulkCreateU
 export const getCustomerCrudBulkCreateMutationKey = () => ['customerCrudBulkCreate'] as const;
 
 export const getCustomerCrudBulkCreateMutationOptions = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerCrudBulkCreate>>, TError,CustomerCrudBulkCreateMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerCrudBulkCreate>>, TError,CustomerCrudBulkCreateMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof customerCrudBulkCreate>>, TError,CustomerCrudBulkCreateMutationVariables, TContext> => {
 
 const mutationKey = getCustomerCrudBulkCreateMutationKey();
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -564,7 +562,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof customerCrudBulkCreate>>, CustomerCrudBulkCreateMutationVariables> = (props) => {
           const {data} = props ?? {};
 
-          return  customerCrudBulkCreate(data,requestOptions)
+          return  customerCrudBulkCreate(data,)
         }
 
 
@@ -584,7 +582,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  * @summary Bulk create {Name} resources
  */
 export const useCustomerCrudBulkCreate = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerCrudBulkCreate>>, TError,CustomerCrudBulkCreateMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerCrudBulkCreate>>, TError,CustomerCrudBulkCreateMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof customerCrudBulkCreate>>,
         TError,
@@ -629,7 +627,7 @@ export const getCustomerCrudBulkUpdateUrl = () => {
  * 複数リソースの更新をまとめて受け付け、バージョン整合性を保ちながら処理します。
  * @summary Bulk update {Name} resources
  */
-export const customerCrudBulkUpdate = async (customerCrudBulkUpdateBody: CustomerCrudBulkUpdateBody, options?: Parameters<typeof customInstance>[1]): Promise<customerCrudBulkUpdateResponse> => {
+export const customerCrudBulkUpdate = async (customerCrudBulkUpdateBody: CustomerCrudBulkUpdateBody, options?: RequestInit): Promise<customerCrudBulkUpdateResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -661,15 +659,15 @@ return customInstance<customerCrudBulkUpdateResponse>(getCustomerCrudBulkUpdateU
 export const getCustomerCrudBulkUpdateMutationKey = () => ['customerCrudBulkUpdate'] as const;
 
 export const getCustomerCrudBulkUpdateMutationOptions = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerCrudBulkUpdate>>, TError,CustomerCrudBulkUpdateMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerCrudBulkUpdate>>, TError,CustomerCrudBulkUpdateMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof customerCrudBulkUpdate>>, TError,CustomerCrudBulkUpdateMutationVariables, TContext> => {
 
 const mutationKey = getCustomerCrudBulkUpdateMutationKey();
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -677,7 +675,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof customerCrudBulkUpdate>>, CustomerCrudBulkUpdateMutationVariables> = (props) => {
           const {data} = props ?? {};
 
-          return  customerCrudBulkUpdate(data,requestOptions)
+          return  customerCrudBulkUpdate(data,)
         }
 
 
@@ -697,7 +695,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  * @summary Bulk update {Name} resources
  */
 export const useCustomerCrudBulkUpdate = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerCrudBulkUpdate>>, TError,CustomerCrudBulkUpdateMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerCrudBulkUpdate>>, TError,CustomerCrudBulkUpdateMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof customerCrudBulkUpdate>>,
         TError,
@@ -742,7 +740,7 @@ export const getCustomerCrudBulkDeleteUrl = () => {
  * 複数リソースを一括削除し、成功可否ごとの結果を返却します。
  * @summary Bulk delete {Name} resources
  */
-export const customerCrudBulkDelete = async (customerCrudBulkDeleteBody: CustomerCrudBulkDeleteBody, options?: Parameters<typeof customInstance>[1]): Promise<customerCrudBulkDeleteResponse> => {
+export const customerCrudBulkDelete = async (customerCrudBulkDeleteBody: CustomerCrudBulkDeleteBody, options?: RequestInit): Promise<customerCrudBulkDeleteResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -774,15 +772,15 @@ return customInstance<customerCrudBulkDeleteResponse>(getCustomerCrudBulkDeleteU
 export const getCustomerCrudBulkDeleteMutationKey = () => ['customerCrudBulkDelete'] as const;
 
 export const getCustomerCrudBulkDeleteMutationOptions = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerCrudBulkDelete>>, TError,CustomerCrudBulkDeleteMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerCrudBulkDelete>>, TError,CustomerCrudBulkDeleteMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof customerCrudBulkDelete>>, TError,CustomerCrudBulkDeleteMutationVariables, TContext> => {
 
 const mutationKey = getCustomerCrudBulkDeleteMutationKey();
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -790,7 +788,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof customerCrudBulkDelete>>, CustomerCrudBulkDeleteMutationVariables> = (props) => {
           const {data} = props ?? {};
 
-          return  customerCrudBulkDelete(data,requestOptions)
+          return  customerCrudBulkDelete(data,)
         }
 
 
@@ -810,7 +808,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  * @summary Bulk delete {Name} resources
  */
 export const useCustomerCrudBulkDelete = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerCrudBulkDelete>>, TError,CustomerCrudBulkDeleteMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerCrudBulkDelete>>, TError,CustomerCrudBulkDeleteMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof customerCrudBulkDelete>>,
         TError,
@@ -855,7 +853,7 @@ export const getCustomerCrudExportUrl = () => {
  * 検索結果を指定形式でエクスポートし、帳票出力や外部共有に活用します。
  * @summary Export {Name} search results
  */
-export const customerCrudExport = async (customerCrudExportBody: CustomerCrudExportBody, options?: Parameters<typeof customInstance>[1]): Promise<customerCrudExportResponse> => {
+export const customerCrudExport = async (customerCrudExportBody: CustomerCrudExportBody, options?: RequestInit): Promise<customerCrudExportResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -887,15 +885,15 @@ return customInstance<customerCrudExportResponse>(getCustomerCrudExportUrl(),
 export const getCustomerCrudExportMutationKey = () => ['customerCrudExport'] as const;
 
 export const getCustomerCrudExportMutationOptions = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerCrudExport>>, TError,CustomerCrudExportMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerCrudExport>>, TError,CustomerCrudExportMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof customerCrudExport>>, TError,CustomerCrudExportMutationVariables, TContext> => {
 
 const mutationKey = getCustomerCrudExportMutationKey();
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -903,7 +901,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof customerCrudExport>>, CustomerCrudExportMutationVariables> = (props) => {
           const {data} = props ?? {};
 
-          return  customerCrudExport(data,requestOptions)
+          return  customerCrudExport(data,)
         }
 
 
@@ -923,7 +921,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  * @summary Export {Name} search results
  */
 export const useCustomerCrudExport = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerCrudExport>>, TError,CustomerCrudExportMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerCrudExport>>, TError,CustomerCrudExportMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof customerCrudExport>>,
         TError,
@@ -978,7 +976,7 @@ export const getCustomerOperationsMergeUrl = () => {
  * 重複登録された顧客レコードを統合し、履歴やポイントを一本化します。
  * @summary Merge customer records
  */
-export const customerOperationsMerge = async (customerOperationsMergeBody: CustomerOperationsMergeBody, options?: Parameters<typeof customInstance>[1]): Promise<customerOperationsMergeResponse> => {
+export const customerOperationsMerge = async (customerOperationsMergeBody: CustomerOperationsMergeBody, options?: RequestInit): Promise<customerOperationsMergeResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -1010,15 +1008,15 @@ return customInstance<customerOperationsMergeResponse>(getCustomerOperationsMerg
 export const getCustomerOperationsMergeMutationKey = () => ['customerOperationsMerge'] as const;
 
 export const getCustomerOperationsMergeMutationOptions = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerOperationsMerge>>, TError,CustomerOperationsMergeMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerOperationsMerge>>, TError,CustomerOperationsMergeMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof customerOperationsMerge>>, TError,CustomerOperationsMergeMutationVariables, TContext> => {
 
 const mutationKey = getCustomerOperationsMergeMutationKey();
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -1026,7 +1024,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof customerOperationsMerge>>, CustomerOperationsMergeMutationVariables> = (props) => {
           const {data} = props ?? {};
 
-          return  customerOperationsMerge(data,requestOptions)
+          return  customerOperationsMerge(data,)
         }
 
 
@@ -1046,7 +1044,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  * @summary Merge customer records
  */
 export const useCustomerOperationsMerge = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerOperationsMerge>>, TError,CustomerOperationsMergeMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerOperationsMerge>>, TError,CustomerOperationsMergeMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof customerOperationsMerge>>,
         TError,
@@ -1098,7 +1096,7 @@ export const getCustomerCrudSearchUrl = (params?: CustomerCrudSearchParams,) => 
  * ファセットや複合条件を利用してリソースを検索し、結果と統計情報を返却します。
  * @summary Search {Name} resources
  */
-export const customerCrudSearch = async (params?: CustomerCrudSearchParams, options?: Parameters<typeof customInstance>[1]): Promise<customerCrudSearchResponse> => {
+export const customerCrudSearch = async (params?: CustomerCrudSearchParams, options?: RequestInit): Promise<customerCrudSearchResponse> => {
 
   return customInstance<customerCrudSearchResponse>(getCustomerCrudSearchUrl(params),
   {
@@ -1120,16 +1118,16 @@ export const getCustomerCrudSearchQueryKey = (params?: CustomerCrudSearchParams,
     }
 
 
-export const getCustomerCrudSearchQueryOptions = <TData = Awaited<ReturnType<typeof customerCrudSearch>>, TError = ModelsProblemDetails>(params?: CustomerCrudSearchParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudSearch>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getCustomerCrudSearchQueryOptions = <TData = Awaited<ReturnType<typeof customerCrudSearch>>, TError = ModelsProblemDetails>(params?: CustomerCrudSearchParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudSearch>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getCustomerCrudSearchQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof customerCrudSearch>>> = ({ signal }) => customerCrudSearch(params, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof customerCrudSearch>>> = ({ signal }) => customerCrudSearch(params, { signal });
 
 
 
@@ -1153,7 +1151,7 @@ export function useCustomerCrudSearch<TData = Awaited<ReturnType<typeof customer
           TError,
           Awaited<ReturnType<typeof customerCrudSearch>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -1167,7 +1165,7 @@ export function useCustomerCrudSearch<TData = Awaited<ReturnType<typeof customer
           TError,
           Awaited<ReturnType<typeof customerCrudSearch>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -1175,7 +1173,7 @@ export function useCustomerCrudSearch<TData = Awaited<ReturnType<typeof customer
  * @summary Search {Name} resources
  */
 export function useCustomerCrudSearch<TData = Awaited<ReturnType<typeof customerCrudSearch>>, TError = ModelsProblemDetails>(
- params?: CustomerCrudSearchParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudSearch>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ params?: CustomerCrudSearchParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudSearch>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -1183,7 +1181,7 @@ export function useCustomerCrudSearch<TData = Awaited<ReturnType<typeof customer
  * @summary Search {Name} resources
  */
 export function useCustomerCrudSearch<TData = Awaited<ReturnType<typeof customerCrudSearch>>, TError = ModelsProblemDetails>(
- params?: CustomerCrudSearchParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudSearch>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ params?: CustomerCrudSearchParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudSearch>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -1249,7 +1247,7 @@ export const getCustomerCrudGetUrl = (id: ModelsCustomerId,
  * @summary Get {Name} by ID
  */
 export const customerCrudGet = async (id: ModelsCustomerId,
-    params?: CustomerCrudGetParams, options?: Parameters<typeof customInstance>[1]): Promise<customerCrudGetResponse> => {
+    params?: CustomerCrudGetParams, options?: RequestInit): Promise<customerCrudGetResponse> => {
 
   return customInstance<customerCrudGetResponse>(getCustomerCrudGetUrl(id,params),
   {
@@ -1273,16 +1271,16 @@ export const getCustomerCrudGetQueryKey = (id: ModelsCustomerId,
 
 
 export const getCustomerCrudGetQueryOptions = <TData = Awaited<ReturnType<typeof customerCrudGet>>, TError = void | ModelsProblemDetails>(id: ModelsCustomerId,
-    params?: CustomerCrudGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudGet>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+    params?: CustomerCrudGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudGet>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getCustomerCrudGetQueryKey(id,params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof customerCrudGet>>> = ({ signal }) => customerCrudGet(id,params, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof customerCrudGet>>> = ({ signal }) => customerCrudGet(id,params, { signal });
 
 
 
@@ -1307,7 +1305,7 @@ export function useCustomerCrudGet<TData = Awaited<ReturnType<typeof customerCru
           TError,
           Awaited<ReturnType<typeof customerCrudGet>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -1322,7 +1320,7 @@ export function useCustomerCrudGet<TData = Awaited<ReturnType<typeof customerCru
           TError,
           Awaited<ReturnType<typeof customerCrudGet>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -1331,7 +1329,7 @@ export function useCustomerCrudGet<TData = Awaited<ReturnType<typeof customerCru
  */
 export function useCustomerCrudGet<TData = Awaited<ReturnType<typeof customerCrudGet>>, TError = void | ModelsProblemDetails>(
  id: ModelsCustomerId,
-    params?: CustomerCrudGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudGet>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+    params?: CustomerCrudGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudGet>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -1340,7 +1338,7 @@ export function useCustomerCrudGet<TData = Awaited<ReturnType<typeof customerCru
  */
 export function useCustomerCrudGet<TData = Awaited<ReturnType<typeof customerCrudGet>>, TError = void | ModelsProblemDetails>(
  id: ModelsCustomerId,
-    params?: CustomerCrudGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudGet>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+    params?: CustomerCrudGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudGet>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -1408,7 +1406,7 @@ export const getCustomerCrudUpdateUrl = (id: ModelsCustomerId,) => {
  * @summary Update {Name}
  */
 export const customerCrudUpdate = async (id: ModelsCustomerId,
-    modelsCustomerUpdateRequest: ModelsCustomerUpdateRequest, options?: Parameters<typeof customInstance>[1]): Promise<customerCrudUpdateResponse> => {
+    modelsCustomerUpdateRequest: ModelsCustomerUpdateRequest, options?: RequestInit): Promise<customerCrudUpdateResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -1440,15 +1438,15 @@ return customInstance<customerCrudUpdateResponse>(getCustomerCrudUpdateUrl(id),
 export const getCustomerCrudUpdateMutationKey = () => ['customerCrudUpdate'] as const;
 
 export const getCustomerCrudUpdateMutationOptions = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerCrudUpdate>>, TError,CustomerCrudUpdateMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerCrudUpdate>>, TError,CustomerCrudUpdateMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof customerCrudUpdate>>, TError,CustomerCrudUpdateMutationVariables, TContext> => {
 
 const mutationKey = getCustomerCrudUpdateMutationKey();
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -1456,7 +1454,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof customerCrudUpdate>>, CustomerCrudUpdateMutationVariables> = (props) => {
           const {id,data} = props ?? {};
 
-          return  customerCrudUpdate(id,data,requestOptions)
+          return  customerCrudUpdate(id,data,)
         }
 
 
@@ -1476,7 +1474,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  * @summary Update {Name}
  */
 export const useCustomerCrudUpdate = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerCrudUpdate>>, TError,CustomerCrudUpdateMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerCrudUpdate>>, TError,CustomerCrudUpdateMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof customerCrudUpdate>>,
         TError,
@@ -1546,7 +1544,7 @@ export const getCustomerCrudPatchUrl = (id: ModelsCustomerId,
  */
 export const customerCrudPatch = async (id: ModelsCustomerId,
     modelsCustomerUpdateRequestUpdate: ModelsCustomerUpdateRequestUpdate,
-    params?: CustomerCrudPatchParams, options?: Parameters<typeof customInstance>[1]): Promise<customerCrudPatchResponse> => {
+    params?: CustomerCrudPatchParams, options?: RequestInit): Promise<customerCrudPatchResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -1578,15 +1576,15 @@ return customInstance<customerCrudPatchResponse>(getCustomerCrudPatchUrl(id,para
 export const getCustomerCrudPatchMutationKey = () => ['customerCrudPatch'] as const;
 
 export const getCustomerCrudPatchMutationOptions = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerCrudPatch>>, TError,CustomerCrudPatchMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerCrudPatch>>, TError,CustomerCrudPatchMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof customerCrudPatch>>, TError,CustomerCrudPatchMutationVariables, TContext> => {
 
 const mutationKey = getCustomerCrudPatchMutationKey();
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -1594,7 +1592,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof customerCrudPatch>>, CustomerCrudPatchMutationVariables> = (props) => {
           const {id,data,params} = props ?? {};
 
-          return  customerCrudPatch(id,data,params,requestOptions)
+          return  customerCrudPatch(id,data,params,)
         }
 
 
@@ -1614,7 +1612,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  * @summary Partially update {Name}
  */
 export const useCustomerCrudPatch = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerCrudPatch>>, TError,CustomerCrudPatchMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerCrudPatch>>, TError,CustomerCrudPatchMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof customerCrudPatch>>,
         TError,
@@ -1673,7 +1671,7 @@ export const getCustomerCrudDeleteUrl = (id: ModelsCustomerId,
  * @summary Delete {Name}
  */
 export const customerCrudDelete = async (id: ModelsCustomerId,
-    params?: CustomerCrudDeleteParams, options?: Parameters<typeof customInstance>[1]): Promise<customerCrudDeleteResponse> => {
+    params?: CustomerCrudDeleteParams, options?: RequestInit): Promise<customerCrudDeleteResponse> => {
 
   return customInstance<customerCrudDeleteResponse>(getCustomerCrudDeleteUrl(id,params),
   {
@@ -1691,15 +1689,15 @@ export const customerCrudDelete = async (id: ModelsCustomerId,
 export const getCustomerCrudDeleteMutationKey = () => ['customerCrudDelete'] as const;
 
 export const getCustomerCrudDeleteMutationOptions = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerCrudDelete>>, TError,CustomerCrudDeleteMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerCrudDelete>>, TError,CustomerCrudDeleteMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof customerCrudDelete>>, TError,CustomerCrudDeleteMutationVariables, TContext> => {
 
 const mutationKey = getCustomerCrudDeleteMutationKey();
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -1707,7 +1705,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof customerCrudDelete>>, CustomerCrudDeleteMutationVariables> = (props) => {
           const {id,params} = props ?? {};
 
-          return  customerCrudDelete(id,params,requestOptions)
+          return  customerCrudDelete(id,params,)
         }
 
 
@@ -1727,7 +1725,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  * @summary Delete {Name}
  */
 export const useCustomerCrudDelete = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerCrudDelete>>, TError,CustomerCrudDeleteMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerCrudDelete>>, TError,CustomerCrudDeleteMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof customerCrudDelete>>,
         TError,
@@ -1781,7 +1779,7 @@ export const getCustomerOperationsGetBookingsUrl = (id: ModelsCustomerId,
  * @summary Get customer bookings
  */
 export const customerOperationsGetBookings = async (id: ModelsCustomerId,
-    params?: CustomerOperationsGetBookingsParams, options?: Parameters<typeof customInstance>[1]): Promise<customerOperationsGetBookingsResponse> => {
+    params?: CustomerOperationsGetBookingsParams, options?: RequestInit): Promise<customerOperationsGetBookingsResponse> => {
 
   return customInstance<customerOperationsGetBookingsResponse>(getCustomerOperationsGetBookingsUrl(id,params),
   {
@@ -1805,16 +1803,16 @@ export const getCustomerOperationsGetBookingsQueryKey = (id: ModelsCustomerId,
 
 
 export const getCustomerOperationsGetBookingsQueryOptions = <TData = Awaited<ReturnType<typeof customerOperationsGetBookings>>, TError = ModelsProblemDetails>(id: ModelsCustomerId,
-    params?: CustomerOperationsGetBookingsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerOperationsGetBookings>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+    params?: CustomerOperationsGetBookingsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerOperationsGetBookings>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getCustomerOperationsGetBookingsQueryKey(id,params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof customerOperationsGetBookings>>> = ({ signal }) => customerOperationsGetBookings(id,params, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof customerOperationsGetBookings>>> = ({ signal }) => customerOperationsGetBookings(id,params, { signal });
 
 
 
@@ -1839,7 +1837,7 @@ export function useCustomerOperationsGetBookings<TData = Awaited<ReturnType<type
           TError,
           Awaited<ReturnType<typeof customerOperationsGetBookings>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -1854,7 +1852,7 @@ export function useCustomerOperationsGetBookings<TData = Awaited<ReturnType<type
           TError,
           Awaited<ReturnType<typeof customerOperationsGetBookings>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -1863,7 +1861,7 @@ export function useCustomerOperationsGetBookings<TData = Awaited<ReturnType<type
  */
 export function useCustomerOperationsGetBookings<TData = Awaited<ReturnType<typeof customerOperationsGetBookings>>, TError = ModelsProblemDetails>(
  id: ModelsCustomerId,
-    params?: CustomerOperationsGetBookingsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerOperationsGetBookings>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+    params?: CustomerOperationsGetBookingsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerOperationsGetBookings>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -1872,7 +1870,7 @@ export function useCustomerOperationsGetBookings<TData = Awaited<ReturnType<type
  */
 export function useCustomerOperationsGetBookings<TData = Awaited<ReturnType<typeof customerOperationsGetBookings>>, TError = ModelsProblemDetails>(
  id: ModelsCustomerId,
-    params?: CustomerOperationsGetBookingsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerOperationsGetBookings>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+    params?: CustomerOperationsGetBookingsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerOperationsGetBookings>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -1930,7 +1928,7 @@ export const getCustomerOperationsRequestDeletionUrl = (id: ModelsCustomerId,) =
  * @summary Request customer data deletion
  */
 export const customerOperationsRequestDeletion = async (id: ModelsCustomerId,
-    customerOperationsRequestDeletionBody: CustomerOperationsRequestDeletionBody, options?: Parameters<typeof customInstance>[1]): Promise<customerOperationsRequestDeletionResponse> => {
+    customerOperationsRequestDeletionBody: CustomerOperationsRequestDeletionBody, options?: RequestInit): Promise<customerOperationsRequestDeletionResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -1962,15 +1960,15 @@ return customInstance<customerOperationsRequestDeletionResponse>(getCustomerOper
 export const getCustomerOperationsRequestDeletionMutationKey = () => ['customerOperationsRequestDeletion'] as const;
 
 export const getCustomerOperationsRequestDeletionMutationOptions = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerOperationsRequestDeletion>>, TError,CustomerOperationsRequestDeletionMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerOperationsRequestDeletion>>, TError,CustomerOperationsRequestDeletionMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof customerOperationsRequestDeletion>>, TError,CustomerOperationsRequestDeletionMutationVariables, TContext> => {
 
 const mutationKey = getCustomerOperationsRequestDeletionMutationKey();
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -1978,7 +1976,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof customerOperationsRequestDeletion>>, CustomerOperationsRequestDeletionMutationVariables> = (props) => {
           const {id,data} = props ?? {};
 
-          return  customerOperationsRequestDeletion(id,data,requestOptions)
+          return  customerOperationsRequestDeletion(id,data,)
         }
 
 
@@ -1998,7 +1996,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  * @summary Request customer data deletion
  */
 export const useCustomerOperationsRequestDeletion = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerOperationsRequestDeletion>>, TError,CustomerOperationsRequestDeletionMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerOperationsRequestDeletion>>, TError,CustomerOperationsRequestDeletionMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof customerOperationsRequestDeletion>>,
         TError,
@@ -2052,7 +2050,7 @@ export const getCustomerOperationsExportDataUrl = (id: ModelsCustomerId,
  * @summary Export customer data
  */
 export const customerOperationsExportData = async (id: ModelsCustomerId,
-    params?: CustomerOperationsExportDataParams, options?: Parameters<typeof customInstance>[1]): Promise<customerOperationsExportDataResponse> => {
+    params?: CustomerOperationsExportDataParams, options?: RequestInit): Promise<customerOperationsExportDataResponse> => {
 
   return customInstance<customerOperationsExportDataResponse>(getCustomerOperationsExportDataUrl(id,params),
   {
@@ -2076,16 +2074,16 @@ export const getCustomerOperationsExportDataQueryKey = (id: ModelsCustomerId,
 
 
 export const getCustomerOperationsExportDataQueryOptions = <TData = Awaited<ReturnType<typeof customerOperationsExportData>>, TError = ModelsProblemDetails>(id: ModelsCustomerId,
-    params?: CustomerOperationsExportDataParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerOperationsExportData>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+    params?: CustomerOperationsExportDataParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerOperationsExportData>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getCustomerOperationsExportDataQueryKey(id,params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof customerOperationsExportData>>> = ({ signal }) => customerOperationsExportData(id,params, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof customerOperationsExportData>>> = ({ signal }) => customerOperationsExportData(id,params, { signal });
 
 
 
@@ -2110,7 +2108,7 @@ export function useCustomerOperationsExportData<TData = Awaited<ReturnType<typeo
           TError,
           Awaited<ReturnType<typeof customerOperationsExportData>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -2125,7 +2123,7 @@ export function useCustomerOperationsExportData<TData = Awaited<ReturnType<typeo
           TError,
           Awaited<ReturnType<typeof customerOperationsExportData>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -2134,7 +2132,7 @@ export function useCustomerOperationsExportData<TData = Awaited<ReturnType<typeo
  */
 export function useCustomerOperationsExportData<TData = Awaited<ReturnType<typeof customerOperationsExportData>>, TError = ModelsProblemDetails>(
  id: ModelsCustomerId,
-    params?: CustomerOperationsExportDataParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerOperationsExportData>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+    params?: CustomerOperationsExportDataParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerOperationsExportData>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -2143,7 +2141,7 @@ export function useCustomerOperationsExportData<TData = Awaited<ReturnType<typeo
  */
 export function useCustomerOperationsExportData<TData = Awaited<ReturnType<typeof customerOperationsExportData>>, TError = ModelsProblemDetails>(
  id: ModelsCustomerId,
-    params?: CustomerOperationsExportDataParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerOperationsExportData>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+    params?: CustomerOperationsExportDataParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerOperationsExportData>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -2204,7 +2202,7 @@ export const getCustomerCrudGetHistoryUrl = (id: ModelsCustomerId,
  * @summary Get {Name} audit history
  */
 export const customerCrudGetHistory = async (id: ModelsCustomerId,
-    params?: CustomerCrudGetHistoryParams, options?: Parameters<typeof customInstance>[1]): Promise<customerCrudGetHistoryResponse> => {
+    params?: CustomerCrudGetHistoryParams, options?: RequestInit): Promise<customerCrudGetHistoryResponse> => {
 
   return customInstance<customerCrudGetHistoryResponse>(getCustomerCrudGetHistoryUrl(id,params),
   {
@@ -2228,16 +2226,16 @@ export const getCustomerCrudGetHistoryQueryKey = (id: ModelsCustomerId,
 
 
 export const getCustomerCrudGetHistoryQueryOptions = <TData = Awaited<ReturnType<typeof customerCrudGetHistory>>, TError = ModelsProblemDetails>(id: ModelsCustomerId,
-    params?: CustomerCrudGetHistoryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudGetHistory>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+    params?: CustomerCrudGetHistoryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudGetHistory>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getCustomerCrudGetHistoryQueryKey(id,params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof customerCrudGetHistory>>> = ({ signal }) => customerCrudGetHistory(id,params, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof customerCrudGetHistory>>> = ({ signal }) => customerCrudGetHistory(id,params, { signal });
 
 
 
@@ -2262,7 +2260,7 @@ export function useCustomerCrudGetHistory<TData = Awaited<ReturnType<typeof cust
           TError,
           Awaited<ReturnType<typeof customerCrudGetHistory>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -2277,7 +2275,7 @@ export function useCustomerCrudGetHistory<TData = Awaited<ReturnType<typeof cust
           TError,
           Awaited<ReturnType<typeof customerCrudGetHistory>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -2286,7 +2284,7 @@ export function useCustomerCrudGetHistory<TData = Awaited<ReturnType<typeof cust
  */
 export function useCustomerCrudGetHistory<TData = Awaited<ReturnType<typeof customerCrudGetHistory>>, TError = ModelsProblemDetails>(
  id: ModelsCustomerId,
-    params?: CustomerCrudGetHistoryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudGetHistory>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+    params?: CustomerCrudGetHistoryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudGetHistory>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -2295,7 +2293,7 @@ export function useCustomerCrudGetHistory<TData = Awaited<ReturnType<typeof cust
  */
 export function useCustomerCrudGetHistory<TData = Awaited<ReturnType<typeof customerCrudGetHistory>>, TError = ModelsProblemDetails>(
  id: ModelsCustomerId,
-    params?: CustomerCrudGetHistoryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudGetHistory>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+    params?: CustomerCrudGetHistoryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudGetHistory>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -2353,7 +2351,7 @@ export const getCustomerOperationsAddLoyaltyPointsUrl = (id: ModelsCustomerId,) 
  * @summary Add loyalty points
  */
 export const customerOperationsAddLoyaltyPoints = async (id: ModelsCustomerId,
-    customerOperationsAddLoyaltyPointsBody: CustomerOperationsAddLoyaltyPointsBody, options?: Parameters<typeof customInstance>[1]): Promise<customerOperationsAddLoyaltyPointsResponse> => {
+    customerOperationsAddLoyaltyPointsBody: CustomerOperationsAddLoyaltyPointsBody, options?: RequestInit): Promise<customerOperationsAddLoyaltyPointsResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -2385,15 +2383,15 @@ return customInstance<customerOperationsAddLoyaltyPointsResponse>(getCustomerOpe
 export const getCustomerOperationsAddLoyaltyPointsMutationKey = () => ['customerOperationsAddLoyaltyPoints'] as const;
 
 export const getCustomerOperationsAddLoyaltyPointsMutationOptions = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerOperationsAddLoyaltyPoints>>, TError,CustomerOperationsAddLoyaltyPointsMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerOperationsAddLoyaltyPoints>>, TError,CustomerOperationsAddLoyaltyPointsMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof customerOperationsAddLoyaltyPoints>>, TError,CustomerOperationsAddLoyaltyPointsMutationVariables, TContext> => {
 
 const mutationKey = getCustomerOperationsAddLoyaltyPointsMutationKey();
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -2401,7 +2399,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof customerOperationsAddLoyaltyPoints>>, CustomerOperationsAddLoyaltyPointsMutationVariables> = (props) => {
           const {id,data} = props ?? {};
 
-          return  customerOperationsAddLoyaltyPoints(id,data,requestOptions)
+          return  customerOperationsAddLoyaltyPoints(id,data,)
         }
 
 
@@ -2421,7 +2419,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  * @summary Add loyalty points
  */
 export const useCustomerOperationsAddLoyaltyPoints = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerOperationsAddLoyaltyPoints>>, TError,CustomerOperationsAddLoyaltyPointsMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerOperationsAddLoyaltyPoints>>, TError,CustomerOperationsAddLoyaltyPointsMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof customerOperationsAddLoyaltyPoints>>,
         TError,
@@ -2472,7 +2470,7 @@ export const getCustomerOperationsUpdatePreferencesUrl = (id: ModelsCustomerId,)
  * @summary Update customer preferences
  */
 export const customerOperationsUpdatePreferences = async (id: ModelsCustomerId,
-    modelsCustomerPreferencesUpdateRequest: ModelsCustomerPreferencesUpdateRequest, options?: Parameters<typeof customInstance>[1]): Promise<customerOperationsUpdatePreferencesResponse> => {
+    modelsCustomerPreferencesUpdateRequest: ModelsCustomerPreferencesUpdateRequest, options?: RequestInit): Promise<customerOperationsUpdatePreferencesResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -2504,15 +2502,15 @@ return customInstance<customerOperationsUpdatePreferencesResponse>(getCustomerOp
 export const getCustomerOperationsUpdatePreferencesMutationKey = () => ['customerOperationsUpdatePreferences'] as const;
 
 export const getCustomerOperationsUpdatePreferencesMutationOptions = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerOperationsUpdatePreferences>>, TError,CustomerOperationsUpdatePreferencesMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerOperationsUpdatePreferences>>, TError,CustomerOperationsUpdatePreferencesMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof customerOperationsUpdatePreferences>>, TError,CustomerOperationsUpdatePreferencesMutationVariables, TContext> => {
 
 const mutationKey = getCustomerOperationsUpdatePreferencesMutationKey();
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -2520,7 +2518,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof customerOperationsUpdatePreferences>>, CustomerOperationsUpdatePreferencesMutationVariables> = (props) => {
           const {id,data} = props ?? {};
 
-          return  customerOperationsUpdatePreferences(id,data,requestOptions)
+          return  customerOperationsUpdatePreferences(id,data,)
         }
 
 
@@ -2540,7 +2538,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  * @summary Update customer preferences
  */
 export const useCustomerOperationsUpdatePreferences = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerOperationsUpdatePreferences>>, TError,CustomerOperationsUpdatePreferencesMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerOperationsUpdatePreferences>>, TError,CustomerOperationsUpdatePreferencesMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof customerOperationsUpdatePreferences>>,
         TError,
@@ -2585,7 +2583,7 @@ export const getCustomerOperationsGetProfileUrl = (id: ModelsCustomerId,) => {
  * 顧客の基本情報に加え、嗜好や連絡先など拡張情報を取得し、パーソナライズ対応に活かします。
  * @summary Get customer profile
  */
-export const customerOperationsGetProfile = async (id: ModelsCustomerId, options?: Parameters<typeof customInstance>[1]): Promise<customerOperationsGetProfileResponse> => {
+export const customerOperationsGetProfile = async (id: ModelsCustomerId, options?: RequestInit): Promise<customerOperationsGetProfileResponse> => {
 
   return customInstance<customerOperationsGetProfileResponse>(getCustomerOperationsGetProfileUrl(id),
   {
@@ -2607,16 +2605,16 @@ export const getCustomerOperationsGetProfileQueryKey = (id: ModelsCustomerId,) =
     }
 
 
-export const getCustomerOperationsGetProfileQueryOptions = <TData = Awaited<ReturnType<typeof customerOperationsGetProfile>>, TError = ModelsProblemDetails>(id: ModelsCustomerId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerOperationsGetProfile>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+export const getCustomerOperationsGetProfileQueryOptions = <TData = Awaited<ReturnType<typeof customerOperationsGetProfile>>, TError = ModelsProblemDetails>(id: ModelsCustomerId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerOperationsGetProfile>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getCustomerOperationsGetProfileQueryKey(id);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof customerOperationsGetProfile>>> = ({ signal }) => customerOperationsGetProfile(id, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof customerOperationsGetProfile>>> = ({ signal }) => customerOperationsGetProfile(id, { signal });
 
 
 
@@ -2640,7 +2638,7 @@ export function useCustomerOperationsGetProfile<TData = Awaited<ReturnType<typeo
           TError,
           Awaited<ReturnType<typeof customerOperationsGetProfile>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -2654,7 +2652,7 @@ export function useCustomerOperationsGetProfile<TData = Awaited<ReturnType<typeo
           TError,
           Awaited<ReturnType<typeof customerOperationsGetProfile>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -2662,7 +2660,7 @@ export function useCustomerOperationsGetProfile<TData = Awaited<ReturnType<typeo
  * @summary Get customer profile
  */
 export function useCustomerOperationsGetProfile<TData = Awaited<ReturnType<typeof customerOperationsGetProfile>>, TError = ModelsProblemDetails>(
- id: ModelsCustomerId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerOperationsGetProfile>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ id: ModelsCustomerId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerOperationsGetProfile>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -2670,7 +2668,7 @@ export function useCustomerOperationsGetProfile<TData = Awaited<ReturnType<typeo
  * @summary Get customer profile
  */
 export function useCustomerOperationsGetProfile<TData = Awaited<ReturnType<typeof customerOperationsGetProfile>>, TError = ModelsProblemDetails>(
- id: ModelsCustomerId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerOperationsGetProfile>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+ id: ModelsCustomerId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerOperationsGetProfile>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -2731,7 +2729,7 @@ export const getCustomerOperationsGetReservationsUrl = (id: ModelsCustomerId,
  * @summary Get customer reservations
  */
 export const customerOperationsGetReservations = async (id: ModelsCustomerId,
-    params?: CustomerOperationsGetReservationsParams, options?: Parameters<typeof customInstance>[1]): Promise<customerOperationsGetReservationsResponse> => {
+    params?: CustomerOperationsGetReservationsParams, options?: RequestInit): Promise<customerOperationsGetReservationsResponse> => {
 
   return customInstance<customerOperationsGetReservationsResponse>(getCustomerOperationsGetReservationsUrl(id,params),
   {
@@ -2755,16 +2753,16 @@ export const getCustomerOperationsGetReservationsQueryKey = (id: ModelsCustomerI
 
 
 export const getCustomerOperationsGetReservationsQueryOptions = <TData = Awaited<ReturnType<typeof customerOperationsGetReservations>>, TError = ModelsProblemDetails>(id: ModelsCustomerId,
-    params?: CustomerOperationsGetReservationsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerOperationsGetReservations>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+    params?: CustomerOperationsGetReservationsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerOperationsGetReservations>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getCustomerOperationsGetReservationsQueryKey(id,params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof customerOperationsGetReservations>>> = ({ signal }) => customerOperationsGetReservations(id,params, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof customerOperationsGetReservations>>> = ({ signal }) => customerOperationsGetReservations(id,params, { signal });
 
 
 
@@ -2789,7 +2787,7 @@ export function useCustomerOperationsGetReservations<TData = Awaited<ReturnType<
           TError,
           Awaited<ReturnType<typeof customerOperationsGetReservations>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -2804,7 +2802,7 @@ export function useCustomerOperationsGetReservations<TData = Awaited<ReturnType<
           TError,
           Awaited<ReturnType<typeof customerOperationsGetReservations>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -2813,7 +2811,7 @@ export function useCustomerOperationsGetReservations<TData = Awaited<ReturnType<
  */
 export function useCustomerOperationsGetReservations<TData = Awaited<ReturnType<typeof customerOperationsGetReservations>>, TError = ModelsProblemDetails>(
  id: ModelsCustomerId,
-    params?: CustomerOperationsGetReservationsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerOperationsGetReservations>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+    params?: CustomerOperationsGetReservationsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerOperationsGetReservations>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -2822,7 +2820,7 @@ export function useCustomerOperationsGetReservations<TData = Awaited<ReturnType<
  */
 export function useCustomerOperationsGetReservations<TData = Awaited<ReturnType<typeof customerOperationsGetReservations>>, TError = ModelsProblemDetails>(
  id: ModelsCustomerId,
-    params?: CustomerOperationsGetReservationsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerOperationsGetReservations>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+    params?: CustomerOperationsGetReservationsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerOperationsGetReservations>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -2879,7 +2877,7 @@ export const getCustomerCrudRestoreUrl = (id: ModelsCustomerId,) => {
  * 削除済みリソースを復元し、誤削除への迅速なリカバリを可能にします。
  * @summary Restore deleted {Name}
  */
-export const customerCrudRestore = async (id: ModelsCustomerId, options?: Parameters<typeof customInstance>[1]): Promise<customerCrudRestoreResponse> => {
+export const customerCrudRestore = async (id: ModelsCustomerId, options?: RequestInit): Promise<customerCrudRestoreResponse> => {
 
   return customInstance<customerCrudRestoreResponse>(getCustomerCrudRestoreUrl(id),
   {
@@ -2897,15 +2895,15 @@ export const customerCrudRestore = async (id: ModelsCustomerId, options?: Parame
 export const getCustomerCrudRestoreMutationKey = () => ['customerCrudRestore'] as const;
 
 export const getCustomerCrudRestoreMutationOptions = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerCrudRestore>>, TError,CustomerCrudRestoreMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerCrudRestore>>, TError,CustomerCrudRestoreMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof customerCrudRestore>>, TError,CustomerCrudRestoreMutationVariables, TContext> => {
 
 const mutationKey = getCustomerCrudRestoreMutationKey();
-const {mutation: mutationOptions, request: requestOptions} = options ?
+const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
       : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }, request: undefined};
+      : {mutation: { mutationKey, }};
 
 
 
@@ -2913,7 +2911,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof customerCrudRestore>>, CustomerCrudRestoreMutationVariables> = (props) => {
           const {id} = props ?? {};
 
-          return  customerCrudRestore(id,requestOptions)
+          return  customerCrudRestore(id,)
         }
 
 
@@ -2933,7 +2931,7 @@ const {mutation: mutationOptions, request: requestOptions} = options ?
  * @summary Restore deleted {Name}
  */
 export const useCustomerCrudRestore = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerCrudRestore>>, TError,CustomerCrudRestoreMutationVariables, TContext>, request?: SecondParameter<typeof customInstance>}
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerCrudRestore>>, TError,CustomerCrudRestoreMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof customerCrudRestore>>,
         TError,
@@ -2987,7 +2985,7 @@ export const getCustomerOperationsGetStatisticsUrl = (id: ModelsCustomerId,
  * @summary Get customer statistics
  */
 export const customerOperationsGetStatistics = async (id: ModelsCustomerId,
-    params?: CustomerOperationsGetStatisticsParams, options?: Parameters<typeof customInstance>[1]): Promise<customerOperationsGetStatisticsResponse> => {
+    params?: CustomerOperationsGetStatisticsParams, options?: RequestInit): Promise<customerOperationsGetStatisticsResponse> => {
 
   return customInstance<customerOperationsGetStatisticsResponse>(getCustomerOperationsGetStatisticsUrl(id,params),
   {
@@ -3011,16 +3009,16 @@ export const getCustomerOperationsGetStatisticsQueryKey = (id: ModelsCustomerId,
 
 
 export const getCustomerOperationsGetStatisticsQueryOptions = <TData = Awaited<ReturnType<typeof customerOperationsGetStatistics>>, TError = ModelsProblemDetails>(id: ModelsCustomerId,
-    params?: CustomerOperationsGetStatisticsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerOperationsGetStatistics>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+    params?: CustomerOperationsGetStatisticsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerOperationsGetStatistics>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getCustomerOperationsGetStatisticsQueryKey(id,params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof customerOperationsGetStatistics>>> = ({ signal }) => customerOperationsGetStatistics(id,params, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof customerOperationsGetStatistics>>> = ({ signal }) => customerOperationsGetStatistics(id,params, { signal });
 
 
 
@@ -3045,7 +3043,7 @@ export function useCustomerOperationsGetStatistics<TData = Awaited<ReturnType<ty
           TError,
           Awaited<ReturnType<typeof customerOperationsGetStatistics>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -3060,7 +3058,7 @@ export function useCustomerOperationsGetStatistics<TData = Awaited<ReturnType<ty
           TError,
           Awaited<ReturnType<typeof customerOperationsGetStatistics>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -3069,7 +3067,7 @@ export function useCustomerOperationsGetStatistics<TData = Awaited<ReturnType<ty
  */
 export function useCustomerOperationsGetStatistics<TData = Awaited<ReturnType<typeof customerOperationsGetStatistics>>, TError = ModelsProblemDetails>(
  id: ModelsCustomerId,
-    params?: CustomerOperationsGetStatisticsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerOperationsGetStatistics>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+    params?: CustomerOperationsGetStatisticsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerOperationsGetStatistics>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -3078,7 +3076,7 @@ export function useCustomerOperationsGetStatistics<TData = Awaited<ReturnType<ty
  */
 export function useCustomerOperationsGetStatistics<TData = Awaited<ReturnType<typeof customerOperationsGetStatistics>>, TError = ModelsProblemDetails>(
  id: ModelsCustomerId,
-    params?: CustomerOperationsGetStatisticsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerOperationsGetStatistics>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+    params?: CustomerOperationsGetStatisticsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerOperationsGetStatistics>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
@@ -3132,7 +3130,7 @@ export const getCustomerCrudGetVersionUrl = (id: ModelsCustomerId,
  * @summary Get {Name} version
  */
 export const customerCrudGetVersion = async (id: ModelsCustomerId,
-    version: number, options?: Parameters<typeof customInstance>[1]): Promise<customerCrudGetVersionResponse> => {
+    version: number, options?: RequestInit): Promise<customerCrudGetVersionResponse> => {
 
   return customInstance<customerCrudGetVersionResponse>(getCustomerCrudGetVersionUrl(id,version),
   {
@@ -3156,16 +3154,16 @@ export const getCustomerCrudGetVersionQueryKey = (id: ModelsCustomerId,
 
 
 export const getCustomerCrudGetVersionQueryOptions = <TData = Awaited<ReturnType<typeof customerCrudGetVersion>>, TError = ModelsProblemDetails>(id: ModelsCustomerId,
-    version: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudGetVersion>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+    version: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudGetVersion>>, TError, TData>>, }
 ) => {
 
-const {query: queryOptions, request: requestOptions} = options ?? {};
+const {query: queryOptions} = options ?? {};
 
   const queryKey =  queryOptions?.queryKey ?? getCustomerCrudGetVersionQueryKey(id,version);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof customerCrudGetVersion>>> = ({ signal }) => customerCrudGetVersion(id,version, { signal, ...requestOptions });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof customerCrudGetVersion>>> = ({ signal }) => customerCrudGetVersion(id,version, { signal });
 
 
 
@@ -3190,7 +3188,7 @@ export function useCustomerCrudGetVersion<TData = Awaited<ReturnType<typeof cust
           TError,
           Awaited<ReturnType<typeof customerCrudGetVersion>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -3205,7 +3203,7 @@ export function useCustomerCrudGetVersion<TData = Awaited<ReturnType<typeof cust
           TError,
           Awaited<ReturnType<typeof customerCrudGetVersion>>
         > , 'initialData'
-      >, request?: SecondParameter<typeof customInstance>}
+      >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -3214,7 +3212,7 @@ export function useCustomerCrudGetVersion<TData = Awaited<ReturnType<typeof cust
  */
 export function useCustomerCrudGetVersion<TData = Awaited<ReturnType<typeof customerCrudGetVersion>>, TError = ModelsProblemDetails>(
  id: ModelsCustomerId,
-    version: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudGetVersion>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+    version: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudGetVersion>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
@@ -3223,7 +3221,7 @@ export function useCustomerCrudGetVersion<TData = Awaited<ReturnType<typeof cust
  */
 export function useCustomerCrudGetVersion<TData = Awaited<ReturnType<typeof customerCrudGetVersion>>, TError = ModelsProblemDetails>(
  id: ModelsCustomerId,
-    version: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudGetVersion>>, TError, TData>>, request?: SecondParameter<typeof customInstance>}
+    version: number, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudGetVersion>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
