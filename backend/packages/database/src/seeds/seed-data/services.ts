@@ -7,6 +7,14 @@ export interface ServiceSeedResult {
   serviceMap: Record<string, string[]> // salonId -> serviceIds
 }
 
+/** The lists of a service without images, tags, member services and booking requirements. */
+const withoutLists = {
+  imageUrls: [],
+  tags: [],
+  packageServiceIds: [],
+  bookingRequirements: [],
+}
+
 export async function seedServices(
   db: PostgresJsDatabase<typeof schema>,
   salonIds: string[],
@@ -236,9 +244,27 @@ export async function seedServices(
       isActive: true,
       sortOrder: 4,
     },
+  )
 
-    // Package services
-    {
+  const plainServices = await db
+    .insert(schema.services)
+    .values(services.map((service) => ({ ...withoutLists, ...service })))
+    .returning({
+      id: schema.services.id,
+      salonId: schema.services.salonId,
+      name: schema.services.name,
+    })
+
+  // A package names its member services, so it is stored after them.
+  const packageMembers = [
+    'Head Spa (30 min)',
+    'Scalp Treatment',
+    'Signature Cut',
+  ]
+  const packages = await db
+    .insert(schema.services)
+    .values({
+      ...withoutLists,
       salonId: salonId2,
       categoryId: categoryMap[`${salonId2}_other`],
       name: 'Spa & Cut Package',
@@ -249,21 +275,24 @@ export async function seedServices(
       discountPrice: 10000,
       taxIncluded: true,
       isPackage: true,
-      packageServiceIds: [],
+      packageServiceIds: plainServices
+        .filter(
+          (service) =>
+            service.salonId === salonId2 &&
+            packageMembers.includes(service.name),
+        )
+        .map((service) => service.id),
       requiresConsultation: false,
       allowOnlineBooking: true,
       isActive: true,
       sortOrder: 5,
-    },
-  )
-
-  const insertedServices = await db
-    .insert(schema.services)
-    .values(services)
+    })
     .returning({
       id: schema.services.id,
       salonId: schema.services.salonId,
     })
+
+  const insertedServices = [...plainServices, ...packages]
 
   // Create service options for some services
   const serviceOptions = []
