@@ -200,8 +200,9 @@ describe('stop', () => {
     const stopped = server.stop()
     pending.end('}')
 
-    // The empty object reaches validation: the request was served.
-    expect(await status).toBe(400)
+    // The request reaches the route, which answers that it carries no
+    // access token: the request was served.
+    expect(await status).toBe(401)
     await stopped
   })
 

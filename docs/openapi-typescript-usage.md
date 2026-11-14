@@ -2,7 +2,7 @@
 
 このドキュメントは、OpenAPI から生成した TypeScript 型（`@beauty-salon-backend/generated`）をバックエンドがどう使っているかを説明します。生成の手順とコマンドは [Type Generation System](./type-generation-system.md) を参照してください。
 
-バックエンドで実装されているのは Salon ドメインとシステムエンドポイントだけなので、例はすべて Salon の実コードからの抜粋です。コード中のコメントは説明用に日本語で付けています。
+バックエンドで実装されているのは Salon ドメイン、認証の一部（[認証と認可](./authentication.md)）、システムエンドポイントです。認証も生成型を同じ形で使っているので（`backend/packages/domain/src/models/auth.ts`、`backend/packages/api/src/routes/auth/_shared/types.ts`）、例はすべて参照実装である Salon の実コードからの抜粋です。コード中のコメントは説明用に日本語で付けています。
 
 ## 生成されるもの
 
@@ -122,14 +122,21 @@ enum の値を手書きで並べ直しません。
 
 ```typescript
   async execute(
+    actor: Actor,
     input: unknown,
   ): Promise<Result<ApiSalonResponse, DomainError>> {
+    if (!mayCreateSalon(actor)) {
+      return Result.error(DomainErrors.forbidden())
+    }
+
     const request = parseWith(salonCreateRequestSchema, input, 'Invalid salon')
     if (request.type === 'error') {
       return request
     }
     // ここから先、request.data は検証済みの値
 ```
+
+`actor` は認証済みの操作者で、サロンの作成は権限の確認があるので最初に判定します（[認証と認可](./authentication.md)）。生成型が関わるのは `input` と戻り値です。
 
 `parseWith`（`backend/packages/domain/src/shared/validation.ts`）がスキーマで検証し、失敗を `validation` の `DomainError` にします。検証済みの値はマッパー（`backend/packages/domain/src/mappers/write/salon.mapper.ts` と `backend/packages/domain/src/mappers/read/salon.mapper.ts`）が `ApiSalonCreateRequest` → `DbNewSalon`、`DbSalon` → `ApiSalonResponse` に変換します。プロパティ名は変えず、表現だけを変えます。
 
@@ -139,10 +146,7 @@ enum の値を手書きで並べ直しません。
 
 ```typescript
 import type { operations } from '@beauty-salon-backend/generated'
-
-type JsonBody<Content> = Content extends { 'application/json': infer Body }
-  ? Body
-  : never
+import type { JsonBody } from '../../../shared/operation-types'
 
 export type ListSalonsResponse = JsonBody<
   operations['SalonCrud_list']['responses'][200]['content']
@@ -158,6 +162,16 @@ export type UpdateSalonResponse = JsonBody<
 >
 ```
 
+`JsonBody` は、生成されたレスポンスの `content` から `application/json` の本体を取り出す型です（`backend/packages/api/src/shared/operation-types.ts`）。
+
+```typescript
+export type JsonBody<Content> = Content extends {
+  'application/json': infer Body
+}
+  ? Body
+  : never
+```
+
 `{ data, meta, links }` という包みの形も TypeSpec で決まっているので、ここでも手書きしません。削除は本体のない 204 を返すので、レスポンス型はありません。
 
 ### 7. ハンドラーに型を付ける
@@ -167,6 +181,7 @@ export type UpdateSalonResponse = JsonBody<
 ```typescript
 export const createSalonHandler = (
   dependencies: SalonUseCaseDependencies,
+  authenticated: Authenticated,
 ): RequestHandler<
   Record<string, never>,
   CreateSalonResponse | ProblemDetails,
@@ -174,8 +189,8 @@ export const createSalonHandler = (
 > => {
   const useCase = new CreateSalonUseCase(dependencies)
 
-  return async (req, res) => {
-    const result = await useCase.execute(req.body)
+  return authenticated(async (actor, req, res) => {
+    const result = await useCase.execute(actor, req.body)
 
     match(result)
       .with({ type: 'success' }, ({ data }) => {
@@ -187,11 +202,11 @@ export const createSalonHandler = (
       })
       .with({ type: 'error' }, ({ error }) => sendProblem(req, res, error))
       .exhaustive()
-  }
+  })
 }
 ```
 
-`RequestHandler` の型引数は順に、パスパラメータ、レスポンス本体、リクエスト本体です。
+`RequestHandler` の型引数は順に、パスパラメータ、レスポンス本体、リクエスト本体です。`authenticated`（`backend/packages/api/src/shared/authentication.ts`）で包んでも型引数は同じで、包まれたハンドラーの `req` と `res` にも同じ型が付きます。
 
 - レスポンス本体は `CreateSalonResponse | ProblemDetails` なので、`res.json(...)` に渡す値が OpenAPI の定義と合わなければ型エラーになります。
 - リクエスト本体は `unknown` です。生成型を当てて信用することはせず、ユースケースが検証します。
@@ -205,7 +220,7 @@ export const createSalonHandler = (
 | `ResponseMeta` | `backend/packages/api/src/shared/responses.ts` | `components['schemas']['Models.ResponseMeta']` |
 | `PaginationMeta` / `PaginationLinks` | `backend/packages/api/src/routes/salon/_shared/links.ts` | `components['schemas']['Models.PaginationMeta']` / `['Models.PaginationLinks']` |
 
-システムエンドポイント（`backend/packages/api/src/routes/system/index.ts`）も同じ `JsonBody<operations[...]>` の形でレスポンス型を取り出しています。
+認証のルート（`backend/packages/api/src/routes/auth/_shared/types.ts`）とシステムエンドポイント（`backend/packages/api/src/routes/system/index.ts`）も、同じ `JsonBody<operations[...]>` の形でレスポンス型を取り出しています。
 
 ## TypeSpec の定義と生成型の対応
 
@@ -242,7 +257,7 @@ export const createSalonHandler = (
 
 ## 他のドメインを実装するとき
 
-Salon 以外のドメインはこれから実装するものです。実装するときは Salon と同じ配置にします（以下は例であり、まだ存在しないファイルです）。
+Salon と認証以外のドメインはこれから実装するものです。実装するときは Salon と同じ配置にします（以下は例であり、まだ存在しないファイルです）。
 
 - `backend/packages/domain/src/models/<domain>.ts`: 生成型の別名と DB 型
 - `backend/packages/domain/src/schemas/<domain>.schema.ts`: `satisfies z.ZodType<…>` を付けた Zod スキーマ

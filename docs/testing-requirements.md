@@ -37,22 +37,26 @@ What the repository does not have:
 
 | Subject | Kind | Reference |
 |---------|------|-----------|
-| Request schemas: every rule, with a value that passes and one that breaks it | Unit | `backend/packages/domain/src/__tests__/salon.schema.test.ts` |
-| Mappers: both directions, `null` kept as `null`, the changes of representation | Unit | `backend/packages/domain/src/__tests__/salon.mapper.test.ts` |
-| Use cases: the success path, every error passed on unchanged, the repository left untouched by invalid input | Unit, with the repository interface stubbed | `backend/packages/domain/src/__tests__/salon.usecase.test.ts` |
+| Request schemas: every rule, with a value that passes and one that breaks it | Unit | `backend/packages/domain/src/__tests__/salon.schema.test.ts`, `auth.schema.test.ts` |
+| Mappers: both directions, `null` kept as `null`, the changes of representation, and the columns that must not reach a response left out | Unit | `backend/packages/domain/src/__tests__/salon.mapper.test.ts`, `user.mapper.test.ts` |
+| Use cases: the success path, every error passed on unchanged, the repository left untouched by invalid input | Unit, with the interfaces the use case depends on stubbed | `backend/packages/domain/src/__tests__/salon.usecase.test.ts`, `auth.usecase.test.ts` |
+| Permission rules: every kind of actor, allowed or refused, and the repository left untouched by a refused one | Unit, through the use cases | `describe('who may change a salon', …)` in `backend/packages/domain/src/__tests__/salon.usecase.test.ts` |
+| Password hashing and session tokens | Unit | `backend/packages/infrastructure/src/security/__tests__/` |
 | Pure helpers of the HTTP layer: links, query decoding, problem details, middleware | Unit | `backend/packages/api/src/routes/salon/_shared/__tests__/`, `backend/packages/api/src/shared/__tests__/problem-details.test.ts`, `backend/packages/api/src/middleware/__tests__/middleware.test.ts` |
-| Every endpoint (see [Requirements per Endpoint](#requirements-per-endpoint)) | Integration | `backend/packages/api/src/__tests__/salon.integration.test.ts` |
+| Every endpoint (see [Requirements per Endpoint](#requirements-per-endpoint)) | Integration | `backend/packages/api/src/__tests__/salon.integration.test.ts`, `auth.integration.test.ts` |
+| The seeded accounts: one of each role signs in with `SEED_PASSWORD`, and the owner and the manager can change the first seeded salon but not the second | Integration | `describe('the seeded accounts', …)` in `backend/packages/api/src/__tests__/auth.integration.test.ts` |
 | What the application does for every route: request IDs, requests it cannot read, a failing database, CORS, the rate limit, the probes, security headers | Integration | `backend/packages/api/src/__tests__/app.integration.test.ts` |
 | Server start-up and shutdown | Integration | `backend/apps/server/src/__tests__/server.integration.test.ts` |
 | The migration runner, and the migrations of the repository | Integration | `backend/packages/database/src/scripts/__tests__/migrations.integration.test.ts` |
 | Configuration: every variable, and every environment file in the repository (the local ones allow the origins of the frontend applications) | Unit | `backend/packages/config/src/__tests__/app-config.test.ts` |
 | Shared helpers: `Result`, the logger, the description of database failures | Unit | `backend/packages/utility/src/__tests__/result.test.ts`, `backend/packages/infrastructure/src/logging/__tests__/logger.test.ts`, `backend/packages/infrastructure/src/database/__tests__/failure.test.ts` |
 
-The repository implementation
-(`backend/packages/infrastructure/src/repositories/salon.repository.impl.ts`)
-has no test file of its own. Its behaviour — transactions, the unique
-violation that becomes `alreadyExists`, soft delete, keyset pagination — is
-required to be covered through the endpoint tests, against a real database.
+The repository implementations
+(`backend/packages/infrastructure/src/repositories/`) have no test files of
+their own. Their behaviour — transactions, the unique violation that becomes
+`alreadyExists`, soft delete, keyset pagination, a refresh token that only one
+of several parallel requests can use — is required to be covered through the
+endpoint tests, against a real database.
 
 ### Frontend
 
@@ -78,15 +82,23 @@ Every endpoint has integration tests in the `api` package that cover:
    `meta`, `links`), not a sample of its properties.
 2. **At least five error scenarios.** Each row of an `it.each` table is one
    scenario. Between them they cover every kind of error the endpoint can
-   answer with: validation (400), not found (404), conflict (409) and, where
-   stored data can be at fault, the 500 that reveals nothing.
-3. **Problem details**: every error scenario asserts the status, the `type`
+   answer with: validation (400), not found (404), conflict (409), for an
+   endpoint that is not public a missing token (401) and a user who is not
+   allowed (403) and, where stored data can be at fault, the 500 that reveals
+   nothing.
+3. **Who may call it**, for an endpoint that is not public: a request without
+   an access token (401 with a `WWW-Authenticate` header) and a request from
+   each kind of user who is not allowed (403). Where a permission belongs to
+   one salon, a user with the same role at another salon is one of them.
+   Where somebody other than an admin is allowed, a success scenario shows
+   it.
+4. **Problem details**: every error scenario asserts the status, the `type`
    and the `code` of the problem, and a validation error also asserts which
    rule of which field was broken.
-4. **State**: after a rejected write nothing has changed; after an accepted
+5. **State**: after a rejected write nothing has changed; after an accepted
    one, what is stored is what was returned. Verify through the API or through
    the test's database connection.
-5. **Deleted resources**: a soft-deleted row is invisible to every endpoint,
+6. **Deleted resources**: a soft-deleted row is invisible to every endpoint,
    so each endpoint that takes an ID has a scenario for a deleted resource.
 
 ### The Salon Endpoints as the Example
@@ -95,11 +107,16 @@ Error scenarios in `backend/packages/api/src/__tests__/salon.integration.test.ts
 
 | Endpoint | Error scenarios | Count |
 |----------|-----------------|-------|
-| `POST /api/v1/salons` | Seven invalid bodies (a missing property, a property the client may not set, `null` for a NOT NULL column, a value longer than its column, several invalid values, a calendar entry on the wrong day of the week, a calendar that repeats a date); a body that is not an object; an email that another salon uses (409) | 9 |
+| `POST /api/v1/salons` | Seven invalid bodies (a missing property, a property the client may not set, `null` for a NOT NULL column, a value longer than its column, several invalid values, a calendar entry on the wrong day of the week, a calendar that repeats a date); a body that is not an object; an email that another salon uses (409); no token, and a token that names no session (401); five kinds of user who are not an admin (403); an owner with an invalid body (403, not 400) | 17 |
 | `GET /api/v1/salons/:id` | Three malformed IDs (400); an ID that no salon has (404); a deleted salon (404); a stored salon that is corrupt (500 without details) | 6 |
 | `GET /api/v1/salons` | Eight invalid queries: a limit of 0, over 100, or not a number; a boolean that is not `true` or `false`; a cursor that is not an ID; a rating above 5; an empty keyword; a parameter that does not exist | 8 |
-| `PATCH /api/v1/salons/:id` | An ID that is not a UUID, an empty request, `null` for a NOT NULL column, a property the client may not set, an invalid calendar (400); an ID that no salon has (404); a deleted salon (404); the email of another salon (409) | 8 |
-| `DELETE /api/v1/salons/:id` | Three malformed IDs (400); an ID that no salon has (404); a salon that is already deleted (404) | 5 |
+| `PATCH /api/v1/salons/:id` | An ID that is not a UUID, an empty request, `null` for a NOT NULL column, a property the client may not set, an invalid calendar (400); an ID that no salon has (404); a deleted salon (404); the email of another salon (409); no token (401); seven kinds of user who may not change the salon (403), the same seven with an ID that no salon has (403), and the owner of a deleted salon (403); an ID that is not a UUID from five kinds of user (400) | 29 |
+| `DELETE /api/v1/salons/:id` | Three malformed IDs (400); an ID that no salon has (404); a salon that is already deleted (404); no token (401); five kinds of user who may not delete the salon (403) | 11 |
+
+The two `GET` endpoints are public and have no scenario for a token. What the
+server does with a token that has expired, belongs to a signed-out session or
+belongs to a suspended, inactive or deleted user is covered in
+`backend/packages/api/src/__tests__/auth.integration.test.ts`.
 
 ## Standards for Every Test
 
@@ -118,10 +135,15 @@ Error scenarios in `backend/packages/api/src/__tests__/salon.integration.test.ts
 - **Integration tests use the real thing**: the production `createApp`, the
   real repository, a real PostgreSQL. A failure is produced by real means — a
   database nothing listens on, a dropped column, a corrupt stored value — not
-  by a mock.
-- **Unit tests of use cases stub one thing**: the repository interface
-  (`ISalonRepository`), with `vi.fn`. Schemas and mappers are tested without
-  any stub.
+  by a mock. A test that needs a signed-in user inserts the user and signs in
+  through `POST /api/v1/auth/login`
+  (`backend/packages/api/src/__tests__/_shared/auth-helpers.ts`).
+- **Unit tests of use cases stub only what the use case depends on**: the
+  repository interface (`ISalonRepository`), with `vi.fn`; for the
+  authentication use cases the two repositories, the password hasher and the
+  token issuer, with the clock fixed (`authDependencies` in
+  `backend/packages/domain/src/__tests__/auth-fixtures.ts`). Schemas and
+  mappers are tested without any stub.
 - **Failures are asserted as values**: a use case or mapper through the
   `Result` it returns, an endpoint through its problem details.
 - **Nothing internal leaks**: a test of a server-side failure asserts that the
@@ -131,7 +153,10 @@ Error scenarios in `backend/packages/api/src/__tests__/salon.integration.test.ts
   test overrides what it is about (`salonRequest(overrides)` in the endpoint
   tests, `salonCreateRequest()` in
   `backend/packages/domain/src/__tests__/fixtures.ts`). Dates are fixed, never
-  taken from the clock.
+  taken from the clock. The one exception is an instant that has to lie
+  before or after the present of the running application, which reads the
+  system clock: an expired token or the end of a lock in the authentication
+  endpoint tests (`minutesFromNow` in `auth-helpers.ts`).
 - **The type rules apply to backend test code**: no `any`, no `as`. Tests are
   scripts, not application code, so a helper may `throw` when its
   precondition is not met.
@@ -142,7 +167,7 @@ A new domain follows the Salon tests file by file:
 
 - [ ] Schema tests: every rule of every request schema, accepted and rejected
 - [ ] Mapper tests: write and read mappers, including `null` and every change of representation
-- [ ] Use case tests: success, each error passed on, no repository call on invalid input
+- [ ] Use case tests: success, each error passed on, no repository call on invalid input; for an operation that is not public, every kind of actor allowed or refused
 - [ ] `backend/packages/api/src/__tests__/<domain>.integration.test.ts` meeting the [requirements per endpoint](#requirements-per-endpoint)
 - [ ] `pnpm test` and `pnpm test:integration` pass
 

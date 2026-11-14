@@ -9,10 +9,7 @@ import { Result } from '@beauty-salon-backend/utility'
 import { type RequestHandler, Router } from 'express'
 import { match } from 'ts-pattern'
 import { API_VERSION } from '../../shared/api-version'
-
-type JsonBody<Content> = Content extends { 'application/json': infer Body }
-  ? Body
-  : never
+import type { JsonBody } from '../../shared/operation-types'
 
 type AliveResponse = JsonBody<
   operations['SystemOperations_alive']['responses'][200]['content']

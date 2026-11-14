@@ -208,7 +208,7 @@ const authRules: ModelRule[] = [
     model: 'Models.SessionResponse',
     table: 'sessions',
     kind: 'response',
-    omittedColumns: ['token', 'refreshToken'],
+    omittedColumns: ['tokenHash', 'refreshTokenHash'],
   },
 ]
 

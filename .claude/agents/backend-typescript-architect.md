@@ -16,13 +16,15 @@ You start without the caller's conversation, and the caller reads only your fina
    - `docs/architecture-overview.md` and `docs/backend-architecture-guidelines.md` for layers and dependencies
    - `docs/domain-implementation-reference.md` and `docs/api-route-modular-structure.md` for adding a domain or an endpoint
    - `docs/uniform-implementation-guide.md`, `docs/sum-types-pattern-matching.md` and `docs/type-safety-principles.md` for the patterns
+   - `docs/authentication.md` for sessions, the `Actor`, who may do what, and how an operation is protected
    - `docs/testing-requirements.md` and `docs/api-testing-guide.md` for tests
 3. The Salon domain, which is the reference implementation. New code has the same shape, file for file:
    - Models: `backend/packages/domain/src/models/salon.ts`
    - Request schemas and validation: `backend/packages/domain/src/schemas/salon.schema.ts`, `backend/packages/domain/src/shared/validation.ts`
    - Mappers: `backend/packages/domain/src/mappers/write/salon.mapper.ts`, `backend/packages/domain/src/mappers/read/salon.mapper.ts`
    - Repository interface: `backend/packages/domain/src/repositories/salon.repository.ts`
-   - Use cases: `backend/packages/domain/src/business-logic/salon/` (one per file, dependencies in `_shared/dependencies.ts`)
+   - Use cases: `backend/packages/domain/src/business-logic/salon/` (one per file, dependencies in `_shared/dependencies.ts`, permission rules in `_shared/authorization.ts`)
+   - The signed-in user: `Actor` and `ActorScope` in `backend/packages/domain/src/models/auth.ts`, and the wrapper `authenticated` in `backend/packages/api/src/shared/authentication.ts`
    - Errors and results: `backend/packages/domain/src/shared/errors.ts`, `backend/packages/utility/src/result/result.ts`
    - Repository implementation: `backend/packages/infrastructure/src/repositories/salon.repository.impl.ts`, `backend/packages/infrastructure/src/database/failure.ts`
    - HTTP: `backend/packages/api/src/routes/salon/` (one handler per file, the router in `index.ts`), `backend/packages/api/src/shared/`, `backend/packages/api/src/middleware/`, and `createApp` in `backend/packages/api/src/index.ts`
@@ -31,7 +33,13 @@ You start without the caller's conversation, and the caller reads only your fina
 
 ## What exists
 
-Only the Salon domain and the system endpoints (`GET /api/system/alive`, `GET /api/system/ready`, `GET /api/system/health`) are implemented. The other domains (customer, staff, booking, payment and so on) have TypeSpec models and database tables, which agree with each other, but no domain, repository or route code. A few features (roles and permissions, attachments, purchase orders, medical charts) are specified in TypeSpec without any table yet. There is no authentication or authorization, no email sending and no file storage. Look into `backend/packages/domain/src/business-logic/` and `backend/packages/api/src/routes/` before you assume that something exists, and do not build on code that is not there.
+The Salon domain, the system endpoints (`GET /api/system/alive`, `GET /api/system/ready`, `GET /api/system/health`) and five authentication operations (`POST /api/v1/auth/login`, `/refresh`, `/logout`, `/logout-all` and `GET /api/v1/auth/me`) are implemented. The rest of the authentication contract (registration, email verification, password reset and change, two-factor authentication, the session list, `/api/v1/admin/auth`) is not. The other domains (customer, staff, booking, payment and so on) have TypeSpec models and database tables, which agree with each other, but no domain, repository or route code. A few features (roles and permissions, attachments, purchase orders, medical charts) are specified in TypeSpec without any table yet. There is no email sending and no file storage. Look into `backend/packages/domain/src/business-logic/` and `backend/packages/api/src/routes/` before you assume that something exists, and do not build on code that is not there.
+
+Authentication is session-based with opaque bearer tokens, and authorization is decided in the use cases. `docs/authentication.md` describes both, including the scope each role has and the seeded accounts to test with. For a new endpoint that means:
+
+- An operation is public only if the contract marks it `@useAuth(NoAuth)`. The handler of every other operation is wrapped with `authenticated`, which answers 401 without a valid access token and otherwise calls the handler with the `Actor`.
+- The use case of such an operation takes `actor: Actor` as its first parameter and decides the permission before anything else, with a pure function in `business-logic/<domain>/_shared/authorization.ts` that reads `actor.scope`. A refusal is `DomainErrors.forbidden()`. Handlers and middleware never look at a role.
+- Data that belongs to a salon is compared with the salon of the actor. What to answer for the data of another salon is stated in `docs/authentication.md`.
 
 ## What you own, and what you leave to others
 
@@ -49,8 +57,8 @@ When a task needs a column or an API property that does not exist, stop there an
 Adding a domain or an endpoint:
 
 1. Check the precondition. `pnpm check:api-db` passes, and the domain's table-backed models are listed in `backend/packages/database/src/scripts/api-consistency-rules.ts` with `omittedColumns`. A model that the operation needs but that has no table yet (see `docs/api-db-type-constraints-mapping.md`) is work for `database-schema-architect` and `typespec-api-architect` first, not something to implement around.
-2. Build the layers in the order in which `CLAUDE.md` lists them for the Salon domain: models, request schemas, repository interface, use cases, mappers, repository implementation, handlers and router, and last the mount in `createApp`.
-3. Write the tests with the code: unit tests for schemas, mappers and use cases in the domain package, and integration tests for every endpoint against PostgreSQL in the api package, with at least five error scenarios per endpoint.
+2. Build the layers in the order in which `CLAUDE.md` lists them for the Salon domain: models, request schemas, repository interface, permission rules, use cases, mappers, repository implementation, handlers and router, and last the mount in `createApp`.
+3. Write the tests with the code: unit tests for schemas, mappers, permission rules and use cases in the domain package, and integration tests for every endpoint against PostgreSQL in the api package, with at least five error scenarios per endpoint. For an operation that is not public, a request without a token (401) and one from a user who is not allowed (403) are among them.
 
 Changing existing behaviour: change the test that describes it, or add one, in the same change.
 
@@ -64,6 +72,7 @@ Keep the change as small as the task. No abstraction, option or parameter for a 
 - Every state is a sum type, matched exhaustively with ts-pattern. Every failure is a `Result` that carries a `DomainError`.
 - Types come from the database schema and the generated API types, never from hand-written declarations. Mappers change representations, not property names.
 - A handler receives the request body as `unknown` and the use case validates it. Every error response is problem details (`application/problem+json`), sent by `sendProblem`.
+- A handler that is not public is wrapped with `authenticated`, and its use case decides from the `Actor` whether the request is allowed.
 - Logging is structured (`req.log` or the injected `Logger`). Configuration is parsed once and passed down as values; application code does not read `process.env`.
 
 ## Before you report

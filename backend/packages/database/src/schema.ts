@@ -43,13 +43,6 @@ export const allergyType = pgEnum('allergy_type', [
   'other',
 ])
 
-export const authenticationState = pgEnum('authentication_state', [
-  'unauthenticated',
-  'authenticated',
-  'pending_two_factor',
-  'locked',
-])
-
 export const bookingRequirement = pgEnum('booking_requirement', [
   'consultation_required',
   'patch_test_required',
@@ -1462,20 +1455,21 @@ export const sessions = pgTable(
   {
     id: uuid().defaultRandom().primaryKey().notNull(),
     userId: uuid().notNull(),
-    token: text().notNull(),
-    refreshToken: text(),
-    ipAddress: varchar({ length: 50 }).notNull(),
-    userAgent: text().notNull(),
-    deviceId: varchar({ length: 255 }),
+    tokenHash: text().notNull(),
+    refreshTokenHash: text().notNull(),
+    ipAddress: varchar({ length: 50 }),
+    userAgent: text(),
     expiresAt: timestamp({ withTimezone: true, mode: 'string' }).notNull(),
-    refreshExpiresAt: timestamp({ withTimezone: true, mode: 'string' }),
+    refreshExpiresAt: timestamp({
+      withTimezone: true,
+      mode: 'string',
+    }).notNull(),
     lastActivityAt: timestamp({ withTimezone: true, mode: 'string' })
       .defaultNow()
       .notNull(),
     createdAt: timestamp({ withTimezone: true, mode: 'string' })
       .defaultNow()
       .notNull(),
-    authenticationState: authenticationState().default('authenticated'),
   },
   (table) => [
     foreignKey({
@@ -1483,28 +1477,16 @@ export const sessions = pgTable(
       foreignColumns: [users.id],
       name: 'sessions_user_id_fk',
     }).onDelete('cascade'),
-    index('idx_sessions_authentication_state').using(
-      'btree',
-      table.authenticationState.asc().nullsLast().op('enum_ops'),
-    ),
     index('idx_sessions_expires_at').using(
       'btree',
       table.expiresAt.asc().nullsLast().op('timestamptz_ops'),
-    ),
-    index('idx_sessions_refresh_token').using(
-      'btree',
-      table.refreshToken.asc().nullsLast().op('text_ops'),
-    ),
-    index('idx_sessions_token').using(
-      'btree',
-      table.token.asc().nullsLast().op('text_ops'),
     ),
     index('idx_sessions_user_id').using(
       'btree',
       table.userId.asc().nullsLast().op('uuid_ops'),
     ),
-    unique('sessions_refresh_token_unique').on(table.refreshToken),
-    unique('sessions_token_unique').on(table.token),
+    unique('sessions_refresh_token_hash_unique').on(table.refreshTokenHash),
+    unique('sessions_token_hash_unique').on(table.tokenHash),
   ],
 )
 
@@ -1852,7 +1834,7 @@ export const users = pgTable(
     email: varchar({ length: 255 }).notNull(),
     passwordHash: text().notNull(),
     role: userRole().default('customer').notNull(),
-    permissions: jsonb().default([]),
+    permissions: jsonb().default([]).notNull(),
     status: accountStatus().default('active').notNull(),
     emailVerified: boolean().default(false).notNull(),
     emailVerificationToken: varchar({ length: 255 }),
@@ -1879,7 +1861,7 @@ export const users = pgTable(
     updatedAt: timestamp({ withTimezone: true, mode: 'string' })
       .defaultNow()
       .notNull(),
-    twoFactorStatus: twoFactorStatus().default('disabled'),
+    twoFactorStatus: twoFactorStatus().default('disabled').notNull(),
   },
   (table) => [
     foreignKey({

@@ -1,16 +1,17 @@
 import { sql } from 'drizzle-orm'
 import { describe, expect, it } from 'vitest'
+import { signInAsAdmin } from './_shared/auth-helpers'
 import {
   ALLOWED_ORIGIN,
   connectUnreachableDatabase,
   createTestApp,
   getTestDb,
   request,
+  UUID,
 } from './_shared/test-helpers'
 
 const SALONS = '/api/v1/salons'
 const UNKNOWN_ID = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1b'
-const UUID = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/
 const JSON_UTF8 = 'application/json; charset=utf-8'
 const PROBLEM_JSON = 'application/problem+json; charset=utf-8'
 
@@ -43,7 +44,13 @@ const salon = {
 
 describe('request identification', () => {
   it('should put the ID of the request in the header and in the response metadata', async () => {
-    const response = await request(createTestApp()).post(SALONS).send(salon)
+    const app = createTestApp()
+    const asAdmin = await signInAsAdmin(app, getTestDb())
+
+    const response = await request(app)
+      .post(SALONS)
+      .set('Authorization', asAdmin)
+      .send(salon)
 
     expect(response.status).toBe(201)
     expect(response.headers['x-request-id']).toMatch(UUID)
@@ -194,7 +201,9 @@ describe('media type of a response', () => {
   ])(
     'should answer %s as application/problem+json',
     async (_kind, method, path, body, status) => {
-      const call = request(createTestApp())[method](path)
+      const app = createTestApp()
+      const asAdmin = await signInAsAdmin(app, getTestDb())
+      const call = request(app)[method](path).set('Authorization', asAdmin)
 
       const response = await (body === null
         ? call
@@ -249,9 +258,13 @@ describe('a failing database', () => {
   it('should log the statement that failed without its values', async () => {
     const logs: unknown[] = []
     const app = createTestApp({ logs })
+    const asAdmin = await signInAsAdmin(app, getTestDb())
     await getTestDb().execute(sql`ALTER TABLE salons DROP COLUMN "phoneNumber"`)
 
-    const response = await request(app).post(SALONS).send(salon)
+    const response = await request(app)
+      .post(SALONS)
+      .set('Authorization', asAdmin)
+      .send(salon)
 
     expect(response.status).toBe(500)
     expect(logs).toContainEqual(

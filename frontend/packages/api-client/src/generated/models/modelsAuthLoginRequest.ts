@@ -22,7 +22,7 @@ export interface ModelsAuthLoginRequest {
      * @maxLength 128
      */
   password: string;
-  /** 永続セッションを希望するかどうかのフラグ。 */
+  /** セッションを長く保つかどうか。false の場合はログインから8時間、true の場合は30日でセッションが切れる。 */
   rememberMe: boolean;
   /**
      * 2要素認証が有効な場合に入力するワンタイムコード。認証アプリが生成したTOTPコード、またはバックアップコードを指定する。2要素認証が無効なアカウントではnull

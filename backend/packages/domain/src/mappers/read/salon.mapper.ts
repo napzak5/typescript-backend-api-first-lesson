@@ -1,5 +1,4 @@
 import { Result } from '@beauty-salon-backend/utility'
-import { parseISO } from 'date-fns'
 import { z } from 'zod'
 import type {
   ApiOpeningHours,
@@ -10,6 +9,7 @@ import type {
 } from '../../models/salon'
 import { storedBusinessHoursSchema } from '../../schemas/salon.schema'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
+import { numericSchema, timestampSchema } from './columns'
 
 /**
  * Database rows → API response. Property names are the column names; what
@@ -18,14 +18,6 @@ import { type DomainError, DomainErrors, parseWith } from '../../shared'
  * - `timestamptz` is read in PostgreSQL's text format and returned as ISO 8601
  * - `jsonb` is untyped in the database and is checked against the API model
  */
-
-const numericSchema = z.string().transform(Number).pipe(z.number())
-
-const timestampSchema = z
-  .string()
-  .transform((value) => parseISO(value))
-  .pipe(z.date())
-  .transform((value) => value.toISOString())
 
 const convertedColumnsSchema = z.object({
   latitude: numericSchema.nullable(),

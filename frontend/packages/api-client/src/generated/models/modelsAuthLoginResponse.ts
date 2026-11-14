@@ -19,7 +19,7 @@ export interface ModelsAuthLoginResponse {
   refreshToken: string;
   /** トークン種別。常にBearer。 */
   token: ModelsAuthLoginResponseToken;
-  /** アクセストークンの有効期限（秒）。 */
+  /** アクセストークンが有効な残り時間(秒)。通常は900(15分)で、セッションの有効期限が先に来る場合はそれまでの秒数。 */
   expiresIn: number;
   /** ログインしたユーザーの情報。 */
   user: ModelsUserResponse;

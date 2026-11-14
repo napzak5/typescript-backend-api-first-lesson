@@ -1,23 +1,30 @@
-import type { Result } from '@beauty-salon-backend/utility'
+import { Result } from '@beauty-salon-backend/utility'
 import { SalonReadMapper } from '../../mappers/read/salon.mapper'
 import { SalonWriteMapper } from '../../mappers/write/salon.mapper'
+import type { Actor } from '../../models/auth'
 import type { ApiSalonResponse } from '../../models/salon'
 import { salonCreateRequestSchema } from '../../schemas/salon.schema'
-import { type DomainError, parseWith } from '../../shared'
+import { type DomainError, DomainErrors, parseWith } from '../../shared'
+import { mayCreateSalon } from './_shared/authorization'
 import type { SalonUseCaseDependencies } from './_shared/dependencies'
 
 export class CreateSalonUseCase {
   constructor(private readonly dependencies: SalonUseCaseDependencies) {}
 
   /**
-   * Validate → map API to DB → save → map DB to API. A second salon with the
+   * Authorize → validate → map API to DB → save → map DB to API. A second salon with the
    * same email is rejected by the unique index, which the repository reports
    * as `alreadyExists`. The index leaves out deleted salons, so their email
    * can be used again.
    */
   async execute(
+    actor: Actor,
     input: unknown,
   ): Promise<Result<ApiSalonResponse, DomainError>> {
+    if (!mayCreateSalon(actor)) {
+      return Result.error(DomainErrors.forbidden())
+    }
+
     const request = parseWith(salonCreateRequestSchema, input, 'Invalid salon')
     if (request.type === 'error') {
       return request

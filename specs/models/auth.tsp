@@ -5,21 +5,6 @@ using TypeSpec.Http;
 
 namespace BeautySalon.Models {
   @doc("""
-    認証状態区分 - セッションの認証状態を表す区分
-    
-    unauthenticated: 未認証 - ログインしていない状態
-    authenticated: 認証済み - 正常にログインしている状態
-    pending_two_factor: 2要素認証待ち - 2要素認証の入力を待っている状態
-    locked: ロック中 - アカウントがロックされている状態
-    """)
-  enum AuthenticationStateType {
-    unauthenticated,
-    authenticated,
-    pending_two_factor,
-    locked,
-  }
-
-  @doc("""
     ユーザーロール区分 - システム内でのユーザーの役割と権限レベル
     
     customer: 顧客 - サービスの予約・利用が可能なユーザー
@@ -84,8 +69,8 @@ namespace BeautySalon.Models {
     @doc("認証システム上での役割区分。")
     role: UserRoleType;
 
-    @doc("ユーザーに個別に付与された権限名の一覧(例: manage_staff)。付与がない場合は空配列。値が保存されていない場合はnull")
-    permissions: string[] | null;
+    @doc("ユーザーに個別に付与された権限名の一覧(例: manage_staff)。付与がない場合は空配列。認可の判定には使わない(判定は role と、所属するサロンで行う)")
+    permissions: string[];
 
     @doc("アカウントの稼働状態。")
     status: UserAccountStatusType;
@@ -99,8 +84,8 @@ namespace BeautySalon.Models {
     @doc("2要素認証が有効かどうか。")
     twoFactorEnabled: boolean;
 
-    @doc("2要素認証の設定状態。未設定の場合はnull")
-    twoFactorStatus: TwoFactorStatusType | null;
+    @doc("2要素認証の設定状態。")
+    twoFactorStatus: TwoFactorStatusType;
 
     @doc("連続したログイン失敗回数。")
     failedLoginAttempts: int32;
@@ -132,7 +117,8 @@ namespace BeautySalon.Models {
 
   @doc("""
     セッションレスポンス - sessions テーブルの公開カラムを返す。
-    セッショントークンとリフレッシュトークンは返さない(発行したログイン・トークン再発行のレスポンスでのみ返す)。
+    トークンのハッシュは返さない。サーバーはトークンそのものを保存しないので、
+    トークンは発行したログイン・トークン再発行のレスポンスでのみ返す。
     プロパティ名と null 許可は DB カラムと一致させている。
     """)
   model SessionResponse {
@@ -142,29 +128,23 @@ namespace BeautySalon.Models {
     @doc("セッション所有者のユーザーID。")
     userId: UserId;
 
-    @doc("セッション発行元のIPアドレス。")
-    ipAddress: string;
+    @doc("ログインしたときの接続元IPアドレス。取得できなかった場合はnull")
+    ipAddress: string | null;
 
-    @doc("ブラウザやアプリを示すユーザーエージェント文字列。")
-    userAgent: string;
+    @doc("ログインしたときの User-Agent ヘッダーの値。ヘッダーがなかった場合はnull")
+    userAgent: string | null;
 
-    @doc("セッションを作成した端末の識別子。端末が特定されていない場合はnull")
-    deviceId: string | null;
-
-    @doc("セッションの有効期限。アクセストークンはこの日時まで使用できる。")
+    @doc("現在のアクセストークンの有効期限。発行から15分。")
     expiresAt: utcDateTime;
 
-    @doc("リフレッシュトークンの有効期限。この日時を過ぎるとアクセストークンを再発行できない。リフレッシュトークンを発行していない場合はnull")
-    refreshExpiresAt: utcDateTime | null;
+    @doc("セッションそのものの有効期限。ログイン時に決まり(通常は8時間後、rememberMe を指定した場合は30日後)、トークンを再発行しても延びない。この日時を過ぎると再発行できない。")
+    refreshExpiresAt: utcDateTime;
 
-    @doc("直近のアクティビティ日時。")
+    @doc("最後にトークンを発行した(ログインまたは再発行した)日時。")
     lastActivityAt: utcDateTime;
 
-    @doc("セッション作成日時。")
+    @doc("セッション作成日時(ログインした日時)。")
     createdAt: utcDateTime;
-
-    @doc("セッションの認証状態。未設定の場合はnull")
-    authenticationState: AuthenticationStateType | null;
   }
 
   @doc("""
@@ -216,7 +196,7 @@ namespace BeautySalon.Models {
     @maxLength(128)
     password: string;
 
-    @doc("永続セッションを希望するかどうかのフラグ。")
+    @doc("セッションを長く保つかどうか。false の場合はログインから8時間、true の場合は30日でセッションが切れる。")
     rememberMe: boolean;
 
     @doc("2要素認証が有効な場合に入力するワンタイムコード。認証アプリが生成したTOTPコード、またはバックアップコードを指定する。2要素認証が無効なアカウントではnull")
@@ -239,7 +219,7 @@ namespace BeautySalon.Models {
     @doc("トークン種別。常にBearer。")
     token: "Bearer";
 
-    @doc("アクセストークンの有効期限（秒）。")
+    @doc("アクセストークンが有効な残り時間(秒)。通常は900(15分)で、セッションの有効期限が先に来る場合はそれまでの秒数。")
     expiresIn: int32;
 
     @doc("ログインしたユーザーの情報。")

@@ -37,6 +37,16 @@ export type paymentCrudRefundResponse400 = {
   status: 400
 }
 
+export type paymentCrudRefundResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type paymentCrudRefundResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type paymentCrudRefundResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -70,7 +80,7 @@ export type paymentCrudRefundResponse500 = {
 export type paymentCrudRefundResponseSuccess = (paymentCrudRefundResponse200) & {
   headers: Headers;
 };
-export type paymentCrudRefundResponseError = (paymentCrudRefundResponse400 | paymentCrudRefundResponse404 | paymentCrudRefundResponse409 | paymentCrudRefundResponse413 | paymentCrudRefundResponse415 | paymentCrudRefundResponse429 | paymentCrudRefundResponse500) & {
+export type paymentCrudRefundResponseError = (paymentCrudRefundResponse400 | paymentCrudRefundResponse401 | paymentCrudRefundResponse403 | paymentCrudRefundResponse404 | paymentCrudRefundResponse409 | paymentCrudRefundResponse413 | paymentCrudRefundResponse415 | paymentCrudRefundResponse429 | paymentCrudRefundResponse500) & {
   headers: Headers;
 };
 

@@ -53,10 +53,12 @@ TypeSpec に定義があっても、バックエンドに実装があるとは�
 |---|---|
 | `models/salon.tsp`、`operations/salon-operations.tsp`（`SalonCrud` の 5 オペレーション） | `backend/packages/api/src/routes/salon/`。定義と実装は一致している |
 | `operations/system-operations.tsp` の `SystemOperations`（`alive`、`ready`、`health`） | `backend/packages/api/src/routes/system/index.ts`。定義と実装は一致している |
-| 上記以外のドメイン（auth、customer、staff、service、booking、review、treatment、payment、inventory） | なし。TypeSpec は DB のテーブルと一致している（`pnpm check:api-db`）が、ドメイン・リポジトリ・ルートのコードはない |
+| `models/auth.tsp`、`operations/auth-operations.tsp` の `AuthCrud` のうち `login`、`refreshToken`、`logout`、`logoutAll`、`getCurrentUser` | `backend/packages/api/src/routes/auth/`。この 5 オペレーションは定義と実装が一致している |
+| `operations/auth-operations.tsp` の残り（`AuthCrud` の登録・メールアドレスの確認・パスワードの再設定と変更・2 要素認証、`SessionCrud`、`AdminAuthCrud`） | なし（[認証と認可](./authentication.md#実装範囲)） |
+| 上記以外のドメイン（customer、staff、service、booking、review、treatment、payment、inventory） | なし。TypeSpec は DB のテーブルと一致している（`pnpm check:api-db`）が、ドメイン・リポジトリ・ルートのコードはない |
 | attachment、permission と、inventory の発注・アラート、treatment のカルテ | なし。対応するテーブルもまだない（[API-DB型制約マッピング](./api-db-type-constraints-mapping.md#ルールに載せるモデル載せないモデル)） |
 
-`main.tsp` は `@useAuth(BearerAuth)` を宣言しているが、バックエンドに認証・認可のコードはない。認証なしで呼べるオペレーション（システムのオペレーション、登録・ログインなどの認証フロー、共有リンク）には `@useAuth(NoAuth)` が付いている。
+`main.tsp` は `@useAuth(BearerAuth)` を宣言しており、認証なしで呼べるオペレーション（システムのオペレーション、サロンの一覧と 1 件の取得、登録・ログインなどの認証フロー、共有リンク）には `@useAuth(NoAuth)` が付いている。実装済みのオペレーションでは、`@useAuth(NoAuth)` のないものをサーバーがアクセストークンで認証し、権限をユースケースで判定する（[認証と認可](./authentication.md)）。
 
 ## 各ファイルの内容
 
@@ -92,7 +94,7 @@ namespace BeautySalon {
 | ファイル | 内容 |
 |---|---|
 | `common.tsp` | ID スカラー（`SalonId`、`CustomerId` など。`@format("uuid")`）、複数のドメインが使う Enum（`DayOfWeekType`、`StaffLevelType`、`ServiceCategoryType` など）、複数のドメインが使うモデル（`OpeningHours`、`BusinessHours`、`TimeSlot`、`AuditInfo`、`Money` など） |
-| `common-api-patterns.tsp` | エラー（`ProblemDetails`、`ProblemResponse<TStatus>`、`CommonErrors`、`RequestBodyErrors`、`ErrorCodeType`、`ValidationError`）、レスポンスのラッパー（`ApiResponse<T>`、`ResponseMeta`、`CursorPaginationResponse<T>`、`PaginationMeta`、`PaginationLinks`）、ヘルスチェック（`HealthStatus`、`HealthCheck`、`SystemReadyResponse`） |
+| `common-api-patterns.tsp` | エラー（`ProblemDetails`、`ProblemResponse<TStatus>`、`UnauthenticatedResponse`、`PermissionDeniedResponse`、`PublicErrors`、`SessionErrors`、`CommonErrors`、`RequestBodyErrors`、`ErrorCodeType`、`ValidationError`）、レスポンスのラッパー（`ApiResponse<T>`、`ResponseMeta`、`CursorPaginationResponse<T>`、`PaginationMeta`、`PaginationLinks`）、ヘルスチェック（`HealthStatus`、`HealthCheck`、`SystemReadyResponse`） |
 
 1 つのドメインだけが使う Enum やモデルは、そのドメインのファイルに置く。どこからも参照されない定義は残さない（TypeSpec は参照されないモデルも OpenAPI に出力する）。
 
@@ -188,3 +190,4 @@ TypeSpec のフォーマットは `tsp format` で、ルートの `pnpm format:c
 - [TypeSpec API型定義ルール](./typespec-api-type-rules.md)
 - [型生成システム](./type-generation-system.md)
 - [API-DB型制約マッピング](./api-db-type-constraints-mapping.md)
+- [認証と認可](./authentication.md)

@@ -34,10 +34,14 @@
 pnpm install        # 依存関係をインストールする。husky の pre-commit フックも設定される
 make infra-up       # PostgreSQL を Docker で起動し、接続できるようになるまで待つ
 pnpm db:fresh       # sql/setup.sql からスキーマを作成する
-pnpm db:seed        # サンプルデータを投入する（任意）
+pnpm db:seed        # サンプルデータを投入する（任意）。ログインできるアカウントも作る
 pnpm dev            # バックエンド :3000、フロントエンド :3001〜3003
 ```
 
+- **`pnpm db:seed` が作るアカウント**は、すべて同じパスワード
+  （`backend/packages/database/src/seeds/seed-data/users.ts` の `SEED_PASSWORD`）でログインできます。
+  公開されているパスワードなので、`NODE_ENV=production` では `pnpm db:seed` は実行を拒否します。
+  アカウントの一覧は [認証と認可](./authentication.md#シードのアカウント) にあります。
 - **生成ファイルはコミット済み**です。TypeSpec を変更しない限り `pnpm generate` は不要です。
 - **ビルドが必要なのは `pnpm typecheck` とビルド済みサーバーの起動（`pnpm start:backend`）だけ**です。
   `pnpm dev:backend`、データベースのコマンド（`pnpm db:fresh` など）、テストは、エクスポート条件
@@ -70,11 +74,15 @@ pnpm dev            # バックエンド :3000、フロントエンド :3001〜3
 
 ```bash
 curl http://localhost:3000/api/system/ready   # データベースに接続できていれば 200
-curl http://localhost:3000/api/v1/salons      # サロン一覧
+curl http://localhost:3000/api/v1/salons      # サロン一覧（認証なしで呼べる）
 ```
 
-実装済みの API は Salon ドメインとシステムエンドポイント（`/api/system/alive`、`/api/system/ready`、
+実装済みの API は、Salon ドメイン、認証の 5 つのオペレーション（`/api/v1/auth` の `login`、`refresh`、
+`logout`、`logout-all`、`me`）、システムエンドポイント（`/api/system/alive`、`/api/system/ready`、
 `/api/system/health`）だけです。他のドメインは TypeSpec とデータベーススキーマにだけ存在します。
+
+サロンの作成・更新・削除にはアクセストークンが必要です。シードのアカウントでログインしてトークンを
+取得する手順と、ロールごとの権限は [認証と認可](./authentication.md) を参照してください。
 
 ### Docker Compose で全体を起動する
 
@@ -171,7 +179,7 @@ pnpm db:generate-sql
 | コマンド | 内容 |
 |----------|------|
 | `pnpm db:fresh` | すべて削除し、`sql/setup.sql` からスキーマを作り直す |
-| `pnpm db:seed` | サンプルデータを投入する（`--if-empty` を付けるとデータがないときだけ） |
+| `pnpm db:seed` | サンプルデータを投入する（`--if-empty` を付けるとデータがないときだけ）。本番環境（`NODE_ENV=production`）では実行を拒否する |
 | `pnpm db:truncate` | 全テーブルの行を削除する。スキーマは残る |
 
 接続先は `DATABASE_URL` で決まります。別のデータベースを対象にするときは、コマンドの前に
@@ -191,10 +199,10 @@ Salon ドメインがリファレンス実装です。新しいドメインは�
 | 4 | リクエストの Zod スキーマ | `backend/packages/domain/src/schemas/salon.schema.ts` |
 | 5 | マッパー | `backend/packages/domain/src/mappers/read/salon.mapper.ts`、`backend/packages/domain/src/mappers/write/salon.mapper.ts` |
 | 6 | リポジトリのインターフェースと実装 | `backend/packages/domain/src/repositories/salon.repository.ts`、`backend/packages/infrastructure/src/repositories/salon.repository.impl.ts` |
-| 7 | ユースケース | `backend/packages/domain/src/business-logic/salon/` |
-| 8 | ハンドラーとルーター、アプリへの登録 | `backend/packages/api/src/routes/salon/`、`backend/packages/api/src/index.ts` |
+| 7 | ユースケースと権限の判定（公開でないオペレーションは `actor` を受け取り、最初に権限を判定する） | `backend/packages/domain/src/business-logic/salon/`、その中の `_shared/authorization.ts` |
+| 8 | ハンドラーとルーター、アプリへの登録（公開でないオペレーションのハンドラーは `authenticated` で包む） | `backend/packages/api/src/routes/salon/`、`backend/packages/api/src/index.ts` |
 | 9 | API と DB の整合ルールにモデルを登録する | `backend/packages/database/src/scripts/api-consistency-rules.ts` |
-| 10 | テスト（スキーマ・マッパー・ユースケースの単体テスト、エンドポイントごとの統合テスト） | `backend/packages/domain/src/__tests__/`、`backend/packages/api/src/__tests__/salon.integration.test.ts` |
+| 10 | テスト（スキーマ・マッパー・ユースケースの単体テスト、エンドポイントごとの統合テスト。公開でないオペレーションは、許可されるユーザーと拒否されるユーザーの両方） | `backend/packages/domain/src/__tests__/`、`backend/packages/api/src/__tests__/salon.integration.test.ts` |
 
 テストの基準は [テスト要件](./testing-requirements.md)、統合テストの書き方は
 [API テストガイド](./api-testing-guide.md) を参照してください。

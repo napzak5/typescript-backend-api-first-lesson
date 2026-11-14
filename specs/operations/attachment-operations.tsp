@@ -181,7 +181,7 @@ namespace BeautySalon.Operations {
           }
         | ProblemResponse<401>
         | ProblemResponse<404>
-        | CommonErrors;
+        | PublicErrors;
 
       @doc("共有リンク利用者が安全にファイル本体を取得できるよう、署名付きダウンロードURLを返却します。パスワード保護された共有リンクでパスワードが指定されていないか一致しない場合は401を、トークンが存在しない場合と、共有リンクが有効期限切れ・ダウンロード回数の上限到達・失効のいずれかの場合は404を返します。")
       @summary("Issue a download URL for a shared file")
@@ -200,7 +200,7 @@ namespace BeautySalon.Operations {
           }
         | ProblemResponse<401>
         | ProblemResponse<404>
-        | CommonErrors;
+        | PublicErrors;
     }
   }
 }

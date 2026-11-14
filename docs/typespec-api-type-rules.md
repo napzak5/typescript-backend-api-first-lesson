@@ -14,7 +14,7 @@ TypeSpec で API のモデルとオペレーションを定義するときのル
 
 すべてのドメインの TypeSpec が、このルールに従っている。テーブルに対応するモデルは、プロパティ名・null 許可・Enum の値が DB と一致しており、`pnpm check:api-db` が検査する（[API-DB型制約マッピング](./api-db-type-constraints-mapping.md)）。
 
-バックエンドに実装があるのは Salon とシステムのオペレーションだけである。ほかのドメインは TypeSpec と DB スキーマにだけ存在する。ロール・権限、添付ファイル、発注、カルテなど、テーブルがまだない機能の TypeSpec もある（一覧は [API-DB型制約マッピング](./api-db-type-constraints-mapping.md#ルールに載せるモデル載せないモデル)）。
+バックエンドに実装があるのは、Salon とシステムのオペレーション、および認証の 5 つのオペレーション（`/api/v1/auth` の `login`、`refresh`、`logout`、`logout-all`、`me`）である。認証の残りのオペレーションとほかのドメインは TypeSpec と DB スキーマにだけ存在する。ロール・権限、添付ファイル、発注、カルテなど、テーブルがまだない機能の TypeSpec もある（一覧は [API-DB型制約マッピング](./api-db-type-constraints-mapping.md#ルールに載せるモデル載せないモデル)）。
 
 規約から外れている箇所は次のとおりで、いずれも意図したものである。
 
@@ -24,7 +24,7 @@ TypeSpec で API のモデルとオペレーションを定義するときのル
 | `POST /api/v1/customers/bulk`、`POST /api/v1/treatments/{id}/photos` | 201 に `Location` がない | 複数の行を作成するので、指す先が 1 つに決まらない |
 | `DELETE /api/v1/customers/bulk` | 204 ではなく 200 | 削除した ID の一覧を返す |
 | `AttachmentCreateRequest` の `salonId`、`tags` | Create なのに Optional | `multipart/form-data` のパートであり、null を値として送れない |
-| `/api/v1/auth/login`、`/api/v1/auth/refresh`、`/api/v1/share/...` | 401 を個別に定義している | 認証の失敗そのものがオペレーションの結果である |
+| `/api/v1/auth/login`、`/api/v1/auth/refresh`、`/api/v1/share/...` | `@useAuth(NoAuth)` なのに 401 を個別に定義している（ログインと再発行は `UnauthenticatedResponse`、共有リンクは `ProblemResponse<401>`） | 認証の失敗そのものがオペレーションの結果である |
 
 ## モデル命名
 
@@ -212,6 +212,7 @@ namespace SalonOperations {
   interface SalonCrud {
     @doc("絞り込み条件とページネーションを指定してサロンを一覧取得します。削除済みのサロンは含みません。")
     @summary("List salons")
+    @useAuth(NoAuth)
     @get
     list(...SalonSearchRequest):
       | {
@@ -219,9 +220,9 @@ namespace SalonOperations {
           @body response: CursorPaginationResponse<SalonResponse>;
         }
       | ProblemResponse<400>
-      | CommonErrors;
+      | PublicErrors;
 
-    @doc("サロンを新規登録します。メールアドレスが既存のサロンと重複する場合は409を返します。")
+    @doc("サロンを新規登録します。admin だけが実行できます。メールアドレスが既存のサロンと重複する場合は409を返します。")
     @summary("Create a salon")
     @post
     create(@body request: SalonCreateRequest):
@@ -243,10 +244,21 @@ namespace SalonOperations {
 - 作成は 201 と `Location` ヘッダー、削除は本文なしの 204 を返す
 - 更新は `@patch` にする（部分更新）
 - エラーのレスポンスはすべて `ProblemResponse<ステータス>` にする。本文は `ProblemDetails`、メディアタイプは `application/problem+json` になる。そのオペレーションのユースケースが返すもの（検証エラー 400、未検出 404、重複 409）をステータスごとに列挙する
-- どのルートでもサーバーが返すエラーも定義に含める。すべてのオペレーションに `CommonErrors`（429、500）を、本文を受け取るオペレーションには `RequestBodyErrors`（413、415）も加える。生成されるクライアントの戻り値はステータスコードのユニオンなので、定義にないステータスはクライアントが扱えない
+- どのルートでもサーバーが返すエラーも定義に含める。すべてのオペレーションに、呼び出し方に合うエイリアスを 1 つ加える（下の表）。本文を受け取るオペレーションには `RequestBodyErrors`（413、415）も加える。生成されるクライアントの戻り値はステータスコードのユニオンなので、定義にないステータスはクライアントが扱えない
+- 権限の確認があるオペレーションの `@doc` には、実行できるロールを書く（「admin だけが実行できます。」）
 - パスの ID は ID スカラーで型付けする（`@path id: SalonId`）
 - オペレーションのファイルは `namespace <Domain>Operations { interface <Resource>Crud { ... } }` の形にし、`@route` と `@tag` は namespace に付ける
 - 新しいオペレーションは、実装する単位で定義する。使う予定のないオペレーションを先に定義しない（YAGNI）
+
+認証と権限に関するエラーは、オペレーションの呼び出し方で決まる 3 つのエイリアスのどれかで定義する。エイリアスは包含関係にあり、広いものが狭いものを含む。
+
+| オペレーション | 書き方 | 含まれるステータス |
+|---|---|---|
+| 認証なしで呼べる | `@useAuth(NoAuth)` を付け、`PublicErrors` を加える | 429、500 |
+| ログインしていれば誰でも呼べる（ログアウト、自分の情報の取得など） | `SessionErrors` | 401、429、500 |
+| ロールやサロンによる権限の確認がある | `CommonErrors` | 401、403、429、500 |
+
+`@useAuth(NoAuth)` を付けていないオペレーションは、API 全体のセキュリティスキーム（`specs/main.tsp` の `@useAuth(BearerAuth)`）によりアクセストークンが必要になる。実装済みのオペレーションでは、サーバーがこのトークンを検証し、権限はユースケースが判定する（[認証と認可](./authentication.md)）。
 
 ステータスコードと、オペレーションの切り方は次のように統一している。
 
@@ -256,7 +268,8 @@ namespace SalonOperations {
 | 本文の ID が存在しない、または別のサロン・顧客のもの | 400 |
 | 一意制約に違反する | 409 |
 | 現在の状態では実行できない操作（完了した予約のキャンセルなど） | 409 |
-| 未認証・権限不足 | オペレーションごとには定義しない。認証は API 全体のセキュリティスキーム（`specs/main.tsp` の `@useAuth(BearerAuth)`）で、認証なしで呼べるオペレーションには `@useAuth(NoAuth)` を付ける。401 を定義するのは、認証の失敗がそのオペレーションの結果である場合（ログイン）だけである |
+| 未認証・権限不足 | 401（`UnauthenticatedResponse`、`WWW-Authenticate` ヘッダー付き）と 403（`PermissionDeniedResponse`）。`ProblemResponse<401>` や `ProblemResponse<403>` を個別に並べず、上の表のエイリアス（`SessionErrors`、`CommonErrors`）で定義する。認証なしのオペレーションで 401 を個別に定義するのは、認証の失敗がそのオペレーションの結果である場合（ログイン、トークンの再発行）だけである |
+| ほかのサロンに属するリソース | 存在を知らせないよう 404。公開情報であるサロンそのものへの操作だけが 403 |
 | 状態の遷移（確定、キャンセル、完了、返金など） | ステータスのカラムを更新リクエストで書き換えず、`POST .../{id}/<action>` のアクションにする。リクエストとレスポンスは `XXX<Action>Request` / `XXX<Action>Response` |
 | 一括操作 | 1 つのトランザクションで全件を処理する。1 件でも失敗すれば全体を失敗させ、成功のレスポンスに件ごとのエラーを入れない |
 | 親で絞り込む一覧 | 一覧の検索リクエストに親の ID のフィルターを持たせる。同じ結果を返すネストしたルート（`/customers/{id}/bookings` など）は作らない |
@@ -274,7 +287,11 @@ namespace SalonOperations {
 | `PaginationMeta` | `total`、`limit`、`hasMore`、`cursor`、`nextCursor`、`prevCursor` |
 | `ProblemDetails` | RFC 9457（旧 RFC 7807）の problem details に `code`、`errors`、`correlationId`、`timestamp` を加えたもの |
 | `ProblemResponse<TStatus>` | ステータス `TStatus` で `ProblemDetails` を `application/problem+json` として返すエラーレスポンス |
-| `CommonErrors` | `RateLimitedResponse`（429、`Retry-After` ヘッダー付き）と `InternalServerErrorResponse`（500） |
+| `UnauthenticatedResponse` | 401 の `ProblemResponse` に `WWW-Authenticate` ヘッダーを加えたもの |
+| `PermissionDeniedResponse` | 403 の `ProblemResponse` |
+| `PublicErrors` | `RateLimitedResponse`（429、`Retry-After` ヘッダー付き）と `InternalServerErrorResponse`（500） |
+| `SessionErrors` | `UnauthenticatedResponse` と `PublicErrors` |
+| `CommonErrors` | `PermissionDeniedResponse` と `SessionErrors` |
 | `RequestBodyErrors` | `PayloadTooLargeResponse`（413）と `UnsupportedMediaTypeResponse`（415） |
 | `HealthStatus`、`SystemReadyResponse` | `/api/system/health`、`/api/system/ready` のレスポンス |
 
@@ -318,4 +335,5 @@ pnpm check:api-db    # API モデルと DB スキーマの一致
 - [CLAUDE.md](../CLAUDE.md) - 命名規則と API-DB 整合性ルールの正
 - [TypeSpecディレクトリ構成ガイド](./typespec-directory-structure.md)
 - [API-DB型制約マッピング](./api-db-type-constraints-mapping.md)
+- [認証と認可](./authentication.md)
 - [型生成システム](./type-generation-system.md)

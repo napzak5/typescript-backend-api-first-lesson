@@ -74,6 +74,16 @@ export type attachmentCrudListResponse400 = {
   status: 400
 }
 
+export type attachmentCrudListResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type attachmentCrudListResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type attachmentCrudListResponse429 = {
   data: ModelsProblemDetails
   status: 429
@@ -87,7 +97,7 @@ export type attachmentCrudListResponse500 = {
 export type attachmentCrudListResponseSuccess = (attachmentCrudListResponse200) & {
   headers: Headers;
 };
-export type attachmentCrudListResponseError = (attachmentCrudListResponse400 | attachmentCrudListResponse429 | attachmentCrudListResponse500) & {
+export type attachmentCrudListResponseError = (attachmentCrudListResponse400 | attachmentCrudListResponse401 | attachmentCrudListResponse403 | attachmentCrudListResponse429 | attachmentCrudListResponse500) & {
   headers: Headers;
 };
 
@@ -223,6 +233,16 @@ export type shareLinkCrudGetResponse400 = {
   status: 400
 }
 
+export type shareLinkCrudGetResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type shareLinkCrudGetResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type shareLinkCrudGetResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -241,7 +261,7 @@ export type shareLinkCrudGetResponse500 = {
 export type shareLinkCrudGetResponseSuccess = (shareLinkCrudGetResponse200) & {
   headers: Headers;
 };
-export type shareLinkCrudGetResponseError = (shareLinkCrudGetResponse400 | shareLinkCrudGetResponse404 | shareLinkCrudGetResponse429 | shareLinkCrudGetResponse500) & {
+export type shareLinkCrudGetResponseError = (shareLinkCrudGetResponse400 | shareLinkCrudGetResponse401 | shareLinkCrudGetResponse403 | shareLinkCrudGetResponse404 | shareLinkCrudGetResponse429 | shareLinkCrudGetResponse500) & {
   headers: Headers;
 };
 
@@ -370,6 +390,16 @@ export type shareLinkCrudDeleteResponse400 = {
   status: 400
 }
 
+export type shareLinkCrudDeleteResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type shareLinkCrudDeleteResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type shareLinkCrudDeleteResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -388,7 +418,7 @@ export type shareLinkCrudDeleteResponse500 = {
 export type shareLinkCrudDeleteResponseSuccess = (shareLinkCrudDeleteResponse204) & {
   headers: Headers;
 };
-export type shareLinkCrudDeleteResponseError = (shareLinkCrudDeleteResponse400 | shareLinkCrudDeleteResponse404 | shareLinkCrudDeleteResponse429 | shareLinkCrudDeleteResponse500) & {
+export type shareLinkCrudDeleteResponseError = (shareLinkCrudDeleteResponse400 | shareLinkCrudDeleteResponse401 | shareLinkCrudDeleteResponse403 | shareLinkCrudDeleteResponse404 | shareLinkCrudDeleteResponse429 | shareLinkCrudDeleteResponse500) & {
   headers: Headers;
 };
 
@@ -479,6 +509,16 @@ export type attachmentCrudUploadFileResponse400 = {
   status: 400
 }
 
+export type attachmentCrudUploadFileResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type attachmentCrudUploadFileResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type attachmentCrudUploadFileResponse413 = {
   data: ModelsProblemDetails
   status: 413
@@ -502,7 +542,7 @@ export type attachmentCrudUploadFileResponse500 = {
 export type attachmentCrudUploadFileResponseSuccess = (attachmentCrudUploadFileResponse201) & {
   headers: Headers;
 };
-export type attachmentCrudUploadFileResponseError = (attachmentCrudUploadFileResponse400 | attachmentCrudUploadFileResponse413 | attachmentCrudUploadFileResponse415 | attachmentCrudUploadFileResponse429 | attachmentCrudUploadFileResponse500) & {
+export type attachmentCrudUploadFileResponseError = (attachmentCrudUploadFileResponse400 | attachmentCrudUploadFileResponse401 | attachmentCrudUploadFileResponse403 | attachmentCrudUploadFileResponse413 | attachmentCrudUploadFileResponse415 | attachmentCrudUploadFileResponse429 | attachmentCrudUploadFileResponse500) & {
   headers: Headers;
 };
 
@@ -603,6 +643,16 @@ export type attachmentCrudGetUploadUrlResponse400 = {
   status: 400
 }
 
+export type attachmentCrudGetUploadUrlResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type attachmentCrudGetUploadUrlResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type attachmentCrudGetUploadUrlResponse413 = {
   data: ModelsProblemDetails
   status: 413
@@ -626,7 +676,7 @@ export type attachmentCrudGetUploadUrlResponse500 = {
 export type attachmentCrudGetUploadUrlResponseSuccess = (attachmentCrudGetUploadUrlResponse200) & {
   headers: Headers;
 };
-export type attachmentCrudGetUploadUrlResponseError = (attachmentCrudGetUploadUrlResponse400 | attachmentCrudGetUploadUrlResponse413 | attachmentCrudGetUploadUrlResponse415 | attachmentCrudGetUploadUrlResponse429 | attachmentCrudGetUploadUrlResponse500) & {
+export type attachmentCrudGetUploadUrlResponseError = (attachmentCrudGetUploadUrlResponse400 | attachmentCrudGetUploadUrlResponse401 | attachmentCrudGetUploadUrlResponse403 | attachmentCrudGetUploadUrlResponse413 | attachmentCrudGetUploadUrlResponse415 | attachmentCrudGetUploadUrlResponse429 | attachmentCrudGetUploadUrlResponse500) & {
   headers: Headers;
 };
 
@@ -731,6 +781,16 @@ export type attachmentCrudGetResponse400 = {
   status: 400
 }
 
+export type attachmentCrudGetResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type attachmentCrudGetResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type attachmentCrudGetResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -749,7 +809,7 @@ export type attachmentCrudGetResponse500 = {
 export type attachmentCrudGetResponseSuccess = (attachmentCrudGetResponse200) & {
   headers: Headers;
 };
-export type attachmentCrudGetResponseError = (attachmentCrudGetResponse400 | attachmentCrudGetResponse404 | attachmentCrudGetResponse429 | attachmentCrudGetResponse500) & {
+export type attachmentCrudGetResponseError = (attachmentCrudGetResponse400 | attachmentCrudGetResponse401 | attachmentCrudGetResponse403 | attachmentCrudGetResponse404 | attachmentCrudGetResponse429 | attachmentCrudGetResponse500) & {
   headers: Headers;
 };
 
@@ -878,6 +938,16 @@ export type attachmentCrudDeleteResponse400 = {
   status: 400
 }
 
+export type attachmentCrudDeleteResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type attachmentCrudDeleteResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type attachmentCrudDeleteResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -896,7 +966,7 @@ export type attachmentCrudDeleteResponse500 = {
 export type attachmentCrudDeleteResponseSuccess = (attachmentCrudDeleteResponse204) & {
   headers: Headers;
 };
-export type attachmentCrudDeleteResponseError = (attachmentCrudDeleteResponse400 | attachmentCrudDeleteResponse404 | attachmentCrudDeleteResponse429 | attachmentCrudDeleteResponse500) & {
+export type attachmentCrudDeleteResponseError = (attachmentCrudDeleteResponse400 | attachmentCrudDeleteResponse401 | attachmentCrudDeleteResponse403 | attachmentCrudDeleteResponse404 | attachmentCrudDeleteResponse429 | attachmentCrudDeleteResponse500) & {
   headers: Headers;
 };
 
@@ -987,6 +1057,16 @@ export type attachmentCrudGetDownloadUrlResponse400 = {
   status: 400
 }
 
+export type attachmentCrudGetDownloadUrlResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type attachmentCrudGetDownloadUrlResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type attachmentCrudGetDownloadUrlResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -1005,7 +1085,7 @@ export type attachmentCrudGetDownloadUrlResponse500 = {
 export type attachmentCrudGetDownloadUrlResponseSuccess = (attachmentCrudGetDownloadUrlResponse200) & {
   headers: Headers;
 };
-export type attachmentCrudGetDownloadUrlResponseError = (attachmentCrudGetDownloadUrlResponse400 | attachmentCrudGetDownloadUrlResponse404 | attachmentCrudGetDownloadUrlResponse429 | attachmentCrudGetDownloadUrlResponse500) & {
+export type attachmentCrudGetDownloadUrlResponseError = (attachmentCrudGetDownloadUrlResponse400 | attachmentCrudGetDownloadUrlResponse401 | attachmentCrudGetDownloadUrlResponse403 | attachmentCrudGetDownloadUrlResponse404 | attachmentCrudGetDownloadUrlResponse429 | attachmentCrudGetDownloadUrlResponse500) & {
   headers: Headers;
 };
 
@@ -1149,6 +1229,16 @@ export type shareLinkCrudCreateResponse400 = {
   status: 400
 }
 
+export type shareLinkCrudCreateResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type shareLinkCrudCreateResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type shareLinkCrudCreateResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -1177,7 +1267,7 @@ export type shareLinkCrudCreateResponse500 = {
 export type shareLinkCrudCreateResponseSuccess = (shareLinkCrudCreateResponse201) & {
   headers: Headers;
 };
-export type shareLinkCrudCreateResponseError = (shareLinkCrudCreateResponse400 | shareLinkCrudCreateResponse404 | shareLinkCrudCreateResponse413 | shareLinkCrudCreateResponse415 | shareLinkCrudCreateResponse429 | shareLinkCrudCreateResponse500) & {
+export type shareLinkCrudCreateResponseError = (shareLinkCrudCreateResponse400 | shareLinkCrudCreateResponse401 | shareLinkCrudCreateResponse403 | shareLinkCrudCreateResponse404 | shareLinkCrudCreateResponse413 | shareLinkCrudCreateResponse415 | shareLinkCrudCreateResponse429 | shareLinkCrudCreateResponse500) & {
   headers: Headers;
 };
 
@@ -1283,6 +1373,16 @@ export type shareLinkCrudListResponse400 = {
   status: 400
 }
 
+export type shareLinkCrudListResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type shareLinkCrudListResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type shareLinkCrudListResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -1301,7 +1401,7 @@ export type shareLinkCrudListResponse500 = {
 export type shareLinkCrudListResponseSuccess = (shareLinkCrudListResponse200) & {
   headers: Headers;
 };
-export type shareLinkCrudListResponseError = (shareLinkCrudListResponse400 | shareLinkCrudListResponse404 | shareLinkCrudListResponse429 | shareLinkCrudListResponse500) & {
+export type shareLinkCrudListResponseError = (shareLinkCrudListResponse400 | shareLinkCrudListResponse401 | shareLinkCrudListResponse403 | shareLinkCrudListResponse404 | shareLinkCrudListResponse429 | shareLinkCrudListResponse500) & {
   headers: Headers;
 };
 

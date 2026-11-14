@@ -23,11 +23,8 @@ export interface ModelsUserResponse {
   email: string;
   /** 認証システム上での役割区分。 */
   role: ModelsUserRoleType;
-  /**
-     * ユーザーに個別に付与された権限名の一覧(例: manage_staff)。付与がない場合は空配列。値が保存されていない場合はnull
-     * @nullable
-     */
-  permissions: string[] | null;
+  /** ユーザーに個別に付与された権限名の一覧(例: manage_staff)。付与がない場合は空配列。認可の判定には使わない(判定は role と、所属するサロンで行う) */
+  permissions: string[];
   /** アカウントの稼働状態。 */
   status: ModelsUserAccountStatusType;
   /** メールアドレスが確認済みかどうか。 */
@@ -39,8 +36,8 @@ export interface ModelsUserResponse {
   lastPasswordChange: string | null;
   /** 2要素認証が有効かどうか。 */
   twoFactorEnabled: boolean;
-  /** 2要素認証の設定状態。未設定の場合はnull */
-  twoFactorStatus: ModelsTwoFactorStatusType | null;
+  /** 2要素認証の設定状態。 */
+  twoFactorStatus: ModelsTwoFactorStatusType;
   /** 連続したログイン失敗回数。 */
   failedLoginAttempts: number;
   /**

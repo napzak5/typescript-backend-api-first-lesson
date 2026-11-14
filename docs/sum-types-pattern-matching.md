@@ -11,10 +11,12 @@
 | 型 | 定義場所 | ケース |
 |----|----------|--------|
 | `Result<T, E>` | `backend/packages/utility/src/result/result.ts` | `success` / `error` |
-| `DomainError` | `backend/packages/domain/src/shared/errors.ts` | `validation` / `notFound` / `alreadyExists` / `database` |
+| `DomainError` | `backend/packages/domain/src/shared/errors.ts` | `validation` / `unauthenticated` / `forbidden` / `notFound` / `alreadyExists` / `database` |
 | `HttpError` | `backend/packages/api/src/shared/problem-details.ts` | `routeNotFound` / `malformedBody` / `unsupportedMediaType` / `bodyTooLarge` / `badRequest` / `rateLimited` / `unexpected` |
 | `ApiError` | 同上 | `DomainError` と `HttpError` の和 |
 | `OpeningHoursChange` | `backend/packages/domain/src/models/salon.ts` | `keep` / `replace` |
+| `ActorScope` | `backend/packages/domain/src/models/auth.ts` | `platform` / `salon` / `customer` / `none` |
+| `PasswordVerification` | `backend/packages/domain/src/services/password-hasher.ts` | `match` / `mismatch` |
 | `StartFailure` | `backend/apps/server/src/server.ts` | `databaseUnreachable` / `listenFailed` |
 
 どの型も同じ書き方に従っています。
@@ -122,12 +124,20 @@ const attempt = async <T>(
 
 ## DomainError
 
-ユースケースが返すエラーはこの4種類です。
+ユースケースが返すエラーはこの6種類です。
 
 ```typescript
 // backend/packages/domain/src/shared/errors.ts
+export type AuthenticationFailure =
+  | 'missingCredentials'
+  | 'invalidToken'
+  | 'expiredToken'
+  | 'invalidCredentials'
+
 export type DomainError =
   | { type: 'validation'; message: string; issues: ValidationIssue[] }
+  | { type: 'unauthenticated'; reason: AuthenticationFailure }
+  | { type: 'forbidden' }
   | { type: 'notFound'; entity: string; id: string }
   | { type: 'alreadyExists'; entity: string; field: string; value: string }
   | { type: 'database'; message: string; cause: unknown }
@@ -138,6 +148,8 @@ export type DomainError =
 | ケース | 作られる場所 | HTTP ステータス |
 |--------|--------------|-----------------|
 | `validation` | `parseWith`（`backend/packages/domain/src/shared/validation.ts`）が Zod の検証結果から作る | 400 |
+| `unauthenticated` | 認証のユースケース（`backend/packages/domain/src/business-logic/auth/`）。有効なアクセストークンがない、ログインやトークンの再発行に失敗したとき。理由は `reason` が持つ | 401 |
+| `forbidden` | ユースケース。操作者にその操作の権限がないとき | 403 |
 | `notFound` | ユースケース。リポジトリが `null`（削除では `false`）を返したとき | 404 |
 | `alreadyExists` | リポジトリ。メールアドレスの一意制約に違反したとき | 409 |
 | `database` | リポジトリ（想定外のクエリ失敗）、読み取りマッパー（保存値が API モデルに合わない） | 500 |
@@ -150,7 +162,7 @@ export type DomainError =
 
 ```typescript
 // backend/packages/api/src/routes/salon/create-salon.handler.ts
-const result = await useCase.execute(req.body)
+const result = await useCase.execute(actor, req.body)
 
 match(result)
   .with({ type: 'success' }, ({ data }) => {
@@ -164,9 +176,31 @@ match(result)
   .exhaustive()
 ```
 
-`.exhaustive()` は、型のケースがすべて `.with()` で扱われていなければコンパイルエラーにします。`.otherwise()` で終えるとケースを足しても検出されないので、ケースを列挙できる型には使いません。
+`.exhaustive()` は、型のケースがすべて `.with()` で扱われていなければコンパイルエラーにします。`.otherwise()` で終えるとケースを足しても検出されないので、ケースを列挙できる型の `match` には使いません。
 
-エラーから問題詳細への変換も同じ形です。`ApiError` の11ケースを1つの `match` で扱っています。
+残りのケースをすべて同じ値にする `match` も、そのケースを 1 つの `.with()` に並べて `.exhaustive()` で終えます。権限の判定は、拒否するケースを並べています。`ActorScope` やロールにケースを足すと、許可するか拒否するかを書くまでコンパイルが通りません。
+
+```typescript
+// backend/packages/domain/src/business-logic/salon/_shared/authorization.ts
+export const mayDeleteSalon = (actor: Actor, salonId: SalonId): boolean =>
+  match(actor.scope)
+    .with({ type: 'platform' }, () => true)
+    .with(
+      { type: 'salon', role: 'owner' },
+      (scope) => scope.salonId === salonId,
+    )
+    .with(
+      { type: 'salon', role: P.union('manager', 'staff') },
+      { type: 'customer' },
+      { type: 'none' },
+      () => false,
+    )
+    .exhaustive()
+```
+
+`toBearerChallenge`（`backend/packages/api/src/shared/problem-details.ts`）は、`unauthenticated` のときだけ `reason` を同じように `match` して `WWW-Authenticate` の値を返し、それ以外のエラーには `null` を返します。
+
+エラーから問題詳細への変換も同じ形です。`ApiError` の13ケースを1つの `match` で扱っています。`unauthenticated` は `reason` によってコードが違うので、`type` と `reason` を1つのパターンに書き、`reason` ごとに分岐しています。
 
 ```typescript
 // backend/packages/api/src/shared/problem-details.ts（抜粋）
@@ -174,6 +208,16 @@ const toProblem = (error: ApiError): Problem =>
   match(error)
     .returnType<Problem>()
     // ... validation
+    .with({ type: 'unauthenticated', reason: 'missingCredentials' }, () => ({
+      type: 'urn:beauty-salon:problem:authentication-required',
+      title: 'Authentication required',
+      status: 401,
+      detail:
+        'Send the access token in the Authorization header as a Bearer token',
+      code: '1001',
+      errors: null,
+    }))
+    // ... unauthenticated の残りの3つの reason、forbidden
     .with({ type: 'notFound' }, ({ entity, id }) => ({
       type: 'urn:beauty-salon:problem:not-found',
       title: 'Resource not found',
@@ -259,7 +303,7 @@ export const toHttpError = (error: unknown): HttpError =>
 |----------|------|----------|
 | `P.string` / `P.number` | プロパティがその型のときだけ取り出す | `describeDatabaseError`（`backend/packages/infrastructure/src/database/failure.ts`）、`portOf`（`backend/apps/server/src/server.ts`） |
 | `P.select()` | 一致した値の一部だけを分岐に渡す | `describeDatabaseError` |
-| `P.union(...)` | 複数の形のどれか | `toHttpError`、`toDomainError`（`backend/packages/infrastructure/src/repositories/salon.repository.impl.ts`） |
+| `P.union(...)` | 複数の形のどれか | `toHttpError`、`toDomainError`（`backend/packages/infrastructure/src/repositories/salon.repository.impl.ts`）、`mayUpdateSalon`、`mayDeleteSalon` |
 | `P.string.regex(...)` | 文字列の形式 | `assignRequestId`（`backend/packages/api/src/middleware/request-logging.ts`） |
 | `P.number.between(...)` / `P.number.gte(...)` | 数値の範囲 | `toHttpError`、`requestLogging` のログレベル判定 |
 

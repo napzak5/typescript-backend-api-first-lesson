@@ -65,6 +65,16 @@ export type inventoryAlertCrudListResponse400 = {
   status: 400
 }
 
+export type inventoryAlertCrudListResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type inventoryAlertCrudListResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type inventoryAlertCrudListResponse429 = {
   data: ModelsProblemDetails
   status: 429
@@ -78,7 +88,7 @@ export type inventoryAlertCrudListResponse500 = {
 export type inventoryAlertCrudListResponseSuccess = (inventoryAlertCrudListResponse200) & {
   headers: Headers;
 };
-export type inventoryAlertCrudListResponseError = (inventoryAlertCrudListResponse400 | inventoryAlertCrudListResponse429 | inventoryAlertCrudListResponse500) & {
+export type inventoryAlertCrudListResponseError = (inventoryAlertCrudListResponse400 | inventoryAlertCrudListResponse401 | inventoryAlertCrudListResponse403 | inventoryAlertCrudListResponse429 | inventoryAlertCrudListResponse500) & {
   headers: Headers;
 };
 
@@ -214,6 +224,16 @@ export type inventoryAlertCrudGetSummaryResponse400 = {
   status: 400
 }
 
+export type inventoryAlertCrudGetSummaryResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type inventoryAlertCrudGetSummaryResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type inventoryAlertCrudGetSummaryResponse429 = {
   data: ModelsProblemDetails
   status: 429
@@ -227,7 +247,7 @@ export type inventoryAlertCrudGetSummaryResponse500 = {
 export type inventoryAlertCrudGetSummaryResponseSuccess = (inventoryAlertCrudGetSummaryResponse200) & {
   headers: Headers;
 };
-export type inventoryAlertCrudGetSummaryResponseError = (inventoryAlertCrudGetSummaryResponse400 | inventoryAlertCrudGetSummaryResponse429 | inventoryAlertCrudGetSummaryResponse500) & {
+export type inventoryAlertCrudGetSummaryResponseError = (inventoryAlertCrudGetSummaryResponse400 | inventoryAlertCrudGetSummaryResponse401 | inventoryAlertCrudGetSummaryResponse403 | inventoryAlertCrudGetSummaryResponse429 | inventoryAlertCrudGetSummaryResponse500) & {
   headers: Headers;
 };
 
@@ -363,6 +383,16 @@ export type inventoryAlertCrudAcknowledgeResponse400 = {
   status: 400
 }
 
+export type inventoryAlertCrudAcknowledgeResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type inventoryAlertCrudAcknowledgeResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type inventoryAlertCrudAcknowledgeResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -396,7 +426,7 @@ export type inventoryAlertCrudAcknowledgeResponse500 = {
 export type inventoryAlertCrudAcknowledgeResponseSuccess = (inventoryAlertCrudAcknowledgeResponse200) & {
   headers: Headers;
 };
-export type inventoryAlertCrudAcknowledgeResponseError = (inventoryAlertCrudAcknowledgeResponse400 | inventoryAlertCrudAcknowledgeResponse404 | inventoryAlertCrudAcknowledgeResponse409 | inventoryAlertCrudAcknowledgeResponse413 | inventoryAlertCrudAcknowledgeResponse415 | inventoryAlertCrudAcknowledgeResponse429 | inventoryAlertCrudAcknowledgeResponse500) & {
+export type inventoryAlertCrudAcknowledgeResponseError = (inventoryAlertCrudAcknowledgeResponse400 | inventoryAlertCrudAcknowledgeResponse401 | inventoryAlertCrudAcknowledgeResponse403 | inventoryAlertCrudAcknowledgeResponse404 | inventoryAlertCrudAcknowledgeResponse409 | inventoryAlertCrudAcknowledgeResponse413 | inventoryAlertCrudAcknowledgeResponse415 | inventoryAlertCrudAcknowledgeResponse429 | inventoryAlertCrudAcknowledgeResponse500) & {
   headers: Headers;
 };
 

@@ -73,6 +73,16 @@ export type reviewCrudListResponse400 = {
   status: 400
 }
 
+export type reviewCrudListResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type reviewCrudListResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type reviewCrudListResponse429 = {
   data: ModelsProblemDetails
   status: 429
@@ -86,7 +96,7 @@ export type reviewCrudListResponse500 = {
 export type reviewCrudListResponseSuccess = (reviewCrudListResponse200) & {
   headers: Headers;
 };
-export type reviewCrudListResponseError = (reviewCrudListResponse400 | reviewCrudListResponse429 | reviewCrudListResponse500) & {
+export type reviewCrudListResponseError = (reviewCrudListResponse400 | reviewCrudListResponse401 | reviewCrudListResponse403 | reviewCrudListResponse429 | reviewCrudListResponse500) & {
   headers: Headers;
 };
 
@@ -222,6 +232,16 @@ export type reviewCrudCreateResponse400 = {
   status: 400
 }
 
+export type reviewCrudCreateResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type reviewCrudCreateResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type reviewCrudCreateResponse409 = {
   data: ModelsProblemDetails
   status: 409
@@ -250,7 +270,7 @@ export type reviewCrudCreateResponse500 = {
 export type reviewCrudCreateResponseSuccess = (reviewCrudCreateResponse201) & {
   headers: Headers;
 };
-export type reviewCrudCreateResponseError = (reviewCrudCreateResponse400 | reviewCrudCreateResponse409 | reviewCrudCreateResponse413 | reviewCrudCreateResponse415 | reviewCrudCreateResponse429 | reviewCrudCreateResponse500) & {
+export type reviewCrudCreateResponseError = (reviewCrudCreateResponse400 | reviewCrudCreateResponse401 | reviewCrudCreateResponse403 | reviewCrudCreateResponse409 | reviewCrudCreateResponse413 | reviewCrudCreateResponse415 | reviewCrudCreateResponse429 | reviewCrudCreateResponse500) & {
   headers: Headers;
 };
 
@@ -355,6 +375,16 @@ export type reviewCrudGetResponse400 = {
   status: 400
 }
 
+export type reviewCrudGetResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type reviewCrudGetResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type reviewCrudGetResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -373,7 +403,7 @@ export type reviewCrudGetResponse500 = {
 export type reviewCrudGetResponseSuccess = (reviewCrudGetResponse200) & {
   headers: Headers;
 };
-export type reviewCrudGetResponseError = (reviewCrudGetResponse400 | reviewCrudGetResponse404 | reviewCrudGetResponse429 | reviewCrudGetResponse500) & {
+export type reviewCrudGetResponseError = (reviewCrudGetResponse400 | reviewCrudGetResponse401 | reviewCrudGetResponse403 | reviewCrudGetResponse404 | reviewCrudGetResponse429 | reviewCrudGetResponse500) & {
   headers: Headers;
 };
 
@@ -502,6 +532,16 @@ export type reviewCrudUpdateResponse400 = {
   status: 400
 }
 
+export type reviewCrudUpdateResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type reviewCrudUpdateResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type reviewCrudUpdateResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -530,7 +570,7 @@ export type reviewCrudUpdateResponse500 = {
 export type reviewCrudUpdateResponseSuccess = (reviewCrudUpdateResponse200) & {
   headers: Headers;
 };
-export type reviewCrudUpdateResponseError = (reviewCrudUpdateResponse400 | reviewCrudUpdateResponse404 | reviewCrudUpdateResponse413 | reviewCrudUpdateResponse415 | reviewCrudUpdateResponse429 | reviewCrudUpdateResponse500) & {
+export type reviewCrudUpdateResponseError = (reviewCrudUpdateResponse400 | reviewCrudUpdateResponse401 | reviewCrudUpdateResponse403 | reviewCrudUpdateResponse404 | reviewCrudUpdateResponse413 | reviewCrudUpdateResponse415 | reviewCrudUpdateResponse429 | reviewCrudUpdateResponse500) & {
   headers: Headers;
 };
 
@@ -636,6 +676,16 @@ export type reviewCrudDeleteResponse400 = {
   status: 400
 }
 
+export type reviewCrudDeleteResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type reviewCrudDeleteResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type reviewCrudDeleteResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -654,7 +704,7 @@ export type reviewCrudDeleteResponse500 = {
 export type reviewCrudDeleteResponseSuccess = (reviewCrudDeleteResponse204) & {
   headers: Headers;
 };
-export type reviewCrudDeleteResponseError = (reviewCrudDeleteResponse400 | reviewCrudDeleteResponse404 | reviewCrudDeleteResponse429 | reviewCrudDeleteResponse500) & {
+export type reviewCrudDeleteResponseError = (reviewCrudDeleteResponse400 | reviewCrudDeleteResponse401 | reviewCrudDeleteResponse403 | reviewCrudDeleteResponse404 | reviewCrudDeleteResponse429 | reviewCrudDeleteResponse500) & {
   headers: Headers;
 };
 
@@ -745,6 +795,16 @@ export type reviewCrudMarkHelpfulResponse400 = {
   status: 400
 }
 
+export type reviewCrudMarkHelpfulResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type reviewCrudMarkHelpfulResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type reviewCrudMarkHelpfulResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -763,7 +823,7 @@ export type reviewCrudMarkHelpfulResponse500 = {
 export type reviewCrudMarkHelpfulResponseSuccess = (reviewCrudMarkHelpfulResponse200) & {
   headers: Headers;
 };
-export type reviewCrudMarkHelpfulResponseError = (reviewCrudMarkHelpfulResponse400 | reviewCrudMarkHelpfulResponse404 | reviewCrudMarkHelpfulResponse429 | reviewCrudMarkHelpfulResponse500) & {
+export type reviewCrudMarkHelpfulResponseError = (reviewCrudMarkHelpfulResponse400 | reviewCrudMarkHelpfulResponse401 | reviewCrudMarkHelpfulResponse403 | reviewCrudMarkHelpfulResponse404 | reviewCrudMarkHelpfulResponse429 | reviewCrudMarkHelpfulResponse500) & {
   headers: Headers;
 };
 
@@ -854,6 +914,16 @@ export type reviewCrudReportResponse400 = {
   status: 400
 }
 
+export type reviewCrudReportResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type reviewCrudReportResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type reviewCrudReportResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -882,7 +952,7 @@ export type reviewCrudReportResponse500 = {
 export type reviewCrudReportResponseSuccess = (reviewCrudReportResponse200) & {
   headers: Headers;
 };
-export type reviewCrudReportResponseError = (reviewCrudReportResponse400 | reviewCrudReportResponse404 | reviewCrudReportResponse413 | reviewCrudReportResponse415 | reviewCrudReportResponse429 | reviewCrudReportResponse500) & {
+export type reviewCrudReportResponseError = (reviewCrudReportResponse400 | reviewCrudReportResponse401 | reviewCrudReportResponse403 | reviewCrudReportResponse404 | reviewCrudReportResponse413 | reviewCrudReportResponse415 | reviewCrudReportResponse429 | reviewCrudReportResponse500) & {
   headers: Headers;
 };
 
@@ -988,6 +1058,16 @@ export type salonReviewSummaryGetSummaryResponse400 = {
   status: 400
 }
 
+export type salonReviewSummaryGetSummaryResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type salonReviewSummaryGetSummaryResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type salonReviewSummaryGetSummaryResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -1006,7 +1086,7 @@ export type salonReviewSummaryGetSummaryResponse500 = {
 export type salonReviewSummaryGetSummaryResponseSuccess = (salonReviewSummaryGetSummaryResponse200) & {
   headers: Headers;
 };
-export type salonReviewSummaryGetSummaryResponseError = (salonReviewSummaryGetSummaryResponse400 | salonReviewSummaryGetSummaryResponse404 | salonReviewSummaryGetSummaryResponse429 | salonReviewSummaryGetSummaryResponse500) & {
+export type salonReviewSummaryGetSummaryResponseError = (salonReviewSummaryGetSummaryResponse400 | salonReviewSummaryGetSummaryResponse401 | salonReviewSummaryGetSummaryResponse403 | salonReviewSummaryGetSummaryResponse404 | salonReviewSummaryGetSummaryResponse429 | salonReviewSummaryGetSummaryResponse500) & {
   headers: Headers;
 };
 
@@ -1135,6 +1215,16 @@ export type staffReviewSummaryGetStaffSummaryResponse400 = {
   status: 400
 }
 
+export type staffReviewSummaryGetStaffSummaryResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type staffReviewSummaryGetStaffSummaryResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type staffReviewSummaryGetStaffSummaryResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -1153,7 +1243,7 @@ export type staffReviewSummaryGetStaffSummaryResponse500 = {
 export type staffReviewSummaryGetStaffSummaryResponseSuccess = (staffReviewSummaryGetStaffSummaryResponse200) & {
   headers: Headers;
 };
-export type staffReviewSummaryGetStaffSummaryResponseError = (staffReviewSummaryGetStaffSummaryResponse400 | staffReviewSummaryGetStaffSummaryResponse404 | staffReviewSummaryGetStaffSummaryResponse429 | staffReviewSummaryGetStaffSummaryResponse500) & {
+export type staffReviewSummaryGetStaffSummaryResponseError = (staffReviewSummaryGetStaffSummaryResponse400 | staffReviewSummaryGetStaffSummaryResponse401 | staffReviewSummaryGetStaffSummaryResponse403 | staffReviewSummaryGetStaffSummaryResponse404 | staffReviewSummaryGetStaffSummaryResponse429 | staffReviewSummaryGetStaffSummaryResponse500) & {
   headers: Headers;
 };
 

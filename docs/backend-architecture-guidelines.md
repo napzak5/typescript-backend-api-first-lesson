@@ -7,7 +7,7 @@
 - [アーキテクチャ概要](./architecture-overview.md): システム全体の説明。パッケージの依存関係、型生成の流れ、リクエストの流れ、実装済みの範囲はそちらにあり、本書では繰り返しません。
 - [CLAUDE.md](../CLAUDE.md): 規約とコマンドの正本。Salon ドメインの全レイヤーのシグネチャもそこにまとまっています。本書は規約の適用のしかたと理由を説明します。
 
-バックエンドで実装済みなのは Salon ドメインとシステムエンドポイントだけです。ほかのドメインを実装するときは、Salon のファイルと同じ構成で書いてください。
+バックエンドで実装済みなのは、Salon ドメイン、認証の 5 つのオペレーション（ログイン、トークンの再発行、ログアウト、全セッションのログアウト、自分の情報の取得）、システムエンドポイントだけです。ほかのドメインを実装するときは、Salon のファイルと同じ構成で書いてください。認証と認可の仕様は [認証と認可](./authentication.md) にあり、本書ではコードの書き方だけを扱います。
 
 ---
 
@@ -27,8 +27,8 @@
 依存の向きは次のとおりです。
 
 - `domain` は I/O を行うパッケージを import しません。`database` から import するのは型だけです。
-- `infrastructure` は `domain` が宣言したリポジトリインターフェースを実装します。
-- `api` はユースケースを呼び出し、結果を HTTP に変換するだけです。
+- `infrastructure` は `domain` が宣言したインターフェースを実装します。リポジトリのほか、パスワードのハッシュ（`IPasswordHasher`）とセッショントークンの生成（`ISessionTokenIssuer`）も同じ形です。
+- `api` はユースケースを呼び出し、結果を HTTP に変換するだけです。認証も同じで、`Authorization` ヘッダーをユースケースに渡して操作者（`Actor`）を受け取るだけです。ロールや権限は判定しません。
 - 環境変数を読み、プロセスを終了させるのは `backend/apps/server/src/index.ts` だけです。
 
 データベースのスクリプト（`backend/packages/database/src/scripts`）、シード、テストはサーバーが実行するコードではないので、`throw` や `console` を使ってかまいません。
@@ -48,6 +48,7 @@
 | リポジトリのインターフェース | `domain/src/repositories/<domain>.repository.ts` | `backend/packages/domain/src/repositories/salon.repository.ts` |
 | ユースケース（1操作1ファイル） | `domain/src/business-logic/<domain>/<action>-<domain>.usecase.ts` | `backend/packages/domain/src/business-logic/salon/create-salon.usecase.ts` ほか4つ |
 | ユースケースの依存 | `domain/src/business-logic/<domain>/_shared/dependencies.ts` | `backend/packages/domain/src/business-logic/salon/_shared/dependencies.ts` |
+| 権限の判定 | `domain/src/business-logic/<domain>/_shared/authorization.ts` | `backend/packages/domain/src/business-logic/salon/_shared/authorization.ts` |
 | リポジトリの実装 | `infrastructure/src/repositories/<domain>.repository.impl.ts` | `backend/packages/infrastructure/src/repositories/salon.repository.impl.ts` |
 | ハンドラー（1操作1ファイル） | `api/src/routes/<domain>/<action>-<domain>.handler.ts` | `backend/packages/api/src/routes/salon/create-salon.handler.ts` ほか4つ |
 | ルーター | `api/src/routes/<domain>/index.ts` | `backend/packages/api/src/routes/salon/index.ts` |
@@ -56,11 +57,14 @@
 ドメインをまたいで使うものは次の場所にあります。
 
 - `backend/packages/domain/src/shared`: `DomainError`、`DomainErrors`、`parseWith`
-- `backend/packages/api/src/shared`: `sendProblem`、`responseMeta`、`toProblemDetails`、API バージョン
+- `backend/packages/domain/src/models/auth.ts`: 操作者を表す `Actor` と `ActorScope`
+- `backend/packages/domain/src/mappers/read/columns.ts`: Read マッパーが共通で使う列の変換（`numericSchema`、`timestampSchema`）
+- `backend/packages/infrastructure/src/database/attempt.ts`: 想定している失敗がないクエリを `Result` に変える `attempt`
+- `backend/packages/api/src/shared`: `sendProblem`、`responseMeta`、`toProblemDetails`、`createAuthenticated`（`authenticated` を作る）、生成型から JSON の本文を取り出す `JsonBody`、API バージョン
 - `backend/packages/api/src/middleware`: リクエストログ、レート制限、エラーハンドラー
 - `backend/packages/utility/src`: `Result`（`success`・`error`・`map`・`mapError`・`flatMap`・`fromPromise`）、`DeepRequired`、`Omit`
 
-`domain` パッケージが外に公開するのは、ユースケース、モデル、リポジトリインターフェース、エラーと検証の共通部品です（`backend/packages/domain/src/index.ts`）。リクエストのスキーマとマッパーはパッケージの中だけで使います。
+`domain` パッケージが外に公開するのは、ユースケース、モデル、リポジトリとサービスのインターフェース、エラーと検証の共通部品です（`backend/packages/domain/src/index.ts`）。リクエストのスキーマとマッパーはパッケージの中だけで使います。
 
 ---
 
@@ -253,7 +257,47 @@ export class GetSalonUseCase {
 
 - 1操作につき1クラスです。基底クラスは作りません。依存は `SalonUseCaseDependencies` のオブジェクト1つをコンストラクタで受け取ります。引数の順序に依存せず、テストで1つだけ差し替えられます。
 - `execute` の入力は `unknown` です。検証はここで一度だけ行います（本文は `parseWith`、ID は `parseSalonId`）。
-- 書き込みの手順は「検証 → API から DB への変換 → 保存 → DB から API への変換」です（`create-salon.usecase.ts`）。
+- 公開でないオペレーションのユースケースは、第 1 引数に操作者（`actor: Actor`）を取ります。上の取得と一覧は公開なので取りません。
+- 書き込みの手順は「権限の判定 → 検証 → API から DB への変換 → 保存 → DB から API への変換」です（`create-salon.usecase.ts`）。
+
+権限は、ユースケースが最初に判定します。判定そのものは `_shared/authorization.ts` に純粋な関数として置き、許可されなければ `DomainErrors.forbidden()` を返します。
+
+```typescript
+// backend/packages/domain/src/business-logic/salon/_shared/authorization.ts（抜粋）
+// 管理者と、そのサロンのオーナー
+export const mayDeleteSalon = (actor: Actor, salonId: SalonId): boolean =>
+  match(actor.scope)
+    .with({ type: 'platform' }, () => true)
+    .with(
+      { type: 'salon', role: 'owner' },
+      (scope) => scope.salonId === salonId,
+    )
+    .with(
+      { type: 'salon', role: P.union('manager', 'staff') },
+      { type: 'customer' },
+      { type: 'none' },
+      () => false,
+    )
+    .exhaustive()
+```
+
+```typescript
+// backend/packages/domain/src/business-logic/salon/delete-salon.usecase.ts（抜粋）
+async execute(
+  actor: Actor,
+  id: unknown,
+): Promise<Result<SalonId, DomainError>> {
+  const salonId = parseSalonId(id)
+  if (salonId.type === 'error') {
+    return salonId
+  }
+  if (!mayDeleteSalon(actor, salonId.data)) {
+    return Result.error(DomainErrors.forbidden())
+  }
+```
+
+- 判定に使うのは `actor.scope`（`ActorScope`）です。`users.role` や `users.permissions` を直接読みません。
+- 対象が 1 つのサロンに属する操作では、操作者のサロンと対象のサロンを比べます。パスの ID だけで判定できるときは、ID を検証した直後、本文の検証や検索の前に判定します。
 - 失敗した `Result` は `result.type === 'error'` で絞り込み、そのまま返します。
 - 戻り値は API モデルか `DomainError` です。HTTP ステータスはユースケースでは決めません。
 - 一意制約で検出できる重複を、事前の検索で確かめません。リポジトリが `alreadyExists` を返します。
@@ -294,7 +338,7 @@ export class SalonRepository implements ISalonRepository {
 ```
 
 - クエリは `attempt` で包みます。ドライバーが投げた例外は `Result.fromPromise` が `Result` に変え、`toDomainError` が `DomainError` に変えます。リポジトリ自身は `try`/`catch` を書きません。
-- 想定している失敗だけを個別のエラーにします。Salon では `email` の一意制約違反が `alreadyExists` になり、それ以外はすべて `database` です。
+- 想定している失敗だけを個別のエラーにします。Salon では `email` の一意制約違反が `alreadyExists` になり、それ以外はすべて `database` です。個別にするエラーがないリポジトリ（`user.repository.impl.ts`、`session.repository.impl.ts`）は、共通の `attempt(message, run)`（`backend/packages/infrastructure/src/database/attempt.ts`）を使います。
 - `database` エラーの `cause` には `describeDatabaseError`（`backend/packages/infrastructure/src/database/failure.ts`）の結果を入れます。SQL 文と SQLSTATE は残し、バインドされた値は残しません。顧客のデータがログに出ないようにするためです。
 - 複数のテーブルに書き込むときは `this.db.transaction` を使います（`create`・`update`）。
 - 配列の先頭は `const [row] = ...` で取り出し、`row === undefined` を確認します。
@@ -333,7 +377,34 @@ export const getSalonHandler = (
 - クエリ文字列だけは例外です。文字列しか運べないので、一覧のハンドラーは `decodeSalonSearchQuery`（`_shared/query.ts`）で数値・真偽値・配列に直してから渡します。値のルールを判定するのはユースケースです。
 - 結果は `match(result)…exhaustive()` で分岐します。成功は `{ data, meta: responseMeta(req), links }`、失敗は必ず `sendProblem(req, res, error)` です。ハンドラーでステータスコードとエラーの対応を書きません。
 - リンクは `req.baseUrl` から組み立てます。マウント先のパスをハンドラーに書きません。
-- ルーターは `createSalonRouter(dependencies)` のように依存を受け取り、各ハンドラーに渡します。
+- ルーターは `createSalonRouter(dependencies, authenticated)` のように依存と `authenticated` を受け取り、各ハンドラーに渡します。
+
+公開でないオペレーションのハンドラーは、`authenticated` で包みます（`backend/packages/api/src/shared/authentication.ts`）。
+
+```typescript
+// backend/packages/api/src/routes/salon/delete-salon.handler.ts
+export const deleteSalonHandler = (
+  dependencies: SalonUseCaseDependencies,
+  authenticated: Authenticated,
+): RequestHandler<{ id: string }, ProblemDetails> => {
+  const useCase = new DeleteSalonUseCase(dependencies)
+
+  return authenticated(async (actor, req, res) => {
+    const result = await useCase.execute(actor, req.params.id)
+
+    match(result)
+      .with({ type: 'success' }, () => {
+        res.status(204).end()
+      })
+      .with({ type: 'error' }, ({ error }) => sendProblem(req, res, error))
+      .exhaustive()
+  })
+}
+```
+
+- `authenticated` は `Authorization: Bearer <アクセストークン>` を検証し、包んだハンドラーを操作者（`actor`）付きで呼びます。有効なトークンがなければ 401 を返し、ハンドラーは実行されません。
+- `actor` を受け取れるのは包まれたハンドラーだけです。包み忘れたハンドラーは、`actor` を要求するユースケースを呼べません（コンパイルエラーになります）。
+- ハンドラーは `actor` をユースケースに渡すだけで、ロールを見ません。
 
 ファイルの分け方について詳しくは [API Route Modular Structure](./api-route-modular-structure.md) を参照してください。
 
@@ -341,13 +412,22 @@ export const getSalonHandler = (
 
 ```typescript
 // backend/packages/api/src/index.ts（抜粋）
+const authenticated = createAuthenticated(authDependencies)
+
+app.use(
+  `${API_BASE_PATH}/auth`,
+  createAuthRouter(authDependencies, authenticated),
+)
 app.use(
   `${API_BASE_PATH}/salons`,
-  createSalonRouter({ salonRepository: new SalonRepository(database) }),
+  createSalonRouter(
+    { salonRepository: new SalonRepository(database) },
+    authenticated,
+  ),
 )
 ```
 
-- リポジトリは `createApp` の中で一度だけ生成し、ルーターに渡します。
+- リポジトリは `createApp` の中で一度だけ生成し、ルーターに渡します。`authenticated` も一度だけ作り、公開でないオペレーションを持つルーターに渡します。
 - 新しいルーターは `express.json` の後、`notFoundHandler` の前にマウントします。ミドルウェアの順序とその理由は [アーキテクチャ概要](./architecture-overview.md) にあります。
 - `api` パッケージは `config` に依存しません。新しい設定値が必要なときは `AppSettings`（`backend/packages/api/src/settings.ts`）に追加し、`backend/apps/server/src/server.ts` の `startServer` で `AppConfig` から渡します。
 
@@ -355,7 +435,8 @@ app.use(
 
 ## エラー処理
 
-- ユースケースが返すエラーは `DomainError` の4種類（`validation`・`notFound`・`alreadyExists`・`database`）です。`DomainErrors.*` で作ります（`backend/packages/domain/src/shared/errors.ts`）。
+- ユースケースが返すエラーは `DomainError` の6種類（`validation`・`unauthenticated`・`forbidden`・`notFound`・`alreadyExists`・`database`）です。`DomainErrors.*` で作ります（`backend/packages/domain/src/shared/errors.ts`）。
+- `unauthenticated`（401）を返すのは認証のユースケースだけです。それ以外のユースケースが権限について返すのは `forbidden`（403）です。401 には `sendProblem` が `WWW-Authenticate` ヘッダーを付けます。
 - ユースケースの外で起きる失敗（存在しないルート、読めない本文、レート制限、想定外の例外）は API 層の `HttpError` です。
 - どちらも `sendProblem` を通り、RFC 9457 の problem details になります。エラーの種類と HTTP ステータス・エラーコードの対応は、`backend/packages/api/src/shared/problem-details.ts` の `toProblemDetails` の1か所にあります。
 - `database` エラーの `cause` と想定外の例外の内容は、レスポンスに含めません。ログに記録します。
@@ -392,15 +473,17 @@ app.use(
 
 | 対象 | 種類 | 場所 |
 |------|------|------|
-| スキーマ、マッパー、ユースケース | ユニット（`pnpm test`） | `backend/packages/domain/src/__tests__` |
+| スキーマ、マッパー、ユースケース（権限の判定を含む） | ユニット（`pnpm test`） | `backend/packages/domain/src/__tests__` |
+| パスワードのハッシュ、セッションのトークン | ユニット（`pnpm test`） | `backend/packages/infrastructure/src/security/__tests__` |
 | クエリの変換、リンク、problem details、ミドルウェア | ユニット（`pnpm test`） | `backend/packages/api/src` の各 `__tests__` |
-| エンドポイント（リポジトリの実装を含む） | 統合（`pnpm test:integration`） | `backend/packages/api/src/__tests__/salon.integration.test.ts` |
+| エンドポイント（リポジトリの実装を含む） | 統合（`pnpm test:integration`） | `backend/packages/api/src/__tests__/salon.integration.test.ts`、`auth.integration.test.ts` |
 | リクエスト ID、エラー応答、CORS、レート制限、プローブ | 統合（`pnpm test:integration`） | `backend/packages/api/src/__tests__/app.integration.test.ts` |
 | 起動と停止 | 統合（`pnpm test:integration`） | `backend/apps/server/src/__tests__/server.integration.test.ts` |
 
-- ユースケースのテストでは、リポジトリを `ISalonRepository` を満たすオブジェクトに差し替えます。DB は使いません。
+- ユースケースのテストでは、リポジトリを `ISalonRepository` を満たすオブジェクトに差し替えます。DB は使いません。認証のユースケースでは、2つのリポジトリ、パスワードのハッシュ、トークンの発行も差し替え、時計を固定します（`backend/packages/domain/src/__tests__/auth-fixtures.ts` の `authDependencies`）。
 - リポジトリの実装は、エンドポイントの統合テストで実際の PostgreSQL に対して検証します。テストごとに専用のスキーマを作り、本番と同じ `createApp` を使います（`backend/packages/api/src/__tests__/_shared/test-helpers.ts` の `createTestApp`）。
-- エンドポイントごとに、エラーのシナリオを5つ以上テストします。
+- 統合テストでアクセストークンが必要なときは、ユーザーの行を挿入し、`POST /api/v1/auth/login` でログインします（`backend/packages/api/src/__tests__/_shared/auth-helpers.ts`）。
+- エンドポイントごとに、エラーのシナリオを5つ以上テストします。公開でないエンドポイントでは、トークンのないリクエスト（401）と、許可されていないユーザーからのリクエスト（403）を含めます。
 
 詳しくは [Testing Requirements](./testing-requirements.md) と [API Testing Guide](./api-testing-guide.md) を参照してください。
 
@@ -411,9 +494,9 @@ app.use(
 1. **API 契約**: `specs/models/<domain>.tsp` と `specs/operations/<domain>-operations.tsp` を確認し、必要なら直して `pnpm generate` を実行します。モデル名や nullable の決まりは [TypeSpec API型定義ルール](./typespec-api-type-rules.md) にあります。
 2. **データベース**: テーブルを変える必要があれば SQL マイグレーションを書き、`pnpm db:migrate`、`pnpm db:introspect`、`pnpm db:generate-sql` の順に実行します。
 3. **API と DB の整合**: テーブルに対応するモデルは `backend/packages/database/src/scripts/api-consistency-rules.ts` に `omittedColumns` 付きで登録されています。TypeSpec かテーブルを変えたら、そのドメインのルールを合わせ、`pnpm check:api-db` が成功することを確認します。食い違いを許容する仕組みはありません。
-4. **domain**: モデル、スキーマ、マッパー、リポジトリインターフェース、ユースケースの順に書き、ユニットテストを付けます。公開するものを `backend/packages/domain/src/index.ts` に追加します。
+4. **domain**: モデル、スキーマ、マッパー、リポジトリインターフェース、権限の判定（`_shared/authorization.ts`）、ユースケースの順に書き、ユニットテストを付けます。公開するものを `backend/packages/domain/src/index.ts` に追加します。
 5. **infrastructure**: リポジトリを実装し、`backend/packages/infrastructure/src/index.ts` から公開します。
-6. **api**: ハンドラーとルーターを書き、`createApp` にマウントして、統合テストを付けます。
+6. **api**: ハンドラーとルーターを書き、公開でないオペレーションのハンドラーを `authenticated` で包み、`createApp` にマウントして、統合テストを付けます。
 7. **確認**: `make ci-check` を実行します。
 
 各ステップの詳しい説明は [Domain Implementation Reference](./domain-implementation-reference.md) にあります。
@@ -426,6 +509,8 @@ app.use(
 - [ ] 型を手で宣言していない（DB 型は Drizzle スキーマから、API 型は生成型から取っている）
 - [ ] スキーマに `satisfies z.ZodType<…>` を付け、検証はユースケースで一度だけ行っている
 - [ ] ハンドラーは本文を `unknown` のままユースケースに渡している
+- [ ] 公開でないオペレーションは、ハンドラーを `authenticated` で包み、ユースケースが `actor` から最初に権限を判定している（TypeSpec では `SessionErrors` または `CommonErrors`）
+- [ ] 公開のオペレーションは、TypeSpec に `@useAuth(NoAuth)` と `PublicErrors` がある
 - [ ] マッパーでプロパティ名を変えていない。`null` を別の値に置き換えていない
 - [ ] 失敗はすべて `Result` で返している。`throw`、`any`、`as` がなく、`try`/`catch` を新たに書いていない（外部の例外は `Result.fromPromise` で受けている）
 - [ ] `match(...).exhaustive()` で分岐している
@@ -444,6 +529,7 @@ app.use(
 - [`docs/domain-implementation-reference.md`](./domain-implementation-reference.md) - ドメイン実装リファレンス
 - [`docs/api-route-modular-structure.md`](./api-route-modular-structure.md) - ルートのファイル構成
 - [`docs/uniform-implementation-guide.md`](./uniform-implementation-guide.md) - 統一実装パターン
+- [`docs/authentication.md`](./authentication.md) - 認証と認可
 - [`docs/db-driven-domain-model.md`](./db-driven-domain-model.md) - DB駆動ドメインモデル
 - [`docs/sum-types-pattern-matching.md`](./sum-types-pattern-matching.md) - Sum型とパターンマッチング
 - [`docs/type-safety-principles.md`](./type-safety-principles.md) - 型安全性の原則

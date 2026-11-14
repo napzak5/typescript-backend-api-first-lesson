@@ -47,6 +47,7 @@ beforeEach(async (context) => {
 
   // Make available to test
   globalThis.__TEST_DB__ = currentTestSchema.db
+  globalThis.__TEST_DB_CLIENT__ = currentTestSchema.queryClient
 
   console.log(`✅ Schema ${currentTestSchema.name} created`)
 })
@@ -61,6 +62,7 @@ afterEach(async () => {
     currentTestSchema = null
 
     globalThis.__TEST_DB__ = undefined
+    globalThis.__TEST_DB_CLIENT__ = undefined
   }
 })
 

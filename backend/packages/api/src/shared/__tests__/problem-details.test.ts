@@ -1,8 +1,10 @@
-import { DomainErrors } from '@beauty-salon-backend/domain'
+import { type DomainError, DomainErrors } from '@beauty-salon-backend/domain'
 import { describe, expect, it } from 'vitest'
 import {
+  type ApiError,
   type HttpError,
   type ProblemDetails,
+  toBearerChallenge,
   toProblemDetails,
 } from '../problem-details'
 
@@ -176,4 +178,116 @@ describe('toProblemDetails', () => {
       })
     },
   )
+})
+
+describe('toProblemDetails for authentication and authorization', () => {
+  it.each<
+    [string, DomainError, Pick<ProblemDetails, 'type' | 'status' | 'code'>]
+  >([
+    [
+      'a request without credentials',
+      DomainErrors.unauthenticated('missingCredentials'),
+      {
+        type: 'urn:beauty-salon:problem:authentication-required',
+        status: 401,
+        code: '1001',
+      },
+    ],
+    [
+      'a failed login',
+      DomainErrors.unauthenticated('invalidCredentials'),
+      {
+        type: 'urn:beauty-salon:problem:invalid-credentials',
+        status: 401,
+        code: '1002',
+      },
+    ],
+    [
+      'an access token that has expired',
+      DomainErrors.unauthenticated('expiredToken'),
+      {
+        type: 'urn:beauty-salon:problem:token-expired',
+        status: 401,
+        code: '1003',
+      },
+    ],
+    [
+      'a token that cannot be used',
+      DomainErrors.unauthenticated('invalidToken'),
+      {
+        type: 'urn:beauty-salon:problem:invalid-token',
+        status: 401,
+        code: '1004',
+      },
+    ],
+    [
+      'an actor who may not do this',
+      DomainErrors.forbidden(),
+      { type: 'urn:beauty-salon:problem:forbidden', status: 403, code: '1005' },
+    ],
+  ])(
+    'presents %s with its own type, status and code',
+    (_case, error, expected) => {
+      expect(toProblemDetails(error, context)).toEqual({
+        ...expected,
+        title: expect.any(String),
+        detail: expect.any(String),
+        errors: null,
+        ...context,
+      })
+    },
+  )
+
+  it('says of a failed login only that the email or the password is wrong', () => {
+    const problem = toProblemDetails(
+      DomainErrors.unauthenticated('invalidCredentials'),
+      context,
+    )
+
+    expect(problem.detail).toBe('Invalid email or password')
+  })
+})
+
+describe('toBearerChallenge', () => {
+  const plain = 'Bearer realm="beauty-salon-api"'
+  const invalidToken = 'Bearer realm="beauty-salon-api", error="invalid_token"'
+
+  it.each<[string, ApiError, string]>([
+    [
+      'a request without credentials',
+      DomainErrors.unauthenticated('missingCredentials'),
+      plain,
+    ],
+    [
+      'a failed login',
+      DomainErrors.unauthenticated('invalidCredentials'),
+      plain,
+    ],
+    [
+      'a token that cannot be used',
+      DomainErrors.unauthenticated('invalidToken'),
+      invalidToken,
+    ],
+    [
+      'an access token that has expired',
+      DomainErrors.unauthenticated('expiredToken'),
+      invalidToken,
+    ],
+  ])('challenges %s with %j', (_case, error, expected) => {
+    expect(toBearerChallenge(error)).toBe(expected)
+  })
+
+  it.each<[string, ApiError]>([
+    ['a forbidden action', DomainErrors.forbidden()],
+    ['a validation error', DomainErrors.validation('Invalid', [])],
+    ['a missing entity', DomainErrors.notFound('Salon', 'x')],
+    ['a duplicate', DomainErrors.alreadyExists('Salon', 'email', 'a@b.jp')],
+    ['a database error', DomainErrors.database('Failed', null)],
+    ['an unknown route', { type: 'routeNotFound', method: 'GET', path: '/' }],
+    ['a malformed body', { type: 'malformedBody' }],
+    ['the rate limit', { type: 'rateLimited' }],
+    ['an unexpected failure', { type: 'unexpected' }],
+  ])('has no challenge for %s', (_case, error) => {
+    expect(toBearerChallenge(error)).toBeNull()
+  })
 })

@@ -11,13 +11,14 @@ document is wrong: fix it in the same change.
 - [Backend Architecture Guidelines](./backend-architecture-guidelines.md) - How to write backend code in each layer (日本語)
 - [Domain Implementation Reference](./domain-implementation-reference.md) - The Salon domain layer by layer, as the model for a new domain
 - [API Route Modular Structure](./api-route-modular-structure.md) - One handler file per endpoint in the API package
+- [Authentication and Authorization](./authentication.md) - Sessions, passwords, who may do what, how to protect an operation, the seeded accounts (日本語)
 - [Multi-Agent Collaboration Framework](./multi-agent-collaboration-framework.md) - Which AI agent owns what, and the hand-over points
 
 ## 🎯 Core Concepts
 - [Type Safety Principles](./type-safety-principles.md) - The type-safety rules and what replaces `any`, `as` and type guards
 - [Sum Types & Pattern Matching](./sum-types-pattern-matching.md) - Discriminated unions, `Result` and ts-pattern
 - [DB-Driven Domain Model](./db-driven-domain-model.md) - The database as the source of truth, and the migration workflow
-- [Uniform Implementation Guide](./uniform-implementation-guide.md) - The standard patterns: pagination, responses, errors, validation, logging
+- [Uniform Implementation Guide](./uniform-implementation-guide.md) - The standard patterns: pagination, responses, errors, validation, authorization, logging
 
 ## 🔧 Development
 - [Development Workflow](./development-workflow.md) - Set-up, the daily loop and the checks before a commit
@@ -61,7 +62,8 @@ current conventions and must be revised when the feature is built.
 1. [Domain Implementation Reference](./domain-implementation-reference.md)
 2. [Sum Types & Pattern Matching](./sum-types-pattern-matching.md)
 3. [Uniform Implementation Guide](./uniform-implementation-guide.md)
-4. [API Testing Guide](./api-testing-guide.md)
+4. [Authentication and Authorization](./authentication.md)
+5. [API Testing Guide](./api-testing-guide.md)
 
 ### For API Development
 1. [TypeSpec API Type Rules](./typespec-api-type-rules.md)

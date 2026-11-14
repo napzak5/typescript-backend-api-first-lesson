@@ -17,12 +17,13 @@ You start without the caller's conversation, and the caller reads only your fina
    - `docs/typespec-directory-structure.md`: where definitions go
    - `docs/type-generation-system.md`: the pipeline from TypeSpec to the generated code
    - `docs/api-db-type-constraints-mapping.md`: how column types appear in the API
+   - `docs/authentication.md`: sessions, roles, and which error alias a protected operation declares
 3. The Salon contract, which is the reference: `specs/models/salon.tsp` and `specs/operations/salon-operations.tsp`, with the shared definitions in `specs/models/_shared/common.tsp` and `specs/models/_shared/common-api-patterns.tsp` (`ProblemDetails`, `ApiResponse`, `CursorPaginationResponse`). `specs/main.tsp` imports every model file and every operation file.
 4. The tables behind the models you touch, in `backend/packages/database/src/schema.ts`, and the rules that say which model is backed by which table, in `backend/packages/database/src/scripts/api-consistency-rules.ts`.
 
 ## What exists
 
-The contract specifies many domains, but the backend implements only the Salon operations and the system probes. The models of every domain agree with their tables, and `pnpm check:api-db` tolerates no difference. Some features are specified without a table yet (roles and permissions, attachments, purchase orders and inventory alerts, medical charts, customer audit history and export jobs); their models follow the naming, response and error rules but have nothing to be compared with, and designing their tables is the first step of implementing them. The contract also declares bearer authentication, which the backend does not implement; operations that work without a session are marked `@useAuth(NoAuth)`.
+The contract specifies many domains, but the backend implements only the Salon operations, the system probes and five authentication operations (`login`, `refreshToken`, `logout`, `logoutAll` and `getCurrentUser` of `AuthCrud`). The models of every domain agree with their tables, and `pnpm check:api-db` tolerates no difference. Some features are specified without a table yet (roles and permissions, attachments, purchase orders and inventory alerts, medical charts, customer audit history and export jobs); their models follow the naming, response and error rules but have nothing to be compared with, and designing their tables is the first step of implementing them. The contract declares bearer authentication for the whole API (`@useAuth(BearerAuth)` in `specs/main.tsp`), and the backend enforces it on the operations it implements: an operation that is not marked `@useAuth(NoAuth)` needs a valid access token, and its use case checks the permission. So whether an operation carries `@useAuth(NoAuth)`, and which error alias it declares, decides how it is served. `docs/authentication.md` describes sessions, roles and who may do what.
 
 ## What you own, and what you leave to others
 
@@ -47,7 +48,8 @@ You do not change the database schema. If a property needs a column that does no
 - Models are named `XXXCreateRequest`, `XXXUpdateRequest`, `XXXSearchRequest` and `XXXResponse`. Enums end with `Type`.
 - Property names equal column names. A property is nullable exactly when its column is.
 - Create: every property is required, and the value may be null where the column allows it. Update: one model per entity, every property optional, `| null` only where the column is nullable. Response: every property is required. Search: optional filters as query parameters.
-- Partial update is `PATCH`. Lists use keyset pagination (`cursor`, `limit`, `meta.nextCursor`). Every error response is `ProblemResponse<status>`: `ProblemDetails` as `application/problem+json`. Every operation also declares `CommonErrors` (429, 500), and one that takes a body `RequestBodyErrors` (413, 415), because the server answers them on every route.
+- Partial update is `PATCH`. Lists use keyset pagination (`cursor`, `limit`, `meta.nextCursor`). Every error response is `ProblemResponse<status>`: `ProblemDetails` as `application/problem+json`. Every operation also declares one of three aliases for what the server answers whatever the operation does, and one that takes a body `RequestBodyErrors` (413, 415).
+- The alias follows from who may call the operation: `@useAuth(NoAuth)` with `PublicErrors` (429, 500) for a public operation; `SessionErrors` (401 and `PublicErrors`) for one that any signed-in user may call; `CommonErrors` (403 and `SessionErrors`) for one with a permission check, whose `@doc` names the roles that may call it. Do not list `ProblemResponse<401>` or `ProblemResponse<403>` next to them; a public operation whose own result is a failed authentication (login, refresh) declares `UnauthenticatedResponse`.
 - Every model, property, operation and enum has a Japanese `@doc`. For a nullable property it says what null means. The `@doc` of an enum describes the enum and then each value.
 
 ## Before you report

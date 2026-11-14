@@ -1,6 +1,6 @@
 # Domain Implementation Reference Guide
 
-The Salon domain is the only domain implemented in the backend, and it is the reference for every other one. This document walks through it in the order in which a new domain is built, from the API contract to the tests, and explains the decisions the code makes on the way.
+The Salon domain is the reference for every other domain of the backend. This document walks through it in the order in which a new domain is built, from the API contract to the tests, and explains the decisions the code makes on the way. Authentication, the only other code in these layers, is described in [Authentication and Authorization](./authentication.md) (Japanese); what a domain needs from it is in step 9 (the permission check) and step 10 (the `authenticated` wrapper).
 
 The excerpts are copied from the file named above each of them and shortened where marked `// ...`; the file is the authority. The rules behind the code (no `any`, no type assertions, no exceptions, API property names equal column names) are stated in [CLAUDE.md](../CLAUDE.md) and are not repeated here.
 
@@ -28,8 +28,9 @@ A request passes through three packages:
 
 ```
 HTTP request
-  → handler      (api)             passes the raw input on
-  → use case     (domain)          validates, maps, decides
+  → authenticated (api)            access token → actor, or 401 (not for public operations)
+  → handler      (api)             passes the actor and the raw input on
+  → use case     (domain)          authorizes, validates, maps, decides
   → repository   (infrastructure)  runs the queries, returns a Result
   ← use case                       maps the rows to the API model
   ← handler                        Result → response or problem details
@@ -56,7 +57,7 @@ What the Salon domain consists of:
 
 Steps 1 to 3 belong together. The database is the source of truth for names and nullability, so the contract is written against the table, and `pnpm check:api-db` compares the two.
 
-Shared by every domain and already in place: `Result` (`backend/packages/utility/src/result/result.ts`), `DomainError` and `parseWith` (`backend/packages/domain/src/shared/`), `describeDatabaseError` (`backend/packages/infrastructure/src/database/failure.ts`) and the response helpers of the API package.
+Shared by every domain and already in place: `Result` (`backend/packages/utility/src/result/result.ts`), `DomainError` and `parseWith` (`backend/packages/domain/src/shared/`), `Actor` (`backend/packages/domain/src/models/auth.ts`), the column conversions of the read mappers (`backend/packages/domain/src/mappers/read/columns.ts`), `describeDatabaseError` and `attempt` (`backend/packages/infrastructure/src/database/`), and the response helpers and the `authenticated` wrapper of the API package.
 
 ## 1. API Contract
 
@@ -93,18 +94,19 @@ The property is named after the column and allows `null` because the column does
 
 The operations of the interface `SalonCrud`, under `@route("/api/v1/salons")`:
 
-| Operation | Route | Request | Success | Declared errors |
-|-----------|-------|---------|---------|-----------------|
-| `list` | `GET /api/v1/salons` | `SalonSearchRequest` as query parameters | 200, `CursorPaginationResponse<SalonResponse>` | 400 |
-| `create` | `POST /api/v1/salons` | `SalonCreateRequest` | 201 with `Location`, `ApiResponse<SalonResponse>` | 400, 409 |
-| `get` | `GET /api/v1/salons/{id}` | none | 200, `ApiResponse<SalonResponse>` | 400, 404 |
-| `update` | `PATCH /api/v1/salons/{id}` | `SalonUpdateRequest` | 200, `ApiResponse<SalonResponse>` | 400, 404, 409 |
-| `delete` | `DELETE /api/v1/salons/{id}` | none | 204 | 400, 404 |
+| Operation | Route | Request | Success | Declared errors | Access |
+|-----------|-------|---------|---------|-----------------|--------|
+| `list` | `GET /api/v1/salons` | `SalonSearchRequest` as query parameters | 200, `CursorPaginationResponse<SalonResponse>` | 400, `PublicErrors` | `@useAuth(NoAuth)` |
+| `create` | `POST /api/v1/salons` | `SalonCreateRequest` | 201 with `Location`, `ApiResponse<SalonResponse>` | 400, 409, `RequestBodyErrors`, `CommonErrors` | `admin` |
+| `get` | `GET /api/v1/salons/{id}` | none | 200, `ApiResponse<SalonResponse>` | 400, 404, `PublicErrors` | `@useAuth(NoAuth)` |
+| `update` | `PATCH /api/v1/salons/{id}` | `SalonUpdateRequest` | 200, `ApiResponse<SalonResponse>` | 400, 404, 409, `RequestBodyErrors`, `CommonErrors` | `admin`, or the `owner` or a `manager` of the salon |
+| `delete` | `DELETE /api/v1/salons/{id}` | none | 204 | 400, 404, `CommonErrors` | `admin`, or the `owner` of the salon |
 
-Two decisions to copy:
+Three decisions to copy:
 
 - **Only what is implemented is specified.** Every operation in the file has a handler. Each declares its success response, from which the handler takes its response type (step 10), and the 400, 404 and 409 responses its use case can produce.
 - **Update is `PATCH`**, and filtering is part of `list`. There is no `PUT` and no separate search route.
+- **Who may call an operation is in the contract.** A public operation carries `@useAuth(NoAuth)` and `PublicErrors` (429, 500). An operation with a permission check declares `CommonErrors`, which adds 401 and 403, and names the roles in its `@doc`. `SessionErrors` (401 without 403) is for an operation that any signed-in user may call; Salon has none.
 
 The naming and typing rules for TypeSpec are in [TypeSpec API Type Rules](./typespec-api-type-rules.md).
 
@@ -337,17 +339,23 @@ export const SalonWriteMapper = {
 
 `fromUpdateRequest` does the same for the properties that are present and nothing for the absent ones. It returns `{ type: 'keep' }` for the calendar when `openingHours` is absent and `{ type: 'replace', ... }` when it is present, even if the list is empty.
 
-Rows → API response (`backend/packages/domain/src/mappers/read/salon.mapper.ts`):
+Rows → API response. The two conversions every read mapper needs are in `backend/packages/domain/src/mappers/read/columns.ts`:
 
 ```typescript
-const numericSchema = z.string().transform(Number).pipe(z.number())
+/** `numeric` is read as a string and returned as a number. */
+export const numericSchema = z.string().transform(Number).pipe(z.number())
 
-const timestampSchema = z
+/** `timestamptz` is read in PostgreSQL's text format and returned as ISO 8601. */
+export const timestampSchema = z
   .string()
   .transform((value) => parseISO(value))
   .pipe(z.date())
   .transform((value) => value.toISOString())
+```
 
+`backend/packages/domain/src/mappers/read/salon.mapper.ts` imports them:
+
+```typescript
 const convertedColumnsSchema = z.object({
   latitude: numericSchema.nullable(),
   longitude: numericSchema.nullable(),
@@ -560,14 +568,20 @@ export class UpdateSalonUseCase {
   /**
    * Changes the properties present in the request and leaves the others as
    * they are. `openingHours`, when present, replaces the whole calendar.
+   * Whether the actor may is decided from the ID alone, before the request
+   * is read and before the salon is looked up.
    */
   async execute(
+    actor: Actor,
     id: unknown,
     input: unknown,
   ): Promise<Result<ApiSalonResponse, DomainError>> {
     const salonId = parseSalonId(id)
     if (salonId.type === 'error') {
       return salonId
+    }
+    if (!mayUpdateSalon(actor, salonId.data)) {
+      return Result.error(DomainErrors.forbidden())
     }
 
     const request = parseWith(
@@ -602,19 +616,62 @@ export class UpdateSalonUseCase {
 }
 ```
 
+- **The actor comes first, and the permission is decided first.** `actor` is who the access token stands for (`Actor` in `backend/packages/domain/src/models/auth.ts`); the handler got it from `authenticated` (step 10). The rule is a pure function in `_shared/authorization.ts`, shown below. A refusal is `DomainErrors.forbidden()`, a 403. Because a salon is public information, the answer does not depend on whether the salon exists: the owner of another salon gets 403 for every well-formed ID but that of their own salon.
 - **The inputs are `unknown`.** What arrives over HTTP is not a `SalonUpdateRequest` until it has been checked. If the handler declared the body with the request type, the compiler would accept an unchecked value as checked, which is a type assertion in everything but name. With `unknown`, the value cannot be used before `parseWith` has returned the typed one, and validation happens in exactly one place whoever the caller is.
 - **A failed step is returned as it is.** After `request.type === 'error'` the value is the error variant, which fits every `Result<T, DomainError>`.
 - **The use case decides what "not found" is.** The repository reported `null`; the use case names the entity and the ID.
 - **No uniqueness check here.** The use case relies on the repository to report `alreadyExists` (step 8).
 - **The return value is the API model**, mapped from the rows the repository read back.
 
-| Use case | `execute` | Success data |
-|----------|-----------|--------------|
-| `CreateSalonUseCase` | `(input: unknown)` | `ApiSalonResponse` |
-| `GetSalonUseCase` | `(id: unknown)` | `ApiSalonResponse` |
-| `ListSalonsUseCase` | `(input: unknown)` | `SalonPage`: `data` and pagination `meta` |
-| `UpdateSalonUseCase` | `(id: unknown, input: unknown)` | `ApiSalonResponse` |
-| `DeleteSalonUseCase` | `(id: unknown)` | the `SalonId` that was deleted |
+| Use case | `execute` | Permission | Success data |
+|----------|-----------|------------|--------------|
+| `CreateSalonUseCase` | `(actor: Actor, input: unknown)` | `mayCreateSalon(actor)` | `ApiSalonResponse` |
+| `GetSalonUseCase` | `(id: unknown)` | none: public | `ApiSalonResponse` |
+| `ListSalonsUseCase` | `(input: unknown)` | none: public | `SalonPage`: `data` and pagination `meta` |
+| `UpdateSalonUseCase` | `(actor: Actor, id: unknown, input: unknown)` | `mayUpdateSalon(actor, salonId)` | `ApiSalonResponse` |
+| `DeleteSalonUseCase` | `(actor: Actor, id: unknown)` | `mayDeleteSalon(actor, salonId)` | the `SalonId` that was deleted |
+
+The three rules are the whole of `_shared/authorization.ts`:
+
+```typescript
+/** A new salon is a new tenant; only the platform's administrators add one. */
+export const mayCreateSalon = (actor: Actor): boolean =>
+  actor.scope.type === 'platform'
+
+/** Administrators, and the owner and the managers of the salon itself. */
+export const mayUpdateSalon = (actor: Actor, salonId: SalonId): boolean =>
+  match(actor.scope)
+    .with({ type: 'platform' }, () => true)
+    .with(
+      { type: 'salon', role: P.union('owner', 'manager') },
+      (scope) => scope.salonId === salonId,
+    )
+    .with(
+      { type: 'salon', role: 'staff' },
+      { type: 'customer' },
+      { type: 'none' },
+      () => false,
+    )
+    .exhaustive()
+
+/** Administrators, and the owner of the salon itself. */
+export const mayDeleteSalon = (actor: Actor, salonId: SalonId): boolean =>
+  match(actor.scope)
+    .with({ type: 'platform' }, () => true)
+    .with(
+      { type: 'salon', role: 'owner' },
+      (scope) => scope.salonId === salonId,
+    )
+    .with(
+      { type: 'salon', role: P.union('manager', 'staff') },
+      { type: 'customer' },
+      { type: 'none' },
+      () => false,
+    )
+    .exhaustive()
+```
+
+A rule reads `actor.scope`, which the authentication derived from the user's role and the staff member or customer the user is linked to. It needs no repository, so it is tested as a plain function. A domain whose data belongs to a salon compares the salon of the actor with the salon of the data in the same way; what to answer for data of another salon is in [Authentication and Authorization](./authentication.md).
 
 `ListSalonsUseCase` applies the default `limit` of 20, turns absent filters into `null` for the repository and builds `meta`: `nextCursor` is the ID of the last salon of the page when `hasMore` is true, otherwise `null`.
 
@@ -622,18 +679,33 @@ The use cases and `SalonUseCaseDependencies` are exported from `business-logic/s
 
 ## 10. Handlers and Router
 
-Each operation has a handler file in `backend/packages/api/src/routes/salon/`, and `index.ts` there exports `createSalonRouter(dependencies)`. A handler is a factory over `SalonUseCaseDependencies`: it passes `req.body`, `req.params.id` or the decoded query to the use case and matches the `Result` into a response or into problem details.
+Each operation has a handler file in `backend/packages/api/src/routes/salon/`, and `index.ts` there exports `createSalonRouter(dependencies, authenticated)`. A handler is a factory over `SalonUseCaseDependencies`: it passes `req.body`, `req.params.id` or the decoded query to the use case and matches the `Result` into a response or into problem details.
+
+The handlers of create, update and delete also take `authenticated` (`backend/packages/api/src/shared/authentication.ts`) and are wrapped with it. From `backend/packages/api/src/routes/salon/update-salon.handler.ts`:
+
+```typescript
+  return authenticated(async (actor, req, res) => {
+    const result = await useCase.execute(actor, req.params.id, req.body)
+```
+
+`authenticated` answers 401 when the request has no access token that works, and otherwise calls the handler with the actor. The handlers of list and get are not wrapped.
 
 The layout of the API package, the handler pattern, the shared helpers and the middleware are described in the [API Route Modular Structure Guide](./api-route-modular-structure.md).
 
 ## 11. Wiring
 
-`createApp` in `backend/packages/api/src/index.ts` constructs each repository once and mounts the router:
+`createApp` in `backend/packages/api/src/index.ts` constructs each repository once and mounts the router. `authenticated` is built once, from the authentication dependencies, a few lines above:
 
 ```typescript
+  const authenticated = createAuthenticated(authDependencies)
+
+  // ...
   app.use(
     `${API_BASE_PATH}/salons`,
-    createSalonRouter({ salonRepository: new SalonRepository(database) }),
+    createSalonRouter(
+      { salonRepository: new SalonRepository(database) },
+      authenticated,
+    ),
   )
 ```
 
@@ -645,10 +717,11 @@ A new domain adds one such statement next to it, before `notFoundHandler`. Nothi
 |------|------|----------------|
 | `backend/packages/domain/src/__tests__/salon.schema.test.ts` | unit | the request schemas: what they accept and the rules they reject |
 | `backend/packages/domain/src/__tests__/salon.mapper.test.ts` | unit | both mappers, including stored rows that do not fit |
-| `backend/packages/domain/src/__tests__/salon.usecase.test.ts` | unit | each use case against a stubbed repository |
+| `backend/packages/domain/src/__tests__/salon.usecase.test.ts` | unit | each use case against a stubbed repository, and who may change a salon |
 | `backend/packages/domain/src/__tests__/fixtures.ts` | helper | a valid request, rows as the driver returns them, `brokenRules` |
+| `backend/packages/domain/src/__tests__/auth-fixtures.ts` | helper | `actors`: an admin, a member of a salon by role, a customer, a user without a scope |
 | `backend/packages/api/src/routes/salon/_shared/__tests__/` | unit | link building and query decoding |
-| `backend/packages/api/src/__tests__/salon.integration.test.ts` | integration | every endpoint through HTTP against PostgreSQL |
+| `backend/packages/api/src/__tests__/salon.integration.test.ts` | integration | every endpoint through HTTP against PostgreSQL, signed in as the user the scenario needs |
 
 The repository has no unit test of its own; its queries, transactions and constraint handling are exercised by the integration tests against a real PostgreSQL.
 
@@ -670,7 +743,32 @@ const repositoryWith = (
 })
 ```
 
-Integration tests run the production `createApp` (through `createTestApp` in `__tests__/_shared/test-helpers.ts`) with a PostgreSQL schema of their own per test. They assert the response and the stored state (`salon.integration.test.ts`):
+For a use case that takes an actor, the actor is one of `actors` from `auth-fixtures.ts`. The tests of what the use case does pass `actors.admin`; the tests of who may do it go through the kinds of actor in a table and assert that a refused one never reaches the repository:
+
+```typescript
+  it.each<[string, Actor]>([
+    ['a manager of the salon', actors.ofSalon('manager', SALON_ID)],
+    ['the owner of another salon', ownerOfOtherSalon],
+    ['a staff member of the salon', actors.ofSalon('staff', SALON_ID)],
+    ['a customer', actors.customer],
+    ['a user without a scope', actors.withoutScope],
+  ])(
+    'forbids %s to delete the salon without touching the repository',
+    async (_case, actor) => {
+      const salonRepository = repositoryWith()
+
+      const result = await new DeleteSalonUseCase({ salonRepository }).execute(
+        actor,
+        SALON_ID,
+      )
+
+      expect(result).toEqual(forbidden)
+      expect(salonRepository.delete).not.toHaveBeenCalled()
+    },
+  )
+```
+
+Integration tests run the production `createApp` (through `createTestApp` in `__tests__/_shared/test-helpers.ts`) with a PostgreSQL schema of their own per test. A request to an operation that is not public carries the `Authorization` header of a user the test has inserted and signed in (`asAdmin` comes from `signInAsAdmin` in `__tests__/_shared/auth-helpers.ts`). The tests assert the response and the stored state (`salon.integration.test.ts`):
 
 ```typescript
     it('rejects an email that another salon uses', async () => {
@@ -678,6 +776,7 @@ Integration tests run the production `createApp` (through `createTestApp` in `__
 
       const response = await request(app)
         .post(SALONS)
+        .set('Authorization', asAdmin)
         .send(salonRequest({ name: 'Second salon' }))
 
       expectProblem(response, conflict)
@@ -688,7 +787,7 @@ Integration tests run the production `createApp` (through `createTestApp` in `__
     })
 ```
 
-Each endpoint has at least five error scenarios, most of them rows of an `it.each` table that name the broken rule as `field:rule` (for example `postalCode:too_big`). Beyond the validation cases, the Salon tests cover an unknown ID, a deleted salon, a duplicate email, a corrupt stored row, a request that must leave the stored data untouched, and pagination while salons are added.
+Each endpoint has at least five error scenarios, most of them rows of an `it.each` table that name the broken rule as `field:rule` (for example `postalCode:too_big`). Beyond the validation cases, the Salon tests cover an unknown ID, a deleted salon, a duplicate email, a corrupt stored row, a request that must leave the stored data untouched, pagination while salons are added, a request without a token, and every kind of user who may not create, change or delete a salon.
 
 ```bash
 pnpm test               # unit tests of every package
@@ -699,21 +798,25 @@ The conventions are in [Testing Requirements](./testing-requirements.md) and the
 
 ## Error Handling
 
-A use case fails in one of four ways (`backend/packages/domain/src/shared/errors.ts`):
+A use case fails in one of six ways (`backend/packages/domain/src/shared/errors.ts`):
 
 ```typescript
 export type DomainError =
   | { type: 'validation'; message: string; issues: ValidationIssue[] }
+  | { type: 'unauthenticated'; reason: AuthenticationFailure }
+  | { type: 'forbidden' }
   | { type: 'notFound'; entity: string; id: string }
   | { type: 'alreadyExists'; entity: string; field: string; value: string }
   | { type: 'database'; message: string; cause: unknown }
 ```
 
-Errors are built with `DomainErrors.validation`, `.notFound`, `.alreadyExists` and `.database`. Where each kind comes from:
+Errors are built with `DomainErrors.validation`, `.unauthenticated`, `.forbidden`, `.notFound`, `.alreadyExists` and `.database`. Where each kind comes from:
 
 | Kind | Where it is created | What the client gets |
 |------|---------------------|----------------------|
 | `validation` | `parseWith`, called by a use case (and by the query decoding of the list handler) | 400 with the broken rules in `errors` |
+| `unauthenticated` | the authentication use cases only: `AuthenticateUseCase` behind `authenticated`, login and refresh | 401 with a `WWW-Authenticate` header |
+| `forbidden` | a use case, when its permission rule refuses the actor | 403 |
 | `notFound` | a use case, when the repository resolved to `null` or `false` | 404 |
 | `alreadyExists` | the repository, from the unique violation | 409 |
 | `database` | the repository, from a failed query; the read mapper, from a stored row that does not fit | 500 without details; the cause is logged |
@@ -728,6 +831,7 @@ Contract and database:
 
 - [ ] `specs/models/<domain>.tsp` defines the response, create, update and search models; property names and nullability are those of the columns
 - [ ] `specs/operations/<domain>-operations.tsp` defines only the operations that will be implemented, each with its success response and the error responses its use case can produce; both files are imported in `specs/main.tsp`
+- [ ] Each operation is either public (`@useAuth(NoAuth)`, `PublicErrors`) or declares `SessionErrors` or `CommonErrors`, and names in its `@doc` who may call it
 - [ ] `pnpm generate` has been run and the generated files are committed
 - [ ] If the table must change: a migration, then `pnpm db:migrate`, `pnpm db:introspect` and `pnpm db:generate-sql`, with the regenerated files committed and the seed data in `backend/packages/database/src/seeds/seed-data/` adjusted
 - [ ] The models that are backed by a table are listed in `api-consistency-rules.ts` with `omittedColumns`, and `pnpm check:api-db` passes
@@ -739,8 +843,9 @@ Domain package (`backend/packages/domain/src/`):
 - [ ] `mappers/write/<domain>.mapper.ts` and `mappers/read/<domain>.mapper.ts`: no renaming; the read mapper returns a `Result`
 - [ ] `repositories/<domain>.repository.ts`: the interface
 - [ ] `business-logic/<domain>/`: `_shared/dependencies.ts`, one `<action>-<domain>.usecase.ts` per operation with `execute` taking `unknown`, and `index.ts`
+- [ ] `business-logic/<domain>/_shared/authorization.ts`: one pure function per permission rule; the use case of every operation that is not public takes `actor: Actor` first and returns `DomainErrors.forbidden()` when the rule refuses
 - [ ] The use cases, models and repository interface are exported from `index.ts`
-- [ ] `__tests__/`: schema, mapper and use case tests
+- [ ] `__tests__/`: schema, mapper and use case tests, the last including every kind of actor for each permission rule
 
 Infrastructure package (`backend/packages/infrastructure/src/`):
 
@@ -750,6 +855,7 @@ Infrastructure package (`backend/packages/infrastructure/src/`):
 API package:
 
 - [ ] Routes, mounting and integration tests as listed in the [API Route Modular Structure Guide](./api-route-modular-structure.md), with at least five error scenarios per endpoint
+- [ ] The handler of every operation that is not public is wrapped with `authenticated`
 
 Before the pull request:
 

@@ -77,6 +77,16 @@ export type serviceCrudListResponse400 = {
   status: 400
 }
 
+export type serviceCrudListResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type serviceCrudListResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type serviceCrudListResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -95,7 +105,7 @@ export type serviceCrudListResponse500 = {
 export type serviceCrudListResponseSuccess = (serviceCrudListResponse200) & {
   headers: Headers;
 };
-export type serviceCrudListResponseError = (serviceCrudListResponse400 | serviceCrudListResponse404 | serviceCrudListResponse429 | serviceCrudListResponse500) & {
+export type serviceCrudListResponseError = (serviceCrudListResponse400 | serviceCrudListResponse401 | serviceCrudListResponse403 | serviceCrudListResponse404 | serviceCrudListResponse429 | serviceCrudListResponse500) & {
   headers: Headers;
 };
 
@@ -239,6 +249,16 @@ export type serviceCrudCreateResponse400 = {
   status: 400
 }
 
+export type serviceCrudCreateResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type serviceCrudCreateResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type serviceCrudCreateResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -267,7 +287,7 @@ export type serviceCrudCreateResponse500 = {
 export type serviceCrudCreateResponseSuccess = (serviceCrudCreateResponse201) & {
   headers: Headers;
 };
-export type serviceCrudCreateResponseError = (serviceCrudCreateResponse400 | serviceCrudCreateResponse404 | serviceCrudCreateResponse413 | serviceCrudCreateResponse415 | serviceCrudCreateResponse429 | serviceCrudCreateResponse500) & {
+export type serviceCrudCreateResponseError = (serviceCrudCreateResponse400 | serviceCrudCreateResponse401 | serviceCrudCreateResponse403 | serviceCrudCreateResponse404 | serviceCrudCreateResponse413 | serviceCrudCreateResponse415 | serviceCrudCreateResponse429 | serviceCrudCreateResponse500) & {
   headers: Headers;
 };
 
@@ -373,6 +393,16 @@ export type serviceCrudBulkUpdateResponse400 = {
   status: 400
 }
 
+export type serviceCrudBulkUpdateResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type serviceCrudBulkUpdateResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type serviceCrudBulkUpdateResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -401,7 +431,7 @@ export type serviceCrudBulkUpdateResponse500 = {
 export type serviceCrudBulkUpdateResponseSuccess = (serviceCrudBulkUpdateResponse200) & {
   headers: Headers;
 };
-export type serviceCrudBulkUpdateResponseError = (serviceCrudBulkUpdateResponse400 | serviceCrudBulkUpdateResponse404 | serviceCrudBulkUpdateResponse413 | serviceCrudBulkUpdateResponse415 | serviceCrudBulkUpdateResponse429 | serviceCrudBulkUpdateResponse500) & {
+export type serviceCrudBulkUpdateResponseError = (serviceCrudBulkUpdateResponse400 | serviceCrudBulkUpdateResponse401 | serviceCrudBulkUpdateResponse403 | serviceCrudBulkUpdateResponse404 | serviceCrudBulkUpdateResponse413 | serviceCrudBulkUpdateResponse415 | serviceCrudBulkUpdateResponse429 | serviceCrudBulkUpdateResponse500) & {
   headers: Headers;
 };
 
@@ -507,6 +537,16 @@ export type serviceCrudGetResponse400 = {
   status: 400
 }
 
+export type serviceCrudGetResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type serviceCrudGetResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type serviceCrudGetResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -525,7 +565,7 @@ export type serviceCrudGetResponse500 = {
 export type serviceCrudGetResponseSuccess = (serviceCrudGetResponse200) & {
   headers: Headers;
 };
-export type serviceCrudGetResponseError = (serviceCrudGetResponse400 | serviceCrudGetResponse404 | serviceCrudGetResponse429 | serviceCrudGetResponse500) & {
+export type serviceCrudGetResponseError = (serviceCrudGetResponse400 | serviceCrudGetResponse401 | serviceCrudGetResponse403 | serviceCrudGetResponse404 | serviceCrudGetResponse429 | serviceCrudGetResponse500) & {
   headers: Headers;
 };
 
@@ -662,6 +702,16 @@ export type serviceCrudUpdateResponse400 = {
   status: 400
 }
 
+export type serviceCrudUpdateResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type serviceCrudUpdateResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type serviceCrudUpdateResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -690,7 +740,7 @@ export type serviceCrudUpdateResponse500 = {
 export type serviceCrudUpdateResponseSuccess = (serviceCrudUpdateResponse200) & {
   headers: Headers;
 };
-export type serviceCrudUpdateResponseError = (serviceCrudUpdateResponse400 | serviceCrudUpdateResponse404 | serviceCrudUpdateResponse413 | serviceCrudUpdateResponse415 | serviceCrudUpdateResponse429 | serviceCrudUpdateResponse500) & {
+export type serviceCrudUpdateResponseError = (serviceCrudUpdateResponse400 | serviceCrudUpdateResponse401 | serviceCrudUpdateResponse403 | serviceCrudUpdateResponse404 | serviceCrudUpdateResponse413 | serviceCrudUpdateResponse415 | serviceCrudUpdateResponse429 | serviceCrudUpdateResponse500) & {
   headers: Headers;
 };
 
@@ -798,6 +848,16 @@ export type serviceCrudDeleteResponse400 = {
   status: 400
 }
 
+export type serviceCrudDeleteResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type serviceCrudDeleteResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type serviceCrudDeleteResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -816,7 +876,7 @@ export type serviceCrudDeleteResponse500 = {
 export type serviceCrudDeleteResponseSuccess = (serviceCrudDeleteResponse204) & {
   headers: Headers;
 };
-export type serviceCrudDeleteResponseError = (serviceCrudDeleteResponse400 | serviceCrudDeleteResponse404 | serviceCrudDeleteResponse429 | serviceCrudDeleteResponse500) & {
+export type serviceCrudDeleteResponseError = (serviceCrudDeleteResponse400 | serviceCrudDeleteResponse401 | serviceCrudDeleteResponse403 | serviceCrudDeleteResponse404 | serviceCrudDeleteResponse429 | serviceCrudDeleteResponse500) & {
   headers: Headers;
 };
 
@@ -909,6 +969,16 @@ export type serviceCategoryCrudListResponse400 = {
   status: 400
 }
 
+export type serviceCategoryCrudListResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type serviceCategoryCrudListResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type serviceCategoryCrudListResponse429 = {
   data: ModelsProblemDetails
   status: 429
@@ -922,7 +992,7 @@ export type serviceCategoryCrudListResponse500 = {
 export type serviceCategoryCrudListResponseSuccess = (serviceCategoryCrudListResponse200) & {
   headers: Headers;
 };
-export type serviceCategoryCrudListResponseError = (serviceCategoryCrudListResponse400 | serviceCategoryCrudListResponse429 | serviceCategoryCrudListResponse500) & {
+export type serviceCategoryCrudListResponseError = (serviceCategoryCrudListResponse400 | serviceCategoryCrudListResponse401 | serviceCategoryCrudListResponse403 | serviceCategoryCrudListResponse429 | serviceCategoryCrudListResponse500) & {
   headers: Headers;
 };
 
@@ -1058,6 +1128,16 @@ export type serviceCategoryCrudCreateResponse400 = {
   status: 400
 }
 
+export type serviceCategoryCrudCreateResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type serviceCategoryCrudCreateResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type serviceCategoryCrudCreateResponse413 = {
   data: ModelsProblemDetails
   status: 413
@@ -1081,7 +1161,7 @@ export type serviceCategoryCrudCreateResponse500 = {
 export type serviceCategoryCrudCreateResponseSuccess = (serviceCategoryCrudCreateResponse201) & {
   headers: Headers;
 };
-export type serviceCategoryCrudCreateResponseError = (serviceCategoryCrudCreateResponse400 | serviceCategoryCrudCreateResponse413 | serviceCategoryCrudCreateResponse415 | serviceCategoryCrudCreateResponse429 | serviceCategoryCrudCreateResponse500) & {
+export type serviceCategoryCrudCreateResponseError = (serviceCategoryCrudCreateResponse400 | serviceCategoryCrudCreateResponse401 | serviceCategoryCrudCreateResponse403 | serviceCategoryCrudCreateResponse413 | serviceCategoryCrudCreateResponse415 | serviceCategoryCrudCreateResponse429 | serviceCategoryCrudCreateResponse500) & {
   headers: Headers;
 };
 
@@ -1186,6 +1266,16 @@ export type serviceCategoryCrudGetResponse400 = {
   status: 400
 }
 
+export type serviceCategoryCrudGetResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type serviceCategoryCrudGetResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type serviceCategoryCrudGetResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -1204,7 +1294,7 @@ export type serviceCategoryCrudGetResponse500 = {
 export type serviceCategoryCrudGetResponseSuccess = (serviceCategoryCrudGetResponse200) & {
   headers: Headers;
 };
-export type serviceCategoryCrudGetResponseError = (serviceCategoryCrudGetResponse400 | serviceCategoryCrudGetResponse404 | serviceCategoryCrudGetResponse429 | serviceCategoryCrudGetResponse500) & {
+export type serviceCategoryCrudGetResponseError = (serviceCategoryCrudGetResponse400 | serviceCategoryCrudGetResponse401 | serviceCategoryCrudGetResponse403 | serviceCategoryCrudGetResponse404 | serviceCategoryCrudGetResponse429 | serviceCategoryCrudGetResponse500) & {
   headers: Headers;
 };
 
@@ -1333,6 +1423,16 @@ export type serviceCategoryCrudUpdateResponse400 = {
   status: 400
 }
 
+export type serviceCategoryCrudUpdateResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type serviceCategoryCrudUpdateResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type serviceCategoryCrudUpdateResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -1361,7 +1461,7 @@ export type serviceCategoryCrudUpdateResponse500 = {
 export type serviceCategoryCrudUpdateResponseSuccess = (serviceCategoryCrudUpdateResponse200) & {
   headers: Headers;
 };
-export type serviceCategoryCrudUpdateResponseError = (serviceCategoryCrudUpdateResponse400 | serviceCategoryCrudUpdateResponse404 | serviceCategoryCrudUpdateResponse413 | serviceCategoryCrudUpdateResponse415 | serviceCategoryCrudUpdateResponse429 | serviceCategoryCrudUpdateResponse500) & {
+export type serviceCategoryCrudUpdateResponseError = (serviceCategoryCrudUpdateResponse400 | serviceCategoryCrudUpdateResponse401 | serviceCategoryCrudUpdateResponse403 | serviceCategoryCrudUpdateResponse404 | serviceCategoryCrudUpdateResponse413 | serviceCategoryCrudUpdateResponse415 | serviceCategoryCrudUpdateResponse429 | serviceCategoryCrudUpdateResponse500) & {
   headers: Headers;
 };
 
@@ -1467,6 +1567,16 @@ export type serviceCategoryCrudDeleteResponse400 = {
   status: 400
 }
 
+export type serviceCategoryCrudDeleteResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type serviceCategoryCrudDeleteResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type serviceCategoryCrudDeleteResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -1485,7 +1595,7 @@ export type serviceCategoryCrudDeleteResponse500 = {
 export type serviceCategoryCrudDeleteResponseSuccess = (serviceCategoryCrudDeleteResponse204) & {
   headers: Headers;
 };
-export type serviceCategoryCrudDeleteResponseError = (serviceCategoryCrudDeleteResponse400 | serviceCategoryCrudDeleteResponse404 | serviceCategoryCrudDeleteResponse429 | serviceCategoryCrudDeleteResponse500) & {
+export type serviceCategoryCrudDeleteResponseError = (serviceCategoryCrudDeleteResponse400 | serviceCategoryCrudDeleteResponse401 | serviceCategoryCrudDeleteResponse403 | serviceCategoryCrudDeleteResponse404 | serviceCategoryCrudDeleteResponse429 | serviceCategoryCrudDeleteResponse500) & {
   headers: Headers;
 };
 

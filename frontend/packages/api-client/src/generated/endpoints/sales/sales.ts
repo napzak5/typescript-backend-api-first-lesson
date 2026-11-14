@@ -73,6 +73,16 @@ export type saleCrudListResponse400 = {
   status: 400
 }
 
+export type saleCrudListResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type saleCrudListResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type saleCrudListResponse429 = {
   data: ModelsProblemDetails
   status: 429
@@ -86,7 +96,7 @@ export type saleCrudListResponse500 = {
 export type saleCrudListResponseSuccess = (saleCrudListResponse200) & {
   headers: Headers;
 };
-export type saleCrudListResponseError = (saleCrudListResponse400 | saleCrudListResponse429 | saleCrudListResponse500) & {
+export type saleCrudListResponseError = (saleCrudListResponse400 | saleCrudListResponse401 | saleCrudListResponse403 | saleCrudListResponse429 | saleCrudListResponse500) & {
   headers: Headers;
 };
 
@@ -222,6 +232,16 @@ export type saleCrudCreateResponse400 = {
   status: 400
 }
 
+export type saleCrudCreateResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type saleCrudCreateResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type saleCrudCreateResponse413 = {
   data: ModelsProblemDetails
   status: 413
@@ -245,7 +265,7 @@ export type saleCrudCreateResponse500 = {
 export type saleCrudCreateResponseSuccess = (saleCrudCreateResponse201) & {
   headers: Headers;
 };
-export type saleCrudCreateResponseError = (saleCrudCreateResponse400 | saleCrudCreateResponse413 | saleCrudCreateResponse415 | saleCrudCreateResponse429 | saleCrudCreateResponse500) & {
+export type saleCrudCreateResponseError = (saleCrudCreateResponse400 | saleCrudCreateResponse401 | saleCrudCreateResponse403 | saleCrudCreateResponse413 | saleCrudCreateResponse415 | saleCrudCreateResponse429 | saleCrudCreateResponse500) & {
   headers: Headers;
 };
 
@@ -350,6 +370,16 @@ export type saleCrudCalculateResponse400 = {
   status: 400
 }
 
+export type saleCrudCalculateResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type saleCrudCalculateResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type saleCrudCalculateResponse413 = {
   data: ModelsProblemDetails
   status: 413
@@ -373,7 +403,7 @@ export type saleCrudCalculateResponse500 = {
 export type saleCrudCalculateResponseSuccess = (saleCrudCalculateResponse200) & {
   headers: Headers;
 };
-export type saleCrudCalculateResponseError = (saleCrudCalculateResponse400 | saleCrudCalculateResponse413 | saleCrudCalculateResponse415 | saleCrudCalculateResponse429 | saleCrudCalculateResponse500) & {
+export type saleCrudCalculateResponseError = (saleCrudCalculateResponse400 | saleCrudCalculateResponse401 | saleCrudCalculateResponse403 | saleCrudCalculateResponse413 | saleCrudCalculateResponse415 | saleCrudCalculateResponse429 | saleCrudCalculateResponse500) & {
   headers: Headers;
 };
 
@@ -478,6 +508,16 @@ export type saleCrudGetResponse400 = {
   status: 400
 }
 
+export type saleCrudGetResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type saleCrudGetResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type saleCrudGetResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -496,7 +536,7 @@ export type saleCrudGetResponse500 = {
 export type saleCrudGetResponseSuccess = (saleCrudGetResponse200) & {
   headers: Headers;
 };
-export type saleCrudGetResponseError = (saleCrudGetResponse400 | saleCrudGetResponse404 | saleCrudGetResponse429 | saleCrudGetResponse500) & {
+export type saleCrudGetResponseError = (saleCrudGetResponse400 | saleCrudGetResponse401 | saleCrudGetResponse403 | saleCrudGetResponse404 | saleCrudGetResponse429 | saleCrudGetResponse500) & {
   headers: Headers;
 };
 
@@ -625,6 +665,16 @@ export type saleCrudUpdateResponse400 = {
   status: 400
 }
 
+export type saleCrudUpdateResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type saleCrudUpdateResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type saleCrudUpdateResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -658,7 +708,7 @@ export type saleCrudUpdateResponse500 = {
 export type saleCrudUpdateResponseSuccess = (saleCrudUpdateResponse200) & {
   headers: Headers;
 };
-export type saleCrudUpdateResponseError = (saleCrudUpdateResponse400 | saleCrudUpdateResponse404 | saleCrudUpdateResponse409 | saleCrudUpdateResponse413 | saleCrudUpdateResponse415 | saleCrudUpdateResponse429 | saleCrudUpdateResponse500) & {
+export type saleCrudUpdateResponseError = (saleCrudUpdateResponse400 | saleCrudUpdateResponse401 | saleCrudUpdateResponse403 | saleCrudUpdateResponse404 | saleCrudUpdateResponse409 | saleCrudUpdateResponse413 | saleCrudUpdateResponse415 | saleCrudUpdateResponse429 | saleCrudUpdateResponse500) & {
   headers: Headers;
 };
 
@@ -764,6 +814,16 @@ export type saleCrudProcessResponse400 = {
   status: 400
 }
 
+export type saleCrudProcessResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type saleCrudProcessResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type saleCrudProcessResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -797,7 +857,7 @@ export type saleCrudProcessResponse500 = {
 export type saleCrudProcessResponseSuccess = (saleCrudProcessResponse200) & {
   headers: Headers;
 };
-export type saleCrudProcessResponseError = (saleCrudProcessResponse400 | saleCrudProcessResponse404 | saleCrudProcessResponse409 | saleCrudProcessResponse413 | saleCrudProcessResponse415 | saleCrudProcessResponse429 | saleCrudProcessResponse500) & {
+export type saleCrudProcessResponseError = (saleCrudProcessResponse400 | saleCrudProcessResponse401 | saleCrudProcessResponse403 | saleCrudProcessResponse404 | saleCrudProcessResponse409 | saleCrudProcessResponse413 | saleCrudProcessResponse415 | saleCrudProcessResponse429 | saleCrudProcessResponse500) & {
   headers: Headers;
 };
 
@@ -903,6 +963,16 @@ export type saleCrudGetReceiptResponse400 = {
   status: 400
 }
 
+export type saleCrudGetReceiptResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type saleCrudGetReceiptResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type saleCrudGetReceiptResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -921,7 +991,7 @@ export type saleCrudGetReceiptResponse500 = {
 export type saleCrudGetReceiptResponseSuccess = (saleCrudGetReceiptResponse200) & {
   headers: Headers;
 };
-export type saleCrudGetReceiptResponseError = (saleCrudGetReceiptResponse400 | saleCrudGetReceiptResponse404 | saleCrudGetReceiptResponse429 | saleCrudGetReceiptResponse500) & {
+export type saleCrudGetReceiptResponseError = (saleCrudGetReceiptResponse400 | saleCrudGetReceiptResponse401 | saleCrudGetReceiptResponse403 | saleCrudGetReceiptResponse404 | saleCrudGetReceiptResponse429 | saleCrudGetReceiptResponse500) & {
   headers: Headers;
 };
 
@@ -1050,6 +1120,16 @@ export type saleCrudVoidSaleResponse400 = {
   status: 400
 }
 
+export type saleCrudVoidSaleResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type saleCrudVoidSaleResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type saleCrudVoidSaleResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -1083,7 +1163,7 @@ export type saleCrudVoidSaleResponse500 = {
 export type saleCrudVoidSaleResponseSuccess = (saleCrudVoidSaleResponse200) & {
   headers: Headers;
 };
-export type saleCrudVoidSaleResponseError = (saleCrudVoidSaleResponse400 | saleCrudVoidSaleResponse404 | saleCrudVoidSaleResponse409 | saleCrudVoidSaleResponse413 | saleCrudVoidSaleResponse415 | saleCrudVoidSaleResponse429 | saleCrudVoidSaleResponse500) & {
+export type saleCrudVoidSaleResponseError = (saleCrudVoidSaleResponse400 | saleCrudVoidSaleResponse401 | saleCrudVoidSaleResponse403 | saleCrudVoidSaleResponse404 | saleCrudVoidSaleResponse409 | saleCrudVoidSaleResponse413 | saleCrudVoidSaleResponse415 | saleCrudVoidSaleResponse429 | saleCrudVoidSaleResponse500) & {
   headers: Headers;
 };
 

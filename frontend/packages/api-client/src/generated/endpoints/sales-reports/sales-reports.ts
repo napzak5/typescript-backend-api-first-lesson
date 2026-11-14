@@ -70,6 +70,16 @@ export type salesReportCrudGetResponse400 = {
   status: 400
 }
 
+export type salesReportCrudGetResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type salesReportCrudGetResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type salesReportCrudGetResponse429 = {
   data: ModelsProblemDetails
   status: 429
@@ -83,7 +93,7 @@ export type salesReportCrudGetResponse500 = {
 export type salesReportCrudGetResponseSuccess = (salesReportCrudGetResponse200) & {
   headers: Headers;
 };
-export type salesReportCrudGetResponseError = (salesReportCrudGetResponse400 | salesReportCrudGetResponse429 | salesReportCrudGetResponse500) & {
+export type salesReportCrudGetResponseError = (salesReportCrudGetResponse400 | salesReportCrudGetResponse401 | salesReportCrudGetResponse403 | salesReportCrudGetResponse429 | salesReportCrudGetResponse500) & {
   headers: Headers;
 };
 
@@ -219,6 +229,16 @@ export type salesReportCrudGetByCategoryResponse400 = {
   status: 400
 }
 
+export type salesReportCrudGetByCategoryResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type salesReportCrudGetByCategoryResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type salesReportCrudGetByCategoryResponse429 = {
   data: ModelsProblemDetails
   status: 429
@@ -232,7 +252,7 @@ export type salesReportCrudGetByCategoryResponse500 = {
 export type salesReportCrudGetByCategoryResponseSuccess = (salesReportCrudGetByCategoryResponse200) & {
   headers: Headers;
 };
-export type salesReportCrudGetByCategoryResponseError = (salesReportCrudGetByCategoryResponse400 | salesReportCrudGetByCategoryResponse429 | salesReportCrudGetByCategoryResponse500) & {
+export type salesReportCrudGetByCategoryResponseError = (salesReportCrudGetByCategoryResponse400 | salesReportCrudGetByCategoryResponse401 | salesReportCrudGetByCategoryResponse403 | salesReportCrudGetByCategoryResponse429 | salesReportCrudGetByCategoryResponse500) & {
   headers: Headers;
 };
 
@@ -368,6 +388,16 @@ export type salesReportCrudGetByStaffResponse400 = {
   status: 400
 }
 
+export type salesReportCrudGetByStaffResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type salesReportCrudGetByStaffResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type salesReportCrudGetByStaffResponse429 = {
   data: ModelsProblemDetails
   status: 429
@@ -381,7 +411,7 @@ export type salesReportCrudGetByStaffResponse500 = {
 export type salesReportCrudGetByStaffResponseSuccess = (salesReportCrudGetByStaffResponse200) & {
   headers: Headers;
 };
-export type salesReportCrudGetByStaffResponseError = (salesReportCrudGetByStaffResponse400 | salesReportCrudGetByStaffResponse429 | salesReportCrudGetByStaffResponse500) & {
+export type salesReportCrudGetByStaffResponseError = (salesReportCrudGetByStaffResponse400 | salesReportCrudGetByStaffResponse401 | salesReportCrudGetByStaffResponse403 | salesReportCrudGetByStaffResponse429 | salesReportCrudGetByStaffResponse500) & {
   headers: Headers;
 };
 
@@ -517,6 +547,16 @@ export type salesReportCrudGetDailyResponse400 = {
   status: 400
 }
 
+export type salesReportCrudGetDailyResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type salesReportCrudGetDailyResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type salesReportCrudGetDailyResponse429 = {
   data: ModelsProblemDetails
   status: 429
@@ -530,7 +570,7 @@ export type salesReportCrudGetDailyResponse500 = {
 export type salesReportCrudGetDailyResponseSuccess = (salesReportCrudGetDailyResponse200) & {
   headers: Headers;
 };
-export type salesReportCrudGetDailyResponseError = (salesReportCrudGetDailyResponse400 | salesReportCrudGetDailyResponse429 | salesReportCrudGetDailyResponse500) & {
+export type salesReportCrudGetDailyResponseError = (salesReportCrudGetDailyResponse400 | salesReportCrudGetDailyResponse401 | salesReportCrudGetDailyResponse403 | salesReportCrudGetDailyResponse429 | salesReportCrudGetDailyResponse500) & {
   headers: Headers;
 };
 
@@ -666,6 +706,16 @@ export type salesReportCrudExportResponse400 = {
   status: 400
 }
 
+export type salesReportCrudExportResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type salesReportCrudExportResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type salesReportCrudExportResponse413 = {
   data: ModelsProblemDetails
   status: 413
@@ -689,7 +739,7 @@ export type salesReportCrudExportResponse500 = {
 export type salesReportCrudExportResponseSuccess = (salesReportCrudExportResponse200) & {
   headers: Headers;
 };
-export type salesReportCrudExportResponseError = (salesReportCrudExportResponse400 | salesReportCrudExportResponse413 | salesReportCrudExportResponse415 | salesReportCrudExportResponse429 | salesReportCrudExportResponse500) & {
+export type salesReportCrudExportResponseError = (salesReportCrudExportResponse400 | salesReportCrudExportResponse401 | salesReportCrudExportResponse403 | salesReportCrudExportResponse413 | salesReportCrudExportResponse415 | salesReportCrudExportResponse429 | salesReportCrudExportResponse500) & {
   headers: Headers;
 };
 
@@ -794,6 +844,16 @@ export type salesReportCrudGetTrendsResponse400 = {
   status: 400
 }
 
+export type salesReportCrudGetTrendsResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type salesReportCrudGetTrendsResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type salesReportCrudGetTrendsResponse429 = {
   data: ModelsProblemDetails
   status: 429
@@ -807,7 +867,7 @@ export type salesReportCrudGetTrendsResponse500 = {
 export type salesReportCrudGetTrendsResponseSuccess = (salesReportCrudGetTrendsResponse200) & {
   headers: Headers;
 };
-export type salesReportCrudGetTrendsResponseError = (salesReportCrudGetTrendsResponse400 | salesReportCrudGetTrendsResponse429 | salesReportCrudGetTrendsResponse500) & {
+export type salesReportCrudGetTrendsResponseError = (salesReportCrudGetTrendsResponse400 | salesReportCrudGetTrendsResponse401 | salesReportCrudGetTrendsResponse403 | salesReportCrudGetTrendsResponse429 | salesReportCrudGetTrendsResponse500) & {
   headers: Headers;
 };
 

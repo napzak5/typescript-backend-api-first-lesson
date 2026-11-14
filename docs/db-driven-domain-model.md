@@ -14,7 +14,7 @@ PostgreSQL ── pnpm db:introspect ──▶ schema.ts     api-types.ts
                                   DbSalon、DbNewSalon ◀── マッパー ──▶ ApiSalonResponse、ApiSalonCreateRequest
 ```
 
-実装されているのは Salon ドメインだけで、以下の例はすべて Salon のコードである。ほかのドメインは DB スキーマと TypeSpec にあるだけで、モデルもマッパーもない（TypeSpec は DB と一致させてある）。
+以下の例はすべて、参照実装である Salon のコードである。認証も同じ方法で型を導出している（`backend/packages/domain/src/models/auth.ts` の `DbUser`、`DbSession`、`DbNewSession`）。ほかのドメインは DB スキーマと TypeSpec にあるだけで、モデルもマッパーもない（TypeSpec は DB と一致させてある）。
 
 - 型と制約の層ごとの対応、`pnpm check:api-db`: [API-DB型制約マッピング](./api-db-type-constraints-mapping.md)
 - TypeSpec の書き方: [TypeSpec API型定義ルール](./typespec-api-type-rules.md)

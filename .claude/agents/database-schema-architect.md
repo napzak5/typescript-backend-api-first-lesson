@@ -40,7 +40,7 @@ A local PostgreSQL has to be running; `make infra-up` starts the Docker Compose 
 2. `pnpm db:migrate` applies the migrations that the database has not seen, each one once and in its own transaction, and records them in `migration_history.applied_migrations`.
 3. `pnpm db:introspect` regenerates `schema.ts` and `relations.ts` from the database.
 4. `pnpm db:generate-sql` regenerates `sql/setup.sql` from `schema.ts`.
-5. Update the seed data when it no longer fits the tables, and check that it loads: `pnpm db:truncate`, then `pnpm db:seed`.
+5. Update the seed data when it no longer fits the tables, and check that it loads: `pnpm db:truncate`, then `pnpm db:seed`. The seed creates the accounts that developers sign in with (listed in `docs/authentication.md`). They share one password, `SEED_PASSWORD` in `backend/packages/database/src/seeds/seed-data/users.ts`, stored as the Argon2id hash next to it, and because that password is published `pnpm db:seed` refuses to run when `NODE_ENV` is `production`. Keep both properties when you change the seed: a seeded user whose `passwordHash` is not an Argon2id PHC string cannot sign in.
 6. The migration, `schema.ts`, `relations.ts` and `sql/setup.sql` belong in one commit.
 
 For new tables, follow the existing ones; the `salons` table is the reference: a `uuid` primary key with `gen_random_uuid()`, `createdAt` and `updatedAt` as `timestamptz`, soft delete through a nullable `deletedAt`, and constraints and indexes declared in the database.

@@ -66,6 +66,8 @@ export async function seed(
     console.log('Seeding staff...')
     const staffResult = await seedStaff(db, salonIds, {
       staffUserIds: userResult.staffUserIds,
+      ownerUserId: userResult.ownerUserId,
+      managerUserId: userResult.managerUserId,
     })
 
     console.log('Seeding membership tiers...')

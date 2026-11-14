@@ -7,8 +7,10 @@ import {
   ListSalonsUseCase,
   UpdateSalonUseCase,
 } from '../business-logic/salon'
+import type { Actor } from '../models/auth'
 import type { ISalonRepository } from '../repositories/salon.repository'
 import { DomainErrors } from '../shared'
+import { actors } from './auth-fixtures'
 import {
   brokenRules,
   dbOpeningHours,
@@ -43,6 +45,7 @@ describe('CreateSalonUseCase', () => {
     const request = salonCreateRequest()
 
     const result = await new CreateSalonUseCase({ salonRepository }).execute(
+      actors.admin,
       request,
     )
 
@@ -63,10 +66,13 @@ describe('CreateSalonUseCase', () => {
   it('rejects an invalid request without touching the repository', async () => {
     const salonRepository = repositoryWith()
 
-    const result = await new CreateSalonUseCase({ salonRepository }).execute({
-      ...salonCreateRequest(),
-      email: 'nope',
-    })
+    const result = await new CreateSalonUseCase({ salonRepository }).execute(
+      actors.admin,
+      {
+        ...salonCreateRequest(),
+        email: 'nope',
+      },
+    )
 
     expect(result.type === 'error' ? brokenRules(result.error) : []).toEqual([
       'email:invalid_format',
@@ -80,7 +86,7 @@ describe('CreateSalonUseCase', () => {
   ])('rejects %s', async (_case, input) => {
     const result = await new CreateSalonUseCase({
       salonRepository: repositoryWith(),
-    }).execute(input)
+    }).execute(actors.admin, input)
 
     expect(result.type === 'error' ? brokenRules(result.error) : []).toEqual([
       ':invalid_type',
@@ -98,6 +104,7 @@ describe('CreateSalonUseCase', () => {
     })
 
     const result = await new CreateSalonUseCase({ salonRepository }).execute(
+      actors.admin,
       salonCreateRequest(),
     )
 
@@ -108,6 +115,7 @@ describe('CreateSalonUseCase', () => {
     const salonRepository = repositoryWith({ create: async () => databaseDown })
 
     const result = await new CreateSalonUseCase({ salonRepository }).execute(
+      actors.admin,
       salonCreateRequest(),
     )
 
@@ -317,6 +325,7 @@ describe('UpdateSalonUseCase', () => {
     const salonRepository = repositoryWith()
 
     const result = await new UpdateSalonUseCase({ salonRepository }).execute(
+      actors.admin,
       SALON_ID,
       { name: 'Renamed', latitude: null },
     )
@@ -332,9 +341,13 @@ describe('UpdateSalonUseCase', () => {
   it('replaces the calendar when openingHours is given', async () => {
     const salonRepository = repositoryWith()
 
-    await new UpdateSalonUseCase({ salonRepository }).execute(SALON_ID, {
-      openingHours: [],
-    })
+    await new UpdateSalonUseCase({ salonRepository }).execute(
+      actors.admin,
+      SALON_ID,
+      {
+        openingHours: [],
+      },
+    )
 
     expect(salonRepository.update).toHaveBeenCalledWith(
       SALON_ID,
@@ -363,6 +376,7 @@ describe('UpdateSalonUseCase', () => {
       const salonRepository = repositoryWith()
 
       const result = await new UpdateSalonUseCase({ salonRepository }).execute(
+        actors.admin,
         id,
         input,
       )
@@ -380,6 +394,7 @@ describe('UpdateSalonUseCase', () => {
     })
 
     const result = await new UpdateSalonUseCase({ salonRepository }).execute(
+      actors.admin,
       SALON_ID,
       { name: 'Renamed' },
     )
@@ -401,6 +416,7 @@ describe('UpdateSalonUseCase', () => {
     })
 
     const result = await new UpdateSalonUseCase({ salonRepository }).execute(
+      actors.admin,
       SALON_ID,
       { email: 'other@example.com' },
     )
@@ -414,6 +430,7 @@ describe('DeleteSalonUseCase', () => {
     const salonRepository = repositoryWith()
 
     const result = await new DeleteSalonUseCase({ salonRepository }).execute(
+      actors.admin,
       SALON_ID,
     )
 
@@ -425,6 +442,7 @@ describe('DeleteSalonUseCase', () => {
     const salonRepository = repositoryWith()
 
     const result = await new DeleteSalonUseCase({ salonRepository }).execute(
+      actors.admin,
       'latest',
     )
 
@@ -440,6 +458,7 @@ describe('DeleteSalonUseCase', () => {
     })
 
     const result = await new DeleteSalonUseCase({ salonRepository }).execute(
+      actors.admin,
       SALON_ID,
     )
 
@@ -453,9 +472,146 @@ describe('DeleteSalonUseCase', () => {
     const salonRepository = repositoryWith({ delete: async () => databaseDown })
 
     const result = await new DeleteSalonUseCase({ salonRepository }).execute(
+      actors.admin,
       SALON_ID,
     )
 
     expect(result).toEqual(databaseDown)
   })
+})
+
+describe('who may change a salon', () => {
+  const forbidden = Result.error(DomainErrors.forbidden())
+
+  const ownerOfOtherSalon = actors.ofSalon('owner', OTHER_SALON_ID)
+  const managerOfOtherSalon = actors.ofSalon('manager', OTHER_SALON_ID)
+
+  it.each<[string, Actor]>([
+    ['the owner of a salon', actors.ofSalon('owner')],
+    ['the manager of a salon', actors.ofSalon('manager')],
+    ['a staff member', actors.ofSalon('staff')],
+    ['a customer', actors.customer],
+    ['a user without a scope', actors.withoutScope],
+  ])(
+    'forbids %s to create a salon without touching the repository',
+    async (_case, actor) => {
+      const salonRepository = repositoryWith()
+
+      const result = await new CreateSalonUseCase({ salonRepository }).execute(
+        actor,
+        salonCreateRequest(),
+      )
+
+      expect(result).toEqual(forbidden)
+      expect(salonRepository.create).not.toHaveBeenCalled()
+    },
+  )
+
+  it('forbids a creation before validating it', async () => {
+    const salonRepository = repositoryWith()
+
+    const result = await new CreateSalonUseCase({ salonRepository }).execute(
+      actors.ofSalon('owner'),
+      { ...salonCreateRequest(), email: 'nope' },
+    )
+
+    expect(result).toEqual(forbidden)
+  })
+
+  it.each<[string, Actor]>([
+    ['an admin', actors.admin],
+    ['the owner of the salon', actors.ofSalon('owner', SALON_ID)],
+    ['a manager of the salon', actors.ofSalon('manager', SALON_ID)],
+  ])('lets %s change the salon', async (_case, actor) => {
+    const salonRepository = repositoryWith()
+
+    const result = await new UpdateSalonUseCase({ salonRepository }).execute(
+      actor,
+      SALON_ID,
+      { name: 'Renamed' },
+    )
+
+    expect(result.type).toBe('success')
+    expect(salonRepository.update).toHaveBeenCalledWith(
+      SALON_ID,
+      { name: 'Renamed' },
+      { type: 'keep' },
+    )
+  })
+
+  it.each<[string, Actor]>([
+    ['the owner of another salon', ownerOfOtherSalon],
+    ['a manager of another salon', managerOfOtherSalon],
+    ['a staff member of the salon', actors.ofSalon('staff', SALON_ID)],
+    ['a customer', actors.customer],
+    ['a user without a scope', actors.withoutScope],
+  ])(
+    'forbids %s to change the salon without looking it up',
+    async (_case, actor) => {
+      const salonRepository = repositoryWith()
+
+      const result = await new UpdateSalonUseCase({ salonRepository }).execute(
+        actor,
+        SALON_ID,
+        { name: 'Renamed' },
+      )
+
+      expect(result).toEqual(forbidden)
+      expect(salonRepository.update).not.toHaveBeenCalled()
+    },
+  )
+
+  it.each<[string, Actor]>([
+    ['an admin', actors.admin],
+    ['the owner of another salon', ownerOfOtherSalon],
+    ['a staff member', actors.ofSalon('staff')],
+    ['a customer', actors.customer],
+    ['a user without a scope', actors.withoutScope],
+  ])(
+    'rejects an ID that is not a UUID from %s as invalid',
+    async (_case, actor) => {
+      const result = await new UpdateSalonUseCase({
+        salonRepository: repositoryWith(),
+      }).execute(actor, 'latest', { name: 'Renamed' })
+
+      expect(result.type === 'error' ? brokenRules(result.error) : []).toEqual([
+        'id:invalid_format',
+      ])
+    },
+  )
+
+  it.each<[string, Actor]>([
+    ['an admin', actors.admin],
+    ['the owner of the salon', actors.ofSalon('owner', SALON_ID)],
+  ])('lets %s delete the salon', async (_case, actor) => {
+    const salonRepository = repositoryWith()
+
+    const result = await new DeleteSalonUseCase({ salonRepository }).execute(
+      actor,
+      SALON_ID,
+    )
+
+    expect(result).toEqual({ type: 'success', data: SALON_ID })
+  })
+
+  it.each<[string, Actor]>([
+    ['a manager of the salon', actors.ofSalon('manager', SALON_ID)],
+    ['the owner of another salon', ownerOfOtherSalon],
+    ['a staff member of the salon', actors.ofSalon('staff', SALON_ID)],
+    ['a customer', actors.customer],
+    ['a user without a scope', actors.withoutScope],
+  ])(
+    'forbids %s to delete the salon without touching the repository',
+    async (_case, actor) => {
+      const salonRepository = repositoryWith()
+
+      const result = await new DeleteSalonUseCase({ salonRepository }).execute(
+        actor,
+        SALON_ID,
+      )
+
+      expect(result).toEqual(forbidden)
+      expect(salonRepository.delete).not.toHaveBeenCalled()
+    },
+  )
 })

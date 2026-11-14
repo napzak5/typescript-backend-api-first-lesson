@@ -72,6 +72,16 @@ export type pointCrudAdjustResponse400 = {
   status: 400
 }
 
+export type pointCrudAdjustResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type pointCrudAdjustResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type pointCrudAdjustResponse409 = {
   data: ModelsProblemDetails
   status: 409
@@ -100,7 +110,7 @@ export type pointCrudAdjustResponse500 = {
 export type pointCrudAdjustResponseSuccess = (pointCrudAdjustResponse200) & {
   headers: Headers;
 };
-export type pointCrudAdjustResponseError = (pointCrudAdjustResponse400 | pointCrudAdjustResponse409 | pointCrudAdjustResponse413 | pointCrudAdjustResponse415 | pointCrudAdjustResponse429 | pointCrudAdjustResponse500) & {
+export type pointCrudAdjustResponseError = (pointCrudAdjustResponse400 | pointCrudAdjustResponse401 | pointCrudAdjustResponse403 | pointCrudAdjustResponse409 | pointCrudAdjustResponse413 | pointCrudAdjustResponse415 | pointCrudAdjustResponse429 | pointCrudAdjustResponse500) & {
   headers: Headers;
 };
 
@@ -205,6 +215,16 @@ export type pointCrudGetBalanceResponse400 = {
   status: 400
 }
 
+export type pointCrudGetBalanceResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type pointCrudGetBalanceResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type pointCrudGetBalanceResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -223,7 +243,7 @@ export type pointCrudGetBalanceResponse500 = {
 export type pointCrudGetBalanceResponseSuccess = (pointCrudGetBalanceResponse200) & {
   headers: Headers;
 };
-export type pointCrudGetBalanceResponseError = (pointCrudGetBalanceResponse400 | pointCrudGetBalanceResponse404 | pointCrudGetBalanceResponse429 | pointCrudGetBalanceResponse500) & {
+export type pointCrudGetBalanceResponseError = (pointCrudGetBalanceResponse400 | pointCrudGetBalanceResponse401 | pointCrudGetBalanceResponse403 | pointCrudGetBalanceResponse404 | pointCrudGetBalanceResponse429 | pointCrudGetBalanceResponse500) & {
   headers: Headers;
 };
 
@@ -352,6 +372,16 @@ export type pointCrudGetExpiringResponse400 = {
   status: 400
 }
 
+export type pointCrudGetExpiringResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type pointCrudGetExpiringResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type pointCrudGetExpiringResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -370,7 +400,7 @@ export type pointCrudGetExpiringResponse500 = {
 export type pointCrudGetExpiringResponseSuccess = (pointCrudGetExpiringResponse200) & {
   headers: Headers;
 };
-export type pointCrudGetExpiringResponseError = (pointCrudGetExpiringResponse400 | pointCrudGetExpiringResponse404 | pointCrudGetExpiringResponse429 | pointCrudGetExpiringResponse500) & {
+export type pointCrudGetExpiringResponseError = (pointCrudGetExpiringResponse400 | pointCrudGetExpiringResponse401 | pointCrudGetExpiringResponse403 | pointCrudGetExpiringResponse404 | pointCrudGetExpiringResponse429 | pointCrudGetExpiringResponse500) & {
   headers: Headers;
 };
 
@@ -514,6 +544,16 @@ export type pointCrudListTransactionsResponse400 = {
   status: 400
 }
 
+export type pointCrudListTransactionsResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type pointCrudListTransactionsResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type pointCrudListTransactionsResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -532,7 +572,7 @@ export type pointCrudListTransactionsResponse500 = {
 export type pointCrudListTransactionsResponseSuccess = (pointCrudListTransactionsResponse200) & {
   headers: Headers;
 };
-export type pointCrudListTransactionsResponseError = (pointCrudListTransactionsResponse400 | pointCrudListTransactionsResponse404 | pointCrudListTransactionsResponse429 | pointCrudListTransactionsResponse500) & {
+export type pointCrudListTransactionsResponseError = (pointCrudListTransactionsResponse400 | pointCrudListTransactionsResponse401 | pointCrudListTransactionsResponse403 | pointCrudListTransactionsResponse404 | pointCrudListTransactionsResponse429 | pointCrudListTransactionsResponse500) & {
   headers: Headers;
 };
 
@@ -676,6 +716,16 @@ export type pointCrudEarnResponse400 = {
   status: 400
 }
 
+export type pointCrudEarnResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type pointCrudEarnResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type pointCrudEarnResponse413 = {
   data: ModelsProblemDetails
   status: 413
@@ -699,7 +749,7 @@ export type pointCrudEarnResponse500 = {
 export type pointCrudEarnResponseSuccess = (pointCrudEarnResponse200) & {
   headers: Headers;
 };
-export type pointCrudEarnResponseError = (pointCrudEarnResponse400 | pointCrudEarnResponse413 | pointCrudEarnResponse415 | pointCrudEarnResponse429 | pointCrudEarnResponse500) & {
+export type pointCrudEarnResponseError = (pointCrudEarnResponse400 | pointCrudEarnResponse401 | pointCrudEarnResponse403 | pointCrudEarnResponse413 | pointCrudEarnResponse415 | pointCrudEarnResponse429 | pointCrudEarnResponse500) & {
   headers: Headers;
 };
 
@@ -804,6 +854,16 @@ export type pointCrudExpireResponse400 = {
   status: 400
 }
 
+export type pointCrudExpireResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type pointCrudExpireResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type pointCrudExpireResponse413 = {
   data: ModelsProblemDetails
   status: 413
@@ -827,7 +887,7 @@ export type pointCrudExpireResponse500 = {
 export type pointCrudExpireResponseSuccess = (pointCrudExpireResponse200) & {
   headers: Headers;
 };
-export type pointCrudExpireResponseError = (pointCrudExpireResponse400 | pointCrudExpireResponse413 | pointCrudExpireResponse415 | pointCrudExpireResponse429 | pointCrudExpireResponse500) & {
+export type pointCrudExpireResponseError = (pointCrudExpireResponse400 | pointCrudExpireResponse401 | pointCrudExpireResponse403 | pointCrudExpireResponse413 | pointCrudExpireResponse415 | pointCrudExpireResponse429 | pointCrudExpireResponse500) & {
   headers: Headers;
 };
 
@@ -932,6 +992,16 @@ export type pointCrudUseResponse400 = {
   status: 400
 }
 
+export type pointCrudUseResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type pointCrudUseResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
 export type pointCrudUseResponse409 = {
   data: ModelsProblemDetails
   status: 409
@@ -960,7 +1030,7 @@ export type pointCrudUseResponse500 = {
 export type pointCrudUseResponseSuccess = (pointCrudUseResponse200) & {
   headers: Headers;
 };
-export type pointCrudUseResponseError = (pointCrudUseResponse400 | pointCrudUseResponse409 | pointCrudUseResponse413 | pointCrudUseResponse415 | pointCrudUseResponse429 | pointCrudUseResponse500) & {
+export type pointCrudUseResponseError = (pointCrudUseResponse400 | pointCrudUseResponse401 | pointCrudUseResponse403 | pointCrudUseResponse409 | pointCrudUseResponse413 | pointCrudUseResponse415 | pointCrudUseResponse429 | pointCrudUseResponse500) & {
   headers: Headers;
 };
 

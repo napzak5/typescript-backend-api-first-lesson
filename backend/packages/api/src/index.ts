@@ -1,7 +1,12 @@
+import type { AuthUseCaseDependencies } from '@beauty-salon-backend/domain'
 import {
+  Argon2PasswordHasher,
   type Database,
   type Logger,
   SalonRepository,
+  SessionRepository,
+  SessionTokenIssuer,
+  UserRepository,
 } from '@beauty-salon-backend/infrastructure'
 import compression from 'compression'
 import cors from 'cors'
@@ -14,10 +19,12 @@ import {
 } from './middleware/errors'
 import { rateLimiting } from './middleware/rate-limiting'
 import { requestLogging } from './middleware/request-logging'
+import { createAuthRouter } from './routes/auth'
 import { createSalonRouter } from './routes/salon'
 import { createSystemRouter } from './routes/system'
 import type { AppSettings } from './settings'
 import { API_BASE_PATH, SYSTEM_BASE_PATH } from './shared/api-version'
+import { createAuthenticated } from './shared/authentication'
 import { BODY_LIMIT_BYTES } from './shared/problem-details'
 
 export type { AppSettings } from './settings'
@@ -30,7 +37,9 @@ export type AppDependencies = {
 
 /**
  * Builds the Express application. Repositories are created here, once, and
- * handed to the routes, so that a handler never reaches for a global.
+ * handed to the routes, so that a handler never reaches for a global. The
+ * routes that need a signed-in user get `authenticated` to wrap their
+ * handlers with.
  *
  * The order matters: every request gets its ID and logger first, the probes
  * are answered before the rate limit so that monitoring is never throttled,
@@ -63,9 +72,25 @@ export const createApp = ({
   app.use(requireJsonBody)
   app.use(express.json({ limit: BODY_LIMIT_BYTES }))
 
+  const authDependencies: AuthUseCaseDependencies = {
+    userRepository: new UserRepository(database),
+    sessionRepository: new SessionRepository(database),
+    passwordHasher: new Argon2PasswordHasher(),
+    tokenIssuer: new SessionTokenIssuer(),
+    clock: () => new Date(),
+  }
+  const authenticated = createAuthenticated(authDependencies)
+
+  app.use(
+    `${API_BASE_PATH}/auth`,
+    createAuthRouter(authDependencies, authenticated),
+  )
   app.use(
     `${API_BASE_PATH}/salons`,
-    createSalonRouter({ salonRepository: new SalonRepository(database) }),
+    createSalonRouter(
+      { salonRepository: new SalonRepository(database) },
+      authenticated,
+    ),
   )
 
   app.use(notFoundHandler)

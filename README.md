@@ -44,12 +44,13 @@ For detailed architecture documentation, see [docs/architecture-overview.md](doc
 
 | Area | Status |
 |------|--------|
-| Salon API (`/api/v1/salons`) | Implemented in every layer; the reference for the other domains |
+| Salon API (`/api/v1/salons`) | Implemented in every layer; the reference for the other domains. List and get are public; create, update and delete need a signed-in user who is allowed to |
+| Authentication (`/api/v1/auth`) | Implemented: `login`, `refresh`, `logout`, `logout-all` and `me`, on server-side sessions with bearer tokens. Registration, email verification, password reset and change, two-factor authentication, the session list and `/api/v1/admin/auth` are specified in TypeSpec only |
+| Authorization | Decided in the use cases from the role and the salon of the signed-in user; applied to the Salon API. See [docs/authentication.md](docs/authentication.md) |
 | System endpoints (`/api/system/alive`, `ready`, `health`) | Implemented |
 | Customers, staff, services, bookings, payments and the other domains | Specified in TypeSpec and present in the database schema; no backend code yet |
-| Authentication and authorization | Not implemented: the API must not be exposed to untrusted networks as it is |
 | Email, file storage | Design documents only |
-| Frontend apps | Application shells; they do not call the API yet |
+| Frontend apps | Application shells; they do not call the API yet, and nothing in them signs in or sends a token |
 
 ## 🚀 Quick Start
 
@@ -66,12 +67,19 @@ For detailed architecture documentation, see [docs/architecture-overview.md](doc
 pnpm install       # Install dependencies and the pre-commit hook
 make infra-up      # Start PostgreSQL in Docker
 pnpm db:fresh      # Create the schema from sql/setup.sql
-pnpm db:seed       # Insert sample data (optional)
+pnpm db:seed       # Insert sample data, including accounts to sign in with (optional)
 pnpm dev           # Backend on :3000, frontend apps on :3001-3003
 ```
 
 Generated files are checked in, so `pnpm generate` is only needed after a
 TypeSpec change. `make help` lists every Makefile target.
+
+No operation creates a user yet, so the accounts come from the seed. Every
+seeded account has the same password, which is published in the repository
+(`SEED_PASSWORD` in `backend/packages/database/src/seeds/seed-data/users.ts`);
+`pnpm db:seed` therefore refuses to run when `NODE_ENV` is `production`. The
+accounts and their roles are listed in
+[docs/authentication.md](docs/authentication.md).
 
 ## 📁 Project Structure
 
@@ -84,7 +92,7 @@ TypeSpec change. `make help` lists every Makefile target.
 ├── backend/                    # Backend monorepo
 │   ├── packages/
 │   │   ├── domain/           # Business logic layer
-│   │   ├── infrastructure/  # Database access, logging
+│   │   ├── infrastructure/  # Database access, password hashing, session tokens, logging
 │   │   ├── api/              # HTTP layer
 │   │   ├── database/         # Database schema, migrations, seeds
 │   │   ├── generated/        # Auto-generated types
@@ -182,7 +190,7 @@ make ci-check                # The CI checks, in the same order (all but check:d
 # Database
 pnpm db:fresh                # Drop everything and recreate the schema
 pnpm db:migrate              # Create the schema or apply the missing migrations
-pnpm db:seed                 # Insert sample data (--if-empty: only without data)
+pnpm db:seed                 # Insert sample data (--if-empty: only without data); not in production
 pnpm db:truncate             # Delete all rows, keep the schema
 pnpm db:introspect           # Regenerate schema.ts from the database
 pnpm db:generate-sql         # Regenerate sql/setup.sql from schema.ts
@@ -235,8 +243,11 @@ log lines.
 Every error response is RFC 9457 problem details (`application/problem+json`),
 including the ones raised before a route runs: unknown route (404), malformed JSON (400), a body that
 is not JSON (415) or over 100 kB (413), too many requests (429) and
-unexpected failures (500, without internal details). The probes below are the
-one exception: a probe that fails answers 503 with its own body.
+unexpected failures (500, without internal details). A request without a
+valid access token to an operation that needs one is answered with 401 and a
+`WWW-Authenticate: Bearer` header, and a signed-in user who lacks the
+permission with 403. The probes below are the one exception: a probe that
+fails answers 503 with its own body.
 
 ### Probes and Shutdown
 
@@ -292,6 +303,7 @@ The full index is [docs/README.md](docs/README.md).
 - [Domain Implementation Reference](docs/domain-implementation-reference.md) - Complete reference for implementing new domains
 - [API Route Modular Structure](docs/api-route-modular-structure.md) - Guide for modular route organization
 - [Uniform Implementation](docs/uniform-implementation-guide.md)
+- [Authentication and Authorization](docs/authentication.md) - Sessions, passwords, permissions, seeded accounts (日本語)
 - [Testing Requirements](docs/testing-requirements.md)
 - [API Testing Guide](docs/api-testing-guide.md)
 - [Type Generation System](docs/type-generation-system.md)
