@@ -5,6 +5,7 @@ import type {
 } from '@beauty-salon-backend/domain'
 import {
   Argon2PasswordHasher,
+  CustomerRepository,
   type Database,
   type Logger,
   RandomTokenIssuer,
@@ -27,6 +28,7 @@ import { rateLimiting } from './middleware/rate-limiting'
 import { requestLogging } from './middleware/request-logging'
 import { createAdminAuthRouter } from './routes/admin-auth'
 import { createAuthRouter } from './routes/auth'
+import { createCustomerRouter } from './routes/customer'
 import { createSalonRouter } from './routes/salon'
 import { createServiceRouter } from './routes/service'
 import { createServiceCategoryRouter } from './routes/service-category'
@@ -87,6 +89,8 @@ export const createApp = ({
   app.use(requireJsonBody)
   app.use(express.json({ limit: BODY_LIMIT_BYTES }))
 
+  const clock = (): Date => new Date()
+
   const authDependencies: AuthUseCaseDependencies = {
     userRepository: new UserRepository(database),
     sessionRepository: new SessionRepository(database),
@@ -95,7 +99,7 @@ export const createApp = ({
     twoFactorAuthenticator,
     mailer,
     publicAppUrl: settings.publicAppUrl,
-    clock: () => new Date(),
+    clock,
   }
   const authenticated = createAuthenticated(authDependencies)
 
@@ -126,6 +130,14 @@ export const createApp = ({
     `${API_BASE_PATH}/salons/:salonId/services`,
     createServiceRouter(
       { serviceRepository: new ServiceRepository(database), salonRepository },
+      authenticated,
+    ),
+  )
+
+  app.use(
+    `${API_BASE_PATH}/customers`,
+    createCustomerRouter(
+      { customerRepository: new CustomerRepository(database), clock },
       authenticated,
     ),
   )
