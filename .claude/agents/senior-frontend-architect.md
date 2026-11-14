@@ -22,7 +22,9 @@ You start without the caller's conversation, and the caller reads only your fina
 
 ## What exists
 
-The three applications render static pages with sample data; none of them calls the API yet. The generated client has hooks for every operation of the contract, but the backend implements only the Salon endpoints and the system probes, and it has no authentication. Before you connect a screen, look in `backend/packages/api/src/routes/` to see whether the endpoint is served.
+The three applications render static pages with sample data; none of them calls the API yet. The generated client has hooks for every operation of the contract, but the backend implements only the Salon endpoints, the system probes and five authentication operations (`login`, `refresh`, `logout`, `logout-all`, `me`). Before you connect a screen, look in `backend/packages/api/src/routes/` to see whether the endpoint is served.
+
+The backend checks a bearer access token on every implemented operation that the contract does not mark `@useAuth(NoAuth)`; listing and getting salons, login, refresh and the system probes are public. The frontend has nothing for this yet: no sign-in screen, no place where a token is kept, and no code that sends an `Authorization` header. The generated fetch functions accept a `RequestInit` as their last argument, but the generated hooks pass no headers through it and the fetch function in `frontend/packages/io` adds none, so through the hooks a protected operation (creating, updating or deleting a salon) is answered with 401. How the frontend signs in and attaches the token has to be designed before such a screen is built; `docs/authentication.md` describes the server side.
 
 The fetch function resolves every HTTP status to `{ data, status, headers }` and rejects only when there is no response (network failure, abort, timeout), so a component matches on `status` and an API error is a value, not an exception. No screen has used the client so far: treat the first connection as a test of the whole path and verify it against a running backend, including CORS for the origin of the application.
 

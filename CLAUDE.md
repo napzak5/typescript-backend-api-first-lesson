@@ -73,6 +73,8 @@ export type Result<T, E> =
 // Domain error types (backend/packages/domain/src/shared/errors.ts)
 export type DomainError =
   | { type: 'validation'; message: string; issues: ValidationIssue[] }
+  | { type: 'unauthenticated'; reason: AuthenticationFailure }
+  | { type: 'forbidden' }
   | { type: 'notFound'; entity: string; id: string }
   | { type: 'alreadyExists'; entity: string; field: string; value: string }
   | { type: 'database'; message: string; cause: unknown }
@@ -147,7 +149,7 @@ backend/
 ├── apps/server/          # Composition root: configuration, logger, start-up, shutdown
 └── packages/
     ├── domain/           # Pure business logic
-    ├── infrastructure/   # Database access, logging
+    ├── infrastructure/   # Database access, password hashing, session tokens, logging
     ├── api/              # HTTP layer
     ├── database/         # DB schema, migrations, seeds
     ├── generated/        # Auto-generated API types
@@ -155,8 +157,12 @@ backend/
     └── utility/          # Result type and shared helpers
 ```
 
-Only the Salon domain and the system endpoints are implemented. The other
-domains exist in TypeSpec and in the database schema only.
+The Salon domain, the system endpoints and five authentication operations
+(`login`, `refresh`, `logout`, `logout-all` and `me` under `/api/v1/auth`) are
+implemented. The rest of the authentication contract and the other domains
+exist in TypeSpec and in the database schema only. Sessions, permissions and
+the seeded accounts are described in
+[docs/authentication.md](docs/authentication.md).
 
 ### Namespace Convention
 - Backend: `@beauty-salon-backend/*`
@@ -228,7 +234,8 @@ pnpm generate:watch   # Regenerate on every TypeSpec change
 # Database
 pnpm db:fresh         # Drop everything and recreate the schema from sql/setup.sql
 pnpm db:migrate       # Create the schema from setup.sql, or apply the migrations not applied yet
-pnpm db:seed          # Seed data with statistics
+pnpm db:seed          # Seed data with statistics, including accounts to sign in with;
+                      # refuses to run when NODE_ENV=production
 pnpm db:truncate      # Clear all table data
 pnpm db:introspect    # Regenerate schema.ts and relations.ts from the DB
 pnpm db:generate-sql  # Regenerate sql/setup.sql from schema.ts
@@ -268,6 +275,7 @@ The full index is [docs/README.md](docs/README.md).
 ### Implementation Guides
 - [Backend Architecture](docs/backend-architecture-guidelines.md)
 - [Uniform Implementation](docs/uniform-implementation-guide.md)
+- [Authentication and Authorization](docs/authentication.md)
 - [Testing Requirements](docs/testing-requirements.md)
 - [Multi-Agent Collaboration](docs/multi-agent-collaboration-framework.md)
 
@@ -326,13 +334,21 @@ export interface SalonUseCaseDependencies {
   salonRepository: ISalonRepository
 }
 
-// 6. Use Case: untrusted input in, API model or DomainError out
+// 6. Authorization: who may, as pure functions of the actor
+// backend/packages/domain/src/business-logic/salon/_shared/authorization.ts
+export const mayCreateSalon = (actor: Actor): boolean =>
+  actor.scope.type === 'platform'
+
+// 7. Use Case: the actor and untrusted input in, API model or DomainError out
 // backend/packages/domain/src/business-logic/salon/create-salon.usecase.ts
 export class CreateSalonUseCase {
   constructor(private readonly dependencies: SalonUseCaseDependencies) {}
 
-  async execute(input: unknown): Promise<Result<ApiSalonResponse, DomainError>> {
-    // Validate → Map API→DB → Save → Map DB→API → Return
+  async execute(actor: Actor, input: unknown): Promise<Result<ApiSalonResponse, DomainError>> {
+    // Authorize → Validate → Map API→DB → Save → Map DB→API → Return
+    if (!mayCreateSalon(actor)) {
+      return Result.error(DomainErrors.forbidden())
+    }
     const request = parseWith(salonCreateRequestSchema, input, 'Invalid salon')
     if (request.type === 'error') {
       return request
@@ -346,7 +362,7 @@ export class CreateSalonUseCase {
   }
 }
 
-// 7. Mappers: property names are the column names; only representations change
+// 8. Mappers: property names are the column names; only representations change
 // backend/packages/domain/src/mappers/write/salon.mapper.ts
 export const SalonWriteMapper = {
   fromCreateRequest(request: ApiSalonCreateRequest): { salon: DbNewSalon; openingHours: DbNewOpeningHours[] }
@@ -358,7 +374,7 @@ export const SalonReadMapper = {
   toApiSalon(salon: DbSalon, openingHours: DbOpeningHours[]): Result<ApiSalonResponse, DomainError>
 }
 
-// 8. Repository Implementation: no throw, no cast; writes are transactions.
+// 9. Repository Implementation: no throw, no cast; writes are transactions.
 // An unexpected failure becomes a `database` error whose cause is safe to log
 // (the statement and the SQLSTATE, never the bound values).
 // backend/packages/infrastructure/src/repositories/salon.repository.impl.ts
@@ -366,12 +382,17 @@ export class SalonRepository implements ISalonRepository {
   constructor(private readonly db: Database) {}
 }
 
-// 9. API Route with Dependency Injection (Modular Handler Pattern)
+// 10. API Route with Dependency Injection (Modular Handler Pattern)
 // backend/packages/api/src/routes/salon/create-salon.handler.ts
 // Each endpoint has its own handler file following [action]-[domain].handler.ts.
 // A handler is created from its dependencies; it never reaches for a global.
+// A handler that needs a signed-in user is wrapped with `authenticated`
+// (backend/packages/api/src/shared/authentication.ts): without a valid access
+// token the request is answered with 401 and the handler does not run.
+// Public operations (list, get) are not wrapped and their use cases take no actor.
 export const createSalonHandler = (
   dependencies: SalonUseCaseDependencies,
+  authenticated: Authenticated,
 ): RequestHandler<
   Record<string, never>,                 // Path params
   CreateSalonResponse | ProblemDetails,  // Response body types
@@ -379,8 +400,8 @@ export const createSalonHandler = (
 > => {
   const useCase = new CreateSalonUseCase(dependencies)
 
-  return async (req, res) => {
-    const result = await useCase.execute(req.body)
+  return authenticated(async (actor, req, res) => {
+    const result = await useCase.execute(actor, req.body)
 
     match(result)
       .with({ type: 'success' }, ({ data }) => {
@@ -389,17 +410,19 @@ export const createSalonHandler = (
       })
       .with({ type: 'error' }, ({ error }) => sendProblem(req, res, error))
       .exhaustive()
-  }
+  })
 }
 
 // backend/packages/api/src/routes/salon/index.ts
-export const createSalonRouter = (dependencies: SalonUseCaseDependencies): Router
+export const createSalonRouter = (dependencies: SalonUseCaseDependencies, authenticated: Authenticated): Router
 
-// backend/packages/api/src/index.ts: repositories are created once, here
+// backend/packages/api/src/index.ts: repositories and `authenticated` are created once, here
 export const createApp = ({ database, logger, settings }: AppDependencies): Express
-app.use(`${API_BASE_PATH}/salons`, createSalonRouter({ salonRepository: new SalonRepository(database) }))
+const authenticated = createAuthenticated(authDependencies)
+app.use(`${API_BASE_PATH}/auth`, createAuthRouter(authDependencies, authenticated))
+app.use(`${API_BASE_PATH}/salons`, createSalonRouter({ salonRepository: new SalonRepository(database) }, authenticated))
 
-// 10. Composition root: the only code that reads the environment or ends the process
+// 11. Composition root: the only code that reads the environment or ends the process
 // backend/apps/server/src/index.ts
 // loadEnvFile() → parseAppConfig(process.env) → createLogger(...) → startServer(config, logger)
 // backend/packages/config/src/app-config.ts
@@ -410,6 +433,7 @@ export const startServer = (config: AppConfig, logger: Logger, shutdownGraceMs?:
 
 ### Conventions the reference follows
 - **Validation** happens once, in the use case, with the Zod schema of the request. Cross-field rules use `.check()`
+- **Authentication** is the wrapper `authenticated`: it turns `Authorization: Bearer <access token>` into an `Actor` (`backend/packages/domain/src/models/auth.ts`) or answers 401. **Authorization** is decided in the use case, first, from the actor; the rules are pure functions in `business-logic/<domain>/_shared/authorization.ts`, and a refusal is `DomainErrors.forbidden()` (403). In TypeSpec a public operation has `@useAuth(NoAuth)` and `PublicErrors`, one that any signed-in user may call has `SessionErrors`, and one with a permission check has `CommonErrors`. See [docs/authentication.md](docs/authentication.md)
 - **Errors** are `DomainError` values; `api/src/shared/problem-details.ts` maps each kind to an HTTP status and never exposes the cause of a `database` error. What goes wrong outside a use case (unknown route, unreadable body, rate limit, unexpected exception) is an `HttpError` and takes the same path, so every error response of the API is problem details (a system probe that fails answers 503 with its own body)
 - **Logging** is structured (pino): `req.log` inside a request, the injected `Logger` elsewhere, never `console`. `sendProblem` logs a `database` error with its cause; headers, bodies and bound SQL values are never logged
 - **Request ID**: `req.id` (the caller's `X-Request-Id` or a new UUID) is on every log line of the request, in the response header and in `meta.correlationId` / `correlationId`

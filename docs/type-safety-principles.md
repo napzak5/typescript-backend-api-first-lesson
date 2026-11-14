@@ -90,6 +90,7 @@ export const parseWith = <T>(
 | リクエストボディ | ハンドラーの型引数で `unknown` | ユースケースが `parseWith(salonCreateRequestSchema, input, ...)` |
 | パスパラメータ | `string` | ユースケースが `parseSalonId(id)` |
 | クエリ文字列 | `unknown` | `decodeSalonSearchQuery`（`backend/packages/api/src/routes/salon/_shared/query.ts`）が文字列を数値・真偽値・配列に直し、ユースケースが `salonSearchRequestSchema` で検証 |
+| `Authorization` ヘッダー | `string \| undefined` | `AuthenticateUseCase`（`backend/packages/domain/src/business-logic/auth/authenticate.usecase.ts`）がトークンを取り出してセッションを検索し、操作者を `actorSchema` で検証して `Actor` にする |
 | 環境変数 | `Record<string, string \| undefined>` | `parseAppConfig`（`backend/packages/config/src/app-config.ts`） |
 | DB から読んだ値のうち DB が形を保証しないもの（`jsonb`、文字列で返る `numeric` と `timestamptz`） | Drizzle の推論型 | 読み取りマッパーの `convertedColumnsSchema`（`backend/packages/domain/src/mappers/read/salon.mapper.ts`） |
 | ライブラリが渡すエラー | `unknown` | ts-pattern の `P` パターン（[Sum型とパターンマッチング](./sum-types-pattern-matching.md)） |
@@ -99,14 +100,21 @@ export const parseWith = <T>(
 ```typescript
 // backend/packages/domain/src/business-logic/salon/create-salon.usecase.ts
 async execute(
+  actor: Actor,
   input: unknown,
 ): Promise<Result<ApiSalonResponse, DomainError>> {
+  if (!mayCreateSalon(actor)) {
+    return Result.error(DomainErrors.forbidden())
+  }
+
   const request = parseWith(salonCreateRequestSchema, input, 'Invalid salon')
   if (request.type === 'error') {
     return request
   }
   // ここから request.data は ApiSalonCreateRequest
 ```
+
+`actor` も同じ考え方です。アプリケーションコードで `Actor` を作るのは `AuthenticateUseCase`（`business-logic/auth/_shared/actor.ts` の `toActor`）だけで、ハンドラーは `authenticated` で包まれたときだけそれを受け取ります。包まれていないハンドラーには渡せる `actor` がないので、`actor` を要求するユースケースを呼ぶコードはコンパイルできません（[認証と認可](./authentication.md)）。
 
 ## `satisfies` でスキーマと API 型を照合する
 

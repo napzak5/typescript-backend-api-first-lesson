@@ -61,9 +61,10 @@ options:
 ```
 
 The document describes every domain that is defined in TypeSpec. The backend
-implements only the Salon operations and the system probes (`alive`, `ready`,
-`health`); the types and client functions of everything else are generated all
-the same.
+implements only the Salon operations, five authentication operations (`login`,
+`refresh`, `logout`, `logout-all`, `me`) and the system probes (`alive`,
+`ready`, `health`); the types and client functions of everything else are
+generated all the same.
 
 ## Step 2: OpenAPI to backend types
 
@@ -189,10 +190,11 @@ both directories) and does not touch YAML. `.tsp` files are formatted with
    [TypeSpec API Type Rules](./typespec-api-type-rules.md).
 2. Run `pnpm generate` (or leave `pnpm generate:watch` running).
 3. Fix what no longer compiles: `pnpm typecheck` (after a build, as in CI).
-   The Salon Zod schemas are checked against the generated types with
+   The request Zod schemas are checked against the generated types with
    `satisfies z.ZodType<…>`, so a property that was added, or whose type
    changed, shows up as a type error in
-   `backend/packages/domain/src/schemas/salon.schema.ts`. A property that was
+   `backend/packages/domain/src/schemas/salon.schema.ts` (or
+   `auth.schema.ts` next to it). A property that was
    removed from a model is not reported there: remove it from the schema
    yourself.
 4. If a model that maps to a table changed, run `pnpm check:api-db`.

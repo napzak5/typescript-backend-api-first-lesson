@@ -19,8 +19,10 @@ backend/packages/api/
     ├── _shared/
     │   ├── setup.ts                 # the database of the run, a schema for each test
     │   ├── test-schema-manager.ts   # creates and drops the schemas
-    │   └── test-helpers.ts          # createTestApp, getTestDb, request
+    │   ├── test-helpers.ts          # createTestApp, getTestDb, request
+    │   └── auth-helpers.ts          # users, staff and salons as rows; signing in
     ├── salon.integration.test.ts    # the Salon endpoints: the reference
+    ├── auth.integration.test.ts     # the authentication endpoints
     └── app.integration.test.ts      # what the application does for every route
 ```
 
@@ -175,8 +177,23 @@ export function createTestApp({
 | `createTestApp({ rateLimit })` | A lower rate limit, to test the limit itself |
 | `createTestApp({ database })` | Another database, for example an unreachable one |
 | `getTestDb()` | The Drizzle database of the test's schema, to arrange or inspect rows |
+| `getTestDbClient()` | The postgres.js client under `getTestDb()`, for code that builds a Drizzle instance of its own (the authentication tests run the seed with it) |
 | `connectUnreachableDatabase()` | A connection nothing answers: every query fails at once |
 | `request` | supertest |
+
+Every operation that is not public needs an access token, and the tests get
+one the way a client does: by signing in. `auth-helpers.ts` has the helpers.
+No implemented operation creates a user, so the users are inserted as rows,
+with a password hashed by the hasher the application uses
+(`Argon2PasswordHasher`).
+
+| Helper of `auth-helpers.ts` | Use |
+|-----------------------------|-----|
+| `signInAsAdmin(app, db)` | Inserts an admin, signs in and returns the value of the `Authorization` header |
+| `signedInUser(app, db, overrides)` | Inserts a user (an active customer unless overridden), signs in and returns the user with the tokens and the header value |
+| `insertUser(db, overrides)`, `insertMember(db, role, salonId)` | A user row; with `insertMember`, an owner, manager or staff user linked to a new staff member of the salon |
+| `insertSalon(db)`, `insertStaff(db, salonId)`, `insertCustomer(db)` | The rows a user's role refers to, each returning the ID |
+| `signIn(app, email)` | `POST /api/v1/auth/login` with `PASSWORD`; returns `accessToken`, `refreshToken`, `authorization` and the user |
 
 ## Writing a Test
 
@@ -186,22 +203,44 @@ The excerpts are from
 ### 1. Set up the application
 
 ```typescript
-import { createTestApp, getTestDb, request } from './_shared/test-helpers'
+import {
+  insertCustomer,
+  insertMember,
+  insertSalon,
+  signedInUser,
+  signIn,
+  signInAsAdmin,
+} from './_shared/auth-helpers'
+import {
+  brokenRules,
+  createTestApp,
+  expectProblem,
+  getTestDb,
+  ISO_TIMESTAMP,
+  request,
+  UUID,
+} from './_shared/test-helpers'
 
 const SALONS = '/api/v1/salons'
 
 describe('Salon API', () => {
   let app: Express
   let db: ReturnType<typeof getTestDb>
+  /** The Authorization header of a signed-in admin. */
+  let asAdmin: string
 
-  beforeEach(() => {
+  beforeEach(async () => {
     app = createTestApp()
     db = getTestDb()
+    asAdmin = await signInAsAdmin(app, db)
   })
 
   // ... one describe block per endpoint ...
 })
 ```
+
+An admin may call every Salon operation, so the tests that are not about
+permissions send `asAdmin`.
 
 ### 2. Build requests from one valid request
 
@@ -227,6 +266,7 @@ the `describe` block:
 const createSalon = async (overrides: Record<string, unknown> = {}) => {
   const response = await request(app)
     .post(SALONS)
+    .set('Authorization', asAdmin)
     .send(salonRequest(overrides))
   expect(response.status).toBe(201)
   return response.body.data
@@ -237,7 +277,10 @@ const createSalon = async (overrides: Record<string, unknown> = {}) => {
 
 ```typescript
 it('creates the salon and returns it with what the server assigned', async () => {
-  const response = await request(app).post(SALONS).send(salonRequest())
+  const response = await request(app)
+    .post(SALONS)
+    .set('Authorization', asAdmin)
+    .send(salonRequest())
 
   expect(response.status).toBe(201)
   const { data, meta, links } = response.body
@@ -250,7 +293,7 @@ it('creates the salon and returns it with what the server assigned', async () =>
     createdAt: expect.stringMatching(ISO_TIMESTAMP),
     updatedAt: expect.stringMatching(ISO_TIMESTAMP),
   })
-  expect(response.headers.location).toBe(`${SALONS}/${data.id}`)
+  expect(response.headers['location']).toBe(`${SALONS}/${data.id}`)
   expect(links).toEqual({ self: `${SALONS}/${data.id}`, list: SALONS })
   expect(meta).toEqual({
     correlationId: expect.stringMatching(UUID),
@@ -270,18 +313,16 @@ two lines read the salon back: what was returned is what was stored.
 ### 4. Assert errors as problem details
 
 Every error response is RFC 9457 problem details, sent as
-`application/problem+json`. Two helpers at the top of the Salon test file keep
-the assertions short:
+`application/problem+json`. Two helpers in `_shared/test-helpers.ts` keep the
+assertions short, and each test file names the problems it expects:
 
 ```typescript
-const brokenRules = (response: Response): string[] =>
-  response.body.errors.map(
-    ({ field, rule }: { field: string; rule: string }) => `${field}:${rule}`,
-  )
+// _shared/test-helpers.ts
+export type ExpectedProblem = { status: number; code: string; type: string }
 
-const expectProblem = (
+export const expectProblem = (
   response: Response,
-  expected: { status: number; code: string; type: string },
+  expected: ExpectedProblem,
 ): void => {
   expect(response.status).toBe(expected.status)
   expect(response.headers['content-type']).toBe(
@@ -296,9 +337,22 @@ const expectProblem = (
   })
 }
 
+export const brokenRules = (response: Response): string[] =>
+  response.body.errors.map(
+    ({ field, rule }: { field: string; rule: string }) => `${field}:${rule}`,
+  )
+
+// salon.integration.test.ts
 const badRequest = { status: 400, code: '2001', type: 'validation' }
 const notFound = { status: 404, code: '3001', type: 'not-found' }
 const conflict = { status: 409, code: '3002', type: 'already-exists' }
+const authenticationRequired = {
+  status: 401,
+  code: '1001',
+  type: 'authentication-required',
+}
+const invalidToken = { status: 401, code: '1004', type: 'invalid-token' }
+const forbidden = { status: 403, code: '1005', type: 'forbidden' }
 ```
 
 The kinds of error an endpoint test meets:
@@ -306,10 +360,15 @@ The kinds of error an endpoint test meets:
 | Error | Status | `type` after `urn:beauty-salon:problem:` | `code` | `errors` |
 |-------|--------|------------------------------------------|--------|----------|
 | Validation | 400 | `validation` | `2001` | One entry per broken rule: `field` (a dot path, empty for the input as a whole), `rule`, `message` |
+| No access token | 401 | `authentication-required` | `1001` | `null` |
+| A token the server does not accept | 401 | `invalid-token`, or `token-expired` for an access token past its end | `1004`, `1003` | `null` |
+| Wrong email or password (login only) | 401 | `invalid-credentials` | `1002` | `null` |
+| Not allowed | 403 | `forbidden` | `1005` | `null` |
 | Not found | 404 | `not-found` | `3001` | `null` |
 | Already exists | 409 | `already-exists` | `3002` | `null` |
 | Database failure or corrupt stored data | 500 | `database` | `4003` | `null`, and `detail` is `null` too |
 
+Every 401 also carries a `WWW-Authenticate` header.
 `backend/packages/api/src/shared/problem-details.ts` defines these and the
 errors of the HTTP layer itself (unknown route, unreadable body, rate limit),
 which `app.integration.test.ts` covers once for all routes.
@@ -330,6 +389,7 @@ it.each([
 ])('rejects %s and stores nothing', async (_case, change, expected) => {
   const response = await request(app)
     .post(SALONS)
+    .set('Authorization', asAdmin)
     .send(salonRequest(change))
 
   expectProblem(response, badRequest)
@@ -347,6 +407,7 @@ it('rejects an email that another salon uses', async () => {
 
   const response = await request(app)
     .post(SALONS)
+    .set('Authorization', asAdmin)
     .send(salonRequest({ name: 'Second salon' }))
 
   expectProblem(response, conflict)
@@ -357,10 +418,71 @@ it('rejects an email that another salon uses', async () => {
 })
 ```
 
-### 5. Write to the database only for what the API cannot produce
+### 5. Test who may call the operation
+
+An operation that is not public is tested without a token and as each kind of
+user who is not allowed. The Salon file keeps these scenarios in one
+`describe('who may change salons', …)` block. Without a token the answer is
+401 and nothing is stored:
+
+```typescript
+it('asks for an access token and stores nothing without one', async () => {
+  const response = await request(app).post(SALONS).send(salonRequest())
+
+  expectProblem(response, authenticationRequired)
+  expect(response.headers['www-authenticate']).toBe(
+    'Bearer realm="beauty-salon-api"',
+  )
+  expect(await db.$count(salons)).toBe(0)
+})
+```
+
+The users who are refused go into one table. Each row names the user and
+gives a function that inserts that user and signs in (`member`,
+`memberOfOther`, `customer` and `staffUserWithoutStaffMember` are defined in
+the block, on top of `insertMember`, `signedInUser` and `signIn`):
+
+```typescript
+it.each<[string, SignInAs]>([
+  ['a manager of the salon', member('manager')],
+  ['the owner of another salon', memberOfOther('owner')],
+  ['a staff member of the salon', member('staff')],
+  ['a customer', customer],
+  ['a staff user without a staff member', staffUserWithoutStaffMember],
+])(
+  'forbids %s to delete the salon and deletes nothing',
+  async (_case, signInAs) => {
+    const created = await createSalon()
+    const authorization = await signInAs(
+      created.id,
+      await insertSalon(db),
+    )
+
+    const response = await request(app)
+      .delete(`${SALONS}/${created.id}`)
+      .set('Authorization', authorization)
+
+    expectProblem(response, forbidden)
+    expect(
+      (await request(app).get(`${SALONS}/${created.id}`)).status,
+    ).toBe(200)
+  },
+)
+```
+
+Where a permission belongs to one salon, the table has a user with the same
+role at another salon, and the block also has the scenarios that succeed for
+somebody other than an admin (the owner and a manager change their salon, the
+owner deletes it). What the server does with a token (an expired one, one of
+a signed-out session, one of a suspended user) is tested in
+`auth.integration.test.ts` on the authentication endpoints. The Salon file
+repeats one such case only, a token that names no session.
+
+### 6. Write to the database only for what the API cannot produce
 
 `getTestDb()` is for inspecting rows and for states no request can create,
-such as a stored value that does not have the shape the schema promises:
+such as a user (no implemented operation creates one) or a stored value that
+does not have the shape the schema promises:
 
 ```typescript
 it('answers 500 without details when the stored salon is corrupt', async () => {
@@ -410,12 +532,13 @@ it('should answer 500 without the cause and log the cause under the request ID',
 
 1. Create `backend/packages/api/src/__tests__/<domain>.integration.test.ts`;
    the name must end in `.integration.test.ts` to be picked up.
-2. Start from the structure of the Salon file: the `beforeEach`, a builder for
-   a valid request, helpers that create state through the API.
+2. Start from the structure of the Salon file: the `beforeEach` that signs
+   in, a builder for a valid request, helpers that create state through the
+   API.
 3. For each endpoint write the scenarios listed in
    [Testing Requirements](./testing-requirements.md): the success response in
-   full, at least five error scenarios, the state after the request, deleted
-   resources.
-4. `expectProblem` and `brokenRules` are local to the Salon file today. When a
-   second file needs them, move them to `_shared/test-helpers.ts` instead of
-   copying them.
+   full, at least five error scenarios, who may call it, the state after the
+   request, deleted resources.
+4. Check problems with `expectProblem` and `brokenRules`, and timestamps
+   and IDs with `ISO_TIMESTAMP` and `UUID`, from `_shared/test-helpers.ts`;
+   do not copy them into the new file.

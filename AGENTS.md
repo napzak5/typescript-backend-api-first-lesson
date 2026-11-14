@@ -25,7 +25,8 @@ The rules that most often decide whether a change is acceptable:
 ## 🧭 Working in the Repository
 
 - **Toolchain**: the Node version in `.node-version`, and pnpm (the version in `packageManager` of `package.json`). Lint and format are Biome; tests are Vitest
-- **What exists**: the Salon domain and the system endpoints. The other domains are specified in TypeSpec and present in the database schema, but have no backend code. Follow the Salon files listed in `CLAUDE.md` when adding one
+- **What exists**: the Salon domain, the system endpoints, and five authentication operations (`login`, `refresh`, `logout`, `logout-all`, `me` under `/api/v1/auth`). The rest of the authentication contract and the other domains are specified in TypeSpec and present in the database schema, but have no backend code. Follow the Salon files listed in `CLAUDE.md` when adding one
+- **Authentication and authorization**: the server checks the bearer token of every handler wrapped with `authenticated`, and the use case decides from the `Actor` whether the request is allowed. A new endpoint that is not public follows that pattern; see [docs/authentication.md](docs/authentication.md)
 - **Generated files are never edited by hand**: `specs/tsp-output/`, `backend/packages/generated/src/`, `frontend/packages/api-client/src/generated/` (from `pnpm generate`), and `backend/packages/database/src/schema.ts`, `relations.ts`, `sql/setup.sql` (from `pnpm db:introspect` and `pnpm db:generate-sql`). They are committed together with the change that caused them
 - **A migration that has been applied is never edited**: write a new file in `backend/packages/database/sql/migrations/`
 

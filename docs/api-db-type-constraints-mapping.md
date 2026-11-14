@@ -2,7 +2,7 @@
 
 DB のカラムの型と制約が、Drizzle スキーマ、TypeSpec、生成された型、Zod スキーマのそれぞれでどう表されるかの対応表と、その一致を機械的に検査する `pnpm check:api-db` の説明。
 
-対応表は、実装済みの Salon ドメイン（`salons` と `opening_hours`）が実際に行っていることを書いている。ほかのドメインは TypeSpec と DB スキーマにあるだけで、マッパーも Zod スキーマもない。それらの TypeSpec も、この対応表に従って DB と一致させてある。
+対応表は、実装済みの Salon ドメイン（`salons` と `opening_hours`）が実際に行っていることを書いている。認証（`users` と `sessions`）も同じ対応に従っており、Read マッパー（`backend/packages/domain/src/mappers/read/user.mapper.ts`）とリクエストの Zod スキーマ（`backend/packages/domain/src/schemas/auth.schema.ts`）を持つ。ほかのドメインは TypeSpec と DB スキーマにあるだけで、マッパーも Zod スキーマもない。それらの TypeSpec も、この対応表に従って DB と一致させてある。
 
 - ルールそのもの（プロパティ名 = カラム名、NULL 許可の一致、Optional の制約）: [CLAUDE.md](../CLAUDE.md)
 - TypeSpec での書き方: [TypeSpec API型定義ルール](./typespec-api-type-rules.md)
@@ -70,16 +70,21 @@ NULL 許可のカラムは、どの層でも null を許す形になる: `schema
 | `timestamp with time zone` | PostgreSQL のテキスト形式を ISO 8601（UTC）にする | 変換なし。リクエストに含まれず、DB が `now()` で設定する |
 | `jsonb` | 保存されている値を API モデルの Zod スキーマで検査する | 検証済みのリクエストの値をそのまま保存する |
 
-```typescript
-// backend/packages/domain/src/mappers/read/salon.mapper.ts（抜粋）
-const numericSchema = z.string().transform(Number).pipe(z.number())
+`numeric` と `timestamp with time zone` の変換は、どの Read マッパーも同じものを使う。
 
-const timestampSchema = z
+```typescript
+// backend/packages/domain/src/mappers/read/columns.ts
+export const numericSchema = z.string().transform(Number).pipe(z.number())
+
+export const timestampSchema = z
   .string()
   .transform((value) => parseISO(value))
   .pipe(z.date())
   .transform((value) => value.toISOString())
+```
 
+```typescript
+// backend/packages/domain/src/mappers/read/salon.mapper.ts（抜粋）
 const convertedColumnsSchema = z.object({
   latitude: numericSchema.nullable(),
   longitude: numericSchema.nullable(),

@@ -16,9 +16,9 @@
 ないもの:
 
 - 生成クライアントを使うコンポーネント、画面、カスタムフック（アプリは `api-client` にも `io` にも依存していない）
-- 認証（バックエンドに認証・認可の実装がなく、`customInstance` にも `Authorization` ヘッダーを付ける仕組みはない）
+- 認証（バックエンドはアクセストークンを検証するようになったが、フロントエンドにはログイン画面も、トークンを保持する場所も、`Authorization` ヘッダーを付ける仕組みもない。生成されたフックから呼べるのは、認証なしのオペレーションだけ。[fetch ラッパー](#fetch-ラッパーcustominstance)の制約を参照）
 - API のモックサーバーと、ブラウザーから API までを通すテスト
-- Salon とシステムエンドポイント以外のバックエンド実装（クライアントは OpenAPI の全操作について生成されるが、サーバーが応答するのは `/api/v1/salons` 以下と `/api/system/alive`、`/api/system/ready`、`/api/system/health` だけ）
+- Salon、認証の一部、システムエンドポイント以外のバックエンド実装（クライアントは OpenAPI の全操作について生成されるが、サーバーが応答するのは `/api/v1/salons` 以下、`/api/v1/auth` の `login`、`refresh`、`logout`、`logout-all`、`me`、および `/api/system/alive`、`/api/system/ready`、`/api/system/health` だけ）
 
 ## 構成
 
@@ -108,7 +108,7 @@ frontend/packages/api-client/src/generated/
 
 パッケージの入口は `.` だけです（`frontend/packages/api-client/src/index.ts` が endpoints と models をすべて再エクスポートする）。`generated/` 以下を直接 import するパスは公開されていません。
 
-fetch 関数の戻り値の型は、ステータスコードで判別できるユニオンです。API のエラーは例外ではなく値として表されています。サーバーがどのルートでも返す 429 と 500、本文を受け取るオペレーションの 413 と 415 もユニオンに含まれます（`salons.ts` より）。
+fetch 関数の戻り値の型は、ステータスコードで判別できるユニオンです。API のエラーは例外ではなく値として表されています。サーバーがどのルートでも返す 429 と 500、本文を受け取るオペレーションの 413 と 415、認証が必要なオペレーション（登録・更新・削除）の 401 と 403 もユニオンに含まれます（`salons.ts` より）。
 
 ```typescript
 export type salonCrudListResponse200 = {
@@ -149,7 +149,7 @@ export function customInstance<T>(url: string, options: RequestInit): Promise<T>
 
 - 型引数 `T` は生成コードがその操作について指定するレスポンスの型で、**実行時に本文を `T` と照合してはいません**。クライアントとサーバーが同じ OpenAPI ドキュメントから生成されていることが、型と実際の値が一致する根拠です
 - JSON 以外の本文は文字列で返します。バイナリを返す操作（未実装の顧客エクスポート）を実装するときは、ここに対応が必要です
-- `Authorization` などの共通ヘッダーを付ける仕組みはありません。認証を実装するときに設計します
+- `Authorization` などの共通ヘッダーを付ける仕組みはありません。生成された fetch 関数は最後の引数に `options?: RequestInit` を取るので、呼び出しごとに `headers` を渡すことはできますが、生成されたフックはこの引数にヘッダーを渡しません。そのため、実装済みのオペレーションのうちフックから呼べるのは認証なしのもの（システムのオペレーション、サロンの一覧と 1 件の取得、ログイン、トークンの再発行）だけで、それ以外は 401 になります。トークンの保持と付与は、フロントエンドの認証を実装するときに設計します（サーバー側の仕様は [認証と認可](./authentication.md)）
 
 ## TanStack Query の設定
 
@@ -188,7 +188,7 @@ const queryClient = new QueryClient({
 
 ## アプリから使う（未実装）
 
-以下は、最初の画面を API につなぐときの手順と推奨です。リポジトリにはまだ存在しません。対象は実装済みの Salon API です。
+以下は、最初の画面を API につなぐときの手順と推奨です。リポジトリにはまだ存在しません。対象は実装済みの Salon API のうち、認証なしで呼べる一覧です。
 
 準備:
 
@@ -230,7 +230,7 @@ export function SalonList() {
 この分岐（200 と 400・429・500）は、現在の生成クライアントの型に対して網羅になっています。API 定義に新しいステータスが増えると、`.exhaustive()` が型エラーになって気づけます。
 
 - 型は生成されたものをそのまま使う。`ModelsSalonResponse` と同じ形の型を手書きしない。`any` と型アサーションも使わない
-- 登録・更新・削除は `useSalonCrudCreate` などのミューテーションフックを使い、結果も同じく `status` で分岐する。成功したら `getSalonCrudListQueryKey()` を使って一覧のキャッシュを無効化する
+- 登録・更新・削除は `useSalonCrudCreate` などのミューテーションフックを使い、結果も同じく `status` で分岐する。成功したら `getSalonCrudListQueryKey()` を使って一覧のキャッシュを無効化する。ただし、この 3 つはアクセストークンが必要で、フックはトークンを送らないので、フロントエンドの認証を実装するまでは 401 が返る
 - サーバーの検証エラーは `ModelsProblemDetails` の `errors`（項目ごとの `field`・`rule`・`message`）から表示する
 - 429 のときは、レスポンスの `headers` から `Retry-After`（秒）を読める
 - 未実装のドメイン（Customer、Booking など）のフックは生成されていても呼ばない。サーバーが 404 を返す
@@ -251,4 +251,5 @@ API のモックサーバーと、ブラウザーから API までを通すテ�
 - [Type Generation System](./type-generation-system.md)
 - [OpenAPI TypeScript 型利用ガイド](./openapi-typescript-usage.md)
 - [TypeSpec API Type Rules](./typespec-api-type-rules.md)
+- [認証と認可](./authentication.md)
 - [Architecture Overview](./architecture-overview.md)

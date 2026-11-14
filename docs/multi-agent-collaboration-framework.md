@@ -51,7 +51,7 @@ graph TD
 ```
 
 - データベースが正です。API のプロパティ名はカラム名と同じで、カラムが NULL を許すときだけプロパティも nullable です。モデルの種類ごとの必須・任意の規則は `CLAUDE.md` にあります。
-- `pnpm check:api-db` が確認するのは、プロパティ名、NULL 可否、必須かどうかです。enum の値、型の表現（`numeric` と number、`timestamptz` と ISO 8601 文字列など）、マッパーが名前を変えていないことは確認しません。これらはレビューで確認します。
+- `pnpm check:api-db` が確認するのは、プロパティ名、NULL 可否、必須かどうか、enum の値（カラムが PostgreSQL の enum 型のとき）です。型の表現（`numeric` と number、`timestamptz` と ISO 8601 文字列など）、マッパーが名前を変えていないことは確認しません。これらはレビューで確認します。
 - 型の対応は [api-db-type-constraints-mapping.md](./api-db-type-constraints-mapping.md) と、Salon のマッパー（`backend/packages/domain/src/mappers/read/salon.mapper.ts`、`backend/packages/domain/src/mappers/write/salon.mapper.ts`）を参照してください。
 
 ## 機能開発の順序
@@ -121,6 +121,7 @@ flowchart LR
 `backend-typescript-architect` が Salon ドメインを手本に、`CLAUDE.md` が示す層の順（モデル、リクエストスキーマ、リポジトリのインターフェース、ユースケース、マッパー、リポジトリの実装、ハンドラーとルーター、`createApp` への登録）で実装し、テストを同時に書きます。
 
 - 始める条件: 工程 3 の確認が済んでいること。カラムや API のプロパティが足りない場合は、マッパーで補わずに工程 2 へ戻します。
+- 公開（`@useAuth(NoAuth)`）でないオペレーションは、ハンドラーを `authenticated` で包み、ユースケースが `Actor` を受け取って権限を判定します（[authentication.md](./authentication.md) の「新しいオペレーションを保護する」）。
 - 確認: 表のコマンド。`pnpm typecheck` はビルドの後に実行します。`pnpm test:integration` には Docker または `TEST_DATABASE_URL` が必要です。
 - 次へ渡すもの: 変更したファイル、各エンドポイントの挙動、実行した確認とその結果。
 
@@ -131,7 +132,7 @@ flowchart LR
 
 ### 6. レビュー
 
-`design-review-architect` はファイルを変更しません。まず表のコマンドを実行し、次に、コマンドが見ない点（enum の値、型の表現、マッパー、層の依存関係、テストの網羅、不要なコード）を確認します。指摘には場所、理由、修正案、担当エージェント、重大度を付けて返します。指摘は担当へ戻し、修正の後に該当する工程の確認をやり直します。
+`design-review-architect` はファイルを変更しません。まず表のコマンドを実行し、次に、コマンドが見ない点（型の表現、マッパー、層の依存関係、認証と権限の判定、テストの網羅、不要なコード）を確認します。指摘には場所、理由、修正案、担当エージェント、重大度を付けて返します。指摘は担当へ戻し、修正の後に該当する工程の確認をやり直します。
 
 スキーマとコントラクトだけを対象にしたレビューは、工程 3 の直後にも依頼できます。実装の前に不一致を見つけるほうが、直す範囲が小さくて済みます。
 
@@ -156,10 +157,11 @@ flowchart LR
 
 ## 現在の実装範囲
 
-- バックエンドに実装されているのは、Salon ドメイン（`/api/v1/salons`）とシステムエンドポイント（`GET /api/system/alive`、`GET /api/system/ready`、`GET /api/system/health`）だけです。Salon が、ほかのドメインを実装するときの手本です。
+- バックエンドに実装されているのは、Salon ドメイン（`/api/v1/salons`）、認証の 5 つのオペレーション（`/api/v1/auth` の `login`、`refresh`、`logout`、`logout-all`、`me`）、システムエンドポイント（`GET /api/system/alive`、`GET /api/system/ready`、`GET /api/system/health`）だけです。Salon が、ほかのドメインを実装するときの手本です。
+- 認証はサーバー側のセッションとベアラートークンで行い、認可はユースケースが操作者（`Actor`）から判定します。認可が適用されているのは Salon API（作成・更新・削除）です。ユーザー登録、パスワードの再設定・変更、2 要素認証、セッションの一覧、管理者の操作は TypeSpec にだけあります。詳細は [authentication.md](./authentication.md) を参照してください。
 - ほかのドメイン（customer、staff、booking、payment など）は TypeSpec とデータベーススキーマにだけあり、ドメイン・リポジトリ・ルートのコードはありません。それらの TypeSpec はテーブルと一致しています（`pnpm check:api-db`）。ロール・権限、添付ファイル、発注、カルテなどは、テーブルもまだありません。
-- フロントエンドの 3 つのアプリケーションは、サンプルデータを表示する静的な画面で、まだ API を呼んでいません。
-- 認証・認可、メール送信、ファイルストレージのコードはありません。
+- フロントエンドの 3 つのアプリケーションは、サンプルデータを表示する静的な画面で、まだ API を呼んでいません。ログインやトークンを扱うコードもありません。
+- メール送信、ファイルストレージのコードはありません。
 
 ## 参照
 
@@ -167,6 +169,7 @@ flowchart LR
 - [AGENTS.md](../AGENTS.md): エージェントの一覧と、リポジトリで作業するときの決まり
 - [README.md](../README.md): セットアップ、コマンド、データベースのワークフロー
 - [typespec-api-type-rules.md](./typespec-api-type-rules.md)、[api-db-type-constraints-mapping.md](./api-db-type-constraints-mapping.md)、[db-driven-domain-model.md](./db-driven-domain-model.md): 層の間の規則
+- [authentication.md](./authentication.md): 認証と認可
 - [testing-requirements.md](./testing-requirements.md): テストの要件
 
 エージェント定義:

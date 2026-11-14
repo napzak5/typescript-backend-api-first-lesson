@@ -34,11 +34,12 @@ Before relying on anything, check this table.
 
 | Area | State |
 |------|-------|
-| Salon API (`/api/v1/salons`) | Implemented in every layer: list, create, get, update, delete. It is the reference implementation for every other domain. |
+| Salon API (`/api/v1/salons`) | Implemented in every layer: list, create, get, update, delete. It is the reference implementation for every other domain. List and get are public; create, update and delete need a signed-in user with the permission. |
+| Authentication (`/api/v1/auth`) | Implemented: `login`, `refresh`, `logout`, `logout-all` and `me`, on server-side sessions with opaque bearer tokens. The other operations of the contract (registration, email verification, password reset and change, two-factor authentication, session list and revocation, `/api/v1/admin/auth`) are specified in TypeSpec only and answered with 404. See [Authentication and Authorization](./authentication.md). |
+| Authorization | Implemented for the Salon API. An implemented operation that the contract does not mark `@useAuth(NoAuth)` needs a valid access token, and its use case decides whether the signed-in user may do what is asked. |
 | System endpoints (`/api/system`) | Implemented: `alive`, `ready` and `health`. |
-| Other domains (auth, staff, service, customer, booking, review, treatment, payment, inventory) | Specified in TypeSpec, so their generated types exist, and the database schema has their tables and seed data. The models agree with the tables (`pnpm check:api-db`). There is no domain, repository or route code. A request to one of these routes is answered with 404. The implementation order is in GitHub issue #4. |
+| Other domains (staff, service, customer, booking, review, treatment, payment, inventory) | Specified in TypeSpec, so their generated types exist, and the database schema has their tables and seed data. The models agree with the tables (`pnpm check:api-db`). There is no domain, repository or route code. A request to one of these routes is answered with 404. The implementation order is in GitHub issue #4. |
 | Attachments, roles and permissions, purchase orders, medical charts | Specified in TypeSpec only. No table exists for them yet. |
-| Authentication and authorization | Not implemented. The OpenAPI document declares bearer authentication for every operation, but the server does not check it. |
 | Email, file storage | Not implemented. Docker Compose starts no service for them. |
 | Frontend | Three application shells and shared packages. The API client is generated, but no application calls the API yet. See [Frontend](#frontend). |
 
@@ -63,6 +64,12 @@ shape the system, and why:
   `unknown`. The use case validates it with a Zod schema that is checked
   against the generated request type. Input becomes trusted in one place, and
   that place is unit-tested without HTTP.
+- **Authorization in the use case.** The HTTP layer only establishes who is
+  asking: `authenticated` turns the bearer token into an `Actor` or answers
+  401. The use case of a protected operation takes the actor as its first
+  argument and decides whether that actor may do what is asked, so a
+  permission rule is a pure function that is unit-tested like any other
+  rule. See [Authentication and Authorization](./authentication.md).
 - **Errors are values.** Every operation that can fail returns a
   `Result<T, E>`, so its signature states how it can fail. Application code
   does not throw, and it contains exactly one `try`/`catch`:
@@ -98,11 +105,11 @@ shape the system, and why:
 │   │   ├── config/          Environment files and parseAppConfig
 │   │   ├── database/        Drizzle schema, SQL, migration and seed scripts
 │   │   ├── domain/          Models, validation schemas, mappers, use cases,
-│   │   │                    repository interfaces, errors
+│   │   │                    repository and service interfaces, errors
 │   │   ├── infrastructure/  Database connection, repository implementations,
-│   │   │                    logger
-│   │   └── api/             Express application: middleware, routes, error
-│   │                        responses
+│   │   │                    password hashing and session tokens, logger
+│   │   └── api/             Express application: middleware, routes,
+│   │                        authentication, error responses
 │   └── apps/
 │       └── server/          The process that runs the API
 ├── frontend/
@@ -124,12 +131,14 @@ domain/src/
 ├── schemas/salon.schema.ts            Zod schema of each request
 ├── mappers/write/salon.mapper.ts      API request → rows
 ├── mappers/read/salon.mapper.ts       Rows → API response
+├── mappers/read/columns.ts            numericSchema, timestampSchema (every read mapper)
 ├── repositories/salon.repository.ts   ISalonRepository
-├── business-logic/salon/              One *.usecase.ts per operation
+├── business-logic/salon/              One *.usecase.ts per operation;
+│                                      _shared/authorization.ts decides who may
 └── shared/                            DomainError, parseWith
 
 infrastructure/src/
-├── database/                          Connection, ping, log-safe failure description
+├── database/                          Connection, ping, attempt, log-safe failure description
 ├── logging/logger.ts                  createLogger
 └── repositories/salon.repository.impl.ts
 
@@ -139,7 +148,28 @@ api/src/
 ├── middleware/                        Request logging, rate limit, error handlers
 ├── routes/salon/                      One *.handler.ts per operation, index.ts (router)
 ├── routes/system/index.ts             alive, ready, health
-└── shared/                            Problem details, response helpers, API version
+└── shared/                            Problem details, response helpers, API version,
+                                       authentication (authenticated), JsonBody
+```
+
+Authentication has the same layout, with what only it needs added:
+
+```
+domain/src/
+├── models/auth.ts                     IDs, API and database types, Actor and ActorScope
+├── schemas/auth.schema.ts             Zod schema of the login and refresh requests
+├── mappers/read/user.mapper.ts        Row of users → API response
+├── repositories/user.repository.ts    IUserRepository
+├── repositories/session.repository.ts ISessionRepository
+├── services/                          IPasswordHasher, ISessionTokenIssuer
+└── business-logic/auth/               One *.usecase.ts per operation, AuthenticateUseCase
+
+infrastructure/src/
+├── repositories/user.repository.impl.ts, session.repository.impl.ts, account.ts
+└── security/                          Argon2PasswordHasher, SessionTokenIssuer
+
+api/src/
+└── routes/auth/                       One *.handler.ts per operation, index.ts (router)
 ```
 
 ## Layers and Package Dependencies
@@ -153,11 +183,11 @@ An arrow means "depends on":
                api                    HTTP: middleware, routes, error responses
         ┌───────┴─────────┐
         ▼                 │
- infrastructure           │           I/O: database connection, repositories, logger
-  ┌─────┴─────────┐       │
+ infrastructure           │           I/O: database connection, repositories,
+  ┌─────┴─────────┐       │           password hashing, session tokens, logger
   │               ▼       ▼
   │                domain             rules: use cases, schemas, mappers,
-  │     ┌─────────────┴───────┐       repository interfaces
+  │     ┌─────────────┴───────┐       repository and service interfaces
   ▼     ▼                     ▼
   database                generated   stored shape (from PostgreSQL),
                                       API shape (from TypeSpec)
@@ -173,7 +203,11 @@ to the contract surfaces as a type error in the mappers.
 
 Use cases and domain logic live in one package, `domain`. It imports nothing
 that performs I/O: from `database` it imports types only, and it reaches the
-database through `ISalonRepository`, which `infrastructure` implements.
+database through repository interfaces (`ISalonRepository`, `IUserRepository`,
+`ISessionRepository`), which `infrastructure` implements. Password hashing and
+token generation are behind interfaces in the same way (`IPasswordHasher`,
+`ISessionTokenIssuer`), and the current time is a dependency (`clock`), so the
+authentication use cases are unit-tested without a database or a real hash.
 
 | Package (`@beauty-salon-backend/…`) | Contains | Workspace packages it depends on |
 |-------------------------------------|----------|----------------------------------|
@@ -181,9 +215,9 @@ database through `ISalonRepository`, which `infrastructure` implements.
 | `generated` | `api-types.ts` (`paths`, `components`, `operations`) and `schema.ts` (a Zod schema per enum) | none |
 | `config` | `loadEnvFile`, `parseAppConfig` | `utility` |
 | `database` | `schema.ts`, `relations.ts`, `sql/`, the `db:*` scripts, seeds | `config`, `utility` |
-| `domain` | Models, schemas, mappers, use cases, repository interfaces, `DomainError` | `database` (types), `generated`, `utility` |
-| `infrastructure` | `connectDatabase`, `pingDatabase`, `SalonRepository`, `createLogger` | `database`, `domain`, `utility` |
-| `api` | `createApp`, middleware, routes, problem details | `domain`, `generated`, `infrastructure`, `utility`; `database` in tests |
+| `domain` | Models, schemas, mappers, use cases, repository and service interfaces, `DomainError` | `database` (types), `generated`, `utility` |
+| `infrastructure` | `connectDatabase`, `pingDatabase`, `SalonRepository`, `UserRepository`, `SessionRepository`, `Argon2PasswordHasher`, `SessionTokenIssuer`, `createLogger` | `database`, `domain`, `utility` |
+| `api` | `createApp`, middleware, routes, authentication of a request, problem details | `domain`, `generated`, `infrastructure`, `utility`; `database` in tests |
 | `server` (application) | Entry point and `startServer` | `api`, `config`, `domain`, `infrastructure`, `utility` |
 
 `api` does not depend on `config`: it receives plain values (`AppSettings`),
@@ -237,7 +271,7 @@ specs/tsp-output/@typespec/openapi3/generated/openapi.yaml
 what is committed, so a TypeSpec change and its generated files always travel
 together.
 
-The backend consumes the generated types in two places:
+The backend consumes the generated types in two places per domain:
 
 - `backend/packages/domain/src/models/salon.ts` names the request and response
   models, for example
@@ -247,6 +281,10 @@ The backend consumes the generated types in two places:
 - `backend/packages/api/src/routes/salon/_shared/types.ts` takes the response
   body of each operation from `operations`, for example
   `operations['SalonCrud_create']`.
+
+Authentication does the same in `backend/packages/domain/src/models/auth.ts`,
+`backend/packages/domain/src/schemas/auth.schema.ts` and
+`backend/packages/api/src/routes/auth/_shared/types.ts`.
 
 Model naming and nullability rules are in
 [TypeSpec API Type Rules](./typespec-api-type-rules.md); the pipeline in
@@ -309,8 +347,9 @@ reads the environment or ends the process.
 
 ### Middleware Order
 
-`createApp` in `backend/packages/api/src/index.ts` creates the repositories
-once and mounts everything in this order. The order is part of the design:
+`createApp` in `backend/packages/api/src/index.ts` creates the repositories,
+the password hasher and the token issuer once and mounts everything in this
+order. The order is part of the design:
 
 1. `requestLogging`: gives every request its ID (`req.id`) and logger
    (`req.log`), first, so that everything after it can log and answer with
@@ -321,9 +360,17 @@ once and mounts everything in this order. The order is part of the design:
 4. `rateLimiting`: requests per client address and window.
 5. `compression`, `requireJsonBody` and `express.json`: a body that is not
    JSON is rejected with 415, and a body over 100 kB with 413.
-6. The Salon router at `/api/v1/salons`.
+6. The authentication router at `/api/v1/auth` and the Salon router at
+   `/api/v1/salons`. Both receive `authenticated`, which
+   `createAuthenticated` builds once from the authentication dependencies.
 7. `notFoundHandler` and `errorHandler`: turn what is left over into problem
    details.
+
+Authentication is not a middleware in this chain. A router wraps the handlers
+that need a signed-in user with `authenticated`
+(`backend/packages/api/src/shared/authentication.ts`), and only a wrapped
+handler receives an `Actor`, so a handler that was not wrapped cannot call a
+use case that asks for one.
 
 ### A Salon Request
 
@@ -332,15 +379,19 @@ Creating a salon, from the route to the database and back:
 ```
 POST /api/v1/salons
   │
+  ▼ api             authenticated                  shared/authentication.ts
+  │                   AuthenticateUseCase: Authorization header → Actor,
+  │                   or 401 and the handler does not run
   ▼ api             createSalonHandler             routes/salon/create-salon.handler.ts
-  │                   passes req.body to the use case as `unknown`
+  │                   passes the actor, and req.body as `unknown`, to the use case
   ▼ domain          CreateSalonUseCase.execute     business-logic/salon/create-salon.usecase.ts
-  │                   1. parseWith(salonCreateRequestSchema, …)       validate
-  │                   2. SalonWriteMapper.fromCreateRequest           API request → rows
-  │                   3. salonRepository.create(salon, openingHours)
+  │                   1. mayCreateSalon(actor)                        authorize, or `forbidden`
+  │                   2. parseWith(salonCreateRequestSchema, …)       validate
+  │                   3. SalonWriteMapper.fromCreateRequest           API request → rows
+  │                   4. salonRepository.create(salon, openingHours)
   ▼ infrastructure  SalonRepository.create         repositories/salon.repository.impl.ts
   │                   one transaction: the salon row and its opening_hours rows
-  ▼ domain            4. SalonReadMapper.toApiSalon                   rows → API response
+  ▼ domain            5. SalonReadMapper.toApiSalon                   rows → API response
   ▼ api             match(result)
                       success → 201, Location header, { data, meta, links }
                       error   → sendProblem → problem details
@@ -353,16 +404,23 @@ promise to the error handler.
 
 The five operations follow the same path:
 
-| Operation | Route | Use case | Success |
-|-----------|-------|----------|---------|
-| List | `GET /api/v1/salons` | `ListSalonsUseCase` | 200, a page: `{ data, meta, links }` with `meta.nextCursor` |
-| Create | `POST /api/v1/salons` | `CreateSalonUseCase` | 201 with a `Location` header |
-| Get | `GET /api/v1/salons/{id}` | `GetSalonUseCase` | 200 |
-| Update | `PATCH /api/v1/salons/{id}` | `UpdateSalonUseCase` | 200. An absent property is left alone, `null` clears a nullable column |
-| Delete | `DELETE /api/v1/salons/{id}` | `DeleteSalonUseCase` | 204. The row is kept and marked with `deletedAt` |
+| Operation | Route | Who may | Use case | Success |
+|-----------|-------|---------|----------|---------|
+| List | `GET /api/v1/salons` | Anyone | `ListSalonsUseCase` | 200, a page: `{ data, meta, links }` with `meta.nextCursor` |
+| Create | `POST /api/v1/salons` | `admin` | `CreateSalonUseCase` | 201 with a `Location` header |
+| Get | `GET /api/v1/salons/{id}` | Anyone | `GetSalonUseCase` | 200 |
+| Update | `PATCH /api/v1/salons/{id}` | `admin`, or the `owner` or a `manager` of that salon | `UpdateSalonUseCase` | 200. An absent property is left alone, `null` clears a nullable column |
+| Delete | `DELETE /api/v1/salons/{id}` | `admin`, or the `owner` of that salon | `DeleteSalonUseCase` | 204. The row is kept and marked with `deletedAt` |
 
-Three things differ from create:
+Four things differ from create:
 
+- **Public operations.** List and get are marked `@useAuth(NoAuth)` in the
+  contract. Their handlers are not wrapped with `authenticated`, and their
+  use cases take no actor.
+- **Permission for one salon.** Update and delete decide from the actor and
+  the ID in the path (`mayUpdateSalon`, `mayDeleteSalon` in
+  `business-logic/salon/_shared/authorization.ts`), after the ID is parsed
+  and before the body is validated or the salon is looked up.
 - **Path parameter.** The use case receives `req.params.id` as it is and
   turns it into a `SalonId` (a branded UUID) with `parseSalonId`.
 - **Query string.** A query string carries text only, so the list handler
@@ -371,6 +429,22 @@ Three things differ from create:
   use case's.
 - **Pagination.** Lists use keyset pagination, newest first. `cursor` is the
   ID of the last salon of the previous page, returned as `meta.nextCursor`.
+
+### An Authentication Request
+
+The authentication operations take the same path through the layers. Every
+response under `/api/v1/auth` carries `Cache-Control: no-store`.
+
+| Operation | Route | Access token | Use case | Success |
+|-----------|-------|--------------|----------|---------|
+| Login | `POST /api/v1/auth/login` | Not needed | `LoginUseCase` | 200 with a new access token and refresh token |
+| Refresh | `POST /api/v1/auth/refresh` | Not needed; the body carries the refresh token | `RefreshSessionUseCase` | 200 with both tokens replaced |
+| Logout | `POST /api/v1/auth/logout` | Needed | `LogoutUseCase` | 204 |
+| Logout everywhere | `POST /api/v1/auth/logout-all` | Needed | `LogoutAllUseCase` | 204 |
+| Current user | `GET /api/v1/auth/me` | Needed | `GetCurrentUserUseCase` | 200 |
+
+How sessions, tokens, passwords and the lockout work is in
+[Authentication and Authorization](./authentication.md).
 
 ## Errors
 
@@ -384,6 +458,8 @@ returns the body the contract defines for it, not problem details.
 | Kind | Raised by | Status |
 |------|-----------|--------|
 | `validation` | A use case, when the input breaks a rule of its Zod schema; the list handler, when a query parameter cannot be read as its type | 400 |
+| `unauthenticated` | `AuthenticateUseCase`, when the request carries no access token that works; the login and refresh use cases, when the credentials are not accepted | 401, with a `WWW-Authenticate: Bearer` header |
+| `forbidden` | A use case, when the signed-in user may not do what is asked | 403 |
 | `notFound` | A use case, when the salon does not exist or is deleted | 404 |
 | `alreadyExists` | The repository, when the unique index on `email` is violated | 409 |
 | `database` | The repository, when a query fails; the read mapper, when a stored row does not match the API model | 500 |
@@ -394,9 +470,13 @@ returns the body the contract defines for it, not problem details.
 | `rateLimited` | `rateLimiting` | 429 |
 | `unexpected` | `errorHandler`, for anything it does not recognize | 500 |
 
-The first four are the `DomainError` union
+The first six are the `DomainError` union
 (`backend/packages/domain/src/shared/errors.ts`); the others are the
-`HttpError` union of the API layer. A 500 response never carries the cause.
+`HttpError` union of the API layer. `unauthenticated` carries a `reason`,
+which decides the code of the problem (`1001` to `1004`) and the challenge in
+the header (`toBearerChallenge`); the table of them is in
+[Authentication and Authorization](./authentication.md). A 500 response never
+carries the cause.
 The cause is logged instead: `sendProblem` logs a `database` error, and
 `errorHandler` logs an unexpected one with its stack.
 
@@ -416,9 +496,11 @@ is where each one lives in the code:
 | Shutdown | `backend/apps/server/src/server.ts` | See [Start-up](#start-up). |
 
 What protects the API today: security headers, the origin allow-list, the
-rate limit, the body size limit, and strict validation that rejects unknown
-properties. There is no authentication, so every endpoint is open to anyone
-who can reach the server.
+rate limit, the body size limit, strict validation that rejects unknown
+properties, and bearer-token authentication with a permission check on the
+operations that change a salon. The system endpoints, the salon list, a
+single salon, login and refresh are open to anyone who can reach the server.
+See [Authentication and Authorization](./authentication.md).
 
 ## Tests, CI and Images
 
@@ -468,6 +550,8 @@ a shell so far. `frontend/packages` holds what they share (UI components,
 theme, configuration, assets) and the API client that orval generates
 into `frontend/packages/api-client`. The client and its fetch function
 (`frontend/packages/io`) are tested, but no application imports the client yet.
+Nothing in the frontend signs in, stores a token or sends an `Authorization`
+header.
 See [Frontend API Integration](./frontend-api-integration.md).
 
 ## References
@@ -476,6 +560,7 @@ See [Frontend API Integration](./frontend-api-integration.md).
 - [README](../README.md): setup, scripts, operating the server
 - [Backend Architecture Guidelines](./backend-architecture-guidelines.md)
 - [Domain Implementation Reference](./domain-implementation-reference.md)
+- [Authentication and Authorization](./authentication.md) (Japanese)
 - [Type Generation System](./type-generation-system.md)
 - [TypeSpec API Type Rules](./typespec-api-type-rules.md)
 - [DB-Driven Domain Model](./db-driven-domain-model.md)

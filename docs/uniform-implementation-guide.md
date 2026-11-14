@@ -1,10 +1,9 @@
 # Uniform Implementation Guide
 
 The standard patterns that every backend endpoint follows, each with the file
-that implements it. The Salon domain is the only implemented domain and the
-reference for the others, so every excerpt below is taken from it or from the
-shared code. Excerpts are shortened; the file named above each one is the
-authority.
+that implements it. The Salon domain is the reference for the others, so
+every excerpt below is taken from it or from the shared code. Excerpts are
+shortened; the file named above each one is the authority.
 
 | Pattern | Where it lives |
 |---------|----------------|
@@ -15,8 +14,8 @@ authority.
 | [Response formatting](#response-formatting) | `backend/packages/api/src/shared/responses.ts` |
 | [Error handling](#error-handling) | `backend/packages/api/src/shared/problem-details.ts`, `backend/packages/api/src/middleware/errors.ts` |
 | [Logging](#logging) | `backend/packages/infrastructure/src/logging/logger.ts`, `backend/packages/api/src/middleware/request-logging.ts` |
-| [Date and time](#date-and-time) | `backend/packages/domain/src/mappers/read/salon.mapper.ts`, `salon.schema.ts` |
-| [Authorization](#authorization) | Not implemented |
+| [Date and time](#date-and-time) | `backend/packages/domain/src/mappers/read/columns.ts`, `salon.schema.ts` |
+| [Authorization](#authorization) | `backend/packages/api/src/shared/authentication.ts`, `backend/packages/domain/src/business-logic/salon/_shared/authorization.ts` |
 
 Related documents: the layer-by-layer walk through the Salon domain is in
 [domain-implementation-reference.md](./domain-implementation-reference.md), the
@@ -28,7 +27,8 @@ and the type rules in [type-safety-principles.md](./type-safety-principles.md).
 ## Request validation
 
 - A handler does not validate. It passes `req.body`, typed `unknown`, to the
-  use case, and the use case parses it before doing anything else.
+  use case, and the use case parses it before using it. Only the permission
+  check comes earlier (see [Authorization](#authorization)).
 - There is one Zod schema per request, in
   `backend/packages/domain/src/schemas/salon.schema.ts`.
 - Each schema is checked against the generated API type with
@@ -62,8 +62,13 @@ into a `validation` error that lists every broken rule, not only the first:
 ```typescript
 // backend/packages/domain/src/business-logic/salon/create-salon.usecase.ts
 async execute(
+  actor: Actor,
   input: unknown,
 ): Promise<Result<ApiSalonResponse, DomainError>> {
+  if (!mayCreateSalon(actor)) {
+    return Result.error(DomainErrors.forbidden())
+  }
+
   const request = parseWith(salonCreateRequestSchema, input, 'Invalid salon')
   if (request.type === 'error') {
     return request
@@ -224,7 +229,7 @@ Every successful response with a body is `{ data, meta, links }`.
 
 ```typescript
 // backend/packages/api/src/shared/responses.ts
-export const responseMeta = (req: Request): ResponseMeta => ({
+export const responseMeta = (req: Pick<Request, 'id'>): ResponseMeta => ({
   correlationId: correlationIdOf(req),
   timestamp: new Date().toISOString(),
   version: API_VERSION,
@@ -245,6 +250,7 @@ export const responseMeta = (req: Request): ResponseMeta => ({
 // backend/packages/api/src/routes/salon/update-salon.handler.ts
 export const updateSalonHandler = (
   dependencies: SalonUseCaseDependencies,
+  authenticated: Authenticated,
 ): RequestHandler<
   { id: string },
   UpdateSalonResponse | ProblemDetails,
@@ -252,8 +258,8 @@ export const updateSalonHandler = (
 > => {
   const useCase = new UpdateSalonUseCase(dependencies)
 
-  return async (req, res) => {
-    const result = await useCase.execute(req.params.id, req.body)
+  return authenticated(async (actor, req, res) => {
+    const result = await useCase.execute(actor, req.params.id, req.body)
 
     match(result)
       .with({ type: 'success' }, ({ data }) => {
@@ -265,7 +271,7 @@ export const updateSalonHandler = (
       })
       .with({ type: 'error' }, ({ error }) => sendProblem(req, res, error))
       .exhaustive()
-  }
+  })
 }
 ```
 
@@ -286,6 +292,8 @@ answers 503 with the body its operation defines.
 | Error | Raised by | Status | `code` |
 |-------|-----------|--------|--------|
 | `validation` | `parseWith` in a use case | 400 | `2001` |
+| `unauthenticated` | `AuthenticateUseCase` behind `authenticated`; the login and refresh use cases | 401 | `1001` to `1004`, by `reason` |
+| `forbidden` | A use case, when the actor may not do what is asked | 403 | `1005` |
 | `notFound` | A use case, when the repository finds no row | 404 | `3001` |
 | `alreadyExists` | The repository, on the unique index on `email` | 409 | `3002` |
 | `database` | The repository on an unexpected failure; the read mapper on stored data that does not match the API model | 500 | `4003` |
@@ -300,9 +308,10 @@ answers 503 with the body its operation defines.
 The mapping is one exhaustive `match` in
 `backend/packages/api/src/shared/problem-details.ts`; a new error kind does not
 compile until it has a status and a code there. Every status of this table
-that an operation can answer is declared on it in TypeSpec: the kinds of the
-use case one by one, 429 and 500 through `CommonErrors`, and 413 and 415
-through `RequestBodyErrors` on the operations that take a body.
+that an operation can answer is declared on it in TypeSpec: 400, 404 and 409
+one by one, 401, 403, 429 and 500 through `PublicErrors`, `SessionErrors` or
+`CommonErrors` (see [Authorization](#authorization)), and 413 and 415 through
+`RequestBodyErrors` on the operations that take a body.
 
 ```typescript
 // backend/packages/api/src/shared/problem-details.ts
@@ -329,7 +338,8 @@ through `RequestBodyErrors` on the operations that take a body.
 `correlationId` (the request ID) and `timestamp`. `errors` is filled for
 `validation` only, with one entry per broken rule. The response is sent with
 the media type `application/problem+json` (RFC 9457); a successful response is
-`application/json`.
+`application/json`. A 401 also carries a `WWW-Authenticate: Bearer` header,
+which `sendProblem` takes from `toBearerChallenge` in `problem-details.ts`.
 
 A `database` or `unexpected` error never shows its cause to the client. It is
 logged instead: `sendProblem` logs a `database` error with its cause, and
@@ -395,12 +405,12 @@ Logging is structured, with pino. Application code never writes to `console`.
   `createdAt` and `updatedAt` default to `now()`, and the repository sets
   `updatedAt` and `deletedAt` with `` sql`now()` ``. Application code does not
   create a `Date` to store it.
-- Drizzle reads a `timestamptz` as text. The read mapper converts it to
-  ISO 8601 in UTC with date-fns:
+- Drizzle reads a `timestamptz` as text. Every read mapper converts it to
+  ISO 8601 in UTC with the same schema, which uses date-fns:
 
   ```typescript
-  // backend/packages/domain/src/mappers/read/salon.mapper.ts
-  const timestampSchema = z
+  // backend/packages/domain/src/mappers/read/columns.ts
+  export const timestampSchema = z
     .string()
     .transform((value) => parseISO(value))
     .pipe(z.date())
@@ -426,17 +436,107 @@ Logging is structured, with pino. Application code never writes to `console`.
 
 ## Authorization
 
-Not implemented: the backend has no authentication or authorization code, and
-every endpoint is public. The auth and permission models under `specs/` are a
-contract without an implementation, so there is no pattern to follow yet.
+An operation is public only when its contract says so with `@useAuth(NoAuth)`.
+Every other operation needs a signed-in user, and the pattern has three parts.
+How sessions, tokens and roles work is in
+[authentication.md](./authentication.md) (Japanese); this section is only the
+pattern.
+
+**1. The route is protected by wrapping its handler.** The router factory
+receives `authenticated` and hands it to the handlers that need it:
+
+```typescript
+// backend/packages/api/src/routes/salon/index.ts
+router.get('/', listSalonsHandler(dependencies))
+router.post('/', createSalonHandler(dependencies, authenticated))
+router.get('/:id', getSalonHandler(dependencies))
+router.patch('/:id', updateSalonHandler(dependencies, authenticated))
+router.delete('/:id', deleteSalonHandler(dependencies, authenticated))
+```
+
+`authenticated` (`backend/packages/api/src/shared/authentication.ts`) reads
+`Authorization: Bearer <access token>`, and calls the wrapped handler with the
+`Actor` the token stands for (see the update handler under
+[Response formatting](#response-formatting)). Without a token that works, it
+answers 401 and the handler does not run. There is no authentication
+middleware to forget: a handler that is not wrapped has no actor, so it
+cannot call a use case that takes one.
+
+**2. The permission check lives in the use case.** `execute` takes
+`actor: Actor` as its first parameter and decides before it validates the
+body or reads the database. The rule itself is a pure function in
+`business-logic/<domain>/_shared/authorization.ts`:
+
+```typescript
+// backend/packages/domain/src/business-logic/salon/_shared/authorization.ts
+export const mayUpdateSalon = (actor: Actor, salonId: SalonId): boolean =>
+  match(actor.scope)
+    .with({ type: 'platform' }, () => true)
+    .with(
+      { type: 'salon', role: P.union('owner', 'manager') },
+      (scope) => scope.salonId === salonId,
+    )
+    .with(
+      { type: 'salon', role: 'staff' },
+      { type: 'customer' },
+      { type: 'none' },
+      () => false,
+    )
+    .exhaustive()
+```
+
+```typescript
+// backend/packages/domain/src/business-logic/salon/update-salon.usecase.ts
+const salonId = parseSalonId(id)
+if (salonId.type === 'error') {
+  return salonId
+}
+if (!mayUpdateSalon(actor, salonId.data)) {
+  return Result.error(DomainErrors.forbidden())
+}
+```
+
+- The handler and the middleware never look at a role. They only pass the
+  actor on.
+- A rule reads `actor.scope` (`ActorScope` in
+  `backend/packages/domain/src/models/auth.ts`), not `users.role` or
+  `users.permissions`.
+- A rule about one resource compares the salon of the actor with the salon of
+  the resource. When the ID in the path is enough to decide, as for a salon,
+  the check comes right after the ID is parsed.
+
+**3. The error is a `DomainError`.** Nothing in this pattern builds a
+response by hand.
+
+| Situation | Error | Response |
+|-----------|-------|----------|
+| No access token, or one that does not work | `DomainErrors.unauthenticated(reason)`, returned by `AuthenticateUseCase` | 401 with `WWW-Authenticate` |
+| Signed in, and not allowed | `DomainErrors.forbidden()`, returned by the use case | 403, code `1005` |
+
+In TypeSpec the operation declares the alias of
+`specs/models/_shared/common-api-patterns.tsp` that matches how it is called:
+
+| Operation | Declares |
+|-----------|----------|
+| Public | `@useAuth(NoAuth)` and `PublicErrors` (429, 500) |
+| Any signed-in user may call it | `SessionErrors` (401 and `PublicErrors`) |
+| It has a permission check | `CommonErrors` (403 and `SessionErrors`) |
 
 ## Checklist for a new endpoint
 
 - [ ] The operation and its models are defined in TypeSpec, and the generated
       files are committed with them (`pnpm generate`)
+- [ ] The operation is either public in the contract (`@useAuth(NoAuth)`,
+      `PublicErrors`) or declares `SessionErrors` or `CommonErrors`
 - [ ] The request has a Zod schema that `satisfies` the generated type
-- [ ] The use case takes `unknown`, parses first and returns
-      `Result<..., DomainError>`
+- [ ] The use case takes `unknown`, parses before it uses the input and
+      returns `Result<..., DomainError>`
+- [ ] The use case of an operation that is not public takes `actor: Actor`
+      first, and decides the permission with a function from
+      `_shared/authorization.ts` before anything else; a refusal is
+      `DomainErrors.forbidden()`
+- [ ] The handler of an operation that is not public is wrapped with
+      `authenticated`
 - [ ] Path IDs go through a branded ID schema
 - [ ] The handler is a factory over its dependencies, takes its response types
       from `operations`, validates nothing, and ends in
@@ -444,4 +544,6 @@ contract without an implementation, so there is no pattern to follow yet.
 - [ ] A list uses `cursor` and `limit` and returns `meta.nextCursor`
 - [ ] Nothing throws, and nothing writes to `console`
 - [ ] The endpoint has integration tests with at least five error scenarios
-      (see [testing-requirements.md](./testing-requirements.md))
+      (see [testing-requirements.md](./testing-requirements.md)); for an
+      operation that is not public they include a request without a token
+      (401) and one from a user who is not allowed (403)
