@@ -1,370 +1,203 @@
 # 型安全性の原則
 
-TypeScriptバックエンド開発における型安全性の基本原則と実践的なパターンを定義します。
+バックエンドの型安全性の規則と、規則が禁じているものの代わりに何を書くかを定義します。
 
-## 基本原則
+規則そのものは [CLAUDE.md](../CLAUDE.md) の「Absolute Rules」です。この文書は、それぞれの規則がどこに適用され、実装済みのコードでどう満たされているかを示します。コード例は実際のファイルからの抜粋で、先頭にパスを示しています（コメントは日本語に置き換えています）。
 
-1. **`any`型の使用は絶対禁止** - Biomeでエラーとして扱う
-2. **型アサーションの禁止** - 適切な型定義と判別共用体を使用
-3. **型ガードの禁止** - 判別共用体と網羅的パターンマッチングを使用
-4. **すべての厳格チェックを有効化**:
-   - `noUncheckedIndexedAccess`
-   - `exactOptionalPropertyTypes`
-   - `noImplicitReturns`
-   - すべての関数パラメータと戻り値の型を明示
+Sum 型の定義と ts-pattern の書き方は [Sum型とパターンマッチング](./sum-types-pattern-matching.md)、コンパイラ設定は [TypeScript設定ガイド](./typescript-configuration.md) にあります。
 
-## ネストした型オブジェクトの回避 - 判別共用体の使用
+## 規則と代替手段
 
-### 問題のあるパターン
+| 禁止 | 代わりに使うもの | 機械的な検査 |
+|------|------------------|--------------|
+| `any` 型 | `unknown` で受けて Zod で検証する。型は生成された API 型と DB スキーマから得る | Biome `noExplicitAny`（error） |
+| 型アサーション（`as`、非 null アサーション `!`） | Zod の検証結果、`satisfies`、ts-pattern、`=== undefined` などの比較 | `!` のみ Biome `noNonNullAssertion`（warn）。`as` はレビューで確認 |
+| 型ガード（`value is T` を返す関数） | 判別共用体の `type` の比較、ts-pattern、Zod | なし。レビューで確認 |
+| 例外を投げる（`throw`） | `Result` 型を返す | なし。レビューで確認 |
+
+`typeof` や `instanceof`、`=== null` といった言語組み込みの絞り込みは型ガードの禁止に含まれません。禁じているのは、検査の正しさをコンパイラが確かめられない自作の型述語です。
+
+## 適用範囲
+
+規則は**アプリケーションコード**に適用します。サーバーとして動くコードのことで、次の場所です。
+
+- `backend/packages/{api,config,domain,infrastructure,utility}/src`
+- `backend/apps/server/src`
+
+次のものはアプリケーションコードではなく、例外を投げたり `try` / `catch` を使ったり `console` に出力したりしてかまいません。スクリプトは失敗したら異常終了すればよく、テストは例外で失敗を知らせるからです。
+
+- コマンドラインから実行するスクリプト: `backend/packages/database/src/scripts`、`backend/packages/database/src/seeds`、`backend/packages/generated/scripts/generate-types.ts`、リポジトリ直下の `scripts/` と `specs/scripts`
+- テスト（`__tests__` ディレクトリと `*.test.ts`）
+
+生成されたファイル（`backend/packages/generated/src`、`backend/packages/database/src/schema.ts`、`backend/packages/database/src/relations.ts`）は手で編集しないので、規則の対象外です。
+
+フロントエンド（`frontend/`）には、この規則を満たしていない箇所があります（型述語は `frontend/packages/utils/src/typeUtil/typeUtil.ts`、`throw` と `as` は `frontend/packages/io/src/libs/fetcher/fetcher.ts` など）。これらは手本にせず、新しく書くコードは規則に従います。なお、フロントエンドの `Result` は neverthrow のもので、バックエンドの `Result` とは別の型です。
+
+## 例外を投げない
+
+失敗は `Result<T, E>` の値として返します。ユースケース、読み取りマッパー、リポジトリ、設定の読み込み（`parseAppConfig`）、サーバーの起動（`startServer`）は、どれも `Result` を返します。型と関数の一覧は [Sum型とパターンマッチング](./sum-types-pattern-matching.md) を見てください。
+
+アプリケーションコードに `throw` はありません。外から来る例外は次の3か所で値に変えています。
+
+| 例外の出どころ | 変換する場所 | 変換後 |
+|----------------|--------------|--------|
+| ライブラリの Promise の reject（Drizzle、postgres.js） | `Result.fromPromise`（`backend/packages/utility/src/result/result.ts`）。アプリケーションコードで唯一の `try` / `catch` | `Result<T, Error>` |
+| Express とそのボディパーサーが渡すエラー、ハンドラー内の予期しない例外 | `errorHandler` と `toHttpError`（`backend/packages/api/src/middleware/errors.ts`） | `HttpError` → 問題詳細のレスポンス |
+| どこにも捕捉されなかった例外と reject | `uncaughtException` / `unhandledRejection` のハンドラー（`backend/apps/server/src/index.ts`） | ログに書いてプロセスを終了 |
+
+ハンドラーは `try` / `catch` を書きません。Express 5 は `async` ハンドラーの reject をエラーハンドラーへ渡すので、`errorHandler` がまとめて処理します。プロセスを終了させる `process.exit` を呼ぶのも `backend/apps/server/src/index.ts` だけです。
+
+## 境界で検証する
+
+外から入ってくる値は `unknown` として受け取り、Zod スキーマで検証して初めて型が付きます。検証の入口は `parseWith` です。
 
 ```typescript
-// ❌ ネストしたオブジェクトでの型定義
-interface Task {
-  id: string;
-  title: string;
-  status: TaskStatus;
-  metadata: TaskMetadata; // ネストしたオブジェクト
-}
-
-type TaskMetadata = 
-  | { type: 'simple'; priority: number }
-  | { type: 'scheduled'; dueDate: Date; reminder?: Date }
-  | { type: 'recurring'; interval: 'daily' | 'weekly' | 'monthly' }
-
-// 使用時に二段階のプロパティアクセスが必要
-if (task.metadata.type === 'scheduled') {
-  console.log(task.metadata.dueDate); // ネストしたアクセス
-}
+// backend/packages/domain/src/shared/validation.ts
+export const parseWith = <T>(
+  schema: z.ZodType<T>,
+  input: unknown,
+  message: string,
+): Result<T, DomainError> =>
+  match(schema.safeParse(input))
+    .with({ success: true }, ({ data }) => Result.success(data))
+    .with({ success: false }, ({ error }) =>
+      Result.error(
+        DomainErrors.validation(
+          message,
+          error.issues.flatMap(toValidationIssues),
+        ),
+      ),
+    )
+    .exhaustive()
 ```
 
-### 推奨パターン
+境界ごとの検証箇所は次のとおりです。
+
+| 境界 | 受け取る型 | 検証する場所 |
+|------|------------|--------------|
+| リクエストボディ | ハンドラーの型引数で `unknown` | ユースケースが `parseWith(salonCreateRequestSchema, input, ...)` |
+| パスパラメータ | `string` | ユースケースが `parseSalonId(id)` |
+| クエリ文字列 | `unknown` | `decodeSalonSearchQuery`（`backend/packages/api/src/routes/salon/_shared/query.ts`）が文字列を数値・真偽値・配列に直し、ユースケースが `salonSearchRequestSchema` で検証 |
+| 環境変数 | `Record<string, string \| undefined>` | `parseAppConfig`（`backend/packages/config/src/app-config.ts`） |
+| DB から読んだ値のうち DB が形を保証しないもの（`jsonb`、文字列で返る `numeric` と `timestamptz`） | Drizzle の推論型 | 読み取りマッパーの `convertedColumnsSchema`（`backend/packages/domain/src/mappers/read/salon.mapper.ts`） |
+| ライブラリが渡すエラー | `unknown` | ts-pattern の `P` パターン（[Sum型とパターンマッチング](./sum-types-pattern-matching.md)） |
+
+検証を通った値だけが型を持つので、`req.body as ApiSalonCreateRequest` のようなアサーションは必要になりません。
 
 ```typescript
-// ✅ フラットな判別共用体
-type BaseTask = {
-  id: string;
-  title: string;
-  status: TaskStatus;
-};
-
-type Task = BaseTask & (
-  | { type: 'simple'; priority: number }
-  | { type: 'scheduled'; dueDate: Date; reminder?: Date }
-  | { type: 'recurring'; interval: 'daily' | 'weekly' | 'monthly' }
-);
-
-// 直接的なプロパティアクセスと自然な型の絞り込み
-if (task.type === 'scheduled') {
-  console.log(task.dueDate); // 直接アクセス、TypeScriptがdueDateの存在を認識
-}
-```
-
-## 入力型は処理内容と一致させる
-
-### 問題のあるパターン
-
-```typescript
-// ❌ すべてのタスクを受け取るが、特定のタイプのみ処理
-function updateScheduledTasks(
-  tasks: ReadonlyArray<Task>,
-  newDate: Date
-): ReadonlyArray<Task> {
-  return tasks.map(task => {
-    // 実行時の型チェックが必要
-    if (task.type === 'scheduled') {
-      return { ...task, dueDate: newDate };
-    }
-    return task; // ほとんどのタスクはそのまま返される
-  });
-}
-```
-
-### 推奨パターン
-
-```typescript
-// ✅ 処理対象の型のみを受け取る
-type ScheduledTask = Extract<Task, { type: 'scheduled' }>;
-
-function updateScheduledTasks(
-  tasks: ReadonlyArray<ScheduledTask>,
-  newDate: Date
-): ReadonlyArray<ScheduledTask> {
-  return tasks.map(task => ({ ...task, dueDate: newDate }));
-}
-
-// 呼び出し側で型を絞り込む
-const scheduledTasks = tasks.filter(
-  (task): task is ScheduledTask => task.type === 'scheduled'
-);
-const updatedTasks = updateScheduledTasks(scheduledTasks, newDate);
-```
-
-## 配列アクセスパターン
-
-```typescript
-// ❌ 長さチェック後のアクセス
-if (array.length > 0) {
-  const first = array[0]; // TypeScriptは配列が空でないことを推論できない
-}
-
-// ✅ 直接アクセスしてundefinedチェック
-const first = array[0];
-if (first !== undefined) {
-  // firstの型情報が保持される
-}
-```
-
-## 論理演算子の使い分け - || vs ??
-
-### 基本原則
-
-- `||`（論理和演算子）: **真偽値の論理演算のみに使用**
-- `??`（null 合体演算子）: **デフォルト値/フォールバック値の設定に使用**
-
-### 問題のあるパターン
-
-```typescript
-// ❌ フォールバック値に || を使用
-const port = process.env.PORT || 3000; // 0や空文字列が falsy として扱われる
-const name = user.name || 'Anonymous'; // 空文字列が意図的に設定されていても 'Anonymous' になる
-const count = options.count || 10; // count が 0 の場合、意図せず 10 になる
-```
-
-### 推奨パターン
-
-```typescript
-// ✅ フォールバック値には ?? を使用
-const port = process.env.PORT ?? 3000; // undefined/null のみフォールバック
-const name = user.name ?? 'Anonymous'; // 空文字列は許容される
-const count = options.count ?? 10; // 0 は有効な値として扱われる
-
-// ✅ 真偽値の論理演算には || を使用（ドモルガンの法則など）
-const isInvalid = !isActive || !isEnabled; // 純粋な boolean 演算
-const shouldProcess = hasPermission || isAdmin; // boolean の結合
-const canAccess = (isPublic || isOwner) && !isBlocked; // 複雑な boolean 論理
-```
-
-### 具体的な使用例
-
-```typescript
-// ✅ 環境変数や設定値の読み込み
-const apiUrl = process.env.API_URL ?? 'http://localhost:3000';
-const timeout = config.timeout ?? 5000;
-const retryCount = options.retries ?? 3;
-
-// ✅ オプショナルな値の処理
-function greet(name?: string) {
-  const displayName = name ?? 'Guest';
-  return `Hello, ${displayName}!`;
-}
-
-// ✅ 配列やオブジェクトのデフォルト値
-const items = response.data ?? [];
-const settings = userPreferences ?? {};
-
-// ✅ boolean の論理演算
-const hasAccess = user.isActive && (user.isAdmin || user.hasPermission);
-const isDisabled = !isEnabled || isLoading || hasErrors;
-```
-
-## 厳密なFalsy判定 - !! や ! の代わりに明示的な比較
-
-### 基本原則
-
-- `!!value` や `!value` による暗黙的なfalsyチェックは禁止
-- 明示的な比較演算子を使用して、意図を明確にする
-
-### 問題のあるパターン
-
-```typescript
-// ❌ !! による真偽値変換
-const hasValue = !!user.name;
-const isValid = !!response.data;
-const exists = !!array.length;
-
-// ❌ ! による否定チェック
-if (!user.email) {
-  // null, undefined, 空文字列すべてをfalseとして扱う
-}
-
-if (!count) {
-  // 0, null, undefined すべてをfalseとして扱う
-}
-```
-
-### 推奨パターン
-
-```typescript
-// ✅ null/undefined の明示的チェック
-const hasValue = user.name != null; // null と undefined をチェック
-const isValid = response.data !== null && response.data !== undefined;
-const exists = array.length > 0;
-
-// ✅ 空文字列の明示的チェック
-if (user.email === '') {
-  // 空文字列のみをチェック
-}
-
-if (user.email == null || user.email === '') {
-  // null, undefined, 空文字列をチェック
-}
-
-// ✅ 数値の明示的チェック
-if (count === 0) {
-  // 0 のみをチェック
-}
-
-if (count == null) {
-  // null と undefined をチェック
-}
-
-// ✅ NaN の明示的チェック
-if (Number.isNaN(value)) {
-  // NaN のみをチェック
-}
-
-// ✅ 配列の存在チェック
-if (items != null && items.length > 0) {
-  // 配列が存在し、要素があることをチェック
-}
-
-// ✅ オブジェクトの存在チェック
-if (options != null && Object.keys(options).length > 0) {
-  // オブジェクトが存在し、プロパティがあることをチェック
-}
-```
-
-### 具体的な使用例
-
-```typescript
-// ✅ ユーザー入力の検証
-function validateInput(input?: string): boolean {
-  // 明示的に undefined と空文字列をチェック
-  if (input == null) {
-    return false;
+// backend/packages/domain/src/business-logic/salon/create-salon.usecase.ts
+async execute(
+  input: unknown,
+): Promise<Result<ApiSalonResponse, DomainError>> {
+  const request = parseWith(salonCreateRequestSchema, input, 'Invalid salon')
+  if (request.type === 'error') {
+    return request
   }
-  if (input === '') {
-    return false;
-  }
-  return true;
-}
-
-// ✅ API レスポンスの処理
-function processResponse(data: unknown): void {
-  // 明示的な型チェック
-  if (data == null) {
-    throw new Error('No data received');
-  }
-  if (typeof data !== 'object') {
-    throw new Error('Invalid data format');
-  }
-  // データ処理...
-}
-
-// ✅ 配列要素の存在チェック
-function getFirstItem<T>(items?: T[]): T | undefined {
-  if (items == null || items.length === 0) {
-    return undefined;
-  }
-  return items[0];
-}
-
-// ✅ 真偽値の明示的な判定
-function isActive(status?: boolean): boolean {
-  // undefined と false を区別
-  if (status === undefined) {
-    return false; // デフォルト値
-  }
-  return status === true; // 明示的な true チェック
-}
+  // ここから request.data は ApiSalonCreateRequest
 ```
 
-### チェックの使い分け
+## `satisfies` でスキーマと API 型を照合する
 
-| 比較 | 用途 |
-|------|------|
-| `value == null` | null と undefined の両方をチェック |
-| `value === null` | null のみをチェック |
-| `value === undefined` | undefined のみをチェック |
-| `value === ''` | 空文字列のみをチェック |
-| `value === 0` | 数値の 0 のみをチェック |
-| `Number.isNaN(value)` | NaN のみをチェック |
-| `Array.isArray(value) && value.length > 0` | 配列で要素があることをチェック |
-
-### Boolean メソッドの戻り値に対する否定
-
-Boolean を返すメソッドの否定には `!` を使用します（`=== false` は不要）：
+Zod スキーマは手で書きますが、生成された API 型と食い違わないことを `satisfies` で確かめます。
 
 ```typescript
-// ❌ 不必要な === false
-if (allowedRoles.includes(role) === false) { }
-if (str.startsWith('http') === false) { }
-if (array.every(predicate) === false) { }
-
-// ✅ Boolean メソッドには ! を使用
-if (!allowedRoles.includes(role)) { }
-if (!str.startsWith('http')) { }
-if (!array.every(predicate)) { }
+// backend/packages/domain/src/schemas/salon.schema.ts（抜粋）
+export const salonCreateRequestSchema = z.strictObject({
+  name: nonBlankText.max(255),
+  nameKana: nonBlankText.max(255).nullable(),
+  // ...
+  openingHours: openingHoursListSchema,
+}) satisfies z.ZodType<ApiSalonCreateRequest>
 ```
 
-#### 重要な区別
+`satisfies` は、スキーマが出力する型を `ApiSalonCreateRequest` として使えることをコンパイル時に検査します。TypeSpec を変更して API 型にプロパティが増えたり型が変わったりすると、スキーマがコンパイルエラーになります。
 
-1. **Boolean メソッドの否定**: `!` を使用（正しい）
-   - `!array.includes(item)`
-   - `!str.startsWith(prefix)`
-   - `!obj.hasOwnProperty(key)`
+型アサーションや型注釈と違い、`satisfies` は式の型を変えません。スキーマは `ZodObject` のままなので、更新用のスキーマを `salonCreateRequestSchema.exactPartial()` で派生できます。
 
-2. **Falsy チェック**: 明示的な比較を使用（`!` は避ける）
-   - `value == null` （null/undefined チェック）
-   - `value === ''` （空文字列チェック）
-   - `value === 0` （ゼロチェック）
+## ブランド型の ID
 
-3. **Boolean 変数の否定**: `!` を使用（正しい）
-   - `!isEnabled`
-   - `!hasPermission`
-   - `!isValid`
+エンティティの ID は、検証済みであることを型で区別します。
 
-## 必須のBiomeルール
+```typescript
+// backend/packages/domain/src/models/salon.ts
+export const salonIdSchema = z.uuid().brand<'SalonId'>()
+export type SalonId = z.infer<typeof salonIdSchema>
 
-```json
-{
-  "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
-  "linter": {
-    "enabled": true,
-    "rules": {
-      "correctness": {
-        "noUnusedImports": "error",
-        "noUnusedVariables": "error",
-        "useExhaustiveDependencies": "error"
-      },
-      "recommended": true,
-      "style": {
-        "noVar": "error",
-        "useAsConstAssertion": "error",
-        "useConst": "error"
-      },
-      "suspicious": {
-        "noExplicitAny": "error",
-        "noImplicitAnyLet": "error"
-      }
-    }
-  }
+const salonIdParameterSchema = z.object({ id: salonIdSchema })
+
+export const parseSalonId = (id: unknown): Result<SalonId, DomainError> =>
+  Result.map(
+    parseWith(salonIdParameterSchema, { id }, 'Invalid salon ID'),
+    (parameters) => parameters.id,
+  )
+```
+
+`SalonId` を得る方法は、スキーマで検証することだけです。リポジトリのメソッドは `id: SalonId` を受け取るので、検証していない `string` を渡すとコンパイルエラーになります。一覧のカーソルも `salonIdSchema` で検証しています。
+
+## 型は宣言せず、推論と生成で得る
+
+エンティティやリクエストの型を手で書きません。DB の型は Drizzle スキーマから、API の型は TypeSpec から生成された型から得ます。
+
+```typescript
+// backend/packages/domain/src/models/salon.ts（抜粋）
+export type ApiSalonResponse = components['schemas']['Models.SalonResponse']
+export type ApiSalonCreateRequest =
+  components['schemas']['Models.SalonCreateRequest']
+
+export type DbSalon = DeepRequired<typeof salons.$inferSelect>
+export type DbNewSalon = DeepRequired<
+  Omit<typeof salons.$inferInsert, SalonManagedColumn>
+>
+```
+
+2つの型の間の変換はマッパーが行い、どちらの型にも合っていることをコンパイラが検査します。詳しくは [DB駆動ドメインモデル](./db-driven-domain-model.md) と [型生成システム](./type-generation-system.md) を見てください。
+
+## 細かな規約
+
+### 配列の要素は取り出してから調べる
+
+`noUncheckedIndexedAccess` により、添字や分割代入で取り出した要素の型には `undefined` が付きます。長さを先に調べるのではなく、取り出した値を `undefined` と比較します。
+
+```typescript
+// backend/packages/infrastructure/src/repositories/salon.repository.impl.ts
+const [inserted] = await tx.insert(salons).values(salon).returning()
+if (inserted === undefined) {
+  return null
 }
 ```
 
-## TypeScript設定
+### 既定値には `??` を使う
 
-TypeScript設定の詳細については、[「TypeScript設定ガイド」](./typescript-configuration.md)を参照してください。
+`??` は `null` と `undefined` のときだけ既定値にします。`||` は `0` や空文字列も置き換えてしまうので、真偽値どうしの演算にだけ使います。
+
+```typescript
+// backend/packages/domain/src/business-logic/salon/list-salons.usecase.ts
+const limit = request.data.limit ?? DEFAULT_LIMIT
+
+// backend/packages/domain/src/schemas/salon.schema.ts
+const needsTimes = !isHoliday || openTime !== null || closeTime !== null
+```
+
+アプリケーションコードで既定値に `||` を使っているのは、DB スクリプト用の `getDatabaseUrl`（`backend/packages/config/src/env-loader.ts`）だけです。この関数は、空文字列の環境変数も未設定として扱います。
+
+### `null` と `undefined` は明示的に比較する
+
+真偽値でない値を `!value` や `!!value` で調べません。何と比較しているのかを書きます。
+
+```typescript
+// backend/packages/domain/src/business-logic/salon/get-salon.usecase.ts
+if (found.data === null) {
+
+// backend/packages/domain/src/mappers/write/salon.mapper.ts
+latitude: latitude === null ? null : toNumeric(latitude),
+```
+
+真偽値の否定（`!isHoliday`、`!deleted.data`）と、真偽値を返すメソッドの否定（`!fs.existsSync(filePath)`）には `!` を使います。
 
 ## まとめ
 
-良いTypeScript設計とは：
-1. 無効な状態を表現できない型
-2. 型アサーションなし（Biomeで強制）
-3. 型述語なし（TypeScriptの厳格設定で強制）
-4. 網羅的パターンマッチング（TypeScriptとts-patternで強制）
-5. 通常の制御フローで自然に絞り込まれる型
-6. 関数が実際に処理するものと一致する入力型
-7. より良い型の絞り込みのためにネストした型構造をフラット化
-
-目標は、実行時チェックではなく、コンパイラに正しさを保証させることです。
+- 外から来た値は `unknown` で受け、Zod で検証してから使う
+- 失敗は `Result` で返し、`type` の比較か ts-pattern で分岐する
+- 型は DB スキーマと生成された API 型から得て、`satisfies` で実装と照合する
+- ID はブランド型にして、検証していない文字列と区別する
+- `any` は Biome が検出する。`as`・型ガード・`throw` はツールが検出しないので、レビューで確認する

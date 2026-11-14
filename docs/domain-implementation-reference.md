@@ -1,1129 +1,755 @@
 # Domain Implementation Reference Guide
 
-This document provides a comprehensive reference for implementing domains in the Beauty Salon Reservation System, based on the proven Salon domain implementation patterns.
+The Salon domain is the only domain implemented in the backend, and it is the reference for every other one. This document walks through it in the order in which a new domain is built, from the API contract to the tests, and explains the decisions the code makes on the way.
+
+The excerpts are copied from the file named above each of them and shortened where marked `// ...`; the file is the authority. The rules behind the code (no `any`, no type assertions, no exceptions, API property names equal column names) are stated in [CLAUDE.md](../CLAUDE.md) and are not repeated here.
 
 ## Table of Contents
 
-1. [Architecture Overview](#architecture-overview)
-2. [API Route Implementation](#api-route-implementation)
-3. [Use Case Layer](#use-case-layer)
-4. [Mapper Pattern](#mapper-pattern)
-5. [Error Handling](#error-handling)
-6. [Testing Patterns](#testing-patterns)
-7. [Implementation Checklist](#implementation-checklist)
+- [Architecture Overview](#architecture-overview)
+- [1. API Contract](#1-api-contract)
+- [2. Generated Types](#2-generated-types)
+- [3. Database Schema](#3-database-schema)
+- [4. Models](#4-models)
+- [5. Validation Schemas](#5-validation-schemas)
+- [6. Mappers](#6-mappers)
+- [7. Repository Interface](#7-repository-interface)
+- [8. Repository Implementation](#8-repository-implementation)
+- [9. Use Cases](#9-use-cases)
+- [10. Handlers and Router](#10-handlers-and-router)
+- [11. Wiring](#11-wiring)
+- [12. Tests](#12-tests)
+- [Error Handling](#error-handling)
+- [Implementation Checklist](#implementation-checklist)
 
 ## Architecture Overview
 
-### Layer Dependencies
+A request passes through three packages:
 
 ```
-API Routes (Express) → Use Cases → Mappers → Repository
-     ↓                      ↓          ↓          ↓
-Generated Types      Domain Models   DB Types   Database
+HTTP request
+  → handler      (api)             passes the raw input on
+  → use case     (domain)          validates, maps, decides
+  → repository   (infrastructure)  runs the queries, returns a Result
+  ← use case                       maps the rows to the API model
+  ← handler                        Result → response or problem details
 ```
 
-### Key Principles
+The salon routes import the domain package and the generated types, never the repository: `createApp` constructs the repository and hands it in. The domain package uses the Drizzle tables as types only and runs no query.
 
-1. **ALL validation in use cases** - Routes only handle DI and response formatting
-2. **Object-based dependency injection** - Use `SalonUseCaseDependencies` interface
-3. **Result pattern everywhere** - Never throw exceptions
-4. **Exhaustive pattern matching** - Use ts-pattern with `.exhaustive()`
-5. **DB-driven types** - Use `DeepRequired<typeof table.$inferSelect>` pattern
-6. **Modular handler structure** - One handler per operation
+What the Salon domain consists of:
 
-## API Route Implementation
+| Step | Layer | Package | Files |
+|------|-------|---------|-------|
+| 1 | API contract | `specs` | `models/salon.tsp`, `operations/salon-operations.tsp` |
+| 2 | Generated types | `backend/packages/generated` | `src/api-types.ts`, `src/schema.ts` |
+| 3 | Database schema | `backend/packages/database` | `sql/migrations/*.sql`, `src/schema.ts`, `src/scripts/api-consistency-rules.ts` |
+| 4 | Models | `backend/packages/domain` | `src/models/salon.ts` |
+| 5 | Validation | `backend/packages/domain` | `src/schemas/salon.schema.ts` |
+| 6 | Mappers | `backend/packages/domain` | `src/mappers/write/salon.mapper.ts`, `src/mappers/read/salon.mapper.ts` |
+| 7 | Repository interface | `backend/packages/domain` | `src/repositories/salon.repository.ts` |
+| 8 | Repository implementation | `backend/packages/infrastructure` | `src/repositories/salon.repository.impl.ts` |
+| 9 | Use cases | `backend/packages/domain` | `src/business-logic/salon/` |
+| 10 | Handlers and router | `backend/packages/api` | `src/routes/salon/` |
+| 11 | Wiring | `backend/packages/api` | `src/index.ts` |
+| 12 | Tests | domain and api | `src/__tests__/` |
 
-### Modular Route Structure
+Steps 1 to 3 belong together. The database is the source of truth for names and nullability, so the contract is written against the table, and `pnpm check:api-db` compares the two.
 
-Since the refactoring, routes follow a modular structure with single responsibility principle:
+Shared by every domain and already in place: `Result` (`backend/packages/utility/src/result/result.ts`), `DomainError` and `parseWith` (`backend/packages/domain/src/shared/`), `describeDatabaseError` (`backend/packages/infrastructure/src/database/failure.ts`) and the response helpers of the API package.
 
-```
-backend/packages/api/src/routes/
-└── [domain]/                      # Domain folder (e.g., salon)
-    ├── _shared/                   # Shared types and utilities
-    │   ├── types.ts               # Type definitions from generated code
-    │   ├── utils.ts               # Error handling, pagination utilities
-    │   └── index.ts               # Re-exports for convenience
-    ├── list-[domain].handler.ts   # GET /api/v1/[domain]
-    ├── create-[domain].handler.ts # POST /api/v1/[domain]
-    ├── get-[domain].handler.ts    # GET /api/v1/[domain]/:id
-    ├── update-[domain].handler.ts # PUT /api/v1/[domain]/:id
-    ├── delete-[domain].handler.ts # DELETE /api/v1/[domain]/:id
-    ├── search-[domain].handler.ts # GET /api/v1/[domain]/search
-    └── index.ts                    # Route aggregation and registration
-```
+## 1. API Contract
 
-### Type Extraction Pattern (_shared/types.ts)
+Files: `specs/models/salon.tsp` and `specs/operations/salon-operations.tsp`, both imported in `specs/main.tsp`. The ID scalar `SalonId` is in `specs/models/_shared/common.tsp`; the response wrappers and `ProblemDetails` are in `specs/models/_shared/common-api-patterns.tsp`.
 
-Always extract types from auto-generated operations for type safety:
+Salon has four models: `SalonResponse`, `SalonCreateRequest`, `SalonUpdateRequest` and `SalonSearchRequest`. The same nullable column appears in the first three like this (`specs/models/salon.tsp`):
 
-```typescript
-import type { components, operations } from '@beauty-salon-backend/generated'
-
-// ============================================================================
-// Operation Types - Maps to API endpoints
-// ============================================================================
-export type ListSalonsOperation = operations['SalonCrud_list']
-export type GetSalonOperation = operations['SalonCrud_get']
-export type DeleteSalonOperation = operations['SalonCrud_delete']
-export type CreateSalonOperation = operations['SalonCrud_create']
-export type UpdateSalonOperation = operations['SalonCrud_update']
-export type SearchSalonsOperation = operations['SalonCrud_search']
-
-// ============================================================================
-// Model Types - Core domain models
-// ============================================================================
-export type Salon = components['schemas']['Models.Salon']
-export type CreateSalonRequest = components['schemas']['Models.CreateSalonRequest']
-export type UpdateSalonRequest = components['schemas']['Models.UpdateSalonRequest']
-
-// ============================================================================
-// Response Types - API response structures
-// ============================================================================
-export type CursorPaginationResponse<T> = {
-  data: T[]
-  meta: components['schemas']['Models.PaginationMeta']
-  links: components['schemas']['Models.PaginationLinks']
+```typespec
+model SalonResponse {
+  // ...
+  @doc("名称のカナ表記。未設定の場合はnull")
+  nameKana: string | null;
+  // ...
 }
 
-export type GetSalonResponse = Extract<
-  GetSalonOperation['responses']['200']['content']['application/json'],
-  { data: unknown }
+model SalonCreateRequest {
+  // ...
+  @doc("名称のカナ表記。未設定の場合はnull")
+  @maxLength(255)
+  nameKana: string | null;
+  // ...
+}
+
+model SalonUpdateRequest {
+  // ...
+  @doc("名称のカナ表記。nullでクリア")
+  @maxLength(255)
+  nameKana?: string | null;
+  // ...
+}
+```
+
+The property is named after the column and allows `null` because the column does. Create requires the key; update makes it optional, and `null` in an update clears the column.
+
+The operations of the interface `SalonCrud`, under `@route("/api/v1/salons")`:
+
+| Operation | Route | Request | Success | Declared errors |
+|-----------|-------|---------|---------|-----------------|
+| `list` | `GET /api/v1/salons` | `SalonSearchRequest` as query parameters | 200, `CursorPaginationResponse<SalonResponse>` | 400 |
+| `create` | `POST /api/v1/salons` | `SalonCreateRequest` | 201 with `Location`, `ApiResponse<SalonResponse>` | 400, 409 |
+| `get` | `GET /api/v1/salons/{id}` | none | 200, `ApiResponse<SalonResponse>` | 400, 404 |
+| `update` | `PATCH /api/v1/salons/{id}` | `SalonUpdateRequest` | 200, `ApiResponse<SalonResponse>` | 400, 404, 409 |
+| `delete` | `DELETE /api/v1/salons/{id}` | none | 204 | 400, 404 |
+
+Two decisions to copy:
+
+- **Only what is implemented is specified.** Every operation in the file has a handler. Each declares its success response, from which the handler takes its response type (step 10), and the 400, 404 and 409 responses its use case can produce.
+- **Update is `PATCH`**, and filtering is part of `list`. There is no `PUT` and no separate search route.
+
+The naming and typing rules for TypeSpec are in [TypeSpec API Type Rules](./typespec-api-type-rules.md).
+
+## 2. Generated Types
+
+```bash
+pnpm generate
+```
+
+This compiles TypeSpec to `specs/tsp-output/@typespec/openapi3/generated/openapi.yaml`, then generates the frontend client (`frontend/packages/api-client/src/generated/`) and the backend types:
+
+- `backend/packages/generated/src/api-types.ts` exports `components` (the models, for example `components['schemas']['Models.SalonResponse']`) and `operations` (keyed `<Interface>_<operation>`, for example `operations['SalonCrud_list']`).
+- `backend/packages/generated/src/schema.ts` exports Zod schemas for the enums, for example `DayOfWeekTypeSchema`.
+
+Generated files are never edited. They are committed together with the TypeSpec change, and `pnpm check:generated` fails in CI when they are not what `pnpm generate` produces. See [Type Generation System](./type-generation-system.md).
+
+## 3. Database Schema
+
+The Salon domain is stored in `salons` and `opening_hours` (`backend/packages/database/src/schema.ts`, excerpt):
+
+```typescript
+export const salons = pgTable(
+  'salons',
+  {
+    id: uuid().defaultRandom().primaryKey().notNull(),
+    name: varchar({ length: 255 }).notNull(),
+    nameKana: varchar({ length: 255 }),
+    // ...
+    latitude: numeric({ precision: 10, scale: 8 }),
+    // ...
+    email: varchar({ length: 255 }).notNull(),
+    // ...
+    imageUrls: text().array().notNull(),
+    // ...
+    businessHours: jsonb(),
+    // ...
+    deletedAt: timestamp({ withTimezone: true, mode: 'string' }),
+    // ...
+  },
+  (table) => [
+    // ...
+    unique('salons_email_unique').on(table.email),
+  ],
+)
+```
+
+`schema.ts` is generated from the database and never edited. A table changes through a migration:
+
+1. Write `backend/packages/database/sql/migrations/<YYYYMMDDHHMM>_<description>.sql`. For an example, see `202611140900_salon_list_columns_not_null.sql` in that directory: it made the list columns of `salons` `text[] NOT NULL`, which is what allows the API model to declare them as `string[]` without `null`.
+2. `pnpm db:migrate`, then `pnpm db:introspect` (regenerates `schema.ts` and `relations.ts`), then `pnpm db:generate-sql` (regenerates `sql/setup.sql`).
+3. Commit the migration with the three regenerated files. `pnpm check:db-schema` guards them in CI.
+
+The commands are described in [Database Commands](../backend/packages/database/docs/database-commands.md).
+
+The table decides much of what the layers above look like:
+
+| In the table | Consequence |
+|--------------|-------------|
+| Column names are camelCase | They are the API property names; no mapper renames anything |
+| `id` has `defaultRandom()` | The database assigns the ID; a create request never contains one |
+| `numeric` columns (`latitude`, `longitude`, `rating`, `taxRate`) | The driver reads and writes them as strings; the mappers convert (step 6) |
+| `timestamp` with `mode: 'string'` | Timestamps arrive in PostgreSQL's text format; the read mapper converts them to ISO 8601 |
+| `jsonb` (`businessHours`) | The value is `unknown` to TypeScript; the read mapper checks it |
+| `unique('salons_email_unique')` | The source of the `alreadyExists` error (step 8) |
+| `deletedAt` | Delete is a soft delete; the repository hides deleted rows |
+| `opening_hours.salonId` references `salons.id` | The calendar is a child table, embedded in the API model as `openingHours` |
+
+### `pnpm check:api-db`
+
+The check compares API models with their tables: same names, same nullability, and the optionality that the kind of model calls for. Which model belongs to which table is listed in `backend/packages/database/src/scripts/api-consistency-rules.ts`:
+
+```typescript
+const salonRules: ModelRule[] = [
+  {
+    model: 'Models.SalonResponse',
+    table: 'salons',
+    kind: 'response',
+    embedded: ['openingHours'],
+    omittedColumns: ['cancellationPolicy', 'bookingPolicy', 'deletedAt'],
+  },
+  {
+    model: 'Models.SalonCreateRequest',
+    table: 'salons',
+    kind: 'create',
+    embedded: ['openingHours'],
+    omittedColumns: salonManagedColumns,
+  },
+  // ...
+]
+```
+
+- `embedded` names properties that are rows of a child table, not columns.
+- `omittedColumns` names the columns the model leaves out on purpose. Once it is given, every other column must be in the model, so leaving a column out is a decision and not an oversight.
+
+The domains that are specified but not implemented are listed in the same file under `specifiedOnlyRules`, without `omittedColumns`. Their TypeSpec models and their tables both exist and disagree; the known differences are recorded in `backend/packages/database/api-consistency-baseline.json` (GitHub issue #91). A new difference fails the check, and so does a baseline entry that no longer occurs.
+
+A domain is done when its models are listed with `omittedColumns` and have no entry in the baseline. After the differences are fixed in TypeSpec or with a migration, `pnpm check:api-db --update-baseline` records what still differs as the new baseline, which drops the resolved entries. It records every remaining difference, new ones included, so read the diff of the baseline file before committing it.
+
+## 4. Models
+
+`backend/packages/domain/src/models/salon.ts` holds the types of the domain and the schema of its ID. No shape is declared by hand: API types come from the generated package, database types from the Drizzle tables.
+
+```typescript
+export const salonIdSchema = z.uuid().brand<'SalonId'>()
+export type SalonId = z.infer<typeof salonIdSchema>
+
+// ...
+
+// API types, generated from TypeSpec
+export type ApiSalonResponse = components['schemas']['Models.SalonResponse']
+export type ApiSalonCreateRequest =
+  components['schemas']['Models.SalonCreateRequest']
+// ...
+export type ApiSalonSearchRequest = NonNullable<
+  operations['SalonCrud_list']['parameters']['query']
 >
 
-export type CreateSalonResponse = GetSalonResponse
-export type UpdateSalonResponse = GetSalonResponse
-export type ListSalonsResponse = CursorPaginationResponse<Salon>
-export type SearchSalonsResponse = CursorPaginationResponse<Salon>
+// Database types, inferred from the Drizzle schema
+export type DbSalon = DeepRequired<typeof salons.$inferSelect>
 
-// ============================================================================
-// Query Parameter Types
-// ============================================================================
-export type ListSalonsQuery = NonNullable<ListSalonsOperation['parameters']['query']>
-export type SearchSalonsQuery = NonNullable<SearchSalonsOperation['parameters']['query']>
+type SalonManagedColumn =
+  | 'id'
+  | 'rating'
+  | 'reviewCount'
+  | 'cancellationPolicy'
+  | 'bookingPolicy'
+  | 'deletedAt'
+  | 'createdAt'
+  | 'updatedAt'
 
-// ============================================================================
-// Error Types
-// ============================================================================
-export type ErrorResponse = components['schemas']['Models.ProblemDetails']
+export type DbNewSalon = DeepRequired<
+  Omit<typeof salons.$inferInsert, SalonManagedColumn>
+>
+export type DbSalonChanges = Partial<DbNewSalon>
+
+// ...
+
+/** What an update does to the calendar of a salon. */
+export type OpeningHoursChange =
+  | { type: 'keep' }
+  | { type: 'replace'; openingHours: DbNewOpeningHours[] }
 ```
 
-### Shared Utilities (_shared/utils.ts)
+- **`SalonId` is a branded UUID.** A plain string is not accepted where a `SalonId` is expected; the only way to get one is to parse a value with `salonIdSchema`. `parseSalonId`, in the same file, does that for a path parameter. It validates `{ id }` instead of the bare value so that a failure is reported under the field `id`.
+- **`SalonManagedColumn`** lists the columns a request never writes: the database assigns them, other features maintain them, or the API does not expose them yet. The same list is the `omittedColumns` of the create and update rules in step 3.
+- **`DeepRequired` on `$inferInsert`.** Drizzle makes a column optional for an insert when it is nullable or has a default. `DeepRequired` makes every column required again, with `null` still allowed where the column allows it. A write therefore states every value, and the defaults of `timezone`, `currency`, `taxRate` and `isActive` are never relied on. This is "Create: every property required" at the type level.
+- **`DbNewOpeningHours` has no `salonId`.** The repository attaches it inside the transaction, once the salon has an ID.
+- **`OpeningHoursChange` is a sum type** rather than an optional list: "leave the calendar alone" and "replace it with nothing" are different, and the repository matches on the two cases exhaustively.
 
-Common utilities used across all handlers:
+`Omit` and `DeepRequired` come from `@beauty-salon-backend/utility`; this `Omit` only accepts keys the type has.
 
-```typescript
-import { toProblemDetails } from '@beauty-salon-backend/domain'
-import type { DomainError } from '@beauty-salon-backend/domain'
-import type { Response } from 'express'
-import type { ErrorResponse } from './types'
+## 5. Validation Schemas
 
-/**
- * Standard error handler for domain errors
- * Converts domain errors to Problem Details format (RFC 7807)
- */
-export const handleDomainError = (
-  res: Response<ErrorResponse>,
-  error: DomainError
-): Response<ErrorResponse> => {
-  const problemDetails = toProblemDetails(error)
-  return res.status(problemDetails.status).json(problemDetails)
-}
-
-/**
- * Convert cursor to page number for backward compatibility
- */
-export const cursorToPage = (
-  cursor: string | undefined,
-  limit: number
-): number => {
-  if (!cursor) return 1
-
-  if (cursor.startsWith('offset:')) {
-    const offset = Number(cursor.replace('offset:', ''))
-    return Math.floor(offset / limit) + 1
-  }
-
-  return 1
-}
-```
-
-### Individual Handler Pattern
-
-#### Create Handler Example (create-salon.handler.ts)
+`backend/packages/domain/src/schemas/salon.schema.ts` has one Zod schema per request:
 
 ```typescript
-import type { RequestHandler } from 'express'
-import type { Database } from '@beauty-salon-backend/infrastructure'
-import { SalonRepository } from '@beauty-salon-backend/infrastructure'
-import { CreateSalonUseCase } from '@beauty-salon-backend/domain'
-import { match } from 'ts-pattern'
-import { handleDomainError } from './_shared/utils'
-import type {
-  CreateSalonRequest,
-  CreateSalonResponse,
-  ErrorResponse
-} from './_shared/types'
+export const salonCreateRequestSchema = z.strictObject({
+  name: nonBlankText.max(255),
+  nameKana: nonBlankText.max(255).nullable(),
+  // ...
+  email: z.email().max(255),
+  // ...
+  // The column keeps two decimal places.
+  taxRate: z.number().min(0).max(100).multipleOf(0.01),
+  isActive: z.boolean(),
+  openingHours: openingHoursListSchema,
+}) satisfies z.ZodType<ApiSalonCreateRequest>
 
-export const createSalonHandler: RequestHandler<
-  Record<string, never>,  // Path params
-  CreateSalonResponse | ErrorResponse,  // Response
-  CreateSalonRequest  // Request body
-> = async (req, res, next) => {
-  try {
-    // 1. Get database from app locals (dependency injection)
-    const db = req.app.locals.database as Database
-
-    // 2. Instantiate repository
-    const salonRepository = new SalonRepository(db)
-
-    // 3. Create use case with object-based dependencies
-    const useCase = new CreateSalonUseCase({ salonRepository })
-
-    // 4. Execute use case (validation happens inside)
-    const result = await useCase.execute(req.body)
-
-    // 5. Pattern match on result
-    match(result)
-      .with({ type: 'success' }, ({ data }) => {
-        const response: CreateSalonResponse = {
-          data,
-          meta: {
-            correlationId: `req-${Date.now()}`,
-            timestamp: new Date().toISOString(),
-            version: '1.0.0'
-          },
-          links: {
-            self: `/api/v1/salons/${data.id}`,
-            list: '/api/v1/salons'
-          }
-        }
-        res.status(201).json(response)
+export const salonUpdateRequestSchema = salonCreateRequestSchema
+  .exactPartial()
+  .check((context) => {
+    // An unknown property is reported as such, not as an empty request.
+    if (
+      context.issues.length === 0 &&
+      Object.keys(context.value).length === 0
+    ) {
+      context.issues.push({
+        code: 'custom',
+        path: [],
+        message: 'At least one property must be specified',
+        input: context.value,
       })
-      .with({ type: 'error' }, ({ error }) =>
-        handleDomainError(res as Response<ErrorResponse>, error)
-      )
-      .exhaustive()
-  } catch (error) {
-    next(error)
-  }
-}
+    }
+  }) satisfies z.ZodType<ApiSalonUpdateRequest>
 ```
 
-### Key Implementation Points:
+- **`satisfies z.ZodType<...>`** ties the schema to the generated type: what the schema produces must be assignable to the API type. A property that the TypeSpec model adds or retypes is a compile error until the schema follows.
+- **`z.strictObject`** rejects a property the model does not have. A client that sends `rating` gets a validation error naming `rating`; the property is not silently dropped.
+- **Three sources of rules.** The shape comes from the API type, the length limits from the columns (`varchar(255)` → `.max(255)`), and the rest are business rules: text must not be blank, a calendar entry must fall on the day of the week it names, closing must be later than opening.
+- **Cross-field rules use `.check()`** and push an issue with the `path` of the offending property, so the client learns which field to fix.
+- **The update schema is derived** from the create schema with `exactPartial()`: every key may be absent, and a key that is present is checked by the same rule as on create. Its one rule of its own rejects an empty request.
+- **`salonSearchRequestSchema`** validates the list parameters, including `cursor: salonIdSchema.exactOptional()`.
+- **`storedBusinessHoursSchema`** is the shape of the `businessHours` JSON column without the business rules. The request schema extends it with the rules; the read mapper uses it as it is, because stored data is checked for shape only.
 
-1. **NO validation in handler** - Request is passed directly to use case
-2. **Dependency injection** - Database from `req.app.locals.database`
-3. **Object-based dependencies** - `{ salonRepository }` pattern
-4. **Type-safe handlers** - RequestHandler with generic parameters
-5. **Pattern matching** - Exhaustive handling of Result types
+Schemas are run through `parseWith(schema, input, message)` in `backend/packages/domain/src/shared/validation.ts`. It takes `unknown`, returns `Result<T, DomainError>`, and reports every broken rule at once, each as `{ field, rule, message }`.
 
-Each handler is in its own file with focused responsibility. Example `create-salon.handler.ts`:
+## 6. Mappers
 
-```typescript
-import { CreateSalonUseCase } from '@beauty-salon-backend/domain'
-import { SalonRepository } from '@beauty-salon-backend/infrastructure'
-import type { Database } from '@beauty-salon-backend/infrastructure'
-import type { RequestHandler, Response } from 'express'
-import { match } from 'ts-pattern'
-import type {
-  CreateSalonRequest,
-  CreateSalonResponse,
-  ErrorResponse,
-} from './_shared'
-import { handleDomainError } from './_shared'
+Property names are the column names, so a mapper never renames. It converts the representation of three kinds of column: `numeric`, `timestamp` and `jsonb` (step 3).
 
-/**
- * POST /api/v1/salons - Create a new salon
- *
- * Features:
- * - Validates all required fields in use case
- * - Creates salon with opening hours
- * - Returns created salon with metadata and links
- */
-export const createSalonHandler: RequestHandler<
-  Record<string, never>,                    // Path params (empty for POST)
-  CreateSalonResponse | ErrorResponse,      // Response body types
-  CreateSalonRequest                        // Request body type
-> = async (req, res, next) => {
-  try {
-    // Get dependencies and execute use case
-    const db = req.app.locals.database as Database
-    const salonRepository = new SalonRepository(db)
-
-    // Use object-based dependency injection
-    const useCase = new CreateSalonUseCase({ salonRepository })
-
-    const result = await useCase.execute(req.body)
-
-    // Handle result with pattern matching
-    match(result)
-      .with({ type: 'success' }, ({ data }) => {
-        const response: CreateSalonResponse = {
-          data,
-          meta: {
-            correlationId: `req-${Date.now()}`,
-            timestamp: new Date().toISOString(),
-            version: '1.0.0',
-          },
-          links: {
-            self: `/salons/${data.id}`,
-            list: '/salons',
-          },
-        }
-        res.status(201).json(response)
-      })
-      .with({ type: 'error' }, ({ error }) =>
-        handleDomainError(res as Response<ErrorResponse>, error)
-      )
-      .exhaustive()
-  } catch (error) {
-    next(error)
-  }
-}
-```
-
-### Route Aggregation (index.ts)
-
-The index.ts file aggregates all handlers and registers routes:
+API request → rows (`backend/packages/domain/src/mappers/write/salon.mapper.ts`):
 
 ```typescript
-import { Router } from 'express'
+const toNumeric = (value: number): string => String(value)
 
-// Import all handlers
-import { createSalonHandler } from './create-salon.handler'
-import { deleteSalonHandler } from './delete-salon.handler'
-import { getSalonHandler } from './get-salon.handler'
-import { listSalonsHandler } from './list-salons.handler'
-import { searchSalonsHandler } from './search-salons.handler'
-import { updateSalonHandler } from './update-salon.handler'
+// ...
 
-/**
- * Salon Routes Configuration
- *
- * Routes:
- * - GET    /api/v1/salons          → listSalonsHandler
- * - POST   /api/v1/salons          → createSalonHandler
- * - GET    /api/v1/salons/search   → searchSalonsHandler
- * - GET    /api/v1/salons/:id      → getSalonHandler
- * - PUT    /api/v1/salons/:id      → updateSalonHandler
- * - DELETE /api/v1/salons/:id      → deleteSalonHandler
- */
-const router = Router()
-
-// List and Create operations
-router.get('/salons', listSalonsHandler)
-router.post('/salons', createSalonHandler)
-
-// Search operation (before :id to avoid route conflicts)
-router.get('/salons/search', searchSalonsHandler)
-
-// Single resource operations
-router.get('/salons/:id', getSalonHandler)
-router.put('/salons/:id', updateSalonHandler)
-router.delete('/salons/:id', deleteSalonHandler)
-
-export default router
-```
-
-### Pagination Handler Example
-
-Example from `list-salons.handler.ts` showing pagination handling:
-
-```typescript
-import { ListSalonsUseCase } from '@beauty-salon-backend/domain'
-import { SalonRepository } from '@beauty-salon-backend/infrastructure'
-import type { Database } from '@beauty-salon-backend/infrastructure'
-import type { RequestHandler, Response } from 'express'
-import { match } from 'ts-pattern'
-import type { ErrorResponse, ListSalonsQuery, ListSalonsResponse } from './_shared'
-import { cursorToPage, handleDomainError } from './_shared'
-
-/**
- * GET /api/v1/salons - List all salons with pagination
- *
- * Features:
- * - Cursor-based pagination
- * - Configurable page size via limit parameter
- * - Returns summary data for list views
- */
-export const listSalonsHandler: RequestHandler<
-  Record<string, never>,
-  ListSalonsResponse | ErrorResponse,
-  unknown,
-  Partial<ListSalonsQuery>
-> = async (req, res, next) => {
-  try {
-    // Extract pagination from query params
-    const limit = Number(req.query.limit) || 20
-    const cursor = req.query.cursor
-
-    // Convert cursor to page using utility
-    const page = cursorToPage(cursor, limit)
-
-    // Get dependencies and execute use case
-    const db = req.app.locals.database as Database
-    const salonRepository = new SalonRepository(db)
-
-    // Use object-based dependency injection
-    const useCase = new ListSalonsUseCase({ salonRepository })
-
-    const result = await useCase.execute({ page, limit })
-
-    // Handle result with pattern matching
-    match(result)
-      .with({ type: 'success' }, ({ data }) => {
-        const response: ListSalonsResponse = {
-          data: data.data,
-          meta: data.meta,
-          links: data.links,
-        }
-        res.json(response)
-      })
-      .with({ type: 'error' }, ({ error }) =>
-        handleDomainError(res as Response<ErrorResponse>, error)
-      )
-      .exhaustive()
-  } catch (error) {
-    next(error)
-  }
-}
-```
-
-## Use Case Layer
-
-### Dependency Injection Pattern
-
-Use cases use object-based dependency injection for better maintainability:
-
-```typescript
-// Dependencies interface for the domain
-export interface SalonUseCaseDependencies {
-  salonRepository: ISalonRepository
-  // Future dependencies can be added here:
-  // userRepository?: IUserRepository
-  // bookingRepository?: IBookingRepository
-  // notificationService?: INotificationService
-  // emailService?: IEmailService
-}
-```
-
-### Base Use Case Pattern
-
-Create a base use case with shared validation logic and dependency management:
-
-```typescript
-export abstract class BaseSalonUseCase {
-  protected readonly salonRepository: SalonUseCaseDependencies['salonRepository']
-
-  constructor(protected readonly dependencies: SalonUseCaseDependencies) {
-    this.salonRepository = dependencies.salonRepository
-  }
-
-  // Shared validation methods
-  protected isValidUuid(value: string): boolean {
-    return validateUuid(value)
-  }
-
-  protected isValidEmail(email: string): boolean {
-    return validateEmail(email)
-  }
-
-  protected isValidPhoneNumber(phone: string): boolean {
-    return validatePhoneNumber(phone)
-  }
-
-  // Field validators with error collection
-  protected validateName(name: string | undefined): string[] {
-    const errors: string[] = []
-
-    if (!name || name.trim().length === 0) {
-      errors.push('Name is required')
-    } else if (name.length > 255) {
-      errors.push('Name must be less than 255 characters')
-    }
-
-    return errors
-  }
-
-  // Handle optional fields properly
-  protected validateDescription(
-    _description: string | undefined | null
-  ): string[] {
-    const errors: string[] = []
-    // Description is optional/nullable - no validation required
-    return errors
-  }
-
-  // Separate validation for create vs update
-  protected validateUpdateAddress(address: ApiAddress | undefined): string[] {
-    const errors: string[] = []
-
-    if (address !== undefined) {
-      if (address.street !== undefined && !address.street) {
-        errors.push('Street address cannot be empty')
-      }
-      // Only validate fields that are provided
-    }
-
-    return errors
-  }
-}
-```
-
-### Create Use Case Pattern
-
-Standard create operation flow:
-
-```typescript
-export class CreateSalonUseCase extends BaseSalonUseCase {
-  async execute(
-    request: ApiCreateSalonRequest
-  ): Promise<Result<ApiSalon, DomainError>> {
-    // 1. Validate request
-    const validation = this.validate(request)
-    if (Result.isError(validation)) {
-      return validation
-    }
-
-    // 2. Check business rules (e.g., uniqueness)
-    const emailExists = await this.salonRepository.existsByEmail(
-      request.contactInfo.email
-    )
-    if (Result.isError(emailExists)) {
-      return emailExists
-    }
-
-    if (emailExists.data) {
-      return Result.error(
-        DomainErrors.alreadyExists('Salon', 'email', request.contactInfo.email)
-      )
-    }
-
-    // 3. Use Write Mapper to transform API → DB
-    const { salon, openingHours } = SalonWriteMapper.fromCreateRequest(request)
-
-    // 4. Save to database with generated ID
-    const createResult = await this.salonRepository.create(
-      { ...salon, id: toSalonID(createId()) },
-      openingHours
-    )
-    if (Result.isError(createResult)) {
-      return createResult
-    }
-
-    // 5. Fetch related data if needed
-    const openingHoursResult = await this.salonRepository.findOpeningHours(
-      toSalonID(createResult.data.id)
-    )
-
-    // 6. Use Read Mapper to transform DB → API
-    const apiSalon = SalonReadMapper.toApiSalon(
-      createResult.data,
-      Result.isSuccess(openingHoursResult) ? openingHoursResult.data : []
-    )
-
-    return Result.success(apiSalon)
-  }
-
-  private validate(request: ApiCreateSalonRequest): Result<true, DomainError> {
-    const errors: string[] = []
-
-    // Collect all validation errors
-    errors.push(...this.validateName(request.name))
-    errors.push(...this.validateDescription(request.description))
-    errors.push(...this.validateAddress(request.address))
-    errors.push(...this.validateContactInfo(request.contactInfo))
-
-    // Check required arrays
-    if (!request.openingHours || request.openingHours.length === 0) {
-      errors.push('Opening hours are required')
-    }
-
-    // Return aggregated errors
-    if (errors.length > 0) {
-      return Result.error(
-        DomainErrors.validation(
-          'Validation failed',
-          'SALON_VALIDATION_ERROR',
-          errors
-        )
-      )
-    }
-
-    return Result.success(true)
-  }
-}
-```
-
-### Get/Read Use Case Pattern
-
-Simple retrieval with proper error handling:
-
-```typescript
-export class GetSalonUseCase extends BaseSalonUseCase {
-  async execute(id: SalonId): Promise<Result<ApiSalon, DomainError>> {
-    // 1. Validate ID format
-    if (!this.isValidUuid(id)) {
-      return Result.error(
-        DomainErrors.validation('Invalid salon ID format', 'INVALID_SALON_ID')
-      )
-    }
-
-    // 2. Fetch from repository
-    const salonResult = await this.salonRepository.findById(id)
-    if (Result.isError(salonResult)) {
-      return salonResult
-    }
-
-    // 3. Check existence
-    if (!salonResult.data) {
-      return Result.error(DomainErrors.notFound('Salon', id))
-    }
-
-    // 4. Fetch related data
-    const openingHoursResult = await this.salonRepository.findOpeningHours(id)
-    const openingHours = Result.isSuccess(openingHoursResult)
-      ? openingHoursResult.data
-      : []
-
-    // 5. Map to API response
-    const apiSalon = SalonReadMapper.toApiSalon(salonResult.data, openingHours)
-    return Result.success(apiSalon)
-  }
-}
-```
-
-### List Use Case Pattern
-
-Pagination handling:
-
-```typescript
-export class ListSalonsUseCase extends BaseSalonUseCase {
-  async execute(
-    page = 1,
-    limit = 20
-  ): Promise<Result<PaginatedResult<ApiSalon>, DomainError>> {
-    // 1. Create pagination params
-    const paginationParams = Pagination.create(page, limit)
-
-    // 2. Fetch paginated data
-    const salonsResult = await this.salonRepository.findAll(paginationParams)
-    if (Result.isError(salonsResult)) {
-      return salonsResult
-    }
-
-    // 3. Map to API format with full data
-    const apiSalons = SalonReadMapper.toApiSalonFullList(
-      salonsResult.data.data,
-      new Map() // Opening hours map if needed
-    )
-
-    // 4. Return paginated result
-    const paginatedResult: PaginatedResult<ApiSalon> = {
-      data: apiSalons,
-      meta: salonsResult.data.meta,
-      links: salonsResult.data.links,
-    }
-
-    return Result.success(paginatedResult)
-  }
-}
-```
-
-## Mapper Pattern
-
-### Read Mapper (DB → API)
-
-Transform database entities to API responses:
-
-```typescript
-export const SalonReadMapper = {
-  // Main entity mapping
-  toApiSalon(dbSalon: DbSalon, openingHours: DbOpeningHours[] = []): ApiSalon {
-    return {
-      id: dbSalon.id,
-      name: dbSalon.name,
-      description: dbSalon.description,
-      address: this.toApiAddress(dbSalon),  // Nested object transformation
-      contactInfo: this.toApiContactInfo(dbSalon),
-      openingHours: openingHours.map((oh) => this.toApiOpeningHours(oh)),
-      businessHours: dbSalon.businessHours as ApiSalon['businessHours'], // JSONB cast
-      imageUrls: Array.isArray(dbSalon.imageUrls)
-        ? (dbSalon.imageUrls as string[])
-        : [],
-      features: Array.isArray(dbSalon.features)
-        ? (dbSalon.features as string[])
-        : [],
-      rating: dbSalon.rating ? Number.parseFloat(dbSalon.rating) : null,
-      reviewCount: dbSalon.reviewCount,
-      createdAt: dbSalon.createdAt,
-      createdBy: 'Demo user',  // Audit fields
-      updatedAt: dbSalon.updatedAt,
-      updatedBy: 'Demo user',
-    }
-  },
-
-  // Nested object mapping
-  toApiAddress(dbSalon: DbSalon): ApiAddress {
-    return {
-      street: dbSalon.address,  // Field name transformation
-      city: dbSalon.city,
-      prefecture: dbSalon.prefecture,
-      postalCode: dbSalon.postalCode,
-      country: 'Japan',  // Business logic default
-    }
-  },
-
-  // Array handling
-  toApiSalonFullList(
-    dbSalons: DbSalon[],
-    openingHoursMap: Map<string, DbOpeningHours[]> = new Map()
-  ): ApiSalon[] {
-    return dbSalons.map((salon) =>
-      this.toApiSalon(salon, openingHoursMap.get(salon.id) ?? [])
-    )
-  },
-}
-```
-
-### Write Mapper (API → DB)
-
-Transform API requests to database format:
-
-```typescript
 export const SalonWriteMapper = {
-  // Create request mapping
-  fromCreateRequest(request: ApiCreateSalonRequest): {
+  fromCreateRequest(request: ApiSalonCreateRequest): {
     salon: DbNewSalon
     openingHours: DbNewOpeningHours[]
   } {
-    const salon: DbNewSalon = {
-      name: request.name,
-      nameKana: null,  // Optional fields set to null
-      description: request.description,
-      postalCode: request.address.postalCode,
-      prefecture: request.address.prefecture,
-      city: request.address.city,
-      address: request.address.street,  // Field name transformation
-      building: null,
-      latitude: null,
-      longitude: null,
-      phoneNumber: request.contactInfo.phoneNumber,
-      alternativePhone: request.contactInfo.alternativePhone,
-      email: request.contactInfo.email,
-      websiteUrl: request.contactInfo.websiteUrl,
-      logoUrl: null,
-      imageUrls: request.imageUrls,
-      features: request.features,
-      amenities: [],  // Default empty arrays
-      timezone: 'Asia/Tokyo',  // Business defaults
-      currency: 'JPY',
-      taxRate: '10.00',
-      cancellationPolicy: null,
-      bookingPolicy: null,
-      businessHours: request.businessHours,
-      rating: null,
-      reviewCount: 0,
-      isActive: true,
-      deletedAt: null,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }
+    const { openingHours, latitude, longitude, taxRate, ...columns } = request
 
-    // Map related entities
-    const openingHours: DbNewOpeningHours[] = request.openingHours.map((oh) =>
-      this.mapOpeningHours(oh, '')  // salonId set later in transaction
-    )
-
-    return { salon, openingHours }
-  },
-
-  // Update request mapping (partial)
-  fromUpdateRequest(request: ApiUpdateSalonRequest): Partial<DbNewSalon> {
-    const updates: Partial<DbNewSalon> = {}
-
-    // Only map fields that are provided
-    if (request.name !== undefined) {
-      updates.name = request.name
-    }
-
-    if (request.description !== undefined) {
-      updates.description = request.description
-    }
-
-    // Handle nested objects
-    if (request.address !== undefined) {
-      if (request.address.postalCode !== undefined) {
-        updates.postalCode = request.address.postalCode
-      }
-      if (request.address.prefecture !== undefined) {
-        updates.prefecture = request.address.prefecture
-      }
-      if (request.address.city !== undefined) {
-        updates.city = request.address.city
-      }
-      if (request.address.street !== undefined) {
-        updates.address = request.address.street
-      }
-    }
-
-    // Always update timestamp
-    updates.updatedAt = new Date().toISOString()
-
-    return updates
-  },
-
-  // Helper for related entities
-  mapOpeningHours(hours: ApiOpeningHours, salonId: string): DbNewOpeningHours {
     return {
-      salonId,
-      dayOfWeek: hours.dayOfWeek,
-      specificDate: hours.date,  // Field name transformation
-      openTime: hours.openTime,
-      closeTime: hours.closeTime,
-      isHoliday: hours.isHoliday,
-      holidayName: hours.holidayName,
-      notes: hours.notes,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      salon: {
+        ...columns,
+        latitude: latitude === null ? null : toNumeric(latitude),
+        longitude: longitude === null ? null : toNumeric(longitude),
+        taxRate: toNumeric(taxRate),
+      },
+      openingHours: toDbOpeningHours(openingHours),
     }
   },
+  // ...
 }
 ```
+
+`fromUpdateRequest` does the same for the properties that are present and nothing for the absent ones. It returns `{ type: 'keep' }` for the calendar when `openingHours` is absent and `{ type: 'replace', ... }` when it is present, even if the list is empty.
+
+Rows → API response (`backend/packages/domain/src/mappers/read/salon.mapper.ts`):
+
+```typescript
+const numericSchema = z.string().transform(Number).pipe(z.number())
+
+const timestampSchema = z
+  .string()
+  .transform((value) => parseISO(value))
+  .pipe(z.date())
+  .transform((value) => value.toISOString())
+
+const convertedColumnsSchema = z.object({
+  latitude: numericSchema.nullable(),
+  longitude: numericSchema.nullable(),
+  rating: numericSchema.nullable(),
+  taxRate: numericSchema,
+  businessHours: z.array(storedBusinessHoursSchema).nullable(),
+  createdAt: timestampSchema,
+  updatedAt: timestampSchema,
+})
+
+// ...
+
+const toApiSalon = (
+  salon: DbSalon,
+  openingHours: DbOpeningHours[],
+): Result<ApiSalonResponse, DomainError> => {
+  const { deletedAt, cancellationPolicy, bookingPolicy, ...columns } = salon
+
+  return Result.mapError(
+    Result.map(
+      parseWith(convertedColumnsSchema, salon, 'Invalid stored salon'),
+      (converted) => ({
+        ...columns,
+        ...converted,
+        openingHours: openingHours.map(toApiOpeningHours),
+      }),
+    ),
+    // The request was fine; the stored row is not.
+    (error) =>
+      DomainErrors.database(
+        `Stored salon ${salon.id} does not match the API model`,
+        error,
+      ),
+  )
+}
+```
+
+- **The conversion is a parse.** A cast would claim that the `jsonb` value has the API shape; the schema checks it. The `pipe` steps also reject a number or a date that did not convert.
+- **The read mapper returns a `Result`.** A stored row that does not fit is a `database` error, not a `validation` error: the client did nothing wrong and gets a 500 without details, while the cause is logged.
+- **Hidden columns are removed by destructuring**, the same three that the response rule in step 3 omits.
+
+## 7. Repository Interface
+
+`backend/packages/domain/src/repositories/salon.repository.ts` states what the use cases need, in terms of the model types:
+
+```typescript
+export interface ISalonRepository {
+  create(
+    salon: DbNewSalon,
+    openingHours: DbNewOpeningHours[],
+  ): Promise<Result<SalonWithOpeningHours, DomainError>>
+
+  findById(
+    id: SalonId,
+  ): Promise<Result<SalonWithOpeningHours | null, DomainError>>
+
+  /** Newest first. */
+  list(criteria: SalonListCriteria): Promise<Result<SalonList, DomainError>>
+
+  /** Resolves to null when the salon does not exist. */
+  update(
+    id: SalonId,
+    changes: DbSalonChanges,
+    openingHours: OpeningHoursChange,
+  ): Promise<Result<SalonWithOpeningHours | null, DomainError>>
+
+  /** Resolves to false when the salon does not exist. */
+  delete(id: SalonId): Promise<Result<boolean, DomainError>>
+}
+```
+
+- **A missing salon is not an error here.** `findById` and `update` resolve to `null` and `delete` to `false`; the use case turns that into `notFound`. The error side of the `Result` is for what went wrong.
+- **Two guarantees**, stated in the comment above the interface: deleted salons are invisible to every method, and each write is atomic, so a salon and its calendar change together or not at all.
+- **`SalonListCriteria` has no optional property.** A filter that is not applied is `null` (or an empty list for `features`), so the use case states every criterion.
+
+## 8. Repository Implementation
+
+`backend/packages/infrastructure/src/repositories/salon.repository.impl.ts` implements the interface with Drizzle. It contains no `throw`, no `catch` and no cast.
+
+### Failures become values, and a unique violation becomes `alreadyExists`
+
+```typescript
+const emailUniqueViolation = {
+  code: '23505',
+  constraint_name: 'salons_email_unique',
+}
+
+const toDomainError =
+  (message: string, email: string | null) =>
+  (cause: unknown): DomainError =>
+    match({ cause, email })
+      .with(
+        {
+          email: P.string,
+          cause: P.union(emailUniqueViolation, { cause: emailUniqueViolation }),
+        },
+        (violation) =>
+          DomainErrors.alreadyExists('Salon', 'email', violation.email),
+      )
+      .otherwise(() =>
+        DomainErrors.database(message, describeDatabaseError(cause)),
+      )
+
+const attempt = async <T>(
+  message: string,
+  email: string | null,
+  run: () => Promise<T>,
+): Promise<Result<T, DomainError>> =>
+  Result.mapError(
+    await Result.fromPromise(run()),
+    toDomainError(message, email),
+  )
+```
+
+Every method runs its queries inside `attempt`. `Result.fromPromise`, in the utility package, is the one place where a rejected query is caught and turned into a value; `toDomainError` classifies it:
+
+- **The unique constraint is the uniqueness check.** There is no "does this email exist" query before the insert, which would leave a gap between the check and the write. The repository recognises SQLSTATE `23505` on the constraint `salons_email_unique`, on the error or on its `cause`, because Drizzle wraps the driver's error.
+- **The value in the error comes from the caller.** `attempt` is given the email being written (`salon.email` on create, `changes.email ?? null` on update), so nothing is parsed out of PostgreSQL's message. A method that writes no email passes `null`, and a violation there is not an expected failure.
+- **Everything else is a `database` error** whose cause is `describeDatabaseError(cause)`: the driver's message, the SQLSTATE, the constraint, table and column names, and the statement with placeholders. The bound values are left out, so the cause is safe to log.
+- **The deleted row keeps its email.** Delete is a soft delete, so the email of a deleted salon still conflicts.
+
+### Keyset pagination
+
+```typescript
+    // Keyset pagination on (createdAt, id): the page starts after the row
+    // the cursor names, wherever that row is by now.
+    const cursorSalon = alias(salons, 'cursor_salon')
+    const afterCursor =
+      after === null
+        ? undefined
+        : sql`(${salons.createdAt}, ${salons.id}) < (${this.db
+            .select({ createdAt: cursorSalon.createdAt, id: cursorSalon.id })
+            .from(cursorSalon)
+            .where(eq(cursorSalon.id, after))})`
+
+    return attempt('Failed to list salons', null, async () => {
+      const [page, [matching]] = await Promise.all([
+        this.db
+          .select()
+          .from(salons)
+          .where(and(filters, afterCursor))
+          .orderBy(desc(salons.createdAt), desc(salons.id))
+          // One extra row tells whether another page follows.
+          .limit(limit + 1),
+        this.db.select({ total: count() }).from(salons).where(filters),
+      ])
+```
+
+- **The cursor is the ID of the last salon of the previous page**, not an offset. The search schema validates it as a `SalonId`, and the list use case returns it as `meta.nextCursor`.
+- **The order is `(createdAt, id)` descending.** `id` breaks ties between salons created in the same instant, so the order is total. The condition is a row comparison against the cursor row, looked up by a subquery: the page holds the rows that sort after it.
+- **Pages are stable.** A salon added while a client walks the list sorts before every page already delivered, so nothing is skipped or repeated. The subquery does not filter on `deletedAt`, so a cursor still works after its salon was deleted. A cursor that names no salon yields an empty page.
+- **`limit + 1` rows are read.** The extra row only answers `hasMore` and is cut off. `total` counts the matches of the filters without the cursor, across all pages.
+- **Pages are walked forwards only**: `prevCursor` is always `null`.
+
+The calendars of a page are loaded with one query for all its salons and grouped by `salonId`.
+
+### Writes are transactions; the calendar is replaced as a whole
+
+```typescript
+    return attempt('Failed to update salon', changes.email ?? null, () =>
+      this.db.transaction(async (tx) => {
+        const [updated] = await tx
+          .update(salons)
+          .set({ ...changes, updatedAt: sql`now()` })
+          .where(and(eq(salons.id, id), notDeleted))
+          .returning()
+        if (updated === undefined) {
+          return null
+        }
+
+        await match(openingHoursChange)
+          .with({ type: 'keep' }, async () => undefined)
+          .with({ type: 'replace' }, async (replacement) => {
+            await tx.delete(openingHours).where(eq(openingHours.salonId, id))
+            await insertOpeningHours(tx, id, replacement.openingHours)
+          })
+          .exhaustive()
+
+        return withOpeningHours(tx, updated)
+      }),
+    )
+```
+
+- **One transaction for the salon and its calendar.** If the email is taken or the calendar cannot be inserted, the transaction rolls back and none of the request is applied.
+- **`replace` deletes every row of the calendar and inserts the new list.** There is no per-entry diff; `openingHours` in a `PATCH` is the whole calendar. `keep` touches nothing.
+- **`notDeleted` is part of the `where`**, so a deleted salon is not updated and the method resolves to `null`.
+- **The calendar is read back** inside the transaction (`withOpeningHours`), so the response shows what is stored: entries in date order, times with seconds.
+- **`updatedAt` is set by the database** (`now()`), not by the application clock.
+
+`create` is built the same way: insert the salon, insert the calendar with the new ID, read the calendar back. Under `noUncheckedIndexedAccess` the first of the returned rows may be `undefined`; the method turns that case into a `database` error instead of asserting it away. `delete` sets `deletedAt` and resolves to whether a row changed; the row and its calendar are kept.
+
+The helper functions take a `DatabaseExecutor`, which is either the database or a transaction on it, so the same query code runs in both. The class is exported from `backend/packages/infrastructure/src/index.ts`.
+
+## 9. Use Cases
+
+One class per operation in `backend/packages/domain/src/business-logic/salon/`, each with the same constructor and one `execute` method. There is no base class. The dependencies are one object (`_shared/dependencies.ts`):
+
+```typescript
+export interface SalonUseCaseDependencies {
+  salonRepository: ISalonRepository
+}
+```
+
+`update-salon.usecase.ts` shows every step a use case can have:
+
+```typescript
+export class UpdateSalonUseCase {
+  constructor(private readonly dependencies: SalonUseCaseDependencies) {}
+
+  /**
+   * Changes the properties present in the request and leaves the others as
+   * they are. `openingHours`, when present, replaces the whole calendar.
+   */
+  async execute(
+    id: unknown,
+    input: unknown,
+  ): Promise<Result<ApiSalonResponse, DomainError>> {
+    const salonId = parseSalonId(id)
+    if (salonId.type === 'error') {
+      return salonId
+    }
+
+    const request = parseWith(
+      salonUpdateRequestSchema,
+      input,
+      'Invalid salon update',
+    )
+    if (request.type === 'error') {
+      return request
+    }
+
+    const { changes, openingHours } = SalonWriteMapper.fromUpdateRequest(
+      request.data,
+    )
+    const updated = await this.dependencies.salonRepository.update(
+      salonId.data,
+      changes,
+      openingHours,
+    )
+    if (updated.type === 'error') {
+      return updated
+    }
+    if (updated.data === null) {
+      return Result.error(DomainErrors.notFound('Salon', salonId.data))
+    }
+
+    return SalonReadMapper.toApiSalon(
+      updated.data.salon,
+      updated.data.openingHours,
+    )
+  }
+}
+```
+
+- **The inputs are `unknown`.** What arrives over HTTP is not a `SalonUpdateRequest` until it has been checked. If the handler declared the body with the request type, the compiler would accept an unchecked value as checked, which is a type assertion in everything but name. With `unknown`, the value cannot be used before `parseWith` has returned the typed one, and validation happens in exactly one place whoever the caller is.
+- **A failed step is returned as it is.** After `request.type === 'error'` the value is the error variant, which fits every `Result<T, DomainError>`.
+- **The use case decides what "not found" is.** The repository reported `null`; the use case names the entity and the ID.
+- **No uniqueness check here.** The use case relies on the repository to report `alreadyExists` (step 8).
+- **The return value is the API model**, mapped from the rows the repository read back.
+
+| Use case | `execute` | Success data |
+|----------|-----------|--------------|
+| `CreateSalonUseCase` | `(input: unknown)` | `ApiSalonResponse` |
+| `GetSalonUseCase` | `(id: unknown)` | `ApiSalonResponse` |
+| `ListSalonsUseCase` | `(input: unknown)` | `SalonPage`: `data` and pagination `meta` |
+| `UpdateSalonUseCase` | `(id: unknown, input: unknown)` | `ApiSalonResponse` |
+| `DeleteSalonUseCase` | `(id: unknown)` | the `SalonId` that was deleted |
+
+`ListSalonsUseCase` applies the default `limit` of 20, turns absent filters into `null` for the repository and builds `meta`: `nextCursor` is the ID of the last salon of the page when `hasMore` is true, otherwise `null`.
+
+The use cases and `SalonUseCaseDependencies` are exported from `business-logic/salon/index.ts`, and the package exports them with the models, the repository interface and the shared error and validation code from `backend/packages/domain/src/index.ts`. Schemas and mappers stay internal to the package.
+
+## 10. Handlers and Router
+
+Each operation has a handler file in `backend/packages/api/src/routes/salon/`, and `index.ts` there exports `createSalonRouter(dependencies)`. A handler is a factory over `SalonUseCaseDependencies`: it passes `req.body`, `req.params.id` or the decoded query to the use case and matches the `Result` into a response or into problem details.
+
+The layout of the API package, the handler pattern, the shared helpers and the middleware are described in the [API Route Modular Structure Guide](./api-route-modular-structure.md).
+
+## 11. Wiring
+
+`createApp` in `backend/packages/api/src/index.ts` constructs each repository once and mounts the router:
+
+```typescript
+  app.use(
+    `${API_BASE_PATH}/salons`,
+    createSalonRouter({ salonRepository: new SalonRepository(database) }),
+  )
+```
+
+A new domain adds one such statement next to it, before `notFoundHandler`. Nothing changes in `backend/apps/server`: it reads the configuration, connects the database and calls `createApp({ database, logger, settings })`.
+
+## 12. Tests
+
+| File | Kind | What it covers |
+|------|------|----------------|
+| `backend/packages/domain/src/__tests__/salon.schema.test.ts` | unit | the request schemas: what they accept and the rules they reject |
+| `backend/packages/domain/src/__tests__/salon.mapper.test.ts` | unit | both mappers, including stored rows that do not fit |
+| `backend/packages/domain/src/__tests__/salon.usecase.test.ts` | unit | each use case against a stubbed repository |
+| `backend/packages/domain/src/__tests__/fixtures.ts` | helper | a valid request, rows as the driver returns them, `brokenRules` |
+| `backend/packages/api/src/routes/salon/_shared/__tests__/` | unit | link building and query decoding |
+| `backend/packages/api/src/__tests__/salon.integration.test.ts` | integration | every endpoint through HTTP against PostgreSQL |
+
+The repository has no unit test of its own; its queries, transactions and constraint handling are exercised by the integration tests against a real PostgreSQL.
+
+Use case tests replace the repository with a stub that holds one salon, and a test overrides the method it is about (`salon.usecase.test.ts`):
+
+```typescript
+/** A repository that holds one salon; a test overrides what it needs. */
+const repositoryWith = (
+  overrides: Partial<ISalonRepository> = {},
+): ISalonRepository => ({
+  create: vi.fn(async () => Result.success(stored)),
+  findById: vi.fn(async () => Result.success(stored)),
+  list: vi.fn(async () =>
+    Result.success({ salons: [stored], total: 1, hasMore: false }),
+  ),
+  update: vi.fn(async () => Result.success(stored)),
+  delete: vi.fn(async () => Result.success(true)),
+  ...overrides,
+})
+```
+
+Integration tests run the production `createApp` (through `createTestApp` in `__tests__/_shared/test-helpers.ts`) with a PostgreSQL schema of their own per test. They assert the response and the stored state (`salon.integration.test.ts`):
+
+```typescript
+    it('rejects an email that another salon uses', async () => {
+      await createSalon()
+
+      const response = await request(app)
+        .post(SALONS)
+        .send(salonRequest({ name: 'Second salon' }))
+
+      expectProblem(response, conflict)
+      expect(response.body.detail).toBe(
+        'Salon with email aoyama@example.com already exists',
+      )
+      expect(await db.$count(salons)).toBe(1)
+    })
+```
+
+Each endpoint has at least five error scenarios, most of them rows of an `it.each` table that name the broken rule as `field:rule` (for example `postalCode:too_big`). Beyond the validation cases, the Salon tests cover an unknown ID, a deleted salon, a duplicate email, a corrupt stored row, a request that must leave the stored data untouched, and pagination while salons are added.
+
+```bash
+pnpm test               # unit tests of every package
+pnpm test:integration   # integration tests; uses TEST_DATABASE_URL, otherwise testcontainers (Docker)
+```
+
+The conventions are in [Testing Requirements](./testing-requirements.md) and the [API Testing Guide](./api-testing-guide.md).
 
 ## Error Handling
 
-### Domain Error Factory
-
-Centralized error creation with proper typing:
+A use case fails in one of four ways (`backend/packages/domain/src/shared/errors.ts`):
 
 ```typescript
-export const DomainErrors = {
-  validation(message: string, code: string, details?: unknown): DomainError {
-    return {
-      type: 'VALIDATION_ERROR' as DomainErrorType,
-      message,
-      code,
-      details,
-    }
-  },
-
-  notFound(entity: string, id: string): DomainError {
-    return {
-      type: 'NOT_FOUND' as DomainErrorType,
-      message: `${entity} with ID ${id} not found`,
-      code: `${entity.toUpperCase()}_NOT_FOUND`,
-      details: { entity, id },
-    }
-  },
-
-  alreadyExists(entity: string, field: string, value: string): DomainError {
-    return {
-      type: 'ALREADY_EXISTS' as DomainErrorType,
-      message: `${entity} with ${field} '${value}' already exists`,
-      code: `${entity.toUpperCase()}_ALREADY_EXISTS`,
-      details: { entity, field, value },
-    }
-  },
-
-  database(message: string, details?: unknown): DomainError {
-    return {
-      type: 'DATABASE_ERROR' as DomainErrorType,
-      message,
-      code: 'DATABASE_ERROR',
-      details,
-    }
-  },
-}
+export type DomainError =
+  | { type: 'validation'; message: string; issues: ValidationIssue[] }
+  | { type: 'notFound'; entity: string; id: string }
+  | { type: 'alreadyExists'; entity: string; field: string; value: string }
+  | { type: 'database'; message: string; cause: unknown }
 ```
 
-### Problem Details Conversion
+Errors are built with `DomainErrors.validation`, `.notFound`, `.alreadyExists` and `.database`. Where each kind comes from:
 
-Convert domain errors to RFC 7807 Problem Details:
+| Kind | Where it is created | What the client gets |
+|------|---------------------|----------------------|
+| `validation` | `parseWith`, called by a use case (and by the query decoding of the list handler) | 400 with the broken rules in `errors` |
+| `notFound` | a use case, when the repository resolved to `null` or `false` | 404 |
+| `alreadyExists` | the repository, from the unique violation | 409 |
+| `database` | the repository, from a failed query; the read mapper, from a stored row that does not fit | 500 without details; the cause is logged |
 
-```typescript
-export function toProblemDetails(
-  error: DomainError,
-  instance?: string
-): ProblemDetails {
-  const errorCode = ERROR_CODE_MAP[error.type] || '4001'
-  const httpStatus = HTTP_STATUS_MAP[error.type] || 500
-
-  return {
-    type: `https://example.com/probs/${error.type.toLowerCase().replace(/_/g, '-')}`,
-    title: error.type.replace(/_/g, ' ').toLowerCase(),
-    status: httpStatus,
-    detail: error.message,
-    instance: instance || `urn:error:${Date.now()}`,
-    code: errorCode as ErrorCodeType,
-    timestamp: new Date().toISOString(),
-    errors: error.details
-      ? [
-          {
-            field: 'unknown',
-            rule: error.code,
-            message: error.message,
-            value: undefined,
-            constraint: undefined,
-          },
-        ]
-      : undefined,
-  }
-}
-```
-
-## Testing Patterns
-
-### Test Structure
-
-Follow AAA (Arrange-Act-Assert) pattern:
-
-```typescript
-describe('POST /api/v1/salons', () => {
-  it('should create a salon successfully', async () => {
-    // Arrange
-    const salonData = {
-      name: 'Test Beauty Salon',
-      description: null,  // Test nullable fields
-      address: {
-        street: '千代田1-1-1',
-        city: '千代田区',
-        prefecture: '東京都',
-        postalCode: '100-0001',
-        country: 'Japan',
-      },
-      contactInfo: {
-        email: 'test@salon.com',
-        phoneNumber: '03-1234-5678',
-        alternativePhone: null,
-        websiteUrl: null,
-      },
-      openingHours: [
-        {
-          dayOfWeek: 'monday',
-          date: null,
-          openTime: '10:00',
-          closeTime: '20:00',
-          isHoliday: false,
-          holidayName: null,
-          notes: null,
-        },
-        // ... other days
-      ],
-      businessHours: null,
-      imageUrls: null,
-      features: null,
-    }
-
-    // Act
-    const response = await request(app).post('/api/v1/salons').send(salonData)
-
-    // Assert
-    expect(response.status).toBe(201)
-    expect(response.body.data).toBeDefined()
-    expect(response.body.data.name).toBe(salonData.name)
-    expect(response.body.data.contactInfo?.email).toBe(
-      salonData.contactInfo.email
-    )
-
-    // Verify database state
-    const result = await db.execute(sql`SELECT * FROM salons`)
-    expect(result.length).toBe(1)
-    expect(result[0]?.name).toBe(salonData.name)
-  })
-})
-```
-
-### Error Scenario Testing
-
-Test all error cases:
-
-```typescript
-it('should return validation error for invalid email', async () => {
-  const invalidData = {
-    name: 'Test Salon',
-    description: null,
-    address: { /* ... */ },
-    contactInfo: {
-      email: 'invalid-email',  // Invalid format
-      phoneNumber: '03-1234-5678',
-      // ...
-    },
-    openingHours: [ /* ... */ ],
-  }
-
-  const response = await request(app)
-    .post('/api/v1/salons')
-    .send(invalidData)
-    .expect(400)
-
-  expect(response.body.type).toBe(
-    'https://example.com/probs/validation-error'
-  )
-  expect(response.body.detail).toContain('Validation failed')
-})
-
-it('should return 404 for non-existent resource', async () => {
-  const nonExistentId = createId()
-
-  const response = await request(app)
-    .get(`/api/v1/salons/${nonExistentId}`)
-    .expect(404)
-
-  expect(response.body.status).toBe(404)
-  expect(response.body.type).toContain('not-found')
-})
-```
-
-### Database State Verification
-
-Always verify database state after operations:
-
-```typescript
-it('should soft delete a salon', async () => {
-  // Arrange - create test data
-  const salonId = createId()
-  await db.execute(sql`
-    INSERT INTO salons (id, name, ...)
-    VALUES (${salonId}, 'To Delete', ...)
-  `)
-
-  // Act - perform delete
-  const response = await request(app)
-    .delete(`/api/v1/salons/${salonId}`)
-    .expect(204)
-
-  // Assert - verify soft delete
-  const result = await db.execute(
-    sql`SELECT * FROM salons WHERE id = ${salonId}`
-  )
-  expect(result).toHaveLength(1)
-  expect(result[0]?.deletedAt).not.toBeNull()  // Soft deleted
-})
-```
+The API package maps the kind to a status and a problem details body (`backend/packages/api/src/shared/problem-details.ts`). A domain adds nothing there unless it introduces a new kind of error, and then the exhaustive match in that file stops compiling until the new kind has a status.
 
 ## Implementation Checklist
 
-### For Each New Domain
+For a new domain, with `<domain>` as its name. Each item names what the Salon domain has.
 
-#### 1. API Layer Setup (Modular Structure)
-- [ ] Create domain folder: `src/routes/[domain]/`
-- [ ] Create `_shared/` subfolder for common code
-- [ ] Extract types to `_shared/types.ts` from generated operations
-- [ ] Create utilities in `_shared/utils.ts` (handleDomainError, cursorToPage)
-- [ ] Create `_shared/index.ts` with re-exports
-- [ ] Create individual handler files:
-  - [ ] `list-[domain].handler.ts` - GET /api/v1/[domain]
-  - [ ] `create-[domain].handler.ts` - POST /api/v1/[domain]
-  - [ ] `get-[domain].handler.ts` - GET /api/v1/[domain]/:id
-  - [ ] `update-[domain].handler.ts` - PUT /api/v1/[domain]/:id
-  - [ ] `delete-[domain].handler.ts` - DELETE /api/v1/[domain]/:id
-  - [ ] `search-[domain].handler.ts` - GET /api/v1/[domain]/search (if needed)
-- [ ] Create `index.ts` for route aggregation
-- [ ] Update main app router import
-- [ ] NO validation in routes (delegate to use cases)
+Contract and database:
 
-#### 2. Use Case Layer
-- [ ] Create base use case with shared validation
-- [ ] Implement create use case with full validation
-- [ ] Implement get/read use case with existence check
-- [ ] Implement update use case with partial validation
-- [ ] Implement delete use case (soft delete)
-- [ ] Implement list use case with pagination
-- [ ] Implement search use case if needed
+- [ ] `specs/models/<domain>.tsp` defines the response, create, update and search models; property names and nullability are those of the columns
+- [ ] `specs/operations/<domain>-operations.tsp` defines only the operations that will be implemented, each with its success response and the error responses its use case can produce; both files are imported in `specs/main.tsp`
+- [ ] `pnpm generate` has been run and the generated files are committed
+- [ ] If the table must change: a migration, then `pnpm db:migrate`, `pnpm db:introspect` and `pnpm db:generate-sql`, with the regenerated files committed and the seed data in `backend/packages/database/src/seeds/seed-data/` adjusted
+- [ ] The models are listed in `api-consistency-rules.ts` with `omittedColumns`, `pnpm check:api-db` passes, and the domain has no entry left in `api-consistency-baseline.json`
 
-#### 3. Mapper Layer
-- [ ] Create Read mapper (DB → API)
-- [ ] Handle nested object transformations
-- [ ] Handle array fields properly
-- [ ] Handle nullable fields correctly
-- [ ] Create Write mapper (API → DB)
-- [ ] Map only provided fields in update
-- [ ] Set proper defaults for create
-- [ ] Always update timestamps
+Domain package (`backend/packages/domain/src/`):
 
-#### 4. Error Handling
-- [ ] Use DomainErrors factory
-- [ ] Convert to Problem Details
-- [ ] Return proper HTTP status codes
-- [ ] Include detailed error information
+- [ ] `models/<domain>.ts`: branded ID with its parser, API types, database types
+- [ ] `schemas/<domain>.schema.ts`: one strict schema per request, each with `satisfies z.ZodType<...>`
+- [ ] `mappers/write/<domain>.mapper.ts` and `mappers/read/<domain>.mapper.ts`: no renaming; the read mapper returns a `Result`
+- [ ] `repositories/<domain>.repository.ts`: the interface
+- [ ] `business-logic/<domain>/`: `_shared/dependencies.ts`, one `<action>-<domain>.usecase.ts` per operation with `execute` taking `unknown`, and `index.ts`
+- [ ] The use cases, models and repository interface are exported from `index.ts`
+- [ ] `__tests__/`: schema, mapper and use case tests
 
-#### 5. Testing
-- [ ] Test successful operations
-- [ ] Test validation errors
-- [ ] Test not found scenarios
-- [ ] Test duplicate/conflict scenarios
-- [ ] Test pagination
-- [ ] Verify database state
-- [ ] Test error response format
+Infrastructure package (`backend/packages/infrastructure/src/`):
 
-### Type Safety Checklist
+- [ ] `repositories/<domain>.repository.impl.ts`: queries inside a function like `attempt`, writes in transactions, expected constraint violations mapped to domain errors, deleted rows filtered out
+- [ ] The class is exported from `index.ts`
 
-- [ ] NO `any` types
-- [ ] NO type assertions (`as`)
-- [ ] NO throwing exceptions
-- [ ] Use Result type everywhere
-- [ ] Use exhaustive pattern matching
-- [ ] Proper null/undefined handling
-- [ ] Type-safe ID generation
+API package:
 
-### Best Practices
+- [ ] Routes, mounting and integration tests as listed in the [API Route Modular Structure Guide](./api-route-modular-structure.md), with at least five error scenarios per endpoint
 
-1. **Always use Result type** - Never throw exceptions
-2. **Validate in use cases** - Not in routes or mappers
-3. **Map at boundaries** - Keep domain logic pure
-4. **Test database state** - Not just API responses
-5. **Handle nullables properly** - Match DB constraints
-6. **Use proper defaults** - Business logic in mappers
-7. **Keep routes simple** - Just orchestration
-8. **Aggregate validation errors** - Return all at once
+Before the pull request:
 
-## Common Pitfalls to Avoid
-
-1. **Don't validate in routes** - All validation belongs in use cases
-2. **Don't throw exceptions** - Always return Result types
-3. **Don't skip error scenarios** - Test all error paths
-4. **Don't mix concerns** - Keep layers separated
-5. **Don't forget timestamps** - Always update them
-6. **Don't use magic strings** - Use constants and enums
-7. **Don't skip database verification** - Always check state in tests
-
-## Migration Guide from Other Patterns
-
-### From Monolithic Routes to Modular Structure
-
-If migrating from a monolithic route file:
-
-1. **Create domain folder structure** with `_shared/` subfolder
-2. **Extract types to `_shared/types.ts`** from the monolithic file
-3. **Move utilities to `_shared/utils.ts`** (handleDomainError, etc.)
-4. **Split handlers into individual files** - one per endpoint
-5. **Create `index.ts`** for route aggregation
-6. **Update app router import** to use the new modular structure
-
-### From Other Architectural Patterns
-
-If migrating from a different pattern:
-
-1. **Move validation from routes to use cases**
-2. **Replace try-catch with Result pattern**
-3. **Extract types from generated operations**
-4. **Separate Read and Write mappers**
-5. **Add exhaustive pattern matching**
-6. **Update tests to verify database state**
-7. **Implement proper error handling with Problem Details**
-
-### Benefits of Modular Structure
-
-The modular route structure provides:
-
-- **Single Responsibility**: Each handler focuses on one endpoint
-- **Better Maintainability**: Changes to one endpoint don't affect others
-- **Easier Testing**: Individual handlers can be tested in isolation
-- **Clear Documentation**: Each handler has its own JSDoc comments
-- **Reduced Merge Conflicts**: Multiple developers can work on different endpoints
-- **Explicit Route Mapping**: The index.ts clearly shows all routes
-- **Type Safety**: Centralized type definitions in `_shared/`
-
-This reference guide represents the proven patterns from the Salon domain implementation and should be followed for all new domain implementations to ensure consistency and maintainability.
+- [ ] `make ci-check` passes: it includes `pnpm check:generated`, `pnpm check:api-db`, `pnpm knip`, `pnpm test` and `pnpm test:integration`
+- [ ] If a table changed: `pnpm check:db-schema` passes (CI runs it; it recreates the local database)

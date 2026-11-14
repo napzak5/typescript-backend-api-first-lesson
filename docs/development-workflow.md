@@ -1,517 +1,316 @@
 # 開発ワークフローガイド
 
-このドキュメントでは、よくある開発シナリオごとの具体的な手順を説明します。
+セットアップから、日々の開発、コミット前の確認、CI までの手順をまとめます。
+ここに出てくるコマンドは、ルートの `package.json` の `scripts` と `Makefile`
+にあるものだけです。`make help` で Makefile のターゲット一覧を表示できます。
 
-## 📋 目次
+## 目次
 
-1. [TypeSpec API定義を変更する場合](#typespec-api定義を変更する場合)
-2. [新しい依存関係を追加する場合](#新しい依存関係を追加する場合)
-3. [新しいエンドポイントを追加する場合](#新しいエンドポイントを追加する場合)
-4. [データベーススキーマを変更する場合](#データベーススキーマを変更する場合)
-5. [バグ修正を行う場合](#バグ修正を行う場合)
+1. [セットアップ](#セットアップ)
+2. [日々の開発](#日々の開発)
+3. [TypeSpec を変更する](#typespec-を変更する)
+4. [データベースを変更する](#データベースを変更する)
+5. [エンドポイントやドメインを追加する](#エンドポイントやドメインを追加する)
+6. [依存関係を追加する](#依存関係を追加する)
+7. [バグを修正する](#バグを修正する)
+8. [コミット前の確認](#コミット前の確認)
+9. [CI が実行する内容](#ci-が実行する内容)
+10. [トラブルシューティング](#トラブルシューティング)
 
-## TypeSpec API定義を変更する場合
+## セットアップ
 
-API定義の変更は、バックエンドとフロントエンドの両方に影響します。
+### 必要なもの
 
-### 手順
+| ツール | バージョン | 備考 |
+|--------|-----------|------|
+| Node.js | 26.13.1 | `.node-version` で固定。fnm など、このファイルを読むバージョンマネージャーなら自動で切り替わる |
+| pnpm | 12.18.0 | `package.json` の `packageManager` で固定 |
+| PostgreSQL | 18 | Docker で起動する（`make infra-up`）か、手元のインスタンスを使う |
+| Docker | - | `make infra-up`、testcontainers を使う統合テスト、イメージのビルドに必要 |
 
-```bash
-# 1. TypeSpec定義を編集
-vim specs/models/customer.tsp  # または該当するファイル
-
-# 2. 型定義を生成
-pnpm generate  # または個別に実行：
-# - pnpm generate:spec     # TypeSpecからOpenAPIを生成
-# - pnpm generate:backend  # OpenAPIからバックエンド型を生成
-# - pnpm generate:api      # OrvalでフロントエンドAPIクライアントを生成
-
-# 3. バックエンドの実装を更新
-# - backend/packages/generated/src/generated/ に新しい型が生成される
-# - 必要に応じて以下を更新：
-#   - Domain層のモデル
-#   - Repository実装
-#   - UseCase実装
-#   - APIルート
-
-# 4. バックエンドをビルド・起動
-make backend-build  # 型生成を含む完全なビルド
-make backend-start
-
-# 5. フロントエンドの実装を更新
-# - frontend/packages/api-client/src/generated/ に新しいクライアントが生成される
-#   - endpoints/ : React Queryフック、API関数、型定義
-#   - models/ : 共通の型定義
-# - 生成されたフックを使用してコンポーネントを更新
-
-# 6. フロントエンドをビルド・起動
-make frontend-build  # 必須：初回または依存関係の変更時
-make frontend-dev    # 開発サーバーを起動
-```
-
-### 型生成スクリプトの場所
-
-型生成スクリプトは `@beauty-salon-backend/generated` パッケージ内に配置されています：
-
-- **スクリプトの場所**: `backend/packages/generated/scripts/generate-types.ts`
-- **実行方法**:
-  - ルートから: `pnpm generate:backend`
-  - specsパッケージから: `cd specs && pnpm generate:backend`
-  - typesパッケージから: `cd backend/packages/generated && pnpm generate`
-
-### 注意点
-
-- TypeSpecの変更は破壊的変更になる可能性があるため、既存のAPIクライアントへの影響を確認
-- 型定義の生成後、TypeScriptのコンパイルエラーが出る箇所をすべて修正
-- 型生成スクリプトはOpenAPI仕様ファイルに依存するため、必ず`pnpm generate:spec`を先に実行
-- Orvalで生成されたフックは自動的にReact Queryのキャッシュキーを管理するため、手動でのキー管理は不要
-
-### フロントエンドでの型生成後の確認
+### 初回の手順
 
 ```bash
-# 生成されたファイルを確認
-ls -la frontend/packages/api-client/src/generated/
-
-# TypeScriptの型チェック
-cd frontend/packages/api-client
-pnpm typecheck
-
-# 生成されたコードのフォーマット（Orvalが自動実行）
-pnpm format
+pnpm install        # 依存関係をインストールする。husky の pre-commit フックも設定される
+make infra-up       # PostgreSQL・MailHog・MinIO を Docker で起動し、DB の準備を待つ
+pnpm build:backend  # バックエンドのパッケージをビルドする（理由は下記）
+pnpm db:fresh       # sql/setup.sql からスキーマを作成する
+pnpm db:seed        # サンプルデータを投入する（任意）
+pnpm dev            # バックエンド :3000、フロントエンド :3001〜3003
 ```
 
-## 新しい依存関係を追加する場合
+- **生成ファイルはコミット済み**です。TypeSpec を変更しない限り `pnpm generate` は不要です。
+- **データベースのコマンド（`pnpm db:fresh` など）と `pnpm typecheck` はビルド成果物を参照します。** データベースのスクリプトは
+  tsx で実行され、`@beauty-salon-backend/config` を `dist` から読み込みます。クローン直後は
+  `dist` がないため、先に `pnpm build:backend`（全パッケージなら `pnpm build:dev`）を実行します。
+  `pnpm dev:backend` と、`api`・`config`・`domain`・`infrastructure`・サーバーのテストは、
+  エクスポート条件 `@beauty-salon-backend/source` によってワークスペースパッケージをソースから
+  読むので、ビルドし直さなくても変更が反映されます。
+- **`make infra-up` の PostgreSQL** は `docker-compose.yml` の既定値で起動し、`.env.localhost` の
+  `DATABASE_URL` はそれに合わせてあります。MailHog と MinIO も起動しますが、現在のアプリケーション
+  コードはどちらも使っていません。
+- **Docker を使わない場合**は、PostgreSQL 18 を用意し、シェルで `DATABASE_URL` を設定します
+  （プロセスの環境変数は `.env` ファイルより優先されます）。
 
-### バックエンドパッケージに追加
+### 環境変数ファイル
+
+ローカル開発のために `.env` を作る必要はありません。`NODE_ENV` を指定しなければ、サーバーも
+データベースのスクリプトも `.env.localhost` を読み込みます。どのファイルがいつ使われるか、
+各変数の意味と制約は [環境変数設定ガイド](./env-configuration.md) を参照してください。
+
+## 日々の開発
+
+### 起動
+
+| コマンド | 内容 |
+|----------|------|
+| `pnpm dev` | フロントエンドのパッケージをビルドしたあと、全パッケージの `dev` を並列実行する。バックエンド（:3000）、portal-app（:3001）、admin-app（:3002）、dashboard-app（:3003） |
+| `pnpm dev:backend` | バックエンドのみ。ソースの変更で再起動する |
+| `make backend-dev` | `make infra-up` のあとに `pnpm dev:backend` を実行する |
+| `pnpm dev:watch:admin-app` | admin-app と、フロントエンドのパッケージの watch ビルドを同時に起動する（`portal-app`、`dashboard-app` も同様） |
+
+バックエンドは起動時に設定を検証し、データベースに接続できることを確認します。どちらかに失敗すると
+起動しません（[トラブルシューティング](#トラブルシューティング)）。
 
 ```bash
-# 1. 該当パッケージに依存関係を追加
-cd backend/packages/api  # 例
-pnpm add express-rate-limit
-pnpm add -D @types/express-rate-limit
-
-# 2. ルートに戻る
-cd ../../..
-
-# 3. 依存関係を再インストール（ワークスペースの整合性確保）
-pnpm install
-
-# 4. コードで使用
-vim backend/packages/api/src/middleware/rate-limit.ts
-
-# 5. バックエンドを再ビルド
-make backend-build
-make backend-start
+curl http://localhost:3000/api/system/ready   # データベースに接続できていれば 200
+curl http://localhost:3000/api/v1/salons      # サロン一覧
 ```
 
-### フロントエンドパッケージに追加
+実装済みの API は Salon ドメインとシステムエンドポイント（`/api/system/alive`、`/api/system/ready`、
+`/api/system/health`）だけです。他のドメインは TypeSpec とデータベーススキーマにだけ存在します。
+
+### Docker Compose で全体を起動する
 
 ```bash
-# 1. 該当パッケージに依存関係を追加
-cd frontend/apps/portal-app
-pnpm add react-hook-form
-
-# 2. ルートに戻る
-cd ../../..
-
-# 3. 依存関係を再インストール
-pnpm install
-
-# 4. フロントエンドをビルド・起動
-make frontend-build  # 必須：新しい依存関係を含めてビルド
-make frontend-dev    # 開発サーバーを起動
+make docker-up     # 全サービスを起動する（バックエンドのコンテナを含む）
+make docker-logs   # ログを追う
+make docker-down   # 停止する
+make docker-clean  # 停止してボリュームも削除する（データベースの中身が消える）
 ```
 
-### 注意点
+`docker-compose.yml` の `migration` サービスが、バックエンドの起動前に `db:migrate` と
+`db:seed --if-empty` を実行します。空のデータベースにはスキーマとサンプルデータを作り、
+既存のデータベースには未適用のマイグレーションだけを適用するので、データは保持されます。
 
-- パッケージ間の依存関係の循環を避ける
-- 型定義（@types/*）も忘れずに追加
-- グローバルな依存関係はルートのpackage.jsonに追加
-- `make frontend-build`はpnpmのワークスペース機能により依存関係を自動解決
+### ポート
 
-## 型生成システムの詳細
+| サービス | ポート |
+|----------|--------|
+| バックエンド API | 3000 |
+| portal-app / admin-app / dashboard-app（`pnpm dev`、`pnpm preview:frontend`） | 3001 / 3002 / 3003 |
+| admin / portal / dashboard の Docker イメージ | 4001 / 4002 / 4003 |
+| PostgreSQL | 5432 |
+| MailHog（SMTP / Web UI） | 1025 / 8025 |
+| MinIO（API / コンソール） | 9000 / 9001 |
 
-### 型生成のアーキテクチャ
+## TypeSpec を変更する
 
-```mermaid
-graph TD
-    A[TypeSpec定義] -->|tsp compile| B[OpenAPI仕様]
-    B -->|openapi-typescript| C[バックエンド型]
-    B -->|openapi-typescript-codegen| D[フロントエンドAPIクライアント]
-    
-    C --> E[backend/packages/generated/src/generated/]
-    D --> F[frontend/packages/api-client/src/generated/]
-```
-
-### 型生成スクリプトの詳細
-
-#### 場所と役割
-
-| スクリプト | 場所 | 役割 |
-|------------|------|------|
-| TypeSpecコンパイラ | `specs/package.json` | TypeSpecからOpenAPIを生成 |
-| バックエンド型生成 | `backend/packages/generated/scripts/generate-types.ts` | OpenAPIからTypeScript型を生成 |
-| フロントエンドクライアント生成 | `frontend/packages/api-client/scripts/` | OpenAPIからAPIクライアントを生成 |
-
-#### 実行コマンド
+API の契約は `specs/` の TypeSpec が出発点です。モデルと列の対応ルールは
+[TypeSpec API 型定義ルール](./typespec-api-type-rules.md)、生成の仕組みは
+[型生成システム](./type-generation-system.md) を参照してください。
 
 ```bash
-# 全体の型生成（推奨）
+# 1. specs/models/ や specs/operations/ の .tsp を編集する
+
+# 2. 生成する（編集中は pnpm generate:watch で変更のたびに再生成できる）
 pnpm generate
+#   pnpm generate:spec     TypeSpec → OpenAPI
+#   pnpm generate:api      OpenAPI → フロントエンドの API クライアント（orval）
+#   pnpm generate:backend  OpenAPI → バックエンドの型（openapi-typescript）
 
-# 個別実行
-pnpm generate:spec      # 1. TypeSpec → OpenAPI
-pnpm generate:backend   # 2. OpenAPI → バックエンド型
-pnpm generate:api       # 3. OpenAPI → フロントエンドクライアント
+# 3. 生成された型に合わせて実装とテストを直す
 
-# Makefile経由（ビルドプロセスに統合）
-make backend-build      # 型生成を含むバックエンドビルド
-make frontend-build     # 型生成を含むフロントエンドビルド
+# 4. API モデルとデータベーススキーマの整合を確認する
+pnpm check:api-db
 ```
 
-### 生成されるファイル
+生成されるファイル:
 
-#### バックエンド型ファイル
+| 出力先 | 内容 |
+|--------|------|
+| `specs/tsp-output/@typespec/openapi3/generated/openapi.yaml` | OpenAPI ドキュメント |
+| `backend/packages/generated/src/` | バックエンドの型（`api-types.ts`）と Zod スキーマ（`schema.ts`） |
+| `frontend/packages/api-client/src/generated/` | フロントエンドの API クライアント（`endpoints/`、`models/`） |
 
-```
-backend/packages/generated/src/generated/
-├── api-types.ts      # OpenAPIから生成された型定義
-│                     # - paths: APIエンドポイントの型
-│                     # - components: コンポーネント型（モデル、リクエスト、レスポンス）
-│                     # - operations: 操作型
-├── schema.ts         # Zodスキーマ（バリデーション用）
-└── index.ts          # エクスポート用インデックス
-```
+生成ファイルは TypeSpec の変更と同じコミットに含めます。`pnpm check:generated` は再生成したうえで
+コミット済みの内容と比較し、差分があれば失敗します（CI でも実行されます）。未コミットの生成物が
+あると失敗するので、コミットしてから実行します。
 
-#### フロントエンドAPIクライアントファイル
+## データベースを変更する
 
-```
-frontend/packages/api-client/src/generated/
-├── core/             # APIクライアントコア
-├── models/           # データモデル
-├── services/         # APIサービスクラス
-└── index.ts          # エクスポート
-```
-
-### トラブルシューティング
-
-#### 型生成が失敗する場合
+データベースが Drizzle スキーマの正です。`schema.ts` を手で編集するのではなく、SQL マイグレーションを
+書いて、そこからスキーマを生成し直します。以下のコマンドはすべて、起動中の PostgreSQL が必要です。
 
 ```bash
-# OpenAPIファイルが存在しない場合
-pnpm generate:spec  # まずTypeSpecをコンパイル
+# 1. マイグレーションを書く（YYYYMMDDHHMM_description.sql）
+#    backend/packages/database/sql/migrations/ に置く
 
-# 型生成スクリプトのパスを確認
-ls backend/packages/generated/scripts/generate-types.ts
-
-# 手動で実行してエラーを確認
-cd backend/packages/generated
-pnpm tsx scripts/generate-types.ts
-```
-
-#### TypeScriptの型エラーが解決しない場合
-
-```bash
-# TypeScriptサーバーを再起動（VSCode）
-# Cmd/Ctrl + Shift + P → "TypeScript: Restart TS Server"
-
-# ビルドキャッシュをクリア
-find . -name "*.tsbuildinfo" -delete
-pnpm typecheck
-```
-
-## 新しいエンドポイントを追加する場合
-
-### 手順
-
-```bash
-# 1. TypeSpecでAPI定義を追加
-vim specs/operations/staff-operations.tsp
-
-# 2. 型を生成
-pnpm generate
-
-# 3. Domain層にモデルを追加（必要な場合）
-vim backend/packages/domain/src/models/staff.ts
-vim backend/packages/domain/src/repositories/staff.repository.ts
-
-# 4. Infrastructure層に実装を追加
-vim backend/packages/infrastructure/src/repositories/staff.repository.impl.ts
-
-# 5. UseCase層にビジネスロジックを追加
-vim backend/packages/domain/src/business-logic/staff/create-staff.use-case.ts
-
-# 6. API層にルートを追加
-vim backend/packages/api/src/routes/staff.ts
-
-# 7. ルートを登録
-vim backend/packages/api/src/index.ts
-
-# 8. ビルドして動作確認
-make backend-build
-make backend-start
-
-# 9. curlでテスト
-curl -X POST http://localhost:3000/api/v1/staff \
-  -H "Content-Type: application/json" \
-  -d '{"name": "Test Staff"}'
-```
-
-### チェックリスト
-
-- [ ] TypeSpec定義を追加
-- [ ] Domain層のモデル・インターフェース作成
-- [ ] Repository実装
-- [ ] UseCase実装
-- [ ] APIルート実装
-- [ ] エラーハンドリング
-- [ ] バリデーション
-- [ ] テスト作成
-
-## データベーススキーマを変更する場合
-
-### 手順
-
-```bash
-# 1. SQLマイグレーションファイルを作成
-echo "ALTER TABLE users ADD COLUMN age INT;" > backend/packages/database/sql/migrations/$(date +%Y%m%d%H%M)_add_age.sql
-
-# 2. マイグレーションを実行（未適用のものだけが、1ファイル1トランザクションで適用される）
-#    作成中に試すだけなら: pnpm db:migrate <ファイル> （適用済みとして記録しない）
+# 2. 適用する。未適用のものだけが、名前順に、1 ファイル 1 トランザクションで適用される
 pnpm db:migrate
 
-# 3. TypeScript型を生成
+# 3. schema.ts と relations.ts を再生成する（drizzle-kit はこの読み取りにだけ使う）
 pnpm db:introspect
 
-# 5. 関連するRepository実装を更新
-vim backend/packages/infrastructure/src/repositories/*.impl.ts
+# 4. sql/setup.sql を再生成する
+pnpm db:generate-sql
 
-# 6. ビルドして動作確認
-make backend-build
-make backend-start
+# 5. マイグレーション、schema.ts、relations.ts、sql/setup.sql をコミットする
 ```
 
-### 注意点
+- 適用済みのマイグレーションは `migration_history.applied_migrations` に記録されます。どこかで
+  適用されたマイグレーションは編集せず、新しいファイルを書きます。
+- 作成中のマイグレーションを試すには `pnpm db:migrate <ファイル>` を使います。そのファイルだけを
+  実行し、適用済みとして記録しません。相対パスは `backend/packages/database` からの相対です。
+- 空のデータベースに対する `pnpm db:migrate` は `sql/setup.sql` からスキーマを作り、既存の
+  マイグレーションをすべて適用済みとして記録します。
+- `pnpm check:db-schema`（`make db-check`）は、データベースを作り直して `schema.ts`、`relations.ts`、
+  `sql/setup.sql` を再生成し、コミット済みの内容と一致するかを確認します。**接続先のデータベースの
+  中身はすべて削除されます。**
+- 列を変えたら API モデルも合わせます。`pnpm check:api-db` が OpenAPI ドキュメントとスキーマを比較します。
 
-- マイグレーションは不可逆な場合があるため、本番環境では慎重に
-- 既存データへの影響を考慮
-- 必要に応じてデータ移行スクリプトを作成
+その他のコマンド:
 
-## バグ修正を行う場合
+| コマンド | 内容 |
+|----------|------|
+| `pnpm db:fresh` | すべて削除し、`sql/setup.sql` からスキーマを作り直す |
+| `pnpm db:seed` | サンプルデータを投入する（`--if-empty` を付けるとデータがないときだけ） |
+| `pnpm db:truncate` | 全テーブルの行を削除する。スキーマは残る |
 
-### 手順
+接続先は `DATABASE_URL` で決まります。別のデータベースを対象にするときは、コマンドの前に
+`DATABASE_URL=...` を付けます（[環境変数設定ガイド](./env-configuration.md)）。
+
+## エンドポイントやドメインを追加する
+
+Salon ドメインがリファレンス実装です。新しいドメインは同じ構成・同じ順序で追加します。規約は
+ルートの `CLAUDE.md`、各層の詳細は [ドメイン実装リファレンス](./domain-implementation-reference.md)
+にあります。ここでは作業の順序と、手本にする Salon のファイルだけを示します。
+
+| 順序 | 作業 | Salon での場所 |
+|------|------|----------------|
+| 1 | テーブルを追加・変更する（[データベースを変更する](#データベースを変更する)） | `backend/packages/database/sql/migrations/` |
+| 2 | モデルと操作を TypeSpec に定義し、生成する（[TypeSpec を変更する](#typespec-を変更する)） | `specs/models/salon.tsp`、`specs/operations/salon-operations.tsp` |
+| 3 | モデルの型（DB スキーマと生成された API 型から導出） | `backend/packages/domain/src/models/salon.ts` |
+| 4 | リクエストの Zod スキーマ | `backend/packages/domain/src/schemas/salon.schema.ts` |
+| 5 | マッパー | `backend/packages/domain/src/mappers/read/salon.mapper.ts`、`backend/packages/domain/src/mappers/write/salon.mapper.ts` |
+| 6 | リポジトリのインターフェースと実装 | `backend/packages/domain/src/repositories/salon.repository.ts`、`backend/packages/infrastructure/src/repositories/salon.repository.impl.ts` |
+| 7 | ユースケース | `backend/packages/domain/src/business-logic/salon/` |
+| 8 | ハンドラーとルーター、アプリへの登録 | `backend/packages/api/src/routes/salon/`、`backend/packages/api/src/index.ts` |
+| 9 | API と DB の整合ルールにモデルを登録する | `backend/packages/database/src/scripts/api-consistency-rules.ts` |
+| 10 | テスト（スキーマ・マッパー・ユースケースの単体テスト、エンドポイントごとの統合テスト） | `backend/packages/domain/src/__tests__/`、`backend/packages/api/src/__tests__/salon.integration.test.ts` |
+
+テストの基準は [テスト要件](./testing-requirements.md)、統合テストの書き方は
+[API テストガイド](./api-testing-guide.md) を参照してください。
+
+## 依存関係を追加する
+
+依存関係は、それを使うパッケージに追加します。
 
 ```bash
-# 1. 問題を再現するテストを書く
-vim backend/packages/domain/src/business-logic/customer/__tests__/get-customer.test.ts
-
-# 2. テストが失敗することを確認
-pnpm test
-
-# 3. バグを修正
-vim backend/packages/domain/src/business-logic/customer/get-customer.use-case.ts
-
-# 4. テストが成功することを確認
-pnpm test
-
-# 5. リグレッションテストを実行
-make test
-
-# 6. ビルドして動作確認
-make backend-build
-make backend-start
-
-# 7. 手動でも動作確認
-curl http://localhost:3000/api/v1/customers/123
+pnpm --filter @beauty-salon-backend/api add <パッケージ名>
+pnpm --filter @beauty-salon-frontend/portal-app add -D <パッケージ名>
 ```
 
-### デバッグのヒント
+- 追加後に `pnpm knip` を実行すると、使われていない依存関係・ファイル・エクスポートが分かります。
+- 新しいリリースがある依存関係は `pnpm update:check` で一覧できます。
+- CI は `pnpm audit --audit-level=high` で脆弱性を確認します（`make audit`）。
 
-- ログを活用: `console.log`や構造化ログ
-- エラースタックトレースを確認
-- `make docker-logs`でDockerコンテナのログを確認
-- TypeScriptの型エラーは`make typecheck`で確認
+## バグを修正する
+
+1. 不具合を再現するテストを、修正する層のテストに追加する。たとえばユースケースなら
+   `backend/packages/domain/src/__tests__/salon.usecase.test.ts`、HTTP の振る舞いなら
+   `backend/packages/api/src/__tests__/` の統合テスト
+2. テストが失敗することを確認する
+3. 修正し、テストが通ることを確認する
+
+```bash
+pnpm --filter @beauty-salon-backend/domain run test                      # パッケージの単体テスト
+pnpm --filter @beauty-salon-backend/domain run test salon.usecase        # ファイル名で絞り込む
+pnpm --filter @beauty-salon-backend/api run test:integration salon       # 統合テスト（PostgreSQL が必要）
+```
+
+調査には構造化ログを使います。`.env.localhost` では `LOG_LEVEL=debug`、`LOG_FORMAT=pretty` です。
+レスポンスの `X-Request-Id` ヘッダー（成功時は `meta.correlationId`、エラー時は `correlationId`）と
+同じ ID が、そのリクエストのすべてのログ行に付きます。アプリケーションコードに `console` は書きません。
+
+## コミット前の確認
+
+```bash
+pnpm format:fix    # Biome の整形・import の並べ替え・安全な修正を適用し、TypeSpec も整形する
+pnpm lint          # Biome の lint
+pnpm typecheck     # 型チェック（先にビルドが必要）
+pnpm test          # 単体テスト（先にビルドが必要）
+```
+
+まとめて確認するには `make ci-check` を使います。CI ワークフローのチェックを、次の順に実行します。
+最初の失敗で止まります。
+
+```bash
+pnpm install --frozen-lockfile
+pnpm check:versions     # Node.js のバージョン指定が .node-version と一致しているか
+pnpm check:generated    # 生成ファイルが TypeSpec と一致しているか
+pnpm check:api-db       # API モデルとデータベーススキーマが一致しているか
+pnpm lint
+pnpm format:check
+pnpm build:prod
+pnpm typecheck
+pnpm knip
+pnpm test
+pnpm test:integration   # Docker、または TEST_DATABASE_URL が指す PostgreSQL が必要
+pnpm audit --audit-level=high
+```
+
+CI のチェックのうち、`pnpm check:db-schema` だけは `make ci-check` に含まれません。CI では実行されますが、
+接続先のデータベースを作り直すため、手元では `make db-check` として分けてあります。スキーマや
+マイグレーションを変更したときに、消えてもよいデータベースに対して実行します。
+
+チェックとは別に、CI は `dev`・`test`・`stg` 向けのビルド（`make ci-check` は `build:prod` のみ）と、
+Docker イメージのビルドも行います。イメージは、手元では `make ci-check-dockerfile` で本番用の 4 つを
+ビルドできます（Docker が必要）。
+
+### pre-commit フック
+
+`git commit` のたびに husky が lint-staged を実行します（`.husky/pre-commit`、`.lintstagedrc.json`）。
+
+- ステージされた `*.{ts,tsx,js,jsx,json,jsonc,css}` に `biome check --write`
+- ステージされた `*.tsp` に `tsp format`
+
+フックが行うのは整形と lint だけです。型チェックとテストは実行しません。
+
+## CI が実行する内容
+
+### `.github/workflows/ci.yml`
+
+`main`・`develop` への push と、すべてのプルリクエストで実行されます。
+
+| ジョブ | 内容 |
+|--------|------|
+| `quality` | `check:versions`、`check:generated`、`check:api-db`、`lint`、`format:check`、`build:prod`、`typecheck`、`knip`。OpenAPI ドキュメントをアーティファクトとして保存する |
+| `test` | `build:prod` のあと、データベースの用意の仕方を変えて 2 通り実行する。`external`: サービスコンテナの PostgreSQL を `TEST_DATABASE_URL` で使い、単体テスト、統合テスト、`check:db-schema` を実行する。`testcontainers`: テスト自身がコンテナを起動し、統合テストだけを実行する |
+| `build` | `pnpm build:dev`、`build:test`、`build:stg`、`build:prod` をそれぞれ実行する |
+| `security` | `pnpm audit --audit-level=high` |
+| `docker-backend`、`docker-frontend-apps` | `main` への push のときだけ、上の `quality`・`test`・`build` が成功したあとにイメージをビルドして GitHub Container Registry に push する |
+
+### `.github/workflows/docker-validation.yml`
+
+Dockerfile、`backend/`、`frontend/`、`specs/`、`shared-config/`、ロックファイルなどを変更する
+プルリクエストで実行されます。バックエンドと 3 つのフロントエンドのイメージをビルドし、コンテナを
+起動して応答を確認します。バックエンドは `/api/system/ready` が応答することと、停止時の終了コードが
+0 であることを確認します。
+
+### `.github/workflows/deploy.yml`
+
+イメージをビルドして GitHub Container Registry に push します。内容と、自動化されていない作業は
+[リリースワークフローガイド](./release-workflow.md) を参照してください。
 
 ## トラブルシューティング
 
-### ビルドエラーが発生する場合
-
-```bash
-# 完全クリーンアップ
-make fresh
-
-# 個別パッケージのビルドを試す
-cd backend/packages/domain
-pnpm build:prod
-```
-
-### 型エラーが解決しない場合
-
-```bash
-# TypeScriptのキャッシュをクリア
-find . -name "*.tsbuildinfo" -delete
-make typecheck
-```
-
-### 依存関係の問題
-
-```bash
-# lockfileを再生成
-rm pnpm-lock.yaml
-pnpm install
-```
-
-### フロントエンドのビルドエラー
-
-```bash
-# フロントエンドパッケージの依存関係を確認
-cd frontend
-pnpm ls --depth=0
-
-# ビルドキャッシュをクリア
-pnpm --filter './frontend/**' run clean
-
-# 依存関係順にビルド
-make frontend-build
-```
-
-### フロントエンド開発サーバーが起動しない場合
-
-```bash
-# node_modulesを削除して再インストール
-rm -rf node_modules frontend/**/node_modules
-pnpm install
-
-# フロントエンドを再ビルド
-make frontend-build
-
-# 開発サーバーを起動
-make frontend-dev
-```
-
-## ビルドとデプロイ
-
-### 開発環境でのビルド
-
-```bash
-# 開発ビルド（全パッケージ）
-pnpm build:dev
-
-# バックエンドのみ
-pnpm --filter "./backend/**" build:dev
-
-# フロントエンドアプリ個別
-pnpm --filter "@beauty-salon/admin-app" build:dev
-pnpm --filter "@beauty-salon/portal-app" build:dev
-pnpm --filter "@beauty-salon/dashboard-app" build:dev
-```
-
-### テスト環境向けビルド
-
-```bash
-# 全パッケージ
-pnpm build:test
-
-# バックエンドのみ
-pnpm --filter "./backend/**" build:test
-```
-
-### ステージング環境向けビルド
-
-```bash
-# 全パッケージ
-pnpm build:stg
-
-# バックエンドのみ
-pnpm --filter "./backend/**" build:stg
-
-# フロントエンドアプリ
-pnpm --filter "@beauty-salon/admin-app" build:stg
-```
-
-### 本番環境向けビルド
-
-```bash
-# 全パッケージ
-pnpm build:prod
-
-# バックエンドのみ
-pnpm --filter "./backend/**" build:prod
-
-# フロントエンドアプリ
-pnpm --filter "@beauty-salon/admin-app" build:prod
-```
-
-### Dockerイメージのビルド
-
-```bash
-# バックエンドイメージ
-docker build -f Dockerfile.backend -t beauty-salon-backend:latest .
-
-# フロントエンドイメージ
-docker build -f Dockerfile.frontend --build-arg APP=admin --build-arg APP_PORT=4001 -t beauty-salon-admin:latest .
-docker build -f Dockerfile.frontend --build-arg APP=portal --build-arg APP_PORT=4002 -t beauty-salon-portal:latest .
-docker build -f Dockerfile.frontend --build-arg APP=dashboard --build-arg APP_PORT=4003 -t beauty-salon-dashboard:latest .
-
-# 本番用ビルド（multi-stage）
-docker build -f Dockerfile.backend --target production -t beauty-salon-backend:prod .
-```
-
-### CI/CDパイプライン
-
-#### GitHub Actionsでの自動デプロイ
-
-1. **プルリクエスト時**: CIパイプラインが自動実行
-   - Linting、Type checking
-   - Unit/Integration tests
-   - ビルド確認
-
-2. **mainブランチへのプッシュ**: ステージング環境へ自動デプロイ
-   - Dockerイメージのビルド
-   - GitHub Container Registryへプッシュ
-   - staging-latestタグで更新
-
-3. **本番環境へのデプロイ**: 手動トリガー
-   ```
-   1. GitHubのActionsタブを開く
-   2. "Deploy"ワークフローを選択
-   3. "Run workflow"をクリック
-   4. Environment: "production"を選択
-   5. "Run workflow"で実行
-   ```
-
-### デプロイ済みイメージの確認
-
-```bash
-# GitHub Container Registryのイメージ一覧
-# https://github.com/<org>/<repo>/pkgs/container/<repo>-backend
-# https://github.com/<org>/<repo>/pkgs/container/<repo>-frontend-admin
-# https://github.com/<org>/<repo>/pkgs/container/<repo>-frontend-portal
-# https://github.com/<org>/<repo>/pkgs/container/<repo>-frontend-dashboard
-```
-
-### ポート構成
-
-| サービス | ポート | 説明 |
-|---------|-------|------|
-| Backend API | 3000 | RESTful API |
-| Admin App | 4001 | 管理者用ダッシュボード |
-| Portal App | 4002 | 顧客向けポータル |
-| Dashboard App | 4003 | メインダッシュボード |
-
-### ヘルスチェック
-
-```bash
-# バックエンド（生存確認 / 受付可否 / 詳細）
-curl http://localhost:3000/api/system/alive
-curl http://localhost:3000/api/system/ready
-curl http://localhost:3000/api/system/health
-
-# フロントエンドアプリ（静的ファイル）
-curl http://localhost:4001/
-curl http://localhost:4002/
-curl http://localhost:4003/
-```
-
-
-
+| 症状 | 原因と対処 |
+|------|-----------|
+| `pnpm db:fresh` などのデータベースコマンドや `pnpm typecheck` が `@beauty-salon-backend/*` を解決できずに失敗する | パッケージがビルドされていない。`pnpm build:backend`（または `pnpm build:dev`）を実行する |
+| バックエンドが `Invalid configuration` を出力して終了する | 環境変数が不足しているか不正。ログの `issues` に変数名と理由が並ぶ（[環境変数設定ガイド](./env-configuration.md)） |
+| バックエンドが `Cannot start: the database is unreachable` を出力して終了する | PostgreSQL が起動していないか、`DATABASE_URL` が違う。`make infra-up` で起動する |
+| フロントエンドの開発サーバーが起動しない | ポート 3001〜3003 が使用中。各アプリは決まったポートでしか起動しない（`strictPort`） |
+| `pnpm test:integration` がコンテナを起動できない | Docker が起動していない。起動するか、`TEST_DATABASE_URL` に既存の PostgreSQL を指定する |
+| 生成された型と実装が合わない | `pnpm generate` を実行する |
+| ビルド成果物や `node_modules` が壊れている | `pnpm clean` でビルド成果物を削除する。`pnpm fresh` はビルド成果物と `node_modules` を削除して再インストールする |

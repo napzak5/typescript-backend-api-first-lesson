@@ -1,522 +1,273 @@
 # 環境変数設定ガイド
 
-## 概要
+バックエンドの API サーバーとデータベーススクリプト、フロントエンドアプリが、どの環境変数を
+どこから読むかを説明します。運用者向けの変数一覧はルートの [README](../README.md) の
+"Operating the API Server" にあります。このガイドは、それに加えて開発者が知る必要のあることを扱います。
 
-本システムの環境変数設定について説明します。環境変数はプロジェクトルート直下の`.env`ファイルで一元管理し、Docker環境での運用を前提としています。Zodスキーマによる厳格な検証を行い、型安全性を保証します。
+## 目次
 
-## 環境変数ファイルの構成
+1. [バックエンドの設定の仕組み](#バックエンドの設定の仕組み)
+2. [どのファイルが使われるか](#どのファイルが使われるか)
+3. [サーバーが読む 14 個の変数](#サーバーが読む-14-個の変数)
+4. [サーバーが読まない変数](#サーバーが読まない変数)
+5. [データベーススクリプトとテストの接続先](#データベーススクリプトとテストの接続先)
+6. [Docker Compose](#docker-compose)
+7. [変数を追加する](#変数を追加する)
+8. [フロントエンドの環境変数](#フロントエンドの環境変数)
+9. [秘密情報の扱い](#秘密情報の扱い)
 
-```
-/project-root/
-├── .env                 # 実際の環境変数（gitignore対象）
-├── .env.example         # サンプル設定（リポジトリに含める）
-├── .env.test           # テスト用設定
-├── docker-compose.yml   # Docker構成（.envを参照）
-└── backend/
-    └── packages/
-        └── config/      # 環境変数の検証とアクセス
-```
+## バックエンドの設定の仕組み
 
-## Docker環境での利用
+設定の読み込みと検証は `@beauty-salon-backend/config` パッケージが担当します。
 
-docker-compose.ymlでは、ルート直下の`.env`ファイルを自動的に読み込みます：
+| ファイル | 役割 |
+|----------|------|
+| `backend/packages/config/src/environment.ts` | 環境名（`production`、`staging`、`development`、`test`、`localhost`）の定義 |
+| `backend/packages/config/src/env-loader.ts` | `loadEnvFile()`: 環境変数ファイルを `process.env` に読み込む。`getDatabaseUrl()`: スクリプト用の接続 URL |
+| `backend/packages/config/src/app-config.ts` | `parseAppConfig()`: 環境変数を検証して `AppConfig` にする |
 
-```yaml
-services:
-  backend:
-    env_file:
-      - .env
-    environment:
-      # Docker内部での通信用にホスト名を上書き
-      MAILHOG_HOST: mailhog
-      MINIO_ENDPOINT: http://minio:9000
-```
+原則:
 
-## 必須環境変数
+- サーバーが読む変数は 14 個で、**すべて必須**です。コードの中に既定値はありません。
+- 検証は起動時に 1 回だけ行い、失敗したらサーバーは起動しません。
+- 環境変数を読むのはエントリーポイント（`backend/apps/server/src/index.ts`）だけです。それ以外の
+  アプリケーションコードは `process.env` を読まず、`AppConfig` の値を引数として受け取ります。
+- 検証エラーに含まれるのは変数名と理由だけです。値は秘密情報の可能性があるので含めません。
 
-### データベース設定
+### 起動時の流れ
 
-```env
-# PostgreSQL接続設定
-DATABASE_URL=postgresql://user:password@localhost:5432/beauty_salon_dev
-DATABASE_POOL_SIZE=20
-DATABASE_CONNECTION_TIMEOUT=30000
-
-# データベースSSL設定（本番環境）
-DATABASE_SSL_ENABLED=true
-DATABASE_SSL_CA=/path/to/ca.pem
-```
-
-### 認証設定
-
-```env
-# JWT設定
-JWT_SECRET=your-secret-key-here
-JWT_EXPIRES_IN=7d
-JWT_REFRESH_SECRET=your-refresh-secret-key-here
-JWT_REFRESH_EXPIRES_IN=30d
-
-# セッション設定
-SESSION_SECRET=your-session-secret-here
-SESSION_COOKIE_NAME=beauty_salon_session
-SESSION_COOKIE_MAX_AGE=86400000
-SESSION_COOKIE_SECURE=true
-SESSION_COOKIE_SAME_SITE=strict
-
-# パスワードリセット
-PASSWORD_RESET_TOKEN_EXPIRES_IN=3600
-PASSWORD_RESET_URL=https://example.com/reset-password
-
-# メール確認
-EMAIL_VERIFICATION_TOKEN_EXPIRES_IN=86400
-EMAIL_VERIFICATION_URL=https://example.com/verify-email
-
-# 2要素認証
-TWO_FACTOR_ISSUER=Beauty Salon
-TWO_FACTOR_WINDOW=2
-```
-
-### メール設定
-
-```env
-# メールプロバイダー選択
-EMAIL_PROVIDER=mailgun  # development | mailhog | mailgun
-
-# 共通設定
-EMAIL_FROM_ADDRESS=noreply@example.com
-EMAIL_FROM_NAME=Beauty Salon
-EMAIL_REPLY_TO=support@example.com
-
-# MailHog設定（開発環境）
-MAILHOG_HOST=localhost
-MAILHOG_PORT=1025
-
-# Mailgun設定（本番環境）
-MAILGUN_API_KEY=key-xxxxxxxxxxxxxxxxxx
-MAILGUN_DOMAIN=mg.example.com
-MAILGUN_REGION=US  # US | EU
-MAILGUN_TEST_MODE=false
-MAILGUN_WEBHOOK_SIGNING_KEY=xxxxxxxxxx
-```
-
-### ストレージ設定
-
-```env
-# ストレージプロバイダー選択
-STORAGE_PROVIDER=minio  # minio | r2
-
-# MinIO設定（開発環境）
-MINIO_ENDPOINT=http://localhost:9000
-MINIO_BUCKET=beauty-salon-dev
-MINIO_REGION=us-east-1
-MINIO_ACCESS_KEY_ID=minioadmin
-MINIO_SECRET_ACCESS_KEY=minioadmin
-
-# Cloudflare R2設定（本番環境）
-R2_ENDPOINT=https://xxx.r2.cloudflarestorage.com
-R2_BUCKET=beauty-salon-prod
-R2_ACCOUNT_ID=your-account-id
-R2_ACCESS_KEY_ID=your-access-key
-R2_SECRET_ACCESS_KEY=your-secret-key
-
-# ストレージ共通設定
-STORAGE_MAX_FILE_SIZE=524288000  # 500MB
-STORAGE_ALLOWED_EXTENSIONS=jpg,jpeg,png,gif,pdf,doc,docx,xls,xlsx
-STORAGE_UPLOAD_URL_EXPIRES_IN=3600
-STORAGE_DOWNLOAD_URL_EXPIRES_IN=86400
-```
-
-### アプリケーション設定
-
-```env
-# 基本設定
-NODE_ENV=development  # development | test | production
-PORT=3000
-HOST=0.0.0.0
-API_PREFIX=/api
-API_VERSION=v1
-
-# CORS設定
-CORS_ORIGIN=http://localhost:3001,http://localhost:3002
-CORS_CREDENTIALS=true
-CORS_MAX_AGE=86400
-
-# レート制限
-RATE_LIMIT_WINDOW_MS=900000  # 15分
-RATE_LIMIT_MAX_REQUESTS=100
-RATE_LIMIT_SKIP_SUCCESSFUL_REQUESTS=false
-RATE_LIMIT_SKIP_FAILED_REQUESTS=false
-
-# ロギング
-LOG_LEVEL=info  # error | warn | info | debug
-LOG_FORMAT=json  # json | pretty
-LOG_FILE_PATH=./logs/app.log
-LOG_FILE_MAX_SIZE=10485760  # 10MB
-LOG_FILE_MAX_FILES=5
-
-# セキュリティ
-BCRYPT_ROUNDS=12
-ENCRYPTION_KEY=32-character-encryption-key-here
-CSRF_SECRET=your-csrf-secret-here
-```
-
-### 外部サービス設定
-
-```env
-# CDN設定（オプション）
-CDN_BASE_URL=https://cdn.example.com
-CDN_ENABLE=true
-```
-
-## 環境変数の検証
-
-### Zodスキーマによる検証
+`loadEnvFile()` → `parseAppConfig(process.env)` → `createLogger(...)` → `startServer(config, logger)` の
+順に進みます。
 
 ```typescript
-// config/env.schema.ts
-import { z } from 'zod'
+// backend/apps/server/src/index.ts（抜粋）
+const { environment, file } = loadEnvFile()
 
-export const envSchema = z.object({
-  // Node環境
-  NODE_ENV: z.enum(['development', 'test', 'production']),
-  PORT: z.coerce.number().int().positive().default(3000),
-  
-  // データベース
-  DATABASE_URL: z.string().url(),
-  DATABASE_POOL_SIZE: z.coerce.number().int().positive().default(20),
-  
-  // JWT
-  JWT_SECRET: z.string().min(32),
-  JWT_EXPIRES_IN: z.string().default('7d'),
-  
-  // メール
-  EMAIL_PROVIDER: z.enum(['development', 'mailhog', 'mailgun']),
-  EMAIL_FROM_ADDRESS: z.string().email(),
-  
-  // ストレージ
-  STORAGE_PROVIDER: z.enum(['minio', 'r2']),
-  STORAGE_MAX_FILE_SIZE: z.coerce.number().int().positive(),
-})
-
-// 環境変数の読み込みと検証
-export function loadEnv() {
-  const result = envSchema.safeParse(process.env)
-  
-  if (!result.success) {
-    console.error('環境変数の検証エラー:')
-    console.error(result.error.format())
-    process.exit(1)
-  }
-  
-  return result.data
-}
-```
-
-### プロバイダー別の条件付き検証
-
-```typescript
-// メールプロバイダー別の検証
-const emailConfigSchema = z.discriminatedUnion('provider', [
-  z.object({
-    provider: z.literal('development'),
-  }),
-  z.object({
-    provider: z.literal('mailhog'),
-    host: z.string().default('localhost'),
-    port: z.coerce.number().default(1025),
-  }),
-  z.object({
-    provider: z.literal('mailgun'),
-    apiKey: z.string().min(1),
-    domain: z.string().min(1),
-    region: z.enum(['US', 'EU']).default('US'),
-  }),
-])
-
-// ストレージプロバイダー別の検証
-const storageConfigSchema = z.discriminatedUnion('provider', [
-  z.object({
-    provider: z.literal('minio'),
-    endpoint: z.string().url(),
-    bucket: z.string().min(1),
-    accessKeyId: z.string().min(1),
-    secretAccessKey: z.string().min(1),
-  }),
-  z.object({
-    provider: z.literal('r2'),
-    endpoint: z.string().url(),
-    bucket: z.string().min(1),
-    accountId: z.string().min(1),
-    accessKeyId: z.string().min(1),
-    secretAccessKey: z.string().min(1),
-  }),
-])
-```
-
-## 環境別の設定例
-
-### 開発環境（.env.development）
-
-```env
-NODE_ENV=development
-PORT=3000
-API_PREFIX=/api
-
-# データベース（Docker）
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/beauty_salon_dev
-
-# 認証（開発用の固定値）
-JWT_SECRET=development-secret-key-minimum-32-characters-long
-SESSION_SECRET=development-session-secret
-
-# メール（MailHog）
-EMAIL_PROVIDER=mailhog
-EMAIL_FROM_ADDRESS=dev@example.com
-MAILHOG_HOST=localhost
-MAILHOG_PORT=1025
-
-# ストレージ（MinIO）
-STORAGE_PROVIDER=minio
-MINIO_ENDPOINT=http://localhost:9000
-MINIO_BUCKET=beauty-salon-dev
-MINIO_ACCESS_KEY_ID=minioadmin
-MINIO_SECRET_ACCESS_KEY=minioadmin
-
-# ロギング
-LOG_LEVEL=debug
-LOG_FORMAT=pretty
-```
-
-### テスト環境（.env.test）
-
-```env
-NODE_ENV=test
-PORT=3001
-
-# テスト用データベース
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/beauty_salon_test
-
-# テスト用の固定シークレット
-JWT_SECRET=test-secret-key-minimum-32-characters-long-fixed
-
-# メール（開発プロバイダー）
-EMAIL_PROVIDER=development
-
-# ストレージ（MinIO）
-STORAGE_PROVIDER=minio
-MINIO_ENDPOINT=http://localhost:9000
-MINIO_BUCKET=beauty-salon-test
-
-# ロギング
-LOG_LEVEL=error
-```
-
-### 本番環境（.env.production）
-
-```env
-NODE_ENV=production
-PORT=8080
-API_PREFIX=/api
-
-# 本番データベース
-DATABASE_URL=postgresql://user:password@db.example.com:5432/beauty_salon_prod
-DATABASE_SSL_ENABLED=true
-DATABASE_POOL_SIZE=50
-
-# 本番用シークレット（AWS Secrets Managerから取得）
-JWT_SECRET=${AWS_SECRET_JWT}
-SESSION_SECRET=${AWS_SECRET_SESSION}
-
-# メール（Mailgun）
-EMAIL_PROVIDER=mailgun
-EMAIL_FROM_ADDRESS=noreply@example.com
-MAILGUN_API_KEY=${AWS_SECRET_MAILGUN_KEY}
-MAILGUN_DOMAIN=mg.example.com
-
-# ストレージ（R2）
-STORAGE_PROVIDER=r2
-R2_ENDPOINT=https://xxx.r2.cloudflarestorage.com
-R2_BUCKET=beauty-salon-prod
-R2_ACCESS_KEY_ID=${AWS_SECRET_R2_ACCESS_KEY}
-R2_SECRET_ACCESS_KEY=${AWS_SECRET_R2_SECRET_KEY}
-
-# セキュリティ
-CORS_ORIGIN=https://app.example.com
-CORS_CREDENTIALS=true
-SESSION_COOKIE_SECURE=true
-
-# ロギング
-LOG_LEVEL=warn
-LOG_FORMAT=json
-```
-
-## セキュリティベストプラクティス
-
-### 1. シークレットの管理
-
-```typescript
-// ❌ 悪い例：ハードコード
-const jwtSecret = "my-secret-key"
-
-// ✅ 良い例：環境変数
-const jwtSecret = process.env.JWT_SECRET
-
-// ✅ より良い例：シークレットマネージャー
-import { getSecret } from './secrets-manager'
-const jwtSecret = await getSecret('jwt-secret')
-```
-
-### 2. 環境変数の暗号化
-
-```bash
-# .env.encryptedファイルの作成
-openssl enc -aes-256-cbc -salt -in .env -out .env.encrypted
-
-# 復号化
-openssl enc -aes-256-cbc -d -in .env.encrypted -out .env
-```
-
-### 3. 環境変数のローテーション
-
-```typescript
-// 定期的なシークレットローテーション
-async function rotateSecrets() {
-  // 新しいシークレットを生成
-  const newJwtSecret = generateSecureKey(64)
-  
-  // シークレットマネージャーに保存
-  await updateSecret('jwt-secret', newJwtSecret)
-  
-  // アプリケーションに通知
-  process.emit('secrets:rotated', { jwt: true })
-}
-
-// 月次でローテーション
-schedule.monthly(rotateSecrets)
-```
-
-## トラブルシューティング
-
-### 環境変数が読み込まれない
-
-```typescript
-// デバッグ用のログ
-console.log('Current environment:', process.env.NODE_ENV)
-console.log('Loaded variables:', Object.keys(process.env).filter(k => k.startsWith('APP_')))
-
-// dotenvの明示的な読み込み
-import dotenv from 'dotenv'
-import path from 'path'
-
-const envFile = process.env.NODE_ENV === 'production' 
-  ? '.env' 
-  : `.env.${process.env.NODE_ENV}`
-
-dotenv.config({ 
-  path: path.resolve(process.cwd(), envFile) 
-})
-```
-
-### 型安全な環境変数アクセス
-
-```typescript
-// 型定義
-declare global {
-  namespace NodeJS {
-    interface ProcessEnv {
-      NODE_ENV: 'development' | 'test' | 'production'
-      PORT: string
-      DATABASE_URL: string
-      JWT_SECRET: string
-      EMAIL_PROVIDER: 'development' | 'mailhog' | 'mailgun'
-      STORAGE_PROVIDER: 'minio' | 'r2'
-    }
-  }
-}
-
-// 型安全なアクセス
-const port = parseInt(process.env.PORT, 10)  // 型: string
-const provider = process.env.EMAIL_PROVIDER   // 型: 'development' | 'mailhog' | 'mailgun'
-```
-
-### 環境変数の検証エラー
-
-```typescript
-try {
-  const config = loadEnv()
-} catch (error) {
-  if (error instanceof z.ZodError) {
-    console.error('環境変数の検証エラー:')
-    error.errors.forEach(err => {
-      console.error(`- ${err.path.join('.')}: ${err.message}`)
-    })
-  }
+const parsed = parseAppConfig(process.env)
+if (parsed.type === 'error') {
+  createLogger({ level: 'info', format: 'json', environment }).fatal(
+    { issues: parsed.error },
+    'Invalid configuration',
+  )
   process.exit(1)
 }
 ```
 
-## Docker開発ワークフロー
+`parseAppConfig` は例外を投げず、`Result` を返します。問題のある変数は最初の 1 つではなく、すべて
+まとめて報告されます。
 
-### 1. 初回セットアップ
+```typescript
+// backend/packages/config/src/app-config.ts（抜粋）
+export type ConfigIssue = {
+  variable: string
+  message: string
+}
 
-```bash
-# .envファイルを作成
-cp .env.example .env
-
-# 必要に応じて.envを編集
-nano .env
-
-# Dockerコンテナを起動
-docker-compose up -d
+export const parseAppConfig = (
+  variables: Record<string, string | undefined>,
+): Result<AppConfig, ConfigIssue[]>
 ```
 
-### 2. 開発時の環境変数変更
+設定に問題があると、サーバーは `Invalid configuration` というログを 1 行出力し（`issues` に
+`variable` と `message` の一覧）、終了コード 1 で終了します。
 
-環境変数を変更した場合は、コンテナの再起動が必要です：
+## どのファイルが使われるか
 
-```bash
-# .envを編集
-nano .env
+```typescript
+// backend/packages/config/src/env-loader.ts（抜粋）
+export const loadEnvFile = (): LoadedEnvFile => {
+  const environment = environmentSchema
+    .catch('localhost')
+    .parse(process.env.NODE_ENV)
 
-# 該当するサービスのみ再起動
-docker-compose restart backend
-
-# または全体を再起動
-docker-compose down
-docker-compose up -d
+  return {
+    environment,
+    file: loadFile('.env') ?? loadFile(`.env.${environment}`),
+  }
+}
 ```
 
-### 3. サービス間の通信
+規則は 3 つです。
 
-Docker Compose内では、サービス名でアクセスできます：
+1. **すでに設定されている環境変数が優先されます。** ファイルは、プロセスの環境にない変数を補うだけ
+   です。デプロイ先では変数を直接設定すればよく、ファイルは不要です。
+2. **読み込むファイルは 1 つだけです。** リポジトリのルートに `.env` があればそれを、なければ
+   `.env.<NODE_ENV>` を読みます。`NODE_ENV` が未設定、または知らない値のときは `localhost` として
+   扱います。
+3. **ファイルがなくてもエラーにはなりません。** その場合はプロセスの環境変数だけで検証されます。
 
-- PostgreSQL: `postgres:5432`
-- MailHog: `mailhog:1025`（SMTP）、`mailhog:8025`（Web UI）
-- MinIO: `minio:9000`（API）、`minio:9001`（Console）
+| 実行するもの | 読み込まれるファイル |
+|--------------|----------------------|
+| `pnpm dev`、`pnpm dev:backend`、`pnpm start:backend`（`NODE_ENV` 未指定） | `.env.localhost` |
+| `NODE_ENV=staging pnpm start:backend` | `.env.staging` |
+| `pnpm db:fresh`、`pnpm db:migrate` などのデータベーススクリプト（`NODE_ENV` 未指定） | `.env.localhost` |
+| 本番イメージ（`Dockerfile.backend` の `production` ステージ） | なし。イメージにファイルは入っておらず、`NODE_ENV=production` 以外はすべてコンテナの環境変数で渡す |
+| 統合テスト | 読まない。テストは設定をコードで組み立て、データベースは `TEST_DATABASE_URL` で指定する |
 
-### 4. 本番環境への移行
+### リポジトリにあるファイル
 
-本番環境では以下の環境変数を変更：
+| ファイル | 用途 |
+|----------|------|
+| `.env.template` | 変数名の一覧。値は空か、プレースホルダー |
+| `.env.example` | 値の入った記入例 |
+| `.env.localhost` | ローカル開発の既定。`DATABASE_URL` は `make infra-up` が起動する PostgreSQL に合わせてある |
+| `.env.development`、`.env.test`、`.env.staging`、`.env.production` | `NODE_ENV` が対応する値のときに読まれる |
+| `.env.test.ci` | CI 用。CI はテストの前にこれを `.env.test` へコピーし、Docker イメージの起動確認ではコンテナに渡す |
+| `.env`（Git で追跡されない） | 置けば `.env.<NODE_ENV>` の代わりに読まれる |
+
+注意点:
+
+- `.env.development` と `.env.test` の `DATABASE_URL` は、`make infra-up` が作るものとは別のユーザーと
+  データベースを指しています。これらの環境名で手元のサーバーを起動するときは、該当のデータベースを
+  用意するか、`DATABASE_URL` を環境変数で上書きします。
+- ルートの `.env` は Docker Compose も読みます（[Docker Compose](#docker-compose)）。`.env.example` を
+  コピーして作る場合は、`DATABASE_URL` と `POSTGRES_*` が同じ接続先を表しているか確認してください。
+  `.env.example` のままでは、`DATABASE_URL` のパスワードと `POSTGRES_PASSWORD` が一致していません。
+
+## サーバーが読む 14 個の変数
+
+`backend/packages/config/src/app-config.ts` の `variablesSchema` が定義です。数値は数字だけの文字列で
+書きます（`3000.5`、`-1`、`30s` は不正）。
+
+| 変数 | 受け付ける値 | `AppConfig` | 意味 |
+|------|--------------|-------------|------|
+| `NODE_ENV` | `production`、`staging`、`development`、`test`、`localhost` | `environment` | 実行環境。ログの各行に付く |
+| `HOST` | 空でない文字列 | `server.host` | 待ち受けるアドレス |
+| `PORT` | 1〜65535 | `server.port` | 待ち受けるポート |
+| `TRUST_PROXY_HOPS` | 0〜10 | `server.trustProxyHops` | サーバーの前段にあるリバースプロキシの数（0 = クライアントが直接接続する）。レート制限はクライアントのアドレスごとに数えるので、実際の構成と一致させる |
+| `DATABASE_URL` | `postgres://` または `postgresql://` の URL | `database.url` | データベースの接続 URL |
+| `DATABASE_POOL_MAX` | 1〜1000 | `database.poolMax` | プールする接続の最大数 |
+| `DATABASE_CONNECTION_TIMEOUT` | 1000〜600000 | `database.connectTimeoutMs` | 接続タイムアウト（ミリ秒） |
+| `CORS_ORIGIN` | カンマ区切りのオリジン。1 つ以上 | `cors.origins` | ブラウザから API を呼べるオリジン |
+| `CORS_CREDENTIALS` | `true`、`false` | `cors.credentials` | 資格情報つきのリクエストを許可するか |
+| `CORS_MAX_AGE` | 0〜86400 | `cors.maxAgeSeconds` | プリフライトの結果をキャッシュできる時間（秒） |
+| `RATE_LIMIT_WINDOW_MS` | 1000〜86400000 | `rateLimit.windowMs` | レート制限のウィンドウ（ミリ秒） |
+| `RATE_LIMIT_MAX_REQUESTS` | 1〜1000000 | `rateLimit.maxRequests` | 1 つのクライアントアドレスがウィンドウ内に送れるリクエスト数（サーバーのインスタンスごとに数える） |
+| `LOG_LEVEL` | `fatal`、`error`、`warn`、`info`、`debug`、`trace`、`silent` | `logging.level` | 出力するログの最低レベル |
+| `LOG_FORMAT` | `json`、`pretty` | `logging.format` | `json` は 1 行 1 オブジェクト、`pretty` はターミナル向け |
+
+`CORS_ORIGIN` の各要素は `https://example.com` のようなオリジンそのものでなければなりません。
+パスや末尾の `/` が付いたもの、スキームのないもの、`*` は不正です。
+
+この表と README の表は同じ内容を保ちます。
+
+## サーバーが読まない変数
+
+`.env.*` ファイルには、上の 14 個以外の変数も多く入っています。
+
+- **Docker Compose が使うもの**: `POSTGRES_DB`、`POSTGRES_USER`、`POSTGRES_PASSWORD`、`POSTGRES_PORT`、
+  `MAILHOG_SMTP_PORT`、`MAILHOG_WEB_PORT`、`MINIO_ACCESS_KEY_ID`、`MINIO_SECRET_ACCESS_KEY`、
+  `MINIO_BUCKET`、`MINIO_API_PORT`、`MINIO_CONSOLE_PORT`
+- **`getDatabaseUrl()` が `DATABASE_URL` のないときに使うもの**: `POSTGRES_USER`、`POSTGRES_PASSWORD`、
+  `DB_HOST`、`POSTGRES_PORT`、`POSTGRES_DB`
+- **どのコードも読まないもの**: `JWT_*`、`SESSION_*`、`EMAIL_*`、`MAILGUN_*`、`SMTP_*`、`STORAGE_*`、
+  `R2_*`、`S3_*`、`CDN_*`、`LOG_FILE_*`、`DATABASE_POOL_MIN`、`DATABASE_POOL_SIZE` など。認証、
+  メール送信、ファイルストレージは実装されていません
+
+`parseAppConfig` は知らない変数を無視するので、これらがあってもなくてもサーバーの起動には影響しません。
+
+## データベーススクリプトとテストの接続先
+
+`pnpm db:migrate` などのデータベーススクリプト（`backend/packages/database/src/scripts/`）と drizzle-kit の設定は、
+サーバーと同じ規則でファイルを読み込んだあと、`getDatabaseUrl()` で接続先を決めます。
+
+- `DATABASE_URL` があればそれを使います。各環境の `.env.<NODE_ENV>` ファイルはすべて `DATABASE_URL` を
+  定義しています。
+- `DATABASE_URL` がないときだけ、`POSTGRES_USER`、`POSTGRES_PASSWORD`、`DB_HOST`、`POSTGRES_PORT`、
+  `POSTGRES_DB` から URL を組み立てます。それぞれにローカル開発用の既定値があります。
+
+別のデータベースを対象にするときは、環境変数で指定します。
 
 ```bash
-NODE_ENV=production
-EMAIL_PROVIDER=mailgun
-STORAGE_PROVIDER=r2
-SESSION_COOKIE_SECURE=true
-CORS_ORIGIN=https://app.example.com
+DATABASE_URL=postgres://<user>:<password>@<host>:5432/<database> pnpm db:migrate
 ```
 
-### 5. シークレット管理
+統合テストは `DATABASE_URL` を使いません。`TEST_DATABASE_URL` が設定されていればその PostgreSQL を使い、
+なければ testcontainers でコンテナを起動します（[API テストガイド](./api-testing-guide.md)）。
 
-本番環境では環境変数を直接設定せず、シークレット管理サービスを使用：
+## Docker Compose
+
+`docker-compose.yml` は `${POSTGRES_USER:-postgres}` のように、変数がなければ既定値を使う形で
+書かれています。Docker Compose は、シェルの環境変数と、ルートに `.env` があればその内容を置換に使います。
+`.env.localhost` は置換には使われません。
+
+- `postgres` サービス: `POSTGRES_DB`、`POSTGRES_USER`、`POSTGRES_PASSWORD`、`POSTGRES_PORT`
+- `backend` サービス: `.env.localhost` の内容をコンテナの環境変数として渡したうえで、`NODE_ENV`
+  （既定は `development`）、`PORT`、`DATABASE_URL`（Compose 内の `postgres` サービス宛て）などを上書きする
+- `migration` サービス: `DATABASE_URL` だけを受け取り、`db:migrate` と `db:seed --if-empty` を実行する
+
+## 変数を追加する
+
+サーバーの設定を 1 つ増やすときに変更する場所です。
+
+1. **スキーマ**: `backend/packages/config/src/app-config.ts` の `variablesSchema` に変数を、`AppConfig` に
+   フィールドを、`toAppConfig` に対応を追加する。必須とし、既定値は付けない
+2. **すべての環境変数ファイル**: `.env.localhost`、`.env.development`、`.env.test`、`.env.test.ci`、
+   `.env.staging`、`.env.production`、`.env.example` に値を、`.env.template` に変数名を追加する
+3. **テスト**: `backend/packages/config/src/__tests__/app-config.test.ts` の `variables` に追加し、不正な値の
+   ケースを `should reject` の表に足す。このテストは、上の各ファイルがサーバーを完全に設定できること、
+   `.env.template` がすべての変数名を含むことも確認する
+4. **値を渡す**: `AppConfig` から、使う場所まで引数で渡す（`backend/apps/server/src/server.ts` の
+   `startServer` → `createApp` の `settings`）。アプリケーションコードで `process.env` を読まない
+5. **ドキュメント**: README の表と、このガイドの表に追加する
+6. **デプロイ先**: 新しいバージョンを起動する前に変数を設定する。設定されていなければサーバーは
+   起動しない
 
 ```bash
-# AWS Secrets Manager
-aws secretsmanager get-secret-value --secret-id beauty-salon-prod
-
-# Kubernetes Secrets
-kubectl create secret generic beauty-salon-secrets --from-env-file=.env.production
-
-# Docker Swarm Secrets
-docker secret create beauty_salon_jwt_secret jwt_secret.txt
+pnpm --filter @beauty-salon-backend/config run test
 ```
+
+## フロントエンドの環境変数
+
+フロントエンドアプリは Vite の仕組みで `VITE_*` 変数を読みます。値は**ビルド時に**バンドルへ
+埋め込まれ、実行時には変えられません。
+
+各アプリのディレクトリ（`frontend/apps/admin-app`、`frontend/apps/portal-app`、
+`frontend/apps/dashboard-app`）に、モードごとのファイルがあります。
+
+| 変数 | 用途 |
+|------|------|
+| `VITE_MODE` | 環境名。環境バナーの表示と、`production` 以外で React Query Devtools を出す判定に使う |
+| `VITE_APP_TITLE` | 画面に表示するアプリ名 |
+| `VITE_BACKEND_BASE_URL` | バックエンドのベース URL |
+
+| 各アプリのスクリプト | Vite のモード | 読まれるファイル |
+|----------------------|---------------|------------------|
+| `dev` | `development` | `.env.development` |
+| `build:test` | `test` | `.env.test` |
+| `build:stg` | `staging` | `.env.staging` |
+| `build:prod` | `production` | `.env.production` |
+| `build:dev` | `dev` | なし（`.env.dev` はない）。`VITE_*` は未定義になる |
+| `build:localhost` | `localhost` | admin-app にだけ `.env.localhost` がある |
+
+変数の型は各アプリの `src/vite-env.d.ts` に宣言します（例: `frontend/apps/admin-app/src/vite-env.d.ts`）。
+変数を追加するときは、各アプリの `.env.<モード>` と `vite-env.d.ts` の両方を更新します。
+
+### `@beauty-salon-frontend/config` パッケージ
+
+`frontend/packages/config/src/env/env.ts` は、`import.meta.env` の値を `env` オブジェクトにまとめて
+公開します。`frontend/packages/config/src/envUtil/envUtil.ts` には `isProductionMode()` などの
+モード判定があります。検証は行いません。
+
+| `env` のキー | 読む値 |
+|--------------|--------|
+| `VITE_MODE` | `import.meta.env.MODE`（Vite のモード） |
+| `VITE_APP_TITLE` | `VITE_APP_TITLE` |
+| `VITE_BACKEND_BASE_URL` | `VITE_BACKEND_BASE_URL` |
+| `VITE_APP_VERSION`、`VITE_FRONTEND_BASE_URL` | 同名の変数。どの `.env.*` ファイルにも定義されていない |
+
+現状について:
+
+- `VITE_BACKEND_BASE_URL` を使うのは `frontend/packages/io` の fetcher だけで、3 つのアプリはまだ
+  API を呼んでいません。
+- `.env.localhost` と `.env.development` の `VITE_BACKEND_BASE_URL` は、ローカルのバックエンド
+  （`http://localhost:3000`、ルートは `/api/v1` 以下）を指していません。API を呼ぶ実装を入れるときに
+  合わせる必要があります。
+
+## 秘密情報の扱い
+
+- `.env.staging` と `.env.production` を含め、`.env.*` ファイルは Git で追跡されています。本物の秘密情報を
+  書かないでください。デプロイ先では、プロセスの環境変数として設定します。
+- `VITE_*` の値はブラウザに配信されるバンドルに入ります。秘密情報を入れてはいけません。
+- 設定の検証エラーに入るのは変数名と理由だけで、値は入りません。データベーススクリプトは接続 URL を
+  表示するとき、パスワードを伏せます。

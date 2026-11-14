@@ -1,508 +1,268 @@
-# OpenAPI TypeScript 型生成ガイド
+# OpenAPI TypeScript 型利用ガイド
 
-このドキュメントは、TypeSpecからOpenAPIを経由してTypeScript型を生成する新しいシステムの使用方法を説明します。
+このドキュメントは、OpenAPI から生成した TypeScript 型（`@beauty-salon-backend/generated`）をバックエンドがどう使っているかを説明します。生成の手順とコマンドは [Type Generation System](./type-generation-system.md) を参照してください。
 
-## 概要
+バックエンドで実装されているのは Salon ドメインとシステムエンドポイントだけなので、例はすべて Salon の実コードからの抜粋です。コード中のコメントは説明用に日本語で付けています。
 
-従来の野良スクリプトから、業界標準の`openapi-typescript`を使用した型生成に移行しました。
+## 生成されるもの
 
-### 主な改善点
+`pnpm generate`（バックエンドの型だけなら `pnpm generate:backend`）が `backend/packages/generated/src/` に次の3ファイルを書き出します。生成物はコミット対象で、手で編集しません。
 
-1. **正規ツールの採用**: `openapi-typescript`による信頼性の高い型生成
-2. **型定義ルールの実装**:
-   - 検索API入力: すべてのフィールドが`optional`
-   - 通常API入力: フィールドは`nullable`（キーは必須）
-   - 出力型: 必須フィールドと`nullable`フィールドの混在を許可
-3. **型安全なAPI実装**: パス、クエリパラメータ、リクエスト/レスポンスの完全な型サポート
+| ファイル | 内容 |
+|----------|------|
+| `api-types.ts` | `openapi-typescript` 7 の出力。`paths`・`components`・`operations` |
+| `schema.ts` | OpenAPI の文字列 enum ごとの Zod スキーマと型（例: `DayOfWeekTypeSchema` / `DayOfWeekType`） |
+| `index.ts` | 上の2ファイルの再エクスポート |
 
-## 型生成の実行
+型は名前で引きます。
 
-```bash
-# TypeSpecのコンパイルとバックエンド型生成
-pnpm run generate:backend
+| 欲しい型 | 引き方 | 例 |
+|----------|--------|-----|
+| モデル | `components['schemas']['Models.<モデル名>']` | `components['schemas']['Models.SalonResponse']` |
+| 操作（パラメータ・リクエスト・レスポンス） | `operations['<operationId>']` | `operations['SalonCrud_list']` |
 
-# すべての型生成（フロントエンドとバックエンド）
-pnpm run generate
-```
+operationId は、TypeSpec で操作を囲むインターフェース（または名前空間）の名前と操作名を `_` でつないだものです（`SalonCrud` の `list` → `SalonCrud_list`、`SystemOperations` の `alive` → `SystemOperations_alive`）。`paths` も生成されますが、バックエンドのコードは `components` と `operations` だけを使っています。
 
-## 型生成スクリプトの場所
+OpenAPI ドキュメントには TypeSpec で定義した全ドメインが含まれるため、Customer や Booking などの型も生成されています。それらを使うドメイン・リポジトリ・ルートのコードはまだありません。
 
-型生成スクリプトは `@beauty-salon-backend/generated` パッケージ内に配置されています：
+## バックエンドでの使い方（Salon）
 
-- **場所**: `backend/packages/generated/scripts/generate-types.ts`
-- **実行方法**: 
-  - ルートから: `pnpm generate:backend`
-  - typesパッケージから: `pnpm generate` または `pnpm generate:types`
-- **依存**: OpenAPI仕様ファイル（`specs/tsp-output/@typespec/openapi3/generated/openapi.yaml`）
+### 1. モデルの別名を1か所で定義する
 
-## 生成される型ファイル
-
-```
-backend/packages/generated/
-├── scripts/
-│   └── generate-types.ts     # 型生成スクリプト（openapi-typescriptを使用）
-└── src/
-    └── generated/
-        ├── api-types.ts      # OpenAPI型定義（paths, operations, components）
-        ├── schema.ts         # Zodスキーマ
-        └── index.ts          # エクスポート
-```
-
-### 注意事項
-
-- 型安全性はDB駆動モデルとResult型で保証されます
-- 型生成前にTypeSpec仕様のコンパイル（`pnpm generate:spec`）が必要です
-
-## 使用例
-
-### 1. 基本的な型のインポート
+`backend/packages/domain/src/models/salon.ts`
 
 ```typescript
-import type { paths, operations, components } from '@beauty-salon/types/generated';
+import type { components, operations } from '@beauty-salon-backend/generated'
 
-// コンポーネント型
-type Customer = components['schemas']['Models.Customer'];
-type CreateCustomerRequest = components['schemas']['Models.CreateCustomerRequest'];
+// TypeSpec から生成された API 型
+export type ApiSalonResponse = components['schemas']['Models.SalonResponse']
+export type ApiSalonCreateRequest =
+  components['schemas']['Models.SalonCreateRequest']
+export type ApiSalonUpdateRequest =
+  components['schemas']['Models.SalonUpdateRequest']
+export type ApiSalonSearchRequest = NonNullable<
+  operations['SalonCrud_list']['parameters']['query']
+>
+export type ApiOpeningHours = components['schemas']['Models.OpeningHours']
+export type ApiBusinessHours = components['schemas']['Models.BusinessHours']
+export type ApiPaginationMeta = components['schemas']['Models.PaginationMeta']
 ```
 
-### 2. 操作型の抽出
+- API 型には `Api`、Drizzle スキーマから推論した DB 型には `Db` の接頭辞を付けます（`DbSalon`、`DbNewSalon`）。どちらも推論・参照だけで、手書きの型定義はありません。
+- `SalonSearchRequest` はクエリパラメータとして展開されるため、`components` ではなく操作型の `parameters.query` から取ります。
+- ドメイン層のスキーマ・マッパー・ユースケースは、API 型をこのファイルから import します。
+
+### 2. ID のブランド化はドメイン側で行う
+
+生成型の `Models.SalonId` はただの `string` です。検証済みの ID だけを受け付けるためのブランド型は、同じファイルで Zod から作ります。
 
 ```typescript
-import type { GetOperation, ExtractRequest, ExtractResponse, ExtractQuery } from '@beauty-salon/types/generated';
-
-// 操作の型を取得
-type CustomerListOperation = GetOperation<'/customers', 'get'>;
-
-// クエリパラメータの型を抽出
-type CustomerListQuery = ExtractQuery<CustomerListOperation>;
-// => { search?: string; tags?: string[]; limit?: number; offset?: number; }
-
-// レスポンスの型を抽出
-type CustomerListResponse = ExtractResponse<CustomerListOperation>;
-// => { data: Customer[]; total: number; limit: number; offset: number; }
-
-// リクエストボディの型を抽出
-type CustomerCreateBody = ExtractRequest<GetOperation<'/customers', 'post'>>;
-// => CreateCustomerRequest
+export const salonIdSchema = z.uuid().brand<'SalonId'>()
+export type SalonId = z.infer<typeof salonIdSchema>
 ```
 
-### 3. 検索APIの実装例
+文字列は、`parseSalonId`（`Result<SalonId, DomainError>` を返す）か、`salonIdSchema` を含むスキーマの検証を通って初めて `SalonId` になります。
+
+### 3. Zod スキーマを生成型に対して検査する
+
+`backend/packages/domain/src/schemas/salon.schema.ts`
 
 ```typescript
-import { Router } from 'express';
-import type { ExtractQuery, ExtractResponse } from '@beauty-salon/types/generated';
-
-const router = Router();
-
-// 検索API（すべてのパラメータがoptional）
-router.get('/customers', async (req, res) => {
-  // 型安全なクエリパラメータ
-  const query: ExtractQuery<paths['/customers']['get']> = req.query;
-  
-  // search, tagsはすべてoptional
-  const { search, tags, limit = 20, offset = 0 } = query;
-  
-  // 型安全なレスポンス
-  const response: ExtractResponse<paths['/customers']['get']> = {
-    data: customers,
-    total: totalCount,
-    limit,
-    offset
-  };
-  
-  res.json(response);
-});
+export const salonCreateRequestSchema = z.strictObject({
+  name: nonBlankText.max(255),
+  nameKana: nonBlankText.max(255).nullable(),
+  // ...（中略）
+  isActive: z.boolean(),
+  openingHours: openingHoursListSchema,
+}) satisfies z.ZodType<ApiSalonCreateRequest>
 ```
 
-### 4. 作成APIの実装例
+`satisfies z.ZodType<ApiSalonCreateRequest>` は、スキーマの出力型が生成型に代入できることをコンパイル時に検査します。TypeSpec にプロパティを追加した、あるいは型を変えたのにスキーマが追従していなければ、ここが型エラーになります。型アサーションは使いません。
+
+TypeSpec からプロパティを削除した場合は、この検査では検出されません（余分なプロパティを持つ型は代入可能なため）。スキーマからも手で削除してください。
+
+更新・検索のスキーマも同じ形です。
 
 ```typescript
-// 作成API（フィールドはnullable）
-router.post('/customers', async (req, res) => {
-  // 型安全なリクエストボディ
-  const body: components['schemas']['Models.CreateCustomerRequest'] = req.body;
-  
-  // すべてのフィールドはnullableだが、キーは必須
-  const { 
-    name,         // string | null
-    contactInfo,  // ContactInfo | null
-    preferences,  // string | null
-    notes,        // string | null
-    tags,         // string[] | null
-    birthDate     // string | null
-  } = body;
-  
-  // nullチェックが必要
-  if (name === null || contactInfo === null) {
-    return res.status(400).json({
-      code: 'INVALID_REQUEST',
-      message: 'name and contactInfo are required'
-    });
+export const salonUpdateRequestSchema = salonCreateRequestSchema
+  .exactPartial()
+  .check((context) => {
+    // ...（空のリクエストを拒否する）
+  }) satisfies z.ZodType<ApiSalonUpdateRequest>
+
+export const salonSearchRequestSchema = z.strictObject({
+  limit: z.number().int().min(1).max(100).exactOptional(),
+  cursor: salonIdSchema.exactOptional(),
+  // ...（中略）
+}) satisfies z.ZodType<ApiSalonSearchRequest>
+```
+
+長さの上限は DB カラムのもの、それ以外はビジネスルールです。生成型が表すのは形だけなので、値の規則はこのスキーマに書きます。
+
+### 4. enum は生成された Zod スキーマを使う
+
+同じファイルで、曜日の enum は `schema.ts` に生成されたスキーマをそのまま使っています。
+
+```typescript
+import { DayOfWeekTypeSchema } from '@beauty-salon-backend/generated'
+
+const openingHoursSchema = z
+  .strictObject({
+    dayOfWeek: DayOfWeekTypeSchema,
+    date: z.iso.date(),
+    // ...（中略）
+  })
+```
+
+enum の値を手書きで並べ直しません。
+
+### 5. ユースケースは `unknown` を受け取り、API 型を返す
+
+`backend/packages/domain/src/business-logic/salon/create-salon.usecase.ts`
+
+```typescript
+  async execute(
+    input: unknown,
+  ): Promise<Result<ApiSalonResponse, DomainError>> {
+    const request = parseWith(salonCreateRequestSchema, input, 'Invalid salon')
+    if (request.type === 'error') {
+      return request
+    }
+    // ここから先、request.data は検証済みの値
+```
+
+`parseWith`（`backend/packages/domain/src/shared/validation.ts`）がスキーマで検証し、失敗を `validation` の `DomainError` にします。検証済みの値はマッパー（`backend/packages/domain/src/mappers/write/salon.mapper.ts` と `backend/packages/domain/src/mappers/read/salon.mapper.ts`）が `ApiSalonCreateRequest` → `DbNewSalon`、`DbSalon` → `ApiSalonResponse` に変換します。プロパティ名は変えず、表現だけを変えます。
+
+### 6. レスポンス本体の型は操作型から取り出す
+
+`backend/packages/api/src/routes/salon/_shared/types.ts`
+
+```typescript
+import type { operations } from '@beauty-salon-backend/generated'
+
+type JsonBody<Content> = Content extends { 'application/json': infer Body }
+  ? Body
+  : never
+
+export type ListSalonsResponse = JsonBody<
+  operations['SalonCrud_list']['responses'][200]['content']
+>
+export type CreateSalonResponse = JsonBody<
+  operations['SalonCrud_create']['responses'][201]['content']
+>
+export type GetSalonResponse = JsonBody<
+  operations['SalonCrud_get']['responses'][200]['content']
+>
+export type UpdateSalonResponse = JsonBody<
+  operations['SalonCrud_update']['responses'][200]['content']
+>
+```
+
+`{ data, meta, links }` という包みの形も TypeSpec で決まっているので、ここでも手書きしません。削除は本体のない 204 を返すので、レスポンス型はありません。
+
+### 7. ハンドラーに型を付ける
+
+`backend/packages/api/src/routes/salon/create-salon.handler.ts`
+
+```typescript
+export const createSalonHandler = (
+  dependencies: SalonUseCaseDependencies,
+): RequestHandler<
+  Record<string, never>,
+  CreateSalonResponse | ProblemDetails,
+  unknown
+> => {
+  const useCase = new CreateSalonUseCase(dependencies)
+
+  return async (req, res) => {
+    const result = await useCase.execute(req.body)
+
+    match(result)
+      .with({ type: 'success' }, ({ data }) => {
+        const links = salonLinks(req.baseUrl, data.id)
+        res
+          .status(201)
+          .location(links.self)
+          .json({ data, meta: responseMeta(req), links })
+      })
+      .with({ type: 'error' }, ({ error }) => sendProblem(req, res, error))
+      .exhaustive()
   }
-  
-  // 型安全なレスポンス
-  const response: ExtractResponse<paths['/customers']['post'], 201> = createdCustomer;
-  res.status(201).json(response);
-});
-```
-
-### 5. Brand型の使用
-
-```typescript
-import { CustomerId, createCustomerId } from '@beauty-salon/types/generated';
-
-// Brand型の作成
-const customerId: CustomerId = createCustomerId('550e8400-e29b-41d4-a716-446655440000');
-
-// 型安全なID使用
-async function getCustomer(id: CustomerId): Promise<Customer> {
-  // idはCustomerId型として保証される
-  return await customerRepository.findById(id);
 }
 ```
 
-### 6. ts-patternとの組み合わせ
+`RequestHandler` の型引数は順に、パスパラメータ、レスポンス本体、リクエスト本体です。
+
+- レスポンス本体は `CreateSalonResponse | ProblemDetails` なので、`res.json(...)` に渡す値が OpenAPI の定義と合わなければ型エラーになります。
+- リクエスト本体は `unknown` です。生成型を当てて信用することはせず、ユースケースが検証します。
+- クエリ文字列は文字列しか運べないため、一覧では `decodeSalonSearchQuery`（`backend/packages/api/src/routes/salon/_shared/query.ts`）が数値・真偽値・配列に直してからユースケースに渡します。
+
+共通のレスポンス型も生成型の別名です。
+
+| 型 | 定義場所 | 生成型 |
+|----|----------|--------|
+| `ProblemDetails` | `backend/packages/api/src/shared/problem-details.ts` | `components['schemas']['Models.ProblemDetails']` |
+| `ResponseMeta` | `backend/packages/api/src/shared/responses.ts` | `components['schemas']['Models.ResponseMeta']` |
+| `PaginationMeta` / `PaginationLinks` | `backend/packages/api/src/routes/salon/_shared/links.ts` | `components['schemas']['Models.PaginationMeta']` / `['Models.PaginationLinks']` |
+
+システムエンドポイント（`backend/packages/api/src/routes/system/index.ts`）も同じ `JsonBody<operations[...]>` の形でレスポンス型を取り出しています。
+
+## TypeSpec の定義と生成型の対応
+
+| TypeSpec（`specs/models/salon.tsp`） | 生成型 | キーと null |
+|--------------------------------------|--------|-------------|
+| `SalonCreateRequest` | `components['schemas']['Models.SalonCreateRequest']` | 全キー必須。DB で NULL 可のカラムだけ `T \| null` |
+| `SalonUpdateRequest` | `components['schemas']['Models.SalonUpdateRequest']` | 全キー省略可。NULL 可のカラムは `null` でクリア |
+| `SalonSearchRequest` | `operations['SalonCrud_list']['parameters']['query']` | 全キー省略可 |
+| `SalonResponse` | `components['schemas']['Models.SalonResponse']` | 全キー必須 |
+
+`api-types.ts` での現れ方（抜粋）:
 
 ```typescript
-import { match } from 'ts-pattern';
-import type { components } from '@beauty-salon/types/generated';
-
-type BookingStatus = components['schemas']['Models.BookingStatus'];
-
-function getBookingStatusLabel(status: BookingStatus): string {
-  return match(status)
-    .with('draft', () => '下書き')
-    .with('pending', () => '保留中')
-    .with('confirmed', () => '確定')
-    .with('in_progress', () => '進行中')
-    .with('completed', () => '完了')
-    .with('cancelled', () => 'キャンセル')
-    .exhaustive();
-}
+"Models.SalonCreateRequest": {
+    name: string;
+    nameKana: string | null;
+    // ...
+};
+"Models.SalonUpdateRequest": {
+    name?: string;
+    nameKana?: string | null;
+    // ...
+};
 ```
 
-## 型マッピングフローの実装例
+ルールそのものは [TypeSpec API Type Rules](./typespec-api-type-rules.md) にあります。
 
-### 顧客作成フロー
+## ルール
 
-OpenAPIからデータベースまでの完全な型マッピングの例：
+- 生成型と同じ形の型を手書きしない。必要なのは別名だけ。
+- `any`、型アサーション、型ガードを使わない。外から来た値は Zod スキーマと `parseWith` で検証する。
+- 生成ファイルを編集しない。変えたいときは TypeSpec を変えて `pnpm generate` を実行する。
+- マッパーでプロパティ名を変えない（API のプロパティ名は DB のカラム名と同じ）。
 
-```typescript
-// 1. OpenAPI型（生成された型）
-type CreateCustomerRequest = components['schemas']['Models.CreateCustomerRequest']
-// {
-//   name: string
-//   contactInfo: ContactInfo
-//   preferences?: string
-//   notes?: string
-//   tags?: string[]
-//   birthDate?: string
-// }
+## 他のドメインを実装するとき
 
-// 2. APIルートがOpenAPI型を受け取る
-router.post('/', async (
-  req: Request<unknown, CreateCustomerResponse, CreateCustomerRequest>,
-  res: Response<CreateCustomerResponse>
-) => {
-  const requestData: CreateCustomerRequest = req.body
-  
-  // 3. UseCase入力へマッピング
-  const input = mapCreateCustomerRequest(requestData)
-  // Returns: CreateCustomerInput
-  
-  // 4. UseCase実行
-  const result = await createCustomerUseCase(input, deps)
-  // Returns: Result<Customer, CreateCustomerError>
-  
-  // 5. APIレスポンスへマッピング
-  const response = mapCustomerToResponse(result.value)
-  // Returns: CreateCustomerResponse (OpenAPI型)
-  
-  res.json(response)
-})
-```
+Salon 以外のドメインはこれから実装するものです。実装するときは Salon と同じ配置にします（以下は例であり、まだ存在しないファイルです）。
 
-### 認証フロー
+- `backend/packages/domain/src/models/<domain>.ts`: 生成型の別名と DB 型
+- `backend/packages/domain/src/schemas/<domain>.schema.ts`: `satisfies z.ZodType<…>` を付けた Zod スキーマ
+- `backend/packages/api/src/routes/<domain>/_shared/types.ts`: 操作型から取り出したレスポンス型
 
-```typescript
-// OpenAPI型
-type LoginRequest = components['schemas']['Models.LoginRequest']
-// {
-//   email: string
-//   password: string
-//   rememberMe: boolean
-//   twoFactorCode?: string
-// }
+## フロントエンド
 
-type AuthLoginResponse = components['schemas']['Models.AuthLoginResponse']
-// {
-//   accessToken: string
-//   refreshToken: string
-//   tokenType: string
-//   expiresIn: number
-//   user: User
-// }
-
-// APIルート
-router.post('/login', async (
-  req: Request<unknown, unknown, LoginRequest>,
-  res: Response<AuthLoginResponse>
-) => {
-  const loginData: LoginRequest = req.body
-  
-  // 検証と認証
-  const user = await authenticateUser(loginData)
-  
-  // トークン生成
-  const tokens = await generateTokens(user)
-  
-  // OpenAPI準拠のレスポンス構築
-  const response: AuthLoginResponse = {
-    accessToken: tokens.accessToken,
-    refreshToken: tokens.refreshToken,
-    tokenType: 'Bearer',
-    expiresIn: tokens.expiresIn,
-    user: mapUserToApiResponse(user)
-  }
-  
-  res.json(response)
-})
-```
-
-### 型安全性の保証
-
-#### コンパイル時チェック
-1. **リクエスト型安全性**: TypeScriptがリクエストボディがOpenAPIスキーマと一致することを保証
-2. **レスポンス型安全性**: レスポンス型がコンパイル時に強制される
-3. **パスパラメータ安全性**: パスパラメータが型チェックされる
-4. **クエリパラメータ安全性**: クエリパラメータが適切な型を持つ
-
-#### ランタイム検証
-1. **Zodスキーマ**: 受信リクエストが期待される型と一致することを検証
-2. **Result型**: 例外なしでエラーを処理
-3. **パターンマッチング**: すべてのケースの網羅的な処理
-
-### ベストプラクティス
-
-#### DO ✅
-- APIルートで常にOpenAPI生成型を使用
-- 適切なジェネリクスでリクエストハンドラーに型を付ける
-- レイヤー遷移にマッパー関数を使用
-- OpenAPI型と一致するZodスキーマでリクエストを検証
-- エラーハンドリングにResult型を使用
-
-#### DON'T ❌
-- OpenAPIスキーマと重複するカスタム型を定義
-- `any`や型アサーションを使用
-- 「信頼できる」入力の検証をスキップ
-- レイヤーの関心事を混在させる（例：APIからDBモデルを返す）
-
-## TypeSpecでの型定義ルール
-
-### 検索API（optional fields）
-
-```typespec
-@doc("Customer search parameters - all fields are optional")
-model CustomerSearchRequest {
-  @query search?: string;
-  @query tags?: string[];
-}
-```
-
-### 作成API（nullable fields）
-
-```typespec
-@doc("Customer creation request with nullable fields")
-model CreateCustomerRequest {
-  name: string | null;
-  contactInfo: ContactInfo | null;
-  preferences: string | null;
-  notes: string | null;
-  tags: string[] | null;
-  birthDate: plainDate | null;
-}
-```
-
-### 更新API（optional fields）
-
-```typespec
-@doc("Customer update request with optional fields for partial updates")
-model UpdateCustomerRequest {
-  name?: string;
-  contactInfo?: ContactInfo;
-  preferences?: string;
-  notes?: string;
-  tags?: string[];
-  birthDate?: plainDate;
-}
-```
-
-## 移行ガイド
-
-### 旧型定義からの移行
-
-```typescript
-// 旧: 個別のモデル型
-import { Customer, CreateCustomerRequest } from '@beauty-salon/types/generated/models';
-
-// 新: components経由でアクセス
-import type { components } from '@beauty-salon/types/generated';
-type Customer = components['schemas']['Models.Customer'];
-type CreateCustomerRequest = components['schemas']['Models.CreateCustomerRequest'];
-```
-
-### 操作型の活用
-
-```typescript
-// 旧: 手動で型定義
-interface CustomerListParams {
-  search?: string;
-  tags?: string[];
-  limit?: number;
-  offset?: number;
-}
-
-// 新: 自動生成された型を使用
-import type { ExtractQuery } from '@beauty-salon/types/generated';
-type CustomerListParams = ExtractQuery<paths['/customers']['get']>;
-```
-
-## ベストプラクティス
-
-1. **型の一貫性**: 常に生成された型を使用し、手動での型定義を避ける
-2. **null安全性**: nullable フィールドは必ずnullチェックを行う
-3. **Brand型**: IDにはBrand型を使用して型安全性を高める
-4. **ts-pattern**: enum型の処理にはts-patternを使用して網羅性を保証
-5. **型の再生成**: TypeSpec定義を変更したら必ず型を再生成する
+フロントエンドはこのパッケージを使いません。同じ OpenAPI ドキュメントから Orval が別のクライアントを生成します。[フロントエンドAPI統合ガイド](./frontend-api-integration.md) を参照してください。
 
 ## トラブルシューティング
 
-### 型が見つからない場合
+**生成型が見つからない、古い**: `pnpm generate` を実行し、エディタの TypeScript サーバーを再起動します。
 
-```bash
-# 型を再生成
-pnpm run generate:backend
+**`satisfies z.ZodType<…>` が型エラーになる**: TypeSpec のモデルと Zod スキーマがずれています。スキーマ（または TypeSpec）を直します。型アサーションで黙らせません。
 
-# TypeScriptの再起動が必要な場合
-# VSCodeの場合: Cmd/Ctrl + Shift + P → "TypeScript: Restart TS Server"
-```
+**CI の `pnpm check:generated` が失敗する**: TypeSpec の変更に生成物のコミットが伴っていません。`pnpm generate` を実行して生成物をコミットします。
 
-### 型の不整合
+## 関連ドキュメント
 
-TypeSpecの定義とOpenAPIの出力が一致していることを確認：
-
-```bash
-# OpenAPI出力を確認
-cat specs/tsp-output/@typespec/openapi3/generated/openapi.yaml
-```
-
-## フロントエンドでの使用（Orval）
-
-### 基本的な使用例
-
-```typescript
-// 自動生成されたReact Queryフックの使用
-import { useCustomerOperationsList } from '@beauty-salon-frontend/api-client/generated/endpoints/customers/customers'
-import type { ModelsCustomer } from '@beauty-salon-frontend/api-client/generated/models'
-
-function CustomerList() {
-  // 型安全なAPIコール
-  const { data, isLoading, error } = useCustomerOperationsList(
-    {
-      limit: 10,
-      offset: 0,
-      search: 'john'  // すべてのパラメータが型チェックされる
-    },
-    {
-      query: {
-        staleTime: 5 * 60 * 1000,  // 5分間キャッシュ
-      }
-    }
-  )
-
-  if (isLoading) return <div>Loading...</div>
-  if (error) return <div>Error: {error.message}</div>
-
-  // data.dataは完全に型付けされている
-  return (
-    <div>
-      {data?.data.customers.map((customer: ModelsCustomer) => (
-        <div key={customer.id}>{customer.name}</div>
-      ))}
-    </div>
-  )
-}
-```
-
-### ミューテーションの使用
-
-```typescript
-import { useCustomerOperationsCreate } from '@beauty-salon-frontend/api-client/generated/endpoints/customers/customers'
-import type { ModelsCreateCustomerRequest } from '@beauty-salon-frontend/api-client/generated/models'
-
-function CreateCustomerForm() {
-  const { mutate, isPending } = useCustomerOperationsCreate({
-    mutation: {
-      onSuccess: (response) => {
-        // response.dataは型安全
-        console.log('Created customer:', response.data.id)
-        queryClient.invalidateQueries({ queryKey: ['/api/v1/customers'] })
-      }
-    }
-  })
-
-  const handleSubmit = (formData: ModelsCreateCustomerRequest) => {
-    mutate({ data: formData })  // 型チェックされる
-  }
-
-  return (
-    <form onSubmit={handleSubmit}>
-      {/* フォームフィールド */}
-    </form>
-  )
-}
-```
-
-### 型の再利用
-
-```typescript
-import type { 
-  ModelsCustomer,
-  ModelsCreateCustomerRequest,
-  ModelsUpdateCustomerRequest,
-  ModelsError 
-} from '@beauty-salon-frontend/api-client/generated/models'
-
-// フォームバリデーションに型を活用
-const customerSchema = z.object({
-  name: z.string().min(1),
-  email: z.string().email(),
-  phone: z.string().optional(),
-}) satisfies z.ZodType<ModelsCreateCustomerRequest>
-
-// ストアの型定義に活用
-interface CustomerStore {
-  customers: ModelsCustomer[]
-  selectedCustomer: ModelsCustomer | null
-  createCustomer: (data: ModelsCreateCustomerRequest) => Promise<void>
-  updateCustomer: (id: string, data: ModelsUpdateCustomerRequest) => Promise<void>
-}
-```
-
-## まとめ
-
-新しい型生成システムにより、以下が実現されました：
-
-### バックエンド
-1. **型安全性の向上**: パス、メソッド、パラメータ、ボディ、レスポンスすべてが型安全
-2. **保守性の向上**: openapi-typescriptによる標準的な型生成
-3. **開発効率の向上**: 自動補完とコンパイル時チェックの強化
-4. **一貫性の確保**: TypeSpec → OpenAPI → TypeScriptの自動変換
-
-### フロントエンド
-1. **React Query統合**: データフェッチングの最適化とキャッシュ管理
-2. **完全な型安全性**: APIクライアント全体で型チェック
-3. **自動生成**: ボイラープレートコードの削減
-4. **優れたDX**: 自動補完とインテリセンス
-
-このシステムを活用することで、フロントエンドとバックエンドの契約を厳密に守りながら、より安全で保守しやすいAPIの実装が可能になります。
+- [Type Generation System](./type-generation-system.md)
+- [TypeSpec API Type Rules](./typespec-api-type-rules.md)
+- [Backend Architecture Guidelines](./backend-architecture-guidelines.md)
+- [Type Safety Principles](./type-safety-principles.md)

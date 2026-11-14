@@ -1,143 +1,183 @@
-# API Testing Guide - Salon Domain Reference Implementation
+# API Testing Guide
 
-このガイドでは、Salonドメインの実装を完全なリファレンスとして、他のドメインを実装する際のテスト戦略とパターンを詳細に説明します。
+How to write and run an integration test for an API endpoint in this
+repository. What has to be covered, and to what standard, is in
+[Testing Requirements](./testing-requirements.md); this guide shows the
+mechanics, with the Salon tests as the example.
 
-## 📋 Overview
+An API integration test sends HTTP requests to the production Express
+application (`createApp`) and lets it work on a real PostgreSQL. Nothing is
+mocked.
 
-Salonドメインは、以下の重要な実装パターンを確立しています：
-- **Type-First Development**: TypeSpec → OpenAPI → TypeScript
-- **Clean Architecture**: Domain/UseCase/Infrastructure/API layers
-- **Test Isolation**: Schema-per-test approach
-- **No Exceptions**: Result type pattern
-- **Type Safety**: No type casting, exhaustive pattern matching
+## Where the Tests Are
 
-## 🏗️ Test Infrastructure
-
-### Directory Structure
 ```
 backend/packages/api/
-├── src/
-│   ├── routes/
-│   │   └── salon.routes.ts         # Reference API implementation
-│   └── __tests__/
-│       ├── _shared/
-│       │   ├── setup.ts            # Global test setup
-│       │   ├── test-helpers.ts     # Test utilities
-│       │   ├── test-schema-manager.ts  # Schema isolation
-│       │   └── app.ts              # Express app factory
-│       └── salon.test.ts           # Reference test suite
+├── vitest.config.ts                 # unit tests: src/**/*.test.ts
+├── vitest.integration.config.ts     # integration tests: src/**/*.integration.test.ts
+└── src/__tests__/
+    ├── _shared/
+    │   ├── setup.ts                 # the database of the run, a schema for each test
+    │   ├── test-schema-manager.ts   # creates and drops the schemas
+    │   └── test-helpers.ts          # createTestApp, getTestDb, request
+    ├── salon.integration.test.ts    # the Salon endpoints: the reference
+    └── app.integration.test.ts      # what the application does for every route
 ```
 
-### Test Setup with Schema Isolation
+Unit tests of the same package (problem details, middleware, links, query
+decoding) sit in `__tests__` directories beside the code they test and need no
+database.
+
+## Running
+
+```bash
+# Every integration test of the workspace (api, server, database)
+pnpm test:integration
+
+# The API package only
+pnpm --filter @beauty-salon-backend/api run test:integration
+
+# Files whose path contains "salon"
+pnpm --filter @beauty-salon-backend/api run test:integration salon
+
+# Tests whose name matches
+pnpm --filter @beauty-salon-backend/api run test:integration -t "POST /api/v1/salons"
+
+# The unit tests of the package (no database)
+pnpm --filter @beauty-salon-backend/api run test
+```
+
+The integration tests need a PostgreSQL. There are two ways to give them one.
+
+**Docker running, nothing set.** The setup starts a `postgres:18-alpine`
+container through testcontainers and stops it afterwards.
+
+**`TEST_DATABASE_URL` set.** The setup uses that database and starts no
+container:
+
+```bash
+TEST_DATABASE_URL=postgres://<user>:<password>@localhost:5432/<database> pnpm test:integration
+```
+
+The API tests leave the tables in `public` alone, so the database of
+`make infra-up` can be used. They create one schema per test, and the enum
+types in `public` when they are missing. The migration tests of the `database`
+package create and drop a database per test, so the user needs the right to
+create databases.
+
+CI runs the integration tests both ways.
+
+## How a Test Gets Its Database
+
+`vitest.integration.config.ts` names `src/__tests__/_shared/setup.ts` as a
+setup file, so its hooks run around every integration test of the package.
+
+Once per test file, the setup picks the database and prepares the enum types:
 
 ```typescript
-// backend/packages/api/src/__tests__/_shared/setup.ts
-import { PostgreSqlContainer } from '@testcontainers/postgresql'
-import { afterAll, afterEach, beforeAll, beforeEach } from 'vitest'
-
+// backend/packages/api/src/__tests__/_shared/setup.ts (excerpt)
 beforeAll(async () => {
-  // Single container for all tests
-  const container = await new PostgreSqlContainer('postgres:18-alpine')
-    .withDatabase('testdb')
-    .start()
+  const externalUrl = process.env.TEST_DATABASE_URL
+
+  if (!externalUrl) {
+    container = await new PostgreSqlContainer('postgres:18-alpine')
+      .withDatabase('testdb')
+      .withUsername('testuser')
+      .withPassword('testpass')
+      .withExposedPorts(5432)
+      .withStartupTimeout(120000)
+      .start()
+  }
 
   // Initialize schema manager
-  const schemaManager = new TestSchemaManager(container.getConnectionUri())
-  await schemaManager.initializeEnums() // Shared enum types
+  schemaManager = new TestSchemaManager(
+    container?.getConnectionUri() ?? externalUrl ?? '',
+  )
 
-  globalThis.__TEST_CONTAINER__ = container
-  globalThis.__SCHEMA_MANAGER__ = schemaManager
-})
-
-beforeEach(async () => {
-  // Create isolated schema for each test
-  const testSchema = await schemaManager.createTestSchema(true)
-  globalThis.__TEST_DB__ = testSchema.db
-  globalThis.__TEST_SCHEMA__ = testSchema
-})
-
-afterEach(async () => {
-  // Clean up test schema
-  await globalThis.__TEST_SCHEMA__?.cleanup()
+  // Initialize enum types once for all test schemas
+  await schemaManager.initializeEnums()
 })
 ```
 
-## 🎯 API Route Implementation Pattern
+Around each test, `TestSchemaManager` gives the test a schema of its own:
 
-### Key Principles from Salon Routes
+1. Before the test it creates a schema named `test_<uuid>` and opens a
+   connection whose `search_path` is that schema followed by `public`.
+2. It runs the statements of `backend/packages/database/sql/setup.sql` in that
+   schema, without the `CREATE TYPE` statements: the tables are the ones of the
+   committed schema, the enum types are shared from `public`.
+3. After the test it closes the connection and drops the schema.
+
+Two things follow from this:
+
+- Every test starts with empty tables and cleans up nothing. Tests cannot see
+  each other's rows.
+- The tests run against `sql/setup.sql`, not against the migrations. After
+  writing a migration, regenerate it (`pnpm db:generate-sql`, see the
+  [Development Workflow](./development-workflow.md)) or the tests will not see
+  the change.
+
+Test files run one at a time (`fileParallelism: false`), which keeps the
+number of open connections bounded. A test may take up to 60 seconds and a
+hook up to 120, enough for the first start of the container.
+
+## The Application under Test
+
+`test-helpers.ts` builds the same application the server runs:
 
 ```typescript
-// backend/packages/api/src/routes/salon.routes.ts
-
-// 1. Type Remapping from Auto-generated Types
-type Salon = components['schemas']['Models.Salon']
-type CreateSalonRequest = components['schemas']['Models.CreateSalonRequest']
-type ErrorResponse = components['schemas']['Models.ProblemDetails']
-
-// 2. Response Type Definitions
-type CursorPaginationResponse<T> = {
-  data: T[]
-  meta: components['schemas']['Models.PaginationMeta']
-  links: components['schemas']['Models.PaginationLinks']
+// backend/packages/api/src/__tests__/_shared/test-helpers.ts (excerpt)
+export type TestAppOptions = {
+  /** The test's isolated database unless another one is given. */
+  database?: Database
+  rateLimit?: AppSettings['rateLimit']
+  /** Receives every line the application logs, parsed. Not logged if absent. */
+  logs?: unknown[]
 }
 
-// 3. Standardized Error Handler
-const handleDomainError = (
-  res: Response<ErrorResponse>,
-  error: DomainError
-): Response<ErrorResponse> => {
-  const problemDetails = toProblemDetails(error)
-  return res.status(problemDetails.status).json(problemDetails)
-}
-
-// 4. Handler Pattern - Delegate ALL Logic to Use Cases
-const createSalonHandler: RequestHandler<
-  Record<string, never>,
-  CreateSalonResponse | ErrorResponse,
-  CreateSalonRequest
-> = async (req, res, next) => {
-  try {
-    const db = req.app.locals.database as Database
-    const salonRepository = new SalonRepository(db)
-    const useCase = new CreateSalonUseCase({ salonRepository })
-
-    // No validation here - use case handles everything
-    const result = await useCase.execute(req.body)
-
-    // Pattern matching for response
-    match(result)
-      .with({ type: 'success' }, ({ data }) => {
-        const response: CreateSalonResponse = {
-          data,
-          meta: {
-            correlationId: `req-${Date.now()}`,
-            timestamp: new Date().toISOString(),
-            version: '1.0.0',
-          },
-          links: {
-            self: `/salons/${data.id}`,
-            list: '/salons',
-          },
-        }
-        res.status(201).json(response)
-      })
-      .with({ type: 'error' }, ({ error }) =>
-        handleDomainError(res as Response<ErrorResponse>, error)
-      )
-      .exhaustive()
-  } catch (error) {
-    next(error)
-  }
+export function createTestApp({
+  database = getTestDb(),
+  rateLimit = settings.rateLimit,
+  logs,
+}: TestAppOptions = {}): Express {
+  return createApp({
+    database,
+    settings: { ...settings, rateLimit },
+    logger: createLogger(
+      {
+        level: logs === undefined ? 'silent' : 'info',
+        format: 'json',
+        environment: 'test',
+      },
+      { write: (line) => logs?.push(JSON.parse(line)) },
+    ),
+  })
 }
 ```
 
-## 🧪 Test Implementation Patterns
+| Helper | Use |
+|--------|-----|
+| `createTestApp()` | The application on the test's own schema, with logging silent |
+| `createTestApp({ logs })` | The same, collecting every log line as a parsed object in `logs` |
+| `createTestApp({ rateLimit })` | A lower rate limit, to test the limit itself |
+| `createTestApp({ database })` | Another database, for example an unreachable one |
+| `getTestDb()` | The Drizzle database of the test's schema, to arrange or inspect rows |
+| `connectUnreachableDatabase()` | A connection nothing answers: every query fails at once |
+| `request` | supertest |
 
-### 1. Basic CRUD Operations
+## Writing a Test
+
+The excerpts are from
+`backend/packages/api/src/__tests__/salon.integration.test.ts`.
+
+### 1. Set up the application
 
 ```typescript
-// backend/packages/api/src/__tests__/salon.test.ts
-describe('Salon API Integration Tests', () => {
+import { createTestApp, getTestDb, request } from './_shared/test-helpers'
+
+const SALONS = '/api/v1/salons'
+
+describe('Salon API', () => {
   let app: Express
   let db: ReturnType<typeof getTestDb>
 
@@ -146,314 +186,219 @@ describe('Salon API Integration Tests', () => {
     db = getTestDb()
   })
 
-  describe('POST /api/v1/salons', () => {
-    it('should create a salon with valid data', async () => {
-      const salonData = {
-        name: 'Test Salon',
-        description: 'A test salon',
-        address: {
-          street: '千代田1-1-1 テストビル2F',
-          city: '千代田区',
-          prefecture: '東京都',
-          postalCode: '100-0001',
-          country: 'Japan',
-        },
-        contactInfo: {
-          email: 'test@salon.com',
-          phoneNumber: '03-1234-5678',
-          alternativePhone: null,
-          websiteUrl: 'https://test-salon.com',
-        },
-        openingHours: [...],
-        businessHours: null,
-        imageUrls: null,
-        features: null,
-      }
-
-      const response = await request(app)
-        .post('/api/v1/salons')
-        .send(salonData)
-
-      expect(response.status).toBe(201)
-      expect(response.body.data).toBeDefined()
-      expect(response.body.data.name).toBe(salonData.name)
-
-      // Verify database state
-      const result = await db.execute(sql`SELECT * FROM salons`)
-      expect(result.length).toBe(1)
-    })
-  })
+  // ... one describe block per endpoint ...
 })
 ```
 
-### 2. Pagination Testing
+### 2. Build requests from one valid request
+
+A function returns a request that satisfies every rule, and each test
+overrides only what it is about. The Create model requires every property, so
+the builder lists them all (abridged here):
 
 ```typescript
-describe('GET /api/v1/salons', () => {
-  it('should support pagination', async () => {
-    // Create test data directly in DB
-    const testSalons = Array.from({ length: 5 }, (_, i) => ({
-      id: createId(),
-      name: `Salon ${i + 1}`,
-      nameKana: `サロン${i + 1}`,
-      postalCode: '100-0001',
-      prefecture: '東京都',
-      city: '千代田区',
-      address: `千代田${i + 1}-1-1`,
-      phoneNumber: `03-1111-${String(i).padStart(4, '0')}`,
-      email: `salon${i + 1}@test.com`,
-    }))
-
-    for (const salon of testSalons) {
-      await db.execute(sql`
-        INSERT INTO salons (id, name, "nameKana", "postalCode",
-                           prefecture, city, address, "phoneNumber", email)
-        VALUES (${salon.id}, ${salon.name}, ${salon.nameKana},
-                ${salon.postalCode}, ${salon.prefecture}, ${salon.city},
-                ${salon.address}, ${salon.phoneNumber}, ${salon.email})
-      `)
-    }
-
-    const response = await request(app)
-      .get('/api/v1/salons?limit=2')
-      .expect(200)
-
-    // CursorPaginationResponse structure
-    expect(response.body).toMatchObject({
-      data: expect.arrayContaining([]),
-      meta: {
-        total: 5,
-        limit: 2,
-        hasMore: true,
-      },
-      links: expect.any(Object),
-    })
-    expect(response.body.data).toHaveLength(2)
-  })
+/** A request that satisfies every rule. */
+const salonRequest = (overrides: Record<string, unknown> = {}) => ({
+  name: 'Hair Studio Aoyama',
+  nameKana: 'ヘアスタジオアオヤマ',
+  // ... the other properties of the request ...
+  openingHours: [workingMonday, holidayMonday],
+  ...overrides,
 })
 ```
 
-### 3. Error Handling
+State that a test needs is created through the API, with small helpers inside
+the `describe` block:
 
 ```typescript
-describe('Error Cases', () => {
-  it('should return validation error for invalid email', async () => {
-    const invalidData = {
-      name: 'Test Salon',
-      contactInfo: {
-        email: 'invalid-email', // Invalid
-        phoneNumber: '03-1234-5678',
-      },
-      // ...other fields
-    }
-
-    const response = await request(app)
-      .post('/api/v1/salons')
-      .send(invalidData)
-      .expect(400)
-
-    expect(response.body).toMatchObject({
-      type: 'https://example.com/probs/validation-error',
-      title: 'Validation failed',
-      status: 400,
-      detail: expect.stringContaining('Invalid email format'),
-    })
-  })
-
-  it('should return 404 for non-existent salon', async () => {
-    const nonExistentId = createId()
-
-    const response = await request(app)
-      .get(`/api/v1/salons/${nonExistentId}`)
-      .expect(404)
-
-    expect(response.body).toMatchObject({
-      type: 'https://example.com/probs/not-found',
-      title: 'Resource not found',
-      status: 404,
-    })
-  })
-})
-```
-
-## 🔄 Use Case and Mapper Pattern
-
-### Use Case Implementation
-
-```typescript
-// backend/packages/domain/src/business-logic/salon/list-salons.usecase.ts
-export class ListSalonsUseCase extends BaseSalonUseCase {
-  async execute(
-    page = 1,
-    limit = 20
-  ): Promise<Result<PaginatedResult<ApiSalon>, DomainError>> {
-    const paginationParams = Pagination.create(page, limit)
-
-    const salonsResult = await this.repository.findAll(paginationParams)
-    if (Result.isError(salonsResult)) {
-      return salonsResult
-    }
-
-    // Use mapper to convert DB → API types
-    const apiSalons = SalonReadMapper.toApiSalonFullList(
-      salonsResult.data.data,
-      new Map() // Opening hours map
-    )
-
-    const paginatedResult: PaginatedResult<ApiSalon> = {
-      data: apiSalons,
-      meta: salonsResult.data.meta,
-      links: salonsResult.data.links,
-    }
-
-    return Result.success(paginatedResult)
-  }
+const createSalon = async (overrides: Record<string, unknown> = {}) => {
+  const response = await request(app)
+    .post(SALONS)
+    .send(salonRequest(overrides))
+  expect(response.status).toBe(201)
+  return response.body.data
 }
 ```
 
-### Mapper Implementation
+### 3. Assert the whole success response
 
 ```typescript
-// backend/packages/domain/src/mappers/read/salon.mapper.ts
-export const SalonReadMapper = {
-  toApiSalon(dbSalon: DbSalon, openingHours: DbOpeningHours[] = []): ApiSalon {
-    return {
-      id: dbSalon.id,
-      name: dbSalon.name,
-      description: dbSalon.description,
-      address: this.toApiAddress(dbSalon),
-      contactInfo: this.toApiContactInfo(dbSalon),
-      openingHours: openingHours.map((oh) => this.toApiOpeningHours(oh)),
-      // ... other fields
-    }
-  },
+it('creates the salon and returns it with what the server assigned', async () => {
+  const response = await request(app).post(SALONS).send(salonRequest())
 
-  toApiSalonFullList(
-    dbSalons: DbSalon[],
-    openingHoursMap: Map<string, DbOpeningHours[]> = new Map()
-  ): ApiSalon[] {
-    return dbSalons.map((salon) =>
-      this.toApiSalon(salon, openingHoursMap.get(salon.id) ?? [])
-    )
-  },
+  expect(response.status).toBe(201)
+  const { data, meta, links } = response.body
+  expect(data).toEqual({
+    ...salonRequest(),
+    openingHours: storedCalendar,
+    id: expect.stringMatching(UUID),
+    rating: null,
+    reviewCount: 0,
+    createdAt: expect.stringMatching(ISO_TIMESTAMP),
+    updatedAt: expect.stringMatching(ISO_TIMESTAMP),
+  })
+  expect(response.headers.location).toBe(`${SALONS}/${data.id}`)
+  expect(links).toEqual({ self: `${SALONS}/${data.id}`, list: SALONS })
+  expect(meta).toEqual({
+    correlationId: expect.stringMatching(UUID),
+    timestamp: expect.stringMatching(ISO_TIMESTAMP),
+    version: 'v1',
+  })
 
-  toApiSalonSummary(dbSalon: DbSalon): ApiSalonSummary {
-    return {
-      id: dbSalon.id,
-      name: dbSalon.name,
-      address: this.toApiAddress(dbSalon),
-      rating: dbSalon.rating ? Number.parseFloat(dbSalon.rating) : null,
-      reviewCount: dbSalon.reviewCount,
-    }
-  },
+  const stored = await request(app).get(`${SALONS}/${data.id}`)
+  expect(stored.body.data).toEqual(data)
+})
+```
+
+`toEqual` on the whole object fails when the response gains or loses a
+property, which `toMatchObject` on a few properties would not notice. The last
+two lines read the salon back: what was returned is what was stored.
+
+### 4. Assert errors as problem details
+
+Every error response is RFC 9457 problem details. Two helpers at the top of
+the Salon test file keep the assertions short:
+
+```typescript
+const brokenRules = (response: Response): string[] =>
+  response.body.errors.map(
+    ({ field, rule }: { field: string; rule: string }) => `${field}:${rule}`,
+  )
+
+const expectProblem = (
+  response: Response,
+  expected: { status: number; code: string; type: string },
+): void => {
+  expect(response.status).toBe(expected.status)
+  expect(response.body).toMatchObject({
+    type: `urn:beauty-salon:problem:${expected.type}`,
+    status: expected.status,
+    code: expected.code,
+    instance: response.request.url.replace(/^https?:\/\/[^/]+/, ''),
+    timestamp: expect.stringMatching(ISO_TIMESTAMP),
+  })
 }
+
+const badRequest = { status: 400, code: '2001', type: 'validation' }
+const notFound = { status: 404, code: '3001', type: 'not-found' }
+const conflict = { status: 409, code: '3002', type: 'already-exists' }
 ```
 
-## 📝 Implementation Checklist
+The kinds of error an endpoint test meets:
 
-### For New Domain Implementation
+| Error | Status | `type` after `urn:beauty-salon:problem:` | `code` | `errors` |
+|-------|--------|------------------------------------------|--------|----------|
+| Validation | 400 | `validation` | `2001` | One entry per broken rule: `field` (a dot path, empty for the input as a whole), `rule`, `message` |
+| Not found | 404 | `not-found` | `3001` | `null` |
+| Already exists | 409 | `already-exists` | `3002` | `null` |
+| Database failure or corrupt stored data | 500 | `database` | `4003` | `null`, and `detail` is `null` too |
 
-#### 1. Route Handler Setup
-- [ ] Import types from `@beauty-salon-backend/generated`
-- [ ] Create type remapping (no `unknown`, no type casting)
-- [ ] Define RequestHandler with explicit type parameters
-- [ ] Implement handleDomainError function
-- [ ] Delegate ALL logic to use cases (no validation in routes)
-- [ ] Use pattern matching for Result handling
+`backend/packages/api/src/shared/problem-details.ts` defines these and the
+errors of the HTTP layer itself (unknown route, unreadable body, rate limit),
+which `app.integration.test.ts` covers once for all routes.
 
-#### 2. Use Case Implementation
-- [ ] Extend base use case class
-- [ ] Accept API types as input
-- [ ] Return Result<ApiType, DomainError>
-- [ ] Handle validation in use case
-- [ ] Use repository pattern for DB access
-- [ ] Apply mappers for type conversion
+Invalid inputs that differ only in the value go into one table. Each row is
+one of the five or more error scenarios the endpoint needs (three of the seven
+rows are shown):
 
-#### 3. Mapper Pattern
-- [ ] Create read mapper for DB → API conversion
-- [ ] Create write mapper for API → DB conversion
-- [ ] Implement toApiXxx methods for full objects
-- [ ] Implement toApiXxxList methods for collections
-- [ ] Handle nullable fields correctly (match DB nullability)
+```typescript
+it.each([
+  ['a missing property', { city: undefined }, ['city:invalid_type']],
+  [
+    'a property the client may not set',
+    { rating: 5 },
+    ['rating:unrecognized_keys'],
+  ],
+  ['null for a NOT NULL column', { name: null }, ['name:invalid_type']],
+])('rejects %s and stores nothing', async (_case, change, expected) => {
+  const response = await request(app)
+    .post(SALONS)
+    .send(salonRequest(change))
 
-#### 4. Test Implementation
-- [ ] Create test file in `__tests__/[domain].test.ts`
-- [ ] Test all CRUD operations
-- [ ] Test pagination with CursorPaginationResponse
-- [ ] Test error cases (validation, 404, invalid UUID)
-- [ ] Verify database state after operations
-- [ ] Use direct DB inserts for test data setup
-
-## 🚀 Running Tests
-
-```bash
-# Run specific domain tests
-pnpm test salon.test.ts
-
-# Run all API tests
-cd backend/packages/api && pnpm test
-
-# Run with coverage
-pnpm test --coverage
-
-# Watch mode for development
-pnpm test --watch
+  expectProblem(response, badRequest)
+  expect(brokenRules(response)).toEqual(expected)
+  expect(await db.$count(salons)).toBe(0)
+})
 ```
 
-## ⚡ Key Architectural Decisions
+The last line checks the state: a rejected request stored nothing. An error
+that depends on existing data arranges it first:
 
-### 1. Schema-per-test Isolation
-- Each test runs in its own PostgreSQL schema
-- No test data conflicts
-- Parallel test execution capability
-- Automatic cleanup
+```typescript
+it('rejects an email that another salon uses', async () => {
+  await createSalon()
 
-### 2. No Validation in Routes
-- Routes are thin HTTP adapters
-- All business logic in use cases
-- Consistent error handling via Result type
-- Single responsibility principle
+  const response = await request(app)
+    .post(SALONS)
+    .send(salonRequest({ name: 'Second salon' }))
 
-### 3. Type-safe Without Casting
-- Use mapper methods that return correct types
-- Adjust use case return types as needed
-- Never use `as` type assertions
-- Maintain type flow from DB to API
-
-### 4. Problem Details Standard
-- RFC 7807 compliant error responses
-- Consistent error structure across all endpoints
-- Machine-readable error types
-- Human-readable error details
-
-## 📊 Test Output Example
-
-```
-✓ src/__tests__/salon.test.ts (15 tests) 4.89s
-  ✓ Salon API Integration Tests
-    ✓ POST /api/v1/salons
-      ✓ should create a salon with valid data 111ms
-      ✓ should return validation error for invalid email 82ms
-      ✓ should return validation error for missing required fields 79ms
-    ✓ GET /api/v1/salons
-      ✓ should list all salons 95ms
-      ✓ should return empty list when no salons exist 87ms
-      ✓ should support pagination 102ms
-    ✓ GET /api/v1/salons/:id
-      ✓ should get a salon by ID 84ms
-      ✓ should return 404 for non-existent salon 83ms
-      ✓ should return 400 for invalid UUID 78ms
-
-Test Files  1 passed (1)
-     Tests  15 passed (15)
+  expectProblem(response, conflict)
+  expect(response.body.detail).toBe(
+    'Salon with email aoyama@example.com already exists',
+  )
+  expect(await db.$count(salons)).toBe(1)
+})
 ```
 
-## 🔍 Summary
+### 5. Write to the database only for what the API cannot produce
 
-The Salon domain implementation establishes:
-1. **Complete type safety** without type casting
-2. **Clean separation** between HTTP and business logic
-3. **Comprehensive test coverage** with real database
-4. **Consistent patterns** for all operations
+`getTestDb()` is for inspecting rows and for states no request can create,
+such as a stored value that does not have the shape the schema promises:
 
-Use this implementation as the reference when implementing Customer, Staff, Service, and other domains.
+```typescript
+it('answers 500 without details when the stored salon is corrupt', async () => {
+  const created = await createSalon()
+  await db
+    .update(salons)
+    .set({ businessHours: { monday: 'ten to seven' } })
+    .where(eq(salons.id, created.id))
+
+  const response = await request(app).get(`${SALONS}/${created.id}`)
+
+  expectProblem(response, { status: 500, code: '4003', type: 'database' })
+  expect(response.body.detail).toBeNull()
+  expect(JSON.stringify(response.body)).not.toContain('ten to seven')
+})
+```
+
+## Testing Failures and Logs
+
+A failing database is a real one that does not answer, and the log is read
+through the `logs` option. From
+`backend/packages/api/src/__tests__/app.integration.test.ts` (the assertions on
+the response body are left out here):
+
+```typescript
+it('should answer 500 without the cause and log the cause under the request ID', async () => {
+  const connection = connectUnreachableDatabase()
+  const logs: unknown[] = []
+  const app = createTestApp({ database: connection.database, logs })
+
+  const response = await request(app).get(SALONS)
+  await connection.close()
+
+  expect(response.status).toBe(500)
+  expect(logs).toContainEqual(
+    expect.objectContaining({
+      level: 'error',
+      req: expect.objectContaining({ id: response.headers['x-request-id'] }),
+      msg: 'Failed to list salons',
+      cause: expect.objectContaining({ code: 'ECONNREFUSED' }),
+    }),
+  )
+})
+```
+
+## Tests for a New Domain
+
+1. Create `backend/packages/api/src/__tests__/<domain>.integration.test.ts`;
+   the name must end in `.integration.test.ts` to be picked up.
+2. Start from the structure of the Salon file: the `beforeEach`, a builder for
+   a valid request, helpers that create state through the API.
+3. For each endpoint write the scenarios listed in
+   [Testing Requirements](./testing-requirements.md): the success response in
+   full, at least five error scenarios, the state after the request, deleted
+   resources.
+4. `expectProblem` and `brokenRules` are local to the Salon file today. When a
+   second file needs them, move them to `_shared/test-helpers.ts` instead of
+   copying them.

@@ -1,261 +1,226 @@
 # Type Generation System
 
-This document describes the TypeSpec → OpenAPI → TypeScript type generation pipeline as defined in the Clean Architecture.
+TypeSpec is the single source of truth for the API contract. The OpenAPI
+document, the backend types and the frontend API client are generated from it,
+and all three are committed to the repository.
 
-## Overview
-
-The type generation system follows API-First development principles with TypeSpec as the single source of truth for all API contracts.
-
-## Architecture
+## Pipeline
 
 ```
-TypeSpec (Single Source of Truth)
-    ↓ tsp compile
-OpenAPI (specs/tsp-output/@typespec/openapi3/openapi.yaml)
-    ↓ openapi-typescript
-TypeScript Types (@beauty-salon-backend/generated)
-    ↓
-Domain Models & Use Cases
-```
-
-## Type Generation Pipeline
-
-### 1. Define API Contracts in TypeSpec
-
-Location: `/specs`
-
-```typespec
-// specs/models/customer.tsp
-model Customer {
-  id: CustomerId;
-  name: string;
-  email: string;
-  contactInfo: ContactInfo;
-  loyaltyPoints: int32 = 0;
-}
-```
-
-### 2. Generate OpenAPI Specification
-
-```bash
-pnpm generate:spec
-# Output: specs/tsp-output/@typespec/openapi3/openapi.yaml
-```
-
-### 3. Generate TypeScript Types
-
-```bash
-pnpm generate:backend
-# Output: backend/packages/generated/src/generated/api-types.ts
-```
-
-### 4. Use Generated Types in Domain Layer
-
-```typescript
-// backend/packages/domain/src/models/customer.ts
-import type { components } from '@beauty-salon-backend/generated'
-
-// Use generated types as base
-type ApiCustomer = components['schemas']['Models.Customer']
-
-// Extend with domain logic
-export type CustomerState =
-  | { type: 'active'; customer: Customer }
-  | { type: 'inactive'; customer: Customer; reason: string }
-  | { type: 'suspended'; customer: Customer; until: string }
-```
-
-## Package Structure
-
-### Generated Package (`/backend/packages/generated`)
-
-```
-generated/
-├── src/
-│   ├── generated/
-│   │   └── api-types.ts  # Auto-generated types
-│   └── index.ts          # Re-exports
-├── scripts/
-│   └── generate-types.ts # Generation script
-└── package.json
-```
-
-### Generation Script
-
-Location: `backend/packages/generated/scripts/generate-types.ts`
-
-The script:
-1. Reads OpenAPI specification from `specs/tsp-output`
-2. Uses `openapi-typescript` to generate TypeScript types
-3. Outputs to `src/generated/api-types.ts`
-
-## Mapper Pattern
-
-The architecture uses separate Write and Read mappers to transform data between layers:
-
-### Write Mapper (API → Domain → DB)
-
-```typescript
-// backend/packages/domain/src/mappers/write/create-customer.mapper.ts
-import type { components } from '@beauty-salon-backend/generated'
-import type { Result } from '../../shared/result'
-
-export const mapCreateApiToDomain = (
-  request: components['schemas']['Models.CreateCustomerRequest']
-): Result<CreateCustomerCommand, ValidationError[]> => {
-  // Validate and transform API request to domain command
-  return ok({
-    name: request.name.trim(),
-    email: request.email,
-    contactInfo: request.contactInfo
-  })
-}
-
-export const mapCreateDomainToDb = (
-  command: CreateCustomerCommand
-): DatabaseInsert => {
-  // Transform domain command to database format
-  return {
-    first_name: command.name.split(' ')[0],
-    last_name: command.name.split(' ').slice(1).join(' '),
-    email: command.email,
-    created_at: new Date()
-  }
-}
-```
-
-### Read Mapper (DB → Domain → API)
-
-```typescript
-// backend/packages/domain/src/mappers/read/get-customer.mapper.ts
-export const mapDbToDomain = (
-  record: CustomerDbRecord
-): Result<Customer, MappingError> => {
-  // Transform database record to domain model
-  return ok({
-    id: record.id as CustomerId,
-    name: `${record.first_name} ${record.last_name}`,
-    email: record.email,
-    contactInfo: {
-      email: record.email,
-      phoneNumber: record.phone_number
-    }
-  })
-}
-
-export const mapDomainToApi = (
-  customer: Customer
-): components['schemas']['Models.Customer'] => {
-  // Transform domain model to API response
-  return {
-    id: customer.id,
-    name: customer.name,
-    email: customer.email,
-    contactInfo: customer.contactInfo,
-    loyaltyPoints: customer.loyaltyPoints
-  }
-}
+specs/main.tsp, specs/models/*.tsp, specs/operations/*.tsp
+    │
+    │  pnpm generate:spec       tsp compile, then specs/scripts/postprocess-openapi.ts
+    ▼
+specs/tsp-output/@typespec/openapi3/generated/openapi.yaml
+    │
+    ├── pnpm generate:api       orval
+    │       ▼
+    │   frontend/packages/api-client/src/generated/
+    │
+    └── pnpm generate:backend   openapi-typescript
+            ▼
+        backend/packages/generated/src/
 ```
 
 ## Commands
 
-### Full Generation Pipeline
+| Command | What it runs | Result |
+|---------|--------------|--------|
+| `pnpm generate` | `generate:spec`, `generate:api`, `generate:backend`, in this order | Everything below |
+| `pnpm generate:spec` | The `compile` script of `@beauty-salon/specs` | `specs/tsp-output/@typespec/openapi3/generated/openapi.yaml` |
+| `pnpm generate:api` | The `generate` script of `@beauty-salon-frontend/api-client` (orval) | `frontend/packages/api-client/src/generated/` |
+| `pnpm generate:backend` | The `generate` script of `@beauty-salon-backend/generated` | `backend/packages/generated/src/` |
+| `pnpm generate:watch` | `scripts/generate-watch.ts` | Runs `pnpm generate` once, then again after every change to a `.tsp` file under `specs/` |
+| `pnpm check:generated` | `pnpm generate`, then `scripts/check-clean.ts` | Fails when the generated files differ from what is committed |
 
-```bash
-# Generate everything (TypeSpec → OpenAPI → Types)
-pnpm generate
+`make generate` runs `pnpm generate`.
 
-# Generate only OpenAPI from TypeSpec
-pnpm generate:spec
+`generate:api` and `generate:backend` read the OpenAPI document, so they only
+see a TypeSpec change after `generate:spec` has run. Use `pnpm generate` unless
+you have a reason to run one step alone.
 
-# Generate only TypeScript types from OpenAPI
-pnpm generate:backend
+## Step 1: TypeSpec to OpenAPI
+
+`specs/main.tsp` imports every model file in `specs/models/` and every
+operation file in `specs/operations/`. The `compile` script in
+`specs/package.json` is:
+
+```
+tsp compile . && node ./scripts/postprocess-openapi.ts
 ```
 
-### Package-specific Commands
+`specs/tspconfig.yaml` selects the emitter and the file name:
 
-```bash
-# In specs package
-cd specs
-pnpm compile           # Generate OpenAPI
+```yaml
+emit:
+  - "@typespec/openapi3"
 
-# In generated package
-cd backend/packages/generated
-pnpm generate         # Generate TypeScript types
+options:
+  "@typespec/openapi3":
+    output-file: "generated/openapi.yaml"
 ```
 
-## Best Practices
+`specs/scripts/postprocess-openapi.ts` then rewrites the emitted file: where
+the emitter has inlined a copy of the enums `ServiceCategoryType`,
+`CustomerStatusType` or `LoyaltyTierType`, the copy is replaced by a `$ref` to
+the shared schema, so the generated code refers to the named enum.
 
-### 1. Never Edit Generated Files
+The document describes every domain that is defined in TypeSpec. The backend
+implements only the Salon operations and the system probes (`alive`, `ready`,
+`health`); the types and client functions of everything else are generated all
+the same.
 
-All files in `backend/packages/generated/src/generated/` are auto-generated and should never be manually edited.
+## Step 2: OpenAPI to backend types
 
-### 2. Always Regenerate After TypeSpec Changes
+Package: `@beauty-salon-backend/generated` (`backend/packages/generated`).
 
-When modifying TypeSpec definitions:
-1. Update `.tsp` files in `/specs`
-2. Run `pnpm generate` to regenerate all types
-3. Fix any TypeScript compilation errors
-4. Commit both TypeSpec changes and generated files
+```
+backend/packages/generated/
+├── scripts/
+│   └── generate-types.ts   # the generator, run with tsx
+├── src/                    # generated, committed, never edited by hand
+│   ├── api-types.ts        # paths, components, operations
+│   ├── schema.ts           # one Zod schema and type per string enum
+│   └── index.ts            # re-exports both files
+├── rslib.config.ts         # builds src/ to dist/
+└── package.json
+```
 
-### 3. Use DB-Driven Types
+`backend/packages/generated/scripts/generate-types.ts`:
+
+1. stops with an error if the OpenAPI document does not exist;
+2. runs the `openapi-typescript` CLI (version 7) on the document;
+3. writes `src/api-types.ts`: the CLI output (`paths`, `components`,
+   `operations`), with the JSDoc of every documented enum schema reformatted
+   so that each enum value is described on its own line;
+4. writes `src/schema.ts`: for every string enum in `components.schemas`, a Zod
+   schema and the type inferred from it, named after the enum without the
+   `Models.` prefix (`DayOfWeekTypeSchema`, `DayOfWeekType`);
+5. writes `src/index.ts`.
+
+This package alone pins `typescript` to 5.9.3, because `openapi-typescript` 7
+uses the TypeScript compiler API and declares `typescript ^5.x` as its peer
+dependency. Every other package uses TypeScript 7. Do not change the pin
+together with the rest of the workspace.
+
+Other backend packages import the package by name. In development and in tests
+the import resolves to `src/index.ts` through the
+`@beauty-salon-backend/source` export condition; a production build uses
+`dist/`.
+
+How the types are used is described in
+[OpenAPI TypeScript Usage](./openapi-typescript-usage.md).
+
+## Step 3: OpenAPI to frontend client
+
+Package: `@beauty-salon-frontend/api-client` (`frontend/packages/api-client`).
+Its `generate` script runs `orval` with
+`frontend/packages/api-client/orval.config.ts`:
 
 ```typescript
-// Types are inferred from database schemas
-import type { Customer, NewCustomer } from '@beauty-salon-backend/database'
-
-// Domain model extends DB types
-type DomainCustomer = Customer & {
-  readonly fullName: string
-  readonly isActive: boolean
-}
+export default defineConfig({
+  beautySalon: {
+    input: {
+      target:
+        '../../../specs/tsp-output/@typespec/openapi3/generated/openapi.yaml',
+    },
+    output: {
+      clean: true,
+      mode: 'tags-split',
+      target: './src/generated/endpoints',
+      schemas: './src/generated/models',
+      client: 'react-query',
+      httpClient: 'fetch',
+      mock: false,
+      override: {
+        mutator: {
+          path: './src/mutator.ts',
+          name: 'customInstance',
+        },
+      },
+    },
+  },
+})
 ```
 
-### 4. Result Types for Error Handling
+Output, under `frontend/packages/api-client/src/generated/`:
 
-```typescript
-// Never throw exceptions
-export const createCustomer = async (
-  request: CreateCustomerRequest
-): Promise<Result<Customer, CreateCustomerError>> => {
-  // Always return Result type
-  return ok(customer) // or err(error)
-}
+- `endpoints/<tag>/<tag>.ts`: one file per OpenAPI tag (for example
+  `endpoints/salons/salons.ts`). For every operation it holds a fetch function,
+  its URL builder and response types, and the TanStack Query hook with its
+  options and key helpers.
+- `endpoints/index.ts`: re-exports every tag file.
+- `models/`: one file per type (component schemas, query parameter objects,
+  inline request and response bodies), and an `index.ts` that re-exports them.
+
+`clean: true` deletes both directories before they are written again, so a
+model that is removed from TypeSpec disappears from the client.
+
+The package is consumed through its build output (`dist/`), not from source.
+After regenerating, rebuild it with
+`pnpm --filter @beauty-salon-frontend/api-client run build:dev`, or keep
+`pnpm dev` running: the `dev` script of the package rebuilds on change.
+
+What the frontend does with the client is described in
+[Frontend API Integration](./frontend-api-integration.md).
+
+## Generated files are committed
+
+The OpenAPI document, `backend/packages/generated/src/` and
+`frontend/packages/api-client/src/generated/` are tracked by git. A TypeSpec
+change is committed together with the files it regenerates.
+
+`pnpm check:generated` enforces this:
+
 ```
+pnpm generate && node ./scripts/check-clean.ts specs/tsp-output backend/packages/generated/src frontend/packages/api-client/src/generated
+```
+
+`scripts/check-clean.ts` runs `git status --porcelain` on the three paths and
+fails if anything is reported. The check runs in the `quality` job of
+`.github/workflows/ci.yml` and in `make ci-check`. Locally it also fails while
+regenerated files are not committed yet.
+
+Biome does not lint or format the generated TypeScript (`biome.json` excludes
+both directories) and does not touch YAML. `.tsp` files are formatted with
+`tsp format` by `pnpm format:fix`.
+
+## Changing the API
+
+1. Edit the `.tsp` files under `specs/`, following
+   [TypeSpec API Type Rules](./typespec-api-type-rules.md).
+2. Run `pnpm generate` (or leave `pnpm generate:watch` running).
+3. Fix what no longer compiles: `pnpm typecheck` (after a build, as in CI).
+   The Salon Zod schemas are checked against the generated types with
+   `satisfies z.ZodType<…>`, so a property that was added, or whose type
+   changed, shows up as a type error in
+   `backend/packages/domain/src/schemas/salon.schema.ts`. A property that was
+   removed from a model is not reported there: remove it from the schema
+   yourself.
+4. If a model that maps to a table changed, run `pnpm check:api-db`.
+5. Commit the `.tsp` change and the generated files together.
 
 ## Troubleshooting
 
-### Issue: Types not updating after TypeSpec changes
+**`OpenAPI file not found`** from `pnpm generate:backend`: the OpenAPI document
+is missing. Run `pnpm generate:spec`, or `pnpm generate`.
 
-Solution:
-```bash
-# Clean and regenerate
-rm -rf specs/tsp-output
-rm -rf backend/packages/generated/src/generated
-pnpm generate
-```
+**`pnpm check:generated` fails in CI**: the commit changed TypeSpec without the
+generated files, or changed a generated file by hand. Run `pnpm generate`
+locally and commit the result.
 
-### Issue: TypeScript compilation errors after generation
+**A generated type is missing or stale in the editor**: run `pnpm generate`
+and restart the TypeScript server. For the frontend client, rebuild the
+`api-client` package as described in step 3.
 
-Common causes:
-1. Breaking changes in TypeSpec models
-2. Mapper functions need updating
-3. Use cases need adjustment
-
-Solution:
-1. Review generated types in `api-types.ts`
-2. Update mappers to match new types
-3. Fix use case implementations
-
-### Issue: Namespace mismatch
-
-Ensure correct namespaces:
-- Backend: `@beauty-salon-backend/*`
-- Frontend: `@beauty-salon-frontend/*`
-- Specs: `@beauty-salon/specs`
+**`openapi-typescript` fails after a dependency update**: check that
+`typescript` in `backend/packages/generated/package.json` is still a 5.x
+release.
 
 ## Related Documentation
 
 - [Architecture Overview](./architecture-overview.md)
 - [TypeSpec API Type Rules](./typespec-api-type-rules.md)
+- [OpenAPI TypeScript Usage](./openapi-typescript-usage.md)
+- [Frontend API Integration](./frontend-api-integration.md)
 - [Backend Architecture Guidelines](./backend-architecture-guidelines.md)
