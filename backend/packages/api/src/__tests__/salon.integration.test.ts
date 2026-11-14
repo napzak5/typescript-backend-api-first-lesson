@@ -85,6 +85,9 @@ const expectProblem = (
   expected: { status: number; code: string; type: string },
 ): void => {
   expect(response.status).toBe(expected.status)
+  expect(response.headers['content-type']).toBe(
+    'application/problem+json; charset=utf-8',
+  )
   expect(response.body).toMatchObject({
     type: `urn:beauty-salon:problem:${expected.type}`,
     status: expected.status,

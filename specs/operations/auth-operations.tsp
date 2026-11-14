@@ -20,14 +20,8 @@ namespace BeautySalon.Operations {
           @statusCode statusCode: 201;
           @body response: User;
         }
-      | {
-          @statusCode statusCode: 409;
-          @body error: Error;
-        }
-      | {
-          @statusCode statusCode: 400;
-          @body error: Error;
-        };
+      | ProblemResponse<409>
+      | ProblemResponse<400>;
 
     @doc("Login with email and password")
     @post
@@ -38,22 +32,10 @@ namespace BeautySalon.Operations {
           @statusCode statusCode: 200;
           @body response: AuthLoginResponse;
         }
-      | {
-          @statusCode statusCode: 401;
-          @body error: Error;
-        }
-      | {
-          @statusCode statusCode: 423;
-          @body error: Error;
-        }
-      | {
-          @statusCode statusCode: 403;
-          @body error: Error;
-        }
-      | {
-          @statusCode statusCode: 400;
-          @body error: Error;
-        };
+      | ProblemResponse<401>
+      | ProblemResponse<423>
+      | ProblemResponse<403>
+      | ProblemResponse<400>;
 
     @doc("Refresh access token")
     @post
@@ -64,10 +46,7 @@ namespace BeautySalon.Operations {
           @statusCode statusCode: 200;
           @body response: AuthLoginResponse;
         }
-      | {
-          @statusCode statusCode: 401;
-          @body error: Error;
-        };
+      | ProblemResponse<401>;
 
     @doc("Logout and invalidate session")
     @post
@@ -77,10 +56,7 @@ namespace BeautySalon.Operations {
           @statusCode statusCode: 200;
           @body response: AuthSuccessResponse;
         }
-      | {
-          @statusCode statusCode: 401;
-          @body error: Error;
-        };
+      | ProblemResponse<401>;
 
     @doc("Get current user information")
     @get
@@ -90,10 +66,7 @@ namespace BeautySalon.Operations {
           @statusCode statusCode: 200;
           @body response: User;
         }
-      | {
-          @statusCode statusCode: 401;
-          @body error: Error;
-        };
+      | ProblemResponse<401>;
 
     @doc("Request password reset")
     @post
@@ -104,14 +77,8 @@ namespace BeautySalon.Operations {
           @statusCode statusCode: 200;
           @body response: AuthSuccessResponse;
         }
-      | {
-          @statusCode statusCode: 404;
-          @body error: Error;
-        }
-      | {
-          @statusCode statusCode: 429;
-          @body error: Error;
-        };
+      | ProblemResponse<404>
+      | ProblemResponse<429>;
 
     @doc("Verify password reset token")
     @get
@@ -122,10 +89,7 @@ namespace BeautySalon.Operations {
           @statusCode statusCode: 200;
           @body response: AuthSuccessResponse;
         }
-      | {
-          @statusCode statusCode: 400;
-          @body error: Error;
-        };
+      | ProblemResponse<400>;
 
     @doc("Reset password with token")
     @post
@@ -136,18 +100,9 @@ namespace BeautySalon.Operations {
           @statusCode statusCode: 200;
           @body response: AuthSuccessResponse;
         }
-      | {
-          @statusCode statusCode: 400;
-          @body error: Error;
-        }
-      | {
-          @statusCode statusCode: 400;
-          @body error: Error;
-        }
-      | {
-          @statusCode statusCode: 400;
-          @body error: Error;
-        };
+      | ProblemResponse<400>
+      | ProblemResponse<400>
+      | ProblemResponse<400>;
 
     @doc("Send email verification")
     @post
@@ -157,18 +112,9 @@ namespace BeautySalon.Operations {
           @statusCode statusCode: 200;
           @body response: AuthSuccessResponse;
         }
-      | {
-          @statusCode statusCode: 401;
-          @body error: Error;
-        }
-      | {
-          @statusCode statusCode: 400;
-          @body error: Error;
-        }
-      | {
-          @statusCode statusCode: 429;
-          @body error: Error;
-        };
+      | ProblemResponse<401>
+      | ProblemResponse<400>
+      | ProblemResponse<429>;
 
     @doc("Confirm email verification")
     @post
@@ -179,10 +125,7 @@ namespace BeautySalon.Operations {
           @statusCode statusCode: 200;
           @body response: AuthSuccessResponse;
         }
-      | {
-          @statusCode statusCode: 400;
-          @body error: Error;
-        };
+      | ProblemResponse<400>;
 
     @doc("Change password")
     @post
@@ -195,22 +138,10 @@ namespace BeautySalon.Operations {
           @statusCode statusCode: 200;
           @body response: AuthSuccessResponse;
         }
-      | {
-          @statusCode statusCode: 401;
-          @body error: Error;
-        }
-      | {
-          @statusCode statusCode: 400;
-          @body error: Error;
-        }
-      | {
-          @statusCode statusCode: 400;
-          @body error: Error;
-        }
-      | {
-          @statusCode statusCode: 400;
-          @body error: Error;
-        };
+      | ProblemResponse<401>
+      | ProblemResponse<400>
+      | ProblemResponse<400>
+      | ProblemResponse<400>;
 
     @doc("Enable two-factor authentication")
     @post
@@ -223,18 +154,9 @@ namespace BeautySalon.Operations {
           @statusCode statusCode: 200;
           @body response: AuthTwoFactorSetupResponse;
         }
-      | {
-          @statusCode statusCode: 401;
-          @body error: Error;
-        }
-      | {
-          @statusCode statusCode: 400;
-          @body error: Error;
-        }
-      | {
-          @statusCode statusCode: 400;
-          @body error: Error;
-        };
+      | ProblemResponse<401>
+      | ProblemResponse<400>
+      | ProblemResponse<400>;
 
     @doc("Get QR code for 2FA setup")
     @get
@@ -244,14 +166,8 @@ namespace BeautySalon.Operations {
           @statusCode statusCode: 200;
           @body response: AuthTwoFactorSetupResponse;
         }
-      | {
-          @statusCode statusCode: 401;
-          @body error: Error;
-        }
-      | {
-          @statusCode statusCode: 400;
-          @body error: Error;
-        };
+      | ProblemResponse<401>
+      | ProblemResponse<400>;
 
     @doc("Verify two-factor authentication code")
     @post
@@ -264,18 +180,9 @@ namespace BeautySalon.Operations {
           @statusCode statusCode: 200;
           @body response: AuthSuccessResponse;
         }
-      | {
-          @statusCode statusCode: 401;
-          @body error: Error;
-        }
-      | {
-          @statusCode statusCode: 400;
-          @body error: Error;
-        }
-      | {
-          @statusCode statusCode: 400;
-          @body error: Error;
-        };
+      | ProblemResponse<401>
+      | ProblemResponse<400>
+      | ProblemResponse<400>;
 
     @doc("Disable two-factor authentication")
     @post
@@ -288,22 +195,10 @@ namespace BeautySalon.Operations {
           @statusCode statusCode: 200;
           @body response: AuthSuccessResponse;
         }
-      | {
-          @statusCode statusCode: 401;
-          @body error: Error;
-        }
-      | {
-          @statusCode statusCode: 400;
-          @body error: Error;
-        }
-      | {
-          @statusCode statusCode: 400;
-          @body error: Error;
-        }
-      | {
-          @statusCode statusCode: 400;
-          @body error: Error;
-        };
+      | ProblemResponse<401>
+      | ProblemResponse<400>
+      | ProblemResponse<400>
+      | ProblemResponse<400>;
 
     @doc("Generate new backup codes for 2FA")
     @post
@@ -318,18 +213,9 @@ namespace BeautySalon.Operations {
             backupCodes: string[];
           };
         }
-      | {
-          @statusCode statusCode: 401;
-          @body error: Error;
-        }
-      | {
-          @statusCode statusCode: 400;
-          @body error: Error;
-        }
-      | {
-          @statusCode statusCode: 400;
-          @body error: Error;
-        };
+      | ProblemResponse<401>
+      | ProblemResponse<400>
+      | ProblemResponse<400>;
 
     @doc("Get active sessions")
     @get
@@ -339,10 +225,7 @@ namespace BeautySalon.Operations {
           @statusCode statusCode: 200;
           @body response: AuthSessionListResponse;
         }
-      | {
-          @statusCode statusCode: 401;
-          @body error: Error;
-        };
+      | ProblemResponse<401>;
 
     @doc("Revoke a specific session")
     @delete
@@ -355,14 +238,8 @@ namespace BeautySalon.Operations {
           @statusCode statusCode: 200;
           @body response: AuthSuccessResponse;
         }
-      | {
-          @statusCode statusCode: 401;
-          @body error: Error;
-        }
-      | {
-          @statusCode statusCode: 404;
-          @body error: Error;
-        };
+      | ProblemResponse<401>
+      | ProblemResponse<404>;
 
     @doc("Logout from all sessions")
     @post
@@ -372,10 +249,7 @@ namespace BeautySalon.Operations {
           @statusCode statusCode: 200;
           @body response: AuthSuccessResponse;
         }
-      | {
-          @statusCode statusCode: 401;
-          @body error: Error;
-        };
+      | ProblemResponse<401>;
   }
 
   @route("/api/v1/admin/auth")
@@ -392,22 +266,10 @@ namespace BeautySalon.Operations {
           @statusCode statusCode: 200;
           @body response: AuthSuccessResponse;
         }
-      | {
-          @statusCode statusCode: 401;
-          @body error: Error;
-        }
-      | {
-          @statusCode statusCode: 403;
-          @body error: Error;
-        }
-      | {
-          @statusCode statusCode: 404;
-          @body error: Error;
-        }
-      | {
-          @statusCode statusCode: 400;
-          @body error: Error;
-        };
+      | ProblemResponse<401>
+      | ProblemResponse<403>
+      | ProblemResponse<404>
+      | ProblemResponse<400>;
 
     @doc("Add trusted IP address for a user")
     @post
@@ -423,22 +285,10 @@ namespace BeautySalon.Operations {
           @statusCode statusCode: 200;
           @body response: AuthSuccessResponse;
         }
-      | {
-          @statusCode statusCode: 401;
-          @body error: Error;
-        }
-      | {
-          @statusCode statusCode: 403;
-          @body error: Error;
-        }
-      | {
-          @statusCode statusCode: 404;
-          @body error: Error;
-        }
-      | {
-          @statusCode statusCode: 400;
-          @body error: Error;
-        };
+      | ProblemResponse<401>
+      | ProblemResponse<403>
+      | ProblemResponse<404>
+      | ProblemResponse<400>;
 
     @doc("Remove trusted IP address for a user")
     @delete
@@ -452,17 +302,8 @@ namespace BeautySalon.Operations {
           @statusCode statusCode: 200;
           @body response: AuthSuccessResponse;
         }
-      | {
-          @statusCode statusCode: 401;
-          @body error: Error;
-        }
-      | {
-          @statusCode statusCode: 403;
-          @body error: Error;
-        }
-      | {
-          @statusCode statusCode: 404;
-          @body error: Error;
-        };
+      | ProblemResponse<401>
+      | ProblemResponse<403>
+      | ProblemResponse<404>;
   }
 }

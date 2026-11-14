@@ -11,6 +11,8 @@ import {
 const SALONS = '/api/v1/salons'
 const UNKNOWN_ID = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1b'
 const UUID = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/
+const JSON_UTF8 = 'application/json; charset=utf-8'
+const PROBLEM_JSON = 'application/problem+json; charset=utf-8'
 
 const salon = {
   name: 'Hair Studio Aoyama',
@@ -182,6 +184,36 @@ describe('requests the API cannot read', () => {
   })
 })
 
+describe('media type of a response', () => {
+  it.each<[string, 'get' | 'post', string, string | null, number]>([
+    ['an unknown path', 'get', '/api/v1/stylists', null, 404],
+    ['a body that is not valid JSON', 'post', SALONS, '{"name": ', 400],
+    ['a body that breaks the rules', 'post', SALONS, '{}', 400],
+    ['an ID that is not a UUID', 'get', `${SALONS}/42`, null, 400],
+    ['an ID that no salon has', 'get', `${SALONS}/${UNKNOWN_ID}`, null, 404],
+  ])(
+    'should answer %s as application/problem+json',
+    async (_kind, method, path, body, status) => {
+      const call = request(createTestApp())[method](path)
+
+      const response = await (body === null
+        ? call
+        : call.set('Content-Type', 'application/json').send(body))
+
+      expect(response.status).toBe(status)
+      expect(response.headers['content-type']).toBe(PROBLEM_JSON)
+      expect(response.body).toMatchObject({ status })
+    },
+  )
+
+  it('should answer a request it accepts as application/json', async () => {
+    const response = await request(createTestApp()).get(SALONS)
+
+    expect(response.status).toBe(200)
+    expect(response.headers['content-type']).toBe(JSON_UTF8)
+  })
+})
+
 describe('a failing database', () => {
   it('should answer 500 without the cause and log the cause under the request ID', async () => {
     const connection = connectUnreachableDatabase()
@@ -192,6 +224,7 @@ describe('a failing database', () => {
     await connection.close()
 
     expect(response.status).toBe(500)
+    expect(response.headers['content-type']).toBe(PROBLEM_JSON)
     expect(response.body).toEqual({
       type: 'urn:beauty-salon:problem:database',
       title: 'Internal server error',
@@ -289,6 +322,7 @@ describe('rate limit', () => {
     const response = await request(app).get(SALONS)
 
     expect(response.status).toBe(429)
+    expect(response.headers['content-type']).toBe(PROBLEM_JSON)
     expect(Number(response.headers['retry-after'])).toBeGreaterThan(0)
     expect(response.body).toEqual({
       type: 'urn:beauty-salon:problem:rate-limited',
@@ -357,6 +391,7 @@ describe('GET /api/system/ready', () => {
     await connection.close()
 
     expect(response.status).toBe(503)
+    expect(response.headers['content-type']).toBe(JSON_UTF8)
     expect(response.body).toEqual({ ready: false, reason: 'database' })
     expect(logs).toMatchObject([
       {
@@ -413,6 +448,7 @@ describe('GET /api/system/health', () => {
     await connection.close()
 
     expect(response.status).toBe(503)
+    expect(response.headers['content-type']).toBe(JSON_UTF8)
     expect(response.body).toMatchObject({
       status: 'unhealthy',
       checks: [

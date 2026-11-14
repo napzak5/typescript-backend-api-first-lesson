@@ -604,32 +604,32 @@ namespace BeautySalon.Models {
    * Extends from AdvancedSearchParams for pagination and advanced filtering
    */
   model CustomerSearchRequest extends AdvancedSearchParams {
-    #suppress "@typespec/http/metadata-ignored" "Treated as queryParams"
+    #suppress "@typespec/http/metadata-ignored" "A query parameter of the search operation and a body property of the export operation"
     @query
     @doc("顧客名、メール、または電話番号で検索")
     search?: string;
 
-    #suppress "@typespec/http/metadata-ignored" "Treated as queryParams"
+    #suppress "@typespec/http/metadata-ignored" "A query parameter of the search operation and a body property of the export operation"
     @query
     @doc("顧客タグでフィルタ")
     tags?: string[];
 
-    #suppress "@typespec/http/metadata-ignored" "Treated as queryParams"
+    #suppress "@typespec/http/metadata-ignored" "A query parameter of the search operation and a body property of the export operation"
     @query
     @doc("登録日開始でフィルタ")
     registeredFrom?: utcDateTime;
 
-    #suppress "@typespec/http/metadata-ignored" "Treated as queryParams"
+    #suppress "@typespec/http/metadata-ignored" "A query parameter of the search operation and a body property of the export operation"
     @query
     @doc("登録日終了でフィルタ")
     registeredTo?: utcDateTime;
 
-    #suppress "@typespec/http/metadata-ignored" "Treated as queryParams"
+    #suppress "@typespec/http/metadata-ignored" "A query parameter of the search operation and a body property of the export operation"
     @query
     @doc("顧客ステータスでフィルタ")
     status?: "active" | "inactive" | "suspended" | "deleted" | "blacklisted";
 
-    #suppress "@typespec/http/metadata-ignored" "Treated as queryParams"
+    #suppress "@typespec/http/metadata-ignored" "A query parameter of the search operation and a body property of the export operation"
     @query
     @doc("ロイヤルティティアでフィルタ")
     loyaltyTier?: "bronze" | "silver" | "gold" | "platinum";

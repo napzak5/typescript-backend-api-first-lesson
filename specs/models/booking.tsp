@@ -249,7 +249,7 @@ namespace BeautySalon.Models {
   }
 
   @doc("予約を新規作成する際のリクエスト。")
-  model CreateBookingRequest {
+  model BookingCreateRequest {
     @doc("予約対象のサロンID。")
     salonId: SalonId;
 

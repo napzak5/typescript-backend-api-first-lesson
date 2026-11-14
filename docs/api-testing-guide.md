@@ -256,8 +256,9 @@ two lines read the salon back: what was returned is what was stored.
 
 ### 4. Assert errors as problem details
 
-Every error response is RFC 9457 problem details. Two helpers at the top of
-the Salon test file keep the assertions short:
+Every error response is RFC 9457 problem details, sent as
+`application/problem+json`. Two helpers at the top of the Salon test file keep
+the assertions short:
 
 ```typescript
 const brokenRules = (response: Response): string[] =>
@@ -270,6 +271,9 @@ const expectProblem = (
   expected: { status: number; code: string; type: string },
 ): void => {
   expect(response.status).toBe(expected.status)
+  expect(response.headers['content-type']).toBe(
+    'application/problem+json; charset=utf-8',
+  )
   expect(response.body).toMatchObject({
     type: `urn:beauty-salon:problem:${expected.type}`,
     status: expected.status,

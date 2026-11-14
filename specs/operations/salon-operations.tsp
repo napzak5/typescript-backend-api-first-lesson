@@ -24,10 +24,8 @@ namespace BeautySalon.Operations {
             @statusCode statusCode: 200;
             @body response: CursorPaginationResponse<SalonResponse>;
           }
-        | {
-            @statusCode statusCode: 400;
-            @body error: ProblemDetails;
-          };
+        | ProblemResponse<400>
+        | CommonErrors;
 
       @doc("サロンを新規登録します。メールアドレスが既存のサロンと重複する場合は409を返します。")
       @summary("Create a salon")
@@ -38,14 +36,10 @@ namespace BeautySalon.Operations {
             @header("Location") location: string;
             @body response: ApiResponse<SalonResponse>;
           }
-        | {
-            @statusCode statusCode: 400;
-            @body error: ProblemDetails;
-          }
-        | {
-            @statusCode statusCode: 409;
-            @body error: ProblemDetails;
-          };
+        | ProblemResponse<400>
+        | ProblemResponse<409>
+        | RequestBodyErrors
+        | CommonErrors;
 
       @doc("IDを指定してサロンを1件取得します。")
       @summary("Get a salon")
@@ -55,14 +49,9 @@ namespace BeautySalon.Operations {
             @statusCode statusCode: 200;
             @body response: ApiResponse<SalonResponse>;
           }
-        | {
-            @statusCode statusCode: 400;
-            @body error: ProblemDetails;
-          }
-        | {
-            @statusCode statusCode: 404;
-            @body error: ProblemDetails;
-          };
+        | ProblemResponse<400>
+        | ProblemResponse<404>
+        | CommonErrors;
 
       @doc("指定した項目だけを更新します。openingHoursを指定した場合は営業日カレンダー全体を置き換えます。")
       @summary("Update a salon")
@@ -72,18 +61,11 @@ namespace BeautySalon.Operations {
             @statusCode statusCode: 200;
             @body response: ApiResponse<SalonResponse>;
           }
-        | {
-            @statusCode statusCode: 400;
-            @body error: ProblemDetails;
-          }
-        | {
-            @statusCode statusCode: 404;
-            @body error: ProblemDetails;
-          }
-        | {
-            @statusCode statusCode: 409;
-            @body error: ProblemDetails;
-          };
+        | ProblemResponse<400>
+        | ProblemResponse<404>
+        | ProblemResponse<409>
+        | RequestBodyErrors
+        | CommonErrors;
 
       @doc("サロンを論理削除します。削除後は一覧・取得の対象外になります。")
       @summary("Delete a salon")
@@ -92,14 +74,9 @@ namespace BeautySalon.Operations {
         | {
             @statusCode statusCode: 204;
           }
-        | {
-            @statusCode statusCode: 400;
-            @body error: ProblemDetails;
-          }
-        | {
-            @statusCode statusCode: 404;
-            @body error: ProblemDetails;
-          };
+        | ProblemResponse<400>
+        | ProblemResponse<404>
+        | CommonErrors;
     }
   }
 }

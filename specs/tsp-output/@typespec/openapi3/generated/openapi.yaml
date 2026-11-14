@@ -4,13 +4,13 @@ info:
   description: Comprehensive REST API for managing beauty salon operations including salons, staff, services, customers, reservations, bookings, treatments, payments, inventory, and access control. Built with TypeSpec for type-safe API-first development.
   version: "2.0"
 tags:
+  - name: System
   - name: Authentication
   - name: Admin - Authentication
   - name: Salons
   - name: Staff
   - name: Services
   - name: Customers
-  - name: System
   - name: Reservations
   - name: Bookings
   - name: Reviews
@@ -405,32 +405,6 @@ paths:
                 $ref: "#/components/schemas/Models.HealthStatus"
       tags:
         - System
-  /api/system/metrics:
-    get:
-      operationId: SystemOperations_metrics
-      summary: Get API metrics
-      description: Prometheus形式のメトリクスを返却し、監視基盤での可視化やアラート設定に用います。
-      parameters:
-        - name: Authorization
-          in: header
-          required: false
-          schema:
-            type: string
-      responses:
-        "200":
-          description: The request has succeeded.
-          content:
-            text/plain:
-              schema:
-                type: string
-        "401":
-          description: Access is unauthorized.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Models.ProblemDetails"
-      tags:
-        - System
   /api/system/ready:
     get:
       operationId: SystemOperations_ready
@@ -450,36 +424,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Models.SystemReadyResponse"
-      tags:
-        - System
-  /api/system/version:
-    get:
-      operationId: SystemOperations_version
-      summary: Get API version
-      description: APIのバージョンやビルド情報を返し、障害解析やデプロイ確認に活用します。
-      parameters: []
-      responses:
-        "200":
-          description: The request has succeeded.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  version:
-                    type: string
-                  buildTime:
-                    type: string
-                    format: date-time
-                  gitCommit:
-                    type: string
-                  gitBranch:
-                    type: string
-                  environment:
-                    type: string
-                required:
-                  - version
-                  - buildTime
       tags:
         - System
   /api/v1/admin/auth/trusted-ip/{userId}:
@@ -507,27 +451,27 @@ paths:
         "400":
           description: The server could not understand the request due to invalid syntax.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
         "401":
           description: Access is unauthorized.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
         "403":
           description: Access is forbidden.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
         "404":
           description: The server cannot find the requested resource.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Admin - Authentication
       requestBody:
@@ -571,21 +515,21 @@ paths:
         "401":
           description: Access is unauthorized.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
         "403":
           description: Access is forbidden.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
         "404":
           description: The server cannot find the requested resource.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Admin - Authentication
   /api/v1/admin/auth/unlock/{userId}:
@@ -613,27 +557,27 @@ paths:
         "400":
           description: The server could not understand the request due to invalid syntax.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
         "401":
           description: Access is unauthorized.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
         "403":
           description: Access is forbidden.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
         "404":
           description: The server cannot find the requested resource.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Admin - Authentication
   /api/v1/attachments:
@@ -901,17 +845,17 @@ paths:
         "400":
           description: The server could not understand the request due to invalid syntax.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 anyOf:
-                  - $ref: "#/components/schemas/Models.Error"
-                  - $ref: "#/components/schemas/Models.Error"
+                  - $ref: "#/components/schemas/Models.ProblemDetails"
+                  - $ref: "#/components/schemas/Models.ProblemDetails"
         "401":
           description: Access is unauthorized.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Authentication
       requestBody:
@@ -940,18 +884,18 @@ paths:
         "400":
           description: The server could not understand the request due to invalid syntax.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 anyOf:
-                  - $ref: "#/components/schemas/Models.Error"
-                  - $ref: "#/components/schemas/Models.Error"
-                  - $ref: "#/components/schemas/Models.Error"
+                  - $ref: "#/components/schemas/Models.ProblemDetails"
+                  - $ref: "#/components/schemas/Models.ProblemDetails"
+                  - $ref: "#/components/schemas/Models.ProblemDetails"
         "401":
           description: Access is unauthorized.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Authentication
       requestBody:
@@ -980,17 +924,17 @@ paths:
         "400":
           description: The server could not understand the request due to invalid syntax.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 anyOf:
-                  - $ref: "#/components/schemas/Models.Error"
-                  - $ref: "#/components/schemas/Models.Error"
+                  - $ref: "#/components/schemas/Models.ProblemDetails"
+                  - $ref: "#/components/schemas/Models.ProblemDetails"
         "401":
           description: Access is unauthorized.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Authentication
       requestBody:
@@ -1019,15 +963,15 @@ paths:
         "400":
           description: The server could not understand the request due to invalid syntax.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
         "401":
           description: Access is unauthorized.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Authentication
   /api/v1/auth/2fa/verify:
@@ -1050,17 +994,17 @@ paths:
         "400":
           description: The server could not understand the request due to invalid syntax.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 anyOf:
-                  - $ref: "#/components/schemas/Models.Error"
-                  - $ref: "#/components/schemas/Models.Error"
+                  - $ref: "#/components/schemas/Models.ProblemDetails"
+                  - $ref: "#/components/schemas/Models.ProblemDetails"
         "401":
           description: Access is unauthorized.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Authentication
       requestBody:
@@ -1089,18 +1033,18 @@ paths:
         "400":
           description: The server could not understand the request due to invalid syntax.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 anyOf:
-                  - $ref: "#/components/schemas/Models.Error"
-                  - $ref: "#/components/schemas/Models.Error"
-                  - $ref: "#/components/schemas/Models.Error"
+                  - $ref: "#/components/schemas/Models.ProblemDetails"
+                  - $ref: "#/components/schemas/Models.ProblemDetails"
+                  - $ref: "#/components/schemas/Models.ProblemDetails"
         "401":
           description: Access is unauthorized.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Authentication
       requestBody:
@@ -1124,15 +1068,15 @@ paths:
         "404":
           description: The server cannot find the requested resource.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
         "429":
           description: Client error
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Authentication
       requestBody:
@@ -1158,27 +1102,27 @@ paths:
         "400":
           description: The server could not understand the request due to invalid syntax.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
         "401":
           description: Access is unauthorized.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
         "403":
           description: Access is forbidden.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
         "423":
           description: Client error
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Authentication
       requestBody:
@@ -1209,9 +1153,9 @@ paths:
         "401":
           description: Access is unauthorized.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Authentication
   /api/v1/auth/logout-all:
@@ -1234,9 +1178,9 @@ paths:
         "401":
           description: Access is unauthorized.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Authentication
   /api/v1/auth/me:
@@ -1259,9 +1203,9 @@ paths:
         "401":
           description: Access is unauthorized.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Authentication
   /api/v1/auth/refresh:
@@ -1279,9 +1223,9 @@ paths:
         "401":
           description: Access is unauthorized.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Authentication
       requestBody:
@@ -1307,15 +1251,15 @@ paths:
         "400":
           description: The server could not understand the request due to invalid syntax.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
         "409":
           description: The request conflicts with the current state of the server.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Authentication
       requestBody:
@@ -1341,12 +1285,12 @@ paths:
         "400":
           description: The server could not understand the request due to invalid syntax.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 anyOf:
-                  - $ref: "#/components/schemas/Models.Error"
-                  - $ref: "#/components/schemas/Models.Error"
-                  - $ref: "#/components/schemas/Models.Error"
+                  - $ref: "#/components/schemas/Models.ProblemDetails"
+                  - $ref: "#/components/schemas/Models.ProblemDetails"
+                  - $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Authentication
       requestBody:
@@ -1378,9 +1322,9 @@ paths:
         "400":
           description: The server could not understand the request due to invalid syntax.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Authentication
       security:
@@ -1405,9 +1349,9 @@ paths:
         "401":
           description: Access is unauthorized.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Authentication
   /api/v1/auth/sessions/{sessionId}:
@@ -1435,15 +1379,15 @@ paths:
         "401":
           description: Access is unauthorized.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
         "404":
           description: The server cannot find the requested resource.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Authentication
   /api/v1/auth/verify-email/confirm:
@@ -1461,9 +1405,9 @@ paths:
         "400":
           description: The server could not understand the request due to invalid syntax.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Authentication
       requestBody:
@@ -1494,21 +1438,21 @@ paths:
         "400":
           description: The server could not understand the request due to invalid syntax.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
         "401":
           description: Access is unauthorized.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
         "429":
           description: Client error
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Authentication
   /api/v1/bookings:
@@ -1604,15 +1548,15 @@ paths:
         "400":
           description: The server could not understand the request due to invalid syntax.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
         "409":
           description: The request conflicts with the current state of the server.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Bookings
       requestBody:
@@ -1620,7 +1564,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Models.CreateBookingRequest"
+              $ref: "#/components/schemas/Models.BookingCreateRequest"
   /api/v1/bookings/{id}:
     get:
       operationId: BookingOperations_get
@@ -1642,9 +1586,9 @@ paths:
         "404":
           description: The server cannot find the requested resource.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Bookings
     patch:
@@ -1667,15 +1611,15 @@ paths:
         "400":
           description: The server could not understand the request due to invalid syntax.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
         "404":
           description: The server cannot find the requested resource.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Bookings
       requestBody:
@@ -1700,15 +1644,15 @@ paths:
         "404":
           description: The server cannot find the requested resource.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
         "409":
           description: The request conflicts with the current state of the server.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Bookings
   /api/v1/bookings/{id}/cancel:
@@ -1732,15 +1676,15 @@ paths:
         "404":
           description: The server cannot find the requested resource.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
         "409":
           description: The request conflicts with the current state of the server.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Bookings
       requestBody:
@@ -1775,15 +1719,15 @@ paths:
         "404":
           description: The server cannot find the requested resource.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
         "409":
           description: The request conflicts with the current state of the server.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Bookings
   /api/v1/bookings/{id}/payment:
@@ -1815,15 +1759,15 @@ paths:
         "400":
           description: The server could not understand the request due to invalid syntax.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
         "404":
           description: The server cannot find the requested resource.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Bookings
       requestBody:
@@ -1863,15 +1807,15 @@ paths:
         "404":
           description: The server cannot find the requested resource.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
         "409":
           description: The request conflicts with the current state of the server.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Bookings
       requestBody:
@@ -1911,9 +1855,9 @@ paths:
         "404":
           description: The server cannot find the requested resource.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Bookings
   /api/v1/customers/:
@@ -2000,13 +1944,13 @@ paths:
         "400":
           description: The server could not understand the request due to invalid syntax.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
         "401":
           description: Access is unauthorized.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
         "429":
@@ -2038,7 +1982,7 @@ paths:
                 format: int32
                 nullable: true
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
@@ -2097,25 +2041,25 @@ paths:
         "400":
           description: The server could not understand the request due to invalid syntax.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
         "401":
           description: Access is unauthorized.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
         "409":
           description: The request conflicts with the current state of the server.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
         "422":
           description: Client error
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
@@ -2172,13 +2116,13 @@ paths:
         "400":
           description: The server could not understand the request due to invalid syntax.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
         "401":
           description: Access is unauthorized.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
@@ -2267,13 +2211,13 @@ paths:
         "400":
           description: The server could not understand the request due to invalid syntax.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
         "401":
           description: Access is unauthorized.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
@@ -2379,13 +2323,13 @@ paths:
         "400":
           description: The server could not understand the request due to invalid syntax.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
         "401":
           description: Access is unauthorized.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
@@ -2528,13 +2472,13 @@ paths:
         "400":
           description: The server could not understand the request due to invalid syntax.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
         "401":
           description: Access is unauthorized.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
@@ -2593,13 +2537,13 @@ paths:
         "400":
           description: The server could not understand the request due to invalid syntax.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
         "401":
           description: Access is unauthorized.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
@@ -2742,25 +2686,25 @@ paths:
         "400":
           description: The server could not understand the request due to invalid syntax.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
         "401":
           description: Access is unauthorized.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
         "404":
           description: The server cannot find the requested resource.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
         "409":
           description: The request conflicts with the current state of the server.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
@@ -2851,13 +2795,13 @@ paths:
         "400":
           description: The server could not understand the request due to invalid syntax.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
         "401":
           description: Access is unauthorized.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
@@ -2934,13 +2878,13 @@ paths:
         "401":
           description: Access is unauthorized.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
         "404":
           description: The server cannot find the requested resource.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
@@ -3004,31 +2948,31 @@ paths:
         "400":
           description: The server could not understand the request due to invalid syntax.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
         "401":
           description: Access is unauthorized.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
         "404":
           description: The server cannot find the requested resource.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
         "409":
           description: The request conflicts with the current state of the server.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
         "422":
           description: Client error
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
@@ -3099,31 +3043,31 @@ paths:
         "400":
           description: The server could not understand the request due to invalid syntax.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
         "401":
           description: Access is unauthorized.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
         "404":
           description: The server cannot find the requested resource.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
         "409":
           description: The request conflicts with the current state of the server.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
         "422":
           description: Client error
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
@@ -3167,19 +3111,19 @@ paths:
         "401":
           description: Access is unauthorized.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
         "404":
           description: The server cannot find the requested resource.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
         "409":
           description: The request conflicts with the current state of the server.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
@@ -3257,13 +3201,13 @@ paths:
         "401":
           description: Access is unauthorized.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
         "404":
           description: The server cannot find the requested resource.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
@@ -3333,19 +3277,19 @@ paths:
         "400":
           description: The server could not understand the request due to invalid syntax.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
         "401":
           description: Access is unauthorized.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
         "404":
           description: The server cannot find the requested resource.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
@@ -3410,13 +3354,13 @@ paths:
         "401":
           description: Access is unauthorized.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
         "404":
           description: The server cannot find the requested resource.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
@@ -3472,13 +3416,13 @@ paths:
         "401":
           description: Access is unauthorized.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
         "404":
           description: The server cannot find the requested resource.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
@@ -3543,19 +3487,19 @@ paths:
         "400":
           description: The server could not understand the request due to invalid syntax.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
         "401":
           description: Access is unauthorized.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
         "404":
           description: The server cannot find the requested resource.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
@@ -3631,19 +3575,19 @@ paths:
         "400":
           description: The server could not understand the request due to invalid syntax.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
         "401":
           description: Access is unauthorized.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
         "404":
           description: The server cannot find the requested resource.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
@@ -3704,13 +3648,13 @@ paths:
         "401":
           description: Access is unauthorized.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
         "404":
           description: The server cannot find the requested resource.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
@@ -3788,13 +3732,13 @@ paths:
         "401":
           description: Access is unauthorized.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
         "404":
           description: The server cannot find the requested resource.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
@@ -3849,19 +3793,19 @@ paths:
         "401":
           description: Access is unauthorized.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
         "404":
           description: The server cannot find the requested resource.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
         "409":
           description: The request conflicts with the current state of the server.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
@@ -3924,13 +3868,13 @@ paths:
         "401":
           description: Access is unauthorized.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
         "404":
           description: The server cannot find the requested resource.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
@@ -3991,13 +3935,13 @@ paths:
         "401":
           description: Access is unauthorized.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
         "404":
           description: The server cannot find the requested resource.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
@@ -4101,15 +4045,15 @@ paths:
         "400":
           description: The server could not understand the request due to invalid syntax.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
         "409":
           description: The request conflicts with the current state of the server.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Reservations
       requestBody:
@@ -4117,7 +4061,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Models.CreateReservationRequest"
+              $ref: "#/components/schemas/Models.ReservationCreateRequest"
   /api/v1/reservations/{id}:
     get:
       operationId: ReservationOperations_get
@@ -4139,9 +4083,9 @@ paths:
         "404":
           description: The server cannot find the requested resource.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Reservations
     patch:
@@ -4164,21 +4108,21 @@ paths:
         "400":
           description: The server could not understand the request due to invalid syntax.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
         "404":
           description: The server cannot find the requested resource.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
         "409":
           description: The request conflicts with the current state of the server.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Reservations
       requestBody:
@@ -4186,7 +4130,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Models.UpdateReservationRequest"
+              $ref: "#/components/schemas/Models.ReservationUpdateRequest"
   /api/v1/reservations/{id}/cancel:
     post:
       operationId: ReservationOperations_cancel
@@ -4208,15 +4152,15 @@ paths:
         "404":
           description: The server cannot find the requested resource.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
         "409":
           description: The request conflicts with the current state of the server.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Reservations
       requestBody:
@@ -4249,15 +4193,15 @@ paths:
         "404":
           description: The server cannot find the requested resource.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
         "409":
           description: The request conflicts with the current state of the server.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Reservations
   /api/v1/reservations/{id}/reschedule:
@@ -4281,15 +4225,15 @@ paths:
         "404":
           description: The server cannot find the requested resource.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
         "409":
           description: The request conflicts with the current state of the server.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Reservations
       requestBody:
@@ -4404,15 +4348,15 @@ paths:
         "400":
           description: The server could not understand the request due to invalid syntax.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
         "409":
           description: The request conflicts with the current state of the server.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Reviews
       requestBody:
@@ -4442,9 +4386,9 @@ paths:
         "404":
           description: The server cannot find the requested resource.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Reviews
     patch:
@@ -4467,15 +4411,15 @@ paths:
         "403":
           description: Access is forbidden.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
         "404":
           description: The server cannot find the requested resource.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Reviews
       requestBody:
@@ -4500,15 +4444,15 @@ paths:
         "403":
           description: Access is forbidden.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
         "404":
           description: The server cannot find the requested resource.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Reviews
   /api/v1/reviews/{id}/helpful:
@@ -4538,9 +4482,9 @@ paths:
         "404":
           description: The server cannot find the requested resource.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Reviews
   /api/v1/reviews/{id}/report:
@@ -4569,9 +4513,9 @@ paths:
         "404":
           description: The server cannot find the requested resource.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Reviews
       requestBody:
@@ -4632,7 +4576,28 @@ paths:
         "400":
           description: The server could not understand the request due to invalid syntax.
           content:
-            application/json:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Models.ProblemDetails"
+        "429":
+          description: |-
+            リクエスト数の上限を超えたときのエラーレスポンス (429)。
+            クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+          headers:
+            Retry-After:
+              required: true
+              description: 再試行できるようになるまでの秒数。
+              schema:
+                type: integer
+                format: int32
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Models.ProblemDetails"
+        "500":
+          description: サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。
+          content:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
@@ -4681,13 +4646,46 @@ paths:
         "400":
           description: The server could not understand the request due to invalid syntax.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
         "409":
           description: The request conflicts with the current state of the server.
           content:
-            application/json:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Models.ProblemDetails"
+        "413":
+          description: リクエスト本文がサイズ上限を超えている (413)。
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Models.ProblemDetails"
+        "415":
+          description: リクエスト本文が UTF-8 の JSON ではない (415)。
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Models.ProblemDetails"
+        "429":
+          description: |-
+            リクエスト数の上限を超えたときのエラーレスポンス (429)。
+            クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+          headers:
+            Retry-After:
+              required: true
+              description: 再試行できるようになるまでの秒数。
+              schema:
+                type: integer
+                format: int32
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Models.ProblemDetails"
+        "500":
+          description: サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。
+          content:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
@@ -4743,13 +4741,34 @@ paths:
         "400":
           description: The server could not understand the request due to invalid syntax.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
         "404":
           description: The server cannot find the requested resource.
           content:
-            application/json:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Models.ProblemDetails"
+        "429":
+          description: |-
+            リクエスト数の上限を超えたときのエラーレスポンス (429)。
+            クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+          headers:
+            Retry-After:
+              required: true
+              description: 再試行できるようになるまでの秒数。
+              schema:
+                type: integer
+                format: int32
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Models.ProblemDetails"
+        "500":
+          description: サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。
+          content:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
@@ -4798,19 +4817,52 @@ paths:
         "400":
           description: The server could not understand the request due to invalid syntax.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
         "404":
           description: The server cannot find the requested resource.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
         "409":
           description: The request conflicts with the current state of the server.
           content:
-            application/json:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Models.ProblemDetails"
+        "413":
+          description: リクエスト本文がサイズ上限を超えている (413)。
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Models.ProblemDetails"
+        "415":
+          description: リクエスト本文が UTF-8 の JSON ではない (415)。
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Models.ProblemDetails"
+        "429":
+          description: |-
+            リクエスト数の上限を超えたときのエラーレスポンス (429)。
+            クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+          headers:
+            Retry-After:
+              required: true
+              description: 再試行できるようになるまでの秒数。
+              schema:
+                type: integer
+                format: int32
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Models.ProblemDetails"
+        "500":
+          description: サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。
+          content:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
@@ -4837,13 +4889,34 @@ paths:
         "400":
           description: The server could not understand the request due to invalid syntax.
           content:
-            application/json:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
         "404":
           description: The server cannot find the requested resource.
           content:
-            application/json:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Models.ProblemDetails"
+        "429":
+          description: |-
+            リクエスト数の上限を超えたときのエラーレスポンス (429)。
+            クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+          headers:
+            Retry-After:
+              required: true
+              description: 再試行できるようになるまでの秒数。
+              schema:
+                type: integer
+                format: int32
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Models.ProblemDetails"
+        "500":
+          description: サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。
+          content:
+            application/problem+json:
               schema:
                 $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
@@ -4897,9 +4970,9 @@ paths:
         "400":
           description: The server could not understand the request due to invalid syntax.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Reservations
   /api/v1/salons/{salonId}/available-slots/check:
@@ -5102,9 +5175,9 @@ paths:
         "400":
           description: The server could not understand the request due to invalid syntax.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Services
       requestBody:
@@ -5112,7 +5185,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Models.CreateServiceRequest"
+              $ref: "#/components/schemas/Models.ServiceCreateRequest"
   /api/v1/salons/{salonId}/services/bulk:
     patch:
       operationId: ServiceOperations_bulkUpdate
@@ -5165,7 +5238,7 @@ paths:
                   items:
                     $ref: "#/components/schemas/Models.ServiceId"
                 updates:
-                  $ref: "#/components/schemas/Models.UpdateServiceRequest"
+                  $ref: "#/components/schemas/Models.ServiceUpdateRequest"
               required:
                 - serviceIds
                 - updates
@@ -5195,9 +5268,9 @@ paths:
         "404":
           description: The server cannot find the requested resource.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Services
     put:
@@ -5225,15 +5298,15 @@ paths:
         "400":
           description: The server could not understand the request due to invalid syntax.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
         "404":
           description: The server cannot find the requested resource.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Services
       requestBody:
@@ -5241,7 +5314,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Models.UpdateServiceRequest"
+              $ref: "#/components/schemas/Models.ServiceUpdateRequest"
     delete:
       operationId: ServiceOperations_delete
       summary: Delete service
@@ -5263,9 +5336,9 @@ paths:
         "404":
           description: The server cannot find the requested resource.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Services
   /api/v1/salons/{salonId}/staff:
@@ -5339,9 +5412,9 @@ paths:
         "400":
           description: The server could not understand the request due to invalid syntax.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Staff
       requestBody:
@@ -5349,7 +5422,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Models.CreateStaffRequest"
+              $ref: "#/components/schemas/Models.StaffCreateRequest"
   /api/v1/salons/{salonId}/staff/{id}:
     get:
       operationId: StaffOperations_get
@@ -5376,9 +5449,9 @@ paths:
         "404":
           description: The server cannot find the requested resource.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Staff
     put:
@@ -5406,15 +5479,15 @@ paths:
         "400":
           description: The server could not understand the request due to invalid syntax.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
         "404":
           description: The server cannot find the requested resource.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Staff
       requestBody:
@@ -5422,7 +5495,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Models.UpdateStaffRequest"
+              $ref: "#/components/schemas/Models.StaffUpdateRequest"
     delete:
       operationId: StaffOperations_delete
       summary: Delete staff member
@@ -5444,9 +5517,9 @@ paths:
         "404":
           description: The server cannot find the requested resource.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Staff
   /api/v1/salons/{salonId}/staff/{id}/availability:
@@ -5510,9 +5583,9 @@ paths:
         "400":
           description: The server could not understand the request due to invalid syntax.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Staff
       requestBody:
@@ -5579,9 +5652,9 @@ paths:
         "400":
           description: The server could not understand the request due to invalid syntax.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Services
       requestBody:
@@ -5625,9 +5698,9 @@ paths:
         "404":
           description: The server cannot find the requested resource.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Services
       requestBody:
@@ -5664,15 +5737,15 @@ paths:
         "404":
           description: The server cannot find the requested resource.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
         "409":
           description: The request conflicts with the current state of the server.
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: "#/components/schemas/Models.Error"
+                $ref: "#/components/schemas/Models.ProblemDetails"
       tags:
         - Services
   /api/v1/share/{shareToken}:
@@ -11714,6 +11787,63 @@ components:
           nullable: true
           description: レコードを最後に更新したユーザーID。システム自動更新または匿名更新の場合はnull
       description: サロンで確定管理する予約の集約モデル。
+    Models.BookingCreateRequest:
+      type: object
+      required:
+        - salonId
+        - customerId
+        - reservationIds
+        - waitlistEntry
+        - deposit
+        - discountAmount
+        - paymentMethod
+        - notes
+        - metadata
+      properties:
+        salonId:
+          allOf:
+            - $ref: "#/components/schemas/Models.SalonId"
+          description: 予約対象のサロンID。
+        customerId:
+          allOf:
+            - $ref: "#/components/schemas/Models.CustomerId"
+          description: 予約を申し込む顧客ID。
+        reservationIds:
+          type: array
+          items:
+            $ref: "#/components/schemas/Models.ReservationId"
+          description: 紐付ける予約リクエストID一覧。
+        waitlistEntry:
+          type: object
+          allOf:
+            - $ref: "#/components/schemas/Models.WaitlistEntry"
+          nullable: true
+          description: ウェイティングリスト情報。ウェイティングリストに登録していない場合はnull。
+        deposit:
+          type: object
+          allOf:
+            - $ref: "#/components/schemas/Models.BookingDeposit"
+          nullable: true
+          description: 預かり金設定。デポジットが不要な場合はnull。
+        discountAmount:
+          allOf:
+            - $ref: "#/components/schemas/Models.Money"
+          description: 適用する割引額
+        paymentMethod:
+          allOf:
+            - $ref: "#/components/schemas/Models.PaymentMethodType"
+          nullable: true
+          description: 予定している支払い方法。当日決定または未選択の場合はnull
+        notes:
+          type: string
+          nullable: true
+          description: スタッフ向けの備考。備考がない場合はnull。
+        metadata:
+          type: object
+          additionalProperties: {}
+          nullable: true
+          description: 外部連携や業務用に保持する任意メタデータ。追加情報が不要の場合はnull。
+      description: 予約を新規作成する際のリクエスト。
     Models.BookingDeposit:
       type: object
       required:
@@ -12311,241 +12441,6 @@ components:
         sms: SMS - ショートメッセージサービスによる連絡方法
         phone: 電話 - 音声通話による連絡方法
         push: プッシュ通知 - アプリ内プッシュ通知による連絡方法
-    Models.CreateBookingRequest:
-      type: object
-      required:
-        - salonId
-        - customerId
-        - reservationIds
-        - waitlistEntry
-        - deposit
-        - discountAmount
-        - paymentMethod
-        - notes
-        - metadata
-      properties:
-        salonId:
-          allOf:
-            - $ref: "#/components/schemas/Models.SalonId"
-          description: 予約対象のサロンID。
-        customerId:
-          allOf:
-            - $ref: "#/components/schemas/Models.CustomerId"
-          description: 予約を申し込む顧客ID。
-        reservationIds:
-          type: array
-          items:
-            $ref: "#/components/schemas/Models.ReservationId"
-          description: 紐付ける予約リクエストID一覧。
-        waitlistEntry:
-          type: object
-          allOf:
-            - $ref: "#/components/schemas/Models.WaitlistEntry"
-          nullable: true
-          description: ウェイティングリスト情報。ウェイティングリストに登録していない場合はnull。
-        deposit:
-          type: object
-          allOf:
-            - $ref: "#/components/schemas/Models.BookingDeposit"
-          nullable: true
-          description: 預かり金設定。デポジットが不要な場合はnull。
-        discountAmount:
-          allOf:
-            - $ref: "#/components/schemas/Models.Money"
-          description: 適用する割引額
-        paymentMethod:
-          allOf:
-            - $ref: "#/components/schemas/Models.PaymentMethodType"
-          nullable: true
-          description: 予定している支払い方法。当日決定または未選択の場合はnull
-        notes:
-          type: string
-          nullable: true
-          description: スタッフ向けの備考。備考がない場合はnull。
-        metadata:
-          type: object
-          additionalProperties: {}
-          nullable: true
-          description: 外部連携や業務用に保持する任意メタデータ。追加情報が不要の場合はnull。
-      description: 予約を新規作成する際のリクエスト。
-    Models.CreateReservationRequest:
-      type: object
-      required:
-        - salonId
-        - customerId
-        - staffId
-        - serviceId
-        - startTime
-        - notes
-      properties:
-        salonId:
-          allOf:
-            - $ref: "#/components/schemas/Models.SalonId"
-          description: 予約対象のサロンID
-        customerId:
-          allOf:
-            - $ref: "#/components/schemas/Models.CustomerId"
-          description: 予約を申し込む顧客ID
-        staffId:
-          allOf:
-            - $ref: "#/components/schemas/Models.StaffId"
-          description: 担当予定のスタッフID
-        serviceId:
-          allOf:
-            - $ref: "#/components/schemas/Models.ServiceId"
-          description: 希望する施術メニューID
-        startTime:
-          type: string
-          format: date-time
-          description: 希望する施術開始日時 (UTC)
-        notes:
-          type: string
-          nullable: true
-          description: 顧客要望や注意事項のメモ - 特記事項がない標準予約の場合はnull
-      description: 予約作成リクエスト - 新規予約登録時に必要なサロン・顧客・メニュー・希望日時の情報を受け取る
-    Models.CreateServiceRequest:
-      type: object
-      required:
-        - salonId
-        - name
-        - description
-        - duration
-        - price
-        - category
-        - categoryId
-        - imageUrl
-        - requiredStaffLevel
-        - depositAmount
-        - isActive
-        - maxAdvanceBookingDays
-        - minAdvanceBookingHours
-      properties:
-        salonId:
-          allOf:
-            - $ref: "#/components/schemas/Models.SalonId"
-          description: サービスを登録するサロン ID
-        name:
-          type: string
-          description: サービス名
-        description:
-          type: string
-          description: サービスの説明文
-        duration:
-          type: integer
-          format: int32
-          description: 施術時間（分）
-        price:
-          type: integer
-          format: int32
-          description: 料金（税抜）
-        category:
-          allOf:
-            - $ref: "#/components/schemas/Models.ServiceCategoryType"
-          description: サービスカテゴリ区分
-        categoryId:
-          type: string
-          allOf:
-            - $ref: "#/components/schemas/Models.CategoryId"
-          nullable: true
-          description: カテゴリ ID。サービスカテゴリ区分のみで分類する場合はnull
-        imageUrl:
-          type: string
-          nullable: true
-          description: サービス画像 URL。画像がない場合はnull
-        requiredStaffLevel:
-          type: integer
-          format: int32
-          nullable: true
-          description: 必要スタッフレベル。全スタッフが対応可能な場合はnull
-        depositAmount:
-          type: integer
-          format: int32
-          nullable: true
-          description: 必要なデポジット額。デポジットが不要な場合はnull
-        isActive:
-          type: boolean
-          nullable: true
-          description: 有効フラグ。未指定時はデフォルトでtrueとして扱う場合null
-        maxAdvanceBookingDays:
-          type: integer
-          format: int32
-          nullable: true
-          description: 最大全日予約可能日数。予約可能期間に制限がない場合はnull
-        minAdvanceBookingHours:
-          type: integer
-          format: int32
-          nullable: true
-          description: 最短予約受付時間（時間）。即時予約可能な場合はnull
-      description: サービスを新規登録するリクエスト
-    Models.CreateStaffRequest:
-      type: object
-      required:
-        - salonId
-        - name
-        - contactInfo
-        - specialties
-        - imageUrl
-        - bio
-        - yearsOfExperience
-        - certifications
-        - qualifications
-        - schedules
-        - permissions
-      properties:
-        salonId:
-          allOf:
-            - $ref: "#/components/schemas/Models.SalonId"
-          description: 所属サロンのID
-        name:
-          type: string
-          description: スタッフの氏名
-        contactInfo:
-          allOf:
-            - $ref: "#/components/schemas/Models.ContactInfo"
-          description: 連絡先情報
-        specialties:
-          type: array
-          items:
-            type: string
-          description: 得意分野や専門メニューの一覧
-        imageUrl:
-          type: string
-          nullable: true
-          description: プロフィール画像のURL - プロフィール画像未設定の場合はnull
-        bio:
-          type: string
-          nullable: true
-          description: 自己紹介や経歴の概要 - プロフィール未記入の新人スタッフの場合はnull
-        yearsOfExperience:
-          type: integer
-          format: int32
-          nullable: true
-          description: 実務経験年数 - 経験年数未記載またはアシスタントスタッフの場合はnull
-        certifications:
-          type: array
-          items:
-            type: string
-          nullable: true
-          description: 保有資格名の一覧 - 資格なしの新人やアシスタントの場合はnull
-        qualifications:
-          type: array
-          items:
-            $ref: "#/components/schemas/Models.StaffQualification"
-          nullable: true
-          description: 詳細な資格情報の一覧 - 詳細資格情報未登録の場合はnull
-        schedules:
-          type: array
-          items:
-            $ref: "#/components/schemas/Models.StaffSchedule"
-          nullable: true
-          description: 通常勤務スケジュールの一覧 - スケジュール未設定やフリーランススタッフの場合はnull
-        permissions:
-          type: array
-          items:
-            $ref: "#/components/schemas/Models.StaffPermission"
-          nullable: true
-          description: 付与する権限の一覧 - 特別権限がない一般スタッフの場合はnull
-      description: スタッフ作成リクエスト - 新規スタッフ登録時に必要なプロフィール・連絡先・スケジュール情報を受け取る
     Models.CurrencyCodeType:
       type: string
       enum:
@@ -13334,326 +13229,6 @@ components:
         friday: 金曜日
         saturday: 土曜日
         sunday: 日曜日
-    Models.DomainErrorDetails:
-      type: object
-      required:
-        - type
-        - message
-        - code
-        - details
-        - entity
-        - field
-        - value
-        - service
-      properties:
-        type:
-          allOf:
-            - $ref: "#/components/schemas/Models.DomainErrorType"
-          description: エラー分類タイプ。上位のビジネスルールカテゴリを特定する。
-        message:
-          type: string
-          description: 業務担当者が理解しやすい説明文。ユーザー通知にも使用可能。
-        code:
-          type: string
-          description: 機械判読可能なエラーコード。外部連携やログ分析に利用する。
-        details:
-          type: object
-          additionalProperties: {}
-          nullable: true
-          description: 追加のエラー文脈。入力値や関連設定など柔軟に格納する。追加情報がない場合はnull
-        entity:
-          type: string
-          nullable: true
-          description: "関連するエンティティ名。例: `Reservation` や `Customer`。特定のエンティティに関連しない場合はnull"
-        field:
-          type: string
-          nullable: true
-          description: 問題が発生したフィールド名。入力フォームとの紐付けに利用。フィールド特定が不要な場合はnull
-        value:
-          type: string
-          nullable: true
-          description: 問題があった値。マスキングが不要なケースのみ保持する。値を出力しない場合はnull
-        service:
-          type: string
-          nullable: true
-          description: 外部サービスエラー時の対象サービス名。連携先の切り分けに役立つ。外部サービスに関係ない場合はnull
-      description: |-
-        ドメインエラーの詳細情報モデル。
-        予約・顧客・サロンなどビジネスロジック層で発生したエラーを分類し、運用チームが原因分析しやすい形で保持する。
-    Models.DomainErrorFactory:
-      type: object
-      required:
-        - validation
-        - notFound
-        - alreadyExists
-        - businessRule
-        - unauthorized
-        - forbidden
-        - internal
-        - database
-        - externalService
-      properties:
-        validation:
-          type: object
-          properties:
-            type:
-              type: string
-              enum:
-                - VALIDATION_ERROR
-            defaultCode:
-              type: string
-              enum:
-                - VALIDATION_FAILED
-            httpStatus:
-              type: number
-              enum:
-                - 400
-          required:
-            - type
-            - defaultCode
-            - httpStatus
-          description: 検証エラーを生成するための設定。
-        notFound:
-          type: object
-          properties:
-            type:
-              type: string
-              enum:
-                - NOT_FOUND
-            defaultCode:
-              type: string
-              enum:
-                - RESOURCE_NOT_FOUND
-            httpStatus:
-              type: number
-              enum:
-                - 404
-          required:
-            - type
-            - defaultCode
-            - httpStatus
-          description: リソース未検出エラーを生成するための設定。
-        alreadyExists:
-          type: object
-          properties:
-            type:
-              type: string
-              enum:
-                - ALREADY_EXISTS
-            defaultCode:
-              type: string
-              enum:
-                - RESOURCE_ALREADY_EXISTS
-            httpStatus:
-              type: number
-              enum:
-                - 409
-          required:
-            - type
-            - defaultCode
-            - httpStatus
-          description: 重複登録エラーを生成するための設定。
-        businessRule:
-          type: object
-          properties:
-            type:
-              type: string
-              enum:
-                - BUSINESS_RULE_VIOLATION
-            defaultCode:
-              type: string
-              enum:
-                - BUSINESS_RULE_VIOLATION
-            httpStatus:
-              type: number
-              enum:
-                - 422
-          required:
-            - type
-            - defaultCode
-            - httpStatus
-          description: ビジネスルール違反エラーを生成するための設定。
-        unauthorized:
-          type: object
-          properties:
-            type:
-              type: string
-              enum:
-                - UNAUTHORIZED
-            defaultCode:
-              type: string
-              enum:
-                - AUTHENTICATION_REQUIRED
-            httpStatus:
-              type: number
-              enum:
-                - 401
-          required:
-            - type
-            - defaultCode
-            - httpStatus
-          description: 未認証エラーを生成するための設定。
-        forbidden:
-          type: object
-          properties:
-            type:
-              type: string
-              enum:
-                - FORBIDDEN
-            defaultCode:
-              type: string
-              enum:
-                - INSUFFICIENT_PERMISSIONS
-            httpStatus:
-              type: number
-              enum:
-                - 403
-          required:
-            - type
-            - defaultCode
-            - httpStatus
-          description: 権限不足エラーを生成するための設定。
-        internal:
-          type: object
-          properties:
-            type:
-              type: string
-              enum:
-                - INTERNAL_ERROR
-            defaultCode:
-              type: string
-              enum:
-                - INTERNAL_SERVER_ERROR
-            httpStatus:
-              type: number
-              enum:
-                - 500
-          required:
-            - type
-            - defaultCode
-            - httpStatus
-          description: 内部サーバーエラーを生成するための設定。
-        database:
-          type: object
-          properties:
-            type:
-              type: string
-              enum:
-                - DATABASE_ERROR
-            defaultCode:
-              type: string
-              enum:
-                - DATABASE_ERROR
-            httpStatus:
-              type: number
-              enum:
-                - 500
-          required:
-            - type
-            - defaultCode
-            - httpStatus
-          description: データベースエラーを生成するための設定。
-        externalService:
-          type: object
-          properties:
-            type:
-              type: string
-              enum:
-                - EXTERNAL_SERVICE_ERROR
-            defaultCode:
-              type: string
-              enum:
-                - EXTERNAL_SERVICE_ERROR
-            httpStatus:
-              type: number
-              enum:
-                - 502
-          required:
-            - type
-            - defaultCode
-            - httpStatus
-          description: 外部サービス連携エラーを生成するための設定。
-      description: |-
-        ドメインエラー生成の標準設定モデル。
-        各カテゴリごとの既定コードと HTTP ステータスを定義し、再利用可能なエラーファクトリーを構築する。
-    Models.DomainErrorMapping:
-      type: object
-      required:
-        - domainType
-        - errorCode
-        - httpStatus
-      properties:
-        domainType:
-          allOf:
-            - $ref: "#/components/schemas/Models.DomainErrorType"
-          description: ドメインエラータイプ。ビジネス層で識別されるカテゴリ。
-        errorCode:
-          allOf:
-            - $ref: "#/components/schemas/Models.ErrorCodeType"
-          description: 対応する標準エラーコード。`ErrorCodeType` を参照する。
-        httpStatus:
-          type: integer
-          format: int32
-          description: レスポンスに適用する HTTP ステータスコード。
-      description: |-
-        ドメインエラータイプとシステム標準エラーコードの対応表モデル。
-        内部ロジックとHTTPレスポンスの整合性を保つために利用する。
-    Models.DomainErrorType:
-      type: string
-      enum:
-        - VALIDATION_ERROR
-        - NOT_FOUND
-        - ALREADY_EXISTS
-        - BUSINESS_RULE_VIOLATION
-        - UNAUTHORIZED
-        - FORBIDDEN
-        - INTERNAL_ERROR
-        - DATABASE_ERROR
-        - EXTERNAL_SERVICE_ERROR
-      description: |-
-        ドメインエラータイプ区分 - ビジネスロジック層で発生するエラーの分類
-
-        VALIDATION_ERROR: 検証エラー - 入力値の検証で失敗
-        NOT_FOUND: 未検出 - 指定されたリソースが存在しない
-        ALREADY_EXISTS: 既存 - リソースが既に存在し、重複が許可されない
-        BUSINESS_RULE_VIOLATION: ビジネスルール違反 - ビジネスロジックの制約に違反
-        UNAUTHORIZED: 未認証 - 認証が必要であるが認証されていない
-        FORBIDDEN: 禁止 - 認証されているが権限が不足
-        INTERNAL_ERROR: 内部エラー - システム内部で予期しないエラーが発生
-        DATABASE_ERROR: データベースエラー - データベース操作中のエラー
-        EXTERNAL_SERVICE_ERROR: 外部サービスエラー - 外部APIやサービスでのエラー
-    Models.DomainOperationError:
-      type: object
-      required:
-        - domainError
-        - problemDetails
-        - occurredAt
-        - operation
-        - stackTrace
-      properties:
-        domainError:
-          allOf:
-            - $ref: "#/components/schemas/Models.DomainErrorDetails"
-          description: ドメインエラーの詳細情報。ビジネスロジック層で発生した要因を保持する。
-        problemDetails:
-          allOf:
-            - $ref: "#/components/schemas/Models.ProblemDetails"
-          description: HTTP レスポンスとして返却可能な ProblemDetails。クライアントへの通知に使用。
-        occurredAt:
-          type: string
-          format: date-time
-          description: エラーが発生した日時 (UTC)。再発防止のタイムライン分析に活用。
-        operation:
-          type: string
-          nullable: true
-          description: "エラーが発生した操作名やユースケース。例: `CreateReservation`。操作名が特定できない場合はnull"
-        stackTrace:
-          type: string
-          nullable: true
-          description: デバッグ用のスタックトレース。開発・検証環境のみで出力する。本番環境ではnull
-      description: |-
-        ドメイン操作で発生したエラーのコンテキストモデル。
-        ビジネス層の例外情報と HTTP レイヤーの問題詳細を紐づけ、ログ出力やモニタリングを容易にする。
     Models.DraftBookingStatus:
       type: object
       required:
@@ -16221,7 +15796,7 @@ components:
           format: date-time
           description: エラー発生日時 (UTC)。サーバーログの検索キーとして使用する。
       description: |-
-        RFC 7807 に準拠した標準エラーレスポンスモデル。
+        RFC 9457 (Problem Details for HTTP APIs) に準拠した標準エラーレスポンスモデル。
         美容サロン予約システム全体で一貫したエラー情報を提供し、顧客・スタッフ双方の操作ログと連携する。
     Models.ProcessingPaymentStatus:
       type: object
@@ -16666,6 +16241,41 @@ components:
           nullable: true
           description: レコードを最後に更新したユーザーID。システム自動更新または匿名更新の場合はnull
       description: 予約モデル - 顧客がサロンに依頼した施術予約の全情報を保持し、日時・担当者・料金・支払い状態を一元管理する中核レコード
+    Models.ReservationCreateRequest:
+      type: object
+      required:
+        - salonId
+        - customerId
+        - staffId
+        - serviceId
+        - startTime
+        - notes
+      properties:
+        salonId:
+          allOf:
+            - $ref: "#/components/schemas/Models.SalonId"
+          description: 予約対象のサロンID
+        customerId:
+          allOf:
+            - $ref: "#/components/schemas/Models.CustomerId"
+          description: 予約を申し込む顧客ID
+        staffId:
+          allOf:
+            - $ref: "#/components/schemas/Models.StaffId"
+          description: 担当予定のスタッフID
+        serviceId:
+          allOf:
+            - $ref: "#/components/schemas/Models.ServiceId"
+          description: 希望する施術メニューID
+        startTime:
+          type: string
+          format: date-time
+          description: 希望する施術開始日時 (UTC)
+        notes:
+          type: string
+          nullable: true
+          description: 顧客要望や注意事項のメモ - 特記事項がない標準予約の場合はnull
+      description: 予約作成リクエスト - 新規予約登録時に必要なサロン・顧客・メニュー・希望日時の情報を受け取る
     Models.ReservationDetail:
       type: object
       required:
@@ -16715,6 +16325,26 @@ components:
         cancelled: キャンセル済み - 顧客またはサロン側により予約が取り消された状態
         completed: 完了 - 予約された施術が実施され、サービス提供が完了した状態
         no_show: 無断キャンセル - 顧客が事前連絡なしに来店しなかった状態
+    Models.ReservationUpdateRequest:
+      type: object
+      properties:
+        status:
+          allOf:
+            - $ref: "#/components/schemas/Models.ReservationStatusType"
+          description: 更新後の予約ステータス
+        notes:
+          type: string
+          nullable: true
+          description: 最新の顧客メモや社内備考（null指定で初期化可能）
+        startTime:
+          type: string
+          format: date-time
+          description: 調整後の施術開始日時 (UTC)
+        staffId:
+          allOf:
+            - $ref: "#/components/schemas/Models.StaffId"
+          description: 再割当先のスタッフID
+      description: 予約更新リクエスト - 部分更新に対応した任意項目の変更指示を受け取り、既存予約を調整する。null指定で値をリセット可能
     Models.ResponseMeta:
       type: object
       required:
@@ -18034,6 +17664,80 @@ components:
         treatment: トリートメント - ヘアトリートメント、ヘアケア等の補修・改善サービス
         spa: スパ - ヘッドスパ、リラクゼーション等の癒し系サービス
         other: その他 - 上記カテゴリーに分類されないサービス
+    Models.ServiceCreateRequest:
+      type: object
+      required:
+        - salonId
+        - name
+        - description
+        - duration
+        - price
+        - category
+        - categoryId
+        - imageUrl
+        - requiredStaffLevel
+        - depositAmount
+        - isActive
+        - maxAdvanceBookingDays
+        - minAdvanceBookingHours
+      properties:
+        salonId:
+          allOf:
+            - $ref: "#/components/schemas/Models.SalonId"
+          description: サービスを登録するサロン ID
+        name:
+          type: string
+          description: サービス名
+        description:
+          type: string
+          description: サービスの説明文
+        duration:
+          type: integer
+          format: int32
+          description: 施術時間（分）
+        price:
+          type: integer
+          format: int32
+          description: 料金（税抜）
+        category:
+          allOf:
+            - $ref: "#/components/schemas/Models.ServiceCategoryType"
+          description: サービスカテゴリ区分
+        categoryId:
+          type: string
+          allOf:
+            - $ref: "#/components/schemas/Models.CategoryId"
+          nullable: true
+          description: カテゴリ ID。サービスカテゴリ区分のみで分類する場合はnull
+        imageUrl:
+          type: string
+          nullable: true
+          description: サービス画像 URL。画像がない場合はnull
+        requiredStaffLevel:
+          type: integer
+          format: int32
+          nullable: true
+          description: 必要スタッフレベル。全スタッフが対応可能な場合はnull
+        depositAmount:
+          type: integer
+          format: int32
+          nullable: true
+          description: 必要なデポジット額。デポジットが不要な場合はnull
+        isActive:
+          type: boolean
+          nullable: true
+          description: 有効フラグ。未指定時はデフォルトでtrueとして扱う場合null
+        maxAdvanceBookingDays:
+          type: integer
+          format: int32
+          nullable: true
+          description: 最大全日予約可能日数。予約可能期間に制限がない場合はnull
+        minAdvanceBookingHours:
+          type: integer
+          format: int32
+          nullable: true
+          description: 最短予約受付時間（時間）。即時予約可能な場合はnull
+      description: サービスを新規登録するリクエスト
     Models.ServiceDuration:
       type: object
       required:
@@ -18558,6 +18262,66 @@ components:
           nullable: true
           description: 対象サービスの予約件数。統計未計算の場合はnull
       description: サービスメニューを一覧表示や候補選択で参照する際の要約情報。
+    Models.ServiceUpdateRequest:
+      type: object
+      required:
+        - description
+        - duration
+      properties:
+        name:
+          type: string
+          description: 更新後のサービス名
+        description:
+          type: string
+          nullable: true
+          description: 更新後の説明文。null指定で説明文をクリア（空文字列にリセット）
+        duration:
+          type: integer
+          format: int32
+          nullable: true
+          description: 更新後の施術時間。null指定で時間設定をクリア（デフォルト値にリセット）
+        price:
+          type: integer
+          format: int32
+          description: 更新後の料金
+        category:
+          allOf:
+            - $ref: "#/components/schemas/Models.ServiceCategoryType"
+          description: 更新後のサービスカテゴリ
+        categoryId:
+          type: string
+          allOf:
+            - $ref: "#/components/schemas/Models.CategoryId"
+          nullable: true
+          description: 更新後のカテゴリ ID（null 指定で解除）
+        imageUrl:
+          type: string
+          nullable: true
+          description: 更新後の画像 URL（null 指定で解除）
+        requiredStaffLevel:
+          type: integer
+          format: int32
+          nullable: true
+          description: 更新後の必要スタッフレベル（null 指定で解除）
+        depositAmount:
+          type: integer
+          format: int32
+          nullable: true
+          description: 更新後のデポジット額（null 指定で解除）
+        isActive:
+          type: boolean
+          description: 更新後の有効フラグ
+        maxAdvanceBookingDays:
+          type: integer
+          format: int32
+          nullable: true
+          description: 更新後の最大予約日数（null 指定で解除）
+        minAdvanceBookingHours:
+          type: integer
+          format: int32
+          nullable: true
+          description: 更新後の最短予約受付時間（null 指定で解除）
+      description: サービス情報を部分更新するリクエスト。null指定で値をリセット可能
     Models.Session:
       type: object
       required:
@@ -18876,6 +18640,75 @@ components:
           nullable: true
           description: 休憩などの終了時刻 - 休憩なしの連続勤務の場合はnull
       description: スタッフ空き状況モデル - 個別時間帯の空き枠を表し、スポット予約や検索レスポンスに利用する
+    Models.StaffCreateRequest:
+      type: object
+      required:
+        - salonId
+        - name
+        - contactInfo
+        - specialties
+        - imageUrl
+        - bio
+        - yearsOfExperience
+        - certifications
+        - qualifications
+        - schedules
+        - permissions
+      properties:
+        salonId:
+          allOf:
+            - $ref: "#/components/schemas/Models.SalonId"
+          description: 所属サロンのID
+        name:
+          type: string
+          description: スタッフの氏名
+        contactInfo:
+          allOf:
+            - $ref: "#/components/schemas/Models.ContactInfo"
+          description: 連絡先情報
+        specialties:
+          type: array
+          items:
+            type: string
+          description: 得意分野や専門メニューの一覧
+        imageUrl:
+          type: string
+          nullable: true
+          description: プロフィール画像のURL - プロフィール画像未設定の場合はnull
+        bio:
+          type: string
+          nullable: true
+          description: 自己紹介や経歴の概要 - プロフィール未記入の新人スタッフの場合はnull
+        yearsOfExperience:
+          type: integer
+          format: int32
+          nullable: true
+          description: 実務経験年数 - 経験年数未記載またはアシスタントスタッフの場合はnull
+        certifications:
+          type: array
+          items:
+            type: string
+          nullable: true
+          description: 保有資格名の一覧 - 資格なしの新人やアシスタントの場合はnull
+        qualifications:
+          type: array
+          items:
+            $ref: "#/components/schemas/Models.StaffQualification"
+          nullable: true
+          description: 詳細な資格情報の一覧 - 詳細資格情報未登録の場合はnull
+        schedules:
+          type: array
+          items:
+            $ref: "#/components/schemas/Models.StaffSchedule"
+          nullable: true
+          description: 通常勤務スケジュールの一覧 - スケジュール未設定やフリーランススタッフの場合はnull
+        permissions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Models.StaffPermission"
+          nullable: true
+          description: 付与する権限の一覧 - 特別権限がない一般スタッフの場合はnull
+      description: スタッフ作成リクエスト - 新規スタッフ登録時に必要なプロフィール・連絡先・スケジュール情報を受け取る
     Models.StaffId:
       type: string
       format: uuid
@@ -19046,6 +18879,62 @@ components:
           nullable: true
           description: 担当した予約件数。統計未計算の場合はnull
       description: スタッフ一覧や選択候補で利用する要約情報。
+    Models.StaffUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: スタッフ名の更新
+        contactInfo:
+          allOf:
+            - $ref: "#/components/schemas/Models.ContactInfo"
+          description: 連絡先情報の更新
+        specialties:
+          type: array
+          items:
+            type: string
+          description: 得意分野一覧の更新
+        imageUrl:
+          type: string
+          nullable: true
+          description: プロフィール画像URLの更新（null指定で初期化可能）
+        bio:
+          type: string
+          nullable: true
+          description: 自己紹介文の更新（null指定で初期化可能）
+        yearsOfExperience:
+          type: integer
+          format: int32
+          nullable: true
+          description: 経験年数の更新（null指定で初期化可能）
+        certifications:
+          type: array
+          items:
+            type: string
+          nullable: true
+          description: 資格名一覧の更新（null指定で初期化可能）
+        qualifications:
+          type: array
+          items:
+            $ref: "#/components/schemas/Models.StaffQualification"
+          nullable: true
+          description: 資格詳細一覧の更新（null指定で初期化可能）
+        schedules:
+          type: array
+          items:
+            $ref: "#/components/schemas/Models.StaffSchedule"
+          nullable: true
+          description: 勤務スケジュール一覧の更新（null指定で初期化可能）
+        permissions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Models.StaffPermission"
+          nullable: true
+          description: 付与権限一覧の更新（null指定で初期化可能）
+        isActive:
+          type: boolean
+          description: アクティブ状態の更新
+      description: スタッフ更新リクエスト - 任意項目を部分更新し、プロフィールや勤務状況を柔軟に調整する。null指定で値をリセット可能
     Models.StockAlert:
       type: object
       required:
@@ -19644,142 +19533,6 @@ components:
           type: string
           description: エラー内容を伝えるメッセージ。
       description: 認証されていないアクセスを表す標準エラーモデル。
-    Models.UpdateReservationRequest:
-      type: object
-      properties:
-        status:
-          allOf:
-            - $ref: "#/components/schemas/Models.ReservationStatusType"
-          description: 更新後の予約ステータス
-        notes:
-          type: string
-          nullable: true
-          description: 最新の顧客メモや社内備考（null指定で初期化可能）
-        startTime:
-          type: string
-          format: date-time
-          description: 調整後の施術開始日時 (UTC)
-        staffId:
-          allOf:
-            - $ref: "#/components/schemas/Models.StaffId"
-          description: 再割当先のスタッフID
-      description: 予約更新リクエスト - 部分更新に対応した任意項目の変更指示を受け取り、既存予約を調整する。null指定で値をリセット可能
-    Models.UpdateServiceRequest:
-      type: object
-      required:
-        - description
-        - duration
-      properties:
-        name:
-          type: string
-          description: 更新後のサービス名
-        description:
-          type: string
-          nullable: true
-          description: 更新後の説明文。null指定で説明文をクリア（空文字列にリセット）
-        duration:
-          type: integer
-          format: int32
-          nullable: true
-          description: 更新後の施術時間。null指定で時間設定をクリア（デフォルト値にリセット）
-        price:
-          type: integer
-          format: int32
-          description: 更新後の料金
-        category:
-          allOf:
-            - $ref: "#/components/schemas/Models.ServiceCategoryType"
-          description: 更新後のサービスカテゴリ
-        categoryId:
-          type: string
-          allOf:
-            - $ref: "#/components/schemas/Models.CategoryId"
-          nullable: true
-          description: 更新後のカテゴリ ID（null 指定で解除）
-        imageUrl:
-          type: string
-          nullable: true
-          description: 更新後の画像 URL（null 指定で解除）
-        requiredStaffLevel:
-          type: integer
-          format: int32
-          nullable: true
-          description: 更新後の必要スタッフレベル（null 指定で解除）
-        depositAmount:
-          type: integer
-          format: int32
-          nullable: true
-          description: 更新後のデポジット額（null 指定で解除）
-        isActive:
-          type: boolean
-          description: 更新後の有効フラグ
-        maxAdvanceBookingDays:
-          type: integer
-          format: int32
-          nullable: true
-          description: 更新後の最大予約日数（null 指定で解除）
-        minAdvanceBookingHours:
-          type: integer
-          format: int32
-          nullable: true
-          description: 更新後の最短予約受付時間（null 指定で解除）
-      description: サービス情報を部分更新するリクエスト。null指定で値をリセット可能
-    Models.UpdateStaffRequest:
-      type: object
-      properties:
-        name:
-          type: string
-          description: スタッフ名の更新
-        contactInfo:
-          allOf:
-            - $ref: "#/components/schemas/Models.ContactInfo"
-          description: 連絡先情報の更新
-        specialties:
-          type: array
-          items:
-            type: string
-          description: 得意分野一覧の更新
-        imageUrl:
-          type: string
-          nullable: true
-          description: プロフィール画像URLの更新（null指定で初期化可能）
-        bio:
-          type: string
-          nullable: true
-          description: 自己紹介文の更新（null指定で初期化可能）
-        yearsOfExperience:
-          type: integer
-          format: int32
-          nullable: true
-          description: 経験年数の更新（null指定で初期化可能）
-        certifications:
-          type: array
-          items:
-            type: string
-          nullable: true
-          description: 資格名一覧の更新（null指定で初期化可能）
-        qualifications:
-          type: array
-          items:
-            $ref: "#/components/schemas/Models.StaffQualification"
-          nullable: true
-          description: 資格詳細一覧の更新（null指定で初期化可能）
-        schedules:
-          type: array
-          items:
-            $ref: "#/components/schemas/Models.StaffSchedule"
-          nullable: true
-          description: 勤務スケジュール一覧の更新（null指定で初期化可能）
-        permissions:
-          type: array
-          items:
-            $ref: "#/components/schemas/Models.StaffPermission"
-          nullable: true
-          description: 付与権限一覧の更新（null指定で初期化可能）
-        isActive:
-          type: boolean
-          description: アクティブ状態の更新
-      description: スタッフ更新リクエスト - 任意項目を部分更新し、プロフィールや勤務状況を柔軟に調整する。null指定で値をリセット可能
     Models.User:
       type: object
       required:

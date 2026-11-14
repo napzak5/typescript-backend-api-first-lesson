@@ -115,7 +115,7 @@ frontend/packages/api-client/src/generated/
 
 パッケージの入口は `.` だけです（`frontend/packages/api-client/src/index.ts` が endpoints と models をすべて再エクスポートする）。`generated/` 以下を直接 import するパスは公開されていません。
 
-fetch 関数の戻り値の型は、ステータスコードで判別できるユニオンです。API のエラーは例外ではなく値として表されています（`salons.ts` より）。
+fetch 関数の戻り値の型は、ステータスコードで判別できるユニオンです。API のエラーは例外ではなく値として表されています。サーバーがどのルートでも返す 429 と 500、本文を受け取るオペレーションの 413 と 415 もユニオンに含まれます（`salons.ts` より）。
 
 ```typescript
 export type salonCrudListResponse200 = {

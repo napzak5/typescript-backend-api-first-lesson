@@ -27,13 +27,13 @@ import type {
 import type {
   GlobalStaffOperationsSearchStaff200,
   GlobalStaffOperationsSearchStaffParams,
-  ModelsCreateStaffRequest,
-  ModelsError,
+  ModelsProblemDetails,
   ModelsSalonId,
   ModelsStaff,
   ModelsStaffAvailability,
+  ModelsStaffCreateRequest,
   ModelsStaffId,
-  ModelsUpdateStaffRequest,
+  ModelsStaffUpdateRequest,
   StaffOperationsGetAvailabilityParams,
   StaffOperationsList200,
   StaffOperationsListParams
@@ -205,7 +205,7 @@ export type staffOperationsCreateResponse201 = {
 }
 
 export type staffOperationsCreateResponse400 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 400
 }
 
@@ -231,7 +231,7 @@ export const getStaffOperationsCreateUrl = (salonId: ModelsSalonId,) => {
  * @summary Create staff member
  */
 export const staffOperationsCreate = async (salonId: ModelsSalonId,
-    modelsCreateStaffRequest: ModelsCreateStaffRequest, options?: RequestInit): Promise<staffOperationsCreateResponse> => {
+    modelsStaffCreateRequest: ModelsStaffCreateRequest, options?: RequestInit): Promise<staffOperationsCreateResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -252,7 +252,7 @@ return customInstance<staffOperationsCreateResponse>(getStaffOperationsCreateUrl
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(modelsCreateStaffRequest)
+    body: JSON.stringify(modelsStaffCreateRequest)
   }
 );}
 
@@ -262,7 +262,7 @@ return customInstance<staffOperationsCreateResponse>(getStaffOperationsCreateUrl
 
 export const getStaffOperationsCreateMutationKey = () => ['staffOperationsCreate'] as const;
 
-export const getStaffOperationsCreateMutationOptions = <TError = ModelsError,
+export const getStaffOperationsCreateMutationOptions = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffOperationsCreate>>, TError,StaffOperationsCreateMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof staffOperationsCreate>>, TError,StaffOperationsCreateMutationVariables, TContext> => {
 
@@ -290,15 +290,15 @@ const {mutation: mutationOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type StaffOperationsCreateMutationResult = NonNullable<Awaited<ReturnType<typeof staffOperationsCreate>>>
-    export type StaffOperationsCreateMutationBody = ModelsCreateStaffRequest
-    export type StaffOperationsCreateMutationError = ModelsError
-    export type StaffOperationsCreateMutationVariables = {salonId: ModelsSalonId;data: ModelsCreateStaffRequest}
+    export type StaffOperationsCreateMutationBody = ModelsStaffCreateRequest
+    export type StaffOperationsCreateMutationError = ModelsProblemDetails
+    export type StaffOperationsCreateMutationVariables = {salonId: ModelsSalonId;data: ModelsStaffCreateRequest}
 
     /**
  * 新しいスタッフを登録し、プロフィール情報や担当メニューの設定を開始します。
  * @summary Create staff member
  */
-export const useStaffOperationsCreate = <TError = ModelsError,
+export const useStaffOperationsCreate = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffOperationsCreate>>, TError,StaffOperationsCreateMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof staffOperationsCreate>>,
@@ -314,7 +314,7 @@ export const useStaffOperationsCreate = <TError = ModelsError,
 }
 
 export type staffOperationsGetResponse404 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 404
 }
 
@@ -364,7 +364,7 @@ export const getStaffOperationsGetQueryKey = (salonId: ModelsSalonId,
     }
 
 
-export const getStaffOperationsGetQueryOptions = <TData = Awaited<ReturnType<typeof staffOperationsGet>>, TError = ModelsError>(salonId: ModelsSalonId,
+export const getStaffOperationsGetQueryOptions = <TData = Awaited<ReturnType<typeof staffOperationsGet>>, TError = ModelsProblemDetails>(salonId: ModelsSalonId,
     id: ModelsStaffId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffOperationsGet>>, TError, TData>>, }
 ) => {
 
@@ -384,14 +384,14 @@ const {query: queryOptions} = options ?? {};
 }
 
 export type StaffOperationsGetQueryResult = NonNullable<Awaited<ReturnType<typeof staffOperationsGet>>>
-export type StaffOperationsGetQueryError = ModelsError
+export type StaffOperationsGetQueryError = ModelsProblemDetails
 
 
 /**
  * 特定スタッフの詳細情報を取得し、顧客向け表示や社内確認に利用します。
  * @summary Get staff member
  */
-export function useStaffOperationsGet<TData = Awaited<ReturnType<typeof staffOperationsGet>>, TError = ModelsError>(
+export function useStaffOperationsGet<TData = Awaited<ReturnType<typeof staffOperationsGet>>, TError = ModelsProblemDetails>(
  salonId: ModelsSalonId,
     id: ModelsStaffId, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffOperationsGet>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -406,7 +406,7 @@ export function useStaffOperationsGet<TData = Awaited<ReturnType<typeof staffOpe
  * 特定スタッフの詳細情報を取得し、顧客向け表示や社内確認に利用します。
  * @summary Get staff member
  */
-export function useStaffOperationsGet<TData = Awaited<ReturnType<typeof staffOperationsGet>>, TError = ModelsError>(
+export function useStaffOperationsGet<TData = Awaited<ReturnType<typeof staffOperationsGet>>, TError = ModelsProblemDetails>(
  salonId: ModelsSalonId,
     id: ModelsStaffId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffOperationsGet>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -421,7 +421,7 @@ export function useStaffOperationsGet<TData = Awaited<ReturnType<typeof staffOpe
  * 特定スタッフの詳細情報を取得し、顧客向け表示や社内確認に利用します。
  * @summary Get staff member
  */
-export function useStaffOperationsGet<TData = Awaited<ReturnType<typeof staffOperationsGet>>, TError = ModelsError>(
+export function useStaffOperationsGet<TData = Awaited<ReturnType<typeof staffOperationsGet>>, TError = ModelsProblemDetails>(
  salonId: ModelsSalonId,
     id: ModelsStaffId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffOperationsGet>>, TError, TData>>, }
  , queryClient?: QueryClient
@@ -430,7 +430,7 @@ export function useStaffOperationsGet<TData = Awaited<ReturnType<typeof staffOpe
  * 特定スタッフの詳細情報を取得し、顧客向け表示や社内確認に利用します。
  * @summary Get staff member
  */
-export function useStaffOperationsGet<TData = Awaited<ReturnType<typeof staffOperationsGet>>, TError = ModelsError>(
+export function useStaffOperationsGet<TData = Awaited<ReturnType<typeof staffOperationsGet>>, TError = ModelsProblemDetails>(
  salonId: ModelsSalonId,
     id: ModelsStaffId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffOperationsGet>>, TError, TData>>, }
  , queryClient?: QueryClient
@@ -454,12 +454,12 @@ export type staffOperationsUpdateResponse200 = {
 }
 
 export type staffOperationsUpdateResponse400 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 400
 }
 
 export type staffOperationsUpdateResponse404 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 404
 }
 
@@ -487,7 +487,7 @@ export const getStaffOperationsUpdateUrl = (salonId: ModelsSalonId,
  */
 export const staffOperationsUpdate = async (salonId: ModelsSalonId,
     id: ModelsStaffId,
-    modelsUpdateStaffRequest: ModelsUpdateStaffRequest, options?: RequestInit): Promise<staffOperationsUpdateResponse> => {
+    modelsStaffUpdateRequest: ModelsStaffUpdateRequest, options?: RequestInit): Promise<staffOperationsUpdateResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -508,7 +508,7 @@ return customInstance<staffOperationsUpdateResponse>(getStaffOperationsUpdateUrl
     ...options,
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(modelsUpdateStaffRequest)
+    body: JSON.stringify(modelsStaffUpdateRequest)
   }
 );}
 
@@ -518,7 +518,7 @@ return customInstance<staffOperationsUpdateResponse>(getStaffOperationsUpdateUrl
 
 export const getStaffOperationsUpdateMutationKey = () => ['staffOperationsUpdate'] as const;
 
-export const getStaffOperationsUpdateMutationOptions = <TError = ModelsError,
+export const getStaffOperationsUpdateMutationOptions = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffOperationsUpdate>>, TError,StaffOperationsUpdateMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof staffOperationsUpdate>>, TError,StaffOperationsUpdateMutationVariables, TContext> => {
 
@@ -546,15 +546,15 @@ const {mutation: mutationOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type StaffOperationsUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof staffOperationsUpdate>>>
-    export type StaffOperationsUpdateMutationBody = ModelsUpdateStaffRequest
-    export type StaffOperationsUpdateMutationError = ModelsError
-    export type StaffOperationsUpdateMutationVariables = {salonId: ModelsSalonId;id: ModelsStaffId;data: ModelsUpdateStaffRequest}
+    export type StaffOperationsUpdateMutationBody = ModelsStaffUpdateRequest
+    export type StaffOperationsUpdateMutationError = ModelsProblemDetails
+    export type StaffOperationsUpdateMutationVariables = {salonId: ModelsSalonId;id: ModelsStaffId;data: ModelsStaffUpdateRequest}
 
     /**
  * スタッフのプロフィールや担当メニュー、表示可否を更新します。
  * @summary Update staff member
  */
-export const useStaffOperationsUpdate = <TError = ModelsError,
+export const useStaffOperationsUpdate = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffOperationsUpdate>>, TError,StaffOperationsUpdateMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof staffOperationsUpdate>>,
@@ -570,7 +570,7 @@ export const useStaffOperationsUpdate = <TError = ModelsError,
 }
 
 export type staffOperationsDeleteResponse404 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 404
 }
 
@@ -614,7 +614,7 @@ export const staffOperationsDelete = async (salonId: ModelsSalonId,
 
 export const getStaffOperationsDeleteMutationKey = () => ['staffOperationsDelete'] as const;
 
-export const getStaffOperationsDeleteMutationOptions = <TError = ModelsError,
+export const getStaffOperationsDeleteMutationOptions = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffOperationsDelete>>, TError,StaffOperationsDeleteMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof staffOperationsDelete>>, TError,StaffOperationsDeleteMutationVariables, TContext> => {
 
@@ -643,14 +643,14 @@ const {mutation: mutationOptions} = options ?
 
     export type StaffOperationsDeleteMutationResult = NonNullable<Awaited<ReturnType<typeof staffOperationsDelete>>>
 
-    export type StaffOperationsDeleteMutationError = ModelsError
+    export type StaffOperationsDeleteMutationError = ModelsProblemDetails
     export type StaffOperationsDeleteMutationVariables = {salonId: ModelsSalonId;id: ModelsStaffId}
 
     /**
  * 退職や契約終了に伴いスタッフを削除し、予約導線から除外します。
  * @summary Delete staff member
  */
-export const useStaffOperationsDelete = <TError = ModelsError,
+export const useStaffOperationsDelete = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffOperationsDelete>>, TError,StaffOperationsDeleteMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof staffOperationsDelete>>,
@@ -814,7 +814,7 @@ export type staffOperationsUpdateAvailabilityResponse200 = {
 }
 
 export type staffOperationsUpdateAvailabilityResponse400 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 400
 }
 
@@ -873,7 +873,7 @@ return customInstance<staffOperationsUpdateAvailabilityResponse>(getStaffOperati
 
 export const getStaffOperationsUpdateAvailabilityMutationKey = () => ['staffOperationsUpdateAvailability'] as const;
 
-export const getStaffOperationsUpdateAvailabilityMutationOptions = <TError = ModelsError,
+export const getStaffOperationsUpdateAvailabilityMutationOptions = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffOperationsUpdateAvailability>>, TError,StaffOperationsUpdateAvailabilityMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof staffOperationsUpdateAvailability>>, TError,StaffOperationsUpdateAvailabilityMutationVariables, TContext> => {
 
@@ -902,14 +902,14 @@ const {mutation: mutationOptions} = options ?
 
     export type StaffOperationsUpdateAvailabilityMutationResult = NonNullable<Awaited<ReturnType<typeof staffOperationsUpdateAvailability>>>
     export type StaffOperationsUpdateAvailabilityMutationBody = ModelsStaffAvailability[]
-    export type StaffOperationsUpdateAvailabilityMutationError = ModelsError
+    export type StaffOperationsUpdateAvailabilityMutationError = ModelsProblemDetails
     export type StaffOperationsUpdateAvailabilityMutationVariables = {salonId: ModelsSalonId;id: ModelsStaffId;data: ModelsStaffAvailability[]}
 
     /**
  * スタッフの稼働予定を更新し、シフト変更や臨時休みを反映します。
  * @summary Update staff availability
  */
-export const useStaffOperationsUpdateAvailability = <TError = ModelsError,
+export const useStaffOperationsUpdateAvailability = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffOperationsUpdateAvailability>>, TError,StaffOperationsUpdateAvailabilityMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof staffOperationsUpdateAvailability>>,

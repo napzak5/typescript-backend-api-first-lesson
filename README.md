@@ -233,8 +233,8 @@ log lines.
 
 ### Errors
 
-Every error response is RFC 9457 problem details, including the ones raised
-before a route runs: unknown route (404), malformed JSON (400), a body that
+Every error response is RFC 9457 problem details (`application/problem+json`),
+including the ones raised before a route runs: unknown route (404), malformed JSON (400), a body that
 is not JSON (415) or over 100 kB (413), too many requests (429) and
 unexpected failures (500, without internal details). The probes below are the
 one exception: a probe that fails answers 503 with its own body.

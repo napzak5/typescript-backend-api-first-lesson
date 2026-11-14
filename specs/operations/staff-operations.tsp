@@ -25,16 +25,13 @@ namespace BeautySalon.Operations {
     @doc("新しいスタッフを登録し、プロフィール情報や担当メニューの設定を開始します。")
     @summary("Create staff member")
     @post
-    op create(@path salonId: SalonId, @body staff: CreateStaffRequest):
+    op create(@path salonId: SalonId, @body staff: StaffCreateRequest):
       | {
           @statusCode statusCode: 201;
           @header location: string;
           @body staff: Staff;
         }
-      | {
-          @statusCode statusCode: 400;
-          @body error: Error;
-        };
+      | ProblemResponse<400>;
 
     @doc("特定スタッフの詳細情報を取得し、顧客向け表示や社内確認に利用します。")
     @summary("Get staff member")
@@ -44,10 +41,7 @@ namespace BeautySalon.Operations {
           @statusCode statusCode: 200;
           @body staff: Staff;
         }
-      | {
-          @statusCode statusCode: 404;
-          @body error: Error;
-        };
+      | ProblemResponse<404>;
 
     @doc("スタッフのプロフィールや担当メニュー、表示可否を更新します。")
     @summary("Update staff member")
@@ -55,20 +49,14 @@ namespace BeautySalon.Operations {
     op update(
       @path salonId: SalonId,
       @path id: StaffId,
-      @body updates: UpdateStaffRequest,
+      @body updates: StaffUpdateRequest,
     ):
       | {
           @statusCode statusCode: 200;
           @body staff: Staff;
         }
-      | {
-          @statusCode statusCode: 404;
-          @body error: Error;
-        }
-      | {
-          @statusCode statusCode: 400;
-          @body error: Error;
-        };
+      | ProblemResponse<404>
+      | ProblemResponse<400>;
 
     @doc("退職や契約終了に伴いスタッフを削除し、予約導線から除外します。")
     @summary("Delete staff member")
@@ -77,10 +65,7 @@ namespace BeautySalon.Operations {
       | {
           @statusCode statusCode: 204;
         }
-      | {
-          @statusCode statusCode: 404;
-          @body error: Error;
-        };
+      | ProblemResponse<404>;
 
     @doc("指定日のスタッフ空き状況を取得し、予約枠の提案や調整に活用します。")
     @summary("Get staff availability")
@@ -108,10 +93,7 @@ namespace BeautySalon.Operations {
           @statusCode statusCode: 200;
           @body availability: StaffAvailability[];
         }
-      | {
-          @statusCode statusCode: 400;
-          @body error: Error;
-        };
+      | ProblemResponse<400>;
   }
 
   @doc("複数サロン横断でスタッフを検索し、指名予約やヘルプ要員の調整に用いるAPI操作群です。")

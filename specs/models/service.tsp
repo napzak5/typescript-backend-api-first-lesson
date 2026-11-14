@@ -728,7 +728,7 @@ namespace BeautySalon.Models {
   }
 
   @doc("サービスを新規登録するリクエスト")
-  model CreateServiceRequest {
+  model ServiceCreateRequest {
     @doc("サービスを登録するサロン ID")
     salonId: SalonId;
 
@@ -770,7 +770,7 @@ namespace BeautySalon.Models {
   }
 
   @doc("サービス情報を部分更新するリクエスト。null指定で値をリセット可能")
-  model UpdateServiceRequest {
+  model ServiceUpdateRequest {
     @doc("更新後のサービス名")
     name?: string;
 

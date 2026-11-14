@@ -54,7 +54,7 @@ namespace BeautySalon.Models {
   @doc("""
     予約作成リクエスト - 新規予約登録時に必要なサロン・顧客・メニュー・希望日時の情報を受け取る
     """)
-  model CreateReservationRequest {
+  model ReservationCreateRequest {
     @doc("予約対象のサロンID")
     salonId: SalonId;
 
@@ -77,7 +77,7 @@ namespace BeautySalon.Models {
   @doc("""
     予約更新リクエスト - 部分更新に対応した任意項目の変更指示を受け取り、既存予約を調整する。null指定で値をリセット可能
     """)
-  model UpdateReservationRequest {
+  model ReservationUpdateRequest {
     @doc("更新後の予約ステータス")
     status?: ReservationStatusType;
 

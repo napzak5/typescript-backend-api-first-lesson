@@ -6,9 +6,8 @@
  * OpenAPI spec version: 2.0
  */
 
-export type ModelsDomainErrorFactoryUnauthorizedType = typeof ModelsDomainErrorFactoryUnauthorizedType[keyof typeof ModelsDomainErrorFactoryUnauthorizedType];
-
-
-export const ModelsDomainErrorFactoryUnauthorizedType = {
-  UNAUTHORIZED: 'UNAUTHORIZED',
-} as const;
+/**
+ * 外部連携や業務用に保持する任意メタデータ。追加情報が不要の場合はnull。
+ * @nullable
+ */
+export type ModelsBookingCreateRequestMetadata = {[key: string]: unknown} | null;

@@ -10,7 +10,7 @@ import type { ModelsServiceCategoryType } from './modelsServiceCategoryType';
 /**
  * サービス情報を部分更新するリクエスト。null指定で値をリセット可能
  */
-export interface ModelsUpdateServiceRequest {
+export interface ModelsServiceUpdateRequest {
   /** 更新後のサービス名 */
   name?: string;
   /**

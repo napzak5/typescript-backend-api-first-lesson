@@ -31,12 +31,12 @@ import type {
   CategoryOperationsUpdateCategoryBody,
   ModelsCategoryId,
   ModelsCategoryModel,
-  ModelsCreateServiceRequest,
-  ModelsError,
+  ModelsProblemDetails,
   ModelsSalonId,
   ModelsService,
+  ModelsServiceCreateRequest,
   ModelsServiceId,
-  ModelsUpdateServiceRequest,
+  ModelsServiceUpdateRequest,
   ServiceOperationsBulkUpdate200,
   ServiceOperationsBulkUpdateBody,
   ServiceOperationsList200,
@@ -209,7 +209,7 @@ export type serviceOperationsCreateResponse201 = {
 }
 
 export type serviceOperationsCreateResponse400 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 400
 }
 
@@ -235,7 +235,7 @@ export const getServiceOperationsCreateUrl = (salonId: ModelsSalonId,) => {
  * @summary Create service
  */
 export const serviceOperationsCreate = async (salonId: ModelsSalonId,
-    modelsCreateServiceRequest: ModelsCreateServiceRequest, options?: RequestInit): Promise<serviceOperationsCreateResponse> => {
+    modelsServiceCreateRequest: ModelsServiceCreateRequest, options?: RequestInit): Promise<serviceOperationsCreateResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -256,7 +256,7 @@ return customInstance<serviceOperationsCreateResponse>(getServiceOperationsCreat
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(modelsCreateServiceRequest)
+    body: JSON.stringify(modelsServiceCreateRequest)
   }
 );}
 
@@ -266,7 +266,7 @@ return customInstance<serviceOperationsCreateResponse>(getServiceOperationsCreat
 
 export const getServiceOperationsCreateMutationKey = () => ['serviceOperationsCreate'] as const;
 
-export const getServiceOperationsCreateMutationOptions = <TError = ModelsError,
+export const getServiceOperationsCreateMutationOptions = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof serviceOperationsCreate>>, TError,ServiceOperationsCreateMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof serviceOperationsCreate>>, TError,ServiceOperationsCreateMutationVariables, TContext> => {
 
@@ -294,15 +294,15 @@ const {mutation: mutationOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type ServiceOperationsCreateMutationResult = NonNullable<Awaited<ReturnType<typeof serviceOperationsCreate>>>
-    export type ServiceOperationsCreateMutationBody = ModelsCreateServiceRequest
-    export type ServiceOperationsCreateMutationError = ModelsError
-    export type ServiceOperationsCreateMutationVariables = {salonId: ModelsSalonId;data: ModelsCreateServiceRequest}
+    export type ServiceOperationsCreateMutationBody = ModelsServiceCreateRequest
+    export type ServiceOperationsCreateMutationError = ModelsProblemDetails
+    export type ServiceOperationsCreateMutationVariables = {salonId: ModelsSalonId;data: ModelsServiceCreateRequest}
 
     /**
  * 新しい施術メニューを登録し、価格・施術時間・提供条件を設定します。
  * @summary Create service
  */
-export const useServiceOperationsCreate = <TError = ModelsError,
+export const useServiceOperationsCreate = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof serviceOperationsCreate>>, TError,ServiceOperationsCreateMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof serviceOperationsCreate>>,
@@ -420,7 +420,7 @@ export const useServiceOperationsBulkUpdate = <TError = unknown,
 }
 
 export type serviceOperationsGetResponse404 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 404
 }
 
@@ -470,7 +470,7 @@ export const getServiceOperationsGetQueryKey = (salonId: ModelsSalonId,
     }
 
 
-export const getServiceOperationsGetQueryOptions = <TData = Awaited<ReturnType<typeof serviceOperationsGet>>, TError = ModelsError>(salonId: ModelsSalonId,
+export const getServiceOperationsGetQueryOptions = <TData = Awaited<ReturnType<typeof serviceOperationsGet>>, TError = ModelsProblemDetails>(salonId: ModelsSalonId,
     id: ModelsServiceId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof serviceOperationsGet>>, TError, TData>>, }
 ) => {
 
@@ -490,14 +490,14 @@ const {query: queryOptions} = options ?? {};
 }
 
 export type ServiceOperationsGetQueryResult = NonNullable<Awaited<ReturnType<typeof serviceOperationsGet>>>
-export type ServiceOperationsGetQueryError = ModelsError
+export type ServiceOperationsGetQueryError = ModelsProblemDetails
 
 
 /**
  * 特定メニューの詳細情報を取得し、予約システムやスタッフ教育に必要な内容を確認します。
  * @summary Get service
  */
-export function useServiceOperationsGet<TData = Awaited<ReturnType<typeof serviceOperationsGet>>, TError = ModelsError>(
+export function useServiceOperationsGet<TData = Awaited<ReturnType<typeof serviceOperationsGet>>, TError = ModelsProblemDetails>(
  salonId: ModelsSalonId,
     id: ModelsServiceId, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof serviceOperationsGet>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
@@ -512,7 +512,7 @@ export function useServiceOperationsGet<TData = Awaited<ReturnType<typeof servic
  * 特定メニューの詳細情報を取得し、予約システムやスタッフ教育に必要な内容を確認します。
  * @summary Get service
  */
-export function useServiceOperationsGet<TData = Awaited<ReturnType<typeof serviceOperationsGet>>, TError = ModelsError>(
+export function useServiceOperationsGet<TData = Awaited<ReturnType<typeof serviceOperationsGet>>, TError = ModelsProblemDetails>(
  salonId: ModelsSalonId,
     id: ModelsServiceId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof serviceOperationsGet>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
@@ -527,7 +527,7 @@ export function useServiceOperationsGet<TData = Awaited<ReturnType<typeof servic
  * 特定メニューの詳細情報を取得し、予約システムやスタッフ教育に必要な内容を確認します。
  * @summary Get service
  */
-export function useServiceOperationsGet<TData = Awaited<ReturnType<typeof serviceOperationsGet>>, TError = ModelsError>(
+export function useServiceOperationsGet<TData = Awaited<ReturnType<typeof serviceOperationsGet>>, TError = ModelsProblemDetails>(
  salonId: ModelsSalonId,
     id: ModelsServiceId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof serviceOperationsGet>>, TError, TData>>, }
  , queryClient?: QueryClient
@@ -536,7 +536,7 @@ export function useServiceOperationsGet<TData = Awaited<ReturnType<typeof servic
  * 特定メニューの詳細情報を取得し、予約システムやスタッフ教育に必要な内容を確認します。
  * @summary Get service
  */
-export function useServiceOperationsGet<TData = Awaited<ReturnType<typeof serviceOperationsGet>>, TError = ModelsError>(
+export function useServiceOperationsGet<TData = Awaited<ReturnType<typeof serviceOperationsGet>>, TError = ModelsProblemDetails>(
  salonId: ModelsSalonId,
     id: ModelsServiceId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof serviceOperationsGet>>, TError, TData>>, }
  , queryClient?: QueryClient
@@ -560,12 +560,12 @@ export type serviceOperationsUpdateResponse200 = {
 }
 
 export type serviceOperationsUpdateResponse400 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 400
 }
 
 export type serviceOperationsUpdateResponse404 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 404
 }
 
@@ -593,7 +593,7 @@ export const getServiceOperationsUpdateUrl = (salonId: ModelsSalonId,
  */
 export const serviceOperationsUpdate = async (salonId: ModelsSalonId,
     id: ModelsServiceId,
-    modelsUpdateServiceRequest: ModelsUpdateServiceRequest, options?: RequestInit): Promise<serviceOperationsUpdateResponse> => {
+    modelsServiceUpdateRequest: ModelsServiceUpdateRequest, options?: RequestInit): Promise<serviceOperationsUpdateResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -614,7 +614,7 @@ return customInstance<serviceOperationsUpdateResponse>(getServiceOperationsUpdat
     ...options,
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(modelsUpdateServiceRequest)
+    body: JSON.stringify(modelsServiceUpdateRequest)
   }
 );}
 
@@ -624,7 +624,7 @@ return customInstance<serviceOperationsUpdateResponse>(getServiceOperationsUpdat
 
 export const getServiceOperationsUpdateMutationKey = () => ['serviceOperationsUpdate'] as const;
 
-export const getServiceOperationsUpdateMutationOptions = <TError = ModelsError,
+export const getServiceOperationsUpdateMutationOptions = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof serviceOperationsUpdate>>, TError,ServiceOperationsUpdateMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof serviceOperationsUpdate>>, TError,ServiceOperationsUpdateMutationVariables, TContext> => {
 
@@ -652,15 +652,15 @@ const {mutation: mutationOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type ServiceOperationsUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof serviceOperationsUpdate>>>
-    export type ServiceOperationsUpdateMutationBody = ModelsUpdateServiceRequest
-    export type ServiceOperationsUpdateMutationError = ModelsError
-    export type ServiceOperationsUpdateMutationVariables = {salonId: ModelsSalonId;id: ModelsServiceId;data: ModelsUpdateServiceRequest}
+    export type ServiceOperationsUpdateMutationBody = ModelsServiceUpdateRequest
+    export type ServiceOperationsUpdateMutationError = ModelsProblemDetails
+    export type ServiceOperationsUpdateMutationVariables = {salonId: ModelsSalonId;id: ModelsServiceId;data: ModelsServiceUpdateRequest}
 
     /**
  * 既存メニューの内容を更新し、料金改定や提供条件の変更に対応します。
  * @summary Update service
  */
-export const useServiceOperationsUpdate = <TError = ModelsError,
+export const useServiceOperationsUpdate = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof serviceOperationsUpdate>>, TError,ServiceOperationsUpdateMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof serviceOperationsUpdate>>,
@@ -676,7 +676,7 @@ export const useServiceOperationsUpdate = <TError = ModelsError,
 }
 
 export type serviceOperationsDeleteResponse404 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 404
 }
 
@@ -720,7 +720,7 @@ export const serviceOperationsDelete = async (salonId: ModelsSalonId,
 
 export const getServiceOperationsDeleteMutationKey = () => ['serviceOperationsDelete'] as const;
 
-export const getServiceOperationsDeleteMutationOptions = <TError = ModelsError,
+export const getServiceOperationsDeleteMutationOptions = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof serviceOperationsDelete>>, TError,ServiceOperationsDeleteMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof serviceOperationsDelete>>, TError,ServiceOperationsDeleteMutationVariables, TContext> => {
 
@@ -749,14 +749,14 @@ const {mutation: mutationOptions} = options ?
 
     export type ServiceOperationsDeleteMutationResult = NonNullable<Awaited<ReturnType<typeof serviceOperationsDelete>>>
 
-    export type ServiceOperationsDeleteMutationError = ModelsError
+    export type ServiceOperationsDeleteMutationError = ModelsProblemDetails
     export type ServiceOperationsDeleteMutationVariables = {salonId: ModelsSalonId;id: ModelsServiceId}
 
     /**
  * 提供終了となったメニューを削除し、予約導線から除外します。
  * @summary Delete service
  */
-export const useServiceOperationsDelete = <TError = ModelsError,
+export const useServiceOperationsDelete = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof serviceOperationsDelete>>, TError,ServiceOperationsDeleteMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof serviceOperationsDelete>>,
@@ -904,7 +904,7 @@ export type categoryOperationsCreateCategoryResponse201 = {
 }
 
 export type categoryOperationsCreateCategoryResponse400 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 400
 }
 
@@ -960,7 +960,7 @@ return customInstance<categoryOperationsCreateCategoryResponse>(getCategoryOpera
 
 export const getCategoryOperationsCreateCategoryMutationKey = () => ['categoryOperationsCreateCategory'] as const;
 
-export const getCategoryOperationsCreateCategoryMutationOptions = <TError = ModelsError,
+export const getCategoryOperationsCreateCategoryMutationOptions = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof categoryOperationsCreateCategory>>, TError,CategoryOperationsCreateCategoryMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof categoryOperationsCreateCategory>>, TError,CategoryOperationsCreateCategoryMutationVariables, TContext> => {
 
@@ -989,14 +989,14 @@ const {mutation: mutationOptions} = options ?
 
     export type CategoryOperationsCreateCategoryMutationResult = NonNullable<Awaited<ReturnType<typeof categoryOperationsCreateCategory>>>
     export type CategoryOperationsCreateCategoryMutationBody = CategoryOperationsCreateCategoryBody
-    export type CategoryOperationsCreateCategoryMutationError = ModelsError
+    export type CategoryOperationsCreateCategoryMutationError = ModelsProblemDetails
     export type CategoryOperationsCreateCategoryMutationVariables = {data: CategoryOperationsCreateCategoryBody}
 
     /**
  * 新しい施術カテゴリを作成し、階層構造や表示順を定義します。
  * @summary Create service category
  */
-export const useCategoryOperationsCreateCategory = <TError = ModelsError,
+export const useCategoryOperationsCreateCategory = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof categoryOperationsCreateCategory>>, TError,CategoryOperationsCreateCategoryMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof categoryOperationsCreateCategory>>,
@@ -1012,7 +1012,7 @@ export const useCategoryOperationsCreateCategory = <TError = ModelsError,
 }
 
 export type categoryOperationsUpdateCategoryResponse404 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 404
 }
 
@@ -1069,7 +1069,7 @@ return customInstance<categoryOperationsUpdateCategoryResponse>(getCategoryOpera
 
 export const getCategoryOperationsUpdateCategoryMutationKey = () => ['categoryOperationsUpdateCategory'] as const;
 
-export const getCategoryOperationsUpdateCategoryMutationOptions = <TError = ModelsError,
+export const getCategoryOperationsUpdateCategoryMutationOptions = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof categoryOperationsUpdateCategory>>, TError,CategoryOperationsUpdateCategoryMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof categoryOperationsUpdateCategory>>, TError,CategoryOperationsUpdateCategoryMutationVariables, TContext> => {
 
@@ -1098,14 +1098,14 @@ const {mutation: mutationOptions} = options ?
 
     export type CategoryOperationsUpdateCategoryMutationResult = NonNullable<Awaited<ReturnType<typeof categoryOperationsUpdateCategory>>>
     export type CategoryOperationsUpdateCategoryMutationBody = CategoryOperationsUpdateCategoryBody
-    export type CategoryOperationsUpdateCategoryMutationError = ModelsError
+    export type CategoryOperationsUpdateCategoryMutationError = ModelsProblemDetails
     export type CategoryOperationsUpdateCategoryMutationVariables = {id: ModelsCategoryId;data: CategoryOperationsUpdateCategoryBody}
 
     /**
  * 既存カテゴリを更新し、名称や表示順、親子関係を調整します。
  * @summary Update service category
  */
-export const useCategoryOperationsUpdateCategory = <TError = ModelsError,
+export const useCategoryOperationsUpdateCategory = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof categoryOperationsUpdateCategory>>, TError,CategoryOperationsUpdateCategoryMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof categoryOperationsUpdateCategory>>,
@@ -1121,12 +1121,12 @@ export const useCategoryOperationsUpdateCategory = <TError = ModelsError,
 }
 
 export type categoryOperationsDeleteCategoryResponse404 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 404
 }
 
 export type categoryOperationsDeleteCategoryResponse409 = {
-  data: ModelsError
+  data: ModelsProblemDetails
   status: 409
 }
 
@@ -1168,7 +1168,7 @@ export const categoryOperationsDeleteCategory = async (id: ModelsCategoryId, opt
 
 export const getCategoryOperationsDeleteCategoryMutationKey = () => ['categoryOperationsDeleteCategory'] as const;
 
-export const getCategoryOperationsDeleteCategoryMutationOptions = <TError = ModelsError,
+export const getCategoryOperationsDeleteCategoryMutationOptions = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof categoryOperationsDeleteCategory>>, TError,CategoryOperationsDeleteCategoryMutationVariables, TContext>, }
 ): UseMutationOptions<Awaited<ReturnType<typeof categoryOperationsDeleteCategory>>, TError,CategoryOperationsDeleteCategoryMutationVariables, TContext> => {
 
@@ -1197,14 +1197,14 @@ const {mutation: mutationOptions} = options ?
 
     export type CategoryOperationsDeleteCategoryMutationResult = NonNullable<Awaited<ReturnType<typeof categoryOperationsDeleteCategory>>>
 
-    export type CategoryOperationsDeleteCategoryMutationError = ModelsError
+    export type CategoryOperationsDeleteCategoryMutationError = ModelsProblemDetails
     export type CategoryOperationsDeleteCategoryMutationVariables = {id: ModelsCategoryId}
 
     /**
  * 利用されなくなったカテゴリを削除し、メニュー構成を整理します。
  * @summary Delete service category
  */
-export const useCategoryOperationsDeleteCategory = <TError = ModelsError,
+export const useCategoryOperationsDeleteCategory = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof categoryOperationsDeleteCategory>>, TError,CategoryOperationsDeleteCategoryMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
         Awaited<ReturnType<typeof categoryOperationsDeleteCategory>>,

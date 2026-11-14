@@ -66,10 +66,20 @@ export type salonCrudListResponse400 = {
   status: 400
 }
 
+export type salonCrudListResponse429 = {
+  data: ModelsProblemDetails
+  status: 429
+}
+
+export type salonCrudListResponse500 = {
+  data: ModelsProblemDetails
+  status: 500
+}
+
 export type salonCrudListResponseSuccess = (salonCrudListResponse200) & {
   headers: Headers;
 };
-export type salonCrudListResponseError = (salonCrudListResponse400) & {
+export type salonCrudListResponseError = (salonCrudListResponse400 | salonCrudListResponse429 | salonCrudListResponse500) & {
   headers: Headers;
 };
 
@@ -218,10 +228,30 @@ export type salonCrudCreateResponse409 = {
   status: 409
 }
 
+export type salonCrudCreateResponse413 = {
+  data: ModelsProblemDetails
+  status: 413
+}
+
+export type salonCrudCreateResponse415 = {
+  data: ModelsProblemDetails
+  status: 415
+}
+
+export type salonCrudCreateResponse429 = {
+  data: ModelsProblemDetails
+  status: 429
+}
+
+export type salonCrudCreateResponse500 = {
+  data: ModelsProblemDetails
+  status: 500
+}
+
 export type salonCrudCreateResponseSuccess = (salonCrudCreateResponse201) & {
   headers: Headers;
 };
-export type salonCrudCreateResponseError = (salonCrudCreateResponse400 | salonCrudCreateResponse409) & {
+export type salonCrudCreateResponseError = (salonCrudCreateResponse400 | salonCrudCreateResponse409 | salonCrudCreateResponse413 | salonCrudCreateResponse415 | salonCrudCreateResponse429 | salonCrudCreateResponse500) & {
   headers: Headers;
 };
 
@@ -331,10 +361,20 @@ export type salonCrudGetResponse404 = {
   status: 404
 }
 
+export type salonCrudGetResponse429 = {
+  data: ModelsProblemDetails
+  status: 429
+}
+
+export type salonCrudGetResponse500 = {
+  data: ModelsProblemDetails
+  status: 500
+}
+
 export type salonCrudGetResponseSuccess = (salonCrudGetResponse200) & {
   headers: Headers;
 };
-export type salonCrudGetResponseError = (salonCrudGetResponse400 | salonCrudGetResponse404) & {
+export type salonCrudGetResponseError = (salonCrudGetResponse400 | salonCrudGetResponse404 | salonCrudGetResponse429 | salonCrudGetResponse500) & {
   headers: Headers;
 };
 
@@ -473,10 +513,30 @@ export type salonCrudUpdateResponse409 = {
   status: 409
 }
 
+export type salonCrudUpdateResponse413 = {
+  data: ModelsProblemDetails
+  status: 413
+}
+
+export type salonCrudUpdateResponse415 = {
+  data: ModelsProblemDetails
+  status: 415
+}
+
+export type salonCrudUpdateResponse429 = {
+  data: ModelsProblemDetails
+  status: 429
+}
+
+export type salonCrudUpdateResponse500 = {
+  data: ModelsProblemDetails
+  status: 500
+}
+
 export type salonCrudUpdateResponseSuccess = (salonCrudUpdateResponse200) & {
   headers: Headers;
 };
-export type salonCrudUpdateResponseError = (salonCrudUpdateResponse400 | salonCrudUpdateResponse404 | salonCrudUpdateResponse409) & {
+export type salonCrudUpdateResponseError = (salonCrudUpdateResponse400 | salonCrudUpdateResponse404 | salonCrudUpdateResponse409 | salonCrudUpdateResponse413 | salonCrudUpdateResponse415 | salonCrudUpdateResponse429 | salonCrudUpdateResponse500) & {
   headers: Headers;
 };
 
@@ -587,10 +647,20 @@ export type salonCrudDeleteResponse404 = {
   status: 404
 }
 
+export type salonCrudDeleteResponse429 = {
+  data: ModelsProblemDetails
+  status: 429
+}
+
+export type salonCrudDeleteResponse500 = {
+  data: ModelsProblemDetails
+  status: 500
+}
+
 export type salonCrudDeleteResponseSuccess = (salonCrudDeleteResponse204) & {
   headers: Headers;
 };
-export type salonCrudDeleteResponseError = (salonCrudDeleteResponse400 | salonCrudDeleteResponse404) & {
+export type salonCrudDeleteResponseError = (salonCrudDeleteResponse400 | salonCrudDeleteResponse404 | salonCrudDeleteResponse429 | salonCrudDeleteResponse500) & {
   headers: Headers;
 };
 

@@ -37,7 +37,7 @@ Visual and interaction design comes from `senior-ui-designer`. You implement it,
 ## How you work
 
 - Server state goes through the generated TanStack Query hooks. Local UI state is a discriminated union that is matched exhaustively, not a set of booleans.
-- Every error response of the API is problem details (`ProblemDetails` in the generated models; its `errors` list names the field of each validation issue). Handle that one shape.
+- Every error response of the API is problem details, sent as `application/problem+json` (`ProblemDetails` in the generated models; its `errors` list names the field of each validation issue). Handle that one shape.
 - Lists use keyset pagination (`cursor`, `limit`, `meta.nextCursor`).
 - A component that several applications use goes into `frontend/packages/ui`, with a test and a story like the existing ones. A component of one application stays in that application.
 - Validation helpers are in `frontend/packages/validations` and return neverthrow results.

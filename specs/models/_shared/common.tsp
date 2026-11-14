@@ -309,12 +309,10 @@ namespace BeautySalon.Models {
 
   @doc("一覧取得APIで利用するページネーション共通パラメータ。")
   model PaginationParams {
-    #suppress "@typespec/http/metadata-ignored" "Treated as queryParams"
     @query
     @doc("1ページあたりの取得件数。省略時は20件。")
     limit?: int32 = 20;
 
-    #suppress "@typespec/http/metadata-ignored" "Treated as queryParams"
     @query
     @doc("取得開始位置を表すオフセット。省略時は0。")
     offset?: int32 = 0;
@@ -435,17 +433,14 @@ namespace BeautySalon.Models {
 
   @doc("一覧検索で使用する共通クエリパラメータセット。")
   model SearchParams {
-    #suppress "@typespec/http/metadata-ignored" "Treated as queryParams"
     @query
     @doc("フリーワード検索用キーワード。")
     q?: string;
 
-    #suppress "@typespec/http/metadata-ignored" "Treated as queryParams"
     @query
     @doc("並び替え対象カラム名。")
     sortBy?: string;
 
-    #suppress "@typespec/http/metadata-ignored" "Treated as queryParams"
     @query
     @doc("昇順ascまたは降順descの指定。")
     sortOrder?: "asc" | "desc";
@@ -476,12 +471,10 @@ namespace BeautySalon.Models {
 
   @doc("期間条件で絞り込むための共通クエリモデル。")
   model DateRangeFilter {
-    #suppress "@typespec/http/metadata-ignored" "Treated as queryParams"
     @query
     @doc("検索対象期間の開始日時。")
     startDate?: utcDateTime;
 
-    #suppress "@typespec/http/metadata-ignored" "Treated as queryParams"
     @query
     @doc("検索対象期間の終了日時。")
     endDate?: utcDateTime;
@@ -489,12 +482,10 @@ namespace BeautySalon.Models {
 
   @doc("金額レンジで絞り込むための共通クエリモデル。")
   model PriceRangeFilter {
-    #suppress "@typespec/http/metadata-ignored" "Treated as queryParams"
     @query
     @doc("下限価格。未指定の場合は制限なし。")
     minPrice?: float32;
 
-    #suppress "@typespec/http/metadata-ignored" "Treated as queryParams"
     @query
     @doc("上限価格。未指定の場合は制限なし。")
     maxPrice?: float32;
