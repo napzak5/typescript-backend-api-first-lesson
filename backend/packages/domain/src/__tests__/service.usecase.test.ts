@@ -1709,6 +1709,23 @@ describe('DeleteServiceUseCase', () => {
     })
   })
 
+  it('refuses to delete a service that bookings have which are not finished as a conflict', async () => {
+    const dependencies = serviceDependencies(
+      deleting({ type: 'bookingsUnfinished' }),
+    )
+
+    const result = await remove(dependencies)
+
+    expect(result).toEqual({
+      type: 'error',
+      error: {
+        type: 'conflict',
+        message:
+          'The service cannot be deleted: bookings that are not finished refer to it',
+      },
+    })
+  })
+
   it('passes on a database error of the repository', async () => {
     const dependencies = serviceDependencies({
       delete: vi.fn(async () => databaseDown),

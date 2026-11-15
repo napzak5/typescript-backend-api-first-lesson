@@ -8,6 +8,7 @@ import {
   UpdateSalonUseCase,
 } from '../business-logic/salon'
 import type { Actor } from '../models/auth'
+import type { SalonDeletion } from '../repositories/salon.repository'
 import { DomainErrors } from '../shared'
 import { actors } from './auth-fixtures'
 import {
@@ -467,7 +468,7 @@ describe('DeleteSalonUseCase', () => {
 
   it('reports a salon that does not exist, or is already deleted, as not found', async () => {
     const salonRepository = repositoryWith({
-      delete: async () => Result.success(false),
+      delete: async () => Result.success<SalonDeletion>({ type: 'notFound' }),
     })
 
     const result = await new DeleteSalonUseCase({ salonRepository }).execute(
@@ -478,6 +479,27 @@ describe('DeleteSalonUseCase', () => {
     expect(result).toEqual({
       type: 'error',
       error: { type: 'notFound', entity: 'Salon', id: SALON_ID },
+    })
+  })
+
+  it('refuses to delete a salon that has bookings that are not finished as a conflict', async () => {
+    const salonRepository = repositoryWith({
+      delete: async () =>
+        Result.success<SalonDeletion>({ type: 'bookingsUnfinished' }),
+    })
+
+    const result = await new DeleteSalonUseCase({ salonRepository }).execute(
+      actors.admin,
+      SALON_ID,
+    )
+
+    expect(result).toEqual({
+      type: 'error',
+      error: {
+        type: 'conflict',
+        message:
+          'The salon cannot be deleted: bookings that are not finished refer to it',
+      },
     })
   })
 

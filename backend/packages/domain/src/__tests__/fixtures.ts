@@ -5,7 +5,10 @@ import type {
   DbOpeningHours,
   DbSalon,
 } from '../models/salon'
-import type { ISalonRepository } from '../repositories/salon.repository'
+import type {
+  ISalonRepository,
+  SalonDeletion,
+} from '../repositories/salon.repository'
 import type { DomainError } from '../shared'
 
 export const SALON_ID = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1b'
@@ -134,7 +137,9 @@ export const salonRepositoryWith = (
       Result.success({ salons: [stored], total: 1, hasMore: false }),
     ),
     update: vi.fn(async () => Result.success(stored)),
-    delete: vi.fn(async () => Result.success(true)),
+    delete: vi.fn(async () =>
+      Result.success<SalonDeletion>({ type: 'deleted' }),
+    ),
     ...overrides,
   }
 }

@@ -10,6 +10,7 @@ import type {
 } from '../models/customer'
 import type {
   CustomerCreation,
+  CustomerDeletion,
   CustomerProfileCreation,
   CustomerUpdate,
   ICustomerRepository,
@@ -246,7 +247,9 @@ const customerRepositoryWith = (
       customer: dbCustomer(),
     }),
   ),
-  delete: vi.fn(async () => Result.success(true)),
+  delete: vi.fn(async () =>
+    Result.success<CustomerDeletion>({ type: 'deleted' }),
+  ),
   createProfile: vi.fn(async () =>
     Result.success<CustomerProfileCreation>({
       type: 'created',
