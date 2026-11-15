@@ -262,6 +262,7 @@
 | 更新（全体の置き換え） | `PUT /api/v1/salons/{salonId}/staff/{id}/schedules` | `admin`、そのサロンの `owner` と `manager` |
 
 - 行のモデルは `StaffSchedule` で、リクエストとレスポンスの両方に使います（Salon の `OpeningHours`、サービスの `ServiceOption` と同じ、行のモデル）。プロパティ名と null の扱いは、`staff_schedules` のカラムと同じです
+- 行の時刻（`startTime`、`endTime`、`breakStartTime`、`breakEndTime`）は、スタッフのサロンのタイムゾーン（`salons.timezone`）での、その日の時刻です。行は、自分のタイムゾーンを持ちません（サロンの営業時間と同じ。[来店日とサロンのタイムゾーン](./bookings.md#来店日とサロンのタイムゾーン)）
 - 行の `id` は出しません。更新のたびに行を作り直すので、ID は続きません。行を区別するのは、曜日（毎週の行）と日付（単日の行）です
 - 以前のコントラクトは、このルートを `availability`（`getAvailability`、`updateAvailability`）と呼んでいました。返すのは空き状況ではなく勤務スケジュールの行で、空き状況（予約できる枠）は予約のコントラクトに `available-slots` として別にあるので、名前を `schedules` に変えました
 

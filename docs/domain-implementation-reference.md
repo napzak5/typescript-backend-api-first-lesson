@@ -324,7 +324,7 @@ export const atLeastOneProperty = (
 - **Cross-field rules use `.check()`** and push an issue with the `path` of the offending property, so the client learns which field to fix.
 - **The update schema is derived** from the create schema with `exactPartial()`: every key may be absent, and a key that is present is checked by the same rule as on create. Its one rule of its own, `atLeastOneProperty`, rejects an empty request.
 - **`salonSearchRequestSchema`** validates the list parameters, including `cursor: salonIdSchema.exactOptional()`.
-- **`storedBusinessHoursSchema`** is the shape of the `businessHours` JSON column without the business rules. The request schema extends it with the rules; the read mapper uses it as it is, because stored data is checked for shape only.
+- **`storedBusinessHoursSchema`** is the shape of the `businessHours` JSON column without the business rules. The request schema extends it with the rules; the read mapper uses it as it is, because stored data is checked for shape only. A day of the weekly hours has no time zone of its own: its slots are times in the `timezone` of the salon, as the times of a calendar row (`openingHours`) are, so the hours and the salon cannot disagree. The entries once had the key, and the migration `202611160500_business_hours_without_time_zone.sql` takes it out of the values that are stored: a stored value with a key the model does not have is a salon that cannot be read.
 
 Schemas are run through `parseWith(schema, input, message)` in `backend/packages/domain/src/shared/validation.ts`. It takes `unknown`, returns `Result<T, DomainError>`, and reports every broken rule at once, each as `{ field, rule, message }`.
 
