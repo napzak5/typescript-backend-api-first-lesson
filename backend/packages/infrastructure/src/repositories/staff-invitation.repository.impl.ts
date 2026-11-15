@@ -13,26 +13,22 @@ import {
   type HeldStaffInvitation,
   type IStaffInvitationRepository,
   type IssuedStaffInvitation,
+  isWithoutSalon,
+  type JoinedStaffInvitation,
   type RevokedStaffInvitation,
   type SalonId,
   type StaffId,
   type StaffInvitationAcceptance,
   type StaffInvitationIssue,
   type UsableStaffInvitation,
+  type UserId,
 } from '@beauty-salon-backend/domain'
 import { Result } from '@beauty-salon-backend/utility'
-import { and, eq, gt, isNull, sql } from 'drizzle-orm'
+import { and, eq, gt, isNull, or, sql } from 'drizzle-orm'
 import { attempt } from '../database/attempt'
 import type { Database, DatabaseExecutor } from '../database/index'
-import { userNotDeleted } from './account'
-
-/** The staff member, if the salon has them and they are not deleted. */
-const staffMemberOf = (salonId: SalonId, staffId: StaffId) =>
-  and(
-    eq(staff.id, staffId),
-    eq(staff.salonId, salonId),
-    isNull(staff.deletedAt),
-  )
+import { salonOfStaff, staffOfUser, userNotDeleted } from './account'
+import { staffMemberOf } from './staff-member'
 
 /**
  * Whether the staff member has an account. The ledger says so in
@@ -239,9 +235,13 @@ export class StaffInvitationRepository implements IStaffInvitationRepository {
           return { type: 'unusable' }
         }
 
+        // The account of the address, read with its salon as the
+        // authentication reads it.
         const [inTheWay] = await this.db
-          .select({ id: users.id })
+          .select({ role: users.role, staffSalonId: salons.id })
           .from(users)
+          .leftJoin(staff, staffOfUser)
+          .leftJoin(salons, salonOfStaff)
           .where(
             and(
               eq(users.email, invitation.email),
@@ -250,9 +250,12 @@ export class StaffInvitationRepository implements IStaffInvitationRepository {
             ),
           )
           .limit(1)
+        if (inTheWay === undefined) {
+          return { type: 'usable', invitation }
+        }
 
-        return inTheWay === undefined
-          ? { type: 'usable', invitation }
+        return isWithoutSalon(inTheWay.role, inTheWay.staffSalonId)
+          ? { type: 'accountMayJoin', invitation }
           : { type: 'accountExists', invitation }
       },
     )
@@ -334,6 +337,106 @@ export class StaffInvitationRepository implements IStaffInvitationRepository {
           .where(eq(staffInvitations.id, invitation.id))
 
         return { type: 'accepted' }
+      }),
+    )
+  }
+
+  async join(
+    tokenHash: string,
+    userId: UserId,
+    now: string,
+  ): Promise<Result<JoinedStaffInvitation, DomainError>> {
+    return attempt('Failed to join staff invitation', () =>
+      this.db.transaction(async (tx): Promise<JoinedStaffInvitation> => {
+        // Whose invitation the token is. Nothing is decided from this
+        // read: it only names the staff member to lock.
+        const [named] = await tx
+          .select({ staffId: staffInvitations.staffId })
+          .from(staffInvitations)
+          .where(eq(staffInvitations.tokenHash, tokenHash))
+          .limit(1)
+        if (named === undefined) {
+          return { type: 'unusable' }
+        }
+        // Two staff members are locked: the one the account joins, and
+        // the one it names now and leaves. In the order of their IDs, so
+        // that two joinings never wait for each other; and before the
+        // user, as by every write that links or unlinks.
+        const locked = await tx
+          .select({ id: staff.id })
+          .from(staff)
+          .where(
+            or(
+              eq(staff.id, named.staffId),
+              sql`${staff.id} = (select ${users.staffId} from ${users} where ${users.id} = ${userId})`,
+            ),
+          )
+          .orderBy(staff.id)
+          .for('update')
+        // The user is locked as well: of two joinings of one account that
+        // has no staff member, the second waits here and sees the first.
+        await tx
+          .select({ id: users.id })
+          .from(users)
+          .where(eq(users.id, userId))
+          .for('update')
+
+        // Read once the locks are held.
+        const invitation = await usableInvitation(tx, tokenHash, now)
+        if (invitation === null) {
+          return { type: 'unusable' }
+        }
+        const [account] = await tx
+          .select({
+            email: users.email,
+            role: users.role,
+            staffId: users.staffId,
+            staffSalonId: salons.id,
+          })
+          .from(users)
+          .leftJoin(staff, staffOfUser)
+          .leftJoin(salons, salonOfStaff)
+          .where(and(eq(users.id, userId), userNotDeleted))
+          .limit(1)
+        if (account === undefined) {
+          return { type: 'accountNotFree' }
+        }
+        if (account.email !== invitation.email) {
+          return { type: 'otherAddress' }
+        }
+        // A staff member the account names and that was not locked is one
+        // it was linked to a moment ago, by a request that arrived
+        // together with this one.
+        const leaves =
+          account.staffId === null ||
+          locked.some((member) => member.id === account.staffId)
+        if (!leaves || !isWithoutSalon(account.role, account.staffSalonId)) {
+          return { type: 'accountNotFree' }
+        }
+
+        // The ledger the account leaves names it no more. A staff member
+        // that is deleted keeps what it had.
+        await tx
+          .update(staff)
+          .set({ userId: null, updatedAt: sql`now()` })
+          .where(and(eq(staff.userId, userId), isNull(staff.deletedAt)))
+        await tx
+          .update(users)
+          .set({
+            staffId: invitation.staffId,
+            role: invitation.role,
+            updatedAt: sql`now()`,
+          })
+          .where(eq(users.id, userId))
+        await tx
+          .update(staff)
+          .set({ userId, updatedAt: sql`now()` })
+          .where(eq(staff.id, invitation.staffId))
+        await tx
+          .delete(staffInvitations)
+          .where(eq(staffInvitations.id, invitation.id))
+
+        return { type: 'joined' }
       }),
     )
   }

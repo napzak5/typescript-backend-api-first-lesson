@@ -3,7 +3,8 @@
 /**
  * Checks that the API models agree with the database tables behind them:
  * same property names, same nullability, the same values for a column of an
- * enum type, and the optionality that the kind of model calls for.
+ * enum type (or some of them, where a rule says so), and the optionality that
+ * the kind of model calls for.
  *
  * Every model listed in `api-consistency-rules.ts` is compared; any difference
  * fails the check.

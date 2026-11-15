@@ -1,3 +1,4 @@
+export { isWithoutSalon } from './_shared/actor'
 export type { AuthUseCaseDependencies } from './_shared/dependencies'
 export { AuthenticateUseCase } from './authenticate.usecase'
 export { ChangePasswordUseCase } from './change-password.usecase'

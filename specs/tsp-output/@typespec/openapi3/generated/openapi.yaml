@@ -3068,7 +3068,7 @@ paths:
     post:
       operationId: AuthCrud_acceptStaffInvitation
       summary: Accept a staff invitation
-      description: メールで受け取ったトークンを使ってスタッフへの招待を受け入れ、ログインアカウントを作ります。アカウントのメールアドレスは招待メールの宛先、ロールは招待のロールで、招待されたスタッフに紐づきます。トークンを受け取れたことがメールアドレスの確認になるので、アカウントは確認済み(active)で作られます。宛先のメールアドレスで登録され、メールアドレスが未確認のままのアカウントがある場合は、そのアカウントを招待のアカウントにします(パスワードを置き換えます)。成功するとトークンは使用できなくなります。セッションは発行しません。トークンが使えない場合と、パスワードが規則を満たさない場合は400を返します。宛先のメールアドレスに、未確認でないアカウントがすでにある場合は409を返し、招待は残ります。
+      description: メールで受け取ったトークンを使ってスタッフへの招待を受け入れ、ログインアカウントを作ります。アカウントのメールアドレスは招待メールの宛先、ロールは招待のロールで、招待されたスタッフに紐づきます。トークンを受け取れたことがメールアドレスの確認になるので、アカウントは確認済み(active)で作られます。宛先のメールアドレスで登録され、メールアドレスが未確認のままのアカウントがある場合は、そのアカウントを招待のアカウントにします(パスワードを置き換えます)。成功するとトークンは使用できなくなります。セッションは発行しません。トークンが使えない場合と、パスワードが規則を満たさない場合は400を返します。宛先のメールアドレスに、未確認でないアカウントがすでにある場合は409を返し、招待は残ります(招待に参加できるアカウントでも同じです。そのアカウントは、ログインして joinStaffInvitation を使います)。
       parameters: []
       responses:
         '204':
@@ -3128,11 +3128,94 @@ paths:
               $ref: '#/components/schemas/Models.AuthStaffInvitationAcceptRequest'
       security:
         - {}
+  /api/v1/auth/staff-invitation/join:
+    post:
+      operationId: AuthCrud_joinStaffInvitation
+      summary: Join a staff invitation with the signed-in account
+      description: ログインしているアカウントで、メールで受け取ったスタッフへの招待に参加します。アカウントを招待されたスタッフに紐づけ、ロールを招待のロールにします。成功するとトークンは使用できなくなります。参加できるのは、サロンのロール(owner、manager、staff)を持ち、どのサロンにも属していないアカウント(紐づけを外された、紐づいているスタッフが削除された・無効になった、そのサロンが削除された)です。顧客と管理者のアカウントには403を返します。サロンに属しているアカウントと、招待の宛先がアカウントのメールアドレスでない場合は409を返し、招待は残ります。トークンが使えない場合は、理由を区別せずに400を返します。
+      parameters: []
+      responses:
+        '204':
+          description: 'There is no content to send for this request, but the headers may be useful. '
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '401':
+          description: |-
+            認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
+            ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
+            WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+          headers:
+            WWW-Authenticate:
+              required: true
+              description: Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '403':
+          description: 認証されているが、この操作を行う権限がない (403)。
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '413':
+          description: リクエスト本文がサイズ上限を超えている (413)。
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '415':
+          description: リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '429':
+          description: |-
+            リクエスト数の上限を超えたときのエラーレスポンス (429)。
+            クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+          headers:
+            Retry-After:
+              required: true
+              description: 再試行できるようになるまでの秒数。
+              schema:
+                type: integer
+                format: int32
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '500':
+          description: サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Models.AuthStaffInvitationJoinRequest'
   /api/v1/auth/staff-invitation/verify:
     post:
       operationId: AuthCrud_verifyStaffInvitation
       summary: Verify a staff invitation token
-      description: メールで受け取ったスタッフへの招待のトークンが使えるかどうかを確認し、招待の内容を返します。パスワードを入力する画面が、入力の前に、招待の宛先(作られるアカウントのメールアドレス)とロールを表示するためのものです。トークンは消費しません。トークンが存在しない、有効期限が切れている、取り消された、新しい招待で置き換えられた、スタッフが招待できる状態でなくなった(削除された、無効になった、アカウントに紐づいた、台帳のメールアドレスが変わった)場合は、理由を区別せずに400を返します。宛先のメールアドレスに、未確認でないアカウントがすでにある場合は409を返します。
+      description: メールで受け取ったスタッフへの招待のトークンが使えるかどうかを確認し、招待の内容を返します。パスワードを入力する画面が、入力の前に、招待の宛先(作られるアカウントのメールアドレス)とロールを表示するためのものです。トークンは消費しません。トークンが存在しない、有効期限が切れている、取り消された、新しい招待で置き換えられた、スタッフが招待できる状態でなくなった(削除された、無効になった、アカウントに紐づいた、台帳のメールアドレスが変わった)場合は、理由を区別せずに400を返します。レスポンスの links は、招待の受け方を示します。宛先のメールアドレスにアカウントがない(または、未確認の登録だけがある)場合は accept(パスワードを設定してアカウントを作る)、宛先のメールアドレスに、サロンのロール(owner、manager、staff)を持ち、どのサロンにも属していないアカウントがある場合は join(そのアカウントでログインして参加する)です。宛先のメールアドレスに、それ以外のアカウント(顧客、管理者、サロンに属しているスタッフ)がある場合は409を返します。
       parameters: []
       responses:
         '200':
@@ -15781,6 +15864,315 @@ paths:
                 $ref: '#/components/schemas/Models.ProblemDetails'
       tags:
         - Staff
+  /api/v1/salons/{salonId}/staff/{id}/account:
+    get:
+      operationId: StaffAccounts_get
+      summary: Get the account of a staff member
+      description: スタッフに紐づいているアカウントを取得します。スタッフにアカウントがない場合(招待を受け入れていない、紐づけを外した)は404を返します。
+      parameters:
+        - name: salonId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Models.SalonId'
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Models.StaffId'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                  - links
+                properties:
+                  data:
+                    allOf:
+                      - $ref: '#/components/schemas/Models.StaffAccountResponse'
+                    description: レスポンスの主体となるビジネスデータ。
+                  meta:
+                    type: object
+                    allOf:
+                      - $ref: '#/components/schemas/Models.ResponseMeta'
+                    nullable: true
+                    description: リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull
+                  links:
+                    type: object
+                    additionalProperties:
+                      type: string
+                    nullable: true
+                    description: 関連リソースや次アクションへのリンク情報。リンクがない場合はnull
+                description: |-
+                  API 成功レスポンスの共通ラッパーモデル。
+                  サロン検索や予約登録など多様なユースケースで応答形式を統一し、クライアント実装を簡潔に保つ。
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '401':
+          description: |-
+            認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
+            ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
+            WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+          headers:
+            WWW-Authenticate:
+              required: true
+              description: Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '403':
+          description: 認証されているが、この操作を行う権限がない (403)。
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '429':
+          description: |-
+            リクエスト数の上限を超えたときのエラーレスポンス (429)。
+            クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+          headers:
+            Retry-After:
+              required: true
+              description: 再試行できるようになるまでの秒数。
+              schema:
+                type: integer
+                format: int32
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '500':
+          description: サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+      tags:
+        - Staff
+    patch:
+      operationId: StaffAccounts_update
+      summary: Change the role of the account of a staff member
+      description: スタッフに紐づいているアカウントのロールを変更します。変更は、そのアカウントの次のリクエストから有効で、セッションは無効にしません。いまと同じロールを指定した場合も200を返します。owner のロールを与えられるのは admin だけで、サロンの owner が指定すると403を返します。自分のアカウント(リクエストしたユーザーが紐づいているスタッフのアカウント)のロールを変えようとすると409を返します。
+      parameters:
+        - name: salonId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Models.SalonId'
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Models.StaffId'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                  - links
+                properties:
+                  data:
+                    allOf:
+                      - $ref: '#/components/schemas/Models.StaffAccountResponse'
+                    description: レスポンスの主体となるビジネスデータ。
+                  meta:
+                    type: object
+                    allOf:
+                      - $ref: '#/components/schemas/Models.ResponseMeta'
+                    nullable: true
+                    description: リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull
+                  links:
+                    type: object
+                    additionalProperties:
+                      type: string
+                    nullable: true
+                    description: 関連リソースや次アクションへのリンク情報。リンクがない場合はnull
+                description: |-
+                  API 成功レスポンスの共通ラッパーモデル。
+                  サロン検索や予約登録など多様なユースケースで応答形式を統一し、クライアント実装を簡潔に保つ。
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '401':
+          description: |-
+            認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
+            ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
+            WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+          headers:
+            WWW-Authenticate:
+              required: true
+              description: Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '403':
+          description: 認証されているが、この操作を行う権限がない (403)。
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '413':
+          description: リクエスト本文がサイズ上限を超えている (413)。
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '415':
+          description: リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '429':
+          description: |-
+            リクエスト数の上限を超えたときのエラーレスポンス (429)。
+            クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+          headers:
+            Retry-After:
+              required: true
+              description: 再試行できるようになるまでの秒数。
+              schema:
+                type: integer
+                format: int32
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '500':
+          description: サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+      tags:
+        - Staff
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Models.StaffAccountUpdateRequest'
+    delete:
+      operationId: StaffAccounts_delete
+      summary: Unlink the account of a staff member
+      description: スタッフとアカウントの紐づけを外します。アカウントとスタッフは残ります。アカウントは、次のリクエストからサロンへの権限を失い(ログインはできます)、スタッフは、また招待できるようになります。自分のアカウントの紐づけを外そうとすると409を返します。
+      parameters:
+        - name: salonId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Models.SalonId'
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Models.StaffId'
+      responses:
+        '204':
+          description: 'There is no content to send for this request, but the headers may be useful. '
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '401':
+          description: |-
+            認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
+            ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
+            WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+          headers:
+            WWW-Authenticate:
+              required: true
+              description: Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '403':
+          description: 認証されているが、この操作を行う権限がない (403)。
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '429':
+          description: |-
+            リクエスト数の上限を超えたときのエラーレスポンス (429)。
+            クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+          headers:
+            Retry-After:
+              required: true
+              description: 再試行できるようになるまでの秒数。
+              schema:
+                type: integer
+                format: int32
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '500':
+          description: サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+      tags:
+        - Staff
   /api/v1/salons/{salonId}/staff/{id}/invitation:
     get:
       operationId: StaffInvitations_get
@@ -19979,6 +20371,17 @@ components:
           maxLength: 128
           description: 設定するパスワード。規則は登録時のパスワード(AuthRegisterRequest.password)と同じ
       description: スタッフへの招待を受け入れて、ログインアカウントを作るためのリクエスト。
+    Models.AuthStaffInvitationJoinRequest:
+      type: object
+      required:
+        - token
+      properties:
+        token:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: メールで受け取った招待トークン。
+      description: ログインしているアカウントで、スタッフへの招待に参加するためのリクエスト。
     Models.AuthStaffInvitationVerifyRequest:
       type: object
       required:
@@ -26048,7 +26451,7 @@ components:
         - manager
         - staff
       description: |-
-        サロンロール区分 - サロンに属するアカウントのロール。スタッフへの招待で与える
+        サロンロール区分 - サロンに属するアカウントのロール。スタッフへの招待で与え、スタッフのアカウントの操作で変える
 
         owner: オーナー - サロンの所有者。スタッフ台帳を扱い、スタッフを招待できる
         manager: マネージャー - サロンの管理業務を担当する
@@ -27121,6 +27524,65 @@ components:
       description: |-
         共有ファイルレスポンス - 共有リンクの閲覧者に示す、公開対象ファイルのメタ情報を返す。
         認証なしで取得できるため、保存先のキーやアップロードしたユーザーなどの内部情報は含めない
+    Models.StaffAccountResponse:
+      type: object
+      required:
+        - id
+        - email
+        - role
+        - status
+        - twoFactorStatus
+        - lastLoginAt
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          allOf:
+            - $ref: '#/components/schemas/Models.UserId'
+          description: アカウント(ユーザー)を一意に識別するID。台帳のスタッフの userId と同じ値
+        email:
+          type: string
+          description: ログインに利用するメールアドレス。招待を受け入れた時点の宛先で、そのあと台帳のメールアドレスを変えても変わらない
+        role:
+          allOf:
+            - $ref: '#/components/schemas/Models.SalonRoleType'
+          description: アカウントのロール。サロンに対してできることを決める
+        status:
+          allOf:
+            - $ref: '#/components/schemas/Models.UserAccountStatusType'
+          description: アカウントの稼働状態
+        twoFactorStatus:
+          allOf:
+            - $ref: '#/components/schemas/Models.TwoFactorStatusType'
+          description: 2要素認証の設定状態。enabled のとき、ログインにコードが必要
+        lastLoginAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: 直近のログイン日時 (UTC)。一度もログインしていない場合はnull
+        createdAt:
+          type: string
+          format: date-time
+          description: アカウントの作成日時 (UTC)
+        updatedAt:
+          type: string
+          format: date-time
+          description: アカウントの最終更新日時 (UTC)
+      description: |-
+        スタッフのアカウント - スタッフに紐づいているログインアカウント。users テーブルの1行のうち、サロンの側に見せるカラムを返す。
+        スタッフのアカウントは、そのスタッフを staffId で指している、削除されていないユーザー。1人のスタッフが持てるアカウントは1つまで。
+        パスワード、トークンのハッシュ、2要素認証のシークレット、ログインの失敗回数、IPアドレスは返さない。
+        プロパティ名と null 許可は DB カラムと一致させている。role は、カラムの列挙(user_role)のうち、スタッフを指すアカウントが持つ3つに限る
+    Models.StaffAccountUpdateRequest:
+      type: object
+      properties:
+        role:
+          allOf:
+            - $ref: '#/components/schemas/Models.SalonRoleType'
+          description: 新しいロール。owner を指定できるのは admin だけ
+      description: |-
+        スタッフのアカウントの更新リクエスト - 変えられるのはロールだけ。
+        Update のモデルなのでキーは省略できるが、プロパティが1つもない本文は400
     Models.StaffCreateRequest:
       type: object
       required:

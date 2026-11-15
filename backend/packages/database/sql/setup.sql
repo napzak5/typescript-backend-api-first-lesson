@@ -775,6 +775,7 @@ CREATE TABLE "users" (
 	CONSTRAINT "users_email_lower_case" CHECK ((email)::text = lower((email)::text)),
 	CONSTRAINT "users_email_verification_token_complete" CHECK (("emailVerificationTokenHash" IS NULL) = ("emailVerificationExpiry" IS NULL)),
 	CONSTRAINT "users_password_reset_token_complete" CHECK (("passwordResetTokenHash" IS NULL) = ("passwordResetExpiry" IS NULL)),
+	CONSTRAINT "users_staff_needs_salon_role" CHECK (("staffId" IS NULL) OR (role = ANY (ARRAY['owner'::user_role, 'manager'::user_role, 'staff'::user_role]))),
 	CONSTRAINT "users_two_factor_secret_matches_status" CHECK (("twoFactorStatus" = 'disabled'::two_factor_status) = ("twoFactorSecret" IS NULL)),
 	CONSTRAINT "users_two_factor_step_needs_secret" CHECK (("twoFactorLastUsedStep" IS NULL) OR ("twoFactorSecret" IS NOT NULL))
 );

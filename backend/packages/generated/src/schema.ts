@@ -999,7 +999,7 @@ export type SalesReportExportFormatType = z.infer<typeof SalesReportExportFormat
 
 /**
  * @description
- * サロンロール区分 - サロンに属するアカウントのロール。スタッフへの招待で与える
+ * サロンロール区分 - サロンに属するアカウントのロール。スタッフへの招待で与え、スタッフのアカウントの操作で変える
  *
  *
  * owner: オーナー - サロンの所有者。スタッフ台帳を扱い、スタッフを招待できる
@@ -1011,7 +1011,7 @@ export type SalesReportExportFormatType = z.infer<typeof SalesReportExportFormat
 export const SalonRoleTypeSchema = z.enum(['owner', 'manager', 'staff'])
 /**
  * @description
- * サロンロール区分 - サロンに属するアカウントのロール。スタッフへの招待で与える
+ * サロンロール区分 - サロンに属するアカウントのロール。スタッフへの招待で与え、スタッフのアカウントの操作で変える
  *
  *
  * owner: オーナー - サロンの所有者。スタッフ台帳を扱い、スタッフを招待できる

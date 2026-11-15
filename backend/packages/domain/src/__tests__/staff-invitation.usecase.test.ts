@@ -5,6 +5,7 @@ import {
   CreateStaffInvitationUseCase,
   DeleteStaffInvitationUseCase,
   GetStaffInvitationUseCase,
+  JoinStaffInvitationUseCase,
   type StaffInvitationUseCaseDependencies,
   VerifyStaffInvitationUseCase,
 } from '../business-logic/staff-invitation'
@@ -15,6 +16,7 @@ import type {
   HeldStaffInvitation,
   IStaffInvitationRepository,
   IssuedStaffInvitation,
+  JoinedStaffInvitation,
   RevokedStaffInvitation,
   UsableStaffInvitation,
 } from '../repositories/staff-invitation.repository'
@@ -25,6 +27,7 @@ import {
   NOW,
   PUBLIC_APP_URL,
   secondsFromNow,
+  USER_ID,
 } from './auth-fixtures'
 import { brokenRules, OTHER_SALON_ID, SALON_ID } from './fixtures'
 import { STAFF_MEMBER_ID } from './staff-fixtures'
@@ -80,6 +83,13 @@ const addressHasAccount = {
     value: INVITED_EMAIL,
   },
 }
+
+const belongsToStaff = Result.error(
+  DomainErrors.conflict('Your account already belongs to a staff member'),
+)
+const sentToAnotherAddress = Result.error(
+  DomainErrors.conflict('The invitation was sent to another address'),
+)
 
 /** A password that is long enough and on no blocklist. */
 const NEW_PASSWORD = 'violet tram under the bridge'
@@ -758,12 +768,48 @@ describe('VerifyStaffInvitationUseCase', () => {
       findUsable: vi.fn(async () => Result.success(found)),
     })
 
-  it('returns the invitation of a token that can be used, without the hash of the token', async () => {
+  it('returns the invitation of a token that can be used, without the hash of the token, as one to accept', async () => {
     const result = await verify(staffInvitationDependencies())
 
-    expect(result).toEqual({ type: 'success', data: apiStaffInvitation() })
+    expect(result).toEqual({
+      type: 'success',
+      data: { invitation: apiStaffInvitation(), next: 'accept' },
+    })
     expect(JSON.stringify(result)).not.toContain('sha256')
   })
+
+  it('returns the invitation as one to join when the address has an account that joins', async () => {
+    const dependencies = withFound({
+      type: 'accountMayJoin',
+      invitation: dbStaffInvitation({ role: 'manager' }),
+    })
+
+    const result = await verify(dependencies)
+
+    expect(result).toEqual({
+      type: 'success',
+      data: {
+        invitation: apiStaffInvitation({ role: 'manager' }),
+        next: 'join',
+      },
+    })
+    expect(JSON.stringify(result)).not.toContain('sha256')
+  })
+
+  it.each<UsableStaffInvitation['type']>(['usable', 'accountMayJoin'])(
+    'reports a stored invitation that does not fit the API as a database error, when it is %s',
+    async (type) => {
+      const dependencies = withFound({
+        type,
+        invitation: dbStaffInvitation({ expiresAt: 'next week' }),
+      })
+
+      expect(await verify(dependencies)).toMatchObject({
+        type: 'error',
+        error: { type: 'database' },
+      })
+    },
+  )
 
   it('looks for the hash of the token, at the time of the clock, and writes nothing', async () => {
     const dependencies = staffInvitationDependencies()
@@ -975,6 +1021,18 @@ describe('AcceptStaffInvitationUseCase', () => {
     ])
   })
 
+  it('tells of the account also when it is one that joins: accepting creates an account, and the address has one', async () => {
+    const dependencies = withRepository(
+      found({ type: 'accountMayJoin', invitation: dbStaffInvitation() }),
+    )
+
+    expect(await accept(dependencies)).toEqual(addressHasAccount)
+    expect(calls(dependencies)).toEqual([
+      'tokens.hashOf',
+      'invitations.findUsable',
+    ])
+  })
+
   it('tells of the account before it looks at the password: no password would work', async () => {
     const dependencies = withRepository(
       found({ type: 'accountExists', invitation: dbStaffInvitation() }),
@@ -1089,7 +1147,176 @@ describe('AcceptStaffInvitationUseCase', () => {
   })
 })
 
+describe('JoinStaffInvitationUseCase', () => {
+  const join = (
+    dependencies: StaffInvitationUseCaseDependencies,
+    actor: Actor = actors.withoutScope,
+    input: unknown = { token: 'mailed-token' },
+  ) => new JoinStaffInvitationUseCase(dependencies).execute(actor, input)
+
+  /** Dependencies in which joining has the given outcome. */
+  const withJoined = (
+    outcome: JoinedStaffInvitation,
+  ): StaffInvitationUseCaseDependencies =>
+    staffInvitationDependencies({
+      join: vi.fn(async () => Result.success(outcome)),
+    })
+
+  it("links the actor's account by the hash of the token, at the time of the clock, and returns nothing", async () => {
+    const dependencies = staffInvitationDependencies()
+
+    const result = await join(dependencies)
+
+    expect(result).toEqual({ type: 'success', data: null })
+    expect(dependencies.staffInvitationRepository.join).toHaveBeenCalledWith(
+      'sha256(mailed-token)',
+      USER_ID,
+      NOW.toISOString(),
+    )
+    expect(calls(dependencies)).toEqual(['tokens.hashOf', 'invitations.join'])
+  })
+
+  it.each<[string, Actor]>([
+    ['an administrator', actors.admin],
+    ['a customer', actors.customer],
+    ['a customer without a profile', actors.customerWithoutProfile],
+  ])('refuses %s before the request is read', async (_who, actor) => {
+    const dependencies = staffInvitationDependencies()
+
+    expect(await join(dependencies, actor)).toEqual(forbidden)
+    expect(await join(dependencies, actor, {})).toEqual(forbidden)
+    expect(calls(dependencies)).toEqual([])
+  })
+
+  it.each<[string, Actor]>([
+    ['an owner', actors.ofSalon('owner')],
+    ['a manager', actors.ofSalon('manager')],
+    ['a staff member', actors.ofSalon('staff')],
+    [
+      'a staff member of another salon',
+      actors.ofSalon('staff', OTHER_SALON_ID),
+    ],
+  ])(
+    'tells %s that the account belongs to a staff member, and looks for no invitation',
+    async (_who, actor) => {
+      const dependencies = staffInvitationDependencies()
+
+      expect(await join(dependencies, actor)).toEqual(belongsToStaff)
+      expect(calls(dependencies)).toEqual([])
+    },
+  )
+
+  it('reads the request before it tells an account that it has a salon', async () => {
+    const result = await join(
+      staffInvitationDependencies(),
+      actors.ofSalon('staff'),
+      {},
+    )
+
+    expect(rulesOf(result)).toEqual(['token:invalid_type'])
+  })
+
+  it.each([
+    ['a missing token', {}, ['token:invalid_type']],
+    ['an empty token', { token: '' }, ['token:too_small']],
+    [
+      'a token over 255 characters',
+      { token: 't'.repeat(256) },
+      ['token:too_big'],
+    ],
+    [
+      'a password next to the token',
+      { token: 'mailed-token', password: NEW_PASSWORD },
+      ['password:unrecognized_keys'],
+    ],
+    [
+      'a role next to the token',
+      { token: 'mailed-token', role: 'owner' },
+      ['role:unrecognized_keys'],
+    ],
+    ['no request', undefined, [':invalid_type']],
+  ])(
+    'rejects %s without looking for an invitation',
+    async (_case, input, expected) => {
+      const dependencies = staffInvitationDependencies()
+
+      const result = await new JoinStaffInvitationUseCase(dependencies).execute(
+        actors.withoutScope,
+        input,
+      )
+
+      expect(rulesOf(result)).toEqual(expected)
+      expect(result).toMatchObject({
+        error: { message: 'Invalid staff invitation' },
+      })
+      expect(calls(dependencies)).toEqual([])
+    },
+  )
+
+  it('gives the one answer for a token that cannot be used', async () => {
+    expect(await join(withJoined({ type: 'unusable' }))).toEqual(refused)
+  })
+
+  it('tells the holder of the token that the invitation went to another address', async () => {
+    expect(await join(withJoined({ type: 'otherAddress' }))).toEqual(
+      sentToAnotherAddress,
+    )
+  })
+
+  it('tells the account that it belongs to a staff member when it was linked before it was written', async () => {
+    expect(await join(withJoined({ type: 'accountNotFree' }))).toEqual(
+      belongsToStaff,
+    )
+  })
+
+  it('passes on a failure of the repository', async () => {
+    const dependencies = staffInvitationDependencies({
+      join: vi.fn(async () => databaseDown),
+    })
+
+    expect(await join(dependencies)).toEqual(databaseDown)
+  })
+
+  it('leaves every decision about the invitation to the one write: nothing is looked for first', async () => {
+    const dependencies = staffInvitationDependencies()
+
+    await join(dependencies)
+
+    expect(
+      dependencies.staffInvitationRepository.findUsable,
+    ).not.toHaveBeenCalled()
+    expect(dependencies.staffInvitationRepository.accept).not.toHaveBeenCalled()
+  })
+
+  it('sends no mail, hashes no password and issues no token', async () => {
+    const dependencies = staffInvitationDependencies()
+
+    await join(dependencies)
+
+    expect(mailsOf(dependencies)).toEqual([])
+    expect(dependencies.passwordHasher.hash).not.toHaveBeenCalled()
+    expect(dependencies.tokenIssuer.issue).not.toHaveBeenCalled()
+  })
+})
+
 describe('what a result of the repository cannot be mistaken for', () => {
+  it.each<[string, JoinedStaffInvitation]>([
+    ['a token that cannot be used', { type: 'unusable' }],
+    ['an invitation to another address', { type: 'otherAddress' }],
+    ['an account that has a salon', { type: 'accountNotFree' }],
+  ])('does not report %s as a joined invitation', async (_case, outcome) => {
+    const dependencies = staffInvitationDependencies({
+      join: vi.fn(async () => Result.success(outcome)),
+    })
+
+    const result = await new JoinStaffInvitationUseCase(dependencies).execute(
+      actors.withoutScope,
+      { token: 'mailed-token' },
+    )
+
+    expect(result.type).toBe('error')
+  })
+
   it.each<[string, RevokedStaffInvitation]>([
     ['no staff member', { type: 'staffNotFound' }],
     ['no invitation', { type: 'none' }],

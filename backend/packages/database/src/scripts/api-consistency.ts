@@ -3,9 +3,10 @@
  *
  * The database is the source of truth, so for every API property that has a
  * column the two must agree on the name, on whether null is allowed and, for
- * a column of an enum type, on the values. The
- * functions here are pure; `check-api-consistency.ts` feeds them the Drizzle
- * schema and the generated OpenAPI document.
+ * a column of an enum type, on the values. A rule can say that a property has
+ * only some of those values. The functions here are pure;
+ * `check-api-consistency.ts` feeds them the Drizzle schema and the generated
+ * OpenAPI document.
  */
 
 /** What the comparison needs to know about a column. */
@@ -53,6 +54,13 @@ export type ModelRule = {
    * and not an oversight.
    */
   omittedColumns?: readonly string[]
+  /**
+   * Properties limited to some of the values of the enum type of their
+   * column, because the rows the model is about have only those. Such a
+   * property must have some of the values and not all of them. Every other
+   * property of an enum column must have exactly its values.
+   */
+  narrowed?: readonly string[]
 }
 
 type FindingKind =
@@ -63,6 +71,7 @@ type FindingKind =
   | 'shouldBeNullable'
   | 'shouldNotBeNullable'
   | 'enumMismatch'
+  | 'enumNotNarrowed'
 
 export type Finding = { model: string; property: string; kind: FindingKind }
 
@@ -82,6 +91,8 @@ export const describeFinding = (finding: Finding): string => {
     shouldBeNullable: 'must allow null because the column does',
     shouldNotBeNullable: 'must not allow null because the column is NOT NULL',
     enumMismatch: 'must have exactly the values of the enum type of its column',
+    enumNotNarrowed:
+      'must have some of the values of the enum type of its column, and not all of them',
   }
   return `${finding.model}.${finding.property} ${descriptions[finding.kind]}`
 }
@@ -95,6 +106,25 @@ const hasValuesOf = (
   new Set(enumValues).symmetricDifference(new Set(property.enumValues)).size ===
     0
 
+/**
+ * Whether the property is limited to some of the values of the enum type,
+ * and not to all of them.
+ */
+const hasPartOfValuesOf = (
+  enumValues: readonly string[],
+  property: ApiProperty,
+): boolean => {
+  if (property.enumValues === null) {
+    return false
+  }
+  const allowed = new Set(property.enumValues)
+  const known = new Set(enumValues)
+
+  return (
+    allowed.size > 0 && allowed.size < known.size && allowed.isSubsetOf(known)
+  )
+}
+
 export const compareModel = (
   rule: ModelRule,
   columns: ReadonlyMap<string, ColumnInfo>,
@@ -104,6 +134,7 @@ export const compareModel = (
     ...(rule.embedded ?? []),
     ...(rule.computed ?? []),
   ])
+  const narrowed = new Set(rule.narrowed ?? [])
   const findings: Finding[] = []
   const report = (property: string, kind: FindingKind): void => {
     findings.push({ model: rule.model, property, kind })
@@ -130,11 +161,14 @@ export const compareModel = (
     if (!column.notNull && !property.nullable) {
       report(name, 'shouldBeNullable')
     }
-    if (
-      column.enumValues !== null &&
-      !hasValuesOf(column.enumValues, property)
-    ) {
-      report(name, 'enumMismatch')
+    if (column.enumValues !== null) {
+      if (narrowed.has(name)) {
+        if (!hasPartOfValuesOf(column.enumValues, property)) {
+          report(name, 'enumNotNarrowed')
+        }
+      } else if (!hasValuesOf(column.enumValues, property)) {
+        report(name, 'enumMismatch')
+      }
     }
   }
 

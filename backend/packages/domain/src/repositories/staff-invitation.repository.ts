@@ -1,4 +1,5 @@
 import type { Result } from '@beauty-salon-backend/utility'
+import type { UserId } from '../models/auth'
 import type { SalonId } from '../models/salon'
 import type { StaffId } from '../models/staff'
 import type { DbStaffInvitation, SalonRole } from '../models/staff-invitation'
@@ -38,8 +39,16 @@ export type RevokedStaffInvitation =
 export type UsableStaffInvitation =
   | { type: 'usable'; invitation: DbStaffInvitation }
   | { type: 'unusable' }
-  /** The address of the invitation has an account that is not the invitation's to take. */
+  /**
+   * The address of the invitation has an account that is not the
+   * invitation's to take, and that does not join either.
+   */
   | { type: 'accountExists'; invitation: DbStaffInvitation }
+  /**
+   * The address of the invitation has an account that joins: one with a
+   * role of a salon that reaches no salon.
+   */
+  | { type: 'accountMayJoin'; invitation: DbStaffInvitation }
 
 /** The account an accepted invitation creates. */
 export type StaffInvitationAcceptance = {
@@ -51,6 +60,17 @@ export type AcceptedStaffInvitation =
   | { type: 'accepted' }
   | { type: 'unusable' }
   | { type: 'accountExists' }
+
+export type JoinedStaffInvitation =
+  | { type: 'joined' }
+  | { type: 'unusable' }
+  /** The invitation went to another address than the one of the account. */
+  | { type: 'otherAddress' }
+  /**
+   * The account is not one that joins: it reaches a salon, or its role is
+   * not a role of a salon.
+   */
+  | { type: 'accountNotFree' }
 
 /**
  * Persistence of the invitations of staff members.
@@ -65,6 +85,11 @@ export type AcceptedStaffInvitation =
  * deleted. Every method that writes locks the staff member first, as the
  * ledger does, so that of two writes that arrive together the second sees
  * what the first did.
+ *
+ * An account joins an invitation when it has a role of a salon and reaches
+ * no salon: it names no staff member, or one that is deleted or inactive,
+ * or one of a salon that is deleted. Those are the accounts the
+ * authentication gives the scope `none`.
  */
 export interface IStaffInvitationRepository {
   findByStaff(
@@ -105,4 +130,18 @@ export interface IStaffInvitationRepository {
     tokenHash: string,
     acceptance: StaffInvitationAcceptance,
   ): Promise<Result<AcceptedStaffInvitation, DomainError>>
+
+  /**
+   * Links the account of this user to the staff member of the invitation
+   * of this token, gives the account the role of the invitation and
+   * deletes the invitation, in one transaction. The invitation must be
+   * usable at `now` and have gone to the address of the account. The
+   * staff member the account named before, if any, names the account no
+   * more.
+   */
+  join(
+    tokenHash: string,
+    userId: UserId,
+    now: string,
+  ): Promise<Result<JoinedStaffInvitation, DomainError>>
 }

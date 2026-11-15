@@ -2,7 +2,7 @@
 
 DB のカラムの型と制約が、Drizzle スキーマ、TypeSpec、生成された型、Zod スキーマのそれぞれでどう表されるかの対応表と、その一致を機械的に検査する `pnpm check:api-db` の説明。
 
-対応表は、実装済みの Salon ドメイン（`salons` と `opening_hours`）が実際に行っていることを書いている。認証（`users` と `sessions`）も同じ対応に従っており、Read マッパー（`backend/packages/domain/src/mappers/read/user.mapper.ts`、`session.mapper.ts`）とリクエストの Zod スキーマ（`backend/packages/domain/src/schemas/auth.schema.ts`）を持つ。サロンのサービスカテゴリー（`service_categories`）も同じで、Read マッパー（`backend/packages/domain/src/mappers/read/service-category.mapper.ts`）とリクエストの Zod スキーマ（`backend/packages/domain/src/schemas/service-category.schema.ts`）を持つ。Write マッパーはない（理由は[表現の変換](#表現の変換)）。サロンのサービス（`services` と `service_options`）も同じ対応に従い、Read マッパー（`backend/packages/domain/src/mappers/read/service.mapper.ts`）とリクエストの Zod スキーマ（`backend/packages/domain/src/schemas/service.schema.ts`）を持つ。Write マッパー（`backend/packages/domain/src/mappers/write/service.mapper.ts`）もあるが、値は変換しない（これも[表現の変換](#表現の変換)）。顧客台帳（`customers`）も同じ対応に従い、Read マッパー（`backend/packages/domain/src/mappers/read/customer.mapper.ts`）とリクエストの Zod スキーマ（`backend/packages/domain/src/schemas/customer.schema.ts`）を持つ。Write マッパー（`backend/packages/domain/src/mappers/write/customer.mapper.ts`）は、リクエストをそのまま行として返す（これも[表現の変換](#表現の変換)）。スタッフ台帳（`staff`）も同じ対応に従い、Read マッパー（`backend/packages/domain/src/mappers/read/staff.mapper.ts`）、リクエストの Zod スキーマ（`backend/packages/domain/src/schemas/staff.schema.ts`）、歩合率（`numeric` の `commissionRate`）を文字列にする Write マッパー（`backend/packages/domain/src/mappers/write/staff.mapper.ts`）を持つ。顧客に見せるスタッフのプロフィール（`StaffProfileResponse`）は、同じ `staff` の行の一部を、同じプロパティ名と null の扱いで返す。変換するカラムがないので、Read マッパー（`backend/packages/domain/src/mappers/read/staff-profile.mapper.ts`）は値をそのまま返す。スタッフの勤務スケジュール（`staff_schedules`）も同じ対応に従う。行のモデル（`StaffSchedule`）は、リクエストとレスポンスの両方に使うので、`pnpm check:api-db` はレスポンスのルール（すべて必須で、NULL 可のカラムだけ `Type | null`）で照合する。Zod スキーマ（`backend/packages/domain/src/schemas/staff-schedule.schema.ts`）は、テーブルの CHECK 制約と部分一意インデックスが守る規則を、リクエストの段階でも確かめる。スタッフの招待（`staff_invitations`）も同じ対応に従い、Read マッパー（`backend/packages/domain/src/mappers/read/staff-invitation.mapper.ts`）とリクエストの Zod スキーマ（`backend/packages/domain/src/schemas/staff-invitation.schema.ts`）を持つ。レスポンスはトークンのハッシュ（`tokenHash`）を返さず、作成リクエストが持つのはロール（enum 型 `salon_role` と `SalonRoleType`）だけなので、`pnpm check:api-db` のルールは、それ以外のカラムを `omittedColumns` に挙げている。それ以外のドメインは TypeSpec と DB スキーマにあるだけで、マッパーも Zod スキーマもない。それらの TypeSpec も、この対応表に従って DB と一致させてある。
+対応表は、実装済みの Salon ドメイン（`salons` と `opening_hours`）が実際に行っていることを書いている。認証（`users` と `sessions`）も同じ対応に従っており、Read マッパー（`backend/packages/domain/src/mappers/read/user.mapper.ts`、`session.mapper.ts`）とリクエストの Zod スキーマ（`backend/packages/domain/src/schemas/auth.schema.ts`）を持つ。サロンのサービスカテゴリー（`service_categories`）も同じで、Read マッパー（`backend/packages/domain/src/mappers/read/service-category.mapper.ts`）とリクエストの Zod スキーマ（`backend/packages/domain/src/schemas/service-category.schema.ts`）を持つ。Write マッパーはない（理由は[表現の変換](#表現の変換)）。サロンのサービス（`services` と `service_options`）も同じ対応に従い、Read マッパー（`backend/packages/domain/src/mappers/read/service.mapper.ts`）とリクエストの Zod スキーマ（`backend/packages/domain/src/schemas/service.schema.ts`）を持つ。Write マッパー（`backend/packages/domain/src/mappers/write/service.mapper.ts`）もあるが、値は変換しない（これも[表現の変換](#表現の変換)）。顧客台帳（`customers`）も同じ対応に従い、Read マッパー（`backend/packages/domain/src/mappers/read/customer.mapper.ts`）とリクエストの Zod スキーマ（`backend/packages/domain/src/schemas/customer.schema.ts`）を持つ。Write マッパー（`backend/packages/domain/src/mappers/write/customer.mapper.ts`）は、リクエストをそのまま行として返す（これも[表現の変換](#表現の変換)）。スタッフ台帳（`staff`）も同じ対応に従い、Read マッパー（`backend/packages/domain/src/mappers/read/staff.mapper.ts`）、リクエストの Zod スキーマ（`backend/packages/domain/src/schemas/staff.schema.ts`）、歩合率（`numeric` の `commissionRate`）を文字列にする Write マッパー（`backend/packages/domain/src/mappers/write/staff.mapper.ts`）を持つ。顧客に見せるスタッフのプロフィール（`StaffProfileResponse`）は、同じ `staff` の行の一部を、同じプロパティ名と null の扱いで返す。変換するカラムがないので、Read マッパー（`backend/packages/domain/src/mappers/read/staff-profile.mapper.ts`）は値をそのまま返す。スタッフの勤務スケジュール（`staff_schedules`）も同じ対応に従う。行のモデル（`StaffSchedule`）は、リクエストとレスポンスの両方に使うので、`pnpm check:api-db` はレスポンスのルール（すべて必須で、NULL 可のカラムだけ `Type | null`）で照合する。Zod スキーマ（`backend/packages/domain/src/schemas/staff-schedule.schema.ts`）は、テーブルの CHECK 制約と部分一意インデックスが守る規則を、リクエストの段階でも確かめる。スタッフの招待（`staff_invitations`）も同じ対応に従い、Read マッパー（`backend/packages/domain/src/mappers/read/staff-invitation.mapper.ts`）とリクエストの Zod スキーマ（`backend/packages/domain/src/schemas/staff-invitation.schema.ts`）を持つ。レスポンスはトークンのハッシュ（`tokenHash`）を返さず、作成リクエストが持つのはロール（enum 型 `salon_role` と `SalonRoleType`）だけなので、`pnpm check:api-db` のルールは、それ以外のカラムを `omittedColumns` に挙げている。スタッフに紐づいたアカウント（`StaffAccountResponse`、`StaffAccountUpdateRequest`）は、`users` の行の一部を、同じプロパティ名と null の扱いで返す。Read マッパー（`backend/packages/domain/src/mappers/read/staff-account.mapper.ts`）とリクエストの Zod スキーマ（`backend/packages/domain/src/schemas/staff-account.schema.ts`）を持ち、ルールは、認証に使うカラムを `omittedColumns` に、Enum の値の一部だけを取る `role` を `narrowed` に挙げている。それ以外のドメインは TypeSpec と DB スキーマにあるだけで、マッパーも Zod スキーマもない。それらの TypeSpec も、この対応表に従って DB と一致させてある。
 
 - ルールそのもの（プロパティ名 = カラム名、NULL 許可の一致、Optional の制約）: [CLAUDE.md](../CLAUDE.md)
 - TypeSpec での書き方: [TypeSpec API型定義ルール](./typespec-api-type-rules.md)
@@ -79,7 +79,7 @@ NULL 許可のカラムは、どの層でも null を許す形になる: `schema
 
 ## 表現の変換
 
-型が層によって違うのは `numeric`、`timestamp with time zone`、`jsonb` の 3 種類だけで、マッパーはこの 3 種類だけを変換する。それ以外のカラムは値をそのまま受け渡し、プロパティ名はどのカラムでも変えない。例外は顧客の `gender`（DB では `varchar`、API では Enum）だけで、この節の最後に書く。
+型が層によって違うのは `numeric`、`timestamp with time zone`、`jsonb` の 3 種類だけで、マッパーはこの 3 種類だけを変換する。それ以外のカラムは値をそのまま受け渡し、プロパティ名はどのカラムでも変えない。例外は、顧客の `gender`（DB では `varchar`、API では Enum）と、スタッフのアカウントの `role`（API の Enum が、カラムの Enum の値の一部だけを持つ）で、この節の最後に書く。
 
 | カラムの型 | DB → API（`SalonReadMapper`） | API → DB（`SalonWriteMapper`） |
 |---|---|---|
@@ -151,6 +151,8 @@ export const SalonWriteMapper = {
 `time` のカラムは変換しない。DB は `HH:mm:ss` で返し、リクエストは `HH:mm` と `HH:mm:ss` のどちらも受け付ける。
 
 顧客の `gender` は、DB では `varchar(20)`（行の型は `string`）、API では `CustomerGenderType` である。CHECK 制約 `customers_gender_known` が、値を Enum の 4 つのどれかに限っている。Read マッパーは、保存されている値を生成された `CustomerGenderTypeSchema` で検査する。書き込みでは変換しない（Enum の値は、そのまま文字列として保存できる）。
+
+スタッフに紐づいたアカウントの `role` は、DB では Enum 型 `user_role`（5 つの値）、API では `SalonRoleType`（そのうちの `owner`、`manager`、`staff`）である。CHECK 制約 `users_staff_needs_salon_role` が、スタッフを指すユーザーのロールを、この 3 つに限っている。Read マッパー（`backend/packages/domain/src/mappers/read/staff-account.mapper.ts`）は、保存されている値を生成された `SalonRoleTypeSchema` で検査する。書き込みでは変換しない（API の値は、どれもカラムの Enum の値である）。
 
 ## 制約の対応
 
@@ -262,6 +264,7 @@ const salonRules: ModelRule[] = [
 | `embedded` | カラムではないプロパティ（子テーブルの行を埋め込んだもの）。カラムとの照合を省く |
 | `computed` | カラムではないプロパティ（サーバーがレスポンスのたびに求め、どこにも保存しない値）。カラムとの照合を省く。`SessionResponse` の `current` に使っている |
 | `omittedColumns` | モデルが意図して含めないカラム。それ以外のカラムがモデルにない場合は報告される。すべてのルールが指定する（テストで確認している） |
+| `narrowed` | カラムの Enum 型の値の一部だけを取るプロパティ。値が、カラムの Enum の値の一部であり、すべてではないことを確かめる。`StaffAccountResponse` と `StaffAccountUpdateRequest` の `role` に使っている（カラムは `user_role`、プロパティは `SalonRoleType`）。値の範囲を DB でも限る CHECK 制約と、組で使う |
 
 報告される食い違い:
 
@@ -273,7 +276,8 @@ const salonRules: ModelRule[] = [
 | `shouldBeOptional` | `update` のプロパティが必須になっている |
 | `shouldBeNullable` | カラムが NULL 許可なのに、API が null を許していない |
 | `shouldNotBeNullable` | カラムが `NOT NULL` なのに、API が null を許している |
-| `enumMismatch` | カラムが PostgreSQL の Enum 型（またはその配列）なのに、API のプロパティが取りうる値がその Enum の値と一致しない |
+| `enumMismatch` | カラムが PostgreSQL の Enum 型（またはその配列）なのに、API のプロパティが取りうる値がその Enum の値と一致しない（`narrowed` に挙げたプロパティを除く） |
+| `enumNotNarrowed` | `narrowed` に挙げたプロパティが、Enum でない、値を持たない、カラムの Enum にない値を持つ、またはカラムの Enum のすべての値を持つ。すべての値を持つなら、絞り込んでいないので、`narrowed` から外す |
 
 検査しないもの:
 
@@ -294,6 +298,7 @@ const salonRules: ModelRule[] = [
 | `XXXResponse`、`XXXCreateRequest`、`XXXUpdateRequest` | 載せる（`response` / `create` / `update`） |
 | 親に埋め込む子テーブルの行（`OpeningHours`、`ServiceOption`、`BookingServiceResponse` など） | 載せる。親のルールでは `embedded` にプロパティ名を書く |
 | テーブルの行に、サーバーがレスポンスのたびに求める値を加えたモデル（`SessionResponse` の `current`） | 載せる。ルールの `computed` にそのプロパティ名を書く |
+| テーブルの行の一部だけを見せ、書かせるモデル（`StaffProfileResponse`、`StaffAccountResponse`、`StaffAccountUpdateRequest`） | 載せる。見せないカラム、書かせないカラムを `omittedColumns` に挙げる。Enum の値の一部だけを取るプロパティは、`narrowed` にも挙げる |
 | 行を追加するアクションのリクエスト（`PointEarnRequest`、`SaleProcessRequest` など） | カラムと 1 対 1 なら `create` として載せる |
 | `XXXSearchRequest` | 載せない |
 | 既存の行の一部だけを書き換えるアクションのリクエスト（`BookingCancelRequest`、`PaymentRefundRequest` など） | 載せない。プロパティ名と null 許可はカラムに合わせる |

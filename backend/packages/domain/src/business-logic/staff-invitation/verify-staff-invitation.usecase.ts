@@ -1,11 +1,34 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { match } from 'ts-pattern'
 import { StaffInvitationReadMapper } from '../../mappers/read/staff-invitation.mapper'
-import type { ApiStaffInvitationResponse } from '../../models/staff-invitation'
+import type {
+  ApiStaffInvitationResponse,
+  DbStaffInvitation,
+} from '../../models/staff-invitation'
 import { authStaffInvitationVerifyRequestSchema } from '../../schemas/auth.schema'
 import { type DomainError, parseWith } from '../../shared'
 import type { StaffInvitationUseCaseDependencies } from './_shared/dependencies'
 import { addressHasAccount, invitationRefused } from './_shared/refusals'
+
+/** An invitation whose token works, and how whoever holds the token takes it. */
+export type VerifiedStaffInvitation = {
+  invitation: ApiStaffInvitationResponse
+  /**
+   * `accept` creates the account, with a password. `join` is for an address
+   * that has an account of a salon without a salon: whoever signs in to it
+   * joins with it.
+   */
+  next: 'accept' | 'join'
+}
+
+const verified = (
+  invitation: DbStaffInvitation,
+  next: VerifiedStaffInvitation['next'],
+): Result<VerifiedStaffInvitation, DomainError> =>
+  Result.map(
+    StaffInvitationReadMapper.toApiStaffInvitation(invitation),
+    (shown) => ({ invitation: shown, next }),
+  )
 
 export class VerifyStaffInvitationUseCase {
   constructor(
@@ -13,14 +36,14 @@ export class VerifyStaffInvitationUseCase {
   ) {}
 
   /**
-   * Tells whether the token of an invitation can still be used and what
-   * the invitation is, so that a page can show the address and the role
-   * of the account before it asks for a password. The token is not used
-   * up.
+   * Tells whether the token of an invitation can still be used, what the
+   * invitation is and how it is taken, so that a page can show the address
+   * and the role of the account before it asks for a password or for
+   * signing in. The token is not used up.
    */
   async execute(
     input: unknown,
-  ): Promise<Result<ApiStaffInvitationResponse, DomainError>> {
+  ): Promise<Result<VerifiedStaffInvitation, DomainError>> {
     const request = parseWith(
       authStaffInvitationVerifyRequestSchema,
       input,
@@ -45,7 +68,10 @@ export class VerifyStaffInvitationUseCase {
         Result.error(addressHasAccount(invitation.email)),
       )
       .with({ type: 'usable' }, ({ invitation }) =>
-        StaffInvitationReadMapper.toApiStaffInvitation(invitation),
+        verified(invitation, 'accept'),
+      )
+      .with({ type: 'accountMayJoin' }, ({ invitation }) =>
+        verified(invitation, 'join'),
       )
       .exhaustive()
   }

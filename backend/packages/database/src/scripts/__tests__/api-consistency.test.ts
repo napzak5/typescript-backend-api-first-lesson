@@ -28,6 +28,14 @@ const enumFindings = (apiProperties: Map<string, ApiProperty>): string[] =>
     ({ kind, property }) => `${kind}:${property}`,
   )
 
+/** As `enumFindings`, by a rule that says `status` has some of the values. */
+const narrowedFindings = (apiProperties: Map<string, ApiProperty>): string[] =>
+  compareModel(
+    rule({ narrowed: ['status'] }),
+    columnsWithEnum,
+    apiProperties,
+  ).map(({ kind, property }) => `${kind}:${property}`)
+
 const properties = (
   entries: Record<string, Partial<ApiProperty>>,
 ): Map<string, ApiProperty> =>
@@ -217,6 +225,39 @@ describe('compareModel', () => {
     expect(findings).toEqual([])
   })
 
+  it('accepts a narrowed property with some of the values of the enum of its column', () => {
+    const findings = narrowedFindings(
+      properties({ status: { enumValues: ['closed'] } }),
+    )
+
+    expect(findings).toEqual([])
+  })
+
+  it.each([
+    ['is not an enum', null],
+    ['has no value', []],
+    ['has every value', ['closed', 'open']],
+    ['has a value the database does not know', ['open', 'paused']],
+    ['has only values the database does not know', ['paused']],
+  ])(
+    'reports a narrowed property of an enum column that %s',
+    (_case, enumValues) => {
+      expect(narrowedFindings(properties({ status: { enumValues } }))).toEqual([
+        'enumNotNarrowed:status',
+      ])
+    },
+  )
+
+  it('narrows only the properties the rule lists', () => {
+    const findings = compareModel(
+      rule({ narrowed: ['name'] }),
+      columnsWithEnum,
+      properties({ name: {}, status: { enumValues: ['closed'] } }),
+    ).map(({ kind, property }) => `${kind}:${property}`)
+
+    expect(findings).toEqual(['enumMismatch:status'])
+  })
+
   it('orders findings by kind and property so that the report is stable', () => {
     const findings = kindsOf(
       rule(),
@@ -241,6 +282,18 @@ describe('describeFinding', () => {
       }),
     ).toBe(
       'Models.SalonResponse.description must allow null because the column does',
+    )
+  })
+
+  it('tells a narrowed property what it may have of the enum type', () => {
+    expect(
+      describeFinding({
+        model: 'Models.StaffAccountResponse',
+        property: 'role',
+        kind: 'enumNotNarrowed',
+      }),
+    ).toBe(
+      'Models.StaffAccountResponse.role must have some of the values of the enum type of its column, and not all of them',
     )
   })
 })
@@ -600,6 +653,78 @@ describe('modelRules', () => {
         embedded: undefined,
         computed: undefined,
       },
+    ])
+  })
+
+  it('shows the salon who signs in as a staff member, with which role and whether the account is in use, lets a request change the role only, and narrows the role in both to the roles of a salon', () => {
+    const hidden = [
+      'passwordHash',
+      'permissions',
+      'emailVerified',
+      'emailVerificationTokenHash',
+      'emailVerificationExpiry',
+      'passwordResetTokenHash',
+      'passwordResetExpiry',
+      'lastPasswordChange',
+      'twoFactorSecret',
+      'backupCodes',
+      'twoFactorLastUsedStep',
+      'failedLoginAttempts',
+      'lockedUntil',
+      'lastLoginIp',
+      'customerId',
+      'staffId',
+      'metadata',
+      'deletedAt',
+    ]
+    const rules = modelRules
+      .filter((modelRule) => modelRule.model.startsWith('Models.StaffAccount'))
+      .map(({ model, table, kind, omittedColumns, embedded, computed }) => ({
+        model,
+        table,
+        kind,
+        omittedColumns,
+        embedded,
+        computed,
+      }))
+
+    expect(rules).toEqual([
+      {
+        model: 'Models.StaffAccountResponse',
+        table: 'users',
+        kind: 'response',
+        omittedColumns: hidden,
+        embedded: undefined,
+        computed: undefined,
+      },
+      {
+        model: 'Models.StaffAccountUpdateRequest',
+        table: 'users',
+        kind: 'update',
+        omittedColumns: [
+          'id',
+          'email',
+          'status',
+          'twoFactorStatus',
+          'lastLoginAt',
+          'createdAt',
+          'updatedAt',
+          ...hidden,
+        ],
+        embedded: undefined,
+        computed: undefined,
+      },
+    ])
+  })
+
+  it('narrows nothing but the role of the account of a staff member', () => {
+    const narrowed = modelRules
+      .filter((modelRule) => modelRule.narrowed !== undefined)
+      .map(({ model, narrowed }) => [model, narrowed])
+
+    expect(narrowed).toEqual([
+      ['Models.StaffAccountResponse', ['role']],
+      ['Models.StaffAccountUpdateRequest', ['role']],
     ])
   })
 })
