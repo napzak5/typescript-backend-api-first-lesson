@@ -11,7 +11,7 @@ using TypeSpec.OpenAPI;
 using BeautySalon.Models;
 
 namespace BeautySalon.Operations {
-  @doc("顧客台帳を管理するAPI操作群です。台帳はプラットフォーム全体で1つで、サロンごとには分かれていません。実装済みの操作は、一覧・登録・1件の取得・更新・削除です。これらは admin とサロンのスタッフ(owner / manager / staff。所属サロンは問いません)が実行でき、削除は admin と owner / manager だけが実行できます。レスポンスはスタッフ専用の項目を含むので、顧客本人(customer)には403を返します。権限は最初に確認し、権限のないユーザーにはIDや本文が不正でも403を返します。")
+  @doc("顧客台帳を管理するAPI操作群です。台帳はプラットフォーム全体で1つで、サロンごとには分かれていません。実装済みの操作は、一覧・登録・1件の取得・更新・削除と、好み設定の取得・更新です。これらは admin とサロンのスタッフ(owner / manager / staff。所属サロンは問いません)が実行でき、削除は admin と owner / manager だけが実行できます。レスポンスはスタッフ専用の項目を含むので、顧客本人(customer)には403を返します。権限は最初に確認し、権限のないユーザーにはIDや本文が不正でも403を返します。")
   @route("/api/v1/customers")
   @tag("Customers")
   namespace CustomerOperations {
@@ -216,7 +216,20 @@ namespace BeautySalon.Operations {
         | ProblemResponse<404>
         | CommonErrors;
 
-      @doc("顧客の施術好みや指名スタッフなどの希望設定のうち、指定した項目だけを更新し、パーソナライズされた提案に反映します。好み設定がまだない場合は作成し、指定しなかった項目はnullになります。顧客が存在しない場合は404を、preferredStaffIdやavoidStaffIdsに存在しないスタッフを指定した場合は400を返します。")
+      @doc("顧客の好み設定(指名を希望するスタッフ、避けたいスタッフ、希望する時間帯、スタイルの好み、接客の好み、特別なリクエスト)を取得します。好み設定をまだ保存していない顧客には、空の好み設定(一覧は空配列、ほかはnull)を返します。顧客が存在しない場合は404を返します。")
+      @summary("Get customer preferences")
+      @get
+      @route("/{id}/preferences")
+      getPreferences(@path id: CustomerId):
+        | {
+            @statusCode statusCode: 200;
+            @body response: ApiResponse<CustomerPreferencesResponse>;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<404>
+        | CommonErrors;
+
+      @doc("顧客の好み設定のうち、指定した項目だけを更新します。好み設定をまだ保存していない顧客には作成し、指定しなかった項目は空(一覧は空配列、ほかはnull)になります。顧客が存在しない場合は404を返します。preferredStaffIdやavoidStaffIdsに、存在しないスタッフか削除されたスタッフを指定した場合と、指名を希望するスタッフが避けたいスタッフに含まれることになる場合は400を返します。")
       @summary("Update customer preferences")
       @patch
       @route("/{id}/preferences")
@@ -286,7 +299,7 @@ namespace BeautySalon.Operations {
         | CommonErrors;
     }
 
-    @doc("顧客本人が自分のプロフィール(自分の顧客レコード)を扱うAPI操作群です。実行できるのは customer ロールのユーザーだけで、admin とサロンのスタッフには403を返します。権限は最初に確認します。スタッフ用の項目は、リクエストにもレスポンスにも含みません。")
+    @doc("顧客本人が自分のプロフィール(自分の顧客レコード)と好み設定を扱うAPI操作群です。実行できるのは customer ロールのユーザーだけで、admin とサロンのスタッフには403を返します。権限は最初に確認します。スタッフ用の項目は、リクエストにもレスポンスにも含みません。")
     @route("/me")
     interface CustomerProfile {
       @doc("ログインしているユーザーのプロフィールを取得します。プロフィールをまだ作っていない場合と、顧客レコードが削除された場合は404を返します。")
@@ -321,6 +334,32 @@ namespace BeautySalon.Operations {
         | {
             @statusCode statusCode: 200;
             @body response: ApiResponse<CustomerProfileResponse>;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<404>
+        | RequestBodyErrors
+        | CommonErrors;
+
+      @doc("ログインしているユーザーの好み設定を取得します。好み設定をまだ保存していない場合は、空の好み設定(一覧は空配列、ほかはnull)を返します。プロフィールをまだ作っていない場合と、顧客レコードが削除された場合は404を返します。")
+      @summary("Get the signed-in customer's preferences")
+      @get
+      @route("/preferences")
+      getPreferences():
+        | {
+            @statusCode statusCode: 200;
+            @body response: ApiResponse<CustomerPreferencesResponse>;
+          }
+        | ProblemResponse<404>
+        | CommonErrors;
+
+      @doc("ログインしているユーザーの好み設定のうち、指定した項目だけを更新します。項目の規則は、台帳の好み設定の更新と同じです。プロフィールをまだ作っていない場合と、顧客レコードが削除された場合は404を返します。")
+      @summary("Update the signed-in customer's preferences")
+      @patch
+      @route("/preferences")
+      updatePreferences(@body request: CustomerPreferencesUpdateRequest):
+        | {
+            @statusCode statusCode: 200;
+            @body response: ApiResponse<CustomerPreferencesResponse>;
           }
         | ProblemResponse<400>
         | ProblemResponse<404>

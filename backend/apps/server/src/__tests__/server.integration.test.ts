@@ -604,7 +604,7 @@ describe('the customer ledger', () => {
   const SOME_ID = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1b'
   const CUSTOMERS = '/api/v1/customers'
 
-  it("should answer each of its five routes, and the three of a customer's own profile, with 401 when no access token is sent", async () => {
+  it("should answer each of its five routes, the three of a customer's own profile, and the four of the preferences, with 401 when no access token is sent", async () => {
     const { server } = await start(createConfig().config)
     const routes: [string, string][] = [
       ['GET', CUSTOMERS],
@@ -612,9 +612,13 @@ describe('the customer ledger', () => {
       ['GET', `${CUSTOMERS}/me`],
       ['POST', `${CUSTOMERS}/me`],
       ['PATCH', `${CUSTOMERS}/me`],
+      ['GET', `${CUSTOMERS}/me/preferences`],
+      ['PATCH', `${CUSTOMERS}/me/preferences`],
       ['GET', `${CUSTOMERS}/${SOME_ID}`],
       ['PATCH', `${CUSTOMERS}/${SOME_ID}`],
       ['DELETE', `${CUSTOMERS}/${SOME_ID}`],
+      ['GET', `${CUSTOMERS}/${SOME_ID}/preferences`],
+      ['PATCH', `${CUSTOMERS}/${SOME_ID}/preferences`],
     ]
 
     const answers: Record<string, unknown>[] = []

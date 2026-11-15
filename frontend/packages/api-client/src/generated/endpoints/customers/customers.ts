@@ -35,6 +35,7 @@ import type {
   CustomerCrudGet200,
   CustomerCrudGetHistory200,
   CustomerCrudGetHistoryParams,
+  CustomerCrudGetPreferences200,
   CustomerCrudGetStatistics200,
   CustomerCrudGetStatisticsParams,
   CustomerCrudGetVersion200,
@@ -47,7 +48,9 @@ import type {
   CustomerCrudUpdatePreferences200,
   CustomerProfileCreate201,
   CustomerProfileGet200,
+  CustomerProfileGetPreferences200,
   CustomerProfileUpdate200,
+  CustomerProfileUpdatePreferences200,
   ModelsCustomerBatchGetRequest,
   ModelsCustomerBulkCreateRequest,
   ModelsCustomerBulkDeleteRequest,
@@ -1547,6 +1550,301 @@ export const useCustomerProfileUpdate = <TError = ModelsProblemDetails,
       > => {
       return useMutation(getCustomerProfileUpdateMutationOptions(options), queryClient);
     }
+    export type customerProfileGetPreferencesResponse200 = {
+  data: CustomerProfileGetPreferences200
+  status: 200
+}
+
+export type customerProfileGetPreferencesResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type customerProfileGetPreferencesResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
+export type customerProfileGetPreferencesResponse404 = {
+  data: ModelsProblemDetails
+  status: 404
+}
+
+export type customerProfileGetPreferencesResponse429 = {
+  data: ModelsProblemDetails
+  status: 429
+}
+
+export type customerProfileGetPreferencesResponse500 = {
+  data: ModelsProblemDetails
+  status: 500
+}
+
+export type customerProfileGetPreferencesResponseSuccess = (customerProfileGetPreferencesResponse200) & {
+  headers: Headers;
+};
+export type customerProfileGetPreferencesResponseError = (customerProfileGetPreferencesResponse401 | customerProfileGetPreferencesResponse403 | customerProfileGetPreferencesResponse404 | customerProfileGetPreferencesResponse429 | customerProfileGetPreferencesResponse500) & {
+  headers: Headers;
+};
+
+export type customerProfileGetPreferencesResponse = (customerProfileGetPreferencesResponseSuccess | customerProfileGetPreferencesResponseError)
+
+export const getCustomerProfileGetPreferencesUrl = () => {
+
+
+
+
+  return `/api/v1/customers/me/preferences`
+}
+
+/**
+ * ログインしているユーザーの好み設定を取得します。好み設定をまだ保存していない場合は、空の好み設定(一覧は空配列、ほかはnull)を返します。プロフィールをまだ作っていない場合と、顧客レコードが削除された場合は404を返します。
+ * @summary Get the signed-in customer's preferences
+ */
+export const customerProfileGetPreferences = async ( options?: RequestInit): Promise<customerProfileGetPreferencesResponse> => {
+
+  return customInstance<customerProfileGetPreferencesResponse>(getCustomerProfileGetPreferencesUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getCustomerProfileGetPreferencesQueryKey = () => {
+    return [
+    `/api/v1/customers/me/preferences`
+    ] as const;
+    }
+
+
+export const getCustomerProfileGetPreferencesQueryOptions = <TData = Awaited<ReturnType<typeof customerProfileGetPreferences>>, TError = ModelsProblemDetails>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerProfileGetPreferences>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getCustomerProfileGetPreferencesQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof customerProfileGetPreferences>>> = ({ signal }) => customerProfileGetPreferences({ signal });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof customerProfileGetPreferences>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type CustomerProfileGetPreferencesQueryResult = NonNullable<Awaited<ReturnType<typeof customerProfileGetPreferences>>>
+export type CustomerProfileGetPreferencesQueryError = ModelsProblemDetails
+
+
+/**
+ * ログインしているユーザーの好み設定を取得します。好み設定をまだ保存していない場合は、空の好み設定(一覧は空配列、ほかはnull)を返します。プロフィールをまだ作っていない場合と、顧客レコードが削除された場合は404を返します。
+ * @summary Get the signed-in customer's preferences
+ */
+export function useCustomerProfileGetPreferences<TData = Awaited<ReturnType<typeof customerProfileGetPreferences>>, TError = ModelsProblemDetails>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerProfileGetPreferences>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof customerProfileGetPreferences>>,
+          TError,
+          Awaited<ReturnType<typeof customerProfileGetPreferences>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * ログインしているユーザーの好み設定を取得します。好み設定をまだ保存していない場合は、空の好み設定(一覧は空配列、ほかはnull)を返します。プロフィールをまだ作っていない場合と、顧客レコードが削除された場合は404を返します。
+ * @summary Get the signed-in customer's preferences
+ */
+export function useCustomerProfileGetPreferences<TData = Awaited<ReturnType<typeof customerProfileGetPreferences>>, TError = ModelsProblemDetails>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerProfileGetPreferences>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof customerProfileGetPreferences>>,
+          TError,
+          Awaited<ReturnType<typeof customerProfileGetPreferences>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * ログインしているユーザーの好み設定を取得します。好み設定をまだ保存していない場合は、空の好み設定(一覧は空配列、ほかはnull)を返します。プロフィールをまだ作っていない場合と、顧客レコードが削除された場合は404を返します。
+ * @summary Get the signed-in customer's preferences
+ */
+export function useCustomerProfileGetPreferences<TData = Awaited<ReturnType<typeof customerProfileGetPreferences>>, TError = ModelsProblemDetails>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerProfileGetPreferences>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * ログインしているユーザーの好み設定を取得します。好み設定をまだ保存していない場合は、空の好み設定(一覧は空配列、ほかはnull)を返します。プロフィールをまだ作っていない場合と、顧客レコードが削除された場合は404を返します。
+ * @summary Get the signed-in customer's preferences
+ */
+export function useCustomerProfileGetPreferences<TData = Awaited<ReturnType<typeof customerProfileGetPreferences>>, TError = ModelsProblemDetails>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerProfileGetPreferences>>, TError, TData>>, }
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getCustomerProfileGetPreferencesQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type customerProfileUpdatePreferencesResponse200 = {
+  data: CustomerProfileUpdatePreferences200
+  status: 200
+}
+
+export type customerProfileUpdatePreferencesResponse400 = {
+  data: ModelsProblemDetails
+  status: 400
+}
+
+export type customerProfileUpdatePreferencesResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type customerProfileUpdatePreferencesResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
+export type customerProfileUpdatePreferencesResponse404 = {
+  data: ModelsProblemDetails
+  status: 404
+}
+
+export type customerProfileUpdatePreferencesResponse413 = {
+  data: ModelsProblemDetails
+  status: 413
+}
+
+export type customerProfileUpdatePreferencesResponse415 = {
+  data: ModelsProblemDetails
+  status: 415
+}
+
+export type customerProfileUpdatePreferencesResponse429 = {
+  data: ModelsProblemDetails
+  status: 429
+}
+
+export type customerProfileUpdatePreferencesResponse500 = {
+  data: ModelsProblemDetails
+  status: 500
+}
+
+export type customerProfileUpdatePreferencesResponseSuccess = (customerProfileUpdatePreferencesResponse200) & {
+  headers: Headers;
+};
+export type customerProfileUpdatePreferencesResponseError = (customerProfileUpdatePreferencesResponse400 | customerProfileUpdatePreferencesResponse401 | customerProfileUpdatePreferencesResponse403 | customerProfileUpdatePreferencesResponse404 | customerProfileUpdatePreferencesResponse413 | customerProfileUpdatePreferencesResponse415 | customerProfileUpdatePreferencesResponse429 | customerProfileUpdatePreferencesResponse500) & {
+  headers: Headers;
+};
+
+export type customerProfileUpdatePreferencesResponse = (customerProfileUpdatePreferencesResponseSuccess | customerProfileUpdatePreferencesResponseError)
+
+export const getCustomerProfileUpdatePreferencesUrl = () => {
+
+
+
+
+  return `/api/v1/customers/me/preferences`
+}
+
+/**
+ * ログインしているユーザーの好み設定のうち、指定した項目だけを更新します。項目の規則は、台帳の好み設定の更新と同じです。プロフィールをまだ作っていない場合と、顧客レコードが削除された場合は404を返します。
+ * @summary Update the signed-in customer's preferences
+ */
+export const customerProfileUpdatePreferences = async (modelsCustomerPreferencesUpdateRequest: ModelsCustomerPreferencesUpdateRequest, options?: RequestInit): Promise<customerProfileUpdatePreferencesResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customInstance<customerProfileUpdatePreferencesResponse>(getCustomerProfileUpdatePreferencesUrl(),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(modelsCustomerPreferencesUpdateRequest)
+  }
+);}
+
+
+
+
+
+export const getCustomerProfileUpdatePreferencesMutationKey = () => ['customerProfileUpdatePreferences'] as const;
+
+export const getCustomerProfileUpdatePreferencesMutationOptions = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerProfileUpdatePreferences>>, TError,CustomerProfileUpdatePreferencesMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof customerProfileUpdatePreferences>>, TError,CustomerProfileUpdatePreferencesMutationVariables, TContext> => {
+
+const mutationKey = getCustomerProfileUpdatePreferencesMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof customerProfileUpdatePreferences>>, CustomerProfileUpdatePreferencesMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  customerProfileUpdatePreferences(data,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CustomerProfileUpdatePreferencesMutationResult = NonNullable<Awaited<ReturnType<typeof customerProfileUpdatePreferences>>>
+    export type CustomerProfileUpdatePreferencesMutationBody = ModelsCustomerPreferencesUpdateRequest
+    export type CustomerProfileUpdatePreferencesMutationError = ModelsProblemDetails
+    export type CustomerProfileUpdatePreferencesMutationVariables = {data: ModelsCustomerPreferencesUpdateRequest}
+
+    /**
+ * ログインしているユーザーの好み設定のうち、指定した項目だけを更新します。項目の規則は、台帳の好み設定の更新と同じです。プロフィールをまだ作っていない場合と、顧客レコードが削除された場合は404を返します。
+ * @summary Update the signed-in customer's preferences
+ */
+export const useCustomerProfileUpdatePreferences = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerProfileUpdatePreferences>>, TError,CustomerProfileUpdatePreferencesMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof customerProfileUpdatePreferences>>,
+        TError,
+        CustomerProfileUpdatePreferencesMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCustomerProfileUpdatePreferencesMutationOptions(options), queryClient);
+    }
     export type customerCrudMergeResponse200 = {
   data: CustomerCrudMerge200
   status: 200
@@ -2603,6 +2901,163 @@ export function useCustomerCrudGetHistory<TData = Awaited<ReturnType<typeof cust
 
 
 
+export type customerCrudGetPreferencesResponse200 = {
+  data: CustomerCrudGetPreferences200
+  status: 200
+}
+
+export type customerCrudGetPreferencesResponse400 = {
+  data: ModelsProblemDetails
+  status: 400
+}
+
+export type customerCrudGetPreferencesResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type customerCrudGetPreferencesResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
+export type customerCrudGetPreferencesResponse404 = {
+  data: ModelsProblemDetails
+  status: 404
+}
+
+export type customerCrudGetPreferencesResponse429 = {
+  data: ModelsProblemDetails
+  status: 429
+}
+
+export type customerCrudGetPreferencesResponse500 = {
+  data: ModelsProblemDetails
+  status: 500
+}
+
+export type customerCrudGetPreferencesResponseSuccess = (customerCrudGetPreferencesResponse200) & {
+  headers: Headers;
+};
+export type customerCrudGetPreferencesResponseError = (customerCrudGetPreferencesResponse400 | customerCrudGetPreferencesResponse401 | customerCrudGetPreferencesResponse403 | customerCrudGetPreferencesResponse404 | customerCrudGetPreferencesResponse429 | customerCrudGetPreferencesResponse500) & {
+  headers: Headers;
+};
+
+export type customerCrudGetPreferencesResponse = (customerCrudGetPreferencesResponseSuccess | customerCrudGetPreferencesResponseError)
+
+export const getCustomerCrudGetPreferencesUrl = (id: ModelsCustomerId,) => {
+
+
+
+
+  return `/api/v1/customers/${id}/preferences`
+}
+
+/**
+ * 顧客の好み設定(指名を希望するスタッフ、避けたいスタッフ、希望する時間帯、スタイルの好み、接客の好み、特別なリクエスト)を取得します。好み設定をまだ保存していない顧客には、空の好み設定(一覧は空配列、ほかはnull)を返します。顧客が存在しない場合は404を返します。
+ * @summary Get customer preferences
+ */
+export const customerCrudGetPreferences = async (id: ModelsCustomerId, options?: RequestInit): Promise<customerCrudGetPreferencesResponse> => {
+
+  return customInstance<customerCrudGetPreferencesResponse>(getCustomerCrudGetPreferencesUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getCustomerCrudGetPreferencesQueryKey = (id: ModelsCustomerId,) => {
+    return [
+    `/api/v1/customers/${id}/preferences`
+    ] as const;
+    }
+
+
+export const getCustomerCrudGetPreferencesQueryOptions = <TData = Awaited<ReturnType<typeof customerCrudGetPreferences>>, TError = ModelsProblemDetails>(id: ModelsCustomerId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudGetPreferences>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getCustomerCrudGetPreferencesQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof customerCrudGetPreferences>>> = ({ signal }) => customerCrudGetPreferences(id, { signal });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof customerCrudGetPreferences>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type CustomerCrudGetPreferencesQueryResult = NonNullable<Awaited<ReturnType<typeof customerCrudGetPreferences>>>
+export type CustomerCrudGetPreferencesQueryError = ModelsProblemDetails
+
+
+/**
+ * 顧客の好み設定(指名を希望するスタッフ、避けたいスタッフ、希望する時間帯、スタイルの好み、接客の好み、特別なリクエスト)を取得します。好み設定をまだ保存していない顧客には、空の好み設定(一覧は空配列、ほかはnull)を返します。顧客が存在しない場合は404を返します。
+ * @summary Get customer preferences
+ */
+export function useCustomerCrudGetPreferences<TData = Awaited<ReturnType<typeof customerCrudGetPreferences>>, TError = ModelsProblemDetails>(
+ id: ModelsCustomerId, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudGetPreferences>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof customerCrudGetPreferences>>,
+          TError,
+          Awaited<ReturnType<typeof customerCrudGetPreferences>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * 顧客の好み設定(指名を希望するスタッフ、避けたいスタッフ、希望する時間帯、スタイルの好み、接客の好み、特別なリクエスト)を取得します。好み設定をまだ保存していない顧客には、空の好み設定(一覧は空配列、ほかはnull)を返します。顧客が存在しない場合は404を返します。
+ * @summary Get customer preferences
+ */
+export function useCustomerCrudGetPreferences<TData = Awaited<ReturnType<typeof customerCrudGetPreferences>>, TError = ModelsProblemDetails>(
+ id: ModelsCustomerId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudGetPreferences>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof customerCrudGetPreferences>>,
+          TError,
+          Awaited<ReturnType<typeof customerCrudGetPreferences>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * 顧客の好み設定(指名を希望するスタッフ、避けたいスタッフ、希望する時間帯、スタイルの好み、接客の好み、特別なリクエスト)を取得します。好み設定をまだ保存していない顧客には、空の好み設定(一覧は空配列、ほかはnull)を返します。顧客が存在しない場合は404を返します。
+ * @summary Get customer preferences
+ */
+export function useCustomerCrudGetPreferences<TData = Awaited<ReturnType<typeof customerCrudGetPreferences>>, TError = ModelsProblemDetails>(
+ id: ModelsCustomerId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudGetPreferences>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * 顧客の好み設定(指名を希望するスタッフ、避けたいスタッフ、希望する時間帯、スタイルの好み、接客の好み、特別なリクエスト)を取得します。好み設定をまだ保存していない顧客には、空の好み設定(一覧は空配列、ほかはnull)を返します。顧客が存在しない場合は404を返します。
+ * @summary Get customer preferences
+ */
+export function useCustomerCrudGetPreferences<TData = Awaited<ReturnType<typeof customerCrudGetPreferences>>, TError = ModelsProblemDetails>(
+ id: ModelsCustomerId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudGetPreferences>>, TError, TData>>, }
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getCustomerCrudGetPreferencesQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 export type customerCrudUpdatePreferencesResponse200 = {
   data: CustomerCrudUpdatePreferences200
   status: 200
@@ -2666,7 +3121,7 @@ export const getCustomerCrudUpdatePreferencesUrl = (id: ModelsCustomerId,) => {
 }
 
 /**
- * 顧客の施術好みや指名スタッフなどの希望設定のうち、指定した項目だけを更新し、パーソナライズされた提案に反映します。好み設定がまだない場合は作成し、指定しなかった項目はnullになります。顧客が存在しない場合は404を、preferredStaffIdやavoidStaffIdsに存在しないスタッフを指定した場合は400を返します。
+ * 顧客の好み設定のうち、指定した項目だけを更新します。好み設定をまだ保存していない顧客には作成し、指定しなかった項目は空(一覧は空配列、ほかはnull)になります。顧客が存在しない場合は404を返します。preferredStaffIdやavoidStaffIdsに、存在しないスタッフか削除されたスタッフを指定した場合と、指名を希望するスタッフが避けたいスタッフに含まれることになる場合は400を返します。
  * @summary Update customer preferences
  */
 export const customerCrudUpdatePreferences = async (id: ModelsCustomerId,
@@ -2734,7 +3189,7 @@ const {mutation: mutationOptions} = options ?
     export type CustomerCrudUpdatePreferencesMutationVariables = {id: ModelsCustomerId;data: ModelsCustomerPreferencesUpdateRequest}
 
     /**
- * 顧客の施術好みや指名スタッフなどの希望設定のうち、指定した項目だけを更新し、パーソナライズされた提案に反映します。好み設定がまだない場合は作成し、指定しなかった項目はnullになります。顧客が存在しない場合は404を、preferredStaffIdやavoidStaffIdsに存在しないスタッフを指定した場合は400を返します。
+ * 顧客の好み設定のうち、指定した項目だけを更新します。好み設定をまだ保存していない顧客には作成し、指定しなかった項目は空(一覧は空配列、ほかはnull)になります。顧客が存在しない場合は404を返します。preferredStaffIdやavoidStaffIdsに、存在しないスタッフか削除されたスタッフを指定した場合と、指名を希望するスタッフが避けたいスタッフに含まれることになる場合は400を返します。
  * @summary Update customer preferences
  */
 export const useCustomerCrudUpdatePreferences = <TError = ModelsProblemDetails,

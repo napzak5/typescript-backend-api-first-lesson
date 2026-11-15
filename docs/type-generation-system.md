@@ -63,9 +63,11 @@ options:
 The document describes every domain that is defined in TypeSpec. The backend
 implements only the Salon operations, the operations on the service
 categories and on the services of a salon (`ServiceCategoryCrud`,
-`ServiceCrud`), five of the eighteen operations of `CustomerCrud` (the
-customer ledger: `list`, `create`, `get`, `update` and `delete`), the three
-of `CustomerProfile` (a customer's own profile), the five operations of
+`ServiceCrud`), seven of the nineteen operations of `CustomerCrud` (the
+customer ledger: `list`, `create`, `get`, `update` and `delete`; the
+preferences of a customer: `getPreferences` and `updatePreferences`), the
+five of `CustomerProfile` (a customer's own profile, and their own
+preferences), the five operations of
 `StaffCrud` (the staff ledger of a salon: `list`, `create`, `get`, `update`
 and `delete`), the two of `StaffSchedules` (when a staff member works:
 `list` and `update`), the three of `StaffInvitations` (the invitation by

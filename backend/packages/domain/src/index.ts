@@ -1,6 +1,7 @@
 // Use cases
 export * from './business-logic/auth'
 export * from './business-logic/customer'
+export * from './business-logic/customer-preferences'
 export * from './business-logic/salon'
 export * from './business-logic/service'
 export * from './business-logic/service-category'
@@ -13,6 +14,7 @@ export * from './business-logic/staff-schedule'
 // Models
 export * from './models/auth'
 export * from './models/customer'
+export * from './models/customer-preferences'
 export * from './models/salon'
 export * from './models/service'
 export * from './models/service-category'
@@ -24,6 +26,7 @@ export * from './models/staff-schedule'
 
 // Repositories
 export * from './repositories/customer.repository'
+export * from './repositories/customer-preferences.repository'
 export * from './repositories/salon.repository'
 export * from './repositories/service.repository'
 export * from './repositories/service-category.repository'

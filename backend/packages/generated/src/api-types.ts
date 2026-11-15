@@ -1096,6 +1096,30 @@ export interface paths {
         patch: operations["CustomerProfile_update"];
         trace?: never;
     };
+    "/api/v1/customers/me/preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get the signed-in customer's preferences
+         * @description ログインしているユーザーの好み設定を取得します。好み設定をまだ保存していない場合は、空の好み設定(一覧は空配列、ほかはnull)を返します。プロフィールをまだ作っていない場合と、顧客レコードが削除された場合は404を返します。
+         */
+        get: operations["CustomerProfile_getPreferences"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update the signed-in customer's preferences
+         * @description ログインしているユーザーの好み設定のうち、指定した項目だけを更新します。項目の規則は、台帳の好み設定の更新と同じです。プロフィールをまだ作っていない場合と、顧客レコードが削除された場合は404を返します。
+         */
+        patch: operations["CustomerProfile_updatePreferences"];
+        trace?: never;
+    };
     "/api/v1/customers/merge": {
         parameters: {
             query?: never;
@@ -1211,7 +1235,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * Get customer preferences
+         * @description 顧客の好み設定(指名を希望するスタッフ、避けたいスタッフ、希望する時間帯、スタイルの好み、接客の好み、特別なリクエスト)を取得します。好み設定をまだ保存していない顧客には、空の好み設定(一覧は空配列、ほかはnull)を返します。顧客が存在しない場合は404を返します。
+         */
+        get: operations["CustomerCrud_getPreferences"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1219,7 +1247,7 @@ export interface paths {
         head?: never;
         /**
          * Update customer preferences
-         * @description 顧客の施術好みや指名スタッフなどの希望設定のうち、指定した項目だけを更新し、パーソナライズされた提案に反映します。好み設定がまだない場合は作成し、指定しなかった項目はnullになります。顧客が存在しない場合は404を、preferredStaffIdやavoidStaffIdsに存在しないスタッフを指定した場合は400を返します。
+         * @description 顧客の好み設定のうち、指定した項目だけを更新します。好み設定をまだ保存していない顧客には作成し、指定しなかった項目は空(一覧は空配列、ほかはnull)になります。顧客が存在しない場合は404を返します。preferredStaffIdやavoidStaffIdsに、存在しないスタッフか削除されたスタッフを指定した場合と、指名を希望するスタッフが避けたいスタッフに含まれることになる場合は400を返します。
          */
         patch: operations["CustomerCrud_updatePreferences"];
         trace?: never;
@@ -4281,16 +4309,16 @@ export interface components {
         };
         /**
          * @description 顧客の好み設定レスポンス - customer_preferences テーブルの1行。顧客ごとに最大1行。
-         *     プロパティ名と null 許可は DB カラムと一致させている
+         *     プロパティ名と null 許可は DB カラムと一致させている。行のない顧客の好み設定は、一覧が空配列で、ほかは null
          */
         "Models.CustomerPreferencesResponse": {
-            /** @description 指名を希望するスタッフのID。指名がない場合はnull */
+            /** @description 指名を希望するスタッフのID。指名がない場合はnull。保存したあとで削除されたスタッフのIDも、そのまま返す */
             preferredStaffId: (string & components["schemas"]["Models.StaffId"]) | null;
-            /** @description 希望時間帯一覧。特に希望がない場合はnull */
-            preferredTimeSlots: components["schemas"]["Models.TimeSlot"][] | null;
-            /** @description 避けたいスタッフのID一覧。特にない場合はnull */
-            avoidStaffIds: components["schemas"]["Models.StaffId"][] | null;
-            /** @description スタイルの好み設定。設定がない場合はnull */
+            /** @description 希望する時間帯の一覧。希望がない場合は空配列 */
+            preferredTimeSlots: components["schemas"]["Models.TimeSlot"][];
+            /** @description 避けたいスタッフのIDの一覧。ない場合は空配列。保存したあとで削除されたスタッフのIDも、そのまま返す */
+            avoidStaffIds: components["schemas"]["Models.StaffId"][];
+            /** @description スタイルの好み。設定がない場合はnull */
             stylePreferences: components["schemas"]["Models.StylePreference"] | null;
             /** @description 会話の多さなど、接客時のコミュニケーションの好み。特に希望がない場合はnull */
             communicationStyle: string | null;
@@ -4298,21 +4326,21 @@ export interface components {
             specialRequests: string | null;
         };
         /**
-         * @description 顧客の好み設定の部分更新リクエスト - 指定した項目だけを更新する。null を指定した項目はクリアする。
-         *     好み設定がまだない場合は作成し、指定しなかった項目は null になる
+         * @description 顧客の好み設定の部分更新リクエスト - 指定した項目だけを更新する。DB で NULL 許可のカラムは null でクリアでき、一覧は空配列でクリアする。
+         *     好み設定の行がまだない顧客には行を作り、指定しなかった項目は空(一覧は空配列、ほかは null)になる
          */
         "Models.CustomerPreferencesUpdateRequest": {
-            /** @description 指名を希望するスタッフのID。存在するスタッフを指定する。nullでクリア */
+            /** @description 指名を希望するスタッフのID。削除されていないスタッフを指定する。避けたいスタッフ(avoidStaffIds)は指定できない。nullでクリア */
             preferredStaffId?: (string & components["schemas"]["Models.StaffId"]) | null;
-            /** @description 希望時間帯一覧。nullでクリア */
-            preferredTimeSlots?: components["schemas"]["Models.TimeSlot"][] | null;
-            /** @description 避けたいスタッフのID一覧。存在するスタッフを指定する。nullでクリア */
-            avoidStaffIds?: components["schemas"]["Models.StaffId"][] | null;
-            /** @description スタイルの好み設定。nullでクリア */
+            /** @description 希望する時間帯の一覧。指定した一覧で置き換える。各時間帯は開始が終了より前で、互いに重ならない */
+            preferredTimeSlots?: components["schemas"]["Models.TimeSlot"][];
+            /** @description 避けたいスタッフのIDの一覧。指定した一覧で置き換える。削除されていないスタッフを指定する。同じIDの繰り返しと、指名を希望するスタッフ(preferredStaffId)は指定できない */
+            avoidStaffIds?: components["schemas"]["Models.StaffId"][];
+            /** @description スタイルの好み。指定した内容で、まとまりごと置き換える。nullでクリア */
             stylePreferences?: components["schemas"]["Models.StylePreference"] | null;
-            /** @description 会話の多さなど、接客時のコミュニケーションの好み。nullでクリア */
+            /** @description 会話の多さなど、接客時のコミュニケーションの好み。空白だけの文字列は指定できない。nullでクリア */
             communicationStyle?: string | null;
-            /** @description 特別なリクエスト。nullでクリア */
+            /** @description 特別なリクエスト。空白だけの文字列は指定できない。nullでクリア */
             specialRequests?: string | null;
         };
         /**
@@ -8740,16 +8768,19 @@ export interface components {
             /** @description 在籍して勤務しているかどうか。自分自身のスタッフ情報では、falseにできない */
             isActive?: boolean;
         };
-        /** @description スタイルの好み - customer_preferences.stylePreferences(jsonb) に保存する構造 */
+        /**
+         * @description スタイルの好み - customer_preferences.stylePreferences(jsonb) に保存する構造。
+         *     一覧は null にならない。1つもない場合は空配列
+         */
         "Models.StylePreference": {
-            /** @description 希望の髪の長さ。特に希望がない場合はnull */
+            /** @description 希望の髪の長さ。特に希望がない場合はnull。空白だけの文字列は指定できない */
             preferredLength: string | null;
-            /** @description 希望のカラー一覧。特に希望がない場合はnull */
-            preferredColors: string[] | null;
-            /** @description 避けたいスタイル一覧。特にない場合はnull */
-            avoidStyles: string[] | null;
-            /** @description 参考画像URL一覧。画像がない場合はnull */
-            inspirationImages: string[] | null;
+            /** @description 希望のカラーの一覧。希望がない場合は空配列。空白だけの要素と、同じ要素の繰り返しは指定できない */
+            preferredColors: string[];
+            /** @description 避けたいスタイルの一覧。ない場合は空配列。空白だけの要素と、同じ要素の繰り返しは指定できない */
+            avoidStyles: string[];
+            /** @description 参考画像のURL(http または https、500文字まで)の一覧。ない場合は空配列。同じURLの繰り返しは指定できない */
+            inspirationImages: string[];
         };
         /**
          * @description 準備完了チェックの結果モデル。
@@ -15704,6 +15735,207 @@ export interface operations {
             };
         };
     };
+    CustomerProfile_getPreferences: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The request has succeeded. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        data: components["schemas"]["Models.CustomerPreferencesResponse"];
+                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        meta: components["schemas"]["Models.ResponseMeta"] | null;
+                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        links: {
+                            [key: string]: string;
+                        } | null;
+                    };
+                };
+            };
+            /**
+             * @description 認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
+             *     ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
+             *     WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+             */
+            401: {
+                headers: {
+                    /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
+                    "WWW-Authenticate": string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description 認証されているが、この操作を行う権限がない (403)。 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The server cannot find the requested resource. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
+             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+             */
+            429: {
+                headers: {
+                    /** @description 再試行できるようになるまでの秒数。 */
+                    "Retry-After": number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+        };
+    };
+    CustomerProfile_updatePreferences: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Models.CustomerPreferencesUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description The request has succeeded. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        data: components["schemas"]["Models.CustomerPreferencesResponse"];
+                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        meta: components["schemas"]["Models.ResponseMeta"] | null;
+                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        links: {
+                            [key: string]: string;
+                        } | null;
+                    };
+                };
+            };
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description 認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
+             *     ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
+             *     WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+             */
+            401: {
+                headers: {
+                    /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
+                    "WWW-Authenticate": string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description 認証されているが、この操作を行う権限がない (403)。 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The server cannot find the requested resource. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
+             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+             */
+            429: {
+                headers: {
+                    /** @description 再試行できるようになるまでの秒数。 */
+                    "Retry-After": number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+        };
+    };
     CustomerCrud_merge: {
         parameters: {
             query?: never;
@@ -16366,6 +16598,102 @@ export interface operations {
                         meta: components["schemas"]["Models.PaginationMeta"];
                         /** @description 関連するページ遷移リンク。HATEOAS 連携や外部連携向けに利用する。 */
                         links: components["schemas"]["Models.PaginationLinks"];
+                    };
+                };
+            };
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description 認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
+             *     ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
+             *     WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+             */
+            401: {
+                headers: {
+                    /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
+                    "WWW-Authenticate": string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description 認証されているが、この操作を行う権限がない (403)。 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The server cannot find the requested resource. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
+             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+             */
+            429: {
+                headers: {
+                    /** @description 再試行できるようになるまでの秒数。 */
+                    "Retry-After": number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+        };
+    };
+    CustomerCrud_getPreferences: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["schemas"]["Models.CustomerId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The request has succeeded. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        data: components["schemas"]["Models.CustomerPreferencesResponse"];
+                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        meta: components["schemas"]["Models.ResponseMeta"] | null;
+                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        links: {
+                            [key: string]: string;
+                        } | null;
                     };
                 };
             };

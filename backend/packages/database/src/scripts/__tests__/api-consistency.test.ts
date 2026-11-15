@@ -199,6 +199,31 @@ describe('compareModel', () => {
     ])
   })
 
+  it('reports an omitted column that the table does not have', () => {
+    const exposed = properties({
+      id: {},
+      name: {},
+      description: { nullable: true },
+    })
+
+    expect(
+      kindsOf(rule({ omittedColumns: ['deletedAt', 'removedAt'] }), exposed),
+    ).toEqual(['omittedUnknownColumn:removedAt'])
+  })
+
+  it('reports nothing about omitted columns when the rule omits none', () => {
+    const exposed = properties({
+      id: {},
+      name: {},
+      description: { nullable: true },
+    })
+
+    expect(kindsOf(rule({ omittedColumns: [] }), exposed)).toEqual([
+      'missingColumn:deletedAt',
+    ])
+    expect(kindsOf(rule(), exposed)).toEqual([])
+  })
+
   it('accepts a property with exactly the values of the enum of its column, in any order', () => {
     const findings = enumFindings(
       properties({ status: { enumValues: ['closed', 'open'] } }),
@@ -282,6 +307,18 @@ describe('describeFinding', () => {
       }),
     ).toBe(
       'Models.SalonResponse.description must allow null because the column does',
+    )
+  })
+
+  it('tells that an omitted column is not a column of the table', () => {
+    expect(
+      describeFinding({
+        model: 'Models.CustomerPreferencesResponse',
+        property: 'preferredServices',
+        kind: 'omittedUnknownColumn',
+      }),
+    ).toBe(
+      'Models.CustomerPreferencesResponse.preferredServices is left out by the rule of the model, and the table has no such column',
     )
   })
 
@@ -524,6 +561,38 @@ describe('modelRules', () => {
         omittedColumns: [...managed, ...notTheCustomers],
         embedded: undefined,
         computed: undefined,
+      },
+    })
+  })
+
+  it('shows the preferences of a customer without the row that holds them, and lets a request change every one of them', () => {
+    const theRow = ['id', 'customerId', 'createdAt', 'updatedAt']
+
+    const rules = Object.fromEntries(
+      modelRules
+        .filter((modelRule) => modelRule.table === 'customerPreferences')
+        .map(
+          ({ model, kind, omittedColumns, embedded, computed, narrowed }) => [
+            model,
+            { kind, omittedColumns, embedded, computed, narrowed },
+          ],
+        ),
+    )
+
+    expect(rules).toEqual({
+      'Models.CustomerPreferencesResponse': {
+        kind: 'response',
+        omittedColumns: theRow,
+        embedded: undefined,
+        computed: undefined,
+        narrowed: undefined,
+      },
+      'Models.CustomerPreferencesUpdateRequest': {
+        kind: 'update',
+        omittedColumns: theRow,
+        embedded: undefined,
+        computed: undefined,
+        narrowed: undefined,
       },
     })
   })

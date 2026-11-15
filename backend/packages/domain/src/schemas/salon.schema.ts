@@ -12,8 +12,10 @@ import {
   atLeastOneProperty,
   dayOfWeekOf,
   nonBlankText,
+  orderedTimeSlot,
   phoneNumber,
   timeOfDay,
+  timeSlot,
   withSeconds,
 } from './rules'
 
@@ -95,11 +97,6 @@ const openingHoursListSchema = z.array(openingHoursSchema).check((context) => {
   })
 })
 
-const timeSlotSchema = z.strictObject({
-  startTime: z.iso.time({ precision: -1 }),
-  endTime: z.iso.time({ precision: -1 }),
-})
-
 const dateRangeSchema = z.strictObject({
   startDate: z.iso.datetime(),
   endDate: z.iso.datetime(),
@@ -111,22 +108,17 @@ const dateRangeSchema = z.strictObject({
  */
 export const storedBusinessHoursSchema = z.strictObject({
   dayOfWeek: DayOfWeekTypeSchema,
-  operatingSlots: z.array(timeSlotSchema),
-  breakSlots: z.array(timeSlotSchema).nullable(),
+  operatingSlots: z.array(timeSlot),
+  breakSlots: z.array(timeSlot).nullable(),
   isClosed: z.boolean(),
   effectivePeriod: dateRangeSchema.nullable(),
   timezone: nonBlankText.nullable(),
 }) satisfies z.ZodType<ApiBusinessHours>
 
-const orderedTimeSlotSchema = timeSlotSchema.refine(
-  (slot) => slot.startTime < slot.endTime,
-  { path: ['endTime'], message: 'Must be later than startTime' },
-)
-
 const businessHoursSchema = storedBusinessHoursSchema
   .extend({
-    operatingSlots: z.array(orderedTimeSlotSchema),
-    breakSlots: z.array(orderedTimeSlotSchema).nullable(),
+    operatingSlots: z.array(orderedTimeSlot),
+    breakSlots: z.array(orderedTimeSlot).nullable(),
     // Compared as times: as text, `…:00Z` sorts after `…:00.500Z`.
     effectivePeriod: dateRangeSchema
       .refine(

@@ -6,6 +6,7 @@ import type {
 } from '@beauty-salon-backend/domain'
 import {
   Argon2PasswordHasher,
+  CustomerPreferencesRepository,
   CustomerRepository,
   type Database,
   type Logger,
@@ -35,6 +36,10 @@ import { requestLogging } from './middleware/request-logging'
 import { createAdminAuthRouter } from './routes/admin-auth'
 import { createAuthRouter } from './routes/auth'
 import { createCustomerRouter } from './routes/customer'
+import {
+  createCustomerPreferencesRouter,
+  createOwnCustomerPreferencesRouter,
+} from './routes/customer-preferences'
 import { createSalonRouter } from './routes/salon'
 import { createServiceRouter } from './routes/service'
 import { createServiceCategoryRouter } from './routes/service-category'
@@ -199,6 +204,24 @@ export const createApp = ({
     `${API_BASE_PATH}/staff-profiles`,
     createStaffProfileRouter(
       { staffProfileRepository: new StaffProfileRepository(database) },
+      authenticated,
+    ),
+  )
+  const customerPreferencesDependencies = {
+    customerPreferencesRepository: new CustomerPreferencesRepository(database),
+  }
+  // "me" first: the router below it would take it for the ID of a customer.
+  app.use(
+    `${API_BASE_PATH}/customers/me/preferences`,
+    createOwnCustomerPreferencesRouter(
+      customerPreferencesDependencies,
+      authenticated,
+    ),
+  )
+  app.use(
+    `${API_BASE_PATH}/customers/:id/preferences`,
+    createCustomerPreferencesRouter(
+      customerPreferencesDependencies,
       authenticated,
     ),
   )
