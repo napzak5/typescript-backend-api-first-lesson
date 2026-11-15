@@ -19,6 +19,7 @@ export {
 export { SmtpMailer, type SmtpSettings } from './mail/smtp-mailer'
 
 // Repositories
+export { AvailableSlotRepository } from './repositories/available-slot.repository.impl'
 export { BookingRepository } from './repositories/booking.repository.impl'
 export { CustomerRepository } from './repositories/customer.repository.impl'
 export { CustomerPreferencesRepository } from './repositories/customer-preferences.repository.impl'
