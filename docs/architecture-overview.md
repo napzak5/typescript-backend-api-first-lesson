@@ -39,12 +39,13 @@ Before relying on anything, check this table.
 | Services of a salon (`/api/v1/salons/{salonId}/services`) | Implemented in every layer: list, create, get, update, bulk update, delete, the six operations of `ServiceCrud`. A service carries its options (the rows of `service_options`) in its requests and responses, and a package names the services it combines. The bulk update changes all the services it names or none of them. A delete keeps the row and marks it with `deletedAt`, and is refused with 409 while a package contains the service. List and get are public; create, update, bulk update and delete need a signed-in user with the permission. `isActive`, `serviceStatus`, `availability`, `bookingRequirements` and `maxBookingsPerDay` are stored and returned, and the list can filter by `isActive`; nothing else reads them: which services can be booked is not decided yet. See [Service Menu](./service-menu.md) (Japanese). |
 | Customer ledger (`/api/v1/customers`) | Implemented in every layer: list, create, get, update, delete, five of the 18 operations of `CustomerCrud`. A customer belongs to no salon: the ledger is one for the whole platform, and its routes are not below a salon. No operation is public: list, create, get and update need a signed-in administrator or member of a salon (owner, manager or staff of any salon), delete an administrator, an owner or a manager. A delete keeps the row and marks it with `deletedAt`. The other 13 operations of `CustomerCrud` are not implemented: the preferences (`PATCH /api/v1/customers/{id}/preferences`), batch get, bulk create, bulk update, bulk delete, restore, merge, audit history, versions, the two exports, statistics and the data deletion request. A signed-in customer reaches no route of the ledger; their own record is the profile of the next row. `isActive` and `customerStatus` are stored and returned, and the list can filter by `customerStatus`; nothing else reads them: which customers can book is not decided yet. Nothing maintains the points, the lifetime value or the visit counters. See [Customer Ledger](./customers.md) (Japanese). |
 | Customer profile (`/api/v1/customers/me`) | Implemented in every layer: get, create, update, the three operations of `CustomerProfile`. The profile is the customer record of the signed-in account. The route names no record: the account alone says which one, so a customer reaches no other. Only a customer account has a profile; an administrator and a member of a salon are answered with 403. A registered user has no record until they create the profile. The creation takes over the customer that the ledger has under the account's email address, unless that customer belongs to another account (409), and needs an account that has confirmed its address (409); without such a customer it adds one to the ledger. The response leaves out what the staff keep to themselves (notes, tags, status, the referrer, the lifetime value, the counts of no-shows and cancellations), and the requests write only what is the customer's own: the name, the contact details, the birth date, the preferences and the three consents. A delete of the customer in the ledger takes the profile from the account, which may then create a new one. See [Customer Ledger](./customers.md) (Japanese). |
-| Staff ledger of a salon (`/api/v1/salons/{salonId}/staff`) | Implemented in every layer: list, create, get, update, delete, the five operations of `StaffCrud`. The ledger is what a salon keeps about its staff as their employer: names and contact details, the terms of employment (base salary, commission rate, employment type, hire date) and how a staff member takes bookings. Nothing of it is public, reading included: every operation needs an administrator or the owner of the salon in the path; a manager and a staff member are answered with 403. Deactivating (`isActive: false`) or deleting a staff member takes the salon from the login account that is linked to it, from its next request on, so nobody deactivates or deletes the staff member their own account belongs to (409). The email is unique among the staff members of one salon who are not deleted, the staff code among all staff members of the salon. A delete keeps the row and marks it with `deletedAt`. A staff member gets a login account by invitation (next row). See [Staff Ledger](./staff.md) (Japanese). |
-| Staff invitations (`/api/v1/salons/{salonId}/staff/{id}/invitation`, `/api/v1/auth/staff-invitation`) | Implemented in every layer: get, create and delete, the three operations of `StaffInvitations`, and `verifyStaffInvitation` and `acceptStaffInvitation` of `AuthCrud`. An invitation is how a staff member of the ledger gets a login account. A staff member holds at most one (a row of `staff_invitations`), so the path names no invitation ID. An administrator or the owner of the salon in the path invites to a role (`SalonRoleType`: owner, manager or staff; only an administrator gives the role of an owner), and a new invitation replaces the one the staff member holds. The link is mailed to the address of the ledger, and the answer does not tell whether that address has an account. A staff member who has an account or is not active is not invited (409), and an invitation that was mailed less than 60 seconds ago is not replaced (409). The token works once, for 7 days, and only while the staff member is active, not deleted, without an account and still has the address the invitation went to. Whoever holds it reads the invitation (`verify`) and accepts it with a password of their own (`accept`), both without an access token. Accepting creates the account, active and with its address verified, and links it to the staff member (`users.staffId` and `staff.userId`). An address that has an account is refused (409), except a registration that never confirmed the address, which becomes the account. Not implemented: linking an account that exists already, changing the role of a linked account, unlinking one. See [Staff Ledger](./staff.md#スタッフのログインアカウント) (Japanese). |
+| Staff ledger of a salon (`/api/v1/salons/{salonId}/staff`) | Implemented in every layer: list, create, get, update, delete, the five operations of `StaffCrud`. The ledger is what a salon keeps about its staff as their employer: names and contact details, the terms of employment (base salary, commission rate, employment type, hire date) and how a staff member takes bookings. Nothing of it is public, reading included: every operation needs an administrator or the owner of the salon in the path; a manager and a staff member are answered with 403. Deactivating (`isActive: false`) or deleting a staff member takes the salon from the login account that is linked to it, from its next request on, so nobody deactivates or deletes the staff member their own account belongs to (409). The email is unique among the staff members of one salon who are not deleted, the staff code among all staff members of the salon. A delete keeps the row and marks it with `deletedAt`. A staff member gets a login account by invitation (next row), and the salon reads that account, changes its role and unlinks it (the row after). See [Staff Ledger](./staff.md) (Japanese). |
+| Staff invitations (`/api/v1/salons/{salonId}/staff/{id}/invitation`, `/api/v1/auth/staff-invitation`) | Implemented in every layer: get, create and delete, the three operations of `StaffInvitations`, and `verifyStaffInvitation`, `acceptStaffInvitation` and `joinStaffInvitation` of `AuthCrud`. An invitation is how a staff member of the ledger gets a login account. A staff member holds at most one (a row of `staff_invitations`), so the path names no invitation ID. An administrator or the owner of the salon in the path invites to a role (`SalonRoleType`: owner, manager or staff; only an administrator gives the role of an owner), and a new invitation replaces the one the staff member holds. The link is mailed to the address of the ledger, and the answer does not tell whether that address has an account. A staff member who has an account or is not active is not invited (409), and an invitation that was mailed less than 60 seconds ago is not replaced (409). The token works once, for 7 days, and only while the staff member is active, not deleted, without an account and still has the address the invitation went to. Whoever holds it reads the invitation (`verify`), which also names the route that takes the token next, and accepts it with a password of their own (`accept`), both without an access token. Accepting creates the account, active and with its address verified, and links it to the staff member (`users.staffId` and `staff.userId`). An address that has an account is refused (409), with two exceptions. A registration that never confirmed the address becomes the account. And an account with the role of an owner, a manager or staff that reaches no salon (a staff member who changed salons, an account that was unlinked) signs in and joins (`join`, with its access token and the mailed token): the account is linked, gets the role of the invitation and keeps its password and its sessions. The token never stands in for the password of an account that exists. See [Staff Ledger](./staff.md#スタッフのログインアカウント) (Japanese). |
+| Staff accounts (`/api/v1/salons/{salonId}/staff/{id}/account`) | Implemented in every layer: get, update and delete, the three operations of `StaffAccounts`. The account of a staff member is the user that names the staff member in `users.staffId` and is not deleted. A staff member has at most one, so the path names no user ID. An administrator or the owner of the salon in the path reads it (`StaffAccountResponse`: the address, the role, the status, the two-factor status and the last login; nothing that authenticates), changes its role (`PATCH`; only an administrator gives the role of an owner, and the owner of the salon may take it from another owner) and unlinks it (`DELETE`: `users.staffId` and `staff.userId` become null, the account and the staff member stay, and the account keeps its role and reaches no salon). Nobody changes the role of their own account or unlinks it (409). A change takes effect with the next request of the account; no session is revoked. A check constraint keeps the role of a user that names a staff member to owner, manager or staff (`users_staff_needs_salon_role`). Not implemented: a staff member leaving a salon on their own, turning a customer account into a staff account, an account that belongs to several salons. See [Staff Ledger](./staff.md#紐づいたアカウントの管理) (Japanese). |
 | Staff schedules (`/api/v1/salons/{salonId}/staff/{id}/schedules`) | Implemented in every layer: list and update, the two operations of `StaffSchedules`. A schedule says when a staff member works. It is a list of entries (`StaffSchedule`, the rows of `staff_schedules`): weekly ones, at most one per day of the week, and ones for a single date, at most one per date, which replace the weekly entry on that date. An entry is a working day, with its hours and at most one break inside them, or a day off, without times. The update is a `PUT` whose body is the whole schedule: it replaces every row, in one transaction. With `?date=` the list answers with the one entry that applies to that date, or with none. Nothing of it is public: an administrator, the owner and the managers of the salon in the path read and write, and a staff member of the salon reads their own schedule. The schedule of a staff member who is not active can be read and written, that of a deleted one is answered with 404. Nothing reads the schedules to work out free slots yet. See [Staff Ledger](./staff.md#勤務スケジュール) (Japanese). |
 | Staff profiles (`/api/v1/staff-profiles`) | Implemented in every layer: list and get, the two operations of `StaffProfile`. A profile is what customers are shown of a row of the staff ledger, in a model of its own (`StaffProfileResponse`): the display name, the level, the position, the specialties, the biography, the photo, the years of experience, the certifications and whether the staff member takes bookings. The names, the contact details and the terms of employment are not in it. Both operations are public and read only. Shown are the staff members who are active and not deleted, of salons that are not deleted; any other is answered with 404, like an ID that no staff member has. The list goes across salons, in the order of registration, and filters by salon, by specialty and by the city of the salon. See [Staff Ledger](./staff.md#顧客に見せるプロフィール) (Japanese). |
-| Authentication (`/api/v1/auth`, `/api/v1/admin/auth`) | Implemented: `login`, `refresh`, `logout`, `logout-all` and `me`, on server-side sessions with opaque bearer tokens, and registration of customer accounts, email verification and password reset, each through a single-use token sent by mail, and password change, and verifying and accepting the invitation of a staff member, which creates the accounts of owners, managers and staff, and two-factor authentication with the one-time passwords of an authenticator app (TOTP) and backup codes, and the list of the signed-in user's sessions with the revocation of one of them, and under `/api/v1/admin/auth` the administrator operations: read a user, unlock an account, reset two-factor authentication. That is every operation in `specs/operations/auth-operations.tsp`: the 18 of `AuthCrud`, the 2 of `SessionCrud` and the 3 of `AdminAuthCrud`. See [Authentication and Authorization](./authentication.md). |
-| Authorization | Implemented for the Salon API (create, update, delete), for the service categories of a salon (create, update, delete), for the services of a salon (create, update, bulk update, delete), for the customer ledger and a customer's own profile (every operation), for the staff ledger of a salon, the schedules of its staff and their invitations (every operation) and for the administrator operations. An implemented operation that the contract does not mark `@useAuth(NoAuth)` needs a valid access token, and its use case decides whether the signed-in user may do what is asked. |
+| Authentication (`/api/v1/auth`, `/api/v1/admin/auth`) | Implemented: `login`, `refresh`, `logout`, `logout-all` and `me`, on server-side sessions with opaque bearer tokens, and registration of customer accounts, email verification and password reset, each through a single-use token sent by mail, and password change, and verifying, accepting and joining the invitation of a staff member, which creates the accounts of owners, managers and staff or links one that exists, and two-factor authentication with the one-time passwords of an authenticator app (TOTP) and backup codes, and the list of the signed-in user's sessions with the revocation of one of them, and under `/api/v1/admin/auth` the administrator operations: read a user, unlock an account, reset two-factor authentication. That is every operation in `specs/operations/auth-operations.tsp`: the 19 of `AuthCrud`, the 2 of `SessionCrud` and the 3 of `AdminAuthCrud`. See [Authentication and Authorization](./authentication.md). |
+| Authorization | Implemented for the Salon API (create, update, delete), for the service categories of a salon (create, update, delete), for the services of a salon (create, update, bulk update, delete), for the customer ledger and a customer's own profile (every operation), for the staff ledger of a salon, the schedules of its staff, their invitations and their accounts (every operation) and for the administrator operations. An implemented operation that the contract does not mark `@useAuth(NoAuth)` needs a valid access token, and its use case decides whether the signed-in user may do what is asked. |
 | System endpoints (`/api/system`) | Implemented: `alive`, `ready` and `health`. |
 | The other domains (booking, review, treatment, payment, inventory) | Specified in TypeSpec, so their generated types exist, and the database schema has their tables and seed data. The models agree with the tables (`pnpm check:api-db`). There is no domain, repository or route code. A request to one of these routes is answered with 404. The implementation order is in GitHub issue #4. |
 | Attachments, roles and permissions, purchase orders, medical charts | Specified in TypeSpec only. No table exists for them yet. |
@@ -197,7 +198,7 @@ infrastructure/src/
 
 api/src/
 ├── routes/auth/                       One *.handler.ts per operation of AuthCrud and
-│                                      SessionCrud, index.ts (router); the two operations
+│                                      SessionCrud, index.ts (router); the three operations
 │                                      of the invitation of a staff member are in
 │                                      routes/staff-invitation/
 └── routes/admin-auth/                 One *.handler.ts per operation of AdminAuthCrud,
@@ -366,30 +367,64 @@ domain/src/
 │                                      invitation gives (SalonRole); no ID type, because
 │                                      no route names an invitation
 ├── schemas/staff-invitation.schema.ts Zod schema of the create request (the role); the
-│                                      two requests that carry the token are in
+│                                      three requests that carry the token are in
 │                                      auth.schema.ts
 ├── mappers/read/staff-invitation.mapper.ts
 │                                      Row → response, without the hash of the token
 ├── repositories/staff-invitation.repository.ts
 │                                      IStaffInvitationRepository: findByStaff, issue,
-│                                      revoke, findUsable, accept; every outcome is a
-│                                      sum type
+│                                      revoke, findUsable, accept, join; every outcome
+│                                      is a sum type
 └── business-logic/staff-invitation/   One *.usecase.ts per operation; _shared/ holds
-                                       the dependencies, who may invite and who may give
-                                       which role (authorization.ts) and the refusals
-                                       (refusals.ts)
+                                       the dependencies, who may invite, who may give
+                                       which role and who may join (authorization.ts)
+                                       and the refusals (refusals.ts)
 
 infrastructure/src/
 └── repositories/staff-invitation.repository.impl.ts
                                        Every write in a transaction that locks the
                                        staff member; the account by one INSERT … ON
-                                       CONFLICT … DO UPDATE … WHERE
+                                       CONFLICT … DO UPDATE … WHERE; a joining locks
+                                       the staff member joined, the one left and the
+                                       user
 
 api/src/
 └── routes/staff-invitation/           One *.handler.ts per operation; index.ts has two
                                        routers: one mounted below
                                        /salons/:salonId/staff/:id, and one at
                                        /auth/staff-invitation for the holder of a token
+```
+
+The accounts of the staff are the users that name a staff member. The salon
+reads one, changes its role and unlinks it:
+
+```
+domain/src/
+├── models/staff-account.ts            API types, and the columns of a user the salon
+│                                      is shown (DbStaffAccount); no ID type, because
+│                                      no route names an account
+├── schemas/staff-account.schema.ts    Zod schema of the update request (the role)
+├── mappers/read/staff-account.mapper.ts
+│                                      Columns → response; names every property
+├── repositories/staff-account.repository.ts
+│                                      IStaffAccountRepository: findByStaff, update,
+│                                      unlink; every outcome is a sum type
+└── business-logic/staff-account/      One *.usecase.ts per operation; _shared/ holds
+                                       the dependencies, who may keep the accounts
+                                       (authorization.ts) and the refusals (refusals.ts)
+
+infrastructure/src/
+├── repositories/staff-account.repository.impl.ts
+│                                      The columns it selects; the update and the
+│                                      unlinking in a transaction that locks the
+│                                      staff member
+└── repositories/staff-member.ts       The staff member of a salon: the condition the
+                                       repositories below a staff member share
+
+api/src/
+└── routes/staff-account/              One *.handler.ts per operation of StaffAccounts,
+                                       index.ts (router, mounted below
+                                       /salons/:salonId/staff/:id)
 ```
 
 The staff profiles read the table of the ledger and write nothing, so they
@@ -553,10 +588,13 @@ profiles in `backend/packages/domain/src/models/staff-profile.ts`,
 `backend/packages/api/src/routes/staff-profile/_shared/types.ts`, the
 staff schedules in `backend/packages/domain/src/models/staff-schedule.ts`,
 `backend/packages/domain/src/schemas/staff-schedule.schema.ts` and
-`backend/packages/api/src/routes/staff-schedule/_shared/types.ts`, and the
+`backend/packages/api/src/routes/staff-schedule/_shared/types.ts`, the
 staff invitations in `backend/packages/domain/src/models/staff-invitation.ts`,
 `backend/packages/domain/src/schemas/staff-invitation.schema.ts` and
-`backend/packages/api/src/routes/staff-invitation/_shared/types.ts`.
+`backend/packages/api/src/routes/staff-invitation/_shared/types.ts`, and the
+staff accounts in `backend/packages/domain/src/models/staff-account.ts`,
+`backend/packages/domain/src/schemas/staff-account.schema.ts` and
+`backend/packages/api/src/routes/staff-account/_shared/types.ts`.
 
 Model naming and nullability rules are in
 [TypeSpec API Type Rules](./typespec-api-type-rules.md); the pipeline in
@@ -650,14 +688,16 @@ mounts everything in this order. The order is part of the design:
    services at `/api/v1/salons/:salonId/services`, the router of the staff
    ledger at `/api/v1/salons/:salonId/staff`, the router of the staff
    invitations at `/api/v1/salons/:salonId/staff/:id/invitation`, the
-   router of the staff
+   router of the staff accounts at
+   `/api/v1/salons/:salonId/staff/:id/account`, the router of the staff
    schedules at `/api/v1/salons/:salonId/staff/:id/schedules`, the router
    of the staff profiles at `/api/v1/staff-profiles` and the router of the
    customer ledger at `/api/v1/customers`. Each receives
    `authenticated`, which `createAuthenticated` builds once from the
-   authentication dependencies; the router of the staff profiles and the
-   one at `/api/v1/auth/staff-invitation` do not, because their
-   operations are public.
+   authentication dependencies; the router of the staff profiles does
+   not, because its operations are public. The one at
+   `/api/v1/auth/staff-invitation` wraps one of its three handlers with
+   it, the joining; the other two are public.
 7. `notFoundHandler` and `errorHandler`: turn what is left over into problem
    details.
 
@@ -993,11 +1033,14 @@ invited the path of a password reset. These are the differences:
   `staff_invitations_staff_unique`), so no route names an invitation ID, and
   a `POST` replaces the invitation the staff member holds.
 - **Two routers, because there are two kinds of callers.** Whoever was
-  invited has no account yet. `createStaffInvitationAcceptanceRouter` is
-  mounted at `/auth/staff-invitation`, takes no `authenticated` and has two
-  routes, `POST /verify` and `POST /accept`, which are operations of
-  `AuthCrud` in the contract. Both take the mailed token in the body, and
-  every response carries `Cache-Control: no-store` (`shared/never-stored.ts`).
+  invited has no account yet, or has one that reaches no salon.
+  `createStaffInvitationAcceptanceRouter` is mounted at
+  `/auth/staff-invitation` and has three routes, `POST /verify`,
+  `POST /accept` and `POST /join`, which are operations of `AuthCrud` in the
+  contract. The first two are not wrapped with `authenticated`; the third
+  is, because it links the account of whoever is signed in. All three take
+  the mailed token in the body, and every response carries
+  `Cache-Control: no-store` (`shared/never-stored.ts`).
 - **A permission that needs the body.** The use case first decides from the
   salon of the path (`mayInviteStaff`: whoever keeps the staff ledger, an
   administrator or the owner of that salon). The create then validates the
@@ -1017,7 +1060,7 @@ invited the path of a password reset. These are the differences:
 - **Outcomes as sum types.** The repository does not answer with a row or
   `null`: `issue` resolves to `issued` | `staffNotFound` | `linked` |
   `inactive` | `mailedMomentsAgo`, `findUsable` to `usable` | `unusable` |
-  `accountExists`, and so on
+  `accountExists` | `accountMayJoin`, and so on
   (`domain/src/repositories/staff-invitation.repository.ts`). The use case
   matches each with `.exhaustive()` and names the refusal
   (`_shared/refusals.ts`).
@@ -1027,8 +1070,8 @@ invited the path of a password reset. These are the differences:
   same 400 (`invitationRefused`). An invitation is usable exactly while it
   could be issued, and one query says so (`usableInvitation` in
   `infrastructure/src/repositories/staff-invitation.repository.impl.ts`).
-- **Writes that lock the staff member.** `issue`, `revoke` and `accept`
-  select the row of the staff member `FOR UPDATE` first, as the update and
+- **Writes that lock the staff member.** `issue`, `revoke`, `accept` and
+  `join` select the row of the staff member `FOR UPDATE` first, as the update and
   the delete of the ledger do, and then read again what they decide from.
   Of an acceptance and a taking back that arrive together, exactly one
   succeeds.
@@ -1044,9 +1087,65 @@ invited the path of a password reset. These are the differences:
   the address (409), the password against the blocklist (400), and only then
   the hash of the password and the write, which looks at the token and the
   address once more.
+- **An account that joins.** `verify` answers with one link, the route that
+  takes the token next: `accept` when the address has no account, `join`
+  when it has one with the role of an owner, a manager or staff that reaches
+  no salon (`isWithoutSalon` in `business-logic/auth/_shared/actor.ts`, the
+  condition of the scope `none`), and 409 for any other account. `join`
+  needs both the mailed token and a session of that account, so the token
+  never stands in for a password. The use case refuses a customer and an
+  administrator (403), validates the body (400) and refuses an account that
+  reaches a salon (409). The repository decides the rest once it holds its
+  locks: the staff member joined and the one the account leaves, in the
+  order of their IDs, and then the user. It resolves to `joined` |
+  `unusable` | `otherAddress` | `accountNotFree`. A joining sets
+  `users.staffId`, the role of the invitation and `staff.userId`, clears
+  `userId` of the staff member the account left unless that one is deleted,
+  and deletes the invitation. The password and the sessions stay.
 
 The rules are in [Staff Ledger](./staff.md#スタッフのログインアカウント), who may invite in
 [Authentication and Authorization](./authentication.md) (both Japanese).
+
+### A Staff Account Request
+
+The accounts of the staff (`business-logic/staff-account/`) are what a salon
+does with the account of a staff member once it is linked: read it, change
+its role, unlink it. A request takes the path of a request of whoever
+invites. These are the differences:
+
+- **No table of its own.** The account is the row of `users` that names the
+  staff member in `staffId` and is not deleted. The router is mounted at
+  `/salons/:salonId/staff/:id/account` and has three routes, `GET /`,
+  `PATCH /` and `DELETE /`; a staff member has at most one account (the
+  unique index `users_staff_unique`), so no route names a user ID. The
+  repository selects eight columns (`accountColumns`) and the mapper names
+  each, so nothing that authenticates reaches a response.
+- **An enum that is narrower than its column.** `role` of the response and
+  of the update request is `SalonRoleType` (owner, manager, staff), and the
+  column is `user_role`, which has customer and admin as well. A check
+  constraint (`users_staff_needs_salon_role`) keeps the role of a user that
+  names a staff member to those three, and the rules of the two models say
+  so to `pnpm check:api-db` (`narrowed`).
+- **Two permissions, and a rule about the actor.** `mayKeepStaffAccounts`
+  decides from the salon of the path. The update then validates the body and
+  asks `mayGiveRole` (403), as the invitation does. After that, nobody
+  changes the role of their own account or unlinks it (`isOwnStaffRecord`,
+  409). All of it comes before the salon and the staff member are looked up.
+- **Outcomes as sum types.** `findByStaff` resolves to `found` |
+  `staffNotFound` | `none`, `update` to `updated` | `staffNotFound` |
+  `none`, `unlink` to `unlinked` | `staffNotFound` | `none`
+  (`domain/src/repositories/staff-account.repository.ts`): a staff member
+  the salon does not have and a staff member without an account are
+  different 404s.
+- **Writes that lock the staff member.** The update and the unlinking select
+  the row of the staff member `FOR UPDATE` first, as the invitations do. The
+  unlinking sets `users.staffId` and `staff.userId` to null in that
+  transaction.
+- **Nothing is revoked.** The scope of an actor is derived on every request,
+  so a new role and an unlinking take effect with the next request of the
+  account, with the access token it has.
+
+The rules are in [Staff Ledger](./staff.md#紐づいたアカウントの管理) (Japanese).
 
 ### A Staff Profile Request
 
@@ -1101,8 +1200,9 @@ response under `/api/v1/auth` and `/api/v1/admin/auth` carries
 | Check a reset token | `POST /api/v1/auth/reset-password/verify` | Not needed; the body carries the mailed token | `VerifyResetTokenUseCase` | 204 |
 | Reset the password | `POST /api/v1/auth/reset-password` | Not needed; the body carries the mailed token | `ResetPasswordUseCase` | 204 |
 | Change the password | `POST /api/v1/auth/change-password` | Needed | `ChangePasswordUseCase` | 204 |
-| Read the invitation of a staff member | `POST /api/v1/auth/staff-invitation/verify` | Not needed; the body carries the mailed token | `VerifyStaffInvitationUseCase` | 200 with the invitation |
+| Read the invitation of a staff member | `POST /api/v1/auth/staff-invitation/verify` | Not needed; the body carries the mailed token | `VerifyStaffInvitationUseCase` | 200 with the invitation and the route that takes the token next |
 | Accept the invitation of a staff member | `POST /api/v1/auth/staff-invitation/accept` | Not needed; the body carries the mailed token | `AcceptStaffInvitationUseCase` | 204; the account of the staff member exists |
+| Join the invitation of a staff member | `POST /api/v1/auth/staff-invitation/join` | Needed, of the account the invitation was mailed to; the body carries the mailed token | `JoinStaffInvitationUseCase` | 204; the account is linked to the staff member |
 | Start the set-up of two-factor authentication | `POST /api/v1/auth/2fa/enable` | Needed | `EnableTwoFactorUseCase` | 200 with the secret for the authenticator app and the backup codes |
 | Confirm the set-up | `POST /api/v1/auth/2fa/verify` | Needed | `VerifyTwoFactorUseCase` | 204 |
 | Disable two-factor authentication | `POST /api/v1/auth/2fa/disable` | Needed | `DisableTwoFactorUseCase` | 204 |
@@ -1119,7 +1219,7 @@ lists build the links of a page with `pageLinks` (`shared/page-links.ts`).
 The three administrator operations have a router of their own
 (`routes/admin-auth/`), and their use cases start with the permission rule
 `mayAdministerAccounts` (`business-logic/auth/_shared/authorization.ts`):
-a signed-in user who is not an `admin` is answered with 403. The two
+a signed-in user who is not an `admin` is answered with 403. The three
 operations of the invitation of a staff member have a router of their own
 as well (`routes/staff-invitation/`, mounted at
 `/api/v1/auth/staff-invitation`), and their use cases are in
