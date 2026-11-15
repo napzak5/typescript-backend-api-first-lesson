@@ -14,7 +14,7 @@ PostgreSQL ── pnpm db:introspect ──▶ schema.ts     api-types.ts
                                   DbSalon、DbNewSalon ◀── マッパー ──▶ ApiSalonResponse、ApiSalonCreateRequest
 ```
 
-以下の例はすべて、参照実装である Salon のコードである。認証も同じ方法で型を導出している（`backend/packages/domain/src/models/auth.ts` の `DbUser`、`DbSession`、`DbNewSession`）。サロンのサービスカテゴリーとサービスも同じである（`backend/packages/domain/src/models/service-category.ts` の `DbServiceCategory`、`DbNewServiceCategory`、`backend/packages/domain/src/models/service.ts` の `DbService`、`DbNewService`、`DbServiceOption`、`DbNewServiceOption`）。顧客台帳も同じである（`backend/packages/domain/src/models/customer.ts` の `DbCustomer`、`DbNewCustomer`、`DbCustomerChanges`）。スタッフ台帳も同じである（`backend/packages/domain/src/models/staff.ts` の `DbStaff`、`DbNewStaff`、`DbStaffChanges`）。それ以外のドメインは DB スキーマと TypeSpec にあるだけで、モデルもマッパーもない（TypeSpec は DB と一致させてある）。
+以下の例はすべて、参照実装である Salon のコードである。認証も同じ方法で型を導出している（`backend/packages/domain/src/models/auth.ts` の `DbUser`、`DbSession`、`DbNewSession`）。サロンのサービスカテゴリーとサービスも同じである（`backend/packages/domain/src/models/service-category.ts` の `DbServiceCategory`、`DbNewServiceCategory`、`backend/packages/domain/src/models/service.ts` の `DbService`、`DbNewService`、`DbServiceOption`、`DbNewServiceOption`）。顧客台帳も同じである（`backend/packages/domain/src/models/customer.ts` の `DbCustomer`、`DbNewCustomer`、`DbCustomerChanges`）。スタッフ台帳も同じである（`backend/packages/domain/src/models/staff.ts` の `DbStaff`、`DbNewStaff`、`DbStaffChanges`）。顧客に見せるスタッフのプロフィールは、同じテーブルの一部を読むので、`DbStaff` から見せるカラムを `Pick` した `DbStaffProfile` を使う（`backend/packages/domain/src/models/staff-profile.ts`）。それ以外のドメインは DB スキーマと TypeSpec にあるだけで、モデルもマッパーもない（TypeSpec は DB と一致させてある）。
 
 - 型と制約の層ごとの対応、`pnpm check:api-db`: [API-DB型制約マッピング](./api-db-type-constraints-mapping.md)
 - TypeSpec の書き方: [TypeSpec API型定義ルール](./typespec-api-type-rules.md)
@@ -193,7 +193,7 @@ DB の型と API の型は、2 つのマッパーでつなぐ。
 - Write マッパーがリクエストを作り替えるのは、リクエストで書けるカラムに表現を変えるものがあるときと、リクエストが複数のテーブルの行を含むときだけである。サービスカテゴリーにはどちらもなく、Write マッパーがない。ユースケースは検証済みのリクエストをそのままリポジトリに渡す。Read マッパー（`backend/packages/domain/src/mappers/read/service-category.mapper.ts`）はあり、タイムスタンプを変換する
 - サービスにも表現を変えるカラムはないが、リクエストが `services` の行と、オプション（`service_options`）の行を含む。`ServiceWriteMapper`（`backend/packages/domain/src/mappers/write/service.mapper.ts`）は値を変換せず、この 2 つを分ける
 - 顧客にも表現を変えるカラムはなく、リクエストは `customers` の 1 行である。`CustomerWriteMapper`（`backend/packages/domain/src/mappers/write/customer.mapper.ts`）は何も変換せず、リクエストをそのまま行として返す。プロパティ名と表現が行と一致していることを、型検査がここで確認する。Read マッパー（`backend/packages/domain/src/mappers/read/customer.mapper.ts`）は、タイムスタンプのほかに、`jsonb` の `preferences` と、DB では文字列で API では Enum の `gender` を検査する
-- スタッフには表現を変えるカラムが 1 つある。歩合率（`commissionRate`）は、API では数値、`numeric(5,2)` のカラムでは文字列である。`StaffWriteMapper`（`backend/packages/domain/src/mappers/write/staff.mapper.ts`）はこれだけを変換し、更新では、リクエストにあるときだけ変更に含める。Read マッパー（`backend/packages/domain/src/mappers/read/staff.mapper.ts`）は、歩合率とタイムスタンプを変換し、レスポンスに出さない `awards` と `deletedAt` を落とす
+- スタッフには表現を変えるカラムが 1 つある。歩合率（`commissionRate`）は、API では数値、`numeric(5,2)` のカラムでは文字列である。`StaffWriteMapper`（`backend/packages/domain/src/mappers/write/staff.mapper.ts`）はこれだけを変換し、更新では、リクエストにあるときだけ変更に含める。Read マッパー（`backend/packages/domain/src/mappers/read/staff.mapper.ts`）は、歩合率とタイムスタンプを変換し、レスポンスに出さない `awards` と `deletedAt` を落とす。顧客に見せるプロフィールの Read マッパー（`backend/packages/domain/src/mappers/read/staff-profile.mapper.ts`）は、変換するカラムがないので、`Result` ではなく値を返す
 
 データの流れ:
 

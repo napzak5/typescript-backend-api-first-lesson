@@ -67,7 +67,8 @@ categories and on the services of a salon (`ServiceCategoryCrud`,
 customer ledger: `list`, `create`, `get`, `update` and `delete`), the three
 of `CustomerProfile` (a customer's own profile), five of the seven
 operations of `StaffCrud` (the staff ledger of a salon: `list`, `create`,
-`get`, `update` and `delete`), the
+`get`, `update` and `delete`), the two of `StaffProfile` (what customers
+are shown of a staff member: `list` and `get`), the
 authentication operations (those of
 `AuthCrud`, `SessionCrud` and `AdminAuthCrud`: login, refresh, logout, the
 current user, registration, email verification, password reset and change,

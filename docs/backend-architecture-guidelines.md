@@ -7,7 +7,7 @@
 - [アーキテクチャ概要](./architecture-overview.md): システム全体の説明。パッケージの依存関係、型生成の流れ、リクエストの流れ、実装済みの範囲はそちらにあり、本書では繰り返しません。
 - [CLAUDE.md](../CLAUDE.md): 規約とコマンドの正本。Salon ドメインの全レイヤーのシグネチャもそこにまとまっています。本書は規約の適用のしかたと理由を説明します。
 
-バックエンドで実装済みなのは、Salon ドメイン、サロンのサービスカテゴリー（`/api/v1/salons/{salonId}/service-categories`）、サロンのサービス（`/api/v1/salons/{salonId}/services`）、サロンのスタッフ台帳（`/api/v1/salons/{salonId}/staff`。`StaffCrud` のうち、スタッフの一覧、登録、1 件の取得、更新、削除）、顧客台帳（`/api/v1/customers`。`CustomerCrud` のうち、顧客の一覧、登録、1 件の取得、更新、削除）、認証のすべてのオペレーション（ログイン、トークンの再発行、ログアウト、全セッションのログアウト、自分の情報の取得、ユーザー登録、メールアドレスの確認、パスワードの再設定と変更、2 要素認証、セッションの一覧と無効化、管理者の操作）、システムエンドポイントだけです。ほかのドメインを実装するときは、Salon のファイルと同じ構成で書いてください。データが 1 つのサロンに属するドメインでは、書き方がいくつか変わります。その例がサービスカテゴリーで、違いは「[9. サロンに属するデータ](#9-サロンに属するデータ-サロンはパスで受け取る)」にまとめています。サービスカテゴリーにはなくサービスにあるもの（2 つのテーブルの行を含むリクエスト、2 つの項目を結ぶ規則、一括更新、論理削除）も、同じ節にあります。サロンに属し、公開のオペレーションがないデータの例がスタッフ台帳で、その違い（どのオペレーションでも最初に判定する権限、操作者自身のスタッフ情報を守る規則、サロンの中での 2 つの一意性）も、同じ節の最後にあります。サロンに属さず、公開のオペレーションもないデータの例が顧客台帳です。書き方の違い（何も変換しない Write マッパー、操作者だけで最初に判定する権限、依存から受け取る現在時刻、範囲の違う 2 つの一意性、権限のあとで返すクエリのエラー）は、実装パターンの 3、5、6、7、8 のそれぞれの箇所に書いてあります。認証と認可の仕様は [認証と認可](./authentication.md)、サービスカテゴリーとサービスの規則は [サービスメニュー](./service-menu.md)、顧客台帳の規則は [顧客台帳](./customers.md)、スタッフ台帳の規則は [スタッフ台帳](./staff.md) にあり、本書ではコードの書き方だけを扱います。
+バックエンドで実装済みなのは、Salon ドメイン、サロンのサービスカテゴリー（`/api/v1/salons/{salonId}/service-categories`）、サロンのサービス（`/api/v1/salons/{salonId}/services`）、サロンのスタッフ台帳（`/api/v1/salons/{salonId}/staff`。`StaffCrud` のうち、スタッフの一覧、登録、1 件の取得、更新、削除）、顧客に見せるスタッフのプロフィール（`/api/v1/staff-profiles`。`StaffProfile` の一覧と 1 件の取得）、顧客台帳（`/api/v1/customers`。`CustomerCrud` のうち、顧客の一覧、登録、1 件の取得、更新、削除）、認証のすべてのオペレーション（ログイン、トークンの再発行、ログアウト、全セッションのログアウト、自分の情報の取得、ユーザー登録、メールアドレスの確認、パスワードの再設定と変更、2 要素認証、セッションの一覧と無効化、管理者の操作）、システムエンドポイントだけです。ほかのドメインを実装するときは、Salon のファイルと同じ構成で書いてください。データが 1 つのサロンに属するドメインでは、書き方がいくつか変わります。その例がサービスカテゴリーで、違いは「[9. サロンに属するデータ](#9-サロンに属するデータ-サロンはパスで受け取る)」にまとめています。サービスカテゴリーにはなくサービスにあるもの（2 つのテーブルの行を含むリクエスト、2 つの項目を結ぶ規則、一括更新、論理削除）も、同じ節にあります。サロンに属し、公開のオペレーションがないデータの例がスタッフ台帳で、その違い（どのオペレーションでも最初に判定する権限、操作者自身のスタッフ情報を守る規則、サロンの中での 2 つの一意性）も、同じ節の最後にあります。公開しないデータのうち、誰にでも見せる部分の例がスタッフのプロフィールで、その違い（見せる列だけを読むリポジトリ、サロンの下に置かない公開のルート）も、同じ節の最後にあります。サロンに属さず、公開のオペレーションもないデータの例が顧客台帳です。書き方の違い（何も変換しない Write マッパー、操作者だけで最初に判定する権限、依存から受け取る現在時刻、範囲の違う 2 つの一意性、権限のあとで返すクエリのエラー）は、実装パターンの 3、5、6、7、8 のそれぞれの箇所に書いてあります。認証と認可の仕様は [認証と認可](./authentication.md)、サービスカテゴリーとサービスの規則は [サービスメニュー](./service-menu.md)、顧客台帳の規則は [顧客台帳](./customers.md)、スタッフ台帳の規則は [スタッフ台帳](./staff.md) にあり、本書ではコードの書き方だけを扱います。
 
 ---
 
@@ -226,6 +226,7 @@ const toApiSalon = (
 - 変換するのは表現だけです。`numeric` 列はドライバーが文字列で読み書きするので number と相互に変換し、`timestamptz` は ISO 8601 に直し、`jsonb` は API モデルのスキーマで検査します。
 - `null` を空文字や既定値に置き換えません。
 - Read マッパーは `Result` を返します。保存されているデータが API モデルに合わない場合は、クライアントの誤りではないので `validation` ではなく `database` エラーにします。
+- 変換する列が 1 つもない Read マッパーは、失敗することがないので、`Result` ではなく値を返します。スタッフのプロフィール（`backend/packages/domain/src/mappers/read/staff-profile.mapper.ts`）がその例で、レスポンスのプロパティを 1 つずつ名指しするだけです。
 - Update では、リクエストに存在するプロパティだけを変更にします（`fromUpdateRequest`）。プロパティがなければその列に触れず、`null` なら列を NULL にします。
 - Write マッパーが要るのは、表現を変える列があるときと、リクエストが複数のテーブルの行を含むときです。サービスカテゴリーにはどちらもなく、Write マッパーもありません。リクエストのプロパティがそのまま列で、どの列も API と DB で表現が同じなので、検証済みのリクエストをそのままリポジトリに渡します（`backend/packages/domain/src/models/service-category.ts` の `ServiceCategoryManagedColumn` のコメント）。サービスにも表現を変える列はありませんが、リクエストがサービスの行とオプション（`service_options`）の行を含むので、`ServiceWriteMapper`（`backend/packages/domain/src/mappers/write/service.mapper.ts`）がその 2 つを分けます。顧客にもどちらもありませんが、`CustomerWriteMapper`（`backend/packages/domain/src/mappers/write/customer.mapper.ts`）があります。何も変換せず、リクエストをそのまま行として返すだけです。リクエストの型と行の型が合っていることを、コンパイラがここで検査します。スタッフには表現を変える列が 1 つあります。`numeric` 列の `commissionRate` で、`StaffWriteMapper`（`backend/packages/domain/src/mappers/write/staff.mapper.ts`）が number を文字列に変えます。ほかの項目はそのまま渡します。
 
@@ -389,7 +390,7 @@ export const getSalonHandler = (
 - `RequestHandler` の型引数で、パスパラメータとレスポンス本文の型を決めます。レスポンスの型は `_shared/types.ts` で生成型の `operations` から取り出します。リクエスト本文の型は `unknown` です。
 - ハンドラーは検証しません。`req.body` と `req.params.id` をそのままユースケースに渡します。
 - クエリ文字列だけは例外です。文字列しか運べないので、一覧のハンドラーは `decodeSalonSearchQuery`（`_shared/query.ts`）で数値・真偽値・配列に直してから渡します。変換の部品はどの一覧でも同じで、`backend/packages/api/src/shared/query-parameters.ts` にあります。値のルールを判定するのはユースケースです。
-- 権限の判定がある一覧では、直せなかったクエリのエラーも、権限を判定したあとで返します。顧客の一覧のハンドラー（`backend/packages/api/src/routes/customer/list-customers.handler.ts`）は、`decodeCustomerSearchQuery` の結果を `Result` のままユースケースに渡します。`ListCustomersUseCase` の `execute(actor, query)` は、権限を判定してから、その `Result` がエラーならそれを返します。スタッフの一覧のハンドラー（`backend/packages/api/src/routes/staff/list-staff.handler.ts`）も同じで、`ListStaffUseCase` の `execute(actor, salon, query)` に `decodeStaffSearchQuery` の結果を渡します。Salon の一覧は公開で権限の判定がないので、ハンドラーがユースケースを呼ばずに変換のエラーを返します。
+- 権限の判定がある一覧では、直せなかったクエリのエラーも、権限を判定したあとで返します。顧客の一覧のハンドラー（`backend/packages/api/src/routes/customer/list-customers.handler.ts`）は、`decodeCustomerSearchQuery` の結果を `Result` のままユースケースに渡します。`ListCustomersUseCase` の `execute(actor, query)` は、権限を判定してから、その `Result` がエラーならそれを返します。スタッフの一覧のハンドラー（`backend/packages/api/src/routes/staff/list-staff.handler.ts`）も同じで、`ListStaffUseCase` の `execute(actor, salon, query)` に `decodeStaffSearchQuery` の結果を渡します。Salon の一覧とスタッフのプロフィールの一覧は公開で権限の判定がないので、ハンドラーがユースケースを呼ばずに変換のエラーを返します。
 - 結果は `match(result)…exhaustive()` で分岐します。成功は `{ data, meta: responseMeta(req), links }`、失敗は必ず `sendProblem(req, res, error)` です。ハンドラーでステータスコードとエラーの対応を書きません。
 - リンクは `req.baseUrl` から組み立てます。マウント先のパスをハンドラーに書きません。一覧のページのリンクは、どの一覧でも `pageLinks`（`backend/packages/api/src/shared/page-links.ts`）で作ります。
 - ルーターは `createSalonRouter(dependencies, authenticated)` のように依存と `authenticated` を受け取り、各ハンドラーに渡します。
@@ -478,6 +479,12 @@ app.use(
     authenticated,
   ),
 )
+app.use(
+  `${API_BASE_PATH}/staff-profiles`,
+  createStaffProfileRouter({
+    staffProfileRepository: new StaffProfileRepository(database),
+  }),
+)
 
 app.use(
   `${API_BASE_PATH}/customers`,
@@ -553,7 +560,15 @@ async execute(
 - 一意性が 2 つあり、どちらも 1 つのサロンの中のものです（実装パターンの 6）。事前の検索はせず、リポジトリが制約の名前から `alreadyExists` を返します。
 - 更新と削除は 1 つの文です（`UPDATE … WHERE … AND deleted_at IS NULL … RETURNING`）。行が返らなければ、スタッフは存在しないか、同時に届いた削除が先に終わっています。どちらも `notFound`（404）です。ロックもトランザクションも使いません。
 
-権限の規則は [認証と認可](./authentication.md#サロンの下にあるルートの権限)、サービスカテゴリーとサービスの規則は [サービスメニュー](./service-menu.md)、スタッフ台帳の規則は [スタッフ台帳](./staff.md) にあります。
+スタッフのプロフィール（`backend/packages/domain/src/business-logic/staff-profile`、`backend/packages/api/src/routes/staff-profile`）は、同じ `staff` の行のうち顧客に見せる部分を、認証なしで読ませます。サロンに属するデータですが、上の書き方とは次の点が違います。
+
+- モデル、リポジトリ、ユースケース、ルーターを、台帳とは別に持ちます。台帳のユースケースに、公開のための分岐は足しません。見せる列（`profileColumns`）と、見せるスタッフの条件（`shown`）は、`backend/packages/infrastructure/src/repositories/staff-profile.repository.impl.ts` の 1 か所で決まります。
+- リポジトリは見せる列だけを SELECT します。行の型は、`DbStaff` から見せる列を `Pick` した `DbStaffProfile` です（`backend/packages/domain/src/models/staff-profile.ts`）。
+- ルートはサロンの下に置きません（`/api/v1/staff-profiles`）。サロンをまたいで探す一覧だからです。サロンは一覧の任意の絞り込みで、`parseSalonIdOfPath` も `requireSalon` も使いません。存在しないサロンでの絞り込みは、404 ではなく空の一覧です。
+- ユースケースは `actor` を受け取らず、ハンドラーを `authenticated` で包みません。ルーターのファクトリー（`createStaffProfileRouter`）も `authenticated` を受け取りません。
+- 一覧のカーソルは位置だけを決めます。見せなくなったスタッフや、絞り込みに合わないスタッフを指していても、そこから続けます。どのスタッフも指していないカーソルのときだけ、リポジトリが null を返し、ユースケースが `validation`（400）にします。
+
+権限の規則は [認証と認可](./authentication.md#サロンの下にあるルートの権限)、サービスカテゴリーとサービスの規則は [サービスメニュー](./service-menu.md)、スタッフ台帳とプロフィールの規則は [スタッフ台帳](./staff.md) にあります。
 
 ---
 
@@ -601,12 +616,12 @@ async execute(
 | パスワードのハッシュ、トークンの生成、2 要素認証のシークレット・コード・バックアップコード | ユニット（`pnpm test`） | `backend/packages/infrastructure/src/security/__tests__` |
 | SMTP でのメールの送信 | ユニット（`pnpm test`）と統合（`pnpm test:integration`。testcontainers で Mailpit のコンテナを起動する） | `backend/packages/infrastructure/src/mail/__tests__` |
 | クエリの変換、リンク、problem details、ミドルウェア | ユニット（`pnpm test`） | `backend/packages/api/src` の各 `__tests__` |
-| エンドポイント（リポジトリの実装を含む） | 統合（`pnpm test:integration`） | `backend/packages/api/src/__tests__/salon.integration.test.ts`、`auth.integration.test.ts`、`service-category.integration.test.ts`（サロンの下にあるルート）、`service.integration.test.ts`（一括更新、サロンの下にあるリソースの論理削除）、`customer.integration.test.ts` と `customer-profile.integration.test.ts`（サロンに属さず、公開のオペレーションがないルート）、`staff.integration.test.ts`（サロンの下にあり、公開のオペレーションがないルート） |
+| エンドポイント（リポジトリの実装を含む） | 統合（`pnpm test:integration`） | `backend/packages/api/src/__tests__/salon.integration.test.ts`、`auth.integration.test.ts`、`service-category.integration.test.ts`（サロンの下にあるルート）、`service.integration.test.ts`（一括更新、サロンの下にあるリソースの論理削除）、`customer.integration.test.ts` と `customer-profile.integration.test.ts`（サロンに属さず、公開のオペレーションがないルート）、`staff.integration.test.ts`（サロンの下にあり、公開のオペレーションがないルート）、`staff-profile.integration.test.ts`（公開しないデータの一部を、認証なしで見せるルート） |
 | リクエスト ID、エラー応答、CORS、レート制限、プローブ | 統合（`pnpm test:integration`） | `backend/packages/api/src/__tests__/app.integration.test.ts` |
 | 起動と停止 | 統合（`pnpm test:integration`） | `backend/apps/server/src/__tests__/server.integration.test.ts` |
 
 - ユースケースのテストでは、リポジトリを `ISalonRepository` を満たすオブジェクトに差し替えます（`backend/packages/domain/src/__tests__/fixtures.ts` の `salonRepositoryWith`）。DB は使いません。認証のユースケースでは、2つのリポジトリ、パスワードのハッシュ、トークンの発行、2 要素認証のコードの確認、メールの送信も差し替え、時計を固定します（`backend/packages/domain/src/__tests__/auth-fixtures.ts` の `authDependencies`）。
-- リポジトリの実装は、エンドポイントの統合テストで実際の PostgreSQL に対して検証します。テストごとに専用のデータベースを作り（スキーマを適用したテンプレートの複製）、本番と同じ `createApp` を使います（`backend/packages/api/src/__tests__/_shared/test-helpers.ts` の `createTestApp`）。メールは送らずに記録し、2 要素認証には本番と同じ `TotpAuthenticator` を使います。`service.integration.test.ts` は、同じデータベースに対して `ServiceRepository` を直接呼ぶテストと、テーブルの制約が拒否する行を確かめるテストも含みます。`customer.integration.test.ts` と `staff.integration.test.ts` も同じで、`CustomerRepository`、`StaffRepository` を直接呼ぶテストと、それぞれのテーブルの制約のテストを含みます。
+- リポジトリの実装は、エンドポイントの統合テストで実際の PostgreSQL に対して検証します。テストごとに専用のデータベースを作り（スキーマを適用したテンプレートの複製）、本番と同じ `createApp` を使います（`backend/packages/api/src/__tests__/_shared/test-helpers.ts` の `createTestApp`）。メールは送らずに記録し、2 要素認証には本番と同じ `TotpAuthenticator` を使います。`service.integration.test.ts` は、同じデータベースに対して `ServiceRepository` を直接呼ぶテストと、テーブルの制約が拒否する行を確かめるテストも含みます。`customer.integration.test.ts` と `staff.integration.test.ts` も同じで、`CustomerRepository`、`StaffRepository` を直接呼ぶテストと、それぞれのテーブルの制約のテストを含みます。`staff-profile.integration.test.ts` は、`StaffProfileRepository` を直接呼ぶテストと、台帳だけにある値がレスポンスのどこにも出ないことのテストを含みます。
 - 統合テストでアクセストークンが必要なときは、ユーザーの行を挿入し、`POST /api/v1/auth/login` でログインします（`backend/packages/api/src/__tests__/_shared/auth-helpers.ts`）。
 - エンドポイントごとに、エラーのシナリオを5つ以上テストします。公開でないエンドポイントでは、トークンのないリクエスト（401）と、許可されていないユーザーからのリクエスト（403）を含めます。
 

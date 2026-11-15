@@ -39,7 +39,8 @@ Before relying on anything, check this table.
 | Services of a salon (`/api/v1/salons/{salonId}/services`) | Implemented in every layer: list, create, get, update, bulk update, delete, the six operations of `ServiceCrud`. A service carries its options (the rows of `service_options`) in its requests and responses, and a package names the services it combines. The bulk update changes all the services it names or none of them. A delete keeps the row and marks it with `deletedAt`, and is refused with 409 while a package contains the service. List and get are public; create, update, bulk update and delete need a signed-in user with the permission. `isActive`, `serviceStatus`, `availability`, `bookingRequirements` and `maxBookingsPerDay` are stored and returned, and the list can filter by `isActive`; nothing else reads them: which services can be booked is not decided yet. See [Service Menu](./service-menu.md) (Japanese). |
 | Customer ledger (`/api/v1/customers`) | Implemented in every layer: list, create, get, update, delete, five of the 18 operations of `CustomerCrud`. A customer belongs to no salon: the ledger is one for the whole platform, and its routes are not below a salon. No operation is public: list, create, get and update need a signed-in administrator or member of a salon (owner, manager or staff of any salon), delete an administrator, an owner or a manager. A delete keeps the row and marks it with `deletedAt`. The other 13 operations of `CustomerCrud` are not implemented: the preferences (`PATCH /api/v1/customers/{id}/preferences`), batch get, bulk create, bulk update, bulk delete, restore, merge, audit history, versions, the two exports, statistics and the data deletion request. A signed-in customer reaches no route of the ledger; their own record is the profile of the next row. `isActive` and `customerStatus` are stored and returned, and the list can filter by `customerStatus`; nothing else reads them: which customers can book is not decided yet. Nothing maintains the points, the lifetime value or the visit counters. See [Customer Ledger](./customers.md) (Japanese). |
 | Customer profile (`/api/v1/customers/me`) | Implemented in every layer: get, create, update, the three operations of `CustomerProfile`. The profile is the customer record of the signed-in account. The route names no record: the account alone says which one, so a customer reaches no other. Only a customer account has a profile; an administrator and a member of a salon are answered with 403. A registered user has no record until they create the profile. The creation takes over the customer that the ledger has under the account's email address, unless that customer belongs to another account (409), and needs an account that has confirmed its address (409); without such a customer it adds one to the ledger. The response leaves out what the staff keep to themselves (notes, tags, status, the referrer, the lifetime value, the counts of no-shows and cancellations), and the requests write only what is the customer's own: the name, the contact details, the birth date, the preferences and the three consents. A delete of the customer in the ledger takes the profile from the account, which may then create a new one. See [Customer Ledger](./customers.md) (Japanese). |
-| Staff ledger of a salon (`/api/v1/salons/{salonId}/staff`) | Implemented in every layer: list, create, get, update, delete, five of the seven operations of `StaffCrud`. The ledger is what a salon keeps about its staff as their employer: names and contact details, the terms of employment (base salary, commission rate, employment type, hire date) and how a staff member takes bookings. Nothing of it is public, reading included: every operation needs an administrator or the owner of the salon in the path; a manager and a staff member are answered with 403. Deactivating (`isActive: false`) or deleting a staff member takes the salon from the login account that is linked to it, from its next request on, so nobody deactivates or deletes the staff member their own account belongs to (409). The email is unique among the staff members of one salon who are not deleted, the staff code among all staff members of the salon. A delete keeps the row and marks it with `deletedAt`. Not implemented: the schedules of a staff member (`getAvailability`, `updateAvailability`), the search across salons (`GlobalStaff`), a profile of a staff member that customers may see, and linking a login account to a staff member. See [Staff Ledger](./staff.md) (Japanese). |
+| Staff ledger of a salon (`/api/v1/salons/{salonId}/staff`) | Implemented in every layer: list, create, get, update, delete, five of the seven operations of `StaffCrud`. The ledger is what a salon keeps about its staff as their employer: names and contact details, the terms of employment (base salary, commission rate, employment type, hire date) and how a staff member takes bookings. Nothing of it is public, reading included: every operation needs an administrator or the owner of the salon in the path; a manager and a staff member are answered with 403. Deactivating (`isActive: false`) or deleting a staff member takes the salon from the login account that is linked to it, from its next request on, so nobody deactivates or deletes the staff member their own account belongs to (409). The email is unique among the staff members of one salon who are not deleted, the staff code among all staff members of the salon. A delete keeps the row and marks it with `deletedAt`. Not implemented: the schedules of a staff member (`getAvailability`, `updateAvailability`) and linking a login account to a staff member. See [Staff Ledger](./staff.md) (Japanese). |
+| Staff profiles (`/api/v1/staff-profiles`) | Implemented in every layer: list and get, the two operations of `StaffProfile`. A profile is what customers are shown of a row of the staff ledger, in a model of its own (`StaffProfileResponse`): the display name, the level, the position, the specialties, the biography, the photo, the years of experience, the certifications and whether the staff member takes bookings. The names, the contact details and the terms of employment are not in it. Both operations are public and read only. Shown are the staff members who are active and not deleted, of salons that are not deleted; any other is answered with 404, like an ID that no staff member has. The list goes across salons, in the order of registration, and filters by salon, by specialty and by the city of the salon. See [Staff Ledger](./staff.md#顧客に見せるプロフィール) (Japanese). |
 | Authentication (`/api/v1/auth`, `/api/v1/admin/auth`) | Implemented: `login`, `refresh`, `logout`, `logout-all` and `me`, on server-side sessions with opaque bearer tokens, and registration of customer accounts, email verification and password reset, each through a single-use token sent by mail, and password change, and two-factor authentication with the one-time passwords of an authenticator app (TOTP) and backup codes, and the list of the signed-in user's sessions with the revocation of one of them, and under `/api/v1/admin/auth` the administrator operations: read a user, unlock an account, reset two-factor authentication. That is every operation in `specs/operations/auth-operations.tsp`: the 16 of `AuthCrud`, the 2 of `SessionCrud` and the 3 of `AdminAuthCrud`. See [Authentication and Authorization](./authentication.md). |
 | Authorization | Implemented for the Salon API (create, update, delete), for the service categories of a salon (create, update, delete), for the services of a salon (create, update, bulk update, delete), for the customer ledger and a customer's own profile (every operation), for the staff ledger of a salon (every operation) and for the administrator operations. An implemented operation that the contract does not mark `@useAuth(NoAuth)` needs a valid access token, and its use case decides whether the signed-in user may do what is asked. |
 | System endpoints (`/api/system`) | Implemented: `alive`, `ready` and `health`. |
@@ -321,6 +322,31 @@ api/src/
                                        /salons/:salonId)
 ```
 
+The staff profiles read the same table and write nothing, so they have
+no write mapper and no authorization:
+
+```
+domain/src/
+├── models/staff-profile.ts            API types, and DbStaffProfile: the columns of a
+│                                      staff row that customers are shown
+├── schemas/staff-profile.schema.ts    Zod schema of the list request
+├── mappers/read/staff-profile.mapper.ts
+│                                      Row → API response; names every property
+├── repositories/staff-profile.repository.ts
+│                                      IStaffProfileRepository: findById, list
+└── business-logic/staff-profile/      One *.usecase.ts per operation; neither takes
+                                       an actor
+
+infrastructure/src/
+└── repositories/staff-profile.repository.impl.ts
+                                       Selects the profile columns only; who is shown
+
+api/src/
+└── routes/staff-profile/              One *.handler.ts per operation of StaffProfile,
+                                       index.ts (router, mounted at /staff-profiles,
+                                       without `authenticated`)
+```
+
 ## Layers and Package Dependencies
 
 An arrow means "depends on":
@@ -448,10 +474,13 @@ services in `backend/packages/domain/src/models/service.ts`,
 `backend/packages/api/src/routes/service/_shared/types.ts`, the
 customers in `backend/packages/domain/src/models/customer.ts`,
 `backend/packages/domain/src/schemas/customer.schema.ts` and
-`backend/packages/api/src/routes/customer/_shared/types.ts`, and the
+`backend/packages/api/src/routes/customer/_shared/types.ts`, the
 staff in `backend/packages/domain/src/models/staff.ts`,
 `backend/packages/domain/src/schemas/staff.schema.ts` and
-`backend/packages/api/src/routes/staff/_shared/types.ts`.
+`backend/packages/api/src/routes/staff/_shared/types.ts`, and the staff
+profiles in `backend/packages/domain/src/models/staff-profile.ts`,
+`backend/packages/domain/src/schemas/staff-profile.schema.ts` and
+`backend/packages/api/src/routes/staff-profile/_shared/types.ts`.
 
 Model naming and nullability rules are in
 [TypeSpec API Type Rules](./typespec-api-type-rules.md); the pipeline in
@@ -541,10 +570,12 @@ mounts everything in this order. The order is part of the design:
    `/api/v1/salons`, the router of the service categories at
    `/api/v1/salons/:salonId/service-categories`, the router of the
    services at `/api/v1/salons/:salonId/services`, the router of the staff
-   ledger at `/api/v1/salons/:salonId/staff` and the router of the
+   ledger at `/api/v1/salons/:salonId/staff`, the router of the staff
+   profiles at `/api/v1/staff-profiles` and the router of the
    customer ledger at `/api/v1/customers`. Each receives
    `authenticated`, which `createAuthenticated` builds once from the
-   authentication dependencies.
+   authentication dependencies; the router of the staff profiles does
+   not, because both of its operations are public.
 7. `notFoundHandler` and `errorHandler`: turn what is left over into problem
    details.
 
@@ -815,6 +846,39 @@ member comes last, and a delete keeps the row and marks it with
 ledger in [Authentication and Authorization](./authentication.md) (both
 Japanese).
 
+### A Staff Profile Request
+
+The staff profiles (`business-logic/staff-profile/`) show customers a part
+of the same rows, and anyone may read them. A request is a public read,
+like the list and the get of a salon, with these differences:
+
+- **A model of its own, not the ledger's.** `StaffProfileResponse` has the
+  11 properties customers are shown. The repository selects those columns
+  and no other (`profileColumns` in
+  `infrastructure/src/repositories/staff-profile.repository.impl.ts`), so
+  pay and contact details never leave the database for this route, and
+  `StaffProfileReadMapper` names each property.
+- **A read mapper that returns a plain value.** None of the 11 columns
+  needs converting (no timestamp, no `numeric`), so nothing can fail and
+  the mapper returns the response, not a `Result`.
+- **Who is shown is decided in one place.** The repository joins the salon
+  and keeps the staff members who are active and not deleted, of salons
+  that are not deleted (`shown` in the same file). The get answers any
+  other with `notFound`, like an ID that no staff member has.
+- **A flat route with filters.** The profiles are not below a salon,
+  because customers look for staff across salons: `salonId`, `specialty`
+  (an element of `specialties`, compared exactly) and `city` (the city of
+  the salon) narrow the list, and `total` counts what they leave.
+- **A cursor that only says where.** The cursor names a staff member, and
+  any row of `staff` will do: one who is not shown any more, or one the
+  filters leave out, still has a place in the order. Only a cursor that
+  names no staff member is refused (400).
+- **A query the handler answers.** Nobody is refused, so the list handler
+  answers a query it cannot decode itself and hands a decoded one to
+  `ListStaffProfilesUseCase.execute(query)`.
+
+The rules are in [Staff Ledger](./staff.md#顧客に見せるプロフィール) (Japanese).
+
 ### An Authentication Request
 
 The authentication operations take the same path through the layers. Every
@@ -926,8 +990,8 @@ operations that change a salon, its service categories or its services, on
 every operation of the customer ledger, of a customer's own profile and of
 the staff ledger of a salon, and on the administrator operations.
 The system endpoints, the salon list, a
-single salon, the service categories and the services of a salon and the
-authentication operations a signed-out user needs
+single salon, the service categories and the services of a salon, the staff
+profiles and the authentication operations a signed-out user needs
 (register, login, refresh, email verification, password reset) are open to
 anyone who can reach the server.
 See [Authentication and Authorization](./authentication.md).
