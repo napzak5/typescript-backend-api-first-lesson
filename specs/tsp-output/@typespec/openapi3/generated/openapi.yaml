@@ -5767,6 +5767,203 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Models.CustomerProfileUpdateRequest'
+  /api/v1/customers/me/preferences:
+    get:
+      operationId: CustomerProfile_getPreferences
+      summary: Get the signed-in customer's preferences
+      description: ログインしているユーザーの好み設定を取得します。好み設定をまだ保存していない場合は、空の好み設定(一覧は空配列、ほかはnull)を返します。プロフィールをまだ作っていない場合と、顧客レコードが削除された場合は404を返します。
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                  - links
+                properties:
+                  data:
+                    allOf:
+                      - $ref: '#/components/schemas/Models.CustomerPreferencesResponse'
+                    description: レスポンスの主体となるビジネスデータ。
+                  meta:
+                    type: object
+                    allOf:
+                      - $ref: '#/components/schemas/Models.ResponseMeta'
+                    nullable: true
+                    description: リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull
+                  links:
+                    type: object
+                    additionalProperties:
+                      type: string
+                    nullable: true
+                    description: 関連リソースや次アクションへのリンク情報。リンクがない場合はnull
+                description: |-
+                  API 成功レスポンスの共通ラッパーモデル。
+                  サロン検索や予約登録など多様なユースケースで応答形式を統一し、クライアント実装を簡潔に保つ。
+        '401':
+          description: |-
+            認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
+            ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
+            WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+          headers:
+            WWW-Authenticate:
+              required: true
+              description: Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '403':
+          description: 認証されているが、この操作を行う権限がない (403)。
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '429':
+          description: |-
+            リクエスト数の上限を超えたときのエラーレスポンス (429)。
+            クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+          headers:
+            Retry-After:
+              required: true
+              description: 再試行できるようになるまでの秒数。
+              schema:
+                type: integer
+                format: int32
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '500':
+          description: サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+      tags:
+        - Customers
+    patch:
+      operationId: CustomerProfile_updatePreferences
+      summary: Update the signed-in customer's preferences
+      description: ログインしているユーザーの好み設定のうち、指定した項目だけを更新します。項目の規則は、台帳の好み設定の更新と同じです。プロフィールをまだ作っていない場合と、顧客レコードが削除された場合は404を返します。
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                  - links
+                properties:
+                  data:
+                    allOf:
+                      - $ref: '#/components/schemas/Models.CustomerPreferencesResponse'
+                    description: レスポンスの主体となるビジネスデータ。
+                  meta:
+                    type: object
+                    allOf:
+                      - $ref: '#/components/schemas/Models.ResponseMeta'
+                    nullable: true
+                    description: リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull
+                  links:
+                    type: object
+                    additionalProperties:
+                      type: string
+                    nullable: true
+                    description: 関連リソースや次アクションへのリンク情報。リンクがない場合はnull
+                description: |-
+                  API 成功レスポンスの共通ラッパーモデル。
+                  サロン検索や予約登録など多様なユースケースで応答形式を統一し、クライアント実装を簡潔に保つ。
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '401':
+          description: |-
+            認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
+            ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
+            WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+          headers:
+            WWW-Authenticate:
+              required: true
+              description: Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '403':
+          description: 認証されているが、この操作を行う権限がない (403)。
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '413':
+          description: リクエスト本文がサイズ上限を超えている (413)。
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '415':
+          description: リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '429':
+          description: |-
+            リクエスト数の上限を超えたときのエラーレスポンス (429)。
+            クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+          headers:
+            Retry-After:
+              required: true
+              description: 再試行できるようになるまでの秒数。
+              schema:
+                type: integer
+                format: int32
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '500':
+          description: サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+      tags:
+        - Customers
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Models.CustomerPreferencesUpdateRequest'
   /api/v1/customers/merge:
     post:
       operationId: CustomerCrud_merge
@@ -6469,10 +6666,107 @@ paths:
       tags:
         - Customers
   /api/v1/customers/{id}/preferences:
+    get:
+      operationId: CustomerCrud_getPreferences
+      summary: Get customer preferences
+      description: 顧客の好み設定(指名を希望するスタッフ、避けたいスタッフ、希望する時間帯、スタイルの好み、接客の好み、特別なリクエスト)を取得します。好み設定をまだ保存していない顧客には、空の好み設定(一覧は空配列、ほかはnull)を返します。顧客が存在しない場合は404を返します。
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Models.CustomerId'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                  - links
+                properties:
+                  data:
+                    allOf:
+                      - $ref: '#/components/schemas/Models.CustomerPreferencesResponse'
+                    description: レスポンスの主体となるビジネスデータ。
+                  meta:
+                    type: object
+                    allOf:
+                      - $ref: '#/components/schemas/Models.ResponseMeta'
+                    nullable: true
+                    description: リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull
+                  links:
+                    type: object
+                    additionalProperties:
+                      type: string
+                    nullable: true
+                    description: 関連リソースや次アクションへのリンク情報。リンクがない場合はnull
+                description: |-
+                  API 成功レスポンスの共通ラッパーモデル。
+                  サロン検索や予約登録など多様なユースケースで応答形式を統一し、クライアント実装を簡潔に保つ。
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '401':
+          description: |-
+            認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
+            ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
+            WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+          headers:
+            WWW-Authenticate:
+              required: true
+              description: Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '403':
+          description: 認証されているが、この操作を行う権限がない (403)。
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '429':
+          description: |-
+            リクエスト数の上限を超えたときのエラーレスポンス (429)。
+            クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+          headers:
+            Retry-After:
+              required: true
+              description: 再試行できるようになるまでの秒数。
+              schema:
+                type: integer
+                format: int32
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '500':
+          description: サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+      tags:
+        - Customers
     patch:
       operationId: CustomerCrud_updatePreferences
       summary: Update customer preferences
-      description: 顧客の施術好みや指名スタッフなどの希望設定のうち、指定した項目だけを更新し、パーソナライズされた提案に反映します。好み設定がまだない場合は作成し、指定しなかった項目はnullになります。顧客が存在しない場合は404を、preferredStaffIdやavoidStaffIdsに存在しないスタッフを指定した場合は400を返します。
+      description: 顧客の好み設定のうち、指定した項目だけを更新します。好み設定をまだ保存していない顧客には作成し、指定しなかった項目は空(一覧は空配列、ほかはnull)になります。顧客が存在しない場合は404を返します。preferredStaffIdやavoidStaffIdsに、存在しないスタッフか削除されたスタッフを指定した場合と、指名を希望するスタッフが避けたいスタッフに含まれることになる場合は400を返します。
       parameters:
         - name: id
           in: path
@@ -21900,25 +22194,23 @@ components:
           allOf:
             - $ref: '#/components/schemas/Models.StaffId'
           nullable: true
-          description: 指名を希望するスタッフのID。指名がない場合はnull
+          description: 指名を希望するスタッフのID。指名がない場合はnull。保存したあとで削除されたスタッフのIDも、そのまま返す
         preferredTimeSlots:
           type: array
           items:
             $ref: '#/components/schemas/Models.TimeSlot'
-          nullable: true
-          description: 希望時間帯一覧。特に希望がない場合はnull
+          description: 希望する時間帯の一覧。希望がない場合は空配列
         avoidStaffIds:
           type: array
           items:
             $ref: '#/components/schemas/Models.StaffId'
-          nullable: true
-          description: 避けたいスタッフのID一覧。特にない場合はnull
+          description: 避けたいスタッフのIDの一覧。ない場合は空配列。保存したあとで削除されたスタッフのIDも、そのまま返す
         stylePreferences:
           type: object
           allOf:
             - $ref: '#/components/schemas/Models.StylePreference'
           nullable: true
-          description: スタイルの好み設定。設定がない場合はnull
+          description: スタイルの好み。設定がない場合はnull
         communicationStyle:
           type: string
           nullable: true
@@ -21929,7 +22221,7 @@ components:
           description: 特別なリクエスト。特にない場合はnull
       description: |-
         顧客の好み設定レスポンス - customer_preferences テーブルの1行。顧客ごとに最大1行。
-        プロパティ名と null 許可は DB カラムと一致させている
+        プロパティ名と null 許可は DB カラムと一致させている。行のない顧客の好み設定は、一覧が空配列で、ほかは null
     Models.CustomerPreferencesUpdateRequest:
       type: object
       properties:
@@ -21938,37 +22230,35 @@ components:
           allOf:
             - $ref: '#/components/schemas/Models.StaffId'
           nullable: true
-          description: 指名を希望するスタッフのID。存在するスタッフを指定する。nullでクリア
+          description: 指名を希望するスタッフのID。削除されていないスタッフを指定する。避けたいスタッフ(avoidStaffIds)は指定できない。nullでクリア
         preferredTimeSlots:
           type: array
           items:
             $ref: '#/components/schemas/Models.TimeSlot'
-          nullable: true
-          description: 希望時間帯一覧。nullでクリア
+          description: 希望する時間帯の一覧。指定した一覧で置き換える。各時間帯は開始が終了より前で、互いに重ならない
         avoidStaffIds:
           type: array
           items:
             $ref: '#/components/schemas/Models.StaffId'
-          nullable: true
-          description: 避けたいスタッフのID一覧。存在するスタッフを指定する。nullでクリア
+          description: 避けたいスタッフのIDの一覧。指定した一覧で置き換える。削除されていないスタッフを指定する。同じIDの繰り返しと、指名を希望するスタッフ(preferredStaffId)は指定できない
         stylePreferences:
           type: object
           allOf:
             - $ref: '#/components/schemas/Models.StylePreference'
           nullable: true
-          description: スタイルの好み設定。nullでクリア
+          description: スタイルの好み。指定した内容で、まとまりごと置き換える。nullでクリア
         communicationStyle:
           type: string
           nullable: true
           maxLength: 100
-          description: 会話の多さなど、接客時のコミュニケーションの好み。nullでクリア
+          description: 会話の多さなど、接客時のコミュニケーションの好み。空白だけの文字列は指定できない。nullでクリア
         specialRequests:
           type: string
           nullable: true
-          description: 特別なリクエスト。nullでクリア
+          description: 特別なリクエスト。空白だけの文字列は指定できない。nullでクリア
       description: |-
-        顧客の好み設定の部分更新リクエスト - 指定した項目だけを更新する。null を指定した項目はクリアする。
-        好み設定がまだない場合は作成し、指定しなかった項目は null になる
+        顧客の好み設定の部分更新リクエスト - 指定した項目だけを更新する。DB で NULL 許可のカラムは null でクリアでき、一覧は空配列でクリアする。
+        好み設定の行がまだない顧客には行を作り、指定しなかった項目は空(一覧は空配列、ほかは null)になる
     Models.CustomerProfileCreateRequest:
       type: object
       required:
@@ -28498,26 +28788,25 @@ components:
         preferredLength:
           type: string
           nullable: true
-          description: 希望の髪の長さ。特に希望がない場合はnull
+          description: 希望の髪の長さ。特に希望がない場合はnull。空白だけの文字列は指定できない
         preferredColors:
           type: array
           items:
             type: string
-          nullable: true
-          description: 希望のカラー一覧。特に希望がない場合はnull
+          description: 希望のカラーの一覧。希望がない場合は空配列。空白だけの要素と、同じ要素の繰り返しは指定できない
         avoidStyles:
           type: array
           items:
             type: string
-          nullable: true
-          description: 避けたいスタイル一覧。特にない場合はnull
+          description: 避けたいスタイルの一覧。ない場合は空配列。空白だけの要素と、同じ要素の繰り返しは指定できない
         inspirationImages:
           type: array
           items:
             type: string
-          nullable: true
-          description: 参考画像URL一覧。画像がない場合はnull
-      description: スタイルの好み - customer_preferences.stylePreferences(jsonb) に保存する構造
+          description: 参考画像のURL(http または https、500文字まで)の一覧。ない場合は空配列。同じURLの繰り返しは指定できない
+      description: |-
+        スタイルの好み - customer_preferences.stylePreferences(jsonb) に保存する構造。
+        一覧は null にならない。1つもない場合は空配列
     Models.SystemReadyResponse:
       type: object
       required:

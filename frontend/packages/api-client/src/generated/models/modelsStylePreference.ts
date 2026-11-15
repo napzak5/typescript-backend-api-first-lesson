@@ -7,27 +7,19 @@
  */
 
 /**
- * スタイルの好み - customer_preferences.stylePreferences(jsonb) に保存する構造
+ * スタイルの好み - customer_preferences.stylePreferences(jsonb) に保存する構造。
+ * 一覧は null にならない。1つもない場合は空配列
  */
 export interface ModelsStylePreference {
   /**
-     * 希望の髪の長さ。特に希望がない場合はnull
+     * 希望の髪の長さ。特に希望がない場合はnull。空白だけの文字列は指定できない
      * @nullable
      */
   preferredLength: string | null;
-  /**
-     * 希望のカラー一覧。特に希望がない場合はnull
-     * @nullable
-     */
-  preferredColors: string[] | null;
-  /**
-     * 避けたいスタイル一覧。特にない場合はnull
-     * @nullable
-     */
-  avoidStyles: string[] | null;
-  /**
-     * 参考画像URL一覧。画像がない場合はnull
-     * @nullable
-     */
-  inspirationImages: string[] | null;
+  /** 希望のカラーの一覧。希望がない場合は空配列。空白だけの要素と、同じ要素の繰り返しは指定できない */
+  preferredColors: string[];
+  /** 避けたいスタイルの一覧。ない場合は空配列。空白だけの要素と、同じ要素の繰り返しは指定できない */
+  avoidStyles: string[];
+  /** 参考画像のURL(http または https、500文字まで)の一覧。ない場合は空配列。同じURLの繰り返しは指定できない */
+  inspirationImages: string[];
 }
