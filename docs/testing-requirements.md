@@ -121,7 +121,11 @@ Error scenarios in `backend/packages/api/src/__tests__/salon.integration.test.ts
 The two `GET` endpoints are public and have no scenario for a token. What the
 server does with a token that has expired, belongs to a signed-out session or
 belongs to a suspended, inactive or deleted user is covered in
-`backend/packages/api/src/__tests__/auth.integration.test.ts`.
+`backend/packages/api/src/__tests__/auth.integration.test.ts`. The 409 of a
+delete while a booking of the salon is not finished is covered in
+`backend/packages/api/src/__tests__/booking-references.integration.test.ts`,
+together with the same rule of the deletes of a customer, a staff member and
+a service.
 
 ## Standards for Every Test
 
