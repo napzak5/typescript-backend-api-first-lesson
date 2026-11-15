@@ -383,7 +383,7 @@ describe('modelRules', () => {
     })
   })
 
-  it('lets a request for a customer leave out the columns the server manages, and the response only deletedAt, with every other property a column of customers', () => {
+  it("lets a request for a customer leave out the columns the server manages, and the response only deletedAt; a profile leaves out what is the staff's as well", () => {
     const managed = [
       'id',
       'userId',
@@ -397,6 +397,33 @@ describe('modelRules', () => {
       'deletedAt',
       'createdAt',
       'updatedAt',
+    ]
+    /** What the customer's own profile does not show. */
+    const keptByTheStaff = [
+      'notes',
+      'internalNotes',
+      'tags',
+      'referredBy',
+      'isActive',
+      'customerStatus',
+      'lifetimeValue',
+      'noShowCount',
+      'cancellationCount',
+    ]
+    /** What the customer's own profile does not write, besides the managed columns. */
+    const notTheCustomers = [
+      'email',
+      'membershipTier',
+      'notes',
+      'internalNotes',
+      'tags',
+      'referredBy',
+      'referralCode',
+      'isActive',
+      'hairType',
+      'hairThickness',
+      'scalpCondition',
+      'customerStatus',
     ]
 
     const rules = Object.fromEntries(
@@ -424,6 +451,24 @@ describe('modelRules', () => {
       'Models.CustomerUpdateRequest': {
         kind: 'update',
         omittedColumns: managed,
+        embedded: undefined,
+        computed: undefined,
+      },
+      'Models.CustomerProfileResponse': {
+        kind: 'response',
+        omittedColumns: [...keptByTheStaff, 'userId', 'deletedAt'],
+        embedded: undefined,
+        computed: undefined,
+      },
+      'Models.CustomerProfileCreateRequest': {
+        kind: 'create',
+        omittedColumns: [...managed, ...notTheCustomers],
+        embedded: undefined,
+        computed: undefined,
+      },
+      'Models.CustomerProfileUpdateRequest': {
+        kind: 'update',
+        omittedColumns: [...managed, ...notTheCustomers],
         embedded: undefined,
         computed: undefined,
       },

@@ -145,6 +145,43 @@ const customerManagedColumns = [
 ]
 
 /**
+ * Columns of `customers` that the staff keep for themselves. The customer's
+ * own profile does not show them.
+ */
+const customerStaffColumns = [
+  'notes',
+  'internalNotes',
+  'tags',
+  'referredBy',
+  'isActive',
+  'customerStatus',
+  'lifetimeValue',
+  'noShowCount',
+  'cancellationCount',
+]
+
+/**
+ * Columns of `customers` that the customer's own profile never writes: the
+ * managed ones, the email (it is the account's), and what the salon decides
+ * or records.
+ */
+const customerProfileManagedColumns = [
+  ...customerManagedColumns,
+  'email',
+  'membershipTier',
+  'notes',
+  'internalNotes',
+  'tags',
+  'referredBy',
+  'referralCode',
+  'isActive',
+  'hairType',
+  'hairThickness',
+  'scalpCondition',
+  'customerStatus',
+]
+
+/**
  * Columns of `customer_preferences` that no model exposes. The row is
  * addressed through its customer; `preferredServices` is a jsonb column
  * without a defined structure.
@@ -176,6 +213,24 @@ const customerRules: ModelRule[] = [
     table: 'customers',
     kind: 'update',
     omittedColumns: customerManagedColumns,
+  },
+  {
+    model: 'Models.CustomerProfileResponse',
+    table: 'customers',
+    kind: 'response',
+    omittedColumns: [...customerStaffColumns, 'userId', 'deletedAt'],
+  },
+  {
+    model: 'Models.CustomerProfileCreateRequest',
+    table: 'customers',
+    kind: 'create',
+    omittedColumns: customerProfileManagedColumns,
+  },
+  {
+    model: 'Models.CustomerProfileUpdateRequest',
+    table: 'customers',
+    kind: 'update',
+    omittedColumns: customerProfileManagedColumns,
   },
   {
     model: 'Models.CustomerPreferencesResponse',
