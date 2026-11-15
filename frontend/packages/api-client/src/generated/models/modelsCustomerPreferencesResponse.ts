@@ -11,26 +11,20 @@ import type { ModelsTimeSlot } from './modelsTimeSlot';
 
 /**
  * 顧客の好み設定レスポンス - customer_preferences テーブルの1行。顧客ごとに最大1行。
- * プロパティ名と null 許可は DB カラムと一致させている
+ * プロパティ名と null 許可は DB カラムと一致させている。行のない顧客の好み設定は、一覧が空配列で、ほかは null
  */
 export interface ModelsCustomerPreferencesResponse {
   /**
-     * 指名を希望するスタッフのID。指名がない場合はnull
+     * 指名を希望するスタッフのID。指名がない場合はnull。保存したあとで削除されたスタッフのIDも、そのまま返す
      * @nullable
      */
   preferredStaffId: string | null;
+  /** 希望する時間帯の一覧。希望がない場合は空配列 */
+  preferredTimeSlots: ModelsTimeSlot[];
+  /** 避けたいスタッフのIDの一覧。ない場合は空配列。保存したあとで削除されたスタッフのIDも、そのまま返す */
+  avoidStaffIds: ModelsStaffId[];
   /**
-     * 希望時間帯一覧。特に希望がない場合はnull
-     * @nullable
-     */
-  preferredTimeSlots: ModelsTimeSlot[] | null;
-  /**
-     * 避けたいスタッフのID一覧。特にない場合はnull
-     * @nullable
-     */
-  avoidStaffIds: ModelsStaffId[] | null;
-  /**
-     * スタイルの好み設定。設定がない場合はnull
+     * スタイルの好み。設定がない場合はnull
      * @nullable
      */
   stylePreferences: ModelsStylePreference | null;

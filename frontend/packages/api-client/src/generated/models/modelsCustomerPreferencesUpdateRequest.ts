@@ -10,38 +10,32 @@ import type { ModelsStylePreference } from './modelsStylePreference';
 import type { ModelsTimeSlot } from './modelsTimeSlot';
 
 /**
- * 顧客の好み設定の部分更新リクエスト - 指定した項目だけを更新する。null を指定した項目はクリアする。
- * 好み設定がまだない場合は作成し、指定しなかった項目は null になる
+ * 顧客の好み設定の部分更新リクエスト - 指定した項目だけを更新する。DB で NULL 許可のカラムは null でクリアでき、一覧は空配列でクリアする。
+ * 好み設定の行がまだない顧客には行を作り、指定しなかった項目は空(一覧は空配列、ほかは null)になる
  */
 export interface ModelsCustomerPreferencesUpdateRequest {
   /**
-     * 指名を希望するスタッフのID。存在するスタッフを指定する。nullでクリア
+     * 指名を希望するスタッフのID。削除されていないスタッフを指定する。避けたいスタッフ(avoidStaffIds)は指定できない。nullでクリア
      * @nullable
      */
   preferredStaffId?: string | null;
+  /** 希望する時間帯の一覧。指定した一覧で置き換える。各時間帯は開始が終了より前で、互いに重ならない */
+  preferredTimeSlots?: ModelsTimeSlot[];
+  /** 避けたいスタッフのIDの一覧。指定した一覧で置き換える。削除されていないスタッフを指定する。同じIDの繰り返しと、指名を希望するスタッフ(preferredStaffId)は指定できない */
+  avoidStaffIds?: ModelsStaffId[];
   /**
-     * 希望時間帯一覧。nullでクリア
-     * @nullable
-     */
-  preferredTimeSlots?: ModelsTimeSlot[] | null;
-  /**
-     * 避けたいスタッフのID一覧。存在するスタッフを指定する。nullでクリア
-     * @nullable
-     */
-  avoidStaffIds?: ModelsStaffId[] | null;
-  /**
-     * スタイルの好み設定。nullでクリア
+     * スタイルの好み。指定した内容で、まとまりごと置き換える。nullでクリア
      * @nullable
      */
   stylePreferences?: ModelsStylePreference | null;
   /**
-     * 会話の多さなど、接客時のコミュニケーションの好み。nullでクリア
+     * 会話の多さなど、接客時のコミュニケーションの好み。空白だけの文字列は指定できない。nullでクリア
      * @maxLength 100
      * @nullable
      */
   communicationStyle?: string | null;
   /**
-     * 特別なリクエスト。nullでクリア
+     * 特別なリクエスト。空白だけの文字列は指定できない。nullでクリア
      * @nullable
      */
   specialRequests?: string | null;

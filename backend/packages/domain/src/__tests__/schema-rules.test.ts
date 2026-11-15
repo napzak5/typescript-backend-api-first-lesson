@@ -6,8 +6,10 @@ import {
   MAX_INTEGER,
   nonBlankText,
   noRepeatedEntries,
+  orderedTimeSlot,
   phoneNumber,
   timeOfDay,
+  timeSlot,
   withSeconds,
 } from '../schemas/rules'
 import { parseWith, uuidSchema } from '../shared'
@@ -302,5 +304,118 @@ describe('dayOfWeekOf', () => {
     ['the empty string', ''],
   ])('returns null for %s', (_case, text) => {
     expect(dayOfWeekOf(text)).toBeNull()
+  })
+})
+
+describe('timeSlot', () => {
+  it.each([
+    ['a slot of a morning', { startTime: '09:00', endTime: '12:30' }],
+    [
+      'the first and the last minute of a day',
+      { startTime: '00:00', endTime: '23:59' },
+    ],
+    [
+      'a slot that ends before it begins',
+      { startTime: '18:00', endTime: '09:00' },
+    ],
+    [
+      'a slot that ends when it begins',
+      { startTime: '09:00', endTime: '09:00' },
+    ],
+  ])('has the shape of %s', (_case, slot) => {
+    expect(parseWith(timeSlot, slot, 'Invalid')).toEqual({
+      type: 'success',
+      data: slot,
+    })
+  })
+
+  it.each<[string, unknown, string[]]>([
+    [
+      'a time with seconds',
+      { startTime: '09:00:00', endTime: '12:00' },
+      ['startTime:invalid_format'],
+    ],
+    [
+      'a time without a leading zero',
+      { startTime: '9:00', endTime: '12:00' },
+      ['startTime:invalid_format'],
+    ],
+    [
+      'an hour that no day has',
+      { startTime: '09:00', endTime: '24:00' },
+      ['endTime:invalid_format'],
+    ],
+    [
+      'a minute that no hour has',
+      { startTime: '09:60', endTime: '12:00' },
+      ['startTime:invalid_format'],
+    ],
+    [
+      'a time that is a number',
+      { startTime: 900, endTime: '12:00' },
+      ['startTime:invalid_type'],
+    ],
+    ['a slot without an end', { startTime: '09:00' }, ['endTime:invalid_type']],
+    [
+      'a slot with another property',
+      { startTime: '09:00', endTime: '12:00', day: 'monday' },
+      ['day:unrecognized_keys'],
+    ],
+    ['text', '09:00-12:00', [':invalid_type']],
+    ['null', null, [':invalid_type']],
+  ])('does not have the shape of %s', (_case, slot, rules) => {
+    expect(rulesBrokenBy(timeSlot, slot)).toEqual(rules)
+  })
+})
+
+describe('orderedTimeSlot', () => {
+  it.each([
+    ['a slot of one minute', { startTime: '09:00', endTime: '09:01' }],
+    ['a slot of a whole day', { startTime: '00:00', endTime: '23:59' }],
+  ])('accepts %s', (_case, slot) => {
+    expect(parseWith(orderedTimeSlot, slot, 'Invalid')).toEqual({
+      type: 'success',
+      data: slot,
+    })
+  })
+
+  it.each([
+    ['ends when it begins', { startTime: '09:00', endTime: '09:00' }],
+    ['ends before it begins', { startTime: '09:01', endTime: '09:00' }],
+    [
+      'ends in the morning after it began in the evening',
+      { startTime: '22:00', endTime: '02:00' },
+    ],
+  ])('rejects a slot that %s, under its end', (_case, slot) => {
+    expect(rulesBrokenBy(orderedTimeSlot, slot)).toEqual(['endTime:custom'])
+  })
+
+  it('says what the end has to be', () => {
+    expect(
+      parseWith(
+        orderedTimeSlot,
+        { startTime: '09:00', endTime: '09:00' },
+        'Invalid',
+      ),
+    ).toEqual({
+      type: 'error',
+      error: {
+        type: 'validation',
+        message: 'Invalid',
+        issues: [
+          {
+            field: 'endTime',
+            rule: 'custom',
+            message: 'Must be later than startTime',
+          },
+        ],
+      },
+    })
+  })
+
+  it('keeps the rules of the shape', () => {
+    expect(
+      rulesBrokenBy(orderedTimeSlot, { startTime: '09:00', endTime: 'noon' }),
+    ).toEqual(['endTime:invalid_format'])
   })
 })

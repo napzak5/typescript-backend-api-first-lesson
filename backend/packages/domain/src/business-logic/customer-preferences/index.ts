@@ -1,0 +1,6 @@
+export type { CustomerPreferencesUseCaseDependencies } from './_shared/dependencies'
+export { customerPreferencesRuleIssues } from './_shared/rules'
+export { GetCustomerPreferencesUseCase } from './get-customer-preferences.usecase'
+export { GetOwnCustomerPreferencesUseCase } from './get-own-customer-preferences.usecase'
+export { UpdateCustomerPreferencesUseCase } from './update-customer-preferences.usecase'
+export { UpdateOwnCustomerPreferencesUseCase } from './update-own-customer-preferences.usecase'

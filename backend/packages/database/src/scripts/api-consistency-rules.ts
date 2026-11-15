@@ -184,13 +184,13 @@ const customerProfileManagedColumns = [
 
 /**
  * Columns of `customer_preferences` that no model exposes. The row is
- * addressed through its customer; `preferredServices` is a jsonb column
- * without a defined structure.
+ * addressed through its customer, and a customer without a row has
+ * preferences too: empty ones. So the row itself, with its ID and its
+ * times, is not shown.
  */
 const customerPreferencesOmittedColumns = [
   'id',
   'customerId',
-  'preferredServices',
   'createdAt',
   'updatedAt',
 ]

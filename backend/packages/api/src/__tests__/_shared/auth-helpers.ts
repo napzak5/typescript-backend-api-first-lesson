@@ -190,7 +190,8 @@ export const insertSalon = async (
   return salon.id
 }
 
-const insertStaff = async (
+/** A staff member of the salon as a row, without an account; returns its ID. */
+export const insertStaff = async (
   db: Database,
   salonId: string,
   overrides: Partial<NewStaff> = {},

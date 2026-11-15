@@ -827,37 +827,38 @@ namespace BeautySalon.Models {
   // ============================================================================
 
   @doc("""
-    スタイルの好み - customer_preferences.stylePreferences(jsonb) に保存する構造
+    スタイルの好み - customer_preferences.stylePreferences(jsonb) に保存する構造。
+    一覧は null にならない。1つもない場合は空配列
     """)
   model StylePreference {
-    @doc("希望の髪の長さ。特に希望がない場合はnull")
+    @doc("希望の髪の長さ。特に希望がない場合はnull。空白だけの文字列は指定できない")
     preferredLength: string | null;
 
-    @doc("希望のカラー一覧。特に希望がない場合はnull")
-    preferredColors: string[] | null;
+    @doc("希望のカラーの一覧。希望がない場合は空配列。空白だけの要素と、同じ要素の繰り返しは指定できない")
+    preferredColors: string[];
 
-    @doc("避けたいスタイル一覧。特にない場合はnull")
-    avoidStyles: string[] | null;
+    @doc("避けたいスタイルの一覧。ない場合は空配列。空白だけの要素と、同じ要素の繰り返しは指定できない")
+    avoidStyles: string[];
 
-    @doc("参考画像URL一覧。画像がない場合はnull")
-    inspirationImages: string[] | null;
+    @doc("参考画像のURL(http または https、500文字まで)の一覧。ない場合は空配列。同じURLの繰り返しは指定できない")
+    inspirationImages: string[];
   }
 
   @doc("""
     顧客の好み設定レスポンス - customer_preferences テーブルの1行。顧客ごとに最大1行。
-    プロパティ名と null 許可は DB カラムと一致させている
+    プロパティ名と null 許可は DB カラムと一致させている。行のない顧客の好み設定は、一覧が空配列で、ほかは null
     """)
   model CustomerPreferencesResponse {
-    @doc("指名を希望するスタッフのID。指名がない場合はnull")
+    @doc("指名を希望するスタッフのID。指名がない場合はnull。保存したあとで削除されたスタッフのIDも、そのまま返す")
     preferredStaffId: StaffId | null;
 
-    @doc("希望時間帯一覧。特に希望がない場合はnull")
-    preferredTimeSlots: TimeSlot[] | null;
+    @doc("希望する時間帯の一覧。希望がない場合は空配列")
+    preferredTimeSlots: TimeSlot[];
 
-    @doc("避けたいスタッフのID一覧。特にない場合はnull")
-    avoidStaffIds: StaffId[] | null;
+    @doc("避けたいスタッフのIDの一覧。ない場合は空配列。保存したあとで削除されたスタッフのIDも、そのまま返す")
+    avoidStaffIds: StaffId[];
 
-    @doc("スタイルの好み設定。設定がない場合はnull")
+    @doc("スタイルの好み。設定がない場合はnull")
     stylePreferences: StylePreference | null;
 
     @doc("会話の多さなど、接客時のコミュニケーションの好み。特に希望がない場合はnull")
@@ -868,27 +869,27 @@ namespace BeautySalon.Models {
   }
 
   @doc("""
-    顧客の好み設定の部分更新リクエスト - 指定した項目だけを更新する。null を指定した項目はクリアする。
-    好み設定がまだない場合は作成し、指定しなかった項目は null になる
+    顧客の好み設定の部分更新リクエスト - 指定した項目だけを更新する。DB で NULL 許可のカラムは null でクリアでき、一覧は空配列でクリアする。
+    好み設定の行がまだない顧客には行を作り、指定しなかった項目は空(一覧は空配列、ほかは null)になる
     """)
   model CustomerPreferencesUpdateRequest {
-    @doc("指名を希望するスタッフのID。存在するスタッフを指定する。nullでクリア")
+    @doc("指名を希望するスタッフのID。削除されていないスタッフを指定する。避けたいスタッフ(avoidStaffIds)は指定できない。nullでクリア")
     preferredStaffId?: StaffId | null;
 
-    @doc("希望時間帯一覧。nullでクリア")
-    preferredTimeSlots?: TimeSlot[] | null;
+    @doc("希望する時間帯の一覧。指定した一覧で置き換える。各時間帯は開始が終了より前で、互いに重ならない")
+    preferredTimeSlots?: TimeSlot[];
 
-    @doc("避けたいスタッフのID一覧。存在するスタッフを指定する。nullでクリア")
-    avoidStaffIds?: StaffId[] | null;
+    @doc("避けたいスタッフのIDの一覧。指定した一覧で置き換える。削除されていないスタッフを指定する。同じIDの繰り返しと、指名を希望するスタッフ(preferredStaffId)は指定できない")
+    avoidStaffIds?: StaffId[];
 
-    @doc("スタイルの好み設定。nullでクリア")
+    @doc("スタイルの好み。指定した内容で、まとまりごと置き換える。nullでクリア")
     stylePreferences?: StylePreference | null;
 
-    @doc("会話の多さなど、接客時のコミュニケーションの好み。nullでクリア")
+    @doc("会話の多さなど、接客時のコミュニケーションの好み。空白だけの文字列は指定できない。nullでクリア")
     @maxLength(100)
     communicationStyle?: string | null;
 
-    @doc("特別なリクエスト。nullでクリア")
+    @doc("特別なリクエスト。空白だけの文字列は指定できない。nullでクリア")
     specialRequests?: string | null;
   }
 

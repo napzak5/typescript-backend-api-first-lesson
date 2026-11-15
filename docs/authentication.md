@@ -268,9 +268,9 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 
 | 範囲 | 対象 | 届くもの |
 |---|---|---|
-| `platform` | `admin` | すべてのサロンと、顧客台帳 |
-| `salon` | `owner`、`manager`、`staff`。`users.staffId` が指すスタッフが有効（`isActive`、未削除）で、そのサロンが未削除であること | そのサロンと、顧客台帳、自分のスタッフのプロフィール（`/api/v1/staff-profiles/me`）。範囲はロール・サロン ID・スタッフ ID を持つ |
-| `customer` | `customer`。範囲は `users.customerId` を持ち、プロフィールを作るまでは null | 自分のプロフィール（`/api/v1/customers/me`）。null の間は、作成だけができる |
+| `platform` | `admin` | すべてのサロンと、顧客台帳（顧客の好み設定を含む） |
+| `salon` | `owner`、`manager`、`staff`。`users.staffId` が指すスタッフが有効（`isActive`、未削除）で、そのサロンが未削除であること | そのサロンと、顧客台帳（顧客の好み設定を含む）、自分のスタッフのプロフィール（`/api/v1/staff-profiles/me`）。範囲はロール・サロン ID・スタッフ ID を持つ |
+| `customer` | `customer`。範囲は `users.customerId` を持ち、プロフィールを作るまでは null | 自分のプロフィール（`/api/v1/customers/me`）と、自分の好み設定（`/api/v1/customers/me/preferences`）。null の間は、プロフィールの作成だけができる |
 | `none` | `owner`、`manager`、`staff` で、`salon` の条件に当たらない（スタッフ情報が削除された `staff`、紐づけを解除された `staff` など） | 範囲を必要とするものには届かない。ログインはでき、スタッフへの招待に[参加](./staff.md#参加)できる |
 
 - ロールは `users.role` の固定 5 種。`users.permissions` は保存しているだけで、判定には使わない
@@ -361,11 +361,14 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 |---|---|
 | 顧客の一覧、登録、1 件の取得、更新 | `admin`、サロンの `owner` / `manager` / `staff`（所属サロンは問わない） |
 | 顧客の削除 | `admin`、サロンの `owner` / `manager` |
+| 顧客の好み設定の取得、更新（`/api/v1/customers/{id}/preferences`） | `admin`、サロンの `owner` / `manager` / `staff`（所属サロンは問わない） |
 | 本人のプロフィールの取得、作成、更新（`/api/v1/customers/me`） | `customer` |
+| 本人の好み設定の取得、更新（`/api/v1/customers/me/preferences`） | プロフィールのある `customer` |
 
 - 判定は最初に行う。権限のないユーザーには、ID、クエリ、本文が不正でも、顧客が存在しなくても 403 を返す
 - ロール `customer` のユーザーは、台帳からは自分の顧客情報にも届かない。台帳のレスポンスがスタッフ専用の項目（`internalNotes` など）を含むため。本人には、それらを除いたプロフィールを返す
 - プロフィールは、どの顧客かをアカウントが決める（`users.customerId`）。リクエストは顧客を指定しないので、ほかの顧客には届かない。`admin` とサロンのロールは 403（`business-logic/customer/_shared/profile.ts` の `profileAccessOf`）
+- 好み設定のための権限はない。台帳のルートは台帳の規則（`mayHandleCustomers`）で、本人のルートはプロフィールの規則（`profileAccessOf`）で判定する。プロフィールをまだ作っていない顧客のアカウントは、本人のルートで 404 になる（[好み設定](./customers.md#好み設定)）
 
 台帳とプロフィールの規則は [顧客台帳](./customers.md) にあります。
 
@@ -416,7 +419,7 @@ export const updateSalonHandler = (
 
 サロンに属するデータ（予約、スタッフなど）を実装するときは、[サロンの下にあるルートの権限](#サロンの下にあるルートの権限) に従います。ユースケースは、パスの ID を `parseSalonIdOfPath`（`backend/packages/domain/src/models/salon.ts`）で検証し、そのサロンで権限を判定してから、`requireSalon`（`business-logic/_shared/existing-salon.ts`）でサロンの存在を確認します。対象は、そのサロンのものだけを検索します。例は `business-logic/service-category/` と `business-logic/service/`（読むのは認証なし）、`business-logic/staff/`（どのオペレーションにも認証が要る）、`business-logic/staff-schedule/`（サロンで判定したあと、対象の ID でもう一度判定する）、`business-logic/staff-invitation/`（サロンで判定したあと、本文の値でもう一度判定する）、`business-logic/staff-account/`（同じ 2 段階のあとに、操作者自身のアカウントでないことを確認する）です。パスが対象を指定せず、アカウントが対象を決めるルートの例は、`business-logic/customer/` の `*-customer-profile.usecase.ts`（`/api/v1/customers/me`）と、`business-logic/staff-profile/` の `*-own-staff-profile.usecase.ts`（`/api/v1/staff-profiles/me`）です。
 
-サロンに属さないデータは、操作者だけで権限を判定し、最初に判定します。例は `business-logic/customer/`（[顧客台帳の権限](#顧客台帳の権限)）です。ログインしているアカウント自身のデータは、対象をパスの ID ではなく操作者の範囲から決めます。例は同じディレクトリの `*-customer-profile.usecase.ts` です。
+サロンに属さないデータは、操作者だけで権限を判定し、最初に判定します。例は `business-logic/customer/`（[顧客台帳の権限](#顧客台帳の権限)）です。ログインしているアカウント自身のデータは、対象をパスの ID ではなく操作者の範囲から決めます。例は同じディレクトリの `*-customer-profile.usecase.ts` です。`business-logic/customer-preferences/` のユースケースは、この 2 つの判定をそのまま使います。
 
 ## シードのアカウント
 
@@ -429,7 +432,7 @@ export const updateSalonHandler = (
 | `manager@beautysalon.jp` | `manager` | 同上 |
 | `stylist1@beautysalon.jp`、`stylist2@beautysalon.jp` | `staff` | 同上 |
 | `therapist@beautysalon.jp` | `staff` | 2 つ目のサロンと、自分のスタッフのプロフィール |
-| `customer1@example.com` 〜 `customer3@example.com`、`vip.customer@example.com` | `customer` | 自分のプロフィール（`/api/v1/customers/me`） |
+| `customer1@example.com` 〜 `customer3@example.com`、`vip.customer@example.com` | `customer` | 自分のプロフィール（`/api/v1/customers/me`）と、自分の好み設定（`/api/v1/customers/me/preferences`） |
 
 ```bash
 curl -s http://localhost:3000/api/v1/auth/login \

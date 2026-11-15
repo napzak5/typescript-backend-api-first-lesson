@@ -131,15 +131,17 @@ CREATE TABLE "customer_preferences" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"customerId" uuid NOT NULL,
 	"preferredStaffId" uuid,
-	"preferredTimeSlots" jsonb DEFAULT '[]'::jsonb,
-	"avoidStaffIds" jsonb DEFAULT '[]'::jsonb,
-	"preferredServices" jsonb DEFAULT '[]'::jsonb,
-	"stylePreferences" jsonb DEFAULT '{}'::jsonb,
+	"preferredTimeSlots" jsonb NOT NULL,
+	"avoidStaffIds" uuid[] NOT NULL,
+	"stylePreferences" jsonb,
 	"communicationStyle" varchar(100),
 	"specialRequests" text,
 	"createdAt" timestamp with time zone DEFAULT now() NOT NULL,
 	"updatedAt" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "customer_preferences_unique" UNIQUE("customerId")
+	CONSTRAINT "customer_preferences_unique" UNIQUE("customerId"),
+	CONSTRAINT "customer_preferences_preferred_staff_not_avoided" CHECK ("preferredStaffId" <> ALL ("avoidStaffIds")),
+	CONSTRAINT "customer_preferences_style_is_an_object" CHECK (jsonb_typeof("stylePreferences") = 'object'::text),
+	CONSTRAINT "customer_preferences_time_slots_is_an_array" CHECK (jsonb_typeof("preferredTimeSlots") = 'array'::text)
 );
 
 CREATE TABLE "customers" (
@@ -849,7 +851,6 @@ CREATE INDEX "idx_customer_allergies_customer_id" ON "customer_allergies" USING 
 CREATE INDEX "idx_customer_points_created_at" ON "customer_points" USING btree ("createdAt" timestamptz_ops);
 CREATE INDEX "idx_customer_points_customer_id" ON "customer_points" USING btree ("customerId" uuid_ops);
 CREATE INDEX "idx_customer_points_expiry_date" ON "customer_points" USING btree ("expiryDate" date_ops);
-CREATE INDEX "idx_customer_preferences_customer_id" ON "customer_preferences" USING btree ("customerId" uuid_ops);
 CREATE INDEX "idx_customers_customer_status" ON "customers" USING btree ("customerStatus" enum_ops);
 CREATE INDEX "idx_customers_deleted_at" ON "customers" USING btree ("deletedAt" timestamptz_ops);
 CREATE INDEX "idx_customers_email" ON "customers" USING btree ("email" text_ops);
