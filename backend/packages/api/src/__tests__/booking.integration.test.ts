@@ -1691,6 +1691,26 @@ describe('Bookings API', () => {
       expectProblem(await read(bookingNumber), badRequest)
     })
 
+    // The API writes at least one line with a booking. A row that was
+    // written before it did may have none, and is in the ledger all the same.
+    it('returns and lists a booking that has no service lines, with none', async () => {
+      const [row] = await db
+        .insert(bookings)
+        .values(bookingRow())
+        .returning({ id: bookings.id })
+      if (row === undefined) {
+        throw new Error('No booking was inserted')
+      }
+
+      const response = await read(row.id)
+      const listed = await list()
+
+      expect(response.status).toBe(200)
+      expect(response.body.data).toMatchObject({ id: row.id, services: [] })
+      expect(listed.status).toBe(200)
+      expect(listed.body.data).toEqual([response.body.data])
+    })
+
     it('does not offer what is not there yet: a booking is neither changed, moved nor removed', async () => {
       const { id } = await created()
 
