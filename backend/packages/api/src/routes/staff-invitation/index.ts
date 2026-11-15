@@ -6,6 +6,7 @@ import { acceptStaffInvitationHandler } from './accept-staff-invitation.handler'
 import { createStaffInvitationHandler } from './create-staff-invitation.handler'
 import { deleteStaffInvitationHandler } from './delete-staff-invitation.handler'
 import { getStaffInvitationHandler } from './get-staff-invitation.handler'
+import { joinStaffInvitationHandler } from './join-staff-invitation.handler'
 import { verifyStaffInvitationHandler } from './verify-staff-invitation.handler'
 
 /**
@@ -35,14 +36,17 @@ export const createStaffInvitationRouter = (
 /**
  * Routes of an invitation for whoever was invited, relative to where the
  * router is mounted (`/auth/staff-invitation`). They are operations of
- * `AuthCrud` in the TypeSpec definition, and the holder of a token has no
- * account to sign in to yet:
+ * `AuthCrud` in the TypeSpec definition. The holder of a token has no
+ * account to sign in to yet, or has one that joins, and only joining needs
+ * a signed-in user:
  *
  * - POST /verify  verifyStaffInvitation
  * - POST /accept  acceptStaffInvitation
+ * - POST /join    joinStaffInvitation (signed in)
  */
 export const createStaffInvitationAcceptanceRouter = (
   dependencies: StaffInvitationUseCaseDependencies,
+  authenticated: Authenticated,
 ): Router => {
   const router = Router()
 
@@ -50,6 +54,7 @@ export const createStaffInvitationAcceptanceRouter = (
 
   router.post('/verify', verifyStaffInvitationHandler(dependencies))
   router.post('/accept', acceptStaffInvitationHandler(dependencies))
+  router.post('/join', joinStaffInvitationHandler(dependencies, authenticated))
 
   return router
 }

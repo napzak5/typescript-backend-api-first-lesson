@@ -14,6 +14,7 @@ import {
   ServiceCategoryRepository,
   ServiceRepository,
   SessionRepository,
+  StaffAccountRepository,
   StaffInvitationRepository,
   StaffProfileRepository,
   StaffRepository,
@@ -38,6 +39,7 @@ import { createSalonRouter } from './routes/salon'
 import { createServiceRouter } from './routes/service'
 import { createServiceCategoryRouter } from './routes/service-category'
 import { createStaffRouter } from './routes/staff'
+import { createStaffAccountRouter } from './routes/staff-account'
 import {
   createStaffInvitationAcceptanceRouter,
   createStaffInvitationRouter,
@@ -135,7 +137,10 @@ export const createApp = ({
   }
   app.use(
     `${API_BASE_PATH}/auth/staff-invitation`,
-    createStaffInvitationAcceptanceRouter(staffInvitationDependencies),
+    createStaffInvitationAcceptanceRouter(
+      staffInvitationDependencies,
+      authenticated,
+    ),
   )
   app.use(
     `${API_BASE_PATH}/salons`,
@@ -168,6 +173,16 @@ export const createApp = ({
   app.use(
     `${API_BASE_PATH}/salons/:salonId/staff/:id/invitation`,
     createStaffInvitationRouter(staffInvitationDependencies, authenticated),
+  )
+  app.use(
+    `${API_BASE_PATH}/salons/:salonId/staff/:id/account`,
+    createStaffAccountRouter(
+      {
+        staffAccountRepository: new StaffAccountRepository(database),
+        salonRepository,
+      },
+      authenticated,
+    ),
   )
   app.use(
     `${API_BASE_PATH}/salons/:salonId/staff/:id/schedules`,
