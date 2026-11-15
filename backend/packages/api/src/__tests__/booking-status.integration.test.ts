@@ -14,7 +14,7 @@ import {
 } from '@beauty-salon-backend/domain'
 import { BookingRepository } from '@beauty-salon-backend/infrastructure'
 import type { Result } from '@beauty-salon-backend/utility'
-import { asc, eq } from 'drizzle-orm'
+import { asc, eq, sql } from 'drizzle-orm'
 import type { Express } from 'express'
 import type { Response, Test } from 'supertest'
 import { beforeEach, describe, expect, it } from 'vitest'
@@ -1601,6 +1601,74 @@ describe('Booking status API', () => {
       expect(response?.status).toBe(200)
       expect((await stored(id)).status).toBe('confirmed')
     })
+
+    // `now()` is the moment a transaction began, which is before what it
+    // waited for: by it, a change that came second would be noted as the
+    // earlier one.
+    it.each<[Action, Status]>([
+      ['confirm', 'pending'],
+      ['cancel', 'confirmed'],
+      ['start', 'confirmed'],
+      ['complete', 'confirmed'],
+      ['no-show', 'confirmed'],
+    ])(
+      '%s writes the times of the moment it got hold of the booking, not of the moment it began to wait',
+      async (action, from) => {
+        const id = await bookingIn(from)
+
+        const { pending, until } = await db.transaction(async (tx) => {
+          await tx
+            .select({ id: bookings.id })
+            .from(bookings)
+            .where(eq(bookings.id, id))
+            .for('update')
+          const underWay = act(id, action).then((response) => response)
+          await pause(300)
+
+          return { pending: underWay, until: await databaseClock() }
+        })
+        const response = await pending
+        const after = await databaseClock()
+
+        expect(response.status).toBe(200)
+        const booking = response.body.data
+        const lines: { completedAt: string | null }[] = booking.services
+        const times: unknown[] = [
+          booking.updatedAt,
+          ...(action === 'cancel' ? [booking.cancelledAt] : []),
+          ...(action === 'start' ? [booking.actualStartTime] : []),
+          ...(action === 'complete'
+            ? [booking.completedAt, ...lines.map((line) => line.completedAt)]
+            : []),
+        ]
+        for (const time of times) {
+          expectBetween(time, until, after)
+        }
+        const noted = await db
+          .select({
+            at: sql<number>`(extract(epoch from ${bookingStatusHistories.createdAt}) * 1000)`.mapWith(
+              Number,
+            ),
+          })
+          .from(bookingStatusHistories)
+          .where(eq(bookingStatusHistories.bookingId, id))
+        expect(noted).toEqual([{ at: expect.any(Number) }])
+        expect(noted[0]?.at).toBeGreaterThanOrEqual(until)
+        expect(noted[0]?.at).toBeLessThanOrEqual(after)
+        // The customer is written by the actions that count their bookings.
+        const [counted] = await db
+          .select({
+            at: sql<number>`(extract(epoch from ${customers.updatedAt}) * 1000)`.mapWith(
+              Number,
+            ),
+          })
+          .from(customers)
+          .where(eq(customers.id, customerId))
+        expect((counted?.at ?? 0) >= until).toBe(
+          ['cancel', 'complete', 'no-show'].includes(action),
+        )
+      },
+    )
 
     // Were a reader to wait, the transaction below would wait for the
     // reader and neither would end.

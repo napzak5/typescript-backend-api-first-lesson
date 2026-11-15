@@ -524,6 +524,13 @@ Logging is structured, with pino. Application code never writes to `console`.
   `createdAt` and `updatedAt` default to `now()`, and the repository sets
   `updatedAt` and `deletedAt` with `` sql`now()` ``. Application code does not
   create a `Date` to store it.
+- `now()` is the moment the transaction began, which is before anything the
+  transaction waited for. A change that is judged by the clock, or whose
+  order is kept (the status of a booking and its history), reads
+  `clock_timestamp()` once it holds the row: the outer query reads the clock
+  of the row a subquery locks `FOR UPDATE`, and `updatedAt` and the
+  `createdAt` of the history are written with `clock_timestamp()` too. Of
+  two changes to one booking, the one that waited writes the later time.
 - Drizzle reads a `timestamptz` as text. Every read mapper converts it to
   ISO 8601 in UTC with the same schema, which uses date-fns:
 

@@ -1360,7 +1360,9 @@ from a request below a salon:
   status share one path (`_shared/change-status.ts`): the reach of the
   actor, the ID, the request of the action, then `changeStatus` of the
   repository. It locks the booking `FOR UPDATE` and reads its status, its
-  times and the clock of the database in that one statement, and hands
+  times and the clock of the database at the moment the booking is held
+  (`clock_timestamp()` of the row a subquery locks, not `now()`, which is
+  the moment the transaction began) in that one statement, and hands
   them to `planStatusChange` (`_shared/status.ts`), a pure function that
   holds the transitions and says what to write or why not
   (`StatusChangeRefusal`: the status does not allow the action, the

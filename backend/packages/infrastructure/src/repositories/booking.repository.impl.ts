@@ -69,6 +69,14 @@ const momentOf = (milliseconds: number | null): Date | null =>
   milliseconds === null ? null : new Date(milliseconds)
 
 /**
+ * The clock of the database at the moment a statement gets to a row.
+ * `now()` is the moment the transaction began, which is before anything it
+ * waited for: by it, a change that waited for another one would be written
+ * as the earlier of the two.
+ */
+const CLOCK = sql`clock_timestamp()`
+
+/**
  * What a create request refers to, locked until the booking is written.
  *
  * The salon, the customer and the services are locked `FOR SHARE`: they
@@ -283,7 +291,7 @@ const countBookingsOf = async (
       cancellationCount: sql`${counted.cancellations}`,
       firstVisitDate: sql`${counted.firstVisit}`,
       lastVisitDate: sql`${counted.lastVisit}`,
-      updatedAt: sql`now()`,
+      updatedAt: CLOCK,
     })
     .from(counted)
     .where(eq(customers.id, customerId))
@@ -378,21 +386,33 @@ export class BookingRepository implements IBookingRepository {
     return attempt('Failed to change the status of booking', () =>
       this.db.transaction(
         async (tx): Promise<BookingStatusChange> => {
-          // The clock is the database's, the one `updatedAt` is written by.
-          const [held] = await tx
+          const holding = tx
             .select({
               customerId: bookings.customerId,
               status: bookings.status,
-              startTime: millisecondsOf(bookings.startTime),
-              actualStartTime: millisecondsOrNullOf(bookings.actualStartTime),
-              actualEndTime: millisecondsOrNullOf(bookings.actualEndTime),
-              now: sql<number>`(extract(epoch from now()) * 1000)`.mapWith(
-                Number,
-              ),
+              startTime: bookings.startTime,
+              actualStartTime: bookings.actualStartTime,
+              actualEndTime: bookings.actualEndTime,
             })
             .from(bookings)
             .where(and(eq(bookings.id, id), within(reach)))
             .for('update')
+            .as('holding')
+          // The booking is held in a subquery, and the clock is read of the
+          // row it returns: the moment of the change is the one at which it
+          // got hold of the booking, after every change it waited for.
+          const [held] = await tx
+            .select({
+              customerId: holding.customerId,
+              status: holding.status,
+              startTime: millisecondsOf(holding.startTime),
+              actualStartTime: millisecondsOrNullOf(holding.actualStartTime),
+              actualEndTime: millisecondsOrNullOf(holding.actualEndTime),
+              now: sql<number>`(extract(epoch from ${CLOCK}) * 1000)`.mapWith(
+                Number,
+              ),
+            })
+            .from(holding)
           if (held === undefined) {
             return { type: 'notFound' }
           }
@@ -414,7 +434,7 @@ export class BookingRepository implements IBookingRepository {
 
           const [booking] = await tx
             .update(bookings)
-            .set({ ...write.booking, updatedAt: sql`now()` })
+            .set({ ...write.booking, updatedAt: CLOCK })
             .where(eq(bookings.id, id))
             .returning()
           if (booking === undefined) {
@@ -426,7 +446,7 @@ export class BookingRepository implements IBookingRepository {
               .set({
                 isCompleted: true,
                 completedAt: write.servicesCompletedAt,
-                updatedAt: sql`now()`,
+                updatedAt: CLOCK,
               })
               .where(
                 and(
@@ -437,7 +457,7 @@ export class BookingRepository implements IBookingRepository {
           }
           await tx
             .insert(bookingStatusHistories)
-            .values({ ...write.statusChange, bookingId: id })
+            .values({ ...write.statusChange, bookingId: id, createdAt: CLOCK })
           if (write.countsCustomer) {
             await countBookingsOf(tx, held.customerId)
           }
