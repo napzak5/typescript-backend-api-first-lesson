@@ -310,7 +310,11 @@ salon, which is ordered by registration, oldest first
 ([staff.md](./staff.md), Japanese). The list of staff profiles has the
 same order across salons; its cursor may name any staff member, one who
 is not shown any more or one the filters leave out included, and only a
-cursor that names no staff member is answered with 400. The
+cursor that names no staff member is answered with 400. The schedule of a
+staff member is the one list without pages: it has at most 373 entries, the
+contract says so (`@maxItems`), and the response is `{ data, meta, links }`
+with the whole schedule in `data` and no pagination metadata
+([staff.md](./staff.md#勤務スケジュール), Japanese). The
 page links are built by
 `pageLinks` in `backend/packages/api/src/shared/page-links.ts`, for every
 list, from the request URL with the cursor replaced.
@@ -531,13 +535,15 @@ Logging is structured, with pino. Application code never writes to `console`.
 - **Calendar dates and times of day** (`date` and `time` columns) stay strings
   from the request to the database: `YYYY-MM-DD` checked with `z.iso.date()`,
   and `HH:mm` or `HH:mm:ss`. Two times of day are compared as strings once both
-  have seconds.
+  have seconds. The format and the comparison are shared rules (`timeOfDay` and
+  `withSeconds` in `backend/packages/domain/src/schemas/rules.ts`), which the
+  calendar of a salon and the schedule of a staff member use.
 - Parsing, validity checks and formatting use date-fns (`parseISO`, `isValid`,
   `format`), not hand-written arithmetic:
 
   ```typescript
-  // backend/packages/domain/src/schemas/salon.schema.ts
-  const dayOfWeekOf = (date: string): string | null => {
+  // backend/packages/domain/src/schemas/rules.ts
+  export const dayOfWeekOf = (date: string): string | null => {
     const parsed = parseISO(date)
     return isValid(parsed) ? format(parsed, 'EEEE').toLowerCase() : null
   }
