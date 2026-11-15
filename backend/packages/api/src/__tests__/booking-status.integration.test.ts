@@ -626,8 +626,8 @@ describe('Booking status API', () => {
 
     // The action that notes a no-show is at `no-show`: neither the name of
     // the operation nor that of the status is an address. Nothing leads
-    // back from a status, and a booking is not moved yet.
-    it.each(['noShow', 'no_show', 'reopen', 'reschedule'])(
+    // back from a status.
+    it.each(['noShow', 'no_show', 'reopen', 'uncancel'])(
       'has no action at %s',
       async (name) => {
         const id = await bookingIn('confirmed', beginning(-5))

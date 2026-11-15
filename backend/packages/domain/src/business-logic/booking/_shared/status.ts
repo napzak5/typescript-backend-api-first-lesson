@@ -144,6 +144,10 @@ const COUNTED_STATUSES: readonly BookingStatus[] = [
   'no_show',
 ]
 
+/** Whether a booking in a status is among those a customer's bookings are counted by. */
+export const isCounted = (status: BookingStatus): boolean =>
+  COUNTED_STATUSES.includes(status)
+
 /**
  * What an action writes: the booking with its new status, the completion of
  * its service lines when the visit is completed, and the entry of the
@@ -184,7 +188,7 @@ export const planStatusChange = (
         reason: action.type === 'cancel' ? action.cancellationReason : null,
         metadata: null,
       },
-      countsCustomer: COUNTED_STATUSES.includes(to),
+      countsCustomer: isCounted(to),
     },
   }
 }

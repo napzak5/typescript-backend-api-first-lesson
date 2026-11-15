@@ -1711,26 +1711,29 @@ describe('Bookings API', () => {
       expect(listed.body.data).toEqual([response.body.data])
     })
 
-    it('does not offer what is not there yet: a booking is neither changed, moved nor removed', async () => {
-      const { id } = await created()
+    it('does not offer what is not there yet: the service lines of a booking are neither added, read nor removed on their own', async () => {
+      const { id, services: lines } = await created()
+      const below = `${BOOKINGS}/${id}/services`
 
       const responses = [
-        await authorized(request(app).patch(`${BOOKINGS}/${id}`), asAdmin).send(
-          { internalNotes: 'x' },
+        await authorized(request(app).post(below), asAdmin).send(
+          line({ startTime: at('05:00') }),
         ),
-        await authorized(request(app).delete(`${BOOKINGS}/${id}`), asAdmin),
+        await authorized(request(app).get(below), asAdmin),
+        await authorized(request(app).get(`${below}/${lines[0].id}`), asAdmin),
         await authorized(
-          request(app).post(`${BOOKINGS}/${id}/reschedule`),
+          request(app).delete(`${below}/${lines[0].id}`),
           asAdmin,
-        ).send({ startTime: at('05:00'), staffId }),
+        ),
       ]
 
       expect(responses.map(statusAndCode)).toEqual([
         '404 3001',
         '404 3001',
         '404 3001',
+        '404 3001',
       ])
-      expect(await db.$count(bookings)).toBe(1)
+      expect(await db.$count(bookingServices)).toBe(1)
     })
   })
 

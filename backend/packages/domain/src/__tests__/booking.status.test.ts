@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   type BookingAction,
   type BookingInStatus,
+  isCounted,
   planStatusChange,
 } from '../business-logic/booking'
 import { userIdSchema } from '../models/auth'
@@ -91,6 +92,22 @@ const writeOf = (
   }
   return plan.write
 }
+
+describe('isCounted', () => {
+  it.each<Status>(['completed', 'cancelled', 'no_show'])(
+    'counts a booking that is %s for its customer',
+    (status) => {
+      expect(isCounted(status)).toBe(true)
+    },
+  )
+
+  it.each<Status>(['draft', 'pending', 'confirmed', 'in_progress'])(
+    'does not count a booking that is %s',
+    (status) => {
+      expect(isCounted(status)).toBe(false)
+    },
+  )
+})
 
 describe('planStatusChange', () => {
   it.each(TAKEN)(

@@ -1,0 +1,45 @@
+import {
+  type BookingUseCaseDependencies,
+  UpdateBookingUseCase,
+} from '@beauty-salon-backend/domain'
+import type { RequestHandler } from 'express'
+import { match } from 'ts-pattern'
+import type { Authenticated } from '../../shared/authentication'
+import type { ProblemDetails } from '../../shared/problem-details'
+import { responseMeta, sendProblem } from '../../shared/responses'
+import {
+  type BookingParams,
+  bookingLinks,
+  type UpdateBookingResponse,
+} from './_shared'
+
+/**
+ * PATCH /api/v1/bookings/:id - change what the salon notes of a booking, in
+ * whatever status it is (administrators and the members of the booking's
+ * salon)
+ */
+export const updateBookingHandler = (
+  dependencies: BookingUseCaseDependencies,
+  authenticated: Authenticated,
+): RequestHandler<
+  BookingParams,
+  UpdateBookingResponse | ProblemDetails,
+  unknown
+> => {
+  const useCase = new UpdateBookingUseCase(dependencies)
+
+  return authenticated(async (actor, req, res) => {
+    const result = await useCase.execute(actor, req.params.id, req.body)
+
+    match(result)
+      .with({ type: 'success' }, ({ data }) => {
+        res.json({
+          data,
+          meta: responseMeta(req),
+          links: bookingLinks(req.baseUrl, data.id),
+        })
+      })
+      .with({ type: 'error' }, ({ error }) => sendProblem(req, res, error))
+      .exhaustive()
+  })
+}

@@ -14,6 +14,8 @@ import type {
 } from '../models/booking'
 import type {
   BookingCreation,
+  BookingDeletion,
+  BookingReschedule,
   BookingStatusChange,
   IBookingRepository,
 } from '../repositories/booking.repository'
@@ -281,6 +283,18 @@ export const bookingDependencies = (
           booking: bookingWithServices(),
         }),
       ),
+      update: vi.fn(async () =>
+        Result.success<BookingWithServices | null>(bookingWithServices()),
+      ),
+      reschedule: vi.fn(async () =>
+        Result.success<BookingReschedule>({
+          type: 'rescheduled',
+          booking: bookingWithServices(),
+        }),
+      ),
+      delete: vi.fn(async () =>
+        Result.success<BookingDeletion>({ type: 'deleted' }),
+      ),
       list: vi.fn(async () =>
         Result.success({
           bookings: [bookingWithServices()],
@@ -296,26 +310,24 @@ export const bookingDependencies = (
   }
 }
 
+const REPOSITORY_METHODS: (keyof IBookingRepository)[] = [
+  'create',
+  'findById',
+  'changeStatus',
+  'update',
+  'reschedule',
+  'delete',
+  'list',
+]
+
 /** The methods of the repository that were called, in the order of the calls. */
 export const bookingRepositoryCalls = ({
   bookingRepository,
 }: BookingUseCaseDependencies): string[] =>
-  [
-    ...vi
-      .mocked(bookingRepository.create)
-      .mock.invocationCallOrder.map((order) => ({ order, name: 'create' })),
-    ...vi
-      .mocked(bookingRepository.findById)
-      .mock.invocationCallOrder.map((order) => ({ order, name: 'findById' })),
-    ...vi
-      .mocked(bookingRepository.changeStatus)
-      .mock.invocationCallOrder.map((order) => ({
-        order,
-        name: 'changeStatus',
-      })),
-    ...vi
-      .mocked(bookingRepository.list)
-      .mock.invocationCallOrder.map((order) => ({ order, name: 'list' })),
-  ]
+  REPOSITORY_METHODS.flatMap((name) =>
+    vi
+      .mocked(bookingRepository[name])
+      .mock.invocationCallOrder.map((order) => ({ order, name })),
+  )
     .toSorted((a, b) => a.order - b.order)
     .map(({ name }) => name)

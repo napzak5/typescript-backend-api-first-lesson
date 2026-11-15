@@ -1,4 +1,4 @@
-import { match } from 'ts-pattern'
+import { match, P } from 'ts-pattern'
 import type { Actor } from '../../../models/auth'
 import type { BookingReach } from '../../../models/booking'
 import type { SalonId } from '../../../models/salon'
@@ -17,6 +17,29 @@ export const bookingReachOf = (actor: Actor): BookingReach | null =>
     .with({ type: 'platform' }, () => ({ type: 'everySalon' }))
     .with({ type: 'salon' }, ({ salonId }) => ({ type: 'salon', salonId }))
     .with({ type: 'customer' }, { type: 'none' }, () => null)
+    .exhaustive()
+
+/**
+ * The bookings an actor removes; null for an actor who removes none.
+ * Removing a booking takes its history with it and changes what the
+ * customer has of visits and cancellations, so within a salon it is the
+ * owner's and the managers': a staff member cancels a booking that will
+ * not take place.
+ */
+export const bookingRemovalReachOf = (actor: Actor): BookingReach | null =>
+  match(actor.scope)
+    .returnType<BookingReach | null>()
+    .with({ type: 'platform' }, () => ({ type: 'everySalon' }))
+    .with(
+      { type: 'salon', role: P.union('owner', 'manager') },
+      ({ salonId }) => ({ type: 'salon', salonId }),
+    )
+    .with(
+      { type: 'salon', role: 'staff' },
+      { type: 'customer' },
+      { type: 'none' },
+      () => null,
+    )
     .exhaustive()
 
 /** Whether the bookings of a salon are within a reach. */

@@ -33,6 +33,10 @@ export type ApiBookingCreateRequest =
   components['schemas']['Models.BookingCreateRequest']
 export type ApiBookingServiceCreateRequest =
   components['schemas']['Models.BookingServiceCreateRequest']
+export type ApiBookingUpdateRequest =
+  components['schemas']['Models.BookingUpdateRequest']
+export type ApiBookingRescheduleRequest =
+  components['schemas']['Models.BookingRescheduleRequest']
 export type ApiBookingCancelRequest =
   components['schemas']['Models.BookingCancelRequest']
 export type ApiBookingCompleteRequest =
@@ -102,6 +106,27 @@ export type DbBookingChanges = Partial<
     | 'actualEndTime'
   >
 >
+
+/**
+ * What an update writes to a booking: what the salon notes of it, and of
+ * that only what the request names.
+ */
+export type DbBookingNotes = Partial<
+  Pick<
+    DbBooking,
+    'depositAmount' | 'customerRequest' | 'internalNotes' | 'source'
+  >
+>
+
+/**
+ * What a reschedule writes: the staff member in charge, the day and the
+ * times of the booking, and the staff member and the times of each of its
+ * service lines.
+ */
+export type BookingRescheduleWrite = {
+  booking: Pick<DbBooking, 'staffId' | 'bookingDate' | 'startTime' | 'endTime'>
+  services: Pick<DbBookingService, 'id' | 'staffId' | 'startTime' | 'endTime'>[]
+}
 
 /** What a change of the status of a booking writes. */
 export type BookingStatusWrite = {

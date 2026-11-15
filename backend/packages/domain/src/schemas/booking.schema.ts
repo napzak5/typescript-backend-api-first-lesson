@@ -5,15 +5,17 @@ import {
   type ApiBookingCancelRequest,
   type ApiBookingCompleteRequest,
   type ApiBookingCreateRequest,
+  type ApiBookingRescheduleRequest,
   type ApiBookingSearchRequest,
   type ApiBookingServiceCreateRequest,
+  type ApiBookingUpdateRequest,
   bookingIdSchema,
 } from '../models/booking'
 import { customerIdSchema } from '../models/customer'
 import { salonIdSchema } from '../models/salon'
 import { serviceIdSchema } from '../models/service'
 import { staffIdSchema } from '../models/staff'
-import { MAX_INTEGER, nonBlankText } from './rules'
+import { atLeastOneProperty, MAX_INTEGER, nonBlankText } from './rules'
 
 /**
  * Validation of booking requests. The shapes are checked against the
@@ -80,19 +82,39 @@ const bookingServiceListSchema = z
     })
   })
 
-export const bookingCreateRequestSchema = z.strictObject({
-  salonId: salonIdSchema,
-  customerId: customerIdSchema,
-  staffId: staffIdSchema,
+/** What a salon notes of a booking, when it enters it and afterwards. */
+const notedOfBooking = {
   depositAmount: z.number().int().min(0).max(MAX_INTEGER).nullable(),
   customerRequest: nonBlankText.nullable(),
   internalNotes: nonBlankText.nullable(),
   source: nonBlankText.max(50).nullable(),
+}
+
+export const bookingCreateRequestSchema = z.strictObject({
+  salonId: salonIdSchema,
+  customerId: customerIdSchema,
+  staffId: staffIdSchema,
+  ...notedOfBooking,
   services: bookingServiceListSchema,
 }) satisfies z.ZodType<ApiBookingCreateRequest>
 
 /** A create request that passed the rules of its own. */
 export type BookingCreateRequest = z.infer<typeof bookingCreateRequestSchema>
+
+export const bookingUpdateRequestSchema = z
+  .strictObject(notedOfBooking)
+  .exactPartial()
+  .check(atLeastOneProperty) satisfies z.ZodType<ApiBookingUpdateRequest>
+
+export const bookingRescheduleRequestSchema = z.strictObject({
+  startTime: minuteInUtc,
+  staffId: staffIdSchema,
+}) satisfies z.ZodType<ApiBookingRescheduleRequest>
+
+/** A reschedule request that passed the rules of its own. */
+export type BookingRescheduleRequest = z.infer<
+  typeof bookingRescheduleRequestSchema
+>
 
 export const bookingCancelRequestSchema = z.strictObject({
   cancellationReason: nonBlankText.nullable(),
