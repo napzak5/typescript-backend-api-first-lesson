@@ -386,8 +386,11 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 | 予約のステータスの操作（`POST /api/v1/bookings/{id}/confirm`、`/cancel`、`/start`、`/complete`、`/no-show`） | `admin`、予約のサロンの `owner` / `manager` / `staff` |
 | 予約の日時の変更（`POST /api/v1/bookings/{id}/reschedule`） | `admin`、予約のサロンの `owner` / `manager` / `staff` |
 | 予約の施術明細の追加、1 件の取得、削除（`POST /api/v1/bookings/{bookingId}/services`、`GET` と `DELETE /api/v1/bookings/{bookingId}/services/{id}`） | `admin`、予約のサロンの `owner` / `manager` / `staff` |
+| 空き枠の一覧（`GET /api/v1/salons/{salonId}/available-slots`） | サインインしているすべてのユーザー |
+| 空き枠の確認（`POST /api/v1/salons/{salonId}/available-slots/check`） | `admin`、パスのサロンの `owner` / `manager` / `staff` |
 
 - 1 段階目は、操作者だけで決まる（`bookingReachOf`）。操作者に届く予約は、`admin` ならすべてのサロンのもの、サロンのユーザーなら所属サロンのもの。ロール `customer` のユーザーと範囲 `none` のユーザーには、届く予約がない。本文、クエリ、ID が不正でも 403 を返す。予約の削除は、別の関数（`bookingRemovalReachOf`）で決まり、サロンの `staff` にも、削除できる予約がない（403）
+- 空き枠の確認は、重なっている予約の ID を返すので、台帳と同じ範囲で決まる（`business-logic/available-slot/_shared/authorization.ts` の `mayAskLedgerOf`。`bookingReachOf` と `isWithin` を使う）。サロンはパスにあるので、本文を読む前に 403 を返す。空き枠の一覧は、どの予約のことも返さないので、サインインしていれば誰でも読める
 - 2 段階目は、リクエストがサロンを指定したあとに決まる（`isWithin`）。サロンのユーザーが、作成の本文や一覧のクエリでほかのサロンを指定すると 403。本文やクエリが不正なら、その前に 400 を返す
 - 取得には、比べるサロンがない。リポジトリが、操作者に届く範囲を検索の条件にするので、ほかのサロンの予約は見つからない（404）。存在しない ID と区別しない。一覧も同じ条件で検索し、カーソルが指す予約にも同じ条件を付ける。更新、削除、ステータスの操作、日時の変更、施術明細の追加と削除も、同じ条件で予約をロックするので、ほかのサロンの予約は 404 で、何も変えない。施術明細の取得も、同じ条件で予約を探す
 - サロンの 3 つのロールの違いは、予約の削除だけにある。削除できるのは `owner` と `manager` で、`staff` は 403。削除は、予約の履歴を消し、顧客の来店回数を変えるためである（顧客台帳の削除と同じ分け方）。施術明細の削除は、予約の内容の変更で、予約の削除ではないので、`staff` にもできる。予約のための権限（`users.permissions`）はない

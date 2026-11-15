@@ -45,6 +45,9 @@ namespace BeautySalon.Models {
     weekends_only: 週末のみ - 土曜日・日曜日に限り提供するサービス
     by_appointment_only: 予約制 - 事前予約がある場合のみ提供するサービス
     seasonal: 季節限定 - 特定の季節のみ提供
+    
+    空き枠は、weekdays_only のサービスを月曜日〜金曜日だけ、weekends_only のサービスを土曜日・日曜日だけに返す(サロンのタイムゾーンでの曜日)。
+    ほかの値は、どの日も同じに扱う(空き枠からの予約は事前の予約であり、季節はサロンが serviceStatus で切り替える)
     """)
   enum ServiceAvailabilityType {
     always,
@@ -61,6 +64,9 @@ namespace BeautySalon.Models {
     patch_test_required: パッチテスト必須 - アレルギー確認のための事前テストが必要
     advance_booking_required: 事前予約必須 - 当日予約を受け付けず、事前の予約が必要
     deposit_required: デポジット必須 - 予約時に予約金の支払いが必要
+    
+    空き枠は、advance_booking_required のあるサービスに、当日(サロンのタイムゾーンでの今日)の枠を返さない。
+    ほかの値は、サーバーでは確かめられない条件で、空き枠には影響しない
     """)
   enum BookingRequirementType {
     consultation_required,

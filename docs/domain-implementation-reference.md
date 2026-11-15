@@ -181,6 +181,7 @@ The table decides much of what the layers above look like:
 | `uniqueIndex('salons_email_unique')` over the rows that are not deleted | The source of the `alreadyExists` error (step 8); the email of a deleted salon is free again |
 | `deletedAt` | Delete is a soft delete; the repository hides deleted rows |
 | `opening_hours.salonId` references `salons.id` | The calendar is a child table, embedded in the API model as `openingHours` |
+| `uniqueIndex('opening_hours_salon_date_unique')` | The calendar has one row for a date of a salon; the available slots read that one row |
 
 ### `pnpm check:api-db`
 
@@ -379,12 +380,14 @@ export const timestampSchema = z
 `backend/packages/domain/src/mappers/read/salon.mapper.ts` imports them:
 
 ```typescript
+const businessHoursSchema = z.array(storedBusinessHoursSchema).nullable()
+
 const convertedColumnsSchema = z.object({
   latitude: numericSchema.nullable(),
   longitude: numericSchema.nullable(),
   rating: numericSchema.nullable(),
   taxRate: numericSchema,
-  businessHours: z.array(storedBusinessHoursSchema).nullable(),
+  businessHours: businessHoursSchema,
   createdAt: timestampSchema,
   updatedAt: timestampSchema,
 })
@@ -406,14 +409,16 @@ const toApiSalon = (
         openingHours: openingHours.map(toApiOpeningHours),
       }),
     ),
-    // The request was fine; the stored row is not.
-    (error) =>
-      DomainErrors.database(
-        `Stored salon ${salon.id} does not match the API model`,
-        error,
-      ),
+    (error) => storedDoesNotMatch(salon.id, error),
   )
 }
+
+/** The request was fine; the stored row is not. */
+const storedDoesNotMatch = (id: string, cause: unknown): DomainError =>
+  DomainErrors.database(
+    `Stored salon ${id} does not match the API model`,
+    cause,
+  )
 ```
 
 - **The conversion is a parse.** A cast would claim that the `jsonb` value has the API shape; the schema checks it. The `pipe` steps also reject a number or a date that did not convert.
@@ -1038,6 +1043,23 @@ A booking is entered with its service lines, and until it is finished a line can
 | 10. Handlers and router | A router of its own with `POST /`, `GET /:id` and `DELETE /:id`, created with `mergeParams`, because it is mounted below a booking. The links of a line are built from the mount path: the line itself, and its booking | `backend/packages/api/src/routes/booking-service/` |
 | 11. Wiring | Mounted at `/bookings/:bookingId/services`, before the router of the ledger and with the same dependencies | `backend/packages/api/src/index.ts` |
 | 12. Tests | The plans are tested as pure functions, with amounts at the limit of what a column holds. The integration test compares the booking after an addition and after a removal with what its lines add up to, holds a transaction open on the booking, on the salon, on the service and on the staff member to show that a write waits and uses what it finds after the wait, and sends additions and removals at the same moment and counts what is left | `backend/packages/domain/src/__tests__/booking.service-lines.test.ts`, `backend/packages/domain/src/__tests__/booking-services.usecase.test.ts`, `backend/packages/api/src/__tests__/booking-services.integration.test.ts` |
+
+#### What Is Worked Out and Not Stored
+
+The available slots of a salon (`GET /api/v1/salons/{salonId}/available-slots` and `POST /api/v1/salons/{salonId}/available-slots/check`, the two operations of `AvailableSlotCrud`) have no table: every answer is worked out from the hours of the salon, the schedules of its staff and the bookings there are. They show a domain whose rules read the data of other domains and write nothing:
+
+| Step | What the available slots show | Where to read it |
+|------|-------------------------------|------------------|
+| 1. API contract | Two operations that answer different questions, and their `@doc` says which: the list is what a customer can book, the check is whether the ledger would take a booking. The check is a `POST` that answers 200. A model without a table is in no rule of `pnpm check:api-db` | `specs/operations/booking-operations.tsp`, `specs/models/booking.tsp` |
+| 3. Database schema | A rule that only the requests kept (one row of the calendar per date) becomes a unique index once code relies on it: the slots let the row of a date decide alone. The migration keeps the row that was written last, and is tested like every other one | `backend/packages/database/sql/migrations/202611160600_opening_hours_one_row_per_date.sql` |
+| 4. Models | No `Db` type of its own: `SalonOfSlots`, `ServiceOfSlots` and `StaffOfSlots` pick the columns that the rules read from the rows of the other domains, so a rule cannot read a column that the repository did not select | `backend/packages/domain/src/models/available-slot.ts` |
+| 5. Validation schemas | The slots have no ID, so the cursor of a page is its last slot, and the schema checks it with the function that reads it (`slotPositionOf`) | `backend/packages/domain/src/schemas/available-slot.schema.ts`, `backend/packages/domain/src/business-logic/available-slot/_shared/page.ts` |
+| 7. Repository interface | Two reads that return what a rule needs and decide nothing: `findDay` (null for a salon that is not there) and `findOccupancy` | `backend/packages/domain/src/repositories/available-slot.repository.ts` |
+| 8. Repository implementation | One transaction that is `repeatable read` and read only: every statement sees the same moment, nothing is locked and nothing waits. What depends on the time zone of the salon is read wide (`widestDayOf`: the date in any time zone, and the longest time a staff member keeps free around a booking) and narrowed by the rules, so the repository interprets no time zone | `backend/packages/infrastructure/src/repositories/available-slot.repository.impl.ts` |
+| 9. Use cases | The rules are pure functions of what was read and of `now`, which comes from the `clock` of the dependencies: when the salon is open (`openRangesOf`), when a staff member works (`workingRangesOf`), what the salon takes (`acceptance.ts`) and the slots themselves (`slotsOf`, a sum type that has a case for a time zone the runtime does not know). A time of day becomes a moment in one file (`salon-time.ts`). The occupancy is decided by the function of the ledger, so the list offers nothing that the ledger would refuse | `backend/packages/domain/src/business-logic/available-slot/` |
+| 10. Handlers and router | The list handler hands the decoded query over as a `Result`, because the use case looks at the path first. The router is created with `mergeParams`, because it is mounted below a salon | `backend/packages/api/src/routes/available-slot/` |
+| 11. Wiring | Mounted at `/salons/:salonId/available-slots`, with the salon repository and the clock | `backend/packages/api/src/index.ts` |
+| 12. Tests | The rules are tested with a fixed `now`. The integration test cannot give the server a clock, so its dates are counted from today, and it finds the nights on which the clocks of a time zone change from what the runtime knows of the zone | `backend/packages/domain/src/__tests__/available-slot.slots.test.ts`, `backend/packages/api/src/__tests__/available-slot.integration.test.ts` |
 
 ## Data That Belongs to No Salon
 

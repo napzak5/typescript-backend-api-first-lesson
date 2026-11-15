@@ -239,6 +239,75 @@ describe('SalonReadMapper.toApiSalon', () => {
   )
 })
 
+describe('SalonReadMapper.toBusinessHours', () => {
+  const monday = {
+    dayOfWeek: 'monday',
+    operatingSlots: [{ startTime: '10:00', endTime: '19:00' }],
+    breakSlots: [{ startTime: '13:00', endTime: '14:00' }],
+    isClosed: false,
+    effectivePeriod: {
+      startDate: '2026-11-01T00:00:00Z',
+      endDate: '2026-12-01T00:00:00Z',
+    },
+  }
+
+  it('returns the stored weekly hours that have the shape of the API model, as they are', () => {
+    expect(
+      SalonReadMapper.toBusinessHours(dbSalon({ businessHours: [monday] })),
+    ).toStrictEqual({ type: 'success', data: [monday] })
+  })
+
+  it('returns null for a salon that has said no hours, and an empty list as it is', () => {
+    expect(
+      SalonReadMapper.toBusinessHours(dbSalon({ businessHours: null })),
+    ).toStrictEqual({ type: 'success', data: null })
+    expect(
+      SalonReadMapper.toBusinessHours(dbSalon({ businessHours: [] })),
+    ).toStrictEqual({ type: 'success', data: [] })
+  })
+
+  it('looks at the hours alone: the other columns of the salon are not read', () => {
+    expect(
+      SalonReadMapper.toBusinessHours({
+        id: OTHER_SALON_ID,
+        businessHours: [monday],
+      }),
+    ).toStrictEqual({ type: 'success', data: [monday] })
+    expect(
+      SalonReadMapper.toBusinessHours(
+        dbSalon({ businessHours: [monday], taxRate: 'ten' }),
+      ).type,
+    ).toBe('success')
+  })
+
+  it.each([
+    ['hours that are not a list', { monday: '10-19' }],
+    ['an entry without its properties', [{ dayOfWeek: 'monday' }]],
+    [
+      'an entry with a time zone of its own',
+      [{ ...monday, timezone: 'Asia/Tokyo' }],
+    ],
+    [
+      'a time that is not a time of day',
+      [{ ...monday, operatingSlots: [{ startTime: '10', endTime: '19' }] }],
+    ],
+    ['a day that is no day of the week', [{ ...monday, dayOfWeek: 'funday' }]],
+  ])(
+    'reports %s as a database error that names the salon',
+    (_case, businessHours) => {
+      expect(
+        SalonReadMapper.toBusinessHours({ id: OTHER_SALON_ID, businessHours }),
+      ).toMatchObject({
+        type: 'error',
+        error: {
+          type: 'database',
+          message: `Stored salon ${OTHER_SALON_ID} does not match the API model`,
+        },
+      })
+    },
+  )
+})
+
 describe('SalonReadMapper.toApiSalons', () => {
   it('maps every salon with its own calendar, in order', () => {
     const result = SalonReadMapper.toApiSalons([

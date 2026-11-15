@@ -98,6 +98,7 @@ curl http://localhost:3000/api/v1/salons      # サロン一覧（認証なし�
 顧客の好み設定（`/api/v1/customers/{id}/preferences` と `/api/v1/customers/me/preferences` の取得、更新）、
 予約台帳（`/api/v1/bookings` の一覧、作成、1 件の取得、更新、削除、ステータスの 5 つの操作、日時の変更と、
 `/api/v1/bookings/{bookingId}/services` の施術明細の追加、1 件の取得、削除）、
+空き枠（`/api/v1/salons/{salonId}/available-slots` の一覧と確認）、
 認証のすべてのオペレーション（`/api/v1/auth` のログイン、トークンの更新、
 ログアウト、現在のユーザーの取得、ユーザー登録、メールアドレスの確認、パスワードの再設定と変更、
 スタッフの招待の確認、受け入れ、参加、2 要素認証、セッションの一覧と無効化、および `/api/v1/admin/auth` の管理者の操作）、

@@ -896,6 +896,7 @@ CREATE INDEX "idx_notification_logs_notification_type" ON "notification_logs" US
 CREATE INDEX "idx_notification_logs_recipient_id" ON "notification_logs" USING btree ("recipientId" uuid_ops);
 CREATE INDEX "idx_opening_hours_date" ON "opening_hours" USING btree ("date" date_ops);
 CREATE INDEX "idx_opening_hours_salon_id" ON "opening_hours" USING btree ("salonId" uuid_ops);
+CREATE UNIQUE INDEX "opening_hours_salon_date_unique" ON "opening_hours" USING btree ("salonId" uuid_ops,"date" date_ops);
 CREATE INDEX "idx_payment_methods_salon_id" ON "payment_methods" USING btree ("salonId" uuid_ops);
 CREATE INDEX "idx_payment_transactions_payment_method_id" ON "payment_transactions" USING btree ("paymentMethodId" uuid_ops);
 CREATE INDEX "idx_payment_transactions_sale_id" ON "payment_transactions" USING btree ("saleId" uuid_ops);

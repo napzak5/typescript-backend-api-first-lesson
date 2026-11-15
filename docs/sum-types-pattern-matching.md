@@ -100,7 +100,7 @@ async execute(id: unknown): Promise<Result<ApiSalonResponse, DomainError>> {
 成功値やエラーを変換するだけなら、分岐を書かずに `Result.map` / `Result.mapError` を使います。
 
 ```typescript
-// backend/packages/domain/src/mappers/read/salon.mapper.ts（toApiSalon の戻り値）
+// backend/packages/domain/src/mappers/read/salon.mapper.ts（toApiSalon の戻り値と、そのエラー）
 return Result.mapError(
   Result.map(
     parseWith(convertedColumnsSchema, salon, 'Invalid stored salon'),
@@ -110,13 +110,15 @@ return Result.mapError(
       openingHours: openingHours.map(toApiOpeningHours),
     }),
   ),
-  // リクエストは正しく、保存されている行のほうが API モデルに合っていない
-  (error) =>
-    DomainErrors.database(
-      `Stored salon ${salon.id} does not match the API model`,
-      error,
-    ),
+  (error) => storedDoesNotMatch(salon.id, error),
 )
+
+// リクエストは正しく、保存されている行のほうが API モデルに合っていない
+const storedDoesNotMatch = (id: string, cause: unknown): DomainError =>
+  DomainErrors.database(
+    `Stored salon ${id} does not match the API model`,
+    cause,
+  )
 ```
 
 ### Promise の失敗を値にする

@@ -14,6 +14,9 @@
  * weekends_only: 週末のみ - 土曜日・日曜日に限り提供するサービス
  * by_appointment_only: 予約制 - 事前予約がある場合のみ提供するサービス
  * seasonal: 季節限定 - 特定の季節のみ提供
+ *
+ * 空き枠は、weekdays_only のサービスを月曜日〜金曜日だけ、weekends_only のサービスを土曜日・日曜日だけに返す(サロンのタイムゾーンでの曜日)。
+ * ほかの値は、どの日も同じに扱う(空き枠からの予約は事前の予約であり、季節はサロンが serviceStatus で切り替える)
  */
 export type ModelsServiceAvailabilityType = typeof ModelsServiceAvailabilityType[keyof typeof ModelsServiceAvailabilityType];
 
