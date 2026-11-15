@@ -249,4 +249,65 @@ namespace BeautySalon.Operations {
         | CommonErrors;
     }
   }
+
+  @doc("顧客本人が、自分の予約を入れ、読み、キャンセルするAPI操作群です。実行できるのは customer ロールのユーザーだけで、admin とサロンのスタッフには403を返します(予約台帳を使います)。権限は最初に確認します。プロフィール(自分の顧客レコード)をまだ作っていない場合と、顧客レコードが削除された場合は404を返します。サロンが予約台帳に入れた自分の予約も対象です。ほかの顧客の予約は、存在しない予約と区別しません。サロン内のメモは、レスポンスに含みません。")
+  @route("/api/v1/customers/me/bookings")
+  @tag("Bookings")
+  namespace CustomerBookingOperations {
+    interface CustomerBookings {
+      @doc("ログインしている顧客の予約を、開始日時の早い順に一覧取得します。どのステータスの予約も、どのサロンの予約も含みます。cursorが、自分の予約を指していない場合は400を返します。")
+      @summary("List the signed-in customer's bookings")
+      @get
+      list(...CustomerBookingSearchRequest):
+        | {
+            @statusCode statusCode: 200;
+            @body response: CursorPaginationResponse<CustomerBookingResponse>;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<404>
+        | CommonErrors;
+
+      @doc("空き枠を1つ指定して、予約を入れます。作成した予約のステータスはpendingで、サロンが確定します。入れられるのは、空き枠の一覧(GET /api/v1/salons/{salonId}/available-slots)が、その時点で返す枠だけです。staffIdとstartTimeが、そのサービスの、その日(サロンのタイムゾーンでのstartTimeの日付)の空き枠でない場合は409を返します(サロンの営業時間、スタッフの勤務、サロン・サービス・スタッフの受付の設定、現在より後であること、スタッフの占有を、空き枠の一覧と同じ規則で確かめます)。施術時間と料金は、サービスの登録内容から決まります。顧客レコードが予約を受け付けられない状態(isActive が false、customerStatus が inactive か blacklisted)の場合と、自分のほかの予約(cancelledとno_showを除く)と時間が重なる場合も409を返します。salonId・serviceId・staffIdが存在しない(削除済みを含む)場合や、サービス・スタッフがsalonIdのサロンのものではない場合は400を、サロンのタイムゾーンを名前として読めない場合は409を返します。")
+      @summary("Book an available slot as the signed-in customer")
+      @post
+      create(@body request: CustomerBookingCreateRequest):
+        | {
+            @statusCode statusCode: 201;
+            @header("Location") location: string;
+            @body response: ApiResponse<CustomerBookingResponse>;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<404>
+        | ProblemResponse<409>
+        | RequestBodyErrors
+        | CommonErrors;
+
+      @doc("ログインしている顧客の予約を1件、施術明細とともに取得します。ほかの顧客の予約には404を返します。")
+      @summary("Get one of the signed-in customer's bookings")
+      @get
+      get(@path id: BookingId):
+        | {
+            @statusCode statusCode: 200;
+            @body response: ApiResponse<CustomerBookingResponse>;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<404>
+        | CommonErrors;
+
+      @doc("ログインしている顧客の、draft・pending・confirmedの予約をキャンセル(cancelled)します。キャンセルできるのは、予約の開始日時より前だけです。開始日時を過ぎた予約と、それ以外のステータスの予約には409を返します(来店しなかった予約は、サロンが記録します)。キャンセル料は、料金を決める規則が未定義のため、常に0です。キャンセルした予約は、スタッフの時間を確保しません。顧客のキャンセル回数(cancellationCount)を、顧客の予約から数え直します。ほかの顧客の予約には404を返します。")
+      @summary("Cancel one of the signed-in customer's bookings")
+      @route("/{id}/cancel")
+      @post
+      cancel(@path id: BookingId, @body request: BookingCancelRequest):
+        | {
+            @statusCode statusCode: 200;
+            @body response: ApiResponse<CustomerBookingResponse>;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<404>
+        | ProblemResponse<409>
+        | RequestBodyErrors
+        | CommonErrors;
+    }
+  }
 }
