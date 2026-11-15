@@ -192,7 +192,6 @@ describe('SalonReadMapper.toApiSalon', () => {
         breakSlots: null,
         isClosed: true,
         effectivePeriod: null,
-        timezone: 'Asia/Tokyo',
       },
     ]
 
@@ -205,6 +204,21 @@ describe('SalonReadMapper.toApiSalon', () => {
     [
       'business hours that are not a list',
       { businessHours: { monday: '10-19' } },
+    ],
+    [
+      'business hours whose days have a time zone of their own',
+      {
+        businessHours: [
+          {
+            dayOfWeek: 'sunday',
+            operatingSlots: [],
+            breakSlots: null,
+            isClosed: true,
+            effectivePeriod: null,
+            timezone: 'Asia/Tokyo',
+          },
+        ],
+      },
     ],
     ['a numeric column that is not a number', { taxRate: 'ten' }],
     ['a timestamp that is not a timestamp', { createdAt: 'yesterday' }],

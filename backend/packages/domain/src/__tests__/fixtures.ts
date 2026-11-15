@@ -41,7 +41,6 @@ export const salonCreateRequest = (): ApiSalonCreateRequest => ({
       breakSlots: null,
       isClosed: false,
       effectivePeriod: null,
-      timezone: null,
     },
   ],
   timezone: 'Asia/Tokyo',

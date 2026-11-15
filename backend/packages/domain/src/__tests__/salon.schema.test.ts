@@ -37,7 +37,6 @@ const businessDay = () => ({
   breakSlots: null,
   isClosed: false,
   effectivePeriod: null,
-  timezone: null,
 })
 
 describe('salonCreateRequestSchema', () => {
@@ -295,6 +294,16 @@ describe('salonCreateRequestSchema', () => {
         ['businessHours.0.operatingSlots:custom'],
       ],
       [
+        'a day with a time zone of its own',
+        { timezone: 'Asia/Tokyo' },
+        ['businessHours.0.timezone:unrecognized_keys'],
+      ],
+      [
+        'a day whose own time zone is null',
+        { timezone: null },
+        ['businessHours.0.timezone:unrecognized_keys'],
+      ],
+      [
         'a period that ends before it starts',
         {
           effectivePeriod: {
@@ -371,6 +380,15 @@ describe('storedBusinessHoursSchema', () => {
     expect(
       rulesBrokenBy(storedBusinessHoursSchema, { dayOfWeek: 'monday' }),
     ).toContain('operatingSlots:invalid_type')
+  })
+
+  it('does not know a time zone of a day: the hours are in the time zone of the salon', () => {
+    expect(
+      rulesBrokenBy(storedBusinessHoursSchema, {
+        ...businessDay(),
+        timezone: null,
+      }),
+    ).toEqual(['timezone:unrecognized_keys'])
   })
 })
 
