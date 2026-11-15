@@ -4,6 +4,7 @@ import type {
   DomainError,
   IStaffProfileRepository,
   StaffId,
+  StaffProfileChanges,
   StaffProfileList,
   StaffProfileListCriteria,
 } from '@beauty-salon-backend/domain'
@@ -52,6 +53,24 @@ export class StaffProfileRepository implements IStaffProfileRepository {
         .innerJoin(salons, salonOfStaff)
         .where(and(eq(staff.id, id), shown))
         .limit(1)
+
+      return profile ?? null
+    })
+  }
+
+  async update(
+    id: StaffId,
+    changes: StaffProfileChanges,
+  ): Promise<Result<DbStaffProfile | null, DomainError>> {
+    return attempt('Failed to update staff profile', async () => {
+      // One statement: a staff member who stops being shown while it runs
+      // is either written before that or not at all.
+      const [profile] = await this.db
+        .update(staff)
+        .set({ ...changes, updatedAt: sql`now()` })
+        .from(salons)
+        .where(and(eq(staff.id, id), salonOfStaff, shown))
+        .returning(profileColumns)
 
       return profile ?? null
     })
