@@ -8,7 +8,7 @@
 import type { ModelsDayOfWeekType } from './modelsDayOfWeekType';
 
 /**
- * 特定の日付の営業時間（営業日カレンダーの1日分）を表すモデル。
+ * 特定の日付の営業時間（営業日カレンダーの1日分）を表すモデル。時刻は、サロンのtimezoneでの時刻。
  */
 export interface ModelsOpeningHours {
   /** dateの曜日。dateと一致している必要がある */

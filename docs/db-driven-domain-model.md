@@ -38,6 +38,8 @@ PostgreSQL ── pnpm db:introspect ──▶ schema.ts     api-types.ts
 
 変更が API に現れる場合は、続けて TypeSpec を直し、`pnpm generate` と `pnpm check:api-db` を実行する。
 
+マイグレーションは、保存されている値だけを直すこともある。`jsonb` のカラムに入れるモデル（`BusinessHours` など）からプロパティを除くとき、名前を変えるときは、カラムは変わらないが、以前の形の値が残ると、その行を読めなくなる（Read マッパーが、いまのモデルの形と照合する）。同じ変更で、値を直すマイグレーションを書く（`202611160500_business_hours_without_time_zone.sql`）。この場合、3 つの生成物は変わらない。
+
 ### マイグレーションのルール
 
 - ファイル名は `YYYYMMDDHHMM_description.sql`。ファイル名の順に適用される

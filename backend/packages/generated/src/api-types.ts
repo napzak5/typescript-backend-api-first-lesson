@@ -3857,7 +3857,7 @@ export interface components {
             /** @description 予約の受付経路（例: online、phone）。nullでクリア */
             source?: string | null;
         };
-        /** @description 曜日単位で管理する営業スケジュール設定。 */
+        /** @description 曜日単位で管理する営業スケジュール設定。時刻は、サロンのtimezoneでの時刻。 */
         "Models.BusinessHours": {
             /** @description 設定の対象となる曜日。 */
             dayOfWeek: components["schemas"]["Models.DayOfWeekType"];
@@ -3872,8 +3872,6 @@ export interface components {
             isClosed: boolean;
             /** @description 季節営業などの適用期間。通年有効の場合はnull */
             effectivePeriod: components["schemas"]["Models.DateRange"] | null;
-            /** @description 営業基準となるタイムゾーンID。サロン既定値を使用する場合はnull */
-            timezone: string | null;
         };
         /**
          * Format: uuid
@@ -5714,7 +5712,7 @@ export interface components {
             /** @description 適用税率。税率が適用されない場合はnull */
             taxRate: (number & components["schemas"]["Models.decimal"]) | null;
         };
-        /** @description 特定の日付の営業時間（営業日カレンダーの1日分）を表すモデル。 */
+        /** @description 特定の日付の営業時間（営業日カレンダーの1日分）を表すモデル。時刻は、サロンのtimezoneでの時刻。 */
         "Models.OpeningHours": {
             /** @description dateの曜日。dateと一致している必要がある */
             dayOfWeek: components["schemas"]["Models.DayOfWeekType"];
@@ -8684,7 +8682,7 @@ export interface components {
          * @description スタッフ勤務スケジュール - staff_schedules テーブルの1行。スタッフがいつ勤務するかを表し、予約可能時間の算出に利用する。
          *     毎週の行(isRecurring が true)は dayOfWeek の曜日に毎週、単日の行(isRecurring が false)は date の日付だけに適用する。
          *     1人のスタッフが持てるのは、毎週の行が曜日ごとに1つまで、単日の行が日付ごとに1つまで。ある日付に単日の行がある場合は、その日付には単日の行だけを適用する。
-         *     勤務する行(isAvailable が true)は勤務時刻を持ち、休みの行(isAvailable が false)は時刻を持たない。
+         *     勤務する行(isAvailable が true)は勤務時刻を持ち、休みの行(isAvailable が false)は時刻を持たない。時刻は、スタッフのサロンの timezone での時刻。
          *     リクエストとレスポンスの両方に使う。プロパティ名と null 許可は DB カラムと一致させている
          */
         "Models.StaffSchedule": {

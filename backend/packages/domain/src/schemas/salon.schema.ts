@@ -113,7 +113,6 @@ export const storedBusinessHoursSchema = z.strictObject({
   breakSlots: z.array(timeSlot).nullable(),
   isClosed: z.boolean(),
   effectivePeriod: dateRangeSchema.nullable(),
-  timezone: nonBlankText.nullable(),
 }) satisfies z.ZodType<ApiBusinessHours>
 
 const businessHoursSchema = storedBusinessHoursSchema

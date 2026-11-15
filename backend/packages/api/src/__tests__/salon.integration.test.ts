@@ -45,6 +45,15 @@ const holidayMonday = {
   notes: 'Closed all day',
 }
 
+/** The weekly hours of a Monday, in the time zone of the salon. */
+const weeklyMonday = {
+  dayOfWeek: 'monday',
+  operatingSlots: [{ startTime: '10:00', endTime: '19:00' }],
+  breakSlots: null,
+  isClosed: false,
+  effectivePeriod: null,
+}
+
 /** A request that satisfies every rule. */
 const salonRequest = (overrides: Record<string, unknown> = {}) => ({
   name: 'Hair Studio Aoyama',
@@ -65,16 +74,7 @@ const salonRequest = (overrides: Record<string, unknown> = {}) => ({
   imageUrls: ['https://aoyama.example.com/front.jpg'],
   features: ['color', 'kids'],
   amenities: ['wifi'],
-  businessHours: [
-    {
-      dayOfWeek: 'monday',
-      operatingSlots: [{ startTime: '10:00', endTime: '19:00' }],
-      breakSlots: null,
-      isClosed: false,
-      effectivePeriod: null,
-      timezone: null,
-    },
-  ],
+  businessHours: [weeklyMonday],
   timezone: 'Asia/Tokyo',
   currency: 'JPY',
   taxRate: 10,
@@ -216,6 +216,11 @@ describe('Salon API', () => {
           openingHours: [workingMonday, workingMonday],
         },
         ['openingHours.1.date:custom'],
+      ],
+      [
+        'weekly hours with a time zone of their own',
+        { businessHours: [{ ...weeklyMonday, timezone: 'Asia/Tokyo' }] },
+        ['businessHours.0.timezone:unrecognized_keys'],
       ],
     ])('rejects %s and stores nothing', async (_case, change, expected) => {
       const response = await request(app)
@@ -668,6 +673,12 @@ describe('Salon API', () => {
           openingHours: [{ ...workingMonday, closeTime: '09:00' }],
         },
         ['openingHours.0.closeTime:custom'],
+      ],
+      [
+        'weekly hours with a time zone of their own',
+        null,
+        { businessHours: [{ ...weeklyMonday, timezone: null }] },
+        ['businessHours.0.timezone:unrecognized_keys'],
       ],
     ])('rejects %s and changes nothing', async (_case, id, body, expected) => {
       const created = await createSalon()

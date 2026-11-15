@@ -350,4 +350,146 @@ describe('the migrations of this repository', () => {
     expect(schemaBefore.length).toBeGreaterThan(100)
     expect(await describeSchema()).toEqual(schemaBefore)
   })
+
+  describe('202611160500_business_hours_without_time_zone.sql', () => {
+    const monday = {
+      dayOfWeek: 'monday',
+      operatingSlots: [{ startTime: '10:00', endTime: '19:00' }],
+      breakSlots: [{ startTime: '13:00', endTime: '14:00' }],
+      isClosed: false,
+      effectivePeriod: null,
+    }
+    const sunday = {
+      dayOfWeek: 'sunday',
+      operatingSlots: [],
+      breakSlots: null,
+      isClosed: true,
+      effectivePeriod: null,
+    }
+
+    /** Stores a salon with the weekly hours and returns its ID. */
+    const storeSalon = async (businessHours: unknown): Promise<string> => {
+      const id = randomUUID()
+      const hours =
+        businessHours === null ? null : JSON.stringify(businessHours)
+      await sql`
+        INSERT INTO salons (
+          id, name, prefecture, city, address, "phoneNumber", email,
+          "imageUrls", features, amenities, "businessHours", "updatedAt"
+        )
+        VALUES (
+          ${id}, 'Hair Studio Aoyama', '東京都', '港区', '南青山1-2-3',
+          '03-1234-5678', ${`${id}@example.com`}, '{}', '{}', '{}',
+          ${hours}::text::jsonb, '2026-01-01T00:00:00Z'
+        )
+      `
+      return id
+    }
+
+    /**
+     * What the salon has of hours, when it says it was last changed, and
+     * the transaction that wrote the row: the same as long as nothing did.
+     */
+    const rowOf = (id: string) => sql<
+      { hours: unknown; updatedAt: string; writtenBy: string }[]
+    >`
+      SELECT
+        "businessHours" AS hours,
+        "updatedAt"::text AS "updatedAt",
+        xmin::text AS "writtenBy"
+      FROM salons
+      WHERE id = ${id}
+    `
+
+    /** The hours alone, to be compared key by key. */
+    const hoursOf = async (id: string): Promise<unknown[]> =>
+      (await rowOf(id)).map(({ hours }) => hours)
+
+    const run = async (): Promise<void> => {
+      const files = plan.migrations.filter(
+        ({ name }) =>
+          name === '202611160500_business_hours_without_time_zone.sql',
+      )
+      expect(files).toHaveLength(1)
+      await Promise.all(files.map((file) => sql.unsafe(file.sql)))
+    }
+
+    beforeEach(async () => {
+      await applyBaseline(sql, plan)
+    })
+
+    it('should take the time zone out of every day of the weekly hours and keep the rest in its order', async () => {
+      const tuesday = { ...monday, dayOfWeek: 'tuesday' }
+      /** The key is the day's: below the day it is not this migration's. */
+      const wednesday = {
+        ...monday,
+        dayOfWeek: 'wednesday',
+        effectivePeriod: { timezone: 'UTC' },
+      }
+      const id = await storeSalon([
+        { ...sunday, timezone: null },
+        { ...monday, timezone: 'Asia/Tokyo' },
+        tuesday,
+        { ...wednesday, timezone: 'UTC' },
+      ])
+      const untouched = await storeSalon([sunday, monday])
+      const [before] = await rowOf(untouched)
+
+      await run()
+
+      expect(await hoursOf(id)).toEqual([[sunday, monday, tuesday, wednesday]])
+      expect(await rowOf(untouched)).toEqual([before])
+    })
+
+    it('should not say that the salon was changed, and write nothing on a second run', async () => {
+      const id = await storeSalon([{ ...monday, timezone: 'Asia/Tokyo' }])
+      const [before] = await rowOf(id)
+
+      await run()
+      const [after] = await rowOf(id)
+      await run()
+
+      expect(after?.hours).toEqual([monday])
+      expect(after?.updatedAt).toBe(before?.updatedAt)
+      expect(after?.writtenBy).not.toBe(before?.writtenBy)
+      expect(await rowOf(id)).toEqual([after])
+    })
+
+    it('should keep the entries that are not objects where they are', async () => {
+      const id = await storeSalon([
+        'timezone',
+        { ...monday, timezone: 'UTC' },
+        ['timezone'],
+        null,
+        7,
+      ])
+
+      await run()
+
+      expect(await hoursOf(id)).toEqual([
+        ['timezone', monday, ['timezone'], null, 7],
+      ])
+    })
+
+    it.each([
+      ['no weekly hours', null],
+      ['an empty list of days', []],
+      ['days without a time zone', [monday, sunday]],
+      ['hours that are not a list', { timezone: 'Asia/Tokyo' }],
+      ['hours that are a text', 'timezone'],
+      ['a list without objects', ['timezone', ['timezone'], null, 7]],
+      [
+        'a time zone below the days only',
+        [{ ...monday, effectivePeriod: { timezone: 'Asia/Tokyo' } }],
+      ],
+    ])('should not write a salon that has %s', async (_case, businessHours) => {
+      const id = await storeSalon(businessHours)
+      const before = await rowOf(id)
+
+      await run()
+
+      expect(before).toHaveLength(1)
+      expect(await rowOf(id)).toEqual(before)
+    })
+  })
 })

@@ -29,7 +29,7 @@ The contract specifies many domains, but the backend implements only the Salon o
 
 You own `specs/`. You regenerate, and never edit, the generated files: `specs/tsp-output/`, `backend/packages/generated/src` and `frontend/packages/api-client/src/generated`. You also maintain `api-consistency-rules.ts`. It is in the database package because the check reads the Drizzle schema, but what it describes is how your models relate to the tables.
 
-You do not change the database schema. If a property needs a column that does not exist, or a different nullability, that is a migration by `database-schema-architect`, and it comes before your change. You do not implement the operations (`backend-typescript-architect`) or the screens (`senior-frontend-architect`).
+You do not change the database schema. If a property needs a column that does not exist, or a different nullability, that is a migration by `database-schema-architect`, and it comes before your change. The model of a `jsonb` column (`BusinessHours`, for example) has no columns to follow, but the stored values are checked against it whenever they are read: when you take a property out of such a model or rename one, the values that are stored need a migration by `database-schema-architect` in the same change (`202611160500_business_hours_without_time_zone.sql`). You do not implement the operations (`backend-typescript-architect`) or the screens (`senior-frontend-architect`).
 
 ## How you work
 
@@ -72,7 +72,7 @@ Your final message is all the caller reads, and what the next agent is told come
 - the models and operations you added or changed; for each property its name, type, nullability and whether it is required
 - the generated files that changed and have to be committed with the definitions
 - the checks you ran with their results, and any you could not run
-- for `database-schema-architect`: columns or nullability that the contract needs and the tables do not have
+- for `database-schema-architect`: columns or nullability that the contract needs and the tables do not have, and stored JSON values that a changed model no longer describes
 - for `backend-typescript-architect`: the operations to implement and the names of the generated types
 - for `senior-frontend-architect`: the hooks and types of the client that changed
 

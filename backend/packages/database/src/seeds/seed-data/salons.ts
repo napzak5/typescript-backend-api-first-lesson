@@ -24,7 +24,6 @@ export async function seedSalons(
             breakSlots: null,
             isClosed: false,
             effectivePeriod: null,
-            timezone: 'Asia/Tokyo',
           },
           {
             dayOfWeek: 'tuesday',
@@ -32,7 +31,6 @@ export async function seedSalons(
             breakSlots: null,
             isClosed: false,
             effectivePeriod: null,
-            timezone: 'Asia/Tokyo',
           },
           {
             dayOfWeek: 'wednesday',
@@ -40,7 +38,6 @@ export async function seedSalons(
             breakSlots: null,
             isClosed: false,
             effectivePeriod: null,
-            timezone: 'Asia/Tokyo',
           },
           {
             dayOfWeek: 'thursday',
@@ -48,7 +45,6 @@ export async function seedSalons(
             breakSlots: null,
             isClosed: false,
             effectivePeriod: null,
-            timezone: 'Asia/Tokyo',
           },
           {
             dayOfWeek: 'friday',
@@ -56,7 +52,6 @@ export async function seedSalons(
             breakSlots: null,
             isClosed: false,
             effectivePeriod: null,
-            timezone: 'Asia/Tokyo',
           },
           {
             dayOfWeek: 'saturday',
@@ -64,7 +59,6 @@ export async function seedSalons(
             breakSlots: null,
             isClosed: false,
             effectivePeriod: null,
-            timezone: 'Asia/Tokyo',
           },
           {
             dayOfWeek: 'sunday',
@@ -72,7 +66,6 @@ export async function seedSalons(
             breakSlots: null,
             isClosed: true,
             effectivePeriod: null,
-            timezone: 'Asia/Tokyo',
           },
         ],
         rating: '4.8',
@@ -101,7 +94,6 @@ export async function seedSalons(
             breakSlots: [{ startTime: '13:00', endTime: '14:00' }],
             isClosed: false,
             effectivePeriod: null,
-            timezone: 'Asia/Tokyo',
           },
           {
             dayOfWeek: 'tuesday',
@@ -109,7 +101,6 @@ export async function seedSalons(
             breakSlots: [{ startTime: '13:00', endTime: '14:00' }],
             isClosed: false,
             effectivePeriod: null,
-            timezone: 'Asia/Tokyo',
           },
           {
             dayOfWeek: 'wednesday',
@@ -117,7 +108,6 @@ export async function seedSalons(
             breakSlots: null,
             isClosed: true,
             effectivePeriod: null,
-            timezone: 'Asia/Tokyo',
           },
           {
             dayOfWeek: 'thursday',
@@ -125,7 +115,6 @@ export async function seedSalons(
             breakSlots: [{ startTime: '13:00', endTime: '14:00' }],
             isClosed: false,
             effectivePeriod: null,
-            timezone: 'Asia/Tokyo',
           },
           {
             dayOfWeek: 'friday',
@@ -133,7 +122,6 @@ export async function seedSalons(
             breakSlots: [{ startTime: '13:00', endTime: '14:00' }],
             isClosed: false,
             effectivePeriod: null,
-            timezone: 'Asia/Tokyo',
           },
           {
             dayOfWeek: 'saturday',
@@ -141,7 +129,6 @@ export async function seedSalons(
             breakSlots: [{ startTime: '13:00', endTime: '14:00' }],
             isClosed: false,
             effectivePeriod: null,
-            timezone: 'Asia/Tokyo',
           },
           {
             dayOfWeek: 'sunday',
@@ -149,7 +136,6 @@ export async function seedSalons(
             breakSlots: null,
             isClosed: false,
             effectivePeriod: null,
-            timezone: 'Asia/Tokyo',
           },
         ],
         rating: '4.6',
