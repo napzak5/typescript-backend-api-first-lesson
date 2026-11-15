@@ -129,6 +129,7 @@ const SERVICE_PROPERTIES = [
   'sortOrder',
   'staffId',
   'startTime',
+  'taxIncluded',
 ]
 
 /** A broken rule as a problem reports it. */
@@ -351,6 +352,7 @@ describe('Bookings API', () => {
     duration: 60,
     price: 6600,
     finalPrice: 6600,
+    taxIncluded: true,
     ...overrides,
   })
 
@@ -557,6 +559,7 @@ describe('Bookings API', () => {
               price: 6600,
               discountAmount: 0,
               finalPrice: 6600,
+              taxIncluded: true,
               isCompleted: false,
               completedAt: null,
               notes: null,
@@ -572,6 +575,7 @@ describe('Bookings API', () => {
               price: 8000,
               discountAmount: 1000,
               finalPrice: 7000,
+              taxIncluded: false,
               isCompleted: false,
               completedAt: null,
               notes: '明るめ',
@@ -624,6 +628,7 @@ describe('Bookings API', () => {
           price: 6600,
           discountAmount: 0,
           finalPrice: 6600,
+          taxIncluded: true,
           selectedOptions: null,
           isCompleted: false,
           completedAt: null,
@@ -1711,29 +1716,17 @@ describe('Bookings API', () => {
       expect(listed.body.data).toEqual([response.body.data])
     })
 
-    it('does not offer what is not there yet: the service lines of a booking are neither added, read nor removed on their own', async () => {
-      const { id, services: lines } = await created()
-      const below = `${BOOKINGS}/${id}/services`
+    // The service lines of a booking are read with the booking, or one by
+    // one (`booking-services.integration.test.ts`).
+    it('does not list the service lines of a booking on their own', async () => {
+      const { id } = await created()
 
-      const responses = [
-        await authorized(request(app).post(below), asAdmin).send(
-          line({ startTime: at('05:00') }),
-        ),
-        await authorized(request(app).get(below), asAdmin),
-        await authorized(request(app).get(`${below}/${lines[0].id}`), asAdmin),
-        await authorized(
-          request(app).delete(`${below}/${lines[0].id}`),
-          asAdmin,
-        ),
-      ]
+      const response = await authorized(
+        request(app).get(`${BOOKINGS}/${id}/services`),
+        asAdmin,
+      )
 
-      expect(responses.map(statusAndCode)).toEqual([
-        '404 3001',
-        '404 3001',
-        '404 3001',
-        '404 3001',
-      ])
-      expect(await db.$count(bookingServices)).toBe(1)
+      expect(statusAndCode(response)).toBe('404 3001')
     })
   })
 

@@ -501,9 +501,10 @@ const bookingSystemColumns = [
 
 /**
  * Columns of `booking_services` that a request never writes: the end time,
- * duration and prices come from the service, the order from the position of
- * the line, completion from the complete action. `selectedOptions` is a jsonb
- * column without a defined structure.
+ * the duration, the prices and whether they include the tax come from the
+ * service, the order from the position of the line, completion from the
+ * complete action. `selectedOptions` is a jsonb column without a defined
+ * structure.
  */
 const bookingServiceSystemColumns = [
   'id',
@@ -513,6 +514,7 @@ const bookingServiceSystemColumns = [
   'price',
   'discountAmount',
   'finalPrice',
+  'taxIncluded',
   'selectedOptions',
   'isCompleted',
   'completedAt',

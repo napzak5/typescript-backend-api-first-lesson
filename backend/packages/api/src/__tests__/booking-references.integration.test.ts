@@ -204,6 +204,7 @@ describe('Deleting what bookings refer to', () => {
     duration: 60,
     price: 6600,
     finalPrice: 6600,
+    taxIncluded: true,
     ...overrides,
   })
 

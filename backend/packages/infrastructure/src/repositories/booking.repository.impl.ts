@@ -17,12 +17,17 @@ import {
   type BookingId,
   type BookingList,
   type BookingListCriteria,
+  type BookingOfLines,
   type BookingOrigin,
   type BookingReach,
   type BookingReference,
   type BookingReferences,
   type BookingReschedule,
   type BookingRescheduleRequest,
+  type BookingServiceAddition,
+  type BookingServiceCreateRequest,
+  type BookingServiceId,
+  type BookingServiceRemoval,
   type BookingStatusChange,
   type BookingWithServices,
   type DbBooking,
@@ -36,6 +41,8 @@ import {
   occupancyWindowOf,
   planBooking,
   planReschedule,
+  planServiceAddition,
+  planServiceRemoval,
   planStatusChange,
   RELEASING_STATUSES,
   type StaffDemand,
@@ -252,6 +259,59 @@ const linesOf = (
     .from(bookingServices)
     .where(eq(bookingServices.bookingId, id))
     .orderBy(asc(bookingServices.sortOrder))
+
+/**
+ * A booking that is held for a change of its service lines: its status,
+ * the lines it has, and what its salon says of the time zone and the tax.
+ * The salon is held shared, as for a booking that is entered: neither
+ * changes while the booking is summed up by it. Null when no booking
+ * within the reach has the ID.
+ */
+const heldForLines = async (
+  tx: DatabaseExecutor,
+  id: BookingId,
+  reach: BookingReach,
+) => {
+  const [held] = await tx
+    .select({ salonId: bookings.salonId, status: bookings.status })
+    .from(bookings)
+    .where(and(eq(bookings.id, id), within(reach)))
+    .for('update')
+  if (held === undefined) {
+    return null
+  }
+  const lines = await tx
+    .select({
+      id: bookingServices.id,
+      startTime: millisecondsOf(bookingServices.startTime),
+      endTime: millisecondsOf(bookingServices.endTime),
+      price: bookingServices.price,
+      discountAmount: bookingServices.discountAmount,
+      finalPrice: bookingServices.finalPrice,
+      taxIncluded: bookingServices.taxIncluded,
+      sortOrder: bookingServices.sortOrder,
+    })
+    .from(bookingServices)
+    .where(eq(bookingServices.bookingId, id))
+  const [salon] = await tx
+    .select({ timezone: salons.timezone, taxRate: salons.taxRate })
+    .from(salons)
+    .where(eq(salons.id, held.salonId))
+    .for('share')
+  if (salon === undefined) {
+    return null
+  }
+  const booking: BookingOfLines = {
+    status: held.status,
+    services: lines.map((line) => ({
+      ...line,
+      startTime: new Date(line.startTime),
+      endTime: new Date(line.endTime),
+    })),
+  }
+
+  return { salonId: held.salonId, salon, booking }
+}
 
 /**
  * Sets what a customer has of visits, no-shows and cancellations to what
@@ -698,6 +758,159 @@ export class BookingRepository implements IBookingRepository {
           }
 
           return { type: 'deleted' }
+        },
+        { isolationLevel: 'read committed' },
+      ),
+    )
+  }
+
+  async addService(
+    id: BookingId,
+    reach: BookingReach,
+    request: BookingServiceCreateRequest,
+  ): Promise<Result<BookingServiceAddition, DomainError>> {
+    return attempt('Failed to add service to booking', () =>
+      this.db.transaction(
+        async (tx): Promise<BookingServiceAddition> => {
+          const held = await heldForLines(tx, id, reach)
+          if (held === null) {
+            return { type: 'notFound' }
+          }
+
+          // As for a new booking: the service is not deleted and keeps its
+          // price while the line is planned from it, and the bookings of
+          // the staff member are written one after the other. A delete of
+          // either waits for this line and then finds it.
+          const [service] = await tx
+            .select({
+              id: services.id,
+              duration: services.duration,
+              price: services.price,
+              discountPrice: services.discountPrice,
+              taxIncluded: services.taxIncluded,
+            })
+            .from(services)
+            .where(
+              and(
+                eq(services.id, request.serviceId),
+                eq(services.salonId, held.salonId),
+                isNull(services.deletedAt),
+              ),
+            )
+            .for('share')
+          const [member] =
+            request.staffId === null
+              ? []
+              : await tx
+                  .select({
+                    id: staff.id,
+                    bufferTimeBefore: staff.bufferTimeBefore,
+                    bufferTimeAfter: staff.bufferTimeAfter,
+                    maxConcurrentBookings: staff.maxConcurrentBookings,
+                  })
+                  .from(staff)
+                  .where(
+                    and(
+                      eq(staff.id, request.staffId),
+                      eq(staff.salonId, held.salonId),
+                      isNull(staff.deletedAt),
+                    ),
+                  )
+                  .for('update')
+
+          const plan = planServiceAddition(held.booking, request, {
+            salon: held.salon,
+            service: service ?? null,
+            staff: member ?? null,
+          })
+          if (plan.type !== 'planned') {
+            return plan
+          }
+          // The lines the booking has already are its own: one booking
+          // occupies a staff member once, however many lines it has.
+          const staffIds = await occupiedAmong(tx, plan.demands, id)
+          if (staffIds.length > 0) {
+            return { type: 'staffOccupied', staffIds }
+          }
+
+          const [line] = await tx
+            .insert(bookingServices)
+            .values({
+              ...plan.service,
+              bookingId: id,
+              createdAt: CLOCK,
+              updatedAt: CLOCK,
+            })
+            .returning()
+          await tx
+            .update(bookings)
+            .set({ ...plan.booking, updatedAt: CLOCK })
+            .where(eq(bookings.id, id))
+
+          return line === undefined
+            ? { type: 'notFound' }
+            : { type: 'added', service: line }
+        },
+        // A line that waited for a staff member sees the booking it waited
+        // for, as a new booking does.
+        { isolationLevel: 'read committed' },
+      ),
+    )
+  }
+
+  async findService(
+    id: BookingId,
+    serviceId: BookingServiceId,
+    reach: BookingReach,
+  ): Promise<Result<DbBookingService | null, DomainError>> {
+    return attempt('Failed to find service of booking', async () => {
+      const [found] = await this.db
+        .select({ service: bookingServices })
+        .from(bookingServices)
+        .innerJoin(bookings, eq(bookings.id, bookingServices.bookingId))
+        .where(
+          and(
+            eq(bookingServices.id, serviceId),
+            eq(bookingServices.bookingId, id),
+            within(reach),
+          ),
+        )
+
+      return found?.service ?? null
+    })
+  }
+
+  async removeService(
+    id: BookingId,
+    serviceId: BookingServiceId,
+    reach: BookingReach,
+  ): Promise<Result<BookingServiceRemoval, DomainError>> {
+    return attempt('Failed to remove service from booking', () =>
+      this.db.transaction(
+        async (tx): Promise<BookingServiceRemoval> => {
+          const held = await heldForLines(tx, id, reach)
+          if (held === null) {
+            return { type: 'notFound' }
+          }
+          const plan = planServiceRemoval(held.booking, serviceId, held.salon)
+          if (plan.type !== 'planned') {
+            return plan
+          }
+
+          await tx
+            .delete(bookingServices)
+            .where(
+              and(
+                eq(bookingServices.id, serviceId),
+                eq(bookingServices.bookingId, id),
+              ),
+            )
+          await tx
+            .update(bookings)
+            .set({ ...plan.booking, updatedAt: CLOCK })
+            .where(eq(bookings.id, id))
+
+          return { type: 'removed' }
         },
         { isolationLevel: 'read committed' },
       ),

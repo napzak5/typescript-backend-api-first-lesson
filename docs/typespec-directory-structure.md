@@ -68,7 +68,8 @@ TypeSpec に定義があっても、バックエンドに実装があるとは�
 | `models/staff.tsp` の招待のモデル（`StaffInvitationResponse`、`StaffInvitationCreateRequest`、`SalonRoleType`）、`operations/staff-operations.tsp` の `StaffInvitations` の 3 オペレーション（`get`、`create`、`delete`） | `backend/packages/api/src/routes/staff-invitation/`（招待する側のルーター）。定義と実装は一致している（[スタッフ台帳](./staff.md#スタッフのログインアカウント)） |
 | `models/staff.tsp` のアカウントのモデル（`StaffAccountResponse`、`StaffAccountUpdateRequest`）、`operations/staff-operations.tsp` の `StaffAccounts` の 3 オペレーション（`get`、`update`、`delete`） | `backend/packages/api/src/routes/staff-account/`。定義と実装は一致している（[スタッフ台帳](./staff.md#紐づいたアカウントの管理)） |
 | `models/booking.tsp` の予約のモデル（`BookingResponse`、`BookingServiceResponse`、`BookingCreateRequest`、`BookingServiceCreateRequest`、`BookingUpdateRequest`、`BookingSearchRequest`）、`operations/booking-operations.tsp` の `BookingCrud` の 11 オペレーション（`list`、`create`、`get`、`update`、`delete`、`confirm`、`cancel`、`start`、`complete`、`noShow`、`reschedule`）と、その本文のモデル（`BookingCancelRequest`、`BookingCompleteRequest`、`BookingRescheduleRequest`） | `backend/packages/api/src/routes/booking/`。定義と実装が一致している（[予約台帳](./bookings.md)） |
-| `BookingServiceCrud` の 3 オペレーション、`AvailableSlotCrud` の 2 オペレーション | なし |
+| `operations/booking-operations.tsp` の `BookingServiceCrud` の 3 オペレーション（`create`、`get`、`delete`）。モデルは、予約の作成とレスポンスが使う `BookingServiceCreateRequest` と `BookingServiceResponse` | `backend/packages/api/src/routes/booking-service/`。定義と実装が一致している（[予約台帳](./bookings.md#施術明細の追加と削除)） |
+| `AvailableSlotCrud` の 2 オペレーション（`list`、`check`） | なし |
 | 上記以外のドメイン（review、treatment、payment、inventory） | なし。TypeSpec は DB のテーブルと一致している（`pnpm check:api-db`）が、ドメイン・リポジトリ・ルートのコードはない |
 | attachment、permission と、inventory の発注・アラート、treatment のカルテ、customer の監査履歴・エクスポート・データ削除リクエスト | なし。対応するテーブルもまだない（[API-DB型制約マッピング](./api-db-type-constraints-mapping.md#ルールに載せるモデル載せないモデル)） |
 

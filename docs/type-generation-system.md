@@ -70,7 +70,8 @@ five of `CustomerProfile` (a customer's own profile, and their own
 preferences), the eleven operations of `BookingCrud` (the booking
 ledger: `list`, `create`, `get`, `update` and `delete`, the actions on the
 status of a booking: `confirm`, `cancel`, `start`, `complete` and `noShow`,
-and `reschedule`), the five
+and `reschedule`), the three of `BookingServiceCrud` (the service lines of
+a booking that exists: `create`, `get` and `delete`), the five
 operations of
 `StaffCrud` (the staff ledger of a salon: `list`, `create`, `get`, `update`
 and `delete`), the two of `StaffSchedules` (when a staff member works:

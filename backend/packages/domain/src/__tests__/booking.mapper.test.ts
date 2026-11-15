@@ -62,6 +62,7 @@ const SERVICE_PROPERTIES = [
   'sortOrder',
   'staffId',
   'startTime',
+  'taxIncluded',
 ]
 
 /** The first service line of the fixtures with these columns changed. */
@@ -276,6 +277,65 @@ describe('BookingReadMapper.toApiBooking', () => {
       expect(toApi({}, serviceWith(stored))).toEqual(storedRowIsCorrupt())
     },
   )
+})
+
+describe('BookingReadMapper.toApiBookingService', () => {
+  const serviceRows = (): DbBookingService[] => dbBookingServices()
+
+  it('returns a service line as its booking shows it', () => {
+    expect(serviceRows().map(BookingReadMapper.toApiBookingService)).toEqual(
+      apiBookingServices().map((data) => ({ type: 'success', data })),
+    )
+  })
+
+  it('has exactly the properties of BookingServiceResponse: the booking of the line is in its address', () => {
+    const [result] = serviceRows().map(BookingReadMapper.toApiBookingService)
+
+    expect(
+      result?.type === 'success' ? Object.keys(result.data).toSorted() : [],
+    ).toEqual(SERVICE_PROPERTIES)
+  })
+
+  it('returns what a line gets later in its life', () => {
+    const [row] = serviceWith({
+      isCompleted: true,
+      completedAt: '2026-11-20 11:04:00.654321+09',
+      notes: '前髪のみ',
+      sortOrder: 7,
+    })
+
+    expect(
+      row === undefined ? null : BookingReadMapper.toApiBookingService(row),
+    ).toEqual({
+      type: 'success',
+      data: {
+        ...apiBookingServices()[0],
+        isCompleted: true,
+        completedAt: '2026-11-20T02:04:00.654Z',
+        notes: '前髪のみ',
+        sortOrder: 7,
+      },
+    })
+  })
+
+  it.each<[string, Partial<DbBookingService>]>([
+    ['a start that is not a timestamp', { startTime: 'tomorrow' }],
+    ['an end that is not a timestamp', { endTime: '' }],
+    ['a time of completion that is not a timestamp', { completedAt: 'x' }],
+  ])('reports %s as a fault of the stored row of the line', (_case, stored) => {
+    const [row] = serviceWith(stored)
+
+    expect(
+      row === undefined ? null : BookingReadMapper.toApiBookingService(row),
+    ).toEqual({
+      type: 'error',
+      error: {
+        type: 'database',
+        message: `Stored booking service ${row?.id} does not match the API model`,
+        cause: expect.objectContaining({ type: 'validation' }),
+      },
+    })
+  })
 })
 
 describe('BookingReadMapper.toApiBookings', () => {

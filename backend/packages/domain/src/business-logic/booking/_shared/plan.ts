@@ -1,19 +1,17 @@
-import {
-  addMinutes,
-  differenceInMinutes,
-  format,
-  isValid,
-  parseISO,
-} from 'date-fns'
+import { addMinutes, parseISO } from 'date-fns'
+import { match } from 'ts-pattern'
 import type { ClientInfo, UserId } from '../../../models/auth'
 import type { BookingWrite, DbNewBookingService } from '../../../models/booking'
-import type { DbSalon } from '../../../models/salon'
 import type { DbService } from '../../../models/service'
 import type { DbStaff } from '../../../models/staff'
-import type { BookingCreateRequest } from '../../../schemas/booking.schema'
-import { inTimeZone, MAX_INTEGER } from '../../../schemas/rules'
+import type {
+  BookingCreateRequest,
+  BookingServiceCreateRequest,
+} from '../../../schemas/booking.schema'
+import { MAX_INTEGER } from '../../../schemas/rules'
 import type { ValidationIssue } from '../../../shared'
 import type { ServiceTime, StaffCapacity } from './occupancy'
+import { type SalonOfBooking, type SummedLine, summarize } from './summary'
 
 /**
  * From a create request to the rows of a booking. A request names what it
@@ -21,14 +19,11 @@ import type { ServiceTime, StaffCapacity } from './occupancy'
  * follows from the rows it refers to, as they are at that moment.
  */
 
-/** What a booking takes from its salon. */
-type SalonOfBooking = Pick<DbSalon, 'timezone' | 'taxRate'>
-
 /** What a booking takes from a staff member. */
 export type StaffOfBooking = Pick<DbStaff, 'id'> & StaffCapacity
 
 /** What a service line takes from its service. */
-type ServiceOfBooking = Pick<
+export type ServiceOfBooking = Pick<
   DbService,
   'id' | 'duration' | 'price' | 'discountPrice' | 'taxIncluded'
 >
@@ -77,28 +72,13 @@ export const notFound = (field: string, what: string): ValidationIssue => ({
   message: `Must name ${what}`,
 })
 
-/** A percentage of the `numeric(5, 2)` column, in hundredths of a percent. */
-const hundredthsOf = (percentage: string): bigint =>
-  BigInt(Math.round(Number(percentage) * 100))
-
 /**
- * The consumption tax that is added to an amount without tax: the amount
- * times the rate, with the fraction of a yen dropped. It is computed once
- * for the sum of a booking and not for every line, the way the tax of an
- * invoice is rounded once for each rate.
+ * The row of a service line: its time, its amounts and whether they
+ * include the tax are those of the service, the discount what the
+ * discounted price takes off the price.
  */
-const taxAddedTo = (amount: number, taxRate: string): number =>
-  Number((BigInt(amount) * hundredthsOf(taxRate)) / 10_000n)
-
-const sumOf = (amounts: readonly number[]): number =>
-  amounts.reduce((sum, amount) => sum + amount, 0)
-
-/**
- * The row of a service line: its time and its amounts are those of the
- * service, the discount what the discounted price takes off the price.
- */
-const toServiceRow = (
-  line: BookingCreateRequest['services'][number],
+export const toServiceRow = (
+  line: BookingServiceCreateRequest,
   service: ServiceOfBooking,
   sortOrder: number,
 ): DbNewBookingService => {
@@ -117,12 +97,23 @@ const toServiceRow = (
     price: service.price,
     discountAmount,
     finalPrice: service.price - discountAmount,
+    taxIncluded: service.taxIncluded,
     isCompleted: false,
     completedAt: null,
     notes: line.notes,
     sortOrder,
   }
 }
+
+/** A row that is about to be written, as its booking is summed up from it. */
+export const summedOf = (row: DbNewBookingService): SummedLine => ({
+  startTime: parseISO(row.startTime),
+  endTime: parseISO(row.endTime),
+  price: row.price,
+  discountAmount: row.discountAmount,
+  finalPrice: row.finalPrice,
+  taxIncluded: row.taxIncluded,
+})
 
 /**
  * Plans the booking a request asks for. The references are looked at in
@@ -178,27 +169,11 @@ export const planBooking = (
   }
 
   // Every service was found, so every line has its row.
-  const lines = requested.flatMap(({ line, service }, index) =>
-    service === undefined
-      ? []
-      : [
-          {
-            row: toServiceRow(line, service, index),
-            taxIncluded: service.taxIncluded,
-          },
-        ],
+  const services = requested.flatMap(({ line, service }, index) =>
+    service === undefined ? [] : [toServiceRow(line, service, index)],
   )
-  const services = lines.map(({ row }) => row)
-  // The times have one spelling, so they sort as text.
-  const firstStart = services
-    .map(({ startTime }) => startTime)
-    .sort()
-    .at(0)
-  const lastEnd = services
-    .map(({ endTime }) => endTime)
-    .sort()
-    .at(-1)
-  if (firstStart === undefined || lastEnd === undefined) {
+  const [first, ...others] = services.map(summedOf)
+  if (first === undefined) {
     return {
       type: 'invalid',
       issues: [
@@ -206,37 +181,6 @@ export const planBooking = (
           field: 'services',
           rule: 'too_small',
           message: 'Must have at least one service',
-        },
-      ],
-    }
-  }
-
-  const visit = inTimeZone(parseISO(firstStart), salon.timezone)
-  if (!isValid(visit)) {
-    return { type: 'timeZoneUnknown' }
-  }
-
-  const subtotal = sumOf(services.map(({ price }) => price))
-  const discountAmount = sumOf(
-    services.map((service) => service.discountAmount),
-  )
-  const taxAmount = taxAddedTo(
-    sumOf(
-      lines
-        .filter(({ taxIncluded }) => !taxIncluded)
-        .map(({ row }) => row.finalPrice),
-    ),
-    salon.taxRate,
-  )
-  const totalAmount = subtotal - discountAmount + taxAmount
-  if (subtotal > MAX_INTEGER || totalAmount > MAX_INTEGER) {
-    return {
-      type: 'invalid',
-      issues: [
-        {
-          field: 'services',
-          rule: 'too_big',
-          message: `The amounts of a booking must not exceed ${MAX_INTEGER}`,
         },
       ],
     }
@@ -253,50 +197,57 @@ export const planBooking = (
     return times.length === 0 ? [] : [{ staff, times }]
   })
 
-  return {
-    type: 'planned',
-    demands,
-    write: {
-      booking: {
-        bookingNumber: origin.bookingNumber,
-        salonId: request.salonId,
-        customerId: request.customerId,
-        staffId: request.staffId,
-        bookingDate: format(visit, 'yyyy-MM-dd'),
-        startTime: firstStart,
-        endTime: lastEnd,
-        duration: differenceInMinutes(parseISO(lastEnd), parseISO(firstStart)),
-        status: 'pending',
-        subtotal,
-        discountAmount,
-        taxAmount,
-        totalAmount,
-        depositAmount: request.depositAmount,
-        pointsUsed: null,
-        pointsEarned: null,
-        customerRequest: request.customerRequest,
-        internalNotes: request.internalNotes,
-        reminderSent: false,
-        reminderSentAt: null,
-        cancelledAt: null,
-        cancelledBy: null,
-        cancellationReason: null,
-        cancellationFee: null,
-        completedAt: null,
-        actualStartTime: null,
-        actualEndTime: null,
-        source: request.source,
-        ipAddress: origin.client.ipAddress,
-        userAgent: origin.client.userAgent,
+  return match(summarize([first, ...others], salon))
+    .returnType<BookingPlan>()
+    .with({ type: 'timeZoneUnknown' }, (unknown) => unknown)
+    .with({ type: 'amountsTooBig' }, () => ({
+      type: 'invalid',
+      issues: [
+        {
+          field: 'services',
+          rule: 'too_big',
+          message: `The amounts of a booking must not exceed ${MAX_INTEGER}`,
+        },
+      ],
+    }))
+    .with({ type: 'summarized' }, ({ booking }) => ({
+      type: 'planned',
+      demands,
+      write: {
+        booking: {
+          ...booking,
+          bookingNumber: origin.bookingNumber,
+          salonId: request.salonId,
+          customerId: request.customerId,
+          staffId: request.staffId,
+          status: 'pending',
+          depositAmount: request.depositAmount,
+          pointsUsed: null,
+          pointsEarned: null,
+          customerRequest: request.customerRequest,
+          internalNotes: request.internalNotes,
+          reminderSent: false,
+          reminderSentAt: null,
+          cancelledAt: null,
+          cancelledBy: null,
+          cancellationReason: null,
+          cancellationFee: null,
+          completedAt: null,
+          actualStartTime: null,
+          actualEndTime: null,
+          source: request.source,
+          ipAddress: origin.client.ipAddress,
+          userAgent: origin.client.userAgent,
+        },
+        services,
+        statusChange: {
+          fromStatus: null,
+          toStatus: 'pending',
+          changedBy: origin.createdBy,
+          reason: null,
+          metadata: null,
+        },
       },
-      services,
-      statusChange: {
-        fromStatus: null,
-        toStatus: 'pending',
-        changedBy: origin.createdBy,
-        reason: null,
-        metadata: null,
-      },
-    },
-  }
+    }))
+    .exhaustive()
 }

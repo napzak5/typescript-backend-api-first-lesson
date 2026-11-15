@@ -250,6 +250,7 @@ export const bookingServices = pgTable(
     updatedAt: timestamp({ withTimezone: true, mode: 'string' })
       .defaultNow()
       .notNull(),
+    taxIncluded: boolean().notNull(),
   },
   (table) => [
     check(
