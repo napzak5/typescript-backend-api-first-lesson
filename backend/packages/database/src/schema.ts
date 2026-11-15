@@ -239,7 +239,7 @@ export const bookingServices = pgTable(
     price: integer().notNull(),
     discountAmount: integer().default(0).notNull(),
     finalPrice: integer().notNull(),
-    selectedOptions: jsonb().default([]),
+    selectedOptions: jsonb(),
     isCompleted: boolean().default(false).notNull(),
     completedAt: timestamp({ withTimezone: true, mode: 'string' }),
     notes: text(),
@@ -252,6 +252,24 @@ export const bookingServices = pgTable(
       .notNull(),
   },
   (table) => [
+    check(
+      'booking_services_completed_has_time',
+      sql`"isCompleted" = ("completedAt" IS NOT NULL)`,
+    ),
+    check(
+      'booking_services_discount_within_price',
+      sql`("discountAmount" >= 0) AND ("discountAmount" <= price)`,
+    ),
+    check(
+      'booking_services_duration_is_the_span',
+      sql`((duration * 60))::numeric = EXTRACT(epoch FROM ("endTime" - "startTime"))`,
+    ),
+    check('booking_services_end_after_start', sql`"startTime" < "endTime"`),
+    check(
+      'booking_services_final_price_is_the_difference',
+      sql`"finalPrice" = (price - "discountAmount")`,
+    ),
+    check('booking_services_sort_order_not_negative', sql`"sortOrder" >= 0`),
     foreignKey({
       columns: [table.bookingId],
       foreignColumns: [bookings.id],
@@ -275,9 +293,14 @@ export const bookingServices = pgTable(
       'btree',
       table.serviceId.asc().nullsLast().op('uuid_ops'),
     ),
-    index('idx_booking_services_staff_id').using(
+    index('idx_booking_services_staff_start').using(
       'btree',
       table.staffId.asc().nullsLast().op('uuid_ops'),
+      table.startTime.asc().nullsLast().op('timestamptz_ops'),
+    ),
+    unique('booking_services_order_unique').on(
+      table.bookingId,
+      table.sortOrder,
     ),
   ],
 )
@@ -330,9 +353,9 @@ export const bookings = pgTable(
     discountAmount: integer().default(0).notNull(),
     taxAmount: integer().default(0).notNull(),
     totalAmount: integer().notNull(),
-    depositAmount: integer().default(0),
-    pointsUsed: integer().default(0),
-    pointsEarned: integer().default(0),
+    depositAmount: integer(),
+    pointsUsed: integer(),
+    pointsEarned: integer(),
     customerRequest: text(),
     internalNotes: text(),
     reminderSent: boolean().default(false).notNull(),
@@ -340,7 +363,7 @@ export const bookings = pgTable(
     cancelledAt: timestamp({ withTimezone: true, mode: 'string' }),
     cancelledBy: uuid(),
     cancellationReason: text(),
-    cancellationFee: integer().default(0),
+    cancellationFee: integer(),
     completedAt: timestamp({ withTimezone: true, mode: 'string' }),
     actualStartTime: timestamp({ withTimezone: true, mode: 'string' }),
     actualEndTime: timestamp({ withTimezone: true, mode: 'string' }),
@@ -355,6 +378,23 @@ export const bookings = pgTable(
       .notNull(),
   },
   (table) => [
+    check(
+      'bookings_amounts_not_negative',
+      sql`(subtotal >= 0) AND ("discountAmount" >= 0) AND ("taxAmount" >= 0) AND ("totalAmount" >= 0) AND (("depositAmount" IS NULL) OR ("depositAmount" >= 0)) AND (("pointsUsed" IS NULL) OR ("pointsUsed" >= 0)) AND (("pointsEarned" IS NULL) OR ("pointsEarned" >= 0)) AND (("cancellationFee" IS NULL) OR ("cancellationFee" >= 0))`,
+    ),
+    check(
+      'bookings_discount_within_subtotal',
+      sql`"discountAmount" <= subtotal`,
+    ),
+    check(
+      'bookings_duration_is_the_span',
+      sql`((duration * 60))::numeric = EXTRACT(epoch FROM ("endTime" - "startTime"))`,
+    ),
+    check('bookings_end_after_start', sql`"startTime" < "endTime"`),
+    check(
+      'bookings_total_is_the_sum',
+      sql`"totalAmount" = ((subtotal - "discountAmount") + "taxAmount")`,
+    ),
     foreignKey({
       columns: [table.customerId],
       foreignColumns: [customers.id],
@@ -382,9 +422,11 @@ export const bookings = pgTable(
       'btree',
       table.customerId.asc().nullsLast().op('uuid_ops'),
     ),
-    index('idx_bookings_salon_id').using(
+    index('idx_bookings_salon_start').using(
       'btree',
       table.salonId.asc().nullsLast().op('uuid_ops'),
+      table.startTime.asc().nullsLast().op('timestamptz_ops'),
+      table.id.asc().nullsLast().op('uuid_ops'),
     ),
     index('idx_bookings_staff_id').using(
       'btree',

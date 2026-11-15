@@ -523,7 +523,8 @@ const bookingServiceSystemColumns = [
 
 /**
  * Bookings and their service lines. The status history
- * (`bookingStatusHistories`) is written by the actions and not exposed.
+ * (`bookingStatusHistories`) is written with the booking and by the
+ * actions, and not exposed.
  */
 const bookingRules: ModelRule[] = [
   {

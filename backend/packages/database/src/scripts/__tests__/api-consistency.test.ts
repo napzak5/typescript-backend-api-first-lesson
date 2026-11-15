@@ -804,6 +804,99 @@ describe('modelRules', () => {
     ])
   })
 
+  it('shows a booking without the address and the user agent of the request, lets the request that creates one state whom it is for and its service lines only, and shows a line without its options', () => {
+    const rules = modelRules
+      .filter(
+        ({ model, table }) =>
+          (table === 'bookings' || table === 'bookingServices') &&
+          model !== 'Models.BookingUpdateRequest',
+      )
+      .map(({ model, kind, omittedColumns, embedded, computed }) => ({
+        model,
+        kind,
+        omittedColumns,
+        embedded,
+        computed,
+      }))
+
+    expect(rules).toEqual([
+      {
+        model: 'Models.BookingResponse',
+        kind: 'response',
+        omittedColumns: ['ipAddress', 'userAgent'],
+        embedded: ['services'],
+        computed: undefined,
+      },
+      {
+        model: 'Models.BookingCreateRequest',
+        kind: 'create',
+        omittedColumns: [
+          'id',
+          'bookingNumber',
+          'bookingDate',
+          'startTime',
+          'endTime',
+          'duration',
+          'status',
+          'subtotal',
+          'discountAmount',
+          'taxAmount',
+          'totalAmount',
+          'pointsUsed',
+          'pointsEarned',
+          'reminderSent',
+          'reminderSentAt',
+          'cancelledAt',
+          'cancelledBy',
+          'cancellationReason',
+          'cancellationFee',
+          'completedAt',
+          'actualStartTime',
+          'actualEndTime',
+          'ipAddress',
+          'userAgent',
+          'createdAt',
+          'updatedAt',
+        ],
+        embedded: ['services'],
+        computed: undefined,
+      },
+      {
+        model: 'Models.BookingServiceResponse',
+        kind: 'response',
+        omittedColumns: [
+          'bookingId',
+          'selectedOptions',
+          'createdAt',
+          'updatedAt',
+        ],
+        embedded: undefined,
+        computed: undefined,
+      },
+      {
+        model: 'Models.BookingServiceCreateRequest',
+        kind: 'create',
+        omittedColumns: [
+          'id',
+          'bookingId',
+          'endTime',
+          'duration',
+          'price',
+          'discountAmount',
+          'finalPrice',
+          'selectedOptions',
+          'isCompleted',
+          'completedAt',
+          'sortOrder',
+          'createdAt',
+          'updatedAt',
+        ],
+        embedded: undefined,
+        computed: undefined,
+      },
+    ])
+  })
+
   it('narrows nothing but the role of the account of a staff member', () => {
     const narrowed = modelRules
       .filter((modelRule) => modelRule.narrowed !== undefined)
