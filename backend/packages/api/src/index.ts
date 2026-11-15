@@ -13,6 +13,7 @@ import {
   ServiceCategoryRepository,
   ServiceRepository,
   SessionRepository,
+  StaffRepository,
   UserRepository,
 } from '@beauty-salon-backend/infrastructure'
 import compression from 'compression'
@@ -32,6 +33,7 @@ import { createCustomerRouter } from './routes/customer'
 import { createSalonRouter } from './routes/salon'
 import { createServiceRouter } from './routes/service'
 import { createServiceCategoryRouter } from './routes/service-category'
+import { createStaffRouter } from './routes/staff'
 import { createSystemRouter } from './routes/system'
 import type { AppSettings } from './settings'
 import { API_BASE_PATH, SYSTEM_BASE_PATH } from './shared/api-version'
@@ -130,6 +132,13 @@ export const createApp = ({
     `${API_BASE_PATH}/salons/:salonId/services`,
     createServiceRouter(
       { serviceRepository: new ServiceRepository(database), salonRepository },
+      authenticated,
+    ),
+  )
+  app.use(
+    `${API_BASE_PATH}/salons/:salonId/staff`,
+    createStaffRouter(
+      { staffRepository: new StaffRepository(database), salonRepository },
       authenticated,
     ),
   )
