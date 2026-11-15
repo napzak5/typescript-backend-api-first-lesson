@@ -34,6 +34,8 @@ export interface ModelsBookingServiceResponse {
   discountAmount: number;
   /** 割引適用後の施術料金 (price − discountAmount) */
   finalPrice: number;
+  /** 施術料金が消費税を含むかどうか。明細を追加した時点のサービスの設定。false の明細の finalPrice には、予約の taxAmount の消費税が加わる */
+  taxIncluded: boolean;
   /** 施術が完了したかどうか */
   isCompleted: boolean;
   /**

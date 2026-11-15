@@ -59,6 +59,9 @@ namespace BeautySalon.Models {
     @doc("割引適用後の施術料金 (price − discountAmount)")
     finalPrice: int32;
 
+    @doc("施術料金が消費税を含むかどうか。明細を追加した時点のサービスの設定。false の明細の finalPrice には、予約の taxAmount の消費税が加わる")
+    taxIncluded: boolean;
+
     @doc("施術が完了したかどうか")
     isCompleted: boolean;
 
@@ -74,7 +77,7 @@ namespace BeautySalon.Models {
 
   @doc("""
     施術明細の追加リクエスト - 全項目のキーが必須。DB で NULL 許可のカラムのみ null を指定できる。
-    終了日時・施術時間・料金・割引額は、指定したサービスの登録内容から算出する
+    終了日時・施術時間・料金・割引額・税込かどうかは、指定したサービスの登録内容から決まる
     """)
   model BookingServiceCreateRequest {
     @doc("予約する施術メニューのID。予約と同じサロンのサービスを指定する")

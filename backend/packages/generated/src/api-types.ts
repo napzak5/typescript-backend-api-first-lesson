@@ -835,7 +835,7 @@ export interface paths {
         put?: never;
         /**
          * Add booking service
-         * @description draft・pending・confirmedの予約に施術明細を追加します。予約が存在しない場合は404を、serviceIdやstaffIdが予約のサロンのものではない場合は400を、それ以外のステータスの予約や、担当スタッフの既存の予約と時間が重なる場合は409を返します。
+         * @description 終わっていない予約(ステータスが draft・pending・confirmed・in_progress の予約)に施術明細を追加し、予約の日時と金額を算出し直します。admin と、予約のサロンの owner / manager / staff が実行できます。明細の時間と金額は、追加の時点のサービスの写しです。明細は、いまの最後の明細の次に並びます。ほかのサロンの予約には404を、serviceIdやstaffIdが予約のサロンのものではない(削除済みを含む)場合は400を返します。completed・cancelled・no_show の予約、すでに20件の明細がある予約、追加後の明細が最も早い明細の開始から24時間以内に収まらない場合、明細のスタッフが同時に受けられる数(maxConcurrentBookings)を超えてほかの予約と重なる場合、サロンのタイムゾーンが名前として認識できない場合、金額が上限を超える場合は409を返します。重なりは作成と同じ規則で確かめ、この予約自身のほかの明細は数えません。
          */
         post: operations["BookingServiceCrud_create"];
         delete?: never;
@@ -853,14 +853,14 @@ export interface paths {
         };
         /**
          * Get booking service
-         * @description 予約の施術明細を1件取得します。
+         * @description 予約の施術明細を1件取得します。admin と、予約のサロンの owner / manager / staff が実行できます。ほかのサロンの予約と、その予約のものではない明細には404を返します。
          */
         get: operations["BookingServiceCrud_get"];
         put?: never;
         post?: never;
         /**
          * Remove booking service
-         * @description draft・pending・confirmedの予約から施術明細を削除します。それ以外のステータスの予約や、予約に残る最後の施術明細を削除しようとした場合は409を返します。
+         * @description 終わっていない予約(ステータスが draft・pending・confirmed・in_progress の予約)から施術明細を削除し、予約の日時と金額を、残る明細から算出し直します。admin と、予約のサロンの owner / manager / staff が実行できます。明細の担当スタッフや開始日時を変えるには、新しい明細を追加してから古い明細を削除します。ほかのサロンの予約と、その予約のものではない明細には404を、completed・cancelled・no_show の予約、予約に残る最後の明細、サロンのタイムゾーンが名前として認識できない場合は409を返します。
          */
         delete: operations["BookingServiceCrud_delete"];
         options?: never;
@@ -2684,7 +2684,7 @@ export interface paths {
         post?: never;
         /**
          * Delete staff member
-         * @description スタッフを論理削除します。削除後は一覧・取得の対象外になり、メールアドレスは別のスタッフの登録に使えるようになります。このスタッフに紐づくログインアカウントは、サロンへの権限を失います。自分自身のスタッフ情報は削除できず、409を返します。終わっていない予約(ステータスが draft・pending・confirmed・in_progress の予約)の担当スタッフであるか、そのいずれかの施術明細を担当しているスタッフも削除できず、409を返します。先に予約を完了、キャンセル、または削除してください。予約の担当スタッフは、日時の変更でほかのスタッフに替えられます(そのスタッフが担当していた施術明細も付け替わります)。
+         * @description スタッフを論理削除します。削除後は一覧・取得の対象外になり、メールアドレスは別のスタッフの登録に使えるようになります。このスタッフに紐づくログインアカウントは、サロンへの権限を失います。自分自身のスタッフ情報は削除できず、409を返します。終わっていない予約(ステータスが draft・pending・confirmed・in_progress の予約)の担当スタッフであるか、そのいずれかの施術明細を担当しているスタッフも削除できず、409を返します。先に予約を完了、キャンセル、または削除してください。予約の担当スタッフは、日時の変更でほかのスタッフに替えられます(そのスタッフが担当していた施術明細も付け替わります)。施術明細だけを担当しているときは、ほかのスタッフで明細を追加してから、そのスタッフの明細を削除します。
          */
         delete: operations["StaffCrud_delete"];
         options?: never;
@@ -3721,7 +3721,7 @@ export interface components {
         };
         /**
          * @description 施術明細の追加リクエスト - 全項目のキーが必須。DB で NULL 許可のカラムのみ null を指定できる。
-         *     終了日時・施術時間・料金・割引額は、指定したサービスの登録内容から算出する
+         *     終了日時・施術時間・料金・割引額・税込かどうかは、指定したサービスの登録内容から決まる
          */
         "Models.BookingServiceCreateRequest": {
             /** @description 予約する施術メニューのID。予約と同じサロンのサービスを指定する */
@@ -3782,6 +3782,8 @@ export interface components {
              * @description 割引適用後の施術料金 (price − discountAmount)
              */
             finalPrice: number;
+            /** @description 施術料金が消費税を含むかどうか。明細を追加した時点のサービスの設定。false の明細の finalPrice には、予約の taxAmount の消費税が加わる */
+            taxIncluded: boolean;
             /** @description 施術が完了したかどうか */
             isCompleted: boolean;
             /**
