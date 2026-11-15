@@ -45,6 +45,9 @@ import type {
   CustomerCrudRestore200,
   CustomerCrudUpdate200,
   CustomerCrudUpdatePreferences200,
+  CustomerProfileCreate201,
+  CustomerProfileGet200,
+  CustomerProfileUpdate200,
   ModelsCustomerBatchGetRequest,
   ModelsCustomerBulkCreateRequest,
   ModelsCustomerBulkDeleteRequest,
@@ -55,6 +58,8 @@ import type {
   ModelsCustomerId,
   ModelsCustomerMergeRequest,
   ModelsCustomerPreferencesUpdateRequest,
+  ModelsCustomerProfileCreateRequest,
+  ModelsCustomerProfileUpdateRequest,
   ModelsCustomerUpdateRequest,
   ModelsProblemDetails
 } from '../../models';
@@ -1103,6 +1108,444 @@ export const useCustomerCrudExport = <TError = ModelsProblemDetails,
         TContext
       > => {
       return useMutation(getCustomerCrudExportMutationOptions(options), queryClient);
+    }
+    export type customerProfileGetResponse200 = {
+  data: CustomerProfileGet200
+  status: 200
+}
+
+export type customerProfileGetResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type customerProfileGetResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
+export type customerProfileGetResponse404 = {
+  data: ModelsProblemDetails
+  status: 404
+}
+
+export type customerProfileGetResponse429 = {
+  data: ModelsProblemDetails
+  status: 429
+}
+
+export type customerProfileGetResponse500 = {
+  data: ModelsProblemDetails
+  status: 500
+}
+
+export type customerProfileGetResponseSuccess = (customerProfileGetResponse200) & {
+  headers: Headers;
+};
+export type customerProfileGetResponseError = (customerProfileGetResponse401 | customerProfileGetResponse403 | customerProfileGetResponse404 | customerProfileGetResponse429 | customerProfileGetResponse500) & {
+  headers: Headers;
+};
+
+export type customerProfileGetResponse = (customerProfileGetResponseSuccess | customerProfileGetResponseError)
+
+export const getCustomerProfileGetUrl = () => {
+
+
+
+
+  return `/api/v1/customers/me`
+}
+
+/**
+ * ログインしているユーザーのプロフィールを取得します。プロフィールをまだ作っていない場合と、顧客レコードが削除された場合は404を返します。
+ * @summary Get the signed-in customer's profile
+ */
+export const customerProfileGet = async ( options?: RequestInit): Promise<customerProfileGetResponse> => {
+
+  return customInstance<customerProfileGetResponse>(getCustomerProfileGetUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getCustomerProfileGetQueryKey = () => {
+    return [
+    `/api/v1/customers/me`
+    ] as const;
+    }
+
+
+export const getCustomerProfileGetQueryOptions = <TData = Awaited<ReturnType<typeof customerProfileGet>>, TError = ModelsProblemDetails>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerProfileGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getCustomerProfileGetQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof customerProfileGet>>> = ({ signal }) => customerProfileGet({ signal });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof customerProfileGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type CustomerProfileGetQueryResult = NonNullable<Awaited<ReturnType<typeof customerProfileGet>>>
+export type CustomerProfileGetQueryError = ModelsProblemDetails
+
+
+/**
+ * ログインしているユーザーのプロフィールを取得します。プロフィールをまだ作っていない場合と、顧客レコードが削除された場合は404を返します。
+ * @summary Get the signed-in customer's profile
+ */
+export function useCustomerProfileGet<TData = Awaited<ReturnType<typeof customerProfileGet>>, TError = ModelsProblemDetails>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerProfileGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof customerProfileGet>>,
+          TError,
+          Awaited<ReturnType<typeof customerProfileGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * ログインしているユーザーのプロフィールを取得します。プロフィールをまだ作っていない場合と、顧客レコードが削除された場合は404を返します。
+ * @summary Get the signed-in customer's profile
+ */
+export function useCustomerProfileGet<TData = Awaited<ReturnType<typeof customerProfileGet>>, TError = ModelsProblemDetails>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerProfileGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof customerProfileGet>>,
+          TError,
+          Awaited<ReturnType<typeof customerProfileGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * ログインしているユーザーのプロフィールを取得します。プロフィールをまだ作っていない場合と、顧客レコードが削除された場合は404を返します。
+ * @summary Get the signed-in customer's profile
+ */
+export function useCustomerProfileGet<TData = Awaited<ReturnType<typeof customerProfileGet>>, TError = ModelsProblemDetails>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerProfileGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * ログインしているユーザーのプロフィールを取得します。プロフィールをまだ作っていない場合と、顧客レコードが削除された場合は404を返します。
+ * @summary Get the signed-in customer's profile
+ */
+export function useCustomerProfileGet<TData = Awaited<ReturnType<typeof customerProfileGet>>, TError = ModelsProblemDetails>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerProfileGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getCustomerProfileGetQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type customerProfileCreateResponse201 = {
+  data: CustomerProfileCreate201
+  status: 201
+}
+
+export type customerProfileCreateResponse400 = {
+  data: ModelsProblemDetails
+  status: 400
+}
+
+export type customerProfileCreateResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type customerProfileCreateResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
+export type customerProfileCreateResponse409 = {
+  data: ModelsProblemDetails
+  status: 409
+}
+
+export type customerProfileCreateResponse413 = {
+  data: ModelsProblemDetails
+  status: 413
+}
+
+export type customerProfileCreateResponse415 = {
+  data: ModelsProblemDetails
+  status: 415
+}
+
+export type customerProfileCreateResponse429 = {
+  data: ModelsProblemDetails
+  status: 429
+}
+
+export type customerProfileCreateResponse500 = {
+  data: ModelsProblemDetails
+  status: 500
+}
+
+export type customerProfileCreateResponseSuccess = (customerProfileCreateResponse201) & {
+  headers: Headers;
+};
+export type customerProfileCreateResponseError = (customerProfileCreateResponse400 | customerProfileCreateResponse401 | customerProfileCreateResponse403 | customerProfileCreateResponse409 | customerProfileCreateResponse413 | customerProfileCreateResponse415 | customerProfileCreateResponse429 | customerProfileCreateResponse500) & {
+  headers: Headers;
+};
+
+export type customerProfileCreateResponse = (customerProfileCreateResponseSuccess | customerProfileCreateResponseError)
+
+export const getCustomerProfileCreateUrl = () => {
+
+
+
+
+  return `/api/v1/customers/me`
+}
+
+/**
+ * ログインしているユーザーのプロフィールを作成します。メールアドレスはアカウントのものを使います。台帳に同じメールアドレスの顧客がいて、まだどのアカウントにも結び付いていない場合は、その顧客を自分のプロフィールにします(リクエストでnullにした項目は、台帳の値を残します)。すでにプロフィールがある場合、アカウントのメールアドレスを確認していない場合、同じメールアドレスの顧客がほかのアカウントに結び付いている場合は409を返します。
+ * @summary Create the signed-in customer's profile
+ */
+export const customerProfileCreate = async (modelsCustomerProfileCreateRequest: ModelsCustomerProfileCreateRequest, options?: RequestInit): Promise<customerProfileCreateResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customInstance<customerProfileCreateResponse>(getCustomerProfileCreateUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(modelsCustomerProfileCreateRequest)
+  }
+);}
+
+
+
+
+
+export const getCustomerProfileCreateMutationKey = () => ['customerProfileCreate'] as const;
+
+export const getCustomerProfileCreateMutationOptions = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerProfileCreate>>, TError,CustomerProfileCreateMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof customerProfileCreate>>, TError,CustomerProfileCreateMutationVariables, TContext> => {
+
+const mutationKey = getCustomerProfileCreateMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof customerProfileCreate>>, CustomerProfileCreateMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  customerProfileCreate(data,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CustomerProfileCreateMutationResult = NonNullable<Awaited<ReturnType<typeof customerProfileCreate>>>
+    export type CustomerProfileCreateMutationBody = ModelsCustomerProfileCreateRequest
+    export type CustomerProfileCreateMutationError = ModelsProblemDetails
+    export type CustomerProfileCreateMutationVariables = {data: ModelsCustomerProfileCreateRequest}
+
+    /**
+ * ログインしているユーザーのプロフィールを作成します。メールアドレスはアカウントのものを使います。台帳に同じメールアドレスの顧客がいて、まだどのアカウントにも結び付いていない場合は、その顧客を自分のプロフィールにします(リクエストでnullにした項目は、台帳の値を残します)。すでにプロフィールがある場合、アカウントのメールアドレスを確認していない場合、同じメールアドレスの顧客がほかのアカウントに結び付いている場合は409を返します。
+ * @summary Create the signed-in customer's profile
+ */
+export const useCustomerProfileCreate = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerProfileCreate>>, TError,CustomerProfileCreateMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof customerProfileCreate>>,
+        TError,
+        CustomerProfileCreateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCustomerProfileCreateMutationOptions(options), queryClient);
+    }
+    export type customerProfileUpdateResponse200 = {
+  data: CustomerProfileUpdate200
+  status: 200
+}
+
+export type customerProfileUpdateResponse400 = {
+  data: ModelsProblemDetails
+  status: 400
+}
+
+export type customerProfileUpdateResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type customerProfileUpdateResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
+export type customerProfileUpdateResponse404 = {
+  data: ModelsProblemDetails
+  status: 404
+}
+
+export type customerProfileUpdateResponse413 = {
+  data: ModelsProblemDetails
+  status: 413
+}
+
+export type customerProfileUpdateResponse415 = {
+  data: ModelsProblemDetails
+  status: 415
+}
+
+export type customerProfileUpdateResponse429 = {
+  data: ModelsProblemDetails
+  status: 429
+}
+
+export type customerProfileUpdateResponse500 = {
+  data: ModelsProblemDetails
+  status: 500
+}
+
+export type customerProfileUpdateResponseSuccess = (customerProfileUpdateResponse200) & {
+  headers: Headers;
+};
+export type customerProfileUpdateResponseError = (customerProfileUpdateResponse400 | customerProfileUpdateResponse401 | customerProfileUpdateResponse403 | customerProfileUpdateResponse404 | customerProfileUpdateResponse413 | customerProfileUpdateResponse415 | customerProfileUpdateResponse429 | customerProfileUpdateResponse500) & {
+  headers: Headers;
+};
+
+export type customerProfileUpdateResponse = (customerProfileUpdateResponseSuccess | customerProfileUpdateResponseError)
+
+export const getCustomerProfileUpdateUrl = () => {
+
+
+
+
+  return `/api/v1/customers/me`
+}
+
+/**
+ * ログインしているユーザーのプロフィールのうち、指定した項目だけを更新します。プロフィールをまだ作っていない場合と、顧客レコードが削除された場合は404を返します。
+ * @summary Update the signed-in customer's profile
+ */
+export const customerProfileUpdate = async (modelsCustomerProfileUpdateRequest: ModelsCustomerProfileUpdateRequest, options?: RequestInit): Promise<customerProfileUpdateResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customInstance<customerProfileUpdateResponse>(getCustomerProfileUpdateUrl(),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(modelsCustomerProfileUpdateRequest)
+  }
+);}
+
+
+
+
+
+export const getCustomerProfileUpdateMutationKey = () => ['customerProfileUpdate'] as const;
+
+export const getCustomerProfileUpdateMutationOptions = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerProfileUpdate>>, TError,CustomerProfileUpdateMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof customerProfileUpdate>>, TError,CustomerProfileUpdateMutationVariables, TContext> => {
+
+const mutationKey = getCustomerProfileUpdateMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof customerProfileUpdate>>, CustomerProfileUpdateMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  customerProfileUpdate(data,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CustomerProfileUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof customerProfileUpdate>>>
+    export type CustomerProfileUpdateMutationBody = ModelsCustomerProfileUpdateRequest
+    export type CustomerProfileUpdateMutationError = ModelsProblemDetails
+    export type CustomerProfileUpdateMutationVariables = {data: ModelsCustomerProfileUpdateRequest}
+
+    /**
+ * ログインしているユーザーのプロフィールのうち、指定した項目だけを更新します。プロフィールをまだ作っていない場合と、顧客レコードが削除された場合は404を返します。
+ * @summary Update the signed-in customer's profile
+ */
+export const useCustomerProfileUpdate = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerProfileUpdate>>, TError,CustomerProfileUpdateMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof customerProfileUpdate>>,
+        TError,
+        CustomerProfileUpdateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCustomerProfileUpdateMutationOptions(options), queryClient);
     }
     export type customerCrudMergeResponse200 = {
   data: CustomerCrudMerge200

@@ -12,6 +12,8 @@ import { z } from 'zod'
 import {
   type ApiCustomerBasicPreferences,
   type ApiCustomerCreateRequest,
+  type ApiCustomerProfileCreateRequest,
+  type ApiCustomerProfileUpdateRequest,
   type ApiCustomerSearchRequest,
   type ApiCustomerUpdateRequest,
   customerIdSchema,
@@ -83,6 +85,39 @@ export const customerCreateRequestSchema = z.strictObject({
 export const customerUpdateRequestSchema = customerCreateRequestSchema
   .exactPartial()
   .check(atLeastOneProperty) satisfies z.ZodType<ApiCustomerUpdateRequest>
+
+/**
+ * What a customer writes about themselves: the properties of a ledger entry
+ * that are theirs to state, under the rules of the ledger.
+ */
+export const customerProfileCreateRequestSchema =
+  customerCreateRequestSchema.pick({
+    firstName: true,
+    lastName: true,
+    firstNameKana: true,
+    lastNameKana: true,
+    phoneNumber: true,
+    alternativePhone: true,
+    postalCode: true,
+    prefecture: true,
+    city: true,
+    address: true,
+    building: true,
+    birthDate: true,
+    gender: true,
+    occupation: true,
+    preferences: true,
+    allowMarketing: true,
+    allowSms: true,
+    allowEmail: true,
+  }) satisfies z.ZodType<ApiCustomerProfileCreateRequest>
+
+export const customerProfileUpdateRequestSchema =
+  customerProfileCreateRequestSchema
+    .exactPartial()
+    .check(
+      atLeastOneProperty,
+    ) satisfies z.ZodType<ApiCustomerProfileUpdateRequest>
 
 export const customerSearchRequestSchema = z
   .strictObject({

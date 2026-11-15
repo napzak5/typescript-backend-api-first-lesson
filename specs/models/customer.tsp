@@ -554,6 +554,275 @@ namespace BeautySalon.Models {
   }
 
   // ============================================================================
+  // The customer's own profile (customers, as the customer sees it)
+  // ============================================================================
+
+  @doc("""
+    顧客本人のプロフィールのレスポンス - customers テーブルの行のうち、本人に見せるカラムだけを返す。
+    スタッフ用の項目(internalNotes、notes、tags、customerStatus、isActive、referredBy、lifetimeValue、
+    noShowCount、cancellationCount)と userId は含まない。プロパティ名と null 許可は DB カラムと一致させている
+    """)
+  model CustomerProfileResponse {
+    @doc("顧客を一意に識別するID")
+    id: CustomerId;
+
+    @doc("名")
+    @minLength(1)
+    @maxLength(100)
+    firstName: string;
+
+    @doc("姓")
+    @minLength(1)
+    @maxLength(100)
+    lastName: string;
+
+    @doc("名のカナ表記。未登録の場合はnull")
+    @maxLength(100)
+    firstNameKana: string | null;
+
+    @doc("姓のカナ表記。未登録の場合はnull")
+    @maxLength(100)
+    lastNameKana: string | null;
+
+    @doc("メールアドレス。アカウントのメールアドレスと同じで、プロフィールからは変更できない")
+    @maxLength(255)
+    email: string;
+
+    @doc("主要連絡先として利用する電話番号")
+    @maxLength(20)
+    phoneNumber: string;
+
+    @doc("緊急連絡用などの予備電話番号。未登録の場合はnull")
+    @maxLength(20)
+    alternativePhone: string | null;
+
+    @doc("郵便番号。未登録の場合はnull")
+    @maxLength(10)
+    postalCode: string | null;
+
+    @doc("都道府県名。未登録の場合はnull")
+    @maxLength(50)
+    prefecture: string | null;
+
+    @doc("市区町村名。未登録の場合はnull")
+    @maxLength(100)
+    city: string | null;
+
+    @doc("町名・番地。未登録の場合はnull")
+    @maxLength(255)
+    address: string | null;
+
+    @doc("建物名・部屋番号。未登録の場合はnull")
+    @maxLength(255)
+    building: string | null;
+
+    @doc("生年月日。1900-01-01以降で、未来の日付は指定できない。未登録の場合はnull")
+    birthDate: plainDate | null;
+
+    @doc("性別。未登録または非公開の場合はnull")
+    gender: CustomerGenderType | null;
+
+    @doc("職業。未登録の場合はnull")
+    @maxLength(100)
+    occupation: string | null;
+
+    @doc("会員ランク。本人は変更できない")
+    membershipTier: MembershipTierType;
+
+    @doc("現在のロイヤルティポイント")
+    loyaltyPoints: int32;
+
+    @doc("好みや要望。未設定の場合はnull")
+    preferences: CustomerBasicPreferences | null;
+
+    @doc("ほかの人を紹介するときに使う紹介コード。未発行の場合はnull")
+    @maxLength(50)
+    referralCode: string | null;
+
+    @doc("初回来店日。未来店の場合はnull")
+    firstVisitDate: plainDate | null;
+
+    @doc("最終来店日。まだ来店がない場合はnull")
+    lastVisitDate: plainDate | null;
+
+    @doc("総来店回数")
+    visitCount: int32;
+
+    @doc("マーケティング配信を許可するかどうか")
+    allowMarketing: boolean;
+
+    @doc("SMSでの連絡を許可するかどうか")
+    allowSms: boolean;
+
+    @doc("メールでの連絡を許可するかどうか")
+    allowEmail: boolean;
+
+    @doc("髪質タイプ。サロンが記録する。未登録の場合はnull")
+    hairType: HairType | null;
+
+    @doc("髪の太さ。サロンが記録する。未登録の場合はnull")
+    hairThickness: HairThicknessType | null;
+
+    @doc("頭皮の状態。サロンが記録する。未登録の場合はnull")
+    scalpCondition: ScalpConditionType | null;
+
+    @doc("レコード作成日時(顧客の登録日時)")
+    createdAt: utcDateTime;
+
+    @doc("レコード最終更新日時")
+    updatedAt: utcDateTime;
+  }
+
+  @doc("""
+    顧客本人のプロフィールの作成リクエスト - ログインしているアカウントの顧客レコードを作る。
+    メールアドレスはアカウントのものを使うので、リクエストには含めない。
+    会員ランクやスタッフ用の項目は指定できない
+    """)
+  model CustomerProfileCreateRequest {
+    @doc("名")
+    @minLength(1)
+    @maxLength(100)
+    firstName: string;
+
+    @doc("姓")
+    @minLength(1)
+    @maxLength(100)
+    lastName: string;
+
+    @doc("名のカナ表記。未登録の場合はnull")
+    @maxLength(100)
+    firstNameKana: string | null;
+
+    @doc("姓のカナ表記。未登録の場合はnull")
+    @maxLength(100)
+    lastNameKana: string | null;
+
+    @doc("主要連絡先として利用する電話番号")
+    @maxLength(20)
+    phoneNumber: string;
+
+    @doc("緊急連絡用などの予備電話番号。未登録の場合はnull")
+    @maxLength(20)
+    alternativePhone: string | null;
+
+    @doc("郵便番号。未登録の場合はnull")
+    @maxLength(10)
+    postalCode: string | null;
+
+    @doc("都道府県名。未登録の場合はnull")
+    @maxLength(50)
+    prefecture: string | null;
+
+    @doc("市区町村名。未登録の場合はnull")
+    @maxLength(100)
+    city: string | null;
+
+    @doc("町名・番地。未登録の場合はnull")
+    @maxLength(255)
+    address: string | null;
+
+    @doc("建物名・部屋番号。未登録の場合はnull")
+    @maxLength(255)
+    building: string | null;
+
+    @doc("生年月日。1900-01-01以降で、未来の日付は指定できない。未登録の場合はnull")
+    birthDate: plainDate | null;
+
+    @doc("性別。未登録または非公開の場合はnull")
+    gender: CustomerGenderType | null;
+
+    @doc("職業。未登録の場合はnull")
+    @maxLength(100)
+    occupation: string | null;
+
+    @doc("好みや要望。未設定の場合はnull")
+    preferences: CustomerBasicPreferences | null;
+
+    @doc("マーケティング配信を許可するかどうか")
+    allowMarketing: boolean;
+
+    @doc("SMSでの連絡を許可するかどうか")
+    allowSms: boolean;
+
+    @doc("メールでの連絡を許可するかどうか")
+    allowEmail: boolean;
+  }
+
+  @doc("""
+    顧客本人のプロフィールの部分更新リクエスト - 指定した項目だけを更新する。DB で NULL 許可のカラムは null でクリアできる。
+    メールアドレス、会員ランク、スタッフ用の項目は変更できない
+    """)
+  model CustomerProfileUpdateRequest {
+    @doc("名")
+    @minLength(1)
+    @maxLength(100)
+    firstName?: string;
+
+    @doc("姓")
+    @minLength(1)
+    @maxLength(100)
+    lastName?: string;
+
+    @doc("名のカナ表記。未登録の場合はnull")
+    @maxLength(100)
+    firstNameKana?: string | null;
+
+    @doc("姓のカナ表記。未登録の場合はnull")
+    @maxLength(100)
+    lastNameKana?: string | null;
+
+    @doc("主要連絡先として利用する電話番号")
+    @maxLength(20)
+    phoneNumber?: string;
+
+    @doc("緊急連絡用などの予備電話番号。未登録の場合はnull")
+    @maxLength(20)
+    alternativePhone?: string | null;
+
+    @doc("郵便番号。未登録の場合はnull")
+    @maxLength(10)
+    postalCode?: string | null;
+
+    @doc("都道府県名。未登録の場合はnull")
+    @maxLength(50)
+    prefecture?: string | null;
+
+    @doc("市区町村名。未登録の場合はnull")
+    @maxLength(100)
+    city?: string | null;
+
+    @doc("町名・番地。未登録の場合はnull")
+    @maxLength(255)
+    address?: string | null;
+
+    @doc("建物名・部屋番号。未登録の場合はnull")
+    @maxLength(255)
+    building?: string | null;
+
+    @doc("生年月日。1900-01-01以降で、未来の日付は指定できない。未登録の場合はnull")
+    birthDate?: plainDate | null;
+
+    @doc("性別。未登録または非公開の場合はnull")
+    gender?: CustomerGenderType | null;
+
+    @doc("職業。未登録の場合はnull")
+    @maxLength(100)
+    occupation?: string | null;
+
+    @doc("好みや要望。未設定の場合はnull")
+    preferences?: CustomerBasicPreferences | null;
+
+    @doc("マーケティング配信を許可するかどうか")
+    allowMarketing?: boolean;
+
+    @doc("SMSでの連絡を許可するかどうか")
+    allowSms?: boolean;
+
+    @doc("メールでの連絡を許可するかどうか")
+    allowEmail?: boolean;
+  }
+
+  // ============================================================================
   // Customer preferences (customer_preferences)
   // ============================================================================
 

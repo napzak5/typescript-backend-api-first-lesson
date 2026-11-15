@@ -37,9 +37,10 @@ Before relying on anything, check this table.
 | Salon API (`/api/v1/salons`) | Implemented in every layer: list, create, get, update, delete. It is the reference implementation for every other domain. List and get are public; create, update and delete need a signed-in user with the permission. |
 | Service categories of a salon (`/api/v1/salons/{salonId}/service-categories`) | Implemented in every layer: list, create, get, update, delete, the five operations of `ServiceCategoryCrud`. They are the example of data that belongs to a salon: the routes are below the salon, and a category that is not of the salon in the path is answered with 404. List and get are public; create, update and delete need a signed-in user with the permission. See [Service Menu](./service-menu.md) (Japanese). |
 | Services of a salon (`/api/v1/salons/{salonId}/services`) | Implemented in every layer: list, create, get, update, bulk update, delete, the six operations of `ServiceCrud`. A service carries its options (the rows of `service_options`) in its requests and responses, and a package names the services it combines. The bulk update changes all the services it names or none of them. A delete keeps the row and marks it with `deletedAt`, and is refused with 409 while a package contains the service. List and get are public; create, update, bulk update and delete need a signed-in user with the permission. `isActive`, `serviceStatus`, `availability`, `bookingRequirements` and `maxBookingsPerDay` are stored and returned, and the list can filter by `isActive`; nothing else reads them: which services can be booked is not decided yet. See [Service Menu](./service-menu.md) (Japanese). |
-| Customer ledger (`/api/v1/customers`) | Implemented in every layer: list, create, get, update, delete, five of the 18 operations of `CustomerCrud`. A customer belongs to no salon: the ledger is one for the whole platform, and its routes are not below a salon. No operation is public: list, create, get and update need a signed-in administrator or member of a salon (owner, manager or staff of any salon), delete an administrator, an owner or a manager. A delete keeps the row and marks it with `deletedAt`. The other 13 operations of `CustomerCrud` are not implemented: the preferences (`PATCH /api/v1/customers/{id}/preferences`), batch get, bulk create, bulk update, bulk delete, restore, merge, audit history, versions, the two exports, statistics and the data deletion request. A customer has no route to their own record: a signed-in customer cannot create, read or change it, and a registered user has no customer record. `isActive` and `customerStatus` are stored and returned, and the list can filter by `customerStatus`; nothing else reads them: which customers can book is not decided yet. Nothing maintains the points, the lifetime value or the visit counters. See [Customer Ledger](./customers.md) (Japanese). |
+| Customer ledger (`/api/v1/customers`) | Implemented in every layer: list, create, get, update, delete, five of the 18 operations of `CustomerCrud`. A customer belongs to no salon: the ledger is one for the whole platform, and its routes are not below a salon. No operation is public: list, create, get and update need a signed-in administrator or member of a salon (owner, manager or staff of any salon), delete an administrator, an owner or a manager. A delete keeps the row and marks it with `deletedAt`. The other 13 operations of `CustomerCrud` are not implemented: the preferences (`PATCH /api/v1/customers/{id}/preferences`), batch get, bulk create, bulk update, bulk delete, restore, merge, audit history, versions, the two exports, statistics and the data deletion request. A signed-in customer reaches no route of the ledger; their own record is the profile of the next row. `isActive` and `customerStatus` are stored and returned, and the list can filter by `customerStatus`; nothing else reads them: which customers can book is not decided yet. Nothing maintains the points, the lifetime value or the visit counters. See [Customer Ledger](./customers.md) (Japanese). |
+| Customer profile (`/api/v1/customers/me`) | Implemented in every layer: get, create, update, the three operations of `CustomerProfile`. The profile is the customer record of the signed-in account. The route names no record: the account alone says which one, so a customer reaches no other. Only a customer account has a profile; an administrator and a member of a salon are answered with 403. A registered user has no record until they create the profile. The creation takes over the customer that the ledger has under the account's email address, unless that customer belongs to another account (409), and needs an account that has confirmed its address (409); without such a customer it adds one to the ledger. The response leaves out what the staff keep to themselves (notes, tags, status, the referrer, the lifetime value, the counts of no-shows and cancellations), and the requests write only what is the customer's own: the name, the contact details, the birth date, the preferences and the three consents. A delete of the customer in the ledger takes the profile from the account, which may then create a new one. See [Customer Ledger](./customers.md) (Japanese). |
 | Authentication (`/api/v1/auth`, `/api/v1/admin/auth`) | Implemented: `login`, `refresh`, `logout`, `logout-all` and `me`, on server-side sessions with opaque bearer tokens, and registration of customer accounts, email verification and password reset, each through a single-use token sent by mail, and password change, and two-factor authentication with the one-time passwords of an authenticator app (TOTP) and backup codes, and the list of the signed-in user's sessions with the revocation of one of them, and under `/api/v1/admin/auth` the administrator operations: read a user, unlock an account, reset two-factor authentication. That is every operation in `specs/operations/auth-operations.tsp`: the 16 of `AuthCrud`, the 2 of `SessionCrud` and the 3 of `AdminAuthCrud`. See [Authentication and Authorization](./authentication.md). |
-| Authorization | Implemented for the Salon API (create, update, delete), for the service categories of a salon (create, update, delete), for the services of a salon (create, update, bulk update, delete), for the customer ledger (every operation) and for the administrator operations. An implemented operation that the contract does not mark `@useAuth(NoAuth)` needs a valid access token, and its use case decides whether the signed-in user may do what is asked. |
+| Authorization | Implemented for the Salon API (create, update, delete), for the service categories of a salon (create, update, delete), for the services of a salon (create, update, bulk update, delete), for the customer ledger and a customer's own profile (every operation) and for the administrator operations. An implemented operation that the contract does not mark `@useAuth(NoAuth)` needs a valid access token, and its use case decides whether the signed-in user may do what is asked. |
 | System endpoints (`/api/system`) | Implemented: `alive`, `ready` and `health`. |
 | The other domains (staff, booking, review, treatment, payment, inventory) | Specified in TypeSpec, so their generated types exist, and the database schema has their tables and seed data. The models agree with the tables (`pnpm check:api-db`). There is no domain, repository or route code. A request to one of these routes is answered with 404. The implementation order is in GitHub issue #4. |
 | Attachments, roles and permissions, purchase orders, medical charts | Specified in TypeSpec only. No table exists for them yet. |
@@ -265,24 +266,33 @@ domain/src/
 ├── mappers/write/customer.mapper.ts   API request → row. Nothing is converted: the
 │                                      request is the row
 ├── mappers/read/customer.mapper.ts    Row → API response
+├── mappers/write/customer-profile.mapper.ts
+│                                      Request of a customer for their own profile → the
+│                                      new row, and the changes of a row that is taken over
+├── mappers/read/customer-profile.mapper.ts
+│                                      Row → the profile; names every property it shows
 ├── repositories/customer.repository.ts
-│                                      ICustomerRepository; what became of a create or an
-│                                      update is a sum type (CustomerCreation,
-│                                      CustomerUpdate)
-└── business-logic/customer/           One *.usecase.ts per operation; _shared/ holds the
-                                       dependencies (the repository and the clock), who
-                                       may (authorization.ts), the rules that need the
-                                       current time or another customer (rules.ts) and
-                                       the reading of a keyword as a phone number
-                                       (search.ts)
+│                                      ICustomerRepository; what became of a create, an
+│                                      update or the creation of a profile is a sum type
+│                                      (CustomerCreation, CustomerUpdate,
+│                                      CustomerProfileCreation)
+└── business-logic/customer/           One *.usecase.ts per operation, of the ledger and
+                                       of the profile (*-customer-profile.usecase.ts);
+                                       _shared/ holds the dependencies (the repository
+                                       and the clock), who may (authorization.ts), whose
+                                       profile a request is about (profile.ts), the rules
+                                       that need the current time or another customer
+                                       (rules.ts) and the reading of a keyword as a phone
+                                       number (search.ts)
 
 infrastructure/src/
 └── repositories/customer.repository.impl.ts
 
 api/src/
 └── routes/customer/                   One *.handler.ts per implemented operation of
-                                       CustomerCrud, index.ts (router, mounted at
-                                       /customers)
+                                       CustomerCrud and of CustomerProfile, index.ts
+                                       (router, mounted at /customers; /me is registered
+                                       before /:id)
 ```
 
 ## Layers and Package Dependencies
@@ -685,8 +695,41 @@ one use case per operation (`business-logic/customer/`). What that changes:
   microseconds, and a response shows milliseconds.
 
 The list is newest first, and a delete keeps the row and marks it with
-`deletedAt`, as for a salon. The rules of the customer ledger are in
-[Customer Ledger](./customers.md), who may use it in
+`deletedAt`, as for a salon.
+
+A customer's own profile (`/api/v1/customers/me`) is served by the same
+router, repository and dependencies, with use cases, mappers and models of
+its own. What differs from the ledger:
+
+- **The account says which record.** The route has no ID. The scope of a
+  customer account carries `customerId`, which is null until the account has
+  a profile, and `profileAccessOf`
+  (`business-logic/customer/_shared/profile.ts`) turns the scope into one of
+  three cases: the account's own record, a customer account without one, or
+  not a customer account. The use cases match on it before the body is read:
+  403 for an account that is no customer account, 404 for a get or an update
+  without a profile, 409 for a second creation.
+- **Models that show and take less.** `CustomerProfileResponse` leaves out
+  what the staff keep to themselves, and the two requests have only the
+  properties a customer states about themselves; the schemas are
+  `pick`ed from the schema of the ledger, so the rules are the same.
+  `CustomerProfileReadMapper` names each property it returns, so a column
+  that is added to `customers` does not reach the customer by itself.
+- **A creation that links two tables.** `createProfile` of the repository
+  runs one transaction: it locks the account's row, reads from it what the
+  decision depends on (the role, the confirmed email, the customer it may
+  already have), locks the customer that the ledger has under that email,
+  and either changes that row or inserts a new one, and writes the link on
+  both sides (`users.customerId`, `customers.userId`). What became of it is
+  the sum type `CustomerProfileCreation`. The mapper hands over both
+  outcomes, the new row and the changes of a row that is taken over, because
+  only the repository learns which applies.
+- **A delete that unlinks.** The delete of the ledger clears
+  `users.customerId` of the account that has the customer, in the
+  transaction that marks the row.
+
+The rules of the customer ledger and of the profile are in
+[Customer Ledger](./customers.md), who may use them in
 [Authentication and Authorization](./authentication.md) (both Japanese).
 
 ### An Authentication Request
@@ -755,9 +798,9 @@ returns the body the contract defines for it, not problem details.
 | `validation` | A use case, when the input breaks a rule of its Zod schema; an authentication use case, also for a rule the schema cannot check (a new password on the blocklist or equal to the current one, a current password that is wrong, a mailed token that cannot be used, a code of two-factor authentication that is not accepted, a cursor of the session list that names no session of the user); a service category use case, for a parent that is not a category of the same salon or that is the category itself or one below it, and for a cursor that names no category of the salon; a service use case, for a service that would break a rule tying two of its properties together (a discounted price above the price, member services that do not fit `isPackage`), for a category that is not of the same salon, for a member of a package that is not a service of the same salon, is a package or is the service itself, for making a package of a service that a package contains, and for a cursor that names no service of the salon; a customer use case, for a birth date before 1900 or in the future, for a referrer that does not exist, is deleted or is the customer itself, and for a cursor that names no customer; a list handler, when a query parameter cannot be read as its type (the handler of the customer list hands that error to its use case, which returns it only to an actor who may list customers) | 400 |
 | `unauthenticated` | `AuthenticateUseCase`, when the request carries no access token that works; the login and refresh use cases, when the credentials are not accepted, which for login includes a missing or refused code of two-factor authentication; the current-user, change-password and two-factor use cases, when the user of the session no longer exists | 401, with a `WWW-Authenticate: Bearer` header |
 | `forbidden` | A use case, when the signed-in user may not do what is asked | 403 |
-| `notFound` | A use case, when what the ID in the path names is not there: a salon or a user that does not exist or is deleted, a service category that does not exist or is not of the salon in the path, a service that does not exist, is deleted or is not of the salon in the path, a customer that does not exist or is deleted, a session that is not one of the signed-in user's own sessions that have not ended | 404 |
+| `notFound` | A use case, when what the ID in the path names is not there: a salon or a user that does not exist or is deleted, a service category that does not exist or is not of the salon in the path, a service that does not exist, is deleted or is not of the salon in the path, a customer that does not exist or is deleted, the profile of a customer account that has none, a session that is not one of the signed-in user's own sessions that have not ended | 404 |
 | `alreadyExists` | The repository, when a write violates a unique index or constraint: the `email` of a salon among the salons that are not deleted, the `email` of a customer among the customers that are not deleted, the `referralCode` of a customer among all customers | 409 |
-| `conflict` | A two-factor use case or the use case of an administrator operation, when the state of the account does not allow the operation: enabling what is enabled, confirming when no set-up is under way, disabling, resetting or replacing backup codes when it is not enabled, unlocking an account that is not locked; the use case that deletes a service, when a package contains the service | 409 |
+| `conflict` | A two-factor use case or the use case of an administrator operation, when the state of the account does not allow the operation: enabling what is enabled, confirming when no set-up is under way, disabling, resetting or replacing backup codes when it is not enabled, unlocking an account that is not locked; the use case that deletes a service, when a package contains the service; the use case that creates a customer's profile, when the account has one, has not confirmed its email address, or the customer with its email address belongs to another account; the customer repository, when a customer with that email address is added to the ledger at the moment the profile is created | 409 |
 | `database` | The repository, when a query fails; the read mapper, when a stored row does not match the API model | 500 |
 | `routeNotFound` | `notFoundHandler` | 404 |
 | `malformedBody`, `badRequest` | `errorHandler`, from what the body parser or Express raised | 400 |
@@ -797,7 +840,8 @@ What protects the API today: security headers, the origin allow-list, the
 rate limit, the body size limit, strict validation that rejects unknown
 properties, and bearer-token authentication with a permission check on the
 operations that change a salon, its service categories or its services, on
-every operation of the customer ledger and on the administrator operations.
+every operation of the customer ledger and of a customer's own profile and
+on the administrator operations.
 The system endpoints, the salon list, a
 single salon, the service categories and the services of a salon and the
 authentication operations a signed-out user needs

@@ -120,10 +120,12 @@ const salonRoleSchema = z.enum(['owner', 'manager', 'staff'])
  * - `platform`: every salon (role `admin`)
  * - `salon`: the salon of the actor's staff member (roles `owner`,
  *   `manager`, `staff`)
- * - `customer`: the actor's own customer record (role `customer`)
- * - `none`: a role without the record it needs, for example a staff user
- *   whose staff member was removed. Such a user can sign in and reach
- *   nothing that needs a scope.
+ * - `customer`: the actor's own customer record (role `customer`).
+ *   `customerId` is null while the account has no customer record: before
+ *   the user has created their profile, or after the record was deleted
+ * - `none`: a staff role without the staff member it needs, for example a
+ *   staff user whose staff member was removed. Such a user can sign in and
+ *   reach nothing that needs a scope.
  */
 export const actorScopeSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('platform') }),
@@ -133,7 +135,10 @@ export const actorScopeSchema = z.discriminatedUnion('type', [
     salonId: salonIdSchema,
     staffId: staffIdSchema,
   }),
-  z.object({ type: z.literal('customer'), customerId: customerIdSchema }),
+  z.object({
+    type: z.literal('customer'),
+    customerId: customerIdSchema.nullable(),
+  }),
   z.object({ type: z.literal('none') }),
 ])
 export type ActorScope = z.infer<typeof actorScopeSchema>

@@ -13,7 +13,7 @@ document is wrong: fix it in the same change.
 - [API Route Modular Structure](./api-route-modular-structure.md) - One handler file per endpoint in the API package
 - [Authentication and Authorization](./authentication.md) - Sessions, passwords, registration, email verification and password reset, two-factor authentication, who may do what, how to protect an operation, the seeded accounts (日本語)
 - [Service Menu](./service-menu.md) - The service categories of a salon: who may change them, the list, the rules for each property, parent and child categories, what a delete does. The services of a salon: the rules for each property, options, packages, bulk update, what a delete does (日本語)
-- [Customer Ledger](./customers.md) - The customers, in one ledger for the platform: what is implemented, who may do what, the order of the checks, the list and its search, the rules for each property, what a delete does, requests that arrive at the same moment (日本語)
+- [Customer Ledger](./customers.md) - The customers, in one ledger for the platform: what is implemented, who may do what, the order of the checks, the list and its search, the rules for each property, a customer's own profile and how it takes over a record of the ledger, what a delete does, requests that arrive at the same moment (日本語)
 - [Email](./email.md) - Which mails the server sends and how: the mailer, SMTP settings, Mailpit for local development (日本語)
 - [Multi-Agent Collaboration Framework](./multi-agent-collaboration-framework.md) - Which AI agent owns what, and the hand-over points
 

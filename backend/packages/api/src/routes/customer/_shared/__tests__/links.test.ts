@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { customerLinks } from '../links'
+import { customerLinks, customerProfileLinks } from '../links'
 
 const CUSTOMERS = '/api/v1/customers'
 const CUSTOMER_ID = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0d01'
@@ -27,5 +27,19 @@ describe('customerLinks', () => {
     expect(customerLinks(CUSTOMERS, inUpperCase).self).toBe(
       `${CUSTOMERS}/${inUpperCase}`,
     )
+  })
+})
+
+describe('customerProfileLinks', () => {
+  it('links the profile to itself: the one address every customer has for their own', () => {
+    expect(customerProfileLinks(CUSTOMERS)).toEqual({
+      self: `${CUSTOMERS}/me`,
+    })
+  })
+
+  it('keeps the collection path as the request wrote it', () => {
+    expect(customerProfileLinks('/API/v1/Customers')).toEqual({
+      self: '/API/v1/Customers/me',
+    })
   })
 })
