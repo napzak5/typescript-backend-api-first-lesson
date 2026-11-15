@@ -1,8 +1,12 @@
 import { z } from 'zod'
 import { salonIdSchema } from '../models/salon'
 import { staffIdSchema } from '../models/staff'
-import type { ApiStaffProfileSearchRequest } from '../models/staff-profile'
-import { nonBlankText } from './rules'
+import type {
+  ApiStaffProfileSearchRequest,
+  ApiStaffProfileUpdateRequest,
+} from '../models/staff-profile'
+import { atLeastOneProperty, nonBlankText } from './rules'
+import { staffCreateRequestSchema } from './staff.schema'
 
 /**
  * Validation of the search for staff profiles. The shape is checked against
@@ -16,3 +20,20 @@ export const staffProfileSearchRequestSchema = z.strictObject({
   specialty: nonBlankText.exactOptional(),
   city: nonBlankText.max(100).exactOptional(),
 }) satisfies z.ZodType<ApiStaffProfileSearchRequest>
+
+/**
+ * What a staff member writes about themselves: the properties of their
+ * entry in the ledger that describe them, under the rules of the ledger.
+ * A request that names another property of the entry is refused, like one
+ * that names none.
+ */
+export const staffProfileUpdateRequestSchema = staffCreateRequestSchema
+  .pick({
+    specialties: true,
+    bio: true,
+    imageUrl: true,
+    yearsOfExperience: true,
+    certifications: true,
+  })
+  .exactPartial()
+  .check(atLeastOneProperty) satisfies z.ZodType<ApiStaffProfileUpdateRequest>

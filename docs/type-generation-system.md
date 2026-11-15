@@ -73,7 +73,8 @@ which a staff member gets a login account: `get`, `create` and `delete`),
 the three of `StaffAccounts` (the account of a staff member, as the salon
 keeps it: `get`, `update` and `delete`),
 the two of `StaffProfile` (what customers
-are shown of a staff member: `list` and `get`), the
+are shown of a staff member: `list` and `get`), the two of
+`StaffOwnProfile` (a staff member's own profile: `get` and `update`), the
 authentication operations (those of
 `AuthCrud`, `SessionCrud` and `AdminAuthCrud`: login, refresh, logout, the
 current user, registration, email verification, password reset and change,

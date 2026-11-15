@@ -12,6 +12,7 @@ import { OTHER_STAFF_MEMBER_ID, STAFF_MEMBER_ID } from './staff-fixtures'
 import {
   apiStaffProfile,
   dbStaffProfile,
+  staffProfileRepositoryCalls as repositoryCalls,
   staffProfileDependencies,
 } from './staff-profile-fixtures'
 
@@ -22,21 +23,6 @@ const databaseDown = Result.error(
 /** The broken rules of a failed result, as `field:rule`; empty for a success. */
 const rulesOf = (result: Result<unknown, DomainError>): string[] =>
   result.type === 'error' ? brokenRules(result.error) : []
-
-/** The methods of the repository that were called, in the order of the calls. */
-const repositoryCalls = ({
-  staffProfileRepository,
-}: StaffProfileUseCaseDependencies): string[] =>
-  [
-    ...vi
-      .mocked(staffProfileRepository.findById)
-      .mock.invocationCallOrder.map((order) => ({ order, name: 'findById' })),
-    ...vi
-      .mocked(staffProfileRepository.list)
-      .mock.invocationCallOrder.map((order) => ({ order, name: 'list' })),
-  ]
-    .toSorted((a, b) => a.order - b.order)
-    .map(({ name }) => name)
 
 describe('ListStaffProfilesUseCase', () => {
   const list = (

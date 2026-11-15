@@ -539,6 +539,30 @@ describe('modelRules', () => {
       'updatedAt',
     ]
 
+    const hidden = [
+      'userId',
+      'firstName',
+      'lastName',
+      'firstNameKana',
+      'lastNameKana',
+      'email',
+      'phoneNumber',
+      'alternativePhone',
+      'staffCode',
+      'awards',
+      'hireDate',
+      'employmentType',
+      'baseSalary',
+      'commissionRate',
+      'maxConcurrentBookings',
+      'bufferTimeBefore',
+      'bufferTimeAfter',
+      'isActive',
+      'deletedAt',
+      'createdAt',
+      'updatedAt',
+    ]
+
     const rules = Object.fromEntries(
       modelRules
         .filter((modelRule) => modelRule.table === 'staff')
@@ -569,28 +593,22 @@ describe('modelRules', () => {
       },
       'Models.StaffProfileResponse': {
         kind: 'response',
+        omittedColumns: hidden,
+        embedded: undefined,
+        computed: undefined,
+      },
+      // The five properties that describe the staff member are the ones
+      // left: specialties, bio, imageUrl, yearsOfExperience, certifications.
+      'Models.StaffProfileUpdateRequest': {
+        kind: 'update',
         omittedColumns: [
-          'userId',
-          'firstName',
-          'lastName',
-          'firstNameKana',
-          'lastNameKana',
-          'email',
-          'phoneNumber',
-          'alternativePhone',
-          'staffCode',
-          'awards',
-          'hireDate',
-          'employmentType',
-          'baseSalary',
-          'commissionRate',
-          'maxConcurrentBookings',
-          'bufferTimeBefore',
-          'bufferTimeAfter',
-          'isActive',
-          'deletedAt',
-          'createdAt',
-          'updatedAt',
+          'id',
+          'salonId',
+          'displayName',
+          'level',
+          'position',
+          'canReceiveBookings',
+          ...hidden,
         ],
         embedded: undefined,
         computed: undefined,

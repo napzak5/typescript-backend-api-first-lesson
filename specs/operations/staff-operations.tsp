@@ -225,7 +225,7 @@ namespace BeautySalon.Operations {
     }
   }
 
-  @doc("顧客に見せるスタッフのプロフィールを返すAPI操作群です。ここに定義した操作はすべて実装済みで、指名するスタッフを選ぶ前の閲覧のために、認証なしで呼び出せます。対象は、在籍して勤務している(isActive が true)、削除されていないスタッフで、所属サロンが削除されていないものです。それ以外のスタッフは、存在しないスタッフと同じ扱いにします。本名、連絡先、雇用の情報は返しません。プロフィールの項目は、スタッフ台帳の操作で更新します。")
+  @doc("顧客に見せるスタッフのプロフィールを扱うAPI操作群です。ここに定義した操作はすべて実装済みです。一覧と1件の取得(StaffProfile)は、指名するスタッフを選ぶ前の閲覧のために、認証なしで呼び出せます。対象は、在籍して勤務している(isActive が true)、削除されていないスタッフで、所属サロンが削除されていないものです。それ以外のスタッフは、存在しないスタッフと同じ扱いにします。本名、連絡先、雇用の情報は返しません。プロフィールの項目は、スタッフ台帳の操作で更新します。スタッフ本人は、自分を紹介する項目を /me の操作(StaffOwnProfile)で更新できます。")
   @route("/api/v1/staff-profiles")
   @tag("Staff")
   namespace StaffProfileOperations {
@@ -254,6 +254,34 @@ namespace BeautySalon.Operations {
         | ProblemResponse<400>
         | ProblemResponse<404>
         | PublicErrors;
+    }
+
+    @doc("ログインしているスタッフが、顧客に見せる自分のプロフィールを扱うAPI操作群です。どのスタッフかは、アカウントで決まります(パスにIDはありません)。実行できるのは、サロンに届いている owner・manager・staff のアカウント(在籍して勤務している、削除されていないスタッフに紐づき、所属サロンが削除されていないもの)だけで、admin、顧客、サロンに届かないアカウントには403を返します。権限は最初に確認します。")
+    @route("/me")
+    interface StaffOwnProfile {
+      @doc("ログインしているスタッフのプロフィールを取得します。顧客に見せるのと同じ項目を返します。認証のあとでスタッフが在籍しなくなった、または削除された場合は404を返します。")
+      @summary("Get the signed-in staff member's profile")
+      @get
+      get():
+        | {
+            @statusCode statusCode: 200;
+            @body response: ApiResponse<StaffProfileResponse>;
+          }
+        | ProblemResponse<404>
+        | CommonErrors;
+
+      @doc("ログインしているスタッフのプロフィールのうち、指定した項目だけを更新します。書き換えられるのは、自己紹介、写真、得意分野、資格、経験年数です。顧客に見せる名前、技術レベル、役職、予約を受け付けるかどうかは、スタッフ台帳の操作で更新します(このリクエストに指定すると400を返します)。認証のあとでスタッフが在籍しなくなった、または削除された場合は404を返します。")
+      @summary("Update the signed-in staff member's profile")
+      @patch
+      update(@body request: StaffProfileUpdateRequest):
+        | {
+            @statusCode statusCode: 200;
+            @body response: ApiResponse<StaffProfileResponse>;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<404>
+        | RequestBodyErrors
+        | CommonErrors;
     }
   }
 }

@@ -10,3 +10,9 @@ export type ListStaffProfilesResponse = JsonBody<
 export type GetStaffProfileResponse = JsonBody<
   operations['StaffProfile_get']['responses'][200]['content']
 >
+export type GetOwnStaffProfileResponse = JsonBody<
+  operations['StaffOwnProfile_get']['responses'][200]['content']
+>
+export type UpdateOwnStaffProfileResponse = JsonBody<
+  operations['StaffOwnProfile_update']['responses'][200]['content']
+>

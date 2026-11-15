@@ -4,7 +4,7 @@
 
 スタッフ台帳は、サロンが雇用主として持つスタッフの記録です。1 人のスタッフが 1 行で、氏名と連絡先、雇用の情報（基本給、歩合率、雇用形態、入社日）、予約の受け方（同時に担当できる数、前後に確保する時間）を持ちます。
 
-スタッフの情報には入口が 2 つあります。管理者とサロンの `owner` は台帳（`/api/v1/salons/{salonId}/staff`）でスタッフのすべての項目を扱い、顧客を含む誰もが[プロフィール](#顧客に見せるプロフィール)（`/api/v1/staff-profiles`）で、顧客に見せる項目だけを読みます。
+スタッフの情報には入口が 3 つあります。管理者とサロンの `owner` は台帳（`/api/v1/salons/{salonId}/staff`）でスタッフのすべての項目を扱い、顧客を含む誰もが[プロフィール](#顧客に見せるプロフィール)（`/api/v1/staff-profiles`）で、顧客に見せる項目だけを読みます。スタッフ本人は、[自分のプロフィール](#スタッフ本人のプロフィール)（`/api/v1/staff-profiles/me`）で、そのうち自分を紹介する項目を直します。
 
 スタッフがいつ勤務するかは、台帳の行ではなく、スタッフごとの[勤務スケジュール](#勤務スケジュール)（`/api/v1/salons/{salonId}/staff/{id}/schedules`、テーブルは `staff_schedules`）が持ちます。シフトを組むサロンの `owner` と `manager`、管理者が読み書きし、スタッフ本人は自分のスケジュールを読みます。
 
@@ -18,10 +18,11 @@
 |---|---|
 | 台帳（`StaffCrud`）の一覧、登録、1 件の取得、更新、削除 | 実装済み |
 | 顧客に見せるプロフィール（`StaffProfile`）の一覧、1 件の取得 | 実装済み。サロンをまたぐ検索は、一覧の絞り込みで行う |
+| スタッフ本人のプロフィール（`StaffOwnProfile`）の取得、更新 | 実装済み |
 | 勤務スケジュール（`StaffSchedules`）の一覧、更新（全体の置き換え） | 実装済み |
 | スタッフのログインアカウント（`StaffInvitations` の招待の取得、作成、取り消しと、`AuthCrud` の招待の確認、受け入れ、参加） | 実装済み |
 | 紐づいたアカウント（`StaffAccounts` の取得、ロールの変更、紐づけの解除） | 実装済み |
-| スタッフ本人によるプロフィールの編集、スタッフ本人によるサロンからの離脱、顧客のアカウントをスタッフのアカウントにすること、複数のサロンに属するアカウント | 未実装。コントラクトにオペレーションがない |
+| スタッフ本人によるサロンからの離脱、スタッフ本人による連絡先の変更と勤務スケジュールの変更、顧客のアカウントをスタッフのアカウントにすること、複数のサロンに属するアカウント | 未実装。コントラクトにオペレーションがない |
 
 スタッフのコントラクトに定義したオペレーションは、すべて実装済みです。`staff_skills`（担当できるサービス）と `staff_performances`（実績）は、テーブルだけがあり、コントラクトにオペレーションがありません。
 
@@ -37,7 +38,7 @@
 
 - 台帳のすべてのオペレーションに認証が要ります。台帳は公開情報ではありません
 - **`manager` と `staff` には許可しません**（403）。理由は 2 つです。台帳が、雇用主だけが扱う情報（給与、歩合、個人の連絡先）を含むこと。無効化（`isActive` を false にする）と削除が、そのスタッフのアカウントからサロンへの権限を外すこと（[ログインアカウントへの影響](#ログインアカウントへの影響)）。`manager` に許すと、`manager` が `owner` をサロンから締め出せます
-- スタッフ本人も、自分のスタッフ情報を台帳から読むことはできません。読めるのは、誰にでも見せる[プロフィール](#顧客に見せるプロフィール)の項目だけです。本人が自分のプロフィールを直すオペレーションはなく、直すのは `owner` と `admin` です
+- スタッフ本人も、自分のスタッフ情報を台帳から読むことはできません。読めるのは、誰にでも見せる[プロフィール](#顧客に見せるプロフィール)の項目だけです。そのうち自分を紹介する 5 項目は、本人が[自分のプロフィール](#スタッフ本人のプロフィール)で直せます。ほかの項目を直すのは `owner` と `admin` です
 - 権限は、[サロンの下にあるルートの規則](./authentication.md#サロンの下にあるルートの権限)どおり、パスの `salonId` だけで判定します（`business-logic/staff/_shared/authorization.ts` の `mayKeepStaffLedger`）。ほかのサロンの `owner` は 403 です
 - サロンが存在しない、または削除済みなら 404。パスのサロンに属さないスタッフと、削除済みのスタッフは 404 で、存在しない ID と区別しません
 - ID（パスの `salonId` と `id`、クエリの `cursor`）は、英字を大文字で書いても同じ ID です。レスポンスの `data` と `meta` の ID は小文字です
@@ -76,7 +77,7 @@
 認証は、リクエストのたびに操作者の範囲を作り直します。`owner`、`manager`、`staff` のアカウントがサロンの範囲を持つのは、`users.staffId` が指すスタッフが有効（`isActive`）で、削除されていないときだけです（[認可](./authentication.md#認可)）。
 
 - スタッフを無効化または削除すると、そのスタッフに紐づくアカウントは、**次のリクエストから**サロンへの権限を失います（範囲 `none`）。発行済みのアクセストークンでも同じです。そのスタッフは、顧客に見せる[プロフィール](#見せるスタッフ)からも外れます
-- アカウントは残り、ログインもできます。サロンの権限が要る操作と顧客台帳には届きません（認証なしで読める情報は、誰でも読めます）
+- アカウントは残り、ログインもできます。サロンの権限が要る操作、顧客台帳、[自分のプロフィール](#スタッフ本人のプロフィール)には届きません（認証なしで読める情報は、誰でも読めます）
 - `isActive` を true に戻すと、権限も戻ります。削除は戻せません（復元のオペレーションはない）
 - アカウントに紐づいていないスタッフ（`userId` が null）には、この影響はありません
 
@@ -152,7 +153,7 @@
 
 - どちらも公開です。アクセストークンは要らず、送っても確認しません。存在しないセッションのトークンや、期限の切れたトークンを付けたリクエストにも、同じ応答を返します
 - 台帳を読めない `manager` と `staff` も、同僚と自分のプロフィールは読めます
-- 読むだけです。登録、更新、削除は台帳で行い、台帳の変更は、次のリクエストからプロフィールに出ます
+- この 2 つは読むだけです。登録と削除、サロンが決める項目の更新は、台帳で行います。自分を紹介する項目は、スタッフ本人も[自分のプロフィール](#スタッフ本人のプロフィール)で直せます。どちらの変更も、次のリクエストからプロフィールに出ます
 - ルートはサロンの下に置いていません。顧客は、サロンをまたいでスタッフを探すからです（専門分野、市区町村）。1 つのサロンのスタッフは、一覧を `salonId` で絞り込んで読みます。同じ結果を返すサロンの下のルート（`/api/v1/salons/{salonId}/staff-profiles`）はありません
 
 ### 見せる項目
@@ -204,6 +205,50 @@
 2. スタッフの存在（404。取得）、`cursor` が指すスタッフの存在（400。一覧）
 
 権限の確認はありません。
+
+## スタッフ本人のプロフィール
+
+スタッフ本人が、顧客に見せるプロフィールのうち、自分を紹介する項目を読み、直します。台帳と同じ `staff` の行で、返すのは、顧客に見せるのと同じ 11 項目（`StaffProfileResponse`）です。
+
+| オペレーション（`StaffOwnProfile`） | ルート | 許可 |
+|---|---|---|
+| 取得 | `GET /api/v1/staff-profiles/me` | サロンに届く `owner`、`manager`、`staff`（自分のプロフィールだけ） |
+| 更新 | `PATCH /api/v1/staff-profiles/me` | 同上 |
+
+- どのスタッフかは、アカウントが決めます（`users.staffId`）。リクエストはスタッフを指定しないので、ほかのスタッフには届きません。`owner` も、ここで直せるのは自分のプロフィールだけです（ほかのスタッフは台帳で直します）
+- 取得が返すのは、顧客に見せるプロフィールの取得（`GET /api/v1/staff-profiles/{id}`）と同じ `data` です。`links` は `self`（`/api/v1/staff-profiles/me`）と `profile`（顧客が読むパス）で、画面は `profile` で、顧客からの見え方を確かめられます
+- 氏名、連絡先、雇用の情報は、ここでも返しません。本人にも、台帳の項目は見せません（台帳は雇用主の記録で、本人に見せる範囲を決めていない）
+- 作成と削除はありません。スタッフを登録、削除するのは台帳です。`/api/v1/staff-profiles/me` への `PUT`、`POST`、`DELETE` は 404 です。プロフィールを ID で直すオペレーション（`PATCH /api/v1/staff-profiles/{id}`）もありません
+
+### 本人が書ける項目
+
+| | 項目 |
+|---|---|
+| 本人が書ける（`StaffProfileUpdateRequest` の 5 項目） | `specialties`、`bio`、`imageUrl`、`yearsOfExperience`、`certifications` |
+| サロンが決める（台帳で書く） | `displayName`、`level`、`position`、`canReceiveBookings` |
+
+- **顧客に見せる名前（`displayName`）は、本人が書けません**。本名を見せるかどうかを、サロンが `displayName` で決めているからです（[見せる項目](#見せる項目)）。`level`（スタイリストのランク）と `position`（役職）は、サロンが与えるもので、`canReceiveBookings` は、予約の受け方の設定です
+- 送った項目だけを変えます。5 項目はどれも任意で、1 つもない本文は 400 です
+- 項目の規則は台帳と同じです（[項目の規則](#項目の規則)）。`bio`、`imageUrl`、`yearsOfExperience` は、null で消せます。`specialties` と `certifications` は、空配列で空にします（null は 400）
+- 定義のない項目は 400（`unrecognized_keys`）です。サロンが決める 4 項目と、台帳のほかの項目（`isActive`、`email` など）も、ここでは定義のない項目です。`owner` が自分の `displayName` を変えるのも、台帳です
+- 変更は、次のリクエストから、顧客に見せるプロフィールと台帳に出ます。台帳の `updatedAt` も進みます。サロンの承認を待つ仕組みはありません。サロンは、台帳で同じ項目を書き直せます
+- `imageUrl` は URL を保存するだけです。画像のアップロードは、この単位に含みません
+
+### 本人のプロフィールの権限
+
+- 許可するのは、操作者の範囲が `salon` のアカウントです（[認可](./authentication.md#認可)）。ロールが `owner`、`manager`、`staff` で、`users.staffId` が指すスタッフが有効で削除されておらず、そのサロンも削除されていないアカウントです。この条件は、顧客に[見せるスタッフ](#見せるスタッフ)の条件と同じなので、見せていないスタッフのプロフィールを、本人が直すことはありません
+- `admin`、顧客、スタッフに紐づいていないアカウント、スタッフが無効化または削除されたアカウント、サロンが削除されたアカウントは 403 です。本文が不正でも 403 です（`business-logic/staff-profile/_shared/own-profile.ts` の `ownProfileOf`）
+- 無効化されたスタッフは、有効に戻るまで、自分のプロフィールを読めず、直せません。紐づけを解除されたアカウントも同じです。プロフィールは `staff` の行に残り、サロンが台帳で直せます
+- アカウントが別のスタッフに紐づけば（[参加](#参加)）、自分のプロフィールは、そのスタッフのものになります
+
+### 確認の順序（本人のプロフィール）
+
+1. アクセストークン（401）
+2. 権限（403）
+3. リクエストの本文（400。更新）
+4. スタッフの存在（404、`Staff member <id> was not found`）
+
+4 は、認証のあとでスタッフが見せるスタッフでなくなったときだけ起きます（同じ瞬間の無効化、削除）。次のリクエストからは 403 です。
 
 ## 勤務スケジュール
 
@@ -540,7 +585,9 @@
 | 同じスタッフの削除が同時に届く | 1 件だけが 204 で、ほかは 404 |
 | 同じスタッフの更新と削除が同時に届く | 削除は成功する。更新は、先に処理されれば 200、あとなら 404 |
 | スタッフの削除と、そのメールアドレスでの登録が同時に届く | 登録は、削除が先に済んでいれば成功し、そうでなければ 409。同じサロンの削除されていないスタッフが、同じメールアドレスを 2 人持つことはない |
-| 同じスタッフの別々の項目を同時に更新する | どちらの変更も残る |
+| 同じスタッフの別々の項目を同時に更新する | どちらの変更も残る。本人（自分のプロフィール）とサロン（台帳）の更新でも同じ |
+| 本人によるプロフィールの更新と、そのスタッフの無効化、削除が同時に届く | 無効化、削除は成功する。更新は、先に処理されれば 200。あとなら、何も書き込まずに、403（届いた時点で、もう無効か削除済み）か 404（認証のあとで、無効化か削除が済んだ） |
+| 本人によるプロフィールの更新と、サロンの削除が同時に届く | 削除は成功する。更新は、削除が済む前に届いていれば 200 で、書き込まれる。あとなら 403 |
 | 同じスタッフのスケジュールの更新が同時に届く | どれも 200 で、それぞれのレスポンスは、そのリクエストが保存した行。残るのは、最後に処理された 1 件の内容の全体で、2 つのリクエストの行が混ざることはない |
 | スケジュールの更新の最中に、同じスケジュールを読む | 更新の前か後の、どちらかの全体を返す |
 | スケジュールの更新と、そのスタッフの削除が同時に届く | 削除は成功する。更新は、先に処理されれば 200、あとなら 404 で、何も書き込まない。削除の処理中に届いた更新は、スタッフの行のロックで削除の完了を待ってから、404 を返す |
@@ -559,6 +606,8 @@
 | 2 人の `owner` が、同時に互いを無効化する | どちらも成功することがある（権限は、リクエストを受け付けた時点で判定する）。サロンに有効な `owner` がいなくなるので、管理者が `isActive` を戻すか、別のスタッフを `owner` として招待する |
 
 一意性は DB の一意インデックスと一意制約が決めます。更新と削除は、「削除されていないこと」を WHERE に含めた 1 つの文で行います。
+
+本人によるプロフィールの更新も、[見せるスタッフ](#見せるスタッフ)の条件を WHERE に含めた 1 つの文です（サロンの条件は、`UPDATE … FROM salons` で同じ文に入れる）。ロックを取る文はありません。同じ行を書いているトランザクション（台帳の更新、無効化、削除）があれば、その完了を待ち、完了したあとの行で条件を確かめ直します（PostgreSQL の Read Committed の動作）。サロンの行は書かないので、サロンの削除は待ちません。
 
 スケジュールの更新は、1 つのトランザクションで、スタッフの行をロックしてから（`SELECT … FOR UPDATE`）、いまの行をすべて消して、新しい行を入れます。同時に届いた更新は、ロックの順に 1 件ずつ処理されます。楽観ロックはなく、あとから処理されたリクエストの内容が残ります（ほかの更新と同じ）。
 
@@ -622,15 +671,15 @@
 |---|---|
 | コントラクト | `specs/models/staff.tsp`、`specs/operations/staff-operations.tsp` |
 | ドメイン | `backend/packages/domain/src/models/staff.ts`、`schemas/staff.schema.ts`、`mappers/write/staff.mapper.ts`、`mappers/read/staff.mapper.ts`、`repositories/staff.repository.ts`、`business-logic/staff/`（権限と「自分自身のスタッフ情報」の判定は `_shared/authorization.ts`、409 の文言は `_shared/refusals.ts`） |
-| ドメイン（プロフィール） | `backend/packages/domain/src/models/staff-profile.ts`、`schemas/staff-profile.schema.ts`、`mappers/read/staff-profile.mapper.ts`、`repositories/staff-profile.repository.ts`、`business-logic/staff-profile/` |
+| ドメイン（プロフィール） | `backend/packages/domain/src/models/staff-profile.ts`、`schemas/staff-profile.schema.ts`（本人が書ける項目は、台帳のスキーマから選ぶ）、`mappers/read/staff-profile.mapper.ts`、`repositories/staff-profile.repository.ts`、`business-logic/staff-profile/`（本人のプロフィールは `*-own-staff-profile.usecase.ts`。どのスタッフかは `_shared/own-profile.ts`） |
 | ドメイン（スケジュール） | `backend/packages/domain/src/models/staff-schedule.ts`、`schemas/staff-schedule.schema.ts`、`mappers/write/staff-schedule.mapper.ts`、`mappers/read/staff-schedule.mapper.ts`、`repositories/staff-schedule.repository.ts`、`business-logic/staff-schedule/`（権限は `_shared/authorization.ts`、ある日付に適用される行は `_shared/applicable-schedule.ts`） |
 | ドメイン（招待） | `backend/packages/domain/src/models/staff-invitation.ts`、`schemas/staff-invitation.schema.ts`、`schemas/auth.schema.ts`（確認と受け入れのリクエスト）、`mappers/read/staff-invitation.mapper.ts`、`repositories/staff-invitation.repository.ts`、`business-logic/staff-invitation/`（権限は `_shared/authorization.ts`、409 と 400 の文言は `_shared/refusals.ts`）、`business-logic/auth/_shared/mailed-token.ts`（有効期間と、招待し直せる間隔）、`business-logic/auth/_shared/mails.ts`（メールの文面）、`business-logic/auth/_shared/actor.ts`（`isWithoutSalon`。参加できるアカウントの条件） |
 | ドメイン（アカウント） | `backend/packages/domain/src/models/staff-account.ts`、`schemas/staff-account.schema.ts`、`mappers/read/staff-account.mapper.ts`、`repositories/staff-account.repository.ts`、`business-logic/staff-account/`（権限は `_shared/authorization.ts`、409 と 404 の文言は `_shared/refusals.ts`） |
 | ドメイン（共通） | `backend/packages/domain/src/schemas/rules.ts`（`lowerCaseEmail`、`phoneNumber`、`noRepeatedEntries`、`timeOfDay`、`dayOfWeekOf` など）、`business-logic/_shared/existing-salon.ts`（サロンの存在の確認） |
 | インフラ | `backend/packages/infrastructure/src/repositories/staff.repository.impl.ts`、`repositories/account.ts`（操作者の範囲。スタッフが有効で削除されていないことを確認する） |
-| インフラ（プロフィール） | `backend/packages/infrastructure/src/repositories/staff-profile.repository.impl.ts`（見せるカラムと、見せるスタッフの条件） |
+| インフラ（プロフィール） | `backend/packages/infrastructure/src/repositories/staff-profile.repository.impl.ts`（見せるカラムと、見せるスタッフの条件。本人による更新も、同じ条件で書く） |
 | インフラ（スケジュール） | `backend/packages/infrastructure/src/repositories/staff-schedule.repository.impl.ts`（行の並びと、置き換えのトランザクション） |
 | インフラ（招待） | `backend/packages/infrastructure/src/repositories/staff-invitation.repository.impl.ts`（使える招待の条件、スタッフの行のロック、アカウントを作る文、参加のロックと書き込み） |
 | インフラ（アカウント） | `backend/packages/infrastructure/src/repositories/staff-account.repository.impl.ts`（見せるカラムと、ロールの変更、紐づけの解除のトランザクション）、`repositories/staff-member.ts`（サロンのスタッフを指す条件。スケジュール、招待、アカウントのリポジトリが使う） |
-| API | `backend/packages/api/src/routes/staff/`、`backend/packages/api/src/routes/staff-profile/`、`backend/packages/api/src/routes/staff-schedule/`、`backend/packages/api/src/routes/staff-invitation/`（サロンの側のルーターと、招待された側のルーター）、`backend/packages/api/src/routes/staff-account/` |
-| DB | `backend/packages/database/sql/migrations/202611151800_staff_columns.sql`、`202611152100_staff_schedules_rules.sql`、`202611152300_staff_invitations.sql`、`202611152330_users_staff_needs_salon_role.sql`、`backend/packages/database/src/scripts/api-consistency-rules.ts`（`Models.StaffProfileResponse`、`Models.StaffSchedule`、`Models.StaffInvitationResponse`、`Models.StaffAccountResponse` が出さないカラムの一覧） |
+| API | `backend/packages/api/src/routes/staff/`、`backend/packages/api/src/routes/staff-profile/`（本人のプロフィールは `*-own-staff-profile.handler.ts`）、`backend/packages/api/src/routes/staff-schedule/`、`backend/packages/api/src/routes/staff-invitation/`（サロンの側のルーターと、招待された側のルーター）、`backend/packages/api/src/routes/staff-account/` |
+| DB | `backend/packages/database/sql/migrations/202611151800_staff_columns.sql`、`202611152100_staff_schedules_rules.sql`、`202611152300_staff_invitations.sql`、`202611152330_users_staff_needs_salon_role.sql`、`backend/packages/database/src/scripts/api-consistency-rules.ts`（`Models.StaffProfileResponse`、`Models.StaffSchedule`、`Models.StaffInvitationResponse`、`Models.StaffAccountResponse` が出さないカラムと、`Models.StaffProfileUpdateRequest` が書かないカラムの一覧） |
