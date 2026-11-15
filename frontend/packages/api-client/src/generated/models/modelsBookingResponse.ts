@@ -19,7 +19,7 @@ import type { ModelsStaffId } from './modelsStaffId';
 export interface ModelsBookingResponse {
   /** 予約を一意に識別するID */
   id: ModelsBookingId;
-  /** 予約番号。システムが採番し、すべての予約の間で一意 */
+  /** 予約番号。システムが BK-XXXX-XXXX の形式(X は数字か、I・L・O・U を除く英大文字)で採番し、すべての予約の間で一意 */
   bookingNumber: string;
   /** 予約が紐づくサロンのID */
   salonId: ModelsSalonId;
@@ -39,9 +39,9 @@ export interface ModelsBookingResponse {
   status: ModelsBookingStatusType;
   /** 小計。施術明細の料金(price)の合計 */
   subtotal: number;
-  /** 割引額の合計。施術明細の割引額と予約単位の割引を含む */
+  /** 割引額の合計。施術明細の割引額(discountAmount)の合計 */
   discountAmount: number;
-  /** 消費税額 */
+  /** 料金に加える消費税額。税抜価格のサービス(taxIncluded が false)の施術明細の割引後料金の合計に、サロンの税率を掛け、1円未満を切り捨てる。税込価格のサービスの消費税は料金に含まれており、ここには入らない */
   taxAmount: number;
   /** 請求金額 (subtotal − discountAmount + taxAmount) */
   totalAmount: number;

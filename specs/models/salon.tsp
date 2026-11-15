@@ -77,7 +77,7 @@ namespace BeautySalon.Models {
     @doc("蓄積されたレビュー件数")
     reviewCount: int32;
 
-    @doc("営業時間の基準となるIANAタイムゾーンID")
+    @doc("営業時間と、予約の来店日の基準となるIANAタイムゾーンID(例: Asia/Tokyo)")
     timezone: string;
 
     @doc("料金表示に使用する通貨コード(ISO 4217)")
@@ -180,7 +180,7 @@ namespace BeautySalon.Models {
     @doc("曜日別の通常営業時間。未設定の場合はnull")
     businessHours: BusinessHours[] | null;
 
-    @doc("営業時間の基準となるIANAタイムゾーンID")
+    @doc("営業時間と、予約の来店日の基準となるIANAタイムゾーンID(例: Asia/Tokyo)。タイムゾーンの名前として認識できない値と、+09:00 のようなオフセットは400")
     @maxLength(50)
     timezone: string;
 
@@ -284,7 +284,7 @@ namespace BeautySalon.Models {
     @doc("曜日別の通常営業時間。nullでクリア")
     businessHours?: BusinessHours[] | null;
 
-    @doc("営業時間の基準となるIANAタイムゾーンID")
+    @doc("営業時間と、予約の来店日の基準となるIANAタイムゾーンID(例: Asia/Tokyo)。タイムゾーンの名前として認識できない値と、+09:00 のようなオフセットは400")
     @maxLength(50)
     timezone?: string;
 

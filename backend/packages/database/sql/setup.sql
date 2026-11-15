@@ -43,13 +43,20 @@ CREATE TABLE "booking_services" (
 	"price" integer NOT NULL,
 	"discountAmount" integer DEFAULT 0 NOT NULL,
 	"finalPrice" integer NOT NULL,
-	"selectedOptions" jsonb DEFAULT '[]'::jsonb,
+	"selectedOptions" jsonb,
 	"isCompleted" boolean DEFAULT false NOT NULL,
 	"completedAt" timestamp with time zone,
 	"notes" text,
 	"sortOrder" integer DEFAULT 0 NOT NULL,
 	"createdAt" timestamp with time zone DEFAULT now() NOT NULL,
-	"updatedAt" timestamp with time zone DEFAULT now() NOT NULL
+	"updatedAt" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "booking_services_order_unique" UNIQUE("bookingId","sortOrder"),
+	CONSTRAINT "booking_services_completed_has_time" CHECK ("isCompleted" = ("completedAt" IS NOT NULL)),
+	CONSTRAINT "booking_services_discount_within_price" CHECK (("discountAmount" >= 0) AND ("discountAmount" <= price)),
+	CONSTRAINT "booking_services_duration_is_the_span" CHECK (((duration * 60))::numeric = EXTRACT(epoch FROM ("endTime" - "startTime"))),
+	CONSTRAINT "booking_services_end_after_start" CHECK ("startTime" < "endTime"),
+	CONSTRAINT "booking_services_final_price_is_the_difference" CHECK ("finalPrice" = (price - "discountAmount")),
+	CONSTRAINT "booking_services_sort_order_not_negative" CHECK ("sortOrder" >= 0)
 );
 
 CREATE TABLE "booking_status_histories" (
@@ -78,9 +85,9 @@ CREATE TABLE "bookings" (
 	"discountAmount" integer DEFAULT 0 NOT NULL,
 	"taxAmount" integer DEFAULT 0 NOT NULL,
 	"totalAmount" integer NOT NULL,
-	"depositAmount" integer DEFAULT 0,
-	"pointsUsed" integer DEFAULT 0,
-	"pointsEarned" integer DEFAULT 0,
+	"depositAmount" integer,
+	"pointsUsed" integer,
+	"pointsEarned" integer,
 	"customerRequest" text,
 	"internalNotes" text,
 	"reminderSent" boolean DEFAULT false NOT NULL,
@@ -88,7 +95,7 @@ CREATE TABLE "bookings" (
 	"cancelledAt" timestamp with time zone,
 	"cancelledBy" uuid,
 	"cancellationReason" text,
-	"cancellationFee" integer DEFAULT 0,
+	"cancellationFee" integer,
 	"completedAt" timestamp with time zone,
 	"actualStartTime" timestamp with time zone,
 	"actualEndTime" timestamp with time zone,
@@ -97,7 +104,12 @@ CREATE TABLE "bookings" (
 	"userAgent" text,
 	"createdAt" timestamp with time zone DEFAULT now() NOT NULL,
 	"updatedAt" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "bookings_booking_number_unique" UNIQUE("bookingNumber")
+	CONSTRAINT "bookings_booking_number_unique" UNIQUE("bookingNumber"),
+	CONSTRAINT "bookings_amounts_not_negative" CHECK ((subtotal >= 0) AND ("discountAmount" >= 0) AND ("taxAmount" >= 0) AND ("totalAmount" >= 0) AND (("depositAmount" IS NULL) OR ("depositAmount" >= 0)) AND (("pointsUsed" IS NULL) OR ("pointsUsed" >= 0)) AND (("pointsEarned" IS NULL) OR ("pointsEarned" >= 0)) AND (("cancellationFee" IS NULL) OR ("cancellationFee" >= 0))),
+	CONSTRAINT "bookings_discount_within_subtotal" CHECK ("discountAmount" <= subtotal),
+	CONSTRAINT "bookings_duration_is_the_span" CHECK (((duration * 60))::numeric = EXTRACT(epoch FROM ("endTime" - "startTime"))),
+	CONSTRAINT "bookings_end_after_start" CHECK ("startTime" < "endTime"),
+	CONSTRAINT "bookings_total_is_the_sum" CHECK ("totalAmount" = ((subtotal - "discountAmount") + "taxAmount"))
 );
 
 CREATE TABLE "customer_allergies" (
@@ -837,13 +849,13 @@ ALTER TABLE "users" ADD CONSTRAINT "users_customer_id_fk" FOREIGN KEY ("customer
 ALTER TABLE "users" ADD CONSTRAINT "users_staff_id_fk" FOREIGN KEY ("staffId") REFERENCES "public"."staff"("id") ON DELETE set null ON UPDATE no action;
 CREATE INDEX "idx_booking_services_booking_id" ON "booking_services" USING btree ("bookingId" uuid_ops);
 CREATE INDEX "idx_booking_services_service_id" ON "booking_services" USING btree ("serviceId" uuid_ops);
-CREATE INDEX "idx_booking_services_staff_id" ON "booking_services" USING btree ("staffId" uuid_ops);
+CREATE INDEX "idx_booking_services_staff_start" ON "booking_services" USING btree ("staffId" uuid_ops,"startTime" timestamptz_ops);
 CREATE INDEX "idx_booking_status_histories_booking_id" ON "booking_status_histories" USING btree ("bookingId" uuid_ops);
 CREATE INDEX "idx_booking_status_histories_created_at" ON "booking_status_histories" USING btree ("createdAt" timestamptz_ops);
 CREATE INDEX "idx_bookings_booking_date" ON "bookings" USING btree ("bookingDate" date_ops);
 CREATE INDEX "idx_bookings_booking_number" ON "bookings" USING btree ("bookingNumber" text_ops);
 CREATE INDEX "idx_bookings_customer_id" ON "bookings" USING btree ("customerId" uuid_ops);
-CREATE INDEX "idx_bookings_salon_id" ON "bookings" USING btree ("salonId" uuid_ops);
+CREATE INDEX "idx_bookings_salon_start" ON "bookings" USING btree ("salonId" uuid_ops,"startTime" timestamptz_ops,"id" uuid_ops);
 CREATE INDEX "idx_bookings_staff_id" ON "bookings" USING btree ("staffId" uuid_ops);
 CREATE INDEX "idx_bookings_start_time" ON "bookings" USING btree ("startTime" timestamptz_ops);
 CREATE INDEX "idx_bookings_status" ON "bookings" USING btree ("status" enum_ops);

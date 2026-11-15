@@ -2,12 +2,6 @@ import { eq } from 'drizzle-orm'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import * as schema from '../../schema'
 
-export interface StaffSeedResult {
-  staffIds: string[]
-  seniorStaffIds: string[]
-  juniorStaffIds: string[]
-}
-
 export async function seedStaff(
   db: PostgresJsDatabase<typeof schema>,
   salonIds: string[],
@@ -16,7 +10,7 @@ export async function seedStaff(
     ownerUserId: string
     managerUserId: string
   },
-): Promise<StaffSeedResult> {
+): Promise<void> {
   const salonId1 = salonIds[0]
   const salonId2 = salonIds[1]
 
@@ -239,13 +233,4 @@ export async function seedStaff(
   }
 
   await db.insert(schema.staffSchedules).values(schedules)
-
-  const seniorStaffIds = staff.slice(0, 2).map((s) => s.id)
-  const juniorStaffIds = staff.slice(3).map((s) => s.id)
-
-  return {
-    staffIds: staff.map((s) => s.id),
-    seniorStaffIds,
-    juniorStaffIds,
-  }
 }

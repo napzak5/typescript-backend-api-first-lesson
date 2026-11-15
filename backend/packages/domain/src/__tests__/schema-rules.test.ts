@@ -1,8 +1,10 @@
+import { format, isValid } from 'date-fns'
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
 import {
   atLeastOneProperty,
   dayOfWeekOf,
+  inTimeZone,
   MAX_INTEGER,
   nonBlankText,
   noRepeatedEntries,
@@ -10,6 +12,7 @@ import {
   phoneNumber,
   timeOfDay,
   timeSlot,
+  timeZoneName,
   withSeconds,
 } from '../schemas/rules'
 import { parseWith, uuidSchema } from '../shared'
@@ -206,6 +209,91 @@ describe('phoneNumber', () => {
     ['null', null, [':invalid_type']],
   ])('refuses %s', (_case, number, expected) => {
     expect(rulesBrokenBy(phoneNumber, number)).toEqual(expected)
+  })
+})
+
+describe('inTimeZone', () => {
+  const localTime = (moment: string, timeZone: string): string =>
+    format(inTimeZone(new Date(moment), timeZone), 'yyyy-MM-dd HH:mm')
+
+  it.each([
+    ['Tokyo', '2026-11-20T15:00:00Z', 'Asia/Tokyo', '2026-11-21 00:00'],
+    ['Tokyo', '2026-11-20T14:59:00Z', 'Asia/Tokyo', '2026-11-20 23:59'],
+    ['UTC', '2026-11-20T15:00:00Z', 'UTC', '2026-11-20 15:00'],
+    [
+      'New York in winter',
+      '2026-11-20T04:59:00Z',
+      'America/New_York',
+      '2026-11-19 23:59',
+    ],
+    [
+      'New York in summer',
+      '2026-07-01T04:00:00Z',
+      'America/New_York',
+      '2026-07-01 00:00',
+    ],
+    ['Kathmandu', '2026-11-20T18:15:00Z', 'Asia/Kathmandu', '2026-11-21 00:00'],
+  ])(
+    'tells the date and the time as the clocks show them in %s',
+    (_case, moment, timeZone, expected) => {
+      expect(localTime(moment, timeZone)).toBe(expected)
+    },
+  )
+
+  it('is the same moment as the one it was given', () => {
+    const moment = new Date('2026-11-20T15:00:00.000Z')
+
+    expect(inTimeZone(moment, 'Asia/Tokyo').getTime()).toBe(moment.getTime())
+  })
+
+  it.each(['Mars/Olympus', '', ' ', 'Asia/Tokyo '])(
+    'is no date in a time zone that is not known: "%s"',
+    (timeZone) => {
+      expect(isValid(inTimeZone(new Date(0), timeZone))).toBe(false)
+    },
+  )
+})
+
+describe('timeZoneName', () => {
+  it.each([
+    'Asia/Tokyo',
+    'America/New_York',
+    'America/Argentina/Buenos_Aires',
+    'Europe/London',
+    'UTC',
+    'Etc/GMT+9',
+    // A name that tzdata keeps as a link to Asia/Kolkata.
+    'Asia/Calcutta',
+  ])('accepts %s and returns it unchanged', (zone) => {
+    expect(parseWith(timeZoneName, zone, 'Invalid')).toEqual({
+      type: 'success',
+      data: zone,
+    })
+  })
+
+  it.each([
+    ['a place that has no time zone of its own', 'Mars/Olympus'],
+    ['a city without its region', 'Tokyo'],
+    ['an offset', '+09:00'],
+    ['an offset without a sign', '09:00'],
+    ['a number', '9'],
+    ['an empty text', ''],
+    ['a blank text', ' '],
+    ['a name with a space after it', 'Asia/Tokyo '],
+    ['a name with a space before it', ' Asia/Tokyo'],
+  ])('refuses %s', (_case, zone) => {
+    expect(rulesBrokenBy(timeZoneName, zone)).toEqual([':custom'])
+  })
+
+  it('refuses what is longer than the column', () => {
+    expect(rulesBrokenBy(timeZoneName, 'A'.repeat(51))).toContain(':too_big')
+  })
+
+  it.each([
+    ['null', null],
+    ['a number', 9],
+  ])('refuses %s', (_case, zone) => {
+    expect(rulesBrokenBy(timeZoneName, zone)).toEqual([':invalid_type'])
   })
 })
 

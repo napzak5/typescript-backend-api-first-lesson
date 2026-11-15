@@ -122,6 +122,17 @@ describe('salonCreateRequestSchema', () => {
       { currency: 'yen' },
       ['currency:invalid_format'],
     ],
+    [
+      'a time zone that is not known',
+      { timezone: 'Mars/Olympus' },
+      ['timezone:custom'],
+    ],
+    [
+      'an offset for the time zone',
+      { timezone: '+09:00' },
+      ['timezone:custom'],
+    ],
+    ['an empty time zone', { timezone: '' }, ['timezone:custom']],
     ['a tax rate above 100', { taxRate: 100.01 }, ['taxRate:too_big']],
     [
       'a tax rate with three decimals',
@@ -364,6 +375,15 @@ describe('storedBusinessHoursSchema', () => {
 })
 
 describe('salonUpdateRequestSchema', () => {
+  it.each(['Asia/Tokyo', 'America/New_York', 'UTC'])(
+    'accepts the time zone %s',
+    (timezone) => {
+      expect(
+        parseWith(salonUpdateRequestSchema, { timezone }, 'Invalid'),
+      ).toEqual({ type: 'success', data: { timezone } })
+    },
+  )
+
   it('accepts any subset of the properties', () => {
     const result = parseWith(
       salonUpdateRequestSchema,
@@ -384,6 +404,11 @@ describe('salonUpdateRequestSchema', () => {
       'a value that breaks the rule of its property',
       { email: 'nope' },
       ['email:invalid_format'],
+    ],
+    [
+      'a time zone that is not known',
+      { timezone: 'Tokyo' },
+      ['timezone:custom'],
     ],
     [
       'a property the client may not set',

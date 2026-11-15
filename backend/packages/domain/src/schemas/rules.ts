@@ -1,3 +1,4 @@
+import { TZDate } from '@date-fns/tz'
 import { format, isValid, parseISO } from 'date-fns'
 import { z } from 'zod'
 
@@ -60,6 +61,26 @@ export const dayOfWeekOf = (date: string): string | null => {
   const parsed = parseISO(date)
   return isValid(parsed) ? format(parsed, 'EEEE').toLowerCase() : null
 }
+
+/**
+ * The local time in a time zone; an invalid date when the runtime does not
+ * know the zone.
+ */
+export const inTimeZone = (moment: Date, timeZone: string): Date =>
+  new TZDate(moment, timeZone)
+
+/**
+ * A time zone by the name the runtime knows it by, which the IANA names
+ * such as `Asia/Tokyo` are. An offset such as `+09:00` is not a name: it
+ * says what the clocks show now and not what they show in another season.
+ */
+export const timeZoneName = z
+  .string()
+  .max(50)
+  .refine(
+    (zone) => /^[A-Za-z]/.test(zone) && isValid(inTimeZone(new Date(0), zone)),
+    'Must be the name of a time zone, such as Asia/Tokyo',
+  )
 
 /** The largest value of an `integer` column. */
 export const MAX_INTEGER = 2_147_483_647

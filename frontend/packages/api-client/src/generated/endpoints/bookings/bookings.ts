@@ -127,7 +127,7 @@ export const getBookingCrudListUrl = (params?: BookingCrudListParams,) => {
 }
 
 /**
- * サロン・顧客・スタッフ・ステータス・来店日の条件で予約を一覧取得し、受付状況を俯瞰します。
+ * サロン・顧客・スタッフ・ステータス・来店日の条件で予約を一覧取得し、受付状況を俯瞰します。開始日時の早い順に並びます。サロンのスタッフには所属サロンの予約だけを返し、salonIdにほかのサロンを指定した場合は403を返します。cursorが、操作者に見える予約を指していない場合は400を返します。
  * @summary List bookings
  */
 export const bookingCrudList = async (params?: BookingCrudListParams, options?: RequestInit): Promise<bookingCrudListResponse> => {
@@ -175,7 +175,7 @@ export type BookingCrudListQueryError = ModelsProblemDetails
 
 
 /**
- * サロン・顧客・スタッフ・ステータス・来店日の条件で予約を一覧取得し、受付状況を俯瞰します。
+ * サロン・顧客・スタッフ・ステータス・来店日の条件で予約を一覧取得し、受付状況を俯瞰します。開始日時の早い順に並びます。サロンのスタッフには所属サロンの予約だけを返し、salonIdにほかのサロンを指定した場合は403を返します。cursorが、操作者に見える予約を指していない場合は400を返します。
  * @summary List bookings
  */
 export function useBookingCrudList<TData = Awaited<ReturnType<typeof bookingCrudList>>, TError = ModelsProblemDetails>(
@@ -189,7 +189,7 @@ export function useBookingCrudList<TData = Awaited<ReturnType<typeof bookingCrud
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * サロン・顧客・スタッフ・ステータス・来店日の条件で予約を一覧取得し、受付状況を俯瞰します。
+ * サロン・顧客・スタッフ・ステータス・来店日の条件で予約を一覧取得し、受付状況を俯瞰します。開始日時の早い順に並びます。サロンのスタッフには所属サロンの予約だけを返し、salonIdにほかのサロンを指定した場合は403を返します。cursorが、操作者に見える予約を指していない場合は400を返します。
  * @summary List bookings
  */
 export function useBookingCrudList<TData = Awaited<ReturnType<typeof bookingCrudList>>, TError = ModelsProblemDetails>(
@@ -203,7 +203,7 @@ export function useBookingCrudList<TData = Awaited<ReturnType<typeof bookingCrud
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * サロン・顧客・スタッフ・ステータス・来店日の条件で予約を一覧取得し、受付状況を俯瞰します。
+ * サロン・顧客・スタッフ・ステータス・来店日の条件で予約を一覧取得し、受付状況を俯瞰します。開始日時の早い順に並びます。サロンのスタッフには所属サロンの予約だけを返し、salonIdにほかのサロンを指定した場合は403を返します。cursorが、操作者に見える予約を指していない場合は400を返します。
  * @summary List bookings
  */
 export function useBookingCrudList<TData = Awaited<ReturnType<typeof bookingCrudList>>, TError = ModelsProblemDetails>(
@@ -211,7 +211,7 @@ export function useBookingCrudList<TData = Awaited<ReturnType<typeof bookingCrud
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * サロン・顧客・スタッフ・ステータス・来店日の条件で予約を一覧取得し、受付状況を俯瞰します。
+ * サロン・顧客・スタッフ・ステータス・来店日の条件で予約を一覧取得し、受付状況を俯瞰します。開始日時の早い順に並びます。サロンのスタッフには所属サロンの予約だけを返し、salonIdにほかのサロンを指定した場合は403を返します。cursorが、操作者に見える予約を指していない場合は400を返します。
  * @summary List bookings
  */
 export function useBookingCrudList<TData = Awaited<ReturnType<typeof bookingCrudList>>, TError = ModelsProblemDetails>(
@@ -294,7 +294,7 @@ export const getBookingCrudCreateUrl = () => {
 }
 
 /**
- * 新しい予約を施術明細とともに作成し、施術枠を確保します。作成した予約のステータスはpendingです。salonId・customerId・staffId・serviceIdが存在しない場合や、スタッフ・サービスがsalonIdのサロンのものではない場合は400を、担当スタッフの既存の予約と時間が重なる場合は409を返します。
+ * 新しい予約を施術明細とともに作成し、施術枠を確保します。作成した予約のステータスはpendingです。サロンのスタッフがsalonIdにほかのサロンを指定した場合は403を、salonId・customerId・staffId・serviceIdが存在しない(削除済みを含む)場合や、スタッフ・サービスがsalonIdのサロンのものではない場合は400を返します。施術明細を担当するスタッフが、同時に受けられる数(maxConcurrentBookings)を超えてほかの予約と重なる場合は409を返します。重なりは、スタッフの準備時間と片付け時間(bufferTimeBefore・bufferTimeAfter)を加えて確かめ、cancelledとno_showの予約は数えません。サロンのタイムゾーン(timezone)が名前として認識できないものである場合も、来店日を決められないので409を返します。営業時間、勤務スケジュール、スタッフ・サービス・顧客の有効・無効は確かめません。
  * @summary Create booking
  */
 export const bookingCrudCreate = async (modelsBookingCreateRequest: ModelsBookingCreateRequest, options?: RequestInit): Promise<bookingCrudCreateResponse> => {
@@ -361,7 +361,7 @@ const {mutation: mutationOptions} = options ?
     export type BookingCrudCreateMutationVariables = {data: ModelsBookingCreateRequest}
 
     /**
- * 新しい予約を施術明細とともに作成し、施術枠を確保します。作成した予約のステータスはpendingです。salonId・customerId・staffId・serviceIdが存在しない場合や、スタッフ・サービスがsalonIdのサロンのものではない場合は400を、担当スタッフの既存の予約と時間が重なる場合は409を返します。
+ * 新しい予約を施術明細とともに作成し、施術枠を確保します。作成した予約のステータスはpendingです。サロンのスタッフがsalonIdにほかのサロンを指定した場合は403を、salonId・customerId・staffId・serviceIdが存在しない(削除済みを含む)場合や、スタッフ・サービスがsalonIdのサロンのものではない場合は400を返します。施術明細を担当するスタッフが、同時に受けられる数(maxConcurrentBookings)を超えてほかの予約と重なる場合は409を返します。重なりは、スタッフの準備時間と片付け時間(bufferTimeBefore・bufferTimeAfter)を加えて確かめ、cancelledとno_showの予約は数えません。サロンのタイムゾーン(timezone)が名前として認識できないものである場合も、来店日を決められないので409を返します。営業時間、勤務スケジュール、スタッフ・サービス・顧客の有効・無効は確かめません。
  * @summary Create booking
  */
 export const useBookingCrudCreate = <TError = ModelsProblemDetails,
@@ -867,7 +867,7 @@ export const getBookingCrudGetUrl = (id: ModelsBookingId,) => {
 }
 
 /**
- * 予約の詳細を施術明細とともに取得し、日時・担当者・料金を確認します。
+ * 予約の詳細を施術明細とともに取得し、日時・担当者・料金を確認します。ほかのサロンの予約には404を返します。
  * @summary Get booking
  */
 export const bookingCrudGet = async (id: ModelsBookingId, options?: RequestInit): Promise<bookingCrudGetResponse> => {
@@ -915,7 +915,7 @@ export type BookingCrudGetQueryError = ModelsProblemDetails
 
 
 /**
- * 予約の詳細を施術明細とともに取得し、日時・担当者・料金を確認します。
+ * 予約の詳細を施術明細とともに取得し、日時・担当者・料金を確認します。ほかのサロンの予約には404を返します。
  * @summary Get booking
  */
 export function useBookingCrudGet<TData = Awaited<ReturnType<typeof bookingCrudGet>>, TError = ModelsProblemDetails>(
@@ -929,7 +929,7 @@ export function useBookingCrudGet<TData = Awaited<ReturnType<typeof bookingCrudG
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 予約の詳細を施術明細とともに取得し、日時・担当者・料金を確認します。
+ * 予約の詳細を施術明細とともに取得し、日時・担当者・料金を確認します。ほかのサロンの予約には404を返します。
  * @summary Get booking
  */
 export function useBookingCrudGet<TData = Awaited<ReturnType<typeof bookingCrudGet>>, TError = ModelsProblemDetails>(
@@ -943,7 +943,7 @@ export function useBookingCrudGet<TData = Awaited<ReturnType<typeof bookingCrudG
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 予約の詳細を施術明細とともに取得し、日時・担当者・料金を確認します。
+ * 予約の詳細を施術明細とともに取得し、日時・担当者・料金を確認します。ほかのサロンの予約には404を返します。
  * @summary Get booking
  */
 export function useBookingCrudGet<TData = Awaited<ReturnType<typeof bookingCrudGet>>, TError = ModelsProblemDetails>(
@@ -951,7 +951,7 @@ export function useBookingCrudGet<TData = Awaited<ReturnType<typeof bookingCrudG
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 予約の詳細を施術明細とともに取得し、日時・担当者・料金を確認します。
+ * 予約の詳細を施術明細とともに取得し、日時・担当者・料金を確認します。ほかのサロンの予約には404を返します。
  * @summary Get booking
  */
 export function useBookingCrudGet<TData = Awaited<ReturnType<typeof bookingCrudGet>>, TError = ModelsProblemDetails>(

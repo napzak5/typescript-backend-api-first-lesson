@@ -44,7 +44,7 @@ export interface ModelsBookingCreateRequest {
      */
   source: string | null;
   /**
-     * 施術明細の一覧。1件以上20件以下で指定する。指定した順に sortOrder を振る
+     * 施術明細の一覧。1件以上20件以下で指定する。指定した順に sortOrder を振る。どの明細も、最も早い明細の開始から24時間以内に始める
      * @minItems 1
      * @maxItems 20
      */

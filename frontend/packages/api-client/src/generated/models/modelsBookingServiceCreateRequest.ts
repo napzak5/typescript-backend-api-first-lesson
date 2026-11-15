@@ -15,11 +15,11 @@ export interface ModelsBookingServiceCreateRequest {
   /** 予約する施術メニューのID。予約と同じサロンのサービスを指定する */
   serviceId: ModelsServiceId;
   /**
-     * この施術を担当するスタッフのID。予約と同じサロンのスタッフを指定する。担当スタッフを決めない場合はnull
+     * この施術を担当するスタッフのID。予約と同じサロンのスタッフを指定する。担当スタッフを決めない場合はnull(その施術は、誰の時間も確保しない)
      * @nullable
      */
   staffId: string | null;
-  /** 施術開始予定日時 (UTC) */
+  /** 施術開始予定日時 (UTC)。分単位で指定する(秒と小数は0) */
   startTime: string;
   /**
      * この施術に関するメモ。メモがない場合はnull

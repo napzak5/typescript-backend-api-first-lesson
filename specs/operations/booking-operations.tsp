@@ -11,12 +11,12 @@ using TypeSpec.OpenAPI;
 using BeautySalon.Models;
 
 namespace BeautySalon.Operations {
-  @doc("顧客の予約と、その施術明細・ステータスを管理するAPI操作群です。ステータスは confirm・cancel・complete のアクションで変更します。")
+  @doc("サロンの予約台帳を管理するAPI操作群です。予約と、その施術明細・ステータスを扱います。ステータスは confirm・cancel・complete のアクションで変更します。実装済みの操作は、一覧・作成・1件の取得です。これらは admin と、予約のサロンのスタッフ(owner / manager / staff)が実行できます。レスポンスはサロン内のメモを含むので、顧客本人(customer)には403を返します。ほかのサロンの予約は、存在しない予約と区別しません。")
   @route("/api/v1/bookings")
   @tag("Bookings")
   namespace BookingOperations {
     interface BookingCrud {
-      @doc("サロン・顧客・スタッフ・ステータス・来店日の条件で予約を一覧取得し、受付状況を俯瞰します。")
+      @doc("サロン・顧客・スタッフ・ステータス・来店日の条件で予約を一覧取得し、受付状況を俯瞰します。開始日時の早い順に並びます。サロンのスタッフには所属サロンの予約だけを返し、salonIdにほかのサロンを指定した場合は403を返します。cursorが、操作者に見える予約を指していない場合は400を返します。")
       @summary("List bookings")
       @get
       list(...BookingSearchRequest):
@@ -27,7 +27,7 @@ namespace BeautySalon.Operations {
         | ProblemResponse<400>
         | CommonErrors;
 
-      @doc("新しい予約を施術明細とともに作成し、施術枠を確保します。作成した予約のステータスはpendingです。salonId・customerId・staffId・serviceIdが存在しない場合や、スタッフ・サービスがsalonIdのサロンのものではない場合は400を、担当スタッフの既存の予約と時間が重なる場合は409を返します。")
+      @doc("新しい予約を施術明細とともに作成し、施術枠を確保します。作成した予約のステータスはpendingです。サロンのスタッフがsalonIdにほかのサロンを指定した場合は403を、salonId・customerId・staffId・serviceIdが存在しない(削除済みを含む)場合や、スタッフ・サービスがsalonIdのサロンのものではない場合は400を返します。施術明細を担当するスタッフが、同時に受けられる数(maxConcurrentBookings)を超えてほかの予約と重なる場合は409を返します。重なりは、スタッフの準備時間と片付け時間(bufferTimeBefore・bufferTimeAfter)を加えて確かめ、cancelledとno_showの予約は数えません。サロンのタイムゾーン(timezone)が名前として認識できないものである場合も、来店日を決められないので409を返します。営業時間、勤務スケジュール、スタッフ・サービス・顧客の有効・無効は確かめません。")
       @summary("Create booking")
       @post
       create(@body request: BookingCreateRequest):
@@ -41,7 +41,7 @@ namespace BeautySalon.Operations {
         | RequestBodyErrors
         | CommonErrors;
 
-      @doc("予約の詳細を施術明細とともに取得し、日時・担当者・料金を確認します。")
+      @doc("予約の詳細を施術明細とともに取得し、日時・担当者・料金を確認します。ほかのサロンの予約には404を返します。")
       @summary("Get booking")
       @get
       get(@path id: BookingId):

@@ -6,10 +6,12 @@ import type {
 } from '@beauty-salon-backend/domain'
 import {
   Argon2PasswordHasher,
+  BookingRepository,
   CustomerPreferencesRepository,
   CustomerRepository,
   type Database,
   type Logger,
+  RandomBookingNumberIssuer,
   RandomTokenIssuer,
   SalonRepository,
   ServiceCategoryRepository,
@@ -35,6 +37,7 @@ import { rateLimiting } from './middleware/rate-limiting'
 import { requestLogging } from './middleware/request-logging'
 import { createAdminAuthRouter } from './routes/admin-auth'
 import { createAuthRouter } from './routes/auth'
+import { createBookingRouter } from './routes/booking'
 import { createCustomerRouter } from './routes/customer'
 import {
   createCustomerPreferencesRouter,
@@ -229,6 +232,16 @@ export const createApp = ({
     `${API_BASE_PATH}/customers`,
     createCustomerRouter(
       { customerRepository: new CustomerRepository(database), clock },
+      authenticated,
+    ),
+  )
+  app.use(
+    `${API_BASE_PATH}/bookings`,
+    createBookingRouter(
+      {
+        bookingRepository: new BookingRepository(database),
+        bookingNumberIssuer: new RandomBookingNumberIssuer(),
+      },
       authenticated,
     ),
   )
