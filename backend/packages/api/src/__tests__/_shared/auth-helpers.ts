@@ -204,6 +204,8 @@ const insertStaff = async (
       displayName: 'Hanako Yamada',
       email: `staff-${randomUUID()}@example.com`,
       phoneNumber: '090-1234-5678',
+      specialties: [],
+      certifications: [],
       ...overrides,
     })
     .returning({ id: staff.id })

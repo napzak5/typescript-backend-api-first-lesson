@@ -124,7 +124,7 @@ export const getStaffCrudListUrl = (salonId: ModelsSalonId,
 }
 
 /**
- * サロンに所属するスタッフを、ページネーションを指定して一覧取得し、配置状況や担当可能メニューを確認します。削除済みのスタッフは含みません。サロンが存在しない場合は404を返します。
+ * サロンのスタッフを、ページネーションを指定して一覧取得します。登録日時の古い順に並びます。削除済みのスタッフは含みません。cursorがそのサロンのスタッフを指していない場合は400を返します。
  * @summary List staff members
  */
 export const staffCrudList = async (salonId: ModelsSalonId,
@@ -175,7 +175,7 @@ export type StaffCrudListQueryError = ModelsProblemDetails
 
 
 /**
- * サロンに所属するスタッフを、ページネーションを指定して一覧取得し、配置状況や担当可能メニューを確認します。削除済みのスタッフは含みません。サロンが存在しない場合は404を返します。
+ * サロンのスタッフを、ページネーションを指定して一覧取得します。登録日時の古い順に並びます。削除済みのスタッフは含みません。cursorがそのサロンのスタッフを指していない場合は400を返します。
  * @summary List staff members
  */
 export function useStaffCrudList<TData = Awaited<ReturnType<typeof staffCrudList>>, TError = ModelsProblemDetails>(
@@ -190,7 +190,7 @@ export function useStaffCrudList<TData = Awaited<ReturnType<typeof staffCrudList
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * サロンに所属するスタッフを、ページネーションを指定して一覧取得し、配置状況や担当可能メニューを確認します。削除済みのスタッフは含みません。サロンが存在しない場合は404を返します。
+ * サロンのスタッフを、ページネーションを指定して一覧取得します。登録日時の古い順に並びます。削除済みのスタッフは含みません。cursorがそのサロンのスタッフを指していない場合は400を返します。
  * @summary List staff members
  */
 export function useStaffCrudList<TData = Awaited<ReturnType<typeof staffCrudList>>, TError = ModelsProblemDetails>(
@@ -205,7 +205,7 @@ export function useStaffCrudList<TData = Awaited<ReturnType<typeof staffCrudList
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * サロンに所属するスタッフを、ページネーションを指定して一覧取得し、配置状況や担当可能メニューを確認します。削除済みのスタッフは含みません。サロンが存在しない場合は404を返します。
+ * サロンのスタッフを、ページネーションを指定して一覧取得します。登録日時の古い順に並びます。削除済みのスタッフは含みません。cursorがそのサロンのスタッフを指していない場合は400を返します。
  * @summary List staff members
  */
 export function useStaffCrudList<TData = Awaited<ReturnType<typeof staffCrudList>>, TError = ModelsProblemDetails>(
@@ -214,7 +214,7 @@ export function useStaffCrudList<TData = Awaited<ReturnType<typeof staffCrudList
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * サロンに所属するスタッフを、ページネーションを指定して一覧取得し、配置状況や担当可能メニューを確認します。削除済みのスタッフは含みません。サロンが存在しない場合は404を返します。
+ * サロンのスタッフを、ページネーションを指定して一覧取得します。登録日時の古い順に並びます。削除済みのスタッフは含みません。cursorがそのサロンのスタッフを指していない場合は400を返します。
  * @summary List staff members
  */
 export function useStaffCrudList<TData = Awaited<ReturnType<typeof staffCrudList>>, TError = ModelsProblemDetails>(
@@ -303,7 +303,7 @@ export const getStaffCrudCreateUrl = (salonId: ModelsSalonId,) => {
 }
 
 /**
- * 新しいスタッフを登録し、プロフィール情報や担当メニューの設定を開始します。サロンが存在しない場合は404を、userIdに存在しないユーザーを指定した場合は400を、メールアドレスまたはスタッフコードが既存のスタッフと重複する場合は409を返します。
+ * サロンにスタッフを登録します。メールアドレスが同じサロンの削除されていないスタッフと重複する場合と、スタッフコードが同じサロンのスタッフ(削除済みを含む)と重複する場合は409を返します。
  * @summary Create staff member
  */
 export const staffCrudCreate = async (salonId: ModelsSalonId,
@@ -371,7 +371,7 @@ const {mutation: mutationOptions} = options ?
     export type StaffCrudCreateMutationVariables = {salonId: ModelsSalonId;data: ModelsStaffCreateRequest}
 
     /**
- * 新しいスタッフを登録し、プロフィール情報や担当メニューの設定を開始します。サロンが存在しない場合は404を、userIdに存在しないユーザーを指定した場合は400を、メールアドレスまたはスタッフコードが既存のスタッフと重複する場合は409を返します。
+ * サロンにスタッフを登録します。メールアドレスが同じサロンの削除されていないスタッフと重複する場合と、スタッフコードが同じサロンのスタッフ(削除済みを含む)と重複する場合は409を返します。
  * @summary Create staff member
  */
 export const useStaffCrudCreate = <TError = ModelsProblemDetails,
@@ -438,7 +438,7 @@ export const getStaffCrudGetUrl = (salonId: ModelsSalonId,
 }
 
 /**
- * 特定スタッフの詳細情報を取得し、顧客向け表示や社内確認に利用します。
+ * IDを指定してスタッフを1件取得します。削除済みのスタッフは404を返します。
  * @summary Get staff member
  */
 export const staffCrudGet = async (salonId: ModelsSalonId,
@@ -489,7 +489,7 @@ export type StaffCrudGetQueryError = ModelsProblemDetails
 
 
 /**
- * 特定スタッフの詳細情報を取得し、顧客向け表示や社内確認に利用します。
+ * IDを指定してスタッフを1件取得します。削除済みのスタッフは404を返します。
  * @summary Get staff member
  */
 export function useStaffCrudGet<TData = Awaited<ReturnType<typeof staffCrudGet>>, TError = ModelsProblemDetails>(
@@ -504,7 +504,7 @@ export function useStaffCrudGet<TData = Awaited<ReturnType<typeof staffCrudGet>>
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 特定スタッフの詳細情報を取得し、顧客向け表示や社内確認に利用します。
+ * IDを指定してスタッフを1件取得します。削除済みのスタッフは404を返します。
  * @summary Get staff member
  */
 export function useStaffCrudGet<TData = Awaited<ReturnType<typeof staffCrudGet>>, TError = ModelsProblemDetails>(
@@ -519,7 +519,7 @@ export function useStaffCrudGet<TData = Awaited<ReturnType<typeof staffCrudGet>>
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 特定スタッフの詳細情報を取得し、顧客向け表示や社内確認に利用します。
+ * IDを指定してスタッフを1件取得します。削除済みのスタッフは404を返します。
  * @summary Get staff member
  */
 export function useStaffCrudGet<TData = Awaited<ReturnType<typeof staffCrudGet>>, TError = ModelsProblemDetails>(
@@ -528,7 +528,7 @@ export function useStaffCrudGet<TData = Awaited<ReturnType<typeof staffCrudGet>>
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 特定スタッフの詳細情報を取得し、顧客向け表示や社内確認に利用します。
+ * IDを指定してスタッフを1件取得します。削除済みのスタッフは404を返します。
  * @summary Get staff member
  */
 export function useStaffCrudGet<TData = Awaited<ReturnType<typeof staffCrudGet>>, TError = ModelsProblemDetails>(
@@ -618,7 +618,7 @@ export const getStaffCrudUpdateUrl = (salonId: ModelsSalonId,
 }
 
 /**
- * スタッフのプロフィールや担当メニュー、表示可否のうち指定した項目だけを更新します。userIdに存在しないユーザーを指定した場合は400を、メールアドレスまたはスタッフコードが既存のスタッフと重複する場合は409を返します。
+ * 指定した項目だけを更新します。メールアドレスが同じサロンの削除されていないほかのスタッフと重複する場合と、スタッフコードが同じサロンのほかのスタッフ(削除済みを含む)と重複する場合は409を返します。自分自身のスタッフ情報の isActive を false にする場合も409を返します。
  * @summary Update staff member
  */
 export const staffCrudUpdate = async (salonId: ModelsSalonId,
@@ -687,7 +687,7 @@ const {mutation: mutationOptions} = options ?
     export type StaffCrudUpdateMutationVariables = {salonId: ModelsSalonId;id: ModelsStaffId;data: ModelsStaffUpdateRequest}
 
     /**
- * スタッフのプロフィールや担当メニュー、表示可否のうち指定した項目だけを更新します。userIdに存在しないユーザーを指定した場合は400を、メールアドレスまたはスタッフコードが既存のスタッフと重複する場合は409を返します。
+ * 指定した項目だけを更新します。メールアドレスが同じサロンの削除されていないほかのスタッフと重複する場合と、スタッフコードが同じサロンのほかのスタッフ(削除済みを含む)と重複する場合は409を返します。自分自身のスタッフ情報の isActive を false にする場合も409を返します。
  * @summary Update staff member
  */
 export const useStaffCrudUpdate = <TError = ModelsProblemDetails,
@@ -725,6 +725,11 @@ export type staffCrudDeleteResponse404 = {
   status: 404
 }
 
+export type staffCrudDeleteResponse409 = {
+  data: ModelsProblemDetails
+  status: 409
+}
+
 export type staffCrudDeleteResponse429 = {
   data: ModelsProblemDetails
   status: 429
@@ -738,7 +743,7 @@ export type staffCrudDeleteResponse500 = {
 export type staffCrudDeleteResponseSuccess = (staffCrudDeleteResponse204) & {
   headers: Headers;
 };
-export type staffCrudDeleteResponseError = (staffCrudDeleteResponse400 | staffCrudDeleteResponse401 | staffCrudDeleteResponse403 | staffCrudDeleteResponse404 | staffCrudDeleteResponse429 | staffCrudDeleteResponse500) & {
+export type staffCrudDeleteResponseError = (staffCrudDeleteResponse400 | staffCrudDeleteResponse401 | staffCrudDeleteResponse403 | staffCrudDeleteResponse404 | staffCrudDeleteResponse409 | staffCrudDeleteResponse429 | staffCrudDeleteResponse500) & {
   headers: Headers;
 };
 
@@ -754,7 +759,7 @@ export const getStaffCrudDeleteUrl = (salonId: ModelsSalonId,
 }
 
 /**
- * 退職や契約終了に伴いスタッフを論理削除し、予約導線から除外します。削除後は一覧・取得の対象外になります。
+ * スタッフを論理削除します。削除後は一覧・取得の対象外になり、メールアドレスは別のスタッフの登録に使えるようになります。このスタッフに紐づくログインアカウントは、サロンへの権限を失います。自分自身のスタッフ情報は削除できず、409を返します。
  * @summary Delete staff member
  */
 export const staffCrudDelete = async (salonId: ModelsSalonId,
@@ -808,7 +813,7 @@ const {mutation: mutationOptions} = options ?
     export type StaffCrudDeleteMutationVariables = {salonId: ModelsSalonId;id: ModelsStaffId}
 
     /**
- * 退職や契約終了に伴いスタッフを論理削除し、予約導線から除外します。削除後は一覧・取得の対象外になります。
+ * スタッフを論理削除します。削除後は一覧・取得の対象外になり、メールアドレスは別のスタッフの登録に使えるようになります。このスタッフに紐づくログインアカウントは、サロンへの権限を失います。自分自身のスタッフ情報は削除できず、409を返します。
  * @summary Delete staff member
  */
 export const useStaffCrudDelete = <TError = ModelsProblemDetails,

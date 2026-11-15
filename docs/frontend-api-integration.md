@@ -18,7 +18,7 @@
 - 生成クライアントを使うコンポーネント、画面、カスタムフック（アプリは `api-client` にも `io` にも依存していない）
 - 認証（バックエンドはアクセストークンを検証するが、フロントエンドにはログイン画面も、トークンを保持する場所も、`Authorization` ヘッダーを付ける仕組みもない。生成されたフックから呼べるのは、認証なしのオペレーションだけ。[fetch ラッパー](#fetch-ラッパーcustominstance)の制約を参照）
 - API のモックサーバーと、ブラウザーから API までを通すテスト
-- Salon、サロンのサービスカテゴリーとサービス、顧客台帳、認証、システムエンドポイント以外のバックエンド実装（クライアントは OpenAPI の全操作について生成されるが、サーバーが応答するのは `/api/v1/salons` と `/api/v1/salons/{id}`、`/api/v1/salons/{salonId}/service-categories` 以下、`/api/v1/salons/{salonId}/services` 以下、`/api/v1/customers` と `/api/v1/customers/{id}`（顧客の一覧、登録、1 件の取得、更新、削除）、`/api/v1/auth` 以下、`/api/v1/admin/auth` 以下、および `/api/system/alive`、`/api/system/ready`、`/api/system/health` だけ。`/api/v1/salons/{salonId}/staff` など、サロンの下にあるほかのルートと、`/api/v1/customers/{id}/preferences` など、顧客のほかのルートには応答しない）
+- Salon、サロンのサービスカテゴリーとサービス、顧客台帳、スタッフ台帳、認証、システムエンドポイント以外のバックエンド実装（クライアントは OpenAPI の全操作について生成されるが、サーバーが応答するのは `/api/v1/salons` と `/api/v1/salons/{id}`、`/api/v1/salons/{salonId}/service-categories` 以下、`/api/v1/salons/{salonId}/services` 以下、`/api/v1/customers` と `/api/v1/customers/{id}`（顧客の一覧、登録、1 件の取得、更新、削除）、`/api/v1/customers/me`（顧客本人のプロフィールの取得、作成、更新）、`/api/v1/salons/{salonId}/staff` と `/api/v1/salons/{salonId}/staff/{id}`（スタッフの一覧、登録、1 件の取得、更新、削除）、`/api/v1/auth` 以下、`/api/v1/admin/auth` 以下、および `/api/system/alive`、`/api/system/ready`、`/api/system/health` だけ。`/api/v1/salons/{salonId}/bookings` など、サロンの下にあるほかのルートと、`/api/v1/customers/{id}/preferences` など顧客のほかのルート、`/api/v1/salons/{salonId}/staff/{id}/availability` と `/api/v1/staff/search` には応答しない）
 
 ## 構成
 
@@ -149,7 +149,7 @@ export function customInstance<T>(url: string, options: RequestInit): Promise<T>
 
 - 型引数 `T` は生成コードがその操作について指定するレスポンスの型で、**実行時に本文を `T` と照合してはいません**。クライアントとサーバーが同じ OpenAPI ドキュメントから生成されていることが、型と実際の値が一致する根拠です
 - JSON 以外の本文は文字列で返します。バイナリを返す操作（未実装の顧客エクスポート）を実装するときは、ここに対応が必要です
-- `Authorization` などの共通ヘッダーを付ける仕組みはありません。生成された fetch 関数は最後の引数に `options?: RequestInit` を取るので、呼び出しごとに `headers` を渡すことはできますが、生成されたフックはこの引数にヘッダーを渡しません。そのため、実装済みのオペレーションのうちフックから呼べるのは認証なしのもの（システムのオペレーション、サロンの一覧と 1 件の取得、サービスカテゴリーの一覧と 1 件の取得、サービスの一覧と 1 件の取得、ログイン、トークンの再発行、ユーザー登録、メールアドレスの確認、パスワードの再設定）だけで、それ以外は 401 になります。顧客台帳のオペレーションは、一覧と 1 件の取得を含めて、すべてアクセストークンが必要です。トークンの保持と付与は、フロントエンドの認証を実装するときに設計します（サーバー側の仕様は [認証と認可](./authentication.md)）
+- `Authorization` などの共通ヘッダーを付ける仕組みはありません。生成された fetch 関数は最後の引数に `options?: RequestInit` を取るので、呼び出しごとに `headers` を渡すことはできますが、生成されたフックはこの引数にヘッダーを渡しません。そのため、実装済みのオペレーションのうちフックから呼べるのは認証なしのもの（システムのオペレーション、サロンの一覧と 1 件の取得、サービスカテゴリーの一覧と 1 件の取得、サービスの一覧と 1 件の取得、ログイン、トークンの再発行、ユーザー登録、メールアドレスの確認、パスワードの再設定）だけで、それ以外は 401 になります。顧客台帳、顧客本人のプロフィール、スタッフ台帳のオペレーションは、一覧と 1 件の取得を含めて、すべてアクセストークンが必要です。トークンの保持と付与は、フロントエンドの認証を実装するときに設計します（サーバー側の仕様は [認証と認可](./authentication.md)）
 
 ## TanStack Query の設定
 
@@ -233,8 +233,9 @@ export function SalonList() {
 - 登録・更新・削除は `useSalonCrudCreate` などのミューテーションフックを使い、結果も同じく `status` で分岐する。成功したら `getSalonCrudListQueryKey()` を使って一覧のキャッシュを無効化する。ただし、この 3 つはアクセストークンが必要で、フックはトークンを送らないので、フロントエンドの認証を実装するまでは 401 が返る
 - サーバーの検証エラーは `ModelsProblemDetails` の `errors`（項目ごとの `field`・`rule`・`message`）から表示する
 - 429 のときは、レスポンスの `headers` から `Retry-After`（秒）を読める
-- 未実装のドメイン（Staff、Booking など）のフックは生成されていても呼ばない。サーバーが 404 を返す。`endpoints/services/services.ts` のフックは、カテゴリーのもの（`useServiceCategoryCrudList` など）も、サービスのもの（`useServiceCrudList` など）も、サーバーに実装がある
-- `endpoints/customers/customers.ts` のフックのうち、サーバーに実装があるのは、一覧、登録、1 件の取得、更新、削除の 5 つ（`useCustomerCrudList`、`useCustomerCrudCreate`、`useCustomerCrudGet`、`useCustomerCrudUpdate`、`useCustomerCrudDelete`）だけである。どれも `admin` か、サロンの `owner`・`manager`・`staff` のアクセストークンが必要で（削除は `staff` を除く）、フックはトークンを送らないので、フロントエンドの認証を実装するまでは 401 が返る。顧客のそれ以外のフック（`useCustomerCrudUpdatePreferences`、`useCustomerCrudExport` など）は、サーバーに実装がないので呼ばない
+- 未実装のドメイン（Booking、Review など）のフックは生成されていても呼ばない。サーバーが 404 を返す。`endpoints/services/services.ts` のフックは、カテゴリーのもの（`useServiceCategoryCrudList` など）も、サービスのもの（`useServiceCrudList` など）も、サーバーに実装がある
+- `endpoints/customers/customers.ts` のフックのうち、サーバーに実装があるのは、一覧、登録、1 件の取得、更新、削除の 5 つ（`useCustomerCrudList`、`useCustomerCrudCreate`、`useCustomerCrudGet`、`useCustomerCrudUpdate`、`useCustomerCrudDelete`）だけである。どれも `admin` か、サロンの `owner`・`manager`・`staff` のアクセストークンが必要で（削除は `staff` を除く）、フックはトークンを送らないので、フロントエンドの認証を実装するまでは 401 が返る。顧客本人のプロフィールの 3 つ（`useCustomerProfileGet`、`useCustomerProfileCreate`、`useCustomerProfileUpdate`）にも実装があり、ロール `customer` のアクセストークンが必要である。顧客のそれ以外のフック（`useCustomerCrudUpdatePreferences`、`useCustomerCrudExport` など）は、サーバーに実装がないので呼ばない
+- `endpoints/staff/staff.ts` のフックのうち、サーバーに実装があるのは、一覧、登録、1 件の取得、更新、削除の 5 つ（`useStaffCrudList`、`useStaffCrudCreate`、`useStaffCrudGet`、`useStaffCrudUpdate`、`useStaffCrudDelete`）だけである。どれも `admin` か、そのサロンの `owner` のアクセストークンが必要である。レスポンスは給与と個人の連絡先を含むので、顧客に見せる画面には使わない。勤務スケジュールと横断検索のフック（`useStaffCrudGetAvailability`、`useStaffCrudUpdateAvailability`、`useGlobalStaffSearch`）は、サーバーに実装がないので呼ばない
 
 ## テスト
 

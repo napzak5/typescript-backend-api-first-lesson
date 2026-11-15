@@ -280,8 +280,16 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 | サービスカテゴリーの作成、更新、削除 | `admin`、そのサロンの `owner` / `manager` |
 | サービスの一覧、1 件の取得 | 認証なし |
 | サービスの作成、更新、一括更新、削除 | `admin`、そのサロンの `owner` / `manager` |
+| スタッフ台帳の一覧、登録、1 件の取得、更新、削除 | `admin`、そのサロンの `owner` |
 
 カテゴリーとサービスの規則は [サービスメニュー](./service-menu.md) にあります。
+
+スタッフ台帳（`/api/v1/salons/{salonId}/staff`）は、読むのにも認証が要り、`manager` と `staff` には許可しません（`business-logic/staff/_shared/authorization.ts`）。台帳が給与と個人の連絡先を含むことと、台帳の操作がアカウントの権限を変えることが理由です。
+
+- スタッフを無効化（`isActive` を false に）または削除すると、そのスタッフに紐づくアカウントは、次のリクエストから範囲が `none` になる。[認可](#認可) の表にある `salon` の条件（スタッフが有効で、削除されていない）を、リクエストのたびに確認しているため。`isActive` を true に戻すと、範囲も戻る
+- 操作者は、自分のアカウントが紐づいているスタッフ（範囲の `staffId`）を、無効化も削除もできない（409）。自分をサロンから締め出す操作で、自分では戻せない。ほかの `owner` と `admin` はできる
+
+規則は [スタッフ台帳](./staff.md) にあります。
 
 ### 顧客台帳の権限
 
@@ -344,7 +352,7 @@ export const updateSalonHandler = (
 }
 ```
 
-サロンに属するデータ（予約、スタッフなど）を実装するときは、[サロンの下にあるルートの権限](#サロンの下にあるルートの権限) に従います。ユースケースは、パスの ID を `parseSalonIdOfPath`（`backend/packages/domain/src/models/salon.ts`）で検証し、そのサロンで権限を判定してから、`requireSalon`（`business-logic/_shared/existing-salon.ts`）でサロンの存在を確認します。対象は、そのサロンのものだけを検索します。例は `business-logic/service-category/` と `business-logic/service/` です。
+サロンに属するデータ（予約、スタッフなど）を実装するときは、[サロンの下にあるルートの権限](#サロンの下にあるルートの権限) に従います。ユースケースは、パスの ID を `parseSalonIdOfPath`（`backend/packages/domain/src/models/salon.ts`）で検証し、そのサロンで権限を判定してから、`requireSalon`（`business-logic/_shared/existing-salon.ts`）でサロンの存在を確認します。対象は、そのサロンのものだけを検索します。例は `business-logic/service-category/` と `business-logic/service/`（読むのは認証なし）、`business-logic/staff/`（どのオペレーションにも認証が要る）です。
 
 サロンに属さないデータは、操作者だけで権限を判定し、最初に判定します。例は `business-logic/customer/`（[顧客台帳の権限](#顧客台帳の権限)）です。ログインしているアカウント自身のデータは、対象をパスの ID ではなく操作者の範囲から決めます。例は同じディレクトリの `*-customer-profile.usecase.ts` です。
 

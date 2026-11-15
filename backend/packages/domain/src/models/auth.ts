@@ -9,6 +9,7 @@ import { z } from 'zod'
 import { type DomainError, parseWith, uuidSchema } from '../shared'
 import { customerIdSchema } from './customer'
 import { salonIdSchema } from './salon'
+import { staffIdSchema } from './staff'
 
 // IDs: UUIDs that have been checked.
 export const userIdSchema = uuidSchema.brand<'UserId'>()
@@ -16,9 +17,6 @@ export type UserId = z.infer<typeof userIdSchema>
 
 export const sessionIdSchema = uuidSchema.brand<'SessionId'>()
 export type SessionId = z.infer<typeof sessionIdSchema>
-
-export const staffIdSchema = uuidSchema.brand<'StaffId'>()
-export type StaffId = z.infer<typeof staffIdSchema>
 
 const userIdParameterSchema = z.object({ userId: userIdSchema })
 

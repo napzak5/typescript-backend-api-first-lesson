@@ -172,14 +172,19 @@ domain the customer ledger is implemented: list, create, get, update and
 delete under `/api/v1/customers`, for administrators and the members of a
 salon. So is a customer's own profile: get, create and update under
 `/api/v1/customers/me`, for the signed-in customer account. The other
-operations of `CustomerCrud` are not. The other domains
+operations of `CustomerCrud` are not. Of the Staff domain the staff ledger of
+a salon is implemented: list, create, get, update and delete under
+`/api/v1/salons/{salonId}/staff`, for administrators and the owner of that
+salon. The other operations of the staff contract (the availability of a
+staff member, the search across salons) are not. The other domains
 exist in TypeSpec and in the database schema only. Sessions, passwords,
 two-factor authentication, permissions, the administrator operations and the
 seeded accounts are described in
 [docs/authentication.md](docs/authentication.md), the service categories and
 the services in [docs/service-menu.md](docs/service-menu.md), the customer
-ledger in [docs/customers.md](docs/customers.md), the mails the server sends
-in [docs/email.md](docs/email.md).
+ledger in [docs/customers.md](docs/customers.md), the staff ledger in
+[docs/staff.md](docs/staff.md), the mails the server sends in
+[docs/email.md](docs/email.md).
 
 ### Namespace Convention
 - Backend: `@beauty-salon-backend/*`
@@ -296,6 +301,7 @@ The full index is [docs/README.md](docs/README.md).
 - [Authentication and Authorization](docs/authentication.md)
 - [Service Menu](docs/service-menu.md)
 - [Customer Ledger](docs/customers.md)
+- [Staff Ledger](docs/staff.md)
 - [Email](docs/email.md)
 - [Testing Requirements](docs/testing-requirements.md)
 - [Multi-Agent Collaboration](docs/multi-agent-collaboration-framework.md)
@@ -451,6 +457,7 @@ app.use(`${API_BASE_PATH}/salons`, createSalonRouter({ salonRepository }, authen
 // The routers of what belongs to a salon are mounted below the salon and are given the same salon repository
 app.use(`${API_BASE_PATH}/salons/:salonId/service-categories`, createServiceCategoryRouter({ serviceCategoryRepository: new ServiceCategoryRepository(database), salonRepository }, authenticated))
 app.use(`${API_BASE_PATH}/salons/:salonId/services`, createServiceRouter({ serviceRepository: new ServiceRepository(database), salonRepository }, authenticated))
+app.use(`${API_BASE_PATH}/salons/:salonId/staff`, createStaffRouter({ staffRepository: new StaffRepository(database), salonRepository }, authenticated))
 // The customers belong to no salon: their router is mounted beside the salons
 app.use(`${API_BASE_PATH}/customers`, createCustomerRouter({ customerRepository: new CustomerRepository(database), clock }, authenticated))
 
@@ -472,8 +479,9 @@ export const startServer = (config: AppConfig, logger: Logger, shutdownGraceMs?:
 - **Configuration** is read once, by `parseAppConfig`, and passed down as values; application code does not read `process.env`. A new variable is added to the schema, to every `.env.*` file and to the README table
 - **Partial update** is `PATCH`: a property that is absent is left alone, `null` clears a nullable column
 - **Lists** use keyset pagination: `cursor` is the ID of the last item of the previous page (`meta.nextCursor`)
-- **Deleted rows** (`deletedAt`) are invisible to every repository method. The cursor of the service list and of the customer list may still name a deleted row: the row stays, so the page starts after its place
+- **Deleted rows** (`deletedAt`) are invisible to every repository method. The cursor of the service list, of the staff list and of the customer list may still name a deleted row: the row stays, so the page starts after its place
 - **Data that belongs to a salon** is served below the salon; the service categories (`business-logic/service-category/`, `routes/service-category/`) are the example to read. The router is mounted at `/salons/:salonId/...` and created with `Router({ mergeParams: true })`, so its handlers see `salonId`. The use case reads the salon of the path with `parseSalonIdOfPath`, decides the permission from that salon alone, and answers 404 through `requireSalon` when the salon does not exist. Every repository method takes the salon ID, so a resource of another salon is not found (404). The create and update requests do not carry `salonId`. A write mapper exists where a column needs converting or a request holds the rows of more than one table: the service categories have none, and the services (`business-logic/service/`, `routes/service/`) have one that tells the service from its options. The services also show what the categories do not: rules that tie two properties together, checked for the row as it will be stored after a partial update (`serviceRuleIssues` in `business-logic/service/_shared/rules.ts`, called by the use case for a create and by the repository inside its transaction for an update); a bulk update that changes all the services or none, whose route `/bulk` is registered before `/:id`; a soft delete; and a delete that is refused with `DomainErrors.conflict` (409). See [docs/authentication.md](docs/authentication.md) and [docs/service-menu.md](docs/service-menu.md)
+- **The staff ledger** belongs to a salon and is not public (`business-logic/staff/`, `routes/staff/`). It is built like the service categories, with `authenticated` on every handler: every use case, the list and the get included, decides the permission from the salon of the path first (`mayKeepStaffLedger`: an administrator or the owner of that salon), and the list handler hands the decoded query to the use case as a `Result` (`ListStaffUseCase.execute(actor, salon, query)`). Nobody deactivates or deletes the staff member that their own account belongs to: `isOwnStaffRecord` compares the actor with the target, and the refusal is `DomainErrors.conflict` (409), not `forbidden`. The write mapper (`mappers/write/staff.mapper.ts`) converts one column, the `numeric` `commissionRate`. An email that a staff member of the salon who is not deleted has, and a staff code that any staff member of the salon has or had, are reported by the repository as `alreadyExists` (409), from the name of the violated constraint. A staff member who is deactivated or deleted no longer gives a login account the salon. See [docs/staff.md](docs/staff.md)
 - **The customer ledger** belongs to no salon and is not public (`business-logic/customer/`, `routes/customer/`). The router is a plain `Router()` mounted at `/customers`, and every handler is wrapped with `authenticated`. The use case decides the permission from the actor alone and first, before it reads the ID, the query or the body. The list handler decodes the query and hands the outcome to the use case as a `Result` (`ListCustomersUseCase.execute(actor, query)`), so a query that cannot be decoded is reported only after the permission. The use cases take the current time from `clock` in `CustomerUseCaseDependencies`. The write mapper (`mappers/write/customer.mapper.ts`) converts nothing: property names and representations are those of the columns, and the mapper is where the compiler checks that the request and the row agree. An email that a customer who is not deleted has, and a referral code that any customer has or had, are reported by the repository as `alreadyExists` (409), from the name of the violated constraint. See [docs/customers.md](docs/customers.md)
 - **Tests**: unit tests for schemas, mappers and use cases in the domain package; integration tests per endpoint against PostgreSQL in the api package
 
