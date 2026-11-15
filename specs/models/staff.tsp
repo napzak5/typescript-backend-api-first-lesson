@@ -367,9 +367,49 @@ namespace BeautySalon.Models {
   }
 
   @doc("""
-    サロン横断スタッフ検索リクエスト - 全サロンのスタッフを対象に、絞り込み条件とページネーションを指定する。条件はすべて AND で結合する
+    スタッフプロフィールのレスポンス - 顧客に見せるスタッフの情報。staff テーブルの1行のうち、公開する項目だけを持つ。
+    本名、連絡先、雇用の情報(基本給、歩合率、雇用形態、入社日)は含まない。それらはスタッフ台帳(StaffResponse)が返す。
+    プロパティ名と null 許可は DB カラムと一致させている
     """)
-  model StaffGlobalSearchRequest {
+  model StaffProfileResponse {
+    @doc("スタッフを一意に識別するID")
+    id: StaffId;
+
+    @doc("所属サロンのID")
+    salonId: SalonId;
+
+    @doc("顧客向けに表示するスタッフ名")
+    displayName: string;
+
+    @doc("技術レベル")
+    level: StaffLevelType;
+
+    @doc("役職名。未設定の場合はnull")
+    position: string | null;
+
+    @doc("得意分野や専門メニューの一覧。ない場合は空配列")
+    specialties: string[];
+
+    @doc("自己紹介や経歴の概要 - プロフィール未記入の新人スタッフの場合はnull")
+    bio: string | null;
+
+    @doc("プロフィール画像のURL - プロフィール画像未設定の場合はnull")
+    imageUrl: string | null;
+
+    @doc("実務経験年数 - 経験年数未記載またはアシスタントスタッフの場合はnull")
+    yearsOfExperience: int32 | null;
+
+    @doc("保有資格名の一覧 (テキスト管理)。ない場合は空配列")
+    certifications: string[];
+
+    @doc("予約を受け付けるかどうか")
+    canReceiveBookings: boolean;
+  }
+
+  @doc("""
+    スタッフプロフィール一覧リクエスト - 全サロンのスタッフを対象に、絞り込み条件とページネーションを指定する。条件はすべて AND で結合する
+    """)
+  model StaffProfileSearchRequest {
     @query
     @doc("1ページあたりの取得件数上限 (1〜100)")
     @minValue(1)
@@ -381,11 +421,18 @@ namespace BeautySalon.Models {
     cursor?: string;
 
     @query
+    @doc("所属サロンの ID による絞り込み(完全一致)。存在しないサロンを指定した場合は空の一覧を返す")
+    salonId?: SalonId;
+
+    @query
     @doc("得意分野による絞り込み。specialtiesに指定した値(完全一致)を含むスタッフに一致する")
+    @minLength(1)
     specialty?: string;
 
     @query
     @doc("所属サロンの市区町村名による絞り込み(完全一致)")
+    @minLength(1)
+    @maxLength(100)
     city?: string;
   }
 }

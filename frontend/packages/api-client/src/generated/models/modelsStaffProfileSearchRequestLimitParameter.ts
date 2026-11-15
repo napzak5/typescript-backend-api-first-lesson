@@ -9,4 +9,4 @@
 /**
  * 1ページあたりの取得件数上限 (1〜100)
  */
-export type ModelsStaffGlobalSearchRequestLimitParameter = number;
+export type ModelsStaffProfileSearchRequestLimitParameter = number;
