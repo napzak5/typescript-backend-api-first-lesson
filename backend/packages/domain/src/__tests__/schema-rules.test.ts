@@ -2,10 +2,13 @@ import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
 import {
   atLeastOneProperty,
+  dayOfWeekOf,
   MAX_INTEGER,
   nonBlankText,
   noRepeatedEntries,
   phoneNumber,
+  timeOfDay,
+  withSeconds,
 } from '../schemas/rules'
 import { parseWith, uuidSchema } from '../shared'
 import { brokenRules } from './fixtures'
@@ -208,5 +211,96 @@ describe('MAX_INTEGER', () => {
   it('is the largest value of a PostgreSQL integer column, 2^31 - 1', () => {
     expect(MAX_INTEGER).toBe(2_147_483_647)
     expect(MAX_INTEGER).toBe(2 ** 31 - 1)
+  })
+})
+
+describe('timeOfDay', () => {
+  it.each([
+    ['midnight', '00:00'],
+    ['the last minute of a day', '23:59'],
+    ['a time with seconds', '09:30:15'],
+    ['the last second of a day', '23:59:59'],
+    ['an hour of 19', '19:00'],
+    ['an hour of 20', '20:00'],
+  ])('accepts %s and keeps it as it is', (_case, time) => {
+    expect(parseWith(timeOfDay, time, 'Invalid')).toEqual({
+      type: 'success',
+      data: time,
+    })
+  })
+
+  it.each([
+    ['24:00', '24:00', [':invalid_format']],
+    ['an hour of 30', '30:00', [':invalid_format']],
+    ['a minute of 60', '09:60', [':invalid_format']],
+    ['a second of 60', '09:00:60', [':invalid_format']],
+    ['an hour of one digit', '9:00', [':invalid_format']],
+    ['a minute of one digit', '09:0', [':invalid_format']],
+    ['a second of one digit', '09:00:0', [':invalid_format']],
+    ['hours alone', '09', [':invalid_format']],
+    ['fractions of a second', '09:00:00.123', [':invalid_format']],
+    ['a time zone', '09:00Z', [':invalid_format']],
+    ['an offset', '09:00+09:00', [':invalid_format']],
+    ['a time of 12 hours', '9:00 AM', [':invalid_format']],
+    ['a space in front', ' 09:00', [':invalid_format']],
+    ['a line break at the end', '09:00\n', [':invalid_format']],
+    ['a date and a time', '2026-12-31T09:00', [':invalid_format']],
+    ['the empty string', '', [':invalid_format']],
+    ['a number', 900, [':invalid_type']],
+    ['null', null, [':invalid_type']],
+  ])('refuses %s', (_case, time, expected) => {
+    expect(rulesBrokenBy(timeOfDay, time)).toEqual(expected)
+  })
+})
+
+describe('withSeconds', () => {
+  it('adds the seconds to a time without them', () => {
+    expect(withSeconds('09:00')).toBe('09:00:00')
+    expect(withSeconds('23:59')).toBe('23:59:00')
+  })
+
+  it('keeps a time with seconds as it is', () => {
+    expect(withSeconds('09:00:30')).toBe('09:00:30')
+  })
+
+  it('puts two times in the order of the clock, whichever of them has seconds', () => {
+    const times = ['10:00', '09:00:30', '09:00', '09:01', '09:00:59']
+
+    expect(times.map(withSeconds).toSorted()).toEqual([
+      '09:00:00',
+      '09:00:30',
+      '09:00:59',
+      '09:01:00',
+      '10:00:00',
+    ])
+  })
+})
+
+describe('dayOfWeekOf', () => {
+  it.each([
+    ['2026-12-28', 'monday'],
+    ['2026-12-29', 'tuesday'],
+    ['2026-12-30', 'wednesday'],
+    ['2026-12-31', 'thursday'],
+    ['2027-01-01', 'friday'],
+    ['2027-01-02', 'saturday'],
+    ['2027-01-03', 'sunday'],
+    ['2028-02-29', 'tuesday'],
+    ['1999-12-31', 'friday'],
+    ['2000-01-01', 'saturday'],
+  ])(
+    'names the day of the week of %s as the database does: %s',
+    (date, day) => {
+      expect(dayOfWeekOf(date)).toBe(day)
+    },
+  )
+
+  it.each([
+    ['a date that does not exist', '2026-02-30'],
+    ['29 February of a year that is not a leap year', '2027-02-29'],
+    ['a word', 'monday'],
+    ['the empty string', ''],
+  ])('returns null for %s', (_case, text) => {
+    expect(dayOfWeekOf(text)).toBeNull()
   })
 })

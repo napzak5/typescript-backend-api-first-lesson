@@ -7,7 +7,6 @@
  */
 
 /**
- * 関連リソースや次アクションへのリンク情報。リンクがない場合はnull
- * @nullable
+ * この日付に適用される行だけを返す。その日付の単日の行があればその行を、なければその曜日の毎週の行を返す。どちらもなければ空配列を返す
  */
-export type StaffCrudUpdateAvailability200Links = {[key: string]: string} | null;
+export type ModelsStaffScheduleSearchRequestParameter = string;

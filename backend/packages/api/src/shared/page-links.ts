@@ -3,7 +3,8 @@ import type { components } from '@beauty-salon-backend/generated'
 type PaginationMeta = components['schemas']['Models.PaginationMeta']
 type PaginationLinks = components['schemas']['Models.PaginationLinks']
 
-const queryOf = (url: string): string => {
+/** The query of a request URL, without the question mark; '' when there is none. */
+export const queryOf = (url: string): string => {
   const start = url.indexOf('?')
   return start === -1 ? '' : url.slice(start + 1)
 }

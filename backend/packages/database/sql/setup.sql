@@ -650,15 +650,20 @@ CREATE TABLE "staff_schedules" (
 	"staffId" uuid NOT NULL,
 	"dayOfWeek" "day_of_week",
 	"date" date,
-	"startTime" time NOT NULL,
-	"endTime" time NOT NULL,
+	"startTime" time,
+	"endTime" time,
 	"breakStartTime" time,
 	"breakEndTime" time,
 	"isRecurring" boolean DEFAULT true NOT NULL,
 	"isAvailable" boolean DEFAULT true NOT NULL,
 	"notes" text,
 	"createdAt" timestamp with time zone DEFAULT now() NOT NULL,
-	"updatedAt" timestamp with time zone DEFAULT now() NOT NULL
+	"updatedAt" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "staff_schedules_break_has_both_times" CHECK (("breakStartTime" IS NULL) = ("breakEndTime" IS NULL)),
+	CONSTRAINT "staff_schedules_break_inside_working_hours" CHECK (("startTime" < "breakStartTime") AND ("breakStartTime" < "breakEndTime") AND ("breakEndTime" < "endTime")),
+	CONSTRAINT "staff_schedules_end_after_start" CHECK ("startTime" < "endTime"),
+	CONSTRAINT "staff_schedules_times_when_available" CHECK (("isAvailable" AND ("startTime" IS NOT NULL) AND ("endTime" IS NOT NULL)) OR ((NOT "isAvailable") AND ("startTime" IS NULL) AND ("endTime" IS NULL) AND ("breakStartTime" IS NULL) AND ("breakEndTime" IS NULL))),
+	CONSTRAINT "staff_schedules_weekly_or_single_day" CHECK (("isRecurring" AND ("dayOfWeek" IS NOT NULL) AND (date IS NULL)) OR ((NOT "isRecurring") AND ("dayOfWeek" IS NULL) AND (date IS NOT NULL)))
 );
 
 CREATE TABLE "staff_skills" (
@@ -903,6 +908,8 @@ CREATE INDEX "idx_staff_performances_staff_id" ON "staff_performances" USING btr
 CREATE INDEX "idx_staff_schedules_date" ON "staff_schedules" USING btree ("date" date_ops);
 CREATE INDEX "idx_staff_schedules_day_of_week" ON "staff_schedules" USING btree ("dayOfWeek" enum_ops);
 CREATE INDEX "idx_staff_schedules_staff_id" ON "staff_schedules" USING btree ("staffId" uuid_ops);
+CREATE UNIQUE INDEX "staff_schedules_single_day_unique" ON "staff_schedules" USING btree ("staffId" uuid_ops,"date" date_ops) WHERE (NOT "isRecurring");
+CREATE UNIQUE INDEX "staff_schedules_weekly_unique" ON "staff_schedules" USING btree ("staffId" uuid_ops,"dayOfWeek" enum_ops) WHERE "isRecurring";
 CREATE INDEX "idx_staff_skills_service_id" ON "staff_skills" USING btree ("serviceId" uuid_ops);
 CREATE INDEX "idx_staff_skills_staff_id" ON "staff_skills" USING btree ("staffId" uuid_ops);
 CREATE INDEX "idx_treatment_materials_product_id" ON "treatment_materials" USING btree ("productId" uuid_ops);

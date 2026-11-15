@@ -14,13 +14,15 @@ TypeSpec で API のモデルとオペレーションを定義するときのル
 
 すべてのドメインの TypeSpec が、このルールに従っている。テーブルに対応するモデルは、プロパティ名・null 許可・Enum の値が DB と一致しており、`pnpm check:api-db` が検査する（[API-DB型制約マッピング](./api-db-type-constraints-mapping.md)）。
 
-バックエンドに実装があるのは、Salon とシステムのオペレーション、サロンのサービスカテゴリーとサービスのオペレーション（`ServiceCategoryCrud`、`ServiceCrud`）、サロンのスタッフ台帳の 5 つのオペレーション（`StaffCrud` の `list`、`create`、`get`、`update`、`delete`）、顧客に見せるスタッフのプロフィールの 2 つのオペレーション（`StaffProfile` の `list`、`get`）、顧客台帳の 5 つのオペレーション（`CustomerCrud` の `list`、`create`、`get`、`update`、`delete`）、顧客本人のプロフィールの 3 つのオペレーション（`CustomerProfile` の `get`、`create`、`update`）、および認証のすべてのオペレーション（`AuthCrud`、`SessionCrud`、`AdminAuthCrud`。`/api/v1/auth` のログイン、トークンの更新、ログアウト、現在のユーザーの取得、ユーザー登録、メールアドレスの確認、パスワードの再設定と変更、2 要素認証、セッションの一覧と無効化、および `/api/v1/admin/auth` の管理者の操作）である。`CustomerCrud` の残りのオペレーション（[顧客台帳](./customers.md#実装範囲)）、`StaffCrud` の残りのオペレーション（[スタッフ台帳](./staff.md#実装範囲)）、およびほかのドメインは TypeSpec と DB スキーマにだけ存在する。ロール・権限、添付ファイル、発注、カルテなど、テーブルがまだない機能の TypeSpec もある（一覧は [API-DB型制約マッピング](./api-db-type-constraints-mapping.md#ルールに載せるモデル載せないモデル)）。
+バックエンドに実装があるのは、Salon とシステムのオペレーション、サロンのサービスカテゴリーとサービスのオペレーション（`ServiceCategoryCrud`、`ServiceCrud`）、サロンのスタッフ台帳の 5 つのオペレーション（`StaffCrud` の `list`、`create`、`get`、`update`、`delete`）、スタッフの勤務スケジュールの 2 つのオペレーション（`StaffSchedules` の `list`、`update`）、顧客に見せるスタッフのプロフィールの 2 つのオペレーション（`StaffProfile` の `list`、`get`）、顧客台帳の 5 つのオペレーション（`CustomerCrud` の `list`、`create`、`get`、`update`、`delete`）、顧客本人のプロフィールの 3 つのオペレーション（`CustomerProfile` の `get`、`create`、`update`）、および認証のすべてのオペレーション（`AuthCrud`、`SessionCrud`、`AdminAuthCrud`。`/api/v1/auth` のログイン、トークンの更新、ログアウト、現在のユーザーの取得、ユーザー登録、メールアドレスの確認、パスワードの再設定と変更、2 要素認証、セッションの一覧と無効化、および `/api/v1/admin/auth` の管理者の操作）である。`CustomerCrud` の残りのオペレーション（[顧客台帳](./customers.md#実装範囲)）と、ほかのドメインは TypeSpec と DB スキーマにだけ存在する。スタッフのコントラクトのオペレーションは、すべて実装済みである（[スタッフ台帳](./staff.md#実装範囲)）。ロール・権限、添付ファイル、発注、カルテなど、テーブルがまだない機能の TypeSpec もある（一覧は [API-DB型制約マッピング](./api-db-type-constraints-mapping.md#ルールに載せるモデル載せないモデル)）。
 
 規約から外れている箇所は次のとおりで、いずれも意図したものである。
 
 | 箇所 | 外れている点 | 理由 |
 |---|---|---|
-| `PUT /api/v1/salons/{salonId}/staff/{id}/availability` | 更新が `PATCH` ではない | 本文がスケジュールの全行で、スタッフのスケジュールを丸ごと置き換える |
+| `PUT /api/v1/salons/{salonId}/staff/{id}/schedules` | 更新が `PATCH` ではない | 本文がスケジュールの全行で、スタッフのスケジュールを丸ごと置き換える。送らなかった行は残らない（[勤務スケジュール](./staff.md#スケジュールの更新)） |
+| `StaffScheduleUpdateRequest` | `XXXUpdateRequest` なのに、プロパティが Optional のオブジェクトではなく、行（`StaffSchedule`）の配列である | 同じ理由。部分更新ではないので、行のプロパティはすべて必須にする。`@body` のパラメーターに付けた `@maxItems` は OpenAPI に出力されないので、上限は名前付きの配列モデル（`model StaffScheduleUpdateRequest is StaffSchedule[]`）に付ける |
+| `StaffSchedule` | レスポンスに使うのに `XXXResponse` という名前ではなく、`id`、`staffId`、タイムスタンプを持たない | リクエストとレスポンスの両方に使う、行のモデルである（Salon の `OpeningHours`、サービスの `ServiceOption` と同じ）。置き換えのたびに行を作り直すので、行の ID は続かない |
 | `POST /api/v1/customers/bulk`、`POST /api/v1/treatments/{id}/photos` | 201 に `Location` がない | 複数の行を作成するので、指す先が 1 つに決まらない |
 | `DELETE /api/v1/customers/bulk` | 204 ではなく 200 | 削除した ID の一覧を返す |
 | `POST /api/v1/auth/register` | 作成なのに 201 と `Location` ではなく、本文なしの 204 | メールアドレスが登録済みかどうかを、応答から判別できないようにする |
@@ -276,6 +278,7 @@ namespace SalonOperations {
 | ほかのサロンに属するリソース | 存在を知らせないよう 404。403 にするのは、権限をパスのサロンだけで判定できる操作である。公開情報であるサロンそのものへの操作と、サロンの下にあるルート（`/api/v1/salons/{salonId}/…`）への操作がこれにあたる。サロンの下にあるルートでは、パスのサロンに属さないリソースを 404 にする（[認証と認可](./authentication.md#サロンの下にあるルートの権限)） |
 | サロンに属さず、公開もしないリソース（顧客台帳。`/api/v1/customers`） | ルートをサロンの下に置かない。一覧と 1 件の取得を含めて、どのオペレーションにも `@useAuth(NoAuth)` を付けず、`CommonErrors` を加える。権限は操作者だけで決まり、最初に確認するので、権限のないユーザーには、ID や本文が不正でも、対象が存在しなくても 403 になる。`specs/operations/customer-operations.tsp` では、これを namespace の `@doc` に書いている（[認証と認可](./authentication.md#顧客台帳の権限)） |
 | サロンに属し、公開しないリソース（スタッフ台帳。`/api/v1/salons/{salonId}/staff`） | ルートはサロンの下に置く。一覧と 1 件の取得を含めて、どのオペレーションにも `@useAuth(NoAuth)` を付けず、`CommonErrors` を加える。権限はパスのサロンだけで決まり、最初に確認するので、権限のないユーザーには、ID や本文が不正でも、サロンや対象が存在しなくても 403 になる。`specs/operations/staff-operations.tsp` では、これを namespace の `@doc` に書いている（[認証と認可](./authentication.md#サロンの下にあるルートの権限)） |
+| 1 つのリソースに属し、全体をまとめて読み書きする行（スタッフの勤務スケジュール。`/api/v1/salons/{salonId}/staff/{id}/schedules`） | ルートは、そのリソースの下に置く。行ごとのルート（`…/schedules/{scheduleId}`）は作らず、`GET` で全体を読み、`PUT` で全体を置き換える。行のモデルは 1 つで、リクエストとレスポンスの両方に使う。行の数には上限を付け（`@maxItems`）、一覧にページネーションを付けない（`ApiResponse<T[]>`）。行ごとの規則と、行どうしの規則（重複）は `@doc` に書き、DB では CHECK 制約と一意インデックスにする（[勤務スケジュール](./staff.md#勤務スケジュール)） |
 | 公開しないリソースのうち、誰にでも見せる部分（顧客に見せるスタッフのプロフィール。`/api/v1/staff-profiles`） | 見せるプロパティだけのレスポンスモデル（`StaffProfileResponse`）と、別のインターフェース（`StaffProfile`）を定義する。台帳のレスポンスモデルのプロパティを任意にしたり、操作者によって出し分けたりしない。どのオペレーションにも `@useAuth(NoAuth)` を付け、`PublicErrors` を加える。サロンをまたいで探すので、ルートはサロンの下に置かず、サロンは検索リクエストの任意のフィルターにする（下の「親で絞り込む一覧」）。`pnpm check:api-db` のルールには、出さないカラムを `omittedColumns` に列挙する（[スタッフ台帳](./staff.md#見せる項目)） |
 | 状態の遷移（確定、キャンセル、完了、返金など） | ステータスのカラムを更新リクエストで書き換えず、`POST .../{id}/<action>` のアクションにする。リクエストとレスポンスは `XXX<Action>Request` / `XXX<Action>Response` |
 | 一括操作 | 1 つのトランザクションで全件を処理する。1 件でも失敗すれば全体を失敗させ、成功のレスポンスに件ごとのエラーを入れない。実装済みの例は、サービスの一括更新（`ServiceCrud` の `bulkUpdate`、`PATCH /api/v1/salons/{salonId}/services/bulk`） |

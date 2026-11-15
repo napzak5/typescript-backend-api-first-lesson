@@ -350,6 +350,9 @@ const staffRules: ModelRule[] = [
     kind: 'update',
     omittedColumns: staffManagedColumns,
   },
+  // An entry of a schedule is the same in a request and in a response.
+  // The check of a response is the one that fits both: every property is
+  // required, and nullable exactly where the column is.
   {
     model: 'Models.StaffSchedule',
     table: 'staffSchedules',

@@ -11,7 +11,7 @@ using TypeSpec.OpenAPI;
 using BeautySalon.Models;
 
 namespace BeautySalon.Operations {
-  @doc("サロンのスタッフ台帳と勤務スケジュールを管理するAPI操作群です。実装済みの操作は、台帳の一覧・登録・1件の取得・更新・削除です。顧客に見せる項目は、スタッフプロフィールの操作(/api/v1/staff-profiles)が認証なしで返します。台帳は雇用の情報と個人の連絡先を含むので、これらは admin と、そのサロンの owner だけが実行できます(manager と staff には403を返します)。権限はパスの salonId だけで判定し、権限のないユーザーには、IDや本文が不正でも、サロンが存在しなくても403を返します。サロンが存在しない場合と、スタッフがパスのサロンに属さない場合は404を返します。")
+  @doc("サロンのスタッフ台帳を管理するAPI操作群です。ここに定義した操作はすべて実装済みです。顧客に見せる項目は、スタッフプロフィールの操作(/api/v1/staff-profiles)が認証なしで返します。台帳は雇用の情報と個人の連絡先を含むので、これらは admin と、そのサロンの owner だけが実行できます(manager と staff には403を返します)。権限はパスの salonId だけで判定し、権限のないユーザーには、IDや本文が不正でも、サロンが存在しなくても403を返します。サロンが存在しない場合と、スタッフがパスのサロンに属さない場合は404を返します。")
   @route("/api/v1/salons/{salonId}/staff")
   @tag("Staff")
   namespace StaffOperations {
@@ -84,18 +84,21 @@ namespace BeautySalon.Operations {
         | ProblemResponse<404>
         | ProblemResponse<409>
         | CommonErrors;
+    }
+  }
 
-      @doc("指定日のスタッフ空き状況を取得し、予約枠の提案や調整に活用します。指定日に適用される勤務スケジュールの行を返します。その日付の単日の行があれば単日の行を、なければその曜日の毎週繰り返す行を返します。適用される行がない場合は空配列を返します。")
-      @summary("Get staff availability")
-      @route("/{id}/availability")
+  @doc("スタッフの勤務スケジュール(staff_schedules)を管理するAPI操作群です。ここに定義した操作はすべて実装済みです。スケジュールは、毎週の行と単日の行の一覧で、スタッフがいつ勤務するかを表します。読めるのは admin と、そのサロンの owner・manager、そして自分のスケジュールに限り staff です。置き換えられるのは admin と、そのサロンの owner・manager です。サロンに対する権限はパスの salonId だけで判定し、権限のないユーザーには、IDや本文が不正でも、サロンが存在しなくても403を返します。staff がほかのスタッフのIDを指定した場合も403を返します。サロンが存在しない場合と、スタッフがパスのサロンに属さない場合、スタッフが削除済みの場合は404を返します。顧客に見せる予約可能な枠は、予約の操作が返します。")
+  @route("/api/v1/salons/{salonId}/staff/{id}/schedules")
+  @tag("Staff")
+  namespace StaffScheduleOperations {
+    interface StaffSchedules {
+      @doc("スタッフの勤務スケジュールの行を一覧取得します。毎週の行を月曜から日曜の順に、続けて単日の行を日付の古い順に返します。date を指定すると、その日付に適用される行だけ(0件か1件)を返します。行の数に上限があるため、ページネーションはありません。")
+      @summary("List the schedules of a staff member")
       @get
-      getAvailability(
+      list(
         @path salonId: SalonId,
         @path id: StaffId,
-
-        @doc("空き状況を確認する日付")
-        @query
-        date: plainDate,
+        ...StaffScheduleSearchRequest,
       ):
         | {
             @statusCode statusCode: 200;
@@ -105,14 +108,13 @@ namespace BeautySalon.Operations {
         | ProblemResponse<404>
         | CommonErrors;
 
-      @doc("スタッフの稼働予定を更新し、シフト変更や臨時休みを反映します。スタッフの勤務スケジュール全体を、指定した行の一覧で置き換えます。")
-      @summary("Update staff availability")
-      @route("/{id}/availability")
+      @doc("スタッフの勤務スケジュール全体を、指定した行の一覧で置き換えます。空の配列を指定すると、スケジュールは空になります。同じ曜日の毎週の行、同じ日付の単日の行は、それぞれ1つまでです。1つでも規則に反する行があれば、何も変更せずに400を返します。レスポンスは、保存後の行を一覧と同じ順で返します。")
+      @summary("Replace the schedules of a staff member")
       @put
-      updateAvailability(
+      update(
         @path salonId: SalonId,
         @path id: StaffId,
-        @body request: StaffSchedule[],
+        @body request: StaffScheduleUpdateRequest,
       ):
         | {
             @statusCode statusCode: 200;
