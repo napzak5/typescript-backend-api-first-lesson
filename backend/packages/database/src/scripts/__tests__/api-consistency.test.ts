@@ -475,7 +475,7 @@ describe('modelRules', () => {
     })
   })
 
-  it('lets a request for a staff member leave out what the server assigns, the salon, which the path names, the login account and the awards; the response leaves out the awards and deletedAt, and embeds nothing', () => {
+  it('lets a request for a staff member leave out what the server assigns, the salon, which the path names, the login account and the awards; the response leaves out the awards and deletedAt, the profile everything customers are not shown, and none embeds anything', () => {
     const managed = [
       'id',
       'salonId',
@@ -511,6 +511,34 @@ describe('modelRules', () => {
       'Models.StaffUpdateRequest': {
         kind: 'update',
         omittedColumns: managed,
+        embedded: undefined,
+        computed: undefined,
+      },
+      'Models.StaffProfileResponse': {
+        kind: 'response',
+        omittedColumns: [
+          'userId',
+          'firstName',
+          'lastName',
+          'firstNameKana',
+          'lastNameKana',
+          'email',
+          'phoneNumber',
+          'alternativePhone',
+          'staffCode',
+          'awards',
+          'hireDate',
+          'employmentType',
+          'baseSalary',
+          'commissionRate',
+          'maxConcurrentBookings',
+          'bufferTimeBefore',
+          'bufferTimeAfter',
+          'isActive',
+          'deletedAt',
+          'createdAt',
+          'updatedAt',
+        ],
         embedded: undefined,
         computed: undefined,
       },

@@ -308,6 +308,37 @@ const staffRules: ModelRule[] = [
     omittedColumns: ['awards', 'deletedAt'],
   },
   {
+    // What customers are shown of a staff member: the name the salon chose
+    // for them and what describes the work, nothing of the person or the
+    // employment.
+    model: 'Models.StaffProfileResponse',
+    table: 'staff',
+    kind: 'response',
+    omittedColumns: [
+      'userId',
+      'firstName',
+      'lastName',
+      'firstNameKana',
+      'lastNameKana',
+      'email',
+      'phoneNumber',
+      'alternativePhone',
+      'staffCode',
+      'awards',
+      'hireDate',
+      'employmentType',
+      'baseSalary',
+      'commissionRate',
+      'maxConcurrentBookings',
+      'bufferTimeBefore',
+      'bufferTimeAfter',
+      'isActive',
+      'deletedAt',
+      'createdAt',
+      'updatedAt',
+    ],
+  },
+  {
     model: 'Models.StaffCreateRequest',
     table: 'staff',
     kind: 'create',

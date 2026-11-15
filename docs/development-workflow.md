@@ -87,6 +87,7 @@ curl http://localhost:3000/api/v1/salons      # サロン一覧（認証なし�
 （`/api/v1/salons/{salonId}/service-categories`）、サロンのサービス
 （`/api/v1/salons/{salonId}/services`）、サロンのスタッフ台帳
 （`/api/v1/salons/{salonId}/staff` の一覧、登録、1 件の取得、更新、削除）、
+顧客に見せるスタッフのプロフィール（`/api/v1/staff-profiles` の一覧、1 件の取得）、
 顧客台帳（`/api/v1/customers` の一覧、登録、1 件の取得、更新、削除）、
 顧客本人のプロフィール（`/api/v1/customers/me` の取得、作成、更新）、認証のすべてのオペレーション（`/api/v1/auth` のログイン、トークンの更新、
 ログアウト、現在のユーザーの取得、ユーザー登録、メールアドレスの確認、パスワードの再設定と変更、
@@ -98,7 +99,8 @@ curl http://localhost:3000/api/v1/salons      # サロン一覧（認証なし�
 必要です。顧客台帳は、一覧と取得を含むすべてのオペレーションに、`admin` か、サロンの `owner`・
 `manager`・`staff` のアクセストークンが必要です（削除は `staff` にはできません）。
 スタッフ台帳は、一覧と取得を含むすべてのオペレーションに、`admin` か、そのサロンの `owner` の
-アクセストークンが必要です。顧客本人のプロフィールには、顧客のアカウントのアクセストークンが必要です。
+アクセストークンが必要です。スタッフのプロフィールは、認証なしで読めます。
+顧客本人のプロフィールには、顧客のアカウントのアクセストークンが必要です。
 シードのアカウントでログインしてトークンを取得する手順と、ロールごとの権限は
 [認証と認可](./authentication.md) を、サービスカテゴリーとサービスの規則は
 [サービスメニュー](./service-menu.md) を、顧客台帳と顧客本人のプロフィールの規則は
@@ -243,6 +245,10 @@ Salon ドメインがリファレンス実装です。新しいドメインは�
 （`backend/packages/domain/src/business-logic/staff/`、`backend/packages/api/src/routes/staff/`）が
 手本です。一覧と取得を含むすべてのオペレーションで、パスのサロンだけで最初に権限を判定します。
 これも同じ節に挙げてあり、規則は [スタッフ台帳](./staff.md) にあります。
+公開しないデータの一部を誰にでも見せるときは、スタッフのプロフィール
+（`backend/packages/domain/src/business-logic/staff-profile/`、
+`backend/packages/api/src/routes/staff-profile/`）が手本です。見せる項目だけのモデル、リポジトリ、
+ユースケース、ルーターを、台帳とは別に持ちます。
 
 サロンに属さず、公開もしないデータは、ルートをサロンの下に置かず、すべてのオペレーションを
 `authenticated` で包みます。権限は操作者だけで決まるので、ユースケースは ID、クエリ、本文を見る前に

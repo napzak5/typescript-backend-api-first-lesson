@@ -307,7 +307,10 @@ both as well: it answers 400 for a cursor that names no customer, and a
 deleted customer still says where the next page begins
 ([customers.md](./customers.md), Japanese). So does the staff list of a
 salon, which is ordered by registration, oldest first
-([staff.md](./staff.md), Japanese). The
+([staff.md](./staff.md), Japanese). The list of staff profiles has the
+same order across salons; its cursor may name any staff member, one who
+is not shown any more or one the filters leave out included, and only a
+cursor that names no staff member is answered with 400. The
 page links are built by
 `pageLinks` in `backend/packages/api/src/shared/page-links.ts`, for every
 list, from the request URL with the cursor replaced.

@@ -25,8 +25,6 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
-  GlobalStaffSearch200,
-  GlobalStaffSearchParams,
   ModelsProblemDetails,
   ModelsSalonId,
   ModelsStaffCreateRequest,
@@ -40,7 +38,10 @@ import type {
   StaffCrudList200,
   StaffCrudListParams,
   StaffCrudUpdate200,
-  StaffCrudUpdateAvailability200
+  StaffCrudUpdateAvailability200,
+  StaffProfileGet200,
+  StaffProfileList200,
+  StaffProfileListParams
 } from '../../models';
 
 import { customInstance } from '../../../mutator';
@@ -1152,46 +1153,36 @@ export const useStaffCrudUpdateAvailability = <TError = ModelsProblemDetails,
       > => {
       return useMutation(getStaffCrudUpdateAvailabilityMutationOptions(options), queryClient);
     }
-    export type globalStaffSearchResponse200 = {
-  data: GlobalStaffSearch200
+    export type staffProfileListResponse200 = {
+  data: StaffProfileList200
   status: 200
 }
 
-export type globalStaffSearchResponse400 = {
+export type staffProfileListResponse400 = {
   data: ModelsProblemDetails
   status: 400
 }
 
-export type globalStaffSearchResponse401 = {
-  data: ModelsProblemDetails
-  status: 401
-}
-
-export type globalStaffSearchResponse403 = {
-  data: ModelsProblemDetails
-  status: 403
-}
-
-export type globalStaffSearchResponse429 = {
+export type staffProfileListResponse429 = {
   data: ModelsProblemDetails
   status: 429
 }
 
-export type globalStaffSearchResponse500 = {
+export type staffProfileListResponse500 = {
   data: ModelsProblemDetails
   status: 500
 }
 
-export type globalStaffSearchResponseSuccess = (globalStaffSearchResponse200) & {
+export type staffProfileListResponseSuccess = (staffProfileListResponse200) & {
   headers: Headers;
 };
-export type globalStaffSearchResponseError = (globalStaffSearchResponse400 | globalStaffSearchResponse401 | globalStaffSearchResponse403 | globalStaffSearchResponse429 | globalStaffSearchResponse500) & {
+export type staffProfileListResponseError = (staffProfileListResponse400 | staffProfileListResponse429 | staffProfileListResponse500) & {
   headers: Headers;
 };
 
-export type globalStaffSearchResponse = (globalStaffSearchResponseSuccess | globalStaffSearchResponseError)
+export type staffProfileListResponse = (staffProfileListResponseSuccess | staffProfileListResponseError)
 
-export const getGlobalStaffSearchUrl = (params?: GlobalStaffSearchParams,) => {
+export const getStaffProfileListUrl = (params?: StaffProfileListParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -1203,16 +1194,16 @@ export const getGlobalStaffSearchUrl = (params?: GlobalStaffSearchParams,) => {
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/staff/search?${stringifiedParams}` : `/api/v1/staff/search`
+  return stringifiedParams.length > 0 ? `/api/v1/staff-profiles?${stringifiedParams}` : `/api/v1/staff-profiles`
 }
 
 /**
- * 専門分野や地域条件で全サロンのスタッフを横断検索し、顧客の指名ニーズに応えます。削除済みのスタッフは含みません。
- * @summary Search staff across all salons
+ * 絞り込み条件とページネーションを指定して、スタッフのプロフィールを一覧取得します。サロンをまたいで探せます。1つのサロンのスタッフは salonId で絞り込みます。登録日時の古い順に並びます。cursorがスタッフを指していない場合は400を返します。
+ * @summary List staff profiles
  */
-export const globalStaffSearch = async (params?: GlobalStaffSearchParams, options?: RequestInit): Promise<globalStaffSearchResponse> => {
+export const staffProfileList = async (params?: StaffProfileListParams, options?: RequestInit): Promise<staffProfileListResponse> => {
 
-  return customInstance<globalStaffSearchResponse>(getGlobalStaffSearchUrl(params),
+  return customInstance<staffProfileListResponse>(getStaffProfileListUrl(params),
   {
     ...options,
     method: 'GET'
@@ -1225,81 +1216,228 @@ export const globalStaffSearch = async (params?: GlobalStaffSearchParams, option
 
 
 
-export const getGlobalStaffSearchQueryKey = (params?: GlobalStaffSearchParams,) => {
+export const getStaffProfileListQueryKey = (params?: StaffProfileListParams,) => {
     return [
-    `/api/v1/staff/search`, ...(params ? [params] : [])
+    `/api/v1/staff-profiles`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getGlobalStaffSearchQueryOptions = <TData = Awaited<ReturnType<typeof globalStaffSearch>>, TError = ModelsProblemDetails>(params?: GlobalStaffSearchParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof globalStaffSearch>>, TError, TData>>, }
+export const getStaffProfileListQueryOptions = <TData = Awaited<ReturnType<typeof staffProfileList>>, TError = ModelsProblemDetails>(params?: StaffProfileListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffProfileList>>, TError, TData>>, }
 ) => {
 
 const {query: queryOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getGlobalStaffSearchQueryKey(params);
+  const queryKey =  queryOptions?.queryKey ?? getStaffProfileListQueryKey(params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof globalStaffSearch>>> = ({ signal }) => globalStaffSearch(params, { signal });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof staffProfileList>>> = ({ signal }) => staffProfileList(params, { signal });
 
 
 
 
 
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof globalStaffSearch>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof staffProfileList>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
-export type GlobalStaffSearchQueryResult = NonNullable<Awaited<ReturnType<typeof globalStaffSearch>>>
-export type GlobalStaffSearchQueryError = ModelsProblemDetails
+export type StaffProfileListQueryResult = NonNullable<Awaited<ReturnType<typeof staffProfileList>>>
+export type StaffProfileListQueryError = ModelsProblemDetails
 
 
 /**
- * 専門分野や地域条件で全サロンのスタッフを横断検索し、顧客の指名ニーズに応えます。削除済みのスタッフは含みません。
- * @summary Search staff across all salons
+ * 絞り込み条件とページネーションを指定して、スタッフのプロフィールを一覧取得します。サロンをまたいで探せます。1つのサロンのスタッフは salonId で絞り込みます。登録日時の古い順に並びます。cursorがスタッフを指していない場合は400を返します。
+ * @summary List staff profiles
  */
-export function useGlobalStaffSearch<TData = Awaited<ReturnType<typeof globalStaffSearch>>, TError = ModelsProblemDetails>(
- params: undefined |  GlobalStaffSearchParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof globalStaffSearch>>, TError, TData>> & Pick<
+export function useStaffProfileList<TData = Awaited<ReturnType<typeof staffProfileList>>, TError = ModelsProblemDetails>(
+ params: undefined |  StaffProfileListParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffProfileList>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof globalStaffSearch>>,
+          Awaited<ReturnType<typeof staffProfileList>>,
           TError,
-          Awaited<ReturnType<typeof globalStaffSearch>>
+          Awaited<ReturnType<typeof staffProfileList>>
         > , 'initialData'
       >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 専門分野や地域条件で全サロンのスタッフを横断検索し、顧客の指名ニーズに応えます。削除済みのスタッフは含みません。
- * @summary Search staff across all salons
+ * 絞り込み条件とページネーションを指定して、スタッフのプロフィールを一覧取得します。サロンをまたいで探せます。1つのサロンのスタッフは salonId で絞り込みます。登録日時の古い順に並びます。cursorがスタッフを指していない場合は400を返します。
+ * @summary List staff profiles
  */
-export function useGlobalStaffSearch<TData = Awaited<ReturnType<typeof globalStaffSearch>>, TError = ModelsProblemDetails>(
- params?: GlobalStaffSearchParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof globalStaffSearch>>, TError, TData>> & Pick<
+export function useStaffProfileList<TData = Awaited<ReturnType<typeof staffProfileList>>, TError = ModelsProblemDetails>(
+ params?: StaffProfileListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffProfileList>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof globalStaffSearch>>,
+          Awaited<ReturnType<typeof staffProfileList>>,
           TError,
-          Awaited<ReturnType<typeof globalStaffSearch>>
+          Awaited<ReturnType<typeof staffProfileList>>
         > , 'initialData'
       >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 専門分野や地域条件で全サロンのスタッフを横断検索し、顧客の指名ニーズに応えます。削除済みのスタッフは含みません。
- * @summary Search staff across all salons
+ * 絞り込み条件とページネーションを指定して、スタッフのプロフィールを一覧取得します。サロンをまたいで探せます。1つのサロンのスタッフは salonId で絞り込みます。登録日時の古い順に並びます。cursorがスタッフを指していない場合は400を返します。
+ * @summary List staff profiles
  */
-export function useGlobalStaffSearch<TData = Awaited<ReturnType<typeof globalStaffSearch>>, TError = ModelsProblemDetails>(
- params?: GlobalStaffSearchParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof globalStaffSearch>>, TError, TData>>, }
+export function useStaffProfileList<TData = Awaited<ReturnType<typeof staffProfileList>>, TError = ModelsProblemDetails>(
+ params?: StaffProfileListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffProfileList>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 専門分野や地域条件で全サロンのスタッフを横断検索し、顧客の指名ニーズに応えます。削除済みのスタッフは含みません。
- * @summary Search staff across all salons
+ * 絞り込み条件とページネーションを指定して、スタッフのプロフィールを一覧取得します。サロンをまたいで探せます。1つのサロンのスタッフは salonId で絞り込みます。登録日時の古い順に並びます。cursorがスタッフを指していない場合は400を返します。
+ * @summary List staff profiles
  */
-export function useGlobalStaffSearch<TData = Awaited<ReturnType<typeof globalStaffSearch>>, TError = ModelsProblemDetails>(
- params?: GlobalStaffSearchParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof globalStaffSearch>>, TError, TData>>, }
+export function useStaffProfileList<TData = Awaited<ReturnType<typeof staffProfileList>>, TError = ModelsProblemDetails>(
+ params?: StaffProfileListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffProfileList>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const queryOptions = getGlobalStaffSearchQueryOptions(params,options)
+  const queryOptions = getStaffProfileListQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type staffProfileGetResponse200 = {
+  data: StaffProfileGet200
+  status: 200
+}
+
+export type staffProfileGetResponse400 = {
+  data: ModelsProblemDetails
+  status: 400
+}
+
+export type staffProfileGetResponse404 = {
+  data: ModelsProblemDetails
+  status: 404
+}
+
+export type staffProfileGetResponse429 = {
+  data: ModelsProblemDetails
+  status: 429
+}
+
+export type staffProfileGetResponse500 = {
+  data: ModelsProblemDetails
+  status: 500
+}
+
+export type staffProfileGetResponseSuccess = (staffProfileGetResponse200) & {
+  headers: Headers;
+};
+export type staffProfileGetResponseError = (staffProfileGetResponse400 | staffProfileGetResponse404 | staffProfileGetResponse429 | staffProfileGetResponse500) & {
+  headers: Headers;
+};
+
+export type staffProfileGetResponse = (staffProfileGetResponseSuccess | staffProfileGetResponseError)
+
+export const getStaffProfileGetUrl = (id: ModelsStaffId,) => {
+
+
+
+
+  return `/api/v1/staff-profiles/${id}`
+}
+
+/**
+ * IDを指定してスタッフのプロフィールを1件取得します。在籍していない、削除済み、または所属サロンが削除済みのスタッフには404を返します。
+ * @summary Get a staff profile
+ */
+export const staffProfileGet = async (id: ModelsStaffId, options?: RequestInit): Promise<staffProfileGetResponse> => {
+
+  return customInstance<staffProfileGetResponse>(getStaffProfileGetUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getStaffProfileGetQueryKey = (id: ModelsStaffId,) => {
+    return [
+    `/api/v1/staff-profiles/${id}`
+    ] as const;
+    }
+
+
+export const getStaffProfileGetQueryOptions = <TData = Awaited<ReturnType<typeof staffProfileGet>>, TError = ModelsProblemDetails>(id: ModelsStaffId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffProfileGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getStaffProfileGetQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof staffProfileGet>>> = ({ signal }) => staffProfileGet(id, { signal });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof staffProfileGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type StaffProfileGetQueryResult = NonNullable<Awaited<ReturnType<typeof staffProfileGet>>>
+export type StaffProfileGetQueryError = ModelsProblemDetails
+
+
+/**
+ * IDを指定してスタッフのプロフィールを1件取得します。在籍していない、削除済み、または所属サロンが削除済みのスタッフには404を返します。
+ * @summary Get a staff profile
+ */
+export function useStaffProfileGet<TData = Awaited<ReturnType<typeof staffProfileGet>>, TError = ModelsProblemDetails>(
+ id: ModelsStaffId, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffProfileGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof staffProfileGet>>,
+          TError,
+          Awaited<ReturnType<typeof staffProfileGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * IDを指定してスタッフのプロフィールを1件取得します。在籍していない、削除済み、または所属サロンが削除済みのスタッフには404を返します。
+ * @summary Get a staff profile
+ */
+export function useStaffProfileGet<TData = Awaited<ReturnType<typeof staffProfileGet>>, TError = ModelsProblemDetails>(
+ id: ModelsStaffId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffProfileGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof staffProfileGet>>,
+          TError,
+          Awaited<ReturnType<typeof staffProfileGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * IDを指定してスタッフのプロフィールを1件取得します。在籍していない、削除済み、または所属サロンが削除済みのスタッフには404を返します。
+ * @summary Get a staff profile
+ */
+export function useStaffProfileGet<TData = Awaited<ReturnType<typeof staffProfileGet>>, TError = ModelsProblemDetails>(
+ id: ModelsStaffId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffProfileGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * IDを指定してスタッフのプロフィールを1件取得します。在籍していない、削除済み、または所属サロンが削除済みのスタッフには404を返します。
+ * @summary Get a staff profile
+ */
+export function useStaffProfileGet<TData = Awaited<ReturnType<typeof staffProfileGet>>, TError = ModelsProblemDetails>(
+ id: ModelsStaffId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffProfileGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getStaffProfileGetQueryOptions(id,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
