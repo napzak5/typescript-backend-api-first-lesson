@@ -11,6 +11,7 @@ import type {
   HeldStaffInvitation,
   IStaffInvitationRepository,
   IssuedStaffInvitation,
+  JoinedStaffInvitation,
   RevokedStaffInvitation,
   StaffInvitationIssue,
   UsableStaffInvitation,
@@ -96,6 +97,9 @@ const staffInvitationRepositoryWith = (
   ),
   accept: vi.fn(async () =>
     Result.success<AcceptedStaffInvitation>({ type: 'accepted' }),
+  ),
+  join: vi.fn(async () =>
+    Result.success<JoinedStaffInvitation>({ type: 'joined' }),
   ),
   ...overrides,
 })

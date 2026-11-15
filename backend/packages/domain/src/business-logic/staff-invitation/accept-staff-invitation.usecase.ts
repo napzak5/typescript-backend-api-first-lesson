@@ -18,7 +18,9 @@ export class AcceptStaffInvitationUseCase {
    * token came through its mailbox. Nobody is signed in by this.
    *
    * An address that has an account is told before the password is looked
-   * at: no password would make the invitation work.
+   * at: no password would make the invitation work. That goes for an
+   * account that joins too: it is its own, and the token does not stand in
+   * for its password.
    */
   async execute(input: unknown): Promise<Result<null, DomainError>> {
     const request = parseWith(
@@ -44,7 +46,7 @@ export class AcceptStaffInvitationUseCase {
       return Result.error(invitationRefused())
     }
     const { email } = found.data.invitation
-    if (found.data.type === 'accountExists') {
+    if (found.data.type !== 'usable') {
       return Result.error(addressHasAccount(email))
     }
 

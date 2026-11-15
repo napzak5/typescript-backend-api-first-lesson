@@ -8,7 +8,9 @@
 
 スタッフがいつ勤務するかは、台帳の行ではなく、スタッフごとの[勤務スケジュール](#勤務スケジュール)（`/api/v1/salons/{salonId}/staff/{id}/schedules`、テーブルは `staff_schedules`）が持ちます。シフトを組むサロンの `owner` と `manager`、管理者が読み書きし、スタッフ本人は自分のスケジュールを読みます。
 
-スタッフがログインするアカウントは、[招待](#スタッフのログインアカウント)で作ります（`/api/v1/salons/{salonId}/staff/{id}/invitation`、テーブルは `staff_invitations`）。管理者とサロンの `owner` が台帳のスタッフを招待し、招待された本人が、メールのリンクから自分でパスワードを決めます。
+スタッフがログインするアカウントは、[招待](#スタッフのログインアカウント)でスタッフに紐づきます（`/api/v1/salons/{salonId}/staff/{id}/invitation`、テーブルは `staff_invitations`）。管理者とサロンの `owner` が台帳のスタッフを招待し、招待された本人が、メールのリンクから自分でパスワードを決めます。スタッフのアカウントをすでに持っていて、どのサロンにも届かない人（サロンを移ったスタッフなど）は、そのアカウントでログインして、招待に[参加](#参加)します。
+
+紐づいたアカウントは、サロンの側から[読み、ロールを変え、紐づけを解除](#紐づいたアカウントの管理)できます（`/api/v1/salons/{salonId}/staff/{id}/account`）。扱うのは、管理者とサロンの `owner` です。
 
 ## 実装範囲
 
@@ -17,8 +19,9 @@
 | 台帳（`StaffCrud`）の一覧、登録、1 件の取得、更新、削除 | 実装済み |
 | 顧客に見せるプロフィール（`StaffProfile`）の一覧、1 件の取得 | 実装済み。サロンをまたぐ検索は、一覧の絞り込みで行う |
 | 勤務スケジュール（`StaffSchedules`）の一覧、更新（全体の置き換え） | 実装済み |
-| スタッフのログインアカウント（`StaffInvitations` の招待の取得、作成、取り消しと、`AuthCrud` の招待の確認、受け入れ） | 実装済み |
-| すでにあるアカウントとスタッフの紐づけ、紐づいているアカウントのロールの変更、紐づけの解除、スタッフ本人によるプロフィールの編集 | 未実装。コントラクトにオペレーションがない |
+| スタッフのログインアカウント（`StaffInvitations` の招待の取得、作成、取り消しと、`AuthCrud` の招待の確認、受け入れ、参加） | 実装済み |
+| 紐づいたアカウント（`StaffAccounts` の取得、ロールの変更、紐づけの解除） | 実装済み |
+| スタッフ本人によるプロフィールの編集、スタッフ本人によるサロンからの離脱、顧客のアカウントをスタッフのアカウントにすること、複数のサロンに属するアカウント | 未実装。コントラクトにオペレーションがない |
 
 スタッフのコントラクトに定義したオペレーションは、すべて実装済みです。`staff_skills`（担当できるサービス）と `staff_performances`（実績）は、テーブルだけがあり、コントラクトにオペレーションがありません。
 
@@ -66,7 +69,7 @@
 
 - どちらも、自分をサロンから締め出す操作で、締め出されたあとは自分では戻せません。ほかの `owner` と `admin` は、`owner` のスタッフ情報も無効化、削除できます
 - 判定は、本文を検証したあと、サロンとスタッフを検索する前に行います（`business-logic/staff/_shared/authorization.ts` の `isOwnStaffRecord`）。本文が不正なら、409 ではなく 400 です
-- **サロンに有効な `owner` が 1 人もいなくなることは、防いでいません**。管理者は最後の `owner` も無効化、削除できます。2 人の `owner` が同じ瞬間に互いを無効化すると、どちらも成功することがあります（[同時に届いたリクエスト](#同時に届いたリクエスト)）。作ったばかりのサロンにも `owner` はいないので、`owner` のいないサロンは、ふつうにある状態です。戻せるのは管理者で、`isActive` を戻すか、別のスタッフを `owner` として[招待](#スタッフのログインアカウント)します
+- **サロンに有効な `owner` が 1 人もいなくなることは、防いでいません**。管理者は最後の `owner` も無効化、削除できます。2 人の `owner` が同じ瞬間に互いを無効化すると、どちらも成功することがあります（[同時に届いたリクエスト](#同時に届いたリクエスト)）。作ったばかりのサロンにも `owner` はいないので、`owner` のいないサロンは、ふつうにある状態です。戻せるのは管理者で、`isActive` を戻すか、別のスタッフを `owner` として[招待](#スタッフのログインアカウント)するか、別のスタッフのアカウントのロールを `owner` に[変えます](#ロールの変更)
 
 ### ログインアカウントへの影響
 
@@ -77,7 +80,7 @@
 - `isActive` を true に戻すと、権限も戻ります。削除は戻せません（復元のオペレーションはない）
 - アカウントに紐づいていないスタッフ（`userId` が null）には、この影響はありません
 
-アカウントとスタッフの紐づけを作るのは、[招待の受け入れ](#受け入れ)だけです（ほかに紐づいているのは、シードのアカウント）。レスポンスの `userId` は、紐づいているアカウントの ID か null で、台帳のリクエストでは指定できません（紐づけは `users.staffId` と `staff.userId` の両方を書き、ロールも決めるので、専用のオペレーションにしています）。紐づけを外すオペレーションはなく、サロンへの権限を外すのは、スタッフの無効化か削除です。
+アカウントとスタッフの紐づけを作るのは、招待の[受け入れ](#受け入れ)と[参加](#参加)だけです（ほかに紐づいているのは、シードのアカウント）。レスポンスの `userId` は、紐づいているアカウントの ID か null で、台帳のリクエストでは指定できません（紐づけは `users.staffId` と `staff.userId` の両方を書き、ロールも決めるので、専用のオペレーションにしています）。紐づけを外すのは、[紐づけの解除](#紐づけの解除)です。スタッフの無効化と削除は、紐づけを残したまま、サロンへの権限だけを外します。
 
 ## 一覧
 
@@ -133,7 +136,7 @@
 - 論理削除です（`deletedAt` を設定し、行は残す）。削除したスタッフは、台帳とプロフィールの、一覧と取得の対象外になります
 - 削除したスタッフのメールアドレスは、別のスタッフに使えるようになります。スタッフコードは使えないままです
 - 勤務スケジュール（`staff_schedules`）、スキル（`staff_skills`）、予約などの行は残ります。削除したスタッフのスケジュールは、読むことも置き換えることもできません（404）
-- そのスタッフに紐づくアカウントは、サロンへの権限を失います（[ログインアカウントへの影響](#ログインアカウントへの影響)）。`users.staffId` は、削除したスタッフを指したまま残ります
+- そのスタッフに紐づくアカウントは、サロンへの権限を失います（[ログインアカウントへの影響](#ログインアカウントへの影響)）。`users.staffId` は、削除したスタッフを指したまま残ります。そのアカウントは、ほかのスタッフへの招待に[参加](#参加)できます
 - そのスタッフが持っている招待は、使えなくなります（[招待が使える間](#招待が使える間)）。`staff_invitations` の行は残ります
 - 削除したスタッフを更新しても、戻りません（404）
 - 予約が残っているスタッフを削除できるかは、予約の実装で決めます
@@ -309,11 +312,12 @@
 
 ## スタッフのログインアカウント
 
-スタッフのアカウント（ロール `owner`、`manager`、`staff`）は、**招待**で作ります。台帳を扱えるユーザーが、台帳のスタッフを、ロールを指定して招待し、招待された本人が、メールのリンクから自分でパスワードを決めます。招待する側がパスワードを決めることはありません（本人以外がパスワードを知ることになるため）。
+スタッフのアカウント（ロール `owner`、`manager`、`staff`）は、**招待**でスタッフに紐づきます。台帳を扱えるユーザーが、台帳のスタッフを、ロールを指定して招待し、招待された本人が、メールのリンクから自分でパスワードを決めます。招待する側がパスワードを決めることはありません（本人以外がパスワードを知ることになるため）。
 
 1. 管理者か、そのサロンの `owner` が、スタッフを招待する
 2. システムが、台帳のメールアドレス（`staff.email`）に、1 回だけ使えるリンクを送る
-3. 本人がリンクを開いて、パスワードを設定する。そのメールアドレスのアカウントが、招待のロールで作られ、スタッフに紐づく
+3. 本人がリンクを開いて、パスワードを設定する（[受け入れ](#受け入れ)）。そのメールアドレスのアカウントが、招待のロールで作られ、スタッフに紐づく
+4. そのメールアドレスのスタッフのアカウントをすでに持っていて、どのサロンにも届かない人は、パスワードを設定する代わりに、そのアカウントでログインして招待に[参加](#参加)する。アカウントが、招待のロールで、スタッフに紐づく
 
 管理者がサロンを作ったあとは、管理者が台帳に最初のスタッフを登録して `owner` として招待し、その `owner` が、ほかのスタッフを登録して招待します。
 
@@ -322,20 +326,21 @@
 | 招待の取得（`StaffInvitations`） | `GET /api/v1/salons/{salonId}/staff/{id}/invitation` | `admin`、そのサロンの `owner` | 200。招待がなければ 404 |
 | 招待の作成 | `POST /api/v1/salons/{salonId}/staff/{id}/invitation` | 同上。`owner` のロールへの招待は `admin` だけ | 201 と `Location`。メールを送る。前の招待があれば、置き換える |
 | 招待の取り消し | `DELETE /api/v1/salons/{salonId}/staff/{id}/invitation` | `admin`、そのサロンの `owner` | 204。招待がなければ 404 |
-| 招待の確認（`AuthCrud`） | `POST /api/v1/auth/staff-invitation/verify` | 招待のトークンを持つ人（認証なし） | 200。招待の内容を返す。トークンは消費しない |
+| 招待の確認（`AuthCrud`） | `POST /api/v1/auth/staff-invitation/verify` | 招待のトークンを持つ人（認証なし） | 200。招待の内容と、次に進むルート（受け入れか参加）を返す。トークンは消費しない |
 | 招待の受け入れ（`AuthCrud`） | `POST /api/v1/auth/staff-invitation/accept` | 同上 | 204。アカウントを作る |
+| 招待への参加（`AuthCrud`） | `POST /api/v1/auth/staff-invitation/join` | 招待のトークンを持ち、宛先のメールアドレスのアカウントでログインしている人 | 204。すでにあるアカウントを、スタッフに紐づける |
 
 - 招待は、スタッフ 1 人につき 1 つまでです。ルートは単数形（`invitation`）で、招待の ID はパスに現れません
-- モデルは、`StaffInvitationCreateRequest`（`role`）、`StaffInvitationResponse`（`id`、`staffId`、`email`、`role`、`expiresAt`、`createdAt`）、`AuthStaffInvitationVerifyRequest`（`token`）、`AuthStaffInvitationAcceptRequest`（`token`、`password`）です。ロールの列挙は `SalonRoleType`（`owner`、`manager`、`staff`）で、`customer` と `admin` への招待はありません
+- モデルは、`StaffInvitationCreateRequest`（`role`）、`StaffInvitationResponse`（`id`、`staffId`、`email`、`role`、`expiresAt`、`createdAt`）、`AuthStaffInvitationVerifyRequest`（`token`）、`AuthStaffInvitationAcceptRequest`（`token`、`password`）、`AuthStaffInvitationJoinRequest`（`token`）です。ロールの列挙は `SalonRoleType`（`owner`、`manager`、`staff`）で、`customer` と `admin` への招待はありません
 - 招待を変更するオペレーション（`PUT`、`PATCH`）はありません。ロールを変えるときは、招待し直します
-- 確認と受け入れは、トークンを本文で受け取ります（URL に書くと、ログに残る）。メールのリンクは、ほかのメールと同じく、トークンをフラグメントに置きます（`<PUBLIC_APP_URL>/accept-staff-invitation#token=…`。[メールで送るトークン](./authentication.md#メールで送るトークン)）。確認と受け入れのレスポンスには `Cache-Control: no-store` が付きます
+- 確認、受け入れ、参加は、トークンを本文で受け取ります（URL に書くと、ログに残る）。メールのリンクは、ほかのメールと同じく、トークンをフラグメントに置きます（`<PUBLIC_APP_URL>/accept-staff-invitation#token=…`。[メールで送るトークン](./authentication.md#メールで送るトークン)）。確認、受け入れ、参加のレスポンスには `Cache-Control: no-store` が付きます
 - トークンとそのハッシュ（`tokenHash`）は、どのレスポンスにも出しません。トークンがあるのは、メールの中だけで、DB にあるのはハッシュだけです
-- 取得、作成、確認のレスポンスの `links` は、取得と作成が `self`（招待）と `staff`（台帳のスタッフ）、確認が `accept`（受け入れのルート）です
+- 取得、作成、確認のレスポンスの `links` は、取得と作成が `self`（招待）と `staff`（台帳のスタッフ）です。確認は、次に進むルートを 1 つだけ返します。`accept`（受け入れのルート）か `join`（参加のルート）のどちらかです（[参加](#参加)）
 
 ### 招待の規則
 
 - **宛先は、台帳のメールアドレスです。** リクエストでは指定できません（本文に `email` を書くと 400）。招待は、送った宛先を `email` に保存します
-- **有効期間は 7 日です**（`business-logic/auth/_shared/mailed-token.ts` の `STAFF_INVITATION`）。スタッフが私用のメールを読むのは、休みの日だけのこともあります。トークンでできるのは、送った宛先のアカウントを 1 つ作ることだけで、招待した側はいつでも取り消せます
+- **有効期間は 7 日です**（`business-logic/auth/_shared/mailed-token.ts` の `STAFF_INVITATION`）。スタッフが私用のメールを読むのは、休みの日だけのこともあります。トークンでできるのは、送った宛先のアカウントを 1 つ作ることと、宛先のアカウントにログインしている人がそのアカウントを紐づけることだけで、招待した側はいつでも取り消せます
 - **招待し直すと、前の招待は使えなくなります。** 新しいトークンを発行し、メールを送り直します。ロールを変えて招待し直すこともできます
 - **招待できるのは、有効（`isActive`）で、アカウントに紐づいていないスタッフです。** 紐づいているスタッフは 409（`Staff member <id> already has an account`）、無効なスタッフも 409（`Staff member <id> is inactive`）。紐づいているかどうかは、`staff.userId` と、そのスタッフを指す削除されていないアカウント（`users.staffId`）の両方で見ます
 - **スタッフが持っている招待を置き換えられるのは、60 秒に 1 回です。** それより短い間隔の招待は 409（`An invitation was mailed to staff member <id> moments ago`）で、前の招待はそのまま残ります。二重の送信と、招待し直しの繰り返しを止めるためのものです。期限の切れた招待は、すぐに置き換えられます
@@ -346,11 +351,11 @@
 
 招待の作成は、宛先のメールアドレスにすでにアカウントがあっても、同じ応答（201）を返し、同じメールを送ります。応答を変えると、`owner` が、任意のメールアドレスについて、アカウントがあるかどうかを調べられるからです（台帳にそのアドレスでスタッフを登録して、招待すればよい）。登録やパスワードの再設定が、アカウントの有無で応答を変えないのと同じです（[ユーザー登録](./authentication.md#ユーザー登録)）。
 
-アカウントがあることは、確認と受け入れの応答（409）で、トークンを持つ人、つまりそのメールボックスを読める人にだけ伝えます。
+アカウントがあることは、確認の応答（409、または `links` の `join`）と受け入れの応答（409）で、トークンを持つ人、つまりそのメールボックスを読める人にだけ伝えます。
 
 ### 招待が使える間
 
-招待が使えるのは、発行できる状態が続いている間だけです。確認と受け入れは、次のどれかに当たると、理由を区別せずに 400（`errors[].field` は `token`、`rule` は `invalid_token`）を返します。
+招待が使えるのは、発行できる状態が続いている間だけです。確認、受け入れ、参加は、次のどれかに当たると、理由を区別せずに 400（`errors[].field` は `token`、`rule` は `invalid_token`）を返します。
 
 - トークンが存在しない、期限が切れた（`expiresAt` の時刻から）、取り消された、新しい招待に置き換えられた、すでに使われた
 - スタッフが削除された、無効になった、すでにアカウントに紐づいている
@@ -365,15 +370,41 @@
 |---|---|
 | アカウントがない（削除済みだけがある場合を含む） | アカウントを作る |
 | 登録しただけで、メールアドレスを確認していないアカウントがある（`unverified` で、顧客にもスタッフにも紐づいていない） | そのアカウントを、招待のアカウントにする。パスワードを置き換え、確認と再設定のトークンを消し、失敗回数とロックを解除し、そのアカウントのセッションを消す |
-| それ以外のアカウントがある | 409（コード `3002`、`User with email <メールアドレス> already exists`）。何も書かず、招待は残る |
+| それ以外のアカウントがある | 409（コード `3002`、`User with email <メールアドレス> already exists`）。何も書かず、招待は残る。[参加](#参加)できるアカウントでも同じ |
 
 - 作るアカウントは、`email` が招待の宛先、`role` が招待のロール、`status` が `active`、`emailVerified` が true、`staffId` がそのスタッフです。リンクを受け取れたことが、メールアドレスの確認になります
 - 同じトランザクションで、`staff.userId` にアカウントの ID を書き、招待を消します。トークンが使えるのは 1 回です
 - **セッションは発行しません。** 受け入れのあと、利用者はログインします。ログインの規則（2 要素認証、試行回数の制限）を 1 か所に保つためです（パスワードの再設定と同じ）
 - パスワードの規則は、登録と同じです（[設定するパスワードの規則](./authentication.md#設定するパスワードの規則)）。規則に合わないパスワードは 400 で、招待は残ります
 - 未確認のアカウントは、登録した人がそのメールボックスを読めることを、まだ示していません。それを理由に受け入れを断ると、誰でも、他人のメールアドレスで登録しておくだけで、その人がスタッフのアカウントを作れないようにできます。登録が、未確認のアカウントを後の登録で置き換えるのと同じ扱いです
-- **1 つのメールアドレスに、アカウントは 1 つ。1 つのアカウントに、ロールは 1 つ。** 顧客としてアカウントを持つ人が、同じメールアドレスでスタッフのアカウントを作ることはできません。別のメールアドレスを台帳に登録して、招待し直します。すでにあるアカウントをスタッフに紐づけるオペレーション（サロンを移ったスタッフなど）は、まだありません
+- **1 つのメールアドレスに、アカウントは 1 つ。1 つのアカウントに、ロールは 1 つ。** 顧客としてアカウントを持つ人が、同じメールアドレスでスタッフのアカウントを作ることはできません。別のメールアドレスを台帳に登録して、招待し直します
+- **受け入れは、すでにあるアカウントには何もしません。** 受け入れはパスワードを設定するオペレーションで、招待のトークンは、すでにあるアカウントのパスワードの代わりになりません。スタッフのアカウントを持っていて、どのサロンにも届かない人は、ログインして[参加](#参加)します
 - 受け入れのあと、そのスタッフは招待できません（409）。台帳の `userId` に、アカウントの ID が出ます
+
+### 参加
+
+スタッフのアカウントをすでに持っている人は、パスワードを設定せず、そのアカウントでログインして、招待に参加します（`POST /api/v1/auth/staff-invitation/join`。本文は `token` だけ）。サロンを移ったスタッフ、[紐づけを解除](#紐づけの解除)されたあとで戻るスタッフ、閉店したサロンの `owner` が次のサロンを始めるときなどです。
+
+参加できるのは、**サロンのロール（`owner`、`manager`、`staff`）を持ち、どのサロンにも届かないアカウント**です。操作者の範囲が `none` のアカウントで（[認可](./authentication.md#認可)）、次のどれかに当たります。
+
+| アカウントの状態 | 参加のあとの、前のスタッフの行 |
+|---|---|
+| スタッフに紐づいていない（紐づけを解除された） | — |
+| 紐づいているスタッフが削除された | そのまま（削除した行は、`userId` を持ったまま残る） |
+| 紐づいているスタッフが無効になった | `userId` を null にする |
+| 紐づいているスタッフのサロンが削除された | `userId` を null にする |
+
+- **確認（`verify`）は、宛先のメールアドレスにあるアカウントを見て、次に進むルートを `links` で 1 つだけ返します。** アカウントがない（未確認の登録だけがある場合を含む）なら `accept`、参加できるアカウントがあるなら `join` です。それ以外のアカウント（顧客、管理者、サロンに届くスタッフのアカウント）があるなら 409 です。`data` は、どちらの場合も招待の内容です
+- **参加には、招待のトークンと、宛先のメールアドレスのアカウントのセッションの両方が要ります。** トークンは、宛先のメールボックスを読めることを示し、セッションは、そのアカウントでログインできること（パスワードと、設定していれば 2 要素認証）を示します。トークンだけでは、すでにあるアカウントには何もできません
+- ログインしているアカウントのメールアドレスが、招待の宛先と違えば 409（コード `3003`、`The invitation was sent to another address`）です。応答に宛先は出しません。招待は残り、宛先のアカウントは参加できます
+- サロンに届くアカウントは 409（コード `3003`、`Your account already belongs to a staff member`）です。トークンが使えるかどうかは答えません。1 つのアカウントが属するサロンは 1 つで、移るときは、いまのサロンが先に、紐づけを解除するか、スタッフを無効化または削除します
+- 顧客と管理者のアカウントは 403 です（`mayJoinStaffInvitations`）。顧客のアカウントをスタッフのアカウントにするオペレーションはありません
+- 参加すると、1 つのトランザクションで、アカウントの `staffId` を招待のスタッフに、`role` を**招待のロール**にし、`staff.userId` にアカウントの ID を書き、招待を消します。トークンが使えるのは 1 回です
+- **前のロールは引き継ぎません。** 前のサロンの `owner` も、`staff` として招待されれば `staff` になります
+- アカウントが前に紐づいていたスタッフは、上の表のとおりです。`userId` が null になったスタッフは、アカウントに紐づいていないスタッフに戻り、有効に戻せば、また招待できます
+- パスワード、2 要素認証、セッションは変えません。発行済みのアクセストークンのまま、**次のリクエストから**新しいサロンに届きます
+- 参加できるかどうかは、ロールと、サロンに届くかどうかだけで決まります（`business-logic/auth/_shared/actor.ts` の `isWithoutSalon`。操作者の範囲 `none` と同じ条件）。アカウントの状態（`status`）は見ません。ログインできない状態のアカウントは、ログインできるようになるまで、参加できません
+- 参加のあと、そのスタッフは招待できません（409）。アカウントは、サロンの側から[読めます](#紐づいたアカウントの管理)
 
 ### 招待の権限
 
@@ -386,6 +417,7 @@
 - 台帳を扱えるユーザーと同じです（`business-logic/staff-invitation/_shared/authorization.ts` の `mayInviteStaff`）。台帳の操作は、すでにアカウントの権限を変えます（[ログインアカウントへの影響](#ログインアカウントへの影響)）
 - **`owner` のロールを与えられるのは、管理者だけです**（同じファイルの `mayGiveRole`）。サロンを運営する人を決めるのは、サロンを登録するプラットフォームの仕事とします（サロンの作成も管理者だけ）。`owner` のセッションを奪った者が、自分のための `owner` のアカウントを作って居座ることも防ぎます
 - 確認と受け入れに認証は要りません。アクセストークンを送っても、見ません
+- 参加には認証が要ります（401）。参加できるのは、サロンのロールを持つアカウントで、顧客と管理者は 403 です（同じファイルの `mayJoinStaffInvitations`）
 
 ### 確認の順序（招待）
 
@@ -408,10 +440,95 @@
 
 1. リクエストの本文（400。トークンと、受け入れではパスワードの長さ）
 2. トークンが使えること（400）
-3. 宛先にアカウントがないこと（409）
+3. 宛先にアカウントがないこと（409。確認は、参加できるアカウントなら 200 で `join` を返す）
 4. パスワードがブロックリストにないこと（400。受け入れ）
 
 どのパスワードを送っても受け入れられない招待には、パスワードを調べる前に、その理由を答えます。
+
+招待された側（参加）:
+
+1. アクセストークン（401）
+2. アカウントの種類（403。顧客と管理者）
+3. リクエストの本文（400。トークン）
+4. アカウントがどのサロンにも届かないこと（409）
+5. トークンが使えること（400）
+6. アカウントのメールアドレスが、招待の宛先であること（409）
+
+顧客と管理者には、本文が不正でも 403 を返します。サロンに届くアカウントには、トークンが使えるかどうかを答えません。読めない本文は、この順序の前に答えます。
+
+## 紐づいたアカウントの管理
+
+スタッフに紐づいているアカウントを、サロンの側から扱います。スタッフのアカウントとは、`users.staffId` でそのスタッフを指している、削除されていないアカウントです。
+
+| オペレーション（`StaffAccounts`） | ルート | 許可 | 結果 |
+|---|---|---|---|
+| 取得 | `GET /api/v1/salons/{salonId}/staff/{id}/account` | `admin`、そのサロンの `owner` | 200。アカウントがなければ 404 |
+| ロールの変更 | `PATCH /api/v1/salons/{salonId}/staff/{id}/account` | 同上。`owner` のロールを与えるのは `admin` だけ | 200。アカウントがなければ 404 |
+| 紐づけの解除 | `DELETE /api/v1/salons/{salonId}/staff/{id}/account` | `admin`、そのサロンの `owner` | 204。アカウントがなければ 404 |
+
+- アカウントは、スタッフ 1 人につき 1 つまでです（[DB の制約](#staff_invitations-とアカウントの紐づけ)）。ルートは単数形（`account`）で、アカウントの ID はパスに現れません
+- モデルは、`StaffAccountResponse` と `StaffAccountUpdateRequest`（`role`）です。レスポンスの `links` は、`self`（アカウント）と `staff`（台帳のスタッフ）です
+- アカウントのないスタッフは 404（コード `3001`、`Account of staff member <id> was not found`）です。削除されたアカウントは、ないのと同じです。スタッフとサロンの 404 は、台帳と同じです
+- 無効（`isActive` が false）のスタッフのアカウントも、読めて、ロールを変えられ、解除できます。削除したスタッフは 404 です
+- アカウントを作るオペレーションはありません。作るのは、招待の[受け入れ](#受け入れ)です
+
+### 見せる項目（アカウント）
+
+| | 項目 |
+|---|---|
+| 見せる（`StaffAccountResponse` の 8 項目） | `id`、`email`、`role`、`status`、`twoFactorStatus`、`lastLoginAt`、`createdAt`、`updatedAt` |
+| 見せない | 認証に使うもの（`passwordHash`、メールで送るトークンのハッシュと期限、`twoFactorSecret`、`backupCodes`、`twoFactorLastUsedStep`）、ログインの記録（`failedLoginAttempts`、`lockedUntil`、`lastLoginIp`）、`emailVerified`、`lastPasswordChange`、`permissions`、`metadata`、`customerId`、`staffId`、`deletedAt` |
+
+- `role` は `SalonRoleType`（`owner`、`manager`、`staff`）です。スタッフを指すアカウントのロールは、DB の制約（`users_staff_needs_salon_role`）で、この 3 つに限られます
+- `email` は、アカウントのメールアドレスです。招待のあとで台帳のメールアドレス（`staff.email`）を直すと、2 つは違う値になります。サロンの側から、アカウントのメールアドレスは変えられません
+- `status`、`twoFactorStatus`、`lastLoginAt` は、読むだけです。招待したスタッフがログインできているか、2 要素認証を設定しているかを、`owner` が確かめるためのものです。ロックの解除と 2 要素認証のリセットは、[管理者の操作](./authentication.md#管理者の操作)です
+- 見せる項目は、リポジトリが SELECT するカラム（`staff-account.repository.impl.ts` の `accountColumns`）と、読み出しのマッパー（`StaffAccountReadMapper`）が 1 つずつ名指しします。`pnpm check:api-db` は、モデルの項目と、見せないと決めたカラムの一覧（`api-consistency-rules.ts`）を、`users` テーブルと突き合わせます。`role` は、カラムの Enum（`user_role`）の値の一部だけを取るプロパティとして、規則に書いてあります（`narrowed`）
+
+### ロールの変更
+
+- 本文は `role` だけです（`owner`、`manager`、`staff`）。空の本文、`customer` と `admin`、ほかの項目（`status`、`email` など）は 400 です
+- **`owner` のロールを与えられるのは、管理者だけです**（招待と同じ `mayGiveRole`）。そのサロンの `owner` は、`manager` と `staff` を与えられます
+- **`owner` のロールを外すことは、そのサロンの `owner` にもできます。** ほかの `owner` のスタッフ情報を、無効化、削除できるのと同じです。外した `owner` のロールを戻せるのは、管理者だけです
+- **自分のアカウントのロールは変えられません**（409、コード `3003`、`You cannot change the role of your own account`）。自分の権限を下げると、自分では戻せないからです。`owner` が、自分のアカウントに `owner` を指定したときは、その前の確認（ロールを与える権限）で 403 です
+- いまと同じロールを指定しても、200 です
+- 変更は、**次のリクエストから**効きます。発行済みのアクセストークンのまま、権限が変わります。セッションは消しません
+- **サロンに `owner` が 1 人もいなくなることは、防いでいません**（[自分自身のスタッフ情報](#自分自身のスタッフ情報)と同じ判断）。管理者は、最後の `owner` のロールも変えられます
+
+### 紐づけの解除
+
+- `users.staffId` と `staff.userId` を、1 つのトランザクションで null にします。アカウントも、スタッフも残ります
+- アカウントは、**次のリクエストから**サロンへの権限を失います（範囲 `none`）。ログインはでき、ロールは残り、セッションは消しません
+- スタッフは、アカウントに紐づいていないスタッフに戻り、招待できます。解除されたアカウントは、同じスタッフにも、ほかのスタッフにも、招待で[参加](#参加)できます
+- **自分のアカウントは解除できません**（409、コード `3003`、`You cannot unlink your own account`）
+- スタッフの無効化とは、外すものが違います。無効化は、スタッフを顧客に見せなくし、紐づけは残します（有効に戻せば、権限も戻る）。解除は、スタッフをそのままにして（顧客に見え、台帳の項目も変わらない）、アカウントだけを外します。台帳のメールアドレスを間違えたまま受け入れられた招待をやり直すときや、アカウントを別の人のものに替えるときに使います
+- 2 つのカラムは、いつも一緒に書きますが、片方だけが残っていても解除できます。どちらのカラムも、そのスタッフとアカウントを結んでいなければ 404 です
+
+### アカウントの権限
+
+| ユーザー | 取得、紐づけの解除 | ロールの変更 |
+|---|---|---|
+| `admin` | できる | できる（`owner`、`manager`、`staff`） |
+| そのサロンの `owner` | できる。自分のアカウントの解除は 409 | `manager` と `staff` への変更だけ。`owner` への変更は 403。自分のアカウントは 409 |
+| そのサロンの `manager`・`staff`、ほかのサロンのユーザー、顧客、スタッフに紐づいていないスタッフ系のアカウント | できない | できない |
+
+- 台帳を扱えるユーザーと同じです（`business-logic/staff-account/_shared/authorization.ts` の `mayKeepStaffAccounts`）。アカウントの操作は、サロンに届く人を変えるからです
+- スタッフ本人も、自分のアカウントを、このルートから読むことはできません（403）。自分のアカウントは `GET /api/v1/auth/me` で読みます。`owner` は、自分のアカウントも読めます
+- どのオペレーションにも認証が要ります
+
+### 確認の順序（アカウント）
+
+1. アクセストークン（401）
+2. `salonId` の形式（400）
+3. サロンに対する権限（403）
+4. スタッフの `id` の形式（400）
+5. リクエストの本文（400。ロールの変更）
+6. そのロールを与える権限（403。ロールの変更）
+7. 自分のアカウントへの操作（409。ロールの変更、紐づけの解除）
+8. サロンの存在（404）
+9. スタッフの存在（404）
+10. アカウントがあること（404）
+
+サロンに対する権限のないユーザーには、台帳と同じく、ID や本文が不正でも、サロン、スタッフ、アカウントが存在しなくても 403 を返します。読めない本文は、この順序の前に答えます。
 
 ## 同時に届いたリクエスト
 
@@ -432,6 +549,13 @@
 | 受け入れと、その招待の取り消し、招待し直し、スタッフの無効化、削除、メールアドレスの変更が同時に届く | 先に処理されたほうで決まる。受け入れがあとなら 400 で、アカウントは作られない。受け入れが先なら、取り消しは 404、招待し直しは 409 |
 | 受け入れと、同じメールアドレスでの登録が同時に届く | アカウントは 1 つで、招待のアカウントになる |
 | 同じメールアドレスを持つ 2 つのサロンのスタッフが、同時に招待を受け入れる | 片方だけが 204 で、もう片方は 409。409 だったほうの招待は残る |
+| 同じトークンでの参加が同時に届く | 1 件だけが 204 で、ほかは 400 か 409（アカウントが、もうスタッフに紐づいている） |
+| 1 つのアカウントが、2 つのサロンの招待に同時に参加する | 片方だけが 204 で、もう片方は 409（`Your account already belongs to a staff member`）。409 だったほうの招待は残る |
+| 参加と、その招待の取り消し、スタッフの無効化、削除が同時に届く | 先に処理されたほうで決まる。参加があとなら 400 で、アカウントは紐づかない。参加が先なら、取り消しは 404 |
+| 参加と、同じトークンでの受け入れが同時に届く | 参加は 204。受け入れは 409 か 400 で、アカウントのパスワードは変わらない |
+| 参加と、アカウントが前に紐づいていたスタッフの紐づけの解除が同時に届く | 参加は 204。解除は、先に処理されれば 204、あとなら 404。どちらの順でも、前のスタッフの `userId` は null になる |
+| 同じアカウントのロールの変更と、紐づけの解除が同時に届く | 解除は 204。変更は、先に処理されれば 200、あとなら 404 |
+| 同じアカウントの紐づけの解除が同時に届く | 1 件だけが 204 で、ほかは 404 |
 | 2 人の `owner` が、同時に互いを無効化する | どちらも成功することがある（権限は、リクエストを受け付けた時点で判定する）。サロンに有効な `owner` がいなくなるので、管理者が `isActive` を戻すか、別のスタッフを `owner` として招待する |
 
 一意性は DB の一意インデックスと一意制約が決めます。更新と削除は、「削除されていないこと」を WHERE に含めた 1 つの文で行います。
@@ -439,6 +563,8 @@
 スケジュールの更新は、1 つのトランザクションで、スタッフの行をロックしてから（`SELECT … FOR UPDATE`）、いまの行をすべて消して、新しい行を入れます。同時に届いた更新は、ロックの順に 1 件ずつ処理されます。楽観ロックはなく、あとから処理されたリクエストの内容が残ります（ほかの更新と同じ）。
 
 招待を書く操作（作成、取り消し、受け入れ）も、1 つのトランザクションで、スタッフの行をロックしてから行います。台帳の更新と削除は同じ行を書くので、招待の操作と 1 件ずつ処理されます。受け入れは、ロックを取ったあとで、招待がまだ使えるかを読み直します。アカウントの行は、メールアドレスの一意インデックスに対する 1 つの文（`INSERT … ON CONFLICT … DO UPDATE … WHERE`）で作るので、同じメールアドレスの登録や、別のサロンでの受け入れと重なっても、アカウントは 1 つです。
+
+アカウントを書く操作（ロールの変更、紐づけの解除、参加）も、1 つのトランザクションで、スタッフの行をロックしてから行います。参加は、参加するスタッフと、アカウントがいま指しているスタッフの 2 行を、ID の順にロックし、続けてアカウントの行をロックします。紐づけを書く操作は、どれも、スタッフの行、アカウントの行の順にロックするので、互いを待ち合うことはありません。参加は、ロックを取ったあとで、招待がまだ使えるか、アカウントがまだどのサロンにも届かないかを読み直します。読み直したアカウントが、ロックしていないスタッフを指していれば（同時に届いた別のリクエストが紐づけたもの）、そのスタッフが無効でも、参加を断ります（409）。ロックしていないスタッフの行を書くと、そのスタッフの紐づけの解除と、互いを待ち合うことがあるからです。
 
 ## DB の制約
 
@@ -478,11 +604,17 @@
 
 削除されていない 2 人のユーザーが同じスタッフを指している、または削除されていない 2 人のスタッフが同じアカウントを指していると、マイグレーションは失敗します（`could not create unique index "users_staff_unique"` など）。どちらが正しいかを決められないので、行を直してから、やり直します。
 
+マイグレーション `202611152330_users_staff_needs_salon_role.sql` で、次の制約を足しました。
+
+- **スタッフを指すアカウントのロールは、`owner`、`manager`、`staff` のどれか**（CHECK 制約 `users_staff_needs_salon_role`。`staffId` が null でないユーザーの `role`）。顧客と管理者のアカウントは、スタッフに紐づきません。スタッフを指していないアカウントのロールは、制約の対象外です（紐づけを解除されたアカウントは、ロールを持ったまま残る）
+
+スタッフを指している顧客や管理者のユーザーがあると、マイグレーションは失敗します。ロールと紐づけのどちらが正しいかを決められないので、行を直してから、やり直します。
+
 スタッフの行を DB から消すと、その招待も消えます（`staff_invitations_staff_id_fk` の `ON DELETE CASCADE`）。API の削除は論理削除なので、行は残り、招待は使えなくなるだけです。
 
 ### 外部キー
 
-`staff.userId` には外部キーを付けていません。`users.staffId` に外部キーがあり、2 つのテーブルが互いを外部キーで参照すると、DB から生成する `schema.ts` に型が付かなくなるためです（[DB 駆動ドメインモデル](./db-driven-domain-model.md)）。2 つのカラムは、招待の受け入れが、1 つのトランザクションで一緒に書きます。
+`staff.userId` には外部キーを付けていません。`users.staffId` に外部キーがあり、2 つのテーブルが互いを外部キーで参照すると、DB から生成する `schema.ts` に型が付かなくなるためです（[DB 駆動ドメインモデル](./db-driven-domain-model.md)）。2 つのカラムは、招待の受け入れと参加、紐づけの解除が、1 つのトランザクションで一緒に書きます。
 
 ## 実装の場所
 
@@ -492,11 +624,13 @@
 | ドメイン | `backend/packages/domain/src/models/staff.ts`、`schemas/staff.schema.ts`、`mappers/write/staff.mapper.ts`、`mappers/read/staff.mapper.ts`、`repositories/staff.repository.ts`、`business-logic/staff/`（権限と「自分自身のスタッフ情報」の判定は `_shared/authorization.ts`、409 の文言は `_shared/refusals.ts`） |
 | ドメイン（プロフィール） | `backend/packages/domain/src/models/staff-profile.ts`、`schemas/staff-profile.schema.ts`、`mappers/read/staff-profile.mapper.ts`、`repositories/staff-profile.repository.ts`、`business-logic/staff-profile/` |
 | ドメイン（スケジュール） | `backend/packages/domain/src/models/staff-schedule.ts`、`schemas/staff-schedule.schema.ts`、`mappers/write/staff-schedule.mapper.ts`、`mappers/read/staff-schedule.mapper.ts`、`repositories/staff-schedule.repository.ts`、`business-logic/staff-schedule/`（権限は `_shared/authorization.ts`、ある日付に適用される行は `_shared/applicable-schedule.ts`） |
-| ドメイン（招待） | `backend/packages/domain/src/models/staff-invitation.ts`、`schemas/staff-invitation.schema.ts`、`schemas/auth.schema.ts`（確認と受け入れのリクエスト）、`mappers/read/staff-invitation.mapper.ts`、`repositories/staff-invitation.repository.ts`、`business-logic/staff-invitation/`（権限は `_shared/authorization.ts`、409 と 400 の文言は `_shared/refusals.ts`）、`business-logic/auth/_shared/mailed-token.ts`（有効期間と、招待し直せる間隔）、`business-logic/auth/_shared/mails.ts`（メールの文面） |
+| ドメイン（招待） | `backend/packages/domain/src/models/staff-invitation.ts`、`schemas/staff-invitation.schema.ts`、`schemas/auth.schema.ts`（確認と受け入れのリクエスト）、`mappers/read/staff-invitation.mapper.ts`、`repositories/staff-invitation.repository.ts`、`business-logic/staff-invitation/`（権限は `_shared/authorization.ts`、409 と 400 の文言は `_shared/refusals.ts`）、`business-logic/auth/_shared/mailed-token.ts`（有効期間と、招待し直せる間隔）、`business-logic/auth/_shared/mails.ts`（メールの文面）、`business-logic/auth/_shared/actor.ts`（`isWithoutSalon`。参加できるアカウントの条件） |
+| ドメイン（アカウント） | `backend/packages/domain/src/models/staff-account.ts`、`schemas/staff-account.schema.ts`、`mappers/read/staff-account.mapper.ts`、`repositories/staff-account.repository.ts`、`business-logic/staff-account/`（権限は `_shared/authorization.ts`、409 と 404 の文言は `_shared/refusals.ts`） |
 | ドメイン（共通） | `backend/packages/domain/src/schemas/rules.ts`（`lowerCaseEmail`、`phoneNumber`、`noRepeatedEntries`、`timeOfDay`、`dayOfWeekOf` など）、`business-logic/_shared/existing-salon.ts`（サロンの存在の確認） |
 | インフラ | `backend/packages/infrastructure/src/repositories/staff.repository.impl.ts`、`repositories/account.ts`（操作者の範囲。スタッフが有効で削除されていないことを確認する） |
 | インフラ（プロフィール） | `backend/packages/infrastructure/src/repositories/staff-profile.repository.impl.ts`（見せるカラムと、見せるスタッフの条件） |
 | インフラ（スケジュール） | `backend/packages/infrastructure/src/repositories/staff-schedule.repository.impl.ts`（行の並びと、置き換えのトランザクション） |
-| インフラ（招待） | `backend/packages/infrastructure/src/repositories/staff-invitation.repository.impl.ts`（使える招待の条件、スタッフの行のロック、アカウントを作る文） |
-| API | `backend/packages/api/src/routes/staff/`、`backend/packages/api/src/routes/staff-profile/`、`backend/packages/api/src/routes/staff-schedule/`、`backend/packages/api/src/routes/staff-invitation/`（サロンの側のルーターと、招待された側のルーター） |
-| DB | `backend/packages/database/sql/migrations/202611151800_staff_columns.sql`、`202611152100_staff_schedules_rules.sql`、`202611152300_staff_invitations.sql`、`backend/packages/database/src/scripts/api-consistency-rules.ts`（`Models.StaffProfileResponse`、`Models.StaffSchedule`、`Models.StaffInvitationResponse` が出さないカラムの一覧） |
+| インフラ（招待） | `backend/packages/infrastructure/src/repositories/staff-invitation.repository.impl.ts`（使える招待の条件、スタッフの行のロック、アカウントを作る文、参加のロックと書き込み） |
+| インフラ（アカウント） | `backend/packages/infrastructure/src/repositories/staff-account.repository.impl.ts`（見せるカラムと、ロールの変更、紐づけの解除のトランザクション）、`repositories/staff-member.ts`（サロンのスタッフを指す条件。スケジュール、招待、アカウントのリポジトリが使う） |
+| API | `backend/packages/api/src/routes/staff/`、`backend/packages/api/src/routes/staff-profile/`、`backend/packages/api/src/routes/staff-schedule/`、`backend/packages/api/src/routes/staff-invitation/`（サロンの側のルーターと、招待された側のルーター）、`backend/packages/api/src/routes/staff-account/` |
+| DB | `backend/packages/database/sql/migrations/202611151800_staff_columns.sql`、`202611152100_staff_schedules_rules.sql`、`202611152300_staff_invitations.sql`、`202611152330_users_staff_needs_salon_role.sql`、`backend/packages/database/src/scripts/api-consistency-rules.ts`（`Models.StaffProfileResponse`、`Models.StaffSchedule`、`Models.StaffInvitationResponse`、`Models.StaffAccountResponse` が出さないカラムの一覧） |

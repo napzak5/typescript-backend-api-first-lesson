@@ -2002,6 +2002,10 @@ export const users = pgTable(
       sql`("passwordResetTokenHash" IS NULL) = ("passwordResetExpiry" IS NULL)`,
     ),
     check(
+      'users_staff_needs_salon_role',
+      sql`("staffId" IS NULL) OR (role = ANY (ARRAY['owner'::user_role, 'manager'::user_role, 'staff'::user_role]))`,
+    ),
+    check(
       'users_two_factor_secret_matches_status',
       sql`("twoFactorStatus" = 'disabled'::two_factor_status) = ("twoFactorSecret" IS NULL)`,
     ),

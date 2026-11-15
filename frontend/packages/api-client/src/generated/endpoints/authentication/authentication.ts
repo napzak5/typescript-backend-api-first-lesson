@@ -40,6 +40,7 @@ import type {
   ModelsAuthPasswordResetVerifyRequest,
   ModelsAuthRegisterRequest,
   ModelsAuthStaffInvitationAcceptRequest,
+  ModelsAuthStaffInvitationJoinRequest,
   ModelsAuthStaffInvitationVerifyRequest,
   ModelsAuthTokenRefreshRequest,
   ModelsAuthTwoFactorBackupCodesRequest,
@@ -2206,7 +2207,7 @@ export const getAuthCrudAcceptStaffInvitationUrl = () => {
 }
 
 /**
- * メールで受け取ったトークンを使ってスタッフへの招待を受け入れ、ログインアカウントを作ります。アカウントのメールアドレスは招待メールの宛先、ロールは招待のロールで、招待されたスタッフに紐づきます。トークンを受け取れたことがメールアドレスの確認になるので、アカウントは確認済み(active)で作られます。宛先のメールアドレスで登録され、メールアドレスが未確認のままのアカウントがある場合は、そのアカウントを招待のアカウントにします(パスワードを置き換えます)。成功するとトークンは使用できなくなります。セッションは発行しません。トークンが使えない場合と、パスワードが規則を満たさない場合は400を返します。宛先のメールアドレスに、未確認でないアカウントがすでにある場合は409を返し、招待は残ります。
+ * メールで受け取ったトークンを使ってスタッフへの招待を受け入れ、ログインアカウントを作ります。アカウントのメールアドレスは招待メールの宛先、ロールは招待のロールで、招待されたスタッフに紐づきます。トークンを受け取れたことがメールアドレスの確認になるので、アカウントは確認済み(active)で作られます。宛先のメールアドレスで登録され、メールアドレスが未確認のままのアカウントがある場合は、そのアカウントを招待のアカウントにします(パスワードを置き換えます)。成功するとトークンは使用できなくなります。セッションは発行しません。トークンが使えない場合と、パスワードが規則を満たさない場合は400を返します。宛先のメールアドレスに、未確認でないアカウントがすでにある場合は409を返し、招待は残ります(招待に参加できるアカウントでも同じです。そのアカウントは、ログインして joinStaffInvitation を使います)。
  * @summary Accept a staff invitation
  */
 export const authCrudAcceptStaffInvitation = async (modelsAuthStaffInvitationAcceptRequest: ModelsAuthStaffInvitationAcceptRequest, options?: RequestInit): Promise<authCrudAcceptStaffInvitationResponse> => {
@@ -2273,7 +2274,7 @@ const {mutation: mutationOptions} = options ?
     export type AuthCrudAcceptStaffInvitationMutationVariables = {data: ModelsAuthStaffInvitationAcceptRequest}
 
     /**
- * メールで受け取ったトークンを使ってスタッフへの招待を受け入れ、ログインアカウントを作ります。アカウントのメールアドレスは招待メールの宛先、ロールは招待のロールで、招待されたスタッフに紐づきます。トークンを受け取れたことがメールアドレスの確認になるので、アカウントは確認済み(active)で作られます。宛先のメールアドレスで登録され、メールアドレスが未確認のままのアカウントがある場合は、そのアカウントを招待のアカウントにします(パスワードを置き換えます)。成功するとトークンは使用できなくなります。セッションは発行しません。トークンが使えない場合と、パスワードが規則を満たさない場合は400を返します。宛先のメールアドレスに、未確認でないアカウントがすでにある場合は409を返し、招待は残ります。
+ * メールで受け取ったトークンを使ってスタッフへの招待を受け入れ、ログインアカウントを作ります。アカウントのメールアドレスは招待メールの宛先、ロールは招待のロールで、招待されたスタッフに紐づきます。トークンを受け取れたことがメールアドレスの確認になるので、アカウントは確認済み(active)で作られます。宛先のメールアドレスで登録され、メールアドレスが未確認のままのアカウントがある場合は、そのアカウントを招待のアカウントにします(パスワードを置き換えます)。成功するとトークンは使用できなくなります。セッションは発行しません。トークンが使えない場合と、パスワードが規則を満たさない場合は400を返します。宛先のメールアドレスに、未確認でないアカウントがすでにある場合は409を返し、招待は残ります(招待に参加できるアカウントでも同じです。そのアカウントは、ログインして joinStaffInvitation を使います)。
  * @summary Accept a staff invitation
  */
 export const useAuthCrudAcceptStaffInvitation = <TError = ModelsProblemDetails,
@@ -2285,6 +2286,149 @@ export const useAuthCrudAcceptStaffInvitation = <TError = ModelsProblemDetails,
         TContext
       > => {
       return useMutation(getAuthCrudAcceptStaffInvitationMutationOptions(options), queryClient);
+    }
+    export type authCrudJoinStaffInvitationResponse204 = {
+  data: void
+  status: 204
+}
+
+export type authCrudJoinStaffInvitationResponse400 = {
+  data: ModelsProblemDetails
+  status: 400
+}
+
+export type authCrudJoinStaffInvitationResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type authCrudJoinStaffInvitationResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
+export type authCrudJoinStaffInvitationResponse409 = {
+  data: ModelsProblemDetails
+  status: 409
+}
+
+export type authCrudJoinStaffInvitationResponse413 = {
+  data: ModelsProblemDetails
+  status: 413
+}
+
+export type authCrudJoinStaffInvitationResponse415 = {
+  data: ModelsProblemDetails
+  status: 415
+}
+
+export type authCrudJoinStaffInvitationResponse429 = {
+  data: ModelsProblemDetails
+  status: 429
+}
+
+export type authCrudJoinStaffInvitationResponse500 = {
+  data: ModelsProblemDetails
+  status: 500
+}
+
+export type authCrudJoinStaffInvitationResponseSuccess = (authCrudJoinStaffInvitationResponse204) & {
+  headers: Headers;
+};
+export type authCrudJoinStaffInvitationResponseError = (authCrudJoinStaffInvitationResponse400 | authCrudJoinStaffInvitationResponse401 | authCrudJoinStaffInvitationResponse403 | authCrudJoinStaffInvitationResponse409 | authCrudJoinStaffInvitationResponse413 | authCrudJoinStaffInvitationResponse415 | authCrudJoinStaffInvitationResponse429 | authCrudJoinStaffInvitationResponse500) & {
+  headers: Headers;
+};
+
+export type authCrudJoinStaffInvitationResponse = (authCrudJoinStaffInvitationResponseSuccess | authCrudJoinStaffInvitationResponseError)
+
+export const getAuthCrudJoinStaffInvitationUrl = () => {
+
+
+
+
+  return `/api/v1/auth/staff-invitation/join`
+}
+
+/**
+ * ログインしているアカウントで、メールで受け取ったスタッフへの招待に参加します。アカウントを招待されたスタッフに紐づけ、ロールを招待のロールにします。成功するとトークンは使用できなくなります。参加できるのは、サロンのロール(owner、manager、staff)を持ち、どのサロンにも属していないアカウント(紐づけを外された、紐づいているスタッフが削除された・無効になった、そのサロンが削除された)です。顧客と管理者のアカウントには403を返します。サロンに属しているアカウントと、招待の宛先がアカウントのメールアドレスでない場合は409を返し、招待は残ります。トークンが使えない場合は、理由を区別せずに400を返します。
+ * @summary Join a staff invitation with the signed-in account
+ */
+export const authCrudJoinStaffInvitation = async (modelsAuthStaffInvitationJoinRequest: ModelsAuthStaffInvitationJoinRequest, options?: RequestInit): Promise<authCrudJoinStaffInvitationResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customInstance<authCrudJoinStaffInvitationResponse>(getAuthCrudJoinStaffInvitationUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(modelsAuthStaffInvitationJoinRequest)
+  }
+);}
+
+
+
+
+
+export const getAuthCrudJoinStaffInvitationMutationKey = () => ['authCrudJoinStaffInvitation'] as const;
+
+export const getAuthCrudJoinStaffInvitationMutationOptions = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authCrudJoinStaffInvitation>>, TError,AuthCrudJoinStaffInvitationMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof authCrudJoinStaffInvitation>>, TError,AuthCrudJoinStaffInvitationMutationVariables, TContext> => {
+
+const mutationKey = getAuthCrudJoinStaffInvitationMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof authCrudJoinStaffInvitation>>, AuthCrudJoinStaffInvitationMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  authCrudJoinStaffInvitation(data,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AuthCrudJoinStaffInvitationMutationResult = NonNullable<Awaited<ReturnType<typeof authCrudJoinStaffInvitation>>>
+    export type AuthCrudJoinStaffInvitationMutationBody = ModelsAuthStaffInvitationJoinRequest
+    export type AuthCrudJoinStaffInvitationMutationError = ModelsProblemDetails
+    export type AuthCrudJoinStaffInvitationMutationVariables = {data: ModelsAuthStaffInvitationJoinRequest}
+
+    /**
+ * ログインしているアカウントで、メールで受け取ったスタッフへの招待に参加します。アカウントを招待されたスタッフに紐づけ、ロールを招待のロールにします。成功するとトークンは使用できなくなります。参加できるのは、サロンのロール(owner、manager、staff)を持ち、どのサロンにも属していないアカウント(紐づけを外された、紐づいているスタッフが削除された・無効になった、そのサロンが削除された)です。顧客と管理者のアカウントには403を返します。サロンに属しているアカウントと、招待の宛先がアカウントのメールアドレスでない場合は409を返し、招待は残ります。トークンが使えない場合は、理由を区別せずに400を返します。
+ * @summary Join a staff invitation with the signed-in account
+ */
+export const useAuthCrudJoinStaffInvitation = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authCrudJoinStaffInvitation>>, TError,AuthCrudJoinStaffInvitationMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof authCrudJoinStaffInvitation>>,
+        TError,
+        AuthCrudJoinStaffInvitationMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAuthCrudJoinStaffInvitationMutationOptions(options), queryClient);
     }
     export type authCrudVerifyStaffInvitationResponse200 = {
   data: AuthCrudVerifyStaffInvitation200
@@ -2339,7 +2483,7 @@ export const getAuthCrudVerifyStaffInvitationUrl = () => {
 }
 
 /**
- * メールで受け取ったスタッフへの招待のトークンが使えるかどうかを確認し、招待の内容を返します。パスワードを入力する画面が、入力の前に、招待の宛先(作られるアカウントのメールアドレス)とロールを表示するためのものです。トークンは消費しません。トークンが存在しない、有効期限が切れている、取り消された、新しい招待で置き換えられた、スタッフが招待できる状態でなくなった(削除された、無効になった、アカウントに紐づいた、台帳のメールアドレスが変わった)場合は、理由を区別せずに400を返します。宛先のメールアドレスに、未確認でないアカウントがすでにある場合は409を返します。
+ * メールで受け取ったスタッフへの招待のトークンが使えるかどうかを確認し、招待の内容を返します。パスワードを入力する画面が、入力の前に、招待の宛先(作られるアカウントのメールアドレス)とロールを表示するためのものです。トークンは消費しません。トークンが存在しない、有効期限が切れている、取り消された、新しい招待で置き換えられた、スタッフが招待できる状態でなくなった(削除された、無効になった、アカウントに紐づいた、台帳のメールアドレスが変わった)場合は、理由を区別せずに400を返します。レスポンスの links は、招待の受け方を示します。宛先のメールアドレスにアカウントがない(または、未確認の登録だけがある)場合は accept(パスワードを設定してアカウントを作る)、宛先のメールアドレスに、サロンのロール(owner、manager、staff)を持ち、どのサロンにも属していないアカウントがある場合は join(そのアカウントでログインして参加する)です。宛先のメールアドレスに、それ以外のアカウント(顧客、管理者、サロンに属しているスタッフ)がある場合は409を返します。
  * @summary Verify a staff invitation token
  */
 export const authCrudVerifyStaffInvitation = async (modelsAuthStaffInvitationVerifyRequest: ModelsAuthStaffInvitationVerifyRequest, options?: RequestInit): Promise<authCrudVerifyStaffInvitationResponse> => {
@@ -2406,7 +2550,7 @@ const {mutation: mutationOptions} = options ?
     export type AuthCrudVerifyStaffInvitationMutationVariables = {data: ModelsAuthStaffInvitationVerifyRequest}
 
     /**
- * メールで受け取ったスタッフへの招待のトークンが使えるかどうかを確認し、招待の内容を返します。パスワードを入力する画面が、入力の前に、招待の宛先(作られるアカウントのメールアドレス)とロールを表示するためのものです。トークンは消費しません。トークンが存在しない、有効期限が切れている、取り消された、新しい招待で置き換えられた、スタッフが招待できる状態でなくなった(削除された、無効になった、アカウントに紐づいた、台帳のメールアドレスが変わった)場合は、理由を区別せずに400を返します。宛先のメールアドレスに、未確認でないアカウントがすでにある場合は409を返します。
+ * メールで受け取ったスタッフへの招待のトークンが使えるかどうかを確認し、招待の内容を返します。パスワードを入力する画面が、入力の前に、招待の宛先(作られるアカウントのメールアドレス)とロールを表示するためのものです。トークンは消費しません。トークンが存在しない、有効期限が切れている、取り消された、新しい招待で置き換えられた、スタッフが招待できる状態でなくなった(削除された、無効になった、アカウントに紐づいた、台帳のメールアドレスが変わった)場合は、理由を区別せずに400を返します。レスポンスの links は、招待の受け方を示します。宛先のメールアドレスにアカウントがない(または、未確認の登録だけがある)場合は accept(パスワードを設定してアカウントを作る)、宛先のメールアドレスに、サロンのロール(owner、manager、staff)を持ち、どのサロンにも属していないアカウントがある場合は join(そのアカウントでログインして参加する)です。宛先のメールアドレスに、それ以外のアカウント(顧客、管理者、サロンに属しているスタッフ)がある場合は409を返します。
  * @summary Verify a staff invitation token
  */
 export const useAuthCrudVerifyStaffInvitation = <TError = ModelsProblemDetails,

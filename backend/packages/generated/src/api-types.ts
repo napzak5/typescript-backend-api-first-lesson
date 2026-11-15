@@ -711,9 +711,29 @@ export interface paths {
         put?: never;
         /**
          * Accept a staff invitation
-         * @description メールで受け取ったトークンを使ってスタッフへの招待を受け入れ、ログインアカウントを作ります。アカウントのメールアドレスは招待メールの宛先、ロールは招待のロールで、招待されたスタッフに紐づきます。トークンを受け取れたことがメールアドレスの確認になるので、アカウントは確認済み(active)で作られます。宛先のメールアドレスで登録され、メールアドレスが未確認のままのアカウントがある場合は、そのアカウントを招待のアカウントにします(パスワードを置き換えます)。成功するとトークンは使用できなくなります。セッションは発行しません。トークンが使えない場合と、パスワードが規則を満たさない場合は400を返します。宛先のメールアドレスに、未確認でないアカウントがすでにある場合は409を返し、招待は残ります。
+         * @description メールで受け取ったトークンを使ってスタッフへの招待を受け入れ、ログインアカウントを作ります。アカウントのメールアドレスは招待メールの宛先、ロールは招待のロールで、招待されたスタッフに紐づきます。トークンを受け取れたことがメールアドレスの確認になるので、アカウントは確認済み(active)で作られます。宛先のメールアドレスで登録され、メールアドレスが未確認のままのアカウントがある場合は、そのアカウントを招待のアカウントにします(パスワードを置き換えます)。成功するとトークンは使用できなくなります。セッションは発行しません。トークンが使えない場合と、パスワードが規則を満たさない場合は400を返します。宛先のメールアドレスに、未確認でないアカウントがすでにある場合は409を返し、招待は残ります(招待に参加できるアカウントでも同じです。そのアカウントは、ログインして joinStaffInvitation を使います)。
          */
         post: operations["AuthCrud_acceptStaffInvitation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/staff-invitation/join": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Join a staff invitation with the signed-in account
+         * @description ログインしているアカウントで、メールで受け取ったスタッフへの招待に参加します。アカウントを招待されたスタッフに紐づけ、ロールを招待のロールにします。成功するとトークンは使用できなくなります。参加できるのは、サロンのロール(owner、manager、staff)を持ち、どのサロンにも属していないアカウント(紐づけを外された、紐づいているスタッフが削除された・無効になった、そのサロンが削除された)です。顧客と管理者のアカウントには403を返します。サロンに属しているアカウントと、招待の宛先がアカウントのメールアドレスでない場合は409を返し、招待は残ります。トークンが使えない場合は、理由を区別せずに400を返します。
+         */
+        post: operations["AuthCrud_joinStaffInvitation"];
         delete?: never;
         options?: never;
         head?: never;
@@ -731,7 +751,7 @@ export interface paths {
         put?: never;
         /**
          * Verify a staff invitation token
-         * @description メールで受け取ったスタッフへの招待のトークンが使えるかどうかを確認し、招待の内容を返します。パスワードを入力する画面が、入力の前に、招待の宛先(作られるアカウントのメールアドレス)とロールを表示するためのものです。トークンは消費しません。トークンが存在しない、有効期限が切れている、取り消された、新しい招待で置き換えられた、スタッフが招待できる状態でなくなった(削除された、無効になった、アカウントに紐づいた、台帳のメールアドレスが変わった)場合は、理由を区別せずに400を返します。宛先のメールアドレスに、未確認でないアカウントがすでにある場合は409を返します。
+         * @description メールで受け取ったスタッフへの招待のトークンが使えるかどうかを確認し、招待の内容を返します。パスワードを入力する画面が、入力の前に、招待の宛先(作られるアカウントのメールアドレス)とロールを表示するためのものです。トークンは消費しません。トークンが存在しない、有効期限が切れている、取り消された、新しい招待で置き換えられた、スタッフが招待できる状態でなくなった(削除された、無効になった、アカウントに紐づいた、台帳のメールアドレスが変わった)場合は、理由を区別せずに400を返します。レスポンスの links は、招待の受け方を示します。宛先のメールアドレスにアカウントがない(または、未確認の登録だけがある)場合は accept(パスワードを設定してアカウントを作る)、宛先のメールアドレスに、サロンのロール(owner、manager、staff)を持ち、どのサロンにも属していないアカウントがある場合は join(そのアカウントでログインして参加する)です。宛先のメールアドレスに、それ以外のアカウント(顧客、管理者、サロンに属しているスタッフ)がある場合は409を返します。
          */
         post: operations["AuthCrud_verifyStaffInvitation"];
         delete?: never;
@@ -2608,6 +2628,34 @@ export interface paths {
         patch: operations["StaffCrud_update"];
         trace?: never;
     };
+    "/api/v1/salons/{salonId}/staff/{id}/account": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get the account of a staff member
+         * @description スタッフに紐づいているアカウントを取得します。スタッフにアカウントがない場合(招待を受け入れていない、紐づけを外した)は404を返します。
+         */
+        get: operations["StaffAccounts_get"];
+        put?: never;
+        post?: never;
+        /**
+         * Unlink the account of a staff member
+         * @description スタッフとアカウントの紐づけを外します。アカウントとスタッフは残ります。アカウントは、次のリクエストからサロンへの権限を失い(ログインはできます)、スタッフは、また招待できるようになります。自分のアカウントの紐づけを外そうとすると409を返します。
+         */
+        delete: operations["StaffAccounts_delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Change the role of the account of a staff member
+         * @description スタッフに紐づいているアカウントのロールを変更します。変更は、そのアカウントの次のリクエストから有効で、セッションは無効にしません。いまと同じロールを指定した場合も200を返します。owner のロールを与えられるのは admin だけで、サロンの owner が指定すると403を返します。自分のアカウント(リクエストしたユーザーが紐づいているスタッフのアカウント)のロールを変えようとすると409を返します。
+         */
+        patch: operations["StaffAccounts_update"];
+        trace?: never;
+    };
     "/api/v1/salons/{salonId}/staff/{id}/invitation": {
         parameters: {
             query?: never;
@@ -3270,6 +3318,11 @@ export interface components {
             token: string;
             /** @description 設定するパスワード。規則は登録時のパスワード(AuthRegisterRequest.password)と同じ */
             password: string;
+        };
+        /** @description ログインしているアカウントで、スタッフへの招待に参加するためのリクエスト。 */
+        "Models.AuthStaffInvitationJoinRequest": {
+            /** @description メールで受け取った招待トークン。 */
+            token: string;
         };
         /** @description スタッフへの招待のトークンが使えるかどうかを確認するリクエスト。 */
         "Models.AuthStaffInvitationVerifyRequest": {
@@ -7443,7 +7496,7 @@ export interface components {
 
          * @description
 
-         * サロンロール区分 - サロンに属するアカウントのロール。スタッフへの招待で与える
+         * サロンロール区分 - サロンに属するアカウントのロール。スタッフへの招待で与え、スタッフのアカウントの操作で変える
 
          *
 
@@ -8192,6 +8245,47 @@ export interface components {
              * @description ファイルサイズ（バイト単位）。
              */
             size: number;
+        };
+        /**
+         * @description スタッフのアカウント - スタッフに紐づいているログインアカウント。users テーブルの1行のうち、サロンの側に見せるカラムを返す。
+         *     スタッフのアカウントは、そのスタッフを staffId で指している、削除されていないユーザー。1人のスタッフが持てるアカウントは1つまで。
+         *     パスワード、トークンのハッシュ、2要素認証のシークレット、ログインの失敗回数、IPアドレスは返さない。
+         *     プロパティ名と null 許可は DB カラムと一致させている。role は、カラムの列挙(user_role)のうち、スタッフを指すアカウントが持つ3つに限る
+         */
+        "Models.StaffAccountResponse": {
+            /** @description アカウント(ユーザー)を一意に識別するID。台帳のスタッフの userId と同じ値 */
+            id: components["schemas"]["Models.UserId"];
+            /** @description ログインに利用するメールアドレス。招待を受け入れた時点の宛先で、そのあと台帳のメールアドレスを変えても変わらない */
+            email: string;
+            /** @description アカウントのロール。サロンに対してできることを決める */
+            role: components["schemas"]["Models.SalonRoleType"];
+            /** @description アカウントの稼働状態 */
+            status: components["schemas"]["Models.UserAccountStatusType"];
+            /** @description 2要素認証の設定状態。enabled のとき、ログインにコードが必要 */
+            twoFactorStatus: components["schemas"]["Models.TwoFactorStatusType"];
+            /**
+             * Format: date-time
+             * @description 直近のログイン日時 (UTC)。一度もログインしていない場合はnull
+             */
+            lastLoginAt: string | null;
+            /**
+             * Format: date-time
+             * @description アカウントの作成日時 (UTC)
+             */
+            createdAt: string;
+            /**
+             * Format: date-time
+             * @description アカウントの最終更新日時 (UTC)
+             */
+            updatedAt: string;
+        };
+        /**
+         * @description スタッフのアカウントの更新リクエスト - 変えられるのはロールだけ。
+         *     Update のモデルなのでキーは省略できるが、プロパティが1つもない本文は400
+         */
+        "Models.StaffAccountUpdateRequest": {
+            /** @description 新しいロール。owner を指定できるのは admin だけ */
+            role?: components["schemas"]["Models.SalonRoleType"];
         };
         /**
          * @description スタッフ新規登録リクエスト - 全項目のキーが必須。DB で NULL 許可のカラムのみ null を指定できる。
@@ -12721,6 +12815,111 @@ export interface operations {
             };
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The request conflicts with the current state of the server. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
+             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+             */
+            429: {
+                headers: {
+                    /** @description 再試行できるようになるまでの秒数。 */
+                    "Retry-After": number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+        };
+    };
+    AuthCrud_joinStaffInvitation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Models.AuthStaffInvitationJoinRequest"];
+            };
+        };
+        responses: {
+            /** @description There is no content to send for this request, but the headers may be useful. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description 認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
+             *     ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
+             *     WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+             */
+            401: {
+                headers: {
+                    /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
+                    "WWW-Authenticate": string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description 認証されているが、この操作を行う権限がない (403)。 */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -25661,6 +25860,326 @@ export interface operations {
                     "application/json": {
                         /** @description レスポンスの主体となるビジネスデータ。 */
                         data: components["schemas"]["Models.StaffResponse"];
+                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        meta: components["schemas"]["Models.ResponseMeta"] | null;
+                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        links: {
+                            [key: string]: string;
+                        } | null;
+                    };
+                };
+            };
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description 認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
+             *     ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
+             *     WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+             */
+            401: {
+                headers: {
+                    /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
+                    "WWW-Authenticate": string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description 認証されているが、この操作を行う権限がない (403)。 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The server cannot find the requested resource. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The request conflicts with the current state of the server. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
+             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+             */
+            429: {
+                headers: {
+                    /** @description 再試行できるようになるまでの秒数。 */
+                    "Retry-After": number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+        };
+    };
+    StaffAccounts_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                salonId: components["schemas"]["Models.SalonId"];
+                id: components["schemas"]["Models.StaffId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The request has succeeded. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        data: components["schemas"]["Models.StaffAccountResponse"];
+                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        meta: components["schemas"]["Models.ResponseMeta"] | null;
+                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        links: {
+                            [key: string]: string;
+                        } | null;
+                    };
+                };
+            };
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description 認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
+             *     ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
+             *     WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+             */
+            401: {
+                headers: {
+                    /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
+                    "WWW-Authenticate": string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description 認証されているが、この操作を行う権限がない (403)。 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The server cannot find the requested resource. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
+             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+             */
+            429: {
+                headers: {
+                    /** @description 再試行できるようになるまでの秒数。 */
+                    "Retry-After": number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+        };
+    };
+    StaffAccounts_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                salonId: components["schemas"]["Models.SalonId"];
+                id: components["schemas"]["Models.StaffId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description There is no content to send for this request, but the headers may be useful. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description 認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
+             *     ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
+             *     WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+             */
+            401: {
+                headers: {
+                    /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
+                    "WWW-Authenticate": string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description 認証されているが、この操作を行う権限がない (403)。 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The server cannot find the requested resource. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The request conflicts with the current state of the server. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
+             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+             */
+            429: {
+                headers: {
+                    /** @description 再試行できるようになるまでの秒数。 */
+                    "Retry-After": number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+        };
+    };
+    StaffAccounts_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                salonId: components["schemas"]["Models.SalonId"];
+                id: components["schemas"]["Models.StaffId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Models.StaffAccountUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description The request has succeeded. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        data: components["schemas"]["Models.StaffAccountResponse"];
                         /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
                         /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */

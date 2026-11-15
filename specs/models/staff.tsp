@@ -1,4 +1,5 @@
 import "@typespec/http";
+import "./auth.tsp";
 import "./_shared/common.tsp";
 
 using TypeSpec.Http;
@@ -455,7 +456,7 @@ namespace BeautySalon.Models {
   }
 
   @doc("""
-    サロンロール区分 - サロンに属するアカウントのロール。スタッフへの招待で与える
+    サロンロール区分 - サロンに属するアカウントのロール。スタッフへの招待で与え、スタッフのアカウントの操作で変える
     
     owner: オーナー - サロンの所有者。スタッフ台帳を扱い、スタッフを招待できる
     manager: マネージャー - サロンの管理業務を担当する
@@ -500,5 +501,46 @@ namespace BeautySalon.Models {
 
     @doc("招待した日時 (UTC)")
     createdAt: utcDateTime;
+  }
+
+  @doc("""
+    スタッフのアカウント - スタッフに紐づいているログインアカウント。users テーブルの1行のうち、サロンの側に見せるカラムを返す。
+    スタッフのアカウントは、そのスタッフを staffId で指している、削除されていないユーザー。1人のスタッフが持てるアカウントは1つまで。
+    パスワード、トークンのハッシュ、2要素認証のシークレット、ログインの失敗回数、IPアドレスは返さない。
+    プロパティ名と null 許可は DB カラムと一致させている。role は、カラムの列挙(user_role)のうち、スタッフを指すアカウントが持つ3つに限る
+    """)
+  model StaffAccountResponse {
+    @doc("アカウント(ユーザー)を一意に識別するID。台帳のスタッフの userId と同じ値")
+    id: UserId;
+
+    @doc("ログインに利用するメールアドレス。招待を受け入れた時点の宛先で、そのあと台帳のメールアドレスを変えても変わらない")
+    email: string;
+
+    @doc("アカウントのロール。サロンに対してできることを決める")
+    role: SalonRoleType;
+
+    @doc("アカウントの稼働状態")
+    status: UserAccountStatusType;
+
+    @doc("2要素認証の設定状態。enabled のとき、ログインにコードが必要")
+    twoFactorStatus: TwoFactorStatusType;
+
+    @doc("直近のログイン日時 (UTC)。一度もログインしていない場合はnull")
+    lastLoginAt: utcDateTime | null;
+
+    @doc("アカウントの作成日時 (UTC)")
+    createdAt: utcDateTime;
+
+    @doc("アカウントの最終更新日時 (UTC)")
+    updatedAt: utcDateTime;
+  }
+
+  @doc("""
+    スタッフのアカウントの更新リクエスト - 変えられるのはロールだけ。
+    Update のモデルなのでキーは省略できるが、プロパティが1つもない本文は400
+    """)
+  model StaffAccountUpdateRequest {
+    @doc("新しいロール。owner を指定できるのは admin だけ")
+    role?: SalonRoleType;
   }
 }

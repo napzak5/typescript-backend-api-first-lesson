@@ -8,17 +8,10 @@ import type {
   StaffId,
 } from '@beauty-salon-backend/domain'
 import type { Result } from '@beauty-salon-backend/utility'
-import { and, asc, desc, eq, isNull } from 'drizzle-orm'
+import { asc, desc, eq } from 'drizzle-orm'
 import { attempt } from '../database/attempt'
 import type { Database, DatabaseExecutor } from '../database/index'
-
-/** The staff member, if the salon has them and they are not deleted. */
-const staffMemberOf = (salonId: SalonId, staffId: StaffId) =>
-  and(
-    eq(staff.id, staffId),
-    eq(staff.salonId, salonId),
-    isNull(staff.deletedAt),
-  )
+import { staffMemberOf } from './staff-member'
 
 /**
  * The weekly rows from Monday to Sunday, which is the order of the

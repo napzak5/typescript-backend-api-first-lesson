@@ -12,6 +12,8 @@ import { staffInvitationMail } from '../business-logic/auth/_shared/mails'
 import {
   mayGiveRole,
   mayInviteStaff,
+  mayJoinStaffInvitations,
+  reachesSalon,
 } from '../business-logic/staff-invitation/_shared/authorization'
 import type { Actor } from '../models/auth'
 import { parseSalonIdOfPath } from '../models/salon'
@@ -67,6 +69,51 @@ describe('mayGiveRole', () => {
 
   it('does not let the owner of a salon make another owner', () => {
     expect(mayGiveRole(actors.ofSalon('owner'), 'owner')).toBe(false)
+  })
+})
+
+describe('mayJoinStaffInvitations', () => {
+  it.each<[string, Actor]>([
+    ['an account of a salon that reaches no salon', actors.withoutScope],
+    ['an owner', actors.ofSalon('owner')],
+    ['a manager', actors.ofSalon('manager')],
+    ['a staff member', actors.ofSalon('staff')],
+  ])('counts %s among the accounts that join', (_who, actor) => {
+    expect(mayJoinStaffInvitations(actor)).toBe(true)
+  })
+
+  it.each<[string, Actor]>([
+    ['an administrator', actors.admin],
+    ['a customer', actors.customer],
+    ['a customer without a profile', actors.customerWithoutProfile],
+  ])(
+    'never makes the account of %s the account of a staff member',
+    (_who, actor) => {
+      expect(mayJoinStaffInvitations(actor)).toBe(false)
+    },
+  )
+})
+
+describe('reachesSalon', () => {
+  it.each<[string, Actor]>([
+    ['an owner', actors.ofSalon('owner')],
+    ['a manager', actors.ofSalon('manager')],
+    ['a staff member', actors.ofSalon('staff')],
+    [
+      'a staff member of another salon',
+      actors.ofSalon('staff', OTHER_SALON_ID),
+    ],
+  ])('finds that %s has a salon', (_who, actor) => {
+    expect(reachesSalon(actor)).toBe(true)
+  })
+
+  it.each<[string, Actor]>([
+    ['an account of a salon that reaches no salon', actors.withoutScope],
+    ['an administrator', actors.admin],
+    ['a customer', actors.customer],
+    ['a customer without a profile', actors.customerWithoutProfile],
+  ])('finds that %s has none', (_who, actor) => {
+    expect(reachesSalon(actor)).toBe(false)
   })
 })
 
@@ -140,9 +187,15 @@ describe('staffInvitationMail', () => {
     expect(mail.text).toContain('このリンクは 7 日間有効で、1 回だけ使えます。')
   })
 
+  it('tells both ways of taking the invitation, whoever the address belongs to', () => {
+    expect(mail.text.split('\n')).toContain(
+      '招待を受けるには、次のリンクを開いてください。パスワードを設定して、アカウントを作成します。このメールアドレスのスタッフアカウントをすでにお持ちの場合は、ログインして参加します。',
+    )
+  })
+
   it('tells what to do with a mail nobody expected', () => {
-    expect(mail.text).toContain(
-      'リンクを開かなければ、アカウントは作成されません。',
+    expect(mail.text.split('\n').at(-1)).toBe(
+      'このメールに心当たりがない場合は、何もせずに破棄してください。リンクを開かなければ、何も変わりません。',
     )
   })
 

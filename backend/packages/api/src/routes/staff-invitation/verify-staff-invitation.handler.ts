@@ -10,7 +10,8 @@ import type { VerifyStaffInvitationResponse } from './_shared'
 
 /**
  * POST /api/v1/auth/staff-invitation/verify - tell whether the token of an
- * invitation still works, and what the invitation is
+ * invitation still works, what the invitation is, and which route takes
+ * it: `accept` or `join`, next to this one
  */
 export const verifyStaffInvitationHandler = (
   dependencies: StaffInvitationUseCaseDependencies,
@@ -25,11 +26,11 @@ export const verifyStaffInvitationHandler = (
     const result = await useCase.execute(req.body)
 
     match(result)
-      .with({ type: 'success' }, ({ data }) => {
+      .with({ type: 'success' }, ({ data: { invitation, next } }) => {
         res.json({
-          data,
+          data: invitation,
           meta: responseMeta(req),
-          links: { accept: `${req.baseUrl}/accept` },
+          links: { [next]: `${req.baseUrl}/${next}` },
         })
       })
       .with({ type: 'error' }, ({ error }) => sendProblem(req, res, error))

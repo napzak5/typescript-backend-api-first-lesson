@@ -4,8 +4,9 @@ import type { ModelRule } from './api-consistency'
  * Which API model is backed by which table.
  *
  * Every rule lists the columns its model leaves out (`omittedColumns`), so
- * that every column is either exposed or deliberately hidden. Salon is the
- * reference. A model that is not backed by a table (computed reports, action
+ * that every column is either exposed or deliberately hidden. A property
+ * that has only some of the values of the enum type of its column is listed
+ * too (`narrowed`). Salon is the reference. A model that is not backed by a table (computed reports, action
  * requests, features whose tables do not exist yet) has no rule.
  */
 
@@ -297,8 +298,36 @@ const staffManagedColumns = [
 ]
 
 /**
- * Staff, their schedules and their invitations. A schedule is read and
- * written as a whole: writing replaces all rows of a staff member.
+ * Columns of `users` that the salon is not shown of the account of a staff
+ * member: what authenticates the account, the mailed tokens, the counters
+ * and traces of the login, and what the account is besides the account of
+ * this staff member.
+ */
+const staffAccountHiddenColumns = [
+  'passwordHash',
+  'permissions',
+  'emailVerified',
+  'emailVerificationTokenHash',
+  'emailVerificationExpiry',
+  'passwordResetTokenHash',
+  'passwordResetExpiry',
+  'lastPasswordChange',
+  'twoFactorSecret',
+  'backupCodes',
+  'twoFactorLastUsedStep',
+  'failedLoginAttempts',
+  'lockedUntil',
+  'lastLoginIp',
+  'customerId',
+  'staffId',
+  'metadata',
+  'deletedAt',
+]
+
+/**
+ * Staff, their schedules, their invitations and their accounts. A schedule
+ * is read and written as a whole: writing replaces all rows of a staff
+ * member.
  */
 const staffRules: ModelRule[] = [
   {
@@ -380,6 +409,33 @@ const staffRules: ModelRule[] = [
       'tokenHash',
       'expiresAt',
       'createdAt',
+    ],
+  },
+  // The account of a staff member is a user that names the staff member,
+  // and such a user has a role of a salon (`users_staff_needs_salon_role`):
+  // of the roles of `user_role`, never 'customer' or 'admin'.
+  {
+    model: 'Models.StaffAccountResponse',
+    table: 'users',
+    kind: 'response',
+    narrowed: ['role'],
+    omittedColumns: staffAccountHiddenColumns,
+  },
+  // The salon changes the role of the account and nothing else of it.
+  {
+    model: 'Models.StaffAccountUpdateRequest',
+    table: 'users',
+    kind: 'update',
+    narrowed: ['role'],
+    omittedColumns: [
+      'id',
+      'email',
+      'status',
+      'twoFactorStatus',
+      'lastLoginAt',
+      'createdAt',
+      'updatedAt',
+      ...staffAccountHiddenColumns,
     ],
   },
 ]
