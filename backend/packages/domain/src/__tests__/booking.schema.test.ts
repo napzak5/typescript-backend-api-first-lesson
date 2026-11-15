@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
+  bookingCancelRequestSchema,
+  bookingCompleteRequestSchema,
   bookingCreateRequestSchema,
   bookingSearchRequestSchema,
 } from '../schemas/booking.schema'
@@ -27,6 +29,24 @@ const parseCreate = (input: unknown) =>
 
 const rulesOfCreate = (input: unknown): string[] =>
   rulesBrokenBy(bookingCreateRequestSchema, input)
+
+const parseCancel = (input: unknown) =>
+  parseWith(bookingCancelRequestSchema, input, 'Invalid')
+
+const rulesOfCancel = (input: unknown): string[] =>
+  rulesBrokenBy(bookingCancelRequestSchema, input)
+
+const parseComplete = (input: unknown) =>
+  parseWith(bookingCompleteRequestSchema, input, 'Invalid')
+
+const rulesOfComplete = (input: unknown): string[] =>
+  rulesBrokenBy(bookingCompleteRequestSchema, input)
+
+/** A complete request with these times. */
+const times = (actualStartTime: unknown, actualEndTime: unknown) => ({
+  actualStartTime,
+  actualEndTime,
+})
 
 const parseSearch = (input: unknown) =>
   parseWith(bookingSearchRequestSchema, input, 'Invalid')
@@ -370,6 +390,211 @@ describe('bookingCreateRequestSchema', () => {
     ['null', null],
   ])('refuses %s for a request', (_case, input) => {
     expect(rulesOfCreate(input)).toEqual([':invalid_type'])
+  })
+})
+
+describe('bookingCancelRequestSchema', () => {
+  it('accepts a reason and returns it as it was written', () => {
+    const request = { cancellationReason: '  お客様のご都合により  ' }
+
+    expect(parseCancel(request)).toEqual({ type: 'success', data: request })
+  })
+
+  it('accepts null for the reason: none was given', () => {
+    expect(parseCancel({ cancellationReason: null })).toEqual({
+      type: 'success',
+      data: { cancellationReason: null },
+    })
+  })
+
+  it('requires the reason to be stated, if only as null', () => {
+    expect(rulesOfCancel({})).toEqual(['cancellationReason:invalid_type'])
+  })
+
+  it.each([
+    ['an empty text', ''],
+    ['spaces', '   '],
+    ['a line break', '\n'],
+  ])('refuses a reason that says nothing: %s', (_case, cancellationReason) => {
+    expect(rulesOfCancel({ cancellationReason })).toEqual([
+      'cancellationReason:invalid_format',
+    ])
+  })
+
+  it.each([
+    ['a number', 1],
+    ['a list', ['x']],
+    ['true', true],
+  ])('refuses %s for the reason', (_case, cancellationReason) => {
+    expect(rulesOfCancel({ cancellationReason })).toEqual([
+      'cancellationReason:invalid_type',
+    ])
+  })
+
+  it('sets no limit to the length of the reason: its column has none', () => {
+    expect(parseCancel({ cancellationReason: 'x'.repeat(10_000) }).type).toBe(
+      'success',
+    )
+  })
+
+  it.each(['cancelledAt', 'cancelledBy', 'cancellationFee', 'status', 'id'])(
+    "refuses %s: what the system notes is not the request's to state",
+    (property) => {
+      expect(
+        rulesOfCancel({ cancellationReason: null, [property]: null }),
+      ).toEqual([`${property}:unrecognized_keys`])
+    },
+  )
+
+  it.each([
+    ['null', null],
+    ['a list', []],
+    ['a text', 'x'],
+    ['nothing', undefined],
+  ])('refuses %s for a request', (_case, input) => {
+    expect(rulesOfCancel(input)).toEqual([':invalid_type'])
+  })
+})
+
+describe('bookingCompleteRequestSchema', () => {
+  it('accepts a request without times: the booking keeps those it has', () => {
+    expect(parseComplete(times(null, null))).toEqual({
+      type: 'success',
+      data: times(null, null),
+    })
+  })
+
+  it('accepts both times and spells them in one way', () => {
+    expect(
+      parseComplete(times('2026-11-20T01:05:00Z', '2026-11-20T03:20:30Z')),
+    ).toEqual({
+      type: 'success',
+      data: times('2026-11-20T01:05:00.000Z', '2026-11-20T03:20:30.000Z'),
+    })
+  })
+
+  it.each([
+    ['the start alone', times('2026-11-20T01:05:00.000Z', null)],
+    ['the end alone', times(null, '2026-11-20T03:20:30.000Z')],
+  ])('accepts %s', (_case, request) => {
+    expect(parseComplete(request)).toEqual({ type: 'success', data: request })
+  })
+
+  it('takes a time to the millisecond, not to the minute: it is when something happened', () => {
+    expect(
+      parseComplete(
+        times('2026-11-20T01:05:07.123Z', '2026-11-20T03:20:30.999Z'),
+      ),
+    ).toEqual({
+      type: 'success',
+      data: times('2026-11-20T01:05:07.123Z', '2026-11-20T03:20:30.999Z'),
+    })
+  })
+
+  it('cuts what a time has beyond the millisecond', () => {
+    expect(parseComplete(times('2026-11-20T01:05:07.123999Z', null))).toEqual({
+      type: 'success',
+      data: times('2026-11-20T01:05:07.123Z', null),
+    })
+  })
+
+  it.each([
+    ['actualStartTime', { actualEndTime: null }],
+    ['actualEndTime', { actualStartTime: null }],
+  ])('requires %s to be stated, if only as null', (property, request) => {
+    expect(rulesOfComplete(request)).toEqual([`${property}:invalid_type`])
+  })
+
+  it.each([
+    ['an offset', '2026-11-20T10:05:00+09:00'],
+    ['no time zone', '2026-11-20T01:05:00'],
+    ['a date only', '2026-11-20'],
+    ['a day that does not exist', '2026-02-30T01:05:00Z'],
+    ['a space for the T', '2026-11-20 01:05:00Z'],
+    ['a number', 1_795_000_000_000],
+    ['an empty text', ''],
+  ])('refuses a time that is not a UTC time of ISO 8601: %s', (_case, time) => {
+    const ofStart = rulesOfComplete(times(time, null))
+    const ofEnd = rulesOfComplete(times(null, time))
+
+    expect(ofStart).toHaveLength(1)
+    expect(ofStart[0]).toMatch(/^actualStartTime:invalid_/)
+    expect(ofEnd).toHaveLength(1)
+    expect(ofEnd[0]).toMatch(/^actualEndTime:invalid_/)
+  })
+
+  it.each([
+    ['the start', '2026-11-20T01:05:00Z', '2026-11-20T01:05:00.000Z'],
+    [
+      'a millisecond before the start',
+      '2026-11-20T01:05:00Z',
+      '2026-11-20T01:04:59.999Z',
+    ],
+    ['a day before the start', '2026-11-20T01:05:00Z', '2026-11-19T03:00:00Z'],
+  ])('refuses an end that is %s, under the end', (_case, start, end) => {
+    const result = parseComplete(times(start, end))
+
+    expect(result).toMatchObject({
+      type: 'error',
+      error: {
+        type: 'validation',
+        issues: [
+          {
+            field: 'actualEndTime',
+            rule: 'custom',
+            message: 'Must be after actualStartTime',
+          },
+        ],
+      },
+    })
+  })
+
+  it('accepts an end a millisecond after the start', () => {
+    expect(
+      parseComplete(times('2026-11-20T01:05:00Z', '2026-11-20T01:05:00.001Z'))
+        .type,
+    ).toBe('success')
+  })
+
+  it('compares the moments, not the texts: a fraction that is spelled out does not come first', () => {
+    expect(
+      parseComplete(times('2026-11-20T01:05:00.5Z', '2026-11-20T01:05:00.50Z'))
+        .type,
+    ).toBe('error')
+    expect(
+      parseComplete(times('2026-11-20T01:05:00Z', '2026-11-20T01:05:00.1Z'))
+        .type,
+    ).toBe('success')
+  })
+
+  it('does not ask how the times stand to the time the booking was made for, or to now', () => {
+    expect(
+      parseComplete(times('2020-01-01T00:00:00Z', '2099-01-01T00:00:00Z')).type,
+    ).toBe('success')
+  })
+
+  it.each(['completedAt', 'status', 'id', 'services'])(
+    "refuses %s: what the system notes is not the request's to state",
+    (property) => {
+      expect(
+        rulesOfComplete({ ...times(null, null), [property]: null }),
+      ).toEqual([`${property}:unrecognized_keys`])
+    },
+  )
+
+  it.each([
+    ['null', null],
+    ['a list', []],
+    ['a text', 'x'],
+    ['nothing', undefined],
+  ])('refuses %s for a request', (_case, input) => {
+    expect(rulesOfComplete(input)).toEqual([':invalid_type'])
+  })
+
+  it('reports a time that is none and does not compare it', () => {
+    expect(rulesOfComplete(times('2026-11-20T03:00:00Z', 'soon'))).toEqual([
+      'actualEndTime:invalid_format',
+    ])
   })
 })
 

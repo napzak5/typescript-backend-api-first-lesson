@@ -12,6 +12,16 @@ export {
   planBooking,
   type StaffDemand,
 } from './_shared/plan'
+export {
+  type BookingAction,
+  type BookingInStatus,
+  planStatusChange,
+} from './_shared/status'
+export { CancelBookingUseCase } from './cancel-booking.usecase'
+export { CompleteBookingUseCase } from './complete-booking.usecase'
+export { ConfirmBookingUseCase } from './confirm-booking.usecase'
 export { CreateBookingUseCase } from './create-booking.usecase'
 export { GetBookingUseCase } from './get-booking.usecase'
 export { type BookingPage, ListBookingsUseCase } from './list-bookings.usecase'
+export { NoShowBookingUseCase } from './no-show-booking.usecase'
+export { StartBookingUseCase } from './start-booking.usecase'

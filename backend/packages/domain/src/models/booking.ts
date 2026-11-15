@@ -33,6 +33,10 @@ export type ApiBookingCreateRequest =
   components['schemas']['Models.BookingCreateRequest']
 export type ApiBookingServiceCreateRequest =
   components['schemas']['Models.BookingServiceCreateRequest']
+export type ApiBookingCancelRequest =
+  components['schemas']['Models.BookingCancelRequest']
+export type ApiBookingCompleteRequest =
+  components['schemas']['Models.BookingCompleteRequest']
 export type ApiBookingSearchRequest = NonNullable<
   operations['BookingCrud_list']['parameters']['query']
 >
@@ -80,6 +84,33 @@ export type BookingWrite = {
   booking: DbNewBooking
   services: DbNewBookingService[]
   statusChange: DbNewBookingStatusChange
+}
+
+/**
+ * What a change of the status writes to a booking besides the status: only
+ * the columns that go with the new status are named.
+ */
+export type DbBookingChanges = Partial<
+  Pick<
+    DbBooking,
+    | 'cancelledAt'
+    | 'cancelledBy'
+    | 'cancellationReason'
+    | 'cancellationFee'
+    | 'completedAt'
+    | 'actualStartTime'
+    | 'actualEndTime'
+  >
+>
+
+/** What a change of the status of a booking writes. */
+export type BookingStatusWrite = {
+  booking: DbBookingChanges & Pick<DbBooking, 'status'>
+  /** The time at which its service lines are completed; null when they stay as they are. */
+  servicesCompletedAt: string | null
+  statusChange: DbNewBookingStatusChange
+  /** Whether what the customer has of visits, cancellations and no-shows is counted again. */
+  countsCustomer: boolean
 }
 
 /**

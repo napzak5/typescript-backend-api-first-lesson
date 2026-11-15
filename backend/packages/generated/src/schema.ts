@@ -111,13 +111,13 @@ export type BookingRequirementType = z.infer<typeof BookingRequirementTypeSchema
  *
  * confirmed: 確定 - 予約が確定し、スタッフが割り当てられた状態
  *
- * in_progress: 施術中 - 現在サービスを実施中の状態
+ * in_progress: 施術中 - 現在サービスを実施中の状態(start アクションで記録する)
  *
  * completed: 完了 - サービス提供が終了した状態
  *
  * cancelled: キャンセル - 予約がキャンセルされた状態
  *
- * no_show: 無断キャンセル - 顧客が連絡なしに来店しなかった状態
+ * no_show: 無断キャンセル - 顧客が連絡なしに来店しなかった状態(no-show アクションで、開始日時を過ぎてから記録する)
  */
 export const BookingStatusTypeSchema = z.enum([
   'draft',
@@ -139,13 +139,13 @@ export const BookingStatusTypeSchema = z.enum([
  *
  * confirmed: 確定 - 予約が確定し、スタッフが割り当てられた状態
  *
- * in_progress: 施術中 - 現在サービスを実施中の状態
+ * in_progress: 施術中 - 現在サービスを実施中の状態(start アクションで記録する)
  *
  * completed: 完了 - サービス提供が終了した状態
  *
  * cancelled: キャンセル - 予約がキャンセルされた状態
  *
- * no_show: 無断キャンセル - 顧客が連絡なしに来店しなかった状態
+ * no_show: 無断キャンセル - 顧客が連絡なしに来店しなかった状態(no-show アクションで、開始日時を過ぎてから記録する)
  */
 export type BookingStatusType = z.infer<typeof BookingStatusTypeSchema>
 

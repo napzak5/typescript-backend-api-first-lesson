@@ -13,3 +13,18 @@ export type CreateBookingResponse = JsonBody<
 export type GetBookingResponse = JsonBody<
   operations['BookingCrud_get']['responses'][200]['content']
 >
+export type ConfirmBookingResponse = JsonBody<
+  operations['BookingCrud_confirm']['responses'][200]['content']
+>
+export type CancelBookingResponse = JsonBody<
+  operations['BookingCrud_cancel']['responses'][200]['content']
+>
+export type StartBookingResponse = JsonBody<
+  operations['BookingCrud_start']['responses'][200]['content']
+>
+export type CompleteBookingResponse = JsonBody<
+  operations['BookingCrud_complete']['responses'][200]['content']
+>
+export type NoShowBookingResponse = JsonBody<
+  operations['BookingCrud_noShow']['responses'][200]['content']
+>

@@ -651,12 +651,17 @@ describe('the booking ledger', () => {
   const SOME_ID = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1b'
   const BOOKINGS = '/api/v1/bookings'
 
-  it('should answer each of its three routes with 401 when no access token is sent', async () => {
+  it('should answer each of its three routes, and the five that change the status of a booking, with 401 when no access token is sent', async () => {
     const { server } = await start(createConfig().config)
     const routes: [string, string][] = [
       ['GET', BOOKINGS],
       ['POST', BOOKINGS],
       ['GET', `${BOOKINGS}/${SOME_ID}`],
+      ['POST', `${BOOKINGS}/${SOME_ID}/confirm`],
+      ['POST', `${BOOKINGS}/${SOME_ID}/cancel`],
+      ['POST', `${BOOKINGS}/${SOME_ID}/start`],
+      ['POST', `${BOOKINGS}/${SOME_ID}/complete`],
+      ['POST', `${BOOKINGS}/${SOME_ID}/no-show`],
     ]
 
     const answers: Record<string, unknown>[] = []

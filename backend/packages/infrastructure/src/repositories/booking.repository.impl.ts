@@ -8,6 +8,7 @@ import {
   staff,
 } from '@beauty-salon-backend/database'
 import {
+  type BookingAction,
   type BookingCreateRequest,
   type BookingCreation,
   type BookingId,
@@ -16,15 +17,19 @@ import {
   type BookingOrigin,
   type BookingReach,
   type BookingReferences,
+  type BookingStatusChange,
   type BookingWithServices,
+  type DbBooking,
   type DbBookingService,
   type DomainError,
   type IBookingRepository,
   isOccupiedBeyondCapacity,
   occupancyWindowOf,
   planBooking,
+  planStatusChange,
   RELEASING_STATUSES,
   type StaffDemand,
+  type UserId,
 } from '@beauty-salon-backend/domain'
 import type { Result } from '@beauty-salon-backend/utility'
 import {
@@ -55,6 +60,21 @@ const within = (reach: BookingReach): SQL | undefined =>
 /** A `timestamptz` column as the milliseconds since the epoch. */
 const millisecondsOf = (column: PgColumn) =>
   sql<number>`(extract(epoch from ${column}) * 1000)`.mapWith(Number)
+
+/** The same of a column that may be NULL. */
+const millisecondsOrNullOf = (column: PgColumn) =>
+  sql<number | null>`(extract(epoch from ${column}) * 1000)`.mapWith(Number)
+
+const momentOf = (milliseconds: number | null): Date | null =>
+  milliseconds === null ? null : new Date(milliseconds)
+
+/**
+ * The clock of the database at the moment a statement gets to a row.
+ * `now()` is the moment the transaction began, which is before anything it
+ * waited for: by it, a change that waited for another one would be written
+ * as the earlier of the two.
+ */
+const CLOCK = sql`clock_timestamp()`
 
 /**
  * What a create request refers to, locked until the booking is written.
@@ -188,24 +208,93 @@ const occupiedAmong = async (
   return occupied
 }
 
-/** The service lines of these bookings, each booking's in their order. */
-const serviceLinesOf = async (
-  db: DatabaseExecutor,
-  bookingIds: string[],
-): Promise<Map<string, DbBookingService[]>> => {
-  const lines =
-    bookingIds.length === 0
-      ? []
-      : await db
-          .select()
-          .from(bookingServices)
-          .where(inArray(bookingServices.bookingId, bookingIds))
-          .orderBy(
-            asc(bookingServices.bookingId),
-            asc(bookingServices.sortOrder),
-          )
+/**
+ * The bookings of the rows of a join of bookings and their service lines,
+ * in the order the rows have. A booking and its lines are read by one
+ * statement, so they are of one moment: a reader never meets a booking
+ * that is completed with lines that are not yet.
+ */
+const gathered = (
+  rows: readonly { booking: DbBooking; service: DbBookingService | null }[],
+): BookingWithServices[] =>
+  [...Map.groupBy(rows, ({ booking }) => booking.id).values()].flatMap(
+    (ofBooking) => {
+      const [first] = ofBooking
 
-  return Map.groupBy(lines, ({ bookingId }) => bookingId)
+      return first === undefined
+        ? []
+        : [
+            {
+              booking: first.booking,
+              services: ofBooking.flatMap(({ service }) =>
+                service === null ? [] : [service],
+              ),
+            },
+          ]
+    },
+  )
+
+/**
+ * Sets what a customer has of visits, no-shows and cancellations to what
+ * their bookings say: the numbers of the completed, the no_show and the
+ * cancelled ones, and the first and the last day of a completed one.
+ *
+ * The customer is locked before the bookings are counted. Without it, of
+ * two changes to bookings of one customer that run at the same time, each
+ * would count without what the other is about to commit, and the one that
+ * writes last would leave the other out.
+ */
+const countBookingsOf = async (
+  tx: DatabaseExecutor,
+  customerId: string,
+): Promise<void> => {
+  await tx
+    .select({ id: customers.id })
+    .from(customers)
+    .where(eq(customers.id, customerId))
+    .for('update')
+
+  const counted = tx
+    .select({
+      visits:
+        sql<number>`count(*) filter (where ${bookings.status} = 'completed')`.as(
+          'visits',
+        ),
+      noShows:
+        sql<number>`count(*) filter (where ${bookings.status} = 'no_show')`.as(
+          'no_shows',
+        ),
+      cancellations:
+        sql<number>`count(*) filter (where ${bookings.status} = 'cancelled')`.as(
+          'cancellations',
+        ),
+      firstVisit: sql<
+        string | null
+      >`min(${bookings.bookingDate}) filter (where ${bookings.status} = 'completed')`.as(
+        'first_visit',
+      ),
+      lastVisit: sql<
+        string | null
+      >`max(${bookings.bookingDate}) filter (where ${bookings.status} = 'completed')`.as(
+        'last_visit',
+      ),
+    })
+    .from(bookings)
+    .where(eq(bookings.customerId, customerId))
+    .as('counted')
+
+  await tx
+    .update(customers)
+    .set({
+      visitCount: sql`${counted.visits}`,
+      noShowCount: sql`${counted.noShows}`,
+      cancellationCount: sql`${counted.cancellations}`,
+      firstVisitDate: sql`${counted.firstVisit}`,
+      lastVisitDate: sql`${counted.lastVisit}`,
+      updatedAt: CLOCK,
+    })
+    .from(counted)
+    .where(eq(customers.id, customerId))
 }
 
 export class BookingRepository implements IBookingRepository {
@@ -275,18 +364,117 @@ export class BookingRepository implements IBookingRepository {
     reach: BookingReach,
   ): Promise<Result<BookingWithServices | null, DomainError>> {
     return attempt('Failed to find booking', async () => {
-      const [booking] = await this.db
-        .select()
-        .from(bookings)
-        .where(and(eq(bookings.id, id), within(reach)))
-        .limit(1)
-      if (booking === undefined) {
-        return null
-      }
-      const lines = await serviceLinesOf(this.db, [booking.id])
+      const [found] = gathered(
+        await this.db
+          .select({ booking: bookings, service: bookingServices })
+          .from(bookings)
+          .leftJoin(bookingServices, eq(bookingServices.bookingId, bookings.id))
+          .where(and(eq(bookings.id, id), within(reach)))
+          .orderBy(asc(bookingServices.sortOrder)),
+      )
 
-      return { booking, services: lines.get(booking.id) ?? [] }
+      return found ?? null
     })
+  }
+
+  async changeStatus(
+    id: BookingId,
+    reach: BookingReach,
+    action: BookingAction,
+    changedBy: UserId,
+  ): Promise<Result<BookingStatusChange, DomainError>> {
+    return attempt('Failed to change the status of booking', () =>
+      this.db.transaction(
+        async (tx): Promise<BookingStatusChange> => {
+          const holding = tx
+            .select({
+              customerId: bookings.customerId,
+              status: bookings.status,
+              startTime: bookings.startTime,
+              actualStartTime: bookings.actualStartTime,
+              actualEndTime: bookings.actualEndTime,
+            })
+            .from(bookings)
+            .where(and(eq(bookings.id, id), within(reach)))
+            .for('update')
+            .as('holding')
+          // The booking is held in a subquery, and the clock is read of the
+          // row it returns: the moment of the change is the one at which it
+          // got hold of the booking, after every change it waited for.
+          const [held] = await tx
+            .select({
+              customerId: holding.customerId,
+              status: holding.status,
+              startTime: millisecondsOf(holding.startTime),
+              actualStartTime: millisecondsOrNullOf(holding.actualStartTime),
+              actualEndTime: millisecondsOrNullOf(holding.actualEndTime),
+              now: sql<number>`(extract(epoch from ${CLOCK}) * 1000)`.mapWith(
+                Number,
+              ),
+            })
+            .from(holding)
+          if (held === undefined) {
+            return { type: 'notFound' }
+          }
+
+          const plan = planStatusChange(
+            {
+              status: held.status,
+              startTime: new Date(held.startTime),
+              actualStartTime: momentOf(held.actualStartTime),
+              actualEndTime: momentOf(held.actualEndTime),
+            },
+            action,
+            { changedBy, at: new Date(held.now) },
+          )
+          if (plan.type !== 'planned') {
+            return plan
+          }
+          const { write } = plan
+
+          const [booking] = await tx
+            .update(bookings)
+            .set({ ...write.booking, updatedAt: CLOCK })
+            .where(eq(bookings.id, id))
+            .returning()
+          if (booking === undefined) {
+            return { type: 'notFound' }
+          }
+          if (write.servicesCompletedAt !== null) {
+            await tx
+              .update(bookingServices)
+              .set({
+                isCompleted: true,
+                completedAt: write.servicesCompletedAt,
+                updatedAt: CLOCK,
+              })
+              .where(
+                and(
+                  eq(bookingServices.bookingId, id),
+                  eq(bookingServices.isCompleted, false),
+                ),
+              )
+          }
+          await tx
+            .insert(bookingStatusHistories)
+            .values({ ...write.statusChange, bookingId: id, createdAt: CLOCK })
+          if (write.countsCustomer) {
+            await countBookingsOf(tx, held.customerId)
+          }
+
+          const services = await tx
+            .select()
+            .from(bookingServices)
+            .where(eq(bookingServices.bookingId, id))
+            .orderBy(asc(bookingServices.sortOrder))
+
+          return { type: 'changed', booking: { booking, services } }
+        },
+        // A change that waited for another one on the same booking reads
+        // the status the other one committed.
+        { isolationLevel: 'read committed' },
+      ),
+    )
   }
 
   async list({
@@ -348,29 +536,37 @@ export class BookingRepository implements IBookingRepository {
           ? undefined
           : sql`(${bookings.startTime}, ${bookings.id}) > (${cursor.startTime}::timestamptz, ${cursor.id}::uuid)`
 
-      const [page, [matching]] = await Promise.all([
+      const page = this.db
+        .select()
+        .from(bookings)
+        .where(and(filters, afterCursor))
+        .orderBy(asc(bookings.startTime), asc(bookings.id))
+        // One extra row tells whether another page follows.
+        .limit(limit + 1)
+        .as('page')
+      const [rows, [matching]] = await Promise.all([
         this.db
           .select()
-          .from(bookings)
-          .where(and(filters, afterCursor))
-          .orderBy(asc(bookings.startTime), asc(bookings.id))
-          // One extra row tells whether another page follows.
-          .limit(limit + 1),
+          .from(page)
+          .leftJoin(bookingServices, eq(bookingServices.bookingId, page.id))
+          .orderBy(
+            asc(page.startTime),
+            asc(page.id),
+            asc(bookingServices.sortOrder),
+          ),
         this.db.select({ total: count() }).from(bookings).where(filters),
       ])
-      const listed = page.slice(0, limit)
-      const lines = await serviceLinesOf(
-        this.db,
-        listed.map(({ id }) => id),
+      const found = gathered(
+        rows.map((row) => ({
+          booking: row.page,
+          service: row.booking_services,
+        })),
       )
 
       return {
-        bookings: listed.map((booking) => ({
-          booking,
-          services: lines.get(booking.id) ?? [],
-        })),
+        bookings: found.slice(0, limit),
         total: matching?.total ?? 0,
-        hasMore: page.length > limit,
+        hasMore: found.length > limit,
       }
     })
   }
