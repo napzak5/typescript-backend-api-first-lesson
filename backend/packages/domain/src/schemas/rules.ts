@@ -1,3 +1,4 @@
+import { format, isValid, parseISO } from 'date-fns'
 import { z } from 'zod'
 
 /**
@@ -24,6 +25,26 @@ export const phoneNumber = z
     (value) => value.replace(/\D/g, '').length >= MIN_PHONE_DIGITS,
     `Must contain at least ${MIN_PHONE_DIGITS} digits`,
   )
+
+const TIME_OF_DAY = /^(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$/
+
+/** Time of a `time` column; the database returns it as HH:mm:ss. */
+export const timeOfDay = z
+  .string()
+  .regex(TIME_OF_DAY, 'Must be a time in HH:mm or HH:mm:ss format')
+
+/** A time of day in the form in which two of them compare as text. */
+export const withSeconds = (time: string): string => time.padEnd(8, ':00')
+
+/**
+ * The day of the week of a date (`YYYY-MM-DD`), as the `day_of_week` type
+ * of the database names it. Null when the text is not a date; the format
+ * rule reports that.
+ */
+export const dayOfWeekOf = (date: string): string | null => {
+  const parsed = parseISO(date)
+  return isValid(parsed) ? format(parsed, 'EEEE').toLowerCase() : null
+}
 
 /** The largest value of an `integer` column. */
 export const MAX_INTEGER = 2_147_483_647
