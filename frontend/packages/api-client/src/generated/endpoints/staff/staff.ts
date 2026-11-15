@@ -27,11 +27,14 @@ import type {
 import type {
   ModelsProblemDetails,
   ModelsSalonId,
+  ModelsStaffAccountUpdateRequest,
   ModelsStaffCreateRequest,
   ModelsStaffId,
   ModelsStaffInvitationCreateRequest,
   ModelsStaffScheduleUpdateRequest,
   ModelsStaffUpdateRequest,
+  StaffAccountsGet200,
+  StaffAccountsUpdate200,
   StaffCrudCreate201,
   StaffCrudGet200,
   StaffCrudList200,
@@ -829,6 +832,448 @@ export const useStaffCrudDelete = <TError = ModelsProblemDetails,
         TContext
       > => {
       return useMutation(getStaffCrudDeleteMutationOptions(options), queryClient);
+    }
+    export type staffAccountsGetResponse200 = {
+  data: StaffAccountsGet200
+  status: 200
+}
+
+export type staffAccountsGetResponse400 = {
+  data: ModelsProblemDetails
+  status: 400
+}
+
+export type staffAccountsGetResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type staffAccountsGetResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
+export type staffAccountsGetResponse404 = {
+  data: ModelsProblemDetails
+  status: 404
+}
+
+export type staffAccountsGetResponse429 = {
+  data: ModelsProblemDetails
+  status: 429
+}
+
+export type staffAccountsGetResponse500 = {
+  data: ModelsProblemDetails
+  status: 500
+}
+
+export type staffAccountsGetResponseSuccess = (staffAccountsGetResponse200) & {
+  headers: Headers;
+};
+export type staffAccountsGetResponseError = (staffAccountsGetResponse400 | staffAccountsGetResponse401 | staffAccountsGetResponse403 | staffAccountsGetResponse404 | staffAccountsGetResponse429 | staffAccountsGetResponse500) & {
+  headers: Headers;
+};
+
+export type staffAccountsGetResponse = (staffAccountsGetResponseSuccess | staffAccountsGetResponseError)
+
+export const getStaffAccountsGetUrl = (salonId: ModelsSalonId,
+    id: ModelsStaffId,) => {
+
+
+
+
+  return `/api/v1/salons/${salonId}/staff/${id}/account`
+}
+
+/**
+ * スタッフに紐づいているアカウントを取得します。スタッフにアカウントがない場合(招待を受け入れていない、紐づけを外した)は404を返します。
+ * @summary Get the account of a staff member
+ */
+export const staffAccountsGet = async (salonId: ModelsSalonId,
+    id: ModelsStaffId, options?: RequestInit): Promise<staffAccountsGetResponse> => {
+
+  return customInstance<staffAccountsGetResponse>(getStaffAccountsGetUrl(salonId,id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getStaffAccountsGetQueryKey = (salonId: ModelsSalonId,
+    id: ModelsStaffId,) => {
+    return [
+    `/api/v1/salons/${salonId}/staff/${id}/account`
+    ] as const;
+    }
+
+
+export const getStaffAccountsGetQueryOptions = <TData = Awaited<ReturnType<typeof staffAccountsGet>>, TError = ModelsProblemDetails>(salonId: ModelsSalonId,
+    id: ModelsStaffId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffAccountsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getStaffAccountsGetQueryKey(salonId,id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof staffAccountsGet>>> = ({ signal }) => staffAccountsGet(salonId,id, { signal });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: salonId !== null && salonId !== undefined && id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof staffAccountsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type StaffAccountsGetQueryResult = NonNullable<Awaited<ReturnType<typeof staffAccountsGet>>>
+export type StaffAccountsGetQueryError = ModelsProblemDetails
+
+
+/**
+ * スタッフに紐づいているアカウントを取得します。スタッフにアカウントがない場合(招待を受け入れていない、紐づけを外した)は404を返します。
+ * @summary Get the account of a staff member
+ */
+export function useStaffAccountsGet<TData = Awaited<ReturnType<typeof staffAccountsGet>>, TError = ModelsProblemDetails>(
+ salonId: ModelsSalonId,
+    id: ModelsStaffId, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffAccountsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof staffAccountsGet>>,
+          TError,
+          Awaited<ReturnType<typeof staffAccountsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * スタッフに紐づいているアカウントを取得します。スタッフにアカウントがない場合(招待を受け入れていない、紐づけを外した)は404を返します。
+ * @summary Get the account of a staff member
+ */
+export function useStaffAccountsGet<TData = Awaited<ReturnType<typeof staffAccountsGet>>, TError = ModelsProblemDetails>(
+ salonId: ModelsSalonId,
+    id: ModelsStaffId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffAccountsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof staffAccountsGet>>,
+          TError,
+          Awaited<ReturnType<typeof staffAccountsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * スタッフに紐づいているアカウントを取得します。スタッフにアカウントがない場合(招待を受け入れていない、紐づけを外した)は404を返します。
+ * @summary Get the account of a staff member
+ */
+export function useStaffAccountsGet<TData = Awaited<ReturnType<typeof staffAccountsGet>>, TError = ModelsProblemDetails>(
+ salonId: ModelsSalonId,
+    id: ModelsStaffId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffAccountsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * スタッフに紐づいているアカウントを取得します。スタッフにアカウントがない場合(招待を受け入れていない、紐づけを外した)は404を返します。
+ * @summary Get the account of a staff member
+ */
+export function useStaffAccountsGet<TData = Awaited<ReturnType<typeof staffAccountsGet>>, TError = ModelsProblemDetails>(
+ salonId: ModelsSalonId,
+    id: ModelsStaffId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffAccountsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getStaffAccountsGetQueryOptions(salonId,id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type staffAccountsUpdateResponse200 = {
+  data: StaffAccountsUpdate200
+  status: 200
+}
+
+export type staffAccountsUpdateResponse400 = {
+  data: ModelsProblemDetails
+  status: 400
+}
+
+export type staffAccountsUpdateResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type staffAccountsUpdateResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
+export type staffAccountsUpdateResponse404 = {
+  data: ModelsProblemDetails
+  status: 404
+}
+
+export type staffAccountsUpdateResponse409 = {
+  data: ModelsProblemDetails
+  status: 409
+}
+
+export type staffAccountsUpdateResponse413 = {
+  data: ModelsProblemDetails
+  status: 413
+}
+
+export type staffAccountsUpdateResponse415 = {
+  data: ModelsProblemDetails
+  status: 415
+}
+
+export type staffAccountsUpdateResponse429 = {
+  data: ModelsProblemDetails
+  status: 429
+}
+
+export type staffAccountsUpdateResponse500 = {
+  data: ModelsProblemDetails
+  status: 500
+}
+
+export type staffAccountsUpdateResponseSuccess = (staffAccountsUpdateResponse200) & {
+  headers: Headers;
+};
+export type staffAccountsUpdateResponseError = (staffAccountsUpdateResponse400 | staffAccountsUpdateResponse401 | staffAccountsUpdateResponse403 | staffAccountsUpdateResponse404 | staffAccountsUpdateResponse409 | staffAccountsUpdateResponse413 | staffAccountsUpdateResponse415 | staffAccountsUpdateResponse429 | staffAccountsUpdateResponse500) & {
+  headers: Headers;
+};
+
+export type staffAccountsUpdateResponse = (staffAccountsUpdateResponseSuccess | staffAccountsUpdateResponseError)
+
+export const getStaffAccountsUpdateUrl = (salonId: ModelsSalonId,
+    id: ModelsStaffId,) => {
+
+
+
+
+  return `/api/v1/salons/${salonId}/staff/${id}/account`
+}
+
+/**
+ * スタッフに紐づいているアカウントのロールを変更します。変更は、そのアカウントの次のリクエストから有効で、セッションは無効にしません。いまと同じロールを指定した場合も200を返します。owner のロールを与えられるのは admin だけで、サロンの owner が指定すると403を返します。自分のアカウント(リクエストしたユーザーが紐づいているスタッフのアカウント)のロールを変えようとすると409を返します。
+ * @summary Change the role of the account of a staff member
+ */
+export const staffAccountsUpdate = async (salonId: ModelsSalonId,
+    id: ModelsStaffId,
+    modelsStaffAccountUpdateRequest: ModelsStaffAccountUpdateRequest, options?: RequestInit): Promise<staffAccountsUpdateResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customInstance<staffAccountsUpdateResponse>(getStaffAccountsUpdateUrl(salonId,id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(modelsStaffAccountUpdateRequest)
+  }
+);}
+
+
+
+
+
+export const getStaffAccountsUpdateMutationKey = () => ['staffAccountsUpdate'] as const;
+
+export const getStaffAccountsUpdateMutationOptions = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffAccountsUpdate>>, TError,StaffAccountsUpdateMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof staffAccountsUpdate>>, TError,StaffAccountsUpdateMutationVariables, TContext> => {
+
+const mutationKey = getStaffAccountsUpdateMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof staffAccountsUpdate>>, StaffAccountsUpdateMutationVariables> = (props) => {
+          const {salonId,id,data} = props ?? {};
+
+          return  staffAccountsUpdate(salonId,id,data,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type StaffAccountsUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof staffAccountsUpdate>>>
+    export type StaffAccountsUpdateMutationBody = ModelsStaffAccountUpdateRequest
+    export type StaffAccountsUpdateMutationError = ModelsProblemDetails
+    export type StaffAccountsUpdateMutationVariables = {salonId: ModelsSalonId;id: ModelsStaffId;data: ModelsStaffAccountUpdateRequest}
+
+    /**
+ * スタッフに紐づいているアカウントのロールを変更します。変更は、そのアカウントの次のリクエストから有効で、セッションは無効にしません。いまと同じロールを指定した場合も200を返します。owner のロールを与えられるのは admin だけで、サロンの owner が指定すると403を返します。自分のアカウント(リクエストしたユーザーが紐づいているスタッフのアカウント)のロールを変えようとすると409を返します。
+ * @summary Change the role of the account of a staff member
+ */
+export const useStaffAccountsUpdate = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffAccountsUpdate>>, TError,StaffAccountsUpdateMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof staffAccountsUpdate>>,
+        TError,
+        StaffAccountsUpdateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getStaffAccountsUpdateMutationOptions(options), queryClient);
+    }
+    export type staffAccountsDeleteResponse204 = {
+  data: void
+  status: 204
+}
+
+export type staffAccountsDeleteResponse400 = {
+  data: ModelsProblemDetails
+  status: 400
+}
+
+export type staffAccountsDeleteResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type staffAccountsDeleteResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
+export type staffAccountsDeleteResponse404 = {
+  data: ModelsProblemDetails
+  status: 404
+}
+
+export type staffAccountsDeleteResponse409 = {
+  data: ModelsProblemDetails
+  status: 409
+}
+
+export type staffAccountsDeleteResponse429 = {
+  data: ModelsProblemDetails
+  status: 429
+}
+
+export type staffAccountsDeleteResponse500 = {
+  data: ModelsProblemDetails
+  status: 500
+}
+
+export type staffAccountsDeleteResponseSuccess = (staffAccountsDeleteResponse204) & {
+  headers: Headers;
+};
+export type staffAccountsDeleteResponseError = (staffAccountsDeleteResponse400 | staffAccountsDeleteResponse401 | staffAccountsDeleteResponse403 | staffAccountsDeleteResponse404 | staffAccountsDeleteResponse409 | staffAccountsDeleteResponse429 | staffAccountsDeleteResponse500) & {
+  headers: Headers;
+};
+
+export type staffAccountsDeleteResponse = (staffAccountsDeleteResponseSuccess | staffAccountsDeleteResponseError)
+
+export const getStaffAccountsDeleteUrl = (salonId: ModelsSalonId,
+    id: ModelsStaffId,) => {
+
+
+
+
+  return `/api/v1/salons/${salonId}/staff/${id}/account`
+}
+
+/**
+ * スタッフとアカウントの紐づけを外します。アカウントとスタッフは残ります。アカウントは、次のリクエストからサロンへの権限を失い(ログインはできます)、スタッフは、また招待できるようになります。自分のアカウントの紐づけを外そうとすると409を返します。
+ * @summary Unlink the account of a staff member
+ */
+export const staffAccountsDelete = async (salonId: ModelsSalonId,
+    id: ModelsStaffId, options?: RequestInit): Promise<staffAccountsDeleteResponse> => {
+
+  return customInstance<staffAccountsDeleteResponse>(getStaffAccountsDeleteUrl(salonId,id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getStaffAccountsDeleteMutationKey = () => ['staffAccountsDelete'] as const;
+
+export const getStaffAccountsDeleteMutationOptions = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffAccountsDelete>>, TError,StaffAccountsDeleteMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof staffAccountsDelete>>, TError,StaffAccountsDeleteMutationVariables, TContext> => {
+
+const mutationKey = getStaffAccountsDeleteMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof staffAccountsDelete>>, StaffAccountsDeleteMutationVariables> = (props) => {
+          const {salonId,id} = props ?? {};
+
+          return  staffAccountsDelete(salonId,id,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type StaffAccountsDeleteMutationResult = NonNullable<Awaited<ReturnType<typeof staffAccountsDelete>>>
+
+    export type StaffAccountsDeleteMutationError = ModelsProblemDetails
+    export type StaffAccountsDeleteMutationVariables = {salonId: ModelsSalonId;id: ModelsStaffId}
+
+    /**
+ * スタッフとアカウントの紐づけを外します。アカウントとスタッフは残ります。アカウントは、次のリクエストからサロンへの権限を失い(ログインはできます)、スタッフは、また招待できるようになります。自分のアカウントの紐づけを外そうとすると409を返します。
+ * @summary Unlink the account of a staff member
+ */
+export const useStaffAccountsDelete = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffAccountsDelete>>, TError,StaffAccountsDeleteMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof staffAccountsDelete>>,
+        TError,
+        StaffAccountsDeleteMutationVariables,
+        TContext
+      > => {
+      return useMutation(getStaffAccountsDeleteMutationOptions(options), queryClient);
     }
     export type staffInvitationsGetResponse200 = {
   data: StaffInvitationsGet200

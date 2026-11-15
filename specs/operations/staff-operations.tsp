@@ -127,7 +127,7 @@ namespace BeautySalon.Operations {
     }
   }
 
-  @doc("スタッフへの招待(staff_invitations)を管理するAPI操作群です。ここに定義した操作はすべて実装済みです。招待は、台帳のスタッフが自分のログインアカウントを作るためのもので、1人のスタッフが持てるのは1つまでです。招待すると、台帳のメールアドレスに、1回だけ使えるリンクをメールで送ります。受け取った本人が、認証の操作(/api/v1/auth/staff-invitation/accept)でパスワードを設定すると、招待のロールを持つアカウントが作られ、スタッフに紐づきます。実行できるのは、スタッフ台帳と同じく admin と、そのサロンの owner です。権限はパスの salonId だけで判定し、権限のないユーザーには、IDや本文が不正でも、サロンが存在しなくても403を返します。サロンが存在しない場合と、スタッフがパスのサロンに属さない場合、スタッフが削除済みの場合は404を返します。")
+  @doc("スタッフへの招待(staff_invitations)を管理するAPI操作群です。ここに定義した操作はすべて実装済みです。招待は、台帳のスタッフが自分のログインアカウントを作るためのもので、1人のスタッフが持てるのは1つまでです。招待すると、台帳のメールアドレスに、1回だけ使えるリンクをメールで送ります。受け取った本人が、認証の操作(/api/v1/auth/staff-invitation/accept)でパスワードを設定すると、招待のロールを持つアカウントが作られ、スタッフに紐づきます。すでにスタッフのアカウントを持つ人は、ログインして、招待に参加します(/api/v1/auth/staff-invitation/join)。実行できるのは、スタッフ台帳と同じく admin と、そのサロンの owner です。権限はパスの salonId だけで判定し、権限のないユーザーには、IDや本文が不正でも、サロンが存在しなくても403を返します。サロンが存在しない場合と、スタッフがパスのサロンに属さない場合、スタッフが削除済みの場合は404を返します。")
   @route("/api/v1/salons/{salonId}/staff/{id}/invitation")
   @tag("Staff")
   namespace StaffInvitationOperations {
@@ -172,6 +172,55 @@ namespace BeautySalon.Operations {
           }
         | ProblemResponse<400>
         | ProblemResponse<404>
+        | CommonErrors;
+    }
+  }
+
+  @doc("スタッフに紐づいているログインアカウントを扱うAPI操作群です。ここに定義した操作はすべて実装済みです。スタッフのアカウントは、そのスタッフを指している、削除されていないユーザーで、1人のスタッフが持てるのは1つまでです。アカウントは、招待の受け入れ(/api/v1/auth/staff-invitation/accept)か、すでにあるアカウントでの招待への参加(/api/v1/auth/staff-invitation/join)でスタッフに紐づきます。実行できるのは、スタッフ台帳と同じく admin と、そのサロンの owner です。権限はパスの salonId だけで判定し、権限のないユーザーには、IDや本文が不正でも、サロンが存在しなくても403を返します。サロンが存在しない場合と、スタッフがパスのサロンに属さない場合、スタッフが削除済みの場合、スタッフにアカウントがない場合は404を返します。無効(isActive が false)のスタッフのアカウントも扱えます。")
+  @route("/api/v1/salons/{salonId}/staff/{id}/account")
+  @tag("Staff")
+  namespace StaffAccountOperations {
+    interface StaffAccounts {
+      @doc("スタッフに紐づいているアカウントを取得します。スタッフにアカウントがない場合(招待を受け入れていない、紐づけを外した)は404を返します。")
+      @summary("Get the account of a staff member")
+      @get
+      get(@path salonId: SalonId, @path id: StaffId):
+        | {
+            @statusCode statusCode: 200;
+            @body response: ApiResponse<StaffAccountResponse>;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<404>
+        | CommonErrors;
+
+      @doc("スタッフに紐づいているアカウントのロールを変更します。変更は、そのアカウントの次のリクエストから有効で、セッションは無効にしません。いまと同じロールを指定した場合も200を返します。owner のロールを与えられるのは admin だけで、サロンの owner が指定すると403を返します。自分のアカウント(リクエストしたユーザーが紐づいているスタッフのアカウント)のロールを変えようとすると409を返します。")
+      @summary("Change the role of the account of a staff member")
+      @patch
+      update(
+        @path salonId: SalonId,
+        @path id: StaffId,
+        @body request: StaffAccountUpdateRequest,
+      ):
+        | {
+            @statusCode statusCode: 200;
+            @body response: ApiResponse<StaffAccountResponse>;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<404>
+        | ProblemResponse<409>
+        | RequestBodyErrors
+        | CommonErrors;
+
+      @doc("スタッフとアカウントの紐づけを外します。アカウントとスタッフは残ります。アカウントは、次のリクエストからサロンへの権限を失い(ログインはできます)、スタッフは、また招待できるようになります。自分のアカウントの紐づけを外そうとすると409を返します。")
+      @summary("Unlink the account of a staff member")
+      @delete
+      delete(@path salonId: SalonId, @path id: StaffId):
+        | {
+            @statusCode statusCode: 204;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<404>
+        | ProblemResponse<409>
         | CommonErrors;
     }
   }

@@ -271,6 +271,14 @@ namespace BeautySalon.Models {
     token: string;
   }
 
+  @doc("ログインしているアカウントで、スタッフへの招待に参加するためのリクエスト。")
+  model AuthStaffInvitationJoinRequest {
+    @doc("メールで受け取った招待トークン。")
+    @minLength(1)
+    @maxLength(255)
+    token: string;
+  }
+
   @doc("スタッフへの招待を受け入れて、ログインアカウントを作るためのリクエスト。")
   model AuthStaffInvitationAcceptRequest {
     @doc("メールで受け取った招待トークン。")
