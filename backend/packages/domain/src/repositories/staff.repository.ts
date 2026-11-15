@@ -23,6 +23,17 @@ export type StaffList = {
   hasMore: boolean
 }
 
+/** What became of a staff member that was to be deleted. */
+export type StaffDeletion =
+  | { type: 'deleted' }
+  /** The salon has no such staff member, or it is deleted already. */
+  | { type: 'notFound' }
+  /**
+   * The staff member is in charge of a booking that is not finished, or
+   * does one of its service lines.
+   */
+  | { type: 'bookingsUnfinished' }
+
 /**
  * Persistence of the staff members of a salon. Every method is given the
  * salon and sees only its staff: a staff member of another salon is one
@@ -35,17 +46,6 @@ export type StaffList = {
  * any staff member of the salon has or had, are refused with
  * `alreadyExists`.
  */
-/** What became of a staff member that was to be deleted. */
-export type StaffDeletion =
-  | { type: 'deleted' }
-  /** The salon has no such staff member, or it is deleted already. */
-  | { type: 'notFound' }
-  /**
-   * The staff member is in charge of a booking that is not finished, or
-   * does one of its service lines.
-   */
-  | { type: 'bookingsUnfinished' }
-
 export interface IStaffRepository {
   create(
     salonId: SalonId,

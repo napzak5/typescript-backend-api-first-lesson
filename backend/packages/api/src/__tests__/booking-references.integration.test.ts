@@ -618,6 +618,28 @@ describe('Deleting what bookings refer to', () => {
         expect(marks.updatedMs).toBeGreaterThanOrEqual(released)
       })
 
+      // A delete holds its row alone. Deletes that held it together would
+      // each wait for the others to let go of it before they could write.
+      it('is deleted once, when deletes that waited for it get to it together', async () => {
+        const { pending } = await db.transaction(async (tx) => {
+          await HOLDS[kind](tx, ours)
+          const underWay = Promise.all(
+            [1, 2, 3].map(() => remove(kind).then((response) => response)),
+          )
+          await pause(300)
+
+          return { pending: underWay }
+        })
+        const responses = await pending
+
+        expect(responses.map(statusAndCode).sort()).toEqual([
+          '204',
+          '404 3001',
+          '404 3001',
+        ])
+        expect(await deletedAmongOurs()).toEqual([kind])
+      })
+
       it('never leaves a booking that is not finished with what was deleted, when an entry and the delete come together', async () => {
         for (let round = 0; round < 6; round += 1) {
           const of = await referred()

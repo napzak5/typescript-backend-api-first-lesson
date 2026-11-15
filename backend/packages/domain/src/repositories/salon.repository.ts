@@ -30,11 +30,6 @@ export type SalonList = {
   hasMore: boolean
 }
 
-/**
- * Persistence of salons. Deleted salons are invisible to every method, and
- * each write is atomic: a salon and its calendar change together or not at
- * all.
- */
 /** What became of a salon that was to be deleted. */
 export type SalonDeletion =
   | { type: 'deleted' }
@@ -43,6 +38,11 @@ export type SalonDeletion =
   /** A booking of the salon is not finished. */
   | { type: 'bookingsUnfinished' }
 
+/**
+ * Persistence of salons. Deleted salons are invisible to every method, and
+ * each write is atomic: a salon and its calendar change together or not at
+ * all.
+ */
 export interface ISalonRepository {
   create(
     salon: DbNewSalon,
