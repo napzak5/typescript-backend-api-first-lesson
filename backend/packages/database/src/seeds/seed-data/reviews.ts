@@ -1,30 +1,21 @@
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import * as schema from '../../schema'
+import type { CompletedBooking } from './bookings'
 
-interface ReviewSeedData {
-  salonIds: string[]
-  customerIds: string[]
-  completedBookingIds: string[]
-  staffIds: string[]
-}
-
+/**
+ * Reviews of the first visits that took place, each by the customer of the
+ * visit, for its salon and the staff member who was in charge of it.
+ */
 export async function seedReviews(
   db: PostgresJsDatabase<typeof schema>,
-  data: ReviewSeedData,
+  completedBookings: CompletedBooking[],
 ): Promise<string[]> {
-  const { salonIds, customerIds, completedBookingIds, staffIds } = data
-
-  if (completedBookingIds.length === 0) {
-    console.log('No completed bookings to create reviews for')
-    return []
-  }
-
-  const reviews = []
   const reviewTexts = [
     {
       title: 'Excellent service!',
       comment:
         'The staff was very professional and friendly. My hair looks amazing!',
+      helpfulCount: 12,
       ratings: {
         overall: 5,
         service: 5,
@@ -38,6 +29,7 @@ export async function seedReviews(
       title: 'Great experience',
       comment:
         'Really enjoyed my visit. The stylist understood exactly what I wanted.',
+      helpfulCount: 7,
       ratings: {
         overall: 5,
         service: 5,
@@ -50,6 +42,7 @@ export async function seedReviews(
     {
       title: 'Good but could be better',
       comment: 'Service was good but had to wait despite having a reservation.',
+      helpfulCount: 0,
       ratings: {
         overall: 3,
         service: 4,
@@ -63,6 +56,7 @@ export async function seedReviews(
       title: 'Satisfied with the result',
       comment:
         'The color turned out exactly as I hoped. Will definitely come back!',
+      helpfulCount: 3,
       ratings: {
         overall: 4,
         service: 4,
@@ -76,6 +70,7 @@ export async function seedReviews(
       title: 'Amazing head spa',
       comment:
         "The most relaxing head spa experience I've ever had. Highly recommend!",
+      helpfulCount: 18,
       ratings: {
         overall: 5,
         service: 5,
@@ -87,48 +82,40 @@ export async function seedReviews(
     },
   ]
 
-  // Create reviews for some completed bookings
-  const bookingsToReview = completedBookingIds.slice(
-    0,
-    Math.min(5, completedBookingIds.length),
-  )
-
-  for (let i = 0; i < bookingsToReview.length; i++) {
-    const bookingId = bookingsToReview[i]
-    const reviewData = reviewTexts[i % reviewTexts.length]
-    const customerId = customerIds[i % customerIds.length]
-    const salonId = salonIds[i % salonIds.length]
-    const staffId = staffIds[i % staffIds.length]
-
-    if (!(bookingId && reviewData && customerId && salonId)) {
-      continue
+  const reviews = reviewTexts.flatMap((reviewData, position) => {
+    const booking = completedBookings[position]
+    if (booking === undefined) {
+      return []
     }
 
-    reviews.push({
-      salonId,
-      customerId,
-      bookingId,
-      staffId,
-      overallRating: reviewData.ratings.overall,
-      serviceRating: reviewData.ratings.service,
-      staffRating: reviewData.ratings.staff,
-      atmosphereRating: reviewData.ratings.atmosphere,
-      cleanlinessRating: reviewData.ratings.cleanliness,
-      valueRating: reviewData.ratings.value,
-      title: reviewData.title,
-      comment: reviewData.comment,
-      isVerified: true,
-      helpfulCount: Math.floor(Math.random() * 20),
-      reportCount: 0,
-      ownerResponse:
-        i === 0
-          ? 'Thank you for your wonderful review! We look forward to seeing you again.'
-          : undefined,
-      ownerRespondedAt: i === 0 ? new Date().toISOString() : undefined,
-    })
-  }
+    return [
+      {
+        salonId: booking.salonId,
+        customerId: booking.customerId,
+        bookingId: booking.id,
+        staffId: booking.staffId,
+        overallRating: reviewData.ratings.overall,
+        serviceRating: reviewData.ratings.service,
+        staffRating: reviewData.ratings.staff,
+        atmosphereRating: reviewData.ratings.atmosphere,
+        cleanlinessRating: reviewData.ratings.cleanliness,
+        valueRating: reviewData.ratings.value,
+        title: reviewData.title,
+        comment: reviewData.comment,
+        isVerified: true,
+        helpfulCount: reviewData.helpfulCount,
+        reportCount: 0,
+        ownerResponse:
+          position === 0
+            ? 'Thank you for your wonderful review! We look forward to seeing you again.'
+            : null,
+        ownerRespondedAt: position === 0 ? new Date().toISOString() : null,
+      },
+    ]
+  })
 
   if (reviews.length === 0) {
+    console.log('No completed bookings to create reviews for')
     return []
   }
 

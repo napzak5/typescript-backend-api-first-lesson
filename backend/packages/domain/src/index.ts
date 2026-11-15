@@ -1,5 +1,6 @@
 // Use cases
 export * from './business-logic/auth'
+export * from './business-logic/booking'
 export * from './business-logic/customer'
 export * from './business-logic/customer-preferences'
 export * from './business-logic/salon'
@@ -13,6 +14,7 @@ export * from './business-logic/staff-schedule'
 
 // Models
 export * from './models/auth'
+export * from './models/booking'
 export * from './models/customer'
 export * from './models/customer-preferences'
 export * from './models/salon'
@@ -25,6 +27,7 @@ export * from './models/staff-profile'
 export * from './models/staff-schedule'
 
 // Repositories
+export * from './repositories/booking.repository'
 export * from './repositories/customer.repository'
 export * from './repositories/customer-preferences.repository'
 export * from './repositories/salon.repository'
@@ -39,6 +42,7 @@ export * from './repositories/staff-schedule.repository'
 export * from './repositories/user.repository'
 
 // Services the use cases rely on
+export * from './services/booking-number-issuer'
 export * from './services/mailer'
 export * from './services/password-hasher'
 export * from './services/token-issuer'

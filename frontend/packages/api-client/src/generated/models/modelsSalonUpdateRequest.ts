@@ -114,7 +114,7 @@ export interface ModelsSalonUpdateRequest {
      */
   businessHours?: ModelsBusinessHours[] | null;
   /**
-     * 営業時間の基準となるIANAタイムゾーンID
+     * 営業時間と、予約の来店日の基準となるIANAタイムゾーンID(例: Asia/Tokyo)。タイムゾーンの名前として認識できない値と、+09:00 のようなオフセットは400
      * @maxLength 50
      */
   timezone?: string;

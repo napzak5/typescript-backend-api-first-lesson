@@ -91,7 +91,7 @@ export interface ModelsSalonResponse {
   rating: number | null;
   /** 蓄積されたレビュー件数 */
   reviewCount: number;
-  /** 営業時間の基準となるIANAタイムゾーンID */
+  /** 営業時間と、予約の来店日の基準となるIANAタイムゾーンID(例: Asia/Tokyo) */
   timezone: string;
   /** 料金表示に使用する通貨コード(ISO 4217) */
   currency: string;

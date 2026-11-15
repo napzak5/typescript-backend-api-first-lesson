@@ -2,11 +2,6 @@ import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import * as schema from '../../schema'
 import type { ServiceCategorySeedResult } from './service-categories'
 
-export interface ServiceSeedResult {
-  serviceIds: string[]
-  serviceMap: Record<string, string[]> // salonId -> serviceIds
-}
-
 /** The lists of a service without images, tags, member services and booking requirements. */
 const withoutLists = {
   imageUrls: [],
@@ -19,7 +14,7 @@ export async function seedServices(
   db: PostgresJsDatabase<typeof schema>,
   salonIds: string[],
   categoryResult: ServiceCategorySeedResult,
-): Promise<ServiceSeedResult> {
+): Promise<void> {
   const services = []
   const { categoryMap } = categoryResult
 
@@ -261,42 +256,33 @@ export async function seedServices(
     'Scalp Treatment',
     'Signature Cut',
   ]
-  const packages = await db
-    .insert(schema.services)
-    .values({
-      ...withoutLists,
-      salonId: salonId2,
-      categoryId: categoryMap[`${salonId2}_other`],
-      name: 'Spa & Cut Package',
-      description: 'Complete relaxation and styling package',
-      shortDescription: 'Head spa + Cut + Treatment',
-      duration: 150,
-      price: 12000,
-      discountPrice: 10000,
-      taxIncluded: true,
-      isPackage: true,
-      packageServiceIds: plainServices
-        .filter(
-          (service) =>
-            service.salonId === salonId2 &&
-            packageMembers.includes(service.name),
-        )
-        .map((service) => service.id),
-      requiresConsultation: false,
-      allowOnlineBooking: true,
-      isActive: true,
-      sortOrder: 5,
-    })
-    .returning({
-      id: schema.services.id,
-      salonId: schema.services.salonId,
-    })
-
-  const insertedServices = [...plainServices, ...packages]
+  await db.insert(schema.services).values({
+    ...withoutLists,
+    salonId: salonId2,
+    categoryId: categoryMap[`${salonId2}_other`],
+    name: 'Spa & Cut Package',
+    description: 'Complete relaxation and styling package',
+    shortDescription: 'Head spa + Cut + Treatment',
+    duration: 150,
+    price: 12000,
+    discountPrice: 10000,
+    taxIncluded: true,
+    isPackage: true,
+    packageServiceIds: plainServices
+      .filter(
+        (service) =>
+          service.salonId === salonId2 && packageMembers.includes(service.name),
+      )
+      .map((service) => service.id),
+    requiresConsultation: false,
+    allowOnlineBooking: true,
+    isActive: true,
+    sortOrder: 5,
+  })
 
   // Create service options for some services
   const serviceOptions = []
-  const firstServiceId = insertedServices[0]?.id
+  const firstServiceId = plainServices[0]?.id
 
   if (firstServiceId) {
     serviceOptions.push(
@@ -325,22 +311,5 @@ export async function seedServices(
 
   if (serviceOptions.length > 0) {
     await db.insert(schema.serviceOptions).values(serviceOptions)
-  }
-
-  // Build service map
-  const serviceMap: Record<string, string[]> = {}
-  for (const service of insertedServices) {
-    if (!serviceMap[service.salonId]) {
-      serviceMap[service.salonId] = []
-    }
-    const serviceList = serviceMap[service.salonId]
-    if (serviceList) {
-      serviceList.push(service.id)
-    }
-  }
-
-  return {
-    serviceIds: insertedServices.map((s) => s.id),
-    serviceMap,
   }
 }

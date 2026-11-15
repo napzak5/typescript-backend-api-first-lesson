@@ -19,6 +19,7 @@ export {
 export { SmtpMailer, type SmtpSettings } from './mail/smtp-mailer'
 
 // Repositories
+export { BookingRepository } from './repositories/booking.repository.impl'
 export { CustomerRepository } from './repositories/customer.repository.impl'
 export { CustomerPreferencesRepository } from './repositories/customer-preferences.repository.impl'
 export { SalonRepository } from './repositories/salon.repository.impl'
@@ -32,7 +33,8 @@ export { StaffProfileRepository } from './repositories/staff-profile.repository.
 export { StaffScheduleRepository } from './repositories/staff-schedule.repository.impl'
 export { UserRepository } from './repositories/user.repository.impl'
 
-// Passwords and tokens
+// Passwords, tokens and booking numbers
 export { Argon2PasswordHasher } from './security/argon2-password-hasher'
+export { RandomBookingNumberIssuer } from './security/random-booking-number-issuer'
 export { RandomTokenIssuer } from './security/random-token-issuer'
 export { TotpAuthenticator } from './security/totp-authenticator'

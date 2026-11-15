@@ -64,7 +64,7 @@ export async function seed(
     })
 
     console.log('Seeding staff...')
-    const staffResult = await seedStaff(db, salonIds, {
+    await seedStaff(db, salonIds, {
       staffUserIds: userResult.staffUserIds,
       ownerUserId: userResult.ownerUserId,
       managerUserId: userResult.managerUserId,
@@ -77,7 +77,7 @@ export async function seed(
     const categoryResult = await seedServiceCategories(db, salonIds)
 
     console.log('Seeding services...')
-    const serviceResult = await seedServices(db, salonIds, categoryResult)
+    await seedServices(db, salonIds, categoryResult)
 
     console.log('Seeding opening hours...')
     await seedOpeningHours(db, salonIds)
@@ -90,21 +90,14 @@ export async function seed(
 
     if (includeSampleData) {
       console.log('Seeding bookings...')
-      const bookingResult = await seedBookings(db, {
+      const completedBookings = await seedBookings(db, {
         salonIds,
         customerIds: customerResult.customerIds,
-        serviceIds: serviceResult.serviceIds,
-        staffIds: staffResult.staffIds,
         vipCustomerId: customerResult.vipCustomerId,
       })
 
       console.log('Seeding reviews...')
-      await seedReviews(db, {
-        salonIds,
-        customerIds: customerResult.customerIds,
-        completedBookingIds: bookingResult.completedBookingIds,
-        staffIds: staffResult.staffIds,
-      })
+      await seedReviews(db, completedBookings)
     }
 
     console.log('Seeding completed successfully!')

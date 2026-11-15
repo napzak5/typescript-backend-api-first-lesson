@@ -155,7 +155,8 @@
 - 整数の上限は、`integer` のカラムの最大値（2147483647）です
 - 配列の要素の違反は、`imageUrls.1` のように、要素の番号を付けた項目名で報告します
 - `salonId` と `requiredProducts` は、リクエストの項目ではありません（指定すると `unrecognized_keys`）。`services.requiredProducts` は構造が決まっていないカラムで、API からは読み書きしません
-- `isActive` と `serviceStatus` は、互いに独立した属性として保存します。どの組み合わせも保存できます。予約は未実装なので、これらの値（と `availability`、`requiresConsultation`、`allowOnlineBooking`、`bookingRequirements`、`maxBookingsPerDay`）を読んで動作を変える処理はありません。どの組み合わせを予約できるサービスとするかは、決まっていません
+- `isActive` と `serviceStatus` は、互いに独立した属性として保存します。どの組み合わせも保存できます。これらの値（と `availability`、`requiresConsultation`、`allowOnlineBooking`、`bookingRequirements`、`maxBookingsPerDay`）を読んで動作を変える処理はありません。サロンが予約台帳に入れる予約には、削除されていないサービスなら、どれでも指定できます（[予約台帳](./bookings.md#サロンが台帳に入れる予約はサロンの判断)）。顧客が自分で予約できるサービスをどの組み合わせにするかは、顧客が入れる予約の実装で決めます
+- 予約の施術明細は、作成した時点のサービスの料金、割引後料金、所要時間を写します。あとでサービスを変えても、削除しても、すでにある予約は変わりません
 
 ### オプション
 

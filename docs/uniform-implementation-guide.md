@@ -310,7 +310,11 @@ salon, which is ordered by registration, oldest first
 ([staff.md](./staff.md), Japanese). The list of staff profiles has the
 same order across salons; its cursor may name any staff member, one who
 is not shown any more or one the filters leave out included, and only a
-cursor that names no staff member is answered with 400. The schedule of a
+cursor that names no staff member is answered with 400. The booking list is
+ordered by the time a booking begins, earliest first, and then by ID; a
+booking is not soft-deleted, and its cursor has to name a booking the reader
+reaches: one of another salon is answered with 400 like an ID that names
+none ([bookings.md](./bookings.md), Japanese). The schedule of a
 staff member is the one list without pages: it has at most 373 entries, the
 contract says so (`@maxItems`), and the response is `{ data, meta, links }`
 with the whole schedule in `data` and no pagination metadata
@@ -658,6 +662,16 @@ if (!mayUpdateSalon(actor, salonId.data)) {
   A user who is not allowed is answered with 403 whatever else is wrong with
   the request, and whether or not the customer exists. The rule is stated in
   [authentication.md](./authentication.md#顧客台帳の権限).
+- A rule that needs the actor and a salon that the path does not name is
+  decided in two steps. The booking ledger is a salon's, but its routes are
+  not below a salon, so each of its use cases first asks which bookings the
+  actor reaches (`bookingReachOf` in
+  `backend/packages/domain/src/business-logic/booking/_shared/authorization.ts`):
+  none is a 403 whatever else is wrong with the request. Once the body or
+  the query names a salon, `isWithin` says whether it is within that reach
+  (403), and the repository takes the reach as a condition of what it
+  reads, so the booking of another salon is not found (404). The rule is
+  stated in [authentication.md](./authentication.md#予約台帳の権限).
 - A rule that needs the actor and the target, and nothing that is stored, is
   decided once the request is known to be valid and before anything is
   looked up. The staff ledger has one: nobody deactivates or deletes the

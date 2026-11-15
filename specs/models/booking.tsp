@@ -80,10 +80,10 @@ namespace BeautySalon.Models {
     @doc("予約する施術メニューのID。予約と同じサロンのサービスを指定する")
     serviceId: ServiceId;
 
-    @doc("この施術を担当するスタッフのID。予約と同じサロンのスタッフを指定する。担当スタッフを決めない場合はnull")
+    @doc("この施術を担当するスタッフのID。予約と同じサロンのスタッフを指定する。担当スタッフを決めない場合はnull(その施術は、誰の時間も確保しない)")
     staffId: StaffId | null;
 
-    @doc("施術開始予定日時 (UTC)")
+    @doc("施術開始予定日時 (UTC)。分単位で指定する(秒と小数は0)")
     startTime: utcDateTime;
 
     @doc("この施術に関するメモ。メモがない場合はnull")
@@ -98,7 +98,7 @@ namespace BeautySalon.Models {
     @doc("予約を一意に識別するID")
     id: BookingId;
 
-    @doc("予約番号。システムが採番し、すべての予約の間で一意")
+    @doc("予約番号。システムが BK-XXXX-XXXX の形式(X は数字か、I・L・O・U を除く英大文字)で採番し、すべての予約の間で一意")
     bookingNumber: string;
 
     @doc("予約が紐づくサロンのID")
@@ -128,10 +128,10 @@ namespace BeautySalon.Models {
     @doc("小計。施術明細の料金(price)の合計")
     subtotal: int32;
 
-    @doc("割引額の合計。施術明細の割引額と予約単位の割引を含む")
+    @doc("割引額の合計。施術明細の割引額(discountAmount)の合計")
     discountAmount: int32;
 
-    @doc("消費税額")
+    @doc("料金に加える消費税額。税抜価格のサービス(taxIncluded が false)の施術明細の割引後料金の合計に、サロンの税率を掛け、1円未満を切り捨てる。税込価格のサービスの消費税は料金に含まれており、ここには入らない")
     taxAmount: int32;
 
     @doc("請求金額 (subtotal − discountAmount + taxAmount)")
@@ -220,7 +220,7 @@ namespace BeautySalon.Models {
     @maxLength(50)
     source: string | null;
 
-    @doc("施術明細の一覧。1件以上20件以下で指定する。指定した順に sortOrder を振る")
+    @doc("施術明細の一覧。1件以上20件以下で指定する。指定した順に sortOrder を振る。どの明細も、最も早い明細の開始から24時間以内に始める")
     @minItems(1)
     @maxItems(20)
     services: BookingServiceCreateRequest[];

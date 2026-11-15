@@ -1,267 +1,546 @@
+import { TZDate } from '@date-fns/tz'
+import { addDays, addMinutes, format, set, startOfDay, subDays } from 'date-fns'
+import { inArray } from 'drizzle-orm'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import * as schema from '../../schema'
 
-interface BookingSeedData {
-  salonIds: string[]
-  customerIds: string[]
-  serviceIds: string[]
-  staffIds: string[]
-  vipCustomerId?: string
+type BookingStatus = (typeof schema.bookingStatus.enumValues)[number]
+
+/**
+ * A booking of the seed, by what a create request says of a booking: whom
+ * it is for and which services begin when. Everything else follows as it
+ * does when the API creates a booking: the time and the amounts of a line
+ * are those of its service, those of the booking come from its lines, and
+ * the day of the visit is the day in the time zone of the salon.
+ */
+type SeededBooking = {
+  /** The position of the salon among the seeded ones. */
+  salon: number
+  /** The position of the customer among the seeded ones, or the VIP customer. */
+  customer: number | 'vip'
+  /** The code of the staff member in charge. */
+  staffCode: string
+  /** Days from today in the time zone of the salon; negative in the past. */
+  day: number
+  /** The time of the salon at which the first service begins. */
+  hours: number
+  minutes: number
+  /** The services by name, one right after the other, and who provides each. */
+  lines: { service: string; staffCode: string }[]
+  status: 'pending' | 'confirmed' | 'completed' | 'cancelled'
+  depositAmount: number | null
+  customerRequest: string | null
+  source: string
 }
 
-export interface BookingSeedResult {
-  bookingIds: string[]
-  completedBookingIds: string[]
-  upcomingBookingIds: string[]
+/**
+ * No two of these occupy a staff member at the same time, except the two of
+ * one afternoon for the staff member who takes two bookings at once.
+ */
+const BOOKINGS: SeededBooking[] = [
+  // Visits that took place. The reviews are written for the first five.
+  {
+    salon: 0,
+    customer: 0,
+    staffCode: 'STF001',
+    day: -30,
+    hours: 14,
+    minutes: 0,
+    lines: [
+      { service: 'Ladies Cut', staffCode: 'STF001' },
+      { service: 'Deep Conditioning Treatment', staffCode: 'STF001' },
+    ],
+    status: 'completed',
+    depositAmount: null,
+    customerRequest: null,
+    source: 'online',
+  },
+  {
+    salon: 1,
+    customer: 1,
+    staffCode: 'STF003',
+    day: -25,
+    hours: 11,
+    minutes: 0,
+    lines: [{ service: 'Signature Cut', staffCode: 'STF003' }],
+    status: 'completed',
+    depositAmount: null,
+    customerRequest: null,
+    source: 'online',
+  },
+  {
+    salon: 0,
+    customer: 2,
+    staffCode: 'STF004',
+    day: -20,
+    hours: 10,
+    minutes: 30,
+    lines: [{ service: 'Mens Cut', staffCode: 'STF004' }],
+    status: 'completed',
+    depositAmount: null,
+    customerRequest: null,
+    source: 'phone',
+  },
+  {
+    salon: 0,
+    customer: 'vip',
+    staffCode: 'STF002',
+    day: -15,
+    hours: 13,
+    minutes: 0,
+    lines: [
+      { service: 'Full Color', staffCode: 'STF002' },
+      { service: 'Ladies Cut', staffCode: 'STF001' },
+    ],
+    status: 'completed',
+    depositAmount: 1000,
+    customerRequest: null,
+    source: 'online',
+  },
+  {
+    salon: 1,
+    customer: 0,
+    staffCode: 'STF003',
+    day: -10,
+    hours: 15,
+    minutes: 0,
+    lines: [{ service: 'Premium Head Spa (60 min)', staffCode: 'STF003' }],
+    status: 'completed',
+    depositAmount: null,
+    customerRequest: null,
+    source: 'online',
+  },
+  {
+    salon: 1,
+    customer: 1,
+    staffCode: 'STF003',
+    day: -5,
+    hours: 16,
+    minutes: 0,
+    lines: [{ service: 'Spa & Cut Package', staffCode: 'STF003' }],
+    status: 'completed',
+    depositAmount: null,
+    customerRequest: null,
+    source: 'phone',
+  },
+  // A visit that was called off the day before
+  {
+    salon: 0,
+    customer: 0,
+    staffCode: 'STF001',
+    day: -2,
+    hours: 11,
+    minutes: 0,
+    lines: [{ service: 'Ladies Cut', staffCode: 'STF001' }],
+    status: 'cancelled',
+    depositAmount: null,
+    customerRequest: null,
+    source: 'online',
+  },
+  // Visits of the coming week
+  {
+    salon: 1,
+    customer: 'vip',
+    staffCode: 'STF003',
+    day: 1,
+    hours: 10,
+    minutes: 0,
+    lines: [{ service: 'Premium Head Spa (60 min)', staffCode: 'STF003' }],
+    status: 'confirmed',
+    depositAmount: 1000,
+    customerRequest: 'Please prepare organic products',
+    source: 'online',
+  },
+  {
+    salon: 0,
+    customer: 1,
+    staffCode: 'STF001',
+    day: 2,
+    hours: 11,
+    minutes: 0,
+    lines: [
+      { service: 'Ladies Cut', staffCode: 'STF001' },
+      { service: 'Full Color', staffCode: 'STF002' },
+    ],
+    status: 'confirmed',
+    depositAmount: 1000,
+    customerRequest: null,
+    source: 'online',
+  },
+  {
+    salon: 0,
+    customer: 2,
+    staffCode: 'STF004',
+    day: 3,
+    hours: 13,
+    minutes: 0,
+    lines: [{ service: 'Keratin Treatment', staffCode: 'STF004' }],
+    status: 'pending',
+    depositAmount: null,
+    customerRequest: null,
+    source: 'phone',
+  },
+  // Two at once: this staff member takes two bookings at a time.
+  {
+    salon: 0,
+    customer: 0,
+    staffCode: 'STF001',
+    day: 4,
+    hours: 14,
+    minutes: 0,
+    lines: [{ service: 'Kids Cut (Under 12)', staffCode: 'STF001' }],
+    status: 'pending',
+    depositAmount: null,
+    customerRequest: null,
+    source: 'online',
+  },
+  {
+    salon: 0,
+    customer: 1,
+    staffCode: 'STF001',
+    day: 4,
+    hours: 14,
+    minutes: 0,
+    lines: [{ service: 'Mens Cut', staffCode: 'STF001' }],
+    status: 'pending',
+    depositAmount: null,
+    customerRequest: null,
+    source: 'phone',
+  },
+  {
+    salon: 1,
+    customer: 2,
+    staffCode: 'STF003',
+    day: 5,
+    hours: 12,
+    minutes: 0,
+    lines: [{ service: 'Scalp Treatment', staffCode: 'STF003' }],
+    status: 'pending',
+    depositAmount: null,
+    customerRequest: null,
+    source: 'online',
+  },
+  {
+    salon: 0,
+    customer: 'vip',
+    staffCode: 'STF002',
+    day: 6,
+    hours: 15,
+    minutes: 0,
+    lines: [{ service: 'Digital Perm', staffCode: 'STF002' }],
+    status: 'pending',
+    depositAmount: null,
+    customerRequest: null,
+    source: 'phone',
+  },
+  {
+    salon: 1,
+    customer: 0,
+    staffCode: 'STF003',
+    day: 7,
+    hours: 17,
+    minutes: 0,
+    lines: [
+      { service: 'Signature Cut', staffCode: 'STF003' },
+      { service: 'Head Spa (30 min)', staffCode: 'STF003' },
+    ],
+    status: 'pending',
+    depositAmount: null,
+    customerRequest: null,
+    source: 'online',
+  },
+]
+
+/** How long before the visit a booking of the seed was made. */
+const DAYS_BOOKED_AHEAD = 14
+
+type BookingSeedData = {
+  salonIds: string[]
+  customerIds: string[]
+  vipCustomerId: string
 }
+
+/** A visit that took place, as far as a review of it refers to it. */
+export type CompletedBooking = {
+  id: string
+  salonId: string
+  customerId: string
+  staffId: string
+}
+
+type StatusChange = {
+  toStatus: BookingStatus
+  at: Date
+  reason: string | null
+}
+
+const CANCELLATION_REASON = 'Customer illness'
+
+/**
+ * The statuses a booking of the seed went through, from its creation to
+ * the status it has: confirmed the day after it was made, completed when
+ * the visit ended, cancelled the day before the visit.
+ */
+const statusChangesTo = (
+  status: SeededBooking['status'],
+  times: { bookedAt: Date; dayBefore: Date; end: Date },
+): StatusChange[] => {
+  const created: StatusChange = {
+    toStatus: 'pending',
+    at: times.bookedAt,
+    reason: null,
+  }
+  const confirmed: StatusChange = {
+    toStatus: 'confirmed',
+    at: addDays(times.bookedAt, 1),
+    reason: 'Customer confirmed',
+  }
+  const changes: Record<SeededBooking['status'], StatusChange[]> = {
+    pending: [created],
+    confirmed: [created, confirmed],
+    completed: [
+      created,
+      confirmed,
+      { toStatus: 'completed', at: times.end, reason: 'Service completed' },
+    ],
+    cancelled: [
+      created,
+      {
+        toStatus: 'cancelled',
+        at: times.dayBefore,
+        reason: CANCELLATION_REASON,
+      },
+    ],
+  }
+
+  return changes[status]
+}
+
+const found = <T>(row: T | undefined, what: string): T => {
+  if (row === undefined) {
+    throw new Error(`The booking seed needs ${what}`)
+  }
+
+  return row
+}
+
+const sumOf = (amounts: number[]): number =>
+  amounts.reduce((sum, amount) => sum + amount, 0)
+
+/**
+ * The tax that is added to an amount without tax, with the fraction of a
+ * yen dropped; the rate is a percentage with two decimal places.
+ */
+const taxAddedTo = (amount: number, taxRate: string): number =>
+  Number((BigInt(amount) * BigInt(Math.round(Number(taxRate) * 100))) / 10_000n)
 
 export async function seedBookings(
   db: PostgresJsDatabase<typeof schema>,
   data: BookingSeedData,
-): Promise<BookingSeedResult> {
-  const { salonIds, customerIds, serviceIds, staffIds, vipCustomerId } = data
+): Promise<CompletedBooking[]> {
+  const { salonIds, customerIds, vipCustomerId } = data
 
-  const salonId1 = salonIds[0]
-  const salonId2 = salonIds[1]
-
-  if (
-    !(salonId1 && salonId2) ||
-    customerIds.length === 0 ||
-    staffIds.length === 0 ||
-    serviceIds.length === 0
-  ) {
-    throw new Error('Insufficient data for bookings seeding')
-  }
+  const salons = await db
+    .select({
+      id: schema.salons.id,
+      timezone: schema.salons.timezone,
+      taxRate: schema.salons.taxRate,
+    })
+    .from(schema.salons)
+    .where(inArray(schema.salons.id, salonIds))
+  const staff = await db
+    .select({
+      id: schema.staff.id,
+      salonId: schema.staff.salonId,
+      staffCode: schema.staff.staffCode,
+    })
+    .from(schema.staff)
+    .where(inArray(schema.staff.salonId, salonIds))
+  const services = await db
+    .select({
+      id: schema.services.id,
+      salonId: schema.services.salonId,
+      name: schema.services.name,
+      duration: schema.services.duration,
+      price: schema.services.price,
+      discountPrice: schema.services.discountPrice,
+      taxIncluded: schema.services.taxIncluded,
+    })
+    .from(schema.services)
+    .where(inArray(schema.services.salonId, salonIds))
 
   const now = new Date()
-  const bookings = []
-
-  // Past completed bookings (for history and reviews)
-  for (let i = 30; i > 0; i -= 5) {
-    const bookingDate = new Date(now)
-    bookingDate.setDate(bookingDate.getDate() - i)
-    const startTime = new Date(bookingDate)
-    startTime.setHours(14, 0, 0, 0)
-    const endTime = new Date(startTime)
-    endTime.setHours(15, 30, 0, 0)
-
+  const planned = BOOKINGS.map((seeded, index) => {
+    const salon = found(
+      salons.find(({ id }) => id === salonIds[seeded.salon]),
+      `salon ${seeded.salon}`,
+    )
+    const staffIdOf = (staffCode: string): string =>
+      found(
+        staff.find(
+          (member) =>
+            member.salonId === salon.id && member.staffCode === staffCode,
+        ),
+        `the staff member ${staffCode} in salon ${seeded.salon}`,
+      ).id
     const customerId =
-      customerIds[Math.floor(Math.random() * customerIds.length)] ??
-      customerIds[0] ??
-      ''
-    const staffId =
-      staffIds[Math.floor(Math.random() * staffIds.length)] ?? staffIds[0] ?? ''
-
-    bookings.push({
-      bookingNumber: `BK2024${String(1000 + i).padStart(5, '0')}`,
-      salonId: i % 2 === 0 ? salonId1 : salonId2,
-      customerId,
-      staffId,
-      bookingDate: bookingDate.toISOString().split('T')[0] ?? '2024-01-01',
-      startTime: startTime.toISOString(),
-      endTime: endTime.toISOString(),
-      duration: 90,
-      status: 'completed' as const,
-      subtotal: 8000,
-      discountAmount: 400,
-      taxAmount: 760,
-      totalAmount: 8360,
-      pointsUsed: 0,
-      pointsEarned: 84,
-      reminderSent: true,
-      reminderSentAt: new Date(
-        startTime.getTime() - 24 * 60 * 60 * 1000,
-      ).toISOString(),
-      completedAt: endTime.toISOString(),
-      actualStartTime: startTime.toISOString(),
-      actualEndTime: endTime.toISOString(),
-      source: 'online',
-    })
-  }
-
-  // Current confirmed bookings
-  for (let i = 1; i <= 7; i++) {
-    const bookingDate = new Date(now)
-    bookingDate.setDate(bookingDate.getDate() + i)
-    const startTime = new Date(bookingDate)
-    startTime.setHours(10 + (i % 8), 0, 0, 0)
-    const endTime = new Date(startTime)
-    endTime.setHours(startTime.getHours() + 1, 30, 0, 0)
-
-    const customerId =
-      (i === 1 && vipCustomerId
+      seeded.customer === 'vip'
         ? vipCustomerId
-        : customerIds[i % customerIds.length]) ??
-      customerIds[0] ??
-      ''
-    const staffId = staffIds[i % staffIds.length] ?? staffIds[0] ?? ''
+        : found(customerIds[seeded.customer], `customer ${seeded.customer}`)
+    const completed = seeded.status === 'completed'
 
-    bookings.push({
-      bookingNumber: `BK2024${String(2000 + i).padStart(5, '0')}`,
-      salonId: i % 2 === 0 ? salonId1 : salonId2,
-      customerId,
-      staffId,
-      bookingDate: bookingDate.toISOString().split('T')[0] ?? '2024-01-01',
-      startTime: startTime.toISOString(),
-      endTime: endTime.toISOString(),
-      duration: 90,
-      status: i <= 2 ? ('confirmed' as const) : ('pending' as const),
-      subtotal: 6000 + i * 500,
-      discountAmount: i === 1 && vipCustomerId ? 1000 : 0,
-      taxAmount: 600 + i * 50,
-      totalAmount: 6600 + i * 550 - (i === 1 && vipCustomerId ? 1000 : 0),
-      depositAmount: i <= 2 ? 1000 : 0,
-      pointsUsed: 0,
-      pointsEarned: 0,
-      customerRequest: i === 1 ? 'Please prepare organic products' : undefined,
-      reminderSent: false,
-      source: i % 3 === 0 ? 'phone' : 'online',
+    const start = set(
+      addDays(startOfDay(new TZDate(now, salon.timezone)), seeded.day),
+      { hours: seeded.hours, minutes: seeded.minutes },
+    )
+    const chosen = seeded.lines.map((line) => ({
+      staffId: staffIdOf(line.staffCode),
+      service: found(
+        services.find(
+          (service) =>
+            service.salonId === salon.id && service.name === line.service,
+        ),
+        `the service ${line.service} in salon ${seeded.salon}`,
+      ),
+    }))
+    const lines = chosen.map(({ staffId, service }, sortOrder) => {
+      const startTime = addMinutes(
+        start,
+        sumOf(chosen.slice(0, sortOrder).map((line) => line.service.duration)),
+      )
+      const endTime = addMinutes(startTime, service.duration)
+      const discountAmount =
+        service.price - (service.discountPrice ?? service.price)
+
+      return {
+        taxIncluded: service.taxIncluded,
+        row: {
+          serviceId: service.id,
+          staffId,
+          startTime: startTime.toISOString(),
+          endTime: endTime.toISOString(),
+          duration: service.duration,
+          price: service.price,
+          discountAmount,
+          finalPrice: service.price - discountAmount,
+          selectedOptions: null,
+          isCompleted: completed,
+          completedAt: completed ? endTime.toISOString() : null,
+          notes: null,
+          sortOrder,
+        },
+      }
     })
-  }
 
-  // One cancelled booking
-  const cancelledDate = new Date(now)
-  cancelledDate.setDate(cancelledDate.getDate() - 2)
-  bookings.push({
-    bookingNumber: 'BK2024CANCEL',
-    salonId: salonId1,
-    customerId: customerIds[0] ?? 'dummy-customer-id',
-    staffId: staffIds[0] ?? 'dummy-staff-id',
-    bookingDate: cancelledDate.toISOString().split('T')[0] ?? '2024-01-01',
-    startTime: cancelledDate.toISOString(),
-    endTime: new Date(cancelledDate.getTime() + 60 * 60 * 1000).toISOString(),
-    duration: 60,
-    status: 'cancelled' as const,
-    subtotal: 5000,
-    discountAmount: 0,
-    taxAmount: 500,
-    totalAmount: 5500,
-    cancelledAt: new Date(
-      cancelledDate.getTime() - 24 * 60 * 60 * 1000,
-    ).toISOString(),
-    cancellationReason: 'Customer illness',
-    cancellationFee: 0,
-    source: 'online',
+    const duration = sumOf(lines.map(({ row }) => row.duration))
+    const end = addMinutes(start, duration)
+    const subtotal = sumOf(lines.map(({ row }) => row.price))
+    const discountAmount = sumOf(lines.map(({ row }) => row.discountAmount))
+    const taxAmount = taxAddedTo(
+      sumOf(
+        lines
+          .filter(({ taxIncluded }) => !taxIncluded)
+          .map(({ row }) => row.finalPrice),
+      ),
+      salon.taxRate,
+    )
+
+    const bookedAt = subDays(start, DAYS_BOOKED_AHEAD)
+    const dayBefore = subDays(start, 1)
+    const statusChanges = statusChangesTo(seeded.status, {
+      bookedAt,
+      dayBefore,
+      end,
+    })
+    const cancelled = seeded.status === 'cancelled'
+
+    return {
+      booking: {
+        bookingNumber: `BK-SEED-${String(index + 1).padStart(4, '0')}`,
+        salonId: salon.id,
+        customerId,
+        staffId: staffIdOf(seeded.staffCode),
+        bookingDate: format(start, 'yyyy-MM-dd'),
+        startTime: start.toISOString(),
+        endTime: end.toISOString(),
+        duration,
+        status: seeded.status,
+        subtotal,
+        discountAmount,
+        taxAmount,
+        totalAmount: subtotal - discountAmount + taxAmount,
+        depositAmount: seeded.depositAmount,
+        pointsUsed: null,
+        pointsEarned: null,
+        customerRequest: seeded.customerRequest,
+        internalNotes: null,
+        reminderSent: completed,
+        reminderSentAt: completed ? dayBefore.toISOString() : null,
+        cancelledAt: cancelled ? dayBefore.toISOString() : null,
+        cancelledBy: null,
+        cancellationReason: cancelled ? CANCELLATION_REASON : null,
+        cancellationFee: cancelled ? 0 : null,
+        completedAt: completed ? end.toISOString() : null,
+        actualStartTime: completed ? start.toISOString() : null,
+        actualEndTime: completed ? end.toISOString() : null,
+        source: seeded.source,
+        ipAddress: null,
+        userAgent: null,
+        createdAt: bookedAt.toISOString(),
+        updatedAt: found(statusChanges.at(-1), 'a status').at.toISOString(),
+      },
+      lines: lines.map(({ row }) => row),
+      statusChanges,
+    }
   })
 
-  const insertedBookings = await db
+  const inserted = await db
     .insert(schema.bookings)
-    .values(bookings)
+    .values(planned.map(({ booking }) => booking))
     .returning({
       id: schema.bookings.id,
-      status: schema.bookings.status,
-      startTime: schema.bookings.startTime,
+      bookingNumber: schema.bookings.bookingNumber,
     })
+  const written = planned.map((plan) => ({
+    ...plan,
+    id: found(
+      inserted.find(
+        ({ bookingNumber }) => bookingNumber === plan.booking.bookingNumber,
+      ),
+      `the booking ${plan.booking.bookingNumber}`,
+    ).id,
+  }))
 
-  // Add services to bookings
-  const bookingServices = []
-  for (let index = 0; index < insertedBookings.length; index++) {
-    const booking = insertedBookings[index]
-    if (!booking) {
-      continue
-    }
+  await db
+    .insert(schema.bookingServices)
+    .values(
+      written.flatMap(({ id, lines }) =>
+        lines.map((line) => ({ ...line, bookingId: id })),
+      ),
+    )
 
-    const serviceId = serviceIds[index % serviceIds.length]
-    const staffId = staffIds[index % staffIds.length]
+  // The history of a booking begins with its creation, which has no status
+  // before it.
+  await db.insert(schema.bookingStatusHistories).values(
+    written.flatMap(({ id, statusChanges }) =>
+      statusChanges.map(({ toStatus, at, reason }, position) => ({
+        bookingId: id,
+        fromStatus: statusChanges[position - 1]?.toStatus ?? null,
+        toStatus,
+        changedBy: null,
+        reason,
+        metadata: null,
+        createdAt: at.toISOString(),
+      })),
+    ),
+  )
 
-    if (!(serviceId && staffId)) {
-      continue
-    }
-
-    const startTime = new Date(booking.startTime)
-    const endTime = new Date(startTime.getTime() + 60 * 60 * 1000)
-
-    bookingServices.push({
-      bookingId: booking.id,
-      serviceId,
-      staffId,
-      startTime: startTime.toISOString(),
-      endTime: endTime.toISOString(),
-      duration: 60,
-      price: 5000 + index * 200,
-      discountAmount: index === 0 ? 500 : 0,
-      finalPrice: 5000 + index * 200 - (index === 0 ? 500 : 0),
-      isCompleted: booking.status === 'completed',
-      completedAt:
-        booking.status === 'completed' ? endTime.toISOString() : undefined,
-      sortOrder: 1,
-    })
-
-    // Add second service for some bookings
-    if (index % 3 === 0 && serviceIds[index + 1]) {
-      const secondServiceId = serviceIds[index + 1]
-      if (secondServiceId) {
-        bookingServices.push({
-          bookingId: booking.id,
-          serviceId: secondServiceId,
-          staffId,
-          startTime: endTime.toISOString(),
-          endTime: new Date(endTime.getTime() + 30 * 60 * 1000).toISOString(),
-          duration: 30,
-          price: 3000,
-          discountAmount: 0,
-          finalPrice: 3000,
-          isCompleted: booking.status === 'completed',
-          completedAt:
-            booking.status === 'completed'
-              ? new Date(endTime.getTime() + 30 * 60 * 1000).toISOString()
-              : undefined,
-          sortOrder: 2,
-        })
-      }
-    }
-  }
-
-  if (bookingServices.length > 0) {
-    await db.insert(schema.bookingServices).values(bookingServices)
-  }
-
-  // Add status histories for some bookings
-  const statusHistories = []
-  for (const booking of insertedBookings.slice(0, 5)) {
-    if (booking.status === 'completed') {
-      statusHistories.push(
-        {
-          bookingId: booking.id,
-          fromStatus: 'pending' as const,
-          toStatus: 'confirmed' as const,
-          reason: 'Customer confirmed',
-          metadata: { confirmedVia: 'online' },
-        },
-        {
-          bookingId: booking.id,
-          fromStatus: 'confirmed' as const,
-          toStatus: 'completed' as const,
-          reason: 'Service completed',
-          metadata: { completedBy: 'staff' },
-        },
-      )
-    } else if (booking.status === 'confirmed') {
-      statusHistories.push({
-        bookingId: booking.id,
-        fromStatus: 'pending' as const,
-        toStatus: 'confirmed' as const,
-        reason: 'Customer confirmed',
-        metadata: { confirmedVia: 'phone' },
-      })
-    }
-  }
-
-  if (statusHistories.length > 0) {
-    await db.insert(schema.bookingStatusHistories).values(statusHistories)
-  }
-
-  const completedBookingIds = insertedBookings
-    .filter((b) => b.status === 'completed')
-    .map((b) => b.id)
-
-  const upcomingBookingIds = insertedBookings
-    .filter((b) => b.status === 'confirmed' || b.status === 'pending')
-    .map((b) => b.id)
-
-  return {
-    bookingIds: insertedBookings.map((b) => b.id),
-    completedBookingIds,
-    upcomingBookingIds,
-  }
+  return written
+    .filter(({ booking }) => booking.status === 'completed')
+    .map(({ id, booking }) => ({
+      id,
+      salonId: booking.salonId,
+      customerId: booking.customerId,
+      staffId: booking.staffId,
+    }))
 }
