@@ -16,6 +16,7 @@ import {
   phoneNumber,
   timeOfDay,
   timeSlot,
+  timeZoneName,
   withSeconds,
 } from './rules'
 
@@ -173,7 +174,7 @@ export const salonCreateRequestSchema = z.strictObject({
   features: z.array(nonBlankText),
   amenities: z.array(nonBlankText),
   businessHours: businessHoursListSchema.nullable(),
-  timezone: nonBlankText.max(50),
+  timezone: timeZoneName,
   currency: z
     .string()
     .regex(/^[A-Z]{3}$/, 'Must be a three-letter ISO 4217 currency code'),
