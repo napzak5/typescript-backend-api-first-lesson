@@ -25,16 +25,15 @@ const scopeOf = ({ user, staffSalonId }: UserAccount): unknown =>
         staffId,
       }),
     )
-    .with({ role: 'customer', customerId: P.string }, ({ customerId }) => ({
+    // A customer account is one with or without a customer record.
+    .with({ role: 'customer' }, ({ customerId }) => ({
       type: 'customer',
       customerId,
     }))
-    // The role is there and the record it needs is not.
-    .with(
-      { role: P.union('owner', 'manager', 'staff') },
-      { role: 'customer' },
-      () => ({ type: 'none' }),
-    )
+    // The role is there and the staff member it needs is not.
+    .with({ role: P.union('owner', 'manager', 'staff') }, () => ({
+      type: 'none',
+    }))
     .exhaustive()
 
 /** The actor a session stands for. */

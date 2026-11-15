@@ -3,11 +3,14 @@ import { vi } from 'vitest'
 import type { CustomerUseCaseDependencies } from '../business-logic/customer'
 import type {
   ApiCustomerCreateRequest,
+  ApiCustomerProfileCreateRequest,
+  ApiCustomerProfileResponse,
   ApiCustomerResponse,
   DbCustomer,
 } from '../models/customer'
 import type {
   CustomerCreation,
+  CustomerProfileCreation,
   CustomerUpdate,
   ICustomerRepository,
 } from '../repositories/customer.repository'
@@ -55,6 +58,35 @@ export const customerCreateRequest = (): ApiCustomerCreateRequest => ({
   scalpCondition: 'sensitive',
   customerStatus: 'active',
 })
+
+/**
+ * A request of a customer for their own profile that satisfies every rule
+ * and sets every property that may be unset.
+ */
+export const customerProfileCreateRequest =
+  (): ApiCustomerProfileCreateRequest => ({
+    firstName: '花子',
+    lastName: '山田',
+    firstNameKana: 'ハナコ',
+    lastNameKana: 'ヤマダ',
+    phoneNumber: '090-1234-5678',
+    alternativePhone: '03-1234-5678',
+    postalCode: '107-0062',
+    prefecture: '東京都',
+    city: '港区',
+    address: '南青山1-2-3',
+    building: 'アオヤマビル 5F',
+    birthDate: '1990-04-01',
+    gender: 'female',
+    occupation: 'デザイナー',
+    preferences: {
+      preferredServices: ['cut', 'color'],
+      notes: '静かな席を希望',
+    },
+    allowMarketing: true,
+    allowSms: false,
+    allowEmail: true,
+  })
 
 /** A row of `customers` as the driver returns it: the customer `CUSTOMER_ID`. */
 export const dbCustomer = (
@@ -153,6 +185,44 @@ export const apiCustomer = (
   ...overrides,
 })
 
+/** The row of `dbCustomer()` as the customer sees it: their own profile. */
+export const apiCustomerProfile = (
+  overrides: Partial<ApiCustomerProfileResponse> = {},
+): ApiCustomerProfileResponse => ({
+  id: CUSTOMER_ID,
+  firstName: '花子',
+  lastName: '山田',
+  firstNameKana: 'ハナコ',
+  lastNameKana: null,
+  email: 'hanako.yamada@example.com',
+  phoneNumber: '090-1234-5678',
+  alternativePhone: null,
+  postalCode: '107-0062',
+  prefecture: '東京都',
+  city: '港区',
+  address: null,
+  building: null,
+  birthDate: '1990-04-01',
+  gender: 'female',
+  occupation: null,
+  membershipTier: 'gold',
+  loyaltyPoints: 120,
+  preferences: { preferredServices: ['cut'], notes: null },
+  referralCode: 'HANAKO2026',
+  firstVisitDate: '2026-01-10',
+  lastVisitDate: '2026-11-01',
+  visitCount: 7,
+  allowMarketing: true,
+  allowSms: false,
+  allowEmail: true,
+  createdAt: '2026-11-14T09:00:00.123Z',
+  updatedAt: '2026-11-14T09:30:00.000Z',
+  hairType: 'wavy',
+  hairThickness: null,
+  scalpCondition: null,
+  ...overrides,
+})
+
 /**
  * A repository that holds the one customer above, in which every write
  * succeeds; a test overrides what it needs.
@@ -177,6 +247,12 @@ const customerRepositoryWith = (
     }),
   ),
   delete: vi.fn(async () => Result.success(true)),
+  createProfile: vi.fn(async () =>
+    Result.success<CustomerProfileCreation>({
+      type: 'created',
+      customer: dbCustomer(),
+    }),
+  ),
   ...overrides,
 })
 

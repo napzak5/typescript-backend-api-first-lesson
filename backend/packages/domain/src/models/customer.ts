@@ -32,6 +32,12 @@ export type ApiCustomerSearchRequest = NonNullable<
 >
 export type ApiCustomerBasicPreferences =
   components['schemas']['Models.CustomerBasicPreferences']
+export type ApiCustomerProfileResponse =
+  components['schemas']['Models.CustomerProfileResponse']
+export type ApiCustomerProfileCreateRequest =
+  components['schemas']['Models.CustomerProfileCreateRequest']
+export type ApiCustomerProfileUpdateRequest =
+  components['schemas']['Models.CustomerProfileUpdateRequest']
 
 // Database types, inferred from the Drizzle schema
 export type DbCustomer = DeepRequired<typeof customers.$inferSelect>
@@ -63,3 +69,37 @@ export type DbNewCustomer = DeepRequired<
   Omit<typeof customers.$inferInsert, CustomerManagedColumn>
 >
 export type DbCustomerChanges = Partial<DbNewCustomer>
+
+/**
+ * Columns that the staff write and a customer does not: the email is the
+ * one of the customer's account, and the rest is what the salon decides or
+ * records.
+ */
+type CustomerStaffWrittenColumn =
+  | 'email'
+  | 'membershipTier'
+  | 'notes'
+  | 'internalNotes'
+  | 'tags'
+  | 'referredBy'
+  | 'referralCode'
+  | 'isActive'
+  | 'hairType'
+  | 'hairThickness'
+  | 'scalpCondition'
+  | 'customerStatus'
+
+/** What a customer writes about themselves. */
+export type DbCustomerProfile = Omit<DbNewCustomer, CustomerStaffWrittenColumn>
+export type DbCustomerProfileChanges = Partial<DbCustomerProfile>
+
+/**
+ * What the creation of a profile writes. The email is missing from both
+ * parts: it is the account's, which the repository reads with the account.
+ */
+export type CustomerProfileWrite = {
+  /** The row, when the ledger has no entry for the account's email. */
+  newEntry: Omit<DbNewCustomer, 'email'>
+  /** The changes, when the ledger has an entry that becomes the profile. */
+  claim: DbCustomerProfileChanges
+}
