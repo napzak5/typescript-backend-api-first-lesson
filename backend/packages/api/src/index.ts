@@ -197,9 +197,10 @@ export const createApp = ({
 
   app.use(
     `${API_BASE_PATH}/staff-profiles`,
-    createStaffProfileRouter({
-      staffProfileRepository: new StaffProfileRepository(database),
-    }),
+    createStaffProfileRouter(
+      { staffProfileRepository: new StaffProfileRepository(database) },
+      authenticated,
+    ),
   )
   app.use(
     `${API_BASE_PATH}/customers`,
