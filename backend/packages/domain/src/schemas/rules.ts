@@ -37,6 +37,21 @@ export const timeOfDay = z
 export const withSeconds = (time: string): string => time.padEnd(8, ':00')
 
 /**
+ * Shape of a time slot in a JSON column: two times of day in HH:mm, which
+ * compare as text.
+ */
+export const timeSlot = z.strictObject({
+  startTime: z.iso.time({ precision: -1 }),
+  endTime: z.iso.time({ precision: -1 }),
+})
+
+/** A time slot as a request states it: it ends after it begins. */
+export const orderedTimeSlot = timeSlot.refine(
+  (slot) => slot.startTime < slot.endTime,
+  { path: ['endTime'], message: 'Must be later than startTime' },
+)
+
+/**
  * The day of the week of a date (`YYYY-MM-DD`), as the `day_of_week` type
  * of the database names it. Null when the text is not a date; the format
  * rule reports that.
