@@ -681,3 +681,45 @@ describe('the staff ledger of a salon', () => {
     )
   })
 })
+
+describe('the staff profiles', () => {
+  /** A UUID that no staff member has. */
+  const SOME_ID = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1b'
+  const STAFF_PROFILES = '/api/v1/staff-profiles'
+
+  it('should answer both of its routes when no access token is sent: the list with a page, a staff member that does not exist with 404', async () => {
+    const database = await createSchemaDatabase()
+    const { config } = createConfig()
+    const { server } = await start({
+      ...config,
+      database: { ...config.database, url: database.url },
+    })
+
+    const listed = await fetch(
+      `http://127.0.0.1:${server.port}${STAFF_PROFILES}`,
+    )
+    const page = await listed.json()
+    const one = await fetch(
+      `http://127.0.0.1:${server.port}${STAFF_PROFILES}/${SOME_ID}`,
+    )
+    const problem = await one.json()
+    await server.stop()
+    await database.drop()
+
+    expect(listed.status).toBe(200)
+    expect(listed.headers.get('www-authenticate')).toBeNull()
+    expect(page).toMatchObject({
+      data: [],
+      meta: { total: 0, limit: 20, hasMore: false },
+      links: { self: STAFF_PROFILES, next: null },
+    })
+    expect(one.status).toBe(404)
+    expect(one.headers.get('www-authenticate')).toBeNull()
+    expect(problem).toMatchObject({
+      type: 'urn:beauty-salon:problem:not-found',
+      status: 404,
+      code: '3001',
+      detail: `Staff member ${SOME_ID} was not found`,
+    })
+  })
+})

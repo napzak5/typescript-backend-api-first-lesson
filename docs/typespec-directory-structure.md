@@ -61,11 +61,12 @@ TypeSpec に定義があっても、バックエンドに実装があるとは�
 | `models/customer.tsp` のプロフィールのモデル（`CustomerProfileResponse`、`CustomerProfileCreateRequest`、`CustomerProfileUpdateRequest`）、`operations/customer-operations.tsp` の `CustomerProfile` の 3 オペレーション（`get`、`create`、`update`） | 同じ `backend/packages/api/src/routes/customer/` の `*-customer-profile.handler.ts`。定義と実装は一致している（[顧客台帳](./customers.md#顧客本人のプロフィール)） |
 | `CustomerCrud` の残りの 13 オペレーション（`batchGet`、`bulkCreate`、`bulkUpdate`、`bulkDelete`、`export`、`getHistory`、`getVersion`、`restore`、`getStatistics`、`updatePreferences`、`merge`、`exportData`、`requestDeletion`） | なし |
 | `models/staff.tsp` のスタッフのモデル（`StaffResponse`、`StaffCreateRequest`、`StaffUpdateRequest`、`StaffSearchRequest`）、`operations/staff-operations.tsp` の `StaffCrud` の 7 オペレーションのうち 5 つ（`list`、`create`、`get`、`update`、`delete`） | `backend/packages/api/src/routes/staff/`。この 5 つは、定義と実装が一致している（[スタッフ台帳](./staff.md)） |
-| `StaffCrud` の残りの 2 オペレーション（`getAvailability`、`updateAvailability`）と、`GlobalStaff` の `search` | なし |
+| `models/staff.tsp` のプロフィールのモデル（`StaffProfileResponse`、`StaffProfileSearchRequest`）、`operations/staff-operations.tsp` の `StaffProfile` の 2 オペレーション（`list`、`get`） | `backend/packages/api/src/routes/staff-profile/`。定義と実装は一致している（[スタッフ台帳](./staff.md#顧客に見せるプロフィール)） |
+| `StaffCrud` の残りの 2 オペレーション（`getAvailability`、`updateAvailability`） | なし |
 | 上記以外のドメイン（booking、review、treatment、payment、inventory） | なし。TypeSpec は DB のテーブルと一致している（`pnpm check:api-db`）が、ドメイン・リポジトリ・ルートのコードはない |
 | attachment、permission と、inventory の発注・アラート、treatment のカルテ、customer の監査履歴・エクスポート・データ削除リクエスト | なし。対応するテーブルもまだない（[API-DB型制約マッピング](./api-db-type-constraints-mapping.md#ルールに載せるモデル載せないモデル)） |
 
-`main.tsp` は `@useAuth(BearerAuth)` を宣言しており、認証なしで呼べるオペレーション（システムのオペレーション、サロンの一覧と 1 件の取得、サービスカテゴリーの一覧と 1 件の取得、サービスの一覧と 1 件の取得、登録・ログインなどの認証フロー、共有リンク）には `@useAuth(NoAuth)` が付いている。実装済みのオペレーションでは、`@useAuth(NoAuth)` のないものをサーバーがアクセストークンで認証し、権限をユースケースで判定する（[認証と認可](./authentication.md)）。
+`main.tsp` は `@useAuth(BearerAuth)` を宣言しており、認証なしで呼べるオペレーション（システムのオペレーション、サロンの一覧と 1 件の取得、サービスカテゴリーの一覧と 1 件の取得、サービスの一覧と 1 件の取得、スタッフのプロフィールの一覧と 1 件の取得、登録・ログインなどの認証フロー、共有リンク）には `@useAuth(NoAuth)` が付いている。実装済みのオペレーションでは、`@useAuth(NoAuth)` のないものをサーバーがアクセストークンで認証し、権限をユースケースで判定する（[認証と認可](./authentication.md)）。
 
 ## 各ファイルの内容
 

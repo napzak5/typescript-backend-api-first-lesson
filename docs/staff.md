@@ -4,12 +4,14 @@
 
 スタッフ台帳は、サロンが雇用主として持つスタッフの記録です。1 人のスタッフが 1 行で、氏名と連絡先、雇用の情報（基本給、歩合率、雇用形態、入社日）、予約の受け方（同時に担当できる数、前後に確保する時間）を持ちます。
 
+スタッフの情報には入口が 2 つあります。管理者とサロンの `owner` は台帳（`/api/v1/salons/{salonId}/staff`）でスタッフのすべての項目を扱い、顧客を含む誰もが[プロフィール](#顧客に見せるプロフィール)（`/api/v1/staff-profiles`）で、顧客に見せる項目だけを読みます。
+
 ## 実装範囲
 
 | オペレーション | 状態 |
 |---|---|
 | 台帳（`StaffCrud`）の一覧、登録、1 件の取得、更新、削除 | 実装済み |
-| 顧客に見せるスタッフのプロフィール（認証なしの一覧と取得）、横断検索（`GlobalStaff` の `search`） | 未実装。台帳のレスポンスは給与と個人の連絡先を含むので、見せる項目だけのモデルを別に定義してから実装する |
+| 顧客に見せるプロフィール（`StaffProfile`）の一覧、1 件の取得 | 実装済み。サロンをまたぐ検索は、一覧の絞り込みで行う |
 | 勤務スケジュール（`StaffCrud` の `getAvailability`、`updateAvailability`） | 未実装 |
 | スタッフのログインアカウント（アカウントとスタッフの紐づけ、サロンのロールの付与） | 未実装。コントラクトにオペレーションがない |
 
@@ -25,9 +27,9 @@
 | 更新 | `PATCH /api/v1/salons/{salonId}/staff/{id}` | 同上 |
 | 削除 | `DELETE /api/v1/salons/{salonId}/staff/{id}` | 同上 |
 
-- すべてのオペレーションに認証が要ります。台帳は公開情報ではありません
+- 台帳のすべてのオペレーションに認証が要ります。台帳は公開情報ではありません
 - **`manager` と `staff` には許可しません**（403）。理由は 2 つです。台帳が、雇用主だけが扱う情報（給与、歩合、個人の連絡先）を含むこと。無効化（`isActive` を false にする）と削除が、そのスタッフのアカウントからサロンへの権限を外すこと（[ログインアカウントへの影響](#ログインアカウントへの影響)）。`manager` に許すと、`manager` が `owner` をサロンから締め出せます
-- スタッフ本人も、自分のスタッフ情報を台帳から読むことはできません。本人が自分のプロフィールを直すことは、顧客に見せるプロフィールの単位で、項目を分けてから決めます
+- スタッフ本人も、自分のスタッフ情報を台帳から読むことはできません。読めるのは、誰にでも見せる[プロフィール](#顧客に見せるプロフィール)の項目だけです。本人が自分のプロフィールを直すオペレーションはなく、直すのは `owner` と `admin` です。本人に許すかどうかは、スタッフのログインアカウントの実装で決めます
 - 権限は、[サロンの下にあるルートの規則](./authentication.md#サロンの下にあるルートの権限)どおり、パスの `salonId` だけで判定します（`business-logic/staff/_shared/authorization.ts` の `mayKeepStaffLedger`）。ほかのサロンの `owner` は 403 です
 - サロンが存在しない、または削除済みなら 404。パスのサロンに属さないスタッフと、削除済みのスタッフは 404 で、存在しない ID と区別しません
 - ID（パスの `salonId` と `id`、クエリの `cursor`）は、英字を大文字で書いても同じ ID です。レスポンスの `data` と `meta` の ID は小文字です
@@ -65,7 +67,7 @@
 
 認証は、リクエストのたびに操作者の範囲を作り直します。`owner`、`manager`、`staff` のアカウントがサロンの範囲を持つのは、`users.staffId` が指すスタッフが有効（`isActive`）で、削除されていないときだけです（[認可](./authentication.md#認可)）。
 
-- スタッフを無効化または削除すると、そのスタッフに紐づくアカウントは、**次のリクエストから**サロンへの権限を失います（範囲 `none`）。発行済みのアクセストークンでも同じです
+- スタッフを無効化または削除すると、そのスタッフに紐づくアカウントは、**次のリクエストから**サロンへの権限を失います（範囲 `none`）。発行済みのアクセストークンでも同じです。そのスタッフは、顧客に見せる[プロフィール](#見せるスタッフ)からも外れます
 - アカウントは残り、ログインもできます。サロンの権限が要る操作と顧客台帳には届きません（認証なしで読める情報は、誰でも読めます）
 - `isActive` を true に戻すと、権限も戻ります。削除は戻せません（復元のオペレーションはない）
 - アカウントに紐づいていないスタッフ（`userId` が null）には、この影響はありません
@@ -107,7 +109,7 @@
 
 - **リクエストで変えられない項目**: `userId`（ログインアカウントとの紐づけ）と、所属サロン（登録はパスの `salonId` が決め、あとから変えられない）。本文に `userId` や `salonId` を書くと 400（`unrecognized_keys`）です
 - **レスポンスに出さない項目**: `awards`（構造の決まっていない jsonb）と `deletedAt`。レスポンス（`StaffResponse`）は勤務スケジュールも含みません
-- `isActive` と `canReceiveBookings` は、互いに独立した属性として保存します。`isActive` はアカウントの権限に効きます（[ログインアカウントへの影響](#ログインアカウントへの影響)）。どのスタッフが予約を受けられるかは、予約の実装で決めます
+- `isActive` と `canReceiveBookings` は、互いに独立した属性として保存します。`isActive` は、アカウントの権限（[ログインアカウントへの影響](#ログインアカウントへの影響)）と、顧客に見せるかどうか（[見せるスタッフ](#見せるスタッフ)）に効きます。どのスタッフが予約を受けられるかは、予約の実装で決めます
 
 ### 一意性の範囲
 
@@ -123,12 +125,76 @@
 
 ## 削除
 
-- 論理削除です（`deletedAt` を設定し、行は残す）。削除したスタッフは、一覧と取得の対象外になります
+- 論理削除です（`deletedAt` を設定し、行は残す）。削除したスタッフは、台帳とプロフィールの、一覧と取得の対象外になります
 - 削除したスタッフのメールアドレスは、別のスタッフに使えるようになります。スタッフコードは使えないままです
 - 勤務スケジュール（`staff_schedules`）、スキル（`staff_skills`）、予約などの行は残ります
 - そのスタッフに紐づくアカウントは、サロンへの権限を失います（[ログインアカウントへの影響](#ログインアカウントへの影響)）。`users.staffId` は、削除したスタッフを指したまま残ります
 - 削除したスタッフを更新しても、戻りません（404）
 - 予約が残っているスタッフを削除できるかは、予約の実装で決めます
+
+## 顧客に見せるプロフィール
+
+顧客がスタッフを選ぶときに見る情報です。台帳と同じ `staff` の行を、見せる項目だけのモデル（`StaffProfileResponse`）で返します。プロフィールのためのテーブルやカラムはありません。
+
+| オペレーション（`StaffProfile`） | ルート | 許可 |
+|---|---|---|
+| 一覧 | `GET /api/v1/staff-profiles` | 誰でも（認証なし） |
+| 1 件の取得 | `GET /api/v1/staff-profiles/{id}` | 同上 |
+
+- どちらも公開です。アクセストークンは要らず、送っても確認しません。存在しないセッションのトークンや、期限の切れたトークンを付けたリクエストにも、同じ応答を返します
+- 台帳を読めない `manager` と `staff` も、同僚と自分のプロフィールは読めます
+- 読むだけです。登録、更新、削除は台帳で行い、台帳の変更は、次のリクエストからプロフィールに出ます
+- ルートはサロンの下に置いていません。顧客は、サロンをまたいでスタッフを探すからです（専門分野、市区町村）。1 つのサロンのスタッフは、一覧を `salonId` で絞り込んで読みます。同じ結果を返すサロンの下のルート（`/api/v1/salons/{salonId}/staff-profiles`）はありません
+
+### 見せる項目
+
+| | 項目 |
+|---|---|
+| 見せる（`StaffProfileResponse` の 11 項目） | `id`、`salonId`、`displayName`、`level`、`position`、`specialties`、`bio`、`imageUrl`、`yearsOfExperience`、`certifications`、`canReceiveBookings` |
+| 見せない | 氏名とその読み（`firstName`、`lastName`、`firstNameKana`、`lastNameKana`）、連絡先（`email`、`phoneNumber`、`alternativePhone`）、雇用の情報（`staffCode`、`hireDate`、`employmentType`、`baseSalary`、`commissionRate`）、予約の受け方の設定（`maxConcurrentBookings`、`bufferTimeBefore`、`bufferTimeAfter`）、`userId`、`isActive`、`createdAt`、`updatedAt`。台帳のレスポンスにも出ない `awards` と `deletedAt` |
+
+- 名前は `displayName`（顧客に見せる名前）だけです。本名を見せるかどうかは、サロンが `displayName` に何を書くかで決まります
+- 項目名、型、null の扱いは台帳と同じです。`position`、`bio`、`imageUrl`、`yearsOfExperience` は null があり、`specialties` と `certifications` は、なければ空配列です
+- `canReceiveBookings` が false のスタッフ（アシスタントなど）も見せます。値はそのまま返すので、予約を受けるスタッフだけを並べるかどうかは、画面が決めます
+- 見せる項目は、リポジトリが SELECT するカラム（`staff-profile.repository.impl.ts` の `profileColumns`）と、読み出しのマッパー（`StaffProfileReadMapper`）が 1 つずつ名指しします。台帳に項目を足しても、名指ししなければプロフィールには出ません。`pnpm check:api-db` は、モデルの項目と、見せないと決めたカラムの一覧（`api-consistency-rules.ts`）を、テーブルと突き合わせます
+
+### 見せるスタッフ
+
+次のすべてを満たすスタッフを見せます。
+
+| 条件 | 理由 |
+|---|---|
+| 有効（`isActive` が true） | 無効化は「いまサロンで働いていない」を表す。休職中や退職の手続き中のスタッフは、顧客に見せない |
+| 削除されていない | 台帳と同じ |
+| サロンが削除されていない | 削除したサロンは Salon の一覧と取得に出ない。そのスタッフも出さない |
+
+- サロンの `isActive`（予約受付中かどうか）は条件にしません。受付を止めているサロンも Salon の取得に出るので、そのスタッフも出します
+- 見せないスタッフの取得は 404（`Staff member <id> was not found`）で、存在しない ID と区別しません。無効化されたのか、削除されたのか、はじめからいないのかは、応答から分かりません
+- 無効化したスタッフを有効に戻すと、同じ ID のまま、一覧の元の位置に戻ります
+
+### プロフィールの一覧
+
+- 並びは台帳と同じで、登録日時（`createdAt`）の古い順、同じ値の中では `id` の昇順。サロンをまたいで、この順に並ぶ
+- `limit` は 1〜100（既定は 20）。`cursor` は、前のページの最後のスタッフの ID
+- 絞り込みは次の 3 つ。指定したすべてを満たすスタッフを返し、`meta.total` はその人数
+
+| パラメーター | 規則 |
+|---|---|
+| `salonId` | そのサロンのスタッフ。UUID の形式でなければ 400。存在しないサロン、削除済みのサロンは、エラーではなく空の一覧 |
+| `specialty` | `specialties` のどれかの要素と完全に一致するスタッフ。空白だけでない文字列。大文字と小文字、前後の空白を区別する。指定できるのは 1 つ（2 つ書くと 400） |
+| `city` | サロンの市区町村（`salons.city`）と完全に一致するサロンのスタッフ。空白だけでない 100 文字以内 |
+
+- **見せなくなったスタッフを指す `cursor` は、その位置から続ける**。ページを読んでいる間にスタッフが無効化、削除されても、続きを読める。絞り込みに合わないスタッフ（ほかのサロンのスタッフなど）を指す `cursor` も同じ。`cursor` は位置だけを決め、誰を返すかは絞り込みが決める
+- どのスタッフも指していない `cursor` は 400（`cursor` の `not_found`、`Must name a staff member`）
+- 定義のないパラメーターは 400（`unrecognized_keys`）。`isActive` での絞り込みはない（無効なスタッフは見せない）
+- ID（パスの `id`、クエリの `cursor` と `salonId`）は、英字を大文字で書いても同じ ID
+
+### 確認の順序（プロフィール）
+
+1. `id` の形式（400。取得）、クエリ（400。一覧）
+2. スタッフの存在（404。取得）、`cursor` が指すスタッフの存在（400。一覧）
+
+権限の確認はありません。
 
 ## 同時に届いたリクエスト
 
@@ -168,7 +234,9 @@
 |---|---|
 | コントラクト | `specs/models/staff.tsp`、`specs/operations/staff-operations.tsp` |
 | ドメイン | `backend/packages/domain/src/models/staff.ts`、`schemas/staff.schema.ts`、`mappers/write/staff.mapper.ts`、`mappers/read/staff.mapper.ts`、`repositories/staff.repository.ts`、`business-logic/staff/`（権限と「自分自身のスタッフ情報」の判定は `_shared/authorization.ts`、409 の文言は `_shared/refusals.ts`） |
+| ドメイン（プロフィール） | `backend/packages/domain/src/models/staff-profile.ts`、`schemas/staff-profile.schema.ts`、`mappers/read/staff-profile.mapper.ts`、`repositories/staff-profile.repository.ts`、`business-logic/staff-profile/` |
 | ドメイン（共通） | `backend/packages/domain/src/schemas/rules.ts`（`lowerCaseEmail`、`phoneNumber`、`noRepeatedEntries` など）、`business-logic/_shared/existing-salon.ts`（サロンの存在の確認） |
 | インフラ | `backend/packages/infrastructure/src/repositories/staff.repository.impl.ts`、`repositories/account.ts`（操作者の範囲。スタッフが有効で削除されていないことを確認する） |
-| API | `backend/packages/api/src/routes/staff/` |
-| DB | `backend/packages/database/sql/migrations/202611151800_staff_columns.sql` |
+| インフラ（プロフィール） | `backend/packages/infrastructure/src/repositories/staff-profile.repository.impl.ts`（見せるカラムと、見せるスタッフの条件） |
+| API | `backend/packages/api/src/routes/staff/`、`backend/packages/api/src/routes/staff-profile/` |
+| DB | `backend/packages/database/sql/migrations/202611151800_staff_columns.sql`、`backend/packages/database/src/scripts/api-consistency-rules.ts`（`Models.StaffProfileResponse` が出さないカラムの一覧） |

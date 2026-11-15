@@ -11,7 +11,7 @@ using TypeSpec.OpenAPI;
 using BeautySalon.Models;
 
 namespace BeautySalon.Operations {
-  @doc("サロンのスタッフ台帳と勤務スケジュールを管理するAPI操作群です。実装済みの操作は、台帳の一覧・登録・1件の取得・更新・削除です。台帳は雇用の情報と個人の連絡先を含むので、これらは admin と、そのサロンの owner だけが実行できます(manager と staff には403を返します)。権限はパスの salonId だけで判定し、権限のないユーザーには、IDや本文が不正でも、サロンが存在しなくても403を返します。サロンが存在しない場合と、スタッフがパスのサロンに属さない場合は404を返します。")
+  @doc("サロンのスタッフ台帳と勤務スケジュールを管理するAPI操作群です。実装済みの操作は、台帳の一覧・登録・1件の取得・更新・削除です。顧客に見せる項目は、スタッフプロフィールの操作(/api/v1/staff-profiles)が認証なしで返します。台帳は雇用の情報と個人の連絡先を含むので、これらは admin と、そのサロンの owner だけが実行できます(manager と staff には403を返します)。権限はパスの salonId だけで判定し、権限のないユーザーには、IDや本文が不正でも、サロンが存在しなくても403を返します。サロンが存在しない場合と、スタッフがパスのサロンに属さない場合は404を返します。")
   @route("/api/v1/salons/{salonId}/staff")
   @tag("Staff")
   namespace StaffOperations {
@@ -125,22 +125,35 @@ namespace BeautySalon.Operations {
     }
   }
 
-  @doc("複数サロン横断でスタッフを検索し、指名予約やヘルプ要員の調整に用いるAPI操作群です。")
-  @route("/api/v1/staff")
+  @doc("顧客に見せるスタッフのプロフィールを返すAPI操作群です。ここに定義した操作はすべて実装済みで、指名するスタッフを選ぶ前の閲覧のために、認証なしで呼び出せます。対象は、在籍して勤務している(isActive が true)、削除されていないスタッフで、所属サロンが削除されていないものです。それ以外のスタッフは、存在しないスタッフと同じ扱いにします。本名、連絡先、雇用の情報は返しません。プロフィールの項目は、スタッフ台帳の操作で更新します。")
+  @route("/api/v1/staff-profiles")
   @tag("Staff")
-  namespace GlobalStaffOperations {
-    interface GlobalStaff {
-      @doc("専門分野や地域条件で全サロンのスタッフを横断検索し、顧客の指名ニーズに応えます。削除済みのスタッフは含みません。")
-      @summary("Search staff across all salons")
-      @route("/search")
+  namespace StaffProfileOperations {
+    interface StaffProfile {
+      @doc("絞り込み条件とページネーションを指定して、スタッフのプロフィールを一覧取得します。サロンをまたいで探せます。1つのサロンのスタッフは salonId で絞り込みます。登録日時の古い順に並びます。cursorがスタッフを指していない場合は400を返します。")
+      @summary("List staff profiles")
+      @useAuth(NoAuth)
       @get
-      search(...StaffGlobalSearchRequest):
+      list(...StaffProfileSearchRequest):
         | {
             @statusCode statusCode: 200;
-            @body response: CursorPaginationResponse<StaffResponse>;
+            @body response: CursorPaginationResponse<StaffProfileResponse>;
           }
         | ProblemResponse<400>
-        | CommonErrors;
+        | PublicErrors;
+
+      @doc("IDを指定してスタッフのプロフィールを1件取得します。在籍していない、削除済み、または所属サロンが削除済みのスタッフには404を返します。")
+      @summary("Get a staff profile")
+      @useAuth(NoAuth)
+      @get
+      get(@path id: StaffId):
+        | {
+            @statusCode statusCode: 200;
+            @body response: ApiResponse<StaffProfileResponse>;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<404>
+        | PublicErrors;
     }
   }
 }

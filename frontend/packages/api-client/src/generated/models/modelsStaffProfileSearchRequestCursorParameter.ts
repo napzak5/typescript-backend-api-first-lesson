@@ -7,6 +7,6 @@
  */
 
 /**
- * 所属サロンの市区町村名による絞り込み(完全一致)
+ * 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する
  */
-export type ModelsStaffGlobalSearchRequestCityParameter = string;
+export type ModelsStaffProfileSearchRequestCursorParameter = string;

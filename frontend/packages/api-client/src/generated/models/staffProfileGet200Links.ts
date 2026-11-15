@@ -7,6 +7,7 @@
  */
 
 /**
- * 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する
+ * 関連リソースや次アクションへのリンク情報。リンクがない場合はnull
+ * @nullable
  */
-export type ModelsStaffGlobalSearchRequestCursorParameter = string;
+export type StaffProfileGet200Links = {[key: string]: string} | null;

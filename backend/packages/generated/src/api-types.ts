@@ -2632,7 +2632,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/staff/search": {
+    "/api/v1/staff-profiles": {
         parameters: {
             query?: never;
             header?: never;
@@ -2640,10 +2640,30 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Search staff across all salons
-         * @description 専門分野や地域条件で全サロンのスタッフを横断検索し、顧客の指名ニーズに応えます。削除済みのスタッフは含みません。
+         * List staff profiles
+         * @description 絞り込み条件とページネーションを指定して、スタッフのプロフィールを一覧取得します。サロンをまたいで探せます。1つのサロンのスタッフは salonId で絞り込みます。登録日時の古い順に並びます。cursorがスタッフを指していない場合は400を返します。
          */
-        get: operations["GlobalStaff_search"];
+        get: operations["StaffProfile_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/staff-profiles/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a staff profile
+         * @description IDを指定してスタッフのプロフィールを1件取得します。在籍していない、削除済み、または所属サロンが削除済みのスタッフには404を返します。
+         */
+        get: operations["StaffProfile_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -8184,6 +8204,38 @@ export interface components {
 
         "Models.StaffLevelType": "junior" | "stylist" | "senior" | "expert" | "director";
         /**
+         * @description スタッフプロフィールのレスポンス - 顧客に見せるスタッフの情報。staff テーブルの1行のうち、公開する項目だけを持つ。
+         *     本名、連絡先、雇用の情報(基本給、歩合率、雇用形態、入社日)は含まない。それらはスタッフ台帳(StaffResponse)が返す。
+         *     プロパティ名と null 許可は DB カラムと一致させている
+         */
+        "Models.StaffProfileResponse": {
+            /** @description スタッフを一意に識別するID */
+            id: components["schemas"]["Models.StaffId"];
+            /** @description 所属サロンのID */
+            salonId: components["schemas"]["Models.SalonId"];
+            /** @description 顧客向けに表示するスタッフ名 */
+            displayName: string;
+            /** @description 技術レベル */
+            level: components["schemas"]["Models.StaffLevelType"];
+            /** @description 役職名。未設定の場合はnull */
+            position: string | null;
+            /** @description 得意分野や専門メニューの一覧。ない場合は空配列 */
+            specialties: string[];
+            /** @description 自己紹介や経歴の概要 - プロフィール未記入の新人スタッフの場合はnull */
+            bio: string | null;
+            /** @description プロフィール画像のURL - プロフィール画像未設定の場合はnull */
+            imageUrl: string | null;
+            /**
+             * Format: int32
+             * @description 実務経験年数 - 経験年数未記載またはアシスタントスタッフの場合はnull
+             */
+            yearsOfExperience: number | null;
+            /** @description 保有資格名の一覧 (テキスト管理)。ない場合は空配列 */
+            certifications: string[];
+            /** @description 予約を受け付けるかどうか */
+            canReceiveBookings: boolean;
+        };
+        /**
          * @description スタッフ台帳のレスポンス - staff テーブルの1行。雇用の情報(基本給、歩合率、雇用形態、入社日)と個人の連絡先を含むので、
          *     admin と、そのサロンの owner だけに返す。プロパティ名と null 許可は DB カラムと一致させている。
          *     勤務スケジュール(staff_schedules)は含まない
@@ -9244,13 +9296,15 @@ export interface components {
         /** @description 1ページあたりの取得件数上限 (1〜100) */
         "Models.ShareLinkSearchRequest.limit": number;
         /** @description 所属サロンの市区町村名による絞り込み(完全一致) */
-        "Models.StaffGlobalSearchRequest.city": string;
+        "Models.StaffProfileSearchRequest.city": string;
         /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
-        "Models.StaffGlobalSearchRequest.cursor": string;
+        "Models.StaffProfileSearchRequest.cursor": string;
         /** @description 1ページあたりの取得件数上限 (1〜100) */
-        "Models.StaffGlobalSearchRequest.limit": number;
+        "Models.StaffProfileSearchRequest.limit": number;
+        /** @description 所属サロンの ID による絞り込み(完全一致)。存在しないサロンを指定した場合は空の一覧を返す */
+        "Models.StaffProfileSearchRequest.salonId": components["schemas"]["Models.SalonId"];
         /** @description 得意分野による絞り込み。specialtiesに指定した値(完全一致)を含むスタッフに一致する */
-        "Models.StaffGlobalSearchRequest.specialty": string;
+        "Models.StaffProfileSearchRequest.specialty": string;
         /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
         "Models.StaffSearchRequest.cursor": string;
         /** @description 1ページあたりの取得件数上限 (1〜100) */
@@ -25755,17 +25809,19 @@ export interface operations {
             };
         };
     };
-    GlobalStaff_search: {
+    StaffProfile_list: {
         parameters: {
             query?: {
                 /** @description 1ページあたりの取得件数上限 (1〜100) */
-                limit?: components["parameters"]["Models.StaffGlobalSearchRequest.limit"];
+                limit?: components["parameters"]["Models.StaffProfileSearchRequest.limit"];
                 /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
-                cursor?: components["parameters"]["Models.StaffGlobalSearchRequest.cursor"];
+                cursor?: components["parameters"]["Models.StaffProfileSearchRequest.cursor"];
+                /** @description 所属サロンの ID による絞り込み(完全一致)。存在しないサロンを指定した場合は空の一覧を返す */
+                salonId?: components["parameters"]["Models.StaffProfileSearchRequest.salonId"];
                 /** @description 得意分野による絞り込み。specialtiesに指定した値(完全一致)を含むスタッフに一致する */
-                specialty?: components["parameters"]["Models.StaffGlobalSearchRequest.specialty"];
+                specialty?: components["parameters"]["Models.StaffProfileSearchRequest.specialty"];
                 /** @description 所属サロンの市区町村名による絞り込み(完全一致) */
-                city?: components["parameters"]["Models.StaffGlobalSearchRequest.city"];
+                city?: components["parameters"]["Models.StaffProfileSearchRequest.city"];
             };
             header?: never;
             path?: never;
@@ -25781,7 +25837,7 @@ export interface operations {
                 content: {
                     "application/json": {
                         /** @description 現在ページで取得したデータ配列。サロン一覧や予約履歴の実データを格納する。 */
-                        data: components["schemas"]["Models.StaffResponse"][];
+                        data: components["schemas"]["Models.StaffProfileResponse"][];
                         /** @description ページング状態を示すメタ情報。次ページの有無やカーソル値を含む。 */
                         meta: components["schemas"]["Models.PaginationMeta"];
                         /** @description 関連するページ遷移リンク。HATEOAS 連携や外部連携向けに利用する。 */
@@ -25799,22 +25855,70 @@ export interface operations {
                 };
             };
             /**
-             * @description 認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
-             *     ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
-             *     WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
+             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
              */
-            401: {
+            429: {
                 headers: {
-                    /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
-                    "WWW-Authenticate": string;
+                    /** @description 再試行できるようになるまでの秒数。 */
+                    "Retry-After": number;
                     [name: string]: unknown;
                 };
                 content: {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description 認証されているが、この操作を行う権限がない (403)。 */
-            403: {
+            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+        };
+    };
+    StaffProfile_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["schemas"]["Models.StaffId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The request has succeeded. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        data: components["schemas"]["Models.StaffProfileResponse"];
+                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        meta: components["schemas"]["Models.ResponseMeta"] | null;
+                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        links: {
+                            [key: string]: string;
+                        } | null;
+                    };
+                };
+            };
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The server cannot find the requested resource. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
