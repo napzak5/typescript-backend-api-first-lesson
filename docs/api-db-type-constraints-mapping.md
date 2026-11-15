@@ -104,12 +104,14 @@ export const timestampSchema = z
 
 ```typescript
 // backend/packages/domain/src/mappers/read/salon.mapper.ts（抜粋）
+const businessHoursSchema = z.array(storedBusinessHoursSchema).nullable()
+
 const convertedColumnsSchema = z.object({
   latitude: numericSchema.nullable(),
   longitude: numericSchema.nullable(),
   rating: numericSchema.nullable(),
   taxRate: numericSchema,
-  businessHours: z.array(storedBusinessHoursSchema).nullable(),
+  businessHours: businessHoursSchema,
   createdAt: timestampSchema,
   updatedAt: timestampSchema,
 })

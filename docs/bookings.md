@@ -4,6 +4,8 @@
 
 予約台帳は、サロンが予約を入れて読むためのものです。管理者とサロンのスタッフが `/api/v1/bookings` で扱います。顧客のアカウントは、このルートを使えません。
 
+空き枠（`/api/v1/salons/{salonId}/available-slots`）は、同じコントラクトにある、台帳とは別のルートです。規則は [空き枠](#空き枠) にまとめます。
+
 ## 実装範囲
 
 | オペレーション | 状態 |
@@ -13,10 +15,10 @@
 | 日時の変更（`BookingCrud` の `reschedule`） | 実装済み |
 | 終わっていない予約が参照する顧客、スタッフ、サービス、サロンの削除を断る（それぞれの削除の規則） | 実装済み |
 | 施術明細の追加、取得、削除（`BookingServiceCrud`） | 実装済み |
-| 空き枠の一覧と確認（`AvailableSlotCrud`） | 未実装 |
+| 空き枠の一覧と確認（`AvailableSlotCrud`） | 実装済み（[空き枠](#空き枠)） |
 | 顧客が自分で入れる予約、顧客が自分の予約を読むルート | 未実装。コントラクトにもない |
 
-未実装のオペレーションは、コントラクトには定義がありますが、サーバーは 404 を返します。
+予約のコントラクト（`specs/operations/booking-operations.tsp`）のオペレーションは、すべて実装されています。
 
 ## サロンが台帳に入れる予約は、サロンの判断
 
@@ -32,7 +34,7 @@
 - サービスの `isActive`、`serviceStatus`、`allowOnlineBooking`、`maxBookingsPerDay`
 - 顧客の `isActive`、`customerStatus`
 
-これらは、顧客が自分で入れる予約と、空き枠の算出に適用する条件です。どちらも未実装で、条件はその実装で決めます。顧客の好み設定（[顧客台帳](./customers.md#好み設定)）は、サーバーの判定には使いません。画面が、希望するスタッフを初期選択に使い、避けるスタッフを候補から外します。
+これらは、顧客が予約できる枠を決める条件です。サロン、スタッフ、サービスの設定は、空き枠の一覧が適用します（[受け付けの設定](#受け付けの設定)）。顧客の設定は、顧客が自分で入れる予約（未実装）で決めます。空き枠の確認は、台帳と同じく、どれも確かめません。顧客の好み設定（[顧客台帳](./customers.md#好み設定)）は、サーバーの判定には使いません。画面が、希望するスタッフを初期選択に使い、避けるスタッフを候補から外します。
 
 過去の日時の予約も作成できます（来店のあとで記録する）。日時の変更も、過去の日時にできます。
 
@@ -515,6 +517,96 @@
 - 保存されている行が API のモデルに合わないとき（マイグレーションより前の行など）は 500（データベースのエラー）です。読み出すときに検証します（`mappers/read/booking.mapper.ts`）
 - 予約と明細は、1 つの問い合わせで読みます。完了の途中の予約を読んでも、「予約は完了で、明細は未完了」という組み合わせは返りません
 
+## 空き枠
+
+`/api/v1/salons/{salonId}/available-slots` の 2 つのオペレーション（`AvailableSlotCrud`）です。空き枠を保存するテーブルはありません。サロンの営業時間、スタッフの勤務スケジュール、すでにある予約から、リクエストのたびに算出します。
+
+| オペレーション | ルート | 許可 |
+|---|---|---|
+| 一覧 | `GET /api/v1/salons/{salonId}/available-slots` | サインインしているすべてのユーザー |
+| 確認 | `POST /api/v1/salons/{salonId}/available-slots/check` | `admin`、そのサロンの `owner` / `manager` / `staff` |
+
+- 2 つは、答える問いが違います。**一覧は、顧客が予約できる枠を返します**。サロンが受け付けについて決めた設定（[受け付けの設定](#受け付けの設定)）を、すべて適用します。**確認は、台帳がその予約を受け付けるかどうかを答えます**。台帳が確かめるもの（[スタッフの占有](#スタッフの占有)）だけを確かめます
+- 一覧は、枠があるかどうかだけを返し、どの予約のことも返しません。だから、サインインしていれば誰でも読めます。認証は要ります（コントラクトのとおり）
+- 確認は、重なっている予約の ID を返します。だから、そのサロンの台帳に届く人だけが使えます（`business-logic/available-slot/_shared/authorization.ts` の `mayAskLedgerOf`。台帳と同じ `bookingReachOf` で決める）。顧客のアカウントと、ほかのサロンのユーザーには 403 を返します
+- どちらも、何も書きません。枠を押さえることもしません。答えは、その時点のものです
+
+### 枠の決め方
+
+枠は、1 人のスタッフがサービスを始められる開始日時です。`staffId`、`startTime`、`endTime`（開始日時に施術時間を足した日時）を返します。
+
+1. 施術時間は、クエリの `duration`（1〜1440 分）です。指定がなければ、サービスの `duration` です
+2. サロンが開いている時間帯（[サロンの営業時間帯](#サロンの営業時間帯)）と、スタッフが勤務している時間帯（[スタッフの勤務時間帯](#スタッフの勤務時間帯)）の重なりを取ります
+3. 重なりの時間帯ごとに、その始まりから 30 分おき（`SLOT_STEP_MINUTES`）に、開始日時を置きます。施術の全体が時間帯に収まるものだけです。10:00〜12:00 の時間帯と 60 分の施術なら、10:00、10:30、11:00 です。刻みは時間帯の始まりから数えるので、10:15 に始まる時間帯の枠は 10:15、10:45 と続きます
+4. 現在（リクエストを処理する時点）より後に始まる枠だけを残します。過去の日付には、空の一覧を返します（エラーにはしません）
+5. スタッフが占有されていない枠だけを残します。台帳と同じ規則です（`isOccupiedBeyondCapacity`。前後の空け時間と `maxConcurrentBookings` を含み、`cancelled` と `no_show` の予約は占有しません）。一覧が返した枠に、台帳で予約を入れると、そのあいだにほかの予約が入っていなければ、占有を理由に断られません
+
+規則は `business-logic/available-slot/_shared/slots.ts` の `slotsOf` です。
+
+### サロンの営業時間帯
+
+- 営業日カレンダー（`opening_hours`）に、その日付の行があれば、その行だけで決まります。`openTime` から `closeTime` まで営業し、時刻のない行の日は終日休業です。`isHoliday` が true でも、時刻があれば、その時間は営業します（祝日の営業）
+- 行がなければ、曜日ごとの営業時間（`businessHours`）の、その曜日のエントリーで決まります。`operatingSlots` から `breakSlots` を除いた時間です。`isClosed` なら休業です。`effectivePeriod` があれば、その期間の中だけ営業します
+- その曜日のエントリーがないサロンと、`businessHours` が null のサロンは、その日は休業です
+- カレンダーは、1 つのサロンの 1 つの日付に 1 行です。リクエストの検証に加えて、一意インデックス（`opening_hours_salon_date_unique`）が保証します（[DB の制約](#db-の制約)）
+- 時刻は、サロンの `timezone` での、その日の時刻です（[来店日とサロンのタイムゾーン](#来店日とサロンのタイムゾーン)）
+- 日付をまたぐ営業は表せません。終わりが始まり以前の時間帯（22:00〜02:00 など）は、時間がないものとして扱い、枠を作りません
+- 夏時間のある地域では、時計を進める夜の、存在しない時刻を、その分だけ後の時点として読みます（02:00 が 03:00 になる夜の 02:30 は、03:30）。時計を戻す夜の、2 回ある時刻は、最初の時点です。00:00〜06:00 の営業は、進める夜には 5 時間、戻す夜には 7 時間になります
+
+規則は `business-logic/available-slot/_shared/opening.ts` の `openRangesOf`、時刻から時点を決めるのは `_shared/salon-time.ts` の `momentAt` です。
+
+### スタッフの勤務時間帯
+
+- その日付に当てはまる勤務スケジュールの行で決まります（[スタッフ台帳](./staff.md#ある日付に適用される行)。その日付の行、なければ、その曜日の毎週の行）
+- `startTime` から `endTime` まで勤務し、休憩（`breakStartTime`〜`breakEndTime`）を除きます
+- 当てはまる行のない日と、休みの行（`isAvailable` が false）の日は、勤務しません。枠はありません
+
+規則は `business-logic/available-slot/_shared/working.ts` の `workingRangesOf` です。
+
+### 受け付けの設定
+
+一覧は、次の場合に枠を返しません。エラーではなく、空の一覧（スタッフの設定は、そのスタッフの枠がないだけ）です。
+
+| 設定 | 枠を返さない場合 |
+|---|---|
+| サロンの `isActive` | false |
+| サービスの `isActive`、`serviceStatus`、`allowOnlineBooking` | `isActive` が false、`serviceStatus` が `active` 以外、`allowOnlineBooking` が false |
+| サービスの `availability` | `weekdays_only` で土曜日・日曜日、`weekends_only` で月曜日〜金曜日（サロンのタイムゾーンでの曜日）。`always`、`by_appointment_only`、`seasonal` は、どの日も同じに扱う |
+| サービスの `bookingRequirements` | `advance_booking_required` があり、日付が、サロンのタイムゾーンでの今日。ほかの値は、サーバーでは確かめられないので、枠に影響しない |
+| サービスの `maxBookingsPerDay` | その日（サロンのタイムゾーンでの日付）に始まる、そのサービスの明細の数が、その値に達している。`cancelled` と `no_show` の予約の明細は数えない。担当スタッフが誰でも（未定でも）数える |
+| スタッフの `isActive`、`canReceiveBookings` | どちらかが false |
+| スタッフの `level` | サービスの `requiredStaffLevel` に満たない（`junior` < `stylist` < `senior` < `expert` < `director`） |
+
+- `by_appointment_only` は、空き枠からの予約が事前の予約なので、ほかの日と同じです。`seasonal` は、サロンが季節ごとに `serviceStatus` を切り替えます
+- サービスの `requiresConsultation`、顧客の設定と好み設定は使いません。どのスタッフがどのサービスを担当できるかの表（`staff_skills`）も使いません。サロンのスタッフは、ランクが足りれば、どのサービスも担当できるものとして扱います
+- これらの設定は、台帳に入れる予約を止めません（[サロンが台帳に入れる予約は、サロンの判断](#サロンが台帳に入れる予約はサロンの判断)）。`maxBookingsPerDay` に達した日にも、サロンは台帳から予約を入れられます
+
+規則は `business-logic/available-slot/_shared/acceptance.ts` です。
+
+### 一覧
+
+- クエリは、`serviceId`（必須）、`date`（必須。`YYYY-MM-DD`。サロンのタイムゾーンでの日付）、`staffId`（指定すると、そのスタッフの枠だけ）、`duration`、`limit`（1〜100。既定は 20）、`cursor` です。ほかのパラメーターは 400 です
+- 並びは、`startTime` の早い順、同じ日時の中では `staffId` の昇順です
+- `meta.total` は、その日の枠の数です（`cursor` によらない）
+- 枠には ID がないので、`cursor` は、ページの最後の枠そのもの（`<startTime>_<staffId>`）です。次のページは、その枠より後の枠から返します。カーソルの枠が、そのあいだに埋まっていても、続きを返します。この形でない `cursor` は 400 です（`cursor` の `custom`）
+- ページは、前にだけ進みます。`meta.prevCursor` と、`links` の `prev`、`last` は null です
+- 確認の順序は、認証（401）、パスの `salonId`（400）、クエリ（400）、サロンがあるか（404）、`staffId` と `serviceId` がそのサロンのものか（400。`not_found`。削除済みのものを含み、両方をまとめて報告する）、サロンのタイムゾーン（409）です
+- サロンの `timezone` が名前として読めないとき（以前に保存された値）は 409 です。時刻を時点に直せないからです。以前に保存されたオフセット（`+09:00`）は読めます
+- 保存されている `businessHours` が API のモデルに合わないときは 500（データベースのエラー）です
+- 読み出しは、1 つのトランザクション（`REPEATABLE READ`、読み取り専用）で行います。サロン、スタッフ、スケジュール、予約を、同じ時点のものとして読みます。ロックは取らず、待ちません
+
+### 確認
+
+- 本文は、`staffId`、`serviceId`、`startTime`（UTC の分単位）です。3 つとも必須で、ほかのプロパティは 400 です
+- 希望する時間は、`startTime` から、サービスの `duration` のあいだです
+- `isAvailable` は、その時間に、スタッフが占有されていないことです。台帳への作成、日時の変更、明細の追加が、スタッフの占有を理由に 409 にならないことを表します
+- `conflicts` は、希望する時間に明細が重なっている予約の ID です。希望する時間にも、明細にも、スタッフの前後の空け時間を加えて比べます。早く始まる明細の予約から並べ、1 つの予約は 1 回だけ返します
+- 同時に複数の予約を受けられるスタッフ（`maxConcurrentBookings` が 2 以上）では、`conflicts` があっても、`isAvailable` が true のことがあります
+- **確かめるのは、占有だけです**。営業時間、勤務スケジュール、受け付けの設定、過去の日時かどうかは確かめません。台帳が確かめないものは、確かめません
+- 確認の順序は、認証（401）、パスの `salonId`（400）、権限（403。本文を読む前に決める。存在しないサロンでも 403）、本文（400）、サロンがあるか（404）、`staffId` と `serviceId` がそのサロンのものか（400。`not_found`）です
+- 答えのあとで、ほかの予約が入ることがあります。そのあとの作成は 409 になりえます
+- `links` は、`self`（確認）と `list`（そのサロンの空き枠の一覧）です
+
 ## 同時に届いたリクエスト
 
 作成:
@@ -637,7 +729,7 @@
 
 削除は、予約の行をロックしません（読むだけです）。予約を書くものは、予約、そのあとで予約が参照する行、の順にロックするので、削除が予約の行をロックすると、逆の順になるからです。削除がロックするのは、削除する行だけ（顧客の削除は、そのあとでアカウントの行）なので、予約のどの書き込みとも、デッドロックになりません。あとから届いた作成と日時の変更、明細の追加は、削除が終わるのを待ち、削除された行を見て 400 を返します。終わった予約が、終わっていない予約に戻ることはなく（[ステータスの操作](#ステータスの操作)）、予約の参照を増やすのは、作成と日時の変更、明細の追加だけです。
 
-取得と一覧は、ロックを待ちません。
+取得と一覧は、ロックを待ちません。空き枠の一覧と確認も、ロックを取らず、待ちません。
 
 ## DB の制約
 
@@ -664,6 +756,12 @@
 - 以前の行は、いまのサービスの `taxIncluded` で埋めます。明細を入れた時点の値は、残っていないからです（シードでは一致します）
 - `BookingServiceResponse` に `taxIncluded` を加えました。リクエストには書けません
 
+マイグレーション `202611160600_opening_hours_one_row_per_date.sql` で、営業日カレンダー（`opening_hours`）に、サロンと日付の一意インデックス（`opening_hours_salon_date_unique`）を加えました。
+
+- 「1 つの日付に 1 件」は、サロンの作成と更新のリクエストの規則でしたが、テーブルは保証していませんでした。空き枠は、その日付の 1 行だけで営業時間を決めるので、2 行あると、どちらを読むかが決まりません
+- 以前の行に、同じサロンの同じ日付の行が複数あれば、最後に書かれた行（`updatedAt` が新しい行。同じなら `id` が大きい行）を残して、ほかを削除します
+- サロンの更新は、サロンの行をロックしてからカレンダーを入れ替えるので、同時に届いた 2 つの更新が、このインデックスに違反することはありません
+
 スタッフの占有（重なり）は、DB の制約では保証しません。同時に受けられる数と前後の時間がスタッフごとに違い、制約では書けないからです。予約を書くトランザクション（作成、日時の変更、明細の追加）が、スタッフの行のロックで保証します。予約の日時と金額が明細の合計と合っていることも、制約では保証しません（2 つのテーブルにまたがる）。予約と明細を書くトランザクションが、予約の行のロックで保証します。
 
 ## シード
@@ -679,14 +777,17 @@
 - 顧客の来店回数、キャンセル回数、無断キャンセル回数、初回と最終の来店日は、予約を入れたあとで、予約から数えます（顧客のシードには書きません）
 - スタッフの占有の規則を満たします。同時に 2 件を受けるスタッフ（`STF001`）に、同じ時間の予約が 2 件あります
 - レビューのシードは、済んだ来店のうち最初の 5 件に、その予約の顧客、サロン、担当スタッフで書きます
+- シードのサロンには営業時間が、スタッフには勤務スケジュールがあるので、空き枠の一覧は、これからの日付に枠を返します。シードの予約がある時間は、枠から除かれます
 
 ## 実装の場所
 
 | 層 | ファイル |
 |---|---|
-| コントラクト | `specs/models/booking.tsp`、`specs/operations/booking-operations.tsp` |
+| コントラクト | `specs/models/booking.tsp`、`specs/operations/booking-operations.tsp`（空き枠は、同じファイルの `AvailableSlotCrud` と、`AvailableSlot` で始まるモデル） |
 | ドメイン | `backend/packages/domain/src/models/booking.ts`、`schemas/booking.schema.ts`、`mappers/read/booking.mapper.ts`、`repositories/booking.repository.ts`、`services/booking-number-issuer.ts`、`business-logic/booking/`（誰がどの予約に届くかは `_shared/authorization.ts`、リクエストから書く行を決めるのは `_shared/plan.ts`、明細から予約の日時と金額を算出するのは `_shared/summary.ts`、スタッフの占有の規則は `_shared/occupancy.ts`、予約番号は `_shared/booking-number.ts`、リポジトリが断った理由をエラーに直すのは `_shared/refusals.ts`、ステータスの規則は `_shared/status.ts`、5 つの操作に共通の手順は `_shared/change-status.ts`、日時の変更の規則は `_shared/reschedule.ts`、施術明細の追加と削除の規則は `_shared/service-lines.ts`）。Write マッパーはない（書く行は `planBooking` と `planServiceAddition` が決める） |
 | ドメイン（共通） | `backend/packages/domain/src/schemas/rules.ts`（`inTimeZone`、`timeZoneName`）、`business-logic/_shared/unfinished-bookings.ts`（終わっていない予約が参照するものの削除を断るエラー） |
 | インフラ | `backend/packages/infrastructure/src/repositories/booking.repository.impl.ts`、`security/random-booking-number-issuer.ts`、`repositories/unfinished-bookings.ts`（顧客、スタッフ、サービス、サロンの削除が、終わっていない予約を探す）、`database/clock.ts`（書き込む時刻） |
-| API | `backend/packages/api/src/routes/booking/`、`routes/booking-service/`（施術明細。`/api/v1/bookings/:bookingId/services` に取り付ける） |
-| DB | `backend/packages/database/sql/migrations/202611160200_bookings_rules.sql`、`202611160300_booking_status_rules.sql`、`202611160400_booking_services_tax_included.sql` |
+| ドメイン（空き枠） | `backend/packages/domain/src/models/available-slot.ts`、`schemas/available-slot.schema.ts`、`mappers/read/available-slot.mapper.ts`、`repositories/available-slot.repository.ts`、`business-logic/available-slot/`（枠を決めるのは `_shared/slots.ts`、サロンの営業時間帯は `_shared/opening.ts`、スタッフの勤務時間帯は `_shared/working.ts`、受け付けの設定は `_shared/acceptance.ts`、サロンの時計の時刻を時点に直すのは `_shared/salon-time.ts`、時間帯の計算は `_shared/time-ranges.ts`、カーソルは `_shared/page.ts`、確認の権限は `_shared/authorization.ts`）。占有の規則は、台帳の `business-logic/booking/_shared/occupancy.ts` を使う（`isOccupiedBeyondCapacity`、`conflictsOf`） |
+| インフラ（空き枠） | `backend/packages/infrastructure/src/repositories/available-slot.repository.impl.ts`（1 日の枠を決めるのに要るものを、1 つの読み取り専用のトランザクションで読む） |
+| API | `backend/packages/api/src/routes/booking/`、`routes/booking-service/`（施術明細。`/api/v1/bookings/:bookingId/services` に取り付ける）、`routes/available-slot/`（空き枠。`/api/v1/salons/:salonId/available-slots` に取り付ける） |
+| DB | `backend/packages/database/sql/migrations/202611160200_bookings_rules.sql`、`202611160300_booking_status_rules.sql`、`202611160400_booking_services_tax_included.sql`、`202611160600_opening_hours_one_row_per_date.sql`（営業日カレンダーの一意インデックス） |
