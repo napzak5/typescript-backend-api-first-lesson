@@ -811,8 +811,9 @@ describe('modelRules', () => {
           (table === 'bookings' || table === 'bookingServices') &&
           model !== 'Models.BookingUpdateRequest',
       )
-      .map(({ model, kind, omittedColumns, embedded, computed }) => ({
+      .map(({ model, table, kind, omittedColumns, embedded, computed }) => ({
         model,
+        table,
         kind,
         omittedColumns,
         embedded,
@@ -822,6 +823,7 @@ describe('modelRules', () => {
     expect(rules).toEqual([
       {
         model: 'Models.BookingResponse',
+        table: 'bookings',
         kind: 'response',
         omittedColumns: ['ipAddress', 'userAgent'],
         embedded: ['services'],
@@ -829,6 +831,7 @@ describe('modelRules', () => {
       },
       {
         model: 'Models.BookingCreateRequest',
+        table: 'bookings',
         kind: 'create',
         omittedColumns: [
           'id',
@@ -863,6 +866,7 @@ describe('modelRules', () => {
       },
       {
         model: 'Models.BookingServiceResponse',
+        table: 'bookingServices',
         kind: 'response',
         omittedColumns: [
           'bookingId',
@@ -875,6 +879,7 @@ describe('modelRules', () => {
       },
       {
         model: 'Models.BookingServiceCreateRequest',
+        table: 'bookingServices',
         kind: 'create',
         omittedColumns: [
           'id',

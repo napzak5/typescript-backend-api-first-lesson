@@ -514,6 +514,26 @@ describe('GetBookingUseCase', () => {
     )
   })
 
+  it('looks the booking up, and names the one that is not there, by the ID in lower case', async () => {
+    const dependencies = bookingDependencies({
+      findById: vi.fn(async () => Result.success(null)),
+    })
+
+    const result = await get(
+      dependencies,
+      actors.admin,
+      BOOKING_ID.toUpperCase(),
+    )
+
+    expect(dependencies.bookingRepository.findById).toHaveBeenCalledWith(
+      BOOKING_ID,
+      { type: 'everySalon' },
+    )
+    expect(result).toEqual(
+      Result.error(DomainErrors.notFound('Booking', BOOKING_ID)),
+    )
+  })
+
   it('reports a failure of the database', async () => {
     const dependencies = bookingDependencies({
       findById: vi.fn(async () => databaseDown),

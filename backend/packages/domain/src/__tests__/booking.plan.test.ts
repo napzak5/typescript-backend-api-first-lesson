@@ -487,6 +487,9 @@ describe('planBooking', () => {
       ['1,000 yen at 100%', 1000, '100.00', 1000],
       ['3 yen at 33.33%', 3, '33.33', 0],
       ['7 yen at 14.29%', 7, '14.29', 1],
+      // 1.15 and 9.95 times 100 are a little less than 115 and 995 as floats.
+      ['10,000 yen at 1.15%', 10000, '1.15', 115],
+      ['10,000 yen at 9.95%', 10000, '9.95', 995],
     ])(
       'drop the fraction of a yen of the tax: %s',
       (_case, price, taxRate, taxAmount) => {
