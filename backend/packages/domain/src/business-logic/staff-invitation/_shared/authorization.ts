@@ -24,3 +24,30 @@ export const mayGiveRole = (actor: Actor, role: SalonRole): boolean =>
     .with('owner', () => actor.scope.type === 'platform')
     .with('manager', 'staff', () => true)
     .exhaustive()
+
+/**
+ * Whether the actor's account is of a kind that joins an invitation: one
+ * with a role of a salon. The account of a customer has the records of a
+ * customer, and that of an administrator reaches every salon; an
+ * invitation makes neither of them the account of a staff member.
+ */
+export const mayJoinStaffInvitations = (actor: Actor): boolean =>
+  match(actor.scope)
+    .with({ type: 'salon' }, { type: 'none' }, () => true)
+    .with({ type: 'platform' }, { type: 'customer' }, () => false)
+    .exhaustive()
+
+/**
+ * Whether the actor's account reaches a salon. An account has one staff
+ * member, and joins another only once the one it has gives it no salon.
+ */
+export const reachesSalon = (actor: Actor): boolean =>
+  match(actor.scope)
+    .with({ type: 'salon' }, () => true)
+    .with(
+      { type: 'platform' },
+      { type: 'customer' },
+      { type: 'none' },
+      () => false,
+    )
+    .exhaustive()

@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   AuthenticateUseCase,
   GetCurrentUserUseCase,
+  isWithoutSalon,
   LoginUseCase,
   LogoutAllUseCase,
   LogoutUseCase,
@@ -998,6 +999,47 @@ describe('the scope of an actor', () => {
 
     expect(dataOf(result).scope).toEqual(scope)
   })
+
+  const ROLES: DbUser['role'][] = [
+    'customer',
+    'staff',
+    'manager',
+    'owner',
+    'admin',
+  ]
+
+  it.each(
+    ROLES.flatMap((role): [DbUser['role'], string | null, string | null][] => [
+      [role, null, null],
+      [role, STAFF_ID, null],
+      [role, STAFF_ID, SALON_ID],
+    ]),
+  )(
+    'gives the role %s with the staff member %s and the salon %s the scope `none` exactly when the account is without a salon',
+    async (role, staffId, staffSalonId) => {
+      const result = await new AuthenticateUseCase(
+        withSession({}, { role, staffId }, staffSalonId),
+      ).execute('Bearer access-token')
+
+      expect(isWithoutSalon(role, staffSalonId)).toBe(
+        dataOf(result).scope.type === 'none',
+      )
+    },
+  )
+
+  it.each<[DbUser['role'], boolean, boolean]>([
+    ['owner', true, false],
+    ['manager', true, false],
+    ['staff', true, false],
+    ['customer', false, false],
+    ['admin', false, false],
+  ])(
+    'tells that an account with the role %s is without a salon when it reaches none: %s, and when it reaches one: %s',
+    (role, withoutOne, withOne) => {
+      expect(isWithoutSalon(role, null)).toBe(withoutOne)
+      expect(isWithoutSalon(role, SALON_ID)).toBe(withOne)
+    },
+  )
 })
 
 describe('GetCurrentUserUseCase', () => {

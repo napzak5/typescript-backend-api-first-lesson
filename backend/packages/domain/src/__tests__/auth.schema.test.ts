@@ -10,6 +10,7 @@ import {
   authPasswordResetVerifyRequestSchema,
   authRegisterRequestSchema,
   authStaffInvitationAcceptRequestSchema,
+  authStaffInvitationJoinRequestSchema,
   authStaffInvitationVerifyRequestSchema,
   authTokenRefreshRequestSchema,
   authTwoFactorBackupCodesRequestSchema,
@@ -411,6 +412,10 @@ describe.each([
   [
     'authStaffInvitationVerifyRequestSchema',
     authStaffInvitationVerifyRequestSchema,
+  ],
+  [
+    'authStaffInvitationJoinRequestSchema',
+    authStaffInvitationJoinRequestSchema,
   ],
 ])('%s', (_name, schema) => {
   it.each([

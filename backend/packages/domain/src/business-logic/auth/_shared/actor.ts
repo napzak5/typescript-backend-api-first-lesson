@@ -3,6 +3,7 @@ import { match, P } from 'ts-pattern'
 import {
   type Actor,
   actorSchema,
+  type DbUser,
   type SessionWithAccount,
   type UserAccount,
 } from '../../../models/auth'
@@ -34,6 +35,22 @@ const scopeOf = ({ user, staffSalonId }: UserAccount): unknown =>
     .with({ role: P.union('owner', 'manager', 'staff') }, () => ({
       type: 'none',
     }))
+    .exhaustive()
+
+/**
+ * Whether an account has a role of a salon and reaches no salon:
+ * `staffSalonId` is the salon of a `UserAccount`. These are the accounts
+ * that get the scope `none` above, and the ones that join an invitation.
+ * A repository asks while it holds the locks of a write, where there is no
+ * actor to ask.
+ */
+export const isWithoutSalon = (
+  role: DbUser['role'],
+  staffSalonId: string | null,
+): boolean =>
+  match(role)
+    .with('owner', 'manager', 'staff', () => staffSalonId === null)
+    .with('customer', 'admin', () => false)
     .exhaustive()
 
 /** The actor a session stands for. */

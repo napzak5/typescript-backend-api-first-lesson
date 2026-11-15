@@ -27,3 +27,15 @@ export const invitationRefused = (): DomainError =>
  */
 export const addressHasAccount = (email: string): DomainError =>
   DomainErrors.alreadyExists('User', 'email', email)
+
+/** Told to the account itself, which is signed in. */
+export const accountBelongsToStaff = (): DomainError =>
+  DomainErrors.conflict('Your account already belongs to a staff member')
+
+/**
+ * Told to whoever holds the token and is signed in to another account: the
+ * token alone makes the invitation nobody's. Whether the token works they
+ * can already ask.
+ */
+export const sentToAnotherAddress = (): DomainError =>
+  DomainErrors.conflict('The invitation was sent to another address')
