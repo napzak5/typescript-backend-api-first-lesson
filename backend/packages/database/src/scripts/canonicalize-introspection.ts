@@ -2,16 +2,27 @@ import { Result } from '@beauty-salon-backend/utility'
 
 /**
  * `drizzle-kit introspect` emits declarations in catalog order, which depends
- * on how the database was built, and lists the columns of unique constraints
- * alphabetically instead of in their real order. The functions below rewrite
+ * on how the database was built, lists the columns of unique constraints
+ * alphabetically instead of in their real order, and gives every column of
+ * an index the operator class of the first one. The functions below rewrite
  * the formatted output into a canonical form, so that introspecting an
- * unchanged schema leaves `schema.ts` and `relations.ts` untouched.
+ * unchanged schema leaves `schema.ts` and `relations.ts` untouched, and so
+ * that the schema says what the database has.
  *
  * Both functions expect their input to be formatted by Biome already.
  */
 
 /** Column names of each unique constraint, keyed by `<table>.<constraint>`. */
-export type UniqueConstraintColumns = ReadonlyMap<string, readonly string[]>
+type UniqueConstraintColumns = ReadonlyMap<string, readonly string[]>
+
+/** Operator class of each column of an index, keyed by `<table>.<index>`. */
+type IndexOperatorClasses = ReadonlyMap<string, readonly string[]>
+
+/** What the catalog of the database says where drizzle-kit says otherwise. */
+export type CatalogFacts = {
+  uniqueColumns: UniqueConstraintColumns
+  indexOperatorClasses: IndexOperatorClasses
+}
 
 type Section = {
   before: readonly string[]
@@ -196,17 +207,67 @@ const restoreUniqueColumnOrder = (
     : Result.success(restored)
 }
 
+const isConstraintList = (line: string): boolean => line === '  (table) => ['
+
+const OPERATOR_CLASS = /\.op\('[^']+'\)/
+
+/**
+ * Restores the operator class of every column of every index of a table.
+ * drizzle-kit repeats the class of the first column for the others, which
+ * the database refuses when the columns differ in type (`uuid_ops` for a
+ * text column).
+ */
+const restoreIndexOperatorClasses = (
+  block: string,
+  operatorClasses: IndexOperatorClasses,
+): Result<string, string> => {
+  const table = /pgTable\(\s*'([^']+)'/.exec(block)?.[1]
+  const section = splitSection(block.split('\n'), isConstraintList)
+  if (table === undefined || section === undefined) {
+    return Result.success(block)
+  }
+  const errors: string[] = []
+  const items = section.items.map((item) => {
+    const text = item.join('\n')
+    const index = /^\s*(?:index|uniqueIndex)\(\s*'([^']+)'/.exec(text)?.[1]
+    if (index === undefined) {
+      return item
+    }
+    const expected = operatorClasses.get(`${table}.${index}`)
+    const [start = '', ...afterEachClass] = text.split(OPERATOR_CLASS)
+    if (expected === undefined || expected.length !== afterEachClass.length) {
+      errors.push(
+        `Index "${index}" on "${table}" does not match the database: introspected ${afterEachClass.length} operator class(es), database (${(expected ?? []).join(', ')})`,
+      )
+      return item
+    }
+    return expected
+      .reduce(
+        (restored, operatorClass, position) =>
+          `${restored}.op('${operatorClass}')${afterEachClass[position] ?? ''}`,
+        start,
+      )
+      .split('\n')
+  })
+  return errors.length > 0
+    ? Result.error(errors.join('\n'))
+    : Result.success(
+        [...section.before, ...items.flat(), ...section.after].join('\n'),
+      )
+}
+
 const isEnumBlock = (block: string): boolean =>
   /^export const \w+ = pgEnum\(/.test(block)
 
 /**
  * Canonical form of `schema.ts`: enums first, then tables, each group sorted by
  * name; the constraints of a table sorted by kind and name; unique constraints
- * listing their columns in database order.
+ * listing their columns in database order; index columns with the operator
+ * class the database has.
  */
 export const canonicalizeSchema = (
   source: string,
-  uniqueColumns: UniqueConstraintColumns,
+  { uniqueColumns, indexOperatorClasses }: CatalogFacts,
 ): Result<string, string> => {
   const { header, blocks } = splitBlocks(source)
   if (blocks.length === 0) {
@@ -220,8 +281,11 @@ export const canonicalizeSchema = (
   )
   for (const block of ordered) {
     const sorted = Result.flatMap(
-      sortSection(block, (line) => line === '  (table) => [', constraintKey),
-      (text) => restoreUniqueColumnOrder(text, uniqueColumns),
+      Result.flatMap(
+        sortSection(block, isConstraintList, constraintKey),
+        (text) => restoreUniqueColumnOrder(text, uniqueColumns),
+      ),
+      (text) => restoreIndexOperatorClasses(text, indexOperatorClasses),
     )
     if (sorted.type === 'error') {
       return sorted

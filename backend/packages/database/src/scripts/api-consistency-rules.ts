@@ -282,11 +282,14 @@ const authRules: ModelRule[] = [
 
 /**
  * Columns of `staff` that a request never writes. The salon comes from the
- * path; `awards` is a jsonb column without a defined structure.
+ * path; the login account (`userId`) is not the ledger's to link, because
+ * linking writes the user as well; `awards` is a jsonb column without a
+ * defined structure.
  */
 const staffManagedColumns = [
   'id',
   'salonId',
+  'userId',
   'awards',
   'deletedAt',
   'createdAt',
@@ -294,15 +297,14 @@ const staffManagedColumns = [
 ]
 
 /**
- * Staff and their schedules. The schedules are written by the availability
- * operation, which replaces all rows of a staff member.
+ * Staff and their schedules. The schedules are read and written by the
+ * availability operations, which replace all rows of a staff member.
  */
 const staffRules: ModelRule[] = [
   {
     model: 'Models.StaffResponse',
     table: 'staff',
     kind: 'response',
-    embedded: ['schedules'],
     omittedColumns: ['awards', 'deletedAt'],
   },
   {
