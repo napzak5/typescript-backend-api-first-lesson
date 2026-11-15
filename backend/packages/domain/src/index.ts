@@ -1,5 +1,6 @@
 // Use cases
 export * from './business-logic/auth'
+export * from './business-logic/available-slot'
 export * from './business-logic/booking'
 export * from './business-logic/customer'
 export * from './business-logic/customer-preferences'
@@ -14,6 +15,7 @@ export * from './business-logic/staff-schedule'
 
 // Models
 export * from './models/auth'
+export * from './models/available-slot'
 export * from './models/booking'
 export * from './models/customer'
 export * from './models/customer-preferences'
@@ -27,6 +29,7 @@ export * from './models/staff-profile'
 export * from './models/staff-schedule'
 
 // Repositories
+export * from './repositories/available-slot.repository'
 export * from './repositories/booking.repository'
 export * from './repositories/customer.repository'
 export * from './repositories/customer-preferences.repository'

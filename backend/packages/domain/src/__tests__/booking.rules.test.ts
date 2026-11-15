@@ -5,12 +5,14 @@ import {
   isOccupiedBeyondCapacity,
   occupancyWindowOf,
   RELEASING_STATUSES,
+  timeOf,
 } from '../business-logic/booking'
 import {
   bookingReachOf,
   bookingRemovalReachOf,
   isWithin,
 } from '../business-logic/booking/_shared/authorization'
+import { conflictsOf } from '../business-logic/booking/_shared/occupancy'
 import type { Actor } from '../models/auth'
 import type { BookingReach } from '../models/booking'
 import { salonIdSchema } from '../models/salon'
@@ -358,6 +360,132 @@ describe('occupancyWindowOf', () => {
       ).toBe(true)
     },
   )
+})
+
+describe('timeOf', () => {
+  it('is the time from a moment on for so many minutes', () => {
+    expect(timeOf(at('10:00'), 60)).toEqual(span('10:00', '11:00'))
+    expect(timeOf(at('23:30'), 45)).toEqual({
+      startTime: at('23:30'),
+      endTime: new Date('2026-11-21T00:15:00.000Z'),
+    })
+  })
+})
+
+describe('conflictsOf', () => {
+  const [hour] = wanted
+  const conflicts = (member: Staff, ...others: ReturnType<typeof taken>[]) =>
+    hour === undefined ? null : conflictsOf(member, hour, others)
+
+  it('names nobody while nothing is booked', () => {
+    expect(conflicts(staff())).toEqual([])
+  })
+
+  it.each([
+    ['begins before the wanted time and ends within it', '09:30', '10:01'],
+    ['lies within the wanted time', '10:15', '10:45'],
+    ['begins within the wanted time and ends after it', '10:59', '12:00'],
+    ['is the wanted time', '10:00', '11:00'],
+    ['holds the wanted time', '09:00', '12:00'],
+  ])('names a booking whose line %s', (_case, from, until) => {
+    expect(conflicts(staff(), taken('a', from, until))).toEqual(['a'])
+  })
+
+  it.each([
+    ['ends as the wanted time begins', '09:00', '10:00'],
+    ['begins as the wanted time ends', '11:00', '12:00'],
+    ['is over before', '08:00', '09:00'],
+    ['comes later', '13:00', '14:00'],
+  ])('does not name a booking whose line %s', (_case, from, until) => {
+    expect(conflicts(staff(), taken('a', from, until))).toEqual([])
+  })
+
+  describe('with time kept free before and after a service', () => {
+    // Ten minutes before and fifteen after, around the wanted time and
+    // around the other line: 25 minutes lie between two services.
+    it.each([
+      ['ends 24 minutes before the wanted time', '08:30', '09:36'],
+      ['begins 24 minutes after the wanted time', '11:24', '12:00'],
+    ])('names a booking whose line %s', (_case, from, until) => {
+      expect(conflicts(withBuffers(), taken('a', from, until))).toEqual(['a'])
+    })
+
+    it.each([
+      ['ends 25 minutes before the wanted time', '08:30', '09:35'],
+      ['begins 25 minutes after the wanted time', '11:25', '12:00'],
+    ])('does not name a booking whose line %s', (_case, from, until) => {
+      expect(conflicts(withBuffers(), taken('a', from, until))).toEqual([])
+    })
+
+    it('agrees with whether the staff member is occupied, minute by minute', () => {
+      const ends = ['09:33', '09:34', '09:35', '09:36', '09:37']
+
+      expect(
+        ends.map(
+          (until) =>
+            conflicts(withBuffers(), taken('a', '08:30', until))?.length === 1,
+        ),
+      ).toEqual(
+        ends.map((until) =>
+          isOccupiedBeyondCapacity(withBuffers(), wanted, [
+            taken('a', '08:30', until),
+          ]),
+        ),
+      )
+    })
+  })
+
+  it('names the bookings by when their lines begin', () => {
+    expect(
+      conflicts(
+        staff(),
+        taken('late', '10:45', '11:30'),
+        taken('early', '09:30', '10:15'),
+        taken('middle', '10:15', '10:45'),
+      ),
+    ).toEqual(['early', 'middle', 'late'])
+  })
+
+  it('names bookings whose lines begin together by their IDs', () => {
+    expect(
+      conflicts(
+        staff(),
+        taken('b', '10:00', '10:30'),
+        taken('c', '10:00', '10:45'),
+        taken('a', '10:00', '11:00'),
+      ),
+    ).toEqual(['a', 'b', 'c'])
+  })
+
+  it('names a booking once that has several lines in the way, where its first one begins', () => {
+    expect(
+      conflicts(
+        staff(),
+        taken('a', '10:40', '11:00'),
+        taken('b', '10:20', '10:40'),
+        taken('a', '10:00', '10:20'),
+      ),
+    ).toEqual(['a', 'b'])
+  })
+
+  it('leaves out the lines of a booking that are not in the way', () => {
+    expect(
+      conflicts(
+        staff(),
+        taken('a', '08:00', '09:00'),
+        taken('b', '10:30', '11:30'),
+        taken('a', '13:00', '14:00'),
+      ),
+    ).toEqual(['b'])
+  })
+
+  it('names the bookings in the way of a staff member who takes more at once and is free', () => {
+    const member = staff({ maxConcurrentBookings: 3 })
+    const others = [taken('a', '10:00', '11:00'), taken('b', '10:30', '11:30')]
+
+    expect(conflicts(member, ...others)).toEqual(['a', 'b'])
+    expect(isOccupiedBeyondCapacity(member, wanted, others)).toBe(false)
+  })
 })
 
 describe('RELEASING_STATUSES', () => {

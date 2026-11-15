@@ -9,6 +9,9 @@ export {
   isOccupiedBeyondCapacity,
   occupancyWindowOf,
   RELEASING_STATUSES,
+  type StaffCapacity,
+  type TakenTime,
+  timeOf,
 } from './_shared/occupancy'
 export {
   type BookingOrigin,

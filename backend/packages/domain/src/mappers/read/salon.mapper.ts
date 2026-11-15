@@ -1,6 +1,7 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { z } from 'zod'
 import type {
+  ApiBusinessHours,
   ApiOpeningHours,
   ApiSalonResponse,
   DbOpeningHours,
@@ -19,12 +20,14 @@ import { numericSchema, timestampSchema } from './columns'
  * - `jsonb` is untyped in the database and is checked against the API model
  */
 
+const businessHoursSchema = z.array(storedBusinessHoursSchema).nullable()
+
 const convertedColumnsSchema = z.object({
   latitude: numericSchema.nullable(),
   longitude: numericSchema.nullable(),
   rating: numericSchema.nullable(),
   taxRate: numericSchema,
-  businessHours: z.array(storedBusinessHoursSchema).nullable(),
+  businessHours: businessHoursSchema,
   createdAt: timestampSchema,
   updatedAt: timestampSchema,
 })
@@ -62,17 +65,33 @@ const toApiSalon = (
         openingHours: openingHours.map(toApiOpeningHours),
       }),
     ),
-    // The request was fine; the stored row is not.
-    (error) =>
-      DomainErrors.database(
-        `Stored salon ${salon.id} does not match the API model`,
-        error,
-      ),
+    (error) => storedDoesNotMatch(salon.id, error),
   )
 }
 
+/** The request was fine; the stored row is not. */
+const storedDoesNotMatch = (id: string, cause: unknown): DomainError =>
+  DomainErrors.database(
+    `Stored salon ${id} does not match the API model`,
+    cause,
+  )
+
 export const SalonReadMapper = {
   toApiSalon,
+
+  /** The weekly hours of a salon alone, for what is worked out from them. */
+  toBusinessHours({
+    id,
+    businessHours,
+  }: Pick<DbSalon, 'id' | 'businessHours'>): Result<
+    ApiBusinessHours[] | null,
+    DomainError
+  > {
+    return Result.mapError(
+      parseWith(businessHoursSchema, businessHours, 'Invalid stored salon'),
+      (error) => storedDoesNotMatch(id, error),
+    )
+  },
 
   toApiSalons(
     salons: SalonWithOpeningHours[],

@@ -19,6 +19,12 @@ export type ServiceTime = {
   endTime: Date
 }
 
+/** The time a service takes that begins at a moment and lasts so many minutes. */
+export const timeOf = (startTime: Date, minutes: number): ServiceTime => ({
+  startTime,
+  endTime: addMinutes(startTime, minutes),
+})
+
 /** The time a service line of another booking takes. */
 export type TakenTime = ServiceTime & { bookingId: string }
 
@@ -113,4 +119,28 @@ export const isOccupiedBeyondCapacity = (
           .filter((moment) => from < moment && moment < until),
       ].some((moment) => bookingsAt(moment) >= staff.maxConcurrentBookings),
     )
+}
+
+/**
+ * The other bookings that occupy the staff member at a moment of the
+ * wanted time, each once: the one whose service line begins first comes
+ * first. A staff member who takes more than one booking at once can be
+ * free although there are some.
+ */
+export const conflictsOf = (
+  staff: StaffCapacity,
+  wanted: ServiceTime,
+  taken: readonly TakenTime[],
+): string[] => {
+  const own = occupiedBy(staff, wanted)
+  const inTheWay = taken
+    .map((time) => ({ ...time, ...occupiedBy(staff, time) }))
+    .filter(({ from, until }) => from < own.until && own.from < until)
+    .toSorted(
+      (one, other) =>
+        one.startTime.getTime() - other.startTime.getTime() ||
+        (one.bookingId < other.bookingId ? -1 : 1),
+    )
+
+  return [...new Set(inTheWay.map(({ bookingId }) => bookingId))]
 }
