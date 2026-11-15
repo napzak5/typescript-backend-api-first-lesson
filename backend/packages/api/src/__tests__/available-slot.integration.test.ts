@@ -2818,15 +2818,30 @@ describe('Available slot API', () => {
         )
       })
 
-      it('reads nothing of the bookings when the service is not there, and still the lines of the staff', async () => {
-        const id = await insertBooking(jst('14:00'))
+      it('reads no line of a service that is deleted or of another salon, and still the lines of the staff', async () => {
+        const deleted = await insertService()
+        const mine = await insertBooking(jst('14:00'), { service: deleted })
+        await deleteService(deleted)
+        const elsewhere = await salon()
+        const theirs = await insertService({}, elsewhere)
+        await insertBooking(jst('15:00'), {
+          of: elsewhere,
+          by: await staffMember({}, elsewhere),
+          service: theirs,
+        })
 
-        const day = await dayOf({ service: UNKNOWN_ID })
+        const days = [
+          await dayOf({ service: deleted }),
+          await dayOf({ service: theirs }),
+        ]
 
-        expect(day?.serviceLineStarts).toEqual([])
+        expect(days.map((day) => day?.service)).toEqual([null, null])
+        expect(days.map((day) => day?.serviceLineStarts)).toEqual([[], []])
         expect(
-          day?.staff.at(0)?.taken.map(({ bookingId }) => bookingId),
-        ).toEqual([id])
+          days.map((day) =>
+            day?.staff.at(0)?.taken.map(({ bookingId }) => bookingId),
+          ),
+        ).toEqual([[mine], [mine]])
       })
     })
 
