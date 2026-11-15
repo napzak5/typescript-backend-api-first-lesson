@@ -8,7 +8,7 @@ import {
 } from '@beauty-salon-backend/domain'
 import { CustomerRepository } from '@beauty-salon-backend/infrastructure'
 import type { Result } from '@beauty-salon-backend/utility'
-import { and, asc, eq, isNull, sql } from 'drizzle-orm'
+import { and, asc, eq, inArray, isNull, sql } from 'drizzle-orm'
 import type { Express } from 'express'
 import type { Response, Test } from 'supertest'
 import { beforeEach, describe, expect, it } from 'vitest'
@@ -1858,11 +1858,12 @@ describe('Customer API', () => {
   })
 
   describe('DELETE /api/v1/customers/:id', () => {
-    it('marks the customer as deleted and keeps its row, and leaves the other customers, their referrer and the linked login account as they are', async () => {
+    it('marks the customer as deleted and keeps its row, leaves the other customers and their referrer as they are, and takes the customer from the login account that has it, and from no other', async () => {
       const deleted = await createCustomer()
       const referred = await createCustomer({ referredBy: deleted.id })
       const other = await createCustomer()
       const account = await insertUser(db, { customerId: deleted.id })
+      const otherAccount = await insertUser(db, { customerId: other.id })
       const before = await storedCustomer(deleted.id)
       const othersBefore = [
         await storedCustomer(referred.id),
@@ -1884,11 +1885,18 @@ describe('Customer API', () => {
         await storedCustomer(other.id),
       ]).toEqual(othersBefore)
       expect((await get(referred.id)).body.data.referredBy).toBe(deleted.id)
-      const [user] = await db
-        .select({ customerId: users.customerId })
+      const links = await db
+        .select({ id: users.id, customerId: users.customerId })
         .from(users)
-        .where(eq(users.id, account.id))
-      expect(user?.customerId).toBe(deleted.id)
+        .where(inArray(users.id, [account.id, otherAccount.id]))
+      expect(
+        links.toSorted((left, right) => (left.id < right.id ? -1 : 1)),
+      ).toEqual(
+        [
+          { id: account.id, customerId: null },
+          { id: otherAccount.id, customerId: other.id },
+        ].toSorted((left, right) => (left.id < right.id ? -1 : 1)),
+      )
     })
 
     it('hides the deleted customer from get, update, delete, the list and its total, and as a referrer', async () => {
