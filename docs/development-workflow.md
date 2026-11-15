@@ -96,7 +96,7 @@ curl http://localhost:3000/api/v1/salons      # サロン一覧（認証なし�
 顧客台帳（`/api/v1/customers` の一覧、登録、1 件の取得、更新、削除）、
 顧客本人のプロフィール（`/api/v1/customers/me` の取得、作成、更新）、
 顧客の好み設定（`/api/v1/customers/{id}/preferences` と `/api/v1/customers/me/preferences` の取得、更新）、
-予約台帳（`/api/v1/bookings` の一覧、作成、1 件の取得）、
+予約台帳（`/api/v1/bookings` の一覧、作成、1 件の取得と、ステータスの 5 つの操作）、
 認証のすべてのオペレーション（`/api/v1/auth` のログイン、トークンの更新、
 ログアウト、現在のユーザーの取得、ユーザー登録、メールアドレスの確認、パスワードの再設定と変更、
 スタッフの招待の確認、受け入れ、参加、2 要素認証、セッションの一覧と無効化、および `/api/v1/admin/auth` の管理者の操作）、
