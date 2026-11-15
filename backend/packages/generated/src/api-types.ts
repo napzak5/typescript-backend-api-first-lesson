@@ -2525,13 +2525,13 @@ export interface paths {
         };
         /**
          * List staff members
-         * @description サロンに所属するスタッフを、ページネーションを指定して一覧取得し、配置状況や担当可能メニューを確認します。削除済みのスタッフは含みません。サロンが存在しない場合は404を返します。
+         * @description サロンのスタッフを、ページネーションを指定して一覧取得します。登録日時の古い順に並びます。削除済みのスタッフは含みません。cursorがそのサロンのスタッフを指していない場合は400を返します。
          */
         get: operations["StaffCrud_list"];
         put?: never;
         /**
          * Create staff member
-         * @description 新しいスタッフを登録し、プロフィール情報や担当メニューの設定を開始します。サロンが存在しない場合は404を、userIdに存在しないユーザーを指定した場合は400を、メールアドレスまたはスタッフコードが既存のスタッフと重複する場合は409を返します。
+         * @description サロンにスタッフを登録します。メールアドレスが同じサロンの削除されていないスタッフと重複する場合と、スタッフコードが同じサロンのスタッフ(削除済みを含む)と重複する場合は409を返します。
          */
         post: operations["StaffCrud_create"];
         delete?: never;
@@ -2549,21 +2549,21 @@ export interface paths {
         };
         /**
          * Get staff member
-         * @description 特定スタッフの詳細情報を取得し、顧客向け表示や社内確認に利用します。
+         * @description IDを指定してスタッフを1件取得します。削除済みのスタッフは404を返します。
          */
         get: operations["StaffCrud_get"];
         put?: never;
         post?: never;
         /**
          * Delete staff member
-         * @description 退職や契約終了に伴いスタッフを論理削除し、予約導線から除外します。削除後は一覧・取得の対象外になります。
+         * @description スタッフを論理削除します。削除後は一覧・取得の対象外になり、メールアドレスは別のスタッフの登録に使えるようになります。このスタッフに紐づくログインアカウントは、サロンへの権限を失います。自分自身のスタッフ情報は削除できず、409を返します。
          */
         delete: operations["StaffCrud_delete"];
         options?: never;
         head?: never;
         /**
          * Update staff member
-         * @description スタッフのプロフィールや担当メニュー、表示可否のうち指定した項目だけを更新します。userIdに存在しないユーザーを指定した場合は400を、メールアドレスまたはスタッフコードが既存のスタッフと重複する場合は409を返します。
+         * @description 指定した項目だけを更新します。メールアドレスが同じサロンの削除されていないほかのスタッフと重複する場合と、スタッフコードが同じサロンのほかのスタッフ(削除済みを含む)と重複する場合は409を返します。自分自身のスタッフ情報の isActive を false にする場合も409を返します。
          */
         patch: operations["StaffCrud_update"];
         trace?: never;
@@ -8070,11 +8070,9 @@ export interface components {
         };
         /**
          * @description スタッフ新規登録リクエスト - 全項目のキーが必須。DB で NULL 許可のカラムのみ null を指定できる。
-         *     所属サロンはパスの salonId で指定する。勤務スケジュールは勤務スケジュール更新(updateAvailability)で登録する
+         *     所属サロンはパスの salonId で指定する。ログインアカウントとの紐づけ(userId)は指定できない
          */
         "Models.StaffCreateRequest": {
-            /** @description スタッフがログインに使うユーザーアカウントのID。存在するユーザーを指定する。ログインアカウントと紐づけない場合はnull */
-            userId: (string & components["schemas"]["Models.UserId"]) | null;
             /** @description 名 */
             firstName: string;
             /** @description 姓 */
@@ -8085,7 +8083,7 @@ export interface components {
             lastNameKana: string | null;
             /** @description 顧客向けに表示するスタッフ名 */
             displayName: string;
-            /** @description 連絡用メールアドレス。削除済みを含むすべてのスタッフの間で一意 */
+            /** @description 連絡用メールアドレス。小文字にして保存する。同じサロンの削除されていないスタッフの間で一意 */
             email: string;
             /** @description 連絡用電話番号 */
             phoneNumber: string;
@@ -8097,8 +8095,8 @@ export interface components {
             level: components["schemas"]["Models.StaffLevelType"];
             /** @description 役職名。未設定の場合はnull */
             position: string | null;
-            /** @description 得意分野や専門メニューの一覧。未設定の場合はnull */
-            specialties: string[] | null;
+            /** @description 得意分野や専門メニューの一覧。ない場合は空配列。空白だけの要素と、同じ要素の繰り返しは指定できない */
+            specialties: string[];
             /** @description 自己紹介や経歴の概要 - プロフィール未記入の新人スタッフの場合はnull */
             bio: string | null;
             /** @description プロフィール画像のURL - プロフィール画像未設定の場合はnull */
@@ -8108,8 +8106,8 @@ export interface components {
              * @description 実務経験年数 - 経験年数未記載またはアシスタントスタッフの場合はnull
              */
             yearsOfExperience: number | null;
-            /** @description 保有資格名の一覧 (テキスト管理) - 資格なしの新人やアシスタントの場合はnull */
-            certifications: string[] | null;
+            /** @description 保有資格名の一覧 (テキスト管理)。ない場合は空配列。空白だけの要素と、同じ要素の繰り返しは指定できない */
+            certifications: string[];
             /**
              * Format: date
              * @description 入社日。未設定の場合はnull
@@ -8124,7 +8122,7 @@ export interface components {
             baseSalary: number | null;
             /**
              * Format: double
-             * @description 歩合率(%)。未設定の場合はnull
+             * @description 歩合率(%)。小数第2位まで。未設定の場合はnull
              */
             commissionRate: number | null;
             /** @description 予約を受け付けるかどうか */
@@ -8136,15 +8134,15 @@ export interface components {
             maxConcurrentBookings: number;
             /**
              * Format: int32
-             * @description 予約の前に確保する準備時間(分)。未設定の場合はnull
+             * @description 予約の前に確保する準備時間(分)。確保しない場合は0
              */
-            bufferTimeBefore: number | null;
+            bufferTimeBefore: number;
             /**
              * Format: int32
-             * @description 予約の後に確保する片付け時間(分)。未設定の場合はnull
+             * @description 予約の後に確保する片付け時間(分)。確保しない場合は0
              */
-            bufferTimeAfter: number | null;
-            /** @description 現在スタッフがアクティブに勤務可能かを示すフラグ */
+            bufferTimeAfter: number;
+            /** @description 在籍して勤務しているかどうか */
             isActive: boolean;
         };
         /**
@@ -8186,15 +8184,16 @@ export interface components {
 
         "Models.StaffLevelType": "junior" | "stylist" | "senior" | "expert" | "director";
         /**
-         * @description スタッフレスポンス - staff テーブルの公開カラムと、勤務スケジュール(staff_schedules)を返す。
-         *     プロパティ名と null 許可は DB カラムと一致させている。
+         * @description スタッフ台帳のレスポンス - staff テーブルの1行。雇用の情報(基本給、歩合率、雇用形態、入社日)と個人の連絡先を含むので、
+         *     admin と、そのサロンの owner だけに返す。プロパティ名と null 許可は DB カラムと一致させている。
+         *     勤務スケジュール(staff_schedules)は含まない
          */
         "Models.StaffResponse": {
             /** @description スタッフを一意に識別するID */
             id: components["schemas"]["Models.StaffId"];
             /** @description 所属サロンのID */
             salonId: components["schemas"]["Models.SalonId"];
-            /** @description スタッフがログインに使うユーザーアカウントのID。ログインアカウントと紐づいていない場合はnull */
+            /** @description スタッフがログインに使うユーザーアカウントのID。ログインアカウントと紐づいていない場合はnull。登録と更新のリクエストでは指定できない */
             userId: (string & components["schemas"]["Models.UserId"]) | null;
             /** @description 名 */
             firstName: string;
@@ -8206,7 +8205,7 @@ export interface components {
             lastNameKana: string | null;
             /** @description 顧客向けに表示するスタッフ名 */
             displayName: string;
-            /** @description 連絡用メールアドレス。削除済みを含むすべてのスタッフの間で一意 */
+            /** @description 連絡用メールアドレス。小文字で保存する。同じサロンの削除されていないスタッフの間で一意 */
             email: string;
             /** @description 連絡用電話番号 */
             phoneNumber: string;
@@ -8218,8 +8217,8 @@ export interface components {
             level: components["schemas"]["Models.StaffLevelType"];
             /** @description 役職名。未設定の場合はnull */
             position: string | null;
-            /** @description 得意分野や専門メニューの一覧。未設定の場合はnull */
-            specialties: string[] | null;
+            /** @description 得意分野や専門メニューの一覧。ない場合は空配列 */
+            specialties: string[];
             /** @description 自己紹介や経歴の概要 - プロフィール未記入の新人スタッフの場合はnull */
             bio: string | null;
             /** @description プロフィール画像のURL - プロフィール画像未設定の場合はnull */
@@ -8229,8 +8228,8 @@ export interface components {
              * @description 実務経験年数 - 経験年数未記載またはアシスタントスタッフの場合はnull
              */
             yearsOfExperience: number | null;
-            /** @description 保有資格名の一覧 (テキスト管理) - 資格なしの新人やアシスタントの場合はnull */
-            certifications: string[] | null;
+            /** @description 保有資格名の一覧 (テキスト管理)。ない場合は空配列 */
+            certifications: string[];
             /**
              * Format: date
              * @description 入社日。未設定の場合はnull
@@ -8257,18 +8256,16 @@ export interface components {
             maxConcurrentBookings: number;
             /**
              * Format: int32
-             * @description 予約の前に確保する準備時間(分)。未設定の場合はnull
+             * @description 予約の前に確保する準備時間(分)。確保しない場合は0
              */
-            bufferTimeBefore: number | null;
+            bufferTimeBefore: number;
             /**
              * Format: int32
-             * @description 予約の後に確保する片付け時間(分)。未設定の場合はnull
+             * @description 予約の後に確保する片付け時間(分)。確保しない場合は0
              */
-            bufferTimeAfter: number | null;
-            /** @description 現在スタッフがアクティブに勤務可能かを示すフラグ */
+            bufferTimeAfter: number;
+            /** @description 在籍して勤務しているかどうか。falseの間、このスタッフに紐づくログインアカウントは、サロンへの権限を持たない */
             isActive: boolean;
-            /** @description 勤務スケジュールの一覧。毎週繰り返す行と単日の行を含む。スケジュールが登録されていない場合は空配列 */
-            schedules: components["schemas"]["Models.StaffSchedule"][];
             /**
              * Format: date-time
              * @description レコード作成日時
@@ -8328,11 +8325,9 @@ export interface components {
         };
         /**
          * @description スタッフ部分更新リクエスト - 指定した項目だけを更新する。DB で NULL 許可のカラムは null でクリアできる。
-         *     所属サロンは変更できない。勤務スケジュールは勤務スケジュール更新(updateAvailability)で更新する
+         *     項目を1つも指定しないリクエストは受け付けない。所属サロンと、ログインアカウントとの紐づけ(userId)は変更できない
          */
         "Models.StaffUpdateRequest": {
-            /** @description スタッフがログインに使うユーザーアカウントのID。存在するユーザーを指定する。nullでクリア(ログインアカウントとの紐づけを外す) */
-            userId?: (string & components["schemas"]["Models.UserId"]) | null;
             /** @description 名 */
             firstName?: string;
             /** @description 姓 */
@@ -8343,7 +8338,7 @@ export interface components {
             lastNameKana?: string | null;
             /** @description 顧客向けに表示するスタッフ名 */
             displayName?: string;
-            /** @description 連絡用メールアドレス。削除済みを含むすべてのスタッフの間で一意 */
+            /** @description 連絡用メールアドレス。小文字にして保存する。同じサロンの削除されていないスタッフの間で一意 */
             email?: string;
             /** @description 連絡用電話番号 */
             phoneNumber?: string;
@@ -8355,8 +8350,8 @@ export interface components {
             level?: components["schemas"]["Models.StaffLevelType"];
             /** @description 役職名。nullでクリア */
             position?: string | null;
-            /** @description 得意分野や専門メニューの一覧。nullでクリア */
-            specialties?: string[] | null;
+            /** @description 得意分野や専門メニューの一覧。指定した一覧で置き換える。空白だけの要素と、同じ要素の繰り返しは指定できない */
+            specialties?: string[];
             /** @description 自己紹介や経歴の概要。nullでクリア */
             bio?: string | null;
             /** @description プロフィール画像のURL。nullでクリア */
@@ -8366,8 +8361,8 @@ export interface components {
              * @description 実務経験年数。nullでクリア
              */
             yearsOfExperience?: number | null;
-            /** @description 保有資格名の一覧 (テキスト管理)。nullでクリア */
-            certifications?: string[] | null;
+            /** @description 保有資格名の一覧 (テキスト管理)。指定した一覧で置き換える。空白だけの要素と、同じ要素の繰り返しは指定できない */
+            certifications?: string[];
             /**
              * Format: date
              * @description 入社日。nullでクリア
@@ -8382,7 +8377,7 @@ export interface components {
             baseSalary?: number | null;
             /**
              * Format: double
-             * @description 歩合率(%)。nullでクリア
+             * @description 歩合率(%)。小数第2位まで。nullでクリア
              */
             commissionRate?: number | null;
             /** @description 予約を受け付けるかどうか */
@@ -8394,15 +8389,15 @@ export interface components {
             maxConcurrentBookings?: number;
             /**
              * Format: int32
-             * @description 予約の前に確保する準備時間(分)。nullでクリア
+             * @description 予約の前に確保する準備時間(分)。確保しない場合は0
              */
-            bufferTimeBefore?: number | null;
+            bufferTimeBefore?: number;
             /**
              * Format: int32
-             * @description 予約の後に確保する片付け時間(分)。nullでクリア
+             * @description 予約の後に確保する片付け時間(分)。確保しない場合は0
              */
-            bufferTimeAfter?: number | null;
-            /** @description 現在スタッフがアクティブに勤務可能かを示すフラグ */
+            bufferTimeAfter?: number;
+            /** @description 在籍して勤務しているかどうか。自分自身のスタッフ情報では、falseにできない */
             isActive?: boolean;
         };
         /** @description スタイルの好み - customer_preferences.stylePreferences(jsonb) に保存する構造 */
@@ -25220,6 +25215,15 @@ export interface operations {
             };
             /** @description The server cannot find the requested resource. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The request conflicts with the current state of the server. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

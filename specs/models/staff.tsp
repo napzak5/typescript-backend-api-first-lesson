@@ -41,8 +41,9 @@ namespace BeautySalon.Models {
   }
 
   @doc("""
-    スタッフレスポンス - staff テーブルの公開カラムと、勤務スケジュール(staff_schedules)を返す。
-    プロパティ名と null 許可は DB カラムと一致させている。
+    スタッフ台帳のレスポンス - staff テーブルの1行。雇用の情報(基本給、歩合率、雇用形態、入社日)と個人の連絡先を含むので、
+    admin と、そのサロンの owner だけに返す。プロパティ名と null 許可は DB カラムと一致させている。
+    勤務スケジュール(staff_schedules)は含まない
     """)
   model StaffResponse {
     @doc("スタッフを一意に識別するID")
@@ -51,7 +52,7 @@ namespace BeautySalon.Models {
     @doc("所属サロンのID")
     salonId: SalonId;
 
-    @doc("スタッフがログインに使うユーザーアカウントのID。ログインアカウントと紐づいていない場合はnull")
+    @doc("スタッフがログインに使うユーザーアカウントのID。ログインアカウントと紐づいていない場合はnull。登録と更新のリクエストでは指定できない")
     userId: UserId | null;
 
     @doc("名")
@@ -69,7 +70,7 @@ namespace BeautySalon.Models {
     @doc("顧客向けに表示するスタッフ名")
     displayName: string;
 
-    @doc("連絡用メールアドレス。削除済みを含むすべてのスタッフの間で一意")
+    @doc("連絡用メールアドレス。小文字で保存する。同じサロンの削除されていないスタッフの間で一意")
     email: string;
 
     @doc("連絡用電話番号")
@@ -87,8 +88,8 @@ namespace BeautySalon.Models {
     @doc("役職名。未設定の場合はnull")
     position: string | null;
 
-    @doc("得意分野や専門メニューの一覧。未設定の場合はnull")
-    specialties: string[] | null;
+    @doc("得意分野や専門メニューの一覧。ない場合は空配列")
+    specialties: string[];
 
     @doc("自己紹介や経歴の概要 - プロフィール未記入の新人スタッフの場合はnull")
     bio: string | null;
@@ -99,8 +100,8 @@ namespace BeautySalon.Models {
     @doc("実務経験年数 - 経験年数未記載またはアシスタントスタッフの場合はnull")
     yearsOfExperience: int32 | null;
 
-    @doc("保有資格名の一覧 (テキスト管理) - 資格なしの新人やアシスタントの場合はnull")
-    certifications: string[] | null;
+    @doc("保有資格名の一覧 (テキスト管理)。ない場合は空配列")
+    certifications: string[];
 
     @doc("入社日。未設定の場合はnull")
     hireDate: plainDate | null;
@@ -120,17 +121,14 @@ namespace BeautySalon.Models {
     @doc("同時に担当できる予約の上限数")
     maxConcurrentBookings: int32;
 
-    @doc("予約の前に確保する準備時間(分)。未設定の場合はnull")
-    bufferTimeBefore: int32 | null;
+    @doc("予約の前に確保する準備時間(分)。確保しない場合は0")
+    bufferTimeBefore: int32;
 
-    @doc("予約の後に確保する片付け時間(分)。未設定の場合はnull")
-    bufferTimeAfter: int32 | null;
+    @doc("予約の後に確保する片付け時間(分)。確保しない場合は0")
+    bufferTimeAfter: int32;
 
-    @doc("現在スタッフがアクティブに勤務可能かを示すフラグ")
+    @doc("在籍して勤務しているかどうか。falseの間、このスタッフに紐づくログインアカウントは、サロンへの権限を持たない")
     isActive: boolean;
-
-    @doc("勤務スケジュールの一覧。毎週繰り返す行と単日の行を含む。スケジュールが登録されていない場合は空配列")
-    schedules: StaffSchedule[];
 
     @doc("レコード作成日時")
     createdAt: utcDateTime;
@@ -141,12 +139,9 @@ namespace BeautySalon.Models {
 
   @doc("""
     スタッフ新規登録リクエスト - 全項目のキーが必須。DB で NULL 許可のカラムのみ null を指定できる。
-    所属サロンはパスの salonId で指定する。勤務スケジュールは勤務スケジュール更新(updateAvailability)で登録する
+    所属サロンはパスの salonId で指定する。ログインアカウントとの紐づけ(userId)は指定できない
     """)
   model StaffCreateRequest {
-    @doc("スタッフがログインに使うユーザーアカウントのID。存在するユーザーを指定する。ログインアカウントと紐づけない場合はnull")
-    userId: UserId | null;
-
     @doc("名")
     @minLength(1)
     @maxLength(100)
@@ -170,7 +165,7 @@ namespace BeautySalon.Models {
     @maxLength(255)
     displayName: string;
 
-    @doc("連絡用メールアドレス。削除済みを含むすべてのスタッフの間で一意")
+    @doc("連絡用メールアドレス。小文字にして保存する。同じサロンの削除されていないスタッフの間で一意")
     @maxLength(255)
     email: string;
 
@@ -193,8 +188,8 @@ namespace BeautySalon.Models {
     @maxLength(100)
     position: string | null;
 
-    @doc("得意分野や専門メニューの一覧。未設定の場合はnull")
-    specialties: string[] | null;
+    @doc("得意分野や専門メニューの一覧。ない場合は空配列。空白だけの要素と、同じ要素の繰り返しは指定できない")
+    specialties: string[];
 
     @doc("自己紹介や経歴の概要 - プロフィール未記入の新人スタッフの場合はnull")
     bio: string | null;
@@ -208,8 +203,8 @@ namespace BeautySalon.Models {
     @maxValue(100)
     yearsOfExperience: int32 | null;
 
-    @doc("保有資格名の一覧 (テキスト管理) - 資格なしの新人やアシスタントの場合はnull")
-    certifications: string[] | null;
+    @doc("保有資格名の一覧 (テキスト管理)。ない場合は空配列。空白だけの要素と、同じ要素の繰り返しは指定できない")
+    certifications: string[];
 
     @doc("入社日。未設定の場合はnull")
     hireDate: plainDate | null;
@@ -222,7 +217,7 @@ namespace BeautySalon.Models {
     @minValue(0)
     baseSalary: int32 | null;
 
-    @doc("歩合率(%)。未設定の場合はnull")
+    @doc("歩合率(%)。小数第2位まで。未設定の場合はnull")
     @minValue(0)
     @maxValue(100)
     commissionRate: float64 | null;
@@ -235,28 +230,25 @@ namespace BeautySalon.Models {
     @maxValue(10)
     maxConcurrentBookings: int32;
 
-    @doc("予約の前に確保する準備時間(分)。未設定の場合はnull")
+    @doc("予約の前に確保する準備時間(分)。確保しない場合は0")
     @minValue(0)
     @maxValue(120)
-    bufferTimeBefore: int32 | null;
+    bufferTimeBefore: int32;
 
-    @doc("予約の後に確保する片付け時間(分)。未設定の場合はnull")
+    @doc("予約の後に確保する片付け時間(分)。確保しない場合は0")
     @minValue(0)
     @maxValue(120)
-    bufferTimeAfter: int32 | null;
+    bufferTimeAfter: int32;
 
-    @doc("現在スタッフがアクティブに勤務可能かを示すフラグ")
+    @doc("在籍して勤務しているかどうか")
     isActive: boolean;
   }
 
   @doc("""
     スタッフ部分更新リクエスト - 指定した項目だけを更新する。DB で NULL 許可のカラムは null でクリアできる。
-    所属サロンは変更できない。勤務スケジュールは勤務スケジュール更新(updateAvailability)で更新する
+    項目を1つも指定しないリクエストは受け付けない。所属サロンと、ログインアカウントとの紐づけ(userId)は変更できない
     """)
   model StaffUpdateRequest {
-    @doc("スタッフがログインに使うユーザーアカウントのID。存在するユーザーを指定する。nullでクリア(ログインアカウントとの紐づけを外す)")
-    userId?: UserId | null;
-
     @doc("名")
     @minLength(1)
     @maxLength(100)
@@ -280,7 +272,7 @@ namespace BeautySalon.Models {
     @maxLength(255)
     displayName?: string;
 
-    @doc("連絡用メールアドレス。削除済みを含むすべてのスタッフの間で一意")
+    @doc("連絡用メールアドレス。小文字にして保存する。同じサロンの削除されていないスタッフの間で一意")
     @maxLength(255)
     email?: string;
 
@@ -303,8 +295,8 @@ namespace BeautySalon.Models {
     @maxLength(100)
     position?: string | null;
 
-    @doc("得意分野や専門メニューの一覧。nullでクリア")
-    specialties?: string[] | null;
+    @doc("得意分野や専門メニューの一覧。指定した一覧で置き換える。空白だけの要素と、同じ要素の繰り返しは指定できない")
+    specialties?: string[];
 
     @doc("自己紹介や経歴の概要。nullでクリア")
     bio?: string | null;
@@ -318,8 +310,8 @@ namespace BeautySalon.Models {
     @maxValue(100)
     yearsOfExperience?: int32 | null;
 
-    @doc("保有資格名の一覧 (テキスト管理)。nullでクリア")
-    certifications?: string[] | null;
+    @doc("保有資格名の一覧 (テキスト管理)。指定した一覧で置き換える。空白だけの要素と、同じ要素の繰り返しは指定できない")
+    certifications?: string[];
 
     @doc("入社日。nullでクリア")
     hireDate?: plainDate | null;
@@ -332,7 +324,7 @@ namespace BeautySalon.Models {
     @minValue(0)
     baseSalary?: int32 | null;
 
-    @doc("歩合率(%)。nullでクリア")
+    @doc("歩合率(%)。小数第2位まで。nullでクリア")
     @minValue(0)
     @maxValue(100)
     commissionRate?: float64 | null;
@@ -345,17 +337,17 @@ namespace BeautySalon.Models {
     @maxValue(10)
     maxConcurrentBookings?: int32;
 
-    @doc("予約の前に確保する準備時間(分)。nullでクリア")
+    @doc("予約の前に確保する準備時間(分)。確保しない場合は0")
     @minValue(0)
     @maxValue(120)
-    bufferTimeBefore?: int32 | null;
+    bufferTimeBefore?: int32;
 
-    @doc("予約の後に確保する片付け時間(分)。nullでクリア")
+    @doc("予約の後に確保する片付け時間(分)。確保しない場合は0")
     @minValue(0)
     @maxValue(120)
-    bufferTimeAfter?: int32 | null;
+    bufferTimeAfter?: int32;
 
-    @doc("現在スタッフがアクティブに勤務可能かを示すフラグ")
+    @doc("在籍して勤務しているかどうか。自分自身のスタッフ情報では、falseにできない")
     isActive?: boolean;
   }
 

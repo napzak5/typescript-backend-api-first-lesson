@@ -9,14 +9,9 @@ import type { ModelsStaffLevelType } from './modelsStaffLevelType';
 
 /**
  * スタッフ新規登録リクエスト - 全項目のキーが必須。DB で NULL 許可のカラムのみ null を指定できる。
- * 所属サロンはパスの salonId で指定する。勤務スケジュールは勤務スケジュール更新(updateAvailability)で登録する
+ * 所属サロンはパスの salonId で指定する。ログインアカウントとの紐づけ(userId)は指定できない
  */
 export interface ModelsStaffCreateRequest {
-  /**
-     * スタッフがログインに使うユーザーアカウントのID。存在するユーザーを指定する。ログインアカウントと紐づけない場合はnull
-     * @nullable
-     */
-  userId: string | null;
   /**
      * 名
      * @minLength 1
@@ -48,7 +43,7 @@ export interface ModelsStaffCreateRequest {
      */
   displayName: string;
   /**
-     * 連絡用メールアドレス。削除済みを含むすべてのスタッフの間で一意
+     * 連絡用メールアドレス。小文字にして保存する。同じサロンの削除されていないスタッフの間で一意
      * @maxLength 255
      */
   email: string;
@@ -77,11 +72,8 @@ export interface ModelsStaffCreateRequest {
      * @nullable
      */
   position: string | null;
-  /**
-     * 得意分野や専門メニューの一覧。未設定の場合はnull
-     * @nullable
-     */
-  specialties: string[] | null;
+  /** 得意分野や専門メニューの一覧。ない場合は空配列。空白だけの要素と、同じ要素の繰り返しは指定できない */
+  specialties: string[];
   /**
      * 自己紹介や経歴の概要 - プロフィール未記入の新人スタッフの場合はnull
      * @nullable
@@ -100,11 +92,8 @@ export interface ModelsStaffCreateRequest {
      * @nullable
      */
   yearsOfExperience: number | null;
-  /**
-     * 保有資格名の一覧 (テキスト管理) - 資格なしの新人やアシスタントの場合はnull
-     * @nullable
-     */
-  certifications: string[] | null;
+  /** 保有資格名の一覧 (テキスト管理)。ない場合は空配列。空白だけの要素と、同じ要素の繰り返しは指定できない */
+  certifications: string[];
   /**
      * 入社日。未設定の場合はnull
      * @nullable
@@ -123,7 +112,7 @@ export interface ModelsStaffCreateRequest {
      */
   baseSalary: number | null;
   /**
-     * 歩合率(%)。未設定の場合はnull
+     * 歩合率(%)。小数第2位まで。未設定の場合はnull
      * @minimum 0
      * @maximum 100
      * @nullable
@@ -138,19 +127,17 @@ export interface ModelsStaffCreateRequest {
      */
   maxConcurrentBookings: number;
   /**
-     * 予約の前に確保する準備時間(分)。未設定の場合はnull
+     * 予約の前に確保する準備時間(分)。確保しない場合は0
      * @minimum 0
      * @maximum 120
-     * @nullable
      */
-  bufferTimeBefore: number | null;
+  bufferTimeBefore: number;
   /**
-     * 予約の後に確保する片付け時間(分)。未設定の場合はnull
+     * 予約の後に確保する片付け時間(分)。確保しない場合は0
      * @minimum 0
      * @maximum 120
-     * @nullable
      */
-  bufferTimeAfter: number | null;
-  /** 現在スタッフがアクティブに勤務可能かを示すフラグ */
+  bufferTimeAfter: number;
+  /** 在籍して勤務しているかどうか */
   isActive: boolean;
 }

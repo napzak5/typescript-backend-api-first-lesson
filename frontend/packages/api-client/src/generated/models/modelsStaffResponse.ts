@@ -8,11 +8,11 @@
 import type { ModelsSalonId } from './modelsSalonId';
 import type { ModelsStaffId } from './modelsStaffId';
 import type { ModelsStaffLevelType } from './modelsStaffLevelType';
-import type { ModelsStaffSchedule } from './modelsStaffSchedule';
 
 /**
- * スタッフレスポンス - staff テーブルの公開カラムと、勤務スケジュール(staff_schedules)を返す。
- * プロパティ名と null 許可は DB カラムと一致させている。
+ * スタッフ台帳のレスポンス - staff テーブルの1行。雇用の情報(基本給、歩合率、雇用形態、入社日)と個人の連絡先を含むので、
+ * admin と、そのサロンの owner だけに返す。プロパティ名と null 許可は DB カラムと一致させている。
+ * 勤務スケジュール(staff_schedules)は含まない
  */
 export interface ModelsStaffResponse {
   /** スタッフを一意に識別するID */
@@ -20,7 +20,7 @@ export interface ModelsStaffResponse {
   /** 所属サロンのID */
   salonId: ModelsSalonId;
   /**
-     * スタッフがログインに使うユーザーアカウントのID。ログインアカウントと紐づいていない場合はnull
+     * スタッフがログインに使うユーザーアカウントのID。ログインアカウントと紐づいていない場合はnull。登録と更新のリクエストでは指定できない
      * @nullable
      */
   userId: string | null;
@@ -40,7 +40,7 @@ export interface ModelsStaffResponse {
   lastNameKana: string | null;
   /** 顧客向けに表示するスタッフ名 */
   displayName: string;
-  /** 連絡用メールアドレス。削除済みを含むすべてのスタッフの間で一意 */
+  /** 連絡用メールアドレス。小文字で保存する。同じサロンの削除されていないスタッフの間で一意 */
   email: string;
   /** 連絡用電話番号 */
   phoneNumber: string;
@@ -61,11 +61,8 @@ export interface ModelsStaffResponse {
      * @nullable
      */
   position: string | null;
-  /**
-     * 得意分野や専門メニューの一覧。未設定の場合はnull
-     * @nullable
-     */
-  specialties: string[] | null;
+  /** 得意分野や専門メニューの一覧。ない場合は空配列 */
+  specialties: string[];
   /**
      * 自己紹介や経歴の概要 - プロフィール未記入の新人スタッフの場合はnull
      * @nullable
@@ -81,11 +78,8 @@ export interface ModelsStaffResponse {
      * @nullable
      */
   yearsOfExperience: number | null;
-  /**
-     * 保有資格名の一覧 (テキスト管理) - 資格なしの新人やアシスタントの場合はnull
-     * @nullable
-     */
-  certifications: string[] | null;
+  /** 保有資格名の一覧 (テキスト管理)。ない場合は空配列 */
+  certifications: string[];
   /**
      * 入社日。未設定の場合はnull
      * @nullable
@@ -110,20 +104,12 @@ export interface ModelsStaffResponse {
   canReceiveBookings: boolean;
   /** 同時に担当できる予約の上限数 */
   maxConcurrentBookings: number;
-  /**
-     * 予約の前に確保する準備時間(分)。未設定の場合はnull
-     * @nullable
-     */
-  bufferTimeBefore: number | null;
-  /**
-     * 予約の後に確保する片付け時間(分)。未設定の場合はnull
-     * @nullable
-     */
-  bufferTimeAfter: number | null;
-  /** 現在スタッフがアクティブに勤務可能かを示すフラグ */
+  /** 予約の前に確保する準備時間(分)。確保しない場合は0 */
+  bufferTimeBefore: number;
+  /** 予約の後に確保する片付け時間(分)。確保しない場合は0 */
+  bufferTimeAfter: number;
+  /** 在籍して勤務しているかどうか。falseの間、このスタッフに紐づくログインアカウントは、サロンへの権限を持たない */
   isActive: boolean;
-  /** 勤務スケジュールの一覧。毎週繰り返す行と単日の行を含む。スケジュールが登録されていない場合は空配列 */
-  schedules: ModelsStaffSchedule[];
   /** レコード作成日時 */
   createdAt: string;
   /** レコード最終更新日時 */
