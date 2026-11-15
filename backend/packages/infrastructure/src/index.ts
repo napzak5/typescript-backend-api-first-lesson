@@ -25,6 +25,7 @@ export { ServiceRepository } from './repositories/service.repository.impl'
 export { ServiceCategoryRepository } from './repositories/service-category.repository.impl'
 export { SessionRepository } from './repositories/session.repository.impl'
 export { StaffRepository } from './repositories/staff.repository.impl'
+export { StaffProfileRepository } from './repositories/staff-profile.repository.impl'
 export { UserRepository } from './repositories/user.repository.impl'
 
 // Passwords and tokens
