@@ -118,6 +118,7 @@ export const actors = {
   ofSalon: (role: 'owner' | 'manager' | 'staff', salonId = SALON_ID): Actor =>
     actorWith({ type: 'salon', role, salonId, staffId: STAFF_ID }),
   customer: actorWith({ type: 'customer', customerId: CUSTOMER_ID }),
+  customerWithoutProfile: actorWith({ type: 'customer', customerId: null }),
   withoutScope: actorWith({ type: 'none' }),
 }
 

@@ -977,13 +977,13 @@ describe('the scope of an actor', () => {
       'a customer without a customer record',
       { role: 'customer' },
       null,
-      { type: 'none' },
+      { type: 'customer', customerId: null },
     ],
     [
-      'a customer linked to a staff member',
+      'a customer linked only to a staff member',
       { role: 'customer', staffId: STAFF_ID },
       SALON_ID,
-      { type: 'none' },
+      { type: 'customer', customerId: null },
     ],
     [
       'a manager with only a customer record',

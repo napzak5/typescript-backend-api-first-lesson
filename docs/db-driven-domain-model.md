@@ -46,6 +46,7 @@ PostgreSQL ── pnpm db:introspect ──▶ schema.ts     api-types.ts
 - カラム名は camelCase なので、SQL では二重引用符で囲む
 - CHECK 制約は、`CASE` を使わずに 1 つの論理式（`AND`・`OR`・`NOT`）で書く。`pnpm db:introspect` は `CASE` を含む CHECK 制約を `schema.ts` に再現しないので、`schema.ts` と、そこから生成する `sql/setup.sql` が、マイグレーションを適用した DB と一致しなくなる。場合分けは `OR` でつなぐ（`202611150300_services_columns.sql` の `services_package_members`）
 - `varchar` 列を値の一覧と比べる CHECK 制約は、列を `text` にしてから比べる（`gender::text IN ('male', …)`）。`gender IN (…)` と書くと、PostgreSQL が保存する式（`… = ANY ((ARRAY['male'::character varying, …])::text[])`）は、その式から作り直したときに別の表記（`ARRAY[('male'::character varying)::text, …]`）になる。マイグレーションを適用した DB と `sql/setup.sql` から作った DB で `schema.ts` が食い違い、`pnpm check:db-schema` が失敗する（`202611150900_customers_columns.sql` の `customers_gender_known`）
+- 2 つのテーブルが互いを外部キーで参照する形にしない。`pnpm db:introspect` が生成する `schema.ts` は、外部キーの参照先のテーブルを `foreignKey({ foreignColumns: [users.id] })` のように名指しするので、`customers` と `users` が互いを参照すると、TypeScript がどちらの型も決められない（TS7022。`'customers' implicitly has type 'any' because … it is referenced directly or indirectly in its own initializer`）。`users.customerId` には外部キーがあるので、`customers.userId` には付けていない。逆向きのカラムは、書き込むコードが 1 つのトランザクションでそろえる（`202611151500_customers_user_unique.sql`）。自分自身への参照（`customers.referredBy`）は問題ない
 
 ```sql
 -- backend/packages/database/sql/migrations/202611140900_salon_list_columns_not_null.sql

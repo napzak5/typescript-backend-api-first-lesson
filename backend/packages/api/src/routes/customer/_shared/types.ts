@@ -16,3 +16,13 @@ export type GetCustomerResponse = JsonBody<
 export type UpdateCustomerResponse = JsonBody<
   operations['CustomerCrud_update']['responses'][200]['content']
 >
+
+export type GetCustomerProfileResponse = JsonBody<
+  operations['CustomerProfile_get']['responses'][200]['content']
+>
+export type CreateCustomerProfileResponse = JsonBody<
+  operations['CustomerProfile_create']['responses'][201]['content']
+>
+export type UpdateCustomerProfileResponse = JsonBody<
+  operations['CustomerProfile_update']['responses'][200]['content']
+>

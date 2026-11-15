@@ -285,5 +285,47 @@ namespace BeautySalon.Operations {
         | RequestBodyErrors
         | CommonErrors;
     }
+
+    @doc("顧客本人が自分のプロフィール(自分の顧客レコード)を扱うAPI操作群です。実行できるのは customer ロールのユーザーだけで、admin とサロンのスタッフには403を返します。権限は最初に確認します。スタッフ用の項目は、リクエストにもレスポンスにも含みません。")
+    @route("/me")
+    interface CustomerProfile {
+      @doc("ログインしているユーザーのプロフィールを取得します。プロフィールをまだ作っていない場合と、顧客レコードが削除された場合は404を返します。")
+      @summary("Get the signed-in customer's profile")
+      @get
+      get():
+        | {
+            @statusCode statusCode: 200;
+            @body response: ApiResponse<CustomerProfileResponse>;
+          }
+        | ProblemResponse<404>
+        | CommonErrors;
+
+      @doc("ログインしているユーザーのプロフィールを作成します。メールアドレスはアカウントのものを使います。台帳に同じメールアドレスの顧客がいて、まだどのアカウントにも結び付いていない場合は、その顧客を自分のプロフィールにします(リクエストでnullにした項目は、台帳の値を残します)。すでにプロフィールがある場合、アカウントのメールアドレスを確認していない場合、同じメールアドレスの顧客がほかのアカウントに結び付いている場合は409を返します。")
+      @summary("Create the signed-in customer's profile")
+      @post
+      create(@body request: CustomerProfileCreateRequest):
+        | {
+            @statusCode statusCode: 201;
+            @header("Location") location: string;
+            @body response: ApiResponse<CustomerProfileResponse>;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<409>
+        | RequestBodyErrors
+        | CommonErrors;
+
+      @doc("ログインしているユーザーのプロフィールのうち、指定した項目だけを更新します。プロフィールをまだ作っていない場合と、顧客レコードが削除された場合は404を返します。")
+      @summary("Update the signed-in customer's profile")
+      @patch
+      update(@body request: CustomerProfileUpdateRequest):
+        | {
+            @statusCode statusCode: 200;
+            @body response: ApiResponse<CustomerProfileResponse>;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<404>
+        | RequestBodyErrors
+        | CommonErrors;
+    }
   }
 }

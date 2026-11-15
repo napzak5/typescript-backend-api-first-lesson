@@ -600,13 +600,12 @@ export const customers = pgTable(
       'btree',
       table.phoneNumber.asc().nullsLast().op('text_ops'),
     ),
-    index('idx_customers_user_id').using(
-      'btree',
-      table.userId.asc().nullsLast().op('uuid_ops'),
-    ),
     unique('customers_referral_code_unique').on(table.referralCode),
     uniqueIndex('customers_email_unique')
       .using('btree', table.email.asc().nullsLast().op('text_ops'))
+      .where(sql`("deletedAt" IS NULL)`),
+    uniqueIndex('customers_user_unique')
+      .using('btree', table.userId.asc().nullsLast().op('uuid_ops'))
       .where(sql`("deletedAt" IS NULL)`),
   ],
 )

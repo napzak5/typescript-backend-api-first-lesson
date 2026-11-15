@@ -1008,6 +1008,34 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/customers/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get the signed-in customer's profile
+         * @description ログインしているユーザーのプロフィールを取得します。プロフィールをまだ作っていない場合と、顧客レコードが削除された場合は404を返します。
+         */
+        get: operations["CustomerProfile_get"];
+        put?: never;
+        /**
+         * Create the signed-in customer's profile
+         * @description ログインしているユーザーのプロフィールを作成します。メールアドレスはアカウントのものを使います。台帳に同じメールアドレスの顧客がいて、まだどのアカウントにも結び付いていない場合は、その顧客を自分のプロフィールにします(リクエストでnullにした項目は、台帳の値を残します)。すでにプロフィールがある場合、アカウントのメールアドレスを確認していない場合、同じメールアドレスの顧客がほかのアカウントに結び付いている場合は409を返します。
+         */
+        post: operations["CustomerProfile_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update the signed-in customer's profile
+         * @description ログインしているユーザーのプロフィールのうち、指定した項目だけを更新します。プロフィールをまだ作っていない場合と、顧客レコードが削除された場合は404を返します。
+         */
+        patch: operations["CustomerProfile_update"];
+        trace?: never;
+    };
     "/api/v1/customers/merge": {
         parameters: {
             query?: never;
@@ -4109,6 +4137,187 @@ export interface components {
             communicationStyle?: string | null;
             /** @description 特別なリクエスト。nullでクリア */
             specialRequests?: string | null;
+        };
+        /**
+         * @description 顧客本人のプロフィールの作成リクエスト - ログインしているアカウントの顧客レコードを作る。
+         *     メールアドレスはアカウントのものを使うので、リクエストには含めない。
+         *     会員ランクやスタッフ用の項目は指定できない
+         */
+        "Models.CustomerProfileCreateRequest": {
+            /** @description 名 */
+            firstName: string;
+            /** @description 姓 */
+            lastName: string;
+            /** @description 名のカナ表記。未登録の場合はnull */
+            firstNameKana: string | null;
+            /** @description 姓のカナ表記。未登録の場合はnull */
+            lastNameKana: string | null;
+            /** @description 主要連絡先として利用する電話番号 */
+            phoneNumber: string;
+            /** @description 緊急連絡用などの予備電話番号。未登録の場合はnull */
+            alternativePhone: string | null;
+            /** @description 郵便番号。未登録の場合はnull */
+            postalCode: string | null;
+            /** @description 都道府県名。未登録の場合はnull */
+            prefecture: string | null;
+            /** @description 市区町村名。未登録の場合はnull */
+            city: string | null;
+            /** @description 町名・番地。未登録の場合はnull */
+            address: string | null;
+            /** @description 建物名・部屋番号。未登録の場合はnull */
+            building: string | null;
+            /**
+             * Format: date
+             * @description 生年月日。1900-01-01以降で、未来の日付は指定できない。未登録の場合はnull
+             */
+            birthDate: string | null;
+            /** @description 性別。未登録または非公開の場合はnull */
+            gender: components["schemas"]["Models.CustomerGenderType"] | null;
+            /** @description 職業。未登録の場合はnull */
+            occupation: string | null;
+            /** @description 好みや要望。未設定の場合はnull */
+            preferences: components["schemas"]["Models.CustomerBasicPreferences"] | null;
+            /** @description マーケティング配信を許可するかどうか */
+            allowMarketing: boolean;
+            /** @description SMSでの連絡を許可するかどうか */
+            allowSms: boolean;
+            /** @description メールでの連絡を許可するかどうか */
+            allowEmail: boolean;
+        };
+        /**
+         * @description 顧客本人のプロフィールのレスポンス - customers テーブルの行のうち、本人に見せるカラムだけを返す。
+         *     スタッフ用の項目(internalNotes、notes、tags、customerStatus、isActive、referredBy、lifetimeValue、
+         *     noShowCount、cancellationCount)と userId は含まない。プロパティ名と null 許可は DB カラムと一致させている
+         */
+        "Models.CustomerProfileResponse": {
+            /** @description 顧客を一意に識別するID */
+            id: components["schemas"]["Models.CustomerId"];
+            /** @description 名 */
+            firstName: string;
+            /** @description 姓 */
+            lastName: string;
+            /** @description 名のカナ表記。未登録の場合はnull */
+            firstNameKana: string | null;
+            /** @description 姓のカナ表記。未登録の場合はnull */
+            lastNameKana: string | null;
+            /** @description メールアドレス。アカウントのメールアドレスと同じで、プロフィールからは変更できない */
+            email: string;
+            /** @description 主要連絡先として利用する電話番号 */
+            phoneNumber: string;
+            /** @description 緊急連絡用などの予備電話番号。未登録の場合はnull */
+            alternativePhone: string | null;
+            /** @description 郵便番号。未登録の場合はnull */
+            postalCode: string | null;
+            /** @description 都道府県名。未登録の場合はnull */
+            prefecture: string | null;
+            /** @description 市区町村名。未登録の場合はnull */
+            city: string | null;
+            /** @description 町名・番地。未登録の場合はnull */
+            address: string | null;
+            /** @description 建物名・部屋番号。未登録の場合はnull */
+            building: string | null;
+            /**
+             * Format: date
+             * @description 生年月日。1900-01-01以降で、未来の日付は指定できない。未登録の場合はnull
+             */
+            birthDate: string | null;
+            /** @description 性別。未登録または非公開の場合はnull */
+            gender: components["schemas"]["Models.CustomerGenderType"] | null;
+            /** @description 職業。未登録の場合はnull */
+            occupation: string | null;
+            /** @description 会員ランク。本人は変更できない */
+            membershipTier: components["schemas"]["Models.MembershipTierType"];
+            /**
+             * Format: int32
+             * @description 現在のロイヤルティポイント
+             */
+            loyaltyPoints: number;
+            /** @description 好みや要望。未設定の場合はnull */
+            preferences: components["schemas"]["Models.CustomerBasicPreferences"] | null;
+            /** @description ほかの人を紹介するときに使う紹介コード。未発行の場合はnull */
+            referralCode: string | null;
+            /**
+             * Format: date
+             * @description 初回来店日。未来店の場合はnull
+             */
+            firstVisitDate: string | null;
+            /**
+             * Format: date
+             * @description 最終来店日。まだ来店がない場合はnull
+             */
+            lastVisitDate: string | null;
+            /**
+             * Format: int32
+             * @description 総来店回数
+             */
+            visitCount: number;
+            /** @description マーケティング配信を許可するかどうか */
+            allowMarketing: boolean;
+            /** @description SMSでの連絡を許可するかどうか */
+            allowSms: boolean;
+            /** @description メールでの連絡を許可するかどうか */
+            allowEmail: boolean;
+            /** @description 髪質タイプ。サロンが記録する。未登録の場合はnull */
+            hairType: components["schemas"]["Models.HairType"] | null;
+            /** @description 髪の太さ。サロンが記録する。未登録の場合はnull */
+            hairThickness: components["schemas"]["Models.HairThicknessType"] | null;
+            /** @description 頭皮の状態。サロンが記録する。未登録の場合はnull */
+            scalpCondition: components["schemas"]["Models.ScalpConditionType"] | null;
+            /**
+             * Format: date-time
+             * @description レコード作成日時(顧客の登録日時)
+             */
+            createdAt: string;
+            /**
+             * Format: date-time
+             * @description レコード最終更新日時
+             */
+            updatedAt: string;
+        };
+        /**
+         * @description 顧客本人のプロフィールの部分更新リクエスト - 指定した項目だけを更新する。DB で NULL 許可のカラムは null でクリアできる。
+         *     メールアドレス、会員ランク、スタッフ用の項目は変更できない
+         */
+        "Models.CustomerProfileUpdateRequest": {
+            /** @description 名 */
+            firstName?: string;
+            /** @description 姓 */
+            lastName?: string;
+            /** @description 名のカナ表記。未登録の場合はnull */
+            firstNameKana?: string | null;
+            /** @description 姓のカナ表記。未登録の場合はnull */
+            lastNameKana?: string | null;
+            /** @description 主要連絡先として利用する電話番号 */
+            phoneNumber?: string;
+            /** @description 緊急連絡用などの予備電話番号。未登録の場合はnull */
+            alternativePhone?: string | null;
+            /** @description 郵便番号。未登録の場合はnull */
+            postalCode?: string | null;
+            /** @description 都道府県名。未登録の場合はnull */
+            prefecture?: string | null;
+            /** @description 市区町村名。未登録の場合はnull */
+            city?: string | null;
+            /** @description 町名・番地。未登録の場合はnull */
+            address?: string | null;
+            /** @description 建物名・部屋番号。未登録の場合はnull */
+            building?: string | null;
+            /**
+             * Format: date
+             * @description 生年月日。1900-01-01以降で、未来の日付は指定できない。未登録の場合はnull
+             */
+            birthDate?: string | null;
+            /** @description 性別。未登録または非公開の場合はnull */
+            gender?: components["schemas"]["Models.CustomerGenderType"] | null;
+            /** @description 職業。未登録の場合はnull */
+            occupation?: string | null;
+            /** @description 好みや要望。未設定の場合はnull */
+            preferences?: components["schemas"]["Models.CustomerBasicPreferences"] | null;
+            /** @description マーケティング配信を許可するかどうか */
+            allowMarketing?: boolean;
+            /** @description SMSでの連絡を許可するかどうか */
+            allowSms?: boolean;
+            /** @description メールでの連絡を許可するかどうか */
+            allowEmail?: boolean;
         };
         /**
          * @description 顧客レスポンス - customers テーブルの公開カラムを返す。スタッフ専用の項目(internalNotes)を含むので、顧客本人には返さない。
@@ -14510,6 +14719,324 @@ export interface operations {
             };
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
+             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+             */
+            429: {
+                headers: {
+                    /** @description 再試行できるようになるまでの秒数。 */
+                    "Retry-After": number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+        };
+    };
+    CustomerProfile_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The request has succeeded. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        data: components["schemas"]["Models.CustomerProfileResponse"];
+                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        meta: components["schemas"]["Models.ResponseMeta"] | null;
+                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        links: {
+                            [key: string]: string;
+                        } | null;
+                    };
+                };
+            };
+            /**
+             * @description 認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
+             *     ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
+             *     WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+             */
+            401: {
+                headers: {
+                    /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
+                    "WWW-Authenticate": string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description 認証されているが、この操作を行う権限がない (403)。 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The server cannot find the requested resource. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
+             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+             */
+            429: {
+                headers: {
+                    /** @description 再試行できるようになるまでの秒数。 */
+                    "Retry-After": number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+        };
+    };
+    CustomerProfile_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Models.CustomerProfileCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description The request has succeeded and a new resource has been created as a result. */
+            201: {
+                headers: {
+                    Location: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        data: components["schemas"]["Models.CustomerProfileResponse"];
+                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        meta: components["schemas"]["Models.ResponseMeta"] | null;
+                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        links: {
+                            [key: string]: string;
+                        } | null;
+                    };
+                };
+            };
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description 認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
+             *     ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
+             *     WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+             */
+            401: {
+                headers: {
+                    /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
+                    "WWW-Authenticate": string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description 認証されているが、この操作を行う権限がない (403)。 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The request conflicts with the current state of the server. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
+             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+             */
+            429: {
+                headers: {
+                    /** @description 再試行できるようになるまでの秒数。 */
+                    "Retry-After": number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+        };
+    };
+    CustomerProfile_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Models.CustomerProfileUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description The request has succeeded. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        data: components["schemas"]["Models.CustomerProfileResponse"];
+                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        meta: components["schemas"]["Models.ResponseMeta"] | null;
+                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        links: {
+                            [key: string]: string;
+                        } | null;
+                    };
+                };
+            };
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description 認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
+             *     ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
+             *     WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+             */
+            401: {
+                headers: {
+                    /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
+                    "WWW-Authenticate": string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description 認証されているが、この操作を行う権限がない (403)。 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The server cannot find the requested resource. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

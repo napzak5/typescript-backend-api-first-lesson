@@ -170,8 +170,9 @@ authentication). So is the Service domain: the service categories of a salon
 options and packages (`/api/v1/salons/{salonId}/services`). Of the Customer
 domain the customer ledger is implemented: list, create, get, update and
 delete under `/api/v1/customers`, for administrators and the members of a
-salon. The other operations of `CustomerCrud` are not, and a signed-in
-customer reaches no customer record, not even their own. The other domains
+salon. So is a customer's own profile: get, create and update under
+`/api/v1/customers/me`, for the signed-in customer account. The other
+operations of `CustomerCrud` are not. The other domains
 exist in TypeSpec and in the database schema only. Sessions, passwords,
 two-factor authentication, permissions, the administrator operations and the
 seeded accounts are described in

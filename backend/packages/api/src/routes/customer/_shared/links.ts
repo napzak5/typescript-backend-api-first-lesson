@@ -6,3 +6,13 @@ export const customerLinks = (
   self: `${collectionPath}/${id}`,
   list: collectionPath,
 })
+
+/**
+ * Links of the signed-in customer's own profile. The profile has one
+ * address, whoever asks: the account says whose it is.
+ */
+export const customerProfileLinks = (
+  collectionPath: string,
+): { self: string } => ({
+  self: `${collectionPath}/me`,
+})

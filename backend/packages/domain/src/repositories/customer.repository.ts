@@ -1,6 +1,8 @@
 import type { Result } from '@beauty-salon-backend/utility'
+import type { UserId } from '../models/auth'
 import type {
   CustomerId,
+  CustomerProfileWrite,
   DbCustomer,
   DbCustomerChanges,
   DbNewCustomer,
@@ -49,6 +51,26 @@ export type CustomerUpdate =
   | CustomerWriteRefusal
 
 /**
+ * Why an account did not get a profile:
+ * - `notACustomerAccount`: the account is not one with the role `customer`
+ * - `alreadyHasProfile`: the account has a customer record
+ * - `emailNotVerified`: the account has not confirmed its email address
+ * - `entryOfAnotherAccount`: the ledger entry with the account's email
+ *   belongs to another account
+ */
+export type CustomerProfileRefusal = {
+  type:
+    | 'notACustomerAccount'
+    | 'alreadyHasProfile'
+    | 'emailNotVerified'
+    | 'entryOfAnotherAccount'
+}
+
+export type CustomerProfileCreation =
+  | { type: 'created'; customer: DbCustomer }
+  | CustomerProfileRefusal
+
+/**
  * Persistence of customers. Deleted customers are invisible to every
  * method, except that a deleted customer still says where a page of the
  * list begins. An email that a customer who is not deleted has, and a
@@ -75,6 +97,20 @@ export interface ICustomerRepository {
     changes: DbCustomerChanges,
   ): Promise<Result<CustomerUpdate, DomainError>>
 
-  /** Resolves to false when the customer does not exist. */
+  /**
+   * Deletes the customer and takes the record from the account that has it
+   * as its profile. Resolves to false when the customer does not exist.
+   */
   delete(id: CustomerId): Promise<Result<boolean, DomainError>>
+
+  /**
+   * Gives the account a customer record and links the two. The record is
+   * the ledger entry that has the account's email, changed by `claim`,
+   * unless that entry belongs to another account; when the ledger has no
+   * entry with the email, it is `newEntry` with the account's email.
+   */
+  createProfile(
+    userId: UserId,
+    write: CustomerProfileWrite,
+  ): Promise<Result<CustomerProfileCreation, DomainError>>
 }
