@@ -544,4 +544,26 @@ describe('modelRules', () => {
       },
     })
   })
+
+  it('checks an entry of a staff schedule, which requests and responses share, as a response: every property is required, and it leaves out the ID of the row, the staff member, whom the path names, and the timestamps', () => {
+    const rules = modelRules
+      .filter((modelRule) => modelRule.table === 'staffSchedules')
+      .map(({ model, kind, omittedColumns, embedded, computed }) => ({
+        model,
+        kind,
+        omittedColumns,
+        embedded,
+        computed,
+      }))
+
+    expect(rules).toEqual([
+      {
+        model: 'Models.StaffSchedule',
+        kind: 'response',
+        omittedColumns: ['id', 'staffId', 'createdAt', 'updatedAt'],
+        embedded: undefined,
+        computed: undefined,
+      },
+    ])
+  })
 })

@@ -87,13 +87,14 @@ curl http://localhost:3000/api/v1/salons      # サロン一覧（認証なし�
 （`/api/v1/salons/{salonId}/service-categories`）、サロンのサービス
 （`/api/v1/salons/{salonId}/services`）、サロンのスタッフ台帳
 （`/api/v1/salons/{salonId}/staff` の一覧、登録、1 件の取得、更新、削除）、
+スタッフの勤務スケジュール（`/api/v1/salons/{salonId}/staff/{id}/schedules` の一覧、更新）、
 顧客に見せるスタッフのプロフィール（`/api/v1/staff-profiles` の一覧、1 件の取得）、
 顧客台帳（`/api/v1/customers` の一覧、登録、1 件の取得、更新、削除）、
 顧客本人のプロフィール（`/api/v1/customers/me` の取得、作成、更新）、認証のすべてのオペレーション（`/api/v1/auth` のログイン、トークンの更新、
 ログアウト、現在のユーザーの取得、ユーザー登録、メールアドレスの確認、パスワードの再設定と変更、
 2 要素認証、セッションの一覧と無効化、および `/api/v1/admin/auth` の管理者の操作）、
 システムエンドポイント（`/api/system/alive`、`/api/system/ready`、`/api/system/health`）だけです。
-顧客とスタッフのそれ以外のオペレーションと他のドメインは、TypeSpec とデータベーススキーマにだけ存在します。
+顧客のそれ以外のオペレーションと他のドメインは、TypeSpec とデータベーススキーマにだけ存在します。
 
 サロン、サービスカテゴリー、サービスの作成・更新・削除（サービスは一括更新も）にはアクセストークンが
 必要です。顧客台帳は、一覧と取得を含むすべてのオペレーションに、`admin` か、サロンの `owner`・
@@ -245,6 +246,10 @@ Salon ドメインがリファレンス実装です。新しいドメインは�
 （`backend/packages/domain/src/business-logic/staff/`、`backend/packages/api/src/routes/staff/`）が
 手本です。一覧と取得を含むすべてのオペレーションで、パスのサロンだけで最初に権限を判定します。
 これも同じ節に挙げてあり、規則は [スタッフ台帳](./staff.md) にあります。
+サロンの 1 つのレコードに属し、全体をまとめて置き換える行は、スタッフの勤務スケジュール
+（`backend/packages/domain/src/business-logic/staff-schedule/`、
+`backend/packages/api/src/routes/staff-schedule/`）が手本です。ルーターをレコードの下にマウントし、
+権限をサロンと対象の 2 段階で判定し、リポジトリが行をロックして 1 つのトランザクションで置き換えます。
 公開しないデータの一部を誰にでも見せるときは、スタッフのプロフィール
 （`backend/packages/domain/src/business-logic/staff-profile/`、
 `backend/packages/api/src/routes/staff-profile/`）が手本です。見せる項目だけのモデル、リポジトリ、

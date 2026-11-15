@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { pageLinks } from '../page-links'
+import { pageLinks, queryOf } from '../page-links'
 
 const meta = {
   total: 5,
@@ -39,4 +39,28 @@ describe('pageLinks', () => {
       prev: null,
     })
   })
+})
+
+describe('queryOf', () => {
+  it.each([
+    [
+      'a URL with a query',
+      '/api/v1/salons?limit=2&city=Tokyo',
+      'limit=2&city=Tokyo',
+    ],
+    ['a URL without a query', '/api/v1/salons', ''],
+    ['a URL that ends in a question mark', '/api/v1/salons?', ''],
+    [
+      'a query that contains a question mark',
+      '/api/v1/salons?keyword=a?b',
+      'keyword=a?b',
+    ],
+    ['a query alone', '?limit=2', 'limit=2'],
+    ['an empty URL', '', ''],
+  ])(
+    'returns the query of %s without the question mark',
+    (_case, url, query) => {
+      expect(queryOf(url)).toBe(query)
+    },
+  )
 })

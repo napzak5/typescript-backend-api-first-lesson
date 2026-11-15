@@ -1,5 +1,5 @@
 import { DayOfWeekTypeSchema } from '@beauty-salon-backend/generated'
-import { format, isValid, parseISO } from 'date-fns'
+import { parseISO } from 'date-fns'
 import { z } from 'zod'
 import {
   type ApiBusinessHours,
@@ -8,7 +8,14 @@ import {
   type ApiSalonUpdateRequest,
   salonIdSchema,
 } from '../models/salon'
-import { atLeastOneProperty, nonBlankText, phoneNumber } from './rules'
+import {
+  atLeastOneProperty,
+  dayOfWeekOf,
+  nonBlankText,
+  phoneNumber,
+  timeOfDay,
+  withSeconds,
+} from './rules'
 
 /**
  * Validation of salon requests. The shapes are checked against the generated
@@ -16,28 +23,12 @@ import { atLeastOneProperty, nonBlankText, phoneNumber } from './rules'
  * remaining rules are business rules.
  */
 
-/** Time of a `time` column; the database returns it as HH:mm:ss. */
-const timeOfDaySchema = z
-  .string()
-  .regex(
-    /^(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$/,
-    'Must be a time in HH:mm or HH:mm:ss format',
-  )
-
-const withSeconds = (time: string): string => time.padEnd(8, ':00')
-
-/** Null when the text is not a date; the format rule reports that. */
-const dayOfWeekOf = (date: string): string | null => {
-  const parsed = parseISO(date)
-  return isValid(parsed) ? format(parsed, 'EEEE').toLowerCase() : null
-}
-
 const openingHoursSchema = z
   .strictObject({
     dayOfWeek: DayOfWeekTypeSchema,
     date: z.iso.date(),
-    openTime: timeOfDaySchema.nullable(),
-    closeTime: timeOfDaySchema.nullable(),
+    openTime: timeOfDay.nullable(),
+    closeTime: timeOfDay.nullable(),
     isHoliday: z.boolean(),
     holidayName: nonBlankText.max(100).nullable(),
     notes: nonBlankText.nullable(),

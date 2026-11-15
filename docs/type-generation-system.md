@@ -65,9 +65,10 @@ implements only the Salon operations, the operations on the service
 categories and on the services of a salon (`ServiceCategoryCrud`,
 `ServiceCrud`), five of the eighteen operations of `CustomerCrud` (the
 customer ledger: `list`, `create`, `get`, `update` and `delete`), the three
-of `CustomerProfile` (a customer's own profile), five of the seven
-operations of `StaffCrud` (the staff ledger of a salon: `list`, `create`,
-`get`, `update` and `delete`), the two of `StaffProfile` (what customers
+of `CustomerProfile` (a customer's own profile), the five operations of
+`StaffCrud` (the staff ledger of a salon: `list`, `create`, `get`, `update`
+and `delete`), the two of `StaffSchedules` (when a staff member works:
+`list` and `update`), the two of `StaffProfile` (what customers
 are shown of a staff member: `list` and `get`), the
 authentication operations (those of
 `AuthCrud`, `SessionCrud` and `AdminAuthCrud`: login, refresh, logout, the

@@ -1,10 +1,12 @@
 # スタッフ台帳
 
-サロンのスタッフ（`staff`）の規則をまとめます。コントラクトは `specs/operations/staff-operations.tsp` と `specs/models/staff.tsp`、テーブルは `staff` です。
+サロンのスタッフ（`staff`）の規則をまとめます。コントラクトは `specs/operations/staff-operations.tsp` と `specs/models/staff.tsp`、テーブルは `staff` と `staff_schedules` です。
 
 スタッフ台帳は、サロンが雇用主として持つスタッフの記録です。1 人のスタッフが 1 行で、氏名と連絡先、雇用の情報（基本給、歩合率、雇用形態、入社日）、予約の受け方（同時に担当できる数、前後に確保する時間）を持ちます。
 
 スタッフの情報には入口が 2 つあります。管理者とサロンの `owner` は台帳（`/api/v1/salons/{salonId}/staff`）でスタッフのすべての項目を扱い、顧客を含む誰もが[プロフィール](#顧客に見せるプロフィール)（`/api/v1/staff-profiles`）で、顧客に見せる項目だけを読みます。
+
+スタッフがいつ勤務するかは、台帳の行ではなく、スタッフごとの[勤務スケジュール](#勤務スケジュール)（`/api/v1/salons/{salonId}/staff/{id}/schedules`、テーブルは `staff_schedules`）が持ちます。シフトを組むサロンの `owner` と `manager`、管理者が読み書きし、スタッフ本人は自分のスケジュールを読みます。
 
 ## 実装範囲
 
@@ -12,10 +14,10 @@
 |---|---|
 | 台帳（`StaffCrud`）の一覧、登録、1 件の取得、更新、削除 | 実装済み |
 | 顧客に見せるプロフィール（`StaffProfile`）の一覧、1 件の取得 | 実装済み。サロンをまたぐ検索は、一覧の絞り込みで行う |
-| 勤務スケジュール（`StaffCrud` の `getAvailability`、`updateAvailability`） | 未実装 |
+| 勤務スケジュール（`StaffSchedules`）の一覧、更新（全体の置き換え） | 実装済み |
 | スタッフのログインアカウント（アカウントとスタッフの紐づけ、サロンのロールの付与） | 未実装。コントラクトにオペレーションがない |
 
-未実装のオペレーションは、コントラクトに定義があっても、サーバーは 404 を返します。`staff_skills`（担当できるサービス）と `staff_performances`（実績）は、テーブルだけがあり、コントラクトにオペレーションがありません。
+スタッフのコントラクトに定義したオペレーションは、すべて実装済みです。`staff_skills`（担当できるサービス）と `staff_performances`（実績）は、テーブルだけがあり、コントラクトにオペレーションがありません。
 
 ## オペレーションと権限
 
@@ -108,7 +110,7 @@
 | `canReceiveBookings` / `isActive` | 真偽値 |
 
 - **リクエストで変えられない項目**: `userId`（ログインアカウントとの紐づけ）と、所属サロン（登録はパスの `salonId` が決め、あとから変えられない）。本文に `userId` や `salonId` を書くと 400（`unrecognized_keys`）です
-- **レスポンスに出さない項目**: `awards`（構造の決まっていない jsonb）と `deletedAt`。レスポンス（`StaffResponse`）は勤務スケジュールも含みません
+- **レスポンスに出さない項目**: `awards`（構造の決まっていない jsonb）と `deletedAt`。レスポンス（`StaffResponse`）は勤務スケジュールも含みません。スケジュールは[別のルート](#勤務スケジュール)で読みます
 - `isActive` と `canReceiveBookings` は、互いに独立した属性として保存します。`isActive` は、アカウントの権限（[ログインアカウントへの影響](#ログインアカウントへの影響)）と、顧客に見せるかどうか（[見せるスタッフ](#見せるスタッフ)）に効きます。どのスタッフが予約を受けられるかは、予約の実装で決めます
 
 ### 一意性の範囲
@@ -127,7 +129,7 @@
 
 - 論理削除です（`deletedAt` を設定し、行は残す）。削除したスタッフは、台帳とプロフィールの、一覧と取得の対象外になります
 - 削除したスタッフのメールアドレスは、別のスタッフに使えるようになります。スタッフコードは使えないままです
-- 勤務スケジュール（`staff_schedules`）、スキル（`staff_skills`）、予約などの行は残ります
+- 勤務スケジュール（`staff_schedules`）、スキル（`staff_skills`）、予約などの行は残ります。削除したスタッフのスケジュールは、読むことも置き換えることもできません（404）
 - そのスタッフに紐づくアカウントは、サロンへの権限を失います（[ログインアカウントへの影響](#ログインアカウントへの影響)）。`users.staffId` は、削除したスタッフを指したまま残ります
 - 削除したスタッフを更新しても、戻りません（404）
 - 予約が残っているスタッフを削除できるかは、予約の実装で決めます
@@ -196,6 +198,111 @@
 
 権限の確認はありません。
 
+## 勤務スケジュール
+
+スタッフがいつ勤務するかを表す行の一覧です（`staff_schedules`）。予約できる枠は、予約の実装が、サロンの営業時間、このスケジュール、すでにある予約から決めます。スケジュールそのものは顧客に見せません。
+
+| オペレーション（`StaffSchedules`） | ルート | 許可 |
+|---|---|---|
+| 一覧 | `GET /api/v1/salons/{salonId}/staff/{id}/schedules` | `admin`、そのサロンの `owner` と `manager`。`staff` は自分のスケジュールだけ |
+| 更新（全体の置き換え） | `PUT /api/v1/salons/{salonId}/staff/{id}/schedules` | `admin`、そのサロンの `owner` と `manager` |
+
+- 行のモデルは `StaffSchedule` で、リクエストとレスポンスの両方に使います（Salon の `OpeningHours`、サービスの `ServiceOption` と同じ、行のモデル）。プロパティ名と null の扱いは、`staff_schedules` のカラムと同じです
+- 行の `id` は出しません。更新のたびに行を作り直すので、ID は続きません。行を区別するのは、曜日（毎週の行）と日付（単日の行）です
+- 以前のコントラクトは、このルートを `availability`（`getAvailability`、`updateAvailability`）と呼んでいました。返すのは空き状況ではなく勤務スケジュールの行で、空き状況（予約できる枠）は予約のコントラクトに `available-slots` として別にあるので、名前を `schedules` に変えました
+
+### 行の種類
+
+行には 2 つの区別があります。
+
+| 区別 | カラム | 規則 |
+|---|---|---|
+| 毎週の行 | `isRecurring` が true | `dayOfWeek` が必須、`date` は null。毎週その曜日に適用する |
+| 単日の行 | `isRecurring` が false | `date` が必須、`dayOfWeek` は null。その日付だけに適用する |
+| 勤務する行 | `isAvailable` が true | `startTime` と `endTime` が必須 |
+| 休みの行 | `isAvailable` が false | `startTime`、`endTime`、`breakStartTime`、`breakEndTime` はすべて null |
+
+- **1 人のスタッフが持てるのは、毎週の行が曜日ごとに 1 つまで、単日の行が日付ごとに 1 つまで**です。ある日付に適用される行は、多くても 1 つになります（[ある日付に適用される行](#ある日付に適用される行)）
+- 毎週の行がない曜日は、勤務しない日です。毎週の休みの行（`isRecurring` と `isAvailable: false`）も置けて、行がないのと同じ意味になります（備考を付けたいときなど）
+- 休みの行は、その日に勤務しないことだけを表すので、時刻を持ちません。意味のない時刻を入れさせないために、`startTime` と `endTime` は null 可のカラムです（サロンの営業日カレンダーの、営業しない日と同じ）
+
+### 行の規則
+
+| 項目 | 規則 |
+|---|---|
+| `dayOfWeek` | 毎週の行では `monday`〜`sunday`。単日の行では null |
+| `date` | 単日の行では実在する日付（`YYYY-MM-DD`）。毎週の行では null。過去の日付も指定できる |
+| `startTime` / `endTime` | 勤務する行では時刻。`startTime` は `endTime` より前（日付をまたぐ勤務は表せない）。休みの行では null |
+| `breakStartTime` / `breakEndTime` | 両方を指定するか、両方 null。指定する場合は、勤務時間の内側（`startTime` < `breakStartTime` < `breakEndTime` < `endTime`）。休みの行では null |
+| `notes` | null、または空白だけでない文字列 |
+| `isRecurring` / `isAvailable` | 真偽値 |
+
+- 時刻の形式は、サロンの営業日カレンダーと同じです。リクエストは `HH:mm` か `HH:mm:ss`（`00:00`〜`23:59:59`）、レスポンスは `HH:mm:ss` です（`schemas/rules.ts` の `timeOfDay`）
+- 休憩は、勤務時間の始まりや終わりに接することはできません。勤務の始まりや終わりに付く「休憩」は、勤務時間を短くして表します。1 日に持てる休憩は 1 つです
+- 行の数は、合わせて 373 までです（毎週の 7 行と、1 年分の単日の 366 行）
+- 過去の日付の単日の行も受け付けます。読んだ全体を、そのまま送り返せるようにするためです。古い行は、送らなければ消えます。サーバーが自動で消すことはありません
+- サロンの営業時間との照合はしません。開店前の準備や閉店後の片付けで、営業時間の外に勤務することがあるからです
+- 行ごとの規則は、リクエストの検証（`schemas/staff-schedule.schema.ts`）と、テーブルの CHECK 制約（[DB の制約](#db-の制約)）の両方が守ります
+
+### ある日付に適用される行
+
+`GET` に `date`（`YYYY-MM-DD`）を付けると、その日付に適用される行だけを返します。
+
+1. その日付の単日の行があれば、その行
+2. なければ、その日付の曜日の、毎週の行
+3. どちらもなければ、空の配列（勤務しない日）
+
+- `data` の要素は 0 個か 1 個です。適用される行が休みの行なら、その行を返します（`isAvailable` が false）。勤務するかどうかは、行の有無ではなく `isAvailable` で見ます
+- 単日の行は、その日付について、毎週の行に置き換わります。毎週は月曜に勤務するスタッフの、ある月曜だけの休みや、勤務時間の変更は、単日の行で表します
+- この決め方は、ドメインの 1 つの関数（`business-logic/staff-schedule/_shared/applicable-schedule.ts` の `scheduleOn`）に書いてあります。予約の実装は、この関数を使います
+- `date` を付けなければ、全体を返します。`date` 以外のパラメーターは 400（`unrecognized_keys`）で、ページネーションはありません（行の数に上限があるため）
+
+### スケジュールの一覧の並び
+
+毎週の行を月曜から日曜の順に、続けて単日の行を日付の古い順に返します。更新のレスポンスも同じ並びで、リクエストに書いた順ではありません。
+
+### スケジュールの更新
+
+- 本文は行の配列（`StaffScheduleUpdateRequest`）で、そのスタッフのスケジュール**全体を置き換えます**。ほかの更新（`PATCH`）と違い、送らなかった行は残りません。メソッドが `PUT` なのは、このためです
+- 空の配列を送ると、スケジュールは空になります
+- 1 つでも規則に反する行があれば、何も変えずに 400 を返します。エラーの `field` は、行の位置とプロパティ名です（`2.endTime` は 3 行目の `endTime`）。同じ曜日の毎週の行、同じ日付の単日の行が 2 つあるときは、後のほうの行を指します
+- 規則に反する行と、重複する行は、1 回の応答でまとめて報告します。行の形が違う場合（プロパティがない、型が違う）は、重複は調べません
+- レスポンスは、保存した行を[一覧の並び](#スケジュールの一覧の並び)で返します。時刻は `HH:mm:ss` になります
+- 読んだ `data` は、そのまま更新の本文にできます
+
+### 対象のスタッフ
+
+- パスのサロンに属し、削除されていないスタッフです。それ以外は 404（`Staff member <id> was not found`）で、存在しない ID と区別しません（台帳と同じ）
+- 無効（`isActive` が false）のスタッフのスケジュールも、読めて、更新できます。復帰の前にシフトを組めるようにするためです
+- スタッフを削除しても、スケジュールの行は残ります。削除したスタッフのスケジュールは 404 です
+
+### スケジュールの権限
+
+| ユーザー | 読む | 更新する |
+|---|---|---|
+| `admin` | できる | できる |
+| そのサロンの `owner`、`manager` | できる（自分のものも、ほかのスタッフのものも） | できる（同上） |
+| そのサロンの `staff` | 自分のスケジュールだけ | できない |
+| ほかのサロンの `owner`・`manager`・`staff`、顧客、スタッフに紐づいていないスタッフ系のアカウント | できない | できない |
+
+- **台帳と違い、`manager` に読み書きを認めます**。シフトを組むのは店長の仕事で、スケジュールは給与も個人の連絡先も含まず、変えてもアカウントの権限は変わりません（`business-logic/staff-schedule/_shared/authorization.ts` の `mayPlanSchedules`）
+- **`staff` が読めるのは、自分のスケジュールだけ**です（操作者の範囲の `staffId` が、パスの `id` と同じとき。同じファイルの `mayReadScheduleOf`）。`notes` には、休みの理由など、本人とシフトを組む側だけが知ればよいことを書くからです。スタッフ全員に見せるシフト表は、それを使う画面を作るときに、見せる項目と合わせて決めます
+- `staff` は更新できません。希望を出して承認を受ける流れは、コントラクトにありません
+- どちらのオペレーションにも認証が要ります
+
+### 確認の順序（スケジュール）
+
+1. アクセストークン（401）
+2. `salonId` の形式（400）
+3. サロンに対する権限（403）。一覧は `admin` か、そのサロンの `owner`・`manager`・`staff`。更新は `admin` か、そのサロンの `owner`・`manager`
+4. スタッフの `id` の形式（400）
+5. 誰のスケジュールか（403。一覧で、操作者が `staff` のとき）
+6. クエリ（400。一覧）、リクエストの本文（400。更新）
+7. サロンの存在（404）
+8. スタッフの存在（404）
+
+サロンに対する権限のないユーザーには、スタッフの ID、クエリ、本文が不正でも、サロンやスタッフが存在しなくても 403 を返します。`staff` がほかのスタッフの ID を指定した場合は、そのスタッフが存在しなくても、クエリが不正でも 403 です。読めない本文は、台帳と同じく、この順序の前に答えます。
+
 ## 同時に届いたリクエスト
 
 | 状況 | 結果 |
@@ -207,9 +314,14 @@
 | 同じスタッフの更新と削除が同時に届く | 削除は成功する。更新は、先に処理されれば 200、あとなら 404 |
 | スタッフの削除と、そのメールアドレスでの登録が同時に届く | 登録は、削除が先に済んでいれば成功し、そうでなければ 409。同じサロンの削除されていないスタッフが、同じメールアドレスを 2 人持つことはない |
 | 同じスタッフの別々の項目を同時に更新する | どちらの変更も残る |
+| 同じスタッフのスケジュールの更新が同時に届く | どれも 200 で、それぞれのレスポンスは、そのリクエストが保存した行。残るのは、最後に処理された 1 件の内容の全体で、2 つのリクエストの行が混ざることはない |
+| スケジュールの更新の最中に、同じスケジュールを読む | 更新の前か後の、どちらかの全体を返す |
+| スケジュールの更新と、そのスタッフの削除が同時に届く | 削除は成功する。更新は、先に処理されれば 200、あとなら 404 で、何も書き込まない。削除の処理中に届いた更新は、スタッフの行のロックで削除の完了を待ってから、404 を返す |
 | 2 人の `owner` が、同時に互いを無効化する | どちらも成功することがある（権限は、リクエストを受け付けた時点で判定する）。サロンに有効な `owner` がいなくなるので、管理者が `isActive` を戻す |
 
 一意性は DB の一意インデックスと一意制約が決めます。更新と削除は、「削除されていないこと」を WHERE に含めた 1 つの文で行います。
+
+スケジュールの更新は、1 つのトランザクションで、スタッフの行をロックしてから（`SELECT … FOR UPDATE`）、いまの行をすべて消して、新しい行を入れます。同時に届いた更新は、ロックの順に 1 件ずつ処理されます。楽観ロックはなく、あとから処理されたリクエストの内容が残ります（ほかの更新と同じ）。
 
 ## DB の制約
 
@@ -226,6 +338,21 @@
 - メールアドレスを小文字にした結果、同じサロンの削除されていないスタッフの間で重なる。どちらを残すかは、人が決める
 - CHECK 制約に反する行がある（負の基本給など）。値を推測できないので、直さない
 
+### `staff_schedules`
+
+マイグレーション `202611152100_staff_schedules_rules.sql` で、次のようにしました。
+
+- `startTime` と `endTime` は NULL 可。以前は NOT NULL で、休みの行にも時刻が要った
+- CHECK 制約: 毎週の行は曜日があって日付がなく、単日の行は日付があって曜日がない（`staff_schedules_weekly_or_single_day`）、勤務する行は開始と終了があり、休みの行は時刻も休憩もない（`staff_schedules_times_when_available`）、終了は開始より後（`staff_schedules_end_after_start`）、休憩は開始と終了の両方があるか、どちらもない（`staff_schedules_break_has_both_times`）、休憩は勤務時間の内側（`staff_schedules_break_inside_working_hours`）
+- 部分一意インデックス: 毎週の行は、スタッフと曜日の組で一意（`staff_schedules_weekly_unique`）。単日の行は、スタッフと日付の組で一意（`staff_schedules_single_day_unique`）
+- `notes` が空白だけでないことは、ほかのテーブルの文字列と同じく、リクエストの検証だけが守る
+
+以前の行のうち、休みの行（`isAvailable` が false）は、マイグレーションが時刻と休憩を NULL にします。規則に合う形がそれしかないからです。ほかの制約に反する行（曜日と日付の両方がある行、同じ曜日の 2 つの行、終了が開始より前の行など）があると、マイグレーションは失敗します。どれが正しいかを決められないので、行を直してから、やり直します。
+
+スタッフの行を DB から消すと、そのスケジュールの行も消えます（`staff_schedules_staff_id_fk` の `ON DELETE CASCADE`）。API の削除は論理削除なので、行は消えません。
+
+### 外部キー
+
 `staff.userId` には外部キーを付けていません。`users.staffId` に外部キーがあり、2 つのテーブルが互いを外部キーで参照すると、DB から生成する `schema.ts` に型が付かなくなるためです（[DB 駆動ドメインモデル](./db-driven-domain-model.md)）。
 
 ## 実装の場所
@@ -235,8 +362,10 @@
 | コントラクト | `specs/models/staff.tsp`、`specs/operations/staff-operations.tsp` |
 | ドメイン | `backend/packages/domain/src/models/staff.ts`、`schemas/staff.schema.ts`、`mappers/write/staff.mapper.ts`、`mappers/read/staff.mapper.ts`、`repositories/staff.repository.ts`、`business-logic/staff/`（権限と「自分自身のスタッフ情報」の判定は `_shared/authorization.ts`、409 の文言は `_shared/refusals.ts`） |
 | ドメイン（プロフィール） | `backend/packages/domain/src/models/staff-profile.ts`、`schemas/staff-profile.schema.ts`、`mappers/read/staff-profile.mapper.ts`、`repositories/staff-profile.repository.ts`、`business-logic/staff-profile/` |
-| ドメイン（共通） | `backend/packages/domain/src/schemas/rules.ts`（`lowerCaseEmail`、`phoneNumber`、`noRepeatedEntries` など）、`business-logic/_shared/existing-salon.ts`（サロンの存在の確認） |
+| ドメイン（スケジュール） | `backend/packages/domain/src/models/staff-schedule.ts`、`schemas/staff-schedule.schema.ts`、`mappers/write/staff-schedule.mapper.ts`、`mappers/read/staff-schedule.mapper.ts`、`repositories/staff-schedule.repository.ts`、`business-logic/staff-schedule/`（権限は `_shared/authorization.ts`、ある日付に適用される行は `_shared/applicable-schedule.ts`） |
+| ドメイン（共通） | `backend/packages/domain/src/schemas/rules.ts`（`lowerCaseEmail`、`phoneNumber`、`noRepeatedEntries`、`timeOfDay`、`dayOfWeekOf` など）、`business-logic/_shared/existing-salon.ts`（サロンの存在の確認） |
 | インフラ | `backend/packages/infrastructure/src/repositories/staff.repository.impl.ts`、`repositories/account.ts`（操作者の範囲。スタッフが有効で削除されていないことを確認する） |
 | インフラ（プロフィール） | `backend/packages/infrastructure/src/repositories/staff-profile.repository.impl.ts`（見せるカラムと、見せるスタッフの条件） |
-| API | `backend/packages/api/src/routes/staff/`、`backend/packages/api/src/routes/staff-profile/` |
-| DB | `backend/packages/database/sql/migrations/202611151800_staff_columns.sql`、`backend/packages/database/src/scripts/api-consistency-rules.ts`（`Models.StaffProfileResponse` が出さないカラムの一覧） |
+| インフラ（スケジュール） | `backend/packages/infrastructure/src/repositories/staff-schedule.repository.impl.ts`（行の並びと、置き換えのトランザクション） |
+| API | `backend/packages/api/src/routes/staff/`、`backend/packages/api/src/routes/staff-profile/`、`backend/packages/api/src/routes/staff-schedule/` |
+| DB | `backend/packages/database/sql/migrations/202611151800_staff_columns.sql`、`202611152100_staff_schedules_rules.sql`、`backend/packages/database/src/scripts/api-consistency-rules.ts`（`Models.StaffProfileResponse` と `Models.StaffSchedule` が出さないカラムの一覧） |

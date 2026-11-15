@@ -39,7 +39,8 @@ Before relying on anything, check this table.
 | Services of a salon (`/api/v1/salons/{salonId}/services`) | Implemented in every layer: list, create, get, update, bulk update, delete, the six operations of `ServiceCrud`. A service carries its options (the rows of `service_options`) in its requests and responses, and a package names the services it combines. The bulk update changes all the services it names or none of them. A delete keeps the row and marks it with `deletedAt`, and is refused with 409 while a package contains the service. List and get are public; create, update, bulk update and delete need a signed-in user with the permission. `isActive`, `serviceStatus`, `availability`, `bookingRequirements` and `maxBookingsPerDay` are stored and returned, and the list can filter by `isActive`; nothing else reads them: which services can be booked is not decided yet. See [Service Menu](./service-menu.md) (Japanese). |
 | Customer ledger (`/api/v1/customers`) | Implemented in every layer: list, create, get, update, delete, five of the 18 operations of `CustomerCrud`. A customer belongs to no salon: the ledger is one for the whole platform, and its routes are not below a salon. No operation is public: list, create, get and update need a signed-in administrator or member of a salon (owner, manager or staff of any salon), delete an administrator, an owner or a manager. A delete keeps the row and marks it with `deletedAt`. The other 13 operations of `CustomerCrud` are not implemented: the preferences (`PATCH /api/v1/customers/{id}/preferences`), batch get, bulk create, bulk update, bulk delete, restore, merge, audit history, versions, the two exports, statistics and the data deletion request. A signed-in customer reaches no route of the ledger; their own record is the profile of the next row. `isActive` and `customerStatus` are stored and returned, and the list can filter by `customerStatus`; nothing else reads them: which customers can book is not decided yet. Nothing maintains the points, the lifetime value or the visit counters. See [Customer Ledger](./customers.md) (Japanese). |
 | Customer profile (`/api/v1/customers/me`) | Implemented in every layer: get, create, update, the three operations of `CustomerProfile`. The profile is the customer record of the signed-in account. The route names no record: the account alone says which one, so a customer reaches no other. Only a customer account has a profile; an administrator and a member of a salon are answered with 403. A registered user has no record until they create the profile. The creation takes over the customer that the ledger has under the account's email address, unless that customer belongs to another account (409), and needs an account that has confirmed its address (409); without such a customer it adds one to the ledger. The response leaves out what the staff keep to themselves (notes, tags, status, the referrer, the lifetime value, the counts of no-shows and cancellations), and the requests write only what is the customer's own: the name, the contact details, the birth date, the preferences and the three consents. A delete of the customer in the ledger takes the profile from the account, which may then create a new one. See [Customer Ledger](./customers.md) (Japanese). |
-| Staff ledger of a salon (`/api/v1/salons/{salonId}/staff`) | Implemented in every layer: list, create, get, update, delete, five of the seven operations of `StaffCrud`. The ledger is what a salon keeps about its staff as their employer: names and contact details, the terms of employment (base salary, commission rate, employment type, hire date) and how a staff member takes bookings. Nothing of it is public, reading included: every operation needs an administrator or the owner of the salon in the path; a manager and a staff member are answered with 403. Deactivating (`isActive: false`) or deleting a staff member takes the salon from the login account that is linked to it, from its next request on, so nobody deactivates or deletes the staff member their own account belongs to (409). The email is unique among the staff members of one salon who are not deleted, the staff code among all staff members of the salon. A delete keeps the row and marks it with `deletedAt`. Not implemented: the schedules of a staff member (`getAvailability`, `updateAvailability`) and linking a login account to a staff member. See [Staff Ledger](./staff.md) (Japanese). |
+| Staff ledger of a salon (`/api/v1/salons/{salonId}/staff`) | Implemented in every layer: list, create, get, update, delete, the five operations of `StaffCrud`. The ledger is what a salon keeps about its staff as their employer: names and contact details, the terms of employment (base salary, commission rate, employment type, hire date) and how a staff member takes bookings. Nothing of it is public, reading included: every operation needs an administrator or the owner of the salon in the path; a manager and a staff member are answered with 403. Deactivating (`isActive: false`) or deleting a staff member takes the salon from the login account that is linked to it, from its next request on, so nobody deactivates or deletes the staff member their own account belongs to (409). The email is unique among the staff members of one salon who are not deleted, the staff code among all staff members of the salon. A delete keeps the row and marks it with `deletedAt`. Not implemented: linking a login account to a staff member. See [Staff Ledger](./staff.md) (Japanese). |
+| Staff schedules (`/api/v1/salons/{salonId}/staff/{id}/schedules`) | Implemented in every layer: list and update, the two operations of `StaffSchedules`. A schedule says when a staff member works. It is a list of entries (`StaffSchedule`, the rows of `staff_schedules`): weekly ones, at most one per day of the week, and ones for a single date, at most one per date, which replace the weekly entry on that date. An entry is a working day, with its hours and at most one break inside them, or a day off, without times. The update is a `PUT` whose body is the whole schedule: it replaces every row, in one transaction. With `?date=` the list answers with the one entry that applies to that date, or with none. Nothing of it is public: an administrator, the owner and the managers of the salon in the path read and write, and a staff member of the salon reads their own schedule. The schedule of a staff member who is not active can be read and written, that of a deleted one is answered with 404. Nothing reads the schedules to work out free slots yet. See [Staff Ledger](./staff.md#勤務スケジュール) (Japanese). |
 | Staff profiles (`/api/v1/staff-profiles`) | Implemented in every layer: list and get, the two operations of `StaffProfile`. A profile is what customers are shown of a row of the staff ledger, in a model of its own (`StaffProfileResponse`): the display name, the level, the position, the specialties, the biography, the photo, the years of experience, the certifications and whether the staff member takes bookings. The names, the contact details and the terms of employment are not in it. Both operations are public and read only. Shown are the staff members who are active and not deleted, of salons that are not deleted; any other is answered with 404, like an ID that no staff member has. The list goes across salons, in the order of registration, and filters by salon, by specialty and by the city of the salon. See [Staff Ledger](./staff.md#顧客に見せるプロフィール) (Japanese). |
 | Authentication (`/api/v1/auth`, `/api/v1/admin/auth`) | Implemented: `login`, `refresh`, `logout`, `logout-all` and `me`, on server-side sessions with opaque bearer tokens, and registration of customer accounts, email verification and password reset, each through a single-use token sent by mail, and password change, and two-factor authentication with the one-time passwords of an authenticator app (TOTP) and backup codes, and the list of the signed-in user's sessions with the revocation of one of them, and under `/api/v1/admin/auth` the administrator operations: read a user, unlock an account, reset two-factor authentication. That is every operation in `specs/operations/auth-operations.tsp`: the 16 of `AuthCrud`, the 2 of `SessionCrud` and the 3 of `AdminAuthCrud`. See [Authentication and Authorization](./authentication.md). |
 | Authorization | Implemented for the Salon API (create, update, delete), for the service categories of a salon (create, update, delete), for the services of a salon (create, update, bulk update, delete), for the customer ledger and a customer's own profile (every operation), for the staff ledger of a salon (every operation) and for the administrator operations. An implemented operation that the contract does not mark `@useAuth(NoAuth)` needs a valid access token, and its use case decides whether the signed-in user may do what is asked. |
@@ -322,8 +323,39 @@ api/src/
                                        /salons/:salonId)
 ```
 
-The staff profiles read the same table and write nothing, so they have
-no write mapper and no authorization:
+The schedules of the staff are rows below a staff member, read and
+replaced as a whole:
+
+```
+domain/src/
+├── models/staff-schedule.ts           API and database types; no ID type, because an
+│                                      entry is addressed by its staff member
+├── schemas/staff-schedule.schema.ts   Zod schema of the update (the rules of an entry,
+│                                      then no day twice) and of the list query
+├── mappers/write/staff-schedule.mapper.ts
+│                                      Entries → rows without their staff member
+├── mappers/read/staff-schedule.mapper.ts
+│                                      Row → entry; names every property
+├── repositories/staff-schedule.repository.ts
+│                                      IStaffScheduleRepository: findByStaff, replace
+└── business-logic/staff-schedule/     One *.usecase.ts per operation; _shared/ holds
+                                       the dependencies, who may plan and who may read
+                                       (authorization.ts) and which entry applies to a
+                                       date (applicable-schedule.ts)
+
+infrastructure/src/
+└── repositories/staff-schedule.repository.impl.ts
+                                       The order of the rows; the replacement in one
+                                       transaction that locks the staff member
+
+api/src/
+└── routes/staff-schedule/             One *.handler.ts per operation of StaffSchedules,
+                                       index.ts (router, mounted below
+                                       /salons/:salonId/staff/:id)
+```
+
+The staff profiles read the table of the ledger and write nothing, so they
+have no write mapper and no authorization:
 
 ```
 domain/src/
@@ -477,10 +509,13 @@ customers in `backend/packages/domain/src/models/customer.ts`,
 `backend/packages/api/src/routes/customer/_shared/types.ts`, the
 staff in `backend/packages/domain/src/models/staff.ts`,
 `backend/packages/domain/src/schemas/staff.schema.ts` and
-`backend/packages/api/src/routes/staff/_shared/types.ts`, and the staff
+`backend/packages/api/src/routes/staff/_shared/types.ts`, the staff
 profiles in `backend/packages/domain/src/models/staff-profile.ts`,
 `backend/packages/domain/src/schemas/staff-profile.schema.ts` and
-`backend/packages/api/src/routes/staff-profile/_shared/types.ts`.
+`backend/packages/api/src/routes/staff-profile/_shared/types.ts`, and the
+staff schedules in `backend/packages/domain/src/models/staff-schedule.ts`,
+`backend/packages/domain/src/schemas/staff-schedule.schema.ts` and
+`backend/packages/api/src/routes/staff-schedule/_shared/types.ts`.
 
 Model naming and nullability rules are in
 [TypeSpec API Type Rules](./typespec-api-type-rules.md); the pipeline in
@@ -571,7 +606,8 @@ mounts everything in this order. The order is part of the design:
    `/api/v1/salons/:salonId/service-categories`, the router of the
    services at `/api/v1/salons/:salonId/services`, the router of the staff
    ledger at `/api/v1/salons/:salonId/staff`, the router of the staff
-   profiles at `/api/v1/staff-profiles` and the router of the
+   schedules at `/api/v1/salons/:salonId/staff/:id/schedules`, the router
+   of the staff profiles at `/api/v1/staff-profiles` and the router of the
    customer ledger at `/api/v1/customers`. Each receives
    `authenticated`, which `createAuthenticated` builds once from the
    authentication dependencies; the router of the staff profiles does
@@ -845,6 +881,57 @@ member comes last, and a delete keeps the row and marks it with
 `deletedAt`. The rules are in [Staff Ledger](./staff.md), who may keep the
 ledger in [Authentication and Authorization](./authentication.md) (both
 Japanese).
+
+### A Staff Schedule Request
+
+The schedules of the staff (`business-logic/staff-schedule/`) are rows that
+belong to a staff member of a salon. A request takes the path of a staff
+request, with these differences:
+
+- **A router below a record.** The router is mounted at
+  `/salons/:salonId/staff/:id/schedules` with `Router({ mergeParams: true })`
+  and has two routes, `GET /` and `PUT /`; its handlers read `salonId` and
+  `id` from the path. A schedule has no ID of its own.
+- **A replacement, not a partial update.** The body of the `PUT` is the
+  array of all entries (`StaffScheduleUpdateRequest`), and what is not in
+  it is gone; an empty array leaves no schedule. The model of an entry
+  (`StaffSchedule`) is the same in the request and in the response, so what
+  a `GET` returned can be sent back.
+- **A permission in two steps.** The use case first decides from the salon
+  of the path (`mayPlanSchedules`: an administrator, the owner or a manager
+  of that salon; `mayReadSchedules` adds its staff). Then it reads the ID
+  of the staff member, and for a read asks whose schedule it is
+  (`mayReadScheduleOf`: a staff member reads their own). Both refusals are
+  403 and come before the query, the body and any lookup, so a staff member
+  learns nothing about a colleague's ID.
+- **Rules of an entry and rules between entries.** The schema checks each
+  entry by itself (weekly or for a single date, working day or day off,
+  the order of the four times), then that no day of the week and no date
+  comes twice. The issues of an entry carry `continue: true`, so one answer
+  reports both kinds. The CHECK constraints and the two partial unique
+  indexes of `staff_schedules` keep the same rules for whatever writes
+  rows.
+- **One transaction that locks the staff member.** `replace` selects the
+  row of the staff member `FOR UPDATE` (of this salon, not deleted), deletes
+  the rows of the schedule, inserts the new ones and reads them back in the
+  order of the list. Two replacements that arrive at the same moment are
+  carried out one after the other, so the rows of two requests never mix,
+  and a replacement that meets a delete of the staff member is done before
+  it or answered with 404.
+- **One order, decided by the repository.** Weekly entries from Monday to
+  Sunday (the order of the enum values of `dayOfWeek`), then the entries for
+  single dates, oldest first. The response of the `PUT` has it too, not the
+  order of the request.
+- **Which entry applies to a date is a pure function.** With `?date=` the
+  use case reads the whole schedule and hands it to `scheduleOn`
+  (`_shared/applicable-schedule.ts`): the entry of that date, or else the
+  weekly entry of its day of the week, or nothing. The booking domain will
+  ask the same question with the same function.
+- **A query the use case reads.** The handler passes `req.query` as it is;
+  the schema is strict and has one property, so nothing needs decoding,
+  and a query that is refused is refused after the permission.
+
+The rules are in [Staff Ledger](./staff.md#勤務スケジュール) (Japanese).
 
 ### A Staff Profile Request
 

@@ -8,39 +8,46 @@
 import type { ModelsDayOfWeekType } from './modelsDayOfWeekType';
 
 /**
- * スタッフ勤務スケジュール - staff_schedules テーブルの1行。勤務時間と休憩時間を表し、予約可能時間の算出に利用する。
- * 毎週繰り返す行(isRecurring が true)は dayOfWeek の曜日に、単日の行(isRecurring が false)は date の日付だけに適用する。
- * 同じ日付に単日の行がある場合は、その日付については毎週繰り返す行より単日の行を優先する。
- * プロパティ名と null 許可は DB カラムと一致させている
+ * スタッフ勤務スケジュール - staff_schedules テーブルの1行。スタッフがいつ勤務するかを表し、予約可能時間の算出に利用する。
+ * 毎週の行(isRecurring が true)は dayOfWeek の曜日に毎週、単日の行(isRecurring が false)は date の日付だけに適用する。
+ * 1人のスタッフが持てるのは、毎週の行が曜日ごとに1つまで、単日の行が日付ごとに1つまで。ある日付に単日の行がある場合は、その日付には単日の行だけを適用する。
+ * 勤務する行(isAvailable が true)は勤務時刻を持ち、休みの行(isAvailable が false)は時刻を持たない。
+ * リクエストとレスポンスの両方に使う。プロパティ名と null 許可は DB カラムと一致させている
  */
 export interface ModelsStaffSchedule {
-  /** 毎週繰り返す行が適用される曜日。単日の行の場合はnull */
+  /** 毎週の行が適用される曜日。毎週の行では必須。単日の行ではnull */
   dayOfWeek: ModelsDayOfWeekType | null;
   /**
-     * 単日の行が適用される日付。毎週繰り返す行の場合はnull
+     * 単日の行が適用される日付。単日の行では必須。毎週の行ではnull
      * @nullable
      */
   date: string | null;
-  /** 勤務開始時刻。HH:mm:ss形式で返す（指定時はHH:mmも可）。endTimeより前の時刻を指定する */
-  startTime: string;
-  /** 勤務終了時刻。HH:mm:ss形式で返す（指定時はHH:mmも可） */
-  endTime: string;
   /**
-     * 休憩開始時刻。HH:mm:ss形式で返す（指定時はHH:mmも可）。breakEndTimeと組で、勤務時間内の時刻を指定する。休憩がない場合はnull
+     * 勤務開始時刻。HH:mm:ss形式で返す（指定時はHH:mmも可）。勤務する行では必須で、endTimeより前の時刻を指定する。休みの行ではnull
+     * @nullable
+     */
+  startTime: string | null;
+  /**
+     * 勤務終了時刻。HH:mm:ss形式で返す（指定時はHH:mmも可）。勤務する行では必須。休みの行ではnull
+     * @nullable
+     */
+  endTime: string | null;
+  /**
+     * 休憩開始時刻。HH:mm:ss形式で返す（指定時はHH:mmも可）。breakEndTimeと組で、startTimeより後の時刻を指定する。休憩がない場合と、休みの行ではnull
      * @nullable
      */
   breakStartTime: string | null;
   /**
-     * 休憩終了時刻。HH:mm:ss形式で返す（指定時はHH:mmも可）。breakStartTimeと組で指定する。休憩がない場合はnull
+     * 休憩終了時刻。HH:mm:ss形式で返す（指定時はHH:mmも可）。breakStartTimeと組で、breakStartTimeより後、endTimeより前の時刻を指定する。休憩がない場合と、休みの行ではnull
      * @nullable
      */
   breakEndTime: string | null;
-  /** 毎週 dayOfWeek の曜日に繰り返す行かどうか。falseの場合は date の日付だけに適用する */
+  /** 毎週の行かどうか。trueの場合は dayOfWeek の曜日に毎週、falseの場合は date の日付だけに適用する */
   isRecurring: boolean;
-  /** 勤務可能かどうか。falseの場合は休み(臨時休みなど)を表す */
+  /** 勤務するかどうか。falseの場合は休み(定休、臨時休みなど)を表す */
   isAvailable: boolean;
   /**
-     * シフト変更の理由などの備考。特記事項がない場合はnull
+     * シフト変更や休みの理由などの備考。特記事項がない場合はnull
      * @nullable
      */
   notes: string | null;
