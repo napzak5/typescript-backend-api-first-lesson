@@ -269,7 +269,7 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 | 範囲 | 対象 | 届くもの |
 |---|---|---|
 | `platform` | `admin` | すべてのサロンと、顧客台帳 |
-| `salon` | `owner`、`manager`、`staff`。`users.staffId` が指すスタッフが有効（`isActive`、未削除）で、そのサロンが未削除であること | そのサロンと、顧客台帳。範囲はロール・サロン ID・スタッフ ID を持つ |
+| `salon` | `owner`、`manager`、`staff`。`users.staffId` が指すスタッフが有効（`isActive`、未削除）で、そのサロンが未削除であること | そのサロンと、顧客台帳、自分のスタッフのプロフィール（`/api/v1/staff-profiles/me`）。範囲はロール・サロン ID・スタッフ ID を持つ |
 | `customer` | `customer`。範囲は `users.customerId` を持ち、プロフィールを作るまでは null | 自分のプロフィール（`/api/v1/customers/me`）。null の間は、作成だけができる |
 | `none` | `owner`、`manager`、`staff` で、`salon` の条件に当たらない（スタッフ情報が削除された `staff`、紐づけを解除された `staff` など） | 範囲を必要とするものには届かない。ログインはでき、スタッフへの招待に[参加](./staff.md#参加)できる |
 
@@ -345,6 +345,14 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 
 顧客に見せるスタッフのプロフィール（`/api/v1/staff-profiles` の一覧と 1 件の取得）は、認証なしで読めます。サロンの下のルートではなく、権限の判定もありません。返すのは、台帳の項目のうち顧客に見せる 11 項目だけで、台帳を読めない `manager`、`staff`、顧客も読めます。見せるのは、有効で削除されていない、削除されていないサロンのスタッフです（[顧客に見せるプロフィール](./staff.md#顧客に見せるプロフィール)）。
 
+スタッフ本人のプロフィール（`/api/v1/staff-profiles/me` の取得と更新）には、認証が要ります。許可するのは、範囲が `salon` のアカウントで、ロール（`owner`、`manager`、`staff`）は問いません（`business-logic/staff-profile/_shared/own-profile.ts` の `ownProfileOf`）。
+
+- どのスタッフのプロフィールかは、範囲の `staffId` が決める。リクエストはスタッフを指定しないので、ほかのスタッフには届かない。`owner` も、ここで直せるのは自分のプロフィールだけ
+- `admin`、顧客、範囲が `none` のアカウント（スタッフが無効化、削除された、紐づけを解除された、サロンが削除された）は 403。本文を検証する前に判定する
+- 本人が書けるのは、自分を紹介する 5 項目（`specialties`、`bio`、`imageUrl`、`yearsOfExperience`、`certifications`）。顧客に見せる名前（`displayName`）、`level`、`position`、`canReceiveBookings` は、サロンが台帳で決める
+
+規則は [スタッフ本人のプロフィール](./staff.md#スタッフ本人のプロフィール) にあります。
+
 ### 顧客台帳の権限
 
 顧客（`customers`）はサロンに属さず、台帳はプラットフォーム全体で 1 つです。ルートは `/api/v1/customers` で、権限は**操作者だけ**で判定します（`business-logic/customer/_shared/authorization.ts`）。
@@ -406,7 +414,7 @@ export const updateSalonHandler = (
 }
 ```
 
-サロンに属するデータ（予約、スタッフなど）を実装するときは、[サロンの下にあるルートの権限](#サロンの下にあるルートの権限) に従います。ユースケースは、パスの ID を `parseSalonIdOfPath`（`backend/packages/domain/src/models/salon.ts`）で検証し、そのサロンで権限を判定してから、`requireSalon`（`business-logic/_shared/existing-salon.ts`）でサロンの存在を確認します。対象は、そのサロンのものだけを検索します。例は `business-logic/service-category/` と `business-logic/service/`（読むのは認証なし）、`business-logic/staff/`（どのオペレーションにも認証が要る）、`business-logic/staff-schedule/`（サロンで判定したあと、対象の ID でもう一度判定する）、`business-logic/staff-invitation/`（サロンで判定したあと、本文の値でもう一度判定する）、`business-logic/staff-account/`（同じ 2 段階のあとに、操作者自身のアカウントでないことを確認する）です。
+サロンに属するデータ（予約、スタッフなど）を実装するときは、[サロンの下にあるルートの権限](#サロンの下にあるルートの権限) に従います。ユースケースは、パスの ID を `parseSalonIdOfPath`（`backend/packages/domain/src/models/salon.ts`）で検証し、そのサロンで権限を判定してから、`requireSalon`（`business-logic/_shared/existing-salon.ts`）でサロンの存在を確認します。対象は、そのサロンのものだけを検索します。例は `business-logic/service-category/` と `business-logic/service/`（読むのは認証なし）、`business-logic/staff/`（どのオペレーションにも認証が要る）、`business-logic/staff-schedule/`（サロンで判定したあと、対象の ID でもう一度判定する）、`business-logic/staff-invitation/`（サロンで判定したあと、本文の値でもう一度判定する）、`business-logic/staff-account/`（同じ 2 段階のあとに、操作者自身のアカウントでないことを確認する）です。パスが対象を指定せず、アカウントが対象を決めるルートの例は、`business-logic/customer/` の `*-customer-profile.usecase.ts`（`/api/v1/customers/me`）と、`business-logic/staff-profile/` の `*-own-staff-profile.usecase.ts`（`/api/v1/staff-profiles/me`）です。
 
 サロンに属さないデータは、操作者だけで権限を判定し、最初に判定します。例は `business-logic/customer/`（[顧客台帳の権限](#顧客台帳の権限)）です。ログインしているアカウント自身のデータは、対象をパスの ID ではなく操作者の範囲から決めます。例は同じディレクトリの `*-customer-profile.usecase.ts` です。
 
@@ -417,10 +425,10 @@ export const updateSalonHandler = (
 | メールアドレス | ロール | 範囲 |
 |---|---|---|
 | `admin@beautysalon.jp` | `admin` | すべてのサロン |
-| `owner@beautysalon.jp` | `owner` | 1 つ目のサロン |
-| `manager@beautysalon.jp` | `manager` | 1 つ目のサロン |
-| `stylist1@beautysalon.jp`、`stylist2@beautysalon.jp` | `staff` | 1 つ目のサロン |
-| `therapist@beautysalon.jp` | `staff` | 2 つ目のサロン |
+| `owner@beautysalon.jp` | `owner` | 1 つ目のサロンと、自分のスタッフのプロフィール（`/api/v1/staff-profiles/me`） |
+| `manager@beautysalon.jp` | `manager` | 同上 |
+| `stylist1@beautysalon.jp`、`stylist2@beautysalon.jp` | `staff` | 同上 |
+| `therapist@beautysalon.jp` | `staff` | 2 つ目のサロンと、自分のスタッフのプロフィール |
 | `customer1@example.com` 〜 `customer3@example.com`、`vip.customer@example.com` | `customer` | 自分のプロフィール（`/api/v1/customers/me`） |
 
 ```bash
