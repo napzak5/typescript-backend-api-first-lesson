@@ -12,6 +12,8 @@ export type ApiStaffProfileResponse =
 export type ApiStaffProfileSearchRequest = NonNullable<
   operations['StaffProfile_list']['parameters']['query']
 >
+export type ApiStaffProfileUpdateRequest =
+  components['schemas']['Models.StaffProfileUpdateRequest']
 
 /**
  * The columns of `staff` that customers are shown. The name of a staff
