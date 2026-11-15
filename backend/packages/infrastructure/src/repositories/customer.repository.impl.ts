@@ -1,9 +1,11 @@
-import { customers } from '@beauty-salon-backend/database'
+import { customers, users } from '@beauty-salon-backend/database'
 import {
   type CustomerCreation,
   type CustomerId,
   type CustomerList,
   type CustomerListCriteria,
+  type CustomerProfileCreation,
+  type CustomerProfileWrite,
   type CustomerUpdate,
   type DbCustomer,
   type DbCustomerChanges,
@@ -11,6 +13,7 @@ import {
   type DomainError,
   DomainErrors,
   type ICustomerRepository,
+  type UserId,
 } from '@beauty-salon-backend/domain'
 import { Result } from '@beauty-salon-backend/utility'
 import {
@@ -29,6 +32,7 @@ import { attempt } from '../database/attempt'
 import { describeDatabaseError } from '../database/failure'
 import type { Database, DatabaseExecutor } from '../database/index'
 import { containing } from '../database/like'
+import { userNotDeleted } from './account'
 
 const emailTaken = {
   code: '23505',
@@ -86,6 +90,25 @@ const attemptWrite = async <T>(
     await Result.fromPromise(run()),
     toDomainError(message, unique),
   )
+
+/**
+ * Turns a failed creation of a profile into a domain error. One failure is
+ * expected: the staff registered a customer with the account's email after
+ * the ledger was searched for one. The next attempt finds that entry.
+ */
+const toProfileError = (cause: unknown): DomainError =>
+  match(cause)
+    .with(P.union(emailTaken, { cause: emailTaken }), () =>
+      DomainErrors.conflict(
+        'A customer with the email address of this account was registered at the same moment; try again',
+      ),
+    )
+    .otherwise(() =>
+      DomainErrors.database(
+        'Failed to create customer profile',
+        describeDatabaseError(cause),
+      ),
+    )
 
 const notDeleted = isNull(customers.deletedAt)
 
@@ -297,14 +320,105 @@ export class CustomerRepository implements ICustomerRepository {
   }
 
   async delete(id: CustomerId): Promise<Result<boolean, DomainError>> {
-    return attempt('Failed to delete customer', async () => {
-      const deleted = await this.db
-        .update(customers)
-        .set({ deletedAt: sql`now()`, updatedAt: sql`now()` })
-        .where(and(eq(customers.id, id), notDeleted))
-        .returning({ id: customers.id })
+    return attempt('Failed to delete customer', () =>
+      this.db.transaction(async (tx) => {
+        const deleted = await tx
+          .update(customers)
+          .set({ deletedAt: sql`now()`, updatedAt: sql`now()` })
+          .where(and(eq(customers.id, id), notDeleted))
+          .returning({ id: customers.id })
+        if (deleted.length === 0) {
+          return false
+        }
+        // The account is without a profile from now on and may create one.
+        // The deleted row keeps naming the account it was the profile of.
+        await tx
+          .update(users)
+          .set({ customerId: null, updatedAt: sql`now()` })
+          .where(eq(users.customerId, id))
 
-      return deleted.length > 0
-    })
+        return true
+      }),
+    )
+  }
+
+  async createProfile(
+    userId: UserId,
+    { newEntry, claim }: CustomerProfileWrite,
+  ): Promise<Result<CustomerProfileCreation, DomainError>> {
+    const created = await Result.fromPromise(
+      this.db.transaction(
+        async (tx): Promise<CustomerProfileCreation | null> => {
+          // The account is locked: of two requests of one account the
+          // second sees the profile of the first.
+          const [account] = await tx
+            .select({
+              role: users.role,
+              email: users.email,
+              emailVerified: users.emailVerified,
+              customerId: users.customerId,
+            })
+            .from(users)
+            .where(and(eq(users.id, userId), userNotDeleted))
+            .for('update')
+          if (account === undefined || account.role !== 'customer') {
+            return { type: 'notACustomerAccount' }
+          }
+          if (account.customerId !== null) {
+            return { type: 'alreadyHasProfile' }
+          }
+          if (!account.emailVerified) {
+            return { type: 'emailNotVerified' }
+          }
+
+          // The entry is locked: it is not deleted, and not taken by
+          // another account, before it is linked.
+          const [entry] = await tx
+            .select({ id: customers.id, userId: customers.userId })
+            .from(customers)
+            .where(and(eq(customers.email, account.email), notDeleted))
+            .for('update')
+          if (
+            entry !== undefined &&
+            entry.userId !== null &&
+            entry.userId !== userId
+          ) {
+            return { type: 'entryOfAnotherAccount' }
+          }
+
+          const [profile] =
+            entry === undefined
+              ? await tx
+                  .insert(customers)
+                  .values({ ...newEntry, email: account.email, userId })
+                  .returning()
+              : await tx
+                  .update(customers)
+                  .set({ ...claim, userId, updatedAt: sql`now()` })
+                  .where(eq(customers.id, entry.id))
+                  .returning()
+          if (profile === undefined) {
+            return null
+          }
+          await tx
+            .update(users)
+            .set({ customerId: profile.id, updatedAt: sql`now()` })
+            .where(eq(users.id, userId))
+
+          return { type: 'created', customer: profile }
+        },
+      ),
+    )
+
+    return Result.flatMap(Result.mapError(created, toProfileError), (data) =>
+      data === null
+        ? Result.error(
+            DomainErrors.database(
+              'Write of customer profile returned no row',
+              null,
+            ),
+          )
+        : Result.success(data),
+    )
   }
 }
