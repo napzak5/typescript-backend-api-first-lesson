@@ -605,7 +605,7 @@ describe('Booking status API', () => {
           await authorized(request(app).patch(address), asAdmin).send({}),
           await authorized(request(app).delete(address), asAdmin),
           await authorized(request(app).post(`${address}/again`), asAdmin),
-          // Without a booking, the name of an action is an ID that is none.
+          // An action is of a booking: without an ID there is no such address.
           await authorized(
             request(app).post(`${BOOKINGS}/${action}`),
             asAdmin,
@@ -620,6 +620,24 @@ describe('Booking status API', () => {
           '404 3001',
           '404 3001',
         ])
+        expect((await stored(id)).status).toBe('confirmed')
+      },
+    )
+
+    // The action that notes a no-show is at `no-show`: neither the name of
+    // the operation nor that of the status is an address. Nothing leads
+    // back from a status, and a booking is not moved yet.
+    it.each(['noShow', 'no_show', 'reopen', 'reschedule'])(
+      'has no action at %s',
+      async (name) => {
+        const id = await bookingIn('confirmed', beginning(-5))
+
+        const response = await authorized(
+          request(app).post(`${BOOKINGS}/${id}/${name}`),
+          asAdmin,
+        ).send({})
+
+        expect(statusAndCode(response)).toBe('404 3001')
         expect((await stored(id)).status).toBe('confirmed')
       },
     )
