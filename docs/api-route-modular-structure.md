@@ -58,11 +58,14 @@ backend/packages/api/src/
 │   ├── customer/
 │   │   ├── _shared/
 │   │   │   ├── types.ts            # CustomerParams, and the response body types
-│   │   │   ├── links.ts            # customerLinks
+│   │   │   ├── links.ts            # customerLinks, customerProfileLinks
 │   │   │   ├── query.ts            # decodeCustomerSearchQuery
 │   │   │   └── index.ts            # re-exports the three files above
 │   │   ├── list-customers.handler.ts             # GET    /api/v1/customers
 │   │   ├── create-customer.handler.ts            # POST   /api/v1/customers
+│   │   ├── get-customer-profile.handler.ts       # GET    /api/v1/customers/me
+│   │   ├── create-customer-profile.handler.ts    # POST   /api/v1/customers/me
+│   │   ├── update-customer-profile.handler.ts    # PATCH  /api/v1/customers/me
 │   │   ├── get-customer.handler.ts               # GET    /api/v1/customers/:id
 │   │   ├── update-customer.handler.ts            # PATCH  /api/v1/customers/:id
 │   │   ├── delete-customer.handler.ts            # DELETE /api/v1/customers/:id
@@ -109,7 +112,7 @@ backend/packages/api/src/
 └── __tests__/                      # integration tests and their helpers (see Tests)
 ```
 
-There is one handler per operation of the `SalonCrud` interface in `specs/operations/salon-operations.tsp`, and no other salon route. Filtering is part of the list operation; there is no separate search endpoint. Each operation in `specs/operations/auth-operations.tsp` has a handler in the same way: those of the interfaces `AuthCrud` and `SessionCrud` in `routes/auth/`, and those of `AdminAuthCrud`, which the contract puts under a path of its own (`/api/v1/admin/auth`), in `routes/admin-auth/`. The five operations of `ServiceCategoryCrud` in `specs/operations/service-operations.tsp` have theirs in `routes/service-category/`, and the six operations of `ServiceCrud` in the same file have theirs in `routes/service/`. Of the 18 operations of `CustomerCrud` in `specs/operations/customer-operations.tsp`, the five that are implemented (list, create, get, update, delete) have theirs in `routes/customer/`; the other 13 have no handler.
+There is one handler per operation of the `SalonCrud` interface in `specs/operations/salon-operations.tsp`, and no other salon route. Filtering is part of the list operation; there is no separate search endpoint. Each operation in `specs/operations/auth-operations.tsp` has a handler in the same way: those of the interfaces `AuthCrud` and `SessionCrud` in `routes/auth/`, and those of `AdminAuthCrud`, which the contract puts under a path of its own (`/api/v1/admin/auth`), in `routes/admin-auth/`. The five operations of `ServiceCategoryCrud` in `specs/operations/service-operations.tsp` have theirs in `routes/service-category/`, and the six operations of `ServiceCrud` in the same file have theirs in `routes/service/`. Of the 18 operations of `CustomerCrud` in `specs/operations/customer-operations.tsp`, the five that are implemented (list, create, get, update, delete) have theirs in `routes/customer/`; the other 13 have no handler. The three operations of `CustomerProfile` in the same file (get, create, update of a customer's own profile) have theirs in `routes/customer/` as well, in the files named `*-customer-profile.handler.ts`.
 
 ## Key Principles
 
@@ -196,7 +199,7 @@ The five handlers in `routes/service-category/` are those of the table above for
 
 The six handlers in `routes/service/` are the same five for the services of a salon, and one more. `bulk-update-services.handler.ts` (`PATCH /bulk`) is wrapped, passes `actor`, `req.params.salonId` and `req.body`, and answers 200 with `{ data, meta, links }`: `data.updated` lists the IDs of the services that were changed, and `links` holds `list` only.
 
-The five handlers in `routes/customer/` are those of the table above with one difference: none is public. All five are wrapped with `authenticated` and pass the `actor` first; the get handler, for example, passes `actor` and `req.params.id`. The answers are the same. What the list handler passes next to the `actor` is described under [Query parameters](#query-parameters).
+The five handlers in `routes/customer/` are those of the table above with one difference: none is public. All five are wrapped with `authenticated` and pass the `actor` first; the get handler, for example, passes `actor` and `req.params.id`. The answers are the same. What the list handler passes next to the `actor` is described under [Query parameters](#query-parameters). The three handlers of a customer's own profile have no `:id`: the get handler passes the `actor` alone, the create and the update handler the `actor` and `req.body`, and the use case finds the record through the actor. A created profile is answered with 201 and a `Location` header like any created resource; its location is `/api/v1/customers/me`, for whichever customer.
 
 ### Query parameters
 
@@ -270,7 +273,7 @@ export type UpdateSalonResponse = JsonBody<
 
 The `links` of a response are built from the mount path:
 
-- `salonLinks(collectionPath, id)` in `routes/salon/_shared/links.ts` returns `{ self, list }` for one salon. `serviceCategoryLinks(collectionPath, id)` in `routes/service-category/_shared/links.ts` returns the same for one category, and `serviceLinks(collectionPath, id)` in `routes/service/_shared/links.ts` for one service; their `collectionPath` names the salon, because the mount path does. `customerLinks(collectionPath, id)` in `routes/customer/_shared/links.ts` returns `{ self, list }` for one customer. `userLinks(basePath, id)` in `routes/admin-auth/_shared/links.ts` returns `{ self }` for a user as an administrator reaches it.
+- `salonLinks(collectionPath, id)` in `routes/salon/_shared/links.ts` returns `{ self, list }` for one salon. `serviceCategoryLinks(collectionPath, id)` in `routes/service-category/_shared/links.ts` returns the same for one category, and `serviceLinks(collectionPath, id)` in `routes/service/_shared/links.ts` for one service; their `collectionPath` names the salon, because the mount path does. `customerLinks(collectionPath, id)` in `routes/customer/_shared/links.ts` returns `{ self, list }` for one customer, and `customerProfileLinks(collectionPath)` in the same file `{ self }` for a customer's own profile, which has one address and no list. `userLinks(basePath, id)` in `routes/admin-auth/_shared/links.ts` returns `{ self }` for a user as an administrator reaches it.
 - `pageLinks(collectionPath, requestUrl, meta)` in `shared/page-links.ts` returns the links of a page: the request's own query string with `cursor` replaced. Pages are only walked forwards, so `prev` and `last` are always `null`. The salon list, the list of service categories, the list of services, the customer list and the session list use it.
 
 ### Router
@@ -316,11 +319,17 @@ The handlers declare the parameter in their path parameters (`SalonParams` in `s
 
 Express tries the routes in the order in which they were registered, so `/bulk` is registered before `/:id`, which would otherwise take `bulk` for the ID of a service.
 
-`routes/customer/index.ts` exports `createCustomerRouter(dependencies, authenticated)` with the same five routes as the salon router. A customer belongs to no salon, so the router is mounted at `/customers` and is a plain `Router()`; its handlers with an `:id` declare `CustomerParams` (`routes/customer/_shared/types.ts`). No operation of the customer ledger is public, so every handler receives `authenticated`:
+`routes/customer/index.ts` exports `createCustomerRouter(dependencies, authenticated)` with the same five routes as the salon router, and the three of a customer's own profile. A customer belongs to no salon, so the router is mounted at `/customers` and is a plain `Router()`; its handlers with an `:id` declare `CustomerParams` (`routes/customer/_shared/types.ts`). No operation of the customer ledger or of the profile is public, so every handler receives `authenticated`. The routes of `/me` are registered before those of `/:id`, which would take `me` for an ID otherwise:
 
 ```typescript
   router.get('/', listCustomersHandler(dependencies, authenticated))
   router.post('/', createCustomerHandler(dependencies, authenticated))
+  router.get('/me', getCustomerProfileHandler(dependencies, authenticated))
+  router.post('/me', createCustomerProfileHandler(dependencies, authenticated))
+  router.patch(
+    '/me',
+    updateCustomerProfileHandler(dependencies, authenticated),
+  )
   router.get('/:id', getCustomerHandler(dependencies, authenticated))
   router.patch('/:id', updateCustomerHandler(dependencies, authenticated))
   router.delete('/:id', deleteCustomerHandler(dependencies, authenticated))

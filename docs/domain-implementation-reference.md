@@ -739,7 +739,7 @@ A new domain adds one such statement next to it, before `notFoundHandler`. The s
 | `backend/packages/domain/src/__tests__/salon.mapper.test.ts` | unit | both mappers, including stored rows that do not fit |
 | `backend/packages/domain/src/__tests__/salon.usecase.test.ts` | unit | each use case against a stubbed repository, and who may change a salon |
 | `backend/packages/domain/src/__tests__/fixtures.ts` | helper | a valid request, rows as the driver returns them, `salonRepositoryWith` (the stub of the repository), `brokenRules` |
-| `backend/packages/domain/src/__tests__/auth-fixtures.ts` | helper | `actors`: an admin, a member of a salon by role, a customer, a user without a scope |
+| `backend/packages/domain/src/__tests__/auth-fixtures.ts` | helper | `actors`: an admin, a member of a salon by role, a customer with and without a customer record, a user without a scope |
 | `backend/packages/api/src/routes/salon/_shared/__tests__/` | unit | link building and query decoding |
 | `backend/packages/api/src/__tests__/salon.integration.test.ts` | integration | every endpoint through HTTP against PostgreSQL, signed in as the user the scenario needs |
 
@@ -871,6 +871,21 @@ The customer ledger is one for the whole platform: a customer belongs to no salo
 
 Who may do what is stated in [Authentication and Authorization](./authentication.md).
 
+### Data That Belongs to the Signed-In Account: a Customer's Own Profile
+
+A customer account reads, creates and updates its own customer record at `/api/v1/customers/me`. The record is a row of the ledger, so the profile shares the table, the repository, the dependencies and the router of the customers, and adds what differs:
+
+| Step | What the profile shows | Where to read it |
+|------|------------------------|------------------|
+| 1. API contract | An interface of its own (`CustomerProfile`) at a fixed path below the collection, without an ID. Models of its own, because the same table is shown and written differently: `CustomerProfileResponse` leaves out what the staff keep to themselves, and the two requests have only what a customer states. `pnpm check:api-db` checks them against `customers` with the columns each may leave out | `specs/operations/customer-operations.tsp`, `specs/models/customer.tsp`, `backend/packages/database/src/scripts/api-consistency-rules.ts` |
+| 3. Database schema | One account, one customer: `customers.userId` is unique among the customers that are not deleted. `customers.userId` has no foreign key, because `users.customerId` has one and two tables that refer to each other cannot be typed in the generated schema; the code writes both columns in one transaction | `backend/packages/database/sql/migrations/202611151500_customers_user_unique.sql` |
+| 5. Validation schemas | `pick`ed from the schema of the ledger, so a property has one rule wherever it is written | `backend/packages/domain/src/schemas/customer.schema.ts` |
+| 6. Mappers | The write mapper returns two things, the new row and the changes of a row that is taken over, because only the repository learns which applies. The read mapper names every property it returns, so a new column of the table is not shown to the customer by itself | `backend/packages/domain/src/mappers/write/customer-profile.mapper.ts`, `backend/packages/domain/src/mappers/read/customer-profile.mapper.ts` |
+| 7. Repository interface | `createProfile` answers with a sum type that includes why an account did not get a profile (`CustomerProfileCreation`): the reasons depend on rows that only the transaction sees as they are | `backend/packages/domain/src/repositories/customer.repository.ts` |
+| 8. Repository implementation | One transaction locks the account's row, decides, locks the customer the ledger has under the account's email, writes the row and the link on both sides. The delete of the ledger clears the link in its own transaction | `backend/packages/infrastructure/src/repositories/customer.repository.impl.ts` |
+| 9. Use cases | The record is found through the actor, not through the request: `profileAccessOf` turns the scope into the account's own record, a customer account without one, or not a customer account, and the use case matches on it before it reads the body | `backend/packages/domain/src/business-logic/customer/_shared/profile.ts`, `backend/packages/domain/src/business-logic/customer/create-customer-profile.usecase.ts` |
+| 10. Handlers and router | `/me` is registered before `/:id`. The links of the profile are `{ self }`, the same for every customer | `backend/packages/api/src/routes/customer/index.ts`, `backend/packages/api/src/routes/customer/_shared/links.ts` |
+
 ## Error Handling
 
 A use case fails in one of seven ways (`backend/packages/domain/src/shared/errors.ts`):
@@ -893,9 +908,9 @@ Errors are built with `DomainErrors.validation`, `.unauthenticated`, `.forbidden
 | `validation` | `parseWith`, called by a use case (and by the query decoding of a list handler). The authentication use cases also build it themselves for what a schema cannot check: a password that is too easy to guess, a wrong current password, a mailed token that cannot be used, a code of two-factor authentication that is not accepted, a cursor of the session list that names no session of the user. The service category use cases do so for a parent that is not a category of the same salon or that is the category itself or one below it, and for a cursor that names no category of the salon. The service use cases do so for a service that would break a rule tying two of its properties together, for a category that is not of the same salon, for a member of a package that is not a service of the same salon, is a package or is the service itself, for making a package of a service that a package contains, and for a cursor that names no service of the salon; `toRefusalError` (`backend/packages/domain/src/business-logic/service/_shared/refusals.ts`) builds the ones that answer a refusal of the repository. The customer use cases do so for a birth date before 1900 or in the future, for a referrer that does not exist, is deleted or is the customer itself, and for a cursor that names no customer | 400 with the broken rules in `errors` |
 | `unauthenticated` | the authentication use cases only: `AuthenticateUseCase` behind `authenticated`, login and refresh, and the current-user, change-password and two-factor use cases when the user of the session no longer exists | 401 with a `WWW-Authenticate` header |
 | `forbidden` | a use case, when its permission rule refuses the actor | 403 |
-| `notFound` | a use case, when the repository resolved to `null` or `false` or reported that there is no such row; `requireSalon`, when the salon in the path does not exist | 404 |
+| `notFound` | a use case, when the repository resolved to `null` or `false` or reported that there is no such row; `requireSalon`, when the salon in the path does not exist; a use case of a customer's own profile, when the account has no customer record | 404 |
 | `alreadyExists` | the repository, from a unique violation: the email of a salon, the email of a customer, the referral code of a customer | 409 |
-| `conflict` | a use case, when the request is fine and what it acts on is not in a state that allows it: the use cases of two-factor authentication (enabling what is already enabled, for example), those of the administrator operations (unlocking an account that is not locked, for example), and the use case that deletes a service, when a package contains the service | 409 |
+| `conflict` | a use case, when the request is fine and what it acts on is not in a state that allows it: the use cases of two-factor authentication (enabling what is already enabled, for example), those of the administrator operations (unlocking an account that is not locked, for example), the use case that deletes a service, when a package contains the service, and the use case that creates a customer's own profile, when the account has one already, has not confirmed its email address, or the customer with its email address belongs to another account. The customer repository returns it as well, when a customer with that email address is added at the moment the profile is created | 409 |
 | `database` | the repository, from a failed query; the read mapper, from a stored row that does not fit | 500 without details; the cause is logged |
 
 The API package maps the kind to a status and a problem details body (`backend/packages/api/src/shared/problem-details.ts`). A domain adds nothing there unless it introduces a new kind of error, and then the exhaustive match in that file stops compiling until the new kind has a status.
@@ -925,6 +940,7 @@ Domain package (`backend/packages/domain/src/`):
 - [ ] `__tests__/`: schema, mapper and use case tests, the last including every kind of actor for each permission rule
 - [ ] When the data belongs to a salon: the use case parses the salon of the path with `parseSalonIdOfPath`, decides the permission from that salon, and calls `requireSalon` before it reaches its repository; the dependencies hold `salonRepository`; every method of the repository interface takes the salon ID
 - [ ] When the data belongs to no salon and is not public (`business-logic/customer/` is the example): the use case decides the permission from the actor alone and first, before it reads the ID, the query or the body; the use case of a list takes the decoded query as a `Result`
+- [ ] When the data belongs to the signed-in account (`business-logic/customer/*-customer-profile.usecase.ts` is the example): the route has no ID and the use case finds the record through the scope of the actor; the models leave out what the account is not shown or may not write, and the read mapper names every property it returns
 
 Infrastructure package (`backend/packages/infrastructure/src/`):
 

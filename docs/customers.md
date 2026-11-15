@@ -2,19 +2,20 @@
 
 顧客（`customers`）の規則をまとめます。コントラクトは `specs/operations/customer-operations.tsp` と `specs/models/customer.tsp`、テーブルは `customers` です。
 
+顧客情報には入口が 2 つあります。管理者とサロンのスタッフは台帳（`/api/v1/customers`）で全員の顧客情報を扱い、顧客本人は[プロフィール](#顧客本人のプロフィール)（`/api/v1/customers/me`）で自分の顧客情報だけを扱います。
+
 ## 実装範囲
 
-| オペレーション（`CustomerCrud`） | 状態 |
+| オペレーション | 状態 |
 |---|---|
-| 一覧、登録、1 件の取得、更新、削除 | 実装済み |
+| 台帳（`CustomerCrud`）の一覧、登録、1 件の取得、更新、削除 | 実装済み |
+| 本人のプロフィール（`CustomerProfile`）の取得、作成、更新 | 実装済み |
 | 好み設定の更新（`PATCH /{id}/preferences`） | 未実装。スタッフの存在確認が要るので、Staff のあとに実装する |
 | 一括取得、一括登録、一括更新、一括削除、復元、統合 | 未実装 |
 | 監査履歴、版、エクスポート、データ削除要請 | 未実装。保存するテーブルがない |
 | 統計 | 未実装。予約と会計の実装が前提 |
 
-未実装のオペレーションは、コントラクトには定義がありますが、サーバーは 404 を返します。
-
-顧客本人が自分の顧客情報を作り、読み、直すためのルートは、まだありません。登録したユーザー（ロール `customer`）は顧客情報を持たず、ここにあるルートも使えません。
+未実装のオペレーションは `CustomerCrud` のもので、コントラクトには定義がありますが、サーバーは 404 を返します。
 
 ## 台帳はプラットフォームで 1 つ
 
@@ -36,7 +37,7 @@
 
 - すべてのオペレーションに認証が要ります。台帳は公開情報ではありません
 - 権限は操作者だけで決まります（`business-logic/customer/_shared/authorization.ts` の `mayHandleCustomers` と `mayDeleteCustomers`）。サロンのロールは、どのサロンのものでも同じ扱いです
-- ロール `customer` のユーザーと、ロールに必要なレコードを持たないユーザー（範囲 `none`）は、どのオペレーションも 403 です。レスポンスはスタッフ専用の項目（`internalNotes`）を含むので、顧客本人には自分の顧客情報も返しません
+- ロール `customer` のユーザーと、ロールに必要なレコードを持たないユーザー（範囲 `none`）は、台帳のどのオペレーションも 403 です。台帳のレスポンスはスタッフ専用の項目（`internalNotes` など）を含むので、顧客本人には、自分の顧客情報も台帳からは返しません。本人には[プロフィール](#顧客本人のプロフィール)を返します
 - 削除済みの顧客は、どのオペレーションからも見えません（404）。存在しない ID と区別しません
 - ID（パスの `id`、本文の `referredBy`、クエリの `cursor`）は、英字を大文字で書いても同じ ID です。レスポンスの `data` と `meta` の ID は小文字です
 
@@ -95,7 +96,7 @@
 | `allowMarketing` / `allowSms` / `allowEmail` / `isActive` | 真偽値 |
 | `hairType` / `hairThickness` / `scalpCondition` | null、またはそれぞれの Enum の値 |
 
-- **リクエストで変えられない項目**: `userId`（ログインアカウントとの紐づけ）、`loyaltyPoints`、`lifetimeValue`、`firstVisitDate`、`lastVisitDate`、`visitCount`、`noShowCount`、`cancellationCount`。本文に書くと 400（`unrecognized_keys`）です。予約、会計、本人の登録が更新します
+- **リクエストで変えられない項目**: `userId`（ログインアカウントとの紐づけ）、`loyaltyPoints`、`lifetimeValue`、`firstVisitDate`、`lastVisitDate`、`visitCount`、`noShowCount`、`cancellationCount`。本文に書くと 400（`unrecognized_keys`）です。`userId` は本人がプロフィールを作ったときに決まり、ほかは予約と会計が更新します
 - **生年月日の「未来」**: 日付にはタイムゾーンがありません。日本時間の今日は、UTC ではまだ前日のことがあるので、UTC の今日の翌日までを受け付けます（`business-logic/customer/_shared/rules.ts` の `customerRuleIssues`。現在時刻は依存の `clock` から受け取る）
 - **メールアドレスと紹介コードの一意性は範囲が違います**。削除した顧客のメールアドレスは、別の顧客の登録に使えます（同じ人がもう一度登録できる）。紹介コードは、人に配ったあとも出回るので、顧客を削除しても別の顧客には使い回しません
 - **紹介元**（`referredBy`）は、登録した時点の事実として保存します。紹介元の顧客があとで削除されても、値は残ります。2 人が互いを紹介元にするような循環は確認しません
@@ -107,8 +108,70 @@
 - 論理削除です（`deletedAt` を設定し、行は残す）
 - 削除した顧客のメールアドレスは、別の顧客の登録や更新に使えるようになります。紹介コードは使えないままです
 - 削除した顧客を紹介元にしている顧客の `referredBy` は変えません。削除した顧客を、新しく紹介元に指定することはできません
-- ログインアカウントとの紐づけ（`users.customerId`、`customers.userId`）は変えません。削除された顧客情報を持つユーザーの扱いは、本人用のルートの実装で決めます
+- その顧客をプロフィールにしているアカウントがあれば、紐づけを外します（[顧客が削除されたとき](#顧客が削除されたとき)）
 - 予約が残っている顧客を削除できるかは、予約の実装で決めます
+
+## 顧客本人のプロフィール
+
+ロール `customer` のアカウントは、台帳の中の自分の顧客情報を「プロフィール」として作り、読み、直せます。プロフィールは台帳の 1 行で、スタッフが台帳で見ているものと同じ顧客です。
+
+| オペレーション（`CustomerProfile`） | ルート | 結果 |
+|---|---|---|
+| 取得 | `GET /api/v1/customers/me` | 200。プロフィールがなければ 404 |
+| 作成 | `POST /api/v1/customers/me` | 201（`Location` は `/api/v1/customers/me`）。すでにあれば 409 |
+| 更新 | `PATCH /api/v1/customers/me` | 200。プロフィールがなければ 404 |
+
+- **どの顧客かは、アカウントだけで決まります**（`users.customerId`）。リクエストは顧客を指定しません。ほかの顧客を読むことも変えることもできません
+- 許可するのは、ロール `customer` のアカウントだけです。`admin` とサロンのロールは 403 で、顧客情報は台帳で扱います（`business-logic/customer/_shared/profile.ts` の `profileAccessOf`）
+- プロフィールを持たないアカウントの取得と更新は 404 です。顧客が台帳から削除されたアカウントも同じ応答です
+- 本人がプロフィールを削除するオペレーションはありません。顧客の削除は台帳のオペレーションです
+- ルーターは `/me` を `/:id` より先に登録しています。`DELETE /api/v1/customers/me` は台帳の削除のルートに届き、`me` は顧客の ID ではないので、削除の権限があるユーザーには 400、ないユーザーには 403 を返します
+
+### 本人に見せる項目、本人が書ける項目
+
+| 項目 | 取得（`CustomerProfileResponse`） | 作成、更新 |
+|---|---|---|
+| `firstName`、`lastName`、`firstNameKana`、`lastNameKana`、`phoneNumber`、`alternativePhone`、`postalCode`、`prefecture`、`city`、`address`、`building`、`birthDate`、`gender`、`occupation`、`preferences`、`allowMarketing`、`allowSms`、`allowEmail` | 出る | 書ける |
+| `id`、`email`、`membershipTier`、`loyaltyPoints`、`referralCode`、`firstVisitDate`、`lastVisitDate`、`visitCount`、`hairType`、`hairThickness`、`scalpCondition`、`createdAt`、`updatedAt` | 出る | 書けない |
+| `userId`、`notes`、`internalNotes`、`tags`、`referredBy`、`isActive`、`customerStatus`、`lifetimeValue`、`noShowCount`、`cancellationCount` | 出ない | 書けない |
+
+- 書ける項目の規則は、台帳と同じです（[項目の規則](#項目の規則)）。作成（`CustomerProfileCreateRequest`）は 18 項目すべてが必須で、台帳で null にできる項目は null にできます。更新（`CustomerProfileUpdateRequest`）は指定した項目だけを変え、空の本文 `{}` は 400 です
+- 書けない項目を本文に書くと 400（`unrecognized_keys`）です。会員ランク、ポイント、状態を本人が書き換えることはできません
+- **メールアドレスは本人が書けません**。作成のとき、アカウントのメールアドレスが顧客のメールアドレスになります。そのあとは台帳の値で、スタッフが台帳で直せば、プロフィールにもその値が出ます（アカウントのメールアドレスは変わりません）
+- 本人に見せる項目は、読み出しのマッパー（`CustomerProfileReadMapper`）が 1 つずつ名指しします。台帳に項目を足しても、名指ししなければ本人には出ません
+
+### プロフィールの作成と、台帳の顧客の引き継ぎ
+
+来店したことのある顧客は、アカウントを作る前から台帳にいます。作成は、アカウントのメールアドレスで台帳を探します。
+
+| 台帳の、同じメールアドレスの顧客（削除済みを除く） | 作成の結果 |
+|---|---|
+| いない | 新しい顧客を登録して、プロフィールにする |
+| いて、どのアカウントにも紐づいていない | その顧客をプロフィールにする（引き継ぎ） |
+| いて、別のアカウントに紐づいている | 409 |
+
+- **新しい顧客**は、本人が書いた 18 項目と、スタッフが何も指定せずに登録したときと同じ値でできます。`membershipTier` は `regular`、`customerStatus` は `active`、`isActive` は true、`tags` は空、ほかの項目は null、ポイントと来店回数は 0 です
+- **引き継ぎ**では、顧客の ID、来店歴、ポイント、スタッフの記録がそのまま残ります。本人が値を書いた項目は顧客情報を置き換え、null にした項目は台帳の値を残します（姓名、電話番号、3 つの同意は null にできないので、必ず置き換わります）。台帳の値を消すには、作成のあとで更新を使います。スタッフ側の項目は変えません。`isActive` と `customerStatus` がどの値でも引き継ぎます
+- **メールアドレスを確認していないアカウントは作成できません**（409）。引き継ぎの根拠は、そのメールアドレスの持ち主であることです。登録の流れでは、確認が済むまでログインできないので、通常の利用でこの 409 になることはありません
+- 紐づけは `users.customerId` と `customers.userId` の両方に、1 つのトランザクションで書きます。`GET /api/v1/auth/me` の `customerId` に、顧客の ID が出るようになります
+
+### 確認の順序（プロフィール）
+
+1. アクセストークン（401）
+2. アカウントの種類（403）
+3. プロフィールの有無: 作成は、すでにあれば 409。取得と更新は、なければ 404
+4. リクエストの本文（400）、生年月日の範囲（400）
+5. 保存されている行で決まること（作成）: メールアドレスの確認（409）、同じメールアドレスの顧客の紐づけ先（409）
+
+読めない本文は、台帳と同じく、この順序の前に答えます。
+
+### 顧客が削除されたとき
+
+- 台帳で顧客を削除すると、その顧客をプロフィールにしているアカウントの紐づけ（`users.customerId`）を、同じトランザクションで外します
+- アカウントは残り、ログインできます。プロフィールの取得と更新は 404 になり、作成をもう一度送れます。できるのは新しい顧客で、削除した顧客の来店歴やポイントは引き継ぎません
+- 削除した行の `customers.userId` は、どのアカウントの顧客だったかの記録として残します
+
+アカウントを削除する機能は、まだありません。作るときは、そのアカウントの顧客との紐づけ（`customers.userId`）を外す必要があります。外さないと、同じメールアドレスで登録し直したアカウントが、台帳の顧客を引き継げません。
 
 ## 同時に届いたリクエスト
 
@@ -119,9 +182,13 @@
 | 同じ顧客の削除が同時に届く | 1 件だけが 204 で、ほかは 404 |
 | 同じ顧客の更新と削除が同時に届く | 削除は成功する。更新は、先に処理されれば 200、あとなら 404 |
 | 顧客の削除と、そのメールアドレスでの登録が同時に届く | 登録は、削除が先に済んでいれば成功し、そうでなければ 409。削除されていない顧客が同じメールアドレスを 2 人持つことはない |
-| 同じ顧客の別々の項目を同時に更新する | どちらの変更も残る |
+| 同じ顧客の別々の項目を同時に更新する | どちらの変更も残る。本人（プロフィール）とスタッフ（台帳）の更新でも同じ |
+| 同じアカウントのプロフィールの作成が同時に届く | 1 件だけが 201 で、ほかは 409。顧客は 1 人だけできる |
+| プロフィールの作成と、そのアカウントのメールアドレスでの顧客の登録（台帳）が同時に届く | そのメールアドレスの顧客は 1 人だけ。登録が先に済めば、作成はその顧客を引き継ぐ（どちらも 201）。作成が先に済めば、登録は 409。同じ瞬間に書き込むと、作成が 409（もう一度送れば、登録された顧客を引き継ぐ） |
+| プロフィールの作成と、引き継ぐはずの顧客の削除が同時に届く | どちらも成功する。削除が先なら、新しい顧客がプロフィールになる。作成が先なら、引き継いだ顧客が削除され、アカウントはプロフィールのない状態に戻る |
+| プロフィールの更新と、その顧客の削除が同時に届く | 削除は成功する。更新は、先に処理されれば 200、あとなら 404 |
 
-一意性は DB の一意インデックスが決めます。更新は、対象の行をロックしてから紹介元を確認し、書き込みます。
+一意性は DB の一意インデックスが決めます。更新は、対象の行をロックしてから紹介元を確認し、書き込みます。プロフィールの作成は、アカウントの行、引き継ぐ顧客の行の順にロックしてから書き込みます。
 
 ## DB の制約
 
@@ -135,13 +202,20 @@
 
 以前の行は、マイグレーションが直します（配列でない `tags` は空配列に、`{}` の `preferences` は NULL に、など。詳細はマイグレーションのコメント）。メールアドレスを小文字にした結果、削除されていない顧客の間で重なる場合は、マイグレーションが失敗します。どちらを残すかを決めてから、やり直します。
 
+マイグレーション `202611151500_customers_user_unique.sql` で、アカウントとの紐づけを 1 対 1 にしました。
+
+- `customers.userId` は、削除されていない顧客の間で一意（一意インデックス `customers_user_unique`）。削除されていない 2 人の顧客が同じアカウントを指していると、マイグレーションが失敗します。どちらがそのアカウントの顧客かを決めてから、やり直します
+- 削除済みの顧客を指していた `users.customerId` は NULL にする
+- `customers.userId` には外部キーを付けていません。`users.customerId` に外部キーがあり、2 つのテーブルが互いを外部キーで参照すると、DB から生成する `schema.ts` に型が付かなくなるためです（[DB 駆動ドメインモデル](./db-driven-domain-model.md)）。2 つのカラムは、紐づけるコードと外すコードが 1 つのトランザクションで一緒に書きます
+
 ## 実装の場所
 
 | 層 | ファイル |
 |---|---|
 | コントラクト | `specs/models/customer.tsp`、`specs/operations/customer-operations.tsp` |
 | ドメイン | `backend/packages/domain/src/models/customer.ts`、`schemas/customer.schema.ts`、`mappers/write/customer.mapper.ts`、`mappers/read/customer.mapper.ts`、`repositories/customer.repository.ts`、`business-logic/customer/`（権限は `_shared/authorization.ts`、生年月日と紹介元の規則は `_shared/rules.ts`、電話番号での検索の判定は `_shared/search.ts`） |
+| ドメイン（プロフィール） | 同じ `models/customer.ts`、`schemas/customer.schema.ts`、`repositories/customer.repository.ts`（`createProfile`）と、`mappers/write/customer-profile.mapper.ts`、`mappers/read/customer-profile.mapper.ts`、`business-logic/customer/` の `*-customer-profile.usecase.ts`（誰のプロフィールかは `_shared/profile.ts`） |
 | ドメイン（共通） | `backend/packages/domain/src/schemas/rules.ts`（`lowerCaseEmail`、`phoneNumber` など、複数のドメインのスキーマが使う規則） |
 | インフラ | `backend/packages/infrastructure/src/repositories/customer.repository.impl.ts`、`database/like.ts`（キーワードを文字どおりに探す LIKE のパターン） |
-| API | `backend/packages/api/src/routes/customer/` |
-| DB | `backend/packages/database/sql/migrations/202611150900_customers_columns.sql` |
+| API | `backend/packages/api/src/routes/customer/`（プロフィールは `*-customer-profile.handler.ts`） |
+| DB | `backend/packages/database/sql/migrations/202611150900_customers_columns.sql`、`202611151500_customers_user_unique.sql` |
