@@ -373,11 +373,19 @@ describe('Bookings API', () => {
     return row.id
   }
 
+  /** A status with the times the table wants a booking in that status to have, and no others. */
+  const inStatus = (status: NewBooking['status']): Partial<NewBooking> => ({
+    status,
+    cancelledAt: status === 'cancelled' ? at('00:30') : null,
+    completedAt: status === 'completed' ? at('02:00') : null,
+    actualStartTime: status === 'in_progress' ? at('01:00') : null,
+  })
+
   const setStatus = async (
     id: string,
     status: NewBooking['status'],
   ): Promise<void> => {
-    await db.update(bookings).set({ status }).where(eq(bookings.id, id))
+    await db.update(bookings).set(inStatus(status)).where(eq(bookings.id, id))
   }
 
   /** Signs in and returns the Authorization header to send. */
@@ -1625,7 +1633,6 @@ describe('Bookings API', () => {
           completedAt: '2026-11-20 11:05:00+09',
           actualStartTime: '2026-11-20 10:02:00+09',
           actualEndTime: '2026-11-20 11:04:00+09',
-          cancellationFee: 0,
         },
         { isCompleted: true, completedAt: '2026-11-20 11:04:00+09' },
       )
@@ -1642,7 +1649,7 @@ describe('Bookings API', () => {
         completedAt: '2026-11-20T02:05:00.000Z',
         actualStartTime: '2026-11-20T01:02:00.000Z',
         actualEndTime: '2026-11-20T02:04:00.000Z',
-        cancellationFee: 0,
+        cancellationFee: null,
         services: [
           { isCompleted: true, completedAt: '2026-11-20T02:04:00.000Z' },
         ],
@@ -1684,7 +1691,7 @@ describe('Bookings API', () => {
       expectProblem(await read(bookingNumber), badRequest)
     })
 
-    it('does not offer what is not there yet: a booking is neither changed nor removed', async () => {
+    it('does not offer what is not there yet: a booking is neither changed, moved nor removed', async () => {
       const { id } = await created()
 
       const responses = [
@@ -1693,9 +1700,9 @@ describe('Bookings API', () => {
         ),
         await authorized(request(app).delete(`${BOOKINGS}/${id}`), asAdmin),
         await authorized(
-          request(app).post(`${BOOKINGS}/${id}/cancel`),
+          request(app).post(`${BOOKINGS}/${id}/reschedule`),
           asAdmin,
-        ).send({}),
+        ).send({ startTime: at('05:00'), staffId }),
       ]
 
       expect(responses.map(statusAndCode)).toEqual([
@@ -3048,7 +3055,7 @@ describe('Bookings API', () => {
       ],
       [
         'a negative cancellation fee',
-        { cancellationFee: -1 },
+        { ...inStatus('cancelled'), cancellationFee: -1 },
         'bookings_amounts_not_negative',
       ],
       [
@@ -3166,7 +3173,13 @@ describe('Bookings API', () => {
     it('accepts a booking and a line whose amounts are all zero', async () => {
       const id = await insertBooking(
         db,
-        { subtotal: 0, totalAmount: 0, depositAmount: 0, cancellationFee: 0 },
+        {
+          ...inStatus('cancelled'),
+          subtotal: 0,
+          totalAmount: 0,
+          depositAmount: 0,
+          cancellationFee: 0,
+        },
         { price: 0, finalPrice: 0 },
       )
 

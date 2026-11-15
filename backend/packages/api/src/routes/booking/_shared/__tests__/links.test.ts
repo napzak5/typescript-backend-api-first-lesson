@@ -21,7 +21,7 @@ describe('bookingLinks', () => {
     })
   })
 
-  it('has no other link: what else is done with a booking is not offered yet', () => {
+  it('has no other link: what can be done with a booking depends on its status, which the booking states', () => {
     expect(Object.keys(bookingLinks(BOOKINGS, BOOKING_ID))).toEqual([
       'self',
       'list',
