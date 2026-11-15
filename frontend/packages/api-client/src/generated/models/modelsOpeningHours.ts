@@ -16,7 +16,7 @@ export interface ModelsOpeningHours {
   /** 日付 */
   date: string;
   /**
-     * 開店時刻。HH:mm:ss形式で返す（指定時はHH:mmも可）。終日休業の場合はnull
+     * 開店時刻。HH:mm:ss形式で返す（指定時はHH:mmも可）。終日休業の場合はnull。時刻がある日は、isHolidayがtrueでも、その時刻のあいだ営業する
      * @nullable
      * @pattern ^([01][0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$
      */
@@ -27,10 +27,10 @@ export interface ModelsOpeningHours {
      * @pattern ^([01][0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$
      */
   closeTime: string | null;
-  /** 休業日かどうかを示すフラグ。 */
+  /** 祝日・休業日かどうかを示すフラグ。trueのときだけ、開店時刻と閉店時刻を省いて終日休業にできる。時刻を指定した場合は、祝日の営業を表す */
   isHoliday: boolean;
   /**
-     * 祝日名称や社内呼称などの休業理由。通常営業日または理由不要の場合はnull
+     * 祝日名称や社内呼称など、祝日・休業日の理由。通常営業日または理由不要の場合はnull
      * @nullable
      */
   holidayName: string | null;

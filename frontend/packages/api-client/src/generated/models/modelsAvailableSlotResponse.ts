@@ -8,7 +8,7 @@
 import type { ModelsStaffId } from './modelsStaffId';
 
 /**
- * 空き枠レスポンス - スタッフごとの提供可能時間帯を表し、予約可能枠の算出結果として返す。
+ * 空き枠レスポンス - 1人のスタッフがサービスを始められる開始日時と、その施術が終わる日時を表す。
  * テーブルには保存せず、予約・スタッフのスケジュール・営業時間から算出する
  */
 export interface ModelsAvailableSlotResponse {
@@ -16,6 +16,6 @@ export interface ModelsAvailableSlotResponse {
   staffId: ModelsStaffId;
   /** 空き枠の開始日時 (UTC) */
   startTime: string;
-  /** 空き枠の終了日時 (UTC) */
+  /** 空き枠の終了日時 (UTC)。開始日時に施術時間を足した日時 */
   endTime: string;
 }

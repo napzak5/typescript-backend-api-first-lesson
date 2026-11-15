@@ -19,13 +19,13 @@ export type AvailableSlotCrudListParams = {
    * @maximum 100
    */
   limit?: ModelsAvailableSlotSearchRequestLimitParameter;
-  /** 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+  /** 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する。ページの最後の枠を表す `<startTime>_<staffId>` の形で、その枠より後の枠から返す */
   cursor?: ModelsAvailableSlotSearchRequestCursorParameter;
   /** 施術スタッフや従業員を識別するためのブランド付きUUID。 */
   staffId?: ModelsAvailableSlotSearchRequestStaffIdParameter;
   /** 提供メニュー・施術サービスを識別するためのブランド付きUUID。 */
   serviceId: ModelsAvailableSlotSearchRequestServiceIdParameter;
-  /** 空き枠を探す日付 */
+  /** 空き枠を探す日付。サロンのタイムゾーンでの日付。過去の日付には空の一覧を返す */
   date: ModelsAvailableSlotSearchRequestDateParameter;
   /**
    * 必要な施術時間（分）。指定しない場合はサービスの施術時間を使う

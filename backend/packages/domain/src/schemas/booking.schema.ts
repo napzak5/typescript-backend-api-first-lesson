@@ -39,7 +39,7 @@ const MILLISECONDS_OF_A_MINUTE = 60_000
  * spelling `toISOString` gives, so that two times that are the same moment
  * are the same text.
  */
-const minuteInUtc = z.iso
+export const minuteInUtc = z.iso
   .datetime()
   // What is not a time has been reported as that.
   .refine((value) => {

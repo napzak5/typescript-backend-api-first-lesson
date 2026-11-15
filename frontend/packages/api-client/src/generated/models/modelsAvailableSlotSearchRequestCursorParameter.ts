@@ -7,6 +7,6 @@
  */
 
 /**
- * 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する
+ * 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する。ページの最後の枠を表す `<startTime>_<staffId>` の形で、その枠より後の枠から返す
  */
 export type ModelsAvailableSlotSearchRequestCursorParameter = string;

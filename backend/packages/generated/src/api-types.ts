@@ -2469,7 +2469,7 @@ export interface paths {
         };
         /**
          * List available slots
-         * @description 指定日の予約可能枠を取得し、空き枠一覧や予約フォームに反映します。サロンが存在しない場合は404を、serviceIdやstaffIdがサロンのものではない場合は400を返します。
+         * @description 指定日に、サービスを予約できる枠(1人のスタッフがそのサービスを始められる開始日時)を算出して返します。サインインしているユーザーなら誰でも実行できます。枠は、サロンの営業時間帯(営業日カレンダーにその日付の行があればその時刻、なければ曜日別の営業時間から休憩を除いたもの)と、スタッフの勤務時間帯(休憩を除く)の重なりの中に、時間帯の始まりから30分ごとに作ります。施術の全体が時間帯に収まり、スタッフが占有されておらず(予約台帳と同じ規則。前後の空け時間と同時に受けられる数を含む)、現在より後に始まる枠だけを返します。施術時間は duration、指定がなければサービスの duration です。次の場合は、その枠を返しません(エラーにはしません)。サロンが予約受付中でない(isActive が false)。サービスが予約できない(isActive が false、serviceStatus が active 以外、allowOnlineBooking が false、availability がその日の曜日に合わない、bookingRequirements に advance_booking_required があり当日である、その日の明細が maxBookingsPerDay に達している)。スタッフが予約を受けない(isActive または canReceiveBookings が false、level が requiredStaffLevel に満たない、その日に勤務しない)。並びは startTime の昇順、同じ日時は staffId の昇順です。サロンが存在しない場合は404を、serviceIdやstaffIdがサロンのものではない(削除済みを含む)場合は400を、サロンのタイムゾーンを名前として読めない場合は409を返します。
          */
         get: operations["AvailableSlotCrud_list"];
         put?: never;
@@ -2491,7 +2491,7 @@ export interface paths {
         put?: never;
         /**
          * Check availability
-         * @description 希望する日時・スタッフの組み合わせが予約可能か即時判定し、ダブルブッキングを防ぎます。サロンが存在しない場合は404を、serviceIdやstaffIdがサロンのものではない場合は400を返します。
+         * @description スタッフが、希望する日時からサービスの施術時間のあいだ、占有されていないかを答えます。予約台帳への作成・日時の変更・明細の追加が、スタッフの占有を理由に409になるかどうかを、何も書かずに確かめる操作で、admin と、そのサロンの owner / manager / staff が実行できます。確かめるのは占有だけです。営業時間、勤務スケジュール、サービスやスタッフの受付の設定、過去の日時かどうかは確かめません(予約台帳が確かめないものは確かめません)。答えはその時点のもので、あとの作成が409になることはあります。サロンが存在しない場合は404を、serviceIdやstaffIdがサロンのものではない(削除済みを含む)場合は400を返します。
          */
         post: operations["AvailableSlotCrud_check"];
         delete?: never;
@@ -3468,7 +3468,10 @@ export interface components {
             /** @description 認証アプリが生成したTOTPコード(6桁の数字)。バックアップコードは指定できない。 */
             code: string;
         };
-        /** @description 空き状況確認リクエスト - 希望する日時・スタッフ・施術メニューの組み合わせを受け取る。キーは必須 */
+        /**
+         * @description 空き状況確認リクエスト - 希望する日時・スタッフ・施術メニューの組み合わせを受け取る。キーは必須。
+         *     希望する時間は、startTime から、サービスの施術時間(duration)のあいだ
+         */
         "Models.AvailableSlotCheckRequest": {
             /** @description 担当を希望するスタッフのID。パスのサロンのスタッフを指定する */
             staffId: components["schemas"]["Models.StaffId"];
@@ -3476,19 +3479,19 @@ export interface components {
             serviceId: components["schemas"]["Models.ServiceId"];
             /**
              * Format: date-time
-             * @description 希望する施術開始日時 (UTC)
+             * @description 希望する施術開始日時 (UTC)。分単位で指定する(秒と小数は0)
              */
             startTime: string;
         };
-        /** @description 空き状況確認レスポンス - 希望した組み合わせが予約可能かどうかと、重なっている予約を返す */
+        /** @description 空き状況確認レスポンス - 希望した時間にスタッフが占有されていないかどうかと、重なっている予約を返す */
         "Models.AvailableSlotCheckResponse": {
-            /** @description 予約可能かどうか */
+            /** @description スタッフが占有されていないかどうか。予約台帳への作成が、スタッフの占有を理由に断られないこと */
             isAvailable: boolean;
-            /** @description 希望した時間帯に重なっている予約のID一覧。重なりがない場合は空配列 */
+            /** @description 希望した時間(スタッフの前後の空け時間を含む)に、施術明細(同じく空け時間を含む)が重なっている予約のID一覧。早く始まる明細の予約から並ぶ。同時に複数の予約を受けられるスタッフでは、重なりがあっても isAvailable が true のことがある。重なりがない場合は空配列 */
             conflicts: components["schemas"]["Models.BookingId"][];
         };
         /**
-         * @description 空き枠レスポンス - スタッフごとの提供可能時間帯を表し、予約可能枠の算出結果として返す。
+         * @description 空き枠レスポンス - 1人のスタッフがサービスを始められる開始日時と、その施術が終わる日時を表す。
          *     テーブルには保存せず、予約・スタッフのスケジュール・営業時間から算出する
          */
         "Models.AvailableSlotResponse": {
@@ -3501,7 +3504,7 @@ export interface components {
             startTime: string;
             /**
              * Format: date-time
-             * @description 空き枠の終了日時 (UTC)
+             * @description 空き枠の終了日時 (UTC)。開始日時に施術時間を足した日時
              */
             endTime: string;
         };
@@ -3576,6 +3579,10 @@ export interface components {
          *
 
          * deposit_required: デポジット必須 - 予約時に予約金の支払いが必要
+
+         * 空き枠は、advance_booking_required のあるサービスに、当日(サロンのタイムゾーンでの今日)の枠を返さない。
+
+         * ほかの値は、サーバーでは確かめられない条件で、空き枠には影響しない
 
          * @enum {string}
 
@@ -5721,13 +5728,13 @@ export interface components {
              * @description 日付
              */
             date: string;
-            /** @description 開店時刻。HH:mm:ss形式で返す（指定時はHH:mmも可）。終日休業の場合はnull */
+            /** @description 開店時刻。HH:mm:ss形式で返す（指定時はHH:mmも可）。終日休業の場合はnull。時刻がある日は、isHolidayがtrueでも、その時刻のあいだ営業する */
             openTime: string | null;
             /** @description 閉店時刻。HH:mm:ss形式で返す（指定時はHH:mmも可）。終日休業の場合はnull */
             closeTime: string | null;
-            /** @description 休業日かどうかを示すフラグ。 */
+            /** @description 祝日・休業日かどうかを示すフラグ。trueのときだけ、開店時刻と閉店時刻を省いて終日休業にできる。時刻を指定した場合は、祝日の営業を表す */
             isHoliday: boolean;
-            /** @description 祝日名称や社内呼称などの休業理由。通常営業日または理由不要の場合はnull */
+            /** @description 祝日名称や社内呼称など、祝日・休業日の理由。通常営業日または理由不要の場合はnull */
             holidayName: string | null;
             /** @description 備考や注意事項。特記事項がない場合はnull */
             notes: string | null;
@@ -7733,6 +7740,10 @@ export interface components {
 
          * seasonal: 季節限定 - 特定の季節のみ提供
 
+         * 空き枠は、weekdays_only のサービスを月曜日〜金曜日だけ、weekends_only のサービスを土曜日・日曜日だけに返す(サロンのタイムゾーンでの曜日)。
+
+         * ほかの値は、どの日も同じに扱う(空き枠からの予約は事前の予約であり、季節はサロンが serviceStatus で切り替える)
+
          * @enum {string}
 
          */
@@ -9406,9 +9417,9 @@ export interface components {
         "Models.AttachmentSearchRequest.limit": number;
         /** @description ファイルが紐づくサロンIDによる絞り込み(完全一致)。省略した場合はサロンで絞り込まない */
         "Models.AttachmentSearchRequest.salonId": components["schemas"]["Models.SalonId"];
-        /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+        /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する。ページの最後の枠を表す `<startTime>_<staffId>` の形で、その枠より後の枠から返す */
         "Models.AvailableSlotSearchRequest.cursor": string;
-        /** @description 空き枠を探す日付 */
+        /** @description 空き枠を探す日付。サロンのタイムゾーンでの日付。過去の日付には空の一覧を返す */
         "Models.AvailableSlotSearchRequest.date": string;
         /** @description 必要な施術時間（分）。指定しない場合はサービスの施術時間を使う */
         "Models.AvailableSlotSearchRequest.duration": number;
@@ -9416,7 +9427,7 @@ export interface components {
         "Models.AvailableSlotSearchRequest.limit": number;
         /** @description 予約したい施術メニューのID。パスのサロンのサービスを指定する */
         "Models.AvailableSlotSearchRequest.serviceId": components["schemas"]["Models.ServiceId"];
-        /** @description 空き枠を探すスタッフのID。指定しない場合はサロンのすべてのスタッフの空き枠を返す */
+        /** @description 空き枠を探すスタッフのID。パスのサロンのスタッフを指定する。指定しない場合はサロンのすべてのスタッフの空き枠を返す */
         "Models.AvailableSlotSearchRequest.staffId": components["schemas"]["Models.StaffId"];
         /** @description 来店日(bookingDate)の範囲の開始日。この日以降の予約に一致する。bookingDateTo より後の日付は指定できない */
         "Models.BookingSearchRequest.bookingDateFrom": string;
@@ -24662,13 +24673,13 @@ export interface operations {
             query: {
                 /** @description 1ページあたりの取得件数上限 (1〜100) */
                 limit?: components["parameters"]["Models.AvailableSlotSearchRequest.limit"];
-                /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+                /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する。ページの最後の枠を表す `<startTime>_<staffId>` の形で、その枠より後の枠から返す */
                 cursor?: components["parameters"]["Models.AvailableSlotSearchRequest.cursor"];
-                /** @description 空き枠を探すスタッフのID。指定しない場合はサロンのすべてのスタッフの空き枠を返す */
+                /** @description 空き枠を探すスタッフのID。パスのサロンのスタッフを指定する。指定しない場合はサロンのすべてのスタッフの空き枠を返す */
                 staffId?: components["parameters"]["Models.AvailableSlotSearchRequest.staffId"];
                 /** @description 予約したい施術メニューのID。パスのサロンのサービスを指定する */
                 serviceId: components["parameters"]["Models.AvailableSlotSearchRequest.serviceId"];
-                /** @description 空き枠を探す日付 */
+                /** @description 空き枠を探す日付。サロンのタイムゾーンでの日付。過去の日付には空の一覧を返す */
                 date: components["parameters"]["Models.AvailableSlotSearchRequest.date"];
                 /** @description 必要な施術時間（分）。指定しない場合はサービスの施術時間を使う */
                 duration?: components["parameters"]["Models.AvailableSlotSearchRequest.duration"];
@@ -24732,6 +24743,15 @@ export interface operations {
             };
             /** @description The server cannot find the requested resource. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The request conflicts with the current state of the server. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
