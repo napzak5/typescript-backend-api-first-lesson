@@ -12,10 +12,10 @@ namespace BeautySalon.Models {
     draft: 下書き - 予約内容を作成中、まだ確定していない状態
     pending: 保留中 - 予約リクエストを受付、確認待ちの状態
     confirmed: 確定 - 予約が確定し、スタッフが割り当てられた状態
-    in_progress: 施術中 - 現在サービスを実施中の状態
+    in_progress: 施術中 - 現在サービスを実施中の状態(start アクションで記録する)
     completed: 完了 - サービス提供が終了した状態
     cancelled: キャンセル - 予約がキャンセルされた状態
-    no_show: 無断キャンセル - 顧客が連絡なしに来店しなかった状態
+    no_show: 無断キャンセル - 顧客が連絡なしに来店しなかった状態(no-show アクションで、開始日時を過ぎてから記録する)
     """)
   enum BookingStatusType {
     draft,
@@ -167,7 +167,7 @@ namespace BeautySalon.Models {
     @doc("キャンセルが発生した場合の理由。キャンセルされていない場合、または理由が記録されていない場合はnull")
     cancellationReason: string | null;
 
-    @doc("キャンセル料。未設定の場合はnull")
+    @doc("キャンセル料。キャンセルされていない場合はnull。キャンセルされた予約では、料金を決める規則が未定義のため常に0")
     cancellationFee: int32 | null;
 
     @doc("予約の施術が完了した日時。完了していない場合はnull")
@@ -297,10 +297,10 @@ namespace BeautySalon.Models {
     予約完了リクエスト - 実際の施術開始・終了日時を受け取る。キーは必須で、記録しない日時は null を指定する
     """)
   model BookingCompleteRequest {
-    @doc("実際の施術開始日時。記録しない場合はnull")
+    @doc("実際の施術開始日時 (UTC)。nullの場合は、記録済みの日時(start アクションが記録したもの)を残す")
     actualStartTime: utcDateTime | null;
 
-    @doc("実際の施術終了日時。actualStartTime より後の日時を指定する。記録しない場合はnull")
+    @doc("実際の施術終了日時 (UTC)。実際の施術開始日時(このリクエストの値、nullの場合は記録済みの値)より後の日時を指定する。記録しない場合はnull")
     actualEndTime: utcDateTime | null;
   }
 

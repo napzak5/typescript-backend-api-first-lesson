@@ -127,20 +127,20 @@ export interface ModelsCustomerResponse {
   /** メールでの連絡を許可するかどうか */
   allowEmail: boolean;
   /**
-     * 初回来店日。未来店の場合はnull
+     * 初回来店日。完了(completed)した予約の来店日のうち最も早い日。来店がない場合はnull
      * @nullable
      */
   firstVisitDate: string | null;
   /**
-     * 最終来店日。新規顧客でまだ来店がない場合はnull
+     * 最終来店日。完了(completed)した予約の来店日のうち最も遅い日。来店がない場合はnull
      * @nullable
      */
   lastVisitDate: string | null;
-  /** 総来店回数。これまでの来店実績の合計 */
+  /** 総来店回数。完了(completed)した予約の数 */
   visitCount: number;
-  /** 無断キャンセル回数。連絡なしで来店しなかった回数 */
+  /** 無断キャンセル回数。顧客が来店しなかった(no_show)予約の数 */
   noShowCount: number;
-  /** キャンセル回数。予約をキャンセルした回数 */
+  /** キャンセル回数。キャンセル(cancelled)された予約の数 */
   cancellationCount: number;
   /** アクティブな顧客かどうか */
   isActive: boolean;

@@ -11,7 +11,7 @@ using TypeSpec.OpenAPI;
 using BeautySalon.Models;
 
 namespace BeautySalon.Operations {
-  @doc("サロンの予約台帳を管理するAPI操作群です。予約と、その施術明細・ステータスを扱います。ステータスは confirm・cancel・complete のアクションで変更します。実装済みの操作は、一覧・作成・1件の取得です。これらは admin と、予約のサロンのスタッフ(owner / manager / staff)が実行できます。レスポンスはサロン内のメモを含むので、顧客本人(customer)には403を返します。ほかのサロンの予約は、存在しない予約と区別しません。")
+  @doc("サロンの予約台帳を管理するAPI操作群です。予約と、その施術明細・ステータスを扱います。ステータスは confirm・cancel・start・complete・no-show のアクションで変更します。実装済みの操作は、一覧・作成・1件の取得と、ステータスの5つのアクションです。これらは admin と、予約のサロンのスタッフ(owner / manager / staff)が実行できます。レスポンスはサロン内のメモを含むので、顧客本人(customer)には403を返します。ほかのサロンの予約は、存在しない予約と区別しません。")
   @route("/api/v1/bookings")
   @tag("Bookings")
   namespace BookingOperations {
@@ -78,7 +78,7 @@ namespace BeautySalon.Operations {
         | ProblemResponse<409>
         | CommonErrors;
 
-      @doc("draftまたはpendingの予約を確定(confirmed)し、顧客への案内やリソース確保を開始します。それ以外のステータスの予約には409を返します。")
+      @doc("draftまたはpendingの予約を確定(confirmed)します。予約は作成の時点から施術枠を占有しているので、確定で変わるのはステータスだけです。それ以外のステータスの予約には409を、ほかのサロンの予約には404を返します。")
       @summary("Confirm booking")
       @route("/{id}/confirm")
       @post
@@ -92,7 +92,7 @@ namespace BeautySalon.Operations {
         | ProblemResponse<409>
         | CommonErrors;
 
-      @doc("draft・pending・confirmedの予約をキャンセル(cancelled)し、理由を記録して施術枠を開放します。キャンセル日時・キャンセルした利用者・キャンセル料はシステムが設定します。それ以外のステータスの予約には409を返します。")
+      @doc("draft・pending・confirmedの予約をキャンセル(cancelled)し、理由を記録して施術枠を開放します。キャンセル日時とキャンセルした利用者はシステムが設定します。キャンセル料は、料金を決める規則が未定義のため、常に0です。顧客のキャンセル回数(cancellationCount)を、顧客の予約から数え直します。それ以外のステータスの予約には409を、ほかのサロンの予約には404を返します。")
       @summary("Cancel booking")
       @route("/{id}/cancel")
       @post
@@ -107,7 +107,21 @@ namespace BeautySalon.Operations {
         | RequestBodyErrors
         | CommonErrors;
 
-      @doc("confirmedまたはin_progressの予約の施術完了(completed)を登録し、実績データや売上計上に利用します。予約のすべての施術明細も完了にします。それ以外のステータスの予約には409を返します。")
+      @doc("confirmedの予約の施術を開始(in_progress)し、実際の施術開始日時(actualStartTime)に現在の日時を記録します。それ以外のステータスの予約には409を、ほかのサロンの予約には404を返します。")
+      @summary("Start booking")
+      @route("/{id}/start")
+      @post
+      start(@path id: BookingId):
+        | {
+            @statusCode statusCode: 200;
+            @body response: ApiResponse<BookingResponse>;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<404>
+        | ProblemResponse<409>
+        | CommonErrors;
+
+      @doc("confirmedまたはin_progressの予約の施術完了(completed)を登録します。予約のすべての施術明細も完了にし、顧客の来店回数(visitCount)と初回・最終来店日を、顧客の予約から数え直します。actualStartTime・actualEndTimeは、nullでない値を記録し、nullの場合は記録済みの値を残します。リクエストの終了日時が開始日時より後でない場合は400を、それ以外のステータスの予約や、終了日時が記録済みの開始日時より後でない場合は409を、ほかのサロンの予約には404を返します。")
       @summary("Complete booking")
       @route("/{id}/complete")
       @post
@@ -120,6 +134,20 @@ namespace BeautySalon.Operations {
         | ProblemResponse<404>
         | ProblemResponse<409>
         | RequestBodyErrors
+        | CommonErrors;
+
+      @doc("pendingまたはconfirmedの予約に、顧客が来店しなかったこと(no_show)を記録し、施術枠を開放します。顧客の無断キャンセル回数(noShowCount)を、顧客の予約から数え直します。予約の開始日時を過ぎるまでは記録できず、409を返します(来ないと分かった予約はキャンセルします)。それ以外のステータスの予約には409を、ほかのサロンの予約には404を返します。")
+      @summary("Record no-show")
+      @route("/{id}/no-show")
+      @post
+      noShow(@path id: BookingId):
+        | {
+            @statusCode statusCode: 200;
+            @body response: ApiResponse<BookingResponse>;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<404>
+        | ProblemResponse<409>
         | CommonErrors;
 
       @doc("draft・pending・confirmedの予約の開始日時と担当スタッフを変更します。施術明細の日時は同じ時間だけずらし、変更前の担当スタッフが担当していた施術明細は新しい担当スタッフに付け替えます。staffIdが予約のサロンのスタッフではない場合は400を、それ以外のステータスの予約や、変更後の時間が担当スタッフの既存の予約と重なる場合は409を返します。")

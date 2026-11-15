@@ -93,7 +93,7 @@ export interface ModelsBookingResponse {
      */
   cancellationReason: string | null;
   /**
-     * キャンセル料。未設定の場合はnull
+     * キャンセル料。キャンセルされていない場合はnull。キャンセルされた予約では、料金を決める規則が未定義のため常に0
      * @nullable
      */
   cancellationFee: number | null;
