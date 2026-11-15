@@ -45,6 +45,14 @@ export type CustomerCreation =
   | { type: 'created'; customer: DbCustomer }
   | CustomerWriteRefusal
 
+/** What became of a customer that was to be deleted. */
+export type CustomerDeletion =
+  | { type: 'deleted' }
+  /** There is no such customer, or it is deleted already. */
+  | { type: 'notFound' }
+  /** A booking of the customer, in whatever salon, is not finished. */
+  | { type: 'bookingsUnfinished' }
+
 export type CustomerUpdate =
   | { type: 'updated'; customer: DbCustomer }
   | { type: 'notFound' }
@@ -99,9 +107,9 @@ export interface ICustomerRepository {
 
   /**
    * Deletes the customer and takes the record from the account that has it
-   * as its profile. Resolves to false when the customer does not exist.
+   * as its profile, unless a booking of the customer is not finished.
    */
-  delete(id: CustomerId): Promise<Result<boolean, DomainError>>
+  delete(id: CustomerId): Promise<Result<CustomerDeletion, DomainError>>
 
   /**
    * Gives the account a customer record and links the two. The record is

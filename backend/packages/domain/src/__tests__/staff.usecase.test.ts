@@ -10,6 +10,7 @@ import {
 } from '../business-logic/staff'
 import type { Actor } from '../models/auth'
 import type { DbStaff } from '../models/staff'
+import type { StaffDeletion } from '../repositories/staff.repository'
 import { type DomainError, DomainErrors } from '../shared'
 import { actors, STAFF_ID } from './auth-fixtures'
 import { brokenRules, OTHER_SALON_ID, SALON_ID } from './fixtures'
@@ -1177,10 +1178,29 @@ describe('DeleteStaffUseCase', () => {
 
   it('answers 404 for a staff member the salon does not have', async () => {
     const dependencies = staffDependencies({
-      delete: vi.fn(async () => Result.success(false)),
+      delete: vi.fn(async () =>
+        Result.success<StaffDeletion>({ type: 'notFound' }),
+      ),
     })
 
     expect(await remove(dependencies)).toEqual(staffNotFound)
+  })
+
+  it('answers 409 for a staff member who is on bookings that are not finished', async () => {
+    const dependencies = staffDependencies({
+      delete: vi.fn(async () =>
+        Result.success<StaffDeletion>({ type: 'bookingsUnfinished' }),
+      ),
+    })
+
+    expect(await remove(dependencies)).toEqual({
+      type: 'error',
+      error: {
+        type: 'conflict',
+        message:
+          'The staff member cannot be deleted: bookings that are not finished refer to it',
+      },
+    })
   })
 
   it('returns the error of a failed salon lookup', async () => {

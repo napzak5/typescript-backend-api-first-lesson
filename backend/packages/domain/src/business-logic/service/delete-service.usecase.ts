@@ -5,6 +5,7 @@ import { parseSalonIdOfPath } from '../../models/salon'
 import { parseServiceId, type ServiceId } from '../../models/service'
 import { type DomainError, DomainErrors } from '../../shared'
 import { requireSalon } from '../_shared/existing-salon'
+import { unfinishedBookingsReferTo } from '../_shared/unfinished-bookings'
 import { mayManageServices } from './_shared/authorization'
 import type { ServiceUseCaseDependencies } from './_shared/dependencies'
 
@@ -15,7 +16,8 @@ export class DeleteServiceUseCase {
    * Takes a service off the menu of a salon; its row stays, marked as
    * deleted. Whether the actor may is decided from the salon in the path
    * alone, before anything is looked up. A service that a package contains
-   * stays until it has left the package.
+   * stays until it has left the package, and a service that a booking has
+   * which is not finished stays until the booking is.
    */
   async execute(
     actor: Actor,
@@ -57,6 +59,9 @@ export class DeleteServiceUseCase {
             'The service is part of a package and has to leave it first',
           ),
         ),
+      )
+      .with({ type: 'bookingsUnfinished' }, () =>
+        Result.error(unfinishedBookingsReferTo('service')),
       )
       .exhaustive()
   }

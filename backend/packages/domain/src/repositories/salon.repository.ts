@@ -30,6 +30,14 @@ export type SalonList = {
   hasMore: boolean
 }
 
+/** What became of a salon that was to be deleted. */
+export type SalonDeletion =
+  | { type: 'deleted' }
+  /** There is no such salon, or it is deleted already. */
+  | { type: 'notFound' }
+  /** A booking of the salon is not finished. */
+  | { type: 'bookingsUnfinished' }
+
 /**
  * Persistence of salons. Deleted salons are invisible to every method, and
  * each write is atomic: a salon and its calendar change together or not at
@@ -58,6 +66,6 @@ export interface ISalonRepository {
     openingHours: OpeningHoursChange,
   ): Promise<Result<SalonWithOpeningHours | null, DomainError>>
 
-  /** Resolves to false when the salon does not exist. */
-  delete(id: SalonId): Promise<Result<boolean, DomainError>>
+  /** Marks the salon as deleted, unless one of its bookings is not finished. */
+  delete(id: SalonId): Promise<Result<SalonDeletion, DomainError>>
 }

@@ -1,4 +1,8 @@
-import { staff } from '@beauty-salon-backend/database'
+import {
+  bookingServices,
+  bookings,
+  staff,
+} from '@beauty-salon-backend/database'
 import {
   type DbNewStaff,
   type DbStaff,
@@ -7,6 +11,7 @@ import {
   DomainErrors,
   type IStaffRepository,
   type SalonId,
+  type StaffDeletion,
   type StaffId,
   type StaffList,
   type StaffListCriteria,
@@ -15,8 +20,13 @@ import { Result } from '@beauty-salon-backend/utility'
 import { and, asc, count, eq, isNull, sql } from 'drizzle-orm'
 import { match, P } from 'ts-pattern'
 import { attempt } from '../database/attempt'
+import { CLOCK } from '../database/clock'
 import { describeDatabaseError } from '../database/failure'
 import type { Database } from '../database/index'
+import {
+  hasLineOfUnfinishedBooking,
+  hasUnfinishedBooking,
+} from './unfinished-bookings'
 
 const emailTaken = {
   code: '23505',
@@ -201,15 +211,40 @@ export class StaffRepository implements IStaffRepository {
   async delete(
     salonId: SalonId,
     id: StaffId,
-  ): Promise<Result<boolean, DomainError>> {
-    return attempt('Failed to delete staff member', async () => {
-      const deleted = await this.db
-        .update(staff)
-        .set({ deletedAt: sql`now()`, updatedAt: sql`now()` })
-        .where(and(ofSalon(salonId, id), notDeleted))
-        .returning({ id: staff.id })
+  ): Promise<Result<StaffDeletion, DomainError>> {
+    return attempt('Failed to delete staff member', () =>
+      this.db.transaction(
+        async (tx): Promise<StaffDeletion> => {
+          // An entry and a reschedule of a booking hold the rows of the
+          // staff members they name until they have written: the look for
+          // bookings is after this lock.
+          const [held] = await tx
+            .select({ id: staff.id })
+            .from(staff)
+            .where(and(ofSalon(salonId, id), notDeleted))
+            .for('update')
+          if (held === undefined) {
+            return { type: 'notFound' }
+          }
+          if (
+            (await hasUnfinishedBooking(tx, eq(bookings.staffId, id))) ||
+            (await hasLineOfUnfinishedBooking(
+              tx,
+              eq(bookingServices.staffId, id),
+            ))
+          ) {
+            return { type: 'bookingsUnfinished' }
+          }
 
-      return deleted.length > 0
-    })
+          await tx
+            .update(staff)
+            .set({ deletedAt: CLOCK, updatedAt: CLOCK })
+            .where(eq(staff.id, id))
+
+          return { type: 'deleted' }
+        },
+        { isolationLevel: 'read committed' },
+      ),
+    )
   }
 }

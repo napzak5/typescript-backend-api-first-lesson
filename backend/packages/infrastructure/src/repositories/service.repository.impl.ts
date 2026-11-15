@@ -1,4 +1,5 @@
 import {
+  bookingServices,
   serviceCategories,
   serviceOptions,
   services,
@@ -40,7 +41,9 @@ import {
 } from 'drizzle-orm'
 import { match } from 'ts-pattern'
 import { attempt } from '../database/attempt'
+import { CLOCK } from '../database/clock'
 import type { Database, DatabaseExecutor } from '../database/index'
+import { hasLineOfUnfinishedBooking } from './unfinished-bookings'
 
 const notDeleted = isNull(services.deletedAt)
 
@@ -436,37 +439,49 @@ export class ServiceRepository implements IServiceRepository {
     id: ServiceId,
   ): Promise<Result<ServiceDeletion, DomainError>> {
     return attempt('Failed to delete service', () =>
-      this.db.transaction(async (tx): Promise<ServiceDeletion> => {
-        // The lock makes this delete and a write that puts the service into
-        // a package run one after the other.
-        const locked = await lockServices(tx, salonId, [id])
-        if (locked.get(id)?.deletedAt !== null) {
-          return { type: 'notFound' }
-        }
+      this.db.transaction(
+        async (tx): Promise<ServiceDeletion> => {
+          // The lock makes this delete run after a write that puts the
+          // service into a package and after an entry of a booking that has
+          // it: what the delete looks for next is written by then.
+          const locked = await lockServices(tx, salonId, [id])
+          if (locked.get(id)?.deletedAt !== null) {
+            return { type: 'notFound' }
+          }
 
-        const [container] = await tx
-          .select({ id: services.id })
-          .from(services)
-          .where(
-            and(
-              eq(services.salonId, salonId),
-              notDeleted,
-              eq(services.isPackage, true),
-              arrayContains(services.packageServiceIds, [id]),
-            ),
-          )
-          .limit(1)
-        if (container !== undefined) {
-          return { type: 'containedInPackage' }
-        }
+          const [container] = await tx
+            .select({ id: services.id })
+            .from(services)
+            .where(
+              and(
+                eq(services.salonId, salonId),
+                notDeleted,
+                eq(services.isPackage, true),
+                arrayContains(services.packageServiceIds, [id]),
+              ),
+            )
+            .limit(1)
+          if (container !== undefined) {
+            return { type: 'containedInPackage' }
+          }
+          if (
+            await hasLineOfUnfinishedBooking(
+              tx,
+              eq(bookingServices.serviceId, id),
+            )
+          ) {
+            return { type: 'bookingsUnfinished' }
+          }
 
-        await tx
-          .update(services)
-          .set({ deletedAt: sql`now()`, updatedAt: sql`now()` })
-          .where(ofSalon(salonId, id))
+          await tx
+            .update(services)
+            .set({ deletedAt: CLOCK, updatedAt: CLOCK })
+            .where(ofSalon(salonId, id))
 
-        return { type: 'deleted' }
-      }),
+          return { type: 'deleted' }
+        },
+        { isolationLevel: 'read committed' },
+      ),
     )
   }
 }

@@ -22,9 +22,12 @@
 | `ServiceChangeRefusal` | 同上 | `ServiceWriteRefusal` のケースと、`notFound` / `invalid` / `containedInPackage` |
 | `ServiceCreation` | 同上 | `created` と、`ServiceWriteRefusal` のケース |
 | `ServiceUpdate`、`ServiceBulkUpdate` | 同上 | `updated` と、`ServiceChangeRefusal` のケース |
-| `ServiceDeletion` | 同上 | `deleted` / `notFound` / `containedInPackage` |
+| `ServiceDeletion` | 同上 | `deleted` / `notFound` / `containedInPackage` / `bookingsUnfinished` |
 | `CustomerCreation` | `backend/packages/domain/src/repositories/customer.repository.ts` | `created` / `referrerNotFound` |
 | `CustomerUpdate` | 同上 | `updated` / `notFound` / `referrerNotFound` |
+| `CustomerDeletion` | 同上 | `deleted` / `notFound` / `bookingsUnfinished` |
+| `SalonDeletion` | `backend/packages/domain/src/repositories/salon.repository.ts` | `deleted` / `notFound` / `bookingsUnfinished` |
+| `StaffDeletion` | `backend/packages/domain/src/repositories/staff.repository.ts` | `deleted` / `notFound` / `bookingsUnfinished` |
 | `ActorScope` | `backend/packages/domain/src/models/auth.ts` | `platform` / `salon` / `customer` / `none` |
 | `PasswordVerification` | `backend/packages/domain/src/services/password-hasher.ts` | `match` / `mismatch` |
 | `PasswordCheck` | `backend/packages/domain/src/business-logic/auth/_shared/password-check.ts` | `accepted` / `refused` |
@@ -169,7 +172,7 @@ export type DomainError =
 | `forbidden` | ユースケース。操作者にその操作の権限がないとき | 403 |
 | `notFound` | ユースケース。リポジトリが `null`（削除では `false`）を返したとき、またはリポジトリの結果が `notFound` のケースだったとき（`ServiceCategoryUpdate`、`ServiceUpdate`、`ServiceBulkUpdate`、`ServiceDeletion`、`CustomerUpdate`）。サロンの下にあるルートでは、パスのサロンが存在しないときも作る（`backend/packages/domain/src/business-logic/_shared/existing-salon.ts` の `requireSalon`） | 404 |
 | `alreadyExists` | リポジトリ。書き込みが一意性に違反したとき。サロンのメールアドレス、顧客のメールアドレス（削除されていない顧客の間で一意）、顧客の紹介コード（削除済みを含むすべての顧客の間で一意）、スタッフのメールアドレス（同じサロンの削除されていないスタッフの間で一意）、スタッフコード（同じサロンの、削除済みを含むすべてのスタッフの間で一意）。どれに違反したかは、違反した制約の名前で見分ける | 409 |
-| `conflict` | 2 要素認証のユースケースと、管理者の操作のユースケース。リクエストは正しいが、対象の状態がその操作を許さないとき（すでに有効なのに設定を開始する、ロックされていないアカウントのロックを解除する、など）。サービスの削除のユースケースも、パッケージに含まれているサービスについて作る。スタッフの更新と削除のユースケースは、操作者が自分のアカウントの属するスタッフ情報を無効化または削除しようとしたときに作る（`backend/packages/domain/src/business-logic/staff/_shared/refusals.ts`）。権限がないのではなく、その操作が成り立たないので、`forbidden` ではない | 409 |
+| `conflict` | 2 要素認証のユースケースと、管理者の操作のユースケース。リクエストは正しいが、対象の状態がその操作を許さないとき（すでに有効なのに設定を開始する、ロックされていないアカウントのロックを解除する、など）。サービスの削除のユースケースも、パッケージに含まれているサービスについて作る。顧客、スタッフ、サービス、サロンの削除のユースケースは、終わっていない予約が参照しているときにも作る（`backend/packages/domain/src/business-logic/_shared/unfinished-bookings.ts`）。スタッフの更新と削除のユースケースは、操作者が自分のアカウントの属するスタッフ情報を無効化または削除しようとしたときに作る（`backend/packages/domain/src/business-logic/staff/_shared/refusals.ts`）。権限がないのではなく、その操作が成り立たないので、`forbidden` ではない | 409 |
 | `database` | リポジトリ（想定外のクエリ失敗）、読み取りマッパー（保存値が API モデルに合わない） | 500 |
 
 `database` の `cause` はログに書くためのもので、レスポンスには含めません。HTTP ステータスへの対応は次節の `toProblem` が決めています。

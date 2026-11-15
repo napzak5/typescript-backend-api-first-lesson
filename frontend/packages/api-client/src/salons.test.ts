@@ -136,6 +136,19 @@ const CONFLICT_PROBLEM: ModelsProblemDetails = {
   timestamp: '2026-11-14T00:00:00.000Z',
 }
 
+const UNFINISHED_BOOKINGS_PROBLEM: ModelsProblemDetails = {
+  type: 'urn:beauty-salon:problem:operation-not-allowed',
+  title: 'Operation not allowed',
+  status: 409,
+  detail:
+    'The salon cannot be deleted: bookings that are not finished refer to it',
+  instance: `/api/v1/salons/${SALON_ID}`,
+  code: '3003',
+  errors: null,
+  correlationId: 'req-1',
+  timestamp: '2026-11-14T00:00:00.000Z',
+}
+
 const FORBIDDEN_PROBLEM: ModelsProblemDetails = {
   type: 'urn:beauty-salon:problem:forbidden',
   title: 'Forbidden',
@@ -473,6 +486,10 @@ describe('generated Salon client', () => {
     it.each([
       ['400 for a malformed ID', VALIDATION_PROBLEM],
       ['404 for an unknown salon', NOT_FOUND_PROBLEM],
+      [
+        '409 for a salon with bookings that are not finished',
+        UNFINISHED_BOOKINGS_PROBLEM,
+      ],
     ])(
       'should return the problem details with status %s',
       async (_case, problem) => {
@@ -517,6 +534,7 @@ describe('generated Salon client', () => {
           ({ data }) => `refused: ${data.detail}`,
         )
         .with({ status: 404 }, ({ data }) => `missing: ${data.detail}`)
+        .with({ status: 409 }, ({ data }) => `conflict: ${data.detail}`)
         .with(
           { status: P.union(429, 500) },
           ({ data }) => `failed: ${data.title}`,
@@ -570,6 +588,19 @@ describe('generated Salon client', () => {
       // Assert
       expect(describeDeleted(response)).toBe(
         'refused: This account is not allowed to do this',
+      )
+    })
+
+    it('should narrow a 409 response, which a delete of a salon with bookings that are not finished answers, to the problem details', async () => {
+      // Arrange
+      stubFetch(respondWithProblem(UNFINISHED_BOOKINGS_PROBLEM))
+
+      // Act
+      const response = await salonCrudDelete(SALON_ID)
+
+      // Assert
+      expect(describeDeleted(response)).toBe(
+        'conflict: The salon cannot be deleted: bookings that are not finished refer to it',
       )
     })
 

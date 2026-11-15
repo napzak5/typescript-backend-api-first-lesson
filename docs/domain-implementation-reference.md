@@ -106,7 +106,7 @@ The operations of the interface `SalonCrud`, under `@route("/api/v1/salons")`:
 | `create` | `POST /api/v1/salons` | `SalonCreateRequest` | 201 with `Location`, `ApiResponse<SalonResponse>` | 400, 409, `RequestBodyErrors`, `CommonErrors` | `admin` |
 | `get` | `GET /api/v1/salons/{id}` | none | 200, `ApiResponse<SalonResponse>` | 400, 404, `PublicErrors` | `@useAuth(NoAuth)` |
 | `update` | `PATCH /api/v1/salons/{id}` | `SalonUpdateRequest` | 200, `ApiResponse<SalonResponse>` | 400, 404, 409, `RequestBodyErrors`, `CommonErrors` | `admin`, or the `owner` or a `manager` of the salon |
-| `delete` | `DELETE /api/v1/salons/{id}` | none | 204 | 400, 404, `CommonErrors` | `admin`, or the `owner` of the salon |
+| `delete` | `DELETE /api/v1/salons/{id}` | none | 204 | 400, 404, 409, `CommonErrors` | `admin`, or the `owner` of the salon |
 
 Three decisions to copy:
 
@@ -448,12 +448,12 @@ export interface ISalonRepository {
     openingHours: OpeningHoursChange,
   ): Promise<Result<SalonWithOpeningHours | null, DomainError>>
 
-  /** Resolves to false when the salon does not exist. */
-  delete(id: SalonId): Promise<Result<boolean, DomainError>>
+  /** Marks the salon as deleted, unless one of its bookings is not finished. */
+  delete(id: SalonId): Promise<Result<SalonDeletion, DomainError>>
 }
 ```
 
-- **A missing salon is not an error here.** `findById` and `update` resolve to `null` and `delete` to `false`; the use case turns that into `notFound`. The error side of the `Result` is for what went wrong.
+- **A missing salon is not an error here.** `findById` and `update` resolve to `null`, and `delete` answers with a sum type (`SalonDeletion`: `deleted`, `notFound`, or `bookingsUnfinished` while a booking of the salon is not finished); the use case turns a missing salon into `notFound` and the bookings into a conflict (409). The error side of the `Result` is for what went wrong.
 - **Two guarantees**, stated in the comment above the interface: deleted salons are invisible to every method, and each write is atomic, so a salon and its calendar change together or not at all.
 - **`SalonListCriteria` has no optional property.** A filter that is not applied is `null` (or an empty list for `features`), so the use case states every criterion.
 - **`exists` is for the domains whose data belongs to a salon.** Their use cases need to know that the salon is there, not what it holds (see [Data That Belongs to a Salon](#data-that-belongs-to-a-salon)).
@@ -768,7 +768,9 @@ export const salonRepositoryWith = (
       Result.success({ salons: [stored], total: 1, hasMore: false }),
     ),
     update: vi.fn(async () => Result.success(stored)),
-    delete: vi.fn(async () => Result.success(true)),
+    delete: vi.fn(async () =>
+      Result.success<SalonDeletion>({ type: 'deleted' }),
+    ),
     ...overrides,
   }
 }
@@ -1006,6 +1008,18 @@ Three more operations write a booking that exists: `PATCH /api/v1/bookings/{id}`
 | 9. Use cases | The permission of a delete is a reach of its own, `bookingRemovalReachOf`: an administrator, and of a salon the owner and the managers, because a delete takes the history of the booking with it and changes what the customer has of visits; the staff cancel a booking that will not take place. The update and the reschedule use `bookingReachOf`. The order of the checks is that of the actions: the reach (403), the ID (400), the request (400), then the repository (404, 409). The rules of a move are two pure functions: `moveBooking` says whether the status allows it and what the booking and its lines are afterwards, and `planReschedule` says, from the staff members and the time zone that were read, what to write and whom the booking occupies when, or that the staff member in charge is not one of the salon. The refusals a reschedule shares with a create go through `toRefusalError` | `backend/packages/domain/src/business-logic/booking/_shared/authorization.ts`, `_shared/reschedule.ts`, `update-booking.usecase.ts`, `reschedule-booking.usecase.ts`, `delete-booking.usecase.ts` |
 | 10. Handlers and router | `PATCH /:id`, `DELETE /:id` and `POST /:id/reschedule`, one handler file each. The update and the reschedule answer 200 with the booking as it is then, the delete 204 with no body | `backend/packages/api/src/routes/booking/` |
 | 12. Tests | The move and its plan are tested as pure functions, the three use cases together for what they share (the order of the checks, the booking of another salon). The integration test moves two bookings to one time at the same moment and counts how many are moved, moves bookings whose staff members are named in opposite orders, sends a move, a note and an action on the status of one booking at once and checks that all three are kept, holds a transaction open on the booking to show that a change waits and writes the time after the wait, deletes a booking while a sale is being written for it, and removes bookings of a customer while others of theirs are completed to show that the count is right | `backend/packages/domain/src/__tests__/booking.reschedule.test.ts`, `backend/packages/domain/src/__tests__/booking-changes.usecase.test.ts`, `backend/packages/api/src/__tests__/booking-changes.integration.test.ts` |
+
+#### What a Booking Refers to Is Not Deleted
+
+A rule of one domain can belong to the deletes of others. A booking that is not finished expects its salon, its customer, its staff members and its services, so their four deletes refuse (409) while such a booking refers to them. No operation is added.
+
+| Step | What the rule shows | Where to read it |
+|------|---------------------|------------------|
+| 1. API contract | The four delete operations say the rule in their description, and those that had no 409 declare one | `specs/operations/customer-operations.tsp`, `staff-operations.tsp`, `service-operations.tsp`, `salon-operations.tsp` |
+| 7. Repository interface | A delete answers with a sum type instead of a boolean: `deleted`, `notFound` or `bookingsUnfinished` (`CustomerDeletion`, `SalonDeletion`, `StaffDeletion`; `ServiceDeletion` has `containedInPackage` as well) | `backend/packages/domain/src/repositories/` |
+| 8. Repository implementation | One transaction at `read committed`: lock the row to delete `FOR UPDATE` in a statement of its own, look for a booking that is not finished in the next one, then mark the row. A create and a reschedule hold the rows they refer to, so the delete waits for them, and only a statement that begins after the wait sees what they wrote. The bookings are read, never locked: a writer of a booking locks the booking before what it refers to. The time of the delete is `clock_timestamp()` (`database/clock.ts`) | `backend/packages/infrastructure/src/repositories/unfinished-bookings.ts` and the four `delete` methods |
+| 9. Use cases | Which statuses are not finished is derived from the transitions (`UNFINISHED_STATUSES`: the statuses an action leads on from). The four use cases turn `bookingsUnfinished` into one conflict that names what was to be deleted | `backend/packages/domain/src/business-logic/booking/_shared/status.ts`, `business-logic/_shared/unfinished-bookings.ts` |
+| 12. Tests | One file for the four deletes, table-driven: every status of the booking, a row held the way a create holds it (the delete finds the booking after the wait, and writes the time after the wait), a create and the delete at the same moment (one of the two outcomes, never both) | `backend/packages/api/src/__tests__/booking-references.integration.test.ts` |
 
 ## Data That Belongs to No Salon
 

@@ -27,6 +27,7 @@ export {
   type BookingInStatus,
   isCounted,
   planStatusChange,
+  UNFINISHED_STATUSES,
 } from './_shared/status'
 export { CancelBookingUseCase } from './cancel-booking.usecase'
 export { CompleteBookingUseCase } from './complete-booking.usecase'

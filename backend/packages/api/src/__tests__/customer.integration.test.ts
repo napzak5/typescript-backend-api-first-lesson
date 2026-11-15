@@ -2838,16 +2838,16 @@ describe('Customer API', () => {
     })
 
     describe('delete', () => {
-      it('resolves to true for a customer that is there, and to false the second time and for an ID that no customer has', async () => {
+      it('deletes a customer that is there, and finds none the second time and for an ID that no customer has', async () => {
         const customer = await stored()
 
         const first = await repository().delete(customerId(customer.id))
         const second = await repository().delete(customerId(customer.id))
         const unknown = await repository().delete(customerId(UNKNOWN_ID))
 
-        expect(dataOf(first)).toBe(true)
-        expect(dataOf(second)).toBe(false)
-        expect(dataOf(unknown)).toBe(false)
+        expect(dataOf(first)).toEqual({ type: 'deleted' })
+        expect(dataOf(second)).toEqual({ type: 'notFound' })
+        expect(dataOf(unknown)).toEqual({ type: 'notFound' })
       })
     })
   })

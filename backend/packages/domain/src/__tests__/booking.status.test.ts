@@ -4,6 +4,7 @@ import {
   type BookingInStatus,
   isCounted,
   planStatusChange,
+  UNFINISHED_STATUSES,
 } from '../business-logic/booking'
 import { userIdSchema } from '../models/auth'
 import type { BookingStatusWrite, DbBooking } from '../models/booking'
@@ -105,6 +106,33 @@ describe('isCounted', () => {
     'does not count a booking that is %s',
     (status) => {
       expect(isCounted(status)).toBe(false)
+    },
+  )
+})
+
+describe('UNFINISHED_STATUSES', () => {
+  it('names the statuses of a booking that is not finished', () => {
+    expect(UNFINISHED_STATUSES).toEqual([
+      'draft',
+      'pending',
+      'confirmed',
+      'in_progress',
+    ])
+  })
+
+  it.each(STATUSES)(
+    'has %s exactly when an action leads on from it',
+    (status) => {
+      const leadsOn = ACTIONS.some(([, from]) => from.includes(status))
+
+      expect(UNFINISHED_STATUSES.includes(status)).toBe(leadsOn)
+    },
+  )
+
+  it.each(STATUSES)(
+    'has %s exactly when a booking in it is not counted for its customer',
+    (status) => {
+      expect(UNFINISHED_STATUSES.includes(status)).toBe(!isCounted(status))
     },
   )
 })

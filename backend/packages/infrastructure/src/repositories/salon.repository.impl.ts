@@ -1,4 +1,4 @@
-import { openingHours, salons } from '@beauty-salon-backend/database'
+import { bookings, openingHours, salons } from '@beauty-salon-backend/database'
 import {
   type DbNewOpeningHours,
   type DbNewSalon,
@@ -9,6 +9,7 @@ import {
   DomainErrors,
   type ISalonRepository,
   type OpeningHoursChange,
+  type SalonDeletion,
   type SalonId,
   type SalonList,
   type SalonListCriteria,
@@ -31,9 +32,11 @@ import {
 } from 'drizzle-orm'
 import { alias } from 'drizzle-orm/pg-core'
 import { match, P } from 'ts-pattern'
+import { CLOCK } from '../database/clock'
 import { describeDatabaseError } from '../database/failure'
 import type { Database, DatabaseExecutor } from '../database/index'
 import { containing } from '../database/like'
+import { hasUnfinishedBooking } from './unfinished-bookings'
 
 const emailUniqueViolation = {
   code: '23505',
@@ -255,15 +258,34 @@ export class SalonRepository implements ISalonRepository {
     )
   }
 
-  async delete(id: SalonId): Promise<Result<boolean, DomainError>> {
-    return attempt('Failed to delete salon', null, async () => {
-      const deleted = await this.db
-        .update(salons)
-        .set({ deletedAt: sql`now()`, updatedAt: sql`now()` })
-        .where(and(eq(salons.id, id), notDeleted))
-        .returning({ id: salons.id })
+  async delete(id: SalonId): Promise<Result<SalonDeletion, DomainError>> {
+    return attempt('Failed to delete salon', null, () =>
+      this.db.transaction(
+        async (tx): Promise<SalonDeletion> => {
+          // An entry and a reschedule of a booking hold the row of the salon
+          // until they have written: the look for bookings is after this
+          // lock.
+          const [held] = await tx
+            .select({ id: salons.id })
+            .from(salons)
+            .where(and(eq(salons.id, id), notDeleted))
+            .for('update')
+          if (held === undefined) {
+            return { type: 'notFound' }
+          }
+          if (await hasUnfinishedBooking(tx, eq(bookings.salonId, id))) {
+            return { type: 'bookingsUnfinished' }
+          }
 
-      return deleted.length > 0
-    })
+          await tx
+            .update(salons)
+            .set({ deletedAt: CLOCK, updatedAt: CLOCK })
+            .where(eq(salons.id, id))
+
+          return { type: 'deleted' }
+        },
+        { isolationLevel: 'read committed' },
+      ),
+    )
   }
 }

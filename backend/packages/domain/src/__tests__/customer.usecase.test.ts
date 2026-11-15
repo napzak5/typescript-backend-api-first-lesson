@@ -11,6 +11,7 @@ import {
 import type { Actor } from '../models/auth'
 import type {
   CustomerCreation,
+  CustomerDeletion,
   CustomerUpdate,
   ICustomerRepository,
 } from '../repositories/customer.repository'
@@ -95,7 +96,9 @@ const nothingThere = (): CustomerUseCaseDependencies =>
     ...updating({ type: 'notFound' }),
     findById: vi.fn(async () => Result.success(null)),
     list: vi.fn(async () => Result.success(null)),
-    delete: vi.fn(async () => Result.success(false)),
+    delete: vi.fn(async () =>
+      Result.success<CustomerDeletion>({ type: 'notFound' }),
+    ),
   })
 
 /** The time of the clock, and the birth dates it accepts and refuses. */
@@ -1048,12 +1051,33 @@ describe('DeleteCustomerUseCase', () => {
 
   it('reports a customer that does not exist, or is already deleted, as not found with its lower-case ID', async () => {
     const dependencies = customerDependencies({
-      delete: vi.fn(async () => Result.success(false)),
+      delete: vi.fn(async () =>
+        Result.success<CustomerDeletion>({ type: 'notFound' }),
+      ),
     })
 
     const result = await remove(dependencies, OTHER_CUSTOMER_ID.toUpperCase())
 
     expect(result).toEqual(customerNotFound(OTHER_CUSTOMER_ID))
+  })
+
+  it('refuses to delete a customer who has bookings that are not finished as a conflict', async () => {
+    const dependencies = customerDependencies({
+      delete: vi.fn(async () =>
+        Result.success<CustomerDeletion>({ type: 'bookingsUnfinished' }),
+      ),
+    })
+
+    const result = await remove(dependencies, CUSTOMER_ID)
+
+    expect(result).toEqual({
+      type: 'error',
+      error: {
+        type: 'conflict',
+        message:
+          'The customer cannot be deleted: bookings that are not finished refer to it',
+      },
+    })
   })
 
   it('passes on a database error of the repository', async () => {

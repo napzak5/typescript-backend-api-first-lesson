@@ -2319,6 +2319,11 @@ export type customerCrudDeleteResponse404 = {
   status: 404
 }
 
+export type customerCrudDeleteResponse409 = {
+  data: ModelsProblemDetails
+  status: 409
+}
+
 export type customerCrudDeleteResponse429 = {
   data: ModelsProblemDetails
   status: 429
@@ -2332,7 +2337,7 @@ export type customerCrudDeleteResponse500 = {
 export type customerCrudDeleteResponseSuccess = (customerCrudDeleteResponse204) & {
   headers: Headers;
 };
-export type customerCrudDeleteResponseError = (customerCrudDeleteResponse400 | customerCrudDeleteResponse401 | customerCrudDeleteResponse403 | customerCrudDeleteResponse404 | customerCrudDeleteResponse429 | customerCrudDeleteResponse500) & {
+export type customerCrudDeleteResponseError = (customerCrudDeleteResponse400 | customerCrudDeleteResponse401 | customerCrudDeleteResponse403 | customerCrudDeleteResponse404 | customerCrudDeleteResponse409 | customerCrudDeleteResponse429 | customerCrudDeleteResponse500) & {
   headers: Headers;
 };
 
@@ -2347,7 +2352,7 @@ export const getCustomerCrudDeleteUrl = (id: ModelsCustomerId,) => {
 }
 
 /**
- * 顧客を論理削除します。削除後は一覧・取得の対象外になり、メールアドレスは別の顧客の登録に使えるようになります。admin と、サロンの owner / manager が実行できます。
+ * 顧客を論理削除します。削除後は一覧・取得の対象外になり、メールアドレスは別の顧客の登録に使えるようになります。admin と、サロンの owner / manager が実行できます。終わっていない予約(ステータスが draft・pending・confirmed・in_progress の予約)がある顧客は削除できず、409を返します。どのサロンの予約でも同じです。先に予約を完了、キャンセル、または削除してください。
  * @summary Delete a customer
  */
 export const customerCrudDelete = async (id: ModelsCustomerId, options?: RequestInit): Promise<customerCrudDeleteResponse> => {
@@ -2400,7 +2405,7 @@ const {mutation: mutationOptions} = options ?
     export type CustomerCrudDeleteMutationVariables = {id: ModelsCustomerId}
 
     /**
- * 顧客を論理削除します。削除後は一覧・取得の対象外になり、メールアドレスは別の顧客の登録に使えるようになります。admin と、サロンの owner / manager が実行できます。
+ * 顧客を論理削除します。削除後は一覧・取得の対象外になり、メールアドレスは別の顧客の登録に使えるようになります。admin と、サロンの owner / manager が実行できます。終わっていない予約(ステータスが draft・pending・confirmed・in_progress の予約)がある顧客は削除できず、409を返します。どのサロンの予約でも同じです。先に予約を完了、キャンセル、または削除してください。
  * @summary Delete a customer
  */
 export const useCustomerCrudDelete = <TError = ModelsProblemDetails,

@@ -60,6 +60,7 @@ import {
 import type { PgColumn } from 'drizzle-orm/pg-core'
 import { match } from 'ts-pattern'
 import { attempt } from '../database/attempt'
+import { CLOCK } from '../database/clock'
 import type { Database, DatabaseExecutor } from '../database/index'
 
 /** The condition that keeps a query to the bookings a reader reaches. */
@@ -79,14 +80,6 @@ const millisecondsOrNullOf = (column: PgColumn) =>
 
 const momentOf = (milliseconds: number | null): Date | null =>
   milliseconds === null ? null : new Date(milliseconds)
-
-/**
- * The clock of the database at the moment a statement gets to a row.
- * `now()` is the moment the transaction began, which is before anything it
- * waited for: by it, a change that waited for another one would be written
- * as the earlier of the two.
- */
-const CLOCK = sql`clock_timestamp()`
 
 /**
  * What a create request refers to, locked until the booking is written.
