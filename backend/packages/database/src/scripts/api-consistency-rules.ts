@@ -298,6 +298,34 @@ const staffManagedColumns = [
 ]
 
 /**
+ * Columns of `staff` that customers are not shown: the person, how to
+ * reach them, and what the salon keeps as an employer.
+ */
+const staffProfileHiddenColumns = [
+  'userId',
+  'firstName',
+  'lastName',
+  'firstNameKana',
+  'lastNameKana',
+  'email',
+  'phoneNumber',
+  'alternativePhone',
+  'staffCode',
+  'awards',
+  'hireDate',
+  'employmentType',
+  'baseSalary',
+  'commissionRate',
+  'maxConcurrentBookings',
+  'bufferTimeBefore',
+  'bufferTimeAfter',
+  'isActive',
+  'deletedAt',
+  'createdAt',
+  'updatedAt',
+]
+
+/**
  * Columns of `users` that the salon is not shown of the account of a staff
  * member: what authenticates the account, the mailed tokens, the counters
  * and traces of the login, and what the account is besides the account of
@@ -343,28 +371,24 @@ const staffRules: ModelRule[] = [
     model: 'Models.StaffProfileResponse',
     table: 'staff',
     kind: 'response',
+    omittedColumns: staffProfileHiddenColumns,
+  },
+  {
+    // What a staff member writes of their own profile: what describes
+    // them. The name customers are shown, the level, the position and
+    // whether the staff member takes bookings are the salon's to decide,
+    // in the ledger.
+    model: 'Models.StaffProfileUpdateRequest',
+    table: 'staff',
+    kind: 'update',
     omittedColumns: [
-      'userId',
-      'firstName',
-      'lastName',
-      'firstNameKana',
-      'lastNameKana',
-      'email',
-      'phoneNumber',
-      'alternativePhone',
-      'staffCode',
-      'awards',
-      'hireDate',
-      'employmentType',
-      'baseSalary',
-      'commissionRate',
-      'maxConcurrentBookings',
-      'bufferTimeBefore',
-      'bufferTimeAfter',
-      'isActive',
-      'deletedAt',
-      'createdAt',
-      'updatedAt',
+      'id',
+      'salonId',
+      'displayName',
+      'level',
+      'position',
+      'canReceiveBookings',
+      ...staffProfileHiddenColumns,
     ],
   },
   {

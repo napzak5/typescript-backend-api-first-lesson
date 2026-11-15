@@ -426,6 +426,30 @@ namespace BeautySalon.Models {
   }
 
   @doc("""
+    スタッフ本人によるプロフィールの部分更新リクエスト - 指定した項目だけを更新する。DB で NULL 許可のカラムは null でクリアできる。
+    書き換えられるのは、本人を紹介する項目だけ。顧客に見せる名前、技術レベル、役職、予約を受け付けるかどうかは、サロンがスタッフ台帳(StaffUpdateRequest)で決める
+    """)
+  model StaffProfileUpdateRequest {
+    @doc("得意分野や専門メニューの一覧。指定した一覧で置き換える。空白だけの要素と、同じ要素の繰り返しは指定できない")
+    specialties?: string[];
+
+    @doc("自己紹介や経歴の概要。nullでクリア")
+    bio?: string | null;
+
+    @doc("プロフィール画像のURL。nullでクリア")
+    @maxLength(500)
+    imageUrl?: string | null;
+
+    @doc("実務経験年数。nullでクリア")
+    @minValue(0)
+    @maxValue(100)
+    yearsOfExperience?: int32 | null;
+
+    @doc("保有資格名の一覧 (テキスト管理)。指定した一覧で置き換える。空白だけの要素と、同じ要素の繰り返しは指定できない")
+    certifications?: string[];
+  }
+
+  @doc("""
     スタッフプロフィール一覧リクエスト - 全サロンのスタッフを対象に、絞り込み条件とページネーションを指定する。条件はすべて AND で結合する
     """)
   model StaffProfileSearchRequest {

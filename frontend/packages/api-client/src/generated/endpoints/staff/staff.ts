@@ -31,6 +31,7 @@ import type {
   ModelsStaffCreateRequest,
   ModelsStaffId,
   ModelsStaffInvitationCreateRequest,
+  ModelsStaffProfileUpdateRequest,
   ModelsStaffScheduleUpdateRequest,
   ModelsStaffUpdateRequest,
   StaffAccountsGet200,
@@ -42,6 +43,8 @@ import type {
   StaffCrudUpdate200,
   StaffInvitationsCreate201,
   StaffInvitationsGet200,
+  StaffOwnProfileGet200,
+  StaffOwnProfileUpdate200,
   StaffProfileGet200,
   StaffProfileList200,
   StaffProfileListParams,
@@ -2187,7 +2190,302 @@ export function useStaffProfileList<TData = Awaited<ReturnType<typeof staffProfi
 
 
 
-export type staffProfileGetResponse200 = {
+export type staffOwnProfileGetResponse200 = {
+  data: StaffOwnProfileGet200
+  status: 200
+}
+
+export type staffOwnProfileGetResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type staffOwnProfileGetResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
+export type staffOwnProfileGetResponse404 = {
+  data: ModelsProblemDetails
+  status: 404
+}
+
+export type staffOwnProfileGetResponse429 = {
+  data: ModelsProblemDetails
+  status: 429
+}
+
+export type staffOwnProfileGetResponse500 = {
+  data: ModelsProblemDetails
+  status: 500
+}
+
+export type staffOwnProfileGetResponseSuccess = (staffOwnProfileGetResponse200) & {
+  headers: Headers;
+};
+export type staffOwnProfileGetResponseError = (staffOwnProfileGetResponse401 | staffOwnProfileGetResponse403 | staffOwnProfileGetResponse404 | staffOwnProfileGetResponse429 | staffOwnProfileGetResponse500) & {
+  headers: Headers;
+};
+
+export type staffOwnProfileGetResponse = (staffOwnProfileGetResponseSuccess | staffOwnProfileGetResponseError)
+
+export const getStaffOwnProfileGetUrl = () => {
+
+
+
+
+  return `/api/v1/staff-profiles/me`
+}
+
+/**
+ * ログインしているスタッフのプロフィールを取得します。顧客に見せるのと同じ項目を返します。認証のあとでスタッフが在籍しなくなった、または削除された場合は404を返します。
+ * @summary Get the signed-in staff member's profile
+ */
+export const staffOwnProfileGet = async ( options?: RequestInit): Promise<staffOwnProfileGetResponse> => {
+
+  return customInstance<staffOwnProfileGetResponse>(getStaffOwnProfileGetUrl(),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getStaffOwnProfileGetQueryKey = () => {
+    return [
+    `/api/v1/staff-profiles/me`
+    ] as const;
+    }
+
+
+export const getStaffOwnProfileGetQueryOptions = <TData = Awaited<ReturnType<typeof staffOwnProfileGet>>, TError = ModelsProblemDetails>( options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffOwnProfileGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getStaffOwnProfileGetQueryKey();
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof staffOwnProfileGet>>> = ({ signal }) => staffOwnProfileGet({ signal });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof staffOwnProfileGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type StaffOwnProfileGetQueryResult = NonNullable<Awaited<ReturnType<typeof staffOwnProfileGet>>>
+export type StaffOwnProfileGetQueryError = ModelsProblemDetails
+
+
+/**
+ * ログインしているスタッフのプロフィールを取得します。顧客に見せるのと同じ項目を返します。認証のあとでスタッフが在籍しなくなった、または削除された場合は404を返します。
+ * @summary Get the signed-in staff member's profile
+ */
+export function useStaffOwnProfileGet<TData = Awaited<ReturnType<typeof staffOwnProfileGet>>, TError = ModelsProblemDetails>(
+  options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffOwnProfileGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof staffOwnProfileGet>>,
+          TError,
+          Awaited<ReturnType<typeof staffOwnProfileGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * ログインしているスタッフのプロフィールを取得します。顧客に見せるのと同じ項目を返します。認証のあとでスタッフが在籍しなくなった、または削除された場合は404を返します。
+ * @summary Get the signed-in staff member's profile
+ */
+export function useStaffOwnProfileGet<TData = Awaited<ReturnType<typeof staffOwnProfileGet>>, TError = ModelsProblemDetails>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffOwnProfileGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof staffOwnProfileGet>>,
+          TError,
+          Awaited<ReturnType<typeof staffOwnProfileGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * ログインしているスタッフのプロフィールを取得します。顧客に見せるのと同じ項目を返します。認証のあとでスタッフが在籍しなくなった、または削除された場合は404を返します。
+ * @summary Get the signed-in staff member's profile
+ */
+export function useStaffOwnProfileGet<TData = Awaited<ReturnType<typeof staffOwnProfileGet>>, TError = ModelsProblemDetails>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffOwnProfileGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * ログインしているスタッフのプロフィールを取得します。顧客に見せるのと同じ項目を返します。認証のあとでスタッフが在籍しなくなった、または削除された場合は404を返します。
+ * @summary Get the signed-in staff member's profile
+ */
+export function useStaffOwnProfileGet<TData = Awaited<ReturnType<typeof staffOwnProfileGet>>, TError = ModelsProblemDetails>(
+  options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffOwnProfileGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getStaffOwnProfileGetQueryOptions(options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type staffOwnProfileUpdateResponse200 = {
+  data: StaffOwnProfileUpdate200
+  status: 200
+}
+
+export type staffOwnProfileUpdateResponse400 = {
+  data: ModelsProblemDetails
+  status: 400
+}
+
+export type staffOwnProfileUpdateResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type staffOwnProfileUpdateResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
+export type staffOwnProfileUpdateResponse404 = {
+  data: ModelsProblemDetails
+  status: 404
+}
+
+export type staffOwnProfileUpdateResponse413 = {
+  data: ModelsProblemDetails
+  status: 413
+}
+
+export type staffOwnProfileUpdateResponse415 = {
+  data: ModelsProblemDetails
+  status: 415
+}
+
+export type staffOwnProfileUpdateResponse429 = {
+  data: ModelsProblemDetails
+  status: 429
+}
+
+export type staffOwnProfileUpdateResponse500 = {
+  data: ModelsProblemDetails
+  status: 500
+}
+
+export type staffOwnProfileUpdateResponseSuccess = (staffOwnProfileUpdateResponse200) & {
+  headers: Headers;
+};
+export type staffOwnProfileUpdateResponseError = (staffOwnProfileUpdateResponse400 | staffOwnProfileUpdateResponse401 | staffOwnProfileUpdateResponse403 | staffOwnProfileUpdateResponse404 | staffOwnProfileUpdateResponse413 | staffOwnProfileUpdateResponse415 | staffOwnProfileUpdateResponse429 | staffOwnProfileUpdateResponse500) & {
+  headers: Headers;
+};
+
+export type staffOwnProfileUpdateResponse = (staffOwnProfileUpdateResponseSuccess | staffOwnProfileUpdateResponseError)
+
+export const getStaffOwnProfileUpdateUrl = () => {
+
+
+
+
+  return `/api/v1/staff-profiles/me`
+}
+
+/**
+ * ログインしているスタッフのプロフィールのうち、指定した項目だけを更新します。書き換えられるのは、自己紹介、写真、得意分野、資格、経験年数です。顧客に見せる名前、技術レベル、役職、予約を受け付けるかどうかは、スタッフ台帳の操作で更新します(このリクエストに指定すると400を返します)。認証のあとでスタッフが在籍しなくなった、または削除された場合は404を返します。
+ * @summary Update the signed-in staff member's profile
+ */
+export const staffOwnProfileUpdate = async (modelsStaffProfileUpdateRequest: ModelsStaffProfileUpdateRequest, options?: RequestInit): Promise<staffOwnProfileUpdateResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customInstance<staffOwnProfileUpdateResponse>(getStaffOwnProfileUpdateUrl(),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(modelsStaffProfileUpdateRequest)
+  }
+);}
+
+
+
+
+
+export const getStaffOwnProfileUpdateMutationKey = () => ['staffOwnProfileUpdate'] as const;
+
+export const getStaffOwnProfileUpdateMutationOptions = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffOwnProfileUpdate>>, TError,StaffOwnProfileUpdateMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof staffOwnProfileUpdate>>, TError,StaffOwnProfileUpdateMutationVariables, TContext> => {
+
+const mutationKey = getStaffOwnProfileUpdateMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof staffOwnProfileUpdate>>, StaffOwnProfileUpdateMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  staffOwnProfileUpdate(data,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type StaffOwnProfileUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof staffOwnProfileUpdate>>>
+    export type StaffOwnProfileUpdateMutationBody = ModelsStaffProfileUpdateRequest
+    export type StaffOwnProfileUpdateMutationError = ModelsProblemDetails
+    export type StaffOwnProfileUpdateMutationVariables = {data: ModelsStaffProfileUpdateRequest}
+
+    /**
+ * ログインしているスタッフのプロフィールのうち、指定した項目だけを更新します。書き換えられるのは、自己紹介、写真、得意分野、資格、経験年数です。顧客に見せる名前、技術レベル、役職、予約を受け付けるかどうかは、スタッフ台帳の操作で更新します(このリクエストに指定すると400を返します)。認証のあとでスタッフが在籍しなくなった、または削除された場合は404を返します。
+ * @summary Update the signed-in staff member's profile
+ */
+export const useStaffOwnProfileUpdate = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffOwnProfileUpdate>>, TError,StaffOwnProfileUpdateMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof staffOwnProfileUpdate>>,
+        TError,
+        StaffOwnProfileUpdateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getStaffOwnProfileUpdateMutationOptions(options), queryClient);
+    }
+    export type staffProfileGetResponse200 = {
   data: StaffProfileGet200
   status: 200
 }
