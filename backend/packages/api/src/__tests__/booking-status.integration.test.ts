@@ -1667,6 +1667,18 @@ describe('Booking status API', () => {
         expect((counted?.at ?? 0) >= until).toBe(
           ['cancel', 'complete', 'no-show'].includes(action),
         )
+        // The lines are written by the action that completes them.
+        const lineTimes = await db
+          .select({
+            at: sql<number>`(extract(epoch from ${bookingServices.updatedAt}) * 1000)`.mapWith(
+              Number,
+            ),
+          })
+          .from(bookingServices)
+          .where(eq(bookingServices.bookingId, id))
+        expect(lineTimes.map(({ at }) => at >= until)).toEqual([
+          action === 'complete',
+        ])
       },
     )
 
