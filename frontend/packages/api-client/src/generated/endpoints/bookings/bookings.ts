@@ -1036,7 +1036,7 @@ export const getBookingCrudUpdateUrl = (id: ModelsBookingId,) => {
 }
 
 /**
- * 予約の指定した項目だけを更新し、顧客要望やメモの変更に対応します。日時と担当スタッフの変更はreschedule、ステータスの変更は各アクションで行います。
+ * 予約の指定した項目だけを更新し、顧客要望やメモの変更に対応します。どのステータスの予約も更新できます(来店のあとでメモを書き足せます)。日時と担当スタッフの変更はreschedule、ステータスの変更は各アクションで行います。項目を1つも指定しない場合は400を、ほかのサロンの予約には404を返します。
  * @summary Update booking
  */
 export const bookingCrudUpdate = async (id: ModelsBookingId,
@@ -1104,7 +1104,7 @@ const {mutation: mutationOptions} = options ?
     export type BookingCrudUpdateMutationVariables = {id: ModelsBookingId;data: ModelsBookingUpdateRequest}
 
     /**
- * 予約の指定した項目だけを更新し、顧客要望やメモの変更に対応します。日時と担当スタッフの変更はreschedule、ステータスの変更は各アクションで行います。
+ * 予約の指定した項目だけを更新し、顧客要望やメモの変更に対応します。どのステータスの予約も更新できます(来店のあとでメモを書き足せます)。日時と担当スタッフの変更はreschedule、ステータスの変更は各アクションで行います。項目を1つも指定しない場合は400を、ほかのサロンの予約には404を返します。
  * @summary Update booking
  */
 export const useBookingCrudUpdate = <TError = ModelsProblemDetails,
@@ -1175,7 +1175,7 @@ export const getBookingCrudDeleteUrl = (id: ModelsBookingId,) => {
 }
 
 /**
- * 誤登録などで不要になった予約を、施術明細・ステータス履歴・レビューを含めて物理削除します。売上または施術記録が紐づく予約は削除できず、409を返します。
+ * 誤登録などで不要になった予約を、施術明細・ステータス履歴・レビューを含めて物理削除します。どのステータスの予約も削除でき、completed・cancelled・no_showの予約を削除した場合は、顧客の来店回数・無断キャンセル回数・キャンセル回数と初回・最終来店日を、顧客の予約から数え直します。adminと、予約のサロンのowner・managerが実行でき、サロンのstaffには403を返します。売上または施術記録が紐づく予約は削除できず、409を返します。ほかのサロンの予約には404を返します。
  * @summary Delete booking
  */
 export const bookingCrudDelete = async (id: ModelsBookingId, options?: RequestInit): Promise<bookingCrudDeleteResponse> => {
@@ -1228,7 +1228,7 @@ const {mutation: mutationOptions} = options ?
     export type BookingCrudDeleteMutationVariables = {id: ModelsBookingId}
 
     /**
- * 誤登録などで不要になった予約を、施術明細・ステータス履歴・レビューを含めて物理削除します。売上または施術記録が紐づく予約は削除できず、409を返します。
+ * 誤登録などで不要になった予約を、施術明細・ステータス履歴・レビューを含めて物理削除します。どのステータスの予約も削除でき、completed・cancelled・no_showの予約を削除した場合は、顧客の来店回数・無断キャンセル回数・キャンセル回数と初回・最終来店日を、顧客の予約から数え直します。adminと、予約のサロンのowner・managerが実行でき、サロンのstaffには403を返します。売上または施術記録が紐づく予約は削除できず、409を返します。ほかのサロンの予約には404を返します。
  * @summary Delete booking
  */
 export const useBookingCrudDelete = <TError = ModelsProblemDetails,
@@ -1855,7 +1855,7 @@ export const getBookingCrudRescheduleUrl = (id: ModelsBookingId,) => {
 }
 
 /**
- * draft・pending・confirmedの予約の開始日時と担当スタッフを変更します。施術明細の日時は同じ時間だけずらし、変更前の担当スタッフが担当していた施術明細は新しい担当スタッフに付け替えます。staffIdが予約のサロンのスタッフではない場合は400を、それ以外のステータスの予約や、変更後の時間が担当スタッフの既存の予約と重なる場合は409を返します。
+ * draft・pending・confirmedの予約の開始日時と担当スタッフを変更します。施術明細の日時は同じ時間だけずらし、変更前の担当スタッフが担当していた施術明細は新しい担当スタッフに付け替えます。所要時間・金額・ステータスは変わりません。来店日(bookingDate)は、新しい開始日時をサロンのタイムゾーンで表した日付にします。それ以外のステータスの予約には409を、staffIdが予約のサロンのスタッフではない(削除済みを含む)場合は400を返します。変更後の施術明細を担当するスタッフが、同時に受けられる数(maxConcurrentBookings)を超えてほかの予約と重なる場合と、サロンのタイムゾーンが名前として認識できない場合は409を返します。重なりは作成と同じ規則で確かめ、この予約自身の変更前の施術明細は数えません。ほかのサロンの予約には404を返します。
  * @summary Reschedule booking
  */
 export const bookingCrudReschedule = async (id: ModelsBookingId,
@@ -1923,7 +1923,7 @@ const {mutation: mutationOptions} = options ?
     export type BookingCrudRescheduleMutationVariables = {id: ModelsBookingId;data: ModelsBookingRescheduleRequest}
 
     /**
- * draft・pending・confirmedの予約の開始日時と担当スタッフを変更します。施術明細の日時は同じ時間だけずらし、変更前の担当スタッフが担当していた施術明細は新しい担当スタッフに付け替えます。staffIdが予約のサロンのスタッフではない場合は400を、それ以外のステータスの予約や、変更後の時間が担当スタッフの既存の予約と重なる場合は409を返します。
+ * draft・pending・confirmedの予約の開始日時と担当スタッフを変更します。施術明細の日時は同じ時間だけずらし、変更前の担当スタッフが担当していた施術明細は新しい担当スタッフに付け替えます。所要時間・金額・ステータスは変わりません。来店日(bookingDate)は、新しい開始日時をサロンのタイムゾーンで表した日付にします。それ以外のステータスの予約には409を、staffIdが予約のサロンのスタッフではない(削除済みを含む)場合は400を返します。変更後の施術明細を担当するスタッフが、同時に受けられる数(maxConcurrentBookings)を超えてほかの予約と重なる場合と、サロンのタイムゾーンが名前として認識できない場合は409を返します。重なりは作成と同じ規則で確かめ、この予約自身の変更前の施術明細は数えません。ほかのサロンの予約には404を返します。
  * @summary Reschedule booking
  */
 export const useBookingCrudReschedule = <TError = ModelsProblemDetails,

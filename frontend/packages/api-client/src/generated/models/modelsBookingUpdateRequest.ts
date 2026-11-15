@@ -7,7 +7,7 @@
  */
 
 /**
- * 予約部分更新リクエスト - 指定した項目だけを更新する。DB で NULL 許可のカラムは null でクリアできる。
+ * 予約部分更新リクエスト - 指定した項目だけを更新する(1つ以上)。DB で NULL 許可のカラムは null でクリアできる。
  * サロン・顧客は変更できない。日時と担当スタッフは reschedule、ステータスは confirm などのアクションで変更する
  */
 export interface ModelsBookingUpdateRequest {
