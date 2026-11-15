@@ -105,10 +105,15 @@ CREATE TABLE "bookings" (
 	"createdAt" timestamp with time zone DEFAULT now() NOT NULL,
 	"updatedAt" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "bookings_booking_number_unique" UNIQUE("bookingNumber"),
+	CONSTRAINT "bookings_actual_end_after_start" CHECK (("actualStartTime" IS NULL) OR ("actualEndTime" IS NULL) OR ("actualStartTime" < "actualEndTime")),
 	CONSTRAINT "bookings_amounts_not_negative" CHECK ((subtotal >= 0) AND ("discountAmount" >= 0) AND ("taxAmount" >= 0) AND ("totalAmount" >= 0) AND (("depositAmount" IS NULL) OR ("depositAmount" >= 0)) AND (("pointsUsed" IS NULL) OR ("pointsUsed" >= 0)) AND (("pointsEarned" IS NULL) OR ("pointsEarned" >= 0)) AND (("cancellationFee" IS NULL) OR ("cancellationFee" >= 0))),
+	CONSTRAINT "bookings_cancellation_only_when_cancelled" CHECK ((status = 'cancelled'::booking_status) OR (("cancelledBy" IS NULL) AND ("cancellationReason" IS NULL) AND ("cancellationFee" IS NULL))),
+	CONSTRAINT "bookings_cancelled_has_time" CHECK ((status = 'cancelled'::booking_status) = ("cancelledAt" IS NOT NULL)),
+	CONSTRAINT "bookings_completed_has_time" CHECK ((status = 'completed'::booking_status) = ("completedAt" IS NOT NULL)),
 	CONSTRAINT "bookings_discount_within_subtotal" CHECK ("discountAmount" <= subtotal),
 	CONSTRAINT "bookings_duration_is_the_span" CHECK (((duration * 60))::numeric = EXTRACT(epoch FROM ("endTime" - "startTime"))),
 	CONSTRAINT "bookings_end_after_start" CHECK ("startTime" < "endTime"),
+	CONSTRAINT "bookings_in_progress_has_start" CHECK ((status <> 'in_progress'::booking_status) OR ("actualStartTime" IS NOT NULL)),
 	CONSTRAINT "bookings_total_is_the_sum" CHECK ("totalAmount" = ((subtotal - "discountAmount") + "taxAmount"))
 );
 
@@ -200,10 +205,12 @@ CREATE TABLE "customers" (
 	"scalpCondition" "scalp_condition",
 	"customerStatus" "customer_status" DEFAULT 'active' NOT NULL,
 	CONSTRAINT "customers_referral_code_unique" UNIQUE("referralCode"),
+	CONSTRAINT "customers_counts_not_negative" CHECK (("visitCount" >= 0) AND ("noShowCount" >= 0) AND ("cancellationCount" >= 0)),
 	CONSTRAINT "customers_email_lower_case" CHECK ((email)::text = lower((email)::text)),
 	CONSTRAINT "customers_gender_known" CHECK ((gender)::text = ANY (ARRAY['male'::text, 'female'::text, 'other'::text, 'prefer_not_to_say'::text])),
 	CONSTRAINT "customers_not_referred_by_itself" CHECK ("referredBy" <> id),
-	CONSTRAINT "customers_preferences_is_an_object" CHECK (jsonb_typeof(preferences) = 'object'::text)
+	CONSTRAINT "customers_preferences_is_an_object" CHECK (jsonb_typeof(preferences) = 'object'::text),
+	CONSTRAINT "customers_visit_days_go_with_visits" CHECK ((("visitCount" = 0) = ("firstVisitDate" IS NULL)) AND (("firstVisitDate" IS NULL) = ("lastVisitDate" IS NULL)) AND (("firstVisitDate" IS NULL) OR ("firstVisitDate" <= "lastVisitDate")))
 );
 
 CREATE TABLE "daily_summaries" (

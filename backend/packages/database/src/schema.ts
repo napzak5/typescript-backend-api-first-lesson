@@ -379,8 +379,24 @@ export const bookings = pgTable(
   },
   (table) => [
     check(
+      'bookings_actual_end_after_start',
+      sql`("actualStartTime" IS NULL) OR ("actualEndTime" IS NULL) OR ("actualStartTime" < "actualEndTime")`,
+    ),
+    check(
       'bookings_amounts_not_negative',
       sql`(subtotal >= 0) AND ("discountAmount" >= 0) AND ("taxAmount" >= 0) AND ("totalAmount" >= 0) AND (("depositAmount" IS NULL) OR ("depositAmount" >= 0)) AND (("pointsUsed" IS NULL) OR ("pointsUsed" >= 0)) AND (("pointsEarned" IS NULL) OR ("pointsEarned" >= 0)) AND (("cancellationFee" IS NULL) OR ("cancellationFee" >= 0))`,
+    ),
+    check(
+      'bookings_cancellation_only_when_cancelled',
+      sql`(status = 'cancelled'::booking_status) OR (("cancelledBy" IS NULL) AND ("cancellationReason" IS NULL) AND ("cancellationFee" IS NULL))`,
+    ),
+    check(
+      'bookings_cancelled_has_time',
+      sql`(status = 'cancelled'::booking_status) = ("cancelledAt" IS NOT NULL)`,
+    ),
+    check(
+      'bookings_completed_has_time',
+      sql`(status = 'completed'::booking_status) = ("completedAt" IS NOT NULL)`,
     ),
     check(
       'bookings_discount_within_subtotal',
@@ -391,6 +407,10 @@ export const bookings = pgTable(
       sql`((duration * 60))::numeric = EXTRACT(epoch FROM ("endTime" - "startTime"))`,
     ),
     check('bookings_end_after_start', sql`"startTime" < "endTime"`),
+    check(
+      'bookings_in_progress_has_start',
+      sql`(status <> 'in_progress'::booking_status) OR ("actualStartTime" IS NOT NULL)`,
+    ),
     check(
       'bookings_total_is_the_sum',
       sql`"totalAmount" = ((subtotal - "discountAmount") + "taxAmount")`,
@@ -610,6 +630,10 @@ export const customers = pgTable(
   },
   (table) => [
     check(
+      'customers_counts_not_negative',
+      sql`("visitCount" >= 0) AND ("noShowCount" >= 0) AND ("cancellationCount" >= 0)`,
+    ),
+    check(
       'customers_email_lower_case',
       sql`(email)::text = lower((email)::text)`,
     ),
@@ -621,6 +645,10 @@ export const customers = pgTable(
     check(
       'customers_preferences_is_an_object',
       sql`jsonb_typeof(preferences) = 'object'::text`,
+    ),
+    check(
+      'customers_visit_days_go_with_visits',
+      sql`(("visitCount" = 0) = ("firstVisitDate" IS NULL)) AND (("firstVisitDate" IS NULL) = ("lastVisitDate" IS NULL)) AND (("firstVisitDate" IS NULL) OR ("firstVisitDate" <= "lastVisitDate"))`,
     ),
     foreignKey({
       columns: [table.referredBy],
