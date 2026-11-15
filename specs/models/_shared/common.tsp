@@ -20,6 +20,10 @@ namespace BeautySalon.Models {
   @format("uuid")
   scalar StaffId extends string;
 
+  @doc("スタッフへの招待(staff_invitations の1行)を識別するブランド付きUUID。")
+  @format("uuid")
+  scalar StaffInvitationId extends string;
+
   @doc("提供メニュー・施術サービスを識別するためのブランド付きUUID。")
   @format("uuid")
   scalar ServiceId extends string;

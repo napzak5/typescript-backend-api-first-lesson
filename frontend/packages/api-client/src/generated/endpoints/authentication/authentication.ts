@@ -30,6 +30,7 @@ import type {
   AuthCrudGetCurrentUser200,
   AuthCrudLogin200,
   AuthCrudRefreshToken200,
+  AuthCrudVerifyStaffInvitation200,
   ModelsAuthEmailVerificationConfirmRequest,
   ModelsAuthEmailVerificationSendRequest,
   ModelsAuthLoginRequest,
@@ -38,6 +39,8 @@ import type {
   ModelsAuthPasswordResetConfirmRequest,
   ModelsAuthPasswordResetVerifyRequest,
   ModelsAuthRegisterRequest,
+  ModelsAuthStaffInvitationAcceptRequest,
+  ModelsAuthStaffInvitationVerifyRequest,
   ModelsAuthTokenRefreshRequest,
   ModelsAuthTwoFactorBackupCodesRequest,
   ModelsAuthTwoFactorDisableRequest,
@@ -2149,6 +2152,272 @@ export const useSessionCrudRevokeSession = <TError = ModelsProblemDetails,
         TContext
       > => {
       return useMutation(getSessionCrudRevokeSessionMutationOptions(options), queryClient);
+    }
+    export type authCrudAcceptStaffInvitationResponse204 = {
+  data: void
+  status: 204
+}
+
+export type authCrudAcceptStaffInvitationResponse400 = {
+  data: ModelsProblemDetails
+  status: 400
+}
+
+export type authCrudAcceptStaffInvitationResponse409 = {
+  data: ModelsProblemDetails
+  status: 409
+}
+
+export type authCrudAcceptStaffInvitationResponse413 = {
+  data: ModelsProblemDetails
+  status: 413
+}
+
+export type authCrudAcceptStaffInvitationResponse415 = {
+  data: ModelsProblemDetails
+  status: 415
+}
+
+export type authCrudAcceptStaffInvitationResponse429 = {
+  data: ModelsProblemDetails
+  status: 429
+}
+
+export type authCrudAcceptStaffInvitationResponse500 = {
+  data: ModelsProblemDetails
+  status: 500
+}
+
+export type authCrudAcceptStaffInvitationResponseSuccess = (authCrudAcceptStaffInvitationResponse204) & {
+  headers: Headers;
+};
+export type authCrudAcceptStaffInvitationResponseError = (authCrudAcceptStaffInvitationResponse400 | authCrudAcceptStaffInvitationResponse409 | authCrudAcceptStaffInvitationResponse413 | authCrudAcceptStaffInvitationResponse415 | authCrudAcceptStaffInvitationResponse429 | authCrudAcceptStaffInvitationResponse500) & {
+  headers: Headers;
+};
+
+export type authCrudAcceptStaffInvitationResponse = (authCrudAcceptStaffInvitationResponseSuccess | authCrudAcceptStaffInvitationResponseError)
+
+export const getAuthCrudAcceptStaffInvitationUrl = () => {
+
+
+
+
+  return `/api/v1/auth/staff-invitation/accept`
+}
+
+/**
+ * メールで受け取ったトークンを使ってスタッフへの招待を受け入れ、ログインアカウントを作ります。アカウントのメールアドレスは招待メールの宛先、ロールは招待のロールで、招待されたスタッフに紐づきます。トークンを受け取れたことがメールアドレスの確認になるので、アカウントは確認済み(active)で作られます。宛先のメールアドレスで登録され、メールアドレスが未確認のままのアカウントがある場合は、そのアカウントを招待のアカウントにします(パスワードを置き換えます)。成功するとトークンは使用できなくなります。セッションは発行しません。トークンが使えない場合と、パスワードが規則を満たさない場合は400を返します。宛先のメールアドレスに、未確認でないアカウントがすでにある場合は409を返し、招待は残ります。
+ * @summary Accept a staff invitation
+ */
+export const authCrudAcceptStaffInvitation = async (modelsAuthStaffInvitationAcceptRequest: ModelsAuthStaffInvitationAcceptRequest, options?: RequestInit): Promise<authCrudAcceptStaffInvitationResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customInstance<authCrudAcceptStaffInvitationResponse>(getAuthCrudAcceptStaffInvitationUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(modelsAuthStaffInvitationAcceptRequest)
+  }
+);}
+
+
+
+
+
+export const getAuthCrudAcceptStaffInvitationMutationKey = () => ['authCrudAcceptStaffInvitation'] as const;
+
+export const getAuthCrudAcceptStaffInvitationMutationOptions = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authCrudAcceptStaffInvitation>>, TError,AuthCrudAcceptStaffInvitationMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof authCrudAcceptStaffInvitation>>, TError,AuthCrudAcceptStaffInvitationMutationVariables, TContext> => {
+
+const mutationKey = getAuthCrudAcceptStaffInvitationMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof authCrudAcceptStaffInvitation>>, AuthCrudAcceptStaffInvitationMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  authCrudAcceptStaffInvitation(data,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AuthCrudAcceptStaffInvitationMutationResult = NonNullable<Awaited<ReturnType<typeof authCrudAcceptStaffInvitation>>>
+    export type AuthCrudAcceptStaffInvitationMutationBody = ModelsAuthStaffInvitationAcceptRequest
+    export type AuthCrudAcceptStaffInvitationMutationError = ModelsProblemDetails
+    export type AuthCrudAcceptStaffInvitationMutationVariables = {data: ModelsAuthStaffInvitationAcceptRequest}
+
+    /**
+ * メールで受け取ったトークンを使ってスタッフへの招待を受け入れ、ログインアカウントを作ります。アカウントのメールアドレスは招待メールの宛先、ロールは招待のロールで、招待されたスタッフに紐づきます。トークンを受け取れたことがメールアドレスの確認になるので、アカウントは確認済み(active)で作られます。宛先のメールアドレスで登録され、メールアドレスが未確認のままのアカウントがある場合は、そのアカウントを招待のアカウントにします(パスワードを置き換えます)。成功するとトークンは使用できなくなります。セッションは発行しません。トークンが使えない場合と、パスワードが規則を満たさない場合は400を返します。宛先のメールアドレスに、未確認でないアカウントがすでにある場合は409を返し、招待は残ります。
+ * @summary Accept a staff invitation
+ */
+export const useAuthCrudAcceptStaffInvitation = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authCrudAcceptStaffInvitation>>, TError,AuthCrudAcceptStaffInvitationMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof authCrudAcceptStaffInvitation>>,
+        TError,
+        AuthCrudAcceptStaffInvitationMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAuthCrudAcceptStaffInvitationMutationOptions(options), queryClient);
+    }
+    export type authCrudVerifyStaffInvitationResponse200 = {
+  data: AuthCrudVerifyStaffInvitation200
+  status: 200
+}
+
+export type authCrudVerifyStaffInvitationResponse400 = {
+  data: ModelsProblemDetails
+  status: 400
+}
+
+export type authCrudVerifyStaffInvitationResponse409 = {
+  data: ModelsProblemDetails
+  status: 409
+}
+
+export type authCrudVerifyStaffInvitationResponse413 = {
+  data: ModelsProblemDetails
+  status: 413
+}
+
+export type authCrudVerifyStaffInvitationResponse415 = {
+  data: ModelsProblemDetails
+  status: 415
+}
+
+export type authCrudVerifyStaffInvitationResponse429 = {
+  data: ModelsProblemDetails
+  status: 429
+}
+
+export type authCrudVerifyStaffInvitationResponse500 = {
+  data: ModelsProblemDetails
+  status: 500
+}
+
+export type authCrudVerifyStaffInvitationResponseSuccess = (authCrudVerifyStaffInvitationResponse200) & {
+  headers: Headers;
+};
+export type authCrudVerifyStaffInvitationResponseError = (authCrudVerifyStaffInvitationResponse400 | authCrudVerifyStaffInvitationResponse409 | authCrudVerifyStaffInvitationResponse413 | authCrudVerifyStaffInvitationResponse415 | authCrudVerifyStaffInvitationResponse429 | authCrudVerifyStaffInvitationResponse500) & {
+  headers: Headers;
+};
+
+export type authCrudVerifyStaffInvitationResponse = (authCrudVerifyStaffInvitationResponseSuccess | authCrudVerifyStaffInvitationResponseError)
+
+export const getAuthCrudVerifyStaffInvitationUrl = () => {
+
+
+
+
+  return `/api/v1/auth/staff-invitation/verify`
+}
+
+/**
+ * メールで受け取ったスタッフへの招待のトークンが使えるかどうかを確認し、招待の内容を返します。パスワードを入力する画面が、入力の前に、招待の宛先(作られるアカウントのメールアドレス)とロールを表示するためのものです。トークンは消費しません。トークンが存在しない、有効期限が切れている、取り消された、新しい招待で置き換えられた、スタッフが招待できる状態でなくなった(削除された、無効になった、アカウントに紐づいた、台帳のメールアドレスが変わった)場合は、理由を区別せずに400を返します。宛先のメールアドレスに、未確認でないアカウントがすでにある場合は409を返します。
+ * @summary Verify a staff invitation token
+ */
+export const authCrudVerifyStaffInvitation = async (modelsAuthStaffInvitationVerifyRequest: ModelsAuthStaffInvitationVerifyRequest, options?: RequestInit): Promise<authCrudVerifyStaffInvitationResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customInstance<authCrudVerifyStaffInvitationResponse>(getAuthCrudVerifyStaffInvitationUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(modelsAuthStaffInvitationVerifyRequest)
+  }
+);}
+
+
+
+
+
+export const getAuthCrudVerifyStaffInvitationMutationKey = () => ['authCrudVerifyStaffInvitation'] as const;
+
+export const getAuthCrudVerifyStaffInvitationMutationOptions = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authCrudVerifyStaffInvitation>>, TError,AuthCrudVerifyStaffInvitationMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof authCrudVerifyStaffInvitation>>, TError,AuthCrudVerifyStaffInvitationMutationVariables, TContext> => {
+
+const mutationKey = getAuthCrudVerifyStaffInvitationMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof authCrudVerifyStaffInvitation>>, AuthCrudVerifyStaffInvitationMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  authCrudVerifyStaffInvitation(data,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AuthCrudVerifyStaffInvitationMutationResult = NonNullable<Awaited<ReturnType<typeof authCrudVerifyStaffInvitation>>>
+    export type AuthCrudVerifyStaffInvitationMutationBody = ModelsAuthStaffInvitationVerifyRequest
+    export type AuthCrudVerifyStaffInvitationMutationError = ModelsProblemDetails
+    export type AuthCrudVerifyStaffInvitationMutationVariables = {data: ModelsAuthStaffInvitationVerifyRequest}
+
+    /**
+ * メールで受け取ったスタッフへの招待のトークンが使えるかどうかを確認し、招待の内容を返します。パスワードを入力する画面が、入力の前に、招待の宛先(作られるアカウントのメールアドレス)とロールを表示するためのものです。トークンは消費しません。トークンが存在しない、有効期限が切れている、取り消された、新しい招待で置き換えられた、スタッフが招待できる状態でなくなった(削除された、無効になった、アカウントに紐づいた、台帳のメールアドレスが変わった)場合は、理由を区別せずに400を返します。宛先のメールアドレスに、未確認でないアカウントがすでにある場合は409を返します。
+ * @summary Verify a staff invitation token
+ */
+export const useAuthCrudVerifyStaffInvitation = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof authCrudVerifyStaffInvitation>>, TError,AuthCrudVerifyStaffInvitationMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof authCrudVerifyStaffInvitation>>,
+        TError,
+        AuthCrudVerifyStaffInvitationMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAuthCrudVerifyStaffInvitationMutationOptions(options), queryClient);
     }
     export type authCrudConfirmEmailVerificationResponse204 = {
   data: void

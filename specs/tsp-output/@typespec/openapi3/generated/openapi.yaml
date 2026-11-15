@@ -3064,6 +3064,162 @@ paths:
                 $ref: '#/components/schemas/Models.ProblemDetails'
       tags:
         - Authentication
+  /api/v1/auth/staff-invitation/accept:
+    post:
+      operationId: AuthCrud_acceptStaffInvitation
+      summary: Accept a staff invitation
+      description: メールで受け取ったトークンを使ってスタッフへの招待を受け入れ、ログインアカウントを作ります。アカウントのメールアドレスは招待メールの宛先、ロールは招待のロールで、招待されたスタッフに紐づきます。トークンを受け取れたことがメールアドレスの確認になるので、アカウントは確認済み(active)で作られます。宛先のメールアドレスで登録され、メールアドレスが未確認のままのアカウントがある場合は、そのアカウントを招待のアカウントにします(パスワードを置き換えます)。成功するとトークンは使用できなくなります。セッションは発行しません。トークンが使えない場合と、パスワードが規則を満たさない場合は400を返します。宛先のメールアドレスに、未確認でないアカウントがすでにある場合は409を返し、招待は残ります。
+      parameters: []
+      responses:
+        '204':
+          description: 'There is no content to send for this request, but the headers may be useful. '
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '413':
+          description: リクエスト本文がサイズ上限を超えている (413)。
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '415':
+          description: リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '429':
+          description: |-
+            リクエスト数の上限を超えたときのエラーレスポンス (429)。
+            クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+          headers:
+            Retry-After:
+              required: true
+              description: 再試行できるようになるまでの秒数。
+              schema:
+                type: integer
+                format: int32
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '500':
+          description: サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Models.AuthStaffInvitationAcceptRequest'
+      security:
+        - {}
+  /api/v1/auth/staff-invitation/verify:
+    post:
+      operationId: AuthCrud_verifyStaffInvitation
+      summary: Verify a staff invitation token
+      description: メールで受け取ったスタッフへの招待のトークンが使えるかどうかを確認し、招待の内容を返します。パスワードを入力する画面が、入力の前に、招待の宛先(作られるアカウントのメールアドレス)とロールを表示するためのものです。トークンは消費しません。トークンが存在しない、有効期限が切れている、取り消された、新しい招待で置き換えられた、スタッフが招待できる状態でなくなった(削除された、無効になった、アカウントに紐づいた、台帳のメールアドレスが変わった)場合は、理由を区別せずに400を返します。宛先のメールアドレスに、未確認でないアカウントがすでにある場合は409を返します。
+      parameters: []
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                  - links
+                properties:
+                  data:
+                    allOf:
+                      - $ref: '#/components/schemas/Models.StaffInvitationResponse'
+                    description: レスポンスの主体となるビジネスデータ。
+                  meta:
+                    type: object
+                    allOf:
+                      - $ref: '#/components/schemas/Models.ResponseMeta'
+                    nullable: true
+                    description: リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull
+                  links:
+                    type: object
+                    additionalProperties:
+                      type: string
+                    nullable: true
+                    description: 関連リソースや次アクションへのリンク情報。リンクがない場合はnull
+                description: |-
+                  API 成功レスポンスの共通ラッパーモデル。
+                  サロン検索や予約登録など多様なユースケースで応答形式を統一し、クライアント実装を簡潔に保つ。
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '413':
+          description: リクエスト本文がサイズ上限を超えている (413)。
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '415':
+          description: リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '429':
+          description: |-
+            リクエスト数の上限を超えたときのエラーレスポンス (429)。
+            クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+          headers:
+            Retry-After:
+              required: true
+              description: 再試行できるようになるまでの秒数。
+              schema:
+                type: integer
+                format: int32
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '500':
+          description: サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Models.AuthStaffInvitationVerifyRequest'
+      security:
+        - {}
   /api/v1/auth/verify-email/confirm:
     post:
       operationId: AuthCrud_confirmEmailVerification
@@ -15625,6 +15781,314 @@ paths:
                 $ref: '#/components/schemas/Models.ProblemDetails'
       tags:
         - Staff
+  /api/v1/salons/{salonId}/staff/{id}/invitation:
+    get:
+      operationId: StaffInvitations_get
+      summary: Get the invitation of a staff member
+      description: スタッフが持っている招待を取得します。有効期限を過ぎた招待も、置き換えるか取り消すまでは返します(expiresAt が過去の日時になります)。招待がない場合(招待していない、受け入れられた、取り消した)は404を返します。
+      parameters:
+        - name: salonId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Models.SalonId'
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Models.StaffId'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                  - links
+                properties:
+                  data:
+                    allOf:
+                      - $ref: '#/components/schemas/Models.StaffInvitationResponse'
+                    description: レスポンスの主体となるビジネスデータ。
+                  meta:
+                    type: object
+                    allOf:
+                      - $ref: '#/components/schemas/Models.ResponseMeta'
+                    nullable: true
+                    description: リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull
+                  links:
+                    type: object
+                    additionalProperties:
+                      type: string
+                    nullable: true
+                    description: 関連リソースや次アクションへのリンク情報。リンクがない場合はnull
+                description: |-
+                  API 成功レスポンスの共通ラッパーモデル。
+                  サロン検索や予約登録など多様なユースケースで応答形式を統一し、クライアント実装を簡潔に保つ。
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '401':
+          description: |-
+            認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
+            ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
+            WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+          headers:
+            WWW-Authenticate:
+              required: true
+              description: Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '403':
+          description: 認証されているが、この操作を行う権限がない (403)。
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '429':
+          description: |-
+            リクエスト数の上限を超えたときのエラーレスポンス (429)。
+            クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+          headers:
+            Retry-After:
+              required: true
+              description: 再試行できるようになるまでの秒数。
+              schema:
+                type: integer
+                format: int32
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '500':
+          description: サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+      tags:
+        - Staff
+    post:
+      operationId: StaffInvitations_create
+      summary: Invite a staff member
+      description: スタッフを招待し、台帳のメールアドレスに招待メールを送ります。すでに招待がある場合は、新しい招待で置き換えます(それまでのトークンは使えなくなります)。招待の有効期間は7日です。応答は、宛先のメールアドレスにアカウントがあるかどうかで変わりません。owner のロールを与えられるのは admin だけで、サロンの owner が指定すると403を返します。スタッフがすでにログインアカウントに紐づいている場合、スタッフが無効(isActive が false)の場合、前の招待メールから60秒たっていない場合は409を返します。
+      parameters:
+        - name: salonId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Models.SalonId'
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Models.StaffId'
+      responses:
+        '201':
+          description: The request has succeeded and a new resource has been created as a result.
+          headers:
+            Location:
+              required: true
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                  - links
+                properties:
+                  data:
+                    allOf:
+                      - $ref: '#/components/schemas/Models.StaffInvitationResponse'
+                    description: レスポンスの主体となるビジネスデータ。
+                  meta:
+                    type: object
+                    allOf:
+                      - $ref: '#/components/schemas/Models.ResponseMeta'
+                    nullable: true
+                    description: リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull
+                  links:
+                    type: object
+                    additionalProperties:
+                      type: string
+                    nullable: true
+                    description: 関連リソースや次アクションへのリンク情報。リンクがない場合はnull
+                description: |-
+                  API 成功レスポンスの共通ラッパーモデル。
+                  サロン検索や予約登録など多様なユースケースで応答形式を統一し、クライアント実装を簡潔に保つ。
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '401':
+          description: |-
+            認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
+            ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
+            WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+          headers:
+            WWW-Authenticate:
+              required: true
+              description: Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '403':
+          description: 認証されているが、この操作を行う権限がない (403)。
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '413':
+          description: リクエスト本文がサイズ上限を超えている (413)。
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '415':
+          description: リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '429':
+          description: |-
+            リクエスト数の上限を超えたときのエラーレスポンス (429)。
+            クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+          headers:
+            Retry-After:
+              required: true
+              description: 再試行できるようになるまでの秒数。
+              schema:
+                type: integer
+                format: int32
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '500':
+          description: サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+      tags:
+        - Staff
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Models.StaffInvitationCreateRequest'
+    delete:
+      operationId: StaffInvitations_delete
+      summary: Revoke the invitation of a staff member
+      description: スタッフが持っている招待を取り消します。メールで送ったトークンは使えなくなります。招待がない場合は404を返します。
+      parameters:
+        - name: salonId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Models.SalonId'
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Models.StaffId'
+      responses:
+        '204':
+          description: 'There is no content to send for this request, but the headers may be useful. '
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '401':
+          description: |-
+            認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
+            ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
+            WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+          headers:
+            WWW-Authenticate:
+              required: true
+              description: Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '403':
+          description: 認証されているが、この操作を行う権限がない (403)。
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '429':
+          description: |-
+            リクエスト数の上限を超えたときのエラーレスポンス (429)。
+            クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+          headers:
+            Retry-After:
+              required: true
+              description: 再試行できるようになるまでの秒数。
+              schema:
+                type: integer
+                format: int32
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '500':
+          description: サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+      tags:
+        - Staff
   /api/v1/salons/{salonId}/staff/{id}/schedules:
     get:
       operationId: StaffSchedules_list
@@ -19498,6 +19962,34 @@ components:
       description: |-
         新規ユーザー登録リクエスト - 全項目のキーが必須。
         登録したユーザーのロールは customer になる。ロールはリクエストで指定できない
+    Models.AuthStaffInvitationAcceptRequest:
+      type: object
+      required:
+        - token
+        - password
+      properties:
+        token:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: メールで受け取った招待トークン。
+        password:
+          type: string
+          minLength: 15
+          maxLength: 128
+          description: 設定するパスワード。規則は登録時のパスワード(AuthRegisterRequest.password)と同じ
+      description: スタッフへの招待を受け入れて、ログインアカウントを作るためのリクエスト。
+    Models.AuthStaffInvitationVerifyRequest:
+      type: object
+      required:
+        - token
+      properties:
+        token:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: メールで受け取った招待トークン。
+      description: スタッフへの招待のトークンが使えるかどうかを確認するリクエスト。
     Models.AuthTokenRefreshRequest:
       type: object
       required:
@@ -25549,6 +26041,18 @@ components:
       description: |-
         サロンレスポンス - salons テーブルの公開カラムと、営業日カレンダー(opening_hours)を返す。
         プロパティ名と null 許可は DB カラムと一致させている。
+    Models.SalonRoleType:
+      type: string
+      enum:
+        - owner
+        - manager
+        - staff
+      description: |-
+        サロンロール区分 - サロンに属するアカウントのロール。スタッフへの招待で与える
+
+        owner: オーナー - サロンの所有者。スタッフ台帳を扱い、スタッフを招待できる
+        manager: マネージャー - サロンの管理業務を担当する
+        staff: スタッフ - 施術を提供するサロン従業員
     Models.SalonUpdateRequest:
       type: object
       properties:
@@ -26778,6 +27282,60 @@ components:
       type: string
       format: uuid
       description: 施術スタッフや従業員を識別するためのブランド付きUUID。
+    Models.StaffInvitationCreateRequest:
+      type: object
+      required:
+        - role
+      properties:
+        role:
+          allOf:
+            - $ref: '#/components/schemas/Models.SalonRoleType'
+          description: 招待を受け入れて作られるアカウントのロール。owner を指定できるのは admin だけ
+      description: |-
+        スタッフ招待作成リクエスト - 全項目のキーが必須。
+        宛先は台帳のメールアドレス(staff.email)で、リクエストでは指定できない
+    Models.StaffInvitationId:
+      type: string
+      format: uuid
+      description: スタッフへの招待(staff_invitations の1行)を識別するブランド付きUUID。
+    Models.StaffInvitationResponse:
+      type: object
+      required:
+        - id
+        - staffId
+        - email
+        - role
+        - expiresAt
+        - createdAt
+      properties:
+        id:
+          allOf:
+            - $ref: '#/components/schemas/Models.StaffInvitationId'
+          description: 招待を一意に識別するID。招待し直すたびに変わる
+        staffId:
+          allOf:
+            - $ref: '#/components/schemas/Models.StaffId'
+          description: 招待されたスタッフのID
+        email:
+          type: string
+          description: 招待メールの宛先。招待した時点の、台帳のメールアドレス。受け入れると、このメールアドレスのアカウントが作られる
+        role:
+          allOf:
+            - $ref: '#/components/schemas/Models.SalonRoleType'
+          description: 招待を受け入れて作られるアカウントのロール
+        expiresAt:
+          type: string
+          format: date-time
+          description: 招待の有効期限 (UTC)。招待してから7日後。この日時を過ぎた招待は受け入れられない
+        createdAt:
+          type: string
+          format: date-time
+          description: 招待した日時 (UTC)
+      description: |-
+        スタッフへの招待 - staff_invitations テーブルの1行。スタッフが、自分のログインアカウントを作るための招待。
+        1人のスタッフが持てる招待は1つまで。受け入れられた招待と、取り消された招待は残らない。
+        メールで送ったトークンとそのハッシュは返さない。
+        プロパティ名と null 許可は DB カラムと一致させている
     Models.StaffLevelType:
       type: string
       enum:
