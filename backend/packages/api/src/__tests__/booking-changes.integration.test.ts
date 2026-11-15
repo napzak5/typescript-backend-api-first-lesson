@@ -1824,6 +1824,24 @@ describe('Booking changes API', () => {
       expect(responses.map(statusAndCode)).toEqual(['404 3001', '404 3001'])
       expect(await everythingOf(id)).toEqual(before)
     })
+
+    // The operations are where the contract puts them: a move has no other
+    // name, and what PATCH and DELETE do is no action.
+    it.each(['move', 'rescheduled', 'update', 'delete', 'remove'])(
+      'has no action at %s',
+      async (name) => {
+        const { id } = await created()
+        const before = await everythingOf(id)
+
+        const response = await authorized(
+          request(app).post(`${BOOKINGS}/${id}/${name}`),
+          asAdmin,
+        ).send(to('05:00'))
+
+        expect(statusAndCode(response)).toBe('404 3001')
+        expect(await everythingOf(id)).toEqual(before)
+      },
+    )
   })
 
   describe('who changes a booking', () => {
@@ -2293,6 +2311,31 @@ describe('Booking changes API', () => {
       expect(await startOf(id)).toBe(written('01:00'))
     })
 
+    // The time zone of the salon tells the day of the visit, so the salon is
+    // held while a booking is moved, as it is while one is entered.
+    it('waits for a change of the salon that is being written, then tells the day of the visit by the time zone it has', async () => {
+      const { id } = await created()
+
+      const { pending } = await db.transaction(async (tx) => {
+        await tx
+          .update(salons)
+          .set({ timezone: 'America/New_York' })
+          .where(eq(salons.id, salonId))
+        const underWay = move(id, to('02:00')).then((response) => response)
+        await pause(300)
+
+        return { pending: underWay }
+      })
+      const response = await pending
+
+      // Eleven in the morning in Tokyo is nine in the evening before in New York.
+      expect(response.status).toBe(200)
+      expect(response.body.data).toMatchObject({
+        startTime: written('02:00'),
+        bookingDate: '2026-11-19',
+      })
+    })
+
     it('takes a note, a move and a confirmation of a booking at the same moment, and loses none of them', async () => {
       const members = await Promise.all(
         Array.from({ length: 4 }, () => staffMember()),
@@ -2518,9 +2561,32 @@ describe('Booking changes API', () => {
       staffId: staffIdSchema.parse(member),
     })
 
+    /**
+     * Gives a booking two more lines, stored in another order than their
+     * own, and the ledger a booking of another staff member: what a reader
+     * of the lines of one booking neither mixes up nor takes along.
+     */
+    const withMoreLines = async (id: string): Promise<void> => {
+      for (const sortOrder of [4, 3]) {
+        await db.insert(bookingServices).values({
+          bookingId: id,
+          serviceId: cutId,
+          staffId: null,
+          startTime: at('03:30'),
+          endTime: at('04:30'),
+          duration: 60,
+          price: 6600,
+          finalPrice: 6600,
+          sortOrder,
+        })
+      }
+      await cutAt('01:00', await staffMember())
+    }
+
     describe('update', () => {
-      it('writes the notes of a booking within the reach and returns it with its lines in their order', async () => {
+      it('writes the notes of a booking within the reach and returns it with its lines, and no others, in their order', async () => {
         const { id } = await visit()
+        await withMoreLines(id)
 
         const ofEverySalon = dataOf(
           await repository().update(bookingIdSchema.parse(id), everySalon, {
@@ -2537,11 +2603,23 @@ describe('Booking changes API', () => {
 
         expect(ofEverySalon).toMatchObject({
           booking: { id, internalNotes: 'お子様連れ', depositAmount: null },
-          services: [{ sortOrder: 0 }, { sortOrder: 1 }, { sortOrder: 2 }],
+          services: [
+            { sortOrder: 0 },
+            { sortOrder: 1 },
+            { sortOrder: 2 },
+            { sortOrder: 3 },
+            { sortOrder: 4 },
+          ],
         })
         expect(ofTheSalon).toMatchObject({
           booking: { id, internalNotes: 'お子様連れ', depositAmount: 500 },
-          services: [{ sortOrder: 0 }, { sortOrder: 1 }, { sortOrder: 2 }],
+          services: [
+            { sortOrder: 0 },
+            { sortOrder: 1 },
+            { sortOrder: 2 },
+            { sortOrder: 3 },
+            { sortOrder: 4 },
+          ],
         })
       })
 
@@ -2586,8 +2664,9 @@ describe('Booking changes API', () => {
     })
 
     describe('reschedule', () => {
-      it('moves a booking within the reach and returns it with its lines in their order', async () => {
+      it('moves a booking within the reach and returns it with its lines, and no others, in their order', async () => {
         const { id, second } = await visit()
+        await withMoreLines(id)
 
         const ofEverySalon = dataOf(
           await repository().reschedule(
@@ -2612,6 +2691,8 @@ describe('Booking changes API', () => {
               { sortOrder: 0, staffId },
               { sortOrder: 1, staffId: second },
               { sortOrder: 2, staffId: null },
+              { sortOrder: 3, staffId: null },
+              { sortOrder: 4, staffId: null },
             ],
           },
         })
@@ -2623,6 +2704,8 @@ describe('Booking changes API', () => {
               { sortOrder: 0, staffId: second },
               { sortOrder: 1, staffId: second },
               { sortOrder: 2, staffId: null },
+              { sortOrder: 3, staffId: null },
+              { sortOrder: 4, staffId: null },
             ],
           },
         })
