@@ -29,6 +29,7 @@ import type {
   ModelsSalonId,
   ModelsStaffCreateRequest,
   ModelsStaffId,
+  ModelsStaffInvitationCreateRequest,
   ModelsStaffScheduleUpdateRequest,
   ModelsStaffUpdateRequest,
   StaffCrudCreate201,
@@ -36,6 +37,8 @@ import type {
   StaffCrudList200,
   StaffCrudListParams,
   StaffCrudUpdate200,
+  StaffInvitationsCreate201,
+  StaffInvitationsGet200,
   StaffProfileGet200,
   StaffProfileList200,
   StaffProfileListParams,
@@ -826,6 +829,443 @@ export const useStaffCrudDelete = <TError = ModelsProblemDetails,
         TContext
       > => {
       return useMutation(getStaffCrudDeleteMutationOptions(options), queryClient);
+    }
+    export type staffInvitationsGetResponse200 = {
+  data: StaffInvitationsGet200
+  status: 200
+}
+
+export type staffInvitationsGetResponse400 = {
+  data: ModelsProblemDetails
+  status: 400
+}
+
+export type staffInvitationsGetResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type staffInvitationsGetResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
+export type staffInvitationsGetResponse404 = {
+  data: ModelsProblemDetails
+  status: 404
+}
+
+export type staffInvitationsGetResponse429 = {
+  data: ModelsProblemDetails
+  status: 429
+}
+
+export type staffInvitationsGetResponse500 = {
+  data: ModelsProblemDetails
+  status: 500
+}
+
+export type staffInvitationsGetResponseSuccess = (staffInvitationsGetResponse200) & {
+  headers: Headers;
+};
+export type staffInvitationsGetResponseError = (staffInvitationsGetResponse400 | staffInvitationsGetResponse401 | staffInvitationsGetResponse403 | staffInvitationsGetResponse404 | staffInvitationsGetResponse429 | staffInvitationsGetResponse500) & {
+  headers: Headers;
+};
+
+export type staffInvitationsGetResponse = (staffInvitationsGetResponseSuccess | staffInvitationsGetResponseError)
+
+export const getStaffInvitationsGetUrl = (salonId: ModelsSalonId,
+    id: ModelsStaffId,) => {
+
+
+
+
+  return `/api/v1/salons/${salonId}/staff/${id}/invitation`
+}
+
+/**
+ * スタッフが持っている招待を取得します。有効期限を過ぎた招待も、置き換えるか取り消すまでは返します(expiresAt が過去の日時になります)。招待がない場合(招待していない、受け入れられた、取り消した)は404を返します。
+ * @summary Get the invitation of a staff member
+ */
+export const staffInvitationsGet = async (salonId: ModelsSalonId,
+    id: ModelsStaffId, options?: RequestInit): Promise<staffInvitationsGetResponse> => {
+
+  return customInstance<staffInvitationsGetResponse>(getStaffInvitationsGetUrl(salonId,id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getStaffInvitationsGetQueryKey = (salonId: ModelsSalonId,
+    id: ModelsStaffId,) => {
+    return [
+    `/api/v1/salons/${salonId}/staff/${id}/invitation`
+    ] as const;
+    }
+
+
+export const getStaffInvitationsGetQueryOptions = <TData = Awaited<ReturnType<typeof staffInvitationsGet>>, TError = ModelsProblemDetails>(salonId: ModelsSalonId,
+    id: ModelsStaffId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffInvitationsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getStaffInvitationsGetQueryKey(salonId,id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof staffInvitationsGet>>> = ({ signal }) => staffInvitationsGet(salonId,id, { signal });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: salonId !== null && salonId !== undefined && id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof staffInvitationsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type StaffInvitationsGetQueryResult = NonNullable<Awaited<ReturnType<typeof staffInvitationsGet>>>
+export type StaffInvitationsGetQueryError = ModelsProblemDetails
+
+
+/**
+ * スタッフが持っている招待を取得します。有効期限を過ぎた招待も、置き換えるか取り消すまでは返します(expiresAt が過去の日時になります)。招待がない場合(招待していない、受け入れられた、取り消した)は404を返します。
+ * @summary Get the invitation of a staff member
+ */
+export function useStaffInvitationsGet<TData = Awaited<ReturnType<typeof staffInvitationsGet>>, TError = ModelsProblemDetails>(
+ salonId: ModelsSalonId,
+    id: ModelsStaffId, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffInvitationsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof staffInvitationsGet>>,
+          TError,
+          Awaited<ReturnType<typeof staffInvitationsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * スタッフが持っている招待を取得します。有効期限を過ぎた招待も、置き換えるか取り消すまでは返します(expiresAt が過去の日時になります)。招待がない場合(招待していない、受け入れられた、取り消した)は404を返します。
+ * @summary Get the invitation of a staff member
+ */
+export function useStaffInvitationsGet<TData = Awaited<ReturnType<typeof staffInvitationsGet>>, TError = ModelsProblemDetails>(
+ salonId: ModelsSalonId,
+    id: ModelsStaffId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffInvitationsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof staffInvitationsGet>>,
+          TError,
+          Awaited<ReturnType<typeof staffInvitationsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * スタッフが持っている招待を取得します。有効期限を過ぎた招待も、置き換えるか取り消すまでは返します(expiresAt が過去の日時になります)。招待がない場合(招待していない、受け入れられた、取り消した)は404を返します。
+ * @summary Get the invitation of a staff member
+ */
+export function useStaffInvitationsGet<TData = Awaited<ReturnType<typeof staffInvitationsGet>>, TError = ModelsProblemDetails>(
+ salonId: ModelsSalonId,
+    id: ModelsStaffId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffInvitationsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * スタッフが持っている招待を取得します。有効期限を過ぎた招待も、置き換えるか取り消すまでは返します(expiresAt が過去の日時になります)。招待がない場合(招待していない、受け入れられた、取り消した)は404を返します。
+ * @summary Get the invitation of a staff member
+ */
+export function useStaffInvitationsGet<TData = Awaited<ReturnType<typeof staffInvitationsGet>>, TError = ModelsProblemDetails>(
+ salonId: ModelsSalonId,
+    id: ModelsStaffId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffInvitationsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getStaffInvitationsGetQueryOptions(salonId,id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type staffInvitationsCreateResponse201 = {
+  data: StaffInvitationsCreate201
+  status: 201
+}
+
+export type staffInvitationsCreateResponse400 = {
+  data: ModelsProblemDetails
+  status: 400
+}
+
+export type staffInvitationsCreateResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type staffInvitationsCreateResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
+export type staffInvitationsCreateResponse404 = {
+  data: ModelsProblemDetails
+  status: 404
+}
+
+export type staffInvitationsCreateResponse409 = {
+  data: ModelsProblemDetails
+  status: 409
+}
+
+export type staffInvitationsCreateResponse413 = {
+  data: ModelsProblemDetails
+  status: 413
+}
+
+export type staffInvitationsCreateResponse415 = {
+  data: ModelsProblemDetails
+  status: 415
+}
+
+export type staffInvitationsCreateResponse429 = {
+  data: ModelsProblemDetails
+  status: 429
+}
+
+export type staffInvitationsCreateResponse500 = {
+  data: ModelsProblemDetails
+  status: 500
+}
+
+export type staffInvitationsCreateResponseSuccess = (staffInvitationsCreateResponse201) & {
+  headers: Headers;
+};
+export type staffInvitationsCreateResponseError = (staffInvitationsCreateResponse400 | staffInvitationsCreateResponse401 | staffInvitationsCreateResponse403 | staffInvitationsCreateResponse404 | staffInvitationsCreateResponse409 | staffInvitationsCreateResponse413 | staffInvitationsCreateResponse415 | staffInvitationsCreateResponse429 | staffInvitationsCreateResponse500) & {
+  headers: Headers;
+};
+
+export type staffInvitationsCreateResponse = (staffInvitationsCreateResponseSuccess | staffInvitationsCreateResponseError)
+
+export const getStaffInvitationsCreateUrl = (salonId: ModelsSalonId,
+    id: ModelsStaffId,) => {
+
+
+
+
+  return `/api/v1/salons/${salonId}/staff/${id}/invitation`
+}
+
+/**
+ * スタッフを招待し、台帳のメールアドレスに招待メールを送ります。すでに招待がある場合は、新しい招待で置き換えます(それまでのトークンは使えなくなります)。招待の有効期間は7日です。応答は、宛先のメールアドレスにアカウントがあるかどうかで変わりません。owner のロールを与えられるのは admin だけで、サロンの owner が指定すると403を返します。スタッフがすでにログインアカウントに紐づいている場合、スタッフが無効(isActive が false)の場合、前の招待メールから60秒たっていない場合は409を返します。
+ * @summary Invite a staff member
+ */
+export const staffInvitationsCreate = async (salonId: ModelsSalonId,
+    id: ModelsStaffId,
+    modelsStaffInvitationCreateRequest: ModelsStaffInvitationCreateRequest, options?: RequestInit): Promise<staffInvitationsCreateResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customInstance<staffInvitationsCreateResponse>(getStaffInvitationsCreateUrl(salonId,id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(modelsStaffInvitationCreateRequest)
+  }
+);}
+
+
+
+
+
+export const getStaffInvitationsCreateMutationKey = () => ['staffInvitationsCreate'] as const;
+
+export const getStaffInvitationsCreateMutationOptions = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffInvitationsCreate>>, TError,StaffInvitationsCreateMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof staffInvitationsCreate>>, TError,StaffInvitationsCreateMutationVariables, TContext> => {
+
+const mutationKey = getStaffInvitationsCreateMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof staffInvitationsCreate>>, StaffInvitationsCreateMutationVariables> = (props) => {
+          const {salonId,id,data} = props ?? {};
+
+          return  staffInvitationsCreate(salonId,id,data,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type StaffInvitationsCreateMutationResult = NonNullable<Awaited<ReturnType<typeof staffInvitationsCreate>>>
+    export type StaffInvitationsCreateMutationBody = ModelsStaffInvitationCreateRequest
+    export type StaffInvitationsCreateMutationError = ModelsProblemDetails
+    export type StaffInvitationsCreateMutationVariables = {salonId: ModelsSalonId;id: ModelsStaffId;data: ModelsStaffInvitationCreateRequest}
+
+    /**
+ * スタッフを招待し、台帳のメールアドレスに招待メールを送ります。すでに招待がある場合は、新しい招待で置き換えます(それまでのトークンは使えなくなります)。招待の有効期間は7日です。応答は、宛先のメールアドレスにアカウントがあるかどうかで変わりません。owner のロールを与えられるのは admin だけで、サロンの owner が指定すると403を返します。スタッフがすでにログインアカウントに紐づいている場合、スタッフが無効(isActive が false)の場合、前の招待メールから60秒たっていない場合は409を返します。
+ * @summary Invite a staff member
+ */
+export const useStaffInvitationsCreate = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffInvitationsCreate>>, TError,StaffInvitationsCreateMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof staffInvitationsCreate>>,
+        TError,
+        StaffInvitationsCreateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getStaffInvitationsCreateMutationOptions(options), queryClient);
+    }
+    export type staffInvitationsDeleteResponse204 = {
+  data: void
+  status: 204
+}
+
+export type staffInvitationsDeleteResponse400 = {
+  data: ModelsProblemDetails
+  status: 400
+}
+
+export type staffInvitationsDeleteResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type staffInvitationsDeleteResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
+export type staffInvitationsDeleteResponse404 = {
+  data: ModelsProblemDetails
+  status: 404
+}
+
+export type staffInvitationsDeleteResponse429 = {
+  data: ModelsProblemDetails
+  status: 429
+}
+
+export type staffInvitationsDeleteResponse500 = {
+  data: ModelsProblemDetails
+  status: 500
+}
+
+export type staffInvitationsDeleteResponseSuccess = (staffInvitationsDeleteResponse204) & {
+  headers: Headers;
+};
+export type staffInvitationsDeleteResponseError = (staffInvitationsDeleteResponse400 | staffInvitationsDeleteResponse401 | staffInvitationsDeleteResponse403 | staffInvitationsDeleteResponse404 | staffInvitationsDeleteResponse429 | staffInvitationsDeleteResponse500) & {
+  headers: Headers;
+};
+
+export type staffInvitationsDeleteResponse = (staffInvitationsDeleteResponseSuccess | staffInvitationsDeleteResponseError)
+
+export const getStaffInvitationsDeleteUrl = (salonId: ModelsSalonId,
+    id: ModelsStaffId,) => {
+
+
+
+
+  return `/api/v1/salons/${salonId}/staff/${id}/invitation`
+}
+
+/**
+ * スタッフが持っている招待を取り消します。メールで送ったトークンは使えなくなります。招待がない場合は404を返します。
+ * @summary Revoke the invitation of a staff member
+ */
+export const staffInvitationsDelete = async (salonId: ModelsSalonId,
+    id: ModelsStaffId, options?: RequestInit): Promise<staffInvitationsDeleteResponse> => {
+
+  return customInstance<staffInvitationsDeleteResponse>(getStaffInvitationsDeleteUrl(salonId,id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getStaffInvitationsDeleteMutationKey = () => ['staffInvitationsDelete'] as const;
+
+export const getStaffInvitationsDeleteMutationOptions = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffInvitationsDelete>>, TError,StaffInvitationsDeleteMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof staffInvitationsDelete>>, TError,StaffInvitationsDeleteMutationVariables, TContext> => {
+
+const mutationKey = getStaffInvitationsDeleteMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof staffInvitationsDelete>>, StaffInvitationsDeleteMutationVariables> = (props) => {
+          const {salonId,id} = props ?? {};
+
+          return  staffInvitationsDelete(salonId,id,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type StaffInvitationsDeleteMutationResult = NonNullable<Awaited<ReturnType<typeof staffInvitationsDelete>>>
+
+    export type StaffInvitationsDeleteMutationError = ModelsProblemDetails
+    export type StaffInvitationsDeleteMutationVariables = {salonId: ModelsSalonId;id: ModelsStaffId}
+
+    /**
+ * スタッフが持っている招待を取り消します。メールで送ったトークンは使えなくなります。招待がない場合は404を返します。
+ * @summary Revoke the invitation of a staff member
+ */
+export const useStaffInvitationsDelete = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffInvitationsDelete>>, TError,StaffInvitationsDeleteMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof staffInvitationsDelete>>,
+        TError,
+        StaffInvitationsDeleteMutationVariables,
+        TContext
+      > => {
+      return useMutation(getStaffInvitationsDeleteMutationOptions(options), queryClient);
     }
     export type staffSchedulesListResponse200 = {
   data: StaffSchedulesList200

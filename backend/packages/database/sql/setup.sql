@@ -23,6 +23,7 @@ CREATE TYPE "public"."payment_method" AS ENUM('cash', 'credit_card', 'debit_card
 CREATE TYPE "public"."payment_status" AS ENUM('pending', 'processing', 'completed', 'failed', 'refunded', 'partial_refund');
 CREATE TYPE "public"."point_transaction_type" AS ENUM('earned', 'used', 'expired', 'adjusted', 'transferred');
 CREATE TYPE "public"."pricing_strategy" AS ENUM('fixed', 'variable', 'tiered', 'dynamic', 'consultation_based');
+CREATE TYPE "public"."salon_role" AS ENUM('owner', 'manager', 'staff');
 CREATE TYPE "public"."scalp_condition" AS ENUM('normal', 'dry', 'oily', 'sensitive', 'dandruff');
 CREATE TYPE "public"."service_availability" AS ENUM('always', 'weekdays_only', 'weekends_only', 'by_appointment_only', 'seasonal');
 CREATE TYPE "public"."service_category" AS ENUM('cut', 'color', 'perm', 'treatment', 'spa', 'styling', 'extension', 'other');
@@ -617,6 +618,19 @@ CREATE TABLE "staff" (
 	CONSTRAINT "staff_years_of_experience_not_negative" CHECK ("yearsOfExperience" >= 0)
 );
 
+CREATE TABLE "staff_invitations" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"staffId" uuid NOT NULL,
+	"email" varchar(255) NOT NULL,
+	"role" "salon_role" NOT NULL,
+	"tokenHash" text NOT NULL,
+	"expiresAt" timestamp with time zone NOT NULL,
+	"createdAt" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "staff_invitations_staff_unique" UNIQUE("staffId"),
+	CONSTRAINT "staff_invitations_token_hash_unique" UNIQUE("tokenHash"),
+	CONSTRAINT "staff_invitations_email_lower_case" CHECK ((email)::text = lower((email)::text))
+);
+
 CREATE TABLE "staff_performances" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"staffId" uuid NOT NULL,
@@ -806,6 +820,7 @@ ALTER TABLE "services" ADD CONSTRAINT "services_category_id_fk" FOREIGN KEY ("ca
 ALTER TABLE "services" ADD CONSTRAINT "services_salon_id_fk" FOREIGN KEY ("salonId") REFERENCES "public"."salons"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "sessions" ADD CONSTRAINT "sessions_user_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "staff" ADD CONSTRAINT "staff_salon_id_fk" FOREIGN KEY ("salonId") REFERENCES "public"."salons"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "staff_invitations" ADD CONSTRAINT "staff_invitations_staff_id_fk" FOREIGN KEY ("staffId") REFERENCES "public"."staff"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "staff_performances" ADD CONSTRAINT "staff_performances_staff_id_fk" FOREIGN KEY ("staffId") REFERENCES "public"."staff"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "staff_schedules" ADD CONSTRAINT "staff_schedules_staff_id_fk" FOREIGN KEY ("staffId") REFERENCES "public"."staff"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "staff_skills" ADD CONSTRAINT "staff_skills_staff_id_fk" FOREIGN KEY ("staffId") REFERENCES "public"."staff"("id") ON DELETE cascade ON UPDATE no action;
@@ -900,8 +915,8 @@ CREATE INDEX "idx_sessions_user_id" ON "sessions" USING btree ("userId" uuid_ops
 CREATE INDEX "idx_staff_deleted_at" ON "staff" USING btree ("deletedAt" timestamptz_ops);
 CREATE INDEX "idx_staff_email" ON "staff" USING btree ("email" text_ops);
 CREATE INDEX "idx_staff_salon_id" ON "staff" USING btree ("salonId" uuid_ops);
-CREATE INDEX "idx_staff_user_id" ON "staff" USING btree ("userId" uuid_ops);
 CREATE UNIQUE INDEX "staff_email_salon_unique" ON "staff" USING btree ("salonId" uuid_ops,"email" text_ops) WHERE ("deletedAt" IS NULL);
+CREATE UNIQUE INDEX "staff_user_unique" ON "staff" USING btree ("userId" uuid_ops) WHERE ("deletedAt" IS NULL);
 CREATE INDEX "idx_staff_performances_period_start" ON "staff_performances" USING btree ("periodStart" date_ops);
 CREATE INDEX "idx_staff_performances_period_type" ON "staff_performances" USING btree ("periodType" text_ops);
 CREATE INDEX "idx_staff_performances_staff_id" ON "staff_performances" USING btree ("staffId" uuid_ops);
@@ -926,3 +941,4 @@ CREATE INDEX "idx_users_two_factor_status" ON "users" USING btree ("twoFactorSta
 CREATE UNIQUE INDEX "users_email_unique" ON "users" USING btree ("email" text_ops) WHERE ("deletedAt" IS NULL);
 CREATE UNIQUE INDEX "users_email_verification_token_hash_unique" ON "users" USING btree ("emailVerificationTokenHash" text_ops);
 CREATE UNIQUE INDEX "users_password_reset_token_hash_unique" ON "users" USING btree ("passwordResetTokenHash" text_ops);
+CREATE UNIQUE INDEX "users_staff_unique" ON "users" USING btree ("staffId" uuid_ops) WHERE ("deletedAt" IS NULL);

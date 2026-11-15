@@ -719,6 +719,81 @@ describe('the schedule of a staff member', () => {
   })
 })
 
+describe('the invitation of a staff member', () => {
+  /** A UUID that neither a salon nor a staff member has: the request is refused before either is looked up. */
+  const SOME_ID = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1b'
+  const INVITATION = `/api/v1/salons/${SOME_ID}/staff/${SOME_ID}/invitation`
+  const OF_THE_INVITED = '/api/v1/auth/staff-invitation'
+
+  it('should answer each of the three routes of a salon with 401 when no access token is sent', async () => {
+    const { server } = await start(createConfig().config)
+    const routes: [string, string][] = [
+      ['GET', INVITATION],
+      ['POST', INVITATION],
+      ['DELETE', INVITATION],
+    ]
+
+    const answers: Record<string, unknown>[] = []
+    for (const [method, path] of routes) {
+      const response = await fetch(`http://127.0.0.1:${server.port}${path}`, {
+        method,
+      })
+      answers.push({
+        route: `${method} ${path}`,
+        status: response.status,
+        challenge: response.headers.get('www-authenticate'),
+        problem: await response.json(),
+      })
+    }
+    await server.stop()
+
+    expect(answers).toEqual(
+      routes.map(([method, path]) => ({
+        route: `${method} ${path}`,
+        status: 401,
+        challenge: 'Bearer realm="beauty-salon-api"',
+        problem: expect.objectContaining({ status: 401, code: '1001' }),
+      })),
+    )
+  })
+
+  it('should answer both routes of the invited without asking for an access token: a request without the token of an invitation with 400, which no cache may keep', async () => {
+    const { server } = await start(createConfig().config)
+    const paths = [`${OF_THE_INVITED}/verify`, `${OF_THE_INVITED}/accept`]
+
+    const answers: Record<string, unknown>[] = []
+    for (const path of paths) {
+      const response = await fetch(`http://127.0.0.1:${server.port}${path}`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ password: 'violet tram under the bridge' }),
+      })
+      answers.push({
+        route: `POST ${path}`,
+        status: response.status,
+        challenge: response.headers.get('www-authenticate'),
+        cacheControl: response.headers.get('cache-control'),
+        problem: await response.json(),
+      })
+    }
+    await server.stop()
+
+    expect(answers).toEqual(
+      paths.map((path) => ({
+        route: `POST ${path}`,
+        status: 400,
+        challenge: null,
+        cacheControl: 'no-store',
+        problem: expect.objectContaining({
+          status: 400,
+          code: '2001',
+          detail: 'Invalid staff invitation',
+        }),
+      })),
+    )
+  })
+})
+
 describe('the staff profiles', () => {
   /** A UUID that no staff member has. */
   const SOME_ID = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0a1b'

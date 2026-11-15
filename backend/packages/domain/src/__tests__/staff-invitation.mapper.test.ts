@@ -1,0 +1,61 @@
+import { describe, expect, it } from 'vitest'
+import { StaffInvitationReadMapper } from '../mappers/read/staff-invitation.mapper'
+import type { SalonRole } from '../models/staff-invitation'
+import {
+  apiStaffInvitation,
+  dbStaffInvitation,
+  INVITATION_ID,
+} from './staff-invitation-fixtures'
+
+describe('StaffInvitationReadMapper.toApiStaffInvitation', () => {
+  it('returns the columns under their own names, with the timestamps in ISO 8601', () => {
+    expect(
+      StaffInvitationReadMapper.toApiStaffInvitation(dbStaffInvitation()),
+    ).toEqual({ type: 'success', data: apiStaffInvitation() })
+  })
+
+  it.each<SalonRole>(['owner', 'manager', 'staff'])(
+    'keeps the role %s',
+    (role) => {
+      expect(
+        StaffInvitationReadMapper.toApiStaffInvitation(
+          dbStaffInvitation({ role }),
+        ),
+      ).toEqual({ type: 'success', data: apiStaffInvitation({ role }) })
+    },
+  )
+
+  it('leaves out the hash of the token', () => {
+    const mapped = StaffInvitationReadMapper.toApiStaffInvitation(
+      dbStaffInvitation({ tokenHash: 'sha256(secret)' }),
+    )
+
+    expect(JSON.stringify(mapped)).not.toContain('sha256(secret)')
+    expect(JSON.stringify(mapped)).not.toContain('tokenHash')
+  })
+
+  it('does not pass on what a row carries beyond its columns', () => {
+    const row = { ...dbStaffInvitation(), token: 'mailed-token' }
+
+    const mapped = StaffInvitationReadMapper.toApiStaffInvitation(row)
+
+    expect(mapped).toEqual({ type: 'success', data: apiStaffInvitation() })
+  })
+
+  it.each(['expiresAt', 'createdAt'])(
+    'reports a stored %s that is no timestamp as a database error that names the invitation',
+    (column) => {
+      const mapped = StaffInvitationReadMapper.toApiStaffInvitation(
+        dbStaffInvitation({ [column]: 'next week' }),
+      )
+
+      expect(mapped).toMatchObject({
+        type: 'error',
+        error: {
+          type: 'database',
+          message: `Stored staff invitation ${INVITATION_ID} does not match the API model`,
+        },
+      })
+    },
+  )
+})

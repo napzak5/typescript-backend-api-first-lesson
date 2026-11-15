@@ -68,12 +68,15 @@ customer ledger: `list`, `create`, `get`, `update` and `delete`), the three
 of `CustomerProfile` (a customer's own profile), the five operations of
 `StaffCrud` (the staff ledger of a salon: `list`, `create`, `get`, `update`
 and `delete`), the two of `StaffSchedules` (when a staff member works:
-`list` and `update`), the two of `StaffProfile` (what customers
+`list` and `update`), the three of `StaffInvitations` (the invitation by
+which a staff member gets a login account: `get`, `create` and `delete`),
+the two of `StaffProfile` (what customers
 are shown of a staff member: `list` and `get`), the
 authentication operations (those of
 `AuthCrud`, `SessionCrud` and `AdminAuthCrud`: login, refresh, logout, the
 current user, registration, email verification, password reset and change,
-two-factor authentication, the session list, the administrator operations)
+verifying and accepting the invitation of a staff member, two-factor
+authentication, the session list, the administrator operations)
 and the system probes (`alive`, `ready`, `health`); the types and client
 functions of everything else are generated all the same.
 

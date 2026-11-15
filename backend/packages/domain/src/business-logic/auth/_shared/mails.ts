@@ -3,10 +3,11 @@ import {
   EMAIL_VERIFICATION,
   type MailedTokenKind,
   PASSWORD_RESET,
+  STAFF_INVITATION,
 } from './mailed-token'
 
 /**
- * The mails of the authentication flows, as plain text. A link points at a
+ * The mails of the flows that concern an account, as plain text. A link points at a
  * page of the web application, whose address is configuration and never
  * taken from the request. The token is in the fragment, which a browser
  * sends to no server and leaves out of the Referer header.
@@ -17,6 +18,8 @@ const linkTo = (publicAppUrl: string, page: string, token: string): string =>
 
 const hoursOf = ({ lifetimeMinutes }: MailedTokenKind): number =>
   lifetimeMinutes / 60
+
+const daysOf = (kind: MailedTokenKind): number => hoursOf(kind) / 24
 
 export const emailVerificationMail = (
   to: string,
@@ -51,6 +54,31 @@ export const passwordResetMail = (
     `このリンクは ${PASSWORD_RESET.lifetimeMinutes} 分間有効で、1 回だけ使えます。`,
     '',
     '再設定を依頼していない場合は、このメールを破棄してください。パスワードは変更されません。',
+  ].join('\n'),
+})
+
+/**
+ * The name of the salon is the salon's own text. It is part of the body
+ * only, never of a header.
+ */
+export const staffInvitationMail = (
+  to: string,
+  salonName: string,
+  publicAppUrl: string,
+  token: string,
+): Mail => ({
+  to,
+  subject: 'スタッフアカウントへの招待',
+  text: [
+    `${salonName} から、スタッフアカウントへの招待が届いています。`,
+    '',
+    'アカウントを作成するには、次のリンクを開いてパスワードを設定してください。',
+    '',
+    linkTo(publicAppUrl, 'accept-staff-invitation', token),
+    '',
+    `このリンクは ${daysOf(STAFF_INVITATION)} 日間有効で、1 回だけ使えます。新しい招待メールを受け取った場合は、新しいメールのリンクを使ってください。`,
+    '',
+    'このメールに心当たりがない場合は、何もせずに破棄してください。リンクを開かなければ、アカウントは作成されません。',
   ].join('\n'),
 })
 

@@ -24,6 +24,7 @@ import {
   services,
   sessions,
   staff,
+  staffInvitations,
   staffPerformances,
   staffSchedules,
   staffSkills,
@@ -333,6 +334,16 @@ export const sessionsRelations = relations(sessions, ({ one }) => ({
   }),
 }))
 
+export const staffInvitationsRelations = relations(
+  staffInvitations,
+  ({ one }) => ({
+    staff: one(staff, {
+      fields: [staffInvitations.staffId],
+      references: [staff.id],
+    }),
+  }),
+)
+
 export const staffPerformancesRelations = relations(
   staffPerformances,
   ({ one }) => ({
@@ -354,6 +365,7 @@ export const staffRelations = relations(staff, ({ one, many }) => ({
     fields: [staff.salonId],
     references: [salons.id],
   }),
+  staffInvitations: many(staffInvitations),
   staffPerformances: many(staffPerformances),
   staffSchedules: many(staffSchedules),
   staffSkills: many(staffSkills),

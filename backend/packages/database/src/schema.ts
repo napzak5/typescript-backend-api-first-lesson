@@ -161,6 +161,8 @@ export const pricingStrategy = pgEnum('pricing_strategy', [
   'consultation_based',
 ])
 
+export const salonRole = pgEnum('salon_role', ['owner', 'manager', 'staff'])
+
 export const scalpCondition = pgEnum('scalp_condition', [
   'normal',
   'dry',
@@ -1604,10 +1606,6 @@ export const staff = pgTable(
       'btree',
       table.salonId.asc().nullsLast().op('uuid_ops'),
     ),
-    index('idx_staff_user_id').using(
-      'btree',
-      table.userId.asc().nullsLast().op('uuid_ops'),
-    ),
     unique('staff_code_salon_unique').on(table.salonId, table.staffCode),
     uniqueIndex('staff_email_salon_unique')
       .using(
@@ -1616,6 +1614,37 @@ export const staff = pgTable(
         table.email.asc().nullsLast().op('text_ops'),
       )
       .where(sql`("deletedAt" IS NULL)`),
+    uniqueIndex('staff_user_unique')
+      .using('btree', table.userId.asc().nullsLast().op('uuid_ops'))
+      .where(sql`("deletedAt" IS NULL)`),
+  ],
+)
+
+export const staffInvitations = pgTable(
+  'staff_invitations',
+  {
+    id: uuid().defaultRandom().primaryKey().notNull(),
+    staffId: uuid().notNull(),
+    email: varchar({ length: 255 }).notNull(),
+    role: salonRole().notNull(),
+    tokenHash: text().notNull(),
+    expiresAt: timestamp({ withTimezone: true, mode: 'string' }).notNull(),
+    createdAt: timestamp({ withTimezone: true, mode: 'string' })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    check(
+      'staff_invitations_email_lower_case',
+      sql`(email)::text = lower((email)::text)`,
+    ),
+    foreignKey({
+      columns: [table.staffId],
+      foreignColumns: [staff.id],
+      name: 'staff_invitations_staff_id_fk',
+    }).onDelete('cascade'),
+    unique('staff_invitations_staff_unique').on(table.staffId),
+    unique('staff_invitations_token_hash_unique').on(table.tokenHash),
   ],
 )
 
@@ -2017,5 +2046,8 @@ export const users = pgTable(
       'btree',
       table.passwordResetTokenHash.asc().nullsLast().op('text_ops'),
     ),
+    uniqueIndex('users_staff_unique')
+      .using('btree', table.staffId.asc().nullsLast().op('uuid_ops'))
+      .where(sql`("deletedAt" IS NULL)`),
   ],
 )

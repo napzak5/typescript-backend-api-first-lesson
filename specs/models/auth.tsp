@@ -263,6 +263,27 @@ namespace BeautySalon.Models {
     newPassword: string;
   }
 
+  @doc("スタッフへの招待のトークンが使えるかどうかを確認するリクエスト。")
+  model AuthStaffInvitationVerifyRequest {
+    @doc("メールで受け取った招待トークン。")
+    @minLength(1)
+    @maxLength(255)
+    token: string;
+  }
+
+  @doc("スタッフへの招待を受け入れて、ログインアカウントを作るためのリクエスト。")
+  model AuthStaffInvitationAcceptRequest {
+    @doc("メールで受け取った招待トークン。")
+    @minLength(1)
+    @maxLength(255)
+    token: string;
+
+    @doc("設定するパスワード。規則は登録時のパスワード(AuthRegisterRequest.password)と同じ")
+    @minLength(15)
+    @maxLength(128)
+    password: string;
+  }
+
   @doc("""
     メールアドレス確認メールの送信を要求するリクエスト。
     アカウントの有無やメールアドレスの確認状態にかかわらず同じ応答を返す

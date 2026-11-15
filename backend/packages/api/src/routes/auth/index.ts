@@ -1,6 +1,7 @@
 import type { AuthUseCaseDependencies } from '@beauty-salon-backend/domain'
-import { type RequestHandler, Router } from 'express'
+import { Router } from 'express'
 import type { Authenticated } from '../../shared/authentication'
+import { neverStored } from '../../shared/never-stored'
 import { changePasswordHandler } from './change-password.handler'
 import { confirmEmailVerificationHandler } from './confirm-email-verification.handler'
 import { disableTwoFactorHandler } from './disable-two-factor.handler'
@@ -19,15 +20,6 @@ import { revokeSessionHandler } from './revoke-session.handler'
 import { sendEmailVerificationHandler } from './send-email-verification.handler'
 import { verifyResetTokenHandler } from './verify-reset-token.handler'
 import { verifyTwoFactorHandler } from './verify-two-factor.handler'
-
-/**
- * Every response of these routes carries tokens or the data of one user, so
- * none of them may be kept by a cache.
- */
-const neverStored: RequestHandler = (_req, res, next) => {
-  res.set('Cache-Control', 'no-store')
-  next()
-}
 
 /**
  * Authentication routes, relative to where the router is mounted. One

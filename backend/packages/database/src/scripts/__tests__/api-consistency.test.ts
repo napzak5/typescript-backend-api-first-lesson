@@ -566,4 +566,40 @@ describe('modelRules', () => {
       },
     ])
   })
+
+  it('shows an invitation of a staff member without the hash of its token, and lets the request that creates one state the role only', () => {
+    const rules = modelRules
+      .filter((modelRule) => modelRule.table === 'staffInvitations')
+      .map(({ model, kind, omittedColumns, embedded, computed }) => ({
+        model,
+        kind,
+        omittedColumns,
+        embedded,
+        computed,
+      }))
+
+    expect(rules).toEqual([
+      {
+        model: 'Models.StaffInvitationResponse',
+        kind: 'response',
+        omittedColumns: ['tokenHash'],
+        embedded: undefined,
+        computed: undefined,
+      },
+      {
+        model: 'Models.StaffInvitationCreateRequest',
+        kind: 'create',
+        omittedColumns: [
+          'id',
+          'staffId',
+          'email',
+          'tokenHash',
+          'expiresAt',
+          'createdAt',
+        ],
+        embedded: undefined,
+        computed: undefined,
+      },
+    ])
+  })
 })
