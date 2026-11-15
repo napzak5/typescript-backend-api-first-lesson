@@ -677,7 +677,10 @@ if (!mayUpdateSalon(actor, salonId.data)) {
   none is a 403 whatever else is wrong with the request. Once the body or
   the query names a salon, `isWithin` says whether it is within that reach
   (403), and the repository takes the reach as a condition of what it
-  reads, so the booking of another salon is not found (404). The rule is
+  reads, so the booking of another salon is not found (404). An operation
+  that fewer may call has a reach of its own: the delete of a booking asks
+  `bookingRemovalReachOf`, by which the staff of a salon reach no booking
+  (403). The rule is
   stated in [authentication.md](./authentication.md#予約台帳の権限).
 - A rule that needs the actor and the target, and nothing that is stored, is
   decided once the request is known to be valid and before anything is
