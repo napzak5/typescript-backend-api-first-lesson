@@ -830,8 +830,8 @@ CREATE INDEX "idx_customers_email" ON "customers" USING btree ("email" text_ops)
 CREATE INDEX "idx_customers_hair_type" ON "customers" USING btree ("hairType" enum_ops);
 CREATE INDEX "idx_customers_membership_tier" ON "customers" USING btree ("membershipTier" enum_ops);
 CREATE INDEX "idx_customers_phone_number" ON "customers" USING btree ("phoneNumber" text_ops);
-CREATE INDEX "idx_customers_user_id" ON "customers" USING btree ("userId" uuid_ops);
 CREATE UNIQUE INDEX "customers_email_unique" ON "customers" USING btree ("email" text_ops) WHERE ("deletedAt" IS NULL);
+CREATE UNIQUE INDEX "customers_user_unique" ON "customers" USING btree ("userId" uuid_ops) WHERE ("deletedAt" IS NULL);
 CREATE INDEX "idx_daily_summaries_salon_id" ON "daily_summaries" USING btree ("salonId" uuid_ops);
 CREATE INDEX "idx_daily_summaries_summary_date" ON "daily_summaries" USING btree ("summaryDate" date_ops);
 CREATE INDEX "idx_inventory_expiry_date" ON "inventory" USING btree ("expiryDate" date_ops);
