@@ -1,6 +1,6 @@
 import { TZDate } from '@date-fns/tz'
 import { addDays, addMinutes, format, set, startOfDay, subDays } from 'date-fns'
-import { inArray } from 'drizzle-orm'
+import { inArray, sql } from 'drizzle-orm'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import * as schema from '../../schema'
 
@@ -27,7 +27,7 @@ type SeededBooking = {
   minutes: number
   /** The services by name, one right after the other, and who provides each. */
   lines: { service: string; staffCode: string }[]
-  status: 'pending' | 'confirmed' | 'completed' | 'cancelled'
+  status: 'pending' | 'confirmed' | 'completed' | 'cancelled' | 'no_show'
   depositAmount: number | null
   customerRequest: string | null
   source: string
@@ -136,6 +136,20 @@ const BOOKINGS: SeededBooking[] = [
     depositAmount: null,
     customerRequest: null,
     source: 'online',
+  },
+  // A visit the customer did not come to
+  {
+    salon: 0,
+    customer: 2,
+    staffCode: 'STF004',
+    day: -1,
+    hours: 16,
+    minutes: 0,
+    lines: [{ service: 'Mens Cut', staffCode: 'STF004' }],
+    status: 'no_show',
+    depositAmount: null,
+    customerRequest: null,
+    source: 'phone',
   },
   // Visits of the coming week
   {
@@ -279,7 +293,8 @@ const CANCELLATION_REASON = 'Customer illness'
 /**
  * The statuses a booking of the seed went through, from its creation to
  * the status it has: confirmed the day after it was made, completed when
- * the visit ended, cancelled the day before the visit.
+ * the visit ended, cancelled the day before the visit, and noted as one the
+ * customer did not come to when it would have ended.
  */
 const statusChangesTo = (
   status: SeededBooking['status'],
@@ -311,6 +326,11 @@ const statusChangesTo = (
         reason: CANCELLATION_REASON,
       },
     ],
+    no_show: [
+      created,
+      confirmed,
+      { toStatus: 'no_show', at: times.end, reason: null },
+    ],
   }
 
   return changes[status]
@@ -333,6 +353,55 @@ const sumOf = (amounts: number[]): number =>
  */
 const taxAddedTo = (amount: number, taxRate: string): number =>
   Number((BigInt(amount) * BigInt(Math.round(Number(taxRate) * 100))) / 10_000n)
+
+/**
+ * Sets what a customer has of visits, no-shows and cancellations to what
+ * their bookings say, as the API does when the status of a booking changes.
+ */
+const countBookingsOfCustomers = async (
+  db: PostgresJsDatabase<typeof schema>,
+): Promise<void> => {
+  const { bookings, customers } = schema
+  const counted = db
+    .select({
+      customerId: bookings.customerId,
+      visits:
+        sql<number>`count(*) filter (where ${bookings.status} = 'completed')`.as(
+          'visits',
+        ),
+      noShows:
+        sql<number>`count(*) filter (where ${bookings.status} = 'no_show')`.as(
+          'no_shows',
+        ),
+      cancellations:
+        sql<number>`count(*) filter (where ${bookings.status} = 'cancelled')`.as(
+          'cancellations',
+        ),
+      firstVisit:
+        sql<string>`min(${bookings.bookingDate}) filter (where ${bookings.status} = 'completed')`.as(
+          'first_visit',
+        ),
+      lastVisit:
+        sql<string>`max(${bookings.bookingDate}) filter (where ${bookings.status} = 'completed')`.as(
+          'last_visit',
+        ),
+    })
+    .from(bookings)
+    .groupBy(bookings.customerId)
+    .as('counted')
+
+  await db
+    .update(customers)
+    .set({
+      visitCount: sql`${counted.visits}`,
+      noShowCount: sql`${counted.noShows}`,
+      cancellationCount: sql`${counted.cancellations}`,
+      firstVisitDate: sql`${counted.firstVisit}`,
+      lastVisitDate: sql`${counted.lastVisit}`,
+    })
+    .from(counted)
+    .where(sql`${customers.id} = ${counted.customerId}`)
+}
 
 export async function seedBookings(
   db: PostgresJsDatabase<typeof schema>,
@@ -534,6 +603,8 @@ export async function seedBookings(
       })),
     ),
   )
+
+  await countBookingsOfCustomers(db)
 
   return written
     .filter(({ booking }) => booking.status === 'completed')

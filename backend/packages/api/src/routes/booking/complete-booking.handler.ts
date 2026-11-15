@@ -1,0 +1,44 @@
+import {
+  type BookingUseCaseDependencies,
+  CompleteBookingUseCase,
+} from '@beauty-salon-backend/domain'
+import type { RequestHandler } from 'express'
+import { match } from 'ts-pattern'
+import type { Authenticated } from '../../shared/authentication'
+import type { ProblemDetails } from '../../shared/problem-details'
+import { responseMeta, sendProblem } from '../../shared/responses'
+import {
+  type BookingParams,
+  bookingLinks,
+  type CompleteBookingResponse,
+} from './_shared'
+
+/**
+ * POST /api/v1/bookings/:id/complete - complete a booking that is confirmed or in progress
+ * (administrators and the members of the booking's salon)
+ */
+export const completeBookingHandler = (
+  dependencies: BookingUseCaseDependencies,
+  authenticated: Authenticated,
+): RequestHandler<
+  BookingParams,
+  CompleteBookingResponse | ProblemDetails,
+  unknown
+> => {
+  const useCase = new CompleteBookingUseCase(dependencies)
+
+  return authenticated(async (actor, req, res) => {
+    const result = await useCase.execute(actor, req.params.id, req.body)
+
+    match(result)
+      .with({ type: 'success' }, ({ data }) => {
+        res.json({
+          data,
+          meta: responseMeta(req),
+          links: bookingLinks(req.baseUrl, data.id),
+        })
+      })
+      .with({ type: 'error' }, ({ error }) => sendProblem(req, res, error))
+      .exhaustive()
+  })
+}

@@ -120,16 +120,16 @@ export interface ModelsCustomerProfileResponse {
      */
   referralCode: string | null;
   /**
-     * 初回来店日。未来店の場合はnull
+     * 初回来店日。完了(completed)した予約の来店日のうち最も早い日。来店がない場合はnull
      * @nullable
      */
   firstVisitDate: string | null;
   /**
-     * 最終来店日。まだ来店がない場合はnull
+     * 最終来店日。完了(completed)した予約の来店日のうち最も遅い日。来店がない場合はnull
      * @nullable
      */
   lastVisitDate: string | null;
-  /** 総来店回数 */
+  /** 総来店回数。完了(completed)した予約の数 */
   visitCount: number;
   /** マーケティング配信を許可するかどうか */
   allowMarketing: boolean;

@@ -242,8 +242,19 @@ DB にも TypeSpec にも表せない規則（空白だけの文字列を拒否�
 | `bookings_total_is_the_sum`（`totalAmount = subtotal - discountAmount + taxAmount`） | `@doc` に同じ式を書く | `planBooking` |
 | `booking_services_discount_within_price`（`discountAmount` は 0 以上 `price` 以下） | `@doc` に「サービスの割引後料金から算出する」と書く | `price` からサービスの `discountPrice` を引く。`discountPrice` は 0 以上 `price` 以下（`services_discount_price_within_price`） |
 | `booking_services_final_price_is_the_difference`（`finalPrice = price - discountAmount`） | `@doc` に同じ式を書く | `planBooking` |
-| `booking_services_completed_has_time`（`isCompleted` と、`completedAt` が NULL でないことが一致する） | `completedAt` の `@doc` に「完了していない場合は null」と書く | 作成では false と NULL。完了の操作は未実装 |
+| `booking_services_completed_has_time`（`isCompleted` と、`completedAt` が NULL でないことが一致する） | `completedAt` の `@doc` に「完了していない場合は null」と書く | 作成では false と NULL。予約の完了が、まだ完了していない明細を true と完了の日時にする |
 | `booking_services_sort_order_not_negative`（`sortOrder >= 0`）と、一意制約 `booking_services_order_unique`（予約の中で `sortOrder` が重ならない） | `@doc` に「予約作成時は `services` の指定順」と書く | リクエストの配列の位置（0 から） |
+
+予約のステータスと、ステータスに伴う値の関係も CHECK 制約にしてある（`backend/packages/database/sql/migrations/202611160300_booking_status_rules.sql`）。対象のカラムは、どれもリクエストの更新では書けない。値を決めるのは `planStatusChange`（`backend/packages/domain/src/business-logic/booking/_shared/status.ts`）と、顧客の予約を数えるリポジトリである。
+
+| CHECK 制約 | TypeSpec | 値を決める場所 |
+|---|---|---|
+| `bookings_cancelled_has_time`（`status` が `cancelled` であることと、`cancelledAt` が NULL でないことが一致する） | `cancelledAt` の `@doc` に「キャンセルされていない場合は null」と書く | キャンセルの操作が、データベースの時計の日時を書く |
+| `bookings_cancellation_only_when_cancelled`（`cancelledBy`、`cancellationReason`、`cancellationFee` は、`cancelled` の予約にだけある） | それぞれの `@doc` に同じことを書く。`cancellationFee` は「常に 0」と書く | キャンセルの操作。`cancelledBy` は操作者、`cancellationReason` は本文の値（null でもよい）、`cancellationFee` は 0 |
+| `bookings_completed_has_time`（`status` が `completed` であることと、`completedAt` が NULL でないことが一致する） | `completedAt` の `@doc` に「完了していない場合は null」と書く | 完了の操作が、データベースの時計の日時を書く |
+| `bookings_in_progress_has_start`（`in_progress` の予約には `actualStartTime` がある） | `actualStartTime` の `@doc` に、施術の開始で記録することを書く | 施術の開始の操作 |
+| `bookings_actual_end_after_start`（両方があれば `actualStartTime < actualEndTime`） | 完了リクエストの `@doc` に書く | 本文の 2 つの値はスキーマが確かめ（400）、本文の値と記録済みの値は `planStatusChange` が確かめる（409） |
+| `customers_visit_days_go_with_visits`（`visitCount` が 0 であることと、`firstVisitDate`・`lastVisitDate` が NULL であることが一致し、初回は最終より後でない）、`customers_counts_not_negative`（3 つの回数は 0 以上） | レスポンスだけの項目（リクエストにはない） | 予約の完了、キャンセル、無断キャンセルの記録が、顧客の予約から数え直す（`countBookingsOf`） |
 
 予約の間の規則（スタッフが、同時に受けられる数を超えて重ならない）は、CHECK 制約では書けない。作成のトランザクションが、スタッフの行をロックして確かめる（[予約台帳](./bookings.md#スタッフの占有)）。
 

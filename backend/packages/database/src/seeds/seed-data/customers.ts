@@ -36,9 +36,6 @@ export async function seedCustomers(
         membershipTier: 'gold',
         loyaltyPoints: 2500,
         lifetimeValue: 150000,
-        visitCount: 25,
-        firstVisitDate: '2022-01-15',
-        lastVisitDate: '2024-01-10',
         preferences: {
           preferredServices: ['cut', 'color'],
           notes: 'Prefers organic products',
@@ -67,9 +64,6 @@ export async function seedCustomers(
         membershipTier: 'silver',
         loyaltyPoints: 800,
         lifetimeValue: 45000,
-        visitCount: 12,
-        firstVisitDate: '2023-03-01',
-        lastVisitDate: '2024-01-05',
         preferences: {
           preferredServices: ['cut'],
           notes: 'Monthly regular customer',
@@ -99,9 +93,6 @@ export async function seedCustomers(
         membershipTier: 'regular',
         loyaltyPoints: 300,
         lifetimeValue: 25000,
-        visitCount: 5,
-        firstVisitDate: '2023-08-15',
-        lastVisitDate: '2023-12-20',
         preferences: {
           preferredServices: ['color', 'treatment', 'spa'],
           notes: 'Sensitive skin, requires patch test',
@@ -131,9 +122,6 @@ export async function seedCustomers(
         membershipTier: 'platinum',
         loyaltyPoints: 10000,
         lifetimeValue: 500000,
-        visitCount: 100,
-        firstVisitDate: '2020-01-01',
-        lastVisitDate: '2024-01-15',
         preferences: {
           preferredServices: ['cut', 'spa', 'treatment'],
           notes: 'VIP customer, requires private room',

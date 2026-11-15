@@ -65,6 +65,11 @@ backend/packages/api/src/
 │   │   ├── list-bookings.handler.ts              # GET  /api/v1/bookings
 │   │   ├── create-booking.handler.ts             # POST /api/v1/bookings
 │   │   ├── get-booking.handler.ts                # GET  /api/v1/bookings/:id
+│   │   ├── confirm-booking.handler.ts            # POST /api/v1/bookings/:id/confirm
+│   │   ├── cancel-booking.handler.ts             # POST /api/v1/bookings/:id/cancel
+│   │   ├── start-booking.handler.ts              # POST /api/v1/bookings/:id/start
+│   │   ├── complete-booking.handler.ts           # POST /api/v1/bookings/:id/complete
+│   │   ├── no-show-booking.handler.ts            # POST /api/v1/bookings/:id/no-show
 │   │   └── index.ts                              # createBookingRouter
 │   ├── customer/
 │   │   ├── _shared/
@@ -428,7 +433,7 @@ Express tries the routes in the order in which they were registered, so `/bulk` 
   router.delete('/:id', deleteCustomerHandler(dependencies, authenticated))
 ```
 
-`routes/booking/index.ts` exports `createBookingRouter(dependencies, authenticated)` with three routes: `GET /`, `POST /` and `GET /:id`. A booking belongs to a salon, but the contract puts its routes at `/api/v1/bookings`, so the router is a plain `Router()` mounted at `/bookings`, like the one of the customers; its get handler declares `BookingParams` (`routes/booking/_shared/types.ts`). No operation is public, so every handler receives `authenticated`.
+`routes/booking/index.ts` exports `createBookingRouter(dependencies, authenticated)` with eight routes: `GET /`, `POST /`, `GET /:id` and the five actions on the status of a booking, `POST /:id/confirm`, `/:id/cancel`, `/:id/start`, `/:id/complete` and `/:id/no-show`. An action is an operation of its own with a handler file of its own, named after the action (`confirm-booking.handler.ts`); it answers 200 with the booking as it is then. A booking belongs to a salon, but the contract puts its routes at `/api/v1/bookings`, so the router is a plain `Router()` mounted at `/bookings`, like the one of the customers; the handlers of the routes with an `:id` declare `BookingParams` (`routes/booking/_shared/types.ts`). No operation is public, so every handler receives `authenticated`.
 
 `routes/customer-preferences/index.ts` exports two factories, because the preferences of a customer are reached in two ways. `createCustomerPreferencesRouter(dependencies, authenticated)` has two routes, `GET /` and `PATCH /`, is mounted below a customer of the ledger (`/customers/:id/preferences`) and created with `Router({ mergeParams: true })`; its handlers declare `CustomerPreferencesParams` (`routes/customer-preferences/_shared/types.ts`). `createOwnCustomerPreferencesRouter(dependencies, authenticated)` has the same two routes and is a plain `Router()` mounted at `/customers/me/preferences`. A customer has one set of preferences, and has it whether a row is stored or not, so neither router has a route with an ID of its own, a `POST` or a `DELETE`. No operation is public, so every handler receives `authenticated`.
 

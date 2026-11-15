@@ -4228,7 +4228,7 @@ paths:
     post:
       operationId: BookingCrud_cancel
       summary: Cancel booking
-      description: draft・pending・confirmedの予約をキャンセル(cancelled)し、理由を記録して施術枠を開放します。キャンセル日時・キャンセルした利用者・キャンセル料はシステムが設定します。それ以外のステータスの予約には409を返します。
+      description: draft・pending・confirmedの予約をキャンセル(cancelled)し、理由を記録して施術枠を開放します。キャンセル日時とキャンセルした利用者はシステムが設定します。キャンセル料は、料金を決める規則が未定義のため、常に0です。顧客のキャンセル回数(cancellationCount)を、顧客の予約から数え直します。それ以外のステータスの予約には409を、ほかのサロンの予約には404を返します。
       parameters:
         - name: id
           in: path
@@ -4350,7 +4350,7 @@ paths:
     post:
       operationId: BookingCrud_complete
       summary: Complete booking
-      description: confirmedまたはin_progressの予約の施術完了(completed)を登録し、実績データや売上計上に利用します。予約のすべての施術明細も完了にします。それ以外のステータスの予約には409を返します。
+      description: confirmedまたはin_progressの予約の施術完了(completed)を登録します。予約のすべての施術明細も完了にし、顧客の来店回数(visitCount)と初回・最終来店日を、顧客の予約から数え直します。actualStartTime・actualEndTimeは、nullでない値を記録し、nullの場合は記録済みの値を残します。リクエストの終了日時が開始日時より後でない場合は400を、それ以外のステータスの予約や、終了日時が記録済みの開始日時より後でない場合は409を、ほかのサロンの予約には404を返します。
       parameters:
         - name: id
           in: path
@@ -4472,7 +4472,111 @@ paths:
     post:
       operationId: BookingCrud_confirm
       summary: Confirm booking
-      description: draftまたはpendingの予約を確定(confirmed)し、顧客への案内やリソース確保を開始します。それ以外のステータスの予約には409を返します。
+      description: draftまたはpendingの予約を確定(confirmed)します。予約は作成の時点から施術枠を占有しているので、確定で変わるのはステータスだけです。それ以外のステータスの予約には409を、ほかのサロンの予約には404を返します。
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Models.BookingId'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                  - links
+                properties:
+                  data:
+                    allOf:
+                      - $ref: '#/components/schemas/Models.BookingResponse'
+                    description: レスポンスの主体となるビジネスデータ。
+                  meta:
+                    type: object
+                    allOf:
+                      - $ref: '#/components/schemas/Models.ResponseMeta'
+                    nullable: true
+                    description: リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull
+                  links:
+                    type: object
+                    additionalProperties:
+                      type: string
+                    nullable: true
+                    description: 関連リソースや次アクションへのリンク情報。リンクがない場合はnull
+                description: |-
+                  API 成功レスポンスの共通ラッパーモデル。
+                  サロン検索や予約登録など多様なユースケースで応答形式を統一し、クライアント実装を簡潔に保つ。
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '401':
+          description: |-
+            認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
+            ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
+            WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+          headers:
+            WWW-Authenticate:
+              required: true
+              description: Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '403':
+          description: 認証されているが、この操作を行う権限がない (403)。
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '429':
+          description: |-
+            リクエスト数の上限を超えたときのエラーレスポンス (429)。
+            クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+          headers:
+            Retry-After:
+              required: true
+              description: 再試行できるようになるまでの秒数。
+              schema:
+                type: integer
+                format: int32
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '500':
+          description: サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+      tags:
+        - Bookings
+  /api/v1/bookings/{id}/no-show:
+    post:
+      operationId: BookingCrud_noShow
+      summary: Record no-show
+      description: pendingまたはconfirmedの予約に、顧客が来店しなかったこと(no_show)を記録し、施術枠を開放します。顧客の無断キャンセル回数(noShowCount)を、顧客の予約から数え直します。予約の開始日時を過ぎるまでは記録できず、409を返します(来ないと分かった予約はキャンセルします)。それ以外のステータスの予約には409を、ほかのサロンの予約には404を返します。
       parameters:
         - name: id
           in: path
@@ -4694,6 +4798,110 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Models.BookingRescheduleRequest'
+  /api/v1/bookings/{id}/start:
+    post:
+      operationId: BookingCrud_start
+      summary: Start booking
+      description: confirmedの予約の施術を開始(in_progress)し、実際の施術開始日時(actualStartTime)に現在の日時を記録します。それ以外のステータスの予約には409を、ほかのサロンの予約には404を返します。
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Models.BookingId'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                  - links
+                properties:
+                  data:
+                    allOf:
+                      - $ref: '#/components/schemas/Models.BookingResponse'
+                    description: レスポンスの主体となるビジネスデータ。
+                  meta:
+                    type: object
+                    allOf:
+                      - $ref: '#/components/schemas/Models.ResponseMeta'
+                    nullable: true
+                    description: リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull
+                  links:
+                    type: object
+                    additionalProperties:
+                      type: string
+                    nullable: true
+                    description: 関連リソースや次アクションへのリンク情報。リンクがない場合はnull
+                description: |-
+                  API 成功レスポンスの共通ラッパーモデル。
+                  サロン検索や予約登録など多様なユースケースで応答形式を統一し、クライアント実装を簡潔に保つ。
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '401':
+          description: |-
+            認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
+            ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
+            WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+          headers:
+            WWW-Authenticate:
+              required: true
+              description: Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '403':
+          description: 認証されているが、この操作を行う権限がない (403)。
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '429':
+          description: |-
+            リクエスト数の上限を超えたときのエラーレスポンス (429)。
+            クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+          headers:
+            Retry-After:
+              required: true
+              description: 再試行できるようになるまでの秒数。
+              schema:
+                type: integer
+                format: int32
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '500':
+          description: サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+      tags:
+        - Bookings
   /api/v1/customers:
     get:
       operationId: CustomerCrud_list
@@ -21055,12 +21263,12 @@ components:
           type: string
           format: date-time
           nullable: true
-          description: 実際の施術開始日時。記録しない場合はnull
+          description: 実際の施術開始日時 (UTC)。nullの場合は、記録済みの日時(start アクションが記録したもの)を残す
         actualEndTime:
           type: string
           format: date-time
           nullable: true
-          description: 実際の施術終了日時。actualStartTime より後の日時を指定する。記録しない場合はnull
+          description: 実際の施術終了日時 (UTC)。実際の施術開始日時(このリクエストの値、nullの場合は記録済みの値)より後の日時を指定する。記録しない場合はnull
       description: 予約完了リクエスト - 実際の施術開始・終了日時を受け取る。キーは必須で、記録しない日時は null を指定する
     Models.BookingCreateRequest:
       type: object
@@ -21289,7 +21497,7 @@ components:
           type: integer
           format: int32
           nullable: true
-          description: キャンセル料。未設定の場合はnull
+          description: キャンセル料。キャンセルされていない場合はnull。キャンセルされた予約では、料金を決める規則が未定義のため常に0
         completedAt:
           type: string
           format: date-time
@@ -21448,10 +21656,10 @@ components:
         draft: 下書き - 予約内容を作成中、まだ確定していない状態
         pending: 保留中 - 予約リクエストを受付、確認待ちの状態
         confirmed: 確定 - 予約が確定し、スタッフが割り当てられた状態
-        in_progress: 施術中 - 現在サービスを実施中の状態
+        in_progress: 施術中 - 現在サービスを実施中の状態(start アクションで記録する)
         completed: 完了 - サービス提供が終了した状態
         cancelled: キャンセル - 予約がキャンセルされた状態
-        no_show: 無断キャンセル - 顧客が連絡なしに来店しなかった状態
+        no_show: 無断キャンセル - 顧客が連絡なしに来店しなかった状態(no-show アクションで、開始日時を過ぎてから記録する)
     Models.BookingUpdateRequest:
       type: object
       properties:
@@ -22504,16 +22712,16 @@ components:
           type: string
           format: date
           nullable: true
-          description: 初回来店日。未来店の場合はnull
+          description: 初回来店日。完了(completed)した予約の来店日のうち最も早い日。来店がない場合はnull
         lastVisitDate:
           type: string
           format: date
           nullable: true
-          description: 最終来店日。まだ来店がない場合はnull
+          description: 最終来店日。完了(completed)した予約の来店日のうち最も遅い日。来店がない場合はnull
         visitCount:
           type: integer
           format: int32
-          description: 総来店回数
+          description: 総来店回数。完了(completed)した予約の数
         allowMarketing:
           type: boolean
           description: マーケティング配信を許可するかどうか
@@ -22807,24 +23015,24 @@ components:
           type: string
           format: date
           nullable: true
-          description: 初回来店日。未来店の場合はnull
+          description: 初回来店日。完了(completed)した予約の来店日のうち最も早い日。来店がない場合はnull
         lastVisitDate:
           type: string
           format: date
           nullable: true
-          description: 最終来店日。新規顧客でまだ来店がない場合はnull
+          description: 最終来店日。完了(completed)した予約の来店日のうち最も遅い日。来店がない場合はnull
         visitCount:
           type: integer
           format: int32
-          description: 総来店回数。これまでの来店実績の合計
+          description: 総来店回数。完了(completed)した予約の数
         noShowCount:
           type: integer
           format: int32
-          description: 無断キャンセル回数。連絡なしで来店しなかった回数
+          description: 無断キャンセル回数。顧客が来店しなかった(no_show)予約の数
         cancellationCount:
           type: integer
           format: int32
-          description: キャンセル回数。予約をキャンセルした回数
+          description: キャンセル回数。キャンセル(cancelled)された予約の数
         isActive:
           type: boolean
           description: アクティブな顧客かどうか

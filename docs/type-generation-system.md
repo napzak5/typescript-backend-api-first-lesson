@@ -67,8 +67,10 @@ categories and on the services of a salon (`ServiceCategoryCrud`,
 customer ledger: `list`, `create`, `get`, `update` and `delete`; the
 preferences of a customer: `getPreferences` and `updatePreferences`), the
 five of `CustomerProfile` (a customer's own profile, and their own
-preferences), three of the nine operations of `BookingCrud` (the booking
-ledger: `list`, `create` and `get`), the five operations of
+preferences), eight of the eleven operations of `BookingCrud` (the booking
+ledger: `list`, `create` and `get`, and the actions on the status of a
+booking: `confirm`, `cancel`, `start`, `complete` and `noShow`), the five
+operations of
 `StaffCrud` (the staff ledger of a salon: `list`, `create`, `get`, `update`
 and `delete`), the two of `StaffSchedules` (when a staff member works:
 `list` and `update`), the three of `StaffInvitations` (the invitation by

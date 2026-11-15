@@ -250,19 +250,19 @@ namespace BeautySalon.Models {
     @doc("メールでの連絡を許可するかどうか")
     allowEmail: boolean;
 
-    @doc("初回来店日。未来店の場合はnull")
+    @doc("初回来店日。完了(completed)した予約の来店日のうち最も早い日。来店がない場合はnull")
     firstVisitDate: plainDate | null;
 
-    @doc("最終来店日。新規顧客でまだ来店がない場合はnull")
+    @doc("最終来店日。完了(completed)した予約の来店日のうち最も遅い日。来店がない場合はnull")
     lastVisitDate: plainDate | null;
 
-    @doc("総来店回数。これまでの来店実績の合計")
+    @doc("総来店回数。完了(completed)した予約の数")
     visitCount: int32;
 
-    @doc("無断キャンセル回数。連絡なしで来店しなかった回数")
+    @doc("無断キャンセル回数。顧客が来店しなかった(no_show)予約の数")
     noShowCount: int32;
 
-    @doc("キャンセル回数。予約をキャンセルした回数")
+    @doc("キャンセル回数。キャンセル(cancelled)された予約の数")
     cancellationCount: int32;
 
     @doc("アクティブな顧客かどうか")
@@ -639,13 +639,13 @@ namespace BeautySalon.Models {
     @maxLength(50)
     referralCode: string | null;
 
-    @doc("初回来店日。未来店の場合はnull")
+    @doc("初回来店日。完了(completed)した予約の来店日のうち最も早い日。来店がない場合はnull")
     firstVisitDate: plainDate | null;
 
-    @doc("最終来店日。まだ来店がない場合はnull")
+    @doc("最終来店日。完了(completed)した予約の来店日のうち最も遅い日。来店がない場合はnull")
     lastVisitDate: plainDate | null;
 
-    @doc("総来店回数")
+    @doc("総来店回数。完了(completed)した予約の数")
     visitCount: int32;
 
     @doc("マーケティング配信を許可するかどうか")

@@ -35,7 +35,9 @@ import type {
   BookingCrudGet200,
   BookingCrudList200,
   BookingCrudListParams,
+  BookingCrudNoShow200,
   BookingCrudReschedule200,
+  BookingCrudStart200,
   BookingCrudUpdate200,
   BookingServiceCrudCreate201,
   BookingServiceCrudGet200,
@@ -1307,7 +1309,7 @@ export const getBookingCrudCancelUrl = (id: ModelsBookingId,) => {
 }
 
 /**
- * draft・pending・confirmedの予約をキャンセル(cancelled)し、理由を記録して施術枠を開放します。キャンセル日時・キャンセルした利用者・キャンセル料はシステムが設定します。それ以外のステータスの予約には409を返します。
+ * draft・pending・confirmedの予約をキャンセル(cancelled)し、理由を記録して施術枠を開放します。キャンセル日時とキャンセルした利用者はシステムが設定します。キャンセル料は、料金を決める規則が未定義のため、常に0です。顧客のキャンセル回数(cancellationCount)を、顧客の予約から数え直します。それ以外のステータスの予約には409を、ほかのサロンの予約には404を返します。
  * @summary Cancel booking
  */
 export const bookingCrudCancel = async (id: ModelsBookingId,
@@ -1375,7 +1377,7 @@ const {mutation: mutationOptions} = options ?
     export type BookingCrudCancelMutationVariables = {id: ModelsBookingId;data: ModelsBookingCancelRequest}
 
     /**
- * draft・pending・confirmedの予約をキャンセル(cancelled)し、理由を記録して施術枠を開放します。キャンセル日時・キャンセルした利用者・キャンセル料はシステムが設定します。それ以外のステータスの予約には409を返します。
+ * draft・pending・confirmedの予約をキャンセル(cancelled)し、理由を記録して施術枠を開放します。キャンセル日時とキャンセルした利用者はシステムが設定します。キャンセル料は、料金を決める規則が未定義のため、常に0です。顧客のキャンセル回数(cancellationCount)を、顧客の予約から数え直します。それ以外のステータスの予約には409を、ほかのサロンの予約には404を返します。
  * @summary Cancel booking
  */
 export const useBookingCrudCancel = <TError = ModelsProblemDetails,
@@ -1456,7 +1458,7 @@ export const getBookingCrudCompleteUrl = (id: ModelsBookingId,) => {
 }
 
 /**
- * confirmedまたはin_progressの予約の施術完了(completed)を登録し、実績データや売上計上に利用します。予約のすべての施術明細も完了にします。それ以外のステータスの予約には409を返します。
+ * confirmedまたはin_progressの予約の施術完了(completed)を登録します。予約のすべての施術明細も完了にし、顧客の来店回数(visitCount)と初回・最終来店日を、顧客の予約から数え直します。actualStartTime・actualEndTimeは、nullでない値を記録し、nullの場合は記録済みの値を残します。リクエストの終了日時が開始日時より後でない場合は400を、それ以外のステータスの予約や、終了日時が記録済みの開始日時より後でない場合は409を、ほかのサロンの予約には404を返します。
  * @summary Complete booking
  */
 export const bookingCrudComplete = async (id: ModelsBookingId,
@@ -1524,7 +1526,7 @@ const {mutation: mutationOptions} = options ?
     export type BookingCrudCompleteMutationVariables = {id: ModelsBookingId;data: ModelsBookingCompleteRequest}
 
     /**
- * confirmedまたはin_progressの予約の施術完了(completed)を登録し、実績データや売上計上に利用します。予約のすべての施術明細も完了にします。それ以外のステータスの予約には409を返します。
+ * confirmedまたはin_progressの予約の施術完了(completed)を登録します。予約のすべての施術明細も完了にし、顧客の来店回数(visitCount)と初回・最終来店日を、顧客の予約から数え直します。actualStartTime・actualEndTimeは、nullでない値を記録し、nullの場合は記録済みの値を残します。リクエストの終了日時が開始日時より後でない場合は400を、それ以外のステータスの予約や、終了日時が記録済みの開始日時より後でない場合は409を、ほかのサロンの予約には404を返します。
  * @summary Complete booking
  */
 export const useBookingCrudComplete = <TError = ModelsProblemDetails,
@@ -1595,7 +1597,7 @@ export const getBookingCrudConfirmUrl = (id: ModelsBookingId,) => {
 }
 
 /**
- * draftまたはpendingの予約を確定(confirmed)し、顧客への案内やリソース確保を開始します。それ以外のステータスの予約には409を返します。
+ * draftまたはpendingの予約を確定(confirmed)します。予約は作成の時点から施術枠を占有しているので、確定で変わるのはステータスだけです。それ以外のステータスの予約には409を、ほかのサロンの予約には404を返します。
  * @summary Confirm booking
  */
 export const bookingCrudConfirm = async (id: ModelsBookingId, options?: RequestInit): Promise<bookingCrudConfirmResponse> => {
@@ -1648,7 +1650,7 @@ const {mutation: mutationOptions} = options ?
     export type BookingCrudConfirmMutationVariables = {id: ModelsBookingId}
 
     /**
- * draftまたはpendingの予約を確定(confirmed)し、顧客への案内やリソース確保を開始します。それ以外のステータスの予約には409を返します。
+ * draftまたはpendingの予約を確定(confirmed)します。予約は作成の時点から施術枠を占有しているので、確定で変わるのはステータスだけです。それ以外のステータスの予約には409を、ほかのサロンの予約には404を返します。
  * @summary Confirm booking
  */
 export const useBookingCrudConfirm = <TError = ModelsProblemDetails,
@@ -1660,6 +1662,130 @@ export const useBookingCrudConfirm = <TError = ModelsProblemDetails,
         TContext
       > => {
       return useMutation(getBookingCrudConfirmMutationOptions(options), queryClient);
+    }
+    export type bookingCrudNoShowResponse200 = {
+  data: BookingCrudNoShow200
+  status: 200
+}
+
+export type bookingCrudNoShowResponse400 = {
+  data: ModelsProblemDetails
+  status: 400
+}
+
+export type bookingCrudNoShowResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type bookingCrudNoShowResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
+export type bookingCrudNoShowResponse404 = {
+  data: ModelsProblemDetails
+  status: 404
+}
+
+export type bookingCrudNoShowResponse409 = {
+  data: ModelsProblemDetails
+  status: 409
+}
+
+export type bookingCrudNoShowResponse429 = {
+  data: ModelsProblemDetails
+  status: 429
+}
+
+export type bookingCrudNoShowResponse500 = {
+  data: ModelsProblemDetails
+  status: 500
+}
+
+export type bookingCrudNoShowResponseSuccess = (bookingCrudNoShowResponse200) & {
+  headers: Headers;
+};
+export type bookingCrudNoShowResponseError = (bookingCrudNoShowResponse400 | bookingCrudNoShowResponse401 | bookingCrudNoShowResponse403 | bookingCrudNoShowResponse404 | bookingCrudNoShowResponse409 | bookingCrudNoShowResponse429 | bookingCrudNoShowResponse500) & {
+  headers: Headers;
+};
+
+export type bookingCrudNoShowResponse = (bookingCrudNoShowResponseSuccess | bookingCrudNoShowResponseError)
+
+export const getBookingCrudNoShowUrl = (id: ModelsBookingId,) => {
+
+
+
+
+  return `/api/v1/bookings/${id}/no-show`
+}
+
+/**
+ * pendingまたはconfirmedの予約に、顧客が来店しなかったこと(no_show)を記録し、施術枠を開放します。顧客の無断キャンセル回数(noShowCount)を、顧客の予約から数え直します。予約の開始日時を過ぎるまでは記録できず、409を返します(来ないと分かった予約はキャンセルします)。それ以外のステータスの予約には409を、ほかのサロンの予約には404を返します。
+ * @summary Record no-show
+ */
+export const bookingCrudNoShow = async (id: ModelsBookingId, options?: RequestInit): Promise<bookingCrudNoShowResponse> => {
+
+  return customInstance<bookingCrudNoShowResponse>(getBookingCrudNoShowUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getBookingCrudNoShowMutationKey = () => ['bookingCrudNoShow'] as const;
+
+export const getBookingCrudNoShowMutationOptions = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bookingCrudNoShow>>, TError,BookingCrudNoShowMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof bookingCrudNoShow>>, TError,BookingCrudNoShowMutationVariables, TContext> => {
+
+const mutationKey = getBookingCrudNoShowMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof bookingCrudNoShow>>, BookingCrudNoShowMutationVariables> = (props) => {
+          const {id} = props ?? {};
+
+          return  bookingCrudNoShow(id,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type BookingCrudNoShowMutationResult = NonNullable<Awaited<ReturnType<typeof bookingCrudNoShow>>>
+
+    export type BookingCrudNoShowMutationError = ModelsProblemDetails
+    export type BookingCrudNoShowMutationVariables = {id: ModelsBookingId}
+
+    /**
+ * pendingまたはconfirmedの予約に、顧客が来店しなかったこと(no_show)を記録し、施術枠を開放します。顧客の無断キャンセル回数(noShowCount)を、顧客の予約から数え直します。予約の開始日時を過ぎるまでは記録できず、409を返します(来ないと分かった予約はキャンセルします)。それ以外のステータスの予約には409を、ほかのサロンの予約には404を返します。
+ * @summary Record no-show
+ */
+export const useBookingCrudNoShow = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bookingCrudNoShow>>, TError,BookingCrudNoShowMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof bookingCrudNoShow>>,
+        TError,
+        BookingCrudNoShowMutationVariables,
+        TContext
+      > => {
+      return useMutation(getBookingCrudNoShowMutationOptions(options), queryClient);
     }
     export type bookingCrudRescheduleResponse200 = {
   data: BookingCrudReschedule200
@@ -1809,6 +1935,130 @@ export const useBookingCrudReschedule = <TError = ModelsProblemDetails,
         TContext
       > => {
       return useMutation(getBookingCrudRescheduleMutationOptions(options), queryClient);
+    }
+    export type bookingCrudStartResponse200 = {
+  data: BookingCrudStart200
+  status: 200
+}
+
+export type bookingCrudStartResponse400 = {
+  data: ModelsProblemDetails
+  status: 400
+}
+
+export type bookingCrudStartResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type bookingCrudStartResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
+export type bookingCrudStartResponse404 = {
+  data: ModelsProblemDetails
+  status: 404
+}
+
+export type bookingCrudStartResponse409 = {
+  data: ModelsProblemDetails
+  status: 409
+}
+
+export type bookingCrudStartResponse429 = {
+  data: ModelsProblemDetails
+  status: 429
+}
+
+export type bookingCrudStartResponse500 = {
+  data: ModelsProblemDetails
+  status: 500
+}
+
+export type bookingCrudStartResponseSuccess = (bookingCrudStartResponse200) & {
+  headers: Headers;
+};
+export type bookingCrudStartResponseError = (bookingCrudStartResponse400 | bookingCrudStartResponse401 | bookingCrudStartResponse403 | bookingCrudStartResponse404 | bookingCrudStartResponse409 | bookingCrudStartResponse429 | bookingCrudStartResponse500) & {
+  headers: Headers;
+};
+
+export type bookingCrudStartResponse = (bookingCrudStartResponseSuccess | bookingCrudStartResponseError)
+
+export const getBookingCrudStartUrl = (id: ModelsBookingId,) => {
+
+
+
+
+  return `/api/v1/bookings/${id}/start`
+}
+
+/**
+ * confirmedの予約の施術を開始(in_progress)し、実際の施術開始日時(actualStartTime)に現在の日時を記録します。それ以外のステータスの予約には409を、ほかのサロンの予約には404を返します。
+ * @summary Start booking
+ */
+export const bookingCrudStart = async (id: ModelsBookingId, options?: RequestInit): Promise<bookingCrudStartResponse> => {
+
+  return customInstance<bookingCrudStartResponse>(getBookingCrudStartUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getBookingCrudStartMutationKey = () => ['bookingCrudStart'] as const;
+
+export const getBookingCrudStartMutationOptions = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bookingCrudStart>>, TError,BookingCrudStartMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof bookingCrudStart>>, TError,BookingCrudStartMutationVariables, TContext> => {
+
+const mutationKey = getBookingCrudStartMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof bookingCrudStart>>, BookingCrudStartMutationVariables> = (props) => {
+          const {id} = props ?? {};
+
+          return  bookingCrudStart(id,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type BookingCrudStartMutationResult = NonNullable<Awaited<ReturnType<typeof bookingCrudStart>>>
+
+    export type BookingCrudStartMutationError = ModelsProblemDetails
+    export type BookingCrudStartMutationVariables = {id: ModelsBookingId}
+
+    /**
+ * confirmedの予約の施術を開始(in_progress)し、実際の施術開始日時(actualStartTime)に現在の日時を記録します。それ以外のステータスの予約には409を、ほかのサロンの予約には404を返します。
+ * @summary Start booking
+ */
+export const useBookingCrudStart = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof bookingCrudStart>>, TError,BookingCrudStartMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof bookingCrudStart>>,
+        TError,
+        BookingCrudStartMutationVariables,
+        TContext
+      > => {
+      return useMutation(getBookingCrudStartMutationOptions(options), queryClient);
     }
     export type availableSlotCrudListResponse200 = {
   data: AvailableSlotCrudList200
