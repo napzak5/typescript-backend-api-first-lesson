@@ -9,14 +9,9 @@ import type { ModelsStaffLevelType } from './modelsStaffLevelType';
 
 /**
  * スタッフ部分更新リクエスト - 指定した項目だけを更新する。DB で NULL 許可のカラムは null でクリアできる。
- * 所属サロンは変更できない。勤務スケジュールは勤務スケジュール更新(updateAvailability)で更新する
+ * 項目を1つも指定しないリクエストは受け付けない。所属サロンと、ログインアカウントとの紐づけ(userId)は変更できない
  */
 export interface ModelsStaffUpdateRequest {
-  /**
-     * スタッフがログインに使うユーザーアカウントのID。存在するユーザーを指定する。nullでクリア(ログインアカウントとの紐づけを外す)
-     * @nullable
-     */
-  userId?: string | null;
   /**
      * 名
      * @minLength 1
@@ -48,7 +43,7 @@ export interface ModelsStaffUpdateRequest {
      */
   displayName?: string;
   /**
-     * 連絡用メールアドレス。削除済みを含むすべてのスタッフの間で一意
+     * 連絡用メールアドレス。小文字にして保存する。同じサロンの削除されていないスタッフの間で一意
      * @maxLength 255
      */
   email?: string;
@@ -77,11 +72,8 @@ export interface ModelsStaffUpdateRequest {
      * @nullable
      */
   position?: string | null;
-  /**
-     * 得意分野や専門メニューの一覧。nullでクリア
-     * @nullable
-     */
-  specialties?: string[] | null;
+  /** 得意分野や専門メニューの一覧。指定した一覧で置き換える。空白だけの要素と、同じ要素の繰り返しは指定できない */
+  specialties?: string[];
   /**
      * 自己紹介や経歴の概要。nullでクリア
      * @nullable
@@ -100,11 +92,8 @@ export interface ModelsStaffUpdateRequest {
      * @nullable
      */
   yearsOfExperience?: number | null;
-  /**
-     * 保有資格名の一覧 (テキスト管理)。nullでクリア
-     * @nullable
-     */
-  certifications?: string[] | null;
+  /** 保有資格名の一覧 (テキスト管理)。指定した一覧で置き換える。空白だけの要素と、同じ要素の繰り返しは指定できない */
+  certifications?: string[];
   /**
      * 入社日。nullでクリア
      * @nullable
@@ -123,7 +112,7 @@ export interface ModelsStaffUpdateRequest {
      */
   baseSalary?: number | null;
   /**
-     * 歩合率(%)。nullでクリア
+     * 歩合率(%)。小数第2位まで。nullでクリア
      * @minimum 0
      * @maximum 100
      * @nullable
@@ -138,19 +127,17 @@ export interface ModelsStaffUpdateRequest {
      */
   maxConcurrentBookings?: number;
   /**
-     * 予約の前に確保する準備時間(分)。nullでクリア
+     * 予約の前に確保する準備時間(分)。確保しない場合は0
      * @minimum 0
      * @maximum 120
-     * @nullable
      */
-  bufferTimeBefore?: number | null;
+  bufferTimeBefore?: number;
   /**
-     * 予約の後に確保する片付け時間(分)。nullでクリア
+     * 予約の後に確保する片付け時間(分)。確保しない場合は0
      * @minimum 0
      * @maximum 120
-     * @nullable
      */
-  bufferTimeAfter?: number | null;
-  /** 現在スタッフがアクティブに勤務可能かを示すフラグ */
+  bufferTimeAfter?: number;
+  /** 在籍して勤務しているかどうか。自分自身のスタッフ情報では、falseにできない */
   isActive?: boolean;
 }

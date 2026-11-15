@@ -1545,11 +1545,11 @@ export const staff = pgTable(
     staffCode: varchar({ length: 50 }),
     level: staffLevel().default('stylist').notNull(),
     position: varchar({ length: 100 }),
-    specialties: jsonb().default([]),
+    specialties: text().array().notNull(),
     bio: text(),
     imageUrl: varchar({ length: 500 }),
     yearsOfExperience: integer().default(0),
-    certifications: jsonb().default([]),
+    certifications: text().array().notNull(),
     awards: jsonb().default([]),
     hireDate: date(),
     employmentType: varchar({ length: 50 }),
@@ -1557,8 +1557,8 @@ export const staff = pgTable(
     commissionRate: numeric({ precision: 5, scale: 2 }),
     canReceiveBookings: boolean().default(true).notNull(),
     maxConcurrentBookings: integer().default(1).notNull(),
-    bufferTimeBefore: integer().default(0),
-    bufferTimeAfter: integer().default(0),
+    bufferTimeBefore: integer().default(0).notNull(),
+    bufferTimeAfter: integer().default(0).notNull(),
     isActive: boolean().default(true).notNull(),
     deletedAt: timestamp({ withTimezone: true, mode: 'string' }),
     createdAt: timestamp({ withTimezone: true, mode: 'string' })
@@ -1569,6 +1569,24 @@ export const staff = pgTable(
       .notNull(),
   },
   (table) => [
+    check('staff_base_salary_not_negative', sql`"baseSalary" >= 0`),
+    check(
+      'staff_buffer_times_not_negative',
+      sql`("bufferTimeBefore" >= 0) AND ("bufferTimeAfter" >= 0)`,
+    ),
+    check(
+      'staff_commission_rate_is_a_percentage',
+      sql`("commissionRate" >= (0)::numeric) AND ("commissionRate" <= (100)::numeric)`,
+    ),
+    check('staff_email_lower_case', sql`(email)::text = lower((email)::text)`),
+    check(
+      'staff_max_concurrent_bookings_positive',
+      sql`"maxConcurrentBookings" >= 1`,
+    ),
+    check(
+      'staff_years_of_experience_not_negative',
+      sql`"yearsOfExperience" >= 0`,
+    ),
     foreignKey({
       columns: [table.salonId],
       foreignColumns: [salons.id],
@@ -1591,7 +1609,13 @@ export const staff = pgTable(
       table.userId.asc().nullsLast().op('uuid_ops'),
     ),
     unique('staff_code_salon_unique').on(table.salonId, table.staffCode),
-    unique('staff_email_unique').on(table.email),
+    uniqueIndex('staff_email_salon_unique')
+      .using(
+        'btree',
+        table.salonId.asc().nullsLast().op('uuid_ops'),
+        table.email.asc().nullsLast().op('text_ops'),
+      )
+      .where(sql`("deletedAt" IS NULL)`),
   ],
 )
 

@@ -590,11 +590,11 @@ CREATE TABLE "staff" (
 	"staffCode" varchar(50),
 	"level" "staff_level" DEFAULT 'stylist' NOT NULL,
 	"position" varchar(100),
-	"specialties" jsonb DEFAULT '[]'::jsonb,
+	"specialties" text[] NOT NULL,
 	"bio" text,
 	"imageUrl" varchar(500),
 	"yearsOfExperience" integer DEFAULT 0,
-	"certifications" jsonb DEFAULT '[]'::jsonb,
+	"certifications" text[] NOT NULL,
 	"awards" jsonb DEFAULT '[]'::jsonb,
 	"hireDate" date,
 	"employmentType" varchar(50),
@@ -602,14 +602,19 @@ CREATE TABLE "staff" (
 	"commissionRate" numeric(5, 2),
 	"canReceiveBookings" boolean DEFAULT true NOT NULL,
 	"maxConcurrentBookings" integer DEFAULT 1 NOT NULL,
-	"bufferTimeBefore" integer DEFAULT 0,
-	"bufferTimeAfter" integer DEFAULT 0,
+	"bufferTimeBefore" integer DEFAULT 0 NOT NULL,
+	"bufferTimeAfter" integer DEFAULT 0 NOT NULL,
 	"isActive" boolean DEFAULT true NOT NULL,
 	"deletedAt" timestamp with time zone,
 	"createdAt" timestamp with time zone DEFAULT now() NOT NULL,
 	"updatedAt" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "staff_code_salon_unique" UNIQUE("salonId","staffCode"),
-	CONSTRAINT "staff_email_unique" UNIQUE("email")
+	CONSTRAINT "staff_base_salary_not_negative" CHECK ("baseSalary" >= 0),
+	CONSTRAINT "staff_buffer_times_not_negative" CHECK (("bufferTimeBefore" >= 0) AND ("bufferTimeAfter" >= 0)),
+	CONSTRAINT "staff_commission_rate_is_a_percentage" CHECK (("commissionRate" >= (0)::numeric) AND ("commissionRate" <= (100)::numeric)),
+	CONSTRAINT "staff_email_lower_case" CHECK ((email)::text = lower((email)::text)),
+	CONSTRAINT "staff_max_concurrent_bookings_positive" CHECK ("maxConcurrentBookings" >= 1),
+	CONSTRAINT "staff_years_of_experience_not_negative" CHECK ("yearsOfExperience" >= 0)
 );
 
 CREATE TABLE "staff_performances" (
@@ -891,6 +896,7 @@ CREATE INDEX "idx_staff_deleted_at" ON "staff" USING btree ("deletedAt" timestam
 CREATE INDEX "idx_staff_email" ON "staff" USING btree ("email" text_ops);
 CREATE INDEX "idx_staff_salon_id" ON "staff" USING btree ("salonId" uuid_ops);
 CREATE INDEX "idx_staff_user_id" ON "staff" USING btree ("userId" uuid_ops);
+CREATE UNIQUE INDEX "staff_email_salon_unique" ON "staff" USING btree ("salonId" uuid_ops,"email" text_ops) WHERE ("deletedAt" IS NULL);
 CREATE INDEX "idx_staff_performances_period_start" ON "staff_performances" USING btree ("periodStart" date_ops);
 CREATE INDEX "idx_staff_performances_period_type" ON "staff_performances" USING btree ("periodType" text_ops);
 CREATE INDEX "idx_staff_performances_staff_id" ON "staff_performances" USING btree ("staffId" uuid_ops);

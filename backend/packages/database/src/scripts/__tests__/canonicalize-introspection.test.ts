@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import {
+  type CatalogFacts,
   canonicalizeRelations,
   canonicalizeSchema,
-  type UniqueConstraintColumns,
 } from '../canonicalize-introspection'
 
-const schemaHeader = `import { foreignKey, index, pgEnum, pgTable, unique, uuid } from 'drizzle-orm/pg-core'
+const schemaHeader = `import { sql } from 'drizzle-orm'
+import { foreignKey, index, pgEnum, pgTable, text, unique, uniqueIndex, uuid } from 'drizzle-orm/pg-core'
 
 `
 
@@ -15,7 +16,7 @@ const stockTable = `export const stock = pgTable(
     id: uuid().defaultRandom().primaryKey().notNull(),
     salonId: uuid().notNull(),
     productId: uuid('product_id').notNull(),
-    lotNumber: uuid(),
+    lotNumber: text(),
   },
   (table) => [
     foreignKey({
@@ -32,6 +33,13 @@ const stockTable = `export const stock = pgTable(
       'btree',
       table.salonId.asc().nullsLast().op('uuid_ops'),
     ),
+    uniqueIndex('stock_lot_unique')
+      .using(
+        'btree',
+        table.salonId.asc().nullsLast().op('uuid_ops'),
+        table.lotNumber.asc().nullsLast().op('uuid_ops'),
+      )
+      .where(sql\`("lotNumber" IS NOT NULL)\`),
     foreignKey({
       columns: [table.productId],
       foreignColumns: [products.id],
@@ -46,15 +54,29 @@ const salonsTable = `export const salons = pgTable('salons', {
 
 const statusEnum = `export const stockStatus = pgEnum('stock_status', ['in', 'out'])`
 
-const uniqueColumns: UniqueConstraintColumns = new Map([
-  ['stock.stock_unique', ['salonId', 'product_id', 'lotNumber']],
-])
+const catalog: CatalogFacts = {
+  uniqueColumns: new Map([
+    ['stock.stock_unique', ['salonId', 'product_id', 'lotNumber']],
+  ]),
+  indexOperatorClasses: new Map([
+    ['stock.idx_stock_salon_id', ['uuid_ops']],
+    ['stock.stock_lot_unique', ['uuid_ops', 'text_ops']],
+  ]),
+}
+
+const withUniqueColumns = (
+  uniqueColumns: CatalogFacts['uniqueColumns'],
+): CatalogFacts => ({ ...catalog, uniqueColumns })
+
+const withIndexOperatorClasses = (
+  indexOperatorClasses: CatalogFacts['indexOperatorClasses'],
+): CatalogFacts => ({ ...catalog, indexOperatorClasses })
 
 const schemaSource = `${schemaHeader}${stockTable}\n\n${statusEnum}\n\n${salonsTable}\n`
 
 describe('canonicalizeSchema', () => {
   it('should place enums before tables and sort each group by name', () => {
-    const result = canonicalizeSchema(schemaSource, uniqueColumns)
+    const result = canonicalizeSchema(schemaSource, catalog)
 
     expect(result).toMatchObject({ type: 'success' })
     const declarations = Array.from(
@@ -67,7 +89,7 @@ describe('canonicalizeSchema', () => {
   })
 
   it('should sort the constraints of a table by kind and name', () => {
-    const result = canonicalizeSchema(schemaSource, uniqueColumns)
+    const result = canonicalizeSchema(schemaSource, catalog)
 
     const names = Array.from(
       (result.type === 'success' ? result.data : '').matchAll(
@@ -84,7 +106,7 @@ describe('canonicalizeSchema', () => {
   })
 
   it('should list unique constraint columns in database order', () => {
-    const result = canonicalizeSchema(schemaSource, uniqueColumns)
+    const result = canonicalizeSchema(schemaSource, catalog)
 
     expect(result.type === 'success' ? result.data : '').toContain(
       "unique('stock_unique').on(table.salonId, table.productId, table.lotNumber)",
@@ -92,7 +114,7 @@ describe('canonicalizeSchema', () => {
   })
 
   it('should keep the header and every declaration line', () => {
-    const result = canonicalizeSchema(schemaSource, uniqueColumns)
+    const result = canonicalizeSchema(schemaSource, catalog)
 
     const output = result.type === 'success' ? result.data : ''
     expect(output.startsWith(schemaHeader)).toBe(true)
@@ -101,17 +123,20 @@ describe('canonicalizeSchema', () => {
   })
 
   it('should be idempotent', () => {
-    const first = canonicalizeSchema(schemaSource, uniqueColumns)
+    const first = canonicalizeSchema(schemaSource, catalog)
     const second = canonicalizeSchema(
       first.type === 'success' ? first.data : '',
-      uniqueColumns,
+      catalog,
     )
 
     expect(second).toEqual(first)
   })
 
   it('should fail when a unique constraint is unknown to the database', () => {
-    const result = canonicalizeSchema(schemaSource, new Map())
+    const result = canonicalizeSchema(
+      schemaSource,
+      withUniqueColumns(new Map()),
+    )
 
     expect(result).toMatchObject({
       type: 'error',
@@ -122,7 +147,9 @@ describe('canonicalizeSchema', () => {
   it('should fail when a unique constraint has different columns in the database', () => {
     const result = canonicalizeSchema(
       schemaSource,
-      new Map([['stock.stock_unique', ['salonId', 'product_id']]]),
+      withUniqueColumns(
+        new Map([['stock.stock_unique', ['salonId', 'product_id']]]),
+      ),
     )
 
     expect(result).toMatchObject({ type: 'error' })
@@ -131,7 +158,9 @@ describe('canonicalizeSchema', () => {
   it('should fail when a unique constraint refers to an unknown column', () => {
     const result = canonicalizeSchema(
       schemaSource,
-      new Map([['stock.stock_unique', ['salonId', 'product_id', 'missing']]]),
+      withUniqueColumns(
+        new Map([['stock.stock_unique', ['salonId', 'product_id', 'missing']]]),
+      ),
     )
 
     expect(result).toMatchObject({ type: 'error' })
@@ -143,10 +172,7 @@ describe('canonicalizeSchema', () => {
       'name: constraintName,',
     )
 
-    const result = canonicalizeSchema(
-      `${schemaHeader}${anonymous}\n`,
-      uniqueColumns,
-    )
+    const result = canonicalizeSchema(`${schemaHeader}${anonymous}\n`, catalog)
 
     expect(result).toMatchObject({
       type: 'error',
@@ -155,9 +181,85 @@ describe('canonicalizeSchema', () => {
   })
 
   it('should return a source without declarations unchanged', () => {
-    const result = canonicalizeSchema(schemaHeader, uniqueColumns)
+    const result = canonicalizeSchema(schemaHeader, catalog)
 
     expect(result).toEqual({ type: 'success', data: schemaHeader })
+  })
+
+  it('should give each index column the operator class the database has', () => {
+    const result = canonicalizeSchema(schemaSource, catalog)
+
+    const output = result.type === 'success' ? result.data : ''
+    expect(output).toContain(
+      "table.lotNumber.asc().nullsLast().op('text_ops'),",
+    )
+    expect(output).not.toContain(
+      "table.lotNumber.asc().nullsLast().op('uuid_ops'),",
+    )
+  })
+
+  it('should leave the operator classes that are right, and the rest of an index, as they are', () => {
+    const result = canonicalizeSchema(schemaSource, catalog)
+
+    const output = result.type === 'success' ? result.data : ''
+    expect(output).toContain(`    index('idx_stock_salon_id').using(
+      'btree',
+      table.salonId.asc().nullsLast().op('uuid_ops'),
+    ),`)
+    expect(output).toContain(`    uniqueIndex('stock_lot_unique')
+      .using(
+        'btree',
+        table.salonId.asc().nullsLast().op('uuid_ops'),
+        table.lotNumber.asc().nullsLast().op('text_ops'),
+      )
+      .where(sql\`("lotNumber" IS NOT NULL)\`),`)
+  })
+
+  it('should fail when an index is unknown to the database', () => {
+    const result = canonicalizeSchema(
+      schemaSource,
+      withIndexOperatorClasses(
+        new Map([['stock.idx_stock_salon_id', ['uuid_ops']]]),
+      ),
+    )
+
+    expect(result).toMatchObject({
+      type: 'error',
+      error: expect.stringContaining('stock_lot_unique'),
+    })
+  })
+
+  it('should fail when an index has another number of columns in the database', () => {
+    const result = canonicalizeSchema(
+      schemaSource,
+      withIndexOperatorClasses(
+        new Map([
+          ['stock.idx_stock_salon_id', ['uuid_ops']],
+          ['stock.stock_lot_unique', ['uuid_ops']],
+        ]),
+      ),
+    )
+
+    expect(result).toMatchObject({
+      type: 'error',
+      error: expect.stringContaining(
+        'introspected 2 operator class(es), database (uuid_ops)',
+      ),
+    })
+  })
+
+  it('should tell an index of one table from the index of the same name of another', () => {
+    const result = canonicalizeSchema(
+      schemaSource,
+      withIndexOperatorClasses(
+        new Map([
+          ['stock.idx_stock_salon_id', ['uuid_ops']],
+          ['salons.stock_lot_unique', ['uuid_ops', 'text_ops']],
+        ]),
+      ),
+    )
+
+    expect(result).toMatchObject({ type: 'error' })
   })
 })
 

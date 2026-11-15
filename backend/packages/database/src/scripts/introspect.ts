@@ -7,9 +7,9 @@ import { getDatabaseUrl, loadEnvConfig } from '@beauty-salon-backend/config'
 import { Result } from '@beauty-salon-backend/utility'
 import postgres from 'postgres'
 import {
+  type CatalogFacts,
   canonicalizeRelations,
   canonicalizeSchema,
-  type UniqueConstraintColumns,
 } from './canonicalize-introspection'
 
 const execAsync = promisify(exec)
@@ -22,36 +22,58 @@ const relationsPath = path.join(packageDir, 'src/relations.ts')
 // Load environment-specific configuration
 const environment = loadEnvConfig()
 
+type CatalogRow = { key: string; names: string[] }
+
+const byKey = (rows: readonly CatalogRow[]): Map<string, string[]> =>
+  new Map(rows.map(({ key, names }) => [key, names]))
+
 /**
- * Reads the columns of every unique constraint in declaration order.
- * drizzle-kit reports them alphabetically, which is not the order the
- * constraint (and its backing index) was created with.
+ * Reads from the catalog what drizzle-kit reports differently:
+ * - the columns of every unique constraint in declaration order. drizzle-kit
+ *   lists them alphabetically, which is not the order the constraint (and
+ *   its backing index) was created with.
+ * - the operator class of every column of every index. drizzle-kit repeats
+ *   the class of the first column for the others.
  */
-async function readUniqueConstraintColumns(
+async function readCatalogFacts(
   databaseUrl: string,
-): Promise<Result<UniqueConstraintColumns, Error>> {
+): Promise<Result<CatalogFacts, Error>> {
   const sql = postgres(databaseUrl, { max: 1 })
-  const rows = await Result.fromPromise(
-    sql<{ key: string; columns: string[] }[]>`
-      SELECT
-        rel.relname || '.' || con.conname AS key,
-        array_agg(att.attname::text ORDER BY cols.position) AS columns
-      FROM pg_constraint con
-      JOIN pg_class rel ON rel.oid = con.conrelid
-      JOIN pg_namespace nsp ON nsp.oid = rel.relnamespace
-      CROSS JOIN LATERAL unnest(con.conkey) WITH ORDINALITY AS cols(attnum, position)
-      JOIN pg_attribute att
-        ON att.attrelid = con.conrelid AND att.attnum = cols.attnum
-      WHERE con.contype = 'u' AND nsp.nspname = 'public'
-      GROUP BY rel.relname, con.conname
-    `,
+  const facts = await Result.fromPromise(
+    Promise.all([
+      sql<CatalogRow[]>`
+        SELECT
+          rel.relname || '.' || con.conname AS key,
+          array_agg(att.attname::text ORDER BY cols.position) AS names
+        FROM pg_constraint con
+        JOIN pg_class rel ON rel.oid = con.conrelid
+        JOIN pg_namespace nsp ON nsp.oid = rel.relnamespace
+        CROSS JOIN LATERAL unnest(con.conkey) WITH ORDINALITY AS cols(attnum, position)
+        JOIN pg_attribute att
+          ON att.attrelid = con.conrelid AND att.attnum = cols.attnum
+        WHERE con.contype = 'u' AND nsp.nspname = 'public'
+        GROUP BY rel.relname, con.conname
+      `,
+      sql<CatalogRow[]>`
+        SELECT
+          rel.relname || '.' || idx.relname AS key,
+          array_agg(opc.opcname::text ORDER BY classes.position) AS names
+        FROM pg_index ind
+        JOIN pg_class idx ON idx.oid = ind.indexrelid
+        JOIN pg_class rel ON rel.oid = ind.indrelid
+        JOIN pg_namespace nsp ON nsp.oid = rel.relnamespace
+        CROSS JOIN LATERAL unnest(ind.indclass::oid[]) WITH ORDINALITY AS classes(oid, position)
+        JOIN pg_opclass opc ON opc.oid = classes.oid
+        WHERE nsp.nspname = 'public'
+        GROUP BY rel.relname, idx.relname
+      `,
+    ]),
   )
   await sql.end()
-  return Result.map(
-    rows,
-    (constraints) =>
-      new Map(constraints.map(({ key, columns }) => [key, columns])),
-  )
+  return Result.map(facts, ([uniqueConstraints, indexes]) => ({
+    uniqueColumns: byKey(uniqueConstraints),
+    indexOperatorClasses: byKey(indexes),
+  }))
 }
 
 /**
@@ -108,17 +130,17 @@ async function main() {
 
     console.log('🧮 Rewriting the generated files into their canonical form...')
     await formatGeneratedFiles()
-    const uniqueColumns = await readUniqueConstraintColumns(databaseUrl)
-    if (uniqueColumns.type === 'error') {
+    const catalogFacts = await readCatalogFacts(databaseUrl)
+    if (catalogFacts.type === 'error') {
       console.error(
-        '❌ Failed to read unique constraints:',
-        uniqueColumns.error,
+        '❌ Failed to read constraints and indexes from the catalog:',
+        catalogFacts.error,
       )
       process.exit(1)
     }
     const schema = canonicalizeSchema(
       fs.readFileSync(schemaPath, 'utf8'),
-      uniqueColumns.data,
+      catalogFacts.data,
     )
     const relations = canonicalizeRelations(
       fs.readFileSync(relationsPath, 'utf8'),

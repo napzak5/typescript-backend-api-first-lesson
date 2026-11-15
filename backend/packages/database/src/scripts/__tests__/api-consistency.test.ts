@@ -474,4 +474,46 @@ describe('modelRules', () => {
       },
     })
   })
+
+  it('lets a request for a staff member leave out what the server assigns, the salon, which the path names, the login account and the awards; the response leaves out the awards and deletedAt, and embeds nothing', () => {
+    const managed = [
+      'id',
+      'salonId',
+      'userId',
+      'awards',
+      'deletedAt',
+      'createdAt',
+      'updatedAt',
+    ]
+
+    const rules = Object.fromEntries(
+      modelRules
+        .filter((modelRule) => modelRule.table === 'staff')
+        .map(({ model, kind, omittedColumns, embedded, computed }) => [
+          model,
+          { kind, omittedColumns, embedded, computed },
+        ]),
+    )
+
+    expect(rules).toEqual({
+      'Models.StaffResponse': {
+        kind: 'response',
+        omittedColumns: ['awards', 'deletedAt'],
+        embedded: undefined,
+        computed: undefined,
+      },
+      'Models.StaffCreateRequest': {
+        kind: 'create',
+        omittedColumns: managed,
+        embedded: undefined,
+        computed: undefined,
+      },
+      'Models.StaffUpdateRequest': {
+        kind: 'update',
+        omittedColumns: managed,
+        embedded: undefined,
+        computed: undefined,
+      },
+    })
+  })
 })

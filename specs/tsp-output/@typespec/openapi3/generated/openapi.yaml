@@ -15097,7 +15097,7 @@ paths:
     get:
       operationId: StaffCrud_list
       summary: List staff members
-      description: サロンに所属するスタッフを、ページネーションを指定して一覧取得し、配置状況や担当可能メニューを確認します。削除済みのスタッフは含みません。サロンが存在しない場合は404を返します。
+      description: サロンのスタッフを、ページネーションを指定して一覧取得します。登録日時の古い順に並びます。削除済みのスタッフは含みません。cursorがそのサロンのスタッフを指していない場合は400を返します。
       parameters:
         - name: salonId
           in: path
@@ -15193,7 +15193,7 @@ paths:
     post:
       operationId: StaffCrud_create
       summary: Create staff member
-      description: 新しいスタッフを登録し、プロフィール情報や担当メニューの設定を開始します。サロンが存在しない場合は404を、userIdに存在しないユーザーを指定した場合は400を、メールアドレスまたはスタッフコードが既存のスタッフと重複する場合は409を返します。
+      description: サロンにスタッフを登録します。メールアドレスが同じサロンの削除されていないスタッフと重複する場合と、スタッフコードが同じサロンのスタッフ(削除済みを含む)と重複する場合は409を返します。
       parameters:
         - name: salonId
           in: path
@@ -15320,7 +15320,7 @@ paths:
     get:
       operationId: StaffCrud_get
       summary: Get staff member
-      description: 特定スタッフの詳細情報を取得し、顧客向け表示や社内確認に利用します。
+      description: IDを指定してスタッフを1件取得します。削除済みのスタッフは404を返します。
       parameters:
         - name: salonId
           in: path
@@ -15422,7 +15422,7 @@ paths:
     patch:
       operationId: StaffCrud_update
       summary: Update staff member
-      description: スタッフのプロフィールや担当メニュー、表示可否のうち指定した項目だけを更新します。userIdに存在しないユーザーを指定した場合は400を、メールアドレスまたはスタッフコードが既存のスタッフと重複する場合は409を返します。
+      description: 指定した項目だけを更新します。メールアドレスが同じサロンの削除されていないほかのスタッフと重複する場合と、スタッフコードが同じサロンのほかのスタッフ(削除済みを含む)と重複する場合は409を返します。自分自身のスタッフ情報の isActive を false にする場合も409を返します。
       parameters:
         - name: salonId
           in: path
@@ -15548,7 +15548,7 @@ paths:
     delete:
       operationId: StaffCrud_delete
       summary: Delete staff member
-      description: 退職や契約終了に伴いスタッフを論理削除し、予約導線から除外します。削除後は一覧・取得の対象外になります。
+      description: スタッフを論理削除します。削除後は一覧・取得の対象外になり、メールアドレスは別のスタッフの登録に使えるようになります。このスタッフに紐づくログインアカウントは、サロンへの権限を失います。自分自身のスタッフ情報は削除できず、409を返します。
       parameters:
         - name: salonId
           in: path
@@ -15592,6 +15592,12 @@ paths:
                 $ref: '#/components/schemas/Models.ProblemDetails'
         '404':
           description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '409':
+          description: The request conflicts with the current state of the server.
           content:
             application/problem+json:
               schema:
@@ -26542,7 +26548,6 @@ components:
     Models.StaffCreateRequest:
       type: object
       required:
-        - userId
         - firstName
         - lastName
         - firstNameKana
@@ -26569,12 +26574,6 @@ components:
         - bufferTimeAfter
         - isActive
       properties:
-        userId:
-          type: string
-          allOf:
-            - $ref: '#/components/schemas/Models.UserId'
-          nullable: true
-          description: スタッフがログインに使うユーザーアカウントのID。存在するユーザーを指定する。ログインアカウントと紐づけない場合はnull
         firstName:
           type: string
           minLength: 1
@@ -26603,7 +26602,7 @@ components:
         email:
           type: string
           maxLength: 255
-          description: 連絡用メールアドレス。削除済みを含むすべてのスタッフの間で一意
+          description: 連絡用メールアドレス。小文字にして保存する。同じサロンの削除されていないスタッフの間で一意
         phoneNumber:
           type: string
           maxLength: 20
@@ -26631,8 +26630,7 @@ components:
           type: array
           items:
             type: string
-          nullable: true
-          description: 得意分野や専門メニューの一覧。未設定の場合はnull
+          description: 得意分野や専門メニューの一覧。ない場合は空配列。空白だけの要素と、同じ要素の繰り返しは指定できない
         bio:
           type: string
           nullable: true
@@ -26653,8 +26651,7 @@ components:
           type: array
           items:
             type: string
-          nullable: true
-          description: 保有資格名の一覧 (テキスト管理) - 資格なしの新人やアシスタントの場合はnull
+          description: 保有資格名の一覧 (テキスト管理)。ない場合は空配列。空白だけの要素と、同じ要素の繰り返しは指定できない
         hireDate:
           type: string
           format: date
@@ -26677,7 +26674,7 @@ components:
           nullable: true
           minimum: 0
           maximum: 100
-          description: 歩合率(%)。未設定の場合はnull
+          description: 歩合率(%)。小数第2位まで。未設定の場合はnull
         canReceiveBookings:
           type: boolean
           description: 予約を受け付けるかどうか
@@ -26690,23 +26687,21 @@ components:
         bufferTimeBefore:
           type: integer
           format: int32
-          nullable: true
           minimum: 0
           maximum: 120
-          description: 予約の前に確保する準備時間(分)。未設定の場合はnull
+          description: 予約の前に確保する準備時間(分)。確保しない場合は0
         bufferTimeAfter:
           type: integer
           format: int32
-          nullable: true
           minimum: 0
           maximum: 120
-          description: 予約の後に確保する片付け時間(分)。未設定の場合はnull
+          description: 予約の後に確保する片付け時間(分)。確保しない場合は0
         isActive:
           type: boolean
-          description: 現在スタッフがアクティブに勤務可能かを示すフラグ
+          description: 在籍して勤務しているかどうか
       description: |-
         スタッフ新規登録リクエスト - 全項目のキーが必須。DB で NULL 許可のカラムのみ null を指定できる。
-        所属サロンはパスの salonId で指定する。勤務スケジュールは勤務スケジュール更新(updateAvailability)で登録する
+        所属サロンはパスの salonId で指定する。ログインアカウントとの紐づけ(userId)は指定できない
     Models.StaffId:
       type: string
       format: uuid
@@ -26758,7 +26753,6 @@ components:
         - bufferTimeBefore
         - bufferTimeAfter
         - isActive
-        - schedules
         - createdAt
         - updatedAt
       properties:
@@ -26775,7 +26769,7 @@ components:
           allOf:
             - $ref: '#/components/schemas/Models.UserId'
           nullable: true
-          description: スタッフがログインに使うユーザーアカウントのID。ログインアカウントと紐づいていない場合はnull
+          description: スタッフがログインに使うユーザーアカウントのID。ログインアカウントと紐づいていない場合はnull。登録と更新のリクエストでは指定できない
         firstName:
           type: string
           description: 名
@@ -26795,7 +26789,7 @@ components:
           description: 顧客向けに表示するスタッフ名
         email:
           type: string
-          description: 連絡用メールアドレス。削除済みを含むすべてのスタッフの間で一意
+          description: 連絡用メールアドレス。小文字で保存する。同じサロンの削除されていないスタッフの間で一意
         phoneNumber:
           type: string
           description: 連絡用電話番号
@@ -26819,8 +26813,7 @@ components:
           type: array
           items:
             type: string
-          nullable: true
-          description: 得意分野や専門メニューの一覧。未設定の場合はnull
+          description: 得意分野や専門メニューの一覧。ない場合は空配列
         bio:
           type: string
           nullable: true
@@ -26838,8 +26831,7 @@ components:
           type: array
           items:
             type: string
-          nullable: true
-          description: 保有資格名の一覧 (テキスト管理) - 資格なしの新人やアシスタントの場合はnull
+          description: 保有資格名の一覧 (テキスト管理)。ない場合は空配列
         hireDate:
           type: string
           format: date
@@ -26869,21 +26861,14 @@ components:
         bufferTimeBefore:
           type: integer
           format: int32
-          nullable: true
-          description: 予約の前に確保する準備時間(分)。未設定の場合はnull
+          description: 予約の前に確保する準備時間(分)。確保しない場合は0
         bufferTimeAfter:
           type: integer
           format: int32
-          nullable: true
-          description: 予約の後に確保する片付け時間(分)。未設定の場合はnull
+          description: 予約の後に確保する片付け時間(分)。確保しない場合は0
         isActive:
           type: boolean
-          description: 現在スタッフがアクティブに勤務可能かを示すフラグ
-        schedules:
-          type: array
-          items:
-            $ref: '#/components/schemas/Models.StaffSchedule'
-          description: 勤務スケジュールの一覧。毎週繰り返す行と単日の行を含む。スケジュールが登録されていない場合は空配列
+          description: 在籍して勤務しているかどうか。falseの間、このスタッフに紐づくログインアカウントは、サロンへの権限を持たない
         createdAt:
           type: string
           format: date-time
@@ -26893,8 +26878,9 @@ components:
           format: date-time
           description: レコード最終更新日時
       description: |-
-        スタッフレスポンス - staff テーブルの公開カラムと、勤務スケジュール(staff_schedules)を返す。
-        プロパティ名と null 許可は DB カラムと一致させている。
+        スタッフ台帳のレスポンス - staff テーブルの1行。雇用の情報(基本給、歩合率、雇用形態、入社日)と個人の連絡先を含むので、
+        admin と、そのサロンの owner だけに返す。プロパティ名と null 許可は DB カラムと一致させている。
+        勤務スケジュール(staff_schedules)は含まない
     Models.StaffSchedule:
       type: object
       required:
@@ -26976,12 +26962,6 @@ components:
     Models.StaffUpdateRequest:
       type: object
       properties:
-        userId:
-          type: string
-          allOf:
-            - $ref: '#/components/schemas/Models.UserId'
-          nullable: true
-          description: スタッフがログインに使うユーザーアカウントのID。存在するユーザーを指定する。nullでクリア(ログインアカウントとの紐づけを外す)
         firstName:
           type: string
           minLength: 1
@@ -27010,7 +26990,7 @@ components:
         email:
           type: string
           maxLength: 255
-          description: 連絡用メールアドレス。削除済みを含むすべてのスタッフの間で一意
+          description: 連絡用メールアドレス。小文字にして保存する。同じサロンの削除されていないスタッフの間で一意
         phoneNumber:
           type: string
           maxLength: 20
@@ -27038,8 +27018,7 @@ components:
           type: array
           items:
             type: string
-          nullable: true
-          description: 得意分野や専門メニューの一覧。nullでクリア
+          description: 得意分野や専門メニューの一覧。指定した一覧で置き換える。空白だけの要素と、同じ要素の繰り返しは指定できない
         bio:
           type: string
           nullable: true
@@ -27060,8 +27039,7 @@ components:
           type: array
           items:
             type: string
-          nullable: true
-          description: 保有資格名の一覧 (テキスト管理)。nullでクリア
+          description: 保有資格名の一覧 (テキスト管理)。指定した一覧で置き換える。空白だけの要素と、同じ要素の繰り返しは指定できない
         hireDate:
           type: string
           format: date
@@ -27084,7 +27062,7 @@ components:
           nullable: true
           minimum: 0
           maximum: 100
-          description: 歩合率(%)。nullでクリア
+          description: 歩合率(%)。小数第2位まで。nullでクリア
         canReceiveBookings:
           type: boolean
           description: 予約を受け付けるかどうか
@@ -27097,23 +27075,21 @@ components:
         bufferTimeBefore:
           type: integer
           format: int32
-          nullable: true
           minimum: 0
           maximum: 120
-          description: 予約の前に確保する準備時間(分)。nullでクリア
+          description: 予約の前に確保する準備時間(分)。確保しない場合は0
         bufferTimeAfter:
           type: integer
           format: int32
-          nullable: true
           minimum: 0
           maximum: 120
-          description: 予約の後に確保する片付け時間(分)。nullでクリア
+          description: 予約の後に確保する片付け時間(分)。確保しない場合は0
         isActive:
           type: boolean
-          description: 現在スタッフがアクティブに勤務可能かを示すフラグ
+          description: 在籍して勤務しているかどうか。自分自身のスタッフ情報では、falseにできない
       description: |-
         スタッフ部分更新リクエスト - 指定した項目だけを更新する。DB で NULL 許可のカラムは null でクリアできる。
-        所属サロンは変更できない。勤務スケジュールは勤務スケジュール更新(updateAvailability)で更新する
+        項目を1つも指定しないリクエストは受け付けない。所属サロンと、ログインアカウントとの紐づけ(userId)は変更できない
     Models.StylePreference:
       type: object
       required:

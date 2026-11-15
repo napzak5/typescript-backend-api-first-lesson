@@ -1,0 +1,53 @@
+import { Result } from '@beauty-salon-backend/utility'
+import { z } from 'zod'
+import type { ApiStaffResponse, DbStaff } from '../../models/staff'
+import { type DomainError, DomainErrors, parseWith } from '../../shared'
+import { numericSchema, timestampSchema } from './columns'
+
+/**
+ * A row of `staff` → the response of the staff ledger. Property names are
+ * the column names. Two columns stay behind: `deletedAt`, which no response
+ * shows, and `awards`, a jsonb column without a defined structure. Two
+ * kinds of column change their representation:
+ * - `numeric` is read as a string and returned as a number
+ * - `timestamptz` is read in PostgreSQL's text format and returned as ISO 8601
+ */
+
+const convertedColumnsSchema = z.object({
+  commissionRate: numericSchema.nullable(),
+  createdAt: timestampSchema,
+  updatedAt: timestampSchema,
+})
+
+const toApiStaff = (member: DbStaff): Result<ApiStaffResponse, DomainError> => {
+  const { awards, deletedAt, ...columns } = member
+
+  return Result.mapError(
+    Result.map(
+      parseWith(convertedColumnsSchema, member, 'Invalid stored staff member'),
+      (converted) => ({ ...columns, ...converted }),
+    ),
+    // The request was fine; the stored row is not.
+    (error) =>
+      DomainErrors.database(
+        `Stored staff member ${member.id} does not match the API model`,
+        error,
+      ),
+  )
+}
+
+export const StaffReadMapper = {
+  toApiStaff,
+
+  toApiStaffList(members: DbStaff[]): Result<ApiStaffResponse[], DomainError> {
+    const apiStaff: ApiStaffResponse[] = []
+    for (const member of members) {
+      const mapped = toApiStaff(member)
+      if (mapped.type === 'error') {
+        return mapped
+      }
+      apiStaff.push(mapped.data)
+    }
+    return Result.success(apiStaff)
+  },
+}
