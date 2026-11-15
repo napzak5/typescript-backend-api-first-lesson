@@ -677,6 +677,11 @@ export type salonCrudDeleteResponse404 = {
   status: 404
 }
 
+export type salonCrudDeleteResponse409 = {
+  data: ModelsProblemDetails
+  status: 409
+}
+
 export type salonCrudDeleteResponse429 = {
   data: ModelsProblemDetails
   status: 429
@@ -690,7 +695,7 @@ export type salonCrudDeleteResponse500 = {
 export type salonCrudDeleteResponseSuccess = (salonCrudDeleteResponse204) & {
   headers: Headers;
 };
-export type salonCrudDeleteResponseError = (salonCrudDeleteResponse400 | salonCrudDeleteResponse401 | salonCrudDeleteResponse403 | salonCrudDeleteResponse404 | salonCrudDeleteResponse429 | salonCrudDeleteResponse500) & {
+export type salonCrudDeleteResponseError = (salonCrudDeleteResponse400 | salonCrudDeleteResponse401 | salonCrudDeleteResponse403 | salonCrudDeleteResponse404 | salonCrudDeleteResponse409 | salonCrudDeleteResponse429 | salonCrudDeleteResponse500) & {
   headers: Headers;
 };
 
@@ -705,7 +710,7 @@ export const getSalonCrudDeleteUrl = (id: ModelsSalonId,) => {
 }
 
 /**
- * サロンを論理削除します。削除後は一覧・取得の対象外になります。admin と、そのサロンの owner が実行できます。ほかのサロンの owner には403を返します。
+ * サロンを論理削除します。削除後は一覧・取得の対象外になります。admin と、そのサロンの owner が実行できます。ほかのサロンの owner には403を返します。終わっていない予約(ステータスが draft・pending・confirmed・in_progress の予約)があるサロンは削除できず、409を返します。先に予約を完了、キャンセル、または削除してください。
  * @summary Delete a salon
  */
 export const salonCrudDelete = async (id: ModelsSalonId, options?: RequestInit): Promise<salonCrudDeleteResponse> => {
@@ -758,7 +763,7 @@ const {mutation: mutationOptions} = options ?
     export type SalonCrudDeleteMutationVariables = {id: ModelsSalonId}
 
     /**
- * サロンを論理削除します。削除後は一覧・取得の対象外になります。admin と、そのサロンの owner が実行できます。ほかのサロンの owner には403を返します。
+ * サロンを論理削除します。削除後は一覧・取得の対象外になります。admin と、そのサロンの owner が実行できます。ほかのサロンの owner には403を返します。終わっていない予約(ステータスが draft・pending・confirmed・in_progress の予約)があるサロンは削除できず、409を返します。先に予約を完了、キャンセル、または削除してください。
  * @summary Delete a salon
  */
 export const useSalonCrudDelete = <TError = ModelsProblemDetails,

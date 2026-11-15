@@ -769,7 +769,7 @@ export const getStaffCrudDeleteUrl = (salonId: ModelsSalonId,
 }
 
 /**
- * スタッフを論理削除します。削除後は一覧・取得の対象外になり、メールアドレスは別のスタッフの登録に使えるようになります。このスタッフに紐づくログインアカウントは、サロンへの権限を失います。自分自身のスタッフ情報は削除できず、409を返します。
+ * スタッフを論理削除します。削除後は一覧・取得の対象外になり、メールアドレスは別のスタッフの登録に使えるようになります。このスタッフに紐づくログインアカウントは、サロンへの権限を失います。自分自身のスタッフ情報は削除できず、409を返します。終わっていない予約(ステータスが draft・pending・confirmed・in_progress の予約)の担当スタッフであるか、そのいずれかの施術明細を担当しているスタッフも削除できず、409を返します。先に予約を完了、キャンセル、または削除してください。予約の担当スタッフは、日時の変更でほかのスタッフに替えられます(そのスタッフが担当していた施術明細も付け替わります)。
  * @summary Delete staff member
  */
 export const staffCrudDelete = async (salonId: ModelsSalonId,
@@ -823,7 +823,7 @@ const {mutation: mutationOptions} = options ?
     export type StaffCrudDeleteMutationVariables = {salonId: ModelsSalonId;id: ModelsStaffId}
 
     /**
- * スタッフを論理削除します。削除後は一覧・取得の対象外になり、メールアドレスは別のスタッフの登録に使えるようになります。このスタッフに紐づくログインアカウントは、サロンへの権限を失います。自分自身のスタッフ情報は削除できず、409を返します。
+ * スタッフを論理削除します。削除後は一覧・取得の対象外になり、メールアドレスは別のスタッフの登録に使えるようになります。このスタッフに紐づくログインアカウントは、サロンへの権限を失います。自分自身のスタッフ情報は削除できず、409を返します。終わっていない予約(ステータスが draft・pending・confirmed・in_progress の予約)の担当スタッフであるか、そのいずれかの施術明細を担当しているスタッフも削除できず、409を返します。先に予約を完了、キャンセル、または削除してください。予約の担当スタッフは、日時の変更でほかのスタッフに替えられます(そのスタッフが担当していた施術明細も付け替わります)。
  * @summary Delete staff member
  */
 export const useStaffCrudDelete = <TError = ModelsProblemDetails,

@@ -67,7 +67,7 @@ namespace BeautySalon.Operations {
         | RequestBodyErrors
         | CommonErrors;
 
-      @doc("顧客を論理削除します。削除後は一覧・取得の対象外になり、メールアドレスは別の顧客の登録に使えるようになります。admin と、サロンの owner / manager が実行できます。")
+      @doc("顧客を論理削除します。削除後は一覧・取得の対象外になり、メールアドレスは別の顧客の登録に使えるようになります。admin と、サロンの owner / manager が実行できます。終わっていない予約(ステータスが draft・pending・confirmed・in_progress の予約)がある顧客は削除できず、409を返します。どのサロンの予約でも同じです。先に予約を完了、キャンセル、または削除してください。")
       @summary("Delete a customer")
       @delete
       delete(@path id: CustomerId):
@@ -76,6 +76,7 @@ namespace BeautySalon.Operations {
           }
         | ProblemResponse<400>
         | ProblemResponse<404>
+        | ProblemResponse<409>
         | CommonErrors;
 
       @doc("複数の顧客IDをまとめて取得し、一覧画面の遅延読み込みや外部連携に利用します。指定した顧客のいずれかが存在しない場合は404を返します。")
