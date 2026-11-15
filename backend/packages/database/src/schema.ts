@@ -972,6 +972,11 @@ export const openingHours = pgTable(
       'btree',
       table.salonId.asc().nullsLast().op('uuid_ops'),
     ),
+    uniqueIndex('opening_hours_salon_date_unique').using(
+      'btree',
+      table.salonId.asc().nullsLast().op('uuid_ops'),
+      table.date.asc().nullsLast().op('date_ops'),
+    ),
   ],
 )
 

@@ -351,6 +351,31 @@ describe('the migrations of this repository', () => {
     expect(await describeSchema()).toEqual(schemaBefore)
   })
 
+  /** Stores a salon with the weekly hours and returns its ID. */
+  const storeSalon = async (businessHours: unknown): Promise<string> => {
+    const id = randomUUID()
+    const hours = businessHours === null ? null : JSON.stringify(businessHours)
+    await sql`
+      INSERT INTO salons (
+        id, name, prefecture, city, address, "phoneNumber", email,
+        "imageUrls", features, amenities, "businessHours", "updatedAt"
+      )
+      VALUES (
+        ${id}, 'Hair Studio Aoyama', '東京都', '港区', '南青山1-2-3',
+        '03-1234-5678', ${`${id}@example.com`}, '{}', '{}', '{}',
+        ${hours}::text::jsonb, '2026-01-01T00:00:00Z'
+      )
+    `
+    return id
+  }
+
+  /** Runs one migration of the repository the way `migrate` would. */
+  const runMigration = async (migration: string): Promise<void> => {
+    const files = plan.migrations.filter(({ name }) => name === migration)
+    expect(files).toHaveLength(1)
+    await Promise.all(files.map((file) => sql.unsafe(file.sql)))
+  }
+
   describe('202611160500_business_hours_without_time_zone.sql', () => {
     const monday = {
       dayOfWeek: 'monday',
@@ -365,25 +390,6 @@ describe('the migrations of this repository', () => {
       breakSlots: null,
       isClosed: true,
       effectivePeriod: null,
-    }
-
-    /** Stores a salon with the weekly hours and returns its ID. */
-    const storeSalon = async (businessHours: unknown): Promise<string> => {
-      const id = randomUUID()
-      const hours =
-        businessHours === null ? null : JSON.stringify(businessHours)
-      await sql`
-        INSERT INTO salons (
-          id, name, prefecture, city, address, "phoneNumber", email,
-          "imageUrls", features, amenities, "businessHours", "updatedAt"
-        )
-        VALUES (
-          ${id}, 'Hair Studio Aoyama', '東京都', '港区', '南青山1-2-3',
-          '03-1234-5678', ${`${id}@example.com`}, '{}', '{}', '{}',
-          ${hours}::text::jsonb, '2026-01-01T00:00:00Z'
-        )
-      `
-      return id
     }
 
     /**
@@ -405,14 +411,8 @@ describe('the migrations of this repository', () => {
     const hoursOf = async (id: string): Promise<unknown[]> =>
       (await rowOf(id)).map(({ hours }) => hours)
 
-    const run = async (): Promise<void> => {
-      const files = plan.migrations.filter(
-        ({ name }) =>
-          name === '202611160500_business_hours_without_time_zone.sql',
-      )
-      expect(files).toHaveLength(1)
-      await Promise.all(files.map((file) => sql.unsafe(file.sql)))
-    }
+    const run = (): Promise<void> =>
+      runMigration('202611160500_business_hours_without_time_zone.sql')
 
     beforeEach(async () => {
       await applyBaseline(sql, plan)
@@ -490,6 +490,111 @@ describe('the migrations of this repository', () => {
 
       expect(before).toHaveLength(1)
       expect(await rowOf(id)).toEqual(before)
+    })
+  })
+
+  describe('202611160600_opening_hours_one_row_per_date.sql', () => {
+    const run = (): Promise<void> =>
+      runMigration('202611160600_opening_hours_one_row_per_date.sql')
+
+    /** A calendar row of the salon that opens at a time and was written at another. */
+    const storeDay = async (
+      salonId: string,
+      date: string,
+      openTime: string,
+      updatedAt: string,
+    ): Promise<string> => {
+      const id = randomUUID()
+      await sql`
+        INSERT INTO opening_hours (
+          id, "salonId", "dayOfWeek", date, "openTime", "closeTime",
+          "updatedAt"
+        )
+        VALUES (
+          ${id}, ${salonId},
+          lower(trim(to_char(${date}::date, 'Day')))::day_of_week,
+          ${date}, ${openTime}, '19:00', ${updatedAt}
+        )
+      `
+      return id
+    }
+
+    /** The calendar of the salon: when it opens on which date. */
+    const calendarOf = async (salonId: string): Promise<string[]> => {
+      const rows = await sql<{ day: string }[]>`
+        SELECT date::text || ' ' || "openTime"::text AS day
+        FROM opening_hours
+        WHERE "salonId" = ${salonId}
+        ORDER BY day
+      `
+      return rows.map(({ day }) => day)
+    }
+
+    // A database from before the migration: nothing keeps two rows for a
+    // date out.
+    beforeEach(async () => {
+      await applyBaseline(sql, plan)
+      await sql`DROP INDEX opening_hours_salon_date_unique`
+    })
+
+    it('should keep, of the rows a salon has for a date, the one that was written last', async () => {
+      const salon = await storeSalon(null)
+      const other = await storeSalon(null)
+      await storeDay(salon, '2026-11-16', '10:00', '2026-11-02T00:00:00Z')
+      await storeDay(salon, '2026-11-16', '11:00', '2026-11-03T00:00:00Z')
+      await storeDay(salon, '2026-11-16', '09:00', '2026-11-01T00:00:00Z')
+      await storeDay(salon, '2026-11-17', '12:00', '2026-11-01T00:00:00Z')
+      await storeDay(other, '2026-11-16', '08:00', '2026-10-01T00:00:00Z')
+
+      await run()
+
+      expect(await calendarOf(salon)).toEqual([
+        '2026-11-16 11:00:00',
+        '2026-11-17 12:00:00',
+      ])
+      expect(await calendarOf(other)).toEqual(['2026-11-16 08:00:00'])
+    })
+
+    it('should keep one of the rows that were written at the same moment', async () => {
+      const salon = await storeSalon(null)
+      const ids = [
+        await storeDay(salon, '2026-11-16', '10:00', '2026-11-01T00:00:00Z'),
+        await storeDay(salon, '2026-11-16', '10:00', '2026-11-01T00:00:00Z'),
+        await storeDay(salon, '2026-11-16', '10:00', '2026-11-01T00:00:00Z'),
+      ]
+
+      await run()
+
+      const kept = await sql<{ id: string }[]>`
+        SELECT id FROM opening_hours WHERE "salonId" = ${salon}
+      `
+      expect(kept).toEqual([{ id: ids.toSorted().at(-1) }])
+    })
+
+    it('should keep a second row for a date out from then on', async () => {
+      const salon = await storeSalon(null)
+      await storeDay(salon, '2026-11-16', '10:00', '2026-11-01T00:00:00Z')
+
+      await run()
+
+      await expect(
+        storeDay(salon, '2026-11-16', '11:00', '2026-11-02T00:00:00Z'),
+      ).rejects.toThrow('opening_hours_salon_date_unique')
+      expect(await calendarOf(salon)).toEqual(['2026-11-16 10:00:00'])
+    })
+
+    it('should delete nothing where every date has one row, and nothing on a second run', async () => {
+      const salon = await storeSalon(null)
+      await storeDay(salon, '2026-11-16', '10:00', '2026-11-02T00:00:00Z')
+      await storeDay(salon, '2026-11-16', '11:00', '2026-11-01T00:00:00Z')
+      await storeDay(salon, '2026-11-17', '12:00', '2026-11-01T00:00:00Z')
+
+      await run()
+      const afterFirst = await calendarOf(salon)
+      await run()
+
+      expect(afterFirst).toEqual(['2026-11-16 10:00:00', '2026-11-17 12:00:00'])
+      expect(await calendarOf(salon)).toEqual(afterFirst)
     })
   })
 })
