@@ -2,6 +2,8 @@ import { BookingStatusTypeSchema } from '@beauty-salon-backend/generated'
 import { addHours, isValid, parseISO } from 'date-fns'
 import { z } from 'zod'
 import {
+  type ApiBookingCancelRequest,
+  type ApiBookingCompleteRequest,
   type ApiBookingCreateRequest,
   type ApiBookingSearchRequest,
   type ApiBookingServiceCreateRequest,
@@ -91,6 +93,35 @@ export const bookingCreateRequestSchema = z.strictObject({
 
 /** A create request that passed the rules of its own. */
 export type BookingCreateRequest = z.infer<typeof bookingCreateRequestSchema>
+
+export const bookingCancelRequestSchema = z.strictObject({
+  cancellationReason: nonBlankText.nullable(),
+}) satisfies z.ZodType<ApiBookingCancelRequest>
+
+/**
+ * A moment something actually happened at, in UTC. It is returned in the
+ * one spelling `toISOString` gives, to the millisecond.
+ */
+const momentInUtc = z.iso
+  .datetime()
+  .transform((value) => parseISO(value).toISOString())
+
+export const bookingCompleteRequestSchema = z
+  .strictObject({
+    actualStartTime: momentInUtc.nullable(),
+    actualEndTime: momentInUtc.nullable(),
+  })
+  // The times have one spelling, so the earlier is the first as text.
+  .refine(
+    ({ actualStartTime, actualEndTime }) =>
+      actualStartTime === null ||
+      actualEndTime === null ||
+      actualStartTime < actualEndTime,
+    {
+      path: ['actualEndTime'],
+      message: 'Must be after actualStartTime',
+    },
+  ) satisfies z.ZodType<ApiBookingCompleteRequest>
 
 export const bookingSearchRequestSchema = z
   .strictObject({

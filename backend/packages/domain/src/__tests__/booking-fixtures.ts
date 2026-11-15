@@ -14,6 +14,7 @@ import type {
 } from '../models/booking'
 import type {
   BookingCreation,
+  BookingStatusChange,
   IBookingRepository,
 } from '../repositories/booking.repository'
 import { CUSTOMER_ID } from './auth-fixtures'
@@ -274,6 +275,12 @@ export const bookingDependencies = (
       findById: vi.fn(async () =>
         Result.success<BookingWithServices | null>(bookingWithServices()),
       ),
+      changeStatus: vi.fn(async () =>
+        Result.success<BookingStatusChange>({
+          type: 'changed',
+          booking: bookingWithServices(),
+        }),
+      ),
       list: vi.fn(async () =>
         Result.success({
           bookings: [bookingWithServices()],
@@ -300,6 +307,12 @@ export const bookingRepositoryCalls = ({
     ...vi
       .mocked(bookingRepository.findById)
       .mock.invocationCallOrder.map((order) => ({ order, name: 'findById' })),
+    ...vi
+      .mocked(bookingRepository.changeStatus)
+      .mock.invocationCallOrder.map((order) => ({
+        order,
+        name: 'changeStatus',
+      })),
     ...vi
       .mocked(bookingRepository.list)
       .mock.invocationCallOrder.map((order) => ({ order, name: 'list' })),

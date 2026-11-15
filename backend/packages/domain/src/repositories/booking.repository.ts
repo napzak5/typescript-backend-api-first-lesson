@@ -1,6 +1,11 @@
 import type { Result } from '@beauty-salon-backend/utility'
 import type { BookingOrigin } from '../business-logic/booking/_shared/plan'
 import type {
+  BookingAction,
+  StatusChangeRefusal,
+} from '../business-logic/booking/_shared/status'
+import type { UserId } from '../models/auth'
+import type {
   BookingId,
   BookingReach,
   BookingWithServices,
@@ -30,6 +35,17 @@ export type BookingCreationRefusal =
 export type BookingCreation =
   | { type: 'created'; booking: BookingWithServices }
   | BookingCreationRefusal
+
+/**
+ * What became of a change of the status of a booking:
+ * - `changed`: the booking as it is now
+ * - `notFound`: no booking within the reach has the ID
+ * - otherwise why the status was not changed (`planStatusChange`)
+ */
+export type BookingStatusChange =
+  | { type: 'changed'; booking: BookingWithServices }
+  | { type: 'notFound' }
+  | StatusChangeRefusal
 
 export type BookingListCriteria = {
   /** The bookings the list is taken from. */
@@ -78,6 +94,22 @@ export interface IBookingRepository {
     id: BookingId,
     reach: BookingReach,
   ): Promise<Result<BookingWithServices | null, DomainError>>
+
+  /**
+   * Takes an action on the status of a booking within the reach
+   * (`planStatusChange`) and writes what it changes: the booking, its
+   * service lines when the visit is completed, an entry of the status
+   * history, and what the customer has of visits, cancellations and
+   * no-shows, counted from their bookings. The booking is held from the
+   * moment its status is read, so of two actions on one booking the second
+   * meets what the first made of it.
+   */
+  changeStatus(
+    id: BookingId,
+    reach: BookingReach,
+    action: BookingAction,
+    changedBy: UserId,
+  ): Promise<Result<BookingStatusChange, DomainError>>
 
   /**
    * A page of the bookings that match, by the time they begin, earliest
