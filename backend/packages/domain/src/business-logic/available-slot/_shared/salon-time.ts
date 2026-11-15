@@ -6,6 +6,7 @@ import {
   format,
   isValid,
   parseISO,
+  subDays,
   subHours,
   subMinutes,
 } from 'date-fns'
@@ -75,3 +76,26 @@ export const widestDayOf = (date: string, minutesAround: number): TimeRange => {
     ),
   }
 }
+
+/**
+ * The dates (`YYYY-MM-DD`) a moment can be on: in every time zone there is
+ * it is on its date in UTC, on the one before or on the one after. They
+ * are what is read for a moment before the time zone of the salon is
+ * looked at.
+ */
+export const datesAround = (moment: Date): string[] =>
+  [subDays(moment, 1), moment, addDays(moment, 1)].map((day) =>
+    dateIn(day, 'UTC'),
+  )
+
+/**
+ * The time within which each of those dates lies in every time zone, and
+ * so many minutes around it.
+ */
+export const widestDaysAround = (
+  moment: Date,
+  minutesAround: number,
+): TimeRange => ({
+  from: widestDayOf(dateIn(subDays(moment, 1), 'UTC'), minutesAround).from,
+  until: widestDayOf(dateIn(addDays(moment, 1), 'UTC'), minutesAround).until,
+})
