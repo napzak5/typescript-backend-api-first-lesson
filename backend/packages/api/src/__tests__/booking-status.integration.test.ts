@@ -605,9 +605,15 @@ describe('Booking status API', () => {
           await authorized(request(app).patch(address), asAdmin).send({}),
           await authorized(request(app).delete(address), asAdmin),
           await authorized(request(app).post(`${address}/again`), asAdmin),
+          // Without a booking, the name of an action is an ID that is none.
+          await authorized(
+            request(app).post(`${BOOKINGS}/${action}`),
+            asAdmin,
+          ).send(ACTIONS[action].body ?? {}),
         ]
 
         expect(responses.map(statusAndCode)).toEqual([
+          '404 3001',
           '404 3001',
           '404 3001',
           '404 3001',

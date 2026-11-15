@@ -1925,6 +1925,30 @@ describe('Bookings API', () => {
       })
     })
 
+    // A booking with two lines is two rows of the query and one of the page.
+    it('says that no page follows a page that is exactly full of bookings with several service lines', async () => {
+      for (const [first, second] of [
+        ['01:00', '02:00'],
+        ['05:00', '06:00'],
+      ]) {
+        await created({
+          services: [
+            line({ staffId: null, startTime: at(first ?? '') }),
+            line({ staffId: null, startTime: at(second ?? '') }),
+          ],
+        })
+      }
+
+      const response = await list({ limit: '2' })
+
+      expect(idsOf(response)).toHaveLength(2)
+      expect(response.body.meta).toMatchObject({
+        total: 2,
+        hasMore: false,
+        nextCursor: null,
+      })
+    })
+
     it('keeps the conditions of a search in the links of its pages', async () => {
       await cutAt('01:00')
       await cutAt('03:00')
