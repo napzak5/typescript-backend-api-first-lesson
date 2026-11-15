@@ -634,6 +634,22 @@ describe('Bookings API', () => {
       ])
     })
 
+    it('says where the booking is by the path alone, and takes nothing from a query', async () => {
+      const response = await authorized(
+        request(app).post(`${BOOKINGS}?source=online`),
+        asAdmin,
+      ).send(booking())
+
+      expect(response.status).toBe(201)
+      const { id } = response.body.data
+      expect(response.headers['location']).toBe(`${BOOKINGS}/${id}`)
+      expect(response.body.links).toEqual({
+        self: `${BOOKINGS}/${id}`,
+        list: BOOKINGS,
+      })
+      expect(response.body.data.source).toBeNull()
+    })
+
     it('keeps where the request came from in the ledger, and shows it in no response', async () => {
       const response = await create(booking()).set(
         'User-Agent',
@@ -1689,6 +1705,40 @@ describe('Bookings API', () => {
       ])
       expect(await db.$count(bookings)).toBe(1)
     })
+  })
+
+  describe('what the contract does not have', () => {
+    /** A method and a path below the ledger, `:id` standing for a booking that is there. */
+    const outside: [
+      string,
+      'put' | 'patch' | 'delete' | 'post' | 'get',
+      string,
+    ][] = [
+      ['PUT on the ledger', 'put', ''],
+      ['PATCH on the ledger', 'patch', ''],
+      ['DELETE on the ledger', 'delete', ''],
+      ['POST on a booking', 'post', '/:id'],
+      ['PUT on a booking', 'put', '/:id'],
+      ['GET on an action', 'get', '/:id/confirm'],
+      ['GET below a booking', 'get', '/:id/history'],
+    ]
+
+    it.each(outside)(
+      'answers %s with 404, whatever is sent',
+      async (_case, method, path) => {
+        const { id } = await created()
+        const address = `${BOOKINGS}${path.replace(':id', id)}`
+        const later = booking({ services: [line({ startTime: at('05:00') })] })
+
+        const responses = [
+          await authorized(request(app)[method](address), asAdmin),
+          await authorized(request(app)[method](address), asAdmin).send(later),
+        ]
+
+        expect(responses.map(statusAndCode)).toEqual(['404 3001', '404 3001'])
+        expect((await storedBookings()).map((row) => row.id)).toEqual([id])
+      },
+    )
   })
 
   describe('GET /api/v1/bookings', () => {
@@ -2833,6 +2883,28 @@ describe('Bookings API', () => {
           ofEverySalon?.services.map(({ sortOrder }) => sortOrder),
         ).toEqual([0, 1, 2])
         expect(ofTheSalon).toEqual(ofEverySalon)
+      })
+
+      it('returns the lines in their order, whatever order they were written in', async () => {
+        const id = await insertBooking(db, {}, { sortOrder: 2 })
+        await db.insert(bookingServices).values(lineRow(id, { sortOrder: 1 }))
+        await db.insert(bookingServices).values(lineRow(id, { sortOrder: 0 }))
+
+        const found = dataOf(
+          await repository().findById(bookingIdSchema.parse(id), everySalon),
+        )
+        const listed = dataOf(
+          await repository().list({ reach: everySalon, ...noConditions }),
+        )
+
+        expect(found?.services.map(({ sortOrder }) => sortOrder)).toEqual([
+          0, 1, 2,
+        ])
+        expect(
+          listed?.bookings.map(({ services }) =>
+            services.map(({ sortOrder }) => sortOrder),
+          ),
+        ).toEqual([[0, 1, 2]])
       })
 
       it('finds nothing outside the reach, and nothing for an ID no booking has', async () => {
