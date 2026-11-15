@@ -11,7 +11,7 @@ import type { ModelsDayOfWeekType } from './modelsDayOfWeekType';
  * スタッフ勤務スケジュール - staff_schedules テーブルの1行。スタッフがいつ勤務するかを表し、予約可能時間の算出に利用する。
  * 毎週の行(isRecurring が true)は dayOfWeek の曜日に毎週、単日の行(isRecurring が false)は date の日付だけに適用する。
  * 1人のスタッフが持てるのは、毎週の行が曜日ごとに1つまで、単日の行が日付ごとに1つまで。ある日付に単日の行がある場合は、その日付には単日の行だけを適用する。
- * 勤務する行(isAvailable が true)は勤務時刻を持ち、休みの行(isAvailable が false)は時刻を持たない。
+ * 勤務する行(isAvailable が true)は勤務時刻を持ち、休みの行(isAvailable が false)は時刻を持たない。時刻は、スタッフのサロンの timezone での時刻。
  * リクエストとレスポンスの両方に使う。プロパティ名と null 許可は DB カラムと一致させている
  */
 export interface ModelsStaffSchedule {

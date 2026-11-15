@@ -10,7 +10,7 @@ import type { ModelsDayOfWeekType } from './modelsDayOfWeekType';
 import type { ModelsTimeSlot } from './modelsTimeSlot';
 
 /**
- * 曜日単位で管理する営業スケジュール設定。
+ * 曜日単位で管理する営業スケジュール設定。時刻は、サロンのtimezoneでの時刻。
  */
 export interface ModelsBusinessHours {
   /** 設定の対象となる曜日。 */
@@ -29,9 +29,4 @@ export interface ModelsBusinessHours {
      * @nullable
      */
   effectivePeriod: ModelsDateRange | null;
-  /**
-     * 営業基準となるタイムゾーンID。サロン既定値を使用する場合はnull
-     * @nullable
-     */
-  timezone: string | null;
 }
