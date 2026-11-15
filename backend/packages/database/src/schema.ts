@@ -1688,8 +1688,8 @@ export const staffSchedules = pgTable(
     staffId: uuid().notNull(),
     dayOfWeek: dayOfWeek(),
     date: date(),
-    startTime: time().notNull(),
-    endTime: time().notNull(),
+    startTime: time(),
+    endTime: time(),
     breakStartTime: time(),
     breakEndTime: time(),
     isRecurring: boolean().default(true).notNull(),
@@ -1703,6 +1703,23 @@ export const staffSchedules = pgTable(
       .notNull(),
   },
   (table) => [
+    check(
+      'staff_schedules_break_has_both_times',
+      sql`("breakStartTime" IS NULL) = ("breakEndTime" IS NULL)`,
+    ),
+    check(
+      'staff_schedules_break_inside_working_hours',
+      sql`("startTime" < "breakStartTime") AND ("breakStartTime" < "breakEndTime") AND ("breakEndTime" < "endTime")`,
+    ),
+    check('staff_schedules_end_after_start', sql`"startTime" < "endTime"`),
+    check(
+      'staff_schedules_times_when_available',
+      sql`("isAvailable" AND ("startTime" IS NOT NULL) AND ("endTime" IS NOT NULL)) OR ((NOT "isAvailable") AND ("startTime" IS NULL) AND ("endTime" IS NULL) AND ("breakStartTime" IS NULL) AND ("breakEndTime" IS NULL))`,
+    ),
+    check(
+      'staff_schedules_weekly_or_single_day',
+      sql`("isRecurring" AND ("dayOfWeek" IS NOT NULL) AND (date IS NULL)) OR ((NOT "isRecurring") AND ("dayOfWeek" IS NULL) AND (date IS NOT NULL))`,
+    ),
     foreignKey({
       columns: [table.staffId],
       foreignColumns: [staff.id],
@@ -1720,6 +1737,20 @@ export const staffSchedules = pgTable(
       'btree',
       table.staffId.asc().nullsLast().op('uuid_ops'),
     ),
+    uniqueIndex('staff_schedules_single_day_unique')
+      .using(
+        'btree',
+        table.staffId.asc().nullsLast().op('uuid_ops'),
+        table.date.asc().nullsLast().op('date_ops'),
+      )
+      .where(sql`(NOT "isRecurring")`),
+    uniqueIndex('staff_schedules_weekly_unique')
+      .using(
+        'btree',
+        table.staffId.asc().nullsLast().op('uuid_ops'),
+        table.dayOfWeek.asc().nullsLast().op('enum_ops'),
+      )
+      .where(sql`"isRecurring"`),
   ],
 )
 

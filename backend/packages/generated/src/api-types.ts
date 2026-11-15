@@ -2568,7 +2568,7 @@ export interface paths {
         patch: operations["StaffCrud_update"];
         trace?: never;
     };
-    "/api/v1/salons/{salonId}/staff/{id}/availability": {
+    "/api/v1/salons/{salonId}/staff/{id}/schedules": {
         parameters: {
             query?: never;
             header?: never;
@@ -2576,15 +2576,15 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get staff availability
-         * @description 指定日のスタッフ空き状況を取得し、予約枠の提案や調整に活用します。指定日に適用される勤務スケジュールの行を返します。その日付の単日の行があれば単日の行を、なければその曜日の毎週繰り返す行を返します。適用される行がない場合は空配列を返します。
+         * List the schedules of a staff member
+         * @description スタッフの勤務スケジュールの行を一覧取得します。毎週の行を月曜から日曜の順に、続けて単日の行を日付の古い順に返します。date を指定すると、その日付に適用される行だけ(0件か1件)を返します。行の数に上限があるため、ページネーションはありません。
          */
-        get: operations["StaffCrud_getAvailability"];
+        get: operations["StaffSchedules_list"];
         /**
-         * Update staff availability
-         * @description スタッフの稼働予定を更新し、シフト変更や臨時休みを反映します。スタッフの勤務スケジュール全体を、指定した行の一覧で置き換えます。
+         * Replace the schedules of a staff member
+         * @description スタッフの勤務スケジュール全体を、指定した行の一覧で置き換えます。空の配列を指定すると、スケジュールは空になります。同じ曜日の毎週の行、同じ日付の単日の行は、それぞれ1つまでです。1つでも規則に反する行があれば、何も変更せずに400を返します。レスポンスは、保存後の行を一覧と同じ順で返します。
          */
-        put: operations["StaffCrud_updateAvailability"];
+        put: operations["StaffSchedules_update"];
         post?: never;
         delete?: never;
         options?: never;
@@ -8330,34 +8330,41 @@ export interface components {
             updatedAt: string;
         };
         /**
-         * @description スタッフ勤務スケジュール - staff_schedules テーブルの1行。勤務時間と休憩時間を表し、予約可能時間の算出に利用する。
-         *     毎週繰り返す行(isRecurring が true)は dayOfWeek の曜日に、単日の行(isRecurring が false)は date の日付だけに適用する。
-         *     同じ日付に単日の行がある場合は、その日付については毎週繰り返す行より単日の行を優先する。
-         *     プロパティ名と null 許可は DB カラムと一致させている
+         * @description スタッフ勤務スケジュール - staff_schedules テーブルの1行。スタッフがいつ勤務するかを表し、予約可能時間の算出に利用する。
+         *     毎週の行(isRecurring が true)は dayOfWeek の曜日に毎週、単日の行(isRecurring が false)は date の日付だけに適用する。
+         *     1人のスタッフが持てるのは、毎週の行が曜日ごとに1つまで、単日の行が日付ごとに1つまで。ある日付に単日の行がある場合は、その日付には単日の行だけを適用する。
+         *     勤務する行(isAvailable が true)は勤務時刻を持ち、休みの行(isAvailable が false)は時刻を持たない。
+         *     リクエストとレスポンスの両方に使う。プロパティ名と null 許可は DB カラムと一致させている
          */
         "Models.StaffSchedule": {
-            /** @description 毎週繰り返す行が適用される曜日。単日の行の場合はnull */
+            /** @description 毎週の行が適用される曜日。毎週の行では必須。単日の行ではnull */
             dayOfWeek: components["schemas"]["Models.DayOfWeekType"] | null;
             /**
              * Format: date
-             * @description 単日の行が適用される日付。毎週繰り返す行の場合はnull
+             * @description 単日の行が適用される日付。単日の行では必須。毎週の行ではnull
              */
             date: string | null;
-            /** @description 勤務開始時刻。HH:mm:ss形式で返す（指定時はHH:mmも可）。endTimeより前の時刻を指定する */
-            startTime: string;
-            /** @description 勤務終了時刻。HH:mm:ss形式で返す（指定時はHH:mmも可） */
-            endTime: string;
-            /** @description 休憩開始時刻。HH:mm:ss形式で返す（指定時はHH:mmも可）。breakEndTimeと組で、勤務時間内の時刻を指定する。休憩がない場合はnull */
+            /** @description 勤務開始時刻。HH:mm:ss形式で返す（指定時はHH:mmも可）。勤務する行では必須で、endTimeより前の時刻を指定する。休みの行ではnull */
+            startTime: string | null;
+            /** @description 勤務終了時刻。HH:mm:ss形式で返す（指定時はHH:mmも可）。勤務する行では必須。休みの行ではnull */
+            endTime: string | null;
+            /** @description 休憩開始時刻。HH:mm:ss形式で返す（指定時はHH:mmも可）。breakEndTimeと組で、startTimeより後の時刻を指定する。休憩がない場合と、休みの行ではnull */
             breakStartTime: string | null;
-            /** @description 休憩終了時刻。HH:mm:ss形式で返す（指定時はHH:mmも可）。breakStartTimeと組で指定する。休憩がない場合はnull */
+            /** @description 休憩終了時刻。HH:mm:ss形式で返す（指定時はHH:mmも可）。breakStartTimeと組で、breakStartTimeより後、endTimeより前の時刻を指定する。休憩がない場合と、休みの行ではnull */
             breakEndTime: string | null;
-            /** @description 毎週 dayOfWeek の曜日に繰り返す行かどうか。falseの場合は date の日付だけに適用する */
+            /** @description 毎週の行かどうか。trueの場合は dayOfWeek の曜日に毎週、falseの場合は date の日付だけに適用する */
             isRecurring: boolean;
-            /** @description 勤務可能かどうか。falseの場合は休み(臨時休みなど)を表す */
+            /** @description 勤務するかどうか。falseの場合は休み(定休、臨時休みなど)を表す */
             isAvailable: boolean;
-            /** @description シフト変更の理由などの備考。特記事項がない場合はnull */
+            /** @description シフト変更や休みの理由などの備考。特記事項がない場合はnull */
             notes: string | null;
         };
+        /**
+         * @description スタッフ勤務スケジュール更新リクエスト - スタッフの勤務スケジュール全体を置き換える行の一覧。
+         *     ほかの更新リクエストと違い、指定した項目だけを変えるのではなく、一覧の全体を置き換える。空の配列を指定すると、スケジュールは空になる。
+         *     行は、毎週の7行と1年分の単日の366行を合わせた373件まで指定できる
+         */
+        "Models.StaffScheduleUpdateRequest": components["schemas"]["Models.StaffSchedule"][];
         /** @description スタッフ一覧や選択候補で利用する要約情報。 */
         "Models.StaffSummary": {
             /** @description スタッフを識別するID。 */
@@ -9305,6 +9312,8 @@ export interface components {
         "Models.StaffProfileSearchRequest.salonId": components["schemas"]["Models.SalonId"];
         /** @description 得意分野による絞り込み。specialtiesに指定した値(完全一致)を含むスタッフに一致する */
         "Models.StaffProfileSearchRequest.specialty": string;
+        /** @description この日付に適用される行だけを返す。その日付の単日の行があればその行を、なければその曜日の毎週の行を返す。どちらもなければ空配列を返す */
+        "Models.StaffScheduleSearchRequest": string;
         /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
         "Models.StaffSearchRequest.cursor": string;
         /** @description 1ページあたりの取得件数上限 (1〜100) */
@@ -25438,11 +25447,11 @@ export interface operations {
             };
         };
     };
-    StaffCrud_getAvailability: {
+    StaffSchedules_list: {
         parameters: {
-            query: {
-                /** @description 空き状況を確認する日付 */
-                date: string;
+            query?: {
+                /** @description この日付に適用される行だけを返す。その日付の単日の行があればその行を、なければその曜日の毎週の行を返す。どちらもなければ空配列を返す */
+                date?: components["parameters"]["Models.StaffScheduleSearchRequest"];
             };
             header?: never;
             path: {
@@ -25538,7 +25547,7 @@ export interface operations {
             };
         };
     };
-    StaffCrud_updateAvailability: {
+    StaffSchedules_update: {
         parameters: {
             query?: never;
             header?: never;
@@ -25550,7 +25559,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["Models.StaffSchedule"][];
+                "application/json": components["schemas"]["Models.StaffScheduleUpdateRequest"];
             };
         };
         responses: {

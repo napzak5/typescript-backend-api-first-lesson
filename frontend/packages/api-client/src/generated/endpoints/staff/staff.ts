@@ -29,19 +29,19 @@ import type {
   ModelsSalonId,
   ModelsStaffCreateRequest,
   ModelsStaffId,
-  ModelsStaffSchedule,
+  ModelsStaffScheduleUpdateRequest,
   ModelsStaffUpdateRequest,
   StaffCrudCreate201,
   StaffCrudGet200,
-  StaffCrudGetAvailability200,
-  StaffCrudGetAvailabilityParams,
   StaffCrudList200,
   StaffCrudListParams,
   StaffCrudUpdate200,
-  StaffCrudUpdateAvailability200,
   StaffProfileGet200,
   StaffProfileList200,
-  StaffProfileListParams
+  StaffProfileListParams,
+  StaffSchedulesList200,
+  StaffSchedulesListParams,
+  StaffSchedulesUpdate200
 } from '../../models';
 
 import { customInstance } from '../../../mutator';
@@ -827,53 +827,53 @@ export const useStaffCrudDelete = <TError = ModelsProblemDetails,
       > => {
       return useMutation(getStaffCrudDeleteMutationOptions(options), queryClient);
     }
-    export type staffCrudGetAvailabilityResponse200 = {
-  data: StaffCrudGetAvailability200
+    export type staffSchedulesListResponse200 = {
+  data: StaffSchedulesList200
   status: 200
 }
 
-export type staffCrudGetAvailabilityResponse400 = {
+export type staffSchedulesListResponse400 = {
   data: ModelsProblemDetails
   status: 400
 }
 
-export type staffCrudGetAvailabilityResponse401 = {
+export type staffSchedulesListResponse401 = {
   data: ModelsProblemDetails
   status: 401
 }
 
-export type staffCrudGetAvailabilityResponse403 = {
+export type staffSchedulesListResponse403 = {
   data: ModelsProblemDetails
   status: 403
 }
 
-export type staffCrudGetAvailabilityResponse404 = {
+export type staffSchedulesListResponse404 = {
   data: ModelsProblemDetails
   status: 404
 }
 
-export type staffCrudGetAvailabilityResponse429 = {
+export type staffSchedulesListResponse429 = {
   data: ModelsProblemDetails
   status: 429
 }
 
-export type staffCrudGetAvailabilityResponse500 = {
+export type staffSchedulesListResponse500 = {
   data: ModelsProblemDetails
   status: 500
 }
 
-export type staffCrudGetAvailabilityResponseSuccess = (staffCrudGetAvailabilityResponse200) & {
+export type staffSchedulesListResponseSuccess = (staffSchedulesListResponse200) & {
   headers: Headers;
 };
-export type staffCrudGetAvailabilityResponseError = (staffCrudGetAvailabilityResponse400 | staffCrudGetAvailabilityResponse401 | staffCrudGetAvailabilityResponse403 | staffCrudGetAvailabilityResponse404 | staffCrudGetAvailabilityResponse429 | staffCrudGetAvailabilityResponse500) & {
+export type staffSchedulesListResponseError = (staffSchedulesListResponse400 | staffSchedulesListResponse401 | staffSchedulesListResponse403 | staffSchedulesListResponse404 | staffSchedulesListResponse429 | staffSchedulesListResponse500) & {
   headers: Headers;
 };
 
-export type staffCrudGetAvailabilityResponse = (staffCrudGetAvailabilityResponseSuccess | staffCrudGetAvailabilityResponseError)
+export type staffSchedulesListResponse = (staffSchedulesListResponseSuccess | staffSchedulesListResponseError)
 
-export const getStaffCrudGetAvailabilityUrl = (salonId: ModelsSalonId,
+export const getStaffSchedulesListUrl = (salonId: ModelsSalonId,
     id: ModelsStaffId,
-    params: StaffCrudGetAvailabilityParams,) => {
+    params?: StaffSchedulesListParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -885,18 +885,18 @@ export const getStaffCrudGetAvailabilityUrl = (salonId: ModelsSalonId,
 
   const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/salons/${salonId}/staff/${id}/availability?${stringifiedParams}` : `/api/v1/salons/${salonId}/staff/${id}/availability`
+  return stringifiedParams.length > 0 ? `/api/v1/salons/${salonId}/staff/${id}/schedules?${stringifiedParams}` : `/api/v1/salons/${salonId}/staff/${id}/schedules`
 }
 
 /**
- * 指定日のスタッフ空き状況を取得し、予約枠の提案や調整に活用します。指定日に適用される勤務スケジュールの行を返します。その日付の単日の行があれば単日の行を、なければその曜日の毎週繰り返す行を返します。適用される行がない場合は空配列を返します。
- * @summary Get staff availability
+ * スタッフの勤務スケジュールの行を一覧取得します。毎週の行を月曜から日曜の順に、続けて単日の行を日付の古い順に返します。date を指定すると、その日付に適用される行だけ(0件か1件)を返します。行の数に上限があるため、ページネーションはありません。
+ * @summary List the schedules of a staff member
  */
-export const staffCrudGetAvailability = async (salonId: ModelsSalonId,
+export const staffSchedulesList = async (salonId: ModelsSalonId,
     id: ModelsStaffId,
-    params: StaffCrudGetAvailabilityParams, options?: RequestInit): Promise<staffCrudGetAvailabilityResponse> => {
+    params?: StaffSchedulesListParams, options?: RequestInit): Promise<staffSchedulesListResponse> => {
 
-  return customInstance<staffCrudGetAvailabilityResponse>(getStaffCrudGetAvailabilityUrl(salonId,id,params),
+  return customInstance<staffSchedulesListResponse>(getStaffSchedulesListUrl(salonId,id,params),
   {
     ...options,
     method: 'GET'
@@ -909,93 +909,93 @@ export const staffCrudGetAvailability = async (salonId: ModelsSalonId,
 
 
 
-export const getStaffCrudGetAvailabilityQueryKey = (salonId: ModelsSalonId,
+export const getStaffSchedulesListQueryKey = (salonId: ModelsSalonId,
     id: ModelsStaffId,
-    params?: StaffCrudGetAvailabilityParams,) => {
+    params?: StaffSchedulesListParams,) => {
     return [
-    `/api/v1/salons/${salonId}/staff/${id}/availability`, ...(params ? [params] : [])
+    `/api/v1/salons/${salonId}/staff/${id}/schedules`, ...(params ? [params] : [])
     ] as const;
     }
 
 
-export const getStaffCrudGetAvailabilityQueryOptions = <TData = Awaited<ReturnType<typeof staffCrudGetAvailability>>, TError = ModelsProblemDetails>(salonId: ModelsSalonId,
+export const getStaffSchedulesListQueryOptions = <TData = Awaited<ReturnType<typeof staffSchedulesList>>, TError = ModelsProblemDetails>(salonId: ModelsSalonId,
     id: ModelsStaffId,
-    params: StaffCrudGetAvailabilityParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffCrudGetAvailability>>, TError, TData>>, }
+    params?: StaffSchedulesListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffSchedulesList>>, TError, TData>>, }
 ) => {
 
 const {query: queryOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getStaffCrudGetAvailabilityQueryKey(salonId,id,params);
+  const queryKey =  queryOptions?.queryKey ?? getStaffSchedulesListQueryKey(salonId,id,params);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof staffCrudGetAvailability>>> = ({ signal }) => staffCrudGetAvailability(salonId,id,params, { signal });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof staffSchedulesList>>> = ({ signal }) => staffSchedulesList(salonId,id,params, { signal });
 
 
 
 
 
-   return  { queryKey, queryFn, enabled: salonId !== null && salonId !== undefined && id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof staffCrudGetAvailability>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+   return  { queryKey, queryFn, enabled: salonId !== null && salonId !== undefined && id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof staffSchedulesList>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
 }
 
-export type StaffCrudGetAvailabilityQueryResult = NonNullable<Awaited<ReturnType<typeof staffCrudGetAvailability>>>
-export type StaffCrudGetAvailabilityQueryError = ModelsProblemDetails
+export type StaffSchedulesListQueryResult = NonNullable<Awaited<ReturnType<typeof staffSchedulesList>>>
+export type StaffSchedulesListQueryError = ModelsProblemDetails
 
 
 /**
- * 指定日のスタッフ空き状況を取得し、予約枠の提案や調整に活用します。指定日に適用される勤務スケジュールの行を返します。その日付の単日の行があれば単日の行を、なければその曜日の毎週繰り返す行を返します。適用される行がない場合は空配列を返します。
- * @summary Get staff availability
+ * スタッフの勤務スケジュールの行を一覧取得します。毎週の行を月曜から日曜の順に、続けて単日の行を日付の古い順に返します。date を指定すると、その日付に適用される行だけ(0件か1件)を返します。行の数に上限があるため、ページネーションはありません。
+ * @summary List the schedules of a staff member
  */
-export function useStaffCrudGetAvailability<TData = Awaited<ReturnType<typeof staffCrudGetAvailability>>, TError = ModelsProblemDetails>(
+export function useStaffSchedulesList<TData = Awaited<ReturnType<typeof staffSchedulesList>>, TError = ModelsProblemDetails>(
  salonId: ModelsSalonId,
     id: ModelsStaffId,
-    params: StaffCrudGetAvailabilityParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffCrudGetAvailability>>, TError, TData>> & Pick<
+    params: undefined |  StaffSchedulesListParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffSchedulesList>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof staffCrudGetAvailability>>,
+          Awaited<ReturnType<typeof staffSchedulesList>>,
           TError,
-          Awaited<ReturnType<typeof staffCrudGetAvailability>>
+          Awaited<ReturnType<typeof staffSchedulesList>>
         > , 'initialData'
       >, }
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 指定日のスタッフ空き状況を取得し、予約枠の提案や調整に活用します。指定日に適用される勤務スケジュールの行を返します。その日付の単日の行があれば単日の行を、なければその曜日の毎週繰り返す行を返します。適用される行がない場合は空配列を返します。
- * @summary Get staff availability
+ * スタッフの勤務スケジュールの行を一覧取得します。毎週の行を月曜から日曜の順に、続けて単日の行を日付の古い順に返します。date を指定すると、その日付に適用される行だけ(0件か1件)を返します。行の数に上限があるため、ページネーションはありません。
+ * @summary List the schedules of a staff member
  */
-export function useStaffCrudGetAvailability<TData = Awaited<ReturnType<typeof staffCrudGetAvailability>>, TError = ModelsProblemDetails>(
+export function useStaffSchedulesList<TData = Awaited<ReturnType<typeof staffSchedulesList>>, TError = ModelsProblemDetails>(
  salonId: ModelsSalonId,
     id: ModelsStaffId,
-    params: StaffCrudGetAvailabilityParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffCrudGetAvailability>>, TError, TData>> & Pick<
+    params?: StaffSchedulesListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffSchedulesList>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof staffCrudGetAvailability>>,
+          Awaited<ReturnType<typeof staffSchedulesList>>,
           TError,
-          Awaited<ReturnType<typeof staffCrudGetAvailability>>
+          Awaited<ReturnType<typeof staffSchedulesList>>
         > , 'initialData'
       >, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 指定日のスタッフ空き状況を取得し、予約枠の提案や調整に活用します。指定日に適用される勤務スケジュールの行を返します。その日付の単日の行があれば単日の行を、なければその曜日の毎週繰り返す行を返します。適用される行がない場合は空配列を返します。
- * @summary Get staff availability
+ * スタッフの勤務スケジュールの行を一覧取得します。毎週の行を月曜から日曜の順に、続けて単日の行を日付の古い順に返します。date を指定すると、その日付に適用される行だけ(0件か1件)を返します。行の数に上限があるため、ページネーションはありません。
+ * @summary List the schedules of a staff member
  */
-export function useStaffCrudGetAvailability<TData = Awaited<ReturnType<typeof staffCrudGetAvailability>>, TError = ModelsProblemDetails>(
+export function useStaffSchedulesList<TData = Awaited<ReturnType<typeof staffSchedulesList>>, TError = ModelsProblemDetails>(
  salonId: ModelsSalonId,
     id: ModelsStaffId,
-    params: StaffCrudGetAvailabilityParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffCrudGetAvailability>>, TError, TData>>, }
+    params?: StaffSchedulesListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffSchedulesList>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 指定日のスタッフ空き状況を取得し、予約枠の提案や調整に活用します。指定日に適用される勤務スケジュールの行を返します。その日付の単日の行があれば単日の行を、なければその曜日の毎週繰り返す行を返します。適用される行がない場合は空配列を返します。
- * @summary Get staff availability
+ * スタッフの勤務スケジュールの行を一覧取得します。毎週の行を月曜から日曜の順に、続けて単日の行を日付の古い順に返します。date を指定すると、その日付に適用される行だけ(0件か1件)を返します。行の数に上限があるため、ページネーションはありません。
+ * @summary List the schedules of a staff member
  */
-export function useStaffCrudGetAvailability<TData = Awaited<ReturnType<typeof staffCrudGetAvailability>>, TError = ModelsProblemDetails>(
+export function useStaffSchedulesList<TData = Awaited<ReturnType<typeof staffSchedulesList>>, TError = ModelsProblemDetails>(
  salonId: ModelsSalonId,
     id: ModelsStaffId,
-    params: StaffCrudGetAvailabilityParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffCrudGetAvailability>>, TError, TData>>, }
+    params?: StaffSchedulesListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof staffSchedulesList>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const queryOptions = getStaffCrudGetAvailabilityQueryOptions(salonId,id,params,options)
+  const queryOptions = getStaffSchedulesListQueryOptions(salonId,id,params,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
@@ -1007,76 +1007,76 @@ export function useStaffCrudGetAvailability<TData = Awaited<ReturnType<typeof st
 
 
 
-export type staffCrudUpdateAvailabilityResponse200 = {
-  data: StaffCrudUpdateAvailability200
+export type staffSchedulesUpdateResponse200 = {
+  data: StaffSchedulesUpdate200
   status: 200
 }
 
-export type staffCrudUpdateAvailabilityResponse400 = {
+export type staffSchedulesUpdateResponse400 = {
   data: ModelsProblemDetails
   status: 400
 }
 
-export type staffCrudUpdateAvailabilityResponse401 = {
+export type staffSchedulesUpdateResponse401 = {
   data: ModelsProblemDetails
   status: 401
 }
 
-export type staffCrudUpdateAvailabilityResponse403 = {
+export type staffSchedulesUpdateResponse403 = {
   data: ModelsProblemDetails
   status: 403
 }
 
-export type staffCrudUpdateAvailabilityResponse404 = {
+export type staffSchedulesUpdateResponse404 = {
   data: ModelsProblemDetails
   status: 404
 }
 
-export type staffCrudUpdateAvailabilityResponse413 = {
+export type staffSchedulesUpdateResponse413 = {
   data: ModelsProblemDetails
   status: 413
 }
 
-export type staffCrudUpdateAvailabilityResponse415 = {
+export type staffSchedulesUpdateResponse415 = {
   data: ModelsProblemDetails
   status: 415
 }
 
-export type staffCrudUpdateAvailabilityResponse429 = {
+export type staffSchedulesUpdateResponse429 = {
   data: ModelsProblemDetails
   status: 429
 }
 
-export type staffCrudUpdateAvailabilityResponse500 = {
+export type staffSchedulesUpdateResponse500 = {
   data: ModelsProblemDetails
   status: 500
 }
 
-export type staffCrudUpdateAvailabilityResponseSuccess = (staffCrudUpdateAvailabilityResponse200) & {
+export type staffSchedulesUpdateResponseSuccess = (staffSchedulesUpdateResponse200) & {
   headers: Headers;
 };
-export type staffCrudUpdateAvailabilityResponseError = (staffCrudUpdateAvailabilityResponse400 | staffCrudUpdateAvailabilityResponse401 | staffCrudUpdateAvailabilityResponse403 | staffCrudUpdateAvailabilityResponse404 | staffCrudUpdateAvailabilityResponse413 | staffCrudUpdateAvailabilityResponse415 | staffCrudUpdateAvailabilityResponse429 | staffCrudUpdateAvailabilityResponse500) & {
+export type staffSchedulesUpdateResponseError = (staffSchedulesUpdateResponse400 | staffSchedulesUpdateResponse401 | staffSchedulesUpdateResponse403 | staffSchedulesUpdateResponse404 | staffSchedulesUpdateResponse413 | staffSchedulesUpdateResponse415 | staffSchedulesUpdateResponse429 | staffSchedulesUpdateResponse500) & {
   headers: Headers;
 };
 
-export type staffCrudUpdateAvailabilityResponse = (staffCrudUpdateAvailabilityResponseSuccess | staffCrudUpdateAvailabilityResponseError)
+export type staffSchedulesUpdateResponse = (staffSchedulesUpdateResponseSuccess | staffSchedulesUpdateResponseError)
 
-export const getStaffCrudUpdateAvailabilityUrl = (salonId: ModelsSalonId,
+export const getStaffSchedulesUpdateUrl = (salonId: ModelsSalonId,
     id: ModelsStaffId,) => {
 
 
 
 
-  return `/api/v1/salons/${salonId}/staff/${id}/availability`
+  return `/api/v1/salons/${salonId}/staff/${id}/schedules`
 }
 
 /**
- * スタッフの稼働予定を更新し、シフト変更や臨時休みを反映します。スタッフの勤務スケジュール全体を、指定した行の一覧で置き換えます。
- * @summary Update staff availability
+ * スタッフの勤務スケジュール全体を、指定した行の一覧で置き換えます。空の配列を指定すると、スケジュールは空になります。同じ曜日の毎週の行、同じ日付の単日の行は、それぞれ1つまでです。1つでも規則に反する行があれば、何も変更せずに400を返します。レスポンスは、保存後の行を一覧と同じ順で返します。
+ * @summary Replace the schedules of a staff member
  */
-export const staffCrudUpdateAvailability = async (salonId: ModelsSalonId,
+export const staffSchedulesUpdate = async (salonId: ModelsSalonId,
     id: ModelsStaffId,
-    modelsStaffSchedule: ModelsStaffSchedule[], options?: RequestInit): Promise<staffCrudUpdateAvailabilityResponse> => {
+    modelsStaffScheduleUpdateRequest: ModelsStaffScheduleUpdateRequest, options?: RequestInit): Promise<staffSchedulesUpdateResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -1092,12 +1092,12 @@ export const staffCrudUpdateAvailability = async (salonId: ModelsSalonId,
     }
     return headers;
   };
-return customInstance<staffCrudUpdateAvailabilityResponse>(getStaffCrudUpdateAvailabilityUrl(salonId,id),
+return customInstance<staffSchedulesUpdateResponse>(getStaffSchedulesUpdateUrl(salonId,id),
   {
     ...options,
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(modelsStaffSchedule)
+    body: JSON.stringify(modelsStaffScheduleUpdateRequest)
   }
 );}
 
@@ -1105,13 +1105,13 @@ return customInstance<staffCrudUpdateAvailabilityResponse>(getStaffCrudUpdateAva
 
 
 
-export const getStaffCrudUpdateAvailabilityMutationKey = () => ['staffCrudUpdateAvailability'] as const;
+export const getStaffSchedulesUpdateMutationKey = () => ['staffSchedulesUpdate'] as const;
 
-export const getStaffCrudUpdateAvailabilityMutationOptions = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffCrudUpdateAvailability>>, TError,StaffCrudUpdateAvailabilityMutationVariables, TContext>, }
-): UseMutationOptions<Awaited<ReturnType<typeof staffCrudUpdateAvailability>>, TError,StaffCrudUpdateAvailabilityMutationVariables, TContext> => {
+export const getStaffSchedulesUpdateMutationOptions = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffSchedulesUpdate>>, TError,StaffSchedulesUpdateMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof staffSchedulesUpdate>>, TError,StaffSchedulesUpdateMutationVariables, TContext> => {
 
-const mutationKey = getStaffCrudUpdateAvailabilityMutationKey();
+const mutationKey = getStaffSchedulesUpdateMutationKey();
 const {mutation: mutationOptions} = options ?
       options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
       options
@@ -1121,10 +1121,10 @@ const {mutation: mutationOptions} = options ?
 
 
 
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof staffCrudUpdateAvailability>>, StaffCrudUpdateAvailabilityMutationVariables> = (props) => {
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof staffSchedulesUpdate>>, StaffSchedulesUpdateMutationVariables> = (props) => {
           const {salonId,id,data} = props ?? {};
 
-          return  staffCrudUpdateAvailability(salonId,id,data,)
+          return  staffSchedulesUpdate(salonId,id,data,)
         }
 
 
@@ -1134,24 +1134,24 @@ const {mutation: mutationOptions} = options ?
 
   return  { mutationFn, ...mutationOptions }}
 
-    export type StaffCrudUpdateAvailabilityMutationResult = NonNullable<Awaited<ReturnType<typeof staffCrudUpdateAvailability>>>
-    export type StaffCrudUpdateAvailabilityMutationBody = ModelsStaffSchedule[]
-    export type StaffCrudUpdateAvailabilityMutationError = ModelsProblemDetails
-    export type StaffCrudUpdateAvailabilityMutationVariables = {salonId: ModelsSalonId;id: ModelsStaffId;data: ModelsStaffSchedule[]}
+    export type StaffSchedulesUpdateMutationResult = NonNullable<Awaited<ReturnType<typeof staffSchedulesUpdate>>>
+    export type StaffSchedulesUpdateMutationBody = ModelsStaffScheduleUpdateRequest
+    export type StaffSchedulesUpdateMutationError = ModelsProblemDetails
+    export type StaffSchedulesUpdateMutationVariables = {salonId: ModelsSalonId;id: ModelsStaffId;data: ModelsStaffScheduleUpdateRequest}
 
     /**
- * スタッフの稼働予定を更新し、シフト変更や臨時休みを反映します。スタッフの勤務スケジュール全体を、指定した行の一覧で置き換えます。
- * @summary Update staff availability
+ * スタッフの勤務スケジュール全体を、指定した行の一覧で置き換えます。空の配列を指定すると、スケジュールは空になります。同じ曜日の毎週の行、同じ日付の単日の行は、それぞれ1つまでです。1つでも規則に反する行があれば、何も変更せずに400を返します。レスポンスは、保存後の行を一覧と同じ順で返します。
+ * @summary Replace the schedules of a staff member
  */
-export const useStaffCrudUpdateAvailability = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffCrudUpdateAvailability>>, TError,StaffCrudUpdateAvailabilityMutationVariables, TContext>, }
+export const useStaffSchedulesUpdate = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof staffSchedulesUpdate>>, TError,StaffSchedulesUpdateMutationVariables, TContext>, }
  , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof staffCrudUpdateAvailability>>,
+        Awaited<ReturnType<typeof staffSchedulesUpdate>>,
         TError,
-        StaffCrudUpdateAvailabilityMutationVariables,
+        StaffSchedulesUpdateMutationVariables,
         TContext
       > => {
-      return useMutation(getStaffCrudUpdateAvailabilityMutationOptions(options), queryClient);
+      return useMutation(getStaffSchedulesUpdateMutationOptions(options), queryClient);
     }
     export type staffProfileListResponse200 = {
   data: StaffProfileList200

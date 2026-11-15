@@ -7,13 +7,13 @@
  */
 import type { ModelsResponseMeta } from './modelsResponseMeta';
 import type { ModelsStaffSchedule } from './modelsStaffSchedule';
-import type { StaffCrudGetAvailability200Links } from './staffCrudGetAvailability200Links';
+import type { StaffSchedulesList200Links } from './staffSchedulesList200Links';
 
 /**
  * API 成功レスポンスの共通ラッパーモデル。
  * サロン検索や予約登録など多様なユースケースで応答形式を統一し、クライアント実装を簡潔に保つ。
  */
-export type StaffCrudGetAvailability200 = {
+export type StaffSchedulesList200 = {
   /** レスポンスの主体となるビジネスデータ。 */
   data: ModelsStaffSchedule[];
   /**
@@ -25,5 +25,5 @@ export type StaffCrudGetAvailability200 = {
      * 関連リソースや次アクションへのリンク情報。リンクがない場合はnull
      * @nullable
      */
-  links: StaffCrudGetAvailability200Links;
+  links: StaffSchedulesList200Links;
 };

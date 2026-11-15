@@ -6,38 +6,56 @@ using BeautySalon.Models;
 
 namespace BeautySalon.Models {
   @doc("""
-    スタッフ勤務スケジュール - staff_schedules テーブルの1行。勤務時間と休憩時間を表し、予約可能時間の算出に利用する。
-    毎週繰り返す行(isRecurring が true)は dayOfWeek の曜日に、単日の行(isRecurring が false)は date の日付だけに適用する。
-    同じ日付に単日の行がある場合は、その日付については毎週繰り返す行より単日の行を優先する。
-    プロパティ名と null 許可は DB カラムと一致させている
+    スタッフ勤務スケジュール - staff_schedules テーブルの1行。スタッフがいつ勤務するかを表し、予約可能時間の算出に利用する。
+    毎週の行(isRecurring が true)は dayOfWeek の曜日に毎週、単日の行(isRecurring が false)は date の日付だけに適用する。
+    1人のスタッフが持てるのは、毎週の行が曜日ごとに1つまで、単日の行が日付ごとに1つまで。ある日付に単日の行がある場合は、その日付には単日の行だけを適用する。
+    勤務する行(isAvailable が true)は勤務時刻を持ち、休みの行(isAvailable が false)は時刻を持たない。
+    リクエストとレスポンスの両方に使う。プロパティ名と null 許可は DB カラムと一致させている
     """)
   model StaffSchedule {
-    @doc("毎週繰り返す行が適用される曜日。単日の行の場合はnull")
+    @doc("毎週の行が適用される曜日。毎週の行では必須。単日の行ではnull")
     dayOfWeek: DayOfWeekType | null;
 
-    @doc("単日の行が適用される日付。毎週繰り返す行の場合はnull")
+    @doc("単日の行が適用される日付。単日の行では必須。毎週の行ではnull")
     date: plainDate | null;
 
-    @doc("勤務開始時刻。HH:mm:ss形式で返す（指定時はHH:mmも可）。endTimeより前の時刻を指定する")
-    startTime: string;
+    @doc("勤務開始時刻。HH:mm:ss形式で返す（指定時はHH:mmも可）。勤務する行では必須で、endTimeより前の時刻を指定する。休みの行ではnull")
+    startTime: string | null;
 
-    @doc("勤務終了時刻。HH:mm:ss形式で返す（指定時はHH:mmも可）")
-    endTime: string;
+    @doc("勤務終了時刻。HH:mm:ss形式で返す（指定時はHH:mmも可）。勤務する行では必須。休みの行ではnull")
+    endTime: string | null;
 
-    @doc("休憩開始時刻。HH:mm:ss形式で返す（指定時はHH:mmも可）。breakEndTimeと組で、勤務時間内の時刻を指定する。休憩がない場合はnull")
+    @doc("休憩開始時刻。HH:mm:ss形式で返す（指定時はHH:mmも可）。breakEndTimeと組で、startTimeより後の時刻を指定する。休憩がない場合と、休みの行ではnull")
     breakStartTime: string | null;
 
-    @doc("休憩終了時刻。HH:mm:ss形式で返す（指定時はHH:mmも可）。breakStartTimeと組で指定する。休憩がない場合はnull")
+    @doc("休憩終了時刻。HH:mm:ss形式で返す（指定時はHH:mmも可）。breakStartTimeと組で、breakStartTimeより後、endTimeより前の時刻を指定する。休憩がない場合と、休みの行ではnull")
     breakEndTime: string | null;
 
-    @doc("毎週 dayOfWeek の曜日に繰り返す行かどうか。falseの場合は date の日付だけに適用する")
+    @doc("毎週の行かどうか。trueの場合は dayOfWeek の曜日に毎週、falseの場合は date の日付だけに適用する")
     isRecurring: boolean;
 
-    @doc("勤務可能かどうか。falseの場合は休み(臨時休みなど)を表す")
+    @doc("勤務するかどうか。falseの場合は休み(定休、臨時休みなど)を表す")
     isAvailable: boolean;
 
-    @doc("シフト変更の理由などの備考。特記事項がない場合はnull")
+    @doc("シフト変更や休みの理由などの備考。特記事項がない場合はnull")
     notes: string | null;
+  }
+
+  @doc("""
+    スタッフ勤務スケジュール更新リクエスト - スタッフの勤務スケジュール全体を置き換える行の一覧。
+    ほかの更新リクエストと違い、指定した項目だけを変えるのではなく、一覧の全体を置き換える。空の配列を指定すると、スケジュールは空になる。
+    行は、毎週の7行と1年分の単日の366行を合わせた373件まで指定できる
+    """)
+  @maxItems(373)
+  model StaffScheduleUpdateRequest is StaffSchedule[];
+
+  @doc("""
+    スタッフ勤務スケジュール一覧リクエスト - 日付を指定すると、その日付に適用される行だけを返す
+    """)
+  model StaffScheduleSearchRequest {
+    @query
+    @doc("この日付に適用される行だけを返す。その日付の単日の行があればその行を、なければその曜日の毎週の行を返す。どちらもなければ空配列を返す")
+    date?: plainDate;
   }
 
   @doc("""

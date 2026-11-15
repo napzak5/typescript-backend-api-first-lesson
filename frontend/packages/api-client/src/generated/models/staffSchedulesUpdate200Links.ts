@@ -6,7 +6,8 @@
  * OpenAPI spec version: 2.0
  */
 
-export type StaffCrudGetAvailabilityParams = {
-  /** 空き状況を確認する日付 */
-  date: string;
-};
+/**
+ * 関連リソースや次アクションへのリンク情報。リンクがない場合はnull
+ * @nullable
+ */
+export type StaffSchedulesUpdate200Links = {[key: string]: string} | null;
