@@ -2577,6 +2577,7 @@ describe('Booking changes API', () => {
           duration: 60,
           price: 6600,
           finalPrice: 6600,
+          taxIncluded: true,
           sortOrder,
         })
       }
