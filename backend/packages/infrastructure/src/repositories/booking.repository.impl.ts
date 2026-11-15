@@ -3,32 +3,43 @@ import {
   bookingStatusHistories,
   bookings,
   customers,
+  sales,
   salons,
   services,
   staff,
+  treatmentRecords,
 } from '@beauty-salon-backend/database'
 import {
   type BookingAction,
   type BookingCreateRequest,
   type BookingCreation,
+  type BookingDeletion,
   type BookingId,
   type BookingList,
   type BookingListCriteria,
   type BookingOrigin,
   type BookingReach,
+  type BookingReference,
   type BookingReferences,
+  type BookingReschedule,
+  type BookingRescheduleRequest,
   type BookingStatusChange,
   type BookingWithServices,
   type DbBooking,
+  type DbBookingNotes,
   type DbBookingService,
   type DomainError,
   type IBookingRepository,
+  isCounted,
   isOccupiedBeyondCapacity,
+  moveBooking,
   occupancyWindowOf,
   planBooking,
+  planReschedule,
   planStatusChange,
   RELEASING_STATUSES,
   type StaffDemand,
+  staffOfMoved,
   type UserId,
 } from '@beauty-salon-backend/domain'
 import type { Result } from '@beauty-salon-backend/utility'
@@ -40,6 +51,7 @@ import {
   exists,
   inArray,
   isNull,
+  ne,
   notInArray,
   or,
   type SQL,
@@ -161,11 +173,13 @@ const lockedReferencesOf = async (
 /**
  * The staff members among those a booking wants who are occupied at a time
  * it wants them: the service lines other bookings have for a staff member
- * around those times are read, and the rule decides.
+ * around those times are read, and the rule decides. A booking that is
+ * moved names itself: the lines it has where it was are not in its way.
  */
 const occupiedAmong = async (
   tx: DatabaseExecutor,
   demands: readonly StaffDemand[],
+  moved: BookingId | null,
 ): Promise<string[]> => {
   const occupied: string[] = []
   for (const { staff: member, times } of demands) {
@@ -187,6 +201,7 @@ const occupiedAmong = async (
           sql`${bookingServices.endTime} > ${window.from.toISOString()}::timestamptz`,
           sql`${bookingServices.startTime} < ${window.until.toISOString()}::timestamptz`,
           notInArray(bookings.status, [...RELEASING_STATUSES]),
+          moved === null ? undefined : ne(bookingServices.bookingId, moved),
         ),
       )
 
@@ -233,6 +248,17 @@ const gathered = (
           ]
     },
   )
+
+/** The service lines of a booking as they are now, in their order. */
+const linesOf = (
+  tx: DatabaseExecutor,
+  id: BookingId,
+): Promise<DbBookingService[]> =>
+  tx
+    .select()
+    .from(bookingServices)
+    .where(eq(bookingServices.bookingId, id))
+    .orderBy(asc(bookingServices.sortOrder))
 
 /**
  * Sets what a customer has of visits, no-shows and cancellations to what
@@ -315,7 +341,7 @@ export class BookingRepository implements IBookingRepository {
           if (plan.type !== 'planned') {
             return plan
           }
-          const staffIds = await occupiedAmong(tx, plan.demands)
+          const staffIds = await occupiedAmong(tx, plan.demands, null)
           if (staffIds.length > 0) {
             return { type: 'staffOccupied', staffIds }
           }
@@ -462,16 +488,224 @@ export class BookingRepository implements IBookingRepository {
             await countBookingsOf(tx, held.customerId)
           }
 
-          const services = await tx
-            .select()
-            .from(bookingServices)
-            .where(eq(bookingServices.bookingId, id))
-            .orderBy(asc(bookingServices.sortOrder))
-
-          return { type: 'changed', booking: { booking, services } }
+          return {
+            type: 'changed',
+            booking: { booking, services: await linesOf(tx, id) },
+          }
         },
         // A change that waited for another one on the same booking reads
         // the status the other one committed.
+        { isolationLevel: 'read committed' },
+      ),
+    )
+  }
+
+  async update(
+    id: BookingId,
+    reach: BookingReach,
+    notes: DbBookingNotes,
+  ): Promise<Result<BookingWithServices | null, DomainError>> {
+    return attempt('Failed to update booking', () =>
+      this.db.transaction(
+        async (tx): Promise<BookingWithServices | null> => {
+          // The booking is held before it is written, like by every other
+          // change of it: the time of the change is then read after
+          // whatever it waited for.
+          const [held] = await tx
+            .select({ id: bookings.id })
+            .from(bookings)
+            .where(and(eq(bookings.id, id), within(reach)))
+            .for('update')
+          if (held === undefined) {
+            return null
+          }
+
+          const [booking] = await tx
+            .update(bookings)
+            .set({ ...notes, updatedAt: CLOCK })
+            .where(eq(bookings.id, id))
+            .returning()
+
+          return booking === undefined
+            ? null
+            : { booking, services: await linesOf(tx, id) }
+        },
+        { isolationLevel: 'read committed' },
+      ),
+    )
+  }
+
+  async reschedule(
+    id: BookingId,
+    reach: BookingReach,
+    request: BookingRescheduleRequest,
+  ): Promise<Result<BookingReschedule, DomainError>> {
+    return attempt('Failed to reschedule booking', () =>
+      this.db.transaction(
+        async (tx): Promise<BookingReschedule> => {
+          const [held] = await tx
+            .select({
+              salonId: bookings.salonId,
+              status: bookings.status,
+              staffId: bookings.staffId,
+              startTime: millisecondsOf(bookings.startTime),
+              endTime: millisecondsOf(bookings.endTime),
+            })
+            .from(bookings)
+            .where(and(eq(bookings.id, id), within(reach)))
+            .for('update')
+          if (held === undefined) {
+            return { type: 'notFound' }
+          }
+          const lines = await tx
+            .select({
+              id: bookingServices.id,
+              staffId: bookingServices.staffId,
+              startTime: millisecondsOf(bookingServices.startTime),
+              endTime: millisecondsOf(bookingServices.endTime),
+            })
+            .from(bookingServices)
+            .where(eq(bookingServices.bookingId, id))
+
+          const move = moveBooking(
+            {
+              status: held.status,
+              staffId: held.staffId,
+              startTime: new Date(held.startTime),
+              endTime: new Date(held.endTime),
+              services: lines.map((line) => ({
+                id: line.id,
+                staffId: line.staffId,
+                startTime: new Date(line.startTime),
+                endTime: new Date(line.endTime),
+              })),
+            },
+            request,
+          )
+          if (move.type !== 'moved') {
+            return move
+          }
+
+          // As for a new booking: the time zone of the salon does not
+          // change while the day of the visit is told by it, and the
+          // bookings of a staff member are written one after the other.
+          const [salon] = await tx
+            .select({ timezone: salons.timezone })
+            .from(salons)
+            .where(eq(salons.id, held.salonId))
+            .for('share')
+          if (salon === undefined) {
+            return { type: 'notFound' }
+          }
+          const members = await tx
+            .select({
+              id: staff.id,
+              bufferTimeBefore: staff.bufferTimeBefore,
+              bufferTimeAfter: staff.bufferTimeAfter,
+              maxConcurrentBookings: staff.maxConcurrentBookings,
+              isDeleted: sql<boolean>`${staff.deletedAt} is not null`,
+            })
+            .from(staff)
+            .where(
+              and(
+                inArray(staff.id, staffOfMoved(move.booking)),
+                eq(staff.salonId, held.salonId),
+              ),
+            )
+            .orderBy(asc(staff.id))
+            .for('update')
+
+          const plan = planReschedule(move.booking, {
+            timezone: salon.timezone,
+            staff: members,
+          })
+          if (plan.type !== 'planned') {
+            return plan
+          }
+          const staffIds = await occupiedAmong(tx, plan.demands, id)
+          if (staffIds.length > 0) {
+            return { type: 'staffOccupied', staffIds }
+          }
+
+          const { write } = plan
+          const [booking] = await tx
+            .update(bookings)
+            .set({ ...write.booking, updatedAt: CLOCK })
+            .where(eq(bookings.id, id))
+            .returning()
+          if (booking === undefined) {
+            return { type: 'notFound' }
+          }
+          for (const { id: lineId, ...line } of write.services) {
+            await tx
+              .update(bookingServices)
+              .set({ ...line, updatedAt: CLOCK })
+              .where(eq(bookingServices.id, lineId))
+          }
+
+          return {
+            type: 'rescheduled',
+            booking: { booking, services: await linesOf(tx, id) },
+          }
+        },
+        // A move that waited for a staff member sees the booking it
+        // waited for, as a new booking does.
+        { isolationLevel: 'read committed' },
+      ),
+    )
+  }
+
+  async delete(
+    id: BookingId,
+    reach: BookingReach,
+  ): Promise<Result<BookingDeletion, DomainError>> {
+    return attempt('Failed to delete booking', () =>
+      this.db.transaction(
+        async (tx): Promise<BookingDeletion> => {
+          // A sale or a treatment record that is being written for the
+          // booking holds it as well: this waits for it and then finds it.
+          const [held] = await tx
+            .select({
+              customerId: bookings.customerId,
+              status: bookings.status,
+            })
+            .from(bookings)
+            .where(and(eq(bookings.id, id), within(reach)))
+            .for('update')
+          if (held === undefined) {
+            return { type: 'notFound' }
+          }
+
+          const [sale] = await tx
+            .select({ id: sales.id })
+            .from(sales)
+            .where(eq(sales.bookingId, id))
+            .limit(1)
+          const [treatmentRecord] = await tx
+            .select({ id: treatmentRecords.id })
+            .from(treatmentRecords)
+            .where(eq(treatmentRecords.bookingId, id))
+            .limit(1)
+          const by: BookingReference[] = []
+          if (sale !== undefined) {
+            by.push('sale')
+          }
+          if (treatmentRecord !== undefined) {
+            by.push('treatmentRecord')
+          }
+          if (by.length > 0) {
+            return { type: 'referredTo', by }
+          }
+
+          // The service lines, the status history and the review go with
+          // the booking: their foreign keys cascade.
+          await tx.delete(bookings).where(eq(bookings.id, id))
+          if (isCounted(held.status)) {
+            await countBookingsOf(tx, held.customerId)
+          }
+
+          return { type: 'deleted' }
+        },
         { isolationLevel: 'read committed' },
       ),
     )

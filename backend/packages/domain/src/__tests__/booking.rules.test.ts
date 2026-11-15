@@ -8,6 +8,7 @@ import {
 } from '../business-logic/booking'
 import {
   bookingReachOf,
+  bookingRemovalReachOf,
   isWithin,
 } from '../business-logic/booking/_shared/authorization'
 import type { Actor } from '../models/auth'
@@ -441,6 +442,39 @@ describe('bookingReachOf', () => {
 
   it.each(reachingNone)('lets %s reach none', (_case, actor) => {
     expect(bookingReachOf(actor)).toBeNull()
+  })
+})
+
+describe('bookingRemovalReachOf', () => {
+  it('lets an admin remove the bookings of every salon', () => {
+    expect(bookingRemovalReachOf(actors.admin)).toEqual({ type: 'everySalon' })
+  })
+
+  const removing: ('owner' | 'manager')[] = ['owner', 'manager']
+
+  it.each(removing)(
+    'lets the %s of a salon remove the bookings of that salon',
+    (role) => {
+      expect(bookingRemovalReachOf(actors.ofSalon(role))).toEqual({
+        type: 'salon',
+        salonId: SALON_ID,
+      })
+      expect(
+        bookingRemovalReachOf(actors.ofSalon(role, OTHER_SALON_ID)),
+      ).toEqual({ type: 'salon', salonId: OTHER_SALON_ID })
+    },
+  )
+
+  const removingNone: [string, Actor][] = [
+    ['the staff of a salon, who keep its ledger', actors.ofSalon('staff')],
+    ['the staff of another salon', actors.ofSalon('staff', OTHER_SALON_ID)],
+    ['a customer', actors.customer],
+    ['a customer without a profile', actors.customerWithoutProfile],
+    ['an account of a salon that reaches no salon', actors.withoutScope],
+  ]
+
+  it.each(removingNone)('lets %s remove none', (_case, actor) => {
+    expect(bookingRemovalReachOf(actor)).toBeNull()
   })
 })
 

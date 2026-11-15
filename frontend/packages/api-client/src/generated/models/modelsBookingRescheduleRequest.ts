@@ -11,7 +11,7 @@ import type { ModelsStaffId } from './modelsStaffId';
  * 予約日時変更リクエスト - 変更後の開始日時と担当スタッフを受け取る。キーは必須
  */
 export interface ModelsBookingRescheduleRequest {
-  /** 変更後の予約開始日時 (UTC) */
+  /** 変更後の予約開始日時 (UTC)。分単位で指定する(秒と小数は0) */
   startTime: string;
   /** 変更後の担当スタッフのID。予約と同じサロンのスタッフを指定する。担当を変えない場合は現在の担当スタッフのIDを指定する */
   staffId: ModelsStaffId;

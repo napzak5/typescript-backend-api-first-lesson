@@ -3,7 +3,9 @@ import {
   bookingCancelRequestSchema,
   bookingCompleteRequestSchema,
   bookingCreateRequestSchema,
+  bookingRescheduleRequestSchema,
   bookingSearchRequestSchema,
+  bookingUpdateRequestSchema,
 } from '../schemas/booking.schema'
 import { parseWith } from '../shared'
 import { CUSTOMER_ID } from './auth-fixtures'
@@ -29,6 +31,18 @@ const parseCreate = (input: unknown) =>
 
 const rulesOfCreate = (input: unknown): string[] =>
   rulesBrokenBy(bookingCreateRequestSchema, input)
+
+const parseUpdate = (input: unknown) =>
+  parseWith(bookingUpdateRequestSchema, input, 'Invalid')
+
+const rulesOfUpdate = (input: unknown): string[] =>
+  rulesBrokenBy(bookingUpdateRequestSchema, input)
+
+const parseReschedule = (input: unknown) =>
+  parseWith(bookingRescheduleRequestSchema, input, 'Invalid')
+
+const rulesOfReschedule = (input: unknown): string[] =>
+  rulesBrokenBy(bookingRescheduleRequestSchema, input)
 
 const parseCancel = (input: unknown) =>
   parseWith(bookingCancelRequestSchema, input, 'Invalid')
@@ -390,6 +404,314 @@ describe('bookingCreateRequestSchema', () => {
     ['null', null],
   ])('refuses %s for a request', (_case, input) => {
     expect(rulesOfCreate(input)).toEqual([':invalid_type'])
+  })
+})
+
+describe('bookingUpdateRequestSchema', () => {
+  const noted = {
+    depositAmount: 3000,
+    customerRequest: '短めに',
+    internalNotes: 'お子様連れ',
+    source: 'web',
+  }
+
+  it('accepts every property at once and returns them as they were written', () => {
+    const request = { ...noted, customerRequest: '  短めに  ' }
+
+    expect(parseUpdate(request)).toStrictEqual({
+      type: 'success',
+      data: request,
+    })
+  })
+
+  it.each(Object.entries(noted))(
+    'accepts %s alone and returns no other property',
+    (property, value) => {
+      expect(parseUpdate({ [property]: value })).toStrictEqual({
+        type: 'success',
+        data: { [property]: value },
+      })
+    },
+  )
+
+  it.each(Object.keys(noted))(
+    'accepts null for %s, which empties it',
+    (property) => {
+      expect(parseUpdate({ [property]: null })).toStrictEqual({
+        type: 'success',
+        data: { [property]: null },
+      })
+    },
+  )
+
+  it.each(Object.keys(noted))(
+    'refuses %s that is stated as undefined: a property is there with a value or it is not there',
+    (property) => {
+      expect(rulesOfUpdate({ ...noted, [property]: undefined })).toEqual([
+        `${property}:invalid_type`,
+      ])
+    },
+  )
+
+  it('refuses a request that states nothing, with one error for the request as a whole', () => {
+    expect(rulesOfUpdate({})).toEqual([':custom'])
+    expect(parseUpdate({})).toMatchObject({
+      type: 'error',
+      error: {
+        issues: [{ message: 'At least one property must be specified' }],
+      },
+    })
+  })
+
+  it.each([
+    ['nothing', 0],
+    ['the largest amount of the column', 2_147_483_647],
+  ])('accepts a deposit of %s', (_case, depositAmount) => {
+    expect(parseUpdate({ depositAmount }).type).toBe('success')
+  })
+
+  it.each([
+    ['a negative amount', { depositAmount: -1 }, 'depositAmount:too_small'],
+    [
+      'a fraction of a yen',
+      { depositAmount: 1000.5 },
+      'depositAmount:invalid_type',
+    ],
+    [
+      'more than the column holds',
+      { depositAmount: 2_147_483_648 },
+      'depositAmount:too_big',
+    ],
+    [
+      'an amount as text',
+      { depositAmount: '1000' },
+      'depositAmount:invalid_type',
+    ],
+    [
+      'a request of the customer that says nothing',
+      { customerRequest: '' },
+      'customerRequest:invalid_format',
+    ],
+    [
+      'notes that are spaces',
+      { internalNotes: ' \t\n' },
+      'internalNotes:invalid_format',
+    ],
+    ['a source that says nothing', { source: '' }, 'source:invalid_format'],
+    ['a source of 51 characters', { source: 'a'.repeat(51) }, 'source:too_big'],
+    [
+      'notes that are a number',
+      { internalNotes: 1 },
+      'internalNotes:invalid_type',
+    ],
+  ])('refuses %s, as a create request does', (_case, change, rule) => {
+    expect(rulesOfUpdate(change)).toEqual([rule])
+  })
+
+  it('keeps the source within the 50 characters of its column, and sets no limit to the notes', () => {
+    expect(parseUpdate({ source: 'a'.repeat(50) }).type).toBe('success')
+    expect(
+      parseUpdate({
+        customerRequest: 'x'.repeat(10_000),
+        internalNotes: 'x'.repeat(10_000),
+      }).type,
+    ).toBe('success')
+  })
+
+  it.each([
+    ['the status, which the actions change', 'status', 'confirmed'],
+    [
+      'the time, which a reschedule changes',
+      'startTime',
+      '2026-11-21T05:00:00Z',
+    ],
+    ['the staff member, whom a reschedule changes', 'staffId', STAFF_MEMBER_ID],
+    ['the salon', 'salonId', SALON_ID],
+    ['the customer', 'customerId', CUSTOMER_ID],
+    ['the service lines', 'services', []],
+    ['the booking number', 'bookingNumber', 'BK-0000-0001'],
+    ['the total', 'totalAmount', 0],
+    ['the fee of a cancellation', 'cancellationFee', 500],
+    ['the points', 'pointsUsed', 10],
+    ['the ID', 'id', BOOKING_ID],
+  ])('refuses %s', (_case, property, value) => {
+    expect(rulesOfUpdate({ ...noted, [property]: value })).toEqual([
+      `${property}:unrecognized_keys`,
+    ])
+  })
+
+  it('reports an unknown property as such, not as a request that states nothing', () => {
+    expect(rulesOfUpdate({ status: 'confirmed' })).toEqual([
+      'status:unrecognized_keys',
+    ])
+  })
+
+  it('reports every broken rule at once', () => {
+    expect(
+      rulesOfUpdate({
+        depositAmount: -1,
+        customerRequest: '',
+        internalNotes: 3,
+        source: 'a'.repeat(51),
+        status: 'confirmed',
+      }).toSorted(),
+    ).toEqual([
+      'customerRequest:invalid_format',
+      'depositAmount:too_small',
+      'internalNotes:invalid_type',
+      'source:too_big',
+      'status:unrecognized_keys',
+    ])
+  })
+
+  it.each([
+    ['a list', [noted]],
+    ['a text', 'booking'],
+    ['null', null],
+    ['nothing', undefined],
+  ])('refuses %s for a request', (_case, input) => {
+    expect(rulesOfUpdate(input)).toEqual([':invalid_type'])
+  })
+})
+
+describe('bookingRescheduleRequestSchema', () => {
+  /** A request that moves the booking to this time. */
+  const movingTo = (startTime: unknown) => ({
+    startTime,
+    staffId: STAFF_MEMBER_ID,
+  })
+
+  it('accepts a time and a staff member, and spells the time in one way', () => {
+    expect(parseReschedule(movingTo('2026-11-21T05:00:00Z'))).toStrictEqual({
+      type: 'success',
+      data: {
+        startTime: '2026-11-21T05:00:00.000Z',
+        staffId: STAFF_MEMBER_ID,
+      },
+    })
+  })
+
+  it('returns the ID of the staff member in lower case', () => {
+    expect(
+      parseReschedule({
+        startTime: '2026-11-21T05:00:00.000Z',
+        staffId: STAFF_MEMBER_ID.toUpperCase(),
+      }),
+    ).toMatchObject({ type: 'success', data: { staffId: STAFF_MEMBER_ID } })
+  })
+
+  it.each([
+    ['with a fraction of zero', '2026-11-21T05:00:00.000Z'],
+    ['at midnight', '2026-11-21T00:00:00Z'],
+    ['in the last minute of a day', '2026-11-21T23:59:00Z'],
+    [
+      'that has passed: what was not entered in time is entered afterwards',
+      '2020-01-01T01:00:00Z',
+    ],
+  ])('accepts a time in UTC on a whole minute %s', (_case, startTime) => {
+    expect(parseReschedule(movingTo(startTime)).type).toBe('success')
+  })
+
+  it.each([
+    ['seconds', '2026-11-21T05:00:30Z'],
+    ['a fraction of a second', '2026-11-21T05:00:00.500Z'],
+  ])(
+    'refuses a time with %s: a booking is made to the minute',
+    (_case, startTime) => {
+      expect(rulesOfReschedule(movingTo(startTime))).toEqual([
+        'startTime:custom',
+      ])
+      expect(parseReschedule(movingTo(startTime))).toMatchObject({
+        type: 'error',
+        error: { issues: [{ message: 'Must be on a whole minute' }] },
+      })
+    },
+  )
+
+  it.each([
+    ['an offset', '2026-11-21T14:00:00+09:00'],
+    ['no time zone', '2026-11-21T05:00:00'],
+    ['no seconds', '2026-11-21T05:00Z'],
+    ['a date only', '2026-11-21'],
+    ['a day that does not exist', '2026-02-30T05:00:00Z'],
+    ['a number', 1_795_000_000_000],
+    ['an empty text', ''],
+    ['null', null],
+  ])(
+    'refuses a time that is not a UTC time of ISO 8601: %s',
+    (_case, startTime) => {
+      const rules = rulesOfReschedule(movingTo(startTime))
+
+      expect(rules).toHaveLength(1)
+      expect(rules[0]).toMatch(/^startTime:invalid_/)
+    },
+  )
+
+  it.each([
+    ['a text that is no ID', 'somebody'],
+    ['nobody: a booking has one staff member in charge', null],
+    ['a number', 1],
+  ])('refuses %s for the staff member', (_case, staffId) => {
+    const rules = rulesOfReschedule({
+      startTime: '2026-11-21T05:00:00Z',
+      staffId,
+    })
+
+    expect(rules).toHaveLength(1)
+    expect(rules[0]).toMatch(/^staffId:invalid_/)
+  })
+
+  it.each(['startTime', 'staffId'])(
+    'requires %s: a move says when and with whom',
+    (property) => {
+      const { [property]: _omitted, ...request }: Record<string, unknown> =
+        movingTo('2026-11-21T05:00:00Z')
+
+      expect(rulesOfReschedule(request)).toEqual([`${property}:invalid_type`])
+    },
+  )
+
+  it.each([
+    [
+      'the end, which follows from the start',
+      'endTime',
+      '2026-11-21T07:30:00Z',
+    ],
+    ['the day of the visit', 'bookingDate', '2026-11-21'],
+    ['the status', 'status', 'confirmed'],
+    ['the service lines', 'services', []],
+    ['a reason', 'reason', 'お客様のご都合'],
+    ['the salon', 'salonId', SALON_ID],
+  ])('refuses %s', (_case, property, value) => {
+    expect(
+      rulesOfReschedule({
+        ...movingTo('2026-11-21T05:00:00Z'),
+        [property]: value,
+      }),
+    ).toEqual([`${property}:unrecognized_keys`])
+  })
+
+  it('reports every broken rule at once', () => {
+    expect(
+      rulesOfReschedule({
+        startTime: '2026-11-21T05:00:30Z',
+        staffId: 'somebody',
+        status: 'confirmed',
+      }).toSorted(),
+    ).toEqual([
+      'staffId:invalid_format',
+      'startTime:custom',
+      'status:unrecognized_keys',
+    ])
+  })
+
+  it.each([
+    ['a list', []],
+    ['a text', 'booking'],
+    ['null', null],
+    ['nothing', undefined],
+  ])('refuses %s for a request', (_case, input) => {
+    expect(rulesOfReschedule(input)).toEqual([':invalid_type'])
   })
 })
 
