@@ -16,6 +16,10 @@ import {
   type ApiSessionSearchRequest,
   sessionIdSchema,
 } from '../models/auth'
+import type {
+  ApiAuthStaffInvitationAcceptRequest,
+  ApiAuthStaffInvitationVerifyRequest,
+} from '../models/staff-invitation'
 import { lowerCaseEmail } from './rules'
 
 /**
@@ -114,6 +118,15 @@ export const authPasswordResetConfirmRequestSchema = z.strictObject({
   token: mailedTokenSchema,
   newPassword: newPasswordSchema,
 }) satisfies z.ZodType<ApiAuthPasswordResetConfirmRequest>
+
+export const authStaffInvitationVerifyRequestSchema = z.strictObject({
+  token: mailedTokenSchema,
+}) satisfies z.ZodType<ApiAuthStaffInvitationVerifyRequest>
+
+export const authStaffInvitationAcceptRequestSchema = z.strictObject({
+  token: mailedTokenSchema,
+  password: newPasswordSchema,
+}) satisfies z.ZodType<ApiAuthStaffInvitationAcceptRequest>
 
 export const authPasswordChangeRequestSchema = z.strictObject({
   currentPassword: presentedPasswordSchema,

@@ -10,11 +10,12 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 | ユーザー登録（`/register`）、メールアドレスの確認（`/verify-email/send`、`/verify-email/confirm`）、パスワードの再設定（`/forgot-password`、`/reset-password/verify`、`/reset-password`）・変更（`/change-password`） | 実装済み |
 | 2 要素認証（`/2fa/enable`、`/2fa/verify`、`/2fa/disable`、`/2fa/backup-codes`）と、ログインでのコードの確認 | 実装済み |
 | セッションの一覧（`GET /api/v1/auth/sessions`）と無効化（`DELETE /api/v1/auth/sessions/{sessionId}`） | 実装済み |
+| スタッフの招待の確認と受け入れ（`/staff-invitation/verify`、`/staff-invitation/accept`） | 実装済み |
 | 管理者の操作（`/api/v1/admin/auth` のユーザーの参照、ロックの解除、2 要素認証のリセット） | 実装済み |
 
 コントラクトの認証のオペレーション（`AuthCrud`、`SessionCrud`、`AdminAuthCrud`）は、すべて実装されています。
 
-登録で作れるのは顧客（ロール `customer`）のアカウントだけです。`admin`、`owner`、`manager`、`staff` のアカウントを作る API はまだないので、シード（`pnpm db:seed`）か SQL で作ります。
+登録で作れるのは顧客（ロール `customer`）のアカウントだけです。`owner`、`manager`、`staff` のアカウントは、[スタッフの招待](#スタッフの招待)で作ります。`admin` のアカウントを作る API はないので、シード（`pnpm db:seed`）か SQL で作ります。
 
 ## セッション
 
@@ -63,7 +64,7 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 
 ### 設定するパスワードの規則
 
-登録・再設定・変更で設定するパスワードに適用します。根拠は NIST SP 800-63B-4 3.1.1.2 です。
+登録・再設定・変更と、スタッフの招待の受け入れで設定するパスワードに適用します。根拠は NIST SP 800-63B-4 3.1.1.2 です。
 
 | 規則 | 内容 |
 |---|---|
@@ -109,18 +110,19 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 - `unverified` のアカウントはログインできない。確認が済むと `active` になる
 - 登録したユーザーは、まだ顧客情報（`customers` の行）を持たない（`customerId` は null）。ログインしたあと、本人が `POST /api/v1/customers/me` でプロフィールを作る。台帳に同じメールアドレスの顧客がいれば、その顧客を引き継ぐ（[顧客本人のプロフィール](./customers.md#顧客本人のプロフィール)）
 - 他人のメールアドレスで先に登録されていても、本人があとから登録すればパスワードは本人のものに置き換わる。確認メールのリンクが有効にするのは、最後に登録されたパスワード
+- `unverified` のアカウントは、同じメールアドレスへの[スタッフの招待](#スタッフの招待)が受け入れられると、その招待のアカウントになる（パスワードは招待された本人のものに置き換わり、確認メールのリンクは使えなくなる）
 
 ## メールで送るトークン
 
-メールアドレスの確認とパスワードの再設定は、メールで送ったトークンで本人を確かめます。
+メールアドレスの確認、パスワードの再設定、スタッフの招待は、メールで送ったトークンで本人を確かめます。
 
 | 項目 | 決まり |
 |---|---|
-| 形式 | セッションのトークンと同じ（CSPRNG の 256 ビット、base64url）。DB には SHA-256 のハッシュだけを保存する（`emailVerificationTokenHash`、`passwordResetTokenHash`） |
-| 有効期間 | メールアドレスの確認は 24 時間、パスワードの再設定は 30 分 |
-| 使える回数 | 1 回。新しいトークンを発行すると、前のトークンは使えなくなる（ユーザーごと・種類ごとに 1 つ） |
-| 送信の間隔 | 同じアカウントへは、種類ごとに 60 秒に 1 通まで。それより短い間隔の要求は、何も送らずに 204 を返す |
-| 無効なトークン | 400（`errors[].field` は `token`、`rule` は `invalid_token`）。存在しない、使用済み、期限切れを区別しない |
+| 形式 | セッションのトークンと同じ（CSPRNG の 256 ビット、base64url）。DB には SHA-256 のハッシュだけを保存する（`users` の `emailVerificationTokenHash`、`passwordResetTokenHash`、`staff_invitations` の `tokenHash`） |
+| 有効期間 | メールアドレスの確認は 24 時間、パスワードの再設定は 30 分、スタッフの招待は 7 日 |
+| 使える回数 | 1 回。新しいトークンを発行すると、前のトークンは使えなくなる（ユーザーごと・種類ごとに 1 つ。招待はスタッフごとに 1 つ） |
+| 送信の間隔 | 同じアカウントへは、種類ごとに 60 秒に 1 通まで。それより短い間隔の要求は、何も送らずに 204 を返す。招待は、スタッフが持っている招待を 60 秒に 1 回まで置き換えられ、それより短い間隔の招待は 409 |
+| 無効なトークン | 400（`errors[].field` は `token`、`rule` は `invalid_token`）。存在しない、使用済み、期限切れを区別しない。招待は、取り消された、スタッフの状態が変わった、も区別しない |
 
 リンクは `PUBLIC_APP_URL`（設定値）から組み立てます。リクエストの `Host` ヘッダーは使いません（OWASP Forgot Password Cheat Sheet）。トークンは URL のフラグメントに置くので、サーバーのアクセスログにも `Referer` にも残りません。
 
@@ -128,8 +130,9 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 |---|---|
 | メールアドレスの確認 | `<PUBLIC_APP_URL>/verify-email#token=<トークン>` |
 | パスワードの再設定 | `<PUBLIC_APP_URL>/reset-password#token=<トークン>` |
+| スタッフの招待 | `<PUBLIC_APP_URL>/accept-staff-invitation#token=<トークン>` |
 
-リンク先のページは、フラグメントからトークンを取り出して API（`/verify-email/confirm`、`/reset-password`）に送ります。このページはフロントエンドにまだありません。
+リンク先のページは、フラグメントからトークンを取り出して API（`/verify-email/confirm`、`/reset-password`、`/staff-invitation/accept`）に送ります。このページはフロントエンドにまだありません。
 
 メールの送信の仕組みは [メール送信](./email.md) にあります。
 
@@ -156,6 +159,19 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 - 現在のパスワードの確認は、上の試行回数の制限を通す。確認できなければ 400（`field` は `currentPassword`、`rule` は `incorrect`）
 - 新しいパスワードが現在のものと同じなら 400（`rule` は `unchanged`）
 - 変更すると、そのユーザーのほかのセッションを無効にし（このリクエストのセッションは残す）、未使用の再設定トークンを無効にし、メールで知らせる
+
+### スタッフの招待
+
+`owner`、`manager`、`staff` のアカウントは、招待で作ります。管理者かサロンの `owner` が、台帳のスタッフをロールを指定して招待し（`POST /api/v1/salons/{salonId}/staff/{id}/invitation`）、招待された本人が、メールのリンクから自分でパスワードを決めます。招待する側の規則（誰がどのロールを与えられるか、誰を招待できるか、取り消し）は [スタッフのログインアカウント](./staff.md#スタッフのログインアカウント) にあります。招待された側のオペレーションは、アカウントをまだ持たない人が使うので、`/api/v1/auth` の下にあり、認証は要りません。
+
+- `POST /api/v1/auth/staff-invitation/verify`: トークンがまだ使えるかを答え、使えるなら招待の内容（宛先のメールアドレス、ロール、期限）を返す（200）。パスワードを尋ねる前に、画面が何のアカウントかを示せるようにするため。トークンは消費しない
+- `POST /api/v1/auth/staff-invitation/accept`: パスワードを設定して、アカウントを作る（204）。同時に次のことが起きる
+  - 招待の宛先のメールアドレスで、招待のロールの、スタッフに紐づいたアカウントができる（`status` は `active`）
+  - メールアドレスは確認済みになる（トークンをメールで受け取れたことが確認になる）
+  - 招待は消える。トークンが使えるのは 1 回
+  - ログインはしない（セッションを発行しない）。利用者は、このあとログインする
+- 使えないトークンは、理由を区別せずに 400（上の表）。パスワードが規則に合わないとき（400）は、招待は残る
+- 宛先のメールアドレスにすでにアカウントがあると、確認も受け入れも 409（コード `3002`）。メールアドレスを確認していない登録（`unverified`）だけは別で、そのアカウントが招待のアカウントになる（[受け入れ](./staff.md#受け入れ)）。招待を作る側の応答は、アカウントの有無で変わらない。アカウントがあることを知るのは、トークンを持つ人、つまりそのメールボックスを読める人だけ
 
 ## 2 要素認証
 
@@ -252,7 +268,8 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 | `none` | `owner`、`manager`、`staff` で、`salon` の条件に当たらない（スタッフ情報が削除された `staff` など） | 範囲を必要とするものには届かない。ログインはできる |
 
 - ロールは `users.role` の固定 5 種。`users.permissions` は保存しているだけで、判定には使わない
-- 1 人のユーザーが属するサロンは 1 つ（`users.staffId` が 1 つのため）
+- 1 人のユーザーが属するサロンは 1 つ（`users.staffId` が 1 つのため）。1 人のスタッフに紐づくアカウントも 1 つ（削除されていないユーザーの間で、`users.staffId` は一意）
+- `owner`、`manager`、`staff` のロールとスタッフへの紐づけは、[スタッフの招待](#スタッフの招待)の受け入れが決める。あとから変えるオペレーションはない
 
 ### Salon API の権限
 
@@ -267,7 +284,7 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 
 ### サロンの下にあるルートの権限
 
-サロンに属するデータのルートは、`/api/v1/salons/{salonId}/...` のようにサロンの下に置きます。権限は、**パスの `salonId` だけ**で判定します（スタッフの勤務スケジュールを読むときだけ、そのあとに、誰のスケジュールかでもう一度判定します。下の説明を参照）。
+サロンに属するデータのルートは、`/api/v1/salons/{salonId}/...` のようにサロンの下に置きます。権限は、**パスの `salonId` だけ**で判定します（スタッフの勤務スケジュールを読むときと、スタッフを招待するときだけ、そのあとにもう一度判定します。誰のスケジュールかと、どのロールへの招待かです。下の説明を参照）。
 
 - 判定は、`salonId` の形式を確認した直後に行う。対象の ID、リクエストの本文、サロンと対象の存在は、権限があると分かってから確認する
 - 権限のないユーザーには 403 を返す。応答はパスと操作者だけで決まり、対象が存在するかどうかで変わらないので、ほかのサロンのデータの存在は伝わらない
@@ -283,6 +300,7 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 | スタッフ台帳の一覧、登録、1 件の取得、更新、削除 | `admin`、そのサロンの `owner` |
 | スタッフの勤務スケジュールの一覧 | `admin`、そのサロンの `owner` / `manager`。そのサロンの `staff` は自分のスケジュールだけ |
 | スタッフの勤務スケジュールの更新 | `admin`、そのサロンの `owner` / `manager` |
+| スタッフの招待の取得、作成、取り消し | `admin`、そのサロンの `owner`。`owner` のロールへの招待は `admin` だけ |
 
 カテゴリーとサービスの規則は [サービスメニュー](./service-menu.md) にあります。
 
@@ -300,6 +318,13 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 - `staff` は自分のスケジュールを更新できない
 
 規則は [勤務スケジュール](./staff.md#勤務スケジュール) にあります。
+
+スタッフの招待（`/api/v1/salons/{salonId}/staff/{id}/invitation`）を扱えるのは、台帳と同じく、`admin` とそのサロンの `owner` です（`business-logic/staff-invitation/_shared/authorization.ts`）。招待は、サロンに届くアカウントを作るからです。
+
+- 作成の権限の判定は 2 段階ある。まず、パスの `salonId` だけで判定する。次に、本文を検証してから、そのロールを与えられるかを判定する。`owner` のロールを与えられるのは `admin` だけで、`owner` が `owner` を招待すると 403。サロンを運営する人を決めるのは、プラットフォームの仕事とする
+- 2 つ目の判定も、サロンとスタッフの存在の確認より前に行う
+
+規則は [スタッフのログインアカウント](./staff.md#スタッフのログインアカウント) にあります。
 
 顧客に見せるスタッフのプロフィール（`/api/v1/staff-profiles` の一覧と 1 件の取得）は、認証なしで読めます。サロンの下のルートではなく、権限の判定もありません。返すのは、台帳の項目のうち顧客に見せる 11 項目だけで、台帳を読めない `manager`、`staff`、顧客も読めます。見せるのは、有効で削除されていない、削除されていないサロンのスタッフです（[顧客に見せるプロフィール](./staff.md#顧客に見せるプロフィール)）。
 
@@ -364,7 +389,7 @@ export const updateSalonHandler = (
 }
 ```
 
-サロンに属するデータ（予約、スタッフなど）を実装するときは、[サロンの下にあるルートの権限](#サロンの下にあるルートの権限) に従います。ユースケースは、パスの ID を `parseSalonIdOfPath`（`backend/packages/domain/src/models/salon.ts`）で検証し、そのサロンで権限を判定してから、`requireSalon`（`business-logic/_shared/existing-salon.ts`）でサロンの存在を確認します。対象は、そのサロンのものだけを検索します。例は `business-logic/service-category/` と `business-logic/service/`（読むのは認証なし）、`business-logic/staff/`（どのオペレーションにも認証が要る）、`business-logic/staff-schedule/`（サロンで判定したあと、対象の ID でもう一度判定する）です。
+サロンに属するデータ（予約、スタッフなど）を実装するときは、[サロンの下にあるルートの権限](#サロンの下にあるルートの権限) に従います。ユースケースは、パスの ID を `parseSalonIdOfPath`（`backend/packages/domain/src/models/salon.ts`）で検証し、そのサロンで権限を判定してから、`requireSalon`（`business-logic/_shared/existing-salon.ts`）でサロンの存在を確認します。対象は、そのサロンのものだけを検索します。例は `business-logic/service-category/` と `business-logic/service/`（読むのは認証なし）、`business-logic/staff/`（どのオペレーションにも認証が要る）、`business-logic/staff-schedule/`（サロンで判定したあと、対象の ID でもう一度判定する）、`business-logic/staff-invitation/`（サロンで判定したあと、本文の値でもう一度判定する）です。
 
 サロンに属さないデータは、操作者だけで権限を判定し、最初に判定します。例は `business-logic/customer/`（[顧客台帳の権限](#顧客台帳の権限)）です。ログインしているアカウント自身のデータは、対象をパスの ID ではなく操作者の範囲から決めます。例は同じディレクトリの `*-customer-profile.usecase.ts` です。
 
@@ -392,6 +417,6 @@ curl -s http://localhost:3000/api/v1/auth/login \
 | 層 | ファイル |
 |---|---|
 | コントラクト | `specs/models/auth.tsp`、`specs/operations/auth-operations.tsp`、`specs/models/_shared/common-api-patterns.tsp`（`UnauthenticatedResponse`、`PermissionDeniedResponse`、エラーのエイリアス） |
-| ドメイン | `backend/packages/domain/src/models/auth.ts`（`Actor`）、`business-logic/auth/`、`repositories/{user,session}.repository.ts`、`services/`（`IPasswordHasher`、`ITokenIssuer`、`ITwoFactorAuthenticator`、`IMailer`） |
-| インフラ | `backend/packages/infrastructure/src/security/`（`Argon2PasswordHasher`、`RandomTokenIssuer`、`TotpAuthenticator`）、`mail/smtp-mailer.ts`、`repositories/{user,session}.repository.impl.ts` |
-| API | `backend/packages/api/src/shared/authentication.ts`、`shared/signed-in-user.ts`（ログ行の `userId`）、`routes/auth/`、`routes/admin-auth/` |
+| ドメイン | `backend/packages/domain/src/models/auth.ts`（`Actor`）、`business-logic/auth/`、`business-logic/staff-invitation/`（スタッフの招待。確認と受け入れを含む）、`repositories/{user,session,staff-invitation}.repository.ts`、`services/`（`IPasswordHasher`、`ITokenIssuer`、`ITwoFactorAuthenticator`、`IMailer`） |
+| インフラ | `backend/packages/infrastructure/src/security/`（`Argon2PasswordHasher`、`RandomTokenIssuer`、`TotpAuthenticator`）、`mail/smtp-mailer.ts`、`repositories/{user,session,staff-invitation}.repository.impl.ts` |
+| API | `backend/packages/api/src/shared/authentication.ts`、`shared/signed-in-user.ts`（ログ行の `userId`）、`shared/never-stored.ts`（`Cache-Control: no-store`）、`routes/auth/`、`routes/admin-auth/`、`routes/staff-invitation/`（招待された側のルーターは `/api/v1/auth/staff-invitation` にマウントする） |
