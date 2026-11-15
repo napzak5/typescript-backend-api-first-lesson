@@ -37,8 +37,9 @@ Before relying on anything, check this table.
 | Salon API (`/api/v1/salons`) | Implemented in every layer: list, create, get, update, delete. It is the reference implementation for every other domain. List and get are public; create, update and delete need a signed-in user with the permission. |
 | Service categories of a salon (`/api/v1/salons/{salonId}/service-categories`) | Implemented in every layer: list, create, get, update, delete, the five operations of `ServiceCategoryCrud`. They are the example of data that belongs to a salon: the routes are below the salon, and a category that is not of the salon in the path is answered with 404. List and get are public; create, update and delete need a signed-in user with the permission. See [Service Menu](./service-menu.md) (Japanese). |
 | Services of a salon (`/api/v1/salons/{salonId}/services`) | Implemented in every layer: list, create, get, update, bulk update, delete, the six operations of `ServiceCrud`. A service carries its options (the rows of `service_options`) in its requests and responses, and a package names the services it combines. The bulk update changes all the services it names or none of them. A delete keeps the row and marks it with `deletedAt`, and is refused with 409 while a package contains the service. List and get are public; create, update, bulk update and delete need a signed-in user with the permission. `isActive`, `serviceStatus`, `availability`, `bookingRequirements` and `maxBookingsPerDay` are stored and returned, and the list can filter by `isActive`; nothing else reads them: which services can be booked is not decided yet. See [Service Menu](./service-menu.md) (Japanese). |
-| Customer ledger (`/api/v1/customers`) | Implemented in every layer: list, create, get, update, delete, five of the 18 operations of `CustomerCrud`. A customer belongs to no salon: the ledger is one for the whole platform, and its routes are not below a salon. No operation is public: list, create, get and update need a signed-in administrator or member of a salon (owner, manager or staff of any salon), delete an administrator, an owner or a manager. A delete keeps the row and marks it with `deletedAt`. The other 13 operations of `CustomerCrud` are not implemented: the preferences (`PATCH /api/v1/customers/{id}/preferences`), batch get, bulk create, bulk update, bulk delete, restore, merge, audit history, versions, the two exports, statistics and the data deletion request. A signed-in customer reaches no route of the ledger; their own record is the profile of the next row. `isActive` and `customerStatus` are stored and returned, and the list can filter by `customerStatus`; nothing else reads them: which customers can book is not decided yet. Nothing maintains the points, the lifetime value or the visit counters. See [Customer Ledger](./customers.md) (Japanese). |
-| Customer profile (`/api/v1/customers/me`) | Implemented in every layer: get, create, update, the three operations of `CustomerProfile`. The profile is the customer record of the signed-in account. The route names no record: the account alone says which one, so a customer reaches no other. Only a customer account has a profile; an administrator and a member of a salon are answered with 403. A registered user has no record until they create the profile. The creation takes over the customer that the ledger has under the account's email address, unless that customer belongs to another account (409), and needs an account that has confirmed its address (409); without such a customer it adds one to the ledger. The response leaves out what the staff keep to themselves (notes, tags, status, the referrer, the lifetime value, the counts of no-shows and cancellations), and the requests write only what is the customer's own: the name, the contact details, the birth date, the preferences and the three consents. A delete of the customer in the ledger takes the profile from the account, which may then create a new one. See [Customer Ledger](./customers.md) (Japanese). |
+| Customer ledger (`/api/v1/customers`) | Implemented in every layer: list, create, get, update, delete, five of the 19 operations of `CustomerCrud`. A customer belongs to no salon: the ledger is one for the whole platform, and its routes are not below a salon. No operation is public: list, create, get and update need a signed-in administrator or member of a salon (owner, manager or staff of any salon), delete an administrator, an owner or a manager. A delete keeps the row and marks it with `deletedAt`. Two more are the preferences of a customer (two rows below). The other 12 operations of `CustomerCrud` are not implemented: batch get, bulk create, bulk update, bulk delete, restore, merge, audit history, versions, the two exports, statistics and the data deletion request. A signed-in customer reaches no route of the ledger; their own record is the profile of the next row. `isActive` and `customerStatus` are stored and returned, and the list can filter by `customerStatus`; nothing else reads them: which customers can book is not decided yet. Nothing maintains the points, the lifetime value or the visit counters. See [Customer Ledger](./customers.md) (Japanese). |
+| Customer profile (`/api/v1/customers/me`) | Implemented in every layer: get, create, update, three of the five operations of `CustomerProfile`; the other two are the preferences of the next row. The profile is the customer record of the signed-in account. The route names no record: the account alone says which one, so a customer reaches no other. Only a customer account has a profile; an administrator and a member of a salon are answered with 403. A registered user has no record until they create the profile. The creation takes over the customer that the ledger has under the account's email address, unless that customer belongs to another account (409), and needs an account that has confirmed its address (409); without such a customer it adds one to the ledger. The response leaves out what the staff keep to themselves (notes, tags, status, the referrer, the lifetime value, the counts of no-shows and cancellations), and the requests write only what is the customer's own: the name, the contact details, the birth date, the preferences and the three consents. A delete of the customer in the ledger takes the profile from the account, which may then create a new one. See [Customer Ledger](./customers.md) (Japanese). |
+| Customer preferences (`/api/v1/customers/{id}/preferences`, `/api/v1/customers/me/preferences`) | Implemented in every layer: get and update for whoever keeps the ledger (`getPreferences` and `updatePreferences` of `CustomerCrud`) and for the customer (the operations of the same names of `CustomerProfile`). The preferences are one record per customer (a row of `customer_preferences`): the staff member the customer prefers, the staff members they avoid, the times of day they like to come, a style preference, how they like to be talked to and special requests. There is no create and no delete: a customer without a row has empty preferences, a get answers 200 with them, and the first update creates the row. The permissions are those of the ledger and of the profile. A staff member that an update names has to be one who is not deleted, of a salon that is not deleted, of whichever salon (400). The preferred staff member is not among the avoided ones in the preferences as they are stored after the update (400), which the update checks while it holds a lock on the row of the customer. The ID of a staff member who is deleted later stays in the preferences. Nothing reads the preferences yet: how a booking uses them is not decided. See [Customer Ledger](./customers.md#好み設定) (Japanese). |
 | Staff ledger of a salon (`/api/v1/salons/{salonId}/staff`) | Implemented in every layer: list, create, get, update, delete, the five operations of `StaffCrud`. The ledger is what a salon keeps about its staff as their employer: names and contact details, the terms of employment (base salary, commission rate, employment type, hire date) and how a staff member takes bookings. Nothing of it is public, reading included: every operation needs an administrator or the owner of the salon in the path; a manager and a staff member are answered with 403. Deactivating (`isActive: false`) or deleting a staff member takes the salon from the login account that is linked to it, from its next request on, so nobody deactivates or deletes the staff member their own account belongs to (409). The email is unique among the staff members of one salon who are not deleted, the staff code among all staff members of the salon. A delete keeps the row and marks it with `deletedAt`. A staff member gets a login account by invitation (next row), and the salon reads that account, changes its role and unlinks it (the row after). See [Staff Ledger](./staff.md) (Japanese). |
 | Staff invitations (`/api/v1/salons/{salonId}/staff/{id}/invitation`, `/api/v1/auth/staff-invitation`) | Implemented in every layer: get, create and delete, the three operations of `StaffInvitations`, and `verifyStaffInvitation`, `acceptStaffInvitation` and `joinStaffInvitation` of `AuthCrud`. An invitation is how a staff member of the ledger gets a login account. A staff member holds at most one (a row of `staff_invitations`), so the path names no invitation ID. An administrator or the owner of the salon in the path invites to a role (`SalonRoleType`: owner, manager or staff; only an administrator gives the role of an owner), and a new invitation replaces the one the staff member holds. The link is mailed to the address of the ledger, and the answer does not tell whether that address has an account. A staff member who has an account or is not active is not invited (409), and an invitation that was mailed less than 60 seconds ago is not replaced (409). The token works once, for 7 days, and only while the staff member is active, not deleted, without an account and still has the address the invitation went to. Whoever holds it reads the invitation (`verify`), which also names the route that takes the token next, and accepts it with a password of their own (`accept`), both without an access token. Accepting creates the account, active and with its address verified, and links it to the staff member (`users.staffId` and `staff.userId`). An address that has an account is refused (409), with two exceptions. A registration that never confirmed the address becomes the account. And an account with the role of an owner, a manager or staff that reaches no salon (a staff member who changed salons, an account that was unlinked) signs in and joins (`join`, with its access token and the mailed token): the account is linked, gets the role of the invitation and keeps its password and its sessions. The token never stands in for the password of an account that exists. See [Staff Ledger](./staff.md#スタッフのログインアカウント) (Japanese). |
 | Staff accounts (`/api/v1/salons/{salonId}/staff/{id}/account`) | Implemented in every layer: get, update and delete, the three operations of `StaffAccounts`. The account of a staff member is the user that names the staff member in `users.staffId` and is not deleted. A staff member has at most one, so the path names no user ID. An administrator or the owner of the salon in the path reads it (`StaffAccountResponse`: the address, the role, the status, the two-factor status and the last login; nothing that authenticates), changes its role (`PATCH`; only an administrator gives the role of an owner, and the owner of the salon may take it from another owner) and unlinks it (`DELETE`: `users.staffId` and `staff.userId` become null, the account and the staff member stay, and the account keeps its role and reaches no salon). Nobody changes the role of their own account or unlinks it (409). A change takes effect with the next request of the account; no session is revoked. A check constraint keeps the role of a user that names a staff member to owner, manager or staff (`users_staff_needs_salon_role`). Not implemented: a staff member leaving a salon on their own, turning a customer account into a staff account, an account that belongs to several salons. See [Staff Ledger](./staff.md#紐づいたアカウントの管理) (Japanese). |
@@ -296,10 +297,44 @@ infrastructure/src/
 └── repositories/customer.repository.impl.ts
 
 api/src/
-└── routes/customer/                   One *.handler.ts per implemented operation of
-                                       CustomerCrud and of CustomerProfile, index.ts
-                                       (router, mounted at /customers; /me is registered
-                                       before /:id)
+└── routes/customer/                   One *.handler.ts per operation of the ledger and
+                                       of the profile, index.ts (router, mounted at
+                                       /customers; /me is registered before /:id)
+```
+
+The preferences of a customer have files of their own in every layer:
+
+```
+domain/src/
+├── models/customer-preferences.ts     API and database types. The database type is the
+│                                      six columns that are the preferences;
+│                                      noCustomerPreferences() is what a customer
+│                                      without a row has
+├── schemas/customer-preferences.schema.ts
+│                                      Zod schema of the update request, and of the two
+│                                      stored jsonb columns
+├── mappers/read/customer-preferences.mapper.ts
+│                                      Columns → API response. There is no write mapper:
+│                                      the request is the change
+├── repositories/customer-preferences.repository.ts
+│                                      ICustomerPreferencesRepository; what became of an
+│                                      update is a sum type (CustomerPreferencesUpdate)
+└── business-logic/customer-preferences/
+                                       One *.usecase.ts per operation, of the ledger and
+                                       of the customer (*-own-customer-preferences.usecase.ts);
+                                       _shared/ holds the dependencies, the flow that
+                                       both share (preferences-of.ts), the rule that ties
+                                       the preferred staff member to the avoided ones
+                                       (rules.ts) and the errors of a refused change
+                                       (refusals.ts)
+
+infrastructure/src/
+└── repositories/customer-preferences.repository.impl.ts
+
+api/src/
+└── routes/customer-preferences/       One *.handler.ts per operation, index.ts (two
+                                       routers, mounted at /customers/me/preferences and
+                                       at /customers/:id/preferences, before /customers)
 ```
 
 The staff ledger belongs to a salon and has the layout of the service
@@ -918,8 +953,36 @@ its own. What differs from the ledger:
   `users.customerId` of the account that has the customer, in the
   transaction that marks the row.
 
-The rules of the customer ledger and of the profile are in
-[Customer Ledger](./customers.md), who may use them in
+The preferences of a customer (`/api/v1/customers/{id}/preferences` and
+`/api/v1/customers/me/preferences`) have a repository, use cases and routers
+of their own (`business-logic/customer-preferences/`). What differs from the
+ledger and the profile:
+
+- **Every customer has them.** A customer without a row of
+  `customer_preferences` has the empty preferences
+  (`noCustomerPreferences` in `models/customer-preferences.ts`): a read
+  answers 200 with them and stores nothing, and the first change creates the
+  row. There is no create and no delete, and a response does not tell
+  whether a row is stored.
+- **Two doors, one flow.** The use cases of the ledger decide with
+  `mayHandleCustomers` and parse the ID of the path; those of the customer
+  decide with `profileAccessOf` and take the customer from the actor. Both
+  then call `readPreferencesOf` or `changePreferencesOf`
+  (`_shared/preferences-of.ts`). The two routers are mounted at their full
+  paths before the router of the customers, `me` first.
+- **A change that is checked against what is stored.** The preferred staff
+  member is not among the avoided ones, and a change may name only one of
+  the two. `update` of the repository runs one transaction: it locks the
+  row of the customer (`FOR UPDATE`), looks up the staff members the change
+  names, reads the stored row, applies `customerPreferencesRuleIssues` to
+  the preferences as they would be, and writes. What became of it is the
+  sum type `CustomerPreferencesUpdate`; `toRefusalError` turns a refusal
+  into the validation error that names the property. The staff members are
+  not locked: the ID of one who is deleted afterwards stays, as it does
+  whenever a staff member is deleted later.
+
+The rules of the customer ledger, of the profile and of the preferences are
+in [Customer Ledger](./customers.md), who may use them in
 [Authentication and Authorization](./authentication.md) (both Japanese).
 
 ### A Staff Request

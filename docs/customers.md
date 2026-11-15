@@ -1,8 +1,8 @@
 # 顧客台帳
 
-顧客（`customers`）の規則をまとめます。コントラクトは `specs/operations/customer-operations.tsp` と `specs/models/customer.tsp`、テーブルは `customers` です。
+顧客（`customers`）の規則をまとめます。コントラクトは `specs/operations/customer-operations.tsp` と `specs/models/customer.tsp`、テーブルは `customers` と `customer_preferences` です。
 
-顧客情報には入口が 2 つあります。管理者とサロンのスタッフは台帳（`/api/v1/customers`）で全員の顧客情報を扱い、顧客本人は[プロフィール](#顧客本人のプロフィール)（`/api/v1/customers/me`）で自分の顧客情報だけを扱います。
+顧客情報には入口が 2 つあります。管理者とサロンのスタッフは台帳（`/api/v1/customers`）で全員の顧客情報を扱い、顧客本人は[プロフィール](#顧客本人のプロフィール)（`/api/v1/customers/me`）で自分の顧客情報だけを扱います。顧客の[好み設定](#好み設定)（希望するスタッフ、希望する時間帯、スタイルの好みなど）は顧客ごとに 1 つあり、どちらの入口からも読み書きできます。
 
 ## 実装範囲
 
@@ -10,7 +10,7 @@
 |---|---|
 | 台帳（`CustomerCrud`）の一覧、登録、1 件の取得、更新、削除 | 実装済み |
 | 本人のプロフィール（`CustomerProfile`）の取得、作成、更新 | 実装済み |
-| 好み設定の更新（`PATCH /{id}/preferences`） | 未実装。希望するスタッフと避けるスタッフ（`preferredStaffId`、`avoidStaffIds`）の存在確認が要る。確認先の [スタッフ台帳](./staff.md) は実装済み |
+| 好み設定の取得と更新（台帳の `GET` / `PATCH /{id}/preferences`、本人の `GET` / `PATCH /me/preferences`） | 実装済み |
 | 一括取得、一括登録、一括更新、一括削除、復元、統合 | 未実装 |
 | 監査履歴、版、エクスポート、データ削除要請 | 未実装。保存するテーブルがない |
 | 統計 | 未実装。予約と会計の実装が前提 |
@@ -109,6 +109,7 @@
 - 削除した顧客のメールアドレスは、別の顧客の登録や更新に使えるようになります。紹介コードは使えないままです
 - 削除した顧客を紹介元にしている顧客の `referredBy` は変えません。削除した顧客を、新しく紹介元に指定することはできません
 - その顧客をプロフィールにしているアカウントがあれば、紐づけを外します（[顧客が削除されたとき](#顧客が削除されたとき)）
+- 削除した顧客の[好み設定](#好み設定)は、顧客と同じく見えなくなります。行は残します
 - 予約が残っている顧客を削除できるかは、予約の実装で決めます
 
 ## 顧客本人のプロフィール
@@ -173,6 +174,89 @@
 
 アカウントを削除する機能は、まだありません。作るときは、そのアカウントの顧客との紐づけ（`customers.userId`）を外す必要があります。外さないと、同じメールアドレスで登録し直したアカウントが、台帳の顧客を引き継げません。
 
+## 好み設定
+
+好み設定は、予約や接客のときに参考にする、顧客の希望です。希望するスタッフ、避けるスタッフ、希望する時間帯、スタイルの好み、接客の好み、特別な要望の 6 項目で、顧客ごとに 1 つあります（テーブル `customer_preferences`）。台帳の項目 `preferences`（好みのサービスカテゴリーとメモ。[項目の規則](#項目の規則)）とは別のものです。
+
+| オペレーション | ルート | 許可 |
+|---|---|---|
+| 取得（`CustomerCrud` の `getPreferences`） | `GET /api/v1/customers/{id}/preferences` | 台帳を扱えるユーザー（`admin`、サロンの `owner` / `manager` / `staff`） |
+| 更新（`CustomerCrud` の `updatePreferences`） | `PATCH /api/v1/customers/{id}/preferences` | 同上 |
+| 自分の好み設定の取得（`CustomerProfile` の `getPreferences`） | `GET /api/v1/customers/me/preferences` | プロフィールのある、ロール `customer` のアカウント |
+| 自分の好み設定の更新（`CustomerProfile` の `updatePreferences`） | `PATCH /api/v1/customers/me/preferences` | 同上 |
+
+- 権限は、台帳（`mayHandleCustomers`）と本人のプロフィール（`profileAccessOf`）の規則をそのまま使います。好み設定のための権限はありません。顧客本人は、自分の顧客の ID を指定しても、台帳のルートは 403 です
+- レスポンスは、どのオペレーションも `CustomerPreferencesResponse`（下の 6 項目）です。スタッフ専用の項目はないので、台帳と本人に同じものを返します。`links` は `self` と `customer`（台帳の顧客、または `/api/v1/customers/me`）です
+- 作成と削除のオペレーションはありません。好み設定は、顧客がいれば「ある」もので、消すには項目を空にします
+- `isActive` と `customerStatus` は、好み設定の読み書きに影響しません
+- ルーターは、`/customers/me/preferences`、`/customers/:id/preferences` の順に、顧客のルーターより前に登録しています
+
+### 好み設定のない顧客
+
+- 何も設定していない顧客の好み設定は、**すべての項目が空**です（一覧は `[]`、ほかは null）。取得は 404 ではなく 200 で、空の好み設定を返します
+- 行（`customer_preferences`）は、最初の更新が作ります。そのあとの更新は、送った項目だけを変えます。行があるかどうかは、API からは見えません（レスポンスは、行の ID と日時を持たない）
+
+### 好み設定の項目
+
+| 項目 | 型 | 規則 |
+|---|---|---|
+| `preferredStaffId` | スタッフの ID、または null | 削除されていないスタッフ（サロンも削除されていない） |
+| `avoidStaffIds` | スタッフの ID の配列 | 同上。重複なし。`preferredStaffId` を含まない |
+| `preferredTimeSlots` | `{ startTime, endTime }` の配列 | 時刻は `HH:mm`。開始が終了より前。互いに重ならない（終了と開始が同じ時刻で接するのはよい） |
+| `stylePreferences` | `StylePreference`、または null | 下の表 |
+| `communicationStyle` | 文字列、または null | 空白だけでない、100 文字以内 |
+| `specialRequests` | 文字列、または null | 空白だけでない |
+
+`StylePreference`（`stylePreferences` の中身）:
+
+| 項目 | 型 | 規則 |
+|---|---|---|
+| `preferredLength` | 文字列、または null | 空白だけでない |
+| `preferredColors` / `avoidStyles` | 文字列の配列 | 各項目は空白だけでない。重複なし |
+| `inspirationImages` | 文字列の配列 | http または https の URL、500 文字以内。重複なし |
+
+- **一覧は null になりません**。1 つもないことは、空の配列で表します（台帳の `tags` と同じ）。null で「設定なし」を表すのは、単一の値と、`stylePreferences` のまとまりだけです
+- 更新（`CustomerPreferencesUpdateRequest`）は 6 項目すべてが任意で、指定した項目だけを変えます。空の本文 `{}` は 400 です。`stylePreferences` は、送るなら 4 項目すべてを書きます（まとまりごと置き換える）
+- 時間帯に曜日はありません。「どの日でも、この時間帯がよい」という意味です。配列は、送った順序のまま保存します
+- スタッフの ID は、英字を大文字で書いても同じ ID で、小文字で保存します
+- `preferredTimeSlots` と `stylePreferences` の中の形は DB では保証できないので、読み出すときに検証します（`schemas/customer-preferences.schema.ts` の `storedTimeSlotsSchema` と `storedStylePreferenceSchema`）。合わない行は 500（データベースのエラー）です
+
+### スタッフの確認
+
+- リクエストに挙げたスタッフの ID は、**書き込みの時点で、削除されていないスタッフ**（サロンも削除されていない）でなければなりません（400。`preferredStaffId` または `avoidStaffIds.<番号>` の `not_found`）。無効のスタッフ（`isActive` が false）、予約を受けないスタッフ、有効でないサロン（`isActive` が false）のスタッフは挙げられます。休職中のスタッフを希望する、あるいは避ける、という記録は成り立つからです
+- 顧客は特定のサロンに属さないので、どのサロンのスタッフでも挙げられます
+- **希望するスタッフは、避けるスタッフに含められません**（400。`preferredStaffId` の `avoided`）。規則は、更新したあとの好み設定に対するものです。片方だけを送ったときは、保存されているもう片方と照らします。両方を送って入れ替えることはできます。判定は `business-logic/customer-preferences/_shared/rules.ts` の `customerPreferencesRuleIssues` で、DB にも CHECK 制約があります
+- **保存したあとでスタッフが削除されても、ID は好み設定に残ります**。スタッフの削除は論理削除で、行が残るからです。取得は、保存されている ID をそのまま返します。画面は、スタッフのプロフィール（`/api/v1/staff-profiles/{id}`）が 404 なら、そのスタッフを出さないようにします（無効のスタッフのプロフィールも 404 なので、この扱いはどのみち要ります）
+- 削除されたスタッフの ID が残っている値を、そのまま送り直すと 400 です（`errors` が、その項目を挙げる）。その ID を外して送ります。ほかの項目だけを変える更新は、残っている ID に関係なくできます
+
+### 確認の順序（好み設定）
+
+台帳のルート:
+
+1. アクセストークン（401）
+2. 権限（403）
+3. 顧客の `id` の形式（400）
+4. リクエストの本文（400。更新）。希望するスタッフと避けるスタッフの両方を送ったときの重なりも、ここで確かめる
+5. 顧客の存在（404）
+6. スタッフの存在（400。更新）
+7. 保存されている値との重なり（400。更新）
+
+本人のルート:
+
+1. アクセストークン（401）
+2. アカウントの種類（403）
+3. プロフィールの有無（404）
+4. リクエストの本文（400。更新）
+5. スタッフの存在（400。更新）
+6. 保存されている値との重なり（400。更新）
+
+読めない本文は、台帳と同じく、この順序の前に答えます。存在しないスタッフを挙げたリクエストには、保存されている値との重なりがあっても、スタッフのエラーだけを返します。
+
+### 顧客が削除されたとき（好み設定）
+
+- 削除した顧客の好み設定は、台帳のルートからは 404 です。本人のルートも、プロフィールがないので 404 です。行は、顧客の行と同じく残します
+- 本人がプロフィールを作り直すと新しい顧客ができるので、好み設定は空から始まります
+
 ## 同時に届いたリクエスト
 
 | 状況 | 結果 |
@@ -187,8 +271,15 @@
 | プロフィールの作成と、そのアカウントのメールアドレスでの顧客の登録（台帳）が同時に届く | そのメールアドレスの顧客は 1 人だけ。登録が先に済めば、作成はその顧客を引き継ぐ（どちらも 201）。作成が先に済めば、登録は 409。同じ瞬間に書き込むと、作成が 409（もう一度送れば、登録された顧客を引き継ぐ） |
 | プロフィールの作成と、引き継ぐはずの顧客の削除が同時に届く | どちらも成功する。削除が先なら、新しい顧客がプロフィールになる。作成が先なら、引き継いだ顧客が削除され、アカウントはプロフィールのない状態に戻る |
 | プロフィールの更新と、その顧客の削除が同時に届く | 削除は成功する。更新は、先に処理されれば 200、あとなら 404 |
+| 好み設定のない顧客への、好み設定の更新が同時に届く | 行は 1 つだけできる。別々の項目の変更は、どちらも残る |
+| 同じ顧客の好み設定の、別々の項目を同時に更新する | どちらの変更も残る。本人とスタッフの更新でも同じ |
+| あるスタッフを希望にする更新と、同じスタッフを避ける更新が同時に届く | 先に処理されたほうが 200 で、あとのほうは 400。希望と回避が重なった状態にはならない |
+| 好み設定の更新と、その顧客の削除が同時に届く | 削除は成功する。更新は、先に処理されれば 200、あとなら 404 |
+| 好み設定の更新と、そこに挙げたスタッフの削除が同時に届く | どちらも成功しうる。更新がスタッフを確かめたあとで削除が済むと、削除されたスタッフの ID が残る（保存したあとで削除された場合と同じ状態） |
 
 一意性は DB の一意インデックスが決めます。更新は、対象の行をロックしてから紹介元を確認し、書き込みます。プロフィールの作成は、アカウントの行、引き継ぐ顧客の行の順にロックしてから書き込みます。
+
+好み設定の更新は、顧客の行をロックして（`FOR UPDATE`）から、スタッフを確かめ、保存されている好み設定を読み、希望と回避の規則を確かめて、行を作るか書き換えます。同じ顧客への更新は、1 件ずつ処理されます。顧客の行をロックするので、台帳の更新や削除とも順番になります。スタッフの行はロックしません。取得は、ロックを待ちません。
 
 ## DB の制約
 
@@ -208,6 +299,19 @@
 - 削除済みの顧客を指していた `users.customerId` は NULL にする
 - `customers.userId` には外部キーを付けていません。`users.customerId` に外部キーがあり、2 つのテーブルが互いを外部キーで参照すると、DB から生成する `schema.ts` に型が付かなくなるためです（[DB 駆動ドメインモデル](./db-driven-domain-model.md)）。2 つのカラムは、紐づけるコードと外すコードが 1 つのトランザクションで一緒に書きます
 
+マイグレーション `202611160100_customer_preferences_columns.sql` で、好み設定のテーブル（`customer_preferences`）を次のようにしました。
+
+- `avoidStaffIds` は `uuid[] NOT NULL`（既定値なし。以前は NULL 可の `jsonb`）
+- `preferredTimeSlots` は NOT NULL（既定値なし）。CHECK 制約 `customer_preferences_time_slots_is_an_array` で、配列であることを保証する
+- `stylePreferences` は既定値なし（未設定は NULL）。CHECK 制約 `customer_preferences_style_is_an_object` で、オブジェクトであることを保証する
+- `preferredStaffId` は `avoidStaffIds` に含まれない（CHECK 制約 `customer_preferences_preferred_staff_not_avoided`）
+- カラム `preferredServices` を削除した。読むコードも書くコードもなく、中身の定義もなかった。好みのサービスカテゴリーは、`customers.preferences` が持つ
+- インデックス `idx_customer_preferences_customer_id` を削除した。顧客ごとに 1 行にする一意制約（`customer_preferences_unique`）が、同じカラムのインデックスを持つ
+
+外部キーは以前からのものです。`customerId` は `ON DELETE CASCADE`、`preferredStaffId` は `ON DELETE SET NULL` で、どちらも行を物理的に消したときの動作です。API の削除は論理削除なので、働きません。`avoidStaffIds` は配列のカラムで、外部キーはありません。スタッフの存在は、書き込むときにコードが確かめます。
+
+以前の行は、マイグレーションが直します（NULL や配列でない一覧は空に、UUID でない ID と重複した ID は除く、時間帯は `HH:mm` で開始が終了より前のものだけを残す、`{}` の `stylePreferences` は NULL に、など。詳細はマイグレーションのコメント）。希望するスタッフが避けるスタッフに含まれている行があると、マイグレーションが失敗します。どちらを残すかは決められないので、行を直してから、やり直します。
+
 ## 実装の場所
 
 | 層 | ファイル |
@@ -215,7 +319,8 @@
 | コントラクト | `specs/models/customer.tsp`、`specs/operations/customer-operations.tsp` |
 | ドメイン | `backend/packages/domain/src/models/customer.ts`、`schemas/customer.schema.ts`、`mappers/write/customer.mapper.ts`、`mappers/read/customer.mapper.ts`、`repositories/customer.repository.ts`、`business-logic/customer/`（権限は `_shared/authorization.ts`、生年月日と紹介元の規則は `_shared/rules.ts`、電話番号での検索の判定は `_shared/search.ts`） |
 | ドメイン（プロフィール） | 同じ `models/customer.ts`、`schemas/customer.schema.ts`、`repositories/customer.repository.ts`（`createProfile`）と、`mappers/write/customer-profile.mapper.ts`、`mappers/read/customer-profile.mapper.ts`、`business-logic/customer/` の `*-customer-profile.usecase.ts`（誰のプロフィールかは `_shared/profile.ts`） |
-| ドメイン（共通） | `backend/packages/domain/src/schemas/rules.ts`（`lowerCaseEmail`、`phoneNumber` など、複数のドメインのスキーマが使う規則） |
-| インフラ | `backend/packages/infrastructure/src/repositories/customer.repository.impl.ts`、`database/like.ts`（キーワードを文字どおりに探す LIKE のパターン） |
-| API | `backend/packages/api/src/routes/customer/`（プロフィールは `*-customer-profile.handler.ts`） |
-| DB | `backend/packages/database/sql/migrations/202611150900_customers_columns.sql`、`202611151500_customers_user_unique.sql` |
+| ドメイン（好み設定） | `backend/packages/domain/src/models/customer-preferences.ts`、`schemas/customer-preferences.schema.ts`、`mappers/read/customer-preferences.mapper.ts`、`repositories/customer-preferences.repository.ts`、`business-logic/customer-preferences/`（希望と回避の規則は `_shared/rules.ts`、リポジトリが断った理由をエラーに直すのは `_shared/refusals.ts`、台帳と本人に共通の流れは `_shared/preferences-of.ts`）。Write マッパーはない（リクエストのプロパティは、名前も型もカラムと同じ） |
+| ドメイン（共通） | `backend/packages/domain/src/schemas/rules.ts`（`lowerCaseEmail`、`phoneNumber`、`timeSlot` など、複数のドメインのスキーマが使う規則） |
+| インフラ | `backend/packages/infrastructure/src/repositories/customer.repository.impl.ts`、`customer-preferences.repository.impl.ts`、`database/like.ts`（キーワードを文字どおりに探す LIKE のパターン） |
+| API | `backend/packages/api/src/routes/customer/`（プロフィールは `*-customer-profile.handler.ts`）、`routes/customer-preferences/`（本人のものは `*-own-customer-preferences.handler.ts`） |
+| DB | `backend/packages/database/sql/migrations/202611150900_customers_columns.sql`、`202611151500_customers_user_unique.sql`、`202611160100_customer_preferences_columns.sql` |
