@@ -488,6 +488,8 @@ describe('Booking status API', () => {
       '%s moves a booking that is %s to %s, notes it in the history and returns the booking as it is then',
       async (action, from, to) => {
         const id = await bookingIn(from)
+        // Another booking, whose lines the response does not have.
+        await bookingIn('pending')
         const before = await databaseClock()
 
         const response = await act(id, action)
