@@ -25,6 +25,37 @@ export const parseBookingId = (id: unknown): Result<BookingId, DomainError> =>
     (parameters) => parameters.id,
   )
 
+const bookingIdOfPathSchema = z.object({ bookingId: bookingIdSchema })
+
+/**
+ * The booking in the path of a route below a booking
+ * (`/bookings/{bookingId}/...`); a failure is reported under `bookingId`.
+ */
+export const parseBookingIdOfPath = (
+  bookingId: unknown,
+): Result<BookingId, DomainError> =>
+  Result.map(
+    parseWith(bookingIdOfPathSchema, { bookingId }, 'Invalid booking ID'),
+    (parameters) => parameters.bookingId,
+  )
+
+export const bookingServiceIdSchema = uuidSchema.brand<'BookingServiceId'>()
+export type BookingServiceId = z.infer<typeof bookingServiceIdSchema>
+
+const bookingServiceIdParameterSchema = z.object({ id: bookingServiceIdSchema })
+
+export const parseBookingServiceId = (
+  id: unknown,
+): Result<BookingServiceId, DomainError> =>
+  Result.map(
+    parseWith(
+      bookingServiceIdParameterSchema,
+      { id },
+      'Invalid booking service ID',
+    ),
+    (parameters) => parameters.id,
+  )
+
 // API types, generated from TypeSpec
 export type ApiBookingResponse = components['schemas']['Models.BookingResponse']
 export type ApiBookingServiceResponse =
@@ -89,6 +120,23 @@ export type BookingWrite = {
   services: DbNewBookingService[]
   statusChange: DbNewBookingStatusChange
 }
+
+/**
+ * What a booking says of its service lines taken together: when the visit
+ * is and what it costs. It is written with the booking, and again whenever
+ * a line is added or removed.
+ */
+export type DbBookingSummary = Pick<
+  DbBooking,
+  | 'bookingDate'
+  | 'startTime'
+  | 'endTime'
+  | 'duration'
+  | 'subtotal'
+  | 'discountAmount'
+  | 'taxAmount'
+  | 'totalAmount'
+>
 
 /**
  * What a change of the status writes to a booking besides the status: only

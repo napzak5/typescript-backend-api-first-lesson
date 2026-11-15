@@ -9,7 +9,7 @@ import type { ModelsServiceId } from './modelsServiceId';
 
 /**
  * 施術明細の追加リクエスト - 全項目のキーが必須。DB で NULL 許可のカラムのみ null を指定できる。
- * 終了日時・施術時間・料金・割引額は、指定したサービスの登録内容から算出する
+ * 終了日時・施術時間・料金・割引額・税込かどうかは、指定したサービスの登録内容から決まる
  */
 export interface ModelsBookingServiceCreateRequest {
   /** 予約する施術メニューのID。予約と同じサロンのサービスを指定する */

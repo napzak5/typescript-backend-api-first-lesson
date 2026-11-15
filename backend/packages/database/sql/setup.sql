@@ -50,6 +50,7 @@ CREATE TABLE "booking_services" (
 	"sortOrder" integer DEFAULT 0 NOT NULL,
 	"createdAt" timestamp with time zone DEFAULT now() NOT NULL,
 	"updatedAt" timestamp with time zone DEFAULT now() NOT NULL,
+	"taxIncluded" boolean NOT NULL,
 	CONSTRAINT "booking_services_order_unique" UNIQUE("bookingId","sortOrder"),
 	CONSTRAINT "booking_services_completed_has_time" CHECK ("isCompleted" = ("completedAt" IS NOT NULL)),
 	CONSTRAINT "booking_services_discount_within_price" CHECK (("discountAmount" >= 0) AND ("discountAmount" <= price)),

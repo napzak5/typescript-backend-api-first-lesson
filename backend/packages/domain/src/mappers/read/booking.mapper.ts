@@ -56,6 +56,7 @@ const toApiBookingService = (
       price: service.price,
       discountAmount: service.discountAmount,
       finalPrice: service.finalPrice,
+      taxIncluded: service.taxIncluded,
       isCompleted: service.isCompleted,
       completedAt: converted.completedAt,
       notes: service.notes,
@@ -134,6 +135,18 @@ const toApiBooking = ({
 
 export const BookingReadMapper = {
   toApiBooking,
+
+  toApiBookingService(
+    service: DbBookingService,
+  ): Result<ApiBookingServiceResponse, DomainError> {
+    return Result.mapError(toApiBookingService(service), (error) =>
+      // The request was fine; the stored row is not.
+      DomainErrors.database(
+        `Stored booking service ${service.id} does not match the API model`,
+        error,
+      ),
+    )
+  },
 
   toApiBookings(
     bookings: BookingWithServices[],

@@ -2,6 +2,10 @@ import type { Result } from '@beauty-salon-backend/utility'
 import type { BookingOrigin } from '../business-logic/booking/_shared/plan'
 import type { BookingMove } from '../business-logic/booking/_shared/reschedule'
 import type {
+  ServiceAdditionPlan,
+  ServiceRemovalPlan,
+} from '../business-logic/booking/_shared/service-lines'
+import type {
   BookingAction,
   StatusChangeRefusal,
 } from '../business-logic/booking/_shared/status'
@@ -9,9 +13,11 @@ import type { UserId } from '../models/auth'
 import type {
   BookingId,
   BookingReach,
+  BookingServiceId,
   BookingWithServices,
   DbBooking,
   DbBookingNotes,
+  DbBookingService,
 } from '../models/booking'
 import type { CustomerId } from '../models/customer'
 import type { SalonId } from '../models/salon'
@@ -19,6 +25,7 @@ import type { StaffId } from '../models/staff'
 import type {
   BookingCreateRequest,
   BookingRescheduleRequest,
+  BookingServiceCreateRequest,
 } from '../schemas/booking.schema'
 import type { DomainError, ValidationIssue } from '../shared'
 
@@ -80,6 +87,31 @@ export type BookingDeletion =
   | { type: 'deleted' }
   | { type: 'notFound' }
   | { type: 'referredTo'; by: BookingReference[] }
+
+/**
+ * What became of a service line that was to be added to a booking:
+ * - `added`: the line as it is stored
+ * - `notFound`: no booking within the reach has the ID
+ * - `staffOccupied`: the staff member of the line has, at its time, as many
+ *   other bookings as they take at once
+ * - otherwise why the line was not planned (`planServiceAddition`)
+ */
+export type BookingServiceAddition =
+  | { type: 'added'; service: DbBookingService }
+  | { type: 'notFound' }
+  | { type: 'staffOccupied'; staffIds: string[] }
+  | Exclude<ServiceAdditionPlan, { type: 'planned' }>
+
+/**
+ * What became of a service line that was to be removed from a booking:
+ * - `removed`: the line is gone
+ * - `notFound`: no booking within the reach has the ID
+ * - otherwise why the line stays (`planServiceRemoval`)
+ */
+export type BookingServiceRemoval =
+  | { type: 'removed' }
+  | { type: 'notFound' }
+  | Exclude<ServiceRemovalPlan, { type: 'planned' }>
 
 export type BookingListCriteria = {
   /** The bookings the list is taken from. */
@@ -180,6 +212,41 @@ export interface IBookingRepository {
     id: BookingId,
     reach: BookingReach,
   ): Promise<Result<BookingDeletion, DomainError>>
+
+  /**
+   * Adds a service line to a booking within the reach
+   * (`planServiceAddition`) and writes what the booking says of its lines
+   * again. The booking is held from the moment its lines are read, the
+   * service and the staff member of the line are held like those of a
+   * booking that is entered, and the lines the booking has already do not
+   * stand in the way of the new one.
+   */
+  addService(
+    id: BookingId,
+    reach: BookingReach,
+    request: BookingServiceCreateRequest,
+  ): Promise<Result<BookingServiceAddition, DomainError>>
+
+  /**
+   * A service line of a booking within the reach. Resolves to `null` when
+   * no such booking has the line.
+   */
+  findService(
+    id: BookingId,
+    serviceId: BookingServiceId,
+    reach: BookingReach,
+  ): Promise<Result<DbBookingService | null, DomainError>>
+
+  /**
+   * Removes a service line from a booking within the reach
+   * (`planServiceRemoval`) and writes what the booking says of the lines
+   * that stay.
+   */
+  removeService(
+    id: BookingId,
+    serviceId: BookingServiceId,
+    reach: BookingReach,
+  ): Promise<Result<BookingServiceRemoval, DomainError>>
 
   /**
    * A page of the bookings that match, by the time they begin, earliest

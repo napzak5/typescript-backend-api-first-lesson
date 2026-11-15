@@ -26,10 +26,11 @@ import { atLeastOneProperty, MAX_INTEGER, nonBlankText } from './rules'
  * while it writes.
  */
 
-const MAX_BOOKING_SERVICES = 20
+/** A booking has no more service lines than this. */
+export const MAX_BOOKING_SERVICES = 20
 
 /** Every service of a booking begins within this time of the earliest one. */
-const HOURS_OF_A_VISIT = 24
+export const HOURS_OF_A_VISIT = 24
 
 const MILLISECONDS_OF_A_MINUTE = 60_000
 
@@ -47,12 +48,21 @@ const minuteInUtc = z.iso
   }, 'Must be on a whole minute')
   .transform((value) => parseISO(value).toISOString())
 
-const bookingServiceCreateRequestSchema = z.strictObject({
+/**
+ * A service line as a request asks for it: of a booking that is entered,
+ * and of one a line is added to afterwards.
+ */
+export const bookingServiceCreateRequestSchema = z.strictObject({
   serviceId: serviceIdSchema,
   staffId: staffIdSchema.nullable(),
   startTime: minuteInUtc,
   notes: nonBlankText.nullable(),
 }) satisfies z.ZodType<ApiBookingServiceCreateRequest>
+
+/** A service line of a request that passed the rules of its own. */
+export type BookingServiceCreateRequest = z.infer<
+  typeof bookingServiceCreateRequestSchema
+>
 
 /**
  * A booking is one visit: a service that begins a day after the first one

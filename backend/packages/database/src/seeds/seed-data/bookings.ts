@@ -482,34 +482,32 @@ export async function seedBookings(
         service.price - (service.discountPrice ?? service.price)
 
       return {
+        serviceId: service.id,
+        staffId,
+        startTime: startTime.toISOString(),
+        endTime: endTime.toISOString(),
+        duration: service.duration,
+        price: service.price,
+        discountAmount,
+        finalPrice: service.price - discountAmount,
         taxIncluded: service.taxIncluded,
-        row: {
-          serviceId: service.id,
-          staffId,
-          startTime: startTime.toISOString(),
-          endTime: endTime.toISOString(),
-          duration: service.duration,
-          price: service.price,
-          discountAmount,
-          finalPrice: service.price - discountAmount,
-          selectedOptions: null,
-          isCompleted: completed,
-          completedAt: completed ? endTime.toISOString() : null,
-          notes: null,
-          sortOrder,
-        },
+        selectedOptions: null,
+        isCompleted: completed,
+        completedAt: completed ? endTime.toISOString() : null,
+        notes: null,
+        sortOrder,
       }
     })
 
-    const duration = sumOf(lines.map(({ row }) => row.duration))
+    const duration = sumOf(lines.map((line) => line.duration))
     const end = addMinutes(start, duration)
-    const subtotal = sumOf(lines.map(({ row }) => row.price))
-    const discountAmount = sumOf(lines.map(({ row }) => row.discountAmount))
+    const subtotal = sumOf(lines.map((line) => line.price))
+    const discountAmount = sumOf(lines.map((line) => line.discountAmount))
     const taxAmount = taxAddedTo(
       sumOf(
         lines
           .filter(({ taxIncluded }) => !taxIncluded)
-          .map(({ row }) => row.finalPrice),
+          .map((line) => line.finalPrice),
       ),
       salon.taxRate,
     )
@@ -558,7 +556,7 @@ export async function seedBookings(
         createdAt: bookedAt.toISOString(),
         updatedAt: found(statusChanges.at(-1), 'a status').at.toISOString(),
       },
-      lines: lines.map(({ row }) => row),
+      lines,
       statusChanges,
     }
   })

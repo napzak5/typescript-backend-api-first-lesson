@@ -889,6 +889,7 @@ describe('modelRules', () => {
           'price',
           'discountAmount',
           'finalPrice',
+          'taxIncluded',
           'selectedOptions',
           'isCompleted',
           'completedAt',
