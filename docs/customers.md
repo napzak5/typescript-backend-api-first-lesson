@@ -96,11 +96,11 @@
 | `allowMarketing` / `allowSms` / `allowEmail` / `isActive` | 真偽値 |
 | `hairType` / `hairThickness` / `scalpCondition` | null、またはそれぞれの Enum の値 |
 
-- **リクエストで変えられない項目**: `userId`（ログインアカウントとの紐づけ）、`loyaltyPoints`、`lifetimeValue`、`firstVisitDate`、`lastVisitDate`、`visitCount`、`noShowCount`、`cancellationCount`。本文に書くと 400（`unrecognized_keys`）です。`userId` は本人がプロフィールを作ったときに決まり、ほかは予約と会計が更新します
+- **リクエストで変えられない項目**: `userId`（ログインアカウントとの紐づけ）、`loyaltyPoints`、`lifetimeValue`、`firstVisitDate`、`lastVisitDate`、`visitCount`、`noShowCount`、`cancellationCount`。本文に書くと 400（`unrecognized_keys`）です。`userId` は本人がプロフィールを作ったときに決まります。ほかは、来店やキャンセルを記録する予約の操作と、会計が更新する値です（どちらも未実装で、予約台帳の作成は、これらの値を変えません）
 - **生年月日の「未来」**: 日付にはタイムゾーンがありません。日本時間の今日は、UTC ではまだ前日のことがあるので、UTC の今日の翌日までを受け付けます（`business-logic/customer/_shared/rules.ts` の `customerRuleIssues`。現在時刻は依存の `clock` から受け取る）
 - **メールアドレスと紹介コードの一意性は範囲が違います**。削除した顧客のメールアドレスは、別の顧客の登録に使えます（同じ人がもう一度登録できる）。紹介コードは、人に配ったあとも出回るので、顧客を削除しても別の顧客には使い回しません
 - **紹介元**（`referredBy`）は、登録した時点の事実として保存します。紹介元の顧客があとで削除されても、値は残ります。2 人が互いを紹介元にするような循環は確認しません
-- `isActive` と `customerStatus` は、互いに独立した属性として保存します。どの状態の顧客が予約できないかは、予約の実装で決めます
+- `isActive` と `customerStatus` は、互いに独立した属性として保存します。サロンが予約台帳に入れる予約は、どちらの値も確かめません（[予約台帳](./bookings.md#サロンが台帳に入れる予約はサロンの判断)）。顧客が自分で入れる予約で、どの状態の顧客が予約できないかは、その実装で決めます
 - `preferences` の中の形は DB では保証できないので、読み出すときに検証します（`schemas/customer.schema.ts` の `storedCustomerPreferencesSchema`）。合わない行は 500（データベースのエラー）です
 
 ## 削除
@@ -110,7 +110,7 @@
 - 削除した顧客を紹介元にしている顧客の `referredBy` は変えません。削除した顧客を、新しく紹介元に指定することはできません
 - その顧客をプロフィールにしているアカウントがあれば、紐づけを外します（[顧客が削除されたとき](#顧客が削除されたとき)）
 - 削除した顧客の[好み設定](#好み設定)は、顧客と同じく見えなくなります。行は残します
-- 予約が残っている顧客を削除できるかは、予約の実装で決めます
+- 予約が残っている顧客も削除できます。予約に保存されている顧客の ID は残り、予約の取得は、そのまま返します。削除した顧客を、新しい予約に指定することはできません（400）。終わっていない予約がある顧客の削除を断る規則は、まだありません
 
 ## 顧客本人のプロフィール
 

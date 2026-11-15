@@ -268,8 +268,8 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 
 | 範囲 | 対象 | 届くもの |
 |---|---|---|
-| `platform` | `admin` | すべてのサロンと、顧客台帳（顧客の好み設定を含む） |
-| `salon` | `owner`、`manager`、`staff`。`users.staffId` が指すスタッフが有効（`isActive`、未削除）で、そのサロンが未削除であること | そのサロンと、顧客台帳（顧客の好み設定を含む）、自分のスタッフのプロフィール（`/api/v1/staff-profiles/me`）。範囲はロール・サロン ID・スタッフ ID を持つ |
+| `platform` | `admin` | すべてのサロン（予約台帳を含む）と、顧客台帳（顧客の好み設定を含む） |
+| `salon` | `owner`、`manager`、`staff`。`users.staffId` が指すスタッフが有効（`isActive`、未削除）で、そのサロンが未削除であること | そのサロン（予約台帳を含む）と、顧客台帳（顧客の好み設定を含む）、自分のスタッフのプロフィール（`/api/v1/staff-profiles/me`）。範囲はロール・サロン ID・スタッフ ID を持つ |
 | `customer` | `customer`。範囲は `users.customerId` を持ち、プロフィールを作るまでは null | 自分のプロフィール（`/api/v1/customers/me`）と、自分の好み設定（`/api/v1/customers/me/preferences`）。null の間は、プロフィールの作成だけができる |
 | `none` | `owner`、`manager`、`staff` で、`salon` の条件に当たらない（スタッフ情報が削除された `staff`、紐づけを解除された `staff` など） | 範囲を必要とするものには届かない。ログインはでき、スタッフへの招待に[参加](./staff.md#参加)できる |
 
@@ -372,6 +372,24 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 
 台帳とプロフィールの規則は [顧客台帳](./customers.md) にあります。
 
+### 予約台帳の権限
+
+予約（`bookings`）はサロンのものですが、ルートはサロンの下にありません（`/api/v1/bookings`）。どのサロンの予約かは、作成では本文の `salonId`、一覧ではクエリの `salonId`、取得では予約そのものが決めます。権限は 2 段階で判定します（`business-logic/booking/_shared/authorization.ts`）。
+
+| オペレーション | 許可 |
+|---|---|
+| 予約の一覧（`GET /api/v1/bookings`） | `admin`（すべてのサロン）、サロンの `owner` / `manager` / `staff`（所属サロンの予約だけ） |
+| 予約の作成（`POST /api/v1/bookings`） | `admin`、本文の `salonId` のサロンの `owner` / `manager` / `staff` |
+| 予約の 1 件の取得（`GET /api/v1/bookings/{id}`） | `admin`、予約のサロンの `owner` / `manager` / `staff` |
+
+- 1 段階目は、操作者だけで決まる（`bookingReachOf`）。操作者に届く予約は、`admin` ならすべてのサロンのもの、サロンのユーザーなら所属サロンのもの。ロール `customer` のユーザーと範囲 `none` のユーザーには、届く予約がない。本文、クエリ、ID が不正でも 403 を返す
+- 2 段階目は、リクエストがサロンを指定したあとに決まる（`isWithin`）。サロンのユーザーが、作成の本文や一覧のクエリでほかのサロンを指定すると 403。本文やクエリが不正なら、その前に 400 を返す
+- 取得には、比べるサロンがない。リポジトリが、操作者に届く範囲を検索の条件にするので、ほかのサロンの予約は見つからない（404）。存在しない ID と区別しない。一覧も同じ条件で検索し、カーソルが指す予約にも同じ条件を付ける
+- サロンの 3 つのロールに違いはない。予約のための権限（`users.permissions`）もない
+- ロール `customer` のユーザーは、自分の予約にも届かない。レスポンスがサロン内のメモ（`internalNotes`）を含むため。顧客が自分の予約を読むルートは、まだない
+
+規則は [予約台帳](./bookings.md) にあります。
+
 ## 管理者の操作
 
 `/api/v1/admin/auth` は、ほかのユーザーのアカウントを参照し、利用者が自分では直せない状態を直すためのものです。使えるのは操作者の範囲が `platform`（ロール `admin`）のユーザーだけで、それ以外は 403 です（`business-logic/auth/_shared/authorization.ts` の `mayAdministerAccounts`）。
@@ -417,9 +435,11 @@ export const updateSalonHandler = (
 }
 ```
 
-サロンに属するデータ（予約、スタッフなど）を実装するときは、[サロンの下にあるルートの権限](#サロンの下にあるルートの権限) に従います。ユースケースは、パスの ID を `parseSalonIdOfPath`（`backend/packages/domain/src/models/salon.ts`）で検証し、そのサロンで権限を判定してから、`requireSalon`（`business-logic/_shared/existing-salon.ts`）でサロンの存在を確認します。対象は、そのサロンのものだけを検索します。例は `business-logic/service-category/` と `business-logic/service/`（読むのは認証なし）、`business-logic/staff/`（どのオペレーションにも認証が要る）、`business-logic/staff-schedule/`（サロンで判定したあと、対象の ID でもう一度判定する）、`business-logic/staff-invitation/`（サロンで判定したあと、本文の値でもう一度判定する）、`business-logic/staff-account/`（同じ 2 段階のあとに、操作者自身のアカウントでないことを確認する）です。パスが対象を指定せず、アカウントが対象を決めるルートの例は、`business-logic/customer/` の `*-customer-profile.usecase.ts`（`/api/v1/customers/me`）と、`business-logic/staff-profile/` の `*-own-staff-profile.usecase.ts`（`/api/v1/staff-profiles/me`）です。
+サロンに属するデータ（スタッフなど）を、サロンの下のルートで実装するときは、[サロンの下にあるルートの権限](#サロンの下にあるルートの権限) に従います。ユースケースは、パスの ID を `parseSalonIdOfPath`（`backend/packages/domain/src/models/salon.ts`）で検証し、そのサロンで権限を判定してから、`requireSalon`（`business-logic/_shared/existing-salon.ts`）でサロンの存在を確認します。対象は、そのサロンのものだけを検索します。例は `business-logic/service-category/` と `business-logic/service/`（読むのは認証なし）、`business-logic/staff/`（どのオペレーションにも認証が要る）、`business-logic/staff-schedule/`（サロンで判定したあと、対象の ID でもう一度判定する）、`business-logic/staff-invitation/`（サロンで判定したあと、本文の値でもう一度判定する）、`business-logic/staff-account/`（同じ 2 段階のあとに、操作者自身のアカウントでないことを確認する）です。パスが対象を指定せず、アカウントが対象を決めるルートの例は、`business-logic/customer/` の `*-customer-profile.usecase.ts`（`/api/v1/customers/me`）と、`business-logic/staff-profile/` の `*-own-staff-profile.usecase.ts`（`/api/v1/staff-profiles/me`）です。
 
 サロンに属さないデータは、操作者だけで権限を判定し、最初に判定します。例は `business-logic/customer/`（[顧客台帳の権限](#顧客台帳の権限)）です。ログインしているアカウント自身のデータは、対象をパスの ID ではなく操作者の範囲から決めます。例は同じディレクトリの `*-customer-profile.usecase.ts` です。`business-logic/customer-preferences/` のユースケースは、この 2 つの判定をそのまま使います。
+
+サロンに属するが、ルートがサロンを指定しないデータは、操作者に届く範囲を最初に決め、リクエストがサロンを指定したところで、そのサロンが範囲に入るかを判定します。保存されている行を読むクエリには、範囲を条件として渡します。例は `business-logic/booking/`（[予約台帳の権限](#予約台帳の権限)）です。
 
 ## シードのアカウント
 

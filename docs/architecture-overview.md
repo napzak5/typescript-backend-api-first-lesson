@@ -36,7 +36,7 @@ Before relying on anything, check this table.
 |------|-------|
 | Salon API (`/api/v1/salons`) | Implemented in every layer: list, create, get, update, delete. It is the reference implementation for every other domain. List and get are public; create, update and delete need a signed-in user with the permission. |
 | Service categories of a salon (`/api/v1/salons/{salonId}/service-categories`) | Implemented in every layer: list, create, get, update, delete, the five operations of `ServiceCategoryCrud`. They are the example of data that belongs to a salon: the routes are below the salon, and a category that is not of the salon in the path is answered with 404. List and get are public; create, update and delete need a signed-in user with the permission. See [Service Menu](./service-menu.md) (Japanese). |
-| Services of a salon (`/api/v1/salons/{salonId}/services`) | Implemented in every layer: list, create, get, update, bulk update, delete, the six operations of `ServiceCrud`. A service carries its options (the rows of `service_options`) in its requests and responses, and a package names the services it combines. The bulk update changes all the services it names or none of them. A delete keeps the row and marks it with `deletedAt`, and is refused with 409 while a package contains the service. List and get are public; create, update, bulk update and delete need a signed-in user with the permission. `isActive`, `serviceStatus`, `availability`, `bookingRequirements` and `maxBookingsPerDay` are stored and returned, and the list can filter by `isActive`; nothing else reads them: which services can be booked is not decided yet. See [Service Menu](./service-menu.md) (Japanese). |
+| Services of a salon (`/api/v1/salons/{salonId}/services`) | Implemented in every layer: list, create, get, update, bulk update, delete, the six operations of `ServiceCrud`. A service carries its options (the rows of `service_options`) in its requests and responses, and a package names the services it combines. The bulk update changes all the services it names or none of them. A delete keeps the row and marks it with `deletedAt`, and is refused with 409 while a package contains the service. List and get are public; create, update, bulk update and delete need a signed-in user with the permission. `isActive`, `serviceStatus`, `availability`, `bookingRequirements` and `maxBookingsPerDay` are stored and returned, and the list can filter by `isActive`; nothing else reads them: the booking ledger takes any service of the salon, and which services customers can book themselves is not decided yet. See [Service Menu](./service-menu.md) (Japanese). |
 | Customer ledger (`/api/v1/customers`) | Implemented in every layer: list, create, get, update, delete, five of the 19 operations of `CustomerCrud`. A customer belongs to no salon: the ledger is one for the whole platform, and its routes are not below a salon. No operation is public: list, create, get and update need a signed-in administrator or member of a salon (owner, manager or staff of any salon), delete an administrator, an owner or a manager. A delete keeps the row and marks it with `deletedAt`. Two more are the preferences of a customer (two rows below). The other 12 operations of `CustomerCrud` are not implemented: batch get, bulk create, bulk update, bulk delete, restore, merge, audit history, versions, the two exports, statistics and the data deletion request. A signed-in customer reaches no route of the ledger; their own record is the profile of the next row. `isActive` and `customerStatus` are stored and returned, and the list can filter by `customerStatus`; nothing else reads them: which customers can book is not decided yet. Nothing maintains the points, the lifetime value or the visit counters. See [Customer Ledger](./customers.md) (Japanese). |
 | Customer profile (`/api/v1/customers/me`) | Implemented in every layer: get, create, update, three of the five operations of `CustomerProfile`; the other two are the preferences of the next row. The profile is the customer record of the signed-in account. The route names no record: the account alone says which one, so a customer reaches no other. Only a customer account has a profile; an administrator and a member of a salon are answered with 403. A registered user has no record until they create the profile. The creation takes over the customer that the ledger has under the account's email address, unless that customer belongs to another account (409), and needs an account that has confirmed its address (409); without such a customer it adds one to the ledger. The response leaves out what the staff keep to themselves (notes, tags, status, the referrer, the lifetime value, the counts of no-shows and cancellations), and the requests write only what is the customer's own: the name, the contact details, the birth date, the preferences and the three consents. A delete of the customer in the ledger takes the profile from the account, which may then create a new one. See [Customer Ledger](./customers.md) (Japanese). |
 | Customer preferences (`/api/v1/customers/{id}/preferences`, `/api/v1/customers/me/preferences`) | Implemented in every layer: get and update for whoever keeps the ledger (`getPreferences` and `updatePreferences` of `CustomerCrud`) and for the customer (the operations of the same names of `CustomerProfile`). The preferences are one record per customer (a row of `customer_preferences`): the staff member the customer prefers, the staff members they avoid, the times of day they like to come, a style preference, how they like to be talked to and special requests. There is no create and no delete: a customer without a row has empty preferences, a get answers 200 with them, and the first update creates the row. The permissions are those of the ledger and of the profile. A staff member that an update names has to be one who is not deleted, of a salon that is not deleted, of whichever salon (400). The preferred staff member is not among the avoided ones in the preferences as they are stored after the update (400), which the update checks while it holds a lock on the row of the customer. The ID of a staff member who is deleted later stays in the preferences. Nothing reads the preferences yet: how a booking uses them is not decided. See [Customer Ledger](./customers.md#好み設定) (Japanese). |
@@ -48,7 +48,8 @@ Before relying on anything, check this table.
 | Authentication (`/api/v1/auth`, `/api/v1/admin/auth`) | Implemented: `login`, `refresh`, `logout`, `logout-all` and `me`, on server-side sessions with opaque bearer tokens, and registration of customer accounts, email verification and password reset, each through a single-use token sent by mail, and password change, and verifying, accepting and joining the invitation of a staff member, which creates the accounts of owners, managers and staff or links one that exists, and two-factor authentication with the one-time passwords of an authenticator app (TOTP) and backup codes, and the list of the signed-in user's sessions with the revocation of one of them, and under `/api/v1/admin/auth` the administrator operations: read a user, unlock an account, reset two-factor authentication. That is every operation in `specs/operations/auth-operations.tsp`: the 19 of `AuthCrud`, the 2 of `SessionCrud` and the 3 of `AdminAuthCrud`. See [Authentication and Authorization](./authentication.md). |
 | Authorization | Implemented for the Salon API (create, update, delete), for the service categories of a salon (create, update, delete), for the services of a salon (create, update, bulk update, delete), for the customer ledger and a customer's own profile (every operation), for the staff ledger of a salon, the schedules of its staff, their invitations and their accounts and a staff member's own profile (every operation) and for the administrator operations. An implemented operation that the contract does not mark `@useAuth(NoAuth)` needs a valid access token, and its use case decides whether the signed-in user may do what is asked. |
 | System endpoints (`/api/system`) | Implemented: `alive`, `ready` and `health`. |
-| The other domains (booking, review, treatment, payment, inventory) | Specified in TypeSpec, so their generated types exist, and the database schema has their tables and seed data. The models agree with the tables (`pnpm check:api-db`). There is no domain, repository or route code. A request to one of these routes is answered with 404. The implementation order is in GitHub issue #4. |
+| Booking ledger (`/api/v1/bookings`) | Implemented in every layer: list, create, get, three of the nine operations of `BookingCrud`. A booking belongs to a salon, but its routes are not below one: the salon is named by the body of a create, by the query of a list and by the stored row of a get. No operation is public: an administrator reaches the bookings of every salon, a member of a salon (owner, manager or staff) those of that salon, and a customer account none (403); the booking of another salon is not found. A create request names the salon, the customer, the staff member in charge and the service lines (a service, who provides it, when it begins). The end, the duration and the amounts of a line are those of its service at that moment, those of the booking follow from its lines, the booking number (`BK-XXXX-XXXX`) is issued by the system, and `bookingDate` is the day of the start in the time zone of the salon. The request is held to what keeps the ledger sound: everything it names exists and is of that salon (400), and no staff member is occupied by more bookings at a time than `maxConcurrentBookings`, counting the minutes the staff member keeps free before and after a line (409). It is not held to the opening hours, the schedules of the staff or to what is active: those are for the bookings that customers enter themselves, which do not exist. The other six operations of `BookingCrud` (update, delete, confirm, cancel, complete, reschedule), `BookingServiceCrud` and `AvailableSlotCrud` are not implemented, so a booking stays `pending`. See [Booking Ledger](./bookings.md) (Japanese). |
+| The other domains (review, treatment, payment, inventory) | Specified in TypeSpec, so their generated types exist, and the database schema has their tables and seed data. The models agree with the tables (`pnpm check:api-db`). There is no domain, repository or route code. A request to one of these routes is answered with 404. The implementation order is in GitHub issue #4. |
 | Attachments, roles and permissions, purchase orders, medical charts | Specified in TypeSpec only. No table exists for them yet. |
 | Email | Implemented for the mails of the authentication flows and the invitation of a staff member (confirm the address, reset the password, accept an invitation, and the notices: the password was changed, two-factor authentication was enabled, disabled or turned off by an administrator, the backup codes were replaced, a backup code was used to sign in): plain text over SMTP. Docker Compose starts Mailpit, which catches them locally. See [Email](./email.md) (Japanese). |
 | File storage | Not implemented. Docker Compose starts no service for it. |
@@ -493,6 +494,42 @@ api/src/
                                        handlers of /me only)
 ```
 
+The booking ledger is a salon's, but its routes are not below a salon. A
+create request states little, and the rows that are written are worked out
+from what it refers to, so there is no write mapper:
+
+```
+domain/src/
+├── models/booking.ts                  BookingId, API and database types; BookingWrite
+│                                      (the rows of one booking) and BookingReach (the
+│                                      bookings an actor reaches)
+├── schemas/booking.schema.ts          Zod schemas of the create and the list request
+├── mappers/read/booking.mapper.ts     A booking and its lines → API response
+├── repositories/booking.repository.ts IBookingRepository; what became of a create is
+│                                      a sum type (BookingCreation)
+├── services/booking-number-issuer.ts  IBookingNumberIssuer
+└── business-logic/booking/            One *.usecase.ts per operation; _shared/ holds
+                                       the dependencies, whom the ledger is for
+                                       (authorization.ts), the rows a request becomes
+                                       (plan.ts), when a staff member is occupied
+                                       (occupancy.ts), the format of a booking number
+                                       (booking-number.ts) and the errors of a refused
+                                       create (refusals.ts)
+
+infrastructure/src/
+├── repositories/booking.repository.impl.ts
+│                                      The create in one transaction that locks what
+│                                      the request refers to; the queries of the get
+│                                      and of the list are limited to a reach
+└── security/random-booking-number-issuer.ts
+                                       RandomBookingNumberIssuer: picks the symbols of
+                                       a number with the CSPRNG
+
+api/src/
+└── routes/booking/                    One *.handler.ts per operation, index.ts (router,
+                                       mounted at /bookings)
+```
+
 ## Layers and Package Dependencies
 
 An arrow means "depends on":
@@ -541,7 +578,7 @@ or a mail server.
 | `config` | `loadEnvFile`, `parseAppConfig` | `utility` |
 | `database` | `schema.ts`, `relations.ts`, `sql/`, the `db:*` scripts, seeds | `config`, `utility` |
 | `domain` | Models, schemas, mappers, use cases, repository and service interfaces, `DomainError` | `database` (types), `generated`, `utility` |
-| `infrastructure` | `connectDatabase`, `pingDatabase`, `SalonRepository`, `ServiceCategoryRepository`, `ServiceRepository`, `CustomerRepository`, `UserRepository`, `SessionRepository`, `Argon2PasswordHasher`, `RandomTokenIssuer`, `TotpAuthenticator`, `SmtpMailer`, `createLogger` | `database`, `domain`, `utility` |
+| `infrastructure` | `connectDatabase`, `pingDatabase`, the repositories (one class per repository interface of the domain: `SalonRepository`, `BookingRepository` and so on), `Argon2PasswordHasher`, `RandomTokenIssuer`, `RandomBookingNumberIssuer`, `TotpAuthenticator`, `SmtpMailer`, `createLogger` | `database`, `domain`, `utility` |
 | `api` | `createApp`, middleware, routes, authentication of a request, problem details | `domain`, `generated`, `infrastructure`, `utility`; `database` in tests |
 | `server` (application) | Entry point and `startServer` | `api`, `config`, `domain`, `infrastructure`, `utility` |
 
@@ -1271,6 +1308,57 @@ writes:
 
 The rules are in [Staff Ledger](./staff.md#顧客に見せるプロフィール) (Japanese).
 
+### A Booking Request
+
+The booking ledger is a salon's and is not public, but the path of a request
+names no salon (`/api/v1/bookings`, `business-logic/booking/`). What differs
+from a request below a salon:
+
+- **The permission in two steps.** `bookingReachOf`
+  (`_shared/authorization.ts`) decides from the actor alone, before the
+  request is read, which bookings the actor reaches: those of every salon
+  (an administrator), those of one salon (its owner, managers and staff) or
+  none (a customer account, an account without a scope: 403). Which salon
+  the request is about is known later. A create reads it from the body and
+  a list from the query, and `isWithin` then refuses a salon outside the
+  reach (403). A get has no salon to compare: the repository takes the
+  reach as a condition of the query (`findById(id, reach)`), so the booking
+  of another salon is not found (404). The list takes the reach the same
+  way, also for the booking a cursor names.
+- **A request that states little.** A create request says whom the booking
+  is for and which services begin when. `planBooking` (`_shared/plan.ts`),
+  a pure function, works out the rows: the end, the duration and the
+  amounts of a line from its service, the span and the sums of the booking
+  from its lines, the tax that is added once for the booking, and
+  `bookingDate` from the start in the time zone of the salon (`inTimeZone`
+  in `schemas/rules.ts`). Its result is a sum type: the rows to write and
+  whom they occupy when, the issues of references that are not there, or a
+  salon whose time zone is not known.
+- **One transaction that locks what it reads.** `create` of the repository
+  locks the salon, the customer and the services of the request
+  `FOR SHARE` and the staff members it names `FOR UPDATE`, in the order of
+  their IDs; calls `planBooking` with those rows; reads the lines that
+  other bookings have for each staff member around the wanted times and
+  asks `isOccupiedBeyondCapacity` (`_shared/occupancy.ts`); and inserts the
+  booking, its lines and the first row of `booking_status_histories`. The
+  bookings of one staff member are therefore written one after the other.
+  The transaction states `READ COMMITTED`, the level at which a statement
+  that waited for a lock sees what was committed meanwhile; with one
+  snapshot for the whole transaction, two requests for the same staff
+  member and time would both be written.
+- **A number from outside.** The use case asks `IBookingNumberIssuer` for a
+  number and hands it to the repository, which inserts with
+  `ON CONFLICT DO NOTHING` on the unique constraint of the number and
+  answers `bookingNumberTaken` when no row was written. The use case then
+  tries another number, three times in all.
+- **Refusals as values.** What became of a create is the sum type
+  `BookingCreation`; `toRefusalError` (`_shared/refusals.ts`) turns a
+  refusal into the error a client gets: a validation error that names the
+  properties (400), or a conflict for a time zone that is not known and for
+  staff members who are occupied (409).
+
+The rules are in [Booking Ledger](./bookings.md) (Japanese).
+
 ### An Authentication Request
 
 The authentication operations take the same path through the layers. Every
@@ -1462,6 +1550,7 @@ See [Frontend API Integration](./frontend-api-integration.md).
 - [Service Menu](./service-menu.md) (Japanese)
 - [Customer Ledger](./customers.md) (Japanese)
 - [Staff Ledger](./staff.md) (Japanese)
+- [Booking Ledger](./bookings.md) (Japanese)
 - [Email](./email.md) (Japanese)
 - [Type Generation System](./type-generation-system.md)
 - [TypeSpec API Type Rules](./typespec-api-type-rules.md)

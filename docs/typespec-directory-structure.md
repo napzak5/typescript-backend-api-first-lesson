@@ -67,7 +67,9 @@ TypeSpec に定義があっても、バックエンドに実装があるとは�
 | `models/staff.tsp` の勤務スケジュールのモデル（`StaffSchedule`、`StaffScheduleUpdateRequest`、`StaffScheduleSearchRequest`）、`operations/staff-operations.tsp` の `StaffSchedules` の 2 オペレーション（`list`、`update`） | `backend/packages/api/src/routes/staff-schedule/`。定義と実装は一致している（[スタッフ台帳](./staff.md#勤務スケジュール)） |
 | `models/staff.tsp` の招待のモデル（`StaffInvitationResponse`、`StaffInvitationCreateRequest`、`SalonRoleType`）、`operations/staff-operations.tsp` の `StaffInvitations` の 3 オペレーション（`get`、`create`、`delete`） | `backend/packages/api/src/routes/staff-invitation/`（招待する側のルーター）。定義と実装は一致している（[スタッフ台帳](./staff.md#スタッフのログインアカウント)） |
 | `models/staff.tsp` のアカウントのモデル（`StaffAccountResponse`、`StaffAccountUpdateRequest`）、`operations/staff-operations.tsp` の `StaffAccounts` の 3 オペレーション（`get`、`update`、`delete`） | `backend/packages/api/src/routes/staff-account/`。定義と実装は一致している（[スタッフ台帳](./staff.md#紐づいたアカウントの管理)） |
-| 上記以外のドメイン（booking、review、treatment、payment、inventory） | なし。TypeSpec は DB のテーブルと一致している（`pnpm check:api-db`）が、ドメイン・リポジトリ・ルートのコードはない |
+| `models/booking.tsp` の予約のモデル（`BookingResponse`、`BookingServiceResponse`、`BookingCreateRequest`、`BookingServiceCreateRequest`、`BookingSearchRequest`）、`operations/booking-operations.tsp` の `BookingCrud` の 9 オペレーションのうち 3 つ（`list`、`create`、`get`） | `backend/packages/api/src/routes/booking/`。この 3 つは、定義と実装が一致している（[予約台帳](./bookings.md)） |
+| `BookingCrud` の残りの 6 オペレーション（`update`、`delete`、`confirm`、`cancel`、`complete`、`reschedule`）、`BookingServiceCrud` の 3 オペレーション、`AvailableSlotCrud` の 2 オペレーション | なし |
+| 上記以外のドメイン（review、treatment、payment、inventory） | なし。TypeSpec は DB のテーブルと一致している（`pnpm check:api-db`）が、ドメイン・リポジトリ・ルートのコードはない |
 | attachment、permission と、inventory の発注・アラート、treatment のカルテ、customer の監査履歴・エクスポート・データ削除リクエスト | なし。対応するテーブルもまだない（[API-DB型制約マッピング](./api-db-type-constraints-mapping.md#ルールに載せるモデル載せないモデル)） |
 
 `main.tsp` は `@useAuth(BearerAuth)` を宣言しており、認証なしで呼べるオペレーション（システムのオペレーション、サロンの一覧と 1 件の取得、サービスカテゴリーの一覧と 1 件の取得、サービスの一覧と 1 件の取得、スタッフのプロフィールの一覧と 1 件の取得、登録・ログインなどの認証フロー、共有リンク）には `@useAuth(NoAuth)` が付いている。実装済みのオペレーションでは、`@useAuth(NoAuth)` のないものをサーバーがアクセストークンで認証し、権限をユースケースで判定する（[認証と認可](./authentication.md)）。
