@@ -16,6 +16,8 @@ import type {
   BookingCreation,
   BookingDeletion,
   BookingReschedule,
+  BookingServiceAddition,
+  BookingServiceRemoval,
   BookingStatusChange,
   IBookingRepository,
 } from '../repositories/booking.repository'
@@ -110,6 +112,7 @@ export const dbBookingServices = (): DbBookingService[] => [
     price: 6600,
     discountAmount: 0,
     finalPrice: 6600,
+    taxIncluded: true,
     selectedOptions: null,
     isCompleted: false,
     completedAt: null,
@@ -129,6 +132,7 @@ export const dbBookingServices = (): DbBookingService[] => [
     price: 8000,
     discountAmount: 1000,
     finalPrice: 7000,
+    taxIncluded: false,
     selectedOptions: null,
     isCompleted: false,
     completedAt: null,
@@ -138,6 +142,17 @@ export const dbBookingServices = (): DbBookingService[] => [
     updatedAt: '2026-11-14 18:00:00.123456+09',
   },
 ]
+
+export const BOOKING_SERVICE_ID = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f2d01'
+
+/** The cut of the booking: the first of its lines. */
+const firstBookingService = (): DbBookingService => {
+  const [first] = dbBookingServices()
+  if (first === undefined) {
+    throw new Error('The booking of the fixtures has service lines')
+  }
+  return first
+}
 
 /** A row of `bookings` as the driver returns it: the booking of the request above. */
 const dbBooking = (overrides: Partial<DbBooking> = {}): DbBooking => ({
@@ -194,6 +209,7 @@ export const apiBookingServices = (): ApiBookingServiceResponse[] => [
     price: 6600,
     discountAmount: 0,
     finalPrice: 6600,
+    taxIncluded: true,
     isCompleted: false,
     completedAt: null,
     notes: null,
@@ -209,6 +225,7 @@ export const apiBookingServices = (): ApiBookingServiceResponse[] => [
     price: 8000,
     discountAmount: 1000,
     finalPrice: 7000,
+    taxIncluded: false,
     isCompleted: false,
     completedAt: null,
     notes: '明るめ',
@@ -295,6 +312,18 @@ export const bookingDependencies = (
       delete: vi.fn(async () =>
         Result.success<BookingDeletion>({ type: 'deleted' }),
       ),
+      addService: vi.fn(async () =>
+        Result.success<BookingServiceAddition>({
+          type: 'added',
+          service: firstBookingService(),
+        }),
+      ),
+      findService: vi.fn(async () =>
+        Result.success<DbBookingService | null>(firstBookingService()),
+      ),
+      removeService: vi.fn(async () =>
+        Result.success<BookingServiceRemoval>({ type: 'removed' }),
+      ),
       list: vi.fn(async () =>
         Result.success({
           bookings: [bookingWithServices()],
@@ -317,6 +346,9 @@ const REPOSITORY_METHODS: (keyof IBookingRepository)[] = [
   'update',
   'reschedule',
   'delete',
+  'addService',
+  'findService',
+  'removeService',
   'list',
 ]
 
