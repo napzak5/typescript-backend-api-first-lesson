@@ -7,7 +7,7 @@
 - [アーキテクチャ概要](./architecture-overview.md): システム全体の説明。パッケージの依存関係、型生成の流れ、リクエストの流れ、実装済みの範囲はそちらにあり、本書では繰り返しません。
 - [CLAUDE.md](../CLAUDE.md): 規約とコマンドの正本。Salon ドメインの全レイヤーのシグネチャもそこにまとまっています。本書は規約の適用のしかたと理由を説明します。
 
-バックエンドで実装済みなのは、Salon ドメイン、サロンのサービスカテゴリー（`/api/v1/salons/{salonId}/service-categories`）、サロンのサービス（`/api/v1/salons/{salonId}/services`）、サロンのスタッフ台帳（`/api/v1/salons/{salonId}/staff`。`StaffCrud` の、スタッフの一覧、登録、1 件の取得、更新、削除）、スタッフの勤務スケジュール（`/api/v1/salons/{salonId}/staff/{id}/schedules`。`StaffSchedules` の一覧と更新）、顧客に見せるスタッフのプロフィール（`/api/v1/staff-profiles`。`StaffProfile` の一覧と 1 件の取得）、顧客台帳（`/api/v1/customers`。`CustomerCrud` のうち、顧客の一覧、登録、1 件の取得、更新、削除）、認証のすべてのオペレーション（ログイン、トークンの再発行、ログアウト、全セッションのログアウト、自分の情報の取得、ユーザー登録、メールアドレスの確認、パスワードの再設定と変更、2 要素認証、セッションの一覧と無効化、管理者の操作）、システムエンドポイントだけです。ほかのドメインを実装するときは、Salon のファイルと同じ構成で書いてください。データが 1 つのサロンに属するドメインでは、書き方がいくつか変わります。その例がサービスカテゴリーで、違いは「[9. サロンに属するデータ](#9-サロンに属するデータ-サロンはパスで受け取る)」にまとめています。サービスカテゴリーにはなくサービスにあるもの（2 つのテーブルの行を含むリクエスト、2 つの項目を結ぶ規則、一括更新、論理削除）も、同じ節にあります。サロンに属し、公開のオペレーションがないデータの例がスタッフ台帳で、その違い（どのオペレーションでも最初に判定する権限、操作者自身のスタッフ情報を守る規則、サロンの中での 2 つの一意性）も、同じ節の最後にあります。サロンの 1 つのレコードに属し、全体を置き換える行の例がスタッフの勤務スケジュールで、その違い（レコードの下にマウントするルーター、2 段階の権限、行をロックして置き換えるトランザクション）も、同じ節の最後にあります。公開しないデータのうち、誰にでも見せる部分の例がスタッフのプロフィールで、その違い（見せる列だけを読むリポジトリ、サロンの下に置かない公開のルート）も、同じ節の最後にあります。サロンに属さず、公開のオペレーションもないデータの例が顧客台帳です。書き方の違い（何も変換しない Write マッパー、操作者だけで最初に判定する権限、依存から受け取る現在時刻、範囲の違う 2 つの一意性、権限のあとで返すクエリのエラー）は、実装パターンの 3、5、6、7、8 のそれぞれの箇所に書いてあります。認証と認可の仕様は [認証と認可](./authentication.md)、サービスカテゴリーとサービスの規則は [サービスメニュー](./service-menu.md)、顧客台帳の規則は [顧客台帳](./customers.md)、スタッフ台帳の規則は [スタッフ台帳](./staff.md) にあり、本書ではコードの書き方だけを扱います。
+バックエンドで実装済みなのは、Salon ドメイン、サロンのサービスカテゴリー（`/api/v1/salons/{salonId}/service-categories`）、サロンのサービス（`/api/v1/salons/{salonId}/services`）、サロンのスタッフ台帳（`/api/v1/salons/{salonId}/staff`。`StaffCrud` の、スタッフの一覧、登録、1 件の取得、更新、削除）、スタッフの勤務スケジュール（`/api/v1/salons/{salonId}/staff/{id}/schedules`。`StaffSchedules` の一覧と更新）、スタッフのログインアカウントへの招待（`/api/v1/salons/{salonId}/staff/{id}/invitation` と `/api/v1/auth/staff-invitation`。`StaffInvitations` の取得、作成、取り消しと、`AuthCrud` の招待の確認、受け入れ）、顧客に見せるスタッフのプロフィール（`/api/v1/staff-profiles`。`StaffProfile` の一覧と 1 件の取得）、顧客台帳（`/api/v1/customers`。`CustomerCrud` のうち、顧客の一覧、登録、1 件の取得、更新、削除）、認証のすべてのオペレーション（ログイン、トークンの再発行、ログアウト、全セッションのログアウト、自分の情報の取得、ユーザー登録、メールアドレスの確認、パスワードの再設定と変更、スタッフの招待の確認と受け入れ、2 要素認証、セッションの一覧と無効化、管理者の操作）、システムエンドポイントだけです。ほかのドメインを実装するときは、Salon のファイルと同じ構成で書いてください。データが 1 つのサロンに属するドメインでは、書き方がいくつか変わります。その例がサービスカテゴリーで、違いは「[9. サロンに属するデータ](#9-サロンに属するデータ-サロンはパスで受け取る)」にまとめています。サービスカテゴリーにはなくサービスにあるもの（2 つのテーブルの行を含むリクエスト、2 つの項目を結ぶ規則、一括更新、論理削除）も、同じ節にあります。サロンに属し、公開のオペレーションがないデータの例がスタッフ台帳で、その違い（どのオペレーションでも最初に判定する権限、操作者自身のスタッフ情報を守る規則、サロンの中での 2 つの一意性）も、同じ節の最後にあります。サロンの 1 つのレコードに属し、全体を置き換える行の例がスタッフの勤務スケジュールで、その違い（レコードの下にマウントするルーター、2 段階の権限、行をロックして置き換えるトランザクション）も、同じ節の最後にあります。メールで送ったトークンで届くレコードの例がスタッフの招待で、その違い（招待する側と招待された側の 2 つのルーター、本文を検証してから判定する 2 つめの権限、結果を直和型で返すリポジトリ、スタッフの行をロックしてから判定し直す書き込み）も、同じ節の最後にあります。公開しないデータのうち、誰にでも見せる部分の例がスタッフのプロフィールで、その違い（見せる列だけを読むリポジトリ、サロンの下に置かない公開のルート）も、同じ節の最後にあります。サロンに属さず、公開のオペレーションもないデータの例が顧客台帳です。書き方の違い（何も変換しない Write マッパー、操作者だけで最初に判定する権限、依存から受け取る現在時刻、範囲の違う 2 つの一意性、権限のあとで返すクエリのエラー）は、実装パターンの 3、5、6、7、8 のそれぞれの箇所に書いてあります。認証と認可の仕様は [認証と認可](./authentication.md)、サービスカテゴリーとサービスの規則は [サービスメニュー](./service-menu.md)、顧客台帳の規則は [顧客台帳](./customers.md)、スタッフ台帳の規則は [スタッフ台帳](./staff.md) にあり、本書ではコードの書き方だけを扱います。
 
 ---
 
@@ -451,6 +451,19 @@ app.use(
   createAdminAuthRouter(authDependencies, authenticated),
 )
 const salonRepository = new SalonRepository(database)
+const staffInvitationDependencies: StaffInvitationUseCaseDependencies = {
+  staffInvitationRepository: new StaffInvitationRepository(database),
+  salonRepository,
+  passwordHasher: authDependencies.passwordHasher,
+  tokenIssuer: authDependencies.tokenIssuer,
+  mailer,
+  publicAppUrl: settings.publicAppUrl,
+  clock,
+}
+app.use(
+  `${API_BASE_PATH}/auth/staff-invitation`,
+  createStaffInvitationAcceptanceRouter(staffInvitationDependencies),
+)
 app.use(
   `${API_BASE_PATH}/salons`,
   createSalonRouter({ salonRepository }, authenticated),
@@ -478,6 +491,10 @@ app.use(
     { staffRepository: new StaffRepository(database), salonRepository },
     authenticated,
   ),
+)
+app.use(
+  `${API_BASE_PATH}/salons/:salonId/staff/:id/invitation`,
+  createStaffInvitationRouter(staffInvitationDependencies, authenticated),
 )
 app.use(
   `${API_BASE_PATH}/salons/:salonId/staff/:id/schedules`,
@@ -508,6 +525,7 @@ app.use(
 - リポジトリは `createApp` の中で一度だけ生成し、ルーターに渡します。`authenticated` も一度だけ作り、公開でないオペレーションを持つルーターに渡します。
 - 現在時刻を返す `clock` も一度だけ作り、認証の依存（`authDependencies`）と顧客台帳の依存の両方に渡します。
 - サロンの下にあるルーターは、`:salonId` を含むパスにマウントし、Salon のルーターと同じ `salonRepository` も渡します。
+- スタッフの招待の 2 つのルーターには、同じ依存（`staffInvitationDependencies`）を渡します。パスワードのハッシュとトークンの発行は認証の依存のものを使い、メールの送信と時計も同じものです。招待された側のルーター（`/auth/staff-invitation`）は公開なので、`authenticated` を渡しません。
 - 顧客台帳はサロンに属さないので、ルーターは `${API_BASE_PATH}/customers` にマウントします。パスにサロンの ID はなく、`salonRepository` も渡しません。
 - 新しいルーターは `express.json` の後、`notFoundHandler` の前にマウントします。ミドルウェアの順序とその理由は [アーキテクチャ概要](./architecture-overview.md) にあります。
 - `api` パッケージは `config` に依存しません。新しい設定値が必要なときは `AppSettings`（`backend/packages/api/src/settings.ts`）に追加し、`backend/apps/server/src/server.ts` の `startServer` で `AppConfig` から渡します。
@@ -579,6 +597,16 @@ async execute(
 - リポジトリの `replace` は、1 つのトランザクションで、スタッフの行を `FOR UPDATE` でロックし（そのサロンの、削除されていないスタッフ）、いまの行を消して、新しい行を入れ、一覧と同じ並びで読み直します。スタッフ台帳の更新と違ってロックを使うのは、複数の文で 1 つの状態を作るからです。同時に届いた置き換えは 1 件ずつ処理され、2 つのリクエストの行が混ざりません。スタッフが見つからなければ、どちらのメソッドも null を返し、ユースケースが `notFound`（404）にします。
 - ある日付に適用される行を決める規則は、純粋な関数です（`_shared/applicable-schedule.ts` の `scheduleOn`）。一覧のユースケースが `date` のあるリクエストで使い、予約の実装も同じ関数を使います。
 
+スタッフの招待（`backend/packages/domain/src/business-logic/staff-invitation`、`backend/packages/api/src/routes/staff-invitation`）は、スタッフ 1 人に 1 つまでの行（`staff_invitations`）で、台帳のスタッフが自分のログインアカウントを作るためのものです。勤務スケジュールと同じくスタッフの下にマウントし、次の点が違います。
+
+- ルーターが 2 つあります。招待する側（`createStaffInvitationRouter`）は `/salons/:salonId/staff/:id/invitation` にマウントし、`GET /`、`POST /`、`DELETE /` の 3 つをすべて `authenticated` で包みます。スタッフが持てる招待は 1 つなので、招待の ID を持つルートはありません。招待された側（`createStaffInvitationAcceptanceRouter`）は `/auth/staff-invitation` にマウントし、`POST /verify` と `POST /accept` を包みません。招待された人にはまだアカウントがなく、メールで届いたトークンを本文で送るからです。コントラクトでも、この 2 つは `AuthCrud` のオペレーションです。ユースケースと依存は 5 つのオペレーションで共通なので、ディレクトリは 1 つにしています。
+- 作成の権限の判定が 2 段階あり、2 つめには本文が要ります。まずパスのサロンで判定し（`_shared/authorization.ts` の `mayInviteStaff`。スタッフ台帳を扱える人）、本文を検証してから、そのロールを与えられるかを判定します（`mayGiveRole`。`owner` を与えられるのは管理者だけ）。どちらも `forbidden`（403）で、2 つめも、サロンやスタッフを検索する前です。
+- リクエストは宛先を指定しません。宛先は台帳のメールアドレスで、リポジトリが、招待を保存するトランザクションの中で読みます。応答は、そのアドレスにアカウントがあるかどうかで変わりません。
+- トークンは、パスワードの再設定と同じ「メールで送るトークン」です（`backend/packages/domain/src/business-logic/auth/_shared/mailed-token.ts` の `STAFF_INVITATION`）。保存するのはハッシュだけで、使えない理由が何であっても同じ 400 を返します（`_shared/refusals.ts` の `invitationRefused`）。
+- リポジトリは、行か null ではなく、結果を直和型で返します（`backend/packages/domain/src/repositories/staff-invitation.repository.ts`。たとえば `issue` は `issued` | `staffNotFound` | `linked` | `inactive` | `mailedMomentsAgo`）。1 つのトランザクションの中で分かる結果が 3 つ以上あり、null では区別できないからです。ユースケースは `match(...).exhaustive()` で、それぞれを `notFound`（404）や `conflict`（409）にします。
+- 書き込み（`issue`、`revoke`、`accept`）はどれも、最初にスタッフの行を `FOR UPDATE` でロックし、判定に使う値をロックのあとで読み直します。台帳の更新と削除の文も同じ行のロックを待つので、招待の受け入れと、取り消し、招待のし直し、スタッフの無効化や削除が同時に届いても、1 件ずつ処理され、あとの処理は先の処理の結果を見ます。
+- 受け入れは、アカウントを 1 つの文で作ります（`INSERT … ON CONFLICT (email) WHERE "deletedAt" is null DO UPDATE … WHERE …`）。アドレスにアカウントがなければ作り、メールアドレスを確認していない、登録しただけのアカウントはこのアカウントに置き換え、それ以外のアカウントには何も書きません。行が返らなければ、ユースケースが `alreadyExists`（409）にします。事前の検索の結果に頼らないので、同じアドレスの登録が同時に届いても、アカウントは 1 つです。
+
 スタッフのプロフィール（`backend/packages/domain/src/business-logic/staff-profile`、`backend/packages/api/src/routes/staff-profile`）は、同じ `staff` の行のうち顧客に見せる部分を、認証なしで読ませます。サロンに属するデータですが、上の書き方とは次の点が違います。
 
 - モデル、リポジトリ、ユースケース、ルーターを、台帳とは別に持ちます。台帳のユースケースに、公開のための分岐は足しません。見せる列（`profileColumns`）と、見せるスタッフの条件（`shown`）は、`backend/packages/infrastructure/src/repositories/staff-profile.repository.impl.ts` の 1 か所で決まります。
@@ -587,7 +615,7 @@ async execute(
 - ユースケースは `actor` を受け取らず、ハンドラーを `authenticated` で包みません。ルーターのファクトリー（`createStaffProfileRouter`）も `authenticated` を受け取りません。
 - 一覧のカーソルは位置だけを決めます。見せなくなったスタッフや、絞り込みに合わないスタッフを指していても、そこから続けます。どのスタッフも指していないカーソルのときだけ、リポジトリが null を返し、ユースケースが `validation`（400）にします。
 
-権限の規則は [認証と認可](./authentication.md#サロンの下にあるルートの権限)、サービスカテゴリーとサービスの規則は [サービスメニュー](./service-menu.md)、スタッフ台帳、勤務スケジュール、プロフィールの規則は [スタッフ台帳](./staff.md) にあります。
+権限の規則は [認証と認可](./authentication.md#サロンの下にあるルートの権限)、サービスカテゴリーとサービスの規則は [サービスメニュー](./service-menu.md)、スタッフ台帳、勤務スケジュール、招待、プロフィールの規則は [スタッフ台帳](./staff.md) にあります。
 
 ---
 
@@ -635,12 +663,12 @@ async execute(
 | パスワードのハッシュ、トークンの生成、2 要素認証のシークレット・コード・バックアップコード | ユニット（`pnpm test`） | `backend/packages/infrastructure/src/security/__tests__` |
 | SMTP でのメールの送信 | ユニット（`pnpm test`）と統合（`pnpm test:integration`。testcontainers で Mailpit のコンテナを起動する） | `backend/packages/infrastructure/src/mail/__tests__` |
 | クエリの変換、リンク、problem details、ミドルウェア | ユニット（`pnpm test`） | `backend/packages/api/src` の各 `__tests__` |
-| エンドポイント（リポジトリの実装を含む） | 統合（`pnpm test:integration`） | `backend/packages/api/src/__tests__/salon.integration.test.ts`、`auth.integration.test.ts`、`service-category.integration.test.ts`（サロンの下にあるルート）、`service.integration.test.ts`（一括更新、サロンの下にあるリソースの論理削除）、`customer.integration.test.ts` と `customer-profile.integration.test.ts`（サロンに属さず、公開のオペレーションがないルート）、`staff.integration.test.ts`（サロンの下にあり、公開のオペレーションがないルート）、`staff-schedule.integration.test.ts`（スタッフの下にあり、全体を置き換えるルート）、`staff-profile.integration.test.ts`（公開しないデータの一部を、認証なしで見せるルート） |
+| エンドポイント（リポジトリの実装を含む） | 統合（`pnpm test:integration`） | `backend/packages/api/src/__tests__/salon.integration.test.ts`、`auth.integration.test.ts`、`service-category.integration.test.ts`（サロンの下にあるルート）、`service.integration.test.ts`（一括更新、サロンの下にあるリソースの論理削除）、`customer.integration.test.ts` と `customer-profile.integration.test.ts`（サロンに属さず、公開のオペレーションがないルート）、`staff.integration.test.ts`（サロンの下にあり、公開のオペレーションがないルート）、`staff-schedule.integration.test.ts`（スタッフの下にあり、全体を置き換えるルート）、`staff-invitation.integration.test.ts`（メールで送ったトークンで届くレコード。招待する側のルートと、招待された側の公開のルート）、`staff-profile.integration.test.ts`（公開しないデータの一部を、認証なしで見せるルート） |
 | リクエスト ID、エラー応答、CORS、レート制限、プローブ | 統合（`pnpm test:integration`） | `backend/packages/api/src/__tests__/app.integration.test.ts` |
 | 起動と停止 | 統合（`pnpm test:integration`） | `backend/apps/server/src/__tests__/server.integration.test.ts` |
 
-- ユースケースのテストでは、リポジトリを `ISalonRepository` を満たすオブジェクトに差し替えます（`backend/packages/domain/src/__tests__/fixtures.ts` の `salonRepositoryWith`）。DB は使いません。認証のユースケースでは、2つのリポジトリ、パスワードのハッシュ、トークンの発行、2 要素認証のコードの確認、メールの送信も差し替え、時計を固定します（`backend/packages/domain/src/__tests__/auth-fixtures.ts` の `authDependencies`）。
-- リポジトリの実装は、エンドポイントの統合テストで実際の PostgreSQL に対して検証します。テストごとに専用のデータベースを作り（スキーマを適用したテンプレートの複製）、本番と同じ `createApp` を使います（`backend/packages/api/src/__tests__/_shared/test-helpers.ts` の `createTestApp`）。メールは送らずに記録し、2 要素認証には本番と同じ `TotpAuthenticator` を使います。`service.integration.test.ts` は、同じデータベースに対して `ServiceRepository` を直接呼ぶテストと、テーブルの制約が拒否する行を確かめるテストも含みます。`customer.integration.test.ts` と `staff.integration.test.ts` も同じで、`CustomerRepository`、`StaffRepository` を直接呼ぶテストと、それぞれのテーブルの制約のテストを含みます。`staff-profile.integration.test.ts` は、`StaffProfileRepository` を直接呼ぶテストと、台帳だけにある値がレスポンスのどこにも出ないことのテストを含みます。`staff-schedule.integration.test.ts` は、`StaffScheduleRepository` を直接呼ぶテスト、`staff_schedules` の制約のテストと、同時に届いた置き換えで行が混ざらないことのテストを含みます。
+- ユースケースのテストでは、リポジトリを `ISalonRepository` を満たすオブジェクトに差し替えます（`backend/packages/domain/src/__tests__/fixtures.ts` の `salonRepositoryWith`）。DB は使いません。認証のユースケースでは、2つのリポジトリ、パスワードのハッシュ、トークンの発行、2 要素認証のコードの確認、メールの送信も差し替え、時計を固定します（`backend/packages/domain/src/__tests__/auth-fixtures.ts` の `authDependencies`）。スタッフの招待のユースケースでは、招待のリポジトリも差し替えます（`staff-invitation-fixtures.ts` の `staffInvitationDependencies`）。
+- リポジトリの実装は、エンドポイントの統合テストで実際の PostgreSQL に対して検証します。テストごとに専用のデータベースを作り（スキーマを適用したテンプレートの複製）、本番と同じ `createApp` を使います（`backend/packages/api/src/__tests__/_shared/test-helpers.ts` の `createTestApp`）。メールは送らずに記録し、2 要素認証には本番と同じ `TotpAuthenticator` を使います。`service.integration.test.ts` は、同じデータベースに対して `ServiceRepository` を直接呼ぶテストと、テーブルの制約が拒否する行を確かめるテストも含みます。`customer.integration.test.ts` と `staff.integration.test.ts` も同じで、`CustomerRepository`、`StaffRepository` を直接呼ぶテストと、それぞれのテーブルの制約のテストを含みます。`staff-profile.integration.test.ts` は、`StaffProfileRepository` を直接呼ぶテストと、台帳だけにある値がレスポンスのどこにも出ないことのテストを含みます。`staff-schedule.integration.test.ts` は、`StaffScheduleRepository` を直接呼ぶテスト、`staff_schedules` の制約のテストと、同時に届いた置き換えで行が混ざらないことのテストを含みます。`staff-invitation.integration.test.ts` は、`StaffInvitationRepository` を直接呼ぶテスト、`staff_invitations` の制約と、アカウントとスタッフを 1 対 1 に保つ一意インデックスのテスト、同時に届いたリクエスト（複数の受け入れ、受け入れと取り消し・招待のし直し・スタッフの削除・同じアドレスの登録）のテストを含みます。
 - 統合テストでアクセストークンが必要なときは、ユーザーの行を挿入し、`POST /api/v1/auth/login` でログインします（`backend/packages/api/src/__tests__/_shared/auth-helpers.ts`）。
 - エンドポイントごとに、エラーのシナリオを5つ以上テストします。公開でないエンドポイントでは、トークンのないリクエスト（401）と、許可されていないユーザーからのリクエスト（403）を含めます。
 

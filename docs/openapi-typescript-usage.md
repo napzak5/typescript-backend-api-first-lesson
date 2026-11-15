@@ -2,7 +2,7 @@
 
 このドキュメントは、OpenAPI から生成した TypeScript 型（`@beauty-salon-backend/generated`）をバックエンドがどう使っているかを説明します。生成の手順とコマンドは [Type Generation System](./type-generation-system.md) を参照してください。
 
-バックエンドで実装されているのは Salon ドメイン、サロンのサービスカテゴリーとサービス（[サービスメニュー](./service-menu.md)）、顧客台帳（[顧客台帳](./customers.md)）、スタッフ台帳、スタッフの勤務スケジュール、顧客に見せるスタッフのプロフィール（[スタッフ台帳](./staff.md)）、認証（[認証と認可](./authentication.md)）、システムエンドポイントです。認証、サービスカテゴリー、サービス、顧客台帳、スタッフ台帳、スタッフの勤務スケジュール、スタッフのプロフィールも生成型を同じ形で使っているので（`backend/packages/domain/src/models/auth.ts`、`backend/packages/api/src/routes/auth/_shared/types.ts`、`backend/packages/domain/src/models/service-category.ts`、`backend/packages/api/src/routes/service-category/_shared/types.ts`、`backend/packages/domain/src/models/service.ts`、`backend/packages/api/src/routes/service/_shared/types.ts`、`backend/packages/domain/src/models/customer.ts`、`backend/packages/api/src/routes/customer/_shared/types.ts`、`backend/packages/domain/src/models/staff.ts`、`backend/packages/api/src/routes/staff/_shared/types.ts`、`backend/packages/domain/src/models/staff-profile.ts`、`backend/packages/api/src/routes/staff-profile/_shared/types.ts`、`backend/packages/domain/src/models/staff-schedule.ts`、`backend/packages/api/src/routes/staff-schedule/_shared/types.ts`）、例はすべて参照実装である Salon の実コードからの抜粋です。コード中のコメントは説明用に日本語で付けています。
+バックエンドで実装されているのは Salon ドメイン、サロンのサービスカテゴリーとサービス（[サービスメニュー](./service-menu.md)）、顧客台帳（[顧客台帳](./customers.md)）、スタッフ台帳、スタッフの勤務スケジュール、スタッフの招待、顧客に見せるスタッフのプロフィール（[スタッフ台帳](./staff.md)）、認証（[認証と認可](./authentication.md)）、システムエンドポイントです。認証、サービスカテゴリー、サービス、顧客台帳、スタッフ台帳、スタッフの勤務スケジュール、スタッフの招待、スタッフのプロフィールも生成型を同じ形で使っているので（`backend/packages/domain/src/models/auth.ts`、`backend/packages/api/src/routes/auth/_shared/types.ts`、`backend/packages/domain/src/models/service-category.ts`、`backend/packages/api/src/routes/service-category/_shared/types.ts`、`backend/packages/domain/src/models/service.ts`、`backend/packages/api/src/routes/service/_shared/types.ts`、`backend/packages/domain/src/models/customer.ts`、`backend/packages/api/src/routes/customer/_shared/types.ts`、`backend/packages/domain/src/models/staff.ts`、`backend/packages/api/src/routes/staff/_shared/types.ts`、`backend/packages/domain/src/models/staff-profile.ts`、`backend/packages/api/src/routes/staff-profile/_shared/types.ts`、`backend/packages/domain/src/models/staff-schedule.ts`、`backend/packages/api/src/routes/staff-schedule/_shared/types.ts`、`backend/packages/domain/src/models/staff-invitation.ts`、`backend/packages/api/src/routes/staff-invitation/_shared/types.ts`）、例はすべて参照実装である Salon の実コードからの抜粋です。コード中のコメントは説明用に日本語で付けています。
 
 ## 生成されるもの
 
@@ -23,7 +23,7 @@
 
 operationId は、TypeSpec で操作を囲むインターフェース（または名前空間）の名前と操作名を `_` でつないだものです（`SalonCrud` の `list` → `SalonCrud_list`、`SystemOperations` の `alive` → `SystemOperations_alive`）。`paths` も生成されますが、バックエンドのコードは `components` と `operations` だけを使っています。
 
-OpenAPI ドキュメントには TypeSpec で定義した全ドメインが含まれるため、Booking や Review などの型も生成されています。それらを使うドメイン・リポジトリ・ルートのコードはまだありません。Customer の型は、顧客台帳の 5 つのオペレーション（`CustomerCrud` の `list`・`create`・`get`・`update`・`delete`）と、顧客本人のプロフィールの 3 つのオペレーション（`CustomerProfile`）のものだけをコードが使っています。Staff の型は、スタッフ台帳の 5 つのオペレーション（`StaffCrud` の `list`・`create`・`get`・`update`・`delete`）、勤務スケジュールの 2 つのオペレーション（`StaffSchedules` の `list`・`update`）、顧客に見せるプロフィールの 2 つのオペレーション（`StaffProfile` の `list`・`get`）のもので、コントラクトのすべてをコードが使っています。`CustomerCrud` の残りのオペレーションの型は、生成されているだけです。
+OpenAPI ドキュメントには TypeSpec で定義した全ドメインが含まれるため、Booking や Review などの型も生成されています。それらを使うドメイン・リポジトリ・ルートのコードはまだありません。Customer の型は、顧客台帳の 5 つのオペレーション（`CustomerCrud` の `list`・`create`・`get`・`update`・`delete`）と、顧客本人のプロフィールの 3 つのオペレーション（`CustomerProfile`）のものだけをコードが使っています。Staff の型は、スタッフ台帳の 5 つのオペレーション（`StaffCrud` の `list`・`create`・`get`・`update`・`delete`）、勤務スケジュールの 2 つのオペレーション（`StaffSchedules` の `list`・`update`）、招待の 3 つのオペレーション（`StaffInvitations` の `get`・`create`・`delete`）、顧客に見せるプロフィールの 2 つのオペレーション（`StaffProfile` の `list`・`get`）のもので、コントラクトのすべてをコードが使っています。`CustomerCrud` の残りのオペレーションの型は、生成されているだけです。
 
 ## バックエンドでの使い方（Salon）
 
@@ -255,7 +255,7 @@ export const createSalonHandler = (
 
 ## 他のドメインを実装するとき
 
-Salon、認証、サロンのサービスカテゴリーとサービス、顧客台帳（`CustomerCrud` の 5 つのオペレーションと `CustomerProfile`）、スタッフ台帳（`StaffCrud` の 5 つのオペレーション）、スタッフの勤務スケジュール（`StaffSchedules`）、スタッフのプロフィール（`StaffProfile`）以外はこれから実装するものです。実装するときは Salon と同じ配置にします（`<domain>` はドメイン名で、サービスカテゴリーでは `service-category`、サービスでは `service`、顧客では `customer`、スタッフでは `staff`、スタッフの勤務スケジュールでは `staff-schedule`、スタッフのプロフィールでは `staff-profile` です）。
+Salon、認証、サロンのサービスカテゴリーとサービス、顧客台帳（`CustomerCrud` の 5 つのオペレーションと `CustomerProfile`）、スタッフ台帳（`StaffCrud` の 5 つのオペレーション）、スタッフの勤務スケジュール（`StaffSchedules`）、スタッフの招待（`StaffInvitations` と、`AuthCrud` の確認・受け入れ）、スタッフのプロフィール（`StaffProfile`）以外はこれから実装するものです。実装するときは Salon と同じ配置にします（`<domain>` はドメイン名で、サービスカテゴリーでは `service-category`、サービスでは `service`、顧客では `customer`、スタッフでは `staff`、スタッフの勤務スケジュールでは `staff-schedule`、スタッフの招待では `staff-invitation`、スタッフのプロフィールでは `staff-profile` です）。
 
 - `backend/packages/domain/src/models/<domain>.ts`: 生成型の別名と DB 型
 - `backend/packages/domain/src/schemas/<domain>.schema.ts`: `satisfies z.ZodType<…>` を付けた Zod スキーマ
