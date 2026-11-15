@@ -477,10 +477,9 @@ export const customerPreferences = pgTable(
     id: uuid().defaultRandom().primaryKey().notNull(),
     customerId: uuid().notNull(),
     preferredStaffId: uuid(),
-    preferredTimeSlots: jsonb().default([]),
-    avoidStaffIds: jsonb().default([]),
-    preferredServices: jsonb().default([]),
-    stylePreferences: jsonb().default({}),
+    preferredTimeSlots: jsonb().notNull(),
+    avoidStaffIds: uuid().array().notNull(),
+    stylePreferences: jsonb(),
     communicationStyle: varchar({ length: 100 }),
     specialRequests: text(),
     createdAt: timestamp({ withTimezone: true, mode: 'string' })
@@ -491,6 +490,18 @@ export const customerPreferences = pgTable(
       .notNull(),
   },
   (table) => [
+    check(
+      'customer_preferences_preferred_staff_not_avoided',
+      sql`"preferredStaffId" <> ALL ("avoidStaffIds")`,
+    ),
+    check(
+      'customer_preferences_style_is_an_object',
+      sql`jsonb_typeof("stylePreferences") = 'object'::text`,
+    ),
+    check(
+      'customer_preferences_time_slots_is_an_array',
+      sql`jsonb_typeof("preferredTimeSlots") = 'array'::text`,
+    ),
     foreignKey({
       columns: [table.customerId],
       foreignColumns: [customers.id],
@@ -501,10 +512,6 @@ export const customerPreferences = pgTable(
       foreignColumns: [staff.id],
       name: 'customer_preferences_staff_id_fk',
     }).onDelete('set null'),
-    index('idx_customer_preferences_customer_id').using(
-      'btree',
-      table.customerId.asc().nullsLast().op('uuid_ops'),
-    ),
     unique('customer_preferences_unique').on(table.customerId),
   ],
 )

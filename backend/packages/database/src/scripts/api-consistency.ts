@@ -51,7 +51,8 @@ export type ModelRule = {
   /**
    * Columns the model leaves out on purpose. When given, any other column
    * missing from the model is reported, so that leaving one out is a decision
-   * and not an oversight.
+   * and not an oversight. A name that is not a column of the table is
+   * reported as well: it is left over from a column that is gone.
    */
   omittedColumns?: readonly string[]
   /**
@@ -66,6 +67,7 @@ export type ModelRule = {
 type FindingKind =
   | 'unknownProperty'
   | 'missingColumn'
+  | 'omittedUnknownColumn'
   | 'shouldBeRequired'
   | 'shouldBeOptional'
   | 'shouldBeNullable'
@@ -86,6 +88,8 @@ export const describeFinding = (finding: Finding): string => {
   const descriptions: Record<FindingKind, string> = {
     unknownProperty: 'has no column in the table',
     missingColumn: 'is a column that the model neither exposes nor omits',
+    omittedUnknownColumn:
+      'is left out by the rule of the model, and the table has no such column',
     shouldBeRequired: 'must be required',
     shouldBeOptional: 'must be optional',
     shouldBeNullable: 'must allow null because the column does',
@@ -177,6 +181,11 @@ export const compareModel = (
     for (const name of columns.keys()) {
       if (!properties.has(name) && !omitted.has(name)) {
         report(name, 'missingColumn')
+      }
+    }
+    for (const name of omitted) {
+      if (!columns.has(name)) {
+        report(name, 'omittedUnknownColumn')
       }
     }
   }
