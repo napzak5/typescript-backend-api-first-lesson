@@ -1,6 +1,7 @@
-import { customers, users } from '@beauty-salon-backend/database'
+import { bookings, customers, users } from '@beauty-salon-backend/database'
 import {
   type CustomerCreation,
+  type CustomerDeletion,
   type CustomerId,
   type CustomerList,
   type CustomerListCriteria,
@@ -29,10 +30,12 @@ import {
 } from 'drizzle-orm'
 import { match, P } from 'ts-pattern'
 import { attempt } from '../database/attempt'
+import { CLOCK } from '../database/clock'
 import { describeDatabaseError } from '../database/failure'
 import type { Database, DatabaseExecutor } from '../database/index'
 import { containing } from '../database/like'
 import { userNotDeleted } from './account'
+import { hasUnfinishedBooking } from './unfinished-bookings'
 
 const emailTaken = {
   code: '23505',
@@ -319,26 +322,39 @@ export class CustomerRepository implements ICustomerRepository {
     )
   }
 
-  async delete(id: CustomerId): Promise<Result<boolean, DomainError>> {
+  async delete(id: CustomerId): Promise<Result<CustomerDeletion, DomainError>> {
     return attempt('Failed to delete customer', () =>
-      this.db.transaction(async (tx) => {
-        const deleted = await tx
-          .update(customers)
-          .set({ deletedAt: sql`now()`, updatedAt: sql`now()` })
-          .where(and(eq(customers.id, id), notDeleted))
-          .returning({ id: customers.id })
-        if (deleted.length === 0) {
-          return false
-        }
-        // The account is without a profile from now on and may create one.
-        // The deleted row keeps naming the account it was the profile of.
-        await tx
-          .update(users)
-          .set({ customerId: null, updatedAt: sql`now()` })
-          .where(eq(users.customerId, id))
+      this.db.transaction(
+        async (tx): Promise<CustomerDeletion> => {
+          // An entry of a booking holds the row of its customer until the
+          // booking is written: the look for bookings is after this lock.
+          const [held] = await tx
+            .select({ id: customers.id })
+            .from(customers)
+            .where(and(eq(customers.id, id), notDeleted))
+            .for('update')
+          if (held === undefined) {
+            return { type: 'notFound' }
+          }
+          if (await hasUnfinishedBooking(tx, eq(bookings.customerId, id))) {
+            return { type: 'bookingsUnfinished' }
+          }
 
-        return true
-      }),
+          await tx
+            .update(customers)
+            .set({ deletedAt: CLOCK, updatedAt: CLOCK })
+            .where(eq(customers.id, id))
+          // The account is without a profile from now on and may create one.
+          // The deleted row keeps naming the account it was the profile of.
+          await tx
+            .update(users)
+            .set({ customerId: null, updatedAt: CLOCK })
+            .where(eq(users.customerId, id))
+
+          return { type: 'deleted' }
+        },
+        { isolationLevel: 'read committed' },
+      ),
     )
   }
 

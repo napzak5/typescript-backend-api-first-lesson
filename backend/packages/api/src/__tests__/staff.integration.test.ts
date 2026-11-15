@@ -3082,7 +3082,7 @@ describe('Staff API', () => {
     })
 
     describe('delete', () => {
-      it('resolves to true for a staff member of the salon, and to false the second time, for one of another salon and for an ID that no staff member has', async () => {
+      it('deletes a staff member of the salon, and finds none the second time, for one of another salon and for an ID that no staff member has', async () => {
         const otherSalonId = await insertSalon(db)
         const row = await stored()
         const elsewhere = await stored({}, otherSalonId)
@@ -3095,7 +3095,13 @@ describe('Staff API', () => {
           await repository().delete(salon(salonId), member(UNKNOWN_ID)),
         ]
 
-        expect(results.map(dataOf)).toEqual([true, false, false, false, false])
+        expect(results.map(dataOf)).toEqual([
+          { type: 'deleted' },
+          { type: 'notFound' },
+          { type: 'notFound' },
+          { type: 'notFound' },
+          { type: 'notFound' },
+        ])
         expect((await storedStaffMember(row.id)).deletedAt).not.toBeNull()
         expect(await storedStaffMember(elsewhere.id)).toEqual(elsewhere)
       })

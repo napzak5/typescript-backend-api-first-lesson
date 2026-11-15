@@ -1196,7 +1196,7 @@ export interface paths {
         post?: never;
         /**
          * Delete a customer
-         * @description 顧客を論理削除します。削除後は一覧・取得の対象外になり、メールアドレスは別の顧客の登録に使えるようになります。admin と、サロンの owner / manager が実行できます。
+         * @description 顧客を論理削除します。削除後は一覧・取得の対象外になり、メールアドレスは別の顧客の登録に使えるようになります。admin と、サロンの owner / manager が実行できます。終わっていない予約(ステータスが draft・pending・confirmed・in_progress の予約)がある顧客は削除できず、409を返します。どのサロンの予約でも同じです。先に予約を完了、キャンセル、または削除してください。
          */
         delete: operations["CustomerCrud_delete"];
         options?: never;
@@ -2448,7 +2448,7 @@ export interface paths {
         post?: never;
         /**
          * Delete a salon
-         * @description サロンを論理削除します。削除後は一覧・取得の対象外になります。admin と、そのサロンの owner が実行できます。ほかのサロンの owner には403を返します。
+         * @description サロンを論理削除します。削除後は一覧・取得の対象外になります。admin と、そのサロンの owner が実行できます。ほかのサロンの owner には403を返します。終わっていない予約(ステータスが draft・pending・confirmed・in_progress の予約)があるサロンは削除できず、409を返します。先に予約を完了、キャンセル、または削除してください。
          */
         delete: operations["SalonCrud_delete"];
         options?: never;
@@ -2632,7 +2632,7 @@ export interface paths {
         post?: never;
         /**
          * Delete service
-         * @description 提供終了となったメニューを論理削除し、予約導線から除外します。削除後は一覧・取得の対象外になります。パッケージに含まれているサービスは削除できず、409を返します。先にパッケージの構成から外してください。
+         * @description 提供終了となったメニューを論理削除し、予約導線から除外します。削除後は一覧・取得の対象外になります。パッケージに含まれているサービスは削除できず、409を返します。先にパッケージの構成から外してください。終わっていない予約(ステータスが draft・pending・confirmed・in_progress の予約)の施術明細にあるサービスも削除できず、409を返します。先に予約を完了、キャンセル、または削除してください。
          */
         delete: operations["ServiceCrud_delete"];
         options?: never;
@@ -2684,7 +2684,7 @@ export interface paths {
         post?: never;
         /**
          * Delete staff member
-         * @description スタッフを論理削除します。削除後は一覧・取得の対象外になり、メールアドレスは別のスタッフの登録に使えるようになります。このスタッフに紐づくログインアカウントは、サロンへの権限を失います。自分自身のスタッフ情報は削除できず、409を返します。
+         * @description スタッフを論理削除します。削除後は一覧・取得の対象外になり、メールアドレスは別のスタッフの登録に使えるようになります。このスタッフに紐づくログインアカウントは、サロンへの権限を失います。自分自身のスタッフ情報は削除できず、409を返します。終わっていない予約(ステータスが draft・pending・confirmed・in_progress の予約)の担当スタッフであるか、そのいずれかの施術明細を担当しているスタッフも削除できず、409を返します。先に予約を完了、キャンセル、または削除してください。予約の担当スタッフは、日時の変更でほかのスタッフに替えられます(そのスタッフが担当していた施術明細も付け替わります)。
          */
         delete: operations["StaffCrud_delete"];
         options?: never;
@@ -16458,6 +16458,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
+            /** @description The request conflicts with the current state of the server. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
             /**
              * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
              *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
@@ -24480,6 +24489,15 @@ export interface operations {
             };
             /** @description The server cannot find the requested resource. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The request conflicts with the current state of the server. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -23,6 +23,17 @@ export type StaffList = {
   hasMore: boolean
 }
 
+/** What became of a staff member that was to be deleted. */
+export type StaffDeletion =
+  | { type: 'deleted' }
+  /** The salon has no such staff member, or it is deleted already. */
+  | { type: 'notFound' }
+  /**
+   * The staff member is in charge of a booking that is not finished, or
+   * does one of its service lines.
+   */
+  | { type: 'bookingsUnfinished' }
+
 /**
  * Persistence of the staff members of a salon. Every method is given the
  * salon and sees only its staff: a staff member of another salon is one
@@ -62,8 +73,12 @@ export interface IStaffRepository {
   ): Promise<Result<DbStaff | null, DomainError>>
 
   /**
-   * Deletes the staff member; the row stays. Resolves to false when the
-   * salon has no such staff member.
+   * Deletes the staff member; the row stays. A staff member who is in
+   * charge of a booking that is not finished, or does one of its service
+   * lines, is not deleted.
    */
-  delete(salonId: SalonId, id: StaffId): Promise<Result<boolean, DomainError>>
+  delete(
+    salonId: SalonId,
+    id: StaffId,
+  ): Promise<Result<StaffDeletion, DomainError>>
 }

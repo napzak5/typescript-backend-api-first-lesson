@@ -7,7 +7,10 @@ import type {
   DbStaff,
 } from '../models/staff'
 import type { ISalonRepository } from '../repositories/salon.repository'
-import type { IStaffRepository } from '../repositories/staff.repository'
+import type {
+  IStaffRepository,
+  StaffDeletion,
+} from '../repositories/staff.repository'
 import { SALON_ID, salonRepositoryWith } from './fixtures'
 
 export const STAFF_MEMBER_ID = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0e01'
@@ -105,7 +108,7 @@ const staffRepositoryWith = (
     Result.success({ staff: [dbStaff()], total: 1, hasMore: false }),
   ),
   update: vi.fn(async () => Result.success<DbStaff | null>(dbStaff())),
-  delete: vi.fn(async () => Result.success(true)),
+  delete: vi.fn(async () => Result.success<StaffDeletion>({ type: 'deleted' })),
   ...overrides,
 })
 

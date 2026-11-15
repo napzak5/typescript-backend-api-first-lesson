@@ -43,6 +43,15 @@ const TRANSITIONS: Record<
   noShow: { from: ['pending', 'confirmed'], to: 'no_show' },
 }
 
+/**
+ * The statuses of a booking that is not finished: an action leads on from
+ * them. What such a booking refers to (its salon, its customer, its staff
+ * members and its services) is expected at the visit and is not deleted.
+ */
+export const UNFINISHED_STATUSES: readonly BookingStatus[] = [
+  ...new Set(Object.values(TRANSITIONS).flatMap(({ from }) => from)),
+]
+
 /** What of a booking decides whether an action is taken, with its times as moments. */
 export type BookingInStatus = {
   status: BookingStatus

@@ -73,7 +73,7 @@ namespace BeautySalon.Operations {
         | RequestBodyErrors
         | CommonErrors;
 
-      @doc("提供終了となったメニューを論理削除し、予約導線から除外します。削除後は一覧・取得の対象外になります。パッケージに含まれているサービスは削除できず、409を返します。先にパッケージの構成から外してください。")
+      @doc("提供終了となったメニューを論理削除し、予約導線から除外します。削除後は一覧・取得の対象外になります。パッケージに含まれているサービスは削除できず、409を返します。先にパッケージの構成から外してください。終わっていない予約(ステータスが draft・pending・confirmed・in_progress の予約)の施術明細にあるサービスも削除できず、409を返します。先に予約を完了、キャンセル、または削除してください。")
       @summary("Delete service")
       @delete
       delete(@path salonId: SalonId, @path id: ServiceId):

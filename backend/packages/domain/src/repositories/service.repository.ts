@@ -67,6 +67,8 @@ export type ServiceDeletion =
   | { type: 'notFound' }
   /** A package contains the service; it has to leave the package first. */
   | { type: 'containedInPackage' }
+  /** A booking that is not finished has a service line of the service. */
+  | { type: 'bookingsUnfinished' }
 
 /**
  * Persistence of the services of a salon and of their options. Every method
@@ -124,7 +126,10 @@ export interface IServiceRepository {
     options: ServiceOptionsChange,
   ): Promise<Result<ServiceBulkUpdate, DomainError>>
 
-  /** Marks the service as deleted. Its options stay with it. */
+  /**
+   * Marks the service as deleted, unless a package contains it or a booking
+   * that is not finished has it. Its options stay with it.
+   */
   delete(
     salonId: SalonId,
     id: ServiceId,

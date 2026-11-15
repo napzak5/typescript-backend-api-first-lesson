@@ -69,7 +69,7 @@ namespace BeautySalon.Operations {
         | RequestBodyErrors
         | CommonErrors;
 
-      @doc("サロンを論理削除します。削除後は一覧・取得の対象外になります。admin と、そのサロンの owner が実行できます。ほかのサロンの owner には403を返します。")
+      @doc("サロンを論理削除します。削除後は一覧・取得の対象外になります。admin と、そのサロンの owner が実行できます。ほかのサロンの owner には403を返します。終わっていない予約(ステータスが draft・pending・confirmed・in_progress の予約)があるサロンは削除できず、409を返します。先に予約を完了、キャンセル、または削除してください。")
       @summary("Delete a salon")
       @delete
       delete(@path id: SalonId):
@@ -78,6 +78,7 @@ namespace BeautySalon.Operations {
           }
         | ProblemResponse<400>
         | ProblemResponse<404>
+        | ProblemResponse<409>
         | CommonErrors;
     }
   }
