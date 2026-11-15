@@ -453,4 +453,52 @@ namespace BeautySalon.Models {
     @maxLength(100)
     city?: string;
   }
+
+  @doc("""
+    サロンロール区分 - サロンに属するアカウントのロール。スタッフへの招待で与える
+    
+    owner: オーナー - サロンの所有者。スタッフ台帳を扱い、スタッフを招待できる
+    manager: マネージャー - サロンの管理業務を担当する
+    staff: スタッフ - 施術を提供するサロン従業員
+    """)
+  enum SalonRoleType {
+    owner,
+    manager,
+    staff,
+  }
+
+  @doc("""
+    スタッフ招待作成リクエスト - 全項目のキーが必須。
+    宛先は台帳のメールアドレス(staff.email)で、リクエストでは指定できない
+    """)
+  model StaffInvitationCreateRequest {
+    @doc("招待を受け入れて作られるアカウントのロール。owner を指定できるのは admin だけ")
+    role: SalonRoleType;
+  }
+
+  @doc("""
+    スタッフへの招待 - staff_invitations テーブルの1行。スタッフが、自分のログインアカウントを作るための招待。
+    1人のスタッフが持てる招待は1つまで。受け入れられた招待と、取り消された招待は残らない。
+    メールで送ったトークンとそのハッシュは返さない。
+    プロパティ名と null 許可は DB カラムと一致させている
+    """)
+  model StaffInvitationResponse {
+    @doc("招待を一意に識別するID。招待し直すたびに変わる")
+    id: StaffInvitationId;
+
+    @doc("招待されたスタッフのID")
+    staffId: StaffId;
+
+    @doc("招待メールの宛先。招待した時点の、台帳のメールアドレス。受け入れると、このメールアドレスのアカウントが作られる")
+    email: string;
+
+    @doc("招待を受け入れて作られるアカウントのロール")
+    role: SalonRoleType;
+
+    @doc("招待の有効期限 (UTC)。招待してから7日後。この日時を過ぎた招待は受け入れられない")
+    expiresAt: utcDateTime;
+
+    @doc("招待した日時 (UTC)")
+    createdAt: utcDateTime;
+  }
 }

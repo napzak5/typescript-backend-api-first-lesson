@@ -9,6 +9,8 @@ import {
   authPasswordResetConfirmRequestSchema,
   authPasswordResetVerifyRequestSchema,
   authRegisterRequestSchema,
+  authStaffInvitationAcceptRequestSchema,
+  authStaffInvitationVerifyRequestSchema,
   authTokenRefreshRequestSchema,
   authTwoFactorBackupCodesRequestSchema,
   authTwoFactorDisableRequestSchema,
@@ -406,6 +408,10 @@ describe.each([
     'authPasswordResetVerifyRequestSchema',
     authPasswordResetVerifyRequestSchema,
   ],
+  [
+    'authStaffInvitationVerifyRequestSchema',
+    authStaffInvitationVerifyRequestSchema,
+  ],
 ])('%s', (_name, schema) => {
   it.each([
     ['a token of one character', 't'],
@@ -498,6 +504,99 @@ describe('authPasswordResetConfirmRequestSchema', () => {
     expect(
       rulesBrokenBy(authPasswordResetConfirmRequestSchema, reset(change)),
     ).toEqual(expected)
+  })
+})
+
+describe('authStaffInvitationAcceptRequestSchema', () => {
+  const acceptance = (overrides: Record<string, unknown> = {}) => ({
+    token: 'mailed-token',
+    password: NEW_PASSWORD,
+    ...overrides,
+  })
+
+  it('accepts a request that satisfies every rule and turns the password into NFC', () => {
+    expect(
+      parseWith(
+        authStaffInvitationAcceptRequestSchema,
+        acceptance({ password: DECOMPOSED }),
+        'Invalid',
+      ),
+    ).toEqual({
+      type: 'success',
+      data: { token: 'mailed-token', password: COMPOSED },
+    })
+  })
+
+  it.each([
+    ['a token of one character', { token: 't' }],
+    ['a token of 255 characters', { token: 't'.repeat(255) }],
+    [
+      'a password of 15 characters outside the basic plane',
+      { password: BLOSSOM.repeat(15) },
+    ],
+    [
+      'a password of 128 characters outside the basic plane',
+      { password: BLOSSOM.repeat(128) },
+    ],
+  ])('accepts %s', (_case, change) => {
+    expect(
+      rulesBrokenBy(authStaffInvitationAcceptRequestSchema, acceptance(change)),
+    ).toEqual([])
+    expect(
+      parseWith(
+        authStaffInvitationAcceptRequestSchema,
+        acceptance(change),
+        'Invalid',
+      ),
+    ).toEqual({ type: 'success', data: acceptance(change) })
+  })
+
+  it.each([
+    ['a missing token', { token: undefined }, ['token:invalid_type']],
+    ['an empty token', { token: '' }, ['token:too_small']],
+    [
+      'a token over 255 characters',
+      { token: 't'.repeat(256) },
+      ['token:too_big'],
+    ],
+    ['a missing password', { password: undefined }, ['password:invalid_type']],
+    ['a password that is null', { password: null }, ['password:invalid_type']],
+    [
+      'a password of 14 characters outside the basic plane',
+      { password: BLOSSOM.repeat(14) },
+      ['password:too_small'],
+    ],
+    [
+      'a password of 129 characters outside the basic plane',
+      { password: BLOSSOM.repeat(129) },
+      ['password:too_big'],
+    ],
+    [
+      'the name the password has in a password reset',
+      { password: undefined, newPassword: NEW_PASSWORD },
+      ['password:invalid_type', 'newPassword:unrecognized_keys'],
+    ],
+    [
+      'an address for the account',
+      { email: 'hanako@example.com' },
+      ['email:unrecognized_keys'],
+    ],
+    ['a role for the account', { role: 'owner' }, ['role:unrecognized_keys']],
+    [
+      'an empty token and a short password',
+      { token: '', password: 'short' },
+      ['token:too_small', 'password:too_small'],
+    ],
+  ])('rejects %s', (_case, change, expected) => {
+    expect(
+      rulesBrokenBy(authStaffInvitationAcceptRequestSchema, acceptance(change)),
+    ).toEqual(expected)
+  })
+
+  it('rejects null as the request', () => {
+    expect(rulesBrokenBy(authStaffInvitationAcceptRequestSchema, null)).toEqual(
+      [':invalid_type'],
+    )
   })
 })
 

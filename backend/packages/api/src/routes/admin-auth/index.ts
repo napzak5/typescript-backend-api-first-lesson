@@ -1,15 +1,10 @@
 import type { AuthUseCaseDependencies } from '@beauty-salon-backend/domain'
-import { type RequestHandler, Router } from 'express'
+import { Router } from 'express'
 import type { Authenticated } from '../../shared/authentication'
+import { neverStored } from '../../shared/never-stored'
 import { getUserHandler } from './get-user.handler'
 import { resetTwoFactorHandler } from './reset-two-factor.handler'
 import { unlockAccountHandler } from './unlock-account.handler'
-
-/** Every response of these routes carries the data of one user. */
-const neverStored: RequestHandler = (_req, res, next) => {
-  res.set('Cache-Control', 'no-store')
-  next()
-}
 
 /**
  * What an administrator does with the accounts of other users, relative to

@@ -127,6 +127,55 @@ namespace BeautySalon.Operations {
     }
   }
 
+  @doc("スタッフへの招待(staff_invitations)を管理するAPI操作群です。ここに定義した操作はすべて実装済みです。招待は、台帳のスタッフが自分のログインアカウントを作るためのもので、1人のスタッフが持てるのは1つまでです。招待すると、台帳のメールアドレスに、1回だけ使えるリンクをメールで送ります。受け取った本人が、認証の操作(/api/v1/auth/staff-invitation/accept)でパスワードを設定すると、招待のロールを持つアカウントが作られ、スタッフに紐づきます。実行できるのは、スタッフ台帳と同じく admin と、そのサロンの owner です。権限はパスの salonId だけで判定し、権限のないユーザーには、IDや本文が不正でも、サロンが存在しなくても403を返します。サロンが存在しない場合と、スタッフがパスのサロンに属さない場合、スタッフが削除済みの場合は404を返します。")
+  @route("/api/v1/salons/{salonId}/staff/{id}/invitation")
+  @tag("Staff")
+  namespace StaffInvitationOperations {
+    interface StaffInvitations {
+      @doc("スタッフが持っている招待を取得します。有効期限を過ぎた招待も、置き換えるか取り消すまでは返します(expiresAt が過去の日時になります)。招待がない場合(招待していない、受け入れられた、取り消した)は404を返します。")
+      @summary("Get the invitation of a staff member")
+      @get
+      get(@path salonId: SalonId, @path id: StaffId):
+        | {
+            @statusCode statusCode: 200;
+            @body response: ApiResponse<StaffInvitationResponse>;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<404>
+        | CommonErrors;
+
+      @doc("スタッフを招待し、台帳のメールアドレスに招待メールを送ります。すでに招待がある場合は、新しい招待で置き換えます(それまでのトークンは使えなくなります)。招待の有効期間は7日です。応答は、宛先のメールアドレスにアカウントがあるかどうかで変わりません。owner のロールを与えられるのは admin だけで、サロンの owner が指定すると403を返します。スタッフがすでにログインアカウントに紐づいている場合、スタッフが無効(isActive が false)の場合、前の招待メールから60秒たっていない場合は409を返します。")
+      @summary("Invite a staff member")
+      @post
+      create(
+        @path salonId: SalonId,
+        @path id: StaffId,
+        @body request: StaffInvitationCreateRequest,
+      ):
+        | {
+            @statusCode statusCode: 201;
+            @header("Location") location: string;
+            @body response: ApiResponse<StaffInvitationResponse>;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<404>
+        | ProblemResponse<409>
+        | RequestBodyErrors
+        | CommonErrors;
+
+      @doc("スタッフが持っている招待を取り消します。メールで送ったトークンは使えなくなります。招待がない場合は404を返します。")
+      @summary("Revoke the invitation of a staff member")
+      @delete
+      delete(@path salonId: SalonId, @path id: StaffId):
+        | {
+            @statusCode statusCode: 204;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<404>
+        | CommonErrors;
+    }
+  }
+
   @doc("顧客に見せるスタッフのプロフィールを返すAPI操作群です。ここに定義した操作はすべて実装済みで、指名するスタッフを選ぶ前の閲覧のために、認証なしで呼び出せます。対象は、在籍して勤務している(isActive が true)、削除されていないスタッフで、所属サロンが削除されていないものです。それ以外のスタッフは、存在しないスタッフと同じ扱いにします。本名、連絡先、雇用の情報は返しません。プロフィールの項目は、スタッフ台帳の操作で更新します。")
   @route("/api/v1/staff-profiles")
   @tag("Staff")

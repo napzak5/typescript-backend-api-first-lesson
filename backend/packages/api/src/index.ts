@@ -2,6 +2,7 @@ import type {
   AuthUseCaseDependencies,
   IMailer,
   ITwoFactorAuthenticator,
+  StaffInvitationUseCaseDependencies,
 } from '@beauty-salon-backend/domain'
 import {
   Argon2PasswordHasher,
@@ -13,6 +14,7 @@ import {
   ServiceCategoryRepository,
   ServiceRepository,
   SessionRepository,
+  StaffInvitationRepository,
   StaffProfileRepository,
   StaffRepository,
   StaffScheduleRepository,
@@ -36,6 +38,10 @@ import { createSalonRouter } from './routes/salon'
 import { createServiceRouter } from './routes/service'
 import { createServiceCategoryRouter } from './routes/service-category'
 import { createStaffRouter } from './routes/staff'
+import {
+  createStaffInvitationAcceptanceRouter,
+  createStaffInvitationRouter,
+} from './routes/staff-invitation'
 import { createStaffProfileRouter } from './routes/staff-profile'
 import { createStaffScheduleRouter } from './routes/staff-schedule'
 import { createSystemRouter } from './routes/system'
@@ -49,7 +55,7 @@ export type { AppSettings } from './settings'
 export type AppDependencies = {
   database: Database
   logger: Logger
-  /** Carries the mails of the authentication flows. */
+  /** Carries the mails of the authentication flows and the invitations of staff members. */
   mailer: IMailer
   /** Issues and checks the codes of two-factor authentication. */
   twoFactorAuthenticator: ITwoFactorAuthenticator
@@ -118,6 +124,19 @@ export const createApp = ({
     createAdminAuthRouter(authDependencies, authenticated),
   )
   const salonRepository = new SalonRepository(database)
+  const staffInvitationDependencies: StaffInvitationUseCaseDependencies = {
+    staffInvitationRepository: new StaffInvitationRepository(database),
+    salonRepository,
+    passwordHasher: authDependencies.passwordHasher,
+    tokenIssuer: authDependencies.tokenIssuer,
+    mailer,
+    publicAppUrl: settings.publicAppUrl,
+    clock,
+  }
+  app.use(
+    `${API_BASE_PATH}/auth/staff-invitation`,
+    createStaffInvitationAcceptanceRouter(staffInvitationDependencies),
+  )
   app.use(
     `${API_BASE_PATH}/salons`,
     createSalonRouter({ salonRepository }, authenticated),
@@ -145,6 +164,10 @@ export const createApp = ({
       { staffRepository: new StaffRepository(database), salonRepository },
       authenticated,
     ),
+  )
+  app.use(
+    `${API_BASE_PATH}/salons/:salonId/staff/:id/invitation`,
+    createStaffInvitationRouter(staffInvitationDependencies, authenticated),
   )
   app.use(
     `${API_BASE_PATH}/salons/:salonId/staff/:id/schedules`,

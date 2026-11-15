@@ -2,6 +2,7 @@ import "@typespec/http";
 import "@typespec/rest";
 import "@typespec/openapi3";
 import "../models/auth.tsp";
+import "../models/staff.tsp";
 import "../models/_shared/common.tsp";
 import "../models/_shared/common-api-patterns.tsp";
 
@@ -144,6 +145,35 @@ namespace BeautySalon.Operations {
             @statusCode statusCode: 204;
           }
         | ProblemResponse<400>
+        | RequestBodyErrors
+        | PublicErrors;
+
+      @doc("メールで受け取ったスタッフへの招待のトークンが使えるかどうかを確認し、招待の内容を返します。パスワードを入力する画面が、入力の前に、招待の宛先(作られるアカウントのメールアドレス)とロールを表示するためのものです。トークンは消費しません。トークンが存在しない、有効期限が切れている、取り消された、新しい招待で置き換えられた、スタッフが招待できる状態でなくなった(削除された、無効になった、アカウントに紐づいた、台帳のメールアドレスが変わった)場合は、理由を区別せずに400を返します。宛先のメールアドレスに、未確認でないアカウントがすでにある場合は409を返します。")
+      @summary("Verify a staff invitation token")
+      @route("/staff-invitation/verify")
+      @useAuth(NoAuth)
+      @post
+      verifyStaffInvitation(@body request: AuthStaffInvitationVerifyRequest):
+        | {
+            @statusCode statusCode: 200;
+            @body response: ApiResponse<StaffInvitationResponse>;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<409>
+        | RequestBodyErrors
+        | PublicErrors;
+
+      @doc("メールで受け取ったトークンを使ってスタッフへの招待を受け入れ、ログインアカウントを作ります。アカウントのメールアドレスは招待メールの宛先、ロールは招待のロールで、招待されたスタッフに紐づきます。トークンを受け取れたことがメールアドレスの確認になるので、アカウントは確認済み(active)で作られます。宛先のメールアドレスで登録され、メールアドレスが未確認のままのアカウントがある場合は、そのアカウントを招待のアカウントにします(パスワードを置き換えます)。成功するとトークンは使用できなくなります。セッションは発行しません。トークンが使えない場合と、パスワードが規則を満たさない場合は400を返します。宛先のメールアドレスに、未確認でないアカウントがすでにある場合は409を返し、招待は残ります。")
+      @summary("Accept a staff invitation")
+      @route("/staff-invitation/accept")
+      @useAuth(NoAuth)
+      @post
+      acceptStaffInvitation(@body request: AuthStaffInvitationAcceptRequest):
+        | {
+            @statusCode statusCode: 204;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<409>
         | RequestBodyErrors
         | PublicErrors;
 

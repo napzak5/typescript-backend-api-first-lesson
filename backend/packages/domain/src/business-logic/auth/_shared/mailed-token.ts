@@ -1,11 +1,12 @@
-import { addMinutes, addSeconds, isAfter, parseISO, subMinutes } from 'date-fns'
+import { addMinutes, isAfter, parseISO, subSeconds } from 'date-fns'
 import type { DbUser } from '../../../models/auth'
 import { type DomainError, DomainErrors } from '../../../shared'
 
 /**
- * The single-use tokens that are mailed to confirm an address or to reset a
- * password. A user has at most one of each kind; issuing another replaces
- * it, so that only the newest mail works.
+ * The single-use tokens that are mailed to confirm an address, to reset a
+ * password or to invite a staff member. A user has at most one of each of
+ * the first two kinds and a staff member at most one invitation; issuing
+ * another replaces it, so that only the newest mail works.
  */
 
 /** A kind of mailed token and how long one works. */
@@ -19,14 +20,32 @@ export const EMAIL_VERIFICATION: MailedTokenKind = { lifetimeMinutes: 24 * 60 }
 export const PASSWORD_RESET: MailedTokenKind = { lifetimeMinutes: 30 }
 
 /**
- * How long after a mail the next one of its kind may go to the same account,
- * so that the endpoints cannot be used to flood somebody's mailbox.
+ * A week: a staff member may read their private mail on days off only.
+ * The token creates the one account of the address it was mailed to, and
+ * whoever invited can take it back at any time.
+ */
+export const STAFF_INVITATION: MailedTokenKind = {
+  lifetimeMinutes: 7 * 24 * 60,
+}
+
+/**
+ * How long after a mail the next one of its kind may go to the same
+ * account or staff member, so that the endpoints cannot be used to flood
+ * somebody's mailbox.
  */
 const MAIL_COOLDOWN_SECONDS = 60
 
 /** Until when a token of this kind that is issued at `now` works. */
 export const mailedTokenEnd = (kind: MailedTokenKind, now: Date): Date =>
   addMinutes(now, kind.lifetimeMinutes)
+
+/**
+ * The latest end a token of this kind can have for another mail to go out
+ * at `now`: the end of one that was mailed exactly one cooldown earlier. A
+ * token that ends later was mailed more recently than that.
+ */
+export const latestEndToMailAgain = (kind: MailedTokenKind, now: Date): Date =>
+  addMinutes(subSeconds(now, MAIL_COOLDOWN_SECONDS), kind.lifetimeMinutes)
 
 /**
  * Whether another mail of this kind may go out. `currentEnd` is the expiry
@@ -39,13 +58,7 @@ export const mayMailAgain = (
   now: Date,
 ): boolean =>
   currentEnd === null ||
-  !isAfter(
-    addSeconds(
-      subMinutes(parseISO(currentEnd), kind.lifetimeMinutes),
-      MAIL_COOLDOWN_SECONDS,
-    ),
-    now,
-  )
+  !isAfter(parseISO(currentEnd), latestEndToMailAgain(kind, now))
 
 /**
  * Whether the account may set a new password through its mailbox: one that

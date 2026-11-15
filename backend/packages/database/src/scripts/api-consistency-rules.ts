@@ -297,8 +297,8 @@ const staffManagedColumns = [
 ]
 
 /**
- * Staff and their schedules. The schedules are read and written by the
- * availability operations, which replace all rows of a staff member.
+ * Staff, their schedules and their invitations. A schedule is read and
+ * written as a whole: writing replaces all rows of a staff member.
  */
 const staffRules: ModelRule[] = [
   {
@@ -358,6 +358,29 @@ const staffRules: ModelRule[] = [
     table: 'staffSchedules',
     kind: 'response',
     omittedColumns: ['id', 'staffId', 'createdAt', 'updatedAt'],
+  },
+  // The mailed token is shown nowhere, and neither is its hash.
+  {
+    model: 'Models.StaffInvitationResponse',
+    table: 'staffInvitations',
+    kind: 'response',
+    omittedColumns: ['tokenHash'],
+  },
+  // An invitation states the role. The staff member comes from the path
+  // and the address from the ledger; the token and its end are the
+  // server's.
+  {
+    model: 'Models.StaffInvitationCreateRequest',
+    table: 'staffInvitations',
+    kind: 'create',
+    omittedColumns: [
+      'id',
+      'staffId',
+      'email',
+      'tokenHash',
+      'expiresAt',
+      'createdAt',
+    ],
   },
 ]
 

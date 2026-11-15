@@ -1,6 +1,6 @@
 # API Route Modular Structure Guide
 
-This guide describes how the HTTP layer, `backend/packages/api`, is organised: one handler file per endpoint, one router per domain, and the helpers and middleware they share. Salon is the pattern for the next domain; the authentication routes (`routes/auth/`, `routes/admin-auth/`) follow it too, and so do the routes of the service categories (`routes/service-category/`), of the services (`routes/service/`) and of the staff ledger (`routes/staff/`), which are mounted below a salon, and the routes of the customer ledger (`routes/customer/`). No route of the two ledgers is public. The routes of the staff schedules (`routes/staff-schedule/`) are mounted one level further down, below a staff member of a salon, and none of them is public either. The routes of the staff profiles (`routes/staff-profile/`) are the opposite: both are public, and the router has no handler that needs a signed-in user.
+This guide describes how the HTTP layer, `backend/packages/api`, is organised: one handler file per endpoint, one router per domain, and the helpers and middleware they share. Salon is the pattern for the next domain; the authentication routes (`routes/auth/`, `routes/admin-auth/`) follow it too, and so do the routes of the service categories (`routes/service-category/`), of the services (`routes/service/`) and of the staff ledger (`routes/staff/`), which are mounted below a salon, and the routes of the customer ledger (`routes/customer/`). No route of the two ledgers is public. The routes of the staff schedules (`routes/staff-schedule/`) are mounted one level further down, below a staff member of a salon, and none of them is public either. The routes of the staff invitations (`routes/staff-invitation/`) are of two kinds and have two routers: three below a staff member of a salon, for whoever invites, and two public ones under `/auth/staff-invitation`, for whoever holds the mailed token. The routes of the staff profiles (`routes/staff-profile/`) are the opposite: both are public, and the router has no handler that needs a signed-in user.
 
 The layers below the API (models, validation, mappers, repository, use cases) are described in the [Domain Implementation Reference](./domain-implementation-reference.md).
 
@@ -17,6 +17,7 @@ backend/packages/api/src/
 ├── shared/
 │   ├── api-version.ts              # API_VERSION, API_BASE_PATH, SYSTEM_BASE_PATH
 │   ├── authentication.ts           # createAuthenticated: the wrapper for handlers that need a signed-in user
+│   ├── never-stored.ts             # neverStored: Cache-Control: no-store for routes whose responses no cache may keep
 │   ├── operation-types.ts          # JsonBody: the JSON body of a generated response; SalonParams: the salon of a route below a salon
 │   ├── page-links.ts               # pageLinks: the links of a page of a list
 │   ├── problem-details.ts          # DomainError | HttpError → problem details, toBearerChallenge
@@ -119,6 +120,17 @@ backend/packages/api/src/
 │   │   ├── update-staff.handler.ts               # PATCH  /api/v1/salons/:salonId/staff/:id
 │   │   ├── delete-staff.handler.ts               # DELETE /api/v1/salons/:salonId/staff/:id
 │   │   └── index.ts                              # createStaffRouter
+│   ├── staff-invitation/
+│   │   ├── _shared/
+│   │   │   ├── types.ts            # StaffInvitationParams, and the response body types
+│   │   │   ├── links.ts            # staffInvitationLinks
+│   │   │   └── index.ts            # re-exports the two files above
+│   │   ├── get-staff-invitation.handler.ts       # GET    /api/v1/salons/:salonId/staff/:id/invitation
+│   │   ├── create-staff-invitation.handler.ts    # POST   /api/v1/salons/:salonId/staff/:id/invitation
+│   │   ├── delete-staff-invitation.handler.ts    # DELETE /api/v1/salons/:salonId/staff/:id/invitation
+│   │   ├── verify-staff-invitation.handler.ts    # POST   /api/v1/auth/staff-invitation/verify
+│   │   ├── accept-staff-invitation.handler.ts    # POST   /api/v1/auth/staff-invitation/accept
+│   │   └── index.ts                              # createStaffInvitationRouter, createStaffInvitationAcceptanceRouter
 │   ├── staff-schedule/
 │   │   ├── _shared/
 │   │   │   ├── types.ts            # StaffScheduleParams, and the response body types
@@ -141,7 +153,7 @@ backend/packages/api/src/
 └── __tests__/                      # integration tests and their helpers (see Tests)
 ```
 
-There is one handler per operation of the `SalonCrud` interface in `specs/operations/salon-operations.tsp`, and no other salon route. Filtering is part of the list operation; there is no separate search endpoint. Each operation in `specs/operations/auth-operations.tsp` has a handler in the same way: those of the interfaces `AuthCrud` and `SessionCrud` in `routes/auth/`, and those of `AdminAuthCrud`, which the contract puts under a path of its own (`/api/v1/admin/auth`), in `routes/admin-auth/`. The five operations of `ServiceCategoryCrud` in `specs/operations/service-operations.tsp` have theirs in `routes/service-category/`, and the six operations of `ServiceCrud` in the same file have theirs in `routes/service/`. Of the 18 operations of `CustomerCrud` in `specs/operations/customer-operations.tsp`, the five that are implemented (list, create, get, update, delete) have theirs in `routes/customer/`; the other 13 have no handler. The three operations of `CustomerProfile` in the same file (get, create, update of a customer's own profile) have theirs in `routes/customer/` as well, in the files named `*-customer-profile.handler.ts`. The five operations of `StaffCrud` in `specs/operations/staff-operations.tsp` (list, create, get, update, delete of the ledger) have theirs in `routes/staff/`, and the two operations of `StaffSchedules` in the same file (list and update of the schedule of a staff member) have theirs in `routes/staff-schedule/`. The two operations of `StaffProfile` in the same file (list and get of what customers are shown of a staff member) have theirs in `routes/staff-profile/`.
+There is one handler per operation of the `SalonCrud` interface in `specs/operations/salon-operations.tsp`, and no other salon route. Filtering is part of the list operation; there is no separate search endpoint. Each operation in `specs/operations/auth-operations.tsp` has a handler in the same way: those of the interfaces `AuthCrud` and `SessionCrud` in `routes/auth/` (but for the two of `AuthCrud` that verify and accept the invitation of a staff member, which are in `routes/staff-invitation/`), and those of `AdminAuthCrud`, which the contract puts under a path of its own (`/api/v1/admin/auth`), in `routes/admin-auth/`. The five operations of `ServiceCategoryCrud` in `specs/operations/service-operations.tsp` have theirs in `routes/service-category/`, and the six operations of `ServiceCrud` in the same file have theirs in `routes/service/`. Of the 18 operations of `CustomerCrud` in `specs/operations/customer-operations.tsp`, the five that are implemented (list, create, get, update, delete) have theirs in `routes/customer/`; the other 13 have no handler. The three operations of `CustomerProfile` in the same file (get, create, update of a customer's own profile) have theirs in `routes/customer/` as well, in the files named `*-customer-profile.handler.ts`. The five operations of `StaffCrud` in `specs/operations/staff-operations.tsp` (list, create, get, update, delete of the ledger) have theirs in `routes/staff/`, and the two operations of `StaffSchedules` in the same file (list and update of the schedule of a staff member) have theirs in `routes/staff-schedule/`. The three operations of `StaffInvitations` in the same file (get, create and delete of the invitation of a staff member) have theirs in `routes/staff-invitation/`, next to the two operations of `AuthCrud` by which the invited person reads and accepts the invitation: the five are one feature with one set of use cases, so they share a directory, and the two kinds of callers get a router each. The two operations of `StaffProfile` in the same file (list and get of what customers are shown of a staff member) have theirs in `routes/staff-profile/`.
 
 ## Key Principles
 
@@ -234,6 +246,8 @@ The five handlers in `routes/staff/` have both properties: their routes are belo
 
 The two handlers in `routes/staff-schedule/` are wrapped as well, and both have the salon and the staff member in their path and no ID of their own. The list handler (`GET /`) passes `actor`, `req.params.salonId`, `req.params.id` and `req.query`; the update handler (`PUT /`) passes `req.body` in the place of the query. Both answer 200 with `{ data, meta, links }`, where `data` is the array of the entries of the schedule: the update replaces the whole schedule and answers with what it stored.
 
+Three of the five handlers in `routes/staff-invitation/` are wrapped, those of whoever invites: get, create and delete pass `actor`, `req.params.salonId` and `req.params.id`, and the create `req.body` as well. The create answers 201 with a `Location` header: the address of the invitation is the mount path (`req.baseUrl`), because a staff member holds one invitation at most. The other two, verify and accept, are not wrapped. Whoever was invited has no account yet, so they pass `req.body`, which carries the mailed token, and nothing else: verify answers 200 with the invitation, accept 204.
+
 The two handlers in `routes/staff-profile/` are the two public rows of the table and nothing else: neither is wrapped, the list handler passes the decoded query and the get handler `req.params.id`, and both answer 200 with `{ data, meta, links }`. A request with an access token is answered like one without: the token is not looked at.
 
 ### Query parameters
@@ -308,13 +322,13 @@ export type UpdateSalonResponse = JsonBody<
 >
 ```
 
-`JsonBody` (`shared/operation-types.ts`) picks the `application/json` body out of the `content` of a generated response; `routes/auth/_shared/types.ts`, `routes/admin-auth/_shared/types.ts`, `routes/service-category/_shared/types.ts`, `routes/service/_shared/types.ts`, `routes/customer/_shared/types.ts`, `routes/staff/_shared/types.ts`, `routes/staff-schedule/_shared/types.ts` and `routes/staff-profile/_shared/types.ts` use it in the same way. Only response bodies are needed: request bodies are `unknown`, and the delete operation answers without a body. Nothing is declared by hand, so after `pnpm generate` a handler that no longer matches the contract stops compiling.
+`JsonBody` (`shared/operation-types.ts`) picks the `application/json` body out of the `content` of a generated response; `routes/auth/_shared/types.ts`, `routes/admin-auth/_shared/types.ts`, `routes/service-category/_shared/types.ts`, `routes/service/_shared/types.ts`, `routes/customer/_shared/types.ts`, `routes/staff/_shared/types.ts`, `routes/staff-invitation/_shared/types.ts`, `routes/staff-schedule/_shared/types.ts` and `routes/staff-profile/_shared/types.ts` use it in the same way. Only response bodies are needed: request bodies are `unknown`, and the delete operation answers without a body. Nothing is declared by hand, so after `pnpm generate` a handler that no longer matches the contract stops compiling.
 
 ### Links
 
 The `links` of a response are built from the mount path:
 
-- `salonLinks(collectionPath, id)` in `routes/salon/_shared/links.ts` returns `{ self, list }` for one salon. `serviceCategoryLinks(collectionPath, id)` in `routes/service-category/_shared/links.ts` returns the same for one category, `serviceLinks(collectionPath, id)` in `routes/service/_shared/links.ts` for one service, and `staffLinks(collectionPath, id)` in `routes/staff/_shared/links.ts` for one staff member; their `collectionPath` names the salon, because the mount path does. `customerLinks(collectionPath, id)` in `routes/customer/_shared/links.ts` returns `{ self, list }` for one customer, and `customerProfileLinks(collectionPath)` in the same file `{ self }` for a customer's own profile, which has one address and no list. `staffProfileLinks(collectionPath, id)` in `routes/staff-profile/_shared/links.ts` returns `{ self, list }` for the profile of one staff member; its `collectionPath` names no salon, because the profiles are not mounted below one. `staffScheduleLinks(schedulePath, requestUrl)` in `routes/staff-schedule/_shared/links.ts` returns `{ self, list }` for the schedule of one staff member: `list` is the mount path, which names the salon and the staff member, and `self` is the same path with the query of the request, so the answer for one date links to itself; it reads the query with `queryOf` of `shared/page-links.ts`. `userLinks(basePath, id)` in `routes/admin-auth/_shared/links.ts` returns `{ self }` for a user as an administrator reaches it.
+- `salonLinks(collectionPath, id)` in `routes/salon/_shared/links.ts` returns `{ self, list }` for one salon. `serviceCategoryLinks(collectionPath, id)` in `routes/service-category/_shared/links.ts` returns the same for one category, `serviceLinks(collectionPath, id)` in `routes/service/_shared/links.ts` for one service, and `staffLinks(collectionPath, id)` in `routes/staff/_shared/links.ts` for one staff member; their `collectionPath` names the salon, because the mount path does. `customerLinks(collectionPath, id)` in `routes/customer/_shared/links.ts` returns `{ self, list }` for one customer, and `customerProfileLinks(collectionPath)` in the same file `{ self }` for a customer's own profile, which has one address and no list. `staffProfileLinks(collectionPath, id)` in `routes/staff-profile/_shared/links.ts` returns `{ self, list }` for the profile of one staff member; its `collectionPath` names no salon, because the profiles are not mounted below one. `staffScheduleLinks(schedulePath, requestUrl)` in `routes/staff-schedule/_shared/links.ts` returns `{ self, list }` for the schedule of one staff member: `list` is the mount path, which names the salon and the staff member, and `self` is the same path with the query of the request, so the answer for one date links to itself; it reads the query with `queryOf` of `shared/page-links.ts`. `staffInvitationLinks(invitationPath)` in `routes/staff-invitation/_shared/links.ts` returns `{ self, staff }` for the invitation of one staff member: `self` is the mount path, and `staff` the same path without its last segment, which is the staff member in the ledger; an invitation has no list. `userLinks(basePath, id)` in `routes/admin-auth/_shared/links.ts` returns `{ self }` for a user as an administrator reaches it.
 - `pageLinks(collectionPath, requestUrl, meta)` in `shared/page-links.ts` returns the links of a page: the request's own query string with `cursor` replaced. Pages are only walked forwards, so `prev` and `last` are always `null`. The salon list, the list of service categories, the list of services, the customer list, the staff list and the session list use it.
 
 ### Router
@@ -340,7 +354,7 @@ export const createSalonRouter = (
 
 Paths are relative to where the router is mounted, and the router is a function of its dependencies, like the handlers. The router is also where one sees which routes are protected: the handlers that receive `authenticated`.
 
-`routes/auth/index.ts` exports `createAuthRouter(dependencies, authenticated)` in the same way. It additionally sets `Cache-Control: no-store` on every response of its routes, because they carry tokens or the data of one user. `routes/admin-auth/index.ts` exports `createAdminAuthRouter(dependencies, authenticated)`, which sets the same header for the same reason: its responses carry the data of one user.
+`routes/auth/index.ts` exports `createAuthRouter(dependencies, authenticated)` in the same way. It additionally sets `Cache-Control: no-store` on every response of its routes, because they carry tokens or the data of one user (`neverStored` in `shared/never-stored.ts`). `routes/admin-auth/index.ts` exports `createAdminAuthRouter(dependencies, authenticated)`, which sets the same header for the same reason: its responses carry the data of one user.
 
 `routes/service-category/index.ts` exports `createServiceCategoryRouter(dependencies, authenticated)` with the same five routes as the salon router. It is mounted below a salon (`/salons/:salonId/service-categories`), so `:salonId` is a parameter of the mount path, and a router does not see the parameters of its mount path unless it is created to:
 
@@ -379,6 +393,8 @@ Express tries the routes in the order in which they were registered, so `/bulk` 
 `routes/staff/index.ts` exports `createStaffRouter(dependencies, authenticated)` with the same five routes as the salon router. It is mounted below a salon (`/salons/:salonId/staff`) and created with `Router({ mergeParams: true })`, like the routers of the service categories and of the services; its handlers declare `SalonParams`, or `StaffParams` (`routes/staff/_shared/types.ts`) for the routes with an `:id`. No operation of the staff ledger is public, so every handler receives `authenticated`, as in the customer router.
 
 `routes/staff-schedule/index.ts` exports `createStaffScheduleRouter(dependencies, authenticated)` with two routes, `GET /` and `PUT /`. It is mounted below a staff member of a salon (`/salons/:salonId/staff/:id/schedules`) and created with `Router({ mergeParams: true })`, so its handlers see both parameters of the mount path and declare `StaffScheduleParams` (`routes/staff-schedule/_shared/types.ts`). The schedule is one resource per staff member, read and replaced as a whole, so the router has no route with an ID of its own. Express matches the router of the staff ledger first, because it is mounted at a prefix of this path; that router has no route for `/:id/schedules`, so the request passes on to this one.
+
+`routes/staff-invitation/index.ts` exports two factories, because its routes have two kinds of callers. `createStaffInvitationRouter(dependencies, authenticated)` has three routes, `GET /`, `POST /` and `DELETE /`, is mounted below a staff member of a salon (`/salons/:salonId/staff/:id/invitation`) and created with `Router({ mergeParams: true })`, like the router of the schedules; its handlers declare `StaffInvitationParams` (`routes/staff-invitation/_shared/types.ts`). `createStaffInvitationAcceptanceRouter(dependencies)` has two routes, `POST /verify` and `POST /accept`, and is a plain `Router()` mounted at `/auth/staff-invitation`. It takes no `authenticated`, like the router of the staff profiles, and sets `Cache-Control: no-store` with `neverStored`, like the authentication router: the answers tell what a mailed token gives access to. Express matches the authentication router first, because it is mounted at a prefix of this path; that router has no route below `/staff-invitation`, so the request passes on to this one. The header is on the response by then, because the authentication router sets it for every path below `/auth`; this router sets it as well, so that its answers do not depend on which of the two is mounted first.
 
 `routes/staff-profile/index.ts` exports `createStaffProfileRouter(dependencies)` with two routes, `GET /` and `GET /:id`. Both operations are public, so the factory takes no `authenticated`, and a handler added to this router cannot ask for a signed-in user without changing the factory. It is a plain `Router()` mounted at `/staff-profiles`: the profiles go across salons, and the salon is a filter of the list.
 
@@ -427,6 +443,19 @@ Express tries the routes in the order in which they were registered, so `/bulk` 
     createAdminAuthRouter(authDependencies, authenticated),
   )
   const salonRepository = new SalonRepository(database)
+  const staffInvitationDependencies: StaffInvitationUseCaseDependencies = {
+    staffInvitationRepository: new StaffInvitationRepository(database),
+    salonRepository,
+    passwordHasher: authDependencies.passwordHasher,
+    tokenIssuer: authDependencies.tokenIssuer,
+    mailer,
+    publicAppUrl: settings.publicAppUrl,
+    clock,
+  }
+  app.use(
+    `${API_BASE_PATH}/auth/staff-invitation`,
+    createStaffInvitationAcceptanceRouter(staffInvitationDependencies),
+  )
   app.use(
     `${API_BASE_PATH}/salons`,
     createSalonRouter({ salonRepository }, authenticated),
@@ -454,6 +483,10 @@ Express tries the routes in the order in which they were registered, so `/bulk` 
       { staffRepository: new StaffRepository(database), salonRepository },
       authenticated,
     ),
+  )
+  app.use(
+    `${API_BASE_PATH}/salons/:salonId/staff/:id/invitation`,
+    createStaffInvitationRouter(staffInvitationDependencies, authenticated),
   )
   app.use(
     `${API_BASE_PATH}/salons/:salonId/staff/:id/schedules`,
@@ -484,7 +517,7 @@ Express tries the routes in the order in which they were registered, so `/bulk` 
   app.use(errorHandler)
 ```
 
-The order matters. Every request gets its ID and logger first. The probes are answered before the rate limit, so monitoring is never throttled. The body is parsed before the domain routers. The two handlers at the end turn whatever is left over into problem details. The router of a new domain is mounted next to the salon router, and receives the same `authenticated` if any of its operations is not public. The router of what belongs to a salon is mounted below the salon, with the parameter in the mount path, as the routers of the service categories, of the services and of the staff ledger are. It is given the salon repository of the salon router next to its own, because its use cases ask whether the salon exists. The router of what belongs to a record of a salon is mounted below that record in the same way: the router of the staff schedules has both parameters in its mount path (`/salons/:salonId/staff/:id/schedules`). The router of the staff profiles is mounted at `/staff-profiles` and receives no `authenticated`, because both of its operations are public. The router of the customer ledger is mounted at `/customers`, because a customer belongs to no salon. The use cases that write a customer need the current time, so the router is given the `clock` that the authentication use cases have: `createApp` builds one and hands it to both.
+The order matters. Every request gets its ID and logger first. The probes are answered before the rate limit, so monitoring is never throttled. The body is parsed before the domain routers. The two handlers at the end turn whatever is left over into problem details. The router of a new domain is mounted next to the salon router, and receives the same `authenticated` if any of its operations is not public. The router of what belongs to a salon is mounted below the salon, with the parameter in the mount path, as the routers of the service categories, of the services and of the staff ledger are. It is given the salon repository of the salon router next to its own, because its use cases ask whether the salon exists. The router of what belongs to a record of a salon is mounted below that record in the same way: the router of the staff schedules has both parameters in its mount path (`/salons/:salonId/staff/:id/schedules`), and so has the router of the staff invitations (`/salons/:salonId/staff/:id/invitation`). The two routers of the staff invitations are given one object of dependencies, which takes the password hasher, the token issuer, the mailer and the clock from those of the authentication: an invitation is a mailed token, and accepting it stores a password. The router of the staff profiles is mounted at `/staff-profiles` and receives no `authenticated`, because both of its operations are public. The router of the customer ledger is mounted at `/customers`, because a customer belongs to no salon. The use cases that write a customer need the current time, so the router is given the `clock` that the authentication use cases have: `createApp` builds one and hands it to both.
 
 ## Shared Helpers
 

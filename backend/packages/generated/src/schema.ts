@@ -999,6 +999,31 @@ export type SalesReportExportFormatType = z.infer<typeof SalesReportExportFormat
 
 /**
  * @description
+ * サロンロール区分 - サロンに属するアカウントのロール。スタッフへの招待で与える
+ *
+ *
+ * owner: オーナー - サロンの所有者。スタッフ台帳を扱い、スタッフを招待できる
+ *
+ * manager: マネージャー - サロンの管理業務を担当する
+ *
+ * staff: スタッフ - 施術を提供するサロン従業員
+ */
+export const SalonRoleTypeSchema = z.enum(['owner', 'manager', 'staff'])
+/**
+ * @description
+ * サロンロール区分 - サロンに属するアカウントのロール。スタッフへの招待で与える
+ *
+ *
+ * owner: オーナー - サロンの所有者。スタッフ台帳を扱い、スタッフを招待できる
+ *
+ * manager: マネージャー - サロンの管理業務を担当する
+ *
+ * staff: スタッフ - 施術を提供するサロン従業員
+ */
+export type SalonRoleType = z.infer<typeof SalonRoleTypeSchema>
+
+/**
+ * @description
  * 頭皮状態区分 - 頭皮の状態を分類、適切なケア方法の選択に使用
  *
  *
