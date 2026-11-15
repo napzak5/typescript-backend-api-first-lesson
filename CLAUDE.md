@@ -260,6 +260,7 @@ model AuthLoginResponse { ... }         // Login response
 2. `pnpm db:migrate` → `pnpm db:introspect` → `pnpm db:generate-sql`
 3. Commit `schema.ts`, `relations.ts` and `sql/setup.sql` (`pnpm check:db-schema` guards this in CI, and the integration tests fail when `setup.sql` lacks a migration)
 4. Keep the API models in line with the tables (`pnpm check:api-db` guards this in CI)
+5. A model that is stored in a `jsonb` column is checked whenever it is read. When a property leaves such a model or is renamed, the same change has a migration that rewrites the stored values (`202611160500_business_hours_without_time_zone.sql`); it regenerates nothing, and the migration tests say what it does to the rows
 
 ### Code Quality Checks
 ```bash

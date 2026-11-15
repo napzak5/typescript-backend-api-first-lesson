@@ -254,7 +254,7 @@ namespace BeautySalon.Models {
     other,
   }
 
-  @doc("特定の日付の営業時間（営業日カレンダーの1日分）を表すモデル。")
+  @doc("特定の日付の営業時間（営業日カレンダーの1日分）を表すモデル。時刻は、サロンのtimezoneでの時刻。")
   model OpeningHours {
     @doc("dateの曜日。dateと一致している必要がある")
     dayOfWeek: DayOfWeekType;
@@ -336,7 +336,7 @@ namespace BeautySalon.Models {
     endTime: string;
   }
 
-  @doc("曜日単位で管理する営業スケジュール設定。")
+  @doc("曜日単位で管理する営業スケジュール設定。時刻は、サロンのtimezoneでの時刻。")
   model BusinessHours {
     @doc("設定の対象となる曜日。")
     dayOfWeek: DayOfWeekType;
@@ -352,9 +352,6 @@ namespace BeautySalon.Models {
 
     @doc("季節営業などの適用期間。通年有効の場合はnull")
     effectivePeriod: DateRange | null;
-
-    @doc("営業基準となるタイムゾーンID。サロン既定値を使用する場合はnull")
-    timezone: string | null;
   }
 
   @doc("サービスメニューを一覧表示や候補選択で参照する際の要約情報。")
