@@ -133,7 +133,10 @@ export const parseSalonId = (id: unknown): Result<SalonId, DomainError> =>
   `parseCustomerId` in `backend/packages/domain/src/models/customer.ts` is
   the one of `/api/v1/customers/{id}`. A customer use case calls it after
   the permission check, which does not need the ID (see
-  [Authorization](#authorization)).
+  [Authorization](#authorization)). `parseStaffId` in
+  `backend/packages/domain/src/models/staff.ts` is the one of
+  `/api/v1/salons/{salonId}/staff/{id}`; a staff use case reads the salon ID
+  first, decides the permission from it, and reads the staff ID after that.
 - An ID that is not a UUID is a `validation` error (400) with `field: 'id'`. A
   well-formed ID of a salon that does not exist, or that has been deleted, is
   `notFound` (404).
@@ -302,7 +305,9 @@ A service that was deleted keeps its row, so a cursor that names one is
 accepted and still says where the next page begins. The customer list does
 both as well: it answers 400 for a cursor that names no customer, and a
 deleted customer still says where the next page begins
-([customers.md](./customers.md), Japanese). The
+([customers.md](./customers.md), Japanese). So does the staff list of a
+salon, which is ordered by registration, oldest first
+([staff.md](./staff.md), Japanese). The
 page links are built by
 `pageLinks` in `backend/packages/api/src/shared/page-links.ts`, for every
 list, from the request URL with the cursor replaced.
@@ -644,6 +649,14 @@ if (!mayUpdateSalon(actor, salonId.data)) {
   A user who is not allowed is answered with 403 whatever else is wrong with
   the request, and whether or not the customer exists. The rule is stated in
   [authentication.md](./authentication.md#顧客台帳の権限).
+- A rule that needs the actor and the target, and nothing that is stored, is
+  decided once the request is known to be valid and before anything is
+  looked up. The staff ledger has one: nobody deactivates or deletes the
+  staff member their own account belongs to (`isOwnStaffRecord` in
+  `backend/packages/domain/src/business-logic/staff/_shared/authorization.ts`).
+  It is not a question of permission, because the actor may do the same to
+  any other staff member of the salon, so the answer is `conflict` (409)
+  and not `forbidden` ([staff.md](./staff.md#自分自身のスタッフ情報), Japanese).
 
 **3. The error is a `DomainError`.** Nothing in this pattern builds a
 response by hand.

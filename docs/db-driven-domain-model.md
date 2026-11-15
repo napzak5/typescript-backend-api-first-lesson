@@ -14,7 +14,7 @@ PostgreSQL ── pnpm db:introspect ──▶ schema.ts     api-types.ts
                                   DbSalon、DbNewSalon ◀── マッパー ──▶ ApiSalonResponse、ApiSalonCreateRequest
 ```
 
-以下の例はすべて、参照実装である Salon のコードである。認証も同じ方法で型を導出している（`backend/packages/domain/src/models/auth.ts` の `DbUser`、`DbSession`、`DbNewSession`）。サロンのサービスカテゴリーとサービスも同じである（`backend/packages/domain/src/models/service-category.ts` の `DbServiceCategory`、`DbNewServiceCategory`、`backend/packages/domain/src/models/service.ts` の `DbService`、`DbNewService`、`DbServiceOption`、`DbNewServiceOption`）。顧客台帳も同じである（`backend/packages/domain/src/models/customer.ts` の `DbCustomer`、`DbNewCustomer`、`DbCustomerChanges`）。それ以外のドメインは DB スキーマと TypeSpec にあるだけで、モデルもマッパーもない（TypeSpec は DB と一致させてある）。
+以下の例はすべて、参照実装である Salon のコードである。認証も同じ方法で型を導出している（`backend/packages/domain/src/models/auth.ts` の `DbUser`、`DbSession`、`DbNewSession`）。サロンのサービスカテゴリーとサービスも同じである（`backend/packages/domain/src/models/service-category.ts` の `DbServiceCategory`、`DbNewServiceCategory`、`backend/packages/domain/src/models/service.ts` の `DbService`、`DbNewService`、`DbServiceOption`、`DbNewServiceOption`）。顧客台帳も同じである（`backend/packages/domain/src/models/customer.ts` の `DbCustomer`、`DbNewCustomer`、`DbCustomerChanges`）。スタッフ台帳も同じである（`backend/packages/domain/src/models/staff.ts` の `DbStaff`、`DbNewStaff`、`DbStaffChanges`）。それ以外のドメインは DB スキーマと TypeSpec にあるだけで、モデルもマッパーもない（TypeSpec は DB と一致させてある）。
 
 - 型と制約の層ごとの対応、`pnpm check:api-db`: [API-DB型制約マッピング](./api-db-type-constraints-mapping.md)
 - TypeSpec の書き方: [TypeSpec API型定義ルール](./typespec-api-type-rules.md)
@@ -94,6 +94,11 @@ drizzle-kit は、マイグレーションの生成にも適用にも使わな�
 | `backend/packages/database/sql/setup.sql` | `schema.ts` | `pnpm db:generate-sql` |
 
 `db:introspect` は drizzle-kit の出力をそのまま使わず、宣言や制約の順序を正規化する（`backend/packages/database/src/scripts/canonicalize-introspection.ts`）。そのため、スキーマが変わっていなければ再生成しても差分は出ない。
+
+drizzle-kit の出力が DB と食い違う 2 点は、DB のカタログを読んで直す（`backend/packages/database/src/scripts/introspect.ts` の `readCatalogFacts`）。
+
+- **一意制約のカラムの順序**: drizzle-kit はカラムを名前の順に並べる。`pg_constraint` の順序に戻す
+- **複数カラムのインデックスの演算子クラス**: drizzle-kit は、1 つ目のカラムの演算子クラスを、すべてのカラムに書く。`staff ("salonId", email)` のインデックスは `"email" uuid_ops` になり、PostgreSQL はこれを拒否するので（`operator class "uuid_ops" does not accept data type character varying`）、`sql/setup.sql` から DB を作れなくなる。`pg_index` の `indclass` から、カラムごとの演算子クラスに戻す。`schema.ts` のインデックスがカタログにない、または演算子クラスの数が合わないときは、`db:introspect` が失敗する
 
 ```typescript
 // backend/packages/database/src/schema.ts（抜粋）
@@ -188,6 +193,7 @@ DB の型と API の型は、2 つのマッパーでつなぐ。
 - Write マッパーがリクエストを作り替えるのは、リクエストで書けるカラムに表現を変えるものがあるときと、リクエストが複数のテーブルの行を含むときだけである。サービスカテゴリーにはどちらもなく、Write マッパーがない。ユースケースは検証済みのリクエストをそのままリポジトリに渡す。Read マッパー（`backend/packages/domain/src/mappers/read/service-category.mapper.ts`）はあり、タイムスタンプを変換する
 - サービスにも表現を変えるカラムはないが、リクエストが `services` の行と、オプション（`service_options`）の行を含む。`ServiceWriteMapper`（`backend/packages/domain/src/mappers/write/service.mapper.ts`）は値を変換せず、この 2 つを分ける
 - 顧客にも表現を変えるカラムはなく、リクエストは `customers` の 1 行である。`CustomerWriteMapper`（`backend/packages/domain/src/mappers/write/customer.mapper.ts`）は何も変換せず、リクエストをそのまま行として返す。プロパティ名と表現が行と一致していることを、型検査がここで確認する。Read マッパー（`backend/packages/domain/src/mappers/read/customer.mapper.ts`）は、タイムスタンプのほかに、`jsonb` の `preferences` と、DB では文字列で API では Enum の `gender` を検査する
+- スタッフには表現を変えるカラムが 1 つある。歩合率（`commissionRate`）は、API では数値、`numeric(5,2)` のカラムでは文字列である。`StaffWriteMapper`（`backend/packages/domain/src/mappers/write/staff.mapper.ts`）はこれだけを変換し、更新では、リクエストにあるときだけ変更に含める。Read マッパー（`backend/packages/domain/src/mappers/read/staff.mapper.ts`）は、歩合率とタイムスタンプを変換し、レスポンスに出さない `awards` と `deletedAt` を落とす
 
 データの流れ:
 
@@ -204,7 +210,7 @@ DB の型と API の型は、2 つのマッパーでつなぐ。
 
 ## ほかのドメインに適用するとき
 
-テーブルがすでに `schema.ts` にあるドメイン（`staff`、`bookings` など）は、同じ形でモデルを定義する。顧客台帳（`customers`）のモデルが、Salon のパターンをそのまま当てはめた例である。
+テーブルがすでに `schema.ts` にあるドメイン（`bookings`、`reviews` など）は、同じ形でモデルを定義する。顧客台帳（`customers`）のモデルが、Salon のパターンをそのまま当てはめた例である。
 
 ```typescript
 // backend/packages/domain/src/models/customer.ts（抜粋）
@@ -230,7 +236,7 @@ export type DbNewCustomer = DeepRequired<
 export type DbCustomerChanges = Partial<DbNewCustomer>
 ```
 
-`CustomerManagedColumn` は、リクエストから書かないカラムである。DB が値を決めるもの（`id`、タイムスタンプ）と `deletedAt` のほかに、ログインアカウントとの紐づけ（`userId`）と、予約や会計から決まる値（ポイント、累計利用金額、来店日、来店・無断キャンセル・キャンセルの回数）が入る。これらを書く機能（顧客本人の登録、予約、会計）はまだ実装がないので、値は行を作ったときのままである。それ以外のカラムは、リクエストの値をそのまま保存する。
+`CustomerManagedColumn` は、リクエストから書かないカラムである。DB が値を決めるもの（`id`、タイムスタンプ）と `deletedAt` のほかに、ログインアカウントとの紐づけ（`userId`。顧客本人がプロフィールを作るときに、リポジトリの `createProfile` が書く）と、予約や会計から決まる値（ポイント、累計利用金額、来店日、来店・無断キャンセル・キャンセルの回数）が入る。予約と会計はまだ実装がないので、それらの値は行を作ったときのままである。それ以外のカラムは、リクエストの値をそのまま保存する。
 
 テーブルやカラムが足りない場合は、先に上のワークフローで追加する。API モデルとテーブルの整合を確認する手順は [API-DB型制約マッピング](./api-db-type-constraints-mapping.md) にある。
 

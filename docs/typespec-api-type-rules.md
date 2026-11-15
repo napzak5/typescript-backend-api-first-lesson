@@ -14,7 +14,7 @@ TypeSpec で API のモデルとオペレーションを定義するときのル
 
 すべてのドメインの TypeSpec が、このルールに従っている。テーブルに対応するモデルは、プロパティ名・null 許可・Enum の値が DB と一致しており、`pnpm check:api-db` が検査する（[API-DB型制約マッピング](./api-db-type-constraints-mapping.md)）。
 
-バックエンドに実装があるのは、Salon とシステムのオペレーション、サロンのサービスカテゴリーとサービスのオペレーション（`ServiceCategoryCrud`、`ServiceCrud`）、顧客台帳の 5 つのオペレーション（`CustomerCrud` の `list`、`create`、`get`、`update`、`delete`）、および認証のすべてのオペレーション（`AuthCrud`、`SessionCrud`、`AdminAuthCrud`。`/api/v1/auth` のログイン、トークンの更新、ログアウト、現在のユーザーの取得、ユーザー登録、メールアドレスの確認、パスワードの再設定と変更、2 要素認証、セッションの一覧と無効化、および `/api/v1/admin/auth` の管理者の操作）である。`CustomerCrud` の残りのオペレーション（[顧客台帳](./customers.md#実装範囲)）と、ほかのドメインは TypeSpec と DB スキーマにだけ存在する。ロール・権限、添付ファイル、発注、カルテなど、テーブルがまだない機能の TypeSpec もある（一覧は [API-DB型制約マッピング](./api-db-type-constraints-mapping.md#ルールに載せるモデル載せないモデル)）。
+バックエンドに実装があるのは、Salon とシステムのオペレーション、サロンのサービスカテゴリーとサービスのオペレーション（`ServiceCategoryCrud`、`ServiceCrud`）、サロンのスタッフ台帳の 5 つのオペレーション（`StaffCrud` の `list`、`create`、`get`、`update`、`delete`）、顧客台帳の 5 つのオペレーション（`CustomerCrud` の `list`、`create`、`get`、`update`、`delete`）、顧客本人のプロフィールの 3 つのオペレーション（`CustomerProfile` の `get`、`create`、`update`）、および認証のすべてのオペレーション（`AuthCrud`、`SessionCrud`、`AdminAuthCrud`。`/api/v1/auth` のログイン、トークンの更新、ログアウト、現在のユーザーの取得、ユーザー登録、メールアドレスの確認、パスワードの再設定と変更、2 要素認証、セッションの一覧と無効化、および `/api/v1/admin/auth` の管理者の操作）である。`CustomerCrud` の残りのオペレーション（[顧客台帳](./customers.md#実装範囲)）、`StaffCrud` の残りのオペレーションと `GlobalStaff`（[スタッフ台帳](./staff.md#実装範囲)）、およびほかのドメインは TypeSpec と DB スキーマにだけ存在する。ロール・権限、添付ファイル、発注、カルテなど、テーブルがまだない機能の TypeSpec もある（一覧は [API-DB型制約マッピング](./api-db-type-constraints-mapping.md#ルールに載せるモデル載せないモデル)）。
 
 規約から外れている箇所は次のとおりで、いずれも意図したものである。
 
@@ -271,9 +271,11 @@ namespace SalonOperations {
 | 本文の ID が存在しない、または別のサロン・顧客のもの | 400 |
 | 一意制約に違反する | 409 |
 | 現在の状態では実行できない操作（完了した予約のキャンセルなど） | 409 |
+| 権限のあるユーザーでも、自分自身には実行できない操作（自分のアカウントが属するスタッフ情報の無効化と削除） | 403 ではなく 409。権限がないのではなく、その操作が成り立たない（[スタッフ台帳](./staff.md#自分自身のスタッフ情報)） |
 | 未認証・権限不足 | 401（`UnauthenticatedResponse`、`WWW-Authenticate` ヘッダー付き）と 403（`PermissionDeniedResponse`）。`ProblemResponse<401>` や `ProblemResponse<403>` を個別に並べず、上の表のエイリアス（`SessionErrors`、`CommonErrors`）で定義する。認証なしのオペレーションで 401 を個別に定義するのは、認証の失敗がそのオペレーションの結果である場合（ログイン、トークンの再発行）だけである |
 | ほかのサロンに属するリソース | 存在を知らせないよう 404。403 にするのは、権限をパスのサロンだけで判定できる操作である。公開情報であるサロンそのものへの操作と、サロンの下にあるルート（`/api/v1/salons/{salonId}/…`）への操作がこれにあたる。サロンの下にあるルートでは、パスのサロンに属さないリソースを 404 にする（[認証と認可](./authentication.md#サロンの下にあるルートの権限)） |
 | サロンに属さず、公開もしないリソース（顧客台帳。`/api/v1/customers`） | ルートをサロンの下に置かない。一覧と 1 件の取得を含めて、どのオペレーションにも `@useAuth(NoAuth)` を付けず、`CommonErrors` を加える。権限は操作者だけで決まり、最初に確認するので、権限のないユーザーには、ID や本文が不正でも、対象が存在しなくても 403 になる。`specs/operations/customer-operations.tsp` では、これを namespace の `@doc` に書いている（[認証と認可](./authentication.md#顧客台帳の権限)） |
+| サロンに属し、公開しないリソース（スタッフ台帳。`/api/v1/salons/{salonId}/staff`） | ルートはサロンの下に置く。一覧と 1 件の取得を含めて、どのオペレーションにも `@useAuth(NoAuth)` を付けず、`CommonErrors` を加える。権限はパスのサロンだけで決まり、最初に確認するので、権限のないユーザーには、ID や本文が不正でも、サロンや対象が存在しなくても 403 になる。`specs/operations/staff-operations.tsp` では、これを namespace の `@doc` に書いている（[認証と認可](./authentication.md#サロンの下にあるルートの権限)） |
 | 状態の遷移（確定、キャンセル、完了、返金など） | ステータスのカラムを更新リクエストで書き換えず、`POST .../{id}/<action>` のアクションにする。リクエストとレスポンスは `XXX<Action>Request` / `XXX<Action>Response` |
 | 一括操作 | 1 つのトランザクションで全件を処理する。1 件でも失敗すれば全体を失敗させ、成功のレスポンスに件ごとのエラーを入れない。実装済みの例は、サービスの一括更新（`ServiceCrud` の `bulkUpdate`、`PATCH /api/v1/salons/{salonId}/services/bulk`） |
 | 親で絞り込む一覧 | 一覧の検索リクエストに親の ID のフィルターを持たせる。同じ結果を返すネストしたルート（`/customers/{id}/bookings` など）は作らない |
