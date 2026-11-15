@@ -9,13 +9,14 @@ import type { ModelsServiceId } from './modelsServiceId';
 import type { ModelsStaffId } from './modelsStaffId';
 
 /**
- * 空き状況確認リクエスト - 希望する日時・スタッフ・施術メニューの組み合わせを受け取る。キーは必須
+ * 空き状況確認リクエスト - 希望する日時・スタッフ・施術メニューの組み合わせを受け取る。キーは必須。
+ * 希望する時間は、startTime から、サービスの施術時間(duration)のあいだ
  */
 export interface ModelsAvailableSlotCheckRequest {
   /** 担当を希望するスタッフのID。パスのサロンのスタッフを指定する */
   staffId: ModelsStaffId;
   /** 予約したい施術メニューのID。パスのサロンのサービスを指定する */
   serviceId: ModelsServiceId;
-  /** 希望する施術開始日時 (UTC) */
+  /** 希望する施術開始日時 (UTC)。分単位で指定する(秒と小数は0) */
   startTime: string;
 }

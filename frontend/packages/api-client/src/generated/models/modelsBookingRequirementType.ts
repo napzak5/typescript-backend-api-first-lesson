@@ -13,6 +13,9 @@
  * patch_test_required: パッチテスト必須 - アレルギー確認のための事前テストが必要
  * advance_booking_required: 事前予約必須 - 当日予約を受け付けず、事前の予約が必要
  * deposit_required: デポジット必須 - 予約時に予約金の支払いが必要
+ *
+ * 空き枠は、advance_booking_required のあるサービスに、当日(サロンのタイムゾーンでの今日)の枠を返さない。
+ * ほかの値は、サーバーでは確かめられない条件で、空き枠には影響しない
  */
 export type ModelsBookingRequirementType = typeof ModelsBookingRequirementType[keyof typeof ModelsBookingRequirementType];
 

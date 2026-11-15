@@ -319,7 +319,7 @@ namespace BeautySalon.Models {
   }
 
   @doc("""
-    空き枠検索リクエスト - サロンの指定日の予約可能枠を算出する条件とページネーションを指定する。
+    空き枠検索リクエスト - サロンの指定日に、サービスを予約できる枠を算出する条件とページネーションを指定する。
     serviceId と date は必須
     """)
   model AvailableSlotSearchRequest {
@@ -330,11 +330,11 @@ namespace BeautySalon.Models {
     limit?: int32 = 20;
 
     @query
-    @doc("取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する")
+    @doc("取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する。ページの最後の枠を表す `<startTime>_<staffId>` の形で、その枠より後の枠から返す")
     cursor?: string;
 
     @query
-    @doc("空き枠を探すスタッフのID。指定しない場合はサロンのすべてのスタッフの空き枠を返す")
+    @doc("空き枠を探すスタッフのID。パスのサロンのスタッフを指定する。指定しない場合はサロンのすべてのスタッフの空き枠を返す")
     staffId?: StaffId;
 
     @query
@@ -342,7 +342,7 @@ namespace BeautySalon.Models {
     serviceId: ServiceId;
 
     @query
-    @doc("空き枠を探す日付")
+    @doc("空き枠を探す日付。サロンのタイムゾーンでの日付。過去の日付には空の一覧を返す")
     date: plainDate;
 
     @query
@@ -353,7 +353,7 @@ namespace BeautySalon.Models {
   }
 
   @doc("""
-    空き枠レスポンス - スタッフごとの提供可能時間帯を表し、予約可能枠の算出結果として返す。
+    空き枠レスポンス - 1人のスタッフがサービスを始められる開始日時と、その施術が終わる日時を表す。
     テーブルには保存せず、予約・スタッフのスケジュール・営業時間から算出する
     """)
   model AvailableSlotResponse {
@@ -363,12 +363,13 @@ namespace BeautySalon.Models {
     @doc("空き枠の開始日時 (UTC)")
     startTime: utcDateTime;
 
-    @doc("空き枠の終了日時 (UTC)")
+    @doc("空き枠の終了日時 (UTC)。開始日時に施術時間を足した日時")
     endTime: utcDateTime;
   }
 
   @doc("""
-    空き状況確認リクエスト - 希望する日時・スタッフ・施術メニューの組み合わせを受け取る。キーは必須
+    空き状況確認リクエスト - 希望する日時・スタッフ・施術メニューの組み合わせを受け取る。キーは必須。
+    希望する時間は、startTime から、サービスの施術時間(duration)のあいだ
     """)
   model AvailableSlotCheckRequest {
     @doc("担当を希望するスタッフのID。パスのサロンのスタッフを指定する")
@@ -377,18 +378,18 @@ namespace BeautySalon.Models {
     @doc("予約したい施術メニューのID。パスのサロンのサービスを指定する")
     serviceId: ServiceId;
 
-    @doc("希望する施術開始日時 (UTC)")
+    @doc("希望する施術開始日時 (UTC)。分単位で指定する(秒と小数は0)")
     startTime: utcDateTime;
   }
 
   @doc("""
-    空き状況確認レスポンス - 希望した組み合わせが予約可能かどうかと、重なっている予約を返す
+    空き状況確認レスポンス - 希望した時間にスタッフが占有されていないかどうかと、重なっている予約を返す
     """)
   model AvailableSlotCheckResponse {
-    @doc("予約可能かどうか")
+    @doc("スタッフが占有されていないかどうか。予約台帳への作成が、スタッフの占有を理由に断られないこと")
     isAvailable: boolean;
 
-    @doc("希望した時間帯に重なっている予約のID一覧。重なりがない場合は空配列")
+    @doc("希望した時間(スタッフの前後の空け時間を含む)に、施術明細(同じく空け時間を含む)が重なっている予約のID一覧。早く始まる明細の予約から並ぶ。同時に複数の予約を受けられるスタッフでは、重なりがあっても isAvailable が true のことがある。重なりがない場合は空配列")
     conflicts: BookingId[];
   }
 }

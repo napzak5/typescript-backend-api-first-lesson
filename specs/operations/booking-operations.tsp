@@ -216,12 +216,12 @@ namespace BeautySalon.Operations {
     }
   }
 
-  @doc("各サロンの予約可能時間帯を予約・スタッフのスケジュール・営業時間から算出し、オンライン予約枠表示やスタッフ提案に使用するAPI操作群です。")
+  @doc("各サロンの空き枠を予約・スタッフのスケジュール・営業時間から算出するAPI操作群です。一覧は顧客が予約できる枠を返し、確認は予約台帳が受け付けるかどうか(スタッフの占有)を答えます。")
   @route("/api/v1/salons/{salonId}/available-slots")
   @tag("Bookings")
   namespace AvailabilityOperations {
     interface AvailableSlotCrud {
-      @doc("指定日の予約可能枠を取得し、空き枠一覧や予約フォームに反映します。サロンが存在しない場合は404を、serviceIdやstaffIdがサロンのものではない場合は400を返します。")
+      @doc("指定日に、サービスを予約できる枠(1人のスタッフがそのサービスを始められる開始日時)を算出して返します。サインインしているユーザーなら誰でも実行できます。枠は、サロンの営業時間帯(営業日カレンダーにその日付の行があればその時刻、なければ曜日別の営業時間から休憩を除いたもの)と、スタッフの勤務時間帯(休憩を除く)の重なりの中に、時間帯の始まりから30分ごとに作ります。施術の全体が時間帯に収まり、スタッフが占有されておらず(予約台帳と同じ規則。前後の空け時間と同時に受けられる数を含む)、現在より後に始まる枠だけを返します。施術時間は duration、指定がなければサービスの duration です。次の場合は、その枠を返しません(エラーにはしません)。サロンが予約受付中でない(isActive が false)。サービスが予約できない(isActive が false、serviceStatus が active 以外、allowOnlineBooking が false、availability がその日の曜日に合わない、bookingRequirements に advance_booking_required があり当日である、その日の明細が maxBookingsPerDay に達している)。スタッフが予約を受けない(isActive または canReceiveBookings が false、level が requiredStaffLevel に満たない、その日に勤務しない)。並びは startTime の昇順、同じ日時は staffId の昇順です。サロンが存在しない場合は404を、serviceIdやstaffIdがサロンのものではない(削除済みを含む)場合は400を、サロンのタイムゾーンを名前として読めない場合は409を返します。")
       @summary("List available slots")
       @get
       list(@path salonId: SalonId, ...AvailableSlotSearchRequest):
@@ -231,9 +231,10 @@ namespace BeautySalon.Operations {
           }
         | ProblemResponse<400>
         | ProblemResponse<404>
+        | ProblemResponse<409>
         | CommonErrors;
 
-      @doc("希望する日時・スタッフの組み合わせが予約可能か即時判定し、ダブルブッキングを防ぎます。サロンが存在しない場合は404を、serviceIdやstaffIdがサロンのものではない場合は400を返します。")
+      @doc("スタッフが、希望する日時からサービスの施術時間のあいだ、占有されていないかを答えます。予約台帳への作成・日時の変更・明細の追加が、スタッフの占有を理由に409になるかどうかを、何も書かずに確かめる操作で、admin と、そのサロンの owner / manager / staff が実行できます。確かめるのは占有だけです。営業時間、勤務スケジュール、サービスやスタッフの受付の設定、過去の日時かどうかは確かめません(予約台帳が確かめないものは確かめません)。答えはその時点のもので、あとの作成が409になることはあります。サロンが存在しない場合は404を、serviceIdやstaffIdがサロンのものではない(削除済みを含む)場合は400を返します。")
       @summary("Check availability")
       @route("/check")
       @post
