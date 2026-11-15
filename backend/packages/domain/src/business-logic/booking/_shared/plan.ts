@@ -25,7 +25,7 @@ import type { ServiceTime, StaffCapacity } from './occupancy'
 type SalonOfBooking = Pick<DbSalon, 'timezone' | 'taxRate'>
 
 /** What a booking takes from a staff member. */
-type StaffOfBooking = Pick<DbStaff, 'id'> & StaffCapacity
+export type StaffOfBooking = Pick<DbStaff, 'id'> & StaffCapacity
 
 /** What a service line takes from its service. */
 type ServiceOfBooking = Pick<
@@ -71,7 +71,7 @@ export type BookingPlan =
   | { type: 'invalid'; issues: ValidationIssue[] }
   | { type: 'timeZoneUnknown' }
 
-const notFound = (field: string, what: string): ValidationIssue => ({
+export const notFound = (field: string, what: string): ValidationIssue => ({
   field,
   rule: 'not_found',
   message: `Must name ${what}`,

@@ -1,5 +1,6 @@
 import type { Result } from '@beauty-salon-backend/utility'
 import type { BookingOrigin } from '../business-logic/booking/_shared/plan'
+import type { BookingMove } from '../business-logic/booking/_shared/reschedule'
 import type {
   BookingAction,
   StatusChangeRefusal,
@@ -10,11 +11,15 @@ import type {
   BookingReach,
   BookingWithServices,
   DbBooking,
+  DbBookingNotes,
 } from '../models/booking'
 import type { CustomerId } from '../models/customer'
 import type { SalonId } from '../models/salon'
 import type { StaffId } from '../models/staff'
-import type { BookingCreateRequest } from '../schemas/booking.schema'
+import type {
+  BookingCreateRequest,
+  BookingRescheduleRequest,
+} from '../schemas/booking.schema'
 import type { DomainError, ValidationIssue } from '../shared'
 
 /**
@@ -46,6 +51,35 @@ export type BookingStatusChange =
   | { type: 'changed'; booking: BookingWithServices }
   | { type: 'notFound' }
   | StatusChangeRefusal
+
+/**
+ * What became of a reschedule:
+ * - `rescheduled`: the booking as it is now
+ * - `notFound`: no booking within the reach has the ID
+ * - `statusDoesNotAllow`: the visit is under way or the booking is closed
+ * - otherwise what stands in the way of the move, as of a booking that is
+ *   entered: the staff member is not one of the salon, the salon has a
+ *   time zone that is not known, staff members are occupied
+ */
+export type BookingReschedule =
+  | { type: 'rescheduled'; booking: BookingWithServices }
+  | { type: 'notFound' }
+  | Exclude<BookingMove, { type: 'moved' }>
+  | Exclude<BookingCreationRefusal, { type: 'bookingNumberTaken' }>
+
+/** A record that refers to a booking and keeps it from being deleted. */
+export type BookingReference = 'sale' | 'treatmentRecord'
+
+/**
+ * What became of the deletion of a booking:
+ * - `deleted`: the booking is gone, with its lines, its history and its review
+ * - `notFound`: no booking within the reach has the ID
+ * - `referredTo`: these records of what took place refer to the booking
+ */
+export type BookingDeletion =
+  | { type: 'deleted' }
+  | { type: 'notFound' }
+  | { type: 'referredTo'; by: BookingReference[] }
 
 export type BookingListCriteria = {
   /** The bookings the list is taken from. */
@@ -110,6 +144,42 @@ export interface IBookingRepository {
     action: BookingAction,
     changedBy: UserId,
   ): Promise<Result<BookingStatusChange, DomainError>>
+
+  /**
+   * Writes what the salon notes of a booking within the reach: the
+   * properties that are named, and no others. Resolves to the booking as
+   * it is then, or to `null` when no booking within the reach has the ID.
+   */
+  update(
+    id: BookingId,
+    reach: BookingReach,
+    notes: DbBookingNotes,
+  ): Promise<Result<BookingWithServices | null, DomainError>>
+
+  /**
+   * Moves a booking within the reach to another time and another staff
+   * member in charge (`moveBooking`, `planReschedule`) and writes the
+   * booking and its service lines. The booking is held from the moment its
+   * status is read, and the staff members of its lines are booked one
+   * request after the other, as when a booking is created. The lines the
+   * booking had before the move do not stand in its own way.
+   */
+  reschedule(
+    id: BookingId,
+    reach: BookingReach,
+    request: BookingRescheduleRequest,
+  ): Promise<Result<BookingReschedule, DomainError>>
+
+  /**
+   * Removes a booking within the reach with its service lines, its status
+   * history and its review, unless a sale or a treatment record refers to
+   * it, and counts again what the customer has of visits, cancellations
+   * and no-shows when the booking was counted among them.
+   */
+  delete(
+    id: BookingId,
+    reach: BookingReach,
+  ): Promise<Result<BookingDeletion, DomainError>>
 
   /**
    * A page of the bookings that match, by the time they begin, earliest
