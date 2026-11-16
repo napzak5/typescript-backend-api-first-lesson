@@ -103,23 +103,23 @@ namespace BeautySalon.Models {
     @doc("未処理(pending)の通報の件数。通報したトランザクションと却下したトランザクションが、通報の行から数え直す。運営が却下した通報は数えない")
     reportCount: int32;
 
-    @doc("サロン運営からの公式返信本文。オーナー未返信のレビューの場合はnull")
+    @doc("サロンからの返信。レビューのサロンの owner・manager が書く。返信のないレビューと、返信を取り下げたレビューの場合はnull")
     ownerResponse: string | null;
 
-    @doc("運営が返信した日時 (UTC)。オーナー未返信のレビューの場合はnull")
+    @doc("サロンが返信を書いた日時 (UTC)。返信を書き換えると変わり、同じ返信をもう一度指定しても変わらない。返信のないレビューの場合はnull")
     ownerRespondedAt: utcDateTime | null;
 
     @doc("レコード作成日時（レビュー投稿日時）")
     createdAt: utcDateTime;
 
-    @doc("レコード最終更新日時")
+    @doc("顧客がレビューを投稿または修正した日時。参考になった数、通報の件数、サロンからの返信が変わっても変わらない")
     updatedAt: utcDateTime;
   }
 
   @doc("""
     レビュー作成リクエスト - 顧客が新規レビュー投稿時に入力する評価情報と任意コメント・画像を受け取る。
     全項目のキーが必須。DB で NULL 許可のカラムのみ null を指定できる。
-    検証フラグ、参考になった数、報告数、運営の返信はシステムやほかの操作が設定するため含まない
+    検証フラグ、参考になった数、通報の件数、サロンからの返信はシステムやほかの操作が設定するため含まない
     """)
   model ReviewCreateRequest {
     @doc("レビュー対象のサロンID。bookingIdの予約のサロンを指定する")
@@ -278,6 +278,14 @@ namespace BeautySalon.Models {
   model ReviewHelpfulResponse {
     @doc("評価したあとの、レビューを「参考になった」と評価した顧客の数")
     helpfulCount: int32;
+  }
+
+  @doc("""
+    サロンからの返信リクエスト - レビューへのサロンの返信を書く、置き換える、取り下げる。キーは必須
+    """)
+  model ReviewRespondRequest {
+    @doc("サロンからの返信。空白だけの文字列は指定できない。null を指定すると返信を取り下げる。admin が指定できるのは null だけ")
+    ownerResponse: string | null;
   }
 
   @doc("""
