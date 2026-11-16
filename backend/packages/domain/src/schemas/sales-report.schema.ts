@@ -68,12 +68,3 @@ export const dailySalesGetRequestSchema = z.strictObject({
   salonId: salonIdSchema,
   date: z.iso.date(),
 }) satisfies z.ZodType<ApiDailySalesGetRequest>
-
-/** A period that passed the rules of its own. */
-export type SalesReportGetRequest = z.infer<typeof salesReportGetRequestSchema>
-
-/** A period of a trend that passed the rules of its own. */
-export type SalesTrendsGetRequest = z.infer<typeof salesTrendsGetRequestSchema>
-
-/** A day that passed the rules of its own. */
-export type DailySalesGetRequest = z.infer<typeof dailySalesGetRequestSchema>
