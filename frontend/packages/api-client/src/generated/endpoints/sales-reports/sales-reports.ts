@@ -6,28 +6,23 @@
  * OpenAPI spec version: 2.0
  */
 import {
-  useMutation,
   useQuery
 } from '@tanstack/react-query';
 import type {
   DataTag,
   DefinedInitialDataOptions,
   DefinedUseQueryResult,
-  MutationFunction,
   QueryClient,
   QueryFunction,
   QueryKey,
   UndefinedInitialDataOptions,
-  UseMutationOptions,
-  UseMutationResult,
   UseQueryOptions,
   UseQueryResult
 } from '@tanstack/react-query';
 
 import type {
   ModelsProblemDetails,
-  ModelsSalesReportExportRequest,
-  SalesReportCrudExport200,
+  SalesReportCrudExportParams,
   SalesReportCrudGet200,
   SalesReportCrudGetByCategory200,
   SalesReportCrudGetByCategoryParams,
@@ -697,7 +692,7 @@ export function useSalesReportCrudGetDaily<TData = Awaited<ReturnType<typeof sal
 
 
 export type salesReportCrudExportResponse200 = {
-  data: SalesReportCrudExport200
+  data: string
   status: 200
 }
 
@@ -716,16 +711,6 @@ export type salesReportCrudExportResponse403 = {
   status: 403
 }
 
-export type salesReportCrudExportResponse413 = {
-  data: ModelsProblemDetails
-  status: 413
-}
-
-export type salesReportCrudExportResponse415 = {
-  data: ModelsProblemDetails
-  status: 415
-}
-
 export type salesReportCrudExportResponse429 = {
   data: ModelsProblemDetails
   status: 429
@@ -739,46 +724,39 @@ export type salesReportCrudExportResponse500 = {
 export type salesReportCrudExportResponseSuccess = (salesReportCrudExportResponse200) & {
   headers: Headers;
 };
-export type salesReportCrudExportResponseError = (salesReportCrudExportResponse400 | salesReportCrudExportResponse401 | salesReportCrudExportResponse403 | salesReportCrudExportResponse413 | salesReportCrudExportResponse415 | salesReportCrudExportResponse429 | salesReportCrudExportResponse500) & {
+export type salesReportCrudExportResponseError = (salesReportCrudExportResponse400 | salesReportCrudExportResponse401 | salesReportCrudExportResponse403 | salesReportCrudExportResponse429 | salesReportCrudExportResponse500) & {
   headers: Headers;
 };
 
 export type salesReportCrudExportResponse = (salesReportCrudExportResponseSuccess | salesReportCrudExportResponseError)
 
-export const getSalesReportCrudExportUrl = () => {
+export const getSalesReportCrudExportUrl = (params: SalesReportCrudExportParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
+  const stringifiedParams = normalizedParams.toString();
 
-  return `/api/v1/sales-reports/export`
+  return stringifiedParams.length > 0 ? `/api/v1/sales-reports/export?${stringifiedParams}` : `/api/v1/sales-reports/export`
 }
 
 /**
- * 期間内の売上レポートを指定した形式のファイルに出力し、ダウンロードURLを返します。
- * @summary Export a sales report
+ * 期間の売上を、1日を1行にした CSV ファイルとして返します。売上のない日も0で載せ、日付の順に並べます。列は date、sales、tax、discounts、transactions、refunds、net で、数え方は期間のレポートと同じです(列ごとの合計は、同じ期間のレポートの totalSales、totalTax、totalDiscounts、transactionCount、totalRefunds、netSales に一致し、1日の行は getDaily と同じ値です)。合計の行はありません。文字コードは UTF-8(BOM なし)、改行は CRLF で、1行目は列名です。ファイルは保存せず、応答の本文として返します。endDate が startDate より前の場合と、期間が366日を超える場合は400を返します。
+ * @summary Export a sales report as CSV
  */
-export const salesReportCrudExport = async (modelsSalesReportExportRequest: ModelsSalesReportExportRequest, options?: RequestInit): Promise<salesReportCrudExportResponse> => {
+export const salesReportCrudExport = async (params: SalesReportCrudExportParams, options?: RequestInit): Promise<salesReportCrudExportResponse> => {
 
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return customInstance<salesReportCrudExportResponse>(getSalesReportCrudExportUrl(),
+  return customInstance<salesReportCrudExportResponse>(getSalesReportCrudExportUrl(params),
   {
     ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(modelsSalesReportExportRequest)
+    method: 'GET'
+
+
   }
 );}
 
@@ -786,55 +764,93 @@ return customInstance<salesReportCrudExportResponse>(getSalesReportCrudExportUrl
 
 
 
-export const getSalesReportCrudExportMutationKey = () => ['salesReportCrudExport'] as const;
-
-export const getSalesReportCrudExportMutationOptions = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof salesReportCrudExport>>, TError,SalesReportCrudExportMutationVariables, TContext>, }
-): UseMutationOptions<Awaited<ReturnType<typeof salesReportCrudExport>>, TError,SalesReportCrudExportMutationVariables, TContext> => {
-
-const mutationKey = getSalesReportCrudExportMutationKey();
-const {mutation: mutationOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof salesReportCrudExport>>, SalesReportCrudExportMutationVariables> = (props) => {
-          const {data} = props ?? {};
-
-          return  salesReportCrudExport(data,)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type SalesReportCrudExportMutationResult = NonNullable<Awaited<ReturnType<typeof salesReportCrudExport>>>
-    export type SalesReportCrudExportMutationBody = ModelsSalesReportExportRequest
-    export type SalesReportCrudExportMutationError = ModelsProblemDetails
-    export type SalesReportCrudExportMutationVariables = {data: ModelsSalesReportExportRequest}
-
-    /**
- * 期間内の売上レポートを指定した形式のファイルに出力し、ダウンロードURLを返します。
- * @summary Export a sales report
- */
-export const useSalesReportCrudExport = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof salesReportCrudExport>>, TError,SalesReportCrudExportMutationVariables, TContext>, }
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof salesReportCrudExport>>,
-        TError,
-        SalesReportCrudExportMutationVariables,
-        TContext
-      > => {
-      return useMutation(getSalesReportCrudExportMutationOptions(options), queryClient);
+export const getSalesReportCrudExportQueryKey = (params?: SalesReportCrudExportParams,) => {
+    return [
+    `/api/v1/sales-reports/export`, ...(params ? [params] : [])
+    ] as const;
     }
-    export type salesReportCrudGetTrendsResponse200 = {
+
+
+export const getSalesReportCrudExportQueryOptions = <TData = Awaited<ReturnType<typeof salesReportCrudExport>>, TError = ModelsProblemDetails>(params: SalesReportCrudExportParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof salesReportCrudExport>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getSalesReportCrudExportQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof salesReportCrudExport>>> = ({ signal }) => salesReportCrudExport(params, { signal });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof salesReportCrudExport>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type SalesReportCrudExportQueryResult = NonNullable<Awaited<ReturnType<typeof salesReportCrudExport>>>
+export type SalesReportCrudExportQueryError = ModelsProblemDetails
+
+
+/**
+ * 期間の売上を、1日を1行にした CSV ファイルとして返します。売上のない日も0で載せ、日付の順に並べます。列は date、sales、tax、discounts、transactions、refunds、net で、数え方は期間のレポートと同じです(列ごとの合計は、同じ期間のレポートの totalSales、totalTax、totalDiscounts、transactionCount、totalRefunds、netSales に一致し、1日の行は getDaily と同じ値です)。合計の行はありません。文字コードは UTF-8(BOM なし)、改行は CRLF で、1行目は列名です。ファイルは保存せず、応答の本文として返します。endDate が startDate より前の場合と、期間が366日を超える場合は400を返します。
+ * @summary Export a sales report as CSV
+ */
+export function useSalesReportCrudExport<TData = Awaited<ReturnType<typeof salesReportCrudExport>>, TError = ModelsProblemDetails>(
+ params: SalesReportCrudExportParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof salesReportCrudExport>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof salesReportCrudExport>>,
+          TError,
+          Awaited<ReturnType<typeof salesReportCrudExport>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * 期間の売上を、1日を1行にした CSV ファイルとして返します。売上のない日も0で載せ、日付の順に並べます。列は date、sales、tax、discounts、transactions、refunds、net で、数え方は期間のレポートと同じです(列ごとの合計は、同じ期間のレポートの totalSales、totalTax、totalDiscounts、transactionCount、totalRefunds、netSales に一致し、1日の行は getDaily と同じ値です)。合計の行はありません。文字コードは UTF-8(BOM なし)、改行は CRLF で、1行目は列名です。ファイルは保存せず、応答の本文として返します。endDate が startDate より前の場合と、期間が366日を超える場合は400を返します。
+ * @summary Export a sales report as CSV
+ */
+export function useSalesReportCrudExport<TData = Awaited<ReturnType<typeof salesReportCrudExport>>, TError = ModelsProblemDetails>(
+ params: SalesReportCrudExportParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof salesReportCrudExport>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof salesReportCrudExport>>,
+          TError,
+          Awaited<ReturnType<typeof salesReportCrudExport>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * 期間の売上を、1日を1行にした CSV ファイルとして返します。売上のない日も0で載せ、日付の順に並べます。列は date、sales、tax、discounts、transactions、refunds、net で、数え方は期間のレポートと同じです(列ごとの合計は、同じ期間のレポートの totalSales、totalTax、totalDiscounts、transactionCount、totalRefunds、netSales に一致し、1日の行は getDaily と同じ値です)。合計の行はありません。文字コードは UTF-8(BOM なし)、改行は CRLF で、1行目は列名です。ファイルは保存せず、応答の本文として返します。endDate が startDate より前の場合と、期間が366日を超える場合は400を返します。
+ * @summary Export a sales report as CSV
+ */
+export function useSalesReportCrudExport<TData = Awaited<ReturnType<typeof salesReportCrudExport>>, TError = ModelsProblemDetails>(
+ params: SalesReportCrudExportParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof salesReportCrudExport>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * 期間の売上を、1日を1行にした CSV ファイルとして返します。売上のない日も0で載せ、日付の順に並べます。列は date、sales、tax、discounts、transactions、refunds、net で、数え方は期間のレポートと同じです(列ごとの合計は、同じ期間のレポートの totalSales、totalTax、totalDiscounts、transactionCount、totalRefunds、netSales に一致し、1日の行は getDaily と同じ値です)。合計の行はありません。文字コードは UTF-8(BOM なし)、改行は CRLF で、1行目は列名です。ファイルは保存せず、応答の本文として返します。endDate が startDate より前の場合と、期間が366日を超える場合は400を返します。
+ * @summary Export a sales report as CSV
+ */
+export function useSalesReportCrudExport<TData = Awaited<ReturnType<typeof salesReportCrudExport>>, TError = ModelsProblemDetails>(
+ params: SalesReportCrudExportParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof salesReportCrudExport>>, TError, TData>>, }
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getSalesReportCrudExportQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type salesReportCrudGetTrendsResponse200 = {
   data: SalesReportCrudGetTrends200
   status: 200
 }

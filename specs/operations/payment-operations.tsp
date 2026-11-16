@@ -225,7 +225,7 @@ namespace BeautySalon.Operations {
     }
   }
 
-  @doc("売上を集計したレポートを取得・出力するAPI操作群です。get、getDaily、getByStaff、getByCategory、getTrends は実装済みで、定義と実装は一致しています。export は定義だけで、実装はありません。どの操作も、管理者と、salonId のサロンのオーナー・マネージャーが実行できます(スタッフと顧客は403)。salonId に自分のサロン以外を指定した場合は403を、salonId のサロンが存在しない場合は400を返します。集計は、リクエストのたびに、取り消していない売上とその決済取引から行い、記録しません。日付は売上日(saleDate。会計日時のサロンのタイムゾーンでの日付)です。")
+  @doc("売上を集計したレポートを取得・出力するAPI操作群です。6つの操作はすべて実装済みで、定義と実装は一致しています。どの操作も、管理者と、salonId のサロンのオーナー・マネージャーが実行できます(スタッフと顧客は403)。salonId に自分のサロン以外を指定した場合は403を、salonId のサロンが存在しない場合は400を返します。集計は、リクエストのたびに、取り消していない売上とその決済取引から行い、記録しません。日付は売上日(saleDate。会計日時のサロンのタイムゾーンでの日付)です。")
   @route("/api/v1/sales-reports")
   @tag("Sales Reports")
   namespace SalesReportOperations {
@@ -289,17 +289,22 @@ namespace BeautySalon.Operations {
         | ProblemResponse<400>
         | CommonErrors;
 
-      @doc("期間内の売上レポートを指定した形式のファイルに出力し、ダウンロードURLを返します。")
-      @summary("Export a sales report")
+      @doc("期間の売上を、1日を1行にした CSV ファイルとして返します。売上のない日も0で載せ、日付の順に並べます。列は date、sales、tax、discounts、transactions、refunds、net で、数え方は期間のレポートと同じです(列ごとの合計は、同じ期間のレポートの totalSales、totalTax、totalDiscounts、transactionCount、totalRefunds、netSales に一致し、1日の行は getDaily と同じ値です)。合計の行はありません。文字コードは UTF-8(BOM なし)、改行は CRLF で、1行目は列名です。ファイルは保存せず、応答の本文として返します。endDate が startDate より前の場合と、期間が366日を超える場合は400を返します。")
+      @summary("Export a sales report as CSV")
       @route("/export")
-      @post
-      export(@body request: SalesReportExportRequest):
+      @get
+      export(...SalesReportGetRequest):
         | {
             @statusCode statusCode: 200;
-            @body response: ApiResponse<SalesReportExportResponse>;
+            @header contentType: "text/csv";
+
+            @doc("attachment; filename=sales-report-<startDate>-<endDate>.csv")
+            @header
+            contentDisposition: string;
+
+            @body file: string;
           }
         | ProblemResponse<400>
-        | RequestBodyErrors
         | CommonErrors;
     }
   }

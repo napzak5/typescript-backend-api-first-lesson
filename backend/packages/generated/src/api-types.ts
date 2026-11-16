@@ -2355,13 +2355,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
-        put?: never;
         /**
-         * Export a sales report
-         * @description 期間内の売上レポートを指定した形式のファイルに出力し、ダウンロードURLを返します。
+         * Export a sales report as CSV
+         * @description 期間の売上を、1日を1行にした CSV ファイルとして返します。売上のない日も0で載せ、日付の順に並べます。列は date、sales、tax、discounts、transactions、refunds、net で、数え方は期間のレポートと同じです(列ごとの合計は、同じ期間のレポートの totalSales、totalTax、totalDiscounts、transactionCount、totalRefunds、netSales に一致し、1日の行は getDaily と同じ値です)。合計の行はありません。文字コードは UTF-8(BOM なし)、改行は CRLF で、1行目は列名です。ファイルは保存せず、応答の本文として返します。endDate が startDate より前の場合と、期間が366日を超える場合は400を返します。
          */
-        post: operations["SalesReportCrud_export"];
+        get: operations["SalesReportCrud_export"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -7753,53 +7753,6 @@ export interface components {
              * @description 表示順序。1件の売上の明細の間で重複しない
              */
             sortOrder: number;
-        };
-        /**
-
-         * @description
-
-         * 売上レポート出力形式区分 - 売上レポートを出力するファイルの形式
-
-         *
-
-         *
-
-         * csv: CSV - カンマ区切りのテキストファイル
-
-         *
-
-         * excel: Excel - Excel のブック
-
-         *
-
-         * pdf: PDF - 印刷・配布用の PDF ファイル
-
-         * @enum {string}
-
-         */
-
-        "Models.SalesReportExportFormatType": "csv" | "excel" | "pdf";
-        /** @description 売上レポートの出力リクエスト - 出力する期間と形式を指定する */
-        "Models.SalesReportExportRequest": {
-            /** @description 集計対象のサロン ID */
-            salonId: components["schemas"]["Models.SalonId"];
-            /**
-             * Format: date-time
-             * @description 集計期間の開始日時
-             */
-            startDate: string;
-            /**
-             * Format: date-time
-             * @description 集計期間の終了日時
-             */
-            endDate: string;
-            /** @description 出力形式 */
-            format: components["schemas"]["Models.SalesReportExportFormatType"];
-        };
-        /** @description 売上レポートの出力結果 */
-        "Models.SalesReportExportResponse": {
-            /** @description 出力したファイルのダウンロード URL */
-            downloadUrl: string;
         };
         /** @description 期間の売上レポート - サロンの、取り消していない売上のうち、売上日(saleDate)が期間内のものを集計する。支払いが済んでいない売上も数える。返金は、いつ返金したかによらず、返金した決済取引の売上の売上日の側で数える */
         "Models.SalesReportResponse": {
@@ -24359,33 +24312,29 @@ export interface operations {
     };
     SalesReportCrud_export: {
         parameters: {
-            query?: never;
+            query: {
+                /** @description 集計対象のサロン ID */
+                salonId: components["parameters"]["Models.SalesReportGetRequest.salonId"];
+                /** @description 期間の最初の売上日(saleDate) */
+                startDate: components["parameters"]["Models.SalesReportGetRequest.startDate"];
+                /** @description 期間の最後の売上日(saleDate)。startDate 以降で、期間は startDate を含めて366日まで */
+                endDate: components["parameters"]["Models.SalesReportGetRequest.endDate"];
+            };
             header?: never;
             path?: never;
             cookie?: never;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["Models.SalesReportExportRequest"];
-            };
-        };
+        requestBody?: never;
         responses: {
             /** @description The request has succeeded. */
             200: {
                 headers: {
+                    /** @description attachment; filename=sales-report-<startDate>-<endDate>.csv */
+                    "content-disposition": string;
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
-                        data: components["schemas"]["Models.SalesReportExportResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
-                        meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
-                        links: {
-                            [key: string]: string;
-                        } | null;
-                    };
+                    "text/csv": string;
                 };
             };
             /** @description The server could not understand the request due to invalid syntax. */
@@ -24414,24 +24363,6 @@ export interface operations {
             };
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
-            413: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
-            415: {
                 headers: {
                     [name: string]: unknown;
                 };
