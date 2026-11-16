@@ -514,6 +514,23 @@ export const customerPoints = pgTable(
       .notNull(),
   },
   (table) => [
+    check('customer_points_balance_not_negative', sql`balance >= 0`),
+    check(
+      'customer_points_expiry_of_earned',
+      sql`("expiryDate" IS NULL) OR ("transactionType" = 'earned'::point_transaction_type)`,
+    ),
+    check(
+      'customer_points_points_of_type',
+      sql`(("transactionType" <> 'earned'::point_transaction_type) OR (points >= 1)) AND (("transactionType" <> ALL (ARRAY['used'::point_transaction_type, 'expired'::point_transaction_type])) OR (points <= '-1'::integer)) AND (("transactionType" <> ALL (ARRAY['adjusted'::point_transaction_type, 'transferred'::point_transaction_type])) OR (points <> 0))`,
+    ),
+    check(
+      'customer_points_reference_pair',
+      sql`("referenceType" IS NULL) = ("referenceId" IS NULL)`,
+    ),
+    check(
+      'customer_points_reference_type_known',
+      sql`("referenceType" IS NULL) OR (("referenceType")::text = ANY (ARRAY['sale'::text, 'booking'::text]))`,
+    ),
     foreignKey({
       columns: [table.customerId],
       foreignColumns: [customers.id],
@@ -523,14 +540,26 @@ export const customerPoints = pgTable(
       'btree',
       table.createdAt.asc().nullsLast().op('timestamptz_ops'),
     ),
-    index('idx_customer_points_customer_id').using(
+    index('idx_customer_points_customer_time').using(
       'btree',
       table.customerId.asc().nullsLast().op('uuid_ops'),
+      table.createdAt.asc().nullsLast().op('timestamptz_ops'),
+      table.id.asc().nullsLast().op('uuid_ops'),
     ),
     index('idx_customer_points_expiry_date').using(
       'btree',
       table.expiryDate.asc().nullsLast().op('date_ops'),
     ),
+    uniqueIndex('customer_points_reference_unique')
+      .using(
+        'btree',
+        table.referenceType.asc().nullsLast().op('text_ops'),
+        table.referenceId.asc().nullsLast().op('uuid_ops'),
+        table.transactionType.asc().nullsLast().op('enum_ops'),
+      )
+      .where(
+        sql`(("transactionType" = ANY (ARRAY['earned'::point_transaction_type, 'used'::point_transaction_type])) AND ("referenceId" IS NOT NULL))`,
+      ),
   ],
 )
 
@@ -642,6 +671,7 @@ export const customers = pgTable(
       'customers_gender_known',
       sql`(gender)::text = ANY (ARRAY['male'::text, 'female'::text, 'other'::text, 'prefer_not_to_say'::text])`,
     ),
+    check('customers_loyalty_points_not_negative', sql`"loyaltyPoints" >= 0`),
     check('customers_not_referred_by_itself', sql`"referredBy" <> id`),
     check(
       'customers_preferences_is_an_object',
