@@ -114,7 +114,7 @@ describe('Sales reports API', () => {
 
   /** A category of a salon of a kind; returns its ID. */
   const insertCategory = async (
-    category: 'cut' | 'color',
+    category: 'cut' | 'color' | 'other',
     ofSalon: string = salonId,
   ): Promise<string> => {
     const [row] = await db
@@ -590,6 +590,42 @@ describe('Sales reports API', () => {
       ])
     })
 
+    it('counts a line for its own staff member before the staff member of its sale', async () => {
+      await insertSale(
+        [
+          line({
+            itemId: colorId,
+            itemName: 'カラー',
+            unitPrice: 10000,
+            taxAmount: 1000,
+            totalAmount: 11000,
+            staffId: renId,
+          }),
+          line(),
+        ],
+        { staffId: aoiId },
+      )
+
+      const response = await report('/by-staff', november())
+
+      expect(response.body.data).toEqual([
+        {
+          staffId: renId,
+          displayName: 'Ren',
+          totalSales: 11000,
+          serviceCount: 1,
+          averageServiceValue: 11000,
+        },
+        {
+          staffId: aoiId,
+          displayName: 'Aoi',
+          totalSales: 6600,
+          serviceCount: 1,
+          averageServiceValue: 6600,
+        },
+      ])
+    })
+
     it('names a staff member who left the salon, by the name they have now', async () => {
       await insertNovember()
       await db
@@ -670,6 +706,31 @@ describe('Sales reports API', () => {
       expect(response.body.data).toEqual([
         { category: 'cut', amount: 17600, count: 2, percentage: 69.6 },
         { category: 'other', amount: 7700, count: 3, percentage: 30.4 },
+      ])
+    })
+
+    it('counts a service of a category of the kind other with the lines that have no category', async () => {
+      await insertNovember()
+      const scalp = await insertService(
+        'ヘッドスパ',
+        await insertCategory('other'),
+      )
+      await insertSale([
+        line({
+          itemId: scalp,
+          itemName: 'ヘッドスパ',
+          unitPrice: 2000,
+          taxAmount: 200,
+          totalAmount: 2200,
+        }),
+      ])
+
+      const response = await report('/by-category', november())
+
+      expect(response.body.data).toEqual([
+        { category: 'color', amount: 11000, count: 1, percentage: 40 },
+        { category: 'other', amount: 9900, count: 4, percentage: 36 },
+        { category: 'cut', amount: 6600, count: 1, percentage: 24 },
       ])
     })
   })
