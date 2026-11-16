@@ -52,8 +52,9 @@ Before relying on anything, check this table.
 | Available slots (`/api/v1/salons/{salonId}/available-slots`) | Implemented in every layer: the list of the times at which a staff member can begin a service on a date, for every signed-in user, and the check of whether a staff member is occupied at a time, for administrators and the members of the salon. Nothing is stored: a slot is worked out from the hours of the salon (the row of its calendar for the date, or else the weekly hours of that day of the week), the schedules of the staff and the bookings there are, every 30 minutes from the beginning of each stretch in which the salon is open and the staff member works, all in the time zone of the salon. The list applies what the salon set for the bookings of its customers (whether the salon, the service and the staff member take bookings, on which days of the week the service is offered, how often it is booked a day, the level it asks for), and a day on which nothing can be booked is an empty list, not an error. The check asks only what the ledger asks, whether the staff member is occupied, and names the bookings in the way. Neither holds a slot. See [Booking Ledger](./bookings.md#空き枠) (Japanese) |
 | A customer's own bookings (`/api/v1/customers/me/bookings`) | Implemented in every layer: list, create, get, cancel and reschedule, for a customer account with a profile (403 for every other role, 404 without a profile). A customer books a slot: a service with a staff member of a salon at a time, and the server takes it only if the list of available slots offers that time at that moment, so everything the list applies holds for the booking as well. The booking is the ledger's: one service line, the times and the amounts from the service, `pending` until the salon confirms it. A customer whose record is not active, or set to inactive or blacklisted, does not book by themself, and nobody books a time at which they have another booking, at whatever salon (409). The customer reads their bookings at every salon, also those a salon entered for them, without what the salon notes and records, and cancels one that is a draft, pending or confirmed until the moment it begins (409 from then on). The booking of another customer is not found. Requests that arrive at the same moment for one slot, for the last booking a service takes that day or from one customer for one time write one booking. A customer moves a booking that is a draft, pending or confirmed, until the moment it begins, to another time, another staff member or both, if that is a slot the list offers for the service of the booking and for the time the booking takes, the booking itself not counted; a booking with more than one service line, or with a line that is not with the staff member in charge, is moved by the salon (409). A confirmed booking that its customer moves is pending again until the salon confirms it. See [Booking Ledger](./bookings.md#顧客が自分で入れる予約) (Japanese) |
 | Sales ledger (`/api/v1/sales`) | Implemented in every layer: list, create, get, update and void, five of the eight operations of `SaleCrud`. A sale belongs to a salon, but its routes are not below one, like those of the bookings: the salon is named by the body of a create, by the query of a list and by the stored row of a get, an update and a void. No operation is public: an administrator reaches the sales of every salon, the owner, the managers and the staff of a salon those of their salon, and a customer account none (403); the sale of another salon is answered like one that does not exist (404). The void alone is not for the staff of the salon (403). A sale is the bill of one visit as the till charged it. A create request states the lines with their amounts; the schema checks that a line agrees with itself (the discount within quantity times unit price, the total their difference plus the tax), that only a line of a service or of a product names a record, and that the lines have places of their own. The repository locks the booking, the salon, the customer and the staff members the sale names, in that order, and `planSale` reports what is not there or not of the salon (400), sums the sale up, takes `saleDate` from the time zone of the salon (409 when it is not known) and refuses a booking that has a sale that is not void (409). The sale number is `SL-XXXX-XXXX`, issued like a booking number. Prices, tax rates and commissions are compared with nothing, and nothing else is written: not the booking, the customer or the stock. A get and a list return a sale with its lines and its payments as they were at one moment, the list latest first and with the void sales. An update writes the properties a request names and holds the sale as it is afterwards to the rules of a create; new lines replace all the lines, and only while the payment status is `pending`. A void keeps the sale with the time and the reason, is refused while a payment of the sale was not refunded (409), and frees the booking for another sale. Both hold the row of the sale before any other row. See [Sales Ledger](./sales.md) (Japanese). |
-| Payment methods (`/api/v1/salons/{salonId}/payment-methods`) | Implemented in every layer: list, create, get, update and delete, the five operations of `PaymentMethodCrud`. A payment method is one way of paying that a salon accepts (cash, a card terminal, a QR payment): a method, a display name, the fee rate, the limits of the amount of one payment, whether it is taken online and at the salon, and whether it is in use. The routes are below the salon and none is public: an administrator and the owner, the managers and the staff of the salon read the payment methods, an administrator, the owner and the managers set them up, and a customer account reaches none (403), because a response states what the salon pays its processor. Both permissions are decided from the salon of the path alone, before anything else of the request is looked at; the payment method of another salon is answered like one that does not exist (404). The method is fixed once a payment method is created. The lower limit of the amount is not above the upper one: a request that names both is refused by the schema, and an update that names one of them is checked against the stored row, which the repository holds while it checks and writes (400). A delete removes the row, unless a payment refers to it (409: it is deactivated instead). The settings of a payment processor (`processorConfig`) are in no model of the API. No operation takes a payment yet, so the fee, the limits and the flags are stored and decide nothing. See [Payments](./payments.md) (Japanese). |
-| The rest of the payment contract (the other three operations of `SaleCrud`, `PaymentCrud`, `SalesReportCrud`, `PointCrud`) and the other domains (review, treatment, inventory) | Specified in TypeSpec, so their generated types exist, and the database schema has their tables and seed data. The models agree with the tables (`pnpm check:api-db`). There is no domain, repository or route code. A request to one of these routes is answered with 404. The implementation order is in GitHub issue #4. |
+| Payment methods (`/api/v1/salons/{salonId}/payment-methods`) | Implemented in every layer: list, create, get, update and delete, the five operations of `PaymentMethodCrud`. A payment method is one way of paying that a salon accepts (cash, a card terminal, a QR payment): a method, a display name, the fee rate, the limits of the amount of one payment, whether it is taken online and at the salon, and whether it is in use. The routes are below the salon and none is public: an administrator and the owner, the managers and the staff of the salon read the payment methods, an administrator, the owner and the managers set them up, and a customer account reaches none (403), because a response states what the salon pays its processor. Both permissions are decided from the salon of the path alone, before anything else of the request is looked at; the payment method of another salon is answered like one that does not exist (404). The method is fixed once a payment method is created. The lower limit of the amount is not above the upper one: a request that names both is refused by the schema, and an update that names one of them is checked against the stored row, which the repository holds while it checks and writes (400). A delete removes the row, unless a payment refers to it (409: it is deactivated instead). The settings of a payment processor (`processorConfig`) are in no model of the API. A payment is held to whether its payment method is in use and to the limits of the amount; the fee and the online and offline flags are stored and decide nothing. See [Payments](./payments.md) (Japanese). |
+| Payments of a sale (`POST /api/v1/sales/{id}/process`, `POST /api/v1/payments/{id}/refund`) | Implemented in every layer: `process` of `SaleCrud` and `refund` of `PaymentCrud`. No payment processor is connected, so a payment records what the till took and is written as `completed`; a refund turns a completed payment into `refunded` or `partial_refund`, once. An administrator and the owner, the managers and the staff of the salon of the sale record a payment; an administrator, the owner and the managers refund one (403 for the staff); a customer account does neither. A payment is held to its payment method (in use and of the salon of the sale, within its limits, card details only with a card) and to what is left to pay (400); a void sale, a sale with a refund and a sale with nothing left to pay take none (409). Both hold the sale `FOR UPDATE` first, as the update and the void do, and write the payment and the payment status of the sale, which is counted from its payments, in one transaction. See [Payments](./payments.md) (Japanese). |
+| The rest of the payment contract (the other two operations of `SaleCrud`, `SalesReportCrud`, `PointCrud`) and the other domains (review, treatment, inventory) | Specified in TypeSpec, so their generated types exist, and the database schema has their tables and seed data. The models agree with the tables (`pnpm check:api-db`). There is no domain, repository or route code. A request to one of these routes is answered with 404. The implementation order is in GitHub issue #4. |
 | Attachments, roles and permissions, purchase orders, medical charts | Specified in TypeSpec only. No table exists for them yet. |
 | Email | Implemented for the mails of the authentication flows and the invitation of a staff member (confirm the address, reset the password, accept an invitation, and the notices: the password was changed, two-factor authentication was enabled, disabled or turned off by an administrator, the backup codes were replaced, a backup code was used to sign in): plain text over SMTP. Docker Compose starts Mailpit, which catches them locally. See [Email](./email.md) (Japanese). |
 | File storage | Not implemented. Docker Compose starts no service for it. |
@@ -612,6 +613,45 @@ api/src/
                                        mounted below /salons/:salonId)
 ```
 
+The payments of a sale are written below the sale, and the payment status
+of the sale is counted from them:
+
+```
+domain/src/
+├── models/payment.ts                  PaymentId, API types of the two requests;
+│                                      what a payment and a refund write
+│                                      (PaymentWrite, RefundWrite)
+├── schemas/payment.schema.ts          Zod schemas of the payment and the refund
+│                                      request
+├── mappers/read/payment.mapper.ts     Row → response; the sale mapper uses it for
+│                                      the payments of a sale
+├── repositories/payment.repository.ts IPaymentRepository; what became of a payment
+│                                      and of a refund is a sum type each
+│                                      (PaymentRecording, PaymentRefunding)
+├── services/payment-number-issuer.ts  IPaymentNumberIssuer
+└── business-logic/payment/            One *.usecase.ts per operation; _shared/ holds
+                                       the dependencies, the payment status of a
+                                       sale, what a payment and a refund write and
+                                       why they are refused (plan.ts), the format of
+                                       a payment number (payment-number.ts) and the
+                                       errors of a refusal (refusals.ts)
+
+infrastructure/src/
+├── repositories/payment.repository.impl.ts
+│                                      A payment and a refund in one transaction
+│                                      that holds the sale first
+├── repositories/held-sale.ts          The lock on a sale, shared with the update
+│                                      and the void of a sale
+└── security/random-payment-number-issuer.ts
+                                       RandomPaymentNumberIssuer
+
+api/src/
+├── routes/sale/process-sale.handler.ts
+│                                      The record of a payment, below /sales
+└── routes/payment/                    The refund; index.ts (router, mounted at
+                                       /payments)
+```
+
 ## Layers and Package Dependencies
 
 An arrow means "depends on":
@@ -660,7 +700,7 @@ or a mail server.
 | `config` | `loadEnvFile`, `parseAppConfig` | `utility` |
 | `database` | `schema.ts`, `relations.ts`, `sql/`, the `db:*` scripts, seeds | `config`, `utility` |
 | `domain` | Models, schemas, mappers, use cases, repository and service interfaces, `DomainError` | `database` (types), `generated`, `utility` |
-| `infrastructure` | `connectDatabase`, `pingDatabase`, the repositories (one class per repository interface of the domain: `SalonRepository`, `BookingRepository` and so on), `Argon2PasswordHasher`, `RandomTokenIssuer`, `RandomBookingNumberIssuer`, `RandomSaleNumberIssuer`, `TotpAuthenticator`, `SmtpMailer`, `createLogger` | `database`, `domain`, `utility` |
+| `infrastructure` | `connectDatabase`, `pingDatabase`, the repositories (one class per repository interface of the domain: `SalonRepository`, `BookingRepository` and so on), `Argon2PasswordHasher`, `RandomTokenIssuer`, `RandomBookingNumberIssuer`, `RandomSaleNumberIssuer`, `RandomPaymentNumberIssuer`, `TotpAuthenticator`, `SmtpMailer`, `createLogger` | `database`, `domain`, `utility` |
 | `api` | `createApp`, middleware, routes, authentication of a request, problem details | `domain`, `generated`, `infrastructure`, `utility`; `database` in tests |
 | `server` (application) | Entry point and `startServer` | `api`, `config`, `domain`, `infrastructure`, `utility` |
 
@@ -1564,8 +1604,8 @@ the list, of the update and of the void. What differs:
   not counted. New lines replace all the lines, and only while the
   payment status is `pending`; `saleDate` is taken again only with a new
   `saleTime`; a void sale is not changed. The order of the locks is sale,
-  booking, salon, customer, service, staff: nothing that holds one of the
-  later rows goes on to hold a sale. The void is not for the staff of the
+  booking, salon, customer, service, staff, payment method: nothing that
+  holds one of the later rows goes on to hold a sale. The void is not for the staff of the
   salon (`saleVoidReachOf`).
 
 The rules are in [Sales Ledger](./sales.md) (Japanese).
@@ -1606,6 +1646,41 @@ of the repository names the salon. What differs:
   `inUse` (409) or deletes the row. A payment that was being written with
   the payment method has been written, or has not, by the time the delete
   looks. The writers hold the row of the payment method and no other row.
+
+The rules are in [Payments](./payments.md) (Japanese).
+
+### A Payment Request
+
+Recording a payment of a sale (`POST /api/v1/sales/{id}/process`) and
+refunding one (`POST /api/v1/payments/{id}/refund`), both in
+`business-logic/payment/`, take the path of a sale: the reach of the actor
+is decided first (`saleReachOf`, or `saleVoidReachOf` for a refund, which
+is not the staff's), then the ID and the body are looked at, and the
+repository looks the sale up within the reach. What differs:
+
+- **No payment processor.** A payment is the record of money the till took,
+  so it is written as `completed`, and the columns of a processor and of a
+  failure stay null. A refund writes `refunded` or `partial_refund` with
+  the time, the amount and the reason, once per payment.
+- **A value of the sale that is counted from the rows below it.** The
+  payment status of a sale is never stated: `paymentStatusOf`
+  (`_shared/plan.ts`) counts it from the payments of the sale, what was
+  received and what was given back, and the transaction that writes a
+  payment or a refund writes it as well. `refusalOfPayment`, `planPayment`
+  and `planRefund` decide from the same rows what is refused (409 for the
+  sale or the payment, 400 for the request) and what is written.
+- **The sale is held first.** `record` and `refund` of the repository hold
+  the row of the sale `FOR UPDATE` (`heldSaleOf` in
+  `repositories/held-sale.ts`, which the update and the void of a sale use
+  too) and read its payments in the statement after it, so the payments of
+  one sale are written one after the other and never receive more than the
+  sale charges. A payment then reads its payment method `FOR SHARE`:
+  payments by one payment method do not wait for one another, and a change
+  or the removal of the payment method and a payment wait for each other.
+  A refund reads the sale of the payment without a lock, holds the sale and
+  reads the payment again.
+- **A number issued by the system.** The payment number (`PT-XXXX-XXXX`) is
+  issued like a sale number and tried again when it is taken.
 
 The rules are in [Payments](./payments.md) (Japanese).
 

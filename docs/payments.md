@@ -1,8 +1,10 @@
 # 支払い
 
-サロンの支払い方法（`payment_methods`）の規則をまとめます。コントラクトは `specs/operations/payment-operations.tsp` と `specs/models/payment.tsp`、テーブルは `payment_methods` です。
+サロンの支払い方法（`payment_methods`）と、売上に対する支払い（決済取引。`payment_transactions`）の規則をまとめます。コントラクトは `specs/operations/payment-operations.tsp` と `specs/models/payment.tsp`、テーブルは `payment_methods` と `payment_transactions` です。
 
 支払い方法は、サロンが受け付ける支払いの手段（現金、クレジットカード、QR コード決済など）の一覧です。サロンごとに持ち、管理者とサロンのスタッフが `/api/v1/salons/{salonId}/payment-methods` で扱います。顧客のアカウントは、このルートを使えません。
+
+支払いは、売上に対して受け取ったお金の記録です。管理者とサロンのスタッフが、売上ごとに記録し（`POST /api/v1/sales/{id}/process`）、返金します（`POST /api/v1/payments/{id}/refund`）。システムは、決済代行会社と接続していません（[支払いは、受け取った結果の記録](#支払いは受け取った結果の記録)）。
 
 売上と、その明細の規則は、[売上台帳](./sales.md) にあります。
 
@@ -11,12 +13,17 @@
 | オペレーション | 状態 |
 |---|---|
 | 支払い方法（`PaymentMethodCrud`）の一覧、作成、1 件の取得、更新、削除（`list`、`create`、`get`、`update`、`delete`） | 実装済み |
-| 支払いの処理と返金（`SaleCrud` の `process`、`PaymentCrud` の `refund`） | 未実装 |
+| 支払いの記録と返金（`SaleCrud` の `process`、`PaymentCrud` の `refund`） | 実装済み |
 
-- 支払い方法を使うオペレーション（支払いの処理）は、未実装です。いまの支払い方法は、サロンが設定して読むだけの記録です
+- 決済取引を 1 件だけ読むオペレーションと、一覧するオペレーションは、コントラクトにありません。決済取引は、売上のレスポンスの `payments` で読みます（[売上台帳](./sales.md#1-件の取得と一覧)）。返金に使う ID も、そこにあります
 - 次のものは、ありません
   - 顧客に、サロンが受け付ける支払い方法を見せるルート
   - 決済代行会社との接続と、その設定（`processorConfig`）を読み書きするオペレーション
+  - 通らなかった決済の記録（`failed` の決済取引）
+  - 1 件の決済取引を、2 回以上に分けて返金すること
+  - 支払いの二重送信を防ぐ仕組み。同じリクエストを 2 回送ると、未払い残額があれば、2 件の決済取引になります
+  - 支払いと返金で、顧客のポイントの残高（`loyaltyPoints`）と累計利用金額（`lifetimeValue`）を動かすこと
+  - お釣りの記録
   - サロンを作成したときに、支払い方法を自動で用意すること。新しいサロンの支払い方法は、空です
   - 手数料率を変えた履歴（テーブルがない）
 
@@ -38,10 +45,13 @@
 
 - **種類、名前、並び順は、重なってもかまいません**。同じサロンに `credit_card` が 2 件あってもよく（端末が 2 台ある、決済代行会社が 2 社ある）、名前が同じでも、`sortOrder` が同じでも受け付けます
 - **`fee` の null と 0 は、別の値です**。null は「記録していない」、0 は「手数料がない」です
-- **`fee`、金額の範囲、`isOnlineEnabled`、`isOfflineEnabled`、`isActive` は、保存するだけです**。これらの値で何かを断るオペレーションは、まだありません。支払いの処理（未実装）のコントラクトは、使っていない支払い方法（`isActive` が false）での支払いを断ると定めています。金額の範囲と、オンライン、店頭の区別を確かめるかどうかは、支払いの処理を実装するときに決めます
+- **支払いの記録が確かめるのは、`isActive` と金額の範囲です**。使っていない支払い方法（`isActive` が false）での支払いと、金額が `minimumAmount` 未満か `maximumAmount` 超の支払いは、400 です（[支払いの記録](#支払いの記録)）。カードの下 4 桁とブランドを記録できるのは、`method` が `credit_card` か `debit_card` の支払い方法での支払いだけです
+- **`fee`、`isOnlineEnabled`、`isOfflineEnabled` は、保存するだけです**。支払いのリクエストにも、決済取引のテーブルにも、どこで受け取ったかの項目と、手数料の項目がありません。オンラインと店頭の区別は、画面が選択肢を絞るための設定として扱います
 - **`processorConfig`（決済代行会社の設定）は、API が読みも書きもしません**。レスポンスに出ず、リクエストに書くと 400 です（`unrecognized_keys`）。API が作った行では、NULL です。決済代行会社の資格情報を置く場所は、決済代行会社との接続を実装するときに決めます
 
 ## オペレーションと権限
+
+支払い方法のオペレーションです。支払いの記録と返金のオペレーションは、[支払いは、受け取った結果の記録](#支払いは受け取った結果の記録) にあります。
 
 | オペレーション | ルート | 許可 |
 |---|---|---|
@@ -185,6 +195,103 @@ JSON として読めない本文は、ほかのルートと同じく、アクセ
 - 表にないパラメーターは 400 です（`unrecognized_keys`）
 - 保存されている行が API のモデルに合わないときは 500（データベースのエラー）です。読み出すときに検証します（`mappers/read/payment-method.mapper.ts`）
 
+## 支払いは、受け取った結果の記録
+
+**システムは、決済代行会社と接続していません**。支払い（決済取引）は、レジが受け取った結果の記録です。スタッフが、現金を受け取るか、カード端末や QR コード決済のアプリで決済が通ったことを確かめてから、記録します。
+
+- API が書く決済取引のステータスは、`completed`（受け取った）と、返金による `refunded`、`partial_refund` だけです。`pending`、`processing`、`failed` の決済取引は、API からは書かれません
+- 通らなかった決済は、記録しません
+- `processorTransactionId`、`errorCode`、`errorMessage`、`failedAt` は、レスポンスにありますが、API が記録した決済取引では、常に null です。`processorResponse` と `metadata` のカラムは、どのレスポンスにも出ず、API が記録した決済取引では NULL です
+- お釣りは、記録しません。`amount` は、売上に充てた金額です
+- 区分が `point` の支払い方法での支払いも、ほかの区分と同じ記録です。顧客のポイントの残高は、動かしません
+- 支払いと返金は、顧客の累計利用金額（`lifetimeValue`）も動かしません
+
+| オペレーション | ルート | 許可 | 成功 |
+|---|---|---|---|
+| 支払いの記録 | `POST /api/v1/sales/{id}/process` | `admin`、売上のサロンの `owner` / `manager` / `staff` | 200。記録した決済取引 |
+| 返金 | `POST /api/v1/payments/{id}/refund` | `admin`、売上のサロンの `owner` / `manager` | 200。返金した決済取引 |
+
+- 支払いを記録するのは、レジに立つスタッフの仕事です。売上台帳を使える人が、記録できます（`business-logic/sale/_shared/authorization.ts` の `saleReachOf`）
+- **返金は、お金を返す操作なので、売上の取り消しと同じく、`owner` と `manager` のものです**（`saleVoidReachOf`）。`staff` は、ID や本文を確かめる前に 403 です
+- 顧客のアカウントは、どちらも 403 です。自分が支払った売上でも同じです。ロールに必要なレコードを持たないユーザー（範囲 `none`）も 403 です
+- **ほかのサロンの売上と決済取引は、存在しないものと区別しません**（404）
+- レスポンスは `PaymentResponse` で、`links.sale` が、その売上の場所を指します。決済取引そのものの場所は、ありません
+- ID（パスの `id`、本文の `paymentMethodId`）は、英字を大文字で書いても同じ ID です。レスポンスの ID は小文字です
+
+## 支払いの記録
+
+`POST /api/v1/sales/{id}/process` は、売上に対して受け取った 1 回の支払いを、1 件の決済取引として記録します。本文（`SaleProcessRequest`）は、すべてのキーが必須です。
+
+| プロパティ | 規則 |
+|---|---|
+| `paymentMethodId` | 売上のサロンの、使っている（`isActive` が true）支払い方法の ID。そうでなければ 400（`not_found`） |
+| `amount` | 1 以上の整数。未払い残額以下（400。`too_big`）。支払い方法に金額の範囲があれば、`minimumAmount` 以上（`too_small`）、`maximumAmount` 以下（`too_big`） |
+| `cardLastFour` | null か、数字 4 桁。支払い方法の区分が `credit_card` でも `debit_card` でもなければ null（400。`custom`） |
+| `cardBrand` | null か、空白だけでない文字列。50 文字まで。支払い方法の区分が `credit_card` でも `debit_card` でもなければ null（400。`custom`） |
+
+- 表にない項目を書くと 400 です（`unrecognized_keys`）。取引番号、ステータス、日時は、リクエストに書けません
+- **分けて支払えます**（現金と、カード）。1 回の記録が、1 件の決済取引です。受け取った合計が合計金額に達すると、売上の支払い状態は `completed` になります（[売上の支払い状態](#売上の支払い状態)）
+- **未払い残額は、合計金額（`totalAmount`）から、これまでに受け取った金額を引いた額です**。受け取った金額は、ステータスが `completed`、`partial_refund`、`refunded` の決済取引の `amount` の合計です。返金しても、残額は増えません
+- **取り消した売上は、支払いを受けません**（409）
+- **返金のある売上は、支払いを受けません**（409）。誤った支払いを全額返金して、払い直すときは、売上を取り消して、入れ直します
+- **未払い残額のない売上は、支払いを受けません**（409）。合計金額が 0 の売上も、同じです（支払い状態は `pending` のまま）
+- 支払い方法が使えないとき（存在しない、ほかのサロンのもの、`isActive` が false）は、カードの項目と金額の範囲は、確かめません。未払い残額は、確かめます
+- カードの項目は、カードの支払いでも、null にできます（記録しない）
+- 支払い方法の金額の範囲は、1 回の支払いの金額に対するものです。売上の最後の支払い（残額の支払い）にも、下限を適用します
+- `isOnlineEnabled` と `isOfflineEnabled` は、確かめません
+- 決済取引の `status` は `completed`、`processedAt`、`createdAt`、`updatedAt` は、書いた時点のデータベースの時計です。売上の `paymentStatus` と `updatedAt` も、同じトランザクションで書きます
+- **取引番号（`transactionNumber`）は、システムが採番します**。`PT-XXXX-XXXX` の形で、売上番号と同じ作り方です（[売上台帳](./sales.md#売上番号)）。すでにある番号と重なったら、別の番号で採り直します（3 回まで）
+
+### 支払いの記録の確認の順序
+
+1. 認証（401）
+2. 操作者が、売上台帳を使えること（403）
+3. `id` の形（400）
+4. 本文の形と値（400）
+5. 売上の存在（404。ほかのサロンの売上も 404）
+6. 取り消されていないこと（409）
+7. 返金がないこと、未払い残額があること（409。この順）
+8. 支払い方法、カードの項目、金額（400。違反をまとめて報告する）
+
+## 返金
+
+`POST /api/v1/payments/{id}/refund` は、決済取引を返金します。本文（`PaymentRefundRequest`）は、`refundAmount`（1 以上の整数）と `refundReason`（null か、空白だけでない文字列。長さの上限はない）で、どちらのキーも必須です。
+
+- **返金できるのは、ステータスが `completed` の決済取引だけです**（409）。**1 件の決済取引の返金は、1 回だけです**。一部を返金した決済取引（`partial_refund`）を、もう一度返金することはできません
+- `refundAmount` が、決済取引の `amount` を超えると 400 です（`too_big`）。等しければ全額返金（`refunded`）、少なければ一部返金（`partial_refund`）です
+- `refundedAt` と `updatedAt` を、書いた時点のデータベースの時計に、`refundAmount` と `refundReason` を、本文の値にします。`amount` と `processedAt` は、変えません。売上の `paymentStatus` と `updatedAt` も、同じトランザクションで書きます
+- **取り消した売上の決済取引でも、`completed` なら返金できます**。お金を返す操作は、断りません。取り消しは、返金していない支払いがある売上を断るので、API で作ったデータでは、この組み合わせは起きません
+- 使うのをやめた支払い方法（`isActive` が false）で受け取った決済取引も、返金できます
+- 支払いをすべて全額返金した売上は、取り消せます（[売上台帳](./sales.md#取り消し)）。一部を返金した決済取引（`partial_refund`）がある売上は、残りを返金できないので、取り消せません
+
+### 返金の確認の順序
+
+1. 認証（401）
+2. 操作者が、返金できること（403）
+3. `id` の形（400）
+4. 本文の形と値（400）
+5. 決済取引の存在（404。ほかのサロンの売上の決済取引も 404）
+6. ステータスが `completed` であること（409）
+7. 返金額が `amount` 以下であること（400）
+
+## 売上の支払い状態
+
+売上の `paymentStatus` は、**その売上の決済取引から決まる値**です。支払いの記録と返金が、決済取引と同じトランザクションで書きます（`business-logic/payment/_shared/plan.ts` の `paymentStatusOf`）。
+
+| 値 | 売上にとっての意味 |
+|---|---|
+| `pending` | 何も受け取っていない |
+| `processing` | 合計金額の一部を受け取った（未払い残額がある） |
+| `completed` | 合計金額を受け取った |
+| `partial_refund` | 受け取った金額の一部を返金した |
+| `refunded` | 受け取った全額を返金した |
+| `failed` | API は書かない |
+
+- 受け取った金額は、ステータスが `completed`、`partial_refund`、`refunded` の決済取引の `amount` の合計、返金した金額は、その `refundAmount` の合計です
+- 返金した金額が 0 より大きければ、受け取った金額と等しいとき `refunded`、そうでなければ `partial_refund` です。合計金額の一部だけを受け取って、その全額を返金した売上も、`refunded` です
+- 売上の更新が明細を置き換えられるのは、`pending` の売上だけです（[売上台帳](./sales.md#更新)）。一部でも受け取った売上の金額は、変えられません
+- 支払いの記録と返金が確かめるのは、決済取引そのもので、売上の `paymentStatus` ではありません
+
 ## 同時に届いたリクエスト
 
 - **更新は、支払い方法の行をロックしてから、金額の範囲を確かめて書きます**（`SELECT … FOR UPDATE`。`READ COMMITTED` のトランザクション）。下限だけを変える更新と、上限だけを変える更新が同時に届いても、後から行を得たほうは、先の更新が書いた値と比べます。下限が上限より大きい行は、残りません
@@ -194,6 +301,24 @@ JSON として読めない本文は、ほかのルートと同じく、アクセ
 - 更新と削除がロックするのは、その支払い方法の行だけです。サロンの行も、ほかの支払い方法の行も、ロックしません
 - 作成は、ロックを取りません。サロンの存在は、書く前に確かめます
 - 取得と一覧は、ロックを待ちません
+
+### 支払いの記録と返金
+
+支払いの記録（`PaymentRepository.record`）と返金（`PaymentRepository.refund`）は、それぞれ 1 つのトランザクションです（`READ COMMITTED`）。
+
+1. **売上の行を排他ロック（`FOR UPDATE`）して読みます**（`repositories/held-sale.ts` の `heldSaleOf`。売上の更新と取り消しと同じロック）。同じ売上の支払い、返金、更新、取り消しは、ここで 1 件ずつになります
+2. 次の文で、その売上の決済取引を読みます。待っていたリクエストは、先のリクエストが書いたあとの決済取引を読みます
+3. 支払いは、売上が支払いを受けるかを決め（`refusalOfPayment`）、**支払い方法の行を共有ロック（`FOR SHARE`）して読み**、書く行を決めて（`planPayment`）、決済取引と、売上の支払い状態を書きます
+4. 返金は、書く値を決めて（`planRefund`）、決済取引と、売上の支払い状態を書きます
+
+- 同時に届いた支払いの合計が、合計金額を超えることはありません。合計金額の支払いが同時に何件も届くと、1 件が 200 で、ほかは 409 です
+- 同じ決済取引の返金が同時に何件も届いても、返金は 1 回です（1 件が 200 で、ほかは 409）
+- 支払いと取り消しが同時に届くと、どちらか一方だけが通ります（支払いが先なら、取り消しは 409。取り消しが先なら、支払いは 409）
+- **返金は、決済取引の ID から売上を知ります**。ロックなしで売上の ID を読み、売上をロックしてから、決済取引を読み直します。決済取引の売上は、変わりません
+- 支払い方法の共有ロックは、支払い方法の更新と削除のロック（`FOR UPDATE`）と両立しません。更新や削除が進んでいる途中に届いた支払いは、それを待ち、コミットされたあとの支払い方法（使うのをやめた、金額の範囲を変えた、消えた）で確かめます。支払いを書いている途中に届いた更新と削除は、支払いを待ちます。支払いどうしは、同じ支払い方法でも、待ちません
+- 取引番号が重なったときは、何も書かずに終わり、ユースケースが別の番号でやり直します
+- 待ったリクエストが書く時刻（`processedAt`、`refundedAt`、`updatedAt`）は、待ったあとの時刻です
+- **ロックの順は、売上、予約、サロン、顧客、サービス、スタッフ、支払い方法です**（[売上台帳](./sales.md#更新と取り消し)）。支払いは、売上のあとに、支払い方法をロックします。支払い方法の更新と削除は、支払い方法の行だけをロックし、ほかの行を待ちません。同じ行を逆の順にロックする組み合わせは、ありません
 
 ## DB の制約
 
@@ -208,11 +333,26 @@ JSON として読めない本文は、ほかのルートと同じく、アクセ
 
 支払いが指す支払い方法を削除できないことは、外部キー（`payment_transactions_payment_method_id_fk`）も保証します。サロンの行を消すと、その支払い方法も消えます（`payment_methods_salon_id_fk` の `ON DELETE CASCADE`）。ただし、サロンの削除は、行を残します（`deletedAt`）。
 
+マイグレーション `202611160900_payment_transaction_rules.sql` で、決済取引（`payment_transactions`）の 1 行だけで確かめられる規則を、CHECK 制約にしました。
+
+- `amount` は 1 以上（`payment_transactions_amount_positive`）
+- 受け取った決済取引（`completed`、`refunded`、`partial_refund`）は `processedAt` を持ち、ほかは持たない（`payment_transactions_received_has_time`）
+- `failedAt` は、`failed` の決済取引だけが持つ。`errorCode` と `errorMessage` は、`failed` の決済取引だけが持てる（`payment_transactions_failure_of_failed`）
+- `refundedAt` と `refundAmount` は、`refunded` と `partial_refund` の決済取引だけが持つ。`refundReason` は、返金した決済取引だけが持てる（`payment_transactions_refund_of_refunded`）
+- `refunded` の決済取引は `refundAmount` = `amount`、`partial_refund` の決済取引は 1 ≦ `refundAmount` < `amount`（`payment_transactions_refund_amount`）
+- `cardLastFour` は、NULL か数字 4 桁（`payment_transactions_card_last_four_digits`）
+
+これまで、このテーブルに書くオペレーションはありませんでした。手で書かれた行が規則に違反していると、マイグレーションは失敗します。行を直してから、やり直します。以前のバージョンは、このテーブルに書かないので、このマイグレーションも、新しいバージョンの前に適用しても、後に適用しても、かまいません。
+
+1 つの売上の決済取引を合わせた規則（受け取った合計は合計金額以下。売上の支払い状態は、決済取引から決まる）は、制約では保証しません（複数の行と、2 つのテーブルにまたがる）。売上の行をロックして書くトランザクションが保証します。取引番号は、一意です（`payment_transactions_transaction_number_unique`）。
+
 ## シード
 
-`pnpm db:seed` は、サロンごとに 7 件の支払い方法（7 つの種類を 1 件ずつ）を入れます。どれも、API が作れる行です（`processorConfig` は NULL）。支払いは入れません。
+`pnpm db:seed` は、サロンごとに 7 件の支払い方法（7 つの種類を 1 件ずつ）を入れます。どれも、API が作れる行です（`processorConfig` は NULL）。支払いは入れません。シードのデータで売上を作成すれば、その売上に、支払いを記録できます。
 
 ## 実装の場所
+
+支払い方法:
 
 | 層 | ファイル |
 |---|---|
@@ -222,3 +362,14 @@ JSON として読めない本文は、ほかのルートと同じく、アクセ
 | API | `backend/packages/api/src/routes/payment-method/`（`/api/v1/salons/:salonId/payment-methods` に取り付ける） |
 | DB | `backend/packages/database/sql/migrations/202611160800_payment_method_rules.sql` |
 | テスト | `backend/packages/domain/src/__tests__/payment-method.schema.test.ts`、`payment-method.limits.test.ts`、`payment-method.mapper.test.ts`、`payment-method.usecase.test.ts`、`backend/packages/api/src/__tests__/payment-method.integration.test.ts` |
+
+支払いの記録と返金:
+
+| 層 | ファイル |
+|---|---|
+| コントラクト | `specs/models/payment.tsp`（`SaleProcessRequest`、`PaymentRefundRequest`、`PaymentResponse`、`PaymentStatusType`）、`specs/operations/payment-operations.tsp`（`SaleCrud` の `process`、`PaymentCrud` の `refund`） |
+| ドメイン | `backend/packages/domain/src/models/payment.ts`、`schemas/payment.schema.ts`、`mappers/read/payment.mapper.ts`、`repositories/payment.repository.ts`、`services/payment-number-issuer.ts`、`business-logic/payment/`（売上の支払い状態、支払いと返金が書く値、断る理由を決めるのは `_shared/plan.ts`、取引番号は `_shared/payment-number.ts`、リポジトリが断った理由をエラーに直すのは `_shared/refusals.ts`）。誰が記録し、誰が返金するかは、売上台帳の `business-logic/sale/_shared/authorization.ts` |
+| インフラ | `backend/packages/infrastructure/src/repositories/payment.repository.impl.ts`、`repositories/held-sale.ts`（売上の行のロック。売上の更新、取り消しと共有する）、`security/random-payment-number-issuer.ts` |
+| API | `backend/packages/api/src/routes/sale/process-sale.handler.ts`（支払いの記録）、`backend/packages/api/src/routes/payment/`（返金。`/api/v1/payments` に取り付ける） |
+| DB | `backend/packages/database/sql/migrations/202611160900_payment_transaction_rules.sql` |
+| テスト | `backend/packages/domain/src/__tests__/payment.schema.test.ts`、`payment.plan.test.ts`、`payment.mapper.test.ts`、`payment.usecase.test.ts`、`backend/packages/api/src/__tests__/payment.integration.test.ts` |
