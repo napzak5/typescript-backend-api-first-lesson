@@ -341,7 +341,7 @@ CREATE TABLE "payment_methods" (
 	"description" text,
 	"processorName" varchar(100),
 	"processorConfig" jsonb,
-	"fee" numeric(5, 2) DEFAULT '0',
+	"fee" numeric(5, 2),
 	"minimumAmount" integer,
 	"maximumAmount" integer,
 	"isOnlineEnabled" boolean DEFAULT false NOT NULL,
@@ -349,7 +349,10 @@ CREATE TABLE "payment_methods" (
 	"sortOrder" integer DEFAULT 0 NOT NULL,
 	"isActive" boolean DEFAULT true NOT NULL,
 	"createdAt" timestamp with time zone DEFAULT now() NOT NULL,
-	"updatedAt" timestamp with time zone DEFAULT now() NOT NULL
+	"updatedAt" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "payment_methods_amount_limits" CHECK ((("minimumAmount" IS NULL) OR ("minimumAmount" >= 1)) AND (("maximumAmount" IS NULL) OR ("maximumAmount" >= 1)) AND (("minimumAmount" IS NULL) OR ("maximumAmount" IS NULL) OR ("minimumAmount" <= "maximumAmount"))),
+	CONSTRAINT "payment_methods_fee_is_a_percentage" CHECK ((fee IS NULL) OR ((fee >= (0)::numeric) AND (fee <= (100)::numeric))),
+	CONSTRAINT "payment_methods_sort_order_not_negative" CHECK ("sortOrder" >= 0)
 );
 
 CREATE TABLE "payment_transactions" (

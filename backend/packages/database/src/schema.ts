@@ -990,7 +990,7 @@ export const paymentMethods = pgTable(
     description: text(),
     processorName: varchar({ length: 100 }),
     processorConfig: jsonb(),
-    fee: numeric({ precision: 5, scale: 2 }).default('0'),
+    fee: numeric({ precision: 5, scale: 2 }),
     minimumAmount: integer(),
     maximumAmount: integer(),
     isOnlineEnabled: boolean().default(false).notNull(),
@@ -1005,6 +1005,15 @@ export const paymentMethods = pgTable(
       .notNull(),
   },
   (table) => [
+    check(
+      'payment_methods_amount_limits',
+      sql`(("minimumAmount" IS NULL) OR ("minimumAmount" >= 1)) AND (("maximumAmount" IS NULL) OR ("maximumAmount" >= 1)) AND (("minimumAmount" IS NULL) OR ("maximumAmount" IS NULL) OR ("minimumAmount" <= "maximumAmount"))`,
+    ),
+    check(
+      'payment_methods_fee_is_a_percentage',
+      sql`(fee IS NULL) OR ((fee >= (0)::numeric) AND (fee <= (100)::numeric))`,
+    ),
+    check('payment_methods_sort_order_not_negative', sql`"sortOrder" >= 0`),
     foreignKey({
       columns: [table.salonId],
       foreignColumns: [salons.id],

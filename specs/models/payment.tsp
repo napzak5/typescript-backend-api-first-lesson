@@ -414,6 +414,176 @@ namespace BeautySalon.Models {
   }
 
   // ---------------------------------------------------------------------------
+  // 支払い方法 (payment_methods)
+  // ---------------------------------------------------------------------------
+
+  @doc("""
+    支払い方法レスポンス - payment_methods テーブルの1行。サロンが会計で使う支払い方法を表す。
+    決済代行会社との接続設定(processorConfig)は返さない。
+    プロパティ名と null 許可は DB カラムと一致させている
+    """)
+  model PaymentMethodResponse {
+    @doc("支払い方法 ID")
+    id: PaymentMethodId;
+
+    @doc("支払い方法を持つサロン ID")
+    salonId: SalonId;
+
+    @doc("支払い方法区分。登録のあとは変わらない")
+    method: PaymentMethodType;
+
+    @doc("表示名")
+    displayName: string;
+
+    @doc("説明。未設定の場合はnull")
+    description: string | null;
+
+    @doc("決済代行会社の名称。決済代行会社を介さない場合、または記録していない場合はnull")
+    processorName: string | null;
+
+    @doc("決済手数料率(%)。記録していない場合はnull")
+    fee: float64 | null;
+
+    @doc("この支払い方法で受け付ける1回の支払いの最小金額。下限がない場合はnull")
+    minimumAmount: int32 | null;
+
+    @doc("この支払い方法で受け付ける1回の支払いの最大金額。上限がない場合はnull")
+    maximumAmount: int32 | null;
+
+    @doc("オンラインの決済で使えるか")
+    isOnlineEnabled: boolean;
+
+    @doc("店頭の会計で使えるか")
+    isOfflineEnabled: boolean;
+
+    @doc("表示順序")
+    sortOrder: int32;
+
+    @doc("有効フラグ。無効な支払い方法は新しい支払いに使えない")
+    isActive: boolean;
+
+    @doc("レコード作成日時")
+    createdAt: utcDateTime;
+
+    @doc("レコード最終更新日時")
+    updatedAt: utcDateTime;
+  }
+
+  @doc("""
+    支払い方法新規登録リクエスト - 全項目のキーが必須。DB で NULL 許可のカラムのみ null を指定できる。
+    支払い方法を持つサロンはパスの salonId で指定する。決済代行会社との接続設定(processorConfig)は指定できない
+    """)
+  model PaymentMethodCreateRequest {
+    @doc("支払い方法区分。登録のあとは変えられない")
+    method: PaymentMethodType;
+
+    @doc("表示名。空白だけの文字列は指定できない")
+    @minLength(1)
+    @maxLength(100)
+    displayName: string;
+
+    @doc("説明。空白だけの文字列は指定できない。未設定の場合はnull")
+    description: string | null;
+
+    @doc("決済代行会社の名称。空白だけの文字列は指定できない。決済代行会社を介さない場合、または記録しない場合はnull")
+    @maxLength(100)
+    processorName: string | null;
+
+    @doc("決済手数料率(%)。小数第2位まで。記録しない場合はnull")
+    @minValue(0)
+    @maxValue(100)
+    fee: float64 | null;
+
+    @doc("この支払い方法で受け付ける1回の支払いの最小金額。maximumAmount 以下。下限がない場合はnull")
+    @minValue(1)
+    minimumAmount: int32 | null;
+
+    @doc("この支払い方法で受け付ける1回の支払いの最大金額。minimumAmount 以上。上限がない場合はnull")
+    @minValue(1)
+    maximumAmount: int32 | null;
+
+    @doc("オンラインの決済で使えるか")
+    isOnlineEnabled: boolean;
+
+    @doc("店頭の会計で使えるか")
+    isOfflineEnabled: boolean;
+
+    @doc("表示順序")
+    @minValue(0)
+    sortOrder: int32;
+
+    @doc("有効フラグ")
+    isActive: boolean;
+  }
+
+  @doc("""
+    支払い方法部分更新リクエスト - 指定した項目だけを更新する。項目を1つも指定しないリクエストは受け付けない。
+    DB で NULL 許可のカラムは null でクリアできる。支払い方法を持つサロンと支払い方法区分(method)は変更できない
+    """)
+  model PaymentMethodUpdateRequest {
+    @doc("表示名。空白だけの文字列は指定できない")
+    @minLength(1)
+    @maxLength(100)
+    displayName?: string;
+
+    @doc("説明。空白だけの文字列は指定できない。nullでクリア")
+    description?: string | null;
+
+    @doc("決済代行会社の名称。空白だけの文字列は指定できない。nullでクリア")
+    @maxLength(100)
+    processorName?: string | null;
+
+    @doc("決済手数料率(%)。小数第2位まで。nullでクリア")
+    @minValue(0)
+    @maxValue(100)
+    fee?: float64 | null;
+
+    @doc("この支払い方法で受け付ける1回の支払いの最小金額。更新後の maximumAmount 以下。nullでクリア(下限がなくなる)")
+    @minValue(1)
+    minimumAmount?: int32 | null;
+
+    @doc("この支払い方法で受け付ける1回の支払いの最大金額。更新後の minimumAmount 以上。nullでクリア(上限がなくなる)")
+    @minValue(1)
+    maximumAmount?: int32 | null;
+
+    @doc("オンラインの決済で使えるか")
+    isOnlineEnabled?: boolean;
+
+    @doc("店頭の会計で使えるか")
+    isOfflineEnabled?: boolean;
+
+    @doc("表示順序")
+    @minValue(0)
+    sortOrder?: int32;
+
+    @doc("有効フラグ")
+    isActive?: boolean;
+  }
+
+  @doc("""
+    支払い方法一覧・検索リクエスト - 絞り込み条件とページネーションを指定する。条件はすべて AND で結合する
+    """)
+  model PaymentMethodSearchRequest {
+    @query
+    @doc("1ページあたりの取得件数上限 (1〜100)")
+    @minValue(1)
+    @maxValue(100)
+    limit?: int32 = 20;
+
+    @query
+    @doc("取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する")
+    cursor?: string;
+
+    @query
+    @doc("支払い方法区分による絞り込み(完全一致)")
+    method?: PaymentMethodType;
+
+    @query
+    @doc("有効フラグによる絞り込み。指定しない場合は無効な支払い方法も返す")
+    isActive?: boolean;
+  }
+
+  // ---------------------------------------------------------------------------
   // 決済取引 (payment_transactions)
   // ---------------------------------------------------------------------------
 

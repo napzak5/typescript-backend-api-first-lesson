@@ -125,6 +125,83 @@ namespace BeautySalon.Operations {
     }
   }
 
+  @doc("サロンが会計で使う支払い方法を登録・取得・更新・削除するAPI操作群です。ここに定義した操作はすべて実装済みで、定義と実装は一致しています。一覧と1件の取得は admin と、そのサロンの owner / manager / staff が実行できます。登録・更新・削除は admin と、そのサロンの owner / manager が実行できます。それ以外のアカウント(ほかのサロンのメンバー、顧客)には、パスの salonId だけで判断して403を返します。サロンが存在しない場合は404を返します。")
+  @route("/api/v1/salons/{salonId}/payment-methods")
+  @tag("Payment Methods")
+  namespace PaymentMethodOperations {
+    interface PaymentMethodCrud {
+      @doc("サロンの支払い方法を、絞り込み条件とページネーションを指定して一覧取得します。表示順(sortOrder)の昇順、同じ表示順ならIDの昇順に並びます。cursorがそのサロンの支払い方法を指していない場合(削除された場合を含む)は400を返します。")
+      @summary("List payment methods")
+      @get
+      list(@path salonId: SalonId, ...PaymentMethodSearchRequest):
+        | {
+            @statusCode statusCode: 200;
+            @body response: CursorPaginationResponse<PaymentMethodResponse>;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<404>
+        | CommonErrors;
+
+      @doc("サロンに支払い方法を登録します。同じ支払い方法区分(method)の支払い方法をいくつでも登録できます。minimumAmount が maximumAmount を超える場合は400を返します。")
+      @summary("Create payment method")
+      @post
+      create(
+        @path salonId: SalonId,
+        @body request: PaymentMethodCreateRequest,
+      ):
+        | {
+            @statusCode statusCode: 201;
+            @header("Location") location: string;
+            @body response: ApiResponse<PaymentMethodResponse>;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<404>
+        | RequestBodyErrors
+        | CommonErrors;
+
+      @doc("サロンの支払い方法を1件取得します。無効な支払い方法も取得できます。支払い方法がそのサロンのものでない場合は404を返します。")
+      @summary("Get payment method")
+      @get
+      get(@path salonId: SalonId, @path id: PaymentMethodId):
+        | {
+            @statusCode statusCode: 200;
+            @body response: ApiResponse<PaymentMethodResponse>;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<404>
+        | CommonErrors;
+
+      @doc("支払い方法の指定した項目だけを更新します。支払い方法区分(method)は変更できません。更新後の minimumAmount が maximumAmount を超える場合は400を返します(片方だけを指定した場合は、もう片方の現在の値と比べます)。支払い方法がそのサロンのものでない場合は404を返します。")
+      @summary("Update payment method")
+      @patch
+      update(
+        @path salonId: SalonId,
+        @path id: PaymentMethodId,
+        @body request: PaymentMethodUpdateRequest,
+      ):
+        | {
+            @statusCode statusCode: 200;
+            @body response: ApiResponse<PaymentMethodResponse>;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<404>
+        | RequestBodyErrors
+        | CommonErrors;
+
+      @doc("支払い方法を削除します。決済取引が指している支払い方法は削除できず、409を返します(使わなくなった支払い方法は isActive を false にします)。支払い方法がそのサロンのものでない場合は404を返します。")
+      @summary("Delete payment method")
+      @delete
+      delete(@path salonId: SalonId, @path id: PaymentMethodId):
+        | {
+            @statusCode statusCode: 204;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<404>
+        | ProblemResponse<409>
+        | CommonErrors;
+    }
+  }
+
   @doc("売上に対する決済取引を返金するAPI操作群です。決済取引の記録は売上の支払い処理で行います。")
   @route("/api/v1/payments")
   @tag("Payments")

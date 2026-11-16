@@ -6,17 +6,22 @@ export interface PaymentMethodSeedResult {
   paymentMethodMap: Record<string, string[]> // salonId -> paymentMethodIds
 }
 
+/**
+ * The payment methods of every salon. Each row is one that the API could
+ * have written: nothing is stored for the settings of a payment processor
+ * (`processorConfig`), which no operation reads or writes.
+ */
 export async function seedPaymentMethods(
   db: PostgresJsDatabase<typeof schema>,
   salonIds: string[],
 ): Promise<PaymentMethodSeedResult> {
-  const paymentMethods = []
+  const paymentMethods: (typeof schema.paymentMethods.$inferInsert)[] = []
 
   for (const salonId of salonIds) {
     paymentMethods.push(
       {
         salonId,
-        method: 'cash' as const,
+        method: 'cash',
         displayName: 'Cash',
         description: 'Cash payment at the salon',
         fee: '0.00',
@@ -27,14 +32,10 @@ export async function seedPaymentMethods(
       },
       {
         salonId,
-        method: 'credit_card' as const,
+        method: 'credit_card',
         displayName: 'Credit Card',
         description: 'Visa, MasterCard, JCB, AMEX accepted',
         processorName: 'Stripe',
-        processorConfig: {
-          merchantId: 'test_merchant_001',
-          terminalId: 'term_001',
-        },
         fee: '3.60',
         minimumAmount: 1000,
         isOnlineEnabled: true,
@@ -44,7 +45,7 @@ export async function seedPaymentMethods(
       },
       {
         salonId,
-        method: 'debit_card' as const,
+        method: 'debit_card',
         displayName: 'Debit Card',
         description: 'Bank debit cards accepted',
         processorName: 'Stripe',
@@ -57,7 +58,7 @@ export async function seedPaymentMethods(
       },
       {
         salonId,
-        method: 'e_money' as const,
+        method: 'e_money',
         displayName: 'E-Money (IC Card)',
         description: 'Suica, PASMO, iD, QUICPay accepted',
         processorName: 'Square',
@@ -70,14 +71,10 @@ export async function seedPaymentMethods(
       },
       {
         salonId,
-        method: 'qr_payment' as const,
+        method: 'qr_payment',
         displayName: 'QR Code Payment',
         description: 'PayPay, LINE Pay, Rakuten Pay accepted',
         processorName: 'PayPay',
-        processorConfig: {
-          apiKey: 'test_api_key',
-          storeId: 'store_001',
-        },
         fee: '2.95',
         isOnlineEnabled: true,
         isOfflineEnabled: true,
@@ -86,16 +83,9 @@ export async function seedPaymentMethods(
       },
       {
         salonId,
-        method: 'bank_transfer' as const,
+        method: 'bank_transfer',
         displayName: 'Bank Transfer',
         description: 'Advance payment via bank transfer',
-        processorConfig: {
-          bankName: 'Mizuho Bank',
-          branchName: 'Shibuya Branch',
-          accountType: 'Savings',
-          accountNumber: '1234567',
-          accountHolder: 'Beauty Salon Inc.',
-        },
         fee: '0.00',
         minimumAmount: 10000,
         isOnlineEnabled: true,
@@ -105,7 +95,7 @@ export async function seedPaymentMethods(
       },
       {
         salonId,
-        method: 'point' as const,
+        method: 'point',
         displayName: 'Point Payment',
         description: 'Pay with accumulated loyalty points',
         fee: '0.00',

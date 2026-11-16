@@ -309,6 +309,8 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 | スタッフの勤務スケジュールの更新 | `admin`、そのサロンの `owner` / `manager` |
 | スタッフの招待の取得、作成、取り消し | `admin`、そのサロンの `owner`。`owner` のロールへの招待は `admin` だけ |
 | スタッフに紐づいたアカウントの取得、ロールの変更、紐づけの解除 | `admin`、そのサロンの `owner`。`owner` のロールへの変更は `admin` だけ |
+| 支払い方法の一覧、1 件の取得 | `admin`、そのサロンの `owner` / `manager` / `staff` |
+| 支払い方法の作成、更新、削除 | `admin`、そのサロンの `owner` / `manager` |
 
 カテゴリーとサービスの規則は [サービスメニュー](./service-menu.md) にあります。
 
@@ -342,6 +344,14 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 - 紐づけを解除されたアカウントは、範囲が `none` になる。ロールは残る
 
 規則は [紐づいたアカウントの管理](./staff.md#紐づいたアカウントの管理) にあります。
+
+支払い方法（`/api/v1/salons/{salonId}/payment-methods`）は、読むのにも認証が要り、顧客のアカウントには見せません（`business-logic/payment-method/_shared/authorization.ts`）。レスポンスが、サロンが決済代行会社に払う手数料率を含むからです。
+
+- 読む権限（`mayReadPaymentMethods`）は、`admin` と、そのサロンの `owner`・`manager`・`staff` にある。会計を入れるスタッフが、どの手段を受け付けるかを知る必要があるため
+- 設定する権限（`mayKeepPaymentMethods`。作成、更新、削除）は、`admin` と、そのサロンの `owner`・`manager` にある。`staff` は、ID や本文を確かめる前に 403
+- どちらも、パスの `salonId` だけで判定する。ほかのサロンのユーザーは、サロンや支払い方法が存在しなくても 403
+
+規則は [支払い](./payments.md) にあります。
 
 顧客に見せるスタッフのプロフィール（`/api/v1/staff-profiles` の一覧と 1 件の取得）は、認証なしで読めます。サロンの下のルートではなく、権限の判定もありません。返すのは、台帳の項目のうち顧客に見せる 11 項目だけで、台帳を読めない `manager`、`staff`、顧客も読めます。見せるのは、有効で削除されていない、削除されていないサロンのスタッフです（[顧客に見せるプロフィール](./staff.md#顧客に見せるプロフィール)）。
 
@@ -466,7 +476,7 @@ export const updateSalonHandler = (
 }
 ```
 
-サロンに属するデータ（スタッフなど）を、サロンの下のルートで実装するときは、[サロンの下にあるルートの権限](#サロンの下にあるルートの権限) に従います。ユースケースは、パスの ID を `parseSalonIdOfPath`（`backend/packages/domain/src/models/salon.ts`）で検証し、そのサロンで権限を判定してから、`requireSalon`（`business-logic/_shared/existing-salon.ts`）でサロンの存在を確認します。対象は、そのサロンのものだけを検索します。例は `business-logic/service-category/` と `business-logic/service/`（読むのは認証なし）、`business-logic/staff/`（どのオペレーションにも認証が要る）、`business-logic/staff-schedule/`（サロンで判定したあと、対象の ID でもう一度判定する）、`business-logic/staff-invitation/`（サロンで判定したあと、本文の値でもう一度判定する）、`business-logic/staff-account/`（同じ 2 段階のあとに、操作者自身のアカウントでないことを確認する）です。パスが対象を指定せず、アカウントが対象を決めるルートの例は、`business-logic/customer/` の `*-customer-profile.usecase.ts`（`/api/v1/customers/me`）と、`business-logic/staff-profile/` の `*-own-staff-profile.usecase.ts`（`/api/v1/staff-profiles/me`）です。
+サロンに属するデータ（スタッフなど）を、サロンの下のルートで実装するときは、[サロンの下にあるルートの権限](#サロンの下にあるルートの権限) に従います。ユースケースは、パスの ID を `parseSalonIdOfPath`（`backend/packages/domain/src/models/salon.ts`）で検証し、そのサロンで権限を判定してから、`requireSalon`（`business-logic/_shared/existing-salon.ts`）でサロンの存在を確認します。対象は、そのサロンのものだけを検索します。例は `business-logic/service-category/` と `business-logic/service/`（読むのは認証なし）、`business-logic/staff/`（どのオペレーションにも認証が要る）、`business-logic/payment-method/`（どのオペレーションにも認証が要り、読む権限と設定する権限が違う）、`business-logic/staff-schedule/`（サロンで判定したあと、対象の ID でもう一度判定する）、`business-logic/staff-invitation/`（サロンで判定したあと、本文の値でもう一度判定する）、`business-logic/staff-account/`（同じ 2 段階のあとに、操作者自身のアカウントでないことを確認する）です。パスが対象を指定せず、アカウントが対象を決めるルートの例は、`business-logic/customer/` の `*-customer-profile.usecase.ts`（`/api/v1/customers/me`）と、`business-logic/staff-profile/` の `*-own-staff-profile.usecase.ts`（`/api/v1/staff-profiles/me`）です。
 
 サロンに属さないデータは、操作者だけで権限を判定し、最初に判定します。例は `business-logic/customer/`（[顧客台帳の権限](#顧客台帳の権限)）です。ログインしているアカウント自身のデータは、対象をパスの ID ではなく操作者の範囲から決めます。例は同じディレクトリの `*-customer-profile.usecase.ts` です。`business-logic/customer-preferences/` のユースケースは、この 2 つの判定をそのまま使います。
 
