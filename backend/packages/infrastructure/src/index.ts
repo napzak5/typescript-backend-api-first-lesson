@@ -23,6 +23,7 @@ export { AvailableSlotRepository } from './repositories/available-slot.repositor
 export { BookingRepository } from './repositories/booking.repository.impl'
 export { CustomerRepository } from './repositories/customer.repository.impl'
 export { CustomerPreferencesRepository } from './repositories/customer-preferences.repository.impl'
+export { PaymentMethodRepository } from './repositories/payment-method.repository.impl'
 export { SaleRepository } from './repositories/sale.repository.impl'
 export { SalonRepository } from './repositories/salon.repository.impl'
 export { ServiceRepository } from './repositories/service.repository.impl'

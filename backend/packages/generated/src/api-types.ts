@@ -2584,6 +2584,58 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/salons/{salonId}/payment-methods": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List payment methods
+         * @description サロンの支払い方法を、絞り込み条件とページネーションを指定して一覧取得します。表示順(sortOrder)の昇順、同じ表示順ならIDの昇順に並びます。cursorがそのサロンの支払い方法を指していない場合(削除された場合を含む)は400を返します。
+         */
+        get: operations["PaymentMethodCrud_list"];
+        put?: never;
+        /**
+         * Create payment method
+         * @description サロンに支払い方法を登録します。同じ支払い方法区分(method)の支払い方法をいくつでも登録できます。minimumAmount が maximumAmount を超える場合は400を返します。
+         */
+        post: operations["PaymentMethodCrud_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/salons/{salonId}/payment-methods/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get payment method
+         * @description サロンの支払い方法を1件取得します。無効な支払い方法も取得できます。支払い方法がそのサロンのものでない場合は404を返します。
+         */
+        get: operations["PaymentMethodCrud_get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete payment method
+         * @description 支払い方法を削除します。決済取引が指している支払い方法は削除できず、409を返します(使わなくなった支払い方法は isActive を false にします)。支払い方法がそのサロンのものでない場合は404を返します。
+         */
+        delete: operations["PaymentMethodCrud_delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Update payment method
+         * @description 支払い方法の指定した項目だけを更新します。支払い方法区分(method)は変更できません。更新後の minimumAmount が maximumAmount を超える場合は400を返します(片方だけを指定した場合は、もう片方の現在の値と比べます)。支払い方法がそのサロンのものでない場合は404を返します。
+         */
+        patch: operations["PaymentMethodCrud_update"];
+        trace?: never;
+    };
     "/api/v1/salons/{salonId}/reviews/summary": {
         parameters: {
             query?: never;
@@ -6085,10 +6137,105 @@ export interface components {
          */
         "Models.PaymentId": string;
         /**
+         * @description 支払い方法新規登録リクエスト - 全項目のキーが必須。DB で NULL 許可のカラムのみ null を指定できる。
+         *     支払い方法を持つサロンはパスの salonId で指定する。決済代行会社との接続設定(processorConfig)は指定できない
+         */
+        "Models.PaymentMethodCreateRequest": {
+            /** @description 支払い方法区分。登録のあとは変えられない */
+            method: components["schemas"]["Models.PaymentMethodType"];
+            /** @description 表示名。空白だけの文字列は指定できない */
+            displayName: string;
+            /** @description 説明。空白だけの文字列は指定できない。未設定の場合はnull */
+            description: string | null;
+            /** @description 決済代行会社の名称。空白だけの文字列は指定できない。決済代行会社を介さない場合、または記録しない場合はnull */
+            processorName: string | null;
+            /**
+             * Format: double
+             * @description 決済手数料率(%)。小数第2位まで。記録しない場合はnull
+             */
+            fee: number | null;
+            /**
+             * Format: int32
+             * @description この支払い方法で受け付ける1回の支払いの最小金額。maximumAmount 以下。下限がない場合はnull
+             */
+            minimumAmount: number | null;
+            /**
+             * Format: int32
+             * @description この支払い方法で受け付ける1回の支払いの最大金額。minimumAmount 以上。上限がない場合はnull
+             */
+            maximumAmount: number | null;
+            /** @description オンラインの決済で使えるか */
+            isOnlineEnabled: boolean;
+            /** @description 店頭の会計で使えるか */
+            isOfflineEnabled: boolean;
+            /**
+             * Format: int32
+             * @description 表示順序
+             */
+            sortOrder: number;
+            /** @description 有効フラグ */
+            isActive: boolean;
+        };
+        /**
          * Format: uuid
          * @description サロンが受け付ける支払い方法の設定を識別するブランド付きUUID。
          */
         "Models.PaymentMethodId": string;
+        /**
+         * @description 支払い方法レスポンス - payment_methods テーブルの1行。サロンが会計で使う支払い方法を表す。
+         *     決済代行会社との接続設定(processorConfig)は返さない。
+         *     プロパティ名と null 許可は DB カラムと一致させている
+         */
+        "Models.PaymentMethodResponse": {
+            /** @description 支払い方法 ID */
+            id: components["schemas"]["Models.PaymentMethodId"];
+            /** @description 支払い方法を持つサロン ID */
+            salonId: components["schemas"]["Models.SalonId"];
+            /** @description 支払い方法区分。登録のあとは変わらない */
+            method: components["schemas"]["Models.PaymentMethodType"];
+            /** @description 表示名 */
+            displayName: string;
+            /** @description 説明。未設定の場合はnull */
+            description: string | null;
+            /** @description 決済代行会社の名称。決済代行会社を介さない場合、または記録していない場合はnull */
+            processorName: string | null;
+            /**
+             * Format: double
+             * @description 決済手数料率(%)。記録していない場合はnull
+             */
+            fee: number | null;
+            /**
+             * Format: int32
+             * @description この支払い方法で受け付ける1回の支払いの最小金額。下限がない場合はnull
+             */
+            minimumAmount: number | null;
+            /**
+             * Format: int32
+             * @description この支払い方法で受け付ける1回の支払いの最大金額。上限がない場合はnull
+             */
+            maximumAmount: number | null;
+            /** @description オンラインの決済で使えるか */
+            isOnlineEnabled: boolean;
+            /** @description 店頭の会計で使えるか */
+            isOfflineEnabled: boolean;
+            /**
+             * Format: int32
+             * @description 表示順序
+             */
+            sortOrder: number;
+            /** @description 有効フラグ。無効な支払い方法は新しい支払いに使えない */
+            isActive: boolean;
+            /**
+             * Format: date-time
+             * @description レコード作成日時
+             */
+            createdAt: string;
+            /**
+             * Format: date-time
+             * @description レコード最終更新日時
+             */
+            updatedAt: string;
+        };
         /**
 
          * @description
@@ -6130,6 +6277,44 @@ export interface components {
          */
 
         "Models.PaymentMethodType": "cash" | "credit_card" | "debit_card" | "e_money" | "qr_payment" | "bank_transfer" | "point";
+        /**
+         * @description 支払い方法部分更新リクエスト - 指定した項目だけを更新する。項目を1つも指定しないリクエストは受け付けない。
+         *     DB で NULL 許可のカラムは null でクリアできる。支払い方法を持つサロンと支払い方法区分(method)は変更できない
+         */
+        "Models.PaymentMethodUpdateRequest": {
+            /** @description 表示名。空白だけの文字列は指定できない */
+            displayName?: string;
+            /** @description 説明。空白だけの文字列は指定できない。nullでクリア */
+            description?: string | null;
+            /** @description 決済代行会社の名称。空白だけの文字列は指定できない。nullでクリア */
+            processorName?: string | null;
+            /**
+             * Format: double
+             * @description 決済手数料率(%)。小数第2位まで。nullでクリア
+             */
+            fee?: number | null;
+            /**
+             * Format: int32
+             * @description この支払い方法で受け付ける1回の支払いの最小金額。更新後の maximumAmount 以下。nullでクリア(下限がなくなる)
+             */
+            minimumAmount?: number | null;
+            /**
+             * Format: int32
+             * @description この支払い方法で受け付ける1回の支払いの最大金額。更新後の minimumAmount 以上。nullでクリア(上限がなくなる)
+             */
+            maximumAmount?: number | null;
+            /** @description オンラインの決済で使えるか */
+            isOnlineEnabled?: boolean;
+            /** @description 店頭の会計で使えるか */
+            isOfflineEnabled?: boolean;
+            /**
+             * Format: int32
+             * @description 表示順序
+             */
+            sortOrder?: number;
+            /** @description 有効フラグ */
+            isActive?: boolean;
+        };
         /** @description 決済取引の返金リクエスト - 返金額と理由を指定する。全項目のキーが必須 */
         "Models.PaymentRefundRequest": {
             /**
@@ -9796,6 +9981,14 @@ export interface components {
         "Models.MedicalChartSearchRequest.limit": number;
         /** @description カルテの記載内容に対する部分一致キーワード */
         "Models.MedicalChartSearchRequest.search": string;
+        /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+        "Models.PaymentMethodSearchRequest.cursor": string;
+        /** @description 有効フラグによる絞り込み。指定しない場合は無効な支払い方法も返す */
+        "Models.PaymentMethodSearchRequest.isActive": boolean;
+        /** @description 1ページあたりの取得件数上限 (1〜100) */
+        "Models.PaymentMethodSearchRequest.limit": number;
+        /** @description 支払い方法区分による絞り込み(完全一致) */
+        "Models.PaymentMethodSearchRequest.method": components["schemas"]["Models.PaymentMethodType"];
         /** @description 操作区分による絞り込み(完全一致) */
         "Models.PermissionSearchRequest.action": string;
         /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
@@ -25661,6 +25854,539 @@ export interface operations {
                     "application/json": {
                         /** @description レスポンスの主体となるビジネスデータ。 */
                         data: components["schemas"]["Models.AvailableSlotCheckResponse"];
+                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        meta: components["schemas"]["Models.ResponseMeta"] | null;
+                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        links: {
+                            [key: string]: string;
+                        } | null;
+                    };
+                };
+            };
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description 認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
+             *     ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
+             *     WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+             */
+            401: {
+                headers: {
+                    /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
+                    "WWW-Authenticate": string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description 認証されているが、この操作を行う権限がない (403)。 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The server cannot find the requested resource. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
+             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+             */
+            429: {
+                headers: {
+                    /** @description 再試行できるようになるまでの秒数。 */
+                    "Retry-After": number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+        };
+    };
+    PaymentMethodCrud_list: {
+        parameters: {
+            query?: {
+                /** @description 1ページあたりの取得件数上限 (1〜100) */
+                limit?: components["parameters"]["Models.PaymentMethodSearchRequest.limit"];
+                /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+                cursor?: components["parameters"]["Models.PaymentMethodSearchRequest.cursor"];
+                /** @description 支払い方法区分による絞り込み(完全一致) */
+                method?: components["parameters"]["Models.PaymentMethodSearchRequest.method"];
+                /** @description 有効フラグによる絞り込み。指定しない場合は無効な支払い方法も返す */
+                isActive?: components["parameters"]["Models.PaymentMethodSearchRequest.isActive"];
+            };
+            header?: never;
+            path: {
+                salonId: components["schemas"]["Models.SalonId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The request has succeeded. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description 現在ページで取得したデータ配列。サロン一覧や予約履歴の実データを格納する。 */
+                        data: components["schemas"]["Models.PaymentMethodResponse"][];
+                        /** @description ページング状態を示すメタ情報。次ページの有無やカーソル値を含む。 */
+                        meta: components["schemas"]["Models.PaginationMeta"];
+                        /** @description 関連するページ遷移リンク。HATEOAS 連携や外部連携向けに利用する。 */
+                        links: components["schemas"]["Models.PaginationLinks"];
+                    };
+                };
+            };
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description 認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
+             *     ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
+             *     WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+             */
+            401: {
+                headers: {
+                    /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
+                    "WWW-Authenticate": string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description 認証されているが、この操作を行う権限がない (403)。 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The server cannot find the requested resource. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
+             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+             */
+            429: {
+                headers: {
+                    /** @description 再試行できるようになるまでの秒数。 */
+                    "Retry-After": number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+        };
+    };
+    PaymentMethodCrud_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                salonId: components["schemas"]["Models.SalonId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Models.PaymentMethodCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description The request has succeeded and a new resource has been created as a result. */
+            201: {
+                headers: {
+                    Location: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        data: components["schemas"]["Models.PaymentMethodResponse"];
+                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        meta: components["schemas"]["Models.ResponseMeta"] | null;
+                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        links: {
+                            [key: string]: string;
+                        } | null;
+                    };
+                };
+            };
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description 認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
+             *     ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
+             *     WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+             */
+            401: {
+                headers: {
+                    /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
+                    "WWW-Authenticate": string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description 認証されているが、この操作を行う権限がない (403)。 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The server cannot find the requested resource. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
+             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+             */
+            429: {
+                headers: {
+                    /** @description 再試行できるようになるまでの秒数。 */
+                    "Retry-After": number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+        };
+    };
+    PaymentMethodCrud_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                salonId: components["schemas"]["Models.SalonId"];
+                id: components["schemas"]["Models.PaymentMethodId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The request has succeeded. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        data: components["schemas"]["Models.PaymentMethodResponse"];
+                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        meta: components["schemas"]["Models.ResponseMeta"] | null;
+                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        links: {
+                            [key: string]: string;
+                        } | null;
+                    };
+                };
+            };
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description 認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
+             *     ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
+             *     WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+             */
+            401: {
+                headers: {
+                    /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
+                    "WWW-Authenticate": string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description 認証されているが、この操作を行う権限がない (403)。 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The server cannot find the requested resource. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
+             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+             */
+            429: {
+                headers: {
+                    /** @description 再試行できるようになるまでの秒数。 */
+                    "Retry-After": number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+        };
+    };
+    PaymentMethodCrud_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                salonId: components["schemas"]["Models.SalonId"];
+                id: components["schemas"]["Models.PaymentMethodId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description There is no content to send for this request, but the headers may be useful. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description 認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
+             *     ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
+             *     WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+             */
+            401: {
+                headers: {
+                    /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
+                    "WWW-Authenticate": string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description 認証されているが、この操作を行う権限がない (403)。 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The server cannot find the requested resource. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The request conflicts with the current state of the server. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
+             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+             */
+            429: {
+                headers: {
+                    /** @description 再試行できるようになるまでの秒数。 */
+                    "Retry-After": number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+        };
+    };
+    PaymentMethodCrud_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                salonId: components["schemas"]["Models.SalonId"];
+                id: components["schemas"]["Models.PaymentMethodId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Models.PaymentMethodUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description The request has succeeded. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        data: components["schemas"]["Models.PaymentMethodResponse"];
                         /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
                         /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */

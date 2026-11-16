@@ -473,6 +473,45 @@ describe('modelRules', () => {
     })
   })
 
+  it('shows a payment method without the settings of its processor, lets a request leave out those, what the database assigns and the salon, and lets an update change everything else but the method', () => {
+    const omitted = Object.fromEntries(
+      modelRules
+        .filter((modelRule) => modelRule.table === 'paymentMethods')
+        .map(({ model, kind, omittedColumns }) => [
+          model,
+          { kind, omittedColumns },
+        ]),
+    )
+
+    expect(omitted).toEqual({
+      'Models.PaymentMethodResponse': {
+        kind: 'response',
+        omittedColumns: ['processorConfig'],
+      },
+      'Models.PaymentMethodCreateRequest': {
+        kind: 'create',
+        omittedColumns: [
+          'id',
+          'salonId',
+          'processorConfig',
+          'createdAt',
+          'updatedAt',
+        ],
+      },
+      'Models.PaymentMethodUpdateRequest': {
+        kind: 'update',
+        omittedColumns: [
+          'id',
+          'salonId',
+          'processorConfig',
+          'createdAt',
+          'updatedAt',
+          'method',
+        ],
+      },
+    })
+  })
+
   it("lets a request for a customer leave out the columns the server manages, and the response only deletedAt; a profile leaves out what is the staff's as well", () => {
     const managed = [
       'id',
