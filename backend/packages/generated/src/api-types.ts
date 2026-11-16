@@ -7985,12 +7985,12 @@ export interface components {
             businessHours: components["schemas"]["Models.BusinessHours"][] | null;
             /**
              * Format: float
-             * @description 顧客レビューから算出した平均評価。レビュー未登録の場合はnull
+             * @description 顧客レビューの全体満足度評価(overallRating)の平均値。小数第2位に四捨五入する。レビューを投稿したトランザクションが数え直す。レビュー未登録の場合はnull
              */
             rating: number | null;
             /**
              * Format: int32
-             * @description 蓄積されたレビュー件数
+             * @description 顧客レビューの件数。レビューを投稿したトランザクションが数え直す
              */
             reviewCount: number;
             /** @description 営業時間と、予約の来店日の基準となるIANAタイムゾーンID(例: Asia/Tokyo) */
