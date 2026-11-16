@@ -20,6 +20,7 @@ import type {
   BookingServiceRemoval,
   BookingStatusChange,
   CustomerBookingCreation,
+  CustomerBookingReschedule,
   IBookingRepository,
 } from '../repositories/booking.repository'
 import { CUSTOMER_ID } from './auth-fixtures'
@@ -316,6 +317,12 @@ export const bookingDependencies = (
           booking: bookingWithServices(),
         }),
       ),
+      rebook: vi.fn(async () =>
+        Result.success<CustomerBookingReschedule>({
+          type: 'rescheduled',
+          booking: bookingWithServices(),
+        }),
+      ),
       delete: vi.fn(async () =>
         Result.success<BookingDeletion>({ type: 'deleted' }),
       ),
@@ -353,6 +360,7 @@ const REPOSITORY_METHODS: (keyof IBookingRepository)[] = [
   'changeStatus',
   'update',
   'reschedule',
+  'rebook',
   'delete',
   'addService',
   'findService',

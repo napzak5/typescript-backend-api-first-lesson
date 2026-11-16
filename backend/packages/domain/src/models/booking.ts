@@ -186,6 +186,18 @@ export type BookingRescheduleWrite = {
   services: Pick<DbBookingService, 'id' | 'staffId' | 'startTime' | 'endTime'>[]
 }
 
+/**
+ * What the move of a booking by its customer writes: what a reschedule
+ * writes, the status the booking has from then on, and the entry of the
+ * status history when that is another one than it had.
+ */
+export type CustomerBookingMoveWrite = {
+  booking: BookingRescheduleWrite['booking'] & Pick<DbBooking, 'status'>
+  services: BookingRescheduleWrite['services']
+  /** Null when the status stays what it is. */
+  statusChange: DbNewBookingStatusChange | null
+}
+
 /** What a change of the status of a booking writes. */
 export type BookingStatusWrite = {
   booking: DbBookingChanges & Pick<DbBooking, 'status'>

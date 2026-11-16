@@ -24,6 +24,7 @@ import {
   type BookingReferences,
   type BookingReschedule,
   type BookingRescheduleRequest,
+  type BookingRescheduleWrite,
   type BookingServiceAddition,
   type BookingServiceCreateRequest,
   type BookingServiceId,
@@ -34,8 +35,13 @@ import {
   type CustomerBooker,
   type CustomerBookingCreateRequest,
   type CustomerBookingCreation,
+  type CustomerBookingMoveWrite,
   type CustomerBookingReferences,
+  type CustomerBookingReschedule,
+  type CustomerBookingToMove,
   type CustomerId,
+  type CustomerMover,
+  type CustomerReach,
   candidateDatesOf,
   candidateTimeOf,
   type DbBooking,
@@ -47,9 +53,11 @@ import {
   isOccupiedBeyondCapacity,
   type LedgerReach,
   moveBooking,
+  moveCustomerBooking,
   occupancyWindowOf,
   planBooking,
   planCustomerBooking,
+  planCustomerMove,
   planReschedule,
   planServiceAddition,
   planServiceRemoval,
@@ -88,7 +96,6 @@ import {
   takenOf,
   takesTime,
 } from './slot-reads'
-import { staffMemberOf } from './staff-member'
 
 /** The condition that keeps a query to the bookings a reader reaches. */
 const within = (reach: BookingReach): SQL | undefined =>
@@ -190,6 +197,18 @@ const lockedReferencesOf = async (
 }
 
 /**
+ * The slot a customer asks for: a service with a staff member of a salon,
+ * at a time. A request names it, or a booking that is moved and the
+ * request that moves it; so the IDs are taken as the text a row has.
+ */
+type SlotOfCustomer = {
+  salonId: string
+  serviceId: string
+  staffId: string
+  startTime: string
+}
+
+/**
  * What the request of a customer refers to and meets, held until the
  * booking is written.
  *
@@ -205,11 +224,16 @@ const lockedReferencesOf = async (
  * What the slot is decided from is read once the rows are held, each
  * statement seeing what was committed before it: a request that waited
  * meets what it waited for.
+ *
+ * A booking that is moved to the slot is named: its lines do not occupy
+ * the staff member, are not counted among those of the service, and it is
+ * not among the other bookings of the customer.
  */
 const heldForCustomerOf = async (
   tx: DatabaseExecutor,
-  request: CustomerBookingCreateRequest,
+  request: SlotOfCustomer,
   customerId: CustomerId,
+  moved: BookingId | null,
 ): Promise<CustomerBookingReferences> => {
   const [salon] = await tx
     .select({
@@ -280,7 +304,13 @@ const heldForCustomerOf = async (
       maxConcurrentBookings: staff.maxConcurrentBookings,
     })
     .from(staff)
-    .where(staffMemberOf(request.salonId, request.staffId))
+    .where(
+      and(
+        eq(staff.id, request.staffId),
+        eq(staff.salonId, request.salonId),
+        isNull(staff.deletedAt),
+      ),
+    )
     .for('update')
   if (service === undefined || member === undefined) {
     return {
@@ -299,6 +329,7 @@ const heldForCustomerOf = async (
     tx,
     [member.id],
     candidateTimeOf(request, member.bufferTimeBefore + member.bufferTimeAfter),
+    moved,
   )
   const others = await tx
     .select({
@@ -312,6 +343,7 @@ const heldForCustomerOf = async (
         sql`${bookings.endTime} > ${moment(days.from)}`,
         sql`${bookings.startTime} < ${moment(days.until)}`,
         takesTime,
+        moved === null ? undefined : ne(bookings.id, moved),
       ),
     )
 
@@ -325,7 +357,12 @@ const heldForCustomerOf = async (
       taken: taken.map(({ time }) => time),
     },
     calendarDays: await calendarDaysOf(tx, request.salonId, dates),
-    serviceLineStarts: await serviceLineStartsOf(tx, request.serviceId, days),
+    serviceLineStarts: await serviceLineStartsOf(
+      tx,
+      request.serviceId,
+      days,
+      moved,
+    ),
     customerTimes: others.map(({ startTime, endTime }) => ({
       startTime: new Date(startTime),
       endTime: new Date(endTime),
@@ -373,6 +410,91 @@ const written = async (
       services: lines.toSorted((a, b) => a.sortOrder - b.sortOrder),
     },
   }
+}
+
+/**
+ * A booking held for a move: where it is, with its service lines, and the
+ * salon it is of. The booking is held from here on, so of two changes of
+ * one booking the second meets what the first made of it. Null when no
+ * booking within the reach has the ID.
+ */
+const heldForMove = async (
+  tx: DatabaseExecutor,
+  id: BookingId,
+  reach: BookingReach,
+): Promise<{ salonId: string; booking: CustomerBookingToMove } | null> => {
+  const [held] = await tx
+    .select({
+      salonId: bookings.salonId,
+      status: bookings.status,
+      staffId: bookings.staffId,
+      startTime: millisecondsOf(bookings.startTime),
+      endTime: millisecondsOf(bookings.endTime),
+    })
+    .from(bookings)
+    .where(and(eq(bookings.id, id), within(reach)))
+    .for('update')
+  if (held === undefined) {
+    return null
+  }
+  const lines = await tx
+    .select({
+      id: bookingServices.id,
+      serviceId: bookingServices.serviceId,
+      staffId: bookingServices.staffId,
+      startTime: millisecondsOf(bookingServices.startTime),
+      endTime: millisecondsOf(bookingServices.endTime),
+    })
+    .from(bookingServices)
+    .where(eq(bookingServices.bookingId, id))
+
+  return {
+    salonId: held.salonId,
+    booking: {
+      status: held.status,
+      staffId: held.staffId,
+      startTime: new Date(held.startTime),
+      endTime: new Date(held.endTime),
+      services: lines.map((line) => ({
+        id: line.id,
+        serviceId: line.serviceId,
+        staffId: line.staffId,
+        startTime: new Date(line.startTime),
+        endTime: new Date(line.endTime),
+      })),
+    },
+  }
+}
+
+/**
+ * Writes a booking and its service lines where a move puts them, with the
+ * status a move by its customer gives it, and returns the booking as it
+ * is then. Null when the booking is gone.
+ */
+const writtenWhereMoved = async (
+  tx: DatabaseExecutor,
+  id: BookingId,
+  write: Pick<
+    BookingRescheduleWrite | CustomerBookingMoveWrite,
+    'booking' | 'services'
+  >,
+): Promise<BookingWithServices | null> => {
+  const [booking] = await tx
+    .update(bookings)
+    .set({ ...write.booking, updatedAt: CLOCK })
+    .where(eq(bookings.id, id))
+    .returning()
+  if (booking === undefined) {
+    return null
+  }
+  for (const { id: lineId, ...line } of write.services) {
+    await tx
+      .update(bookingServices)
+      .set({ ...line, updatedAt: CLOCK })
+      .where(eq(bookingServices.id, lineId))
+  }
+
+  return { booking, services: await linesOf(tx, id) }
 }
 
 /**
@@ -626,7 +748,7 @@ export class BookingRepository implements IBookingRepository {
           const plan = planCustomerBooking(
             request,
             booker,
-            await heldForCustomerOf(tx, request, booker.customerId),
+            await heldForCustomerOf(tx, request, booker.customerId, null),
             origin,
           )
 
@@ -798,45 +920,11 @@ export class BookingRepository implements IBookingRepository {
     return attempt('Failed to reschedule booking', () =>
       this.db.transaction(
         async (tx): Promise<BookingReschedule> => {
-          const [held] = await tx
-            .select({
-              salonId: bookings.salonId,
-              status: bookings.status,
-              staffId: bookings.staffId,
-              startTime: millisecondsOf(bookings.startTime),
-              endTime: millisecondsOf(bookings.endTime),
-            })
-            .from(bookings)
-            .where(and(eq(bookings.id, id), within(reach)))
-            .for('update')
-          if (held === undefined) {
+          const held = await heldForMove(tx, id, reach)
+          if (held === null) {
             return { type: 'notFound' }
           }
-          const lines = await tx
-            .select({
-              id: bookingServices.id,
-              staffId: bookingServices.staffId,
-              startTime: millisecondsOf(bookingServices.startTime),
-              endTime: millisecondsOf(bookingServices.endTime),
-            })
-            .from(bookingServices)
-            .where(eq(bookingServices.bookingId, id))
-
-          const move = moveBooking(
-            {
-              status: held.status,
-              staffId: held.staffId,
-              startTime: new Date(held.startTime),
-              endTime: new Date(held.endTime),
-              services: lines.map((line) => ({
-                id: line.id,
-                staffId: line.staffId,
-                startTime: new Date(line.startTime),
-                endTime: new Date(line.endTime),
-              })),
-            },
-            request,
-          )
+          const move = moveBooking(held.booking, request)
           if (move.type !== 'moved') {
             return move
           }
@@ -882,29 +970,88 @@ export class BookingRepository implements IBookingRepository {
             return { type: 'staffOccupied', staffIds }
           }
 
-          const { write } = plan
-          const [booking] = await tx
-            .update(bookings)
-            .set({ ...write.booking, updatedAt: CLOCK })
-            .where(eq(bookings.id, id))
-            .returning()
-          if (booking === undefined) {
-            return { type: 'notFound' }
-          }
-          for (const { id: lineId, ...line } of write.services) {
-            await tx
-              .update(bookingServices)
-              .set({ ...line, updatedAt: CLOCK })
-              .where(eq(bookingServices.id, lineId))
-          }
+          const booking = await writtenWhereMoved(tx, id, plan.write)
 
-          return {
-            type: 'rescheduled',
-            booking: { booking, services: await linesOf(tx, id) },
-          }
+          return booking === null
+            ? { type: 'notFound' }
+            : { type: 'rescheduled', booking }
         },
         // A move that waited for a staff member sees the booking it
         // waited for, as a new booking does.
+        { isolationLevel: 'read committed' },
+      ),
+    )
+  }
+
+  async rebook(
+    id: BookingId,
+    reach: CustomerReach,
+    request: BookingRescheduleRequest,
+    mover: CustomerMover,
+  ): Promise<Result<CustomerBookingReschedule, DomainError>> {
+    return attempt('Failed to rebook for customer', () =>
+      this.db.transaction(
+        async (tx): Promise<CustomerBookingReschedule> => {
+          const held = await heldForMove(tx, id, reach)
+          if (held === null) {
+            return { type: 'notFound' }
+          }
+          const move = moveCustomerBooking(held.booking, request, mover.now)
+          if (move.type === 'unchanged') {
+            const [booking] = await tx
+              .select()
+              .from(bookings)
+              .where(eq(bookings.id, id))
+
+            return booking === undefined
+              ? { type: 'notFound' }
+              : {
+                  type: 'unchanged',
+                  booking: { booking, services: await linesOf(tx, id) },
+                }
+          }
+          if (move.type !== 'moved') {
+            return move
+          }
+
+          // The slot is one of the salon of the booking, for the service
+          // of its line; the booking itself is not in the way of it.
+          const plan = planCustomerMove(
+            move,
+            mover,
+            await heldForCustomerOf(
+              tx,
+              {
+                salonId: held.salonId,
+                serviceId: move.serviceId,
+                staffId: request.staffId,
+                startTime: request.startTime,
+              },
+              reach.customerId,
+              id,
+            ),
+          )
+          if (plan.type !== 'planned') {
+            return plan
+          }
+          const { write } = plan
+          const booking = await writtenWhereMoved(tx, id, write)
+          if (booking === null) {
+            return { type: 'notFound' }
+          }
+          if (write.statusChange !== null) {
+            await tx.insert(bookingStatusHistories).values({
+              ...write.statusChange,
+              bookingId: id,
+              createdAt: CLOCK,
+            })
+          }
+
+          return { type: 'rescheduled', booking }
+        },
+        // As when the customer books: a request that waited for the
+        // booking, the customer, the service or the staff member sees
+        // what it waited for.
         { isolationLevel: 'read committed' },
       ),
     )

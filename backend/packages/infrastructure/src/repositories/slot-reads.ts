@@ -5,22 +5,33 @@ import {
   staffSchedules,
 } from '@beauty-salon-backend/database'
 import {
+  type BookingId,
   type CalendarDayOfDate,
   type DbStaffSchedule,
   RELEASING_STATUSES,
-  type SalonId,
-  type ServiceId,
   type TakenTime,
 } from '@beauty-salon-backend/domain'
-import { and, eq, inArray, notInArray, or, type SQL, sql } from 'drizzle-orm'
+import {
+  and,
+  eq,
+  inArray,
+  ne,
+  notInArray,
+  or,
+  type SQL,
+  sql,
+} from 'drizzle-orm'
 import type { PgColumn } from 'drizzle-orm/pg-core'
 import type { DatabaseExecutor } from '../database/index'
 
 /**
  * What the available slots of a day are worked out from, as far as it is
  * read the same way for the list of the slots and for the booking a
- * customer makes of one. The rows are read wide and the rules narrow them:
- * the time zone of the salon is the rules' to read.
+ * customer makes of one or moves to one. The rows are read wide and the
+ * rules narrow them: the time zone of the salon is the rules' to read.
+ *
+ * The salon and the service are named by a request or by a row that was
+ * read, so their IDs are taken as the text a row has.
  */
 
 /** A stretch of time; its end is not part of it. */
@@ -37,10 +48,17 @@ export const moment = (value: Date): SQL =>
 /** A booking that was cancelled, or whose customer did not come, takes no time. */
 export const takesTime = notInArray(bookings.status, [...RELEASING_STATUSES])
 
+/**
+ * The condition that leaves a booking out of the lines that are read: a
+ * booking that is moved is not in its own way. Null leaves none out.
+ */
+const without = (moved: BookingId | null): SQL | undefined =>
+  moved === null ? undefined : ne(bookingServices.bookingId, moved)
+
 /** The rows of the calendar of a salon for dates (`YYYY-MM-DD`). */
 export const calendarDaysOf = (
   executor: DatabaseExecutor,
-  salonId: SalonId,
+  salonId: string,
   dates: readonly string[],
 ): Promise<CalendarDayOfDate[]> =>
   executor
@@ -83,12 +101,14 @@ export const schedulesOf = async (
 
 /**
  * The service lines that bookings have for the staff members and that
- * meet a stretch of time, with the staff member each is for.
+ * meet a stretch of time, with the staff member each is for; those of a
+ * booking that is moved are left out.
  */
 export const takenOf = async (
   executor: DatabaseExecutor,
   staffIds: readonly string[],
   { from, until }: Stretch,
+  moved: BookingId | null,
 ): Promise<{ staffId: string | null; time: TakenTime }[]> => {
   if (staffIds.length === 0) {
     return []
@@ -108,6 +128,7 @@ export const takenOf = async (
         sql`${bookingServices.endTime} > ${moment(from)}`,
         sql`${bookingServices.startTime} < ${moment(until)}`,
         takesTime,
+        without(moved),
       ),
     )
 
@@ -123,12 +144,13 @@ export const takenOf = async (
 
 /**
  * When the lines begin that bookings have of a service within a stretch
- * of time.
+ * of time; those of a booking that is moved are left out.
  */
 export const serviceLineStartsOf = async (
   executor: DatabaseExecutor,
-  serviceId: ServiceId,
+  serviceId: string,
   { from, until }: Stretch,
+  moved: BookingId | null,
 ): Promise<Date[]> => {
   const lines = await executor
     .select({ startTime: millisecondsOf(bookingServices.startTime) })
@@ -140,6 +162,7 @@ export const serviceLineStartsOf = async (
         sql`${bookingServices.startTime} >= ${moment(from)}`,
         sql`${bookingServices.startTime} < ${moment(until)}`,
         takesTime,
+        without(moved),
       ),
     )
 
