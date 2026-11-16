@@ -6,12 +6,19 @@ import {
   type ApiSaleCreateRequest,
   type ApiSaleSearchRequest,
   type ApiSalesDetail,
+  type ApiSaleUpdateRequest,
+  type ApiSaleVoidRequest,
   saleIdSchema,
 } from '../models/sale'
 import { salonIdSchema } from '../models/salon'
 import { staffIdSchema } from '../models/staff'
 import { uuidSchema } from '../shared'
-import { MAX_INTEGER, momentInUtc, nonBlankText } from './rules'
+import {
+  atLeastOneProperty,
+  MAX_INTEGER,
+  momentInUtc,
+  nonBlankText,
+} from './rules'
 
 /**
  * Validation of sale requests. The shapes are checked against the generated
@@ -139,23 +146,26 @@ const salesDetailListSchema = z
     })
   })
 
-const POINTS_OF_A_CUSTOMER: readonly ('pointsUsed' | 'pointsEarned')[] = [
-  'pointsUsed',
-  'pointsEarned',
-]
+export const POINTS_OF_A_CUSTOMER: readonly ('pointsUsed' | 'pointsEarned')[] =
+  ['pointsUsed', 'pointsEarned']
+
+/** What points are told that a sale without a customer states. */
+export const NO_POINTS_FOR_NOBODY = 'Must be null for a sale without a customer'
+
+/** What a request states of a sale, to enter it or to correct it. */
+const statedOfSale = {
+  customerId: customerIdSchema.nullable(),
+  staffId: staffIdSchema.nullable(),
+  bookingId: bookingIdSchema.nullable(),
+  saleTime: momentInUtc,
+  pointsUsed: amount.nullable(),
+  pointsEarned: amount.nullable(),
+  notes: nonBlankText.nullable(),
+  details: salesDetailListSchema,
+}
 
 export const saleCreateRequestSchema = z
-  .strictObject({
-    salonId: salonIdSchema,
-    customerId: customerIdSchema.nullable(),
-    staffId: staffIdSchema.nullable(),
-    bookingId: bookingIdSchema.nullable(),
-    saleTime: momentInUtc,
-    pointsUsed: amount.nullable(),
-    pointsEarned: amount.nullable(),
-    notes: nonBlankText.nullable(),
-    details: salesDetailListSchema,
-  })
+  .strictObject({ salonId: salonIdSchema, ...statedOfSale })
   // Points are a customer's: a sale to nobody uses and earns none.
   .check((context) => {
     if (context.value.customerId !== null) {
@@ -166,7 +176,7 @@ export const saleCreateRequestSchema = z
         context.issues.push({
           code: 'custom',
           path: [points],
-          message: 'Must be null for a sale without a customer',
+          message: NO_POINTS_FOR_NOBODY,
           input: context.value[points],
         })
       }
@@ -175,6 +185,27 @@ export const saleCreateRequestSchema = z
 
 /** A create request that passed the rules of its own. */
 export type SaleCreateRequest = z.infer<typeof saleCreateRequestSchema>
+
+/**
+ * A correction names what it changes, and the salon is not among it: a
+ * sale does not move. The rules that span several properties are held
+ * against the sale as it is after the correction, which the request alone
+ * does not tell (`planSaleChange`).
+ */
+export const saleUpdateRequestSchema = z
+  .strictObject(statedOfSale)
+  .exactPartial()
+  .check(atLeastOneProperty) satisfies z.ZodType<ApiSaleUpdateRequest>
+
+/** A correction that passed the rules of its own. */
+export type SaleUpdateRequest = z.infer<typeof saleUpdateRequestSchema>
+
+export const saleVoidRequestSchema = z.strictObject({
+  voidReason: nonBlankText.nullable(),
+}) satisfies z.ZodType<ApiSaleVoidRequest>
+
+/** A request to void a sale that passed the rules of its own. */
+export type SaleVoidRequest = z.infer<typeof saleVoidRequestSchema>
 
 const saleSearch = z.strictObject({
   limit: z.number().int().min(1).max(100).exactOptional(),

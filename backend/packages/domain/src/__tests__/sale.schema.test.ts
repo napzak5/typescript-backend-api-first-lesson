@@ -3,6 +3,8 @@ import {
   MAX_SALE_DETAILS,
   saleCreateRequestSchema,
   saleSearchRequestSchema,
+  saleUpdateRequestSchema,
+  saleVoidRequestSchema,
 } from '../schemas/sale.schema'
 import { type DomainError, parseWith } from '../shared'
 import { CUSTOMER_ID } from './auth-fixtures'
@@ -26,6 +28,18 @@ const parseCreate = (input: unknown) =>
 
 const rulesOfCreate = (input: unknown): string[] =>
   rulesBrokenBy(saleCreateRequestSchema, input)
+
+const parseUpdate = (input: unknown) =>
+  parseWith(saleUpdateRequestSchema, input, 'Invalid')
+
+const rulesOfUpdate = (input: unknown): string[] =>
+  rulesBrokenBy(saleUpdateRequestSchema, input)
+
+const parseVoid = (input: unknown) =>
+  parseWith(saleVoidRequestSchema, input, 'Invalid')
+
+const rulesOfVoid = (input: unknown): string[] =>
+  rulesBrokenBy(saleVoidRequestSchema, input)
 
 const parseSearch = (input: unknown) =>
   parseWith(saleSearchRequestSchema, input, 'Invalid')
@@ -837,5 +851,285 @@ describe('saleSearchRequestSchema', () => {
       'paymentStatus:invalid_value',
     ])
     expect(rulesOfSearch({ salonId: null })).toHaveLength(1)
+  })
+})
+
+describe('saleUpdateRequestSchema', () => {
+  /** Everything a correction can name, each with a value it takes. */
+  const stated = {
+    customerId: CUSTOMER_ID,
+    staffId: STAFF_MEMBER_ID,
+    bookingId: BOOKING_ID,
+    saleTime: '2026-11-20T03:40:00.000Z',
+    pointsUsed: 100,
+    pointsEarned: 126,
+    notes: '現金でお支払い',
+    details: [line()],
+  }
+
+  it('accepts every property at once and returns them as they were written', () => {
+    expect(parseUpdate(stated)).toStrictEqual({ type: 'success', data: stated })
+  })
+
+  it.each(Object.entries(stated))(
+    'accepts %s alone and returns no other property',
+    (property, value) => {
+      expect(parseUpdate({ [property]: value })).toStrictEqual({
+        type: 'success',
+        data: { [property]: value },
+      })
+    },
+  )
+
+  it.each([
+    'customerId',
+    'staffId',
+    'bookingId',
+    'pointsUsed',
+    'pointsEarned',
+    'notes',
+  ])('accepts null for %s, which empties it', (property) => {
+    expect(parseUpdate({ [property]: null })).toStrictEqual({
+      type: 'success',
+      data: { [property]: null },
+    })
+  })
+
+  it.each([
+    ['saleTime', 'invalid_type'],
+    ['details', 'invalid_type'],
+  ])('refuses null for %s: a sale has it', (property, rule) => {
+    expect(rulesOfUpdate({ [property]: null })).toEqual([`${property}:${rule}`])
+  })
+
+  it.each(Object.keys(stated))(
+    'refuses %s that is stated as undefined: a property is there with a value or it is not there',
+    (property) => {
+      expect(rulesOfUpdate({ ...stated, [property]: undefined })).toEqual([
+        `${property}:invalid_type`,
+      ])
+    },
+  )
+
+  it('refuses a request that states nothing, with one error for the request as a whole', () => {
+    expect(rulesOfUpdate({})).toEqual([':custom'])
+    expect(parseUpdate({})).toMatchObject({
+      type: 'error',
+      error: {
+        issues: [{ message: 'At least one property must be specified' }],
+      },
+    })
+  })
+
+  it.each([
+    ['the salon: a sale does not move', 'salonId', SALON_ID],
+    ['the number of the sale', 'saleNumber', 'SL-0000-0001'],
+    ['the day, which follows from the time', 'saleDate', '2026-11-20'],
+    ['the subtotal, which the lines come to', 'subtotal', 1000],
+    ['the discount, which the lines come to', 'discountAmount', 0],
+    ['the tax, which the lines come to', 'taxAmount', 100],
+    ['the total, which the lines come to', 'totalAmount', 1100],
+    [
+      'the payment status, which the payments decide',
+      'paymentStatus',
+      'completed',
+    ],
+    ['whether the sale is void, which a void decides', 'isVoid', true],
+    ['the time of a void', 'voidedAt', '2026-11-20T05:00:00Z'],
+    ['the reason of a void', 'voidReason', '二重登録'],
+    ['the payments', 'payments', []],
+    ['the ID', 'id', SALE_ID],
+  ])('refuses %s', (_case, property, value) => {
+    expect(rulesOfUpdate({ ...stated, [property]: value })).toEqual([
+      `${property}:unrecognized_keys`,
+    ])
+  })
+
+  it('reports an unknown property as such, not as a request that states nothing', () => {
+    expect(rulesOfUpdate({ isVoid: true })).toEqual([
+      'isVoid:unrecognized_keys',
+    ])
+  })
+
+  it.each([
+    ['a list', [stated]],
+    ['a text', 'notes'],
+    ['nothing', undefined],
+    ['null', null],
+  ])('refuses %s for the request', (_case, input) => {
+    expect(rulesOfUpdate(input)).toEqual([':invalid_type'])
+  })
+
+  it('spells the time in one way, as a create request does', () => {
+    expect(parseUpdate({ saleTime: '2026-11-20T03:40:00Z' })).toEqual({
+      type: 'success',
+      data: { saleTime: '2026-11-20T03:40:00.000Z' },
+    })
+  })
+
+  it.each([
+    [
+      'a customer that is no ID',
+      { customerId: 'cust-1' },
+      'customerId:invalid_format',
+    ],
+    [
+      'a staff member that is no ID',
+      { staffId: 'staff-1' },
+      'staffId:invalid_format',
+    ],
+    [
+      'a booking that is no ID',
+      { bookingId: 'BK-0000-0001' },
+      'bookingId:invalid_format',
+    ],
+    [
+      'a day for the time',
+      { saleTime: '2026-11-20' },
+      'saleTime:invalid_format',
+    ],
+    [
+      'a time in another zone',
+      { saleTime: '2026-11-20T12:40:00+09:00' },
+      'saleTime:invalid_format',
+    ],
+    ['points below 0', { pointsUsed: -1 }, 'pointsUsed:too_small'],
+    [
+      'more points than the column holds',
+      { pointsEarned: MAX_INTEGER + 1 },
+      'pointsEarned:too_big',
+    ],
+    ['half a point', { pointsEarned: 0.5 }, 'pointsEarned:invalid_type'],
+    ['notes that say nothing', { notes: '  ' }, 'notes:invalid_format'],
+    ['no line', { details: [] }, 'details:too_small'],
+    [
+      'one line that is not in a list',
+      { details: line() },
+      'details:invalid_type',
+    ],
+  ])('refuses %s, as a create request does', (_case, change, rule) => {
+    expect(rulesOfUpdate(change)).toEqual([rule])
+  })
+
+  it(`takes up to ${MAX_SALE_DETAILS} lines`, () => {
+    const lines = (count: number) =>
+      Array.from({ length: count }, (_value, sortOrder) => line({ sortOrder }))
+
+    expect(rulesOfUpdate({ details: lines(100) })).toEqual([])
+    expect(rulesOfUpdate({ details: lines(101) })).toEqual(['details:too_big'])
+  })
+
+  it('holds every line to the rules of a line', () => {
+    expect(
+      rulesOfUpdate({
+        details: [
+          line({ totalAmount: 1000 }),
+          line({ sortOrder: 1, itemName: '' }),
+          line({ sortOrder: 2, itemId: CUT_ID }),
+          line({ sortOrder: 3, salonId: SALON_ID }),
+          line({ sortOrder: 3 }),
+        ],
+      }).toSorted(),
+    ).toEqual([
+      'details.0.totalAmount:custom',
+      'details.1.itemName:invalid_format',
+      'details.2.itemId:custom',
+      'details.3.salonId:unrecognized_keys',
+      'details.4.sortOrder:custom',
+    ])
+  })
+
+  it.each(['pointsUsed', 'pointsEarned'])(
+    'does not hold %s to the customer of the request: the sale as it is afterwards is held to that rule',
+    (property) => {
+      expect(rulesOfUpdate({ customerId: null, [property]: 10 })).toEqual([])
+      expect(rulesOfUpdate({ [property]: 10 })).toEqual([])
+    },
+  )
+
+  it('reports every broken rule at once', () => {
+    expect(
+      rulesOfUpdate({
+        customerId: 'cust-1',
+        saleTime: 'noon',
+        pointsUsed: -1,
+        notes: '',
+        details: [],
+        salonId: SALON_ID,
+      }).toSorted(),
+    ).toEqual([
+      'customerId:invalid_format',
+      'details:too_small',
+      'notes:invalid_format',
+      'pointsUsed:too_small',
+      'saleTime:invalid_format',
+      'salonId:unrecognized_keys',
+    ])
+  })
+})
+
+describe('saleVoidRequestSchema', () => {
+  it('accepts a reason and returns it as it was written', () => {
+    expect(parseVoid({ voidReason: ' 二重登録 ' })).toStrictEqual({
+      type: 'success',
+      data: { voidReason: ' 二重登録 ' },
+    })
+  })
+
+  it('accepts null: a void of which no reason is kept', () => {
+    expect(parseVoid({ voidReason: null })).toStrictEqual({
+      type: 'success',
+      data: { voidReason: null },
+    })
+  })
+
+  it('sets no limit to the length of the reason: the column has none', () => {
+    expect(rulesOfVoid({ voidReason: 'あ'.repeat(10_000) })).toEqual([])
+  })
+
+  it.each([
+    ['a request without the reason', {}, 'voidReason:invalid_type'],
+    [
+      'a reason stated as undefined',
+      { voidReason: undefined },
+      'voidReason:invalid_type',
+    ],
+    ['an empty reason', { voidReason: '' }, 'voidReason:invalid_format'],
+    [
+      'a reason of spaces',
+      { voidReason: ' \t\n' },
+      'voidReason:invalid_format',
+    ],
+    ['a number for the reason', { voidReason: 1 }, 'voidReason:invalid_type'],
+    [
+      'a list of reasons',
+      { voidReason: ['二重登録'] },
+      'voidReason:invalid_type',
+    ],
+  ])('refuses %s', (_case, input, rule) => {
+    expect(rulesOfVoid(input)).toEqual([rule])
+  })
+
+  it.each([
+    ['whether the sale is void', 'isVoid', true],
+    ['the time of the void', 'voidedAt', '2026-11-20T05:00:00Z'],
+    ['the sale', 'id', SALE_ID],
+    ['notes', 'notes', '二重登録'],
+  ])(
+    'refuses %s: a void states its reason and nothing else',
+    (_case, property, value) => {
+      expect(rulesOfVoid({ voidReason: null, [property]: value })).toEqual([
+        `${property}:unrecognized_keys`,
+      ])
+    },
+  )
+
+  it.each([
+    ['a list', [{ voidReason: null }]],
+    ['a text', '二重登録'],
+    ['nothing', undefined],
+    ['null', null],
+  ])('refuses %s for the request', (_case, input) => {
+    expect(rulesOfVoid(input)).toEqual([':invalid_type'])
   })
 })

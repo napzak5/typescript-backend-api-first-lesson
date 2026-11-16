@@ -5,11 +5,15 @@ import {
   GetSaleUseCase,
   ListSalesUseCase,
   type SaleUseCaseDependencies,
+  UpdateSaleUseCase,
+  VoidSaleUseCase,
 } from '../business-logic/sale'
 import type { Actor } from '../models/auth'
 import type {
   ISaleRepository,
   SaleCreation,
+  SaleUpdate,
+  SaleVoiding,
 } from '../repositories/sale.repository'
 import { type DomainError, DomainErrors } from '../shared'
 import { actors, CUSTOMER_ID } from './auth-fixtures'
@@ -796,5 +800,529 @@ describe('ListSalesUseCase', () => {
     const result = await list(saleDependencies(listing([corruptSale])))
 
     expect(result).toEqual(storedRowIsCorrupt)
+  })
+})
+
+describe('UpdateSaleUseCase', () => {
+  const note = { notes: 'レシート再発行' }
+
+  const update = (
+    dependencies: SaleUseCaseDependencies,
+    actor: Actor = actors.ofSalon('staff'),
+    id: unknown = SALE_ID,
+    input: unknown = note,
+  ) => new UpdateSaleUseCase(dependencies).execute(actor, id, input)
+
+  const updating = (outcome: SaleUpdate): Partial<ISaleRepository> => ({
+    update: vi.fn(async () => Result.success(outcome)),
+  })
+
+  it('corrects the sale and returns it as it is afterwards', async () => {
+    const dependencies = saleDependencies(
+      updating({
+        type: 'updated',
+        sale: saleWithDetails({ notes: 'レシート再発行' }),
+      }),
+    )
+
+    const result = await update(dependencies)
+
+    expect(result).toEqual({
+      type: 'success',
+      data: apiSale({ notes: 'レシート再発行' }),
+    })
+    expect(repositoryCalls(dependencies)).toEqual(['update'])
+  })
+
+  it('hands on what the request names and nothing else, with its time in one spelling', async () => {
+    const dependencies = saleDependencies()
+
+    await update(dependencies, actors.admin, SALE_ID, {
+      saleTime: '2026-11-21T01:00:00Z',
+      bookingId: null,
+    })
+
+    expect(dependencies.saleRepository.update).toHaveBeenCalledWith(
+      SALE_ID,
+      everySalon,
+      { saleTime: '2026-11-21T01:00:00.000Z', bookingId: null },
+    )
+  })
+
+  it.each([
+    ['the owner', actors.ofSalon('owner')],
+    ['the manager', actors.ofSalon('manager')],
+    ['the staff', actors.ofSalon('staff')],
+  ])(
+    'looks for the sale %s of a salon corrects among those of that salon',
+    async (_case, actor) => {
+      const dependencies = saleDependencies()
+
+      await update(dependencies, actor)
+
+      expect(dependencies.saleRepository.update).toHaveBeenCalledWith(
+        SALE_ID,
+        ownSalon,
+        note,
+      )
+    },
+  )
+
+  it.each(membersOfAnotherSalon)(
+    'looks for the sale %s corrects among those of their own salon',
+    async (_case, actor) => {
+      const dependencies = saleDependencies()
+
+      await update(dependencies, actor)
+
+      expect(dependencies.saleRepository.update).toHaveBeenCalledWith(
+        SALE_ID,
+        { type: 'salon', salonId: OTHER_SALON_ID },
+        note,
+      )
+    },
+  )
+
+  it.each(notKeepers)(
+    'refuses %s without reading the request, whatever the ID',
+    async (_case, actor) => {
+      const dependencies = saleDependencies()
+
+      expect(await update(dependencies, actor)).toEqual(forbidden)
+      expect(await update(dependencies, actor, 'not-an-id', null)).toEqual(
+        forbidden,
+      )
+      expect(repositoryCalls(dependencies)).toEqual([])
+    },
+  )
+
+  it.each([
+    ['a text that is no ID', 'not-an-id'],
+    ['an empty text', ''],
+    ['a sale number', SALE_NUMBER],
+    ['nothing', undefined],
+  ])('refuses %s for the ID without looking anything up', async (_case, id) => {
+    const dependencies = saleDependencies()
+
+    // Not through the helper above: it would put the ID of the fixtures
+    // in the place of one that is not given.
+    const result = await new UpdateSaleUseCase(dependencies).execute(
+      actors.admin,
+      id,
+      note,
+    )
+
+    expect(validationMessageOf(result)).toBe('Invalid sale ID')
+    expect(rulesOf(result)).toHaveLength(1)
+    expect(rulesOf(result)[0]).toMatch(/^id:/)
+    expect(repositoryCalls(dependencies)).toEqual([])
+  })
+
+  it('says what is wrong with the ID before it reads the request', async () => {
+    const result = await update(saleDependencies(), actors.admin, 'not-an-id', {
+      notes: '',
+    })
+
+    expect(validationMessageOf(result)).toBe('Invalid sale ID')
+  })
+
+  it('refuses a request that breaks a rule of its own without looking anything up', async () => {
+    const dependencies = saleDependencies()
+
+    const result = await update(dependencies, actors.admin, SALE_ID, {
+      notes: '',
+      details: [],
+      salonId: OTHER_SALON_ID,
+    })
+
+    expect(validationMessageOf(result)).toBe('Invalid sale update')
+    expect(rulesOf(result).toSorted()).toEqual([
+      'details:too_small',
+      'notes:invalid_format',
+      'salonId:unrecognized_keys',
+    ])
+    expect(repositoryCalls(dependencies)).toEqual([])
+  })
+
+  it('refuses a request that names nothing', async () => {
+    const dependencies = saleDependencies()
+
+    const result = await update(dependencies, actors.admin, SALE_ID, {})
+
+    expect(rulesOf(result)).toEqual([':custom'])
+    expect(repositoryCalls(dependencies)).toEqual([])
+  })
+
+  it.each([
+    ['null', null],
+    ['a list', []],
+    ['a text', 'notes'],
+  ])('refuses %s for a request', async (_case, input) => {
+    const result = await update(
+      saleDependencies(),
+      actors.admin,
+      SALE_ID,
+      input,
+    )
+
+    expect(rulesOf(result)).toEqual([':invalid_type'])
+  })
+
+  it('tells a member of another salon what is wrong with a request: the sale is not looked for', async () => {
+    const dependencies = saleDependencies()
+
+    const result = await update(
+      dependencies,
+      actors.ofSalon('owner', OTHER_SALON_ID),
+      SALE_ID,
+      { pointsUsed: -1 },
+    )
+
+    expect(rulesOf(result)).toEqual(['pointsUsed:too_small'])
+    expect(repositoryCalls(dependencies)).toEqual([])
+  })
+
+  it('reports a sale the actor does not reach as one that does not exist', async () => {
+    expect(
+      await update(saleDependencies(updating({ type: 'notFound' }))),
+    ).toEqual(Result.error(DomainErrors.notFound('Sale', SALE_ID)))
+  })
+
+  it('looks the sale up, and names the one that is not there, by the ID in lower case', async () => {
+    const dependencies = saleDependencies(updating({ type: 'notFound' }))
+
+    const result = await update(
+      dependencies,
+      actors.admin,
+      SALE_ID.toUpperCase(),
+    )
+
+    expect(dependencies.saleRepository.update).toHaveBeenCalledWith(
+      SALE_ID,
+      everySalon,
+      note,
+    )
+    expect(result).toEqual(Result.error(DomainErrors.notFound('Sale', SALE_ID)))
+  })
+
+  it('reports a void sale as a conflict', async () => {
+    expect(await update(saleDependencies(updating({ type: 'void' })))).toEqual({
+      type: 'error',
+      error: {
+        type: 'conflict',
+        message: 'The sale is void; a void sale is not changed',
+      },
+    })
+  })
+
+  it('reports new lines for a sale whose payment has begun as a conflict', async () => {
+    expect(
+      await update(saleDependencies(updating({ type: 'paymentBegun' }))),
+    ).toEqual({
+      type: 'error',
+      error: {
+        type: 'conflict',
+        message:
+          'The lines of a sale are replaced only while its payment status is pending',
+      },
+    })
+  })
+
+  it('reports what the request refers to and is not there', async () => {
+    const issues = [
+      {
+        field: 'customerId',
+        rule: 'not_found',
+        message: 'Must name the customer of the booking of the sale',
+      },
+      {
+        field: 'pointsUsed',
+        rule: 'custom',
+        message: 'Must be null for a sale without a customer',
+      },
+    ]
+
+    const result = await update(
+      saleDependencies(updating({ type: 'invalid', issues })),
+    )
+
+    expect(result).toEqual({
+      type: 'error',
+      error: { type: 'validation', message: 'Invalid sale update', issues },
+    })
+  })
+
+  it('reports a booking that another sale bills as a conflict: the request is not at fault', async () => {
+    expect(
+      await update(saleDependencies(updating({ type: 'bookingBilled' }))),
+    ).toEqual({
+      type: 'error',
+      error: {
+        type: 'conflict',
+        message:
+          'The booking has a sale that is not void; a booking is billed once',
+      },
+    })
+  })
+
+  it('reports a salon whose time zone is not known as a conflict', async () => {
+    expect(
+      await update(saleDependencies(updating({ type: 'timeZoneUnknown' }))),
+    ).toEqual({
+      type: 'error',
+      error: {
+        type: 'conflict',
+        message:
+          'The time zone of the salon is not one that is known, so the day of the sale cannot be told; correct the time zone of the salon first',
+      },
+    })
+  })
+
+  it('reports a failure of the database', async () => {
+    const dependencies = saleDependencies({
+      update: vi.fn(async () => databaseDown),
+    })
+
+    expect(await update(dependencies)).toEqual(databaseDown)
+  })
+
+  it('reports a stored sale that cannot be presented as a fault of the database', async () => {
+    expect(
+      await update(
+        saleDependencies(updating({ type: 'updated', sale: corruptSale })),
+      ),
+    ).toEqual(storedRowIsCorrupt)
+  })
+})
+
+describe('VoidSaleUseCase', () => {
+  const reason = { voidReason: '二重登録' }
+
+  const voidSale = (
+    dependencies: SaleUseCaseDependencies,
+    actor: Actor = actors.ofSalon('manager'),
+    id: unknown = SALE_ID,
+    input: unknown = reason,
+  ) => new VoidSaleUseCase(dependencies).execute(actor, id, input)
+
+  const voiding = (outcome: SaleVoiding): Partial<ISaleRepository> => ({
+    voidSale: vi.fn(async () => Result.success(outcome)),
+  })
+
+  const voided = {
+    isVoid: true,
+    voidedAt: '2026-11-20 14:00:00.25+09',
+    voidReason: '二重登録',
+  }
+
+  it('voids the sale and returns it as it is afterwards', async () => {
+    const dependencies = saleDependencies(
+      voiding({ type: 'voided', sale: saleWithDetails(voided) }),
+    )
+
+    const result = await voidSale(dependencies)
+
+    expect(result).toEqual({
+      type: 'success',
+      data: apiSale({
+        isVoid: true,
+        voidedAt: '2026-11-20T05:00:00.250Z',
+        voidReason: '二重登録',
+      }),
+    })
+    expect(repositoryCalls(dependencies)).toEqual(['voidSale'])
+  })
+
+  it('lets an admin void a sale of any salon', async () => {
+    const dependencies = saleDependencies()
+
+    await voidSale(dependencies, actors.admin)
+
+    expect(dependencies.saleRepository.voidSale).toHaveBeenCalledWith(
+      SALE_ID,
+      everySalon,
+      reason,
+    )
+  })
+
+  it.each([
+    ['the owner', actors.ofSalon('owner')],
+    ['the manager', actors.ofSalon('manager')],
+  ])(
+    'looks for the sale %s of a salon voids among those of that salon',
+    async (_case, actor) => {
+      const dependencies = saleDependencies()
+
+      await voidSale(dependencies, actor)
+
+      expect(dependencies.saleRepository.voidSale).toHaveBeenCalledWith(
+        SALE_ID,
+        ownSalon,
+        reason,
+      )
+    },
+  )
+
+  it.each([
+    ['the owner', actors.ofSalon('owner', OTHER_SALON_ID)],
+    ['the manager', actors.ofSalon('manager', OTHER_SALON_ID)],
+  ])(
+    'looks for the sale %s of another salon voids among those of their own salon',
+    async (_case, actor) => {
+      const dependencies = saleDependencies()
+
+      await voidSale(dependencies, actor)
+
+      expect(dependencies.saleRepository.voidSale).toHaveBeenCalledWith(
+        SALE_ID,
+        { type: 'salon', salonId: OTHER_SALON_ID },
+        reason,
+      )
+    },
+  )
+
+  it.each([
+    ['the staff of the salon, who correct a sale', actors.ofSalon('staff')],
+    ['the staff of another salon', actors.ofSalon('staff', OTHER_SALON_ID)],
+    ...notKeepers,
+  ])(
+    'refuses %s without reading the request, whatever the ID',
+    async (_case, actor) => {
+      const dependencies = saleDependencies()
+
+      expect(await voidSale(dependencies, actor)).toEqual(forbidden)
+      expect(await voidSale(dependencies, actor, 'not-an-id', null)).toEqual(
+        forbidden,
+      )
+      expect(repositoryCalls(dependencies)).toEqual([])
+    },
+  )
+
+  it('hands null on for a void of which no reason is kept', async () => {
+    const dependencies = saleDependencies()
+
+    await voidSale(dependencies, actors.admin, SALE_ID, { voidReason: null })
+
+    expect(dependencies.saleRepository.voidSale).toHaveBeenCalledWith(
+      SALE_ID,
+      everySalon,
+      { voidReason: null },
+    )
+  })
+
+  it.each([
+    ['a text that is no ID', 'not-an-id'],
+    ['an empty text', ''],
+    ['a sale number', SALE_NUMBER],
+    ['nothing', undefined],
+  ])('refuses %s for the ID without looking anything up', async (_case, id) => {
+    const dependencies = saleDependencies()
+
+    const result = await new VoidSaleUseCase(dependencies).execute(
+      actors.admin,
+      id,
+      reason,
+    )
+
+    expect(validationMessageOf(result)).toBe('Invalid sale ID')
+    expect(rulesOf(result)).toHaveLength(1)
+    expect(rulesOf(result)[0]).toMatch(/^id:/)
+    expect(repositoryCalls(dependencies)).toEqual([])
+  })
+
+  it('says what is wrong with the ID before it reads the request', async () => {
+    const result = await voidSale(
+      saleDependencies(),
+      actors.admin,
+      'not-an-id',
+      {},
+    )
+
+    expect(validationMessageOf(result)).toBe('Invalid sale ID')
+  })
+
+  it.each([
+    ['a request without the reason', {}, ['voidReason:invalid_type']],
+    [
+      'a reason that says nothing',
+      { voidReason: ' ' },
+      ['voidReason:invalid_format'],
+    ],
+    [
+      'a request that states more than the reason',
+      { voidReason: null, isVoid: true },
+      ['isVoid:unrecognized_keys'],
+    ],
+    ['null for the request', null, [':invalid_type']],
+    ['a list for the request', [], [':invalid_type']],
+  ])('refuses %s without looking anything up', async (_case, input, rules) => {
+    const dependencies = saleDependencies()
+
+    const result = await voidSale(dependencies, actors.admin, SALE_ID, input)
+
+    expect(validationMessageOf(result)).toBe('Invalid sale void')
+    expect(rulesOf(result)).toEqual(rules)
+    expect(repositoryCalls(dependencies)).toEqual([])
+  })
+
+  it('reports a sale the actor does not reach as one that does not exist', async () => {
+    expect(
+      await voidSale(saleDependencies(voiding({ type: 'notFound' }))),
+    ).toEqual(Result.error(DomainErrors.notFound('Sale', SALE_ID)))
+  })
+
+  it('looks the sale up, and names the one that is not there, by the ID in lower case', async () => {
+    const dependencies = saleDependencies(voiding({ type: 'notFound' }))
+
+    const result = await voidSale(
+      dependencies,
+      actors.admin,
+      SALE_ID.toUpperCase(),
+    )
+
+    expect(dependencies.saleRepository.voidSale).toHaveBeenCalledWith(
+      SALE_ID,
+      everySalon,
+      reason,
+    )
+    expect(result).toEqual(Result.error(DomainErrors.notFound('Sale', SALE_ID)))
+  })
+
+  it('reports a sale that is void already as a conflict', async () => {
+    expect(await voidSale(saleDependencies(voiding({ type: 'void' })))).toEqual(
+      {
+        type: 'error',
+        error: { type: 'conflict', message: 'The sale is void already' },
+      },
+    )
+  })
+
+  it('reports a sale with a payment that was not refunded as a conflict', async () => {
+    expect(await voidSale(saleDependencies(voiding({ type: 'paid' })))).toEqual(
+      {
+        type: 'error',
+        error: {
+          type: 'conflict',
+          message:
+            'The sale has a payment that was not refunded; refund it before the sale is voided',
+        },
+      },
+    )
+  })
+
+  it('reports a failure of the database', async () => {
+    const dependencies = saleDependencies({
+      voidSale: vi.fn(async () => databaseDown),
+    })
+
+    expect(await voidSale(dependencies)).toEqual(databaseDown)
+  })
+
+  it('reports a stored sale that cannot be presented as a fault of the database', async () => {
+    expect(
+      await voidSale(
+        saleDependencies(voiding({ type: 'voided', sale: corruptSale })),
+      ),
+    ).toEqual(storedRowIsCorrupt)
   })
 })
