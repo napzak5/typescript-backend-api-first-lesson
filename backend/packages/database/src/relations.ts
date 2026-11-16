@@ -15,6 +15,7 @@ import {
   paymentMethods,
   paymentTransactions,
   products,
+  reviewHelpfulVotes,
   reviews,
   sales,
   salesDetails,
@@ -126,6 +127,7 @@ export const customersRelations = relations(customers, ({ one, many }) => ({
   customers: many(customers, {
     relationName: 'customers_referredBy_customers_id',
   }),
+  reviewHelpfulVotes: many(reviewHelpfulVotes),
   reviews: many(reviews),
   sales: many(sales),
   treatmentRecords: many(treatmentRecords),
@@ -221,7 +223,21 @@ export const productsRelations = relations(products, ({ one, many }) => ({
   treatmentMaterials: many(treatmentMaterials),
 }))
 
-export const reviewsRelations = relations(reviews, ({ one }) => ({
+export const reviewHelpfulVotesRelations = relations(
+  reviewHelpfulVotes,
+  ({ one }) => ({
+    customer: one(customers, {
+      fields: [reviewHelpfulVotes.customerId],
+      references: [customers.id],
+    }),
+    review: one(reviews, {
+      fields: [reviewHelpfulVotes.reviewId],
+      references: [reviews.id],
+    }),
+  }),
+)
+
+export const reviewsRelations = relations(reviews, ({ one, many }) => ({
   booking: one(bookings, {
     fields: [reviews.bookingId],
     references: [bookings.id],
@@ -230,6 +246,7 @@ export const reviewsRelations = relations(reviews, ({ one }) => ({
     fields: [reviews.customerId],
     references: [customers.id],
   }),
+  reviewHelpfulVotes: many(reviewHelpfulVotes),
   salon: one(salons, {
     fields: [reviews.salonId],
     references: [salons.id],

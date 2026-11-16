@@ -369,6 +369,84 @@ describe('the migrations of this repository', () => {
     return id
   }
 
+  /** Stores a customer of their own and returns the ID. */
+  const storeNewCustomer = async (): Promise<string> => {
+    const id = randomUUID()
+    await sql`
+      INSERT INTO customers (
+        id, "firstName", "lastName", email, "phoneNumber", tags
+      )
+      VALUES (
+        ${id}, 'Taro', 'Suzuki', ${`${id}@example.com`}, '090-8765-4321', '{}'
+      )
+    `
+    return id
+  }
+
+  type StoredReview = {
+    overallRating: number
+    serviceRating?: number | null
+    imageUrls?: string | null
+    ownerResponse?: string | null
+    ownerRespondedAt?: string | null
+  }
+
+  /**
+   * A review of the salon, by a customer of their own, of a booking of
+   * their own with a staff member of the salon; returns its ID.
+   * `imageUrls` is the JSON text of the column.
+   */
+  const storeReview = async (
+    salonId: string,
+    {
+      overallRating,
+      serviceRating = null,
+      imageUrls = '[]',
+      ownerResponse = null,
+      ownerRespondedAt = null,
+    }: StoredReview,
+  ): Promise<string> => {
+    const customerId = await storeNewCustomer()
+    const staffId = randomUUID()
+    await sql`
+      INSERT INTO staff (
+        id, "salonId", "firstName", "lastName", "displayName", email,
+        "phoneNumber", specialties, certifications
+      )
+      VALUES (
+        ${staffId}, ${salonId}, 'Hanako', 'Sato', 'Hanako',
+        ${`${staffId}@example.com`}, '03-1234-5678', '{}', '{}'
+      )
+    `
+    const bookingId = randomUUID()
+    await sql`
+      INSERT INTO bookings (
+        id, "bookingNumber", "salonId", "customerId", "staffId",
+        "bookingDate", "startTime", "endTime", duration, subtotal,
+        "totalAmount"
+      )
+      VALUES (
+        ${bookingId}, ${`BK-${bookingId.slice(0, 8)}`}, ${salonId},
+        ${customerId}, ${staffId}, '2026-11-01',
+        '2026-11-01T01:00:00Z', '2026-11-01T02:00:00Z', 60, 0, 0
+      )
+    `
+    const id = randomUUID()
+    await sql`
+      INSERT INTO reviews (
+        id, "salonId", "customerId", "bookingId", "staffId",
+        "overallRating", "serviceRating", "imageUrls", "ownerResponse",
+        "ownerRespondedAt"
+      )
+      VALUES (
+        ${id}, ${salonId}, ${customerId}, ${bookingId}, ${staffId},
+        ${overallRating}, ${serviceRating}, ${imageUrls}::text::jsonb,
+        ${ownerResponse}, ${ownerRespondedAt}
+      )
+    `
+    return id
+  }
+
   /** Runs one migration of the repository the way `migrate` would. */
   const runMigration = async (migration: string): Promise<void> => {
     const files = plan.migrations.filter(({ name }) => name === migration)
@@ -840,79 +918,6 @@ describe('the migrations of this repository', () => {
       return id
     }
 
-    type StoredReview = {
-      overallRating: number
-      serviceRating?: number | null
-      imageUrls?: string | null
-      ownerResponse?: string | null
-      ownerRespondedAt?: string | null
-    }
-
-    /**
-     * A review of the salon, by a customer of their own, of a booking of
-     * their own with a staff member of the salon; returns its ID.
-     * `imageUrls` is the JSON text of the column.
-     */
-    const storeReview = async (
-      salonId: string,
-      {
-        overallRating,
-        serviceRating = null,
-        imageUrls = '[]',
-        ownerResponse = null,
-        ownerRespondedAt = null,
-      }: StoredReview,
-    ): Promise<string> => {
-      const customerId = randomUUID()
-      await sql`
-        INSERT INTO customers (
-          id, "firstName", "lastName", email, "phoneNumber", tags
-        )
-        VALUES (
-          ${customerId}, 'Taro', 'Suzuki', ${`${customerId}@example.com`},
-          '090-8765-4321', '{}'
-        )
-      `
-      const staffId = randomUUID()
-      await sql`
-        INSERT INTO staff (
-          id, "salonId", "firstName", "lastName", "displayName", email,
-          "phoneNumber", specialties, certifications
-        )
-        VALUES (
-          ${staffId}, ${salonId}, 'Hanako', 'Sato', 'Hanako',
-          ${`${staffId}@example.com`}, '03-1234-5678', '{}', '{}'
-        )
-      `
-      const bookingId = randomUUID()
-      await sql`
-        INSERT INTO bookings (
-          id, "bookingNumber", "salonId", "customerId", "staffId",
-          "bookingDate", "startTime", "endTime", duration, subtotal,
-          "totalAmount"
-        )
-        VALUES (
-          ${bookingId}, ${`BK-${bookingId.slice(0, 8)}`}, ${salonId},
-          ${customerId}, ${staffId}, '2026-11-01',
-          '2026-11-01T01:00:00Z', '2026-11-01T02:00:00Z', 60, 0, 0
-        )
-      `
-      const id = randomUUID()
-      await sql`
-        INSERT INTO reviews (
-          id, "salonId", "customerId", "bookingId", "staffId",
-          "overallRating", "serviceRating", "imageUrls", "ownerResponse",
-          "ownerRespondedAt"
-        )
-        VALUES (
-          ${id}, ${salonId}, ${customerId}, ${bookingId}, ${staffId},
-          ${overallRating}, ${serviceRating}, ${imageUrls}::text::jsonb,
-          ${ownerResponse}, ${ownerRespondedAt}
-        )
-      `
-      return id
-    }
-
     /**
      * What the salon says of its reviews, as `rating count`, and the
      * transaction that wrote the row: the same as long as nothing did.
@@ -1066,6 +1071,110 @@ describe('the migrations of this repository', () => {
       await expect(
         sql`UPDATE salons SET rating = 5.5, "reviewCount" = 1 WHERE id = ${salon}`,
       ).rejects.toThrow('salons_rating_in_range')
+    })
+  })
+
+  describe('202611171100_review_helpful_votes.sql', () => {
+    const run = (): Promise<void> =>
+      runMigration('202611171100_review_helpful_votes.sql')
+
+    /** The schema of setup.sql, which the migration brings a database to. */
+    let schemaOfSetup: string[] = []
+
+    /** A review that says it was found helpful so many times. */
+    const storeCountedReview = async (
+      helpfulCount: number,
+    ): Promise<string> => {
+      const id = await storeReview(await storeSalon(null), { overallRating: 4 })
+      await sql`
+        UPDATE reviews SET "helpfulCount" = ${helpfulCount} WHERE id = ${id}
+      `
+      return id
+    }
+
+    /** The customer found the review helpful. */
+    const storeVote = async (
+      reviewId: string,
+      customerId: string,
+    ): Promise<void> => {
+      await sql`
+        INSERT INTO review_helpful_votes ("reviewId", "customerId")
+        VALUES (${reviewId}, ${customerId})
+      `
+    }
+
+    /**
+     * The helpful count of a review, and the transaction that wrote the
+     * row: the same as long as nothing did.
+     */
+    const helpfulOf = async (
+      id: string,
+    ): Promise<{ count: number; writtenBy: string }> => {
+      const [row] = await sql<{ count: number; writtenBy: string }[]>`
+        SELECT "helpfulCount" AS count, xmin::text AS "writtenBy"
+        FROM reviews
+        WHERE id = ${id}
+      `
+      return row ?? { count: -1, writtenBy: 'missing' }
+    }
+
+    // A database from before the migration: no table of the marks.
+    beforeEach(async () => {
+      await applyBaseline(sql, plan)
+      schemaOfSetup = await describeSchema()
+      await sql.unsafe('DROP TABLE review_helpful_votes')
+    })
+
+    it('should give the database the table of setup.sql', async () => {
+      expect(await describeSchema()).not.toEqual(schemaOfSetup)
+
+      await run()
+
+      expect(await describeSchema()).toEqual(schemaOfSetup)
+    })
+
+    it('should count every review again: nobody is known to have found one helpful', async () => {
+      const counted = await storeCountedReview(12)
+      const none = await storeCountedReview(0)
+      const noneBefore = await helpfulOf(none)
+
+      await run()
+
+      expect((await helpfulOf(counted)).count).toBe(0)
+      expect(await helpfulOf(none)).toEqual(noneBefore)
+    })
+
+    it('should count the marks of a review, write no review whose count agrees, and nothing on a second run', async () => {
+      await run()
+      const marked = await storeCountedReview(0)
+      await storeVote(marked, await storeNewCustomer())
+      await storeVote(marked, await storeNewCustomer())
+      const agreeing = await storeCountedReview(1)
+      await storeVote(agreeing, await storeNewCustomer())
+      const agreeingBefore = await helpfulOf(agreeing)
+
+      await run()
+      const afterSecond = await helpfulOf(marked)
+      await run()
+
+      expect(afterSecond.count).toBe(2)
+      expect(await helpfulOf(marked)).toEqual(afterSecond)
+      expect(await helpfulOf(agreeing)).toEqual(agreeingBefore)
+    })
+
+    it('should keep a second mark of a customer out, and take the marks of a review away with it', async () => {
+      await run()
+      const review = await storeCountedReview(0)
+      const customer = await storeNewCustomer()
+      await storeVote(review, customer)
+
+      await expect(storeVote(review, customer)).rejects.toThrow(
+        'review_helpful_votes_review_customer_unique',
+      )
+      await sql`DELETE FROM reviews WHERE id = ${review}`
+      expect(
+        await sql`SELECT 1 FROM review_helpful_votes WHERE "reviewId" = ${review}`,
+      ).toHaveLength(0)
     })
   })
 })

@@ -69,7 +69,7 @@ export interface ModelsReviewResponse {
   imageUrls: string[];
   /** 実来店が確認済みかを表す検証フラグ。システムが設定する。完了した予約のレビューだけを受け付けるので、APIで投稿したレビューはtrue */
   isVerified: boolean;
-  /** レビューが「参考になった」と評価された累積回数 */
+  /** レビューを「参考になった」と評価した顧客の数。1人1回で、評価したトランザクションが数え直す */
   helpfulCount: number;
   /** 不適切報告が入った累積回数 */
   reportCount: number;

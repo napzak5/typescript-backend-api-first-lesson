@@ -1,6 +1,6 @@
 # レビュー
 
-顧客が来店のあとで書くレビューと、サロンとスタッフごとの集計の規則をまとめます。コントラクトは `specs/operations/review-operations.tsp` の `ReviewCrud`、`SalonReviewSummary`、`StaffReviewSummary` と `specs/models/review.tsp`、テーブルは `reviews` と、`salons` の `rating` と `reviewCount` です。
+顧客が来店のあとで書くレビューと、サロンとスタッフごとの集計の規則をまとめます。コントラクトは `specs/operations/review-operations.tsp` の `ReviewCrud`、`SalonReviewSummary`、`StaffReviewSummary` と `specs/models/review.tsp`、テーブルは `reviews` と `review_helpful_votes`（誰がレビューを参考になったと評価したか）、`salons` の `rating` と `reviewCount` です。
 
 レビューは、1 回の来店（1 件の予約）について、その予約の顧客が書きます。ポータルでサロンを選ぶ人は、ログインせずにレビューと集計を読みます。
 
@@ -10,14 +10,15 @@
 
 | オペレーション | 状態 |
 |---|---|
-| 一覧（`ReviewCrud.list`）、投稿（`create`）、1 件の取得（`get`）、修正（`update`）、削除（`delete`）、サロンの集計（`SalonReviewSummary.getSummary`）、スタッフの集計（`StaffReviewSummary.getStaffSummary`） | 実装済み |
-| 参考になった（`markHelpful`）、通報（`report`） | 未実装 |
+| 一覧（`ReviewCrud.list`）、投稿（`create`）、1 件の取得（`get`）、修正（`update`）、削除（`delete`）、参考になった（`markHelpful`）、サロンの集計（`SalonReviewSummary.getSummary`）、スタッフの集計（`StaffReviewSummary.getStaffSummary`） | 実装済み |
+| 通報（`report`） | 未実装 |
 
 - 次のものは、ありません
   - サロンからの返信（`ownerResponse`）を書くこと。返信を書くオペレーションは、コントラクトにありません。シードが書いた返信は、読めます
   - 投稿と修正の期限。来店から何日たっても、書いて、直せます
   - 修正の履歴。修正すると、前の内容は残りません
   - `admin` による修正と、削除したレビューの復元
+  - 参考になったの取り消しと、自分が評価したかどうか、誰が評価したかを返すこと
   - 不適切な表現の検出と、通報による非表示
   - 画像のアップロード。`imageUrls` は、どこかに置いた画像の URL を受け取るだけです
   - スタッフの成績の集計表（`staff_performances` の `averageRating` など）を書くこと
@@ -33,6 +34,7 @@
 | 投稿 | `POST /api/v1/reviews` | 予約の顧客本人だけ（ロール `customer` で、顧客のプロフィールがあるアカウント） |
 | 修正 | `PATCH /api/v1/reviews/{id}` | レビューを書いた顧客本人だけ |
 | 削除 | `DELETE /api/v1/reviews/{id}` | レビューを書いた顧客本人と `admin` |
+| 参考になった | `POST /api/v1/reviews/{id}/helpful` | 顧客だけ（ロール `customer` で、顧客のプロフィールがあるアカウント）。自分のレビューは不可 |
 
 - 読む 4 つのオペレーションは、アクセストークンを見ません。期限の切れたトークンや、セッションのないトークンを付けても、200 です。サロン、サービス、スタッフのプロフィールと同じく、サロンを選ぶ人が読むものだからです
 - **投稿できるのは顧客本人だけです**。`admin` と、サロンの `owner`・`manager`・`staff` は 403 です。レビューは顧客の声なので、ほかの人が代わりに書きません。誰が投稿できるかは、`business-logic/review/_shared/authorization.ts` の `reviewerOf` が決めます
@@ -41,6 +43,7 @@
 - **修正できるのは、書いた顧客本人だけです**。`admin` とサロンのメンバーも 403 です。投稿と同じく、ほかの人が顧客の声を書き換えません
 - **削除できるのは、書いた顧客本人と `admin` です**。`admin` は、規約に反するレビューや、本人から求められたレビューを消します。どのサロンのレビューも、書いた顧客が削除されていても消せます。サロンの `owner`・`manager`・`staff` は 403 です。サロンが、自分に不利なレビューを消せないようにします。誰が削除できるかは、`_shared/authorization.ts` の `reviewRemoverOf` が決めます
 - ほかの顧客のレビューの修正と削除は 403 です。レビューは誰でも読めるので、存在を隠す（404 にする）理由はありません。修正と削除でも、プロフィールのない顧客のアカウントと、紐づいた顧客が削除されたアカウントは 403 です
+- **参考になったと評価できるのは、顧客だけです**。`admin` と、サロンの `owner`・`manager`・`staff` は 403 です。一覧の「参考になった順」を顧客の評価だけで決め、サロンが自分のレビューを押し上げられないようにします。プロフィールのない顧客のアカウントと、紐づいた顧客が削除されたアカウントも 403 です。**自分のレビューは 403 です**。誰が評価できるかは、投稿と同じ `reviewerOf` が決めます
 - レスポンスの `customerId` と `bookingId` は内部の ID で、これだけで人を特定することはできません。顧客台帳と予約台帳は、`admin` とサロンのメンバーしか読めません
 
 ### 投稿の確認の順序
@@ -84,7 +87,16 @@
 5. レビューの存在（404。`detail` は `Review <id> was not found`）。削除したサロンのレビューと、削除したあとのレビューも 404 です
 6. 顧客なら、レビューが、操作者の書いたものであること（403）
 
-本文を読めない修正の扱い（400、415）は、投稿と同じです。
+### 参考になったの確認の順序
+
+1. アクセストークン（401）
+2. 操作者が、顧客のプロフィールを持つ顧客であること（403）
+3. パスの ID（400。`detail` は `Invalid review ID`、`id` の `invalid_format`）
+4. 操作者の顧客が削除されていないこと（403）
+5. レビューの存在（404。`detail` は `Review <id> was not found`）。削除したサロンのレビューと、削除したあとのレビューも 404 です
+6. レビューが、操作者の書いたものでないこと（403）
+
+本文を読めない修正の扱い（400、415）は、投稿と同じです。参考になったは本文の中身を読みませんが、JSON として読めない本文と JSON でない本文は、すべてのルートと同じく 400 と 415 です。
 
 ### 一覧の確認の順序
 
@@ -151,6 +163,16 @@
 - **削除したあと、その予約は削除できます**。レビューの参照がなくなるからです。顧客は、同じ予約に、もう一度レビューを投稿できます（予約へのレビューは 1 件の規則は変わりません）
 - 成功は 204 で、本文はありません
 
+## 参考になったの規則
+
+- **1 人の顧客が 1 つのレビューを評価するのは、1 回です**。同じ顧客の 2 回目は、数を変えずに 200 で、今の数を返します。二重送信で数がずれず、画面は何度押しても同じ結果を受け取ります。取り消しはありません（コントラクトにありません）
+- **`helpfulCount` は、そのレビューを参考になったと評価した顧客の数です**（`review_helpful_votes` の、そのレビューの行数）。評価したトランザクションが、同じトランザクションの中で数え直し、保存された値と違うときだけレビューを書きます
+- レビューの `updatedAt` は変わりません。レビューの内容が変わったのではないからです。サロンも書きません
+- 一覧の `sortBy=helpful` は、この数の降順です
+- 誰が評価したかは、API では返しません
+- レビューを削除すると、その評価も消えます（外部キーの `ON DELETE CASCADE`）
+- 成功は 200 で、`data` は `{ "helpfulCount": <評価したあとの数> }`、`links` は null です。レビューは、取得で読みます
+
 ## 一覧と 1 件の取得
 
 - 一覧と取得は、削除したサロンのレビューを返しません。スタッフや顧客を削除しても、そのレビューは残り、`staffId` と `customerId` もそのままです
@@ -208,9 +230,12 @@
 - 修正と削除も、1 つのトランザクション（`READ COMMITTED`）で書きます。顧客が削除されていないことを確かめ（`admin` の削除では確かめない）、レビューを `FOR UPDATE` で、そのサロンを `FOR NO KEY UPDATE` で持ってから、確かめて、書いて、サロンを数え直します。行を持つ順は、レビューが先、サロンが後です。投稿（予約が先、サロンが後）と、どちらもサロンが最後なので、互いに待っても行き詰まりません
 - **同じサロンへの投稿、修正、削除は、サロンの行で 1 件ずつ順に進みます**。後の処理は、前の処理の結果を含めて数え直します。レビューを待っている修正と削除は、サロンを持たないので、その間も、同じサロンへの投稿は進みます
 - **同じレビューへの修正と削除は、レビューの行で 1 件ずつ順に進みます**。後の処理は、前の処理が残したレビューを確かめます。削除のあとに届いた修正と削除は 404 です
+- 参考になったも、1 つのトランザクション（`READ COMMITTED`）で書きます。顧客が削除されていないことを確かめ、レビューを `FOR NO KEY UPDATE` で持ち、サロンが削除されていないことを読んでから（サロンは持たない）、評価の行を書き（同じ顧客の行があれば何もしない）、`helpfulCount` を数え直します
+- **同じレビューへの評価は、レビューの行で 1 件ずつ順に進みます**。数え直す文は、レビューを持ったあとに始まるので、待たせた評価の行が見えます。同時に届いた評価で、数がずれることはありません。同じ顧客の評価が同時に届いても、書くのは 1 行です。一意制約（`review_helpful_votes_review_customer_unique`）も同じことを確かめます
+- 評価と、修正・削除（レビューを `FOR UPDATE`）は、互いに待ちます。削除を待った評価は 404 です。評価が持つ行はレビューだけなので、投稿、修正、削除と行き詰まらず、サロンを持っている投稿の途中でも進みます。`FOR NO KEY UPDATE` なので、レビューを参照する行を書く処理（外部キーの確認で、レビューを `FOR KEY SHARE` で持つ）も待ちません
 - 予約を `FOR SHARE` で持つ処理（予約を参照するポイントの付与と利用）と、サロンを参照する行を書く処理（外部キーの確認でサロンを `FOR KEY SHARE` で持つ）は、待ちません
 - 予約のステータスの変更と削除（予約を `FOR UPDATE` で持つ）とは、互いに待ちます。削除している途中の予約への投稿は、削除を待ち、予約が見つからないので 400 です。投稿を書いている途中の予約の削除は、投稿を待ち、レビューがあるので 409 です
-- レビューの `createdAt` と `updatedAt`、サロンの `updatedAt` は、行を書いた時点の時刻（`clock_timestamp()`）です。サロンやレビューを待った処理は、待たせた処理より後の時刻になります
+- レビューの `createdAt` と `updatedAt`、サロンの `updatedAt`、評価の `createdAt` は、行を書いた時点の時刻（`clock_timestamp()`）です。サロンやレビューを待った処理は、待たせた処理より後の時刻になります
 - 一覧は、1 つの読み取り専用のトランザクション（`REPEATABLE READ`）で読みます。カーソル、ページ、件数は、同じ時点の値です。ロックは取りません
 
 ## DB の制約
@@ -222,12 +247,14 @@
 | `reviews_owner_response_pair` | `ownerResponse` と `ownerRespondedAt` は、両方あるか、両方 NULL |
 | `reviews_image_urls_array` | `imageUrls` は JSON の配列（カラムは NOT NULL、既定は空の配列） |
 | `reviews_booking_unique` | 1 つの予約へのレビューは 1 件 |
+| `review_helpful_votes_review_customer_unique` | 1 人の顧客が 1 つのレビューを評価するのは 1 回 |
 | `salons_review_count_not_negative` | サロンの `reviewCount` は 0 以上 |
 | `salons_rating_in_range` | サロンの `rating` は NULL か 1〜5 |
 | `salons_rating_of_reviews` | `reviewCount` が 0 のときだけ、`rating` は NULL |
 
 - `reviews` の `bookingId`、`customerId`、`salonId` の外部キーは `ON DELETE CASCADE` ですが、予約は、レビューがあれば削除できず、顧客とサロンは、行を残して削除します（`deletedAt`）。レビューが外部キーで消えることはありません
 - `staffId` の外部キーは `ON DELETE SET NULL` です。スタッフも、行を残して削除します
+- `review_helpful_votes` の `reviewId` と `customerId` の外部キーは `ON DELETE CASCADE` です。レビューを削除すると、その評価も消えます。顧客は行を残して削除するので、顧客の削除で評価が消えることはありません
 
 ## マイグレーション
 
@@ -238,17 +265,23 @@
 - 2 回目の適用では、何もしません。値の違うサロンだけを書きます
 - 規則に反するレビューが手で書かれていたら、マイグレーションは失敗し、何も変えません。正しい値は決められないので、直してから適用します
 
+`202611171100_review_helpful_votes.sql` が、表 `review_helpful_votes` を作り、すべてのレビューの `helpfulCount` を、表の行数に数え直します。
+
+- それまで、誰が評価したかの記録はなく、数を増やすオペレーションもありませんでした。保存されていた数は、シードか手で書いたものなので、適用すると、どのレビューも 0 になります
+- 2 回目の適用では、何もしません。値の違うレビューだけを書きます
+- 前の版のサーバーは、この表を読まず、`helpfulCount` も書かないので、サーバーを入れ替える前にも後にも適用できます
+
 ## シード
 
-`pnpm db:seed` は、済んだ来店のうち最初の 5 件に、その予約の顧客、サロン、担当スタッフでレビューを書きます（1 件目には、サロンからの返信があります）。そのあとで、サロンの `rating` と `reviewCount` を、レビューから数えます。サロンのシードは、2 つの値を書きません。
+`pnpm db:seed` は、済んだ来店のうち最初の 5 件に、その予約の顧客、サロン、担当スタッフでレビューを書きます（1 件目には、サロンからの返信があります）。そのあとで、サロンの `rating` と `reviewCount` を、レビューから数えます。サロンのシードは、2 つの値を書きません。続けて、ほかのシードの顧客の「参考になった」を書き（レビューごとに 0〜3 人。書いた顧客は、自分のレビューを評価しません）、`helpfulCount` を、その数から数えます。
 
 ## 実装の場所
 
 | 層 | ファイル |
 |---|---|
 | コントラクト | `specs/models/review.tsp`、`specs/operations/review-operations.tsp`（`ReviewCrud`、`SalonReviewSummary`、`StaffReviewSummary`） |
-| データベース | `backend/packages/database/sql/migrations/202611171000_review_rules.sql`、`src/seeds/seed-data/reviews.ts` |
-| ドメイン | `backend/packages/domain/src/models/review.ts`、`schemas/review.schema.ts`、`repositories/review.repository.ts`、`mappers/read/review.mapper.ts`、`business-logic/review/`（誰が投稿できるかは `_shared/authorization.ts`、投稿の計画は `_shared/plan.ts`、修正と削除の計画は `_shared/change.ts`、409 と 403・404 の内容は `_shared/refusals.ts`） |
+| データベース | `backend/packages/database/sql/migrations/202611171000_review_rules.sql`、`202611171100_review_helpful_votes.sql`、`src/seeds/seed-data/reviews.ts` |
+| ドメイン | `backend/packages/domain/src/models/review.ts`、`schemas/review.schema.ts`、`repositories/review.repository.ts`、`mappers/read/review.mapper.ts`、`business-logic/review/`（誰が投稿できるかは `_shared/authorization.ts`、投稿の計画は `_shared/plan.ts`、修正と削除の計画は `_shared/change.ts`、参考になったの計画は `_shared/helpful.ts`、409 と 403・404 の内容は `_shared/refusals.ts`） |
 | インフラ | `backend/packages/infrastructure/src/repositories/review.repository.impl.ts` |
 | API | `backend/packages/api/src/routes/review/`（`/api/v1/reviews`、`/api/v1/salons/:salonId/reviews`、`/api/v1/staff/:staffId/reviews` に取り付ける） |
-| テスト | `backend/packages/domain/src/__tests__/review.schema.test.ts`、`review.plan.test.ts`、`review.change.test.ts`、`review.mapper.test.ts`、`review.usecase.test.ts`、`backend/packages/api/src/routes/review/_shared/__tests__/`、`backend/packages/api/src/__tests__/review.integration.test.ts`（一覧、投稿、取得、集計）、`review-changes.integration.test.ts`（修正と削除）、`backend/packages/database/src/scripts/__tests__/migrations.integration.test.ts` |
+| テスト | `backend/packages/domain/src/__tests__/review.schema.test.ts`、`review.plan.test.ts`、`review.change.test.ts`、`review.helpful.test.ts`、`review.mapper.test.ts`、`review.usecase.test.ts`、`backend/packages/api/src/routes/review/_shared/__tests__/`、`backend/packages/api/src/__tests__/review.integration.test.ts`（一覧、投稿、取得、集計）、`review-changes.integration.test.ts`（修正と削除）、`review-helpful.integration.test.ts`（参考になった）、`backend/packages/database/src/scripts/__tests__/migrations.integration.test.ts` |

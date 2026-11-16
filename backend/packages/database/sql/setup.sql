@@ -424,6 +424,14 @@ CREATE TABLE "products" (
 	CONSTRAINT "products_code_salon_unique" UNIQUE("salonId","productCode")
 );
 
+CREATE TABLE "review_helpful_votes" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"reviewId" uuid NOT NULL,
+	"customerId" uuid NOT NULL,
+	"createdAt" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "review_helpful_votes_review_customer_unique" UNIQUE("reviewId","customerId")
+);
+
 CREATE TABLE "reviews" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"salonId" uuid NOT NULL,
@@ -862,6 +870,8 @@ ALTER TABLE "payment_methods" ADD CONSTRAINT "payment_methods_salon_id_fk" FOREI
 ALTER TABLE "payment_transactions" ADD CONSTRAINT "payment_transactions_payment_method_id_fk" FOREIGN KEY ("paymentMethodId") REFERENCES "public"."payment_methods"("id") ON DELETE restrict ON UPDATE no action;
 ALTER TABLE "payment_transactions" ADD CONSTRAINT "payment_transactions_sale_id_fk" FOREIGN KEY ("saleId") REFERENCES "public"."sales"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "products" ADD CONSTRAINT "products_salon_id_fk" FOREIGN KEY ("salonId") REFERENCES "public"."salons"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "review_helpful_votes" ADD CONSTRAINT "review_helpful_votes_customer_id_fk" FOREIGN KEY ("customerId") REFERENCES "public"."customers"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "review_helpful_votes" ADD CONSTRAINT "review_helpful_votes_review_id_fk" FOREIGN KEY ("reviewId") REFERENCES "public"."reviews"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "reviews" ADD CONSTRAINT "reviews_booking_id_fk" FOREIGN KEY ("bookingId") REFERENCES "public"."bookings"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "reviews" ADD CONSTRAINT "reviews_customer_id_fk" FOREIGN KEY ("customerId") REFERENCES "public"."customers"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "reviews" ADD CONSTRAINT "reviews_salon_id_fk" FOREIGN KEY ("salonId") REFERENCES "public"."salons"("id") ON DELETE cascade ON UPDATE no action;

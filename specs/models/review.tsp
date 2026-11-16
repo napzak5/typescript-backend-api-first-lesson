@@ -69,7 +69,7 @@ namespace BeautySalon.Models {
     @doc("実来店が確認済みかを表す検証フラグ。システムが設定する。完了した予約のレビューだけを受け付けるので、APIで投稿したレビューはtrue")
     isVerified: boolean;
 
-    @doc("レビューが「参考になった」と評価された累積回数")
+    @doc("レビューを「参考になった」と評価した顧客の数。1人1回で、評価したトランザクションが数え直す")
     helpfulCount: int32;
 
     @doc("不適切報告が入った累積回数")
@@ -246,9 +246,9 @@ namespace BeautySalon.Models {
     sortBy?: ReviewSortType = ReviewSortType.recent;
   }
 
-  @doc("参考になった評価の結果 - 加算後の参考になった数を返す")
+  @doc("参考になった評価の結果 - 評価したあとの参考になった数を返す")
   model ReviewHelpfulResponse {
-    @doc("加算後の、レビューが「参考になった」と評価された累積回数")
+    @doc("評価したあとの、レビューを「参考になった」と評価した顧客の数")
     helpfulCount: int32;
   }
 

@@ -2,6 +2,7 @@ import { match } from 'ts-pattern'
 import type { ReviewId } from '../../../models/review'
 import { type DomainError, DomainErrors } from '../../../shared'
 import type { ReviewNotReached } from './change'
+import type { ReviewMarkPlan } from './helpful'
 import type { ReviewPlan } from './plan'
 
 /** Why the review of a booking is refused, as the error a client gets. */
@@ -37,6 +38,23 @@ export const toUnreachedReviewError = (
   match(unreached)
     .with({ type: 'reviewNotFound' }, () => DomainErrors.notFound('Review', id))
     .with({ type: 'reviewerNotFound' }, { type: 'notTheAuthor' }, () =>
+      DomainErrors.forbidden(),
+    )
+    .exhaustive()
+
+/**
+ * Why a review is not marked as helpful, as the error a client gets. A
+ * customer whose account lost its customer is refused as an account
+ * without a profile is, and an author as one who may not mark their own
+ * review.
+ */
+export const toUnmarkedReviewError = (
+  unmarked: Exclude<ReviewMarkPlan, { type: 'planned' }>,
+  id: ReviewId,
+): DomainError =>
+  match(unmarked)
+    .with({ type: 'reviewNotFound' }, () => DomainErrors.notFound('Review', id))
+    .with({ type: 'reviewerNotFound' }, { type: 'ownReview' }, () =>
       DomainErrors.forbidden(),
     )
     .exhaustive()

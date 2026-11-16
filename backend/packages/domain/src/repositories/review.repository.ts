@@ -5,6 +5,7 @@ import type {
   ReviewRemovalPlan,
   ReviewRemover,
 } from '../business-logic/review/_shared/change'
+import type { ReviewMarkPlan } from '../business-logic/review/_shared/helpful'
 import type { ReviewPlan } from '../business-logic/review/_shared/plan'
 import type { BookingId } from '../models/booking'
 import type { CustomerId } from '../models/customer'
@@ -72,6 +73,15 @@ export type ReviewRemoval =
   | Exclude<ReviewRemovalPlan, { type: 'planned' }>
 
 /**
+ * What became of a mark that a review was helpful:
+ * - `marked`: how many customers marked the review, the mark included
+ * - otherwise why it was not planned (`planHelpfulMark`)
+ */
+export type ReviewMark =
+  | { type: 'marked'; helpfulCount: number }
+  | Exclude<ReviewMarkPlan, { type: 'planned' }>
+
+/**
  * Persistence of the reviews. The rating and the review count of a salon
  * are those of its reviews: a review is written, changed or removed in the
  * same transaction as the salon is counted again, with the salon held, so
@@ -104,6 +114,16 @@ export interface IReviewRepository {
     id: ReviewId,
     remover: ReviewRemover,
   ): Promise<Result<ReviewRemoval, DomainError>>
+
+  /**
+   * Marks that the customer found a review helpful, as `planHelpfulMark`
+   * plans it, and counts the marks of the review again, with the review
+   * held, so the marks of one review are counted one after the other.
+   */
+  markHelpful(
+    id: ReviewId,
+    customerId: CustomerId,
+  ): Promise<Result<ReviewMark, DomainError>>
 
   /** What the reviews of a salon come to; null for no salon or a deleted one. */
   salonTally(salonId: SalonId): Promise<Result<ReviewTally | null, DomainError>>

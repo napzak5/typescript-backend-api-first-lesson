@@ -818,7 +818,7 @@ export const getReviewCrudMarkHelpfulUrl = (id: ModelsReviewId,) => {
 }
 
 /**
- * 他の利用者に役立つレビューをマーキングし、信頼性の高い声を強調します。参考になった数を1加算し、加算後の値を返します。
+ * 他の利用者に役立つレビューをマーキングし、信頼性の高い声を強調します。評価できるのは顧客(ロール customer で顧客のプロフィールがあるアカウント)だけで、admin とサロンのメンバー、プロフィールのない顧客のアカウント、自分のレビューには403を返します。1人1回で、同じ顧客の2回目は数を変えずに今の数を返します。参考になった数を、評価した顧客の数から数え直し、評価したあとの値を返します。存在しないレビューと削除したサロンのレビューは404です。本文は読みません。
  * @summary Mark review as helpful
  */
 export const reviewCrudMarkHelpful = async (id: ModelsReviewId, options?: RequestInit): Promise<reviewCrudMarkHelpfulResponse> => {
@@ -871,7 +871,7 @@ const {mutation: mutationOptions} = options ?
     export type ReviewCrudMarkHelpfulMutationVariables = {id: ModelsReviewId}
 
     /**
- * 他の利用者に役立つレビューをマーキングし、信頼性の高い声を強調します。参考になった数を1加算し、加算後の値を返します。
+ * 他の利用者に役立つレビューをマーキングし、信頼性の高い声を強調します。評価できるのは顧客(ロール customer で顧客のプロフィールがあるアカウント)だけで、admin とサロンのメンバー、プロフィールのない顧客のアカウント、自分のレビューには403を返します。1人1回で、同じ顧客の2回目は数を変えずに今の数を返します。参考になった数を、評価した顧客の数から数え直し、評価したあとの値を返します。存在しないレビューと削除したサロンのレビューは404です。本文は読みません。
  * @summary Mark review as helpful
  */
 export const useReviewCrudMarkHelpful = <TError = ModelsProblemDetails,
