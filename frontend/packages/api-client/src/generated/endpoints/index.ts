@@ -7,6 +7,7 @@ export * from './customers/customers';
 export * from './inventory/inventory';
 export * from './inventory-alerts/inventory-alerts';
 export * from './medical-charts/medical-charts';
+export * from './payment-methods/payment-methods';
 export * from './payments/payments';
 export * from './permissions/permissions';
 export * from './points/points';
