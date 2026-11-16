@@ -13652,42 +13652,27 @@ paths:
       tags:
         - Sales Reports
   /api/v1/sales-reports/export:
-    post:
+    get:
       operationId: SalesReportCrud_export
-      summary: Export a sales report
-      description: 期間内の売上レポートを指定した形式のファイルに出力し、ダウンロードURLを返します。
-      parameters: []
+      summary: Export a sales report as CSV
+      description: 期間の売上を、1日を1行にした CSV ファイルとして返します。売上のない日も0で載せ、日付の順に並べます。列は date、sales、tax、discounts、transactions、refunds、net で、数え方は期間のレポートと同じです(列ごとの合計は、同じ期間のレポートの totalSales、totalTax、totalDiscounts、transactionCount、totalRefunds、netSales に一致し、1日の行は getDaily と同じ値です)。合計の行はありません。文字コードは UTF-8(BOM なし)、改行は CRLF で、1行目は列名です。ファイルは保存せず、応答の本文として返します。endDate が startDate より前の場合と、期間が366日を超える場合は400を返します。
+      parameters:
+        - $ref: '#/components/parameters/Models.SalesReportGetRequest.salonId'
+        - $ref: '#/components/parameters/Models.SalesReportGetRequest.startDate'
+        - $ref: '#/components/parameters/Models.SalesReportGetRequest.endDate'
       responses:
         '200':
           description: The request has succeeded.
-          content:
-            application/json:
+          headers:
+            content-disposition:
+              required: true
+              description: attachment; filename=sales-report-<startDate>-<endDate>.csv
               schema:
-                type: object
-                required:
-                  - data
-                  - meta
-                  - links
-                properties:
-                  data:
-                    allOf:
-                      - $ref: '#/components/schemas/Models.SalesReportExportResponse'
-                    description: レスポンスの主体となるビジネスデータ。
-                  meta:
-                    type: object
-                    allOf:
-                      - $ref: '#/components/schemas/Models.ResponseMeta'
-                    nullable: true
-                    description: リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull
-                  links:
-                    type: object
-                    additionalProperties:
-                      type: string
-                    nullable: true
-                    description: 関連リソースや次アクションへのリンク情報。リンクがない場合はnull
-                description: |-
-                  API 成功レスポンスの共通ラッパーモデル。
-                  サロン検索や予約登録など多様なユースケースで応答形式を統一し、クライアント実装を簡潔に保つ。
+                type: string
+          content:
+            text/csv:
+              schema:
+                type: string
         '400':
           description: The server could not understand the request due to invalid syntax.
           content:
@@ -13715,18 +13700,6 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Models.ProblemDetails'
-        '413':
-          description: リクエスト本文がサイズ上限を超えている (413)。
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Models.ProblemDetails'
-        '415':
-          description: リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Models.ProblemDetails'
         '429':
           description: |-
             リクエスト数の上限を超えたときのエラーレスポンス (429)。
@@ -13750,12 +13723,6 @@ paths:
                 $ref: '#/components/schemas/Models.ProblemDetails'
       tags:
         - Sales Reports
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Models.SalesReportExportRequest'
   /api/v1/sales-reports/trends:
     get:
       operationId: SalesReportCrud_getTrends
@@ -28238,52 +28205,6 @@ components:
       description: |-
         売上明細 - sales_details テーブルの1行。会計の1項目(サービス・商品など)を表す。
         売上の登録・更新リクエストとレスポンスで共通に使う。プロパティ名と null 許可は DB カラムと一致させている
-    Models.SalesReportExportFormatType:
-      type: string
-      enum:
-        - csv
-        - excel
-        - pdf
-      description: |-
-        売上レポート出力形式区分 - 売上レポートを出力するファイルの形式
-
-        csv: CSV - カンマ区切りのテキストファイル
-        excel: Excel - Excel のブック
-        pdf: PDF - 印刷・配布用の PDF ファイル
-    Models.SalesReportExportRequest:
-      type: object
-      required:
-        - salonId
-        - startDate
-        - endDate
-        - format
-      properties:
-        salonId:
-          allOf:
-            - $ref: '#/components/schemas/Models.SalonId'
-          description: 集計対象のサロン ID
-        startDate:
-          type: string
-          format: date-time
-          description: 集計期間の開始日時
-        endDate:
-          type: string
-          format: date-time
-          description: 集計期間の終了日時
-        format:
-          allOf:
-            - $ref: '#/components/schemas/Models.SalesReportExportFormatType'
-          description: 出力形式
-      description: 売上レポートの出力リクエスト - 出力する期間と形式を指定する
-    Models.SalesReportExportResponse:
-      type: object
-      required:
-        - downloadUrl
-      properties:
-        downloadUrl:
-          type: string
-          description: 出力したファイルのダウンロード URL
-      description: 売上レポートの出力結果
     Models.SalesReportResponse:
       type: object
       required:

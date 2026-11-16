@@ -980,31 +980,6 @@ export type ReviewSortType = z.infer<typeof ReviewSortTypeSchema>
 
 /**
  * @description
- * 売上レポート出力形式区分 - 売上レポートを出力するファイルの形式
- *
- *
- * csv: CSV - カンマ区切りのテキストファイル
- *
- * excel: Excel - Excel のブック
- *
- * pdf: PDF - 印刷・配布用の PDF ファイル
- */
-export const SalesReportExportFormatTypeSchema = z.enum(['csv', 'excel', 'pdf'])
-/**
- * @description
- * 売上レポート出力形式区分 - 売上レポートを出力するファイルの形式
- *
- *
- * csv: CSV - カンマ区切りのテキストファイル
- *
- * excel: Excel - Excel のブック
- *
- * pdf: PDF - 印刷・配布用の PDF ファイル
- */
-export type SalesReportExportFormatType = z.infer<typeof SalesReportExportFormatTypeSchema>
-
-/**
- * @description
  * 売上推移区切り区分 - 売上推移の期間を区切る単位
  *
  *

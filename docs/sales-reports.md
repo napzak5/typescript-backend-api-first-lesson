@@ -1,6 +1,6 @@
 # 売上レポート
 
-サロンの売上を、期間、日、スタッフ、サービスのカテゴリー、支払い方法の種類ごとに数えるレポートの規則をまとめます。コントラクトは `specs/operations/payment-operations.tsp`（`SalesReportCrud`）と `specs/models/payment.tsp` です。
+サロンの売上を、期間、日、スタッフ、サービスのカテゴリー、支払い方法の種類ごとに数えるレポートと、期間の売上を日ごとに並べた CSV ファイルの規則をまとめます。コントラクトは `specs/operations/payment-operations.tsp`（`SalesReportCrud`）と `specs/models/payment.tsp` です。
 
 レポートは、サロンを運営する人のためのものです。管理者と、サロンの `owner` / `manager` が `/api/v1/sales-reports` で読みます。
 
@@ -10,11 +10,12 @@
 
 | オペレーション | 状態 |
 |---|---|
-| 期間のレポート、1 日の売上、スタッフ別、カテゴリー別、推移（`SalesReportCrud` の `get`、`getDaily`、`getByStaff`、`getByCategory`、`getTrends`） | 実装済み |
-| エクスポート（`SalesReportCrud` の `export`） | 未実装（404） |
+| 期間のレポート、1 日の売上、スタッフ別、カテゴリー別、推移、出力（`SalesReportCrud` の `get`、`getDaily`、`getByStaff`、`getByCategory`、`getTrends`、`export`） | 実装済み |
 
-- エクスポートは、ファイルを置く場所（ストレージ）がないので、実装していません
+- 出力は、期間の売上を日ごとに並べた CSV ファイルだけです（[出力](#出力)）
 - 次のものは、ありません
+  - Excel と PDF のファイル。出力したファイルの保存と、ダウンロード URL
+  - スタッフ別、カテゴリー別、支払い方法別の CSV
   - 前の期間や前年との比較
   - 顧客別、時間帯別、予約の経路別、商品別の集計
   - スタッフの歩合（`commissionAmount`）の集計
@@ -30,8 +31,9 @@
 | スタッフ別 | `GET /api/v1/sales-reports/by-staff` | `salonId`、`startDate`、`endDate` |
 | カテゴリー別 | `GET /api/v1/sales-reports/by-category` | `salonId`、`startDate`、`endDate` |
 | 推移 | `GET /api/v1/sales-reports/trends` | `salonId`、`startDate`、`endDate`、`period` |
+| 出力（CSV） | `GET /api/v1/sales-reports/export` | `salonId`、`startDate`、`endDate` |
 
-- すべてのオペレーションに認証が要ります。許可は、5 つとも同じです: `admin` はすべてのサロン、サロンの `owner` と `manager` は所属サロン（`business-logic/sales-report/_shared/authorization.ts` の `salesReportReachOf`）。レポートのための権限（`users.permissions`）はありません
+- すべてのオペレーションに認証が要ります。許可は、6 つとも同じです: `admin` はすべてのサロン、サロンの `owner` と `manager` は所属サロン（`business-logic/sales-report/_shared/authorization.ts` の `salesReportReachOf`）。レポートのための権限（`users.permissions`）はありません
 - **サロンの `staff` は 403 です**。売上台帳は、レジに立つスタッフも扱いますが（[売上台帳](./sales.md#オペレーションと権限)）、レポートは、サロン全体の売上と、スタッフ一人ひとりの売上を見せる、経営の情報だからです
 - 顧客のアカウントと、ロールに必要なレコードを持たないユーザー（範囲 `none`）も 403 です。この 403 は、クエリを確かめる前に返します
 - **ほかのサロンを指定した `owner` / `manager` は、サロンが存在するかどうかにかかわらず 403 です**。サロンを探す前に、権限を確かめます
@@ -46,7 +48,7 @@
 4. 操作者が、クエリのサロンのレポートを読めること（403）
 5. サロンの存在（400。`salonId` の `not_found`）
 
-400 の `detail` は、期間のレポート、スタッフ別、カテゴリー別では `Invalid sales report`、1 日の売上では `Invalid daily sales`、推移では `Invalid sales trends` です。
+400 の `detail` は、期間のレポート、スタッフ別、カテゴリー別、出力では `Invalid sales report`、1 日の売上では `Invalid daily sales`、推移では `Invalid sales trends` です。
 
 ## クエリの規則
 
@@ -178,6 +180,36 @@
 - **最初と最後の区切りは、期間内の日だけを数えます**。水曜日から始まる期間の最初の週は、その週の月曜日のラベルで、水曜日からの売上の合計です。月曜日のラベルが、`startDate` より前の日付になることがあります
 - 週は、ISO 8601 の週（月曜日始まり）です。年をまたぐ週は、月曜日の年のラベルです
 
+## 出力
+
+`GET /api/v1/sales-reports/export` は、期間の売上を、1 日を 1 行にした CSV ファイルで返します。会計ソフトや表計算ソフトに取り込むためのものです。クエリ、権限、確認の順序、数える売上は、期間のレポートと同じです。
+
+```csv
+date,sales,tax,discounts,transactions,refunds,net
+2026-11-19,0,0,0,0,0,0
+2026-11-20,19800,1800,0,2,3000,16800
+2026-11-21,7700,700,1000,2,2200,5500
+```
+
+| 列 | 値 |
+|---|---|
+| `date` | 会計日（`YYYY-MM-DD`） |
+| `sales` | その日の売上の `totalAmount` の合計 |
+| `tax` | その日の売上の `taxAmount` の合計 |
+| `discounts` | その日の売上の `discountAmount` の合計 |
+| `transactions` | その日の売上の件数 |
+| `refunds` | その日の売上の決済取引の `refundAmount` の合計 |
+| `net` | `sales` − `refunds` |
+
+- 期間の**すべての日**を、古い順に 1 行ずつ載せます。売上のない日も、0 の行です。期間は 366 日までなので、行も 366 行までです
+- 1 日の行は、[1 日の売上](#1-日の売上) の値に、`tax` と `discounts` を加えたものです。**列ごとの合計は、同じ期間のレポートの `totalSales`、`totalTax`、`totalDiscounts`、`transactionCount`、`totalRefunds`、`netSales` と一致します**。返金は、ほかのレポートと同じく、売上の会計日の行に入ります
+- 合計の行は、ありません。表計算ソフトで合計すると二重になり、取り込むときに日付でない行が混じるからです
+- 1 行目は列名です。列名は、レポートのプロパティ名に合わせた英語です。値は日付と整数だけなので、引用符で囲む値はなく、ファイルは ASCII の文字だけです。Shift_JIS で開く表計算ソフトでも、文字化けしません
+- 文字コードは UTF-8（BOM なし）、改行は CRLF です（RFC 4180）。最後の行も CRLF で終わります
+- レスポンスの本文が、ファイルそのものです。`Content-Type` は `text/csv; charset=utf-8`、`Content-Disposition` は `attachment; filename=sales-report-<startDate>-<endDate>.csv` です。名前はトークンの文字だけなので、引用符は付きません（RFC 6266）。`data`、`meta`、`links` の包みは、ありません
+- エラーは、ほかのオペレーションと同じ問題の詳細（`application/problem+json`）です
+- **ファイルは保存しません**。同じクエリには、そのときの台帳から作ったファイルを返します。以前のコントラクトは、ファイルを作ってダウンロード URL を返す `POST` で、Excel と PDF も選べました。ファイルを置く場所も、作ったファイルの記録も、期限が来たファイルを消す仕組みもないので、ファイルを本文で返す `GET` に変え、形式を CSV だけにしました。Excel は CSV を開けます
+
 ## 丸め
 
 - 平均（`averageTransactionValue`、`averageServiceValue`、推移の `average`）は、1 円未満を切り捨てます
@@ -203,7 +235,7 @@
 | 層 | ファイル |
 |---|---|
 | コントラクト | `specs/models/payment.tsp`（`SalesReportGetRequest`、`DailySalesGetRequest`、`SalesTrendsGetRequest`、`SalesTrendPeriodType`、`SalesReportResponse`、`SalesByMethodResponse`、`SalesByCategoryResponse`、`SalesByStaffResponse`、`DailySalesResponse`、`SalesTrendsResponse`）、`specs/operations/payment-operations.tsp`（`SalesReportCrud`） |
-| ドメイン | `backend/packages/domain/src/models/sales-report.ts`、`schemas/sales-report.schema.ts`、`repositories/sales-report.repository.ts`、`business-logic/sales-report/`（誰が読むかは `_shared/authorization.ts`、リポジトリが読んだ値からレポートを作るのは `_shared/report.ts`、日付の計算は `_shared/calendar.ts`、権限とサロンの確かめ方は `_shared/figures.ts`） |
+| ドメイン | `backend/packages/domain/src/models/sales-report.ts`、`schemas/sales-report.schema.ts`、`repositories/sales-report.repository.ts`、`business-logic/sales-report/`（誰が読むかは `_shared/authorization.ts`、リポジトリが読んだ値からレポートを作るのは `_shared/report.ts`、日付の計算は `_shared/calendar.ts`、CSV を作るのは `_shared/export.ts`、権限とサロンの確かめ方は `_shared/figures.ts`） |
 | インフラ | `backend/packages/infrastructure/src/repositories/sales-report.repository.impl.ts` |
 | API | `backend/packages/api/src/routes/sales-report/`（`/api/v1/sales-reports` に取り付ける） |
-| テスト | `backend/packages/domain/src/__tests__/sales-report.schema.test.ts`、`sales-report.report.test.ts`、`sales-report.usecase.test.ts`、`backend/packages/api/src/__tests__/sales-report.integration.test.ts` |
+| テスト | `backend/packages/domain/src/__tests__/sales-report.schema.test.ts`、`sales-report.report.test.ts`、`sales-report.export.test.ts`、`sales-report.usecase.test.ts`、`backend/packages/api/src/__tests__/sales-report.integration.test.ts` |

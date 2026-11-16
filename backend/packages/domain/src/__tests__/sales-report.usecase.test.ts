@@ -1,6 +1,7 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { describe, expect, it, vi } from 'vitest'
 import {
+  ExportSalesReportUseCase,
   GetDailySalesUseCase,
   GetSalesByCategoryUseCase,
   GetSalesByStaffUseCase,
@@ -100,6 +101,14 @@ const reports: Report[] = [
     wrongQuery: [periodQuery({ period: 'yearly' }), 'period:invalid_value'],
     run: (dependencies, actor, query) =>
       new GetSalesTrendsUseCase(dependencies).execute(actor, query),
+  },
+  {
+    name: 'the export of a period',
+    message: 'Invalid sales report',
+    query: periodQuery,
+    wrongQuery: [periodQuery({ salonId: 'mine' }), 'salonId:invalid_format'],
+    run: (dependencies, actor, query) =>
+      new ExportSalesReportUseCase(dependencies).execute(actor, query),
   },
 ]
 
@@ -372,5 +381,31 @@ describe('GetSalesTrendsUseCase', () => {
         average: [0, 0, 0, 14666, 0, 0],
       },
     })
+  })
+})
+
+describe('ExportSalesReportUseCase', () => {
+  it('reads the figures of the period named, and writes a line for every day of it', async () => {
+    const dependencies = salesReportDependencies()
+
+    const result = await new ExportSalesReportUseCase(dependencies).execute(
+      actors.ofSalon('manager'),
+      periodQuery(),
+    )
+
+    expect(findFiguresOf(dependencies).mock.calls).toEqual([[salesPeriod()]])
+    const lines =
+      result.type === 'success' ? result.data.content.split('\r\n') : []
+    expect(result).toMatchObject({
+      type: 'success',
+      data: { fileName: 'sales-report-2026-11-01-2026-11-30.csv' },
+    })
+    expect(lines).toHaveLength(32)
+    expect(lines.slice(19, 23)).toEqual([
+      '2026-11-19,0,0,0,0,0,0',
+      '2026-11-20,33000,3000,1000,2,2000,31000',
+      '2026-11-21,11000,1000,0,1,0,11000',
+      '2026-11-22,0,0,0,0,0,0',
+    ])
   })
 })
