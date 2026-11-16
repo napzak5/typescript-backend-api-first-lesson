@@ -951,11 +951,14 @@ describe('Review changes API', () => {
 
       const { waiting, written } = await db.transaction(
         async (tx: Transaction) => {
+          // Held for share, the review is still written by no one else: a
+          // write that held it so would hold the salon while it waits to
+          // write the review.
           await tx
             .select({ id: reviews.id })
             .from(reviews)
             .where(eq(reviews.id, id))
-            .for('update')
+            .for('share')
           const underWay = write(id).then((response) => response)
           await pause(300)
           // Another review of the salon goes on meanwhile.
