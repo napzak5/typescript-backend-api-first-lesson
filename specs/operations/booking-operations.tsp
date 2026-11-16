@@ -250,7 +250,7 @@ namespace BeautySalon.Operations {
     }
   }
 
-  @doc("顧客本人が、自分の予約を入れ、読み、キャンセルするAPI操作群です。実行できるのは customer ロールのユーザーだけで、admin とサロンのスタッフには403を返します(予約台帳を使います)。権限は最初に確認します。プロフィール(自分の顧客レコード)をまだ作っていない場合と、顧客レコードが削除された場合は404を返します。サロンが予約台帳に入れた自分の予約も対象です。ほかの顧客の予約は、存在しない予約と区別しません。サロン内のメモは、レスポンスに含みません。")
+  @doc("顧客本人が、自分の予約を入れ、読み、日時を変え、キャンセルするAPI操作群です。実行できるのは customer ロールのユーザーだけで、admin とサロンのスタッフには403を返します(予約台帳を使います)。権限は最初に確認します。プロフィール(自分の顧客レコード)をまだ作っていない場合と、顧客レコードが削除された場合は404を返します。サロンが予約台帳に入れた自分の予約も対象です。ほかの顧客の予約は、存在しない予約と区別しません。サロン内のメモは、レスポンスに含みません。")
   @route("/api/v1/customers/me/bookings")
   @tag("Bookings")
   namespace CustomerBookingOperations {
@@ -299,6 +299,21 @@ namespace BeautySalon.Operations {
       @route("/{id}/cancel")
       @post
       cancel(@path id: BookingId, @body request: BookingCancelRequest):
+        | {
+            @statusCode statusCode: 200;
+            @body response: ApiResponse<CustomerBookingResponse>;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<404>
+        | ProblemResponse<409>
+        | RequestBodyErrors
+        | CommonErrors;
+
+      @doc("ログインしている顧客の、draft・pending・confirmedの予約の開始日時と担当スタッフを変更します。変更できるのは、予約の開始日時より前で、施術明細が1件、その担当が予約の担当スタッフである予約だけです(サロンが施術明細を足した予約は、サロンが予約台帳で変更します)。移せる先は、予約のサービスの空き枠だけです。空き枠は、予約を入れるときと同じ規則で、予約の施術時間について確かめ、この予約自身は、ないものとして数えます。staffIdとstartTimeが空き枠でない場合、顧客レコードが予約を受け付けられない状態の場合、自分のほかの予約(cancelledとno_showを除く)と時間が重なる場合、開始日時を過ぎた予約、それ以外のステータスの予約、施術明細が上の形でない予約には409を返します。staffIdが予約のサロンのスタッフではない(削除済みを含む)場合は400を、サロンのタイムゾーンを名前として読めない場合は409を返します。所要時間と金額は変わりません。confirmedの予約は、サロンがもう一度確定するまでpendingに戻ります。担当も開始日時も変わらないリクエストは、何も変更せずに予約を返します。ほかの顧客の予約には404を返します。")
+      @summary("Reschedule one of the signed-in customer's bookings")
+      @route("/{id}/reschedule")
+      @post
+      reschedule(@path id: BookingId, @body request: BookingRescheduleRequest):
         | {
             @statusCode statusCode: 200;
             @body response: ApiResponse<CustomerBookingResponse>;

@@ -1200,6 +1200,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/customers/me/bookings/{id}/reschedule": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reschedule one of the signed-in customer's bookings
+         * @description ログインしている顧客の、draft・pending・confirmedの予約の開始日時と担当スタッフを変更します。変更できるのは、予約の開始日時より前で、施術明細が1件、その担当が予約の担当スタッフである予約だけです(サロンが施術明細を足した予約は、サロンが予約台帳で変更します)。移せる先は、予約のサービスの空き枠だけです。空き枠は、予約を入れるときと同じ規則で、予約の施術時間について確かめ、この予約自身は、ないものとして数えます。staffIdとstartTimeが空き枠でない場合、顧客レコードが予約を受け付けられない状態の場合、自分のほかの予約(cancelledとno_showを除く)と時間が重なる場合、開始日時を過ぎた予約、それ以外のステータスの予約、施術明細が上の形でない予約には409を返します。staffIdが予約のサロンのスタッフではない(削除済みを含む)場合は400を、サロンのタイムゾーンを名前として読めない場合は409を返します。所要時間と金額は変わりません。confirmedの予約は、サロンがもう一度確定するまでpendingに戻ります。担当も開始日時も変わらないリクエストは、何も変更せずに予約を返します。ほかの顧客の予約には404を返します。
+         */
+        post: operations["CustomerBookings_reschedule"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/customers/me/preferences": {
         parameters: {
             query?: never;
@@ -4174,7 +4194,7 @@ export interface components {
              * @description 予約全体の所要時間（分）。startTime から endTime までの分数
              */
             duration: number;
-            /** @description 予約の現在ステータス。本人が入れた予約は pending で始まり、サロンが確定(confirmed)する */
+            /** @description 予約の現在ステータス。本人が入れた予約は pending で始まり、サロンが確定(confirmed)する。確定済みの予約の日時を本人が変えると pending に戻る */
             status: components["schemas"]["Models.BookingStatusType"];
             /**
              * Format: int32
@@ -16577,6 +16597,133 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["Models.BookingCancelRequest"];
+            };
+        };
+        responses: {
+            /** @description The request has succeeded. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        data: components["schemas"]["Models.CustomerBookingResponse"];
+                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        meta: components["schemas"]["Models.ResponseMeta"] | null;
+                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        links: {
+                            [key: string]: string;
+                        } | null;
+                    };
+                };
+            };
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description 認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
+             *     ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
+             *     WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+             */
+            401: {
+                headers: {
+                    /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
+                    "WWW-Authenticate": string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description 認証されているが、この操作を行う権限がない (403)。 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The server cannot find the requested resource. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The request conflicts with the current state of the server. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
+             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+             */
+            429: {
+                headers: {
+                    /** @description 再試行できるようになるまでの秒数。 */
+                    "Retry-After": number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+        };
+    };
+    CustomerBookings_reschedule: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["schemas"]["Models.BookingId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Models.BookingRescheduleRequest"];
             };
         };
         responses: {
