@@ -13,7 +13,9 @@ import {
   type Database,
   type Logger,
   PaymentMethodRepository,
+  PaymentRepository,
   RandomBookingNumberIssuer,
+  RandomPaymentNumberIssuer,
   RandomSaleNumberIssuer,
   RandomTokenIssuer,
   SaleRepository,
@@ -50,6 +52,7 @@ import {
   createCustomerPreferencesRouter,
   createOwnCustomerPreferencesRouter,
 } from './routes/customer-preferences'
+import { createPaymentRouter } from './routes/payment'
 import { createPaymentMethodRouter } from './routes/payment-method'
 import { createSaleRouter } from './routes/sale'
 import { createSalonRouter } from './routes/salon'
@@ -285,15 +288,24 @@ export const createApp = ({
     `${API_BASE_PATH}/bookings`,
     createBookingRouter(bookingDependencies, authenticated),
   )
+  const paymentDependencies = {
+    paymentRepository: new PaymentRepository(database),
+    paymentNumberIssuer: new RandomPaymentNumberIssuer(),
+  }
   app.use(
     `${API_BASE_PATH}/sales`,
     createSaleRouter(
       {
         saleRepository: new SaleRepository(database),
         saleNumberIssuer: new RandomSaleNumberIssuer(),
+        ...paymentDependencies,
       },
       authenticated,
     ),
+  )
+  app.use(
+    `${API_BASE_PATH}/payments`,
+    createPaymentRouter(paymentDependencies, authenticated),
   )
 
   app.use(notFoundHandler)

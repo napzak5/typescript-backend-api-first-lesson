@@ -6,3 +6,12 @@ export const saleLinks = (
   self: `${collectionPath}/${id}`,
   list: collectionPath,
 })
+
+/**
+ * Links of a payment of a sale. A payment has no address of its own: it is
+ * read with its sale.
+ */
+export const paymentOfSaleLinks = (
+  collectionPath: string,
+  saleId: string,
+): { sale: string } => ({ sale: `${collectionPath}/${saleId}` })
