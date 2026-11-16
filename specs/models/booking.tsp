@@ -319,6 +319,170 @@ namespace BeautySalon.Models {
   }
 
   @doc("""
+    顧客本人に返す施術明細 - booking_services テーブルの1行のうち、顧客に見せるカラム。
+    サロン内のメモ(notes)と、施術の完了の記録(isCompleted、completedAt)は返さない
+    """)
+  model CustomerBookingServiceResponse {
+    @doc("施術明細を一意に識別するID")
+    id: BookingServiceId;
+
+    @doc("予約された施術メニューのID")
+    serviceId: ServiceId;
+
+    @doc("この施術を担当するスタッフのID。担当スタッフが決まっていない場合はnull")
+    staffId: StaffId | null;
+
+    @doc("施術開始予定日時 (UTC)")
+    startTime: utcDateTime;
+
+    @doc("施術終了予定日時 (UTC)")
+    endTime: utcDateTime;
+
+    @doc("施術時間（分）。明細を入れた時点のサービスの施術時間")
+    duration: int32;
+
+    @doc("施術料金。明細を入れた時点のサービスの料金")
+    price: int32;
+
+    @doc("施術料金からの割引額。明細を入れた時点のサービスの割引後料金から算出する")
+    discountAmount: int32;
+
+    @doc("割引適用後の施術料金 (price − discountAmount)")
+    finalPrice: int32;
+
+    @doc("施術料金が消費税を含むかどうか。false の明細の finalPrice には、予約の taxAmount の消費税が加わる")
+    taxIncluded: boolean;
+
+    @doc("予約内での表示順序")
+    sortOrder: int32;
+  }
+
+  @doc("""
+    顧客本人に返す予約 - bookings テーブルのうち、顧客に見せるカラムと、施術明細を返す。
+    プロパティ名と null 許可は DB カラムと一致させている。サロン内のメモ(internalNotes)、サロンの記録
+    (source、reminderSent、reminderSentAt、actualStartTime、actualEndTime)、誰がキャンセルしたかとその理由
+    (cancelledBy、cancellationReason)は返さない。customerId は、本人のものなので返さない
+    """)
+  model CustomerBookingResponse {
+    @doc("予約を一意に識別するID")
+    id: BookingId;
+
+    @doc("予約番号。BK-XXXX-XXXX の形式で、サロンへの問い合わせに使う")
+    bookingNumber: string;
+
+    @doc("予約したサロンのID")
+    salonId: SalonId;
+
+    @doc("予約の担当スタッフのID")
+    staffId: StaffId;
+
+    @doc("来店日。startTime をサロンのタイムゾーンで表した日付")
+    bookingDate: plainDate;
+
+    @doc("予約の開始予定日時 (UTC)。施術明細の最も早い開始日時")
+    startTime: utcDateTime;
+
+    @doc("予約の終了予定日時 (UTC)。施術明細の最も遅い終了日時")
+    endTime: utcDateTime;
+
+    @doc("予約全体の所要時間（分）。startTime から endTime までの分数")
+    duration: int32;
+
+    @doc("予約の現在ステータス。本人が入れた予約は pending で始まり、サロンが確定(confirmed)する")
+    status: BookingStatusType;
+
+    @doc("小計。施術明細の料金(price)の合計")
+    subtotal: int32;
+
+    @doc("割引額の合計。施術明細の割引額(discountAmount)の合計")
+    discountAmount: int32;
+
+    @doc("料金に加える消費税額。税込価格のサービスの消費税は料金に含まれており、ここには入らない")
+    taxAmount: int32;
+
+    @doc("請求金額 (subtotal − discountAmount + taxAmount)")
+    totalAmount: int32;
+
+    @doc("事前に受領する内金・デポジット金額。未設定の場合はnull")
+    depositAmount: int32 | null;
+
+    @doc("この予約の支払いで利用したポイント数。未設定の場合はnull")
+    pointsUsed: int32 | null;
+
+    @doc("この予約で獲得したポイント数。未設定の場合はnull")
+    pointsEarned: int32 | null;
+
+    @doc("予約のときに伝えた要望や特記事項。要望がない場合はnull")
+    customerRequest: string | null;
+
+    @doc("予約がキャンセルされた日時。キャンセルされていない場合はnull")
+    cancelledAt: utcDateTime | null;
+
+    @doc("キャンセル料。キャンセルされていない場合はnull。キャンセルされた予約では、料金を決める規則が未定義のため常に0")
+    cancellationFee: int32 | null;
+
+    @doc("予約の施術が完了した日時。完了していない場合はnull")
+    completedAt: utcDateTime | null;
+
+    @doc("施術明細の一覧。sortOrder の昇順で並ぶ。1件以上")
+    services: CustomerBookingServiceResponse[];
+
+    @doc("レコード作成日時")
+    createdAt: utcDateTime;
+
+    @doc("レコード最終更新日時")
+    updatedAt: utcDateTime;
+  }
+
+  @doc("""
+    顧客本人の予約作成リクエスト - 空き枠の一覧が返した枠を1つ指定する。全項目のキーが必須。
+    予約するのは1つのサービスで、施術時間・料金はサービスの登録内容から決まる。作成した予約のステータスは pending になる
+    """)
+  model CustomerBookingCreateRequest {
+    @doc("予約するサロンのID")
+    salonId: SalonId;
+
+    @doc("予約する施術メニューのID。salonId のサロンのサービスを指定する")
+    serviceId: ServiceId;
+
+    @doc("担当するスタッフのID。空き枠の staffId を指定する")
+    staffId: StaffId;
+
+    @doc("開始日時 (UTC)。空き枠の startTime を指定する。分単位(秒と小数は0)")
+    startTime: utcDateTime;
+
+    @doc("サロンに伝える要望や特記事項。要望がない場合はnull")
+    customerRequest: string | null;
+  }
+
+  @doc("""
+    顧客本人の予約一覧リクエスト - 自分の予約の絞り込み条件とページネーションを指定する。条件はすべて AND で結合する
+    """)
+  model CustomerBookingSearchRequest {
+    @query
+    @doc("1ページあたりの取得件数上限 (1〜100)")
+    @minValue(1)
+    @maxValue(100)
+    limit?: int32 = 20;
+
+    @query
+    @doc("取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する")
+    cursor?: string;
+
+    @query
+    @doc("ステータスによる絞り込み(完全一致)")
+    status?: BookingStatusType;
+
+    @query
+    @doc("来店日(bookingDate)の範囲の開始日。この日以降の予約に一致する。bookingDateTo より後の日付は指定できない")
+    bookingDateFrom?: plainDate;
+
+    @query
+    @doc("来店日(bookingDate)の範囲の終了日。この日以前の予約に一致する")
+    bookingDateTo?: plainDate;
+  }
+
+  @doc("""
     空き枠検索リクエスト - サロンの指定日に、サービスを予約できる枠を算出する条件とページネーションを指定する。
     serviceId と date は必須
     """)

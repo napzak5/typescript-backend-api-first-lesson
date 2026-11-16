@@ -1,5 +1,5 @@
 import { parseISO } from 'date-fns'
-import { match } from 'ts-pattern'
+import { match, P } from 'ts-pattern'
 import type { UserId } from '../../../models/auth'
 import type {
   BookingStatusWrite,
@@ -14,6 +14,10 @@ import type {
  * is completed; or it is cancelled, or the customer does not come. Nothing
  * leads out of `completed`, `cancelled` and `no_show`: a booking that was
  * closed by mistake is removed and entered again.
+ *
+ * The salon cancels a booking whenever it learns that the visit will not
+ * take place. The customer cancels their own before it begins; after that
+ * it is the salon's to say what became of the visit.
  */
 
 type BookingStatus = DbBooking['status']
@@ -22,6 +26,8 @@ type BookingStatus = DbBooking['status']
 export type BookingAction =
   | { type: 'confirm' }
   | { type: 'cancel'; cancellationReason: string | null }
+  /** The cancellation by the customer whose booking it is. */
+  | { type: 'cancelAsCustomer'; cancellationReason: string | null }
   | { type: 'start' }
   | {
       type: 'complete'
@@ -31,13 +37,17 @@ export type BookingAction =
     }
   | { type: 'noShow' }
 
+/** The statuses in which a booking can still be cancelled, whoever cancels it. */
+const CANCELLABLE: readonly BookingStatus[] = ['draft', 'pending', 'confirmed']
+
 /** The statuses from which an action leads on, and the one it leads to. */
 const TRANSITIONS: Record<
   BookingAction['type'],
   { from: readonly BookingStatus[]; to: BookingStatus }
 > = {
   confirm: { from: ['draft', 'pending'], to: 'confirmed' },
-  cancel: { from: ['draft', 'pending', 'confirmed'], to: 'cancelled' },
+  cancel: { from: CANCELLABLE, to: 'cancelled' },
+  cancelAsCustomer: { from: CANCELLABLE, to: 'cancelled' },
   start: { from: ['confirmed'], to: 'in_progress' },
   complete: { from: ['confirmed', 'in_progress'], to: 'completed' },
   noShow: { from: ['pending', 'confirmed'], to: 'no_show' },
@@ -71,6 +81,7 @@ export type StatusChangeOrigin = {
  * - `statusDoesNotAllow`: the action does not lead on from the status the
  *   booking has
  * - `notBegunYet`: nobody failed to come to a visit that has not begun
+ * - `alreadyBegun`: the customer cancels a visit only before it begins
  * - `actualTimesOutOfOrder`: with the times the booking has, the actual end
  *   would not be after the actual start
  */
@@ -82,6 +93,7 @@ export type StatusChangeRefusal =
       allowed: readonly BookingStatus[]
     }
   | { type: 'notBegunYet' }
+  | { type: 'alreadyBegun' }
   | { type: 'actualTimesOutOfOrder' }
 
 export type StatusChangePlan =
@@ -93,27 +105,40 @@ type Changes =
   | { type: 'changes'; booking: DbBookingChanges }
   | StatusChangeRefusal
 
+/** What a cancellation writes, whoever cancels. */
+const cancelled = (
+  cancellationReason: string | null,
+  { changedBy, at }: StatusChangeOrigin,
+): Changes => ({
+  type: 'changes',
+  booking: {
+    cancelledAt: at.toISOString(),
+    cancelledBy: changedBy,
+    cancellationReason,
+    // Nothing defines what a cancellation costs.
+    cancellationFee: 0,
+  },
+})
+
 const changesOf = (
   booking: BookingInStatus,
   action: BookingAction,
-  { changedBy, at }: StatusChangeOrigin,
+  origin: StatusChangeOrigin,
 ): Changes =>
   match(action)
     .returnType<Changes>()
     .with({ type: 'confirm' }, () => ({ type: 'changes', booking: {} }))
-    .with({ type: 'cancel' }, ({ cancellationReason }) => ({
-      type: 'changes',
-      booking: {
-        cancelledAt: at.toISOString(),
-        cancelledBy: changedBy,
-        cancellationReason,
-        // Nothing defines what a cancellation costs.
-        cancellationFee: 0,
-      },
-    }))
+    .with({ type: 'cancel' }, ({ cancellationReason }) =>
+      cancelled(cancellationReason, origin),
+    )
+    .with({ type: 'cancelAsCustomer' }, ({ cancellationReason }) =>
+      origin.at < booking.startTime
+        ? cancelled(cancellationReason, origin)
+        : { type: 'alreadyBegun' },
+    )
     .with({ type: 'start' }, () => ({
       type: 'changes',
-      booking: { actualStartTime: at.toISOString() },
+      booking: { actualStartTime: origin.at.toISOString() },
     }))
     .with({ type: 'complete' }, ({ actualStartTime, actualEndTime }) => {
       const began =
@@ -129,14 +154,14 @@ const changesOf = (
       return {
         type: 'changes',
         booking: {
-          completedAt: at.toISOString(),
+          completedAt: origin.at.toISOString(),
           ...(actualStartTime === null ? {} : { actualStartTime }),
           ...(actualEndTime === null ? {} : { actualEndTime }),
         },
       }
     })
     .with({ type: 'noShow' }, () =>
-      at < booking.startTime
+      origin.at < booking.startTime
         ? { type: 'notBegunYet' }
         : { type: 'changes', booking: {} },
     )
@@ -194,7 +219,16 @@ export const planStatusChange = (
         fromStatus: booking.status,
         toStatus: to,
         changedBy: origin.changedBy,
-        reason: action.type === 'cancel' ? action.cancellationReason : null,
+        reason: match(action)
+          .with(
+            { type: P.union('cancel', 'cancelAsCustomer') },
+            ({ cancellationReason }) => cancellationReason,
+          )
+          .with(
+            { type: P.union('confirm', 'start', 'complete', 'noShow') },
+            () => null,
+          )
+          .exhaustive(),
         metadata: null,
       },
       countsCustomer: isCounted(to),

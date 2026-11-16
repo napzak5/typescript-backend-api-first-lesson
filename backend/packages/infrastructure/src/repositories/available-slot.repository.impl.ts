@@ -1,40 +1,26 @@
-import {
-  bookingServices,
-  bookings,
-  openingHours,
-  salons,
-  services,
-  staff,
-  staffSchedules,
-} from '@beauty-salon-backend/database'
+import { salons, services, staff } from '@beauty-salon-backend/database'
 import {
   type DomainError,
   type IAvailableSlotRepository,
   type OccupancyQuery,
   occupancyWindowOf,
-  RELEASING_STATUSES,
   type SlotDay,
   type SlotDayQuery,
   type SlotOccupancy,
-  type TakenTime,
   timeOf,
   widestDayOf,
 } from '@beauty-salon-backend/domain'
 import type { Result } from '@beauty-salon-backend/utility'
-import {
-  and,
-  asc,
-  eq,
-  inArray,
-  isNull,
-  notInArray,
-  or,
-  type SQL,
-  sql,
-} from 'drizzle-orm'
-import type { PgColumn, PgTransactionConfig } from 'drizzle-orm/pg-core'
+import { and, asc, eq, isNull } from 'drizzle-orm'
+import type { PgTransactionConfig } from 'drizzle-orm/pg-core'
 import { attempt } from '../database/attempt'
-import type { Database, DatabaseExecutor } from '../database/index'
+import type { Database } from '../database/index'
+import {
+  calendarDaysOf,
+  schedulesOf,
+  serviceLineStartsOf,
+  takenOf,
+} from './slot-reads'
 import { staffMemberOf } from './staff-member'
 
 /**
@@ -45,56 +31,6 @@ import { staffMemberOf } from './staff-member'
 const AT_ONE_MOMENT: PgTransactionConfig = {
   isolationLevel: 'repeatable read',
   accessMode: 'read only',
-}
-
-/** A `timestamptz` column as the milliseconds since the epoch. */
-const millisecondsOf = (column: PgColumn) =>
-  sql<number>`(extract(epoch from ${column}) * 1000)`.mapWith(Number)
-
-/** A moment as a value a `timestamptz` column is compared with. */
-const moment = (value: Date): SQL => sql`${value.toISOString()}::timestamptz`
-
-/** A booking that was cancelled, or whose customer did not come, takes no time. */
-const takesTime = notInArray(bookings.status, [...RELEASING_STATUSES])
-
-/**
- * The service lines that bookings have for the staff members and that
- * meet a stretch of time, with the staff member each is for.
- */
-const takenOf = async (
-  executor: DatabaseExecutor,
-  staffIds: readonly string[],
-  { from, until }: { from: Date; until: Date },
-): Promise<{ staffId: string | null; time: TakenTime }[]> => {
-  if (staffIds.length === 0) {
-    return []
-  }
-  const lines = await executor
-    .select({
-      staffId: bookingServices.staffId,
-      bookingId: bookingServices.bookingId,
-      startTime: millisecondsOf(bookingServices.startTime),
-      endTime: millisecondsOf(bookingServices.endTime),
-    })
-    .from(bookingServices)
-    .innerJoin(bookings, eq(bookings.id, bookingServices.bookingId))
-    .where(
-      and(
-        inArray(bookingServices.staffId, [...staffIds]),
-        sql`${bookingServices.endTime} > ${moment(from)}`,
-        sql`${bookingServices.startTime} < ${moment(until)}`,
-        takesTime,
-      ),
-    )
-
-  return lines.map(({ staffId, bookingId, startTime, endTime }) => ({
-    staffId,
-    time: {
-      bookingId,
-      startTime: new Date(startTime),
-      endTime: new Date(endTime),
-    },
-  }))
 }
 
 export class AvailableSlotRepository implements IAvailableSlotRepository {
@@ -122,16 +58,7 @@ export class AvailableSlotRepository implements IAvailableSlotRepository {
           return null
         }
 
-        const [calendarDay] = await tx
-          .select({
-            openTime: openingHours.openTime,
-            closeTime: openingHours.closeTime,
-          })
-          .from(openingHours)
-          .where(
-            and(eq(openingHours.salonId, salonId), eq(openingHours.date, date)),
-          )
-          .limit(1)
+        const [calendarDay] = await calendarDaysOf(tx, salonId, [date])
         const [service] = await tx
           .select({
             duration: services.duration,
@@ -184,47 +111,23 @@ export class AvailableSlotRepository implements IAvailableSlotRepository {
               bufferTimeBefore + bufferTimeAfter,
           ),
         )
-        const schedules =
-          staffIds.length === 0
-            ? []
-            : await tx
-                .select()
-                .from(staffSchedules)
-                .where(
-                  and(
-                    inArray(staffSchedules.staffId, staffIds),
-                    or(
-                      eq(staffSchedules.date, date),
-                      eq(staffSchedules.isRecurring, true),
-                    ),
-                  ),
-                )
+        const schedules = await schedulesOf(tx, staffIds, [date])
         const taken = await takenOf(tx, staffIds, widestDayOf(date, kept))
-        const serviceLines =
-          service === undefined
-            ? []
-            : await tx
-                .select({
-                  startTime: millisecondsOf(bookingServices.startTime),
-                })
-                .from(bookingServices)
-                .innerJoin(bookings, eq(bookings.id, bookingServices.bookingId))
-                .where(
-                  and(
-                    eq(bookingServices.serviceId, serviceId),
-                    sql`${bookingServices.startTime} >= ${moment(widest.from)}`,
-                    sql`${bookingServices.startTime} < ${moment(widest.until)}`,
-                    takesTime,
-                  ),
-                )
 
         return {
           salon,
-          calendarDay: calendarDay ?? null,
+          calendarDay:
+            calendarDay === undefined
+              ? null
+              : {
+                  openTime: calendarDay.openTime,
+                  closeTime: calendarDay.closeTime,
+                },
           service: service ?? null,
-          serviceLineStarts: serviceLines.map(
-            ({ startTime }) => new Date(startTime),
-          ),
+          serviceLineStarts:
+            service === undefined
+              ? []
+              : await serviceLineStartsOf(tx, serviceId, widest),
           staff: members.map((member) => ({
             ...member,
             schedules: schedules.filter(

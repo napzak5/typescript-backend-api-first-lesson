@@ -270,7 +270,7 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 |---|---|---|
 | `platform` | `admin` | すべてのサロン（予約台帳を含む）と、顧客台帳（顧客の好み設定を含む） |
 | `salon` | `owner`、`manager`、`staff`。`users.staffId` が指すスタッフが有効（`isActive`、未削除）で、そのサロンが未削除であること | そのサロン（予約台帳を含む）と、顧客台帳（顧客の好み設定を含む）、自分のスタッフのプロフィール（`/api/v1/staff-profiles/me`）。範囲はロール・サロン ID・スタッフ ID を持つ |
-| `customer` | `customer`。範囲は `users.customerId` を持ち、プロフィールを作るまでは null | 自分のプロフィール（`/api/v1/customers/me`）と、自分の好み設定（`/api/v1/customers/me/preferences`）。null の間は、プロフィールの作成だけができる |
+| `customer` | `customer`。範囲は `users.customerId` を持ち、プロフィールを作るまでは null | 自分のプロフィール（`/api/v1/customers/me`）、自分の好み設定（`/api/v1/customers/me/preferences`）、自分の予約（`/api/v1/customers/me/bookings`）。null の間は、プロフィールの作成だけができる |
 | `none` | `owner`、`manager`、`staff` で、`salon` の条件に当たらない（スタッフ情報が削除された `staff`、紐づけを解除された `staff` など） | 範囲を必要とするものには届かない。ログインはでき、スタッフへの招待に[参加](./staff.md#参加)できる |
 
 - ロールは `users.role` の固定 5 種。`users.permissions` は保存しているだけで、判定には使わない
@@ -388,13 +388,16 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 | 予約の施術明細の追加、1 件の取得、削除（`POST /api/v1/bookings/{bookingId}/services`、`GET` と `DELETE /api/v1/bookings/{bookingId}/services/{id}`） | `admin`、予約のサロンの `owner` / `manager` / `staff` |
 | 空き枠の一覧（`GET /api/v1/salons/{salonId}/available-slots`） | サインインしているすべてのユーザー |
 | 空き枠の確認（`POST /api/v1/salons/{salonId}/available-slots/check`） | `admin`、パスのサロンの `owner` / `manager` / `staff` |
+| 自分の予約の一覧、作成、1 件の取得、キャンセル（`GET` と `POST /api/v1/customers/me/bookings`、`GET /api/v1/customers/me/bookings/{id}`、`POST /api/v1/customers/me/bookings/{id}/cancel`） | プロフィールのある `customer` |
 
 - 1 段階目は、操作者だけで決まる（`bookingReachOf`）。操作者に届く予約は、`admin` ならすべてのサロンのもの、サロンのユーザーなら所属サロンのもの。ロール `customer` のユーザーと範囲 `none` のユーザーには、届く予約がない。本文、クエリ、ID が不正でも 403 を返す。予約の削除は、別の関数（`bookingRemovalReachOf`）で決まり、サロンの `staff` にも、削除できる予約がない（403）
 - 空き枠の確認は、重なっている予約の ID を返すので、台帳と同じ範囲で決まる（`business-logic/available-slot/_shared/authorization.ts` の `mayAskLedgerOf`。`bookingReachOf` と `isWithin` を使う）。サロンはパスにあるので、本文を読む前に 403 を返す。空き枠の一覧は、どの予約のことも返さないので、サインインしていれば誰でも読める
 - 2 段階目は、リクエストがサロンを指定したあとに決まる（`isWithin`）。サロンのユーザーが、作成の本文や一覧のクエリでほかのサロンを指定すると 403。本文やクエリが不正なら、その前に 400 を返す
 - 取得には、比べるサロンがない。リポジトリが、操作者に届く範囲を検索の条件にするので、ほかのサロンの予約は見つからない（404）。存在しない ID と区別しない。一覧も同じ条件で検索し、カーソルが指す予約にも同じ条件を付ける。更新、削除、ステータスの操作、日時の変更、施術明細の追加と削除も、同じ条件で予約をロックするので、ほかのサロンの予約は 404 で、何も変えない。施術明細の取得も、同じ条件で予約を探す
 - サロンの 3 つのロールの違いは、予約の削除だけにある。削除できるのは `owner` と `manager` で、`staff` は 403。削除は、予約の履歴を消し、顧客の来店回数を変えるためである（顧客台帳の削除と同じ分け方）。施術明細の削除は、予約の内容の変更で、予約の削除ではないので、`staff` にもできる。予約のための権限（`users.permissions`）はない
-- ロール `customer` のユーザーは、自分の予約にも届かない（キャンセルもできない）。レスポンスがサロン内のメモ（`internalNotes`）を含むため。顧客が自分の予約を読むルートは、まだない
+- ロール `customer` のユーザーは、台帳からは、自分の予約にも届かない。レスポンスがサロン内のメモ（`internalNotes`）を含むため。自分の予約は、本人のルート（`/api/v1/customers/me/bookings`）で、見せてよい項目だけを読み、入れ、キャンセルする
+- 本人のルートは、プロフィールの規則（`profileAccessOf`）で判定する（`business-logic/customer-booking/_shared/access.ts` の `ownBookingsOf`）。`admin` とサロンのロール、範囲 `none` のユーザーは 403、プロフィールをまだ作っていない顧客のアカウントは 404。判定は最初に行う。届く範囲は、その顧客の予約だけで（どのサロンの予約でも、サロンが台帳に入れた予約でも）、リポジトリが、顧客を検索とロックの条件にする。ほかの顧客の予約は、存在しない予約と区別しない（404）
+- 本人のルートに、更新、削除、確定、日時の変更、施術明細のオペレーションはない。それらは、台帳のオペレーションである
 
 規則は [予約台帳](./bookings.md) にあります。
 
@@ -460,7 +463,7 @@ export const updateSalonHandler = (
 | `manager@beautysalon.jp` | `manager` | 同上 |
 | `stylist1@beautysalon.jp`、`stylist2@beautysalon.jp` | `staff` | 同上 |
 | `therapist@beautysalon.jp` | `staff` | 2 つ目のサロンと、自分のスタッフのプロフィール |
-| `customer1@example.com` 〜 `customer3@example.com`、`vip.customer@example.com` | `customer` | 自分のプロフィール（`/api/v1/customers/me`）と、自分の好み設定（`/api/v1/customers/me/preferences`） |
+| `customer1@example.com` 〜 `customer3@example.com`、`vip.customer@example.com` | `customer` | 自分のプロフィール（`/api/v1/customers/me`）、自分の好み設定（`/api/v1/customers/me/preferences`）、自分の予約（`/api/v1/customers/me/bookings`） |
 
 ```bash
 curl -s http://localhost:3000/api/v1/auth/login \

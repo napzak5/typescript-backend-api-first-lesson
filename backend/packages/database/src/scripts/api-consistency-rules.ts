@@ -524,9 +524,27 @@ const bookingServiceSystemColumns = [
 ]
 
 /**
- * Bookings and their service lines. The status history
+ * Columns of `bookings` that the customer of a booking is not shown: what
+ * the salon notes for itself and records of the visit, and who cancelled
+ * and why, which the staff do not write for the customer to read.
+ */
+const bookingColumnsOfTheSalon = [
+  'internalNotes',
+  'source',
+  'reminderSent',
+  'reminderSentAt',
+  'actualStartTime',
+  'actualEndTime',
+  'cancelledBy',
+  'cancellationReason',
+]
+
+/**
+ * Bookings and their service lines, as the ledger shows them and as the
+ * customer of a booking is shown them. The status history
  * (`bookingStatusHistories`) is written with the booking and by the
- * actions, and not exposed.
+ * actions, and not exposed. What a customer sends to book a slot names
+ * the slot, and has no rule.
  */
 const bookingRules: ModelRule[] = [
   {
@@ -566,6 +584,34 @@ const bookingRules: ModelRule[] = [
     table: 'bookingServices',
     kind: 'create',
     omittedColumns: bookingServiceSystemColumns,
+  },
+  {
+    model: 'Models.CustomerBookingResponse',
+    table: 'bookings',
+    kind: 'response',
+    embedded: ['services'],
+    omittedColumns: [
+      'ipAddress',
+      'userAgent',
+      ...bookingColumnsOfTheSalon,
+      // The customer reads their own bookings.
+      'customerId',
+    ],
+  },
+  {
+    model: 'Models.CustomerBookingServiceResponse',
+    table: 'bookingServices',
+    kind: 'response',
+    omittedColumns: [
+      'bookingId',
+      'selectedOptions',
+      'createdAt',
+      'updatedAt',
+      // What the salon notes of the line and records of the visit.
+      'notes',
+      'isCompleted',
+      'completedAt',
+    ],
   },
 ]
 

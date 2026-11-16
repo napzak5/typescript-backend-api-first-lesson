@@ -19,6 +19,7 @@ import type {
   BookingServiceAddition,
   BookingServiceRemoval,
   BookingStatusChange,
+  CustomerBookingCreation,
   IBookingRepository,
 } from '../repositories/booking.repository'
 import { CUSTOMER_ID } from './auth-fixtures'
@@ -291,6 +292,12 @@ export const bookingDependencies = (
           booking: bookingWithServices(),
         }),
       ),
+      book: vi.fn(async () =>
+        Result.success<CustomerBookingCreation>({
+          type: 'created',
+          booking: bookingWithServices(),
+        }),
+      ),
       findById: vi.fn(async () =>
         Result.success<BookingWithServices | null>(bookingWithServices()),
       ),
@@ -341,6 +348,7 @@ export const bookingDependencies = (
 
 const REPOSITORY_METHODS: (keyof IBookingRepository)[] = [
   'create',
+  'book',
   'findById',
   'changeStatus',
   'update',

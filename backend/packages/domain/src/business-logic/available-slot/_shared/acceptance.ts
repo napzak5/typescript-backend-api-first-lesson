@@ -4,13 +4,14 @@ import type {
   ServiceOfSlots,
   StaffOfSlots,
 } from '../../../models/available-slot'
+import type { DbCustomer } from '../../../models/customer'
 import { dayOfWeekOf } from '../../../schemas/rules'
 
 /**
  * What a salon has set for the bookings its customers make: whether the
- * salon, a service and a staff member take such a booking at all. The
- * ledger does not ask: a booking the salon enters itself is the salon's
- * decision.
+ * salon, a service and a staff member take such a booking at all, and
+ * whether a customer makes one. The ledger does not ask: a booking the
+ * salon enters itself is the salon's decision.
  */
 
 /** The levels of the staff, from the one that qualifies for the least. */
@@ -92,3 +93,17 @@ export const takesBookingsOf = (
   staff.canReceiveBookings &&
   (service.requiredStaffLevel === null ||
     LEVELS.indexOf(staff.level) >= LEVELS.indexOf(service.requiredStaffLevel))
+
+/**
+ * Whether a customer books by themself. The salons keep the ledger of the
+ * customers: one they have set aside, or marked as one they do not take
+ * bookings from, books through a salon, which enters what it accepts.
+ */
+export const booksOnline = (
+  customer: Pick<DbCustomer, 'isActive' | 'customerStatus'>,
+): boolean =>
+  customer.isActive &&
+  match(customer.customerStatus)
+    .with('active', 'vip', () => true)
+    .with('inactive', 'blacklisted', () => false)
+    .exhaustive()

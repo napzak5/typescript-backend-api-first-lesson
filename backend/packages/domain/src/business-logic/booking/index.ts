@@ -9,6 +9,7 @@ export {
   isOccupiedBeyondCapacity,
   occupancyWindowOf,
   RELEASING_STATUSES,
+  type ServiceTime,
   type StaffCapacity,
   type TakenTime,
   timeOf,

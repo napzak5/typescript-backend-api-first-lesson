@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  booksOnline,
   hasRoomFor,
   isBookable,
   isBookedInTime,
@@ -684,6 +685,40 @@ describe('takesBookingsOf', () => {
         { requiredStaffLevel: 'junior' },
       ),
     ).toBe(false)
+  })
+})
+
+describe('booksOnline', () => {
+  it.each<[string, Parameters<typeof booksOnline>[0], boolean]>([
+    ['an active customer', { isActive: true, customerStatus: 'active' }, true],
+    ['a VIP', { isActive: true, customerStatus: 'vip' }, true],
+    [
+      'a customer set aside as inactive',
+      { isActive: true, customerStatus: 'inactive' },
+      false,
+    ],
+    [
+      'a blacklisted customer',
+      { isActive: true, customerStatus: 'blacklisted' },
+      false,
+    ],
+    [
+      'a customer who is not active',
+      { isActive: false, customerStatus: 'active' },
+      false,
+    ],
+    [
+      'a VIP who is not active',
+      { isActive: false, customerStatus: 'vip' },
+      false,
+    ],
+    [
+      'a blacklisted customer who is not active',
+      { isActive: false, customerStatus: 'blacklisted' },
+      false,
+    ],
+  ])('says of %s whether they book by themself', (_case, customer, books) => {
+    expect(booksOnline(customer)).toBe(books)
   })
 })
 

@@ -9,6 +9,8 @@ import {
   type ApiBookingSearchRequest,
   type ApiBookingServiceCreateRequest,
   type ApiBookingUpdateRequest,
+  type ApiCustomerBookingCreateRequest,
+  type ApiCustomerBookingSearchRequest,
   bookingIdSchema,
 } from '../models/booking'
 import { customerIdSchema } from '../models/customer'
@@ -155,25 +157,64 @@ export const bookingCompleteRequestSchema = z
     },
   ) satisfies z.ZodType<ApiBookingCompleteRequest>
 
-export const bookingSearchRequestSchema = z
-  .strictObject({
-    limit: z.number().int().min(1).max(100).exactOptional(),
-    cursor: bookingIdSchema.exactOptional(),
-    salonId: salonIdSchema.exactOptional(),
-    customerId: customerIdSchema.exactOptional(),
-    staffId: staffIdSchema.exactOptional(),
-    status: BookingStatusTypeSchema.exactOptional(),
-    bookingDateFrom: z.iso.date().exactOptional(),
-    bookingDateTo: z.iso.date().exactOptional(),
-  })
-  // Two dates in the same format compare as text.
+const bookingSearch = z.strictObject({
+  limit: z.number().int().min(1).max(100).exactOptional(),
+  cursor: bookingIdSchema.exactOptional(),
+  salonId: salonIdSchema.exactOptional(),
+  customerId: customerIdSchema.exactOptional(),
+  staffId: staffIdSchema.exactOptional(),
+  status: BookingStatusTypeSchema.exactOptional(),
+  bookingDateFrom: z.iso.date().exactOptional(),
+  bookingDateTo: z.iso.date().exactOptional(),
+})
+
+/** Two dates in the same format compare as text. */
+const daysAreInOrder = ({
+  bookingDateFrom,
+  bookingDateTo,
+}: {
+  bookingDateFrom?: string
+  bookingDateTo?: string
+}): boolean =>
+  bookingDateFrom === undefined ||
+  bookingDateTo === undefined ||
+  bookingDateFrom <= bookingDateTo
+
+const DAYS_OUT_OF_ORDER = {
+  path: ['bookingDateTo'],
+  message: 'Must not be earlier than bookingDateFrom',
+}
+
+export const bookingSearchRequestSchema = bookingSearch.refine(
+  daysAreInOrder,
+  DAYS_OUT_OF_ORDER,
+) satisfies z.ZodType<ApiBookingSearchRequest>
+
+/**
+ * What a customer asks for when they book by themself: one slot of the
+ * available slots of a salon, for one service. The rest of a booking is
+ * the salon's to note.
+ */
+export const customerBookingCreateRequestSchema = z.strictObject({
+  salonId: salonIdSchema,
+  serviceId: serviceIdSchema,
+  staffId: staffIdSchema,
+  startTime: minuteInUtc,
+  customerRequest: notedOfBooking.customerRequest,
+}) satisfies z.ZodType<ApiCustomerBookingCreateRequest>
+
+/** A booking request of a customer that passed the rules of its own. */
+export type CustomerBookingCreateRequest = z.infer<
+  typeof customerBookingCreateRequestSchema
+>
+
+/**
+ * A customer lists their own bookings: there is no salon, customer or
+ * staff member to narrow the list by.
+ */
+export const customerBookingSearchRequestSchema = bookingSearch
+  .omit({ salonId: true, customerId: true, staffId: true })
   .refine(
-    ({ bookingDateFrom, bookingDateTo }) =>
-      bookingDateFrom === undefined ||
-      bookingDateTo === undefined ||
-      bookingDateFrom <= bookingDateTo,
-    {
-      path: ['bookingDateTo'],
-      message: 'Must not be earlier than bookingDateFrom',
-    },
-  ) satisfies z.ZodType<ApiBookingSearchRequest>
+    daysAreInOrder,
+    DAYS_OUT_OF_ORDER,
+  ) satisfies z.ZodType<ApiCustomerBookingSearchRequest>

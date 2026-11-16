@@ -41,6 +41,11 @@ import type {
   BookingCrudUpdate200,
   BookingServiceCrudCreate201,
   BookingServiceCrudGet200,
+  CustomerBookingsCancel200,
+  CustomerBookingsCreate201,
+  CustomerBookingsGet200,
+  CustomerBookingsList200,
+  CustomerBookingsListParams,
   ModelsAvailableSlotCheckRequest,
   ModelsBookingCancelRequest,
   ModelsBookingCompleteRequest,
@@ -50,6 +55,7 @@ import type {
   ModelsBookingServiceCreateRequest,
   ModelsBookingServiceId,
   ModelsBookingUpdateRequest,
+  ModelsCustomerBookingCreateRequest,
   ModelsProblemDetails,
   ModelsSalonId
 } from '../../models';
@@ -2059,6 +2065,624 @@ export const useBookingCrudStart = <TError = ModelsProblemDetails,
         TContext
       > => {
       return useMutation(getBookingCrudStartMutationOptions(options), queryClient);
+    }
+    export type customerBookingsListResponse200 = {
+  data: CustomerBookingsList200
+  status: 200
+}
+
+export type customerBookingsListResponse400 = {
+  data: ModelsProblemDetails
+  status: 400
+}
+
+export type customerBookingsListResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type customerBookingsListResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
+export type customerBookingsListResponse404 = {
+  data: ModelsProblemDetails
+  status: 404
+}
+
+export type customerBookingsListResponse429 = {
+  data: ModelsProblemDetails
+  status: 429
+}
+
+export type customerBookingsListResponse500 = {
+  data: ModelsProblemDetails
+  status: 500
+}
+
+export type customerBookingsListResponseSuccess = (customerBookingsListResponse200) & {
+  headers: Headers;
+};
+export type customerBookingsListResponseError = (customerBookingsListResponse400 | customerBookingsListResponse401 | customerBookingsListResponse403 | customerBookingsListResponse404 | customerBookingsListResponse429 | customerBookingsListResponse500) & {
+  headers: Headers;
+};
+
+export type customerBookingsListResponse = (customerBookingsListResponseSuccess | customerBookingsListResponseError)
+
+export const getCustomerBookingsListUrl = (params?: CustomerBookingsListParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/customers/me/bookings?${stringifiedParams}` : `/api/v1/customers/me/bookings`
+}
+
+/**
+ * ログインしている顧客の予約を、開始日時の早い順に一覧取得します。どのステータスの予約も、どのサロンの予約も含みます。cursorが、自分の予約を指していない場合は400を返します。
+ * @summary List the signed-in customer's bookings
+ */
+export const customerBookingsList = async (params?: CustomerBookingsListParams, options?: RequestInit): Promise<customerBookingsListResponse> => {
+
+  return customInstance<customerBookingsListResponse>(getCustomerBookingsListUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getCustomerBookingsListQueryKey = (params?: CustomerBookingsListParams,) => {
+    return [
+    `/api/v1/customers/me/bookings`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getCustomerBookingsListQueryOptions = <TData = Awaited<ReturnType<typeof customerBookingsList>>, TError = ModelsProblemDetails>(params?: CustomerBookingsListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerBookingsList>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getCustomerBookingsListQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof customerBookingsList>>> = ({ signal }) => customerBookingsList(params, { signal });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof customerBookingsList>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type CustomerBookingsListQueryResult = NonNullable<Awaited<ReturnType<typeof customerBookingsList>>>
+export type CustomerBookingsListQueryError = ModelsProblemDetails
+
+
+/**
+ * ログインしている顧客の予約を、開始日時の早い順に一覧取得します。どのステータスの予約も、どのサロンの予約も含みます。cursorが、自分の予約を指していない場合は400を返します。
+ * @summary List the signed-in customer's bookings
+ */
+export function useCustomerBookingsList<TData = Awaited<ReturnType<typeof customerBookingsList>>, TError = ModelsProblemDetails>(
+ params: undefined |  CustomerBookingsListParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerBookingsList>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof customerBookingsList>>,
+          TError,
+          Awaited<ReturnType<typeof customerBookingsList>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * ログインしている顧客の予約を、開始日時の早い順に一覧取得します。どのステータスの予約も、どのサロンの予約も含みます。cursorが、自分の予約を指していない場合は400を返します。
+ * @summary List the signed-in customer's bookings
+ */
+export function useCustomerBookingsList<TData = Awaited<ReturnType<typeof customerBookingsList>>, TError = ModelsProblemDetails>(
+ params?: CustomerBookingsListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerBookingsList>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof customerBookingsList>>,
+          TError,
+          Awaited<ReturnType<typeof customerBookingsList>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * ログインしている顧客の予約を、開始日時の早い順に一覧取得します。どのステータスの予約も、どのサロンの予約も含みます。cursorが、自分の予約を指していない場合は400を返します。
+ * @summary List the signed-in customer's bookings
+ */
+export function useCustomerBookingsList<TData = Awaited<ReturnType<typeof customerBookingsList>>, TError = ModelsProblemDetails>(
+ params?: CustomerBookingsListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerBookingsList>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * ログインしている顧客の予約を、開始日時の早い順に一覧取得します。どのステータスの予約も、どのサロンの予約も含みます。cursorが、自分の予約を指していない場合は400を返します。
+ * @summary List the signed-in customer's bookings
+ */
+export function useCustomerBookingsList<TData = Awaited<ReturnType<typeof customerBookingsList>>, TError = ModelsProblemDetails>(
+ params?: CustomerBookingsListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerBookingsList>>, TError, TData>>, }
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getCustomerBookingsListQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type customerBookingsCreateResponse201 = {
+  data: CustomerBookingsCreate201
+  status: 201
+}
+
+export type customerBookingsCreateResponse400 = {
+  data: ModelsProblemDetails
+  status: 400
+}
+
+export type customerBookingsCreateResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type customerBookingsCreateResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
+export type customerBookingsCreateResponse404 = {
+  data: ModelsProblemDetails
+  status: 404
+}
+
+export type customerBookingsCreateResponse409 = {
+  data: ModelsProblemDetails
+  status: 409
+}
+
+export type customerBookingsCreateResponse413 = {
+  data: ModelsProblemDetails
+  status: 413
+}
+
+export type customerBookingsCreateResponse415 = {
+  data: ModelsProblemDetails
+  status: 415
+}
+
+export type customerBookingsCreateResponse429 = {
+  data: ModelsProblemDetails
+  status: 429
+}
+
+export type customerBookingsCreateResponse500 = {
+  data: ModelsProblemDetails
+  status: 500
+}
+
+export type customerBookingsCreateResponseSuccess = (customerBookingsCreateResponse201) & {
+  headers: Headers;
+};
+export type customerBookingsCreateResponseError = (customerBookingsCreateResponse400 | customerBookingsCreateResponse401 | customerBookingsCreateResponse403 | customerBookingsCreateResponse404 | customerBookingsCreateResponse409 | customerBookingsCreateResponse413 | customerBookingsCreateResponse415 | customerBookingsCreateResponse429 | customerBookingsCreateResponse500) & {
+  headers: Headers;
+};
+
+export type customerBookingsCreateResponse = (customerBookingsCreateResponseSuccess | customerBookingsCreateResponseError)
+
+export const getCustomerBookingsCreateUrl = () => {
+
+
+
+
+  return `/api/v1/customers/me/bookings`
+}
+
+/**
+ * 空き枠を1つ指定して、予約を入れます。作成した予約のステータスはpendingで、サロンが確定します。入れられるのは、空き枠の一覧(GET /api/v1/salons/{salonId}/available-slots)が、その時点で返す枠だけです。staffIdとstartTimeが、そのサービスの、その日(サロンのタイムゾーンでのstartTimeの日付)の空き枠でない場合は409を返します(サロンの営業時間、スタッフの勤務、サロン・サービス・スタッフの受付の設定、現在より後であること、スタッフの占有を、空き枠の一覧と同じ規則で確かめます)。施術時間と料金は、サービスの登録内容から決まります。顧客レコードが予約を受け付けられない状態(isActive が false、customerStatus が inactive か blacklisted)の場合と、自分のほかの予約(cancelledとno_showを除く)と時間が重なる場合も409を返します。salonId・serviceId・staffIdが存在しない(削除済みを含む)場合や、サービス・スタッフがsalonIdのサロンのものではない場合は400を、サロンのタイムゾーンを名前として読めない場合は409を返します。
+ * @summary Book an available slot as the signed-in customer
+ */
+export const customerBookingsCreate = async (modelsCustomerBookingCreateRequest: ModelsCustomerBookingCreateRequest, options?: RequestInit): Promise<customerBookingsCreateResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customInstance<customerBookingsCreateResponse>(getCustomerBookingsCreateUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(modelsCustomerBookingCreateRequest)
+  }
+);}
+
+
+
+
+
+export const getCustomerBookingsCreateMutationKey = () => ['customerBookingsCreate'] as const;
+
+export const getCustomerBookingsCreateMutationOptions = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerBookingsCreate>>, TError,CustomerBookingsCreateMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof customerBookingsCreate>>, TError,CustomerBookingsCreateMutationVariables, TContext> => {
+
+const mutationKey = getCustomerBookingsCreateMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof customerBookingsCreate>>, CustomerBookingsCreateMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  customerBookingsCreate(data,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CustomerBookingsCreateMutationResult = NonNullable<Awaited<ReturnType<typeof customerBookingsCreate>>>
+    export type CustomerBookingsCreateMutationBody = ModelsCustomerBookingCreateRequest
+    export type CustomerBookingsCreateMutationError = ModelsProblemDetails
+    export type CustomerBookingsCreateMutationVariables = {data: ModelsCustomerBookingCreateRequest}
+
+    /**
+ * 空き枠を1つ指定して、予約を入れます。作成した予約のステータスはpendingで、サロンが確定します。入れられるのは、空き枠の一覧(GET /api/v1/salons/{salonId}/available-slots)が、その時点で返す枠だけです。staffIdとstartTimeが、そのサービスの、その日(サロンのタイムゾーンでのstartTimeの日付)の空き枠でない場合は409を返します(サロンの営業時間、スタッフの勤務、サロン・サービス・スタッフの受付の設定、現在より後であること、スタッフの占有を、空き枠の一覧と同じ規則で確かめます)。施術時間と料金は、サービスの登録内容から決まります。顧客レコードが予約を受け付けられない状態(isActive が false、customerStatus が inactive か blacklisted)の場合と、自分のほかの予約(cancelledとno_showを除く)と時間が重なる場合も409を返します。salonId・serviceId・staffIdが存在しない(削除済みを含む)場合や、サービス・スタッフがsalonIdのサロンのものではない場合は400を、サロンのタイムゾーンを名前として読めない場合は409を返します。
+ * @summary Book an available slot as the signed-in customer
+ */
+export const useCustomerBookingsCreate = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerBookingsCreate>>, TError,CustomerBookingsCreateMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof customerBookingsCreate>>,
+        TError,
+        CustomerBookingsCreateMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCustomerBookingsCreateMutationOptions(options), queryClient);
+    }
+    export type customerBookingsGetResponse200 = {
+  data: CustomerBookingsGet200
+  status: 200
+}
+
+export type customerBookingsGetResponse400 = {
+  data: ModelsProblemDetails
+  status: 400
+}
+
+export type customerBookingsGetResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type customerBookingsGetResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
+export type customerBookingsGetResponse404 = {
+  data: ModelsProblemDetails
+  status: 404
+}
+
+export type customerBookingsGetResponse429 = {
+  data: ModelsProblemDetails
+  status: 429
+}
+
+export type customerBookingsGetResponse500 = {
+  data: ModelsProblemDetails
+  status: 500
+}
+
+export type customerBookingsGetResponseSuccess = (customerBookingsGetResponse200) & {
+  headers: Headers;
+};
+export type customerBookingsGetResponseError = (customerBookingsGetResponse400 | customerBookingsGetResponse401 | customerBookingsGetResponse403 | customerBookingsGetResponse404 | customerBookingsGetResponse429 | customerBookingsGetResponse500) & {
+  headers: Headers;
+};
+
+export type customerBookingsGetResponse = (customerBookingsGetResponseSuccess | customerBookingsGetResponseError)
+
+export const getCustomerBookingsGetUrl = (id: ModelsBookingId,) => {
+
+
+
+
+  return `/api/v1/customers/me/bookings/${id}`
+}
+
+/**
+ * ログインしている顧客の予約を1件、施術明細とともに取得します。ほかの顧客の予約には404を返します。
+ * @summary Get one of the signed-in customer's bookings
+ */
+export const customerBookingsGet = async (id: ModelsBookingId, options?: RequestInit): Promise<customerBookingsGetResponse> => {
+
+  return customInstance<customerBookingsGetResponse>(getCustomerBookingsGetUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getCustomerBookingsGetQueryKey = (id: ModelsBookingId,) => {
+    return [
+    `/api/v1/customers/me/bookings/${id}`
+    ] as const;
+    }
+
+
+export const getCustomerBookingsGetQueryOptions = <TData = Awaited<ReturnType<typeof customerBookingsGet>>, TError = ModelsProblemDetails>(id: ModelsBookingId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerBookingsGet>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getCustomerBookingsGetQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof customerBookingsGet>>> = ({ signal }) => customerBookingsGet(id, { signal });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof customerBookingsGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type CustomerBookingsGetQueryResult = NonNullable<Awaited<ReturnType<typeof customerBookingsGet>>>
+export type CustomerBookingsGetQueryError = ModelsProblemDetails
+
+
+/**
+ * ログインしている顧客の予約を1件、施術明細とともに取得します。ほかの顧客の予約には404を返します。
+ * @summary Get one of the signed-in customer's bookings
+ */
+export function useCustomerBookingsGet<TData = Awaited<ReturnType<typeof customerBookingsGet>>, TError = ModelsProblemDetails>(
+ id: ModelsBookingId, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerBookingsGet>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof customerBookingsGet>>,
+          TError,
+          Awaited<ReturnType<typeof customerBookingsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * ログインしている顧客の予約を1件、施術明細とともに取得します。ほかの顧客の予約には404を返します。
+ * @summary Get one of the signed-in customer's bookings
+ */
+export function useCustomerBookingsGet<TData = Awaited<ReturnType<typeof customerBookingsGet>>, TError = ModelsProblemDetails>(
+ id: ModelsBookingId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerBookingsGet>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof customerBookingsGet>>,
+          TError,
+          Awaited<ReturnType<typeof customerBookingsGet>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * ログインしている顧客の予約を1件、施術明細とともに取得します。ほかの顧客の予約には404を返します。
+ * @summary Get one of the signed-in customer's bookings
+ */
+export function useCustomerBookingsGet<TData = Awaited<ReturnType<typeof customerBookingsGet>>, TError = ModelsProblemDetails>(
+ id: ModelsBookingId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerBookingsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * ログインしている顧客の予約を1件、施術明細とともに取得します。ほかの顧客の予約には404を返します。
+ * @summary Get one of the signed-in customer's bookings
+ */
+export function useCustomerBookingsGet<TData = Awaited<ReturnType<typeof customerBookingsGet>>, TError = ModelsProblemDetails>(
+ id: ModelsBookingId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerBookingsGet>>, TError, TData>>, }
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getCustomerBookingsGetQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type customerBookingsCancelResponse200 = {
+  data: CustomerBookingsCancel200
+  status: 200
+}
+
+export type customerBookingsCancelResponse400 = {
+  data: ModelsProblemDetails
+  status: 400
+}
+
+export type customerBookingsCancelResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type customerBookingsCancelResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
+export type customerBookingsCancelResponse404 = {
+  data: ModelsProblemDetails
+  status: 404
+}
+
+export type customerBookingsCancelResponse409 = {
+  data: ModelsProblemDetails
+  status: 409
+}
+
+export type customerBookingsCancelResponse413 = {
+  data: ModelsProblemDetails
+  status: 413
+}
+
+export type customerBookingsCancelResponse415 = {
+  data: ModelsProblemDetails
+  status: 415
+}
+
+export type customerBookingsCancelResponse429 = {
+  data: ModelsProblemDetails
+  status: 429
+}
+
+export type customerBookingsCancelResponse500 = {
+  data: ModelsProblemDetails
+  status: 500
+}
+
+export type customerBookingsCancelResponseSuccess = (customerBookingsCancelResponse200) & {
+  headers: Headers;
+};
+export type customerBookingsCancelResponseError = (customerBookingsCancelResponse400 | customerBookingsCancelResponse401 | customerBookingsCancelResponse403 | customerBookingsCancelResponse404 | customerBookingsCancelResponse409 | customerBookingsCancelResponse413 | customerBookingsCancelResponse415 | customerBookingsCancelResponse429 | customerBookingsCancelResponse500) & {
+  headers: Headers;
+};
+
+export type customerBookingsCancelResponse = (customerBookingsCancelResponseSuccess | customerBookingsCancelResponseError)
+
+export const getCustomerBookingsCancelUrl = (id: ModelsBookingId,) => {
+
+
+
+
+  return `/api/v1/customers/me/bookings/${id}/cancel`
+}
+
+/**
+ * ログインしている顧客の、draft・pending・confirmedの予約をキャンセル(cancelled)します。キャンセルできるのは、予約の開始日時より前だけです。開始日時を過ぎた予約と、それ以外のステータスの予約には409を返します(来店しなかった予約は、サロンが記録します)。キャンセル料は、料金を決める規則が未定義のため、常に0です。キャンセルした予約は、スタッフの時間を確保しません。顧客のキャンセル回数(cancellationCount)を、顧客の予約から数え直します。ほかの顧客の予約には404を返します。
+ * @summary Cancel one of the signed-in customer's bookings
+ */
+export const customerBookingsCancel = async (id: ModelsBookingId,
+    modelsBookingCancelRequest: ModelsBookingCancelRequest, options?: RequestInit): Promise<customerBookingsCancelResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customInstance<customerBookingsCancelResponse>(getCustomerBookingsCancelUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(modelsBookingCancelRequest)
+  }
+);}
+
+
+
+
+
+export const getCustomerBookingsCancelMutationKey = () => ['customerBookingsCancel'] as const;
+
+export const getCustomerBookingsCancelMutationOptions = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerBookingsCancel>>, TError,CustomerBookingsCancelMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof customerBookingsCancel>>, TError,CustomerBookingsCancelMutationVariables, TContext> => {
+
+const mutationKey = getCustomerBookingsCancelMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof customerBookingsCancel>>, CustomerBookingsCancelMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  customerBookingsCancel(id,data,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CustomerBookingsCancelMutationResult = NonNullable<Awaited<ReturnType<typeof customerBookingsCancel>>>
+    export type CustomerBookingsCancelMutationBody = ModelsBookingCancelRequest
+    export type CustomerBookingsCancelMutationError = ModelsProblemDetails
+    export type CustomerBookingsCancelMutationVariables = {id: ModelsBookingId;data: ModelsBookingCancelRequest}
+
+    /**
+ * ログインしている顧客の、draft・pending・confirmedの予約をキャンセル(cancelled)します。キャンセルできるのは、予約の開始日時より前だけです。開始日時を過ぎた予約と、それ以外のステータスの予約には409を返します(来店しなかった予約は、サロンが記録します)。キャンセル料は、料金を決める規則が未定義のため、常に0です。キャンセルした予約は、スタッフの時間を確保しません。顧客のキャンセル回数(cancellationCount)を、顧客の予約から数え直します。ほかの顧客の予約には404を返します。
+ * @summary Cancel one of the signed-in customer's bookings
+ */
+export const useCustomerBookingsCancel = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerBookingsCancel>>, TError,CustomerBookingsCancelMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof customerBookingsCancel>>,
+        TError,
+        CustomerBookingsCancelMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCustomerBookingsCancelMutationOptions(options), queryClient);
     }
     export type availableSlotCrudListResponse200 = {
   data: AvailableSlotCrudList200

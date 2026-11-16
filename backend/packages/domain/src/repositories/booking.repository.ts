@@ -9,6 +9,10 @@ import type {
   BookingAction,
   StatusChangeRefusal,
 } from '../business-logic/booking/_shared/status'
+import type {
+  CustomerBooker,
+  CustomerBookingPlan,
+} from '../business-logic/customer-booking/_shared/plan'
 import type { UserId } from '../models/auth'
 import type {
   BookingId,
@@ -18,6 +22,7 @@ import type {
   DbBooking,
   DbBookingNotes,
   DbBookingService,
+  LedgerReach,
 } from '../models/booking'
 import type { CustomerId } from '../models/customer'
 import type { SalonId } from '../models/salon'
@@ -26,6 +31,7 @@ import type {
   BookingCreateRequest,
   BookingRescheduleRequest,
   BookingServiceCreateRequest,
+  CustomerBookingCreateRequest,
 } from '../schemas/booking.schema'
 import type { DomainError, ValidationIssue } from '../shared'
 
@@ -47,6 +53,17 @@ export type BookingCreationRefusal =
 export type BookingCreation =
   | { type: 'created'; booking: BookingWithServices }
   | BookingCreationRefusal
+
+/**
+ * What became of the booking a customer asked for:
+ * - `created`: the booking as it is stored
+ * - `bookingNumberTaken`: another booking has the number
+ * - otherwise why it was not planned (`planCustomerBooking`)
+ */
+export type CustomerBookingCreation =
+  | { type: 'created'; booking: BookingWithServices }
+  | { type: 'bookingNumberTaken' }
+  | Exclude<CustomerBookingPlan, { type: 'planned' }>
 
 /**
  * What became of a change of the status of a booking:
@@ -140,7 +157,8 @@ export type BookingList = {
 /**
  * Persistence of the bookings. A booking is read with its service lines,
  * in their order. A reader names the bookings it reaches, and a booking
- * outside of them is one that does not exist.
+ * outside of them is one that does not exist. What only the keeper of a
+ * ledger does to a booking takes the reach of a ledger.
  */
 export interface IBookingRepository {
   /**
@@ -155,6 +173,21 @@ export interface IBookingRepository {
     request: BookingCreateRequest,
     origin: BookingOrigin,
   ): Promise<Result<BookingCreation, DomainError>>
+
+  /**
+   * Plans the booking a customer asks for (`planCustomerBooking`) and
+   * writes it as `create` writes one of the salon. The customer, the
+   * service and the staff member are booked one request after the other,
+   * and what the plan is made from is read once they are held: of the
+   * requests for the last slot of a staff member, for the last booking a
+   * service takes on a day, or of one customer for the same time, the
+   * second meets what the first wrote.
+   */
+  book(
+    request: CustomerBookingCreateRequest,
+    booker: CustomerBooker,
+    origin: BookingOrigin,
+  ): Promise<Result<CustomerBookingCreation, DomainError>>
 
   findById(
     id: BookingId,
@@ -184,7 +217,7 @@ export interface IBookingRepository {
    */
   update(
     id: BookingId,
-    reach: BookingReach,
+    reach: LedgerReach,
     notes: DbBookingNotes,
   ): Promise<Result<BookingWithServices | null, DomainError>>
 
@@ -198,7 +231,7 @@ export interface IBookingRepository {
    */
   reschedule(
     id: BookingId,
-    reach: BookingReach,
+    reach: LedgerReach,
     request: BookingRescheduleRequest,
   ): Promise<Result<BookingReschedule, DomainError>>
 
@@ -210,7 +243,7 @@ export interface IBookingRepository {
    */
   delete(
     id: BookingId,
-    reach: BookingReach,
+    reach: LedgerReach,
   ): Promise<Result<BookingDeletion, DomainError>>
 
   /**
@@ -223,7 +256,7 @@ export interface IBookingRepository {
    */
   addService(
     id: BookingId,
-    reach: BookingReach,
+    reach: LedgerReach,
     request: BookingServiceCreateRequest,
   ): Promise<Result<BookingServiceAddition, DomainError>>
 
@@ -234,7 +267,7 @@ export interface IBookingRepository {
   findService(
     id: BookingId,
     serviceId: BookingServiceId,
-    reach: BookingReach,
+    reach: LedgerReach,
   ): Promise<Result<DbBookingService | null, DomainError>>
 
   /**
@@ -245,7 +278,7 @@ export interface IBookingRepository {
   removeService(
     id: BookingId,
     serviceId: BookingServiceId,
-    reach: BookingReach,
+    reach: LedgerReach,
   ): Promise<Result<BookingServiceRemoval, DomainError>>
 
   /**

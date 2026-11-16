@@ -6,9 +6,9 @@ import {
   services,
 } from '@beauty-salon-backend/database'
 import {
-  type BookingReach,
   bookingIdSchema,
   type DomainError,
+  type LedgerReach,
   salonIdSchema,
   userIdSchema,
 } from '@beauty-salon-backend/domain'
@@ -1900,8 +1900,8 @@ describe('Booking status API', () => {
     }
 
     const repository = () => new BookingRepository(db)
-    const everySalon: BookingReach = { type: 'everySalon' }
-    const salonOnly = (id: string): BookingReach => ({
+    const everySalon: LedgerReach = { type: 'everySalon' }
+    const salonOnly = (id: string): LedgerReach => ({
       type: 'salon',
       salonId: salonIdSchema.parse(id),
     })

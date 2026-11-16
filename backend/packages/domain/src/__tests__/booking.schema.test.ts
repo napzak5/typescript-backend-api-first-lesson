@@ -6,6 +6,8 @@ import {
   bookingRescheduleRequestSchema,
   bookingSearchRequestSchema,
   bookingUpdateRequestSchema,
+  customerBookingCreateRequestSchema,
+  customerBookingSearchRequestSchema,
 } from '../schemas/booking.schema'
 import { parseWith } from '../shared'
 import { CUSTOMER_ID } from './auth-fixtures'
@@ -1026,5 +1028,172 @@ describe('bookingSearchRequestSchema', () => {
   it('refuses null for a condition: one that is not wanted is left out', () => {
     expect(rulesOfSearch({ status: null })).toEqual(['status:invalid_value'])
     expect(rulesOfSearch({ salonId: null })).toHaveLength(1)
+  })
+})
+
+describe('customerBookingCreateRequestSchema', () => {
+  const parseOwn = (input: unknown) =>
+    parseWith(customerBookingCreateRequestSchema, input, 'Invalid')
+  const rulesOfOwn = (input: unknown): string[] =>
+    rulesBrokenBy(customerBookingCreateRequestSchema, input)
+
+  /** A request that satisfies every rule. */
+  const wanting = (overrides: Record<string, unknown> = {}) => ({
+    salonId: SALON_ID,
+    serviceId: CUT_ID,
+    staffId: STAFF_MEMBER_ID,
+    startTime: '2026-11-20T01:00:00.000Z',
+    customerRequest: null,
+    ...overrides,
+  })
+
+  it('accepts a slot of a service with a staff member of a salon and returns it unchanged', () => {
+    expect(parseOwn(wanting())).toEqual({ type: 'success', data: wanting() })
+    expect(parseOwn(wanting({ customerRequest: '静かな席で' }))).toEqual({
+      type: 'success',
+      data: wanting({ customerRequest: '静かな席で' }),
+    })
+  })
+
+  it.each(['salonId', 'serviceId', 'staffId', 'startTime', 'customerRequest'])(
+    'refuses a request without %s',
+    (property) => {
+      expect(rulesOfOwn(wanting({ [property]: undefined }))).toEqual([
+        `${property}:invalid_type`,
+      ])
+    },
+  )
+
+  it.each(['salonId', 'serviceId', 'staffId'])(
+    'refuses a value of %s that is no ID, and null',
+    (property) => {
+      expect(rulesOfOwn(wanting({ [property]: 'not-an-id' }))).toEqual([
+        `${property}:invalid_format`,
+      ])
+      expect(rulesOfOwn(wanting({ [property]: null }))).toEqual([
+        `${property}:invalid_type`,
+      ])
+    },
+  )
+
+  it('returns the time in the one spelling of its moment', () => {
+    const result = parseOwn(wanting({ startTime: '2026-11-20T01:00:00Z' }))
+
+    expect(result).toMatchObject({
+      type: 'success',
+      data: { startTime: '2026-11-20T01:00:00.000Z' },
+    })
+  })
+
+  it.each([
+    ['a time with an offset', '2026-11-20T10:00:00+09:00', 'invalid_format'],
+    ['a time without a zone', '2026-11-20T10:00:00', 'invalid_format'],
+    ['a date', '2026-11-20', 'invalid_format'],
+    ['a word', 'tomorrow', 'invalid_format'],
+    ['a time with seconds', '2026-11-20T01:00:30Z', 'custom'],
+    [
+      'a time with a fraction of a second',
+      '2026-11-20T01:00:00.500Z',
+      'custom',
+    ],
+  ])('refuses %s', (_case, startTime, rule) => {
+    expect(rulesOfOwn(wanting({ startTime }))).toEqual([`startTime:${rule}`])
+  })
+
+  it.each([
+    ['an empty request of the customer', ''],
+    ['a request of spaces', ' \n '],
+  ])('refuses %s: no request is null', (_case, customerRequest) => {
+    expect(rulesOfOwn(wanting({ customerRequest }))).toEqual([
+      'customerRequest:invalid_format',
+    ])
+  })
+
+  it.each([
+    ['the customer, who is the account', 'customerId', CUSTOMER_ID],
+    ['a deposit', 'depositAmount', 1000],
+    ['a note of the salon', 'internalNotes', 'VIP'],
+    ['where the booking came from', 'source', 'phone'],
+    ['a list of services', 'services', []],
+    ['a status', 'status', 'confirmed'],
+    ['a duration', 'duration', 30],
+    ['an end', 'endTime', '2026-11-20T02:00:00.000Z'],
+  ])('refuses %s, which a customer does not send', (_case, property, value) => {
+    expect(rulesOfOwn(wanting({ [property]: value }))).toEqual([
+      `${property}:unrecognized_keys`,
+    ])
+  })
+
+  it.each([
+    ['null', null],
+    ['a list', []],
+    ['a text', 'a cut at ten'],
+  ])('refuses %s for a request', (_case, input) => {
+    expect(rulesOfOwn(input)).toEqual([':invalid_type'])
+  })
+})
+
+describe('customerBookingSearchRequestSchema', () => {
+  const parseOwnSearch = (input: unknown) =>
+    parseWith(customerBookingSearchRequestSchema, input, 'Invalid')
+  const rulesOfOwnSearch = (input: unknown): string[] =>
+    rulesBrokenBy(customerBookingSearchRequestSchema, input)
+
+  it('accepts a search without a condition', () => {
+    expect(parseOwnSearch({})).toEqual({ type: 'success', data: {} })
+  })
+
+  it('accepts every condition together and returns the search unchanged', () => {
+    const search = {
+      limit: 50,
+      cursor: BOOKING_ID,
+      status: 'confirmed',
+      bookingDateFrom: '2026-11-01',
+      bookingDateTo: '2026-11-30',
+    }
+
+    expect(parseOwnSearch(search)).toEqual({ type: 'success', data: search })
+  })
+
+  it.each(['salonId', 'customerId', 'staffId'])(
+    'refuses %s, by which the ledger is searched and a customer’s own bookings are not',
+    (property) => {
+      expect(rulesOfOwnSearch({ [property]: SALON_ID })).toEqual([
+        `${property}:unrecognized_keys`,
+      ])
+    },
+  )
+
+  it('holds what it has to the rules of the search of the ledger', () => {
+    const searches: Record<string, unknown>[] = [
+      { limit: 0 },
+      { limit: 101 },
+      { limit: '20' },
+      { cursor: 'first' },
+      { status: 'done' },
+      { status: null },
+      { bookingDateFrom: '2026-02-30' },
+      { bookingDateTo: '20/11/2026' },
+      { bookingDateFrom: '2026-11-20', bookingDateTo: '2026-11-19' },
+      { bookingDateFrom: '2026-11-20', bookingDateTo: '2026-11-20' },
+      { limit: 1, status: 'no_show' },
+      { page: 2 },
+    ]
+
+    expect(searches.map(rulesOfOwnSearch)).toEqual(searches.map(rulesOfSearch))
+    expect(searches.map(rulesOfOwnSearch)).toEqual([
+      ['limit:too_small'],
+      ['limit:too_big'],
+      ['limit:invalid_type'],
+      ['cursor:invalid_format'],
+      ['status:invalid_value'],
+      ['status:invalid_value'],
+      ['bookingDateFrom:invalid_format'],
+      ['bookingDateTo:invalid_format'],
+      ['bookingDateTo:custom'],
+      [],
+      [],
+      ['page:unrecognized_keys'],
+    ])
   })
 })

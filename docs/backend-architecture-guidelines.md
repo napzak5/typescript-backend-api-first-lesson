@@ -7,7 +7,7 @@
 - [アーキテクチャ概要](./architecture-overview.md): システム全体の説明。パッケージの依存関係、型生成の流れ、リクエストの流れ、実装済みの範囲はそちらにあり、本書では繰り返しません。
 - [CLAUDE.md](../CLAUDE.md): 規約とコマンドの正本。Salon ドメインの全レイヤーのシグネチャもそこにまとまっています。本書は規約の適用のしかたと理由を説明します。
 
-バックエンドで実装済みなのは、Salon ドメイン、サロンのサービスカテゴリー（`/api/v1/salons/{salonId}/service-categories`）、サロンのサービス（`/api/v1/salons/{salonId}/services`）、サロンのスタッフ台帳（`/api/v1/salons/{salonId}/staff`。`StaffCrud` の、スタッフの一覧、登録、1 件の取得、更新、削除）、スタッフの勤務スケジュール（`/api/v1/salons/{salonId}/staff/{id}/schedules`。`StaffSchedules` の一覧と更新）、スタッフのログインアカウントへの招待（`/api/v1/salons/{salonId}/staff/{id}/invitation` と `/api/v1/auth/staff-invitation`。`StaffInvitations` の取得、作成、取り消しと、`AuthCrud` の招待の確認、受け入れ、参加）、スタッフに紐づいたアカウント（`/api/v1/salons/{salonId}/staff/{id}/account`。`StaffAccounts` の取得、ロールの変更、紐づけの解除）、顧客に見せるスタッフのプロフィール（`/api/v1/staff-profiles`。`StaffProfile` の一覧と 1 件の取得）、スタッフ本人のプロフィール（`/api/v1/staff-profiles/me`。`StaffOwnProfile` の取得と更新）、顧客台帳（`/api/v1/customers`。`CustomerCrud` のうち、顧客の一覧、登録、1 件の取得、更新、削除）、顧客本人のプロフィール（`/api/v1/customers/me`。`CustomerProfile` の取得、作成、更新）、顧客の好み設定（`/api/v1/customers/{id}/preferences` と `/api/v1/customers/me/preferences`。`CustomerCrud` と `CustomerProfile` の、好み設定の取得と更新）、予約台帳（`/api/v1/bookings`。`BookingCrud` の 11 オペレーション: 予約の一覧、作成、1 件の取得、更新、削除、ステータスの 5 つの操作、日時の変更。`BookingServiceCrud` の 3 オペレーション: 施術明細の追加、1 件の取得、削除）、空き枠（`/api/v1/salons/{salonId}/available-slots`。`AvailableSlotCrud` の 2 オペレーション: 一覧、確認）、認証のすべてのオペレーション（ログイン、トークンの再発行、ログアウト、全セッションのログアウト、自分の情報の取得、ユーザー登録、メールアドレスの確認、パスワードの再設定と変更、スタッフの招待の確認、受け入れ、参加、2 要素認証、セッションの一覧と無効化、管理者の操作）、システムエンドポイントだけです。ほかのドメインを実装するときは、Salon のファイルと同じ構成で書いてください。データが 1 つのサロンに属するドメインでは、書き方がいくつか変わります。その例がサービスカテゴリーで、違いは「[9. サロンに属するデータ](#9-サロンに属するデータ-サロンはパスで受け取る)」にまとめています。サービスカテゴリーにはなくサービスにあるもの（2 つのテーブルの行を含むリクエスト、2 つの項目を結ぶ規則、一括更新、論理削除）も、同じ節にあります。サロンに属し、公開のオペレーションがないデータの例がスタッフ台帳で、その違い（どのオペレーションでも最初に判定する権限、操作者自身のスタッフ情報を守る規則、サロンの中での 2 つの一意性）も、同じ節の最後にあります。サロンの 1 つのレコードに属し、全体を置き換える行の例がスタッフの勤務スケジュールで、その違い（レコードの下にマウントするルーター、2 段階の権限、行をロックして置き換えるトランザクション）も、同じ節の最後にあります。メールで送ったトークンで届くレコードの例がスタッフの招待で、その違い（招待する側と招待された側の 2 つのルーター、本文を検証してから判定する 2 つめの権限、結果を直和型で返すリポジトリ、スタッフの行をロックしてから判定し直す書き込み）も、同じ節の最後にあります。テーブルを持たず、ほかのテーブルの行の一部をサロンに扱わせるデータの例がスタッフのアカウントで、その違い（カラムの Enum より狭い Enum、操作者自身のアカウントを守る規則）も、同じ節の最後にあります。公開しないデータのうち、誰にでも見せる部分の例がスタッフのプロフィールで、その違い（見せる列だけを読むリポジトリ、サロンの下に置かない公開のルート、アカウントが対象を決める本人のルート）も、同じ節の最後にあります。サロンに属さず、公開のオペレーションもないデータの例が顧客台帳です。書き方の違い（何も変換しない Write マッパー、操作者だけで最初に判定する権限、依存から受け取る現在時刻、範囲の違う 2 つの一意性、権限のあとで返すクエリのエラー）は、実装パターンの 3、5、6、7、8 のそれぞれの箇所に書いてあります。行が保存されていてもいなくても、どのレコードにも「ある」付随データの例が顧客の好み設定です。その違い（作成と削除のないオペレーション、行がないときに返す空の値、保存されている値と照らす規則、顧客の行をロックしてから判定する書き込み）は、[ドメイン実装リファレンス](./domain-implementation-reference.md#a-record-every-customer-has-the-preferences) にまとめています。サロンに属するが、ルートをサロンの下に置かないデータの例が予約台帳です。その違い（操作者に届く範囲を先に決め、リクエストがサロンを指定してから判定する 2 段階の権限、参照する行から書く行を決める純粋な関数、参照する行をロックし、スタッフの占有を確かめてから書くトランザクション、システムが決める番号の発行、行をロックして読んだステータスから、純粋な関数が次の状態を決める操作、予約の行を最初にロックしてから書く更新・日時の変更・削除、予約の下にあり、明細を足し、外すたびに予約を算出し直すルート）は、[ドメイン実装リファレンス](./domain-implementation-reference.md#data-of-a-salon-whose-routes-are-not-below-it-the-booking-ledger) にまとめています。認証と認可の仕様は [認証と認可](./authentication.md)、サービスカテゴリーとサービスの規則は [サービスメニュー](./service-menu.md)、顧客台帳の規則は [顧客台帳](./customers.md)、スタッフ台帳の規則は [スタッフ台帳](./staff.md)、予約台帳の規則は [予約台帳](./bookings.md) にあり、本書ではコードの書き方だけを扱います。
+バックエンドで実装済みなのは、Salon ドメイン、サロンのサービスカテゴリー（`/api/v1/salons/{salonId}/service-categories`）、サロンのサービス（`/api/v1/salons/{salonId}/services`）、サロンのスタッフ台帳（`/api/v1/salons/{salonId}/staff`。`StaffCrud` の、スタッフの一覧、登録、1 件の取得、更新、削除）、スタッフの勤務スケジュール（`/api/v1/salons/{salonId}/staff/{id}/schedules`。`StaffSchedules` の一覧と更新）、スタッフのログインアカウントへの招待（`/api/v1/salons/{salonId}/staff/{id}/invitation` と `/api/v1/auth/staff-invitation`。`StaffInvitations` の取得、作成、取り消しと、`AuthCrud` の招待の確認、受け入れ、参加）、スタッフに紐づいたアカウント（`/api/v1/salons/{salonId}/staff/{id}/account`。`StaffAccounts` の取得、ロールの変更、紐づけの解除）、顧客に見せるスタッフのプロフィール（`/api/v1/staff-profiles`。`StaffProfile` の一覧と 1 件の取得）、スタッフ本人のプロフィール（`/api/v1/staff-profiles/me`。`StaffOwnProfile` の取得と更新）、顧客台帳（`/api/v1/customers`。`CustomerCrud` のうち、顧客の一覧、登録、1 件の取得、更新、削除）、顧客本人のプロフィール（`/api/v1/customers/me`。`CustomerProfile` の取得、作成、更新）、顧客の好み設定（`/api/v1/customers/{id}/preferences` と `/api/v1/customers/me/preferences`。`CustomerCrud` と `CustomerProfile` の、好み設定の取得と更新）、予約台帳（`/api/v1/bookings`。`BookingCrud` の 11 オペレーション: 予約の一覧、作成、1 件の取得、更新、削除、ステータスの 5 つの操作、日時の変更。`BookingServiceCrud` の 3 オペレーション: 施術明細の追加、1 件の取得、削除）、空き枠（`/api/v1/salons/{salonId}/available-slots`。`AvailableSlotCrud` の 2 オペレーション: 一覧、確認）、顧客が自分で入れる予約（`/api/v1/customers/me/bookings`。`CustomerBookings` の 4 オペレーション: 一覧、作成、1 件の取得、キャンセル）、認証のすべてのオペレーション（ログイン、トークンの再発行、ログアウト、全セッションのログアウト、自分の情報の取得、ユーザー登録、メールアドレスの確認、パスワードの再設定と変更、スタッフの招待の確認、受け入れ、参加、2 要素認証、セッションの一覧と無効化、管理者の操作）、システムエンドポイントだけです。ほかのドメインを実装するときは、Salon のファイルと同じ構成で書いてください。データが 1 つのサロンに属するドメインでは、書き方がいくつか変わります。その例がサービスカテゴリーで、違いは「[9. サロンに属するデータ](#9-サロンに属するデータ-サロンはパスで受け取る)」にまとめています。サービスカテゴリーにはなくサービスにあるもの（2 つのテーブルの行を含むリクエスト、2 つの項目を結ぶ規則、一括更新、論理削除）も、同じ節にあります。サロンに属し、公開のオペレーションがないデータの例がスタッフ台帳で、その違い（どのオペレーションでも最初に判定する権限、操作者自身のスタッフ情報を守る規則、サロンの中での 2 つの一意性）も、同じ節の最後にあります。サロンの 1 つのレコードに属し、全体を置き換える行の例がスタッフの勤務スケジュールで、その違い（レコードの下にマウントするルーター、2 段階の権限、行をロックして置き換えるトランザクション）も、同じ節の最後にあります。メールで送ったトークンで届くレコードの例がスタッフの招待で、その違い（招待する側と招待された側の 2 つのルーター、本文を検証してから判定する 2 つめの権限、結果を直和型で返すリポジトリ、スタッフの行をロックしてから判定し直す書き込み）も、同じ節の最後にあります。テーブルを持たず、ほかのテーブルの行の一部をサロンに扱わせるデータの例がスタッフのアカウントで、その違い（カラムの Enum より狭い Enum、操作者自身のアカウントを守る規則）も、同じ節の最後にあります。公開しないデータのうち、誰にでも見せる部分の例がスタッフのプロフィールで、その違い（見せる列だけを読むリポジトリ、サロンの下に置かない公開のルート、アカウントが対象を決める本人のルート）も、同じ節の最後にあります。サロンに属さず、公開のオペレーションもないデータの例が顧客台帳です。書き方の違い（何も変換しない Write マッパー、操作者だけで最初に判定する権限、依存から受け取る現在時刻、範囲の違う 2 つの一意性、権限のあとで返すクエリのエラー）は、実装パターンの 3、5、6、7、8 のそれぞれの箇所に書いてあります。行が保存されていてもいなくても、どのレコードにも「ある」付随データの例が顧客の好み設定です。その違い（作成と削除のないオペレーション、行がないときに返す空の値、保存されている値と照らす規則、顧客の行をロックしてから判定する書き込み）は、[ドメイン実装リファレンス](./domain-implementation-reference.md#a-record-every-customer-has-the-preferences) にまとめています。サロンに属するが、ルートをサロンの下に置かないデータの例が予約台帳です。その違い（操作者に届く範囲を先に決め、リクエストがサロンを指定してから判定する 2 段階の権限、参照する行から書く行を決める純粋な関数、参照する行をロックし、スタッフの占有を確かめてから書くトランザクション、システムが決める番号の発行、行をロックして読んだステータスから、純粋な関数が次の状態を決める操作、予約の行を最初にロックしてから書く更新・日時の変更・削除、予約の下にあり、明細を足し、外すたびに予約を算出し直すルート）は、[ドメイン実装リファレンス](./domain-implementation-reference.md#data-of-a-salon-whose-routes-are-not-below-it-the-booking-ledger) にまとめています。認証と認可の仕様は [認証と認可](./authentication.md)、サービスカテゴリーとサービスの規則は [サービスメニュー](./service-menu.md)、顧客台帳の規則は [顧客台帳](./customers.md)、スタッフ台帳の規則は [スタッフ台帳](./staff.md)、予約台帳の規則は [予約台帳](./bookings.md) にあり、本書ではコードの書き方だけを扱います。
 
 ---
 
@@ -546,7 +546,18 @@ app.use(
 const customerPreferencesDependencies = {
   customerPreferencesRepository: new CustomerPreferencesRepository(database),
 }
+const bookingDependencies = {
+  bookingRepository: new BookingRepository(database),
+  bookingNumberIssuer: new RandomBookingNumberIssuer(),
+}
 // "me" first: the router below it would take it for the ID of a customer.
+app.use(
+  `${API_BASE_PATH}/customers/me/bookings`,
+  createCustomerBookingRouter(
+    { ...bookingDependencies, clock },
+    authenticated,
+  ),
+)
 app.use(
   `${API_BASE_PATH}/customers/me/preferences`,
   createOwnCustomerPreferencesRouter(
@@ -569,14 +580,12 @@ app.use(
   ),
 )
 app.use(
+  `${API_BASE_PATH}/bookings/:bookingId/services`,
+  createBookingServiceRouter(bookingDependencies, authenticated),
+)
+app.use(
   `${API_BASE_PATH}/bookings`,
-  createBookingRouter(
-    {
-      bookingRepository: new BookingRepository(database),
-      bookingNumberIssuer: new RandomBookingNumberIssuer(),
-    },
-    authenticated,
-  ),
+  createBookingRouter(bookingDependencies, authenticated),
 )
 ```
 
@@ -587,6 +596,7 @@ app.use(
 - スタッフのアカウントのルーターには、自分のリポジトリと `salonRepository` だけを渡します。メールを送らず、パスワードも保存しないので、認証の依存は要りません。
 - 顧客台帳はサロンに属さないので、ルーターは `${API_BASE_PATH}/customers` にマウントします。パスにサロンの ID はなく、`salonRepository` も渡しません。
 - 顧客の好み設定の 2 つのルーターは、パスの全体（`/customers/me/preferences`、`/customers/:id/preferences`）にマウントし、同じ依存（`customerPreferencesDependencies`）を渡します。`me` のほうを先にマウントします。逆にすると、`:id` のルーターが `me` を顧客の ID として受け取ります。
+- 顧客が自分で入れる予約のルーター（`/customers/me/bookings`）も、同じ理由で、顧客のルーターより前にマウントします。予約台帳と同じ依存（`bookingDependencies`）に、時計（`clock`）を加えて渡します。枠は、いまより後に始まるものだけだからです。
 - 予約台帳はサロンのデータですが、ルーターは `${API_BASE_PATH}/bookings` にマウントします。パスにサロンの ID がないので、`salonRepository` は渡しません。リクエストが指定したサロンが存在するかは、予約のリポジトリが、作成のトランザクションの中で確かめます。予約番号を発行する `RandomBookingNumberIssuer` も、ここで生成して渡します。
 - 新しいルーターは `express.json` の後、`notFoundHandler` の前にマウントします。ミドルウェアの順序とその理由は [アーキテクチャ概要](./architecture-overview.md) にあります。
 - `api` パッケージは `config` に依存しません。新しい設定値が必要なときは `AppSettings`（`backend/packages/api/src/settings.ts`）に追加し、`backend/apps/server/src/server.ts` の `startServer` で `AppConfig` から渡します。
