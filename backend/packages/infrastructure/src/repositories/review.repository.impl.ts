@@ -2,6 +2,7 @@ import {
   bookingServices,
   bookings,
   customers,
+  reviewHelpfulVotes,
   reviews,
   salons,
   staff,
@@ -12,6 +13,7 @@ import {
   type DomainError,
   type HeldReview,
   type IReviewRepository,
+  planHelpfulMark,
   planReview,
   planReviewChange,
   planReviewRemoval,
@@ -22,6 +24,7 @@ import {
   type ReviewId,
   type ReviewList,
   type ReviewListCriteria,
+  type ReviewMark,
   type ReviewPlanContext,
   type ReviewRemoval,
   type ReviewRemover,
@@ -205,6 +208,76 @@ const heldReviewOf = async (
 }
 
 /**
+ * The review a mark names, held `FOR NO KEY UPDATE` until its marks are
+ * counted again: the marks of one review are counted one after the other,
+ * each by a statement that begins once the mark before it is committed,
+ * and a change or a removal of the review under way (`FOR UPDATE`) has
+ * been made when the row is returned. Its salon is read, not held: a mark
+ * writes nothing of the salon. Null when there is no review with the ID,
+ * or its salon is deleted.
+ */
+const markedReviewOf = async (
+  tx: DatabaseExecutor,
+  id: string,
+): Promise<HeldReview | null> => {
+  const [review] = await tx
+    .select({
+      customerId: reviews.customerId,
+      staffId: reviews.staffId,
+      salonId: reviews.salonId,
+    })
+    .from(reviews)
+    .where(eq(reviews.id, id))
+    .for('no key update')
+  if (review === undefined) {
+    return null
+  }
+
+  const [salon] = await tx
+    .select({ deletedAt: salons.deletedAt })
+    .from(salons)
+    .where(eq(salons.id, review.salonId))
+  return salon?.deletedAt === null
+    ? { customerId: review.customerId, staffId: review.staffId }
+    : null
+}
+
+/**
+ * Counts the helpful count of a review again from its marks, as they are
+ * after the mark just written, and returns it. The review is written only
+ * when the count changes, and its `updatedAt` stays: what the review says
+ * did not change.
+ */
+const countMarksOf = async (
+  tx: DatabaseExecutor,
+  id: string,
+): Promise<number> => {
+  const counted = tx
+    .select({
+      marks: sql<number>`count(*)::integer`.as('marks'),
+    })
+    .from(reviewHelpfulVotes)
+    .where(eq(reviewHelpfulVotes.reviewId, id))
+    .as('counted')
+
+  await tx
+    .update(reviews)
+    .set({ helpfulCount: sql`${counted.marks}` })
+    .from(counted)
+    .where(
+      and(
+        eq(reviews.id, id),
+        sql`${reviews.helpfulCount} is distinct from ${counted.marks}`,
+      ),
+    )
+  const [review] = await tx
+    .select({ helpfulCount: reviews.helpfulCount })
+    .from(reviews)
+    .where(eq(reviews.id, id))
+  return review?.helpfulCount ?? 0
+}
+
+/**
  * Counts the rating and the review count of a salon again from its
  * reviews, as they are after the review just written, changed or removed:
  * the average of the overall ratings rounded to two decimals, and no
@@ -270,8 +343,9 @@ const contextOf = async (
 
 /**
  * Each statement sees what was committed before it began: a review that
- * waited for the salon, or a change or a removal that waited for the
- * review or the salon, sees what the one it waited for wrote.
+ * waited for the salon, a change or a removal that waited for the review
+ * or the salon, or a mark that waited for the review, sees what the one it
+ * waited for wrote.
  */
 const WRITE: PgTransactionConfig = { isolationLevel: 'read committed' }
 
@@ -482,6 +556,36 @@ export class ReviewRepository implements IReviewRepository {
         await countReviewsOf(tx, removed.salonId)
 
         return { type: 'deleted' }
+      }, WRITE),
+    )
+  }
+
+  async markHelpful(
+    id: ReviewId,
+    customerId: CustomerId,
+  ): Promise<Result<ReviewMark, DomainError>> {
+    return attempt('Failed to mark review as helpful', () =>
+      this.db.transaction(async (tx): Promise<ReviewMark> => {
+        const plan = planHelpfulMark(customerId, {
+          reviewerDeleted: await isReviewerDeleted(tx, customerId),
+          review: await markedReviewOf(tx, id),
+        })
+        if (plan.type !== 'planned') {
+          return plan
+        }
+
+        // A second mark of the customer is not written, and not counted.
+        await tx
+          .insert(reviewHelpfulVotes)
+          .values({ reviewId: id, customerId, createdAt: CLOCK })
+          .onConflictDoNothing({
+            target: [
+              reviewHelpfulVotes.reviewId,
+              reviewHelpfulVotes.customerId,
+            ],
+          })
+
+        return { type: 'marked', helpfulCount: await countMarksOf(tx, id) }
       }, WRITE),
     )
   }
