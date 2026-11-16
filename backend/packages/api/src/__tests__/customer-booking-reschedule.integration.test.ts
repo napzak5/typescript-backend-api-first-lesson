@@ -645,6 +645,21 @@ describe('Customer booking reschedule API', () => {
       expect(await stored(created.id)).toEqual(before)
     })
 
+    it('returns the booking of the request, whatever other bookings there are', async () => {
+      const other = await otherCustomer()
+      await insertBooking(jst('09:00'), {
+        by: otherStaffId,
+        customerId: other.customerId,
+      })
+      const created = await booked()
+      await booked('16:00')
+
+      const response = await reschedule(created.id, to('10:00'))
+
+      expect(response.status).toBe(200)
+      expect(response.body.data).toEqual(created)
+    })
+
     it('leaves a confirmed booking confirmed', async () => {
       const created = await booked()
       await confirm(created.id)
