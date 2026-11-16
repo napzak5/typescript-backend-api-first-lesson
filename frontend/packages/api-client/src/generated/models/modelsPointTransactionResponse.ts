@@ -6,6 +6,7 @@
  * OpenAPI spec version: 2.0
  */
 import type { ModelsCustomerId } from './modelsCustomerId';
+import type { ModelsPointReferenceType } from './modelsPointReferenceType';
 import type { ModelsPointTransactionId } from './modelsPointTransactionId';
 import type { ModelsPointTransactionType } from './modelsPointTransactionType';
 
@@ -20,27 +21,24 @@ export interface ModelsPointTransactionResponse {
   customerId: ModelsCustomerId;
   /** 取引の種別 */
   transactionType: ModelsPointTransactionType;
-  /** ポイントの変動量。獲得は正、利用・失効は負の値 */
+  /** ポイントの変動量。獲得は正、利用・失効は負の値、調整・移行は0以外の値 */
   points: number;
-  /** この取引の後のポイント残高 */
+  /** この取引の後のポイント残高。0 以上 */
   balance: number;
   /**
      * 取引内容の説明。未設定の場合はnull
      * @nullable
      */
   description: string | null;
-  /**
-     * 取引のもとになった記録の種類(sale、booking など)。参照する記録がない場合はnull
-     * @nullable
-     */
-  referenceType: string | null;
+  /** 取引のもとになった記録の種類。参照する記録がない場合はnull */
+  referenceType: ModelsPointReferenceType | null;
   /**
      * 取引のもとになった記録の ID。参照する記録がない場合はnull
      * @nullable
      */
   referenceId: string | null;
   /**
-     * 獲得したポイントの有効期限。有効期限のない取引の場合はnull
+     * 獲得したポイントの有効期限。付与(earned)の取引だけが持ち、有効期限のない付与とほかの取引はnull
      * @nullable
      */
   expiryDate: string | null;

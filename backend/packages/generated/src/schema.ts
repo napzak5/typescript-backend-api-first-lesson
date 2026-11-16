@@ -889,6 +889,27 @@ export type PermissionScopeType = z.infer<typeof PermissionScopeTypeSchema>
 
 /**
  * @description
+ * ポイント取引の参照先区分 - ポイント取引のもとになった記録の種類(customer_points.referenceType)
+ *
+ *
+ * sale: 売上 - referenceId は売上の ID
+ *
+ * booking: 予約 - referenceId は予約の ID
+ */
+export const PointReferenceTypeSchema = z.enum(['sale', 'booking'])
+/**
+ * @description
+ * ポイント取引の参照先区分 - ポイント取引のもとになった記録の種類(customer_points.referenceType)
+ *
+ *
+ * sale: 売上 - referenceId は売上の ID
+ *
+ * booking: 予約 - referenceId は予約の ID
+ */
+export type PointReferenceType = z.infer<typeof PointReferenceTypeSchema>
+
+/**
+ * @description
  * ポイント取引種別区分 - 顧客ポイントの増減(customer_points の1行)の種類
  *
  *

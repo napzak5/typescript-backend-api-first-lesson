@@ -65,6 +65,17 @@ namespace BeautySalon.Models {
     transferred,
   }
 
+  @doc("""
+    ポイント取引の参照先区分 - ポイント取引のもとになった記録の種類(customer_points.referenceType)
+    
+    sale: 売上 - referenceId は売上の ID
+    booking: 予約 - referenceId は予約の ID
+    """)
+  enum PointReferenceType {
+    sale,
+    booking,
+  }
+
   // ---------------------------------------------------------------------------
   // 売上 (sales、sales_details)
   // ---------------------------------------------------------------------------
@@ -668,23 +679,23 @@ namespace BeautySalon.Models {
     @doc("取引の種別")
     transactionType: PointTransactionType;
 
-    @doc("ポイントの変動量。獲得は正、利用・失効は負の値")
+    @doc("ポイントの変動量。獲得は正、利用・失効は負の値、調整・移行は0以外の値")
     points: int32;
 
-    @doc("この取引の後のポイント残高")
+    @doc("この取引の後のポイント残高。0 以上")
     balance: int32;
 
     @doc("取引内容の説明。未設定の場合はnull")
     description: string | null;
 
-    @doc("取引のもとになった記録の種類(sale、booking など)。参照する記録がない場合はnull")
-    referenceType: string | null;
+    @doc("取引のもとになった記録の種類。参照する記録がない場合はnull")
+    referenceType: PointReferenceType | null;
 
     @doc("取引のもとになった記録の ID。参照する記録がない場合はnull")
     @format("uuid")
     referenceId: string | null;
 
-    @doc("獲得したポイントの有効期限。有効期限のない取引の場合はnull")
+    @doc("獲得したポイントの有効期限。付与(earned)の取引だけが持ち、有効期限のない付与とほかの取引はnull")
     expiryDate: plainDate | null;
 
     @doc("取引の発生日時")
@@ -702,21 +713,21 @@ namespace BeautySalon.Models {
     limit?: int32 = 20;
 
     @query
-    @doc("取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する")
-    cursor?: string;
+    @doc("取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する。その顧客のポイント取引の ID でなければならない")
+    cursor?: PointTransactionId;
 
     @query
     @doc("取引の発生日時(createdAt)の下限。この日時以降の取引に一致する")
     startDate?: utcDateTime;
 
     @query
-    @doc("取引の発生日時(createdAt)の上限。この日時以前の取引に一致する")
+    @doc("取引の発生日時(createdAt)の上限。この日時以前の取引に一致する。startDate より前の日時は指定できない")
     endDate?: utcDateTime;
   }
 
   @doc("""
-    ポイント残高レスポンス - 顧客の最新のポイント取引(customer_points)の balance を返す。
-    ポイント取引のない顧客の残高は 0
+    ポイント残高レスポンス - 顧客の残高(customers.loyaltyPoints)を返す。
+    残高は最新のポイント取引(customer_points)の balance と等しく、ポイント取引のない顧客の残高は 0
     """)
   model PointBalanceResponse {
     @doc("対象顧客の ID")
@@ -734,22 +745,21 @@ namespace BeautySalon.Models {
     @doc("ポイントを付与する顧客の ID")
     customerId: CustomerId;
 
-    @doc("付与するポイント数")
+    @doc("付与するポイント数。付与の後の残高が 2,147,483,647 を超える値は指定できない")
     @minValue(1)
     points: int32;
 
-    @doc("付与の理由。未設定の場合はnull")
+    @doc("付与の理由。空白だけの文字列は指定できない。未設定の場合はnull")
     description: string | null;
 
-    @doc("付与のもとになった記録の種類(sale、booking など)。referenceId と同時に指定する。参照する記録がない場合はnull")
-    @maxLength(50)
-    referenceType: string | null;
+    @doc("付与のもとになった記録の種類。referenceId と同時に指定する。参照する記録がない場合はnull")
+    referenceType: PointReferenceType | null;
 
-    @doc("付与のもとになった記録の ID。referenceType と同時に指定する。参照する記録がない場合はnull")
+    @doc("付与のもとになった記録の ID。referenceType と同時に指定する。その顧客の売上・予約で、取り消した売上と、ステータスが draft・cancelled・no_show の予約は指定できない。1 つの記録に付与できるのは1回。参照する記録がない場合はnull")
     @format("uuid")
     referenceId: string | null;
 
-    @doc("付与したポイントの有効期限。有効期限を設けない場合はnull")
+    @doc("付与したポイントの有効期限(この日まで使える)。昨日(UTC)より前の日付は指定できない。有効期限を設けない場合はnull")
     expiryDate: plainDate | null;
   }
 
@@ -761,18 +771,17 @@ namespace BeautySalon.Models {
     @doc("ポイントを利用する顧客の ID")
     customerId: CustomerId;
 
-    @doc("利用するポイント数。現在の残高以下")
+    @doc("利用するポイント数。現在の残高以下。ポイント取引には負の値で記録する")
     @minValue(1)
     points: int32;
 
-    @doc("利用の理由。未設定の場合はnull")
+    @doc("利用の理由。空白だけの文字列は指定できない。未設定の場合はnull")
     description: string | null;
 
-    @doc("利用のもとになった記録の種類(sale など)。referenceId と同時に指定する。参照する記録がない場合はnull")
-    @maxLength(50)
-    referenceType: string | null;
+    @doc("利用のもとになった記録の種類。referenceId と同時に指定する。参照する記録がない場合はnull")
+    referenceType: PointReferenceType | null;
 
-    @doc("利用のもとになった記録の ID。referenceType と同時に指定する。参照する記録がない場合はnull")
+    @doc("利用のもとになった記録の ID。referenceType と同時に指定する。その顧客の売上・予約で、取り消した売上と、ステータスが draft・cancelled・no_show の予約は指定できない。1 つの記録で利用できるのは1回。参照する記録がない場合はnull")
     @format("uuid")
     referenceId: string | null;
   }
@@ -785,17 +794,16 @@ namespace BeautySalon.Models {
     @doc("ポイントを調整する顧客の ID")
     customerId: CustomerId;
 
-    @doc("調整するポイント数。増やす場合は正、減らす場合は負の値で、0 は指定できない。調整後の残高が負になる値は指定できない")
+    @doc("調整するポイント数。増やす場合は正、減らす場合は負の値で、0 は指定できない。調整後の残高が負になる値と、2,147,483,647 を超える値は指定できない")
     points: int32;
 
-    @doc("調整の理由。未設定の場合はnull")
+    @doc("調整の理由。空白だけの文字列は指定できない。未設定の場合はnull")
     description: string | null;
 
-    @doc("調整のもとになった記録の種類(sale、booking など)。referenceId と同時に指定する。参照する記録がない場合はnull")
-    @maxLength(50)
-    referenceType: string | null;
+    @doc("調整のもとになった記録の種類。referenceId と同時に指定する。参照する記録がない場合はnull")
+    referenceType: PointReferenceType | null;
 
-    @doc("調整のもとになった記録の ID。referenceType と同時に指定する。参照する記録がない場合はnull")
+    @doc("調整のもとになった記録の ID。referenceType と同時に指定する。その顧客の売上・予約で、取り消した売上やキャンセルした予約も指定できる。参照する記録がない場合はnull")
     @format("uuid")
     referenceId: string | null;
   }

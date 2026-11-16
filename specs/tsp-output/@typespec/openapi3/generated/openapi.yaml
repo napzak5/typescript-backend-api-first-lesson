@@ -10154,7 +10154,7 @@ paths:
     post:
       operationId: PointCrud_adjust
       summary: Adjust points
-      description: 顧客のポイントを手動で増減し、種別 adjusted のポイント取引を登録します。customerId の顧客が存在しない場合や points が0の場合は400を、調整後の残高が負になる場合は409を返します。
+      description: 顧客のポイントを手動で増減し、種別 adjusted のポイント取引を登録して、顧客の残高(loyaltyPoints)を更新します。管理者と、サロンの owner・manager が実行できます(サロンの staff と顧客のアカウントは403)。customerId の顧客が存在しない、または削除されている場合、points が0の場合、referenceId にその顧客のものではない記録や、サロンのメンバーが自分のサロンのものではない記録を指定した場合は400を、調整後の残高が負になる場合と 2,147,483,647 を超える場合は409を返します。
       parameters: []
       responses:
         '200':
@@ -10265,7 +10265,7 @@ paths:
     get:
       operationId: PointCrud_getBalance
       summary: Get the point balance of a customer
-      description: 顧客の現在のポイント残高を取得します。最新のポイント取引の残高を返し、取引のない顧客は0を返します。
+      description: 顧客の現在のポイント残高(customers.loyaltyPoints)を取得します。残高は最新のポイント取引の残高と等しく、取引のない顧客は0です。管理者と、サロンの owner・manager・staff が実行できます(顧客のアカウントは403)。customerId の顧客が存在しない、または削除されている場合は404を返します。
       parameters:
         - name: customerId
           in: path
@@ -10472,7 +10472,7 @@ paths:
     get:
       operationId: PointCrud_listTransactions
       summary: List the point transactions of a customer
-      description: 顧客のポイント取引の履歴を、発生日時の新しい順に一覧取得します。
+      description: 顧客のポイント取引の履歴を、発生日時(createdAt)の新しい順に一覧取得します。管理者と、サロンの owner・manager・staff が実行できます(顧客のアカウントは403)。customerId の顧客が存在しない、または削除されている場合は404を、cursor がその顧客のポイント取引を指していない場合や、endDate が startDate より前の場合は400を返します。
       parameters:
         - name: customerId
           in: path
@@ -10571,7 +10571,7 @@ paths:
     post:
       operationId: PointCrud_earn
       summary: Earn points
-      description: 顧客にポイントを付与し、種別 earned のポイント取引を登録します。customerId の顧客が存在しない場合は400を返します。
+      description: 顧客にポイントを付与し、種別 earned のポイント取引を登録して、顧客の残高(loyaltyPoints)を更新します。管理者と、サロンの owner・manager・staff が実行できます(顧客のアカウントは403)。customerId の顧客が存在しない、または削除されている場合と、referenceId にその顧客のものではない記録や、サロンのメンバーが自分のサロンのものではない記録を指定した場合は400を返します。参照した売上を取り消している、または予約のステータスが draft・cancelled・no_show の場合、その記録にすでに付与している場合、付与の後の残高が 2,147,483,647 を超える場合は409を返します。
       parameters: []
       responses:
         '200':
@@ -10627,6 +10627,12 @@ paths:
                 $ref: '#/components/schemas/Models.ProblemDetails'
         '403':
           description: 認証されているが、この操作を行う権限がない (403)。
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '409':
+          description: The request conflicts with the current state of the server.
           content:
             application/problem+json:
               schema:
@@ -10781,7 +10787,7 @@ paths:
     post:
       operationId: PointCrud_use
       summary: Use points
-      description: 顧客のポイントを利用し、種別 used のポイント取引を登録します。customerId の顧客が存在しない場合は400を、残高が不足する場合は409を返します。
+      description: 顧客のポイントを利用し、種別 used のポイント取引を登録して、顧客の残高(loyaltyPoints)を更新します。管理者と、サロンの owner・manager・staff が実行できます(顧客のアカウントは403)。customerId の顧客が存在しない、または削除されている場合と、referenceId にその顧客のものではない記録や、サロンのメンバーが自分のサロンのものではない記録を指定した場合は400を返します。残高が不足する場合、参照した売上を取り消している、または予約のステータスが draft・cancelled・no_show の場合、その記録ですでに利用している場合は409を返します。
       parameters: []
       responses:
         '200':
@@ -20974,15 +20980,15 @@ components:
       name: cursor
       in: query
       required: false
-      description: 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する
+      description: 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する。その顧客のポイント取引の ID でなければならない
       schema:
-        type: string
+        $ref: '#/components/schemas/Models.PointTransactionId'
       explode: false
     Models.PointTransactionSearchRequest.endDate:
       name: endDate
       in: query
       required: false
-      description: 取引の発生日時(createdAt)の上限。この日時以前の取引に一致する
+      description: 取引の発生日時(createdAt)の上限。この日時以前の取引に一致する。startDate より前の日時は指定できない
       schema:
         type: string
         format: date-time
@@ -26337,21 +26343,21 @@ components:
         points:
           type: integer
           format: int32
-          description: 調整するポイント数。増やす場合は正、減らす場合は負の値で、0 は指定できない。調整後の残高が負になる値は指定できない
+          description: 調整するポイント数。増やす場合は正、減らす場合は負の値で、0 は指定できない。調整後の残高が負になる値と、2,147,483,647 を超える値は指定できない
         description:
           type: string
           nullable: true
-          description: 調整の理由。未設定の場合はnull
+          description: 調整の理由。空白だけの文字列は指定できない。未設定の場合はnull
         referenceType:
-          type: string
+          allOf:
+            - $ref: '#/components/schemas/Models.PointReferenceType'
           nullable: true
-          maxLength: 50
-          description: 調整のもとになった記録の種類(sale、booking など)。referenceId と同時に指定する。参照する記録がない場合はnull
+          description: 調整のもとになった記録の種類。referenceId と同時に指定する。参照する記録がない場合はnull
         referenceId:
           type: string
           nullable: true
           format: uuid
-          description: 調整のもとになった記録の ID。referenceType と同時に指定する。参照する記録がない場合はnull
+          description: 調整のもとになった記録の ID。referenceType と同時に指定する。その顧客の売上・予約で、取り消した売上やキャンセルした予約も指定できる。参照する記録がない場合はnull
       description: |-
         ポイント調整リクエスト - 種別 adjusted のポイント取引を登録する。全項目のキーが必須。
         DB で NULL 許可のカラムのみ null を指定できる。残高はシステムが計算する
@@ -26370,8 +26376,8 @@ components:
           format: int32
           description: 現在のポイント残高
       description: |-
-        ポイント残高レスポンス - 顧客の最新のポイント取引(customer_points)の balance を返す。
-        ポイント取引のない顧客の残高は 0
+        ポイント残高レスポンス - 顧客の残高(customers.loyaltyPoints)を返す。
+        残高は最新のポイント取引(customer_points)の balance と等しく、ポイント取引のない顧客の残高は 0
     Models.PointEarnRequest:
       type: object
       required:
@@ -26390,26 +26396,26 @@ components:
           type: integer
           format: int32
           minimum: 1
-          description: 付与するポイント数
+          description: 付与するポイント数。付与の後の残高が 2,147,483,647 を超える値は指定できない
         description:
           type: string
           nullable: true
-          description: 付与の理由。未設定の場合はnull
+          description: 付与の理由。空白だけの文字列は指定できない。未設定の場合はnull
         referenceType:
-          type: string
+          allOf:
+            - $ref: '#/components/schemas/Models.PointReferenceType'
           nullable: true
-          maxLength: 50
-          description: 付与のもとになった記録の種類(sale、booking など)。referenceId と同時に指定する。参照する記録がない場合はnull
+          description: 付与のもとになった記録の種類。referenceId と同時に指定する。参照する記録がない場合はnull
         referenceId:
           type: string
           nullable: true
           format: uuid
-          description: 付与のもとになった記録の ID。referenceType と同時に指定する。参照する記録がない場合はnull
+          description: 付与のもとになった記録の ID。referenceType と同時に指定する。その顧客の売上・予約で、取り消した売上と、ステータスが draft・cancelled・no_show の予約は指定できない。1 つの記録に付与できるのは1回。参照する記録がない場合はnull
         expiryDate:
           type: string
           format: date
           nullable: true
-          description: 付与したポイントの有効期限。有効期限を設けない場合はnull
+          description: 付与したポイントの有効期限(この日まで使える)。昨日(UTC)より前の日付は指定できない。有効期限を設けない場合はnull
       description: |-
         ポイント付与リクエスト - 種別 earned のポイント取引を登録する。全項目のキーが必須。
         DB で NULL 許可のカラムのみ null を指定できる。残高はシステムが計算する
@@ -26473,6 +26479,16 @@ components:
             $ref: '#/components/schemas/Models.PointTransactionResponse'
           description: 期間内に有効期限を迎える獲得ポイントの取引の一覧。expiryDate の昇順で並ぶ
       description: 失効予定ポイントの集計結果 - 有効期限が近い獲得ポイントの合計と、その取引の一覧
+    Models.PointReferenceType:
+      type: string
+      enum:
+        - sale
+        - booking
+      description: |-
+        ポイント取引の参照先区分 - ポイント取引のもとになった記録の種類(customer_points.referenceType)
+
+        sale: 売上 - referenceId は売上の ID
+        booking: 予約 - referenceId は予約の ID
     Models.PointTransactionId:
       type: string
       format: uuid
@@ -26506,19 +26522,20 @@ components:
         points:
           type: integer
           format: int32
-          description: ポイントの変動量。獲得は正、利用・失効は負の値
+          description: ポイントの変動量。獲得は正、利用・失効は負の値、調整・移行は0以外の値
         balance:
           type: integer
           format: int32
-          description: この取引の後のポイント残高
+          description: この取引の後のポイント残高。0 以上
         description:
           type: string
           nullable: true
           description: 取引内容の説明。未設定の場合はnull
         referenceType:
-          type: string
+          allOf:
+            - $ref: '#/components/schemas/Models.PointReferenceType'
           nullable: true
-          description: 取引のもとになった記録の種類(sale、booking など)。参照する記録がない場合はnull
+          description: 取引のもとになった記録の種類。参照する記録がない場合はnull
         referenceId:
           type: string
           nullable: true
@@ -26528,7 +26545,7 @@ components:
           type: string
           format: date
           nullable: true
-          description: 獲得したポイントの有効期限。有効期限のない取引の場合はnull
+          description: 獲得したポイントの有効期限。付与(earned)の取引だけが持ち、有効期限のない付与とほかの取引はnull
         createdAt:
           type: string
           format: date-time
@@ -26569,21 +26586,21 @@ components:
           type: integer
           format: int32
           minimum: 1
-          description: 利用するポイント数。現在の残高以下
+          description: 利用するポイント数。現在の残高以下。ポイント取引には負の値で記録する
         description:
           type: string
           nullable: true
-          description: 利用の理由。未設定の場合はnull
+          description: 利用の理由。空白だけの文字列は指定できない。未設定の場合はnull
         referenceType:
-          type: string
+          allOf:
+            - $ref: '#/components/schemas/Models.PointReferenceType'
           nullable: true
-          maxLength: 50
-          description: 利用のもとになった記録の種類(sale など)。referenceId と同時に指定する。参照する記録がない場合はnull
+          description: 利用のもとになった記録の種類。referenceId と同時に指定する。参照する記録がない場合はnull
         referenceId:
           type: string
           nullable: true
           format: uuid
-          description: 利用のもとになった記録の ID。referenceType と同時に指定する。参照する記録がない場合はnull
+          description: 利用のもとになった記録の ID。referenceType と同時に指定する。その顧客の売上・予約で、取り消した売上と、ステータスが draft・cancelled・no_show の予約は指定できない。1 つの記録で利用できるのは1回。参照する記録がない場合はnull
       description: |-
         ポイント利用リクエスト - 種別 used のポイント取引を登録する。全項目のキーが必須。
         DB で NULL 許可のカラムのみ null を指定できる。残高はシステムが計算する

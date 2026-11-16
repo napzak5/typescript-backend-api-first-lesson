@@ -125,7 +125,7 @@ export const getPointCrudAdjustUrl = () => {
 }
 
 /**
- * 顧客のポイントを手動で増減し、種別 adjusted のポイント取引を登録します。customerId の顧客が存在しない場合や points が0の場合は400を、調整後の残高が負になる場合は409を返します。
+ * 顧客のポイントを手動で増減し、種別 adjusted のポイント取引を登録して、顧客の残高(loyaltyPoints)を更新します。管理者と、サロンの owner・manager が実行できます(サロンの staff と顧客のアカウントは403)。customerId の顧客が存在しない、または削除されている場合、points が0の場合、referenceId にその顧客のものではない記録や、サロンのメンバーが自分のサロンのものではない記録を指定した場合は400を、調整後の残高が負になる場合と 2,147,483,647 を超える場合は409を返します。
  * @summary Adjust points
  */
 export const pointCrudAdjust = async (modelsPointAdjustRequest: ModelsPointAdjustRequest, options?: RequestInit): Promise<pointCrudAdjustResponse> => {
@@ -192,7 +192,7 @@ const {mutation: mutationOptions} = options ?
     export type PointCrudAdjustMutationVariables = {data: ModelsPointAdjustRequest}
 
     /**
- * 顧客のポイントを手動で増減し、種別 adjusted のポイント取引を登録します。customerId の顧客が存在しない場合や points が0の場合は400を、調整後の残高が負になる場合は409を返します。
+ * 顧客のポイントを手動で増減し、種別 adjusted のポイント取引を登録して、顧客の残高(loyaltyPoints)を更新します。管理者と、サロンの owner・manager が実行できます(サロンの staff と顧客のアカウントは403)。customerId の顧客が存在しない、または削除されている場合、points が0の場合、referenceId にその顧客のものではない記録や、サロンのメンバーが自分のサロンのものではない記録を指定した場合は400を、調整後の残高が負になる場合と 2,147,483,647 を超える場合は409を返します。
  * @summary Adjust points
  */
 export const usePointCrudAdjust = <TError = ModelsProblemDetails,
@@ -258,7 +258,7 @@ export const getPointCrudGetBalanceUrl = (customerId: ModelsCustomerId,) => {
 }
 
 /**
- * 顧客の現在のポイント残高を取得します。最新のポイント取引の残高を返し、取引のない顧客は0を返します。
+ * 顧客の現在のポイント残高(customers.loyaltyPoints)を取得します。残高は最新のポイント取引の残高と等しく、取引のない顧客は0です。管理者と、サロンの owner・manager・staff が実行できます(顧客のアカウントは403)。customerId の顧客が存在しない、または削除されている場合は404を返します。
  * @summary Get the point balance of a customer
  */
 export const pointCrudGetBalance = async (customerId: ModelsCustomerId, options?: RequestInit): Promise<pointCrudGetBalanceResponse> => {
@@ -306,7 +306,7 @@ export type PointCrudGetBalanceQueryError = ModelsProblemDetails
 
 
 /**
- * 顧客の現在のポイント残高を取得します。最新のポイント取引の残高を返し、取引のない顧客は0を返します。
+ * 顧客の現在のポイント残高(customers.loyaltyPoints)を取得します。残高は最新のポイント取引の残高と等しく、取引のない顧客は0です。管理者と、サロンの owner・manager・staff が実行できます(顧客のアカウントは403)。customerId の顧客が存在しない、または削除されている場合は404を返します。
  * @summary Get the point balance of a customer
  */
 export function usePointCrudGetBalance<TData = Awaited<ReturnType<typeof pointCrudGetBalance>>, TError = ModelsProblemDetails>(
@@ -320,7 +320,7 @@ export function usePointCrudGetBalance<TData = Awaited<ReturnType<typeof pointCr
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 顧客の現在のポイント残高を取得します。最新のポイント取引の残高を返し、取引のない顧客は0を返します。
+ * 顧客の現在のポイント残高(customers.loyaltyPoints)を取得します。残高は最新のポイント取引の残高と等しく、取引のない顧客は0です。管理者と、サロンの owner・manager・staff が実行できます(顧客のアカウントは403)。customerId の顧客が存在しない、または削除されている場合は404を返します。
  * @summary Get the point balance of a customer
  */
 export function usePointCrudGetBalance<TData = Awaited<ReturnType<typeof pointCrudGetBalance>>, TError = ModelsProblemDetails>(
@@ -334,7 +334,7 @@ export function usePointCrudGetBalance<TData = Awaited<ReturnType<typeof pointCr
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 顧客の現在のポイント残高を取得します。最新のポイント取引の残高を返し、取引のない顧客は0を返します。
+ * 顧客の現在のポイント残高(customers.loyaltyPoints)を取得します。残高は最新のポイント取引の残高と等しく、取引のない顧客は0です。管理者と、サロンの owner・manager・staff が実行できます(顧客のアカウントは403)。customerId の顧客が存在しない、または削除されている場合は404を返します。
  * @summary Get the point balance of a customer
  */
 export function usePointCrudGetBalance<TData = Awaited<ReturnType<typeof pointCrudGetBalance>>, TError = ModelsProblemDetails>(
@@ -342,7 +342,7 @@ export function usePointCrudGetBalance<TData = Awaited<ReturnType<typeof pointCr
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 顧客の現在のポイント残高を取得します。最新のポイント取引の残高を返し、取引のない顧客は0を返します。
+ * 顧客の現在のポイント残高(customers.loyaltyPoints)を取得します。残高は最新のポイント取引の残高と等しく、取引のない顧客は0です。管理者と、サロンの owner・manager・staff が実行できます(顧客のアカウントは403)。customerId の顧客が存在しない、または削除されている場合は404を返します。
  * @summary Get the point balance of a customer
  */
 export function usePointCrudGetBalance<TData = Awaited<ReturnType<typeof pointCrudGetBalance>>, TError = ModelsProblemDetails>(
@@ -595,7 +595,7 @@ export const getPointCrudListTransactionsUrl = (customerId: ModelsCustomerId,
 }
 
 /**
- * 顧客のポイント取引の履歴を、発生日時の新しい順に一覧取得します。
+ * 顧客のポイント取引の履歴を、発生日時(createdAt)の新しい順に一覧取得します。管理者と、サロンの owner・manager・staff が実行できます(顧客のアカウントは403)。customerId の顧客が存在しない、または削除されている場合は404を、cursor がその顧客のポイント取引を指していない場合や、endDate が startDate より前の場合は400を返します。
  * @summary List the point transactions of a customer
  */
 export const pointCrudListTransactions = async (customerId: ModelsCustomerId,
@@ -646,7 +646,7 @@ export type PointCrudListTransactionsQueryError = ModelsProblemDetails
 
 
 /**
- * 顧客のポイント取引の履歴を、発生日時の新しい順に一覧取得します。
+ * 顧客のポイント取引の履歴を、発生日時(createdAt)の新しい順に一覧取得します。管理者と、サロンの owner・manager・staff が実行できます(顧客のアカウントは403)。customerId の顧客が存在しない、または削除されている場合は404を、cursor がその顧客のポイント取引を指していない場合や、endDate が startDate より前の場合は400を返します。
  * @summary List the point transactions of a customer
  */
 export function usePointCrudListTransactions<TData = Awaited<ReturnType<typeof pointCrudListTransactions>>, TError = ModelsProblemDetails>(
@@ -661,7 +661,7 @@ export function usePointCrudListTransactions<TData = Awaited<ReturnType<typeof p
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 顧客のポイント取引の履歴を、発生日時の新しい順に一覧取得します。
+ * 顧客のポイント取引の履歴を、発生日時(createdAt)の新しい順に一覧取得します。管理者と、サロンの owner・manager・staff が実行できます(顧客のアカウントは403)。customerId の顧客が存在しない、または削除されている場合は404を、cursor がその顧客のポイント取引を指していない場合や、endDate が startDate より前の場合は400を返します。
  * @summary List the point transactions of a customer
  */
 export function usePointCrudListTransactions<TData = Awaited<ReturnType<typeof pointCrudListTransactions>>, TError = ModelsProblemDetails>(
@@ -676,7 +676,7 @@ export function usePointCrudListTransactions<TData = Awaited<ReturnType<typeof p
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 顧客のポイント取引の履歴を、発生日時の新しい順に一覧取得します。
+ * 顧客のポイント取引の履歴を、発生日時(createdAt)の新しい順に一覧取得します。管理者と、サロンの owner・manager・staff が実行できます(顧客のアカウントは403)。customerId の顧客が存在しない、または削除されている場合は404を、cursor がその顧客のポイント取引を指していない場合や、endDate が startDate より前の場合は400を返します。
  * @summary List the point transactions of a customer
  */
 export function usePointCrudListTransactions<TData = Awaited<ReturnType<typeof pointCrudListTransactions>>, TError = ModelsProblemDetails>(
@@ -685,7 +685,7 @@ export function usePointCrudListTransactions<TData = Awaited<ReturnType<typeof p
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 顧客のポイント取引の履歴を、発生日時の新しい順に一覧取得します。
+ * 顧客のポイント取引の履歴を、発生日時(createdAt)の新しい順に一覧取得します。管理者と、サロンの owner・manager・staff が実行できます(顧客のアカウントは403)。customerId の顧客が存在しない、または削除されている場合は404を、cursor がその顧客のポイント取引を指していない場合や、endDate が startDate より前の場合は400を返します。
  * @summary List the point transactions of a customer
  */
 export function usePointCrudListTransactions<TData = Awaited<ReturnType<typeof pointCrudListTransactions>>, TError = ModelsProblemDetails>(
@@ -726,6 +726,11 @@ export type pointCrudEarnResponse403 = {
   status: 403
 }
 
+export type pointCrudEarnResponse409 = {
+  data: ModelsProblemDetails
+  status: 409
+}
+
 export type pointCrudEarnResponse413 = {
   data: ModelsProblemDetails
   status: 413
@@ -749,7 +754,7 @@ export type pointCrudEarnResponse500 = {
 export type pointCrudEarnResponseSuccess = (pointCrudEarnResponse200) & {
   headers: Headers;
 };
-export type pointCrudEarnResponseError = (pointCrudEarnResponse400 | pointCrudEarnResponse401 | pointCrudEarnResponse403 | pointCrudEarnResponse413 | pointCrudEarnResponse415 | pointCrudEarnResponse429 | pointCrudEarnResponse500) & {
+export type pointCrudEarnResponseError = (pointCrudEarnResponse400 | pointCrudEarnResponse401 | pointCrudEarnResponse403 | pointCrudEarnResponse409 | pointCrudEarnResponse413 | pointCrudEarnResponse415 | pointCrudEarnResponse429 | pointCrudEarnResponse500) & {
   headers: Headers;
 };
 
@@ -764,7 +769,7 @@ export const getPointCrudEarnUrl = () => {
 }
 
 /**
- * 顧客にポイントを付与し、種別 earned のポイント取引を登録します。customerId の顧客が存在しない場合は400を返します。
+ * 顧客にポイントを付与し、種別 earned のポイント取引を登録して、顧客の残高(loyaltyPoints)を更新します。管理者と、サロンの owner・manager・staff が実行できます(顧客のアカウントは403)。customerId の顧客が存在しない、または削除されている場合と、referenceId にその顧客のものではない記録や、サロンのメンバーが自分のサロンのものではない記録を指定した場合は400を返します。参照した売上を取り消している、または予約のステータスが draft・cancelled・no_show の場合、その記録にすでに付与している場合、付与の後の残高が 2,147,483,647 を超える場合は409を返します。
  * @summary Earn points
  */
 export const pointCrudEarn = async (modelsPointEarnRequest: ModelsPointEarnRequest, options?: RequestInit): Promise<pointCrudEarnResponse> => {
@@ -831,7 +836,7 @@ const {mutation: mutationOptions} = options ?
     export type PointCrudEarnMutationVariables = {data: ModelsPointEarnRequest}
 
     /**
- * 顧客にポイントを付与し、種別 earned のポイント取引を登録します。customerId の顧客が存在しない場合は400を返します。
+ * 顧客にポイントを付与し、種別 earned のポイント取引を登録して、顧客の残高(loyaltyPoints)を更新します。管理者と、サロンの owner・manager・staff が実行できます(顧客のアカウントは403)。customerId の顧客が存在しない、または削除されている場合と、referenceId にその顧客のものではない記録や、サロンのメンバーが自分のサロンのものではない記録を指定した場合は400を返します。参照した売上を取り消している、または予約のステータスが draft・cancelled・no_show の場合、その記録にすでに付与している場合、付与の後の残高が 2,147,483,647 を超える場合は409を返します。
  * @summary Earn points
  */
 export const usePointCrudEarn = <TError = ModelsProblemDetails,
@@ -1045,7 +1050,7 @@ export const getPointCrudUseUrl = () => {
 }
 
 /**
- * 顧客のポイントを利用し、種別 used のポイント取引を登録します。customerId の顧客が存在しない場合は400を、残高が不足する場合は409を返します。
+ * 顧客のポイントを利用し、種別 used のポイント取引を登録して、顧客の残高(loyaltyPoints)を更新します。管理者と、サロンの owner・manager・staff が実行できます(顧客のアカウントは403)。customerId の顧客が存在しない、または削除されている場合と、referenceId にその顧客のものではない記録や、サロンのメンバーが自分のサロンのものではない記録を指定した場合は400を返します。残高が不足する場合、参照した売上を取り消している、または予約のステータスが draft・cancelled・no_show の場合、その記録ですでに利用している場合は409を返します。
  * @summary Use points
  */
 export const pointCrudUse = async (modelsPointUseRequest: ModelsPointUseRequest, options?: RequestInit): Promise<pointCrudUseResponse> => {
@@ -1112,7 +1117,7 @@ const {mutation: mutationOptions} = options ?
     export type PointCrudUseMutationVariables = {data: ModelsPointUseRequest}
 
     /**
- * 顧客のポイントを利用し、種別 used のポイント取引を登録します。customerId の顧客が存在しない場合は400を、残高が不足する場合は409を返します。
+ * 顧客のポイントを利用し、種別 used のポイント取引を登録して、顧客の残高(loyaltyPoints)を更新します。管理者と、サロンの owner・manager・staff が実行できます(顧客のアカウントは403)。customerId の顧客が存在しない、または削除されている場合と、referenceId にその顧客のものではない記録や、サロンのメンバーが自分のサロンのものではない記録を指定した場合は400を返します。残高が不足する場合、参照した売上を取り消している、または予約のステータスが draft・cancelled・no_show の場合、その記録ですでに利用している場合は409を返します。
  * @summary Use points
  */
 export const usePointCrudUse = <TError = ModelsProblemDetails,

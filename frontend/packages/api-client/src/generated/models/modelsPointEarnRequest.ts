@@ -6,6 +6,7 @@
  * OpenAPI spec version: 2.0
  */
 import type { ModelsCustomerId } from './modelsCustomerId';
+import type { ModelsPointReferenceType } from './modelsPointReferenceType';
 
 /**
  * ポイント付与リクエスト - 種別 earned のポイント取引を登録する。全項目のキーが必須。
@@ -15,28 +16,24 @@ export interface ModelsPointEarnRequest {
   /** ポイントを付与する顧客の ID */
   customerId: ModelsCustomerId;
   /**
-     * 付与するポイント数
+     * 付与するポイント数。付与の後の残高が 2,147,483,647 を超える値は指定できない
      * @minimum 1
      */
   points: number;
   /**
-     * 付与の理由。未設定の場合はnull
+     * 付与の理由。空白だけの文字列は指定できない。未設定の場合はnull
      * @nullable
      */
   description: string | null;
+  /** 付与のもとになった記録の種類。referenceId と同時に指定する。参照する記録がない場合はnull */
+  referenceType: ModelsPointReferenceType | null;
   /**
-     * 付与のもとになった記録の種類(sale、booking など)。referenceId と同時に指定する。参照する記録がない場合はnull
-     * @maxLength 50
-     * @nullable
-     */
-  referenceType: string | null;
-  /**
-     * 付与のもとになった記録の ID。referenceType と同時に指定する。参照する記録がない場合はnull
+     * 付与のもとになった記録の ID。referenceType と同時に指定する。その顧客の売上・予約で、取り消した売上と、ステータスが draft・cancelled・no_show の予約は指定できない。1 つの記録に付与できるのは1回。参照する記録がない場合はnull
      * @nullable
      */
   referenceId: string | null;
   /**
-     * 付与したポイントの有効期限。有効期限を設けない場合はnull
+     * 付与したポイントの有効期限(この日まで使える)。昨日(UTC)より前の日付は指定できない。有効期限を設けない場合はnull
      * @nullable
      */
   expiryDate: string | null;
