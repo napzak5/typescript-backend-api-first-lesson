@@ -1383,6 +1383,49 @@ describe('Customer booking reschedule API', () => {
       )
     })
 
+    it('moves one of six bookings to a day on which their service takes one booking, each of another customer with another staff member', async () => {
+      const service = await insertService()
+      await opens(NEXT_DAY)
+      const wanting = await Promise.all(
+        Array.from({ length: 6 }, async () => {
+          const other = await otherCustomer()
+          const by = await staffMember()
+          await works(DAY, by)
+          await works(NEXT_DAY, by)
+          const theirs = await booked(
+            '10:00',
+            { staffId: by, serviceId: service },
+            other.authorization,
+          )
+          return { id: theirs.id, by, authorization: other.authorization }
+        }),
+      )
+      await changeService({ maxBookingsPerDay: 1 }, service)
+
+      const responses = await Promise.all(
+        wanting.map(({ id, by, authorization }) =>
+          reschedule(id, to('14:00', by, NEXT_DAY), authorization),
+        ),
+      )
+
+      // Nothing but the service is common to the six requests.
+      expect(responses.map(statusAndCode).toSorted()).toEqual([
+        '200',
+        '409 3003',
+        '409 3003',
+        '409 3003',
+        '409 3003',
+        '409 3003',
+      ])
+      expect(
+        responses
+          .filter(({ status }) => status === 409)
+          .map(({ body }) => body.detail),
+      ).toEqual(Array.from({ length: 5 }, () => NOT_A_SLOT))
+      const places = await Promise.all(wanting.map(({ id }) => placeOf(id)))
+      expect(places.filter(({ date }) => date === NEXT_DAY)).toHaveLength(1)
+    })
+
     it('moves a confirmed booking once when the customer sends the move six times', async () => {
       const created = await booked()
       await confirm(created.id)
