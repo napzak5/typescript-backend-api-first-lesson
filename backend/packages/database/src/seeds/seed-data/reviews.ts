@@ -5,20 +5,22 @@ import type { CompletedBooking } from './bookings'
 
 /**
  * Reviews of the first visits that took place, each by the customer of the
- * visit, for its salon and the staff member who was in charge of it. The
- * rating and the review count of each salon are then counted from its
- * reviews, as a review written through the API leaves them.
+ * visit, for its salon and the staff member who was in charge of it, and
+ * the marks of the other customers who found them helpful. The helpful
+ * count of each review is then counted from its marks, and the rating and
+ * the review count of each salon from its reviews, as the API leaves them.
  */
 export async function seedReviews(
   db: PostgresJsDatabase<typeof schema>,
   completedBookings: CompletedBooking[],
+  customerIds: string[],
 ): Promise<string[]> {
   const reviewTexts = [
     {
       title: 'Excellent service!',
       comment:
         'The staff was very professional and friendly. My hair looks amazing!',
-      helpfulCount: 12,
+      helpfulVoters: 3,
       ratings: {
         overall: 5,
         service: 5,
@@ -32,7 +34,7 @@ export async function seedReviews(
       title: 'Great experience',
       comment:
         'Really enjoyed my visit. The stylist understood exactly what I wanted.',
-      helpfulCount: 7,
+      helpfulVoters: 2,
       ratings: {
         overall: 5,
         service: 5,
@@ -45,7 +47,7 @@ export async function seedReviews(
     {
       title: 'Good but could be better',
       comment: 'Service was good but had to wait despite having a reservation.',
-      helpfulCount: 0,
+      helpfulVoters: 0,
       ratings: {
         overall: 3,
         service: 4,
@@ -59,7 +61,7 @@ export async function seedReviews(
       title: 'Satisfied with the result',
       comment:
         'The color turned out exactly as I hoped. Will definitely come back!',
-      helpfulCount: 3,
+      helpfulVoters: 1,
       ratings: {
         overall: 4,
         service: 4,
@@ -73,7 +75,7 @@ export async function seedReviews(
       title: 'Amazing head spa',
       comment:
         "The most relaxing head spa experience I've ever had. Highly recommend!",
-      helpfulCount: 18,
+      helpfulVoters: 3,
       ratings: {
         overall: 5,
         service: 5,
@@ -106,7 +108,6 @@ export async function seedReviews(
         title: reviewData.title,
         comment: reviewData.comment,
         isVerified: true,
-        helpfulCount: reviewData.helpfulCount,
         reportCount: 0,
         ownerResponse:
           position === 0
@@ -125,7 +126,31 @@ export async function seedReviews(
   const insertedReviews = await db
     .insert(schema.reviews)
     .values(reviews)
-    .returning({ id: schema.reviews.id })
+    .returning({
+      id: schema.reviews.id,
+      customerId: schema.reviews.customerId,
+    })
+
+  // The first customers other than the author found it helpful.
+  const votes = insertedReviews.flatMap((review, position) =>
+    customerIds
+      .filter((customerId) => customerId !== review.customerId)
+      .slice(0, reviewTexts[position]?.helpfulVoters ?? 0)
+      .map((customerId) => ({ reviewId: review.id, customerId })),
+  )
+  if (votes.length > 0) {
+    await db.insert(schema.reviewHelpfulVotes).values(votes)
+  }
+  await db.execute(sql`
+    UPDATE reviews
+    SET "helpfulCount" = counted.votes
+    FROM (
+      SELECT "reviewId", count(*)::integer AS votes
+      FROM review_helpful_votes
+      GROUP BY "reviewId"
+    ) counted
+    WHERE reviews.id = counted."reviewId"
+  `)
 
   await db.execute(sql`
     UPDATE salons

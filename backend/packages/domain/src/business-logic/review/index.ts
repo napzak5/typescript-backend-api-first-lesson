@@ -10,6 +10,7 @@ export {
   type ReviewRemover,
 } from './_shared/change'
 export type { ReviewUseCaseDependencies } from './_shared/dependencies'
+export { planHelpfulMark } from './_shared/helpful'
 export {
   planReview,
   type ReviewedBooking,
@@ -22,4 +23,5 @@ export { GetReviewUseCase } from './get-review.usecase'
 export { GetSalonReviewSummaryUseCase } from './get-salon-review-summary.usecase'
 export { GetStaffReviewSummaryUseCase } from './get-staff-review-summary.usecase'
 export { ListReviewsUseCase, type ReviewPage } from './list-reviews.usecase'
+export { MarkReviewHelpfulUseCase } from './mark-review-helpful.usecase'
 export { UpdateReviewUseCase } from './update-review.usecase'

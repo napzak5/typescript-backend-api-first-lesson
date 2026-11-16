@@ -16,6 +16,7 @@ import type {
   ReviewChange,
   ReviewCreation,
   ReviewList,
+  ReviewMark,
   ReviewRemoval,
 } from '../repositories/review.repository'
 import { CUSTOMER_ID } from './auth-fixtures'
@@ -136,9 +137,9 @@ export const reviewTally = (
 
 /**
  * Everything the review use cases need: a repository that lists, finds,
- * creates, updates and deletes the review of the fixtures, and tallies
- * three reviews for a salon and for a staff member; a test overrides what
- * it needs.
+ * creates, updates, deletes and marks the review of the fixtures (three
+ * customers found it helpful), and tallies three reviews for a salon and
+ * for a staff member; a test overrides what it needs.
  */
 export const reviewDependencies = (
   overrides: Partial<IReviewRepository> = {},
@@ -160,6 +161,9 @@ export const reviewDependencies = (
     ),
     delete: vi.fn(async () =>
       Result.success<ReviewRemoval>({ type: 'deleted' }),
+    ),
+    markHelpful: vi.fn(async () =>
+      Result.success<ReviewMark>({ type: 'marked', helpfulCount: 3 }),
     ),
     salonTally: vi.fn(async () =>
       Result.success<ReviewTally | null>(reviewTally()),

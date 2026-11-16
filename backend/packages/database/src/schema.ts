@@ -1201,6 +1201,34 @@ export const products = pgTable(
   ],
 )
 
+export const reviewHelpfulVotes = pgTable(
+  'review_helpful_votes',
+  {
+    id: uuid().defaultRandom().primaryKey().notNull(),
+    reviewId: uuid().notNull(),
+    customerId: uuid().notNull(),
+    createdAt: timestamp({ withTimezone: true, mode: 'string' })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    foreignKey({
+      columns: [table.customerId],
+      foreignColumns: [customers.id],
+      name: 'review_helpful_votes_customer_id_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [table.reviewId],
+      foreignColumns: [reviews.id],
+      name: 'review_helpful_votes_review_id_fk',
+    }).onDelete('cascade'),
+    unique('review_helpful_votes_review_customer_unique').on(
+      table.reviewId,
+      table.customerId,
+    ),
+  ],
+)
+
 export const reviews = pgTable(
   'reviews',
   {

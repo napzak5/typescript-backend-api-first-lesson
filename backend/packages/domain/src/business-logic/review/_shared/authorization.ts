@@ -11,7 +11,9 @@ import type { ReviewRemover } from './change'
  * account has a profile. A review is the voice of a customer, so no one
  * writes one for them: administrators and the members of a salon are
  * refused, and so is an account without a profile, which has no bookings.
- * The same customer is the one who changes the reviews they wrote.
+ * The same customer is the one who changes the reviews they wrote, and
+ * who marks the reviews of others as helpful: the helpful order is the
+ * customers' word on the reviews, which a salon does not raise.
  */
 export const reviewerOf = (actor: Actor): Result<CustomerId, DomainError> =>
   match(profileAccessOf(actor))

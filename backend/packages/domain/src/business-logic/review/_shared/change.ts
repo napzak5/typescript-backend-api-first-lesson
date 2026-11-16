@@ -7,13 +7,13 @@ import type { ValidationIssue } from '../../../shared'
  * is written, to what is written.
  */
 
-/** The review a change or a removal names, as it was found and held. */
+/** The review a change, a removal or a mark names, as it was found and held. */
 export type HeldReview = {
   customerId: string
   staffId: string | null
 }
 
-/** What a change or a removal of a review meets where it is written. */
+/** What a change, a removal or a mark of a review meets where it is written. */
 export type ReviewChangeContext = {
   /**
    * Whether the customer the account is linked to is deleted: the staff
