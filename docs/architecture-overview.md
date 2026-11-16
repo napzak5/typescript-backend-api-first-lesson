@@ -56,7 +56,7 @@ Before relying on anything, check this table.
 | Payments of a sale (`POST /api/v1/sales/{id}/process`, `POST /api/v1/payments/{id}/refund`) | Implemented in every layer: `process` of `SaleCrud` and `refund` of `PaymentCrud`. No payment processor is connected, so a payment records what the till took and is written as `completed`; a refund turns a completed payment into `refunded` or `partial_refund`, once. An administrator and the owner, the managers and the staff of the salon of the sale record a payment; an administrator, the owner and the managers refund one (403 for the staff); a customer account does neither. A payment is held to its payment method (in use and of the salon of the sale, within its limits, card details only with a card) and to what is left to pay (400); a void sale, a sale with a refund and a sale with nothing left to pay take none (409). Both hold the sale `FOR UPDATE` first, as the update and the void do, and write the payment and the payment status of the sale, which is counted from its payments, in one transaction. See [Payments](./payments.md) (Japanese). |
 | Sales reports (`/api/v1/sales-reports`) | Implemented in every layer: the report of a period, the sales of a day, by staff member, by category, the trends, and the export of the sales of each day of a period as a CSV file in the response (nothing is stored): the six operations of `SalesReportCrud`. An administrator reads the reports of every salon, the owner and the managers those of their salon; the staff of a salon and a customer account are refused (403). The query names the salon, the first and the last day of the sales, both required, at most 366 days (400 otherwise). A report is counted from the sales that are not void, their lines and their payments at every request, in one read-only `REPEATABLE READ` transaction, and is stored nowhere; the summary tables (`daily_summaries`, `staff_performances`) are not used. See [Sales Reports](./sales-reports.md) (Japanese). |
 | Points (`/api/v1/points`) | Implemented in every layer: the balance of a customer, their history of point transactions (latest first, by cursor, between two moments), their points about to expire, and earning, using, adjusting and expiring points: the seven operations of `PointCrud`. The ledger is one for the whole platform, as the customer ledger is. An administrator and the owner, the managers and the staff of any salon read, earn and use points; the staff do not adjust them; a customer account is refused (403). Every movement writes a transaction with the balance after it and sets the balance of the customer (`loyaltyPoints`) to it, in one `READ COMMITTED` transaction that holds the sale or the booking it names and then the customer; the balance stays between 0 and 2,147,483,647 (409). A movement may name a sale or a booking of the customer within the reach of the actor: points are not earned on or used for a void sale or a draft, cancelled or no-show booking, and a record is earned on once and used for once (409, and a partial unique index). The points of a sale and a payment by points move no balance. What is left of an earning is counted from the transactions of the customer in the order they were written, a decrease taking the earliest expiry date first; the points about to expire include those past their expiry date that are not yet expired. The expiry is the administrators' alone (403 for the members of a salon): it writes one `expired` transaction per customer, each in a `READ COMMITTED` transaction of its own that holds the customer `FOR NO KEY UPDATE` before it reads their transactions, so a second run writes nothing. See [Points](./points.md) (Japanese). |
-| Reviews (`/api/v1/reviews`, `/api/v1/salons/{salonId}/reviews/summary`, `/api/v1/staff/{staffId}/reviews/summary`) | Implemented in every layer: the list, the create and the get of `ReviewCrud`, `getSummary` of `SalonReviewSummary` and `getStaffSummary` of `StaffReviewSummary`. Reading is public: no token is needed or looked at. A review is written by a customer account with a profile alone (403 for an administrator and the members of a salon), for a booking of that customer that is completed (409 otherwise), once per booking (409), at the salon of the booking that is not deleted, naming no staff member or one who took the booking (400). The transaction that writes a review holds the booking `FOR SHARE` and the salon `FOR NO KEY UPDATE` in `READ COMMITTED` and counts the `rating` (the average of the overall ratings, two decimals) and the `reviewCount` of the salon again, so the reviews of a salon are written one after the other. Its author changes a review (`update`; 403 for everyone else), and its author or an administrator removes it (`delete`, physically; 403 for the members of a salon); both hold the review `FOR UPDATE` and then the salon, and count the salon again, writing it only when a figure changes. A booking with a review is not deleted (409) until the review is. Marking as helpful and reporting are not implemented, and their routes are answered with 404; the contract has no operation that writes the response of the salon. See [Reviews](./reviews.md) (Japanese). |
+| Reviews (`/api/v1/reviews`, `/api/v1/salons/{salonId}/reviews/summary`, `/api/v1/staff/{staffId}/reviews/summary`) | Implemented in every layer: the list, the create, the get, the update, the delete and the mark as helpful of `ReviewCrud`, `getSummary` of `SalonReviewSummary` and `getStaffSummary` of `StaffReviewSummary`. Reading is public: no token is needed or looked at. A review is written by a customer account with a profile alone (403 for an administrator and the members of a salon), for a booking of that customer that is completed (409 otherwise), once per booking (409), at the salon of the booking that is not deleted, naming no staff member or one who took the booking (400). The transaction that writes a review holds the booking `FOR SHARE` and the salon `FOR NO KEY UPDATE` in `READ COMMITTED` and counts the `rating` (the average of the overall ratings, two decimals) and the `reviewCount` of the salon again, so the reviews of a salon are written one after the other. Its author changes a review (`update`; 403 for everyone else), and its author or an administrator removes it (`delete`, physically; 403 for the members of a salon); both hold the review `FOR UPDATE` and then the salon, and count the salon again, writing it only when a figure changes. A booking with a review is not deleted (409) until the review is. A customer marks a review of another customer as helpful (`markHelpful`; 403 for an administrator, the members of a salon and the author), once: the mark is a row of `review_helpful_votes`, a second one answers the count as it is, and the `helpfulCount` of the review is counted again from the rows, with the review held `FOR NO KEY UPDATE`. Reporting is not implemented, and its route is answered with 404; the contract has no operation that writes the response of the salon. See [Reviews](./reviews.md) (Japanese). |
 | The other domains (treatment, inventory) | Specified in TypeSpec, so their generated types exist, and the database schema has their tables and seed data. The models agree with the tables (`pnpm check:api-db`). There is no domain, repository or route code. A request to one of these routes is answered with 404. The implementation order is in GitHub issue #4. |
 | Attachments, roles and permissions, purchase orders, medical charts | Specified in TypeSpec only. No table exists for them yet. |
 | Email | Implemented for the mails of the authentication flows and the invitation of a staff member (confirm the address, reset the password, accept an invitation, and the notices: the password was changed, two-factor authentication was enabled, disabled or turned off by an administrator, the backup codes were replaced, a backup code was used to sign in): plain text over SMTP. Docker Compose starts Mailpit, which catches them locally. See [Email](./email.md) (Japanese). |
@@ -726,8 +726,10 @@ api/src/
                                        /points)
 ```
 
-The reviews have one table and two columns of the salon that are counted
-from it; a pure function plans a review from what the repository holds:
+The reviews have a table, two columns of the salon that are counted from
+it, and a table of the customers who marked a review as helpful, from
+which its helpful count is counted; a pure function plans a review from
+what the repository holds:
 
 ```
 domain/src/
@@ -740,13 +742,14 @@ domain/src/
 │                                      the API returns them
 ├── repositories/review.repository.ts  IReviewRepository; what writing, changing and
 │                                      removing a review can come to (ReviewCreation,
-│                                      ReviewChange, ReviewRemoval)
+│                                      ReviewChange, ReviewRemoval, ReviewMark)
 └── business-logic/review/             One *.usecase.ts per operation; _shared/ holds
                                        the dependencies, who writes a review
                                        (authorization.ts), the plan of a review from
                                        the booking it names (plan.ts), of a change and
-                                       a removal from the review held (change.ts) and
-                                       the refusals (refusals.ts)
+                                       a removal from the review held (change.ts), of
+                                       a mark as helpful (helpful.ts) and the
+                                       refusals (refusals.ts)
 
 infrastructure/src/
 └── repositories/review.repository.impl.ts
@@ -755,8 +758,9 @@ infrastructure/src/
                                        UPDATE, the row at clock_timestamp() and the
                                        rating and the review count of the salon counted
                                        again; a change and a removal hold the review
-                                       FOR UPDATE, then the salon; the list in one
-                                       read-only snapshot
+                                       FOR UPDATE, then the salon; a mark holds the
+                                       review FOR NO KEY UPDATE and counts its marks
+                                       again; the list in one read-only snapshot
 
 api/src/
 └── routes/review/                     One *.handler.ts per operation, _shared/ (types,
@@ -1909,6 +1913,15 @@ repository writes the review. What differs:
   salon is counted again in the same transaction and written only when a
   figure changes; the salon is the last row each write waits for, so they
   do not deadlock.
+- **A mark holds the review alone.** `POST /api/v1/reviews/{id}/helpful`
+  holds the review `FOR NO KEY UPDATE`, reads whether its salon is
+  deleted without holding it, and hands what it read to `planHelpfulMark`
+  (`_shared/helpful.ts`), which refuses the author (403). The mark is a
+  row of `review_helpful_votes`, written once per customer (`ON CONFLICT
+  DO NOTHING`), and the `helpfulCount` of the review is counted again
+  from those rows by a later statement, which sees every mark the review
+  waited for. A change and a removal of the review and a mark wait for
+  each other; a mark waits for no write of the salon.
 
 The summaries are counted at every request, the average rounded to two
 decimals as the `rating` of the salon is. The rules are in
