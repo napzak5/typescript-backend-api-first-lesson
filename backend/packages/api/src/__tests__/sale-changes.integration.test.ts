@@ -1488,6 +1488,16 @@ describe('Sale changes API', () => {
         expect(response.status).toBe(200)
         expect(response.body.data).toMatchObject({ bookingId, notes: 'レジ2' })
       })
+
+      it('takes the customer the sale has again for a sale that keeps its booking', async () => {
+        const bookingId = await insertBooking()
+        const entered = await created({ bookingId })
+
+        const response = await update(entered.id, { customerId })
+
+        expect(response.status).toBe(200)
+        expect(response.body.data).toMatchObject({ customerId, bookingId })
+      })
     })
 
     describe('the points of a sale', () => {
@@ -2595,6 +2605,32 @@ describe('Sale changes API', () => {
       })
 
       expect(responses.map((response) => response?.status)).toEqual([200, 200])
+    })
+
+    it('holds the booking the sale keeps for a correction that names the customer only', async () => {
+      const bookingId = await insertBooking()
+      const entered = await created({ bookingId })
+
+      const { pending, answeredWhileHeld } = await db.transaction(
+        async (tx) => {
+          await holdBooking(tx, bookingId)
+          const underWay = update(entered.id, { customerId }).then(
+            (response) => response,
+          )
+
+          return {
+            pending: underWay,
+            answeredWhileHeld: await Promise.race([
+              underWay.then(() => true),
+              pause(300).then(() => false),
+            ]),
+          }
+        },
+      )
+      const response = await pending
+
+      expect(answeredWhileHeld).toBe(false)
+      expect(response.status).toBe(200)
     })
 
     it('meets the sale that was entered for the booking while it waited for the booking', async () => {

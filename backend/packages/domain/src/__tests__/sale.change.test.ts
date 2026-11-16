@@ -809,6 +809,18 @@ describe('planSaleChange', () => {
       ).toEqual(['pointsUsed:custom'])
     })
 
+    it.each([
+      ['pointsUsed', { pointsUsed: 5, pointsEarned: null }],
+      ['pointsEarned', { pointsUsed: null, pointsEarned: 5 }],
+    ])(
+      'names %s alone when those are the only points the sale keeps',
+      (property, points) => {
+        expect(
+          rulesOf({ customerId: null }, references(), withoutBooking(points)),
+        ).toEqual([`${property}:custom`])
+      },
+    )
+
     it('takes the customer off a sale whose points are emptied with them', () => {
       expect(
         planned(
