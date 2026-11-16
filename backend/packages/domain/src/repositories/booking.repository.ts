@@ -113,12 +113,15 @@ export type CustomerBookingReschedule =
   | Exclude<CustomerMove, { type: 'moved' | 'unchanged' }>
   | Exclude<CustomerMovePlan, { type: 'planned' }>
 
-/** A record that refers to a booking and keeps it from being deleted. */
-export type BookingReference = 'sale' | 'treatmentRecord'
+/**
+ * A record that refers to a booking and keeps it from being deleted: a
+ * record of what took place, or the voice of the customer about it.
+ */
+export type BookingReference = 'sale' | 'treatmentRecord' | 'review'
 
 /**
  * What became of the deletion of a booking:
- * - `deleted`: the booking is gone, with its lines, its history and its review
+ * - `deleted`: the booking is gone, with its lines and its history
  * - `notFound`: no booking within the reach has the ID
  * - `referredTo`: these records of what took place refer to the booking
  */
@@ -274,9 +277,9 @@ export interface IBookingRepository {
   ): Promise<Result<CustomerBookingReschedule, DomainError>>
 
   /**
-   * Removes a booking within the reach with its service lines, its status
-   * history and its review, unless a sale or a treatment record refers to
-   * it, and counts again what the customer has of visits, cancellations
+   * Removes a booking within the reach with its service lines and its
+   * status history, unless a sale, a treatment record or a review refers
+   * to it, and counts again what the customer has of visits, cancellations
    * and no-shows when the booking was counted among them.
    */
   delete(

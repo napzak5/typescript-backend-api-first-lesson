@@ -884,7 +884,7 @@ export interface paths {
         post?: never;
         /**
          * Delete booking
-         * @description 誤登録などで不要になった予約を、施術明細・ステータス履歴・レビューを含めて物理削除します。どのステータスの予約も削除でき、completed・cancelled・no_showの予約を削除した場合は、顧客の来店回数・無断キャンセル回数・キャンセル回数と初回・最終来店日を、顧客の予約から数え直します。adminと、予約のサロンのowner・managerが実行でき、サロンのstaffには403を返します。売上または施術記録が紐づく予約は削除できず、409を返します。ほかのサロンの予約には404を返します。
+         * @description 誤登録などで不要になった予約を、施術明細・ステータス履歴を含めて物理削除します。どのステータスの予約も削除でき、completed・cancelled・no_showの予約を削除した場合は、顧客の来店回数・無断キャンセル回数・キャンセル回数と初回・最終来店日を、顧客の予約から数え直します。adminと、予約のサロンのowner・managerが実行でき、サロンのstaffには403を返します。売上、施術記録またはレビューが紐づく予約は削除できず、409を返します。ほかのサロンの予約には404を返します。
          */
         delete: operations["BookingCrud_delete"];
         options?: never;
