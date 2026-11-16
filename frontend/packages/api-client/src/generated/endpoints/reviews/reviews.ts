@@ -30,6 +30,7 @@ import type {
   ModelsReviewId,
   ModelsReviewReportId,
   ModelsReviewReportRequest,
+  ModelsReviewRespondRequest,
   ModelsReviewUpdateRequest,
   ModelsSalonId,
   ModelsStaffId,
@@ -39,6 +40,7 @@ import type {
   ReviewCrudListParams,
   ReviewCrudMarkHelpful200,
   ReviewCrudReport200,
+  ReviewCrudRespond200,
   ReviewCrudUpdate200,
   ReviewReportCrudDismiss200,
   ReviewReportCrudList200,
@@ -1319,6 +1321,150 @@ export const useReviewCrudReport = <TError = ModelsProblemDetails,
         TContext
       > => {
       return useMutation(getReviewCrudReportMutationOptions(options), queryClient);
+    }
+    export type reviewCrudRespondResponse200 = {
+  data: ReviewCrudRespond200
+  status: 200
+}
+
+export type reviewCrudRespondResponse400 = {
+  data: ModelsProblemDetails
+  status: 400
+}
+
+export type reviewCrudRespondResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type reviewCrudRespondResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
+export type reviewCrudRespondResponse404 = {
+  data: ModelsProblemDetails
+  status: 404
+}
+
+export type reviewCrudRespondResponse413 = {
+  data: ModelsProblemDetails
+  status: 413
+}
+
+export type reviewCrudRespondResponse415 = {
+  data: ModelsProblemDetails
+  status: 415
+}
+
+export type reviewCrudRespondResponse429 = {
+  data: ModelsProblemDetails
+  status: 429
+}
+
+export type reviewCrudRespondResponse500 = {
+  data: ModelsProblemDetails
+  status: 500
+}
+
+export type reviewCrudRespondResponseSuccess = (reviewCrudRespondResponse200) & {
+  headers: Headers;
+};
+export type reviewCrudRespondResponseError = (reviewCrudRespondResponse400 | reviewCrudRespondResponse401 | reviewCrudRespondResponse403 | reviewCrudRespondResponse404 | reviewCrudRespondResponse413 | reviewCrudRespondResponse415 | reviewCrudRespondResponse429 | reviewCrudRespondResponse500) & {
+  headers: Headers;
+};
+
+export type reviewCrudRespondResponse = (reviewCrudRespondResponseSuccess | reviewCrudRespondResponseError)
+
+export const getReviewCrudRespondUrl = (id: ModelsReviewId,) => {
+
+
+
+
+  return `/api/v1/reviews/${id}/respond`
+}
+
+/**
+ * レビューにサロンからの返信を書き、返信したあとのレビューを返します。ownerResponse に文字列を指定すると返信を書き(すでにあれば置き換えます)、null を指定すると返信を取り下げます。返信を書けるのは、レビューのサロンの owner・manager です。admin は返信を取り下げる(null を指定する)ことだけができ、文字列を指定すると403を返します。staff、顧客(レビューの作者を含む)、ほかのサロンの owner・manager、プロフィールのない顧客のアカウントには403を返します。空白だけの返信は400を、レビューが存在しない場合と、削除したサロンのレビューの場合は404を返します。返信を書くと ownerRespondedAt を書いた日時にします。いまと同じ返信を指定した場合と、返信のないレビューに null を指定した場合は、何も書かずに200を返します。レビューの updatedAt とサロンの rating は変わりません。
+ * @summary Respond to review
+ */
+export const reviewCrudRespond = async (id: ModelsReviewId,
+    modelsReviewRespondRequest: ModelsReviewRespondRequest, options?: RequestInit): Promise<reviewCrudRespondResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customInstance<reviewCrudRespondResponse>(getReviewCrudRespondUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(modelsReviewRespondRequest)
+  }
+);}
+
+
+
+
+
+export const getReviewCrudRespondMutationKey = () => ['reviewCrudRespond'] as const;
+
+export const getReviewCrudRespondMutationOptions = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviewCrudRespond>>, TError,ReviewCrudRespondMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof reviewCrudRespond>>, TError,ReviewCrudRespondMutationVariables, TContext> => {
+
+const mutationKey = getReviewCrudRespondMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reviewCrudRespond>>, ReviewCrudRespondMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  reviewCrudRespond(id,data,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReviewCrudRespondMutationResult = NonNullable<Awaited<ReturnType<typeof reviewCrudRespond>>>
+    export type ReviewCrudRespondMutationBody = ModelsReviewRespondRequest
+    export type ReviewCrudRespondMutationError = ModelsProblemDetails
+    export type ReviewCrudRespondMutationVariables = {id: ModelsReviewId;data: ModelsReviewRespondRequest}
+
+    /**
+ * レビューにサロンからの返信を書き、返信したあとのレビューを返します。ownerResponse に文字列を指定すると返信を書き(すでにあれば置き換えます)、null を指定すると返信を取り下げます。返信を書けるのは、レビューのサロンの owner・manager です。admin は返信を取り下げる(null を指定する)ことだけができ、文字列を指定すると403を返します。staff、顧客(レビューの作者を含む)、ほかのサロンの owner・manager、プロフィールのない顧客のアカウントには403を返します。空白だけの返信は400を、レビューが存在しない場合と、削除したサロンのレビューの場合は404を返します。返信を書くと ownerRespondedAt を書いた日時にします。いまと同じ返信を指定した場合と、返信のないレビューに null を指定した場合は、何も書かずに200を返します。レビューの updatedAt とサロンの rating は変わりません。
+ * @summary Respond to review
+ */
+export const useReviewCrudRespond = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviewCrudRespond>>, TError,ReviewCrudRespondMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof reviewCrudRespond>>,
+        TError,
+        ReviewCrudRespondMutationVariables,
+        TContext
+      > => {
+      return useMutation(getReviewCrudRespondMutationOptions(options), queryClient);
     }
     export type salonReviewSummaryGetSummaryResponse200 = {
   data: SalonReviewSummaryGetSummary200

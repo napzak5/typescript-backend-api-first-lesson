@@ -12,7 +12,7 @@ import type { ModelsSalonId } from './modelsSalonId';
 /**
  * レビュー作成リクエスト - 顧客が新規レビュー投稿時に入力する評価情報と任意コメント・画像を受け取る。
  * 全項目のキーが必須。DB で NULL 許可のカラムのみ null を指定できる。
- * 検証フラグ、参考になった数、報告数、運営の返信はシステムやほかの操作が設定するため含まない
+ * 検証フラグ、参考になった数、通報の件数、サロンからの返信はシステムやほかの操作が設定するため含まない
  */
 export interface ModelsReviewCreateRequest {
   /** レビュー対象のサロンID。bookingIdの予約のサロンを指定する */

@@ -19,6 +19,7 @@ import {
   planReviewChange,
   planReviewRemoval,
   planReviewReport,
+  planReviewResponse,
   type ReportedReview,
   type ReviewChange,
   type ReviewCreateRequest,
@@ -34,6 +35,9 @@ import {
   type ReviewReporter,
   type ReviewReporting,
   type ReviewReportRequest,
+  type ReviewResponder,
+  type ReviewResponding,
+  type ReviewRespondRequest,
   type ReviewTally,
   type ReviewUpdateRequest,
   type SalonId,
@@ -215,15 +219,16 @@ const heldReviewOf = async (
 }
 
 /**
- * The review a mark or a report names, held `FOR NO KEY UPDATE` until its
- * marks or its reports are counted again: the marks and the reports of one
- * review are counted one after the other, each by a statement that begins
+ * The review a mark, a report or a response names, held `FOR NO KEY
+ * UPDATE` until its marks or its reports are counted again, or the
+ * response is written: the marks, the reports and the responses of one
+ * review are written one after the other, each by a statement that begins
  * once the one before it is committed, and a change or a removal of the
  * review under way (`FOR UPDATE`) has been made when the row is returned.
- * Its salon is read, not held: neither writes anything of the salon. Null
- * when there is no review with the ID, or its salon is deleted.
+ * Its salon is read, not held: none of them writes anything of the salon.
+ * Null when there is no review with the ID, or its salon is deleted.
  */
-const countedReviewOf = async (
+const notedReviewOf = async (
   tx: DatabaseExecutor,
   id: string,
 ): Promise<(HeldReview & ReportedReview) | null> => {
@@ -349,8 +354,8 @@ const contextOf = async (
 /**
  * Each statement sees what was committed before it began: a review that
  * waited for the salon, a change or a removal that waited for the review
- * or the salon, or a mark or a report that waited for the review, sees what
- * the one it waited for wrote.
+ * or the salon, or a mark, a report or a response that waited for the
+ * review, sees what the one it waited for wrote.
  */
 const WRITE: PgTransactionConfig = { isolationLevel: 'read committed' }
 
@@ -573,7 +578,7 @@ export class ReviewRepository implements IReviewRepository {
       this.db.transaction(async (tx): Promise<ReviewMark> => {
         const plan = planHelpfulMark(customerId, {
           reviewerDeleted: await isReviewerDeleted(tx, customerId),
-          review: await countedReviewOf(tx, id),
+          review: await notedReviewOf(tx, id),
         })
         if (plan.type !== 'planned') {
           return plan
@@ -609,7 +614,7 @@ export class ReviewRepository implements IReviewRepository {
             )
             .with({ type: 'salon' }, async () => false)
             .exhaustive(),
-          review: await countedReviewOf(tx, id),
+          review: await notedReviewOf(tx, id),
         })
         if (plan.type !== 'planned') {
           return plan
@@ -636,6 +641,47 @@ export class ReviewRepository implements IReviewRepository {
 
         await countReportsOf(tx, id)
         return { type: 'reported', report }
+      }, WRITE),
+    )
+  }
+
+  async respond(
+    id: ReviewId,
+    responder: ReviewResponder,
+    { ownerResponse }: ReviewRespondRequest,
+  ): Promise<Result<ReviewResponding, DomainError>> {
+    return attempt('Failed to respond to review', () =>
+      this.db.transaction(async (tx): Promise<ReviewResponding> => {
+        const plan = planReviewResponse(responder, await notedReviewOf(tx, id))
+        if (plan.type !== 'planned') {
+          return plan
+        }
+
+        // A response that is stored already is not written again, and
+        // the time it was written stays. What the review says did not
+        // change, so its `updatedAt` stays too.
+        await tx
+          .update(reviews)
+          .set({
+            ownerResponse,
+            ownerRespondedAt: ownerResponse === null ? null : CLOCK,
+          })
+          .where(
+            and(
+              eq(reviews.id, id),
+              sql`${reviews.ownerResponse} is distinct from ${ownerResponse}`,
+            ),
+          )
+        const [review] = await tx
+          .select()
+          .from(reviews)
+          .where(eq(reviews.id, id))
+        // The review is held: it is there until the transaction ends.
+        if (review === undefined) {
+          return { type: 'reviewNotFound' }
+        }
+
+        return { type: 'responded', review }
       }, WRITE),
     )
   }

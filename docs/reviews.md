@@ -10,13 +10,13 @@
 
 | オペレーション | 状態 |
 |---|---|
-| 一覧（`ReviewCrud.list`）、投稿（`create`）、1 件の取得（`get`）、修正（`update`）、削除（`delete`）、参考になった（`markHelpful`）、通報（`report`）、サロンの集計（`SalonReviewSummary.getSummary`）、スタッフの集計（`StaffReviewSummary.getStaffSummary`） | 実装済み |
+| 一覧（`ReviewCrud.list`）、投稿（`create`）、1 件の取得（`get`）、修正（`update`）、削除（`delete`）、参考になった（`markHelpful`）、通報（`report`）、サロンからの返信（`respond`）、サロンの集計（`SalonReviewSummary.getSummary`）、スタッフの集計（`StaffReviewSummary.getStaffSummary`） | 実装済み |
 | 通報の一覧（`ReviewReportCrud.list`）、却下（`dismiss`） | 実装済み |
 
 コントラクトにあるレビューのオペレーションは、すべて実装済みです。
 
 - 次のものは、ありません
-  - サロンからの返信（`ownerResponse`）を書くこと。返信を書くオペレーションは、コントラクトにありません。シードが書いた返信は、読めます
+  - 返信の履歴と、返信をレビューを書いた顧客に知らせること。返信への返信（やり取り）
   - 投稿と修正の期限。来店から何日たっても、書いて、直せます
   - 修正の履歴。修正すると、前の内容は残りません
   - `admin` による修正と、削除したレビューの復元
@@ -40,6 +40,7 @@
 | 削除 | `DELETE /api/v1/reviews/{id}` | レビューを書いた顧客本人と `admin` |
 | 参考になった | `POST /api/v1/reviews/{id}/helpful` | 顧客だけ（ロール `customer` で、顧客のプロフィールがあるアカウント）。自分のレビューは不可 |
 | 通報 | `POST /api/v1/reviews/{id}/report` | 顧客（同上。自分のレビューは不可）と、レビューのサロンの `owner`・`manager` |
+| サロンからの返信 | `POST /api/v1/reviews/{id}/respond` | レビューのサロンの `owner`・`manager`。`admin` は取り下げ（`ownerResponse` が null）だけ |
 | 通報の一覧 | `GET /api/v1/review-reports` | `admin` だけ |
 | 通報の却下 | `POST /api/v1/review-reports/{id}/dismiss` | `admin` だけ |
 
@@ -52,6 +53,7 @@
 - ほかの顧客のレビューの修正と削除は 403 です。レビューは誰でも読めるので、存在を隠す（404 にする）理由はありません。修正と削除でも、プロフィールのない顧客のアカウントと、紐づいた顧客が削除されたアカウントは 403 です
 - **参考になったと評価できるのは、顧客だけです**。`admin` と、サロンの `owner`・`manager`・`staff` は 403 です。一覧の「参考になった順」を顧客の評価だけで決め、サロンが自分のレビューを押し上げられないようにします。プロフィールのない顧客のアカウントと、紐づいた顧客が削除されたアカウントも 403 です。**自分のレビューは 403 です**。誰が評価できるかは、投稿と同じ `reviewerOf` が決めます
 - **通報できるのは、顧客と、レビューのサロンの `owner`・`manager` です**。顧客は、どのサロンのレビューも通報できますが、自分のレビューは 403 です（自分で修正、削除できるからです）。サロンは、レビューを削除できないので、事実と違うレビューなどを `admin` に知らせる手段として、自分のサロンのレビューを、誰が書いたものでも通報できます。ほかのサロンのレビューは 403 です。`admin` は通報を扱う側で、レビューを自分で削除できるので 403、サロンの `staff` は、サロンを代表する `owner`・`manager` に任せるので 403 です。プロフィールのない顧客のアカウント、紐づいた顧客が削除されたアカウント、サロンに届かないアカウント（スタッフ情報が削除されたアカウントなど）も 403 です。誰が通報できるかは、`_shared/authorization.ts` の `reviewReporterOf` が決めます
+- **返信を書けるのは、レビューのサロンの `owner`・`manager` です**。返信はサロンの公式の発言なので、`staff` は、通報と同じく、サロンを代表する `owner`・`manager` に任せるので 403 です。ほかのサロンのレビューは 403 です。`admin` は、規約に反する返信を、レビューごと消さずに取り下げるため、`ownerResponse` に null を指定することだけができ、文字列を指定すると 403 です（運営は、サロンの代わりに返信を書きません）。顧客（レビューを書いた顧客を含む）、プロフィールのない顧客のアカウント、サロンに届かないアカウントも 403 です。誰が返信できるかは、`_shared/authorization.ts` の `reviewResponderOf` と、`_shared/response.ts` の `mayRespondWith` が決めます
 - **通報の一覧と却下は、`admin` だけです**。ほかのアカウントは、クエリや ID が不正でも 403 です。誰が扱えるかは、`business-logic/review-report/_shared/authorization.ts` の `mayHandleReviewReports` が決めます
 - レスポンスの `customerId` と `bookingId` は内部の ID で、これだけで人を特定することはできません。顧客台帳と予約台帳は、`admin` とサロンのメンバーしか読めません
 
@@ -117,6 +119,18 @@
 6. レビューの存在（404。`detail` は `Review <id> was not found`）。削除したサロンのレビューと、削除したあとのレビューも 404 です
 7. 顧客なら、レビューが操作者の書いたものでないこと、サロンなら、レビューが操作者のサロンのものであること（403）
 8. 操作者のアカウントが、そのレビューをまだ通報していないこと（409）
+
+### 返信の確認の順序
+
+1. アクセストークン（401）
+2. 操作者が、サロンの `owner`・`manager` か、`admin` であること（403）
+3. パスの ID（400。`detail` は `Invalid review ID`、`id` の `invalid_format`）
+4. リクエストの形式（400。`detail` は `Invalid review response`）
+5. `admin` なら、`ownerResponse` が null であること（403）
+6. レビューの存在（404。`detail` は `Review <id> was not found`）。削除したサロンのレビューと、削除したあとのレビューも 404 です
+7. サロンなら、レビューが操作者のサロンのものであること（403）
+
+本文を読めない返信の扱い（400、415）は、投稿と同じです。
 
 ### 通報の一覧の確認の順序
 
@@ -250,6 +264,22 @@
 
 - 数でない `limit` は 400（`invalid_format`）、範囲外は 400（`too_small`、`too_big`）、知らない `status` は 400（`invalid_value`）です。コントラクトにないパラメーターは 400 です（`unrecognized_keys`）
 
+## サロンからの返信の規則
+
+返信は、サロンがレビューに答えるものです。お礼や施術の説明を、ほかの顧客も読める形で伝えます。1 つのレビューへの返信は 1 つで、レビューの行のカラム（`ownerResponse`、`ownerRespondedAt`）にあります。
+
+| プロパティ | 規則 |
+|---|---|
+| `ownerResponse` | 文字列か null（キーは必須）。空白だけの文字列は不可（400、`invalid_format`）。長さの上限は、コメントと同じく、ありません（カラムは `text`）。前後の空白や改行も、そのまま残します。null は返信の取り下げです |
+
+- **文字列を指定すると、返信を書きます**。返信があれば置き換えます。`ownerRespondedAt` は、書いた時点の時刻になります
+- **null を指定すると、返信を取り下げます**。`ownerResponse` と `ownerRespondedAt` は、どちらも null になります
+- **いまと同じ返信を指定しても、何も書きません**。`ownerRespondedAt` は、その返信を書いた時刻のままです。返信のないレビューへの null も、何も書きません。どちらも 200 で、そのときのレビューを返します。二重送信で時刻が変わりません
+- **レビューの `updatedAt` は変わりません**。`updatedAt` は、顧客がレビューを投稿、修正した時刻です。サロンの `rating` と `reviewCount` も変わりません
+- 顧客がレビューを修正しても、返信は残ります（[修正の規則](#修正の規則)）。レビューを削除すると、返信も一緒に消えます
+- コントラクトにないキーは 400 です（`unrecognized_keys`）。`ownerRespondedAt` は書けません
+- 成功は 200 で、返信したあとのレビューを返します。`links` は、取得と同じ `self`（レビュー）と `list`（一覧）です
+
 ## 一覧と 1 件の取得
 
 - 一覧と取得は、削除したサロンのレビューを返しません。スタッフや顧客を削除しても、そのレビューは残り、`staffId` と `customerId` もそのままです
@@ -314,9 +344,11 @@
 - 却下も、1 つのトランザクション（`READ COMMITTED`）で、通報のレビューを `FOR NO KEY UPDATE` で持ってから、通報を読み、書いて、`reportCount` を数え直します。通報の行は持ちません。通報の行を書く処理は、どれもレビューを先に持つからです
 - **同じレビューへの通報、却下、参考になったは、レビューの行で 1 件ずつ順に進みます**。数え直す文は、レビューを持ったあとに始まるので、待たせた処理の行が見えます。同時に届いた通報と却下で、数がずれることはありません。同じアカウントの通報が同時に届いても、書くのは 1 行で、ほかは 409 です。一意制約（`review_reports_review_reporter_unique`）も同じことを確かめ、同じアカウントの通報をまだコミットしていないトランザクションがあっても、制約にぶつかった通報は、それを待ってから、何も書かずに 409 です（500 にはならない）。同じ通報の却下が同時に届けば、1 つが 200、ほかは 409 です
 - 通報と却下は、レビューの修正・削除と互いに待ちます。削除を待った通報と却下は 404 です。参考になったと同じく、サロンを持っている投稿の途中でも進み、レビューを `FOR KEY SHARE` で持つ処理も待ちません
+- 返信も、1 つのトランザクション（`READ COMMITTED`）で書きます。レビューを `FOR NO KEY UPDATE` で持ち、サロンが削除されていないことを読んでから（サロンは持たない）確かめ、いまの返信と違うときだけ返信を書き、書いたあとのレビューを読みます。返信を比べる文は、レビューを持ったあとに始まるので、待たせた処理が書いた返信と比べます
+- **同じレビューへの返信は、レビューの行で 1 件ずつ順に進み、後の返信が残ります**。それぞれが、自分の返信を書いたあとのレビューを受け取ります。参考になった、通報、却下とも、レビューの行で 1 件ずつ進みます。修正・削除とは互いに待ち、削除を待った返信は 404 です。参考になったと同じく、サロンを持っている投稿の途中でも進み、レビューを `FOR KEY SHARE` で持つ処理も待ちません
 - 予約を `FOR SHARE` で持つ処理（予約を参照するポイントの付与と利用）と、サロンを参照する行を書く処理（外部キーの確認でサロンを `FOR KEY SHARE` で持つ）は、待ちません
 - 予約のステータスの変更と削除（予約を `FOR UPDATE` で持つ）とは、互いに待ちます。削除している途中の予約への投稿は、削除を待ち、予約が見つからないので 400 です。投稿を書いている途中の予約の削除は、投稿を待ち、レビューがあるので 409 です
-- レビューの `createdAt` と `updatedAt`、サロンの `updatedAt`、評価の `createdAt`、通報の `createdAt`、`updatedAt` と `resolvedAt` は、行を書いた時点の時刻（`clock_timestamp()`）です。サロンやレビューを待った処理は、待たせた処理より後の時刻になります
+- レビューの `createdAt`、`updatedAt` と `ownerRespondedAt`、サロンの `updatedAt`、評価の `createdAt`、通報の `createdAt`、`updatedAt` と `resolvedAt` は、行を書いた時点の時刻（`clock_timestamp()`）です。サロンやレビューを待った処理は、待たせた処理より後の時刻になります
 - 一覧は、1 つの読み取り専用のトランザクション（`REPEATABLE READ`）で読みます。カーソル、ページ、件数は、同じ時点の値です。ロックは取りません。通報の一覧も同じです
 
 ## DB の制約
@@ -340,6 +372,7 @@
 - `staffId` の外部キーは `ON DELETE SET NULL` です。スタッフも、行を残して削除します
 - `review_helpful_votes` の `reviewId` と `customerId` の外部キーは `ON DELETE CASCADE` です。レビューを削除すると、その評価も消えます。顧客は行を残して削除するので、顧客の削除で評価が消えることはありません
 - `review_reports` の `reviewId` の外部キーは `ON DELETE CASCADE` です。レビューを削除すると、その通報も消えます。`reportedBy` と `resolvedBy` はユーザー ID で、外部キーはありません（予約を変更、取り消したユーザーと同じ）。`details` は 2000 文字まで（`varchar(2000)`）で、空白だけの文字列を拒むのは API です
+- `ownerResponse` は `text` で、長さの制約はありません。空白だけの返信を拒むのは API です
 
 ## マイグレーション
 
@@ -370,9 +403,9 @@
 
 | 層 | ファイル |
 |---|---|
-| コントラクト | `specs/models/review.tsp`、`specs/operations/review-operations.tsp`（`ReviewCrud`、`SalonReviewSummary`、`StaffReviewSummary`） |
+| コントラクト | `specs/models/review.tsp`、`specs/operations/review-operations.tsp`（`ReviewCrud`、`ReviewReportCrud`、`SalonReviewSummary`、`StaffReviewSummary`） |
 | データベース | `backend/packages/database/sql/migrations/202611171000_review_rules.sql`、`202611171100_review_helpful_votes.sql`、`202611171200_review_reports.sql`、`src/seeds/seed-data/reviews.ts` |
-| ドメイン | `backend/packages/domain/src/models/review.ts`、`schemas/review.schema.ts`、`repositories/review.repository.ts`、`mappers/read/review.mapper.ts`、`business-logic/review/`（誰が投稿できるかは `_shared/authorization.ts`、投稿の計画は `_shared/plan.ts`、修正と削除の計画は `_shared/change.ts`、参考になったの計画は `_shared/helpful.ts`、通報の計画は `_shared/report.ts`、409 と 403・404 の内容は `_shared/refusals.ts`）。通報の一覧と却下は `models/review-report.ts`、`schemas/review-report.schema.ts`、`repositories/review-report.repository.ts`、`mappers/read/review-report.mapper.ts`、`business-logic/review-report/`（誰が扱えるかは `_shared/authorization.ts`、却下の計画は `_shared/dismissal.ts`） |
+| ドメイン | `backend/packages/domain/src/models/review.ts`、`schemas/review.schema.ts`、`repositories/review.repository.ts`、`mappers/read/review.mapper.ts`、`business-logic/review/`（誰が投稿できるかは `_shared/authorization.ts`、投稿の計画は `_shared/plan.ts`、修正と削除の計画は `_shared/change.ts`、参考になったの計画は `_shared/helpful.ts`、通報の計画は `_shared/report.ts`、返信の計画は `_shared/response.ts`、409 と 403・404 の内容は `_shared/refusals.ts`）。通報の一覧と却下は `models/review-report.ts`、`schemas/review-report.schema.ts`、`repositories/review-report.repository.ts`、`mappers/read/review-report.mapper.ts`、`business-logic/review-report/`（誰が扱えるかは `_shared/authorization.ts`、却下の計画は `_shared/dismissal.ts`） |
 | インフラ | `backend/packages/infrastructure/src/repositories/review.repository.impl.ts`、`review-report.repository.impl.ts`、`review-report-count.ts`（通報と却下が `reportCount` を数え直す） |
 | API | `backend/packages/api/src/routes/review/`（`/api/v1/reviews`、`/api/v1/salons/:salonId/reviews`、`/api/v1/staff/:staffId/reviews` に取り付ける）、`backend/packages/api/src/routes/review-report/`（`/api/v1/review-reports` に取り付ける） |
-| テスト | `backend/packages/domain/src/__tests__/review.schema.test.ts`、`review.plan.test.ts`、`review.change.test.ts`、`review.helpful.test.ts`、`review.report.test.ts`、`review-report.usecase.test.ts`、`review.mapper.test.ts`、`review.usecase.test.ts`、`backend/packages/api/src/routes/review/_shared/__tests__/`、`backend/packages/api/src/__tests__/review.integration.test.ts`（一覧、投稿、取得、集計）、`review-changes.integration.test.ts`（修正と削除）、`review-helpful.integration.test.ts`（参考になった）、`review-report.integration.test.ts`（通報、一覧、却下）、`backend/packages/database/src/scripts/__tests__/migrations.integration.test.ts` |
+| テスト | `backend/packages/domain/src/__tests__/review.schema.test.ts`、`review.plan.test.ts`、`review.change.test.ts`、`review.helpful.test.ts`、`review.report.test.ts`、`review-report.usecase.test.ts`、`review.response.test.ts`、`review-response.usecase.test.ts`、`review.mapper.test.ts`、`review.usecase.test.ts`、`backend/packages/api/src/routes/review/_shared/__tests__/`、`backend/packages/api/src/__tests__/review.integration.test.ts`（一覧、投稿、取得、集計）、`review-changes.integration.test.ts`（修正と削除）、`review-helpful.integration.test.ts`（参考になった）、`review-report.integration.test.ts`（通報、一覧、却下）、`review-response.integration.test.ts`（返信）、`backend/packages/database/src/scripts/__tests__/migrations.integration.test.ts` |
