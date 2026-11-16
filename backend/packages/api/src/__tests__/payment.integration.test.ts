@@ -2526,6 +2526,32 @@ describe('Payments API', () => {
       expect(brokenRules(response)).toEqual(['amount:too_big'])
     })
 
+    it('makes a payment wait for a change of its payment method that holds the row no more than an update of a column that is no key does', async () => {
+      const entered = await created()
+
+      const { pending, paymentsWhileWaiting } = await db.transaction(
+        async (tx) => {
+          await tx
+            .update(paymentMethods)
+            .set({ isActive: false })
+            .where(eq(paymentMethods.id, cashId))
+          const underWay = process(entered.id).then((response) => response)
+          await pause(300)
+
+          return {
+            pending: underWay,
+            paymentsWhileWaiting: await paymentsOf(entered.id),
+          }
+        },
+      )
+      const response = await pending
+
+      expect(paymentsWhileWaiting).toEqual([])
+      expectProblem(response, badRequest)
+      expect(brokenRules(response)).toEqual(['paymentMethodId:not_found'])
+      expect(await paymentsOf(entered.id)).toEqual([])
+    })
+
     it('records a payment by a payment method whose change was given up', async () => {
       const entered = await created()
       const abandoned = new Error('The payment method is not changed')

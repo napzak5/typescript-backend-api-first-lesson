@@ -274,6 +274,15 @@ describe('paymentRefundRequestSchema', () => {
     ).toBe(' 返品 ')
   })
 
+  it('takes a reason of any length, as its column of text does', () => {
+    expect(
+      rulesBrokenBy(
+        paymentRefundRequestSchema,
+        refund({ refundReason: '返品'.repeat(5_000) }),
+      ),
+    ).toEqual([])
+  })
+
   it.each([['refundAmount'], ['refundReason']])(
     'refuses a request without %s: every key is stated',
     (key) => {
