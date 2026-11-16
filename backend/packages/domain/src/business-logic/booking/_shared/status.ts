@@ -18,6 +18,11 @@ import type {
  * The salon cancels a booking whenever it learns that the visit will not
  * take place. The customer cancels their own before it begins; after that
  * it is the salon's to say what became of the visit.
+ *
+ * One change of the status is no action: a confirmed booking is pending
+ * again when its customer moves it to another slot, because the salon
+ * confirmed the time and the staff member it had
+ * (`customer-booking/_shared/move.ts`).
  */
 
 type BookingStatus = DbBooking['status']

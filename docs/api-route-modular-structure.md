@@ -111,11 +111,12 @@ backend/packages/api/src/
 │   │   ├── _shared/
 │   │   │   ├── types.ts            # the response body types
 │   │   │   └── index.ts            # re-exports the file above, and BookingParams, bookingLinks and decodeBookingSearchQuery of routes/booking/_shared
-│   │   ├── list-customer-bookings.handler.ts     # GET  /api/v1/customers/me/bookings
-│   │   ├── create-customer-booking.handler.ts    # POST /api/v1/customers/me/bookings
-│   │   ├── get-customer-booking.handler.ts       # GET  /api/v1/customers/me/bookings/:id
-│   │   ├── cancel-customer-booking.handler.ts    # POST /api/v1/customers/me/bookings/:id/cancel
-│   │   └── index.ts                              # createCustomerBookingRouter
+│   │   ├── list-customer-bookings.handler.ts       # GET  /api/v1/customers/me/bookings
+│   │   ├── create-customer-booking.handler.ts      # POST /api/v1/customers/me/bookings
+│   │   ├── get-customer-booking.handler.ts         # GET  /api/v1/customers/me/bookings/:id
+│   │   ├── cancel-customer-booking.handler.ts      # POST /api/v1/customers/me/bookings/:id/cancel
+│   │   ├── reschedule-customer-booking.handler.ts  # POST /api/v1/customers/me/bookings/:id/reschedule
+│   │   └── index.ts                                # createCustomerBookingRouter
 │   ├── customer-preferences/
 │   │   ├── _shared/
 │   │   │   ├── types.ts            # CustomerPreferencesParams, and the response body types
@@ -469,7 +470,7 @@ Express tries the routes in the order in which they were registered, so `/bulk` 
 
 `routes/available-slot/index.ts` exports `createAvailableSlotRouter(dependencies, authenticated)` with two routes: `GET /` and `POST /check`. The slots are below a salon (`/salons/:salonId/available-slots`), so the router is created with `Router({ mergeParams: true })`. The check is a `POST` at a path of its own and not an action on a stored resource: it takes a body and answers a question. Neither operation is public, so both handlers receive `authenticated`.
 
-`routes/customer-booking/index.ts` exports `createCustomerBookingRouter(dependencies, authenticated)` with four routes: `GET /`, `POST /`, `GET /:id` and `POST /:id/cancel`. It is a plain `Router()` mounted at `/customers/me/bookings`, before the routers of the customers. A customer's own bookings are rows of the booking ledger, so the handlers take what is the same from `routes/booking/_shared` (`BookingParams`, `bookingLinks`, `decodeBookingSearchQuery`), which their own `_shared/index.ts` re-exports; only the response body types are their own. The links are built from where the router is mounted (`req.baseUrl`): `self` is `/api/v1/customers/me/bookings/{id}` and `list` is `/api/v1/customers/me/bookings`. The create passes the `actor`, `req.body` and where the request came from (`req.ip`, the `User-Agent` header), and answers 201 with a `Location` header. There is no update, no delete and no reschedule: those are operations of the ledger. No operation is public, so every handler receives `authenticated`, and the use cases decide who has bookings of their own: a customer account.
+`routes/customer-booking/index.ts` exports `createCustomerBookingRouter(dependencies, authenticated)` with five routes: `GET /`, `POST /`, `GET /:id`, `POST /:id/cancel` and `POST /:id/reschedule`. It is a plain `Router()` mounted at `/customers/me/bookings`, before the routers of the customers. A customer's own bookings are rows of the booking ledger, so the handlers take what is the same from `routes/booking/_shared` (`BookingParams`, `bookingLinks`, `decodeBookingSearchQuery`), which their own `_shared/index.ts` re-exports; only the response body types are their own. The links are built from where the router is mounted (`req.baseUrl`): `self` is `/api/v1/customers/me/bookings/{id}` and `list` is `/api/v1/customers/me/bookings`. The create passes the `actor`, `req.body` and where the request came from (`req.ip`, the `User-Agent` header), and answers 201 with a `Location` header. The cancel and the reschedule pass the `actor`, the ID of the path and `req.body`, and answer 200 with the booking. There is no update and no delete: those are operations of the ledger. No operation is public, so every handler receives `authenticated`, and the use cases decide who has bookings of their own: a customer account.
 
 `routes/customer-preferences/index.ts` exports two factories, because the preferences of a customer are reached in two ways. `createCustomerPreferencesRouter(dependencies, authenticated)` has two routes, `GET /` and `PATCH /`, is mounted below a customer of the ledger (`/customers/:id/preferences`) and created with `Router({ mergeParams: true })`; its handlers declare `CustomerPreferencesParams` (`routes/customer-preferences/_shared/types.ts`). `createOwnCustomerPreferencesRouter(dependencies, authenticated)` has the same two routes and is a plain `Router()` mounted at `/customers/me/preferences`. A customer has one set of preferences, and has it whether a row is stored or not, so neither router has a route with an ID of its own, a `POST` or a `DELETE`. No operation is public, so every handler receives `authenticated`.
 

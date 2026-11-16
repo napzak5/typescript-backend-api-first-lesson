@@ -112,7 +112,7 @@ export class AvailableSlotRepository implements IAvailableSlotRepository {
           ),
         )
         const schedules = await schedulesOf(tx, staffIds, [date])
-        const taken = await takenOf(tx, staffIds, widestDayOf(date, kept))
+        const taken = await takenOf(tx, staffIds, widestDayOf(date, kept), null)
 
         return {
           salon,
@@ -127,7 +127,7 @@ export class AvailableSlotRepository implements IAvailableSlotRepository {
           serviceLineStarts:
             service === undefined
               ? []
-              : await serviceLineStartsOf(tx, serviceId, widest),
+              : await serviceLineStartsOf(tx, serviceId, widest, null),
           staff: members.map((member) => ({
             ...member,
             schedules: schedules.filter(
@@ -181,7 +181,9 @@ export class AvailableSlotRepository implements IAvailableSlotRepository {
           taken:
             window === null
               ? []
-              : (await takenOf(tx, [staffId], window)).map(({ time }) => time),
+              : (await takenOf(tx, [staffId], window, null)).map(
+                  ({ time }) => time,
+                ),
         }
       }, AT_ONE_MOMENT),
     )

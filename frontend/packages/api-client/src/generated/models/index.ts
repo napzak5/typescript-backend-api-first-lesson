@@ -82,6 +82,8 @@ export * from './customerBookingsGet200';
 export * from './customerBookingsGet200Links';
 export * from './customerBookingsList200';
 export * from './customerBookingsListParams';
+export * from './customerBookingsReschedule200';
+export * from './customerBookingsReschedule200Links';
 export * from './customerCrudBatchGet200';
 export * from './customerCrudBatchGet200Links';
 export * from './customerCrudBulkCreate201';

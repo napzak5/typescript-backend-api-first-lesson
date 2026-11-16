@@ -34,7 +34,7 @@ export interface ModelsCustomerBookingResponse {
   endTime: string;
   /** 予約全体の所要時間（分）。startTime から endTime までの分数 */
   duration: number;
-  /** 予約の現在ステータス。本人が入れた予約は pending で始まり、サロンが確定(confirmed)する */
+  /** 予約の現在ステータス。本人が入れた予約は pending で始まり、サロンが確定(confirmed)する。確定済みの予約の日時を本人が変えると pending に戻る */
   status: ModelsBookingStatusType;
   /** 小計。施術明細の料金(price)の合計 */
   subtotal: number;

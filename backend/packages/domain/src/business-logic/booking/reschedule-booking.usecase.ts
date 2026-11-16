@@ -7,7 +7,7 @@ import { bookingRescheduleRequestSchema } from '../../schemas/booking.schema'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import { bookingReachOf } from './_shared/authorization'
 import type { BookingUseCaseDependencies } from './_shared/dependencies'
-import { toRefusalError } from './_shared/refusals'
+import { cannotBeRescheduled, toRefusalError } from './_shared/refusals'
 
 const MESSAGE = 'Invalid booking reschedule'
 
@@ -61,12 +61,8 @@ export class RescheduleBookingUseCase {
       .with({ type: 'notFound' }, () =>
         Result.error(DomainErrors.notFound('Booking', bookingId.data)),
       )
-      .with({ type: 'statusDoesNotAllow' }, ({ status, allowed }) =>
-        Result.error(
-          DomainErrors.conflict(
-            `A booking that is ${status} cannot be rescheduled; its status has to be ${allowed.join(' or ')}`,
-          ),
-        ),
+      .with({ type: 'statusDoesNotAllow' }, (refusal) =>
+        Result.error(cannotBeRescheduled(refusal)),
       )
       .with(
         { type: P.union('invalid', 'timeZoneUnknown', 'staffOccupied') },

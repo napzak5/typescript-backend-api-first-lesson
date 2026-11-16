@@ -2446,6 +2446,14 @@ describe('Customer booking API', () => {
       ['create', (as) => book(wanting({ startTime: iso('13:00') }), as)],
       ['get', (as) => read(id, as)],
       ['cancel', (as) => cancel(id, { cancellationReason: null }, as)],
+      [
+        'reschedule',
+        (as) =>
+          authorized(
+            request(app).post(`${OWN_BOOKINGS}/${id}/reschedule`),
+            as,
+          ).send({ startTime: iso('14:00'), staffId }),
+      ],
     ]
 
     it('answers a request without a token with 401, whatever it asks for', async () => {
@@ -2549,10 +2557,6 @@ describe('Customer booking API', () => {
       [
         'the confirmation of a booking',
         (id) => request(app).post(`${OWN_BOOKINGS}/${id}/confirm`),
-      ],
-      [
-        'the reschedule of a booking',
-        (id) => request(app).post(`${OWN_BOOKINGS}/${id}/reschedule`),
       ],
       [
         'the service lines of a booking',

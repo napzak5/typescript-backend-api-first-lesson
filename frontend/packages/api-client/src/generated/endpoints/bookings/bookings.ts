@@ -46,6 +46,7 @@ import type {
   CustomerBookingsGet200,
   CustomerBookingsList200,
   CustomerBookingsListParams,
+  CustomerBookingsReschedule200,
   ModelsAvailableSlotCheckRequest,
   ModelsBookingCancelRequest,
   ModelsBookingCompleteRequest,
@@ -2683,6 +2684,155 @@ export const useCustomerBookingsCancel = <TError = ModelsProblemDetails,
         TContext
       > => {
       return useMutation(getCustomerBookingsCancelMutationOptions(options), queryClient);
+    }
+    export type customerBookingsRescheduleResponse200 = {
+  data: CustomerBookingsReschedule200
+  status: 200
+}
+
+export type customerBookingsRescheduleResponse400 = {
+  data: ModelsProblemDetails
+  status: 400
+}
+
+export type customerBookingsRescheduleResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type customerBookingsRescheduleResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
+export type customerBookingsRescheduleResponse404 = {
+  data: ModelsProblemDetails
+  status: 404
+}
+
+export type customerBookingsRescheduleResponse409 = {
+  data: ModelsProblemDetails
+  status: 409
+}
+
+export type customerBookingsRescheduleResponse413 = {
+  data: ModelsProblemDetails
+  status: 413
+}
+
+export type customerBookingsRescheduleResponse415 = {
+  data: ModelsProblemDetails
+  status: 415
+}
+
+export type customerBookingsRescheduleResponse429 = {
+  data: ModelsProblemDetails
+  status: 429
+}
+
+export type customerBookingsRescheduleResponse500 = {
+  data: ModelsProblemDetails
+  status: 500
+}
+
+export type customerBookingsRescheduleResponseSuccess = (customerBookingsRescheduleResponse200) & {
+  headers: Headers;
+};
+export type customerBookingsRescheduleResponseError = (customerBookingsRescheduleResponse400 | customerBookingsRescheduleResponse401 | customerBookingsRescheduleResponse403 | customerBookingsRescheduleResponse404 | customerBookingsRescheduleResponse409 | customerBookingsRescheduleResponse413 | customerBookingsRescheduleResponse415 | customerBookingsRescheduleResponse429 | customerBookingsRescheduleResponse500) & {
+  headers: Headers;
+};
+
+export type customerBookingsRescheduleResponse = (customerBookingsRescheduleResponseSuccess | customerBookingsRescheduleResponseError)
+
+export const getCustomerBookingsRescheduleUrl = (id: ModelsBookingId,) => {
+
+
+
+
+  return `/api/v1/customers/me/bookings/${id}/reschedule`
+}
+
+/**
+ * ログインしている顧客の、draft・pending・confirmedの予約の開始日時と担当スタッフを変更します。変更できるのは、予約の開始日時より前で、施術明細が1件、その担当が予約の担当スタッフである予約だけです(サロンが施術明細を足した予約は、サロンが予約台帳で変更します)。移せる先は、予約のサービスの空き枠だけです。空き枠は、予約を入れるときと同じ規則で、予約の施術時間について確かめ、この予約自身は、ないものとして数えます。staffIdとstartTimeが空き枠でない場合、顧客レコードが予約を受け付けられない状態の場合、自分のほかの予約(cancelledとno_showを除く)と時間が重なる場合、開始日時を過ぎた予約、それ以外のステータスの予約、施術明細が上の形でない予約には409を返します。staffIdが予約のサロンのスタッフではない(削除済みを含む)場合は400を、サロンのタイムゾーンを名前として読めない場合は409を返します。所要時間と金額は変わりません。confirmedの予約は、サロンがもう一度確定するまでpendingに戻ります。担当も開始日時も変わらないリクエストは、何も変更せずに予約を返します。ほかの顧客の予約には404を返します。
+ * @summary Reschedule one of the signed-in customer's bookings
+ */
+export const customerBookingsReschedule = async (id: ModelsBookingId,
+    modelsBookingRescheduleRequest: ModelsBookingRescheduleRequest, options?: RequestInit): Promise<customerBookingsRescheduleResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customInstance<customerBookingsRescheduleResponse>(getCustomerBookingsRescheduleUrl(id),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(modelsBookingRescheduleRequest)
+  }
+);}
+
+
+
+
+
+export const getCustomerBookingsRescheduleMutationKey = () => ['customerBookingsReschedule'] as const;
+
+export const getCustomerBookingsRescheduleMutationOptions = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerBookingsReschedule>>, TError,CustomerBookingsRescheduleMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof customerBookingsReschedule>>, TError,CustomerBookingsRescheduleMutationVariables, TContext> => {
+
+const mutationKey = getCustomerBookingsRescheduleMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof customerBookingsReschedule>>, CustomerBookingsRescheduleMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  customerBookingsReschedule(id,data,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CustomerBookingsRescheduleMutationResult = NonNullable<Awaited<ReturnType<typeof customerBookingsReschedule>>>
+    export type CustomerBookingsRescheduleMutationBody = ModelsBookingRescheduleRequest
+    export type CustomerBookingsRescheduleMutationError = ModelsProblemDetails
+    export type CustomerBookingsRescheduleMutationVariables = {id: ModelsBookingId;data: ModelsBookingRescheduleRequest}
+
+    /**
+ * ログインしている顧客の、draft・pending・confirmedの予約の開始日時と担当スタッフを変更します。変更できるのは、予約の開始日時より前で、施術明細が1件、その担当が予約の担当スタッフである予約だけです(サロンが施術明細を足した予約は、サロンが予約台帳で変更します)。移せる先は、予約のサービスの空き枠だけです。空き枠は、予約を入れるときと同じ規則で、予約の施術時間について確かめ、この予約自身は、ないものとして数えます。staffIdとstartTimeが空き枠でない場合、顧客レコードが予約を受け付けられない状態の場合、自分のほかの予約(cancelledとno_showを除く)と時間が重なる場合、開始日時を過ぎた予約、それ以外のステータスの予約、施術明細が上の形でない予約には409を返します。staffIdが予約のサロンのスタッフではない(削除済みを含む)場合は400を、サロンのタイムゾーンを名前として読めない場合は409を返します。所要時間と金額は変わりません。confirmedの予約は、サロンがもう一度確定するまでpendingに戻ります。担当も開始日時も変わらないリクエストは、何も変更せずに予約を返します。ほかの顧客の予約には404を返します。
+ * @summary Reschedule one of the signed-in customer's bookings
+ */
+export const useCustomerBookingsReschedule = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerBookingsReschedule>>, TError,CustomerBookingsRescheduleMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof customerBookingsReschedule>>,
+        TError,
+        CustomerBookingsRescheduleMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCustomerBookingsRescheduleMutationOptions(options), queryClient);
     }
     export type availableSlotCrudListResponse200 = {
   data: AvailableSlotCrudList200

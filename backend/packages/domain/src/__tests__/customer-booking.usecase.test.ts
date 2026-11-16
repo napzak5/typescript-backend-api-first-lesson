@@ -6,11 +6,13 @@ import {
   type CustomerBookingUseCaseDependencies,
   GetCustomerBookingUseCase,
   ListCustomerBookingsUseCase,
+  RescheduleCustomerBookingUseCase,
 } from '../business-logic/customer-booking'
 import type { Actor, ClientInfo } from '../models/auth'
 import type {
   BookingStatusChange,
   CustomerBookingCreation,
+  CustomerBookingReschedule,
   IBookingRepository,
 } from '../repositories/booking.repository'
 import { type DomainError, DomainErrors } from '../shared'
@@ -105,6 +107,11 @@ const everyUseCaseAs = async (
     'haircut',
     { nothing: 'right' },
   ),
+  await new RescheduleCustomerBookingUseCase(dependencies).execute(
+    actor,
+    'haircut',
+    { nothing: 'right' },
+  ),
 ]
 
 describe('who has bookings of their own', () => {
@@ -115,7 +122,13 @@ describe('who has bookings of their own', () => {
 
       const results = await everyUseCaseAs(actor, dependencies)
 
-      expect(results).toEqual([forbidden, forbidden, forbidden, forbidden])
+      expect(results).toEqual([
+        forbidden,
+        forbidden,
+        forbidden,
+        forbidden,
+        forbidden,
+      ])
       expect(repositoryCalls(dependencies)).toEqual([])
     },
   )
@@ -133,6 +146,7 @@ describe('who has bookings of their own', () => {
       profileNotFound,
       profileNotFound,
       profileNotFound,
+      profileNotFound,
     ])
     expect(repositoryCalls(dependencies)).toEqual([])
   })
@@ -145,6 +159,7 @@ describe('who has bookings of their own', () => {
     expect(results.map(rulesOf)).toEqual([
       ['limit:too_small'],
       expect.arrayContaining(['salonId:invalid_type']),
+      [expect.stringMatching(/^id:/)],
       [expect.stringMatching(/^id:/)],
       [expect.stringMatching(/^id:/)],
     ])
@@ -835,6 +850,234 @@ describe('CancelCustomerBookingUseCase', () => {
       { cancellationReason: null },
       answering({
         type: 'changed',
+        booking: bookingWithServices({ startTime: 'tomorrow' }),
+      }),
+    )
+
+    expect(await result).toEqual(storedRowIsCorrupt)
+  })
+})
+
+describe('RescheduleCustomerBookingUseCase', () => {
+  /** A body that satisfies every rule: two in the afternoon in Tokyo on the 16th. */
+  const to = (overrides: Record<string, unknown> = {}) => ({
+    startTime: '2026-11-16T05:00:00Z',
+    staffId: STAFF_MEMBER_ID,
+    ...overrides,
+  })
+
+  const reschedule = (
+    id: unknown = BOOKING_ID,
+    body: unknown = to(),
+    overrides: Partial<IBookingRepository> = {},
+    now: () => Date = () => NOW,
+  ) => {
+    const dependencies = dependenciesWith(overrides, [], now)
+    return {
+      dependencies,
+      result: new RescheduleCustomerBookingUseCase(dependencies).execute(
+        actors.customer,
+        id,
+        body,
+      ),
+    }
+  }
+
+  const answering = (rebooked: CustomerBookingReschedule) => ({
+    rebook: vi.fn(async () => Result.success(rebooked)),
+  })
+
+  it('moves the booking as the customer among their own, at the moment the clock shows, and returns it as they are shown it', async () => {
+    const moment = jst('09:15')
+    const { result, dependencies } = reschedule(
+      BOOKING_ID,
+      to(),
+      {},
+      () => moment,
+    )
+
+    expect(await result).toStrictEqual({
+      type: 'success',
+      data: apiCustomerBooking(),
+    })
+    expect(
+      dependencies.bookingRepository.rebook,
+    ).toHaveBeenCalledExactlyOnceWith(
+      BOOKING_ID,
+      ownBookings,
+      { startTime: '2026-11-16T05:00:00.000Z', staffId: STAFF_MEMBER_ID },
+      { changedBy: USER_ID, now: moment },
+    )
+    expect(repositoryCalls(dependencies)).toEqual(['rebook'])
+  })
+
+  it('returns a booking that is where the request wants it already, as it is', async () => {
+    const booking = bookingWithServices({ status: 'confirmed' })
+    const { result } = reschedule(
+      BOOKING_ID,
+      to(),
+      answering({ type: 'unchanged', booking }),
+    )
+
+    expect(await result).toStrictEqual({
+      type: 'success',
+      data: apiCustomerBooking({ status: 'confirmed' }),
+    })
+  })
+
+  it('looks at the ID before the request, and at both before it asks the repository', async () => {
+    const both = reschedule('haircut', { time: 'later' })
+    const request = reschedule(BOOKING_ID, { time: 'later' })
+
+    expect(rulesOf(await both.result)).toEqual([expect.stringMatching(/^id:/)])
+    expect(validationMessageOf(await both.result)).toBe('Invalid booking ID')
+    expect(rulesOf(await request.result)).toEqual([
+      'startTime:invalid_type',
+      'staffId:invalid_type',
+      'time:unrecognized_keys',
+    ])
+    expect(validationMessageOf(await request.result)).toBe(
+      'Invalid booking reschedule',
+    )
+    expect(repositoryCalls(both.dependencies)).toEqual([])
+    expect(repositoryCalls(request.dependencies)).toEqual([])
+    expect(both.dependencies.clock).not.toHaveBeenCalled()
+  })
+
+  it.each<[string, unknown, string[]]>([
+    [
+      'a time with seconds',
+      to({ startTime: '2026-11-16T05:00:30Z' }),
+      ['startTime:custom'],
+    ],
+    [
+      'a time that is not in UTC',
+      to({ startTime: '2026-11-16T14:00:00+09:00' }),
+      ['startTime:invalid_format'],
+    ],
+    [
+      'a staff member that is no ID',
+      to({ staffId: 'the usual one' }),
+      ['staffId:invalid_format'],
+    ],
+    ['a service', to({ serviceId: CUT_ID }), ['serviceId:unrecognized_keys']],
+    ['null for a body', null, [':invalid_type']],
+  ])('refuses a request with %s', async (_case, body, rules) => {
+    const { result, dependencies } = reschedule(BOOKING_ID, body)
+
+    expect(rulesOf(await result)).toEqual(rules)
+    expect(repositoryCalls(dependencies)).toEqual([])
+  })
+
+  it('answers a booking that is not among those of the customer as one that was not found', async () => {
+    const { result } = reschedule(
+      BOOKING_ID,
+      to(),
+      answering({ type: 'notFound' }),
+    )
+
+    expect(await result).toEqual(
+      Result.error(DomainErrors.notFound('Booking', BOOKING_ID)),
+    )
+  })
+
+  it.each<[CustomerBookingReschedule, string]>([
+    [
+      {
+        type: 'statusDoesNotAllow',
+        status: 'in_progress',
+        allowed: ['draft', 'pending', 'confirmed'],
+      },
+      'A booking that is in_progress cannot be rescheduled; its status has to be draft or pending or confirmed',
+    ],
+    [
+      { type: 'alreadyBegun' },
+      'The time of the booking has come, so the customer cannot move it any more; the salon notes what became of the visit',
+    ],
+    [
+      { type: 'notOneSlot' },
+      'The booking has several services, or a service with another staff member than the one in charge, so the customer cannot move it; contact the salon to move it',
+    ],
+    [
+      { type: 'timeZoneUnknown' },
+      'The time zone of the salon is not one that is known, so the times of its hours cannot be told; correct the time zone of the salon first',
+    ],
+    [
+      { type: 'customerNotAccepted' },
+      'This customer profile does not take bookings online; contact the salon to book',
+    ],
+    [
+      { type: 'notASlot' },
+      'The staff member has no available slot for the service at that time; choose one of the available slots of the salon',
+    ],
+    [
+      { type: 'customerOccupied' },
+      'The customer has another booking at that time; cancel it first or choose another time',
+    ],
+  ])(
+    'answers $type with a conflict that says what stands in the way',
+    async (rebooked, message) => {
+      const { result } = reschedule(BOOKING_ID, to(), answering(rebooked))
+
+      expect(conflictOf(await result)).toBe(message)
+    },
+  )
+
+  it('reports a staff member who is not one of the salon as a rule of the request', async () => {
+    const { result } = reschedule(
+      BOOKING_ID,
+      to(),
+      answering({
+        type: 'invalid',
+        issues: [
+          {
+            field: 'staffId',
+            rule: 'not_found',
+            message: 'Must name a staff member of the salon',
+          },
+        ],
+      }),
+    )
+
+    expect(rulesOf(await result)).toEqual(['staffId:not_found'])
+    expect(validationMessageOf(await result)).toBe('Invalid booking reschedule')
+  })
+
+  it('answers a customer who was deleted as an account without a profile', async () => {
+    const { result } = reschedule(
+      BOOKING_ID,
+      to(),
+      answering({ type: 'profileNotFound' }),
+    )
+
+    expect(await result).toEqual(profileNotFound)
+  })
+
+  it('answers hours of the salon that cannot be read with the error they were read with', async () => {
+    const error = DomainErrors.database('Stored salon does not match', null)
+    const { result } = reschedule(
+      BOOKING_ID,
+      to(),
+      answering({ type: 'hoursUnreadable', error }),
+    )
+
+    expect(await result).toEqual(Result.error(error))
+  })
+
+  it('answers with the error of the repository', async () => {
+    const { result } = reschedule(BOOKING_ID, to(), {
+      rebook: vi.fn(async () => databaseDown),
+    })
+
+    expect(await result).toEqual(databaseDown)
+  })
+
+  it('answers a stored booking that does not match the model with a database error', async () => {
+    const { result } = reschedule(
+      BOOKING_ID,
+      to(),
+      answering({
+        type: 'rescheduled',
         booking: bookingWithServices({ startTime: 'tomorrow' }),
       }),
     )

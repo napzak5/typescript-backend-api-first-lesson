@@ -13,3 +13,6 @@ export type GetCustomerBookingResponse = JsonBody<
 export type CancelCustomerBookingResponse = JsonBody<
   operations['CustomerBookings_cancel']['responses'][200]['content']
 >
+export type RescheduleCustomerBookingResponse = JsonBody<
+  operations['CustomerBookings_reschedule']['responses'][200]['content']
+>
