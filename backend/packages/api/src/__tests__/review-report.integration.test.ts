@@ -512,6 +512,16 @@ describe('Review report API', () => {
       expect(await storedReview(id)).toMatchObject({ reportCount: 1 })
     })
 
+    it('leaves the review unwritten when the number it was stored with is the count already', async () => {
+      const id = await insertReview({ reportCount: 1 })
+      const before = await storedReview(id)
+
+      expect((await report(id)).status).toBe(200)
+
+      expect(await reportsOf(id)).toHaveLength(1)
+      expect(await storedReview(id)).toEqual(before)
+    })
+
     it.each([
       'inappropriate',
       'false_information',
@@ -1148,6 +1158,20 @@ describe('Review report API', () => {
       expect((await dismiss(dismissed)).status).toBe(200)
 
       expect(await storedReview(id)).toMatchObject({ reportCount: 1 })
+    })
+
+    it('leaves the review unwritten when the number it was stored with is the count already', async () => {
+      const id = await insertReview({ reportCount: 1 })
+      const dismissed = await insertReport(id)
+      await insertReport(id)
+      const before = await storedReview(id)
+
+      expect((await dismiss(dismissed)).status).toBe(200)
+
+      expect(await storedReport(dismissed)).toMatchObject({
+        status: 'dismissed',
+      })
+      expect(await storedReview(id)).toEqual(before)
     })
 
     it('takes the report out of the pending ones of the list', async () => {
