@@ -11,7 +11,7 @@ using TypeSpec.OpenAPI;
 using BeautySalon.Models;
 
 namespace BeautySalon.Operations {
-  @doc("施術体験に対する顧客レビューを収集・運用し、信頼性の高いフィードバック基盤を構築するAPI操作群です。一覧・投稿・取得を実装済みで、修正・削除・参考になった・通報は未実装です(404)。一覧と取得はログインなしで読めます。削除したサロンのレビューは、一覧と取得の対象外です。")
+  @doc("施術体験に対する顧客レビューを収集・運用し、信頼性の高いフィードバック基盤を構築するAPI操作群です。一覧・投稿・取得・修正・削除を実装済みで、参考になった・通報は未実装です(404)。一覧と取得はログインなしで読めます。削除したサロンのレビューは、一覧・取得・修正・削除の対象外です。")
   @route("/api/v1/reviews")
   @tag("Reviews")
   namespace ReviewOperations {
@@ -55,7 +55,7 @@ namespace BeautySalon.Operations {
         | ProblemResponse<404>
         | PublicErrors;
 
-      @doc("顧客が投稿後のレビューの指定した項目だけを修正し、誤記修正や追記を反映します。")
+      @doc("顧客が投稿後のレビューの指定した項目だけを修正し、誤記修正や追記を反映します。修正できるのは、レビューを書いた顧客本人(ロール customer で顧客のプロフィールがあるアカウント)だけで、admin とサロンのメンバー、プロフィールのない顧客のアカウント、ほかの顧客のレビューには403を返します。空の本文と、staffId が null のレビューに staffRating を指定した場合は400を、レビューが存在しない場合と、削除したサロンのレビューの場合は404を返します。overallRating が変わると、サロンの rating を、そのサロンのレビューから数え直します。")
       @summary("Update review")
       @patch
       update(@path id: ReviewId, @body request: ReviewUpdateRequest):
@@ -68,7 +68,7 @@ namespace BeautySalon.Operations {
         | RequestBodyErrors
         | CommonErrors;
 
-      @doc("レビューの削除要請に応じて投稿を除去し、コンプライアンスを維持します。削除後は一覧・取得・集計の対象外になります。")
+      @doc("レビューの削除要請に応じて投稿を除去し、コンプライアンスを維持します。削除できるのは、レビューを書いた顧客本人と admin だけで、サロンのメンバー、プロフィールのない顧客のアカウント、ほかの顧客のレビューには403を返します。レビューが存在しない場合と、削除したサロンのレビューの場合は404を返します。削除は物理削除で、削除後は一覧・取得・集計の対象外になり、サロンの rating と reviewCount を数え直します。予約は削除できるようになり、顧客は同じ予約にもう一度投稿できます。")
       @summary("Delete review")
       @delete
       delete(@path id: ReviewId):

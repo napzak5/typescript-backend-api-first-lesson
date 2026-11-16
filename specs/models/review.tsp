@@ -163,7 +163,7 @@ namespace BeautySalon.Models {
     @maxValue(5)
     serviceRating?: int32 | null;
 
-    @doc("更新後のスタッフ評価 (1〜5)。nullでクリア")
+    @doc("更新後のスタッフ評価 (1〜5)。nullでクリア。staffId が null のレビューには null 以外を指定できない")
     @minValue(1)
     @maxValue(5)
     staffRating?: int32 | null;

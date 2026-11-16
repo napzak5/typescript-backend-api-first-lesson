@@ -1,6 +1,7 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { vi } from 'vitest'
 import type {
+  HeldReview,
   ReviewedBooking,
   ReviewUseCaseDependencies,
 } from '../business-logic/review'
@@ -12,8 +13,10 @@ import type {
 } from '../models/review'
 import type {
   IReviewRepository,
+  ReviewChange,
   ReviewCreation,
   ReviewList,
+  ReviewRemoval,
 } from '../repositories/review.repository'
 import { CUSTOMER_ID } from './auth-fixtures'
 import { BOOKING_ID } from './booking-fixtures'
@@ -112,6 +115,15 @@ export const reviewedBooking = (
   ...overrides,
 })
 
+/** The review above as a change or a removal finds it, held. */
+export const heldReview = (
+  overrides: Partial<HeldReview> = {},
+): HeldReview => ({
+  customerId: CUSTOMER_ID,
+  staffId: STAFF_MEMBER_ID,
+  ...overrides,
+})
+
 /** Three reviews of 5, 4 and 4 stars. */
 export const reviewTally = (
   overrides: Partial<ReviewTally> = {},
@@ -123,9 +135,10 @@ export const reviewTally = (
 })
 
 /**
- * Everything the review use cases need: a repository that lists, finds
- * and creates the review of the fixtures, and tallies three reviews for a
- * salon and for a staff member; a test overrides what it needs.
+ * Everything the review use cases need: a repository that lists, finds,
+ * creates, updates and deletes the review of the fixtures, and tallies
+ * three reviews for a salon and for a staff member; a test overrides what
+ * it needs.
  */
 export const reviewDependencies = (
   overrides: Partial<IReviewRepository> = {},
@@ -141,6 +154,12 @@ export const reviewDependencies = (
     findById: vi.fn(async () => Result.success<DbReview | null>(dbReview())),
     create: vi.fn(async () =>
       Result.success<ReviewCreation>({ type: 'created', review: dbReview() }),
+    ),
+    update: vi.fn(async () =>
+      Result.success<ReviewChange>({ type: 'updated', review: dbReview() }),
+    ),
+    delete: vi.fn(async () =>
+      Result.success<ReviewRemoval>({ type: 'deleted' }),
     ),
     salonTally: vi.fn(async () =>
       Result.success<ReviewTally | null>(reviewTally()),

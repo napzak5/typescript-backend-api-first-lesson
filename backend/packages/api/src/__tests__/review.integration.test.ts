@@ -985,8 +985,6 @@ describe('Reviews API', () => {
       for (const call of [
         request(app).post(`${REVIEWS}/${id}`),
         request(app).put(`${REVIEWS}/${id}`),
-        request(app).patch(`${REVIEWS}/${id}`).send({ title: '修正' }),
-        request(app).delete(`${REVIEWS}/${id}`),
         request(app).post(`${REVIEWS}/${id}/helpful`),
         request(app)
           .post(`${REVIEWS}/${id}/report`)
