@@ -14,7 +14,7 @@
 | 支払いの記録と返金（`SaleCrud` の `process`、`PaymentCrud` の `refund`） | 実装済み（規則は [支払い](./payments.md)） |
 | レシートと金額の計算（`SaleCrud` の `getReceipt`、`calculate`） | 実装済み（[レシート](#レシート)、[金額の計算](#金額の計算)） |
 | 売上レポート（`SalesReportCrud`） | 実装済み（期間の売上の CSV の出力を含む。規則は [売上レポート](./sales-reports.md)） |
-| ポイント（`PointCrud`） | 未実装 |
+| ポイント（`PointCrud`） | 有効期限が近いポイントと失効（`getExpiring`、`expire`）を除いて実装済み（規則は [ポイント台帳](./points.md)） |
 
 - 未実装のオペレーションへのリクエストは 404 です
 - 売上の `paymentStatus` と `payments` は、支払いの記録と返金が書きます（[支払い](./payments.md#売上の支払い状態)）。作成した売上は `pending` で、`payments` は空です
@@ -37,11 +37,11 @@
 - スタッフの `isActive`、`canReceiveBookings`。サービスの `isActive`、`serviceStatus`、`allowOnlineBooking`。商品の `isActive`、`isForSale`。顧客の `isActive`、`customerStatus`。退職したスタッフの売上も、扱いをやめた商品の売上も、あとから記録できます
 - 予約のステータス。キャンセルした予約にも、無断キャンセルの予約にも、会計を入れられます（キャンセル料）
 - 会計日時（`saleTime`）が、過去か未来か。閉店後にまとめて入れることも、前受けを先に入れることもできます
-- 利用したポイント（`pointsUsed`）が、顧客の残高（`customers.loyaltyPoints`）以内かどうか
+- 利用したポイント（`pointsUsed`）が、顧客の残高（`customers.loyaltyPoints`）以内かどうか。ポイントの利用は、売上とは別に、ポイント台帳に記録します（[ポイント台帳](./points.md#売上と支払いとの関係)）
 
 会計の前に金額を見積もるオペレーション（[金額の計算](#金額の計算)）は、サロンの料金と税率から金額を出しますが、売上の作成は、その結果と比べません。レジは、計算の結果を明細の金額にして、売上を作成します。
 
-売上の作成は、ほかの行を変えません。予約のステータスも金額も、顧客のポイントと累計利用金額（`loyaltyPoints`、`lifetimeValue`）も、商品の在庫も、そのままです。更新と取り消しも同じで、変えるのは、その売上と明細だけです。
+売上の作成は、ほかの行を変えません。予約のステータスも金額も、顧客のポイントと累計利用金額（`loyaltyPoints`、`lifetimeValue`）も、商品の在庫も、そのままです。更新と取り消しも同じで、変えるのは、その売上と明細だけです。売上の `pointsUsed` と `pointsEarned` も、顧客の残高を動かしません。残高を動かすのは、ポイント台帳の付与、利用、調整だけです（[ポイント台帳](./points.md)）。
 
 ## オペレーションと権限
 

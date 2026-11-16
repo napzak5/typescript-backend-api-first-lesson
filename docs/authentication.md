@@ -268,8 +268,8 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 
 | 範囲 | 対象 | 届くもの |
 |---|---|---|
-| `platform` | `admin` | すべてのサロン（予約台帳、売上台帳を含む）と、顧客台帳（顧客の好み設定を含む） |
-| `salon` | `owner`、`manager`、`staff`。`users.staffId` が指すスタッフが有効（`isActive`、未削除）で、そのサロンが未削除であること | そのサロン（予約台帳、売上台帳を含む）と、顧客台帳（顧客の好み設定を含む）、自分のスタッフのプロフィール（`/api/v1/staff-profiles/me`）。範囲はロール・サロン ID・スタッフ ID を持つ |
+| `platform` | `admin` | すべてのサロン（予約台帳、売上台帳を含む）と、顧客台帳（顧客の好み設定を含む）、ポイント台帳 |
+| `salon` | `owner`、`manager`、`staff`。`users.staffId` が指すスタッフが有効（`isActive`、未削除）で、そのサロンが未削除であること | そのサロン（予約台帳、売上台帳を含む）と、顧客台帳（顧客の好み設定を含む）、ポイント台帳（調整は `owner`・`manager` だけ）、自分のスタッフのプロフィール（`/api/v1/staff-profiles/me`）。範囲はロール・サロン ID・スタッフ ID を持つ |
 | `customer` | `customer`。範囲は `users.customerId` を持ち、プロフィールを作るまでは null | 自分のプロフィール（`/api/v1/customers/me`）、自分の好み設定（`/api/v1/customers/me/preferences`）、自分の予約（`/api/v1/customers/me/bookings`）。null の間は、プロフィールの作成だけができる |
 | `none` | `owner`、`manager`、`staff` で、`salon` の条件に当たらない（スタッフ情報が削除された `staff`、紐づけを解除された `staff` など） | 範囲を必要とするものには届かない。ログインはでき、スタッフへの招待に[参加](./staff.md#参加)できる |
 
@@ -449,6 +449,22 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 - 売上台帳と違い、サロンの `staff` は読めない。レポートは、サロン全体の売上と、スタッフ一人ひとりの売上を見せる、経営の情報だからである。売上レポートのための権限（`users.permissions`）はない
 
 規則は [売上レポート](./sales-reports.md) にあります。
+
+### ポイント台帳の権限
+
+ポイントは顧客のもので、顧客はサロンに属さないので、ポイント台帳（`/api/v1/points`）はプラットフォーム全体で 1 つです。誰が使えるかは、操作者だけで決まります（`business-logic/point/_shared/authorization.ts` の `pointReachOf` と `pointAdjustReachOf`）。
+
+| オペレーション | 許可 |
+|---|---|
+| 残高、履歴（`GET /api/v1/points/customer/{customerId}/balance`、`/transactions`）、付与、利用（`POST /api/v1/points/earn`、`/use`） | `admin`、どのサロンの `owner` / `manager` / `staff` も |
+| 調整（`POST /api/v1/points/adjust`） | `admin`、どのサロンの `owner` / `manager` も |
+
+- ロール `customer` のユーザーと、範囲 `none` のユーザーは、パスと本文が不正でも 403
+- サロンの `staff` は、付与と利用はできるが、調整はできない（403）。付与と利用はレジの仕事で、調整はレジの記録によらずにポイントを動かすからである（売上の取り消しと同じ）
+- 届く範囲（`LedgerReach`）が決めるのは、付与、利用、調整が参照できる売上と予約である。`admin` はすべてのサロンの、サロンのメンバーは所属サロンの売上と予約を参照できる。ほかのサロンの売上と予約は、存在しないものとして 400（`referenceId` の `not_found`）
+- 顧客本人は、自分の残高をプロフィール（`/api/v1/customers/me` の `loyaltyPoints`）で見る。履歴を読むルートはない。ポイントのための権限（`users.permissions`）はない
+
+規則は [ポイント台帳](./points.md) にあります。
 
 ## 管理者の操作
 
