@@ -25,7 +25,7 @@ export interface ModelsReviewUpdateRequest {
      */
   serviceRating?: number | null;
   /**
-     * 更新後のスタッフ評価 (1〜5)。nullでクリア
+     * 更新後のスタッフ評価 (1〜5)。nullでクリア。staffId が null のレビューには null 以外を指定できない
      * @minimum 1
      * @maximum 5
      * @nullable
