@@ -100,7 +100,7 @@ curl http://localhost:3000/api/v1/salons      # サロン一覧（認証なし�
 `/api/v1/bookings/{bookingId}/services` の施術明細の追加、1 件の取得、削除）、
 空き枠（`/api/v1/salons/{salonId}/available-slots` の一覧と確認）、
 顧客が自分で入れる予約（`/api/v1/customers/me/bookings` の一覧、作成、1 件の取得、キャンセル、日時の変更）、
-売上台帳（`/api/v1/sales` の一覧、作成、1 件の取得、更新、取り消し）、
+売上台帳（`/api/v1/sales` の一覧、作成、1 件の取得、更新、取り消し、`/api/v1/sales/{id}/receipt` のレシート、`/api/v1/sales/calculate` の金額の計算）、
 支払い方法（`/api/v1/salons/{salonId}/payment-methods` の一覧、作成、1 件の取得、更新、削除）、
 売上の支払い（`/api/v1/sales/{id}/process` の記録と、`/api/v1/payments/{id}/refund` の返金）、
 認証のすべてのオペレーション（`/api/v1/auth` のログイン、トークンの更新、
@@ -122,6 +122,7 @@ curl http://localhost:3000/api/v1/salons      # サロン一覧（認証なし�
 アクセストークンが必要です。顧客のアカウントでは使えません。
 売上台帳も、すべてのオペレーションに、`admin` か、売上のサロンの `owner`・`manager`・`staff` の
 アクセストークンが必要で、顧客のアカウントでは使えません（売上の取り消しは、`staff` も使えません）。
+レシートと金額の計算も、同じアクセストークンで使えます。どちらも何も書かないので、シードのデータで試せます。
 支払い方法は、読むのに、`admin` か、そのサロンの `owner`・`manager`・`staff` のアクセストークンが必要で、
 設定（作成、更新、削除）は、`staff` にはできません。顧客のアカウントでは使えません。
 支払いの記録には、売上台帳と同じアクセストークンが必要で、返金は、`staff` にはできません。

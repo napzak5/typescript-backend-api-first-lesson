@@ -298,6 +298,7 @@ export const createApp = ({
       {
         saleRepository: new SaleRepository(database),
         saleNumberIssuer: new RandomSaleNumberIssuer(),
+        clock,
         ...paymentDependencies,
       },
       authenticated,

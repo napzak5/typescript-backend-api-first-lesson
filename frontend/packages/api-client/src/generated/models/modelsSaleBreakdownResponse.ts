@@ -7,20 +7,16 @@
  */
 
 /**
- * 試算した請求金額の内訳
+ * 試算した請求金額の内訳 - 売上を登録したときに、売上の小計・値引額・消費税額・合計金額になる値。
+ * プロパティ名は sales テーブルのカラムと一致させている
  */
 export interface ModelsSaleBreakdownResponse {
-  /** サービス代金の税抜小計 */
+  /** 小計。明細の価格の合計 */
   subtotal: number;
-  /** 適用される消費税額 */
-  tax: number;
-  /** 割引金額 */
-  discount: number;
-  /**
-     * ポイント利用による値引額。ポイントを使わない場合はnull
-     * @nullable
-     */
-  pointsDiscount: number | null;
-  /** 支払総額 */
-  total: number;
+  /** 値引額。サービスに割引価格(discountPrice)があれば、価格との差額の合計 */
+  discountAmount: number;
+  /** 消費税額。税込みでない明細の割引後の金額の合計に、サロンの税率を掛けて1円未満を切り捨てた額。明細ごとではなく、合計に対して1回だけ計算する */
+  taxAmount: number;
+  /** 合計金額。subtotal - discountAmount + taxAmount */
+  totalAmount: number;
 }

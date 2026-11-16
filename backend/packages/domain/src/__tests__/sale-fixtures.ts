@@ -1,11 +1,13 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { vi } from 'vitest'
 import type {
+  CalculationReferences,
   SaleReferences,
   SaleUseCaseDependencies,
 } from '../business-logic/sale'
 import type {
   ApiPaymentResponse,
+  ApiSaleCalculateRequest,
   ApiSaleCreateRequest,
   ApiSaleResponse,
   ApiSalesDetail,
@@ -339,10 +341,70 @@ export const apiSale = (
   ...overrides,
 })
 
+/** A treatment the till adds to a booking, at a price that leaves half a yen of tax. */
+export const TREATMENT_ID = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f3d01'
+
+/** The moment the clock of the use cases tells. */
+export const RECEIPT_TIME = new Date('2026-11-20T04:00:00.000Z')
+
+/**
+ * A calculation that satisfies every rule: the two service lines of the
+ * booking and a treatment the till adds twice.
+ */
+export const saleCalculateRequest = (): ApiSaleCalculateRequest => ({
+  salonId: SALON_ID,
+  bookingId: BOOKING_ID,
+  services: [TREATMENT_ID, TREATMENT_ID],
+})
+
+/**
+ * What the calculation above refers to: a salon at 10 %, a booking with a
+ * cut of 6,000 and a colour of 3,300 at 3,000, and a treatment of 1,505,
+ * none with the tax in its price. Together: 12,310, less 300, plus 1,201
+ * of tax on 12,010, a yen more than the tax of every line rounded on its
+ * own would come to; 13,211 in all, which cash takes and so does a credit
+ * card from 1,000 yen.
+ */
+export const calculationReferences = (
+  overrides: Partial<CalculationReferences> = {},
+): CalculationReferences => ({
+  salon: { taxRate: '10.00' },
+  booking: {
+    lines: [
+      { price: 6000, discountAmount: 0, finalPrice: 6000, taxIncluded: false },
+      {
+        price: 3300,
+        discountAmount: 300,
+        finalPrice: 3000,
+        taxIncluded: false,
+      },
+    ],
+  },
+  services: [
+    { id: TREATMENT_ID, price: 1505, discountPrice: null, taxIncluded: false },
+  ],
+  paymentMethods: [
+    {
+      method: 'cash',
+      isActive: true,
+      minimumAmount: null,
+      maximumAmount: null,
+    },
+    {
+      method: 'credit_card',
+      isActive: true,
+      minimumAmount: 1000,
+      maximumAmount: null,
+    },
+  ],
+  ...overrides,
+})
+
 /**
  * Everything the sale use cases need: a repository that holds the one sale
- * above and writes it for every request, and an issuer that always issues
- * the same number; a test overrides what it needs.
+ * above and writes it for every request, an issuer that always issues the
+ * same number and a clock that stands still; a test overrides what it
+ * needs.
  */
 export const saleDependencies = (
   overrides: Partial<ISaleRepository> = {},
@@ -351,7 +413,11 @@ export const saleDependencies = (
   const upcoming = [...numbers]
 
   return {
+    clock: vi.fn(() => RECEIPT_TIME),
     saleRepository: {
+      findCalculationReferences: vi.fn(async () =>
+        Result.success<CalculationReferences>(calculationReferences()),
+      ),
       create: vi.fn(async () =>
         Result.success<SaleCreation>({
           type: 'created',
@@ -394,6 +460,7 @@ const REPOSITORY_METHODS: (keyof ISaleRepository)[] = [
   'list',
   'update',
   'voidSale',
+  'findCalculationReferences',
 ]
 
 /** The methods of the repository that were called, in the order of the calls. */

@@ -5,4 +5,6 @@ import type { ISaleNumberIssuer } from '../../../services/sale-number-issuer'
 export interface SaleUseCaseDependencies {
   saleRepository: ISaleRepository
   saleNumberIssuer: ISaleNumberIssuer
+  /** The moment a receipt is made. */
+  clock: () => Date
 }

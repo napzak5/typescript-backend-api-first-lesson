@@ -512,6 +512,84 @@ describe('modelRules', () => {
     })
   })
 
+  it('shows a sale with its lines and payments, lets a request leave out what the server works out of a sale, an update the salon as well, and names what a calculated sale would come to after the columns of its amounts', () => {
+    const workedOut = [
+      'id',
+      'saleNumber',
+      'saleDate',
+      'subtotal',
+      'discountAmount',
+      'taxAmount',
+      'totalAmount',
+      'paymentStatus',
+      'isVoid',
+      'voidedAt',
+      'voidReason',
+      'createdAt',
+      'updatedAt',
+    ]
+
+    const rules = Object.fromEntries(
+      modelRules
+        .filter((modelRule) => modelRule.table === 'sales')
+        .map(
+          ({ model, kind, omittedColumns, embedded, computed, narrowed }) => [
+            model,
+            { kind, omittedColumns, embedded, computed, narrowed },
+          ],
+        ),
+    )
+
+    expect(rules).toEqual({
+      'Models.SaleResponse': {
+        kind: 'response',
+        omittedColumns: [],
+        embedded: ['details', 'payments'],
+        computed: undefined,
+        narrowed: undefined,
+      },
+      'Models.SaleCreateRequest': {
+        kind: 'create',
+        omittedColumns: workedOut,
+        embedded: ['details'],
+        computed: undefined,
+        narrowed: undefined,
+      },
+      'Models.SaleUpdateRequest': {
+        kind: 'update',
+        omittedColumns: [...workedOut, 'salonId'],
+        embedded: ['details'],
+        computed: undefined,
+        narrowed: undefined,
+      },
+      'Models.SaleBreakdownResponse': {
+        kind: 'response',
+        omittedColumns: [
+          'id',
+          'saleNumber',
+          'salonId',
+          'customerId',
+          'staffId',
+          'bookingId',
+          'saleDate',
+          'saleTime',
+          'pointsUsed',
+          'pointsEarned',
+          'paymentStatus',
+          'isVoid',
+          'voidedAt',
+          'voidReason',
+          'notes',
+          'createdAt',
+          'updatedAt',
+        ],
+        embedded: undefined,
+        computed: undefined,
+        narrowed: undefined,
+      },
+    })
+  })
+
   it("lets a request for a customer leave out the columns the server manages, and the response only deletedAt; a profile leaves out what is the staff's as well", () => {
     const managed = [
       'id',

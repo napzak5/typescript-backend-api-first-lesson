@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { bookingIdSchema } from '../models/booking'
 import { customerIdSchema } from '../models/customer'
 import {
+  type ApiSaleCalculateRequest,
   type ApiSaleCreateRequest,
   type ApiSaleSearchRequest,
   type ApiSalesDetail,
@@ -11,6 +12,7 @@ import {
   saleIdSchema,
 } from '../models/sale'
 import { salonIdSchema } from '../models/salon'
+import { serviceIdSchema } from '../models/service'
 import { staffIdSchema } from '../models/staff'
 import { uuidSchema } from '../shared'
 import {
@@ -206,6 +208,21 @@ export const saleVoidRequestSchema = z.strictObject({
 
 /** A request to void a sale that passed the rules of its own. */
 export type SaleVoidRequest = z.infer<typeof saleVoidRequestSchema>
+
+/**
+ * A calculation names the salon, the booking whose service lines it counts
+ * and the services it adds to them, each of which becomes a line of the
+ * sale. Whether that comes to a line at all is known once the booking is
+ * read (`planCalculation`).
+ */
+export const saleCalculateRequestSchema = z.strictObject({
+  salonId: salonIdSchema,
+  bookingId: bookingIdSchema.nullable(),
+  services: z.array(serviceIdSchema).max(MAX_SALE_DETAILS),
+}) satisfies z.ZodType<ApiSaleCalculateRequest>
+
+/** A calculation that passed the rules of its own. */
+export type SaleCalculateRequest = z.infer<typeof saleCalculateRequestSchema>
 
 const saleSearch = z.strictObject({
   limit: z.number().int().min(1).max(100).exactOptional(),

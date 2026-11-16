@@ -8,13 +8,14 @@
 import type { ModelsSaleResponse } from './modelsSaleResponse';
 
 /**
- * 売上のレシート - 売上とその明細・決済取引から作成するレシートの内容
+ * 売上のレシート - 売上とその明細・決済取引から作成するレシートの内容。
+ * レシートは記録せず、呼び出すたびに同じ売上から作り直す(再発行)
  */
 export interface ModelsSaleReceiptResponse {
-  /** レシート番号 */
+  /** レシート番号。売上番号(saleNumber)と同じで、再発行しても変わらない */
   receiptNumber: string;
-  /** レシートの対象となる売上。明細(details)と決済取引(payments)を含む */
+  /** レシートの対象となる売上。明細(details)と決済取引(payments)を含む。売上の取得と同じ内容 */
   sale: ModelsSaleResponse;
-  /** レシートの発行日時 */
+  /** レシートを作成した日時。再発行すると変わる */
   issuedAt: string;
 }

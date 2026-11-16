@@ -5,34 +5,24 @@
  * Comprehensive REST API for managing beauty salon operations including salons, staff, services, customers, bookings, treatments, payments, inventory, and access control. Built with TypeSpec for type-safe API-first development.
  * OpenAPI spec version: 2.0
  */
+import type { ModelsSalonId } from './modelsSalonId';
 import type { ModelsServiceId } from './modelsServiceId';
 
 /**
- * 会計金額の試算リクエスト - 選択したサービスと割引・ポイントから、売上を登録する前に請求額を試算する。
+ * 会計金額の試算リクエスト - 予約のサービス明細と、加えるサービスから、売上を登録する前に請求額を試算する。
  * 全項目のキーが必須
  */
 export interface ModelsSaleCalculateRequest {
-  /** 試算の対象となるサービス ID の一覧 */
-  services: ModelsServiceId[];
+  /** 会計を行うサロン ID。消費税率と支払い方法は、このサロンのものを使う */
+  salonId: ModelsSalonId;
   /**
-     * 適用する割引コード。割引コードを使わない場合はnull
-     * @nullable
-     */
-  discountCode: string | null;
-  /**
-     * 利用するポイント数。ポイントを使わない場合はnull
-     * @minimum 0
-     * @nullable
-     */
-  pointsToUse: number | null;
-  /**
-     * 会計する顧客の ID。顧客を指定しない場合はnull
-     * @nullable
-     */
-  customerId: string | null;
-  /**
-     * 関連する予約の ID。予約がない場合はnull
+     * 会計する予約の ID。salonId のサロンの予約を指定する。予約のサービス明細を、明細に写した価格で数える。予約のない来店の場合はnull
      * @nullable
      */
   bookingId: string | null;
+  /**
+     * 予約のサービス明細に加えるサービスの ID の一覧。salonId のサロンの、削除されていないサービスを指定する。いまのメニューの価格で数える。同じIDを複数回指定すると、その回数だけ数える。0件以上100件以下で、予約のサービス明細と合わせて1件以上
+     * @maxItems 100
+     */
+  services: ModelsServiceId[];
 }

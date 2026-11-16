@@ -33,6 +33,12 @@ export type ApiSaleCreateRequest =
 export type ApiSaleUpdateRequest =
   components['schemas']['Models.SaleUpdateRequest']
 export type ApiSaleVoidRequest = components['schemas']['Models.SaleVoidRequest']
+export type ApiSaleReceiptResponse =
+  components['schemas']['Models.SaleReceiptResponse']
+export type ApiSaleCalculateRequest =
+  components['schemas']['Models.SaleCalculateRequest']
+export type ApiSaleCalculateResponse =
+  components['schemas']['Models.SaleCalculateResponse']
 export type ApiSaleSearchRequest = NonNullable<
   operations['SaleCrud_list']['parameters']['query']
 >

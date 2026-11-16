@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   MAX_SALE_DETAILS,
+  saleCalculateRequestSchema,
   saleCreateRequestSchema,
   saleSearchRequestSchema,
   saleUpdateRequestSchema,
@@ -10,7 +11,13 @@ import { type DomainError, parseWith } from '../shared'
 import { CUSTOMER_ID } from './auth-fixtures'
 import { BOOKING_ID, CUT_ID } from './booking-fixtures'
 import { brokenRules, SALON_ID } from './fixtures'
-import { PRODUCT_ID, SALE_ID, saleCreateRequest } from './sale-fixtures'
+import {
+  PRODUCT_ID,
+  SALE_ID,
+  saleCalculateRequest,
+  saleCreateRequest,
+  TREATMENT_ID,
+} from './sale-fixtures'
 import { STAFF_MEMBER_ID } from './staff-fixtures'
 
 const MAX_INTEGER = 2_147_483_647
@@ -1131,5 +1138,152 @@ describe('saleVoidRequestSchema', () => {
     ['null', null],
   ])('refuses %s for the request', (_case, input) => {
     expect(rulesOfVoid(input)).toEqual([':invalid_type'])
+  })
+})
+
+describe('saleCalculateRequestSchema', () => {
+  const parseCalculation = (input: unknown) =>
+    parseWith(saleCalculateRequestSchema, input, 'Invalid')
+
+  const rulesOfCalculation = (input: unknown): string[] =>
+    rulesBrokenBy(saleCalculateRequestSchema, input)
+
+  it('accepts a calculation and returns it as it was written', () => {
+    expect(parseCalculation(saleCalculateRequest())).toStrictEqual({
+      type: 'success',
+      data: saleCalculateRequest(),
+    })
+  })
+
+  it.each([
+    [
+      'a visit without a booking',
+      { ...saleCalculateRequest(), bookingId: null },
+    ],
+    [
+      'a booking with nothing added',
+      { ...saleCalculateRequest(), services: [] },
+    ],
+    [
+      'nothing but a salon: whether that comes to a line is told by the booking',
+      { salonId: SALON_ID, bookingId: null, services: [] },
+    ],
+  ])('accepts %s', (_case, input) => {
+    expect(rulesOfCalculation(input)).toEqual([])
+  })
+
+  it('keeps a service that is named more than once, every time, in its place', () => {
+    const services = [CUT_ID, TREATMENT_ID, CUT_ID, CUT_ID]
+
+    const parsed = parseCalculation({ ...saleCalculateRequest(), services })
+
+    expect(parsed).toMatchObject({ type: 'success', data: { services } })
+  })
+
+  it('takes as many services as a sale has lines, and no more', () => {
+    const services = (count: number) =>
+      Array.from({ length: count }, () => CUT_ID)
+
+    expect(
+      rulesOfCalculation({
+        ...saleCalculateRequest(),
+        services: services(MAX_SALE_DETAILS),
+      }),
+    ).toEqual([])
+    expect(
+      rulesOfCalculation({
+        ...saleCalculateRequest(),
+        services: services(MAX_SALE_DETAILS + 1),
+      }),
+    ).toEqual(['services:too_big'])
+  })
+
+  it.each([['salonId'], ['bookingId'], ['services']])(
+    'refuses a request without %s: every key is stated',
+    (key) => {
+      const rest = Object.fromEntries(
+        Object.entries(saleCalculateRequest()).filter(([name]) => name !== key),
+      )
+
+      expect(rulesOfCalculation(rest)).toEqual([`${key}:invalid_type`])
+    },
+  )
+
+  it.each([['salonId'], ['bookingId'], ['services']])(
+    'refuses %s stated as undefined',
+    (key) => {
+      expect(
+        rulesOfCalculation({ ...saleCalculateRequest(), [key]: undefined }),
+      ).toEqual([`${key}:invalid_type`])
+    },
+  )
+
+  it.each<[string, Record<string, unknown>, string[]]>([
+    [
+      'a salon that is no ID',
+      { salonId: 'salon-1' },
+      ['salonId:invalid_format'],
+    ],
+    ['no salon', { salonId: null }, ['salonId:invalid_type']],
+    [
+      'a booking that is no ID',
+      { bookingId: 'BK-7Z3K-0QXM' },
+      ['bookingId:invalid_format'],
+    ],
+    [
+      'a service that is no ID, among others',
+      { services: [CUT_ID, 'cut', TREATMENT_ID] },
+      ['services.1:invalid_format'],
+    ],
+    [
+      'null among the services',
+      { services: [null] },
+      ['services.0:invalid_type'],
+    ],
+    ['a service for the list', { services: CUT_ID }, ['services:invalid_type']],
+    ['no list of services', { services: null }, ['services:invalid_type']],
+    [
+      'everything at once',
+      { salonId: '', bookingId: 1, services: ['x', 'y'] },
+      [
+        'salonId:invalid_format',
+        'bookingId:invalid_type',
+        'services.0:invalid_format',
+        'services.1:invalid_format',
+      ],
+    ],
+  ])('refuses %s', (_case, change, rules) => {
+    expect(
+      rulesOfCalculation({ ...saleCalculateRequest(), ...change }),
+    ).toEqual(rules)
+  })
+
+  it.each([
+    [
+      'a discount code: there are no discount codes',
+      'discountCode',
+      'WELCOME10',
+    ],
+    ['points to use: what a point is worth is not known', 'pointsToUse', 100],
+    [
+      'a customer: nothing of a customer changes what a sale comes to',
+      'customerId',
+      CUSTOMER_ID,
+    ],
+    ['notes', 'notes', '常連'],
+    ['the lines of a sale', 'details', []],
+  ])('refuses %s', (_case, property, value) => {
+    expect(
+      rulesOfCalculation({ ...saleCalculateRequest(), [property]: value }),
+    ).toEqual([`${property}:unrecognized_keys`])
+  })
+
+  it.each([
+    ['a list', [saleCalculateRequest()]],
+    ['a text', SALON_ID],
+    ['nothing', undefined],
+    ['null', null],
+  ])('refuses %s for the request', (_case, input) => {
+    expect(rulesOfCalculation(input)).toEqual([':invalid_type'])
   })
 })

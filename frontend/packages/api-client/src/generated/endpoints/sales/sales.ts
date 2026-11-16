@@ -423,7 +423,7 @@ export const getSaleCrudCalculateUrl = () => {
 }
 
 /**
- * 選択したサービスと割引コード・利用ポイントから、売上を登録する前に請求金額を試算します。存在しないIDを指定した場合は400を返します。
+ * 売上を登録する前に、予約のサービス明細と、加えるサービスから、請求金額を試算します。何も記録しません。管理者と、salonId のサロンのメンバーが実行できます。予約のサービス明細は明細に写した価格で、加えるサービスはいまのメニューの価格で数え、消費税はサロンのいまの税率で、税込みでない明細の割引後の金額の合計に対して1回だけ計算します(1円未満は切り捨て)。salonId のサロンが存在しない場合、bookingId に salonId のサロンの予約ではないIDを指定した場合、services に salonId のサロンの削除されていないサービスではないIDを指定した場合、予約のサービス明細と services を合わせて1件もない場合、金額の合計が integer の上限を超える場合は400を返します。
  * @summary Calculate the amount of a sale
  */
 export const saleCrudCalculate = async (modelsSaleCalculateRequest: ModelsSaleCalculateRequest, options?: RequestInit): Promise<saleCrudCalculateResponse> => {
@@ -490,7 +490,7 @@ const {mutation: mutationOptions} = options ?
     export type SaleCrudCalculateMutationVariables = {data: ModelsSaleCalculateRequest}
 
     /**
- * 選択したサービスと割引コード・利用ポイントから、売上を登録する前に請求金額を試算します。存在しないIDを指定した場合は400を返します。
+ * 売上を登録する前に、予約のサービス明細と、加えるサービスから、請求金額を試算します。何も記録しません。管理者と、salonId のサロンのメンバーが実行できます。予約のサービス明細は明細に写した価格で、加えるサービスはいまのメニューの価格で数え、消費税はサロンのいまの税率で、税込みでない明細の割引後の金額の合計に対して1回だけ計算します(1円未満は切り捨て)。salonId のサロンが存在しない場合、bookingId に salonId のサロンの予約ではないIDを指定した場合、services に salonId のサロンの削除されていないサービスではないIDを指定した場合、予約のサービス明細と services を合わせて1件もない場合、金額の合計が integer の上限を超える場合は400を返します。
  * @summary Calculate the amount of a sale
  */
 export const useSaleCrudCalculate = <TError = ModelsProblemDetails,
@@ -983,6 +983,11 @@ export type saleCrudGetReceiptResponse404 = {
   status: 404
 }
 
+export type saleCrudGetReceiptResponse409 = {
+  data: ModelsProblemDetails
+  status: 409
+}
+
 export type saleCrudGetReceiptResponse429 = {
   data: ModelsProblemDetails
   status: 429
@@ -996,7 +1001,7 @@ export type saleCrudGetReceiptResponse500 = {
 export type saleCrudGetReceiptResponseSuccess = (saleCrudGetReceiptResponse200) & {
   headers: Headers;
 };
-export type saleCrudGetReceiptResponseError = (saleCrudGetReceiptResponse400 | saleCrudGetReceiptResponse401 | saleCrudGetReceiptResponse403 | saleCrudGetReceiptResponse404 | saleCrudGetReceiptResponse429 | saleCrudGetReceiptResponse500) & {
+export type saleCrudGetReceiptResponseError = (saleCrudGetReceiptResponse400 | saleCrudGetReceiptResponse401 | saleCrudGetReceiptResponse403 | saleCrudGetReceiptResponse404 | saleCrudGetReceiptResponse409 | saleCrudGetReceiptResponse429 | saleCrudGetReceiptResponse500) & {
   headers: Headers;
 };
 
@@ -1011,7 +1016,7 @@ export const getSaleCrudGetReceiptUrl = (id: ModelsSaleId,) => {
 }
 
 /**
- * 売上のレシートを、明細と決済取引を含めて取得します。
+ * 売上のレシートを、明細と決済取引を含めて作成します。管理者と、売上のサロンのメンバーが実行できます。レシートは記録せず、呼び出すたびに同じ売上から作り直します(再発行)。レシート番号は売上番号です。取消済みの売上と、受け取った金額(status が completed・partial_refund・refunded の決済取引の amount の合計)が totalAmount に達していない売上は409を返します。totalAmount が0の売上は、支払いがなくてもレシートを作成できます。ほかのサロンの売上は、存在しない売上と同じく404を返します。
  * @summary Get the receipt of a sale
  */
 export const saleCrudGetReceipt = async (id: ModelsSaleId, options?: RequestInit): Promise<saleCrudGetReceiptResponse> => {
@@ -1059,7 +1064,7 @@ export type SaleCrudGetReceiptQueryError = ModelsProblemDetails
 
 
 /**
- * 売上のレシートを、明細と決済取引を含めて取得します。
+ * 売上のレシートを、明細と決済取引を含めて作成します。管理者と、売上のサロンのメンバーが実行できます。レシートは記録せず、呼び出すたびに同じ売上から作り直します(再発行)。レシート番号は売上番号です。取消済みの売上と、受け取った金額(status が completed・partial_refund・refunded の決済取引の amount の合計)が totalAmount に達していない売上は409を返します。totalAmount が0の売上は、支払いがなくてもレシートを作成できます。ほかのサロンの売上は、存在しない売上と同じく404を返します。
  * @summary Get the receipt of a sale
  */
 export function useSaleCrudGetReceipt<TData = Awaited<ReturnType<typeof saleCrudGetReceipt>>, TError = ModelsProblemDetails>(
@@ -1073,7 +1078,7 @@ export function useSaleCrudGetReceipt<TData = Awaited<ReturnType<typeof saleCrud
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 売上のレシートを、明細と決済取引を含めて取得します。
+ * 売上のレシートを、明細と決済取引を含めて作成します。管理者と、売上のサロンのメンバーが実行できます。レシートは記録せず、呼び出すたびに同じ売上から作り直します(再発行)。レシート番号は売上番号です。取消済みの売上と、受け取った金額(status が completed・partial_refund・refunded の決済取引の amount の合計)が totalAmount に達していない売上は409を返します。totalAmount が0の売上は、支払いがなくてもレシートを作成できます。ほかのサロンの売上は、存在しない売上と同じく404を返します。
  * @summary Get the receipt of a sale
  */
 export function useSaleCrudGetReceipt<TData = Awaited<ReturnType<typeof saleCrudGetReceipt>>, TError = ModelsProblemDetails>(
@@ -1087,7 +1092,7 @@ export function useSaleCrudGetReceipt<TData = Awaited<ReturnType<typeof saleCrud
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 売上のレシートを、明細と決済取引を含めて取得します。
+ * 売上のレシートを、明細と決済取引を含めて作成します。管理者と、売上のサロンのメンバーが実行できます。レシートは記録せず、呼び出すたびに同じ売上から作り直します(再発行)。レシート番号は売上番号です。取消済みの売上と、受け取った金額(status が completed・partial_refund・refunded の決済取引の amount の合計)が totalAmount に達していない売上は409を返します。totalAmount が0の売上は、支払いがなくてもレシートを作成できます。ほかのサロンの売上は、存在しない売上と同じく404を返します。
  * @summary Get the receipt of a sale
  */
 export function useSaleCrudGetReceipt<TData = Awaited<ReturnType<typeof saleCrudGetReceipt>>, TError = ModelsProblemDetails>(
@@ -1095,7 +1100,7 @@ export function useSaleCrudGetReceipt<TData = Awaited<ReturnType<typeof saleCrud
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 売上のレシートを、明細と決済取引を含めて取得します。
+ * 売上のレシートを、明細と決済取引を含めて作成します。管理者と、売上のサロンのメンバーが実行できます。レシートは記録せず、呼び出すたびに同じ売上から作り直します(再発行)。レシート番号は売上番号です。取消済みの売上と、受け取った金額(status が completed・partial_refund・refunded の決済取引の amount の合計)が totalAmount に達していない売上は409を返します。totalAmount が0の売上は、支払いがなくてもレシートを作成できます。ほかのサロンの売上は、存在しない売上と同じく404を返します。
  * @summary Get the receipt of a sale
  */
 export function useSaleCrudGetReceipt<TData = Awaited<ReturnType<typeof saleCrudGetReceipt>>, TError = ModelsProblemDetails>(

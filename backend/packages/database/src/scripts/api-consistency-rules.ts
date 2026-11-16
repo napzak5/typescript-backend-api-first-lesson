@@ -6,8 +6,11 @@ import type { ModelRule } from './api-consistency'
  * Every rule lists the columns its model leaves out (`omittedColumns`), so
  * that every column is either exposed or deliberately hidden. A property
  * that has only some of the values of the enum type of its column is listed
- * too (`narrowed`). Salon is the reference. A model that is not backed by a table (computed reports, action
- * requests, features whose tables do not exist yet) has no rule.
+ * too (`narrowed`). Salon is the reference. A model that is not backed by
+ * a table (computed reports, action requests, features whose tables do not
+ * exist yet) has no rule, unless its values are those of columns of a row
+ * that is not written yet: then it has the rule of that table, and leaves
+ * out every other column.
  */
 
 /** Columns of `salons` that a request never writes. */
@@ -703,6 +706,33 @@ const paymentRules: ModelRule[] = [
     embedded: ['details'],
     // A sale does not move to another salon.
     omittedColumns: [...saleManagedColumns, 'salonId'],
+  },
+  {
+    // What a sale would come to, worked out before it is entered: the
+    // amounts it would have, under the names of the columns that would
+    // hold them, and nothing else of a sale.
+    model: 'Models.SaleBreakdownResponse',
+    table: 'sales',
+    kind: 'response',
+    omittedColumns: [
+      'id',
+      'saleNumber',
+      'salonId',
+      'customerId',
+      'staffId',
+      'bookingId',
+      'saleDate',
+      'saleTime',
+      'pointsUsed',
+      'pointsEarned',
+      'paymentStatus',
+      'isVoid',
+      'voidedAt',
+      'voidReason',
+      'notes',
+      'createdAt',
+      'updatedAt',
+    ],
   },
   {
     model: 'Models.SalesDetail',

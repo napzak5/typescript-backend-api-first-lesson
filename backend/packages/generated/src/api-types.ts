@@ -2399,7 +2399,7 @@ export interface paths {
         put?: never;
         /**
          * Calculate the amount of a sale
-         * @description 選択したサービスと割引コード・利用ポイントから、売上を登録する前に請求金額を試算します。存在しないIDを指定した場合は400を返します。
+         * @description 売上を登録する前に、予約のサービス明細と、加えるサービスから、請求金額を試算します。何も記録しません。管理者と、salonId のサロンのメンバーが実行できます。予約のサービス明細は明細に写した価格で、加えるサービスはいまのメニューの価格で数え、消費税はサロンのいまの税率で、税込みでない明細の割引後の金額の合計に対して1回だけ計算します(1円未満は切り捨て)。salonId のサロンが存在しない場合、bookingId に salonId のサロンの予約ではないIDを指定した場合、services に salonId のサロンの削除されていないサービスではないIDを指定した場合、予約のサービス明細と services を合わせて1件もない場合、金額の合計が integer の上限を超える場合は400を返します。
          */
         post: operations["SaleCrud_calculate"];
         delete?: never;
@@ -2461,7 +2461,7 @@ export interface paths {
         };
         /**
          * Get the receipt of a sale
-         * @description 売上のレシートを、明細と決済取引を含めて取得します。
+         * @description 売上のレシートを、明細と決済取引を含めて作成します。管理者と、売上のサロンのメンバーが実行できます。レシートは記録せず、呼び出すたびに同じ売上から作り直します(再発行)。レシート番号は売上番号です。取消済みの売上と、受け取った金額(status が completed・partial_refund・refunded の決済取引の amount の合計)が totalAmount に達していない売上は409を返します。totalAmount が0の売上は、支払いがなくてもレシートを作成できます。ほかのサロンの売上は、存在しない売上と同じく404を返します。
          */
         get: operations["SaleCrud_getReceipt"];
         put?: never;
@@ -7392,67 +7392,54 @@ export interface components {
             /** @description 有効/無効の切り替え */
             isActive?: boolean;
         };
-        /** @description 試算した請求金額の内訳 */
+        /**
+         * @description 試算した請求金額の内訳 - 売上を登録したときに、売上の小計・値引額・消費税額・合計金額になる値。
+         *     プロパティ名は sales テーブルのカラムと一致させている
+         */
         "Models.SaleBreakdownResponse": {
             /**
              * Format: int32
-             * @description サービス代金の税抜小計
+             * @description 小計。明細の価格の合計
              */
             subtotal: number;
             /**
              * Format: int32
-             * @description 適用される消費税額
+             * @description 値引額。サービスに割引価格(discountPrice)があれば、価格との差額の合計
              */
-            tax: number;
+            discountAmount: number;
             /**
              * Format: int32
-             * @description 割引金額
+             * @description 消費税額。税込みでない明細の割引後の金額の合計に、サロンの税率を掛けて1円未満を切り捨てた額。明細ごとではなく、合計に対して1回だけ計算する
              */
-            discount: number;
+            taxAmount: number;
             /**
              * Format: int32
-             * @description ポイント利用による値引額。ポイントを使わない場合はnull
+             * @description 合計金額。subtotal - discountAmount + taxAmount
              */
-            pointsDiscount: number | null;
-            /**
-             * Format: int32
-             * @description 支払総額
-             */
-            total: number;
+            totalAmount: number;
         };
         /**
-         * @description 会計金額の試算リクエスト - 選択したサービスと割引・ポイントから、売上を登録する前に請求額を試算する。
+         * @description 会計金額の試算リクエスト - 予約のサービス明細と、加えるサービスから、売上を登録する前に請求額を試算する。
          *     全項目のキーが必須
          */
         "Models.SaleCalculateRequest": {
-            /** @description 試算の対象となるサービス ID の一覧 */
-            services: components["schemas"]["Models.ServiceId"][];
-            /** @description 適用する割引コード。割引コードを使わない場合はnull */
-            discountCode: string | null;
-            /**
-             * Format: int32
-             * @description 利用するポイント数。ポイントを使わない場合はnull
-             */
-            pointsToUse: number | null;
-            /** @description 会計する顧客の ID。顧客を指定しない場合はnull */
-            customerId: (string & components["schemas"]["Models.CustomerId"]) | null;
-            /** @description 関連する予約の ID。予約がない場合はnull */
+            /** @description 会計を行うサロン ID。消費税率と支払い方法は、このサロンのものを使う */
+            salonId: components["schemas"]["Models.SalonId"];
+            /** @description 会計する予約の ID。salonId のサロンの予約を指定する。予約のサービス明細を、明細に写した価格で数える。予約のない来店の場合はnull */
             bookingId: (string & components["schemas"]["Models.BookingId"]) | null;
+            /** @description 予約のサービス明細に加えるサービスの ID の一覧。salonId のサロンの、削除されていないサービスを指定する。いまのメニューの価格で数える。同じIDを複数回指定すると、その回数だけ数える。0件以上100件以下で、予約のサービス明細と合わせて1件以上 */
+            services: components["schemas"]["Models.ServiceId"][];
         };
-        /** @description 会計金額の試算結果 - 売上を登録する前の請求金額の見積もり */
+        /** @description 会計金額の試算結果 - 売上を登録する前の請求金額の見積もり。何も記録しない */
         "Models.SaleCalculateResponse": {
             /** @description 試算の対象となるサロン ID */
             salonId: components["schemas"]["Models.SalonId"];
-            /** @description 試算の対象となる顧客の ID。顧客を指定しなかった場合はnull */
-            customerId: (string & components["schemas"]["Models.CustomerId"]) | null;
-            /** @description 関連する予約の ID。予約を指定しなかった場合はnull */
+            /** @description 試算の対象となる予約の ID。予約を指定しなかった場合はnull */
             bookingId: (string & components["schemas"]["Models.BookingId"]) | null;
             /** @description 請求金額の内訳 */
             breakdown: components["schemas"]["Models.SaleBreakdownResponse"];
-            /** @description 推奨する支払い方法の一覧 */
+            /** @description 合計金額を1回の支払いで受け取れる支払い方法区分の一覧。サロンの有効な支払い方法のうち、合計金額が minimumAmount 以上 maximumAmount 以下のものの区分を、sortOrder とIDの順に、同じ区分は1回だけ並べる。合計金額が0の場合は空 */
             recommendedMethods: components["schemas"]["Models.PaymentMethodType"][];
-            /** @description 顧客・スタッフ向けの備考。備考がない場合はnull */
-            notes: string | null;
         };
         /**
          * @description 売上登録リクエスト - 全項目のキーが必須。DB で NULL 許可のカラムのみ null を指定できる。
@@ -7509,15 +7496,18 @@ export interface components {
             /** @description カードブランド(Visa など)。空白だけの文字列は指定できない。支払い方法の区分が credit_card または debit_card の場合だけ指定できる。記録しない場合と、カード以外の支払いの場合はnull */
             cardBrand: string | null;
         };
-        /** @description 売上のレシート - 売上とその明細・決済取引から作成するレシートの内容 */
+        /**
+         * @description 売上のレシート - 売上とその明細・決済取引から作成するレシートの内容。
+         *     レシートは記録せず、呼び出すたびに同じ売上から作り直す(再発行)
+         */
         "Models.SaleReceiptResponse": {
-            /** @description レシート番号 */
+            /** @description レシート番号。売上番号(saleNumber)と同じで、再発行しても変わらない */
             receiptNumber: string;
-            /** @description レシートの対象となる売上。明細(details)と決済取引(payments)を含む */
+            /** @description レシートの対象となる売上。明細(details)と決済取引(payments)を含む。売上の取得と同じ内容 */
             sale: components["schemas"]["Models.SaleResponse"];
             /**
              * Format: date-time
-             * @description レシートの発行日時
+             * @description レシートを作成した日時。再発行すると変わる
              */
             issuedAt: string;
         };
@@ -25071,6 +25061,15 @@ export interface operations {
             };
             /** @description The server cannot find the requested resource. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The request conflicts with the current state of the server. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

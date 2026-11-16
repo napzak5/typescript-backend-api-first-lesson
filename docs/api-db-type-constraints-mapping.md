@@ -389,6 +389,8 @@ const salonRules: ModelRule[] = [
 | `XXXSearchRequest` | 載せない |
 | 行のカラムではなく、行を決めるものを指すリクエスト（`CustomerBookingCreateRequest`。空き枠を指し、行は `planCustomerBooking` が決める） | 載せない。プロパティ名と null 許可はカラムに合わせる |
 | 既存の行の一部だけを書き換えるアクションのリクエスト（`BookingCancelRequest`、`PaymentRefundRequest` など） | 載せない。プロパティ名と null 許可はカラムに合わせる |
+| まだ書いていない行のカラムの値だけを返すモデル（`SaleBreakdownResponse`。売上を作成すれば、その金額のカラムになる値） | 載せる。その表のルールで、ほかのカラムを `omittedColumns` に挙げる |
+| 何も書かないリクエストと、行のモデルを包むレスポンス（`SaleCalculateRequest`、`SaleCalculateResponse`、`SaleReceiptResponse`） | 載せない。包んだ行のモデル（`SaleResponse`、`SaleBreakdownResponse`）は、それぞれのルールで照合する |
 | 集計・計算結果（`ReviewSummaryResponse`、`SalesReportResponse` など） | 載せない |
 | テーブルがまだない機能のモデル（下の表） | 載せない |
 

@@ -1,11 +1,20 @@
 export {
   PRODUCT_ITEM,
+  type SaleCalculateRequest,
   type SaleCreateRequest,
   type SalesDetailRequest,
   type SaleUpdateRequest,
   type SaleVoidRequest,
   SERVICE_ITEM,
 } from '../../schemas/sale.schema'
+export {
+  type CalculationReferences,
+  type PaymentMethodOfCalculation,
+  planCalculation,
+  type SaleCalculation,
+  type SalonOfCalculation,
+  type ServiceOfCalculation,
+} from './_shared/calculation'
 export {
   bookingToHold,
   planSaleChange,
@@ -25,9 +34,12 @@ export {
   type SaleReferences,
   type SalonOfSale,
 } from './_shared/plan'
+export { type ReceiptRefusal, refusalOfReceipt } from './_shared/receipt'
 export { saleNumberFrom } from './_shared/sale-number'
+export { CalculateSaleUseCase } from './calculate-sale.usecase'
 export { CreateSaleUseCase } from './create-sale.usecase'
 export { GetSaleUseCase } from './get-sale.usecase'
+export { GetSaleReceiptUseCase } from './get-sale-receipt.usecase'
 export { ListSalesUseCase, type SalePage } from './list-sales.usecase'
 export { UpdateSaleUseCase } from './update-sale.usecase'
 export { VoidSaleUseCase } from './void-sale.usecase'

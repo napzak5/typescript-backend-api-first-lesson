@@ -10,28 +10,18 @@ import type { ModelsSaleBreakdownResponse } from './modelsSaleBreakdownResponse'
 import type { ModelsSalonId } from './modelsSalonId';
 
 /**
- * 会計金額の試算結果 - 売上を登録する前の請求金額の見積もり
+ * 会計金額の試算結果 - 売上を登録する前の請求金額の見積もり。何も記録しない
  */
 export interface ModelsSaleCalculateResponse {
   /** 試算の対象となるサロン ID */
   salonId: ModelsSalonId;
   /**
-     * 試算の対象となる顧客の ID。顧客を指定しなかった場合はnull
-     * @nullable
-     */
-  customerId: string | null;
-  /**
-     * 関連する予約の ID。予約を指定しなかった場合はnull
+     * 試算の対象となる予約の ID。予約を指定しなかった場合はnull
      * @nullable
      */
   bookingId: string | null;
   /** 請求金額の内訳 */
   breakdown: ModelsSaleBreakdownResponse;
-  /** 推奨する支払い方法の一覧 */
+  /** 合計金額を1回の支払いで受け取れる支払い方法区分の一覧。サロンの有効な支払い方法のうち、合計金額が minimumAmount 以上 maximumAmount 以下のものの区分を、sortOrder とIDの順に、同じ区分は1回だけ並べる。合計金額が0の場合は空 */
   recommendedMethods: ModelsPaymentMethodType[];
-  /**
-     * 顧客・スタッフ向けの備考。備考がない場合はnull
-     * @nullable
-     */
-  notes: string | null;
 }
