@@ -19,3 +19,6 @@ export type UpdateSaleResponse = JsonBody<
 export type VoidSaleResponse = JsonBody<
   operations['SaleCrud_voidSale']['responses'][200]['content']
 >
+export type ProcessSaleResponse = JsonBody<
+  operations['SaleCrud_process']['responses'][200]['content']
+>

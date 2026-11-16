@@ -11,13 +11,13 @@
 | オペレーション | 状態 |
 |---|---|
 | 売上（`SaleCrud`）の一覧、作成、1 件の取得、更新、取り消し（`list`、`create`、`get`、`update`、`voidSale`） | 実装済み |
-| 支払いの処理と返金（`SaleCrud` の `process`、`PaymentCrud` の `refund`） | 未実装 |
+| 支払いの記録と返金（`SaleCrud` の `process`、`PaymentCrud` の `refund`） | 実装済み（規則は [支払い](./payments.md)） |
 | レシートと金額の計算（`SaleCrud` の `getReceipt`、`calculate`） | 未実装 |
 | 売上レポート（`SalesReportCrud`） | 未実装 |
 | ポイント（`PointCrud`） | 未実装 |
 
 - 未実装のオペレーションへのリクエストは 404 です
-- 支払いを書くオペレーションがないので、API が作った売上の `paymentStatus` は `pending` のままで、`payments` は空です。取得と一覧は、データベースにある支払い（`payment_transactions`）を、あれば返します
+- 売上の `paymentStatus` と `payments` は、支払いの記録と返金が書きます（[支払い](./payments.md#売上の支払い状態)）。作成した売上は `pending` で、`payments` は空です
 - 売上は、削除できません（コントラクトに、削除のオペレーションがない）。誤って入れた売上は、更新で直すか（[更新](#更新)）、取り消します（[取り消し](#取り消し)）。取り消した売上は、記録として台帳に残ります
 - 売上を誰が、いつ、どう変えたかの履歴は、残しません（テーブルがない）。残るのは、最後に変えた時刻（`updatedAt`）と、取り消しの時刻と理由だけです
 
@@ -252,7 +252,8 @@ JSON として読めない本文は、ほかのルートと同じく、アクセ
 - 取り消した売上は、取得と一覧に、これまでどおり出ます（`isVoid` が true）。取り消しを絞り込むパラメーターは、ありません
 - **取り消した売上は、もう一度取り消せません**（409。最初の取り消しの時刻と理由は変わらない）。取り消しを元に戻すオペレーションは、ありません。会計を入れ直します
 - **返金していない支払いがある売上は、取り消せません**（409）。その売上の決済取引（`payment_transactions`）に、ステータスが `completed` か `partial_refund` のものがあるときです。先に返金します。`pending`、`processing`、`failed`、`refunded` の決済取引は、妨げません。確かめるのは、決済取引そのもので、売上の `paymentStatus` ではありません
-- 支払いと返金のオペレーションは未実装なので、いまこの 409 になるのは、データベースに直接書いた決済取引がある売上だけです。処理中（`processing`）の支払いと取り消しの関係は、支払いの処理を実装するときに決めます
+- 支払いを受け取った売上は、決済取引をすべて全額返金すると、取り消せます（[支払い](./payments.md#返金)）。一部を返金した決済取引（`partial_refund`）は、残りを返金できないので（1 件の決済取引の返金は 1 回）、その売上は取り消せません
+- API が書く決済取引は、`completed`、`refunded`、`partial_refund` だけです。`pending`、`processing`、`failed` の決済取引は、データベースに直接書いた行にしかありません
 - **取り消すと、その予約は、もう一度会計できます**（[予約の会計は 1 回](#予約の会計は-1-回)）。取り消した売上は、予約を指したままです。その予約は、削除できないままです（[予約台帳](./bookings.md#削除)）
 
 ## 1 件の取得と一覧
@@ -278,7 +279,7 @@ JSON として読めない本文は、ほかのルートと同じく、アクセ
 - `customerId` や `bookingId` に、存在しない ID を指定しても、エラーにはしません。一致する売上がないだけです
 - スタッフでの絞り込みは、ありません（表にないパラメーターは 400）
 - 保存されている行が API のモデルに合わないときは 500（データベースのエラー）です。読み出すときに検証します（`mappers/read/sale.mapper.ts`）
-- 売上、明細、支払いは、同じ時点のものを返します。取得も一覧も、1 つの読み取り専用のトランザクション（`REPEATABLE READ`）で読みます。支払いの処理が実装されたあとも、「支払い状態は完了で、支払いがない」という組み合わせは返りません
+- 売上、明細、支払いは、同じ時点のものを返します。取得も一覧も、1 つの読み取り専用のトランザクション（`REPEATABLE READ`）で読みます。支払いの記録と返金は、決済取引と売上の支払い状態を 1 つのトランザクションで書くので、「支払い状態は完了で、支払いがない」という組み合わせは返りません
 
 ## 同時に届いたリクエスト
 
@@ -298,6 +299,8 @@ JSON として読めない本文は、ほかのルートと同じく、アクセ
 | 別々の売上を、同じ予約に変える更新が、同時に届く | 1 件が 200 で、ほかは 409 |
 | 売上を予約に変える更新と、その予約の会計の作成が、同時に届く | どちらか 1 件が成功し、もう 1 件は 409 |
 | 決済取引を書いている途中に、その売上の取り消しが届く | 決済取引が書き終わるのを待ち、それを数えて判定する |
+| 支払いの記録と、その売上の取り消しが、同時に届く | 支払いが 200 で取り消しが 409 か、取り消しが 200 で支払いが 409 |
+| 同じ売上の支払いの記録が、同時に何件も届く | 1 件ずつ処理する。受け取った合計は、合計金額を超えない（[支払い](./payments.md#支払いの記録と返金)） |
 | 予約の削除が進んでいる途中に、売上をその予約に変える更新が届く | 削除が終わるのを待ち、400（`bookingId` の `not_found`） |
 | 売上を予約に変える更新と、その予約の削除が、同時に届く | 更新が 200 で削除が 409 か、削除が 204 で更新が 400。互いを待ち続けることはない |
 
@@ -327,9 +330,9 @@ JSON として読めない本文は、ほかのルートと同じく、アクセ
 5. 売上を書きます。`details` を指定していれば、明細をすべて消して、新しい明細を書きます
 6. 変えたあとの売上を、明細、支払いと一緒に読んで返します
 
-売上の行のロックを `FOR UPDATE` にしているのは、決済取引の外部キーの確認（`FOR KEY SHARE`）と両立しないロックだからです。決済取引を書いている途中のトランザクションがあれば、取り消しは、それを待ってから決済取引を読みます。売上をロックしている間は、その売上の決済取引は増えません。
+売上の行のロックを `FOR UPDATE` にしているのは、決済取引の外部キーの確認（`FOR KEY SHARE`）と両立しないロックだからです。決済取引を書いている途中のトランザクションがあれば、取り消しは、それを待ってから決済取引を読みます。売上をロックしている間は、その売上の決済取引は増えません。支払いの記録と返金も、最初に同じロックを取ります（[支払い](./payments.md#支払いの記録と返金)）。売上の行をロックして読む処理は、`backend/packages/infrastructure/src/repositories/held-sale.ts` の `heldSaleOf` です。
 
-**ロックの順は、売上、予約、サロン、顧客、サービス、スタッフです**。売上の行を先にロックするのは、更新と取り消しだけです。予約、顧客、スタッフの行を先にロックする操作（売上の作成、予約台帳の書き込み、顧客やスタッフの削除）は、すでにある売上の行をロックしません。予約の削除は、予約を指す売上があれば、削除を試みる前に 409 で終わるので、外部キーの確認が売上の行を待つこともありません。同じ行を逆の順にロックする組み合わせは、ありません。
+**ロックの順は、売上、予約、サロン、顧客、サービス、スタッフ、支払い方法です**。売上の行を先にロックするのは、更新、取り消し、支払いの記録、返金だけです。支払いの記録は、売上のあとに、支払い方法の行だけをロックします。支払い方法の更新と削除は、支払い方法の行のほかを、ロックしません。予約、顧客、スタッフの行を先にロックする操作（売上の作成、予約台帳の書き込み、顧客やスタッフの削除）は、すでにある売上の行をロックしません。予約の削除は、予約を指す売上があれば、削除を試みる前に 409 で終わるので、外部キーの確認が売上の行を待つこともありません。同じ行を逆の順にロックする組み合わせは、ありません。
 
 取得と一覧は、ロックを待ちません。
 
@@ -352,16 +355,16 @@ JSON として読めない本文は、ほかのルートと同じく、アクセ
 
 ## シード
 
-`pnpm db:seed` は、売上を入れません。売上が指せるもの（サロン、顧客、スタッフ、サービス、商品、予約）は入れるので、シードのデータで、売上を作成できます。支払い方法（`payment_methods`）もシードにあり、サロンが設定して読めますが（[支払い](./payments.md)）、支払いを書くオペレーションは未実装です。
+`pnpm db:seed` は、売上を入れません。売上が指せるもの（サロン、顧客、スタッフ、サービス、商品、予約）は入れるので、シードのデータで、売上を作成できます。支払い方法（`payment_methods`）もシードにあるので、作成した売上に、支払いを記録できます（[支払い](./payments.md)）。
 
 ## 実装の場所
 
 | 層 | ファイル |
 |---|---|
 | コントラクト | `specs/models/payment.tsp`、`specs/operations/payment-operations.tsp`（`SaleCrud`） |
-| ドメイン | `backend/packages/domain/src/models/sale.ts`、`schemas/sale.schema.ts`、`mappers/read/sale.mapper.ts`、`repositories/sale.repository.ts`、`services/sale-number-issuer.ts`、`business-logic/sale/`（誰がどの売上に届くかは `_shared/authorization.ts`、リクエストから書く行を決めるのは `_shared/plan.ts`、更新が書く値と、更新と取り消しを断る理由を決めるのは `_shared/change.ts`、売上番号は `_shared/sale-number.ts`、リポジトリが断った理由をエラーに直すのは `_shared/refusals.ts`）。Write マッパーはない（書く行は `planSale` が決める） |
+| ドメイン | `backend/packages/domain/src/models/sale.ts`、`schemas/sale.schema.ts`、`mappers/read/sale.mapper.ts`（決済取引は `mappers/read/payment.mapper.ts`）、`repositories/sale.repository.ts`、`services/sale-number-issuer.ts`、`business-logic/sale/`（誰がどの売上に届くかは `_shared/authorization.ts`、リクエストから書く行を決めるのは `_shared/plan.ts`、更新が書く値と、更新と取り消しを断る理由を決めるのは `_shared/change.ts`、売上番号は `_shared/sale-number.ts`、リポジトリが断った理由をエラーに直すのは `_shared/refusals.ts`）。Write マッパーはない（書く行は `planSale` が決める） |
 | ドメイン（共通） | `backend/packages/domain/src/business-logic/_shared/record-number.ts`（番号の形式）、`business-logic/_shared/numbered.ts`（番号を採り直す手順）、`schemas/rules.ts`（`inTimeZone`、`momentInUtc`）、`models/booking.ts` の `LedgerReach` と `business-logic/booking/_shared/authorization.ts` の `isWithin`（台帳に届く範囲） |
-| インフラ | `backend/packages/infrastructure/src/repositories/sale.repository.impl.ts`、`security/random-sale-number-issuer.ts` |
+| インフラ | `backend/packages/infrastructure/src/repositories/sale.repository.impl.ts`、`repositories/held-sale.ts`（売上の行のロック。支払いの記録、返金と共有する）、`security/random-sale-number-issuer.ts` |
 | API | `backend/packages/api/src/routes/sale/`（`/api/v1/sales` に取り付ける） |
 | DB | `backend/packages/database/sql/migrations/202611160700_sales_rules.sql` |
 | テスト | `backend/packages/domain/src/__tests__/sale.schema.test.ts`、`sale.plan.test.ts`、`sale.change.test.ts`、`sale.mapper.test.ts`、`sale.usecase.test.ts`、`backend/packages/api/src/__tests__/sale.integration.test.ts`（作成、取得、一覧）、`sale-changes.integration.test.ts`（更新、取り消し）、`backend/packages/api/src/routes/sale/_shared/__tests__/` |

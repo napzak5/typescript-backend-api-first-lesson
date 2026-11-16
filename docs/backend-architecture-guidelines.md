@@ -7,7 +7,7 @@
 - [アーキテクチャ概要](./architecture-overview.md): システム全体の説明。パッケージの依存関係、型生成の流れ、リクエストの流れ、実装済みの範囲はそちらにあり、本書では繰り返しません。
 - [CLAUDE.md](../CLAUDE.md): 規約とコマンドの正本。Salon ドメインの全レイヤーのシグネチャもそこにまとまっています。本書は規約の適用のしかたと理由を説明します。
 
-バックエンドで実装済みなのは、Salon ドメイン、サロンのサービスカテゴリー（`/api/v1/salons/{salonId}/service-categories`）、サロンのサービス（`/api/v1/salons/{salonId}/services`）、サロンのスタッフ台帳（`/api/v1/salons/{salonId}/staff`。`StaffCrud` の、スタッフの一覧、登録、1 件の取得、更新、削除）、スタッフの勤務スケジュール（`/api/v1/salons/{salonId}/staff/{id}/schedules`。`StaffSchedules` の一覧と更新）、スタッフのログインアカウントへの招待（`/api/v1/salons/{salonId}/staff/{id}/invitation` と `/api/v1/auth/staff-invitation`。`StaffInvitations` の取得、作成、取り消しと、`AuthCrud` の招待の確認、受け入れ、参加）、スタッフに紐づいたアカウント（`/api/v1/salons/{salonId}/staff/{id}/account`。`StaffAccounts` の取得、ロールの変更、紐づけの解除）、顧客に見せるスタッフのプロフィール（`/api/v1/staff-profiles`。`StaffProfile` の一覧と 1 件の取得）、スタッフ本人のプロフィール（`/api/v1/staff-profiles/me`。`StaffOwnProfile` の取得と更新）、顧客台帳（`/api/v1/customers`。`CustomerCrud` のうち、顧客の一覧、登録、1 件の取得、更新、削除）、顧客本人のプロフィール（`/api/v1/customers/me`。`CustomerProfile` の取得、作成、更新）、顧客の好み設定（`/api/v1/customers/{id}/preferences` と `/api/v1/customers/me/preferences`。`CustomerCrud` と `CustomerProfile` の、好み設定の取得と更新）、予約台帳（`/api/v1/bookings`。`BookingCrud` の 11 オペレーション: 予約の一覧、作成、1 件の取得、更新、削除、ステータスの 5 つの操作、日時の変更。`BookingServiceCrud` の 3 オペレーション: 施術明細の追加、1 件の取得、削除）、空き枠（`/api/v1/salons/{salonId}/available-slots`。`AvailableSlotCrud` の 2 オペレーション: 一覧、確認）、顧客が自分で入れる予約（`/api/v1/customers/me/bookings`。`CustomerBookings` の 5 オペレーション: 一覧、作成、1 件の取得、キャンセル、日時の変更）、売上台帳（`/api/v1/sales`。`SaleCrud` の 8 オペレーションのうち 5 つ: 一覧、作成、1 件の取得、更新、取り消し）、サロンの支払い方法（`/api/v1/salons/{salonId}/payment-methods`。`PaymentMethodCrud` の 5 オペレーション: 一覧、作成、1 件の取得、更新、削除）、認証のすべてのオペレーション（ログイン、トークンの再発行、ログアウト、全セッションのログアウト、自分の情報の取得、ユーザー登録、メールアドレスの確認、パスワードの再設定と変更、スタッフの招待の確認、受け入れ、参加、2 要素認証、セッションの一覧と無効化、管理者の操作）、システムエンドポイントだけです。ほかのドメインを実装するときは、Salon のファイルと同じ構成で書いてください。データが 1 つのサロンに属するドメインでは、書き方がいくつか変わります。その例がサービスカテゴリーで、違いは「[9. サロンに属するデータ](#9-サロンに属するデータ-サロンはパスで受け取る)」にまとめています。サービスカテゴリーにはなくサービスにあるもの（2 つのテーブルの行を含むリクエスト、2 つの項目を結ぶ規則、一括更新、論理削除）も、同じ節にあります。サロンに属し、公開のオペレーションがないデータの例がスタッフ台帳で、その違い（どのオペレーションでも最初に判定する権限、操作者自身のスタッフ情報を守る規則、サロンの中での 2 つの一意性）も、同じ節の最後にあります。公開のオペレーションがなく、読む権限と設定する権限が違うデータの例が支払い方法で、その違い（2 つの権限、行をロックしてから確かめる 2 つの項目の規則、作成のあとで変えられないカラム、支払いが指している行を消さない削除）も、同じ節にあります。サロンの 1 つのレコードに属し、全体を置き換える行の例がスタッフの勤務スケジュールで、その違い（レコードの下にマウントするルーター、2 段階の権限、行をロックして置き換えるトランザクション）も、同じ節の最後にあります。メールで送ったトークンで届くレコードの例がスタッフの招待で、その違い（招待する側と招待された側の 2 つのルーター、本文を検証してから判定する 2 つめの権限、結果を直和型で返すリポジトリ、スタッフの行をロックしてから判定し直す書き込み）も、同じ節の最後にあります。テーブルを持たず、ほかのテーブルの行の一部をサロンに扱わせるデータの例がスタッフのアカウントで、その違い（カラムの Enum より狭い Enum、操作者自身のアカウントを守る規則）も、同じ節の最後にあります。公開しないデータのうち、誰にでも見せる部分の例がスタッフのプロフィールで、その違い（見せる列だけを読むリポジトリ、サロンの下に置かない公開のルート、アカウントが対象を決める本人のルート）も、同じ節の最後にあります。サロンに属さず、公開のオペレーションもないデータの例が顧客台帳です。書き方の違い（何も変換しない Write マッパー、操作者だけで最初に判定する権限、依存から受け取る現在時刻、範囲の違う 2 つの一意性、権限のあとで返すクエリのエラー）は、実装パターンの 3、5、6、7、8 のそれぞれの箇所に書いてあります。行が保存されていてもいなくても、どのレコードにも「ある」付随データの例が顧客の好み設定です。その違い（作成と削除のないオペレーション、行がないときに返す空の値、保存されている値と照らす規則、顧客の行をロックしてから判定する書き込み）は、[ドメイン実装リファレンス](./domain-implementation-reference.md#a-record-every-customer-has-the-preferences) にまとめています。サロンに属するが、ルートをサロンの下に置かないデータの例が予約台帳です。その違い（操作者に届く範囲を先に決め、リクエストがサロンを指定してから判定する 2 段階の権限、参照する行から書く行を決める純粋な関数、参照する行をロックし、スタッフの占有を確かめてから書くトランザクション、システムが決める番号の発行、行をロックして読んだステータスから、純粋な関数が次の状態を決める操作、予約の行を最初にロックしてから書く更新・日時の変更・削除、予約の下にあり、明細を足し、外すたびに予約を算出し直すルート）は、[ドメイン実装リファレンス](./domain-implementation-reference.md#data-of-a-salon-whose-routes-are-not-below-it-the-booking-ledger) にまとめています。認証と認可の仕様は [認証と認可](./authentication.md)、サービスカテゴリーとサービスの規則は [サービスメニュー](./service-menu.md)、顧客台帳の規則は [顧客台帳](./customers.md)、スタッフ台帳の規則は [スタッフ台帳](./staff.md)、予約台帳の規則は [予約台帳](./bookings.md) にあり、本書ではコードの書き方だけを扱います。
+バックエンドで実装済みなのは、Salon ドメイン、サロンのサービスカテゴリー（`/api/v1/salons/{salonId}/service-categories`）、サロンのサービス（`/api/v1/salons/{salonId}/services`）、サロンのスタッフ台帳（`/api/v1/salons/{salonId}/staff`。`StaffCrud` の、スタッフの一覧、登録、1 件の取得、更新、削除）、スタッフの勤務スケジュール（`/api/v1/salons/{salonId}/staff/{id}/schedules`。`StaffSchedules` の一覧と更新）、スタッフのログインアカウントへの招待（`/api/v1/salons/{salonId}/staff/{id}/invitation` と `/api/v1/auth/staff-invitation`。`StaffInvitations` の取得、作成、取り消しと、`AuthCrud` の招待の確認、受け入れ、参加）、スタッフに紐づいたアカウント（`/api/v1/salons/{salonId}/staff/{id}/account`。`StaffAccounts` の取得、ロールの変更、紐づけの解除）、顧客に見せるスタッフのプロフィール（`/api/v1/staff-profiles`。`StaffProfile` の一覧と 1 件の取得）、スタッフ本人のプロフィール（`/api/v1/staff-profiles/me`。`StaffOwnProfile` の取得と更新）、顧客台帳（`/api/v1/customers`。`CustomerCrud` のうち、顧客の一覧、登録、1 件の取得、更新、削除）、顧客本人のプロフィール（`/api/v1/customers/me`。`CustomerProfile` の取得、作成、更新）、顧客の好み設定（`/api/v1/customers/{id}/preferences` と `/api/v1/customers/me/preferences`。`CustomerCrud` と `CustomerProfile` の、好み設定の取得と更新）、予約台帳（`/api/v1/bookings`。`BookingCrud` の 11 オペレーション: 予約の一覧、作成、1 件の取得、更新、削除、ステータスの 5 つの操作、日時の変更。`BookingServiceCrud` の 3 オペレーション: 施術明細の追加、1 件の取得、削除）、空き枠（`/api/v1/salons/{salonId}/available-slots`。`AvailableSlotCrud` の 2 オペレーション: 一覧、確認）、顧客が自分で入れる予約（`/api/v1/customers/me/bookings`。`CustomerBookings` の 5 オペレーション: 一覧、作成、1 件の取得、キャンセル、日時の変更）、売上台帳（`/api/v1/sales`。`SaleCrud` の 8 オペレーションのうち 5 つ: 一覧、作成、1 件の取得、更新、取り消し）、サロンの支払い方法（`/api/v1/salons/{salonId}/payment-methods`。`PaymentMethodCrud` の 5 オペレーション: 一覧、作成、1 件の取得、更新、削除）、売上の支払い（`SaleCrud` の `process` で記録し、`PaymentCrud` の `refund` で返金する）、認証のすべてのオペレーション（ログイン、トークンの再発行、ログアウト、全セッションのログアウト、自分の情報の取得、ユーザー登録、メールアドレスの確認、パスワードの再設定と変更、スタッフの招待の確認、受け入れ、参加、2 要素認証、セッションの一覧と無効化、管理者の操作）、システムエンドポイントだけです。ほかのドメインを実装するときは、Salon のファイルと同じ構成で書いてください。データが 1 つのサロンに属するドメインでは、書き方がいくつか変わります。その例がサービスカテゴリーで、違いは「[9. サロンに属するデータ](#9-サロンに属するデータ-サロンはパスで受け取る)」にまとめています。サービスカテゴリーにはなくサービスにあるもの（2 つのテーブルの行を含むリクエスト、2 つの項目を結ぶ規則、一括更新、論理削除）も、同じ節にあります。サロンに属し、公開のオペレーションがないデータの例がスタッフ台帳で、その違い（どのオペレーションでも最初に判定する権限、操作者自身のスタッフ情報を守る規則、サロンの中での 2 つの一意性）も、同じ節の最後にあります。公開のオペレーションがなく、読む権限と設定する権限が違うデータの例が支払い方法で、その違い（2 つの権限、行をロックしてから確かめる 2 つの項目の規則、作成のあとで変えられないカラム、支払いが指している行を消さない削除）も、同じ節にあります。サロンの 1 つのレコードに属し、全体を置き換える行の例がスタッフの勤務スケジュールで、その違い（レコードの下にマウントするルーター、2 段階の権限、行をロックして置き換えるトランザクション）も、同じ節の最後にあります。メールで送ったトークンで届くレコードの例がスタッフの招待で、その違い（招待する側と招待された側の 2 つのルーター、本文を検証してから判定する 2 つめの権限、結果を直和型で返すリポジトリ、スタッフの行をロックしてから判定し直す書き込み）も、同じ節の最後にあります。テーブルを持たず、ほかのテーブルの行の一部をサロンに扱わせるデータの例がスタッフのアカウントで、その違い（カラムの Enum より狭い Enum、操作者自身のアカウントを守る規則）も、同じ節の最後にあります。公開しないデータのうち、誰にでも見せる部分の例がスタッフのプロフィールで、その違い（見せる列だけを読むリポジトリ、サロンの下に置かない公開のルート、アカウントが対象を決める本人のルート）も、同じ節の最後にあります。サロンに属さず、公開のオペレーションもないデータの例が顧客台帳です。書き方の違い（何も変換しない Write マッパー、操作者だけで最初に判定する権限、依存から受け取る現在時刻、範囲の違う 2 つの一意性、権限のあとで返すクエリのエラー）は、実装パターンの 3、5、6、7、8 のそれぞれの箇所に書いてあります。行が保存されていてもいなくても、どのレコードにも「ある」付随データの例が顧客の好み設定です。その違い（作成と削除のないオペレーション、行がないときに返す空の値、保存されている値と照らす規則、顧客の行をロックしてから判定する書き込み）は、[ドメイン実装リファレンス](./domain-implementation-reference.md#a-record-every-customer-has-the-preferences) にまとめています。サロンに属するが、ルートをサロンの下に置かないデータの例が予約台帳です。その違い（操作者に届く範囲を先に決め、リクエストがサロンを指定してから判定する 2 段階の権限、参照する行から書く行を決める純粋な関数、参照する行をロックし、スタッフの占有を確かめてから書くトランザクション、システムが決める番号の発行、行をロックして読んだステータスから、純粋な関数が次の状態を決める操作、予約の行を最初にロックしてから書く更新・日時の変更・削除、予約の下にあり、明細を足し、外すたびに予約を算出し直すルート）は、[ドメイン実装リファレンス](./domain-implementation-reference.md#data-of-a-salon-whose-routes-are-not-below-it-the-booking-ledger) にまとめています。認証と認可の仕様は [認証と認可](./authentication.md)、サービスカテゴリーとサービスの規則は [サービスメニュー](./service-menu.md)、顧客台帳の規則は [顧客台帳](./customers.md)、スタッフ台帳の規則は [スタッフ台帳](./staff.md)、予約台帳の規則は [予約台帳](./bookings.md) にあり、本書ではコードの書き方だけを扱います。
 
 ---
 
@@ -597,15 +597,24 @@ app.use(
   `${API_BASE_PATH}/bookings`,
   createBookingRouter(bookingDependencies, authenticated),
 )
+const paymentDependencies = {
+  paymentRepository: new PaymentRepository(database),
+  paymentNumberIssuer: new RandomPaymentNumberIssuer(),
+}
 app.use(
   `${API_BASE_PATH}/sales`,
   createSaleRouter(
     {
       saleRepository: new SaleRepository(database),
       saleNumberIssuer: new RandomSaleNumberIssuer(),
+      ...paymentDependencies,
     },
     authenticated,
   ),
+)
+app.use(
+  `${API_BASE_PATH}/payments`,
+  createPaymentRouter(paymentDependencies, authenticated),
 )
 ```
 
@@ -619,6 +628,7 @@ app.use(
 - 顧客が自分で入れる予約のルーター（`/customers/me/bookings`）も、同じ理由で、顧客のルーターより前にマウントします。予約台帳と同じ依存（`bookingDependencies`）に、時計（`clock`）を加えて渡します。枠は、いまより後に始まるものだけだからです。
 - 予約台帳はサロンのデータですが、ルーターは `${API_BASE_PATH}/bookings` にマウントします。パスにサロンの ID がないので、`salonRepository` は渡しません。リクエストが指定したサロンが存在するかは、予約のリポジトリが、作成のトランザクションの中で確かめます。予約番号を発行する `RandomBookingNumberIssuer` も、ここで生成して渡します。
 - 売上台帳も同じで、ルーターは `${API_BASE_PATH}/sales` にマウントします。`salonRepository` は渡さず、売上番号を発行する `RandomSaleNumberIssuer` を、ここで生成して渡します。時計も渡しません。売上の `createdAt` と `updatedAt` は、カラムの既定値が決め、更新と取り消しが書く時刻（`updatedAt`、`voidedAt`）は、リポジトリがデータベースの時計（`clock_timestamp()`）で書きます。
+- 売上のルーターと決済取引のルーター（`${API_BASE_PATH}/payments`）には、同じ支払いの依存（`paymentDependencies`。リポジトリと、取引番号を発行する `RandomPaymentNumberIssuer`）を渡します。支払いの記録は売上の下に、返金は決済取引の下にあるからです。支払いと返金が書く時刻も、データベースの時計です。
 - 新しいルーターは `express.json` の後、`notFoundHandler` の前にマウントします。ミドルウェアの順序とその理由は [アーキテクチャ概要](./architecture-overview.md) にあります。
 - `api` パッケージは `config` に依存しません。新しい設定値が必要なときは `AppSettings`（`backend/packages/api/src/settings.ts`）に追加し、`backend/apps/server/src/server.ts` の `startServer` で `AppConfig` から渡します。
 
@@ -689,6 +699,13 @@ async execute(
 - API が読みも書きもしないカラム（`processorConfig`）があります。どのモデルにも入れず、Read マッパーは、プロパティを 1 つずつ書き出します。
 - 削除は、行を消します。支払い（`payment_transactions`）が指している行は、消しません。リポジトリが、行を `FOR UPDATE` でロックしてから、次の文で支払いを探し、あれば `inUse` を返します。ユースケースが `DomainErrors.conflict`（409）にします。このロックは、支払いの外部キーの確認が待つロックなので、書いている途中の支払いを見落としません。
 
+売上の支払い（`backend/packages/domain/src/business-logic/payment`、`backend/packages/api/src/routes/payment`、`backend/packages/api/src/routes/sale/process-sale.handler.ts`）は、売上台帳と同じく、ルートをサロンの下に置かず、権限は売上台帳の関数（記録は `saleReachOf`、返金は `saleVoidReachOf`）で決まります。売上台帳にないものは次の点です。
+
+- 記録は、レコード（売上）の下のルート（`POST /api/v1/sales/{id}/process`）で、返金は、書いた行（決済取引）のルート（`POST /api/v1/payments/{id}/refund`）です。2 つのルーターに、同じ依存を渡します。
+- レコードの値（売上の `paymentStatus`）を、その下の行（決済取引）から数えます。純粋な関数（`_shared/plan.ts` の `paymentStatusOf`）が数え、決済取引を書くトランザクションが、同じ値を書きます。ほかの場所では書かず、判定にも使いません。
+- リポジトリは、売上の行を `FOR UPDATE` でロックしてから（`backend/packages/infrastructure/src/repositories/held-sale.ts` の `heldSaleOf`。売上の更新、取り消しと共有）、次の文で決済取引を読み、断る理由と書く値を純粋な関数（`refusalOfPayment`、`planPayment`、`planRefund`）で決めます。結果は直和型です（`backend/packages/domain/src/repositories/payment.repository.ts` の `PaymentRecording`、`PaymentRefunding`）。
+- 参照する支払い方法は、売上のあとに `FOR SHARE` でロックします。同じ支払い方法での支払いどうしは待たず、支払い方法の更新、削除とは、互いに待ちます。
+
 スタッフの勤務スケジュール（`backend/packages/domain/src/business-logic/staff-schedule`、`backend/packages/api/src/routes/staff-schedule`）は、サロンのスタッフ 1 人に属する行（`staff_schedules`）です。スタッフ台帳と同じく公開のオペレーションはなく、次の点が違います。
 
 - ルーターを、サロンではなくスタッフの下にマウントします（`/salons/:salonId/staff/:id/schedules`）。`Router({ mergeParams: true })` で作り、ハンドラーは `salonId` と `id` の両方をパスから受け取ります。スケジュール自身の ID はなく、ルートは `GET /` と `PUT /` の 2 つです。
@@ -735,7 +752,7 @@ async execute(
 - リポジトリの `update` は、見せるスタッフの条件（`shown`）を WHERE に含めた 1 つの文で書き、見せる列を `RETURNING` で返します。サロンの条件があるので、`UPDATE … FROM salons` です。条件に合う行がなければ null を返し、ユースケースが `notFound` にします。先に読んでから書くことはしません。
 - ルーターは、`/me` を `/:id` より前に登録します。逆にすると、`me` が ID として検証されます。
 
-権限の規則は [認証と認可](./authentication.md#サロンの下にあるルートの権限)、サービスカテゴリーとサービスの規則は [サービスメニュー](./service-menu.md)、スタッフ台帳、勤務スケジュール、招待、アカウント、プロフィールの規則は [スタッフ台帳](./staff.md)、支払い方法の規則は [支払い](./payments.md) にあります。
+権限の規則は [認証と認可](./authentication.md#サロンの下にあるルートの権限)、サービスカテゴリーとサービスの規則は [サービスメニュー](./service-menu.md)、スタッフ台帳、勤務スケジュール、招待、アカウント、プロフィールの規則は [スタッフ台帳](./staff.md)、支払い方法と支払いの規則は [支払い](./payments.md) にあります。
 
 ---
 
@@ -783,7 +800,7 @@ async execute(
 | パスワードのハッシュ、トークンの生成、2 要素認証のシークレット・コード・バックアップコード | ユニット（`pnpm test`） | `backend/packages/infrastructure/src/security/__tests__` |
 | SMTP でのメールの送信 | ユニット（`pnpm test`）と統合（`pnpm test:integration`。testcontainers で Mailpit のコンテナを起動する） | `backend/packages/infrastructure/src/mail/__tests__` |
 | クエリの変換、リンク、problem details、ミドルウェア | ユニット（`pnpm test`） | `backend/packages/api/src` の各 `__tests__` |
-| エンドポイント（リポジトリの実装を含む） | 統合（`pnpm test:integration`） | `backend/packages/api/src/__tests__/salon.integration.test.ts`、`auth.integration.test.ts`、`service-category.integration.test.ts`（サロンの下にあるルート）、`service.integration.test.ts`（一括更新、サロンの下にあるリソースの論理削除）、`customer.integration.test.ts` と `customer-profile.integration.test.ts`（サロンに属さず、公開のオペレーションがないルート）、`customer-preferences.integration.test.ts`（行が保存されていなくても答えるルートと、顧客の行をロックする更新）、`staff.integration.test.ts`（サロンの下にあり、公開のオペレーションがないルート）、`staff-schedule.integration.test.ts`（スタッフの下にあり、全体を置き換えるルート）、`staff-invitation.integration.test.ts`（メールで送ったトークンで届くレコード。招待する側のルートと、招待された側の公開のルート）、`staff-account.integration.test.ts`（スタッフに紐づいたアカウントのルートと、すでにあるアカウントでの招待への参加）、`staff-profile.integration.test.ts`（公開しないデータの一部を、認証なしで見せるルート）、`staff-own-profile.integration.test.ts`（アカウントが対象を決める、本人のルート）、`booking.integration.test.ts`（サロンに属し、サロンの下にないルートと、参照する行をロックしてスタッフの占有を確かめる作成）、`booking-status.integration.test.ts`（行をロックして読んだステータスから、次の状態を決める操作）、`booking-changes.integration.test.ts`（予約の行を最初にロックしてから書く更新・日時の変更・削除）、`booking-services.integration.test.ts`（予約の下にあり、明細を足し、外すたびに予約を算出し直すルート）、`available-slot.integration.test.ts`（テーブルを持たず、ほかのドメインの行と現在の時刻から答えを算出するルート）、`sale.integration.test.ts`（金額を持つリクエストを、明細ごとの式と参照で確かめる作成。予約の行のロックで、予約の会計を 1 件にする）、`sale-changes.integration.test.ts`（売上の行を最初にロックしてから書く更新と取り消し。外部キーの確認が待つロックで、書いている途中の決済取引を待つ）、`payment-method.integration.test.ts`（読む権限と設定する権限が違うルート。行をロックしてから、2 つの項目の規則を更新後の値で確かめる更新） |
+| エンドポイント（リポジトリの実装を含む） | 統合（`pnpm test:integration`） | `backend/packages/api/src/__tests__/salon.integration.test.ts`、`auth.integration.test.ts`、`service-category.integration.test.ts`（サロンの下にあるルート）、`service.integration.test.ts`（一括更新、サロンの下にあるリソースの論理削除）、`customer.integration.test.ts` と `customer-profile.integration.test.ts`（サロンに属さず、公開のオペレーションがないルート）、`customer-preferences.integration.test.ts`（行が保存されていなくても答えるルートと、顧客の行をロックする更新）、`staff.integration.test.ts`（サロンの下にあり、公開のオペレーションがないルート）、`staff-schedule.integration.test.ts`（スタッフの下にあり、全体を置き換えるルート）、`staff-invitation.integration.test.ts`（メールで送ったトークンで届くレコード。招待する側のルートと、招待された側の公開のルート）、`staff-account.integration.test.ts`（スタッフに紐づいたアカウントのルートと、すでにあるアカウントでの招待への参加）、`staff-profile.integration.test.ts`（公開しないデータの一部を、認証なしで見せるルート）、`staff-own-profile.integration.test.ts`（アカウントが対象を決める、本人のルート）、`booking.integration.test.ts`（サロンに属し、サロンの下にないルートと、参照する行をロックしてスタッフの占有を確かめる作成）、`booking-status.integration.test.ts`（行をロックして読んだステータスから、次の状態を決める操作）、`booking-changes.integration.test.ts`（予約の行を最初にロックしてから書く更新・日時の変更・削除）、`booking-services.integration.test.ts`（予約の下にあり、明細を足し、外すたびに予約を算出し直すルート）、`available-slot.integration.test.ts`（テーブルを持たず、ほかのドメインの行と現在の時刻から答えを算出するルート）、`sale.integration.test.ts`（金額を持つリクエストを、明細ごとの式と参照で確かめる作成。予約の行のロックで、予約の会計を 1 件にする）、`sale-changes.integration.test.ts`（売上の行を最初にロックしてから書く更新と取り消し。外部キーの確認が待つロックで、書いている途中の決済取引を待つ）、`payment-method.integration.test.ts`（読む権限と設定する権限が違うルート。行をロックしてから、2 つの項目の規則を更新後の値で確かめる更新）、`payment.integration.test.ts`（売上の行を最初にロックしてから、決済取引と売上の支払い状態を書く記録と返金。支払い方法の行の共有ロック） |
 | リクエスト ID、エラー応答、CORS、レート制限、プローブ | 統合（`pnpm test:integration`） | `backend/packages/api/src/__tests__/app.integration.test.ts` |
 | 起動と停止 | 統合（`pnpm test:integration`） | `backend/apps/server/src/__tests__/server.integration.test.ts` |
 
@@ -843,7 +860,7 @@ async execute(
 - [`docs/staff.md`](./staff.md) - スタッフ台帳（スタッフの規則）
 - [`docs/bookings.md`](./bookings.md) - 予約台帳（予約の規則）
 - [`docs/sales.md`](./sales.md) - 売上台帳（売上の規則）
-- [`docs/payments.md`](./payments.md) - 支払い（支払い方法の規則）
+- [`docs/payments.md`](./payments.md) - 支払い（支払い方法、支払いの記録と返金の規則）
 - [`docs/db-driven-domain-model.md`](./db-driven-domain-model.md) - DB駆動ドメインモデル
 - [`docs/sum-types-pattern-matching.md`](./sum-types-pattern-matching.md) - Sum型とパターンマッチング
 - [`docs/type-safety-principles.md`](./type-safety-principles.md) - 型安全性の原則

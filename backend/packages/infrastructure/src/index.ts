@@ -23,6 +23,7 @@ export { AvailableSlotRepository } from './repositories/available-slot.repositor
 export { BookingRepository } from './repositories/booking.repository.impl'
 export { CustomerRepository } from './repositories/customer.repository.impl'
 export { CustomerPreferencesRepository } from './repositories/customer-preferences.repository.impl'
+export { PaymentRepository } from './repositories/payment.repository.impl'
 export { PaymentMethodRepository } from './repositories/payment-method.repository.impl'
 export { SaleRepository } from './repositories/sale.repository.impl'
 export { SalonRepository } from './repositories/salon.repository.impl'
@@ -36,9 +37,10 @@ export { StaffProfileRepository } from './repositories/staff-profile.repository.
 export { StaffScheduleRepository } from './repositories/staff-schedule.repository.impl'
 export { UserRepository } from './repositories/user.repository.impl'
 
-// Passwords, tokens and the numbers of bookings and sales
+// Passwords, tokens and the numbers of bookings, sales and payments
 export { Argon2PasswordHasher } from './security/argon2-password-hasher'
 export { RandomBookingNumberIssuer } from './security/random-booking-number-issuer'
+export { RandomPaymentNumberIssuer } from './security/random-payment-number-issuer'
 export { RandomSaleNumberIssuer } from './security/random-sale-number-issuer'
 export { RandomTokenIssuer } from './security/random-token-issuer'
 export { TotpAuthenticator } from './security/totp-authenticator'

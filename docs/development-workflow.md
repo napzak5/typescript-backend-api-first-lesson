@@ -102,6 +102,7 @@ curl http://localhost:3000/api/v1/salons      # サロン一覧（認証なし�
 顧客が自分で入れる予約（`/api/v1/customers/me/bookings` の一覧、作成、1 件の取得、キャンセル、日時の変更）、
 売上台帳（`/api/v1/sales` の一覧、作成、1 件の取得、更新、取り消し）、
 支払い方法（`/api/v1/salons/{salonId}/payment-methods` の一覧、作成、1 件の取得、更新、削除）、
+売上の支払い（`/api/v1/sales/{id}/process` の記録と、`/api/v1/payments/{id}/refund` の返金）、
 認証のすべてのオペレーション（`/api/v1/auth` のログイン、トークンの更新、
 ログアウト、現在のユーザーの取得、ユーザー登録、メールアドレスの確認、パスワードの再設定と変更、
 スタッフの招待の確認、受け入れ、参加、2 要素認証、セッションの一覧と無効化、および `/api/v1/admin/auth` の管理者の操作）、
@@ -123,11 +124,12 @@ curl http://localhost:3000/api/v1/salons      # サロン一覧（認証なし�
 アクセストークンが必要で、顧客のアカウントでは使えません（売上の取り消しは、`staff` も使えません）。
 支払い方法は、読むのに、`admin` か、そのサロンの `owner`・`manager`・`staff` のアクセストークンが必要で、
 設定（作成、更新、削除）は、`staff` にはできません。顧客のアカウントでは使えません。
+支払いの記録には、売上台帳と同じアクセストークンが必要で、返金は、`staff` にはできません。
 シードのアカウントでログインしてトークンを取得する手順と、ロールごとの権限は
 [認証と認可](./authentication.md) を、サービスカテゴリーとサービスの規則は
 [サービスメニュー](./service-menu.md) を、顧客台帳、顧客本人のプロフィール、好み設定の規則は
 [顧客台帳](./customers.md) を、スタッフ台帳の規則は [スタッフ台帳](./staff.md) を、予約台帳の規則は
-[予約台帳](./bookings.md) を、売上台帳の規則は [売上台帳](./sales.md) を、支払い方法の規則は
+[予約台帳](./bookings.md) を、売上台帳の規則は [売上台帳](./sales.md) を、支払い方法と支払いの規則は
 [支払い](./payments.md) を参照してください。
 
 ユーザー登録やパスワードの再設定で送られるメールは Mailpit（`http://localhost:8025`）に届きます。
@@ -274,6 +276,10 @@ Salon ドメインがリファレンス実装です。新しいドメインは�
 `backend/packages/api/src/routes/payment-method/`）が手本です。読む権限と設定する権限を、
 どちらもパスのサロンだけで判定し、更新は、行をロックしてから、2 つの項目を結ぶ規則を
 更新後の行で確かめます。これも同じ節に挙げてあり、規則は [支払い](./payments.md) にあります。
+レコードの下に行を書き、その行からレコードの値を数え直すデータは、売上の支払い
+（`backend/packages/domain/src/business-logic/payment/`、`backend/packages/api/src/routes/payment/`）が
+手本です。レコード（売上）の行をロックしてから下の行を読み、値を数え、行と値を 1 つのトランザクションで
+書きます。これも同じ節に挙げてあり、規則は [支払い](./payments.md#支払いの記録と返金) にあります。
 サロンの 1 つのレコードに属し、全体をまとめて置き換える行は、スタッフの勤務スケジュール
 （`backend/packages/domain/src/business-logic/staff-schedule/`、
 `backend/packages/api/src/routes/staff-schedule/`）が手本です。ルーターをレコードの下にマウントし、

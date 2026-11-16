@@ -11,7 +11,7 @@ import type { ModelsPaymentStatusType } from './modelsPaymentStatusType';
 import type { ModelsSaleId } from './modelsSaleId';
 
 /**
- * 決済取引レスポンス - payment_transactions テーブルの1行。売上に対する1回の支払いを表す。
+ * 決済取引レスポンス - payment_transactions テーブルの1行。売上に対して受け取った1回の支払いを表す。
  * 決済代行会社の応答(processorResponse)と構造の定まっていない metadata は返さない。
  * プロパティ名と null 許可は DB カラムと一致させている
  */
@@ -26,10 +26,10 @@ export interface ModelsPaymentResponse {
   transactionNumber: string;
   /** 支払金額 */
   amount: number;
-  /** 決済の状態 */
+  /** 決済の状態。completed は受け取った、refunded は全額を返金した、partial_refund は一部を返金した状態。API が記録する決済取引は、この3つのどれか */
   status: ModelsPaymentStatusType;
   /**
-     * 決済代行会社の取引 ID。現金など決済代行会社を介さない支払いの場合、または決済代行会社が受け付けなかった場合はnull
+     * 決済代行会社の取引 ID。決済代行会社とは接続していないので、API が記録した決済取引ではnull
      * @nullable
      */
   processorTransactionId: string | null;
@@ -54,7 +54,7 @@ export interface ModelsPaymentResponse {
      */
   errorMessage: string | null;
   /**
-     * 決済が完了した日時。完了していない場合はnull
+     * 支払いを受け取ったものとして記録した日時。受け取っていない決済取引の場合はnull
      * @nullable
      */
   processedAt: string | null;

@@ -9,12 +9,14 @@
 /**
  * 支払いステータス区分 - 決済取引(payment_transactions.status)と売上(sales.paymentStatus)の支払いの進行状態を表す区分
  *
- * pending: 支払い待ち - 支払いが開始されたがまだ完了していない状態
- * processing: 処理中 - 決済処理が進行中の状態
- * completed: 完了 - 支払いが正常に完了した状態
+ * pending: 支払い待ち - 売上では、何も受け取っていない状態
+ * processing: 処理中 - 売上では、合計金額の一部を受け取った状態
+ * completed: 完了 - 決済取引では、支払いを受け取った状態。売上では、合計金額を受け取った状態
  * failed: 失敗 - 支払い処理が失敗した状態
- * refunded: 返金済み - 全額返金が完了した状態
- * partial_refund: 部分返金 - 一部金額の返金が完了した状態
+ * refunded: 返金済み - 決済取引では、全額を返金した状態。売上では、受け取った全額を返金した状態
+ * partial_refund: 部分返金 - 決済取引では、一部を返金した状態。売上では、受け取った金額の一部を返金した状態
+ *
+ * API が決済取引に書くのは completed・refunded・partial_refund だけで、売上に failed は書かない
  */
 export type ModelsPaymentStatusType = typeof ModelsPaymentStatusType[keyof typeof ModelsPaymentStatusType];
 

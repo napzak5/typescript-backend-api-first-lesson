@@ -95,7 +95,7 @@ export const getPaymentCrudRefundUrl = (id: ModelsPaymentId,) => {
 }
 
 /**
- * 決済取引を返金します。返金できるのは status が completed の決済取引だけで、それ以外(返金済みを含む)は409を返します。1つの決済取引に対する返金は1回だけです。refundAmount が amount を超える場合は400を返します。返金後の決済取引の status は全額返金なら refunded、部分返金なら partial_refund になり、売上の paymentStatus も同じように更新されます。
+ * 決済取引を返金します。管理者と、決済取引の売上のサロンのオーナー・マネージャーが実行できます。返金できるのは status が completed の決済取引だけで、それ以外(返金済みを含む)は409を返します。1つの決済取引に対する返金は1回だけです。refundAmount が amount を超える場合は400を返します。返金後の決済取引の status は全額返金なら refunded、部分返金なら partial_refund になります。売上の paymentStatus は、受け取った全額を返金していれば refunded に、そうでなければ partial_refund になります。決済取引が存在しない場合と、ほかのサロンの売上のものである場合は404を返します。
  * @summary Refund a payment
  */
 export const paymentCrudRefund = async (id: ModelsPaymentId,
@@ -163,7 +163,7 @@ const {mutation: mutationOptions} = options ?
     export type PaymentCrudRefundMutationVariables = {id: ModelsPaymentId;data: ModelsPaymentRefundRequest}
 
     /**
- * 決済取引を返金します。返金できるのは status が completed の決済取引だけで、それ以外(返金済みを含む)は409を返します。1つの決済取引に対する返金は1回だけです。refundAmount が amount を超える場合は400を返します。返金後の決済取引の status は全額返金なら refunded、部分返金なら partial_refund になり、売上の paymentStatus も同じように更新されます。
+ * 決済取引を返金します。管理者と、決済取引の売上のサロンのオーナー・マネージャーが実行できます。返金できるのは status が completed の決済取引だけで、それ以外(返金済みを含む)は409を返します。1つの決済取引に対する返金は1回だけです。refundAmount が amount を超える場合は400を返します。返金後の決済取引の status は全額返金なら refunded、部分返金なら partial_refund になります。売上の paymentStatus は、受け取った全額を返金していれば refunded に、そうでなければ partial_refund になります。決済取引が存在しない場合と、ほかのサロンの売上のものである場合は404を返します。
  * @summary Refund a payment
  */
 export const usePaymentCrudRefund = <TError = ModelsProblemDetails,
