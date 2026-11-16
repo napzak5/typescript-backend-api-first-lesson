@@ -5,11 +5,12 @@ import { customerIdSchema } from '../models/customer'
 import {
   type ApiReviewCreateRequest,
   type ApiReviewSearchRequest,
+  type ApiReviewUpdateRequest,
   reviewIdSchema,
 } from '../models/review'
 import { salonIdSchema } from '../models/salon'
 import { staffIdSchema } from '../models/staff'
-import { nonBlankText, noRepeatedEntries } from './rules'
+import { atLeastOneProperty, nonBlankText, noRepeatedEntries } from './rules'
 
 /**
  * Validation of the requests of the reviews. The shapes are checked
@@ -19,7 +20,9 @@ import { nonBlankText, noRepeatedEntries } from './rules'
  *
  * Whose the booking is, which salon and which staff member it is of,
  * whether it was completed and whether it has a review already are looked
- * at where the review is written (`planReview`).
+ * at where the review is written (`planReview`); whose a review is and
+ * whether it names a staff member, where it is changed
+ * (`planReviewChange`).
  */
 
 /** A rating of a review: a whole number of stars, from 1 to 5. */
@@ -47,26 +50,44 @@ const staffRatingNeedsStaff = (
   }
 }
 
+/** What a customer says in a review, to write it or to change it. */
+const saidInReview = {
+  overallRating: rating,
+  serviceRating: rating.nullable(),
+  staffRating: rating.nullable(),
+  atmosphereRating: rating.nullable(),
+  cleanlinessRating: rating.nullable(),
+  valueRating: rating.nullable(),
+  title: nonBlankText.max(255).nullable(),
+  comment: nonBlankText.nullable(),
+  imageUrls: z.array(z.httpUrl().max(500)).max(10).check(noRepeatedEntries),
+}
+
 export const reviewCreateRequestSchema = z
   .strictObject({
     salonId: salonIdSchema,
     customerId: customerIdSchema,
     bookingId: bookingIdSchema,
     staffId: staffIdSchema.nullable(),
-    overallRating: rating,
-    serviceRating: rating.nullable(),
-    staffRating: rating.nullable(),
-    atmosphereRating: rating.nullable(),
-    cleanlinessRating: rating.nullable(),
-    valueRating: rating.nullable(),
-    title: nonBlankText.max(255).nullable(),
-    comment: nonBlankText.nullable(),
-    imageUrls: z.array(z.httpUrl().max(500)).max(10).check(noRepeatedEntries),
+    ...saidInReview,
   })
   .check(staffRatingNeedsStaff) satisfies z.ZodType<ApiReviewCreateRequest>
 
 /** A review that passed the rules of its own. */
 export type ReviewCreateRequest = z.infer<typeof reviewCreateRequestSchema>
+
+/**
+ * A change of a review: what the request names, with the rules of a
+ * create. What a review is of (the salon, the customer, the booking and
+ * the staff member) is not changed.
+ */
+export const reviewUpdateRequestSchema = z
+  .strictObject(saidInReview)
+  .exactPartial()
+  .check(atLeastOneProperty) satisfies z.ZodType<ApiReviewUpdateRequest>
+
+/** A change of a review that passed the rules of its own. */
+export type ReviewUpdateRequest = z.infer<typeof reviewUpdateRequestSchema>
 
 export const reviewSearchRequestSchema = z
   .strictObject({

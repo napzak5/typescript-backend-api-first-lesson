@@ -2120,14 +2120,14 @@ export interface paths {
         post?: never;
         /**
          * Delete review
-         * @description レビューの削除要請に応じて投稿を除去し、コンプライアンスを維持します。削除後は一覧・取得・集計の対象外になります。
+         * @description レビューの削除要請に応じて投稿を除去し、コンプライアンスを維持します。削除できるのは、レビューを書いた顧客本人と admin だけで、サロンのメンバー、プロフィールのない顧客のアカウント、ほかの顧客のレビューには403を返します。レビューが存在しない場合と、削除したサロンのレビューの場合は404を返します。削除は物理削除で、削除後は一覧・取得・集計の対象外になり、サロンの rating と reviewCount を数え直します。予約は削除できるようになり、顧客は同じ予約にもう一度投稿できます。
          */
         delete: operations["ReviewCrud_delete"];
         options?: never;
         head?: never;
         /**
          * Update review
-         * @description 顧客が投稿後のレビューの指定した項目だけを修正し、誤記修正や追記を反映します。
+         * @description 顧客が投稿後のレビューの指定した項目だけを修正し、誤記修正や追記を反映します。修正できるのは、レビューを書いた顧客本人(ロール customer で顧客のプロフィールがあるアカウント)だけで、admin とサロンのメンバー、プロフィールのない顧客のアカウント、ほかの顧客のレビューには403を返します。空の本文と、staffId が null のレビューに staffRating を指定した場合は400を、レビューが存在しない場合と、削除したサロンのレビューの場合は404を返します。overallRating が変わると、サロンの rating を、そのサロンのレビューから数え直します。
          */
         patch: operations["ReviewCrud_update"];
         trace?: never;
@@ -7281,7 +7281,7 @@ export interface components {
             serviceRating?: number | null;
             /**
              * Format: int32
-             * @description 更新後のスタッフ評価 (1〜5)。nullでクリア
+             * @description 更新後のスタッフ評価 (1〜5)。nullでクリア。staffId が null のレビューには null 以外を指定できない
              */
             staffRating?: number | null;
             /**

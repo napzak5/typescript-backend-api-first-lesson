@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   reviewCreateRequestSchema,
   reviewSearchRequestSchema,
+  reviewUpdateRequestSchema,
 } from '../schemas/review.schema'
 import { parseWith } from '../shared'
 import { CUSTOMER_ID } from './auth-fixtures'
@@ -295,6 +296,179 @@ describe('reviewCreateRequestSchema', () => {
       'title:invalid_format',
       'imageUrls.0:invalid_format',
       'staffRating:custom',
+    ])
+  })
+})
+
+describe('reviewUpdateRequestSchema', () => {
+  /** One value of each property a change may name, each one valid. */
+  const CHANGES: [string, unknown][] = [
+    ['overallRating', 2],
+    ['serviceRating', null],
+    ['staffRating', 1],
+    ['atmosphereRating', 5],
+    ['cleanlinessRating', 3],
+    ['valueRating', null],
+    ['title', null],
+    ['comment', '二度目の来店で、印象が変わりました。'],
+    ['imageUrls', []],
+  ]
+
+  it.each(CHANGES)(
+    'accepts a change of %s alone and returns it unchanged',
+    (key, value) => {
+      expect(
+        parseWith(reviewUpdateRequestSchema, { [key]: value }, 'Invalid'),
+      ).toEqual({ type: 'success', data: { [key]: value } })
+    },
+  )
+
+  it('accepts a change of every property at once', () => {
+    const change = Object.fromEntries(CHANGES)
+
+    expect(parseWith(reviewUpdateRequestSchema, change, 'Invalid')).toEqual({
+      type: 'success',
+      data: change,
+    })
+  })
+
+  it('refuses a change that names nothing', () => {
+    expect(rulesBrokenBy(reviewUpdateRequestSchema, {})).toEqual([':custom'])
+    expect(messagesOf(reviewUpdateRequestSchema, {})).toEqual({
+      '': 'At least one property must be specified',
+    })
+  })
+
+  it.each(CHANGES.map(([key]) => key))(
+    'refuses %s stated without a value',
+    (key) => {
+      expect(
+        rulesBrokenBy(reviewUpdateRequestSchema, { [key]: undefined }),
+      ).toEqual([`${key}:invalid_type`])
+    },
+  )
+
+  it.each([
+    'salonId',
+    'customerId',
+    'bookingId',
+    'staffId',
+    'isVerified',
+    'helpfulCount',
+    'reportCount',
+    'ownerResponse',
+  ])('refuses %s, which a change does not write', (key) => {
+    expect(
+      rulesBrokenBy(reviewUpdateRequestSchema, {
+        title: 'タイトル',
+        [key]: null,
+      }),
+    ).toEqual([`${key}:unrecognized_keys`])
+  })
+
+  it.each(RATINGS)('takes %s from 1 to 5 stars', (key) => {
+    for (const stars of [1, 2, 3, 4, 5]) {
+      expect(
+        rulesBrokenBy(reviewUpdateRequestSchema, { [key]: stars }),
+      ).toEqual([])
+    }
+    expect(rulesBrokenBy(reviewUpdateRequestSchema, { [key]: 0 })).toEqual([
+      `${key}:too_small`,
+    ])
+    expect(rulesBrokenBy(reviewUpdateRequestSchema, { [key]: 6 })).toEqual([
+      `${key}:too_big`,
+    ])
+    expect(rulesBrokenBy(reviewUpdateRequestSchema, { [key]: 4.5 })).toEqual([
+      `${key}:invalid_type`,
+    ])
+  })
+
+  it('refuses an overall rating of null, and takes the other ratings as null', () => {
+    expect(
+      rulesBrokenBy(reviewUpdateRequestSchema, { overallRating: null }),
+    ).toEqual(['overallRating:invalid_type'])
+    for (const key of RATINGS.filter((name) => name !== 'overallRating')) {
+      expect(rulesBrokenBy(reviewUpdateRequestSchema, { [key]: null })).toEqual(
+        [],
+      )
+    }
+  })
+
+  it('takes a title of up to 255 characters, and refuses a blank title or comment', () => {
+    expect(
+      rulesBrokenBy(reviewUpdateRequestSchema, { title: 'あ'.repeat(255) }),
+    ).toEqual([])
+    expect(
+      rulesBrokenBy(reviewUpdateRequestSchema, { title: 'あ'.repeat(256) }),
+    ).toEqual(['title:too_big'])
+    expect(
+      rulesBrokenBy(reviewUpdateRequestSchema, { title: ' ', comment: '　' }),
+    ).toEqual(['title:invalid_format', 'comment:invalid_format'])
+  })
+
+  it('takes a long comment', () => {
+    expect(
+      rulesBrokenBy(reviewUpdateRequestSchema, {
+        comment: 'とても良かった。'.repeat(1000),
+      }),
+    ).toEqual([])
+  })
+
+  it('takes up to 10 images of http or https of up to 500 characters, none twice', () => {
+    const urls = Array.from(
+      { length: 11 },
+      (_, index) => `https://images.example.com/${index}.jpg`,
+    )
+
+    expect(
+      rulesBrokenBy(reviewUpdateRequestSchema, {
+        imageUrls: [...urls.slice(0, 9), urlOfLength(500)],
+      }),
+    ).toEqual([])
+    expect(
+      rulesBrokenBy(reviewUpdateRequestSchema, { imageUrls: urls }),
+    ).toEqual(['imageUrls:too_big'])
+    expect(
+      rulesBrokenBy(reviewUpdateRequestSchema, {
+        imageUrls: [
+          urlOfLength(501),
+          'ftp://images.example.com/a.jpg',
+          urls[0],
+          urls[0],
+        ],
+      }),
+    ).toEqual([
+      'imageUrls.0:too_big',
+      'imageUrls.1:invalid_format',
+      'imageUrls.3:custom',
+    ])
+  })
+
+  it('refuses images that are null, which is an empty list', () => {
+    expect(
+      rulesBrokenBy(reviewUpdateRequestSchema, { imageUrls: null }),
+    ).toEqual(['imageUrls:invalid_type'])
+  })
+
+  it('takes a staff rating, which is checked against the review it changes', () => {
+    expect(
+      rulesBrokenBy(reviewUpdateRequestSchema, { staffRating: 3 }),
+    ).toEqual([])
+  })
+
+  it('reports every broken rule at once', () => {
+    expect(
+      rulesBrokenBy(reviewUpdateRequestSchema, {
+        overallRating: 0,
+        title: '',
+        imageUrls: ['images.example.com/a.jpg'],
+        staffId: null,
+      }),
+    ).toEqual([
+      'overallRating:too_small',
+      'title:invalid_format',
+      'imageUrls.0:invalid_format',
+      'staffId:unrecognized_keys',
     ])
   })
 })

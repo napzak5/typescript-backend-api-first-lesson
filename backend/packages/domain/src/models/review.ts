@@ -20,6 +20,8 @@ export const parseReviewId = (id: unknown): Result<ReviewId, DomainError> =>
 export type ApiReviewResponse = components['schemas']['Models.ReviewResponse']
 export type ApiReviewCreateRequest =
   components['schemas']['Models.ReviewCreateRequest']
+export type ApiReviewUpdateRequest =
+  components['schemas']['Models.ReviewUpdateRequest']
 export type ApiReviewSearchRequest = NonNullable<
   operations['ReviewCrud_list']['parameters']['query']
 >

@@ -1,12 +1,20 @@
 import type { ReviewSortType } from '@beauty-salon-backend/generated'
 import type { Result } from '@beauty-salon-backend/utility'
+import type {
+  ReviewChangePlan,
+  ReviewRemovalPlan,
+  ReviewRemover,
+} from '../business-logic/review/_shared/change'
 import type { ReviewPlan } from '../business-logic/review/_shared/plan'
 import type { BookingId } from '../models/booking'
 import type { CustomerId } from '../models/customer'
 import type { DbReview, ReviewId, ReviewTally } from '../models/review'
 import type { SalonId } from '../models/salon'
 import type { StaffId } from '../models/staff'
-import type { ReviewCreateRequest } from '../schemas/review.schema'
+import type {
+  ReviewCreateRequest,
+  ReviewUpdateRequest,
+} from '../schemas/review.schema'
 import type { DomainError } from '../shared'
 
 /**
@@ -46,10 +54,28 @@ export type ReviewCreation =
   | Exclude<ReviewPlan, { type: 'planned' }>
 
 /**
+ * What became of a change of a review:
+ * - `updated`: the review as it is stored
+ * - otherwise why it was not planned (`planReviewChange`)
+ */
+export type ReviewChange =
+  | { type: 'updated'; review: DbReview }
+  | Exclude<ReviewChangePlan, { type: 'planned' }>
+
+/**
+ * What became of a removal of a review:
+ * - `deleted`: the review is gone
+ * - otherwise why it was not planned (`planReviewRemoval`)
+ */
+export type ReviewRemoval =
+  | { type: 'deleted' }
+  | Exclude<ReviewRemovalPlan, { type: 'planned' }>
+
+/**
  * Persistence of the reviews. The rating and the review count of a salon
- * are those of its reviews: a review is written in the same transaction as
- * the salon is counted again, with the salon held, so the reviews of one
- * salon are written one after the other.
+ * are those of its reviews: a review is written, changed or removed in the
+ * same transaction as the salon is counted again, with the salon held, so
+ * the reviews of one salon are written one after the other.
  */
 export interface IReviewRepository {
   /** Null when the cursor names no review that is listed. */
@@ -65,6 +91,19 @@ export interface IReviewRepository {
     customerId: CustomerId,
     request: ReviewCreateRequest,
   ): Promise<Result<ReviewCreation, DomainError>>
+
+  /** Changes a review of the customer, as `planReviewChange` plans it. */
+  update(
+    id: ReviewId,
+    customerId: CustomerId,
+    request: ReviewUpdateRequest,
+  ): Promise<Result<ReviewChange, DomainError>>
+
+  /** Removes a review, as `planReviewRemoval` plans it. */
+  delete(
+    id: ReviewId,
+    remover: ReviewRemover,
+  ): Promise<Result<ReviewRemoval, DomainError>>
 
   /** What the reviews of a salon come to; null for no salon or a deleted one. */
   salonTally(salonId: SalonId): Promise<Result<ReviewTally | null, DomainError>>
