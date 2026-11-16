@@ -12,6 +12,7 @@ import {
   CustomerRepository,
   type Database,
   type Logger,
+  PaymentMethodRepository,
   RandomBookingNumberIssuer,
   RandomSaleNumberIssuer,
   RandomTokenIssuer,
@@ -49,6 +50,7 @@ import {
   createCustomerPreferencesRouter,
   createOwnCustomerPreferencesRouter,
 } from './routes/customer-preferences'
+import { createPaymentMethodRouter } from './routes/payment-method'
 import { createSaleRouter } from './routes/sale'
 import { createSalonRouter } from './routes/salon'
 import { createServiceRouter } from './routes/service'
@@ -166,6 +168,16 @@ export const createApp = ({
     createServiceCategoryRouter(
       {
         serviceCategoryRepository: new ServiceCategoryRepository(database),
+        salonRepository,
+      },
+      authenticated,
+    ),
+  )
+  app.use(
+    `${API_BASE_PATH}/salons/:salonId/payment-methods`,
+    createPaymentMethodRouter(
+      {
+        paymentMethodRepository: new PaymentMethodRepository(database),
         salonRepository,
       },
       authenticated,
