@@ -1,24 +1,5 @@
-/**
- * The symbols of Crockford's Base32: the digits and the capital letters
- * without I, L, O and U, which are mistaken for 1 and 0 when a number is
- * read out or typed.
- */
-const SYMBOLS = '0123456789ABCDEFGHJKMNPQRSTVWXYZ'
+import { recordNumberFrom } from '../../_shared/record-number'
 
-const GROUPS = 2
-const SYMBOLS_OF_A_GROUP = 4
-
-/**
- * A booking number, `BK-XXXX-XXXX`, from whoever picks its symbols: `pick`
- * is asked eight times for one of `count` symbols and answers with an
- * integer from 0 up to `count`, which is not one of them.
- */
+/** A booking number, `BK-XXXX-XXXX`, from whoever picks its symbols. */
 export const bookingNumberFrom = (pick: (count: number) => number): string =>
-  [
-    'BK',
-    ...Array.from({ length: GROUPS }, () =>
-      Array.from({ length: SYMBOLS_OF_A_GROUP }, () =>
-        SYMBOLS.charAt(pick(SYMBOLS.length)),
-      ).join(''),
-    ),
-  ].join('-')
+  recordNumberFrom('BK', pick)

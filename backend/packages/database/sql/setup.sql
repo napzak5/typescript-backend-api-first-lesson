@@ -447,8 +447,8 @@ CREATE TABLE "sales" (
 	"discountAmount" integer DEFAULT 0 NOT NULL,
 	"taxAmount" integer NOT NULL,
 	"totalAmount" integer NOT NULL,
-	"pointsUsed" integer DEFAULT 0,
-	"pointsEarned" integer DEFAULT 0,
+	"pointsUsed" integer,
+	"pointsEarned" integer,
 	"paymentStatus" "payment_status" DEFAULT 'pending' NOT NULL,
 	"isVoid" boolean DEFAULT false NOT NULL,
 	"voidedAt" timestamp with time zone,
@@ -456,7 +456,13 @@ CREATE TABLE "sales" (
 	"notes" text,
 	"createdAt" timestamp with time zone DEFAULT now() NOT NULL,
 	"updatedAt" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "sales_sale_number_unique" UNIQUE("saleNumber")
+	CONSTRAINT "sales_sale_number_unique" UNIQUE("saleNumber"),
+	CONSTRAINT "sales_amounts_not_negative" CHECK ((subtotal >= 0) AND ("discountAmount" >= 0) AND ("taxAmount" >= 0) AND ("totalAmount" >= 0) AND (("pointsUsed" IS NULL) OR ("pointsUsed" >= 0)) AND (("pointsEarned" IS NULL) OR ("pointsEarned" >= 0))),
+	CONSTRAINT "sales_discount_within_subtotal" CHECK ("discountAmount" <= subtotal),
+	CONSTRAINT "sales_points_need_customer" CHECK (("customerId" IS NOT NULL) OR (("pointsUsed" IS NULL) AND ("pointsEarned" IS NULL))),
+	CONSTRAINT "sales_total_is_the_sum" CHECK ("totalAmount" = ((subtotal - "discountAmount") + "taxAmount")),
+	CONSTRAINT "sales_void_has_time" CHECK ("isVoid" = ("voidedAt" IS NOT NULL)),
+	CONSTRAINT "sales_void_reason_of_void" CHECK (("voidReason" IS NULL) OR "isVoid")
 );
 
 CREATE TABLE "sales_details" (
@@ -475,7 +481,15 @@ CREATE TABLE "sales_details" (
 	"commissionAmount" integer,
 	"notes" text,
 	"sortOrder" integer DEFAULT 0 NOT NULL,
-	"createdAt" timestamp with time zone DEFAULT now() NOT NULL
+	"createdAt" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "sales_details_order_unique" UNIQUE("saleId","sortOrder"),
+	CONSTRAINT "sales_details_amounts_not_negative" CHECK (("unitPrice" >= 0) AND ("discountAmount" >= 0) AND ("taxAmount" >= 0) AND ("totalAmount" >= 0) AND (("commissionAmount" IS NULL) OR ("commissionAmount" >= 0))),
+	CONSTRAINT "sales_details_commission_rate_is_a_percentage" CHECK (("commissionRate" IS NULL) OR (("commissionRate" >= (0)::numeric) AND ("commissionRate" <= (100)::numeric))),
+	CONSTRAINT "sales_details_discount_within_price" CHECK ("discountAmount" <= ((quantity)::bigint * "unitPrice")),
+	CONSTRAINT "sales_details_item_of_a_known_type" CHECK (("itemId" IS NULL) OR (("itemType")::text = ANY (ARRAY['service'::text, 'product'::text]))),
+	CONSTRAINT "sales_details_quantity_positive" CHECK (quantity >= 1),
+	CONSTRAINT "sales_details_sort_order_not_negative" CHECK ("sortOrder" >= 0),
+	CONSTRAINT "sales_details_total_is_the_sum" CHECK ("totalAmount" = ((((quantity)::bigint * "unitPrice") - "discountAmount") + "taxAmount"))
 );
 
 CREATE TABLE "salons" (
@@ -915,8 +929,9 @@ CREATE INDEX "idx_sales_booking_id" ON "sales" USING btree ("bookingId" uuid_ops
 CREATE INDEX "idx_sales_customer_id" ON "sales" USING btree ("customerId" uuid_ops);
 CREATE INDEX "idx_sales_sale_date" ON "sales" USING btree ("saleDate" date_ops);
 CREATE INDEX "idx_sales_sale_number" ON "sales" USING btree ("saleNumber" text_ops);
-CREATE INDEX "idx_sales_salon_id" ON "sales" USING btree ("salonId" uuid_ops);
+CREATE INDEX "idx_sales_salon_time" ON "sales" USING btree ("salonId" uuid_ops,"saleTime" timestamptz_ops,"id" uuid_ops);
 CREATE INDEX "idx_sales_staff_id" ON "sales" USING btree ("staffId" uuid_ops);
+CREATE UNIQUE INDEX "sales_booking_live_unique" ON "sales" USING btree ("bookingId" uuid_ops) WHERE (NOT "isVoid");
 CREATE INDEX "idx_sales_details_sale_id" ON "sales_details" USING btree ("saleId" uuid_ops);
 CREATE INDEX "idx_sales_details_staff_id" ON "sales_details" USING btree ("staffId" uuid_ops);
 CREATE INDEX "idx_salons_deleted_at" ON "salons" USING btree ("deletedAt" timestamptz_ops);

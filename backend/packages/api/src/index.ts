@@ -13,7 +13,9 @@ import {
   type Database,
   type Logger,
   RandomBookingNumberIssuer,
+  RandomSaleNumberIssuer,
   RandomTokenIssuer,
+  SaleRepository,
   SalonRepository,
   ServiceCategoryRepository,
   ServiceRepository,
@@ -47,6 +49,7 @@ import {
   createCustomerPreferencesRouter,
   createOwnCustomerPreferencesRouter,
 } from './routes/customer-preferences'
+import { createSaleRouter } from './routes/sale'
 import { createSalonRouter } from './routes/salon'
 import { createServiceRouter } from './routes/service'
 import { createServiceCategoryRouter } from './routes/service-category'
@@ -269,6 +272,16 @@ export const createApp = ({
   app.use(
     `${API_BASE_PATH}/bookings`,
     createBookingRouter(bookingDependencies, authenticated),
+  )
+  app.use(
+    `${API_BASE_PATH}/sales`,
+    createSaleRouter(
+      {
+        saleRepository: new SaleRepository(database),
+        saleNumberIssuer: new RandomSaleNumberIssuer(),
+      },
+      authenticated,
+    ),
   )
 
   app.use(notFoundHandler)

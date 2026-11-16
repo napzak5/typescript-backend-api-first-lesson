@@ -26,20 +26,20 @@ export interface ModelsSaleCreateRequest {
      */
   staffId: string | null;
   /**
-     * 売上のもとになる予約の ID。salonId のサロンの予約を指定する。予約のない来店の場合はnull
+     * 売上のもとになる予約の ID。salonId のサロンの、customerId の顧客の予約を指定する。1件の予約に対して、取り消していない売上は1件まで。予約のない来店の場合はnull
      * @nullable
      */
   bookingId: string | null;
   /** 会計日時 */
   saleTime: string;
   /**
-     * この会計で利用したポイント数。記録しない場合はnull
+     * この会計で利用したポイント数。記録しない場合はnull。customerId がnullの場合はnull
      * @minimum 0
      * @nullable
      */
   pointsUsed: number | null;
   /**
-     * この会計で付与したポイント数。記録しない場合はnull
+     * この会計で付与したポイント数。記録しない場合はnull。customerId がnullの場合はnull
      * @minimum 0
      * @nullable
      */

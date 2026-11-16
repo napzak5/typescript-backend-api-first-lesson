@@ -314,7 +314,10 @@ cursor that names no staff member is answered with 400. The booking list is
 ordered by the time a booking begins, earliest first, and then by ID; a
 booking is not soft-deleted, and its cursor has to name a booking the reader
 reaches: one of another salon is answered with 400 like an ID that names
-none ([bookings.md](./bookings.md), Japanese). The schedule of a
+none ([bookings.md](./bookings.md), Japanese). The sale list is ordered
+the other way, by the time of the sale, latest first, and then by ID
+downwards; its cursor is held to the same rule
+([sales.md](./sales.md), Japanese). The schedule of a
 staff member is the one list without pages: it has at most 373 entries, the
 contract says so (`@maxItems`), and the response is `{ data, meta, links }`
 with the whole schedule in `data` and no pagination metadata
