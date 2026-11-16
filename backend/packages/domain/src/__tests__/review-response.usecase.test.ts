@@ -165,7 +165,9 @@ describe('RespondToReviewUseCase', () => {
     for (const actor of [actors.ofSalon('owner'), actors.admin]) {
       const dependencies = reviewDependencies()
 
-      const responded = await respond(dependencies, actor, 'latest', response)
+      const responded = await respond(dependencies, actor, 'latest', {
+        broken: true,
+      })
 
       expect(rulesOf(responded)).toEqual(['id:invalid_format'])
       expect(validationMessageOf(responded)).toBe('Invalid review ID')

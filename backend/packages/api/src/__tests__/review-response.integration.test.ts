@@ -82,10 +82,10 @@ const at = (time: string): string => `2026-11-20T${time}:00Z`
 const RESPONSE =
   'ご来店ありがとうございました。またのお越しをお待ちしております。'
 
-/** A response the salon wrote earlier, at a time of its own. */
+/** A response the salon wrote earlier, at a time before any run of the tests. */
 const EARLIER = {
   ownerResponse: 'ご来店ありがとうございました。',
-  ownerRespondedAt: '2026-11-17T03:00:00.000Z',
+  ownerRespondedAt: '2026-01-15T03:00:00.000Z',
 }
 const EARLIER_AT = Date.parse(EARLIER.ownerRespondedAt)
 
@@ -693,17 +693,34 @@ describe('Review response API', () => {
   })
 
   describe('requests at the same time', () => {
-    it('writes the responses of the owner and a manager one after the other: each gets the review with its own, and the later one stays', async () => {
+    it('writes the responses of the owner and a manager that waited for the review one after the other: each gets the review with its own, and the later one stays', async () => {
       const id = await insertReview()
       const asManager = await signedInMember('manager')
       const fromOwner = 'オーナーより、ご来店ありがとうございました。'
       const fromManager = '店長より、ご来店ありがとうございました。'
 
-      const responses = await Promise.all([
-        respond(id, asOwner, { ownerResponse: fromOwner }),
-        respond(id, asManager, { ownerResponse: fromManager }),
-      ])
+      const { pending, answeredWhileHeld } = await db.transaction(
+        async (tx: Transaction) => {
+          // As a mark or a report that is under way holds it: both wait,
+          // and go on at the same moment.
+          await tx
+            .select({ id: reviews.id })
+            .from(reviews)
+            .where(eq(reviews.id, id))
+            .for('no key update')
+          const underWay = Promise.all([
+            respond(id, asOwner, { ownerResponse: fromOwner }),
+            respond(id, asManager, { ownerResponse: fromManager }),
+          ])
+          return {
+            pending: underWay,
+            answeredWhileHeld: await answersWithin(underWay, 300),
+          }
+        },
+      )
+      const responses = await pending
 
+      expect(answeredWhileHeld).toBe(false)
       expect(responses.map(statusAndCode)).toEqual(['200', '200'])
       expect(responses.map(({ body }) => body.data.ownerResponse)).toEqual([
         fromOwner,
