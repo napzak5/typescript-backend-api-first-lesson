@@ -28,6 +28,7 @@ The excerpts are copied from the file named above each of them and shortened whe
 - [Rows Below a Record That Its Value Is Counted From](#rows-below-a-record-that-its-value-is-counted-from-the-payments-of-a-sale)
 - [Figures Counted from the Rows of Other Domains](#figures-counted-from-the-rows-of-other-domains-the-sales-reports)
 - [Data That Belongs to No Salon](#data-that-belongs-to-no-salon)
+- [A Balance and the Ledger of Its Changes](#a-balance-and-the-ledger-of-its-changes-the-points)
 - [Error Handling](#error-handling)
 - [Implementation Checklist](#implementation-checklist)
 
@@ -1203,6 +1204,22 @@ The preferences of a customer are one record per customer in a table of their ow
 | 10. Handlers and router | Two routers with `GET /` and `PATCH /` each. The links are built from where the router is mounted: `self`, and `customer` one segment above | `backend/packages/api/src/routes/customer-preferences/` |
 | 11. Wiring | The two routers are mounted at their full paths before the customer router, `/customers/me/preferences` first: the router of `/customers/:id/preferences` would take `me` for an ID | `backend/packages/api/src/index.ts` |
 | 12. Tests | The integration test reads and changes the preferences of a customer without a row, sends two first changes at the same moment, sends a change that prefers a staff member together with one that avoids the same staff member, and holds a transaction open on the row of the customer to show that a change waits for it and a read does not | `backend/packages/api/src/__tests__/customer-preferences.integration.test.ts`, `backend/packages/domain/src/__tests__/customer-preferences.usecase.test.ts` |
+
+### A Balance and the Ledger of Its Changes: the Points
+
+The points of a customer are a balance (`customers.loyaltyPoints`) and the ledger of its changes (`customer_points`): every movement writes a row with the balance after it and sets the balance to it, so the balance of a customer is that of their latest row. The ledger is one for the whole platform, as the customer ledger is, and five operations of `PointCrud` are implemented. It is the example of a value that no request writes directly and that is kept equal to the latest row of another table. Its rules are in [Points](./points.md) (Japanese). What it shows that the customer ledger does not:
+
+| Step | What the points show | Where to read it |
+|------|----------------------|------------------|
+| 1. API contract | The kind of record a transaction refers to became an enumeration (`PointReferenceType`: a sale or a booking). The three movements name the customer in the body, so a customer who is not there is a broken rule of the body (400), while the two reads name the customer in the path (404). The `@doc` of each operation says who may and what is refused with 400 and with 409 | `specs/operations/payment-operations.tsp` (`PointCrud`), `specs/models/payment.tsp` |
+| 3. Database schema | CHECK constraints say what a row of each type can be (the sign of `points`, an expiry date only on an earning, a reference as a kind and an ID together), the balance is not negative in either table, and a partial unique index allows one earning and one use per record. A data step of the migration opened the ledger: an adjustment for every customer whose balance was not that of their latest row | `backend/packages/database/sql/migrations/202611161000_customer_points_rules.sql` |
+| 5. Validation schemas | A rule between two properties is a `.check()` that pushes its issue with `continue: true` onto the property that is null; an adjustment takes `points` of either sign but 0 | `backend/packages/domain/src/schemas/point.schema.ts` |
+| 6. Mappers | No write mapper: `planPoints` makes the row. The read mapper checks the kind of record against the enumeration of the API | `backend/packages/domain/src/business-logic/point/_shared/plan.ts`, `backend/packages/domain/src/mappers/read/point.mapper.ts` |
+| 7. Repository interface | `record` takes the movement and the reach and answers `PointRecording`: the row, a customer who is not there, or a refusal of the plan | `backend/packages/domain/src/repositories/point.repository.ts` |
+| 8. Repository implementation | One `READ COMMITTED` transaction holds the record `FOR SHARE` and then the customer `FOR NO KEY UPDATE`, which lets a row that refers to the customer be written past it; every statement after the lock sees what was committed before it, so a movement that waited counts from the balance it waited for. The row and `loyaltyPoints` are written at `clock_timestamp()`. The history is a keyset page on (`createdAt`, `id`) in one read-only `REPEATABLE READ` transaction | `backend/packages/infrastructure/src/repositories/point.repository.impl.ts` |
+| 9. Use cases | Two reaches (`pointReachOf`, `pointAdjustReachOf`) that answer a `LedgerReach`: every member of a salon reaches every customer, and the reach limits the records a movement may name. The three movements share one flow (`recordMovement`); the plan is a pure function of the balance, the record and whether it was taken; an expiry date is checked against the `clock` | `backend/packages/domain/src/business-logic/point/` |
+| 10. Handlers and router | A plain router at `/points`, as the contract puts it; every response links the balance and the history of the customer | `backend/packages/api/src/routes/point/` |
+| 12. Tests | The plan is tested as a pure function in the order of its checks. The integration test spends one balance six times at once, earns on one record five times at once, holds the customer, the sale and the booking while a movement waits for them, and lets a movement past the lock a foreign key takes. The migration test opens the ledger of customers with and without rows, two of them of one moment | `backend/packages/domain/src/__tests__/point.plan.test.ts`, `backend/packages/domain/src/__tests__/point.usecase.test.ts`, `backend/packages/api/src/__tests__/point.integration.test.ts`, `backend/packages/database/src/scripts/__tests__/migrations.integration.test.ts` |
 
 ## Error Handling
 

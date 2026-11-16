@@ -6,6 +6,7 @@
  * OpenAPI spec version: 2.0
  */
 import type { ModelsCustomerId } from './modelsCustomerId';
+import type { ModelsPointReferenceType } from './modelsPointReferenceType';
 
 /**
  * ポイント利用リクエスト - 種別 used のポイント取引を登録する。全項目のキーが必須。
@@ -15,23 +16,19 @@ export interface ModelsPointUseRequest {
   /** ポイントを利用する顧客の ID */
   customerId: ModelsCustomerId;
   /**
-     * 利用するポイント数。現在の残高以下
+     * 利用するポイント数。現在の残高以下。ポイント取引には負の値で記録する
      * @minimum 1
      */
   points: number;
   /**
-     * 利用の理由。未設定の場合はnull
+     * 利用の理由。空白だけの文字列は指定できない。未設定の場合はnull
      * @nullable
      */
   description: string | null;
+  /** 利用のもとになった記録の種類。referenceId と同時に指定する。参照する記録がない場合はnull */
+  referenceType: ModelsPointReferenceType | null;
   /**
-     * 利用のもとになった記録の種類(sale など)。referenceId と同時に指定する。参照する記録がない場合はnull
-     * @maxLength 50
-     * @nullable
-     */
-  referenceType: string | null;
-  /**
-     * 利用のもとになった記録の ID。referenceType と同時に指定する。参照する記録がない場合はnull
+     * 利用のもとになった記録の ID。referenceType と同時に指定する。その顧客の売上・予約で、取り消した売上と、ステータスが draft・cancelled・no_show の予約は指定できない。1 つの記録で利用できるのは1回。参照する記録がない場合はnull
      * @nullable
      */
   referenceId: string | null;

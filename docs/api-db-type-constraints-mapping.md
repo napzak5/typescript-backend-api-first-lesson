@@ -304,6 +304,19 @@ DB にも TypeSpec にも表せない規則（空白だけの文字列を拒否�
 
 1 つの売上の決済取引を合わせた規則（受け取った合計は合計金額以下。売上の `paymentStatus` は決済取引から決まる）は、行とテーブルをまたぐので、CHECK 制約では書けない。支払いの記録と返金のトランザクションが、売上の行をロックして保証する（[支払い](./payments.md#支払いの記録と返金)）。
 
+`customer_points` と、`customers.loyaltyPoints` の CHECK 制約は、ポイント取引の 1 行で確かめられる規則である（`backend/packages/database/sql/migrations/202611161000_customer_points_rules.sql`）。リクエストが書く値にかかるものは、スキーマが先に確かめ、違反は 400 になる。
+
+| CHECK 制約 | TypeSpec | 規則を確かめる場所 |
+|---|---|---|
+| `customers_loyalty_points_not_negative`（`loyaltyPoints >= 0`） | 残高のレスポンスの `@doc` に書く | リクエストからは書けない。`planPoints` が、0 未満になる取引を書かない（409） |
+| `customer_points_points_of_type`（`earned` は 1 以上、`used` と `expired` は −1 以下、`adjusted` と `transferred` は 0 以外） | 付与と利用の `points` に `@minValue(1)`。調整の 0 以外は `@doc` に書く | スキーマの `points`（付与と利用は 1 以上、調整は 0 以外の `refine`）。利用は、`planPoints` が負の数にして書く |
+| `customer_points_balance_not_negative`（`balance >= 0`） | レスポンスの `@doc` に書く | リクエストからは書けない。`planPoints` が、0 未満になる取引を書かない（409） |
+| `customer_points_expiry_of_earned`（有効期限は `earned` だけ） | 利用と調整のリクエストに `expiryDate` がない | スキーマ（利用と調整では `unrecognized_keys`）と、`planPoints`（付与だけが `expiryDate` を書く） |
+| `customer_points_reference_pair`（`referenceType` と `referenceId` は、両方あるか、両方 NULL） | 両方の `@doc` に書く | 3 つのリクエストの `.check()`（`referenceInPairs`） |
+| `customer_points_reference_type_known`（`referenceType` は `sale` か `booking`） | `PointReferenceType` | スキーマの `referenceType`（`PointReferenceTypeSchema`）と、読み出しマッパー |
+
+部分一意インデックス `customer_points_reference_unique`（1 つの記録への `earned` は 1 件、`used` も 1 件）は、`planPoints` が、顧客をロックしたあとに確かめる規則（409）の裏付けである。顧客の残高が最新の取引の `balance` と等しいことは、行とテーブルをまたぐので、CHECK 制約では書けない。ポイント取引を書くトランザクションが、顧客の行をロックして、取引と残高を一緒に書いて保証する（[ポイント台帳](./points.md#同時に届いたリクエスト)）。
+
 ## `pnpm check:api-db`
 
 生成済みの OpenAPI ドキュメント（`specs/tsp-output/@typespec/openapi3/generated/openapi.yaml`）と Drizzle スキーマ（`schema.ts`）を比べ、API モデルがテーブルと食い違っていれば失敗する。DB は使わない。CI の `quality` ジョブと `make ci-check` で実行される。

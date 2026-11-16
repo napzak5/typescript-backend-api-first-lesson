@@ -96,7 +96,7 @@
 | `allowMarketing` / `allowSms` / `allowEmail` / `isActive` | 真偽値 |
 | `hairType` / `hairThickness` / `scalpCondition` | null、またはそれぞれの Enum の値 |
 
-- **リクエストで変えられない項目**: `userId`（ログインアカウントとの紐づけ）、`loyaltyPoints`、`lifetimeValue`、`firstVisitDate`、`lastVisitDate`、`visitCount`、`noShowCount`、`cancellationCount`。本文に書くと 400（`unrecognized_keys`）です。`userId` は本人がプロフィールを作ったときに決まります。来店日と 3 つの回数は、予約のステータスの操作と削除が、顧客の予約から数えます（[予約から数える値](#予約から数える値)）。`loyaltyPoints` と `lifetimeValue` を更新するオペレーションは、まだありません。売上の作成、更新、取り消し（[売上台帳](./sales.md)）と、支払いの記録と返金（[支払い](./payments.md)）も、これらの値を変えません
+- **リクエストで変えられない項目**: `userId`（ログインアカウントとの紐づけ）、`loyaltyPoints`、`lifetimeValue`、`firstVisitDate`、`lastVisitDate`、`visitCount`、`noShowCount`、`cancellationCount`。本文に書くと 400（`unrecognized_keys`）です。`userId` は本人がプロフィールを作ったときに決まります。来店日と 3 つの回数は、予約のステータスの操作と削除が、顧客の予約から数えます（[予約から数える値](#予約から数える値)）。`loyaltyPoints` は、ポイント台帳の付与、利用、調整が書きます（[ポイント台帳](./points.md)）。`lifetimeValue` を更新するオペレーションは、まだありません。売上の作成、更新、取り消し（[売上台帳](./sales.md)）と、支払いの記録と返金（[支払い](./payments.md)）は、どちらの値も変えません
 - **生年月日の「未来」**: 日付にはタイムゾーンがありません。日本時間の今日は、UTC ではまだ前日のことがあるので、UTC の今日の翌日までを受け付けます（`business-logic/customer/_shared/rules.ts` の `customerRuleIssues`。現在時刻は依存の `clock` から受け取る）
 - **メールアドレスと紹介コードの一意性は範囲が違います**。削除した顧客のメールアドレスは、別の顧客の登録に使えます（同じ人がもう一度登録できる）。紹介コードは、人に配ったあとも出回るので、顧客を削除しても別の顧客には使い回しません
 - **紹介元**（`referredBy`）は、登録した時点の事実として保存します。紹介元の顧客があとで削除されても、値は残ります。2 人が互いを紹介元にするような循環は確認しません

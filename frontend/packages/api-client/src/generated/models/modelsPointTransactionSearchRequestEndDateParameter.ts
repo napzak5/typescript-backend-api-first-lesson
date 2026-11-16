@@ -7,6 +7,6 @@
  */
 
 /**
- * 取引の発生日時(createdAt)の上限。この日時以前の取引に一致する
+ * 取引の発生日時(createdAt)の上限。この日時以前の取引に一致する。startDate より前の日時は指定できない
  */
 export type ModelsPointTransactionSearchRequestEndDateParameter = string;

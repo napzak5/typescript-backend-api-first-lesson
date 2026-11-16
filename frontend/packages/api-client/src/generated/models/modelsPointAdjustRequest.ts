@@ -6,6 +6,7 @@
  * OpenAPI spec version: 2.0
  */
 import type { ModelsCustomerId } from './modelsCustomerId';
+import type { ModelsPointReferenceType } from './modelsPointReferenceType';
 
 /**
  * ポイント調整リクエスト - 種別 adjusted のポイント取引を登録する。全項目のキーが必須。
@@ -14,21 +15,17 @@ import type { ModelsCustomerId } from './modelsCustomerId';
 export interface ModelsPointAdjustRequest {
   /** ポイントを調整する顧客の ID */
   customerId: ModelsCustomerId;
-  /** 調整するポイント数。増やす場合は正、減らす場合は負の値で、0 は指定できない。調整後の残高が負になる値は指定できない */
+  /** 調整するポイント数。増やす場合は正、減らす場合は負の値で、0 は指定できない。調整後の残高が負になる値と、2,147,483,647 を超える値は指定できない */
   points: number;
   /**
-     * 調整の理由。未設定の場合はnull
+     * 調整の理由。空白だけの文字列は指定できない。未設定の場合はnull
      * @nullable
      */
   description: string | null;
+  /** 調整のもとになった記録の種類。referenceId と同時に指定する。参照する記録がない場合はnull */
+  referenceType: ModelsPointReferenceType | null;
   /**
-     * 調整のもとになった記録の種類(sale、booking など)。referenceId と同時に指定する。参照する記録がない場合はnull
-     * @maxLength 50
-     * @nullable
-     */
-  referenceType: string | null;
-  /**
-     * 調整のもとになった記録の ID。referenceType と同時に指定する。参照する記録がない場合はnull
+     * 調整のもとになった記録の ID。referenceType と同時に指定する。その顧客の売上・予約で、取り消した売上やキャンセルした予約も指定できる。参照する記録がない場合はnull
      * @nullable
      */
   referenceId: string | null;
