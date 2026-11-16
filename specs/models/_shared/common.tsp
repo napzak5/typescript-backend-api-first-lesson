@@ -316,17 +316,6 @@ namespace BeautySalon.Models {
     taxRate: decimal | null;
   }
 
-  @doc("期間条件で絞り込むための共通クエリモデル。")
-  model DateRangeFilter {
-    @query
-    @doc("検索対象期間の開始日時。")
-    startDate?: utcDateTime;
-
-    @query
-    @doc("検索対象期間の終了日時。")
-    endDate?: utcDateTime;
-  }
-
   @doc("営業時間や休憩時間を表現する単一の時間帯スロット。")
   model TimeSlot {
     @doc("開始時刻（HH:mm形式、24時間表記）。")

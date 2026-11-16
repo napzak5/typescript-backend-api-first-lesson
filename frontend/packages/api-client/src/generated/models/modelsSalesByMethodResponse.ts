@@ -8,15 +8,15 @@
 import type { ModelsPaymentMethodType } from './modelsPaymentMethodType';
 
 /**
- * 支払い方法別の売上集計行
+ * 支払い方法の区分ごとの入金 - 売上の決済取引のうち、受け取ったもの(status が completed・partial_refund・refunded)を、支払い方法の区分ごとに合わせる
  */
 export interface ModelsSalesByMethodResponse {
   /** 支払い方法区分 */
   method: ModelsPaymentMethodType;
-  /** 売上金額 */
+  /** 決済取引の金額(amount)から返金額(refundAmount)を引いた額の合計 */
   amount: number;
-  /** 取引件数 */
+  /** 決済取引の件数 */
   count: number;
-  /** 総売上に対する構成比率(%) */
+  /** 内訳のすべての行の amount の合計に対する割合(%)。小数第1位に丸める。合計が0なら0 */
   percentage: number;
 }

@@ -7,6 +7,6 @@
  */
 
 /**
- * 検索対象期間の終了日時。
+ * 期間の最初の売上日(saleDate)
  */
-export type ModelsDateRangeFilterEndDateParameter = string;
+export type ModelsSalesReportGetRequestStartDateParameter = string;

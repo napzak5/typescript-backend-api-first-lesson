@@ -8,22 +8,17 @@
 import type { ModelsStaffId } from './modelsStaffId';
 
 /**
- * スタッフ別の売上パフォーマンス指標
+ * スタッフ別の売上 - 売上の明細を、明細の担当スタッフ(staffId)ごとに合わせる。明細に担当スタッフがなければ、売上の担当スタッフの明細として数え、どちらもない明細は数えない。削除したスタッフも載る
  */
 export interface ModelsSalesByStaffResponse {
   /** スタッフ ID */
   staffId: ModelsStaffId;
-  /** スタッフ名 */
-  staffName: string;
-  /** 担当した売上金額 */
+  /** スタッフの表示名(staff.displayName のいまの値) */
+  displayName: string;
+  /** 担当した明細の合計金額(totalAmount)の合計 */
   totalSales: number;
-  /** 提供したサービス件数 */
+  /** 担当した、itemType が service の明細の数量(quantity)の合計 */
   serviceCount: number;
-  /** 平均サービス単価 */
+  /** 担当した service の明細の合計金額の合計を serviceCount で割った額(1円未満を切り捨て)。service の明細がなければ0 */
   averageServiceValue: number;
-  /**
-     * 顧客満足度評価。評価データがない場合はnull
-     * @nullable
-     */
-  customerSatisfaction: number | null;
 }

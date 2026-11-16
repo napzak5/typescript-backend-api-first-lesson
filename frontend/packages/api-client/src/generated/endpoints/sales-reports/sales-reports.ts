@@ -115,7 +115,7 @@ export const getSalesReportCrudGetUrl = (params: SalesReportCrudGetParams,) => {
 }
 
 /**
- * 期間内の売上を集計したレポートを取得します。
+ * サロンの、取り消していない売上のうち、売上日が期間内のものを集計します。支払いが済んでいない売上も数え、返金は返金した決済取引の売上の売上日の側で数えます。endDate が startDate より前の場合と、期間が366日を超える場合は400を返します。
  * @summary Get a sales report
  */
 export const salesReportCrudGet = async (params: SalesReportCrudGetParams, options?: RequestInit): Promise<salesReportCrudGetResponse> => {
@@ -163,7 +163,7 @@ export type SalesReportCrudGetQueryError = ModelsProblemDetails
 
 
 /**
- * 期間内の売上を集計したレポートを取得します。
+ * サロンの、取り消していない売上のうち、売上日が期間内のものを集計します。支払いが済んでいない売上も数え、返金は返金した決済取引の売上の売上日の側で数えます。endDate が startDate より前の場合と、期間が366日を超える場合は400を返します。
  * @summary Get a sales report
  */
 export function useSalesReportCrudGet<TData = Awaited<ReturnType<typeof salesReportCrudGet>>, TError = ModelsProblemDetails>(
@@ -177,7 +177,7 @@ export function useSalesReportCrudGet<TData = Awaited<ReturnType<typeof salesRep
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 期間内の売上を集計したレポートを取得します。
+ * サロンの、取り消していない売上のうち、売上日が期間内のものを集計します。支払いが済んでいない売上も数え、返金は返金した決済取引の売上の売上日の側で数えます。endDate が startDate より前の場合と、期間が366日を超える場合は400を返します。
  * @summary Get a sales report
  */
 export function useSalesReportCrudGet<TData = Awaited<ReturnType<typeof salesReportCrudGet>>, TError = ModelsProblemDetails>(
@@ -191,7 +191,7 @@ export function useSalesReportCrudGet<TData = Awaited<ReturnType<typeof salesRep
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 期間内の売上を集計したレポートを取得します。
+ * サロンの、取り消していない売上のうち、売上日が期間内のものを集計します。支払いが済んでいない売上も数え、返金は返金した決済取引の売上の売上日の側で数えます。endDate が startDate より前の場合と、期間が366日を超える場合は400を返します。
  * @summary Get a sales report
  */
 export function useSalesReportCrudGet<TData = Awaited<ReturnType<typeof salesReportCrudGet>>, TError = ModelsProblemDetails>(
@@ -199,7 +199,7 @@ export function useSalesReportCrudGet<TData = Awaited<ReturnType<typeof salesRep
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 期間内の売上を集計したレポートを取得します。
+ * サロンの、取り消していない売上のうち、売上日が期間内のものを集計します。支払いが済んでいない売上も数え、返金は返金した決済取引の売上の売上日の側で数えます。endDate が startDate より前の場合と、期間が366日を超える場合は400を返します。
  * @summary Get a sales report
  */
 export function useSalesReportCrudGet<TData = Awaited<ReturnType<typeof salesReportCrudGet>>, TError = ModelsProblemDetails>(
@@ -274,7 +274,7 @@ export const getSalesReportCrudGetByCategoryUrl = (params: SalesReportCrudGetByC
 }
 
 /**
- * 期間内の売上をサービスカテゴリ別に集計します。
+ * 期間内の売上のサービスの明細を、サービスのカテゴリーの区分別に集計します。金額の多い順(同じなら区分の名前の順)に、明細のある区分だけを返します。endDate が startDate より前の場合と、期間が366日を超える場合は400を返します。
  * @summary Get sales by service category
  */
 export const salesReportCrudGetByCategory = async (params: SalesReportCrudGetByCategoryParams, options?: RequestInit): Promise<salesReportCrudGetByCategoryResponse> => {
@@ -322,7 +322,7 @@ export type SalesReportCrudGetByCategoryQueryError = ModelsProblemDetails
 
 
 /**
- * 期間内の売上をサービスカテゴリ別に集計します。
+ * 期間内の売上のサービスの明細を、サービスのカテゴリーの区分別に集計します。金額の多い順(同じなら区分の名前の順)に、明細のある区分だけを返します。endDate が startDate より前の場合と、期間が366日を超える場合は400を返します。
  * @summary Get sales by service category
  */
 export function useSalesReportCrudGetByCategory<TData = Awaited<ReturnType<typeof salesReportCrudGetByCategory>>, TError = ModelsProblemDetails>(
@@ -336,7 +336,7 @@ export function useSalesReportCrudGetByCategory<TData = Awaited<ReturnType<typeo
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 期間内の売上をサービスカテゴリ別に集計します。
+ * 期間内の売上のサービスの明細を、サービスのカテゴリーの区分別に集計します。金額の多い順(同じなら区分の名前の順)に、明細のある区分だけを返します。endDate が startDate より前の場合と、期間が366日を超える場合は400を返します。
  * @summary Get sales by service category
  */
 export function useSalesReportCrudGetByCategory<TData = Awaited<ReturnType<typeof salesReportCrudGetByCategory>>, TError = ModelsProblemDetails>(
@@ -350,7 +350,7 @@ export function useSalesReportCrudGetByCategory<TData = Awaited<ReturnType<typeo
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 期間内の売上をサービスカテゴリ別に集計します。
+ * 期間内の売上のサービスの明細を、サービスのカテゴリーの区分別に集計します。金額の多い順(同じなら区分の名前の順)に、明細のある区分だけを返します。endDate が startDate より前の場合と、期間が366日を超える場合は400を返します。
  * @summary Get sales by service category
  */
 export function useSalesReportCrudGetByCategory<TData = Awaited<ReturnType<typeof salesReportCrudGetByCategory>>, TError = ModelsProblemDetails>(
@@ -358,7 +358,7 @@ export function useSalesReportCrudGetByCategory<TData = Awaited<ReturnType<typeo
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 期間内の売上をサービスカテゴリ別に集計します。
+ * 期間内の売上のサービスの明細を、サービスのカテゴリーの区分別に集計します。金額の多い順(同じなら区分の名前の順)に、明細のある区分だけを返します。endDate が startDate より前の場合と、期間が366日を超える場合は400を返します。
  * @summary Get sales by service category
  */
 export function useSalesReportCrudGetByCategory<TData = Awaited<ReturnType<typeof salesReportCrudGetByCategory>>, TError = ModelsProblemDetails>(
@@ -433,7 +433,7 @@ export const getSalesReportCrudGetByStaffUrl = (params: SalesReportCrudGetByStaf
 }
 
 /**
- * 期間内の売上をスタッフ別に集計します。
+ * 期間内の売上の明細を、担当スタッフ別に集計します。担当した明細の合計金額の多い順(同じならスタッフ ID の順)に、明細を担当したスタッフだけを返します。endDate が startDate より前の場合と、期間が366日を超える場合は400を返します。
  * @summary Get sales by staff
  */
 export const salesReportCrudGetByStaff = async (params: SalesReportCrudGetByStaffParams, options?: RequestInit): Promise<salesReportCrudGetByStaffResponse> => {
@@ -481,7 +481,7 @@ export type SalesReportCrudGetByStaffQueryError = ModelsProblemDetails
 
 
 /**
- * 期間内の売上をスタッフ別に集計します。
+ * 期間内の売上の明細を、担当スタッフ別に集計します。担当した明細の合計金額の多い順(同じならスタッフ ID の順)に、明細を担当したスタッフだけを返します。endDate が startDate より前の場合と、期間が366日を超える場合は400を返します。
  * @summary Get sales by staff
  */
 export function useSalesReportCrudGetByStaff<TData = Awaited<ReturnType<typeof salesReportCrudGetByStaff>>, TError = ModelsProblemDetails>(
@@ -495,7 +495,7 @@ export function useSalesReportCrudGetByStaff<TData = Awaited<ReturnType<typeof s
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 期間内の売上をスタッフ別に集計します。
+ * 期間内の売上の明細を、担当スタッフ別に集計します。担当した明細の合計金額の多い順(同じならスタッフ ID の順)に、明細を担当したスタッフだけを返します。endDate が startDate より前の場合と、期間が366日を超える場合は400を返します。
  * @summary Get sales by staff
  */
 export function useSalesReportCrudGetByStaff<TData = Awaited<ReturnType<typeof salesReportCrudGetByStaff>>, TError = ModelsProblemDetails>(
@@ -509,7 +509,7 @@ export function useSalesReportCrudGetByStaff<TData = Awaited<ReturnType<typeof s
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 期間内の売上をスタッフ別に集計します。
+ * 期間内の売上の明細を、担当スタッフ別に集計します。担当した明細の合計金額の多い順(同じならスタッフ ID の順)に、明細を担当したスタッフだけを返します。endDate が startDate より前の場合と、期間が366日を超える場合は400を返します。
  * @summary Get sales by staff
  */
 export function useSalesReportCrudGetByStaff<TData = Awaited<ReturnType<typeof salesReportCrudGetByStaff>>, TError = ModelsProblemDetails>(
@@ -517,7 +517,7 @@ export function useSalesReportCrudGetByStaff<TData = Awaited<ReturnType<typeof s
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 期間内の売上をスタッフ別に集計します。
+ * 期間内の売上の明細を、担当スタッフ別に集計します。担当した明細の合計金額の多い順(同じならスタッフ ID の順)に、明細を担当したスタッフだけを返します。endDate が startDate より前の場合と、期間が366日を超える場合は400を返します。
  * @summary Get sales by staff
  */
 export function useSalesReportCrudGetByStaff<TData = Awaited<ReturnType<typeof salesReportCrudGetByStaff>>, TError = ModelsProblemDetails>(
@@ -592,7 +592,7 @@ export const getSalesReportCrudGetDailyUrl = (params: SalesReportCrudGetDailyPar
 }
 
 /**
- * 指定した日の売上サマリーを取得します。
+ * サロンの、売上日が date の、取り消していない売上を集計します。
  * @summary Get daily sales
  */
 export const salesReportCrudGetDaily = async (params: SalesReportCrudGetDailyParams, options?: RequestInit): Promise<salesReportCrudGetDailyResponse> => {
@@ -640,7 +640,7 @@ export type SalesReportCrudGetDailyQueryError = ModelsProblemDetails
 
 
 /**
- * 指定した日の売上サマリーを取得します。
+ * サロンの、売上日が date の、取り消していない売上を集計します。
  * @summary Get daily sales
  */
 export function useSalesReportCrudGetDaily<TData = Awaited<ReturnType<typeof salesReportCrudGetDaily>>, TError = ModelsProblemDetails>(
@@ -654,7 +654,7 @@ export function useSalesReportCrudGetDaily<TData = Awaited<ReturnType<typeof sal
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 指定した日の売上サマリーを取得します。
+ * サロンの、売上日が date の、取り消していない売上を集計します。
  * @summary Get daily sales
  */
 export function useSalesReportCrudGetDaily<TData = Awaited<ReturnType<typeof salesReportCrudGetDaily>>, TError = ModelsProblemDetails>(
@@ -668,7 +668,7 @@ export function useSalesReportCrudGetDaily<TData = Awaited<ReturnType<typeof sal
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 指定した日の売上サマリーを取得します。
+ * サロンの、売上日が date の、取り消していない売上を集計します。
  * @summary Get daily sales
  */
 export function useSalesReportCrudGetDaily<TData = Awaited<ReturnType<typeof salesReportCrudGetDaily>>, TError = ModelsProblemDetails>(
@@ -676,7 +676,7 @@ export function useSalesReportCrudGetDaily<TData = Awaited<ReturnType<typeof sal
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 指定した日の売上サマリーを取得します。
+ * サロンの、売上日が date の、取り消していない売上を集計します。
  * @summary Get daily sales
  */
 export function useSalesReportCrudGetDaily<TData = Awaited<ReturnType<typeof salesReportCrudGetDaily>>, TError = ModelsProblemDetails>(
@@ -889,7 +889,7 @@ export const getSalesReportCrudGetTrendsUrl = (params: SalesReportCrudGetTrendsP
 }
 
 /**
- * 期間内の売上推移を、日・週・月のいずれかの単位で集計します。
+ * 期間内の売上の推移を、日・週(月曜日始まり)・月のいずれかの単位で区切って集計します。endDate が startDate より前の場合と、期間が366日を超える場合は400を返します。
  * @summary Get sales trends
  */
 export const salesReportCrudGetTrends = async (params: SalesReportCrudGetTrendsParams, options?: RequestInit): Promise<salesReportCrudGetTrendsResponse> => {
@@ -937,7 +937,7 @@ export type SalesReportCrudGetTrendsQueryError = ModelsProblemDetails
 
 
 /**
- * 期間内の売上推移を、日・週・月のいずれかの単位で集計します。
+ * 期間内の売上の推移を、日・週(月曜日始まり)・月のいずれかの単位で区切って集計します。endDate が startDate より前の場合と、期間が366日を超える場合は400を返します。
  * @summary Get sales trends
  */
 export function useSalesReportCrudGetTrends<TData = Awaited<ReturnType<typeof salesReportCrudGetTrends>>, TError = ModelsProblemDetails>(
@@ -951,7 +951,7 @@ export function useSalesReportCrudGetTrends<TData = Awaited<ReturnType<typeof sa
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 期間内の売上推移を、日・週・月のいずれかの単位で集計します。
+ * 期間内の売上の推移を、日・週(月曜日始まり)・月のいずれかの単位で区切って集計します。endDate が startDate より前の場合と、期間が366日を超える場合は400を返します。
  * @summary Get sales trends
  */
 export function useSalesReportCrudGetTrends<TData = Awaited<ReturnType<typeof salesReportCrudGetTrends>>, TError = ModelsProblemDetails>(
@@ -965,7 +965,7 @@ export function useSalesReportCrudGetTrends<TData = Awaited<ReturnType<typeof sa
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 期間内の売上推移を、日・週・月のいずれかの単位で集計します。
+ * 期間内の売上の推移を、日・週(月曜日始まり)・月のいずれかの単位で区切って集計します。endDate が startDate より前の場合と、期間が366日を超える場合は400を返します。
  * @summary Get sales trends
  */
 export function useSalesReportCrudGetTrends<TData = Awaited<ReturnType<typeof salesReportCrudGetTrends>>, TError = ModelsProblemDetails>(
@@ -973,7 +973,7 @@ export function useSalesReportCrudGetTrends<TData = Awaited<ReturnType<typeof sa
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 期間内の売上推移を、日・週・月のいずれかの単位で集計します。
+ * 期間内の売上の推移を、日・週(月曜日始まり)・月のいずれかの単位で区切って集計します。endDate が startDate より前の場合と、期間が366日を超える場合は400を返します。
  * @summary Get sales trends
  */
 export function useSalesReportCrudGetTrends<TData = Awaited<ReturnType<typeof salesReportCrudGetTrends>>, TError = ModelsProblemDetails>(

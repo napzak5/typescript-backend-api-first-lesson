@@ -834,150 +834,190 @@ namespace BeautySalon.Models {
   }
 
   // ---------------------------------------------------------------------------
-  // 売上レポート (sales を集計して作成する。対応するテーブルはない)
+  // 売上レポート (sales、sales_details、payment_transactions をリクエストのたびに集計する。対応するテーブルはない)
   // 金額はサロンの通貨(salons.currency)の整数値
   // ---------------------------------------------------------------------------
 
-  @doc("売上レポートの集計条件")
+  @doc("""
+    売上レポートの集計条件 - サロンと、売上日(saleDate)の期間を指定する。期間は両端を含み、366日まで
+    """)
   model SalesReportGetRequest {
     @query
     @doc("集計対象のサロン ID")
     salonId: SalonId;
 
-    ...DateRangeFilter;
+    @query
+    @doc("期間の最初の売上日(saleDate)")
+    startDate: plainDate;
 
     @query
-    @doc("集計粒度(day: 日／week: 週／month: 月)")
-    groupBy?: "day" | "week" | "month";
-
-    @query
-    @doc("返金取引を集計に含めるかどうか")
-    includeRefunds?: boolean = true;
+    @doc("期間の最後の売上日(saleDate)。startDate 以降で、期間は startDate を含めて366日まで")
+    endDate: plainDate;
   }
 
-  @doc("期間内の売上実績を集計したレポート")
+  @doc("1日の売上の集計条件 - サロンと売上日(saleDate)を指定する")
+  model DailySalesGetRequest {
+    @query
+    @doc("集計対象のサロン ID")
+    salonId: SalonId;
+
+    @query
+    @doc("集計対象の売上日(saleDate)")
+    date: plainDate;
+  }
+
+  @doc("""
+    売上推移区切り区分 - 売上推移の期間を区切る単位
+    
+    daily: 日 - 1日ごと。ラベルは YYYY-MM-DD
+    weekly: 週 - 月曜日に始まる週ごと。ラベルは週の月曜日の YYYY-MM-DD
+    monthly: 月 - 暦の月ごと。ラベルは YYYY-MM
+    """)
+  enum SalesTrendPeriodType {
+    daily,
+    weekly,
+    monthly,
+  }
+
+  @doc("売上推移の集計条件 - 売上レポートの集計条件に、区切りの単位を加える")
+  model SalesTrendsGetRequest {
+    ...SalesReportGetRequest;
+
+    @query
+    @doc("区切りの単位")
+    period: SalesTrendPeriodType;
+  }
+
+  @doc("""
+    期間の売上レポート - サロンの、取り消していない売上のうち、売上日(saleDate)が期間内のものを集計する。支払いが済んでいない売上も数える。返金は、いつ返金したかによらず、返金した決済取引の売上の売上日の側で数える
+    """)
   model SalesReportResponse {
     @doc("対象サロン ID")
     salonId: SalonId;
 
-    @doc("集計期間の開始日時")
-    periodStart: utcDateTime;
+    @doc("期間の最初の売上日")
+    startDate: plainDate;
 
-    @doc("集計期間の終了日時")
-    periodEnd: utcDateTime;
+    @doc("期間の最後の売上日")
+    endDate: plainDate;
 
-    @doc("総売上額")
+    @doc("売上の合計金額(totalAmount。税込み)の合計")
     totalSales: int64;
 
-    @doc("累計税額")
+    @doc("売上の消費税額(taxAmount)の合計")
     totalTax: int64;
 
-    @doc("累計割引額")
+    @doc("売上の値引額(discountAmount)の合計")
     totalDiscounts: int64;
 
-    @doc("累計返金額")
+    @doc("売上の決済取引の返金額(refundAmount)の合計")
     totalRefunds: int64;
 
-    @doc("返金考慮後の純売上額")
+    @doc("totalSales から totalRefunds を引いた額")
     netSales: int64;
 
-    @doc("取引件数")
+    @doc("売上の件数")
     transactionCount: int32;
 
-    @doc("平均取引単価")
+    @doc("totalSales を transactionCount で割った額(1円未満を切り捨て)。売上がなければ0")
     averageTransactionValue: int64;
 
-    @doc("支払い方法別の売上内訳")
+    @doc("支払い方法の区分ごとの入金。amount の多い順、同じなら区分の名前の順")
     salesByMethod: SalesByMethodResponse[];
 
-    @doc("サービスカテゴリ別の売上内訳")
+    @doc("サービスのカテゴリーの区分ごとの売上。amount の多い順、同じなら区分の名前の順")
     salesByCategory: SalesByCategoryResponse[];
 
-    @doc("売上貢献度の高いスタッフ情報")
+    @doc("スタッフ別の売上の上位5人(getByStaff の最初の5行)")
     topStaff: SalesByStaffResponse[];
   }
 
-  @doc("支払い方法別の売上集計行")
+  @doc("""
+    支払い方法の区分ごとの入金 - 売上の決済取引のうち、受け取ったもの(status が completed・partial_refund・refunded)を、支払い方法の区分ごとに合わせる
+    """)
   model SalesByMethodResponse {
     @doc("支払い方法区分")
     method: PaymentMethodType;
 
-    @doc("売上金額")
+    @doc("決済取引の金額(amount)から返金額(refundAmount)を引いた額の合計")
     amount: int64;
 
-    @doc("取引件数")
+    @doc("決済取引の件数")
     count: int32;
 
-    @doc("総売上に対する構成比率(%)")
+    @doc("内訳のすべての行の amount の合計に対する割合(%)。小数第1位に丸める。合計が0なら0")
     percentage: float32;
   }
 
-  @doc("サービスカテゴリ別の売上集計行")
+  @doc("""
+    サービスのカテゴリーの区分ごとの売上 - 売上の明細のうち、itemType が service のものを、サービスのカテゴリーの区分(service_categories.category のいまの値)ごとに合わせる。カテゴリーのないサービスの明細と、itemId のない明細は other。サービスでない明細(商品、指名料など)は数えない
+    """)
   model SalesByCategoryResponse {
     @doc("サービスカテゴリ区分")
     category: ServiceCategoryType;
 
-    @doc("売上金額")
+    @doc("明細の合計金額(totalAmount)の合計")
     amount: int64;
 
-    @doc("提供件数")
+    @doc("明細の数量(quantity)の合計")
     count: int32;
 
-    @doc("総売上に対する構成比率(%)")
+    @doc("内訳のすべての行の amount の合計に対する割合(%)。小数第1位に丸める。合計が0なら0")
     percentage: float32;
   }
 
-  @doc("スタッフ別の売上パフォーマンス指標")
+  @doc("""
+    スタッフ別の売上 - 売上の明細を、明細の担当スタッフ(staffId)ごとに合わせる。明細に担当スタッフがなければ、売上の担当スタッフの明細として数え、どちらもない明細は数えない。削除したスタッフも載る
+    """)
   model SalesByStaffResponse {
     @doc("スタッフ ID")
     staffId: StaffId;
 
-    @doc("スタッフ名")
-    staffName: string;
+    @doc("スタッフの表示名(staff.displayName のいまの値)")
+    displayName: string;
 
-    @doc("担当した売上金額")
+    @doc("担当した明細の合計金額(totalAmount)の合計")
     totalSales: int64;
 
-    @doc("提供したサービス件数")
+    @doc("担当した、itemType が service の明細の数量(quantity)の合計")
     serviceCount: int32;
 
-    @doc("平均サービス単価")
+    @doc("担当した service の明細の合計金額の合計を serviceCount で割った額(1円未満を切り捨て)。service の明細がなければ0")
     averageServiceValue: int64;
-
-    @doc("顧客満足度評価。評価データがない場合はnull")
-    customerSatisfaction: float32 | null;
   }
 
-  @doc("日次の売上サマリー")
+  @doc("1日の売上 - その売上日の、取り消していない売上を集計する")
   model DailySalesResponse {
-    @doc("集計対象日")
+    @doc("売上日")
     date: plainDate;
 
-    @doc("売上額")
+    @doc("売上の合計金額(totalAmount)の合計")
     sales: int64;
 
-    @doc("取引件数")
+    @doc("売上の件数")
     transactions: int32;
 
-    @doc("返金額")
+    @doc("その日の売上の決済取引の返金額(refundAmount)の合計")
     refunds: int64;
 
-    @doc("返金考慮後の純売上額")
+    @doc("sales から refunds を引いた額")
     net: int64;
   }
 
-  @doc("売上推移 - 期間を区切った単位ごとの売上の時系列。各配列の同じ位置が同じ区切りを表す")
+  @doc("""
+    売上推移 - 期間を区切った単位ごとの、取り消していない売上の時系列。各配列の同じ位置が同じ区切りを表す。最初と最後の区切りは期間の中の売上だけを数え、売上のない区切りも0で載せる
+    """)
   model SalesTrendsResponse {
-    @doc("各区切りのラベル")
+    @doc("各区切りのラベル(SalesTrendPeriodType の説明を参照)")
     labels: string[];
 
-    @doc("各区切りの売上額")
+    @doc("各区切りの売上の合計金額(totalAmount)の合計")
     sales: int64[];
 
-    @doc("各区切りの取引件数")
+    @doc("各区切りの売上の件数")
     transactions: int32[];
 
-    @doc("各区切りの平均取引単価")
+    @doc("各区切りの sales を transactions で割った額(1円未満を切り捨て)。売上がなければ0")
     average: int64[];
   }
 

@@ -6,11 +6,7 @@
  * OpenAPI spec version: 2.0
  */
 
-export type SalesReportCrudGetTrendsPeriod = typeof SalesReportCrudGetTrendsPeriod[keyof typeof SalesReportCrudGetTrendsPeriod];
-
-
-export const SalesReportCrudGetTrendsPeriod = {
-  daily: 'daily',
-  weekly: 'weekly',
-  monthly: 'monthly',
-} as const;
+/**
+ * 期間の最後の売上日(saleDate)。startDate 以降で、期間は startDate を含めて366日まで
+ */
+export type ModelsSalesReportGetRequestEndDateParameter = string;
