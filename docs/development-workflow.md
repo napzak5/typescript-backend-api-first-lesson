@@ -102,6 +102,7 @@ curl http://localhost:3000/api/v1/salons      # サロン一覧（認証なし�
 顧客が自分で入れる予約（`/api/v1/customers/me/bookings` の一覧、作成、1 件の取得、キャンセル、日時の変更）、
 売上台帳（`/api/v1/sales` の一覧、作成、1 件の取得、更新、取り消し、`/api/v1/sales/{id}/receipt` のレシート、`/api/v1/sales/calculate` の金額の計算）、
 支払い方法（`/api/v1/salons/{salonId}/payment-methods` の一覧、作成、1 件の取得、更新、削除）、
+商品（`/api/v1/salons/{salonId}/products` の一覧、作成、1 件の取得、更新、削除）、
 売上の支払い（`/api/v1/sales/{id}/process` の記録と、`/api/v1/payments/{id}/refund` の返金）、
 売上レポート（`/api/v1/sales-reports` の期間のレポート、1 日の売上、スタッフ別、カテゴリー別、推移、CSV の出力）、
 ポイント台帳（`/api/v1/points` の顧客の残高、履歴、有効期限が近いポイント、付与、利用、調整、失効）、
@@ -128,6 +129,8 @@ curl http://localhost:3000/api/v1/salons      # サロン一覧（認証なし�
 レシートと金額の計算も、同じアクセストークンで使えます。どちらも何も書かないので、シードのデータで試せます。
 支払い方法は、読むのに、`admin` か、そのサロンの `owner`・`manager`・`staff` のアクセストークンが必要で、
 設定（作成、更新、削除）は、`staff` にはできません。顧客のアカウントでは使えません。
+商品も、読むのに、`admin` か、そのサロンの `owner`・`manager`・`staff` のアクセストークンが必要で、
+作成、更新、削除は、`staff` にはできません。顧客のアカウントでは使えません。シードの商品のうち、在庫のレコードがある 6 件は削除できません（409）。
 支払いの記録には、売上台帳と同じアクセストークンが必要で、返金は、`staff` にはできません。
 売上レポートは、`admin` か、そのサロンの `owner`・`manager` のアクセストークンで読めます（`staff` は読めません）。シードには売上がないので、売上を作成するまで、どの値も 0 です。
 ポイント台帳は、`admin` か、どのサロンの `owner`・`manager`・`staff` のアクセストークンでも使えます（調整は、`staff` にはできません。失効は、`admin` だけができます）。シードの 4 人の顧客は、ポイントの残高と、それと同じ開始残高の調整を 1 件ずつ持っています。
@@ -137,7 +140,7 @@ curl http://localhost:3000/api/v1/salons      # サロン一覧（認証なし�
 [サービスメニュー](./service-menu.md) を、顧客台帳、顧客本人のプロフィール、好み設定の規則は
 [顧客台帳](./customers.md) を、スタッフ台帳の規則は [スタッフ台帳](./staff.md) を、予約台帳の規則は
 [予約台帳](./bookings.md) を、売上台帳の規則は [売上台帳](./sales.md) を、支払い方法と支払いの規則は
-[支払い](./payments.md) を、売上レポートの規則は [売上レポート](./sales-reports.md) を、ポイント台帳の規則は
+[支払い](./payments.md) を、商品の規則は [商品](./products.md) を、売上レポートの規則は [売上レポート](./sales-reports.md) を、ポイント台帳の規則は
 [ポイント台帳](./points.md) を、レビューの規則は [レビュー](./reviews.md) を参照してください。
 
 ユーザー登録やパスワードの再設定で送られるメールは Mailpit（`http://localhost:8025`）に届きます。
@@ -284,6 +287,10 @@ Salon ドメインがリファレンス実装です。新しいドメインは�
 `backend/packages/api/src/routes/payment-method/`）が手本です。読む権限と設定する権限を、
 どちらもパスのサロンだけで判定し、更新は、行をロックしてから、2 つの項目を結ぶ規則を
 更新後の行で確かめます。これも同じ節に挙げてあり、規則は [支払い](./payments.md) にあります。
+3 つの項目を結ぶ規則があり、ほかのテーブルの行がある間は削除を断る論理削除のデータは、商品
+（`backend/packages/domain/src/business-logic/product/`、`backend/packages/api/src/routes/product/`）が
+手本です。組ごとに比べる純粋な関数を、スキーマとリポジトリの両方が使い、削除は、行をロックしてから
+在庫の行を探します。これも同じ節に挙げてあり、規則は [商品](./products.md) にあります。
 レコードの下に行を書き、その行からレコードの値を数え直すデータは、売上の支払い
 （`backend/packages/domain/src/business-logic/payment/`、`backend/packages/api/src/routes/payment/`）が
 手本です。レコード（売上）の行をロックしてから下の行を読み、値を数え、行と値を 1 つのトランザクションで

@@ -86,7 +86,9 @@ reports of the sales of a salon: `get`, `getDaily`, `getByStaff`,
 reviews of the customers), `list` and `dismiss` of `ReviewReportCrud` (the reports of the reviews), `getSummary` of `SalonReviewSummary` and `getStaffSummary` of
 `StaffReviewSummary` (the summaries of the reviews of a salon and of a
 staff member), the five of `PaymentMethodCrud` (the payment methods of a
-salon: `list`, `create`, `get`, `update` and `delete`),
+salon: `list`, `create`, `get`, `update` and `delete`), the five of
+`ProductCrud` (the products of a salon: `list`, `create`, `get`, `update`
+and `delete`),
 the five
 operations of
 `StaffCrud` (the staff ledger of a salon: `list`, `create`, `get`, `update`

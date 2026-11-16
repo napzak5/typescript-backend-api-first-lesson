@@ -160,6 +160,8 @@ export const SalonWriteMapper = {
 
 `payment_methods` には、表現が変わるカラムが 1 つある。手数料率（`fee`）は、API では数値、`numeric(5,2)` のカラムでは文字列である。`PaymentMethodWriteMapper`（`backend/packages/domain/src/mappers/write/payment-method.mapper.ts`）が `String(value)` で文字列にし、Read マッパー（`backend/packages/domain/src/mappers/read/payment-method.mapper.ts`）が数値に戻す。スキーマは、小数第 3 位以下を持つ値を受け付けないので、保存で値が変わることはない。`jsonb` の `processorConfig` は、どちらのマッパーも扱わない。Read マッパーは、プロパティを 1 つずつ書き出すので、このカラムはレスポンスに出ない。
 
+`products` には、表現が変わるカラムが 3 つある。在庫の水準（`minimumStock`、`reorderPoint`、`maximumStock`）は、API では数値、`numeric(10,2)` のカラムでは文字列である。`ProductWriteMapper`（`backend/packages/domain/src/mappers/write/product.mapper.ts`）が `String(value)` で文字列にし、Read マッパー（`backend/packages/domain/src/mappers/read/product.mapper.ts`）が数値に戻す。スキーマは、小数第 3 位以下を持つ値を受け付けないので、保存で値が変わることはない。Read マッパーは、有限の数値として読めない値を、データベースのエラーにする。
+
 `time` のカラムは変換しない。DB は `HH:mm:ss` で返し、リクエストは `HH:mm` と `HH:mm:ss` のどちらも受け付ける。
 
 顧客の `gender` は、DB では `varchar(20)`（行の型は `string`）、API では `CustomerGenderType` である。CHECK 制約 `customers_gender_known` が、値を Enum の 4 つのどれかに限っている。Read マッパーは、保存されている値を生成された `CustomerGenderTypeSchema` で検査する。書き込みでは変換しない（Enum の値は、そのまま文字列として保存できる）。
