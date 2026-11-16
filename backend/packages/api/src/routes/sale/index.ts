@@ -4,6 +4,8 @@ import type { Authenticated } from '../../shared/authentication'
 import { createSaleHandler } from './create-sale.handler'
 import { getSaleHandler } from './get-sale.handler'
 import { listSalesHandler } from './list-sales.handler'
+import { updateSaleHandler } from './update-sale.handler'
+import { voidSaleHandler } from './void-sale.handler'
 
 /**
  * Sale routes, relative to where the router is mounted. One handler per
@@ -11,9 +13,11 @@ import { listSalesHandler } from './list-sales.handler'
  * public: every operation needs a signed-in user, and the use cases decide
  * who may.
  *
- * - GET    /     list    (authenticated)
- * - POST   /     create  (authenticated)
- * - GET    /:id  get     (authenticated)
+ * - GET    /          list      (authenticated)
+ * - POST   /          create    (authenticated)
+ * - GET    /:id       get       (authenticated)
+ * - PATCH  /:id       update    (authenticated)
+ * - POST   /:id/void  voidSale  (authenticated)
  */
 export const createSaleRouter = (
   dependencies: SaleUseCaseDependencies,
@@ -24,6 +28,8 @@ export const createSaleRouter = (
   router.get('/', listSalesHandler(dependencies, authenticated))
   router.post('/', createSaleHandler(dependencies, authenticated))
   router.get('/:id', getSaleHandler(dependencies, authenticated))
+  router.patch('/:id', updateSaleHandler(dependencies, authenticated))
+  router.post('/:id/void', voidSaleHandler(dependencies, authenticated))
 
   return router
 }
