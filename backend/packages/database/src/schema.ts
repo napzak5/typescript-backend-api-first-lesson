@@ -1055,6 +1055,27 @@ export const paymentTransactions = pgTable(
       .notNull(),
   },
   (table) => [
+    check('payment_transactions_amount_positive', sql`amount >= 1`),
+    check(
+      'payment_transactions_card_last_four_digits',
+      sql`("cardLastFour" IS NULL) OR (("cardLastFour")::text ~ '^[0-9]{4}$'::text)`,
+    ),
+    check(
+      'payment_transactions_failure_of_failed',
+      sql`((status = 'failed'::payment_status) = ("failedAt" IS NOT NULL)) AND ((status = 'failed'::payment_status) OR (("errorCode" IS NULL) AND ("errorMessage" IS NULL)))`,
+    ),
+    check(
+      'payment_transactions_received_has_time',
+      sql`(status = ANY (ARRAY['completed'::payment_status, 'refunded'::payment_status, 'partial_refund'::payment_status])) = ("processedAt" IS NOT NULL)`,
+    ),
+    check(
+      'payment_transactions_refund_amount',
+      sql`((status <> 'refunded'::payment_status) OR ("refundAmount" = amount)) AND ((status <> 'partial_refund'::payment_status) OR (("refundAmount" >= 1) AND ("refundAmount" < amount)))`,
+    ),
+    check(
+      'payment_transactions_refund_of_refunded',
+      sql`((status = ANY (ARRAY['refunded'::payment_status, 'partial_refund'::payment_status])) = ("refundedAt" IS NOT NULL)) AND ((status = ANY (ARRAY['refunded'::payment_status, 'partial_refund'::payment_status])) = ("refundAmount" IS NOT NULL)) AND ((status = ANY (ARRAY['refunded'::payment_status, 'partial_refund'::payment_status])) OR ("refundReason" IS NULL))`,
+    ),
     foreignKey({
       columns: [table.paymentMethodId],
       foreignColumns: [paymentMethods.id],

@@ -1,15 +1,14 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { z } from 'zod'
 import type {
-  ApiPaymentResponse,
   ApiSaleResponse,
   ApiSalesDetail,
-  DbPaymentTransaction,
   DbSalesDetail,
   SaleWithDetails,
 } from '../../models/sale'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import { numericSchema, timestampSchema } from './columns'
+import { toApiPayment } from './payment.mapper'
 
 /**
  * Database rows → API response. Property names are the column names; what
@@ -18,21 +17,13 @@ import { numericSchema, timestampSchema } from './columns'
  * `numeric` commission rate, which is read as text and returned as a
  * number.
  *
- * Every property is named: a payment keeps what the processor answered
- * (`processorResponse`, `metadata`), which no response shows, and a column
- * added to one of the tables is not shown by itself.
+ * Every property is named, so a column added to one of the tables is not
+ * shown by itself. The payments of a sale are mapped as a payment is
+ * (`payment.mapper.ts`).
  */
 
 const convertedDetailColumnsSchema = z.object({
   commissionRate: numericSchema.nullable(),
-})
-
-const convertedPaymentColumnsSchema = z.object({
-  processedAt: timestampSchema.nullable(),
-  failedAt: timestampSchema.nullable(),
-  refundedAt: timestampSchema.nullable(),
-  createdAt: timestampSchema,
-  updatedAt: timestampSchema,
 })
 
 const convertedSaleColumnsSchema = z.object({
@@ -65,33 +56,6 @@ const toApiSalesDetail = (
       commissionAmount: detail.commissionAmount,
       notes: detail.notes,
       sortOrder: detail.sortOrder,
-    }),
-  )
-
-const toApiPayment = (
-  payment: DbPaymentTransaction,
-): Result<ApiPaymentResponse, DomainError> =>
-  Result.map(
-    parseWith(convertedPaymentColumnsSchema, payment, 'Invalid stored payment'),
-    (converted) => ({
-      id: payment.id,
-      saleId: payment.saleId,
-      paymentMethodId: payment.paymentMethodId,
-      transactionNumber: payment.transactionNumber,
-      amount: payment.amount,
-      status: payment.status,
-      processorTransactionId: payment.processorTransactionId,
-      cardLastFour: payment.cardLastFour,
-      cardBrand: payment.cardBrand,
-      errorCode: payment.errorCode,
-      errorMessage: payment.errorMessage,
-      processedAt: converted.processedAt,
-      failedAt: converted.failedAt,
-      refundedAt: converted.refundedAt,
-      refundAmount: payment.refundAmount,
-      refundReason: payment.refundReason,
-      createdAt: converted.createdAt,
-      updatedAt: converted.updatedAt,
     }),
   )
 

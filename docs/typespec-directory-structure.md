@@ -73,7 +73,8 @@ TypeSpec に定義があっても、バックエンドに実装があるとは�
 | `operations/booking-operations.tsp` の `CustomerBookings` の 5 オペレーション（`list`、`create`、`get`、`cancel`、`reschedule`）と、`models/booking.tsp` の `CustomerBookingResponse`、`CustomerBookingServiceResponse`、`CustomerBookingCreateRequest`、`CustomerBookingSearchRequest` | `backend/packages/api/src/routes/customer-booking/`。定義と実装が一致している（[予約台帳](./bookings.md#顧客が自分で入れる予約)）。キャンセルの本文は、台帳と同じ `BookingCancelRequest` |
 | `models/payment.tsp` の売上のモデル（`SaleResponse`、`SalesDetail`、`PaymentResponse`、`SaleCreateRequest`、`SaleUpdateRequest`、`SaleVoidRequest`、`SaleSearchRequest`）、`operations/payment-operations.tsp` の `SaleCrud` の 8 オペレーションのうち 5 つ（`list`、`create`、`get`、`update`、`voidSale`） | `backend/packages/api/src/routes/sale/`。定義と実装は一致している（[売上台帳](./sales.md)） |
 | `models/payment.tsp` の支払い方法のモデル（`PaymentMethodResponse`、`PaymentMethodCreateRequest`、`PaymentMethodUpdateRequest`、`PaymentMethodSearchRequest`）、`operations/payment-operations.tsp` の `PaymentMethodCrud` の 5 オペレーション（`list`、`create`、`get`、`update`、`delete`） | `backend/packages/api/src/routes/payment-method/`。定義と実装は一致している（[支払い](./payments.md)） |
-| `SaleCrud` の残りの 3 オペレーション（`process`、`getReceipt`、`calculate`）、`PaymentCrud`、`SalesReportCrud`、`PointCrud` | なし |
+| `models/payment.tsp` の支払いのモデル（`SaleProcessRequest`、`PaymentRefundRequest`、`PaymentResponse`）、`SaleCrud` の `process`、`PaymentCrud` の `refund` | `backend/packages/api/src/routes/sale/process-sale.handler.ts`、`backend/packages/api/src/routes/payment/`。定義と実装は一致している（[支払い](./payments.md#支払いは受け取った結果の記録)） |
+| `SaleCrud` の残りの 2 オペレーション（`getReceipt`、`calculate`）、`SalesReportCrud`、`PointCrud` | なし |
 | 上記以外のドメイン（review、treatment、inventory） | なし。TypeSpec は DB のテーブルと一致している（`pnpm check:api-db`）が、ドメイン・リポジトリ・ルートのコードはない |
 | attachment、permission と、inventory の発注・アラート、treatment のカルテ、customer の監査履歴・エクスポート・データ削除リクエスト | なし。対応するテーブルもまだない（[API-DB型制約マッピング](./api-db-type-constraints-mapping.md#ルールに載せるモデル載せないモデル)） |
 

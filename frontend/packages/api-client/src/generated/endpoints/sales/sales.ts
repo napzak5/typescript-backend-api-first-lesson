@@ -877,8 +877,8 @@ export const getSaleCrudProcessUrl = (id: ModelsSaleId,) => {
 }
 
 /**
- * 売上に対する1回の支払いを処理し、決済取引として記録します。取消済みの売上と、paymentStatus が pending または failed ではない売上は409を返します。paymentMethodId に売上のサロンの有効な支払い方法ではないIDを指定した場合や、amount が未払い残額を超える場合は400を返します。決済代行会社が支払いを拒否した場合も、status が failed の決済取引を記録して返します。売上の paymentStatus は、完了した支払いの合計が totalAmount に達すると completed に、支払いが失敗すると failed になります。
- * @summary Process a payment for a sale
+ * 売上に対して受け取った1回の支払いを、status が completed の決済取引として記録します。管理者と、売上のサロンのメンバーが実行できます。決済代行会社とは接続していないので、支払いを受け取ったあとに呼び出します。支払いは分けて記録でき、amount は未払い残額(totalAmount から、これまでに受け取った金額を引いた額。返金しても増えない)以下で指定します。取消済みの売上、支払いが済んだ売上、返金のある売上は409を返します。paymentMethodId に売上のサロンの有効な支払い方法ではないIDを指定した場合、amount が未払い残額を超える場合、amount が支払い方法の minimumAmount 未満または maximumAmount 超の場合、区分が credit_card でも debit_card でもない支払い方法に cardLastFour または cardBrand を指定した場合は400を返します。売上の paymentStatus は、受け取った金額の合計が totalAmount に達すると completed に、達しなければ processing になります。
+ * @summary Record a payment for a sale
  */
 export const saleCrudProcess = async (id: ModelsSaleId,
     modelsSaleProcessRequest: ModelsSaleProcessRequest, options?: RequestInit): Promise<saleCrudProcessResponse> => {
@@ -945,8 +945,8 @@ const {mutation: mutationOptions} = options ?
     export type SaleCrudProcessMutationVariables = {id: ModelsSaleId;data: ModelsSaleProcessRequest}
 
     /**
- * 売上に対する1回の支払いを処理し、決済取引として記録します。取消済みの売上と、paymentStatus が pending または failed ではない売上は409を返します。paymentMethodId に売上のサロンの有効な支払い方法ではないIDを指定した場合や、amount が未払い残額を超える場合は400を返します。決済代行会社が支払いを拒否した場合も、status が failed の決済取引を記録して返します。売上の paymentStatus は、完了した支払いの合計が totalAmount に達すると completed に、支払いが失敗すると failed になります。
- * @summary Process a payment for a sale
+ * 売上に対して受け取った1回の支払いを、status が completed の決済取引として記録します。管理者と、売上のサロンのメンバーが実行できます。決済代行会社とは接続していないので、支払いを受け取ったあとに呼び出します。支払いは分けて記録でき、amount は未払い残額(totalAmount から、これまでに受け取った金額を引いた額。返金しても増えない)以下で指定します。取消済みの売上、支払いが済んだ売上、返金のある売上は409を返します。paymentMethodId に売上のサロンの有効な支払い方法ではないIDを指定した場合、amount が未払い残額を超える場合、amount が支払い方法の minimumAmount 未満または maximumAmount 超の場合、区分が credit_card でも debit_card でもない支払い方法に cardLastFour または cardBrand を指定した場合は400を返します。売上の paymentStatus は、受け取った金額の合計が totalAmount に達すると completed に、達しなければ processing になります。
+ * @summary Record a payment for a sale
  */
 export const useSaleCrudProcess = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof saleCrudProcess>>, TError,SaleCrudProcessMutationVariables, TContext>, }

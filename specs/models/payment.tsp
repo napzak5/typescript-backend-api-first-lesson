@@ -30,12 +30,14 @@ namespace BeautySalon.Models {
   @doc("""
     支払いステータス区分 - 決済取引(payment_transactions.status)と売上(sales.paymentStatus)の支払いの進行状態を表す区分
     
-    pending: 支払い待ち - 支払いが開始されたがまだ完了していない状態
-    processing: 処理中 - 決済処理が進行中の状態
-    completed: 完了 - 支払いが正常に完了した状態
+    pending: 支払い待ち - 売上では、何も受け取っていない状態
+    processing: 処理中 - 売上では、合計金額の一部を受け取った状態
+    completed: 完了 - 決済取引では、支払いを受け取った状態。売上では、合計金額を受け取った状態
     failed: 失敗 - 支払い処理が失敗した状態
-    refunded: 返金済み - 全額返金が完了した状態
-    partial_refund: 部分返金 - 一部金額の返金が完了した状態
+    refunded: 返金済み - 決済取引では、全額を返金した状態。売上では、受け取った全額を返金した状態
+    partial_refund: 部分返金 - 決済取引では、一部を返金した状態。売上では、受け取った金額の一部を返金した状態
+    
+    API が決済取引に書くのは completed・refunded・partial_refund だけで、売上に failed は書かない
     """)
   enum PaymentStatusType {
     pending,
@@ -173,7 +175,7 @@ namespace BeautySalon.Models {
     @doc("この会計で付与したポイント数。記録していない場合はnull")
     pointsEarned: int32 | null;
 
-    @doc("支払い状態。決済取引(payments)の処理と返金に応じてシステムが更新する")
+    @doc("支払い状態。この売上の決済取引(payments)から決まり、支払いの記録と返金のたびにシステムが更新する。pending は何も受け取っていない、processing は合計金額の一部を受け取った、completed は合計金額を受け取った、partial_refund は受け取った金額の一部を返金した、refunded は受け取った全額を返金した状態")
     paymentStatus: PaymentStatusType;
 
     @doc("取り消された売上かどうか")
@@ -319,23 +321,22 @@ namespace BeautySalon.Models {
   }
 
   @doc("""
-    売上の支払いリクエスト - 売上に対する1回の支払い(決済取引)の内容を指定する。全項目のキーが必須。
-    取引番号・決済代行会社の応答・処理日時・状態はシステムが設定する
+    売上の支払いリクエスト - 売上に対して受け取った1回の支払い(決済取引)の内容を指定する。全項目のキーが必須。
+    取引番号・処理日時・状態はシステムが設定する
     """)
   model SaleProcessRequest {
     @doc("支払い方法の ID。売上と同じサロンの有効な支払い方法を指定する")
     paymentMethodId: PaymentMethodId;
 
-    @doc("支払金額。売上の未払い残額以下")
+    @doc("支払金額。売上の未払い残額以下で、支払い方法に minimumAmount・maximumAmount がある場合はその範囲内")
     @minValue(1)
     amount: int32;
 
-    @doc("カード番号の下4桁(数字4桁)。カード以外の支払いの場合はnull")
-    @minLength(4)
-    @maxLength(4)
+    @doc("カード番号の下4桁(数字4桁)。支払い方法の区分が credit_card または debit_card の場合だけ指定できる。記録しない場合と、カード以外の支払いの場合はnull")
+    @pattern("^[0-9]{4}$")
     cardLastFour: string | null;
 
-    @doc("カードブランド(Visa など)。カード以外の支払いの場合はnull")
+    @doc("カードブランド(Visa など)。空白だけの文字列は指定できない。支払い方法の区分が credit_card または debit_card の場合だけ指定できる。記録しない場合と、カード以外の支払いの場合はnull")
     @maxLength(50)
     cardBrand: string | null;
   }
@@ -588,7 +589,7 @@ namespace BeautySalon.Models {
   // ---------------------------------------------------------------------------
 
   @doc("""
-    決済取引レスポンス - payment_transactions テーブルの1行。売上に対する1回の支払いを表す。
+    決済取引レスポンス - payment_transactions テーブルの1行。売上に対して受け取った1回の支払いを表す。
     決済代行会社の応答(processorResponse)と構造の定まっていない metadata は返さない。
     プロパティ名と null 許可は DB カラムと一致させている
     """)
@@ -608,10 +609,10 @@ namespace BeautySalon.Models {
     @doc("支払金額")
     amount: int32;
 
-    @doc("決済の状態")
+    @doc("決済の状態。completed は受け取った、refunded は全額を返金した、partial_refund は一部を返金した状態。API が記録する決済取引は、この3つのどれか")
     status: PaymentStatusType;
 
-    @doc("決済代行会社の取引 ID。現金など決済代行会社を介さない支払いの場合、または決済代行会社が受け付けなかった場合はnull")
+    @doc("決済代行会社の取引 ID。決済代行会社とは接続していないので、API が記録した決済取引ではnull")
     processorTransactionId: string | null;
 
     @doc("カード番号の下4桁。カード以外の支払いの場合はnull")
@@ -626,7 +627,7 @@ namespace BeautySalon.Models {
     @doc("決済が失敗したときのエラーメッセージ。失敗していない場合はnull")
     errorMessage: string | null;
 
-    @doc("決済が完了した日時。完了していない場合はnull")
+    @doc("支払いを受け取ったものとして記録した日時。受け取っていない決済取引の場合はnull")
     processedAt: utcDateTime | null;
 
     @doc("決済が失敗した日時。失敗していない場合はnull")
@@ -654,7 +655,7 @@ namespace BeautySalon.Models {
     @minValue(1)
     refundAmount: int32;
 
-    @doc("返金理由。理由を記録しない場合はnull")
+    @doc("返金理由。空白だけの文字列は指定できない。理由を記録しない場合はnull")
     refundReason: string | null;
   }
 

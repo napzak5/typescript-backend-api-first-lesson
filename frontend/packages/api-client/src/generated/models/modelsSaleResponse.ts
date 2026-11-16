@@ -59,7 +59,7 @@ export interface ModelsSaleResponse {
      * @nullable
      */
   pointsEarned: number | null;
-  /** 支払い状態。決済取引(payments)の処理と返金に応じてシステムが更新する */
+  /** 支払い状態。この売上の決済取引(payments)から決まり、支払いの記録と返金のたびにシステムが更新する。pending は何も受け取っていない、processing は合計金額の一部を受け取った、completed は合計金額を受け取った、partial_refund は受け取った金額の一部を返金した、refunded は受け取った全額を返金した状態 */
   paymentStatus: ModelsPaymentStatusType;
   /** 取り消された売上かどうか */
   isVoid: boolean;

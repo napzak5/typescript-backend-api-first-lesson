@@ -8,26 +8,25 @@
 import type { ModelsPaymentMethodId } from './modelsPaymentMethodId';
 
 /**
- * 売上の支払いリクエスト - 売上に対する1回の支払い(決済取引)の内容を指定する。全項目のキーが必須。
- * 取引番号・決済代行会社の応答・処理日時・状態はシステムが設定する
+ * 売上の支払いリクエスト - 売上に対して受け取った1回の支払い(決済取引)の内容を指定する。全項目のキーが必須。
+ * 取引番号・処理日時・状態はシステムが設定する
  */
 export interface ModelsSaleProcessRequest {
   /** 支払い方法の ID。売上と同じサロンの有効な支払い方法を指定する */
   paymentMethodId: ModelsPaymentMethodId;
   /**
-     * 支払金額。売上の未払い残額以下
+     * 支払金額。売上の未払い残額以下で、支払い方法に minimumAmount・maximumAmount がある場合はその範囲内
      * @minimum 1
      */
   amount: number;
   /**
-     * カード番号の下4桁(数字4桁)。カード以外の支払いの場合はnull
-     * @minLength 4
-     * @maxLength 4
+     * カード番号の下4桁(数字4桁)。支払い方法の区分が credit_card または debit_card の場合だけ指定できる。記録しない場合と、カード以外の支払いの場合はnull
      * @nullable
+     * @pattern ^[0-9]{4}$
      */
   cardLastFour: string | null;
   /**
-     * カードブランド(Visa など)。カード以外の支払いの場合はnull
+     * カードブランド(Visa など)。空白だけの文字列は指定できない。支払い方法の区分が credit_card または debit_card の場合だけ指定できる。記録しない場合と、カード以外の支払いの場合はnull
      * @maxLength 50
      * @nullable
      */

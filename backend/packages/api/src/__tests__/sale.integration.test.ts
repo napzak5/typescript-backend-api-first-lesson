@@ -39,6 +39,7 @@ import {
   signedInUser,
   signIn,
 } from './_shared/auth-helpers'
+import { type NewPayment, paymentColumns } from './_shared/payment-helpers'
 import {
   brokenRules,
   connectUnreachableDatabase,
@@ -208,7 +209,6 @@ describe('Sales API', () => {
   type NewBooking = typeof bookings.$inferInsert
   type NewSale = typeof sales.$inferInsert
   type NewSalesDetail = typeof salesDetails.$inferInsert
-  type NewPayment = typeof paymentTransactions.$inferInsert
   type Executor = Pick<typeof db, 'insert'>
 
   let rows = 0
@@ -483,9 +483,7 @@ describe('Sales API', () => {
         saleId,
         paymentMethodId,
         transactionNumber: `TX-${nextRow()}`,
-        amount: 6600,
-        status: 'completed',
-        ...overrides,
+        ...paymentColumns(overrides),
       })
       .returning({ id: paymentTransactions.id })
     if (payment === undefined) {

@@ -82,8 +82,8 @@ namespace BeautySalon.Operations {
         | RequestBodyErrors
         | CommonErrors;
 
-      @doc("売上に対する1回の支払いを処理し、決済取引として記録します。取消済みの売上と、paymentStatus が pending または failed ではない売上は409を返します。paymentMethodId に売上のサロンの有効な支払い方法ではないIDを指定した場合や、amount が未払い残額を超える場合は400を返します。決済代行会社が支払いを拒否した場合も、status が failed の決済取引を記録して返します。売上の paymentStatus は、完了した支払いの合計が totalAmount に達すると completed に、支払いが失敗すると failed になります。")
-      @summary("Process a payment for a sale")
+      @doc("売上に対して受け取った1回の支払いを、status が completed の決済取引として記録します。管理者と、売上のサロンのメンバーが実行できます。決済代行会社とは接続していないので、支払いを受け取ったあとに呼び出します。支払いは分けて記録でき、amount は未払い残額(totalAmount から、これまでに受け取った金額を引いた額。返金しても増えない)以下で指定します。取消済みの売上、支払いが済んだ売上、返金のある売上は409を返します。paymentMethodId に売上のサロンの有効な支払い方法ではないIDを指定した場合、amount が未払い残額を超える場合、amount が支払い方法の minimumAmount 未満または maximumAmount 超の場合、区分が credit_card でも debit_card でもない支払い方法に cardLastFour または cardBrand を指定した場合は400を返します。売上の paymentStatus は、受け取った金額の合計が totalAmount に達すると completed に、達しなければ processing になります。")
+      @summary("Record a payment for a sale")
       @route("/{id}/process")
       @post
       process(@path id: SaleId, @body request: SaleProcessRequest):
@@ -202,12 +202,12 @@ namespace BeautySalon.Operations {
     }
   }
 
-  @doc("売上に対する決済取引を返金するAPI操作群です。決済取引の記録は売上の支払い処理で行います。")
+  @doc("売上に対する決済取引を返金するAPI操作群です。ここに定義した操作は実装済みで、定義と実装は一致しています。決済取引は売上の支払いの記録(SaleCrud の process)で作り、売上のレスポンスの payments で読みます。")
   @route("/api/v1/payments")
   @tag("Payments")
   namespace PaymentOperations {
     interface PaymentCrud {
-      @doc("決済取引を返金します。返金できるのは status が completed の決済取引だけで、それ以外(返金済みを含む)は409を返します。1つの決済取引に対する返金は1回だけです。refundAmount が amount を超える場合は400を返します。返金後の決済取引の status は全額返金なら refunded、部分返金なら partial_refund になり、売上の paymentStatus も同じように更新されます。")
+      @doc("決済取引を返金します。管理者と、決済取引の売上のサロンのオーナー・マネージャーが実行できます。返金できるのは status が completed の決済取引だけで、それ以外(返金済みを含む)は409を返します。1つの決済取引に対する返金は1回だけです。refundAmount が amount を超える場合は400を返します。返金後の決済取引の status は全額返金なら refunded、部分返金なら partial_refund になります。売上の paymentStatus は、受け取った全額を返金していれば refunded に、そうでなければ partial_refund になります。決済取引が存在しない場合と、ほかのサロンの売上のものである場合は404を返します。")
       @summary("Refund a payment")
       @route("/{id}/refund")
       @post
