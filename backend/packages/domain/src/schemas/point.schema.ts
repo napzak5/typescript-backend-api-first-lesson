@@ -126,5 +126,3 @@ export const pointExpireRequestSchema = z.strictObject({
   customerId: customerIdSchema.nullable(),
   processBefore: z.iso.date().nullable(),
 }) satisfies z.ZodType<ApiPointExpireRequest>
-
-export type PointExpireRequest = z.infer<typeof pointExpireRequestSchema>
