@@ -452,15 +452,17 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 
 ### ポイント台帳の権限
 
-ポイントは顧客のもので、顧客はサロンに属さないので、ポイント台帳（`/api/v1/points`）はプラットフォーム全体で 1 つです。誰が使えるかは、操作者だけで決まります（`business-logic/point/_shared/authorization.ts` の `pointReachOf` と `pointAdjustReachOf`）。
+ポイントは顧客のもので、顧客はサロンに属さないので、ポイント台帳（`/api/v1/points`）はプラットフォーム全体で 1 つです。誰が使えるかは、操作者だけで決まります（`business-logic/point/_shared/authorization.ts` の `pointReachOf`、`pointAdjustReachOf`、`mayExpirePoints`）。
 
 | オペレーション | 許可 |
 |---|---|
-| 残高、履歴（`GET /api/v1/points/customer/{customerId}/balance`、`/transactions`）、付与、利用（`POST /api/v1/points/earn`、`/use`） | `admin`、どのサロンの `owner` / `manager` / `staff` も |
+| 残高、履歴、有効期限が近いポイント（`GET /api/v1/points/customer/{customerId}/balance`、`/transactions`、`/expiring`）、付与、利用（`POST /api/v1/points/earn`、`/use`） | `admin`、どのサロンの `owner` / `manager` / `staff` も |
 | 調整（`POST /api/v1/points/adjust`） | `admin`、どのサロンの `owner` / `manager` も |
+| 失効（`POST /api/v1/points/expire`） | `admin` だけ |
 
 - ロール `customer` のユーザーと、範囲 `none` のユーザーは、パスと本文が不正でも 403
 - サロンの `staff` は、付与と利用はできるが、調整はできない（403）。付与と利用はレジの仕事で、調整はレジの記録によらずにポイントを動かすからである（売上の取り消しと同じ）
+- 失効は `admin` だけができる。サロンの `owner` と `manager` も 403。どのサロンで貯めたポイントも、すべての顧客についてまとめて減らすからである
 - 届く範囲（`LedgerReach`）が決めるのは、付与、利用、調整が参照できる売上と予約である。`admin` はすべてのサロンの、サロンのメンバーは所属サロンの売上と予約を参照できる。ほかのサロンの売上と予約は、存在しないものとして 400（`referenceId` の `not_found`）
 - 顧客本人は、自分の残高をプロフィール（`/api/v1/customers/me` の `loyaltyPoints`）で見る。履歴を読むルートはない。ポイントのための権限（`users.permissions`）はない
 

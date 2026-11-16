@@ -150,13 +150,15 @@ backend/packages/api/src/
 │   │   ├── _shared/
 │   │   │   ├── types.ts            # CustomerPointsParams, and the response body types
 │   │   │   ├── links.ts            # customerPointsLinks
-│   │   │   ├── query.ts            # decodePointTransactionSearchQuery
+│   │   │   ├── query.ts            # decodePointTransactionSearchQuery, decodeExpiringPointsQuery
 │   │   │   └── index.ts            # re-exports the three files above
 │   │   ├── get-point-balance.handler.ts          # GET  /api/v1/points/customer/:customerId/balance
 │   │   ├── list-point-transactions.handler.ts    # GET  /api/v1/points/customer/:customerId/transactions
+│   │   ├── get-expiring-points.handler.ts        # GET  /api/v1/points/customer/:customerId/expiring
 │   │   ├── earn-points.handler.ts                # POST /api/v1/points/earn
 │   │   ├── use-points.handler.ts                 # POST /api/v1/points/use
 │   │   ├── adjust-points.handler.ts              # POST /api/v1/points/adjust
+│   │   ├── expire-points.handler.ts              # POST /api/v1/points/expire
 │   │   └── index.ts                              # createPointRouter
 │   ├── sale/
 │   │   ├── _shared/
@@ -541,7 +543,7 @@ Express tries the routes in the order in which they were registered, so `/bulk` 
 
 `routes/payment/index.ts` exports `createPaymentRouter(dependencies, authenticated)` with one route, `POST /:id/refund`. It is a plain `Router()` mounted at `/payments` and given the same dependencies of the payments as the sale router; its handler declares `PaymentParams` (`routes/payment/_shared/types.ts`). The contract has no other route of a payment: a payment is read with its sale.
 
-`routes/point/index.ts` exports `createPointRouter(dependencies, authenticated)` with five routes: `GET /customer/:customerId/balance`, `GET /customer/:customerId/transactions`, `POST /earn`, `POST /use` and `POST /adjust`. It is a plain `Router()` mounted at `/points`, as the contract puts the routes, and not below the customers. The two reads declare `CustomerPointsParams`; the three movements name the customer in the body. Every response links the balance and the history of the customer (`customerPointsLinks`), and the links of a page of the history are those of the history of the customer. A point transaction has no address of its own. No operation is public, so every handler receives `authenticated`.
+`routes/point/index.ts` exports `createPointRouter(dependencies, authenticated)` with seven routes: `GET /customer/:customerId/balance`, `GET /customer/:customerId/transactions`, `GET /customer/:customerId/expiring`, `POST /earn`, `POST /use`, `POST /adjust` and `POST /expire`. It is a plain `Router()` mounted at `/points`, as the contract puts the routes, and not below the customers. The two reads declare `CustomerPointsParams`; the three movements name the customer in the body. Every response links the balance and the history of the customer (`customerPointsLinks`), and the links of a page of the history are those of the history of the customer. A point transaction has no address of its own. No operation is public, so every handler receives `authenticated`.
 
 `routes/customer-preferences/index.ts` exports two factories, because the preferences of a customer are reached in two ways. `createCustomerPreferencesRouter(dependencies, authenticated)` has two routes, `GET /` and `PATCH /`, is mounted below a customer of the ledger (`/customers/:id/preferences`) and created with `Router({ mergeParams: true })`; its handlers declare `CustomerPreferencesParams` (`routes/customer-preferences/_shared/types.ts`). `createOwnCustomerPreferencesRouter(dependencies, authenticated)` has the same two routes and is a plain `Router()` mounted at `/customers/me/preferences`. A customer has one set of preferences, and has it whether a row is stored or not, so neither router has a route with an ID of its own, a `POST` or a `DELETE`. No operation is public, so every handler receives `authenticated`.
 
