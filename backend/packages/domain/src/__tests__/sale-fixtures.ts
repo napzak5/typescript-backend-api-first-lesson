@@ -30,8 +30,8 @@ export const OTHER_SALE_ID = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f3a02'
 /** A shampoo the salon sells. */
 export const PRODUCT_ID = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f3b01'
 
-export const PAYMENT_ID = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f3c01'
-export const PAYMENT_METHOD_ID = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f3d01'
+const PAYMENT_ID = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f3c01'
+const PAYMENT_METHOD_ID = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f3d01'
 
 export const SALE_NUMBER = 'SL-7Z3K-0QXM'
 

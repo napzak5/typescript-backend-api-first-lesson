@@ -20,7 +20,7 @@ import { notFound } from '../../booking/_shared/plan'
  */
 
 /** What a sale takes from its salon. */
-export type SalonOfSale = Pick<DbSalon, 'timezone'>
+type SalonOfSale = Pick<DbSalon, 'timezone'>
 
 /** The booking a sale is the bill of. */
 export type BookingOfSale = Pick<DbBooking, 'customerId'> & {

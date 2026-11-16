@@ -62,7 +62,7 @@ const salesDetailShape = z.strictObject({
  * lines taken together and of the sale are looked at all the same, and a
  * request learns everything that is wrong with it at once.
  */
-export const salesDetailSchema = salesDetailShape.check((context) => {
+const salesDetailSchema = salesDetailShape.check((context) => {
   const { itemType, itemId, quantity, unitPrice } = context.value
   const { discountAmount, taxAmount, totalAmount } = context.value
 
