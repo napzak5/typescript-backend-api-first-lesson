@@ -1177,4 +1177,194 @@ describe('the migrations of this repository', () => {
       ).toHaveLength(0)
     })
   })
+
+  describe('202611171200_review_reports.sql', () => {
+    const run = (): Promise<void> =>
+      runMigration('202611171200_review_reports.sql')
+
+    /** The schema of setup.sql, which the migration brings a database to. */
+    let schemaOfSetup: string[] = []
+
+    /** A review that says it was reported so many times. */
+    const storeReportedReview = async (
+      reportCount: number,
+    ): Promise<string> => {
+      const id = await storeReview(await storeSalon(null), { overallRating: 2 })
+      await sql`
+        UPDATE reviews SET "reportCount" = ${reportCount} WHERE id = ${id}
+      `
+      return id
+    }
+
+    type StoredReport = {
+      reportedBy?: string
+      reason?: string
+      details?: string | null
+      status?: string
+      resolvedBy?: string | null
+      resolvedAt?: string | null
+    }
+
+    /** A report of the review, by an account of its own: pending, for spam. */
+    const storeReport = async (
+      reviewId: string,
+      {
+        reportedBy = randomUUID(),
+        reason = 'spam',
+        details = null,
+        status = 'pending',
+        resolvedBy = null,
+        resolvedAt = null,
+      }: StoredReport = {},
+    ): Promise<void> => {
+      await sql`
+        INSERT INTO review_reports (
+          "reviewId", "reportedBy", reason, details, status, "resolvedBy",
+          "resolvedAt"
+        )
+        VALUES (
+          ${reviewId}, ${reportedBy}, ${reason}, ${details}, ${status},
+          ${resolvedBy}, ${resolvedAt}
+        )
+      `
+    }
+
+    /** A report an administrator dismissed. */
+    const dismissed: StoredReport = {
+      status: 'dismissed',
+      resolvedBy: randomUUID(),
+      resolvedAt: '2026-11-17T03:00:00Z',
+    }
+
+    /**
+     * The report count of a review, and the transaction that wrote the
+     * row: the same as long as nothing did.
+     */
+    const reportsOf = async (
+      id: string,
+    ): Promise<{ count: number; writtenBy: string }> => {
+      const [row] = await sql<{ count: number; writtenBy: string }[]>`
+        SELECT "reportCount" AS count, xmin::text AS "writtenBy"
+        FROM reviews
+        WHERE id = ${id}
+      `
+      return row ?? { count: -1, writtenBy: 'missing' }
+    }
+
+    // A database from before the migration: no table of the reports and
+    // none of its types.
+    beforeEach(async () => {
+      await applyBaseline(sql, plan)
+      schemaOfSetup = await describeSchema()
+      await sql.unsafe(`
+        DROP TABLE review_reports;
+        DROP TYPE review_report_reason;
+        DROP TYPE review_report_status;
+      `)
+    })
+
+    it('should give the database the table and the types of setup.sql', async () => {
+      expect(await describeSchema()).not.toEqual(schemaOfSetup)
+
+      await run()
+
+      expect(await describeSchema()).toEqual(schemaOfSetup)
+    })
+
+    it('should count every review again: nobody is known to have reported one', async () => {
+      const counted = await storeReportedReview(3)
+      const none = await storeReportedReview(0)
+      const noneBefore = await reportsOf(none)
+
+      await run()
+
+      expect((await reportsOf(counted)).count).toBe(0)
+      expect(await reportsOf(none)).toEqual(noneBefore)
+    })
+
+    it('should count the pending reports of a review and no dismissed one, write no review whose count agrees, and nothing on a second run', async () => {
+      await run()
+      const reported = await storeReportedReview(0)
+      await storeReport(reported)
+      await storeReport(reported, { reason: 'inappropriate' })
+      await storeReport(reported, dismissed)
+      const agreeing = await storeReportedReview(1)
+      await storeReport(agreeing)
+      await storeReport(agreeing, dismissed)
+      const agreeingBefore = await reportsOf(agreeing)
+
+      await run()
+      const afterSecond = await reportsOf(reported)
+      await run()
+
+      expect(afterSecond.count).toBe(2)
+      expect(await reportsOf(reported)).toEqual(afterSecond)
+      expect(await reportsOf(agreeing)).toEqual(agreeingBefore)
+    })
+
+    it('should keep a second report of an account out, and take the reports of a review away with it', async () => {
+      await run()
+      const review = await storeReportedReview(0)
+      const account = randomUUID()
+      await storeReport(review, { reportedBy: account })
+      await storeReport(review, { ...dismissed, reportedBy: randomUUID() })
+
+      await expect(
+        storeReport(review, { ...dismissed, reportedBy: account }),
+      ).rejects.toThrow('review_reports_review_reporter_unique')
+      await sql`DELETE FROM reviews WHERE id = ${review}`
+      expect(
+        await sql`SELECT 1 FROM review_reports WHERE "reviewId" = ${review}`,
+      ).toHaveLength(0)
+    })
+
+    it.each<[string, StoredReport, string]>([
+      [
+        'a pending report that says who dismissed it',
+        { resolvedBy: randomUUID() },
+        'review_reports_resolved_when_dismissed',
+      ],
+      [
+        'a pending report that says when it was dismissed',
+        { resolvedAt: '2026-11-17T03:00:00Z' },
+        'review_reports_resolved_when_dismissed',
+      ],
+      [
+        'a dismissed report that does not say who dismissed it',
+        { ...dismissed, resolvedBy: null },
+        'review_reports_resolved_when_dismissed',
+      ],
+      [
+        'a dismissed report that does not say when',
+        { ...dismissed, resolvedAt: null },
+        'review_reports_resolved_when_dismissed',
+      ],
+      [
+        'a report for another reason that does not say what it is about',
+        { reason: 'other' },
+        'review_reports_other_has_details',
+      ],
+      [
+        'details of more than 2000 characters',
+        { details: 'x'.repeat(2001) },
+        'value too long',
+      ],
+    ])('should keep %s out', async (_, report, rule) => {
+      await run()
+      const review = await storeReportedReview(0)
+
+      await expect(storeReport(review, report)).rejects.toThrow(rule)
+    })
+
+    it('should take a report for another reason that says what it is about, and details of 2000 characters', async () => {
+      await run()
+      const review = await storeReportedReview(0)
+
+      await storeReport(review, { reason: 'other', details: 'x'.repeat(2000) })
+
+      expect(
+        await sql`SELECT 1 FROM review_reports WHERE "reviewId" = ${review}`,
+      ).toHaveLength(1)
+    })
+  })
 })

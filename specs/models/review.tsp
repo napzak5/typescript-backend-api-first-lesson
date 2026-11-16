@@ -20,6 +20,34 @@ namespace BeautySalon.Models {
   }
 
   @doc("""
+    レビュー通報理由区分 - レビューを通報する理由を表す。運営が理由で絞り込み、集計する
+    
+    inappropriate: 不適切な表現 - 暴言、差別的な表現、わいせつな内容
+    false_information: 事実と違う内容 - 施術や来店の事実と違う記述
+    personal_information: 個人情報 - スタッフやほかの顧客の氏名・連絡先などの記述
+    spam: 宣伝・無関係 - 宣伝や、来店と関係のない内容
+    other: その他 - ほかのどれにも当たらない理由。details に内容を書く
+    """)
+  enum ReviewReportReasonType {
+    inappropriate,
+    false_information,
+    personal_information,
+    spam,
+    other,
+  }
+
+  @doc("""
+    レビュー通報状態区分 - 通報の処理状態を表す
+    
+    pending: 未処理 - 運営がまだ確かめていない通報。レビューの reportCount が数える
+    dismissed: 却下 - 運営が確かめ、レビューに問題がないと判断した通報
+    """)
+  enum ReviewReportStatusType {
+    pending,
+    dismissed,
+  }
+
+  @doc("""
     レビューレスポンス - reviews テーブルの全カラムを返す。施術後の顧客体験を定量・定性的に記録し、サロン品質の改善と信頼性向上に活用する。
     プロパティ名と null 許可は DB カラムと一致させている。評価値はすべて1〜5の整数
     """)
@@ -72,7 +100,7 @@ namespace BeautySalon.Models {
     @doc("レビューを「参考になった」と評価した顧客の数。1人1回で、評価したトランザクションが数え直す")
     helpfulCount: int32;
 
-    @doc("不適切報告が入った累積回数")
+    @doc("未処理(pending)の通報の件数。通報したトランザクションと却下したトランザクションが、通報の行から数え直す。運営が却下した通報は数えない")
     reportCount: int32;
 
     @doc("サロン運営からの公式返信本文。オーナー未返信のレビューの場合はnull")
@@ -257,19 +285,73 @@ namespace BeautySalon.Models {
     """)
   model ReviewReportRequest {
     @doc("通報の理由")
-    @minLength(1)
-    @maxLength(255)
-    reason: string;
+    reason: ReviewReportReasonType;
 
-    @doc("通報内容の詳細。補足説明がない場合はnull")
+    @doc("通報内容の詳細。空白だけの文字列は指定できない。reason が other の場合は必須で、ほかの理由で補足がない場合はnull")
     @maxLength(2000)
     details: string | null;
   }
 
-  @doc("レビュー通報の結果 - 受け付けた通報を識別するIDを返す")
+  @doc("""
+    レビュー通報レスポンス - review_reports テーブルの全カラムを返す。プロパティ名と null 許可は DB カラムと一致させている
+    """)
   model ReviewReportResponse {
-    @doc("受け付けた通報を識別するID")
-    reportId: string;
+    @doc("通報を一意に識別するID")
+    id: ReviewReportId;
+
+    @doc("通報されたレビューのID")
+    reviewId: ReviewId;
+
+    @doc("通報したアカウントのユーザーID")
+    reportedBy: UserId;
+
+    @doc("通報の理由")
+    reason: ReviewReportReasonType;
+
+    @doc("通報内容の詳細。補足がない場合はnull")
+    details: string | null;
+
+    @doc("通報の処理状態")
+    status: ReviewReportStatusType;
+
+    @doc("通報を却下した管理者のユーザーID。未処理の場合はnull")
+    resolvedBy: UserId | null;
+
+    @doc("通報を却下した日時。未処理の場合はnull")
+    resolvedAt: utcDateTime | null;
+
+    @doc("通報を受け付けた日時")
+    createdAt: utcDateTime;
+
+    @doc("通報を最後に更新した日時")
+    updatedAt: utcDateTime;
+  }
+
+  @doc("""
+    レビュー通報の一覧・検索リクエスト - 絞り込み条件とページネーションを指定する。条件はすべて AND で結合する。受け付けた順(createdAt と id の昇順)に並ぶ
+    """)
+  model ReviewReportSearchRequest {
+    @query
+    @doc("1ページあたりの取得件数上限 (1〜100)")
+    @minValue(1)
+    @maxValue(100)
+    limit?: int32 = 20;
+
+    @query
+    @doc("取得開始位置を示すカーソル。同じ絞り込み条件で取得した前回レスポンスの `meta.nextCursor` を指定する。一覧に出る通報のIDでない場合は検証エラー")
+    cursor?: string;
+
+    @query
+    @doc("通報の処理状態による絞り込み")
+    status?: ReviewReportStatusType;
+
+    @query
+    @doc("通報されたレビューのIDによる絞り込み(完全一致)")
+    reviewId?: ReviewId;
+
+    @query
+    @doc("通報されたレビューのサロンIDによる絞り込み(完全一致)")
+    salonId?: SalonId;
   }
 
   @doc("""

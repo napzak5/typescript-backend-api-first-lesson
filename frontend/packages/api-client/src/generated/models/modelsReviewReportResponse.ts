@@ -5,11 +5,43 @@
  * Comprehensive REST API for managing beauty salon operations including salons, staff, services, customers, bookings, treatments, payments, inventory, and access control. Built with TypeSpec for type-safe API-first development.
  * OpenAPI spec version: 2.0
  */
+import type { ModelsReviewId } from './modelsReviewId';
+import type { ModelsReviewReportId } from './modelsReviewReportId';
+import type { ModelsReviewReportReasonType } from './modelsReviewReportReasonType';
+import type { ModelsReviewReportStatusType } from './modelsReviewReportStatusType';
+import type { ModelsUserId } from './modelsUserId';
 
 /**
- * レビュー通報の結果 - 受け付けた通報を識別するIDを返す
+ * レビュー通報レスポンス - review_reports テーブルの全カラムを返す。プロパティ名と null 許可は DB カラムと一致させている
  */
 export interface ModelsReviewReportResponse {
-  /** 受け付けた通報を識別するID */
-  reportId: string;
+  /** 通報を一意に識別するID */
+  id: ModelsReviewReportId;
+  /** 通報されたレビューのID */
+  reviewId: ModelsReviewId;
+  /** 通報したアカウントのユーザーID */
+  reportedBy: ModelsUserId;
+  /** 通報の理由 */
+  reason: ModelsReviewReportReasonType;
+  /**
+     * 通報内容の詳細。補足がない場合はnull
+     * @nullable
+     */
+  details: string | null;
+  /** 通報の処理状態 */
+  status: ModelsReviewReportStatusType;
+  /**
+     * 通報を却下した管理者のユーザーID。未処理の場合はnull
+     * @nullable
+     */
+  resolvedBy: string | null;
+  /**
+     * 通報を却下した日時。未処理の場合はnull
+     * @nullable
+     */
+  resolvedAt: string | null;
+  /** 通報を受け付けた日時 */
+  createdAt: string;
+  /** 通報を最後に更新した日時 */
+  updatedAt: string;
 }

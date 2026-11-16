@@ -2080,6 +2080,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/review-reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List review reports
+         * @description レビューの通報を、受け付けた順(createdAt と id の昇順)に一覧取得します。admin だけが呼べ、ほかのロールには403を返します。status、reviewId、salonId で絞り込めます。削除したサロンのレビューの通報は含みません。存在しないIDで絞り込んだ場合は空の一覧を返します。cursor が一覧に出る通報のIDでない場合は400を返します。
+         */
+        get: operations["ReviewReportCrud_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/review-reports/{id}/dismiss": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Dismiss review report
+         * @description レビューに問題がないと判断した通報を却下し、却下した通報を返します。admin だけが呼べ、ほかのロールには403を返します。status を dismissed に、resolvedBy を操作者のユーザーIDに、resolvedAt を却下した日時にし、レビューの reportCount を未処理の通報から数え直します。却下した通報の却下は409、通報が存在しない場合と、削除したサロンのレビューの通報の場合は404を返します。本文は読みません。
+         */
+        post: operations["ReviewReportCrud_dismiss"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/reviews": {
         parameters: {
             query?: never;
@@ -2163,7 +2203,7 @@ export interface paths {
         put?: never;
         /**
          * Report review
-         * @description 不適切な内容や虚偽が疑われるレビューを通報し、運営による対応フローへ送ります。レビューの報告数を1加算します。
+         * @description 不適切な内容や虚偽が疑われるレビューを運営に通報し、受け付けた通報を返します。通報できるのは、顧客(ロール customer で顧客のプロフィールがあるアカウント)と、レビューのサロンの owner・manager です。admin と staff、ほかのサロンの owner・manager、プロフィールのない顧客のアカウント、自分のレビューには403を返します。1つのレビューを通報できるのは1アカウント1回で、2回目は409です(却下されたあとも同じ)。reason が other で details が null の場合は400を、レビューが存在しない場合と、削除したサロンのレビューの場合は404を返します。通報してもレビューは隠しません。レビューの reportCount を、未処理の通報から数え直します。
          */
         post: operations["ReviewCrud_report"];
         delete?: never;
@@ -7129,18 +7169,104 @@ export interface components {
          * @description 顧客レビューや口コミを識別するブランド付きUUID。
          */
         "Models.ReviewId": string;
+        /**
+         * Format: uuid
+         * @description レビューの通報（review_reports の1行）を識別するブランド付きUUID。
+         */
+        "Models.ReviewReportId": string;
+        /**
+
+         * @description
+
+         * レビュー通報理由区分 - レビューを通報する理由を表す。運営が理由で絞り込み、集計する
+
+         *
+
+         *
+
+         * inappropriate: 不適切な表現 - 暴言、差別的な表現、わいせつな内容
+
+         *
+
+         * false_information: 事実と違う内容 - 施術や来店の事実と違う記述
+
+         *
+
+         * personal_information: 個人情報 - スタッフやほかの顧客の氏名・連絡先などの記述
+
+         *
+
+         * spam: 宣伝・無関係 - 宣伝や、来店と関係のない内容
+
+         *
+
+         * other: その他 - ほかのどれにも当たらない理由。details に内容を書く
+
+         * @enum {string}
+
+         */
+
+        "Models.ReviewReportReasonType": "inappropriate" | "false_information" | "personal_information" | "spam" | "other";
         /** @description レビュー通報リクエスト - 不適切な内容や虚偽が疑われるレビューの通報内容を受け取る。全項目のキーが必須 */
         "Models.ReviewReportRequest": {
             /** @description 通報の理由 */
-            reason: string;
-            /** @description 通報内容の詳細。補足説明がない場合はnull */
+            reason: components["schemas"]["Models.ReviewReportReasonType"];
+            /** @description 通報内容の詳細。空白だけの文字列は指定できない。reason が other の場合は必須で、ほかの理由で補足がない場合はnull */
             details: string | null;
         };
-        /** @description レビュー通報の結果 - 受け付けた通報を識別するIDを返す */
+        /** @description レビュー通報レスポンス - review_reports テーブルの全カラムを返す。プロパティ名と null 許可は DB カラムと一致させている */
         "Models.ReviewReportResponse": {
-            /** @description 受け付けた通報を識別するID */
-            reportId: string;
+            /** @description 通報を一意に識別するID */
+            id: components["schemas"]["Models.ReviewReportId"];
+            /** @description 通報されたレビューのID */
+            reviewId: components["schemas"]["Models.ReviewId"];
+            /** @description 通報したアカウントのユーザーID */
+            reportedBy: components["schemas"]["Models.UserId"];
+            /** @description 通報の理由 */
+            reason: components["schemas"]["Models.ReviewReportReasonType"];
+            /** @description 通報内容の詳細。補足がない場合はnull */
+            details: string | null;
+            /** @description 通報の処理状態 */
+            status: components["schemas"]["Models.ReviewReportStatusType"];
+            /** @description 通報を却下した管理者のユーザーID。未処理の場合はnull */
+            resolvedBy: (string & components["schemas"]["Models.UserId"]) | null;
+            /**
+             * Format: date-time
+             * @description 通報を却下した日時。未処理の場合はnull
+             */
+            resolvedAt: string | null;
+            /**
+             * Format: date-time
+             * @description 通報を受け付けた日時
+             */
+            createdAt: string;
+            /**
+             * Format: date-time
+             * @description 通報を最後に更新した日時
+             */
+            updatedAt: string;
         };
+        /**
+
+         * @description
+
+         * レビュー通報状態区分 - 通報の処理状態を表す
+
+         *
+
+         *
+
+         * pending: 未処理 - 運営がまだ確かめていない通報。レビューの reportCount が数える
+
+         *
+
+         * dismissed: 却下 - 運営が確かめ、レビューに問題がないと判断した通報
+
+         * @enum {string}
+
+         */
+
+        "Models.ReviewReportStatusType": "pending" | "dismissed";
         /**
          * @description レビューレスポンス - reviews テーブルの全カラムを返す。施術後の顧客体験を定量・定性的に記録し、サロン品質の改善と信頼性向上に活用する。
          *     プロパティ名と null 許可は DB カラムと一致させている。評価値はすべて1〜5の整数
@@ -7201,7 +7327,7 @@ export interface components {
             helpfulCount: number;
             /**
              * Format: int32
-             * @description 不適切報告が入った累積回数
+             * @description 未処理(pending)の通報の件数。通報したトランザクションと却下したトランザクションが、通報の行から数え直す。運営が却下した通報は数えない
              */
             reportCount: number;
             /** @description サロン運営からの公式返信本文。オーナー未返信のレビューの場合はnull */
@@ -10019,6 +10145,16 @@ export interface components {
         "Models.ResourceAccessSearchRequest.limit": number;
         /** @description サロンの ID による絞り込み(完全一致)。省略した場合はシステム全体の権限で判定する */
         "Models.ResourceAccessSearchRequest.salonId": components["schemas"]["Models.SalonId"];
+        /** @description 取得開始位置を示すカーソル。同じ絞り込み条件で取得した前回レスポンスの `meta.nextCursor` を指定する。一覧に出る通報のIDでない場合は検証エラー */
+        "Models.ReviewReportSearchRequest.cursor": string;
+        /** @description 1ページあたりの取得件数上限 (1〜100) */
+        "Models.ReviewReportSearchRequest.limit": number;
+        /** @description 通報されたレビューのIDによる絞り込み(完全一致) */
+        "Models.ReviewReportSearchRequest.reviewId": components["schemas"]["Models.ReviewId"];
+        /** @description 通報されたレビューのサロンIDによる絞り込み(完全一致) */
+        "Models.ReviewReportSearchRequest.salonId": components["schemas"]["Models.SalonId"];
+        /** @description 通報の処理状態による絞り込み */
+        "Models.ReviewReportSearchRequest.status": components["schemas"]["Models.ReviewReportStatusType"];
         /** @description 紐づく来店予約IDによる絞り込み(完全一致) */
         "Models.ReviewSearchRequest.bookingId": components["schemas"]["Models.BookingId"];
         /** @description 取得開始位置を示すカーソル。同じ絞り込み条件と並び順で取得した前回レスポンスの `meta.nextCursor` を指定する。一覧に出るレビューのIDでない場合は検証エラー */
@@ -22378,6 +22514,205 @@ export interface operations {
             };
         };
     };
+    ReviewReportCrud_list: {
+        parameters: {
+            query?: {
+                /** @description 1ページあたりの取得件数上限 (1〜100) */
+                limit?: components["parameters"]["Models.ReviewReportSearchRequest.limit"];
+                /** @description 取得開始位置を示すカーソル。同じ絞り込み条件で取得した前回レスポンスの `meta.nextCursor` を指定する。一覧に出る通報のIDでない場合は検証エラー */
+                cursor?: components["parameters"]["Models.ReviewReportSearchRequest.cursor"];
+                /** @description 通報の処理状態による絞り込み */
+                status?: components["parameters"]["Models.ReviewReportSearchRequest.status"];
+                /** @description 通報されたレビューのIDによる絞り込み(完全一致) */
+                reviewId?: components["parameters"]["Models.ReviewReportSearchRequest.reviewId"];
+                /** @description 通報されたレビューのサロンIDによる絞り込み(完全一致) */
+                salonId?: components["parameters"]["Models.ReviewReportSearchRequest.salonId"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The request has succeeded. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description 現在ページで取得したデータ配列。サロン一覧や予約履歴の実データを格納する。 */
+                        data: components["schemas"]["Models.ReviewReportResponse"][];
+                        /** @description ページング状態を示すメタ情報。次ページの有無やカーソル値を含む。 */
+                        meta: components["schemas"]["Models.PaginationMeta"];
+                        /** @description 関連するページ遷移リンク。HATEOAS 連携や外部連携向けに利用する。 */
+                        links: components["schemas"]["Models.PaginationLinks"];
+                    };
+                };
+            };
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description 認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
+             *     ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
+             *     WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+             */
+            401: {
+                headers: {
+                    /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
+                    "WWW-Authenticate": string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description 認証されているが、この操作を行う権限がない (403)。 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
+             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+             */
+            429: {
+                headers: {
+                    /** @description 再試行できるようになるまでの秒数。 */
+                    "Retry-After": number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+        };
+    };
+    ReviewReportCrud_dismiss: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["schemas"]["Models.ReviewReportId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The request has succeeded. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        data: components["schemas"]["Models.ReviewReportResponse"];
+                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        meta: components["schemas"]["Models.ResponseMeta"] | null;
+                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        links: {
+                            [key: string]: string;
+                        } | null;
+                    };
+                };
+            };
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description 認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
+             *     ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
+             *     WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+             */
+            401: {
+                headers: {
+                    /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
+                    "WWW-Authenticate": string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description 認証されているが、この操作を行う権限がない (403)。 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The server cannot find the requested resource. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The request conflicts with the current state of the server. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
+             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+             */
+            429: {
+                headers: {
+                    /** @description 再試行できるようになるまでの秒数。 */
+                    "Retry-After": number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+        };
+    };
     ReviewCrud_list: {
         parameters: {
             query?: {
@@ -23014,6 +23349,15 @@ export interface operations {
             };
             /** @description The server cannot find the requested resource. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The request conflicts with the current state of the server. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

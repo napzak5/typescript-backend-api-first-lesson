@@ -161,6 +161,19 @@ export const pricingStrategy = pgEnum('pricing_strategy', [
   'consultation_based',
 ])
 
+export const reviewReportReason = pgEnum('review_report_reason', [
+  'inappropriate',
+  'false_information',
+  'personal_information',
+  'spam',
+  'other',
+])
+
+export const reviewReportStatus = pgEnum('review_report_status', [
+  'pending',
+  'dismissed',
+])
+
 export const salonRole = pgEnum('salon_role', ['owner', 'manager', 'staff'])
 
 export const scalpCondition = pgEnum('scalp_condition', [
@@ -1225,6 +1238,50 @@ export const reviewHelpfulVotes = pgTable(
     unique('review_helpful_votes_review_customer_unique').on(
       table.reviewId,
       table.customerId,
+    ),
+  ],
+)
+
+export const reviewReports = pgTable(
+  'review_reports',
+  {
+    id: uuid().defaultRandom().primaryKey().notNull(),
+    reviewId: uuid().notNull(),
+    reportedBy: uuid().notNull(),
+    reason: reviewReportReason().notNull(),
+    details: varchar({ length: 2000 }),
+    status: reviewReportStatus().default('pending').notNull(),
+    resolvedBy: uuid(),
+    resolvedAt: timestamp({ withTimezone: true, mode: 'string' }),
+    createdAt: timestamp({ withTimezone: true, mode: 'string' })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp({ withTimezone: true, mode: 'string' })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    check(
+      'review_reports_other_has_details',
+      sql`(reason <> 'other'::review_report_reason) OR (details IS NOT NULL)`,
+    ),
+    check(
+      'review_reports_resolved_when_dismissed',
+      sql`((status = 'pending'::review_report_status) AND ("resolvedBy" IS NULL) AND ("resolvedAt" IS NULL)) OR ((status = 'dismissed'::review_report_status) AND ("resolvedBy" IS NOT NULL) AND ("resolvedAt" IS NOT NULL))`,
+    ),
+    foreignKey({
+      columns: [table.reviewId],
+      foreignColumns: [reviews.id],
+      name: 'review_reports_review_id_fk',
+    }).onDelete('cascade'),
+    index('idx_review_reports_created_at').using(
+      'btree',
+      table.createdAt.asc().nullsLast().op('timestamptz_ops'),
+      table.id.asc().nullsLast().op('uuid_ops'),
+    ),
+    unique('review_reports_review_reporter_unique').on(
+      table.reviewId,
+      table.reportedBy,
     ),
   ],
 )

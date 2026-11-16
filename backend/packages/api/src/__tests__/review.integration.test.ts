@@ -979,15 +979,12 @@ describe('Reviews API', () => {
       })
     })
 
-    it('serves no other method on a review, and none of the operations that are not implemented', async () => {
+    it('serves no other method on a review', async () => {
       const id = await insertReview()
 
       for (const call of [
         request(app).post(`${REVIEWS}/${id}`),
         request(app).put(`${REVIEWS}/${id}`),
-        request(app)
-          .post(`${REVIEWS}/${id}/report`)
-          .send({ reason: 'spam', details: null }),
       ]) {
         expectProblem(await authorized(call, asCustomer), routeNotFound)
       }

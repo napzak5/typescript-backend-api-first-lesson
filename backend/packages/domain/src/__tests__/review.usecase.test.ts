@@ -79,6 +79,7 @@ const repositoryWasNotCalled = (dependencies: ReviewUseCaseDependencies) => {
   expect(
     vi.mocked(dependencies.reviewRepository.markHelpful),
   ).not.toHaveBeenCalled()
+  expect(vi.mocked(dependencies.reviewRepository.report)).not.toHaveBeenCalled()
   expect(vi.mocked(salonTally)).not.toHaveBeenCalled()
   expect(vi.mocked(staffTally)).not.toHaveBeenCalled()
 }

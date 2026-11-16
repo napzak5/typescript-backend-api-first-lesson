@@ -97,7 +97,9 @@ export async function seed(
       })
 
       console.log('Seeding reviews...')
-      await seedReviews(db, completedBookings, customerResult.customerIds)
+      await seedReviews(db, completedBookings, customerResult.customerIds, {
+        adminUserId: userResult.adminUserId,
+      })
     }
 
     console.log('Seeding completed successfully!')
@@ -131,6 +133,7 @@ export async function truncateAll(
           staff_performances,
           sessions,
           review_helpful_votes,
+          review_reports,
           reviews,
           sales_details,
           payment_transactions,
@@ -182,6 +185,7 @@ export async function truncateAll(
       db.delete(schema.customerAllergies),
       db.delete(schema.bookingStatusHistories),
       db.delete(schema.reviewHelpfulVotes),
+      db.delete(schema.reviewReports),
     ])
 
     // Level 2: Tables that Level 1 tables depend on

@@ -71,7 +71,7 @@ export interface ModelsReviewResponse {
   isVerified: boolean;
   /** レビューを「参考になった」と評価した顧客の数。1人1回で、評価したトランザクションが数え直す */
   helpfulCount: number;
-  /** 不適切報告が入った累積回数 */
+  /** 未処理(pending)の通報の件数。通報したトランザクションと却下したトランザクションが、通報の行から数え直す。運営が却下した通報は数えない */
   reportCount: number;
   /**
      * サロン運営からの公式返信本文。オーナー未返信のレビューの場合はnull

@@ -11,7 +11,7 @@ using TypeSpec.OpenAPI;
 using BeautySalon.Models;
 
 namespace BeautySalon.Operations {
-  @doc("施術体験に対する顧客レビューを収集・運用し、信頼性の高いフィードバック基盤を構築するAPI操作群です。一覧・投稿・取得・修正・削除・参考になったを実装済みで、通報は未実装です(404)。一覧と取得はログインなしで読めます。削除したサロンのレビューは、一覧・取得・修正・削除・参考になったの対象外です。")
+  @doc("施術体験に対する顧客レビューを収集・運用し、信頼性の高いフィードバック基盤を構築するAPI操作群です。一覧・投稿・取得・修正・削除・参考になった・通報を実装済みです。一覧と取得はログインなしで読めます。削除したサロンのレビューは、一覧・取得・修正・削除・参考になった・通報の対象外です。")
   @route("/api/v1/reviews")
   @tag("Reviews")
   namespace ReviewOperations {
@@ -92,7 +92,7 @@ namespace BeautySalon.Operations {
         | ProblemResponse<404>
         | CommonErrors;
 
-      @doc("不適切な内容や虚偽が疑われるレビューを通報し、運営による対応フローへ送ります。レビューの報告数を1加算します。")
+      @doc("不適切な内容や虚偽が疑われるレビューを運営に通報し、受け付けた通報を返します。通報できるのは、顧客(ロール customer で顧客のプロフィールがあるアカウント)と、レビューのサロンの owner・manager です。admin と staff、ほかのサロンの owner・manager、プロフィールのない顧客のアカウント、自分のレビューには403を返します。1つのレビューを通報できるのは1アカウント1回で、2回目は409です(却下されたあとも同じ)。reason が other で details が null の場合は400を、レビューが存在しない場合と、削除したサロンのレビューの場合は404を返します。通報してもレビューは隠しません。レビューの reportCount を、未処理の通報から数え直します。")
       @summary("Report review")
       @route("/{id}/report")
       @post
@@ -103,7 +103,40 @@ namespace BeautySalon.Operations {
           }
         | ProblemResponse<400>
         | ProblemResponse<404>
+        | ProblemResponse<409>
         | RequestBodyErrors
+        | CommonErrors;
+    }
+  }
+
+  @doc("レビューの通報を運営(admin)が処理するAPI操作群です。未処理の通報を受け付けた順に読み、レビューに問題がなければ通報を却下し、問題があればレビューを削除します(DELETE /api/v1/reviews/{id}。レビューの通報も一緒に消えます)。どの操作も admin だけが呼べます。削除したサロンのレビューの通報は対象外です。")
+  @route("/api/v1/review-reports")
+  @tag("Reviews")
+  namespace ReviewReportOperations {
+    interface ReviewReportCrud {
+      @doc("レビューの通報を、受け付けた順(createdAt と id の昇順)に一覧取得します。admin だけが呼べ、ほかのロールには403を返します。status、reviewId、salonId で絞り込めます。削除したサロンのレビューの通報は含みません。存在しないIDで絞り込んだ場合は空の一覧を返します。cursor が一覧に出る通報のIDでない場合は400を返します。")
+      @summary("List review reports")
+      @get
+      list(...ReviewReportSearchRequest):
+        | {
+            @statusCode statusCode: 200;
+            @body response: CursorPaginationResponse<ReviewReportResponse>;
+          }
+        | ProblemResponse<400>
+        | CommonErrors;
+
+      @doc("レビューに問題がないと判断した通報を却下し、却下した通報を返します。admin だけが呼べ、ほかのロールには403を返します。status を dismissed に、resolvedBy を操作者のユーザーIDに、resolvedAt を却下した日時にし、レビューの reportCount を未処理の通報から数え直します。却下した通報の却下は409、通報が存在しない場合と、削除したサロンのレビューの通報の場合は404を返します。本文は読みません。")
+      @summary("Dismiss review report")
+      @route("/{id}/dismiss")
+      @post
+      dismiss(@path id: ReviewReportId):
+        | {
+            @statusCode statusCode: 200;
+            @body response: ApiResponse<ReviewReportResponse>;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<404>
+        | ProblemResponse<409>
         | CommonErrors;
     }
   }

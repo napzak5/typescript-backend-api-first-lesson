@@ -4,6 +4,7 @@ import { type DomainError, DomainErrors } from '../../../shared'
 import type { ReviewNotReached } from './change'
 import type { ReviewMarkPlan } from './helpful'
 import type { ReviewPlan } from './plan'
+import type { ReviewReportPlan } from './report'
 
 /** Why the review of a booking is refused, as the error a client gets. */
 export const toReviewRefusalError = (
@@ -56,5 +57,25 @@ export const toUnmarkedReviewError = (
     .with({ type: 'reviewNotFound' }, () => DomainErrors.notFound('Review', id))
     .with({ type: 'reviewerNotFound' }, { type: 'ownReview' }, () =>
       DomainErrors.forbidden(),
+    )
+    .exhaustive()
+
+/**
+ * Why a review is not reported, as the error a client gets. A customer
+ * whose account lost its customer is refused as an account without a
+ * profile is, an author as one who may change or remove the review
+ * instead, and a salon as one that does not report the reviews of others.
+ */
+export const toUnreportedReviewError = (
+  unreported: Exclude<ReviewReportPlan, { type: 'planned' }>,
+  id: ReviewId,
+): DomainError =>
+  match(unreported)
+    .with({ type: 'reviewNotFound' }, () => DomainErrors.notFound('Review', id))
+    .with(
+      { type: 'reporterNotFound' },
+      { type: 'ownReview' },
+      { type: 'otherSalon' },
+      () => DomainErrors.forbidden(),
     )
     .exhaustive()
