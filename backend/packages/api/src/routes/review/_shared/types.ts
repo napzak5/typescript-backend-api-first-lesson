@@ -19,6 +19,9 @@ export type CreateReviewResponse = JsonBody<
 export type GetReviewResponse = JsonBody<
   operations['ReviewCrud_get']['responses'][200]['content']
 >
+export type UpdateReviewResponse = JsonBody<
+  operations['ReviewCrud_update']['responses'][200]['content']
+>
 export type GetSalonReviewSummaryResponse = JsonBody<
   operations['SalonReviewSummary_getSummary']['responses'][200]['content']
 >

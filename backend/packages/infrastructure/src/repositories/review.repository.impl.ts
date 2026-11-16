@@ -10,8 +10,12 @@ import {
   type CustomerId,
   type DbReview,
   type DomainError,
+  type HeldReview,
   type IReviewRepository,
   planReview,
+  planReviewChange,
+  planReviewRemoval,
+  type ReviewChange,
   type ReviewCreateRequest,
   type ReviewCreation,
   type ReviewedBooking,
@@ -19,7 +23,10 @@ import {
   type ReviewList,
   type ReviewListCriteria,
   type ReviewPlanContext,
+  type ReviewRemoval,
+  type ReviewRemover,
   type ReviewTally,
+  type ReviewUpdateRequest,
   type SalonId,
   type StaffId,
 } from '@beauty-salon-backend/domain'
@@ -164,9 +171,45 @@ const heldBookingOf = async (
 }
 
 /**
+ * The review a change or a removal names, held `FOR UPDATE` until it is
+ * written, and its salon held next, `FOR NO KEY UPDATE`, as a review that
+ * is written holds it: the reviews of one salon are written, changed and
+ * removed one after the other. Null when there is no review with the ID,
+ * or its salon is deleted.
+ */
+const heldReviewOf = async (
+  tx: DatabaseExecutor,
+  id: string,
+): Promise<HeldReview | null> => {
+  const [review] = await tx
+    .select({
+      customerId: reviews.customerId,
+      staffId: reviews.staffId,
+      salonId: reviews.salonId,
+    })
+    .from(reviews)
+    .where(eq(reviews.id, id))
+    .for('update')
+  if (review === undefined) {
+    return null
+  }
+
+  const [salon] = await tx
+    .select({ deletedAt: salons.deletedAt })
+    .from(salons)
+    .where(eq(salons.id, review.salonId))
+    .for('no key update')
+  return salon?.deletedAt === null
+    ? { customerId: review.customerId, staffId: review.staffId }
+    : null
+}
+
+/**
  * Counts the rating and the review count of a salon again from its
- * reviews, the review just written included: the average of the overall
- * ratings rounded to two decimals, and no rating without reviews.
+ * reviews, as they are after the review just written, changed or removed:
+ * the average of the overall ratings rounded to two decimals, and no
+ * rating without reviews. The salon is written only when a figure
+ * changes.
  */
 const countReviewsOf = async (
   tx: DatabaseExecutor,
@@ -192,7 +235,24 @@ const countReviewsOf = async (
       updatedAt: CLOCK,
     })
     .from(counted)
-    .where(eq(salons.id, salonId))
+    .where(
+      and(
+        eq(salons.id, salonId),
+        sql`(${salons.rating}, ${salons.reviewCount}) is distinct from (${counted.averageRating}, ${counted.reviewCount})`,
+      ),
+    )
+}
+
+/** Whether the customer an account is linked to is deleted. */
+const isReviewerDeleted = async (
+  tx: DatabaseExecutor,
+  customerId: string,
+): Promise<boolean> => {
+  const [reviewer] = await tx
+    .select({ id: customers.id })
+    .from(customers)
+    .where(and(eq(customers.id, customerId), isNull(customers.deletedAt)))
+  return reviewer === undefined
 }
 
 /**
@@ -203,16 +263,17 @@ const contextOf = async (
   tx: DatabaseExecutor,
   customerId: string,
   bookingId: string,
-): Promise<ReviewPlanContext> => {
-  const [reviewer] = await tx
-    .select({ id: customers.id })
-    .from(customers)
-    .where(and(eq(customers.id, customerId), isNull(customers.deletedAt)))
-  return {
-    reviewerDeleted: reviewer === undefined,
-    booking: await heldBookingOf(tx, bookingId),
-  }
-}
+): Promise<ReviewPlanContext> => ({
+  reviewerDeleted: await isReviewerDeleted(tx, customerId),
+  booking: await heldBookingOf(tx, bookingId),
+})
+
+/**
+ * Each statement sees what was committed before it began: a review that
+ * waited for the salon, or a change or a removal that waited for the
+ * review or the salon, sees what the one it waited for wrote.
+ */
+const WRITE: PgTransactionConfig = { isolationLevel: 'read committed' }
 
 export class ReviewRepository implements IReviewRepository {
   constructor(private readonly db: Database) {}
@@ -334,36 +395,94 @@ export class ReviewRepository implements IReviewRepository {
     request: ReviewCreateRequest,
   ): Promise<Result<ReviewCreation, DomainError>> {
     return attempt('Failed to create review', () =>
-      this.db.transaction(
-        async (tx): Promise<ReviewCreation> => {
-          const plan = planReview(
-            customerId,
-            request,
-            await contextOf(tx, customerId, request.bookingId),
-          )
-          if (plan.type !== 'planned') {
-            return plan
-          }
+      this.db.transaction(async (tx): Promise<ReviewCreation> => {
+        const plan = planReview(
+          customerId,
+          request,
+          await contextOf(tx, customerId, request.bookingId),
+        )
+        if (plan.type !== 'planned') {
+          return plan
+        }
 
-          // The time is read when the row is written, not when the
-          // transaction began: a review that waited for the salon is
-          // later than the one it waited for.
-          const [review] = await tx
-            .insert(reviews)
-            .values({ ...plan.write, createdAt: CLOCK, updatedAt: CLOCK })
-            .onConflictDoNothing({ target: reviews.bookingId })
-            .returning()
-          if (review === undefined) {
-            return { type: 'bookingReviewed' }
-          }
-          await countReviewsOf(tx, plan.write.salonId)
+        // The time is read when the row is written, not when the
+        // transaction began: a review that waited for the salon is
+        // later than the one it waited for.
+        const [review] = await tx
+          .insert(reviews)
+          .values({ ...plan.write, createdAt: CLOCK, updatedAt: CLOCK })
+          .onConflictDoNothing({ target: reviews.bookingId })
+          .returning()
+        if (review === undefined) {
+          return { type: 'bookingReviewed' }
+        }
+        await countReviewsOf(tx, plan.write.salonId)
 
-          return { type: 'created', review }
-        },
-        // Each statement sees what was committed before it began: a
-        // review that waited for the salon sees the review it waited for.
-        { isolationLevel: 'read committed' },
-      ),
+        return { type: 'created', review }
+      }, WRITE),
+    )
+  }
+
+  async update(
+    id: ReviewId,
+    customerId: CustomerId,
+    request: ReviewUpdateRequest,
+  ): Promise<Result<ReviewChange, DomainError>> {
+    return attempt('Failed to update review', () =>
+      this.db.transaction(async (tx): Promise<ReviewChange> => {
+        const plan = planReviewChange(customerId, request, {
+          reviewerDeleted: await isReviewerDeleted(tx, customerId),
+          review: await heldReviewOf(tx, id),
+        })
+        if (plan.type !== 'planned') {
+          return plan
+        }
+
+        const [review] = await tx
+          .update(reviews)
+          .set({ ...plan.write, updatedAt: CLOCK })
+          .where(eq(reviews.id, id))
+          .returning()
+        // The review is held: it is there until the transaction ends.
+        if (review === undefined) {
+          return { type: 'reviewNotFound' }
+        }
+        await countReviewsOf(tx, review.salonId)
+
+        return { type: 'updated', review }
+      }, WRITE),
+    )
+  }
+
+  async delete(
+    id: ReviewId,
+    remover: ReviewRemover,
+  ): Promise<Result<ReviewRemoval, DomainError>> {
+    return attempt('Failed to delete review', () =>
+      this.db.transaction(async (tx): Promise<ReviewRemoval> => {
+        const plan = planReviewRemoval(remover, {
+          // An administrator removes a review whatever became of its author.
+          reviewerDeleted:
+            remover.type === 'author' &&
+            (await isReviewerDeleted(tx, remover.customerId)),
+          review: await heldReviewOf(tx, id),
+        })
+        if (plan.type !== 'planned') {
+          return plan
+        }
+
+        const [removed] = await tx
+          .delete(reviews)
+          .where(eq(reviews.id, id))
+          .returning({ salonId: reviews.salonId })
+        // The review is held: it is there until the transaction ends.
+        if (removed === undefined) {
+          return { type: 'reviewNotFound' }
+        }
+        await countReviewsOf(tx, removed.salonId)
+
+        return { type: 'deleted' }
+      }, WRITE),
     )
   }
 
