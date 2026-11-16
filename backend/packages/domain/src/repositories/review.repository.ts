@@ -11,6 +11,10 @@ import type {
   ReviewReporter,
   ReviewReportPlan,
 } from '../business-logic/review/_shared/report'
+import type {
+  ReviewResponder,
+  ReviewResponsePlan,
+} from '../business-logic/review/_shared/response'
 import type { BookingId } from '../models/booking'
 import type { CustomerId } from '../models/customer'
 import type { DbReview, ReviewId, ReviewTally } from '../models/review'
@@ -19,6 +23,7 @@ import type { SalonId } from '../models/salon'
 import type { StaffId } from '../models/staff'
 import type {
   ReviewCreateRequest,
+  ReviewRespondRequest,
   ReviewUpdateRequest,
 } from '../schemas/review.schema'
 import type { ReviewReportRequest } from '../schemas/review-report.schema'
@@ -100,6 +105,16 @@ export type ReviewReporting =
   | Exclude<ReviewReportPlan, { type: 'planned' }>
 
 /**
+ * What became of a response of a salon to a review:
+ * - `responded`: the review as it is stored, with the response written,
+ *   taken down, or left as it was when it was that already
+ * - otherwise why it was not planned (`planReviewResponse`)
+ */
+export type ReviewResponding =
+  | { type: 'responded'; review: DbReview }
+  | Exclude<ReviewResponsePlan, { type: 'planned' }>
+
+/**
  * Persistence of the reviews. The rating and the review count of a salon
  * are those of its reviews: a review is written, changed or removed in the
  * same transaction as the salon is counted again, with the salon held, so
@@ -153,6 +168,18 @@ export interface IReviewRepository {
     reporter: ReviewReporter,
     request: ReviewReportRequest,
   ): Promise<Result<ReviewReporting, DomainError>>
+
+  /**
+   * Writes or takes down the response of a salon to a review, as
+   * `planReviewResponse` plans it, with the review held, as a report is
+   * written. A response that is stored already is not written again, so
+   * the time it was written stays.
+   */
+  respond(
+    id: ReviewId,
+    responder: ReviewResponder,
+    request: ReviewRespondRequest,
+  ): Promise<Result<ReviewResponding, DomainError>>
 
   /** What the reviews of a salon come to; null for no salon or a deleted one. */
   salonTally(salonId: SalonId): Promise<Result<ReviewTally | null, DomainError>>

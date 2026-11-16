@@ -4,6 +4,7 @@ import { bookingIdSchema } from '../models/booking'
 import { customerIdSchema } from '../models/customer'
 import {
   type ApiReviewCreateRequest,
+  type ApiReviewRespondRequest,
   type ApiReviewSearchRequest,
   type ApiReviewUpdateRequest,
   reviewIdSchema,
@@ -88,6 +89,17 @@ export const reviewUpdateRequestSchema = z
 
 /** A change of a review that passed the rules of its own. */
 export type ReviewUpdateRequest = z.infer<typeof reviewUpdateRequestSchema>
+
+/**
+ * A response of a salon to a review, or null to take it down. Its length
+ * is not limited, as that of a comment is not.
+ */
+export const reviewRespondRequestSchema = z.strictObject({
+  ownerResponse: nonBlankText.nullable(),
+}) satisfies z.ZodType<ApiReviewRespondRequest>
+
+/** A response that passed the rules of its own. */
+export type ReviewRespondRequest = z.infer<typeof reviewRespondRequestSchema>
 
 export const reviewSearchRequestSchema = z
   .strictObject({

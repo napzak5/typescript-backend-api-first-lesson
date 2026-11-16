@@ -5,6 +5,7 @@ import type { ReviewNotReached } from './change'
 import type { ReviewMarkPlan } from './helpful'
 import type { ReviewPlan } from './plan'
 import type { ReviewReportPlan } from './report'
+import type { ReviewResponsePlan } from './response'
 
 /** Why the review of a booking is refused, as the error a client gets. */
 export const toReviewRefusalError = (
@@ -78,4 +79,17 @@ export const toUnreportedReviewError = (
       { type: 'otherSalon' },
       () => DomainErrors.forbidden(),
     )
+    .exhaustive()
+
+/**
+ * Why a response to a review is not written, as the error a client gets:
+ * a salon is refused a review of another salon, which anyone may read.
+ */
+export const toUnrespondedReviewError = (
+  unresponded: Exclude<ReviewResponsePlan, { type: 'planned' }>,
+  id: ReviewId,
+): DomainError =>
+  match(unresponded)
+    .with({ type: 'reviewNotFound' }, () => DomainErrors.notFound('Review', id))
+    .with({ type: 'otherSalon' }, () => DomainErrors.forbidden())
     .exhaustive()
