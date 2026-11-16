@@ -1000,17 +1000,19 @@ describe('Reviews API', () => {
 
   describe('GET /api/v1/reviews', () => {
     /**
-     * Five reviews of the salon, written a minute apart in the order of
-     * their IDs: their stars, how many found each helpful, and two of the
-     * same moment.
+     * Six reviews of the salon: the last number of their ID, their stars,
+     * how many found each helpful and when it was written. The order of the
+     * IDs is not that of the time, and every order has two reviews that
+     * agree on its value and on the time.
      */
-    const fiveReviews = async () => {
+    const sixReviews = async () => {
       const written: [number, number, number, string][] = [
-        [1, 3, 10, '2026-11-20T01:00:00Z'],
+        [1, 3, 10, '2026-11-20T01:04:00Z'],
         [2, 5, 0, '2026-11-20T01:01:00Z'],
         [3, 4, 10, '2026-11-20T01:02:00Z'],
         [4, 5, 2, '2026-11-20T01:02:00Z'],
         [5, 1, 0, '2026-11-20T01:03:00Z'],
+        [6, 5, 0, '2026-11-20T01:01:00Z'],
       ]
       for (const [last, overallRating, helpfulCount, createdAt] of written) {
         await insertReview({
@@ -1023,15 +1025,15 @@ describe('Reviews API', () => {
     }
 
     it('lists the reviews newest first, 20 a page, with the links of the page', async () => {
-      await fiveReviews()
+      await sixReviews()
 
       const response = await list()
 
       expect(response.status).toBe(200)
       expect(response.headers['content-type']).toBe(JSON_UTF8)
-      expect(idsOf(response)).toEqual([5, 4, 3, 2, 1].map(idOf))
+      expect(idsOf(response)).toEqual([1, 5, 4, 3, 6, 2].map(idOf))
       expect(response.body.meta).toEqual({
-        total: 5,
+        total: 6,
         limit: 20,
         hasMore: false,
         cursor: null,
@@ -1067,70 +1069,70 @@ describe('Reviews API', () => {
     })
 
     it.each<[string, number[]]>([
-      ['rating', [4, 2, 3, 1, 5]],
-      ['helpful', [3, 1, 4, 5, 2]],
-      ['recent', [5, 4, 3, 2, 1]],
+      ['rating', [4, 6, 2, 3, 1, 5]],
+      ['helpful', [1, 3, 4, 5, 6, 2]],
+      ['recent', [1, 5, 4, 3, 6, 2]],
     ])(
       'orders by %s, then newest, then by the greater ID',
       async (sortBy, order) => {
-        await fiveReviews()
+        await sixReviews()
 
         expect(idsOf(await list({ sortBy }))).toEqual(order.map(idOf))
       },
     )
 
     it.each(['recent', 'rating', 'helpful'])(
-      'walks through the pages of the order %s with the cursor of the previous page',
+      'walks through the pages of the order %s with the cursor of the previous page, one review a page',
       async (sortBy) => {
-        await fiveReviews()
+        await sixReviews()
         const all = idsOf(await list({ sortBy }))
 
         const walked: string[] = []
         let cursor: string | null = null
         let pages = 0
         do {
-          const query: Record<string, string> = { sortBy, limit: '2' }
+          const query: Record<string, string> = { sortBy, limit: '1' }
           if (cursor !== null) {
             query['cursor'] = cursor
           }
           const page: Response = await list(query)
-          expect(page.body.meta).toMatchObject({ total: 5, limit: 2, cursor })
+          expect(page.body.meta).toMatchObject({ total: 6, limit: 1, cursor })
           walked.push(...idsOf(page))
           cursor = page.body.meta.nextCursor
           pages += 1
         } while (cursor !== null)
 
         expect(walked).toEqual(all)
-        expect(pages).toBe(3)
+        expect(pages).toBe(6)
       },
     )
 
     it('links to the next page with the query of the request', async () => {
-      await fiveReviews()
+      await sixReviews()
 
       const response = await list({ sortBy: 'rating', limit: '2' })
 
       expect(response.body.meta).toMatchObject({
         hasMore: true,
-        nextCursor: idOf(2),
+        nextCursor: idOf(6),
       })
       expect(response.body.links).toEqual({
         self: `${REVIEWS}?sortBy=rating&limit=2`,
         first: `${REVIEWS}?sortBy=rating&limit=2`,
         last: null,
-        next: `${REVIEWS}?sortBy=rating&limit=2&cursor=${idOf(2)}`,
+        next: `${REVIEWS}?sortBy=rating&limit=2&cursor=${idOf(6)}`,
         prev: null,
       })
     })
 
     it('links the pages at the spelling of the mount path', async () => {
-      await fiveReviews()
+      await sixReviews()
 
       const response = await request(app).get('/API/V1/REVIEWS?limit=1')
 
       expect(response.body.links).toMatchObject({
         self: '/API/V1/REVIEWS?limit=1',
-        next: `/API/V1/REVIEWS?limit=1&cursor=${idOf(5)}`,
+        next: `/API/V1/REVIEWS?limit=1&cursor=${idOf(1)}`,
       })
     })
 
@@ -1666,6 +1668,38 @@ describe('Reviews API', () => {
       const salon = await storedSalon()
       expect(salon).toMatchObject({ rating: '4.00', reviewCount: 3 })
       expect(salon.writtenAt).toBeGreaterThanOrEqual(Math.floor(released))
+    })
+
+    it('waits neither for a booking that is held for share nor for a salon that a foreign key holds', async () => {
+      const bookingId = await insertBooking()
+
+      const { answered, written } = await db.transaction(
+        async (tx: Transaction) => {
+          // As a point transaction that names the booking holds it.
+          await tx
+            .select({ id: bookings.id })
+            .from(bookings)
+            .where(eq(bookings.id, bookingId))
+            .for('share')
+          // As a row that refers to the salon, being written, holds it.
+          await tx
+            .select({ id: salons.id })
+            .from(salons)
+            .where(eq(salons.id, salonId))
+            .for('key share')
+          const underWay = create(review(bookingId)).then(
+            (response) => response,
+          )
+
+          return {
+            answered: await answersWithin(underWay, 2000),
+            written: underWay,
+          }
+        },
+      )
+
+      expect(answered).toBe(true)
+      expect((await written).status).toBe(201)
     })
 
     it('keeps a booking that is deleted while its review is written', async () => {
