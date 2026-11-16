@@ -597,4 +597,225 @@ describe('the migrations of this repository', () => {
       expect(await calendarOf(salon)).toEqual(afterFirst)
     })
   })
+
+  describe('202611161000_customer_points_rules.sql', () => {
+    const run = (): Promise<void> =>
+      runMigration('202611161000_customer_points_rules.sql')
+
+    /** The schema of setup.sql, which the migration brings a database to. */
+    let schemaOfSetup: string[] = []
+
+    /** A customer with a balance; returns their ID. */
+    const storeCustomer = async (loyaltyPoints: number): Promise<string> => {
+      const id = randomUUID()
+      await sql`
+        INSERT INTO customers (
+          id, "firstName", "lastName", email, "phoneNumber", tags,
+          "loyaltyPoints"
+        )
+        VALUES (
+          ${id}, 'Taro', 'Suzuki', ${`${id}@example.com`}, '090-8765-4321',
+          '{}', ${loyaltyPoints}
+        )
+      `
+      return id
+    }
+
+    type StoredPoints = {
+      id?: string
+      transactionType?: string
+      points: number
+      balance: number
+      createdAt?: string
+      referenceType?: string | null
+      referenceId?: string | null
+    }
+
+    /** A point transaction of the customer, an adjustment unless said otherwise. */
+    const storePoints = (
+      customerId: string,
+      {
+        id = randomUUID(),
+        transactionType = 'adjusted',
+        points,
+        balance,
+        createdAt = '2026-01-01T00:00:00Z',
+        referenceType = null,
+        referenceId = null,
+      }: StoredPoints,
+    ) => sql`
+      INSERT INTO customer_points (
+        id, "customerId", "transactionType", points, balance,
+        "referenceType", "referenceId", "createdAt"
+      )
+      VALUES (
+        ${id}, ${customerId}, ${transactionType}, ${points}, ${balance},
+        ${referenceType}, ${referenceId}, ${createdAt}
+      )
+    `
+
+    /** The point transactions of the customer in the order they were written, as `type points balance description`. */
+    const ledgerOf = async (customerId: string): Promise<string[]> => {
+      const rows = await sql<{ line: string }[]>`
+        SELECT concat_ws(
+          ' ', "transactionType", points, balance, description
+        ) AS line
+        FROM customer_points
+        WHERE "customerId" = ${customerId}
+        ORDER BY "createdAt", id
+      `
+      return rows.map(({ line }) => line)
+    }
+
+    const countOfPoints = async (): Promise<number> => {
+      const [row] = await sql<{ count: number }[]>`
+        SELECT count(*)::int AS count FROM customer_points
+      `
+      return row?.count ?? -1
+    }
+
+    // A database from before the migration: none of its rules and indexes.
+    beforeEach(async () => {
+      await applyBaseline(sql, plan)
+      schemaOfSetup = await describeSchema()
+      await sql.unsafe(`
+        ALTER TABLE customers
+          DROP CONSTRAINT customers_loyalty_points_not_negative;
+        ALTER TABLE customer_points
+          DROP CONSTRAINT customer_points_points_of_type,
+          DROP CONSTRAINT customer_points_balance_not_negative,
+          DROP CONSTRAINT customer_points_expiry_of_earned,
+          DROP CONSTRAINT customer_points_reference_pair,
+          DROP CONSTRAINT customer_points_reference_type_known;
+        DROP INDEX customer_points_reference_unique;
+        DROP INDEX idx_customer_points_customer_time;
+        CREATE INDEX idx_customer_points_customer_id
+          ON customer_points USING btree ("customerId");
+      `)
+    })
+
+    it('should give the database the rules and the indexes of setup.sql', async () => {
+      expect(await describeSchema()).not.toEqual(schemaOfSetup)
+
+      await run()
+
+      expect(await describeSchema()).toEqual(schemaOfSetup)
+    })
+
+    it('should open the ledger of every customer whose balance is not that of their latest transaction', async () => {
+      const withoutTransactions = await storeCustomer(300)
+      const above = await storeCustomer(500)
+      await storePoints(above, { points: 999, balance: 999 })
+      await storePoints(above, {
+        transactionType: 'used',
+        points: -799,
+        balance: 200,
+        createdAt: '2026-02-01T00:00:00Z',
+      })
+      const below = await storeCustomer(100)
+      await storePoints(below, { points: 400, balance: 400 })
+      // Of two transactions of one moment, the one of the greater ID is the latest.
+      const tied = await storeCustomer(50)
+      await storePoints(tied, {
+        id: '00000000-0000-4000-8000-000000000002',
+        points: 20,
+        balance: 20,
+      })
+      await storePoints(tied, {
+        id: '00000000-0000-4000-8000-000000000001',
+        points: 70,
+        balance: 70,
+      })
+
+      await run()
+
+      expect(await ledgerOf(withoutTransactions)).toEqual([
+        'adjusted 300 300 ポイント台帳の開始残高',
+      ])
+      expect(await ledgerOf(above)).toEqual([
+        'adjusted 999 999',
+        'used -799 200',
+        'adjusted 300 500 ポイント台帳の開始残高',
+      ])
+      expect(await ledgerOf(below)).toEqual([
+        'adjusted 400 400',
+        'adjusted -300 100 ポイント台帳の開始残高',
+      ])
+      expect(await ledgerOf(tied)).toEqual([
+        'adjusted 70 70',
+        'adjusted 20 20',
+        'adjusted 30 50 ポイント台帳の開始残高',
+      ])
+    })
+
+    it('should write nothing where every balance agrees, and nothing on a second run', async () => {
+      const none = await storeCustomer(0)
+      const agreeing = await storeCustomer(700)
+      await storePoints(agreeing, { points: 700, balance: 700 })
+      const differing = await storeCustomer(10)
+
+      await run()
+      const afterFirst = await countOfPoints()
+      await run()
+
+      expect(await ledgerOf(none)).toEqual([])
+      expect(await ledgerOf(agreeing)).toEqual(['adjusted 700 700'])
+      expect(await ledgerOf(differing)).toEqual([
+        'adjusted 10 10 ポイント台帳の開始残高',
+      ])
+      expect(afterFirst).toBe(2)
+      expect(await countOfPoints()).toBe(afterFirst)
+    })
+
+    it('should fail and change nothing where a row breaks a rule', async () => {
+      await storeCustomer(300)
+      const broken = await storeCustomer(100)
+      await storePoints(broken, { points: 0, balance: 100 })
+      const before = await describeSchema()
+
+      await expect(run()).rejects.toThrow('customer_points_points_of_type')
+
+      expect(await countOfPoints()).toBe(1)
+      expect(await describeSchema()).toEqual(before)
+    })
+
+    it('should keep a second earning on a record, and a kind of record it does not know, out from then on', async () => {
+      const customer = await storeCustomer(0)
+      const sale = { referenceType: 'sale', referenceId: randomUUID() }
+      await run()
+
+      await storePoints(customer, {
+        transactionType: 'earned',
+        points: 10,
+        balance: 10,
+        ...sale,
+      })
+      await storePoints(customer, {
+        transactionType: 'used',
+        points: -10,
+        balance: 0,
+        ...sale,
+      })
+      await storePoints(customer, { points: 5, balance: 5, ...sale })
+      await storePoints(customer, { points: -5, balance: 0, ...sale })
+
+      await expect(
+        storePoints(customer, {
+          transactionType: 'earned',
+          points: 1,
+          balance: 1,
+          ...sale,
+        }),
+      ).rejects.toThrow('customer_points_reference_unique')
+      await expect(
+        storePoints(customer, {
+          points: 1,
+          balance: 1,
+          referenceType: 'payment',
+          referenceId: randomUUID(),
+        }),
+      ).rejects.toThrow('customer_points_reference_type_known')
+      expect(await countOfPoints()).toBe(4)
+    })
+  })
 })

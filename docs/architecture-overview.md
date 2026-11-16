@@ -55,7 +55,8 @@ Before relying on anything, check this table.
 | Payment methods (`/api/v1/salons/{salonId}/payment-methods`) | Implemented in every layer: list, create, get, update and delete, the five operations of `PaymentMethodCrud`. A payment method is one way of paying that a salon accepts (cash, a card terminal, a QR payment): a method, a display name, the fee rate, the limits of the amount of one payment, whether it is taken online and at the salon, and whether it is in use. The routes are below the salon and none is public: an administrator and the owner, the managers and the staff of the salon read the payment methods, an administrator, the owner and the managers set them up, and a customer account reaches none (403), because a response states what the salon pays its processor. Both permissions are decided from the salon of the path alone, before anything else of the request is looked at; the payment method of another salon is answered like one that does not exist (404). The method is fixed once a payment method is created. The lower limit of the amount is not above the upper one: a request that names both is refused by the schema, and an update that names one of them is checked against the stored row, which the repository holds while it checks and writes (400). A delete removes the row, unless a payment refers to it (409: it is deactivated instead). The settings of a payment processor (`processorConfig`) are in no model of the API. A payment is held to whether its payment method is in use and to the limits of the amount; the fee and the online and offline flags are stored and decide nothing. See [Payments](./payments.md) (Japanese). |
 | Payments of a sale (`POST /api/v1/sales/{id}/process`, `POST /api/v1/payments/{id}/refund`) | Implemented in every layer: `process` of `SaleCrud` and `refund` of `PaymentCrud`. No payment processor is connected, so a payment records what the till took and is written as `completed`; a refund turns a completed payment into `refunded` or `partial_refund`, once. An administrator and the owner, the managers and the staff of the salon of the sale record a payment; an administrator, the owner and the managers refund one (403 for the staff); a customer account does neither. A payment is held to its payment method (in use and of the salon of the sale, within its limits, card details only with a card) and to what is left to pay (400); a void sale, a sale with a refund and a sale with nothing left to pay take none (409). Both hold the sale `FOR UPDATE` first, as the update and the void do, and write the payment and the payment status of the sale, which is counted from its payments, in one transaction. See [Payments](./payments.md) (Japanese). |
 | Sales reports (`/api/v1/sales-reports`) | Implemented in every layer: the report of a period, the sales of a day, by staff member, by category, the trends, and the export of the sales of each day of a period as a CSV file in the response (nothing is stored): the six operations of `SalesReportCrud`. An administrator reads the reports of every salon, the owner and the managers those of their salon; the staff of a salon and a customer account are refused (403). The query names the salon, the first and the last day of the sales, both required, at most 366 days (400 otherwise). A report is counted from the sales that are not void, their lines and their payments at every request, in one read-only `REPEATABLE READ` transaction, and is stored nowhere; the summary tables (`daily_summaries`, `staff_performances`) are not used. See [Sales Reports](./sales-reports.md) (Japanese). |
-| The rest of the payment contract (`PointCrud`) and the other domains (review, treatment, inventory) | Specified in TypeSpec, so their generated types exist, and the database schema has their tables and seed data. The models agree with the tables (`pnpm check:api-db`). There is no domain, repository or route code. A request to one of these routes is answered with 404. The implementation order is in GitHub issue #4. |
+| Points (`/api/v1/points`) | Implemented in every layer: the balance of a customer, their history of point transactions (latest first, by cursor, between two moments), and earning, using and adjusting points: five of the seven operations of `PointCrud`. The ledger is one for the whole platform, as the customer ledger is. An administrator and the owner, the managers and the staff of any salon read, earn and use points; the staff do not adjust them; a customer account is refused (403). Every movement writes a transaction with the balance after it and sets the balance of the customer (`loyaltyPoints`) to it, in one `READ COMMITTED` transaction that holds the sale or the booking it names and then the customer; the balance stays between 0 and 2,147,483,647 (409). A movement may name a sale or a booking of the customer within the reach of the actor: points are not earned on or used for a void sale or a draft, cancelled or no-show booking, and a record is earned on once and used for once (409, and a partial unique index). The points of a sale and a payment by points move no balance. Points about to expire and expiring them (`getExpiring`, `expire`) are not served. See [Points](./points.md) (Japanese). |
+| The rest of the points contract (`getExpiring`, `expire`) and the other domains (review, treatment, inventory) | Specified in TypeSpec, so their generated types exist, and the database schema has their tables and seed data. The models agree with the tables (`pnpm check:api-db`). There is no domain, repository or route code. A request to one of these routes is answered with 404. The implementation order is in GitHub issue #4. |
 | Attachments, roles and permissions, purchase orders, medical charts | Specified in TypeSpec only. No table exists for them yet. |
 | Email | Implemented for the mails of the authentication flows and the invitation of a staff member (confirm the address, reset the password, accept an invitation, and the notices: the password was changed, two-factor authentication was enabled, disabled or turned off by an administrator, the backup codes were replaced, a backup code was used to sign in): plain text over SMTP. Docker Compose starts Mailpit, which catches them locally. See [Email](./email.md) (Japanese). |
 | File storage | Not implemented. Docker Compose starts no service for it. |
@@ -685,6 +686,41 @@ infrastructure/src/
 api/src/
 └── routes/sales-report/               One *.handler.ts per operation, index.ts (router,
                                        mounted at /sales-reports)
+```
+
+The points ledger has one table of transactions and the balance of the
+customer; a pure function plans every movement from what the repository
+holds:
+
+```
+domain/src/
+├── models/point.ts                    API types of the transactions, the balance and
+│                                      the requests; DbPointTransaction
+├── schemas/point.schema.ts            Zod schemas of the requests and of the query of
+│                                      the history; a record is a kind and an ID together
+├── mappers/read/point.mapper.ts       PointReadMapper: a stored transaction as the API
+│                                      returns it
+├── repositories/point.repository.ts   IPointRepository; what recording a movement can
+│                                      come to (PointRecording)
+└── business-logic/point/              One *.usecase.ts per operation; _shared/ holds
+                                       the dependencies, who reads and who moves points
+                                       (authorization.ts), the plan of a movement from
+                                       the balance and the record it names (plan.ts),
+                                       the refusals (refusals.ts) and what earning,
+                                       using and adjusting share (record.ts)
+
+infrastructure/src/
+└── repositories/point.repository.impl.ts
+                                       A movement in one READ COMMITTED transaction:
+                                       the record FOR SHARE, the customer FOR NO KEY
+                                       UPDATE, the row and loyaltyPoints at
+                                       clock_timestamp(); the history in one read-only
+                                       snapshot
+
+api/src/
+└── routes/point/                      One *.handler.ts per operation, _shared/ (types,
+                                       links, query), index.ts (router, mounted at
+                                       /points)
 ```
 
 ## Layers and Package Dependencies
@@ -1761,6 +1797,40 @@ query (400). What differs:
   what one request reads.
 
 The rules are in [Sales Reports](./sales-reports.md) (Japanese).
+
+### A Points Request
+
+Earning, using and adjusting points (`POST /api/v1/points/earn`, `/use`,
+`/adjust`, `business-logic/point/`) take the path of a write, with the
+customer named in the body: the reach of the actor is decided first
+(`pointReachOf`, or `pointAdjustReachOf` for an adjustment, which leaves
+out the staff), then the body is parsed, and the repository records the
+movement. What differs:
+
+- **A ledger of the whole platform.** Points are a customer's, so any
+  member of a salon reaches every customer; what the reach limits is the
+  sales and the bookings a movement may name. A record outside it is, to
+  that actor, a record that is not there (400).
+- **A plan from what is held.** `PointRepository.record` holds the sale or
+  the booking the movement names `FOR SHARE`, then the customer
+  `FOR NO KEY UPDATE`, in one `READ COMMITTED` transaction, and hands what
+  it read to `planPoints` (`_shared/plan.ts`), a pure function that answers
+  the row to write or why there is none: the record is not the customer's,
+  a void sale or a closed booking, a record earned on or used for already,
+  a balance below 0 or above 2,147,483,647. The movements of one customer
+  are written one after the other, each from the balance the one before
+  left, and a void of the sale or a change of the booking that is under
+  way is waited for. The row and `loyaltyPoints` are written at
+  `clock_timestamp()`, so the latest transaction is the one whose balance
+  the customer has.
+- **A backstop in the table.** A partial unique index allows one earning
+  and one use per record; the CHECK constraints say what a row of each
+  type can be. The migration that added them opened the ledger of every
+  customer with an adjustment to the balance they had.
+
+The balance is `loyaltyPoints`; the history is read in one read-only
+`REPEATABLE READ` transaction, ordered by `createdAt` and `id`. The rules
+are in [Points](./points.md) (Japanese).
 
 ### An Authentication Request
 

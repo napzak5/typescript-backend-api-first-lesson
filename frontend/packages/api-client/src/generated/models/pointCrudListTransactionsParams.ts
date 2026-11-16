@@ -17,10 +17,10 @@ export type PointCrudListTransactionsParams = {
    * @maximum 100
    */
   limit?: ModelsPointTransactionSearchRequestLimitParameter;
-  /** 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+  /** 顧客ポイントの加算・減算履歴を識別するブランド付きUUID。 */
   cursor?: ModelsPointTransactionSearchRequestCursorParameter;
   /** 取引の発生日時(createdAt)の下限。この日時以降の取引に一致する */
   startDate?: ModelsPointTransactionSearchRequestStartDateParameter;
-  /** 取引の発生日時(createdAt)の上限。この日時以前の取引に一致する */
+  /** 取引の発生日時(createdAt)の上限。この日時以前の取引に一致する。startDate より前の日時は指定できない */
   endDate?: ModelsPointTransactionSearchRequestEndDateParameter;
 };

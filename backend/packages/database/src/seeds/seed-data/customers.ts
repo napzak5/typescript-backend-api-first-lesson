@@ -133,7 +133,27 @@ export async function seedCustomers(
         isActive: true,
       },
     ])
-    .returning({ id: schema.customers.id })
+    .returning({
+      id: schema.customers.id,
+      loyaltyPoints: schema.customers.loyaltyPoints,
+    })
+
+  // The balance of a customer is that of their latest point transaction:
+  // each balance above is opened as the migration of the points ledger
+  // opens the balances it finds.
+  await db.insert(schema.customerPoints).values(
+    customers
+      .filter(({ loyaltyPoints }) => loyaltyPoints > 0)
+      .map(
+        ({ id, loyaltyPoints }): typeof schema.customerPoints.$inferInsert => ({
+          customerId: id,
+          transactionType: 'adjusted',
+          points: loyaltyPoints,
+          balance: loyaltyPoints,
+          description: 'ポイント台帳の開始残高',
+        }),
+      ),
+  )
 
   const vipCustomerId = customers[3]?.id ?? ''
   const regularCustomerIds = customers.slice(0, 3).map((c) => c.id)

@@ -778,7 +778,8 @@ const paymentRules: ModelRule[] = [
     omittedColumns: [],
   },
   {
-    // The latest row of the customer.
+    // The balance of the latest row of the customer, which their
+    // loyaltyPoints equal.
     model: 'Models.PointBalanceResponse',
     table: 'customerPoints',
     kind: 'response',

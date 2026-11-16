@@ -396,6 +396,7 @@ export * from './modelsPointEarnRequest';
 export * from './modelsPointExpireRequest';
 export * from './modelsPointExpireResponse';
 export * from './modelsPointExpiringResponse';
+export * from './modelsPointReferenceType';
 export * from './modelsPointTransactionId';
 export * from './modelsPointTransactionResponse';
 export * from './modelsPointTransactionSearchRequestCursorParameter';

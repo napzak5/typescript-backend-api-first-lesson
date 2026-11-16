@@ -309,12 +309,12 @@ namespace BeautySalon.Operations {
     }
   }
 
-  @doc("顧客ポイントの付与・利用・調整・失効と、残高・履歴の参照を行うAPI操作群です。ポイントの増減はすべてポイント取引として記録し、取引ごとに残高を保持します。")
+  @doc("顧客ポイントの付与・利用・調整・失効と、残高・履歴の参照を行うAPI操作群です。ポイントはサロンではなく顧客のもので、どのサロンでも同じ残高を使います。ポイントの増減はすべてポイント取引として記録し、取引ごとにその後の残高を保持して、同じトランザクションで顧客の残高(loyaltyPoints)も更新します。残高、履歴、付与、利用、調整の5つの操作は実装済みで、定義と実装は一致しています。失効予定の集計(getExpiring)と失効(expire)は未実装です。")
   @route("/api/v1/points")
   @tag("Points")
   namespace PointOperations {
     interface PointCrud {
-      @doc("顧客の現在のポイント残高を取得します。最新のポイント取引の残高を返し、取引のない顧客は0を返します。")
+      @doc("顧客の現在のポイント残高(customers.loyaltyPoints)を取得します。残高は最新のポイント取引の残高と等しく、取引のない顧客は0です。管理者と、サロンの owner・manager・staff が実行できます(顧客のアカウントは403)。customerId の顧客が存在しない、または削除されている場合は404を返します。")
       @summary("Get the point balance of a customer")
       @route("/customer/{customerId}/balance")
       @get
@@ -327,7 +327,7 @@ namespace BeautySalon.Operations {
         | ProblemResponse<404>
         | CommonErrors;
 
-      @doc("顧客のポイント取引の履歴を、発生日時の新しい順に一覧取得します。")
+      @doc("顧客のポイント取引の履歴を、発生日時(createdAt)の新しい順に一覧取得します。管理者と、サロンの owner・manager・staff が実行できます(顧客のアカウントは403)。customerId の顧客が存在しない、または削除されている場合は404を、cursor がその顧客のポイント取引を指していない場合や、endDate が startDate より前の場合は400を返します。")
       @summary("List the point transactions of a customer")
       @route("/customer/{customerId}/transactions")
       @get
@@ -343,7 +343,7 @@ namespace BeautySalon.Operations {
         | ProblemResponse<404>
         | CommonErrors;
 
-      @doc("顧客にポイントを付与し、種別 earned のポイント取引を登録します。customerId の顧客が存在しない場合は400を返します。")
+      @doc("顧客にポイントを付与し、種別 earned のポイント取引を登録して、顧客の残高(loyaltyPoints)を更新します。管理者と、サロンの owner・manager・staff が実行できます(顧客のアカウントは403)。customerId の顧客が存在しない、または削除されている場合と、referenceId にその顧客のものではない記録や、サロンのメンバーが自分のサロンのものではない記録を指定した場合は400を返します。参照した売上を取り消している、または予約のステータスが draft・cancelled・no_show の場合、その記録にすでに付与している場合、付与の後の残高が 2,147,483,647 を超える場合は409を返します。")
       @summary("Earn points")
       @route("/earn")
       @post
@@ -353,10 +353,11 @@ namespace BeautySalon.Operations {
             @body response: ApiResponse<PointTransactionResponse>;
           }
         | ProblemResponse<400>
+        | ProblemResponse<409>
         | RequestBodyErrors
         | CommonErrors;
 
-      @doc("顧客のポイントを利用し、種別 used のポイント取引を登録します。customerId の顧客が存在しない場合は400を、残高が不足する場合は409を返します。")
+      @doc("顧客のポイントを利用し、種別 used のポイント取引を登録して、顧客の残高(loyaltyPoints)を更新します。管理者と、サロンの owner・manager・staff が実行できます(顧客のアカウントは403)。customerId の顧客が存在しない、または削除されている場合と、referenceId にその顧客のものではない記録や、サロンのメンバーが自分のサロンのものではない記録を指定した場合は400を返します。残高が不足する場合、参照した売上を取り消している、または予約のステータスが draft・cancelled・no_show の場合、その記録ですでに利用している場合は409を返します。")
       @summary("Use points")
       @route("/use")
       @post
@@ -370,7 +371,7 @@ namespace BeautySalon.Operations {
         | RequestBodyErrors
         | CommonErrors;
 
-      @doc("顧客のポイントを手動で増減し、種別 adjusted のポイント取引を登録します。customerId の顧客が存在しない場合や points が0の場合は400を、調整後の残高が負になる場合は409を返します。")
+      @doc("顧客のポイントを手動で増減し、種別 adjusted のポイント取引を登録して、顧客の残高(loyaltyPoints)を更新します。管理者と、サロンの owner・manager が実行できます(サロンの staff と顧客のアカウントは403)。customerId の顧客が存在しない、または削除されている場合、points が0の場合、referenceId にその顧客のものではない記録や、サロンのメンバーが自分のサロンのものではない記録を指定した場合は400を、調整後の残高が負になる場合と 2,147,483,647 を超える場合は409を返します。")
       @summary("Adjust points")
       @route("/adjust")
       @post

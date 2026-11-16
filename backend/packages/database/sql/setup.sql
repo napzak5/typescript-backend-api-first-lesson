@@ -142,7 +142,12 @@ CREATE TABLE "customer_points" (
 	"referenceType" varchar(50),
 	"referenceId" uuid,
 	"expiryDate" date,
-	"createdAt" timestamp with time zone DEFAULT now() NOT NULL
+	"createdAt" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "customer_points_balance_not_negative" CHECK (balance >= 0),
+	CONSTRAINT "customer_points_expiry_of_earned" CHECK (("expiryDate" IS NULL) OR ("transactionType" = 'earned'::point_transaction_type)),
+	CONSTRAINT "customer_points_points_of_type" CHECK ((("transactionType" <> 'earned'::point_transaction_type) OR (points >= 1)) AND (("transactionType" <> ALL (ARRAY['used'::point_transaction_type, 'expired'::point_transaction_type])) OR (points <= '-1'::integer)) AND (("transactionType" <> ALL (ARRAY['adjusted'::point_transaction_type, 'transferred'::point_transaction_type])) OR (points <> 0))),
+	CONSTRAINT "customer_points_reference_pair" CHECK (("referenceType" IS NULL) = ("referenceId" IS NULL)),
+	CONSTRAINT "customer_points_reference_type_known" CHECK (("referenceType" IS NULL) OR (("referenceType")::text = ANY (ARRAY['sale'::text, 'booking'::text])))
 );
 
 CREATE TABLE "customer_preferences" (
@@ -209,6 +214,7 @@ CREATE TABLE "customers" (
 	CONSTRAINT "customers_counts_not_negative" CHECK (("visitCount" >= 0) AND ("noShowCount" >= 0) AND ("cancellationCount" >= 0)),
 	CONSTRAINT "customers_email_lower_case" CHECK ((email)::text = lower((email)::text)),
 	CONSTRAINT "customers_gender_known" CHECK ((gender)::text = ANY (ARRAY['male'::text, 'female'::text, 'other'::text, 'prefer_not_to_say'::text])),
+	CONSTRAINT "customers_loyalty_points_not_negative" CHECK ("loyaltyPoints" >= 0),
 	CONSTRAINT "customers_not_referred_by_itself" CHECK ("referredBy" <> id),
 	CONSTRAINT "customers_preferences_is_an_object" CHECK (jsonb_typeof(preferences) = 'object'::text),
 	CONSTRAINT "customers_visit_days_go_with_visits" CHECK ((("visitCount" = 0) = ("firstVisitDate" IS NULL)) AND (("firstVisitDate" IS NULL) = ("lastVisitDate" IS NULL)) AND (("firstVisitDate" IS NULL) OR ("firstVisitDate" <= "lastVisitDate")))
@@ -892,8 +898,9 @@ CREATE INDEX "idx_bookings_start_time" ON "bookings" USING btree ("startTime" ti
 CREATE INDEX "idx_bookings_status" ON "bookings" USING btree ("status" enum_ops);
 CREATE INDEX "idx_customer_allergies_customer_id" ON "customer_allergies" USING btree ("customerId" uuid_ops);
 CREATE INDEX "idx_customer_points_created_at" ON "customer_points" USING btree ("createdAt" timestamptz_ops);
-CREATE INDEX "idx_customer_points_customer_id" ON "customer_points" USING btree ("customerId" uuid_ops);
+CREATE INDEX "idx_customer_points_customer_time" ON "customer_points" USING btree ("customerId" uuid_ops,"createdAt" timestamptz_ops,"id" uuid_ops);
 CREATE INDEX "idx_customer_points_expiry_date" ON "customer_points" USING btree ("expiryDate" date_ops);
+CREATE UNIQUE INDEX "customer_points_reference_unique" ON "customer_points" USING btree ("referenceType" text_ops,"referenceId" uuid_ops,"transactionType" enum_ops) WHERE (("transactionType" = ANY (ARRAY['earned'::point_transaction_type, 'used'::point_transaction_type])) AND ("referenceId" IS NOT NULL));
 CREATE INDEX "idx_customers_customer_status" ON "customers" USING btree ("customerStatus" enum_ops);
 CREATE INDEX "idx_customers_deleted_at" ON "customers" USING btree ("deletedAt" timestamptz_ops);
 CREATE INDEX "idx_customers_email" ON "customers" USING btree ("email" text_ops);
