@@ -590,6 +590,8 @@ describe('Sale changes API', () => {
   describe('PATCH /api/v1/sales/:id', () => {
     it('writes the one property a request names and returns the sale as it is then', async () => {
       const entered = await created()
+      const other = await created()
+      const otherBefore = await everythingOf(other.id)
       const before = await databaseClock()
 
       const response = await update(entered.id, { notes: 'レシート再発行' })
@@ -613,6 +615,7 @@ describe('Sale changes API', () => {
       expect(Object.keys(response.body.data).toSorted()).toEqual(PROPERTIES)
       expectBetween(response.body.data.updatedAt, before, after)
       expect((await read(entered.id)).body.data).toEqual(response.body.data)
+      expect(await everythingOf(other.id)).toEqual(otherBefore)
     })
 
     it('corrects everything a request can name at once, and says what the new lines come to', async () => {
@@ -717,7 +720,9 @@ describe('Sale changes API', () => {
       const entered = await created({
         details: [line(), fee({ sortOrder: 1 }), fee({ sortOrder: 2 })],
       })
+      const other = await created({ details: [line(), fee({ sortOrder: 1 })] })
       const before = await everythingOf(entered.id)
+      const otherBefore = await everythingOf(other.id)
 
       const response = await update(entered.id, {
         details: [fee({ sortOrder: 7, itemName: '延長料' })],
@@ -741,6 +746,8 @@ describe('Sale changes API', () => {
       expect(before.details.map((row) => row.id)).not.toContain(
         after.details[0]?.id,
       )
+      expect(otherBefore.details).toHaveLength(2)
+      expect(await everythingOf(other.id)).toEqual(otherBefore)
     })
 
     it('returns new lines by their places, in whatever order the request states them', async () => {
@@ -1733,6 +1740,8 @@ describe('Sale changes API', () => {
         pointsUsed: 5,
         details: [line(), fee({ sortOrder: 1 })],
       })
+      const other = await created()
+      const otherBefore = await everythingOf(other.id)
       const before = await databaseClock()
 
       const response = await voidSale(entered.id, { voidReason: '二重登録' })
@@ -1759,6 +1768,7 @@ describe('Sale changes API', () => {
       expectBetween(response.body.data.voidedAt, before, after)
       expectBetween(response.body.data.updatedAt, before, after)
       expect((await read(entered.id)).body.data).toEqual(response.body.data)
+      expect(await everythingOf(other.id)).toEqual(otherBefore)
     })
 
     it('voids a sale of which no reason is kept, and keeps a reason as it was written', async () => {
@@ -2266,6 +2276,16 @@ describe('Sale changes API', () => {
         .where(eq(bookings.id, id))
         .for('update')
 
+    /**
+     * The response of a request that is sent while the test holds rows it
+     * must not wait for; null when it waits for them after all.
+     */
+    const unlessItWaits = (call: Test): Promise<Response | null> =>
+      Promise.race([
+        call.then((response) => response),
+        pause(2_000).then(() => null),
+      ])
+
     it('voids a sale once when six requests arrive together', async () => {
       const entered = await created()
 
@@ -2427,13 +2447,15 @@ describe('Sale changes API', () => {
     })
 
     it('writes the time of a change that waited as the time after the wait', async () => {
-      const entered = await created()
+      const toCorrect = await created()
+      const toVoid = await created()
 
       const { pending, until } = await db.transaction(async (tx) => {
-        await holdSale(tx, entered.id)
+        await holdSale(tx, toCorrect.id)
+        await holdSale(tx, toVoid.id)
         const underWay = Promise.all([
-          update(entered.id, { notes: 'レジ2' }),
-          voidSale(entered.id),
+          update(toCorrect.id, { notes: 'レジ2' }),
+          voidSale(toVoid.id),
         ])
         await pause(300)
 
@@ -2442,12 +2464,10 @@ describe('Sale changes API', () => {
       const [corrected, voidedNow] = await pending
       const after = await databaseClock()
 
-      expect(voidedNow.status).toBe(200)
+      expect([corrected, voidedNow].map(statusAndCode)).toEqual(['200', '200'])
+      expectBetween(corrected.body.data.updatedAt, until, after)
       expectBetween(voidedNow.body.data.voidedAt, until, after)
       expectBetween(voidedNow.body.data.updatedAt, until, after)
-      if (corrected.status === 200) {
-        expectBetween(corrected.body.data.updatedAt, until, after)
-      }
     })
 
     it('makes a void wait for a payment that is being written, and meet it', async () => {
@@ -2530,10 +2550,51 @@ describe('Sale changes API', () => {
       const response = await db.transaction(async (tx) => {
         await holdBooking(tx, bookingId)
 
-        return update(entered.id, { notes: 'レジ2', details: [fee()] })
+        return unlessItWaits(
+          update(entered.id, { notes: 'レジ2', details: [fee()] }),
+        )
       })
 
-      expect(response.status).toBe(200)
+      expect(response?.status).toBe(200)
+    })
+
+    // A delete of a salon, of a customer or of a staff member holds the row
+    // like this. A change that waited for one of them would hold a sale and
+    // wait for a row that the entry of a sale holds before it.
+    it('holds neither the salon of the sale nor a customer or a staff member that the request does not name', async () => {
+      const toCorrect = await created()
+      const toVoid = await created()
+
+      const responses = await db.transaction(async (tx) => {
+        await tx
+          .select({ id: salons.id })
+          .from(salons)
+          .where(eq(salons.id, salonId))
+          .for('update')
+        await tx
+          .select({ id: customers.id })
+          .from(customers)
+          .where(eq(customers.id, customerId))
+          .for('update')
+        await tx
+          .select({ id: staff.id })
+          .from(staff)
+          .where(eq(staff.id, staffId))
+          .for('update')
+
+        return [
+          await unlessItWaits(
+            update(toCorrect.id, {
+              notes: 'レジ2',
+              saleTime: at('16:00'),
+              details: [fee()],
+            }),
+          ),
+          await unlessItWaits(voidSale(toVoid.id)),
+        ]
+      })
+
+      expect(responses.map((response) => response?.status)).toEqual([200, 200])
     })
 
     it('meets the sale that was entered for the booking while it waited for the booking', async () => {
