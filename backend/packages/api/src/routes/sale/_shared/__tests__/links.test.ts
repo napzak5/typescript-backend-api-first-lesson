@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { paymentOfSaleLinks, saleLinks } from '../links'
+import {
+  paymentOfSaleLinks,
+  saleCalculationLinks,
+  saleLinks,
+  saleReceiptLinks,
+} from '../links'
 
 const SALES = '/api/v1/sales'
 const SALE_ID = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f3a01'
@@ -43,5 +48,52 @@ describe('paymentOfSaleLinks', () => {
 
   it('has no link of the payment itself: a payment is read with its sale', () => {
     expect(Object.keys(paymentOfSaleLinks(SALES, SALE_ID))).toEqual(['sale'])
+  })
+})
+
+describe('saleReceiptLinks', () => {
+  it('links a receipt to itself and to the sale it is made from', () => {
+    expect(saleReceiptLinks(SALES, SALE_ID)).toEqual({
+      self: `${SALES}/${SALE_ID}/receipt`,
+      sale: `${SALES}/${SALE_ID}`,
+    })
+  })
+
+  it('keeps the collection path as the request wrote it', () => {
+    const collection = '/API/v1/Sales'
+
+    expect(saleReceiptLinks(collection, SALE_ID)).toEqual({
+      self: `${collection}/${SALE_ID}/receipt`,
+      sale: `${collection}/${SALE_ID}`,
+    })
+  })
+
+  it('has no link to the ledger: a receipt is of one sale', () => {
+    expect(Object.keys(saleReceiptLinks(SALES, SALE_ID))).toEqual([
+      'self',
+      'sale',
+    ])
+  })
+})
+
+describe('saleCalculationLinks', () => {
+  it('links a calculation to where it is asked for and to the ledger', () => {
+    expect(saleCalculationLinks(SALES)).toEqual({
+      self: `${SALES}/calculate`,
+      list: SALES,
+    })
+  })
+
+  it('keeps the collection path as the request wrote it', () => {
+    const collection = '/API/v1/Sales'
+
+    expect(saleCalculationLinks(collection)).toEqual({
+      self: `${collection}/calculate`,
+      list: collection,
+    })
+  })
+
+  it('has no link of a sale: nothing is entered by a calculation', () => {
+    expect(Object.keys(saleCalculationLinks(SALES))).toEqual(['self', 'list'])
   })
 })

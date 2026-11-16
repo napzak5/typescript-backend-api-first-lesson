@@ -2,6 +2,7 @@ import { match } from 'ts-pattern'
 import { type DomainError, DomainErrors } from '../../../shared'
 import type { SaleChangeRefusal, SaleVoidRefusal } from './change'
 import type { SalePlan } from './plan'
+import type { ReceiptRefusal } from './receipt'
 
 /** A refusal that says something about the request or about what it meets. */
 type AnsweredRefusal = Exclude<SalePlan, { type: 'planned' }>
@@ -40,6 +41,19 @@ export const toChangeRefusalError = (refusal: SaleChangeRefusal): DomainError =>
     .with({ type: 'paymentBegun' }, () =>
       DomainErrors.conflict(
         'The lines of a sale are replaced only while its payment status is pending',
+      ),
+    )
+    .exhaustive()
+
+/** Why a sale has no receipt, as the error a client gets. */
+export const toReceiptRefusalError = (refusal: ReceiptRefusal): DomainError =>
+  match(refusal)
+    .with({ type: 'void' }, () =>
+      DomainErrors.conflict('The sale is void; a void sale has no receipt'),
+    )
+    .with({ type: 'notPaidInFull' }, () =>
+      DomainErrors.conflict(
+        'The sale is not paid in full; a receipt is made once what was received comes to its total',
       ),
     )
     .exhaustive()

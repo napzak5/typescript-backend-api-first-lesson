@@ -1,6 +1,8 @@
 import {
+  bookingServices,
   bookings,
   customers,
+  paymentMethods,
   paymentTransactions,
   products,
   sales,
@@ -12,6 +14,7 @@ import {
 import {
   type BookingOfSale,
   bookingToHold,
+  type CalculationReferences,
   type DbPaymentTransaction,
   type DbSale,
   type DbSalesDetail,
@@ -23,6 +26,7 @@ import {
   planSaleChange,
   refusalOfChange,
   refusalOfVoid,
+  type SaleCalculateRequest,
   type SaleChangeReferences,
   type SaleCreateRequest,
   type SaleCreation,
@@ -372,6 +376,89 @@ const gathered = async (
   })
 }
 
+/**
+ * What a calculation refers to, as far as it is there: the salon, the
+ * service lines of the booking, the services the request adds and the
+ * payment methods of the salon, in the order of `sortOrder` and of the ID.
+ * Nothing is locked: a calculation writes nothing, and the statements see
+ * the database as it was at one moment.
+ */
+const calculationReferencesOf = async (
+  tx: DatabaseExecutor,
+  request: SaleCalculateRequest,
+): Promise<CalculationReferences> => {
+  const [salon] = await tx
+    .select({ taxRate: salons.taxRate })
+    .from(salons)
+    .where(and(eq(salons.id, request.salonId), isNull(salons.deletedAt)))
+  if (salon === undefined) {
+    return { salon: null, booking: null, services: [], paymentMethods: [] }
+  }
+
+  const [booking] =
+    request.bookingId === null
+      ? []
+      : await tx
+          .select({ id: bookings.id })
+          .from(bookings)
+          .where(
+            and(
+              eq(bookings.id, request.bookingId),
+              eq(bookings.salonId, request.salonId),
+            ),
+          )
+  const lines =
+    booking === undefined
+      ? []
+      : await tx
+          .select({
+            price: bookingServices.price,
+            discountAmount: bookingServices.discountAmount,
+            finalPrice: bookingServices.finalPrice,
+            taxIncluded: bookingServices.taxIncluded,
+          })
+          .from(bookingServices)
+          .where(eq(bookingServices.bookingId, booking.id))
+          .orderBy(asc(bookingServices.sortOrder), asc(bookingServices.id))
+  const serviceIds = named(request.services)
+  const added =
+    serviceIds.length === 0
+      ? []
+      : await tx
+          .select({
+            id: services.id,
+            price: services.price,
+            discountPrice: services.discountPrice,
+            taxIncluded: services.taxIncluded,
+          })
+          .from(services)
+          .where(
+            and(
+              inArray(services.id, serviceIds),
+              eq(services.salonId, request.salonId),
+              isNull(services.deletedAt),
+            ),
+          )
+          .orderBy(asc(services.id))
+  const methods = await tx
+    .select({
+      method: paymentMethods.method,
+      isActive: paymentMethods.isActive,
+      minimumAmount: paymentMethods.minimumAmount,
+      maximumAmount: paymentMethods.maximumAmount,
+    })
+    .from(paymentMethods)
+    .where(eq(paymentMethods.salonId, request.salonId))
+    .orderBy(asc(paymentMethods.sortOrder), asc(paymentMethods.id))
+
+  return {
+    salon,
+    booking: booking === undefined ? null : { lines },
+    services: added,
+    paymentMethods: methods,
+  }
+}
+
 /** The sale with the ID that the reader reaches, with its lines and payments. */
 const saleOf = async (
   tx: DatabaseExecutor,
@@ -598,6 +685,17 @@ export class SaleRepository implements ISaleRepository {
           hasMore: found.length > limit,
         }
       }, AT_ONE_MOMENT),
+    )
+  }
+
+  async findCalculationReferences(
+    request: SaleCalculateRequest,
+  ): Promise<Result<CalculationReferences, DomainError>> {
+    return attempt('Failed to read what a calculation refers to', () =>
+      this.db.transaction(
+        (tx) => calculationReferencesOf(tx, request),
+        AT_ONE_MOMENT,
+      ),
     )
   }
 }

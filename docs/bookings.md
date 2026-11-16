@@ -238,7 +238,7 @@
 | `ipAddress`、`userAgent` | リクエストの送信元（監査用。レスポンスには出さない） |
 
 - 明細の金額と時間、料金が消費税を含むかどうかは、明細を入れた時点のサービスの写しです。あとでサービスの料金や所要時間、税込かどうかを変えても、予約は変わりません
-- 予約の日時と金額は、明細から算出します（`business-logic/booking/_shared/summary.ts` の `summarize`）。作成と、明細の追加と削除が、同じ関数で算出します
+- 予約の日時と金額は、明細から算出します（`business-logic/booking/_shared/summary.ts` の `summarize`）。作成と、明細の追加と削除が、同じ関数で算出します。金額の規則（`business-logic/_shared/amounts.ts` の `amountsOf`）は、売上の金額の計算と共有します（[売上台帳](./sales.md#金額の計算)）
 - `subtotal` か `totalAmount` が `integer` の上限（2,147,483,647）を超える予約は 400 です（`services` の `too_big`）
 - 明細の間に空き時間があっても、予約の `duration` は最初の開始から最後の終了までの分数です。明細の `duration` の合計とは限りません
 - ステータスの履歴（`booking_status_histories`）に、作成を 1 行書きます（`fromStatus` が null、`toStatus` が `pending`、`changedBy` が操作者のユーザー ID）。ステータスの操作も、1 回につき 1 行書きます。更新と、台帳での日時の変更は、ステータスを変えないので、履歴を書きません。顧客による日時の変更は、確定済みの予約を確定待ちに戻すときに、1 行書きます（[顧客による日時の変更](#顧客による日時の変更)）。履歴を読むオペレーションはありません
@@ -987,7 +987,7 @@
 | 層 | ファイル |
 |---|---|
 | コントラクト | `specs/models/booking.tsp`、`specs/operations/booking-operations.tsp`（空き枠は、同じファイルの `AvailableSlotCrud` と、`AvailableSlot` で始まるモデル。顧客が自分で入れる予約は、`CustomerBookings` と、`CustomerBooking` で始まるモデル） |
-| ドメイン | `backend/packages/domain/src/models/booking.ts`、`schemas/booking.schema.ts`、`mappers/read/booking.mapper.ts`、`repositories/booking.repository.ts`、`services/booking-number-issuer.ts`、`business-logic/booking/`（誰がどの予約に届くかは `_shared/authorization.ts`、リクエストから書く行を決めるのは `_shared/plan.ts`、明細から予約の日時と金額を算出するのは `_shared/summary.ts`、スタッフの占有の規則は `_shared/occupancy.ts`、予約番号は `_shared/booking-number.ts`、リポジトリが断った理由をエラーに直すのは `_shared/refusals.ts`、ステータスの規則は `_shared/status.ts`、5 つの操作に共通の手順は `_shared/change-status.ts`、日時の変更の規則は `_shared/reschedule.ts`、施術明細の追加と削除の規則は `_shared/service-lines.ts`）。Write マッパーはない（書く行は `planBooking` と `planServiceAddition` が決める） |
+| ドメイン | `backend/packages/domain/src/models/booking.ts`、`schemas/booking.schema.ts`、`mappers/read/booking.mapper.ts`、`repositories/booking.repository.ts`、`services/booking-number-issuer.ts`、`business-logic/booking/`（誰がどの予約に届くかは `_shared/authorization.ts`、リクエストから書く行を決めるのは `_shared/plan.ts`、明細から予約の日時と金額を算出するのは `_shared/summary.ts`（金額の規則は、売上の金額の計算と共有する `business-logic/_shared/amounts.ts`）、スタッフの占有の規則は `_shared/occupancy.ts`、予約番号は `_shared/booking-number.ts`、リポジトリが断った理由をエラーに直すのは `_shared/refusals.ts`、ステータスの規則は `_shared/status.ts`、5 つの操作に共通の手順は `_shared/change-status.ts`、日時の変更の規則は `_shared/reschedule.ts`、施術明細の追加と削除の規則は `_shared/service-lines.ts`）。Write マッパーはない（書く行は `planBooking` と `planServiceAddition` が決める） |
 | ドメイン（共通） | `backend/packages/domain/src/schemas/rules.ts`（`inTimeZone`、`timeZoneName`）、`business-logic/_shared/unfinished-bookings.ts`（終わっていない予約が参照するものの削除を断るエラー） |
 | インフラ | `backend/packages/infrastructure/src/repositories/booking.repository.impl.ts`、`security/random-booking-number-issuer.ts`、`repositories/unfinished-bookings.ts`（顧客、スタッフ、サービス、サロンの削除が、終わっていない予約を探す）、`database/clock.ts`（書き込む時刻） |
 | ドメイン（空き枠） | `backend/packages/domain/src/models/available-slot.ts`、`schemas/available-slot.schema.ts`、`mappers/read/available-slot.mapper.ts`、`repositories/available-slot.repository.ts`、`business-logic/available-slot/`（枠を決めるのは `_shared/slots.ts`、サロンの営業時間帯は `_shared/opening.ts`、スタッフの勤務時間帯は `_shared/working.ts`、受け付けの設定は `_shared/acceptance.ts`、サロンの時計の時刻を時点に直すのは `_shared/salon-time.ts`、時間帯の計算は `_shared/time-ranges.ts`、カーソルは `_shared/page.ts`、確認の権限は `_shared/authorization.ts`）。占有の規則は、台帳の `business-logic/booking/_shared/occupancy.ts` を使う（`isOccupiedBeyondCapacity`、`conflictsOf`） |

@@ -1,4 +1,5 @@
 import type { Result } from '@beauty-salon-backend/utility'
+import type { CalculationReferences } from '../business-logic/sale/_shared/calculation'
 import type {
   SaleChangePlan,
   SaleChangeRefusal,
@@ -10,6 +11,7 @@ import type { CustomerId } from '../models/customer'
 import type { DbSale, SaleId, SaleWithDetails } from '../models/sale'
 import type { SalonId } from '../models/salon'
 import type {
+  SaleCalculateRequest,
   SaleCreateRequest,
   SaleUpdateRequest,
   SaleVoidRequest,
@@ -127,4 +129,13 @@ export interface ISaleRepository {
   list(
     criteria: SaleListCriteria,
   ): Promise<Result<SaleList | null, DomainError>>
+
+  /**
+   * What a calculation refers to (`planCalculation`), read at one moment:
+   * the salon, the service lines of the booking, the services and the
+   * payment methods of the salon. Nothing is held and nothing is written.
+   */
+  findCalculationReferences(
+    request: SaleCalculateRequest,
+  ): Promise<Result<CalculationReferences, DomainError>>
 }

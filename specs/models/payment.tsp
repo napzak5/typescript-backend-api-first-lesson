@@ -341,77 +341,68 @@ namespace BeautySalon.Models {
     cardBrand: string | null;
   }
 
-  @doc("売上のレシート - 売上とその明細・決済取引から作成するレシートの内容")
+  @doc("""
+    売上のレシート - 売上とその明細・決済取引から作成するレシートの内容。
+    レシートは記録せず、呼び出すたびに同じ売上から作り直す(再発行)
+    """)
   model SaleReceiptResponse {
-    @doc("レシート番号")
+    @doc("レシート番号。売上番号(saleNumber)と同じで、再発行しても変わらない")
     receiptNumber: string;
 
-    @doc("レシートの対象となる売上。明細(details)と決済取引(payments)を含む")
+    @doc("レシートの対象となる売上。明細(details)と決済取引(payments)を含む。売上の取得と同じ内容")
     sale: SaleResponse;
 
-    @doc("レシートの発行日時")
+    @doc("レシートを作成した日時。再発行すると変わる")
     issuedAt: utcDateTime;
   }
 
   @doc("""
-    会計金額の試算リクエスト - 選択したサービスと割引・ポイントから、売上を登録する前に請求額を試算する。
+    会計金額の試算リクエスト - 予約のサービス明細と、加えるサービスから、売上を登録する前に請求額を試算する。
     全項目のキーが必須
     """)
   model SaleCalculateRequest {
-    @doc("試算の対象となるサービス ID の一覧")
-    services: ServiceId[];
+    @doc("会計を行うサロン ID。消費税率と支払い方法は、このサロンのものを使う")
+    salonId: SalonId;
 
-    @doc("適用する割引コード。割引コードを使わない場合はnull")
-    discountCode: string | null;
-
-    @doc("利用するポイント数。ポイントを使わない場合はnull")
-    @minValue(0)
-    pointsToUse: int32 | null;
-
-    @doc("会計する顧客の ID。顧客を指定しない場合はnull")
-    customerId: CustomerId | null;
-
-    @doc("関連する予約の ID。予約がない場合はnull")
+    @doc("会計する予約の ID。salonId のサロンの予約を指定する。予約のサービス明細を、明細に写した価格で数える。予約のない来店の場合はnull")
     bookingId: BookingId | null;
+
+    @doc("予約のサービス明細に加えるサービスの ID の一覧。salonId のサロンの、削除されていないサービスを指定する。いまのメニューの価格で数える。同じIDを複数回指定すると、その回数だけ数える。0件以上100件以下で、予約のサービス明細と合わせて1件以上")
+    @maxItems(100)
+    services: ServiceId[];
   }
 
-  @doc("試算した請求金額の内訳")
+  @doc("""
+    試算した請求金額の内訳 - 売上を登録したときに、売上の小計・値引額・消費税額・合計金額になる値。
+    プロパティ名は sales テーブルのカラムと一致させている
+    """)
   model SaleBreakdownResponse {
-    @doc("サービス代金の税抜小計")
+    @doc("小計。明細の価格の合計")
     subtotal: int32;
 
-    @doc("適用される消費税額")
-    tax: int32;
+    @doc("値引額。サービスに割引価格(discountPrice)があれば、価格との差額の合計")
+    discountAmount: int32;
 
-    @doc("割引金額")
-    discount: int32;
+    @doc("消費税額。税込みでない明細の割引後の金額の合計に、サロンの税率を掛けて1円未満を切り捨てた額。明細ごとではなく、合計に対して1回だけ計算する")
+    taxAmount: int32;
 
-    @doc("ポイント利用による値引額。ポイントを使わない場合はnull")
-    pointsDiscount: int32 | null;
-
-    @doc("支払総額")
-    total: int32;
+    @doc("合計金額。subtotal - discountAmount + taxAmount")
+    totalAmount: int32;
   }
 
-  @doc("会計金額の試算結果 - 売上を登録する前の請求金額の見積もり")
+  @doc("会計金額の試算結果 - 売上を登録する前の請求金額の見積もり。何も記録しない")
   model SaleCalculateResponse {
     @doc("試算の対象となるサロン ID")
     salonId: SalonId;
 
-    @doc("試算の対象となる顧客の ID。顧客を指定しなかった場合はnull")
-    customerId: CustomerId | null;
-
-    @doc("関連する予約の ID。予約を指定しなかった場合はnull")
+    @doc("試算の対象となる予約の ID。予約を指定しなかった場合はnull")
     bookingId: BookingId | null;
 
     @doc("請求金額の内訳")
     breakdown: SaleBreakdownResponse;
 
-    @doc("推奨する支払い方法の一覧")
+    @doc("合計金額を1回の支払いで受け取れる支払い方法区分の一覧。サロンの有効な支払い方法のうち、合計金額が minimumAmount 以上 maximumAmount 以下のものの区分を、sortOrder とIDの順に、同じ区分は1回だけ並べる。合計金額が0の場合は空")
     recommendedMethods: PaymentMethodType[];
-
-    @doc("顧客・スタッフ向けの備考。備考がない場合はnull")
-    notes: string | null;
   }
 
   // ---------------------------------------------------------------------------
