@@ -18,11 +18,12 @@ import {
 } from '@beauty-salon-backend/domain'
 import { BookingRepository } from '@beauty-salon-backend/infrastructure'
 import type { Result } from '@beauty-salon-backend/utility'
-import { asc, eq } from 'drizzle-orm'
+import { and, asc, eq } from 'drizzle-orm'
 import type { Express } from 'express'
 import type { Response, Test } from 'supertest'
 import { beforeEach, describe, expect, it } from 'vitest'
 import {
+  epochMs,
   insertCustomer,
   insertMember,
   signedInUser,
@@ -50,6 +51,7 @@ import {
   createTestApp,
   expectProblem,
   getTestDb,
+  getTestDbClient,
   ISO_TIMESTAMP,
   request,
 } from './_shared/test-helpers'
@@ -91,6 +93,20 @@ const malformedIds: [string, string][] = [
   ['a number', '42'],
   ['a UUID with a character too many', `${UNKNOWN_ID}0`],
 ]
+
+const pause = (milliseconds: number): Promise<void> =>
+  new Promise((resolve) => setTimeout(resolve, milliseconds))
+
+/** The moment of the clock that the changes of a booking write by. */
+const databaseClock = async (): Promise<number> => {
+  const [row] = await getTestDbClient()<{ now: number }[]>`
+    SELECT (extract(epoch from clock_timestamp()) * 1000)::float8 AS now
+  `
+  if (row === undefined) {
+    throw new Error('The database did not tell the time')
+  }
+  return row.now
+}
 
 /** The status and the code of a problem; the status alone of a success. */
 const statusAndCode = (response: Response): string =>
@@ -1406,6 +1422,52 @@ describe('Customer booking reschedule API', () => {
           moved === undefined ? '' : statusAndCode(moved),
         )
         expect((await storedBooking(ids[index] ?? '')).status).toBe('cancelled')
+      }
+    })
+    // `now()` is the moment a transaction began, which is before what it
+    // waited for: by it, a move that waited for the salon to confirm the
+    // booking would be noted in the history as the earlier of the two.
+    it('writes the times of the moment it got hold of the booking, not of the moment it began to wait', async () => {
+      const created = await booked()
+      await confirm(created.id)
+
+      const { pending, until } = await db.transaction(async (tx) => {
+        await tx
+          .select({ id: bookings.id })
+          .from(bookings)
+          .where(eq(bookings.id, created.id))
+          .for('update')
+        const underWay = reschedule(created.id).then((response) => response)
+        await pause(300)
+
+        return { pending: underWay, until: await databaseClock() }
+      })
+      const moved = await pending
+      const after = await databaseClock()
+
+      expect(moved.status).toBe(200)
+      const lineTimes = await db
+        .select({ at: epochMs(bookingServices.updatedAt) })
+        .from(bookingServices)
+        .where(eq(bookingServices.bookingId, created.id))
+      const historyTimes = await db
+        .select({ at: epochMs(bookingStatusHistories.createdAt) })
+        .from(bookingStatusHistories)
+        .where(
+          and(
+            eq(bookingStatusHistories.bookingId, created.id),
+            eq(bookingStatusHistories.fromStatus, 'confirmed'),
+          ),
+        )
+      const times = [
+        Date.parse(moved.body.data.updatedAt),
+        ...lineTimes.map(({ at }) => at),
+        ...historyTimes.map(({ at }) => at),
+      ]
+      expect(times).toHaveLength(3)
+      for (const time of times) {
+        expect(time).toBeGreaterThanOrEqual(Math.floor(until))
+        expect(time).toBeLessThanOrEqual(Math.ceil(after))
       }
     })
   })
