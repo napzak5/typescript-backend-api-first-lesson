@@ -376,7 +376,13 @@ CREATE TABLE "payment_transactions" (
 	"metadata" jsonb,
 	"createdAt" timestamp with time zone DEFAULT now() NOT NULL,
 	"updatedAt" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "payment_transactions_transaction_number_unique" UNIQUE("transactionNumber")
+	CONSTRAINT "payment_transactions_transaction_number_unique" UNIQUE("transactionNumber"),
+	CONSTRAINT "payment_transactions_amount_positive" CHECK (amount >= 1),
+	CONSTRAINT "payment_transactions_card_last_four_digits" CHECK (("cardLastFour" IS NULL) OR (("cardLastFour")::text ~ '^[0-9]{4}$'::text)),
+	CONSTRAINT "payment_transactions_failure_of_failed" CHECK (((status = 'failed'::payment_status) = ("failedAt" IS NOT NULL)) AND ((status = 'failed'::payment_status) OR (("errorCode" IS NULL) AND ("errorMessage" IS NULL)))),
+	CONSTRAINT "payment_transactions_received_has_time" CHECK ((status = ANY (ARRAY['completed'::payment_status, 'refunded'::payment_status, 'partial_refund'::payment_status])) = ("processedAt" IS NOT NULL)),
+	CONSTRAINT "payment_transactions_refund_amount" CHECK (((status <> 'refunded'::payment_status) OR ("refundAmount" = amount)) AND ((status <> 'partial_refund'::payment_status) OR (("refundAmount" >= 1) AND ("refundAmount" < amount)))),
+	CONSTRAINT "payment_transactions_refund_of_refunded" CHECK (((status = ANY (ARRAY['refunded'::payment_status, 'partial_refund'::payment_status])) = ("refundedAt" IS NOT NULL)) AND ((status = ANY (ARRAY['refunded'::payment_status, 'partial_refund'::payment_status])) = ("refundAmount" IS NOT NULL)) AND ((status = ANY (ARRAY['refunded'::payment_status, 'partial_refund'::payment_status])) OR ("refundReason" IS NULL)))
 );
 
 CREATE TABLE "products" (

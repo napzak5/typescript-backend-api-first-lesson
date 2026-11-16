@@ -27,6 +27,11 @@ import {
   signIn,
 } from './_shared/auth-helpers'
 import {
+  type NewPayment,
+  PAYMENT_STATUSES,
+  paymentColumns,
+} from './_shared/payment-helpers'
+import {
   brokenRules,
   connectUnreachableDatabase,
   createTestApp,
@@ -99,17 +104,6 @@ const PROPERTIES = [
   'updatedAt',
 ]
 
-type PaymentStatus = (typeof paymentTransactions.$inferInsert)['status']
-
-const PAYMENT_STATUSES: PaymentStatus[] = [
-  'pending',
-  'processing',
-  'completed',
-  'failed',
-  'refunded',
-  'partial_refund',
-]
-
 /** A broken rule as a problem reports it. */
 const issue = (field: string, rule: string, message: string) => ({
   field,
@@ -137,7 +131,6 @@ describe('Payment methods API', () => {
 
   type NewSalon = typeof salons.$inferInsert
   type NewPaymentMethod = typeof paymentMethods.$inferInsert
-  type NewPayment = typeof paymentTransactions.$inferInsert
   type Executor = Pick<typeof db, 'insert'>
   type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0]
 
@@ -279,9 +272,7 @@ describe('Payment methods API', () => {
         saleId: await insertSale(),
         paymentMethodId,
         transactionNumber: `TX-${nextRow()}`,
-        amount: 6600,
-        status: 'completed',
-        ...overrides,
+        ...paymentColumns(overrides),
       })
       .returning({ id: paymentTransactions.id })
     if (payment === undefined) {

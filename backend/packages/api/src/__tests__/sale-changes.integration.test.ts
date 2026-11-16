@@ -37,6 +37,12 @@ import {
   signIn,
 } from './_shared/auth-helpers'
 import {
+  type NewPayment,
+  PAYMENT_STATUSES,
+  type PaymentStatus,
+  paymentColumns,
+} from './_shared/payment-helpers'
+import {
   brokenRules,
   connectUnreachableDatabase,
   createTestApp,
@@ -125,17 +131,6 @@ const PROPERTIES = [
   'voidedAt',
 ]
 
-type PaymentStatus = (typeof paymentTransactions.$inferInsert)['status']
-
-const PAYMENT_STATUSES: PaymentStatus[] = [
-  'pending',
-  'processing',
-  'completed',
-  'failed',
-  'refunded',
-  'partial_refund',
-]
-
 /** The statuses of a payment that holds money of the customer. */
 const HOLDING: PaymentStatus[] = ['completed', 'partial_refund']
 
@@ -183,7 +178,6 @@ describe('Sale changes API', () => {
   type NewProduct = typeof products.$inferInsert
   type NewBooking = typeof bookings.$inferInsert
   type NewSale = typeof sales.$inferInsert
-  type NewPayment = typeof paymentTransactions.$inferInsert
   type Executor = Pick<typeof db, 'insert'>
   type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0]
 
@@ -472,9 +466,7 @@ describe('Sale changes API', () => {
         saleId,
         paymentMethodId,
         transactionNumber: `TX-${nextRow()}`,
-        amount: 6600,
-        status: 'completed',
-        ...overrides,
+        ...paymentColumns(overrides),
       })
       .returning({ id: paymentTransactions.id })
     if (payment === undefined) {
