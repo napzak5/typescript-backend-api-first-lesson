@@ -38,7 +38,6 @@ import {
   type SaleVoidRequest,
   type SaleWithDetails,
   type SaleWrite,
-  type SalonOfSale,
   SERVICE_ITEM,
 } from '@beauty-salon-backend/domain'
 import type { Result } from '@beauty-salon-backend/utility'
@@ -52,14 +51,13 @@ import {
   isNull,
   ne,
   not,
-  type SQL,
   sql,
 } from 'drizzle-orm'
 import type { PgTransactionConfig } from 'drizzle-orm/pg-core'
-import { match } from 'ts-pattern'
 import { attempt } from '../database/attempt'
 import { CLOCK } from '../database/clock'
 import type { Database, DatabaseExecutor } from '../database/index'
+import { type HeldSale, heldSaleOf, within } from './held-sale'
 
 /**
  * The statements of a read see the database as it was at one moment: a
@@ -70,13 +68,6 @@ const AT_ONE_MOMENT: PgTransactionConfig = {
   isolationLevel: 'repeatable read',
   accessMode: 'read only',
 }
-
-/** The condition that keeps a query to the sales a reader reaches. */
-const within = (reach: LedgerReach): SQL | undefined =>
-  match(reach)
-    .with({ type: 'everySalon' }, () => undefined)
-    .with({ type: 'salon' }, ({ salonId }) => eq(sales.salonId, salonId))
-    .exhaustive()
 
 /** The IDs among these that are there, without the ones that are null. */
 const named = (ids: readonly (string | null)[]): string[] => [
@@ -269,36 +260,6 @@ const referencesOf = async (
     ...(await soldOf(tx, request.salonId, request.staffId, request.details)),
     booking,
   }
-}
-
-/** A sale that is held, with what it takes from its salon. */
-type HeldSale = { sale: DbSale; salon: SalonOfSale }
-
-/**
- * The sale a change is of, held `FOR UPDATE` until the change is written.
- * Of the changes of one sale each waits here for the one before it, and
- * what it reads afterwards is what that one left. The lock is the one that
- * the foreign key of a payment does not get past: no payment of the sale
- * is written while it is held, and one that is being written is waited
- * for.
- *
- * The sale is the first row a change holds; nothing that holds a booking,
- * a customer or a staff member goes on to hold a sale, so the changes of
- * sales wait for nothing that waits for them.
- */
-const heldSaleOf = async (
-  tx: DatabaseExecutor,
-  id: SaleId,
-  reach: LedgerReach,
-): Promise<HeldSale | null> => {
-  const [held] = await tx
-    .select({ sale: sales, salon: { timezone: salons.timezone } })
-    .from(sales)
-    .innerJoin(salons, eq(salons.id, sales.salonId))
-    .where(and(eq(sales.id, id), within(reach)))
-    .for('update', { of: sales })
-
-  return held ?? null
 }
 
 /**
