@@ -2,6 +2,7 @@ export type {
   ReviewCreateRequest,
   ReviewUpdateRequest,
 } from '../../schemas/review.schema'
+export type { ReviewReportRequest } from '../../schemas/review-report.schema'
 export {
   type HeldReview,
   planReviewChange,
@@ -17,6 +18,11 @@ export {
   type ReviewPlan,
   type ReviewPlanContext,
 } from './_shared/plan'
+export {
+  planReviewReport,
+  type ReportedReview,
+  type ReviewReporter,
+} from './_shared/report'
 export { CreateReviewUseCase } from './create-review.usecase'
 export { DeleteReviewUseCase } from './delete-review.usecase'
 export { GetReviewUseCase } from './get-review.usecase'
@@ -24,4 +30,5 @@ export { GetSalonReviewSummaryUseCase } from './get-salon-review-summary.usecase
 export { GetStaffReviewSummaryUseCase } from './get-staff-review-summary.usecase'
 export { ListReviewsUseCase, type ReviewPage } from './list-reviews.usecase'
 export { MarkReviewHelpfulUseCase } from './mark-review-helpful.usecase'
+export { ReportReviewUseCase } from './report-review.usecase'
 export { UpdateReviewUseCase } from './update-review.usecase'
