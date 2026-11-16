@@ -26,6 +26,7 @@ export { CustomerPreferencesRepository } from './repositories/customer-preferenc
 export { PaymentRepository } from './repositories/payment.repository.impl'
 export { PaymentMethodRepository } from './repositories/payment-method.repository.impl'
 export { SaleRepository } from './repositories/sale.repository.impl'
+export { SalesReportRepository } from './repositories/sales-report.repository.impl'
 export { SalonRepository } from './repositories/salon.repository.impl'
 export { ServiceRepository } from './repositories/service.repository.impl'
 export { ServiceCategoryRepository } from './repositories/service-category.repository.impl'

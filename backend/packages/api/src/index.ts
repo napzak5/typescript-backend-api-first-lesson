@@ -19,6 +19,7 @@ import {
   RandomSaleNumberIssuer,
   RandomTokenIssuer,
   SaleRepository,
+  SalesReportRepository,
   SalonRepository,
   ServiceCategoryRepository,
   ServiceRepository,
@@ -55,6 +56,7 @@ import {
 import { createPaymentRouter } from './routes/payment'
 import { createPaymentMethodRouter } from './routes/payment-method'
 import { createSaleRouter } from './routes/sale'
+import { createSalesReportRouter } from './routes/sales-report'
 import { createSalonRouter } from './routes/salon'
 import { createServiceRouter } from './routes/service'
 import { createServiceCategoryRouter } from './routes/service-category'
@@ -307,6 +309,13 @@ export const createApp = ({
   app.use(
     `${API_BASE_PATH}/payments`,
     createPaymentRouter(paymentDependencies, authenticated),
+  )
+  app.use(
+    `${API_BASE_PATH}/sales-reports`,
+    createSalesReportRouter(
+      { salesReportRepository: new SalesReportRepository(database) },
+      authenticated,
+    ),
   )
 
   app.use(notFoundHandler)

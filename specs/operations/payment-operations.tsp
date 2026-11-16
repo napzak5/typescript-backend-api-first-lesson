@@ -225,12 +225,12 @@ namespace BeautySalon.Operations {
     }
   }
 
-  @doc("売上を集計したレポートを取得・出力するAPI操作群です。salonId のサロンが存在しない場合は400を返します。")
+  @doc("売上を集計したレポートを取得・出力するAPI操作群です。get、getDaily、getByStaff、getByCategory、getTrends は実装済みで、定義と実装は一致しています。export は定義だけで、実装はありません。どの操作も、管理者と、salonId のサロンのオーナー・マネージャーが実行できます(スタッフと顧客は403)。salonId に自分のサロン以外を指定した場合は403を、salonId のサロンが存在しない場合は400を返します。集計は、リクエストのたびに、取り消していない売上とその決済取引から行い、記録しません。日付は売上日(saleDate。会計日時のサロンのタイムゾーンでの日付)です。")
   @route("/api/v1/sales-reports")
   @tag("Sales Reports")
   namespace SalesReportOperations {
     interface SalesReportCrud {
-      @doc("期間内の売上を集計したレポートを取得します。")
+      @doc("サロンの、取り消していない売上のうち、売上日が期間内のものを集計します。支払いが済んでいない売上も数え、返金は返金した決済取引の売上の売上日の側で数えます。endDate が startDate より前の場合と、期間が366日を超える場合は400を返します。")
       @summary("Get a sales report")
       @get
       get(...SalesReportGetRequest):
@@ -241,19 +241,11 @@ namespace BeautySalon.Operations {
         | ProblemResponse<400>
         | CommonErrors;
 
-      @doc("指定した日の売上サマリーを取得します。")
+      @doc("サロンの、売上日が date の、取り消していない売上を集計します。")
       @summary("Get daily sales")
       @route("/daily")
       @get
-      getDaily(
-        @doc("集計対象のサロン ID")
-        @query
-        salonId: SalonId,
-
-        @doc("集計対象日")
-        @query
-        date: plainDate,
-      ):
+      getDaily(...DailySalesGetRequest):
         | {
             @statusCode statusCode: 200;
             @body response: ApiResponse<DailySalesResponse>;
@@ -261,17 +253,11 @@ namespace BeautySalon.Operations {
         | ProblemResponse<400>
         | CommonErrors;
 
-      @doc("期間内の売上をスタッフ別に集計します。")
+      @doc("期間内の売上の明細を、担当スタッフ別に集計します。担当した明細の合計金額の多い順(同じならスタッフ ID の順)に、明細を担当したスタッフだけを返します。endDate が startDate より前の場合と、期間が366日を超える場合は400を返します。")
       @summary("Get sales by staff")
       @route("/by-staff")
       @get
-      getByStaff(
-        @doc("集計対象のサロン ID")
-        @query
-        salonId: SalonId,
-
-        ...DateRangeFilter,
-      ):
+      getByStaff(...SalesReportGetRequest):
         | {
             @statusCode statusCode: 200;
             @body response: ApiResponse<SalesByStaffResponse[]>;
@@ -279,17 +265,11 @@ namespace BeautySalon.Operations {
         | ProblemResponse<400>
         | CommonErrors;
 
-      @doc("期間内の売上をサービスカテゴリ別に集計します。")
+      @doc("期間内の売上のサービスの明細を、サービスのカテゴリーの区分別に集計します。金額の多い順(同じなら区分の名前の順)に、明細のある区分だけを返します。endDate が startDate より前の場合と、期間が366日を超える場合は400を返します。")
       @summary("Get sales by service category")
       @route("/by-category")
       @get
-      getByCategory(
-        @doc("集計対象のサロン ID")
-        @query
-        salonId: SalonId,
-
-        ...DateRangeFilter,
-      ):
+      getByCategory(...SalesReportGetRequest):
         | {
             @statusCode statusCode: 200;
             @body response: ApiResponse<SalesByCategoryResponse[]>;
@@ -297,21 +277,11 @@ namespace BeautySalon.Operations {
         | ProblemResponse<400>
         | CommonErrors;
 
-      @doc("期間内の売上推移を、日・週・月のいずれかの単位で集計します。")
+      @doc("期間内の売上の推移を、日・週(月曜日始まり)・月のいずれかの単位で区切って集計します。endDate が startDate より前の場合と、期間が366日を超える場合は400を返します。")
       @summary("Get sales trends")
       @route("/trends")
       @get
-      getTrends(
-        @doc("集計対象のサロン ID")
-        @query
-        salonId: SalonId,
-
-        @doc("集計の単位(daily: 日／weekly: 週／monthly: 月)")
-        @query
-        period: "daily" | "weekly" | "monthly",
-
-        ...DateRangeFilter,
-      ):
+      getTrends(...SalesTrendsGetRequest):
         | {
             @statusCode statusCode: 200;
             @body response: ApiResponse<SalesTrendsResponse>;

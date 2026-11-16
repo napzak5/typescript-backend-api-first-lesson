@@ -7,15 +7,15 @@
  */
 
 /**
- * 売上推移 - 期間を区切った単位ごとの売上の時系列。各配列の同じ位置が同じ区切りを表す
+ * 売上推移 - 期間を区切った単位ごとの、取り消していない売上の時系列。各配列の同じ位置が同じ区切りを表す。最初と最後の区切りは期間の中の売上だけを数え、売上のない区切りも0で載せる
  */
 export interface ModelsSalesTrendsResponse {
-  /** 各区切りのラベル */
+  /** 各区切りのラベル(SalesTrendPeriodType の説明を参照) */
   labels: string[];
-  /** 各区切りの売上額 */
+  /** 各区切りの売上の合計金額(totalAmount)の合計 */
   sales: number[];
-  /** 各区切りの取引件数 */
+  /** 各区切りの売上の件数 */
   transactions: number[];
-  /** 各区切りの平均取引単価 */
+  /** 各区切りの sales を transactions で割った額(1円未満を切り捨て)。売上がなければ0 */
   average: number[];
 }

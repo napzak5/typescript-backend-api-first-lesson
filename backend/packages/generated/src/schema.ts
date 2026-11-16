@@ -1005,6 +1005,31 @@ export type SalesReportExportFormatType = z.infer<typeof SalesReportExportFormat
 
 /**
  * @description
+ * 売上推移区切り区分 - 売上推移の期間を区切る単位
+ *
+ *
+ * daily: 日 - 1日ごと。ラベルは YYYY-MM-DD
+ *
+ * weekly: 週 - 月曜日に始まる週ごと。ラベルは週の月曜日の YYYY-MM-DD
+ *
+ * monthly: 月 - 暦の月ごと。ラベルは YYYY-MM
+ */
+export const SalesTrendPeriodTypeSchema = z.enum(['daily', 'weekly', 'monthly'])
+/**
+ * @description
+ * 売上推移区切り区分 - 売上推移の期間を区切る単位
+ *
+ *
+ * daily: 日 - 1日ごと。ラベルは YYYY-MM-DD
+ *
+ * weekly: 週 - 月曜日に始まる週ごと。ラベルは週の月曜日の YYYY-MM-DD
+ *
+ * monthly: 月 - 暦の月ごと。ラベルは YYYY-MM
+ */
+export type SalesTrendPeriodType = z.infer<typeof SalesTrendPeriodTypeSchema>
+
+/**
+ * @description
  * サロンロール区分 - サロンに属するアカウントのロール。スタッフへの招待で与え、スタッフのアカウントの操作で変える
  *
  *

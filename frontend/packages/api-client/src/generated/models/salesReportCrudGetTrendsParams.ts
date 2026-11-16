@@ -5,18 +5,24 @@
  * Comprehensive REST API for managing beauty salon operations including salons, staff, services, customers, bookings, treatments, payments, inventory, and access control. Built with TypeSpec for type-safe API-first development.
  * OpenAPI spec version: 2.0
  */
-import type { ModelsDateRangeFilterEndDateParameter } from './modelsDateRangeFilterEndDateParameter';
-import type { ModelsDateRangeFilterStartDateParameter } from './modelsDateRangeFilterStartDateParameter';
-import type { ModelsSalonId } from './modelsSalonId';
-import type { SalesReportCrudGetTrendsPeriod } from './salesReportCrudGetTrendsPeriod';
+import type { ModelsSalesReportGetRequestEndDateParameter } from './modelsSalesReportGetRequestEndDateParameter';
+import type { ModelsSalesReportGetRequestSalonIdParameter } from './modelsSalesReportGetRequestSalonIdParameter';
+import type { ModelsSalesReportGetRequestStartDateParameter } from './modelsSalesReportGetRequestStartDateParameter';
+import type { ModelsSalesTrendsGetRequestPeriodParameter } from './modelsSalesTrendsGetRequestPeriodParameter';
 
 export type SalesReportCrudGetTrendsParams = {
-  /** 集計対象のサロン ID */
-  salonId: ModelsSalonId;
-  /** 集計の単位(daily: 日／weekly: 週／monthly: 月) */
-  period: SalesReportCrudGetTrendsPeriod;
-  /** 検索対象期間の開始日時。 */
-  startDate?: ModelsDateRangeFilterStartDateParameter;
-  /** 検索対象期間の終了日時。 */
-  endDate?: ModelsDateRangeFilterEndDateParameter;
+  /** サロン店舗・拠点を識別するためのブランド付きUUID。 */
+  salonId: ModelsSalesReportGetRequestSalonIdParameter;
+  /** 期間の最初の売上日(saleDate) */
+  startDate: ModelsSalesReportGetRequestStartDateParameter;
+  /** 期間の最後の売上日(saleDate)。startDate 以降で、期間は startDate を含めて366日まで */
+  endDate: ModelsSalesReportGetRequestEndDateParameter;
+  /**
+   * 売上推移区切り区分 - 売上推移の期間を区切る単位
+   *
+   * daily: 日 - 1日ごと。ラベルは YYYY-MM-DD
+   * weekly: 週 - 月曜日に始まる週ごと。ラベルは週の月曜日の YYYY-MM-DD
+   * monthly: 月 - 暦の月ごと。ラベルは YYYY-MM
+   */
+  period: ModelsSalesTrendsGetRequestPeriodParameter;
 };

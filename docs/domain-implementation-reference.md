@@ -26,6 +26,7 @@ The excerpts are copied from the file named above each of them and shortened whe
 - [Data of a Salon Whose Routes Are Not Below It](#data-of-a-salon-whose-routes-are-not-below-it-the-booking-ledger)
 - [A Request That States Its Amounts](#a-request-that-states-its-amounts-the-sales-ledger)
 - [Rows Below a Record That Its Value Is Counted From](#rows-below-a-record-that-its-value-is-counted-from-the-payments-of-a-sale)
+- [Figures Counted from the Rows of Other Domains](#figures-counted-from-the-rows-of-other-domains-the-sales-reports)
 - [Data That Belongs to No Salon](#data-that-belongs-to-no-salon)
 - [Error Handling](#error-handling)
 - [Implementation Checklist](#implementation-checklist)
@@ -1137,6 +1138,21 @@ A payment is a row below a sale (`payment_transactions`), and the payment status
 | 9. Use cases | `saleReachOf` for a payment and `saleVoidReachOf` for a refund; the payment status of a sale, why a sale takes no payment and what a payment and a refund write are pure functions (`paymentStatusOf`, `refusalOfPayment`, `planPayment`, `planRefund`); the payment number is tried three times by `underFreeNumber` | `backend/packages/domain/src/business-logic/payment/` |
 | 10. Handlers and router | The record of a payment is a handler of the sale router, which takes the dependencies of the payments as well; the refund has a router of its own at `/payments` | `backend/packages/api/src/routes/sale/process-sale.handler.ts`, `backend/packages/api/src/routes/payment/` |
 | 12. Tests | The plan is tested as pure functions in the order of its checks. The integration test sends six payments of one sale at once (the whole, parts that add up to it, parts that exceed it), six refunds of one payment, a payment and a void together, holds a sale and a payment method while a payment waits for them, and breaks every constraint of the table. The tests that write payments directly take the columns that go with a status from `paymentColumns` | `backend/packages/domain/src/__tests__/payment.plan.test.ts`, `backend/packages/domain/src/__tests__/payment.usecase.test.ts`, `backend/packages/api/src/__tests__/payment.integration.test.ts`, `backend/packages/api/src/__tests__/_shared/payment-helpers.ts` |
+
+### Figures Counted from the Rows of Other Domains: the Sales Reports
+
+The sales reports (`SalesReportCrud`) have no table: every report is counted from the sales ledger, its lines and its payments when it is asked for, and stored nowhere. They are the example of a read-only domain whose answer is a sum of the rows of others. Their rules are in [Sales Reports](./sales-reports.md) (Japanese). What they show that the sales ledger does not:
+
+| Step | What the sales reports show | Where to read it |
+|------|-----------------------------|------------------|
+| 1. API contract | The queries were narrowed before they were implemented: every parameter is required and has no default, a parameter that decided nothing (the grouping of a report, whether to include refunds) was removed, and the satisfaction of customers was removed from the staff row, because no table records it. Each figure says in its `@doc` which rows it is counted from | `specs/operations/payment-operations.tsp` (`SalesReportCrud`), `specs/models/payment.tsp` |
+| 3. `pnpm check:api-db` | A report has no table, so no model of it has a rule. Its properties take the names of the columns they are counted from where there is one (`displayName`, `category`, `method`) | `backend/packages/database/src/scripts/api-consistency-rules.ts` |
+| 5. Validation schemas | A rule of two parameters, checked once both are dates: the end is not before the beginning, and the period is at most 366 days, both ends included, counted in calendar days | `backend/packages/domain/src/schemas/sales-report.schema.ts` |
+| 7. Repository interface | One read, `findFigures`, returns sums (`SalesFigures`) and not rows, or null for a salon that is not there; what the sums mean is written on their types | `backend/packages/domain/src/repositories/sales-report.repository.ts` |
+| 8. Repository implementation | Four `GROUP BY` queries and the look-up of the salon in one read-only `REPEATABLE READ` transaction, without a lock, so the figures are of the same sales and nothing waits for a writer. The SQL decides which rows count (not void, in the period, received payments, service lines, the staff member of the line or else of the sale) | `backend/packages/infrastructure/src/repositories/sales-report.repository.impl.ts` |
+| 9. Use cases | A reach of its own (`salesReportReachOf`), which leaves out the staff who keep the ledger. The reports are pure functions of the sums (`reportOf`, `dailyOf`, `staffRowsOf`, `categoryRowsOf`, `trendsOf`), which add them up, divide them, round them and put them in order, and the days, weeks and months are counted in UTC whatever the time zone of the server | `backend/packages/domain/src/business-logic/sales-report/_shared/` |
+| 10. Handlers and router | Five `GET`s whose query names the salon, so no route has a parameter; the query is text only, so the handlers pass it as it is, and the links of a report are the request itself | `backend/packages/api/src/routes/sales-report/` |
+| 12. Tests | The functions of the reports and of the calendar are tested with sums that are written out, a leap year and the ends of weeks, months and years among them. The integration test writes the rows of a month directly, with the sales, the lines and the payments that a report leaves out, and checks every figure against them | `backend/packages/domain/src/__tests__/sales-report.report.test.ts`, `backend/packages/domain/src/__tests__/sales-report.usecase.test.ts`, `backend/packages/api/src/__tests__/sales-report.integration.test.ts` |
 
 ## Data That Belongs to No Salon
 

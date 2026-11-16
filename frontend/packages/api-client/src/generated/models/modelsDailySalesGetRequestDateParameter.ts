@@ -7,6 +7,6 @@
  */
 
 /**
- * 返金取引を集計に含めるかどうか
+ * 集計対象の売上日(saleDate)
  */
-export type ModelsSalesReportGetRequestIncludeRefundsParameter = boolean;
+export type ModelsDailySalesGetRequestDateParameter = string;

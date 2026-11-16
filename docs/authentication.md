@@ -435,6 +435,21 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 
 規則は [売上台帳](./sales.md) と [支払い](./payments.md#支払いは受け取った結果の記録) にあります。
 
+### 売上レポートの権限
+
+売上レポート（`/api/v1/sales-reports`）は、サロンの売上台帳から数えます。どのサロンのレポートかは、クエリの `salonId` が決めます。権限は、売上台帳と同じ 2 段階で判定しますが、届く範囲は別の関数で決まります（`business-logic/sales-report/_shared/authorization.ts` の `salesReportReachOf`）。
+
+| オペレーション | 許可 |
+|---|---|
+| 期間のレポート、1 日の売上、スタッフ別、カテゴリー別、推移（`GET /api/v1/sales-reports`、`/daily`、`/by-staff`、`/by-category`、`/trends`） | `admin`（すべてのサロン）、クエリの `salonId` のサロンの `owner` / `manager` |
+
+- 1 段階目は、操作者だけで決まる。`admin` はすべてのサロン、サロンの `owner` と `manager` は所属サロンのレポートを読める。サロンの `staff`、ロール `customer` のユーザー、範囲 `none` のユーザーは、クエリが不正でも 403
+- 2 段階目は、クエリを確かめたあとに決まる（`isWithin`）。`owner` / `manager` が、ほかのサロンを指定すると、サロンが存在するかどうかにかかわらず 403。クエリが不正なら、その前に 400 を返す
+- 存在しないサロンと削除済みのサロンは、2 段階目を通った操作者（実際には `admin`）に 400（`salonId` の `not_found`）
+- 売上台帳と違い、サロンの `staff` は読めない。レポートは、サロン全体の売上と、スタッフ一人ひとりの売上を見せる、経営の情報だからである。売上レポートのための権限（`users.permissions`）はない
+
+規則は [売上レポート](./sales-reports.md) にあります。
+
 ## 管理者の操作
 
 `/api/v1/admin/auth` は、ほかのユーザーのアカウントを参照し、利用者が自分では直せない状態を直すためのものです。使えるのは操作者の範囲が `platform`（ロール `admin`）のユーザーだけで、それ以外は 403 です（`business-logic/auth/_shared/authorization.ts` の `mayAdministerAccounts`）。
