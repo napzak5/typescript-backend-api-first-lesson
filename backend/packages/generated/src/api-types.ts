@@ -2253,13 +2253,13 @@ export interface paths {
         };
         /**
          * List sales
-         * @description 絞り込み条件とページネーションを指定して売上を一覧取得します。顧客の支払い履歴は customerId で絞り込みます。
+         * @description 絞り込み条件とページネーションを指定して、売上を会計日時(saleTime)の新しい順に一覧取得します。取り消した売上も含みます。管理者はすべてのサロンの売上を、サロンのメンバーは自分のサロンの売上を取得できます。顧客の支払い履歴は customerId で絞り込みます。salonId に自分のサロン以外を指定した場合は403を、cursor が取得できる売上を指していない場合や、endDate が startDate より前の場合は400を返します。
          */
         get: operations["SaleCrud_list"];
         put?: never;
         /**
          * Create a sale
-         * @description 来店1回分の会計を売上として登録します。売上番号・売上日・小計・値引額・消費税額・合計金額はシステムが設定し、paymentStatus は pending で登録します。予約に対する会計は bookingId を指定します。salonId のサロンが存在しない場合や、customerId・staffId・bookingId・明細の staffId に存在しないIDまたは salonId のサロンのものではないIDを指定した場合は400を返します。
+         * @description 来店1回分の会計を売上として登録します。管理者と、salonId のサロンのメンバーが実行できます。売上番号・売上日・小計・値引額・消費税額・合計金額はシステムが設定し、paymentStatus は pending で登録します。予約に対する会計は bookingId を指定します。salonId のサロンが存在しない場合や、customerId・staffId・bookingId・明細の staffId・明細の itemId に存在しないIDまたは salonId のサロンのものではないIDを指定した場合、bookingId の予約の顧客が customerId と異なる場合、金額の合計が integer の上限を超える場合は400を返します。サロンのタイムゾーンが不明で売上日を決められない場合と、bookingId の予約に取り消していない売上がすでにある場合は409を返します。
          */
         post: operations["SaleCrud_create"];
         delete?: never;
@@ -2417,7 +2417,7 @@ export interface paths {
         };
         /**
          * Get a sale
-         * @description IDを指定して売上を1件取得します。明細と決済取引を含みます。
+         * @description IDを指定して売上を1件取得します。明細と決済取引を含みます。管理者と、売上のサロンのメンバーが実行できます。ほかのサロンの売上は、存在しない売上と同じく404を返します。
          */
         get: operations["SaleCrud_get"];
         put?: never;
@@ -7278,7 +7278,7 @@ export interface components {
             customerId: (string & components["schemas"]["Models.CustomerId"]) | null;
             /** @description 会計を担当するスタッフの ID。salonId のサロンのスタッフを指定する。担当者を記録しない場合はnull */
             staffId: (string & components["schemas"]["Models.StaffId"]) | null;
-            /** @description 売上のもとになる予約の ID。salonId のサロンの予約を指定する。予約のない来店の場合はnull */
+            /** @description 売上のもとになる予約の ID。salonId のサロンの、customerId の顧客の予約を指定する。1件の予約に対して、取り消していない売上は1件まで。予約のない来店の場合はnull */
             bookingId: (string & components["schemas"]["Models.BookingId"]) | null;
             /**
              * Format: date-time
@@ -7287,12 +7287,12 @@ export interface components {
             saleTime: string;
             /**
              * Format: int32
-             * @description この会計で利用したポイント数。記録しない場合はnull
+             * @description この会計で利用したポイント数。記録しない場合はnull。customerId がnullの場合はnull
              */
             pointsUsed: number | null;
             /**
              * Format: int32
-             * @description この会計で付与したポイント数。記録しない場合はnull
+             * @description この会計で付与したポイント数。記録しない場合はnull。customerId がnullの場合はnull
              */
             pointsEarned: number | null;
             /** @description 備考。未設定の場合はnull */
@@ -7527,11 +7527,11 @@ export interface components {
          *     売上の登録・更新リクエストとレスポンスで共通に使う。プロパティ名と null 許可は DB カラムと一致させている
          */
         "Models.SalesDetail": {
-            /** @description 明細の種類。service(サービス)、product(商品)など */
+            /** @description 明細の種類。service(サービス)、product(商品)など。空白だけの文字列は指定できない */
             itemType: string;
             /**
              * Format: uuid
-             * @description itemType が指すサービスまたは商品の ID。手入力の項目など、対象の記録がない明細の場合はnull
+             * @description itemType が service の明細では売上のサロンのサービスの ID、product の明細では売上のサロンの商品の ID。それ以外の itemType の明細と、手入力の項目など対象の記録がない明細の場合はnull
              */
             itemId: string | null;
             /** @description 明細名。会計時点の名称を記録する */
@@ -7548,7 +7548,7 @@ export interface components {
             unitPrice: number;
             /**
              * Format: int32
-             * @description 明細の値引額
+             * @description 明細の値引額。quantity × unitPrice 以下
              */
             discountAmount: number;
             /**
@@ -7565,7 +7565,7 @@ export interface components {
             staffId: (string & components["schemas"]["Models.StaffId"]) | null;
             /**
              * Format: double
-             * @description 担当スタッフの歩合率(%)。歩合を記録しない場合はnull
+             * @description 担当スタッフの歩合率(%)。小数第2位まで。歩合を記録しない場合はnull
              */
             commissionRate: number | null;
             /**
@@ -7577,7 +7577,7 @@ export interface components {
             notes: string | null;
             /**
              * Format: int32
-             * @description 表示順序
+             * @description 表示順序。1件の売上の明細の間で重複しない
              */
             sortOrder: number;
         };
@@ -23724,6 +23724,15 @@ export interface operations {
             };
             /** @description 認証されているが、この操作を行う権限がない (403)。 */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The request conflicts with the current state of the server. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -118,7 +118,7 @@ export const getSaleCrudListUrl = (params?: SaleCrudListParams,) => {
 }
 
 /**
- * 絞り込み条件とページネーションを指定して売上を一覧取得します。顧客の支払い履歴は customerId で絞り込みます。
+ * 絞り込み条件とページネーションを指定して、売上を会計日時(saleTime)の新しい順に一覧取得します。取り消した売上も含みます。管理者はすべてのサロンの売上を、サロンのメンバーは自分のサロンの売上を取得できます。顧客の支払い履歴は customerId で絞り込みます。salonId に自分のサロン以外を指定した場合は403を、cursor が取得できる売上を指していない場合や、endDate が startDate より前の場合は400を返します。
  * @summary List sales
  */
 export const saleCrudList = async (params?: SaleCrudListParams, options?: RequestInit): Promise<saleCrudListResponse> => {
@@ -166,7 +166,7 @@ export type SaleCrudListQueryError = ModelsProblemDetails
 
 
 /**
- * 絞り込み条件とページネーションを指定して売上を一覧取得します。顧客の支払い履歴は customerId で絞り込みます。
+ * 絞り込み条件とページネーションを指定して、売上を会計日時(saleTime)の新しい順に一覧取得します。取り消した売上も含みます。管理者はすべてのサロンの売上を、サロンのメンバーは自分のサロンの売上を取得できます。顧客の支払い履歴は customerId で絞り込みます。salonId に自分のサロン以外を指定した場合は403を、cursor が取得できる売上を指していない場合や、endDate が startDate より前の場合は400を返します。
  * @summary List sales
  */
 export function useSaleCrudList<TData = Awaited<ReturnType<typeof saleCrudList>>, TError = ModelsProblemDetails>(
@@ -180,7 +180,7 @@ export function useSaleCrudList<TData = Awaited<ReturnType<typeof saleCrudList>>
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 絞り込み条件とページネーションを指定して売上を一覧取得します。顧客の支払い履歴は customerId で絞り込みます。
+ * 絞り込み条件とページネーションを指定して、売上を会計日時(saleTime)の新しい順に一覧取得します。取り消した売上も含みます。管理者はすべてのサロンの売上を、サロンのメンバーは自分のサロンの売上を取得できます。顧客の支払い履歴は customerId で絞り込みます。salonId に自分のサロン以外を指定した場合は403を、cursor が取得できる売上を指していない場合や、endDate が startDate より前の場合は400を返します。
  * @summary List sales
  */
 export function useSaleCrudList<TData = Awaited<ReturnType<typeof saleCrudList>>, TError = ModelsProblemDetails>(
@@ -194,7 +194,7 @@ export function useSaleCrudList<TData = Awaited<ReturnType<typeof saleCrudList>>
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 絞り込み条件とページネーションを指定して売上を一覧取得します。顧客の支払い履歴は customerId で絞り込みます。
+ * 絞り込み条件とページネーションを指定して、売上を会計日時(saleTime)の新しい順に一覧取得します。取り消した売上も含みます。管理者はすべてのサロンの売上を、サロンのメンバーは自分のサロンの売上を取得できます。顧客の支払い履歴は customerId で絞り込みます。salonId に自分のサロン以外を指定した場合は403を、cursor が取得できる売上を指していない場合や、endDate が startDate より前の場合は400を返します。
  * @summary List sales
  */
 export function useSaleCrudList<TData = Awaited<ReturnType<typeof saleCrudList>>, TError = ModelsProblemDetails>(
@@ -202,7 +202,7 @@ export function useSaleCrudList<TData = Awaited<ReturnType<typeof saleCrudList>>
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 絞り込み条件とページネーションを指定して売上を一覧取得します。顧客の支払い履歴は customerId で絞り込みます。
+ * 絞り込み条件とページネーションを指定して、売上を会計日時(saleTime)の新しい順に一覧取得します。取り消した売上も含みます。管理者はすべてのサロンの売上を、サロンのメンバーは自分のサロンの売上を取得できます。顧客の支払い履歴は customerId で絞り込みます。salonId に自分のサロン以外を指定した場合は403を、cursor が取得できる売上を指していない場合や、endDate が startDate より前の場合は400を返します。
  * @summary List sales
  */
 export function useSaleCrudList<TData = Awaited<ReturnType<typeof saleCrudList>>, TError = ModelsProblemDetails>(
@@ -242,6 +242,11 @@ export type saleCrudCreateResponse403 = {
   status: 403
 }
 
+export type saleCrudCreateResponse409 = {
+  data: ModelsProblemDetails
+  status: 409
+}
+
 export type saleCrudCreateResponse413 = {
   data: ModelsProblemDetails
   status: 413
@@ -265,7 +270,7 @@ export type saleCrudCreateResponse500 = {
 export type saleCrudCreateResponseSuccess = (saleCrudCreateResponse201) & {
   headers: Headers;
 };
-export type saleCrudCreateResponseError = (saleCrudCreateResponse400 | saleCrudCreateResponse401 | saleCrudCreateResponse403 | saleCrudCreateResponse413 | saleCrudCreateResponse415 | saleCrudCreateResponse429 | saleCrudCreateResponse500) & {
+export type saleCrudCreateResponseError = (saleCrudCreateResponse400 | saleCrudCreateResponse401 | saleCrudCreateResponse403 | saleCrudCreateResponse409 | saleCrudCreateResponse413 | saleCrudCreateResponse415 | saleCrudCreateResponse429 | saleCrudCreateResponse500) & {
   headers: Headers;
 };
 
@@ -280,7 +285,7 @@ export const getSaleCrudCreateUrl = () => {
 }
 
 /**
- * 来店1回分の会計を売上として登録します。売上番号・売上日・小計・値引額・消費税額・合計金額はシステムが設定し、paymentStatus は pending で登録します。予約に対する会計は bookingId を指定します。salonId のサロンが存在しない場合や、customerId・staffId・bookingId・明細の staffId に存在しないIDまたは salonId のサロンのものではないIDを指定した場合は400を返します。
+ * 来店1回分の会計を売上として登録します。管理者と、salonId のサロンのメンバーが実行できます。売上番号・売上日・小計・値引額・消費税額・合計金額はシステムが設定し、paymentStatus は pending で登録します。予約に対する会計は bookingId を指定します。salonId のサロンが存在しない場合や、customerId・staffId・bookingId・明細の staffId・明細の itemId に存在しないIDまたは salonId のサロンのものではないIDを指定した場合、bookingId の予約の顧客が customerId と異なる場合、金額の合計が integer の上限を超える場合は400を返します。サロンのタイムゾーンが不明で売上日を決められない場合と、bookingId の予約に取り消していない売上がすでにある場合は409を返します。
  * @summary Create a sale
  */
 export const saleCrudCreate = async (modelsSaleCreateRequest: ModelsSaleCreateRequest, options?: RequestInit): Promise<saleCrudCreateResponse> => {
@@ -347,7 +352,7 @@ const {mutation: mutationOptions} = options ?
     export type SaleCrudCreateMutationVariables = {data: ModelsSaleCreateRequest}
 
     /**
- * 来店1回分の会計を売上として登録します。売上番号・売上日・小計・値引額・消費税額・合計金額はシステムが設定し、paymentStatus は pending で登録します。予約に対する会計は bookingId を指定します。salonId のサロンが存在しない場合や、customerId・staffId・bookingId・明細の staffId に存在しないIDまたは salonId のサロンのものではないIDを指定した場合は400を返します。
+ * 来店1回分の会計を売上として登録します。管理者と、salonId のサロンのメンバーが実行できます。売上番号・売上日・小計・値引額・消費税額・合計金額はシステムが設定し、paymentStatus は pending で登録します。予約に対する会計は bookingId を指定します。salonId のサロンが存在しない場合や、customerId・staffId・bookingId・明細の staffId・明細の itemId に存在しないIDまたは salonId のサロンのものではないIDを指定した場合、bookingId の予約の顧客が customerId と異なる場合、金額の合計が integer の上限を超える場合は400を返します。サロンのタイムゾーンが不明で売上日を決められない場合と、bookingId の予約に取り消していない売上がすでにある場合は409を返します。
  * @summary Create a sale
  */
 export const useSaleCrudCreate = <TError = ModelsProblemDetails,
@@ -551,7 +556,7 @@ export const getSaleCrudGetUrl = (id: ModelsSaleId,) => {
 }
 
 /**
- * IDを指定して売上を1件取得します。明細と決済取引を含みます。
+ * IDを指定して売上を1件取得します。明細と決済取引を含みます。管理者と、売上のサロンのメンバーが実行できます。ほかのサロンの売上は、存在しない売上と同じく404を返します。
  * @summary Get a sale
  */
 export const saleCrudGet = async (id: ModelsSaleId, options?: RequestInit): Promise<saleCrudGetResponse> => {
@@ -599,7 +604,7 @@ export type SaleCrudGetQueryError = ModelsProblemDetails
 
 
 /**
- * IDを指定して売上を1件取得します。明細と決済取引を含みます。
+ * IDを指定して売上を1件取得します。明細と決済取引を含みます。管理者と、売上のサロンのメンバーが実行できます。ほかのサロンの売上は、存在しない売上と同じく404を返します。
  * @summary Get a sale
  */
 export function useSaleCrudGet<TData = Awaited<ReturnType<typeof saleCrudGet>>, TError = ModelsProblemDetails>(
@@ -613,7 +618,7 @@ export function useSaleCrudGet<TData = Awaited<ReturnType<typeof saleCrudGet>>, 
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * IDを指定して売上を1件取得します。明細と決済取引を含みます。
+ * IDを指定して売上を1件取得します。明細と決済取引を含みます。管理者と、売上のサロンのメンバーが実行できます。ほかのサロンの売上は、存在しない売上と同じく404を返します。
  * @summary Get a sale
  */
 export function useSaleCrudGet<TData = Awaited<ReturnType<typeof saleCrudGet>>, TError = ModelsProblemDetails>(
@@ -627,7 +632,7 @@ export function useSaleCrudGet<TData = Awaited<ReturnType<typeof saleCrudGet>>, 
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * IDを指定して売上を1件取得します。明細と決済取引を含みます。
+ * IDを指定して売上を1件取得します。明細と決済取引を含みます。管理者と、売上のサロンのメンバーが実行できます。ほかのサロンの売上は、存在しない売上と同じく404を返します。
  * @summary Get a sale
  */
 export function useSaleCrudGet<TData = Awaited<ReturnType<typeof saleCrudGet>>, TError = ModelsProblemDetails>(
@@ -635,7 +640,7 @@ export function useSaleCrudGet<TData = Awaited<ReturnType<typeof saleCrudGet>>, 
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * IDを指定して売上を1件取得します。明細と決済取引を含みます。
+ * IDを指定して売上を1件取得します。明細と決済取引を含みます。管理者と、売上のサロンのメンバーが実行できます。ほかのサロンの売上は、存在しない売上と同じく404を返します。
  * @summary Get a sale
  */
 export function useSaleCrudGet<TData = Awaited<ReturnType<typeof saleCrudGet>>, TError = ModelsProblemDetails>(

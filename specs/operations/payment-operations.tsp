@@ -16,7 +16,7 @@ namespace BeautySalon.Operations {
   @tag("Sales")
   namespace SaleOperations {
     interface SaleCrud {
-      @doc("絞り込み条件とページネーションを指定して売上を一覧取得します。顧客の支払い履歴は customerId で絞り込みます。")
+      @doc("絞り込み条件とページネーションを指定して、売上を会計日時(saleTime)の新しい順に一覧取得します。取り消した売上も含みます。管理者はすべてのサロンの売上を、サロンのメンバーは自分のサロンの売上を取得できます。顧客の支払い履歴は customerId で絞り込みます。salonId に自分のサロン以外を指定した場合は403を、cursor が取得できる売上を指していない場合や、endDate が startDate より前の場合は400を返します。")
       @summary("List sales")
       @get
       list(...SaleSearchRequest):
@@ -27,7 +27,7 @@ namespace BeautySalon.Operations {
         | ProblemResponse<400>
         | CommonErrors;
 
-      @doc("来店1回分の会計を売上として登録します。売上番号・売上日・小計・値引額・消費税額・合計金額はシステムが設定し、paymentStatus は pending で登録します。予約に対する会計は bookingId を指定します。salonId のサロンが存在しない場合や、customerId・staffId・bookingId・明細の staffId に存在しないIDまたは salonId のサロンのものではないIDを指定した場合は400を返します。")
+      @doc("来店1回分の会計を売上として登録します。管理者と、salonId のサロンのメンバーが実行できます。売上番号・売上日・小計・値引額・消費税額・合計金額はシステムが設定し、paymentStatus は pending で登録します。予約に対する会計は bookingId を指定します。salonId のサロンが存在しない場合や、customerId・staffId・bookingId・明細の staffId・明細の itemId に存在しないIDまたは salonId のサロンのものではないIDを指定した場合、bookingId の予約の顧客が customerId と異なる場合、金額の合計が integer の上限を超える場合は400を返します。サロンのタイムゾーンが不明で売上日を決められない場合と、bookingId の予約に取り消していない売上がすでにある場合は409を返します。")
       @summary("Create a sale")
       @post
       create(@body request: SaleCreateRequest):
@@ -37,10 +37,11 @@ namespace BeautySalon.Operations {
             @body response: ApiResponse<SaleResponse>;
           }
         | ProblemResponse<400>
+        | ProblemResponse<409>
         | RequestBodyErrors
         | CommonErrors;
 
-      @doc("IDを指定して売上を1件取得します。明細と決済取引を含みます。")
+      @doc("IDを指定して売上を1件取得します。明細と決済取引を含みます。管理者と、売上のサロンのメンバーが実行できます。ほかのサロンの売上は、存在しない売上と同じく404を返します。")
       @summary("Get a sale")
       @get
       get(@path id: SaleId):

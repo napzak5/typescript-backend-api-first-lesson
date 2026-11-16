@@ -12,13 +12,13 @@
  */
 export interface ModelsSalesDetail {
   /**
-     * 明細の種類。service(サービス)、product(商品)など
+     * 明細の種類。service(サービス)、product(商品)など。空白だけの文字列は指定できない
      * @minLength 1
      * @maxLength 50
      */
   itemType: string;
   /**
-     * itemType が指すサービスまたは商品の ID。手入力の項目など、対象の記録がない明細の場合はnull
+     * itemType が service の明細では売上のサロンのサービスの ID、product の明細では売上のサロンの商品の ID。それ以外の itemType の明細と、手入力の項目など対象の記録がない明細の場合はnull
      * @nullable
      */
   itemId: string | null;
@@ -39,7 +39,7 @@ export interface ModelsSalesDetail {
      */
   unitPrice: number;
   /**
-     * 明細の値引額
+     * 明細の値引額。quantity × unitPrice 以下
      * @minimum 0
      */
   discountAmount: number;
@@ -59,7 +59,7 @@ export interface ModelsSalesDetail {
      */
   staffId: string | null;
   /**
-     * 担当スタッフの歩合率(%)。歩合を記録しない場合はnull
+     * 担当スタッフの歩合率(%)。小数第2位まで。歩合を記録しない場合はnull
      * @minimum 0
      * @maximum 100
      * @nullable
@@ -77,7 +77,7 @@ export interface ModelsSalesDetail {
      */
   notes: string | null;
   /**
-     * 表示順序
+     * 表示順序。1件の売上の明細の間で重複しない
      * @minimum 0
      */
   sortOrder: number;
