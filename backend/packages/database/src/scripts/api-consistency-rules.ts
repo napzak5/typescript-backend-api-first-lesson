@@ -644,11 +644,44 @@ const saleManagedColumns = [
 const pointManagedColumns = ['id', 'transactionType', 'balance', 'createdAt']
 
 /**
- * Sales, their payments, and points. `daily_summaries` and `payment_methods`
- * back no model: the daily report returns values that `daily_summaries` does
- * not hold, and no operation exposes the payment methods.
+ * Columns of `payment_methods` that no request writes: the database assigns
+ * the ID and the timestamps, the path names the salon, and nothing reads or
+ * writes the settings of a payment processor (`processorConfig`, a jsonb
+ * column without a defined structure that may hold credentials).
+ */
+const paymentMethodManagedColumns = [
+  'id',
+  'salonId',
+  'processorConfig',
+  'createdAt',
+  'updatedAt',
+]
+
+/**
+ * Sales, their payments, the payment methods of a salon, and points.
+ * `daily_summaries` backs no model: the daily report returns values that it
+ * does not hold.
  */
 const paymentRules: ModelRule[] = [
+  {
+    model: 'Models.PaymentMethodResponse',
+    table: 'paymentMethods',
+    kind: 'response',
+    omittedColumns: ['processorConfig'],
+  },
+  {
+    model: 'Models.PaymentMethodCreateRequest',
+    table: 'paymentMethods',
+    kind: 'create',
+    omittedColumns: paymentMethodManagedColumns,
+  },
+  {
+    // A payment method keeps the method it was created with.
+    model: 'Models.PaymentMethodUpdateRequest',
+    table: 'paymentMethods',
+    kind: 'update',
+    omittedColumns: [...paymentMethodManagedColumns, 'method'],
+  },
   {
     model: 'Models.SaleResponse',
     table: 'sales',
