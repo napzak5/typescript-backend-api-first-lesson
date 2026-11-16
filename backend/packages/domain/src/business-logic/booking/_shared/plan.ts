@@ -10,6 +10,7 @@ import type {
 } from '../../../schemas/booking.schema'
 import { MAX_INTEGER } from '../../../schemas/rules'
 import type { ValidationIssue } from '../../../shared'
+import { pricedLineOf } from '../../_shared/amounts'
 import type { ServiceTime, StaffCapacity } from './occupancy'
 import { type SalonOfBooking, type SummedLine, summarize } from './summary'
 
@@ -74,36 +75,24 @@ export const notFound = (field: string, what: string): ValidationIssue => ({
 
 /**
  * The row of a service line: its time, its amounts and whether they
- * include the tax are those of the service, the discount what the
- * discounted price takes off the price.
+ * include the tax are those of the service (`pricedLineOf`).
  */
 export const toServiceRow = (
   line: BookingServiceCreateRequest,
   service: ServiceOfBooking,
   sortOrder: number,
-): DbNewBookingService => {
-  const discountAmount =
-    service.price - (service.discountPrice ?? service.price)
-
-  return {
-    serviceId: line.serviceId,
-    staffId: line.staffId,
-    startTime: line.startTime,
-    endTime: addMinutes(
-      parseISO(line.startTime),
-      service.duration,
-    ).toISOString(),
-    duration: service.duration,
-    price: service.price,
-    discountAmount,
-    finalPrice: service.price - discountAmount,
-    taxIncluded: service.taxIncluded,
-    isCompleted: false,
-    completedAt: null,
-    notes: line.notes,
-    sortOrder,
-  }
-}
+): DbNewBookingService => ({
+  serviceId: line.serviceId,
+  staffId: line.staffId,
+  startTime: line.startTime,
+  endTime: addMinutes(parseISO(line.startTime), service.duration).toISOString(),
+  duration: service.duration,
+  ...pricedLineOf(service),
+  isCompleted: false,
+  completedAt: null,
+  notes: line.notes,
+  sortOrder,
+})
 
 /** A row that is about to be written, as its booking is summed up from it. */
 export const summedOf = (row: DbNewBookingService): SummedLine => ({

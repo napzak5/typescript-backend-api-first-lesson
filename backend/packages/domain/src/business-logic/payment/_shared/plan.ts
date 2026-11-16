@@ -36,7 +36,7 @@ const RECEIVED: readonly DbPaymentTransaction['status'][] = [
 ]
 
 /** What a sale received with its payments, and what it gave back of that. */
-const moneyOf = (
+export const moneyOf = (
   payments: readonly MoneyOfPayment[],
 ): { received: number; returned: number } => {
   const received = payments.filter(({ status }) => RECEIVED.includes(status))
