@@ -2,11 +2,13 @@ import { Result } from '@beauty-salon-backend/utility'
 import { describe, expect, it, vi } from 'vitest'
 import {
   CreateReviewUseCase,
+  DeleteReviewUseCase,
   GetReviewUseCase,
   GetSalonReviewSummaryUseCase,
   GetStaffReviewSummaryUseCase,
   ListReviewsUseCase,
   type ReviewUseCaseDependencies,
+  UpdateReviewUseCase,
 } from '../business-logic/review'
 import type { Actor } from '../models/auth'
 import type {
@@ -16,8 +18,10 @@ import type {
 } from '../models/review'
 import type {
   IReviewRepository,
+  ReviewChange,
   ReviewCreation,
   ReviewList,
+  ReviewRemoval,
 } from '../repositories/review.repository'
 import { type DomainError, DomainErrors } from '../shared'
 import { actors, CUSTOMER_ID } from './auth-fixtures'
@@ -63,11 +67,13 @@ const validationMessageOf = (
     : null
 
 const repositoryWasNotCalled = (dependencies: ReviewUseCaseDependencies) => {
-  const { list, findById, create, salonTally, staffTally } =
+  const { list, findById, create, update, salonTally, staffTally } =
     dependencies.reviewRepository
   expect(vi.mocked(list)).not.toHaveBeenCalled()
   expect(vi.mocked(findById)).not.toHaveBeenCalled()
   expect(vi.mocked(create)).not.toHaveBeenCalled()
+  expect(vi.mocked(update)).not.toHaveBeenCalled()
+  expect(vi.mocked(dependencies.reviewRepository.delete)).not.toHaveBeenCalled()
   expect(vi.mocked(salonTally)).not.toHaveBeenCalled()
   expect(vi.mocked(staffTally)).not.toHaveBeenCalled()
 }
@@ -75,6 +81,24 @@ const repositoryWasNotCalled = (dependencies: ReviewUseCaseDependencies) => {
 const creating = (outcome: ReviewCreation) => ({
   create: vi.fn(async () => Result.success(outcome)),
 })
+
+const updating = (outcome: ReviewChange) => ({
+  update: vi.fn(async () => Result.success(outcome)),
+})
+
+const deleting = (outcome: ReviewRemoval) => ({
+  delete: vi.fn(async () => Result.success(outcome)),
+})
+
+/** The accounts that are not customers with a profile. */
+const notReviewers: [string, Actor][] = [
+  ['an administrator', actors.admin],
+  ['an owner', actors.ofSalon('owner')],
+  ['a manager', actors.ofSalon('manager')],
+  ['a staff member', actors.ofSalon('staff')],
+  ['an account of a salon that reaches no salon', actors.withoutScope],
+  ['a customer without a profile', actors.customerWithoutProfile],
+]
 
 describe('ListReviewsUseCase', () => {
   const list = (dependencies: ReviewUseCaseDependencies, input: unknown = {}) =>
@@ -312,22 +336,18 @@ describe('CreateReviewUseCase', () => {
     )
   })
 
-  it.each<[string, Actor]>([
-    ['an administrator', actors.admin],
-    ['an owner', actors.ofSalon('owner')],
-    ['a manager', actors.ofSalon('manager')],
-    ['a staff member', actors.ofSalon('staff')],
-    ['an account of a salon that reaches no salon', actors.withoutScope],
-    ['a customer without a profile', actors.customerWithoutProfile],
-  ])('refuses %s before the request is read', async (_, actor) => {
-    const dependencies = reviewDependencies()
+  it.each(notReviewers)(
+    'refuses %s before the request is read',
+    async (_, actor) => {
+      const dependencies = reviewDependencies()
 
-    expect(await create(dependencies, actor, { broken: true })).toEqual({
-      type: 'error',
-      error: DomainErrors.forbidden(),
-    })
-    repositoryWasNotCalled(dependencies)
-  })
+      expect(await create(dependencies, actor, { broken: true })).toEqual({
+        type: 'error',
+        error: DomainErrors.forbidden(),
+      })
+      repositoryWasNotCalled(dependencies)
+    },
+  )
 
   it('refuses a request that breaks a rule without asking the repository', async () => {
     const dependencies = reviewDependencies()
@@ -448,6 +468,264 @@ describe('CreateReviewUseCase', () => {
     })
 
     expect(await create(dependencies)).toEqual(databaseDown)
+  })
+})
+
+describe('UpdateReviewUseCase', () => {
+  const change = { overallRating: 2, title: null }
+  const update = (
+    dependencies: ReviewUseCaseDependencies,
+    actor: Actor = actors.customer,
+    id: unknown = REVIEW_ID,
+    input: unknown = change,
+  ) => new UpdateReviewUseCase(dependencies).execute(actor, id, input)
+
+  it('changes the review as the signed-in customer and returns it', async () => {
+    const dependencies = reviewDependencies(
+      updating({
+        type: 'updated',
+        review: dbReview({ overallRating: 2, title: null }),
+      }),
+    )
+
+    expect(await update(dependencies)).toEqual({
+      type: 'success',
+      data: apiReview({ overallRating: 2, title: null }),
+    })
+    expect(dependencies.reviewRepository.update).toHaveBeenCalledWith(
+      REVIEW_ID,
+      CUSTOMER_ID,
+      change,
+    )
+  })
+
+  it('looks for the review by its ID in lower case', async () => {
+    const dependencies = reviewDependencies()
+
+    await update(dependencies, actors.customer, REVIEW_ID.toUpperCase())
+
+    expect(dependencies.reviewRepository.update).toHaveBeenCalledWith(
+      REVIEW_ID,
+      CUSTOMER_ID,
+      change,
+    )
+  })
+
+  it.each(notReviewers)(
+    'refuses %s before the ID and the request are read',
+    async (_, actor) => {
+      const dependencies = reviewDependencies()
+
+      expect(
+        await update(dependencies, actor, 'not-a-uuid', { broken: true }),
+      ).toEqual({ type: 'error', error: DomainErrors.forbidden() })
+      repositoryWasNotCalled(dependencies)
+    },
+  )
+
+  it('refuses an ID that is not a UUID before the request is read', async () => {
+    const dependencies = reviewDependencies()
+
+    const updated = await update(dependencies, actors.customer, 'latest', {})
+
+    expect(rulesOf(updated)).toEqual(['id:invalid_format'])
+    expect(validationMessageOf(updated)).toBe('Invalid review ID')
+    repositoryWasNotCalled(dependencies)
+  })
+
+  it('refuses a change that breaks a rule without asking the repository', async () => {
+    const dependencies = reviewDependencies()
+
+    const updated = await update(dependencies, actors.customer, REVIEW_ID, {
+      overallRating: null,
+      staffId: null,
+    })
+
+    expect(rulesOf(updated)).toEqual([
+      'overallRating:invalid_type',
+      'staffId:unrecognized_keys',
+    ])
+    expect(validationMessageOf(updated)).toBe('Invalid review update')
+    repositoryWasNotCalled(dependencies)
+  })
+
+  it('refuses a change that names nothing without asking the repository', async () => {
+    const dependencies = reviewDependencies()
+
+    expect(
+      rulesOf(await update(dependencies, actors.customer, REVIEW_ID, {})),
+    ).toEqual([':custom'])
+    repositoryWasNotCalled(dependencies)
+  })
+
+  it('refuses a staff rating of a review that names no staff member as invalid', async () => {
+    const issues = [
+      {
+        field: 'staffRating',
+        rule: 'custom',
+        message: 'Must be null when the review names no staff member',
+      },
+    ]
+    const dependencies = reviewDependencies(
+      updating({ type: 'invalid', issues }),
+    )
+
+    expect(
+      await update(dependencies, actors.customer, REVIEW_ID, {
+        staffRating: 4,
+      }),
+    ).toEqual({
+      type: 'error',
+      error: DomainErrors.validation('Invalid review update', issues),
+    })
+  })
+
+  it('answers a review that is not there, or of a deleted salon, as not found', async () => {
+    const dependencies = reviewDependencies(
+      updating({ type: 'reviewNotFound' }),
+    )
+
+    expect(await update(dependencies)).toEqual({
+      type: 'error',
+      error: DomainErrors.notFound('Review', REVIEW_ID),
+    })
+  })
+
+  it.each<[string, ReviewChange]>([
+    ['a review of another customer', { type: 'notTheAuthor' }],
+    [
+      'a customer who was deleted behind the link of the account',
+      { type: 'reviewerNotFound' },
+    ],
+  ])('refuses %s as forbidden', async (_, outcome) => {
+    const dependencies = reviewDependencies(updating(outcome))
+
+    expect(await update(dependencies)).toEqual({
+      type: 'error',
+      error: DomainErrors.forbidden(),
+    })
+  })
+
+  it('fails on a stored review that does not match the API model', async () => {
+    const dependencies = reviewDependencies(
+      updating({ type: 'updated', review: dbReview({ imageUrls: {} }) }),
+    )
+
+    expect(await update(dependencies)).toEqual(storedRowIsCorrupt)
+  })
+
+  it('passes a failure of the database on', async () => {
+    const dependencies = reviewDependencies({
+      update: vi.fn(async () => databaseDown),
+    })
+
+    expect(await update(dependencies)).toEqual(databaseDown)
+  })
+})
+
+describe('DeleteReviewUseCase', () => {
+  const remove = (
+    dependencies: ReviewUseCaseDependencies,
+    actor: Actor = actors.customer,
+    id: unknown = REVIEW_ID,
+  ) => new DeleteReviewUseCase(dependencies).execute(actor, id)
+
+  it('removes a review of the signed-in customer as its author', async () => {
+    const dependencies = reviewDependencies()
+
+    expect(await remove(dependencies)).toEqual({
+      type: 'success',
+      data: REVIEW_ID,
+    })
+    expect(dependencies.reviewRepository.delete).toHaveBeenCalledWith(
+      REVIEW_ID,
+      { type: 'author', customerId: CUSTOMER_ID },
+    )
+  })
+
+  it('removes a review as an administrator', async () => {
+    const dependencies = reviewDependencies()
+
+    expect(await remove(dependencies, actors.admin)).toEqual({
+      type: 'success',
+      data: REVIEW_ID,
+    })
+    expect(dependencies.reviewRepository.delete).toHaveBeenCalledWith(
+      REVIEW_ID,
+      { type: 'administrator' },
+    )
+  })
+
+  it('looks for the review by its ID in lower case', async () => {
+    const dependencies = reviewDependencies()
+
+    expect(
+      await remove(dependencies, actors.customer, REVIEW_ID.toUpperCase()),
+    ).toEqual({ type: 'success', data: REVIEW_ID })
+    expect(dependencies.reviewRepository.delete).toHaveBeenCalledWith(
+      REVIEW_ID,
+      { type: 'author', customerId: CUSTOMER_ID },
+    )
+  })
+
+  it.each<[string, Actor]>([
+    ['an owner', actors.ofSalon('owner')],
+    ['a manager', actors.ofSalon('manager')],
+    ['a staff member', actors.ofSalon('staff')],
+    ['an account of a salon that reaches no salon', actors.withoutScope],
+    ['a customer without a profile', actors.customerWithoutProfile],
+  ])('refuses %s before the ID is read', async (_, actor) => {
+    const dependencies = reviewDependencies()
+
+    expect(await remove(dependencies, actor, 'not-a-uuid')).toEqual({
+      type: 'error',
+      error: DomainErrors.forbidden(),
+    })
+    repositoryWasNotCalled(dependencies)
+  })
+
+  it('refuses an ID that is not a UUID without asking the repository', async () => {
+    const dependencies = reviewDependencies()
+
+    const removed = await remove(dependencies, actors.admin, 'latest')
+
+    expect(rulesOf(removed)).toEqual(['id:invalid_format'])
+    expect(validationMessageOf(removed)).toBe('Invalid review ID')
+    repositoryWasNotCalled(dependencies)
+  })
+
+  it('answers a review that is not there, or of a deleted salon, as not found', async () => {
+    const dependencies = reviewDependencies(
+      deleting({ type: 'reviewNotFound' }),
+    )
+
+    expect(await remove(dependencies, actors.admin)).toEqual({
+      type: 'error',
+      error: DomainErrors.notFound('Review', REVIEW_ID),
+    })
+  })
+
+  it.each<[string, ReviewRemoval]>([
+    ['a review of another customer', { type: 'notTheAuthor' }],
+    [
+      'a customer who was deleted behind the link of the account',
+      { type: 'reviewerNotFound' },
+    ],
+  ])('refuses %s as forbidden', async (_, outcome) => {
+    const dependencies = reviewDependencies(deleting(outcome))
+
+    expect(await remove(dependencies)).toEqual({
+      type: 'error',
+      error: DomainErrors.forbidden(),
+    })
+  })
+
+  it('passes a failure of the database on', async () => {
+    const dependencies = reviewDependencies({
+      delete: vi.fn(async () => databaseDown),
+    })
+
+    expect(await remove(dependencies)).toEqual(databaseDown)
   })
 })
 
