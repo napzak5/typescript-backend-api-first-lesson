@@ -22,6 +22,7 @@ tags:
   - name: Payments
   - name: Sales Reports
   - name: Points
+  - name: Products
   - name: Inventory
   - name: Purchase Orders
   - name: Inventory Alerts
@@ -15977,6 +15978,544 @@ paths:
                 $ref: '#/components/schemas/Models.ProblemDetails'
       tags:
         - Payment Methods
+  /api/v1/salons/{salonId}/products:
+    get:
+      operationId: ProductCrud_list
+      summary: List products
+      description: サロンの商品を、絞り込み条件とページネーションを指定して一覧取得します。商品コード(productCode)の昇順、同じ商品コードならIDの昇順に並びます。削除済みの商品は含みません。取り扱いをやめた商品(isActive が false)は含みます。cursorがそのサロンの削除されていない商品を指していない場合は400を返します。
+      parameters:
+        - name: salonId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Models.SalonId'
+        - $ref: '#/components/parameters/Models.ProductSearchRequest.limit'
+        - $ref: '#/components/parameters/Models.ProductSearchRequest.cursor'
+        - $ref: '#/components/parameters/Models.ProductSearchRequest.keyword'
+        - $ref: '#/components/parameters/Models.ProductSearchRequest.category'
+        - $ref: '#/components/parameters/Models.ProductSearchRequest.barcode'
+        - $ref: '#/components/parameters/Models.ProductSearchRequest.isActive'
+        - $ref: '#/components/parameters/Models.ProductSearchRequest.isForSale'
+        - $ref: '#/components/parameters/Models.ProductSearchRequest.isForTreatment'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                  - links
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Models.ProductResponse'
+                    description: 現在ページで取得したデータ配列。サロン一覧や予約履歴の実データを格納する。
+                  meta:
+                    allOf:
+                      - $ref: '#/components/schemas/Models.PaginationMeta'
+                    description: ページング状態を示すメタ情報。次ページの有無やカーソル値を含む。
+                  links:
+                    allOf:
+                      - $ref: '#/components/schemas/Models.PaginationLinks'
+                    description: 関連するページ遷移リンク。HATEOAS 連携や外部連携向けに利用する。
+                description: |-
+                  カーソル方式のページネーションレスポンスモデル。
+                  `CursorPaginationParams` を受けたAPIが検索結果とページング状態をまとめて返却する際に利用する。
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '401':
+          description: |-
+            認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
+            ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
+            WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+          headers:
+            WWW-Authenticate:
+              required: true
+              description: Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '403':
+          description: 認証されているが、この操作を行う権限がない (403)。
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '429':
+          description: |-
+            リクエスト数の上限を超えたときのエラーレスポンス (429)。
+            クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+          headers:
+            Retry-After:
+              required: true
+              description: 再試行できるようになるまでの秒数。
+              schema:
+                type: integer
+                format: int32
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '500':
+          description: サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+      tags:
+        - Products
+    post:
+      operationId: ProductCrud_create
+      summary: Create product
+      description: サロンに商品を登録します。productCode がサロンの削除されていない商品と重複する場合は409を返します。在庫数の3つの値が minimumStock ≦ reorderPoint ≦ maximumStock の順に並んでいない場合は400を返します。在庫は商品とは別に、在庫(inventory)として登録します。
+      parameters:
+        - name: salonId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Models.SalonId'
+      responses:
+        '201':
+          description: The request has succeeded and a new resource has been created as a result.
+          headers:
+            Location:
+              required: true
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                  - links
+                properties:
+                  data:
+                    allOf:
+                      - $ref: '#/components/schemas/Models.ProductResponse'
+                    description: レスポンスの主体となるビジネスデータ。
+                  meta:
+                    type: object
+                    allOf:
+                      - $ref: '#/components/schemas/Models.ResponseMeta'
+                    nullable: true
+                    description: リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull
+                  links:
+                    type: object
+                    additionalProperties:
+                      type: string
+                    nullable: true
+                    description: 関連リソースや次アクションへのリンク情報。リンクがない場合はnull
+                description: |-
+                  API 成功レスポンスの共通ラッパーモデル。
+                  サロン検索や予約登録など多様なユースケースで応答形式を統一し、クライアント実装を簡潔に保つ。
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '401':
+          description: |-
+            認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
+            ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
+            WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+          headers:
+            WWW-Authenticate:
+              required: true
+              description: Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '403':
+          description: 認証されているが、この操作を行う権限がない (403)。
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '413':
+          description: リクエスト本文がサイズ上限を超えている (413)。
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '415':
+          description: リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '429':
+          description: |-
+            リクエスト数の上限を超えたときのエラーレスポンス (429)。
+            クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+          headers:
+            Retry-After:
+              required: true
+              description: 再試行できるようになるまでの秒数。
+              schema:
+                type: integer
+                format: int32
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '500':
+          description: サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+      tags:
+        - Products
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Models.ProductCreateRequest'
+  /api/v1/salons/{salonId}/products/{id}:
+    get:
+      operationId: ProductCrud_get
+      summary: Get product
+      description: サロンの商品を1件取得します。取り扱いをやめた商品も取得できます。
+      parameters:
+        - name: salonId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Models.SalonId'
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Models.ProductId'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                  - links
+                properties:
+                  data:
+                    allOf:
+                      - $ref: '#/components/schemas/Models.ProductResponse'
+                    description: レスポンスの主体となるビジネスデータ。
+                  meta:
+                    type: object
+                    allOf:
+                      - $ref: '#/components/schemas/Models.ResponseMeta'
+                    nullable: true
+                    description: リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull
+                  links:
+                    type: object
+                    additionalProperties:
+                      type: string
+                    nullable: true
+                    description: 関連リソースや次アクションへのリンク情報。リンクがない場合はnull
+                description: |-
+                  API 成功レスポンスの共通ラッパーモデル。
+                  サロン検索や予約登録など多様なユースケースで応答形式を統一し、クライアント実装を簡潔に保つ。
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '401':
+          description: |-
+            認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
+            ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
+            WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+          headers:
+            WWW-Authenticate:
+              required: true
+              description: Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '403':
+          description: 認証されているが、この操作を行う権限がない (403)。
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '429':
+          description: |-
+            リクエスト数の上限を超えたときのエラーレスポンス (429)。
+            クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+          headers:
+            Retry-After:
+              required: true
+              description: 再試行できるようになるまでの秒数。
+              schema:
+                type: integer
+                format: int32
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '500':
+          description: サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+      tags:
+        - Products
+    patch:
+      operationId: ProductCrud_update
+      summary: Update product
+      description: 商品の指定した項目だけを更新します。更新後の在庫数の3つの値が順に並んでいない場合は400を返します(一部だけを指定した場合は、ほかの値の現在の値と比べます)。productCode の変更で、サロンの削除されていない商品と重複する場合は409を返します。
+      parameters:
+        - name: salonId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Models.SalonId'
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Models.ProductId'
+      responses:
+        '200':
+          description: The request has succeeded.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                  - meta
+                  - links
+                properties:
+                  data:
+                    allOf:
+                      - $ref: '#/components/schemas/Models.ProductResponse'
+                    description: レスポンスの主体となるビジネスデータ。
+                  meta:
+                    type: object
+                    allOf:
+                      - $ref: '#/components/schemas/Models.ResponseMeta'
+                    nullable: true
+                    description: リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull
+                  links:
+                    type: object
+                    additionalProperties:
+                      type: string
+                    nullable: true
+                    description: 関連リソースや次アクションへのリンク情報。リンクがない場合はnull
+                description: |-
+                  API 成功レスポンスの共通ラッパーモデル。
+                  サロン検索や予約登録など多様なユースケースで応答形式を統一し、クライアント実装を簡潔に保つ。
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '401':
+          description: |-
+            認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
+            ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
+            WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+          headers:
+            WWW-Authenticate:
+              required: true
+              description: Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '403':
+          description: 認証されているが、この操作を行う権限がない (403)。
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '413':
+          description: リクエスト本文がサイズ上限を超えている (413)。
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '415':
+          description: リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '429':
+          description: |-
+            リクエスト数の上限を超えたときのエラーレスポンス (429)。
+            クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+          headers:
+            Retry-After:
+              required: true
+              description: 再試行できるようになるまでの秒数。
+              schema:
+                type: integer
+                format: int32
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '500':
+          description: サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+      tags:
+        - Products
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Models.ProductUpdateRequest'
+    delete:
+      operationId: ProductCrud_delete
+      summary: Delete product
+      description: 商品を論理削除します。削除した商品は、どの操作からも取得できず、売上の明細にも指定できません。削除した商品の商品コードは、新しい商品に使えます。在庫(inventory)のある商品は削除できず、409を返します。先に在庫を削除するか、取り扱いをやめた商品として isActive を false にします。
+      parameters:
+        - name: salonId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Models.SalonId'
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Models.ProductId'
+      responses:
+        '204':
+          description: 'There is no content to send for this request, but the headers may be useful. '
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '401':
+          description: |-
+            認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
+            ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
+            WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+          headers:
+            WWW-Authenticate:
+              required: true
+              description: Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '403':
+          description: 認証されているが、この操作を行う権限がない (403)。
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '429':
+          description: |-
+            リクエスト数の上限を超えたときのエラーレスポンス (429)。
+            クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+          headers:
+            Retry-After:
+              required: true
+              description: 再試行できるようになるまでの秒数。
+              schema:
+                type: integer
+                format: int32
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '500':
+          description: サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+      tags:
+        - Products
   /api/v1/salons/{salonId}/reviews/summary:
     get:
       operationId: SalonReviewSummary_getSummary
@@ -21252,6 +21791,80 @@ components:
       schema:
         type: string
         format: date-time
+      explode: false
+    Models.ProductSearchRequest.barcode:
+      name: barcode
+      in: query
+      required: false
+      description: バーコードによる絞り込み(完全一致)
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 100
+      explode: false
+    Models.ProductSearchRequest.category:
+      name: category
+      in: query
+      required: false
+      description: 商品カテゴリによる絞り込み(完全一致)
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 100
+      explode: false
+    Models.ProductSearchRequest.cursor:
+      name: cursor
+      in: query
+      required: false
+      description: 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する
+      schema:
+        type: string
+      explode: false
+    Models.ProductSearchRequest.isActive:
+      name: isActive
+      in: query
+      required: false
+      description: 取り扱い中かどうかによる絞り込み。指定しない場合は取り扱いをやめた商品も返す
+      schema:
+        type: boolean
+      explode: false
+    Models.ProductSearchRequest.isForSale:
+      name: isForSale
+      in: query
+      required: false
+      description: 店頭で販売する商品かどうかによる絞り込み
+      schema:
+        type: boolean
+      explode: false
+    Models.ProductSearchRequest.isForTreatment:
+      name: isForTreatment
+      in: query
+      required: false
+      description: 施術で使う商品かどうかによる絞り込み
+      schema:
+        type: boolean
+      explode: false
+    Models.ProductSearchRequest.keyword:
+      name: keyword
+      in: query
+      required: false
+      description: 商品名・商品コード・ブランドに対する部分一致キーワード(大文字小文字を区別しない)
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 100
+      explode: false
+    Models.ProductSearchRequest.limit:
+      name: limit
+      in: query
+      required: false
+      description: 1ページあたりの取得件数上限 (1〜100)
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+        maximum: 100
+        default: 20
       explode: false
     Models.PurchaseOrderSearchRequest.cursor:
       name: cursor
@@ -26980,10 +27593,437 @@ components:
       description: |-
         RFC 9457 (Problem Details for HTTP APIs) に準拠した標準エラーレスポンスモデル。
         美容サロン予約システム全体で一貫したエラー情報を提供し、顧客・スタッフ双方の操作ログと連携する。
+    Models.ProductCreateRequest:
+      type: object
+      required:
+        - productCode
+        - name
+        - description
+        - category
+        - brand
+        - purchasePrice
+        - retailPrice
+        - salonPrice
+        - unit
+        - minimumStock
+        - maximumStock
+        - reorderPoint
+        - supplier
+        - supplierProductCode
+        - leadTimeDays
+        - imageUrl
+        - barcode
+        - isForSale
+        - isForTreatment
+        - requiresLotTracking
+        - expiryMonths
+        - storageConditions
+        - safetyDataSheet
+        - isActive
+      properties:
+        productCode:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: 商品コード。サロンの削除されていない商品の間で一意
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: 商品名
+        description:
+          type: string
+          nullable: true
+          description: 説明。未設定の場合はnull
+        category:
+          type: string
+          nullable: true
+          maxLength: 100
+          description: 商品カテゴリ。未設定の場合はnull
+        brand:
+          type: string
+          nullable: true
+          maxLength: 100
+          description: ブランド。未設定の場合はnull
+        purchasePrice:
+          type: integer
+          format: int32
+          nullable: true
+          minimum: 0
+          description: 仕入価格(円)。未設定の場合はnull
+        retailPrice:
+          type: integer
+          format: int32
+          nullable: true
+          minimum: 0
+          description: 希望小売価格(定価、円)。未設定の場合はnull
+        salonPrice:
+          type: integer
+          format: int32
+          nullable: true
+          minimum: 0
+          description: サロンの店頭での販売価格(円)。未設定の場合はnull
+        unit:
+          type: string
+          minLength: 1
+          maxLength: 20
+          description: 数量の単位(本、ml など)
+        minimumStock:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 99999999.99
+          description: 最低在庫数。小数第2位まで
+        maximumStock:
+          type: number
+          format: double
+          nullable: true
+          minimum: 0
+          maximum: 99999999.99
+          description: 最大在庫数。小数第2位まで。minimumStock 以上。未設定の場合はnull
+        reorderPoint:
+          type: number
+          format: double
+          nullable: true
+          minimum: 0
+          maximum: 99999999.99
+          description: 発注点。小数第2位まで。minimumStock 以上、maximumStock 以下。未設定の場合はnull
+        supplier:
+          type: string
+          nullable: true
+          maxLength: 255
+          description: 仕入先の名前。未設定の場合はnull
+        supplierProductCode:
+          type: string
+          nullable: true
+          maxLength: 100
+          description: 仕入先の商品コード。未設定の場合はnull
+        leadTimeDays:
+          type: integer
+          format: int32
+          nullable: true
+          minimum: 0
+          description: 発注から納品までの日数。未設定の場合はnull
+        imageUrl:
+          type: string
+          nullable: true
+          maxLength: 500
+          description: 商品画像の URL(http または https)。未設定の場合はnull
+        barcode:
+          type: string
+          nullable: true
+          maxLength: 100
+          description: バーコード。未設定の場合はnull
+        isForSale:
+          type: boolean
+          description: 店頭で販売する商品か
+        isForTreatment:
+          type: boolean
+          description: 施術で使う商品か
+        requiresLotTracking:
+          type: boolean
+          description: 在庫をロット番号で分けて管理するか
+        expiryMonths:
+          type: integer
+          format: int32
+          nullable: true
+          minimum: 1
+          description: 使用期限までの月数の目安。未設定の場合はnull
+        storageConditions:
+          type: string
+          nullable: true
+          description: 保管条件。未設定の場合はnull
+        safetyDataSheet:
+          type: string
+          nullable: true
+          maxLength: 500
+          description: 安全データシート(SDS)の URL(http または https)。未設定の場合はnull
+        isActive:
+          type: boolean
+          description: 取り扱い中か
+      description: |-
+        商品新規登録リクエスト - 全項目のキーが必須。DB で NULL 許可のカラムのみ null を指定できる。
+        商品を持つサロンはパスの salonId で指定する。文字列は、空白だけの文字列を指定できない。
+        在庫数の3つの値は、null でないものの間で minimumStock ≦ reorderPoint ≦ maximumStock の順に指定する
     Models.ProductId:
       type: string
       format: uuid
       description: サロンで扱う商品（商品マスタ。店販品・施術用商材）を識別するブランド付きUUID。
+    Models.ProductResponse:
+      type: object
+      required:
+        - id
+        - salonId
+        - productCode
+        - name
+        - description
+        - category
+        - brand
+        - purchasePrice
+        - retailPrice
+        - salonPrice
+        - unit
+        - minimumStock
+        - maximumStock
+        - reorderPoint
+        - supplier
+        - supplierProductCode
+        - leadTimeDays
+        - imageUrl
+        - barcode
+        - isForSale
+        - isForTreatment
+        - requiresLotTracking
+        - expiryMonths
+        - storageConditions
+        - safetyDataSheet
+        - isActive
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          allOf:
+            - $ref: '#/components/schemas/Models.ProductId'
+          description: 商品 ID
+        salonId:
+          allOf:
+            - $ref: '#/components/schemas/Models.SalonId'
+          description: 商品を持つサロン ID
+        productCode:
+          type: string
+          description: 商品コード。サロンの削除されていない商品の間で一意
+        name:
+          type: string
+          description: 商品名
+        description:
+          type: string
+          nullable: true
+          description: 説明。未設定の場合はnull
+        category:
+          type: string
+          nullable: true
+          description: 商品カテゴリ。在庫評価額をカテゴリ別に集計する単位。未設定の場合はnull
+        brand:
+          type: string
+          nullable: true
+          description: ブランド。未設定の場合はnull
+        purchasePrice:
+          type: integer
+          format: int32
+          nullable: true
+          description: 仕入価格(円)。未設定の場合はnull
+        retailPrice:
+          type: integer
+          format: int32
+          nullable: true
+          description: 希望小売価格(定価、円)。未設定の場合はnull
+        salonPrice:
+          type: integer
+          format: int32
+          nullable: true
+          description: サロンの店頭での販売価格(円)。未設定の場合はnull
+        unit:
+          type: string
+          description: 数量の単位(本、ml など)
+        minimumStock:
+          type: number
+          format: double
+          description: 最低在庫数。在庫数がこれを下回らないように発注する
+        maximumStock:
+          type: number
+          format: double
+          nullable: true
+          description: 最大在庫数。未設定の場合はnull
+        reorderPoint:
+          type: number
+          format: double
+          nullable: true
+          description: 発注点。在庫数がこれ以下になったら発注する。未設定の場合はnull
+        supplier:
+          type: string
+          nullable: true
+          description: 仕入先の名前。未設定の場合はnull
+        supplierProductCode:
+          type: string
+          nullable: true
+          description: 仕入先の商品コード。未設定の場合はnull
+        leadTimeDays:
+          type: integer
+          format: int32
+          nullable: true
+          description: 発注から納品までの日数。未設定の場合はnull
+        imageUrl:
+          type: string
+          nullable: true
+          description: 商品画像の URL。未設定の場合はnull
+        barcode:
+          type: string
+          nullable: true
+          description: バーコード。未設定の場合はnull
+        isForSale:
+          type: boolean
+          description: 店頭で販売する商品か
+        isForTreatment:
+          type: boolean
+          description: 施術で使う商品か
+        requiresLotTracking:
+          type: boolean
+          description: 在庫をロット番号で分けて管理するか
+        expiryMonths:
+          type: integer
+          format: int32
+          nullable: true
+          description: 使用期限までの月数の目安。未設定の場合はnull
+        storageConditions:
+          type: string
+          nullable: true
+          description: 保管条件。未設定の場合はnull
+        safetyDataSheet:
+          type: string
+          nullable: true
+          description: 安全データシート(SDS)の URL。未設定の場合はnull
+        isActive:
+          type: boolean
+          description: 取り扱い中か。取り扱いをやめた商品は false
+        createdAt:
+          type: string
+          format: date-time
+          description: レコード作成日時
+        updatedAt:
+          type: string
+          format: date-time
+          description: レコード最終更新日時
+      description: |-
+        商品レスポンス - products テーブルの、削除日時(deletedAt)以外の全カラムを返す。1行はサロンが店頭で売る、または施術で使う1つの商品を表す。
+        プロパティ名と null 許可は DB カラムと一致させている。
+        在庫数の3つの値は、null でないものの間で minimumStock ≦ reorderPoint ≦ maximumStock の順に並ぶ
+    Models.ProductUpdateRequest:
+      type: object
+      properties:
+        productCode:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: 商品コード。サロンの削除されていない商品の間で一意
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: 商品名
+        description:
+          type: string
+          nullable: true
+          description: 説明。nullでクリア
+        category:
+          type: string
+          nullable: true
+          maxLength: 100
+          description: 商品カテゴリ。nullでクリア
+        brand:
+          type: string
+          nullable: true
+          maxLength: 100
+          description: ブランド。nullでクリア
+        purchasePrice:
+          type: integer
+          format: int32
+          nullable: true
+          minimum: 0
+          description: 仕入価格(円)。nullでクリア
+        retailPrice:
+          type: integer
+          format: int32
+          nullable: true
+          minimum: 0
+          description: 希望小売価格(定価、円)。nullでクリア
+        salonPrice:
+          type: integer
+          format: int32
+          nullable: true
+          minimum: 0
+          description: サロンの店頭での販売価格(円)。nullでクリア
+        unit:
+          type: string
+          minLength: 1
+          maxLength: 20
+          description: 数量の単位(本、ml など)
+        minimumStock:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 99999999.99
+          description: 最低在庫数。小数第2位まで
+        maximumStock:
+          type: number
+          format: double
+          nullable: true
+          minimum: 0
+          maximum: 99999999.99
+          description: 最大在庫数。小数第2位まで。nullでクリア
+        reorderPoint:
+          type: number
+          format: double
+          nullable: true
+          minimum: 0
+          maximum: 99999999.99
+          description: 発注点。小数第2位まで。nullでクリア
+        supplier:
+          type: string
+          nullable: true
+          maxLength: 255
+          description: 仕入先の名前。nullでクリア
+        supplierProductCode:
+          type: string
+          nullable: true
+          maxLength: 100
+          description: 仕入先の商品コード。nullでクリア
+        leadTimeDays:
+          type: integer
+          format: int32
+          nullable: true
+          minimum: 0
+          description: 発注から納品までの日数。nullでクリア
+        imageUrl:
+          type: string
+          nullable: true
+          maxLength: 500
+          description: 商品画像の URL(http または https)。nullでクリア
+        barcode:
+          type: string
+          nullable: true
+          maxLength: 100
+          description: バーコード。nullでクリア
+        isForSale:
+          type: boolean
+          description: 店頭で販売する商品か
+        isForTreatment:
+          type: boolean
+          description: 施術で使う商品か
+        requiresLotTracking:
+          type: boolean
+          description: 在庫をロット番号で分けて管理するか
+        expiryMonths:
+          type: integer
+          format: int32
+          nullable: true
+          minimum: 1
+          description: 使用期限までの月数の目安。nullでクリア
+        storageConditions:
+          type: string
+          nullable: true
+          description: 保管条件。nullでクリア
+        safetyDataSheet:
+          type: string
+          nullable: true
+          maxLength: 500
+          description: 安全データシート(SDS)の URL(http または https)。nullでクリア
+        isActive:
+          type: boolean
+          description: 取り扱い中か
+      description: |-
+        商品部分更新リクエスト - 指定した項目だけを更新する。項目を1つも指定しないリクエストは受け付けない。
+        DB で NULL 許可のカラムは null でクリアできる。商品を持つサロンは変更できない。
+        在庫数の3つの値は、更新後の値の間で minimumStock ≦ reorderPoint ≦ maximumStock の順に並ぶ
     Models.PurchaseOrderApproveRequest:
       type: object
       required:
@@ -27326,7 +28366,7 @@ components:
         minimumStock:
           type: number
           format: double
-          description: 商品の最低在庫数。商品に未設定の場合は0
+          description: 商品の最低在庫数
         suggestedQuantity:
           type: number
           format: double

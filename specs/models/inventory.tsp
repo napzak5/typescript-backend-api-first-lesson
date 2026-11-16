@@ -55,6 +55,348 @@ namespace BeautySalon.Models {
   }
 
   @doc("""
+    商品レスポンス - products テーブルの、削除日時(deletedAt)以外の全カラムを返す。1行はサロンが店頭で売る、または施術で使う1つの商品を表す。
+    プロパティ名と null 許可は DB カラムと一致させている。
+    在庫数の3つの値は、null でないものの間で minimumStock ≦ reorderPoint ≦ maximumStock の順に並ぶ
+    """)
+  model ProductResponse {
+    @doc("商品 ID")
+    id: ProductId;
+
+    @doc("商品を持つサロン ID")
+    salonId: SalonId;
+
+    @doc("商品コード。サロンの削除されていない商品の間で一意")
+    productCode: string;
+
+    @doc("商品名")
+    name: string;
+
+    @doc("説明。未設定の場合はnull")
+    description: string | null;
+
+    @doc("商品カテゴリ。在庫評価額をカテゴリ別に集計する単位。未設定の場合はnull")
+    category: string | null;
+
+    @doc("ブランド。未設定の場合はnull")
+    brand: string | null;
+
+    @doc("仕入価格(円)。未設定の場合はnull")
+    purchasePrice: int32 | null;
+
+    @doc("希望小売価格(定価、円)。未設定の場合はnull")
+    retailPrice: int32 | null;
+
+    @doc("サロンの店頭での販売価格(円)。未設定の場合はnull")
+    salonPrice: int32 | null;
+
+    @doc("数量の単位(本、ml など)")
+    unit: string;
+
+    @doc("最低在庫数。在庫数がこれを下回らないように発注する")
+    minimumStock: float64;
+
+    @doc("最大在庫数。未設定の場合はnull")
+    maximumStock: float64 | null;
+
+    @doc("発注点。在庫数がこれ以下になったら発注する。未設定の場合はnull")
+    reorderPoint: float64 | null;
+
+    @doc("仕入先の名前。未設定の場合はnull")
+    supplier: string | null;
+
+    @doc("仕入先の商品コード。未設定の場合はnull")
+    supplierProductCode: string | null;
+
+    @doc("発注から納品までの日数。未設定の場合はnull")
+    leadTimeDays: int32 | null;
+
+    @doc("商品画像の URL。未設定の場合はnull")
+    imageUrl: string | null;
+
+    @doc("バーコード。未設定の場合はnull")
+    barcode: string | null;
+
+    @doc("店頭で販売する商品か")
+    isForSale: boolean;
+
+    @doc("施術で使う商品か")
+    isForTreatment: boolean;
+
+    @doc("在庫をロット番号で分けて管理するか")
+    requiresLotTracking: boolean;
+
+    @doc("使用期限までの月数の目安。未設定の場合はnull")
+    expiryMonths: int32 | null;
+
+    @doc("保管条件。未設定の場合はnull")
+    storageConditions: string | null;
+
+    @doc("安全データシート(SDS)の URL。未設定の場合はnull")
+    safetyDataSheet: string | null;
+
+    @doc("取り扱い中か。取り扱いをやめた商品は false")
+    isActive: boolean;
+
+    @doc("レコード作成日時")
+    createdAt: utcDateTime;
+
+    @doc("レコード最終更新日時")
+    updatedAt: utcDateTime;
+  }
+
+  @doc("""
+    商品新規登録リクエスト - 全項目のキーが必須。DB で NULL 許可のカラムのみ null を指定できる。
+    商品を持つサロンはパスの salonId で指定する。文字列は、空白だけの文字列を指定できない。
+    在庫数の3つの値は、null でないものの間で minimumStock ≦ reorderPoint ≦ maximumStock の順に指定する
+    """)
+  model ProductCreateRequest {
+    @doc("商品コード。サロンの削除されていない商品の間で一意")
+    @minLength(1)
+    @maxLength(100)
+    productCode: string;
+
+    @doc("商品名")
+    @minLength(1)
+    @maxLength(255)
+    name: string;
+
+    @doc("説明。未設定の場合はnull")
+    description: string | null;
+
+    @doc("商品カテゴリ。未設定の場合はnull")
+    @maxLength(100)
+    category: string | null;
+
+    @doc("ブランド。未設定の場合はnull")
+    @maxLength(100)
+    brand: string | null;
+
+    @doc("仕入価格(円)。未設定の場合はnull")
+    @minValue(0)
+    purchasePrice: int32 | null;
+
+    @doc("希望小売価格(定価、円)。未設定の場合はnull")
+    @minValue(0)
+    retailPrice: int32 | null;
+
+    @doc("サロンの店頭での販売価格(円)。未設定の場合はnull")
+    @minValue(0)
+    salonPrice: int32 | null;
+
+    @doc("数量の単位(本、ml など)")
+    @minLength(1)
+    @maxLength(20)
+    unit: string;
+
+    @doc("最低在庫数。小数第2位まで")
+    @minValue(0)
+    @maxValue(99999999.99)
+    minimumStock: float64;
+
+    @doc("最大在庫数。小数第2位まで。minimumStock 以上。未設定の場合はnull")
+    @minValue(0)
+    @maxValue(99999999.99)
+    maximumStock: float64 | null;
+
+    @doc("発注点。小数第2位まで。minimumStock 以上、maximumStock 以下。未設定の場合はnull")
+    @minValue(0)
+    @maxValue(99999999.99)
+    reorderPoint: float64 | null;
+
+    @doc("仕入先の名前。未設定の場合はnull")
+    @maxLength(255)
+    supplier: string | null;
+
+    @doc("仕入先の商品コード。未設定の場合はnull")
+    @maxLength(100)
+    supplierProductCode: string | null;
+
+    @doc("発注から納品までの日数。未設定の場合はnull")
+    @minValue(0)
+    leadTimeDays: int32 | null;
+
+    @doc("商品画像の URL(http または https)。未設定の場合はnull")
+    @maxLength(500)
+    imageUrl: string | null;
+
+    @doc("バーコード。未設定の場合はnull")
+    @maxLength(100)
+    barcode: string | null;
+
+    @doc("店頭で販売する商品か")
+    isForSale: boolean;
+
+    @doc("施術で使う商品か")
+    isForTreatment: boolean;
+
+    @doc("在庫をロット番号で分けて管理するか")
+    requiresLotTracking: boolean;
+
+    @doc("使用期限までの月数の目安。未設定の場合はnull")
+    @minValue(1)
+    expiryMonths: int32 | null;
+
+    @doc("保管条件。未設定の場合はnull")
+    storageConditions: string | null;
+
+    @doc("安全データシート(SDS)の URL(http または https)。未設定の場合はnull")
+    @maxLength(500)
+    safetyDataSheet: string | null;
+
+    @doc("取り扱い中か")
+    isActive: boolean;
+  }
+
+  @doc("""
+    商品部分更新リクエスト - 指定した項目だけを更新する。項目を1つも指定しないリクエストは受け付けない。
+    DB で NULL 許可のカラムは null でクリアできる。商品を持つサロンは変更できない。
+    在庫数の3つの値は、更新後の値の間で minimumStock ≦ reorderPoint ≦ maximumStock の順に並ぶ
+    """)
+  model ProductUpdateRequest {
+    @doc("商品コード。サロンの削除されていない商品の間で一意")
+    @minLength(1)
+    @maxLength(100)
+    productCode?: string;
+
+    @doc("商品名")
+    @minLength(1)
+    @maxLength(255)
+    name?: string;
+
+    @doc("説明。nullでクリア")
+    description?: string | null;
+
+    @doc("商品カテゴリ。nullでクリア")
+    @maxLength(100)
+    category?: string | null;
+
+    @doc("ブランド。nullでクリア")
+    @maxLength(100)
+    brand?: string | null;
+
+    @doc("仕入価格(円)。nullでクリア")
+    @minValue(0)
+    purchasePrice?: int32 | null;
+
+    @doc("希望小売価格(定価、円)。nullでクリア")
+    @minValue(0)
+    retailPrice?: int32 | null;
+
+    @doc("サロンの店頭での販売価格(円)。nullでクリア")
+    @minValue(0)
+    salonPrice?: int32 | null;
+
+    @doc("数量の単位(本、ml など)")
+    @minLength(1)
+    @maxLength(20)
+    unit?: string;
+
+    @doc("最低在庫数。小数第2位まで")
+    @minValue(0)
+    @maxValue(99999999.99)
+    minimumStock?: float64;
+
+    @doc("最大在庫数。小数第2位まで。nullでクリア")
+    @minValue(0)
+    @maxValue(99999999.99)
+    maximumStock?: float64 | null;
+
+    @doc("発注点。小数第2位まで。nullでクリア")
+    @minValue(0)
+    @maxValue(99999999.99)
+    reorderPoint?: float64 | null;
+
+    @doc("仕入先の名前。nullでクリア")
+    @maxLength(255)
+    supplier?: string | null;
+
+    @doc("仕入先の商品コード。nullでクリア")
+    @maxLength(100)
+    supplierProductCode?: string | null;
+
+    @doc("発注から納品までの日数。nullでクリア")
+    @minValue(0)
+    leadTimeDays?: int32 | null;
+
+    @doc("商品画像の URL(http または https)。nullでクリア")
+    @maxLength(500)
+    imageUrl?: string | null;
+
+    @doc("バーコード。nullでクリア")
+    @maxLength(100)
+    barcode?: string | null;
+
+    @doc("店頭で販売する商品か")
+    isForSale?: boolean;
+
+    @doc("施術で使う商品か")
+    isForTreatment?: boolean;
+
+    @doc("在庫をロット番号で分けて管理するか")
+    requiresLotTracking?: boolean;
+
+    @doc("使用期限までの月数の目安。nullでクリア")
+    @minValue(1)
+    expiryMonths?: int32 | null;
+
+    @doc("保管条件。nullでクリア")
+    storageConditions?: string | null;
+
+    @doc("安全データシート(SDS)の URL(http または https)。nullでクリア")
+    @maxLength(500)
+    safetyDataSheet?: string | null;
+
+    @doc("取り扱い中か")
+    isActive?: boolean;
+  }
+
+  @doc("""
+    商品一覧・検索リクエスト - 絞り込み条件とページネーションを指定する。条件はすべて AND で結合する
+    """)
+  model ProductSearchRequest {
+    @query
+    @doc("1ページあたりの取得件数上限 (1〜100)")
+    @minValue(1)
+    @maxValue(100)
+    limit?: int32 = 20;
+
+    @query
+    @doc("取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する")
+    cursor?: string;
+
+    @query
+    @doc("商品名・商品コード・ブランドに対する部分一致キーワード(大文字小文字を区別しない)")
+    @minLength(1)
+    @maxLength(100)
+    keyword?: string;
+
+    @query
+    @doc("商品カテゴリによる絞り込み(完全一致)")
+    @minLength(1)
+    @maxLength(100)
+    category?: string;
+
+    @query
+    @doc("バーコードによる絞り込み(完全一致)")
+    @minLength(1)
+    @maxLength(100)
+    barcode?: string;
+
+    @query
+    @doc("取り扱い中かどうかによる絞り込み。指定しない場合は取り扱いをやめた商品も返す")
+    isActive?: boolean;
+
+    @query
+    @doc("店頭で販売する商品かどうかによる絞り込み")
+    isForSale?: boolean;
+
+    @query
+    @doc("施術で使う商品かどうかによる絞り込み")
+    isForTreatment?: boolean;
+  }
+
+  @doc("""
     在庫レスポンス - inventory テーブルの全カラムを返す。1行はサロンにおける1商品(ロット)の在庫を表す。
     プロパティ名と null 許可は DB カラムと一致させている。
     在庫数(currentStock・availableStock・reservedStock)は在庫移動と棚卸によってのみ変わる
@@ -714,7 +1056,7 @@ namespace BeautySalon.Models {
     @doc("現在の在庫数量")
     currentStock: float64;
 
-    @doc("商品の最低在庫数。商品に未設定の場合は0")
+    @doc("商品の最低在庫数")
     minimumStock: float64;
 
     @doc("推奨する発注数量")

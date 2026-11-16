@@ -2696,6 +2696,58 @@ export interface paths {
         patch: operations["PaymentMethodCrud_update"];
         trace?: never;
     };
+    "/api/v1/salons/{salonId}/products": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List products
+         * @description サロンの商品を、絞り込み条件とページネーションを指定して一覧取得します。商品コード(productCode)の昇順、同じ商品コードならIDの昇順に並びます。削除済みの商品は含みません。取り扱いをやめた商品(isActive が false)は含みます。cursorがそのサロンの削除されていない商品を指していない場合は400を返します。
+         */
+        get: operations["ProductCrud_list"];
+        put?: never;
+        /**
+         * Create product
+         * @description サロンに商品を登録します。productCode がサロンの削除されていない商品と重複する場合は409を返します。在庫数の3つの値が minimumStock ≦ reorderPoint ≦ maximumStock の順に並んでいない場合は400を返します。在庫は商品とは別に、在庫(inventory)として登録します。
+         */
+        post: operations["ProductCrud_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/salons/{salonId}/products/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get product
+         * @description サロンの商品を1件取得します。取り扱いをやめた商品も取得できます。
+         */
+        get: operations["ProductCrud_get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete product
+         * @description 商品を論理削除します。削除した商品は、どの操作からも取得できず、売上の明細にも指定できません。削除した商品の商品コードは、新しい商品に使えます。在庫(inventory)のある商品は削除できず、409を返します。先に在庫を削除するか、取り扱いをやめた商品として isActive を false にします。
+         */
+        delete: operations["ProductCrud_delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Update product
+         * @description 商品の指定した項目だけを更新します。更新後の在庫数の3つの値が順に並んでいない場合は400を返します(一部だけを指定した場合は、ほかの値の現在の値と比べます)。productCode の変更で、サロンの削除されていない商品と重複する場合は409を返します。
+         */
+        patch: operations["ProductCrud_update"];
+        trace?: never;
+    };
     "/api/v1/salons/{salonId}/reviews/summary": {
         parameters: {
             query?: never;
@@ -6869,10 +6921,261 @@ export interface components {
             timestamp: string;
         };
         /**
+         * @description 商品新規登録リクエスト - 全項目のキーが必須。DB で NULL 許可のカラムのみ null を指定できる。
+         *     商品を持つサロンはパスの salonId で指定する。文字列は、空白だけの文字列を指定できない。
+         *     在庫数の3つの値は、null でないものの間で minimumStock ≦ reorderPoint ≦ maximumStock の順に指定する
+         */
+        "Models.ProductCreateRequest": {
+            /** @description 商品コード。サロンの削除されていない商品の間で一意 */
+            productCode: string;
+            /** @description 商品名 */
+            name: string;
+            /** @description 説明。未設定の場合はnull */
+            description: string | null;
+            /** @description 商品カテゴリ。未設定の場合はnull */
+            category: string | null;
+            /** @description ブランド。未設定の場合はnull */
+            brand: string | null;
+            /**
+             * Format: int32
+             * @description 仕入価格(円)。未設定の場合はnull
+             */
+            purchasePrice: number | null;
+            /**
+             * Format: int32
+             * @description 希望小売価格(定価、円)。未設定の場合はnull
+             */
+            retailPrice: number | null;
+            /**
+             * Format: int32
+             * @description サロンの店頭での販売価格(円)。未設定の場合はnull
+             */
+            salonPrice: number | null;
+            /** @description 数量の単位(本、ml など) */
+            unit: string;
+            /**
+             * Format: double
+             * @description 最低在庫数。小数第2位まで
+             */
+            minimumStock: number;
+            /**
+             * Format: double
+             * @description 最大在庫数。小数第2位まで。minimumStock 以上。未設定の場合はnull
+             */
+            maximumStock: number | null;
+            /**
+             * Format: double
+             * @description 発注点。小数第2位まで。minimumStock 以上、maximumStock 以下。未設定の場合はnull
+             */
+            reorderPoint: number | null;
+            /** @description 仕入先の名前。未設定の場合はnull */
+            supplier: string | null;
+            /** @description 仕入先の商品コード。未設定の場合はnull */
+            supplierProductCode: string | null;
+            /**
+             * Format: int32
+             * @description 発注から納品までの日数。未設定の場合はnull
+             */
+            leadTimeDays: number | null;
+            /** @description 商品画像の URL(http または https)。未設定の場合はnull */
+            imageUrl: string | null;
+            /** @description バーコード。未設定の場合はnull */
+            barcode: string | null;
+            /** @description 店頭で販売する商品か */
+            isForSale: boolean;
+            /** @description 施術で使う商品か */
+            isForTreatment: boolean;
+            /** @description 在庫をロット番号で分けて管理するか */
+            requiresLotTracking: boolean;
+            /**
+             * Format: int32
+             * @description 使用期限までの月数の目安。未設定の場合はnull
+             */
+            expiryMonths: number | null;
+            /** @description 保管条件。未設定の場合はnull */
+            storageConditions: string | null;
+            /** @description 安全データシート(SDS)の URL(http または https)。未設定の場合はnull */
+            safetyDataSheet: string | null;
+            /** @description 取り扱い中か */
+            isActive: boolean;
+        };
+        /**
          * Format: uuid
          * @description サロンで扱う商品（商品マスタ。店販品・施術用商材）を識別するブランド付きUUID。
          */
         "Models.ProductId": string;
+        /**
+         * @description 商品レスポンス - products テーブルの、削除日時(deletedAt)以外の全カラムを返す。1行はサロンが店頭で売る、または施術で使う1つの商品を表す。
+         *     プロパティ名と null 許可は DB カラムと一致させている。
+         *     在庫数の3つの値は、null でないものの間で minimumStock ≦ reorderPoint ≦ maximumStock の順に並ぶ
+         */
+        "Models.ProductResponse": {
+            /** @description 商品 ID */
+            id: components["schemas"]["Models.ProductId"];
+            /** @description 商品を持つサロン ID */
+            salonId: components["schemas"]["Models.SalonId"];
+            /** @description 商品コード。サロンの削除されていない商品の間で一意 */
+            productCode: string;
+            /** @description 商品名 */
+            name: string;
+            /** @description 説明。未設定の場合はnull */
+            description: string | null;
+            /** @description 商品カテゴリ。在庫評価額をカテゴリ別に集計する単位。未設定の場合はnull */
+            category: string | null;
+            /** @description ブランド。未設定の場合はnull */
+            brand: string | null;
+            /**
+             * Format: int32
+             * @description 仕入価格(円)。未設定の場合はnull
+             */
+            purchasePrice: number | null;
+            /**
+             * Format: int32
+             * @description 希望小売価格(定価、円)。未設定の場合はnull
+             */
+            retailPrice: number | null;
+            /**
+             * Format: int32
+             * @description サロンの店頭での販売価格(円)。未設定の場合はnull
+             */
+            salonPrice: number | null;
+            /** @description 数量の単位(本、ml など) */
+            unit: string;
+            /**
+             * Format: double
+             * @description 最低在庫数。在庫数がこれを下回らないように発注する
+             */
+            minimumStock: number;
+            /**
+             * Format: double
+             * @description 最大在庫数。未設定の場合はnull
+             */
+            maximumStock: number | null;
+            /**
+             * Format: double
+             * @description 発注点。在庫数がこれ以下になったら発注する。未設定の場合はnull
+             */
+            reorderPoint: number | null;
+            /** @description 仕入先の名前。未設定の場合はnull */
+            supplier: string | null;
+            /** @description 仕入先の商品コード。未設定の場合はnull */
+            supplierProductCode: string | null;
+            /**
+             * Format: int32
+             * @description 発注から納品までの日数。未設定の場合はnull
+             */
+            leadTimeDays: number | null;
+            /** @description 商品画像の URL。未設定の場合はnull */
+            imageUrl: string | null;
+            /** @description バーコード。未設定の場合はnull */
+            barcode: string | null;
+            /** @description 店頭で販売する商品か */
+            isForSale: boolean;
+            /** @description 施術で使う商品か */
+            isForTreatment: boolean;
+            /** @description 在庫をロット番号で分けて管理するか */
+            requiresLotTracking: boolean;
+            /**
+             * Format: int32
+             * @description 使用期限までの月数の目安。未設定の場合はnull
+             */
+            expiryMonths: number | null;
+            /** @description 保管条件。未設定の場合はnull */
+            storageConditions: string | null;
+            /** @description 安全データシート(SDS)の URL。未設定の場合はnull */
+            safetyDataSheet: string | null;
+            /** @description 取り扱い中か。取り扱いをやめた商品は false */
+            isActive: boolean;
+            /**
+             * Format: date-time
+             * @description レコード作成日時
+             */
+            createdAt: string;
+            /**
+             * Format: date-time
+             * @description レコード最終更新日時
+             */
+            updatedAt: string;
+        };
+        /**
+         * @description 商品部分更新リクエスト - 指定した項目だけを更新する。項目を1つも指定しないリクエストは受け付けない。
+         *     DB で NULL 許可のカラムは null でクリアできる。商品を持つサロンは変更できない。
+         *     在庫数の3つの値は、更新後の値の間で minimumStock ≦ reorderPoint ≦ maximumStock の順に並ぶ
+         */
+        "Models.ProductUpdateRequest": {
+            /** @description 商品コード。サロンの削除されていない商品の間で一意 */
+            productCode?: string;
+            /** @description 商品名 */
+            name?: string;
+            /** @description 説明。nullでクリア */
+            description?: string | null;
+            /** @description 商品カテゴリ。nullでクリア */
+            category?: string | null;
+            /** @description ブランド。nullでクリア */
+            brand?: string | null;
+            /**
+             * Format: int32
+             * @description 仕入価格(円)。nullでクリア
+             */
+            purchasePrice?: number | null;
+            /**
+             * Format: int32
+             * @description 希望小売価格(定価、円)。nullでクリア
+             */
+            retailPrice?: number | null;
+            /**
+             * Format: int32
+             * @description サロンの店頭での販売価格(円)。nullでクリア
+             */
+            salonPrice?: number | null;
+            /** @description 数量の単位(本、ml など) */
+            unit?: string;
+            /**
+             * Format: double
+             * @description 最低在庫数。小数第2位まで
+             */
+            minimumStock?: number;
+            /**
+             * Format: double
+             * @description 最大在庫数。小数第2位まで。nullでクリア
+             */
+            maximumStock?: number | null;
+            /**
+             * Format: double
+             * @description 発注点。小数第2位まで。nullでクリア
+             */
+            reorderPoint?: number | null;
+            /** @description 仕入先の名前。nullでクリア */
+            supplier?: string | null;
+            /** @description 仕入先の商品コード。nullでクリア */
+            supplierProductCode?: string | null;
+            /**
+             * Format: int32
+             * @description 発注から納品までの日数。nullでクリア
+             */
+            leadTimeDays?: number | null;
+            /** @description 商品画像の URL(http または https)。nullでクリア */
+            imageUrl?: string | null;
+            /** @description バーコード。nullでクリア */
+            barcode?: string | null;
+            /** @description 店頭で販売する商品か */
+            isForSale?: boolean;
+            /** @description 施術で使う商品か */
+            isForTreatment?: boolean;
+            /** @description 在庫をロット番号で分けて管理するか */
+            requiresLotTracking?: boolean;
+            /**
+             * Format: int32
+             * @description 使用期限までの月数の目安。nullでクリア
+             */
+            expiryMonths?: number | null;
+            /** @description 保管条件。nullでクリア */
+            storageConditions?: string | null;
+            /** @description 安全データシート(SDS)の URL(http または https)。nullでクリア */
+            safetyDataSheet?: string | null;
+            /** @description 取り扱い中か */
+            isActive?: boolean;
+        };
         /** @description 仕入れ発注承認リクエスト - 全項目のキーが必須 */
         "Models.PurchaseOrderApproveRequest": {
             /** @description 発注を承認するスタッフ ID */
@@ -7078,7 +7381,7 @@ export interface components {
             currentStock: number;
             /**
              * Format: double
-             * @description 商品の最低在庫数。商品に未設定の場合は0
+             * @description 商品の最低在庫数
              */
             minimumStock: number;
             /**
@@ -10142,6 +10445,22 @@ export interface components {
         "Models.PointTransactionSearchRequest.limit": number;
         /** @description 取引の発生日時(createdAt)の下限。この日時以降の取引に一致する */
         "Models.PointTransactionSearchRequest.startDate": string;
+        /** @description バーコードによる絞り込み(完全一致) */
+        "Models.ProductSearchRequest.barcode": string;
+        /** @description 商品カテゴリによる絞り込み(完全一致) */
+        "Models.ProductSearchRequest.category": string;
+        /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+        "Models.ProductSearchRequest.cursor": string;
+        /** @description 取り扱い中かどうかによる絞り込み。指定しない場合は取り扱いをやめた商品も返す */
+        "Models.ProductSearchRequest.isActive": boolean;
+        /** @description 店頭で販売する商品かどうかによる絞り込み */
+        "Models.ProductSearchRequest.isForSale": boolean;
+        /** @description 施術で使う商品かどうかによる絞り込み */
+        "Models.ProductSearchRequest.isForTreatment": boolean;
+        /** @description 商品名・商品コード・ブランドに対する部分一致キーワード(大文字小文字を区別しない) */
+        "Models.ProductSearchRequest.keyword": string;
+        /** @description 1ページあたりの取得件数上限 (1〜100) */
+        "Models.ProductSearchRequest.limit": number;
         /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
         "Models.PurchaseOrderSearchRequest.cursor": string;
         /** @description 検索対象期間の終了日時。発注日(orderDate)がこの日時より前の発注に一致する */
@@ -26850,6 +27169,565 @@ export interface operations {
             };
             /** @description The server cannot find the requested resource. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
+             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+             */
+            429: {
+                headers: {
+                    /** @description 再試行できるようになるまでの秒数。 */
+                    "Retry-After": number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+        };
+    };
+    ProductCrud_list: {
+        parameters: {
+            query?: {
+                /** @description 1ページあたりの取得件数上限 (1〜100) */
+                limit?: components["parameters"]["Models.ProductSearchRequest.limit"];
+                /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+                cursor?: components["parameters"]["Models.ProductSearchRequest.cursor"];
+                /** @description 商品名・商品コード・ブランドに対する部分一致キーワード(大文字小文字を区別しない) */
+                keyword?: components["parameters"]["Models.ProductSearchRequest.keyword"];
+                /** @description 商品カテゴリによる絞り込み(完全一致) */
+                category?: components["parameters"]["Models.ProductSearchRequest.category"];
+                /** @description バーコードによる絞り込み(完全一致) */
+                barcode?: components["parameters"]["Models.ProductSearchRequest.barcode"];
+                /** @description 取り扱い中かどうかによる絞り込み。指定しない場合は取り扱いをやめた商品も返す */
+                isActive?: components["parameters"]["Models.ProductSearchRequest.isActive"];
+                /** @description 店頭で販売する商品かどうかによる絞り込み */
+                isForSale?: components["parameters"]["Models.ProductSearchRequest.isForSale"];
+                /** @description 施術で使う商品かどうかによる絞り込み */
+                isForTreatment?: components["parameters"]["Models.ProductSearchRequest.isForTreatment"];
+            };
+            header?: never;
+            path: {
+                salonId: components["schemas"]["Models.SalonId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The request has succeeded. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description 現在ページで取得したデータ配列。サロン一覧や予約履歴の実データを格納する。 */
+                        data: components["schemas"]["Models.ProductResponse"][];
+                        /** @description ページング状態を示すメタ情報。次ページの有無やカーソル値を含む。 */
+                        meta: components["schemas"]["Models.PaginationMeta"];
+                        /** @description 関連するページ遷移リンク。HATEOAS 連携や外部連携向けに利用する。 */
+                        links: components["schemas"]["Models.PaginationLinks"];
+                    };
+                };
+            };
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description 認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
+             *     ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
+             *     WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+             */
+            401: {
+                headers: {
+                    /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
+                    "WWW-Authenticate": string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description 認証されているが、この操作を行う権限がない (403)。 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The server cannot find the requested resource. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
+             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+             */
+            429: {
+                headers: {
+                    /** @description 再試行できるようになるまでの秒数。 */
+                    "Retry-After": number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+        };
+    };
+    ProductCrud_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                salonId: components["schemas"]["Models.SalonId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Models.ProductCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description The request has succeeded and a new resource has been created as a result. */
+            201: {
+                headers: {
+                    Location: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        data: components["schemas"]["Models.ProductResponse"];
+                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        meta: components["schemas"]["Models.ResponseMeta"] | null;
+                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        links: {
+                            [key: string]: string;
+                        } | null;
+                    };
+                };
+            };
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description 認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
+             *     ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
+             *     WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+             */
+            401: {
+                headers: {
+                    /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
+                    "WWW-Authenticate": string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description 認証されているが、この操作を行う権限がない (403)。 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The server cannot find the requested resource. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The request conflicts with the current state of the server. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
+             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+             */
+            429: {
+                headers: {
+                    /** @description 再試行できるようになるまでの秒数。 */
+                    "Retry-After": number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+        };
+    };
+    ProductCrud_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                salonId: components["schemas"]["Models.SalonId"];
+                id: components["schemas"]["Models.ProductId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The request has succeeded. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        data: components["schemas"]["Models.ProductResponse"];
+                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        meta: components["schemas"]["Models.ResponseMeta"] | null;
+                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        links: {
+                            [key: string]: string;
+                        } | null;
+                    };
+                };
+            };
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description 認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
+             *     ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
+             *     WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+             */
+            401: {
+                headers: {
+                    /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
+                    "WWW-Authenticate": string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description 認証されているが、この操作を行う権限がない (403)。 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The server cannot find the requested resource. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
+             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+             */
+            429: {
+                headers: {
+                    /** @description 再試行できるようになるまでの秒数。 */
+                    "Retry-After": number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+        };
+    };
+    ProductCrud_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                salonId: components["schemas"]["Models.SalonId"];
+                id: components["schemas"]["Models.ProductId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description There is no content to send for this request, but the headers may be useful. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description 認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
+             *     ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
+             *     WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+             */
+            401: {
+                headers: {
+                    /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
+                    "WWW-Authenticate": string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description 認証されているが、この操作を行う権限がない (403)。 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The server cannot find the requested resource. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The request conflicts with the current state of the server. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
+             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+             */
+            429: {
+                headers: {
+                    /** @description 再試行できるようになるまでの秒数。 */
+                    "Retry-After": number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+        };
+    };
+    ProductCrud_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                salonId: components["schemas"]["Models.SalonId"];
+                id: components["schemas"]["Models.ProductId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Models.ProductUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description The request has succeeded. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        data: components["schemas"]["Models.ProductResponse"];
+                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        meta: components["schemas"]["Models.ResponseMeta"] | null;
+                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        links: {
+                            [key: string]: string;
+                        } | null;
+                    };
+                };
+            };
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description 認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
+             *     ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
+             *     WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+             */
+            401: {
+                headers: {
+                    /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
+                    "WWW-Authenticate": string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description 認証されているが、この操作を行う権限がない (403)。 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The server cannot find the requested resource. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The request conflicts with the current state of the server. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
