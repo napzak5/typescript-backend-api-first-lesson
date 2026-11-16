@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import {
   dateIn,
+  datesAround,
   dayIn,
   momentAt,
   widestDayOf,
+  widestDaysAround,
 } from '../business-logic/available-slot/_shared/salon-time'
 import {
   joined,
@@ -420,4 +422,89 @@ describe('widestDayOf', () => {
     expect(dayIn('2026-11-16', 'Pacific/Kiritimati')?.from).toEqual(widest.from)
     expect(dayIn('2026-11-16', 'Etc/GMT+12')?.until).toEqual(widest.until)
   })
+})
+
+const ZONES = [
+  'Pacific/Kiritimati',
+  'Asia/Tokyo',
+  'UTC',
+  'America/New_York',
+  'Etc/GMT+12',
+]
+
+describe('datesAround', () => {
+  it.each([
+    ['the first moment of a date in UTC', '2026-11-16T00:00:00.000Z'],
+    ['noon', '2026-11-16T12:00:00.000Z'],
+    ['the last moment of the date', '2026-11-16T23:59:59.999Z'],
+  ])(
+    'returns the date in UTC between the one before and the one after, for %s',
+    (_case, moment) => {
+      expect(datesAround(new Date(moment))).toEqual([
+        '2026-11-15',
+        '2026-11-16',
+        '2026-11-17',
+      ])
+    },
+  )
+
+  it('crosses a month and a year', () => {
+    expect(datesAround(new Date('2026-12-31T12:00:00Z'))).toEqual([
+      '2026-12-30',
+      '2026-12-31',
+      '2027-01-01',
+    ])
+    expect(datesAround(new Date('2028-03-01T00:00:00Z'))).toEqual([
+      '2028-02-29',
+      '2028-03-01',
+      '2028-03-02',
+    ])
+  })
+
+  it.each(ZONES)(
+    'has the date a moment is on in %s, at whatever hour',
+    (timeZone) => {
+      for (let hour = 0; hour < 24; hour += 1) {
+        const moment = new Date(Date.UTC(2026, 10, 16, hour, 59, 59, 999))
+
+        expect(datesAround(moment)).toContain(dateIn(moment, timeZone))
+      }
+    },
+  )
+})
+
+describe('widestDaysAround', () => {
+  it('returns the time from the first moment of the date before in the time zone furthest ahead to the last of the date after in the one furthest behind', () => {
+    expect(
+      written([widestDaysAround(new Date('2026-11-16T01:00:00Z'), 0)]),
+    ).toEqual(['2026-11-14T10:00:00.000Z - 2026-11-18T12:00:00.000Z'])
+  })
+
+  it('is wider by the minutes around it, before and after', () => {
+    expect(
+      written([widestDaysAround(new Date('2026-11-16T01:00:00Z'), 45)]),
+    ).toEqual(['2026-11-14T09:15:00.000Z - 2026-11-18T12:45:00.000Z'])
+  })
+
+  it('is the same for every moment of a date in UTC', () => {
+    expect(
+      written([widestDaysAround(new Date('2026-11-16T23:59:59.999Z'), 0)]),
+    ).toEqual(written([widestDaysAround(new Date('2026-11-16T00:00:00Z'), 0)]))
+  })
+
+  it.each(ZONES)(
+    'holds each of the dates around a moment in %s',
+    (timeZone) => {
+      const moment = new Date('2026-11-16T12:00:00Z')
+      const widest = widestDaysAround(moment, 0)
+
+      for (const date of datesAround(moment)) {
+        const day = dayIn(date, timeZone)
+
+        expect(
+          day !== null && widest.from <= day.from && day.until <= widest.until,
+        ).toBe(true)
+      }
+    },
+  )
 })

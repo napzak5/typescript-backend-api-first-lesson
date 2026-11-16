@@ -7,12 +7,10 @@ import { bookingCreateRequestSchema } from '../../schemas/booking.schema'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import { bookingReachOf, isWithin } from './_shared/authorization'
 import type { BookingUseCaseDependencies } from './_shared/dependencies'
+import { underFreeNumber } from './_shared/numbered'
 import { toRefusalError } from './_shared/refusals'
 
 const MESSAGE = 'Invalid booking'
-
-/** How many numbers are tried before giving up; one collision is already rare. */
-const BOOKING_NUMBER_ATTEMPTS = 3
 
 export class CreateBookingUseCase {
   constructor(private readonly dependencies: BookingUseCaseDependencies) {}
@@ -48,9 +46,10 @@ export class CreateBookingUseCase {
     }
 
     const { bookingRepository, bookingNumberIssuer } = this.dependencies
-    for (let attempt = 0; attempt < BOOKING_NUMBER_ATTEMPTS; attempt += 1) {
+
+    return underFreeNumber(bookingNumberIssuer, async (bookingNumber) => {
       const created = await bookingRepository.create(request.data, {
-        bookingNumber: bookingNumberIssuer.issue(),
+        bookingNumber,
         createdBy: actor.userId,
         client,
       })
@@ -58,7 +57,7 @@ export class CreateBookingUseCase {
         return created
       }
 
-      const answer = match(created.data)
+      return match(created.data)
         .returnType<Result<ApiBookingResponse, DomainError> | null>()
         .with({ type: 'created' }, ({ booking }) =>
           BookingReadMapper.toApiBooking(booking),
@@ -69,16 +68,6 @@ export class CreateBookingUseCase {
           (refusal) => Result.error(toRefusalError(refusal, MESSAGE)),
         )
         .exhaustive()
-      if (answer !== null) {
-        return answer
-      }
-    }
-
-    return Result.error(
-      DomainErrors.database(
-        `No booking number that is free was found in ${BOOKING_NUMBER_ATTEMPTS} attempts`,
-        null,
-      ),
-    )
+    })
   }
 }

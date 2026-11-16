@@ -461,6 +461,109 @@ describe('planStatusChange', () => {
     })
   })
 
+  describe('cancelAsCustomer', () => {
+    /** A moment before the booking begins. */
+    const BEFORE = new Date('2026-11-19T12:00:00.000Z')
+    const own = (cancellationReason: string | null = null): BookingAction => ({
+      type: 'cancelAsCustomer',
+      cancellationReason,
+    })
+    const CANCELLABLE: Status[] = ['draft', 'pending', 'confirmed']
+
+    it.each(CANCELLABLE)(
+      'leads a booking that is %s to cancelled before it begins',
+      (status) => {
+        const write = writeOf(own(), { status }, BEFORE)
+
+        expect(write.booking.status).toBe('cancelled')
+        expect(write.statusChange).toMatchObject({
+          fromStatus: status,
+          toStatus: 'cancelled',
+        })
+      },
+    )
+
+    it.each(STATUSES.filter((status) => !CANCELLABLE.includes(status)))(
+      'does not lead on from %s, and says from where it does',
+      (status) => {
+        expect(
+          planStatusChange(booking({ status }), own(), {
+            changedBy: BY,
+            at: BEFORE,
+          }),
+        ).toEqual({
+          type: 'statusDoesNotAllow',
+          action: 'cancelAsCustomer',
+          status,
+          allowed: CANCELLABLE,
+        })
+      },
+    )
+
+    it('writes what a cancellation by the salon writes, with the customer as the one who cancelled', () => {
+      const write = writeOf(own('都合が悪くなった'), {}, BEFORE)
+
+      expect(write).toStrictEqual({
+        booking: {
+          status: 'cancelled',
+          cancelledAt: '2026-11-19T12:00:00.000Z',
+          cancelledBy: BY,
+          cancellationReason: '都合が悪くなった',
+          cancellationFee: 0,
+        },
+        servicesCompletedAt: null,
+        statusChange: {
+          fromStatus: 'confirmed',
+          toStatus: 'cancelled',
+          changedBy: BY,
+          reason: '都合が悪くなった',
+          metadata: null,
+        },
+        countsCustomer: true,
+      })
+      expect(write).toStrictEqual(
+        writeOf(
+          { type: 'cancel', cancellationReason: '都合が悪くなった' },
+          {},
+          BEFORE,
+        ),
+      )
+    })
+
+    it('notes no reason when none is given', () => {
+      const write = writeOf(own(), {}, BEFORE)
+
+      expect(write.booking.cancellationReason).toBeNull()
+      expect(write.statusChange.reason).toBeNull()
+    })
+
+    it('is taken until the moment before the booking begins, and refused from the moment it begins', () => {
+      const at = (moment: Date) =>
+        planStatusChange(booking(), own(), { changedBy: BY, at: moment }).type
+
+      expect(at(new Date(START.getTime() - 1))).toBe('planned')
+      expect(at(START)).toBe('alreadyBegun')
+      expect(at(new Date(START.getTime() + 1))).toBe('alreadyBegun')
+      expect(at(AT)).toBe('alreadyBegun')
+    })
+
+    it('says that the status does not allow it before it says that the booking has begun', () => {
+      expect(
+        planStatusChange(booking({ status: 'completed' }), own(), origin),
+      ).toMatchObject({ type: 'statusDoesNotAllow' })
+    })
+
+    it('does not look at the actual times of the booking', () => {
+      expect(
+        writeOf(
+          own(),
+          { actualStartTime: BEFORE, actualEndTime: BEFORE },
+          BEFORE,
+        ).booking.status,
+      ).toBe('cancelled')
+    })
+  })
+
   it('names the reason of a cancellation in the history, and no reason for any other change', () => {
     const reasons = ACTIONS.map(
       ([action, from]) =>

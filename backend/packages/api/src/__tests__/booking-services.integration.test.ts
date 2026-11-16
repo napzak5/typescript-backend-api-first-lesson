@@ -8,11 +8,11 @@ import {
   staff,
 } from '@beauty-salon-backend/database'
 import {
-  type BookingReach,
   type BookingServiceCreateRequest,
   bookingIdSchema,
   bookingServiceIdSchema,
   type DomainError,
+  type LedgerReach,
   salonIdSchema,
   serviceIdSchema,
   staffIdSchema,
@@ -2815,8 +2815,8 @@ describe('Booking service lines API', () => {
     }
 
     const repository = () => new BookingRepository(db)
-    const everySalon: BookingReach = { type: 'everySalon' }
-    const salonOnly = (id: string): BookingReach => ({
+    const everySalon: LedgerReach = { type: 'everySalon' }
+    const salonOnly = (id: string): LedgerReach => ({
       type: 'salon',
       salonId: salonIdSchema.parse(id),
     })
@@ -3021,7 +3021,7 @@ describe('Booking service lines API', () => {
         const find = async (
           booking: string,
           service: string,
-          reach: BookingReach,
+          reach: LedgerReach,
         ) =>
           dataOf(
             await repository().findService(
@@ -3065,7 +3065,7 @@ describe('Booking service lines API', () => {
       const removeFrom = async (
         booking: string,
         service: string,
-        reach: BookingReach,
+        reach: LedgerReach,
       ) =>
         dataOf(
           await repository().removeService(

@@ -42,6 +42,7 @@ import { createAvailableSlotRouter } from './routes/available-slot'
 import { createBookingRouter } from './routes/booking'
 import { createBookingServiceRouter } from './routes/booking-service'
 import { createCustomerRouter } from './routes/customer'
+import { createCustomerBookingRouter } from './routes/customer-booking'
 import {
   createCustomerPreferencesRouter,
   createOwnCustomerPreferencesRouter,
@@ -228,7 +229,18 @@ export const createApp = ({
   const customerPreferencesDependencies = {
     customerPreferencesRepository: new CustomerPreferencesRepository(database),
   }
+  const bookingDependencies = {
+    bookingRepository: new BookingRepository(database),
+    bookingNumberIssuer: new RandomBookingNumberIssuer(),
+  }
   // "me" first: the router below it would take it for the ID of a customer.
+  app.use(
+    `${API_BASE_PATH}/customers/me/bookings`,
+    createCustomerBookingRouter(
+      { ...bookingDependencies, clock },
+      authenticated,
+    ),
+  )
   app.use(
     `${API_BASE_PATH}/customers/me/preferences`,
     createOwnCustomerPreferencesRouter(
@@ -250,10 +262,6 @@ export const createApp = ({
       authenticated,
     ),
   )
-  const bookingDependencies = {
-    bookingRepository: new BookingRepository(database),
-    bookingNumberIssuer: new RandomBookingNumberIssuer(),
-  }
   app.use(
     `${API_BASE_PATH}/bookings/:bookingId/services`,
     createBookingServiceRouter(bookingDependencies, authenticated),

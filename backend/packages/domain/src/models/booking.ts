@@ -11,6 +11,7 @@ import {
 } from '@beauty-salon-backend/utility'
 import { z } from 'zod'
 import { type DomainError, parseWith, uuidSchema } from '../shared'
+import type { CustomerId } from './customer'
 import type { SalonId } from './salon'
 
 // ID: a UUID that has been checked.
@@ -74,6 +75,15 @@ export type ApiBookingCompleteRequest =
   components['schemas']['Models.BookingCompleteRequest']
 export type ApiBookingSearchRequest = NonNullable<
   operations['BookingCrud_list']['parameters']['query']
+>
+export type ApiCustomerBookingResponse =
+  components['schemas']['Models.CustomerBookingResponse']
+export type ApiCustomerBookingServiceResponse =
+  components['schemas']['Models.CustomerBookingServiceResponse']
+export type ApiCustomerBookingCreateRequest =
+  components['schemas']['Models.CustomerBookingCreateRequest']
+export type ApiCustomerBookingSearchRequest = NonNullable<
+  operations['CustomerBookings_list']['parameters']['query']
 >
 
 // Database types, inferred from the Drizzle schema
@@ -187,10 +197,18 @@ export type BookingStatusWrite = {
 }
 
 /**
- * The bookings an actor reaches: those of every salon, or those of one. A
- * booking outside the reach is, to that actor, a booking that does not
- * exist.
+ * The bookings a keeper of a ledger reaches: those of every salon, or
+ * those of one.
  */
-export type BookingReach =
+export type LedgerReach =
   | { type: 'everySalon' }
   | { type: 'salon'; salonId: SalonId }
+
+/** The bookings a customer reaches: their own, at whatever salon. */
+export type CustomerReach = { type: 'customer'; customerId: CustomerId }
+
+/**
+ * The bookings a reader reaches. A booking outside the reach is, to that
+ * reader, a booking that does not exist.
+ */
+export type BookingReach = LedgerReach | CustomerReach

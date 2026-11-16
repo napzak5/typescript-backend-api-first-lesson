@@ -809,7 +809,8 @@ describe('modelRules', () => {
       .filter(
         ({ model, table }) =>
           (table === 'bookings' || table === 'bookingServices') &&
-          model !== 'Models.BookingUpdateRequest',
+          model !== 'Models.BookingUpdateRequest' &&
+          !model.startsWith('Models.CustomerBooking'),
       )
       .map(({ model, table, kind, omittedColumns, embedded, computed }) => ({
         model,
@@ -896,6 +897,58 @@ describe('modelRules', () => {
           'sortOrder',
           'createdAt',
           'updatedAt',
+        ],
+        embedded: undefined,
+        computed: undefined,
+      },
+    ])
+  })
+
+  it('shows the customer of a booking what the ledger shows, without themself and without what the salon notes, records and writes of a cancellation', () => {
+    const rules = modelRules
+      .filter(({ model }) => model.startsWith('Models.CustomerBooking'))
+      .map(({ model, table, kind, omittedColumns, embedded, computed }) => ({
+        model,
+        table,
+        kind,
+        omittedColumns,
+        embedded,
+        computed,
+      }))
+
+    expect(rules).toEqual([
+      {
+        model: 'Models.CustomerBookingResponse',
+        table: 'bookings',
+        kind: 'response',
+        omittedColumns: [
+          'ipAddress',
+          'userAgent',
+          'internalNotes',
+          'source',
+          'reminderSent',
+          'reminderSentAt',
+          'actualStartTime',
+          'actualEndTime',
+          'cancelledBy',
+          'cancellationReason',
+          'customerId',
+        ],
+        embedded: ['services'],
+        computed: undefined,
+      },
+      {
+        model: 'Models.CustomerBookingServiceResponse',
+        table: 'bookingServices',
+        kind: 'response',
+        omittedColumns: [
+          'bookingId',
+          'selectedOptions',
+          'createdAt',
+          'updatedAt',
+          'notes',
+          'isCompleted',
+          'completedAt',
         ],
         embedded: undefined,
         computed: undefined,

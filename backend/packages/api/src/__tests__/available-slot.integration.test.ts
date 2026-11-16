@@ -20,14 +20,31 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import {
   insertCustomer,
   insertMember,
-  insertSalon,
   insertSession,
-  insertStaff,
   insertUser,
   minutesFromNow,
   signedInUser,
   signIn,
 } from './_shared/auth-helpers'
+import {
+  DAY,
+  dateIn,
+  dayOfWeekOf,
+  daysAfter,
+  HOUR,
+  inStatus,
+  inTokyo,
+  iso,
+  jst,
+  MINUTE,
+  type NewBooking,
+  type NewService,
+  type NewStaff,
+  nextOn,
+  STARTS,
+  slotFixtures,
+  weeklyHours,
+} from './_shared/slot-helpers'
 import {
   brokenRules,
   createTestApp,
@@ -71,95 +88,6 @@ const INVALID_SEARCH = 'Invalid available slot search'
 const INVALID_CHECK = 'Invalid available slot check'
 const TIME_ZONE_UNKNOWN =
   'The time zone of the salon is not one that is known, so the times of its hours cannot be told; correct the time zone of the salon first'
-
-const MINUTE = 60_000
-const HOUR = 60 * MINUTE
-const DAY_LENGTH = 24 * HOUR
-
-type NewOpeningHours = typeof openingHours.$inferInsert
-type NewSchedule = typeof staffSchedules.$inferInsert
-type NewSalon = typeof salons.$inferInsert
-type NewStaff = typeof staff.$inferInsert
-type NewService = typeof services.$inferInsert
-type NewBooking = typeof bookings.$inferInsert
-type DayOfWeek = NewOpeningHours['dayOfWeek']
-
-/** The days of the week in the order `getUTCDay` counts them. */
-const DAYS: DayOfWeek[] = [
-  'sunday',
-  'monday',
-  'tuesday',
-  'wednesday',
-  'thursday',
-  'friday',
-  'saturday',
-]
-
-/** The day of the week of a date (`YYYY-MM-DD`). */
-const dayOfWeekOf = (date: string): DayOfWeek =>
-  DAYS.at(new Date(`${date}T00:00:00Z`).getUTCDay()) ?? 'sunday'
-
-/** The date the clocks of Tokyo show at a moment (`YYYY-MM-DD`). */
-const dateInTokyo = (moment: Date): string =>
-  new Date(moment.getTime() + 9 * HOUR).toISOString().slice(0, 10)
-
-/** The date in Tokyo so many days from today; before today when negative. */
-const dateIn = (days: number): string =>
-  dateInTokyo(new Date(Date.now() + days * DAY_LENGTH))
-
-/** The date so many days after another. */
-const daysAfter = (date: string, days: number): string =>
-  new Date(new Date(`${date}T00:00:00Z`).getTime() + days * DAY_LENGTH)
-    .toISOString()
-    .slice(0, 10)
-
-/** The first date, a week from today or later, that is on a day of the week. */
-const nextOn = (dayOfWeek: DayOfWeek): string => {
-  const candidates = Array.from({ length: 7 }, (_, days) => dateIn(7 + days))
-  return candidates.find((date) => dayOfWeekOf(date) === dayOfWeek) ?? ''
-}
-
-/**
- * The day most tests are about: a month from now, so that every slot of it
- * is still to come whenever the tests run.
- */
-const DAY = dateIn(30)
-
-/** The moment at which the clocks of Tokyo show a time (HH:mm) on a date. */
-const jst = (time: string, date: string = DAY): Date =>
-  new Date(`${date}T${time}:00+09:00`)
-
-/** That moment as the API writes it. */
-const iso = (time: string, date: string = DAY): string =>
-  jst(time, date).toISOString()
-
-/** The time the clocks of Tokyo show at a moment written in UTC (HH:mm). */
-const inTokyo = (moment: string): string =>
-  new Date(new Date(moment).getTime() + 9 * HOUR).toISOString().slice(11, 16)
-
-/** The weekly hours of the day of the week of a date: open from 10:00 to 19:00. */
-const weeklyHours = (
-  date: string = DAY,
-  overrides: Record<string, unknown> = {},
-) => ({
-  dayOfWeek: dayOfWeekOf(date),
-  operatingSlots: [{ startTime: '10:00', endTime: '19:00' }],
-  breakSlots: null,
-  isClosed: false,
-  effectivePeriod: null,
-  ...overrides,
-})
-
-/**
- * When the staff member of the tests can begin the cut of an hour on the
- * day: the salon is open from 10:00 to 19:00, and they work from 09:00 to
- * 18:00 with a break from 12:00 to 13:00.
- */
-const STARTS = [
-  ...['10:00', '10:30', '11:00'],
-  ...['13:00', '13:30', '14:00', '14:30', '15:00'],
-  ...['15:30', '16:00', '16:30', '17:00'],
-]
 
 const NEW_YORK = 'America/New_York'
 
@@ -246,184 +174,16 @@ describe('Available slot API', () => {
   /** A cut of an hour. */
   let cutId: string
 
-  const salon = (overrides: Partial<NewSalon> = {}): Promise<string> =>
-    insertSalon(db, {
-      timezone: 'Asia/Tokyo',
-      businessHours: [weeklyHours()],
-      ...overrides,
-    })
-
-  /** A staff member of a salon who takes one booking at a time and keeps no time free, unless stated otherwise. */
-  const staffMember = (
-    overrides: Partial<NewStaff> = {},
-    of: string = salonId,
-  ): Promise<string> =>
-    insertStaff(db, of, {
-      maxConcurrentBookings: 1,
-      bufferTimeBefore: 0,
-      bufferTimeAfter: 0,
-      ...overrides,
-    })
-
-  /** A service of a salon as a row; returns its ID. */
-  const insertService = async (
-    overrides: Partial<NewService> = {},
-    of: string = salonId,
-  ): Promise<string> => {
-    const [service] = await db
-      .insert(services)
-      .values({
-        salonId: of,
-        name: 'Cut and blow-dry',
-        duration: 60,
-        price: 6600,
-        imageUrls: [],
-        tags: [],
-        packageServiceIds: [],
-        bookingRequirements: [],
-        ...overrides,
-      })
-      .returning({ id: services.id })
-    if (service === undefined) {
-      throw new Error('No service was inserted')
-    }
-    return service.id
-  }
-
-  /**
-   * A row of the schedule of a staff member for a date: from 09:00 to
-   * 18:00 with a break from 12:00 to 13:00 unless stated otherwise.
-   */
-  const works = async (
-    date: string = DAY,
-    by: string = staffId,
-    overrides: Partial<NewSchedule> = {},
-  ): Promise<void> => {
-    await db.insert(staffSchedules).values({
-      staffId: by,
-      date,
-      dayOfWeek: null,
-      isRecurring: false,
-      isAvailable: true,
-      startTime: '09:00',
-      endTime: '18:00',
-      breakStartTime: '12:00',
-      breakEndTime: '13:00',
-      ...overrides,
-    })
-  }
-
-  /** A day off of a staff member on a date. */
-  const isOff = (date: string = DAY, by: string = staffId): Promise<void> =>
-    works(date, by, {
-      isAvailable: false,
-      startTime: null,
-      endTime: null,
-      breakStartTime: null,
-      breakEndTime: null,
-    })
-
-  /** A row of the calendar of a salon for a date: open from 10:00 to 19:00 unless stated otherwise. */
-  const opens = async (
-    date: string = DAY,
-    overrides: Partial<NewOpeningHours> = {},
-    of: string = salonId,
-  ): Promise<void> => {
-    await db.insert(openingHours).values({
-      salonId: of,
-      dayOfWeek: dayOfWeekOf(date),
-      date,
-      openTime: '10:00',
-      closeTime: '19:00',
-      ...overrides,
-    })
-  }
-
-  /** A date on which the salon is open and the staff member works from 00:00 to 23:59. */
-  const allDay = async (date: string, by: string = staffId): Promise<void> => {
-    await opens(date, { openTime: '00:00', closeTime: '23:59' })
-    await works(date, by, {
-      startTime: '00:00',
-      endTime: '23:59',
-      breakStartTime: null,
-      breakEndTime: null,
-    })
-  }
-
-  let rows = 0
-
-  /**
-   * Writes a booking with one service line directly: of the cut, by the
-   * staff member of the tests, pending and an hour long unless stated
-   * otherwise. `lineBy` is the staff member of the line, which is nobody
-   * when null. Returns the ID of the booking.
-   */
-  const insertBooking = async (
-    from: Date,
-    {
-      by = staffId,
-      lineBy = by,
-      minutes = 60,
-      service = cutId,
-      of = salonId,
-      ...columns
-    }: Partial<NewBooking> & {
-      by?: string
-      lineBy?: string | null
-      minutes?: number
-      service?: string
-      of?: string
-    } = {},
-  ): Promise<string> => {
-    rows += 1
-    const times = {
-      startTime: from.toISOString(),
-      endTime: new Date(from.getTime() + minutes * MINUTE).toISOString(),
-      duration: minutes,
-    }
-    const [row] = await db
-      .insert(bookings)
-      .values({
-        bookingNumber: `BK-SLOTS-${String(rows).padStart(4, '0')}`,
-        salonId: of,
-        customerId,
-        staffId: by,
-        bookingDate: dateInTokyo(from),
-        status: 'pending',
-        subtotal: 6600,
-        totalAmount: 6600,
-        ...times,
-        ...columns,
-      })
-      .returning({ id: bookings.id })
-    if (row === undefined) {
-      throw new Error('No booking was inserted')
-    }
-    await db.insert(bookingServices).values({
-      bookingId: row.id,
-      serviceId: service,
-      staffId: lineBy,
-      price: 6600,
-      finalPrice: 6600,
-      taxIncluded: true,
-      ...times,
-    })
-    return row.id
-  }
-
-  /** What a booking in a status has to have beside it. */
-  const inStatus = (status: NewBooking['status']): Partial<NewBooking> => ({
-    status,
-    ...(status === 'cancelled'
-      ? { cancelledAt: new Date().toISOString() }
-      : {}),
-    ...(status === 'completed'
-      ? { completedAt: new Date().toISOString() }
-      : {}),
-    ...(status === 'in_progress'
-      ? { actualStartTime: new Date().toISOString() }
-      : {}),
-  })
+  const {
+    salon,
+    staffMember,
+    insertService,
+    works,
+    isOff,
+    opens,
+    allDay,
+    insertBooking,
+  } = slotFixtures(() => ({ db, salonId, customerId, staffId, cutId }))
 
   beforeEach(async () => {
     app = createTestApp()

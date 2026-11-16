@@ -30,6 +30,14 @@ import {
   type BookingServiceRemoval,
   type BookingStatusChange,
   type BookingWithServices,
+  type BookingWrite,
+  type CustomerBooker,
+  type CustomerBookingCreateRequest,
+  type CustomerBookingCreation,
+  type CustomerBookingReferences,
+  type CustomerId,
+  candidateDatesOf,
+  candidateTimeOf,
   type DbBooking,
   type DbBookingNotes,
   type DbBookingService,
@@ -37,9 +45,11 @@ import {
   type IBookingRepository,
   isCounted,
   isOccupiedBeyondCapacity,
+  type LedgerReach,
   moveBooking,
   occupancyWindowOf,
   planBooking,
+  planCustomerBooking,
   planReschedule,
   planServiceAddition,
   planServiceRemoval,
@@ -69,17 +79,26 @@ import { match } from 'ts-pattern'
 import { attempt } from '../database/attempt'
 import { CLOCK } from '../database/clock'
 import type { Database, DatabaseExecutor } from '../database/index'
+import {
+  calendarDaysOf,
+  millisecondsOf,
+  moment,
+  schedulesOf,
+  serviceLineStartsOf,
+  takenOf,
+  takesTime,
+} from './slot-reads'
+import { staffMemberOf } from './staff-member'
 
 /** The condition that keeps a query to the bookings a reader reaches. */
 const within = (reach: BookingReach): SQL | undefined =>
   match(reach)
     .with({ type: 'everySalon' }, () => undefined)
     .with({ type: 'salon' }, ({ salonId }) => eq(bookings.salonId, salonId))
+    .with({ type: 'customer' }, ({ customerId }) =>
+      eq(bookings.customerId, customerId),
+    )
     .exhaustive()
-
-/** A `timestamptz` column as the milliseconds since the epoch. */
-const millisecondsOf = (column: PgColumn) =>
-  sql<number>`(extract(epoch from ${column}) * 1000)`.mapWith(Number)
 
 /** The same of a column that may be NULL. */
 const millisecondsOrNullOf = (column: PgColumn) =>
@@ -167,6 +186,192 @@ const lockedReferencesOf = async (
       )
       .orderBy(asc(staff.id))
       .for('update'),
+  }
+}
+
+/**
+ * What the request of a customer refers to and meets, held until the
+ * booking is written.
+ *
+ * The tables are locked in the order of a booking the salon enters, so the
+ * two never wait for each other. The salon is locked `FOR SHARE`: its
+ * hours and its settings do not change while the slot is decided by them.
+ * The customer, the service and the staff member are locked `FOR UPDATE`,
+ * so the bookings of each are written one after the other: no two requests
+ * of one customer for the same time, for the last booking a service takes
+ * on a day or for the last slot of a staff member are each written because
+ * the other was not there yet.
+ *
+ * What the slot is decided from is read once the rows are held, each
+ * statement seeing what was committed before it: a request that waited
+ * meets what it waited for.
+ */
+const heldForCustomerOf = async (
+  tx: DatabaseExecutor,
+  request: CustomerBookingCreateRequest,
+  customerId: CustomerId,
+): Promise<CustomerBookingReferences> => {
+  const [salon] = await tx
+    .select({
+      id: salons.id,
+      isActive: salons.isActive,
+      timezone: salons.timezone,
+      businessHours: salons.businessHours,
+      taxRate: salons.taxRate,
+    })
+    .from(salons)
+    .where(and(eq(salons.id, request.salonId), isNull(salons.deletedAt)))
+    .for('share')
+  const [customer] = await tx
+    .select({
+      isActive: customers.isActive,
+      customerStatus: customers.customerStatus,
+    })
+    .from(customers)
+    .where(and(eq(customers.id, customerId), isNull(customers.deletedAt)))
+    .for('update')
+  const nothingRead = {
+    calendarDays: [],
+    serviceLineStarts: [],
+    customerTimes: [],
+  }
+  if (salon === undefined || customer === undefined) {
+    return {
+      customer: customer ?? null,
+      salon: salon ?? null,
+      service: null,
+      staff: null,
+      ...nothingRead,
+    }
+  }
+
+  const [service] = await tx
+    .select({
+      id: services.id,
+      duration: services.duration,
+      price: services.price,
+      discountPrice: services.discountPrice,
+      taxIncluded: services.taxIncluded,
+      isActive: services.isActive,
+      serviceStatus: services.serviceStatus,
+      allowOnlineBooking: services.allowOnlineBooking,
+      availability: services.availability,
+      bookingRequirements: services.bookingRequirements,
+      maxBookingsPerDay: services.maxBookingsPerDay,
+      requiredStaffLevel: services.requiredStaffLevel,
+    })
+    .from(services)
+    .where(
+      and(
+        eq(services.id, request.serviceId),
+        eq(services.salonId, request.salonId),
+        isNull(services.deletedAt),
+      ),
+    )
+    .for('update')
+  const [member] = await tx
+    .select({
+      id: staff.id,
+      level: staff.level,
+      isActive: staff.isActive,
+      canReceiveBookings: staff.canReceiveBookings,
+      bufferTimeBefore: staff.bufferTimeBefore,
+      bufferTimeAfter: staff.bufferTimeAfter,
+      maxConcurrentBookings: staff.maxConcurrentBookings,
+    })
+    .from(staff)
+    .where(staffMemberOf(request.salonId, request.staffId))
+    .for('update')
+  if (service === undefined || member === undefined) {
+    return {
+      customer,
+      salon,
+      service: service ?? null,
+      staff:
+        member === undefined ? null : { ...member, schedules: [], taken: [] },
+      ...nothingRead,
+    }
+  }
+
+  const dates = candidateDatesOf(request)
+  const days = candidateTimeOf(request, 0)
+  const taken = await takenOf(
+    tx,
+    [member.id],
+    candidateTimeOf(request, member.bufferTimeBefore + member.bufferTimeAfter),
+  )
+  const others = await tx
+    .select({
+      startTime: millisecondsOf(bookings.startTime),
+      endTime: millisecondsOf(bookings.endTime),
+    })
+    .from(bookings)
+    .where(
+      and(
+        eq(bookings.customerId, customerId),
+        sql`${bookings.endTime} > ${moment(days.from)}`,
+        sql`${bookings.startTime} < ${moment(days.until)}`,
+        takesTime,
+      ),
+    )
+
+  return {
+    customer,
+    salon,
+    service,
+    staff: {
+      ...member,
+      schedules: await schedulesOf(tx, [member.id], dates),
+      taken: taken.map(({ time }) => time),
+    },
+    calendarDays: await calendarDaysOf(tx, request.salonId, dates),
+    serviceLineStarts: await serviceLineStartsOf(tx, request.serviceId, days),
+    customerTimes: others.map(({ startTime, endTime }) => ({
+      startTime: new Date(startTime),
+      endTime: new Date(endTime),
+    })),
+  }
+}
+
+/**
+ * Writes a booking that was planned: the booking, its service lines and
+ * the first entry of its status history. Nothing is written when another
+ * booking has the number.
+ */
+const written = async (
+  tx: DatabaseExecutor,
+  write: BookingWrite,
+): Promise<
+  | { type: 'created'; booking: BookingWithServices }
+  | { type: 'bookingNumberTaken' }
+> => {
+  const [booking] = await tx
+    .insert(bookings)
+    .values(write.booking)
+    .onConflictDoNothing({ target: bookings.bookingNumber })
+    .returning()
+  if (booking === undefined) {
+    return { type: 'bookingNumberTaken' }
+  }
+  const lines = await tx
+    .insert(bookingServices)
+    .values(
+      write.services.map((service) => ({
+        ...service,
+        bookingId: booking.id,
+      })),
+    )
+    .returning()
+  await tx
+    .insert(bookingStatusHistories)
+    .values({ ...write.statusChange, bookingId: booking.id })
+
+  return {
+    type: 'created',
+    booking: {
+      booking,
+      services: lines.toSorted((a, b) => a.sortOrder - b.sortOrder),
+    },
   }
 }
 
@@ -270,7 +475,7 @@ const linesOf = (
 const heldForLines = async (
   tx: DatabaseExecutor,
   id: BookingId,
-  reach: BookingReach,
+  reach: LedgerReach,
 ) => {
   const [held] = await tx
     .select({ salonId: bookings.salonId, status: bookings.status })
@@ -399,40 +604,37 @@ export class BookingRepository implements IBookingRepository {
             return { type: 'staffOccupied', staffIds }
           }
 
-          const { write } = plan
-          const [booking] = await tx
-            .insert(bookings)
-            .values(write.booking)
-            .onConflictDoNothing({ target: bookings.bookingNumber })
-            .returning()
-          if (booking === undefined) {
-            return { type: 'bookingNumberTaken' }
-          }
-          const lines = await tx
-            .insert(bookingServices)
-            .values(
-              write.services.map((service) => ({
-                ...service,
-                bookingId: booking.id,
-              })),
-            )
-            .returning()
-          await tx
-            .insert(bookingStatusHistories)
-            .values({ ...write.statusChange, bookingId: booking.id })
-
-          return {
-            type: 'created',
-            booking: {
-              booking,
-              services: lines.toSorted((a, b) => a.sortOrder - b.sortOrder),
-            },
-          }
+          return written(tx, plan.write)
         },
         // Each statement sees what was committed before it: a request that
         // waited for a staff member sees the booking it waited for. With a
         // snapshot of the whole transaction it would not, and both
         // bookings would be written.
+        { isolationLevel: 'read committed' },
+      ),
+    )
+  }
+
+  async book(
+    request: CustomerBookingCreateRequest,
+    booker: CustomerBooker,
+    origin: BookingOrigin,
+  ): Promise<Result<CustomerBookingCreation, DomainError>> {
+    return attempt('Failed to book for customer', () =>
+      this.db.transaction(
+        async (tx): Promise<CustomerBookingCreation> => {
+          const plan = planCustomerBooking(
+            request,
+            booker,
+            await heldForCustomerOf(tx, request, booker.customerId),
+            origin,
+          )
+
+          return plan.type === 'planned' ? written(tx, plan.write) : plan
+        },
+        // As when the salon enters a booking: a request that waited for
+        // the customer, the service or the staff member sees what it
+        // waited for.
         { isolationLevel: 'read committed' },
       ),
     )
@@ -555,7 +757,7 @@ export class BookingRepository implements IBookingRepository {
 
   async update(
     id: BookingId,
-    reach: BookingReach,
+    reach: LedgerReach,
     notes: DbBookingNotes,
   ): Promise<Result<BookingWithServices | null, DomainError>> {
     return attempt('Failed to update booking', () =>
@@ -590,7 +792,7 @@ export class BookingRepository implements IBookingRepository {
 
   async reschedule(
     id: BookingId,
-    reach: BookingReach,
+    reach: LedgerReach,
     request: BookingRescheduleRequest,
   ): Promise<Result<BookingReschedule, DomainError>> {
     return attempt('Failed to reschedule booking', () =>
@@ -710,7 +912,7 @@ export class BookingRepository implements IBookingRepository {
 
   async delete(
     id: BookingId,
-    reach: BookingReach,
+    reach: LedgerReach,
   ): Promise<Result<BookingDeletion, DomainError>> {
     return attempt('Failed to delete booking', () =>
       this.db.transaction(
@@ -766,7 +968,7 @@ export class BookingRepository implements IBookingRepository {
 
   async addService(
     id: BookingId,
-    reach: BookingReach,
+    reach: LedgerReach,
     request: BookingServiceCreateRequest,
   ): Promise<Result<BookingServiceAddition, DomainError>> {
     return attempt('Failed to add service to booking', () =>
@@ -861,7 +1063,7 @@ export class BookingRepository implements IBookingRepository {
   async findService(
     id: BookingId,
     serviceId: BookingServiceId,
-    reach: BookingReach,
+    reach: LedgerReach,
   ): Promise<Result<DbBookingService | null, DomainError>> {
     return attempt('Failed to find service of booking', async () => {
       const [found] = await this.db
@@ -883,7 +1085,7 @@ export class BookingRepository implements IBookingRepository {
   async removeService(
     id: BookingId,
     serviceId: BookingServiceId,
-    reach: BookingReach,
+    reach: LedgerReach,
   ): Promise<Result<BookingServiceRemoval, DomainError>> {
     return attempt('Failed to remove service from booking', () =>
       this.db.transaction(

@@ -2,7 +2,7 @@
 
 予約（`bookings`）と、その施術明細（`booking_services`）の規則をまとめます。コントラクトは `specs/operations/booking-operations.tsp` と `specs/models/booking.tsp`、テーブルは `bookings`、`booking_services`、`booking_status_histories` です。
 
-予約台帳は、サロンが予約を入れて読むためのものです。管理者とサロンのスタッフが `/api/v1/bookings` で扱います。顧客のアカウントは、このルートを使えません。
+予約台帳は、サロンが予約を入れて読むためのものです。管理者とサロンのスタッフが `/api/v1/bookings` で扱います。顧客のアカウントは、このルートを使えません。顧客は、自分の予約を `/api/v1/customers/me/bookings` で扱います。規則は [顧客が自分で入れる予約](#顧客が自分で入れる予約) にまとめます。
 
 空き枠（`/api/v1/salons/{salonId}/available-slots`）は、同じコントラクトにある、台帳とは別のルートです。規則は [空き枠](#空き枠) にまとめます。
 
@@ -16,7 +16,8 @@
 | 終わっていない予約が参照する顧客、スタッフ、サービス、サロンの削除を断る（それぞれの削除の規則） | 実装済み |
 | 施術明細の追加、取得、削除（`BookingServiceCrud`） | 実装済み |
 | 空き枠の一覧と確認（`AvailableSlotCrud`） | 実装済み（[空き枠](#空き枠)） |
-| 顧客が自分で入れる予約、顧客が自分の予約を読むルート | 未実装。コントラクトにもない |
+| 顧客が自分で入れる予約、自分の予約の一覧、1 件の取得、キャンセル（`CustomerBookings`） | 実装済み（[顧客が自分で入れる予約](#顧客が自分で入れる予約)） |
+| 顧客による日時の変更 | 未実装。コントラクトにもない。顧客は、キャンセルして入れ直す |
 
 予約のコントラクト（`specs/operations/booking-operations.tsp`）のオペレーションは、すべて実装されています。
 
@@ -34,7 +35,7 @@
 - サービスの `isActive`、`serviceStatus`、`allowOnlineBooking`、`maxBookingsPerDay`
 - 顧客の `isActive`、`customerStatus`
 
-これらは、顧客が予約できる枠を決める条件です。サロン、スタッフ、サービスの設定は、空き枠の一覧が適用します（[受け付けの設定](#受け付けの設定)）。顧客の設定は、顧客が自分で入れる予約（未実装）で決めます。空き枠の確認は、台帳と同じく、どれも確かめません。顧客の好み設定（[顧客台帳](./customers.md#好み設定)）は、サーバーの判定には使いません。画面が、希望するスタッフを初期選択に使い、避けるスタッフを候補から外します。
+これらは、顧客が予約できる枠を決める条件です。サロン、スタッフ、サービスの設定は、空き枠の一覧が適用します（[受け付けの設定](#受け付けの設定)）。顧客の設定は、顧客が自分で入れる予約が適用します（[顧客の状態](#顧客の状態)）。空き枠の確認は、台帳と同じく、どれも確かめません。顧客の好み設定（[顧客台帳](./customers.md#好み設定)）は、サーバーの判定には使いません。画面が、希望するスタッフを初期選択に使い、避けるスタッフを候補から外します。
 
 過去の日時の予約も作成できます（来店のあとで記録する）。日時の変更も、過去の日時にできます。
 
@@ -61,7 +62,7 @@
 - 予約はサロンのものですが、ルートはサロンの下に置きません（コントラクトのとおり `/api/v1/bookings`）。サロンは、作成では本文の `salonId`、一覧ではクエリの `salonId`、ほかのオペレーション（取得、更新、削除、ステータスの操作、日時の変更、施術明細のオペレーション）では予約そのものが決めます
 - 誰がどの予約に届くかは、操作者の範囲で決まります（`business-logic/booking/_shared/authorization.ts` の `bookingReachOf`）。`admin` はすべてのサロン、サロンのユーザーは所属サロンです
 - サロンの 3 つのロールの違いは、予約の削除だけです。削除できるのは `owner` と `manager` で、`staff` には 403 を返します（同じファイルの `bookingRemovalReachOf`）。削除は、予約の履歴を消し、顧客の来店回数を変えるからです。スタッフは、行われない予約をキャンセルします。施術明細の削除は、履歴も来店回数も変えないので、`staff` にもできます
-- **顧客のアカウントは、このルートを使えません**（403）。`BookingResponse` はサロン内のメモ（`internalNotes`）を含みます。顧客台帳と同じく、顧客には、自分の予約だけを、見せてよい項目だけで返す別のルートを用意します（未実装）。ロールに必要なレコードを持たないユーザー（範囲 `none`）も 403 です
+- **顧客のアカウントは、このルートを使えません**（403）。`BookingResponse` はサロン内のメモ（`internalNotes`）を含みます。顧客台帳と同じく、顧客には、自分の予約だけを、見せてよい項目だけで返す別のルートがあります（[顧客が自分で入れる予約](#顧客が自分で入れる予約)）。ロールに必要なレコードを持たないユーザー（範囲 `none`）も 403 です
 - **ほかのサロンの予約は、存在しない予約と区別しません**。取得、更新、削除、ステータスの操作、日時の変更、施術明細のオペレーションは 404、一覧には出ず、カーソルに指定すると 400 です
 - ID（パスの `id` と `bookingId`、本文とクエリの ID）は、英字を大文字で書いても同じ ID です。レスポンスの ID は小文字です
 - レスポンスの `links` は `self` と `list` です。作成は 201 で、`Location` ヘッダーに予約の URL を返します。更新、ステータスの操作、日時の変更は 200 で、そのあとの予約を返します。削除は 204 で、本文はありません。施術明細のオペレーションのレスポンスは、[施術明細の追加と削除](#施術明細の追加と削除) にあります
@@ -320,7 +321,7 @@
 |---|---|---|
 | `cancellationReason` | `string \| null` | 空白だけでない。null は「理由を記録しない」 |
 
-- 開始日時の前でも後でも、キャンセルできます。来店しないと連絡があった予約は、開始日時を過ぎていてもキャンセルです
+- 開始日時の前でも後でも、キャンセルできます。来店しないと連絡があった予約は、開始日時を過ぎていてもキャンセルです。顧客が自分でキャンセルできるのは、開始日時より前だけです（[顧客によるキャンセル](#顧客によるキャンセル)）
 - **キャンセル料（`cancellationFee`）は、常に 0 です**。料金を決める規則（何日前から、何パーセントか）が定義されていないからです。`salons.cancellationPolicy` は、API が公開していないカラムで、中身の形式も決まっていません
 - いつ、誰がキャンセルしたかは、システムが書きます。本文に `cancelledAt`、`cancelledBy`、`cancellationFee` を書くと 400（`unrecognized_keys`）です
 
@@ -529,7 +530,7 @@
 - 2 つは、答える問いが違います。**一覧は、顧客が予約できる枠を返します**。サロンが受け付けについて決めた設定（[受け付けの設定](#受け付けの設定)）を、すべて適用します。**確認は、台帳がその予約を受け付けるかどうかを答えます**。台帳が確かめるもの（[スタッフの占有](#スタッフの占有)）だけを確かめます
 - 一覧は、枠があるかどうかだけを返し、どの予約のことも返しません。だから、サインインしていれば誰でも読めます。認証は要ります（コントラクトのとおり）
 - 確認は、重なっている予約の ID を返します。だから、そのサロンの台帳に届く人だけが使えます（`business-logic/available-slot/_shared/authorization.ts` の `mayAskLedgerOf`。台帳と同じ `bookingReachOf` で決める）。顧客のアカウントと、ほかのサロンのユーザーには 403 を返します
-- どちらも、何も書きません。枠を押さえることもしません。答えは、その時点のものです
+- どちらも、何も書きません。枠を押さえることもしません。答えは、その時点のものです。顧客が枠に予約を入れるときに、同じ規則で、もう一度確かめます（[予約を入れる](#予約を入れる)）
 
 ### 枠の決め方
 
@@ -589,7 +590,7 @@
 - 並びは、`startTime` の早い順、同じ日時の中では `staffId` の昇順です
 - `meta.total` は、その日の枠の数です（`cursor` によらない）
 - 枠には ID がないので、`cursor` は、ページの最後の枠そのもの（`<startTime>_<staffId>`）です。次のページは、その枠より後の枠から返します。カーソルの枠が、そのあいだに埋まっていても、続きを返します。この形でない `cursor` は 400 です（`cursor` の `custom`）
-- ページは、前にだけ進みます。`meta.prevCursor` と、`links` の `prev`、`last` は null です
+- ページは、次にだけ進みます。`meta.prevCursor` と、`links` の `prev`、`last` は null です
 - 確認の順序は、認証（401）、パスの `salonId`（400）、クエリ（400）、サロンがあるか（404）、`staffId` と `serviceId` がそのサロンのものか（400。`not_found`。削除済みのものを含み、両方をまとめて報告する）、サロンのタイムゾーン（409）です
 - サロンの `timezone` が名前として読めないとき（以前に保存された値）は 409 です。時刻を時点に直せないからです。以前に保存されたオフセット（`+09:00`）は読めます
 - 保存されている `businessHours` が API のモデルに合わないときは 500（データベースのエラー）です
@@ -606,6 +607,114 @@
 - 確認の順序は、認証（401）、パスの `salonId`（400）、権限（403。本文を読む前に決める。存在しないサロンでも 403）、本文（400）、サロンがあるか（404）、`staffId` と `serviceId` がそのサロンのものか（400。`not_found`）です
 - 答えのあとで、ほかの予約が入ることがあります。そのあとの作成は 409 になりえます
 - `links` は、`self`（確認）と `list`（そのサロンの空き枠の一覧）です
+
+## 顧客が自分で入れる予約
+
+`/api/v1/customers/me/bookings` の 4 つのオペレーション（`CustomerBookings`）です。顧客が、自分のアカウントで、空き枠に予約を入れ、自分の予約を読み、キャンセルします。ルートは、プロフィールと好み設定（[顧客台帳](./customers.md#顧客本人のプロフィール)）と同じく、`/api/v1/customers/me` の下にあります。
+
+| オペレーション | ルート | 成功 |
+|---|---|---|
+| 一覧 | `GET /api/v1/customers/me/bookings` | 200。自分の予約の一覧 |
+| 作成 | `POST /api/v1/customers/me/bookings` | 201。入れた予約。`Location` ヘッダーに予約の URL |
+| 1 件の取得 | `GET /api/v1/customers/me/bookings/{id}` | 200。自分の予約 |
+| キャンセル | `POST /api/v1/customers/me/bookings/{id}/cancel` | 200。キャンセルした予約 |
+
+- 使えるのは、ロール `customer` のユーザーだけです。`admin` とサロンのユーザー、ロールに必要なレコードを持たないユーザー（範囲 `none`）には 403 を返します。これらのユーザーは、台帳を使います。権限は、パスの ID、クエリ、本文のどれよりも先に確かめます（`business-logic/customer-booking/_shared/access.ts` の `ownBookingsOf`）
+- プロフィール（自分の顧客レコード）をまだ作っていないアカウントと、顧客レコードが削除されたアカウントには 404 を返します（プロフィール、好み設定と同じ）
+- 届くのは、自分の予約だけです。**ほかの顧客の予約は、存在しない予約と区別しません**。取得とキャンセルは 404、一覧には出ず、カーソルに指定すると 400 です
+- **サロンが台帳に入れた自分の予約も、自分の予約です**（電話で入れた予約など）。読めて、同じ規則でキャンセルできます。どのサロンの、どのステータスの予約も対象です
+- 日時の変更はありません。キャンセルして、入れ直します（キャンセル回数が 1 つ増えます）
+- レスポンスの `links` は、`self` と `list`（`/api/v1/customers/me/bookings`）です
+
+### 顧客に見せる項目
+
+レスポンス（`CustomerBookingResponse`）は、予約のうち、顧客に見せる項目だけです。プロパティ名と null 許可は、台帳の `BookingResponse` と同じです（DB のカラムと同じ）。
+
+| | 項目 |
+|---|---|
+| 予約 | `id`、`bookingNumber`、`salonId`、`staffId`、`bookingDate`、`startTime`、`endTime`、`duration`、`status`、`subtotal`、`discountAmount`、`taxAmount`、`totalAmount`、`depositAmount`、`pointsUsed`、`pointsEarned`、`customerRequest`、`cancelledAt`、`cancellationFee`、`completedAt`、`services`、`createdAt`、`updatedAt` |
+| 明細（`CustomerBookingServiceResponse`） | `id`、`serviceId`、`staffId`、`startTime`、`endTime`、`duration`、`price`、`discountAmount`、`finalPrice`、`taxIncluded`、`sortOrder` |
+
+出さないものは、次のとおりです。
+
+- サロン内のメモ: `internalNotes`、明細の `notes`
+- サロンの記録: `source`、`reminderSent`、`reminderSentAt`、`actualStartTime`、`actualEndTime`、明細の `isCompleted`・`completedAt`
+- 誰がキャンセルしたかと、その理由: `cancelledBy`、`cancellationReason`。スタッフが書いた理由は、顧客に向けた文とは限りません。顧客が自分で書いた理由も、返しません
+- `customerId`: 自分のものなので、出しません
+
+読み出しは、台帳と同じマッパーで検証してから、見せる項目を 1 つずつ取り出します（`mappers/read/customer-booking.mapper.ts`）。台帳のレスポンスに項目を加えても、顧客のレスポンスには出ません。
+
+### 予約を入れる
+
+本文（`CustomerBookingCreateRequest`）は、全項目が必須です。ほかのプロパティは 400 です（`unrecognized_keys`）。`customerId` も書けません。予約は、アカウントの顧客のものです。
+
+| 項目 | 型 | 規則 |
+|---|---|---|
+| `salonId` | `SalonId` | 削除されていないサロン |
+| `serviceId` | `ServiceId` | そのサロンの、削除されていないサービス |
+| `staffId` | `StaffId` | そのサロンの、削除されていないスタッフ |
+| `startTime` | `utcDateTime` | UTC（`Z`）で、分単位 |
+| `customerRequest` | `string \| null` | 空白だけでない |
+
+- **入れられるのは、空き枠の一覧が、その時点で返す枠だけです**。`staffId` と `startTime` が、そのサービスの、その日（サロンのタイムゾーンでの `startTime` の日付）の空き枠でなければ 409 です。サロンの営業時間、スタッフの勤務、[受け付けの設定](#受け付けの設定)、いまより後であること、スタッフの占有を、空き枠の一覧と同じ 1 つの関数（`slotsOf`）で確かめます。施術時間は、サービスの `duration` です（一覧の `duration` パラメーターにあたるものは、ありません）
+- 「いま」は、空き枠の一覧と同じく、アプリケーションの時計です
+- **1 つの予約に、サービスは 1 つです**。明細は 1 件で、担当は `staffId` のスタッフです。空き枠の一覧が、サービスを 1 つしか受け取らないからです。複数のメニューを 1 回で受けるには、サロンがパッケージのサービス（`isPackage`）を用意します。入れたあとで、サロンは台帳から明細を足せます
+- システムが決める値は、台帳の作成と同じです（[システムが決める値](#システムが決める値)。金額と時間はサービスの写し、`status` は `pending`、予約番号、`bookingDate`、消費税）。`depositAmount` と `internalNotes`、明細の `notes` は null、`source` は `online` です。ステータスの履歴の `changedBy` は、顧客のユーザー ID です。書く行は、サロンが同じ内容を台帳に入れたときと同じです（`planCustomerBooking` が、台帳の `planBooking` で作る）
+- 入れた予約は `pending` です。サロンが、台帳で確定します。自動で確定するかどうかの、サロンの設定はありません
+- 枠でない理由（営業時間の外か、スタッフが占有されているか、など）は、区別して返しません。画面は、空き枠の一覧を読み直します
+
+#### 顧客の状態
+
+顧客レコードの `isActive` が false、または `customerStatus` が `inactive` か `blacklisted` の顧客は、自分では予約を入れられません（409）。`active` と `vip` は入れられます（`business-logic/available-slot/_shared/acceptance.ts` の `booksOnline`）。
+
+- `detail` は、理由を書きません。状態は、サロンが顧客について記録したもので、本人には見せていない項目です（[顧客台帳](./customers.md#本人に見せる項目本人が書ける項目)）
+- その顧客の予約を、サロンが台帳に入れることは、妨げません（[サロンが台帳に入れる予約は、サロンの判断](#サロンが台帳に入れる予約はサロンの判断)）
+- 自分の予約を読むことと、キャンセルすることは、どの状態の顧客にもできます
+- 空き枠の一覧は、顧客の状態を見ません。誰が読んでも、同じ枠を返します
+
+#### 同じ時間の予約
+
+自分の、ほかの予約と時間が重なる予約は、入れられません（409）。1 人の顧客は、同時に 2 か所にいられないからです。
+
+- 比べるのは、予約の `startTime` から `endTime` までです。終わりは含みません（10:00〜11:00 の予約がある顧客は、11:00 からの予約を入れられる）。スタッフの前後の空け時間は、顧客の時間には加えません
+- `cancelled` と `no_show` の予約は、比べません。ほかのステータスの予約は、どのサロンの予約でも、サロンが台帳に入れた予約でも、比べます
+- 二重に送信したリクエストが、同時に複数を受けるスタッフ（`maxConcurrentBookings` が 2 以上）に 2 件入ることも、この規則で防ぎます
+- サロンが台帳に入れる予約と、台帳での日時の変更は、顧客のほかの予約を確かめません（これまでどおり）
+
+#### 予約を入れるときの確認の順序
+
+1. 認証（401）
+2. ロール `customer` であること（403）
+3. プロフィールがあること（404）
+4. 本文（400）
+5. 顧客レコードが削除されていないこと（404。認証のあとで削除された場合）
+6. `salonId`、`serviceId`、`staffId`（400。`not_found`。サロンがなければ `salonId` だけを、あれば、サービスとスタッフをまとめて報告する）
+7. サロンのタイムゾーン（409。台帳、空き枠と同じ）
+8. 顧客の状態（409）
+9. 空き枠であること（409）
+10. 自分のほかの予約と重ならないこと（409）
+
+- 読めない本文（JSON でない、JSON の `null`）は、ほかのルートと同じく、認証より前に 400 です
+- 保存されている `businessHours` が API のモデルに合わないサロンは 500 です（空き枠の一覧と同じ）
+- 5 からあとは、1 つのトランザクションの中で、ロックを取ったあとに確かめます（[同時に届いたリクエスト](#同時に届いたリクエスト)）
+
+### 顧客によるキャンセル
+
+本文は、台帳のキャンセルと同じ `BookingCancelRequest` です（`cancellationReason`。`string | null` で、空白だけでない）。
+
+- キャンセルできるのは、`draft`、`pending`、`confirmed` の予約（台帳のキャンセルと同じ）で、**開始日時より前**であることです。開始日時になった予約は 409 です。来店しなかった予約は、サロンが、キャンセルか無断キャンセルとして記録します
+- 日時は、データベースの時計で決めます（ほかのステータスの操作と同じ。予約の行をロックできた時点の時刻）
+- 締め切り（何時間前まで）と、キャンセル料は、定義していません。`cancellationFee` は 0 です（台帳と同じ）
+- 書く値は、台帳のキャンセルと同じです（[各操作が書く値](#各操作が書く値)。`cancelledAt`、`cancelledBy` は顧客のユーザー ID、`cancellationReason`、履歴の 1 行、顧客のキャンセル回数の数え直し）。キャンセルした予約は、スタッフを占有しないので、その時間は空き枠に戻ります
+- 確認の順序は、認証（401）、ロール `customer`（403）、プロフィール（404）、ID の形式（400）、本文（400）、予約があるか（404。ほかの顧客の予約も同じ）、ステータス（409）、開始日時より前であること（409）です
+- 規則は、ステータスの操作の 1 つです（`business-logic/booking/_shared/status.ts` の `cancelAsCustomer`）。台帳のキャンセルとの違いは、開始日時を確かめることだけです
+
+### 自分の予約の一覧と取得
+
+- クエリ（`CustomerBookingSearchRequest`）は、`status`、`bookingDateFrom`、`bookingDateTo`、`limit`（1〜100。既定は 20）、`cursor` です。規則は、台帳の一覧の同じパラメーターと同じです（[1 件の取得と一覧](#1-件の取得と一覧)）。台帳の `salonId`、`customerId`、`staffId` を含めて、ほかのパラメーターは 400 です
+- 並びは、台帳と同じです（開始日時の早い順、同じ値の中では `id` の昇順）
+- `meta.total` は、絞り込みに一致する、自分の予約の件数です
+- `cursor` が自分の予約を指していなければ 400 です（`cursor` の `not_found`）
 
 ## 同時に届いたリクエスト
 
@@ -661,6 +770,18 @@
 | サービスの料金と所要時間の変更が進んでいる途中に、そのサービスの明細の追加が届く | 変更が終わるのを待ち、新しい料金と所要時間で明細を作る |
 | 予約の削除と、その予約への明細の追加が同時に届く | 削除は 204。追加は、先に処理されれば 201、あとなら 404。予約も、明細も残らない |
 
+顧客が自分で入れる予約:
+
+| 状況 | 結果 |
+|---|---|
+| 同じスタッフの同じ枠への予約が、別々の顧客から同時に何件も届く | そのスタッフが同時に受けられる数だけが 201 で、ほかは 409（空き枠でない） |
+| `maxBookingsPerDay` の残りが 1 件のサービスに、スタッフが別々の予約が同時に届く | 1 件だけが 201 で、ほかは 409 |
+| 同じ顧客の、同じ時間の予約が、別々のスタッフに同時に届く | 1 件だけが 201 で、ほかは 409（自分のほかの予約と重なる） |
+| 同じスタッフの、時間が重ならない枠への予約が、別々の顧客から同時に届く | すべて 201 |
+| 同じ枠に、顧客が入れる予約と、台帳への作成が同時に届く | 片方だけが 201 で、もう片方は 409 |
+| 同じ予約に、顧客のキャンセルが同時に何件も届く | 1 件が 200 で、ほかは 409。履歴は 1 行で、キャンセル回数は 1 つだけ増える |
+| 同じ予約に、顧客のキャンセルと、サロンの確定が同時に届く | 両方が 200（確定のあとキャンセル）か、キャンセルが 200 で確定が 409。予約は `cancelled` |
+
 予約が参照するものの削除:
 
 | 状況 | 結果 |
@@ -673,13 +794,27 @@
 
 作成は 1 つのトランザクションです（`infrastructure` の `BookingRepository.create`）。
 
-1. サロン、顧客、サービスの行を、この順に共有ロック（`FOR SHARE`）します。確認した行が、書き終わるまで削除されず、料金も変わらないようにするためです。共有ロックどうしは待たせないので、同じ顧客や同じサービスの予約は並行して進みます
+1. サロン、顧客、サービスの行を、この順に共有ロック（`FOR SHARE`）します。確認した行が、書き終わるまで削除されず、料金も変わらないようにするためです。共有ロックどうしは待たせないので、台帳に入れる、同じ顧客や同じサービスの予約は並行して進みます
 2. リクエストが挙げたスタッフ（担当スタッフと、明細のスタッフ）の行を、1 つの問い合わせで、ID の順に排他ロック（`FOR UPDATE`）します。同じスタッフへの予約は 1 件ずつ処理されるので、同時に届いた 2 件が、どちらも「空いている」と判断して両方書かれることはありません。どのリクエストも同じ順にロックするので、デッドロックになりません
 3. 占有を確かめて、予約、明細、履歴を書きます
 
 このトランザクションは、分離レベルを `READ COMMITTED` と明示しています。ロックを待ったあとの問い合わせが、待っている間に書かれた予約を見るためです。トランザクション全体で 1 つのスナップショットを使う分離レベル（`REPEATABLE READ`）では、待っていた相手の予約が見えず、両方が書かれます。
 
-ステータスの操作も 1 つのトランザクションです（`BookingRepository.changeStatus`。分離レベルは `READ COMMITTED`）。
+顧客が自分で入れる予約も 1 つのトランザクションです（`BookingRepository.book`。分離レベルは `READ COMMITTED`）。
+
+1. サロンの行を共有ロック、顧客の行を排他ロックします。どちらかがなければ、ここで終わります
+2. サービスの行を排他ロック、スタッフの行を排他ロックします（リクエストのサロンの、削除されていない行だけ）
+3. 枠を決めるのに要るものを読みます。スタッフの勤務スケジュール、サロンの営業日カレンダー、スタッフの明細、そのサービスの明細の開始日時、顧客のほかの予約です。**どれも、ロックを取ったあとの問い合わせで読みます**。待っている間に入った予約と、変わった設定を見ます
+4. `planCustomerBooking` が、予約を入れられるかを決めて、書く行を作ります。入れられなければ、何も書かずに終わります
+5. 予約、明細、履歴を書きます（台帳の作成と同じ書き込み）
+
+- ロックの順は、台帳の作成と同じ（サロン、顧客、サービス、スタッフ）で、顧客とサービスは、台帳より強いロックです
+- スタッフの排他ロックで、同じスタッフへの予約は、台帳からのものも含めて、1 件ずつ処理されます
+- サービスの排他ロックで、同じサービスへの顧客の予約は 1 件ずつ処理されます。`maxBookingsPerDay` の残りが 1 件の日に、スタッフが別々の予約が同時に届いても、1 件だけが書かれます。台帳の作成と明細の追加は、サービスを共有ロックするので、顧客の予約を書いている間は待ちます（台帳は `maxBookingsPerDay` を確かめないので、待つだけです）
+- 顧客の排他ロックで、同じ顧客の予約は 1 件ずつ処理されます。同じ時間の予約が同時に届いても、1 件だけが書かれます
+- サロンのタイムゾーンは、ロックのあとで分かります。だから、読む範囲は、`startTime` がどのタイムゾーンでも入る広さにします（UTC での日付と、その前後の日付。`candidateDatesOf`、`candidateTimeOf`）。その中から、サロンのタイムゾーンでの日付のものを、`planCustomerBooking` が選びます
+
+ステータスの操作も 1 つのトランザクションです（`BookingRepository.changeStatus`。分離レベルは `READ COMMITTED`）。顧客によるキャンセルも、範囲が顧客の予約であることのほかは、同じトランザクションです。
 
 1. 予約の行を排他ロック（`FOR UPDATE`）して、ステータスと日時を読み、ロックできた時点のデータベースの時計を読みます（ロックする副問い合わせが返した行に対して、外側の問い合わせが `clock_timestamp()` を読む。1 つの問い合わせ）。同じ予約への操作は 1 件ずつ処理され、待っていた操作は、先の操作が書いたステータスを読み、先の操作より後の時刻を書きます
 2. `planStatusChange` が、操作できるかを決めます。できなければ、何も書かずに終わります
@@ -719,7 +854,7 @@
 2. `planServiceRemoval` が、削除できるかを決めて、算出し直した予約の値を作ります。削除できなければ、何も書かずに終わります
 3. 明細を削除して、予約を書きます。スタッフの行はロックしません（占有が減っても、待っている書き込みはない）
 
-ロックの順は、作成がサロン、顧客、サービス、スタッフ、日時の変更が予約、サロン、スタッフ、明細の追加が予約、サロン、サービス、スタッフ、明細の削除が予約、サロン、ステータスの操作と削除が予約、顧客です。作成は、すでにある予約の行をロックしません。どの 2 つを組み合わせても、同じ行を逆の順にロックすることはないので、デッドロックになりません。
+ロックの順は、作成（台帳も、顧客が自分で入れる予約も）がサロン、顧客、サービス、スタッフ、日時の変更が予約、サロン、スタッフ、明細の追加が予約、サロン、サービス、スタッフ、明細の削除が予約、サロン、ステータスの操作と削除が予約、顧客です。作成は、すでにある予約の行をロックしません。どの 2 つを組み合わせても、同じ行を逆の順にロックすることはないので、デッドロックになりません。
 
 顧客、スタッフ、サービス、サロンの削除も、それぞれ 1 つのトランザクションです（`CustomerRepository`、`StaffRepository`、`ServiceRepository`、`SalonRepository` の `delete`。分離レベルは `READ COMMITTED`）。
 
@@ -783,11 +918,13 @@
 
 | 層 | ファイル |
 |---|---|
-| コントラクト | `specs/models/booking.tsp`、`specs/operations/booking-operations.tsp`（空き枠は、同じファイルの `AvailableSlotCrud` と、`AvailableSlot` で始まるモデル） |
+| コントラクト | `specs/models/booking.tsp`、`specs/operations/booking-operations.tsp`（空き枠は、同じファイルの `AvailableSlotCrud` と、`AvailableSlot` で始まるモデル。顧客が自分で入れる予約は、`CustomerBookings` と、`CustomerBooking` で始まるモデル） |
 | ドメイン | `backend/packages/domain/src/models/booking.ts`、`schemas/booking.schema.ts`、`mappers/read/booking.mapper.ts`、`repositories/booking.repository.ts`、`services/booking-number-issuer.ts`、`business-logic/booking/`（誰がどの予約に届くかは `_shared/authorization.ts`、リクエストから書く行を決めるのは `_shared/plan.ts`、明細から予約の日時と金額を算出するのは `_shared/summary.ts`、スタッフの占有の規則は `_shared/occupancy.ts`、予約番号は `_shared/booking-number.ts`、リポジトリが断った理由をエラーに直すのは `_shared/refusals.ts`、ステータスの規則は `_shared/status.ts`、5 つの操作に共通の手順は `_shared/change-status.ts`、日時の変更の規則は `_shared/reschedule.ts`、施術明細の追加と削除の規則は `_shared/service-lines.ts`）。Write マッパーはない（書く行は `planBooking` と `planServiceAddition` が決める） |
 | ドメイン（共通） | `backend/packages/domain/src/schemas/rules.ts`（`inTimeZone`、`timeZoneName`）、`business-logic/_shared/unfinished-bookings.ts`（終わっていない予約が参照するものの削除を断るエラー） |
 | インフラ | `backend/packages/infrastructure/src/repositories/booking.repository.impl.ts`、`security/random-booking-number-issuer.ts`、`repositories/unfinished-bookings.ts`（顧客、スタッフ、サービス、サロンの削除が、終わっていない予約を探す）、`database/clock.ts`（書き込む時刻） |
 | ドメイン（空き枠） | `backend/packages/domain/src/models/available-slot.ts`、`schemas/available-slot.schema.ts`、`mappers/read/available-slot.mapper.ts`、`repositories/available-slot.repository.ts`、`business-logic/available-slot/`（枠を決めるのは `_shared/slots.ts`、サロンの営業時間帯は `_shared/opening.ts`、スタッフの勤務時間帯は `_shared/working.ts`、受け付けの設定は `_shared/acceptance.ts`、サロンの時計の時刻を時点に直すのは `_shared/salon-time.ts`、時間帯の計算は `_shared/time-ranges.ts`、カーソルは `_shared/page.ts`、確認の権限は `_shared/authorization.ts`）。占有の規則は、台帳の `business-logic/booking/_shared/occupancy.ts` を使う（`isOccupiedBeyondCapacity`、`conflictsOf`） |
 | インフラ（空き枠） | `backend/packages/infrastructure/src/repositories/available-slot.repository.impl.ts`（1 日の枠を決めるのに要るものを、1 つの読み取り専用のトランザクションで読む） |
-| API | `backend/packages/api/src/routes/booking/`、`routes/booking-service/`（施術明細。`/api/v1/bookings/:bookingId/services` に取り付ける）、`routes/available-slot/`（空き枠。`/api/v1/salons/:salonId/available-slots` に取り付ける） |
+| ドメイン（顧客が自分で入れる予約） | `backend/packages/domain/src/business-logic/customer-booking/`（誰が自分の予約を持つかは `_shared/access.ts`、リクエストから書く行を決めるのは `_shared/plan.ts`、リポジトリが断った理由をエラーに直すのは `_shared/refusals.ts`）、`mappers/read/customer-booking.mapper.ts`。モデル、スキーマ、リポジトリのインターフェースは、台帳と同じファイル。予約に届く範囲（`BookingReach`）は、台帳の範囲（`LedgerReach`）か、1 人の顧客の予約（`CustomerReach`）。予約番号を採り直す手順は `business-logic/booking/_shared/numbered.ts`（台帳の作成と共通） |
+| インフラ（顧客が自分で入れる予約） | `booking.repository.impl.ts` の `book`。1 日の枠を決めるのに要るものを読む問い合わせは `repositories/slot-reads.ts`（空き枠のリポジトリと共通） |
+| API | `backend/packages/api/src/routes/customer-booking/`（`/api/v1/customers/me/bookings` に取り付ける）、`backend/packages/api/src/routes/booking/`、`routes/booking-service/`（施術明細。`/api/v1/bookings/:bookingId/services` に取り付ける）、`routes/available-slot/`（空き枠。`/api/v1/salons/:salonId/available-slots` に取り付ける） |
 | DB | `backend/packages/database/sql/migrations/202611160200_bookings_rules.sql`、`202611160300_booking_status_rules.sql`、`202611160400_booking_services_tax_included.sql`、`202611160600_opening_hours_one_row_per_date.sql`（営業日カレンダーの一意インデックス） |

@@ -107,6 +107,15 @@ backend/packages/api/src/
 │   │   ├── update-customer.handler.ts            # PATCH  /api/v1/customers/:id
 │   │   ├── delete-customer.handler.ts            # DELETE /api/v1/customers/:id
 │   │   └── index.ts                              # createCustomerRouter
+│   ├── customer-booking/
+│   │   ├── _shared/
+│   │   │   ├── types.ts            # the response body types
+│   │   │   └── index.ts            # re-exports the file above, and BookingParams, bookingLinks and decodeBookingSearchQuery of routes/booking/_shared
+│   │   ├── list-customer-bookings.handler.ts     # GET  /api/v1/customers/me/bookings
+│   │   ├── create-customer-booking.handler.ts    # POST /api/v1/customers/me/bookings
+│   │   ├── get-customer-booking.handler.ts       # GET  /api/v1/customers/me/bookings/:id
+│   │   ├── cancel-customer-booking.handler.ts    # POST /api/v1/customers/me/bookings/:id/cancel
+│   │   └── index.ts                              # createCustomerBookingRouter
 │   ├── customer-preferences/
 │   │   ├── _shared/
 │   │   │   ├── types.ts            # CustomerPreferencesParams, and the response body types
@@ -460,6 +469,8 @@ Express tries the routes in the order in which they were registered, so `/bulk` 
 
 `routes/available-slot/index.ts` exports `createAvailableSlotRouter(dependencies, authenticated)` with two routes: `GET /` and `POST /check`. The slots are below a salon (`/salons/:salonId/available-slots`), so the router is created with `Router({ mergeParams: true })`. The check is a `POST` at a path of its own and not an action on a stored resource: it takes a body and answers a question. Neither operation is public, so both handlers receive `authenticated`.
 
+`routes/customer-booking/index.ts` exports `createCustomerBookingRouter(dependencies, authenticated)` with four routes: `GET /`, `POST /`, `GET /:id` and `POST /:id/cancel`. It is a plain `Router()` mounted at `/customers/me/bookings`, before the routers of the customers. A customer's own bookings are rows of the booking ledger, so the handlers take what is the same from `routes/booking/_shared` (`BookingParams`, `bookingLinks`, `decodeBookingSearchQuery`), which their own `_shared/index.ts` re-exports; only the response body types are their own. The links are built from where the router is mounted (`req.baseUrl`): `self` is `/api/v1/customers/me/bookings/{id}` and `list` is `/api/v1/customers/me/bookings`. The create passes the `actor`, `req.body` and where the request came from (`req.ip`, the `User-Agent` header), and answers 201 with a `Location` header. There is no update, no delete and no reschedule: those are operations of the ledger. No operation is public, so every handler receives `authenticated`, and the use cases decide who has bookings of their own: a customer account.
+
 `routes/customer-preferences/index.ts` exports two factories, because the preferences of a customer are reached in two ways. `createCustomerPreferencesRouter(dependencies, authenticated)` has two routes, `GET /` and `PATCH /`, is mounted below a customer of the ledger (`/customers/:id/preferences`) and created with `Router({ mergeParams: true })`; its handlers declare `CustomerPreferencesParams` (`routes/customer-preferences/_shared/types.ts`). `createOwnCustomerPreferencesRouter(dependencies, authenticated)` has the same two routes and is a plain `Router()` mounted at `/customers/me/preferences`. A customer has one set of preferences, and has it whether a row is stored or not, so neither router has a route with an ID of its own, a `POST` or a `DELETE`. No operation is public, so every handler receives `authenticated`.
 
 `routes/staff/index.ts` exports `createStaffRouter(dependencies, authenticated)` with the same five routes as the salon router. It is mounted below a salon (`/salons/:salonId/staff`) and created with `Router({ mergeParams: true })`, like the routers of the service categories and of the services; its handlers declare `SalonParams`, or `StaffParams` (`routes/staff/_shared/types.ts`) for the routes with an `:id`. No operation of the staff ledger is public, so every handler receives `authenticated`, as in the customer router.
@@ -608,7 +619,18 @@ Express tries the routes in the order in which they were registered, so `/bulk` 
   const customerPreferencesDependencies = {
     customerPreferencesRepository: new CustomerPreferencesRepository(database),
   }
+  const bookingDependencies = {
+    bookingRepository: new BookingRepository(database),
+    bookingNumberIssuer: new RandomBookingNumberIssuer(),
+  }
   // "me" first: the router below it would take it for the ID of a customer.
+  app.use(
+    `${API_BASE_PATH}/customers/me/bookings`,
+    createCustomerBookingRouter(
+      { ...bookingDependencies, clock },
+      authenticated,
+    ),
+  )
   app.use(
     `${API_BASE_PATH}/customers/me/preferences`,
     createOwnCustomerPreferencesRouter(
@@ -630,10 +652,6 @@ Express tries the routes in the order in which they were registered, so `/bulk` 
       authenticated,
     ),
   )
-  const bookingDependencies = {
-    bookingRepository: new BookingRepository(database),
-    bookingNumberIssuer: new RandomBookingNumberIssuer(),
-  }
   app.use(
     `${API_BASE_PATH}/bookings/:bookingId/services`,
     createBookingServiceRouter(bookingDependencies, authenticated),
@@ -647,7 +665,7 @@ Express tries the routes in the order in which they were registered, so `/bulk` 
   app.use(errorHandler)
 ```
 
-The order matters. Every request gets its ID and logger first. The probes are answered before the rate limit, so monitoring is never throttled. The body is parsed before the domain routers. The two handlers at the end turn whatever is left over into problem details. The router of a new domain is mounted next to the salon router, and receives the same `authenticated` if any of its operations is not public. The router of what belongs to a salon is mounted below the salon, with the parameter in the mount path, as the routers of the service categories, of the services and of the staff ledger are. It is given the salon repository of the salon router next to its own, because its use cases ask whether the salon exists. The router of what belongs to a record of a salon is mounted below that record in the same way: the router of the staff schedules has both parameters in its mount path (`/salons/:salonId/staff/:id/schedules`), and so have the routers of the staff invitations (`/salons/:salonId/staff/:id/invitation`) and of the staff accounts (`/salons/:salonId/staff/:id/account`). The two routers of the staff invitations are given one object of dependencies, which takes the password hasher, the token issuer, the mailer and the clock from those of the authentication: an invitation is a mailed token, and accepting it stores a password. The one for whoever holds a token receives `authenticated` too, for its one route that needs a signed-in user. The router of the staff accounts needs none of that: it is given its repository and the salon repository. The router of the staff profiles is mounted at `/staff-profiles` and receives `authenticated` for the two routes of a staff member's own profile; its list and its get are public. The router of the customer ledger is mounted at `/customers`, because a customer belongs to no salon. The two routers of the preferences of a customer are mounted at their full paths (`/customers/me/preferences` and `/customers/:id/preferences`), before the router of the ledger, and are given one object of dependencies, which holds their repository and nothing else. The one of `/me` comes first, because the other would take `me` for the ID of a customer. The use cases that write a customer need the current time, so the router is given the `clock` that the authentication use cases have: `createApp` builds one and hands it to both. The router of the booking ledger is mounted at `/bookings` and is given its repository and what issues the booking numbers (`RandomBookingNumberIssuer`); it does not need the salon repository, because the repository of the bookings looks up the salon, with everything else a booking refers to, in the transaction that writes the booking. The router of the service lines of a booking is mounted below a booking, at its full path (`/bookings/:bookingId/services`), before the router of the ledger, and is given the same object of dependencies: a line is written through the repository of the bookings. The router of the available slots is mounted below a salon (`/salons/:salonId/available-slots`) and is given its repository, the salon repository, by which the check finds out whether the salon of the path exists, and the clock: a slot begins after now.
+The order matters. Every request gets its ID and logger first. The probes are answered before the rate limit, so monitoring is never throttled. The body is parsed before the domain routers. The two handlers at the end turn whatever is left over into problem details. The router of a new domain is mounted next to the salon router, and receives the same `authenticated` if any of its operations is not public. The router of what belongs to a salon is mounted below the salon, with the parameter in the mount path, as the routers of the service categories, of the services and of the staff ledger are. It is given the salon repository of the salon router next to its own, because its use cases ask whether the salon exists. The router of what belongs to a record of a salon is mounted below that record in the same way: the router of the staff schedules has both parameters in its mount path (`/salons/:salonId/staff/:id/schedules`), and so have the routers of the staff invitations (`/salons/:salonId/staff/:id/invitation`) and of the staff accounts (`/salons/:salonId/staff/:id/account`). The two routers of the staff invitations are given one object of dependencies, which takes the password hasher, the token issuer, the mailer and the clock from those of the authentication: an invitation is a mailed token, and accepting it stores a password. The one for whoever holds a token receives `authenticated` too, for its one route that needs a signed-in user. The router of the staff accounts needs none of that: it is given its repository and the salon repository. The router of the staff profiles is mounted at `/staff-profiles` and receives `authenticated` for the two routes of a staff member's own profile; its list and its get are public. The router of the customer ledger is mounted at `/customers`, because a customer belongs to no salon. The two routers of the preferences of a customer are mounted at their full paths (`/customers/me/preferences` and `/customers/:id/preferences`), before the router of the ledger, and are given one object of dependencies, which holds their repository and nothing else. The one of `/me` comes first, because the other would take `me` for the ID of a customer. The use cases that write a customer need the current time, so the router is given the `clock` that the authentication use cases have: `createApp` builds one and hands it to both. The router of the booking ledger is mounted at `/bookings` and is given its repository and what issues the booking numbers (`RandomBookingNumberIssuer`); it does not need the salon repository, because the repository of the bookings looks up the salon, with everything else a booking refers to, in the transaction that writes the booking. The router of the service lines of a booking is mounted below a booking, at its full path (`/bookings/:bookingId/services`), before the router of the ledger, and is given the same object of dependencies: a line is written through the repository of the bookings. The router of the available slots is mounted below a salon (`/salons/:salonId/available-slots`) and is given its repository, the salon repository, by which the check finds out whether the salon of the path exists, and the clock: a slot begins after now. The router of a customer's own bookings is mounted at its full path (`/customers/me/bookings`), before the routers of the customers, which would take `me` for an ID, and is given the dependencies of the booking ledger and the clock: a customer's booking is a row of the ledger, and it is taken only for a slot that begins after now.
 
 ## Shared Helpers
 

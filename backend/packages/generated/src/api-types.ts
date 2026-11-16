@@ -1136,6 +1136,70 @@ export interface paths {
         patch: operations["CustomerProfile_update"];
         trace?: never;
     };
+    "/api/v1/customers/me/bookings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the signed-in customer's bookings
+         * @description ログインしている顧客の予約を、開始日時の早い順に一覧取得します。どのステータスの予約も、どのサロンの予約も含みます。cursorが、自分の予約を指していない場合は400を返します。
+         */
+        get: operations["CustomerBookings_list"];
+        put?: never;
+        /**
+         * Book an available slot as the signed-in customer
+         * @description 空き枠を1つ指定して、予約を入れます。作成した予約のステータスはpendingで、サロンが確定します。入れられるのは、空き枠の一覧(GET /api/v1/salons/{salonId}/available-slots)が、その時点で返す枠だけです。staffIdとstartTimeが、そのサービスの、その日(サロンのタイムゾーンでのstartTimeの日付)の空き枠でない場合は409を返します(サロンの営業時間、スタッフの勤務、サロン・サービス・スタッフの受付の設定、現在より後であること、スタッフの占有を、空き枠の一覧と同じ規則で確かめます)。施術時間と料金は、サービスの登録内容から決まります。顧客レコードが予約を受け付けられない状態(isActive が false、customerStatus が inactive か blacklisted)の場合と、自分のほかの予約(cancelledとno_showを除く)と時間が重なる場合も409を返します。salonId・serviceId・staffIdが存在しない(削除済みを含む)場合や、サービス・スタッフがsalonIdのサロンのものではない場合は400を、サロンのタイムゾーンを名前として読めない場合は409を返します。
+         */
+        post: operations["CustomerBookings_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/customers/me/bookings/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get one of the signed-in customer's bookings
+         * @description ログインしている顧客の予約を1件、施術明細とともに取得します。ほかの顧客の予約には404を返します。
+         */
+        get: operations["CustomerBookings_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/customers/me/bookings/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancel one of the signed-in customer's bookings
+         * @description ログインしている顧客の、draft・pending・confirmedの予約をキャンセル(cancelled)します。キャンセルできるのは、予約の開始日時より前だけです。開始日時を過ぎた予約と、それ以外のステータスの予約には409を返します(来店しなかった予約は、サロンが記録します)。キャンセル料は、料金を決める規則が未定義のため、常に0です。キャンセルした予約は、スタッフの時間を確保しません。顧客のキャンセル回数(cancellationCount)を、顧客の予約から数え直します。ほかの顧客の予約には404を返します。
+         */
+        post: operations["CustomerBookings_cancel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/customers/me/preferences": {
         parameters: {
             query?: never;
@@ -4055,6 +4119,176 @@ export interface components {
         "Models.CustomerBatchGetRequest": {
             /** @description 取得する顧客のID一覧。1件以上100件以下で指定する */
             ids: components["schemas"]["Models.CustomerId"][];
+        };
+        /**
+         * @description 顧客本人の予約作成リクエスト - 空き枠の一覧が返した枠を1つ指定する。全項目のキーが必須。
+         *     予約するのは1つのサービスで、施術時間・料金はサービスの登録内容から決まる。作成した予約のステータスは pending になる
+         */
+        "Models.CustomerBookingCreateRequest": {
+            /** @description 予約するサロンのID */
+            salonId: components["schemas"]["Models.SalonId"];
+            /** @description 予約する施術メニューのID。salonId のサロンのサービスを指定する */
+            serviceId: components["schemas"]["Models.ServiceId"];
+            /** @description 担当するスタッフのID。空き枠の staffId を指定する */
+            staffId: components["schemas"]["Models.StaffId"];
+            /**
+             * Format: date-time
+             * @description 開始日時 (UTC)。空き枠の startTime を指定する。分単位(秒と小数は0)
+             */
+            startTime: string;
+            /** @description サロンに伝える要望や特記事項。要望がない場合はnull */
+            customerRequest: string | null;
+        };
+        /**
+         * @description 顧客本人に返す予約 - bookings テーブルのうち、顧客に見せるカラムと、施術明細を返す。
+         *     プロパティ名と null 許可は DB カラムと一致させている。サロン内のメモ(internalNotes)、サロンの記録
+         *     (source、reminderSent、reminderSentAt、actualStartTime、actualEndTime)、誰がキャンセルしたかとその理由
+         *     (cancelledBy、cancellationReason)は返さない。customerId は、本人のものなので返さない
+         */
+        "Models.CustomerBookingResponse": {
+            /** @description 予約を一意に識別するID */
+            id: components["schemas"]["Models.BookingId"];
+            /** @description 予約番号。BK-XXXX-XXXX の形式で、サロンへの問い合わせに使う */
+            bookingNumber: string;
+            /** @description 予約したサロンのID */
+            salonId: components["schemas"]["Models.SalonId"];
+            /** @description 予約の担当スタッフのID */
+            staffId: components["schemas"]["Models.StaffId"];
+            /**
+             * Format: date
+             * @description 来店日。startTime をサロンのタイムゾーンで表した日付
+             */
+            bookingDate: string;
+            /**
+             * Format: date-time
+             * @description 予約の開始予定日時 (UTC)。施術明細の最も早い開始日時
+             */
+            startTime: string;
+            /**
+             * Format: date-time
+             * @description 予約の終了予定日時 (UTC)。施術明細の最も遅い終了日時
+             */
+            endTime: string;
+            /**
+             * Format: int32
+             * @description 予約全体の所要時間（分）。startTime から endTime までの分数
+             */
+            duration: number;
+            /** @description 予約の現在ステータス。本人が入れた予約は pending で始まり、サロンが確定(confirmed)する */
+            status: components["schemas"]["Models.BookingStatusType"];
+            /**
+             * Format: int32
+             * @description 小計。施術明細の料金(price)の合計
+             */
+            subtotal: number;
+            /**
+             * Format: int32
+             * @description 割引額の合計。施術明細の割引額(discountAmount)の合計
+             */
+            discountAmount: number;
+            /**
+             * Format: int32
+             * @description 料金に加える消費税額。税込価格のサービスの消費税は料金に含まれており、ここには入らない
+             */
+            taxAmount: number;
+            /**
+             * Format: int32
+             * @description 請求金額 (subtotal − discountAmount + taxAmount)
+             */
+            totalAmount: number;
+            /**
+             * Format: int32
+             * @description 事前に受領する内金・デポジット金額。未設定の場合はnull
+             */
+            depositAmount: number | null;
+            /**
+             * Format: int32
+             * @description この予約の支払いで利用したポイント数。未設定の場合はnull
+             */
+            pointsUsed: number | null;
+            /**
+             * Format: int32
+             * @description この予約で獲得したポイント数。未設定の場合はnull
+             */
+            pointsEarned: number | null;
+            /** @description 予約のときに伝えた要望や特記事項。要望がない場合はnull */
+            customerRequest: string | null;
+            /**
+             * Format: date-time
+             * @description 予約がキャンセルされた日時。キャンセルされていない場合はnull
+             */
+            cancelledAt: string | null;
+            /**
+             * Format: int32
+             * @description キャンセル料。キャンセルされていない場合はnull。キャンセルされた予約では、料金を決める規則が未定義のため常に0
+             */
+            cancellationFee: number | null;
+            /**
+             * Format: date-time
+             * @description 予約の施術が完了した日時。完了していない場合はnull
+             */
+            completedAt: string | null;
+            /** @description 施術明細の一覧。sortOrder の昇順で並ぶ。1件以上 */
+            services: components["schemas"]["Models.CustomerBookingServiceResponse"][];
+            /**
+             * Format: date-time
+             * @description レコード作成日時
+             */
+            createdAt: string;
+            /**
+             * Format: date-time
+             * @description レコード最終更新日時
+             */
+            updatedAt: string;
+        };
+        /**
+         * @description 顧客本人に返す施術明細 - booking_services テーブルの1行のうち、顧客に見せるカラム。
+         *     サロン内のメモ(notes)と、施術の完了の記録(isCompleted、completedAt)は返さない
+         */
+        "Models.CustomerBookingServiceResponse": {
+            /** @description 施術明細を一意に識別するID */
+            id: components["schemas"]["Models.BookingServiceId"];
+            /** @description 予約された施術メニューのID */
+            serviceId: components["schemas"]["Models.ServiceId"];
+            /** @description この施術を担当するスタッフのID。担当スタッフが決まっていない場合はnull */
+            staffId: (string & components["schemas"]["Models.StaffId"]) | null;
+            /**
+             * Format: date-time
+             * @description 施術開始予定日時 (UTC)
+             */
+            startTime: string;
+            /**
+             * Format: date-time
+             * @description 施術終了予定日時 (UTC)
+             */
+            endTime: string;
+            /**
+             * Format: int32
+             * @description 施術時間（分）。明細を入れた時点のサービスの施術時間
+             */
+            duration: number;
+            /**
+             * Format: int32
+             * @description 施術料金。明細を入れた時点のサービスの料金
+             */
+            price: number;
+            /**
+             * Format: int32
+             * @description 施術料金からの割引額。明細を入れた時点のサービスの割引後料金から算出する
+             */
+            discountAmount: number;
+            /**
+             * Format: int32
+             * @description 割引適用後の施術料金 (price − discountAmount)
+             */
+            finalPrice: number;
+            /** @description 施術料金が消費税を含むかどうか。false の明細の finalPrice には、予約の taxAmount の消費税が加わる */
+            taxIncluded: boolean;
+            /**
+             * Format: int32
+             * @description 予約内での表示順序
+             */
+            sortOrder: number;
         };
         /**
          * @description 顧客一括登録リクエスト - 複数の顧客をまとめて登録する。
@@ -9453,6 +9687,16 @@ export interface components {
         "Models.CustomerAuditEntrySearchRequest.cursor": string;
         /** @description 1ページあたりの取得件数上限 (1〜100) */
         "Models.CustomerAuditEntrySearchRequest.limit": number;
+        /** @description 来店日(bookingDate)の範囲の開始日。この日以降の予約に一致する。bookingDateTo より後の日付は指定できない */
+        "Models.CustomerBookingSearchRequest.bookingDateFrom": string;
+        /** @description 来店日(bookingDate)の範囲の終了日。この日以前の予約に一致する */
+        "Models.CustomerBookingSearchRequest.bookingDateTo": string;
+        /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+        "Models.CustomerBookingSearchRequest.cursor": string;
+        /** @description 1ページあたりの取得件数上限 (1〜100) */
+        "Models.CustomerBookingSearchRequest.limit": number;
+        /** @description ステータスによる絞り込み(完全一致) */
+        "Models.CustomerBookingSearchRequest.status": components["schemas"]["Models.BookingStatusType"];
         /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
         "Models.CustomerSearchRequest.cursor": string;
         /** @description 顧客ステータスによる絞り込み(完全一致) */
@@ -15946,6 +16190,458 @@ export interface operations {
             };
             /** @description The server cannot find the requested resource. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
+             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+             */
+            429: {
+                headers: {
+                    /** @description 再試行できるようになるまでの秒数。 */
+                    "Retry-After": number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+        };
+    };
+    CustomerBookings_list: {
+        parameters: {
+            query?: {
+                /** @description 1ページあたりの取得件数上限 (1〜100) */
+                limit?: components["parameters"]["Models.CustomerBookingSearchRequest.limit"];
+                /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+                cursor?: components["parameters"]["Models.CustomerBookingSearchRequest.cursor"];
+                /** @description ステータスによる絞り込み(完全一致) */
+                status?: components["parameters"]["Models.CustomerBookingSearchRequest.status"];
+                /** @description 来店日(bookingDate)の範囲の開始日。この日以降の予約に一致する。bookingDateTo より後の日付は指定できない */
+                bookingDateFrom?: components["parameters"]["Models.CustomerBookingSearchRequest.bookingDateFrom"];
+                /** @description 来店日(bookingDate)の範囲の終了日。この日以前の予約に一致する */
+                bookingDateTo?: components["parameters"]["Models.CustomerBookingSearchRequest.bookingDateTo"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The request has succeeded. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description 現在ページで取得したデータ配列。サロン一覧や予約履歴の実データを格納する。 */
+                        data: components["schemas"]["Models.CustomerBookingResponse"][];
+                        /** @description ページング状態を示すメタ情報。次ページの有無やカーソル値を含む。 */
+                        meta: components["schemas"]["Models.PaginationMeta"];
+                        /** @description 関連するページ遷移リンク。HATEOAS 連携や外部連携向けに利用する。 */
+                        links: components["schemas"]["Models.PaginationLinks"];
+                    };
+                };
+            };
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description 認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
+             *     ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
+             *     WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+             */
+            401: {
+                headers: {
+                    /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
+                    "WWW-Authenticate": string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description 認証されているが、この操作を行う権限がない (403)。 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The server cannot find the requested resource. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
+             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+             */
+            429: {
+                headers: {
+                    /** @description 再試行できるようになるまでの秒数。 */
+                    "Retry-After": number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+        };
+    };
+    CustomerBookings_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Models.CustomerBookingCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description The request has succeeded and a new resource has been created as a result. */
+            201: {
+                headers: {
+                    Location: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        data: components["schemas"]["Models.CustomerBookingResponse"];
+                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        meta: components["schemas"]["Models.ResponseMeta"] | null;
+                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        links: {
+                            [key: string]: string;
+                        } | null;
+                    };
+                };
+            };
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description 認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
+             *     ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
+             *     WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+             */
+            401: {
+                headers: {
+                    /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
+                    "WWW-Authenticate": string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description 認証されているが、この操作を行う権限がない (403)。 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The server cannot find the requested resource. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The request conflicts with the current state of the server. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
+             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+             */
+            429: {
+                headers: {
+                    /** @description 再試行できるようになるまでの秒数。 */
+                    "Retry-After": number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+        };
+    };
+    CustomerBookings_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["schemas"]["Models.BookingId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The request has succeeded. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        data: components["schemas"]["Models.CustomerBookingResponse"];
+                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        meta: components["schemas"]["Models.ResponseMeta"] | null;
+                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        links: {
+                            [key: string]: string;
+                        } | null;
+                    };
+                };
+            };
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description 認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
+             *     ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
+             *     WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+             */
+            401: {
+                headers: {
+                    /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
+                    "WWW-Authenticate": string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description 認証されているが、この操作を行う権限がない (403)。 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The server cannot find the requested resource. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
+             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+             */
+            429: {
+                headers: {
+                    /** @description 再試行できるようになるまでの秒数。 */
+                    "Retry-After": number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+        };
+    };
+    CustomerBookings_cancel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["schemas"]["Models.BookingId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Models.BookingCancelRequest"];
+            };
+        };
+        responses: {
+            /** @description The request has succeeded. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        data: components["schemas"]["Models.CustomerBookingResponse"];
+                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        meta: components["schemas"]["Models.ResponseMeta"] | null;
+                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        links: {
+                            [key: string]: string;
+                        } | null;
+                    };
+                };
+            };
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description 認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
+             *     ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
+             *     WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+             */
+            401: {
+                headers: {
+                    /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
+                    "WWW-Authenticate": string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description 認証されているが、この操作を行う権限がない (403)。 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The server cannot find the requested resource. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The request conflicts with the current state of the server. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
