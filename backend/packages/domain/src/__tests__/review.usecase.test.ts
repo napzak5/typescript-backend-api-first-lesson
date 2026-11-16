@@ -7,6 +7,7 @@ import {
   GetSalonReviewSummaryUseCase,
   GetStaffReviewSummaryUseCase,
   ListReviewsUseCase,
+  MarkReviewHelpfulUseCase,
   type ReviewUseCaseDependencies,
   UpdateReviewUseCase,
 } from '../business-logic/review'
@@ -21,6 +22,7 @@ import type {
   ReviewChange,
   ReviewCreation,
   ReviewList,
+  ReviewMark,
   ReviewRemoval,
 } from '../repositories/review.repository'
 import { type DomainError, DomainErrors } from '../shared'
@@ -74,6 +76,9 @@ const repositoryWasNotCalled = (dependencies: ReviewUseCaseDependencies) => {
   expect(vi.mocked(create)).not.toHaveBeenCalled()
   expect(vi.mocked(update)).not.toHaveBeenCalled()
   expect(vi.mocked(dependencies.reviewRepository.delete)).not.toHaveBeenCalled()
+  expect(
+    vi.mocked(dependencies.reviewRepository.markHelpful),
+  ).not.toHaveBeenCalled()
   expect(vi.mocked(salonTally)).not.toHaveBeenCalled()
   expect(vi.mocked(staffTally)).not.toHaveBeenCalled()
 }
@@ -88,6 +93,10 @@ const updating = (outcome: ReviewChange) => ({
 
 const deleting = (outcome: ReviewRemoval) => ({
   delete: vi.fn(async () => Result.success(outcome)),
+})
+
+const marking = (outcome: ReviewMark) => ({
+  markHelpful: vi.fn(async () => Result.success(outcome)),
 })
 
 /** The accounts that are not customers with a profile. */
@@ -726,6 +735,94 @@ describe('DeleteReviewUseCase', () => {
     })
 
     expect(await remove(dependencies)).toEqual(databaseDown)
+  })
+})
+
+describe('MarkReviewHelpfulUseCase', () => {
+  const mark = (
+    dependencies: ReviewUseCaseDependencies,
+    actor: Actor = actors.customer,
+    id: unknown = REVIEW_ID,
+  ) => new MarkReviewHelpfulUseCase(dependencies).execute(actor, id)
+
+  it('marks the review as the signed-in customer and answers how many customers did', async () => {
+    const dependencies = reviewDependencies()
+
+    expect(await mark(dependencies)).toEqual({
+      type: 'success',
+      data: { helpfulCount: 3 },
+    })
+    expect(dependencies.reviewRepository.markHelpful).toHaveBeenCalledWith(
+      REVIEW_ID,
+      CUSTOMER_ID,
+    )
+  })
+
+  it('looks for the review by its ID in lower case', async () => {
+    const dependencies = reviewDependencies()
+
+    expect(
+      await mark(dependencies, actors.customer, REVIEW_ID.toUpperCase()),
+    ).toEqual({ type: 'success', data: { helpfulCount: 3 } })
+    expect(dependencies.reviewRepository.markHelpful).toHaveBeenCalledWith(
+      REVIEW_ID,
+      CUSTOMER_ID,
+    )
+  })
+
+  it.each(notReviewers)(
+    'refuses %s before the ID is read',
+    async (_, actor) => {
+      const dependencies = reviewDependencies()
+
+      expect(await mark(dependencies, actor, 'not-a-uuid')).toEqual({
+        type: 'error',
+        error: DomainErrors.forbidden(),
+      })
+      repositoryWasNotCalled(dependencies)
+    },
+  )
+
+  it('refuses an ID that is not a UUID without asking the repository', async () => {
+    const dependencies = reviewDependencies()
+
+    const marked = await mark(dependencies, actors.customer, 'latest')
+
+    expect(rulesOf(marked)).toEqual(['id:invalid_format'])
+    expect(validationMessageOf(marked)).toBe('Invalid review ID')
+    repositoryWasNotCalled(dependencies)
+  })
+
+  it('answers a review that is not there, or of a deleted salon, as not found', async () => {
+    const dependencies = reviewDependencies(marking({ type: 'reviewNotFound' }))
+
+    expect(await mark(dependencies)).toEqual({
+      type: 'error',
+      error: DomainErrors.notFound('Review', REVIEW_ID),
+    })
+  })
+
+  it.each<[string, ReviewMark]>([
+    ['a review of the customer', { type: 'ownReview' }],
+    [
+      'a customer who was deleted behind the link of the account',
+      { type: 'reviewerNotFound' },
+    ],
+  ])('refuses %s as forbidden', async (_, outcome) => {
+    const dependencies = reviewDependencies(marking(outcome))
+
+    expect(await mark(dependencies)).toEqual({
+      type: 'error',
+      error: DomainErrors.forbidden(),
+    })
+  })
+
+  it('passes a failure of the database on', async () => {
+    const dependencies = reviewDependencies({
+      markHelpful: vi.fn(async () => databaseDown),
+    })
+
+    expect(await mark(dependencies)).toEqual(databaseDown)
   })
 })
 
