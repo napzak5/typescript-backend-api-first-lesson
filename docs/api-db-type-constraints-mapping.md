@@ -317,6 +317,20 @@ DB にも TypeSpec にも表せない規則（空白だけの文字列を拒否�
 
 部分一意インデックス `customer_points_reference_unique`（1 つの記録への `earned` は 1 件、`used` も 1 件）は、`planPoints` が、顧客をロックしたあとに確かめる規則（409）の裏付けである。顧客の残高が最新の取引の `balance` と等しいことは、行とテーブルをまたぐので、CHECK 制約では書けない。ポイント取引を書くトランザクションが、顧客の行をロックして、取引と残高を一緒に書いて保証する（[ポイント台帳](./points.md#同時に届いたリクエスト)）。
 
+`reviews` の CHECK 制約は、レビューの 1 行で確かめられる規則である（`backend/packages/database/sql/migrations/202611171000_review_rules.sql`）。投稿のリクエストが書く値にかかるものは、スキーマが先に確かめ、違反は 400 になる。
+
+| CHECK 制約 | TypeSpec | 規則を確かめる場所 |
+|---|---|---|
+| `reviews_ratings_in_range`（`overallRating` は 1〜5、ほかの評価は NULL か 1〜5） | 6 つの評価に `@minValue(1)` と `@maxValue(5)` | スキーマの評価（`rating`: 1〜5 の整数） |
+| `reviews_counts_not_negative`（`helpfulCount` と `reportCount` は 0 以上） | レスポンスの `@doc`（累積回数） | リクエストからは書けない（作成では既定の 0） |
+| `reviews_owner_response_pair`（`ownerResponse` と `ownerRespondedAt` は、両方あるか、両方 NULL） | 両方の `@doc`（未返信なら両方 null） | リクエストからは書けない。返信を書くオペレーションはない |
+| `reviews_image_urls_array`（`imageUrls` は JSON の配列。カラムは NOT NULL） | `imageUrls: string[]`（null にならない） | スキーマの `imageUrls`（URL の配列、10 個まで、重複なし）と、読み出しマッパー |
+| `salons_review_count_not_negative`（`reviewCount >= 0`） | サロンのレスポンスの `@doc`（レビューの件数） | リクエストからは書けない。レビューを書くトランザクションが、件数を数えて書く |
+| `salons_rating_in_range`（`rating` は NULL か 1〜5） | サロンのレスポンスの `@doc`（`overallRating` の平均） | 同上。平均を小数第 2 位に丸めて書く |
+| `salons_rating_of_reviews`（`reviewCount` が 0 のときだけ `rating` が NULL） | サロンのレスポンスの `@doc`（レビュー未登録なら null） | 同上。レビューがなければ、平均は NULL、件数は 0 |
+
+一意制約 `reviews_booking_unique`（1 つの予約へのレビューは 1 件）は、`planReview` が、サロンをロックしたあとに確かめる規則（409）の裏付けである。サロンの `rating` と `reviewCount` がレビューから数えた値と等しいことは、テーブルをまたぐので、CHECK 制約では書けない。レビューを書くトランザクションが、サロンの行をロックして、レビューと一緒に書いて保証する（[レビュー](./reviews.md#同時に届いたリクエスト)）。
+
 ## `pnpm check:api-db`
 
 生成済みの OpenAPI ドキュメント（`specs/tsp-output/@typespec/openapi3/generated/openapi.yaml`）と Drizzle スキーマ（`schema.ts`）を比べ、API モデルがテーブルと食い違っていれば失敗する。DB は使わない。CI の `quality` ジョブと `make ci-check` で実行される。
