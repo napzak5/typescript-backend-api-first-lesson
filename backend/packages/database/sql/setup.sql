@@ -405,10 +405,9 @@ CREATE TABLE "products" (
 	"retailPrice" integer,
 	"salonPrice" integer,
 	"unit" varchar(20) NOT NULL,
-	"minimumStock" numeric(10, 2) DEFAULT '0',
+	"minimumStock" numeric(10, 2) DEFAULT '0' NOT NULL,
 	"maximumStock" numeric(10, 2),
 	"reorderPoint" numeric(10, 2),
-	"supplierId" uuid,
 	"supplierProductCode" varchar(100),
 	"leadTimeDays" integer,
 	"imageUrl" varchar(500),
@@ -423,7 +422,11 @@ CREATE TABLE "products" (
 	"deletedAt" timestamp with time zone,
 	"createdAt" timestamp with time zone DEFAULT now() NOT NULL,
 	"updatedAt" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "products_code_salon_unique" UNIQUE("salonId","productCode")
+	"supplier" varchar(255),
+	CONSTRAINT "products_expiry_months_positive" CHECK (("expiryMonths" IS NULL) OR ("expiryMonths" >= 1)),
+	CONSTRAINT "products_lead_time_not_negative" CHECK (("leadTimeDays" IS NULL) OR ("leadTimeDays" >= 0)),
+	CONSTRAINT "products_prices_not_negative" CHECK ((("purchasePrice" IS NULL) OR ("purchasePrice" >= 0)) AND (("retailPrice" IS NULL) OR ("retailPrice" >= 0)) AND (("salonPrice" IS NULL) OR ("salonPrice" >= 0))),
+	CONSTRAINT "products_stock_levels" CHECK (("minimumStock" >= (0)::numeric) AND (("reorderPoint" IS NULL) OR ("reorderPoint" >= "minimumStock")) AND (("maximumStock" IS NULL) OR ("maximumStock" >= "minimumStock")) AND (("reorderPoint" IS NULL) OR ("maximumStock" IS NULL) OR ("reorderPoint" <= "maximumStock")))
 );
 
 CREATE TABLE "review_helpful_votes" (
@@ -972,6 +975,7 @@ CREATE INDEX "idx_products_barcode" ON "products" USING btree ("barcode" text_op
 CREATE INDEX "idx_products_deleted_at" ON "products" USING btree ("deletedAt" timestamptz_ops);
 CREATE INDEX "idx_products_product_code" ON "products" USING btree ("productCode" text_ops);
 CREATE INDEX "idx_products_salon_id" ON "products" USING btree ("salonId" uuid_ops);
+CREATE UNIQUE INDEX "products_code_salon_unique" ON "products" USING btree ("salonId" uuid_ops,"productCode" text_ops) WHERE ("deletedAt" IS NULL);
 CREATE INDEX "idx_review_reports_created_at" ON "review_reports" USING btree ("createdAt" timestamptz_ops,"id" uuid_ops);
 CREATE INDEX "idx_reviews_booking_id" ON "reviews" USING btree ("bookingId" uuid_ops);
 CREATE INDEX "idx_reviews_customer_id" ON "reviews" USING btree ("customerId" uuid_ops);
