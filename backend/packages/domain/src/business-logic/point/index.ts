@@ -4,6 +4,7 @@ export type {
   PointUseRequest,
 } from '../../schemas/point.schema'
 export type { PointUseCaseDependencies } from './_shared/dependencies'
+export { type PointExpiryPlan, planExpiry } from './_shared/lots'
 export {
   type PointMovement,
   type PointPlan,
@@ -14,6 +15,8 @@ export {
 } from './_shared/plan'
 export { AdjustPointsUseCase } from './adjust-points.usecase'
 export { EarnPointsUseCase } from './earn-points.usecase'
+export { ExpirePointsUseCase } from './expire-points.usecase'
+export { GetExpiringPointsUseCase } from './get-expiring-points.usecase'
 export { GetPointBalanceUseCase } from './get-point-balance.usecase'
 export {
   ListPointTransactionsUseCase,

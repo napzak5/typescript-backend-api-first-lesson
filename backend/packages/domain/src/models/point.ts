@@ -21,6 +21,15 @@ export type ApiPointAdjustRequest =
 export type ApiPointTransactionSearchRequest = NonNullable<
   operations['PointCrud_listTransactions']['parameters']['query']
 >
+export type ApiPointExpiringResponse =
+  components['schemas']['Models.PointExpiringResponse']
+export type ApiPointExpiringSearchRequest = NonNullable<
+  operations['PointCrud_getExpiring']['parameters']['query']
+>
+export type ApiPointExpireRequest =
+  components['schemas']['Models.PointExpireRequest']
+export type ApiPointExpireResponse =
+  components['schemas']['Models.PointExpireResponse']
 
 // Database types, inferred from the Drizzle schema
 export type DbPointTransaction = DeepRequired<

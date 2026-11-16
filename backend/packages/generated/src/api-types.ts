@@ -1861,7 +1861,7 @@ export interface paths {
         };
         /**
          * Get the expiring points of a customer
-         * @description 処理日から days 日以内に有効期限を迎える、顧客の獲得ポイントを集計します。
+         * @description 顧客の、有効期限が今日(UTC)から days 日後まで(その日を含む)の獲得ポイントのうち、使われずに残っているポイントを集計します。有効期限を過ぎて、まだ失効させていないポイントも含みます。管理者と、サロンの owner・manager・staff が実行できます(顧客のアカウントは403)。customerId の顧客が存在しない、または削除されている場合は404を、days が 1〜365 の整数でない場合は400を返します。
          */
         get: operations["PointCrud_getExpiring"];
         put?: never;
@@ -1923,7 +1923,7 @@ export interface paths {
         put?: never;
         /**
          * Expire points
-         * @description 有効期限を過ぎたポイントを失効させ、対象の顧客ごとに種別 expired のポイント取引を登録します。customerId に存在しない顧客を指定した場合は400を返します。
+         * @description 有効期限が processBefore より前の獲得ポイントのうち、使われずに残っているポイントを失効させます。失効させるポイントのある顧客ごとに、種別 expired のポイント取引を1件登録し、同じトランザクションで顧客の残高を減らします。管理者だけが実行できます(サロンのメンバーと顧客のアカウントは403)。processBefore が昨日(UTC)より後の日付の場合と、customerId に存在しない、または削除された顧客を指定した場合は400を返します。失効させたポイントは残っていないものとして数えるので、同じ processBefore で何度実行しても、2回目からは何も登録しません。
          */
         post: operations["PointCrud_expire"];
         delete?: never;
@@ -6571,11 +6571,11 @@ export interface components {
         };
         /** @description ポイント失効処理リクエスト - 有効期限を過ぎたポイントを失効させる対象を指定する。全項目のキーが必須 */
         "Models.PointExpireRequest": {
-            /** @description 対象顧客の ID。すべての顧客を処理する場合はnull */
+            /** @description 対象顧客の ID。削除されていないすべての顧客を処理する場合はnull */
             customerId: (string & components["schemas"]["Models.CustomerId"]) | null;
             /**
              * Format: date
-             * @description この日付より前に有効期限を迎えたポイントを失効させる。null の場合は処理を実行した日
+             * @description 有効期限がこの日付より前の獲得ポイントを失効させる。昨日(UTC)以前の日付で、null の場合は昨日(UTC)。有効期限は、その日まで使える日付で、付与は昨日(UTC)以降の有効期限を受け付けるため、どのタイムゾーンでも、有効期限の日が終わる前には失効しない
              */
             processBefore: string | null;
         };
@@ -6583,30 +6583,30 @@ export interface components {
         "Models.PointExpireResponse": {
             /**
              * Format: int32
-             * @description 登録した失効(expired)のポイント取引の件数
+             * @description 登録した失効(expired)のポイント取引の件数。ポイントを失効させた顧客の数と等しい
              */
             processedCount: number;
             /**
-             * Format: int32
-             * @description 失効させたポイントの合計
+             * Format: int64
+             * @description 失効させたポイントの合計(0 以上)。すべての顧客の合計は int32 に収まらないことがあるため int64
              */
             totalPoints: number;
         };
-        /** @description 失効予定ポイントの集計結果 - 有効期限が近い獲得ポイントの合計と、その取引の一覧 */
+        /** @description 失効予定ポイントの集計結果 - 有効期限が近い獲得ポイントのうち、使われずに残っているポイントの合計と、その獲得の取引の一覧 */
         "Models.PointExpiringResponse": {
             /** @description 対象顧客の ID */
             customerId: components["schemas"]["Models.CustomerId"];
             /**
              * Format: int32
-             * @description 期間内に失効する予定のポイント数の合計
+             * @description 有効期限が期間内(期限を過ぎて、まだ失効させていないものを含む)の獲得ポイントのうち、使われずに残っているポイント数の合計。残高を超えない
              */
             expiringPoints: number;
             /**
              * Format: date
-             * @description 期間内で最も早い有効期限。失効予定のポイントがない場合はnull
+             * @description transactions の中で最も早い有効期限。該当するポイントがない場合はnull
              */
             expirationDate: string | null;
-            /** @description 期間内に有効期限を迎える獲得ポイントの取引の一覧。expiryDate の昇順で並ぶ */
+            /** @description 使われずに残っているポイントのある、有効期限が期間内の獲得(earned)の取引の一覧。expiryDate の昇順で、同じ日付なら登録の古い順に並ぶ。各取引の points は獲得したポイント数で、残っている数ではない */
             transactions: components["schemas"]["Models.PointTransactionResponse"][];
         };
         /**

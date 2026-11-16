@@ -423,7 +423,7 @@ export const getPointCrudGetExpiringUrl = (customerId: ModelsCustomerId,
 }
 
 /**
- * 処理日から days 日以内に有効期限を迎える、顧客の獲得ポイントを集計します。
+ * 顧客の、有効期限が今日(UTC)から days 日後まで(その日を含む)の獲得ポイントのうち、使われずに残っているポイントを集計します。有効期限を過ぎて、まだ失効させていないポイントも含みます。管理者と、サロンの owner・manager・staff が実行できます(顧客のアカウントは403)。customerId の顧客が存在しない、または削除されている場合は404を、days が 1〜365 の整数でない場合は400を返します。
  * @summary Get the expiring points of a customer
  */
 export const pointCrudGetExpiring = async (customerId: ModelsCustomerId,
@@ -474,7 +474,7 @@ export type PointCrudGetExpiringQueryError = ModelsProblemDetails
 
 
 /**
- * 処理日から days 日以内に有効期限を迎える、顧客の獲得ポイントを集計します。
+ * 顧客の、有効期限が今日(UTC)から days 日後まで(その日を含む)の獲得ポイントのうち、使われずに残っているポイントを集計します。有効期限を過ぎて、まだ失効させていないポイントも含みます。管理者と、サロンの owner・manager・staff が実行できます(顧客のアカウントは403)。customerId の顧客が存在しない、または削除されている場合は404を、days が 1〜365 の整数でない場合は400を返します。
  * @summary Get the expiring points of a customer
  */
 export function usePointCrudGetExpiring<TData = Awaited<ReturnType<typeof pointCrudGetExpiring>>, TError = ModelsProblemDetails>(
@@ -489,7 +489,7 @@ export function usePointCrudGetExpiring<TData = Awaited<ReturnType<typeof pointC
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 処理日から days 日以内に有効期限を迎える、顧客の獲得ポイントを集計します。
+ * 顧客の、有効期限が今日(UTC)から days 日後まで(その日を含む)の獲得ポイントのうち、使われずに残っているポイントを集計します。有効期限を過ぎて、まだ失効させていないポイントも含みます。管理者と、サロンの owner・manager・staff が実行できます(顧客のアカウントは403)。customerId の顧客が存在しない、または削除されている場合は404を、days が 1〜365 の整数でない場合は400を返します。
  * @summary Get the expiring points of a customer
  */
 export function usePointCrudGetExpiring<TData = Awaited<ReturnType<typeof pointCrudGetExpiring>>, TError = ModelsProblemDetails>(
@@ -504,7 +504,7 @@ export function usePointCrudGetExpiring<TData = Awaited<ReturnType<typeof pointC
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 処理日から days 日以内に有効期限を迎える、顧客の獲得ポイントを集計します。
+ * 顧客の、有効期限が今日(UTC)から days 日後まで(その日を含む)の獲得ポイントのうち、使われずに残っているポイントを集計します。有効期限を過ぎて、まだ失効させていないポイントも含みます。管理者と、サロンの owner・manager・staff が実行できます(顧客のアカウントは403)。customerId の顧客が存在しない、または削除されている場合は404を、days が 1〜365 の整数でない場合は400を返します。
  * @summary Get the expiring points of a customer
  */
 export function usePointCrudGetExpiring<TData = Awaited<ReturnType<typeof pointCrudGetExpiring>>, TError = ModelsProblemDetails>(
@@ -513,7 +513,7 @@ export function usePointCrudGetExpiring<TData = Awaited<ReturnType<typeof pointC
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 処理日から days 日以内に有効期限を迎える、顧客の獲得ポイントを集計します。
+ * 顧客の、有効期限が今日(UTC)から days 日後まで(その日を含む)の獲得ポイントのうち、使われずに残っているポイントを集計します。有効期限を過ぎて、まだ失効させていないポイントも含みます。管理者と、サロンの owner・manager・staff が実行できます(顧客のアカウントは403)。customerId の顧客が存在しない、または削除されている場合は404を、days が 1〜365 の整数でない場合は400を返します。
  * @summary Get the expiring points of a customer
  */
 export function usePointCrudGetExpiring<TData = Awaited<ReturnType<typeof pointCrudGetExpiring>>, TError = ModelsProblemDetails>(
@@ -907,7 +907,7 @@ export const getPointCrudExpireUrl = () => {
 }
 
 /**
- * 有効期限を過ぎたポイントを失効させ、対象の顧客ごとに種別 expired のポイント取引を登録します。customerId に存在しない顧客を指定した場合は400を返します。
+ * 有効期限が processBefore より前の獲得ポイントのうち、使われずに残っているポイントを失効させます。失効させるポイントのある顧客ごとに、種別 expired のポイント取引を1件登録し、同じトランザクションで顧客の残高を減らします。管理者だけが実行できます(サロンのメンバーと顧客のアカウントは403)。processBefore が昨日(UTC)より後の日付の場合と、customerId に存在しない、または削除された顧客を指定した場合は400を返します。失効させたポイントは残っていないものとして数えるので、同じ processBefore で何度実行しても、2回目からは何も登録しません。
  * @summary Expire points
  */
 export const pointCrudExpire = async (modelsPointExpireRequest: ModelsPointExpireRequest, options?: RequestInit): Promise<pointCrudExpireResponse> => {
@@ -974,7 +974,7 @@ const {mutation: mutationOptions} = options ?
     export type PointCrudExpireMutationVariables = {data: ModelsPointExpireRequest}
 
     /**
- * 有効期限を過ぎたポイントを失効させ、対象の顧客ごとに種別 expired のポイント取引を登録します。customerId に存在しない顧客を指定した場合は400を返します。
+ * 有効期限が processBefore より前の獲得ポイントのうち、使われずに残っているポイントを失効させます。失効させるポイントのある顧客ごとに、種別 expired のポイント取引を1件登録し、同じトランザクションで顧客の残高を減らします。管理者だけが実行できます(サロンのメンバーと顧客のアカウントは403)。processBefore が昨日(UTC)より後の日付の場合と、customerId に存在しない、または削除された顧客を指定した場合は400を返します。失効させたポイントは残っていないものとして数えるので、同じ processBefore で何度実行しても、2回目からは何も登録しません。
  * @summary Expire points
  */
 export const usePointCrudExpire = <TError = ModelsProblemDetails,
