@@ -35,6 +35,18 @@ export const toRefusalError = (
     )
     .exhaustive()
 
+/** A booking is moved until the visit begins. */
+export const cannotBeRescheduled = ({
+  status,
+  allowed,
+}: {
+  status: DbBooking['status']
+  allowed: readonly DbBooking['status'][]
+}): DomainError =>
+  DomainErrors.conflict(
+    `A booking that is ${status} cannot be rescheduled; its status has to be ${allowed.join(' or ')}`,
+  )
+
 export const bookingServiceNotFound = (id: BookingServiceId): DomainError =>
   DomainErrors.notFound('Booking service', id)
 

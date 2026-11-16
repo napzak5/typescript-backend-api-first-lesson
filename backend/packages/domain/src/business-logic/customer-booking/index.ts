@@ -1,6 +1,12 @@
 export type { CustomerBookingCreateRequest } from '../../schemas/booking.schema'
 export type { CustomerBookingUseCaseDependencies } from './_shared/dependencies'
 export {
+  type CustomerBookingToMove,
+  type CustomerMover,
+  moveCustomerBooking,
+  planCustomerMove,
+} from './_shared/move'
+export {
   type CalendarDayOfDate,
   type CustomerBooker,
   type CustomerBookingReferences,
@@ -15,3 +21,4 @@ export {
   type CustomerBookingPage,
   ListCustomerBookingsUseCase,
 } from './list-customer-bookings.usecase'
+export { RescheduleCustomerBookingUseCase } from './reschedule-customer-booking.usecase'

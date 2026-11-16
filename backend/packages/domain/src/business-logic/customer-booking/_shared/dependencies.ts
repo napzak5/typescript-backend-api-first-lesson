@@ -5,6 +5,6 @@ import type { IBookingNumberIssuer } from '../../../services/booking-number-issu
 export interface CustomerBookingUseCaseDependencies {
   bookingRepository: IBookingRepository
   bookingNumberIssuer: IBookingNumberIssuer
-  /** The current time: a slot that has begun is not booked. */
+  /** The current time: a slot that has begun is not booked, and a booking that has begun is not moved. */
   clock: () => Date
 }

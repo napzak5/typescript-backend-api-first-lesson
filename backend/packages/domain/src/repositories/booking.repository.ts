@@ -10,6 +10,11 @@ import type {
   StatusChangeRefusal,
 } from '../business-logic/booking/_shared/status'
 import type {
+  CustomerMove,
+  CustomerMovePlan,
+  CustomerMover,
+} from '../business-logic/customer-booking/_shared/move'
+import type {
   CustomerBooker,
   CustomerBookingPlan,
 } from '../business-logic/customer-booking/_shared/plan'
@@ -19,6 +24,7 @@ import type {
   BookingReach,
   BookingServiceId,
   BookingWithServices,
+  CustomerReach,
   DbBooking,
   DbBookingNotes,
   DbBookingService,
@@ -90,6 +96,22 @@ export type BookingReschedule =
   | { type: 'notFound' }
   | Exclude<BookingMove, { type: 'moved' }>
   | Exclude<BookingCreationRefusal, { type: 'bookingNumberTaken' }>
+
+/**
+ * What became of the move of a booking by its customer:
+ * - `rescheduled`: the booking as it is now
+ * - `unchanged`: the booking is at that time with that staff member
+ *   already, and nothing was written; the booking as it is
+ * - `notFound`: no booking within the reach has the ID
+ * - otherwise why the booking stays where it is (`moveCustomerBooking`,
+ *   `planCustomerMove`)
+ */
+export type CustomerBookingReschedule =
+  | { type: 'rescheduled'; booking: BookingWithServices }
+  | { type: 'unchanged'; booking: BookingWithServices }
+  | { type: 'notFound' }
+  | Exclude<CustomerMove, { type: 'moved' | 'unchanged' }>
+  | Exclude<CustomerMovePlan, { type: 'planned' }>
 
 /** A record that refers to a booking and keeps it from being deleted. */
 export type BookingReference = 'sale' | 'treatmentRecord'
@@ -234,6 +256,22 @@ export interface IBookingRepository {
     reach: LedgerReach,
     request: BookingRescheduleRequest,
   ): Promise<Result<BookingReschedule, DomainError>>
+
+  /**
+   * Moves a booking of a customer to the slot they ask for
+   * (`moveCustomerBooking`, `planCustomerMove`) and writes what a
+   * reschedule writes, with the status the booking has from then on. The
+   * booking is held from the moment its status is read; the customer, the
+   * service and the staff member are held, and what the slot is decided
+   * from is read, as when the customer books. The booking itself does not
+   * stand in its own way.
+   */
+  rebook(
+    id: BookingId,
+    reach: CustomerReach,
+    request: BookingRescheduleRequest,
+    mover: CustomerMover,
+  ): Promise<Result<CustomerBookingReschedule, DomainError>>
 
   /**
    * Removes a booking within the reach with its service lines, its status

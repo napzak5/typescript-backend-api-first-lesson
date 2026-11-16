@@ -103,15 +103,17 @@ export type CustomerBookingPlan =
   | { type: 'notASlot' }
   | { type: 'customerOccupied' }
 
+/** The time a customer asks for, as a request writes it. */
+type TimeAsked = Pick<CustomerBookingCreateRequest, 'startTime'>
+
 /**
  * The dates (`YYYY-MM-DD`) the calendar of the salon is read for: those
- * the time of the request can be on. The time zone of the salon is the
- * plan's to read, so what the plan is made from is read for every date it
- * could come to.
+ * the time a customer asks for can be on. The time zone of the salon is
+ * the plan's to read, so what the plan is made from is read for every date
+ * it could come to.
  */
-export const candidateDatesOf = (
-  request: CustomerBookingCreateRequest,
-): string[] => datesAround(parseISO(request.startTime))
+export const candidateDatesOf = (asked: TimeAsked): string[] =>
+  datesAround(parseISO(asked.startTime))
 
 /**
  * The time within which the bookings are read that the plan looks at:
@@ -119,13 +121,98 @@ export const candidateDatesOf = (
  * it, which are the time a staff member keeps free around a booking.
  */
 export const candidateTimeOf = (
-  request: CustomerBookingCreateRequest,
+  asked: TimeAsked,
   minutesAround: number,
-): TimeRange => widestDaysAround(parseISO(request.startTime), minutesAround)
+): TimeRange => widestDaysAround(parseISO(asked.startTime), minutesAround)
 
 /** Whether two times have a moment in common; the end of a time is not part of it. */
 const meet = (one: ServiceTime, other: ServiceTime): boolean =>
   one.startTime < other.endTime && other.startTime < one.endTime
+
+/** A slot as a customer asks for it. */
+export type SlotAsked = {
+  /** The date of the time in the time zone of the salon (`YYYY-MM-DD`). */
+  date: string
+  startTime: Date
+  /** How long the treatment takes, in minutes. */
+  duration: number
+}
+
+/** What a slot is decided from, once everything it is asked of is there. */
+export type SlotReferences = {
+  [Name in 'customer' | 'salon' | 'service' | 'staff']: NonNullable<
+    CustomerBookingReferences[Name]
+  >
+} & Pick<
+  CustomerBookingReferences,
+  'calendarDays' | 'serviceLineStarts' | 'customerTimes'
+>
+
+/** Why a customer does not get a slot. */
+export type SlotRefusal = Extract<
+  CustomerBookingPlan,
+  {
+    type:
+      | 'timeZoneUnknown'
+      | 'hoursUnreadable'
+      | 'customerNotAccepted'
+      | 'notASlot'
+      | 'customerOccupied'
+  }
+>
+
+/**
+ * Why the customer does not get the slot they ask for, or null when they
+ * get it. The booking a customer makes and the one they move are held to
+ * the same: the salons take bookings from the customer, the time is a slot
+ * the list of available slots offers at that moment, and no other booking
+ * of the customer is at that time.
+ */
+export const refusalOfSlot = (
+  { date, startTime, duration }: SlotAsked,
+  now: Date,
+  references: SlotReferences,
+): SlotRefusal | null => {
+  const { customer, salon, service, staff } = references
+  if (!booksOnline(customer)) {
+    return { type: 'customerNotAccepted' }
+  }
+  const businessHours = SalonReadMapper.toBusinessHours(salon)
+  if (businessHours.type === 'error') {
+    return { type: 'hoursUnreadable', error: businessHours.error }
+  }
+
+  const day = slotsOf({
+    date,
+    now,
+    duration,
+    salon: {
+      isActive: salon.isActive,
+      timezone: salon.timezone,
+      businessHours: businessHours.data,
+    },
+    calendarDay:
+      references.calendarDays.find((row) => row.date === date) ?? null,
+    service,
+    serviceLineStarts: references.serviceLineStarts,
+    staff: [staff],
+  })
+  if (day.type === 'timeZoneUnknown') {
+    return day
+  }
+  if (
+    !day.slots.some((slot) => slot.startTime.getTime() === startTime.getTime())
+  ) {
+    return { type: 'notASlot' }
+  }
+
+  const wanted = timeOf(startTime, duration)
+  if (references.customerTimes.some((other) => meet(wanted, other))) {
+    return { type: 'customerOccupied' }
+  }
+
+  return null
+}
 
 /**
  * Plans the booking a customer asks for. What is not there is reported
@@ -192,50 +279,19 @@ export const planCustomerBooking = (
       // service costs: the one service of the request is `serviceId`.
       issues: issues.map((issue) => ({ ...issue, field: 'serviceId' })),
     }))
-    .with({ type: 'planned' }, ({ write }) => {
-      if (!booksOnline(customer)) {
-        return { type: 'customerNotAccepted' }
-      }
-      const businessHours = SalonReadMapper.toBusinessHours(salon)
-      if (businessHours.type === 'error') {
-        return { type: 'hoursUnreadable', error: businessHours.error }
-      }
-
-      // The day of the visit is the date the slot is one of.
-      const date = write.booking.bookingDate
-      const startTime = parseISO(request.startTime)
-      const day = slotsOf({
-        date,
-        now,
-        duration: service.duration,
-        salon: {
-          isActive: salon.isActive,
-          timezone: salon.timezone,
-          businessHours: businessHours.data,
-        },
-        calendarDay:
-          references.calendarDays.find((row) => row.date === date) ?? null,
-        service,
-        serviceLineStarts: references.serviceLineStarts,
-        staff: [staff],
-      })
-      if (day.type === 'timeZoneUnknown') {
-        return day
-      }
-      if (
-        !day.slots.some(
-          (slot) => slot.startTime.getTime() === startTime.getTime(),
-        )
-      ) {
-        return { type: 'notASlot' }
-      }
-
-      const wanted = timeOf(startTime, service.duration)
-      if (references.customerTimes.some((other) => meet(wanted, other))) {
-        return { type: 'customerOccupied' }
-      }
-
-      return { type: 'planned', write }
-    })
+    .with(
+      { type: 'planned' },
+      ({ write }) =>
+        refusalOfSlot(
+          {
+            // The day of the visit is the date the slot is one of.
+            date: write.booking.bookingDate,
+            startTime: parseISO(request.startTime),
+            duration: service.duration,
+          },
+          now,
+          { ...references, customer, salon, service, staff },
+        ) ?? { type: 'planned', write },
+    )
     .exhaustive()
 }
