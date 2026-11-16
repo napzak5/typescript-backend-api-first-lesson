@@ -7,15 +7,21 @@ import type {
 } from '../business-logic/review/_shared/change'
 import type { ReviewMarkPlan } from '../business-logic/review/_shared/helpful'
 import type { ReviewPlan } from '../business-logic/review/_shared/plan'
+import type {
+  ReviewReporter,
+  ReviewReportPlan,
+} from '../business-logic/review/_shared/report'
 import type { BookingId } from '../models/booking'
 import type { CustomerId } from '../models/customer'
 import type { DbReview, ReviewId, ReviewTally } from '../models/review'
+import type { DbReviewReport } from '../models/review-report'
 import type { SalonId } from '../models/salon'
 import type { StaffId } from '../models/staff'
 import type {
   ReviewCreateRequest,
   ReviewUpdateRequest,
 } from '../schemas/review.schema'
+import type { ReviewReportRequest } from '../schemas/review-report.schema'
 import type { DomainError } from '../shared'
 
 /**
@@ -82,6 +88,18 @@ export type ReviewMark =
   | Exclude<ReviewMarkPlan, { type: 'planned' }>
 
 /**
+ * What became of a report of a review:
+ * - `reported`: the report as it is stored
+ * - `reportedAlready`: the account reported the review before; an account
+ *   reports a review once, whatever became of the report
+ * - otherwise why it was not planned (`planReviewReport`)
+ */
+export type ReviewReporting =
+  | { type: 'reported'; report: DbReviewReport }
+  | { type: 'reportedAlready' }
+  | Exclude<ReviewReportPlan, { type: 'planned' }>
+
+/**
  * Persistence of the reviews. The rating and the review count of a salon
  * are those of its reviews: a review is written, changed or removed in the
  * same transaction as the salon is counted again, with the salon held, so
@@ -124,6 +142,17 @@ export interface IReviewRepository {
     id: ReviewId,
     customerId: CustomerId,
   ): Promise<Result<ReviewMark, DomainError>>
+
+  /**
+   * Reports a review for the account, as `planReviewReport` plans it, and
+   * counts the pending reports of the review again, with the review held,
+   * as a mark is counted.
+   */
+  report(
+    id: ReviewId,
+    reporter: ReviewReporter,
+    request: ReviewReportRequest,
+  ): Promise<Result<ReviewReporting, DomainError>>
 
   /** What the reviews of a salon come to; null for no salon or a deleted one. */
   salonTally(salonId: SalonId): Promise<Result<ReviewTally | null, DomainError>>

@@ -5,6 +5,7 @@ import type {
   ReviewedBooking,
   ReviewUseCaseDependencies,
 } from '../business-logic/review'
+import type { ReviewReportUseCaseDependencies } from '../business-logic/review-report'
 import type {
   ApiReviewCreateRequest,
   ApiReviewResponse,
@@ -12,20 +13,32 @@ import type {
   ReviewTally,
 } from '../models/review'
 import type {
+  ApiReviewReportResponse,
+  DbReviewReport,
+} from '../models/review-report'
+import type {
   IReviewRepository,
   ReviewChange,
   ReviewCreation,
   ReviewList,
   ReviewMark,
   ReviewRemoval,
+  ReviewReporting,
 } from '../repositories/review.repository'
-import { CUSTOMER_ID } from './auth-fixtures'
+import type {
+  IReviewReportRepository,
+  ReportDismissal,
+  ReviewReportList,
+} from '../repositories/review-report.repository'
+import { CUSTOMER_ID, USER_ID } from './auth-fixtures'
 import { BOOKING_ID } from './booking-fixtures'
 import { SALON_ID } from './fixtures'
 import { STAFF_MEMBER_ID } from './staff-fixtures'
 
 export const REVIEW_ID = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f5a01'
 export const OTHER_REVIEW_ID = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f5a02'
+export const REVIEW_REPORT_ID = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f5b01'
+export const OTHER_REVIEW_REPORT_ID = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f5b02'
 
 const IMAGE_URL = 'https://images.example.com/reviews/after.jpg'
 
@@ -125,6 +138,49 @@ export const heldReview = (
   ...overrides,
 })
 
+/** A pending report of the review above, by the account of the actors. */
+export const dbReviewReport = (
+  overrides: Partial<DbReviewReport> = {},
+): DbReviewReport => ({
+  id: REVIEW_REPORT_ID,
+  reviewId: REVIEW_ID,
+  reportedBy: USER_ID,
+  reason: 'false_information',
+  details: '来店していない日の施術が書かれています。',
+  status: 'pending',
+  resolvedBy: null,
+  resolvedAt: null,
+  createdAt: '2026-11-21 10:00:00.5+09',
+  updatedAt: '2026-11-21 10:00:00.5+09',
+  ...overrides,
+})
+
+/** The report above as the API presents it. */
+export const apiReviewReport = (
+  overrides: Partial<ApiReviewReportResponse> = {},
+): ApiReviewReportResponse => ({
+  id: REVIEW_REPORT_ID,
+  reviewId: REVIEW_ID,
+  reportedBy: USER_ID,
+  reason: 'false_information',
+  details: '来店していない日の施術が書かれています。',
+  status: 'pending',
+  resolvedBy: null,
+  resolvedAt: null,
+  createdAt: '2026-11-21T01:00:00.500Z',
+  updatedAt: '2026-11-21T01:00:00.500Z',
+  ...overrides,
+})
+
+/** The report above, dismissed by the account of the actors. */
+const dismissedReviewReport = (): DbReviewReport =>
+  dbReviewReport({
+    status: 'dismissed',
+    resolvedBy: USER_ID,
+    resolvedAt: '2026-11-22 09:30:00+09',
+    updatedAt: '2026-11-22 09:30:00+09',
+  })
+
 /** Three reviews of 5, 4 and 4 stars. */
 export const reviewTally = (
   overrides: Partial<ReviewTally> = {},
@@ -137,9 +193,9 @@ export const reviewTally = (
 
 /**
  * Everything the review use cases need: a repository that lists, finds,
- * creates, updates, deletes and marks the review of the fixtures (three
- * customers found it helpful), and tallies three reviews for a salon and
- * for a staff member; a test overrides what it needs.
+ * creates, updates, deletes, marks and reports the review of the fixtures
+ * (three customers found it helpful), and tallies three reviews for a
+ * salon and for a staff member; a test overrides what it needs.
  */
 export const reviewDependencies = (
   overrides: Partial<IReviewRepository> = {},
@@ -165,11 +221,43 @@ export const reviewDependencies = (
     markHelpful: vi.fn(async () =>
       Result.success<ReviewMark>({ type: 'marked', helpfulCount: 3 }),
     ),
+    report: vi.fn(async () =>
+      Result.success<ReviewReporting>({
+        type: 'reported',
+        report: dbReviewReport(),
+      }),
+    ),
     salonTally: vi.fn(async () =>
       Result.success<ReviewTally | null>(reviewTally()),
     ),
     staffTally: vi.fn(async () =>
       Result.success<ReviewTally | null>(reviewTally()),
+    ),
+    ...overrides,
+  },
+})
+
+/**
+ * Everything the use cases of the reports need: a repository that lists
+ * the report of the fixtures and dismisses it; a test overrides what it
+ * needs.
+ */
+export const reviewReportDependencies = (
+  overrides: Partial<IReviewReportRepository> = {},
+): ReviewReportUseCaseDependencies => ({
+  reviewReportRepository: {
+    list: vi.fn(async () =>
+      Result.success<ReviewReportList | null>({
+        reports: [dbReviewReport()],
+        total: 1,
+        hasMore: false,
+      }),
+    ),
+    dismiss: vi.fn(async () =>
+      Result.success<ReportDismissal>({
+        type: 'dismissed',
+        report: dismissedReviewReport(),
+      }),
     ),
     ...overrides,
   },

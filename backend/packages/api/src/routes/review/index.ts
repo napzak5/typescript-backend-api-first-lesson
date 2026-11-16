@@ -8,13 +8,14 @@ import { getSalonReviewSummaryHandler } from './get-salon-review-summary.handler
 import { getStaffReviewSummaryHandler } from './get-staff-review-summary.handler'
 import { listReviewsHandler } from './list-reviews.handler'
 import { markReviewHelpfulHandler } from './mark-review-helpful.handler'
+import { reportReviewHandler } from './report-review.handler'
 import { updateReviewHandler } from './update-review.handler'
 
 /**
  * Routes of the reviews, relative to where the router is mounted. One
  * handler per implemented operation of `ReviewCrud` in the TypeSpec
- * definition. Reading is public; writing, changing, removing and marking a
- * review need a signed-in user:
+ * definition. Reading is public; writing, changing, removing, marking and
+ * reporting a review need a signed-in user:
  *
  * - GET    /             list
  * - POST   /             create       (authenticated)
@@ -22,6 +23,7 @@ import { updateReviewHandler } from './update-review.handler'
  * - PATCH  /:id          update       (authenticated)
  * - DELETE /:id          delete       (authenticated)
  * - POST   /:id/helpful  mark helpful (authenticated)
+ * - POST   /:id/report   report       (authenticated)
  */
 export const createReviewRouter = (
   dependencies: ReviewUseCaseDependencies,
@@ -38,6 +40,7 @@ export const createReviewRouter = (
     '/:id/helpful',
     markReviewHelpfulHandler(dependencies, authenticated),
   )
+  router.post('/:id/report', reportReviewHandler(dependencies, authenticated))
 
   return router
 }

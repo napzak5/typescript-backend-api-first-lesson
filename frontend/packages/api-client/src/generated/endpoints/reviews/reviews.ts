@@ -28,6 +28,7 @@ import type {
   ModelsProblemDetails,
   ModelsReviewCreateRequest,
   ModelsReviewId,
+  ModelsReviewReportId,
   ModelsReviewReportRequest,
   ModelsReviewUpdateRequest,
   ModelsSalonId,
@@ -39,6 +40,9 @@ import type {
   ReviewCrudMarkHelpful200,
   ReviewCrudReport200,
   ReviewCrudUpdate200,
+  ReviewReportCrudDismiss200,
+  ReviewReportCrudList200,
+  ReviewReportCrudListParams,
   SalonReviewSummaryGetSummary200,
   StaffReviewSummaryGetStaffSummary200
 } from '../../models';
@@ -63,7 +67,290 @@ const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKe
   return result;
 };
 
-export type reviewCrudListResponse200 = {
+export type reviewReportCrudListResponse200 = {
+  data: ReviewReportCrudList200
+  status: 200
+}
+
+export type reviewReportCrudListResponse400 = {
+  data: ModelsProblemDetails
+  status: 400
+}
+
+export type reviewReportCrudListResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type reviewReportCrudListResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
+export type reviewReportCrudListResponse429 = {
+  data: ModelsProblemDetails
+  status: 429
+}
+
+export type reviewReportCrudListResponse500 = {
+  data: ModelsProblemDetails
+  status: 500
+}
+
+export type reviewReportCrudListResponseSuccess = (reviewReportCrudListResponse200) & {
+  headers: Headers;
+};
+export type reviewReportCrudListResponseError = (reviewReportCrudListResponse400 | reviewReportCrudListResponse401 | reviewReportCrudListResponse403 | reviewReportCrudListResponse429 | reviewReportCrudListResponse500) & {
+  headers: Headers;
+};
+
+export type reviewReportCrudListResponse = (reviewReportCrudListResponseSuccess | reviewReportCrudListResponseError)
+
+export const getReviewReportCrudListUrl = (params?: ReviewReportCrudListParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/review-reports?${stringifiedParams}` : `/api/v1/review-reports`
+}
+
+/**
+ * レビューの通報を、受け付けた順(createdAt と id の昇順)に一覧取得します。admin だけが呼べ、ほかのロールには403を返します。status、reviewId、salonId で絞り込めます。削除したサロンのレビューの通報は含みません。存在しないIDで絞り込んだ場合は空の一覧を返します。cursor が一覧に出る通報のIDでない場合は400を返します。
+ * @summary List review reports
+ */
+export const reviewReportCrudList = async (params?: ReviewReportCrudListParams, options?: RequestInit): Promise<reviewReportCrudListResponse> => {
+
+  return customInstance<reviewReportCrudListResponse>(getReviewReportCrudListUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getReviewReportCrudListQueryKey = (params?: ReviewReportCrudListParams,) => {
+    return [
+    `/api/v1/review-reports`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getReviewReportCrudListQueryOptions = <TData = Awaited<ReturnType<typeof reviewReportCrudList>>, TError = ModelsProblemDetails>(params?: ReviewReportCrudListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof reviewReportCrudList>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getReviewReportCrudListQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof reviewReportCrudList>>> = ({ signal }) => reviewReportCrudList(params, { signal });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof reviewReportCrudList>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type ReviewReportCrudListQueryResult = NonNullable<Awaited<ReturnType<typeof reviewReportCrudList>>>
+export type ReviewReportCrudListQueryError = ModelsProblemDetails
+
+
+/**
+ * レビューの通報を、受け付けた順(createdAt と id の昇順)に一覧取得します。admin だけが呼べ、ほかのロールには403を返します。status、reviewId、salonId で絞り込めます。削除したサロンのレビューの通報は含みません。存在しないIDで絞り込んだ場合は空の一覧を返します。cursor が一覧に出る通報のIDでない場合は400を返します。
+ * @summary List review reports
+ */
+export function useReviewReportCrudList<TData = Awaited<ReturnType<typeof reviewReportCrudList>>, TError = ModelsProblemDetails>(
+ params: undefined |  ReviewReportCrudListParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof reviewReportCrudList>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof reviewReportCrudList>>,
+          TError,
+          Awaited<ReturnType<typeof reviewReportCrudList>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * レビューの通報を、受け付けた順(createdAt と id の昇順)に一覧取得します。admin だけが呼べ、ほかのロールには403を返します。status、reviewId、salonId で絞り込めます。削除したサロンのレビューの通報は含みません。存在しないIDで絞り込んだ場合は空の一覧を返します。cursor が一覧に出る通報のIDでない場合は400を返します。
+ * @summary List review reports
+ */
+export function useReviewReportCrudList<TData = Awaited<ReturnType<typeof reviewReportCrudList>>, TError = ModelsProblemDetails>(
+ params?: ReviewReportCrudListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof reviewReportCrudList>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof reviewReportCrudList>>,
+          TError,
+          Awaited<ReturnType<typeof reviewReportCrudList>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * レビューの通報を、受け付けた順(createdAt と id の昇順)に一覧取得します。admin だけが呼べ、ほかのロールには403を返します。status、reviewId、salonId で絞り込めます。削除したサロンのレビューの通報は含みません。存在しないIDで絞り込んだ場合は空の一覧を返します。cursor が一覧に出る通報のIDでない場合は400を返します。
+ * @summary List review reports
+ */
+export function useReviewReportCrudList<TData = Awaited<ReturnType<typeof reviewReportCrudList>>, TError = ModelsProblemDetails>(
+ params?: ReviewReportCrudListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof reviewReportCrudList>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * レビューの通報を、受け付けた順(createdAt と id の昇順)に一覧取得します。admin だけが呼べ、ほかのロールには403を返します。status、reviewId、salonId で絞り込めます。削除したサロンのレビューの通報は含みません。存在しないIDで絞り込んだ場合は空の一覧を返します。cursor が一覧に出る通報のIDでない場合は400を返します。
+ * @summary List review reports
+ */
+export function useReviewReportCrudList<TData = Awaited<ReturnType<typeof reviewReportCrudList>>, TError = ModelsProblemDetails>(
+ params?: ReviewReportCrudListParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof reviewReportCrudList>>, TError, TData>>, }
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getReviewReportCrudListQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type reviewReportCrudDismissResponse200 = {
+  data: ReviewReportCrudDismiss200
+  status: 200
+}
+
+export type reviewReportCrudDismissResponse400 = {
+  data: ModelsProblemDetails
+  status: 400
+}
+
+export type reviewReportCrudDismissResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type reviewReportCrudDismissResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
+export type reviewReportCrudDismissResponse404 = {
+  data: ModelsProblemDetails
+  status: 404
+}
+
+export type reviewReportCrudDismissResponse409 = {
+  data: ModelsProblemDetails
+  status: 409
+}
+
+export type reviewReportCrudDismissResponse429 = {
+  data: ModelsProblemDetails
+  status: 429
+}
+
+export type reviewReportCrudDismissResponse500 = {
+  data: ModelsProblemDetails
+  status: 500
+}
+
+export type reviewReportCrudDismissResponseSuccess = (reviewReportCrudDismissResponse200) & {
+  headers: Headers;
+};
+export type reviewReportCrudDismissResponseError = (reviewReportCrudDismissResponse400 | reviewReportCrudDismissResponse401 | reviewReportCrudDismissResponse403 | reviewReportCrudDismissResponse404 | reviewReportCrudDismissResponse409 | reviewReportCrudDismissResponse429 | reviewReportCrudDismissResponse500) & {
+  headers: Headers;
+};
+
+export type reviewReportCrudDismissResponse = (reviewReportCrudDismissResponseSuccess | reviewReportCrudDismissResponseError)
+
+export const getReviewReportCrudDismissUrl = (id: ModelsReviewReportId,) => {
+
+
+
+
+  return `/api/v1/review-reports/${id}/dismiss`
+}
+
+/**
+ * レビューに問題がないと判断した通報を却下し、却下した通報を返します。admin だけが呼べ、ほかのロールには403を返します。status を dismissed に、resolvedBy を操作者のユーザーIDに、resolvedAt を却下した日時にし、レビューの reportCount を未処理の通報から数え直します。却下した通報の却下は409、通報が存在しない場合と、削除したサロンのレビューの通報の場合は404を返します。本文は読みません。
+ * @summary Dismiss review report
+ */
+export const reviewReportCrudDismiss = async (id: ModelsReviewReportId, options?: RequestInit): Promise<reviewReportCrudDismissResponse> => {
+
+  return customInstance<reviewReportCrudDismissResponse>(getReviewReportCrudDismissUrl(id),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getReviewReportCrudDismissMutationKey = () => ['reviewReportCrudDismiss'] as const;
+
+export const getReviewReportCrudDismissMutationOptions = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviewReportCrudDismiss>>, TError,ReviewReportCrudDismissMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof reviewReportCrudDismiss>>, TError,ReviewReportCrudDismissMutationVariables, TContext> => {
+
+const mutationKey = getReviewReportCrudDismissMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof reviewReportCrudDismiss>>, ReviewReportCrudDismissMutationVariables> = (props) => {
+          const {id} = props ?? {};
+
+          return  reviewReportCrudDismiss(id,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ReviewReportCrudDismissMutationResult = NonNullable<Awaited<ReturnType<typeof reviewReportCrudDismiss>>>
+
+    export type ReviewReportCrudDismissMutationError = ModelsProblemDetails
+    export type ReviewReportCrudDismissMutationVariables = {id: ModelsReviewReportId}
+
+    /**
+ * レビューに問題がないと判断した通報を却下し、却下した通報を返します。admin だけが呼べ、ほかのロールには403を返します。status を dismissed に、resolvedBy を操作者のユーザーIDに、resolvedAt を却下した日時にし、レビューの reportCount を未処理の通報から数え直します。却下した通報の却下は409、通報が存在しない場合と、削除したサロンのレビューの通報の場合は404を返します。本文は読みません。
+ * @summary Dismiss review report
+ */
+export const useReviewReportCrudDismiss = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof reviewReportCrudDismiss>>, TError,ReviewReportCrudDismissMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof reviewReportCrudDismiss>>,
+        TError,
+        ReviewReportCrudDismissMutationVariables,
+        TContext
+      > => {
+      return useMutation(getReviewReportCrudDismissMutationOptions(options), queryClient);
+    }
+    export type reviewCrudListResponse200 = {
   data: ReviewCrudList200
   status: 200
 }
@@ -909,6 +1196,11 @@ export type reviewCrudReportResponse404 = {
   status: 404
 }
 
+export type reviewCrudReportResponse409 = {
+  data: ModelsProblemDetails
+  status: 409
+}
+
 export type reviewCrudReportResponse413 = {
   data: ModelsProblemDetails
   status: 413
@@ -932,7 +1224,7 @@ export type reviewCrudReportResponse500 = {
 export type reviewCrudReportResponseSuccess = (reviewCrudReportResponse200) & {
   headers: Headers;
 };
-export type reviewCrudReportResponseError = (reviewCrudReportResponse400 | reviewCrudReportResponse401 | reviewCrudReportResponse403 | reviewCrudReportResponse404 | reviewCrudReportResponse413 | reviewCrudReportResponse415 | reviewCrudReportResponse429 | reviewCrudReportResponse500) & {
+export type reviewCrudReportResponseError = (reviewCrudReportResponse400 | reviewCrudReportResponse401 | reviewCrudReportResponse403 | reviewCrudReportResponse404 | reviewCrudReportResponse409 | reviewCrudReportResponse413 | reviewCrudReportResponse415 | reviewCrudReportResponse429 | reviewCrudReportResponse500) & {
   headers: Headers;
 };
 
@@ -947,7 +1239,7 @@ export const getReviewCrudReportUrl = (id: ModelsReviewId,) => {
 }
 
 /**
- * 不適切な内容や虚偽が疑われるレビューを通報し、運営による対応フローへ送ります。レビューの報告数を1加算します。
+ * 不適切な内容や虚偽が疑われるレビューを運営に通報し、受け付けた通報を返します。通報できるのは、顧客(ロール customer で顧客のプロフィールがあるアカウント)と、レビューのサロンの owner・manager です。admin と staff、ほかのサロンの owner・manager、プロフィールのない顧客のアカウント、自分のレビューには403を返します。1つのレビューを通報できるのは1アカウント1回で、2回目は409です(却下されたあとも同じ)。reason が other で details が null の場合は400を、レビューが存在しない場合と、削除したサロンのレビューの場合は404を返します。通報してもレビューは隠しません。レビューの reportCount を、未処理の通報から数え直します。
  * @summary Report review
  */
 export const reviewCrudReport = async (id: ModelsReviewId,
@@ -1015,7 +1307,7 @@ const {mutation: mutationOptions} = options ?
     export type ReviewCrudReportMutationVariables = {id: ModelsReviewId;data: ModelsReviewReportRequest}
 
     /**
- * 不適切な内容や虚偽が疑われるレビューを通報し、運営による対応フローへ送ります。レビューの報告数を1加算します。
+ * 不適切な内容や虚偽が疑われるレビューを運営に通報し、受け付けた通報を返します。通報できるのは、顧客(ロール customer で顧客のプロフィールがあるアカウント)と、レビューのサロンの owner・manager です。admin と staff、ほかのサロンの owner・manager、プロフィールのない顧客のアカウント、自分のレビューには403を返します。1つのレビューを通報できるのは1アカウント1回で、2回目は409です(却下されたあとも同じ)。reason が other で details が null の場合は400を、レビューが存在しない場合と、削除したサロンのレビューの場合は404を返します。通報してもレビューは隠しません。レビューの reportCount を、未処理の通報から数え直します。
  * @summary Report review
  */
 export const useReviewCrudReport = <TError = ModelsProblemDetails,

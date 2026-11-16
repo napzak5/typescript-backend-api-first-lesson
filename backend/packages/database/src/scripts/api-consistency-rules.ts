@@ -887,6 +887,29 @@ const reviewRules: ModelRule[] = [
       'updatedAt',
     ],
   },
+  {
+    model: 'Models.ReviewReportResponse',
+    table: 'reviewReports',
+    kind: 'response',
+    omittedColumns: [],
+  },
+  {
+    model: 'Models.ReviewReportRequest',
+    table: 'reviewReports',
+    kind: 'create',
+    // The review comes from the path and the account from the session;
+    // a report is pending until an administrator dismisses it.
+    omittedColumns: [
+      'id',
+      'reviewId',
+      'reportedBy',
+      'status',
+      'resolvedBy',
+      'resolvedAt',
+      'createdAt',
+      'updatedAt',
+    ],
+  },
 ]
 
 /**

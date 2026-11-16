@@ -3,6 +3,7 @@ import {
   bookings,
   customers,
   reviewHelpfulVotes,
+  reviewReports,
   reviews,
   salons,
   staff,
@@ -17,6 +18,8 @@ import {
   planReview,
   planReviewChange,
   planReviewRemoval,
+  planReviewReport,
+  type ReportedReview,
   type ReviewChange,
   type ReviewCreateRequest,
   type ReviewCreation,
@@ -28,6 +31,9 @@ import {
   type ReviewPlanContext,
   type ReviewRemoval,
   type ReviewRemover,
+  type ReviewReporter,
+  type ReviewReporting,
+  type ReviewReportRequest,
   type ReviewTally,
   type ReviewUpdateRequest,
   type SalonId,
@@ -52,6 +58,7 @@ import { match } from 'ts-pattern'
 import { attempt } from '../database/attempt'
 import { CLOCK } from '../database/clock'
 import type { Database, DatabaseExecutor } from '../database/index'
+import { countReportsOf } from './review-report-count'
 
 /**
  * A read of a page of reviews in one snapshot: the cursor, the page and
@@ -208,18 +215,18 @@ const heldReviewOf = async (
 }
 
 /**
- * The review a mark names, held `FOR NO KEY UPDATE` until its marks are
- * counted again: the marks of one review are counted one after the other,
- * each by a statement that begins once the mark before it is committed,
- * and a change or a removal of the review under way (`FOR UPDATE`) has
- * been made when the row is returned. Its salon is read, not held: a mark
- * writes nothing of the salon. Null when there is no review with the ID,
- * or its salon is deleted.
+ * The review a mark or a report names, held `FOR NO KEY UPDATE` until its
+ * marks or its reports are counted again: the marks and the reports of one
+ * review are counted one after the other, each by a statement that begins
+ * once the one before it is committed, and a change or a removal of the
+ * review under way (`FOR UPDATE`) has been made when the row is returned.
+ * Its salon is read, not held: neither writes anything of the salon. Null
+ * when there is no review with the ID, or its salon is deleted.
  */
-const markedReviewOf = async (
+const countedReviewOf = async (
   tx: DatabaseExecutor,
   id: string,
-): Promise<HeldReview | null> => {
+): Promise<(HeldReview & ReportedReview) | null> => {
   const [review] = await tx
     .select({
       customerId: reviews.customerId,
@@ -237,9 +244,7 @@ const markedReviewOf = async (
     .select({ deletedAt: salons.deletedAt })
     .from(salons)
     .where(eq(salons.id, review.salonId))
-  return salon?.deletedAt === null
-    ? { customerId: review.customerId, staffId: review.staffId }
-    : null
+  return salon?.deletedAt === null ? review : null
 }
 
 /**
@@ -344,8 +349,8 @@ const contextOf = async (
 /**
  * Each statement sees what was committed before it began: a review that
  * waited for the salon, a change or a removal that waited for the review
- * or the salon, or a mark that waited for the review, sees what the one it
- * waited for wrote.
+ * or the salon, or a mark or a report that waited for the review, sees what
+ * the one it waited for wrote.
  */
 const WRITE: PgTransactionConfig = { isolationLevel: 'read committed' }
 
@@ -568,7 +573,7 @@ export class ReviewRepository implements IReviewRepository {
       this.db.transaction(async (tx): Promise<ReviewMark> => {
         const plan = planHelpfulMark(customerId, {
           reviewerDeleted: await isReviewerDeleted(tx, customerId),
-          review: await markedReviewOf(tx, id),
+          review: await countedReviewOf(tx, id),
         })
         if (plan.type !== 'planned') {
           return plan
@@ -586,6 +591,51 @@ export class ReviewRepository implements IReviewRepository {
           })
 
         return { type: 'marked', helpfulCount: await countMarksOf(tx, id) }
+      }, WRITE),
+    )
+  }
+
+  async report(
+    id: ReviewId,
+    reporter: ReviewReporter,
+    request: ReviewReportRequest,
+  ): Promise<Result<ReviewReporting, DomainError>> {
+    return attempt('Failed to report review', () =>
+      this.db.transaction(async (tx): Promise<ReviewReporting> => {
+        const plan = planReviewReport(reporter, {
+          reporterDeleted: await match(reporter)
+            .with({ type: 'customer' }, ({ customerId }) =>
+              isReviewerDeleted(tx, customerId),
+            )
+            .with({ type: 'salon' }, async () => false)
+            .exhaustive(),
+          review: await countedReviewOf(tx, id),
+        })
+        if (plan.type !== 'planned') {
+          return plan
+        }
+
+        // A second report of the account is not written, and not counted.
+        const [report] = await tx
+          .insert(reviewReports)
+          .values({
+            reviewId: id,
+            reportedBy: reporter.userId,
+            reason: request.reason,
+            details: request.details,
+            createdAt: CLOCK,
+            updatedAt: CLOCK,
+          })
+          .onConflictDoNothing({
+            target: [reviewReports.reviewId, reviewReports.reportedBy],
+          })
+          .returning()
+        if (report === undefined) {
+          return { type: 'reportedAlready' }
+        }
+
+        await countReportsOf(tx, id)
+        return { type: 'reported', report }
       }, WRITE),
     )
   }

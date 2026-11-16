@@ -1073,6 +1073,44 @@ describe('modelRules', () => {
     ])
   })
 
+  it('shows a report of a review with every column, and lets the request that makes one state the reason and the details only', () => {
+    const rules = modelRules
+      .filter((modelRule) => modelRule.table === 'reviewReports')
+      .map(({ model, kind, omittedColumns, embedded, computed }) => ({
+        model,
+        kind,
+        omittedColumns,
+        embedded,
+        computed,
+      }))
+
+    expect(rules).toEqual([
+      {
+        model: 'Models.ReviewReportResponse',
+        kind: 'response',
+        omittedColumns: [],
+        embedded: undefined,
+        computed: undefined,
+      },
+      {
+        model: 'Models.ReviewReportRequest',
+        kind: 'create',
+        omittedColumns: [
+          'id',
+          'reviewId',
+          'reportedBy',
+          'status',
+          'resolvedBy',
+          'resolvedAt',
+          'createdAt',
+          'updatedAt',
+        ],
+        embedded: undefined,
+        computed: undefined,
+      },
+    ])
+  })
+
   it('narrows nothing but the role of the account of a staff member', () => {
     const narrowed = modelRules
       .filter((modelRule) => modelRule.narrowed !== undefined)

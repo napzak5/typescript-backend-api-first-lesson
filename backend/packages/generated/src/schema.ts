@@ -976,6 +976,60 @@ export type PricingStrategyType = z.infer<typeof PricingStrategyTypeSchema>
 
 /**
  * @description
+ * レビュー通報理由区分 - レビューを通報する理由を表す。運営が理由で絞り込み、集計する
+ *
+ *
+ * inappropriate: 不適切な表現 - 暴言、差別的な表現、わいせつな内容
+ *
+ * false_information: 事実と違う内容 - 施術や来店の事実と違う記述
+ *
+ * personal_information: 個人情報 - スタッフやほかの顧客の氏名・連絡先などの記述
+ *
+ * spam: 宣伝・無関係 - 宣伝や、来店と関係のない内容
+ *
+ * other: その他 - ほかのどれにも当たらない理由。details に内容を書く
+ */
+export const ReviewReportReasonTypeSchema = z.enum(['inappropriate', 'false_information', 'personal_information', 'spam', 'other'])
+/**
+ * @description
+ * レビュー通報理由区分 - レビューを通報する理由を表す。運営が理由で絞り込み、集計する
+ *
+ *
+ * inappropriate: 不適切な表現 - 暴言、差別的な表現、わいせつな内容
+ *
+ * false_information: 事実と違う内容 - 施術や来店の事実と違う記述
+ *
+ * personal_information: 個人情報 - スタッフやほかの顧客の氏名・連絡先などの記述
+ *
+ * spam: 宣伝・無関係 - 宣伝や、来店と関係のない内容
+ *
+ * other: その他 - ほかのどれにも当たらない理由。details に内容を書く
+ */
+export type ReviewReportReasonType = z.infer<typeof ReviewReportReasonTypeSchema>
+
+/**
+ * @description
+ * レビュー通報状態区分 - 通報の処理状態を表す
+ *
+ *
+ * pending: 未処理 - 運営がまだ確かめていない通報。レビューの reportCount が数える
+ *
+ * dismissed: 却下 - 運営が確かめ、レビューに問題がないと判断した通報
+ */
+export const ReviewReportStatusTypeSchema = z.enum(['pending', 'dismissed'])
+/**
+ * @description
+ * レビュー通報状態区分 - 通報の処理状態を表す
+ *
+ *
+ * pending: 未処理 - 運営がまだ確かめていない通報。レビューの reportCount が数える
+ *
+ * dismissed: 却下 - 運営が確かめ、レビューに問題がないと判断した通報
+ */
+export type ReviewReportStatusType = z.infer<typeof ReviewReportStatusTypeSchema>
+
+/**
+ * @description
  * レビュー並び順区分 - レビュー一覧の並び順を表す
  *
  *
