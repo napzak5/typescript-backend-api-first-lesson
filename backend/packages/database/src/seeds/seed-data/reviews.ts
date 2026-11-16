@@ -1,10 +1,13 @@
+import { sql } from 'drizzle-orm'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import * as schema from '../../schema'
 import type { CompletedBooking } from './bookings'
 
 /**
  * Reviews of the first visits that took place, each by the customer of the
- * visit, for its salon and the staff member who was in charge of it.
+ * visit, for its salon and the staff member who was in charge of it. The
+ * rating and the review count of each salon are then counted from its
+ * reviews, as a review written through the API leaves them.
  */
 export async function seedReviews(
   db: PostgresJsDatabase<typeof schema>,
@@ -123,6 +126,20 @@ export async function seedReviews(
     .insert(schema.reviews)
     .values(reviews)
     .returning({ id: schema.reviews.id })
+
+  await db.execute(sql`
+    UPDATE salons
+    SET rating = counted.rating, "reviewCount" = counted.reviews
+    FROM (
+      SELECT
+        "salonId",
+        round(avg("overallRating"), 2) AS rating,
+        count(*)::integer AS reviews
+      FROM reviews
+      GROUP BY "salonId"
+    ) counted
+    WHERE salons.id = counted."salonId"
+  `)
 
   return insertedReviews.map((r) => r.id)
 }

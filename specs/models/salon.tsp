@@ -71,10 +71,10 @@ namespace BeautySalon.Models {
     @doc("曜日別の通常営業時間。未設定の場合はnull")
     businessHours: BusinessHours[] | null;
 
-    @doc("顧客レビューから算出した平均評価。レビュー未登録の場合はnull")
+    @doc("顧客レビューの全体満足度評価(overallRating)の平均値。小数第2位に四捨五入する。レビューを投稿したトランザクションが数え直す。レビュー未登録の場合はnull")
     rating: float32 | null;
 
-    @doc("蓄積されたレビュー件数")
+    @doc("顧客レビューの件数。レビューを投稿したトランザクションが数え直す")
     reviewCount: int32;
 
     @doc("営業時間と、予約の来店日の基準となるIANAタイムゾーンID(例: Asia/Tokyo)")

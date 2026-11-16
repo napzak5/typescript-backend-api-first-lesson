@@ -1,0 +1,77 @@
+import type { ReviewSortType } from '@beauty-salon-backend/generated'
+import type { Result } from '@beauty-salon-backend/utility'
+import type { ReviewPlan } from '../business-logic/review/_shared/plan'
+import type { BookingId } from '../models/booking'
+import type { CustomerId } from '../models/customer'
+import type { DbReview, ReviewId, ReviewTally } from '../models/review'
+import type { SalonId } from '../models/salon'
+import type { StaffId } from '../models/staff'
+import type { ReviewCreateRequest } from '../schemas/review.schema'
+import type { DomainError } from '../shared'
+
+/**
+ * Which reviews are listed. A review of a deleted salon is listed under
+ * no filter.
+ */
+export type ReviewListCriteria = {
+  limit: number
+  /** The review the page starts after; null for the first page. */
+  after: ReviewId | null
+  sortBy: ReviewSortType
+  salonId: SalonId | null
+  staffId: StaffId | null
+  customerId: CustomerId | null
+  bookingId: BookingId | null
+  isVerified: boolean | null
+  /** The lowest overall rating listed, or null. */
+  minRating: number | null
+  /** The highest overall rating listed, or null. */
+  maxRating: number | null
+}
+
+/** A page of reviews, how many match, and whether another page follows. */
+export type ReviewList = {
+  reviews: DbReview[]
+  total: number
+  hasMore: boolean
+}
+
+/**
+ * What became of a review a customer wrote:
+ * - `created`: the review as it is stored
+ * - otherwise why it was not planned (`planReview`)
+ */
+export type ReviewCreation =
+  | { type: 'created'; review: DbReview }
+  | Exclude<ReviewPlan, { type: 'planned' }>
+
+/**
+ * Persistence of the reviews. The rating and the review count of a salon
+ * are those of its reviews: a review is written in the same transaction as
+ * the salon is counted again, with the salon held, so the reviews of one
+ * salon are written one after the other.
+ */
+export interface IReviewRepository {
+  /** Null when the cursor names no review that is listed. */
+  list(
+    criteria: ReviewListCriteria,
+  ): Promise<Result<ReviewList | null, DomainError>>
+
+  /** Null for no review with the ID, or one of a deleted salon. */
+  findById(id: ReviewId): Promise<Result<DbReview | null, DomainError>>
+
+  /** Writes the review of the customer, as `planReview` plans it. */
+  create(
+    customerId: CustomerId,
+    request: ReviewCreateRequest,
+  ): Promise<Result<ReviewCreation, DomainError>>
+
+  /** What the reviews of a salon come to; null for no salon or a deleted one. */
+  salonTally(salonId: SalonId): Promise<Result<ReviewTally | null, DomainError>>
+
+  /**
+   * What the reviews that name a staff member come to; null for no staff
+   * member, a deleted one, or one of a deleted salon.
+   */
+  staffTally(staffId: StaffId): Promise<Result<ReviewTally | null, DomainError>>
+}

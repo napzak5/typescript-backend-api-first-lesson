@@ -73,16 +73,6 @@ export type reviewCrudListResponse400 = {
   status: 400
 }
 
-export type reviewCrudListResponse401 = {
-  data: ModelsProblemDetails
-  status: 401
-}
-
-export type reviewCrudListResponse403 = {
-  data: ModelsProblemDetails
-  status: 403
-}
-
 export type reviewCrudListResponse429 = {
   data: ModelsProblemDetails
   status: 429
@@ -96,7 +86,7 @@ export type reviewCrudListResponse500 = {
 export type reviewCrudListResponseSuccess = (reviewCrudListResponse200) & {
   headers: Headers;
 };
-export type reviewCrudListResponseError = (reviewCrudListResponse400 | reviewCrudListResponse401 | reviewCrudListResponse403 | reviewCrudListResponse429 | reviewCrudListResponse500) & {
+export type reviewCrudListResponseError = (reviewCrudListResponse400 | reviewCrudListResponse429 | reviewCrudListResponse500) & {
   headers: Headers;
 };
 
@@ -118,7 +108,7 @@ export const getReviewCrudListUrl = (params?: ReviewCrudListParams,) => {
 }
 
 /**
- * サロン、スタッフ、顧客、予約、実来店確認、評価点でレビューを絞り込み、指定した並び順とページネーションで一覧取得し、店舗運営の改善材料を抽出します。minRatingにmaxRatingより大きい値を指定した場合は400を返します。
+ * サロン、スタッフ、顧客、予約、実来店確認、評価点でレビューを絞り込み、指定した並び順とページネーションで一覧取得し、店舗運営の改善材料を抽出します。ログインなしで呼べます。削除したサロンのレビューは含みません。存在しないIDで絞り込んだ場合は空の一覧を返します。minRatingにmaxRatingより大きい値を指定した場合と、cursorが一覧に出るレビューのIDでない場合は400を返します。
  * @summary List reviews
  */
 export const reviewCrudList = async (params?: ReviewCrudListParams, options?: RequestInit): Promise<reviewCrudListResponse> => {
@@ -166,7 +156,7 @@ export type ReviewCrudListQueryError = ModelsProblemDetails
 
 
 /**
- * サロン、スタッフ、顧客、予約、実来店確認、評価点でレビューを絞り込み、指定した並び順とページネーションで一覧取得し、店舗運営の改善材料を抽出します。minRatingにmaxRatingより大きい値を指定した場合は400を返します。
+ * サロン、スタッフ、顧客、予約、実来店確認、評価点でレビューを絞り込み、指定した並び順とページネーションで一覧取得し、店舗運営の改善材料を抽出します。ログインなしで呼べます。削除したサロンのレビューは含みません。存在しないIDで絞り込んだ場合は空の一覧を返します。minRatingにmaxRatingより大きい値を指定した場合と、cursorが一覧に出るレビューのIDでない場合は400を返します。
  * @summary List reviews
  */
 export function useReviewCrudList<TData = Awaited<ReturnType<typeof reviewCrudList>>, TError = ModelsProblemDetails>(
@@ -180,7 +170,7 @@ export function useReviewCrudList<TData = Awaited<ReturnType<typeof reviewCrudLi
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * サロン、スタッフ、顧客、予約、実来店確認、評価点でレビューを絞り込み、指定した並び順とページネーションで一覧取得し、店舗運営の改善材料を抽出します。minRatingにmaxRatingより大きい値を指定した場合は400を返します。
+ * サロン、スタッフ、顧客、予約、実来店確認、評価点でレビューを絞り込み、指定した並び順とページネーションで一覧取得し、店舗運営の改善材料を抽出します。ログインなしで呼べます。削除したサロンのレビューは含みません。存在しないIDで絞り込んだ場合は空の一覧を返します。minRatingにmaxRatingより大きい値を指定した場合と、cursorが一覧に出るレビューのIDでない場合は400を返します。
  * @summary List reviews
  */
 export function useReviewCrudList<TData = Awaited<ReturnType<typeof reviewCrudList>>, TError = ModelsProblemDetails>(
@@ -194,7 +184,7 @@ export function useReviewCrudList<TData = Awaited<ReturnType<typeof reviewCrudLi
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * サロン、スタッフ、顧客、予約、実来店確認、評価点でレビューを絞り込み、指定した並び順とページネーションで一覧取得し、店舗運営の改善材料を抽出します。minRatingにmaxRatingより大きい値を指定した場合は400を返します。
+ * サロン、スタッフ、顧客、予約、実来店確認、評価点でレビューを絞り込み、指定した並び順とページネーションで一覧取得し、店舗運営の改善材料を抽出します。ログインなしで呼べます。削除したサロンのレビューは含みません。存在しないIDで絞り込んだ場合は空の一覧を返します。minRatingにmaxRatingより大きい値を指定した場合と、cursorが一覧に出るレビューのIDでない場合は400を返します。
  * @summary List reviews
  */
 export function useReviewCrudList<TData = Awaited<ReturnType<typeof reviewCrudList>>, TError = ModelsProblemDetails>(
@@ -202,7 +192,7 @@ export function useReviewCrudList<TData = Awaited<ReturnType<typeof reviewCrudLi
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * サロン、スタッフ、顧客、予約、実来店確認、評価点でレビューを絞り込み、指定した並び順とページネーションで一覧取得し、店舗運営の改善材料を抽出します。minRatingにmaxRatingより大きい値を指定した場合は400を返します。
+ * サロン、スタッフ、顧客、予約、実来店確認、評価点でレビューを絞り込み、指定した並び順とページネーションで一覧取得し、店舗運営の改善材料を抽出します。ログインなしで呼べます。削除したサロンのレビューは含みません。存在しないIDで絞り込んだ場合は空の一覧を返します。minRatingにmaxRatingより大きい値を指定した場合と、cursorが一覧に出るレビューのIDでない場合は400を返します。
  * @summary List reviews
  */
 export function useReviewCrudList<TData = Awaited<ReturnType<typeof reviewCrudList>>, TError = ModelsProblemDetails>(
@@ -285,7 +275,7 @@ export const getReviewCrudCreateUrl = () => {
 }
 
 /**
- * 施術完了後に顧客がレビューを投稿し、サービス品質の可視化と信頼獲得につなげます。salonId・customerId・bookingIdの組み合わせが同じ予約のものではない場合や、staffIdに同じサロンのものではないスタッフを指定した場合は400を、予約が完了していない場合や予約のレビューが既に存在する場合は409を返します。
+ * 施術完了後に顧客がレビューを投稿し、サービス品質の可視化と信頼獲得につなげます。投稿できるのは、予約の顧客本人(ロール customer で顧客のプロフィールがあるアカウント)だけで、admin とサロンのメンバー、プロフィールのない顧客のアカウント、customerId が自分の顧客IDでないリクエストには403を返します。bookingIdが自分の予約でない場合、salonIdがその予約のサロンでない場合(削除したサロンを含む)、staffIdがその予約を担当したスタッフ(予約の担当者か施術明細のスタッフ)でないか削除されている場合、staffIdがnullでstaffRatingを指定した場合は400を、予約のステータスがcompletedでない場合と、予約のレビューが既に存在する場合は409を返します。投稿すると、サロンの rating と reviewCount を、そのサロンのレビューから数え直します。
  * @summary Create review
  */
 export const reviewCrudCreate = async (modelsReviewCreateRequest: ModelsReviewCreateRequest, options?: RequestInit): Promise<reviewCrudCreateResponse> => {
@@ -352,7 +342,7 @@ const {mutation: mutationOptions} = options ?
     export type ReviewCrudCreateMutationVariables = {data: ModelsReviewCreateRequest}
 
     /**
- * 施術完了後に顧客がレビューを投稿し、サービス品質の可視化と信頼獲得につなげます。salonId・customerId・bookingIdの組み合わせが同じ予約のものではない場合や、staffIdに同じサロンのものではないスタッフを指定した場合は400を、予約が完了していない場合や予約のレビューが既に存在する場合は409を返します。
+ * 施術完了後に顧客がレビューを投稿し、サービス品質の可視化と信頼獲得につなげます。投稿できるのは、予約の顧客本人(ロール customer で顧客のプロフィールがあるアカウント)だけで、admin とサロンのメンバー、プロフィールのない顧客のアカウント、customerId が自分の顧客IDでないリクエストには403を返します。bookingIdが自分の予約でない場合、salonIdがその予約のサロンでない場合(削除したサロンを含む)、staffIdがその予約を担当したスタッフ(予約の担当者か施術明細のスタッフ)でないか削除されている場合、staffIdがnullでstaffRatingを指定した場合は400を、予約のステータスがcompletedでない場合と、予約のレビューが既に存在する場合は409を返します。投稿すると、サロンの rating と reviewCount を、そのサロンのレビューから数え直します。
  * @summary Create review
  */
 export const useReviewCrudCreate = <TError = ModelsProblemDetails,
@@ -375,16 +365,6 @@ export type reviewCrudGetResponse400 = {
   status: 400
 }
 
-export type reviewCrudGetResponse401 = {
-  data: ModelsProblemDetails
-  status: 401
-}
-
-export type reviewCrudGetResponse403 = {
-  data: ModelsProblemDetails
-  status: 403
-}
-
 export type reviewCrudGetResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -403,7 +383,7 @@ export type reviewCrudGetResponse500 = {
 export type reviewCrudGetResponseSuccess = (reviewCrudGetResponse200) & {
   headers: Headers;
 };
-export type reviewCrudGetResponseError = (reviewCrudGetResponse400 | reviewCrudGetResponse401 | reviewCrudGetResponse403 | reviewCrudGetResponse404 | reviewCrudGetResponse429 | reviewCrudGetResponse500) & {
+export type reviewCrudGetResponseError = (reviewCrudGetResponse400 | reviewCrudGetResponse404 | reviewCrudGetResponse429 | reviewCrudGetResponse500) & {
   headers: Headers;
 };
 
@@ -418,7 +398,7 @@ export const getReviewCrudGetUrl = (id: ModelsReviewId,) => {
 }
 
 /**
- * 単一レビューの詳細を表示し、コメント内容や評価指標を確認します。
+ * 単一レビューの詳細を表示し、コメント内容や評価指標を確認します。ログインなしで呼べます。レビューが存在しない場合と、削除したサロンのレビューの場合は404を返します。
  * @summary Get review
  */
 export const reviewCrudGet = async (id: ModelsReviewId, options?: RequestInit): Promise<reviewCrudGetResponse> => {
@@ -466,7 +446,7 @@ export type ReviewCrudGetQueryError = ModelsProblemDetails
 
 
 /**
- * 単一レビューの詳細を表示し、コメント内容や評価指標を確認します。
+ * 単一レビューの詳細を表示し、コメント内容や評価指標を確認します。ログインなしで呼べます。レビューが存在しない場合と、削除したサロンのレビューの場合は404を返します。
  * @summary Get review
  */
 export function useReviewCrudGet<TData = Awaited<ReturnType<typeof reviewCrudGet>>, TError = ModelsProblemDetails>(
@@ -480,7 +460,7 @@ export function useReviewCrudGet<TData = Awaited<ReturnType<typeof reviewCrudGet
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 単一レビューの詳細を表示し、コメント内容や評価指標を確認します。
+ * 単一レビューの詳細を表示し、コメント内容や評価指標を確認します。ログインなしで呼べます。レビューが存在しない場合と、削除したサロンのレビューの場合は404を返します。
  * @summary Get review
  */
 export function useReviewCrudGet<TData = Awaited<ReturnType<typeof reviewCrudGet>>, TError = ModelsProblemDetails>(
@@ -494,7 +474,7 @@ export function useReviewCrudGet<TData = Awaited<ReturnType<typeof reviewCrudGet
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 単一レビューの詳細を表示し、コメント内容や評価指標を確認します。
+ * 単一レビューの詳細を表示し、コメント内容や評価指標を確認します。ログインなしで呼べます。レビューが存在しない場合と、削除したサロンのレビューの場合は404を返します。
  * @summary Get review
  */
 export function useReviewCrudGet<TData = Awaited<ReturnType<typeof reviewCrudGet>>, TError = ModelsProblemDetails>(
@@ -502,7 +482,7 @@ export function useReviewCrudGet<TData = Awaited<ReturnType<typeof reviewCrudGet
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 単一レビューの詳細を表示し、コメント内容や評価指標を確認します。
+ * 単一レビューの詳細を表示し、コメント内容や評価指標を確認します。ログインなしで呼べます。レビューが存在しない場合と、削除したサロンのレビューの場合は404を返します。
  * @summary Get review
  */
 export function useReviewCrudGet<TData = Awaited<ReturnType<typeof reviewCrudGet>>, TError = ModelsProblemDetails>(
@@ -1058,16 +1038,6 @@ export type salonReviewSummaryGetSummaryResponse400 = {
   status: 400
 }
 
-export type salonReviewSummaryGetSummaryResponse401 = {
-  data: ModelsProblemDetails
-  status: 401
-}
-
-export type salonReviewSummaryGetSummaryResponse403 = {
-  data: ModelsProblemDetails
-  status: 403
-}
-
 export type salonReviewSummaryGetSummaryResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -1086,7 +1056,7 @@ export type salonReviewSummaryGetSummaryResponse500 = {
 export type salonReviewSummaryGetSummaryResponseSuccess = (salonReviewSummaryGetSummaryResponse200) & {
   headers: Headers;
 };
-export type salonReviewSummaryGetSummaryResponseError = (salonReviewSummaryGetSummaryResponse400 | salonReviewSummaryGetSummaryResponse401 | salonReviewSummaryGetSummaryResponse403 | salonReviewSummaryGetSummaryResponse404 | salonReviewSummaryGetSummaryResponse429 | salonReviewSummaryGetSummaryResponse500) & {
+export type salonReviewSummaryGetSummaryResponseError = (salonReviewSummaryGetSummaryResponse400 | salonReviewSummaryGetSummaryResponse404 | salonReviewSummaryGetSummaryResponse429 | salonReviewSummaryGetSummaryResponse500) & {
   headers: Headers;
 };
 
@@ -1101,7 +1071,7 @@ export const getSalonReviewSummaryGetSummaryUrl = (salonId: ModelsSalonId,) => {
 }
 
 /**
- * サロン全体の平均評価や件数などの概要指標を取得し、ダッシュボード表示に利用します。サロンが存在しない場合は404を返します。
+ * サロン全体の平均評価や件数などの概要指標を取得し、ダッシュボード表示に利用します。ログインなしで呼べます。averageRating と totalReviews は、サロンの rating と reviewCount と一致します。サロンが存在しない場合と、削除されている場合は404を返します。
  * @summary Get salon reviews summary
  */
 export const salonReviewSummaryGetSummary = async (salonId: ModelsSalonId, options?: RequestInit): Promise<salonReviewSummaryGetSummaryResponse> => {
@@ -1149,7 +1119,7 @@ export type SalonReviewSummaryGetSummaryQueryError = ModelsProblemDetails
 
 
 /**
- * サロン全体の平均評価や件数などの概要指標を取得し、ダッシュボード表示に利用します。サロンが存在しない場合は404を返します。
+ * サロン全体の平均評価や件数などの概要指標を取得し、ダッシュボード表示に利用します。ログインなしで呼べます。averageRating と totalReviews は、サロンの rating と reviewCount と一致します。サロンが存在しない場合と、削除されている場合は404を返します。
  * @summary Get salon reviews summary
  */
 export function useSalonReviewSummaryGetSummary<TData = Awaited<ReturnType<typeof salonReviewSummaryGetSummary>>, TError = ModelsProblemDetails>(
@@ -1163,7 +1133,7 @@ export function useSalonReviewSummaryGetSummary<TData = Awaited<ReturnType<typeo
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * サロン全体の平均評価や件数などの概要指標を取得し、ダッシュボード表示に利用します。サロンが存在しない場合は404を返します。
+ * サロン全体の平均評価や件数などの概要指標を取得し、ダッシュボード表示に利用します。ログインなしで呼べます。averageRating と totalReviews は、サロンの rating と reviewCount と一致します。サロンが存在しない場合と、削除されている場合は404を返します。
  * @summary Get salon reviews summary
  */
 export function useSalonReviewSummaryGetSummary<TData = Awaited<ReturnType<typeof salonReviewSummaryGetSummary>>, TError = ModelsProblemDetails>(
@@ -1177,7 +1147,7 @@ export function useSalonReviewSummaryGetSummary<TData = Awaited<ReturnType<typeo
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * サロン全体の平均評価や件数などの概要指標を取得し、ダッシュボード表示に利用します。サロンが存在しない場合は404を返します。
+ * サロン全体の平均評価や件数などの概要指標を取得し、ダッシュボード表示に利用します。ログインなしで呼べます。averageRating と totalReviews は、サロンの rating と reviewCount と一致します。サロンが存在しない場合と、削除されている場合は404を返します。
  * @summary Get salon reviews summary
  */
 export function useSalonReviewSummaryGetSummary<TData = Awaited<ReturnType<typeof salonReviewSummaryGetSummary>>, TError = ModelsProblemDetails>(
@@ -1185,7 +1155,7 @@ export function useSalonReviewSummaryGetSummary<TData = Awaited<ReturnType<typeo
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * サロン全体の平均評価や件数などの概要指標を取得し、ダッシュボード表示に利用します。サロンが存在しない場合は404を返します。
+ * サロン全体の平均評価や件数などの概要指標を取得し、ダッシュボード表示に利用します。ログインなしで呼べます。averageRating と totalReviews は、サロンの rating と reviewCount と一致します。サロンが存在しない場合と、削除されている場合は404を返します。
  * @summary Get salon reviews summary
  */
 export function useSalonReviewSummaryGetSummary<TData = Awaited<ReturnType<typeof salonReviewSummaryGetSummary>>, TError = ModelsProblemDetails>(
@@ -1215,16 +1185,6 @@ export type staffReviewSummaryGetStaffSummaryResponse400 = {
   status: 400
 }
 
-export type staffReviewSummaryGetStaffSummaryResponse401 = {
-  data: ModelsProblemDetails
-  status: 401
-}
-
-export type staffReviewSummaryGetStaffSummaryResponse403 = {
-  data: ModelsProblemDetails
-  status: 403
-}
-
 export type staffReviewSummaryGetStaffSummaryResponse404 = {
   data: ModelsProblemDetails
   status: 404
@@ -1243,7 +1203,7 @@ export type staffReviewSummaryGetStaffSummaryResponse500 = {
 export type staffReviewSummaryGetStaffSummaryResponseSuccess = (staffReviewSummaryGetStaffSummaryResponse200) & {
   headers: Headers;
 };
-export type staffReviewSummaryGetStaffSummaryResponseError = (staffReviewSummaryGetStaffSummaryResponse400 | staffReviewSummaryGetStaffSummaryResponse401 | staffReviewSummaryGetStaffSummaryResponse403 | staffReviewSummaryGetStaffSummaryResponse404 | staffReviewSummaryGetStaffSummaryResponse429 | staffReviewSummaryGetStaffSummaryResponse500) & {
+export type staffReviewSummaryGetStaffSummaryResponseError = (staffReviewSummaryGetStaffSummaryResponse400 | staffReviewSummaryGetStaffSummaryResponse404 | staffReviewSummaryGetStaffSummaryResponse429 | staffReviewSummaryGetStaffSummaryResponse500) & {
   headers: Headers;
 };
 
@@ -1258,7 +1218,7 @@ export const getStaffReviewSummaryGetStaffSummaryUrl = (staffId: ModelsStaffId,)
 }
 
 /**
- * スタッフ別の平均評価やレビュー数を集計し、人事評価や表彰に用います。スタッフが存在しない場合は404を返します。
+ * スタッフ別の平均評価やレビュー数を集計し、人事評価や表彰に用います。ログインなしで呼べます。staffId がそのスタッフのレビューを数えます。スタッフが存在しない場合と、スタッフかそのサロンが削除されている場合は404を返します。
  * @summary Get staff reviews summary
  */
 export const staffReviewSummaryGetStaffSummary = async (staffId: ModelsStaffId, options?: RequestInit): Promise<staffReviewSummaryGetStaffSummaryResponse> => {
@@ -1306,7 +1266,7 @@ export type StaffReviewSummaryGetStaffSummaryQueryError = ModelsProblemDetails
 
 
 /**
- * スタッフ別の平均評価やレビュー数を集計し、人事評価や表彰に用います。スタッフが存在しない場合は404を返します。
+ * スタッフ別の平均評価やレビュー数を集計し、人事評価や表彰に用います。ログインなしで呼べます。staffId がそのスタッフのレビューを数えます。スタッフが存在しない場合と、スタッフかそのサロンが削除されている場合は404を返します。
  * @summary Get staff reviews summary
  */
 export function useStaffReviewSummaryGetStaffSummary<TData = Awaited<ReturnType<typeof staffReviewSummaryGetStaffSummary>>, TError = ModelsProblemDetails>(
@@ -1320,7 +1280,7 @@ export function useStaffReviewSummaryGetStaffSummary<TData = Awaited<ReturnType<
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * スタッフ別の平均評価やレビュー数を集計し、人事評価や表彰に用います。スタッフが存在しない場合は404を返します。
+ * スタッフ別の平均評価やレビュー数を集計し、人事評価や表彰に用います。ログインなしで呼べます。staffId がそのスタッフのレビューを数えます。スタッフが存在しない場合と、スタッフかそのサロンが削除されている場合は404を返します。
  * @summary Get staff reviews summary
  */
 export function useStaffReviewSummaryGetStaffSummary<TData = Awaited<ReturnType<typeof staffReviewSummaryGetStaffSummary>>, TError = ModelsProblemDetails>(
@@ -1334,7 +1294,7 @@ export function useStaffReviewSummaryGetStaffSummary<TData = Awaited<ReturnType<
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * スタッフ別の平均評価やレビュー数を集計し、人事評価や表彰に用います。スタッフが存在しない場合は404を返します。
+ * スタッフ別の平均評価やレビュー数を集計し、人事評価や表彰に用います。ログインなしで呼べます。staffId がそのスタッフのレビューを数えます。スタッフが存在しない場合と、スタッフかそのサロンが削除されている場合は404を返します。
  * @summary Get staff reviews summary
  */
 export function useStaffReviewSummaryGetStaffSummary<TData = Awaited<ReturnType<typeof staffReviewSummaryGetStaffSummary>>, TError = ModelsProblemDetails>(
@@ -1342,7 +1302,7 @@ export function useStaffReviewSummaryGetStaffSummary<TData = Awaited<ReturnType<
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * スタッフ別の平均評価やレビュー数を集計し、人事評価や表彰に用います。スタッフが存在しない場合は404を返します。
+ * スタッフ別の平均評価やレビュー数を集計し、人事評価や表彰に用います。ログインなしで呼べます。staffId がそのスタッフのレビューを数えます。スタッフが存在しない場合と、スタッフかそのサロンが削除されている場合は404を返します。
  * @summary Get staff reviews summary
  */
 export function useStaffReviewSummaryGetStaffSummary<TData = Awaited<ReturnType<typeof staffReviewSummaryGetStaffSummary>>, TError = ModelsProblemDetails>(

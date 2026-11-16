@@ -818,4 +818,254 @@ describe('the migrations of this repository', () => {
       expect(await countOfPoints()).toBe(4)
     })
   })
+
+  describe('202611171000_review_rules.sql', () => {
+    const run = (): Promise<void> =>
+      runMigration('202611171000_review_rules.sql')
+
+    /** The schema of setup.sql, which the migration brings a database to. */
+    let schemaOfSetup: string[] = []
+
+    /** A salon with the rating and the review count it says it has. */
+    const storeRatedSalon = async (
+      rating: string | null,
+      reviewCount: number,
+    ): Promise<string> => {
+      const id = await storeSalon(null)
+      await sql`
+        UPDATE salons
+        SET rating = ${rating}, "reviewCount" = ${reviewCount}
+        WHERE id = ${id}
+      `
+      return id
+    }
+
+    type StoredReview = {
+      overallRating: number
+      serviceRating?: number | null
+      imageUrls?: string | null
+      ownerResponse?: string | null
+      ownerRespondedAt?: string | null
+    }
+
+    /**
+     * A review of the salon, by a customer of their own, of a booking of
+     * their own with a staff member of the salon; returns its ID.
+     * `imageUrls` is the JSON text of the column.
+     */
+    const storeReview = async (
+      salonId: string,
+      {
+        overallRating,
+        serviceRating = null,
+        imageUrls = '[]',
+        ownerResponse = null,
+        ownerRespondedAt = null,
+      }: StoredReview,
+    ): Promise<string> => {
+      const customerId = randomUUID()
+      await sql`
+        INSERT INTO customers (
+          id, "firstName", "lastName", email, "phoneNumber", tags
+        )
+        VALUES (
+          ${customerId}, 'Taro', 'Suzuki', ${`${customerId}@example.com`},
+          '090-8765-4321', '{}'
+        )
+      `
+      const staffId = randomUUID()
+      await sql`
+        INSERT INTO staff (
+          id, "salonId", "firstName", "lastName", "displayName", email,
+          "phoneNumber", specialties, certifications
+        )
+        VALUES (
+          ${staffId}, ${salonId}, 'Hanako', 'Sato', 'Hanako',
+          ${`${staffId}@example.com`}, '03-1234-5678', '{}', '{}'
+        )
+      `
+      const bookingId = randomUUID()
+      await sql`
+        INSERT INTO bookings (
+          id, "bookingNumber", "salonId", "customerId", "staffId",
+          "bookingDate", "startTime", "endTime", duration, subtotal,
+          "totalAmount"
+        )
+        VALUES (
+          ${bookingId}, ${`BK-${bookingId.slice(0, 8)}`}, ${salonId},
+          ${customerId}, ${staffId}, '2026-11-01',
+          '2026-11-01T01:00:00Z', '2026-11-01T02:00:00Z', 60, 0, 0
+        )
+      `
+      const id = randomUUID()
+      await sql`
+        INSERT INTO reviews (
+          id, "salonId", "customerId", "bookingId", "staffId",
+          "overallRating", "serviceRating", "imageUrls", "ownerResponse",
+          "ownerRespondedAt"
+        )
+        VALUES (
+          ${id}, ${salonId}, ${customerId}, ${bookingId}, ${staffId},
+          ${overallRating}, ${serviceRating}, ${imageUrls}::text::jsonb,
+          ${ownerResponse}, ${ownerRespondedAt}
+        )
+      `
+      return id
+    }
+
+    /**
+     * What the salon says of its reviews, as `rating count`, and the
+     * transaction that wrote the row: the same as long as nothing did.
+     */
+    const figuresOf = async (
+      id: string,
+    ): Promise<{ figures: string; writtenBy: string }> => {
+      const [row] = await sql<{ figures: string; writtenBy: string }[]>`
+        SELECT
+          concat_ws(' ', coalesce(rating::text, 'null'), "reviewCount")
+            AS figures,
+          xmin::text AS "writtenBy"
+        FROM salons
+        WHERE id = ${id}
+      `
+      return row ?? { figures: 'missing', writtenBy: 'missing' }
+    }
+
+    const imagesOf = async (id: string): Promise<unknown> => {
+      const [row] = await sql<{ imageUrls: unknown }[]>`
+        SELECT "imageUrls" FROM reviews WHERE id = ${id}
+      `
+      return row?.imageUrls
+    }
+
+    // A database from before the migration: none of its rules, and image
+    // URLs that may be missing.
+    beforeEach(async () => {
+      await applyBaseline(sql, plan)
+      schemaOfSetup = await describeSchema()
+      await sql.unsafe(`
+        ALTER TABLE reviews
+          DROP CONSTRAINT reviews_ratings_in_range,
+          DROP CONSTRAINT reviews_counts_not_negative,
+          DROP CONSTRAINT reviews_owner_response_pair,
+          DROP CONSTRAINT reviews_image_urls_array,
+          ALTER COLUMN "imageUrls" DROP NOT NULL;
+        ALTER TABLE salons
+          DROP CONSTRAINT salons_review_count_not_negative,
+          DROP CONSTRAINT salons_rating_in_range,
+          DROP CONSTRAINT salons_rating_of_reviews;
+      `)
+    })
+
+    it('should give the database the rules of setup.sql', async () => {
+      expect(await describeSchema()).not.toEqual(schemaOfSetup)
+
+      await run()
+
+      expect(await describeSchema()).toEqual(schemaOfSetup)
+    })
+
+    it('should count the rating and the review count of every salon from its reviews', async () => {
+      const counted = await storeRatedSalon('4.80', 324)
+      for (const overallRating of [5, 4, 4]) {
+        await storeReview(counted, { overallRating })
+      }
+      const roundedUp = await storeRatedSalon(null, 0)
+      for (const overallRating of [5, 5, 4]) {
+        await storeReview(roundedUp, { overallRating })
+      }
+      const withoutReviews = await storeRatedSalon('3.00', 10)
+
+      await run()
+
+      expect((await figuresOf(counted)).figures).toBe('4.33 3')
+      expect((await figuresOf(roundedUp)).figures).toBe('4.67 3')
+      expect((await figuresOf(withoutReviews)).figures).toBe('null 0')
+    })
+
+    it('should give a review without images an empty array and keep the images of the others', async () => {
+      const salon = await storeRatedSalon('4.00', 3)
+      const missing = await storeReview(salon, {
+        overallRating: 4,
+        imageUrls: null,
+      })
+      const jsonNull = await storeReview(salon, {
+        overallRating: 4,
+        imageUrls: 'null',
+      })
+      const withImages = await storeReview(salon, {
+        overallRating: 4,
+        imageUrls: '["https://example.com/after.jpg"]',
+      })
+
+      await run()
+
+      expect(await imagesOf(missing)).toEqual([])
+      expect(await imagesOf(jsonNull)).toEqual([])
+      expect(await imagesOf(withImages)).toEqual([
+        'https://example.com/after.jpg',
+      ])
+    })
+
+    it('should write no salon whose figures agree, and nothing on a second run', async () => {
+      const agreeing = await storeRatedSalon('4.50', 2)
+      await storeReview(agreeing, { overallRating: 5 })
+      await storeReview(agreeing, { overallRating: 4 })
+      const empty = await storeRatedSalon(null, 0)
+      const differing = await storeRatedSalon(null, 0)
+      await storeReview(differing, { overallRating: 3 })
+      const before = await figuresOf(agreeing)
+      const emptyBefore = await figuresOf(empty)
+
+      await run()
+      const afterFirst = await figuresOf(differing)
+      await run()
+
+      expect(await figuresOf(agreeing)).toEqual(before)
+      expect(await figuresOf(empty)).toEqual(emptyBefore)
+      expect(afterFirst.figures).toBe('3.00 1')
+      expect(await figuresOf(differing)).toEqual(afterFirst)
+    })
+
+    it('should fail and change nothing where a review breaks a rule', async () => {
+      const salon = await storeRatedSalon('4.80', 324)
+      await storeReview(salon, { overallRating: 4, serviceRating: 0 })
+      const before = await describeSchema()
+
+      await expect(run()).rejects.toThrow('reviews_ratings_in_range')
+
+      expect((await figuresOf(salon)).figures).toBe('4.80 324')
+      expect(await describeSchema()).toEqual(before)
+    })
+
+    it('should keep a review and a salon that break a rule out from then on', async () => {
+      const salon = await storeRatedSalon(null, 0)
+      await run()
+
+      await expect(storeReview(salon, { overallRating: 6 })).rejects.toThrow(
+        'reviews_ratings_in_range',
+      )
+      await expect(
+        storeReview(salon, { overallRating: 4, imageUrls: '{}' }),
+      ).rejects.toThrow('reviews_image_urls_array')
+      await expect(
+        storeReview(salon, { overallRating: 4, imageUrls: null }),
+      ).rejects.toThrow('imageUrls')
+      await expect(
+        storeReview(salon, {
+          overallRating: 4,
+          ownerResponse: 'Thank you',
+        }),
+      ).rejects.toThrow('reviews_owner_response_pair')
+      await expect(
+        sql`UPDATE salons SET rating = 4 WHERE id = ${salon}`,
+      ).rejects.toThrow('salons_rating_of_reviews')
+      await expect(
+        sql`UPDATE salons SET rating = 4, "reviewCount" = -1 WHERE id = ${salon}`,
+      ).rejects.toThrow('salons_review_count_not_negative')
+      await expect(
+        sql`UPDATE salons SET rating = 5.5, "reviewCount" = 1 WHERE id = ${salon}`,
+      ).rejects.toThrow('salons_rating_in_range')
+    })
+  })
 })

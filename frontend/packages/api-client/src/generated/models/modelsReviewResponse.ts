@@ -24,7 +24,7 @@ export interface ModelsReviewResponse {
   /** 紐づく来店予約ID。1件の予約につきレビューは1件 */
   bookingId: ModelsBookingId;
   /**
-     * 評価対象のスタッフID。セルフサービスやスタッフ特定不要の施術の場合、またはスタッフが削除された場合はnull
+     * 評価対象のスタッフID。予約を担当したスタッフ(予約の担当者か施術明細のスタッフ)。スタッフを評価しないレビューの場合はnull
      * @nullable
      */
   staffId: string | null;
@@ -36,7 +36,7 @@ export interface ModelsReviewResponse {
      */
   serviceRating: number | null;
   /**
-     * スタッフの接客・技術に対する評価値 (1〜5)。スタッフ評価省略またはセルフサービスの場合はnull
+     * スタッフの接客・技術に対する評価値 (1〜5)。スタッフ評価を省略した場合と、staffId が null の場合はnull
      * @nullable
      */
   staffRating: number | null;
@@ -65,12 +65,9 @@ export interface ModelsReviewResponse {
      * @nullable
      */
   comment: string | null;
-  /**
-     * レビューに添付された画像URLの一覧。画像添付なしのテキストのみレビューの場合は空配列またはnull
-     * @nullable
-     */
-  imageUrls: string[] | null;
-  /** 実来店が確認済みかを表す検証フラグ。システムが設定する */
+  /** レビューに添付された画像のURLの一覧。添付がない場合は空配列 */
+  imageUrls: string[];
+  /** 実来店が確認済みかを表す検証フラグ。システムが設定する。完了した予約のレビューだけを受け付けるので、APIで投稿したレビューはtrue */
   isVerified: boolean;
   /** レビューが「参考になった」と評価された累積回数 */
   helpfulCount: number;

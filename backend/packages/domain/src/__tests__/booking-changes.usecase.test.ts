@@ -620,8 +620,20 @@ describe('DeleteBookingUseCase', () => {
       'The booking cannot be deleted: a treatment record refers to it',
     ],
     [
+      { type: 'referredTo', by: ['review'] },
+      'The booking cannot be deleted: a review refers to it',
+    ],
+    [
       { type: 'referredTo', by: ['sale', 'treatmentRecord'] },
       'The booking cannot be deleted: a sale and a treatment record refer to it',
+    ],
+    [
+      { type: 'referredTo', by: ['sale', 'review'] },
+      'The booking cannot be deleted: a sale and a review refer to it',
+    ],
+    [
+      { type: 'referredTo', by: ['sale', 'treatmentRecord', 'review'] },
+      'The booking cannot be deleted: a sale, a treatment record and a review refer to it',
     ],
   ])(
     'reports %j as a conflict that says what refers to the booking',

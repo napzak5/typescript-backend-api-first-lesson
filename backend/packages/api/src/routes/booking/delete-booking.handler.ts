@@ -10,9 +10,10 @@ import { sendProblem } from '../../shared/responses'
 import type { BookingParams } from './_shared'
 
 /**
- * DELETE /api/v1/bookings/:id - remove a booking with its service lines,
- * its status history and its review (administrators, and the owner and the
- * managers of the booking's salon)
+ * DELETE /api/v1/bookings/:id - remove a booking with its service lines
+ * and its status history, unless a sale, a treatment record or a review
+ * refers to it (administrators, and the owner and the managers of the
+ * booking's salon)
  */
 export const deleteBookingHandler = (
   dependencies: BookingUseCaseDependencies,

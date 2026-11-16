@@ -82,7 +82,10 @@ of `PaymentCrud` (`refund`), the six of `SalesReportCrud` (the
 reports of the sales of a salon: `get`, `getDaily`, `getByStaff`,
 `getByCategory`, `getTrends` and `export`, a CSV file), the seven of
 `PointCrud` (the points ledger of the customers: `getBalance`,
-`listTransactions`, `getExpiring`, `earn`, `use`, `adjust` and `expire`), the five of `PaymentMethodCrud` (the payment methods of a
+`listTransactions`, `getExpiring`, `earn`, `use`, `adjust` and `expire`), `list`, `create` and `get` of `ReviewCrud` (the reviews of the
+customers), `getSummary` of `SalonReviewSummary` and `getStaffSummary` of
+`StaffReviewSummary` (the summaries of the reviews of a salon and of a
+staff member), the five of `PaymentMethodCrud` (the payment methods of a
 salon: `list`, `create`, `get`, `update` and `delete`),
 the five
 operations of

@@ -22,7 +22,7 @@ export interface ModelsReviewCreateRequest {
   /** 紐づく来店予約ID。1件の予約につきレビューは1件まで */
   bookingId: ModelsBookingId;
   /**
-     * 評価対象スタッフのID。salonIdのサロンのスタッフを指定する。セルフサービスやスタッフ特定不要の施術の場合はnull
+     * 評価対象スタッフのID。bookingIdの予約を担当したスタッフ(予約の担当者か施術明細のスタッフ)で、削除されていないスタッフを指定する。スタッフを評価しない場合はnull
      * @nullable
      */
   staffId: string | null;
@@ -40,7 +40,7 @@ export interface ModelsReviewCreateRequest {
      */
   serviceRating: number | null;
   /**
-     * スタッフ対応に対する評価値 (1〜5)。スタッフ評価省略またはセルフサービスの場合はnull
+     * スタッフ対応に対する評価値 (1〜5)。スタッフ評価を省略する場合はnull。staffId が null の場合はnullしか指定できない
      * @minimum 1
      * @maximum 5
      * @nullable
@@ -68,19 +68,19 @@ export interface ModelsReviewCreateRequest {
      */
   valueRating: number | null;
   /**
-     * レビュータイトル。タイトル未設定の簡易レビューの場合はnull
+     * レビュータイトル。空白だけの文字列は指定できない。タイトル未設定の簡易レビューの場合はnull
      * @maxLength 255
      * @nullable
      */
   title: string | null;
   /**
-     * 自由記述のコメント。評価のみでコメントなしのシンプルレビューの場合はnull
+     * 自由記述のコメント。空白だけの文字列は指定できない。評価のみでコメントなしのシンプルレビューの場合はnull
      * @nullable
      */
   comment: string | null;
   /**
-     * 添付画像のURL一覧。画像添付なしのテキストのみレビューの場合は空配列またはnull
-     * @nullable
+     * 添付画像のURL(http または https、500文字まで)の一覧。10件まで。添付がない場合は空配列。同じURLの繰り返しは指定できない
+     * @maxItems 10
      */
-  imageUrls: string[] | null;
+  imageUrls: string[];
 }

@@ -12,7 +12,7 @@ import type { ModelsReviewSummaryResponseRatingDistribution } from './modelsRevi
  */
 export interface ModelsReviewSummaryResponse {
   /**
-     * 全体満足度評価(overallRating)の平均値 (小数)。レビューが1件もない場合はnull
+     * 全体満足度評価(overallRating)の平均値。小数第2位に四捨五入する。レビューが1件もない場合はnull
      * @nullable
      */
   averageRating: number | null;

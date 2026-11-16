@@ -53,19 +53,19 @@ export interface ModelsReviewUpdateRequest {
      */
   valueRating?: number | null;
   /**
-     * 更新後のレビュータイトル。nullでクリア
+     * 更新後のレビュータイトル。空白だけの文字列は指定できない。nullでクリア
      * @maxLength 255
      * @nullable
      */
   title?: string | null;
   /**
-     * 更新後のコメント本文。nullでクリア
+     * 更新後のコメント本文。空白だけの文字列は指定できない。nullでクリア
      * @nullable
      */
   comment?: string | null;
   /**
-     * 画像URL一覧の更新内容。指定した場合は全件を置き換える。nullでクリア
-     * @nullable
+     * 画像のURL(http または https、500文字まで)の一覧の更新内容。10件まで。指定した場合は全件を置き換える。空配列でクリア。同じURLの繰り返しは指定できない
+     * @maxItems 10
      */
-  imageUrls?: string[] | null;
+  imageUrls?: string[];
 }
