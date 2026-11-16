@@ -304,6 +304,25 @@ describe('planCalculation', () => {
     expect(rulesOf(calculation)).toEqual(rules)
   })
 
+  it('refuses a subtotal of more than an integer column holds, though the discounts bring the total under it', () => {
+    const calculation = calculate(
+      { services: [CUT_ID] },
+      {
+        booking: { lines: [bookedLine(1, true)] },
+        services: [
+          {
+            id: CUT_ID,
+            price: MAX_INTEGER,
+            discountPrice: MAX_INTEGER - 1000,
+            taxIncluded: true,
+          },
+        ],
+      },
+    )
+
+    expect(rulesOf(calculation)).toEqual(['services:too_big'])
+  })
+
   it('tells why a sale that comes to more than it holds is refused', () => {
     const calculation = calculate(
       { services: [CUT_ID] },
@@ -344,6 +363,23 @@ describe('planCalculation', () => {
 
     expect(calculation).toMatchObject({
       calculation: { recommendedMethods: ['e_money'] },
+    })
+  })
+
+  it('recommends by the total, with the tax and without the discounts, not by the subtotal', () => {
+    // The subtotal is 12310 and the total 13211.
+    const calculation = calculate(
+      {},
+      {
+        paymentMethods: [
+          paymentMethod({ method: 'e_money', maximumAmount: 13000 }),
+          paymentMethod({ method: 'credit_card', minimumAmount: 13000 }),
+        ],
+      },
+    )
+
+    expect(calculation).toMatchObject({
+      calculation: { recommendedMethods: ['credit_card'] },
     })
   })
 })

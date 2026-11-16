@@ -1544,6 +1544,32 @@ describe('Sale receipts and calculations API', () => {
         })
       })
 
+      it('reads the services in the order of their IDs, whatever they cost', async () => {
+        // The dearer service has the lower ID: by price, they would come the other way round.
+        const dearer = await insertService({
+          id: '0193a5b8-0000-7000-8000-000000000001',
+          price: 9000,
+        })
+        const cheaper = await insertService({
+          id: '0193a5b8-0000-7000-8000-000000000002',
+          price: 1000,
+        })
+
+        const result = await new SaleRepository(db).findCalculationReferences(
+          requestOf({ servicesOf: [cheaper, dearer] }),
+        )
+
+        expect(result).toMatchObject({
+          type: 'success',
+          data: {
+            services: [
+              { id: dearer, price: 9000 },
+              { id: cheaper, price: 1000 },
+            ],
+          },
+        })
+      })
+
       it('reads nothing else of a salon that is not there or was deleted', async () => {
         const deleted = await salon({ deletedAt: '2026-11-01T00:00:00.000Z' })
         const bookingId = await insertBooking({ booking: { salonId: deleted } })
