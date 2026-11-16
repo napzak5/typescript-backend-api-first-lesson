@@ -1,6 +1,8 @@
-export type {
-  SaleCreateRequest,
-  SalesDetailRequest,
+export {
+  PRODUCT_ITEM,
+  type SaleCreateRequest,
+  type SalesDetailRequest,
+  SERVICE_ITEM,
 } from '../../schemas/sale.schema'
 export type { SaleUseCaseDependencies } from './_shared/dependencies'
 export {
