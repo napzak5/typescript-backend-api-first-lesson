@@ -1217,7 +1217,7 @@ export const reviews = pgTable(
     valueRating: integer(),
     title: varchar({ length: 255 }),
     comment: text(),
-    imageUrls: jsonb().default([]),
+    imageUrls: jsonb().default([]).notNull(),
     isVerified: boolean().default(false).notNull(),
     helpfulCount: integer().default(0).notNull(),
     reportCount: integer().default(0).notNull(),
@@ -1231,6 +1231,22 @@ export const reviews = pgTable(
       .notNull(),
   },
   (table) => [
+    check(
+      'reviews_counts_not_negative',
+      sql`("helpfulCount" >= 0) AND ("reportCount" >= 0)`,
+    ),
+    check(
+      'reviews_image_urls_array',
+      sql`jsonb_typeof("imageUrls") = 'array'::text`,
+    ),
+    check(
+      'reviews_owner_response_pair',
+      sql`("ownerResponse" IS NULL) = ("ownerRespondedAt" IS NULL)`,
+    ),
+    check(
+      'reviews_ratings_in_range',
+      sql`("overallRating" >= 1) AND ("overallRating" <= 5) AND (("serviceRating" IS NULL) OR (("serviceRating" >= 1) AND ("serviceRating" <= 5))) AND (("staffRating" IS NULL) OR (("staffRating" >= 1) AND ("staffRating" <= 5))) AND (("atmosphereRating" IS NULL) OR (("atmosphereRating" >= 1) AND ("atmosphereRating" <= 5))) AND (("cleanlinessRating" IS NULL) OR (("cleanlinessRating" >= 1) AND ("cleanlinessRating" <= 5))) AND (("valueRating" IS NULL) OR (("valueRating" >= 1) AND ("valueRating" <= 5)))`,
+    ),
     foreignKey({
       columns: [table.bookingId],
       foreignColumns: [bookings.id],
@@ -1480,6 +1496,15 @@ export const salons = pgTable(
       .notNull(),
   },
   (table) => [
+    check(
+      'salons_rating_in_range',
+      sql`(rating IS NULL) OR ((rating >= (1)::numeric) AND (rating <= (5)::numeric))`,
+    ),
+    check(
+      'salons_rating_of_reviews',
+      sql`("reviewCount" = 0) = (rating IS NULL)`,
+    ),
+    check('salons_review_count_not_negative', sql`"reviewCount" >= 0`),
     index('idx_salons_deleted_at').using(
       'btree',
       table.deletedAt.asc().nullsLast().op('timestamptz_ops'),

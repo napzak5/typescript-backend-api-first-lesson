@@ -438,7 +438,7 @@ CREATE TABLE "reviews" (
 	"valueRating" integer,
 	"title" varchar(255),
 	"comment" text,
-	"imageUrls" jsonb DEFAULT '[]'::jsonb,
+	"imageUrls" jsonb DEFAULT '[]'::jsonb NOT NULL,
 	"isVerified" boolean DEFAULT false NOT NULL,
 	"helpfulCount" integer DEFAULT 0 NOT NULL,
 	"reportCount" integer DEFAULT 0 NOT NULL,
@@ -446,7 +446,11 @@ CREATE TABLE "reviews" (
 	"ownerRespondedAt" timestamp with time zone,
 	"createdAt" timestamp with time zone DEFAULT now() NOT NULL,
 	"updatedAt" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "reviews_booking_unique" UNIQUE("bookingId")
+	CONSTRAINT "reviews_booking_unique" UNIQUE("bookingId"),
+	CONSTRAINT "reviews_counts_not_negative" CHECK (("helpfulCount" >= 0) AND ("reportCount" >= 0)),
+	CONSTRAINT "reviews_image_urls_array" CHECK (jsonb_typeof("imageUrls") = 'array'::text),
+	CONSTRAINT "reviews_owner_response_pair" CHECK (("ownerResponse" IS NULL) = ("ownerRespondedAt" IS NULL)),
+	CONSTRAINT "reviews_ratings_in_range" CHECK (("overallRating" >= 1) AND ("overallRating" <= 5) AND (("serviceRating" IS NULL) OR (("serviceRating" >= 1) AND ("serviceRating" <= 5))) AND (("staffRating" IS NULL) OR (("staffRating" >= 1) AND ("staffRating" <= 5))) AND (("atmosphereRating" IS NULL) OR (("atmosphereRating" >= 1) AND ("atmosphereRating" <= 5))) AND (("cleanlinessRating" IS NULL) OR (("cleanlinessRating" >= 1) AND ("cleanlinessRating" <= 5))) AND (("valueRating" IS NULL) OR (("valueRating" >= 1) AND ("valueRating" <= 5))))
 );
 
 CREATE TABLE "sales" (
@@ -538,7 +542,10 @@ CREATE TABLE "salons" (
 	"isActive" boolean DEFAULT true NOT NULL,
 	"deletedAt" timestamp with time zone,
 	"createdAt" timestamp with time zone DEFAULT now() NOT NULL,
-	"updatedAt" timestamp with time zone DEFAULT now() NOT NULL
+	"updatedAt" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "salons_rating_in_range" CHECK ((rating IS NULL) OR ((rating >= (1)::numeric) AND (rating <= (5)::numeric))),
+	CONSTRAINT "salons_rating_of_reviews" CHECK (("reviewCount" = 0) = (rating IS NULL)),
+	CONSTRAINT "salons_review_count_not_negative" CHECK ("reviewCount" >= 0)
 );
 
 CREATE TABLE "service_categories" (

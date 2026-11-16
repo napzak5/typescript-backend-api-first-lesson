@@ -379,8 +379,15 @@ describe('Salon API', () => {
         features: [],
         isActive: true,
       })
-      await db.update(salons).set({ rating: '4.50' }).where(eq(salons.id, a.id))
-      await db.update(salons).set({ rating: '3.00' }).where(eq(salons.id, b.id))
+      // A rating is that of reviews, which the salons do not have here.
+      await db
+        .update(salons)
+        .set({ rating: '4.50', reviewCount: 2 })
+        .where(eq(salons.id, a.id))
+      await db
+        .update(salons)
+        .set({ rating: '3.00', reviewCount: 1 })
+        .where(eq(salons.id, b.id))
       return { a, b, c }
     }
 
@@ -419,7 +426,11 @@ describe('Salon API', () => {
       expect(namesOf(response)).toEqual(['C', 'B', 'A'])
       expect(response.body.meta).toMatchObject({ total: 3, hasMore: false })
       expect(response.body.data[0]).toEqual(c)
-      expect(response.body.data[2]).toEqual({ ...a, rating: 4.5 })
+      expect(response.body.data[2]).toEqual({
+        ...a,
+        rating: 4.5,
+        reviewCount: 2,
+      })
     })
 
     it('walks through the pages with the cursor of the previous page', async () => {

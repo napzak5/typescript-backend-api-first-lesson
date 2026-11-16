@@ -429,6 +429,13 @@ describe('Booking changes API', () => {
       .values({ bookingId, customerId, staffId, services: [] })
   }
 
+  /** A review of a booking by the customer, written directly. */
+  const insertReview = async (bookingId: string): Promise<void> => {
+    await db
+      .insert(reviews)
+      .values({ salonId, customerId, bookingId, overallRating: 5 })
+  }
+
   /**
    * A visit of three services: a cut by the staff member of the tests from
    * 01:00, a colouring by a second one from 02:00, and a cut nobody is named
@@ -1540,26 +1547,6 @@ describe('Booking changes API', () => {
       expect((await create(booking())).status).toBe(201)
     })
 
-    it('removes the review of the booking with it, and leaves the reviews of other bookings', async () => {
-      const id = await cutAt('01:00')
-      const other = await cutAt('03:00')
-      await db.insert(reviews).values(
-        [id, other].map((bookingId) => ({
-          salonId,
-          customerId,
-          bookingId,
-          overallRating: 5,
-        })),
-      )
-
-      const response = await remove(id)
-
-      expect(response.status).toBe(204)
-      expect(
-        await db.select({ bookingId: reviews.bookingId }).from(reviews),
-      ).toEqual([{ bookingId: other }])
-    })
-
     it.each(STATUSES)('removes a booking that is %s', async (status) => {
       const { id } = await created()
       await setStatus(id, status)
@@ -1682,7 +1669,7 @@ describe('Booking changes API', () => {
       })
     })
 
-    describe('a booking that a record of what took place refers to', () => {
+    describe('a booking that a record of what took place, or a review, refers to', () => {
       it.each<[string, (id: string) => Promise<void>, string]>([
         ['a sale', insertSale, 'a sale refers to it'],
         [
@@ -1690,6 +1677,7 @@ describe('Booking changes API', () => {
           insertTreatmentRecord,
           'a treatment record refers to it',
         ],
+        ['a review', insertReview, 'a review refers to it'],
         [
           'a sale and a treatment record',
           async (id) => {
@@ -1697,6 +1685,15 @@ describe('Booking changes API', () => {
             await insertSale(id)
           },
           'a sale and a treatment record refer to it',
+        ],
+        [
+          'a sale, a treatment record and a review',
+          async (id) => {
+            await insertReview(id)
+            await insertTreatmentRecord(id)
+            await insertSale(id)
+          },
+          'a sale, a treatment record and a review refer to it',
         ],
       ])(
         'stays when %s refers to it: 409, and nothing is removed',
@@ -1728,15 +1725,19 @@ describe('Booking changes API', () => {
         expect(statusAndCode(await remove(id))).toBe('409 3003')
       })
 
-      it('is removed when a sale and a treatment record refer to other bookings, or to none', async () => {
+      it('is removed when a sale, a treatment record and a review refer to other bookings, or to none', async () => {
         const id = await cutAt('01:00')
         const other = await cutAt('03:00')
         await insertSale(other)
         await insertSale(null)
         await insertTreatmentRecord(other)
+        await insertReview(other)
 
         expect((await remove(id)).status).toBe(204)
         expect(statusAndCode(await remove(other))).toBe('409 3003')
+        expect(
+          await db.select({ bookingId: reviews.bookingId }).from(reviews),
+        ).toEqual([{ bookingId: other }])
       })
     })
 
@@ -2842,8 +2843,9 @@ describe('Booking changes API', () => {
         expect(await db.$count(bookings)).toBe(1)
       })
 
-      it('says what refers to a booking that stays, the sale first', async () => {
+      it('says what refers to a booking that stays, the sale first and the review last', async () => {
         const { id } = await created()
+        await insertReview(id)
         await insertTreatmentRecord(id)
         await insertSale(id)
 
@@ -2851,7 +2853,10 @@ describe('Booking changes API', () => {
           dataOf(
             await repository().delete(bookingIdSchema.parse(id), everySalon),
           ),
-        ).toEqual({ type: 'referredTo', by: ['sale', 'treatmentRecord'] })
+        ).toEqual({
+          type: 'referredTo',
+          by: ['sale', 'treatmentRecord', 'review'],
+        })
       })
 
       it('resolves to a database error when the database does not answer', async () => {

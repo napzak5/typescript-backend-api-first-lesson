@@ -20,6 +20,20 @@ export const parseStaffId = (id: unknown): Result<StaffId, DomainError> =>
     (parameters) => parameters.id,
   )
 
+const staffIdOfPathSchema = z.object({ staffId: staffIdSchema })
+
+/**
+ * The staff member in the path of a route below a staff member
+ * (`/staff/{staffId}/...`); a failure is reported under `staffId`.
+ */
+export const parseStaffIdOfPath = (
+  staffId: unknown,
+): Result<StaffId, DomainError> =>
+  Result.map(
+    parseWith(staffIdOfPathSchema, { staffId }, 'Invalid staff ID'),
+    (parameters) => parameters.staffId,
+  )
+
 // API types, generated from TypeSpec
 export type ApiStaffResponse = components['schemas']['Models.StaffResponse']
 export type ApiStaffCreateRequest =

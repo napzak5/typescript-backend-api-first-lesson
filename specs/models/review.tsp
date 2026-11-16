@@ -36,7 +36,7 @@ namespace BeautySalon.Models {
     @doc("紐づく来店予約ID。1件の予約につきレビューは1件")
     bookingId: BookingId;
 
-    @doc("評価対象のスタッフID。セルフサービスやスタッフ特定不要の施術の場合、またはスタッフが削除された場合はnull")
+    @doc("評価対象のスタッフID。予約を担当したスタッフ(予約の担当者か施術明細のスタッフ)。スタッフを評価しないレビューの場合はnull")
     staffId: StaffId | null;
 
     @doc("全体満足度の評価値 (1〜5)")
@@ -45,7 +45,7 @@ namespace BeautySalon.Models {
     @doc("施術サービスそのものに対する評価値 (1〜5)。個別評価をしない総合評価のみのレビューの場合はnull")
     serviceRating: int32 | null;
 
-    @doc("スタッフの接客・技術に対する評価値 (1〜5)。スタッフ評価省略またはセルフサービスの場合はnull")
+    @doc("スタッフの接客・技術に対する評価値 (1〜5)。スタッフ評価を省略した場合と、staffId が null の場合はnull")
     staffRating: int32 | null;
 
     @doc("店内の雰囲気・居心地に対する評価値 (1〜5)。雰囲気評価を省略したレビューの場合はnull")
@@ -63,10 +63,10 @@ namespace BeautySalon.Models {
     @doc("自由記述のレビューコメント。評価のみでコメントなしのシンプルレビューの場合はnull")
     comment: string | null;
 
-    @doc("レビューに添付された画像URLの一覧。画像添付なしのテキストのみレビューの場合は空配列またはnull")
-    imageUrls: string[] | null;
+    @doc("レビューに添付された画像のURLの一覧。添付がない場合は空配列")
+    imageUrls: string[];
 
-    @doc("実来店が確認済みかを表す検証フラグ。システムが設定する")
+    @doc("実来店が確認済みかを表す検証フラグ。システムが設定する。完了した予約のレビューだけを受け付けるので、APIで投稿したレビューはtrue")
     isVerified: boolean;
 
     @doc("レビューが「参考になった」と評価された累積回数")
@@ -103,7 +103,7 @@ namespace BeautySalon.Models {
     @doc("紐づく来店予約ID。1件の予約につきレビューは1件まで")
     bookingId: BookingId;
 
-    @doc("評価対象スタッフのID。salonIdのサロンのスタッフを指定する。セルフサービスやスタッフ特定不要の施術の場合はnull")
+    @doc("評価対象スタッフのID。bookingIdの予約を担当したスタッフ(予約の担当者か施術明細のスタッフ)で、削除されていないスタッフを指定する。スタッフを評価しない場合はnull")
     staffId: StaffId | null;
 
     @doc("全体満足度の評価値 (1〜5)")
@@ -116,7 +116,7 @@ namespace BeautySalon.Models {
     @maxValue(5)
     serviceRating: int32 | null;
 
-    @doc("スタッフ対応に対する評価値 (1〜5)。スタッフ評価省略またはセルフサービスの場合はnull")
+    @doc("スタッフ対応に対する評価値 (1〜5)。スタッフ評価を省略する場合はnull。staffId が null の場合はnullしか指定できない")
     @minValue(1)
     @maxValue(5)
     staffRating: int32 | null;
@@ -136,15 +136,16 @@ namespace BeautySalon.Models {
     @maxValue(5)
     valueRating: int32 | null;
 
-    @doc("レビュータイトル。タイトル未設定の簡易レビューの場合はnull")
+    @doc("レビュータイトル。空白だけの文字列は指定できない。タイトル未設定の簡易レビューの場合はnull")
     @maxLength(255)
     title: string | null;
 
-    @doc("自由記述のコメント。評価のみでコメントなしのシンプルレビューの場合はnull")
+    @doc("自由記述のコメント。空白だけの文字列は指定できない。評価のみでコメントなしのシンプルレビューの場合はnull")
     comment: string | null;
 
-    @doc("添付画像のURL一覧。画像添付なしのテキストのみレビューの場合は空配列またはnull")
-    imageUrls: string[] | null;
+    @doc("添付画像のURL(http または https、500文字まで)の一覧。10件まで。添付がない場合は空配列。同じURLの繰り返しは指定できない")
+    @maxItems(10)
+    imageUrls: string[];
   }
 
   @doc("""
@@ -182,15 +183,16 @@ namespace BeautySalon.Models {
     @maxValue(5)
     valueRating?: int32 | null;
 
-    @doc("更新後のレビュータイトル。nullでクリア")
+    @doc("更新後のレビュータイトル。空白だけの文字列は指定できない。nullでクリア")
     @maxLength(255)
     title?: string | null;
 
-    @doc("更新後のコメント本文。nullでクリア")
+    @doc("更新後のコメント本文。空白だけの文字列は指定できない。nullでクリア")
     comment?: string | null;
 
-    @doc("画像URL一覧の更新内容。指定した場合は全件を置き換える。nullでクリア")
-    imageUrls?: string[] | null;
+    @doc("画像のURL(http または https、500文字まで)の一覧の更新内容。10件まで。指定した場合は全件を置き換える。空配列でクリア。同じURLの繰り返しは指定できない")
+    @maxItems(10)
+    imageUrls?: string[];
   }
 
   @doc("""
@@ -204,7 +206,7 @@ namespace BeautySalon.Models {
     limit?: int32 = 20;
 
     @query
-    @doc("取得開始位置を示すカーソル。同じ絞り込み条件と並び順で取得した前回レスポンスの `meta.nextCursor` を指定する")
+    @doc("取得開始位置を示すカーソル。同じ絞り込み条件と並び順で取得した前回レスポンスの `meta.nextCursor` を指定する。一覧に出るレビューのIDでない場合は検証エラー")
     cursor?: string;
 
     @query
@@ -240,7 +242,7 @@ namespace BeautySalon.Models {
     maxRating?: int32;
 
     @query
-    @doc("並び順。省略時は新着順")
+    @doc("並び順。省略時は新着順。評価順と参考になった順で同じ値のレビューは、新着順に並ぶ")
     sortBy?: ReviewSortType = ReviewSortType.recent;
   }
 
@@ -274,7 +276,7 @@ namespace BeautySalon.Models {
     レビュー集計レスポンス - サロンまたはスタッフのレビューから平均評価や件数分布を算出し、ダッシュボードやランキング表示に活用する
     """)
   model ReviewSummaryResponse {
-    @doc("全体満足度評価(overallRating)の平均値 (小数)。レビューが1件もない場合はnull")
+    @doc("全体満足度評価(overallRating)の平均値。小数第2位に四捨五入する。レビューが1件もない場合はnull")
     averageRating: float32 | null;
 
     @doc("レビュー総件数")

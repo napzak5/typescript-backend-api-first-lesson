@@ -270,7 +270,7 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 |---|---|---|
 | `platform` | `admin` | すべてのサロン（予約台帳、売上台帳を含む）と、顧客台帳（顧客の好み設定を含む）、ポイント台帳 |
 | `salon` | `owner`、`manager`、`staff`。`users.staffId` が指すスタッフが有効（`isActive`、未削除）で、そのサロンが未削除であること | そのサロン（予約台帳、売上台帳を含む）と、顧客台帳（顧客の好み設定を含む）、ポイント台帳（調整は `owner`・`manager` だけ）、自分のスタッフのプロフィール（`/api/v1/staff-profiles/me`）。範囲はロール・サロン ID・スタッフ ID を持つ |
-| `customer` | `customer`。範囲は `users.customerId` を持ち、プロフィールを作るまでは null | 自分のプロフィール（`/api/v1/customers/me`）、自分の好み設定（`/api/v1/customers/me/preferences`）、自分の予約（`/api/v1/customers/me/bookings`）。null の間は、プロフィールの作成だけができる |
+| `customer` | `customer`。範囲は `users.customerId` を持ち、プロフィールを作るまでは null | 自分のプロフィール（`/api/v1/customers/me`）、自分の好み設定（`/api/v1/customers/me/preferences`）、自分の予約（`/api/v1/customers/me/bookings`）、自分の済んだ予約へのレビューの投稿（`POST /api/v1/reviews`）。null の間は、プロフィールの作成だけができる |
 | `none` | `owner`、`manager`、`staff` で、`salon` の条件に当たらない（スタッフ情報が削除された `staff`、紐づけを解除された `staff` など） | 範囲を必要とするものには届かない。ログインはでき、スタッフへの招待に[参加](./staff.md#参加)できる |
 
 - ロールは `users.role` の固定 5 種。`users.permissions` は保存しているだけで、判定には使わない
@@ -467,6 +467,22 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 - 顧客本人は、自分の残高をプロフィール（`/api/v1/customers/me` の `loyaltyPoints`）で見る。履歴を読むルートはない。ポイントのための権限（`users.permissions`）はない
 
 規則は [ポイント台帳](./points.md) にあります。
+
+### レビューの権限
+
+レビューは、来店した顧客が書き、誰でも読みます。誰が投稿できるかは、操作者だけで決まります（`business-logic/review/_shared/authorization.ts` の `reviewerOf`）。
+
+| オペレーション | 許可 |
+|---|---|
+| 一覧、1 件の取得（`GET /api/v1/reviews`、`/api/v1/reviews/{id}`）、サロンとスタッフの集計（`GET /api/v1/salons/{salonId}/reviews/summary`、`/api/v1/staff/{staffId}/reviews/summary`） | 認証なし（トークンを付けても見ない） |
+| 投稿（`POST /api/v1/reviews`） | ロール `customer` で、顧客のプロフィールがあるアカウントだけ |
+
+- `admin` と、サロンの `owner` / `manager` / `staff` は、本文が不正でも 403。レビューは顧客の声なので、ほかの人が代わりに書かない
+- プロフィールのない顧客のアカウントと、紐づいた顧客が削除されたアカウントも 403
+- 本文の `customerId` が、操作者の顧客 ID でなければ 403。ほかの顧客として書けない
+- 投稿できる予約は、操作者の予約で、ステータスが `completed` のものだけ（400、409）。レビューのための権限（`users.permissions`）はない
+
+規則は [レビュー](./reviews.md) にあります。
 
 ## 管理者の操作
 

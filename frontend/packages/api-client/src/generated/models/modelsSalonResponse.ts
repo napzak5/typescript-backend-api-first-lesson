@@ -85,11 +85,11 @@ export interface ModelsSalonResponse {
      */
   businessHours: ModelsBusinessHours[] | null;
   /**
-     * 顧客レビューから算出した平均評価。レビュー未登録の場合はnull
+     * 顧客レビューの全体満足度評価(overallRating)の平均値。小数第2位に四捨五入する。レビューを投稿したトランザクションが数え直す。レビュー未登録の場合はnull
      * @nullable
      */
   rating: number | null;
-  /** 蓄積されたレビュー件数 */
+  /** 顧客レビューの件数。レビューを投稿したトランザクションが数え直す */
   reviewCount: number;
   /** 営業時間と、予約の来店日の基準となるIANAタイムゾーンID(例: Asia/Tokyo) */
   timezone: string;
