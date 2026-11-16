@@ -56,6 +56,10 @@ const authenticationRequired = {
 const tokenExpired = { status: 401, code: '1003', type: 'token-expired' }
 const invalidToken = { status: 401, code: '1004', type: 'invalid-token' }
 const forbidden = { status: 403, code: '1005', type: 'forbidden' }
+const routeNotFound = { status: 404, code: '3001', type: 'route-not-found' }
+
+const CSV_UTF8 = 'text/csv; charset=utf-8'
+const COLUMNS = 'date,sales,tax,discounts,transactions,refunds,net'
 
 /** November 2026, the period of most tests. */
 const NOVEMBER = { startDate: '2026-11-01', endDate: '2026-11-30' }
@@ -802,6 +806,119 @@ describe('Sales reports API', () => {
     })
   })
 
+  describe('GET /api/v1/sales-reports/export', () => {
+    /** The lines of a file, without the empty text after the last line end. */
+    const linesOf = (text: string): string[] => text.split('\r\n').slice(0, -1)
+
+    it('answers November as a CSV file, a line for every day; and writes nothing', async () => {
+      await insertNovember()
+      const before = await counts()
+
+      const response = await report('/export', november(), asOwner)
+
+      expect(response.status).toBe(200)
+      expect(response.headers['content-type']).toBe(CSV_UTF8)
+      expect(response.headers['content-disposition']).toBe(
+        'attachment; filename=sales-report-2026-11-01-2026-11-30.csv',
+      )
+      expect(response.text.endsWith('\r\n')).toBe(true)
+      const lines = linesOf(response.text)
+      expect(lines).toHaveLength(31)
+      expect(lines[0]).toBe(COLUMNS)
+      expect(lines[1]).toBe('2026-11-01,0,0,0,0,0,0')
+      expect(lines.slice(19, 23)).toEqual([
+        '2026-11-19,0,0,0,0,0,0',
+        '2026-11-20,19800,1800,0,2,3000,16800',
+        '2026-11-21,7700,700,1000,2,2200,5500',
+        '2026-11-22,0,0,0,0,0,0',
+      ])
+      expect(lines[30]).toBe('2026-11-30,0,0,0,0,0,0')
+      expect(await counts()).toEqual(before)
+    })
+
+    it('has columns whose totals are those of the report of the period, and lines that are the sales of their days', async () => {
+      await insertNovember()
+      const period = november({
+        startDate: '2026-10-31',
+        endDate: '2026-12-01',
+      })
+
+      const file = await report('/export', period, asManager)
+      const ofPeriod = (await report('', period)).body.data
+      const ofDay = (await report('/daily', { salonId, date: '2026-11-20' }))
+        .body.data
+
+      const rows = linesOf(file.text)
+        .slice(1)
+        .map((line) => line.split(','))
+      const totalOf = (column: number): number =>
+        rows.reduce((sum, row) => sum + Number(row[column]), 0)
+      expect(rows).toHaveLength(32)
+      expect([1, 2, 3, 4, 5, 6].map(totalOf)).toEqual([
+        ofPeriod.totalSales,
+        ofPeriod.totalTax,
+        ofPeriod.totalDiscounts,
+        ofPeriod.transactionCount,
+        ofPeriod.totalRefunds,
+        ofPeriod.netSales,
+      ])
+      expect(rows.find(([date]) => date === '2026-11-20')).toEqual([
+        '2026-11-20',
+        String(ofDay.sales),
+        '1800',
+        '0',
+        String(ofDay.transactions),
+        String(ofDay.refunds),
+        String(ofDay.net),
+      ])
+    })
+
+    it('answers a period without a sale with a line of zeros for each day', async () => {
+      await insertNovember()
+
+      const response = await report(
+        '/export',
+        november({ startDate: '2026-11-22', endDate: '2026-11-24' }),
+      )
+
+      expect(response.status).toBe(200)
+      expect(response.text).toBe(
+        `${COLUMNS}\r\n2026-11-22,0,0,0,0,0,0\r\n2026-11-23,0,0,0,0,0,0\r\n2026-11-24,0,0,0,0,0,0\r\n`,
+      )
+      expect(response.headers['content-disposition']).toBe(
+        'attachment; filename=sales-report-2026-11-22-2026-11-24.csv',
+      )
+    })
+  })
+
+  it('serves no other method on the paths of the reports, the POST of the export included: 404', async () => {
+    for (const path of [
+      '',
+      '/daily',
+      '/by-staff',
+      '/by-category',
+      '/trends',
+      '/export',
+    ]) {
+      const url = `${REPORTS}${path}?${new URLSearchParams(november())}`
+      const responses = [
+        await authorized(
+          request(app)
+            .post(url)
+            .send({ ...november(), format: 'csv' }),
+          asAdmin,
+        ),
+        await authorized(request(app).put(url).send({}), asAdmin),
+        await authorized(request(app).patch(url).send({}), asAdmin),
+        await authorized(request(app).delete(url), asAdmin),
+      ]
+
+      for (const response of responses) {
+        expectProblem(response, routeNotFound)
+      }
+    }
+  })
+
   /** Each report with a query it takes, for the salon of the tests. */
   const operations: [string, string, () => Record<string, string>, string][] = [
     ['GET /sales-reports', '', () => november(), 'Invalid sales report'],
@@ -828,6 +945,12 @@ describe('Sales reports API', () => {
       '/trends',
       () => november({ period: 'monthly' }),
       'Invalid sales trends',
+    ],
+    [
+      'GET /sales-reports/export',
+      '/export',
+      () => november(),
+      'Invalid sales report',
     ],
   ]
 
