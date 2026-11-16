@@ -31,9 +31,10 @@
 --          have to be corrected first.
 --
 --          The versions before this one read only the ID of a product
---          (a sale looks up the products it names), so the migration
---          can be applied before or after the version that serves the
---          products.
+--          (a sale looks up the products it names), so they go on
+--          working once the migration is applied. The version that
+--          serves the products reads supplier, which this migration
+--          adds: it starts after the migration, as every release does.
 -- Idempotent: each step is skipped once it has been applied.
 -- ====================================================================
 

@@ -2074,9 +2074,10 @@ describe('Products API', () => {
       expect(row).toEqual({
         ...before.find(({ id: rowId }) => rowId === id),
         deletedAt: expect.any(String),
-        updatedAt: row?.deletedAt,
+        updatedAt: expect.any(String),
       })
       expectBetween(row?.deletedAt, until, after)
+      expectBetween(row?.updatedAt, until, after)
       for (const kept of [other, elsewhere]) {
         expect(await stored(kept)).toEqual(
           before.find(({ id: rowId }) => rowId === kept),
