@@ -1342,39 +1342,93 @@ describe('Customer booking reschedule API', () => {
       expect(places.filter(({ from }) => from === '14:00')).toHaveLength(1)
     })
 
+    /** A customer asks for the cut with the staff member of the tests, whatever the answer is. */
+    const asksFor = (time: string, as: string) =>
+      authorized(request(app).post(OWN_BOOKINGS), as).send({
+        salonId,
+        serviceId: cutId,
+        staffId,
+        startTime: iso(time),
+        customerRequest: null,
+      })
+
     it('gives a slot to one of a customer who moves a booking there and one who books it', async () => {
       const other = await otherCustomer()
       const created = await booked('10:00')
 
-      const rounds = await Promise.all(
-        ['13:00', '15:00', '17:00'].map((time) =>
-          Promise.all([
-            reschedule(created.id, to(time)),
-            authorized(
-              request(app).post(OWN_BOOKINGS),
-              other.authorization,
-            ).send({
-              salonId,
-              serviceId: cutId,
-              staffId,
-              startTime: iso(time),
-              customerRequest: null,
-            }),
-          ]),
-        ),
-      )
+      // One slot after the other: a move that followed at once would
+      // leave the slot, which the other customer may then take as well.
+      for (const time of ['13:00', '15:00', '17:00']) {
+        const [moved, made] = await Promise.all([
+          reschedule(created.id, to(time)),
+          asksFor(time, other.authorization),
+        ])
 
-      // The moves of one booking come one after the other, and each slot
-      // goes to the move or to the booking: never to both.
-      for (const [moved, made] of rounds) {
         expect([
           ['200', '409 3003'],
           ['409 3003', '201'],
-        ]).toContainEqual([
-          moved === undefined ? '' : statusAndCode(moved),
-          made === undefined ? '' : statusAndCode(made),
-        ])
+        ]).toContainEqual([statusAndCode(moved), statusAndCode(made)])
       }
+    })
+
+    it('stores one booking a slot, however the moves of a booking and the requests for the slots it goes to fall together', async () => {
+      const other = await otherCustomer()
+      const created = await booked('10:00')
+
+      const responses = await Promise.all(
+        ['13:00', '15:00', '17:00'].flatMap((time) => [
+          reschedule(created.id, to(time)),
+          asksFor(time, other.authorization),
+        ]),
+      )
+
+      // A slot the booking left again may have gone to the other customer
+      // too, so the answers do not say whether a slot was given twice:
+      // what is stored does.
+      expect(
+        responses
+          .map(statusAndCode)
+          .filter((answer) => !['200', '201', '409 3003'].includes(answer)),
+      ).toEqual([])
+      const starts = (
+        await db
+          .select({ startTime: bookings.startTime })
+          .from(bookings)
+          .where(eq(bookings.staffId, staffId))
+      ).map(({ startTime }) => inTokyo(new Date(startTime).toISOString()))
+      expect(starts).toHaveLength(
+        1 + responses.filter(({ status }) => status === 201).length,
+      )
+      expect(starts.toSorted()).toEqual([...new Set(starts)].toSorted())
+    })
+
+    it('gives another customer a slot the booking was moved to and left again while their request waited', async () => {
+      const other = await otherCustomer()
+      const created = await booked('10:00')
+
+      const { pending, moves } = await db.transaction(async (tx) => {
+        await tx
+          .select({ id: customers.id })
+          .from(customers)
+          .where(eq(customers.id, other.customerId))
+          .for('update')
+        const underWay = asksFor('13:00', other.authorization).then(
+          (response) => response,
+        )
+        await pause(300)
+        const there = await reschedule(created.id, to('13:00'))
+        const on = await reschedule(created.id, to('15:00'))
+
+        return { pending: underWay, moves: [there.status, on.status] }
+      })
+      const made = await pending
+
+      // Both the move to the slot and the request for it are granted: the
+      // slot was never the place of two bookings.
+      expect(moves).toEqual([200, 200])
+      expect(made.status).toBe(201)
+      expect(await placeOf(created.id)).toMatchObject({ from: '15:00' })
+      expect(await placeOf(made.body.data.id)).toMatchObject({ from: '13:00' })
     })
 
     it('moves one of two bookings of a customer to a time both are sent to, each with another staff member for another service', async () => {
