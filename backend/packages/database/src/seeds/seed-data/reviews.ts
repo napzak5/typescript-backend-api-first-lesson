@@ -3,17 +3,25 @@ import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import * as schema from '../../schema'
 import type { CompletedBooking } from './bookings'
 
+/** The accounts that report reviews and handle the reports. */
+export interface ReviewReportAccounts {
+  adminUserId: string
+}
+
 /**
  * Reviews of the first visits that took place, each by the customer of the
- * visit, for its salon and the staff member who was in charge of it, and
- * the marks of the other customers who found them helpful. The helpful
- * count of each review is then counted from its marks, and the rating and
- * the review count of each salon from its reviews, as the API leaves them.
+ * visit, for its salon and the staff member who was in charge of it, the
+ * marks of the other customers who found them helpful, and two reports by
+ * another customer: one the administrator dismissed, one still pending.
+ * The helpful count and the report count of each review are then counted
+ * from its marks and its pending reports, and the rating and the review
+ * count of each salon from its reviews, as the API leaves them.
  */
 export async function seedReviews(
   db: PostgresJsDatabase<typeof schema>,
   completedBookings: CompletedBooking[],
   customerIds: string[],
+  { adminUserId }: ReviewReportAccounts,
 ): Promise<string[]> {
   const reviewTexts = [
     {
@@ -147,6 +155,67 @@ export async function seedReviews(
     FROM (
       SELECT "reviewId", count(*)::integer AS votes
       FROM review_helpful_votes
+      GROUP BY "reviewId"
+    ) counted
+    WHERE reviews.id = counted."reviewId"
+  `)
+
+  // Another customer with an account reported the first review as an
+  // advertisement, which the administrator dismissed, and the second one
+  // as untrue, which is still pending.
+  const accounts = await db
+    .select({
+      customerId: schema.customers.id,
+      userId: schema.customers.userId,
+    })
+    .from(schema.customers)
+  const reporterOf = (review: { customerId: string }): string | null =>
+    accounts.find(
+      (account) =>
+        account.customerId !== review.customerId && account.userId !== null,
+    )?.userId ?? null
+  const [dismissedOne, pendingOne] = insertedReviews
+  const reports = [
+    ...(dismissedOne === undefined
+      ? []
+      : [
+          {
+            review: dismissedOne,
+            reason: 'spam' as const,
+            details: null,
+            status: 'dismissed' as const,
+            resolvedBy: adminUserId,
+            resolvedAt: new Date().toISOString(),
+          },
+        ]),
+    ...(pendingOne === undefined
+      ? []
+      : [
+          {
+            review: pendingOne,
+            reason: 'false_information' as const,
+            details: '担当したスタッフの名前が違います。',
+            status: 'pending' as const,
+            resolvedBy: null,
+            resolvedAt: null,
+          },
+        ]),
+  ].flatMap(({ review, ...report }) => {
+    const reportedBy = reporterOf(review)
+    return reportedBy === null
+      ? []
+      : [{ ...report, reviewId: review.id, reportedBy }]
+  })
+  if (reports.length > 0) {
+    await db.insert(schema.reviewReports).values(reports)
+  }
+  await db.execute(sql`
+    UPDATE reviews
+    SET "reportCount" = counted.reports
+    FROM (
+      SELECT "reviewId", count(*)::integer AS reports
+      FROM review_reports
+      WHERE status = 'pending'
       GROUP BY "reviewId"
     ) counted
     WHERE reviews.id = counted."reviewId"

@@ -131,6 +131,10 @@ async function displaySeedingStatistics(db: ReturnType<typeof drizzle>) {
       .then((rows) => ({ table: 'review_helpful_votes', count: rows.length })),
     db
       .select()
+      .from(schema.reviewReports)
+      .then((rows) => ({ table: 'review_reports', count: rows.length })),
+    db
+      .select()
       .from(schema.customerPoints)
       .then((rows) => ({ table: 'customer_points', count: rows.length })),
     db

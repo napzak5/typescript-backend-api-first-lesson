@@ -23,6 +23,8 @@ CREATE TYPE "public"."payment_method" AS ENUM('cash', 'credit_card', 'debit_card
 CREATE TYPE "public"."payment_status" AS ENUM('pending', 'processing', 'completed', 'failed', 'refunded', 'partial_refund');
 CREATE TYPE "public"."point_transaction_type" AS ENUM('earned', 'used', 'expired', 'adjusted', 'transferred');
 CREATE TYPE "public"."pricing_strategy" AS ENUM('fixed', 'variable', 'tiered', 'dynamic', 'consultation_based');
+CREATE TYPE "public"."review_report_reason" AS ENUM('inappropriate', 'false_information', 'personal_information', 'spam', 'other');
+CREATE TYPE "public"."review_report_status" AS ENUM('pending', 'dismissed');
 CREATE TYPE "public"."salon_role" AS ENUM('owner', 'manager', 'staff');
 CREATE TYPE "public"."scalp_condition" AS ENUM('normal', 'dry', 'oily', 'sensitive', 'dandruff');
 CREATE TYPE "public"."service_availability" AS ENUM('always', 'weekdays_only', 'weekends_only', 'by_appointment_only', 'seasonal');
@@ -430,6 +432,22 @@ CREATE TABLE "review_helpful_votes" (
 	"customerId" uuid NOT NULL,
 	"createdAt" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "review_helpful_votes_review_customer_unique" UNIQUE("reviewId","customerId")
+);
+
+CREATE TABLE "review_reports" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"reviewId" uuid NOT NULL,
+	"reportedBy" uuid NOT NULL,
+	"reason" "review_report_reason" NOT NULL,
+	"details" varchar(2000),
+	"status" "review_report_status" DEFAULT 'pending' NOT NULL,
+	"resolvedBy" uuid,
+	"resolvedAt" timestamp with time zone,
+	"createdAt" timestamp with time zone DEFAULT now() NOT NULL,
+	"updatedAt" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "review_reports_review_reporter_unique" UNIQUE("reviewId","reportedBy"),
+	CONSTRAINT "review_reports_other_has_details" CHECK ((reason <> 'other'::review_report_reason) OR (details IS NOT NULL)),
+	CONSTRAINT "review_reports_resolved_when_dismissed" CHECK (((status = 'pending'::review_report_status) AND ("resolvedBy" IS NULL) AND ("resolvedAt" IS NULL)) OR ((status = 'dismissed'::review_report_status) AND ("resolvedBy" IS NOT NULL) AND ("resolvedAt" IS NOT NULL)))
 );
 
 CREATE TABLE "reviews" (
@@ -872,6 +890,7 @@ ALTER TABLE "payment_transactions" ADD CONSTRAINT "payment_transactions_sale_id_
 ALTER TABLE "products" ADD CONSTRAINT "products_salon_id_fk" FOREIGN KEY ("salonId") REFERENCES "public"."salons"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "review_helpful_votes" ADD CONSTRAINT "review_helpful_votes_customer_id_fk" FOREIGN KEY ("customerId") REFERENCES "public"."customers"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "review_helpful_votes" ADD CONSTRAINT "review_helpful_votes_review_id_fk" FOREIGN KEY ("reviewId") REFERENCES "public"."reviews"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "review_reports" ADD CONSTRAINT "review_reports_review_id_fk" FOREIGN KEY ("reviewId") REFERENCES "public"."reviews"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "reviews" ADD CONSTRAINT "reviews_booking_id_fk" FOREIGN KEY ("bookingId") REFERENCES "public"."bookings"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "reviews" ADD CONSTRAINT "reviews_customer_id_fk" FOREIGN KEY ("customerId") REFERENCES "public"."customers"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "reviews" ADD CONSTRAINT "reviews_salon_id_fk" FOREIGN KEY ("salonId") REFERENCES "public"."salons"("id") ON DELETE cascade ON UPDATE no action;
@@ -953,6 +972,7 @@ CREATE INDEX "idx_products_barcode" ON "products" USING btree ("barcode" text_op
 CREATE INDEX "idx_products_deleted_at" ON "products" USING btree ("deletedAt" timestamptz_ops);
 CREATE INDEX "idx_products_product_code" ON "products" USING btree ("productCode" text_ops);
 CREATE INDEX "idx_products_salon_id" ON "products" USING btree ("salonId" uuid_ops);
+CREATE INDEX "idx_review_reports_created_at" ON "review_reports" USING btree ("createdAt" timestamptz_ops,"id" uuid_ops);
 CREATE INDEX "idx_reviews_booking_id" ON "reviews" USING btree ("bookingId" uuid_ops);
 CREATE INDEX "idx_reviews_customer_id" ON "reviews" USING btree ("customerId" uuid_ops);
 CREATE INDEX "idx_reviews_overall_rating" ON "reviews" USING btree ("overallRating" int4_ops);
