@@ -1836,6 +1836,24 @@ describe('Sales API', () => {
       ).toEqual([PAYMENT_PROPERTIES, PAYMENT_PROPERTIES])
     })
 
+    it('returns the payments that were made at one moment by their IDs', async () => {
+      const id = await insertSale()
+      const methodId = await insertPaymentMethod()
+      const atOneMoment = { createdAt: '2026-11-20 12:45:00+09' }
+      const later = await insertPayment(id, methodId, atOneMoment)
+      const earlier = await insertPayment(id, methodId, {
+        ...atOneMoment,
+        id: FIRST_ID,
+      })
+
+      const { payments } = (await read(id)).body.data
+
+      expect(payments.map((payment: { id: string }) => payment.id)).toEqual([
+        earlier,
+        later,
+      ])
+    })
+
     it('returns a sale whose customer, staff member, service and salon were deleted afterwards, and is not in the way of their deletion', async () => {
       const { id } = await created()
       const remove = (path: string) =>
