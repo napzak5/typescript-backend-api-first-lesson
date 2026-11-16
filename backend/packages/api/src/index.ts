@@ -19,6 +19,7 @@ import {
   RandomPaymentNumberIssuer,
   RandomSaleNumberIssuer,
   RandomTokenIssuer,
+  ReviewReportRepository,
   ReviewRepository,
   SaleRepository,
   SalesReportRepository,
@@ -63,6 +64,7 @@ import {
   createSalonReviewRouter,
   createStaffReviewRouter,
 } from './routes/review'
+import { createReviewReportRouter } from './routes/review-report'
 import { createSaleRouter } from './routes/sale'
 import { createSalesReportRouter } from './routes/sales-report'
 import { createSalonRouter } from './routes/salon'
@@ -346,6 +348,13 @@ export const createApp = ({
   app.use(
     `${API_BASE_PATH}/staff/:staffId/reviews`,
     createStaffReviewRouter(reviewDependencies),
+  )
+  app.use(
+    `${API_BASE_PATH}/review-reports`,
+    createReviewReportRouter(
+      { reviewReportRepository: new ReviewReportRepository(database) },
+      authenticated,
+    ),
   )
 
   app.use(notFoundHandler)
