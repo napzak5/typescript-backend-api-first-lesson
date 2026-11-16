@@ -12,7 +12,7 @@
 |---|---|
 | 売上（`SaleCrud`）の一覧、作成、1 件の取得、更新、取り消し（`list`、`create`、`get`、`update`、`voidSale`） | 実装済み |
 | 支払いの記録と返金（`SaleCrud` の `process`、`PaymentCrud` の `refund`） | 実装済み（規則は [支払い](./payments.md)） |
-| レシートと金額の計算（`SaleCrud` の `getReceipt`、`calculate`） | 未実装 |
+| レシートと金額の計算（`SaleCrud` の `getReceipt`、`calculate`） | 実装済み（[レシート](#レシート)、[金額の計算](#金額の計算)） |
 | 売上レポート（`SalesReportCrud`） | 未実装 |
 | ポイント（`PointCrud`） | 未実装 |
 
@@ -39,6 +39,8 @@
 - 会計日時（`saleTime`）が、過去か未来か。閉店後にまとめて入れることも、前受けを先に入れることもできます
 - 利用したポイント（`pointsUsed`）が、顧客の残高（`customers.loyaltyPoints`）以内かどうか
 
+会計の前に金額を見積もるオペレーション（[金額の計算](#金額の計算)）は、サロンの料金と税率から金額を出しますが、売上の作成は、その結果と比べません。レジは、計算の結果を明細の金額にして、売上を作成します。
+
 売上の作成は、ほかの行を変えません。予約のステータスも金額も、顧客のポイントと累計利用金額（`loyaltyPoints`、`lifetimeValue`）も、商品の在庫も、そのままです。更新と取り消しも同じで、変えるのは、その売上と明細だけです。
 
 ## オペレーションと権限
@@ -50,15 +52,18 @@
 | 1 件の取得 | `GET /api/v1/sales/{id}` | `admin`、売上のサロンの `owner` / `manager` / `staff` |
 | 更新 | `PATCH /api/v1/sales/{id}` | `admin`、売上のサロンの `owner` / `manager` / `staff` |
 | 取り消し | `POST /api/v1/sales/{id}/void` | `admin`、売上のサロンの `owner` / `manager`（`staff` は 403） |
+| レシート | `GET /api/v1/sales/{id}/receipt` | `admin`、売上のサロンの `owner` / `manager` / `staff` |
+| 金額の計算 | `POST /api/v1/sales/calculate` | `admin`、本文の `salonId` のサロンの `owner` / `manager` / `staff` |
 
 - すべてのオペレーションに認証が要ります
-- 売上はサロンのものですが、ルートはサロンの下に置きません（コントラクトのとおり `/api/v1/sales`。予約台帳と同じ）。サロンは、作成では本文の `salonId`、一覧ではクエリの `salonId`、取得、更新、取り消しでは売上そのものが決めます
+- 売上はサロンのものですが、ルートはサロンの下に置きません（コントラクトのとおり `/api/v1/sales`。予約台帳と同じ）。サロンは、作成と金額の計算では本文の `salonId`、一覧ではクエリの `salonId`、取得、更新、取り消し、レシートでは売上そのものが決めます
 - 誰がどの売上に届くかは、操作者の範囲で決まります（`business-logic/sale/_shared/authorization.ts` の `saleReachOf`）。`admin` はすべてのサロン、サロンのユーザーは所属サロンです。届く範囲の型は、予約台帳と同じ `LedgerReach` です
-- サロンの 3 つのロールの違いは、取り消しだけです。会計は、レジに立つスタッフの仕事なので、作成も、読むことも、打ち間違いを直すこと（更新）も、3 つのロールができます。取り消しは、売上をサロンの売上から外し、予約をもう一度会計できる状態に戻す操作なので、`owner` と `manager` のものです（予約の削除と同じ分け方。`saleVoidReachOf`）。`staff` は、ID や本文を確かめる前に 403 です。売上のための権限（`users.permissions`）はありません
+- サロンの 3 つのロールの違いは、取り消しだけです。会計は、レジに立つスタッフの仕事なので、作成も、読むことも、打ち間違いを直すこと（更新）も、レシートを出すことも、会計の前に金額を計算することも、3 つのロールができます。取り消しは、売上をサロンの売上から外し、予約をもう一度会計できる状態に戻す操作なので、`owner` と `manager` のものです（予約の削除と同じ分け方。`saleVoidReachOf`）。`staff` は、ID や本文を確かめる前に 403 です。売上のための権限（`users.permissions`）はありません
 - **顧客のアカウントは、このルートを使えません**（403）。`SaleResponse` は、スタッフの歩合（`commissionRate`、`commissionAmount`）とサロン内の備考（`notes`）を含みます。自分が支払った売上にも届きません。顧客が自分の支払いを読むルートは、ありません。ロールに必要なレコードを持たないユーザー（範囲 `none`）も 403 です
-- **ほかのサロンの売上は、存在しない売上と区別しません**。取得、更新、取り消しは 404、一覧には出ず、カーソルに指定すると 400 です
+- **ほかのサロンの売上は、存在しない売上と区別しません**。取得、更新、取り消し、レシートは 404、一覧には出ず、カーソルに指定すると 400 です
 - ID（パスの `id`、本文とクエリの ID）は、英字を大文字で書いても同じ ID です。レスポンスの ID は小文字です
 - レスポンスの `links` は `self` と `list` です。作成は 201 で、`Location` ヘッダーに売上の URL を返します。更新と取り消しは 200 で、変えたあとの売上を返します
+- レシートの `links` は、`self`（レシート）と `sale`（売上）です。金額の計算には自分の URL がないので、`links` は、`self`（`/api/v1/sales/calculate`）と `list` です
 
 ### 確認の順序
 
@@ -111,6 +116,26 @@
 5. 売上の存在（404。ほかのサロンの売上も同じ）
 6. 売上が取り消されていないこと（409）
 7. 返金していない支払いがないこと（409）
+
+レシート:
+
+1. アクセストークン（401）
+2. 操作者の種類（403）
+3. ID の形式（400）
+4. 売上の存在（404。ほかのサロンの売上も同じ）
+5. 売上が取り消されていないこと（409）
+6. 受け取った金額が、合計金額に達していること（409）
+
+金額の計算:
+
+1. アクセストークン（401）
+2. 操作者の種類（403。顧客、範囲のないアカウント）
+3. リクエストの本文（400）
+4. 本文の `salonId` が操作者のサロンであること（403。`admin` はどのサロンでもよい。存在しないサロンも、操作者のサロンではない）
+5. サロンの存在（400。`salonId` の `not_found`。サロンがなければ、ほかの項目は確かめない）
+6. 予約とサービスが、サロンのものであること（400。誤りは、まとめて返す）
+7. 計算する明細があること（400）
+8. 金額の上限（400）
 
 JSON として読めない本文は、ほかのルートと同じく、アクセストークンより前に 400（`code` は `2002`）です。JSON でない `Content-Type` は 415 です。
 
@@ -256,6 +281,48 @@ JSON として読めない本文は、ほかのルートと同じく、アクセ
 - API が書く決済取引は、`completed`、`refunded`、`partial_refund` だけです。`pending`、`processing`、`failed` の決済取引は、データベースに直接書いた行にしかありません
 - **取り消すと、その予約は、もう一度会計できます**（[予約の会計は 1 回](#予約の会計は-1-回)）。取り消した売上は、予約を指したままです。その予約は、削除できないままです（[予約台帳](./bookings.md#削除)）
 
+## レシート
+
+`GET /api/v1/sales/{id}/receipt` は、支払いを受け取った売上のレシートを作って返します（`SaleReceiptResponse`）。
+
+- **レシートは、保存しません**。リクエストのたびに、その時点の売上から作ります。レシートのテーブルはなく、何も書きません。再発行も、同じリクエストです
+- `receiptNumber` は、売上番号（`saleNumber`）です。レシートごとの番号は振りません。同じ売上のレシートは、何度作っても同じ番号です
+- `sale` は、1 件の取得と同じ売上です（明細と支払いを含む。[1 件の取得と一覧](#1-件の取得と一覧)）
+- `issuedAt` は、レシートを作った時刻です（アプリケーションの時計。ミリ秒までの UTC）。リクエストのたびに変わります
+- **レシートを作るのは、取り消していない売上で、受け取った金額が合計金額（`totalAmount`）に達しているものだけです**。それ以外は 409 で、`detail` が理由を伝えます。取り消した売上は、支払いがあってもなくても、取り消しを理由にします
+- 受け取った金額は、ステータスが `completed`、`partial_refund`、`refunded` の決済取引の `amount` の合計です（[支払い](./payments.md#売上の支払い状態)）。`pending`、`processing`、`failed` の決済取引は数えません。返金は差し引かないので、全額を受け取ったあとに返金した売上も、レシートを作れます。返金の金額と時刻は、`sale.payments` にあります
+- 確かめるのは決済取引そのもので、売上の `paymentStatus` ではありません
+- 合計金額が 0 の売上は、支払いがなくても、レシートを作れます
+- インボイス（適格請求書）の記載事項のうち、サロンの登録番号と、税率ごとの対価の額と消費税額は、レシートにありません。サロンに登録番号のカラムがなく、明細の消費税は、レジが決めた金額で、税率を持たないからです（[消費税](#消費税)）
+- レシートは、1 件の取得と同じく、読み取り専用のトランザクションで読み、ロックを待ちません
+
+## 金額の計算
+
+`POST /api/v1/sales/calculate` は、売上を入れる前に、会計の金額を計算して返します（`SaleCalculateResponse`）。何も書きません。
+
+| 項目 | 規則 |
+|---|---|
+| `salonId` | サロンの ID。税率と支払い方法は、このサロンのもの |
+| `bookingId` | null か、サロンの予約の ID。予約のない来店は null |
+| `services` | 予約の施術明細に加えるサービスの ID の配列（0〜100 件）。同じ ID を何度書いても、書いた数だけ数える |
+
+- 3 つの項目は、すべて必須です（キーを省くと 400）。表にない項目は 400 です（`unrecognized_keys`）
+- 計算する明細は、予約の施術明細（`booking_services`）と、`services` のサービスです
+  - 予約の施術明細は、予約のときに写した金額（`price`、`discountAmount`、`finalPrice`、`taxIncluded`）で数えます。あとでサービスの料金を変えても、予約の金額は変わりません
+  - 加えるサービスは、いまのメニューの金額で数えます。`discountPrice` があれば、`price` − `discountPrice` が割引です。税込かどうか（`taxIncluded`）も、サービスのものです
+- 金額は、予約の金額と同じ規則で出します（[予約台帳](./bookings.md#消費税)。同じ関数）。`subtotal` は明細の `price` の合計、`discountAmount` は割引の合計、`taxAmount` は、税込でない明細の割引後の金額の合計に、サロンのいまの税率（`salons.taxRate`）を掛けて、1 円未満を切り捨てた金額です。**消費税は、明細ごとではなく、合計に 1 回だけ掛けます**（適格請求書の端数処理が、税率ごとに 1 回であるのと同じ）。`totalAmount` は `subtotal` − `discountAmount` + `taxAmount` です
+- `breakdown` の項目名は、売上（`sales`）のカラム名と同じです
+- `recommendedMethods` は、1 回の支払いで合計金額を受け取れる支払い方法の種類です。サロンの支払い方法のうち、使っていて（`isActive`）、合計金額が下限（`minimumAmount`）以上、上限（`maximumAmount`）以下のものの `method` を、`sortOrder` と ID の順に、同じ種類は 1 回だけ並べます。合計金額が 0 なら空です（受け取る支払いがない）。`isOnlineEnabled` と `isOfflineEnabled` は見ません（[支払い](./payments.md#支払い方法はサロンの設定)）
+- 次のものは、確かめません: 予約のステータス（キャンセルした予約も計算できる）、サービスの `isActive`、予約の顧客。予約がまだ会計されていないかどうかも、確かめません。それは、売上の作成が確かめます
+- 400 になるのは、次のときです
+  - サロンが存在しないか、削除されている（`salonId` の `not_found`）。サロンがなければ、予約とサービスは確かめません
+  - 予約が、サロンのものでない（`bookingId` の `not_found`）
+  - サービスが、サロンのものでないか、削除されている（`services.0` のように、何番目かを含む `not_found`）。予約とサービスの誤りは、まとめて返します
+  - 予約に施術明細がなく、`services` も空（`services` の `too_small`）。予約がなく、`services` が空のときも同じです
+  - 小計か合計金額が `integer` の上限（2,147,483,647）を超える（`services` の `too_big`）
+- コントラクトにあった割引コード（`discountCode`）、利用するポイント（`pointsToUse`）、顧客（`customerId`）、備考（`notes`）と、ポイントの値引き（`pointsDiscount`）は、なくしました。割引コードを持つテーブルはなく、ポイント 1 点が何円かも決まっていません。顧客と備考は、金額を変えません。ポイントで支払うときは、種類が `point` の支払い方法で記録します（[支払い](./payments.md)）
+- 計算は、1 つの読み取り専用のトランザクション（`REPEATABLE READ`）で、サロン、予約の施術明細、サービス、支払い方法を読みます。ロックは取らず、ほかの書き込みを待ちません。書いている途中の変更は数えず、コミットされた値で計算します
+
 ## 1 件の取得と一覧
 
 - `details` は、明細を `sortOrder` の順に並べたものです
@@ -302,6 +369,7 @@ JSON として読めない本文は、ほかのルートと同じく、アクセ
 | 支払いの記録と、その売上の取り消しが、同時に届く | 支払いが 200 で取り消しが 409 か、取り消しが 200 で支払いが 409 |
 | 同じ売上の支払いの記録が、同時に何件も届く | 1 件ずつ処理する。受け取った合計は、合計金額を超えない（[支払い](./payments.md#支払いの記録と返金)） |
 | 予約の削除が進んでいる途中に、売上をその予約に変える更新が届く | 削除が終わるのを待ち、400（`bookingId` の `not_found`） |
+| 売上、決済取引、予約、サービス、支払い方法、サロンを書いている途中に、レシートや金額の計算が届く | 待たない。コミットされた値で作る |
 | 売上を予約に変える更新と、その予約の削除が、同時に届く | 更新が 200 で削除が 409 か、削除が 204 で更新が 400。互いを待ち続けることはない |
 
 売上の作成は、1 つのトランザクションです（`SaleRepository.create`。分離レベルは `READ COMMITTED`）。
@@ -334,7 +402,7 @@ JSON として読めない本文は、ほかのルートと同じく、アクセ
 
 **ロックの順は、売上、予約、サロン、顧客、サービス、スタッフ、支払い方法です**。売上の行を先にロックするのは、更新、取り消し、支払いの記録、返金だけです。支払いの記録は、売上のあとに、支払い方法の行だけをロックします。支払い方法の更新と削除は、支払い方法の行のほかを、ロックしません。予約、顧客、スタッフの行を先にロックする操作（売上の作成、予約台帳の書き込み、顧客やスタッフの削除）は、すでにある売上の行をロックしません。予約の削除は、予約を指す売上があれば、削除を試みる前に 409 で終わるので、外部キーの確認が売上の行を待つこともありません。同じ行を逆の順にロックする組み合わせは、ありません。
 
-取得と一覧は、ロックを待ちません。
+取得、一覧、レシート、金額の計算は、ロックを待ちません。
 
 ## DB の制約
 
@@ -355,16 +423,16 @@ JSON として読めない本文は、ほかのルートと同じく、アクセ
 
 ## シード
 
-`pnpm db:seed` は、売上を入れません。売上が指せるもの（サロン、顧客、スタッフ、サービス、商品、予約）は入れるので、シードのデータで、売上を作成できます。支払い方法（`payment_methods`）もシードにあるので、作成した売上に、支払いを記録できます（[支払い](./payments.md)）。
+`pnpm db:seed` は、売上を入れません。売上が指せるもの（サロン、顧客、スタッフ、サービス、商品、予約）は入れるので、シードのデータで、売上を作成できます。予約には施術明細があるので、金額を計算することもできます。支払い方法（`payment_methods`）もシードにあるので、作成した売上に、支払いを記録できます（[支払い](./payments.md)）。
 
 ## 実装の場所
 
 | 層 | ファイル |
 |---|---|
 | コントラクト | `specs/models/payment.tsp`、`specs/operations/payment-operations.tsp`（`SaleCrud`） |
-| ドメイン | `backend/packages/domain/src/models/sale.ts`、`schemas/sale.schema.ts`、`mappers/read/sale.mapper.ts`（決済取引は `mappers/read/payment.mapper.ts`）、`repositories/sale.repository.ts`、`services/sale-number-issuer.ts`、`business-logic/sale/`（誰がどの売上に届くかは `_shared/authorization.ts`、リクエストから書く行を決めるのは `_shared/plan.ts`、更新が書く値と、更新と取り消しを断る理由を決めるのは `_shared/change.ts`、売上番号は `_shared/sale-number.ts`、リポジトリが断った理由をエラーに直すのは `_shared/refusals.ts`）。Write マッパーはない（書く行は `planSale` が決める） |
-| ドメイン（共通） | `backend/packages/domain/src/business-logic/_shared/record-number.ts`（番号の形式）、`business-logic/_shared/numbered.ts`（番号を採り直す手順）、`schemas/rules.ts`（`inTimeZone`、`momentInUtc`）、`models/booking.ts` の `LedgerReach` と `business-logic/booking/_shared/authorization.ts` の `isWithin`（台帳に届く範囲） |
+| ドメイン | `backend/packages/domain/src/models/sale.ts`、`schemas/sale.schema.ts`、`mappers/read/sale.mapper.ts`（決済取引は `mappers/read/payment.mapper.ts`）、`repositories/sale.repository.ts`、`services/sale-number-issuer.ts`、`business-logic/sale/`（誰がどの売上に届くかは `_shared/authorization.ts`、リクエストから書く行を決めるのは `_shared/plan.ts`、更新が書く値と、更新と取り消しを断る理由を決めるのは `_shared/change.ts`、レシートを断る理由は `_shared/receipt.ts`、金額の計算は `_shared/calculation.ts`、売上番号は `_shared/sale-number.ts`、リポジトリが断った理由をエラーに直すのは `_shared/refusals.ts`）。Write マッパーはない（書く行は `planSale` が決める） |
+| ドメイン（共通） | `backend/packages/domain/src/business-logic/_shared/amounts.ts`（明細から小計、割引、消費税、合計を出す。予約と共有する）、`business-logic/_shared/record-number.ts`（番号の形式）、`business-logic/_shared/numbered.ts`（番号を採り直す手順）、`schemas/rules.ts`（`inTimeZone`、`momentInUtc`）、`models/booking.ts` の `LedgerReach` と `business-logic/booking/_shared/authorization.ts` の `isWithin`（台帳に届く範囲） |
 | インフラ | `backend/packages/infrastructure/src/repositories/sale.repository.impl.ts`、`repositories/held-sale.ts`（売上の行のロック。支払いの記録、返金と共有する）、`security/random-sale-number-issuer.ts` |
 | API | `backend/packages/api/src/routes/sale/`（`/api/v1/sales` に取り付ける） |
 | DB | `backend/packages/database/sql/migrations/202611160700_sales_rules.sql` |
-| テスト | `backend/packages/domain/src/__tests__/sale.schema.test.ts`、`sale.plan.test.ts`、`sale.change.test.ts`、`sale.mapper.test.ts`、`sale.usecase.test.ts`、`backend/packages/api/src/__tests__/sale.integration.test.ts`（作成、取得、一覧）、`sale-changes.integration.test.ts`（更新、取り消し）、`backend/packages/api/src/routes/sale/_shared/__tests__/` |
+| テスト | `backend/packages/domain/src/__tests__/sale.schema.test.ts`、`sale.plan.test.ts`、`sale.change.test.ts`、`sale.receipt.test.ts`、`sale.calculation.test.ts`、`sale.mapper.test.ts`、`sale.usecase.test.ts`、`sale.receipt-calculation.usecase.test.ts`、`backend/packages/api/src/__tests__/sale.integration.test.ts`（作成、取得、一覧）、`sale-changes.integration.test.ts`（更新、取り消し）、`sale-receipt-calculation.integration.test.ts`（レシート、金額の計算）、`backend/packages/api/src/routes/sale/_shared/__tests__/` |
