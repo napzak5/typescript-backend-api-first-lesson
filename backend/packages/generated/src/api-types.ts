@@ -2143,7 +2143,7 @@ export interface paths {
         put?: never;
         /**
          * Mark review as helpful
-         * @description 他の利用者に役立つレビューをマーキングし、信頼性の高い声を強調します。参考になった数を1加算し、加算後の値を返します。
+         * @description 他の利用者に役立つレビューをマーキングし、信頼性の高い声を強調します。評価できるのは顧客(ロール customer で顧客のプロフィールがあるアカウント)だけで、admin とサロンのメンバー、プロフィールのない顧客のアカウント、自分のレビューには403を返します。1人1回で、同じ顧客の2回目は数を変えずに今の数を返します。参考になった数を、評価した顧客の数から数え直し、評価したあとの値を返します。存在しないレビューと削除したサロンのレビューは404です。本文は読みません。
          */
         post: operations["ReviewCrud_markHelpful"];
         delete?: never;
@@ -7116,11 +7116,11 @@ export interface components {
             /** @description 添付画像のURL(http または https、500文字まで)の一覧。10件まで。添付がない場合は空配列。同じURLの繰り返しは指定できない */
             imageUrls: string[];
         };
-        /** @description 参考になった評価の結果 - 加算後の参考になった数を返す */
+        /** @description 参考になった評価の結果 - 評価したあとの参考になった数を返す */
         "Models.ReviewHelpfulResponse": {
             /**
              * Format: int32
-             * @description 加算後の、レビューが「参考になった」と評価された累積回数
+             * @description 評価したあとの、レビューを「参考になった」と評価した顧客の数
              */
             helpfulCount: number;
         };
@@ -7196,7 +7196,7 @@ export interface components {
             isVerified: boolean;
             /**
              * Format: int32
-             * @description レビューが「参考になった」と評価された累積回数
+             * @description レビューを「参考になった」と評価した顧客の数。1人1回で、評価したトランザクションが数え直す
              */
             helpfulCount: number;
             /**
