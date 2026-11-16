@@ -3,6 +3,7 @@ import {
   bookingStatusHistories,
   bookings,
   customers,
+  reviews,
   sales,
   salons,
   services,
@@ -1064,8 +1065,9 @@ export class BookingRepository implements IBookingRepository {
     return attempt('Failed to delete booking', () =>
       this.db.transaction(
         async (tx): Promise<BookingDeletion> => {
-          // A sale or a treatment record that is being written for the
-          // booking holds it as well: this waits for it and then finds it.
+          // A sale, a treatment record or a review that is being written
+          // for the booking holds it as well: this waits for it and then
+          // finds it.
           const [held] = await tx
             .select({
               customerId: bookings.customerId,
@@ -1088,6 +1090,11 @@ export class BookingRepository implements IBookingRepository {
             .from(treatmentRecords)
             .where(eq(treatmentRecords.bookingId, id))
             .limit(1)
+          const [review] = await tx
+            .select({ id: reviews.id })
+            .from(reviews)
+            .where(eq(reviews.bookingId, id))
+            .limit(1)
           const by: BookingReference[] = []
           if (sale !== undefined) {
             by.push('sale')
@@ -1095,12 +1102,15 @@ export class BookingRepository implements IBookingRepository {
           if (treatmentRecord !== undefined) {
             by.push('treatmentRecord')
           }
+          if (review !== undefined) {
+            by.push('review')
+          }
           if (by.length > 0) {
             return { type: 'referredTo', by }
           }
 
-          // The service lines, the status history and the review go with
-          // the booking: their foreign keys cascade.
+          // The service lines and the status history go with the
+          // booking: their foreign keys cascade.
           await tx.delete(bookings).where(eq(bookings.id, id))
           if (isCounted(held.status)) {
             await countBookingsOf(tx, held.customerId)

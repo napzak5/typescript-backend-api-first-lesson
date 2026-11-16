@@ -19,6 +19,7 @@ import {
   RandomPaymentNumberIssuer,
   RandomSaleNumberIssuer,
   RandomTokenIssuer,
+  ReviewRepository,
   SaleRepository,
   SalesReportRepository,
   SalonRepository,
@@ -57,6 +58,11 @@ import {
 import { createPaymentRouter } from './routes/payment'
 import { createPaymentMethodRouter } from './routes/payment-method'
 import { createPointRouter } from './routes/point'
+import {
+  createReviewRouter,
+  createSalonReviewRouter,
+  createStaffReviewRouter,
+} from './routes/review'
 import { createSaleRouter } from './routes/sale'
 import { createSalesReportRouter } from './routes/sales-report'
 import { createSalonRouter } from './routes/salon'
@@ -325,6 +331,21 @@ export const createApp = ({
       { pointRepository: new PointRepository(database), clock },
       authenticated,
     ),
+  )
+  const reviewDependencies = {
+    reviewRepository: new ReviewRepository(database),
+  }
+  app.use(
+    `${API_BASE_PATH}/reviews`,
+    createReviewRouter(reviewDependencies, authenticated),
+  )
+  app.use(
+    `${API_BASE_PATH}/salons/:salonId/reviews`,
+    createSalonReviewRouter(reviewDependencies),
+  )
+  app.use(
+    `${API_BASE_PATH}/staff/:staffId/reviews`,
+    createStaffReviewRouter(reviewDependencies),
   )
 
   app.use(notFoundHandler)
