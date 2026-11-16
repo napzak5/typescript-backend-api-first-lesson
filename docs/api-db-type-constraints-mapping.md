@@ -309,9 +309,9 @@ DB にも TypeSpec にも表せない規則（空白だけの文字列を拒否�
 | CHECK 制約 | TypeSpec | 規則を確かめる場所 |
 |---|---|---|
 | `customers_loyalty_points_not_negative`（`loyaltyPoints >= 0`） | 残高のレスポンスの `@doc` に書く | リクエストからは書けない。`planPoints` が、0 未満になる取引を書かない（409） |
-| `customer_points_points_of_type`（`earned` は 1 以上、`used` と `expired` は −1 以下、`adjusted` と `transferred` は 0 以外） | 付与と利用の `points` に `@minValue(1)`。調整の 0 以外は `@doc` に書く | スキーマの `points`（付与と利用は 1 以上、調整は 0 以外の `refine`）。利用は、`planPoints` が負の数にして書く |
+| `customer_points_points_of_type`（`earned` は 1 以上、`used` と `expired` は −1 以下、`adjusted` と `transferred` は 0 以外） | 付与と利用の `points` に `@minValue(1)`。調整の 0 以外は `@doc` に書く | スキーマの `points`（付与と利用は 1 以上、調整は 0 以外の `refine`）。利用は、`planPoints` が負の数にして書く。失効は、`planExpiry` が、失効させるポイントがあるときだけ負の数にして書く |
 | `customer_points_balance_not_negative`（`balance >= 0`） | レスポンスの `@doc` に書く | リクエストからは書けない。`planPoints` が、0 未満になる取引を書かない（409） |
-| `customer_points_expiry_of_earned`（有効期限は `earned` だけ） | 利用と調整のリクエストに `expiryDate` がない | スキーマ（利用と調整では `unrecognized_keys`）と、`planPoints`（付与だけが `expiryDate` を書く） |
+| `customer_points_expiry_of_earned`（有効期限は `earned` だけ） | 利用と調整のリクエストに `expiryDate` がない | スキーマ（利用と調整では `unrecognized_keys`）と、`planPoints`（付与だけが `expiryDate` を書く）と `planExpiry`（失効の `expiryDate` は null） |
 | `customer_points_reference_pair`（`referenceType` と `referenceId` は、両方あるか、両方 NULL） | 両方の `@doc` に書く | 3 つのリクエストの `.check()`（`referenceInPairs`） |
 | `customer_points_reference_type_known`（`referenceType` は `sale` か `booking`） | `PointReferenceType` | スキーマの `referenceType`（`PointReferenceTypeSchema`）と、読み出しマッパー |
 

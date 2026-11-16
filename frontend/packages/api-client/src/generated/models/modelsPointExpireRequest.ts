@@ -11,12 +11,12 @@
  */
 export interface ModelsPointExpireRequest {
   /**
-     * 対象顧客の ID。すべての顧客を処理する場合はnull
+     * 対象顧客の ID。削除されていないすべての顧客を処理する場合はnull
      * @nullable
      */
   customerId: string | null;
   /**
-     * この日付より前に有効期限を迎えたポイントを失効させる。null の場合は処理を実行した日
+     * 有効期限がこの日付より前の獲得ポイントを失効させる。昨日(UTC)以前の日付で、null の場合は昨日(UTC)。有効期限は、その日まで使える日付で、付与は昨日(UTC)以降の有効期限を受け付けるため、どのタイムゾーンでも、有効期限の日が終わる前には失効しない
      * @nullable
      */
   processBefore: string | null;

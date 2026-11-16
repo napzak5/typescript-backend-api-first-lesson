@@ -49,6 +49,17 @@ export type PointListing =
   | { type: 'cursorNotFound' }
 
 /**
+ * What an expiry did:
+ * - `expired`: how many point transactions of the type `expired` it wrote,
+ *   one a customer, and how many points they took together
+ * - `customerNotFound`: the customer it was asked for is not there, or
+ *   deleted
+ */
+export type PointExpiryOutcome =
+  | { type: 'expired'; processedCount: number; totalPoints: number }
+  | { type: 'customerNotFound' }
+
+/**
  * Persistence of the points of the customers. Every movement writes a
  * point transaction and the balance after it to the customer
  * (`loyaltyPoints`) in one transaction, with the customer held, so the
@@ -59,6 +70,29 @@ export interface IPointRepository {
   balanceOf(customerId: CustomerId): Promise<Result<number | null, DomainError>>
 
   list(criteria: PointListCriteria): Promise<Result<PointListing, DomainError>>
+
+  /**
+   * All the point transactions of a customer, in the order they were
+   * written (`createdAt`, then `id`), read at one moment; null for no
+   * customer or a deleted one.
+   */
+  transactionsOf(
+    customerId: CustomerId,
+  ): Promise<Result<DbPointTransaction[] | null, DomainError>>
+
+  /**
+   * Expires the points of the customer, or of every customer who is not
+   * deleted when it is null, whose expiry date is before `processBefore`
+   * and that are left (`planExpiry`). Each customer is held as a movement
+   * holds them, in a transaction of their own, and their transactions are
+   * read after that, so an expiry and the movements of a customer are
+   * written one after the other. A customer whose expiry is written stays
+   * expired when a later one fails.
+   */
+  expire(
+    customerId: CustomerId | null,
+    processBefore: string,
+  ): Promise<Result<PointExpiryOutcome, DomainError>>
 
   /**
    * Holds the record the request names, if it is within the reach, then

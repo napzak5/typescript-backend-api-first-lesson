@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { decodePointTransactionSearchQuery } from '../query'
+import {
+  decodeExpiringPointsQuery,
+  decodePointTransactionSearchQuery,
+} from '../query'
 
 const POINT_TRANSACTION_ID = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f4a01'
 
@@ -58,6 +61,37 @@ describe('decodePointTransactionSearchQuery', () => {
         type: 'validation',
         message: 'Invalid point transaction search',
         issues: [{ field: 'limit', rule }],
+      },
+    })
+  })
+})
+
+describe('decodeExpiringPointsQuery', () => {
+  it('gives the days their type', () => {
+    expect(decodeExpiringPointsQuery({ days: '7' })).toEqual({
+      type: 'success',
+      data: { days: 7 },
+    })
+    expect(decodeExpiringPointsQuery({})).toEqual({ type: 'success', data: {} })
+  })
+
+  it('passes days out of range and unknown parameters on for the use case', () => {
+    expect(decodeExpiringPointsQuery({ days: '366', limit: '10' })).toEqual({
+      type: 'success',
+      data: { days: 366, limit: '10' },
+    })
+  })
+
+  it.each([
+    ['days that are not a number', { days: 'a week' }, 'invalid_format'],
+    ['days given twice', { days: ['1', '2'] }, 'invalid_type'],
+  ])('rejects %s as a broken rule of the parameter', (_case, query, rule) => {
+    expect(decodeExpiringPointsQuery(query)).toMatchObject({
+      type: 'error',
+      error: {
+        type: 'validation',
+        message: 'Invalid expiring points search',
+        issues: [{ field: 'days', rule }],
       },
     })
   })

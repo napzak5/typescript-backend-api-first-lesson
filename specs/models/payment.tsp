@@ -808,37 +808,37 @@ namespace BeautySalon.Models {
     referenceId: string | null;
   }
 
-  @doc("失効予定ポイントの集計結果 - 有効期限が近い獲得ポイントの合計と、その取引の一覧")
+  @doc("失効予定ポイントの集計結果 - 有効期限が近い獲得ポイントのうち、使われずに残っているポイントの合計と、その獲得の取引の一覧")
   model PointExpiringResponse {
     @doc("対象顧客の ID")
     customerId: CustomerId;
 
-    @doc("期間内に失効する予定のポイント数の合計")
+    @doc("有効期限が期間内(期限を過ぎて、まだ失効させていないものを含む)の獲得ポイントのうち、使われずに残っているポイント数の合計。残高を超えない")
     expiringPoints: int32;
 
-    @doc("期間内で最も早い有効期限。失効予定のポイントがない場合はnull")
+    @doc("transactions の中で最も早い有効期限。該当するポイントがない場合はnull")
     expirationDate: plainDate | null;
 
-    @doc("期間内に有効期限を迎える獲得ポイントの取引の一覧。expiryDate の昇順で並ぶ")
+    @doc("使われずに残っているポイントのある、有効期限が期間内の獲得(earned)の取引の一覧。expiryDate の昇順で、同じ日付なら登録の古い順に並ぶ。各取引の points は獲得したポイント数で、残っている数ではない")
     transactions: PointTransactionResponse[];
   }
 
   @doc("ポイント失効処理リクエスト - 有効期限を過ぎたポイントを失効させる対象を指定する。全項目のキーが必須")
   model PointExpireRequest {
-    @doc("対象顧客の ID。すべての顧客を処理する場合はnull")
+    @doc("対象顧客の ID。削除されていないすべての顧客を処理する場合はnull")
     customerId: CustomerId | null;
 
-    @doc("この日付より前に有効期限を迎えたポイントを失効させる。null の場合は処理を実行した日")
+    @doc("有効期限がこの日付より前の獲得ポイントを失効させる。昨日(UTC)以前の日付で、null の場合は昨日(UTC)。有効期限は、その日まで使える日付で、付与は昨日(UTC)以降の有効期限を受け付けるため、どのタイムゾーンでも、有効期限の日が終わる前には失効しない")
     processBefore: plainDate | null;
   }
 
   @doc("ポイント失効処理の結果")
   model PointExpireResponse {
-    @doc("登録した失効(expired)のポイント取引の件数")
+    @doc("登録した失効(expired)のポイント取引の件数。ポイントを失効させた顧客の数と等しい")
     processedCount: int32;
 
-    @doc("失効させたポイントの合計")
-    totalPoints: int32;
+    @doc("失効させたポイントの合計(0 以上)。すべての顧客の合計は int32 に収まらないことがあるため int64")
+    totalPoints: int64;
   }
 
   // ---------------------------------------------------------------------------

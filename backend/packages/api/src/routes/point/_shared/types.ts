@@ -19,3 +19,9 @@ export type UsePointsResponse = JsonBody<
 export type AdjustPointsResponse = JsonBody<
   operations['PointCrud_adjust']['responses'][200]['content']
 >
+export type GetExpiringPointsResponse = JsonBody<
+  operations['PointCrud_getExpiring']['responses'][200]['content']
+>
+export type ExpirePointsResponse = JsonBody<
+  operations['PointCrud_expire']['responses'][200]['content']
+>

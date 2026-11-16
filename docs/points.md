@@ -10,11 +10,11 @@
 
 | オペレーション | 状態 |
 |---|---|
-| 残高（`getBalance`）、履歴（`listTransactions`）、付与（`earn`）、利用（`use`）、調整（`adjust`） | 実装済み |
-| 有効期限が近いポイント（`getExpiring`）、失効（`expire`） | 未実装 |
+| 残高（`getBalance`）、履歴（`listTransactions`）、有効期限が近いポイント（`getExpiring`）、付与（`earn`）、利用（`use`）、調整（`adjust`）、失効（`expire`） | 実装済み |
 
-- 付与には有効期限（`expiryDate`）を記録できますが、**期限を過ぎたポイントを残高から引く処理はありません**。期限を過ぎても、残高に残り、使えます
+- 有効期限を過ぎたポイントは、管理者が失効（`expire`）を実行するまで残高に残り、使えます（[有効期限と失効](#有効期限と失効)）
 - 次のものは、ありません
+  - 失効を決まった時刻に実行する仕組み（スケジューラー）。管理者が API を呼びます
   - 顧客の間でポイントを移すこと（種別 `transferred`）
   - 会員ランク（`membershipTier`）をポイントや利用額で変えること
   - 1 ポイントが何円かと、売上の金額に対する付与率。付与するポイント数は、レジが決めて送ります
@@ -25,7 +25,7 @@
 ## 残高と履歴
 
 - 顧客の残高は `customers.loyaltyPoints` です。**ポイント台帳のルートだけが、残高を書きます**。顧客の作成と更新のリクエストでは書けません（[顧客台帳](./customers.md)）
-- 残高を動かすたびに、ポイント取引を 1 件書きます。取引の `points` は増減（付与は正、利用は負、調整はどちらか）、`balance` は、その取引の後の残高です
+- 残高を動かすたびに、ポイント取引を 1 件書きます。取引の `points` は増減（付与は正、利用と失効は負、調整はどちらか）、`balance` は、その取引の後の残高です
 - **顧客の残高は、最新の取引の `balance` と等しくなります**。最新とは、`createdAt` が最も新しく、同じ時刻なら `id` が最も大きいものです。取引のない顧客の残高は 0 です
 - 残高は 0 以上、2,147,483,647（`int32` の最大値）以下です。範囲を外れる取引は書きません（409）
 - ポイントは整数です。1 未満の単位はありません
@@ -35,7 +35,8 @@
 | `earned`（付与） | `POST /api/v1/points/earn` | 1 以上 | 指定できる。null なら期限なし |
 | `used`（利用） | `POST /api/v1/points/use` | −1 以下。リクエストには正の数で書き、負の数で記録する | null |
 | `adjusted`（調整） | `POST /api/v1/points/adjust` | 0 以外 | null |
-| `expired`（失効）、`transferred`（移行） | なし | | null |
+| `expired`（失効） | `POST /api/v1/points/expire` | −1 以下 | null |
+| `transferred`（移行） | なし | | null |
 
 ## オペレーションと権限
 
@@ -43,14 +44,17 @@
 |---|---|---|
 | 残高 | `GET /api/v1/points/customer/{customerId}/balance` | `admin`、どのサロンの `owner`・`manager`・`staff` も |
 | 履歴 | `GET /api/v1/points/customer/{customerId}/transactions` | 同上 |
+| 有効期限が近いポイント | `GET /api/v1/points/customer/{customerId}/expiring` | 同上 |
 | 付与 | `POST /api/v1/points/earn` | 同上 |
 | 利用 | `POST /api/v1/points/use` | 同上 |
 | 調整 | `POST /api/v1/points/adjust` | `admin`、どのサロンの `owner`・`manager` も |
+| 失効 | `POST /api/v1/points/expire` | `admin` だけ |
 
-- すべてのオペレーションに認証が要ります。誰が使えるかは、`business-logic/point/_shared/authorization.ts` の `pointReachOf`（残高、履歴、付与、利用）と `pointAdjustReachOf`（調整）が決めます。ポイントのための権限（`users.permissions`）はありません
+- すべてのオペレーションに認証が要ります。誰が使えるかは、`business-logic/point/_shared/authorization.ts` の `pointReachOf`（残高、履歴、有効期限が近いポイント、付与、利用）、`pointAdjustReachOf`（調整）、`mayExpirePoints`（失効）が決めます。ポイントのための権限（`users.permissions`）はありません
 - **サロンの `staff` は、付与と利用ができ、調整はできません（403）**。付与と利用はレジの仕事で、調整はレジの記録によらずにポイントを動かすからです（売上の取り消しを `staff` ができないのと同じです。[売上台帳](./sales.md#オペレーションと権限)）
+- **失効は `admin` だけができます**。サロンの `owner` と `manager` も 403 です。失効は、どのサロンで貯めたポイントも、すべての顧客についてまとめて減らすので、1 つのサロンのメンバーには任せません
 - サロンのメンバーは、どの顧客のポイントも扱えます。顧客はサロンに属さないからです（[顧客台帳](./customers.md)）
-- 顧客のアカウントと、ロールに必要なレコードを持たないユーザー（削除されたスタッフに紐づいたアカウントなど）は、すべてのオペレーションで 403 です。この 403 は、パスと本文を確かめる前に返します
+- 顧客のアカウントと、ロールに必要なレコードを持たないユーザー（削除されたスタッフに紐づいたアカウントなど）は、すべてのオペレーションで 403 です。この 403 は、パス、クエリ、本文を確かめる前に返します
 - 付与、利用、調整が参照できる売上と予約は、操作者が扱えるものだけです。`admin` はすべてのサロンの、サロンのメンバーは所属サロンの売上と予約です。ほかのサロンの売上と予約は、その操作者には存在しないものとして扱います（400。[参照する記録](#参照する記録)）
 
 ### 残高の確認の順序
@@ -68,6 +72,14 @@
 4. クエリ（400。`detail` は `Invalid point transaction search`）
 5. 顧客の存在（404）。削除した顧客も 404 です
 6. カーソル（400。`cursor` の `not_found`、`message` は `Must name a point transaction of the customer`）
+
+### 有効期限が近いポイントの確認の順序
+
+1. アクセストークン（401）
+2. 操作者が、ポイントを読めること（403）
+3. パスの顧客 ID（400。`Invalid customer ID`）
+4. クエリ（400。`detail` は `Invalid expiring points search`）
+5. 顧客の存在（404）。削除した顧客も 404 です
 
 ### 付与、利用、調整の確認の順序
 
@@ -92,6 +104,16 @@
 | 同じ記録への付与、または利用が済んでいる | `The record has a point transaction of this kind already; a record is earned on once and used for once` |
 | 残高が 0 未満になる | `The balance of the customer would fall below 0` |
 | 残高が 2,147,483,647 を超える | `The balance of the customer would go above 2147483647` |
+
+### 失効の確認の順序
+
+1. アクセストークン（401）
+2. 操作者が `admin` であること（403）
+3. リクエストの形式（400。`detail` は `Invalid point expiry`）
+4. `processBefore` が昨日（UTC）以前であること（400。`processBefore` の `too_big`、`message` は `Must not be later than <昨日の日付>`）
+5. `customerId` を指定したときだけ: 顧客の存在（400。`customerId` の `not_found`、`message` は `Must name a customer`）。削除した顧客も同じです
+
+失効は 409 を返しません。失効させるポイントがない顧客には何も書かず、数にも入れません（200）。
 
 ## リクエストの規則
 
@@ -140,6 +162,49 @@
 - `limit` が数でなければ 400（`invalid_format`）、範囲外なら 400（`too_small`、`too_big`）です
 - コントラクトにないパラメーターは 400 です（`unrecognized_keys`）
 
+## 有効期限と失効
+
+有効期限（`expiryDate`）は、付与だけが持つ、そのポイントを使える最後の日です（`YYYY-MM-DD`）。有効期限が null の付与と、調整で増えたポイント（マイグレーションとシードの開始残高を含む）には、期限がありません。
+
+### 残っているポイントの数え方
+
+付与したポイントのうち、どれだけが使われずに残っているかは、取引に書きません。顧客のすべての取引を書いた順（`createdAt` の昇順、同じ時刻なら `id` の昇順）にたどって、そのつど数えます（`business-logic/point/_shared/lots.ts` の `lotsOf`）。
+
+- 残高を増やす取引（付与、正の調整）ごとに、そのポイントのまとまりができます。付与のまとまりは、付与の有効期限を持ちます
+- 残高を減らす取引（利用、失効、負の調整）は、**その時点にあるまとまりから、有効期限の近い順に取ったもの**とします。期限のないまとまりは最後で、期限が同じなら書いた順です。期限の近いポイントから使うほうが、顧客に有利だからです
+- 後から付与したポイントが、それより前の利用で取られることはありません
+- 残ったまとまりの合計は、最新の取引の残高と等しくなります
+
+### 有効期限が近いポイント
+
+`GET /api/v1/points/customer/{customerId}/expiring` は、有効期限が今日（UTC）から `days` 日後まで（その日を含む）の付与のうち、残っているポイントを返します。**有効期限を過ぎて、まだ失効させていないポイントも含みます**。失効させるまでは使えるからです。
+
+| パラメーター | 形式 | 規則 |
+|---|---|---|
+| `days` | 整数 | 1〜365。既定は 30 |
+
+- `days` が数でなければ 400（`invalid_format`）、整数でなければ 400（`invalid_type`）、範囲外なら 400（`too_small`、`too_big`）です。コントラクトにないパラメーターは 400 です（`unrecognized_keys`）
+- `expiringPoints` は、残っているポイントの合計で、残高を超えません。`expirationDate` は、その中で最も早い有効期限で、なければ null です
+- `transactions` は、ポイントが残っている付与の取引です。有効期限の昇順で、同じ日付なら書いた順です。`points` は付与したポイント数で、残っている数ではありません
+- `links` は、このリクエストと、その顧客の残高と履歴です
+
+### 失効
+
+`POST /api/v1/points/expire` は、有効期限が `processBefore` より前の付与のうち、残っているポイントを失効させます。
+
+| プロパティ | 形式 | 規則 |
+|---|---|---|
+| `customerId` | UUID か null | null なら、削除されていないすべての顧客 |
+| `processBefore` | `YYYY-MM-DD` か null | 昨日（UTC）以前。null なら昨日（UTC） |
+
+- 2 つのキーは必須です。コントラクトにないキーは 400 です（`unrecognized_keys`）
+- 失効させるポイントのある顧客ごとに、種別 `expired` のポイント取引を 1 件書き、顧客の残高を同じ数だけ減らします。取引の `points` は失効させた数の負の数で、`description`、`referenceType`、`referenceId`、`expiryDate` は null です
+- レスポンスは `{ processedCount, totalPoints }` です。書いた失効の取引の件数（失効させた顧客の数）と、失効させたポイントの合計です。`links` は null です
+- **何度実行しても、同じポイントを二度は失効させません**。失効の取引も、まとまりからポイントを取るからです。2 回目は何も書かず、`processedCount` は 0 です
+- `processBefore` の既定と上限を昨日（UTC）にするのは、どのタイムゾーンでも、有効期限の日が終わる前に失効させないためです。失効させるのは、有効期限が一昨日（UTC）以前のポイントになります。付与の有効期限に昨日（UTC）以降を受け付けるのと同じ考え方です（[リクエストの規則](#リクエストの規則)）
+- `customerId` が null なら、削除されていない顧客のうち、残高が 1 以上で、有効期限が `processBefore` より前の付与がある顧客を、1 人ずつ処理します。残っているポイントがなければ、その顧客には何も書きません
+- 失効を決まった時刻に実行する仕組みはありません。管理者が、たとえば毎日 1 回、2 つのキーを null にして呼びます
+
 ## 売上と支払いとの関係
 
 - **売上の `pointsUsed` と `pointsEarned` は、残高を動かしません**。売上の記録として残るだけです（[売上台帳](./sales.md)）
@@ -155,7 +220,10 @@
 - 参照する売上を取り消している途中や、予約のステータスを変えている途中なら、それを待ち、その結果で判断します（取り消した売上なら 409）。ポイント取引を書き終わるまで、参照している売上の取り消しと予約のステータスの変更は待ちます
 - 同じ記録への付与が同時に届いたら、1 件だけを書き、ほかは 409 です。部分一意インデックス（`customer_points_reference_unique`）も、同じことを確かめます
 - 取引の `createdAt` と、顧客の `updatedAt` は、行を書いた時点の時刻（`clock_timestamp()`）です。顧客を待った取引は、待たせた取引より後の時刻になります
-- 履歴は、1 つの読み取り専用のトランザクション（`REPEATABLE READ`）で読みます。顧客、カーソル、ページ、件数は、同じ時点の値です。ロックは取りません
+- 失効は、顧客ごとに 1 つのトランザクション（`READ COMMITTED`）で書きます。顧客を `FOR NO KEY UPDATE` で持ち、**持ったあとで**その顧客の取引を読んで、失効させる数を数えます。付与、利用、調整と同じ行を持つので、同じ顧客の取引とは 1 件ずつ順に書きます。利用を待った失効は利用の後の取引から数え、失効を待った利用は失効の後の残高から計算します
+- 同時に実行された失効も、顧客ごとに 1 件ずつ順に書きます。後の失効は、前の失効が取ったポイントを数えないので、同じポイントの失効を 2 件書くことはありません
+- すべての顧客の失効は、顧客ごとのトランザクションで、1 人ずつ書きます。途中で失敗したら（500）、それまでの顧客は失効したままです。もう一度実行すると、残りの顧客を失効させます
+- 履歴は、1 つの読み取り専用のトランザクション（`REPEATABLE READ`）で読みます。顧客、カーソル、ページ、件数は、同じ時点の値です。ロックは取りません。有効期限が近いポイントも、顧客と取引を同じように読みます
 
 ## DB の制約
 
@@ -189,9 +257,9 @@
 
 | 層 | ファイル |
 |---|---|
-| コントラクト | `specs/models/payment.tsp`（`PointTransactionType`、`PointReferenceType`、`PointTransactionResponse`、`PointTransactionSearchRequest`、`PointBalanceResponse`、`PointEarnRequest`、`PointUseRequest`、`PointAdjustRequest`）、`specs/operations/payment-operations.tsp`（`PointCrud`） |
+| コントラクト | `specs/models/payment.tsp`（`PointTransactionType`、`PointReferenceType`、`PointTransactionResponse`、`PointTransactionSearchRequest`、`PointBalanceResponse`、`PointEarnRequest`、`PointUseRequest`、`PointAdjustRequest`、`PointExpiringResponse`、`PointExpireRequest`、`PointExpireResponse`）、`specs/operations/payment-operations.tsp`（`PointCrud`） |
 | データベース | `backend/packages/database/sql/migrations/202611161000_customer_points_rules.sql`、`src/seeds/seed-data/customers.ts` |
-| ドメイン | `backend/packages/domain/src/models/point.ts`、`schemas/point.schema.ts`、`repositories/point.repository.ts`、`mappers/read/point.mapper.ts`、`business-logic/point/`（誰が使えるかは `_shared/authorization.ts`、取引の計画は `_shared/plan.ts`、409 の内容は `_shared/refusals.ts`、付与・利用・調整に共通の流れは `_shared/record.ts`） |
+| ドメイン | `backend/packages/domain/src/models/point.ts`、`schemas/point.schema.ts`、`repositories/point.repository.ts`、`mappers/read/point.mapper.ts`、`business-logic/point/`（誰が使えるかは `_shared/authorization.ts`、取引の計画は `_shared/plan.ts`、残っているポイントの数え方と失効の計画は `_shared/lots.ts`、409 の内容は `_shared/refusals.ts`、付与・利用・調整に共通の流れは `_shared/record.ts`） |
 | インフラ | `backend/packages/infrastructure/src/repositories/point.repository.impl.ts` |
 | API | `backend/packages/api/src/routes/point/`（`/api/v1/points` に取り付ける） |
-| テスト | `backend/packages/domain/src/__tests__/point.schema.test.ts`、`point.plan.test.ts`、`point.mapper.test.ts`、`point.usecase.test.ts`、`backend/packages/api/src/routes/point/_shared/__tests__/`、`backend/packages/api/src/__tests__/point.integration.test.ts`、`backend/packages/database/src/scripts/__tests__/migrations.integration.test.ts` |
+| テスト | `backend/packages/domain/src/__tests__/point.schema.test.ts`、`point.plan.test.ts`、`point.lots.test.ts`、`point.mapper.test.ts`、`point.usecase.test.ts`、`backend/packages/api/src/routes/point/_shared/__tests__/`、`backend/packages/api/src/__tests__/point.integration.test.ts`、`backend/packages/database/src/scripts/__tests__/migrations.integration.test.ts` |

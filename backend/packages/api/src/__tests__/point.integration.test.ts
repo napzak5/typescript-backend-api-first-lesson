@@ -67,6 +67,8 @@ const forbidden = { status: 403, code: '1005', type: 'forbidden' }
 
 const INVALID_CUSTOMER_ID = 'Invalid customer ID'
 const INVALID_SEARCH = 'Invalid point transaction search'
+const INVALID_EXPIRING_SEARCH = 'Invalid expiring points search'
+const INVALID_EXPIRY = 'Invalid point expiry'
 const SALE_IS_VOID =
   'The sale is void; points are not earned on or used for a void sale'
 const BOOKING_IS_CLOSED =
@@ -151,6 +153,7 @@ describe('Points API', () => {
   type NewStaff = typeof staff.$inferInsert
   type NewSale = typeof sales.$inferInsert
   type NewBooking = typeof bookings.$inferInsert
+  type NewPointTransaction = typeof customerPoints.$inferInsert
   type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0]
 
   let rows = 0
@@ -297,6 +300,62 @@ describe('Points API', () => {
       request(app).get(`${POINTS}/customer/${id}/transactions`).query(query),
       as,
     )
+
+  const expiringPointsOf = (
+    id: string,
+    query: Record<string, string | string[]> = {},
+    as: string | null = asAdmin,
+  ) =>
+    authorized(
+      request(app).get(`${POINTS}/customer/${id}/expiring`).query(query),
+      as,
+    )
+  const expirePoints = (body: Body, as: string | null = asAdmin) =>
+    authorized(request(app).post(`${POINTS}/expire`), as).send(body)
+  /** An expiry of every customer, before yesterday in UTC. */
+  const everyCustomer: Body = { customerId: null, processBefore: null }
+
+  /**
+   * Writes the point transactions of a customer directly, as the ledger
+   * writes them: each with the balance after it, at the second of
+   * 1 January 2026 it names (its place unless said otherwise), with IDs
+   * that fall as the rows are written, and the latest balance to the
+   * customer. `[type, points, expiry date, second]` each; returns the IDs.
+   */
+  const writeLedger = async (
+    rows: [
+      NewPointTransaction['transactionType'],
+      number,
+      string | null,
+      number?,
+    ][],
+    of: string = customerId,
+  ): Promise<string[]> => {
+    let balance = 0
+    const ids: string[] = []
+    for (const [
+      index,
+      [transactionType, points, expiryDate, second],
+    ] of rows.entries()) {
+      balance += points
+      const id = `0193a5b8-7c2e-7d4f-8a1b-${String(1_000_000 - Number(nextRow())).padStart(12, '0')}`
+      await db.insert(customerPoints).values({
+        id,
+        customerId: of,
+        transactionType,
+        points,
+        balance,
+        expiryDate,
+        createdAt: `2026-01-01T00:00:${String(second ?? index).padStart(2, '0')}Z`,
+      })
+      ids.push(id)
+    }
+    await db
+      .update(customers)
+      .set({ loyaltyPoints: balance })
+      .where(eq(customers.id, of))
+    return ids
+  }
 
   /** Gives the customer a balance by an adjustment of the admin; anything but 200 fails the test. */
   const withBalance = async (points: number, of: string = customerId) => {
@@ -860,7 +919,7 @@ describe('Points API', () => {
           `${POINTS}/customer/${customerId}/transactions/${UNKNOWN_ID}`,
         ),
         request(app).get(`${POINTS}/customer/${customerId}`),
-        request(app).get(`${POINTS}/customer/${customerId}/expiring`),
+        request(app).get(`${POINTS}/customer/${customerId}/expired`),
         request(app).get(POINTS),
       ]) {
         expectProblem(await authorized(call, asAdmin), routeNotFound)
@@ -1196,7 +1255,7 @@ describe('Points API', () => {
         request(app).get(`${POINTS}/earn`),
         request(app).put(`${POINTS}/earn`),
         request(app).delete(`${POINTS}/earn`),
-        request(app).post(`${POINTS}/expire`),
+        request(app).post(`${POINTS}/expiry`),
         request(app).post(`${POINTS}/transfer`),
       ]) {
         expectProblem(await authorized(call, asAdmin), routeNotFound)
@@ -1507,6 +1566,602 @@ describe('Points API', () => {
     })
   })
 
+  describe('GET /api/v1/points/customer/:customerId/expiring', () => {
+    it('answers what is left of the earnings near their expiry date, the earliest first', async () => {
+      const [inTenDays, lapsed] = await writeLedger([
+        ['earned', 100, daysFromToday(10)],
+        ['earned', 200, daysFromToday(-5)],
+        ['earned', 300, daysFromToday(40)],
+        ['adjusted', 400, null],
+        ['used', -50, null],
+      ])
+
+      const response = await expiringPointsOf(customerId)
+
+      expect(response.status).toBe(200)
+      expect(response.headers['content-type']).toBe(JSON_UTF8)
+      expect(response.body).toEqual({
+        data: {
+          customerId,
+          expiringPoints: 250,
+          expirationDate: daysFromToday(-5),
+          transactions: [
+            {
+              id: lapsed,
+              customerId,
+              transactionType: 'earned',
+              points: 200,
+              balance: 300,
+              description: null,
+              referenceType: null,
+              referenceId: null,
+              expiryDate: daysFromToday(-5),
+              createdAt: '2026-01-01T00:00:01.000Z',
+            },
+            expect.objectContaining({ id: inTenDays, points: 100 }),
+          ],
+        },
+        meta: {
+          correlationId: expect.any(String),
+          timestamp: expect.stringMatching(ISO_TIMESTAMP),
+          version: expect.any(String),
+        },
+        links: {
+          self: `${POINTS}/customer/${customerId}/expiring`,
+          balance: `${POINTS}/customer/${customerId}/balance`,
+          transactions: `${POINTS}/customer/${customerId}/transactions`,
+        },
+      })
+      expect(Object.keys(response.body.data.transactions[1]).sort()).toEqual(
+        PROPERTIES,
+      )
+    })
+
+    it('counts 30 days from today in UTC without days, and the days of the query, the last day included', async () => {
+      await writeLedger([
+        ['earned', 100, daysFromToday(10)],
+        ['earned', 50, daysFromToday(30)],
+        ['earned', 20, daysFromToday(31)],
+      ])
+
+      const pointsWithin = async (query: Record<string, string>) =>
+        (await expiringPointsOf(customerId, query)).body.data.expiringPoints
+
+      expect(await pointsWithin({})).toBe(150)
+      expect(await pointsWithin({ days: '9' })).toBe(0)
+      expect(await pointsWithin({ days: '10' })).toBe(100)
+      expect(await pointsWithin({ days: '365' })).toBe(170)
+    })
+
+    it('reads the transactions in the order they were written, by the ID within one moment', async () => {
+      // The use is written before the earning, with the larger ID, at the
+      // same moment: it comes after the earning, and takes it.
+      await writeLedger([
+        ['adjusted', 100, null, 0],
+        ['used', -100, null, 1],
+        ['earned', 100, daysFromToday(5), 1],
+      ])
+
+      expect((await expiringPointsOf(customerId)).body.data).toEqual({
+        customerId,
+        expiringPoints: 0,
+        expirationDate: null,
+        transactions: [],
+      })
+    })
+
+    it('answers nothing near for a customer without points', async () => {
+      const response = await expiringPointsOf(customerId)
+
+      expect(response.status).toBe(200)
+      expect(response.body.data).toEqual({
+        customerId,
+        expiringPoints: 0,
+        expirationDate: null,
+        transactions: [],
+      })
+    })
+
+    it('links the customer under the mount path the request used', async () => {
+      const response = await authorized(
+        request(app).get(
+          `/API/V1/POINTS/customer/${customerId}/expiring?days=7`,
+        ),
+        asAdmin,
+      )
+
+      expect(response.status).toBe(200)
+      expect(response.body.links).toEqual({
+        self: `/API/V1/POINTS/customer/${customerId}/expiring?days=7`,
+        balance: `/API/V1/POINTS/customer/${customerId}/balance`,
+        transactions: `/API/V1/POINTS/customer/${customerId}/transactions`,
+      })
+    })
+
+    it.each(keepers)('answers %s', async (_, signInAs) => {
+      expect(
+        (await expiringPointsOf(customerId, {}, await signInAs())).status,
+      ).toBe(200)
+    })
+
+    it.each(notKeepers)(
+      'refuses %s, whatever the ID and the query',
+      async (_, signInAs) => {
+        const as = await signInAs()
+
+        expectProblem(await expiringPointsOf(customerId, {}, as), forbidden)
+        expectProblem(
+          await expiringPointsOf('mine', { days: 'many' }, as),
+          forbidden,
+        )
+      },
+    )
+
+    it.each(unauthenticated)(
+      'refuses %s',
+      async (_, tokenOf, problem, challenge) => {
+        const response = await expiringPointsOf('mine', {}, await tokenOf())
+
+        expectProblem(response, problem)
+        expect(response.headers['www-authenticate']).toBe(challenge)
+      },
+    )
+
+    it('refuses an ID that is not a UUID before the query', async () => {
+      const response = await expiringPointsOf('mine', { days: 'many' })
+
+      expectProblem(response, badRequest)
+      expect(response.body.detail).toBe(INVALID_CUSTOMER_ID)
+      expect(brokenRules(response)).toEqual(['id:invalid_format'])
+    })
+
+    it('refuses a query that breaks a rule, before the customer is looked for', async () => {
+      const broken: [Record<string, string | string[]>, string[]][] = [
+        [{ days: 'many' }, ['days:invalid_format']],
+        [{ days: '' }, ['days:invalid_format']],
+        [{ days: ['1', '2'] }, ['days:invalid_type']],
+        [{ days: '0' }, ['days:too_small']],
+        [{ days: '366' }, ['days:too_big']],
+        [{ days: '1.5' }, ['days:invalid_type']],
+        [{ limit: '10' }, ['limit:unrecognized_keys']],
+      ]
+
+      for (const [query, rules] of broken) {
+        const response = await expiringPointsOf(UNKNOWN_ID, query)
+
+        expectProblem(response, badRequest)
+        expect(response.body.detail).toBe(INVALID_EXPIRING_SEARCH)
+        expect(brokenRules(response)).toEqual(rules)
+      }
+    })
+
+    it('answers 404 for a customer who is not there, or is deleted', async () => {
+      expectProblem(await expiringPointsOf(UNKNOWN_ID), notFound)
+      await writeLedger([['earned', 100, daysFromToday(5)]])
+      await deleteCustomer(customerId)
+      expectProblem(await expiringPointsOf(customerId), notFound)
+    })
+
+    it('serves no other method on the path', async () => {
+      for (const call of [
+        request(app).post(`${POINTS}/customer/${customerId}/expiring`),
+        request(app).put(`${POINTS}/customer/${customerId}/expiring`),
+        request(app).delete(`${POINTS}/customer/${customerId}/expiring`),
+      ]) {
+        expectProblem(await authorized(call, asAdmin), routeNotFound)
+      }
+    })
+  })
+
+  describe('POST /api/v1/points/expire', () => {
+    /** Those who do not expire points: everybody but the administrators. */
+    const notExpirers: [string, SignInAs][] = [
+      ...notKeepers,
+      ['the owner of the salon', member('owner')],
+      ['a manager of the salon', member('manager')],
+      ['a staff member of the salon', member('staff')],
+    ]
+
+    /** The types of the point transactions of a customer, in the order written. */
+    const typesOf = async (of: string = customerId) =>
+      (await storedTransactions(of)).map(
+        ({ transactionType }) => transactionType,
+      )
+
+    it('expires what is left of the lapsed earnings of every customer, one transaction each', async () => {
+      const other = await insertCustomer(db)
+      const notYet = await insertCustomer(db)
+      const deleted = await insertCustomer(db)
+      const usedUp = await insertCustomer(db)
+      await writeLedger([
+        ['earned', 100, daysFromToday(-10)],
+        ['earned', 50, daysFromToday(-3)],
+        ['adjusted', 200, null],
+        ['used', -30, null],
+        ['earned', 80, daysFromToday(5)],
+      ])
+      await writeLedger([['earned', 40, daysFromToday(-2)]], other)
+      await writeLedger([['earned', 60, daysFromToday(-1)]], notYet)
+      await writeLedger([['earned', 70, daysFromToday(-9)]], deleted)
+      await deleteCustomer(deleted)
+      await writeLedger(
+        [
+          ['earned', 90, daysFromToday(-9)],
+          ['used', -90, null],
+        ],
+        usedUp,
+      )
+      const before = await databaseClock()
+
+      const response = await expirePoints(everyCustomer)
+      const after = await databaseClock()
+
+      expect(response.status).toBe(200)
+      expect(response.headers['content-type']).toBe(JSON_UTF8)
+      expect(response.body).toEqual({
+        data: { processedCount: 2, totalPoints: 160 },
+        meta: {
+          correlationId: expect.any(String),
+          timestamp: expect.stringMatching(ISO_TIMESTAMP),
+          version: expect.any(String),
+        },
+        links: null,
+      })
+      const expired = (await storedTransactions()).at(-1)
+      expect(expired).toMatchObject({
+        customerId,
+        transactionType: 'expired',
+        points: -120,
+        balance: 280,
+        description: null,
+        referenceType: null,
+        referenceId: null,
+        expiryDate: null,
+      })
+      expectBetween(
+        new Date(String(expired?.createdAt)).toISOString(),
+        before,
+        after,
+      )
+      const stored = await storedCustomer()
+      expect(stored.loyaltyPoints).toBe(280)
+      expectBetween(new Date(stored.updatedAt).toISOString(), before, after)
+      expect((await storedTransactions(other)).at(-1)).toMatchObject({
+        transactionType: 'expired',
+        points: -40,
+        balance: 0,
+      })
+      expect((await storedCustomer(other)).loyaltyPoints).toBe(0)
+      const untouchedOnes: [string, number][] = [
+        [notYet, 60],
+        [deleted, 70],
+        [usedUp, 0],
+      ]
+      for (const [untouched, balance] of untouchedOnes) {
+        expect(await typesOf(untouched)).not.toContain('expired')
+        expect((await storedCustomer(untouched)).loyaltyPoints).toBe(balance)
+      }
+    })
+
+    it('writes nothing on a second run, and the expired points are no longer near their expiry', async () => {
+      await writeLedger([
+        ['earned', 100, daysFromToday(-10)],
+        ['adjusted', 50, null],
+      ])
+
+      const first = await expirePoints(everyCustomer)
+      const second = await expirePoints(everyCustomer)
+
+      expect(first.body.data).toEqual({ processedCount: 1, totalPoints: 100 })
+      expect(second.body.data).toEqual({ processedCount: 0, totalPoints: 0 })
+      expect(await typesOf()).toEqual(['earned', 'adjusted', 'expired'])
+      expect((await balanceOf(customerId)).body.data.balance).toBe(50)
+      expect((await expiringPointsOf(customerId)).body.data).toMatchObject({
+        expiringPoints: 0,
+        transactions: [],
+      })
+    })
+
+    it('expires the customer of the request alone', async () => {
+      const other = await insertCustomer(db)
+      await writeLedger([['earned', 100, daysFromToday(-10)]])
+      await writeLedger([['earned', 40, daysFromToday(-10)]], other)
+
+      const response = await expirePoints({ customerId, processBefore: null })
+
+      expect(response.body.data).toEqual({
+        processedCount: 1,
+        totalPoints: 100,
+      })
+      expect((await storedCustomer()).loyaltyPoints).toBe(0)
+      expect(await typesOf(other)).toEqual(['earned'])
+      expect((await storedCustomer(other)).loyaltyPoints).toBe(40)
+    })
+
+    it('answers nothing expired for a customer of the request without lapsed points', async () => {
+      await writeLedger([['earned', 100, daysFromToday(3)]])
+
+      const response = await expirePoints({ customerId, processBefore: null })
+
+      expect(response.status).toBe(200)
+      expect(response.body.data).toEqual({ processedCount: 0, totalPoints: 0 })
+      expect(await typesOf()).toEqual(['earned'])
+    })
+
+    it('expires the earnings whose expiry date is before the day of the request', async () => {
+      await writeLedger([
+        ['earned', 100, daysFromToday(-10)],
+        ['earned', 50, daysFromToday(-5)],
+        ['earned', 20, daysFromToday(-4)],
+      ])
+
+      const response = await expirePoints({
+        customerId: null,
+        processBefore: daysFromToday(-5),
+      })
+
+      expect(response.body.data).toEqual({
+        processedCount: 1,
+        totalPoints: 100,
+      })
+      expect((await storedCustomer()).loyaltyPoints).toBe(70)
+    })
+
+    it('takes yesterday in UTC, and refuses today before the customer is looked for', async () => {
+      await writeLedger([
+        ['earned', 100, daysFromToday(-2)],
+        ['earned', 50, daysFromToday(-1)],
+      ])
+
+      const yesterday = await expirePoints({
+        customerId,
+        processBefore: daysFromToday(-1),
+      })
+      const today = await expirePoints({
+        customerId: UNKNOWN_ID,
+        processBefore: daysFromToday(0),
+      })
+
+      expect(yesterday.body.data).toEqual({
+        processedCount: 1,
+        totalPoints: 100,
+      })
+      expectProblem(today, badRequest)
+      expect(today.body.detail).toBe(INVALID_EXPIRY)
+      expect(today.body.errors).toEqual([
+        issue(
+          'processBefore',
+          'too_big',
+          `Must not be later than ${daysFromToday(-1)}`,
+        ),
+      ])
+      expect((await storedCustomer()).loyaltyPoints).toBe(50)
+    })
+
+    it.each(notExpirers)(
+      'refuses %s, whatever the request',
+      async (_, signInAs) => {
+        await writeLedger([['earned', 100, daysFromToday(-10)]])
+        const as = await signInAs()
+
+        expectProblem(await expirePoints(everyCustomer, as), forbidden)
+        expectProblem(await expirePoints({}, as), forbidden)
+        expect(await typesOf()).toEqual(['earned'])
+      },
+    )
+
+    it.each(unauthenticated)(
+      'refuses %s',
+      async (_, tokenOf, problem, challenge) => {
+        const response = await expirePoints({}, await tokenOf())
+
+        expectProblem(response, problem)
+        expect(response.headers['www-authenticate']).toBe(challenge)
+      },
+    )
+
+    it('refuses a request that breaks a rule', async () => {
+      const broken: [Body, string[]][] = [
+        [{}, ['customerId:invalid_type', 'processBefore:invalid_type']],
+        [
+          { customerId: 'everyone', processBefore: null },
+          ['customerId:invalid_format'],
+        ],
+        [
+          { customerId: null, processBefore: '2026-02-30' },
+          ['processBefore:invalid_format'],
+        ],
+        [
+          { customerId: null, processBefore: '2026-11-01T00:00:00Z' },
+          ['processBefore:invalid_format'],
+        ],
+        [
+          { customerId: null, processBefore: null, salonId },
+          ['salonId:unrecognized_keys'],
+        ],
+      ]
+
+      for (const [body, rules] of broken) {
+        const response = await expirePoints(body)
+
+        expectProblem(response, badRequest)
+        expect(response.body.detail).toBe(INVALID_EXPIRY)
+        expect(brokenRules(response)).toEqual(rules)
+      }
+    })
+
+    it('refuses a customer who is not there, or is deleted, as a property of the request', async () => {
+      await writeLedger([['earned', 100, daysFromToday(-10)]])
+      await deleteCustomer(customerId)
+
+      for (const id of [UNKNOWN_ID, customerId]) {
+        const response = await expirePoints({
+          customerId: id,
+          processBefore: null,
+        })
+
+        expectProblem(response, badRequest)
+        expect(response.body.detail).toBe(INVALID_EXPIRY)
+        expect(response.body.errors).toEqual([
+          issue('customerId', 'not_found', 'Must name a customer'),
+        ])
+      }
+      expect(await typesOf()).toEqual(['earned'])
+    })
+
+    it('serves no other method on the path', async () => {
+      for (const call of [
+        request(app).get(`${POINTS}/expire`),
+        request(app).put(`${POINTS}/expire`),
+        request(app).delete(`${POINTS}/expire`),
+        request(app).post(`${POINTS}/expire/${customerId}`),
+      ]) {
+        expectProblem(await authorized(call, asAdmin), routeNotFound)
+      }
+    })
+  })
+
+  describe('expiries at the same time', () => {
+    it('expires each customer once when expiries come at the same time', async () => {
+      const other = await insertCustomer(db)
+      await writeLedger([['earned', 100, daysFromToday(-10)]])
+      await writeLedger([['earned', 40, daysFromToday(-10)]], other)
+
+      const responses = await Promise.all(
+        Array.from({ length: 4 }, () => expirePoints(everyCustomer)),
+      )
+
+      expect(responses.map(({ status }) => status)).toEqual([
+        200, 200, 200, 200,
+      ])
+      const sum = (key: 'processedCount' | 'totalPoints') =>
+        responses.reduce((total, { body }) => total + body.data[key], 0)
+      expect(sum('processedCount')).toBe(2)
+      expect(sum('totalPoints')).toBe(140)
+      expect(await storedTransactions()).toHaveLength(2)
+      expect(await storedTransactions(other)).toHaveLength(2)
+    })
+
+    it('makes an expiry wait for a change of the customer, and count the transactions it left', async () => {
+      await writeLedger([
+        ['earned', 100, daysFromToday(-10)],
+        ['adjusted', 300, null],
+      ])
+
+      const { pending, answeredWhileHeld } = await db.transaction(
+        async (tx: Transaction) => {
+          // A use of the lapsed points, written as the ledger writes one.
+          await tx
+            .update(customers)
+            .set({ loyaltyPoints: 300 })
+            .where(eq(customers.id, customerId))
+          await tx.insert(customerPoints).values({
+            customerId,
+            transactionType: 'used',
+            points: -100,
+            balance: 300,
+            createdAt: '2026-01-01T00:01:00Z',
+          })
+          const underWay = expirePoints({
+            customerId,
+            processBefore: null,
+          }).then((response) => response)
+
+          return {
+            pending: underWay,
+            answeredWhileHeld: await answersWithin(underWay, 300),
+          }
+        },
+      )
+      const response = await pending
+
+      expect(answeredWhileHeld).toBe(false)
+      expect(response.body.data).toEqual({ processedCount: 0, totalPoints: 0 })
+      expect((await storedCustomer()).loyaltyPoints).toBe(300)
+    })
+
+    it('writes an expiry that waited for the customer at the time it is written', async () => {
+      await writeLedger([['earned', 100, daysFromToday(-10)]])
+
+      const { pending, answeredWhileHeld, released } = await db.transaction(
+        async (tx: Transaction) => {
+          await tx
+            .update(customers)
+            .set({ loyaltyPoints: 100 })
+            .where(eq(customers.id, customerId))
+          const underWay = expirePoints({
+            customerId,
+            processBefore: null,
+          }).then((response) => response)
+          const answered = await answersWithin(underWay, 300)
+
+          return {
+            pending: underWay,
+            answeredWhileHeld: answered,
+            released: await databaseClock(),
+          }
+        },
+      )
+      const response = await pending
+
+      expect(answeredWhileHeld).toBe(false)
+      expect(response.body.data).toEqual({
+        processedCount: 1,
+        totalPoints: 100,
+      })
+      const expired = (await storedTransactions()).at(-1)
+      expect(expired?.transactionType).toBe('expired')
+      expect(
+        new Date(String(expired?.createdAt)).getTime(),
+      ).toBeGreaterThanOrEqual(Math.floor(released))
+      expect(
+        new Date((await storedCustomer()).updatedAt).getTime(),
+      ).toBeGreaterThanOrEqual(Math.floor(released))
+    })
+
+    it('lets an expiry past a row that refers to the customer while it is written', async () => {
+      await writeLedger([['earned', 100, daysFromToday(-10)]])
+
+      const response = await db.transaction(async (tx: Transaction) => {
+        // The lock a foreign key to the customer takes.
+        await tx
+          .select({ id: customers.id })
+          .from(customers)
+          .where(eq(customers.id, customerId))
+          .for('key share')
+        return unlessItWaits(expirePoints({ customerId, processBefore: null }))
+      })
+
+      expect(response?.body.data).toEqual({
+        processedCount: 1,
+        totalPoints: 100,
+      })
+    })
+
+    it('leaves the balance of the latest transaction when a use and an expiry come at once', async () => {
+      await writeLedger([
+        ['earned', 100, daysFromToday(-10)],
+        ['adjusted', 300, null],
+      ])
+
+      const [used, expired] = await Promise.all([
+        use(using({ points: 350 })),
+        expirePoints({ customerId, processBefore: null }),
+      ])
+
+      // The use first takes the lapsed points, which leaves nothing to
+      // expire; the expiry first leaves too little to use.
+      expect([
+        [200, 0],
+        [409, 1],
+      ]).toContainEqual([used.status, expired.body.data.processedCount])
+      const stored = await storedTransactions()
+      const balance = (await storedCustomer()).loyaltyPoints
+      expect(stored.at(-1)?.balance).toBe(balance)
+      expect(balance).toBe(used.status === 200 ? 50 : 300)
+    })
+  })
+
   describe('movements at the same time', () => {
     it('writes the movements of one customer one after the other, each from the balance the one before left', async () => {
       await withBalance(1000)
@@ -1685,6 +2340,8 @@ describe('Points API', () => {
           endDate: null,
         }),
         await repository.record(everySalon, movement()),
+        await repository.transactionsOf(id),
+        await repository.expire(null, '2026-11-01'),
       ]
       await connection.close()
 
@@ -1708,6 +2365,20 @@ describe('Points API', () => {
           error: expect.objectContaining({
             type: 'database',
             message: 'Failed to record points',
+          }),
+        },
+        {
+          type: 'error',
+          error: expect.objectContaining({
+            type: 'database',
+            message: 'Failed to read point transactions',
+          }),
+        },
+        {
+          type: 'error',
+          error: expect.objectContaining({
+            type: 'database',
+            message: 'Failed to expire points',
           }),
         },
       ])

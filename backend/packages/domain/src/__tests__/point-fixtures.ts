@@ -10,6 +10,7 @@ import type {
 } from '../models/point'
 import type {
   IPointRepository,
+  PointExpiryOutcome,
   PointListing,
   PointRecording,
 } from '../repositories/point.repository'
@@ -96,8 +97,9 @@ export const apiPointTransaction = (
 /**
  * Everything the point use cases need: a repository that answers a balance
  * of 2,620 points, a page of the point transaction of the fixtures and
- * records it for every request, and the clock of the fixtures; a test
- * overrides what it needs.
+ * records it for every request, finds it as the only transaction of the
+ * customer and expires 120 points of one customer, and the clock of the
+ * fixtures; a test overrides what it needs.
  */
 export const pointDependencies = (
   overrides: Partial<IPointRepository> = {},
@@ -117,6 +119,16 @@ export const pointDependencies = (
       Result.success<PointRecording>({
         type: 'recorded',
         transaction: dbPointTransaction(),
+      }),
+    ),
+    transactionsOf: vi.fn(async () =>
+      Result.success<DbPointTransaction[] | null>([dbPointTransaction()]),
+    ),
+    expire: vi.fn(async () =>
+      Result.success<PointExpiryOutcome>({
+        type: 'expired',
+        processedCount: 1,
+        totalPoints: 120,
       }),
     ),
     ...overrides,

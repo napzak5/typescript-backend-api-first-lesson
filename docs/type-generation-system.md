@@ -80,9 +80,9 @@ and `voidSale`, `process`, which records a payment of a sale, `getReceipt`
 and `calculate`), the one
 of `PaymentCrud` (`refund`), the six of `SalesReportCrud` (the
 reports of the sales of a salon: `get`, `getDaily`, `getByStaff`,
-`getByCategory`, `getTrends` and `export`, a CSV file), five of the seven of
+`getByCategory`, `getTrends` and `export`, a CSV file), the seven of
 `PointCrud` (the points ledger of the customers: `getBalance`,
-`listTransactions`, `earn`, `use` and `adjust`), the five of `PaymentMethodCrud` (the payment methods of a
+`listTransactions`, `getExpiring`, `earn`, `use`, `adjust` and `expire`), the five of `PaymentMethodCrud` (the payment methods of a
 salon: `list`, `create`, `get`, `update` and `delete`),
 the five
 operations of

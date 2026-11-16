@@ -10,8 +10,8 @@
  * ポイント失効処理の結果
  */
 export interface ModelsPointExpireResponse {
-  /** 登録した失効(expired)のポイント取引の件数 */
+  /** 登録した失効(expired)のポイント取引の件数。ポイントを失効させた顧客の数と等しい */
   processedCount: number;
-  /** 失効させたポイントの合計 */
+  /** 失効させたポイントの合計(0 以上)。すべての顧客の合計は int32 に収まらないことがあるため int64 */
   totalPoints: number;
 }

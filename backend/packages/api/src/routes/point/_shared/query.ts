@@ -16,3 +16,13 @@ export const decodePointTransactionSearchQuery = (
     query,
     'Invalid point transaction search',
   )
+
+/** The parameter of the expiring points, as its type. */
+const expiringPointsQuerySchema = z.looseObject({
+  days: numberParameter.exactOptional(),
+})
+
+export const decodeExpiringPointsQuery = (
+  query: unknown,
+): Result<unknown, DomainError> =>
+  parseWith(expiringPointsQuerySchema, query, 'Invalid expiring points search')

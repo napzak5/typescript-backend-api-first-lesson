@@ -3,13 +3,17 @@ import { describe, expect, it, vi } from 'vitest'
 import {
   AdjustPointsUseCase,
   EarnPointsUseCase,
+  ExpirePointsUseCase,
+  GetExpiringPointsUseCase,
   GetPointBalanceUseCase,
   ListPointTransactionsUseCase,
   type PointUseCaseDependencies,
   UsePointsUseCase,
 } from '../business-logic/point'
 import type { Actor } from '../models/auth'
+import type { DbPointTransaction } from '../models/point'
 import type {
+  PointExpiryOutcome,
   PointListing,
   PointRecording,
 } from '../repositories/point.repository'
@@ -76,10 +80,13 @@ const keepers: [string, Actor, unknown][] = [
 ]
 
 const repositoryWasNotCalled = (dependencies: PointUseCaseDependencies) => {
-  const { balanceOf, list, record } = dependencies.pointRepository
+  const { balanceOf, list, record, transactionsOf, expire } =
+    dependencies.pointRepository
   expect(vi.mocked(balanceOf)).not.toHaveBeenCalled()
   expect(vi.mocked(list)).not.toHaveBeenCalled()
   expect(vi.mocked(record)).not.toHaveBeenCalled()
+  expect(vi.mocked(transactionsOf)).not.toHaveBeenCalled()
+  expect(vi.mocked(expire)).not.toHaveBeenCalled()
 }
 
 const recording = (outcome: PointRecording) => ({
@@ -623,5 +630,322 @@ describe('EarnPointsUseCase', () => {
         ),
       ),
     ).toEqual(['expiryDate:too_small'])
+  })
+})
+
+describe('GetExpiringPointsUseCase', () => {
+  const get = (
+    dependencies: PointUseCaseDependencies,
+    actor: Actor = actors.ofSalon('staff'),
+    id: unknown = CUSTOMER_ID,
+    query: Result<unknown, DomainError> = Result.success({}),
+  ) => new GetExpiringPointsUseCase(dependencies).execute(actor, id, query)
+
+  /** A repository that finds these transactions of the customer. */
+  const finding = (transactions: DbPointTransaction[] | null) => ({
+    transactionsOf: vi.fn(async () => Result.success(transactions)),
+  })
+
+  /** An earning of 120 points that expires on the day, as the only transaction. */
+  const earningUntil = (expiryDate: string) =>
+    finding([dbPointTransaction({ expiryDate, balance: 120 })])
+
+  it.each(keepers)(
+    'answers what is left of the earnings near their expiry date to %s',
+    async (_, actor) => {
+      const dependencies = pointDependencies(earningUntil('2026-12-20'))
+
+      expect(await get(dependencies, actor)).toEqual({
+        type: 'success',
+        data: {
+          customerId: CUSTOMER_ID,
+          expiringPoints: 120,
+          expirationDate: '2026-12-20',
+          transactions: [
+            apiPointTransaction({ expiryDate: '2026-12-20', balance: 120 }),
+          ],
+        },
+      })
+      expect(dependencies.pointRepository.transactionsOf).toHaveBeenCalledWith(
+        CUSTOMER_ID,
+      )
+    },
+  )
+
+  it('counts 30 days from today in UTC when the query has no days', async () => {
+    const after = pointDependencies(earningUntil('2026-12-21'))
+
+    expect(await get(after)).toMatchObject({
+      type: 'success',
+      data: { expiringPoints: 0, expirationDate: null, transactions: [] },
+    })
+  })
+
+  it('counts the days of the query', async () => {
+    const onTheDay = pointDependencies(earningUntil('2026-11-27'))
+    const after = pointDependencies(earningUntil('2026-11-28'))
+    const week = Result.success({ days: 7 })
+
+    expect(await get(onTheDay, actors.admin, CUSTOMER_ID, week)).toMatchObject({
+      data: { expiringPoints: 120 },
+    })
+    expect(await get(after, actors.admin, CUSTOMER_ID, week)).toMatchObject({
+      data: { expiringPoints: 0 },
+    })
+  })
+
+  it('counts from the day of its clock', async () => {
+    const dependencies = pointDependencies(
+      earningUntil('2026-11-22'),
+      new Date('2026-11-21T00:00:00.000Z'),
+    )
+
+    expect(
+      await get(
+        dependencies,
+        actors.admin,
+        CUSTOMER_ID,
+        Result.success({ days: 1 }),
+      ),
+    ).toMatchObject({ data: { expiringPoints: 120 } })
+  })
+
+  it.each(notKeepers)(
+    'refuses %s before the ID and the query are looked at',
+    async (_, actor) => {
+      const dependencies = pointDependencies()
+
+      expect(
+        await get(
+          dependencies,
+          actor,
+          'mine',
+          Result.error(DomainErrors.validation('Invalid', [])),
+        ),
+      ).toEqual(forbidden)
+      repositoryWasNotCalled(dependencies)
+    },
+  )
+
+  it('refuses an ID that is not a UUID before the query', async () => {
+    const dependencies = pointDependencies()
+    const result = await get(
+      dependencies,
+      actors.admin,
+      'mine',
+      Result.error(DomainErrors.validation('Invalid query', [])),
+    )
+
+    expect(rulesOf(result)).toEqual(['id:invalid_format'])
+    repositoryWasNotCalled(dependencies)
+  })
+
+  it('answers a query that could not be decoded', async () => {
+    const dependencies = pointDependencies()
+    const undecoded = Result.error(
+      DomainErrors.validation('Invalid expiring points search', [
+        { field: 'days', rule: 'invalid_format', message: 'Must be a number' },
+      ]),
+    )
+
+    expect(
+      await get(dependencies, actors.admin, CUSTOMER_ID, undecoded),
+    ).toEqual(undecoded)
+    repositoryWasNotCalled(dependencies)
+  })
+
+  it('refuses a query that breaks a rule', async () => {
+    const dependencies = pointDependencies()
+    const result = await get(
+      dependencies,
+      actors.admin,
+      CUSTOMER_ID,
+      Result.success({ days: 366 }),
+    )
+
+    expect(rulesOf(result)).toEqual(['days:too_big'])
+    expect(validationMessageOf(result)).toBe('Invalid expiring points search')
+    repositoryWasNotCalled(dependencies)
+  })
+
+  it('answers that a customer who is not there is not found', async () => {
+    const dependencies = pointDependencies(finding(null))
+
+    expect(await get(dependencies)).toEqual(
+      Result.error(DomainErrors.notFound('Customer', CUSTOMER_ID)),
+    )
+  })
+
+  it('hands on a failure of the database', async () => {
+    const dependencies = pointDependencies({
+      transactionsOf: vi.fn(async () => databaseDown),
+    })
+
+    expect(await get(dependencies)).toEqual(databaseDown)
+  })
+
+  it('reports a stored earning that does not fit the model', async () => {
+    const dependencies = pointDependencies(
+      finding([
+        dbPointTransaction({
+          expiryDate: '2026-12-01',
+          referenceType: 'payment',
+        }),
+      ]),
+    )
+
+    expect(await get(dependencies)).toEqual(storedRowIsCorrupt)
+  })
+})
+
+/** Those who do not expire points: everybody but the administrators. */
+const notExpirers: [string, Actor][] = [
+  ...notKeepers,
+  ['an owner', actors.ofSalon('owner')],
+  ['a manager', actors.ofSalon('manager')],
+  ['a staff member', actors.ofSalon('staff')],
+]
+
+describe('ExpirePointsUseCase', () => {
+  const expire = (
+    dependencies: PointUseCaseDependencies,
+    input: unknown = { customerId: null, processBefore: null },
+    actor: Actor = actors.admin,
+  ) => new ExpirePointsUseCase(dependencies).execute(actor, input)
+
+  const expiring = (outcome: PointExpiryOutcome) => ({
+    expire: vi.fn(async () => Result.success(outcome)),
+  })
+
+  it('expires the points of every customer that lapsed before yesterday in UTC', async () => {
+    const dependencies = pointDependencies()
+
+    expect(await expire(dependencies)).toEqual({
+      type: 'success',
+      data: { processedCount: 1, totalPoints: 120 },
+    })
+    expect(dependencies.pointRepository.expire).toHaveBeenCalledWith(
+      null,
+      '2026-11-19',
+    )
+  })
+
+  it('hands the customer and the day of the request on', async () => {
+    const dependencies = pointDependencies()
+
+    await expire(dependencies, {
+      customerId: CUSTOMER_ID,
+      processBefore: '2026-11-01',
+    })
+
+    expect(dependencies.pointRepository.expire).toHaveBeenCalledWith(
+      CUSTOMER_ID,
+      '2026-11-01',
+    )
+  })
+
+  it('takes yesterday in UTC and refuses today', async () => {
+    const dependencies = pointDependencies()
+
+    expect(
+      await expire(dependencies, {
+        customerId: null,
+        processBefore: '2026-11-19',
+      }),
+    ).toMatchObject({ type: 'success' })
+    const today = await expire(dependencies, {
+      customerId: CUSTOMER_ID,
+      processBefore: '2026-11-20',
+    })
+    expect(today).toEqual(
+      Result.error(
+        DomainErrors.validation('Invalid point expiry', [
+          {
+            field: 'processBefore',
+            rule: 'too_big',
+            message: 'Must not be later than 2026-11-19',
+          },
+        ]),
+      ),
+    )
+    expect(dependencies.pointRepository.expire).toHaveBeenCalledTimes(1)
+  })
+
+  it('takes yesterday from its clock', async () => {
+    const dependencies = pointDependencies(
+      {},
+      new Date('2026-11-21T00:00:00.000Z'),
+    )
+
+    await expire(dependencies)
+
+    expect(dependencies.pointRepository.expire).toHaveBeenCalledWith(
+      null,
+      '2026-11-20',
+    )
+  })
+
+  it('answers that nothing lapsed', async () => {
+    const dependencies = pointDependencies(
+      expiring({ type: 'expired', processedCount: 0, totalPoints: 0 }),
+    )
+
+    expect(await expire(dependencies)).toEqual({
+      type: 'success',
+      data: { processedCount: 0, totalPoints: 0 },
+    })
+  })
+
+  it.each(notExpirers)(
+    'refuses %s before the request is looked at',
+    async (_, actor) => {
+      const dependencies = pointDependencies()
+
+      expect(await expire(dependencies, 'everyone', actor)).toEqual(forbidden)
+      repositoryWasNotCalled(dependencies)
+    },
+  )
+
+  it('refuses a request that breaks the rules', async () => {
+    const dependencies = pointDependencies()
+    const result = await expire(dependencies, { customerId: 'everyone' })
+
+    expect(rulesOf(result)).toEqual([
+      'customerId:invalid_format',
+      'processBefore:invalid_type',
+    ])
+    expect(validationMessageOf(result)).toBe('Invalid point expiry')
+    repositoryWasNotCalled(dependencies)
+  })
+
+  it('refuses a customer who is not there as a property of the request', async () => {
+    const dependencies = pointDependencies(
+      expiring({ type: 'customerNotFound' }),
+    )
+
+    expect(
+      await expire(dependencies, {
+        customerId: CUSTOMER_ID,
+        processBefore: null,
+      }),
+    ).toEqual(
+      Result.error(
+        DomainErrors.validation('Invalid point expiry', [
+          {
+            field: 'customerId',
+            rule: 'not_found',
+            message: 'Must name a customer',
+          },
+        ]),
+      ),
+    )
+  })
+
+  it('hands on a failure of the database', async () => {
+    const dependencies = pointDependencies({
+      expire: vi.fn(async () => databaseDown),
+    })
+
+    expect(await expire(dependencies)).toEqual(databaseDown)
   })
 })
