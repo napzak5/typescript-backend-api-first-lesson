@@ -882,7 +882,7 @@ describe('Sales API', () => {
         })
       })
 
-      it('returns the lines by their places, in whatever order the request states them', async () => {
+      it('returns the lines by their places, in whatever order the request states them, in the list as well', async () => {
         const data = await created({
           details: [
             fee({ sortOrder: 7, itemName: 'third' }),
@@ -891,8 +891,9 @@ describe('Sales API', () => {
           ],
         })
         const got = await read(data.id)
+        const listed = await list()
 
-        for (const { details } of [data, got.body.data]) {
+        for (const { details } of [data, got.body.data, listed.body.data[0]]) {
           expect(
             details.map(({ itemName, sortOrder }: Record<string, unknown>) => [
               itemName,
@@ -2032,6 +2033,25 @@ describe('Sales API', () => {
       const response = await list()
 
       expect(idsOf(response)).toEqual(ids.toSorted().toReversed())
+    })
+
+    it('walks the pages through sales of one moment, by their IDs downwards', async () => {
+      const ids = [
+        (await created()).id,
+        (await created()).id,
+        (await created()).id,
+        (await created()).id,
+        (await created()).id,
+      ]
+      const inOrder = ids.toSorted().toReversed()
+
+      const pages = await walk(`${SALES}?limit=2`)
+
+      expect(pages.map((page) => idsOf(page))).toEqual([
+        inOrder.slice(0, 2),
+        inOrder.slice(2, 4),
+        inOrder.slice(4),
+      ])
     })
 
     it('lists sales that are void with the others, and each with its lines and payments', async () => {
