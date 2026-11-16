@@ -23,7 +23,7 @@ export type ReviewCrudListParams = {
    * @maximum 100
    */
   limit?: ModelsReviewSearchRequestLimitParameter;
-  /** 取得開始位置を示すカーソル。同じ絞り込み条件と並び順で取得した前回レスポンスの `meta.nextCursor` を指定する */
+  /** 取得開始位置を示すカーソル。同じ絞り込み条件と並び順で取得した前回レスポンスの `meta.nextCursor` を指定する。一覧に出るレビューのIDでない場合は検証エラー */
   cursor?: ModelsReviewSearchRequestCursorParameter;
   /** サロン店舗・拠点を識別するためのブランド付きUUID。 */
   salonId?: ModelsReviewSearchRequestSalonIdParameter;
@@ -47,6 +47,6 @@ export type ReviewCrudListParams = {
    * @maximum 5
    */
   maxRating?: ModelsReviewSearchRequestMaxRatingParameter;
-  /** 並び順。省略時は新着順 */
+  /** 並び順。省略時は新着順。評価順と参考になった順で同じ値のレビューは、新着順に並ぶ */
   sortBy?: ModelsReviewSearchRequestSortByParameter;
 };

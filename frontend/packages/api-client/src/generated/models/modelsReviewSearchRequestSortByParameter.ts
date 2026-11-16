@@ -8,6 +8,6 @@
 import type { ModelsReviewSortType } from './modelsReviewSortType';
 
 /**
- * 並び順。省略時は新着順
+ * 並び順。省略時は新着順。評価順と参考になった順で同じ値のレビューは、新着順に並ぶ
  */
 export type ModelsReviewSearchRequestSortByParameter = ModelsReviewSortType;

@@ -2089,13 +2089,13 @@ export interface paths {
         };
         /**
          * List reviews
-         * @description サロン、スタッフ、顧客、予約、実来店確認、評価点でレビューを絞り込み、指定した並び順とページネーションで一覧取得し、店舗運営の改善材料を抽出します。minRatingにmaxRatingより大きい値を指定した場合は400を返します。
+         * @description サロン、スタッフ、顧客、予約、実来店確認、評価点でレビューを絞り込み、指定した並び順とページネーションで一覧取得し、店舗運営の改善材料を抽出します。ログインなしで呼べます。削除したサロンのレビューは含みません。存在しないIDで絞り込んだ場合は空の一覧を返します。minRatingにmaxRatingより大きい値を指定した場合と、cursorが一覧に出るレビューのIDでない場合は400を返します。
          */
         get: operations["ReviewCrud_list"];
         put?: never;
         /**
          * Create review
-         * @description 施術完了後に顧客がレビューを投稿し、サービス品質の可視化と信頼獲得につなげます。salonId・customerId・bookingIdの組み合わせが同じ予約のものではない場合や、staffIdに同じサロンのものではないスタッフを指定した場合は400を、予約が完了していない場合や予約のレビューが既に存在する場合は409を返します。
+         * @description 施術完了後に顧客がレビューを投稿し、サービス品質の可視化と信頼獲得につなげます。投稿できるのは、予約の顧客本人(ロール customer で顧客のプロフィールがあるアカウント)だけで、admin とサロンのメンバー、プロフィールのない顧客のアカウント、customerId が自分の顧客IDでないリクエストには403を返します。bookingIdが自分の予約でない場合、salonIdがその予約のサロンでない場合(削除したサロンを含む)、staffIdがその予約を担当したスタッフ(予約の担当者か施術明細のスタッフ)でないか削除されている場合、staffIdがnullでstaffRatingを指定した場合は400を、予約のステータスがcompletedでない場合と、予約のレビューが既に存在する場合は409を返します。投稿すると、サロンの rating と reviewCount を、そのサロンのレビューから数え直します。
          */
         post: operations["ReviewCrud_create"];
         delete?: never;
@@ -2113,7 +2113,7 @@ export interface paths {
         };
         /**
          * Get review
-         * @description 単一レビューの詳細を表示し、コメント内容や評価指標を確認します。
+         * @description 単一レビューの詳細を表示し、コメント内容や評価指標を確認します。ログインなしで呼べます。レビューが存在しない場合と、削除したサロンのレビューの場合は404を返します。
          */
         get: operations["ReviewCrud_get"];
         put?: never;
@@ -2645,7 +2645,7 @@ export interface paths {
         };
         /**
          * Get salon reviews summary
-         * @description サロン全体の平均評価や件数などの概要指標を取得し、ダッシュボード表示に利用します。サロンが存在しない場合は404を返します。
+         * @description サロン全体の平均評価や件数などの概要指標を取得し、ダッシュボード表示に利用します。ログインなしで呼べます。averageRating と totalReviews は、サロンの rating と reviewCount と一致します。サロンが存在しない場合と、削除されている場合は404を返します。
          */
         get: operations["SalonReviewSummary_getSummary"];
         put?: never;
@@ -3025,7 +3025,7 @@ export interface paths {
         };
         /**
          * Get staff reviews summary
-         * @description スタッフ別の平均評価やレビュー数を集計し、人事評価や表彰に用います。スタッフが存在しない場合は404を返します。
+         * @description スタッフ別の平均評価やレビュー数を集計し、人事評価や表彰に用います。ログインなしで呼べます。staffId がそのスタッフのレビューを数えます。スタッフが存在しない場合と、スタッフかそのサロンが削除されている場合は404を返します。
          */
         get: operations["StaffReviewSummary_getStaffSummary"];
         put?: never;
@@ -7077,7 +7077,7 @@ export interface components {
             customerId: components["schemas"]["Models.CustomerId"];
             /** @description 紐づく来店予約ID。1件の予約につきレビューは1件まで */
             bookingId: components["schemas"]["Models.BookingId"];
-            /** @description 評価対象スタッフのID。salonIdのサロンのスタッフを指定する。セルフサービスやスタッフ特定不要の施術の場合はnull */
+            /** @description 評価対象スタッフのID。bookingIdの予約を担当したスタッフ(予約の担当者か施術明細のスタッフ)で、削除されていないスタッフを指定する。スタッフを評価しない場合はnull */
             staffId: (string & components["schemas"]["Models.StaffId"]) | null;
             /**
              * Format: int32
@@ -7091,7 +7091,7 @@ export interface components {
             serviceRating: number | null;
             /**
              * Format: int32
-             * @description スタッフ対応に対する評価値 (1〜5)。スタッフ評価省略またはセルフサービスの場合はnull
+             * @description スタッフ対応に対する評価値 (1〜5)。スタッフ評価を省略する場合はnull。staffId が null の場合はnullしか指定できない
              */
             staffRating: number | null;
             /**
@@ -7109,12 +7109,12 @@ export interface components {
              * @description 価格に見合う価値の評価値 (1〜5)。価格評価を省略したレビューの場合はnull
              */
             valueRating: number | null;
-            /** @description レビュータイトル。タイトル未設定の簡易レビューの場合はnull */
+            /** @description レビュータイトル。空白だけの文字列は指定できない。タイトル未設定の簡易レビューの場合はnull */
             title: string | null;
-            /** @description 自由記述のコメント。評価のみでコメントなしのシンプルレビューの場合はnull */
+            /** @description 自由記述のコメント。空白だけの文字列は指定できない。評価のみでコメントなしのシンプルレビューの場合はnull */
             comment: string | null;
-            /** @description 添付画像のURL一覧。画像添付なしのテキストのみレビューの場合は空配列またはnull */
-            imageUrls: string[] | null;
+            /** @description 添付画像のURL(http または https、500文字まで)の一覧。10件まで。添付がない場合は空配列。同じURLの繰り返しは指定できない */
+            imageUrls: string[];
         };
         /** @description 参考になった評価の結果 - 加算後の参考になった数を返す */
         "Models.ReviewHelpfulResponse": {
@@ -7154,7 +7154,7 @@ export interface components {
             customerId: components["schemas"]["Models.CustomerId"];
             /** @description 紐づく来店予約ID。1件の予約につきレビューは1件 */
             bookingId: components["schemas"]["Models.BookingId"];
-            /** @description 評価対象のスタッフID。セルフサービスやスタッフ特定不要の施術の場合、またはスタッフが削除された場合はnull */
+            /** @description 評価対象のスタッフID。予約を担当したスタッフ(予約の担当者か施術明細のスタッフ)。スタッフを評価しないレビューの場合はnull */
             staffId: (string & components["schemas"]["Models.StaffId"]) | null;
             /**
              * Format: int32
@@ -7168,7 +7168,7 @@ export interface components {
             serviceRating: number | null;
             /**
              * Format: int32
-             * @description スタッフの接客・技術に対する評価値 (1〜5)。スタッフ評価省略またはセルフサービスの場合はnull
+             * @description スタッフの接客・技術に対する評価値 (1〜5)。スタッフ評価を省略した場合と、staffId が null の場合はnull
              */
             staffRating: number | null;
             /**
@@ -7190,9 +7190,9 @@ export interface components {
             title: string | null;
             /** @description 自由記述のレビューコメント。評価のみでコメントなしのシンプルレビューの場合はnull */
             comment: string | null;
-            /** @description レビューに添付された画像URLの一覧。画像添付なしのテキストのみレビューの場合は空配列またはnull */
-            imageUrls: string[] | null;
-            /** @description 実来店が確認済みかを表す検証フラグ。システムが設定する */
+            /** @description レビューに添付された画像のURLの一覧。添付がない場合は空配列 */
+            imageUrls: string[];
+            /** @description 実来店が確認済みかを表す検証フラグ。システムが設定する。完了した予約のレビューだけを受け付けるので、APIで投稿したレビューはtrue */
             isVerified: boolean;
             /**
              * Format: int32
@@ -7251,7 +7251,7 @@ export interface components {
         "Models.ReviewSummaryResponse": {
             /**
              * Format: float
-             * @description 全体満足度評価(overallRating)の平均値 (小数)。レビューが1件もない場合はnull
+             * @description 全体満足度評価(overallRating)の平均値。小数第2位に四捨五入する。レビューが1件もない場合はnull
              */
             averageRating: number | null;
             /**
@@ -7299,12 +7299,12 @@ export interface components {
              * @description 更新後の価格価値評価 (1〜5)。nullでクリア
              */
             valueRating?: number | null;
-            /** @description 更新後のレビュータイトル。nullでクリア */
+            /** @description 更新後のレビュータイトル。空白だけの文字列は指定できない。nullでクリア */
             title?: string | null;
-            /** @description 更新後のコメント本文。nullでクリア */
+            /** @description 更新後のコメント本文。空白だけの文字列は指定できない。nullでクリア */
             comment?: string | null;
-            /** @description 画像URL一覧の更新内容。指定した場合は全件を置き換える。nullでクリア */
-            imageUrls?: string[] | null;
+            /** @description 画像のURL(http または https、500文字まで)の一覧の更新内容。10件まで。指定した場合は全件を置き換える。空配列でクリア。同じURLの繰り返しは指定できない */
+            imageUrls?: string[];
         };
         /**
          * @description ロール保有ユーザーレスポンス - 指定したロールを割り当てられているユーザーを返す。
@@ -10021,7 +10021,7 @@ export interface components {
         "Models.ResourceAccessSearchRequest.salonId": components["schemas"]["Models.SalonId"];
         /** @description 紐づく来店予約IDによる絞り込み(完全一致) */
         "Models.ReviewSearchRequest.bookingId": components["schemas"]["Models.BookingId"];
-        /** @description 取得開始位置を示すカーソル。同じ絞り込み条件と並び順で取得した前回レスポンスの `meta.nextCursor` を指定する */
+        /** @description 取得開始位置を示すカーソル。同じ絞り込み条件と並び順で取得した前回レスポンスの `meta.nextCursor` を指定する。一覧に出るレビューのIDでない場合は検証エラー */
         "Models.ReviewSearchRequest.cursor": string;
         /** @description レビューを投稿した顧客IDによる絞り込み(完全一致) */
         "Models.ReviewSearchRequest.customerId": components["schemas"]["Models.CustomerId"];
@@ -10035,7 +10035,7 @@ export interface components {
         "Models.ReviewSearchRequest.minRating": number;
         /** @description レビュー対象のサロンIDによる絞り込み(完全一致) */
         "Models.ReviewSearchRequest.salonId": components["schemas"]["Models.SalonId"];
-        /** @description 並び順。省略時は新着順 */
+        /** @description 並び順。省略時は新着順。評価順と参考になった順で同じ値のレビューは、新着順に並ぶ */
         "Models.ReviewSearchRequest.sortBy": components["schemas"]["Models.ReviewSortType"];
         /** @description 評価対象のスタッフIDによる絞り込み(完全一致) */
         "Models.ReviewSearchRequest.staffId": components["schemas"]["Models.StaffId"];
@@ -22383,7 +22383,7 @@ export interface operations {
             query?: {
                 /** @description 1ページあたりの取得件数上限 (1〜100) */
                 limit?: components["parameters"]["Models.ReviewSearchRequest.limit"];
-                /** @description 取得開始位置を示すカーソル。同じ絞り込み条件と並び順で取得した前回レスポンスの `meta.nextCursor` を指定する */
+                /** @description 取得開始位置を示すカーソル。同じ絞り込み条件と並び順で取得した前回レスポンスの `meta.nextCursor` を指定する。一覧に出るレビューのIDでない場合は検証エラー */
                 cursor?: components["parameters"]["Models.ReviewSearchRequest.cursor"];
                 /** @description レビュー対象のサロンIDによる絞り込み(完全一致) */
                 salonId?: components["parameters"]["Models.ReviewSearchRequest.salonId"];
@@ -22399,7 +22399,7 @@ export interface operations {
                 minRating?: components["parameters"]["Models.ReviewSearchRequest.minRating"];
                 /** @description 全体満足度評価(overallRating)の上限による絞り込み。指定値以下のレビューに一致する */
                 maxRating?: components["parameters"]["Models.ReviewSearchRequest.maxRating"];
-                /** @description 並び順。省略時は新着順 */
+                /** @description 並び順。省略時は新着順。評価順と参考になった順で同じ値のレビューは、新着順に並ぶ */
                 sortBy?: components["parameters"]["Models.ReviewSearchRequest.sortBy"];
             };
             header?: never;
@@ -22426,30 +22426,6 @@ export interface operations {
             };
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /**
-             * @description 認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
-             *     ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
-             *     WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
-             */
-            401: {
-                headers: {
-                    /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
-                    "WWW-Authenticate": string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description 認証されているが、この操作を行う権限がない (403)。 */
-            403: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -22630,30 +22606,6 @@ export interface operations {
             };
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /**
-             * @description 認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
-             *     ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
-             *     WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
-             */
-            401: {
-                headers: {
-                    /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
-                    "WWW-Authenticate": string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description 認証されているが、この操作を行う権限がない (403)。 */
-            403: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -26499,30 +26451,6 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /**
-             * @description 認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
-             *     ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
-             *     WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
-             */
-            401: {
-                headers: {
-                    /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
-                    "WWW-Authenticate": string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description 認証されているが、この操作を行う権限がない (403)。 */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
             /** @description The server cannot find the requested resource. */
             404: {
                 headers: {
@@ -29558,30 +29486,6 @@ export interface operations {
             };
             /** @description The server could not understand the request due to invalid syntax. */
             400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /**
-             * @description 認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
-             *     ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
-             *     WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
-             */
-            401: {
-                headers: {
-                    /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
-                    "WWW-Authenticate": string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description 認証されているが、この操作を行う権限がない (403)。 */
-            403: {
                 headers: {
                     [name: string]: unknown;
                 };
