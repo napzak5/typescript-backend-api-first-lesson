@@ -68,8 +68,6 @@ export async function seedSalons(
             effectivePeriod: null,
           },
         ],
-        rating: '4.8',
-        reviewCount: 324,
         amenities: [],
         features: ['Hair Styling', 'Hair Color', 'Treatment', 'Head Spa'],
         imageUrls: [
@@ -138,8 +136,6 @@ export async function seedSalons(
             effectivePeriod: null,
           },
         ],
-        rating: '4.6',
-        reviewCount: 189,
         amenities: [],
         features: ['Hair Cut', 'Spa', 'Color', 'Perm', 'Treatment'],
         imageUrls: [
