@@ -359,6 +359,18 @@ describe('Customer booking API', () => {
       })
     })
 
+    it('says where the booking is, whatever query the request came with', async () => {
+      const response = await authorized(
+        request(app).post(`${OWN_BOOKINGS}?from=app`),
+        asCustomer,
+      ).send(wanting())
+
+      expect(response.status).toBe(201)
+      const self = `${OWN_BOOKINGS}/${response.body.data.id}`
+      expect(response.headers['location']).toBe(self)
+      expect(response.body.links).toEqual({ self, list: OWN_BOOKINGS })
+    })
+
     it('returns what a GET of the booking returns', async () => {
       const created = await book()
 
@@ -1427,6 +1439,36 @@ describe('Customer booking API', () => {
       expect(await db.$count(bookingStatusHistories)).toBe(1)
     })
 
+    // The requests above are for one service, which each of them holds as
+    // well. Here nothing but the staff member is common to them.
+    it('books one of six customers who want one staff member at one time, each for another service', async () => {
+      const servicesOfSlot = await Promise.all(
+        Array.from({ length: 6 }, () => insertService()),
+      )
+      const customersOfSlot = await six()
+
+      const responses = await Promise.all(
+        customersOfSlot.map(({ authorization }, index) =>
+          book(wanting({ serviceId: servicesOfSlot[index] }), authorization),
+        ),
+      )
+
+      expect(responses.map(statusAndCode).toSorted()).toEqual([
+        '201',
+        '409 3003',
+        '409 3003',
+        '409 3003',
+        '409 3003',
+        '409 3003',
+      ])
+      expect(
+        responses
+          .filter(({ status }) => status === 409)
+          .map(({ body }) => body.detail),
+      ).toEqual(Array.from({ length: 5 }, () => NOT_A_SLOT))
+      expect(await db.$count(bookings)).toBe(1)
+    })
+
     it('books as many of six customers as the staff member takes at once', async () => {
       await db
         .update(staff)
@@ -1485,8 +1527,9 @@ describe('Customer booking API', () => {
     })
 
     // A booking holds the customer, so the bookings of a customer are
-    // written one after the other.
-    it('books one of six requests of one customer for the same time, each with another staff member', async () => {
+    // written one after the other. Nothing else is common to these
+    // requests: each is for another service with another staff member.
+    it('books one of six requests of one customer for the same time, each for another service with another staff member', async () => {
       const members = await Promise.all(
         Array.from({ length: 6 }, async () => {
           const id = await staffMember()
@@ -1494,9 +1537,14 @@ describe('Customer booking API', () => {
           return id
         }),
       )
+      const servicesOfTime = await Promise.all(
+        Array.from({ length: 6 }, () => insertService()),
+      )
 
       const responses = await Promise.all(
-        members.map((id) => book(wanting({ staffId: id }))),
+        members.map((id, index) =>
+          book(wanting({ staffId: id, serviceId: servicesOfTime[index] })),
+        ),
       )
 
       expect(responses.map(statusAndCode).toSorted()).toEqual([
