@@ -737,14 +737,22 @@ describe('paymentMethodSearchRequestSchema', () => {
       { page: 2 },
       ['page:unrecognized_keys'],
     ],
-    [
-      'a parameter that is present without a value',
-      { method: undefined },
-      ['method:invalid_value'],
-    ],
   ])('rejects %s', (_case, input, expected) => {
     expect(rulesBrokenBy(paymentMethodSearchRequestSchema, input)).toEqual(
       expected,
     )
+  })
+
+  it.each([
+    ['limit', 'limit:invalid_type'],
+    ['cursor', 'cursor:invalid_type'],
+    ['method', 'method:invalid_value'],
+    ['isActive', 'isActive:invalid_type'],
+  ])('rejects %s that is present without a value', (parameter, expected) => {
+    expect(
+      rulesBrokenBy(paymentMethodSearchRequestSchema, {
+        [parameter]: undefined,
+      }),
+    ).toEqual([expected])
   })
 })

@@ -234,9 +234,13 @@ describe('ListPaymentMethodsUseCase', () => {
       method: 'cash',
       isActive: false,
     })
+    // The page repeats its cursor and names none for the page before it:
+    // pages are only walked forwards.
     expect(result).toMatchObject({
       type: 'success',
-      data: { meta: { limit: 5, cursor: OTHER_PAYMENT_METHOD_ID } },
+      data: {
+        meta: { limit: 5, cursor: OTHER_PAYMENT_METHOD_ID, prevCursor: null },
+      },
     })
   })
 
