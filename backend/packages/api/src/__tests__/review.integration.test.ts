@@ -1702,6 +1702,42 @@ describe('Reviews API', () => {
       expect((await written).status).toBe(201)
     })
 
+    it('answers 409, and writes nothing, when the review it did not see is committed first', async () => {
+      const bookingId = await insertBooking()
+
+      const { pending, answeredWhileHeld } = await db.transaction(
+        async (tx: Transaction) => {
+          // A review of the booking written by a transaction that holds
+          // neither the booking nor the salon: the review that is sent
+          // does not see it, and meets it at the unique constraint.
+          await tx.insert(reviews).values({
+            salonId,
+            customerId,
+            bookingId,
+            overallRating: 2,
+          })
+          const underWay = create(review(bookingId)).then(
+            (response) => response,
+          )
+
+          return {
+            pending: underWay,
+            answeredWhileHeld: await answersWithin(underWay, 300),
+          }
+        },
+      )
+      const response = await pending
+
+      expect(answeredWhileHeld).toBe(false)
+      expectProblem(response, notAllowed)
+      expect(response.body.detail).toBe(REVIEWED)
+      expect(await db.$count(reviews)).toBe(1)
+      expect(await storedSalon()).toMatchObject({
+        rating: null,
+        reviewCount: 0,
+      })
+    })
+
     it('keeps a booking that is deleted while its review is written', async () => {
       const bookingId = await insertBooking()
 
