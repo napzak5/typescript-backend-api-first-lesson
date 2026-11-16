@@ -13,7 +13,7 @@
 | 売上（`SaleCrud`）の一覧、作成、1 件の取得、更新、取り消し（`list`、`create`、`get`、`update`、`voidSale`） | 実装済み |
 | 支払いの記録と返金（`SaleCrud` の `process`、`PaymentCrud` の `refund`） | 実装済み（規則は [支払い](./payments.md)） |
 | レシートと金額の計算（`SaleCrud` の `getReceipt`、`calculate`） | 実装済み（[レシート](#レシート)、[金額の計算](#金額の計算)） |
-| 売上レポート（`SalesReportCrud`） | 未実装 |
+| 売上レポート（`SalesReportCrud`） | エクスポート（`export`）を除いて実装済み（規則は [売上レポート](./sales-reports.md)） |
 | ポイント（`PointCrud`） | 未実装 |
 
 - 未実装のオペレーションへのリクエストは 404 です

@@ -11,33 +11,33 @@ import type { ModelsSalesByStaffResponse } from './modelsSalesByStaffResponse';
 import type { ModelsSalonId } from './modelsSalonId';
 
 /**
- * 期間内の売上実績を集計したレポート
+ * 期間の売上レポート - サロンの、取り消していない売上のうち、売上日(saleDate)が期間内のものを集計する。支払いが済んでいない売上も数える。返金は、いつ返金したかによらず、返金した決済取引の売上の売上日の側で数える
  */
 export interface ModelsSalesReportResponse {
   /** 対象サロン ID */
   salonId: ModelsSalonId;
-  /** 集計期間の開始日時 */
-  periodStart: string;
-  /** 集計期間の終了日時 */
-  periodEnd: string;
-  /** 総売上額 */
+  /** 期間の最初の売上日 */
+  startDate: string;
+  /** 期間の最後の売上日 */
+  endDate: string;
+  /** 売上の合計金額(totalAmount。税込み)の合計 */
   totalSales: number;
-  /** 累計税額 */
+  /** 売上の消費税額(taxAmount)の合計 */
   totalTax: number;
-  /** 累計割引額 */
+  /** 売上の値引額(discountAmount)の合計 */
   totalDiscounts: number;
-  /** 累計返金額 */
+  /** 売上の決済取引の返金額(refundAmount)の合計 */
   totalRefunds: number;
-  /** 返金考慮後の純売上額 */
+  /** totalSales から totalRefunds を引いた額 */
   netSales: number;
-  /** 取引件数 */
+  /** 売上の件数 */
   transactionCount: number;
-  /** 平均取引単価 */
+  /** totalSales を transactionCount で割った額(1円未満を切り捨て)。売上がなければ0 */
   averageTransactionValue: number;
-  /** 支払い方法別の売上内訳 */
+  /** 支払い方法の区分ごとの入金。amount の多い順、同じなら区分の名前の順 */
   salesByMethod: ModelsSalesByMethodResponse[];
-  /** サービスカテゴリ別の売上内訳 */
+  /** サービスのカテゴリーの区分ごとの売上。amount の多い順、同じなら区分の名前の順 */
   salesByCategory: ModelsSalesByCategoryResponse[];
-  /** 売上貢献度の高いスタッフ情報 */
+  /** スタッフ別の売上の上位5人(getByStaff の最初の5行) */
   topStaff: ModelsSalesByStaffResponse[];
 }

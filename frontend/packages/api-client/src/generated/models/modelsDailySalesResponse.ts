@@ -7,17 +7,17 @@
  */
 
 /**
- * 日次の売上サマリー
+ * 1日の売上 - その売上日の、取り消していない売上を集計する
  */
 export interface ModelsDailySalesResponse {
-  /** 集計対象日 */
+  /** 売上日 */
   date: string;
-  /** 売上額 */
+  /** 売上の合計金額(totalAmount)の合計 */
   sales: number;
-  /** 取引件数 */
+  /** 売上の件数 */
   transactions: number;
-  /** 返金額 */
+  /** その日の売上の決済取引の返金額(refundAmount)の合計 */
   refunds: number;
-  /** 返金考慮後の純売上額 */
+  /** sales から refunds を引いた額 */
   net: number;
 }

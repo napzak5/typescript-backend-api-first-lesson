@@ -75,7 +75,8 @@ TypeSpec に定義があっても、バックエンドに実装があるとは�
 | `models/payment.tsp` のレシートと金額の計算のモデル（`SaleReceiptResponse`、`SaleCalculateRequest`、`SaleCalculateResponse`、`SaleBreakdownResponse`）、`SaleCrud` の `getReceipt`、`calculate` | `backend/packages/api/src/routes/sale/get-sale-receipt.handler.ts`、`calculate-sale.handler.ts`。定義と実装は一致している（[売上台帳](./sales.md#レシート)） |
 | `models/payment.tsp` の支払い方法のモデル（`PaymentMethodResponse`、`PaymentMethodCreateRequest`、`PaymentMethodUpdateRequest`、`PaymentMethodSearchRequest`）、`operations/payment-operations.tsp` の `PaymentMethodCrud` の 5 オペレーション（`list`、`create`、`get`、`update`、`delete`） | `backend/packages/api/src/routes/payment-method/`。定義と実装は一致している（[支払い](./payments.md)） |
 | `models/payment.tsp` の支払いのモデル（`SaleProcessRequest`、`PaymentRefundRequest`、`PaymentResponse`）、`SaleCrud` の `process`、`PaymentCrud` の `refund` | `backend/packages/api/src/routes/sale/process-sale.handler.ts`、`backend/packages/api/src/routes/payment/`。定義と実装は一致している（[支払い](./payments.md#支払いは受け取った結果の記録)） |
-| `SalesReportCrud`、`PointCrud` | なし |
+| `models/payment.tsp` の売上レポートのモデル（`SalesReportGetRequest`、`DailySalesGetRequest`、`SalesTrendsGetRequest`、`SalesTrendPeriodType`、`SalesReportResponse`、`SalesByMethodResponse`、`SalesByCategoryResponse`、`SalesByStaffResponse`、`DailySalesResponse`、`SalesTrendsResponse`）、`operations/payment-operations.tsp` の `SalesReportCrud` の 6 オペレーションのうち 5 つ（`get`、`getDaily`、`getByStaff`、`getByCategory`、`getTrends`） | `backend/packages/api/src/routes/sales-report/`。定義と実装は一致している（[売上レポート](./sales-reports.md)）。レポートにはテーブルがなく、モデルは `pnpm check:api-db` の対象ではない |
+| `SalesReportCrud` の `export`、`PointCrud` | なし |
 | 上記以外のドメイン（review、treatment、inventory） | なし。TypeSpec は DB のテーブルと一致している（`pnpm check:api-db`）が、ドメイン・リポジトリ・ルートのコードはない |
 | attachment、permission と、inventory の発注・アラート、treatment のカルテ、customer の監査履歴・エクスポート・データ削除リクエスト | なし。対応するテーブルもまだない（[API-DB型制約マッピング](./api-db-type-constraints-mapping.md#ルールに載せるモデル載せないモデル)） |
 

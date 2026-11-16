@@ -5,11 +5,12 @@
  * Comprehensive REST API for managing beauty salon operations including salons, staff, services, customers, bookings, treatments, payments, inventory, and access control. Built with TypeSpec for type-safe API-first development.
  * OpenAPI spec version: 2.0
  */
-import type { ModelsSalonId } from './modelsSalonId';
+import type { ModelsDailySalesGetRequestDateParameter } from './modelsDailySalesGetRequestDateParameter';
+import type { ModelsDailySalesGetRequestSalonIdParameter } from './modelsDailySalesGetRequestSalonIdParameter';
 
 export type SalesReportCrudGetDailyParams = {
-  /** 集計対象のサロン ID */
-  salonId: ModelsSalonId;
-  /** 集計対象日 */
-  date: string;
+  /** サロン店舗・拠点を識別するためのブランド付きUUID。 */
+  salonId: ModelsDailySalesGetRequestSalonIdParameter;
+  /** 集計対象の売上日(saleDate) */
+  date: ModelsDailySalesGetRequestDateParameter;
 };

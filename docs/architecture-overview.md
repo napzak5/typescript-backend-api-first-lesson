@@ -54,7 +54,8 @@ Before relying on anything, check this table.
 | Sales ledger (`/api/v1/sales`) | Implemented in every layer: list, create, get, update and void, the receipt of a sale and the calculation of one, seven of the eight operations of `SaleCrud` (the eighth, `process`, is in the row of the payments below). A sale belongs to a salon, but its routes are not below one, like those of the bookings: the salon is named by the body of a create and of a calculation, by the query of a list and by the stored row of a get, an update, a void and a receipt. No operation is public: an administrator reaches the sales of every salon, the owner, the managers and the staff of a salon those of their salon, and a customer account none (403); the sale of another salon is answered like one that does not exist (404). The void alone is not for the staff of the salon (403). A sale is the bill of one visit as the till charged it. A create request states the lines with their amounts; the schema checks that a line agrees with itself (the discount within quantity times unit price, the total their difference plus the tax), that only a line of a service or of a product names a record, and that the lines have places of their own. The repository locks the booking, the salon, the customer and the staff members the sale names, in that order, and `planSale` reports what is not there or not of the salon (400), sums the sale up, takes `saleDate` from the time zone of the salon (409 when it is not known) and refuses a booking that has a sale that is not void (409). The sale number is `SL-XXXX-XXXX`, issued like a booking number. Prices, tax rates and commissions are compared with nothing, and nothing else is written: not the booking, the customer or the stock. A get and a list return a sale with its lines and its payments as they were at one moment, the list latest first and with the void sales. An update writes the properties a request names and holds the sale as it is afterwards to the rules of a create; new lines replace all the lines, and only while the payment status is `pending`. A void keeps the sale with the time and the reason, is refused while a payment of the sale was not refunded (409), and frees the booking for another sale. Both hold the row of the sale before any other row. A receipt is not stored: it is made from the sale at every request, under the sale number, and only for a sale that is not void and received its total (409). A calculation writes nothing: it counts the lines of a booking at the amounts they copied and added services at the prices of the menu, adds the tax of the salon once to their sum, and names the kinds of payment method that take the total in one payment; what is not of the salon is answered with 400. See [Sales Ledger](./sales.md) (Japanese). |
 | Payment methods (`/api/v1/salons/{salonId}/payment-methods`) | Implemented in every layer: list, create, get, update and delete, the five operations of `PaymentMethodCrud`. A payment method is one way of paying that a salon accepts (cash, a card terminal, a QR payment): a method, a display name, the fee rate, the limits of the amount of one payment, whether it is taken online and at the salon, and whether it is in use. The routes are below the salon and none is public: an administrator and the owner, the managers and the staff of the salon read the payment methods, an administrator, the owner and the managers set them up, and a customer account reaches none (403), because a response states what the salon pays its processor. Both permissions are decided from the salon of the path alone, before anything else of the request is looked at; the payment method of another salon is answered like one that does not exist (404). The method is fixed once a payment method is created. The lower limit of the amount is not above the upper one: a request that names both is refused by the schema, and an update that names one of them is checked against the stored row, which the repository holds while it checks and writes (400). A delete removes the row, unless a payment refers to it (409: it is deactivated instead). The settings of a payment processor (`processorConfig`) are in no model of the API. A payment is held to whether its payment method is in use and to the limits of the amount; the fee and the online and offline flags are stored and decide nothing. See [Payments](./payments.md) (Japanese). |
 | Payments of a sale (`POST /api/v1/sales/{id}/process`, `POST /api/v1/payments/{id}/refund`) | Implemented in every layer: `process` of `SaleCrud` and `refund` of `PaymentCrud`. No payment processor is connected, so a payment records what the till took and is written as `completed`; a refund turns a completed payment into `refunded` or `partial_refund`, once. An administrator and the owner, the managers and the staff of the salon of the sale record a payment; an administrator, the owner and the managers refund one (403 for the staff); a customer account does neither. A payment is held to its payment method (in use and of the salon of the sale, within its limits, card details only with a card) and to what is left to pay (400); a void sale, a sale with a refund and a sale with nothing left to pay take none (409). Both hold the sale `FOR UPDATE` first, as the update and the void do, and write the payment and the payment status of the sale, which is counted from its payments, in one transaction. See [Payments](./payments.md) (Japanese). |
-| The rest of the payment contract (`SalesReportCrud`, `PointCrud`) and the other domains (review, treatment, inventory) | Specified in TypeSpec, so their generated types exist, and the database schema has their tables and seed data. The models agree with the tables (`pnpm check:api-db`). There is no domain, repository or route code. A request to one of these routes is answered with 404. The implementation order is in GitHub issue #4. |
+| Sales reports (`/api/v1/sales-reports`) | Implemented in every layer: the report of a period, the sales of a day, by staff member, by category and the trends, five of the six operations of `SalesReportCrud` (the export is not served: there is no file storage). An administrator reads the reports of every salon, the owner and the managers those of their salon; the staff of a salon and a customer account are refused (403). The query names the salon, the first and the last day of the sales, both required, at most 366 days (400 otherwise). A report is counted from the sales that are not void, their lines and their payments at every request, in one read-only `REPEATABLE READ` transaction, and is stored nowhere; the summary tables (`daily_summaries`, `staff_performances`) are not used. See [Sales Reports](./sales-reports.md) (Japanese). |
+| The rest of the payment contract (the export of `SalesReportCrud`, `PointCrud`) and the other domains (review, treatment, inventory) | Specified in TypeSpec, so their generated types exist, and the database schema has their tables and seed data. The models agree with the tables (`pnpm check:api-db`). There is no domain, repository or route code. A request to one of these routes is answered with 404. The implementation order is in GitHub issue #4. |
 | Attachments, roles and permissions, purchase orders, medical charts | Specified in TypeSpec only. No table exists for them yet. |
 | Email | Implemented for the mails of the authentication flows and the invitation of a staff member (confirm the address, reset the password, accept an invitation, and the notices: the password was changed, two-factor authentication was enabled, disabled or turned off by an administrator, the backup codes were replaced, a backup code was used to sign in): plain text over SMTP. Docker Compose starts Mailpit, which catches them locally. See [Email](./email.md) (Japanese). |
 | File storage | Not implemented. Docker Compose starts no service for it. |
@@ -654,6 +655,36 @@ api/src/
 │                                      The record of a payment, below /sales
 └── routes/payment/                    The refund; index.ts (router, mounted at
                                        /payments)
+```
+
+The sales reports write nothing and have no table of their own: the
+repository reads sums of the sales ledger, and pure functions build a
+report from them:
+
+```
+domain/src/
+├── models/sales-report.ts             API types of the reports and of their queries
+├── schemas/sales-report.schema.ts     Zod schemas of the queries; the period is in
+│                                      order and at most 366 days long
+├── repositories/sales-report.repository.ts
+│                                      ISalesReportRepository; the sums it reads
+│                                      (SalesFigures: by day, by kind of payment
+│                                      method, by kind of category, by staff member)
+└── business-logic/sales-report/       One *.usecase.ts per operation; _shared/ holds
+                                       the dependencies, whom the reports are for
+                                       (authorization.ts), the reach and the salon
+                                       before the sums are read (figures.ts), what
+                                       a report says of the sums (report.ts) and
+                                       the days, weeks and months (calendar.ts)
+
+infrastructure/src/
+└── repositories/sales-report.repository.impl.ts
+                                       The sums in one read-only transaction of one
+                                       snapshot, without a lock
+
+api/src/
+└── routes/sales-report/               One *.handler.ts per operation, index.ts (router,
+                                       mounted at /sales-reports)
 ```
 
 ## Layers and Package Dependencies
@@ -1699,6 +1730,37 @@ repository looks the sale up within the reach. What differs:
   issued like a sale number and tried again when it is taken.
 
 The rules are in [Payments](./payments.md) (Japanese).
+
+### A Sales Report Request
+
+The five reports of the sales of a salon (`/api/v1/sales-reports`,
+`business-logic/sales-report/`) are `GET`s whose query names the salon, as
+the list of the sales ledger does: the reach of the actor is decided first
+(`salesReportReachOf`), then the query is parsed, the salon of the query is
+compared with the reach (403), and the repository answers null for a salon
+that is not there, which the use case reports as a broken rule of the
+query (400). What differs:
+
+- **A reach of its own.** The reports show what the whole salon earned and
+  what each staff member brought in, so they are for an administrator and
+  the owner and the managers of the salon. The staff, who keep the sales
+  ledger, are refused (403).
+- **Counted at every request, stored nowhere.** `findFigures` reads the
+  sums of the sales of the period that are not void (by day, by kind of
+  payment method, by kind of category, by staff member) in one read-only
+  `REPEATABLE READ` transaction without a lock, so every sum is of the same
+  sales and nothing waits for a writer. `reportOf`, `dailyOf`,
+  `staffRowsOf`, `categoryRowsOf` and `trendsOf` (`_shared/report.ts`) are
+  pure functions that add the sums up, divide them and put them in order;
+  the days, the weeks beginning on a Monday and the months are counted in
+  UTC by `_shared/calendar.ts`, whatever the time zone of the server. The
+  summary tables (`daily_summaries`, `staff_performances`) are not read:
+  every change of a sale or a payment would have to change them too.
+- **A bounded period.** The query has no default; the period is in order
+  and at most 366 days long (`salesReportGetRequestSchema`), which bounds
+  what one request reads.
+
+The rules are in [Sales Reports](./sales-reports.md) (Japanese).
 
 ### An Authentication Request
 

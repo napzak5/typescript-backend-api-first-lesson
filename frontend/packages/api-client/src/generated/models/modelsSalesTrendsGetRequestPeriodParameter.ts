@@ -5,8 +5,6 @@
  * Comprehensive REST API for managing beauty salon operations including salons, staff, services, customers, bookings, treatments, payments, inventory, and access control. Built with TypeSpec for type-safe API-first development.
  * OpenAPI spec version: 2.0
  */
+import type { ModelsSalesTrendPeriodType } from './modelsSalesTrendPeriodType';
 
-/**
- * 検索対象期間の開始日時。
- */
-export type ModelsDateRangeFilterStartDateParameter = string;
+export type ModelsSalesTrendsGetRequestPeriodParameter = ModelsSalesTrendPeriodType;
