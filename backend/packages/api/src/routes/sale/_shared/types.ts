@@ -22,3 +22,9 @@ export type VoidSaleResponse = JsonBody<
 export type ProcessSaleResponse = JsonBody<
   operations['SaleCrud_process']['responses'][200]['content']
 >
+export type GetSaleReceiptResponse = JsonBody<
+  operations['SaleCrud_getReceipt']['responses'][200]['content']
+>
+export type CalculateSaleResponse = JsonBody<
+  operations['SaleCrud_calculate']['responses'][200]['content']
+>
