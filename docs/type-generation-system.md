@@ -78,7 +78,9 @@ the five of `CustomerBookings` (a customer's own bookings: `list`, `create`,
 `SaleCrud` (the sales ledger of a salon: `list`, `create`, `get`, `update`
 and `voidSale`, `process`, which records a payment of a sale, `getReceipt`
 and `calculate`), the one
-of `PaymentCrud` (`refund`), the five of `PaymentMethodCrud` (the payment methods of a
+of `PaymentCrud` (`refund`), five of the six of `SalesReportCrud` (the
+reports of the sales of a salon: `get`, `getDaily`, `getByStaff`,
+`getByCategory` and `getTrends`), the five of `PaymentMethodCrud` (the payment methods of a
 salon: `list`, `create`, `get`, `update` and `delete`),
 the five
 operations of
