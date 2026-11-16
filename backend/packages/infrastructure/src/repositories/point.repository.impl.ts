@@ -6,18 +6,21 @@ import {
 } from '@beauty-salon-backend/database'
 import {
   type CustomerId,
+  type DbPointTransaction,
   type DomainError,
   type IPointRepository,
   type LedgerReach,
+  type PointExpiryOutcome,
   type PointListCriteria,
   type PointListing,
   type PointMovement,
   type PointRecording,
   type PointReference,
+  planExpiry,
   planPoints,
 } from '@beauty-salon-backend/domain'
 import type { Result } from '@beauty-salon-backend/utility'
-import { and, count, desc, eq, isNull, sql } from 'drizzle-orm'
+import { and, asc, count, desc, eq, gt, isNull, lt, sql } from 'drizzle-orm'
 import type { PgTransactionConfig } from 'drizzle-orm/pg-core'
 import { match } from 'ts-pattern'
 import { attempt } from '../database/attempt'
@@ -110,8 +113,35 @@ const isTaken = async (
 }
 
 /** The condition that keeps a query to a customer who is not deleted. */
-const liveCustomer = (customerId: CustomerId) =>
+const liveCustomer = (customerId: string) =>
   and(eq(customers.id, customerId), isNull(customers.deletedAt))
+
+/**
+ * Every point transaction of a customer in the order they were written,
+ * which is the order in which `lotsOf` counts what is left of each earning.
+ */
+const transactionsInOrder = (
+  tx: DatabaseExecutor,
+  customerId: string,
+): Promise<DbPointTransaction[]> =>
+  tx
+    .select()
+    .from(customerPoints)
+    .where(eq(customerPoints.customerId, customerId))
+    .orderBy(asc(customerPoints.createdAt), asc(customerPoints.id))
+
+/** What the expiry of one customer did. */
+type ExpiryOfOne =
+  | { type: 'expired'; points: number }
+  | { type: 'nothingLapsed' }
+  | { type: 'customerNotFound' }
+
+/**
+ * Each statement of a movement or an expiry sees what was committed before
+ * it: one that waited for the customer sees the balance and the point
+ * transactions it waited for.
+ */
+const WRITE: PgTransactionConfig = { isolationLevel: 'read committed' }
 
 export class PointRepository implements IPointRepository {
   constructor(private readonly db: Database) {}
@@ -207,54 +237,155 @@ export class PointRepository implements IPointRepository {
     const { customerId } = movement.request
 
     return attempt('Failed to record points', () =>
-      this.db.transaction(
-        async (tx): Promise<PointRecording> => {
-          const reference = await heldReferenceOf(tx, reach, movement)
+      this.db.transaction(async (tx): Promise<PointRecording> => {
+        const reference = await heldReferenceOf(tx, reach, movement)
 
-          // FOR NO KEY UPDATE: the movements of one customer, a change of
-          // the customer and their deletion wait for each other, while a
-          // sale or a booking of the customer is written past it.
-          const [customer] = await tx
-            .select({ loyaltyPoints: customers.loyaltyPoints })
-            .from(customers)
-            .where(liveCustomer(customerId))
-            .for('no key update')
-          if (customer === undefined) {
-            return { type: 'customerNotFound' }
-          }
+        // FOR NO KEY UPDATE: the movements of one customer, a change of
+        // the customer and their deletion wait for each other, while a
+        // sale or a booking of the customer is written past it.
+        const [customer] = await tx
+          .select({ loyaltyPoints: customers.loyaltyPoints })
+          .from(customers)
+          .where(liveCustomer(customerId))
+          .for('no key update')
+        if (customer === undefined) {
+          return { type: 'customerNotFound' }
+        }
 
-          const plan = planPoints(customerId, movement, {
-            balance: customer.loyaltyPoints,
-            reference,
-            referenceTaken: await isTaken(tx, movement),
-          })
-          if (plan.type !== 'planned') {
-            return plan
-          }
+        const plan = planPoints(customerId, movement, {
+          balance: customer.loyaltyPoints,
+          reference,
+          referenceTaken: await isTaken(tx, movement),
+        })
+        if (plan.type !== 'planned') {
+          return plan
+        }
 
-          // The time is read when the row is written, not when the
-          // transaction began: a movement that waited for the customer is
-          // later than the one it waited for, and the latest transaction of
-          // a customer is the one whose balance the customer has.
-          const [transaction] = await tx
-            .insert(customerPoints)
-            .values({ ...plan.write, createdAt: CLOCK })
-            .onConflictDoNothing()
-            .returning()
-          if (transaction === undefined) {
-            return { type: 'referenceTaken' }
-          }
-          await tx
-            .update(customers)
-            .set({ loyaltyPoints: plan.write.balance, updatedAt: CLOCK })
-            .where(eq(customers.id, customerId))
+        // The time is read when the row is written, not when the
+        // transaction began: a movement that waited for the customer is
+        // later than the one it waited for, and the latest transaction of
+        // a customer is the one whose balance the customer has.
+        const [transaction] = await tx
+          .insert(customerPoints)
+          .values({ ...plan.write, createdAt: CLOCK })
+          .onConflictDoNothing()
+          .returning()
+        if (transaction === undefined) {
+          return { type: 'referenceTaken' }
+        }
+        await tx
+          .update(customers)
+          .set({ loyaltyPoints: plan.write.balance, updatedAt: CLOCK })
+          .where(eq(customers.id, customerId))
 
-          return { type: 'recorded', transaction }
-        },
-        // Each statement sees what was committed before it: a movement that
-        // waited for the customer sees the balance it waited for.
-        { isolationLevel: 'read committed' },
-      ),
+        return { type: 'recorded', transaction }
+      }, WRITE),
     )
+  }
+
+  async transactionsOf(
+    customerId: CustomerId,
+  ): Promise<Result<DbPointTransaction[] | null, DomainError>> {
+    return attempt('Failed to read point transactions', () =>
+      this.db.transaction(async (tx): Promise<DbPointTransaction[] | null> => {
+        const [customer] = await tx
+          .select({ id: customers.id })
+          .from(customers)
+          .where(liveCustomer(customerId))
+        return customer === undefined
+          ? null
+          : transactionsInOrder(tx, customerId)
+      }, AT_ONE_MOMENT),
+    )
+  }
+
+  async expire(
+    customerId: CustomerId | null,
+    processBefore: string,
+  ): Promise<Result<PointExpiryOutcome, DomainError>> {
+    return attempt('Failed to expire points', async () => {
+      const targets =
+        customerId === null
+          ? await this.customersWithLapsedEarnings(processBefore)
+          : [customerId]
+      let processedCount = 0
+      let totalPoints = 0
+      // One customer after the other, each in a transaction of their own:
+      // no expiry holds more than one customer.
+      for (const target of targets) {
+        const expiry = await this.expireOne(target, processBefore)
+        if (expiry.type === 'customerNotFound' && customerId !== null) {
+          return { type: 'customerNotFound' }
+        }
+        if (expiry.type === 'expired') {
+          processedCount += 1
+          totalPoints += expiry.points
+        }
+      }
+      return { type: 'expired', processedCount, totalPoints }
+    })
+  }
+
+  /**
+   * The customers who are not deleted, have points and have an earning
+   * whose expiry date is before `processBefore`, by ID. What is left of the
+   * earnings is counted for each of them under their lock.
+   */
+  private async customersWithLapsedEarnings(
+    processBefore: string,
+  ): Promise<string[]> {
+    const found = await this.db
+      .selectDistinct({ customerId: customerPoints.customerId })
+      .from(customerPoints)
+      .innerJoin(customers, eq(customers.id, customerPoints.customerId))
+      .where(
+        and(
+          eq(customerPoints.transactionType, 'earned'),
+          lt(customerPoints.expiryDate, processBefore),
+          isNull(customers.deletedAt),
+          gt(customers.loyaltyPoints, 0),
+        ),
+      )
+      .orderBy(asc(customerPoints.customerId))
+    return found.map(({ customerId }) => customerId)
+  }
+
+  /**
+   * Holds the customer as a movement does, reads their point transactions
+   * after that, and writes the expiry `planExpiry` plans, with the balance
+   * after it, at the time the row is written.
+   */
+  private expireOne(
+    customerId: string,
+    processBefore: string,
+  ): Promise<ExpiryOfOne> {
+    return this.db.transaction(async (tx): Promise<ExpiryOfOne> => {
+      const [customer] = await tx
+        .select({ loyaltyPoints: customers.loyaltyPoints })
+        .from(customers)
+        .where(liveCustomer(customerId))
+        .for('no key update')
+      if (customer === undefined) {
+        return { type: 'customerNotFound' }
+      }
+
+      const plan = planExpiry(
+        customerId,
+        customer.loyaltyPoints,
+        await transactionsInOrder(tx, customerId),
+        processBefore,
+      )
+      if (plan.type === 'nothingLapsed') {
+        return plan
+      }
+      await tx
+        .insert(customerPoints)
+        .values({ ...plan.write, createdAt: CLOCK })
+      await tx
+        .update(customers)
+        .set({ loyaltyPoints: plan.write.balance, updatedAt: CLOCK })
+        .where(eq(customers.id, customerId))
+      return { type: 'expired', points: -plan.write.points }
+    }, WRITE)
   }
 }
