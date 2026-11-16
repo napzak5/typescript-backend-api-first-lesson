@@ -695,6 +695,28 @@ describe('saleCreateRequestSchema', () => {
       'pointsUsed:custom',
     ])
   })
+
+  it('goes on to the rules of the lines and of the sale after a discount that is more than the price', () => {
+    const rules = rulesOfCreate({
+      ...toNobody({ pointsEarned: 5 }),
+      details: [
+        line({
+          quantity: 1,
+          unitPrice: 1000,
+          discountAmount: 1500,
+          taxAmount: 600,
+          totalAmount: 100,
+        }),
+        line(),
+      ],
+    })
+
+    expect(rules.toSorted()).toEqual([
+      'details.0.discountAmount:custom',
+      'details.1.sortOrder:custom',
+      'pointsEarned:custom',
+    ])
+  })
 })
 
 describe('saleSearchRequestSchema', () => {
