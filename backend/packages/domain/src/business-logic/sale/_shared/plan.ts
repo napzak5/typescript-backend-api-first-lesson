@@ -1,6 +1,6 @@
 import { format, isValid, parseISO } from 'date-fns'
 import type { DbBooking } from '../../../models/booking'
-import type { SaleWrite } from '../../../models/sale'
+import type { DbNewSalesDetail, SaleWrite } from '../../../models/sale'
 import type { DbSalon } from '../../../models/salon'
 import { inTimeZone, MAX_INTEGER } from '../../../schemas/rules'
 import {
@@ -20,7 +20,7 @@ import { notFound } from '../../booking/_shared/plan'
  */
 
 /** What a sale takes from its salon. */
-type SalonOfSale = Pick<DbSalon, 'timezone'>
+export type SalonOfSale = Pick<DbSalon, 'timezone'>
 
 /** The booking a sale is the bill of. */
 export type BookingOfSale = Pick<DbBooking, 'customerId'> & {
@@ -77,7 +77,7 @@ const sumOf = (amounts: readonly number[]): number =>
  * of a sale is within its subtotal and its tax within its total, because
  * those of every line are; neither needs a look of its own.
  */
-const summed = (
+export const summed = (
   details: readonly SalesDetailRequest[],
 ): Pick<
   SaleWrite['sale'],
@@ -94,7 +94,7 @@ const summed = (
 }
 
 /** What the line of a request names that is not there. */
-const issuesOfLine = (
+export const issuesOfLine = (
   line: SalesDetailRequest,
   index: number,
   references: SaleReferences,
@@ -113,6 +113,48 @@ const issuesOfLine = (
     ? [notFound(`details.${index}.itemId`, 'a product of the salon')]
     : []),
 ]
+
+/** What lines are told that come to more than a sale holds. */
+export const TOO_MUCH: ValidationIssue = {
+  field: 'details',
+  rule: 'too_big',
+  message: `The amounts of a sale must not exceed ${MAX_INTEGER}`,
+}
+
+/**
+ * The day of a sale: the day its moment falls on in the time zone of the
+ * salon. Null when the runtime does not know the time zone.
+ */
+export const dayOfSale = (
+  saleTime: string,
+  timezone: string,
+): string | null => {
+  const day = inTimeZone(parseISO(saleTime), timezone)
+
+  return isValid(day) ? format(day, 'yyyy-MM-dd') : null
+}
+
+/** The rows of the lines a request states. */
+export const linesOf = (
+  details: readonly SalesDetailRequest[],
+): DbNewSalesDetail[] =>
+  details.map((line) => ({
+    itemType: line.itemType,
+    itemId: line.itemId,
+    itemName: line.itemName,
+    quantity: line.quantity,
+    unitPrice: line.unitPrice,
+    discountAmount: line.discountAmount,
+    taxAmount: line.taxAmount,
+    totalAmount: line.totalAmount,
+    staffId: line.staffId,
+    // A `numeric` column is written as text.
+    commissionRate:
+      line.commissionRate === null ? null : line.commissionRate.toFixed(2),
+    commissionAmount: line.commissionAmount,
+    notes: line.notes,
+    sortOrder: line.sortOrder,
+  }))
 
 /**
  * Plans the sale a request asks for. The references are looked at in this
@@ -167,20 +209,11 @@ export const planSale = (
 
   const sums = summed(request.details)
   if (sums === null) {
-    return {
-      type: 'invalid',
-      issues: [
-        {
-          field: 'details',
-          rule: 'too_big',
-          message: `The amounts of a sale must not exceed ${MAX_INTEGER}`,
-        },
-      ],
-    }
+    return { type: 'invalid', issues: [TOO_MUCH] }
   }
 
-  const day = inTimeZone(parseISO(request.saleTime), salon.timezone)
-  if (!isValid(day)) {
+  const saleDate = dayOfSale(request.saleTime, salon.timezone)
+  if (saleDate === null) {
     return { type: 'timeZoneUnknown' }
   }
   if (booking?.isBilled === true) {
@@ -197,7 +230,7 @@ export const planSale = (
         customerId: request.customerId,
         staffId: request.staffId,
         bookingId: request.bookingId,
-        saleDate: format(day, 'yyyy-MM-dd'),
+        saleDate,
         saleTime: request.saleTime,
         pointsUsed: request.pointsUsed,
         pointsEarned: request.pointsEarned,
@@ -207,23 +240,7 @@ export const planSale = (
         voidReason: null,
         notes: request.notes,
       },
-      details: request.details.map((line) => ({
-        itemType: line.itemType,
-        itemId: line.itemId,
-        itemName: line.itemName,
-        quantity: line.quantity,
-        unitPrice: line.unitPrice,
-        discountAmount: line.discountAmount,
-        taxAmount: line.taxAmount,
-        totalAmount: line.totalAmount,
-        staffId: line.staffId,
-        // A `numeric` column is written as text.
-        commissionRate:
-          line.commissionRate === null ? null : line.commissionRate.toFixed(2),
-        commissionAmount: line.commissionAmount,
-        notes: line.notes,
-        sortOrder: line.sortOrder,
-      })),
+      details: linesOf(request.details),
     },
   }
 }

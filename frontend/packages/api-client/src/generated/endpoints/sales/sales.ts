@@ -728,7 +728,7 @@ export const getSaleCrudUpdateUrl = (id: ModelsSaleId,) => {
 }
 
 /**
- * 指定した項目だけを更新します。details を指定した場合は明細全体を置き換え、小計・値引額・消費税額・合計金額を再計算します。取消済みの売上は409を、paymentStatus が pending ではない売上に details を指定した場合も409を返します。customerId・staffId・bookingId・明細の staffId に存在しないIDまたは売上のサロンのものではないIDを指定した場合は400を返します。
+ * 指定した項目だけを更新します。管理者と、売上のサロンのメンバーが実行できます。details を指定した場合は明細全体を置き換え、小計・値引額・消費税額・合計金額を再計算します。saleTime を指定した場合は売上日も決め直します。更新後の売上が、登録と同じ規則を満たすことを確かめます。項目を1つも指定しない場合、customerId・staffId・bookingId・明細の staffId・明細の itemId に存在しないIDまたは売上のサロンのものではないIDを指定した場合、更新後の売上の予約の顧客が売上の顧客と異なる場合、顧客のいない売上にポイントが残る場合、金額の合計が integer の上限を超える場合は400を返します。取消済みの売上、paymentStatus が pending ではない売上に details を指定した場合、サロンのタイムゾーンが不明で売上日を決められない場合、bookingId の予約にほかの取り消していない売上がある場合は409を返します。
  * @summary Update a sale
  */
 export const saleCrudUpdate = async (id: ModelsSaleId,
@@ -796,7 +796,7 @@ const {mutation: mutationOptions} = options ?
     export type SaleCrudUpdateMutationVariables = {id: ModelsSaleId;data: ModelsSaleUpdateRequest}
 
     /**
- * 指定した項目だけを更新します。details を指定した場合は明細全体を置き換え、小計・値引額・消費税額・合計金額を再計算します。取消済みの売上は409を、paymentStatus が pending ではない売上に details を指定した場合も409を返します。customerId・staffId・bookingId・明細の staffId に存在しないIDまたは売上のサロンのものではないIDを指定した場合は400を返します。
+ * 指定した項目だけを更新します。管理者と、売上のサロンのメンバーが実行できます。details を指定した場合は明細全体を置き換え、小計・値引額・消費税額・合計金額を再計算します。saleTime を指定した場合は売上日も決め直します。更新後の売上が、登録と同じ規則を満たすことを確かめます。項目を1つも指定しない場合、customerId・staffId・bookingId・明細の staffId・明細の itemId に存在しないIDまたは売上のサロンのものではないIDを指定した場合、更新後の売上の予約の顧客が売上の顧客と異なる場合、顧客のいない売上にポイントが残る場合、金額の合計が integer の上限を超える場合は400を返します。取消済みの売上、paymentStatus が pending ではない売上に details を指定した場合、サロンのタイムゾーンが不明で売上日を決められない場合、bookingId の予約にほかの取り消していない売上がある場合は409を返します。
  * @summary Update a sale
  */
 export const useSaleCrudUpdate = <TError = ModelsProblemDetails,
@@ -1183,7 +1183,7 @@ export const getSaleCrudVoidSaleUrl = (id: ModelsSaleId,) => {
 }
 
 /**
- * 売上を取り消します。isVoid を true にし、voidedAt と voidReason を記録します。取消済みの売上、または返金していない支払い(status が completed または partial_refund の決済取引)がある売上は409を返します。
+ * 売上を取り消します。管理者と、売上のサロンのオーナー・マネージャーが実行できます。isVoid を true にし、voidedAt と voidReason を記録します。明細・金額・支払い状態は変えません。取り消した売上の予約は、もう一度会計できます。取消済みの売上、または返金していない支払い(status が completed または partial_refund の決済取引)がある売上は409を返します。
  * @summary Void a sale
  */
 export const saleCrudVoidSale = async (id: ModelsSaleId,
@@ -1251,7 +1251,7 @@ const {mutation: mutationOptions} = options ?
     export type SaleCrudVoidSaleMutationVariables = {id: ModelsSaleId;data: ModelsSaleVoidRequest}
 
     /**
- * 売上を取り消します。isVoid を true にし、voidedAt と voidReason を記録します。取消済みの売上、または返金していない支払い(status が completed または partial_refund の決済取引)がある売上は409を返します。
+ * 売上を取り消します。管理者と、売上のサロンのオーナー・マネージャーが実行できます。isVoid を true にし、voidedAt と voidReason を記録します。明細・金額・支払い状態は変えません。取り消した売上の予約は、もう一度会計できます。取消済みの売上、または返金していない支払い(status が completed または partial_refund の決済取引)がある売上は409を返します。
  * @summary Void a sale
  */
 export const useSaleCrudVoidSale = <TError = ModelsProblemDetails,

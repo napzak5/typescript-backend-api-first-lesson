@@ -11,6 +11,7 @@ import {
 } from '@beauty-salon-backend/database'
 import {
   type BookingOfSale,
+  bookingToHold,
   type DbPaymentTransaction,
   type DbSale,
   type DbSalesDetail,
@@ -19,6 +20,10 @@ import {
   type LedgerReach,
   PRODUCT_ITEM,
   planSale,
+  planSaleChange,
+  refusalOfChange,
+  refusalOfVoid,
+  type SaleChangeReferences,
   type SaleCreateRequest,
   type SaleCreation,
   type SaleId,
@@ -26,8 +31,14 @@ import {
   type SaleListCriteria,
   type SaleOrigin,
   type SaleReferences,
+  type SalesDetailRequest,
+  type SaleUpdate,
+  type SaleUpdateRequest,
+  type SaleVoiding,
+  type SaleVoidRequest,
   type SaleWithDetails,
   type SaleWrite,
+  type SalonOfSale,
   SERVICE_ITEM,
 } from '@beauty-salon-backend/domain'
 import type { Result } from '@beauty-salon-backend/utility'
@@ -39,6 +50,7 @@ import {
   eq,
   inArray,
   isNull,
+  ne,
   not,
   type SQL,
   sql,
@@ -46,6 +58,7 @@ import {
 import type { PgTransactionConfig } from 'drizzle-orm/pg-core'
 import { match } from 'ts-pattern'
 import { attempt } from '../database/attempt'
+import { CLOCK } from '../database/clock'
 import type { Database, DatabaseExecutor } from '../database/index'
 
 /**
@@ -70,10 +83,13 @@ const named = (ids: readonly (string | null)[]): string[] => [
   ...new Set(ids.flatMap((id) => (id === null ? [] : [id]))),
 ]
 
-/** The `itemId`s of the lines of a request that are of that type. */
-const itemIdsOf = (request: SaleCreateRequest, itemType: string): string[] =>
+/** The `itemId`s of the lines that are of that type. */
+const itemIdsOf = (
+  details: readonly SalesDetailRequest[],
+  itemType: string,
+): string[] =>
   named(
-    request.details
+    details
       .filter((line) => line.itemType === itemType)
       .map(({ itemId }) => itemId),
   )
@@ -85,24 +101,24 @@ const itemIdsOf = (request: SaleCreateRequest, itemType: string): string[] =>
  * statement of its own after the wait, meets the sale of the first. A
  * delete of the booking waits for the sale and finds it; one that came
  * first leaves no booking to be found here.
+ *
+ * `billing` is the sale that is being corrected, which does not stand in
+ * its own way; null for a sale that is being entered.
  */
 const heldBookingOf = async (
   tx: DatabaseExecutor,
-  request: SaleCreateRequest,
+  bookingId: string | null,
+  salonId: string,
+  billing: string | null,
 ): Promise<BookingOfSale | null> => {
-  if (request.bookingId === null) {
+  if (bookingId === null) {
     return null
   }
 
   const [booking] = await tx
     .select({ customerId: bookings.customerId })
     .from(bookings)
-    .where(
-      and(
-        eq(bookings.id, request.bookingId),
-        eq(bookings.salonId, request.salonId),
-      ),
-    )
+    .where(and(eq(bookings.id, bookingId), eq(bookings.salonId, salonId)))
     .for('update')
   if (booking === undefined) {
     return null
@@ -110,10 +126,97 @@ const heldBookingOf = async (
   const [billed] = await tx
     .select({ id: sales.id })
     .from(sales)
-    .where(and(eq(sales.bookingId, request.bookingId), not(sales.isVoid)))
+    .where(
+      and(
+        eq(sales.bookingId, bookingId),
+        not(sales.isVoid),
+        billing === null ? undefined : ne(sales.id, billing),
+      ),
+    )
     .limit(1)
 
   return { customerId: booking.customerId, isBilled: billed !== undefined }
+}
+
+/** Whether the customer is there, held `FOR KEY SHARE`; of no customer, false. */
+const heldCustomerIsThere = async (
+  tx: DatabaseExecutor,
+  customerId: string | null,
+): Promise<boolean> => {
+  if (customerId === null) {
+    return false
+  }
+  const [customer] = await tx
+    .select({ id: customers.id })
+    .from(customers)
+    .where(and(eq(customers.id, customerId), isNull(customers.deletedAt)))
+    .for('key share')
+
+  return customer !== undefined
+}
+
+/**
+ * Of the staff members, the services and the products a request names,
+ * those of the salon that are there. The staff members are held `FOR KEY
+ * SHARE`, by their IDs.
+ */
+const soldOf = async (
+  tx: DatabaseExecutor,
+  salonId: string,
+  staffId: string | null,
+  details: readonly SalesDetailRequest[],
+): Promise<Pick<SaleReferences, 'staffIds' | 'serviceIds' | 'productIds'>> => {
+  const staffIds = named([staffId, ...details.map((line) => line.staffId)])
+  const serviceIds = itemIdsOf(details, SERVICE_ITEM)
+  const productIds = itemIdsOf(details, PRODUCT_ITEM)
+
+  const staffMembers =
+    staffIds.length === 0
+      ? []
+      : await tx
+          .select({ id: staff.id })
+          .from(staff)
+          .where(
+            and(
+              inArray(staff.id, staffIds),
+              eq(staff.salonId, salonId),
+              isNull(staff.deletedAt),
+            ),
+          )
+          .orderBy(asc(staff.id))
+          .for('key share')
+  const soldServices =
+    serviceIds.length === 0
+      ? []
+      : await tx
+          .select({ id: services.id })
+          .from(services)
+          .where(
+            and(
+              inArray(services.id, serviceIds),
+              eq(services.salonId, salonId),
+              isNull(services.deletedAt),
+            ),
+          )
+  const soldProducts =
+    productIds.length === 0
+      ? []
+      : await tx
+          .select({ id: products.id })
+          .from(products)
+          .where(
+            and(
+              inArray(products.id, productIds),
+              eq(products.salonId, salonId),
+              isNull(products.deletedAt),
+            ),
+          )
+
+  return {
+    staffIds: staffMembers.map(({ id }) => id),
+    serviceIds: soldServices.map(({ id }) => id),
+    productIds: soldProducts.map(({ id }) => id),
+  }
 }
 
 /**
@@ -137,26 +240,18 @@ const referencesOf = async (
   tx: DatabaseExecutor,
   request: SaleCreateRequest,
 ): Promise<SaleReferences> => {
-  const booking = await heldBookingOf(tx, request)
+  const booking = await heldBookingOf(
+    tx,
+    request.bookingId,
+    request.salonId,
+    null,
+  )
   const [salon] = await tx
     .select({ timezone: salons.timezone })
     .from(salons)
     .where(and(eq(salons.id, request.salonId), isNull(salons.deletedAt)))
     .for('key share')
-  const [customer] =
-    request.customerId === null
-      ? []
-      : await tx
-          .select({ id: customers.id })
-          .from(customers)
-          .where(
-            and(
-              eq(customers.id, request.customerId),
-              isNull(customers.deletedAt),
-            ),
-          )
-          .for('key share')
-  const customerExists = customer !== undefined
+  const customerExists = await heldCustomerIsThere(tx, request.customerId)
   if (salon === undefined) {
     return {
       salon: null,
@@ -168,61 +263,76 @@ const referencesOf = async (
     }
   }
 
-  const staffIds = named([
-    request.staffId,
-    ...request.details.map(({ staffId }) => staffId),
-  ])
-  const serviceIds = itemIdsOf(request, SERVICE_ITEM)
-  const productIds = itemIdsOf(request, PRODUCT_ITEM)
+  return {
+    salon,
+    customerExists,
+    ...(await soldOf(tx, request.salonId, request.staffId, request.details)),
+    booking,
+  }
+}
 
-  const staffMembers =
-    staffIds.length === 0
-      ? []
-      : await tx
-          .select({ id: staff.id })
-          .from(staff)
-          .where(
-            and(
-              inArray(staff.id, staffIds),
-              eq(staff.salonId, request.salonId),
-              isNull(staff.deletedAt),
-            ),
-          )
-          .orderBy(asc(staff.id))
-          .for('key share')
-  const soldServices =
-    serviceIds.length === 0
-      ? []
-      : await tx
-          .select({ id: services.id })
-          .from(services)
-          .where(
-            and(
-              inArray(services.id, serviceIds),
-              eq(services.salonId, request.salonId),
-              isNull(services.deletedAt),
-            ),
-          )
-  const soldProducts =
-    productIds.length === 0
-      ? []
-      : await tx
-          .select({ id: products.id })
-          .from(products)
-          .where(
-            and(
-              inArray(products.id, productIds),
-              eq(products.salonId, request.salonId),
-              isNull(products.deletedAt),
-            ),
-          )
+/** A sale that is held, with what it takes from its salon. */
+type HeldSale = { sale: DbSale; salon: SalonOfSale }
+
+/**
+ * The sale a change is of, held `FOR UPDATE` until the change is written.
+ * Of the changes of one sale each waits here for the one before it, and
+ * what it reads afterwards is what that one left. The lock is the one that
+ * the foreign key of a payment does not get past: no payment of the sale
+ * is written while it is held, and one that is being written is waited
+ * for.
+ *
+ * The sale is the first row a change holds; nothing that holds a booking,
+ * a customer or a staff member goes on to hold a sale, so the changes of
+ * sales wait for nothing that waits for them.
+ */
+const heldSaleOf = async (
+  tx: DatabaseExecutor,
+  id: SaleId,
+  reach: LedgerReach,
+): Promise<HeldSale | null> => {
+  const [held] = await tx
+    .select({ sale: sales, salon: { timezone: salons.timezone } })
+    .from(sales)
+    .innerJoin(salons, eq(salons.id, sales.salonId))
+    .where(and(eq(sales.id, id), within(reach)))
+    .for('update', { of: sales })
+
+  return held ?? null
+}
+
+/**
+ * What a correction refers to, as far as it is there: only what the
+ * request names is looked for, and locked as for a sale that is entered,
+ * in the same order (the booking, the customer, the staff members by
+ * their IDs). The salon is that of the sale, and the day of a sale of a
+ * deleted salon is still a day of its time zone.
+ */
+const changeReferencesOf = async (
+  tx: DatabaseExecutor,
+  { sale, salon }: HeldSale,
+  request: SaleUpdateRequest,
+): Promise<SaleChangeReferences> => {
+  const booking = await heldBookingOf(
+    tx,
+    bookingToHold(sale, request),
+    sale.salonId,
+    sale.id,
+  )
+  const customerExists = await heldCustomerIsThere(
+    tx,
+    request.customerId ?? null,
+  )
 
   return {
     salon,
     customerExists,
-    staffIds: staffMembers.map(({ id }) => id),
-    serviceIds: soldServices.map(({ id }) => id),
-    productIds: soldProducts.map(({ id }) => id),
+    ...(await soldOf(
+      tx,
+      sale.salonId,
+      request.staffId ?? null,
+      request.details ?? [],
+    )),
     booking,
   }
 }
@@ -301,6 +411,25 @@ const gathered = async (
   })
 }
 
+/** The sale with the ID that the reader reaches, with its lines and payments. */
+const saleOf = async (
+  tx: DatabaseExecutor,
+  id: SaleId,
+  reach: LedgerReach,
+): Promise<SaleWithDetails | null> => {
+  const [found] = await gathered(
+    tx,
+    await tx
+      .select({ sale: sales, detail: salesDetails })
+      .from(sales)
+      .leftJoin(salesDetails, eq(salesDetails.saleId, sales.id))
+      .where(and(eq(sales.id, id), within(reach)))
+      .orderBy(asc(salesDetails.sortOrder)),
+  )
+
+  return found ?? null
+}
+
 export class SaleRepository implements ISaleRepository {
   constructor(private readonly db: Database) {}
 
@@ -333,19 +462,101 @@ export class SaleRepository implements ISaleRepository {
     reach: LedgerReach,
   ): Promise<Result<SaleWithDetails | null, DomainError>> {
     return attempt('Failed to find sale', () =>
-      this.db.transaction(async (tx): Promise<SaleWithDetails | null> => {
-        const [found] = await gathered(
-          tx,
-          await tx
-            .select({ sale: sales, detail: salesDetails })
-            .from(sales)
-            .leftJoin(salesDetails, eq(salesDetails.saleId, sales.id))
-            .where(and(eq(sales.id, id), within(reach)))
-            .orderBy(asc(salesDetails.sortOrder)),
-        )
+      this.db.transaction((tx) => saleOf(tx, id, reach), AT_ONE_MOMENT),
+    )
+  }
 
-        return found ?? null
-      }, AT_ONE_MOMENT),
+  async update(
+    id: SaleId,
+    reach: LedgerReach,
+    request: SaleUpdateRequest,
+  ): Promise<Result<SaleUpdate, DomainError>> {
+    return attempt('Failed to update sale', () =>
+      this.db.transaction(
+        async (tx): Promise<SaleUpdate> => {
+          const held = await heldSaleOf(tx, id, reach)
+          if (held === null) {
+            return { type: 'notFound' }
+          }
+          const refusal = refusalOfChange(held.sale, request)
+          if (refusal !== null) {
+            return refusal
+          }
+          const plan = planSaleChange(
+            held.sale,
+            request,
+            await changeReferencesOf(tx, held, request),
+          )
+          if (plan.type !== 'planned') {
+            return plan
+          }
+
+          await tx
+            .update(sales)
+            .set({ ...plan.change.sale, updatedAt: CLOCK })
+            .where(eq(sales.id, id))
+          if (plan.change.details !== null) {
+            await tx.delete(salesDetails).where(eq(salesDetails.saleId, id))
+            await tx.insert(salesDetails).values(
+              plan.change.details.map((detail) => ({
+                ...detail,
+                saleId: id,
+              })),
+            )
+          }
+          // The sale is held: no payment of it comes in between the
+          // statements of this read.
+          const sale = await saleOf(tx, id, reach)
+
+          return sale === null
+            ? { type: 'notFound' }
+            : { type: 'updated', sale }
+        },
+        // Each statement sees what was committed before it: a request that
+        // waited for the sale or for the booking sees what it waited for.
+        { isolationLevel: 'read committed' },
+      ),
+    )
+  }
+
+  async voidSale(
+    id: SaleId,
+    reach: LedgerReach,
+    request: SaleVoidRequest,
+  ): Promise<Result<SaleVoiding, DomainError>> {
+    return attempt('Failed to void sale', () =>
+      this.db.transaction(
+        async (tx): Promise<SaleVoiding> => {
+          const held = await heldSaleOf(tx, id, reach)
+          if (held === null) {
+            return { type: 'notFound' }
+          }
+          // A statement of its own after the lock: a payment that was
+          // being written when the sale was asked for is among these.
+          const payments = await tx
+            .select({ status: paymentTransactions.status })
+            .from(paymentTransactions)
+            .where(eq(paymentTransactions.saleId, id))
+          const refusal = refusalOfVoid(held.sale, payments)
+          if (refusal !== null) {
+            return refusal
+          }
+
+          await tx
+            .update(sales)
+            .set({
+              isVoid: true,
+              voidedAt: CLOCK,
+              voidReason: request.voidReason,
+              updatedAt: CLOCK,
+            })
+            .where(eq(sales.id, id))
+          const sale = await saleOf(tx, id, reach)
+
+          return sale === null ? { type: 'notFound' } : { type: 'voided', sale }
+        },
+        { isolationLevel: 'read committed' },
+      ),
     )
   }
 

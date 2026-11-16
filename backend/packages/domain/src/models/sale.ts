@@ -30,6 +30,9 @@ export type ApiSalesDetail = components['schemas']['Models.SalesDetail']
 export type ApiPaymentResponse = components['schemas']['Models.PaymentResponse']
 export type ApiSaleCreateRequest =
   components['schemas']['Models.SaleCreateRequest']
+export type ApiSaleUpdateRequest =
+  components['schemas']['Models.SaleUpdateRequest']
+export type ApiSaleVoidRequest = components['schemas']['Models.SaleVoidRequest']
 export type ApiSaleSearchRequest = NonNullable<
   operations['SaleCrud_list']['parameters']['query']
 >
@@ -71,4 +74,31 @@ export type SaleWithDetails = {
 export type SaleWrite = {
   sale: DbNewSale
   details: DbNewSalesDetail[]
+}
+
+/**
+ * What a correction of a sale writes: the columns that change, and the
+ * lines that take the place of every line the sale has, or null when its
+ * lines stay. The salon, the number, the payment status and what makes a
+ * sale void are not among the columns: no correction changes them.
+ */
+export type SaleChange = {
+  sale: Partial<
+    Pick<
+      DbNewSale,
+      | 'customerId'
+      | 'staffId'
+      | 'bookingId'
+      | 'saleDate'
+      | 'saleTime'
+      | 'subtotal'
+      | 'discountAmount'
+      | 'taxAmount'
+      | 'totalAmount'
+      | 'pointsUsed'
+      | 'pointsEarned'
+      | 'notes'
+    >
+  >
+  details: DbNewSalesDetail[] | null
 }

@@ -74,8 +74,9 @@ and `reschedule`), the three of `BookingServiceCrud` (the service lines of
 a booking that exists: `create`, `get` and `delete`), the two of
 `AvailableSlotCrud` (the available slots of a salon: `list` and `check`),
 the five of `CustomerBookings` (a customer's own bookings: `list`, `create`,
-`get`, `cancel` and `reschedule`), three of the eight operations of
-`SaleCrud` (the sales ledger of a salon: `list`, `create` and `get`),
+`get`, `cancel` and `reschedule`), five of the eight operations of
+`SaleCrud` (the sales ledger of a salon: `list`, `create`, `get`, `update`
+and `voidSale`),
 the five
 operations of
 `StaffCrud` (the staff ledger of a salon: `list`, `create`, `get`, `update`
