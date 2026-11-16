@@ -5,19 +5,16 @@
  * Comprehensive REST API for managing beauty salon operations including salons, staff, services, customers, bookings, treatments, payments, inventory, and access control. Built with TypeSpec for type-safe API-first development.
  * OpenAPI spec version: 2.0
  */
+import type { ModelsReviewReportReasonType } from './modelsReviewReportReasonType';
 
 /**
  * レビュー通報リクエスト - 不適切な内容や虚偽が疑われるレビューの通報内容を受け取る。全項目のキーが必須
  */
 export interface ModelsReviewReportRequest {
+  /** 通報の理由 */
+  reason: ModelsReviewReportReasonType;
   /**
-     * 通報の理由
-     * @minLength 1
-     * @maxLength 255
-     */
-  reason: string;
-  /**
-     * 通報内容の詳細。補足説明がない場合はnull
+     * 通報内容の詳細。空白だけの文字列は指定できない。reason が other の場合は必須で、ほかの理由で補足がない場合はnull
      * @maxLength 2000
      * @nullable
      */

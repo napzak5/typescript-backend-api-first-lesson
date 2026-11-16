@@ -44,6 +44,10 @@ namespace BeautySalon.Models {
   @format("uuid")
   scalar ReviewId extends string;
 
+  @doc("レビューの通報（review_reports の1行）を識別するブランド付きUUID。")
+  @format("uuid")
+  scalar ReviewReportId extends string;
+
   @doc("サービスカテゴリやメニュー分類を識別するブランド付きUUID。")
   @format("uuid")
   scalar CategoryId extends string;
