@@ -209,8 +209,8 @@ export type BookingStatusWrite = {
 }
 
 /**
- * The bookings a keeper of a ledger reaches: those of every salon, or
- * those of one.
+ * What a keeper of a ledger reaches, of the bookings as of the sales: the
+ * records of every salon, or those of one.
  */
 export type LedgerReach =
   | { type: 'everySalon' }

@@ -1230,8 +1230,8 @@ export const sales = pgTable(
     discountAmount: integer().default(0).notNull(),
     taxAmount: integer().notNull(),
     totalAmount: integer().notNull(),
-    pointsUsed: integer().default(0),
-    pointsEarned: integer().default(0),
+    pointsUsed: integer(),
+    pointsEarned: integer(),
     paymentStatus: paymentStatus().default('pending').notNull(),
     isVoid: boolean().default(false).notNull(),
     voidedAt: timestamp({ withTimezone: true, mode: 'string' }),
@@ -1245,6 +1245,21 @@ export const sales = pgTable(
       .notNull(),
   },
   (table) => [
+    check(
+      'sales_amounts_not_negative',
+      sql`(subtotal >= 0) AND ("discountAmount" >= 0) AND ("taxAmount" >= 0) AND ("totalAmount" >= 0) AND (("pointsUsed" IS NULL) OR ("pointsUsed" >= 0)) AND (("pointsEarned" IS NULL) OR ("pointsEarned" >= 0))`,
+    ),
+    check('sales_discount_within_subtotal', sql`"discountAmount" <= subtotal`),
+    check(
+      'sales_points_need_customer',
+      sql`("customerId" IS NOT NULL) OR (("pointsUsed" IS NULL) AND ("pointsEarned" IS NULL))`,
+    ),
+    check(
+      'sales_total_is_the_sum',
+      sql`"totalAmount" = ((subtotal - "discountAmount") + "taxAmount")`,
+    ),
+    check('sales_void_has_time', sql`"isVoid" = ("voidedAt" IS NOT NULL)`),
+    check('sales_void_reason_of_void', sql`("voidReason" IS NULL) OR "isVoid"`),
     foreignKey({
       columns: [table.bookingId],
       foreignColumns: [bookings.id],
@@ -1281,15 +1296,20 @@ export const sales = pgTable(
       'btree',
       table.saleNumber.asc().nullsLast().op('text_ops'),
     ),
-    index('idx_sales_salon_id').using(
+    index('idx_sales_salon_time').using(
       'btree',
       table.salonId.asc().nullsLast().op('uuid_ops'),
+      table.saleTime.asc().nullsLast().op('timestamptz_ops'),
+      table.id.asc().nullsLast().op('uuid_ops'),
     ),
     index('idx_sales_staff_id').using(
       'btree',
       table.staffId.asc().nullsLast().op('uuid_ops'),
     ),
     unique('sales_sale_number_unique').on(table.saleNumber),
+    uniqueIndex('sales_booking_live_unique')
+      .using('btree', table.bookingId.asc().nullsLast().op('uuid_ops'))
+      .where(sql`(NOT "isVoid")`),
   ],
 )
 
@@ -1316,6 +1336,28 @@ export const salesDetails = pgTable(
       .notNull(),
   },
   (table) => [
+    check(
+      'sales_details_amounts_not_negative',
+      sql`("unitPrice" >= 0) AND ("discountAmount" >= 0) AND ("taxAmount" >= 0) AND ("totalAmount" >= 0) AND (("commissionAmount" IS NULL) OR ("commissionAmount" >= 0))`,
+    ),
+    check(
+      'sales_details_commission_rate_is_a_percentage',
+      sql`("commissionRate" IS NULL) OR (("commissionRate" >= (0)::numeric) AND ("commissionRate" <= (100)::numeric))`,
+    ),
+    check(
+      'sales_details_discount_within_price',
+      sql`"discountAmount" <= ((quantity)::bigint * "unitPrice")`,
+    ),
+    check(
+      'sales_details_item_of_a_known_type',
+      sql`("itemId" IS NULL) OR (("itemType")::text = ANY (ARRAY['service'::text, 'product'::text]))`,
+    ),
+    check('sales_details_quantity_positive', sql`quantity >= 1`),
+    check('sales_details_sort_order_not_negative', sql`"sortOrder" >= 0`),
+    check(
+      'sales_details_total_is_the_sum',
+      sql`"totalAmount" = ((((quantity)::bigint * "unitPrice") - "discountAmount") + "taxAmount")`,
+    ),
     foreignKey({
       columns: [table.saleId],
       foreignColumns: [sales.id],
@@ -1334,6 +1376,7 @@ export const salesDetails = pgTable(
       'btree',
       table.staffId.asc().nullsLast().op('uuid_ops'),
     ),
+    unique('sales_details_order_unique').on(table.saleId, table.sortOrder),
   ],
 )
 

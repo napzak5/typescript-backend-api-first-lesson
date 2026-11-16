@@ -258,7 +258,7 @@
 - `BK-XXXX-XXXX` の形式です。`X` は、数字と、読み間違えやすい文字（I、L、O、U）を除いた英大文字の 32 文字（Crockford の Base32 の文字集合）から、暗号論的な乱数で選びます（32^8 ≒ 1.1 × 10^12 通り）
 - 連番にはしません。連番は、プラットフォーム全体の予約の件数を、番号を見た人に伝えます
 - すでにある番号と重なったら、別の番号で作り直します（一意制約 `bookings_booking_number_unique`）。3 回続けて重なると 500 です
-- 番号を作るのは `business-logic/booking/_shared/booking-number.ts` の `bookingNumberFrom`、乱数を渡すのは `infrastructure` の `RandomBookingNumberIssuer` です
+- 番号を作るのは `business-logic/booking/_shared/booking-number.ts` の `bookingNumberFrom`、乱数を渡すのは `infrastructure` の `RandomBookingNumberIssuer` です。形式そのもの（`business-logic/_shared/record-number.ts` の `recordNumberFrom`）は、売上番号と共通です
 
 ### 来店日とサロンのタイムゾーン
 
@@ -469,7 +469,7 @@
 - 削除できるのは、`admin` と、予約のサロンの `owner`・`manager` です（[オペレーションと権限](#オペレーションと権限)）
 - どのステータスの予約も削除できます
 - 予約とともに、施術明細、ステータスの履歴、レビュー（`reviews`）が消えます（外部キーの `ON DELETE CASCADE`）
-- **売上（`sales`）か施術記録（`treatment_records`）が参照している予約は、削除できません**（409。`detail` に、何が参照しているかが入る）。行われた来店の記録だからです。取り消した売上（`isVoid`）も、参照に数えます。売上と施術記録を書くオペレーションは未実装なので、いま該当するのは、データベースに直接書いた行だけです
+- **売上（`sales`）か施術記録（`treatment_records`）が参照している予約は、削除できません**（409。`detail` に、何が参照しているかが入る）。行われた来店の記録だからです。取り消した売上（`isVoid`）も、参照に数えます。売上は、売上台帳の作成が書きます（[売上台帳](./sales.md)）。施術記録を書くオペレーションは未実装です
 - `completed`、`cancelled`、`no_show` の予約を削除したときは、同じトランザクションの中で、顧客の 5 つの値を数え直します（[顧客の来店回数](#顧客の来店回数)）。ほかのステータスの予約は、数えられていないので、数え直しません
 - 削除した予約が占有していた時間は、空きます
 - 成功は 204 で、本文はありません。削除した予約への取得、更新、ステータスの操作、日時の変更、2 度目の削除は 404 です
@@ -903,7 +903,7 @@
 
 削除:
 
-1. 予約の行を排他ロックします。その予約を参照する売上や施術記録を書いている途中のトランザクションは、外部キーの確認のために予約の行をロックしているので、削除はそれを待ちます
+1. 予約の行を排他ロックします。その予約の会計を書いている途中の売上の作成は、予約の行を排他ロックしています（[売上台帳](./sales.md#同時に届いたリクエスト)）。予約を参照する行をほかの方法で書くトランザクションも、外部キーの確認のために予約の行をロックします。削除は、どちらも待ちます
 2. 予約を参照する売上と施術記録を探します。あれば、何も消さずに終わります
 3. 予約を削除します（明細、履歴、レビューは外部キーで消える）。数えられていたステータスなら、顧客の行を排他ロックして、数え直します
 
@@ -922,7 +922,7 @@
 2. `planServiceRemoval` が、削除できるかを決めて、算出し直した予約の値を作ります。削除できなければ、何も書かずに終わります
 3. 明細を削除して、予約を書きます。スタッフの行はロックしません（占有が減っても、待っている書き込みはない）
 
-ロックの順は、作成（台帳も、顧客が自分で入れる予約も）がサロン、顧客、サービス、スタッフ、台帳での日時の変更が予約、サロン、スタッフ、顧客による日時の変更が予約、サロン、顧客、サービス、スタッフ、明細の追加が予約、サロン、サービス、スタッフ、明細の削除が予約、サロン、ステータスの操作と削除が予約、顧客です。作成は、すでにある予約の行をロックしません。どの 2 つを組み合わせても、同じ行を逆の順にロックすることはないので、デッドロックになりません。
+ロックの順は、作成（台帳も、顧客が自分で入れる予約も）がサロン、顧客、サービス、スタッフ、台帳での日時の変更が予約、サロン、スタッフ、顧客による日時の変更が予約、サロン、顧客、サービス、スタッフ、明細の追加が予約、サロン、サービス、スタッフ、明細の削除が予約、サロン、ステータスの操作と削除が予約、顧客です。売上の作成（[売上台帳](./sales.md)）は、予約、サロン、顧客、スタッフの順です。予約の作成は、すでにある予約の行をロックしません。どの 2 つを組み合わせても、同じ行を逆の順にロックすることはないので、デッドロックになりません。
 
 顧客、スタッフ、サービス、サロンの削除も、それぞれ 1 つのトランザクションです（`CustomerRepository`、`StaffRepository`、`ServiceRepository`、`SalonRepository` の `delete`。分離レベルは `READ COMMITTED`）。
 
@@ -992,7 +992,7 @@
 | インフラ | `backend/packages/infrastructure/src/repositories/booking.repository.impl.ts`、`security/random-booking-number-issuer.ts`、`repositories/unfinished-bookings.ts`（顧客、スタッフ、サービス、サロンの削除が、終わっていない予約を探す）、`database/clock.ts`（書き込む時刻） |
 | ドメイン（空き枠） | `backend/packages/domain/src/models/available-slot.ts`、`schemas/available-slot.schema.ts`、`mappers/read/available-slot.mapper.ts`、`repositories/available-slot.repository.ts`、`business-logic/available-slot/`（枠を決めるのは `_shared/slots.ts`、サロンの営業時間帯は `_shared/opening.ts`、スタッフの勤務時間帯は `_shared/working.ts`、受け付けの設定は `_shared/acceptance.ts`、サロンの時計の時刻を時点に直すのは `_shared/salon-time.ts`、時間帯の計算は `_shared/time-ranges.ts`、カーソルは `_shared/page.ts`、確認の権限は `_shared/authorization.ts`）。占有の規則は、台帳の `business-logic/booking/_shared/occupancy.ts` を使う（`isOccupiedBeyondCapacity`、`conflictsOf`） |
 | インフラ（空き枠） | `backend/packages/infrastructure/src/repositories/available-slot.repository.impl.ts`（1 日の枠を決めるのに要るものを、1 つの読み取り専用のトランザクションで読む） |
-| ドメイン（顧客が自分で入れる予約） | `backend/packages/domain/src/business-logic/customer-booking/`（誰が自分の予約を持つかは `_shared/access.ts`、リクエストから書く行を決めるのは `_shared/plan.ts`、日時の変更の規則は `_shared/move.ts`、リポジトリが断った理由をエラーに直すのは `_shared/refusals.ts`）、`mappers/read/customer-booking.mapper.ts`。モデル、スキーマ、リポジトリのインターフェースは、台帳と同じファイル。予約に届く範囲（`BookingReach`）は、台帳の範囲（`LedgerReach`）か、1 人の顧客の予約（`CustomerReach`）。予約番号を採り直す手順は `business-logic/booking/_shared/numbered.ts`（台帳の作成と共通） |
+| ドメイン（顧客が自分で入れる予約） | `backend/packages/domain/src/business-logic/customer-booking/`（誰が自分の予約を持つかは `_shared/access.ts`、リクエストから書く行を決めるのは `_shared/plan.ts`、日時の変更の規則は `_shared/move.ts`、リポジトリが断った理由をエラーに直すのは `_shared/refusals.ts`）、`mappers/read/customer-booking.mapper.ts`。モデル、スキーマ、リポジトリのインターフェースは、台帳と同じファイル。予約に届く範囲（`BookingReach`）は、台帳の範囲（`LedgerReach`）か、1 人の顧客の予約（`CustomerReach`）。予約番号を採り直す手順は `business-logic/_shared/numbered.ts`（台帳の作成、売上台帳の作成と共通） |
 | インフラ（顧客が自分で入れる予約） | `booking.repository.impl.ts` の `book` と `rebook`。1 日の枠を決めるのに要るものを読む問い合わせは `repositories/slot-reads.ts`（空き枠のリポジトリと共通） |
 | API | `backend/packages/api/src/routes/customer-booking/`（`/api/v1/customers/me/bookings` に取り付ける）、`backend/packages/api/src/routes/booking/`、`routes/booking-service/`（施術明細。`/api/v1/bookings/:bookingId/services` に取り付ける）、`routes/available-slot/`（空き枠。`/api/v1/salons/:salonId/available-slots` に取り付ける） |
 | DB | `backend/packages/database/sql/migrations/202611160200_bookings_rules.sql`、`202611160300_booking_status_rules.sql`、`202611160400_booking_services_tax_included.sql`、`202611160600_opening_hours_one_row_per_date.sql`（営業日カレンダーの一意インデックス） |

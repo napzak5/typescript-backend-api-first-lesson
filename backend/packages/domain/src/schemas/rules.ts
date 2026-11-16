@@ -82,6 +82,14 @@ export const timeZoneName = z
     'Must be the name of a time zone, such as Asia/Tokyo',
   )
 
+/**
+ * A moment something actually happened at, in UTC. It is returned in the
+ * one spelling `toISOString` gives, to the millisecond.
+ */
+export const momentInUtc = z.iso
+  .datetime()
+  .transform((value) => parseISO(value).toISOString())
+
 /** The largest value of an `integer` column. */
 export const MAX_INTEGER = 2_147_483_647
 

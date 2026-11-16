@@ -72,12 +72,12 @@ namespace BeautySalon.Models {
     売上の登録・更新リクエストとレスポンスで共通に使う。プロパティ名と null 許可は DB カラムと一致させている
     """)
   model SalesDetail {
-    @doc("明細の種類。service(サービス)、product(商品)など")
+    @doc("明細の種類。service(サービス)、product(商品)など。空白だけの文字列は指定できない")
     @minLength(1)
     @maxLength(50)
     itemType: string;
 
-    @doc("itemType が指すサービスまたは商品の ID。手入力の項目など、対象の記録がない明細の場合はnull")
+    @doc("itemType が service の明細では売上のサロンのサービスの ID、product の明細では売上のサロンの商品の ID。それ以外の itemType の明細と、手入力の項目など対象の記録がない明細の場合はnull")
     @format("uuid")
     itemId: string | null;
 
@@ -94,7 +94,7 @@ namespace BeautySalon.Models {
     @minValue(0)
     unitPrice: int32;
 
-    @doc("明細の値引額")
+    @doc("明細の値引額。quantity × unitPrice 以下")
     @minValue(0)
     discountAmount: int32;
 
@@ -109,7 +109,7 @@ namespace BeautySalon.Models {
     @doc("明細を担当したスタッフの ID。売上と同じサロンのスタッフを指定する。担当者を記録しない場合はnull")
     staffId: StaffId | null;
 
-    @doc("担当スタッフの歩合率(%)。歩合を記録しない場合はnull")
+    @doc("担当スタッフの歩合率(%)。小数第2位まで。歩合を記録しない場合はnull")
     @minValue(0)
     @maxValue(100)
     commissionRate: float64 | null;
@@ -121,7 +121,7 @@ namespace BeautySalon.Models {
     @doc("明細の備考。未設定の場合はnull")
     notes: string | null;
 
-    @doc("表示順序")
+    @doc("表示順序。1件の売上の明細の間で重複しない")
     @minValue(0)
     sortOrder: int32;
   }
@@ -215,17 +215,17 @@ namespace BeautySalon.Models {
     @doc("会計を担当するスタッフの ID。salonId のサロンのスタッフを指定する。担当者を記録しない場合はnull")
     staffId: StaffId | null;
 
-    @doc("売上のもとになる予約の ID。salonId のサロンの予約を指定する。予約のない来店の場合はnull")
+    @doc("売上のもとになる予約の ID。salonId のサロンの、customerId の顧客の予約を指定する。1件の予約に対して、取り消していない売上は1件まで。予約のない来店の場合はnull")
     bookingId: BookingId | null;
 
     @doc("会計日時")
     saleTime: utcDateTime;
 
-    @doc("この会計で利用したポイント数。記録しない場合はnull")
+    @doc("この会計で利用したポイント数。記録しない場合はnull。customerId がnullの場合はnull")
     @minValue(0)
     pointsUsed: int32 | null;
 
-    @doc("この会計で付与したポイント数。記録しない場合はnull")
+    @doc("この会計で付与したポイント数。記録しない場合はnull。customerId がnullの場合はnull")
     @minValue(0)
     pointsEarned: int32 | null;
 

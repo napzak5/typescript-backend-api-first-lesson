@@ -100,11 +100,12 @@ curl http://localhost:3000/api/v1/salons      # サロン一覧（認証なし�
 `/api/v1/bookings/{bookingId}/services` の施術明細の追加、1 件の取得、削除）、
 空き枠（`/api/v1/salons/{salonId}/available-slots` の一覧と確認）、
 顧客が自分で入れる予約（`/api/v1/customers/me/bookings` の一覧、作成、1 件の取得、キャンセル、日時の変更）、
+売上台帳（`/api/v1/sales` の一覧、作成、1 件の取得）、
 認証のすべてのオペレーション（`/api/v1/auth` のログイン、トークンの更新、
 ログアウト、現在のユーザーの取得、ユーザー登録、メールアドレスの確認、パスワードの再設定と変更、
 スタッフの招待の確認、受け入れ、参加、2 要素認証、セッションの一覧と無効化、および `/api/v1/admin/auth` の管理者の操作）、
 システムエンドポイント（`/api/system/alive`、`/api/system/ready`、`/api/system/health`）だけです。
-顧客と予約のそれ以外のオペレーションと他のドメインは、TypeSpec とデータベーススキーマにだけ存在します。
+顧客と支払いのそれ以外のオペレーションと他のドメインは、TypeSpec とデータベーススキーマにだけ存在します。
 
 サロン、サービスカテゴリー、サービスの作成・更新・削除（サービスは一括更新も）にはアクセストークンが
 必要です。顧客台帳は、一覧と取得を含むすべてのオペレーションに、`admin` か、サロンの `owner`・
@@ -117,11 +118,13 @@ curl http://localhost:3000/api/v1/salons      # サロン一覧（認証なし�
 プロフィールのある顧客のアカウントのアクセストークンが必要です。
 予約台帳は、すべてのオペレーションに、`admin` か、予約のサロンの `owner`・`manager`・`staff` の
 アクセストークンが必要です。顧客のアカウントでは使えません。
+売上台帳も、すべてのオペレーションに、`admin` か、売上のサロンの `owner`・`manager`・`staff` の
+アクセストークンが必要で、顧客のアカウントでは使えません。
 シードのアカウントでログインしてトークンを取得する手順と、ロールごとの権限は
 [認証と認可](./authentication.md) を、サービスカテゴリーとサービスの規則は
 [サービスメニュー](./service-menu.md) を、顧客台帳、顧客本人のプロフィール、好み設定の規則は
 [顧客台帳](./customers.md) を、スタッフ台帳の規則は [スタッフ台帳](./staff.md) を、予約台帳の規則は
-[予約台帳](./bookings.md) を参照してください。
+[予約台帳](./bookings.md) を、売上台帳の規則は [売上台帳](./sales.md) を参照してください。
 
 ユーザー登録やパスワードの再設定で送られるメールは Mailpit（`http://localhost:8025`）に届きます。
 メールのリンクが指すページ（`/verify-email`、`/reset-password`）はフロントエンドにまだないので、
@@ -296,6 +299,9 @@ Salon ドメインがリファレンス実装です。新しいドメインは�
 参照する行をロックしたトランザクションの中で呼びます。手本は予約台帳
 （`backend/packages/domain/src/business-logic/booking/`、`backend/packages/api/src/routes/booking/`）で、
 権限は [認証と認可](./authentication.md#予約台帳の権限)、規則は [予約台帳](./bookings.md) にあります。
+売上台帳（`backend/packages/domain/src/business-logic/sale/`、`backend/packages/api/src/routes/sale/`）も
+同じ形です。リクエストが金額まで持つので、行を決める関数は、算出するよりも、確かめます
+（[売上台帳](./sales.md)）。
 
 テストの基準は [テスト要件](./testing-requirements.md)、統合テストの書き方は
 [API テストガイド](./api-testing-guide.md) を参照してください。

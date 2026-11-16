@@ -13086,7 +13086,7 @@ paths:
     get:
       operationId: SaleCrud_list
       summary: List sales
-      description: 絞り込み条件とページネーションを指定して売上を一覧取得します。顧客の支払い履歴は customerId で絞り込みます。
+      description: 絞り込み条件とページネーションを指定して、売上を会計日時(saleTime)の新しい順に一覧取得します。取り消した売上も含みます。管理者はすべてのサロンの売上を、サロンのメンバーは自分のサロンの売上を取得できます。顧客の支払い履歴は customerId で絞り込みます。salonId に自分のサロン以外を指定した場合は403を、cursor が取得できる売上を指していない場合や、endDate が startDate より前の場合は400を返します。
       parameters:
         - $ref: '#/components/parameters/Models.SaleSearchRequest.limit'
         - $ref: '#/components/parameters/Models.SaleSearchRequest.cursor'
@@ -13177,7 +13177,7 @@ paths:
     post:
       operationId: SaleCrud_create
       summary: Create a sale
-      description: 来店1回分の会計を売上として登録します。売上番号・売上日・小計・値引額・消費税額・合計金額はシステムが設定し、paymentStatus は pending で登録します。予約に対する会計は bookingId を指定します。salonId のサロンが存在しない場合や、customerId・staffId・bookingId・明細の staffId に存在しないIDまたは salonId のサロンのものではないIDを指定した場合は400を返します。
+      description: 来店1回分の会計を売上として登録します。管理者と、salonId のサロンのメンバーが実行できます。売上番号・売上日・小計・値引額・消費税額・合計金額はシステムが設定し、paymentStatus は pending で登録します。予約に対する会計は bookingId を指定します。salonId のサロンが存在しない場合や、customerId・staffId・bookingId・明細の staffId・明細の itemId に存在しないIDまたは salonId のサロンのものではないIDを指定した場合、bookingId の予約の顧客が customerId と異なる場合、金額の合計が integer の上限を超える場合は400を返します。サロンのタイムゾーンが不明で売上日を決められない場合と、bookingId の予約に取り消していない売上がすでにある場合は409を返します。
       parameters: []
       responses:
         '201':
@@ -13238,6 +13238,12 @@ paths:
                 $ref: '#/components/schemas/Models.ProblemDetails'
         '403':
           description: 認証されているが、この操作を行う権限がない (403)。
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '409':
+          description: The request conflicts with the current state of the server.
           content:
             application/problem+json:
               schema:
@@ -13992,7 +13998,7 @@ paths:
     get:
       operationId: SaleCrud_get
       summary: Get a sale
-      description: IDを指定して売上を1件取得します。明細と決済取引を含みます。
+      description: IDを指定して売上を1件取得します。明細と決済取引を含みます。管理者と、売上のサロンのメンバーが実行できます。ほかのサロンの売上は、存在しない売上と同じく404を返します。
       parameters:
         - name: id
           in: path
@@ -27083,7 +27089,7 @@ components:
           allOf:
             - $ref: '#/components/schemas/Models.BookingId'
           nullable: true
-          description: 売上のもとになる予約の ID。salonId のサロンの予約を指定する。予約のない来店の場合はnull
+          description: 売上のもとになる予約の ID。salonId のサロンの、customerId の顧客の予約を指定する。1件の予約に対して、取り消していない売上は1件まで。予約のない来店の場合はnull
         saleTime:
           type: string
           format: date-time
@@ -27093,13 +27099,13 @@ components:
           format: int32
           nullable: true
           minimum: 0
-          description: この会計で利用したポイント数。記録しない場合はnull
+          description: この会計で利用したポイント数。記録しない場合はnull。customerId がnullの場合はnull
         pointsEarned:
           type: integer
           format: int32
           nullable: true
           minimum: 0
-          description: この会計で付与したポイント数。記録しない場合はnull
+          description: この会計で付与したポイント数。記録しない場合はnull。customerId がnullの場合はnull
         notes:
           type: string
           nullable: true
@@ -27466,12 +27472,12 @@ components:
           type: string
           minLength: 1
           maxLength: 50
-          description: 明細の種類。service(サービス)、product(商品)など
+          description: 明細の種類。service(サービス)、product(商品)など。空白だけの文字列は指定できない
         itemId:
           type: string
           nullable: true
           format: uuid
-          description: itemType が指すサービスまたは商品の ID。手入力の項目など、対象の記録がない明細の場合はnull
+          description: itemType が service の明細では売上のサロンのサービスの ID、product の明細では売上のサロンの商品の ID。それ以外の itemType の明細と、手入力の項目など対象の記録がない明細の場合はnull
         itemName:
           type: string
           minLength: 1
@@ -27491,7 +27497,7 @@ components:
           type: integer
           format: int32
           minimum: 0
-          description: 明細の値引額
+          description: 明細の値引額。quantity × unitPrice 以下
         taxAmount:
           type: integer
           format: int32
@@ -27514,7 +27520,7 @@ components:
           nullable: true
           minimum: 0
           maximum: 100
-          description: 担当スタッフの歩合率(%)。歩合を記録しない場合はnull
+          description: 担当スタッフの歩合率(%)。小数第2位まで。歩合を記録しない場合はnull
         commissionAmount:
           type: integer
           format: int32
@@ -27529,7 +27535,7 @@ components:
           type: integer
           format: int32
           minimum: 0
-          description: 表示順序
+          description: 表示順序。1件の売上の明細の間で重複しない
       description: |-
         売上明細 - sales_details テーブルの1行。会計の1項目(サービス・商品など)を表す。
         売上の登録・更新リクエストとレスポンスで共通に使う。プロパティ名と null 許可は DB カラムと一致させている
