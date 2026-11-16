@@ -286,6 +286,24 @@ describe('ListProductsUseCase', () => {
     )
   })
 
+  it.each(['isActive', 'isForSale', 'isForTreatment'] as const)(
+    'hands on %s as its own filter, and no other flag',
+    async (flag) => {
+      const dependencies = productDependencies()
+
+      await list(dependencies, { [flag]: false })
+
+      expect(dependencies.productRepository.list).toHaveBeenCalledWith(
+        expect.objectContaining({
+          isActive: null,
+          isForSale: null,
+          isForTreatment: null,
+          [flag]: false,
+        }),
+      )
+    },
+  )
+
   it('names the last product of a page as the cursor of the next one when more follow', async () => {
     const dependencies = productDependencies({
       list: vi.fn(async () =>
