@@ -101,6 +101,7 @@ curl http://localhost:3000/api/v1/salons      # サロン一覧（認証なし�
 空き枠（`/api/v1/salons/{salonId}/available-slots` の一覧と確認）、
 顧客が自分で入れる予約（`/api/v1/customers/me/bookings` の一覧、作成、1 件の取得、キャンセル、日時の変更）、
 売上台帳（`/api/v1/sales` の一覧、作成、1 件の取得、更新、取り消し）、
+支払い方法（`/api/v1/salons/{salonId}/payment-methods` の一覧、作成、1 件の取得、更新、削除）、
 認証のすべてのオペレーション（`/api/v1/auth` のログイン、トークンの更新、
 ログアウト、現在のユーザーの取得、ユーザー登録、メールアドレスの確認、パスワードの再設定と変更、
 スタッフの招待の確認、受け入れ、参加、2 要素認証、セッションの一覧と無効化、および `/api/v1/admin/auth` の管理者の操作）、
@@ -120,11 +121,14 @@ curl http://localhost:3000/api/v1/salons      # サロン一覧（認証なし�
 アクセストークンが必要です。顧客のアカウントでは使えません。
 売上台帳も、すべてのオペレーションに、`admin` か、売上のサロンの `owner`・`manager`・`staff` の
 アクセストークンが必要で、顧客のアカウントでは使えません（売上の取り消しは、`staff` も使えません）。
+支払い方法は、読むのに、`admin` か、そのサロンの `owner`・`manager`・`staff` のアクセストークンが必要で、
+設定（作成、更新、削除）は、`staff` にはできません。顧客のアカウントでは使えません。
 シードのアカウントでログインしてトークンを取得する手順と、ロールごとの権限は
 [認証と認可](./authentication.md) を、サービスカテゴリーとサービスの規則は
 [サービスメニュー](./service-menu.md) を、顧客台帳、顧客本人のプロフィール、好み設定の規則は
 [顧客台帳](./customers.md) を、スタッフ台帳の規則は [スタッフ台帳](./staff.md) を、予約台帳の規則は
-[予約台帳](./bookings.md) を、売上台帳の規則は [売上台帳](./sales.md) を参照してください。
+[予約台帳](./bookings.md) を、売上台帳の規則は [売上台帳](./sales.md) を、支払い方法の規則は
+[支払い](./payments.md) を参照してください。
 
 ユーザー登録やパスワードの再設定で送られるメールは Mailpit（`http://localhost:8025`）に届きます。
 メールのリンクが指すページ（`/verify-email`、`/reset-password`）はフロントエンドにまだないので、
@@ -265,6 +269,11 @@ Salon ドメインがリファレンス実装です。新しいドメインは�
 （`backend/packages/domain/src/business-logic/staff/`、`backend/packages/api/src/routes/staff/`）が
 手本です。一覧と取得を含むすべてのオペレーションで、パスのサロンだけで最初に権限を判定します。
 これも同じ節に挙げてあり、規則は [スタッフ台帳](./staff.md) にあります。
+公開のオペレーションがなく、読める人と書ける人が違うデータは、支払い方法
+（`backend/packages/domain/src/business-logic/payment-method/`、
+`backend/packages/api/src/routes/payment-method/`）が手本です。読む権限と設定する権限を、
+どちらもパスのサロンだけで判定し、更新は、行をロックしてから、2 つの項目を結ぶ規則を
+更新後の行で確かめます。これも同じ節に挙げてあり、規則は [支払い](./payments.md) にあります。
 サロンの 1 つのレコードに属し、全体をまとめて置き換える行は、スタッフの勤務スケジュール
 （`backend/packages/domain/src/business-logic/staff-schedule/`、
 `backend/packages/api/src/routes/staff-schedule/`）が手本です。ルーターをレコードの下にマウントし、

@@ -76,7 +76,8 @@ a booking that exists: `create`, `get` and `delete`), the two of
 the five of `CustomerBookings` (a customer's own bookings: `list`, `create`,
 `get`, `cancel` and `reschedule`), five of the eight operations of
 `SaleCrud` (the sales ledger of a salon: `list`, `create`, `get`, `update`
-and `voidSale`),
+and `voidSale`), the five of `PaymentMethodCrud` (the payment methods of a
+salon: `list`, `create`, `get`, `update` and `delete`),
 the five
 operations of
 `StaffCrud` (the staff ledger of a salon: `list`, `create`, `get`, `update`
