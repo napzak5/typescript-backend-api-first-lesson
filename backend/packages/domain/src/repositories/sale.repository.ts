@@ -1,10 +1,19 @@
 import type { Result } from '@beauty-salon-backend/utility'
+import type {
+  SaleChangePlan,
+  SaleChangeRefusal,
+  SaleVoidRefusal,
+} from '../business-logic/sale/_shared/change'
 import type { SaleOrigin, SalePlan } from '../business-logic/sale/_shared/plan'
 import type { BookingId, LedgerReach } from '../models/booking'
 import type { CustomerId } from '../models/customer'
 import type { DbSale, SaleId, SaleWithDetails } from '../models/sale'
 import type { SalonId } from '../models/salon'
-import type { SaleCreateRequest } from '../schemas/sale.schema'
+import type {
+  SaleCreateRequest,
+  SaleUpdateRequest,
+  SaleVoidRequest,
+} from '../schemas/sale.schema'
 import type { DomainError } from '../shared'
 
 /**
@@ -17,6 +26,30 @@ export type SaleCreation =
   | { type: 'created'; sale: SaleWithDetails }
   | { type: 'saleNumberTaken' }
   | Exclude<SalePlan, { type: 'planned' }>
+
+/**
+ * What became of a correction:
+ * - `updated`: the sale as it is stored now
+ * - `notFound`: no sale with the ID is within the reach
+ * - otherwise why the sale is not corrected (`refusalOfChange`) or why
+ *   the correction was not planned (`planSaleChange`)
+ */
+export type SaleUpdate =
+  | { type: 'updated'; sale: SaleWithDetails }
+  | { type: 'notFound' }
+  | SaleChangeRefusal
+  | Exclude<SaleChangePlan, { type: 'planned' }>
+
+/**
+ * What became of the request to void a sale:
+ * - `voided`: the sale as it is stored now
+ * - `notFound`: no sale with the ID is within the reach
+ * - otherwise why the sale is not voided (`refusalOfVoid`)
+ */
+export type SaleVoiding =
+  | { type: 'voided'; sale: SaleWithDetails }
+  | { type: 'notFound' }
+  | SaleVoidRefusal
 
 export type SaleListCriteria = {
   /** The sales the list is taken from. */
@@ -63,6 +96,28 @@ export interface ISaleRepository {
     id: SaleId,
     reach: LedgerReach,
   ): Promise<Result<SaleWithDetails | null, DomainError>>
+
+  /**
+   * Holds the sale, plans the correction from what the request names
+   * (`planSaleChange`) and writes it; lines that are named take the place
+   * of every line of the sale. Of the requests that change one sale at
+   * the same moment, each meets the sale the one before it left.
+   */
+  update(
+    id: SaleId,
+    reach: LedgerReach,
+    request: SaleUpdateRequest,
+  ): Promise<Result<SaleUpdate, DomainError>>
+
+  /**
+   * Holds the sale and makes it void, unless it is void or a payment of
+   * it holds money (`refusalOfVoid`).
+   */
+  voidSale(
+    id: SaleId,
+    reach: LedgerReach,
+    request: SaleVoidRequest,
+  ): Promise<Result<SaleVoiding, DomainError>>
 
   /**
    * The sales that match the criteria, the latest first; of sales at the

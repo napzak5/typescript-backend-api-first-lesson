@@ -1,17 +1,15 @@
 import { match } from 'ts-pattern'
-import type { SaleCreation } from '../../../repositories/sale.repository'
 import { type DomainError, DomainErrors } from '../../../shared'
+import type { SaleChangeRefusal, SaleVoidRefusal } from './change'
+import type { SalePlan } from './plan'
 
 /** A refusal that says something about the request or about what it meets. */
-type AnsweredRefusal = Exclude<
-  SaleCreation,
-  { type: 'created' | 'saleNumberTaken' }
->
+type AnsweredRefusal = Exclude<SalePlan, { type: 'planned' }>
 
 /**
- * Why a sale was not entered, as the error a client gets. A sale number
- * that is taken is not among the reasons: the client did not choose it,
- * and the use case tries another.
+ * Why a sale was not entered or not corrected, as the error a client gets.
+ * A sale number that is taken is not among the reasons: the client did
+ * not choose it, and the use case tries another.
  */
 export const toRefusalError = (
   refusal: AnsweredRefusal,
@@ -29,6 +27,32 @@ export const toRefusalError = (
     .with({ type: 'bookingBilled' }, () =>
       DomainErrors.conflict(
         'The booking has a sale that is not void; a booking is billed once',
+      ),
+    )
+    .exhaustive()
+
+/** Why a sale is not corrected whatever the request names, as the error a client gets. */
+export const toChangeRefusalError = (refusal: SaleChangeRefusal): DomainError =>
+  match(refusal)
+    .with({ type: 'void' }, () =>
+      DomainErrors.conflict('The sale is void; a void sale is not changed'),
+    )
+    .with({ type: 'paymentBegun' }, () =>
+      DomainErrors.conflict(
+        'The lines of a sale are replaced only while its payment status is pending',
+      ),
+    )
+    .exhaustive()
+
+/** Why a sale is not voided, as the error a client gets. */
+export const toVoidRefusalError = (refusal: SaleVoidRefusal): DomainError =>
+  match(refusal)
+    .with({ type: 'void' }, () =>
+      DomainErrors.conflict('The sale is void already'),
+    )
+    .with({ type: 'paid' }, () =>
+      DomainErrors.conflict(
+        'The sale has a payment that was not refunded; refund it before the sale is voided',
       ),
     )
     .exhaustive()

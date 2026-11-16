@@ -7,11 +7,11 @@
  */
 
 /**
- * 売上取消リクエスト - 売上を取り消す理由を指定する
+ * 売上取消リクエスト - 売上を取り消す理由を指定する。キーは必須
  */
 export interface ModelsSaleVoidRequest {
   /**
-     * 取消理由。理由を記録しない場合はnull
+     * 取消理由。空白だけの文字列は指定できない。理由を記録しない場合はnull
      * @nullable
      */
   voidReason: string | null;

@@ -51,8 +51,8 @@ Before relying on anything, check this table.
 | Booking ledger (`/api/v1/bookings`) | Implemented in every layer: list, create, get, update, delete, the five actions that change the status of a booking (confirm, cancel, start, complete, no-show) and reschedule, the eleven operations of `BookingCrud`, and add, get and remove of the service lines of a booking that exists, the three operations of `BookingServiceCrud` (`/api/v1/bookings/{bookingId}/services`). A booking belongs to a salon, but its routes are not below one: the salon is named by the body of a create, by the query of a list and by the stored row of every operation on one booking. No operation is public: an administrator reaches the bookings of every salon, a member of a salon (owner, manager or staff) those of that salon, and a customer account none (403); the booking of another salon is not found. A delete is for administrators, the owner and the managers, and not for the staff of the salon (403). A create request names the salon, the customer, the staff member in charge and the service lines (a service, who provides it, when it begins). The end, the duration and the amounts of a line are those of its service at that moment, those of the booking follow from its lines, the booking number (`BK-XXXX-XXXX`) is issued by the system, and `bookingDate` is the day of the start in the time zone of the salon. The request is held to what keeps the ledger sound: everything it names exists and is of that salon (400), and no staff member is occupied by more bookings at a time than `maxConcurrentBookings`, counting the minutes the staff member keeps free before and after a line (409). It is not held to the opening hours, the schedules of the staff or to what is active: those are for the bookings that customers enter themselves, which do not exist. A booking is entered as `pending`; an action leads on from the statuses it is defined for and is refused from any other (409), a no-show cannot be noted before the booking has begun, a cancellation costs nothing (no rule defines a fee), and completing a booking completes its service lines. Every change of status is a row of the status history, and the visits, cancellations and no-shows of the customer are counted again from their bookings. An update writes what a salon notes of a booking (the deposit, the request of the customer, the internal notes, the source), whatever the status. A reschedule moves a booking that is `draft`, `pending` or `confirmed` to another time and staff member in charge: every line moves by as much, the lines of the staff member who was in charge go to the new one, and the move is held to what a create is held to (400 for a staff member who is not of the salon, 409 for one who is occupied). A service line is added to a booking and removed from it as long as the booking is not finished (`draft`, `pending`, `confirmed` or `in_progress`; 409 from any other status): a line that is added is a copy of its service at that moment and is held to what a create is held to, a booking keeps between one and twenty lines (409), and its day, its times and its amounts are computed again from the lines it then has, at the tax rate the salon then has. The staff of the salon remove a line, although they do not delete a booking. A delete removes the booking with its lines, its status history and its reviews, counts the customer again, and is refused while a sale or a treatment record refers to the booking (409). A customer, a staff member, a service and a salon are not deleted while a booking that is not finished refers to them (409). See [Booking Ledger](./bookings.md) (Japanese). |
 | Available slots (`/api/v1/salons/{salonId}/available-slots`) | Implemented in every layer: the list of the times at which a staff member can begin a service on a date, for every signed-in user, and the check of whether a staff member is occupied at a time, for administrators and the members of the salon. Nothing is stored: a slot is worked out from the hours of the salon (the row of its calendar for the date, or else the weekly hours of that day of the week), the schedules of the staff and the bookings there are, every 30 minutes from the beginning of each stretch in which the salon is open and the staff member works, all in the time zone of the salon. The list applies what the salon set for the bookings of its customers (whether the salon, the service and the staff member take bookings, on which days of the week the service is offered, how often it is booked a day, the level it asks for), and a day on which nothing can be booked is an empty list, not an error. The check asks only what the ledger asks, whether the staff member is occupied, and names the bookings in the way. Neither holds a slot. See [Booking Ledger](./bookings.md#空き枠) (Japanese) |
 | A customer's own bookings (`/api/v1/customers/me/bookings`) | Implemented in every layer: list, create, get, cancel and reschedule, for a customer account with a profile (403 for every other role, 404 without a profile). A customer books a slot: a service with a staff member of a salon at a time, and the server takes it only if the list of available slots offers that time at that moment, so everything the list applies holds for the booking as well. The booking is the ledger's: one service line, the times and the amounts from the service, `pending` until the salon confirms it. A customer whose record is not active, or set to inactive or blacklisted, does not book by themself, and nobody books a time at which they have another booking, at whatever salon (409). The customer reads their bookings at every salon, also those a salon entered for them, without what the salon notes and records, and cancels one that is a draft, pending or confirmed until the moment it begins (409 from then on). The booking of another customer is not found. Requests that arrive at the same moment for one slot, for the last booking a service takes that day or from one customer for one time write one booking. A customer moves a booking that is a draft, pending or confirmed, until the moment it begins, to another time, another staff member or both, if that is a slot the list offers for the service of the booking and for the time the booking takes, the booking itself not counted; a booking with more than one service line, or with a line that is not with the staff member in charge, is moved by the salon (409). A confirmed booking that its customer moves is pending again until the salon confirms it. See [Booking Ledger](./bookings.md#顧客が自分で入れる予約) (Japanese) |
-| Sales ledger (`/api/v1/sales`) | Implemented in every layer: list, create and get, three of the eight operations of `SaleCrud`. A sale belongs to a salon, but its routes are not below one, like those of the bookings: the salon is named by the body of a create, by the query of a list and by the stored row of a get. No operation is public: an administrator reaches the sales of every salon, the owner, the managers and the staff of a salon those of their salon, and a customer account none (403); the sale of another salon is answered like one that does not exist (404). A sale is the bill of one visit as the till charged it. A create request states the lines with their amounts; the schema checks that a line agrees with itself (the discount within quantity times unit price, the total their difference plus the tax), that only a line of a service or of a product names a record, and that the lines have places of their own. The repository locks the booking, the salon, the customer and the staff members the sale names, in that order, and `planSale` reports what is not there or not of the salon (400), sums the sale up, takes `saleDate` from the time zone of the salon (409 when it is not known) and refuses a booking that has a sale that is not void (409). The sale number is `SL-XXXX-XXXX`, issued like a booking number. Prices, tax rates and commissions are compared with nothing, and nothing else is written: not the booking, the customer or the stock. A get and a list return a sale with its lines and its payments as they were at one moment, the list latest first and with the void sales. See [Sales Ledger](./sales.md) (Japanese). |
-| The rest of the payment contract (the other five operations of `SaleCrud`, `PaymentCrud`, `SalesReportCrud`, `PointCrud`) and the other domains (review, treatment, inventory) | Specified in TypeSpec, so their generated types exist, and the database schema has their tables and seed data. The models agree with the tables (`pnpm check:api-db`). There is no domain, repository or route code. A request to one of these routes is answered with 404. The implementation order is in GitHub issue #4. |
+| Sales ledger (`/api/v1/sales`) | Implemented in every layer: list, create, get, update and void, five of the eight operations of `SaleCrud`. A sale belongs to a salon, but its routes are not below one, like those of the bookings: the salon is named by the body of a create, by the query of a list and by the stored row of a get, an update and a void. No operation is public: an administrator reaches the sales of every salon, the owner, the managers and the staff of a salon those of their salon, and a customer account none (403); the sale of another salon is answered like one that does not exist (404). The void alone is not for the staff of the salon (403). A sale is the bill of one visit as the till charged it. A create request states the lines with their amounts; the schema checks that a line agrees with itself (the discount within quantity times unit price, the total their difference plus the tax), that only a line of a service or of a product names a record, and that the lines have places of their own. The repository locks the booking, the salon, the customer and the staff members the sale names, in that order, and `planSale` reports what is not there or not of the salon (400), sums the sale up, takes `saleDate` from the time zone of the salon (409 when it is not known) and refuses a booking that has a sale that is not void (409). The sale number is `SL-XXXX-XXXX`, issued like a booking number. Prices, tax rates and commissions are compared with nothing, and nothing else is written: not the booking, the customer or the stock. A get and a list return a sale with its lines and its payments as they were at one moment, the list latest first and with the void sales. An update writes the properties a request names and holds the sale as it is afterwards to the rules of a create; new lines replace all the lines, and only while the payment status is `pending`. A void keeps the sale with the time and the reason, is refused while a payment of the sale was not refunded (409), and frees the booking for another sale. Both hold the row of the sale before any other row. See [Sales Ledger](./sales.md) (Japanese). |
+| The rest of the payment contract (the other three operations of `SaleCrud`, `PaymentCrud`, `SalesReportCrud`, `PointCrud`) and the other domains (review, treatment, inventory) | Specified in TypeSpec, so their generated types exist, and the database schema has their tables and seed data. The models agree with the tables (`pnpm check:api-db`). There is no domain, repository or route code. A request to one of these routes is answered with 404. The implementation order is in GitHub issue #4. |
 | Attachments, roles and permissions, purchase orders, medical charts | Specified in TypeSpec only. No table exists for them yet. |
 | Email | Implemented for the mails of the authentication flows and the invitation of a staff member (confirm the address, reset the password, accept an invitation, and the notices: the password was changed, two-factor authentication was enabled, disabled or turned off by an administrator, the backup codes were replaced, a backup code was used to sign in): plain text over SMTP. Docker Compose starts Mailpit, which catches them locally. See [Email](./email.md) (Japanese). |
 | File storage | Not implemented. Docker Compose starts no service for it. |
@@ -540,20 +540,23 @@ as well, so the rows are checked more than worked out:
 ```
 domain/src/
 ├── models/sale.ts                     SaleId, API and database types; SaleWrite (the
-│                                      rows of one sale) and SaleWithDetails (a sale,
-│                                      its lines and its payments)
-├── schemas/sale.schema.ts             Zod schemas of the create and the list request;
-│                                      a line agrees with itself
+│                                      rows of one sale), SaleChange (what an update
+│                                      writes) and SaleWithDetails (a sale, its lines
+│                                      and its payments)
+├── schemas/sale.schema.ts             Zod schemas of the create, the list, the update
+│                                      and the void request; a line agrees with itself
 ├── mappers/read/sale.mapper.ts        A sale, its lines and its payments → API response
-├── repositories/sale.repository.ts    ISaleRepository; what became of a create is a
-│                                      sum type (SaleCreation)
+├── repositories/sale.repository.ts    ISaleRepository; what became of a create, of an
+│                                      update and of a void is a sum type each
+│                                      (SaleCreation, SaleUpdate, SaleVoiding)
 ├── services/sale-number-issuer.ts     ISaleNumberIssuer
 ├── business-logic/sale/               One *.usecase.ts per operation; _shared/ holds
 │                                      the dependencies, whom the ledger is for
 │                                      (authorization.ts), the rows a request becomes
-│                                      (plan.ts), the format of a sale number
-│                                      (sale-number.ts) and the errors of a refused
-│                                      create (refusals.ts)
+│                                      (plan.ts), what an update writes and why a
+│                                      change is refused (change.ts), the format of a
+│                                      sale number (sale-number.ts) and the errors of
+│                                      a refusal (refusals.ts)
 └── business-logic/_shared/            What the numbers of bookings and sales share:
                                        the format (record-number.ts) and trying
                                        another number when one is taken (numbered.ts)
@@ -561,8 +564,9 @@ domain/src/
 infrastructure/src/
 ├── repositories/sale.repository.impl.ts
 │                                      The create in one transaction that locks what
-│                                      the sale points at; the get and the list in a
-│                                      read-only transaction of one snapshot
+│                                      the sale points at; the update and the void in
+│                                      one that holds the sale first; the get and the
+│                                      list in a read-only transaction of one snapshot
 └── security/random-sale-number-issuer.ts
                                        RandomSaleNumberIssuer
 
@@ -1476,8 +1480,8 @@ The rules are in [Booking Ledger](./bookings.md) (Japanese).
 The sales ledger (`/api/v1/sales`, `business-logic/sale/`) takes the path of
 a booking request: the reach of the actor first (`saleReachOf`, which
 answers with the `LedgerReach` of the bookings), `isWithin` once the request
-names a salon, and the reach as a condition of the queries of the get and of
-the list. What differs:
+names a salon, and the reach as a condition of the queries of the get, of
+the list, of the update and of the void. What differs:
 
 - **A request that states the amounts.** A sale is what the till charged, so
   a create request carries the unit price, the discount, the tax and the
@@ -1509,6 +1513,23 @@ the list. What differs:
 - **One sale for a booking, twice.** The transaction refuses a second sale
   of a booking (409), and a partial unique index (`sales_booking_live_unique`)
   says the same of the table.
+- **A change holds the sale first.** `update` and `voidSale` of the
+  repository lock the row of the sale `FOR UPDATE` within the reach of the
+  actor, so the changes of one sale run one after the other and each meets
+  what the one before it left. The foreign key of a payment does not get
+  past that lock: a void waits for a payment that is being written and
+  then counts it (`refusalOfVoid`: a payment that is `completed` or
+  `partial_refund` stands in the way, 409). An update looks up and locks
+  only what the request names, in the order of the create, and
+  `planSaleChange` (`_shared/change.ts`) holds the sale as it is afterwards
+  to the rules of a create: no points without a customer, the booking of
+  the customer of the sale, one sale for a booking with the sale itself
+  not counted. New lines replace all the lines, and only while the
+  payment status is `pending`; `saleDate` is taken again only with a new
+  `saleTime`; a void sale is not changed. The order of the locks is sale,
+  booking, salon, customer, service, staff: nothing that holds one of the
+  later rows goes on to hold a sale. The void is not for the staff of the
+  salon (`saleVoidReachOf`).
 
 The rules are in [Sales Ledger](./sales.md) (Japanese).
 

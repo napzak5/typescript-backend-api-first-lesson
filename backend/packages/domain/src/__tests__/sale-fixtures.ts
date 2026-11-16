@@ -18,6 +18,8 @@ import type {
   ISaleRepository,
   SaleCreation,
   SaleList,
+  SaleUpdate,
+  SaleVoiding,
 } from '../repositories/sale.repository'
 import { CUSTOMER_ID } from './auth-fixtures'
 import { BOOKING_ID, CUT_ID } from './booking-fixtures'
@@ -201,7 +203,7 @@ export const dbPayment = (
 })
 
 /** A row of `sales` as the driver returns it: the sale of the request above. */
-const dbSale = (overrides: Partial<DbSale> = {}): DbSale => ({
+export const dbSale = (overrides: Partial<DbSale> = {}): DbSale => ({
   id: SALE_ID,
   saleNumber: SALE_NUMBER,
   salonId: SALON_ID,
@@ -366,6 +368,18 @@ export const saleDependencies = (
           hasMore: false,
         }),
       ),
+      update: vi.fn(async () =>
+        Result.success<SaleUpdate>({
+          type: 'updated',
+          sale: saleWithDetails(),
+        }),
+      ),
+      voidSale: vi.fn(async () =>
+        Result.success<SaleVoiding>({
+          type: 'voided',
+          sale: saleWithDetails(),
+        }),
+      ),
       ...overrides,
     },
     saleNumberIssuer: {
@@ -378,6 +392,8 @@ const REPOSITORY_METHODS: (keyof ISaleRepository)[] = [
   'create',
   'findById',
   'list',
+  'update',
+  'voidSale',
 ]
 
 /** The methods of the repository that were called, in the order of the calls. */
