@@ -16,7 +16,7 @@ export interface ModelsPaymentRefundRequest {
      */
   refundAmount: number;
   /**
-     * 返金理由。理由を記録しない場合はnull
+     * 返金理由。空白だけの文字列は指定できない。理由を記録しない場合はnull
      * @nullable
      */
   refundReason: string | null;

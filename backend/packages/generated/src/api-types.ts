@@ -1763,7 +1763,7 @@ export interface paths {
         put?: never;
         /**
          * Refund a payment
-         * @description 決済取引を返金します。返金できるのは status が completed の決済取引だけで、それ以外(返金済みを含む)は409を返します。1つの決済取引に対する返金は1回だけです。refundAmount が amount を超える場合は400を返します。返金後の決済取引の status は全額返金なら refunded、部分返金なら partial_refund になり、売上の paymentStatus も同じように更新されます。
+         * @description 決済取引を返金します。管理者と、決済取引の売上のサロンのオーナー・マネージャーが実行できます。返金できるのは status が completed の決済取引だけで、それ以外(返金済みを含む)は409を返します。1つの決済取引に対する返金は1回だけです。refundAmount が amount を超える場合は400を返します。返金後の決済取引の status は全額返金なら refunded、部分返金なら partial_refund になります。売上の paymentStatus は、受け取った全額を返金していれば refunded に、そうでなければ partial_refund になります。決済取引が存在しない場合と、ほかのサロンの売上のものである場合は404を返します。
          */
         post: operations["PaymentCrud_refund"];
         delete?: never;
@@ -2442,8 +2442,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Process a payment for a sale
-         * @description 売上に対する1回の支払いを処理し、決済取引として記録します。取消済みの売上と、paymentStatus が pending または failed ではない売上は409を返します。paymentMethodId に売上のサロンの有効な支払い方法ではないIDを指定した場合や、amount が未払い残額を超える場合は400を返します。決済代行会社が支払いを拒否した場合も、status が failed の決済取引を記録して返します。売上の paymentStatus は、完了した支払いの合計が totalAmount に達すると completed に、支払いが失敗すると failed になります。
+         * Record a payment for a sale
+         * @description 売上に対して受け取った1回の支払いを、status が completed の決済取引として記録します。管理者と、売上のサロンのメンバーが実行できます。決済代行会社とは接続していないので、支払いを受け取ったあとに呼び出します。支払いは分けて記録でき、amount は未払い残額(totalAmount から、これまでに受け取った金額を引いた額。返金しても増えない)以下で指定します。取消済みの売上、支払いが済んだ売上、返金のある売上は409を返します。paymentMethodId に売上のサロンの有効な支払い方法ではないIDを指定した場合、amount が未払い残額を超える場合、amount が支払い方法の minimumAmount 未満または maximumAmount 超の場合、区分が credit_card でも debit_card でもない支払い方法に cardLastFour または cardBrand を指定した場合は400を返します。売上の paymentStatus は、受け取った金額の合計が totalAmount に達すると completed に、達しなければ processing になります。
          */
         post: operations["SaleCrud_process"];
         delete?: never;
@@ -6322,11 +6322,11 @@ export interface components {
              * @description 返金額。決済取引の amount 以下。amount と等しい場合は全額返金、少ない場合は部分返金になる
              */
             refundAmount: number;
-            /** @description 返金理由。理由を記録しない場合はnull */
+            /** @description 返金理由。空白だけの文字列は指定できない。理由を記録しない場合はnull */
             refundReason: string | null;
         };
         /**
-         * @description 決済取引レスポンス - payment_transactions テーブルの1行。売上に対する1回の支払いを表す。
+         * @description 決済取引レスポンス - payment_transactions テーブルの1行。売上に対して受け取った1回の支払いを表す。
          *     決済代行会社の応答(processorResponse)と構造の定まっていない metadata は返さない。
          *     プロパティ名と null 許可は DB カラムと一致させている
          */
@@ -6344,9 +6344,9 @@ export interface components {
              * @description 支払金額
              */
             amount: number;
-            /** @description 決済の状態 */
+            /** @description 決済の状態。completed は受け取った、refunded は全額を返金した、partial_refund は一部を返金した状態。API が記録する決済取引は、この3つのどれか */
             status: components["schemas"]["Models.PaymentStatusType"];
-            /** @description 決済代行会社の取引 ID。現金など決済代行会社を介さない支払いの場合、または決済代行会社が受け付けなかった場合はnull */
+            /** @description 決済代行会社の取引 ID。決済代行会社とは接続していないので、API が記録した決済取引ではnull */
             processorTransactionId: string | null;
             /** @description カード番号の下4桁。カード以外の支払いの場合はnull */
             cardLastFour: string | null;
@@ -6358,7 +6358,7 @@ export interface components {
             errorMessage: string | null;
             /**
              * Format: date-time
-             * @description 決済が完了した日時。完了していない場合はnull
+             * @description 支払いを受け取ったものとして記録した日時。受け取っていない決済取引の場合はnull
              */
             processedAt: string | null;
             /**
@@ -6399,15 +6399,15 @@ export interface components {
 
          *
 
-         * pending: 支払い待ち - 支払いが開始されたがまだ完了していない状態
+         * pending: 支払い待ち - 売上では、何も受け取っていない状態
 
          *
 
-         * processing: 処理中 - 決済処理が進行中の状態
+         * processing: 処理中 - 売上では、合計金額の一部を受け取った状態
 
          *
 
-         * completed: 完了 - 支払いが正常に完了した状態
+         * completed: 完了 - 決済取引では、支払いを受け取った状態。売上では、合計金額を受け取った状態
 
          *
 
@@ -6415,11 +6415,13 @@ export interface components {
 
          *
 
-         * refunded: 返金済み - 全額返金が完了した状態
+         * refunded: 返金済み - 決済取引では、全額を返金した状態。売上では、受け取った全額を返金した状態
 
          *
 
-         * partial_refund: 部分返金 - 一部金額の返金が完了した状態
+         * partial_refund: 部分返金 - 決済取引では、一部を返金した状態。売上では、受け取った金額の一部を返金した状態
+
+         * API が決済取引に書くのは completed・refunded・partial_refund だけで、売上に failed は書かない
 
          * @enum {string}
 
@@ -7491,20 +7493,20 @@ export interface components {
          */
         "Models.SaleId": string;
         /**
-         * @description 売上の支払いリクエスト - 売上に対する1回の支払い(決済取引)の内容を指定する。全項目のキーが必須。
-         *     取引番号・決済代行会社の応答・処理日時・状態はシステムが設定する
+         * @description 売上の支払いリクエスト - 売上に対して受け取った1回の支払い(決済取引)の内容を指定する。全項目のキーが必須。
+         *     取引番号・処理日時・状態はシステムが設定する
          */
         "Models.SaleProcessRequest": {
             /** @description 支払い方法の ID。売上と同じサロンの有効な支払い方法を指定する */
             paymentMethodId: components["schemas"]["Models.PaymentMethodId"];
             /**
              * Format: int32
-             * @description 支払金額。売上の未払い残額以下
+             * @description 支払金額。売上の未払い残額以下で、支払い方法に minimumAmount・maximumAmount がある場合はその範囲内
              */
             amount: number;
-            /** @description カード番号の下4桁(数字4桁)。カード以外の支払いの場合はnull */
+            /** @description カード番号の下4桁(数字4桁)。支払い方法の区分が credit_card または debit_card の場合だけ指定できる。記録しない場合と、カード以外の支払いの場合はnull */
             cardLastFour: string | null;
-            /** @description カードブランド(Visa など)。カード以外の支払いの場合はnull */
+            /** @description カードブランド(Visa など)。空白だけの文字列は指定できない。支払い方法の区分が credit_card または debit_card の場合だけ指定できる。記録しない場合と、カード以外の支払いの場合はnull */
             cardBrand: string | null;
         };
         /** @description 売上のレシート - 売上とその明細・決済取引から作成するレシートの内容 */
@@ -7576,7 +7578,7 @@ export interface components {
              * @description この会計で付与したポイント数。記録していない場合はnull
              */
             pointsEarned: number | null;
-            /** @description 支払い状態。決済取引(payments)の処理と返金に応じてシステムが更新する */
+            /** @description 支払い状態。この売上の決済取引(payments)から決まり、支払いの記録と返金のたびにシステムが更新する。pending は何も受け取っていない、processing は合計金額の一部を受け取った、completed は合計金額を受け取った、partial_refund は受け取った金額の一部を返金した、refunded は受け取った全額を返金した状態 */
             paymentStatus: components["schemas"]["Models.PaymentStatusType"];
             /** @description 取り消された売上かどうか */
             isVoid: boolean;
