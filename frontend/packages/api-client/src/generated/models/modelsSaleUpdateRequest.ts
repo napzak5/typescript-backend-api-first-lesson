@@ -8,12 +8,13 @@
 import type { ModelsSalesDetail } from './modelsSalesDetail';
 
 /**
- * 売上部分更新リクエスト - 指定した項目だけを更新する。DB で NULL 許可のカラムは null でクリアできる。
- * サロンは変更できない。details を指定した場合は明細全体を置き換え、小計・値引額・消費税額・合計金額を再計算する
+ * 売上部分更新リクエスト - 指定した項目だけを更新する。項目を1つ以上指定する。DB で NULL 許可のカラムは null でクリアできる。
+ * サロンは変更できない。details を指定した場合は明細全体を置き換え、小計・値引額・消費税額・合計金額を再計算する。
+ * 指定しなかった項目は、いまの値のまま、更新後の売上の規則(顧客のいない売上はポイントを持たない、予約の顧客は売上の顧客と同じ)を確かめる
  */
 export interface ModelsSaleUpdateRequest {
   /**
-     * 会計した顧客の ID。nullでクリア
+     * 会計した顧客の ID。売上が予約を持つ場合は、その予約の顧客を指定する。nullでクリア(pointsUsed と pointsEarned が null の売上だけ)
      * @nullable
      */
   customerId?: string | null;
@@ -23,7 +24,7 @@ export interface ModelsSaleUpdateRequest {
      */
   staffId?: string | null;
   /**
-     * 売上のもとになった予約の ID。売上と同じサロンの予約を指定する。nullでクリア
+     * 売上のもとになった予約の ID。売上と同じサロンの、売上の顧客の予約で、ほかの取り消していない売上がないものを指定する。nullでクリア
      * @nullable
      */
   bookingId?: string | null;

@@ -2427,7 +2427,7 @@ export interface paths {
         head?: never;
         /**
          * Update a sale
-         * @description 指定した項目だけを更新します。details を指定した場合は明細全体を置き換え、小計・値引額・消費税額・合計金額を再計算します。取消済みの売上は409を、paymentStatus が pending ではない売上に details を指定した場合も409を返します。customerId・staffId・bookingId・明細の staffId に存在しないIDまたは売上のサロンのものではないIDを指定した場合は400を返します。
+         * @description 指定した項目だけを更新します。管理者と、売上のサロンのメンバーが実行できます。details を指定した場合は明細全体を置き換え、小計・値引額・消費税額・合計金額を再計算します。saleTime を指定した場合は売上日も決め直します。更新後の売上が、登録と同じ規則を満たすことを確かめます。項目を1つも指定しない場合、customerId・staffId・bookingId・明細の staffId・明細の itemId に存在しないIDまたは売上のサロンのものではないIDを指定した場合、更新後の売上の予約の顧客が売上の顧客と異なる場合、顧客のいない売上にポイントが残る場合、金額の合計が integer の上限を超える場合は400を返します。取消済みの売上、paymentStatus が pending ではない売上に details を指定した場合、サロンのタイムゾーンが不明で売上日を決められない場合、bookingId の予約にほかの取り消していない売上がある場合は409を返します。
          */
         patch: operations["SaleCrud_update"];
         trace?: never;
@@ -2483,7 +2483,7 @@ export interface paths {
         put?: never;
         /**
          * Void a sale
-         * @description 売上を取り消します。isVoid を true にし、voidedAt と voidReason を記録します。取消済みの売上、または返金していない支払い(status が completed または partial_refund の決済取引)がある売上は409を返します。
+         * @description 売上を取り消します。管理者と、売上のサロンのオーナー・マネージャーが実行できます。isVoid を true にし、voidedAt と voidReason を記録します。明細・金額・支払い状態は変えません。取り消した売上の予約は、もう一度会計できます。取消済みの売上、または返金していない支払い(status が completed または partial_refund の決済取引)がある売上は409を返します。
          */
         post: operations["SaleCrud_voidSale"];
         delete?: never;
@@ -7420,15 +7420,16 @@ export interface components {
             updatedAt: string;
         };
         /**
-         * @description 売上部分更新リクエスト - 指定した項目だけを更新する。DB で NULL 許可のカラムは null でクリアできる。
-         *     サロンは変更できない。details を指定した場合は明細全体を置き換え、小計・値引額・消費税額・合計金額を再計算する
+         * @description 売上部分更新リクエスト - 指定した項目だけを更新する。項目を1つ以上指定する。DB で NULL 許可のカラムは null でクリアできる。
+         *     サロンは変更できない。details を指定した場合は明細全体を置き換え、小計・値引額・消費税額・合計金額を再計算する。
+         *     指定しなかった項目は、いまの値のまま、更新後の売上の規則(顧客のいない売上はポイントを持たない、予約の顧客は売上の顧客と同じ)を確かめる
          */
         "Models.SaleUpdateRequest": {
-            /** @description 会計した顧客の ID。nullでクリア */
+            /** @description 会計した顧客の ID。売上が予約を持つ場合は、その予約の顧客を指定する。nullでクリア(pointsUsed と pointsEarned が null の売上だけ) */
             customerId?: (string & components["schemas"]["Models.CustomerId"]) | null;
             /** @description 会計を担当したスタッフの ID。売上と同じサロンのスタッフを指定する。nullでクリア */
             staffId?: (string & components["schemas"]["Models.StaffId"]) | null;
-            /** @description 売上のもとになった予約の ID。売上と同じサロンの予約を指定する。nullでクリア */
+            /** @description 売上のもとになった予約の ID。売上と同じサロンの、売上の顧客の予約で、ほかの取り消していない売上がないものを指定する。nullでクリア */
             bookingId?: (string & components["schemas"]["Models.BookingId"]) | null;
             /**
              * Format: date-time
@@ -7450,9 +7451,9 @@ export interface components {
             /** @description 売上明細の一覧。指定した場合は全件を置き換える。1件以上100件以下 */
             details?: components["schemas"]["Models.SalesDetail"][];
         };
-        /** @description 売上取消リクエスト - 売上を取り消す理由を指定する */
+        /** @description 売上取消リクエスト - 売上を取り消す理由を指定する。キーは必須 */
         "Models.SaleVoidRequest": {
-            /** @description 取消理由。理由を記録しない場合はnull */
+            /** @description 取消理由。空白だけの文字列は指定できない。理由を記録しない場合はnull */
             voidReason: string | null;
         };
         /** @description サービスカテゴリ別の売上集計行 */
