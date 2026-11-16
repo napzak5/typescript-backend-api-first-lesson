@@ -323,7 +323,7 @@ DB にも TypeSpec にも表せない規則（空白だけの文字列を拒否�
 |---|---|---|
 | `reviews_ratings_in_range`（`overallRating` は 1〜5、ほかの評価は NULL か 1〜5） | 6 つの評価に `@minValue(1)` と `@maxValue(5)` | スキーマの評価（`rating`: 1〜5 の整数） |
 | `reviews_counts_not_negative`（`helpfulCount` と `reportCount` は 0 以上） | レスポンスの `@doc`（`helpfulCount` は評価した顧客の数、`reportCount` は `pending` の通報の数） | リクエストからは書けない（作成では既定の 0。`helpfulCount` は、参考になったが `review_helpful_votes` から、`reportCount` は、通報と却下が `review_reports` から数え直す） |
-| `reviews_owner_response_pair`（`ownerResponse` と `ownerRespondedAt` は、両方あるか、両方 NULL） | 両方の `@doc`（未返信なら両方 null） | リクエストからは書けない。返信を書くオペレーションはない |
+| `reviews_owner_response_pair`（`ownerResponse` と `ownerRespondedAt` は、両方あるか、両方 NULL） | 両方の `@doc`（返信がなければ両方 null） | 返信（`POST /api/v1/reviews/{id}/respond`）が、返信と一緒に時刻を書き、取り下げでは両方を null にする。時刻はリクエストからは書けない |
 | `reviews_image_urls_array`（`imageUrls` は JSON の配列。カラムは NOT NULL） | `imageUrls: string[]`（null にならない） | スキーマの `imageUrls`（URL の配列、10 個まで、重複なし）と、読み出しマッパー |
 | `salons_review_count_not_negative`（`reviewCount >= 0`） | サロンのレスポンスの `@doc`（レビューの件数） | リクエストからは書けない。レビューを書くトランザクションが、件数を数えて書く |
 | `salons_rating_in_range`（`rating` は NULL か 1〜5） | サロンのレスポンスの `@doc`（`overallRating` の平均） | 同上。平均を小数第 2 位に丸めて書く |

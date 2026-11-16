@@ -24,6 +24,8 @@ export type ApiReviewUpdateRequest =
   components['schemas']['Models.ReviewUpdateRequest']
 export type ApiReviewHelpfulResponse =
   components['schemas']['Models.ReviewHelpfulResponse']
+export type ApiReviewRespondRequest =
+  components['schemas']['Models.ReviewRespondRequest']
 export type ApiReviewSearchRequest = NonNullable<
   operations['ReviewCrud_list']['parameters']['query']
 >

@@ -11,7 +11,7 @@ using TypeSpec.OpenAPI;
 using BeautySalon.Models;
 
 namespace BeautySalon.Operations {
-  @doc("施術体験に対する顧客レビューを収集・運用し、信頼性の高いフィードバック基盤を構築するAPI操作群です。一覧・投稿・取得・修正・削除・参考になった・通報を実装済みです。一覧と取得はログインなしで読めます。削除したサロンのレビューは、一覧・取得・修正・削除・参考になった・通報の対象外です。")
+  @doc("施術体験に対する顧客レビューを収集・運用し、信頼性の高いフィードバック基盤を構築するAPI操作群です。一覧・投稿・取得・修正・削除・参考になった・通報・サロンからの返信を実装済みです。一覧と取得はログインなしで読めます。削除したサロンのレビューは、一覧・取得・修正・削除・参考になった・通報・返信の対象外です。")
   @route("/api/v1/reviews")
   @tag("Reviews")
   namespace ReviewOperations {
@@ -104,6 +104,20 @@ namespace BeautySalon.Operations {
         | ProblemResponse<400>
         | ProblemResponse<404>
         | ProblemResponse<409>
+        | RequestBodyErrors
+        | CommonErrors;
+
+      @doc("レビューにサロンからの返信を書き、返信したあとのレビューを返します。ownerResponse に文字列を指定すると返信を書き(すでにあれば置き換えます)、null を指定すると返信を取り下げます。返信を書けるのは、レビューのサロンの owner・manager です。admin は返信を取り下げる(null を指定する)ことだけができ、文字列を指定すると403を返します。staff、顧客(レビューの作者を含む)、ほかのサロンの owner・manager、プロフィールのない顧客のアカウントには403を返します。空白だけの返信は400を、レビューが存在しない場合と、削除したサロンのレビューの場合は404を返します。返信を書くと ownerRespondedAt を書いた日時にします。いまと同じ返信を指定した場合と、返信のないレビューに null を指定した場合は、何も書かずに200を返します。レビューの updatedAt とサロンの rating は変わりません。")
+      @summary("Respond to review")
+      @route("/{id}/respond")
+      @post
+      respond(@path id: ReviewId, @body request: ReviewRespondRequest):
+        | {
+            @statusCode statusCode: 200;
+            @body response: ApiResponse<ReviewResponse>;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<404>
         | RequestBodyErrors
         | CommonErrors;
     }

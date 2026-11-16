@@ -24,6 +24,7 @@ import type {
   ReviewMark,
   ReviewRemoval,
   ReviewReporting,
+  ReviewResponding,
 } from '../repositories/review.repository'
 import type {
   IReviewReportRepository,
@@ -39,6 +40,8 @@ export const REVIEW_ID = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f5a01'
 export const OTHER_REVIEW_ID = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f5a02'
 export const REVIEW_REPORT_ID = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f5b01'
 export const OTHER_REVIEW_REPORT_ID = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f5b02'
+export const OWNER_RESPONSE =
+  'ご来店ありがとうございました。またのお越しをお待ちしております。'
 
 const IMAGE_URL = 'https://images.example.com/reviews/after.jpg'
 
@@ -193,9 +196,10 @@ export const reviewTally = (
 
 /**
  * Everything the review use cases need: a repository that lists, finds,
- * creates, updates, deletes, marks and reports the review of the fixtures
- * (three customers found it helpful), and tallies three reviews for a
- * salon and for a staff member; a test overrides what it needs.
+ * creates, updates, deletes, marks, reports and responds to the review of
+ * the fixtures (three customers found it helpful; the salon responded),
+ * and tallies three reviews for a salon and for a staff member; a test
+ * overrides what it needs.
  */
 export const reviewDependencies = (
   overrides: Partial<IReviewRepository> = {},
@@ -225,6 +229,15 @@ export const reviewDependencies = (
       Result.success<ReviewReporting>({
         type: 'reported',
         report: dbReviewReport(),
+      }),
+    ),
+    respond: vi.fn(async () =>
+      Result.success<ReviewResponding>({
+        type: 'responded',
+        review: dbReview({
+          ownerResponse: OWNER_RESPONSE,
+          ownerRespondedAt: '2026-11-21 10:00:00.5+09',
+        }),
       }),
     ),
     salonTally: vi.fn(async () =>

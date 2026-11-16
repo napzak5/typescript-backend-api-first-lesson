@@ -74,17 +74,17 @@ export interface ModelsReviewResponse {
   /** 未処理(pending)の通報の件数。通報したトランザクションと却下したトランザクションが、通報の行から数え直す。運営が却下した通報は数えない */
   reportCount: number;
   /**
-     * サロン運営からの公式返信本文。オーナー未返信のレビューの場合はnull
+     * サロンからの返信。レビューのサロンの owner・manager が書く。返信のないレビューと、返信を取り下げたレビューの場合はnull
      * @nullable
      */
   ownerResponse: string | null;
   /**
-     * 運営が返信した日時 (UTC)。オーナー未返信のレビューの場合はnull
+     * サロンが返信を書いた日時 (UTC)。返信を書き換えると変わり、同じ返信をもう一度指定しても変わらない。返信のないレビューの場合はnull
      * @nullable
      */
   ownerRespondedAt: string | null;
   /** レコード作成日時（レビュー投稿日時） */
   createdAt: string;
-  /** レコード最終更新日時 */
+  /** 顧客がレビューを投稿または修正した日時。参考になった数、通報の件数、サロンからの返信が変わっても変わらない */
   updatedAt: string;
 }

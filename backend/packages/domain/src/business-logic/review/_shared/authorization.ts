@@ -6,6 +6,7 @@ import { type DomainError, DomainErrors } from '../../../shared'
 import { profileAccessOf } from '../../customer/_shared/profile'
 import type { ReviewRemover } from './change'
 import type { ReviewReporter } from './report'
+import type { ReviewResponder } from './response'
 
 /**
  * The customer a review is written as: the signed-in customer, once the
@@ -76,5 +77,29 @@ export const reviewReporterOf = (
           customerId,
         }),
       ),
+    )
+    .exhaustive()
+
+/**
+ * Who responds to a review: the owner and the managers of a salon, who
+ * speak for their salon, and an administrator, who only takes a response
+ * down (`mayRespondWith`). The staff of a salon are refused, as they are
+ * for a report, and so are the customers, the author included: a customer
+ * says what they have to say in their review.
+ */
+export const reviewResponderOf = (
+  actor: Actor,
+): Result<ReviewResponder, DomainError> =>
+  match(actor.scope)
+    .returnType<Result<ReviewResponder, DomainError>>()
+    .with({ type: 'salon', role: P.union('owner', 'manager') }, ({ salonId }) =>
+      Result.success({ type: 'salon', salonId }),
+    )
+    .with({ type: 'platform' }, () => Result.success({ type: 'administrator' }))
+    .with(
+      { type: 'salon', role: 'staff' },
+      { type: 'customer' },
+      { type: 'none' },
+      () => Result.error(DomainErrors.forbidden()),
     )
     .exhaustive()
