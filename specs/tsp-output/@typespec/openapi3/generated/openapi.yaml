@@ -13894,7 +13894,7 @@ paths:
     post:
       operationId: SaleCrud_calculate
       summary: Calculate the amount of a sale
-      description: 選択したサービスと割引コード・利用ポイントから、売上を登録する前に請求金額を試算します。存在しないIDを指定した場合は400を返します。
+      description: 売上を登録する前に、予約のサービス明細と、加えるサービスから、請求金額を試算します。何も記録しません。管理者と、salonId のサロンのメンバーが実行できます。予約のサービス明細は明細に写した価格で、加えるサービスはいまのメニューの価格で数え、消費税はサロンのいまの税率で、税込みでない明細の割引後の金額の合計に対して1回だけ計算します(1円未満は切り捨て)。salonId のサロンが存在しない場合、bookingId に salonId のサロンの予約ではないIDを指定した場合、services に salonId のサロンの削除されていないサービスではないIDを指定した場合、予約のサービス明細と services を合わせて1件もない場合、金額の合計が integer の上限を超える場合は400を返します。
       parameters: []
       responses:
         '200':
@@ -14340,7 +14340,7 @@ paths:
     get:
       operationId: SaleCrud_getReceipt
       summary: Get the receipt of a sale
-      description: 売上のレシートを、明細と決済取引を含めて取得します。
+      description: 売上のレシートを、明細と決済取引を含めて作成します。管理者と、売上のサロンのメンバーが実行できます。レシートは記録せず、呼び出すたびに同じ売上から作り直します(再発行)。レシート番号は売上番号です。取消済みの売上と、受け取った金額(status が completed・partial_refund・refunded の決済取引の amount の合計)が totalAmount に達していない売上は409を返します。totalAmount が0の売上は、支払いがなくてもレシートを作成できます。ほかのサロンの売上は、存在しない売上と同じく404を返します。
       parameters:
         - name: id
           in: path
@@ -14407,6 +14407,12 @@ paths:
                 $ref: '#/components/schemas/Models.ProblemDetails'
         '404':
           description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '409':
+          description: The request conflicts with the current state of the server.
           content:
             application/problem+json:
               schema:
@@ -27714,98 +27720,73 @@ components:
       type: object
       required:
         - subtotal
-        - tax
-        - discount
-        - pointsDiscount
-        - total
+        - discountAmount
+        - taxAmount
+        - totalAmount
       properties:
         subtotal:
           type: integer
           format: int32
-          description: サービス代金の税抜小計
-        tax:
+          description: 小計。明細の価格の合計
+        discountAmount:
           type: integer
           format: int32
-          description: 適用される消費税額
-        discount:
+          description: 値引額。サービスに割引価格(discountPrice)があれば、価格との差額の合計
+        taxAmount:
           type: integer
           format: int32
-          description: 割引金額
-        pointsDiscount:
+          description: 消費税額。税込みでない明細の割引後の金額の合計に、サロンの税率を掛けて1円未満を切り捨てた額。明細ごとではなく、合計に対して1回だけ計算する
+        totalAmount:
           type: integer
           format: int32
-          nullable: true
-          description: ポイント利用による値引額。ポイントを使わない場合はnull
-        total:
-          type: integer
-          format: int32
-          description: 支払総額
-      description: 試算した請求金額の内訳
+          description: 合計金額。subtotal - discountAmount + taxAmount
+      description: |-
+        試算した請求金額の内訳 - 売上を登録したときに、売上の小計・値引額・消費税額・合計金額になる値。
+        プロパティ名は sales テーブルのカラムと一致させている
     Models.SaleCalculateRequest:
       type: object
       required:
-        - services
-        - discountCode
-        - pointsToUse
-        - customerId
+        - salonId
         - bookingId
+        - services
       properties:
-        services:
-          type: array
-          items:
-            $ref: '#/components/schemas/Models.ServiceId'
-          description: 試算の対象となるサービス ID の一覧
-        discountCode:
-          type: string
-          nullable: true
-          description: 適用する割引コード。割引コードを使わない場合はnull
-        pointsToUse:
-          type: integer
-          format: int32
-          nullable: true
-          minimum: 0
-          description: 利用するポイント数。ポイントを使わない場合はnull
-        customerId:
-          type: string
+        salonId:
           allOf:
-            - $ref: '#/components/schemas/Models.CustomerId'
-          nullable: true
-          description: 会計する顧客の ID。顧客を指定しない場合はnull
+            - $ref: '#/components/schemas/Models.SalonId'
+          description: 会計を行うサロン ID。消費税率と支払い方法は、このサロンのものを使う
         bookingId:
           type: string
           allOf:
             - $ref: '#/components/schemas/Models.BookingId'
           nullable: true
-          description: 関連する予約の ID。予約がない場合はnull
+          description: 会計する予約の ID。salonId のサロンの予約を指定する。予約のサービス明細を、明細に写した価格で数える。予約のない来店の場合はnull
+        services:
+          type: array
+          items:
+            $ref: '#/components/schemas/Models.ServiceId'
+          maxItems: 100
+          description: 予約のサービス明細に加えるサービスの ID の一覧。salonId のサロンの、削除されていないサービスを指定する。いまのメニューの価格で数える。同じIDを複数回指定すると、その回数だけ数える。0件以上100件以下で、予約のサービス明細と合わせて1件以上
       description: |-
-        会計金額の試算リクエスト - 選択したサービスと割引・ポイントから、売上を登録する前に請求額を試算する。
+        会計金額の試算リクエスト - 予約のサービス明細と、加えるサービスから、売上を登録する前に請求額を試算する。
         全項目のキーが必須
     Models.SaleCalculateResponse:
       type: object
       required:
         - salonId
-        - customerId
         - bookingId
         - breakdown
         - recommendedMethods
-        - notes
       properties:
         salonId:
           allOf:
             - $ref: '#/components/schemas/Models.SalonId'
           description: 試算の対象となるサロン ID
-        customerId:
-          type: string
-          allOf:
-            - $ref: '#/components/schemas/Models.CustomerId'
-          nullable: true
-          description: 試算の対象となる顧客の ID。顧客を指定しなかった場合はnull
         bookingId:
           type: string
           allOf:
             - $ref: '#/components/schemas/Models.BookingId'
           nullable: true
-          description: 関連する予約の ID。予約を指定しなかった場合はnull
+          description: 試算の対象となる予約の ID。予約を指定しなかった場合はnull
         breakdown:
           allOf:
             - $ref: '#/components/schemas/Models.SaleBreakdownResponse'
@@ -27814,12 +27795,8 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Models.PaymentMethodType'
-          description: 推奨する支払い方法の一覧
-        notes:
-          type: string
-          nullable: true
-          description: 顧客・スタッフ向けの備考。備考がない場合はnull
-      description: 会計金額の試算結果 - 売上を登録する前の請求金額の見積もり
+          description: 合計金額を1回の支払いで受け取れる支払い方法区分の一覧。サロンの有効な支払い方法のうち、合計金額が minimumAmount 以上 maximumAmount 以下のものの区分を、sortOrder とIDの順に、同じ区分は1回だけ並べる。合計金額が0の場合は空
+      description: 会計金額の試算結果 - 売上を登録する前の請求金額の見積もり。何も記録しない
     Models.SaleCreateRequest:
       type: object
       required:
@@ -27928,16 +27905,18 @@ components:
       properties:
         receiptNumber:
           type: string
-          description: レシート番号
+          description: レシート番号。売上番号(saleNumber)と同じで、再発行しても変わらない
         sale:
           allOf:
             - $ref: '#/components/schemas/Models.SaleResponse'
-          description: レシートの対象となる売上。明細(details)と決済取引(payments)を含む
+          description: レシートの対象となる売上。明細(details)と決済取引(payments)を含む。売上の取得と同じ内容
         issuedAt:
           type: string
           format: date-time
-          description: レシートの発行日時
-      description: 売上のレシート - 売上とその明細・決済取引から作成するレシートの内容
+          description: レシートを作成した日時。再発行すると変わる
+      description: |-
+        売上のレシート - 売上とその明細・決済取引から作成するレシートの内容。
+        レシートは記録せず、呼び出すたびに同じ売上から作り直す(再発行)
     Models.SaleResponse:
       type: object
       required:
