@@ -76,7 +76,6 @@ export type StaffFigures = {
 
 /** What the sales of a period that are not void come to, in every way a report divides them. */
 export type SalesFigures = {
-  /** In the order of the days. */
   days: readonly DayFigures[]
   methods: readonly MethodFigures[]
   categories: readonly CategoryFigures[]

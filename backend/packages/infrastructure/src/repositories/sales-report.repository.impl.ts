@@ -20,7 +20,6 @@ import {
 import type { Result } from '@beauty-salon-backend/utility'
 import {
   and,
-  asc,
   count,
   eq,
   gte,
@@ -134,7 +133,6 @@ const figuresOf = async (
     .leftJoin(refundsOfSale, eq(refundsOfSale.saleId, sales.id))
     .where(ofPeriod(period))
     .groupBy(sales.saleDate)
-    .orderBy(asc(sales.saleDate))
 
   const methods = await tx
     .select({
