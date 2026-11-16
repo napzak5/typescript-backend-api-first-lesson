@@ -279,7 +279,7 @@ DB にも TypeSpec にも表せない規則（空白だけの文字列を拒否�
 | `sales_points_need_customer`（顧客のない売上にポイントはない） | 作成リクエストの `@doc` に書く | `saleCreateRequestSchema` の `.check()` |
 | `sales_void_has_time`、`sales_void_reason_of_void`（取り消しの項目） | レスポンスの `@doc` に書く | 作成では false と NULL。取り消しの操作は未実装 |
 
-1 つの予約に、取り消していない売上は 1 件、という規則は、行の間の規則なので、CHECK 制約では書けない。部分一意インデックス（`sales_booking_live_unique`）が保証し、作成のトランザクションが、予約の行をロックして先に確かめる（[売上台帳](./sales.md#予約の会計は-1-回)）。
+1 つの予約に、取り消していない売上は 1 件、という規則は、行の間の規則なので、CHECK 制約では書けない。部分一意インデックス（`sales_booking_live_unique`）が保証し、作成と更新のトランザクションが、予約の行をロックして先に確かめる（[売上台帳](./sales.md#予約の会計は-1-回)）。
 
 ## `pnpm check:api-db`
 
