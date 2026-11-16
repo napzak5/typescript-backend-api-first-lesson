@@ -5,9 +5,9 @@ import type { Actor, ClientInfo } from '../../models/auth'
 import type { ApiBookingResponse } from '../../models/booking'
 import { bookingCreateRequestSchema } from '../../schemas/booking.schema'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
+import { underFreeNumber } from '../_shared/numbered'
 import { bookingReachOf, isWithin } from './_shared/authorization'
 import type { BookingUseCaseDependencies } from './_shared/dependencies'
-import { underFreeNumber } from './_shared/numbered'
 import { toRefusalError } from './_shared/refusals'
 
 const MESSAGE = 'Invalid booking'
@@ -47,27 +47,31 @@ export class CreateBookingUseCase {
 
     const { bookingRepository, bookingNumberIssuer } = this.dependencies
 
-    return underFreeNumber(bookingNumberIssuer, async (bookingNumber) => {
-      const created = await bookingRepository.create(request.data, {
-        bookingNumber,
-        createdBy: actor.userId,
-        client,
-      })
-      if (created.type === 'error') {
-        return created
-      }
+    return underFreeNumber(
+      'booking',
+      bookingNumberIssuer,
+      async (bookingNumber) => {
+        const created = await bookingRepository.create(request.data, {
+          bookingNumber,
+          createdBy: actor.userId,
+          client,
+        })
+        if (created.type === 'error') {
+          return created
+        }
 
-      return match(created.data)
-        .returnType<Result<ApiBookingResponse, DomainError> | null>()
-        .with({ type: 'created' }, ({ booking }) =>
-          BookingReadMapper.toApiBooking(booking),
-        )
-        .with({ type: 'bookingNumberTaken' }, () => null)
-        .with(
-          { type: P.not(P.union('created', 'bookingNumberTaken')) },
-          (refusal) => Result.error(toRefusalError(refusal, MESSAGE)),
-        )
-        .exhaustive()
-    })
+        return match(created.data)
+          .returnType<Result<ApiBookingResponse, DomainError> | null>()
+          .with({ type: 'created' }, ({ booking }) =>
+            BookingReadMapper.toApiBooking(booking),
+          )
+          .with({ type: 'bookingNumberTaken' }, () => null)
+          .with(
+            { type: P.not(P.union('created', 'bookingNumberTaken')) },
+            (refusal) => Result.error(toRefusalError(refusal, MESSAGE)),
+          )
+          .exhaustive()
+      },
+    )
   }
 }

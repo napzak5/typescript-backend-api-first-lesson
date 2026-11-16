@@ -17,7 +17,12 @@ import { customerIdSchema } from '../models/customer'
 import { salonIdSchema } from '../models/salon'
 import { serviceIdSchema } from '../models/service'
 import { staffIdSchema } from '../models/staff'
-import { atLeastOneProperty, MAX_INTEGER, nonBlankText } from './rules'
+import {
+  atLeastOneProperty,
+  MAX_INTEGER,
+  momentInUtc,
+  nonBlankText,
+} from './rules'
 
 /**
  * Validation of booking requests. The shapes are checked against the
@@ -131,14 +136,6 @@ export type BookingRescheduleRequest = z.infer<
 export const bookingCancelRequestSchema = z.strictObject({
   cancellationReason: nonBlankText.nullable(),
 }) satisfies z.ZodType<ApiBookingCancelRequest>
-
-/**
- * A moment something actually happened at, in UTC. It is returned in the
- * one spelling `toISOString` gives, to the millisecond.
- */
-const momentInUtc = z.iso
-  .datetime()
-  .transform((value) => parseISO(value).toISOString())
 
 export const bookingCompleteRequestSchema = z
   .strictObject({
