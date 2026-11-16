@@ -268,9 +268,9 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 
 | 範囲 | 対象 | 届くもの |
 |---|---|---|
-| `platform` | `admin` | すべてのサロン（予約台帳、売上台帳を含む）と、顧客台帳（顧客の好み設定を含む）、ポイント台帳、すべてのレビューの削除（`DELETE /api/v1/reviews/{id}`） |
-| `salon` | `owner`、`manager`、`staff`。`users.staffId` が指すスタッフが有効（`isActive`、未削除）で、そのサロンが未削除であること | そのサロン（予約台帳、売上台帳を含む）と、顧客台帳（顧客の好み設定を含む）、ポイント台帳（調整は `owner`・`manager` だけ）、自分のスタッフのプロフィール（`/api/v1/staff-profiles/me`）。範囲はロール・サロン ID・スタッフ ID を持つ |
-| `customer` | `customer`。範囲は `users.customerId` を持ち、プロフィールを作るまでは null | 自分のプロフィール（`/api/v1/customers/me`）、自分の好み設定（`/api/v1/customers/me/preferences`）、自分の予約（`/api/v1/customers/me/bookings`）、自分の済んだ予約へのレビューの投稿（`POST /api/v1/reviews`）と、自分のレビューの修正と削除（`PATCH`、`DELETE /api/v1/reviews/{id}`）、ほかの顧客のレビューの参考になった（`POST /api/v1/reviews/{id}/helpful`）。null の間は、プロフィールの作成だけができる |
+| `platform` | `admin` | すべてのサロン（予約台帳、売上台帳を含む）と、顧客台帳（顧客の好み設定を含む）、ポイント台帳、すべてのレビューの削除（`DELETE /api/v1/reviews/{id}`）、レビューの通報の一覧と却下（`/api/v1/review-reports`） |
+| `salon` | `owner`、`manager`、`staff`。`users.staffId` が指すスタッフが有効（`isActive`、未削除）で、そのサロンが未削除であること | そのサロン（予約台帳、売上台帳を含む）と、顧客台帳（顧客の好み設定を含む）、ポイント台帳（調整は `owner`・`manager` だけ）、自分のスタッフのプロフィール（`/api/v1/staff-profiles/me`）、サロンのレビューの通報（`owner`・`manager` だけ。`POST /api/v1/reviews/{id}/report`）。範囲はロール・サロン ID・スタッフ ID を持つ |
+| `customer` | `customer`。範囲は `users.customerId` を持ち、プロフィールを作るまでは null | 自分のプロフィール（`/api/v1/customers/me`）、自分の好み設定（`/api/v1/customers/me/preferences`）、自分の予約（`/api/v1/customers/me/bookings`）、自分の済んだ予約へのレビューの投稿（`POST /api/v1/reviews`）と、自分のレビューの修正と削除（`PATCH`、`DELETE /api/v1/reviews/{id}`）、ほかの顧客のレビューの参考になったと通報（`POST /api/v1/reviews/{id}/helpful`、`/report`）。null の間は、プロフィールの作成だけができる |
 | `none` | `owner`、`manager`、`staff` で、`salon` の条件に当たらない（スタッフ情報が削除された `staff`、紐づけを解除された `staff` など） | 範囲を必要とするものには届かない。ログインはでき、スタッフへの招待に[参加](./staff.md#参加)できる |
 
 - ロールは `users.role` の固定 5 種。`users.permissions` は保存しているだけで、判定には使わない
@@ -470,7 +470,7 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 
 ### レビューの権限
 
-レビューは、来店した顧客が書き、誰でも読みます。誰が投稿、修正、削除、参考になったの評価ができるかは、まず操作者で決まります（`business-logic/review/_shared/authorization.ts` の `reviewerOf` と `reviewRemoverOf`）。修正と削除では、そのあとで、レビューを書いた顧客かどうかを、参考になったでは、書いた顧客でないことを確かめます。
+レビューは、来店した顧客が書き、誰でも読みます。誰が投稿、修正、削除、参考になったの評価、通報ができるかは、まず操作者で決まります（`business-logic/review/_shared/authorization.ts` の `reviewerOf`、`reviewRemoverOf`、`reviewReporterOf`）。修正と削除では、そのあとで、レビューを書いた顧客かどうかを、参考になったでは、書いた顧客でないことを、通報では、顧客なら書いた顧客でないこと、サロンならそのサロンのレビューであることを確かめます。通報の一覧と却下は `admin` だけです（`business-logic/review-report/_shared/authorization.ts` の `mayHandleReviewReports`）。
 
 | オペレーション | 許可 |
 |---|---|
@@ -479,12 +479,16 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 | 修正（`PATCH /api/v1/reviews/{id}`） | レビューを書いた顧客のアカウントだけ |
 | 削除（`DELETE /api/v1/reviews/{id}`） | `admin` と、レビューを書いた顧客のアカウント |
 | 参考になった（`POST /api/v1/reviews/{id}/helpful`） | ロール `customer` で、顧客のプロフィールがあるアカウントだけ。自分のレビューは不可 |
+| 通報（`POST /api/v1/reviews/{id}/report`） | ロール `customer` で、顧客のプロフィールがあるアカウント（自分のレビューは不可）と、レビューのサロンの `owner`・`manager` |
+| 通報の一覧と却下（`GET /api/v1/review-reports`、`POST /api/v1/review-reports/{id}/dismiss`） | `admin` だけ |
 
 - `admin` と、サロンの `owner` / `manager` / `staff` は、本文が不正でも 403。レビューは顧客の声なので、ほかの人が代わりに書かない
 - プロフィールのない顧客のアカウントと、紐づいた顧客が削除されたアカウントも 403
 - 本文の `customerId` が、操作者の顧客 ID でなければ 403。ほかの顧客として書けない
 - ほかの顧客のレビューの修正と削除は 403。`admin` も修正はできない（403）。サロンのメンバーは、自分のサロンのレビューでも、修正も削除もできない（403）。サロンが、自分に不利なレビューを消せないようにする
 - 参考になったも、`admin` とサロンのメンバーは 403。「参考になった順」を顧客の評価だけで決め、サロンが自分のレビューを押し上げられないようにする。自分のレビューも 403。1 人 1 回で、2 回目は数を変えずに 200
+- 通報は、`admin` と `staff` は 403。`admin` は通報を扱う側で、レビューを自分で削除できる。サロンは、レビューを削除できない代わりに、自分のサロンのレビューを `admin` に通報できる（ほかのサロンのレビューは 403）。1 つのアカウントに 1 回で、2 回目は 409
+- 通報の一覧と却下は、`admin` 以外は 403。読めないクエリでも、先に 403 を返す
 - 投稿できる予約は、操作者の予約で、ステータスが `completed` のものだけ（400、409）。レビューのための権限（`users.permissions`）はない
 
 規則は [レビュー](./reviews.md) にあります。

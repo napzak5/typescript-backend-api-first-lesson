@@ -322,7 +322,7 @@ DB にも TypeSpec にも表せない規則（空白だけの文字列を拒否�
 | CHECK 制約 | TypeSpec | 規則を確かめる場所 |
 |---|---|---|
 | `reviews_ratings_in_range`（`overallRating` は 1〜5、ほかの評価は NULL か 1〜5） | 6 つの評価に `@minValue(1)` と `@maxValue(5)` | スキーマの評価（`rating`: 1〜5 の整数） |
-| `reviews_counts_not_negative`（`helpfulCount` と `reportCount` は 0 以上） | レスポンスの `@doc`（`helpfulCount` は評価した顧客の数、`reportCount` は累積回数） | リクエストからは書けない（作成では既定の 0。`helpfulCount` は、参考になったが `review_helpful_votes` から数え直す） |
+| `reviews_counts_not_negative`（`helpfulCount` と `reportCount` は 0 以上） | レスポンスの `@doc`（`helpfulCount` は評価した顧客の数、`reportCount` は `pending` の通報の数） | リクエストからは書けない（作成では既定の 0。`helpfulCount` は、参考になったが `review_helpful_votes` から、`reportCount` は、通報と却下が `review_reports` から数え直す） |
 | `reviews_owner_response_pair`（`ownerResponse` と `ownerRespondedAt` は、両方あるか、両方 NULL） | 両方の `@doc`（未返信なら両方 null） | リクエストからは書けない。返信を書くオペレーションはない |
 | `reviews_image_urls_array`（`imageUrls` は JSON の配列。カラムは NOT NULL） | `imageUrls: string[]`（null にならない） | スキーマの `imageUrls`（URL の配列、10 個まで、重複なし）と、読み出しマッパー |
 | `salons_review_count_not_negative`（`reviewCount >= 0`） | サロンのレスポンスの `@doc`（レビューの件数） | リクエストからは書けない。レビューを書くトランザクションが、件数を数えて書く |
@@ -330,6 +330,15 @@ DB にも TypeSpec にも表せない規則（空白だけの文字列を拒否�
 | `salons_rating_of_reviews`（`reviewCount` が 0 のときだけ `rating` が NULL） | サロンのレスポンスの `@doc`（レビュー未登録なら null） | 同上。レビューがなければ、平均は NULL、件数は 0 |
 
 一意制約 `reviews_booking_unique`（1 つの予約へのレビューは 1 件）は、`planReview` が、サロンをロックしたあとに確かめる規則（409）の裏付けである。サロンの `rating` と `reviewCount` がレビューから数えた値と等しいことは、テーブルをまたぐので、CHECK 制約では書けない。レビューを書くトランザクションが、サロンの行をロックして、レビューと一緒に書いて保証する（[レビュー](./reviews.md#同時に届いたリクエスト)）。
+
+`review_reports` の CHECK 制約は、通報の 1 行で確かめられる規則である（`backend/packages/database/sql/migrations/202611171200_review_reports.sql`）。
+
+| CHECK 制約 | TypeSpec | 規則を確かめる場所 |
+|---|---|---|
+| `review_reports_resolved_when_dismissed`（`dismissed` なら `resolvedBy` と `resolvedAt` があり、`pending` ならどちらも NULL） | `ReviewReportStatusType` と、`resolvedBy`・`resolvedAt` の `@doc`（未処理なら null） | リクエストからは書けない。却下が、状態と一緒に書く |
+| `review_reports_other_has_details`（`reason` が `other` なら `details` は NULL でない） | `ReviewReportRequest` の `details` の `@doc` | スキーマの `.check()`（`details` の `custom`、400） |
+
+一意制約 `review_reports_review_reporter_unique`（1 つのアカウントが 1 つのレビューを通報するのは 1 回）は、通報が `ON CONFLICT DO NOTHING` で行を書き、何も書かれなければ 409 を返す規則そのものである。レビューの `reportCount` が `pending` の通報の数と等しいことは、テーブルをまたぐので、CHECK 制約では書けない。通報と却下のトランザクションが、レビューの行をロックして数え直して保証する（[レビュー](./reviews.md#同時に届いたリクエスト)）。
 
 ## `pnpm check:api-db`
 
