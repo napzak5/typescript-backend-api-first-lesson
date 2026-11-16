@@ -113,28 +113,31 @@ describe('Review changes API', () => {
     return String(rows).padStart(4, '0')
   }
 
+  /** A completed booking of the customer at the salon. */
+  const bookingRow = (overrides: Partial<NewBooking> = {}): NewBooking => ({
+    bookingNumber: `BK-TEST-${nextRow()}`,
+    salonId,
+    customerId,
+    staffId,
+    bookingDate: '2026-11-20',
+    startTime: at('01:00'),
+    endTime: at('02:00'),
+    duration: 60,
+    subtotal: 6600,
+    totalAmount: 6600,
+    status: 'completed',
+    actualStartTime: at('01:00'),
+    completedAt: at('02:00'),
+    ...overrides,
+  })
+
   /** A completed booking of the customer at the salon, written directly; returns its ID. */
   const insertBooking = async (
     overrides: Partial<NewBooking> = {},
   ): Promise<string> => {
     const [booking] = await db
       .insert(bookings)
-      .values({
-        bookingNumber: `BK-TEST-${nextRow()}`,
-        salonId,
-        customerId,
-        staffId,
-        bookingDate: '2026-11-20',
-        startTime: at('01:00'),
-        endTime: at('02:00'),
-        duration: 60,
-        subtotal: 6600,
-        totalAmount: 6600,
-        status: 'completed',
-        actualStartTime: at('01:00'),
-        completedAt: at('02:00'),
-        ...overrides,
-      })
+      .values(bookingRow(overrides))
       .returning({ id: bookings.id })
     if (booking === undefined) {
       throw new Error('No booking was inserted')
@@ -1111,6 +1114,22 @@ describe('Review changes API', () => {
         rating: '2.75',
         reviewCount: 4,
       })
+    })
+
+    it.each<[string, (id: string) => Promise<Response>]>([
+      ['a change', (id) => update(id, { overallRating: 1 })],
+      ['a removal', (id) => remove(id)],
+    ])('lets %s past a salon held by a foreign key', async (_, write) => {
+      const id = await insertReview()
+
+      const answered = await db.transaction(async (tx: Transaction) => {
+        // A booking of the salon that is not committed yet holds the
+        // salon FOR KEY SHARE.
+        await tx.insert(bookings).values(bookingRow())
+        return answersWithin(write(id), 2000)
+      })
+
+      expect(answered).toBe(true)
     })
 
     it('removes a review once when it is changed and removed at the same time', async () => {
