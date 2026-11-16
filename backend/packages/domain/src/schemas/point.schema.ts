@@ -4,6 +4,8 @@ import { customerIdSchema } from '../models/customer'
 import {
   type ApiPointAdjustRequest,
   type ApiPointEarnRequest,
+  type ApiPointExpireRequest,
+  type ApiPointExpiringSearchRequest,
   type ApiPointTransactionSearchRequest,
   type ApiPointUseRequest,
   pointTransactionIdSchema,
@@ -19,7 +21,8 @@ import { MAX_INTEGER, momentInUtc, nonBlankText } from './rules'
  * What a request is held to by the customer and by the record it refers
  * to (the balance, whose record it is, whether points were earned on it
  * already) is looked at where the point transaction is written. Whether an
- * expiry date has passed needs the clock (`issuesOfExpiry`).
+ * expiry date has passed, and how late `processBefore` may be, need the
+ * clock (`issuesOfExpiry`, `issuesOfProcessBefore`).
  */
 
 /** The smallest value of an `integer` column. */
@@ -114,3 +117,14 @@ export const pointTransactionSearchRequestSchema = pointSearch.refine(
     startDate === undefined || endDate === undefined || startDate <= endDate,
   { path: ['endDate'], message: 'Must not be earlier than startDate' },
 ) satisfies z.ZodType<ApiPointTransactionSearchRequest>
+
+export const pointExpiringSearchRequestSchema = z.strictObject({
+  days: z.number().int().min(1).max(365).exactOptional(),
+}) satisfies z.ZodType<ApiPointExpiringSearchRequest>
+
+export const pointExpireRequestSchema = z.strictObject({
+  customerId: customerIdSchema.nullable(),
+  processBefore: z.iso.date().nullable(),
+}) satisfies z.ZodType<ApiPointExpireRequest>
+
+export type PointExpireRequest = z.infer<typeof pointExpireRequestSchema>

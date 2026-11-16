@@ -1,5 +1,5 @@
 import { tz } from '@date-fns/tz'
-import { format, subDays } from 'date-fns'
+import { addDays, format, subDays } from 'date-fns'
 import { match } from 'ts-pattern'
 import type { DbBooking } from '../../../models/booking'
 import type { CustomerId } from '../../../models/customer'
@@ -192,3 +192,33 @@ export const issuesOfExpiry = (
         },
       ]
 }
+
+/**
+ * The latest `processBefore` of an expiry, and the one an expiry without
+ * it uses: the earliest expiry date a point is given. The points that
+ * expire are those whose expiry date is before it, so no point expires
+ * before its expiry date is over everywhere, and a point is never given
+ * an expiry date that has already lapsed.
+ */
+export const issuesOfProcessBefore = (
+  processBefore: string | null,
+  now: Date,
+): ValidationIssue[] => {
+  const latest = earliestExpiryDateOf(now)
+  return processBefore === null || processBefore <= latest
+    ? []
+    : [
+        {
+          field: 'processBefore',
+          rule: 'too_big',
+          message: `Must not be later than ${latest}`,
+        },
+      ]
+}
+
+/**
+ * The last expiry date of the points counted as expiring within `days`
+ * days: the day `days` days after today in UTC.
+ */
+export const expiringUntilOf = (now: Date, days: number): string =>
+  format(addDays(now, days, { in: UTC }), 'yyyy-MM-dd', { in: UTC })

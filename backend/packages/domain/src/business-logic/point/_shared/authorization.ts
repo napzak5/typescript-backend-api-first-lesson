@@ -49,3 +49,19 @@ export const pointAdjustReachOf = (actor: Actor): LedgerReach | null =>
       () => null,
     )
     .exhaustive()
+
+/**
+ * Who expires the points that lapsed: the administrators alone. The expiry
+ * dates are a rule of the platform, and an expiry may run over the
+ * customers of every salon.
+ */
+export const mayExpirePoints = (actor: Actor): boolean =>
+  match(actor.scope)
+    .with({ type: 'platform' }, () => true)
+    .with(
+      { type: 'salon' },
+      { type: 'customer' },
+      { type: 'none' },
+      () => false,
+    )
+    .exhaustive()

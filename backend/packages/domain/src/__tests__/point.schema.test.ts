@@ -2,10 +2,13 @@ import { describe, expect, it } from 'vitest'
 import {
   pointAdjustRequestSchema,
   pointEarnRequestSchema,
+  pointExpireRequestSchema,
+  pointExpiringSearchRequestSchema,
   pointTransactionSearchRequestSchema,
   pointUseRequestSchema,
 } from '../schemas/point.schema'
 import { parseWith } from '../shared'
+import { CUSTOMER_ID } from './auth-fixtures'
 import { BOOKING_ID } from './booking-fixtures'
 import { brokenRules } from './fixtures'
 import {
@@ -355,5 +358,92 @@ describe('pointTransactionSearchRequestSchema', () => {
     expect(rulesBrokenBy(schema, { customerId: POINT_TRANSACTION_ID })).toEqual(
       ['customerId:unrecognized_keys'],
     )
+  })
+})
+
+describe('pointExpiringSearchRequestSchema', () => {
+  const schema = pointExpiringSearchRequestSchema
+
+  it('accepts no parameter', () => {
+    expect(parseWith(schema, {}, 'Invalid')).toEqual({
+      type: 'success',
+      data: {},
+    })
+  })
+
+  it('takes a number of days from 1 to 365', () => {
+    expect(parseWith(schema, { days: 7 }, 'Invalid')).toEqual({
+      type: 'success',
+      data: { days: 7 },
+    })
+    expect(rulesBrokenBy(schema, { days: 1 })).toEqual([])
+    expect(rulesBrokenBy(schema, { days: 365 })).toEqual([])
+    expect(rulesBrokenBy(schema, { days: 0 })).toEqual(['days:too_small'])
+    expect(rulesBrokenBy(schema, { days: 366 })).toEqual(['days:too_big'])
+    expect(rulesBrokenBy(schema, { days: 1.5 })).toEqual(['days:invalid_type'])
+  })
+
+  it('refuses days stated as undefined', () => {
+    expect(rulesBrokenBy(schema, { days: undefined })).toEqual([
+      'days:invalid_type',
+    ])
+  })
+
+  it('refuses a parameter it does not know', () => {
+    expect(rulesBrokenBy(schema, { limit: 10 })).toEqual([
+      'limit:unrecognized_keys',
+    ])
+  })
+})
+
+describe('pointExpireRequestSchema', () => {
+  const schema = pointExpireRequestSchema
+
+  it('accepts a customer and a day, and neither', () => {
+    expect(
+      parseWith(
+        schema,
+        { customerId: CUSTOMER_ID, processBefore: '2026-11-01' },
+        'Invalid',
+      ),
+    ).toEqual({
+      type: 'success',
+      data: { customerId: CUSTOMER_ID, processBefore: '2026-11-01' },
+    })
+    expect(
+      parseWith(schema, { customerId: null, processBefore: null }, 'Invalid'),
+    ).toEqual({
+      type: 'success',
+      data: { customerId: null, processBefore: null },
+    })
+  })
+
+  it('needs both keys', () => {
+    expect(rulesBrokenBy(schema, {})).toEqual([
+      'customerId:invalid_type',
+      'processBefore:invalid_type',
+    ])
+  })
+
+  it('refuses a customer ID that is not a UUID and a day that is not a date', () => {
+    expect(
+      rulesBrokenBy(schema, {
+        customerId: 'everyone',
+        processBefore: '2026-11-01T00:00:00Z',
+      }),
+    ).toEqual(['customerId:invalid_format', 'processBefore:invalid_format'])
+    expect(
+      rulesBrokenBy(schema, { customerId: null, processBefore: '2026-02-30' }),
+    ).toEqual(['processBefore:invalid_format'])
+  })
+
+  it('refuses a key it does not know', () => {
+    expect(
+      rulesBrokenBy(schema, {
+        customerId: null,
+        processBefore: null,
+        salonId: CUSTOMER_ID,
+      }),
+    ).toEqual(['salonId:unrecognized_keys'])
   })
 })
