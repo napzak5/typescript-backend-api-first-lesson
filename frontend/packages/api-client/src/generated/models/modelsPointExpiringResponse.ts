@@ -9,18 +9,18 @@ import type { ModelsCustomerId } from './modelsCustomerId';
 import type { ModelsPointTransactionResponse } from './modelsPointTransactionResponse';
 
 /**
- * 失効予定ポイントの集計結果 - 有効期限が近い獲得ポイントの合計と、その取引の一覧
+ * 失効予定ポイントの集計結果 - 有効期限が近い獲得ポイントのうち、使われずに残っているポイントの合計と、その獲得の取引の一覧
  */
 export interface ModelsPointExpiringResponse {
   /** 対象顧客の ID */
   customerId: ModelsCustomerId;
-  /** 期間内に失効する予定のポイント数の合計 */
+  /** 有効期限が期間内(期限を過ぎて、まだ失効させていないものを含む)の獲得ポイントのうち、使われずに残っているポイント数の合計。残高を超えない */
   expiringPoints: number;
   /**
-     * 期間内で最も早い有効期限。失効予定のポイントがない場合はnull
+     * transactions の中で最も早い有効期限。該当するポイントがない場合はnull
      * @nullable
      */
   expirationDate: string | null;
-  /** 期間内に有効期限を迎える獲得ポイントの取引の一覧。expiryDate の昇順で並ぶ */
+  /** 使われずに残っているポイントのある、有効期限が期間内の獲得(earned)の取引の一覧。expiryDate の昇順で、同じ日付なら登録の古い順に並ぶ。各取引の points は獲得したポイント数で、残っている数ではない */
   transactions: ModelsPointTransactionResponse[];
 }
