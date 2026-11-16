@@ -744,6 +744,24 @@ describe('Points API', () => {
       })
     })
 
+    it('links the pages under the mount path the request used', async () => {
+      await insertTransaction('2026-11-20T03:00:00.000Z', idOf(1))
+      await insertTransaction('2026-11-20T04:00:00.000Z', idOf(2))
+
+      const response = await authorized(
+        request(app).get(
+          `/API/V1/POINTS/customer/${customerId}/transactions?limit=1`,
+        ),
+        asAdmin,
+      )
+
+      expect(response.status).toBe(200)
+      expect(response.body.links).toMatchObject({
+        self: `/API/V1/POINTS/customer/${customerId}/transactions?limit=1`,
+        next: `/API/V1/POINTS/customer/${customerId}/transactions?limit=1&cursor=${idOf(2)}`,
+      })
+    })
+
     it.each(keepers)('answers %s', async (_, signInAs) => {
       expect((await historyOf(customerId, {}, await signInAs())).status).toBe(
         200,
@@ -908,6 +926,19 @@ describe('Points API', () => {
 
       expect(response.body.data.balance).toBe(2800)
       expect((await storedCustomer()).loyaltyPoints).toBe(2800)
+    })
+
+    it('links the customer under the mount path the request used', async () => {
+      const response = await authorized(
+        request(app).post('/API/V1/POINTS/earn?x=1'),
+        asAdmin,
+      ).send(earning())
+
+      expect(response.status).toBe(200)
+      expect(response.body.links).toEqual({
+        balance: `/API/V1/POINTS/customer/${customerId}/balance`,
+        transactions: `/API/V1/POINTS/customer/${customerId}/transactions`,
+      })
     })
 
     it('earns on a sale and on a booking of the customer', async () => {
@@ -1207,6 +1238,21 @@ describe('Points API', () => {
       expect((await storedCustomer()).loyaltyPoints).toBe(600)
     })
 
+    it('links the customer under the mount path the request used', async () => {
+      await withBalance(1000)
+
+      const response = await authorized(
+        request(app).post('/API/V1/POINTS/use?x=1'),
+        asAdmin,
+      ).send(using())
+
+      expect(response.status).toBe(200)
+      expect(response.body.links).toEqual({
+        balance: `/API/V1/POINTS/customer/${customerId}/balance`,
+        transactions: `/API/V1/POINTS/customer/${customerId}/transactions`,
+      })
+    })
+
     it('uses the whole balance and no more', async () => {
       await withBalance(300)
 
@@ -1342,6 +1388,19 @@ describe('Points API', () => {
         description: null,
       })
       expect((await storedCustomer()).loyaltyPoints).toBe(300)
+    })
+
+    it('links the customer under the mount path the request used', async () => {
+      const response = await authorized(
+        request(app).post('/API/V1/POINTS/adjust?x=1'),
+        asAdmin,
+      ).send(adjusting())
+
+      expect(response.status).toBe(200)
+      expect(response.body.links).toEqual({
+        balance: `/API/V1/POINTS/customer/${customerId}/balance`,
+        transactions: `/API/V1/POINTS/customer/${customerId}/transactions`,
+      })
     })
 
     it('refers to a void sale, a cancelled booking and a record adjusted for already', async () => {
