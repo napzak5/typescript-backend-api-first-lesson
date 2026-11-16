@@ -103,7 +103,7 @@ curl http://localhost:3000/api/v1/salons      # サロン一覧（認証なし�
 売上台帳（`/api/v1/sales` の一覧、作成、1 件の取得、更新、取り消し、`/api/v1/sales/{id}/receipt` のレシート、`/api/v1/sales/calculate` の金額の計算）、
 支払い方法（`/api/v1/salons/{salonId}/payment-methods` の一覧、作成、1 件の取得、更新、削除）、
 売上の支払い（`/api/v1/sales/{id}/process` の記録と、`/api/v1/payments/{id}/refund` の返金）、
-売上レポート（`/api/v1/sales-reports` の期間のレポート、1 日の売上、スタッフ別、カテゴリー別、推移）、
+売上レポート（`/api/v1/sales-reports` の期間のレポート、1 日の売上、スタッフ別、カテゴリー別、推移、CSV の出力）、
 認証のすべてのオペレーション（`/api/v1/auth` のログイン、トークンの更新、
 ログアウト、現在のユーザーの取得、ユーザー登録、メールアドレスの確認、パスワードの再設定と変更、
 スタッフの招待の確認、受け入れ、参加、2 要素認証、セッションの一覧と無効化、および `/api/v1/admin/auth` の管理者の操作）、

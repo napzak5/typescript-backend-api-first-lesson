@@ -441,7 +441,7 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 
 | オペレーション | 許可 |
 |---|---|
-| 期間のレポート、1 日の売上、スタッフ別、カテゴリー別、推移（`GET /api/v1/sales-reports`、`/daily`、`/by-staff`、`/by-category`、`/trends`） | `admin`（すべてのサロン）、クエリの `salonId` のサロンの `owner` / `manager` |
+| 期間のレポート、1 日の売上、スタッフ別、カテゴリー別、推移、CSV の出力（`GET /api/v1/sales-reports`、`/daily`、`/by-staff`、`/by-category`、`/trends`、`/export`） | `admin`（すべてのサロン）、クエリの `salonId` のサロンの `owner` / `manager` |
 
 - 1 段階目は、操作者だけで決まる。`admin` はすべてのサロン、サロンの `owner` と `manager` は所属サロンのレポートを読める。サロンの `staff`、ロール `customer` のユーザー、範囲 `none` のユーザーは、クエリが不正でも 403
 - 2 段階目は、クエリを確かめたあとに決まる（`isWithin`）。`owner` / `manager` が、ほかのサロンを指定すると、サロンが存在するかどうかにかかわらず 403。クエリが不正なら、その前に 400 を返す

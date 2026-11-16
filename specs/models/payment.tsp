@@ -1020,38 +1020,4 @@ namespace BeautySalon.Models {
     @doc("各区切りの sales を transactions で割った額(1円未満を切り捨て)。売上がなければ0")
     average: int64[];
   }
-
-  @doc("""
-    売上レポート出力形式区分 - 売上レポートを出力するファイルの形式
-    
-    csv: CSV - カンマ区切りのテキストファイル
-    excel: Excel - Excel のブック
-    pdf: PDF - 印刷・配布用の PDF ファイル
-    """)
-  enum SalesReportExportFormatType {
-    csv,
-    excel,
-    pdf,
-  }
-
-  @doc("売上レポートの出力リクエスト - 出力する期間と形式を指定する")
-  model SalesReportExportRequest {
-    @doc("集計対象のサロン ID")
-    salonId: SalonId;
-
-    @doc("集計期間の開始日時")
-    startDate: utcDateTime;
-
-    @doc("集計期間の終了日時")
-    endDate: utcDateTime;
-
-    @doc("出力形式")
-    format: SalesReportExportFormatType;
-  }
-
-  @doc("売上レポートの出力結果")
-  model SalesReportExportResponse {
-    @doc("出力したファイルのダウンロード URL")
-    downloadUrl: string;
-  }
 }
