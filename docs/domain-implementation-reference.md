@@ -956,6 +956,21 @@ A stock count (`POST /api/v1/inventory/stock-count`; its rules are in [Inventory
 | 9. Use cases | The keepers count (`inventoryKeeperReachOf`), and the positions of the rows that are not of the salon become `items.<n>.inventoryId` issues | `backend/packages/domain/src/business-logic/inventory/perform-stock-count.usecase.ts` |
 | 12. Tests | The integration test makes a count wait for a change and for a delete of one of its rows, times a count that waited, and sends counts that share rows in other orders, and a count among sales of its row, at the same moment | `backend/packages/api/src/__tests__/inventory-count.integration.test.ts` |
 
+### Items That Copy Another Domain, and a Status That Moves Step by Step: the Purchase Orders
+
+The purchase orders of a salon (`/api/v1/purchase-orders`; their rules are in [Purchase Orders](./purchase-orders.md), Japanese) are reached as the stock rows are. Read them for what the stock does not show:
+
+| Step | What the purchase orders show | Where to read it |
+|------|-------------------------------|------------------|
+| 1. API contract | A new item (`PurchaseOrderItemCreateRequest`) names its stock row, its quantity and its unit price; the item of the response (`PurchaseOrderItem`) has the product the server copied and what the item comes to. The approval has no body | `specs/models/inventory.tsp`, `specs/operations/inventory-operations.tsp` (`PurchaseOrderCrud`) |
+| 2. Database | The amounts, the approval, the cancellation and the delivery are held by CHECK constraints; an item keeps its order when its stock row is removed (`ON DELETE SET NULL`) | `backend/packages/database/sql/migrations/202611171600_purchase_orders.sql` |
+| 3. Consistency rules | The stock row of a new item never takes the null of its column (`nonNullable`) | `backend/packages/database/src/scripts/api-consistency-rules.ts` |
+| 5. Validation schemas | A row named twice is reported where it is named again; an item that comes to more than an `integer` is reported at its unit price with the most it may be; the total of the order is looked at once nothing else is wrong | `backend/packages/domain/src/schemas/purchase-order.schema.ts` |
+| 6. Business rules | Pure functions say why an update, an approval or a cancellation is refused from a status, and work out the amounts exactly | `backend/packages/domain/src/business-logic/purchase-order/_shared/status.ts`, `_shared/amounts.ts` |
+| 7. Repository interface | `PurchaseOrderCreation` (`created`, `orderNumberTaken`, `rowsNotFound` with every position) and `PurchaseOrderChange` (`changed`, `notFound`, or the refusal of the status) | `backend/packages/domain/src/repositories/purchase-order.repository.ts` |
+| 8. Repository implementation | The create holds the stock rows and their products `FOR KEY SHARE` in the order of the IDs of the rows and copies the products; a change holds the order `FOR UPDATE` and decides on its status as held | `backend/packages/infrastructure/src/repositories/purchase-order.repository.impl.ts` |
+| 12. Tests | The integration test approves one order twice at the same moment, makes a create wait for the removal of one of its rows and for a change of a product, and checks every refused step of the status | `backend/packages/api/src/__tests__/purchase-order.integration.test.ts` |
+
 ### Rows That Belong to a Record of a Salon: the Staff Schedules
 
 A schedule says when a staff member works: the rows of `staff_schedules` of one staff member, read and replaced as a whole. Their rules are in [Staff Ledger](./staff.md#勤務スケジュール) (Japanese). They are built like the staff ledger and differ in these places:

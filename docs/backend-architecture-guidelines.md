@@ -818,7 +818,7 @@ async execute(
 - リポジトリの `update` は、見せるスタッフの条件（`shown`）を WHERE に含めた 1 つの文で書き、見せる列を `RETURNING` で返します。サロンの条件があるので、`UPDATE … FROM salons` です。条件に合う行がなければ null を返し、ユースケースが `notFound` にします。先に読んでから書くことはしません。
 - ルーターは、`/me` を `/:id` より前に登録します。逆にすると、`me` が ID として検証されます。
 
-権限の規則は [認証と認可](./authentication.md#サロンの下にあるルートの権限)、サービスカテゴリーとサービスの規則は [サービスメニュー](./service-menu.md)、スタッフ台帳、勤務スケジュール、招待、アカウント、プロフィールの規則は [スタッフ台帳](./staff.md)、支払い方法と支払いの規則は [支払い](./payments.md)、商品の規則は [商品](./products.md)、在庫の規則は [在庫](./inventory.md) にあります。
+権限の規則は [認証と認可](./authentication.md#サロンの下にあるルートの権限)、サービスカテゴリーとサービスの規則は [サービスメニュー](./service-menu.md)、スタッフ台帳、勤務スケジュール、招待、アカウント、プロフィールの規則は [スタッフ台帳](./staff.md)、支払い方法と支払いの規則は [支払い](./payments.md)、商品の規則は [商品](./products.md)、在庫の規則は [在庫](./inventory.md)、発注の規則は [発注](./purchase-orders.md) にあります。
 
 ---
 
@@ -929,6 +929,7 @@ async execute(
 - [`docs/payments.md`](./payments.md) - 支払い（支払い方法、支払いの記録と返金の規則）
 - [`docs/products.md`](./products.md) - 商品（サロンの商品の規則）
 - [`docs/inventory.md`](./inventory.md) - 在庫（サロンの在庫の行、在庫僅少、期限切れ間近の規則）
+- [`docs/purchase-orders.md`](./purchase-orders.md) - 発注（サロンの発注、明細、金額、ステータスの規則）
 - [`docs/db-driven-domain-model.md`](./db-driven-domain-model.md) - DB駆動ドメインモデル
 - [`docs/sum-types-pattern-matching.md`](./sum-types-pattern-matching.md) - Sum型とパターンマッチング
 - [`docs/type-safety-principles.md`](./type-safety-principles.md) - 型安全性の原則

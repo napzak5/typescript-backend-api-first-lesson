@@ -92,7 +92,9 @@ and `delete`), the eleven of `InventoryCrud` (the stock rows of a salon:
 `list`, `create`, `get`, `update`, `delete`, `listLowStock` and
 `listExpiring`, their stock movements: `recordMovement` and
 `listMovements`, the stock count, `performStockCount`, and the value
-report, `getValueReport`),
+report, `getValueReport`), the six of `PurchaseOrderCrud` (the purchase
+orders of a salon: `list`, `create`, `get`, `update`, `approve` and
+`cancel`),
 the five
 operations of
 `StaffCrud` (the staff ledger of a salon: `list`, `create`, `get`, `update`

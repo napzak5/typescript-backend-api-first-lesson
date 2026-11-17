@@ -504,6 +504,25 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 
 規則は [在庫](./inventory.md) にあります。
 
+### 発注の権限
+
+発注（`purchase_orders`）もサロンのもので、ルートはサロンの下にありません（`/api/v1/purchase-orders`）。どのサロンの発注かは、作成では本文の `salonId`、一覧ではクエリの `salonId`、取得、更新、承認、取り消しでは発注そのものが決めます。権限は、在庫と同じ 2 段階で判定します（`business-logic/purchase-order/_shared/authorization.ts`）。
+
+| オペレーション | 許可 |
+|---|---|
+| 一覧（`GET /api/v1/purchase-orders`） | `admin`（すべてのサロン）、サロンの `owner` / `manager` / `staff`（所属サロンの発注だけ） |
+| 作成（`POST /api/v1/purchase-orders`） | `admin`、本文の `salonId` のサロンの `owner` / `manager` / `staff` |
+| 1 件の取得、更新（`GET`、`PATCH /api/v1/purchase-orders/{id}`） | `admin`、発注のサロンの `owner` / `manager` / `staff` |
+| 承認、取り消し（`POST /api/v1/purchase-orders/{id}/approve`、`/cancel`） | `admin`、発注のサロンの `owner` / `manager` |
+
+- 1 段階目は、操作者だけで決まる。一覧、作成、取得、更新（`purchaseOrderReachOf`）は、在庫を読める人ができる。足りない商品を頼み、仕入先が発注をどうしたかを記録するのは、日々在庫を扱うスタッフであるため。承認と取り消し（`purchaseOrderApproverReachOf`）は、在庫を管理する `owner` と `manager` だけができる。承認はお金を使うことを決めるため。サロンの `staff`（承認と取り消し）、ロール `customer` のユーザー、範囲 `none` のユーザーは、ID か本文が不正でも 403
+- 2 段階目は、本文かクエリを確かめたあとに決まる（`isWithin`）。サロンのユーザーが、ほかのサロンを指定すると、サロンが存在するかどうかにかかわらず 403
+- 取得、更新、承認、取り消しには、比べるサロンがない。リポジトリが、操作者に届く範囲を検索の条件にするので、ほかのサロンの発注は見つからない（404）。一覧のカーソルにも、同じ条件を付ける。作成の明細の在庫の行は、本文の `salonId` のサロンの行でなければ 400（`items.<n>.inventoryId` の `not_found`）
+- `createdBy` と `approvedBy` は、操作者のスタッフ ID で、`admin` では null
+- 顧客には、発注を見せない。発注のための権限（`users.permissions`）はない
+
+規則は [発注](./purchase-orders.md) にあります。
+
 ### レビューの権限
 
 レビューは、来店した顧客が書き、誰でも読みます。誰が投稿、修正、削除、参考になったの評価、通報、返信ができるかは、まず操作者で決まります（`business-logic/review/_shared/authorization.ts` の `reviewerOf`、`reviewRemoverOf`、`reviewReporterOf`、`reviewResponderOf`）。修正と削除では、そのあとで、レビューを書いた顧客かどうかを、参考になったでは、書いた顧客でないことを、通報では、顧客なら書いた顧客でないこと、サロンならそのサロンのレビューであることを、返信では、`admin` なら取り下げ（null）であること、サロンならそのサロンのレビューであることを確かめます。通報の一覧と却下は `admin` だけです（`business-logic/review-report/_shared/authorization.ts` の `mayHandleReviewReports`）。
