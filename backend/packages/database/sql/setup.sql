@@ -264,7 +264,8 @@ CREATE TABLE "inventory" (
 	"notes" text,
 	"createdAt" timestamp with time zone DEFAULT now() NOT NULL,
 	"updatedAt" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "inventory_unique" UNIQUE("salonId","productId","lotNumber")
+	CONSTRAINT "inventory_unique" UNIQUE("salonId","productId","lotNumber"),
+	CONSTRAINT "inventory_stock" CHECK (("currentStock" >= (0)::numeric) AND ("reservedStock" >= (0)::numeric) AND ("reservedStock" <= "currentStock") AND ("availableStock" = ("currentStock" - "reservedStock")))
 );
 
 CREATE TABLE "inventory_transactions" (
@@ -954,6 +955,7 @@ CREATE INDEX "idx_inventory_expiry_date" ON "inventory" USING btree ("expiryDate
 CREATE INDEX "idx_inventory_lot_number" ON "inventory" USING btree ("lotNumber" text_ops);
 CREATE INDEX "idx_inventory_product_id" ON "inventory" USING btree ("productId" uuid_ops);
 CREATE INDEX "idx_inventory_salon_id" ON "inventory" USING btree ("salonId" uuid_ops);
+CREATE UNIQUE INDEX "inventory_unique_without_lot" ON "inventory" USING btree ("salonId" uuid_ops,"productId" uuid_ops) WHERE ("lotNumber" IS NULL);
 CREATE INDEX "idx_inventory_transactions_created_at" ON "inventory_transactions" USING btree ("createdAt" timestamptz_ops);
 CREATE INDEX "idx_inventory_transactions_inventory_id" ON "inventory_transactions" USING btree ("inventoryId" uuid_ops);
 CREATE INDEX "idx_inventory_transactions_product_id" ON "inventory_transactions" USING btree ("productId" uuid_ops);

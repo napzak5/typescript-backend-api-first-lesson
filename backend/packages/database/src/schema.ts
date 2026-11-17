@@ -807,6 +807,10 @@ export const inventory = pgTable(
       .notNull(),
   },
   (table) => [
+    check(
+      'inventory_stock',
+      sql`("currentStock" >= (0)::numeric) AND ("reservedStock" >= (0)::numeric) AND ("reservedStock" <= "currentStock") AND ("availableStock" = ("currentStock" - "reservedStock"))`,
+    ),
     foreignKey({
       columns: [table.productId],
       foreignColumns: [products.id],
@@ -838,6 +842,13 @@ export const inventory = pgTable(
       table.productId,
       table.lotNumber,
     ),
+    uniqueIndex('inventory_unique_without_lot')
+      .using(
+        'btree',
+        table.salonId.asc().nullsLast().op('uuid_ops'),
+        table.productId.asc().nullsLast().op('uuid_ops'),
+      )
+      .where(sql`("lotNumber" IS NULL)`),
   ],
 )
 

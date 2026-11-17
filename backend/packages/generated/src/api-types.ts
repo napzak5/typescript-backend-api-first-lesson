@@ -1445,13 +1445,13 @@ export interface paths {
         };
         /**
          * List inventory
-         * @description 絞り込み条件とページネーションを指定して在庫を一覧取得します。
+         * @description 絞り込み条件とページネーションを指定して在庫を一覧取得します。商品の商品コード、ロット番号(nullが先)、IDの順に並べます。管理者と、サロンのオーナー・マネージャー・スタッフ(所属サロンの在庫)が使えます。ほかのサロンのsalonIdを指定した場合は403を、cursorが一覧できる在庫を指していない場合は400を返します。
          */
         get: operations["InventoryCrud_list"];
         put?: never;
         /**
          * Create an inventory record
-         * @description 商品の在庫を新規登録します。在庫数は0で登録され、入庫は在庫移動で記録します。salonIdのサロンが存在しない場合や、productIdにsalonIdのサロンの商品ではないIDを指定した場合は400を、salonId・productId・lotNumberの組み合わせが既存の在庫と重複する場合は409を返します。
+         * @description 商品の在庫を新規登録します。在庫数は0で登録され、入庫は在庫移動で記録します。管理者と、salonIdのサロンのオーナー・マネージャーが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合や、productIdにsalonIdのサロンの商品ではないIDを指定した場合、lotNumberが商品のロット管理(requiresLotTracking)と合わない場合は400を、salonId・productId・lotNumberの組み合わせが既存の在庫と重複する場合は409を返します。
          */
         post: operations["InventoryCrud_create"];
         delete?: never;
@@ -1529,7 +1529,7 @@ export interface paths {
         };
         /**
          * List expiring inventory
-         * @description 指定した日数以内に使用期限を迎える在庫を、期限切れの在庫も含めて一覧取得します。salonIdのサロンが存在しない場合は400を返します。
+         * @description 指定した日数以内に使用期限を迎える、在庫数が0より多い在庫を、期限切れの在庫も含めて、使用期限の早い順に一覧取得します。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合は400を返します。
          */
         get: operations["InventoryCrud_listExpiring"];
         put?: never;
@@ -1549,7 +1549,7 @@ export interface paths {
         };
         /**
          * List low-stock inventory
-         * @description 在庫数が閾値以下の在庫を一覧取得します。閾値を省略した場合は商品ごとの最低在庫数を使います。salonIdのサロンが存在しない場合は400を返します。
+         * @description 取り扱い中の商品のうち、サロンにある在庫数の合計が閾値以下の商品の在庫を一覧取得します。閾値を省略した場合は商品ごとの最低在庫数を使います。並びは在庫の一覧と同じです。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合は400を返します。
          */
         get: operations["InventoryCrud_listLowStock"];
         put?: never;
@@ -1629,21 +1629,21 @@ export interface paths {
         };
         /**
          * Get an inventory record
-         * @description IDを指定して在庫を1件取得します。
+         * @description IDを指定して在庫を1件取得します。管理者と、在庫のサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンの在庫は、存在しない在庫と同じく404を返します。
          */
         get: operations["InventoryCrud_get"];
         put?: never;
         post?: never;
         /**
          * Delete an inventory record
-         * @description 在庫を削除します。この在庫の在庫移動の記録は残り、その inventoryId は null になります。
+         * @description 在庫を削除します。この在庫の在庫移動の記録は残り、その inventoryId は null になります。管理者と、在庫のサロンのオーナー・マネージャーが使えます。ほかのサロンの在庫は404を、在庫数(currentStock)が0でない場合は409を返します。
          */
         delete: operations["InventoryCrud_delete"];
         options?: never;
         head?: never;
         /**
          * Update an inventory record
-         * @description 在庫の指定した項目だけを更新します。在庫数は変更できません。lotNumberの変更で同じサロン・商品・ロット番号の在庫と重複する場合は409を返します。
+         * @description 在庫の指定した項目だけを更新します。在庫数は変更できません。管理者と、在庫のサロンのオーナー・マネージャーが使えます。ほかのサロンの在庫は404を、lotNumberが商品のロット管理(requiresLotTracking)と合わない場合は400を、lotNumberの変更で同じサロン・商品・ロット番号の在庫と重複する場合は409を返します。
          */
         patch: operations["InventoryCrud_update"];
         trace?: never;
@@ -5676,14 +5676,14 @@ export interface components {
         "Models.InventoryAlertType": "low_stock" | "expiring" | "expired" | "overstock";
         /**
          * @description 在庫新規登録リクエスト - 全項目のキーが必須。DB で NULL 許可のカラムのみ null を指定できる。
-         *     在庫数は0で登録され、入庫は在庫移動(movement)で記録する
+         *     在庫数は0で登録され、入庫は在庫移動(movement)で記録する。文字列は空白だけのものを指定できない
          */
         "Models.InventoryCreateRequest": {
-            /** @description 在庫を追加するサロン ID */
+            /** @description 在庫を追加するサロン ID。削除されていないサロンを指定する */
             salonId: components["schemas"]["Models.SalonId"];
-            /** @description 在庫の対象となる商品 ID。salonId のサロンの商品を指定する */
+            /** @description 在庫の対象となる商品 ID。salonId のサロンの、削除されていない商品を指定する */
             productId: components["schemas"]["Models.ProductId"];
-            /** @description ロット番号。同じサロン・商品の在庫の間で一意。ロット管理をしない場合はnull */
+            /** @description ロット番号。同じサロン・商品の在庫の間で一意。商品の requiresLotTracking が true なら必須、false なら null */
             lotNumber: string | null;
             /**
              * Format: date
@@ -5734,7 +5734,7 @@ export interface components {
             reason: string | null;
         };
         /**
-         * @description 在庫レスポンス - inventory テーブルの全カラムを返す。1行はサロンにおける1商品(ロット)の在庫を表す。
+         * @description 在庫レスポンス - inventory テーブルの全カラムを返す。1行はサロンにおける1商品の1ロットの在庫を表し、salonId・productId・lotNumber の組はサロンの在庫の間で一意(lotNumber が null の行も1つまで)。
          *     プロパティ名と null 許可は DB カラムと一致させている。
          *     在庫数(currentStock・availableStock・reservedStock)は在庫移動と棚卸によってのみ変わる
          */
@@ -5752,12 +5752,12 @@ export interface components {
             currentStock: number;
             /**
              * Format: double
-             * @description 引当中の数量を除いた、利用できる在庫数量
+             * @description 引当中の数量を除いた、利用できる在庫数量。常に currentStock - reservedStock
              */
             availableStock: number;
             /**
              * Format: double
-             * @description 引当済み(予約済み)の在庫数量
+             * @description 引当済み(予約済み)の在庫数量。0以上 currentStock 以下。引当を記録するオペレーションはなく、APIで登録した在庫では0
              */
             reservedStock: number;
             /** @description ロット番号。ロット管理をしない場合はnull */
@@ -5951,11 +5951,11 @@ export interface components {
 
         "Models.InventoryTransactionType": "purchase" | "sale" | "use" | "adjustment" | "return" | "disposal" | "transfer";
         /**
-         * @description 在庫部分更新リクエスト - 指定した項目だけを更新する。DB で NULL 許可のカラムは null でクリアできる。
-         *     在庫数は変更できない(在庫移動と棚卸で変更する)。サロンと商品も変更できない
+         * @description 在庫部分更新リクエスト - 指定した項目だけを更新し、1つ以上の項目を指定する。DB で NULL 許可のカラムは null でクリアできる。
+         *     在庫数は変更できない(在庫移動と棚卸で変更する)。サロンと商品も変更できない。文字列は空白だけのものを指定できない
          */
         "Models.InventoryUpdateRequest": {
-            /** @description ロット番号。同じサロン・商品の在庫の間で一意。nullでクリア */
+            /** @description ロット番号。同じサロン・商品の在庫の間で一意。商品の requiresLotTracking が true なら null にできず、false なら null だけを指定できる */
             lotNumber?: string | null;
             /**
              * Format: date
@@ -10375,7 +10375,7 @@ export interface components {
         "Models.InventoryAlertSearchRequest.type": components["schemas"]["Models.InventoryAlertType"];
         /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
         "Models.InventoryExpiringSearchRequest.cursor": string;
-        /** @description 今日から何日後までに使用期限を迎える在庫を対象とするか (0〜365)。期限切れの在庫も含む */
+        /** @description サロンのタイムゾーンでの今日から何日後までに使用期限を迎える在庫を対象とするか (0〜365、両端を含む)。期限切れの在庫も含む */
         "Models.InventoryExpiringSearchRequest.days": number;
         /** @description 1ページあたりの取得件数上限 (1〜100) */
         "Models.InventoryExpiringSearchRequest.limit": number;
@@ -10387,7 +10387,7 @@ export interface components {
         "Models.InventoryLowStockSearchRequest.limit": number;
         /** @description 対象のサロン ID */
         "Models.InventoryLowStockSearchRequest.salonId": components["schemas"]["Models.SalonId"];
-        /** @description 在庫僅少とみなす在庫数の閾値。currentStock がこの値以下の在庫に一致する。省略時は商品ごとの最低在庫数(minimumStock)を使う */
+        /** @description 在庫僅少とみなす在庫数の閾値。商品ごとに、サロンにあるその商品の在庫の currentStock の合計がこの値以下なら、その商品の在庫に一致する。省略時は商品ごとの最低在庫数(minimumStock)を使う */
         "Models.InventoryLowStockSearchRequest.threshold": number;
         /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
         "Models.InventorySearchRequest.cursor": string;
@@ -10397,7 +10397,7 @@ export interface components {
         "Models.InventorySearchRequest.lotNumber": string;
         /** @description 商品の ID による絞り込み(完全一致) */
         "Models.InventorySearchRequest.productId": components["schemas"]["Models.ProductId"];
-        /** @description 在庫を管理するサロンの ID による絞り込み(完全一致) */
+        /** @description 在庫を管理するサロンの ID による絞り込み(完全一致)。省略すると、サロンのユーザーには所属サロンの在庫、管理者にはすべてのサロンの在庫を返す */
         "Models.InventorySearchRequest.salonId": components["schemas"]["Models.SalonId"];
         /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
         "Models.InventoryTransactionSearchRequest.cursor": string;
@@ -18966,7 +18966,7 @@ export interface operations {
                 limit?: components["parameters"]["Models.InventorySearchRequest.limit"];
                 /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
                 cursor?: components["parameters"]["Models.InventorySearchRequest.cursor"];
-                /** @description 在庫を管理するサロンの ID による絞り込み(完全一致) */
+                /** @description 在庫を管理するサロンの ID による絞り込み(完全一致)。省略すると、サロンのユーザーには所属サロンの在庫、管理者にはすべてのサロンの在庫を返す */
                 salonId?: components["parameters"]["Models.InventorySearchRequest.salonId"];
                 /** @description 商品の ID による絞り込み(完全一致) */
                 productId?: components["parameters"]["Models.InventorySearchRequest.productId"];
@@ -19487,7 +19487,7 @@ export interface operations {
                 cursor?: components["parameters"]["Models.InventoryExpiringSearchRequest.cursor"];
                 /** @description 対象のサロン ID */
                 salonId: components["parameters"]["Models.InventoryExpiringSearchRequest.salonId"];
-                /** @description 今日から何日後までに使用期限を迎える在庫を対象とするか (0〜365)。期限切れの在庫も含む */
+                /** @description サロンのタイムゾーンでの今日から何日後までに使用期限を迎える在庫を対象とするか (0〜365、両端を含む)。期限切れの在庫も含む */
                 days?: components["parameters"]["Models.InventoryExpiringSearchRequest.days"];
             };
             header?: never;
@@ -19579,7 +19579,7 @@ export interface operations {
                 cursor?: components["parameters"]["Models.InventoryLowStockSearchRequest.cursor"];
                 /** @description 対象のサロン ID */
                 salonId: components["parameters"]["Models.InventoryLowStockSearchRequest.salonId"];
-                /** @description 在庫僅少とみなす在庫数の閾値。currentStock がこの値以下の在庫に一致する。省略時は商品ごとの最低在庫数(minimumStock)を使う */
+                /** @description 在庫僅少とみなす在庫数の閾値。商品ごとに、サロンにあるその商品の在庫の currentStock の合計がこの値以下なら、その商品の在庫に一致する。省略時は商品ごとの最低在庫数(minimumStock)を使う */
                 threshold?: components["parameters"]["Models.InventoryLowStockSearchRequest.threshold"];
             };
             header?: never;
@@ -20124,6 +20124,15 @@ export interface operations {
             };
             /** @description The server cannot find the requested resource. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The request conflicts with the current state of the server. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

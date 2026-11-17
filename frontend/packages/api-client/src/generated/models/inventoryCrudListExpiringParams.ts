@@ -22,7 +22,7 @@ export type InventoryCrudListExpiringParams = {
   /** サロン店舗・拠点を識別するためのブランド付きUUID。 */
   salonId: ModelsInventoryExpiringSearchRequestSalonIdParameter;
   /**
-   * 今日から何日後までに使用期限を迎える在庫を対象とするか (0〜365)。期限切れの在庫も含む
+   * サロンのタイムゾーンでの今日から何日後までに使用期限を迎える在庫を対象とするか (0〜365、両端を含む)。期限切れの在庫も含む
    * @minimum 0
    * @maximum 365
    */

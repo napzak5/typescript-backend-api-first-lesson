@@ -162,6 +162,8 @@ export const SalonWriteMapper = {
 
 `products` には、表現が変わるカラムが 3 つある。在庫の水準（`minimumStock`、`reorderPoint`、`maximumStock`）は、API では数値、`numeric(10,2)` のカラムでは文字列である。`ProductWriteMapper`（`backend/packages/domain/src/mappers/write/product.mapper.ts`）が `String(value)` で文字列にし、Read マッパー（`backend/packages/domain/src/mappers/read/product.mapper.ts`）が数値に戻す。スキーマは、小数第 3 位以下を持つ値を受け付けないので、保存で値が変わることはない。Read マッパーは、有限の数値として読めない値を、データベースのエラーにする。
 
+`inventory` の在庫の 3 つの数（`currentStock`、`availableStock`、`reservedStock`）も、API では数値、`numeric(10,2)` のカラムでは文字列である。リクエストは書かず（作成した行は 0）、Read マッパー（`backend/packages/domain/src/mappers/read/inventory.mapper.ts`）が数値にする。使用期限（`expiryDate`）は `date` のカラムで、DB も API も `YYYY-MM-DD` なので変換しない。リクエストの日付は、0001-01-01 から 9999-12-31 までに限る（`date` は 0 年を持てない）。
+
 `time` のカラムは変換しない。DB は `HH:mm:ss` で返し、リクエストは `HH:mm` と `HH:mm:ss` のどちらも受け付ける。
 
 顧客の `gender` は、DB では `varchar(20)`（行の型は `string`）、API では `CustomerGenderType` である。CHECK 制約 `customers_gender_known` が、値を Enum の 4 つのどれかに限っている。Read マッパーは、保存されている値を生成された `CustomerGenderTypeSchema` で検査する。書き込みでは変換しない（Enum の値は、そのまま文字列として保存できる）。

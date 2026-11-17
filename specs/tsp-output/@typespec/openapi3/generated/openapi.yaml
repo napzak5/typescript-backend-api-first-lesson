@@ -7972,7 +7972,7 @@ paths:
     get:
       operationId: InventoryCrud_list
       summary: List inventory
-      description: 絞り込み条件とページネーションを指定して在庫を一覧取得します。
+      description: 絞り込み条件とページネーションを指定して在庫を一覧取得します。商品の商品コード、ロット番号(nullが先)、IDの順に並べます。管理者と、サロンのオーナー・マネージャー・スタッフ(所属サロンの在庫)が使えます。ほかのサロンのsalonIdを指定した場合は403を、cursorが一覧できる在庫を指していない場合は400を返します。
       parameters:
         - $ref: '#/components/parameters/Models.InventorySearchRequest.limit'
         - $ref: '#/components/parameters/Models.InventorySearchRequest.cursor'
@@ -8060,7 +8060,7 @@ paths:
     post:
       operationId: InventoryCrud_create
       summary: Create an inventory record
-      description: 商品の在庫を新規登録します。在庫数は0で登録され、入庫は在庫移動で記録します。salonIdのサロンが存在しない場合や、productIdにsalonIdのサロンの商品ではないIDを指定した場合は400を、salonId・productId・lotNumberの組み合わせが既存の在庫と重複する場合は409を返します。
+      description: 商品の在庫を新規登録します。在庫数は0で登録され、入庫は在庫移動で記録します。管理者と、salonIdのサロンのオーナー・マネージャーが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合や、productIdにsalonIdのサロンの商品ではないIDを指定した場合、lotNumberが商品のロット管理(requiresLotTracking)と合わない場合は400を、salonId・productId・lotNumberの組み合わせが既存の在庫と重複する場合は409を返します。
       parameters: []
       responses:
         '201':
@@ -8480,7 +8480,7 @@ paths:
     get:
       operationId: InventoryCrud_listExpiring
       summary: List expiring inventory
-      description: 指定した日数以内に使用期限を迎える在庫を、期限切れの在庫も含めて一覧取得します。salonIdのサロンが存在しない場合は400を返します。
+      description: 指定した日数以内に使用期限を迎える、在庫数が0より多い在庫を、期限切れの在庫も含めて、使用期限の早い順に一覧取得します。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合は400を返します。
       parameters:
         - $ref: '#/components/parameters/Models.InventoryExpiringSearchRequest.limit'
         - $ref: '#/components/parameters/Models.InventoryExpiringSearchRequest.cursor'
@@ -8568,7 +8568,7 @@ paths:
     get:
       operationId: InventoryCrud_listLowStock
       summary: List low-stock inventory
-      description: 在庫数が閾値以下の在庫を一覧取得します。閾値を省略した場合は商品ごとの最低在庫数を使います。salonIdのサロンが存在しない場合は400を返します。
+      description: 取り扱い中の商品のうち、サロンにある在庫数の合計が閾値以下の商品の在庫を一覧取得します。閾値を省略した場合は商品ごとの最低在庫数を使います。並びは在庫の一覧と同じです。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合は400を返します。
       parameters:
         - $ref: '#/components/parameters/Models.InventoryLowStockSearchRequest.limit'
         - $ref: '#/components/parameters/Models.InventoryLowStockSearchRequest.cursor'
@@ -8961,7 +8961,7 @@ paths:
     get:
       operationId: InventoryCrud_get
       summary: Get an inventory record
-      description: IDを指定して在庫を1件取得します。
+      description: IDを指定して在庫を1件取得します。管理者と、在庫のサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンの在庫は、存在しない在庫と同じく404を返します。
       parameters:
         - name: id
           in: path
@@ -9058,7 +9058,7 @@ paths:
     patch:
       operationId: InventoryCrud_update
       summary: Update an inventory record
-      description: 在庫の指定した項目だけを更新します。在庫数は変更できません。lotNumberの変更で同じサロン・商品・ロット番号の在庫と重複する場合は409を返します。
+      description: 在庫の指定した項目だけを更新します。在庫数は変更できません。管理者と、在庫のサロンのオーナー・マネージャーが使えます。ほかのサロンの在庫は404を、lotNumberが商品のロット管理(requiresLotTracking)と合わない場合は400を、lotNumberの変更で同じサロン・商品・ロット番号の在庫と重複する場合は409を返します。
       parameters:
         - name: id
           in: path
@@ -9179,7 +9179,7 @@ paths:
     delete:
       operationId: InventoryCrud_delete
       summary: Delete an inventory record
-      description: 在庫を削除します。この在庫の在庫移動の記録は残り、その inventoryId は null になります。
+      description: 在庫を削除します。この在庫の在庫移動の記録は残り、その inventoryId は null になります。管理者と、在庫のサロンのオーナー・マネージャーが使えます。ほかのサロンの在庫は404を、在庫数(currentStock)が0でない場合は409を返します。
       parameters:
         - name: id
           in: path
@@ -9218,6 +9218,12 @@ paths:
                 $ref: '#/components/schemas/Models.ProblemDetails'
         '404':
           description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '409':
+          description: The request conflicts with the current state of the server.
           content:
             application/problem+json:
               schema:
@@ -21467,7 +21473,7 @@ components:
       name: days
       in: query
       required: false
-      description: 今日から何日後までに使用期限を迎える在庫を対象とするか (0〜365)。期限切れの在庫も含む
+      description: サロンのタイムゾーンでの今日から何日後までに使用期限を迎える在庫を対象とするか (0〜365、両端を含む)。期限切れの在庫も含む
       schema:
         type: integer
         format: int32
@@ -21527,7 +21533,7 @@ components:
       name: threshold
       in: query
       required: false
-      description: 在庫僅少とみなす在庫数の閾値。currentStock がこの値以下の在庫に一致する。省略時は商品ごとの最低在庫数(minimumStock)を使う
+      description: 在庫僅少とみなす在庫数の閾値。商品ごとに、サロンにあるその商品の在庫の currentStock の合計がこの値以下なら、その商品の在庫に一致する。省略時は商品ごとの最低在庫数(minimumStock)を使う
       schema:
         type: number
         format: double
@@ -21576,7 +21582,7 @@ components:
       name: salonId
       in: query
       required: false
-      description: 在庫を管理するサロンの ID による絞り込み(完全一致)
+      description: 在庫を管理するサロンの ID による絞り込み(完全一致)。省略すると、サロンのユーザーには所属サロンの在庫、管理者にはすべてのサロンの在庫を返す
       schema:
         $ref: '#/components/schemas/Models.SalonId'
       explode: false
@@ -25905,16 +25911,16 @@ components:
         salonId:
           allOf:
             - $ref: '#/components/schemas/Models.SalonId'
-          description: 在庫を追加するサロン ID
+          description: 在庫を追加するサロン ID。削除されていないサロンを指定する
         productId:
           allOf:
             - $ref: '#/components/schemas/Models.ProductId'
-          description: 在庫の対象となる商品 ID。salonId のサロンの商品を指定する
+          description: 在庫の対象となる商品 ID。salonId のサロンの、削除されていない商品を指定する
         lotNumber:
           type: string
           nullable: true
           maxLength: 100
-          description: ロット番号。同じサロン・商品の在庫の間で一意。ロット管理をしない場合はnull
+          description: ロット番号。同じサロン・商品の在庫の間で一意。商品の requiresLotTracking が true なら必須、false なら null
         expiryDate:
           type: string
           format: date
@@ -25936,7 +25942,7 @@ components:
           description: 備考メモ。未設定の場合はnull
       description: |-
         在庫新規登録リクエスト - 全項目のキーが必須。DB で NULL 許可のカラムのみ null を指定できる。
-        在庫数は0で登録され、入庫は在庫移動(movement)で記録する
+        在庫数は0で登録され、入庫は在庫移動(movement)で記録する。文字列は空白だけのものを指定できない
     Models.InventoryId:
       type: string
       format: uuid
@@ -26030,11 +26036,11 @@ components:
         availableStock:
           type: number
           format: double
-          description: 引当中の数量を除いた、利用できる在庫数量
+          description: 引当中の数量を除いた、利用できる在庫数量。常に currentStock - reservedStock
         reservedStock:
           type: number
           format: double
-          description: 引当済み(予約済み)の在庫数量
+          description: 引当済み(予約済み)の在庫数量。0以上 currentStock 以下。引当を記録するオペレーションはなく、APIで登録した在庫では0
         lotNumber:
           type: string
           nullable: true
@@ -26076,7 +26082,7 @@ components:
           format: date-time
           description: レコード最終更新日時
       description: |-
-        在庫レスポンス - inventory テーブルの全カラムを返す。1行はサロンにおける1商品(ロット)の在庫を表す。
+        在庫レスポンス - inventory テーブルの全カラムを返す。1行はサロンにおける1商品の1ロットの在庫を表し、salonId・productId・lotNumber の組はサロンの在庫の間で一意(lotNumber が null の行も1つまで)。
         プロパティ名と null 許可は DB カラムと一致させている。
         在庫数(currentStock・availableStock・reservedStock)は在庫移動と棚卸によってのみ変わる
     Models.InventoryStockCountDiscrepancy:
@@ -26294,7 +26300,7 @@ components:
           type: string
           nullable: true
           maxLength: 100
-          description: ロット番号。同じサロン・商品の在庫の間で一意。nullでクリア
+          description: ロット番号。同じサロン・商品の在庫の間で一意。商品の requiresLotTracking が true なら null にできず、false なら null だけを指定できる
         expiryDate:
           type: string
           format: date
@@ -26315,8 +26321,8 @@ components:
           nullable: true
           description: 備考メモ。nullでクリア
       description: |-
-        在庫部分更新リクエスト - 指定した項目だけを更新する。DB で NULL 許可のカラムは null でクリアできる。
-        在庫数は変更できない(在庫移動と棚卸で変更する)。サロンと商品も変更できない
+        在庫部分更新リクエスト - 指定した項目だけを更新し、1つ以上の項目を指定する。DB で NULL 許可のカラムは null でクリアできる。
+        在庫数は変更できない(在庫移動と棚卸で変更する)。サロンと商品も変更できない。文字列は空白だけのものを指定できない
     Models.InventoryValueReportCategory:
       type: object
       required:
