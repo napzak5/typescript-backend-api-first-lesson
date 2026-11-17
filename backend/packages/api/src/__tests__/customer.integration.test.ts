@@ -82,7 +82,6 @@ type Customer = {
   occupation: string | null
   membershipTier: string
   loyaltyPoints: number
-  lifetimeValue: number
   preferences: { preferredServices: string[]; notes: string | null } | null
   notes: string | null
   internalNotes: string | null
@@ -127,7 +126,6 @@ const RESPONSE_PROPERTIES = [
   'occupation',
   'membershipTier',
   'loyaltyPoints',
-  'lifetimeValue',
   'preferences',
   'notes',
   'internalNotes',
@@ -193,7 +191,6 @@ const customerRequest = (overrides: Record<string, unknown> = {}) => ({
 const assignedToNewCustomer = {
   userId: null,
   loyaltyPoints: 0,
-  lifetimeValue: 0,
   firstVisitDate: null,
   lastVisitDate: null,
   visitCount: 0,
@@ -855,7 +852,6 @@ describe('Customer API', () => {
     it('returns the columns of a row with microseconds and a visit history in the representation of the API', async () => {
       const id = await insertCustomerRow({
         loyaltyPoints: 120,
-        lifetimeValue: 54000,
         firstVisitDate: '2025-01-10',
         lastVisitDate: '2026-11-01',
         visitCount: 12,
@@ -871,7 +867,6 @@ describe('Customer API', () => {
       expect(response.body.data).toMatchObject({
         id,
         loyaltyPoints: 120,
-        lifetimeValue: 54000,
         firstVisitDate: '2025-01-10',
         lastVisitDate: '2026-11-01',
         visitCount: 12,
