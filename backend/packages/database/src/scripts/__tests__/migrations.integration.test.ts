@@ -3804,4 +3804,122 @@ describe('the migrations of this repository', () => {
       )
     })
   })
+
+  describe('202611181800_customer_versions.sql', () => {
+    const run = (): Promise<void> =>
+      runMigration('202611181800_customer_versions.sql')
+
+    /** The schema of setup.sql, which the migration brings a database to. */
+    let schemaOfSetup: string[] = []
+
+    /** The versions of the customers: the number, the operation, the user and a few values. */
+    const versionsOf = (ids: string[]) =>
+      sql<
+        {
+          customerId: string
+          version: number
+          operation: string
+          changedBy: string | null
+          email: string
+          notes: string | null
+          tags: string[]
+        }[]
+      >`
+        SELECT "customerId", version, operation::text AS operation,
+               "changedBy", email, notes, tags
+        FROM customer_versions
+        WHERE "customerId" = ANY(${ids}::uuid[])
+        ORDER BY "customerId", version
+      `
+
+    // A database from before the migration: no versions are kept.
+    beforeEach(async () => {
+      await applyBaseline(sql, plan)
+      schemaOfSetup = await describeSchema()
+      await sql.unsafe(`
+        DROP TABLE customer_versions;
+        DROP TYPE customer_version_operation;
+      `)
+    })
+
+    it('should give the database the schema of setup.sql, and keep it on a second run', async () => {
+      expect(await describeSchema()).not.toEqual(schemaOfSetup)
+
+      await run()
+      await run()
+
+      expect(await describeSchema()).toEqual(schemaOfSetup)
+    })
+
+    it('should give every customer, deleted or not, one baseline version of the values they have, and none on a second run', async () => {
+      const kept = await storeNewCustomer()
+      const deleted = await storeNewCustomer()
+      await sql`
+        UPDATE customers SET notes = 'Window seat', tags = '{vip}'
+        WHERE id = ${kept}
+      `
+      await sql`UPDATE customers SET "deletedAt" = now() WHERE id = ${deleted}`
+
+      await run()
+      await run()
+
+      expect(await versionsOf([kept, deleted])).toEqual(
+        [
+          {
+            customerId: kept,
+            version: 1,
+            operation: 'baseline',
+            changedBy: null,
+            email: `${kept}@example.com`,
+            notes: 'Window seat',
+            tags: ['vip'],
+          },
+          {
+            customerId: deleted,
+            version: 1,
+            operation: 'baseline',
+            changedBy: null,
+            email: `${deleted}@example.com`,
+            notes: null,
+            tags: [],
+          },
+        ].sort((left, right) => (left.customerId < right.customerId ? -1 : 1)),
+      )
+    })
+
+    it('should let only a baseline be without the user who wrote it, number versions from 1 once each, and drop the versions with their customer', async () => {
+      await run()
+      const id = await storeNewCustomer()
+      await run()
+      const write = (version: number, operation: string, by: string | null) =>
+        sql`
+          INSERT INTO customer_versions (
+            "customerId", version, operation, "changedBy", "firstName",
+            "lastName", email, "phoneNumber", "membershipTier", tags,
+            "allowMarketing", "allowSms", "allowEmail", "isActive",
+            "customerStatus"
+          )
+          VALUES (
+            ${id}, ${version}, ${operation}::customer_version_operation, ${by},
+            'Taro', 'Suzuki', 'taro@example.com', '090-8765-4321', 'regular',
+            '{}', true, true, true, true, 'active'
+          )
+        `
+
+      await expect(write(2, 'update', null)).rejects.toThrow(
+        /customer_versions_changed_by_unless_baseline/,
+      )
+      await expect(write(0, 'baseline', null)).rejects.toThrow(
+        /customer_versions_version_positive/,
+      )
+      await expect(write(1, 'baseline', null)).rejects.toThrow(
+        /customer_versions_customer_version_unique/,
+      )
+      await expect(write(2, 'baseline', randomUUID())).rejects.toThrow(
+        /customer_versions_changed_by_unless_baseline/,
+      )
+      await sql`DELETE FROM customers WHERE id = ${id}`
+      expect(await versionsOf([id])).toEqual([])
+    })
+  })
 })

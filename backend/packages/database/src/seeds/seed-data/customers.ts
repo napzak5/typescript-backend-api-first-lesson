@@ -129,10 +129,8 @@ export async function seedCustomers(
         isActive: true,
       },
     ])
-    .returning({
-      id: schema.customers.id,
-      loyaltyPoints: schema.customers.loyaltyPoints,
-    })
+    // The whole rows: the versions below begin with what they hold.
+    .returning()
 
   // The balance of a customer is that of their latest point transaction:
   // each balance above is opened as the migration of the points ledger
@@ -149,6 +147,34 @@ export async function seedCustomers(
           description: 'ポイント台帳の開始残高',
         }),
       ),
+  )
+
+  // The values the seed gives the customers are where their versions begin,
+  // as for the customers who were there before versions were kept.
+  await db.insert(schema.customerVersions).values(
+    customers.map(
+      ({
+        id,
+        userId,
+        loyaltyPoints,
+        firstVisitDate,
+        lastVisitDate,
+        visitCount,
+        noShowCount,
+        cancellationCount,
+        deletedAt,
+        createdAt,
+        updatedAt,
+        ...ledger
+      }): typeof schema.customerVersions.$inferInsert => ({
+        ...ledger,
+        customerId: id,
+        version: 1,
+        operation: 'baseline',
+        changedBy: null,
+        changedAt: updatedAt,
+      }),
+    ),
   )
 
   const vipCustomerId = customers[3]?.id ?? ''
