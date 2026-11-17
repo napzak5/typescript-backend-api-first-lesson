@@ -112,6 +112,13 @@ const isTaken = async (
   return taken !== undefined
 }
 
+/**
+ * The time of a point transaction as a response shows it, to the
+ * millisecond: a filter by the time a client was shown matches the
+ * transaction it was shown.
+ */
+const transactedAt = sql`date_trunc('milliseconds', ${customerPoints.createdAt})`
+
 /** The condition that keeps a query to a customer who is not deleted. */
 const liveCustomer = (customerId: string) =>
   and(eq(customers.id, customerId), isNull(customers.deletedAt))
@@ -169,10 +176,10 @@ export class PointRepository implements IPointRepository {
       eq(customerPoints.customerId, customerId),
       startDate === null
         ? undefined
-        : sql`${customerPoints.createdAt} >= ${startDate}::timestamptz`,
+        : sql`${transactedAt} >= ${startDate}::timestamptz`,
       endDate === null
         ? undefined
-        : sql`${customerPoints.createdAt} <= ${endDate}::timestamptz`,
+        : sql`${transactedAt} <= ${endDate}::timestamptz`,
     )
 
     return attempt('Failed to list point transactions', () =>
