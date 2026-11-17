@@ -173,9 +173,9 @@ export const mergeCustomers = async (
     return Result.success({ type: 'pointsBeyondLimit' })
   }
 
-  // The charts, the preferences and the allergies are held as they are
-  // read: a change of one that is under way is in what is read, and the
-  // next one waits for the merge.
+  // The charts and the allergies are held as they are read: a change of
+  // one, which holds no customer, that is under way is in what is read, and
+  // the next one waits for the merge instead of being written over.
   const charts = await tx
     .select()
     .from(medicalCharts)
@@ -194,12 +194,12 @@ export const mergeCustomers = async (
     return Result.success({ type: 'chartTooLong', list: chart.list })
   }
 
+  // The preferences are written only under a lock of their customer, which
+  // the merge holds.
   const preferenceRows = await tx
     .select()
     .from(customerPreferences)
     .where(inArray(customerPreferences.customerId, both))
-    .orderBy(asc(customerPreferences.id))
-    .for('update')
   const primaryPreferences = preferenceRows.find(
     ({ customerId }) => customerId === primary.id,
   )
