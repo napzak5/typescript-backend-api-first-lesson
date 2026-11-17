@@ -6,7 +6,7 @@
  * OpenAPI spec version: 2.0
  */
 import type { ModelsCustomerId } from './modelsCustomerId';
-import type { ModelsPointReferenceType } from './modelsPointReferenceType';
+import type { ModelsPointMovementReferenceType } from './modelsPointMovementReferenceType';
 
 /**
  * ポイント調整リクエスト - 種別 adjusted のポイント取引を登録する。全項目のキーが必須。
@@ -23,7 +23,7 @@ export interface ModelsPointAdjustRequest {
      */
   description: string | null;
   /** 調整のもとになった記録の種類。referenceId と同時に指定する。参照する記録がない場合はnull */
-  referenceType: ModelsPointReferenceType | null;
+  referenceType: ModelsPointMovementReferenceType | null;
   /**
      * 調整のもとになった記録の ID。referenceType と同時に指定する。その顧客の売上・予約で、取り消した売上やキャンセルした予約も指定できる。参照する記録がない場合はnull
      * @nullable

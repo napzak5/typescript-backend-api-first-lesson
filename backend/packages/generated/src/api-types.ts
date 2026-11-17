@@ -1155,7 +1155,7 @@ export interface paths {
         put?: never;
         /**
          * Merge customer records
-         * @description 重複登録された顧客レコードを統合し、履歴やポイントを一本化します。secondaryCustomerIdの顧客は統合後に論理削除されます。存在しない顧客や同じ顧客を指定した場合は400を、両方の顧客が別々のログインアカウントに紐づいている場合は409を返します。
+         * @description 重複登録された2人の顧客を1人にまとめ、統合後のメイン顧客を返します。admin と owner / manager だけが実行できます。すべてを1つのトランザクションで行い、断るときは何も変えません。台帳の項目は、両方が同じ値ならその値、片方だけが値を持つならその値、両方が異なる値なら conflictResolution で決めます。どちらかの顧客を指す紹介元は値がないものとして扱い、サブを紹介元にしていたほかの顧客はメインを紹介元にします。メインがサブの紹介コードを受け継ぐときは、サブの紹介コードを外します。サブの予約・売上・施術記録・レビューはメインのものになり、来店回数などは予約から数え直します。サブだけがアカウントに紐づいていれば、そのアカウントをメインに紐づけます。サブのポイント残高は、移行(transferred)の取引で、残っている付与ごとに同じ有効期限でメインに移します。好み設定はサブだけにあれば移し、両方にあれば conflictResolution で選んだ行の値を残します。カルテはサブだけにあれば移し、両方にあれば何も落とさずに合わせます(施術歴はメインのあとにサブのもの、製品の一覧は両方を合わせ、既往歴とメモは値が違えば空行でつなぐ)。アレルギーはサブにだけあるものを移し、両方にあるアレルゲンは重いほうの記録を残します。サブの「参考になった」はメインのものにし、自分のレビューへの投票と重複する投票は消します。2人と、紹介元がメインに変わった顧客に版(merge)を記録し、サブは論理削除します。IDが不正な場合、同じ顧客を指定した場合、存在しない顧客や削除した顧客を指定した場合は400を、両方の顧客が別々のログインアカウントに紐づいている場合と、2人のポイント残高の合計が 2,147,483,647 を超える場合、2人のカルテを合わせると施術歴か製品の一覧が50件を超える場合は409を返します。
          */
         post: operations["CustomerCrud_merge"];
         delete?: never;
@@ -1287,7 +1287,7 @@ export interface paths {
         put?: never;
         /**
          * Restore a deleted customer
-         * @description 論理削除した顧客を台帳に戻し、版(restore)を記録します。admin と owner / manager だけが実行できます。アカウントとの紐づけは戻しません(userId は null。本人がプロフィールを作ると、メールアドレスで顧客を引き継ぎます)。IDが不正な場合は400を、顧客が存在しない場合は404を、削除されていない顧客を指定した場合と、削除のあとに同じメールアドレスの顧客が登録されている場合は409を返します。
+         * @description 論理削除した顧客を台帳に戻し、版(restore)を記録します。admin と owner / manager だけが実行できます。アカウントとの紐づけは戻しません(userId は null。本人がプロフィールを作ると、メールアドレスで顧客を引き継ぎます)。IDが不正な場合は400を、顧客が存在しない場合は404を、削除されていない顧客を指定した場合と、統合(merge)で削除した顧客を指定した場合と、削除のあとに同じメールアドレスの顧客が登録されている場合は409を返します。
          */
         post: operations["CustomerCrud_restore"];
         delete?: never;
@@ -4370,7 +4370,7 @@ export interface components {
 
          * @description
 
-         * 顧客統合時の競合解決方針区分 - 2件の顧客レコードで値が異なる項目をどちらに合わせるか
+         * 顧客統合時の競合解決方針区分 - 2件の顧客レコードの両方が値を持ち、その値が異なる項目をどちらに合わせるか。片方だけが値を持つ項目(もう片方が null、タグは空の一覧)は、この区分に関わらず、値を持つほうの値を使う
 
          *
 
@@ -4384,7 +4384,7 @@ export interface components {
 
          *
 
-         * keep_newest: 新しい方優先 - 最後に更新された顧客の値を使う
+         * keep_newest: 新しい方優先 - updatedAt が新しい顧客の値を使う。同じ時刻ならメインの値
 
          * @enum {string}
 
@@ -4393,11 +4393,11 @@ export interface components {
         "Models.CustomerMergeConflictResolutionType": "keep_primary" | "keep_secondary" | "keep_newest";
         /** @description 顧客統合リクエスト - 重複登録された2件の顧客レコードを1件に統合する */
         "Models.CustomerMergeRequest": {
-            /** @description 統合後も残すメイン顧客ID */
+            /** @description 統合後も残すメイン顧客ID。削除していない顧客 */
             primaryCustomerId: components["schemas"]["Models.CustomerId"];
-            /** @description 統合して削除するサブ顧客ID。primaryCustomerId と異なる顧客を指定する */
+            /** @description 統合して論理削除するサブ顧客ID。削除していない顧客で、primaryCustomerId と異なる顧客を指定する */
             secondaryCustomerId: components["schemas"]["Models.CustomerId"];
-            /** @description 2件の顧客で値が異なる項目の優先ルール */
+            /** @description 台帳の項目のうち、2件の顧客の両方が値を持ち、その値が異なる項目の優先ルール。好み設定が両方にあるときは、どちらの行を残すかにも使う(keep_newest は好み設定の updatedAt)。カルテとアレルギーには使わない */
             conflictResolution: components["schemas"]["Models.CustomerMergeConflictResolutionType"];
         };
         /**
@@ -4956,11 +4956,15 @@ export interface components {
 
          * restore: 復元 - 論理削除した顧客を台帳に戻した
 
+         *
+
+         * merge: 統合 - 2人の顧客を1人にまとめた。残した顧客(メイン)の版は統合後の値、統合して論理削除した顧客(サブ)の版は削除したときの値
+
          * @enum {string}
 
          */
 
-        "Models.CustomerVersionOperationType": "baseline" | "create" | "update" | "delete" | "restore";
+        "Models.CustomerVersionOperationType": "baseline" | "create" | "update" | "delete" | "restore" | "merge";
         /**
          * @description 顧客の版 - customer_versions の 1 行。その版の時点の、顧客台帳の 30 項目の値。
          *     来店回数やポイントなど、予約やポイントが変える値と、アカウントとの紐づけは、台帳の項目ではないので含まない
@@ -6377,7 +6381,7 @@ export interface components {
             /** @description 調整の理由。空白だけの文字列は指定できない。未設定の場合はnull */
             description: string | null;
             /** @description 調整のもとになった記録の種類。referenceId と同時に指定する。参照する記録がない場合はnull */
-            referenceType: components["schemas"]["Models.PointReferenceType"] | null;
+            referenceType: components["schemas"]["Models.PointMovementReferenceType"] | null;
             /**
              * Format: uuid
              * @description 調整のもとになった記録の ID。referenceType と同時に指定する。その顧客の売上・予約で、取り消した売上やキャンセルした予約も指定できる。参照する記録がない場合はnull
@@ -6412,7 +6416,7 @@ export interface components {
             /** @description 付与の理由。空白だけの文字列は指定できない。未設定の場合はnull */
             description: string | null;
             /** @description 付与のもとになった記録の種類。referenceId と同時に指定する。参照する記録がない場合はnull */
-            referenceType: components["schemas"]["Models.PointReferenceType"] | null;
+            referenceType: components["schemas"]["Models.PointMovementReferenceType"] | null;
             /**
              * Format: uuid
              * @description 付与のもとになった記録の ID。referenceType と同時に指定する。その顧客の売上・予約で、取り消した売上と、ステータスが draft・cancelled・no_show の予約は指定できない。1 つの記録に付与できるのは1回。参照する記録がない場合はnull
@@ -6468,7 +6472,7 @@ export interface components {
 
          * @description
 
-         * ポイント取引の参照先区分 - ポイント取引のもとになった記録の種類(customer_points.referenceType)
+         * ポイントの付与・利用・調整の参照先区分 - リクエストで指定できる、ポイント取引のもとになった記録の種類
 
          *
 
@@ -6484,7 +6488,32 @@ export interface components {
 
          */
 
-        "Models.PointReferenceType": "sale" | "booking";
+        "Models.PointMovementReferenceType": "sale" | "booking";
+        /**
+
+         * @description
+
+         * ポイント取引の参照先区分 - ポイント取引のもとになった記録の種類(customer_points.referenceType)
+
+         *
+
+         *
+
+         * sale: 売上 - referenceId は売上の ID
+
+         *
+
+         * booking: 予約 - referenceId は予約の ID
+
+         *
+
+         * customer: 顧客 - 移行(transferred)の取引だけが持つ。referenceId は、ポイントを移した相手の顧客の ID
+
+         * @enum {string}
+
+         */
+
+        "Models.PointReferenceType": "sale" | "booking" | "customer";
         /**
          * Format: uuid
          * @description 顧客ポイントの加算・減算履歴を識別するブランド付きUUID。
@@ -6522,7 +6551,7 @@ export interface components {
             referenceId: string | null;
             /**
              * Format: date
-             * @description 獲得したポイントの有効期限。付与(earned)の取引だけが持ち、有効期限のない付与とほかの取引はnull
+             * @description ポイントの有効期限(この日まで使える)。付与(earned)と、メインに移した移行(transferred)の取引だけが持つ。移行の取引は、移したもとの付与の有効期限を引き継ぐ。有効期限のない付与・移行と、ほかの取引はnull
              */
             expiryDate: string | null;
             /**
@@ -6557,7 +6586,7 @@ export interface components {
 
          *
 
-         * transferred: 移行 - 別の顧客との間でポイントを移した取引
+         * transferred: 移行 - 顧客の統合で、統合して削除する顧客(サブ)の残高を、残す顧客(メイン)に移した取引。サブは残高を 0 にする負の取引、メインは残っている付与ごとの正の取引
 
          * @enum {string}
 
@@ -6579,7 +6608,7 @@ export interface components {
             /** @description 利用の理由。空白だけの文字列は指定できない。未設定の場合はnull */
             description: string | null;
             /** @description 利用のもとになった記録の種類。referenceId と同時に指定する。参照する記録がない場合はnull */
-            referenceType: components["schemas"]["Models.PointReferenceType"] | null;
+            referenceType: components["schemas"]["Models.PointMovementReferenceType"] | null;
             /**
              * Format: uuid
              * @description 利用のもとになった記録の ID。referenceType と同時に指定する。その顧客の売上・予約で、取り消した売上と、ステータスが draft・cancelled・no_show の予約は指定できない。1 つの記録で利用できるのは1回。参照する記録がない場合はnull

@@ -55,7 +55,7 @@ namespace BeautySalon.Models {
     used: 利用 - 支払いなどでポイントを使用した取引
     expired: 失効 - 有効期限を過ぎたポイントを失効させた取引
     adjusted: 調整 - スタッフが手動でポイントを増減した取引
-    transferred: 移行 - 別の顧客との間でポイントを移した取引
+    transferred: 移行 - 顧客の統合で、統合して削除する顧客(サブ)の残高を、残す顧客(メイン)に移した取引。サブは残高を 0 にする負の取引、メインは残っている付与ごとの正の取引
     """)
   enum PointTransactionType {
     earned,
@@ -70,8 +70,21 @@ namespace BeautySalon.Models {
     
     sale: 売上 - referenceId は売上の ID
     booking: 予約 - referenceId は予約の ID
+    customer: 顧客 - 移行(transferred)の取引だけが持つ。referenceId は、ポイントを移した相手の顧客の ID
     """)
   enum PointReferenceType {
+    sale,
+    booking,
+    customer,
+  }
+
+  @doc("""
+    ポイントの付与・利用・調整の参照先区分 - リクエストで指定できる、ポイント取引のもとになった記録の種類
+    
+    sale: 売上 - referenceId は売上の ID
+    booking: 予約 - referenceId は予約の ID
+    """)
+  enum PointMovementReferenceType {
     sale,
     booking,
   }
@@ -695,7 +708,7 @@ namespace BeautySalon.Models {
     @format("uuid")
     referenceId: string | null;
 
-    @doc("獲得したポイントの有効期限。付与(earned)の取引だけが持ち、有効期限のない付与とほかの取引はnull")
+    @doc("ポイントの有効期限(この日まで使える)。付与(earned)と、メインに移した移行(transferred)の取引だけが持つ。移行の取引は、移したもとの付与の有効期限を引き継ぐ。有効期限のない付与・移行と、ほかの取引はnull")
     expiryDate: plainDate | null;
 
     @doc("取引の発生日時")
@@ -753,7 +766,7 @@ namespace BeautySalon.Models {
     description: string | null;
 
     @doc("付与のもとになった記録の種類。referenceId と同時に指定する。参照する記録がない場合はnull")
-    referenceType: PointReferenceType | null;
+    referenceType: PointMovementReferenceType | null;
 
     @doc("付与のもとになった記録の ID。referenceType と同時に指定する。その顧客の売上・予約で、取り消した売上と、ステータスが draft・cancelled・no_show の予約は指定できない。1 つの記録に付与できるのは1回。参照する記録がない場合はnull")
     @format("uuid")
@@ -779,7 +792,7 @@ namespace BeautySalon.Models {
     description: string | null;
 
     @doc("利用のもとになった記録の種類。referenceId と同時に指定する。参照する記録がない場合はnull")
-    referenceType: PointReferenceType | null;
+    referenceType: PointMovementReferenceType | null;
 
     @doc("利用のもとになった記録の ID。referenceType と同時に指定する。その顧客の売上・予約で、取り消した売上と、ステータスが draft・cancelled・no_show の予約は指定できない。1 つの記録で利用できるのは1回。参照する記録がない場合はnull")
     @format("uuid")
@@ -801,7 +814,7 @@ namespace BeautySalon.Models {
     description: string | null;
 
     @doc("調整のもとになった記録の種類。referenceId と同時に指定する。参照する記録がない場合はnull")
-    referenceType: PointReferenceType | null;
+    referenceType: PointMovementReferenceType | null;
 
     @doc("調整のもとになった記録の ID。referenceType と同時に指定する。その顧客の売上・予約で、取り消した売上やキャンセルした予約も指定できる。参照する記録がない場合はnull")
     @format("uuid")
