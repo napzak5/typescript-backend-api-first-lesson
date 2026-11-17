@@ -1578,4 +1578,179 @@ describe('the migrations of this repository', () => {
       ).toHaveLength(4)
     })
   })
+
+  describe('202611171400_inventory_rules.sql', () => {
+    const run = (): Promise<void> =>
+      runMigration('202611171400_inventory_rules.sql')
+
+    /** The schema of setup.sql, which the migration brings a database to. */
+    let schemaOfSetup: string[] = []
+
+    type StoredStock = {
+      lotNumber?: string | null
+      currentStock?: string
+      availableStock?: string
+      reservedStock?: string
+    }
+
+    const storeProduct = async (salonId: string): Promise<string> => {
+      const id = randomUUID()
+      await sql`
+        INSERT INTO products (id, "salonId", "productCode", name, unit)
+        VALUES (${id}, ${salonId}, ${`CODE-${id}`}, 'Shampoo', 'bottle')
+      `
+      return id
+    }
+
+    /** A stock row of the product, with what it states of the columns named. */
+    const storeStock = async (
+      salonId: string,
+      productId: string,
+      stock: StoredStock = {},
+    ): Promise<string> => {
+      const id = randomUUID()
+      await sql`
+        INSERT INTO inventory (
+          id, "salonId", "productId", "lotNumber", "currentStock",
+          "availableStock", "reservedStock"
+        )
+        VALUES (
+          ${id}, ${salonId}, ${productId},
+          ${stock.lotNumber === undefined ? null : stock.lotNumber},
+          ${stock.currentStock ?? '0'}, ${stock.availableStock ?? '0'},
+          ${stock.reservedStock ?? '0'}
+        )
+      `
+      return id
+    }
+
+    // A database from before the migration: any number of rows of a
+    // product without a lot number, and no rule for the stock figures.
+    beforeEach(async () => {
+      await applyBaseline(sql, plan)
+      schemaOfSetup = await describeSchema()
+      await sql.unsafe(`
+        DROP INDEX inventory_unique_without_lot;
+        ALTER TABLE inventory DROP CONSTRAINT inventory_stock;
+      `)
+    })
+
+    it('should give the database the rules of setup.sql, and keep them on a second run', async () => {
+      expect(await describeSchema()).not.toEqual(schemaOfSetup)
+
+      await run()
+      await run()
+
+      expect(await describeSchema()).toEqual(schemaOfSetup)
+    })
+
+    it('should keep the rows that follow the rules, the seeded reservation among them', async () => {
+      const salon = await storeSalon(null)
+      const product = await storeProduct(salon)
+      const other = await storeProduct(salon)
+      await storeStock(salon, product, {
+        lotNumber: 'LOT-1',
+        currentStock: '20',
+        availableStock: '18',
+        reservedStock: '2',
+      })
+      await storeStock(salon, product, { lotNumber: 'LOT-2' })
+      await storeStock(salon, other)
+
+      await run()
+
+      expect(
+        await sql`SELECT 1 FROM inventory WHERE "salonId" = ${salon}`,
+      ).toHaveLength(3)
+    })
+
+    it('should fail and change nothing where a product has two rows without a lot number', async () => {
+      const salon = await storeSalon(null)
+      const product = await storeProduct(salon)
+      await storeStock(salon, product)
+      await storeStock(salon, product)
+      const before = await describeSchema()
+
+      await expect(run()).rejects.toThrow('inventory_unique_without_lot')
+
+      expect(await describeSchema()).toEqual(before)
+    })
+
+    it('should fail and change nothing where a row breaks the rule of the stock figures', async () => {
+      const salon = await storeSalon(null)
+      const product = await storeProduct(salon)
+      await storeStock(salon, product, {
+        currentStock: '20',
+        availableStock: '20',
+        reservedStock: '2',
+      })
+      const before = await describeSchema()
+
+      await expect(run()).rejects.toThrow('inventory_stock')
+
+      expect(await describeSchema()).toEqual(before)
+    })
+
+    it('should keep a second row of a product without a lot number out from then on, in each salon', async () => {
+      await run()
+      const salon = await storeSalon(null)
+      const other = await storeSalon(null)
+      const product = await storeProduct(salon)
+      await storeStock(salon, product)
+      await storeStock(other, product)
+      await storeStock(salon, product, { lotNumber: 'LOT-1' })
+
+      await expect(storeStock(salon, product)).rejects.toThrow(
+        'inventory_unique_without_lot',
+      )
+      await expect(
+        storeStock(salon, product, { lotNumber: 'LOT-1' }),
+      ).rejects.toThrow('inventory_unique')
+    })
+
+    it.each<[string, StoredStock]>([
+      [
+        'a negative stock',
+        { currentStock: '-1', availableStock: '-1', reservedStock: '0' },
+      ],
+      [
+        'a negative reservation',
+        { currentStock: '1', availableStock: '2', reservedStock: '-1' },
+      ],
+      [
+        'more reserved than there is',
+        { currentStock: '1', availableStock: '-1', reservedStock: '2' },
+      ],
+      [
+        'an available stock that is not what is left after the reservation',
+        { currentStock: '5', availableStock: '5', reservedStock: '1' },
+      ],
+    ])('should keep %s out from then on', async (_, stock) => {
+      await run()
+      const salon = await storeSalon(null)
+      const product = await storeProduct(salon)
+
+      await expect(storeStock(salon, product, stock)).rejects.toThrow(
+        'inventory_stock',
+      )
+    })
+
+    it('should take a row whose stock is all reserved, and one without stock', async () => {
+      await run()
+      const salon = await storeSalon(null)
+      const product = await storeProduct(salon)
+
+      await storeStock(salon, product, {
+        lotNumber: 'LOT-1',
+        currentStock: '2.50',
+        availableStock: '0',
+        reservedStock: '2.50',
+      })
+      await storeStock(salon, product, { lotNumber: 'LOT-2' })
+
+      expect(
+        await sql`SELECT 1 FROM inventory WHERE "productId" = ${product}`,
+      ).toHaveLength(2)
+    })
+  })
 })

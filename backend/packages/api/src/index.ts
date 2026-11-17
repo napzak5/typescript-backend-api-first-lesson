@@ -11,6 +11,7 @@ import {
   CustomerPreferencesRepository,
   CustomerRepository,
   type Database,
+  InventoryRepository,
   type Logger,
   PaymentMethodRepository,
   PaymentRepository,
@@ -57,6 +58,7 @@ import {
   createCustomerPreferencesRouter,
   createOwnCustomerPreferencesRouter,
 } from './routes/customer-preferences'
+import { createInventoryRouter } from './routes/inventory'
 import { createPaymentRouter } from './routes/payment'
 import { createPaymentMethodRouter } from './routes/payment-method'
 import { createPointRouter } from './routes/point'
@@ -204,6 +206,17 @@ export const createApp = ({
     `${API_BASE_PATH}/salons/:salonId/products`,
     createProductRouter(
       { productRepository: new ProductRepository(database), salonRepository },
+      authenticated,
+    ),
+  )
+  app.use(
+    `${API_BASE_PATH}/inventory`,
+    createInventoryRouter(
+      {
+        inventoryRepository: new InventoryRepository(database),
+        salonRepository,
+        clock,
+      },
       authenticated,
     ),
   )

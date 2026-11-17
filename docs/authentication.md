@@ -268,8 +268,8 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 
 | 範囲 | 対象 | 届くもの |
 |---|---|---|
-| `platform` | `admin` | すべてのサロン（予約台帳、売上台帳を含む）と、顧客台帳（顧客の好み設定を含む）、ポイント台帳、すべてのレビューの削除（`DELETE /api/v1/reviews/{id}`）とサロンからの返信の取り下げ（`POST /api/v1/reviews/{id}/respond`）、レビューの通報の一覧と却下（`/api/v1/review-reports`） |
-| `salon` | `owner`、`manager`、`staff`。`users.staffId` が指すスタッフが有効（`isActive`、未削除）で、そのサロンが未削除であること | そのサロン（予約台帳、売上台帳を含む）と、顧客台帳（顧客の好み設定を含む）、ポイント台帳（調整は `owner`・`manager` だけ）、自分のスタッフのプロフィール（`/api/v1/staff-profiles/me`）、サロンのレビューの通報と返信（`owner`・`manager` だけ。`POST /api/v1/reviews/{id}/report`、`/respond`）。範囲はロール・サロン ID・スタッフ ID を持つ |
+| `platform` | `admin` | すべてのサロン（予約台帳、売上台帳、在庫を含む）と、顧客台帳（顧客の好み設定を含む）、ポイント台帳、すべてのレビューの削除（`DELETE /api/v1/reviews/{id}`）とサロンからの返信の取り下げ（`POST /api/v1/reviews/{id}/respond`）、レビューの通報の一覧と却下（`/api/v1/review-reports`） |
+| `salon` | `owner`、`manager`、`staff`。`users.staffId` が指すスタッフが有効（`isActive`、未削除）で、そのサロンが未削除であること | そのサロン（予約台帳、売上台帳、在庫を含む。在庫の管理は `owner`・`manager` だけ）と、顧客台帳（顧客の好み設定を含む）、ポイント台帳（調整は `owner`・`manager` だけ）、自分のスタッフのプロフィール（`/api/v1/staff-profiles/me`）、サロンのレビューの通報と返信（`owner`・`manager` だけ。`POST /api/v1/reviews/{id}/report`、`/respond`）。範囲はロール・サロン ID・スタッフ ID を持つ |
 | `customer` | `customer`。範囲は `users.customerId` を持ち、プロフィールを作るまでは null | 自分のプロフィール（`/api/v1/customers/me`）、自分の好み設定（`/api/v1/customers/me/preferences`）、自分の予約（`/api/v1/customers/me/bookings`）、自分の済んだ予約へのレビューの投稿（`POST /api/v1/reviews`）と、自分のレビューの修正と削除（`PATCH`、`DELETE /api/v1/reviews/{id}`）、ほかの顧客のレビューの参考になったと通報（`POST /api/v1/reviews/{id}/helpful`、`/report`）。null の間は、プロフィールの作成だけができる |
 | `none` | `owner`、`manager`、`staff` で、`salon` の条件に当たらない（スタッフ情報が削除された `staff`、紐づけを解除された `staff` など） | 範囲を必要とするものには届かない。ログインはでき、スタッフへの招待に[参加](./staff.md#参加)できる |
 
@@ -477,6 +477,26 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 - 顧客本人は、自分の残高をプロフィール（`/api/v1/customers/me` の `loyaltyPoints`）で見る。履歴を読むルートはない。ポイントのための権限（`users.permissions`）はない
 
 規則は [ポイント台帳](./points.md) にあります。
+
+### 在庫の権限
+
+在庫（`inventory`）もサロンのもので、ルートはサロンの下にありません（`/api/v1/inventory`）。どのサロンの在庫かは、作成では本文の `salonId`、一覧、在庫僅少の一覧、期限切れ間近の一覧ではクエリの `salonId`、取得、更新、削除では在庫の行そのものが決めます。権限は、売上台帳と同じ 2 段階で判定します（`business-logic/inventory/_shared/authorization.ts`）。
+
+| オペレーション | 許可 |
+|---|---|
+| 一覧（`GET /api/v1/inventory`） | `admin`（すべてのサロン）、サロンの `owner` / `manager` / `staff`（所属サロンの在庫だけ） |
+| 1 件の取得（`GET /api/v1/inventory/{id}`） | `admin`、在庫の行のサロンの `owner` / `manager` / `staff` |
+| 在庫僅少の一覧、期限切れ間近の一覧（`GET /api/v1/inventory/low-stock`、`/expiring`） | `admin`、クエリの `salonId` のサロンの `owner` / `manager` / `staff` |
+| 作成（`POST /api/v1/inventory`） | `admin`、本文の `salonId` のサロンの `owner` / `manager` |
+| 更新、削除（`PATCH`、`DELETE /api/v1/inventory/{id}`） | `admin`、在庫の行のサロンの `owner` / `manager` |
+
+- 1 段階目は、操作者だけで決まる。読むこと（`inventoryReachOf`）は、`admin` と、サロンの 3 つのロールができる。施術で商品を棚から出し、店頭で売るスタッフが、在庫を知る必要があるため。作成、更新、削除（`inventoryKeeperReachOf`）は、商品と同じく、`owner` と `manager` だけができる。サロンの `staff`、ロール `customer` のユーザー、範囲 `none` のユーザーは、本文、クエリ、ID が不正でも 403
+- 2 段階目は、本文かクエリを確かめたあとに決まる（`isWithin`）。サロンのユーザーが、ほかのサロンを指定すると、サロンが存在するかどうかにかかわらず 403。本文かクエリが不正なら、その前に 400 を返す
+- 存在しないサロンと削除済みのサロンは、2 段階目を通った操作者（実際には `admin`）に 400（`salonId` の `not_found`）。一覧の `salonId` は絞り込みで、存在しないサロンは空の一覧になる
+- 取得、更新、削除には、比べるサロンがない。リポジトリが、操作者に届く範囲を検索の条件にするので、ほかのサロンの在庫の行は見つからない（404）。存在しない ID と区別しない。一覧のカーソルにも、同じ条件を付ける
+- 顧客には、在庫を見せない。在庫のための権限（`users.permissions`）はない
+
+規則は [在庫](./inventory.md) にあります。
 
 ### レビューの権限
 

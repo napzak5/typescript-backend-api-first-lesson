@@ -123,7 +123,7 @@ export const getInventoryCrudListUrl = (params?: InventoryCrudListParams,) => {
 }
 
 /**
- * 絞り込み条件とページネーションを指定して在庫を一覧取得します。
+ * 絞り込み条件とページネーションを指定して在庫を一覧取得します。商品の商品コード、ロット番号(nullが先)、IDの順に並べます。管理者と、サロンのオーナー・マネージャー・スタッフ(所属サロンの在庫)が使えます。ほかのサロンのsalonIdを指定した場合は403を、cursorが一覧できる在庫を指していない場合は400を返します。
  * @summary List inventory
  */
 export const inventoryCrudList = async (params?: InventoryCrudListParams, options?: RequestInit): Promise<inventoryCrudListResponse> => {
@@ -171,7 +171,7 @@ export type InventoryCrudListQueryError = ModelsProblemDetails
 
 
 /**
- * 絞り込み条件とページネーションを指定して在庫を一覧取得します。
+ * 絞り込み条件とページネーションを指定して在庫を一覧取得します。商品の商品コード、ロット番号(nullが先)、IDの順に並べます。管理者と、サロンのオーナー・マネージャー・スタッフ(所属サロンの在庫)が使えます。ほかのサロンのsalonIdを指定した場合は403を、cursorが一覧できる在庫を指していない場合は400を返します。
  * @summary List inventory
  */
 export function useInventoryCrudList<TData = Awaited<ReturnType<typeof inventoryCrudList>>, TError = ModelsProblemDetails>(
@@ -185,7 +185,7 @@ export function useInventoryCrudList<TData = Awaited<ReturnType<typeof inventory
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 絞り込み条件とページネーションを指定して在庫を一覧取得します。
+ * 絞り込み条件とページネーションを指定して在庫を一覧取得します。商品の商品コード、ロット番号(nullが先)、IDの順に並べます。管理者と、サロンのオーナー・マネージャー・スタッフ(所属サロンの在庫)が使えます。ほかのサロンのsalonIdを指定した場合は403を、cursorが一覧できる在庫を指していない場合は400を返します。
  * @summary List inventory
  */
 export function useInventoryCrudList<TData = Awaited<ReturnType<typeof inventoryCrudList>>, TError = ModelsProblemDetails>(
@@ -199,7 +199,7 @@ export function useInventoryCrudList<TData = Awaited<ReturnType<typeof inventory
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 絞り込み条件とページネーションを指定して在庫を一覧取得します。
+ * 絞り込み条件とページネーションを指定して在庫を一覧取得します。商品の商品コード、ロット番号(nullが先)、IDの順に並べます。管理者と、サロンのオーナー・マネージャー・スタッフ(所属サロンの在庫)が使えます。ほかのサロンのsalonIdを指定した場合は403を、cursorが一覧できる在庫を指していない場合は400を返します。
  * @summary List inventory
  */
 export function useInventoryCrudList<TData = Awaited<ReturnType<typeof inventoryCrudList>>, TError = ModelsProblemDetails>(
@@ -207,7 +207,7 @@ export function useInventoryCrudList<TData = Awaited<ReturnType<typeof inventory
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 絞り込み条件とページネーションを指定して在庫を一覧取得します。
+ * 絞り込み条件とページネーションを指定して在庫を一覧取得します。商品の商品コード、ロット番号(nullが先)、IDの順に並べます。管理者と、サロンのオーナー・マネージャー・スタッフ(所属サロンの在庫)が使えます。ほかのサロンのsalonIdを指定した場合は403を、cursorが一覧できる在庫を指していない場合は400を返します。
  * @summary List inventory
  */
 export function useInventoryCrudList<TData = Awaited<ReturnType<typeof inventoryCrudList>>, TError = ModelsProblemDetails>(
@@ -290,7 +290,7 @@ export const getInventoryCrudCreateUrl = () => {
 }
 
 /**
- * 商品の在庫を新規登録します。在庫数は0で登録され、入庫は在庫移動で記録します。salonIdのサロンが存在しない場合や、productIdにsalonIdのサロンの商品ではないIDを指定した場合は400を、salonId・productId・lotNumberの組み合わせが既存の在庫と重複する場合は409を返します。
+ * 商品の在庫を新規登録します。在庫数は0で登録され、入庫は在庫移動で記録します。管理者と、salonIdのサロンのオーナー・マネージャーが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合や、productIdにsalonIdのサロンの商品ではないIDを指定した場合、lotNumberが商品のロット管理(requiresLotTracking)と合わない場合は400を、salonId・productId・lotNumberの組み合わせが既存の在庫と重複する場合は409を返します。
  * @summary Create an inventory record
  */
 export const inventoryCrudCreate = async (modelsInventoryCreateRequest: ModelsInventoryCreateRequest, options?: RequestInit): Promise<inventoryCrudCreateResponse> => {
@@ -357,7 +357,7 @@ const {mutation: mutationOptions} = options ?
     export type InventoryCrudCreateMutationVariables = {data: ModelsInventoryCreateRequest}
 
     /**
- * 商品の在庫を新規登録します。在庫数は0で登録され、入庫は在庫移動で記録します。salonIdのサロンが存在しない場合や、productIdにsalonIdのサロンの商品ではないIDを指定した場合は400を、salonId・productId・lotNumberの組み合わせが既存の在庫と重複する場合は409を返します。
+ * 商品の在庫を新規登録します。在庫数は0で登録され、入庫は在庫移動で記録します。管理者と、salonIdのサロンのオーナー・マネージャーが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合や、productIdにsalonIdのサロンの商品ではないIDを指定した場合、lotNumberが商品のロット管理(requiresLotTracking)と合わない場合は400を、salonId・productId・lotNumberの組み合わせが既存の在庫と重複する場合は409を返します。
  * @summary Create an inventory record
  */
 export const useInventoryCrudCreate = <TError = ModelsProblemDetails,
@@ -425,7 +425,7 @@ export const getInventoryCrudListExpiringUrl = (params: InventoryCrudListExpirin
 }
 
 /**
- * 指定した日数以内に使用期限を迎える在庫を、期限切れの在庫も含めて一覧取得します。salonIdのサロンが存在しない場合は400を返します。
+ * 指定した日数以内に使用期限を迎える、在庫数が0より多い在庫を、期限切れの在庫も含めて、使用期限の早い順に一覧取得します。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合は400を返します。
  * @summary List expiring inventory
  */
 export const inventoryCrudListExpiring = async (params: InventoryCrudListExpiringParams, options?: RequestInit): Promise<inventoryCrudListExpiringResponse> => {
@@ -473,7 +473,7 @@ export type InventoryCrudListExpiringQueryError = ModelsProblemDetails
 
 
 /**
- * 指定した日数以内に使用期限を迎える在庫を、期限切れの在庫も含めて一覧取得します。salonIdのサロンが存在しない場合は400を返します。
+ * 指定した日数以内に使用期限を迎える、在庫数が0より多い在庫を、期限切れの在庫も含めて、使用期限の早い順に一覧取得します。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合は400を返します。
  * @summary List expiring inventory
  */
 export function useInventoryCrudListExpiring<TData = Awaited<ReturnType<typeof inventoryCrudListExpiring>>, TError = ModelsProblemDetails>(
@@ -487,7 +487,7 @@ export function useInventoryCrudListExpiring<TData = Awaited<ReturnType<typeof i
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 指定した日数以内に使用期限を迎える在庫を、期限切れの在庫も含めて一覧取得します。salonIdのサロンが存在しない場合は400を返します。
+ * 指定した日数以内に使用期限を迎える、在庫数が0より多い在庫を、期限切れの在庫も含めて、使用期限の早い順に一覧取得します。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合は400を返します。
  * @summary List expiring inventory
  */
 export function useInventoryCrudListExpiring<TData = Awaited<ReturnType<typeof inventoryCrudListExpiring>>, TError = ModelsProblemDetails>(
@@ -501,7 +501,7 @@ export function useInventoryCrudListExpiring<TData = Awaited<ReturnType<typeof i
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 指定した日数以内に使用期限を迎える在庫を、期限切れの在庫も含めて一覧取得します。salonIdのサロンが存在しない場合は400を返します。
+ * 指定した日数以内に使用期限を迎える、在庫数が0より多い在庫を、期限切れの在庫も含めて、使用期限の早い順に一覧取得します。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合は400を返します。
  * @summary List expiring inventory
  */
 export function useInventoryCrudListExpiring<TData = Awaited<ReturnType<typeof inventoryCrudListExpiring>>, TError = ModelsProblemDetails>(
@@ -509,7 +509,7 @@ export function useInventoryCrudListExpiring<TData = Awaited<ReturnType<typeof i
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 指定した日数以内に使用期限を迎える在庫を、期限切れの在庫も含めて一覧取得します。salonIdのサロンが存在しない場合は400を返します。
+ * 指定した日数以内に使用期限を迎える、在庫数が0より多い在庫を、期限切れの在庫も含めて、使用期限の早い順に一覧取得します。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合は400を返します。
  * @summary List expiring inventory
  */
 export function useInventoryCrudListExpiring<TData = Awaited<ReturnType<typeof inventoryCrudListExpiring>>, TError = ModelsProblemDetails>(
@@ -584,7 +584,7 @@ export const getInventoryCrudListLowStockUrl = (params: InventoryCrudListLowStoc
 }
 
 /**
- * 在庫数が閾値以下の在庫を一覧取得します。閾値を省略した場合は商品ごとの最低在庫数を使います。salonIdのサロンが存在しない場合は400を返します。
+ * 取り扱い中の商品のうち、サロンにある在庫数の合計が閾値以下の商品の在庫を一覧取得します。閾値を省略した場合は商品ごとの最低在庫数を使います。並びは在庫の一覧と同じです。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合は400を返します。
  * @summary List low-stock inventory
  */
 export const inventoryCrudListLowStock = async (params: InventoryCrudListLowStockParams, options?: RequestInit): Promise<inventoryCrudListLowStockResponse> => {
@@ -632,7 +632,7 @@ export type InventoryCrudListLowStockQueryError = ModelsProblemDetails
 
 
 /**
- * 在庫数が閾値以下の在庫を一覧取得します。閾値を省略した場合は商品ごとの最低在庫数を使います。salonIdのサロンが存在しない場合は400を返します。
+ * 取り扱い中の商品のうち、サロンにある在庫数の合計が閾値以下の商品の在庫を一覧取得します。閾値を省略した場合は商品ごとの最低在庫数を使います。並びは在庫の一覧と同じです。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合は400を返します。
  * @summary List low-stock inventory
  */
 export function useInventoryCrudListLowStock<TData = Awaited<ReturnType<typeof inventoryCrudListLowStock>>, TError = ModelsProblemDetails>(
@@ -646,7 +646,7 @@ export function useInventoryCrudListLowStock<TData = Awaited<ReturnType<typeof i
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 在庫数が閾値以下の在庫を一覧取得します。閾値を省略した場合は商品ごとの最低在庫数を使います。salonIdのサロンが存在しない場合は400を返します。
+ * 取り扱い中の商品のうち、サロンにある在庫数の合計が閾値以下の商品の在庫を一覧取得します。閾値を省略した場合は商品ごとの最低在庫数を使います。並びは在庫の一覧と同じです。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合は400を返します。
  * @summary List low-stock inventory
  */
 export function useInventoryCrudListLowStock<TData = Awaited<ReturnType<typeof inventoryCrudListLowStock>>, TError = ModelsProblemDetails>(
@@ -660,7 +660,7 @@ export function useInventoryCrudListLowStock<TData = Awaited<ReturnType<typeof i
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 在庫数が閾値以下の在庫を一覧取得します。閾値を省略した場合は商品ごとの最低在庫数を使います。salonIdのサロンが存在しない場合は400を返します。
+ * 取り扱い中の商品のうち、サロンにある在庫数の合計が閾値以下の商品の在庫を一覧取得します。閾値を省略した場合は商品ごとの最低在庫数を使います。並びは在庫の一覧と同じです。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合は400を返します。
  * @summary List low-stock inventory
  */
 export function useInventoryCrudListLowStock<TData = Awaited<ReturnType<typeof inventoryCrudListLowStock>>, TError = ModelsProblemDetails>(
@@ -668,7 +668,7 @@ export function useInventoryCrudListLowStock<TData = Awaited<ReturnType<typeof i
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 在庫数が閾値以下の在庫を一覧取得します。閾値を省略した場合は商品ごとの最低在庫数を使います。salonIdのサロンが存在しない場合は400を返します。
+ * 取り扱い中の商品のうち、サロンにある在庫数の合計が閾値以下の商品の在庫を一覧取得します。閾値を省略した場合は商品ごとの最低在庫数を使います。並びは在庫の一覧と同じです。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合は400を返します。
  * @summary List low-stock inventory
  */
 export function useInventoryCrudListLowStock<TData = Awaited<ReturnType<typeof inventoryCrudListLowStock>>, TError = ModelsProblemDetails>(
@@ -1181,7 +1181,7 @@ export const getInventoryCrudGetUrl = (id: ModelsInventoryId,) => {
 }
 
 /**
- * IDを指定して在庫を1件取得します。
+ * IDを指定して在庫を1件取得します。管理者と、在庫のサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンの在庫は、存在しない在庫と同じく404を返します。
  * @summary Get an inventory record
  */
 export const inventoryCrudGet = async (id: ModelsInventoryId, options?: RequestInit): Promise<inventoryCrudGetResponse> => {
@@ -1229,7 +1229,7 @@ export type InventoryCrudGetQueryError = ModelsProblemDetails
 
 
 /**
- * IDを指定して在庫を1件取得します。
+ * IDを指定して在庫を1件取得します。管理者と、在庫のサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンの在庫は、存在しない在庫と同じく404を返します。
  * @summary Get an inventory record
  */
 export function useInventoryCrudGet<TData = Awaited<ReturnType<typeof inventoryCrudGet>>, TError = ModelsProblemDetails>(
@@ -1243,7 +1243,7 @@ export function useInventoryCrudGet<TData = Awaited<ReturnType<typeof inventoryC
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * IDを指定して在庫を1件取得します。
+ * IDを指定して在庫を1件取得します。管理者と、在庫のサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンの在庫は、存在しない在庫と同じく404を返します。
  * @summary Get an inventory record
  */
 export function useInventoryCrudGet<TData = Awaited<ReturnType<typeof inventoryCrudGet>>, TError = ModelsProblemDetails>(
@@ -1257,7 +1257,7 @@ export function useInventoryCrudGet<TData = Awaited<ReturnType<typeof inventoryC
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * IDを指定して在庫を1件取得します。
+ * IDを指定して在庫を1件取得します。管理者と、在庫のサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンの在庫は、存在しない在庫と同じく404を返します。
  * @summary Get an inventory record
  */
 export function useInventoryCrudGet<TData = Awaited<ReturnType<typeof inventoryCrudGet>>, TError = ModelsProblemDetails>(
@@ -1265,7 +1265,7 @@ export function useInventoryCrudGet<TData = Awaited<ReturnType<typeof inventoryC
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * IDを指定して在庫を1件取得します。
+ * IDを指定して在庫を1件取得します。管理者と、在庫のサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンの在庫は、存在しない在庫と同じく404を返します。
  * @summary Get an inventory record
  */
 export function useInventoryCrudGet<TData = Awaited<ReturnType<typeof inventoryCrudGet>>, TError = ModelsProblemDetails>(
@@ -1353,7 +1353,7 @@ export const getInventoryCrudUpdateUrl = (id: ModelsInventoryId,) => {
 }
 
 /**
- * 在庫の指定した項目だけを更新します。在庫数は変更できません。lotNumberの変更で同じサロン・商品・ロット番号の在庫と重複する場合は409を返します。
+ * 在庫の指定した項目だけを更新します。在庫数は変更できません。管理者と、在庫のサロンのオーナー・マネージャーが使えます。ほかのサロンの在庫は404を、lotNumberが商品のロット管理(requiresLotTracking)と合わない場合は400を、lotNumberの変更で同じサロン・商品・ロット番号の在庫と重複する場合は409を返します。
  * @summary Update an inventory record
  */
 export const inventoryCrudUpdate = async (id: ModelsInventoryId,
@@ -1421,7 +1421,7 @@ const {mutation: mutationOptions} = options ?
     export type InventoryCrudUpdateMutationVariables = {id: ModelsInventoryId;data: ModelsInventoryUpdateRequest}
 
     /**
- * 在庫の指定した項目だけを更新します。在庫数は変更できません。lotNumberの変更で同じサロン・商品・ロット番号の在庫と重複する場合は409を返します。
+ * 在庫の指定した項目だけを更新します。在庫数は変更できません。管理者と、在庫のサロンのオーナー・マネージャーが使えます。ほかのサロンの在庫は404を、lotNumberが商品のロット管理(requiresLotTracking)と合わない場合は400を、lotNumberの変更で同じサロン・商品・ロット番号の在庫と重複する場合は409を返します。
  * @summary Update an inventory record
  */
 export const useInventoryCrudUpdate = <TError = ModelsProblemDetails,
@@ -1459,6 +1459,11 @@ export type inventoryCrudDeleteResponse404 = {
   status: 404
 }
 
+export type inventoryCrudDeleteResponse409 = {
+  data: ModelsProblemDetails
+  status: 409
+}
+
 export type inventoryCrudDeleteResponse429 = {
   data: ModelsProblemDetails
   status: 429
@@ -1472,7 +1477,7 @@ export type inventoryCrudDeleteResponse500 = {
 export type inventoryCrudDeleteResponseSuccess = (inventoryCrudDeleteResponse204) & {
   headers: Headers;
 };
-export type inventoryCrudDeleteResponseError = (inventoryCrudDeleteResponse400 | inventoryCrudDeleteResponse401 | inventoryCrudDeleteResponse403 | inventoryCrudDeleteResponse404 | inventoryCrudDeleteResponse429 | inventoryCrudDeleteResponse500) & {
+export type inventoryCrudDeleteResponseError = (inventoryCrudDeleteResponse400 | inventoryCrudDeleteResponse401 | inventoryCrudDeleteResponse403 | inventoryCrudDeleteResponse404 | inventoryCrudDeleteResponse409 | inventoryCrudDeleteResponse429 | inventoryCrudDeleteResponse500) & {
   headers: Headers;
 };
 
@@ -1487,7 +1492,7 @@ export const getInventoryCrudDeleteUrl = (id: ModelsInventoryId,) => {
 }
 
 /**
- * 在庫を削除します。この在庫の在庫移動の記録は残り、その inventoryId は null になります。
+ * 在庫を削除します。この在庫の在庫移動の記録は残り、その inventoryId は null になります。管理者と、在庫のサロンのオーナー・マネージャーが使えます。ほかのサロンの在庫は404を、在庫数(currentStock)が0でない場合は409を返します。
  * @summary Delete an inventory record
  */
 export const inventoryCrudDelete = async (id: ModelsInventoryId, options?: RequestInit): Promise<inventoryCrudDeleteResponse> => {
@@ -1540,7 +1545,7 @@ const {mutation: mutationOptions} = options ?
     export type InventoryCrudDeleteMutationVariables = {id: ModelsInventoryId}
 
     /**
- * 在庫を削除します。この在庫の在庫移動の記録は残り、その inventoryId は null になります。
+ * 在庫を削除します。この在庫の在庫移動の記録は残り、その inventoryId は null になります。管理者と、在庫のサロンのオーナー・マネージャーが使えます。ほかのサロンの在庫は404を、在庫数(currentStock)が0でない場合は409を返します。
  * @summary Delete an inventory record
  */
 export const useInventoryCrudDelete = <TError = ModelsProblemDetails,
