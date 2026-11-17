@@ -1,0 +1,81 @@
+import { Result } from '@beauty-salon-backend/utility'
+import { match } from 'ts-pattern'
+import { CustomerAllergyReadMapper } from '../../mappers/read/customer-allergy.mapper'
+import { CustomerAllergyWriteMapper } from '../../mappers/write/customer-allergy.mapper'
+import type { Actor } from '../../models/auth'
+import {
+  type ApiCustomerAllergyResponse,
+  parseAllergyCustomerId,
+} from '../../models/customer-allergy'
+import { customerAllergyCreateRequestSchema } from '../../schemas/customer-allergy.schema'
+import { type DomainError, DomainErrors, parseWith } from '../../shared'
+import { mayHandleCustomers } from '../customer/_shared/authorization'
+import type { CustomerAllergyUseCaseDependencies } from './_shared/dependencies'
+import { customerAllergyRuleIssues } from './_shared/rules'
+
+const MESSAGE = 'Invalid customer allergy'
+
+export class AddCustomerAllergyUseCase {
+  constructor(
+    private readonly dependencies: CustomerAllergyUseCaseDependencies,
+  ) {}
+
+  /**
+   * Writes an allergy of a customer who is there and has none of that
+   * allergen. Those who keep the customer ledger keep the allergies, which
+   * is decided before the request is read.
+   */
+  async execute(
+    actor: Actor,
+    customerId: unknown,
+    input: unknown,
+  ): Promise<Result<ApiCustomerAllergyResponse, DomainError>> {
+    if (!mayHandleCustomers(actor)) {
+      return Result.error(DomainErrors.forbidden())
+    }
+    const id = parseAllergyCustomerId(customerId)
+    if (id.type === 'error') {
+      return id
+    }
+    const request = parseWith(
+      customerAllergyCreateRequestSchema,
+      input,
+      MESSAGE,
+    )
+    if (request.type === 'error') {
+      return request
+    }
+    const issues = customerAllergyRuleIssues(
+      request.data,
+      this.dependencies.clock(),
+    )
+    if (issues.length > 0) {
+      return Result.error(DomainErrors.validation(MESSAGE, issues))
+    }
+
+    const added = await this.dependencies.customerAllergyRepository.add(
+      id.data,
+      CustomerAllergyWriteMapper.fromCreateRequest(request.data),
+    )
+    if (added.type === 'error') {
+      return added
+    }
+
+    return match(added.data)
+      .returnType<Result<ApiCustomerAllergyResponse, DomainError>>()
+      .with({ type: 'added' }, ({ allergy }) =>
+        CustomerAllergyReadMapper.toApiCustomerAllergy(allergy),
+      )
+      .with({ type: 'customerNotFound' }, () =>
+        Result.error(DomainErrors.notFound('Customer', id.data)),
+      )
+      .with({ type: 'allergenExists' }, () =>
+        Result.error(
+          DomainErrors.conflict(
+            'The customer has an allergy of that allergen already; an allergen is recorded once',
+          ),
+        ),
+      )
+      .exhaustive()
+  }
+}

@@ -466,14 +466,17 @@ namespace BeautySalon.Models {
     プロパティ名と null 許可は DB カラムと一致させている。対象の顧客はパスの customerId で示す
     """)
   model CustomerAllergyResponse {
+    @doc("アレルギー ID")
+    id: CustomerAllergyId;
+
     @doc("アレルギーの種類")
     allergyType: AllergyType;
 
-    @doc("アレルゲンの名称")
+    @doc("アレルゲンの名称。1人の顧客に同じ名称は1件だけ")
     allergenName: string;
 
-    @doc("重篤度を表す数値")
-    severity: int32;
+    @doc("重篤度")
+    severityType: AllergySeverityType;
 
     @doc("症状の内容。記録していない場合はnull")
     symptoms: string | null;
@@ -484,15 +487,65 @@ namespace BeautySalon.Models {
     @doc("アレルギーを確認した日。確認日が不明な場合はnull")
     confirmedDate: plainDate | null;
 
-    @doc("重篤度の区分。区分を設定していない場合はnull")
-    severityType: AllergySeverityType | null;
+    @doc("レコード作成日時")
+    createdAt: utcDateTime;
 
     @doc("レコード最終更新日時")
     updatedAt: utcDateTime;
   }
 
   @doc("""
-    顧客アレルギー一覧リクエスト - ページネーションを指定する
+    顧客アレルギー追加リクエスト - 全項目のキーが必須。値がない項目は null を指定する。対象の顧客はパスの customerId で示す
+    """)
+  model CustomerAllergyCreateRequest {
+    @doc("アレルギーの種類")
+    allergyType: AllergyType;
+
+    @doc("アレルゲンの名称（255文字まで。空白だけは指定できない）。顧客がすでに同じ名称のアレルギーを持つ場合は409。大文字と小文字は区別する")
+    @maxLength(255)
+    allergenName: string;
+
+    @doc("重篤度")
+    severityType: AllergySeverityType;
+
+    @doc("症状の内容（空白だけは指定できない）。記録しない場合はnull")
+    symptoms: string | null;
+
+    @doc("施術時の注意事項などのメモ（空白だけは指定できない）。特記事項がない場合はnull")
+    notes: string | null;
+
+    @doc("アレルギーを確認した日。1900-01-01 から今日まで。確認日が不明な場合はnull")
+    confirmedDate: plainDate | null;
+  }
+
+  @doc("""
+    顧客アレルギー部分更新リクエスト - 指定した項目だけを更新する。項目を1つも指定しないリクエストは受け付けない。
+    DB で NULL 許可のカラムは null でクリアできる。対象の顧客は変更できない
+    """)
+  model CustomerAllergyUpdateRequest {
+    @doc("アレルギーの種類")
+    allergyType?: AllergyType;
+
+    @doc("アレルゲンの名称（255文字まで。空白だけは指定できない）。顧客のほかのアレルギーと同じ名称の場合は409")
+    @maxLength(255)
+    allergenName?: string;
+
+    @doc("重篤度")
+    severityType?: AllergySeverityType;
+
+    @doc("症状の内容（空白だけは指定できない）。nullでクリア")
+    symptoms?: string | null;
+
+    @doc("施術時の注意事項などのメモ（空白だけは指定できない）。nullでクリア")
+    notes?: string | null;
+
+    @doc("アレルギーを確認した日。1900-01-01 から今日まで。nullでクリア")
+    confirmedDate?: plainDate | null;
+  }
+
+  @doc("""
+    顧客アレルギー一覧リクエスト - ページネーションを指定する。
+    重篤度の重い順（life_threatening、severe、moderate、mild）、同じ重篤度は記録した順（作成日時、同時刻は ID の順）に返す
     """)
   model CustomerAllergySearchRequest {
     @query

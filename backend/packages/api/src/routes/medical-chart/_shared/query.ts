@@ -20,3 +20,17 @@ export const decodeMedicalChartSearchQuery = (
     query,
     'Invalid medical chart search',
   )
+
+/** The parameter of the list of the allergies of a customer that is no text, as its type. */
+const customerAllergySearchQuerySchema = z.looseObject({
+  limit: numberParameter.exactOptional(),
+})
+
+export const decodeCustomerAllergySearchQuery = (
+  query: unknown,
+): Result<unknown, DomainError> =>
+  parseWith(
+    customerAllergySearchQuerySchema,
+    query,
+    'Invalid customer allergy search',
+  )

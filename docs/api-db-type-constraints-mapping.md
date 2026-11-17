@@ -374,6 +374,8 @@ DB にも TypeSpec にも表せない規則（空白だけの文字列を拒否�
 
 過去の施術の要素の形（施術の種類、日付、サロン名、メモ）は、CHECK 制約では確かめない。書く前にリクエストのスキーマが、読むときに読み取りのマッパーが確かめ、合わない行は 500 になる。一意制約 `medical_charts_customer_id_unique`（顧客 1 人にカルテは 1 件）は、作成が `ON CONFLICT DO NOTHING` で行を書き、何も書かれなければ 409 を返す規則そのものである。
 
+`customer_allergies` の一意制約 `customer_allergies_customer_allergen_unique`（顧客 1 人にアレルゲンは 1 件）も、同じく規則そのものである。追加は `ON CONFLICT DO NOTHING` で行を書き、何も書かれなければ 409 を返す。更新はアレルゲンを書き換える 1 つの `UPDATE` 文で、この制約の違反を 409 にする。重篤度は、列挙型 `allergy_severity` の NOT NULL の列 `severityType` だけで、TypeSpec は `AllergySeverityType` である（`backend/packages/database/sql/migrations/202611181100_customer_allergy_rules.sql`）。
+
 ## `pnpm check:api-db`
 
 生成済みの OpenAPI ドキュメント（`specs/tsp-output/@typespec/openapi3/generated/openapi.yaml`）と Drizzle スキーマ（`schema.ts`）を比べ、API モデルがテーブルと食い違っていれば失敗する。DB は使わない。CI の `quality` ジョブと `make ci-check` で実行される。

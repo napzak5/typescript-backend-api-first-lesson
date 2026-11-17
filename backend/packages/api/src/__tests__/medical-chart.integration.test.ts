@@ -900,11 +900,13 @@ describe('Medical chart API', () => {
           customerId: allergic.customer,
           allergyType: 'chemical',
           allergenName: 'PPD',
+          severityType: 'moderate',
         },
         {
           customerId: allergic.customer,
           allergyType: 'metal',
           allergenName: 'ニッケル',
+          severityType: 'moderate',
         },
       ])
 
@@ -1034,11 +1036,6 @@ describe('Medical chart API', () => {
 
   describe('what the routes do not serve', () => {
     it.each<[string, 'get' | 'put' | 'patch' | 'delete' | 'post', string]>([
-      [
-        'the allergies of a customer, served by a later unit',
-        'get',
-        '/customer/CUSTOMER/allergies',
-      ],
       ['GET on a chart by its ID', 'get', '/ID'],
       ['DELETE on a chart', 'delete', '/ID'],
       ['PUT on a chart', 'put', '/ID'],
@@ -1238,6 +1235,7 @@ describe('Medical chart API', () => {
           customerId: chart.customer,
           allergyType: 'chemical',
           allergenName: 'PPD',
+          severityType: 'moderate',
         })
         return chart
       }
@@ -1293,6 +1291,7 @@ describe('Medical chart API', () => {
           customerId: customer.id,
           allergyType: 'metal',
           allergenName: 'ニッケル',
+          severityType: 'moderate',
         })
         return { pending: underWay, waited: blocked }
       })

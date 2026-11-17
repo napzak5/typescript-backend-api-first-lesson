@@ -96,6 +96,10 @@ namespace BeautySalon.Models {
   @format("uuid")
   scalar MedicalChartId extends string;
 
+  @doc("顧客のアレルギー（customer_allergies の行）を識別するブランド付きUUID。")
+  @format("uuid")
+  scalar CustomerAllergyId extends string;
+
   @doc("添付ファイル・画像データを識別するブランド付きUUID。")
   @format("uuid")
   scalar AttachmentId extends string;

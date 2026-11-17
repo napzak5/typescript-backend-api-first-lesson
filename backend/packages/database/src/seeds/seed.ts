@@ -3,6 +3,7 @@ import { sql } from 'drizzle-orm'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import * as schema from '../schema'
 import { seedBookings } from './seed-data/bookings'
+import { seedCustomerAllergies } from './seed-data/customer-allergies'
 import { seedCustomers } from './seed-data/customers'
 import { seedMedicalCharts } from './seed-data/medical-charts'
 import { seedMembershipTiers } from './seed-data/membership-tiers'
@@ -67,6 +68,9 @@ export async function seed(
 
     console.log('Seeding medical charts...')
     await seedMedicalCharts(db, customerResult.customerIds)
+
+    console.log('Seeding customer allergies...')
+    await seedCustomerAllergies(db, customerResult.customerIds)
 
     console.log('Seeding staff...')
     await seedStaff(db, salonIds, {

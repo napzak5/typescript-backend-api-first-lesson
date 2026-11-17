@@ -1546,6 +1546,63 @@ describe('modelRules', () => {
     ])
   })
 
+  it('shows an allergy of a customer without its customer, and lets the requests that add and change one state everything but its ID, its customer and its times', () => {
+    const rules = modelRules
+      .filter(({ table }) => table === 'customerAllergies')
+      .map(
+        ({
+          model,
+          table,
+          kind,
+          omittedColumns,
+          embedded,
+          computed,
+          narrowed,
+          nonNullable,
+        }) => ({
+          model,
+          table,
+          kind,
+          omittedColumns,
+          embedded,
+          computed,
+          narrowed,
+          nonNullable,
+        }),
+      )
+    const none = {
+      embedded: undefined,
+      computed: undefined,
+      narrowed: undefined,
+      nonNullable: undefined,
+    }
+    const managed = ['id', 'customerId', 'createdAt', 'updatedAt']
+
+    expect(rules).toEqual([
+      {
+        model: 'Models.CustomerAllergyResponse',
+        table: 'customerAllergies',
+        kind: 'response',
+        omittedColumns: ['customerId'],
+        ...none,
+      },
+      {
+        model: 'Models.CustomerAllergyCreateRequest',
+        table: 'customerAllergies',
+        kind: 'create',
+        omittedColumns: managed,
+        ...none,
+      },
+      {
+        model: 'Models.CustomerAllergyUpdateRequest',
+        table: 'customerAllergies',
+        kind: 'update',
+        omittedColumns: managed,
+        ...none,
+      },
+    ])
+  })
+
   it('lets nothing but the stock row of a new item of a purchase order leave out the null of its column', () => {
     const nonNullable = modelRules
       .filter((modelRule) => modelRule.nonNullable !== undefined)

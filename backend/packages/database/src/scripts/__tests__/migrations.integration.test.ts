@@ -3380,4 +3380,170 @@ describe('the migrations of this repository', () => {
       },
     )
   })
+
+  describe('202611181100_customer_allergy_rules.sql', () => {
+    const run = (): Promise<void> =>
+      runMigration('202611181100_customer_allergy_rules.sql')
+
+    /** The schema of setup.sql, which the migration brings a database to. */
+    let schemaOfSetup: string[] = []
+
+    /** An allergy as stored before the migration, with both severities. */
+    type OldAllergy = {
+      allergenName?: string
+      severity?: number
+      severityType?: string | null
+    }
+
+    /** An allergy of the customer before the migration; returns its ID. */
+    const storeOldAllergy = async (
+      customerId: string,
+      {
+        allergenName = `allergen ${randomUUID()}`,
+        severity = 3,
+        severityType = null,
+      }: OldAllergy = {},
+    ): Promise<string> => {
+      const id = randomUUID()
+      await sql`
+        INSERT INTO customer_allergies (
+          id, "customerId", "allergyType", "allergenName", severity,
+          "severityType"
+        )
+        VALUES (
+          ${id}, ${customerId}, 'chemical', ${allergenName}, ${severity},
+          ${severityType}::allergy_severity
+        )
+      `
+      return id
+    }
+
+    /** An allergy of the customer once the migration is applied. */
+    const storeAllergy = (
+      customerId: string,
+      allergenName: string,
+      severityType: string | null = 'mild',
+    ) => sql`
+      INSERT INTO customer_allergies (
+        "customerId", "allergyType", "allergenName", "severityType"
+      )
+      VALUES (
+        ${customerId}, 'chemical', ${allergenName},
+        ${severityType}::allergy_severity
+      )
+    `
+
+    const levelOf = async (id: string): Promise<unknown> =>
+      sql`
+        SELECT "severityType"::text AS "severityType"
+        FROM customer_allergies WHERE id = ${id}
+      `
+
+    // A database from before the migration: a severity as a number beside
+    // a level that may be missing, an index on the customer, and no rule
+    // that keeps an allergen of a customer to one row.
+    beforeEach(async () => {
+      await applyBaseline(sql, plan)
+      schemaOfSetup = await describeSchema()
+      await sql.unsafe(`
+        ALTER TABLE customer_allergies
+          DROP CONSTRAINT customer_allergies_customer_allergen_unique,
+          ALTER COLUMN "severityType" DROP NOT NULL,
+          ADD COLUMN severity integer DEFAULT 3 NOT NULL;
+        CREATE INDEX idx_customer_allergies_customer_id
+          ON customer_allergies USING btree ("customerId");
+      `)
+    })
+
+    it('should give the database the rules of setup.sql, and keep them on a second run', async () => {
+      expect(await describeSchema()).not.toEqual(schemaOfSetup)
+
+      await run()
+      await run()
+
+      expect(await describeSchema()).toEqual(schemaOfSetup)
+    })
+
+    it.each<[number, string]>([
+      [-1, 'mild'],
+      [1, 'mild'],
+      [2, 'mild'],
+      [3, 'moderate'],
+      [4, 'severe'],
+      [5, 'life_threatening'],
+      [9, 'life_threatening'],
+    ])(
+      'should give an allergy of severity %i and no level the level %s',
+      async (severity, level) => {
+        const id = await storeOldAllergy(await storeNewCustomer(), {
+          severity,
+        })
+
+        await run()
+
+        expect(await levelOf(id)).toEqual([{ severityType: level }])
+      },
+    )
+
+    it('should keep the level of an allergy that has one, whatever its number', async () => {
+      const customerId = await storeNewCustomer()
+      const mild = await storeOldAllergy(customerId, {
+        severity: 5,
+        severityType: 'mild',
+      })
+      const severe = await storeOldAllergy(customerId, {
+        severity: 1,
+        severityType: 'severe',
+      })
+
+      await run()
+
+      expect(await levelOf(mild)).toEqual([{ severityType: 'mild' }])
+      expect(await levelOf(severe)).toEqual([{ severityType: 'severe' }])
+    })
+
+    it('should keep the allergens of one name of two customers, and names of one customer that differ in case', async () => {
+      const first = await storeNewCustomer()
+      const second = await storeNewCustomer()
+      await storeOldAllergy(first, { allergenName: 'PPD' })
+      await storeOldAllergy(first, { allergenName: 'ppd' })
+      await storeOldAllergy(second, { allergenName: 'PPD' })
+
+      await run()
+
+      await storeAllergy(second, 'ppd')
+      expect(await sql`SELECT 1 FROM customer_allergies`).toHaveLength(4)
+    })
+
+    it('should fail and change nothing where a customer has two rows of one allergen, and keep them out from then on', async () => {
+      const customerId = await storeNewCustomer()
+      const kept = await storeOldAllergy(customerId, { allergenName: 'PPD' })
+      const second = await storeOldAllergy(customerId, {
+        allergenName: 'PPD',
+      })
+      const before = await describeSchema()
+
+      await expect(run()).rejects.toThrow(
+        'customer_allergies_customer_allergen_unique',
+      )
+
+      expect(await levelOf(kept)).toEqual([{ severityType: null }])
+      expect(await describeSchema()).toEqual(before)
+
+      await sql`DELETE FROM customer_allergies WHERE id = ${second}`
+      await run()
+
+      await expect(storeAllergy(customerId, 'PPD')).rejects.toThrow(
+        'customer_allergies_customer_allergen_unique',
+      )
+    })
+
+    it('should keep an allergy without a level out from then on', async () => {
+      await run()
+
+      await expect(
+        storeAllergy(await storeNewCustomer(), 'PPD', null),
+      ).rejects.toThrow('severityType')
+    })
+  })
 })
