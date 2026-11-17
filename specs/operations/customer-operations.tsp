@@ -11,7 +11,7 @@ using TypeSpec.OpenAPI;
 using BeautySalon.Models;
 
 namespace BeautySalon.Operations {
-  @doc("顧客台帳を管理するAPI操作群です。台帳はプラットフォーム全体で1つで、サロンごとには分かれていません。実装済みの操作は、一覧・登録・1件の取得・更新・削除と、好み設定の取得・更新、統計の取得です。これらは admin とサロンのスタッフ(owner / manager / staff。所属サロンは問いません)が実行でき、削除は admin と owner / manager だけが実行できます。統計は、admin と、salonId のサロンの owner / manager / staff が実行できます。レスポンスはスタッフ専用の項目を含むので、顧客本人(customer)には403を返します。権限は最初に確認し、権限のないユーザーにはIDや本文が不正でも403を返します。")
+  @doc("顧客台帳を管理するAPI操作群です。台帳はプラットフォーム全体で1つで、サロンごとには分かれていません。実装済みの操作は、一覧・登録・1件の取得・更新・削除、一括取得・一括登録・一括更新・一括削除と、好み設定の取得・更新、統計の取得です。これらは admin とサロンのスタッフ(owner / manager / staff。所属サロンは問いません)が実行でき、削除と一括削除は admin と owner / manager だけが実行できます。統計は、admin と、salonId のサロンの owner / manager / staff が実行できます。レスポンスはスタッフ専用の項目を含むので、顧客本人(customer)には403を返します。権限は最初に確認し、権限のないユーザーにはIDや本文が不正でも403を返します。")
   @route("/api/v1/customers")
   @tag("Customers")
   namespace CustomerOperations {
@@ -79,7 +79,7 @@ namespace BeautySalon.Operations {
         | ProblemResponse<409>
         | CommonErrors;
 
-      @doc("複数の顧客IDをまとめて取得し、一覧画面の遅延読み込みや外部連携に利用します。指定した顧客のいずれかが存在しない場合は404を返します。")
+      @doc("複数の顧客IDをまとめて取得し、一覧画面の遅延読み込みや外部連携に利用します。顧客はリクエストの ids と同じ順に並びます。同じIDを2回指定した場合は400を、指定した顧客のいずれかが存在しない場合(削除済みを含む)は404を返します。404の detail は、ids の順で最初に見つからなかった顧客です。")
       @summary("Batch get customers")
       @post
       @route("/batch/get")
@@ -93,7 +93,7 @@ namespace BeautySalon.Operations {
         | RequestBodyErrors
         | CommonErrors;
 
-      @doc("複数の顧客を一括登録します。すべての顧客を1つのトランザクションで登録し、1件でも登録できない場合はどの顧客も登録しません。メールアドレスまたは紹介コードが既存の顧客やリクエスト内の他の顧客と重複する場合は409を、referredByに存在しない顧客を指定した場合は400を返します。")
+      @doc("複数の顧客を一括登録します。すべての顧客を1つのトランザクションで登録し、1件でも登録できない場合はどの顧客も登録しません。各項目の規則は1件の登録と同じです。referredByに削除されていない既存の顧客以外を指定した場合(同じリクエストで登録する顧客は指定できません)は400を、メールアドレスまたは紹介コードが既存の顧客やリクエスト内の他の顧客と重複する場合は409を返します。400は409より先に返します。")
       @summary("Bulk create customers")
       @post
       @route("/bulk")
@@ -107,7 +107,7 @@ namespace BeautySalon.Operations {
         | RequestBodyErrors
         | CommonErrors;
 
-      @doc("複数の顧客をそれぞれの更新内容で一括更新します。すべての顧客を1つのトランザクションで更新し、1件でも更新できない場合はどの顧客も更新しません。指定した顧客のいずれかが存在しない場合は404を、メールアドレスまたは紹介コードが重複する場合は409を返します。")
+      @doc("複数の顧客をそれぞれの更新内容で一括更新します。すべての顧客を1つのトランザクションで更新し、1件でも更新できない場合はどの顧客も更新しません。各項目の規則は1件の更新と同じです。同じ顧客IDを2回指定した場合は400を、指定した顧客のいずれかが存在しない場合は404を、referredByに削除されていない顧客以外を指定した場合は400を、メールアドレスまたは紹介コードが重複する場合は409を返します。顧客は1人ずつリクエストの順に更新するので、2人のメールアドレスを入れ替える更新は409です。")
       @summary("Bulk update customers")
       @patch
       @route("/bulk")
@@ -122,7 +122,7 @@ namespace BeautySalon.Operations {
         | RequestBodyErrors
         | CommonErrors;
 
-      @doc("複数の顧客を一括で論理削除します。すべての顧客を1つのトランザクションで削除し、指定した顧客のいずれかが存在しない場合は404を返してどの顧客も削除しません。")
+      @doc("複数の顧客を一括で論理削除します。すべての顧客を1つのトランザクションで削除し、1人でも削除できない場合はどの顧客も削除しません。同じIDを2回指定した場合は400を、指定した顧客のいずれかが存在しない場合は404を、いずれかの顧客に終わっていない予約(draft・pending・confirmed・in_progress。どのサロンの予約でも)がある場合は409を返します。")
       @summary("Bulk delete customers")
       @delete
       @route("/bulk")
@@ -133,6 +133,7 @@ namespace BeautySalon.Operations {
           }
         | ProblemResponse<400>
         | ProblemResponse<404>
+        | ProblemResponse<409>
         | RequestBodyErrors
         | CommonErrors;
 

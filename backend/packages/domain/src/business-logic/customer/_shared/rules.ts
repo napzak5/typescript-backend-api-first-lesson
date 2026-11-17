@@ -59,11 +59,11 @@ export const referredByItself = (
     : []
 
 /** The customer named as the referrer does not exist, or is deleted. */
+export const referrerMissing: ValidationIssue = {
+  field: 'referredBy',
+  rule: 'not_found',
+  message: 'Must name a customer',
+}
+
 export const referrerNotFound = (message: string): DomainError =>
-  DomainErrors.validation(message, [
-    {
-      field: 'referredBy',
-      rule: 'not_found',
-      message: 'Must name a customer',
-    },
-  ])
+  DomainErrors.validation(message, [referrerMissing])

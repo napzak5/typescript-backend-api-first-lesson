@@ -951,7 +951,7 @@ export interface paths {
         put?: never;
         /**
          * Batch get customers
-         * @description 複数の顧客IDをまとめて取得し、一覧画面の遅延読み込みや外部連携に利用します。指定した顧客のいずれかが存在しない場合は404を返します。
+         * @description 複数の顧客IDをまとめて取得し、一覧画面の遅延読み込みや外部連携に利用します。顧客はリクエストの ids と同じ順に並びます。同じIDを2回指定した場合は400を、指定した顧客のいずれかが存在しない場合(削除済みを含む)は404を返します。404の detail は、ids の順で最初に見つからなかった顧客です。
          */
         post: operations["CustomerCrud_batchGet"];
         delete?: never;
@@ -971,19 +971,19 @@ export interface paths {
         put?: never;
         /**
          * Bulk create customers
-         * @description 複数の顧客を一括登録します。すべての顧客を1つのトランザクションで登録し、1件でも登録できない場合はどの顧客も登録しません。メールアドレスまたは紹介コードが既存の顧客やリクエスト内の他の顧客と重複する場合は409を、referredByに存在しない顧客を指定した場合は400を返します。
+         * @description 複数の顧客を一括登録します。すべての顧客を1つのトランザクションで登録し、1件でも登録できない場合はどの顧客も登録しません。各項目の規則は1件の登録と同じです。referredByに削除されていない既存の顧客以外を指定した場合(同じリクエストで登録する顧客は指定できません)は400を、メールアドレスまたは紹介コードが既存の顧客やリクエスト内の他の顧客と重複する場合は409を返します。400は409より先に返します。
          */
         post: operations["CustomerCrud_bulkCreate"];
         /**
          * Bulk delete customers
-         * @description 複数の顧客を一括で論理削除します。すべての顧客を1つのトランザクションで削除し、指定した顧客のいずれかが存在しない場合は404を返してどの顧客も削除しません。
+         * @description 複数の顧客を一括で論理削除します。すべての顧客を1つのトランザクションで削除し、1人でも削除できない場合はどの顧客も削除しません。同じIDを2回指定した場合は400を、指定した顧客のいずれかが存在しない場合は404を、いずれかの顧客に終わっていない予約(draft・pending・confirmed・in_progress。どのサロンの予約でも)がある場合は409を返します。
          */
         delete: operations["CustomerCrud_bulkDelete"];
         options?: never;
         head?: never;
         /**
          * Bulk update customers
-         * @description 複数の顧客をそれぞれの更新内容で一括更新します。すべての顧客を1つのトランザクションで更新し、1件でも更新できない場合はどの顧客も更新しません。指定した顧客のいずれかが存在しない場合は404を、メールアドレスまたは紹介コードが重複する場合は409を返します。
+         * @description 複数の顧客をそれぞれの更新内容で一括更新します。すべての顧客を1つのトランザクションで更新し、1件でも更新できない場合はどの顧客も更新しません。各項目の規則は1件の更新と同じです。同じ顧客IDを2回指定した場合は400を、指定した顧客のいずれかが存在しない場合は404を、referredByに削除されていない顧客以外を指定した場合は400を、メールアドレスまたは紹介コードが重複する場合は409を返します。顧客は1人ずつリクエストの順に更新するので、2人のメールアドレスを入れ替える更新は409です。
          */
         patch: operations["CustomerCrud_bulkUpdate"];
         trace?: never;
@@ -3978,7 +3978,7 @@ export interface components {
         };
         /** @description 顧客一括取得リクエスト - 複数の顧客IDを指定してまとめて取得する */
         "Models.CustomerBatchGetRequest": {
-            /** @description 取得する顧客のID一覧。1件以上100件以下で指定する */
+            /** @description 取得する顧客のID一覧。1件以上100件以下で指定する。同じ ID を複数回指定できない */
             ids: components["schemas"]["Models.CustomerId"][];
         };
         /**
@@ -4169,12 +4169,12 @@ export interface components {
          *     すべての顧客を1つのトランザクションで削除し、1件でも削除できない場合はどの顧客も削除しない
          */
         "Models.CustomerBulkDeleteRequest": {
-            /** @description 削除する顧客の ID 一覧。1件以上100件以下で指定する */
+            /** @description 削除する顧客の ID 一覧。1件以上100件以下で指定する。同じ ID を複数回指定できない */
             ids: components["schemas"]["Models.CustomerId"][];
         };
         /** @description 顧客一括削除の結果 - 削除した顧客の ID 一覧を返す */
         "Models.CustomerBulkDeleteResponse": {
-            /** @description 削除した顧客の ID 一覧 */
+            /** @description 削除した顧客の ID 一覧。リクエストの ids と同じ順序で並ぶ */
             deleted: components["schemas"]["Models.CustomerId"][];
         };
         /** @description 顧客一括更新の1件分 - 更新対象の顧客 ID と更新内容 */
@@ -4194,7 +4194,7 @@ export interface components {
         };
         /** @description 顧客一括更新の結果 - 更新した顧客の ID 一覧を返す */
         "Models.CustomerBulkUpdateResponse": {
-            /** @description 更新した顧客の ID 一覧 */
+            /** @description 更新した顧客の ID 一覧。リクエストの items と同じ順序で並ぶ */
             updated: components["schemas"]["Models.CustomerId"][];
         };
         /**
@@ -15309,6 +15309,15 @@ export interface operations {
             };
             /** @description The server cannot find the requested resource. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The request conflicts with the current state of the server. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -12,7 +12,7 @@ import type { ModelsCustomerId } from './modelsCustomerId';
  */
 export interface ModelsCustomerBatchGetRequest {
   /**
-     * 取得する顧客のID一覧。1件以上100件以下で指定する
+     * 取得する顧客のID一覧。1件以上100件以下で指定する。同じ ID を複数回指定できない
      * @minItems 1
      * @maxItems 100
      */

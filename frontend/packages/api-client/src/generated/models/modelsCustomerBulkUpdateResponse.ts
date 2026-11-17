@@ -11,6 +11,6 @@ import type { ModelsCustomerId } from './modelsCustomerId';
  * 顧客一括更新の結果 - 更新した顧客の ID 一覧を返す
  */
 export interface ModelsCustomerBulkUpdateResponse {
-  /** 更新した顧客の ID 一覧 */
+  /** 更新した顧客の ID 一覧。リクエストの items と同じ順序で並ぶ */
   updated: ModelsCustomerId[];
 }

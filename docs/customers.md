@@ -12,7 +12,8 @@
 | 本人のプロフィール（`CustomerProfile`）の取得、作成、更新 | 実装済み |
 | 好み設定の取得と更新（台帳の `GET` / `PATCH /{id}/preferences`、本人の `GET` / `PATCH /me/preferences`） | 実装済み |
 | [統計](#統計)（台帳の `GET /{id}/statistics`） | 実装済み |
-| 一括取得、一括登録、一括更新、一括削除、復元、統合 | 未実装 |
+| [一括の操作](#一括の操作)（一括取得、一括登録、一括更新、一括削除） | 実装済み |
+| 復元、統合 | 未実装 |
 | 監査履歴、版、エクスポート、データ削除要請 | 未実装。保存するテーブルがない |
 
 未実装のオペレーションは `CustomerCrud` のもので、コントラクトには定義がありますが、サーバーは 404 を返します。
@@ -34,6 +35,8 @@
 | 1 件の取得 | `GET /api/v1/customers/{id}` | 同上 |
 | 更新 | `PATCH /api/v1/customers/{id}` | 同上 |
 | 削除 | `DELETE /api/v1/customers/{id}` | `admin`、サロンの `owner` / `manager` |
+| 一括取得、一括登録、一括更新 | `POST /api/v1/customers/batch/get`、`POST` / `PATCH /api/v1/customers/bulk` | `admin`、サロンの `owner` / `manager` / `staff`（[一括の操作](#一括の操作)） |
+| 一括削除 | `DELETE /api/v1/customers/bulk` | `admin`、サロンの `owner` / `manager` |
 | 統計 | `GET /api/v1/customers/{id}/statistics` | `admin`、クエリのサロンの `owner` / `manager` / `staff`（[統計](#統計)） |
 
 - すべてのオペレーションに認証が要ります。台帳は公開情報ではありません
@@ -130,6 +133,48 @@
 - 削除した顧客の[カルテとアレルギー](./medical-charts.md#削除された顧客)も、見えなくなります。行は残します
 - **終わっていない予約がある顧客は、削除できません**（409）。ステータスが `draft`、`pending`、`confirmed`、`in_progress` の予約で、どのサロンの予約でも同じです。先に、予約を完了、キャンセル、または削除します（[予約台帳](./bookings.md#予約が参照するものの削除)）。断ったときは、アカウントとの紐づけも、そのままです
 - 終わった予約（`completed`、`cancelled`、`no_show`）は、削除を妨げません。予約に保存されている顧客の ID は残り、予約の取得は、そのまま返します。削除した顧客を、新しい予約に指定することはできません（400）
+
+## 一括の操作
+
+| オペレーション | ルート | 成功 |
+|---|---|---|
+| 一括取得 | `POST /api/v1/customers/batch/get`（本文 `{ "ids": [...] }`） | 200。`data` は顧客の一覧（1 件の取得と同じ形） |
+| 一括登録 | `POST /api/v1/customers/bulk`（本文 `{ "items": [...] }`。各項目は登録の本文） | 201。`data.created` は登録した顧客の ID。`Location` ヘッダーはない |
+| 一括更新 | `PATCH /api/v1/customers/bulk`（本文 `{ "items": [{ "id", "updates" }, ...] }`。`updates` は更新の本文） | 200。`data.updated` は更新した顧客の ID |
+| 一括削除 | `DELETE /api/v1/customers/bulk`（本文 `{ "ids": [...] }`） | 200。`data.deleted` は削除した顧客の ID |
+
+- **すべてか、何もしないか**です。1 件でも断る理由があれば、どの顧客も登録・更新・削除しません。1 つのリクエストは 1 つのトランザクションです
+- 1 回に 1〜100 件です。**同じ顧客を 2 回書くと 400** です（`ids.<n>` または `items.<n>.id` の `custom`。あとの位置で報告）。英字を大文字で書いた ID も同じ ID です
+- 結果の ID と、一括取得の顧客は、**リクエストの順**に並びます。`links` は `{ "list": "/api/v1/customers" }` です
+- 権限は 1 件の操作と同じです。一括削除だけが `admin`、`owner`、`manager` で、ほかは `staff` もできます。権限は本文を読む前に確かめます
+- 各項目の規則は 1 件の操作と同じです（[項目の規則](#項目の規則)）。エラーの位置は `items.<n>.<項目>`（更新は `items.<n>.updates.<項目>`）です
+- 本文は、ほかのルートと同じく 100 kB までです（413）。長いメモを持つ 100 件の登録は届かないことがあるので、分けて送ります
+
+### 確認の順序（一括の操作）
+
+| オペレーション | 順序 |
+|---|---|
+| 一括取得 | アクセストークン（401）→ 権限（403）→ 本文（400）→ 顧客の存在（404） |
+| 一括登録 | 401 → 403 → 本文（400）→ 生年月日の範囲（400）→ 紹介元の存在（400、`items.<n>.referredBy` の `not_found`）→ メールアドレスと紹介コードの重複（409） |
+| 一括更新 | 401 → 403 → 本文（400）→ 生年月日の範囲と、自分自身を紹介元にしないこと（400）→ 顧客の存在（404）→ 紹介元の存在（400）→ 重複（409） |
+| 一括削除 | 401 → 403 → 本文（400）→ 顧客の存在（404）→ 終わっていない予約（409） |
+
+- 404 は、存在しない顧客と削除した顧客のうち、リクエストの順で最初の 1 人を `detail` に書きます（`Customer <ID> was not found`）
+- 一括削除の 409 も、終わっていない予約のある顧客のうち、リクエストの順で最初の 1 人を書きます（`Customer <ID> cannot be deleted: bookings that are not finished refer to it`）。予約の規則は [削除](#削除) と同じです
+- 紹介元の 400 は、紹介元が見つからないすべての項目を報告します
+
+### 重複の判定
+
+- **リクエストの中の重複と、保存されている顧客との重複は、どちらも 409** です。顧客を 1 人ずつリクエストの順に書き、一意インデックスが断ったところで止めます。409 の `detail` は、断られた値です（`Customer with email <アドレス> already exists`）。リクエストの中で同じメールアドレスを 2 回書いたときは、あとの項目で断られます
+- 範囲は 1 件の操作と同じです。メールアドレスは小文字にそろえてから、削除されていない顧客と比べます。紹介コードは、削除した顧客とも比べます
+- 一括登録の紹介元に、同じリクエストで登録する顧客は書けません（まだ ID がない）
+- **一括更新で 2 人のメールアドレスを入れ替えることはできません**（409）。1 人目を書いた時点で、2 人が同じアドレスを持つことになるためです。入れ替えるときは、一方をいったん別のアドレスにする更新を先に送ります
+
+### ロック
+
+- 一括更新と一括削除は、対象の顧客の行を **ID の順に** `FOR UPDATE` でロックしてから、紹介元や予約を確かめ、書き込みます。同じ顧客を含む 2 つの一括更新が、逆の順に顧客を並べて同時に届いても、ロックの順が同じなので、片方がもう片方を待ちます
+- 一括削除は、1 件の削除と同じく、ロックしたあとの文で終わっていない予約を探します。顧客の行を共有ロックして書いている途中の予約の作成を待ってから探すので、終わっていない予約が、削除した顧客を指すことはありません
+- 一括取得は、ロックを取らずに 1 つの文で読みます
 
 ## 顧客本人のプロフィール
 
@@ -347,6 +392,9 @@
 | 好み設定の更新と、その顧客の削除が同時に届く | 削除は成功する。更新は、先に処理されれば 200、あとなら 404 |
 | 好み設定の更新と、そこに挙げたスタッフの削除が同時に届く | どちらも成功しうる。更新がスタッフを確かめたあとで削除が済むと、削除されたスタッフの ID が残る（保存したあとで削除された場合と同じ状態） |
 | 顧客の削除と、その顧客の予約の作成が同時に届く | 作成が 201 で削除が 409 か、削除が 204 で作成が 400。終わっていない予約が、削除された顧客を指すことはない |
+| 同じ顧客を含む 2 つの一括更新が、顧客を逆の順に並べて同時に届く | どちらも 200。顧客を ID の順にロックするので、片方がもう片方を待つ |
+| 一括削除と、そのうち 1 人の予約の作成が同時に届く | 1 件の削除と同じ。作成が先なら、一括削除は 409 で、どの顧客も削除しない |
+| 一括更新と、そのうち 1 人の削除が同時に届く | 削除が先なら、一括更新は 404 で、どの顧客も更新しない |
 
 一意性は DB の一意インデックスが決めます。更新は、対象の行をロックしてから紹介元を確認し、書き込みます。プロフィールの作成は、アカウントの行、引き継ぐ顧客の行の順にロックしてから書き込みます。
 
@@ -405,5 +453,6 @@
 | インフラ | `backend/packages/infrastructure/src/repositories/customer.repository.impl.ts`、`customer-preferences.repository.impl.ts`、`database/like.ts`（キーワードを文字どおりに探す LIKE のパターン） |
 | ドメイン（統計） | `backend/packages/domain/src/models/customer-statistics.ts`、`schemas/customer-statistics.schema.ts`（売上レポートの期間の規則を使う）、`repositories/customer-statistics.repository.ts`、`business-logic/customer-statistics/`（値の計算と並びは `_shared/statistics.ts`） |
 | インフラ（統計） | `backend/packages/infrastructure/src/repositories/customer-statistics.repository.impl.ts` |
-| API | `backend/packages/api/src/routes/customer/`（プロフィールは `*-customer-profile.handler.ts`）、`routes/customer-preferences/`（本人のものは `*-own-customer-preferences.handler.ts`）、`routes/customer-statistics/` |
+| ドメイン（一括の操作） | `backend/packages/domain/src/schemas/customer-bulk.schema.ts`、`business-logic/customer/` の `batch-get-customers.usecase.ts`、`bulk-*-customers.usecase.ts`（エラーの位置と、リクエストの順の扱いは `_shared/bulk.ts`）、`repositories/customer.repository.ts`（`findByIds`、`createMany`、`updateMany`、`deleteMany`） |
+| API | `backend/packages/api/src/routes/customer/`（一括の操作は `batch-get-customers.handler.ts`、`bulk-*-customers.handler.ts`。プロフィールは `*-customer-profile.handler.ts`）、`routes/customer-preferences/`（本人のものは `*-own-customer-preferences.handler.ts`）、`routes/customer-statistics/` |
 | DB | `backend/packages/database/sql/migrations/202611150900_customers_columns.sql`、`202611151500_customers_user_unique.sql`、`202611160100_customer_preferences_columns.sql`、`202611181400_customers_without_lifetime_value.sql` |

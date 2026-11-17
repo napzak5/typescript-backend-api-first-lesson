@@ -898,7 +898,7 @@ namespace BeautySalon.Models {
     顧客一括取得リクエスト - 複数の顧客IDを指定してまとめて取得する
     """)
   model CustomerBatchGetRequest {
-    @doc("取得する顧客のID一覧。1件以上100件以下で指定する")
+    @doc("取得する顧客のID一覧。1件以上100件以下で指定する。同じ ID を複数回指定できない")
     @minItems(1)
     @maxItems(100)
     ids: CustomerId[];
@@ -943,7 +943,7 @@ namespace BeautySalon.Models {
 
   @doc("顧客一括更新の結果 - 更新した顧客の ID 一覧を返す")
   model CustomerBulkUpdateResponse {
-    @doc("更新した顧客の ID 一覧")
+    @doc("更新した顧客の ID 一覧。リクエストの items と同じ順序で並ぶ")
     updated: CustomerId[];
   }
 
@@ -952,7 +952,7 @@ namespace BeautySalon.Models {
     すべての顧客を1つのトランザクションで削除し、1件でも削除できない場合はどの顧客も削除しない
     """)
   model CustomerBulkDeleteRequest {
-    @doc("削除する顧客の ID 一覧。1件以上100件以下で指定する")
+    @doc("削除する顧客の ID 一覧。1件以上100件以下で指定する。同じ ID を複数回指定できない")
     @minItems(1)
     @maxItems(100)
     ids: CustomerId[];
@@ -960,7 +960,7 @@ namespace BeautySalon.Models {
 
   @doc("顧客一括削除の結果 - 削除した顧客の ID 一覧を返す")
   model CustomerBulkDeleteResponse {
-    @doc("削除した顧客の ID 一覧")
+    @doc("削除した顧客の ID 一覧。リクエストの ids と同じ順序で並ぶ")
     deleted: CustomerId[];
   }
 
