@@ -19,7 +19,6 @@ specs/
 │   ├── customer.tsp
 │   ├── inventory.tsp
 │   ├── payment.tsp
-│   ├── permission.tsp
 │   ├── review.tsp
 │   ├── salon.tsp
 │   ├── service.tsp
@@ -32,7 +31,6 @@ specs/
 │   ├── customer-operations.tsp
 │   ├── inventory-operations.tsp
 │   ├── payment-operations.tsp
-│   ├── permission-operations.tsp
 │   ├── review-operations.tsp
 │   ├── salon-operations.tsp
 │   ├── service-operations.tsp
@@ -84,7 +82,7 @@ TypeSpec に定義があっても、バックエンドに実装があるとは�
 | `models/inventory.tsp` の在庫のアラートのモデル（`InventoryAlertType`、`InventoryAlertSeverityType`、`InventoryAlertResponse`、`InventoryAlertAcknowledgementResponse`、`InventoryAlertSearchRequest`、`InventoryAlertAcknowledgeRequest`、`InventoryAlertSummaryRequest`、`InventoryAlertSummaryResponse`）、`operations/inventory-operations.tsp` の `InventoryAlertCrud` の 3 オペレーション（`list`、`acknowledge`、`getSummary`） | `backend/packages/api/src/routes/inventory-alert/`。定義と実装は一致している（[在庫のアラート](./inventory-alerts.md)）。確認の記録と確認のリクエストは `inventory_alert_acknowledgements` と一致している（`pnpm check:api-db`）。アラートそのものは、保存しないので照合しない |
 | `models/treatment.tsp` の施術記録のモデル（`TreatmentRecordResponse`、`TreatmentMaterial`、`TreatmentPhotoResponse`、`TreatmentRecordCreateRequest`、`TreatmentRecordUpdateRequest`、`TreatmentRecordSearchRequest`、`TreatmentPhotoCreateRequest`、`TreatmentPhotoBulkCreateRequest`、`TreatmentPhotoBulkCreateResponse`、`TreatmentStatisticsGetRequest`、`TreatmentStatisticsResponse`）、`operations/treatment-operations.tsp` の `TreatmentRecordCrud` の 8 オペレーション（`list`、`create`、`get`、`update`、`delete`、`addPhotos`、`removePhoto`、`getStatistics`） | `backend/packages/api/src/routes/treatment-record/`。定義と実装は一致している（[施術記録](./treatments.md)）。モデルは `treatment_records`、`treatment_materials`、`treatment_photos` と一致している（`pnpm check:api-db`） |
 | `models/treatment.tsp` のカルテのモデル（`PreviousTreatment`、`MedicalChartResponse`、`MedicalChartCreateRequest`、`MedicalChartUpdateRequest`、`MedicalChartSearchRequest`）、`operations/treatment-operations.tsp` の `MedicalChartCrud` の 8 オペレーション（`list`、`create`、`getByCustomer`、`update`、`listAllergies`、`addAllergy`、`updateAllergy`、`removeAllergy`） | `backend/packages/api/src/routes/medical-chart/`。定義と実装は一致している（[カルテ](./medical-charts.md)）。モデルは `medical_charts` と `customer_allergies` と一致している（`pnpm check:api-db`） |
-| attachment、permission と、customer の監査履歴・エクスポート・データ削除リクエスト | なし。対応するテーブルもまだない（[API-DB型制約マッピング](./api-db-type-constraints-mapping.md#ルールに載せるモデル載せないモデル)） |
+| attachment と、customer の監査履歴・エクスポート・データ削除リクエスト | なし。対応するテーブルもまだない（[API-DB型制約マッピング](./api-db-type-constraints-mapping.md#ルールに載せるモデル載せないモデル)） |
 
 `main.tsp` は `@useAuth(BearerAuth)` を宣言しており、認証なしで呼べるオペレーション（システムのオペレーション、サロンの一覧と 1 件の取得、サービスカテゴリーの一覧と 1 件の取得、サービスの一覧と 1 件の取得、スタッフのプロフィールの一覧と 1 件の取得、登録・ログインなどの認証フロー、共有リンク）には `@useAuth(NoAuth)` が付いている。実装済みのオペレーションでは、`@useAuth(NoAuth)` のないものをサーバーがアクセストークンで認証し、権限をユースケースで判定する（[認証と認可](./authentication.md)）。
 

@@ -128,7 +128,6 @@ const USER_PROPERTIES = [
   'lastLoginIp',
   'lastPasswordChange',
   'lockedUntil',
-  'permissions',
   'role',
   'staffId',
   'status',

@@ -50,7 +50,7 @@
 | 調整 | `POST /api/v1/points/adjust` | `admin`、どのサロンの `owner`・`manager` も |
 | 失効 | `POST /api/v1/points/expire` | `admin` だけ |
 
-- すべてのオペレーションに認証が要ります。誰が使えるかは、`business-logic/point/_shared/authorization.ts` の `pointReachOf`（残高、履歴、有効期限が近いポイント、付与、利用）、`pointAdjustReachOf`（調整）、`mayExpirePoints`（失効）が決めます。ポイントのための権限（`users.permissions`）はありません
+- すべてのオペレーションに認証が要ります。誰が使えるかは、`business-logic/point/_shared/authorization.ts` の `pointReachOf`（残高、履歴、有効期限が近いポイント、付与、利用）、`pointAdjustReachOf`（調整）、`mayExpirePoints`（失効）が決めます
 - **サロンの `staff` は、付与と利用ができ、調整はできません（403）**。付与と利用はレジの仕事で、調整はレジの記録によらずにポイントを動かすからです（売上の取り消しを `staff` ができないのと同じです。[売上台帳](./sales.md#オペレーションと権限)）
 - **失効は `admin` だけができます**。サロンの `owner` と `manager` も 403 です。失効は、どのサロンで貯めたポイントも、すべての顧客についてまとめて減らすので、1 つのサロンのメンバーには任せません
 - サロンのメンバーは、どの顧客のポイントも扱えます。顧客はサロンに属さないからです（[顧客台帳](./customers.md)）

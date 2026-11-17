@@ -37,7 +37,6 @@ export async function seedUsers(
       status: 'active',
       emailVerified: true,
       failedLoginAttempts: 0,
-      permissions: ['all'],
     })
     .returning({ id: schema.users.id })
 
@@ -51,7 +50,6 @@ export async function seedUsers(
       status: 'active',
       emailVerified: true,
       failedLoginAttempts: 0,
-      permissions: [],
     })
     .returning({ id: schema.users.id })
 
@@ -65,7 +63,6 @@ export async function seedUsers(
       status: 'active',
       emailVerified: true,
       failedLoginAttempts: 0,
-      permissions: ['manage_staff', 'manage_bookings', 'view_reports'],
     })
     .returning({ id: schema.users.id })
 
@@ -80,7 +77,6 @@ export async function seedUsers(
         status: 'active',
         emailVerified: true,
         failedLoginAttempts: 0,
-        permissions: ['view_bookings', 'manage_own_schedule'],
       },
       {
         email: 'stylist2@beautysalon.jp',
@@ -89,7 +85,6 @@ export async function seedUsers(
         status: 'active',
         emailVerified: true,
         failedLoginAttempts: 0,
-        permissions: ['view_bookings', 'manage_own_schedule'],
       },
       {
         email: 'therapist@beautysalon.jp',
@@ -98,7 +93,6 @@ export async function seedUsers(
         status: 'active',
         emailVerified: true,
         failedLoginAttempts: 0,
-        permissions: ['view_bookings', 'manage_own_schedule'],
       },
     ])
     .returning({ id: schema.users.id })
@@ -114,7 +108,6 @@ export async function seedUsers(
         status: 'active',
         emailVerified: true,
         failedLoginAttempts: 0,
-        permissions: [],
       },
       {
         email: 'customer2@example.com',
@@ -123,7 +116,6 @@ export async function seedUsers(
         status: 'active',
         emailVerified: true,
         failedLoginAttempts: 0,
-        permissions: [],
       },
       {
         email: 'customer3@example.com',
@@ -132,7 +124,6 @@ export async function seedUsers(
         status: 'active',
         emailVerified: true,
         failedLoginAttempts: 0,
-        permissions: [],
       },
       {
         email: 'vip.customer@example.com',
@@ -141,7 +132,6 @@ export async function seedUsers(
         status: 'active',
         emailVerified: true,
         failedLoginAttempts: 0,
-        permissions: [],
       },
     ])
     .returning({ id: schema.users.id })

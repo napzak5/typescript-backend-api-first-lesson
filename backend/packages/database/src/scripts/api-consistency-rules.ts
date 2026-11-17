@@ -328,7 +328,6 @@ const staffProfileHiddenColumns = [
  */
 const staffAccountHiddenColumns = [
   'passwordHash',
-  'permissions',
   'emailVerified',
   'emailVerificationTokenHash',
   'emailVerificationExpiry',

@@ -72,7 +72,7 @@
 | 削除 | `DELETE /api/v1/salons/{salonId}/products/{id}` | `admin`、そのサロンの `owner` / `manager` |
 
 - すべてのオペレーションに認証が要ります
-- 誰が使えるかは、パスのサロンだけで決まります（`business-logic/product/_shared/authorization.ts` の `mayReadProducts` と `mayKeepProducts`）。`admin` はすべてのサロン、サロンのユーザーは所属サロンです。商品のための権限（`users.permissions`）はありません
+- 誰が使えるかは、パスのサロンだけで決まります（`business-logic/product/_shared/authorization.ts` の `mayReadProducts` と `mayKeepProducts`）。`admin` はすべてのサロン、サロンのユーザーは所属サロンです
 - 読むことは、サロンの 3 つのロールができます。施術で商品を使い、店頭で売るスタッフが、商品を知る必要があるからです。作成、更新、削除は、メニューや支払い方法と同じく、`owner` と `manager` のものです。`staff` は、ID や本文を確かめる前に 403 です
 - **顧客のアカウントは、このルートを使えません**（403）。レスポンスは、仕入価格と仕入先を含みます。ロールに必要なレコードを持たないユーザー（範囲 `none`）も 403 です
 - **ほかのサロンのユーザーは、サロンが存在するかどうかにかかわらず 403 です**。サロンを探す前に、権限を確かめます

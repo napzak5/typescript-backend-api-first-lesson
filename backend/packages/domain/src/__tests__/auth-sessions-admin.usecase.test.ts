@@ -838,7 +838,7 @@ describe('UnlockAccountUseCase', () => {
     const { dependencies } = withRepositories(
       lockedThenUnlocked({
         unlock: vi.fn(async () =>
-          Result.success(dbUser({ ...unlockedUser, permissions: 'all' })),
+          Result.success(dbUser({ ...unlockedUser, lastLoginAt: 'yesterday' })),
         ),
       }),
     )

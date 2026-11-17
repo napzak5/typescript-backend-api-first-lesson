@@ -52,7 +52,6 @@ export const dbUser = (overrides: Partial<DbUser> = {}): DbUser => ({
   email: 'hanako@example.com',
   passwordHash: `hashed:${PASSWORD}`,
   role: 'admin',
-  permissions: [],
   status: 'active',
   emailVerified: true,
   emailVerificationTokenHash: null,

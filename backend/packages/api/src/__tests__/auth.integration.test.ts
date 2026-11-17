@@ -103,7 +103,6 @@ const USER_PROPERTIES = [
   'lastLoginIp',
   'lastPasswordChange',
   'lockedUntil',
-  'permissions',
   'role',
   'staffId',
   'status',
@@ -179,7 +178,6 @@ describe('Authentication API', () => {
       const user = await insertUser(db, {
         email: 'hanako@example.com',
         role: 'admin',
-        permissions: ['all'],
       })
 
       const response = await request(app)
@@ -201,7 +199,6 @@ describe('Authentication API', () => {
             id: user.id,
             email: 'hanako@example.com',
             role: 'admin',
-            permissions: ['all'],
             status: 'active',
             emailVerified: true,
             lastPasswordChange: null,
