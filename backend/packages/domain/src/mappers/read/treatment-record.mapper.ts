@@ -20,8 +20,9 @@ import { numericSchema, timestampSchema } from './columns'
  *   number
  * - `timestamptz` is read in PostgreSQL's text format and returned as ISO 8601
  *
- * A material and a photo are shown without their own IDs, their record and
- * their place, which is the place they have in their lists.
+ * A material is shown without its own ID, its record and its place, which
+ * is the place it has in its list. A photo is shown with its ID, which
+ * removes it, and its place, which the request that added it stated.
  *
  * Every property is named: a column added to a table is not shown by
  * itself.
@@ -54,6 +55,7 @@ const toApiMaterial = (
   )
 
 const toApiPhoto = (photo: DbTreatmentPhoto): ApiTreatmentPhotoResponse => ({
+  id: photo.id,
   photoType: photo.photoType,
   photoUrl: photo.photoUrl,
   thumbnailUrl: photo.thumbnailUrl,
@@ -124,6 +126,11 @@ const toApiTreatmentRecord = ({
 
 export const TreatmentRecordReadMapper = {
   toApiTreatmentRecord,
+
+  /** The photos of an addition, in the order they are given. */
+  toApiPhotos(photos: DbTreatmentPhoto[]): ApiTreatmentPhotoResponse[] {
+    return photos.map(toApiPhoto)
+  },
 
   toApiTreatmentRecords(
     records: TreatmentRecordWithDetails[],

@@ -1,15 +1,20 @@
 import { Result } from '@beauty-salon-backend/utility'
 import { vi } from 'vitest'
 import type { TreatmentRecordUseCaseDependencies } from '../business-logic/treatment-record'
-import type {
-  ApiTreatmentRecordCreateRequest,
-  DbTreatmentMaterial,
-  DbTreatmentPhoto,
-  DbTreatmentRecord,
-  TreatmentRecordWithDetails,
+import {
+  type ApiTreatmentPhotoCreateRequest,
+  type ApiTreatmentRecordCreateRequest,
+  type DbTreatmentMaterial,
+  type DbTreatmentPhoto,
+  type DbTreatmentRecord,
+  type TreatmentFigures,
+  type TreatmentRecordWithDetails,
+  treatmentRecordIdSchema,
 } from '../models/treatment-record'
 import type {
   ITreatmentRecordRepository,
+  TreatmentPhotoAddition,
+  TreatmentPhotoRemoval,
   TreatmentRecordChange,
   TreatmentRecordCreation,
   TreatmentRecordListing,
@@ -23,7 +28,7 @@ export const TREATMENT_RECORD_ID = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f5d01'
 export const OTHER_TREATMENT_RECORD_ID = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f5d02'
 const MATERIAL_ID = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f5d11'
 const OTHER_MATERIAL_ID = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f5d12'
-const PHOTO_ID = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f5d21'
+export const PHOTO_ID = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f5d21'
 
 /**
  * A request that satisfies every rule: a colour and a cut, with 80 grams
@@ -135,6 +140,42 @@ export const dbTreatmentPhoto = (): DbTreatmentPhoto => ({
   createdAt: '2026-11-20 11:05:00+09',
 })
 
+/** A photo of an addition that satisfies every rule: public, with consent. */
+export const treatmentPhotoCreateRequest = (
+  overrides: Partial<ApiTreatmentPhotoCreateRequest> = {},
+): ApiTreatmentPhotoCreateRequest => ({
+  photoType: 'after',
+  photoUrl: 'https://images.example.com/after.jpg',
+  thumbnailUrl: 'https://images.example.com/after-small.jpg',
+  angle: 'side',
+  description: '毛先まで色が入った',
+  isPublic: true,
+  customerConsent: true,
+  sortOrder: 0,
+  ...overrides,
+})
+
+/**
+ * What the records of a period come to: three records, two of which
+ * state a processing time.
+ */
+export const treatmentFigures = (
+  overrides: Partial<TreatmentFigures> = {},
+): TreatmentFigures => ({
+  total: 3,
+  processingTimeSum: 195,
+  processingTimeCount: 2,
+  byCategory: [
+    { category: 'cut', count: 3 },
+    { category: 'color', count: 1 },
+  ],
+  topServices: [
+    { serviceId: CUT_ID, count: 3 },
+    { serviceId: COLOR_ID, count: 1 },
+  ],
+  ...overrides,
+})
+
 /** The record above with its materials and its photo. */
 export const storedTreatmentRecord = (
   overrides: Partial<DbTreatmentRecord> = {},
@@ -175,6 +216,17 @@ const treatmentRecordRepositoryWith = (
   delete: vi.fn(async () =>
     Result.success<TreatmentRecordRemoval>({ type: 'removed' }),
   ),
+  addPhotos: vi.fn(async () =>
+    Result.success<TreatmentPhotoAddition>({
+      type: 'added',
+      recordId: treatmentRecordIdSchema.parse(TREATMENT_RECORD_ID),
+      photos: [dbTreatmentPhoto()],
+    }),
+  ),
+  removePhoto: vi.fn(async () =>
+    Result.success<TreatmentPhotoRemoval>({ type: 'removed' }),
+  ),
+  findFigures: vi.fn(async () => Result.success(treatmentFigures())),
   ...overrides,
 })
 
