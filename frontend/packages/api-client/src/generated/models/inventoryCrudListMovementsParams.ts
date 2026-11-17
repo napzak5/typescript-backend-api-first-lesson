@@ -32,8 +32,8 @@ export type InventoryCrudListMovementsParams = {
    * transfer: 移動 - ほかの保管場所・店舗との間の移動による増減
    */
   transactionType?: ModelsInventoryTransactionSearchRequestTransactionTypeParameter;
-  /** 検索対象期間の開始日時。操作日時(createdAt)がこの日時以降の在庫移動に一致する */
+  /** 検索対象期間の開始日時。操作日時(createdAt)がこの日時以降の在庫移動に一致する。UTC の日付で 1900-01-01 から 2999-12-31 まで */
   startDate?: ModelsInventoryTransactionSearchRequestStartDateParameter;
-  /** 検索対象期間の終了日時。操作日時(createdAt)がこの日時より前の在庫移動に一致する */
+  /** 検索対象期間の終了日時。操作日時(createdAt)がこの日時以前の在庫移動に一致する。startDate より前の日時は指定できない。UTC の日付で 1900-01-01 から 2999-12-31 まで */
   endDate?: ModelsInventoryTransactionSearchRequestEndDateParameter;
 };

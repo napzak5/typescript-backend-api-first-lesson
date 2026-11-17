@@ -11,7 +11,7 @@ import type { ModelsInventoryTransactionType } from './modelsInventoryTransactio
 /**
  * 在庫移動記録リクエスト - 1件の在庫移動(inventory_transactions の行)を記録し、対象在庫の在庫数を増減する。
  * 全項目のキーが必須。salonId・productId・lotNumber・expiryDate は対象在庫から、
- * balanceBefore・balanceAfter・totalCost はサーバーが設定する
+ * balanceBefore・balanceAfter・totalCost はサーバーが計算して、performedBy は操作したアカウントから設定する
  */
 export interface ModelsInventoryMovementRequest {
   /** 対象在庫 ID */
@@ -19,31 +19,32 @@ export interface ModelsInventoryMovementRequest {
   /** 在庫操作区分 */
   transactionType: ModelsInventoryTransactionType;
   /**
-     * 操作数量。在庫数の増減量で、入庫は正、出庫は負の値で指定する。0は指定できない。
-     * purchase は正、sale・use・disposal は負でなければならない
+     * 操作数量。在庫数の増減量で、入庫は正、出庫は負の値で指定する。0は指定できない。小数第2位まで。
+     * purchase は正、sale・use・disposal は負でなければならない。adjustment・return・transfer はどちらの符号でもよい。
+     * 保管場所や店舗の間の移動(transfer)は、移動元の在庫の負の transfer と、移動先の在庫の正の transfer の2件で記録する
      * @minimum -99999999.99
      * @maximum 99999999.99
      */
   quantity: number;
   /**
-     * 単価(円)。未設定の場合はnull
+     * 単価(円)。未設定の場合はnull。totalCost(unitCost と quantity の絶対値の積を四捨五入した値)が int32 の範囲に収まる値
      * @minimum 0
      * @nullable
      */
   unitCost: number | null;
   /**
-     * 関連する記録の種別 (例: purchase_order、treatment_record)。関連する記録がない場合はnull
+     * 関連する記録の種別 (例: purchase_order、treatment_record)。空白だけの文字列は指定できない。referenceId と両方を指定するか、両方を null にする。サーバーは指した記録があるかを確かめない
      * @maxLength 50
      * @nullable
      */
   referenceType: string | null;
   /**
-     * 関連する外部参照 ID。referenceType の記録の ID。関連する記録がない場合はnull
+     * 関連する外部参照 ID。referenceType の記録の ID。referenceType と両方を指定するか、両方を null にする
      * @nullable
      */
   referenceId: string | null;
   /**
-     * 操作理由。未設定の場合はnull
+     * 操作理由。空白だけの文字列は指定できない。adjustment と disposal では必須(null は400)。ほかの区分で未設定の場合はnull
      * @nullable
      */
   reason: string | null;

@@ -70,7 +70,7 @@ export interface ModelsInventoryTransactionResponse {
      */
   reason: string | null;
   /**
-     * 操作を担当したスタッフ ID。未設定の場合はnull
+     * 操作したアカウントのスタッフ ID。管理者の操作と、マイグレーションとシードが書いた開始の在庫移動ではnull
      * @nullable
      */
   performedBy: string | null;

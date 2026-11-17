@@ -1571,7 +1571,7 @@ export interface paths {
         put?: never;
         /**
          * Record a stock movement
-         * @description 在庫移動を1件記録し、対象在庫の currentStock と availableStock に quantity を加算します。inventoryIdの在庫が存在しない場合や、quantityの符号が在庫操作区分と合わない場合は400を、在庫数が負になる場合は409を返します。
+         * @description 在庫移動を1件記録し、対象在庫の currentStock と availableStock に quantity を加算します。管理者と、在庫のサロンのオーナー・マネージャーはすべての在庫操作区分を、スタッフは purchase・sale・use・return を記録できます(スタッフの adjustment・disposal・transfer は403)。inventoryIdの在庫が存在しない場合(ほかのサロンの在庫を含む)、quantityの符号が在庫操作区分と合わない場合、adjustment・disposal の reason が null の場合、referenceType と referenceId の一方だけを指定した場合、totalCost が int32 の範囲を超える場合は400を、移動後の在庫数が reservedStock を下回る場合と 99999999.99 を超える場合は409を返し、何も記録しません。
          */
         post: operations["InventoryCrud_recordMovement"];
         delete?: never;
@@ -1657,7 +1657,7 @@ export interface paths {
         };
         /**
          * List stock movements of an inventory record
-         * @description 在庫の在庫移動の履歴を、新しい順に絞り込み条件とページネーションを指定して取得します。在庫が存在しない場合は404を返します。
+         * @description 在庫の在庫移動の履歴を、新しい順(createdAt の降順、同じなら id の降順)に、絞り込み条件とページネーションを指定して取得します。管理者と、在庫のサロンのオーナー・マネージャー・スタッフが使えます。在庫が存在しない場合(ほかのサロンの在庫を含む)は404を、endDate が startDate より前の場合や、cursor がその在庫の在庫移動でない場合は400を返します。
          */
         get: operations["InventoryCrud_listMovements"];
         put?: never;
@@ -5705,7 +5705,7 @@ export interface components {
         /**
          * @description 在庫移動記録リクエスト - 1件の在庫移動(inventory_transactions の行)を記録し、対象在庫の在庫数を増減する。
          *     全項目のキーが必須。salonId・productId・lotNumber・expiryDate は対象在庫から、
-         *     balanceBefore・balanceAfter・totalCost はサーバーが設定する
+         *     balanceBefore・balanceAfter・totalCost はサーバーが計算して、performedBy は操作したアカウントから設定する
          */
         "Models.InventoryMovementRequest": {
             /** @description 対象在庫 ID */
@@ -5714,23 +5714,24 @@ export interface components {
             transactionType: components["schemas"]["Models.InventoryTransactionType"];
             /**
              * Format: double
-             * @description 操作数量。在庫数の増減量で、入庫は正、出庫は負の値で指定する。0は指定できない。
-             *     purchase は正、sale・use・disposal は負でなければならない
+             * @description 操作数量。在庫数の増減量で、入庫は正、出庫は負の値で指定する。0は指定できない。小数第2位まで。
+             *     purchase は正、sale・use・disposal は負でなければならない。adjustment・return・transfer はどちらの符号でもよい。
+             *     保管場所や店舗の間の移動(transfer)は、移動元の在庫の負の transfer と、移動先の在庫の正の transfer の2件で記録する
              */
             quantity: number;
             /**
              * Format: int32
-             * @description 単価(円)。未設定の場合はnull
+             * @description 単価(円)。未設定の場合はnull。totalCost(unitCost と quantity の絶対値の積を四捨五入した値)が int32 の範囲に収まる値
              */
             unitCost: number | null;
-            /** @description 関連する記録の種別 (例: purchase_order、treatment_record)。関連する記録がない場合はnull */
+            /** @description 関連する記録の種別 (例: purchase_order、treatment_record)。空白だけの文字列は指定できない。referenceId と両方を指定するか、両方を null にする。サーバーは指した記録があるかを確かめない */
             referenceType: string | null;
             /**
              * Format: uuid
-             * @description 関連する外部参照 ID。referenceType の記録の ID。関連する記録がない場合はnull
+             * @description 関連する外部参照 ID。referenceType の記録の ID。referenceType と両方を指定するか、両方を null にする
              */
             referenceId: string | null;
-            /** @description 操作理由。未設定の場合はnull */
+            /** @description 操作理由。空白だけの文字列は指定できない。adjustment と disposal では必須(null は400)。ほかの区分で未設定の場合はnull */
             reason: string | null;
         };
         /**
@@ -5901,7 +5902,7 @@ export interface components {
             expiryDate: string | null;
             /** @description 操作理由。未設定の場合はnull */
             reason: string | null;
-            /** @description 操作を担当したスタッフ ID。未設定の場合はnull */
+            /** @description 操作したアカウントのスタッフ ID。管理者の操作と、マイグレーションとシードが書いた開始の在庫移動ではnull */
             performedBy: (string & components["schemas"]["Models.StaffId"]) | null;
             /**
              * Format: date-time
@@ -10401,11 +10402,11 @@ export interface components {
         "Models.InventorySearchRequest.salonId": components["schemas"]["Models.SalonId"];
         /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
         "Models.InventoryTransactionSearchRequest.cursor": string;
-        /** @description 検索対象期間の終了日時。操作日時(createdAt)がこの日時より前の在庫移動に一致する */
+        /** @description 検索対象期間の終了日時。操作日時(createdAt)がこの日時以前の在庫移動に一致する。startDate より前の日時は指定できない。UTC の日付で 1900-01-01 から 2999-12-31 まで */
         "Models.InventoryTransactionSearchRequest.endDate": string;
         /** @description 1ページあたりの取得件数上限 (1〜100) */
         "Models.InventoryTransactionSearchRequest.limit": number;
-        /** @description 検索対象期間の開始日時。操作日時(createdAt)がこの日時以降の在庫移動に一致する */
+        /** @description 検索対象期間の開始日時。操作日時(createdAt)がこの日時以降の在庫移動に一致する。UTC の日付で 1900-01-01 から 2999-12-31 まで */
         "Models.InventoryTransactionSearchRequest.startDate": string;
         /** @description 在庫操作区分による絞り込み(完全一致) */
         "Models.InventoryTransactionSearchRequest.transactionType": components["schemas"]["Models.InventoryTransactionType"];
@@ -20301,9 +20302,9 @@ export interface operations {
                 cursor?: components["parameters"]["Models.InventoryTransactionSearchRequest.cursor"];
                 /** @description 在庫操作区分による絞り込み(完全一致) */
                 transactionType?: components["parameters"]["Models.InventoryTransactionSearchRequest.transactionType"];
-                /** @description 検索対象期間の開始日時。操作日時(createdAt)がこの日時以降の在庫移動に一致する */
+                /** @description 検索対象期間の開始日時。操作日時(createdAt)がこの日時以降の在庫移動に一致する。UTC の日付で 1900-01-01 から 2999-12-31 まで */
                 startDate?: components["parameters"]["Models.InventoryTransactionSearchRequest.startDate"];
-                /** @description 検索対象期間の終了日時。操作日時(createdAt)がこの日時より前の在庫移動に一致する */
+                /** @description 検索対象期間の終了日時。操作日時(createdAt)がこの日時以前の在庫移動に一致する。startDate より前の日時は指定できない。UTC の日付で 1900-01-01 から 2999-12-31 まで */
                 endDate?: components["parameters"]["Models.InventoryTransactionSearchRequest.endDate"];
             };
             header?: never;
