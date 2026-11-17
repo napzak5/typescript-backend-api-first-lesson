@@ -177,14 +177,14 @@ describe('planGoodsReceipt', () => {
   it('refuses every row that no item is for, and every item over its quantity, by their places, and records nothing', () => {
     expect(
       planGoodsReceipt(ordered, [
-        { inventoryId: rowId(THIRD_INVENTORY_ID), quantity: 1 },
         { inventoryId: rowId(INVENTORY_ID), quantity: 1 },
+        { inventoryId: rowId(THIRD_INVENTORY_ID), quantity: 1 },
         { inventoryId: rowId(OTHER_INVENTORY_ID), quantity: 3 },
       ]),
     ).toEqual({
       type: 'refused',
       refusals: [
-        { type: 'notOrdered', index: 0 },
+        { type: 'notOrdered', index: 1 },
         { type: 'moreThanOrdered', index: 2, ordered: 2.5 },
       ],
     })
@@ -708,9 +708,17 @@ describe('ListReorderSuggestionsUseCase', () => {
   })
 
   it('refuses a cursor that names no product of the salon', async () => {
-    expect(rulesOf(await list(listing({ type: 'cursorNotFound' })))).toEqual([
-      'cursor:not_found',
-    ])
+    expect(await list(listing({ type: 'cursorNotFound' }))).toEqual(
+      Result.error(
+        DomainErrors.validation('Invalid reorder suggestion search', [
+          {
+            field: 'cursor',
+            rule: 'not_found',
+            message: 'Must name a product of the salon',
+          },
+        ]),
+      ),
+    )
   })
 
   it('passes on what the database could not do, of the salon or of the suggestions', async () => {
