@@ -198,7 +198,7 @@ const salonRules: ModelRule[] = [
     table: 'salons',
     kind: 'response',
     embedded: ['openingHours'],
-    omittedColumns: ['cancellationPolicy', 'bookingPolicy', 'deletedAt'],
+    omittedColumns: ['deletedAt'],
   },
   {
     model: 'Models.SalonCreateRequest',
@@ -246,8 +246,6 @@ type SalonManagedColumn =
   | 'id'
   | 'rating'
   | 'reviewCount'
-  | 'cancellationPolicy'
-  | 'bookingPolicy'
   | 'deletedAt'
   | 'createdAt'
   | 'updatedAt'
@@ -402,7 +400,7 @@ const toApiSalon = (
   salon: DbSalon,
   openingHours: DbOpeningHours[],
 ): Result<ApiSalonResponse, DomainError> => {
-  const { deletedAt, cancellationPolicy, bookingPolicy, ...columns } = salon
+  const { deletedAt, ...columns } = salon
 
   return Result.mapError(
     Result.map(
@@ -877,7 +875,7 @@ The staff ledger of a salon (`/api/v1/salons/{salonId}/staff`; its rules are in 
 |------|-----------------------------|------------------|
 | 1. API contract | No operation is `@useAuth(NoAuth)`: each of the implemented ones declares `CommonErrors`. The interface `StaffCrud` defines five operations, and each has a handler: list, create, get, update and delete. The update and the delete declare 409 for what nobody does to their own staff record | `specs/operations/staff-operations.tsp`, `specs/models/staff.tsp` |
 | 3. Database schema | Two unique values, both within one salon and with different scopes: the email is unique among the staff members of a salon that are not deleted (the unique index `staff_email_salon_unique`), the staff code among all staff members of a salon, deleted ones included (the unique constraint `staff_code_salon_unique`). Two lists (`specialties`, `certifications`) are NOT NULL without a default, so a create request states them, as an empty list if there is nothing to state | `staff` in `backend/packages/database/src/schema.ts`, `backend/packages/database/sql/migrations/202611151800_staff_columns.sql` |
-| 3. `pnpm check:api-db` | Columns that no request writes are `omittedColumns` of the create and the update rule. Besides the usual ones they are `userId`, because a login account is linked by accepting or joining an invitation and not by a request to the ledger, and `awards`, a `jsonb` column without a defined structure, which the response leaves out too | `staffRules` in `backend/packages/database/src/scripts/api-consistency-rules.ts` |
+| 3. `pnpm check:api-db` | Columns that no request writes are `omittedColumns` of the create and the update rule. Besides the usual ones they are `userId`, because a login account is linked by accepting or joining an invitation and not by a request to the ledger | `staffRules` in `backend/packages/database/src/scripts/api-consistency-rules.ts` |
 | 6. Mappers | A write mapper with one conversion: `commissionRate` is a `numeric` column, a number in the API and a string in a row. Everything else is passed on as it is | `backend/packages/domain/src/mappers/write/staff.mapper.ts` |
 | 8. Repository implementation | The two unique violations are expected outcomes, told apart by the name of the violated constraint and returned as `alreadyExists`, as in the customer repository. An update and a delete are one statement each, which names the salon, the ID and `deletedAt IS NULL`: of two requests that arrive at the same moment, the later one finds no row, and no lock is needed. The list is in the order of registration, `(createdAt, id)` ascending | `backend/packages/infrastructure/src/repositories/staff.repository.impl.ts` |
 | 9. Use cases | Every use case, the list and the get included, decides the permission from the salon of the path before anything else of the request is looked at (`mayKeepStaffLedger`: an administrator, or the owner of that salon). The use case of the list therefore takes the decoded query as a `Result`, as that of the customer list does (`ListStaffUseCase.execute(actor, salon, query)`). A second rule compares the actor with the target: nobody deactivates or deletes the staff member that their own account belongs to (`isOwnStaffRecord`). It is answered with `DomainErrors.conflict`, not with `forbidden`, and is decided without the database, after the ID and the body are validated and before the salon is looked up | `backend/packages/domain/src/business-logic/staff/`, with `_shared/authorization.ts` and `_shared/refusals.ts` |
