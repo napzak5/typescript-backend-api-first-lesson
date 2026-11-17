@@ -13,10 +13,10 @@
 | 在庫の移動の記録と履歴（`recordMovement`、`listMovements`） | 実装済み（[在庫の移動](#在庫の移動)） |
 | 棚卸し（`performStockCount`） | 実装済み（[棚卸し](#棚卸し)） |
 | 在庫評価額（`getValueReport`） | 実装済み（[在庫評価額](#在庫評価額)） |
-| 発注（`PurchaseOrderCrud` の一覧、作成、1 件の取得、更新、承認、取り消し） | 実装済み（[発注](./purchase-orders.md)） |
-| 発注の入荷（`receive`）と発注の提案（`listReorderSuggestions`）、在庫のアラート（`InventoryAlertCrud`） | 未実装（ルートがなく、404。在庫のアラートは、テーブルもない） |
+| 発注（`PurchaseOrderCrud` の一覧、作成、1 件の取得、更新、承認、取り消し、入荷、発注の提案） | 実装済み（[発注](./purchase-orders.md)） |
+| 在庫のアラート（`InventoryAlertCrud`） | 未実装（ルートがなく、404。テーブルもない） |
 
-- 在庫数（`currentStock`）と使える数（`availableStock`）を書くのは、在庫の移動と棚卸しです（[在庫の移動](#在庫の移動)、[棚卸し](#棚卸し)）。棚卸しも、帳簿との差を在庫の移動（`adjustment`）として記録します。棚卸しの記録（`lastCountedAt`、`lastCountedBy`）を書くのは、棚卸しだけです
+- 在庫数（`currentStock`）と使える数（`availableStock`）を書くのは、在庫の移動、棚卸し、発注の入荷です（[在庫の移動](#在庫の移動)、[棚卸し](#棚卸し)、[入荷](./purchase-orders.md#入荷)）。棚卸しも、帳簿との差を在庫の移動（`adjustment`）として記録し、入荷も、届いた数を在庫の移動（`purchase`）として記録します。棚卸しの記録（`lastCountedAt`、`lastCountedBy`）を書くのは、棚卸しだけです
 - 次のものは、ありません
   - 在庫を引き当てるオペレーション。`reservedStock` は、API で作成した行では 0 です
   - 顧客に、在庫を見せるルート
@@ -236,7 +236,7 @@ JSON として読めない本文は、ほかのルートと同じく、アクセ
 
 ## 在庫僅少の一覧
 
-`GET /api/v1/inventory/low-stock` は、発注を考える商品の在庫の行を返します。
+`GET /api/v1/inventory/low-stock` は、発注を考える商品の在庫の行を返します。発注点、最大在庫数、発注中の数量から、商品ごとに頼む数量を求めるのは、発注の提案です（[発注の提案](./purchase-orders.md#発注の提案)）。
 
 - `salonId` は必須です
 - **取り扱い中の商品（`isActive` が true）のうち、そのサロンの在庫数の合計（すべてのロットの `currentStock` の和）が、最低在庫数（`minimumStock`）以下のもの**の、すべての在庫の行を返します。最低在庫数と同じ数も、在庫僅少です
@@ -299,7 +299,7 @@ JSON として読めない本文は、ほかのルートと同じく、アクセ
 - 表にないキー（`salonId`、`balanceAfter`、`totalCost`、`performedBy` など）は 400 です（`unrecognized_keys`）。`salonId`、`productId`、`lotNumber`、`expiryDate` は在庫の行から、`balanceBefore`、`balanceAfter`、`totalCost` はサーバーが計算して、`performedBy` は操作者から書きます
 - **`totalCost` は、`unitCost` × |`quantity`| を四捨五入した円です**。0.5 は 0 から遠いほうに丸めます（PostgreSQL の `numeric` の `round` と同じ）。`unitCost` が null なら、`totalCost` も null です
 - `totalCost` が 2,147,483,647（`integer` の最大値）を超える `unitCost` は 400 です（`unitCost` の `too_big`）。`maximum` は、その `quantity` で書ける最大の `unitCost` です。`quantity` か `unitCost` が、それだけで規則に合わないときは、この規則を確かめません
-- `referenceType` と `referenceId` は、関連する記録（発注、施術の記録など）の種別と ID です。両方を書くか、両方を null にします。一方だけは 400 です（null のほうの `custom`。`Must not be null when referenceId is given` など）。**サーバーは、指した記録があるかを確かめません**
+- `referenceType` と `referenceId` は、関連する記録（発注、施術の記録など）の種別と ID です。両方を書くか、両方を null にします。一方だけは 400 です（null のほうの `custom`。`Must not be null when referenceId is given` など）。**サーバーは、指した記録があるかを確かめません**。発注の入荷が記録する在庫の移動は、`referenceType` が `purchase_order`、`referenceId` が発注の ID です（[入荷](./purchase-orders.md#入荷)）
 - `performedBy` は、サロンのユーザーのスタッフ ID です。`admin` が記録した在庫の移動では null です
 
 ### 在庫数の範囲
