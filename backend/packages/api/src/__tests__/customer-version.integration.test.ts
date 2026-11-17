@@ -1116,36 +1116,109 @@ describe('Customer history, versions and restore API', () => {
       ])
     })
 
-    it('makes a restore wait for a change of the customer in progress, and restores it at the moment it is let through', async () => {
-      const id = await deletedCustomer()
+    /**
+     * Holds the row of a customer as another writer does, sends the request
+     * meanwhile, and lets the row go once the request waits for it. Tells
+     * the clock of the database just before the row was let go.
+     */
+    const whileHeld = async (
+      id: string,
+      send: () => Promise<Response>,
+    ): Promise<{ response: Response; letGoAt: number }> => {
       const client = getTestDbClient()
       const held = Promise.withResolvers<void>()
       const mayCommit = Promise.withResolvers<void>()
-      const change = client.begin(async (tx) => {
+      const holder = client.begin(async (tx) => {
         await tx`SELECT id FROM customers WHERE id = ${id} FOR UPDATE`
         held.resolve()
         await mayCommit.promise
       })
       await held.promise
 
-      const pending = restore(id).then((response) => response)
+      const pending = send().then((response) => response)
       await untilSomeoneWaits(client)
-      const [beforeRelease] = await client<{ at: string }[]>`
-        SELECT clock_timestamp()::text AS at
+      const [moment] = await client<{ ms: number }[]>`
+        SELECT (extract(epoch FROM clock_timestamp()) * 1000)::float8 AS ms
       `
       mayCommit.resolve()
-      await change
-      const response = await pending
+      await holder
+      return { response: await pending, letGoAt: Math.floor(moment?.ms ?? 0) }
+    }
+
+    /** When the customer was last written, as the API tells it, in milliseconds. */
+    const writtenAt = async (id: string): Promise<number> =>
+      new Date(
+        (
+          await request(app)
+            .get(`${CUSTOMERS}/${id}`)
+            .set('Authorization', asAdmin)
+        ).body.data.updatedAt,
+      ).getTime()
+
+    /** The version a write kept last is at the time the write gave the customer. */
+    const expectLastVersionAtTheWrite = async (
+      id: string,
+      operation: string,
+    ): Promise<void> => {
+      const last = (await versionsOf(id)).at(-1)
+      expect(last?.operation).toBe(operation)
+      expect(last?.changedAt).toBe((await storedCustomer(id))?.updatedAt)
+    }
+
+    it('makes a change wait for a change of the customer in progress, and stamps it, and its version, with the moment it is let through', async () => {
+      const { id } = await created()
+
+      const { response, letGoAt } = await whileHeld(id, () =>
+        update(id, { notes: 'after the wait' }),
+      )
+
+      expect(response.status).toBe(200)
+      expect(await writtenAt(id)).toBeGreaterThanOrEqual(letGoAt)
+      await expectLastVersionAtTheWrite(id, 'update')
+    })
+
+    it('makes a bulk update wait for a change of one of its customers in progress, and stamps it with the moment it is let through', async () => {
+      const { id } = await created()
+
+      const { response, letGoAt } = await whileHeld(id, () =>
+        request(app)
+          .patch(`${CUSTOMERS}/bulk`)
+          .set('Authorization', asAdmin)
+          .send({ items: [{ id, updates: { notes: 'after the wait' } }] }),
+      )
+
+      expect(response.status).toBe(200)
+      expect(await writtenAt(id)).toBeGreaterThanOrEqual(letGoAt)
+      await expectLastVersionAtTheWrite(id, 'update')
+    })
+
+    it('makes a profile that takes the entry of its email wait for a change of the entry in progress, and stamps it with the moment it is let through', async () => {
+      const owner = await signedInUser(app, db)
+      const { id } = await created({ email: owner.email })
+
+      const { response, letGoAt } = await whileHeld(id, () =>
+        request(app)
+          .post(`${CUSTOMERS}/me`)
+          .set('Authorization', owner.authorization)
+          .send(profileRequest()),
+      )
+
+      expect(response.status).toBe(201)
+      expect(response.body.data.id).toBe(id)
+      expect(await writtenAt(id)).toBeGreaterThanOrEqual(letGoAt)
+      await expectLastVersionAtTheWrite(id, 'update')
+    })
+
+    it('makes a restore wait for a change of the customer in progress, and restores it at the moment it is let through', async () => {
+      const id = await deletedCustomer()
+
+      const { response, letGoAt } = await whileHeld(id, () => restore(id))
 
       expect(response.status).toBe(200)
       expect(
         new Date(response.body.data.updatedAt).getTime(),
-      ).toBeGreaterThanOrEqual(
-        Math.floor(new Date(beforeRelease?.at ?? '').getTime()),
-      )
-      const [, , restored] = await versionsOf(id)
-      expect(restored?.operation).toBe('restore')
-      expect(restored?.changedAt).toBe((await storedCustomer(id))?.updatedAt)
+      ).toBeGreaterThanOrEqual(letGoAt)
+      await expectLastVersionAtTheWrite(id, 'restore')
     })
   })
 
