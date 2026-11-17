@@ -860,7 +860,10 @@ CREATE TABLE "treatment_materials" (
 	"unit" varchar(20) NOT NULL,
 	"lotNumber" varchar(100),
 	"notes" text,
-	"createdAt" timestamp with time zone DEFAULT now() NOT NULL
+	"createdAt" timestamp with time zone DEFAULT now() NOT NULL,
+	"sortOrder" integer NOT NULL,
+	CONSTRAINT "treatment_materials_record_sort_unique" UNIQUE("treatmentRecordId","sortOrder"),
+	CONSTRAINT "treatment_materials_amounts" CHECK ((quantity > (0)::numeric) AND ("sortOrder" >= 0))
 );
 
 CREATE TABLE "treatment_photos" (
@@ -883,23 +886,23 @@ CREATE TABLE "treatment_records" (
 	"customerId" uuid NOT NULL,
 	"staffId" uuid NOT NULL,
 	"services" jsonb NOT NULL,
-	"techniques" jsonb DEFAULT '[]'::jsonb,
+	"techniques" jsonb DEFAULT '[]'::jsonb NOT NULL,
 	"consultationNotes" text,
-	"scalpCondition" jsonb,
-	"hairCondition" jsonb,
-	"colorFormula" jsonb,
+	"scalpCondition" text,
+	"hairCondition" text,
+	"colorFormula" text,
 	"processingTime" integer,
-	"beforePhotos" jsonb DEFAULT '[]'::jsonb,
-	"afterPhotos" jsonb DEFAULT '[]'::jsonb,
 	"resultNotes" text,
 	"nextRecommendedDate" date,
-	"nextRecommendedServices" jsonb DEFAULT '[]'::jsonb,
+	"nextRecommendedServices" jsonb DEFAULT '[]'::jsonb NOT NULL,
 	"homeCareSuggestions" text,
 	"customerSatisfaction" integer,
 	"staffEvaluation" text,
 	"createdAt" timestamp with time zone DEFAULT now() NOT NULL,
 	"updatedAt" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "treatment_records_booking_unique" UNIQUE("bookingId")
+	CONSTRAINT "treatment_records_booking_unique" UNIQUE("bookingId"),
+	CONSTRAINT "treatment_records_lists" CHECK ((jsonb_typeof(services) = 'array'::text) AND (services <> '[]'::jsonb) AND (jsonb_typeof(techniques) = 'array'::text) AND (jsonb_typeof("nextRecommendedServices") = 'array'::text)),
+	CONSTRAINT "treatment_records_ranges" CHECK ((("processingTime" IS NULL) OR (("processingTime" >= 0) AND ("processingTime" <= 1440))) AND (("customerSatisfaction" IS NULL) OR (("customerSatisfaction" >= 1) AND ("customerSatisfaction" <= 5))))
 );
 
 CREATE TABLE "users" (
@@ -1111,6 +1114,7 @@ CREATE INDEX "idx_treatment_materials_treatment_record_id" ON "treatment_materia
 CREATE INDEX "idx_treatment_photos_photo_type" ON "treatment_photos" USING btree ("photoType" text_ops);
 CREATE INDEX "idx_treatment_photos_treatment_record_id" ON "treatment_photos" USING btree ("treatmentRecordId" uuid_ops);
 CREATE INDEX "idx_treatment_records_booking_id" ON "treatment_records" USING btree ("bookingId" uuid_ops);
+CREATE INDEX "idx_treatment_records_created_at" ON "treatment_records" USING btree ("createdAt" timestamptz_ops,"id" uuid_ops);
 CREATE INDEX "idx_treatment_records_customer_id" ON "treatment_records" USING btree ("customerId" uuid_ops);
 CREATE INDEX "idx_treatment_records_staff_id" ON "treatment_records" USING btree ("staffId" uuid_ops);
 CREATE INDEX "idx_users_customer_id" ON "users" USING btree ("customerId" uuid_ops);

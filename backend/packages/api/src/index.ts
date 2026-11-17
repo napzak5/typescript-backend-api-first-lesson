@@ -37,6 +37,7 @@ import {
   StaffProfileRepository,
   StaffRepository,
   StaffScheduleRepository,
+  TreatmentRecordRepository,
   UserRepository,
 } from '@beauty-salon-backend/infrastructure'
 import compression from 'compression'
@@ -88,6 +89,7 @@ import {
 import { createStaffProfileRouter } from './routes/staff-profile'
 import { createStaffScheduleRouter } from './routes/staff-schedule'
 import { createSystemRouter } from './routes/system'
+import { createTreatmentRecordRouter } from './routes/treatment-record'
 import type { AppSettings } from './settings'
 import { API_BASE_PATH, SYSTEM_BASE_PATH } from './shared/api-version'
 import { createAuthenticated } from './shared/authentication'
@@ -402,6 +404,13 @@ export const createApp = ({
     `${API_BASE_PATH}/review-reports`,
     createReviewReportRouter(
       { reviewReportRepository: new ReviewReportRepository(database) },
+      authenticated,
+    ),
+  )
+  app.use(
+    `${API_BASE_PATH}/treatments`,
+    createTreatmentRecordRouter(
+      { treatmentRecordRepository: new TreatmentRecordRepository(database) },
       authenticated,
     ),
   )

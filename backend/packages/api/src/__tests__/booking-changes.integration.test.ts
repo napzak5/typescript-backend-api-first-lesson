@@ -426,7 +426,7 @@ describe('Booking changes API', () => {
   const insertTreatmentRecord = async (bookingId: string): Promise<void> => {
     await db
       .insert(treatmentRecords)
-      .values({ bookingId, customerId, staffId, services: [] })
+      .values({ bookingId, customerId, staffId, services: [cutId] })
   }
 
   /** A review of a booking by the customer, written directly. */

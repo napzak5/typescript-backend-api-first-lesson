@@ -1372,6 +1372,75 @@ describe('modelRules', () => {
     ])
   })
 
+  it('shows every column of a treatment record with its materials and photos, lets the request that creates one state everything but its ID and times, an update neither its booking, its customer nor its staff member, and keeps the order of the materials to itself', () => {
+    const managed = ['id', 'createdAt', 'updatedAt']
+    const rules = modelRules
+      .filter(({ table }) =>
+        ['treatmentRecords', 'treatmentMaterials'].includes(table),
+      )
+      .map(
+        ({
+          model,
+          table,
+          kind,
+          omittedColumns,
+          embedded,
+          computed,
+          narrowed,
+          nonNullable,
+        }) => ({
+          model,
+          table,
+          kind,
+          omittedColumns,
+          embedded,
+          computed,
+          narrowed,
+          nonNullable,
+        }),
+      )
+    const none = {
+      computed: undefined,
+      narrowed: undefined,
+      nonNullable: undefined,
+    }
+
+    expect(rules).toEqual([
+      {
+        model: 'Models.TreatmentRecordResponse',
+        table: 'treatmentRecords',
+        kind: 'response',
+        omittedColumns: [],
+        embedded: ['materials', 'photos'],
+        ...none,
+      },
+      {
+        model: 'Models.TreatmentRecordCreateRequest',
+        table: 'treatmentRecords',
+        kind: 'create',
+        omittedColumns: managed,
+        embedded: ['materials'],
+        ...none,
+      },
+      {
+        model: 'Models.TreatmentRecordUpdateRequest',
+        table: 'treatmentRecords',
+        kind: 'update',
+        omittedColumns: [...managed, 'bookingId', 'customerId', 'staffId'],
+        embedded: ['materials'],
+        ...none,
+      },
+      {
+        model: 'Models.TreatmentMaterial',
+        table: 'treatmentMaterials',
+        kind: 'response',
+        omittedColumns: ['id', 'treatmentRecordId', 'createdAt', 'sortOrder'],
+        embedded: undefined,
+        ...none,
+      },
+    ])
+  })
+
   it('lets nothing but the stock row of a new item of a purchase order leave out the null of its column', () => {
     const nonNullable = modelRules
       .filter((modelRule) => modelRule.nonNullable !== undefined)

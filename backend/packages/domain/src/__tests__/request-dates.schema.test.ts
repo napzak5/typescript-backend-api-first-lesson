@@ -31,6 +31,11 @@ import {
   pointTransactionSearchRequestSchema,
 } from '../schemas/point.schema'
 import {
+  purchaseOrderCreateRequestSchema,
+  purchaseOrderSearchRequestSchema,
+  purchaseOrderUpdateRequestSchema,
+} from '../schemas/purchase-order.schema'
+import {
   saleCreateRequestSchema,
   saleSearchRequestSchema,
   saleUpdateRequestSchema,
@@ -52,6 +57,11 @@ import {
   staffScheduleSearchRequestSchema,
   staffScheduleUpdateRequestSchema,
 } from '../schemas/staff-schedule.schema'
+import {
+  treatmentRecordCreateRequestSchema,
+  treatmentRecordSearchRequestSchema,
+  treatmentRecordUpdateRequestSchema,
+} from '../schemas/treatment-record.schema'
 
 /** The rules a value breaks, as `path:code`; empty when it breaks none. */
 const brokenBy = (schema: z.ZodType, value: unknown): string[] =>
@@ -223,6 +233,18 @@ const DATE_FIELDS: Field[] = [
     (hireDate) => ({ hireDate }),
     'hireDate',
   ],
+  [
+    'treatmentRecordCreateRequestSchema',
+    treatmentRecordCreateRequestSchema,
+    (nextRecommendedDate) => ({ nextRecommendedDate }),
+    'nextRecommendedDate',
+  ],
+  [
+    'treatmentRecordUpdateRequestSchema',
+    treatmentRecordUpdateRequestSchema,
+    (nextRecommendedDate) => ({ nextRecommendedDate }),
+    'nextRecommendedDate',
+  ],
 ]
 
 const MOMENT_FIELDS: Field[] = [
@@ -315,6 +337,42 @@ const MOMENT_FIELDS: Field[] = [
     saleUpdateRequestSchema,
     (saleTime) => ({ saleTime }),
     'saleTime',
+  ],
+  [
+    'purchaseOrderCreateRequestSchema',
+    purchaseOrderCreateRequestSchema,
+    (expectedDelivery) => ({ expectedDelivery }),
+    'expectedDelivery',
+  ],
+  [
+    'purchaseOrderUpdateRequestSchema',
+    purchaseOrderUpdateRequestSchema,
+    (expectedDelivery) => ({ expectedDelivery }),
+    'expectedDelivery',
+  ],
+  [
+    'purchaseOrderSearchRequestSchema',
+    purchaseOrderSearchRequestSchema,
+    (startDate) => ({ startDate }),
+    'startDate',
+  ],
+  [
+    'purchaseOrderSearchRequestSchema',
+    purchaseOrderSearchRequestSchema,
+    (endDate) => ({ endDate }),
+    'endDate',
+  ],
+  [
+    'treatmentRecordSearchRequestSchema',
+    treatmentRecordSearchRequestSchema,
+    (startDate) => ({ startDate }),
+    'startDate',
+  ],
+  [
+    'treatmentRecordSearchRequestSchema',
+    treatmentRecordSearchRequestSchema,
+    (endDate) => ({ endDate }),
+    'endDate',
   ],
 ]
 

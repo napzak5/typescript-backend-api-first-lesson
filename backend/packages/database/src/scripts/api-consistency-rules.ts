@@ -1092,27 +1092,8 @@ const inventoryRules: ModelRule[] = [
   },
 ]
 
-/**
- * jsonb columns of `treatment_records` without a defined structure. They are
- * left out of every model until their structure is defined.
- */
-const treatmentRecordUndefinedJsonColumns = [
-  'techniques',
-  'scalpCondition',
-  'hairCondition',
-  'colorFormula',
-  'beforePhotos',
-  'afterPhotos',
-  'nextRecommendedServices',
-]
-
 /** Columns of `treatment_records` that a create request never writes. */
-const treatmentRecordManagedColumns = [
-  'id',
-  ...treatmentRecordUndefinedJsonColumns,
-  'createdAt',
-  'updatedAt',
-]
+const treatmentRecordManagedColumns = ['id', 'createdAt', 'updatedAt']
 
 /** Columns of a child row of a treatment record that no model exposes. */
 const treatmentChildManagedColumns = ['id', 'treatmentRecordId', 'createdAt']
@@ -1124,7 +1105,7 @@ const treatmentRules: ModelRule[] = [
     table: 'treatmentRecords',
     kind: 'response',
     embedded: ['materials', 'photos'],
-    omittedColumns: treatmentRecordUndefinedJsonColumns,
+    omittedColumns: [],
   },
   {
     model: 'Models.TreatmentRecordCreateRequest',
@@ -1150,7 +1131,8 @@ const treatmentRules: ModelRule[] = [
     model: 'Models.TreatmentMaterial',
     table: 'treatmentMaterials',
     kind: 'response',
-    omittedColumns: treatmentChildManagedColumns,
+    // The materials of a record are in the order of their sortOrder.
+    omittedColumns: [...treatmentChildManagedColumns, 'sortOrder'],
   },
   {
     model: 'Models.TreatmentPhotoResponse',

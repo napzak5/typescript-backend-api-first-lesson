@@ -19628,10 +19628,11 @@ paths:
     get:
       operationId: TreatmentRecordCrud_list
       summary: List treatment records
-      description: 絞り込み条件とページネーションを指定して施術記録を一覧取得します。顧客別の施術履歴やスタッフ別の施術一覧は customerId・staffId で絞り込みます。
+      description: 絞り込み条件とページネーションを指定して施術記録を一覧取得します。顧客別の施術履歴やスタッフ別の施術一覧は customerId・staffId で絞り込みます。サロンのメンバーがほかのサロンの salonId を指定した場合は403を返します。
       parameters:
         - $ref: '#/components/parameters/Models.TreatmentRecordSearchRequest.limit'
         - $ref: '#/components/parameters/Models.TreatmentRecordSearchRequest.cursor'
+        - $ref: '#/components/parameters/Models.TreatmentRecordSearchRequest.salonId'
         - $ref: '#/components/parameters/Models.TreatmentRecordSearchRequest.customerId'
         - $ref: '#/components/parameters/Models.TreatmentRecordSearchRequest.staffId'
         - $ref: '#/components/parameters/Models.TreatmentRecordSearchRequest.startDate'
@@ -19717,7 +19718,7 @@ paths:
     post:
       operationId: TreatmentRecordCrud_create
       summary: Create a treatment record
-      description: 施術記録を新規登録します。bookingId・customerId・staffId・services・materialsのproductIdに存在しないIDや予約と別のサロンのものを指定した場合、およびcustomerIdが予約の顧客と一致しない場合は400を、予約に施術記録がすでにある場合は409を返します。
+      description: 施術記録を新規登録します。bookingId・customerId・staffId・services・nextRecommendedServices・materialsのproductIdに存在しないIDや削除済みのもの、予約と別のサロンのものを指定した場合、customerIdが予約の顧客と一致しない場合、nextRecommendedDateが予約の日より前の場合、およびロット番号が商品のロット管理と合わない場合は400を返します。予約が施術中（in_progress）でも完了（completed）でもない場合と、予約に施術記録がすでにある場合は409を返します。
       parameters: []
       responses:
         '201':
@@ -20020,7 +20021,7 @@ paths:
     patch:
       operationId: TreatmentRecordCrud_update
       summary: Update a treatment record
-      description: 指定した項目だけを更新します。materialsを指定した場合は使用商材の一覧全体を置き換えます。servicesやmaterialsのproductIdに存在しないIDや予約と別のサロンのものを指定した場合は400を返します。
+      description: 指定した項目だけを更新します。materialsを指定した場合は使用商材の一覧全体を置き換えます。services・nextRecommendedServices・materialsのproductIdに存在しないIDや削除済みのもの、予約と別のサロンのものを指定した場合、nextRecommendedDateが予約の日より前の場合、およびロット番号が商品のロット管理と合わない場合は400を返します。
       parameters:
         - name: id
           in: path
@@ -20135,7 +20136,7 @@ paths:
     delete:
       operationId: TreatmentRecordCrud_delete
       summary: Delete a treatment record
-      description: 施術記録を削除します。施術記録の使用商材と施術写真も削除されます。
+      description: 施術記録を削除します。施術記録の使用商材と施術写真も削除されます。削除できるのは管理者と、サロンのオーナー・マネージャーです（スタッフは403）。施術記録を削除すると、予約を削除できるようになります。
       parameters:
         - name: id
           in: path
@@ -22566,6 +22567,14 @@ components:
         minimum: 1
         maximum: 100
         default: 20
+      explode: false
+    Models.TreatmentRecordSearchRequest.salonId:
+      name: salonId
+      in: query
+      required: false
+      description: 施術記録のサロン(予約のサロン)の ID による絞り込み(完全一致)。サロンのメンバーが省略した場合は自分のサロン
+      schema:
+        $ref: '#/components/schemas/Models.SalonId'
       explode: false
     Models.TreatmentRecordSearchRequest.staffId:
       name: staffId
@@ -32112,12 +32121,12 @@ components:
         productId:
           allOf:
             - $ref: '#/components/schemas/Models.ProductId'
-          description: 使用した商品の ID。予約と同じサロンの商品を指定する
+          description: 使用した商品の ID。予約と同じサロンの、削除されていない商品を指定する。ロットの違う同じ商品を複数回指定できる
         quantity:
           type: number
           format: double
           maximum: 99999999.99
-          description: 使用量
+          description: 使用量。0.01単位
           minimum: 0
           exclusiveMinimum: true
         unit:
@@ -32129,14 +32138,15 @@ components:
           type: string
           nullable: true
           maxLength: 100
-          description: 使用した商品のロット番号。記録しない場合はnull
+          description: 使用した商品のロット番号。ロットで管理する商品（requiresLotTracking）では必須、それ以外の商品ではnull
         notes:
           type: string
           nullable: true
           description: 備考メモ - 特記事項がない標準的な使用量の場合はnull
       description: |-
         施術で使用した商材 - treatment_materials テーブルの1行。施術記録の作成・更新リクエストとレスポンスで共通に使う。
-        プロパティ名と null 許可は DB カラムと一致させている。
+        プロパティ名と null 許可は DB カラムと一致させている。商材は指定した順に保存し、その順に返す。
+        使用商材を記録しても在庫は動かない。在庫は在庫の移動（use）で記録する
     Models.TreatmentPhotoBulkCreateRequest:
       type: object
       required:
@@ -32263,10 +32273,15 @@ components:
         - customerId
         - staffId
         - services
+        - techniques
         - consultationNotes
+        - scalpCondition
+        - hairCondition
+        - colorFormula
         - processingTime
         - resultNotes
         - nextRecommendedDate
+        - nextRecommendedServices
         - homeCareSuggestions
         - customerSatisfaction
         - staffEvaluation
@@ -32275,7 +32290,7 @@ components:
         bookingId:
           allOf:
             - $ref: '#/components/schemas/Models.BookingId'
-          description: 紐づく予約 ID。施術記録がまだない予約を指定する
+          description: 紐づく予約 ID。施術中（in_progress）か完了（completed）の、施術記録がまだない予約を指定する
         customerId:
           allOf:
             - $ref: '#/components/schemas/Models.CustomerId'
@@ -32283,17 +32298,36 @@ components:
         staffId:
           allOf:
             - $ref: '#/components/schemas/Models.StaffId'
-          description: 施術担当スタッフ ID
+          description: 施術担当スタッフ ID。予約と同じサロンの、削除されていないスタッフを指定する。予約の担当でなくてもよい
         services:
           type: array
           items:
             $ref: '#/components/schemas/Models.ServiceId'
           minItems: 1
-          description: 施術で提供したサービス ID 一覧。予約と同じサロンのサービスを1件以上指定する
+          maxItems: 20
+          description: 施術で提供したサービス ID 一覧。予約と同じサロンの、削除されていないサービスを1件以上20件以下で指定する。予約の明細にないサービスも指定できる。同じサービスの繰り返しは指定できない
+        techniques:
+          type: array
+          items:
+            type: string
+          maxItems: 20
+          description: 施術で使った技法の名称の一覧（100文字まで）。20件まで。同じ名称の繰り返しは指定できない。記録しない場合は空配列
         consultationNotes:
           type: string
           nullable: true
           description: 施術前のカウンセリング内容のメモ。記録しない場合はnull
+        scalpCondition:
+          type: string
+          nullable: true
+          description: 施術のときの頭皮の状態。記録しない場合はnull
+        hairCondition:
+          type: string
+          nullable: true
+          description: 施術のときの毛髪の状態。記録しない場合はnull
+        colorFormula:
+          type: string
+          nullable: true
+          description: カラー剤の配合。カラーをしない施術や記録しない場合はnull
         processingTime:
           type: integer
           format: int32
@@ -32309,7 +32343,13 @@ components:
           type: string
           format: date
           nullable: true
-          description: 次回来店の推奨日。特に提案事項がない場合はnull
+          description: 次回来店の推奨日。予約の日より前の日は指定できない。特に提案事項がない場合はnull
+        nextRecommendedServices:
+          type: array
+          items:
+            $ref: '#/components/schemas/Models.ServiceId'
+          maxItems: 20
+          description: 次回来店時に推奨するサービス ID の一覧。予約と同じサロンのサービスを20件まで指定する。同じサービスの繰り返しは指定できない。提案事項がない場合は空配列
         homeCareSuggestions:
           type: string
           nullable: true
@@ -32329,7 +32369,8 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Models.TreatmentMaterial'
-          description: 施術で使用した商材の一覧。商材を使用しない施術の場合は空配列
+          maxItems: 50
+          description: 施術で使用した商材の一覧。50件まで。指定した順に保存する。商材を使用しない施術の場合は空配列
       description: |-
         施術記録新規登録リクエスト - 全項目のキーが必須。DB で NULL 許可のカラムのみ null を指定できる。
         施術写真は登録後に写真追加の操作で追加する
@@ -32345,10 +32386,15 @@ components:
         - customerId
         - staffId
         - services
+        - techniques
         - consultationNotes
+        - scalpCondition
+        - hairCondition
+        - colorFormula
         - processingTime
         - resultNotes
         - nextRecommendedDate
+        - nextRecommendedServices
         - homeCareSuggestions
         - customerSatisfaction
         - staffEvaluation
@@ -32378,10 +32424,27 @@ components:
           items:
             $ref: '#/components/schemas/Models.ServiceId'
           description: 施術で提供したサービス ID 一覧
+        techniques:
+          type: array
+          items:
+            type: string
+          description: 施術で使った技法の名称の一覧。記録しない場合は空配列
         consultationNotes:
           type: string
           nullable: true
           description: 施術前のカウンセリング内容のメモ。記録しない場合はnull
+        scalpCondition:
+          type: string
+          nullable: true
+          description: 施術のときの頭皮の状態。記録しない場合はnull
+        hairCondition:
+          type: string
+          nullable: true
+          description: 施術のときの毛髪の状態。記録しない場合はnull
+        colorFormula:
+          type: string
+          nullable: true
+          description: カラー剤の配合。カラーをしない施術や記録しない場合はnull
         processingTime:
           type: integer
           format: int32
@@ -32396,6 +32459,11 @@ components:
           format: date
           nullable: true
           description: 次回来店の推奨日。特に提案事項がない場合はnull
+        nextRecommendedServices:
+          type: array
+          items:
+            $ref: '#/components/schemas/Models.ServiceId'
+          description: 次回来店時に推奨するサービス ID の一覧。提案事項がない場合は空配列
         homeCareSuggestions:
           type: string
           nullable: true
@@ -32413,7 +32481,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Models.TreatmentMaterial'
-          description: 施術で使用した商材の一覧。商材を使用しない施術の場合は空配列
+          description: 施術で使用した商材の一覧。指定した順に並ぶ。商材を使用しない施術の場合は空配列
         photos:
           type: array
           items:
@@ -32439,11 +32507,30 @@ components:
           items:
             $ref: '#/components/schemas/Models.ServiceId'
           minItems: 1
-          description: 施術で提供したサービス ID 一覧。予約と同じサロンのサービスを1件以上指定する
+          maxItems: 20
+          description: 施術で提供したサービス ID 一覧。予約と同じサロンの、削除されていないサービスを1件以上20件以下で指定する。同じサービスの繰り返しは指定できない
+        techniques:
+          type: array
+          items:
+            type: string
+          maxItems: 20
+          description: 施術で使った技法の名称の一覧（100文字まで）。20件まで。同じ名称の繰り返しは指定できない。空配列でクリア
         consultationNotes:
           type: string
           nullable: true
           description: 施術前のカウンセリング内容のメモ。nullでクリア
+        scalpCondition:
+          type: string
+          nullable: true
+          description: 施術のときの頭皮の状態。nullでクリア
+        hairCondition:
+          type: string
+          nullable: true
+          description: 施術のときの毛髪の状態。nullでクリア
+        colorFormula:
+          type: string
+          nullable: true
+          description: カラー剤の配合。nullでクリア
         processingTime:
           type: integer
           format: int32
@@ -32459,7 +32546,13 @@ components:
           type: string
           format: date
           nullable: true
-          description: 次回来店の推奨日。nullでクリア
+          description: 次回来店の推奨日。予約の日より前の日は指定できない。nullでクリア
+        nextRecommendedServices:
+          type: array
+          items:
+            $ref: '#/components/schemas/Models.ServiceId'
+          maxItems: 20
+          description: 次回来店時に推奨するサービス ID の一覧。予約と同じサロンの、削除されていないサービスを20件まで指定する。同じサービスの繰り返しは指定できない。空配列でクリア
         homeCareSuggestions:
           type: string
           nullable: true
@@ -32479,7 +32572,8 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Models.TreatmentMaterial'
-          description: 施術で使用した商材の一覧。指定した場合は全件を置き換える
+          maxItems: 50
+          description: 施術で使用した商材の一覧。50件まで。指定した場合は全件を、指定した順に置き換える
       description: |-
         施術記録部分更新リクエスト - 指定した項目だけを更新する。DB で NULL 許可のカラムは null でクリアできる。
         materials を指定した場合は使用商材の一覧全体を置き換える。予約・顧客・担当スタッフは変更できない

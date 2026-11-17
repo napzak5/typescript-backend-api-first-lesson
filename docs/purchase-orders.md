@@ -166,7 +166,7 @@
 | `items[].notes` | 必須。空白だけでない文字列か null |
 | `taxAmount` | 必須。0 以上 2,147,483,647 以下の整数 |
 | `shippingCost` | 必須。0 以上 2,147,483,647 以下の整数か null |
-| `expectedDelivery` | 必須。日時（タイムゾーン付きの ISO 8601）か null |
+| `expectedDelivery` | 必須。`Z` で終わる UTC の ISO 8601 の日時か null。時差を付けた日時と、秒のない日時は 400 です（`invalid_format`） |
 | `paymentTerms`、`notes` | 必須。空白だけでない文字列か null |
 
 - 知らないプロパティは 400 です（`unrecognized_keys`）。サーバーが決めるもの（`status`、`orderNumber`、金額、明細の商品の写し、`createdBy` など）も、本文に書くと 400 です
@@ -288,7 +288,7 @@
 | `salonId` | サロンの ID。サロンのユーザーは、自分のサロンだけ |
 | `status` | ステータス |
 | `supplier` | 仕入先の名前（完全一致）。空白だけでない 255 文字以下 |
-| `startDate`、`endDate` | 発注日時の範囲。どちらも含みます。日時（タイムゾーン付きの ISO 8601）。`endDate` は `startDate` より前にできません（`endDate` の `custom`） |
+| `startDate`、`endDate` | 発注日時の範囲。どちらも含みます。`Z` で終わる UTC の ISO 8601 の日時。`endDate` は `startDate` より前にできません（`endDate` の `custom`） |
 
 - 並びは、発注日時の新しい順、同じ発注日時では ID の降順です。`cursor` は、そのあとの発注からのページを返します（キーセット）。ページは、前にだけ進みます（`prevCursor` は、いつも null）
 - 発注日時の範囲は、ミリ秒で比べます。データベースの発注日時はマイクロ秒まであるので、ミリ秒未満を切り捨ててから比べます。レスポンスの `orderDate` と同じ値を `startDate` と `endDate` に書くと、その発注が入ります

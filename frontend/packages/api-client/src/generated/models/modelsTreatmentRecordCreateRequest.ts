@@ -16,22 +16,43 @@ import type { ModelsTreatmentMaterial } from './modelsTreatmentMaterial';
  * 施術写真は登録後に写真追加の操作で追加する
  */
 export interface ModelsTreatmentRecordCreateRequest {
-  /** 紐づく予約 ID。施術記録がまだない予約を指定する */
+  /** 紐づく予約 ID。施術中（in_progress）か完了（completed）の、施術記録がまだない予約を指定する */
   bookingId: ModelsBookingId;
   /** 施術を受けた顧客 ID。予約の顧客と一致している必要がある */
   customerId: ModelsCustomerId;
-  /** 施術担当スタッフ ID */
+  /** 施術担当スタッフ ID。予約と同じサロンの、削除されていないスタッフを指定する。予約の担当でなくてもよい */
   staffId: ModelsStaffId;
   /**
-     * 施術で提供したサービス ID 一覧。予約と同じサロンのサービスを1件以上指定する
+     * 施術で提供したサービス ID 一覧。予約と同じサロンの、削除されていないサービスを1件以上20件以下で指定する。予約の明細にないサービスも指定できる。同じサービスの繰り返しは指定できない
      * @minItems 1
+     * @maxItems 20
      */
   services: ModelsServiceId[];
+  /**
+     * 施術で使った技法の名称の一覧（100文字まで）。20件まで。同じ名称の繰り返しは指定できない。記録しない場合は空配列
+     * @maxItems 20
+     */
+  techniques: string[];
   /**
      * 施術前のカウンセリング内容のメモ。記録しない場合はnull
      * @nullable
      */
   consultationNotes: string | null;
+  /**
+     * 施術のときの頭皮の状態。記録しない場合はnull
+     * @nullable
+     */
+  scalpCondition: string | null;
+  /**
+     * 施術のときの毛髪の状態。記録しない場合はnull
+     * @nullable
+     */
+  hairCondition: string | null;
+  /**
+     * カラー剤の配合。カラーをしない施術や記録しない場合はnull
+     * @nullable
+     */
+  colorFormula: string | null;
   /**
      * 施術の処理時間（分）。記録しない場合はnull
      * @minimum 0
@@ -45,10 +66,15 @@ export interface ModelsTreatmentRecordCreateRequest {
      */
   resultNotes: string | null;
   /**
-     * 次回来店の推奨日。特に提案事項がない場合はnull
+     * 次回来店の推奨日。予約の日より前の日は指定できない。特に提案事項がない場合はnull
      * @nullable
      */
   nextRecommendedDate: string | null;
+  /**
+     * 次回来店時に推奨するサービス ID の一覧。予約と同じサロンのサービスを20件まで指定する。同じサービスの繰り返しは指定できない。提案事項がない場合は空配列
+     * @maxItems 20
+     */
+  nextRecommendedServices: ModelsServiceId[];
   /**
      * ホームケアの提案内容。提案事項がない場合はnull
      * @nullable
@@ -66,6 +92,9 @@ export interface ModelsTreatmentRecordCreateRequest {
      * @nullable
      */
   staffEvaluation: string | null;
-  /** 施術で使用した商材の一覧。商材を使用しない施術の場合は空配列 */
+  /**
+     * 施術で使用した商材の一覧。50件まで。指定した順に保存する。商材を使用しない施術の場合は空配列
+     * @maxItems 50
+     */
   materials: ModelsTreatmentMaterial[];
 }

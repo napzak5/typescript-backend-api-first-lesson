@@ -29,11 +29,28 @@ export interface ModelsTreatmentRecordResponse {
   staffId: ModelsStaffId;
   /** 施術で提供したサービス ID 一覧 */
   services: ModelsServiceId[];
+  /** 施術で使った技法の名称の一覧。記録しない場合は空配列 */
+  techniques: string[];
   /**
      * 施術前のカウンセリング内容のメモ。記録しない場合はnull
      * @nullable
      */
   consultationNotes: string | null;
+  /**
+     * 施術のときの頭皮の状態。記録しない場合はnull
+     * @nullable
+     */
+  scalpCondition: string | null;
+  /**
+     * 施術のときの毛髪の状態。記録しない場合はnull
+     * @nullable
+     */
+  hairCondition: string | null;
+  /**
+     * カラー剤の配合。カラーをしない施術や記録しない場合はnull
+     * @nullable
+     */
+  colorFormula: string | null;
   /**
      * 施術の処理時間（分）。記録しない場合はnull
      * @nullable
@@ -49,6 +66,8 @@ export interface ModelsTreatmentRecordResponse {
      * @nullable
      */
   nextRecommendedDate: string | null;
+  /** 次回来店時に推奨するサービス ID の一覧。提案事項がない場合は空配列 */
+  nextRecommendedServices: ModelsServiceId[];
   /**
      * ホームケアの提案内容。提案事項がない場合はnull
      * @nullable
@@ -64,7 +83,7 @@ export interface ModelsTreatmentRecordResponse {
      * @nullable
      */
   staffEvaluation: string | null;
-  /** 施術で使用した商材の一覧。商材を使用しない施術の場合は空配列 */
+  /** 施術で使用した商材の一覧。指定した順に並ぶ。商材を使用しない施術の場合は空配列 */
   materials: ModelsTreatmentMaterial[];
   /** 施術写真の一覧。sortOrderの昇順で並ぶ。写真がない場合は空配列 */
   photos: ModelsTreatmentPhotoResponse[];

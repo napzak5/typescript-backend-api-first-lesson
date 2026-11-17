@@ -14,15 +14,36 @@ import type { ModelsTreatmentMaterial } from './modelsTreatmentMaterial';
  */
 export interface ModelsTreatmentRecordUpdateRequest {
   /**
-     * 施術で提供したサービス ID 一覧。予約と同じサロンのサービスを1件以上指定する
+     * 施術で提供したサービス ID 一覧。予約と同じサロンの、削除されていないサービスを1件以上20件以下で指定する。同じサービスの繰り返しは指定できない
      * @minItems 1
+     * @maxItems 20
      */
   services?: ModelsServiceId[];
+  /**
+     * 施術で使った技法の名称の一覧（100文字まで）。20件まで。同じ名称の繰り返しは指定できない。空配列でクリア
+     * @maxItems 20
+     */
+  techniques?: string[];
   /**
      * 施術前のカウンセリング内容のメモ。nullでクリア
      * @nullable
      */
   consultationNotes?: string | null;
+  /**
+     * 施術のときの頭皮の状態。nullでクリア
+     * @nullable
+     */
+  scalpCondition?: string | null;
+  /**
+     * 施術のときの毛髪の状態。nullでクリア
+     * @nullable
+     */
+  hairCondition?: string | null;
+  /**
+     * カラー剤の配合。nullでクリア
+     * @nullable
+     */
+  colorFormula?: string | null;
   /**
      * 施術の処理時間（分）。nullでクリア
      * @minimum 0
@@ -36,10 +57,15 @@ export interface ModelsTreatmentRecordUpdateRequest {
      */
   resultNotes?: string | null;
   /**
-     * 次回来店の推奨日。nullでクリア
+     * 次回来店の推奨日。予約の日より前の日は指定できない。nullでクリア
      * @nullable
      */
   nextRecommendedDate?: string | null;
+  /**
+     * 次回来店時に推奨するサービス ID の一覧。予約と同じサロンの、削除されていないサービスを20件まで指定する。同じサービスの繰り返しは指定できない。空配列でクリア
+     * @maxItems 20
+     */
+  nextRecommendedServices?: ModelsServiceId[];
   /**
      * ホームケアの提案内容。nullでクリア
      * @nullable
@@ -57,6 +83,9 @@ export interface ModelsTreatmentRecordUpdateRequest {
      * @nullable
      */
   staffEvaluation?: string | null;
-  /** 施術で使用した商材の一覧。指定した場合は全件を置き換える */
+  /**
+     * 施術で使用した商材の一覧。50件まで。指定した場合は全件を、指定した順に置き換える
+     * @maxItems 50
+     */
   materials?: ModelsTreatmentMaterial[];
 }

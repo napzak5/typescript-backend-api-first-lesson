@@ -9,6 +9,7 @@ import type { ModelsTreatmentRecordSearchRequestCursorParameter } from './models
 import type { ModelsTreatmentRecordSearchRequestCustomerIdParameter } from './modelsTreatmentRecordSearchRequestCustomerIdParameter';
 import type { ModelsTreatmentRecordSearchRequestEndDateParameter } from './modelsTreatmentRecordSearchRequestEndDateParameter';
 import type { ModelsTreatmentRecordSearchRequestLimitParameter } from './modelsTreatmentRecordSearchRequestLimitParameter';
+import type { ModelsTreatmentRecordSearchRequestSalonIdParameter } from './modelsTreatmentRecordSearchRequestSalonIdParameter';
 import type { ModelsTreatmentRecordSearchRequestStaffIdParameter } from './modelsTreatmentRecordSearchRequestStaffIdParameter';
 import type { ModelsTreatmentRecordSearchRequestStartDateParameter } from './modelsTreatmentRecordSearchRequestStartDateParameter';
 
@@ -21,6 +22,8 @@ export type TreatmentRecordCrudListParams = {
   limit?: ModelsTreatmentRecordSearchRequestLimitParameter;
   /** 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
   cursor?: ModelsTreatmentRecordSearchRequestCursorParameter;
+  /** サロン店舗・拠点を識別するためのブランド付きUUID。 */
+  salonId?: ModelsTreatmentRecordSearchRequestSalonIdParameter;
   /** 顧客（来店者）を識別するためのブランド付きUUID。 */
   customerId?: ModelsTreatmentRecordSearchRequestCustomerIdParameter;
   /** 施術スタッフや従業員を識別するためのブランド付きUUID。 */
