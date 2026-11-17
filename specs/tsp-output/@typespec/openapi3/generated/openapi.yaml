@@ -6827,16 +6827,16 @@ paths:
   /api/v1/customers/{id}/history:
     get:
       operationId: CustomerCrud_getHistory
-      summary: Get customer audit history
-      description: 顧客レコードに対する操作の監査履歴を新しい順に取得し、変更者や変更内容を追跡します。顧客が存在しない場合は404を返します。
+      summary: Get the history of a customer
+      description: 顧客の変更履歴(顧客台帳への書き込みごとの版)を、新しい版から順に取得し、変更者、日時、前の版から変わった項目を返します。admin と owner / manager だけが実行できます。削除した顧客の履歴も取得できます。IDとクエリが不正な場合と、cursorがその顧客の版を指していない場合は400を、顧客が存在しない場合は404を返します。
       parameters:
         - name: id
           in: path
           required: true
           schema:
             $ref: '#/components/schemas/Models.CustomerId'
-        - $ref: '#/components/parameters/Models.CustomerAuditEntrySearchRequest.limit'
-        - $ref: '#/components/parameters/Models.CustomerAuditEntrySearchRequest.cursor'
+        - $ref: '#/components/parameters/Models.CustomerVersionSearchRequest.limit'
+        - $ref: '#/components/parameters/Models.CustomerVersionSearchRequest.cursor'
       responses:
         '200':
           description: The request has succeeded.
@@ -6852,7 +6852,7 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/Models.CustomerAuditEntryResponse'
+                      $ref: '#/components/schemas/Models.CustomerHistoryEntryResponse'
                     description: 現在ページで取得したデータ配列。サロン一覧や予約履歴の実データを格納する。
                   meta:
                     allOf:
@@ -7138,7 +7138,7 @@ paths:
     post:
       operationId: CustomerCrud_restore
       summary: Restore a deleted customer
-      description: 論理削除された顧客を復元し、誤削除への迅速なリカバリを可能にします。顧客が存在しない場合は404を、削除されていない顧客を指定した場合は409を返します。
+      description: 論理削除した顧客を台帳に戻し、版(restore)を記録します。admin と owner / manager だけが実行できます。アカウントとの紐づけは戻しません(userId は null。本人がプロフィールを作ると、メールアドレスで顧客を引き継ぎます)。IDが不正な場合は400を、顧客が存在しない場合は404を、削除されていない顧客を指定した場合と、削除のあとに同じメールアドレスの顧客が登録されている場合は409を返します。
       parameters:
         - name: id
           in: path
@@ -7342,8 +7342,8 @@ paths:
   /api/v1/customers/{id}/versions/{version}:
     get:
       operationId: CustomerCrud_getVersion
-      summary: Get customer version
-      description: 指定したバージョン時点の顧客情報を取得し、過去状態の確認や比較に利用します。顧客またはバージョンが存在しない場合は404を返します。
+      summary: Get a version of a customer
+      description: 顧客の 1 つの版を取得し、その時点の顧客台帳の項目の値を返します。admin と owner / manager だけが実行できます。削除した顧客の版も取得できます。IDと版の番号が不正な場合は400を、顧客か、その番号の版が存在しない場合は404を返します。
       parameters:
         - name: id
           in: path
@@ -7372,7 +7372,7 @@ paths:
                 properties:
                   data:
                     allOf:
-                      - $ref: '#/components/schemas/Models.CustomerResponse'
+                      - $ref: '#/components/schemas/Models.CustomerVersionResponse'
                     description: レスポンスの主体となるビジネスデータ。
                   meta:
                     type: object
@@ -19597,26 +19597,6 @@ components:
         maximum: 100
         default: 20
       explode: false
-    Models.CustomerAuditEntrySearchRequest.cursor:
-      name: cursor
-      in: query
-      required: false
-      description: 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する
-      schema:
-        type: string
-      explode: false
-    Models.CustomerAuditEntrySearchRequest.limit:
-      name: limit
-      in: query
-      required: false
-      description: 1ページあたりの取得件数上限 (1〜100)
-      schema:
-        type: integer
-        format: int32
-        minimum: 1
-        maximum: 100
-        default: 20
-      explode: false
     Models.CustomerBookingSearchRequest.bookingDateFrom:
       name: bookingDateFrom
       in: query
@@ -19761,6 +19741,26 @@ components:
       schema:
         type: string
         format: date
+      explode: false
+    Models.CustomerVersionSearchRequest.cursor:
+      name: cursor
+      in: query
+      required: false
+      description: 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor`(その顧客の版の ID)を指定する
+      schema:
+        type: string
+      explode: false
+    Models.CustomerVersionSearchRequest.limit:
+      name: limit
+      in: query
+      required: false
+      description: 1ページあたりの取得件数上限 (1〜100)
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+        maximum: 100
+        default: 20
       explode: false
     Models.DailySalesGetRequest.date:
       name: date
@@ -22041,106 +22041,6 @@ components:
       description: |-
         顧客アレルギー部分更新リクエスト - 指定した項目だけを更新する。項目を1つも指定しないリクエストは受け付けない。
         DB で NULL 許可のカラムは null でクリアできる。対象の顧客は変更できない
-    Models.CustomerAuditChangeResponse:
-      type: object
-      required:
-        - field
-        - oldValue
-        - newValue
-      properties:
-        field:
-          type: string
-          description: 変更されたフィールド名
-        oldValue:
-          nullable: true
-          description: 変更前の値。値がなかった場合はnull
-        newValue:
-          nullable: true
-          description: 変更後の値。値がなくなった場合はnull
-      description: 顧客監査履歴の1項目の変更内容 - 変更されたフィールドと変更前後の値
-    Models.CustomerAuditEntryResponse:
-      type: object
-      required:
-        - id
-        - entityId
-        - entity
-        - operation
-        - userId
-        - userName
-        - ipAddress
-        - userAgent
-        - timestamp
-        - changes
-        - before
-        - after
-        - metadata
-      properties:
-        id:
-          type: string
-          description: 監査履歴エントリのID
-        entityId:
-          allOf:
-            - $ref: '#/components/schemas/Models.CustomerId'
-          description: 操作対象の顧客ID
-        entity:
-          type: string
-          description: 操作対象のエンティティ種別
-        operation:
-          allOf:
-            - $ref: '#/components/schemas/Models.CustomerAuditOperationType'
-          description: 実行された操作
-        userId:
-          allOf:
-            - $ref: '#/components/schemas/Models.UserId'
-          description: 操作を実行したユーザーのID
-        userName:
-          type: string
-          nullable: true
-          description: 操作を実行したユーザーの表示名。記録されていない場合はnull
-        ipAddress:
-          type: string
-          nullable: true
-          description: 操作元のIPアドレス。記録されていない場合はnull
-        userAgent:
-          type: string
-          nullable: true
-          description: 操作元のユーザーエージェント。記録されていない場合はnull
-        timestamp:
-          type: string
-          format: date-time
-          description: 操作日時
-        changes:
-          type: array
-          items:
-            $ref: '#/components/schemas/Models.CustomerAuditChangeResponse'
-          nullable: true
-          description: 変更内容の一覧。変更内容を記録しない操作の場合はnull
-        before:
-          nullable: true
-          description: 変更前のエンティティのスナップショット。作成操作の場合はnull
-        after:
-          nullable: true
-          description: 変更後のエンティティのスナップショット。削除操作の場合はnull
-        metadata:
-          type: object
-          additionalProperties: {}
-          nullable: true
-          description: 追加のメタデータ。追加情報がない場合はnull
-      description: 顧客監査履歴レスポンス - 顧客レコードに対して、誰がいつどのような操作を行ったかを表す
-    Models.CustomerAuditOperationType:
-      type: string
-      enum:
-        - create
-        - update
-        - delete
-        - restore
-      description: |-
-        顧客監査操作区分 - 監査履歴に記録される顧客レコードへの操作の種類
-
-        create: 作成 - 顧客を新規登録した
-        update: 更新 - 顧客情報を更新した
-        delete: 削除 - 顧客を論理削除した
-        restore: 復元 - 論理削除された顧客を復元した
     Models.CustomerBasicPreferences:
       type: object
       required:
@@ -22814,6 +22714,50 @@ components:
         female: 女性
         other: その他 - 男性・女性以外の性自認を持つ方
         prefer_not_to_say: 回答しない - 性別の回答を希望しない方
+    Models.CustomerHistoryEntryResponse:
+      type: object
+      required:
+        - id
+        - customerId
+        - version
+        - operation
+        - changedBy
+        - changedAt
+        - changes
+      properties:
+        id:
+          allOf:
+            - $ref: '#/components/schemas/Models.CustomerVersionId'
+          description: 版の ID
+        customerId:
+          allOf:
+            - $ref: '#/components/schemas/Models.CustomerId'
+          description: 顧客 ID
+        version:
+          type: integer
+          format: int32
+          description: 版の番号。顧客ごとに 1 から数える
+        operation:
+          allOf:
+            - $ref: '#/components/schemas/Models.CustomerVersionOperationType'
+          description: 版を作った操作
+        changedBy:
+          type: string
+          allOf:
+            - $ref: '#/components/schemas/Models.UserId'
+          nullable: true
+          description: 操作したユーザーの ID。記録を始める前の値(baseline)の場合はnull
+        changedAt:
+          type: string
+          format: date-time
+          description: 操作した日時
+        changes:
+          type: array
+          items:
+            $ref: '#/components/schemas/Models.CustomerVersionChangeResponse'
+          nullable: true
+          description: 前の版と値の違う台帳の項目(顧客のレスポンスのプロパティの順)。update の版のときだけ返し、ほかの操作と、前の版がない版の場合はnull
+      description: 顧客の変更履歴の 1 項目 - customer_versions の 1 行の、誰がいつどの操作をしたかと、前の版から変わった項目
     Models.CustomerId:
       type: string
       format: uuid
@@ -23799,6 +23743,234 @@ components:
       description: |-
         顧客部分更新リクエスト - 指定した項目だけを更新する。DB で NULL 許可のカラムは null でクリアできる。
         ログインアカウントとの紐づけ、来店回数やポイントなどの集計値は変更できない
+    Models.CustomerVersionChangeResponse:
+      type: object
+      required:
+        - field
+        - oldValue
+        - newValue
+      properties:
+        field:
+          type: string
+          description: 台帳の項目の名前(顧客のレスポンスのプロパティ名)
+        oldValue:
+          nullable: true
+          description: 前の版の値。顧客のレスポンスと同じ表し方。値がなかった場合はnull
+        newValue:
+          nullable: true
+          description: この版の値。顧客のレスポンスと同じ表し方。値がなくなった場合はnull
+      description: 変更履歴の 1 項目の変更内容 - 前の版と値の違う台帳の項目と、変更前後の値
+    Models.CustomerVersionId:
+      type: string
+      format: uuid
+      description: 顧客の版（customer_versions の行）を識別するブランド付きUUID。
+    Models.CustomerVersionOperationType:
+      type: string
+      enum:
+        - baseline
+        - create
+        - update
+        - delete
+        - restore
+      description: |-
+        顧客の版の操作区分 - 版を作った、顧客台帳への書き込みの種類
+
+        baseline: 記録の開始 - 版を記録する前からいた顧客の、記録を始めた時点の値。変更者はない
+        create: 登録 - 顧客を登録した(一括登録、顧客本人のプロフィールの作成を含む)
+        update: 更新 - 台帳の項目を変えた(一括更新、顧客本人のプロフィールの更新、プロフィールの作成で台帳の顧客を引き継いだときを含む)
+        delete: 削除 - 顧客を論理削除した(一括削除を含む)
+        restore: 復元 - 論理削除した顧客を台帳に戻した
+    Models.CustomerVersionResponse:
+      type: object
+      required:
+        - id
+        - customerId
+        - version
+        - operation
+        - changedBy
+        - changedAt
+        - firstName
+        - lastName
+        - firstNameKana
+        - lastNameKana
+        - email
+        - phoneNumber
+        - alternativePhone
+        - postalCode
+        - prefecture
+        - city
+        - address
+        - building
+        - birthDate
+        - gender
+        - occupation
+        - membershipTier
+        - preferences
+        - notes
+        - internalNotes
+        - tags
+        - referredBy
+        - referralCode
+        - allowMarketing
+        - allowSms
+        - allowEmail
+        - isActive
+        - hairType
+        - hairThickness
+        - scalpCondition
+        - customerStatus
+      properties:
+        id:
+          allOf:
+            - $ref: '#/components/schemas/Models.CustomerVersionId'
+          description: 版の ID
+        customerId:
+          allOf:
+            - $ref: '#/components/schemas/Models.CustomerId'
+          description: 顧客 ID
+        version:
+          type: integer
+          format: int32
+          description: 版の番号。顧客ごとに 1 から数える
+        operation:
+          allOf:
+            - $ref: '#/components/schemas/Models.CustomerVersionOperationType'
+          description: 版を作った操作
+        changedBy:
+          type: string
+          allOf:
+            - $ref: '#/components/schemas/Models.UserId'
+          nullable: true
+          description: 操作したユーザーの ID。記録を始める前の値(baseline)の場合はnull
+        changedAt:
+          type: string
+          format: date-time
+          description: 操作した日時
+        firstName:
+          type: string
+          description: 名
+        lastName:
+          type: string
+          description: 姓
+        firstNameKana:
+          type: string
+          nullable: true
+          description: 名のカナ表記。未登録の場合はnull
+        lastNameKana:
+          type: string
+          nullable: true
+          description: 姓のカナ表記。未登録の場合はnull
+        email:
+          type: string
+          description: 主要連絡先として利用するメールアドレス。小文字で保存され、削除されていない顧客の間で一意
+        phoneNumber:
+          type: string
+          description: 主要連絡先として利用する電話番号
+        alternativePhone:
+          type: string
+          nullable: true
+          description: 緊急連絡用などの予備電話番号。未登録の場合はnull
+        postalCode:
+          type: string
+          nullable: true
+          description: 郵便番号。未登録の場合はnull
+        prefecture:
+          type: string
+          nullable: true
+          description: 都道府県名。未登録の場合はnull
+        city:
+          type: string
+          nullable: true
+          description: 市区町村名。未登録の場合はnull
+        address:
+          type: string
+          nullable: true
+          description: 町名・番地。未登録の場合はnull
+        building:
+          type: string
+          nullable: true
+          description: 建物名・部屋番号。未登録の場合はnull
+        birthDate:
+          type: string
+          format: date
+          nullable: true
+          description: 生年月日。未登録または非公開の場合はnull
+        gender:
+          allOf:
+            - $ref: '#/components/schemas/Models.CustomerGenderType'
+          nullable: true
+          description: 顧客の性別。未登録または非公開の場合はnull
+        occupation:
+          type: string
+          nullable: true
+          description: 職業。未登録の場合はnull
+        membershipTier:
+          allOf:
+            - $ref: '#/components/schemas/Models.MembershipTierType'
+          description: 会員ランク。顧客の現在のメンバーシップレベル
+        preferences:
+          type: object
+          allOf:
+            - $ref: '#/components/schemas/Models.CustomerBasicPreferences'
+          nullable: true
+          description: 顧客の好みや要望。未設定の場合はnull
+        notes:
+          type: string
+          nullable: true
+          description: 顧客に関する備考。メモがない場合はnull
+        internalNotes:
+          type: string
+          nullable: true
+          description: スタッフ専用の内部メモ。顧客本人に見せることを想定しない情報。メモがない場合はnull
+        tags:
+          type: array
+          items:
+            type: string
+          description: 分類用タグ。顧客をグループ化するためのラベル。タグがない場合は空配列
+        referredBy:
+          type: string
+          allOf:
+            - $ref: '#/components/schemas/Models.CustomerId'
+          nullable: true
+          description: 紹介元顧客ID。紹介元の顧客があとで削除されても値は残る。紹介ではない場合はnull
+        referralCode:
+          type: string
+          nullable: true
+          description: この顧客が他の顧客を紹介するときに使う紹介コード。削除済みを含むすべての顧客の間で一意。未発行の場合はnull
+        allowMarketing:
+          type: boolean
+          description: マーケティング配信を許可するかどうか
+        allowSms:
+          type: boolean
+          description: SMSでの連絡を許可するかどうか
+        allowEmail:
+          type: boolean
+          description: メールでの連絡を許可するかどうか
+        isActive:
+          type: boolean
+          description: アクティブな顧客かどうか
+        hairType:
+          allOf:
+            - $ref: '#/components/schemas/Models.HairType'
+          nullable: true
+          description: 髪質タイプ。髪のクセや形状の分類。未登録の場合はnull
+        hairThickness:
+          allOf:
+            - $ref: '#/components/schemas/Models.HairThicknessType'
+          nullable: true
+          description: 髪の太さ。一本あたりの毛髪の太さ。未登録の場合はnull
+        scalpCondition:
+          allOf:
+            - $ref: '#/components/schemas/Models.ScalpConditionType'
+          nullable: true
+          description: 頭皮の状態。健康状態やケア必要性の分類。未登録の場合はnull
+        customerStatus:
+          allOf:
+            - $ref: '#/components/schemas/Models.CustomerStatusType'
+          description: 顧客ステータス
+      description: |-
+        顧客の版 - customer_versions の 1 行。その版の時点の、顧客台帳の 30 項目の値。
+        来店回数やポイントなど、予約やポイントが変える値と、アカウントとの紐づけは、台帳の項目ではないので含まない
     Models.DailySalesResponse:
       type: object
       required:

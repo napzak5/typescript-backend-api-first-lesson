@@ -5,6 +5,8 @@ import {
   customerIdSchema,
   type DbNewCustomer,
   type DomainError,
+  type UserId,
+  userIdSchema,
 } from '@beauty-salon-backend/domain'
 import { CustomerRepository } from '@beauty-salon-backend/infrastructure'
 import type { Result } from '@beauty-salon-backend/utility'
@@ -2520,6 +2522,12 @@ describe('Customer API', () => {
     const repository = () => new CustomerRepository(db)
     const customerId = (id: string) => customerIdSchema.parse(id)
 
+    /** The user who writes the customers of these tests. */
+    let writer: UserId
+    beforeEach(async () => {
+      writer = userIdSchema.parse((await insertUser(db)).id)
+    })
+
     /** The values of a new customer with nothing that may be unset. */
     const newCustomer = (
       overrides: Partial<DbNewCustomer> = {},
@@ -2574,7 +2582,9 @@ describe('Customer API', () => {
 
     /** Stores a customer through the repository and returns its row. */
     const stored = async (overrides: Partial<DbNewCustomer> = {}) => {
-      const creation = dataOf(await repository().create(newCustomer(overrides)))
+      const creation = dataOf(
+        await repository().create(newCustomer(overrides), writer),
+      )
       if (creation.type !== 'created') {
         throw new Error(`Expected a customer, got ${creation.type}`)
       }
@@ -2593,7 +2603,7 @@ describe('Customer API', () => {
           preferences: { preferredServices: ['cut'], notes: null },
         })
 
-        const creation = dataOf(await repository().create(values))
+        const creation = dataOf(await repository().create(values, writer))
 
         expect(creation).toEqual({
           type: 'created',
@@ -2610,13 +2620,15 @@ describe('Customer API', () => {
 
       it('resolves to referrerNotFound for a referrer that does not exist or is deleted, and stores nothing', async () => {
         const deleted = await stored()
-        dataOf(await repository().delete(customerId(deleted.id)))
+        dataOf(await repository().delete(customerId(deleted.id), writer))
 
         const unknown = await repository().create(
           newCustomer({ referredBy: UNKNOWN_ID }),
+          writer,
         )
         const ofDeleted = await repository().create(
           newCustomer({ referredBy: deleted.id }),
+          writer,
         )
 
         expect(dataOf(unknown)).toEqual({ type: 'referrerNotFound' })
@@ -2629,9 +2641,11 @@ describe('Customer API', () => {
 
         const email = await repository().create(
           newCustomer({ email: 'taken@example.com' }),
+          writer,
         )
         const code = await repository().create(
           newCustomer({ referralCode: 'TAKEN' }),
+          writer,
         )
 
         expect(email).toEqual({
@@ -2660,7 +2674,7 @@ describe('Customer API', () => {
       it('finds a customer, and resolves to null for a deleted customer and an ID that no customer has', async () => {
         const kept = await stored()
         const deleted = await stored()
-        dataOf(await repository().delete(customerId(deleted.id)))
+        dataOf(await repository().delete(customerId(deleted.id), writer))
 
         const found = await repository().findById(customerId(kept.id))
         const ofDeleted = await repository().findById(customerId(deleted.id))
@@ -2759,10 +2773,14 @@ describe('Customer API', () => {
         const original = await stored({ notes: 'Before', tags: ['vip'] })
 
         const update = dataOf(
-          await repository().update(customerId(original.id), {
-            notes: 'After',
-            tags: [],
-          }),
+          await repository().update(
+            customerId(original.id),
+            {
+              notes: 'After',
+              tags: [],
+            },
+            writer,
+          ),
         )
 
         expect(update).toEqual({
@@ -2780,18 +2798,27 @@ describe('Customer API', () => {
       it('resolves to notFound for a deleted customer and an ID that no customer has, and to referrerNotFound for a referrer that is deleted, changing nothing', async () => {
         const customer = await stored()
         const deleted = await stored()
-        dataOf(await repository().delete(customerId(deleted.id)))
+        dataOf(await repository().delete(customerId(deleted.id), writer))
         const before = await storedCustomers()
 
-        const ofDeleted = await repository().update(customerId(deleted.id), {
-          notes: 'After',
-        })
-        const unknown = await repository().update(customerId(UNKNOWN_ID), {
-          notes: 'After',
-        })
+        const ofDeleted = await repository().update(
+          customerId(deleted.id),
+          {
+            notes: 'After',
+          },
+          writer,
+        )
+        const unknown = await repository().update(
+          customerId(UNKNOWN_ID),
+          {
+            notes: 'After',
+          },
+          writer,
+        )
         const deletedReferrer = await repository().update(
           customerId(customer.id),
           { notes: 'After', referredBy: deleted.id },
+          writer,
         )
 
         expect(dataOf(ofDeleted)).toEqual({ type: 'notFound' })
@@ -2805,12 +2832,20 @@ describe('Customer API', () => {
         await stored({ email: 'taken@example.com', referralCode: 'TAKEN' })
         const before = await storedCustomers()
 
-        const email = await repository().update(customerId(customer.id), {
-          email: 'taken@example.com',
-        })
-        const code = await repository().update(customerId(customer.id), {
-          referralCode: 'TAKEN',
-        })
+        const email = await repository().update(
+          customerId(customer.id),
+          {
+            email: 'taken@example.com',
+          },
+          writer,
+        )
+        const code = await repository().update(
+          customerId(customer.id),
+          {
+            referralCode: 'TAKEN',
+          },
+          writer,
+        )
 
         expect(email).toMatchObject({
           type: 'error',
@@ -2836,9 +2871,15 @@ describe('Customer API', () => {
       it('deletes a customer that is there, and finds none the second time and for an ID that no customer has', async () => {
         const customer = await stored()
 
-        const first = await repository().delete(customerId(customer.id))
-        const second = await repository().delete(customerId(customer.id))
-        const unknown = await repository().delete(customerId(UNKNOWN_ID))
+        const first = await repository().delete(customerId(customer.id), writer)
+        const second = await repository().delete(
+          customerId(customer.id),
+          writer,
+        )
+        const unknown = await repository().delete(
+          customerId(UNKNOWN_ID),
+          writer,
+        )
 
         expect(dataOf(first)).toEqual({ type: 'deleted' })
         expect(dataOf(second)).toEqual({ type: 'notFound' })

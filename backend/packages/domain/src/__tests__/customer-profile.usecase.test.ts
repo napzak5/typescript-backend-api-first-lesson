@@ -428,6 +428,7 @@ describe('UpdateCustomerProfileUseCase', () => {
     expect(dependencies.customerRepository.update).toHaveBeenCalledWith(
       CUSTOMER_ID,
       { lastName: '佐藤', building: null, allowSms: true },
+      USER_ID,
     )
     expect(repositoryCalls(dependencies)).toEqual(['update'])
     expect(result).toEqual({ type: 'success', data: apiCustomerProfile() })

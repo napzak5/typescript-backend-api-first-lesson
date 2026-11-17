@@ -12,5 +12,6 @@ export {
   type CustomerPage,
   ListCustomersUseCase,
 } from './list-customers.usecase'
+export { RestoreCustomerUseCase } from './restore-customer.usecase'
 export { UpdateCustomerUseCase } from './update-customer.usecase'
 export { UpdateCustomerProfileUseCase } from './update-customer-profile.usecase'

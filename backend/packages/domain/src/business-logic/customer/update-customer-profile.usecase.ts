@@ -63,6 +63,7 @@ export class UpdateCustomerProfileUseCase {
     const updated = await customerRepository.update(
       customerId,
       CustomerProfileWriteMapper.fromUpdateRequest(request.data),
+      actor.userId,
     )
     if (updated.type === 'error') {
       return updated

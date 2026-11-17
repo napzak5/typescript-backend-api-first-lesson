@@ -384,6 +384,7 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 | 顧客の一括取得、一括登録、一括更新（`/api/v1/customers/batch/get`、`/api/v1/customers/bulk`） | `admin`、サロンの `owner` / `manager` / `staff`（所属サロンは問わない） |
 | 顧客の一括削除（`DELETE /api/v1/customers/bulk`） | `admin`、サロンの `owner` / `manager` |
 | 顧客の統計（`/api/v1/customers/{id}/statistics`） | `admin`、クエリの `salonId` のサロンの `owner` / `manager` / `staff`。ほかのサロンを指定したメンバーは 403（[統計](./customers.md#統計)） |
+| 顧客の変更履歴と版（`/api/v1/customers/{id}/history`、`/api/v1/customers/{id}/versions/{version}`）、復元（`POST /api/v1/customers/{id}/restore`） | `admin`、サロンの `owner` / `manager`（[変更履歴と版](./customers.md#変更履歴と版)、[復元](./customers.md#復元)） |
 | 顧客の好み設定の取得、更新（`/api/v1/customers/{id}/preferences`） | `admin`、サロンの `owner` / `manager` / `staff`（所属サロンは問わない） |
 | 本人のプロフィールの取得、作成、更新（`/api/v1/customers/me`） | `customer` |
 | 本人の好み設定の取得、更新（`/api/v1/customers/me/preferences`） | プロフィールのある `customer` |

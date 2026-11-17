@@ -44,6 +44,7 @@ export class BulkCreateCustomersUseCase {
 
     const created = await customerRepository.createMany(
       items.map(CustomerWriteMapper.fromCreateRequest),
+      actor.userId,
     )
     if (created.type === 'error') {
       return created

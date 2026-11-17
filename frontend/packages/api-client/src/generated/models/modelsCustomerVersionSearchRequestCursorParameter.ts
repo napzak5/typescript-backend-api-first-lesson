@@ -7,7 +7,6 @@
  */
 
 /**
- * 追加のメタデータ。追加情報がない場合はnull
- * @nullable
+ * 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor`(その顧客の版の ID)を指定する
  */
-export type ModelsCustomerAuditEntryResponseMetadata = {[key: string]: unknown} | null;
+export type ModelsCustomerVersionSearchRequestCursorParameter = string;

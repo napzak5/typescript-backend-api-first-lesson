@@ -68,6 +68,14 @@ export const customerStatus = pgEnum('customer_status', [
   'blacklisted',
 ])
 
+export const customerVersionOperation = pgEnum('customer_version_operation', [
+  'baseline',
+  'create',
+  'update',
+  'delete',
+  'restore',
+])
+
 export const dayOfWeek = pgEnum('day_of_week', [
   'monday',
   'tuesday',
@@ -629,6 +637,71 @@ export const customerPreferences = pgTable(
       name: 'customer_preferences_staff_id_fk',
     }).onDelete('set null'),
     unique('customer_preferences_unique').on(table.customerId),
+  ],
+)
+
+export const customerVersions = pgTable(
+  'customer_versions',
+  {
+    id: uuid().defaultRandom().primaryKey().notNull(),
+    customerId: uuid().notNull(),
+    version: integer().notNull(),
+    operation: customerVersionOperation().notNull(),
+    changedBy: uuid(),
+    changedAt: timestamp({ withTimezone: true, mode: 'string' })
+      .defaultNow()
+      .notNull(),
+    firstName: varchar({ length: 100 }).notNull(),
+    lastName: varchar({ length: 100 }).notNull(),
+    firstNameKana: varchar({ length: 100 }),
+    lastNameKana: varchar({ length: 100 }),
+    email: varchar({ length: 255 }).notNull(),
+    phoneNumber: varchar({ length: 20 }).notNull(),
+    alternativePhone: varchar({ length: 20 }),
+    postalCode: varchar({ length: 10 }),
+    prefecture: varchar({ length: 50 }),
+    city: varchar({ length: 100 }),
+    address: varchar({ length: 255 }),
+    building: varchar({ length: 255 }),
+    birthDate: date(),
+    gender: varchar({ length: 20 }),
+    occupation: varchar({ length: 100 }),
+    membershipTier: membershipTier().notNull(),
+    preferences: jsonb(),
+    notes: text(),
+    internalNotes: text(),
+    tags: text().array().notNull(),
+    referredBy: uuid(),
+    referralCode: varchar({ length: 50 }),
+    allowMarketing: boolean().notNull(),
+    allowSms: boolean().notNull(),
+    allowEmail: boolean().notNull(),
+    isActive: boolean().notNull(),
+    hairType: hairType(),
+    hairThickness: hairThickness(),
+    scalpCondition: scalpCondition(),
+    customerStatus: customerStatus().notNull(),
+  },
+  (table) => [
+    check(
+      'customer_versions_changed_by_unless_baseline',
+      sql`(operation = 'baseline'::customer_version_operation) = ("changedBy" IS NULL)`,
+    ),
+    check('customer_versions_version_positive', sql`version > 0`),
+    foreignKey({
+      columns: [table.changedBy],
+      foreignColumns: [users.id],
+      name: 'customer_versions_changed_by_fk',
+    }),
+    foreignKey({
+      columns: [table.customerId],
+      foreignColumns: [customers.id],
+      name: 'customer_versions_customer_id_fk',
+    }).onDelete('cascade'),
+    unique('customer_versions_customer_version_unique').on(
+      table.customerId,
+      table.version,
+    ),
   ],
 )
 

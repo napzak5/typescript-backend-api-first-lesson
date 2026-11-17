@@ -7,6 +7,6 @@
  */
 
 /**
- * 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する
+ * 1ページあたりの取得件数上限 (1〜100)
  */
-export type ModelsCustomerAuditEntrySearchRequestCursorParameter = string;
+export type ModelsCustomerVersionSearchRequestLimitParameter = number;

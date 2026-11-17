@@ -155,35 +155,6 @@ export type BookingStatusType = z.infer<typeof BookingStatusTypeSchema>
 
 /**
  * @description
- * 顧客監査操作区分 - 監査履歴に記録される顧客レコードへの操作の種類
- *
- *
- * create: 作成 - 顧客を新規登録した
- *
- * update: 更新 - 顧客情報を更新した
- *
- * delete: 削除 - 顧客を論理削除した
- *
- * restore: 復元 - 論理削除された顧客を復元した
- */
-export const CustomerAuditOperationTypeSchema = z.enum(['create', 'update', 'delete', 'restore'])
-/**
- * @description
- * 顧客監査操作区分 - 監査履歴に記録される顧客レコードへの操作の種類
- *
- *
- * create: 作成 - 顧客を新規登録した
- *
- * update: 更新 - 顧客情報を更新した
- *
- * delete: 削除 - 顧客を論理削除した
- *
- * restore: 復元 - 論理削除された顧客を復元した
- */
-export type CustomerAuditOperationType = z.infer<typeof CustomerAuditOperationTypeSchema>
-
-/**
- * @description
  * 顧客データエクスポート形式区分 - 顧客本人のデータを出力するファイル形式
  *
  *
@@ -314,6 +285,39 @@ export const CustomerStatusTypeSchema = z.enum(['active', 'inactive', 'vip', 'bl
  * blacklisted: ブラックリスト - 利用を禁止された状態
  */
 export type CustomerStatusType = z.infer<typeof CustomerStatusTypeSchema>
+
+/**
+ * @description
+ * 顧客の版の操作区分 - 版を作った、顧客台帳への書き込みの種類
+ *
+ *
+ * baseline: 記録の開始 - 版を記録する前からいた顧客の、記録を始めた時点の値。変更者はない
+ *
+ * create: 登録 - 顧客を登録した(一括登録、顧客本人のプロフィールの作成を含む)
+ *
+ * update: 更新 - 台帳の項目を変えた(一括更新、顧客本人のプロフィールの更新、プロフィールの作成で台帳の顧客を引き継いだときを含む)
+ *
+ * delete: 削除 - 顧客を論理削除した(一括削除を含む)
+ *
+ * restore: 復元 - 論理削除した顧客を台帳に戻した
+ */
+export const CustomerVersionOperationTypeSchema = z.enum(['baseline', 'create', 'update', 'delete', 'restore'])
+/**
+ * @description
+ * 顧客の版の操作区分 - 版を作った、顧客台帳への書き込みの種類
+ *
+ *
+ * baseline: 記録の開始 - 版を記録する前からいた顧客の、記録を始めた時点の値。変更者はない
+ *
+ * create: 登録 - 顧客を登録した(一括登録、顧客本人のプロフィールの作成を含む)
+ *
+ * update: 更新 - 台帳の項目を変えた(一括更新、顧客本人のプロフィールの更新、プロフィールの作成で台帳の顧客を引き継いだときを含む)
+ *
+ * delete: 削除 - 顧客を論理削除した(一括削除を含む)
+ *
+ * restore: 復元 - 論理削除した顧客を台帳に戻した
+ */
+export type CustomerVersionOperationType = z.infer<typeof CustomerVersionOperationTypeSchema>
 
 /**
  * @description
