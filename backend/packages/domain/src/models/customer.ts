@@ -38,6 +38,20 @@ export type ApiCustomerProfileCreateRequest =
   components['schemas']['Models.CustomerProfileCreateRequest']
 export type ApiCustomerProfileUpdateRequest =
   components['schemas']['Models.CustomerProfileUpdateRequest']
+export type ApiCustomerBatchGetRequest =
+  components['schemas']['Models.CustomerBatchGetRequest']
+export type ApiCustomerBulkCreateRequest =
+  components['schemas']['Models.CustomerBulkCreateRequest']
+export type ApiCustomerBulkCreateResponse =
+  components['schemas']['Models.CustomerBulkCreateResponse']
+export type ApiCustomerBulkUpdateRequest =
+  components['schemas']['Models.CustomerBulkUpdateRequest']
+export type ApiCustomerBulkUpdateResponse =
+  components['schemas']['Models.CustomerBulkUpdateResponse']
+export type ApiCustomerBulkDeleteRequest =
+  components['schemas']['Models.CustomerBulkDeleteRequest']
+export type ApiCustomerBulkDeleteResponse =
+  components['schemas']['Models.CustomerBulkDeleteResponse']
 
 // Database types, inferred from the Drizzle schema
 export type DbCustomer = DeepRequired<typeof customers.$inferSelect>

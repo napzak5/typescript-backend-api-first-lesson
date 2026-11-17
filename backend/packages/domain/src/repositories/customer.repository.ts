@@ -58,6 +58,34 @@ export type CustomerUpdate =
   | { type: 'notFound' }
   | CustomerWriteRefusal
 
+/** The changes of one customer of a bulk update. */
+export type CustomerChange = { id: CustomerId; changes: DbCustomerChanges }
+
+/**
+ * Customers named that are not there, or are deleted: the customers to
+ * change or delete (`customersNotFound`), or the referrers of those to
+ * create or change (`referrersNotFound`).
+ */
+type Missing<T extends 'customersNotFound' | 'referrersNotFound'> = {
+  type: T
+  missing: string[]
+}
+
+export type CustomerBulkCreation =
+  | { type: 'created'; customers: DbCustomer[] }
+  | Missing<'referrersNotFound'>
+
+export type CustomerBulkUpdate =
+  | { type: 'updated'; customers: DbCustomer[] }
+  | Missing<'customersNotFound'>
+  | Missing<'referrersNotFound'>
+
+export type CustomerBulkDeletion =
+  | { type: 'deleted' }
+  | Missing<'customersNotFound'>
+  /** The customers that a booking that is not finished refers to. */
+  | { type: 'bookingsUnfinished'; customers: string[] }
+
 /**
  * Why an account did not get a profile:
  * - `notACustomerAccount`: the account is not one with the role `customer`
@@ -110,6 +138,36 @@ export interface ICustomerRepository {
    * as its profile, unless a booking of the customer is not finished.
    */
   delete(id: CustomerId): Promise<Result<CustomerDeletion, DomainError>>
+
+  /** The customers of these IDs that are not deleted, in no given order. */
+  findByIds(
+    ids: readonly CustomerId[],
+  ): Promise<Result<DbCustomer[], DomainError>>
+
+  /**
+   * Adds every customer, in the order given, or none: when a referrer is
+   * not a customer who is not deleted, or when a write is refused.
+   */
+  createMany(
+    customers: readonly DbNewCustomer[],
+  ): Promise<Result<CustomerBulkCreation, DomainError>>
+
+  /**
+   * Changes every customer, one after the other in the order given, or
+   * none. The customers are held until the end, taken in the order of
+   * their IDs.
+   */
+  updateMany(
+    changes: readonly CustomerChange[],
+  ): Promise<Result<CustomerBulkUpdate, DomainError>>
+
+  /**
+   * Deletes every customer, as `delete` deletes one, or none. The customers
+   * are held until the end, taken in the order of their IDs.
+   */
+  deleteMany(
+    ids: readonly CustomerId[],
+  ): Promise<Result<CustomerBulkDeletion, DomainError>>
 
   /**
    * Gives the account a customer record and links the two. The record is

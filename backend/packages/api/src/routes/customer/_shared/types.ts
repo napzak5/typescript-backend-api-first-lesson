@@ -16,6 +16,18 @@ export type GetCustomerResponse = JsonBody<
 export type UpdateCustomerResponse = JsonBody<
   operations['CustomerCrud_update']['responses'][200]['content']
 >
+export type BatchGetCustomersResponse = JsonBody<
+  operations['CustomerCrud_batchGet']['responses'][200]['content']
+>
+export type BulkCreateCustomersResponse = JsonBody<
+  operations['CustomerCrud_bulkCreate']['responses'][201]['content']
+>
+export type BulkUpdateCustomersResponse = JsonBody<
+  operations['CustomerCrud_bulkUpdate']['responses'][200]['content']
+>
+export type BulkDeleteCustomersResponse = JsonBody<
+  operations['CustomerCrud_bulkDelete']['responses'][200]['content']
+>
 
 export type GetCustomerProfileResponse = JsonBody<
   operations['CustomerProfile_get']['responses'][200]['content']

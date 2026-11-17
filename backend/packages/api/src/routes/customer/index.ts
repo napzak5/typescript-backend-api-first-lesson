@@ -1,6 +1,10 @@
 import type { CustomerUseCaseDependencies } from '@beauty-salon-backend/domain'
 import { Router } from 'express'
 import type { Authenticated } from '../../shared/authentication'
+import { batchGetCustomersHandler } from './batch-get-customers.handler'
+import { bulkCreateCustomersHandler } from './bulk-create-customers.handler'
+import { bulkDeleteCustomersHandler } from './bulk-delete-customers.handler'
+import { bulkUpdateCustomersHandler } from './bulk-update-customers.handler'
 import { createCustomerHandler } from './create-customer.handler'
 import { createCustomerProfileHandler } from './create-customer-profile.handler'
 import { deleteCustomerHandler } from './delete-customer.handler'
@@ -17,17 +21,21 @@ import { updateCustomerProfileHandler } from './update-customer-profile.handler'
  * is public: every operation needs a signed-in user, and the use cases
  * decide who may.
  *
- * - GET    /     list            (authenticated)
- * - POST   /     create          (authenticated)
- * - GET    /me   get profile     (authenticated)
- * - POST   /me   create profile  (authenticated)
- * - PATCH  /me   update profile  (authenticated)
- * - GET    /:id  get             (authenticated)
- * - PATCH  /:id  update          (authenticated)
- * - DELETE /:id  delete          (authenticated)
+ * - GET    /           list            (authenticated)
+ * - POST   /           create          (authenticated)
+ * - POST   /batch/get  batch get       (authenticated)
+ * - POST   /bulk       bulk create     (authenticated)
+ * - PATCH  /bulk       bulk update     (authenticated)
+ * - DELETE /bulk       bulk delete     (authenticated)
+ * - GET    /me         get profile     (authenticated)
+ * - POST   /me         create profile  (authenticated)
+ * - PATCH  /me         update profile  (authenticated)
+ * - GET    /:id        get             (authenticated)
+ * - PATCH  /:id        update          (authenticated)
+ * - DELETE /:id        delete          (authenticated)
  *
- * `/me` is registered before `/:id`, which would take it for an ID
- * otherwise.
+ * `/bulk` and `/me` are registered before `/:id`, which would take them
+ * for an ID otherwise.
  */
 export const createCustomerRouter = (
   dependencies: CustomerUseCaseDependencies,
@@ -37,6 +45,16 @@ export const createCustomerRouter = (
 
   router.get('/', listCustomersHandler(dependencies, authenticated))
   router.post('/', createCustomerHandler(dependencies, authenticated))
+  router.post(
+    '/batch/get',
+    batchGetCustomersHandler(dependencies, authenticated),
+  )
+  router.post('/bulk', bulkCreateCustomersHandler(dependencies, authenticated))
+  router.patch('/bulk', bulkUpdateCustomersHandler(dependencies, authenticated))
+  router.delete(
+    '/bulk',
+    bulkDeleteCustomersHandler(dependencies, authenticated),
+  )
   router.get('/me', getCustomerProfileHandler(dependencies, authenticated))
   router.post('/me', createCustomerProfileHandler(dependencies, authenticated))
   router.patch('/me', updateCustomerProfileHandler(dependencies, authenticated))

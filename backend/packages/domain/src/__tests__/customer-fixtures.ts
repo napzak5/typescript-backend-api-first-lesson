@@ -9,6 +9,9 @@ import type {
   DbCustomer,
 } from '../models/customer'
 import type {
+  CustomerBulkCreation,
+  CustomerBulkDeletion,
+  CustomerBulkUpdate,
   CustomerCreation,
   CustomerDeletion,
   CustomerProfileCreation,
@@ -247,6 +250,22 @@ const customerRepositoryWith = (
   ),
   delete: vi.fn(async () =>
     Result.success<CustomerDeletion>({ type: 'deleted' }),
+  ),
+  findByIds: vi.fn(async () => Result.success([dbCustomer()])),
+  createMany: vi.fn(async () =>
+    Result.success<CustomerBulkCreation>({
+      type: 'created',
+      customers: [dbCustomer()],
+    }),
+  ),
+  updateMany: vi.fn(async () =>
+    Result.success<CustomerBulkUpdate>({
+      type: 'updated',
+      customers: [dbCustomer()],
+    }),
+  ),
+  deleteMany: vi.fn(async () =>
+    Result.success<CustomerBulkDeletion>({ type: 'deleted' }),
   ),
   createProfile: vi.fn(async () =>
     Result.success<CustomerProfileCreation>({
