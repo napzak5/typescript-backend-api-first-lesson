@@ -157,14 +157,18 @@ backend/packages/api/src/
 │   │   └── index.ts                              # createInventoryAlertRouter
 │   ├── medical-chart/
 │   │   ├── _shared/
-│   │   │   ├── types.ts            # MedicalChartParams, MedicalChartCustomerParams, and the response body types
-│   │   │   ├── links.ts            # medicalChartLinks
-│   │   │   ├── query.ts            # decodeMedicalChartSearchQuery
+│   │   │   ├── types.ts            # MedicalChartParams, MedicalChartCustomerParams, CustomerAllergyParams, and the response body types
+│   │   │   ├── links.ts            # medicalChartLinks, customerAllergiesPath
+│   │   │   ├── query.ts            # decodeMedicalChartSearchQuery, decodeCustomerAllergySearchQuery
 │   │   │   └── index.ts            # re-exports the three files above
 │   │   ├── list-medical-charts.handler.ts        # GET    /api/v1/medical-charts
 │   │   ├── create-medical-chart.handler.ts       # POST   /api/v1/medical-charts
 │   │   ├── get-medical-chart.handler.ts          # GET    /api/v1/medical-charts/customer/:customerId
 │   │   ├── update-medical-chart.handler.ts       # PATCH  /api/v1/medical-charts/:id
+│   │   ├── list-customer-allergies.handler.ts    # GET    /api/v1/medical-charts/customer/:customerId/allergies
+│   │   ├── add-customer-allergy.handler.ts       # POST   /api/v1/medical-charts/customer/:customerId/allergies
+│   │   ├── update-customer-allergy.handler.ts    # PATCH  /api/v1/medical-charts/customer/:customerId/allergies/:allergyId
+│   │   ├── remove-customer-allergy.handler.ts    # DELETE /api/v1/medical-charts/customer/:customerId/allergies/:allergyId
 │   │   └── index.ts                              # createMedicalChartRouter
 │   ├── payment/
 │   │   ├── _shared/
@@ -497,7 +501,7 @@ The three handlers in `routes/inventory-alert/` are wrapped with `authenticated`
 
 The eight handlers in `routes/treatment-record/` are wrapped with `authenticated` and pass the `actor` first: the list then passes the outcome of `decodeTreatmentRecordSearchQuery`, the create `req.body`, the get and the delete `req.params.id`, the update and the addition of photos `req.params.id` and `req.body`, the removal of a photo `req.params.id` and `req.params.photoId`, and the statistics `req.query`, which their use case reads, so that a query that is wrong is told only to an actor who may read treatment records. The create answers 201 with a `Location` header; the addition of photos answers 201 without one, since the photos have no address of their own, and links to the record; the delete and the removal of a photo answer 204 without a body; the statistics link to themselves as they were requested (`req.originalUrl`). The router has `GET /statistics` before `/:id`, which would take its name for an ID.
 
-The four handlers in `routes/medical-chart/` are wrapped with `authenticated` and pass the `actor` first: the list then passes the outcome of `decodeMedicalChartSearchQuery`, the create `req.body`, the get `req.params.customerId` and the update `req.params.id` and `req.body`. A chart is read by its customer and changed by its own ID, and every response links it by its customer (`medicalChartLinks`): the create answers 201 with a `Location` header at `/customer/:customerId`. The allergies of a customer (`GET /customer/:customerId/allergies`) are not routed.
+The eight handlers in `routes/medical-chart/` are wrapped with `authenticated` and pass the `actor` first. The four of the charts: the list then passes the outcome of `decodeMedicalChartSearchQuery`, the create `req.body`, the get `req.params.customerId` and the update `req.params.id` and `req.body`. A chart is read by its customer and changed by its own ID, and every response links it by its customer (`medicalChartLinks`): the create answers 201 with a `Location` header at `/customer/:customerId`. The four of the allergies of a customer are routed at `/customer/:customerId/allergies` and `/customer/:customerId/allergies/:allergyId`, and the router takes the dependencies of both kinds of use case (`MedicalChartUseCaseDependencies & CustomerAllergyUseCaseDependencies`): the list passes `req.params.customerId` and the outcome of `decodeCustomerAllergySearchQuery`, the add `req.params.customerId` and `req.body`, the update both IDs of the path and `req.body`, and the removal both IDs. No route reads one allergy, so the add (201) and the update (200) answer without a `Location` and link the list of the customer (`customerAllergiesPath`), and the removal answers 204 without a body.
 
 The two handlers in `routes/staff-schedule/` are wrapped as well, and both have the salon and the staff member in their path and no ID of their own. The list handler (`GET /`) passes `actor`, `req.params.salonId`, `req.params.id` and `req.query`; the update handler (`PUT /`) passes `req.body` in the place of the query. Both answer 200 with `{ data, meta, links }`, where `data` is the array of the entries of the schedule: the update replaces the whole schedule and answers with what it stored.
 

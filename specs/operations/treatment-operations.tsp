@@ -186,7 +186,7 @@ namespace BeautySalon.Operations {
         | RequestBodyErrors
         | CommonErrors;
 
-      @doc("施術時の注意喚起のため、顧客のアレルギー情報を一覧取得します。顧客が存在しない場合は404を返します。")
+      @doc("施術時の注意喚起のため、顧客のアレルギー情報を一覧取得します。顧客のカルテがなくても取得できます。顧客が存在しないか削除されている場合は404を返します。")
       @summary("List the allergies of a customer")
       @route("/customer/{customerId}/allergies")
       @get
@@ -197,6 +197,58 @@ namespace BeautySalon.Operations {
         | {
             @statusCode statusCode: 200;
             @body response: CursorPaginationResponse<CustomerAllergyResponse>;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<404>
+        | CommonErrors;
+
+      @doc("顧客のアレルギーを1件追加します。顧客のカルテがなくても追加できます。顧客が存在しないか削除されている場合は404を、顧客がすでに同じallergenNameのアレルギーを持つ場合は409を返します。アレルギーを1件取得するオペレーションはないため、Locationヘッダーは返しません。")
+      @summary("Add an allergy of a customer")
+      @route("/customer/{customerId}/allergies")
+      @post
+      addAllergy(
+        @path customerId: CustomerId,
+        @body request: CustomerAllergyCreateRequest,
+      ):
+        | {
+            @statusCode statusCode: 201;
+            @body response: ApiResponse<CustomerAllergyResponse>;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<404>
+        | ProblemResponse<409>
+        | RequestBodyErrors
+        | CommonErrors;
+
+      @doc("顧客のアレルギーの指定した項目だけを更新します。顧客が存在しないか削除されている場合や、アレルギーがその顧客のものでない場合は404を、顧客のほかのアレルギーと同じallergenNameにする場合は409を返します。")
+      @summary("Update an allergy of a customer")
+      @route("/customer/{customerId}/allergies/{allergyId}")
+      @patch
+      updateAllergy(
+        @path customerId: CustomerId,
+        @path allergyId: CustomerAllergyId,
+        @body request: CustomerAllergyUpdateRequest,
+      ):
+        | {
+            @statusCode statusCode: 200;
+            @body response: ApiResponse<CustomerAllergyResponse>;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<404>
+        | ProblemResponse<409>
+        | RequestBodyErrors
+        | CommonErrors;
+
+      @doc("誤って記録した顧客のアレルギーを削除します。削除できるのは管理者と、サロンのオーナー・マネージャーです（スタッフは403）。顧客が存在しないか削除されている場合や、アレルギーがその顧客のものでない場合は404を返します。")
+      @summary("Remove an allergy of a customer")
+      @route("/customer/{customerId}/allergies/{allergyId}")
+      @delete
+      removeAllergy(
+        @path customerId: CustomerId,
+        @path allergyId: CustomerAllergyId,
+      ):
+        | {
+            @statusCode statusCode: 204;
           }
         | ProblemResponse<400>
         | ProblemResponse<404>

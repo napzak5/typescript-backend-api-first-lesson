@@ -1102,6 +1102,17 @@ const treatmentChildManagedColumns = ['id', 'treatmentRecordId', 'createdAt']
 const medicalChartManagedColumns = ['id', 'createdAt', 'updatedAt']
 
 /**
+ * Columns of `customer_allergies` that no request writes: the customer is
+ * the one of the path.
+ */
+const customerAllergyManagedColumns = [
+  'id',
+  'customerId',
+  'createdAt',
+  'updatedAt',
+]
+
+/**
  * Treatment records, their materials and photos, the medical charts of the
  * customers, and customer allergies.
  */
@@ -1176,8 +1187,21 @@ const treatmentRules: ModelRule[] = [
     model: 'Models.CustomerAllergyResponse',
     table: 'customerAllergies',
     kind: 'response',
-    // The customer is in the path and no operation addresses one allergy.
-    omittedColumns: ['id', 'customerId', 'createdAt'],
+    // The customer is in the path of every operation on allergies.
+    omittedColumns: ['customerId'],
+  },
+  {
+    model: 'Models.CustomerAllergyCreateRequest',
+    table: 'customerAllergies',
+    kind: 'create',
+    omittedColumns: customerAllergyManagedColumns,
+  },
+  {
+    model: 'Models.CustomerAllergyUpdateRequest',
+    table: 'customerAllergies',
+    kind: 'update',
+    // An allergy is the allergy of one customer.
+    omittedColumns: customerAllergyManagedColumns,
   },
 ]
 

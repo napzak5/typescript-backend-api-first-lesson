@@ -8,6 +8,7 @@ import {
   Argon2PasswordHasher,
   AvailableSlotRepository,
   BookingRepository,
+  CustomerAllergyRepository,
   CustomerPreferencesRepository,
   CustomerRepository,
   type Database,
@@ -412,7 +413,11 @@ export const createApp = ({
   app.use(
     `${API_BASE_PATH}/medical-charts`,
     createMedicalChartRouter(
-      { medicalChartRepository: new MedicalChartRepository(database), clock },
+      {
+        medicalChartRepository: new MedicalChartRepository(database),
+        customerAllergyRepository: new CustomerAllergyRepository(database),
+        clock,
+      },
       authenticated,
     ),
   )

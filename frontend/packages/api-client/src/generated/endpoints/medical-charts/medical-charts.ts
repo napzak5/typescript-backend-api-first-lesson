@@ -25,6 +25,7 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  MedicalChartCrudAddAllergy201,
   MedicalChartCrudCreate201,
   MedicalChartCrudGetByCustomer200,
   MedicalChartCrudList200,
@@ -32,6 +33,10 @@ import type {
   MedicalChartCrudListAllergiesParams,
   MedicalChartCrudListParams,
   MedicalChartCrudUpdate200,
+  MedicalChartCrudUpdateAllergy200,
+  ModelsCustomerAllergyCreateRequest,
+  ModelsCustomerAllergyId,
+  ModelsCustomerAllergyUpdateRequest,
   ModelsCustomerId,
   ModelsMedicalChartCreateRequest,
   ModelsMedicalChartId,
@@ -579,7 +584,7 @@ export const getMedicalChartCrudListAllergiesUrl = (customerId: ModelsCustomerId
 }
 
 /**
- * 施術時の注意喚起のため、顧客のアレルギー情報を一覧取得します。顧客が存在しない場合は404を返します。
+ * 施術時の注意喚起のため、顧客のアレルギー情報を一覧取得します。顧客のカルテがなくても取得できます。顧客が存在しないか削除されている場合は404を返します。
  * @summary List the allergies of a customer
  */
 export const medicalChartCrudListAllergies = async (customerId: ModelsCustomerId,
@@ -630,7 +635,7 @@ export type MedicalChartCrudListAllergiesQueryError = ModelsProblemDetails
 
 
 /**
- * 施術時の注意喚起のため、顧客のアレルギー情報を一覧取得します。顧客が存在しない場合は404を返します。
+ * 施術時の注意喚起のため、顧客のアレルギー情報を一覧取得します。顧客のカルテがなくても取得できます。顧客が存在しないか削除されている場合は404を返します。
  * @summary List the allergies of a customer
  */
 export function useMedicalChartCrudListAllergies<TData = Awaited<ReturnType<typeof medicalChartCrudListAllergies>>, TError = ModelsProblemDetails>(
@@ -645,7 +650,7 @@ export function useMedicalChartCrudListAllergies<TData = Awaited<ReturnType<type
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 施術時の注意喚起のため、顧客のアレルギー情報を一覧取得します。顧客が存在しない場合は404を返します。
+ * 施術時の注意喚起のため、顧客のアレルギー情報を一覧取得します。顧客のカルテがなくても取得できます。顧客が存在しないか削除されている場合は404を返します。
  * @summary List the allergies of a customer
  */
 export function useMedicalChartCrudListAllergies<TData = Awaited<ReturnType<typeof medicalChartCrudListAllergies>>, TError = ModelsProblemDetails>(
@@ -660,7 +665,7 @@ export function useMedicalChartCrudListAllergies<TData = Awaited<ReturnType<type
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 施術時の注意喚起のため、顧客のアレルギー情報を一覧取得します。顧客が存在しない場合は404を返します。
+ * 施術時の注意喚起のため、顧客のアレルギー情報を一覧取得します。顧客のカルテがなくても取得できます。顧客が存在しないか削除されている場合は404を返します。
  * @summary List the allergies of a customer
  */
 export function useMedicalChartCrudListAllergies<TData = Awaited<ReturnType<typeof medicalChartCrudListAllergies>>, TError = ModelsProblemDetails>(
@@ -669,7 +674,7 @@ export function useMedicalChartCrudListAllergies<TData = Awaited<ReturnType<type
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 施術時の注意喚起のため、顧客のアレルギー情報を一覧取得します。顧客が存在しない場合は404を返します。
+ * 施術時の注意喚起のため、顧客のアレルギー情報を一覧取得します。顧客のカルテがなくても取得できます。顧客が存在しないか削除されている場合は404を返します。
  * @summary List the allergies of a customer
  */
 export function useMedicalChartCrudListAllergies<TData = Awaited<ReturnType<typeof medicalChartCrudListAllergies>>, TError = ModelsProblemDetails>(
@@ -690,7 +695,428 @@ export function useMedicalChartCrudListAllergies<TData = Awaited<ReturnType<type
 
 
 
-export type medicalChartCrudUpdateResponse200 = {
+export type medicalChartCrudAddAllergyResponse201 = {
+  data: MedicalChartCrudAddAllergy201
+  status: 201
+}
+
+export type medicalChartCrudAddAllergyResponse400 = {
+  data: ModelsProblemDetails
+  status: 400
+}
+
+export type medicalChartCrudAddAllergyResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type medicalChartCrudAddAllergyResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
+export type medicalChartCrudAddAllergyResponse404 = {
+  data: ModelsProblemDetails
+  status: 404
+}
+
+export type medicalChartCrudAddAllergyResponse409 = {
+  data: ModelsProblemDetails
+  status: 409
+}
+
+export type medicalChartCrudAddAllergyResponse413 = {
+  data: ModelsProblemDetails
+  status: 413
+}
+
+export type medicalChartCrudAddAllergyResponse415 = {
+  data: ModelsProblemDetails
+  status: 415
+}
+
+export type medicalChartCrudAddAllergyResponse429 = {
+  data: ModelsProblemDetails
+  status: 429
+}
+
+export type medicalChartCrudAddAllergyResponse500 = {
+  data: ModelsProblemDetails
+  status: 500
+}
+
+export type medicalChartCrudAddAllergyResponseSuccess = (medicalChartCrudAddAllergyResponse201) & {
+  headers: Headers;
+};
+export type medicalChartCrudAddAllergyResponseError = (medicalChartCrudAddAllergyResponse400 | medicalChartCrudAddAllergyResponse401 | medicalChartCrudAddAllergyResponse403 | medicalChartCrudAddAllergyResponse404 | medicalChartCrudAddAllergyResponse409 | medicalChartCrudAddAllergyResponse413 | medicalChartCrudAddAllergyResponse415 | medicalChartCrudAddAllergyResponse429 | medicalChartCrudAddAllergyResponse500) & {
+  headers: Headers;
+};
+
+export type medicalChartCrudAddAllergyResponse = (medicalChartCrudAddAllergyResponseSuccess | medicalChartCrudAddAllergyResponseError)
+
+export const getMedicalChartCrudAddAllergyUrl = (customerId: ModelsCustomerId,) => {
+
+
+
+
+  return `/api/v1/medical-charts/customer/${customerId}/allergies`
+}
+
+/**
+ * 顧客のアレルギーを1件追加します。顧客のカルテがなくても追加できます。顧客が存在しないか削除されている場合は404を、顧客がすでに同じallergenNameのアレルギーを持つ場合は409を返します。アレルギーを1件取得するオペレーションはないため、Locationヘッダーは返しません。
+ * @summary Add an allergy of a customer
+ */
+export const medicalChartCrudAddAllergy = async (customerId: ModelsCustomerId,
+    modelsCustomerAllergyCreateRequest: ModelsCustomerAllergyCreateRequest, options?: RequestInit): Promise<medicalChartCrudAddAllergyResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customInstance<medicalChartCrudAddAllergyResponse>(getMedicalChartCrudAddAllergyUrl(customerId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(modelsCustomerAllergyCreateRequest)
+  }
+);}
+
+
+
+
+
+export const getMedicalChartCrudAddAllergyMutationKey = () => ['medicalChartCrudAddAllergy'] as const;
+
+export const getMedicalChartCrudAddAllergyMutationOptions = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof medicalChartCrudAddAllergy>>, TError,MedicalChartCrudAddAllergyMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof medicalChartCrudAddAllergy>>, TError,MedicalChartCrudAddAllergyMutationVariables, TContext> => {
+
+const mutationKey = getMedicalChartCrudAddAllergyMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof medicalChartCrudAddAllergy>>, MedicalChartCrudAddAllergyMutationVariables> = (props) => {
+          const {customerId,data} = props ?? {};
+
+          return  medicalChartCrudAddAllergy(customerId,data,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type MedicalChartCrudAddAllergyMutationResult = NonNullable<Awaited<ReturnType<typeof medicalChartCrudAddAllergy>>>
+    export type MedicalChartCrudAddAllergyMutationBody = ModelsCustomerAllergyCreateRequest
+    export type MedicalChartCrudAddAllergyMutationError = ModelsProblemDetails
+    export type MedicalChartCrudAddAllergyMutationVariables = {customerId: ModelsCustomerId;data: ModelsCustomerAllergyCreateRequest}
+
+    /**
+ * 顧客のアレルギーを1件追加します。顧客のカルテがなくても追加できます。顧客が存在しないか削除されている場合は404を、顧客がすでに同じallergenNameのアレルギーを持つ場合は409を返します。アレルギーを1件取得するオペレーションはないため、Locationヘッダーは返しません。
+ * @summary Add an allergy of a customer
+ */
+export const useMedicalChartCrudAddAllergy = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof medicalChartCrudAddAllergy>>, TError,MedicalChartCrudAddAllergyMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof medicalChartCrudAddAllergy>>,
+        TError,
+        MedicalChartCrudAddAllergyMutationVariables,
+        TContext
+      > => {
+      return useMutation(getMedicalChartCrudAddAllergyMutationOptions(options), queryClient);
+    }
+    export type medicalChartCrudUpdateAllergyResponse200 = {
+  data: MedicalChartCrudUpdateAllergy200
+  status: 200
+}
+
+export type medicalChartCrudUpdateAllergyResponse400 = {
+  data: ModelsProblemDetails
+  status: 400
+}
+
+export type medicalChartCrudUpdateAllergyResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type medicalChartCrudUpdateAllergyResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
+export type medicalChartCrudUpdateAllergyResponse404 = {
+  data: ModelsProblemDetails
+  status: 404
+}
+
+export type medicalChartCrudUpdateAllergyResponse409 = {
+  data: ModelsProblemDetails
+  status: 409
+}
+
+export type medicalChartCrudUpdateAllergyResponse413 = {
+  data: ModelsProblemDetails
+  status: 413
+}
+
+export type medicalChartCrudUpdateAllergyResponse415 = {
+  data: ModelsProblemDetails
+  status: 415
+}
+
+export type medicalChartCrudUpdateAllergyResponse429 = {
+  data: ModelsProblemDetails
+  status: 429
+}
+
+export type medicalChartCrudUpdateAllergyResponse500 = {
+  data: ModelsProblemDetails
+  status: 500
+}
+
+export type medicalChartCrudUpdateAllergyResponseSuccess = (medicalChartCrudUpdateAllergyResponse200) & {
+  headers: Headers;
+};
+export type medicalChartCrudUpdateAllergyResponseError = (medicalChartCrudUpdateAllergyResponse400 | medicalChartCrudUpdateAllergyResponse401 | medicalChartCrudUpdateAllergyResponse403 | medicalChartCrudUpdateAllergyResponse404 | medicalChartCrudUpdateAllergyResponse409 | medicalChartCrudUpdateAllergyResponse413 | medicalChartCrudUpdateAllergyResponse415 | medicalChartCrudUpdateAllergyResponse429 | medicalChartCrudUpdateAllergyResponse500) & {
+  headers: Headers;
+};
+
+export type medicalChartCrudUpdateAllergyResponse = (medicalChartCrudUpdateAllergyResponseSuccess | medicalChartCrudUpdateAllergyResponseError)
+
+export const getMedicalChartCrudUpdateAllergyUrl = (customerId: ModelsCustomerId,
+    allergyId: ModelsCustomerAllergyId,) => {
+
+
+
+
+  return `/api/v1/medical-charts/customer/${customerId}/allergies/${allergyId}`
+}
+
+/**
+ * 顧客のアレルギーの指定した項目だけを更新します。顧客が存在しないか削除されている場合や、アレルギーがその顧客のものでない場合は404を、顧客のほかのアレルギーと同じallergenNameにする場合は409を返します。
+ * @summary Update an allergy of a customer
+ */
+export const medicalChartCrudUpdateAllergy = async (customerId: ModelsCustomerId,
+    allergyId: ModelsCustomerAllergyId,
+    modelsCustomerAllergyUpdateRequest: ModelsCustomerAllergyUpdateRequest, options?: RequestInit): Promise<medicalChartCrudUpdateAllergyResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customInstance<medicalChartCrudUpdateAllergyResponse>(getMedicalChartCrudUpdateAllergyUrl(customerId,allergyId),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(modelsCustomerAllergyUpdateRequest)
+  }
+);}
+
+
+
+
+
+export const getMedicalChartCrudUpdateAllergyMutationKey = () => ['medicalChartCrudUpdateAllergy'] as const;
+
+export const getMedicalChartCrudUpdateAllergyMutationOptions = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof medicalChartCrudUpdateAllergy>>, TError,MedicalChartCrudUpdateAllergyMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof medicalChartCrudUpdateAllergy>>, TError,MedicalChartCrudUpdateAllergyMutationVariables, TContext> => {
+
+const mutationKey = getMedicalChartCrudUpdateAllergyMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof medicalChartCrudUpdateAllergy>>, MedicalChartCrudUpdateAllergyMutationVariables> = (props) => {
+          const {customerId,allergyId,data} = props ?? {};
+
+          return  medicalChartCrudUpdateAllergy(customerId,allergyId,data,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type MedicalChartCrudUpdateAllergyMutationResult = NonNullable<Awaited<ReturnType<typeof medicalChartCrudUpdateAllergy>>>
+    export type MedicalChartCrudUpdateAllergyMutationBody = ModelsCustomerAllergyUpdateRequest
+    export type MedicalChartCrudUpdateAllergyMutationError = ModelsProblemDetails
+    export type MedicalChartCrudUpdateAllergyMutationVariables = {customerId: ModelsCustomerId;allergyId: ModelsCustomerAllergyId;data: ModelsCustomerAllergyUpdateRequest}
+
+    /**
+ * 顧客のアレルギーの指定した項目だけを更新します。顧客が存在しないか削除されている場合や、アレルギーがその顧客のものでない場合は404を、顧客のほかのアレルギーと同じallergenNameにする場合は409を返します。
+ * @summary Update an allergy of a customer
+ */
+export const useMedicalChartCrudUpdateAllergy = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof medicalChartCrudUpdateAllergy>>, TError,MedicalChartCrudUpdateAllergyMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof medicalChartCrudUpdateAllergy>>,
+        TError,
+        MedicalChartCrudUpdateAllergyMutationVariables,
+        TContext
+      > => {
+      return useMutation(getMedicalChartCrudUpdateAllergyMutationOptions(options), queryClient);
+    }
+    export type medicalChartCrudRemoveAllergyResponse204 = {
+  data: void
+  status: 204
+}
+
+export type medicalChartCrudRemoveAllergyResponse400 = {
+  data: ModelsProblemDetails
+  status: 400
+}
+
+export type medicalChartCrudRemoveAllergyResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type medicalChartCrudRemoveAllergyResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
+export type medicalChartCrudRemoveAllergyResponse404 = {
+  data: ModelsProblemDetails
+  status: 404
+}
+
+export type medicalChartCrudRemoveAllergyResponse429 = {
+  data: ModelsProblemDetails
+  status: 429
+}
+
+export type medicalChartCrudRemoveAllergyResponse500 = {
+  data: ModelsProblemDetails
+  status: 500
+}
+
+export type medicalChartCrudRemoveAllergyResponseSuccess = (medicalChartCrudRemoveAllergyResponse204) & {
+  headers: Headers;
+};
+export type medicalChartCrudRemoveAllergyResponseError = (medicalChartCrudRemoveAllergyResponse400 | medicalChartCrudRemoveAllergyResponse401 | medicalChartCrudRemoveAllergyResponse403 | medicalChartCrudRemoveAllergyResponse404 | medicalChartCrudRemoveAllergyResponse429 | medicalChartCrudRemoveAllergyResponse500) & {
+  headers: Headers;
+};
+
+export type medicalChartCrudRemoveAllergyResponse = (medicalChartCrudRemoveAllergyResponseSuccess | medicalChartCrudRemoveAllergyResponseError)
+
+export const getMedicalChartCrudRemoveAllergyUrl = (customerId: ModelsCustomerId,
+    allergyId: ModelsCustomerAllergyId,) => {
+
+
+
+
+  return `/api/v1/medical-charts/customer/${customerId}/allergies/${allergyId}`
+}
+
+/**
+ * 誤って記録した顧客のアレルギーを削除します。削除できるのは管理者と、サロンのオーナー・マネージャーです（スタッフは403）。顧客が存在しないか削除されている場合や、アレルギーがその顧客のものでない場合は404を返します。
+ * @summary Remove an allergy of a customer
+ */
+export const medicalChartCrudRemoveAllergy = async (customerId: ModelsCustomerId,
+    allergyId: ModelsCustomerAllergyId, options?: RequestInit): Promise<medicalChartCrudRemoveAllergyResponse> => {
+
+  return customInstance<medicalChartCrudRemoveAllergyResponse>(getMedicalChartCrudRemoveAllergyUrl(customerId,allergyId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getMedicalChartCrudRemoveAllergyMutationKey = () => ['medicalChartCrudRemoveAllergy'] as const;
+
+export const getMedicalChartCrudRemoveAllergyMutationOptions = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof medicalChartCrudRemoveAllergy>>, TError,MedicalChartCrudRemoveAllergyMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof medicalChartCrudRemoveAllergy>>, TError,MedicalChartCrudRemoveAllergyMutationVariables, TContext> => {
+
+const mutationKey = getMedicalChartCrudRemoveAllergyMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof medicalChartCrudRemoveAllergy>>, MedicalChartCrudRemoveAllergyMutationVariables> = (props) => {
+          const {customerId,allergyId} = props ?? {};
+
+          return  medicalChartCrudRemoveAllergy(customerId,allergyId,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type MedicalChartCrudRemoveAllergyMutationResult = NonNullable<Awaited<ReturnType<typeof medicalChartCrudRemoveAllergy>>>
+
+    export type MedicalChartCrudRemoveAllergyMutationError = ModelsProblemDetails
+    export type MedicalChartCrudRemoveAllergyMutationVariables = {customerId: ModelsCustomerId;allergyId: ModelsCustomerAllergyId}
+
+    /**
+ * 誤って記録した顧客のアレルギーを削除します。削除できるのは管理者と、サロンのオーナー・マネージャーです（スタッフは403）。顧客が存在しないか削除されている場合や、アレルギーがその顧客のものでない場合は404を返します。
+ * @summary Remove an allergy of a customer
+ */
+export const useMedicalChartCrudRemoveAllergy = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof medicalChartCrudRemoveAllergy>>, TError,MedicalChartCrudRemoveAllergyMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof medicalChartCrudRemoveAllergy>>,
+        TError,
+        MedicalChartCrudRemoveAllergyMutationVariables,
+        TContext
+      > => {
+      return useMutation(getMedicalChartCrudRemoveAllergyMutationOptions(options), queryClient);
+    }
+    export type medicalChartCrudUpdateResponse200 = {
   data: MedicalChartCrudUpdate200
   status: 200
 }

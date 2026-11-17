@@ -7,18 +7,21 @@
  */
 import type { ModelsAllergySeverityType } from './modelsAllergySeverityType';
 import type { ModelsAllergyType } from './modelsAllergyType';
+import type { ModelsCustomerAllergyId } from './modelsCustomerAllergyId';
 
 /**
  * 顧客アレルギーレスポンス - customer_allergies テーブルの1行。顧客ごとのアレルギー情報を返す。
  * プロパティ名と null 許可は DB カラムと一致させている。対象の顧客はパスの customerId で示す
  */
 export interface ModelsCustomerAllergyResponse {
+  /** アレルギー ID */
+  id: ModelsCustomerAllergyId;
   /** アレルギーの種類 */
   allergyType: ModelsAllergyType;
-  /** アレルゲンの名称 */
+  /** アレルゲンの名称。1人の顧客に同じ名称は1件だけ */
   allergenName: string;
-  /** 重篤度を表す数値 */
-  severity: number;
+  /** 重篤度 */
+  severityType: ModelsAllergySeverityType;
   /**
      * 症状の内容。記録していない場合はnull
      * @nullable
@@ -34,8 +37,8 @@ export interface ModelsCustomerAllergyResponse {
      * @nullable
      */
   confirmedDate: string | null;
-  /** 重篤度の区分。区分を設定していない場合はnull */
-  severityType: ModelsAllergySeverityType | null;
+  /** レコード作成日時 */
+  createdAt: string;
   /** レコード最終更新日時 */
   updatedAt: string;
 }

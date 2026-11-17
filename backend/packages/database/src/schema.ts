@@ -515,7 +515,6 @@ export const customerAllergies = pgTable(
     customerId: uuid().notNull(),
     allergyType: allergyType().notNull(),
     allergenName: varchar({ length: 255 }).notNull(),
-    severity: integer().default(3).notNull(),
     symptoms: text(),
     notes: text(),
     confirmedDate: date(),
@@ -525,7 +524,7 @@ export const customerAllergies = pgTable(
     updatedAt: timestamp({ withTimezone: true, mode: 'string' })
       .defaultNow()
       .notNull(),
-    severityType: allergySeverity(),
+    severityType: allergySeverity().notNull(),
   },
   (table) => [
     foreignKey({
@@ -533,9 +532,9 @@ export const customerAllergies = pgTable(
       foreignColumns: [customers.id],
       name: 'customer_allergies_customer_id_fk',
     }).onDelete('cascade'),
-    index('idx_customer_allergies_customer_id').using(
-      'btree',
-      table.customerId.asc().nullsLast().op('uuid_ops'),
+    unique('customer_allergies_customer_allergen_unique').on(
+      table.customerId,
+      table.allergenName,
     ),
   ],
 )
