@@ -3,7 +3,9 @@ import { z } from 'zod'
 import type {
   ApiPurchaseOrderItem,
   ApiPurchaseOrderResponse,
+  ApiReorderSuggestionResponse,
   DbPurchaseOrderItem,
+  DbReorderSuggestion,
   PurchaseOrderWithItems,
 } from '../../models/purchase-order'
 import { type DomainError, DomainErrors, parseWith } from '../../shared'
@@ -32,6 +34,15 @@ const convertedOrderSchema = z.object({
 })
 
 const convertedItemSchema = z.object({ quantity: numericSchema })
+
+const convertedSuggestionSchema = z.object({
+  currentStock: numericSchema,
+  onOrderQuantity: numericSchema,
+  reorderPoint: numericSchema,
+  maximumStock: numericSchema.nullable(),
+  suggestedQuantity: numericSchema,
+  lastOrderDate: timestampSchema.nullable(),
+})
 
 const MESSAGE = 'Invalid stored purchase order'
 
@@ -105,8 +116,54 @@ const toApiPurchaseOrder = ({
   )
 }
 
+/**
+ * A product to reorder, as the database works it out → API response. The
+ * quantities are returned as numbers and the date of the latest order in
+ * ISO 8601.
+ */
+const toApiReorderSuggestion = (
+  suggestion: DbReorderSuggestion,
+): Result<ApiReorderSuggestionResponse, DomainError> =>
+  Result.mapError(
+    Result.map(
+      parseWith(convertedSuggestionSchema, suggestion, MESSAGE),
+      (converted) => ({
+        productId: suggestion.productId,
+        productCode: suggestion.productCode,
+        productName: suggestion.productName,
+        unit: suggestion.unit,
+        supplier: suggestion.supplier,
+        currentStock: converted.currentStock,
+        onOrderQuantity: converted.onOrderQuantity,
+        reorderPoint: converted.reorderPoint,
+        maximumStock: converted.maximumStock,
+        suggestedQuantity: converted.suggestedQuantity,
+        lastOrderDate: converted.lastOrderDate,
+      }),
+    ),
+    (error) =>
+      DomainErrors.database(
+        `Reorder suggestion of product ${suggestion.productId} does not match the API model`,
+        error,
+      ),
+  )
+
 export const PurchaseOrderReadMapper = {
   toApiPurchaseOrder,
+
+  toApiReorderSuggestions(
+    suggestions: DbReorderSuggestion[],
+  ): Result<ApiReorderSuggestionResponse[], DomainError> {
+    const apiSuggestions: ApiReorderSuggestionResponse[] = []
+    for (const suggestion of suggestions) {
+      const mapped = toApiReorderSuggestion(suggestion)
+      if (mapped.type === 'error') {
+        return mapped
+      }
+      apiSuggestions.push(mapped.data)
+    }
+    return Result.success(apiSuggestions)
+  },
 
   toApiPurchaseOrders(
     orders: PurchaseOrderWithItems[],

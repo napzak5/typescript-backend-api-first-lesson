@@ -5,6 +5,7 @@ import type {
   ApiPurchaseOrderCreateRequest,
   DbPurchaseOrder,
   DbPurchaseOrderItem,
+  DbReorderSuggestion,
   PurchaseOrderWithItems,
 } from '../models/purchase-order'
 import type {
@@ -12,12 +13,15 @@ import type {
   PurchaseOrderChange,
   PurchaseOrderCreation,
   PurchaseOrderListing,
+  PurchaseOrderReceipt,
+  ReorderSuggestionListing,
 } from '../repositories/purchase-order.repository'
 import type { ISalonRepository } from '../repositories/salon.repository'
 import type { IPurchaseOrderNumberIssuer } from '../services/purchase-order-number-issuer'
 import { STAFF_ID } from './auth-fixtures'
 import { SALON_ID, salonRepositoryWith } from './fixtures'
 import { INVENTORY_ID, OTHER_INVENTORY_ID } from './inventory-fixtures'
+import { PRODUCT_ID } from './product-fixtures'
 
 export const PURCHASE_ORDER_ID = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0f01'
 export const OTHER_PURCHASE_ORDER_ID = '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f0f02'
@@ -132,6 +136,27 @@ const changed = (): Result<PurchaseOrderChange, never> =>
   Result.success({ type: 'changed', order: storedPurchaseOrder() })
 
 /**
+ * A product to reorder as the database works it out: 3 bottles in stock
+ * and 2 on order against a reorder point of 10, up to a maximum of 24.
+ */
+export const dbReorderSuggestion = (
+  overrides: Partial<DbReorderSuggestion> = {},
+): DbReorderSuggestion => ({
+  productId: PRODUCT_ID,
+  productCode: 'SHMP001',
+  productName: 'Moisture Shampoo 500ml',
+  unit: 'bottle',
+  supplier: 'Beauty Supply Tokyo',
+  currentStock: '3.00',
+  onOrderQuantity: '2.00',
+  reorderPoint: '10.00',
+  maximumStock: '24.00',
+  suggestedQuantity: '19.00',
+  lastOrderDate: '2026-11-14 18:00:00.123456+09',
+  ...overrides,
+})
+
+/**
  * A repository that holds the one order above, in which every write
  * succeeds; a test overrides what it needs.
  */
@@ -149,6 +174,23 @@ const purchaseOrderRepositoryWith = (
   update: vi.fn(async () => changed()),
   approve: vi.fn(async () => changed()),
   cancel: vi.fn(async () => changed()),
+  receive: vi.fn(async () =>
+    Result.success<PurchaseOrderReceipt>({
+      type: 'received',
+      order: storedPurchaseOrder({
+        status: 'delivered',
+        actualDelivery: '2026-11-21 10:00:00+09',
+      }),
+    }),
+  ),
+  listReorderSuggestions: vi.fn(async () =>
+    Result.success<ReorderSuggestionListing>({
+      type: 'listed',
+      suggestions: [dbReorderSuggestion()],
+      total: 1,
+      hasMore: false,
+    }),
+  ),
   ...overrides,
 })
 

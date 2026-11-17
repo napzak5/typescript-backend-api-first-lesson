@@ -11,17 +11,12 @@ import type { ModelsInventoryId } from './modelsInventoryId';
  * 受領した1件の発注明細
  */
 export interface ModelsPurchaseOrderReceivedItem {
-  /** 受領した在庫 ID。発注明細の inventoryId のいずれかを指定する */
+  /** 受領した在庫 ID。発注の明細の inventoryId のいずれかを指定する。1つの受領で同じ在庫を2回指定できない */
   inventoryId: ModelsInventoryId;
   /**
-     * 受領数量
+     * 受領数量。0より大きく、その明細の発注数量以下、小数第2位まで。発注数量を超えた分は在庫移動(purchase)で記録する
      * @maximum 99999999.99
      * @exclusiveMinimum 0
      */
-  receivedQuantity: number;
-  /**
-     * 受領時のメモ。メモがない場合はnull
-     * @nullable
-     */
-  notes: string | null;
+  quantity: number;
 }

@@ -71,6 +71,23 @@ export const refusalOfApproval = (
     }))
     .exhaustive()
 
+/**
+ * Why a receipt is refused, null when it is taken: the goods of an order
+ * that was placed with the supplier, shipped or not, are received.
+ */
+export const refusalOfGoodsReceipt = (
+  status: OrderStatusType,
+): OrderStatusRefusal | null =>
+  match(status)
+    .returnType<OrderStatusRefusal | null>()
+    .with('ordered', 'shipped', () => null)
+    .with('delivered', 'cancelled', () => ({ type: 'closed', status }))
+    .with('draft', 'pending', 'approved', () => ({
+      type: 'notFromStatus',
+      status,
+    }))
+    .exhaustive()
+
 /** Why a cancellation is refused, null when it is taken: an open order is cancelled. */
 export const refusalOfCancellation = (
   status: OrderStatusType,

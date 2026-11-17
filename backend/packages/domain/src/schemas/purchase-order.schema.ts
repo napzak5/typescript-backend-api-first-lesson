@@ -6,12 +6,16 @@ import {
   totalPriceOf,
 } from '../business-logic/purchase-order/_shared/amounts'
 import { inventoryIdSchema } from '../models/inventory'
+import { productIdSchema } from '../models/product'
 import {
   type ApiPurchaseOrderCancelRequest,
   type ApiPurchaseOrderCreateRequest,
   type ApiPurchaseOrderItemCreateRequest,
+  type ApiPurchaseOrderReceivedItem,
+  type ApiPurchaseOrderReceiveRequest,
   type ApiPurchaseOrderSearchRequest,
   type ApiPurchaseOrderUpdateRequest,
+  type ApiReorderSuggestionSearchRequest,
   purchaseOrderIdSchema,
 } from '../models/purchase-order'
 import { salonIdSchema } from '../models/salon'
@@ -37,12 +41,15 @@ import {
 /** The most an item orders, as a `numeric(10, 2)` column holds. */
 const MAX_QUANTITY = 99_999_999.99
 
+/** A quantity of an item: more than none, to the hundredth. */
+const quantity = z.number().gt(0).max(MAX_QUANTITY).multipleOf(0.01)
+
 /** Yen, as an `integer` column holds them. */
 const amount = z.number().int().min(0).max(MAX_INTEGER)
 
 const purchaseOrderItemCreateRequestSchema = z.strictObject({
   inventoryId: inventoryIdSchema,
-  quantity: z.number().gt(0).max(MAX_QUANTITY).multipleOf(0.01),
+  quantity,
   unitPrice: amount,
   notes: nonBlankText.nullable(),
 }) satisfies z.ZodType<ApiPurchaseOrderItemCreateRequest>
@@ -65,25 +72,29 @@ const brokenAlready = (
   )
 
 /**
- * An order names each stock row once: a row named again is reported where
- * it is named again. IDs are compared as the schema spells them, so one ID
- * in other letters is the same row.
+ * A request names each stock row once among its items: a row named again
+ * is reported where it is named again, with the message. IDs are compared
+ * as the schema spells them, so one ID in other letters is the same row.
  */
-const noRowOrderedTwice = (context: z.core.ParsePayload<StatedOrder>): void => {
-  const seen = new Set<string>()
-  context.value.items.forEach(({ inventoryId }, index) => {
-    if (seen.has(inventoryId)) {
-      context.issues.push({
-        code: 'custom',
-        path: ['items', index, 'inventoryId'],
-        message: 'Must not repeat a stock row ordered earlier in the order',
-        input: inventoryId,
-        continue: true,
-      })
-    }
-    seen.add(inventoryId)
-  })
-}
+const noRowNamedTwice =
+  (message: string) =>
+  (
+    context: z.core.ParsePayload<{ items: { inventoryId: string }[] }>,
+  ): void => {
+    const seen = new Set<string>()
+    context.value.items.forEach(({ inventoryId }, index) => {
+      if (seen.has(inventoryId)) {
+        context.issues.push({
+          code: 'custom',
+          path: ['items', index, 'inventoryId'],
+          message,
+          input: inventoryId,
+          continue: true,
+        })
+      }
+      seen.add(inventoryId)
+    })
+  }
 
 /**
  * What an item comes to (`totalPriceOf`) fits an `integer` column. It is
@@ -152,7 +163,9 @@ export const purchaseOrderCreateRequestSchema = z
     paymentTerms: nonBlankText.nullable(),
     notes: nonBlankText.nullable(),
   })
-  .check(noRowOrderedTwice)
+  .check(
+    noRowNamedTwice('Must not repeat a stock row ordered earlier in the order'),
+  )
   .check(itemTotalsWithinInteger)
   .check(
     amountsWithinInteger,
@@ -180,6 +193,34 @@ export type PurchaseOrderUpdateRequest = z.infer<
 export const purchaseOrderCancelRequestSchema = z.strictObject({
   cancellationReason: nonBlankText,
 }) satisfies z.ZodType<ApiPurchaseOrderCancelRequest>
+
+const purchaseOrderReceivedItemSchema = z.strictObject({
+  inventoryId: inventoryIdSchema,
+  quantity,
+}) satisfies z.ZodType<ApiPurchaseOrderReceivedItem>
+
+/**
+ * A receipt names what arrived of the items of an order, each stock row
+ * once. Whether the order has an item for each row, and whether no more
+ * arrived than the item orders, is looked at with the order
+ * (`planGoodsReceipt`).
+ */
+export const purchaseOrderReceiveRequestSchema = z
+  .strictObject({
+    items: z.array(purchaseOrderReceivedItemSchema).min(1).max(100),
+    deliveryNotes: nonBlankText.nullable(),
+  })
+  .check(
+    noRowNamedTwice(
+      'Must not repeat a stock row received earlier in the receipt',
+    ),
+  ) satisfies z.ZodType<ApiPurchaseOrderReceiveRequest>
+
+export const reorderSuggestionSearchRequestSchema = z.strictObject({
+  limit: z.number().int().min(1).max(100).exactOptional(),
+  cursor: productIdSchema.exactOptional(),
+  salonId: salonIdSchema,
+}) satisfies z.ZodType<ApiReorderSuggestionSearchRequest>
 
 /** Two moments in the spelling of `toISOString` compare as text. */
 export const purchaseOrderSearchRequestSchema = z

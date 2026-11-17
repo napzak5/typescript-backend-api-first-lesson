@@ -46,6 +46,14 @@ export type ApiPurchaseOrderCancelRequest =
 export type ApiPurchaseOrderSearchRequest = NonNullable<
   operations['PurchaseOrderCrud_list']['parameters']['query']
 >
+export type ApiPurchaseOrderReceiveRequest =
+  components['schemas']['Models.PurchaseOrderReceiveRequest']
+export type ApiPurchaseOrderReceivedItem =
+  components['schemas']['Models.PurchaseOrderReceivedItem']
+export type ApiReorderSuggestionResponse =
+  components['schemas']['Models.ReorderSuggestionResponse']
+export type ApiReorderSuggestionSearchRequest =
+  operations['PurchaseOrderCrud_listReorderSuggestions']['parameters']['query']
 
 // Database types, inferred from the Drizzle schema
 export type DbPurchaseOrder = DeepRequired<typeof purchaseOrders.$inferSelect>
@@ -102,6 +110,26 @@ export type DbNewPurchaseOrderItem = DeepRequired<
     | 'sortOrder'
   >
 > & { inventoryId: InventoryId }
+
+/**
+ * A product of a salon to reorder, as the database works it out from its
+ * stock rows and the open orders of the salon. Quantities are the text of
+ * a `numeric`, the date of the latest order PostgreSQL's text of a
+ * `timestamptz`.
+ */
+export type DbReorderSuggestion = {
+  productId: string
+  productCode: string
+  productName: string
+  unit: string
+  supplier: string | null
+  currentStock: string
+  onOrderQuantity: string
+  reorderPoint: string
+  maximumStock: string | null
+  suggestedQuantity: string
+  lastOrderDate: string | null
+}
 
 /** What an update can write of an order. */
 export type DbPurchaseOrderChanges = Partial<

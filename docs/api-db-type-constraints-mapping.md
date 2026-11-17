@@ -443,8 +443,8 @@ const salonRules: ModelRule[] = [
 | 既存の行の一部だけを書き換えるアクションのリクエスト（`BookingCancelRequest`、`PaymentRefundRequest` など） | 載せない。プロパティ名と null 許可はカラムに合わせる |
 | まだ書いていない行のカラムの値だけを返すモデル（`SaleBreakdownResponse`。売上を作成すれば、その金額のカラムになる値） | 載せる。その表のルールで、ほかのカラムを `omittedColumns` に挙げる |
 | 何も書かないリクエストと、行のモデルを包むレスポンス（`SaleCalculateRequest`、`SaleCalculateResponse`、`SaleReceiptResponse`） | 載せない。包んだ行のモデル（`SaleResponse`、`SaleBreakdownResponse`）は、それぞれのルールで照合する |
-| 複数の行を書き換えるアクションのリクエストと、その結果（`InventoryStockCountRequest`、`InventoryStockCountResponse`） | 載せない。結果に包む行のモデル（`InventoryTransactionResponse`）は、そのルールで照合する |
-| 集計・計算結果（`ReviewSummaryResponse`、`SalesReportResponse`、`InventoryValueReportResponse` など） | 載せない |
+| 複数の行を書き換えるアクションのリクエストと、その結果（`InventoryStockCountRequest`、`InventoryStockCountResponse`、`PurchaseOrderReceiveRequest`、`PurchaseOrderReceivedItem`） | 載せない。プロパティ名と null 許可はカラムに合わせる（入荷の `inventoryId`、`quantity` は在庫の移動の、`deliveryNotes` は発注のカラム）。結果に包む行のモデル（`InventoryTransactionResponse`、`PurchaseOrderResponse`）は、そのルールで照合する |
+| 集計・計算結果（`ReviewSummaryResponse`、`SalesReportResponse`、`InventoryValueReportResponse`、`ReorderSuggestionResponse` など） | 載せない |
 | テーブルがまだない機能のモデル（下の表） | 載せない |
 
 テーブルがまだない機能は次のとおりである。これらの TypeSpec は命名・レスポンスの形・エラーの規約には従っているが、プロパティを照合する相手がない。実装するときは、先にテーブルを設計してマイグレーションを書き、モデルをルールに載せる。
@@ -453,7 +453,7 @@ const salonRules: ModelRule[] = [
 |---|---|
 | ロール、権限、ロールの割り当て、アクセス判定 | `specs/models/permission.tsp` |
 | 添付ファイル、共有リンク | `specs/models/attachment.tsp` |
-| 在庫アラート、発注の提案、発注の入荷 | `specs/models/inventory.tsp` の `InventoryAlert*`、`ReorderSuggestion*`、`PurchaseOrderReceive*`、`PurchaseOrderReceivedItem` |
+| 在庫アラート | `specs/models/inventory.tsp` の `InventoryAlert*` |
 | カルテ（medical charts） | `specs/models/treatment.tsp` の `MedicalChart*` |
 | 顧客の監査履歴・版、エクスポートジョブ、データ削除リクエスト | `specs/models/customer.tsp` の `CustomerAuditEntry*`、`CustomerExport*`、`CustomerDataDeletion*` |
 

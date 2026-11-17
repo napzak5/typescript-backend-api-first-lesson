@@ -60,7 +60,7 @@ Before relying on anything, check this table.
 | Products (`/api/v1/salons/{salonId}/products`) | Implemented in every layer: list, create, get, update and delete, the five operations of `ProductCrud`. A product is what a salon sells at its counter or uses in its treatments: a code, a name, the prices, the unit, the stock levels, the supplier and whether it is sold, used in treatments and in use. The routes are below the salon and none is public: an administrator and the owner, the managers and the staff of the salon read them, an administrator, the owner and the managers keep them, and a customer account reaches none. The stock levels lie in order, the product code is unique among the products of the salon that are not deleted, and a delete marks the product and is refused while it has stock. See [Products](./products.md) (Japanese). |
 | Stock (`/api/v1/inventory`) | Implemented in every layer: list, create, get, update and delete of the stock rows, the lists of the low stock and of what expires soon, the stock movements of a row and their history, the stock count and the value report: every operation of `InventoryCrud`. A stock row is one lot of one product of a salon: how much there is, where it is kept and when it expires. The routes are not below a salon and none is public: an administrator and the owner, the managers and the staff of a salon read them, an administrator, the owner and the managers keep them, and a customer account reaches none. A product kept by lots names the lot of each row and a product that is not has one row; a row is created without stock, only a stock movement or a stock count moves its stock, and a row that counts stock is not deleted. The staff record purchases, sales, uses and returns; an adjustment, a disposal and a transfer are for an administrator, the owner and the managers. A stock count sets the rows it names to what was counted, all of them or none, recording an adjustment of each difference, and the value report sums the stock at purchase prices by category; both are for an administrator, the owner and the managers. See [Inventory](./inventory.md) (Japanese). |
 | The other domains (treatment) | Specified in TypeSpec, so their generated types exist, and the database schema has their tables and seed data. The models agree with the tables (`pnpm check:api-db`). There is no domain, repository or route code. A request to one of these routes is answered with 404. The implementation order is in GitHub issue #4. |
-| Purchase orders (`/api/v1/purchase-orders`) | Implemented in every layer: list, create, get, update, approve and cancel of the purchase orders of a salon. An order names stock rows of its salon; its items copy their products, and the server works out the amounts. The routes are not below a salon and none is public: an administrator and the members of a salon draft and move on the orders of the salon, an administrator, the owner and the managers approve and cancel them, and a customer account reaches none. The receipt of the goods and the suggestions of what to reorder are not implemented. See [Purchase Orders](./purchase-orders.md) (Japanese). |
+| Purchase orders (`/api/v1/purchase-orders`) | Implemented in every layer: list, create, get, update, approve, cancel and receive of the purchase orders of a salon, and the suggestions of what to reorder. An order names stock rows of its salon; its items copy their products, and the server works out the amounts. The routes are not below a salon and none is public: an administrator and the members of a salon draft and move on the orders of the salon, an administrator, the owner and the managers approve and cancel them, and a customer account reaches none. A receipt records a purchase of each item that arrived and delivers the order; the suggestions are worked out from the stock, the open orders and the levels of each product. See [Purchase Orders](./purchase-orders.md) (Japanese). |
 | Attachments, roles and permissions, inventory alerts, medical charts | Specified in TypeSpec only. No table exists for them yet. |
 | Email | Implemented for the mails of the authentication flows and the invitation of a staff member (confirm the address, reset the password, accept an invitation, and the notices: the password was changed, two-factor authentication was enabled, disabled or turned off by an administrator, the backup codes were replaced, a backup code was used to sign in): plain text over SMTP. Docker Compose starts Mailpit, which catches them locally. See [Email](./email.md) (Japanese). |
 | File storage | Not implemented. Docker Compose starts no service for it. |
@@ -1942,8 +1942,9 @@ the `salonId` of the body or of the query. What differs from the products:
   unique index `inventory_unique_without_lot` those without one. Both are
   `alreadyExists` (409).
 - **Figures that only a ledger writes.** A row is created with no stock,
-  and only a stock movement and a stock count, which records each
-  difference as a movement, move it. For a movement, the repository
+  and only a stock movement, a stock count and the receipt of a purchase
+  order, which record each difference and each arrival as a movement,
+  move it. For a movement, the repository
   holds the row
   `FOR UPDATE`, refuses a stock below what is reserved or above
   99,999,999.99 (409), moves the row and records the movement with the
@@ -1989,6 +1990,18 @@ then compares the `salonId` of the body or of the query. What differs:
   order held `FOR UPDATE`, so two changes of one order take turns, and
   answers the refusal (409) instead of writing. An approval and a
   cancellation are timed at the `statement_timestamp()` of the change.
+- **A receipt that moves the stock.** A receipt takes an ordered or
+  shipped order: the repository holds the order `FOR UPDATE`, plans a
+  `purchase` movement of each item named at the unit price of the item
+  (`_shared/goods-receipt.ts`), holds the stock rows `FOR UPDATE` in the
+  order of their IDs, refuses a row that would go above 99,999,999.99
+  (409), and delivers the order, moves the rows and records the
+  movements at one moment. The items it does not name are not received.
+- **Suggestions worked out in the database.** The reorder suggestions sum
+  the stock of each product of the salon over its rows and what the open
+  orders bring of it, in one read-only snapshot, and list each active
+  product that comes to its reorder point or less, with the quantity up
+  to its maximum.
 - **A number of its own.** The order number is `PO-XXXX-XXXX` from the
   CSPRNG, unique across the salons, and the create is tried again under
   another number when the one it drew is taken.

@@ -9,16 +9,17 @@ import type { ModelsPurchaseOrderReceivedItem } from './modelsPurchaseOrderRecei
 
 /**
  * 仕入れ発注受領リクエスト - 全項目のキーが必須。
- * 受領数量を在庫移動(transactionType が purchase)として記録し、在庫数を増やす
+ * 明細ごとに、受領数量を在庫移動(transactionType が purchase)として記録し、在庫数を増やす。書かなかった明細は受領しない
  */
 export interface ModelsPurchaseOrderReceiveRequest {
   /**
-     * 受領した明細の一覧。1件以上を指定する
+     * 受領した明細の一覧。1件以上100件以下
      * @minItems 1
+     * @maxItems 100
      */
-  receivedItems: ModelsPurchaseOrderReceivedItem[];
+  items: ModelsPurchaseOrderReceivedItem[];
   /**
-     * 納品に関するメモ。メモがない場合はnull
+     * 納品に関するメモ。null の場合は記録済みのメモを変えない。空白だけの文字列は指定できない
      * @nullable
      */
   deliveryNotes: string | null;
