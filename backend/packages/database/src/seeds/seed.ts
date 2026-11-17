@@ -189,6 +189,7 @@ export async function truncateAll(
       db.delete(schema.reviewHelpfulVotes),
       db.delete(schema.reviewReports),
       db.delete(schema.purchaseOrderItems),
+      db.delete(schema.inventoryAlertAcknowledgements),
     ])
 
     // Level 2: Tables that Level 1 tables depend on

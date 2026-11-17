@@ -9,6 +9,7 @@ import {
   customers,
   dailySummaries,
   inventory,
+  inventoryAlertAcknowledgements,
   inventoryTransactions,
   membershipTiers,
   openingHours,
@@ -144,7 +145,26 @@ export const dailySummariesRelations = relations(dailySummaries, ({ one }) => ({
   }),
 }))
 
+export const inventoryAlertAcknowledgementsRelations = relations(
+  inventoryAlertAcknowledgements,
+  ({ one }) => ({
+    inventory: one(inventory, {
+      fields: [inventoryAlertAcknowledgements.inventoryId],
+      references: [inventory.id],
+    }),
+    product: one(products, {
+      fields: [inventoryAlertAcknowledgements.productId],
+      references: [products.id],
+    }),
+    salon: one(salons, {
+      fields: [inventoryAlertAcknowledgements.salonId],
+      references: [salons.id],
+    }),
+  }),
+)
+
 export const inventoryRelations = relations(inventory, ({ one, many }) => ({
+  inventoryAlertAcknowledgements: many(inventoryAlertAcknowledgements),
   inventoryTransactions: many(inventoryTransactions),
   product: one(products, {
     fields: [inventory.productId],
@@ -219,6 +239,7 @@ export const paymentTransactionsRelations = relations(
 
 export const productsRelations = relations(products, ({ one, many }) => ({
   inventories: many(inventory),
+  inventoryAlertAcknowledgements: many(inventoryAlertAcknowledgements),
   inventoryTransactions: many(inventoryTransactions),
   salon: one(salons, {
     fields: [products.salonId],
@@ -330,6 +351,7 @@ export const salonsRelations = relations(salons, ({ many }) => ({
   bookings: many(bookings),
   dailySummaries: many(dailySummaries),
   inventories: many(inventory),
+  inventoryAlertAcknowledgements: many(inventoryAlertAcknowledgements),
   inventoryTransactions: many(inventoryTransactions),
   membershipTiers: many(membershipTiers),
   openingHours: many(openingHours),

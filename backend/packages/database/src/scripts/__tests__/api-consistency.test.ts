@@ -1315,6 +1315,63 @@ describe('modelRules', () => {
     ])
   })
 
+  it('shows every column of an acknowledgement of an alert of the stock, and lets the request that acknowledges one name the alert, its product, its stock row and the notes', () => {
+    const rules = modelRules
+      .filter(({ table }) => table === 'inventoryAlertAcknowledgements')
+      .map(
+        ({
+          model,
+          table,
+          kind,
+          omittedColumns,
+          embedded,
+          computed,
+          narrowed,
+          nonNullable,
+        }) => ({
+          model,
+          table,
+          kind,
+          omittedColumns,
+          embedded,
+          computed,
+          narrowed,
+          nonNullable,
+        }),
+      )
+    const none = {
+      embedded: undefined,
+      computed: undefined,
+      narrowed: undefined,
+      nonNullable: undefined,
+    }
+
+    expect(rules).toEqual([
+      {
+        model: 'Models.InventoryAlertAcknowledgementResponse',
+        table: 'inventoryAlertAcknowledgements',
+        kind: 'response',
+        omittedColumns: [],
+        ...none,
+      },
+      {
+        model: 'Models.InventoryAlertAcknowledgeRequest',
+        table: 'inventoryAlertAcknowledgements',
+        kind: 'create',
+        omittedColumns: [
+          'id',
+          'salonId',
+          'severity',
+          'threshold',
+          'expiryDate',
+          'acknowledgedBy',
+          'acknowledgedAt',
+        ],
+        ...none,
+      },
+    ])
+  })
+
   it('lets nothing but the stock row of a new item of a purchase order leave out the null of its column', () => {
     const nonNullable = modelRules
       .filter((modelRule) => modelRule.nonNullable !== undefined)

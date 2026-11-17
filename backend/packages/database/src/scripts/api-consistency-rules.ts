@@ -962,10 +962,12 @@ const purchaseOrderManagedColumns = [
 
 /**
  * The products of a salon, the stock of a product at a salon, its stock
- * movements and the purchase orders of a salon. A deleted product is not
- * shown. Stock movements are written by actions (movement, stock count,
- * receiving a purchase order), so `inventoryTransactions` has only a
- * response model.
+ * movements, the purchase orders of a salon and the acknowledgements of the
+ * alerts of its stock. A deleted product is not shown. Stock movements are
+ * written by actions (movement, stock count, receiving a purchase order),
+ * so `inventoryTransactions` has only a response model. The alerts are
+ * worked out and not stored; an alert carries the acknowledgement that
+ * still holds for it.
  */
 const inventoryRules: ModelRule[] = [
   {
@@ -1062,6 +1064,30 @@ const inventoryRules: ModelRule[] = [
       'unit',
       'totalPrice',
       'sortOrder',
+    ],
+  },
+  {
+    model: 'Models.InventoryAlertAcknowledgementResponse',
+    table: 'inventoryAlertAcknowledgements',
+    kind: 'response',
+    omittedColumns: [],
+  },
+  {
+    // The alert is named by its kind, its product and its stock row; the
+    // salon is that of the product, what the alert was like (severity,
+    // threshold, expiry date) is copied from the alert the server works
+    // out, and the acknowledger is the one who asks.
+    model: 'Models.InventoryAlertAcknowledgeRequest',
+    table: 'inventoryAlertAcknowledgements',
+    kind: 'create',
+    omittedColumns: [
+      'id',
+      'salonId',
+      'severity',
+      'threshold',
+      'expiryDate',
+      'acknowledgedBy',
+      'acknowledgedAt',
     ],
   },
 ]

@@ -15,6 +15,8 @@ CREATE TYPE "public"."customer_status" AS ENUM('active', 'inactive', 'vip', 'bla
 CREATE TYPE "public"."day_of_week" AS ENUM('monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday');
 CREATE TYPE "public"."hair_thickness" AS ENUM('thin', 'medium', 'thick');
 CREATE TYPE "public"."hair_type" AS ENUM('straight', 'wavy', 'curly', 'coily');
+CREATE TYPE "public"."inventory_alert_severity" AS ENUM('info', 'warning', 'critical');
+CREATE TYPE "public"."inventory_alert_type" AS ENUM('low_stock', 'expiring', 'expired', 'overstock');
 CREATE TYPE "public"."inventory_transaction_type" AS ENUM('purchase', 'sale', 'use', 'adjustment', 'return', 'disposal', 'transfer');
 CREATE TYPE "public"."membership_tier" AS ENUM('regular', 'silver', 'gold', 'platinum', 'vip');
 CREATE TYPE "public"."notification_channel" AS ENUM('email', 'sms', 'push', 'line');
@@ -267,6 +269,22 @@ CREATE TABLE "inventory" (
 	"updatedAt" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "inventory_unique" UNIQUE("salonId","productId","lotNumber"),
 	CONSTRAINT "inventory_stock" CHECK (("currentStock" >= (0)::numeric) AND ("reservedStock" >= (0)::numeric) AND ("reservedStock" <= "currentStock") AND ("availableStock" = ("currentStock" - "reservedStock")))
+);
+
+CREATE TABLE "inventory_alert_acknowledgements" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"salonId" uuid NOT NULL,
+	"productId" uuid NOT NULL,
+	"inventoryId" uuid,
+	"alert" "inventory_alert_type" NOT NULL,
+	"severity" "inventory_alert_severity" NOT NULL,
+	"threshold" numeric(10, 2),
+	"expiryDate" date,
+	"notes" text,
+	"acknowledgedBy" uuid,
+	"acknowledgedAt" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "inventory_alert_acknowledgements_severity" CHECK (((alert <> 'low_stock'::inventory_alert_type) OR (severity = ANY (ARRAY['warning'::inventory_alert_severity, 'critical'::inventory_alert_severity]))) AND ((alert <> 'overstock'::inventory_alert_type) OR (severity = 'info'::inventory_alert_severity)) AND ((alert <> 'expiring'::inventory_alert_type) OR (severity = 'warning'::inventory_alert_severity)) AND ((alert <> 'expired'::inventory_alert_type) OR (severity = 'critical'::inventory_alert_severity))),
+	CONSTRAINT "inventory_alert_acknowledgements_subject" CHECK (((alert = ANY (ARRAY['low_stock'::inventory_alert_type, 'overstock'::inventory_alert_type])) AND ("inventoryId" IS NULL) AND ("expiryDate" IS NULL) AND (threshold IS NOT NULL) AND (threshold >= (0)::numeric)) OR ((alert = ANY (ARRAY['expiring'::inventory_alert_type, 'expired'::inventory_alert_type])) AND ("inventoryId" IS NOT NULL) AND ("expiryDate" IS NOT NULL) AND (threshold IS NULL)))
 );
 
 CREATE TABLE "inventory_transactions" (
@@ -936,6 +954,9 @@ ALTER TABLE "customers" ADD CONSTRAINT "customers_referred_by_fk" FOREIGN KEY ("
 ALTER TABLE "daily_summaries" ADD CONSTRAINT "daily_summaries_salon_id_fk" FOREIGN KEY ("salonId") REFERENCES "public"."salons"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "inventory" ADD CONSTRAINT "inventory_product_id_fk" FOREIGN KEY ("productId") REFERENCES "public"."products"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "inventory" ADD CONSTRAINT "inventory_salon_id_fk" FOREIGN KEY ("salonId") REFERENCES "public"."salons"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "inventory_alert_acknowledgements" ADD CONSTRAINT "inventory_alert_acknowledgements_inventory_id_fk" FOREIGN KEY ("inventoryId") REFERENCES "public"."inventory"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "inventory_alert_acknowledgements" ADD CONSTRAINT "inventory_alert_acknowledgements_product_id_fk" FOREIGN KEY ("productId") REFERENCES "public"."products"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "inventory_alert_acknowledgements" ADD CONSTRAINT "inventory_alert_acknowledgements_salon_id_fk" FOREIGN KEY ("salonId") REFERENCES "public"."salons"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "inventory_transactions" ADD CONSTRAINT "inventory_transactions_inventory_id_fk" FOREIGN KEY ("inventoryId") REFERENCES "public"."inventory"("id") ON DELETE set null ON UPDATE no action;
 ALTER TABLE "inventory_transactions" ADD CONSTRAINT "inventory_transactions_product_id_fk" FOREIGN KEY ("productId") REFERENCES "public"."products"("id") ON DELETE restrict ON UPDATE no action;
 ALTER TABLE "inventory_transactions" ADD CONSTRAINT "inventory_transactions_salon_id_fk" FOREIGN KEY ("salonId") REFERENCES "public"."salons"("id") ON DELETE cascade ON UPDATE no action;
@@ -1012,9 +1033,12 @@ CREATE INDEX "idx_inventory_lot_number" ON "inventory" USING btree ("lotNumber" 
 CREATE INDEX "idx_inventory_product_id" ON "inventory" USING btree ("productId" uuid_ops);
 CREATE INDEX "idx_inventory_salon_id" ON "inventory" USING btree ("salonId" uuid_ops);
 CREATE UNIQUE INDEX "inventory_unique_without_lot" ON "inventory" USING btree ("salonId" uuid_ops,"productId" uuid_ops) WHERE ("lotNumber" IS NULL);
+CREATE INDEX "idx_inventory_alert_acknowledgements_inventory_id" ON "inventory_alert_acknowledgements" USING btree ("inventoryId" uuid_ops);
+CREATE INDEX "idx_inventory_alert_acknowledgements_product_time" ON "inventory_alert_acknowledgements" USING btree ("productId" uuid_ops,"acknowledgedAt" timestamptz_ops);
+CREATE INDEX "idx_inventory_alert_acknowledgements_salon_id" ON "inventory_alert_acknowledgements" USING btree ("salonId" uuid_ops);
 CREATE INDEX "idx_inventory_transactions_created_at" ON "inventory_transactions" USING btree ("createdAt" timestamptz_ops);
 CREATE INDEX "idx_inventory_transactions_inventory_time" ON "inventory_transactions" USING btree ("inventoryId" uuid_ops,"createdAt" timestamptz_ops,"id" uuid_ops);
-CREATE INDEX "idx_inventory_transactions_product_id" ON "inventory_transactions" USING btree ("productId" uuid_ops);
+CREATE INDEX "idx_inventory_transactions_product_time" ON "inventory_transactions" USING btree ("productId" uuid_ops,"createdAt" timestamptz_ops);
 CREATE INDEX "idx_inventory_transactions_salon_id" ON "inventory_transactions" USING btree ("salonId" uuid_ops);
 CREATE INDEX "idx_inventory_transactions_transaction_type" ON "inventory_transactions" USING btree ("transactionType" enum_ops);
 CREATE INDEX "idx_membership_tiers_salon_id" ON "membership_tiers" USING btree ("salonId" uuid_ops);
