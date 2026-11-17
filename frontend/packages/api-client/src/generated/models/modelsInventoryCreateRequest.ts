@@ -10,7 +10,7 @@ import type { ModelsSalonId } from './modelsSalonId';
 
 /**
  * 在庫新規登録リクエスト - 全項目のキーが必須。DB で NULL 許可のカラムのみ null を指定できる。
- * 在庫数は0で登録され、入庫は在庫移動(movement)で記録する。文字列は空白だけのものを指定できない
+ * 在庫数は0で登録され、入庫は在庫移動(movement)か発注の入荷(receive)で記録する。文字列は空白だけのものを指定できない
  */
 export interface ModelsInventoryCreateRequest {
   /** 在庫を追加するサロン ID。削除されていないサロンを指定する */

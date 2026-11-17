@@ -290,7 +290,7 @@ export const getInventoryCrudCreateUrl = () => {
 }
 
 /**
- * 商品の在庫を新規登録します。在庫数は0で登録され、入庫は在庫移動で記録します。管理者と、salonIdのサロンのオーナー・マネージャーが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合や、productIdにsalonIdのサロンの商品ではないIDを指定した場合、lotNumberが商品のロット管理(requiresLotTracking)と合わない場合は400を、salonId・productId・lotNumberの組み合わせが既存の在庫と重複する場合は409を返します。
+ * 商品の在庫を新規登録します。在庫数は0で登録され、入庫は在庫移動か発注の入荷で記録します。管理者と、salonIdのサロンのオーナー・マネージャーが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合や、productIdにsalonIdのサロンの商品ではないIDを指定した場合、lotNumberが商品のロット管理(requiresLotTracking)と合わない場合は400を、salonId・productId・lotNumberの組み合わせが既存の在庫と重複する場合は409を返します。
  * @summary Create an inventory record
  */
 export const inventoryCrudCreate = async (modelsInventoryCreateRequest: ModelsInventoryCreateRequest, options?: RequestInit): Promise<inventoryCrudCreateResponse> => {
@@ -357,7 +357,7 @@ const {mutation: mutationOptions} = options ?
     export type InventoryCrudCreateMutationVariables = {data: ModelsInventoryCreateRequest}
 
     /**
- * 商品の在庫を新規登録します。在庫数は0で登録され、入庫は在庫移動で記録します。管理者と、salonIdのサロンのオーナー・マネージャーが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合や、productIdにsalonIdのサロンの商品ではないIDを指定した場合、lotNumberが商品のロット管理(requiresLotTracking)と合わない場合は400を、salonId・productId・lotNumberの組み合わせが既存の在庫と重複する場合は409を返します。
+ * 商品の在庫を新規登録します。在庫数は0で登録され、入庫は在庫移動か発注の入荷で記録します。管理者と、salonIdのサロンのオーナー・マネージャーが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合や、productIdにsalonIdのサロンの商品ではないIDを指定した場合、lotNumberが商品のロット管理(requiresLotTracking)と合わない場合は400を、salonId・productId・lotNumberの組み合わせが既存の在庫と重複する場合は409を返します。
  * @summary Create an inventory record
  */
 export const useInventoryCrudCreate = <TError = ModelsProblemDetails,

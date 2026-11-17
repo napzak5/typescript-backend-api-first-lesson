@@ -12,7 +12,7 @@ import type { ModelsSalonId } from './modelsSalonId';
 /**
  * 在庫レスポンス - inventory テーブルの全カラムを返す。1行はサロンにおける1商品の1ロットの在庫を表し、salonId・productId・lotNumber の組はサロンの在庫の間で一意(lotNumber が null の行も1つまで)。
  * プロパティ名と null 許可は DB カラムと一致させている。
- * 在庫数(currentStock・availableStock・reservedStock)は在庫移動と棚卸によってのみ変わる
+ * 在庫数(currentStock・availableStock・reservedStock)は在庫移動、棚卸、発注の入荷によってのみ変わり、どれも在庫移動を記録する
  */
 export interface ModelsInventoryResponse {
   /** 在庫 ID */

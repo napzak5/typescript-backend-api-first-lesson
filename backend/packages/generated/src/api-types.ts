@@ -1451,7 +1451,7 @@ export interface paths {
         put?: never;
         /**
          * Create an inventory record
-         * @description 商品の在庫を新規登録します。在庫数は0で登録され、入庫は在庫移動で記録します。管理者と、salonIdのサロンのオーナー・マネージャーが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合や、productIdにsalonIdのサロンの商品ではないIDを指定した場合、lotNumberが商品のロット管理(requiresLotTracking)と合わない場合は400を、salonId・productId・lotNumberの組み合わせが既存の在庫と重複する場合は409を返します。
+         * @description 商品の在庫を新規登録します。在庫数は0で登録され、入庫は在庫移動か発注の入荷で記録します。管理者と、salonIdのサロンのオーナー・マネージャーが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合や、productIdにsalonIdのサロンの商品ではないIDを指定した場合、lotNumberが商品のロット管理(requiresLotTracking)と合わない場合は400を、salonId・productId・lotNumberの組み合わせが既存の在庫と重複する場合は409を返します。
          */
         post: operations["InventoryCrud_create"];
         delete?: never;
@@ -5676,7 +5676,7 @@ export interface components {
         "Models.InventoryAlertType": "low_stock" | "expiring" | "expired" | "overstock";
         /**
          * @description 在庫新規登録リクエスト - 全項目のキーが必須。DB で NULL 許可のカラムのみ null を指定できる。
-         *     在庫数は0で登録され、入庫は在庫移動(movement)で記録する。文字列は空白だけのものを指定できない
+         *     在庫数は0で登録され、入庫は在庫移動(movement)か発注の入荷(receive)で記録する。文字列は空白だけのものを指定できない
          */
         "Models.InventoryCreateRequest": {
             /** @description 在庫を追加するサロン ID。削除されていないサロンを指定する */
@@ -5738,7 +5738,7 @@ export interface components {
         /**
          * @description 在庫レスポンス - inventory テーブルの全カラムを返す。1行はサロンにおける1商品の1ロットの在庫を表し、salonId・productId・lotNumber の組はサロンの在庫の間で一意(lotNumber が null の行も1つまで)。
          *     プロパティ名と null 許可は DB カラムと一致させている。
-         *     在庫数(currentStock・availableStock・reservedStock)は在庫移動と棚卸によってのみ変わる
+         *     在庫数(currentStock・availableStock・reservedStock)は在庫移動、棚卸、発注の入荷によってのみ変わり、どれも在庫移動を記録する
          */
         "Models.InventoryResponse": {
             /** @description 在庫 ID */
@@ -5954,7 +5954,7 @@ export interface components {
         "Models.InventoryTransactionType": "purchase" | "sale" | "use" | "adjustment" | "return" | "disposal" | "transfer";
         /**
          * @description 在庫部分更新リクエスト - 指定した項目だけを更新し、1つ以上の項目を指定する。DB で NULL 許可のカラムは null でクリアできる。
-         *     在庫数は変更できない(在庫移動と棚卸で変更する)。サロンと商品も変更できない。文字列は空白だけのものを指定できない
+         *     在庫数は変更できない(在庫移動、棚卸、発注の入荷で変更する)。サロンと商品も変更できない。文字列は空白だけのものを指定できない
          */
         "Models.InventoryUpdateRequest": {
             /** @description ロット番号。同じサロン・商品の在庫の間で一意。商品の requiresLotTracking が true なら null にできず、false なら null だけを指定できる */
