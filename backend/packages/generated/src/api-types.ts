@@ -1721,15 +1721,43 @@ export interface paths {
         };
         /**
          * List the allergies of a customer
-         * @description 施術時の注意喚起のため、顧客のアレルギー情報を一覧取得します。顧客が存在しない場合は404を返します。
+         * @description 施術時の注意喚起のため、顧客のアレルギー情報を一覧取得します。顧客のカルテがなくても取得できます。顧客が存在しないか削除されている場合は404を返します。
          */
         get: operations["MedicalChartCrud_listAllergies"];
         put?: never;
-        post?: never;
+        /**
+         * Add an allergy of a customer
+         * @description 顧客のアレルギーを1件追加します。顧客のカルテがなくても追加できます。顧客が存在しないか削除されている場合は404を、顧客がすでに同じallergenNameのアレルギーを持つ場合は409を返します。アレルギーを1件取得するオペレーションはないため、Locationヘッダーは返しません。
+         */
+        post: operations["MedicalChartCrud_addAllergy"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v1/medical-charts/customer/{customerId}/allergies/{allergyId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove an allergy of a customer
+         * @description 誤って記録した顧客のアレルギーを削除します。削除できるのは管理者と、サロンのオーナー・マネージャーです（スタッフは403）。顧客が存在しないか削除されている場合や、アレルギーがその顧客のものでない場合は404を返します。
+         */
+        delete: operations["MedicalChartCrud_removeAllergy"];
+        options?: never;
+        head?: never;
+        /**
+         * Update an allergy of a customer
+         * @description 顧客のアレルギーの指定した項目だけを更新します。顧客が存在しないか削除されている場合や、アレルギーがその顧客のものでない場合は404を、顧客のほかのアレルギーと同じallergenNameにする場合は409を返します。
+         */
+        patch: operations["MedicalChartCrud_updateAllergy"];
         trace?: never;
     };
     "/api/v1/medical-charts/{id}": {
@@ -4189,20 +4217,42 @@ export interface components {
          */
 
         "Models.CurrencyCodeType": "JPY" | "USD" | "EUR" | "GBP" | "AUD" | "CAD" | "CNY" | "KRW" | "SGD" | "TWD";
+        /** @description 顧客アレルギー追加リクエスト - 全項目のキーが必須。値がない項目は null を指定する。対象の顧客はパスの customerId で示す */
+        "Models.CustomerAllergyCreateRequest": {
+            /** @description アレルギーの種類 */
+            allergyType: components["schemas"]["Models.AllergyType"];
+            /** @description アレルゲンの名称（255文字まで。空白だけは指定できない）。顧客がすでに同じ名称のアレルギーを持つ場合は409。大文字と小文字は区別する */
+            allergenName: string;
+            /** @description 重篤度 */
+            severityType: components["schemas"]["Models.AllergySeverityType"];
+            /** @description 症状の内容（空白だけは指定できない）。記録しない場合はnull */
+            symptoms: string | null;
+            /** @description 施術時の注意事項などのメモ（空白だけは指定できない）。特記事項がない場合はnull */
+            notes: string | null;
+            /**
+             * Format: date
+             * @description アレルギーを確認した日。1900-01-01 から今日まで。確認日が不明な場合はnull
+             */
+            confirmedDate: string | null;
+        };
+        /**
+         * Format: uuid
+         * @description 顧客のアレルギー（customer_allergies の行）を識別するブランド付きUUID。
+         */
+        "Models.CustomerAllergyId": string;
         /**
          * @description 顧客アレルギーレスポンス - customer_allergies テーブルの1行。顧客ごとのアレルギー情報を返す。
          *     プロパティ名と null 許可は DB カラムと一致させている。対象の顧客はパスの customerId で示す
          */
         "Models.CustomerAllergyResponse": {
+            /** @description アレルギー ID */
+            id: components["schemas"]["Models.CustomerAllergyId"];
             /** @description アレルギーの種類 */
             allergyType: components["schemas"]["Models.AllergyType"];
-            /** @description アレルゲンの名称 */
+            /** @description アレルゲンの名称。1人の顧客に同じ名称は1件だけ */
             allergenName: string;
-            /**
-             * Format: int32
-             * @description 重篤度を表す数値
-             */
-            severity: number;
+            /** @description 重篤度 */
+            severityType: components["schemas"]["Models.AllergySeverityType"];
             /** @description 症状の内容。記録していない場合はnull */
             symptoms: string | null;
             /** @description 施術時の注意事項などのメモ。特記事項がない場合はnull */
@@ -4212,13 +4262,37 @@ export interface components {
              * @description アレルギーを確認した日。確認日が不明な場合はnull
              */
             confirmedDate: string | null;
-            /** @description 重篤度の区分。区分を設定していない場合はnull */
-            severityType: components["schemas"]["Models.AllergySeverityType"] | null;
+            /**
+             * Format: date-time
+             * @description レコード作成日時
+             */
+            createdAt: string;
             /**
              * Format: date-time
              * @description レコード最終更新日時
              */
             updatedAt: string;
+        };
+        /**
+         * @description 顧客アレルギー部分更新リクエスト - 指定した項目だけを更新する。項目を1つも指定しないリクエストは受け付けない。
+         *     DB で NULL 許可のカラムは null でクリアできる。対象の顧客は変更できない
+         */
+        "Models.CustomerAllergyUpdateRequest": {
+            /** @description アレルギーの種類 */
+            allergyType?: components["schemas"]["Models.AllergyType"];
+            /** @description アレルゲンの名称（255文字まで。空白だけは指定できない）。顧客のほかのアレルギーと同じ名称の場合は409 */
+            allergenName?: string;
+            /** @description 重篤度 */
+            severityType?: components["schemas"]["Models.AllergySeverityType"];
+            /** @description 症状の内容（空白だけは指定できない）。nullでクリア */
+            symptoms?: string | null;
+            /** @description 施術時の注意事項などのメモ（空白だけは指定できない）。nullでクリア */
+            notes?: string | null;
+            /**
+             * Format: date
+             * @description アレルギーを確認した日。1900-01-01 から今日まで。nullでクリア
+             */
+            confirmedDate?: string | null;
         };
         /** @description 顧客監査履歴の1項目の変更内容 - 変更されたフィールドと変更前後の値 */
         "Models.CustomerAuditChangeResponse": {
@@ -20935,6 +21009,347 @@ export interface operations {
             };
             /** @description The server cannot find the requested resource. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
+             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+             */
+            429: {
+                headers: {
+                    /** @description 再試行できるようになるまでの秒数。 */
+                    "Retry-After": number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+        };
+    };
+    MedicalChartCrud_addAllergy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                customerId: components["schemas"]["Models.CustomerId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Models.CustomerAllergyCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description The request has succeeded and a new resource has been created as a result. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        data: components["schemas"]["Models.CustomerAllergyResponse"];
+                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        meta: components["schemas"]["Models.ResponseMeta"] | null;
+                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        links: {
+                            [key: string]: string;
+                        } | null;
+                    };
+                };
+            };
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description 認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
+             *     ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
+             *     WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+             */
+            401: {
+                headers: {
+                    /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
+                    "WWW-Authenticate": string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description 認証されているが、この操作を行う権限がない (403)。 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The server cannot find the requested resource. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The request conflicts with the current state of the server. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
+             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+             */
+            429: {
+                headers: {
+                    /** @description 再試行できるようになるまでの秒数。 */
+                    "Retry-After": number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+        };
+    };
+    MedicalChartCrud_removeAllergy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                customerId: components["schemas"]["Models.CustomerId"];
+                allergyId: components["schemas"]["Models.CustomerAllergyId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description There is no content to send for this request, but the headers may be useful. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description 認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
+             *     ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
+             *     WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+             */
+            401: {
+                headers: {
+                    /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
+                    "WWW-Authenticate": string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description 認証されているが、この操作を行う権限がない (403)。 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The server cannot find the requested resource. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
+             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+             */
+            429: {
+                headers: {
+                    /** @description 再試行できるようになるまでの秒数。 */
+                    "Retry-After": number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+        };
+    };
+    MedicalChartCrud_updateAllergy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                customerId: components["schemas"]["Models.CustomerId"];
+                allergyId: components["schemas"]["Models.CustomerAllergyId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Models.CustomerAllergyUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description The request has succeeded. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        data: components["schemas"]["Models.CustomerAllergyResponse"];
+                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        meta: components["schemas"]["Models.ResponseMeta"] | null;
+                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        links: {
+                            [key: string]: string;
+                        } | null;
+                    };
+                };
+            };
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description 認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
+             *     ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
+             *     WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+             */
+            401: {
+                headers: {
+                    /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
+                    "WWW-Authenticate": string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description 認証されているが、この操作を行う権限がない (403)。 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The server cannot find the requested resource. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The request conflicts with the current state of the server. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            415: {
                 headers: {
                     [name: string]: unknown;
                 };
