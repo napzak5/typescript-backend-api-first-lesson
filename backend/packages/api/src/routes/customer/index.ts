@@ -11,6 +11,7 @@ import { deleteCustomerHandler } from './delete-customer.handler'
 import { getCustomerHandler } from './get-customer.handler'
 import { getCustomerProfileHandler } from './get-customer-profile.handler'
 import { listCustomersHandler } from './list-customers.handler'
+import { restoreCustomerHandler } from './restore-customer.handler'
 import { updateCustomerHandler } from './update-customer.handler'
 import { updateCustomerProfileHandler } from './update-customer-profile.handler'
 
@@ -33,6 +34,7 @@ import { updateCustomerProfileHandler } from './update-customer-profile.handler'
  * - GET    /:id        get             (authenticated)
  * - PATCH  /:id        update          (authenticated)
  * - DELETE /:id        delete          (authenticated)
+ * - POST   /:id/restore  restore     (authenticated)
  *
  * `/bulk` and `/me` are registered before `/:id`, which would take them
  * for an ID otherwise.
@@ -61,6 +63,10 @@ export const createCustomerRouter = (
   router.get('/:id', getCustomerHandler(dependencies, authenticated))
   router.patch('/:id', updateCustomerHandler(dependencies, authenticated))
   router.delete('/:id', deleteCustomerHandler(dependencies, authenticated))
+  router.post(
+    '/:id/restore',
+    restoreCustomerHandler(dependencies, authenticated),
+  )
 
   return router
 }

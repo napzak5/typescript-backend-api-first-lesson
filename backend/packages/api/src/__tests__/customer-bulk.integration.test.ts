@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { bookings, customers, users } from '@beauty-salon-backend/database'
-import { customerIdSchema } from '@beauty-salon-backend/domain'
+import { customerIdSchema, userIdSchema } from '@beauty-salon-backend/domain'
 import { CustomerRepository } from '@beauty-salon-backend/infrastructure'
 import { asc, eq, inArray } from 'drizzle-orm'
 import type { Express } from 'express'
@@ -957,11 +957,19 @@ describe('Customer bulk API', () => {
       [
         'updateMany',
         (r) =>
-          r.updateMany([
-            { id: customerId(UNKNOWN_ID), changes: { notes: null } },
-          ]),
+          r.updateMany(
+            [{ id: customerId(UNKNOWN_ID), changes: { notes: null } }],
+            userIdSchema.parse(UNKNOWN_ID),
+          ),
       ],
-      ['deleteMany', (r) => r.deleteMany([customerId(UNKNOWN_ID)])],
+      [
+        'deleteMany',
+        (r) =>
+          r.deleteMany(
+            [customerId(UNKNOWN_ID)],
+            userIdSchema.parse(UNKNOWN_ID),
+          ),
+      ],
     ])(
       'resolves %s to a database error when the database does not answer',
       async (_method, call) => {

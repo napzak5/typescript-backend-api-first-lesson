@@ -16,6 +16,9 @@ export type GetCustomerResponse = JsonBody<
 export type UpdateCustomerResponse = JsonBody<
   operations['CustomerCrud_update']['responses'][200]['content']
 >
+export type RestoreCustomerResponse = JsonBody<
+  operations['CustomerCrud_restore']['responses'][200]['content']
+>
 export type BatchGetCustomersResponse = JsonBody<
   operations['CustomerCrud_batchGet']['responses'][200]['content']
 >

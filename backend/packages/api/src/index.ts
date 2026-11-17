@@ -12,6 +12,7 @@ import {
   CustomerPreferencesRepository,
   CustomerRepository,
   CustomerStatisticsRepository,
+  CustomerVersionRepository,
   type Database,
   InventoryAlertRepository,
   InventoryRepository,
@@ -66,6 +67,7 @@ import {
   createOwnCustomerPreferencesRouter,
 } from './routes/customer-preferences'
 import { createCustomerStatisticsRouter } from './routes/customer-statistics'
+import { createCustomerVersionRouter } from './routes/customer-version'
 import { createInventoryRouter } from './routes/inventory'
 import { createInventoryAlertRouter } from './routes/inventory-alert'
 import { createMedicalChartRouter } from './routes/medical-chart'
@@ -349,6 +351,15 @@ export const createApp = ({
           database,
         ),
       },
+      authenticated,
+    ),
+  )
+  // Below a customer, after the routes above: the history and the versions.
+  // Any other path below a customer falls through to the customer router.
+  app.use(
+    `${API_BASE_PATH}/customers/:id`,
+    createCustomerVersionRouter(
+      { customerVersionRepository: new CustomerVersionRepository(database) },
       authenticated,
     ),
   )
