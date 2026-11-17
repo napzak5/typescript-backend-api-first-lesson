@@ -16,7 +16,6 @@ import {
 const fullyStoredUser = (): DbUser =>
   dbUser({
     role: 'manager',
-    permissions: ['manage_staff', 'view_reports'],
     status: 'locked',
     passwordHash: '$argon2id$v=19$m=19456,t=2,p=1$c2FsdHNhbHQ$dGFndGFn',
     emailVerificationTokenHash: 'email-verification-token-hash',
@@ -45,7 +44,6 @@ describe('UserReadMapper.toApiUser', () => {
       id: USER_ID,
       email: 'hanako@example.com',
       role: 'manager',
-      permissions: ['manage_staff', 'view_reports'],
       status: 'locked',
       emailVerified: true,
       lastPasswordChange: '2026-10-01T03:00:00.000Z',
@@ -149,8 +147,6 @@ describe('UserReadMapper.toApiUser', () => {
   })
 
   it.each<[string, Partial<DbUser>]>([
-    ['permissions that are not a list', { permissions: { all: true } }],
-    ['permissions that are not names', { permissions: [1, 2] }],
     ['a timestamp that is not one', { lastLoginAt: 'yesterday' }],
   ])(
     'reports a stored user with %s as a database error',

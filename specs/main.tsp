@@ -17,7 +17,6 @@ import "./models/attachment.tsp";
 import "./models/treatment.tsp";
 import "./models/payment.tsp";
 import "./models/inventory.tsp";
-import "./models/permission.tsp";
 
 // Import all operations
 import "./operations/system-operations.tsp";
@@ -32,7 +31,6 @@ import "./operations/attachment-operations.tsp";
 import "./operations/treatment-operations.tsp";
 import "./operations/payment-operations.tsp";
 import "./operations/inventory-operations.tsp";
-import "./operations/permission-operations.tsp";
 
 using TypeSpec.Http;
 using TypeSpec.Rest;
