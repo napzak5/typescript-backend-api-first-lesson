@@ -900,11 +900,13 @@ describe('Medical chart API', () => {
           customerId: allergic.customer,
           allergyType: 'chemical',
           allergenName: 'PPD',
+          severityType: 'moderate',
         },
         {
           customerId: allergic.customer,
           allergyType: 'metal',
           allergenName: 'ニッケル',
+          severityType: 'moderate',
         },
       ])
 
@@ -1238,6 +1240,7 @@ describe('Medical chart API', () => {
           customerId: chart.customer,
           allergyType: 'chemical',
           allergenName: 'PPD',
+          severityType: 'moderate',
         })
         return chart
       }
@@ -1293,6 +1296,7 @@ describe('Medical chart API', () => {
           customerId: customer.id,
           allergyType: 'metal',
           allergenName: 'ニッケル',
+          severityType: 'moderate',
         })
         return { pending: underWay, waited: blocked }
       })
