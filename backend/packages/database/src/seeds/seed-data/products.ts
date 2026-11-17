@@ -250,6 +250,10 @@ export async function seedProducts(
     .returning({
       id: schema.products.id,
       salonId: schema.products.salonId,
+      productCode: schema.products.productCode,
+      name: schema.products.name,
+      unit: schema.products.unit,
+      purchasePrice: schema.products.purchasePrice,
     })
 
   // Create initial inventory for products
@@ -289,6 +293,7 @@ export async function seedProducts(
         reason: '在庫移動の記録を始めた時点の在庫数',
       })),
     )
+    await seedPurchaseOrders(db, rows, insertedProducts)
   }
 
   // Build product map
@@ -306,5 +311,101 @@ export async function seedProducts(
   return {
     productIds: insertedProducts.map((p) => p.id),
     productMap,
+  }
+}
+
+type SeededStockRow = { id: string; salonId: string; productId: string }
+type SeededProduct = {
+  id: string
+  productCode: string
+  name: string
+  unit: string
+  purchasePrice: number | null
+}
+
+/**
+ * Two orders of the salon of the first stock rows, entered by an
+ * administrator: one waiting for approval and one placed with the supplier.
+ * The amounts are worked out as the server does: each item at its quantity
+ * times the purchase price, rounded to the yen, and 10% of tax.
+ */
+const seedPurchaseOrders = async (
+  db: PostgresJsDatabase<typeof schema>,
+  rows: SeededStockRow[],
+  products: SeededProduct[],
+): Promise<void> => {
+  const itemOf = (row: SeededStockRow, quantity: number, sortOrder: number) => {
+    const product = products.find(({ id }) => id === row.productId)
+    const unitPrice = product?.purchasePrice ?? 0
+    return {
+      inventoryId: row.id,
+      productCode: product?.productCode ?? '',
+      productName: product?.name ?? '',
+      quantity: quantity.toFixed(2),
+      unit: product?.unit ?? '',
+      unitPrice,
+      totalPrice: Math.round(unitPrice * quantity),
+      notes: null,
+      sortOrder,
+    }
+  }
+  const [first, second, third] = rows
+  if (first === undefined || second === undefined || third === undefined) {
+    return
+  }
+  const now = new Date().toISOString()
+  const orders: {
+    order: Omit<
+      typeof schema.purchaseOrders.$inferInsert,
+      'subtotal' | 'taxAmount' | 'totalAmount'
+    >
+    items: ReturnType<typeof itemOf>[]
+  }[] = [
+    {
+      order: {
+        salonId: first.salonId,
+        orderNumber: 'PO-SEED-0001',
+        supplier: 'Beauty Supply Tokyo',
+        status: 'pending',
+        shippingCost: null,
+        expectedDelivery: null,
+        paymentTerms: '月末締め翌月末払い',
+        notes: '定期補充',
+        approvedAt: null,
+      },
+      items: [itemOf(first, 10, 0), itemOf(second, 5, 1)],
+    },
+    {
+      order: {
+        salonId: first.salonId,
+        orderNumber: 'PO-SEED-0002',
+        supplier: 'Beauty Supply Tokyo',
+        status: 'ordered',
+        shippingCost: 800,
+        expectedDelivery: new Date(Date.now() + 7 * 86_400_000).toISOString(),
+        paymentTerms: '月末締め翌月末払い',
+        notes: null,
+        approvedAt: now,
+      },
+      items: [itemOf(third, 12, 0)],
+    },
+  ]
+  for (const { order, items } of orders) {
+    const subtotal = items.reduce((sum, item) => sum + item.totalPrice, 0)
+    const taxAmount = Math.round(subtotal * 0.1)
+    const [stored] = await db
+      .insert(schema.purchaseOrders)
+      .values({
+        ...order,
+        subtotal,
+        taxAmount,
+        totalAmount: subtotal + taxAmount + (order.shippingCost ?? 0),
+      })
+      .returning({ id: schema.purchaseOrders.id })
+    if (stored !== undefined) {
+      await db
+        .insert(schema.purchaseOrderItems)
+        .values(items.map((item) => ({ ...item, purchaseOrderId: stored.id })))
+    }
   }
 }

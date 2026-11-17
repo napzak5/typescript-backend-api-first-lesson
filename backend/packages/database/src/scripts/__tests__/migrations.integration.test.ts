@@ -2164,4 +2164,427 @@ describe('the migrations of this repository', () => {
       expect(await historyOf(row.id)).toHaveLength(1)
     })
   })
+  describe('202611171600_purchase_orders.sql', () => {
+    const run = (): Promise<void> =>
+      runMigration('202611171600_purchase_orders.sql')
+
+    /** The schema of setup.sql, which the migration brings a database to. */
+    let schemaOfSetup: string[] = []
+
+    /** A stock row of a new product of the salon, without stock. */
+    const storeStock = async (salonId: string): Promise<string> => {
+      const productId = randomUUID()
+      const id = randomUUID()
+      await sql`
+        INSERT INTO products (id, "salonId", "productCode", name, unit)
+        VALUES (${productId}, ${salonId}, ${`CODE-${productId}`}, 'Shampoo', 'bottle')
+      `
+      await sql`
+        INSERT INTO inventory (
+          id, "salonId", "productId", "currentStock", "availableStock"
+        )
+        VALUES (${id}, ${salonId}, ${productId}, '0', '0')
+      `
+      return id
+    }
+
+    type StoredOrder = {
+      orderNumber?: string
+      supplier?: string
+      status?: string
+      subtotal?: number
+      taxAmount?: number
+      shippingCost?: number | null
+      totalAmount?: number
+      actualDelivery?: string | null
+      approvedBy?: string | null
+      approvedAt?: string | null
+      cancelledAt?: string | null
+      cancellationReason?: string | null
+    }
+
+    /**
+     * An order of the salon: a draft of 1000 yen and 100 of tax, without
+     * a shipping cost, unless said otherwise; returns its ID.
+     */
+    const storeOrder = async (
+      salonId: string,
+      {
+        orderNumber = `PO-${randomUUID()}`,
+        supplier = 'Beauty Supply',
+        status = 'draft',
+        subtotal = 1000,
+        taxAmount = 100,
+        shippingCost = null,
+        totalAmount = 1100,
+        actualDelivery = null,
+        approvedBy = null,
+        approvedAt = null,
+        cancelledAt = null,
+        cancellationReason = null,
+      }: StoredOrder = {},
+    ): Promise<string> => {
+      const id = randomUUID()
+      await sql`
+        INSERT INTO purchase_orders (
+          id, "salonId", "orderNumber", supplier, status, subtotal,
+          "taxAmount", "shippingCost", "totalAmount", "actualDelivery",
+          "approvedBy", "approvedAt", "cancelledAt", "cancellationReason"
+        )
+        VALUES (
+          ${id}, ${salonId}, ${orderNumber}, ${supplier}, ${status},
+          ${subtotal}, ${taxAmount}, ${shippingCost}, ${totalAmount},
+          ${actualDelivery}, ${approvedBy}, ${approvedAt}, ${cancelledAt},
+          ${cancellationReason}
+        )
+      `
+      return id
+    }
+
+    type StoredItem = {
+      inventoryId?: string | null
+      productCode?: string
+      quantity?: string
+      unitPrice?: number
+      totalPrice?: number
+      sortOrder?: number
+    }
+
+    /** An item of the order: 2 of the stock row at 500 yen, first. */
+    const storeItem = (
+      purchaseOrderId: string,
+      {
+        inventoryId = null,
+        productCode = 'CODE-1',
+        quantity = '2',
+        unitPrice = 500,
+        totalPrice = 1000,
+        sortOrder = 0,
+      }: StoredItem = {},
+    ) => sql`
+      INSERT INTO purchase_order_items (
+        "purchaseOrderId", "inventoryId", "productCode", "productName",
+        quantity, unit, "unitPrice", "totalPrice", "sortOrder"
+      )
+      VALUES (
+        ${purchaseOrderId}, ${inventoryId}, ${productCode}, 'Shampoo',
+        ${quantity}, 'bottle', ${unitPrice}, ${totalPrice}, ${sortOrder}
+      )
+    `
+
+    /** The items of an order, as `sortOrder:inventoryId`, in their order. */
+    const itemsOf = async (purchaseOrderId: string): Promise<string[]> => {
+      const rows = await sql<{ line: string }[]>`
+        SELECT "sortOrder" || ':' || coalesce("inventoryId"::text, 'none') AS line
+        FROM purchase_order_items
+        WHERE "purchaseOrderId" = ${purchaseOrderId}
+        ORDER BY "sortOrder"
+      `
+      return rows.map(({ line }) => line)
+    }
+
+    const approved: StoredOrder = {
+      status: 'approved',
+      approvedBy: randomUUID(),
+      approvedAt: '2026-11-17T03:00:00Z',
+    }
+
+    // A database from before the migration: neither table nor the type.
+    beforeEach(async () => {
+      await applyBaseline(sql, plan)
+      schemaOfSetup = await describeSchema()
+      await sql.unsafe(`
+        DROP TABLE purchase_order_items;
+        DROP TABLE purchase_orders;
+        DROP TYPE order_status;
+      `)
+    })
+
+    it('should give the database the tables and the type of setup.sql, and keep them on a second run', async () => {
+      expect(await describeSchema()).not.toEqual(schemaOfSetup)
+
+      await run()
+      await run()
+
+      expect(await describeSchema()).toEqual(schemaOfSetup)
+    })
+
+    it('should keep the items of an order, the item of a removed stock row without it, and take them away with the order', async () => {
+      await run()
+      const salon = await storeSalon(null)
+      const [kept, removed] = [await storeStock(salon), await storeStock(salon)]
+      const order = await storeOrder(salon, {
+        subtotal: 2000,
+        totalAmount: 2100,
+      })
+      await storeItem(order, { inventoryId: kept, sortOrder: 0 })
+      await storeItem(order, { inventoryId: removed, sortOrder: 1 })
+
+      await sql`DELETE FROM inventory WHERE id = ${removed}`
+      const afterRemoval = await itemsOf(order)
+      await sql`DELETE FROM purchase_orders WHERE id = ${order}`
+
+      expect(afterRemoval).toEqual([`0:${kept}`, '1:none'])
+      expect(await itemsOf(order)).toEqual([])
+    })
+
+    it('should take the orders of a salon away with it', async () => {
+      await run()
+      const salon = await storeSalon(null)
+      const order = await storeOrder(salon)
+      await storeItem(order)
+
+      await sql`DELETE FROM salons WHERE id = ${salon}`
+
+      expect(
+        await sql`SELECT 1 FROM purchase_orders WHERE id = ${order}`,
+      ).toHaveLength(0)
+      expect(await itemsOf(order)).toEqual([])
+    })
+
+    it('should keep an order number twice, a stock row twice in an order and a place twice in an order out, and take items of no stock row', async () => {
+      await run()
+      const salon = await storeSalon(null)
+      const row = await storeStock(salon)
+      const order = await storeOrder(salon, { orderNumber: 'PO-0000-0001' })
+      await storeItem(order, { inventoryId: row, sortOrder: 0 })
+      await storeItem(order, { inventoryId: null, sortOrder: 1 })
+      await storeItem(order, { inventoryId: null, sortOrder: 2 })
+
+      await expect(
+        storeOrder(salon, { orderNumber: 'PO-0000-0001' }),
+      ).rejects.toThrow('purchase_orders_order_number_unique')
+      await expect(
+        storeItem(order, { inventoryId: row, sortOrder: 3 }),
+      ).rejects.toThrow('purchase_order_items_order_inventory_unique')
+      await expect(storeItem(order, { sortOrder: 2 })).rejects.toThrow(
+        'purchase_order_items_order_sort_unique',
+      )
+      expect(await itemsOf(order)).toEqual([`0:${row}`, '1:none', '2:none'])
+    })
+
+    it.each<[string, StoredOrder, string]>([
+      [
+        'a subtotal below zero',
+        { subtotal: -1, totalAmount: 99 },
+        'purchase_orders_amounts',
+      ],
+      [
+        'a tax below zero',
+        { taxAmount: -1, totalAmount: 999 },
+        'purchase_orders_amounts',
+      ],
+      [
+        'a shipping cost below zero',
+        { shippingCost: -1, totalAmount: 1099 },
+        'purchase_orders_amounts',
+      ],
+      [
+        'a total that is not its parts',
+        { totalAmount: 1000 },
+        'purchase_orders_amounts',
+      ],
+      [
+        'a total without its shipping cost',
+        { shippingCost: 500, totalAmount: 1100 },
+        'purchase_orders_amounts',
+      ],
+      [
+        'an approver of an order not approved',
+        { approvedBy: randomUUID() },
+        'purchase_orders_approval',
+      ],
+      [
+        'a pending order that was approved',
+        { status: 'pending', approvedAt: '2026-11-17T03:00:00Z' },
+        'purchase_orders_approval',
+      ],
+      [
+        'an approved order that does not say when',
+        { ...approved, approvedAt: null, approvedBy: null },
+        'purchase_orders_approval',
+      ],
+      [
+        'an approved order with an approver but no time',
+        { ...approved, approvedAt: null },
+        'purchase_orders_approval',
+      ],
+      [
+        'an ordered order that was not approved',
+        { status: 'ordered' },
+        'purchase_orders_approval',
+      ],
+      [
+        'a shipped order that was not approved',
+        { status: 'shipped' },
+        'purchase_orders_approval',
+      ],
+      [
+        'a cancelled order that does not say when',
+        { status: 'cancelled', cancellationReason: 'Wrong supplier' },
+        'purchase_orders_cancellation',
+      ],
+      [
+        'a cancelled order that does not say why',
+        { status: 'cancelled', cancelledAt: '2026-11-17T03:00:00Z' },
+        'purchase_orders_cancellation',
+      ],
+      [
+        'a draft that says when it was cancelled',
+        {
+          cancelledAt: '2026-11-17T03:00:00Z',
+          cancellationReason: 'Wrong supplier',
+        },
+        'purchase_orders_cancellation',
+      ],
+      [
+        'a draft that says why it was cancelled',
+        { cancellationReason: 'Wrong supplier' },
+        'purchase_orders_cancellation',
+      ],
+      [
+        'a delivered order that does not say when',
+        { ...approved, status: 'delivered' },
+        'purchase_orders_delivery',
+      ],
+      [
+        'an approved order that says when it was delivered',
+        { ...approved, actualDelivery: '2026-11-17T03:00:00Z' },
+        'purchase_orders_delivery',
+      ],
+      [
+        'a supplier of more than 255 characters',
+        { supplier: 'x'.repeat(256) },
+        'value too long',
+      ],
+    ])('should keep %s out', async (_, order, rule) => {
+      await run()
+
+      await expect(storeOrder(await storeSalon(null), order)).rejects.toThrow(
+        rule,
+      )
+    })
+
+    it.each<[string, StoredOrder]>([
+      ['a draft without a shipping cost', {}],
+      [
+        'an order with a shipping cost',
+        { shippingCost: 500, totalAmount: 1600 },
+      ],
+      [
+        'an order of nothing',
+        { subtotal: 0, taxAmount: 0, shippingCost: 0, totalAmount: 0 },
+      ],
+      [
+        'the largest total',
+        {
+          subtotal: 2_147_483_000,
+          taxAmount: 600,
+          shippingCost: 47,
+          totalAmount: 2_147_483_647,
+        },
+      ],
+      ['an order an administrator approved', { ...approved, approvedBy: null }],
+      ['an order placed with the supplier', { ...approved, status: 'ordered' }],
+      ['an order shipped', { ...approved, status: 'shipped' }],
+      [
+        'an order delivered',
+        {
+          ...approved,
+          status: 'delivered',
+          actualDelivery: '2026-11-18T03:00:00Z',
+        },
+      ],
+      [
+        'a pending order cancelled',
+        {
+          status: 'cancelled',
+          cancelledAt: '2026-11-17T03:00:00Z',
+          cancellationReason: 'Wrong supplier',
+        },
+      ],
+      [
+        'an approved order cancelled',
+        {
+          ...approved,
+          status: 'cancelled',
+          cancelledAt: '2026-11-18T03:00:00Z',
+          cancellationReason: 'Out of stock',
+        },
+      ],
+      ['a supplier of 255 characters', { supplier: 'x'.repeat(255) }],
+    ])('should take %s', async (_, order) => {
+      await run()
+      const salon = await storeSalon(null)
+
+      const id = await storeOrder(salon, order)
+
+      expect(
+        await sql`SELECT 1 FROM purchase_orders WHERE id = ${id}`,
+      ).toHaveLength(1)
+    })
+
+    it.each<[string, StoredItem, string]>([
+      [
+        'a quantity of nothing',
+        { quantity: '0', totalPrice: 0 },
+        'purchase_order_items_amounts',
+      ],
+      [
+        'a quantity below zero',
+        { quantity: '-1', totalPrice: 500 },
+        'purchase_order_items_amounts',
+      ],
+      [
+        'a unit price below zero',
+        { unitPrice: -1, totalPrice: 2 },
+        'purchase_order_items_amounts',
+      ],
+      ['a place below zero', { sortOrder: -1 }, 'purchase_order_items_amounts'],
+      [
+        'a total that is not the quantity times the price',
+        { totalPrice: 999 },
+        'purchase_order_items_amounts',
+      ],
+      [
+        'a total rounded down from a half',
+        { quantity: '0.50', unitPrice: 3, totalPrice: 1 },
+        'purchase_order_items_amounts',
+      ],
+      [
+        'a product code of more than 100 characters',
+        { productCode: 'x'.repeat(101) },
+        'value too long',
+      ],
+    ])('should keep an item of %s out', async (_, item, rule) => {
+      await run()
+      const order = await storeOrder(await storeSalon(null))
+
+      await expect(storeItem(order, item)).rejects.toThrow(rule)
+    })
+
+    it.each<[string, StoredItem]>([
+      [
+        'a total rounded up from a half',
+        { quantity: '0.50', unitPrice: 3, totalPrice: 2 },
+      ],
+      [
+        'a total rounded down',
+        { quantity: '0.25', unitPrice: 333, totalPrice: 83 },
+      ],
+      ['a free item', { unitPrice: 0, totalPrice: 0 }],
+      [
+        'the smallest quantity',
+        { quantity: '0.01', unitPrice: 100, totalPrice: 1 },
+      ],
+      ['a product code of 100 characters', { productCode: 'x'.repeat(100) }],
+    ])('should take an item of %s', async (_, item) => {
+      await run()
+      const order = await storeOrder(await storeSalon(null))
+
+      await storeItem(order, item)
+
+      expect(await itemsOf(order)).toEqual(['0:none'])
+    })
+  })
 })

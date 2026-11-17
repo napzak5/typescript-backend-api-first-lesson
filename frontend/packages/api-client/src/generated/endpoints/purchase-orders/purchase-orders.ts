@@ -27,7 +27,6 @@ import type {
 import type {
   ModelsOrderId,
   ModelsProblemDetails,
-  ModelsPurchaseOrderApproveRequest,
   ModelsPurchaseOrderCancelRequest,
   ModelsPurchaseOrderCreateRequest,
   ModelsPurchaseOrderReceiveRequest,
@@ -119,7 +118,7 @@ export const getPurchaseOrderCrudListUrl = (params?: PurchaseOrderCrudListParams
 }
 
 /**
- * 絞り込み条件とページネーションを指定して仕入れ発注を一覧取得します。
+ * 絞り込み条件とページネーションを指定して仕入れ発注を一覧取得します。発注日(orderDate)の新しい順、同じ日時ならIDの順に並べます。管理者と、サロンのオーナー・マネージャー・スタッフ(所属サロンの発注)が使えます。ほかのサロンのsalonIdを指定した場合は403を、cursorが一覧できる発注を指していない場合や、endDateがstartDateより前の場合は400を返します。
  * @summary List purchase orders
  */
 export const purchaseOrderCrudList = async (params?: PurchaseOrderCrudListParams, options?: RequestInit): Promise<purchaseOrderCrudListResponse> => {
@@ -167,7 +166,7 @@ export type PurchaseOrderCrudListQueryError = ModelsProblemDetails
 
 
 /**
- * 絞り込み条件とページネーションを指定して仕入れ発注を一覧取得します。
+ * 絞り込み条件とページネーションを指定して仕入れ発注を一覧取得します。発注日(orderDate)の新しい順、同じ日時ならIDの順に並べます。管理者と、サロンのオーナー・マネージャー・スタッフ(所属サロンの発注)が使えます。ほかのサロンのsalonIdを指定した場合は403を、cursorが一覧できる発注を指していない場合や、endDateがstartDateより前の場合は400を返します。
  * @summary List purchase orders
  */
 export function usePurchaseOrderCrudList<TData = Awaited<ReturnType<typeof purchaseOrderCrudList>>, TError = ModelsProblemDetails>(
@@ -181,7 +180,7 @@ export function usePurchaseOrderCrudList<TData = Awaited<ReturnType<typeof purch
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 絞り込み条件とページネーションを指定して仕入れ発注を一覧取得します。
+ * 絞り込み条件とページネーションを指定して仕入れ発注を一覧取得します。発注日(orderDate)の新しい順、同じ日時ならIDの順に並べます。管理者と、サロンのオーナー・マネージャー・スタッフ(所属サロンの発注)が使えます。ほかのサロンのsalonIdを指定した場合は403を、cursorが一覧できる発注を指していない場合や、endDateがstartDateより前の場合は400を返します。
  * @summary List purchase orders
  */
 export function usePurchaseOrderCrudList<TData = Awaited<ReturnType<typeof purchaseOrderCrudList>>, TError = ModelsProblemDetails>(
@@ -195,7 +194,7 @@ export function usePurchaseOrderCrudList<TData = Awaited<ReturnType<typeof purch
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 絞り込み条件とページネーションを指定して仕入れ発注を一覧取得します。
+ * 絞り込み条件とページネーションを指定して仕入れ発注を一覧取得します。発注日(orderDate)の新しい順、同じ日時ならIDの順に並べます。管理者と、サロンのオーナー・マネージャー・スタッフ(所属サロンの発注)が使えます。ほかのサロンのsalonIdを指定した場合は403を、cursorが一覧できる発注を指していない場合や、endDateがstartDateより前の場合は400を返します。
  * @summary List purchase orders
  */
 export function usePurchaseOrderCrudList<TData = Awaited<ReturnType<typeof purchaseOrderCrudList>>, TError = ModelsProblemDetails>(
@@ -203,7 +202,7 @@ export function usePurchaseOrderCrudList<TData = Awaited<ReturnType<typeof purch
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 絞り込み条件とページネーションを指定して仕入れ発注を一覧取得します。
+ * 絞り込み条件とページネーションを指定して仕入れ発注を一覧取得します。発注日(orderDate)の新しい順、同じ日時ならIDの順に並べます。管理者と、サロンのオーナー・マネージャー・スタッフ(所属サロンの発注)が使えます。ほかのサロンのsalonIdを指定した場合は403を、cursorが一覧できる発注を指していない場合や、endDateがstartDateより前の場合は400を返します。
  * @summary List purchase orders
  */
 export function usePurchaseOrderCrudList<TData = Awaited<ReturnType<typeof purchaseOrderCrudList>>, TError = ModelsProblemDetails>(
@@ -281,7 +280,7 @@ export const getPurchaseOrderCrudCreateUrl = () => {
 }
 
 /**
- * 仕入れ発注を draft のステータスで作成します。salonIdのサロンが存在しない場合や、明細のinventoryIdにsalonIdのサロンの在庫ではないIDを指定した場合は400を返します。
+ * 仕入れ発注を draft のステータスで作成します。発注番号を採番し、明細の商品コード・商品名・単位を在庫の商品から写し、金額を計算します。作成したスタッフを createdBy に記録します(管理者は null)。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合や、明細のinventoryIdにsalonIdのサロンの在庫ではないIDを指定した場合、同じ在庫を2回指定した場合、明細の金額・小計・合計金額が2147483647円を超える場合は400を返します。
  * @summary Create a purchase order
  */
 export const purchaseOrderCrudCreate = async (modelsPurchaseOrderCreateRequest: ModelsPurchaseOrderCreateRequest, options?: RequestInit): Promise<purchaseOrderCrudCreateResponse> => {
@@ -348,7 +347,7 @@ const {mutation: mutationOptions} = options ?
     export type PurchaseOrderCrudCreateMutationVariables = {data: ModelsPurchaseOrderCreateRequest}
 
     /**
- * 仕入れ発注を draft のステータスで作成します。salonIdのサロンが存在しない場合や、明細のinventoryIdにsalonIdのサロンの在庫ではないIDを指定した場合は400を返します。
+ * 仕入れ発注を draft のステータスで作成します。発注番号を採番し、明細の商品コード・商品名・単位を在庫の商品から写し、金額を計算します。作成したスタッフを createdBy に記録します(管理者は null)。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合や、明細のinventoryIdにsalonIdのサロンの在庫ではないIDを指定した場合、同じ在庫を2回指定した場合、明細の金額・小計・合計金額が2147483647円を超える場合は400を返します。
  * @summary Create a purchase order
  */
 export const usePurchaseOrderCrudCreate = <TError = ModelsProblemDetails,
@@ -573,7 +572,7 @@ export const getPurchaseOrderCrudGetUrl = (id: ModelsOrderId,) => {
 }
 
 /**
- * IDを指定して仕入れ発注を1件取得します。
+ * IDを指定して仕入れ発注を1件取得します。管理者と、発注のサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンの発注は、存在しない発注と同じく404を返します。
  * @summary Get a purchase order
  */
 export const purchaseOrderCrudGet = async (id: ModelsOrderId, options?: RequestInit): Promise<purchaseOrderCrudGetResponse> => {
@@ -621,7 +620,7 @@ export type PurchaseOrderCrudGetQueryError = ModelsProblemDetails
 
 
 /**
- * IDを指定して仕入れ発注を1件取得します。
+ * IDを指定して仕入れ発注を1件取得します。管理者と、発注のサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンの発注は、存在しない発注と同じく404を返します。
  * @summary Get a purchase order
  */
 export function usePurchaseOrderCrudGet<TData = Awaited<ReturnType<typeof purchaseOrderCrudGet>>, TError = ModelsProblemDetails>(
@@ -635,7 +634,7 @@ export function usePurchaseOrderCrudGet<TData = Awaited<ReturnType<typeof purcha
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * IDを指定して仕入れ発注を1件取得します。
+ * IDを指定して仕入れ発注を1件取得します。管理者と、発注のサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンの発注は、存在しない発注と同じく404を返します。
  * @summary Get a purchase order
  */
 export function usePurchaseOrderCrudGet<TData = Awaited<ReturnType<typeof purchaseOrderCrudGet>>, TError = ModelsProblemDetails>(
@@ -649,7 +648,7 @@ export function usePurchaseOrderCrudGet<TData = Awaited<ReturnType<typeof purcha
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * IDを指定して仕入れ発注を1件取得します。
+ * IDを指定して仕入れ発注を1件取得します。管理者と、発注のサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンの発注は、存在しない発注と同じく404を返します。
  * @summary Get a purchase order
  */
 export function usePurchaseOrderCrudGet<TData = Awaited<ReturnType<typeof purchaseOrderCrudGet>>, TError = ModelsProblemDetails>(
@@ -657,7 +656,7 @@ export function usePurchaseOrderCrudGet<TData = Awaited<ReturnType<typeof purcha
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * IDを指定して仕入れ発注を1件取得します。
+ * IDを指定して仕入れ発注を1件取得します。管理者と、発注のサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンの発注は、存在しない発注と同じく404を返します。
  * @summary Get a purchase order
  */
 export function usePurchaseOrderCrudGet<TData = Awaited<ReturnType<typeof purchaseOrderCrudGet>>, TError = ModelsProblemDetails>(
@@ -745,7 +744,7 @@ export const getPurchaseOrderCrudUpdateUrl = (id: ModelsOrderId,) => {
 }
 
 /**
- * 仕入れ発注の指定した項目だけを更新します。statusで許可されていない遷移を指定した場合や、delivered・cancelledの発注を更新しようとした場合は409を返します。
+ * 仕入れ発注の指定した項目だけを更新します。statusで変えられるのは draft→pending、approved→ordered、ordered→shipped です。管理者と、発注のサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンの発注は404を、statusで許可されていない遷移を指定した場合や、delivered・cancelledの発注を更新しようとした場合は409を返します。
  * @summary Update a purchase order
  */
 export const purchaseOrderCrudUpdate = async (id: ModelsOrderId,
@@ -813,7 +812,7 @@ const {mutation: mutationOptions} = options ?
     export type PurchaseOrderCrudUpdateMutationVariables = {id: ModelsOrderId;data: ModelsPurchaseOrderUpdateRequest}
 
     /**
- * 仕入れ発注の指定した項目だけを更新します。statusで許可されていない遷移を指定した場合や、delivered・cancelledの発注を更新しようとした場合は409を返します。
+ * 仕入れ発注の指定した項目だけを更新します。statusで変えられるのは draft→pending、approved→ordered、ordered→shipped です。管理者と、発注のサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンの発注は404を、statusで許可されていない遷移を指定した場合や、delivered・cancelledの発注を更新しようとした場合は409を返します。
  * @summary Update a purchase order
  */
 export const usePurchaseOrderCrudUpdate = <TError = ModelsProblemDetails,
@@ -856,16 +855,6 @@ export type purchaseOrderCrudApproveResponse409 = {
   status: 409
 }
 
-export type purchaseOrderCrudApproveResponse413 = {
-  data: ModelsProblemDetails
-  status: 413
-}
-
-export type purchaseOrderCrudApproveResponse415 = {
-  data: ModelsProblemDetails
-  status: 415
-}
-
 export type purchaseOrderCrudApproveResponse429 = {
   data: ModelsProblemDetails
   status: 429
@@ -879,7 +868,7 @@ export type purchaseOrderCrudApproveResponse500 = {
 export type purchaseOrderCrudApproveResponseSuccess = (purchaseOrderCrudApproveResponse200) & {
   headers: Headers;
 };
-export type purchaseOrderCrudApproveResponseError = (purchaseOrderCrudApproveResponse400 | purchaseOrderCrudApproveResponse401 | purchaseOrderCrudApproveResponse403 | purchaseOrderCrudApproveResponse404 | purchaseOrderCrudApproveResponse409 | purchaseOrderCrudApproveResponse413 | purchaseOrderCrudApproveResponse415 | purchaseOrderCrudApproveResponse429 | purchaseOrderCrudApproveResponse500) & {
+export type purchaseOrderCrudApproveResponseError = (purchaseOrderCrudApproveResponse400 | purchaseOrderCrudApproveResponse401 | purchaseOrderCrudApproveResponse403 | purchaseOrderCrudApproveResponse404 | purchaseOrderCrudApproveResponse409 | purchaseOrderCrudApproveResponse429 | purchaseOrderCrudApproveResponse500) & {
   headers: Headers;
 };
 
@@ -894,32 +883,17 @@ export const getPurchaseOrderCrudApproveUrl = (id: ModelsOrderId,) => {
 }
 
 /**
- * 承認待ち(pending)の仕入れ発注を承認し、ステータスを approved にします。approvedByのスタッフが存在しない場合は400を、発注が pending でない場合は409を返します。
+ * 承認待ち(pending)の仕入れ発注を承認し、ステータスを approved にします。承認したスタッフを approvedBy に(管理者は null)、承認した日時を approvedAt に記録します。管理者と、発注のサロンのオーナー・マネージャーが使えます。スタッフは403を、ほかのサロンの発注は404を、発注が pending でない場合は409を返します。本文は読みません。
  * @summary Approve a purchase order
  */
-export const purchaseOrderCrudApprove = async (id: ModelsOrderId,
-    modelsPurchaseOrderApproveRequest: ModelsPurchaseOrderApproveRequest, options?: RequestInit): Promise<purchaseOrderCrudApproveResponse> => {
+export const purchaseOrderCrudApprove = async (id: ModelsOrderId, options?: RequestInit): Promise<purchaseOrderCrudApproveResponse> => {
 
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return customInstance<purchaseOrderCrudApproveResponse>(getPurchaseOrderCrudApproveUrl(id),
+  return customInstance<purchaseOrderCrudApproveResponse>(getPurchaseOrderCrudApproveUrl(id),
   {
     ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(modelsPurchaseOrderApproveRequest)
+    method: 'POST'
+
+
   }
 );}
 
@@ -944,9 +918,9 @@ const {mutation: mutationOptions} = options ?
 
 
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof purchaseOrderCrudApprove>>, PurchaseOrderCrudApproveMutationVariables> = (props) => {
-          const {id,data} = props ?? {};
+          const {id} = props ?? {};
 
-          return  purchaseOrderCrudApprove(id,data,)
+          return  purchaseOrderCrudApprove(id,)
         }
 
 
@@ -957,12 +931,12 @@ const {mutation: mutationOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type PurchaseOrderCrudApproveMutationResult = NonNullable<Awaited<ReturnType<typeof purchaseOrderCrudApprove>>>
-    export type PurchaseOrderCrudApproveMutationBody = ModelsPurchaseOrderApproveRequest
+
     export type PurchaseOrderCrudApproveMutationError = ModelsProblemDetails
-    export type PurchaseOrderCrudApproveMutationVariables = {id: ModelsOrderId;data: ModelsPurchaseOrderApproveRequest}
+    export type PurchaseOrderCrudApproveMutationVariables = {id: ModelsOrderId}
 
     /**
- * 承認待ち(pending)の仕入れ発注を承認し、ステータスを approved にします。approvedByのスタッフが存在しない場合は400を、発注が pending でない場合は409を返します。
+ * 承認待ち(pending)の仕入れ発注を承認し、ステータスを approved にします。承認したスタッフを approvedBy に(管理者は null)、承認した日時を approvedAt に記録します。管理者と、発注のサロンのオーナー・マネージャーが使えます。スタッフは403を、ほかのサロンの発注は404を、発注が pending でない場合は409を返します。本文は読みません。
  * @summary Approve a purchase order
  */
 export const usePurchaseOrderCrudApprove = <TError = ModelsProblemDetails,
@@ -1043,7 +1017,7 @@ export const getPurchaseOrderCrudCancelUrl = (id: ModelsOrderId,) => {
 }
 
 /**
- * 仕入れ発注をキャンセルし、ステータスを cancelled にします。発注が delivered または cancelled の場合は409を返します。
+ * 仕入れ発注をキャンセルし、ステータスを cancelled にします。キャンセルした日時を cancelledAt に、本文の理由を cancellationReason に記録します。管理者と、発注のサロンのオーナー・マネージャーが使えます。スタッフは403を、ほかのサロンの発注は404を、発注が delivered または cancelled の場合は409を返します。
  * @summary Cancel a purchase order
  */
 export const purchaseOrderCrudCancel = async (id: ModelsOrderId,
@@ -1111,7 +1085,7 @@ const {mutation: mutationOptions} = options ?
     export type PurchaseOrderCrudCancelMutationVariables = {id: ModelsOrderId;data: ModelsPurchaseOrderCancelRequest}
 
     /**
- * 仕入れ発注をキャンセルし、ステータスを cancelled にします。発注が delivered または cancelled の場合は409を返します。
+ * 仕入れ発注をキャンセルし、ステータスを cancelled にします。キャンセルした日時を cancelledAt に、本文の理由を cancellationReason に記録します。管理者と、発注のサロンのオーナー・マネージャーが使えます。スタッフは403を、ほかのサロンの発注は404を、発注が delivered または cancelled の場合は409を返します。
  * @summary Cancel a purchase order
  */
 export const usePurchaseOrderCrudCancel = <TError = ModelsProblemDetails,

@@ -62,6 +62,14 @@ export type ModelRule = {
    * property of an enum column must have exactly its values.
    */
   narrowed?: readonly string[]
+  /**
+   * Properties that never take null in the model although their column
+   * allows it, because the rows the model writes always have a value: the
+   * column refers to another row and becomes null only when that row is
+   * removed later (`ON DELETE SET NULL`). Such a property must not allow
+   * null, and its column must allow it.
+   */
+  nonNullable?: readonly string[]
 }
 
 type FindingKind =
@@ -74,6 +82,7 @@ type FindingKind =
   | 'shouldNotBeNullable'
   | 'enumMismatch'
   | 'enumNotNarrowed'
+  | 'nullNotNarrowed'
 
 export type Finding = { model: string; property: string; kind: FindingKind }
 
@@ -97,6 +106,8 @@ export const describeFinding = (finding: Finding): string => {
     enumMismatch: 'must have exactly the values of the enum type of its column',
     enumNotNarrowed:
       'must have some of the values of the enum type of its column, and not all of them',
+    nullNotNarrowed:
+      'must not allow null, and its column must allow it: the model never takes the null of its column',
   }
   return `${finding.model}.${finding.property} ${descriptions[finding.kind]}`
 }
@@ -139,6 +150,7 @@ export const compareModel = (
     ...(rule.computed ?? []),
   ])
   const narrowed = new Set(rule.narrowed ?? [])
+  const nonNullable = new Set(rule.nonNullable ?? [])
   const findings: Finding[] = []
   const report = (property: string, kind: FindingKind): void => {
     findings.push({ model: rule.model, property, kind })
@@ -162,7 +174,11 @@ export const compareModel = (
     if (column.notNull && property.nullable) {
       report(name, 'shouldNotBeNullable')
     }
-    if (!column.notNull && !property.nullable) {
+    if (nonNullable.has(name)) {
+      if (column.notNull || property.nullable) {
+        report(name, 'nullNotNarrowed')
+      }
+    } else if (!column.notNull && !property.nullable) {
       report(name, 'shouldBeNullable')
     }
     if (column.enumValues !== null) {

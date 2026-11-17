@@ -60,7 +60,8 @@ Before relying on anything, check this table.
 | Products (`/api/v1/salons/{salonId}/products`) | Implemented in every layer: list, create, get, update and delete, the five operations of `ProductCrud`. A product is what a salon sells at its counter or uses in its treatments: a code, a name, the prices, the unit, the stock levels, the supplier and whether it is sold, used in treatments and in use. The routes are below the salon and none is public: an administrator and the owner, the managers and the staff of the salon read them, an administrator, the owner and the managers keep them, and a customer account reaches none. The stock levels lie in order, the product code is unique among the products of the salon that are not deleted, and a delete marks the product and is refused while it has stock. See [Products](./products.md) (Japanese). |
 | Stock (`/api/v1/inventory`) | Implemented in every layer: list, create, get, update and delete of the stock rows, the lists of the low stock and of what expires soon, the stock movements of a row and their history, the stock count and the value report: every operation of `InventoryCrud`. A stock row is one lot of one product of a salon: how much there is, where it is kept and when it expires. The routes are not below a salon and none is public: an administrator and the owner, the managers and the staff of a salon read them, an administrator, the owner and the managers keep them, and a customer account reaches none. A product kept by lots names the lot of each row and a product that is not has one row; a row is created without stock, only a stock movement or a stock count moves its stock, and a row that counts stock is not deleted. The staff record purchases, sales, uses and returns; an adjustment, a disposal and a transfer are for an administrator, the owner and the managers. A stock count sets the rows it names to what was counted, all of them or none, recording an adjustment of each difference, and the value report sums the stock at purchase prices by category; both are for an administrator, the owner and the managers. See [Inventory](./inventory.md) (Japanese). |
 | The other domains (treatment) | Specified in TypeSpec, so their generated types exist, and the database schema has their tables and seed data. The models agree with the tables (`pnpm check:api-db`). There is no domain, repository or route code. A request to one of these routes is answered with 404. The implementation order is in GitHub issue #4. |
-| Attachments, roles and permissions, purchase orders, medical charts | Specified in TypeSpec only. No table exists for them yet. |
+| Purchase orders (`/api/v1/purchase-orders`) | Implemented in every layer: list, create, get, update, approve and cancel of the purchase orders of a salon. An order names stock rows of its salon; its items copy their products, and the server works out the amounts. The routes are not below a salon and none is public: an administrator and the members of a salon draft and move on the orders of the salon, an administrator, the owner and the managers approve and cancel them, and a customer account reaches none. The receipt of the goods and the suggestions of what to reorder are not implemented. See [Purchase Orders](./purchase-orders.md) (Japanese). |
+| Attachments, roles and permissions, inventory alerts, medical charts | Specified in TypeSpec only. No table exists for them yet. |
 | Email | Implemented for the mails of the authentication flows and the invitation of a staff member (confirm the address, reset the password, accept an invitation, and the notices: the password was changed, two-factor authentication was enabled, disabled or turned off by an administrator, the backup codes were replaced, a backup code was used to sign in): plain text over SMTP. Docker Compose starts Mailpit, which catches them locally. See [Email](./email.md) (Japanese). |
 | File storage | Not implemented. Docker Compose starts no service for it. |
 | Frontend | Three application shells and shared packages. The API client is generated, but no application calls the API yet. See [Frontend](#frontend). |
@@ -1962,6 +1963,37 @@ the `salonId` of the body or of the query. What differs from the products:
   `clock` of the dependencies and the salon's time zone.
 
 The rules are in [Inventory](./inventory.md) (Japanese).
+
+### A Purchase Order Request
+
+The purchase orders of a salon (`/api/v1/purchase-orders`,
+`business-logic/purchase-order/`) are reached as the stock is: the actor
+alone decides which salons they order for (`purchaseOrderReachOf`, the
+readers of the stock) and approve and cancel for
+(`purchaseOrderApproverReachOf`, the keepers of the stock), and `isWithin`
+then compares the `salonId` of the body or of the query. What differs:
+
+- **Items that copy another domain.** An item names a stock row of the
+  salon; the repository holds the rows and their products `FOR KEY SHARE`
+  and copies the code, the name and the unit of each product into its
+  item, so an order says what was ordered after the product changes. A
+  row that is removed leaves the item without it (`ON DELETE SET NULL`).
+- **Amounts the server works out.** An item comes to its quantity times
+  its unit price, rounded half up, worked out exactly as a `bigint`
+  (`_shared/amounts.ts`); the schema refuses an item or an order that
+  comes to more than an `integer` holds, and CHECK constraints hold the
+  same sums in the database.
+- **A status that moves one step at a time.** The pure functions of
+  `_shared/status.ts` say why an update, an approval or a cancellation is
+  refused from where an order stands; the repository applies them to the
+  order held `FOR UPDATE`, so two changes of one order take turns, and
+  answers the refusal (409) instead of writing. An approval and a
+  cancellation are timed at the `statement_timestamp()` of the change.
+- **A number of its own.** The order number is `PO-XXXX-XXXX` from the
+  CSPRNG, unique across the salons, and the create is tried again under
+  another number when the one it drew is taken.
+
+The rules are in [Purchase Orders](./purchase-orders.md) (Japanese).
 
 ### A Payment Request
 

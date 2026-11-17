@@ -13,7 +13,8 @@
 | 在庫の移動の記録と履歴（`recordMovement`、`listMovements`） | 実装済み（[在庫の移動](#在庫の移動)） |
 | 棚卸し（`performStockCount`） | 実装済み（[棚卸し](#棚卸し)） |
 | 在庫評価額（`getValueReport`） | 実装済み（[在庫評価額](#在庫評価額)） |
-| 発注（`PurchaseOrderCrud`）と在庫のアラート（`InventoryAlertCrud`） | 未実装（ルートがなく、404。テーブルもない） |
+| 発注（`PurchaseOrderCrud` の一覧、作成、1 件の取得、更新、承認、取り消し） | 実装済み（[発注](./purchase-orders.md)） |
+| 発注の入荷（`receive`）と発注の提案（`listReorderSuggestions`）、在庫のアラート（`InventoryAlertCrud`） | 未実装（ルートがなく、404。在庫のアラートは、テーブルもない） |
 
 - 在庫数（`currentStock`）と使える数（`availableStock`）を書くのは、在庫の移動と棚卸しです（[在庫の移動](#在庫の移動)、[棚卸し](#棚卸し)）。棚卸しも、帳簿との差を在庫の移動（`adjustment`）として記録します。棚卸しの記録（`lastCountedAt`、`lastCountedBy`）を書くのは、棚卸しだけです
 - 次のものは、ありません
@@ -213,6 +214,7 @@ JSON として読めない本文は、ほかのルートと同じく、アクセ
 - 在庫を 0 にするのは、在庫の移動です。使い切る（`use`、`sale`）、捨てる（`disposal`）、ほかのサロンに移す（`transfer`）、帳簿を直す（`adjustment`）のどれかか、棚卸しで 0 と数えることです
 - **在庫の移動の記録（`inventory_transactions`）は、残ります**。記録が指す在庫の行（`inventoryId`）は null になり（`ON DELETE SET NULL`）、サロン、商品、ロット番号、使用期限は、記録に残ります。削除した行の履歴は、`GET /api/v1/inventory/{id}/movements` では読めません（404）
 - 削除した行のロット番号は、同じ商品のほかの行が使えます
+- **発注の明細も、残ります**。明細が指す在庫の行（`inventoryId`）は null になり、商品の商品コード、名前、単位は、明細に写してあります（[発注](./purchase-orders.md#発注と明細)）。発注の途中の行も、削除できます
 
 ## 1 件の取得と一覧
 

@@ -4,7 +4,7 @@
 
 商品は、サロンが店頭で売るもの（シャンプー、スタイリング剤など）と、施術で使うもの（カラー剤、ブリーチ剤など）の一覧です。サロンごとに持ち、管理者とサロンのスタッフが `/api/v1/salons/{salonId}/products` で扱います。顧客のアカウントは、このルートを使えません。
 
-商品の在庫（`inventory`）は [在庫](./inventory.md) にあります。在庫の移動（`inventory_transactions`）、棚卸し、在庫評価額も、[在庫](./inventory.md) にあります。発注と在庫のアラートは、まだ実装していません（[実装範囲](#実装範囲)）。
+商品の在庫（`inventory`）は [在庫](./inventory.md) にあります。在庫の移動（`inventory_transactions`）、棚卸し、在庫評価額も、[在庫](./inventory.md) にあります。発注は [発注](./purchase-orders.md) にあります。在庫のアラートは、まだ実装していません（[実装範囲](#実装範囲)）。
 
 ## 実装範囲
 
@@ -12,7 +12,8 @@
 |---|---|
 | 商品（`ProductCrud`）の一覧、作成、1 件の取得、更新、削除（`list`、`create`、`get`、`update`、`delete`） | 実装済み |
 | 在庫の行（`InventoryCrud` の一覧、作成、1 件の取得、更新、削除、在庫僅少、期限切れ間近）、在庫の移動（`recordMovement`、`listMovements`）、棚卸し（`performStockCount`）、在庫評価額（`getValueReport`） | 実装済み（[在庫](./inventory.md)） |
-| 発注（`PurchaseOrderCrud`）と在庫のアラート（`InventoryAlertCrud`） | 未実装（ルートがなく、404。テーブルもない） |
+| 発注（`PurchaseOrderCrud` の一覧、作成、1 件の取得、更新、承認、取り消し） | 実装済み（[発注](./purchase-orders.md)） |
+| 発注の入荷（`receive`）と発注の提案（`listReorderSuggestions`）、在庫のアラート（`InventoryAlertCrud`） | 未実装（ルートがなく、404。在庫のアラートは、テーブルもない） |
 
 - 次のものは、ありません
   - 顧客に、商品を見せるルート

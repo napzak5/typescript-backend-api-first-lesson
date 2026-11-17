@@ -39,10 +39,11 @@ export type PurchaseOrderCrudListParams = {
   /**
    * 仕入先名による絞り込み(完全一致)
    * @minLength 1
+   * @maxLength 255
    */
   supplier?: ModelsPurchaseOrderSearchRequestSupplierParameter;
   /** 検索対象期間の開始日時。発注日(orderDate)がこの日時以降の発注に一致する */
   startDate?: ModelsPurchaseOrderSearchRequestStartDateParameter;
-  /** 検索対象期間の終了日時。発注日(orderDate)がこの日時より前の発注に一致する */
+  /** 検索対象期間の終了日時。発注日(orderDate)がこの日時以前(この日時を含む)の発注に一致する */
   endDate?: ModelsPurchaseOrderSearchRequestEndDateParameter;
 };
