@@ -80,7 +80,7 @@ namespace BeautySalon.Operations {
         | ProblemResponse<404>
         | CommonErrors;
 
-      @doc("施術記録に写真を追加します。すべての写真を1つのトランザクションで追加し、1件でも追加できない場合はどの写真も追加しません。追加した写真は個別のURLを持たないため、Locationヘッダーは返しません。追加した写真は施術記録の取得結果のphotosに含まれます。")
+      @doc("施術記録に写真を追加します。すべての写真を1つのトランザクションで追加し、1件でも追加できない場合はどの写真も追加しません。顧客の同意(customerConsent)のない写真をisPublicにした場合と、リクエストのなかで同じphotoUrlを繰り返した場合は400を返します。施術記録の写真が追加済みのものと合わせて20枚を超える場合と、施術記録に同じphotoUrlの写真がすでにある場合は409を返します。追加した写真は個別のURLを持たないため、Locationヘッダーは返しません。追加した写真は施術記録の取得結果のphotosに含まれ、施術記録のupdatedAtが更新されます。")
       @summary("Add photos to a treatment record")
       @route("/{id}/photos")
       @post
@@ -94,10 +94,26 @@ namespace BeautySalon.Operations {
           }
         | ProblemResponse<400>
         | ProblemResponse<404>
+        | ProblemResponse<409>
         | RequestBodyErrors
         | CommonErrors;
 
-      @doc("サロンの施術記録を集計した統計を取得します。salonIdのサロンが存在しない場合は400を返します。")
+      @doc("施術記録から写真を1枚削除します。誤って追加した写真を、施術記録を残したまま外すための操作です。削除すると施術記録のupdatedAtが更新されます。写真が施術記録のものでない場合は404を返します。")
+      @summary("Remove a photo from a treatment record")
+      @route("/{id}/photos/{photoId}")
+      @delete
+      removePhoto(
+        @path id: TreatmentRecordId,
+        @path photoId: TreatmentPhotoId,
+      ):
+        | {
+            @statusCode statusCode: 204;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<404>
+        | CommonErrors;
+
+      @doc("サロンの施術記録を集計した統計を取得します。salonIdのサロンが存在しない場合と削除されている場合は400を、サロンのメンバーがほかのサロンのsalonIdを指定した場合は403を返します。")
       @summary("Get treatment statistics")
       @route("/statistics")
       @get

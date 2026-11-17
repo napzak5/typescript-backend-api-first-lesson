@@ -1313,6 +1313,35 @@ export type StaffLevelType = z.infer<typeof StaffLevelTypeSchema>
 
 /**
  * @description
+ * 施術写真種別区分 - 写真を施術のどの時点で撮ったかを表す
+ *
+ *
+ * before: 施術前 - 施術を始める前の状態
+ *
+ * during: 施術中 - 施術の途中の状態
+ *
+ * after: 施術後 - 施術を終えたあとの状態
+ *
+ * other: その他 - ほかのどれにも当たらない写真
+ */
+export const TreatmentPhotoTypeSchema = z.enum(['before', 'during', 'after', 'other'])
+/**
+ * @description
+ * 施術写真種別区分 - 写真を施術のどの時点で撮ったかを表す
+ *
+ *
+ * before: 施術前 - 施術を始める前の状態
+ *
+ * during: 施術中 - 施術の途中の状態
+ *
+ * after: 施術後 - 施術を終えたあとの状態
+ *
+ * other: その他 - ほかのどれにも当たらない写真
+ */
+export type TreatmentPhotoType = z.infer<typeof TreatmentPhotoTypeSchema>
+
+/**
+ * @description
  * 施術タイプ区分 - サロンで提供される具体的な施術の種類
  *
  *

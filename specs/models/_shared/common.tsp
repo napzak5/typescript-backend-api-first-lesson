@@ -88,6 +88,10 @@ namespace BeautySalon.Models {
   @format("uuid")
   scalar TreatmentRecordId extends string;
 
+  @doc("施術記録の写真を識別するブランド付きUUID。")
+  @format("uuid")
+  scalar TreatmentPhotoId extends string;
+
   @doc("カルテ（メディカルチャート）を識別するブランド付きUUID。")
   @format("uuid")
   scalar MedicalChartId extends string;

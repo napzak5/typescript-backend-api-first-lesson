@@ -5,19 +5,25 @@
  * Comprehensive REST API for managing beauty salon operations including salons, staff, services, customers, bookings, treatments, payments, inventory, and access control. Built with TypeSpec for type-safe API-first development.
  * OpenAPI spec version: 2.0
  */
-import type { ModelsServiceId } from './modelsServiceId';
-import type { ModelsTreatmentStatisticsResponseTreatmentsBy } from './modelsTreatmentStatisticsResponseTreatmentsBy';
+import type { ModelsTreatmentsByCategoryResponse } from './modelsTreatmentsByCategoryResponse';
+import type { ModelsTreatmentsByServiceResponse } from './modelsTreatmentsByServiceResponse';
 
 /**
- * 施術統計レスポンス - 施術記録から算出した集計値を返す。対応するテーブルはない
+ * 施術統計レスポンス - 期間内の施術記録から算出した集計値を返す。対応するテーブルはない
  */
 export interface ModelsTreatmentStatisticsResponse {
-  /** 期間内の施術件数 */
+  /** 期間内の施術記録の件数 */
   totalTreatments: number;
-  /** 施術の区分ごとの施術件数。キーは区分の値、値は件数 */
-  treatmentsBy: ModelsTreatmentStatisticsResponseTreatmentsBy;
-  /** 平均施術時間（分） */
-  averageDuration: number;
-  /** 施術件数の多いサービス ID の一覧。件数の多い順に並ぶ */
-  topServices: ModelsServiceId[];
+  /** サービスのカテゴリーの区分ごとの施術件数。件数の多い順、同じ件数は区分の値の順。施術記録のない区分は載らない */
+  treatmentsByCategory: ModelsTreatmentsByCategoryResponse[];
+  /**
+     * 施術時間(processingTime)のある施術記録の、施術時間の平均（分）。小数第1位に丸める。施術時間のある施術記録がなければnull
+     * @nullable
+     */
+  averageProcessingTime: number | null;
+  /**
+     * 施術件数の多いサービス。上位10件。件数の多い順、同じ件数はサービス ID の順
+     * @maxItems 10
+     */
+  topServices: ModelsTreatmentsByServiceResponse[];
 }

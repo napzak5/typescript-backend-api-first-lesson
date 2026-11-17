@@ -19834,7 +19834,7 @@ paths:
     get:
       operationId: TreatmentRecordCrud_getStatistics
       summary: Get treatment statistics
-      description: サロンの施術記録を集計した統計を取得します。salonIdのサロンが存在しない場合は400を返します。
+      description: サロンの施術記録を集計した統計を取得します。salonIdのサロンが存在しない場合と削除されている場合は400を、サロンのメンバーがほかのサロンのsalonIdを指定した場合は403を返します。
       parameters:
         - $ref: '#/components/parameters/Models.TreatmentStatisticsGetRequest.salonId'
         - $ref: '#/components/parameters/Models.TreatmentStatisticsGetRequest.startDate'
@@ -20206,7 +20206,7 @@ paths:
     post:
       operationId: TreatmentRecordCrud_addPhotos
       summary: Add photos to a treatment record
-      description: 施術記録に写真を追加します。すべての写真を1つのトランザクションで追加し、1件でも追加できない場合はどの写真も追加しません。追加した写真は個別のURLを持たないため、Locationヘッダーは返しません。追加した写真は施術記録の取得結果のphotosに含まれます。
+      description: 施術記録に写真を追加します。すべての写真を1つのトランザクションで追加し、1件でも追加できない場合はどの写真も追加しません。顧客の同意(customerConsent)のない写真をisPublicにした場合と、リクエストのなかで同じphotoUrlを繰り返した場合は400を返します。施術記録の写真が追加済みのものと合わせて20枚を超える場合と、施術記録に同じphotoUrlの写真がすでにある場合は409を返します。追加した写真は個別のURLを持たないため、Locationヘッダーは返しません。追加した写真は施術記録の取得結果のphotosに含まれ、施術記録のupdatedAtが更新されます。
       parameters:
         - name: id
           in: path
@@ -20277,6 +20277,12 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Models.ProblemDetails'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
         '413':
           description: リクエスト本文がサイズ上限を超えている (413)。
           content:
@@ -20318,6 +20324,81 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Models.TreatmentPhotoBulkCreateRequest'
+  /api/v1/treatments/{id}/photos/{photoId}:
+    delete:
+      operationId: TreatmentRecordCrud_removePhoto
+      summary: Remove a photo from a treatment record
+      description: 施術記録から写真を1枚削除します。誤って追加した写真を、施術記録を残したまま外すための操作です。削除すると施術記録のupdatedAtが更新されます。写真が施術記録のものでない場合は404を返します。
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Models.TreatmentRecordId'
+        - name: photoId
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/Models.TreatmentPhotoId'
+      responses:
+        '204':
+          description: 'There is no content to send for this request, but the headers may be useful. '
+        '400':
+          description: The server could not understand the request due to invalid syntax.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '401':
+          description: |-
+            認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
+            ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
+            WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+          headers:
+            WWW-Authenticate:
+              required: true
+              description: Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。
+              schema:
+                type: string
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '403':
+          description: 認証されているが、この操作を行う権限がない (403)。
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '404':
+          description: The server cannot find the requested resource.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '429':
+          description: |-
+            リクエスト数の上限を超えたときのエラーレスポンス (429)。
+            クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+          headers:
+            Retry-After:
+              required: true
+              description: 再試行できるようになるまでの秒数。
+              schema:
+                type: integer
+                format: int32
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+        '500':
+          description: サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
+      tags:
+        - Treatments
   /api/v1/user-roles:
     post:
       operationId: UserRoleAssignmentCrud_create
@@ -22597,7 +22678,7 @@ components:
       name: endDate
       in: query
       required: false
-      description: 集計期間の終了日時。未指定の場合は期間の上限なし
+      description: レコード作成日時(createdAt)がこの日時以前の施術記録を数える。未指定の場合は期間の上限なし。startDate より前にはできない
       schema:
         type: string
         format: date-time
@@ -22614,7 +22695,7 @@ components:
       name: startDate
       in: query
       required: false
-      description: 集計期間の開始日時。未指定の場合は期間の下限なし
+      description: レコード作成日時(createdAt)がこの日時以降の施術記録を数える。未指定の場合は期間の下限なし
       schema:
         type: string
         format: date-time
@@ -32158,10 +32239,11 @@ components:
             $ref: '#/components/schemas/Models.TreatmentPhotoCreateRequest'
           minItems: 1
           maxItems: 20
-          description: 追加する写真の一覧。1件以上20件以下で指定する
+          description: 追加する写真の一覧。1件以上20件以下で指定する。同じphotoUrlの繰り返しは指定できない
       description: |-
         施術写真一括登録リクエスト - 1つの施術記録に複数の写真を追加する。
-        すべての写真を1つのトランザクションで追加し、1件でも追加できない場合はどの写真も追加しない
+        すべての写真を1つのトランザクションで追加し、1件でも追加できない場合はどの写真も追加しない。
+        1つの施術記録の写真は、追加済みのものと合わせて20枚まで
     Models.TreatmentPhotoBulkCreateResponse:
       type: object
       required:
@@ -32186,32 +32268,31 @@ components:
         - sortOrder
       properties:
         photoType:
-          type: string
-          minLength: 1
-          maxLength: 20
-          description: 写真の種別。施術前・施術後などを表す
+          allOf:
+            - $ref: '#/components/schemas/Models.TreatmentPhotoType'
+          description: 写真の種別
         photoUrl:
           type: string
           minLength: 1
           maxLength: 500
-          description: 写真の URL
+          description: 写真の URL(http または https、500文字まで)。1つの施術記録に同じURLの写真は1枚だけ
         thumbnailUrl:
           type: string
           nullable: true
           maxLength: 500
-          description: サムネイル画像の URL。サムネイルを作成していない場合はnull
+          description: サムネイル画像の URL(http または https、500文字まで)。サムネイルを作成していない場合はnull
         angle:
           type: string
           nullable: true
           maxLength: 50
-          description: 撮影アングル。記録しない場合はnull
+          description: 撮影アングル。空白だけの文字列は指定できない。記録しない場合はnull
         description:
           type: string
           nullable: true
-          description: 写真の説明。説明がない場合はnull
+          description: 写真の説明。空白だけの文字列は指定できない。説明がない場合はnull
         isPublic:
           type: boolean
-          description: サロン外（ポートフォリオ等）に公開してよい写真かどうか
+          description: サロン外（ポートフォリオ等）に公開してよい写真かどうか。true にできるのは customerConsent が true の写真だけ
         customerConsent:
           type: boolean
           description: 顧客が写真の撮影・利用に同意しているかどうか
@@ -32219,13 +32300,18 @@ components:
           type: integer
           format: int32
           minimum: 0
-          description: 表示順序
+          description: 表示順序。小さい順に並び、同じ値の写真は追加した順に並ぶ
       description: |-
         施術写真登録リクエスト - treatment_photos テーブルに1行を追加する。全項目のキーが必須。DB で NULL 許可のカラムのみ null を指定できる。
         写真を追加する施術記録はパスの id で指定する
+    Models.TreatmentPhotoId:
+      type: string
+      format: uuid
+      description: 施術記録の写真を識別するブランド付きUUID。
     Models.TreatmentPhotoResponse:
       type: object
       required:
+        - id
         - photoType
         - photoUrl
         - thumbnailUrl
@@ -32235,9 +32321,14 @@ components:
         - customerConsent
         - sortOrder
       properties:
+        id:
+          allOf:
+            - $ref: '#/components/schemas/Models.TreatmentPhotoId'
+          description: 写真 ID
         photoType:
-          type: string
-          description: 写真の種別。施術前・施術後などを表す
+          allOf:
+            - $ref: '#/components/schemas/Models.TreatmentPhotoType'
+          description: 写真の種別
         photoUrl:
           type: string
           description: 写真の URL
@@ -32262,10 +32353,24 @@ components:
         sortOrder:
           type: integer
           format: int32
-          description: 表示順序
+          description: 表示順序。小さい順に並ぶ
       description: |-
         施術写真レスポンス - treatment_photos テーブルの1行。施術記録に読み取り専用で埋め込む。
         プロパティ名と null 許可は DB カラムと一致させている。
+    Models.TreatmentPhotoType:
+      type: string
+      enum:
+        - before
+        - during
+        - after
+        - other
+      description: |-
+        施術写真種別区分 - 写真を施術のどの時点で撮ったかを表す
+
+        before: 施術前 - 施術を始める前の状態
+        during: 施術中 - 施術の途中の状態
+        after: 施術後 - 施術を終えたあとの状態
+        other: その他 - ほかのどれにも当たらない写真
     Models.TreatmentRecordCreateRequest:
       type: object
       required:
@@ -32581,30 +32686,31 @@ components:
       type: object
       required:
         - totalTreatments
-        - treatmentsBy
-        - averageDuration
+        - treatmentsByCategory
+        - averageProcessingTime
         - topServices
       properties:
         totalTreatments:
           type: integer
           format: int32
-          description: 期間内の施術件数
-        treatmentsBy:
-          type: object
-          additionalProperties:
-            type: integer
-            format: int32
-          description: 施術の区分ごとの施術件数。キーは区分の値、値は件数
-        averageDuration:
+          description: 期間内の施術記録の件数
+        treatmentsByCategory:
+          type: array
+          items:
+            $ref: '#/components/schemas/Models.TreatmentsByCategoryResponse'
+          description: サービスのカテゴリーの区分ごとの施術件数。件数の多い順、同じ件数は区分の値の順。施術記録のない区分は載らない
+        averageProcessingTime:
           type: number
           format: float
-          description: 平均施術時間（分）
+          nullable: true
+          description: 施術時間(processingTime)のある施術記録の、施術時間の平均（分）。小数第1位に丸める。施術時間のある施術記録がなければnull
         topServices:
           type: array
           items:
-            $ref: '#/components/schemas/Models.ServiceId'
-          description: 施術件数の多いサービス ID の一覧。件数の多い順に並ぶ
-      description: 施術統計レスポンス - 施術記録から算出した集計値を返す。対応するテーブルはない
+            $ref: '#/components/schemas/Models.TreatmentsByServiceResponse'
+          maxItems: 10
+          description: 施術件数の多いサービス。上位10件。件数の多い順、同じ件数はサービス ID の順
+      description: 施術統計レスポンス - 期間内の施術記録から算出した集計値を返す。対応するテーブルはない
     Models.TreatmentType:
       type: string
       enum:
@@ -32631,6 +32737,36 @@ components:
         nail: ネイル - マニキュア、ジェルネイル等の爪装飾技術
         eyelash: まつげ - まつげエクステ、まつげパーマ等のまつげ装飾技術
         other: その他 - 上記に分類されない施術
+    Models.TreatmentsByCategoryResponse:
+      type: object
+      required:
+        - category
+        - count
+      properties:
+        category:
+          allOf:
+            - $ref: '#/components/schemas/Models.ServiceCategoryType'
+          description: サービスカテゴリ区分
+        count:
+          type: integer
+          format: int32
+          description: この区分のサービスを含む施術記録の件数
+      description: サービスのカテゴリーの区分ごとの施術件数 - 施術記録の services のサービスを、カテゴリーの区分(service_categories.category のいまの値)ごとに合わせる。カテゴリーのないサービスは other。1つの施術記録が同じ区分のサービスを2つ含んでも1件と数える
+    Models.TreatmentsByServiceResponse:
+      type: object
+      required:
+        - serviceId
+        - count
+      properties:
+        serviceId:
+          allOf:
+            - $ref: '#/components/schemas/Models.ServiceId'
+          description: サービス ID
+        count:
+          type: integer
+          format: int32
+          description: このサービスを含む施術記録の件数
+      description: サービスごとの施術件数 - 施術記録の services に含まれるサービスごとに合わせる。削除したサービスも載る
     Models.TwoFactorStatusType:
       type: string
       enum:

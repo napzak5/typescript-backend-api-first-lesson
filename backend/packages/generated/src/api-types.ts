@@ -3181,7 +3181,7 @@ export interface paths {
         };
         /**
          * Get treatment statistics
-         * @description サロンの施術記録を集計した統計を取得します。salonIdのサロンが存在しない場合は400を返します。
+         * @description サロンの施術記録を集計した統計を取得します。salonIdのサロンが存在しない場合と削除されている場合は400を、サロンのメンバーがほかのサロンのsalonIdを指定した場合は403を返します。
          */
         get: operations["TreatmentRecordCrud_getStatistics"];
         put?: never;
@@ -3231,10 +3231,30 @@ export interface paths {
         put?: never;
         /**
          * Add photos to a treatment record
-         * @description 施術記録に写真を追加します。すべての写真を1つのトランザクションで追加し、1件でも追加できない場合はどの写真も追加しません。追加した写真は個別のURLを持たないため、Locationヘッダーは返しません。追加した写真は施術記録の取得結果のphotosに含まれます。
+         * @description 施術記録に写真を追加します。すべての写真を1つのトランザクションで追加し、1件でも追加できない場合はどの写真も追加しません。顧客の同意(customerConsent)のない写真をisPublicにした場合と、リクエストのなかで同じphotoUrlを繰り返した場合は400を返します。施術記録の写真が追加済みのものと合わせて20枚を超える場合と、施術記録に同じphotoUrlの写真がすでにある場合は409を返します。追加した写真は個別のURLを持たないため、Locationヘッダーは返しません。追加した写真は施術記録の取得結果のphotosに含まれ、施術記録のupdatedAtが更新されます。
          */
         post: operations["TreatmentRecordCrud_addPhotos"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/treatments/{id}/photos/{photoId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove a photo from a treatment record
+         * @description 施術記録から写真を1枚削除します。誤って追加した写真を、施術記録を残したまま外すための操作です。削除すると施術記録のupdatedAtが更新されます。写真が施術記録のものでない場合は404を返します。
+         */
+        delete: operations["TreatmentRecordCrud_removePhoto"];
         options?: never;
         head?: never;
         patch?: never;
@@ -9838,10 +9858,11 @@ export interface components {
         };
         /**
          * @description 施術写真一括登録リクエスト - 1つの施術記録に複数の写真を追加する。
-         *     すべての写真を1つのトランザクションで追加し、1件でも追加できない場合はどの写真も追加しない
+         *     すべての写真を1つのトランザクションで追加し、1件でも追加できない場合はどの写真も追加しない。
+         *     1つの施術記録の写真は、追加済みのものと合わせて20枚まで
          */
         "Models.TreatmentPhotoBulkCreateRequest": {
-            /** @description 追加する写真の一覧。1件以上20件以下で指定する */
+            /** @description 追加する写真の一覧。1件以上20件以下で指定する。同じphotoUrlの繰り返しは指定できない */
             photos: components["schemas"]["Models.TreatmentPhotoCreateRequest"][];
         };
         /** @description 施術写真一括登録の結果 - 追加した写真の一覧を返す */
@@ -9854,33 +9875,40 @@ export interface components {
          *     写真を追加する施術記録はパスの id で指定する
          */
         "Models.TreatmentPhotoCreateRequest": {
-            /** @description 写真の種別。施術前・施術後などを表す */
-            photoType: string;
-            /** @description 写真の URL */
+            /** @description 写真の種別 */
+            photoType: components["schemas"]["Models.TreatmentPhotoType"];
+            /** @description 写真の URL(http または https、500文字まで)。1つの施術記録に同じURLの写真は1枚だけ */
             photoUrl: string;
-            /** @description サムネイル画像の URL。サムネイルを作成していない場合はnull */
+            /** @description サムネイル画像の URL(http または https、500文字まで)。サムネイルを作成していない場合はnull */
             thumbnailUrl: string | null;
-            /** @description 撮影アングル。記録しない場合はnull */
+            /** @description 撮影アングル。空白だけの文字列は指定できない。記録しない場合はnull */
             angle: string | null;
-            /** @description 写真の説明。説明がない場合はnull */
+            /** @description 写真の説明。空白だけの文字列は指定できない。説明がない場合はnull */
             description: string | null;
-            /** @description サロン外（ポートフォリオ等）に公開してよい写真かどうか */
+            /** @description サロン外（ポートフォリオ等）に公開してよい写真かどうか。true にできるのは customerConsent が true の写真だけ */
             isPublic: boolean;
             /** @description 顧客が写真の撮影・利用に同意しているかどうか */
             customerConsent: boolean;
             /**
              * Format: int32
-             * @description 表示順序
+             * @description 表示順序。小さい順に並び、同じ値の写真は追加した順に並ぶ
              */
             sortOrder: number;
         };
+        /**
+         * Format: uuid
+         * @description 施術記録の写真を識別するブランド付きUUID。
+         */
+        "Models.TreatmentPhotoId": string;
         /**
          * @description 施術写真レスポンス - treatment_photos テーブルの1行。施術記録に読み取り専用で埋め込む。
          *     プロパティ名と null 許可は DB カラムと一致させている。
          */
         "Models.TreatmentPhotoResponse": {
-            /** @description 写真の種別。施術前・施術後などを表す */
-            photoType: string;
+            /** @description 写真 ID */
+            id: components["schemas"]["Models.TreatmentPhotoId"];
+            /** @description 写真の種別 */
+            photoType: components["schemas"]["Models.TreatmentPhotoType"];
             /** @description 写真の URL */
             photoUrl: string;
             /** @description サムネイル画像の URL。サムネイルを作成していない場合はnull */
@@ -9895,10 +9923,39 @@ export interface components {
             customerConsent: boolean;
             /**
              * Format: int32
-             * @description 表示順序
+             * @description 表示順序。小さい順に並ぶ
              */
             sortOrder: number;
         };
+        /**
+
+         * @description
+
+         * 施術写真種別区分 - 写真を施術のどの時点で撮ったかを表す
+
+         *
+
+         *
+
+         * before: 施術前 - 施術を始める前の状態
+
+         *
+
+         * during: 施術中 - 施術の途中の状態
+
+         *
+
+         * after: 施術後 - 施術を終えたあとの状態
+
+         *
+
+         * other: その他 - ほかのどれにも当たらない写真
+
+         * @enum {string}
+
+         */
+
+        "Models.TreatmentPhotoType": "before" | "during" | "after" | "other";
         /**
          * @description 施術記録新規登録リクエスト - 全項目のキーが必須。DB で NULL 許可のカラムのみ null を指定できる。
          *     施術写真は登録後に写真追加の操作で追加する
@@ -10060,24 +10117,22 @@ export interface components {
             /** @description 施術で使用した商材の一覧。50件まで。指定した場合は全件を、指定した順に置き換える */
             materials?: components["schemas"]["Models.TreatmentMaterial"][];
         };
-        /** @description 施術統計レスポンス - 施術記録から算出した集計値を返す。対応するテーブルはない */
+        /** @description 施術統計レスポンス - 期間内の施術記録から算出した集計値を返す。対応するテーブルはない */
         "Models.TreatmentStatisticsResponse": {
             /**
              * Format: int32
-             * @description 期間内の施術件数
+             * @description 期間内の施術記録の件数
              */
             totalTreatments: number;
-            /** @description 施術の区分ごとの施術件数。キーは区分の値、値は件数 */
-            treatmentsBy: {
-                [key: string]: number;
-            };
+            /** @description サービスのカテゴリーの区分ごとの施術件数。件数の多い順、同じ件数は区分の値の順。施術記録のない区分は載らない */
+            treatmentsByCategory: components["schemas"]["Models.TreatmentsByCategoryResponse"][];
             /**
              * Format: float
-             * @description 平均施術時間（分）
+             * @description 施術時間(processingTime)のある施術記録の、施術時間の平均（分）。小数第1位に丸める。施術時間のある施術記録がなければnull
              */
-            averageDuration: number;
-            /** @description 施術件数の多いサービス ID の一覧。件数の多い順に並ぶ */
-            topServices: components["schemas"]["Models.ServiceId"][];
+            averageProcessingTime: number | null;
+            /** @description 施術件数の多いサービス。上位10件。件数の多い順、同じ件数はサービス ID の順 */
+            topServices: components["schemas"]["Models.TreatmentsByServiceResponse"][];
         };
         /**
 
@@ -10132,6 +10187,26 @@ export interface components {
          */
 
         "Models.TreatmentType": "cut" | "color" | "perm" | "treatment" | "head_spa" | "styling" | "extension" | "nail" | "eyelash" | "other";
+        /** @description サービスのカテゴリーの区分ごとの施術件数 - 施術記録の services のサービスを、カテゴリーの区分(service_categories.category のいまの値)ごとに合わせる。カテゴリーのないサービスは other。1つの施術記録が同じ区分のサービスを2つ含んでも1件と数える */
+        "Models.TreatmentsByCategoryResponse": {
+            /** @description サービスカテゴリ区分 */
+            category: components["schemas"]["Models.ServiceCategoryType"];
+            /**
+             * Format: int32
+             * @description この区分のサービスを含む施術記録の件数
+             */
+            count: number;
+        };
+        /** @description サービスごとの施術件数 - 施術記録の services に含まれるサービスごとに合わせる。削除したサービスも載る */
+        "Models.TreatmentsByServiceResponse": {
+            /** @description サービス ID */
+            serviceId: components["schemas"]["Models.ServiceId"];
+            /**
+             * Format: int32
+             * @description このサービスを含む施術記録の件数
+             */
+            count: number;
+        };
         /**
 
          * @description
@@ -10740,11 +10815,11 @@ export interface components {
         "Models.TreatmentRecordSearchRequest.staffId": components["schemas"]["Models.StaffId"];
         /** @description レコード作成日時(createdAt)がこの日時以降の施術記録に一致する */
         "Models.TreatmentRecordSearchRequest.startDate": string;
-        /** @description 集計期間の終了日時。未指定の場合は期間の上限なし */
+        /** @description レコード作成日時(createdAt)がこの日時以前の施術記録を数える。未指定の場合は期間の上限なし。startDate より前にはできない */
         "Models.TreatmentStatisticsGetRequest.endDate": string;
         /** @description 集計対象のサロン ID */
         "Models.TreatmentStatisticsGetRequest.salonId": components["schemas"]["Models.SalonId"];
-        /** @description 集計期間の開始日時。未指定の場合は期間の下限なし */
+        /** @description レコード作成日時(createdAt)がこの日時以降の施術記録を数える。未指定の場合は期間の下限なし */
         "Models.TreatmentStatisticsGetRequest.startDate": string;
         /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
         "Models.UserRoleAssignmentSearchRequest.cursor": string;
@@ -31229,9 +31304,9 @@ export interface operations {
             query: {
                 /** @description 集計対象のサロン ID */
                 salonId: components["parameters"]["Models.TreatmentStatisticsGetRequest.salonId"];
-                /** @description 集計期間の開始日時。未指定の場合は期間の下限なし */
+                /** @description レコード作成日時(createdAt)がこの日時以降の施術記録を数える。未指定の場合は期間の下限なし */
                 startDate?: components["parameters"]["Models.TreatmentStatisticsGetRequest.startDate"];
-                /** @description 集計期間の終了日時。未指定の場合は期間の上限なし */
+                /** @description レコード作成日時(createdAt)がこの日時以前の施術記録を数える。未指定の場合は期間の上限なし。startDate より前にはできない */
                 endDate?: components["parameters"]["Models.TreatmentStatisticsGetRequest.endDate"];
             };
             header?: never;
@@ -31690,6 +31765,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
+            /** @description The request conflicts with the current state of the server. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
@@ -31701,6 +31785,92 @@ export interface operations {
             };
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
+             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+             */
+            429: {
+                headers: {
+                    /** @description 再試行できるようになるまでの秒数。 */
+                    "Retry-After": number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+        };
+    };
+    TreatmentRecordCrud_removePhoto: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["schemas"]["Models.TreatmentRecordId"];
+                photoId: components["schemas"]["Models.TreatmentPhotoId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description There is no content to send for this request, but the headers may be useful. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description 認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
+             *     ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
+             *     WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+             */
+            401: {
+                headers: {
+                    /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
+                    "WWW-Authenticate": string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description 認証されているが、この操作を行う権限がない (403)。 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The server cannot find the requested resource. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

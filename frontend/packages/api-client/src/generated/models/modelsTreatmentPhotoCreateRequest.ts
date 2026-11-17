@@ -5,47 +5,44 @@
  * Comprehensive REST API for managing beauty salon operations including salons, staff, services, customers, bookings, treatments, payments, inventory, and access control. Built with TypeSpec for type-safe API-first development.
  * OpenAPI spec version: 2.0
  */
+import type { ModelsTreatmentPhotoType } from './modelsTreatmentPhotoType';
 
 /**
  * 施術写真登録リクエスト - treatment_photos テーブルに1行を追加する。全項目のキーが必須。DB で NULL 許可のカラムのみ null を指定できる。
  * 写真を追加する施術記録はパスの id で指定する
  */
 export interface ModelsTreatmentPhotoCreateRequest {
+  /** 写真の種別 */
+  photoType: ModelsTreatmentPhotoType;
   /**
-     * 写真の種別。施術前・施術後などを表す
-     * @minLength 1
-     * @maxLength 20
-     */
-  photoType: string;
-  /**
-     * 写真の URL
+     * 写真の URL(http または https、500文字まで)。1つの施術記録に同じURLの写真は1枚だけ
      * @minLength 1
      * @maxLength 500
      */
   photoUrl: string;
   /**
-     * サムネイル画像の URL。サムネイルを作成していない場合はnull
+     * サムネイル画像の URL(http または https、500文字まで)。サムネイルを作成していない場合はnull
      * @maxLength 500
      * @nullable
      */
   thumbnailUrl: string | null;
   /**
-     * 撮影アングル。記録しない場合はnull
+     * 撮影アングル。空白だけの文字列は指定できない。記録しない場合はnull
      * @maxLength 50
      * @nullable
      */
   angle: string | null;
   /**
-     * 写真の説明。説明がない場合はnull
+     * 写真の説明。空白だけの文字列は指定できない。説明がない場合はnull
      * @nullable
      */
   description: string | null;
-  /** サロン外（ポートフォリオ等）に公開してよい写真かどうか */
+  /** サロン外（ポートフォリオ等）に公開してよい写真かどうか。true にできるのは customerConsent が true の写真だけ */
   isPublic: boolean;
   /** 顧客が写真の撮影・利用に同意しているかどうか */
   customerConsent: boolean;
   /**
-     * 表示順序
+     * 表示順序。小さい順に並び、同じ値の写真は追加した順に並ぶ
      * @minimum 0
      */
   sortOrder: number;
