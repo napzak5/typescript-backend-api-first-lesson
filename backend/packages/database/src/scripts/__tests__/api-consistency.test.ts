@@ -906,7 +906,6 @@ describe('modelRules', () => {
   it('shows the salon who signs in as a staff member, with which role and whether the account is in use, lets a request change the role only, and narrows the role in both to the roles of a salon', () => {
     const hidden = [
       'passwordHash',
-      'permissions',
       'emailVerified',
       'emailVerificationTokenHash',
       'emailVerificationExpiry',

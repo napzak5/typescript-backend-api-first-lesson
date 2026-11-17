@@ -2312,7 +2312,6 @@ export const users = pgTable(
     email: varchar({ length: 255 }).notNull(),
     passwordHash: text().notNull(),
     role: userRole().default('customer').notNull(),
-    permissions: jsonb().default([]).notNull(),
     status: accountStatus().default('active').notNull(),
     emailVerified: boolean().default(false).notNull(),
     emailVerificationTokenHash: varchar({ length: 255 }),

@@ -3680,4 +3680,66 @@ describe('the migrations of this repository', () => {
       expect(await yearsOf(later)).toEqual([{ yearsOfExperience: null }])
     })
   })
+
+  describe('202611181300_users_without_permissions.sql', () => {
+    const run = (): Promise<void> =>
+      runMigration('202611181300_users_without_permissions.sql')
+
+    /** The schema of setup.sql, which the migration brings a database to. */
+    let schemaOfSetup: string[] = []
+
+    /** The rows of the users, by email. */
+    const userRows = (ids: string[]): Promise<Record<string, unknown>[]> =>
+      sql<Record<string, unknown>[]>`
+        SELECT * FROM users WHERE id = ANY(${ids}::uuid[]) ORDER BY email
+      `
+
+    /** The rows as the migration should leave them: without permissions. */
+    const withoutPermissions = (
+      rows: Record<string, unknown>[],
+    ): Record<string, unknown>[] =>
+      rows.map(({ permissions: _permissions, ...row }) => row)
+
+    // A database from before the migration: every user has a list of
+    // permission names, which nothing reads.
+    beforeEach(async () => {
+      await applyBaseline(sql, plan)
+      schemaOfSetup = await describeSchema()
+      await sql.unsafe(`
+        ALTER TABLE users
+          ADD COLUMN permissions jsonb DEFAULT '[]'::jsonb NOT NULL;
+      `)
+    })
+
+    it('should give the database the schema of setup.sql, and keep it on a second run', async () => {
+      expect(await describeSchema()).not.toEqual(schemaOfSetup)
+
+      await run()
+      await run()
+
+      expect(await describeSchema()).toEqual(schemaOfSetup)
+    })
+
+    it('should keep every user, with all that the row stores but the permissions', async () => {
+      const owner = randomUUID()
+      const customer = randomUUID()
+      await sql`
+        INSERT INTO users (id, email, "passwordHash", role, permissions)
+        VALUES
+          (${owner}, 'owner@example.com', 'hash', 'owner', '["all"]'::jsonb),
+          (${customer}, 'customer@example.com', 'hash', 'customer', '[]'::jsonb)
+      `
+      const before = await userRows([owner, customer])
+      expect(before).toMatchObject([
+        { email: 'customer@example.com', permissions: [] },
+        { email: 'owner@example.com', permissions: ['all'] },
+      ])
+
+      await run()
+
+      expect(await userRows([owner, customer])).toEqual(
+        withoutPermissions(before),
+      )
+    })
+  })
 })

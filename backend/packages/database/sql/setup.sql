@@ -814,7 +814,6 @@ CREATE TABLE "users" (
 	"email" varchar(255) NOT NULL,
 	"passwordHash" text NOT NULL,
 	"role" "user_role" DEFAULT 'customer' NOT NULL,
-	"permissions" jsonb DEFAULT '[]'::jsonb NOT NULL,
 	"status" "account_status" DEFAULT 'active' NOT NULL,
 	"emailVerified" boolean DEFAULT false NOT NULL,
 	"emailVerificationTokenHash" varchar(255),
