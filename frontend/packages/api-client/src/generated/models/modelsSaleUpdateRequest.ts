@@ -28,7 +28,7 @@ export interface ModelsSaleUpdateRequest {
      * @nullable
      */
   bookingId?: string | null;
-  /** 会計日時。変更すると saleDate も再計算する */
+  /** 会計日時。変更すると saleDate も再計算する。UTC の日付で 1900-01-01 から 2999-12-31 まで */
   saleTime?: string;
   /**
      * この会計で利用したポイント数。nullでクリア

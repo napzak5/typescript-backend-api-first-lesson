@@ -7,6 +7,6 @@
  */
 
 /**
- * 集計対象の売上日(saleDate)
+ * 集計対象の売上日(saleDate)。1900-01-01 から 2999-12-31 まで
  */
 export type ModelsDailySalesGetRequestDateParameter = string;

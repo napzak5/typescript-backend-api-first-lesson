@@ -550,11 +550,25 @@ Logging is structured, with pino. Application code never writes to `console`.
   ```
 
 - **Calendar dates and times of day** (`date` and `time` columns) stay strings
-  from the request to the database: `YYYY-MM-DD` checked with `z.iso.date()`,
+  from the request to the database: `YYYY-MM-DD` checked with `calendarDate`,
   and `HH:mm` or `HH:mm:ss`. Two times of day are compared as strings once both
-  have seconds. The format and the comparison are shared rules (`timeOfDay` and
-  `withSeconds` in `backend/packages/domain/src/schemas/rules.ts`), which the
-  calendar of a salon and the schedule of a staff member use.
+  have seconds. The format and the comparison are shared rules (`calendarDate`,
+  `timeOfDay` and `withSeconds` in
+  `backend/packages/domain/src/schemas/rules.ts`), which the calendar of a
+  salon and the schedule of a staff member use.
+- **Every date and moment of a request lies from 1900-01-01 to 2999-12-31**,
+  a moment by the day it is written on in UTC. An earlier one is refused with
+  `too_small`, a later one with `too_big`. `z.iso.date()` and
+  `z.iso.datetime()` accept the year 0, which PostgreSQL does not hold, and
+  PostgreSQL does not read a moment past the year 9999 as `toISOString`
+  writes it; both would answer 500. A day of the range stays within what
+  PostgreSQL holds when it is turned into the day of a time zone or into
+  the day before or after. A date or a moment that the database reads is
+  checked with `calendarDate`, `momentOfRequest` (kept as written) or
+  `momentInUtc` (written again as `toISOString` writes it), all in
+  `rules.ts`. The rule and what it leaves out are in
+  [api-db-type-constraints-mapping.md](./api-db-type-constraints-mapping.md#リクエストの日付と日時の範囲)
+  (Japanese).
 - Parsing, validity checks and formatting use date-fns (`parseISO`, `isValid`,
   `format`), not hand-written arithmetic:
 

@@ -30,7 +30,7 @@ export interface ModelsSaleCreateRequest {
      * @nullable
      */
   bookingId: string | null;
-  /** 会計日時 */
+  /** 会計日時。UTC の日付で 1900-01-01 から 2999-12-31 まで */
   saleTime: string;
   /**
      * この会計で利用したポイント数。記録しない場合はnull。customerId がnullの場合はnull

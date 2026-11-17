@@ -24,7 +24,7 @@ export interface ModelsInventoryCreateRequest {
      */
   lotNumber: string | null;
   /**
-     * 使用期限。期限のない場合はnull
+     * 使用期限。期限のない場合はnull。1900-01-01 から 2999-12-31 まで
      * @nullable
      */
   expiryDate: string | null;

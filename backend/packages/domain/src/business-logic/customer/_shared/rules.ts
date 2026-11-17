@@ -11,8 +11,6 @@ import {
  * need the current time or another customer.
  */
 
-const EARLIEST_BIRTH_DATE = '1900-01-01'
-
 /**
  * The latest date that has begun somewhere when it is `now`. A date has no
  * time zone: the day that has begun in Japan is still tomorrow in UTC for
@@ -22,8 +20,8 @@ const latestDateOf = (now: Date): string =>
   addDays(now, 1).toISOString().slice(0, 10)
 
 /**
- * The birth date lies between 1900 and today. The dates are in ISO 8601,
- * which sorts as text.
+ * The birth date is not after today. The dates are in ISO 8601, which sorts
+ * as text. The schema keeps it from 1900 on, as every date of a request.
  */
 export const customerRuleIssues = (
   customer: { birthDate?: string | null },
@@ -32,15 +30,6 @@ export const customerRuleIssues = (
   const { birthDate } = customer
   if (birthDate === undefined || birthDate === null) {
     return []
-  }
-  if (birthDate < EARLIEST_BIRTH_DATE) {
-    return [
-      {
-        field: 'birthDate',
-        rule: 'too_small',
-        message: `Must not be earlier than ${EARLIEST_BIRTH_DATE}`,
-      },
-    ]
   }
   if (birthDate > latestDateOf(now)) {
     return [

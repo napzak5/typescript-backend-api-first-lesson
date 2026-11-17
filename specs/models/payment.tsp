@@ -231,7 +231,7 @@ namespace BeautySalon.Models {
     @doc("売上のもとになる予約の ID。salonId のサロンの、customerId の顧客の予約を指定する。1件の予約に対して、取り消していない売上は1件まで。予約のない来店の場合はnull")
     bookingId: BookingId | null;
 
-    @doc("会計日時")
+    @doc("会計日時。UTC の日付で 1900-01-01 から 2999-12-31 まで")
     saleTime: utcDateTime;
 
     @doc("この会計で利用したポイント数。記録しない場合はnull。customerId がnullの場合はnull")
@@ -266,7 +266,7 @@ namespace BeautySalon.Models {
     @doc("売上のもとになった予約の ID。売上と同じサロンの、売上の顧客の予約で、ほかの取り消していない売上がないものを指定する。nullでクリア")
     bookingId?: BookingId | null;
 
-    @doc("会計日時。変更すると saleDate も再計算する")
+    @doc("会計日時。変更すると saleDate も再計算する。UTC の日付で 1900-01-01 から 2999-12-31 まで")
     saleTime?: utcDateTime;
 
     @doc("この会計で利用したポイント数。nullでクリア")
@@ -317,11 +317,11 @@ namespace BeautySalon.Models {
     paymentStatus?: PaymentStatusType;
 
     @query
-    @doc("売上日(saleDate)の下限。この日付以降の売上に一致する")
+    @doc("売上日(saleDate)の下限。この日付以降の売上に一致する。1900-01-01 から 2999-12-31 まで")
     startDate?: plainDate;
 
     @query
-    @doc("売上日(saleDate)の上限。この日付以前の売上に一致する")
+    @doc("売上日(saleDate)の上限。この日付以前の売上に一致する。1900-01-01 から 2999-12-31 まで")
     endDate?: plainDate;
   }
 
@@ -717,11 +717,11 @@ namespace BeautySalon.Models {
     cursor?: PointTransactionId;
 
     @query
-    @doc("取引の発生日時(createdAt)の下限。この日時以降の取引に一致する")
+    @doc("取引の発生日時(createdAt)の下限。この日時以降の取引に一致する。UTC の日付で 1900-01-01 から 2999-12-31 まで")
     startDate?: utcDateTime;
 
     @query
-    @doc("取引の発生日時(createdAt)の上限。この日時以前の取引に一致する。startDate より前の日時は指定できない")
+    @doc("取引の発生日時(createdAt)の上限。この日時以前の取引に一致する。startDate より前の日時は指定できない。UTC の日付で 1900-01-01 から 2999-12-31 まで")
     endDate?: utcDateTime;
   }
 
@@ -759,7 +759,7 @@ namespace BeautySalon.Models {
     @format("uuid")
     referenceId: string | null;
 
-    @doc("付与したポイントの有効期限(この日まで使える)。昨日(UTC)より前の日付は指定できない。有効期限を設けない場合はnull")
+    @doc("付与したポイントの有効期限(この日まで使える)。昨日(UTC)より前の日付は指定できない。有効期限を設けない場合はnull。1900-01-01 から 2999-12-31 まで")
     expiryDate: plainDate | null;
   }
 
@@ -828,7 +828,7 @@ namespace BeautySalon.Models {
     @doc("対象顧客の ID。削除されていないすべての顧客を処理する場合はnull")
     customerId: CustomerId | null;
 
-    @doc("有効期限がこの日付より前の獲得ポイントを失効させる。昨日(UTC)以前の日付で、null の場合は昨日(UTC)。有効期限は、その日まで使える日付で、付与は昨日(UTC)以降の有効期限を受け付けるため、どのタイムゾーンでも、有効期限の日が終わる前には失効しない")
+    @doc("有効期限がこの日付より前の獲得ポイントを失効させる。昨日(UTC)以前の日付で、null の場合は昨日(UTC)。有効期限は、その日まで使える日付で、付与は昨日(UTC)以降の有効期限を受け付けるため、どのタイムゾーンでも、有効期限の日が終わる前には失効しない。1900-01-01 から 2999-12-31 まで")
     processBefore: plainDate | null;
   }
 
@@ -855,11 +855,11 @@ namespace BeautySalon.Models {
     salonId: SalonId;
 
     @query
-    @doc("期間の最初の売上日(saleDate)")
+    @doc("期間の最初の売上日(saleDate)。1900-01-01 から 2999-12-31 まで")
     startDate: plainDate;
 
     @query
-    @doc("期間の最後の売上日(saleDate)。startDate 以降で、期間は startDate を含めて366日まで")
+    @doc("期間の最後の売上日(saleDate)。startDate 以降で、期間は startDate を含めて366日まで。1900-01-01 から 2999-12-31 まで")
     endDate: plainDate;
   }
 
@@ -870,7 +870,7 @@ namespace BeautySalon.Models {
     salonId: SalonId;
 
     @query
-    @doc("集計対象の売上日(saleDate)")
+    @doc("集計対象の売上日(saleDate)。1900-01-01 から 2999-12-31 まで")
     date: plainDate;
   }
 

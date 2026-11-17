@@ -75,7 +75,7 @@ describe('inventoryCreateRequestSchema', () => {
     [
       'an expiry date of the year 0',
       { expiryDate: '0000-06-30' },
-      ['expiryDate:custom'],
+      ['expiryDate:too_small'],
     ],
     [
       'an expiry date of no day',

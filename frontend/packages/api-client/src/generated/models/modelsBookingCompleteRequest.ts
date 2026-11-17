@@ -11,12 +11,12 @@
  */
 export interface ModelsBookingCompleteRequest {
   /**
-     * 実際の施術開始日時 (UTC)。nullの場合は、記録済みの日時(start アクションが記録したもの)を残す
+     * 実際の施術開始日時 (UTC)。nullの場合は、記録済みの日時(start アクションが記録したもの)を残す。UTC の日付で 1900-01-01 から 2999-12-31 まで
      * @nullable
      */
   actualStartTime: string | null;
   /**
-     * 実際の施術終了日時 (UTC)。実際の施術開始日時(このリクエストの値、nullの場合は記録済みの値)より後の日時を指定する。記録しない場合はnull
+     * 実際の施術終了日時 (UTC)。実際の施術開始日時(このリクエストの値、nullの場合は記録済みの値)より後の日時を指定する。記録しない場合はnull。UTC の日付で 1900-01-01 から 2999-12-31 まで
      * @nullable
      */
   actualEndTime: string | null;

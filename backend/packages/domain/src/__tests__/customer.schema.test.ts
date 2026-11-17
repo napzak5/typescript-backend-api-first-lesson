@@ -106,12 +106,8 @@ const accepted: [string, Record<string, unknown>][] = [
   ],
   ['a phone number of 20 characters', { phoneNumber: '090-1234-5678-901234' }],
   ['a second phone number', { alternativePhone: '+81 3 1234 5678' }],
-  ['the earliest birth date there is a rule for', { birthDate: '1900-01-01' }],
+  ['the earliest birth date a request may name', { birthDate: '1900-01-01' }],
   ['a birth date on a leap day', { birthDate: '2000-02-29' }],
-  [
-    'a birth date before 1900, which is the rule of the use case',
-    { birthDate: '1899-12-31' },
-  ],
   [
     'a birth date in the future, which is the rule of the use case',
     { birthDate: '2999-01-01' },
@@ -287,6 +283,21 @@ const violations: [string, Record<string, unknown>, string[]][] = [
     'a birth date with a time',
     { birthDate: '1990-04-01T00:00:00Z' },
     ['birthDate:invalid_format'],
+  ],
+  [
+    'a birth date before 1900, the first day a request may name',
+    { birthDate: '1899-12-31' },
+    ['birthDate:too_small'],
+  ],
+  [
+    'a birth date of the year 0, which PostgreSQL does not hold',
+    { birthDate: '0000-01-01' },
+    ['birthDate:too_small'],
+  ],
+  [
+    'a birth date after 2999, the last year a request may name',
+    { birthDate: '3000-01-01' },
+    ['birthDate:too_big'],
   ],
   [
     'a gender that is not one of the four',

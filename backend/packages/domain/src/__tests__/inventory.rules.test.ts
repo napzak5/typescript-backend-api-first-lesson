@@ -6,7 +6,6 @@ import {
 } from '../business-logic/inventory/_shared/authorization'
 import { lastExpiringDayOf } from '../business-logic/inventory/_shared/expiry'
 import type { Actor } from '../models/auth'
-import { calendarDate } from '../schemas/rules'
 import { actors } from './auth-fixtures'
 import { OTHER_SALON_ID, SALON_ID } from './fixtures'
 
@@ -140,35 +139,5 @@ describe('who reaches the stock of a salon', () => {
     const reach = inventoryReachOf(actors.ofSalon('owner', OTHER_SALON_ID))
 
     expect(reach).toEqual({ type: 'salon', salonId: OTHER_SALON_ID })
-  })
-})
-
-describe('calendarDate', () => {
-  it.each(['0001-01-01', '2028-02-29', '9999-12-31'])('takes %s', (date) => {
-    expect(calendarDate.safeParse(date)).toEqual({
-      success: true,
-      data: date,
-    })
-  })
-
-  it('refuses a day of the year 0, which PostgreSQL does not hold', () => {
-    const parsed = calendarDate.safeParse('0000-12-31')
-
-    expect(parsed.success).toBe(false)
-    expect(parsed.error?.issues).toMatchObject([
-      { code: 'custom', message: 'Must be in the year 1 or later' },
-    ])
-  })
-
-  it.each([
-    '2027-02-29',
-    '2027-13-01',
-    '27-01-01',
-    '2027-01-01T00:00:00Z',
-    '+12027-01-01',
-  ])('refuses %s as no day', (date) => {
-    expect(calendarDate.safeParse(date).error?.issues).toMatchObject([
-      { code: 'invalid_format' },
-    ])
   })
 })

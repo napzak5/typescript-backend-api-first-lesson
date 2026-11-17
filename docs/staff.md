@@ -109,7 +109,7 @@
 | `bio` | null、または空白だけでない文字列 |
 | `imageUrl` | null、または `http` か `https` の URL、500 文字以内 |
 | `yearsOfExperience` | null、または 0〜100 の整数 |
-| `hireDate` | null、または実在する日付（`YYYY-MM-DD`）。未来の日付も指定できる（入社が決まったスタッフを先に登録できる） |
+| `hireDate` | null、または実在する日付（`YYYY-MM-DD`）。未来の日付も指定できる（入社が決まったスタッフを先に登録できる）。1900-01-01 から 2999-12-31 まで |
 | `baseSalary` | null、または 0 以上の整数（`integer` カラムの上限まで） |
 | `commissionRate` | null、または 0〜100 の数値（%）。小数第 2 位まで（カラムが `numeric(5,2)` のため） |
 | `maxConcurrentBookings` | 1〜10 の整数 |
@@ -286,7 +286,7 @@
 | 項目 | 規則 |
 |---|---|
 | `dayOfWeek` | 毎週の行では `monday`〜`sunday`。単日の行では null |
-| `date` | 単日の行では実在する日付（`YYYY-MM-DD`）。毎週の行では null。過去の日付も指定できる |
+| `date` | 単日の行では実在する日付（`YYYY-MM-DD`）で、1900-01-01 から 2999-12-31 まで。毎週の行では null。過去の日付も指定できる |
 | `startTime` / `endTime` | 勤務する行では時刻。`startTime` は `endTime` より前（日付をまたぐ勤務は表せない）。休みの行では null |
 | `breakStartTime` / `breakEndTime` | 両方を指定するか、両方 null。指定する場合は、勤務時間の内側（`startTime` < `breakStartTime` < `breakEndTime` < `endTime`）。休みの行では null |
 | `notes` | null、または空白だけでない文字列 |
@@ -301,7 +301,7 @@
 
 ### ある日付に適用される行
 
-`GET` に `date`（`YYYY-MM-DD`）を付けると、その日付に適用される行だけを返します。
+`GET` に `date`（`YYYY-MM-DD`。1900-01-01 から 2999-12-31 まで）を付けると、その日付に適用される行だけを返します。
 
 1. その日付の単日の行があれば、その行
 2. なければ、その日付の曜日の、毎週の行

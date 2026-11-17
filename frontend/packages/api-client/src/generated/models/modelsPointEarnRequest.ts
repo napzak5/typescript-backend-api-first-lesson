@@ -33,7 +33,7 @@ export interface ModelsPointEarnRequest {
      */
   referenceId: string | null;
   /**
-     * 付与したポイントの有効期限(この日まで使える)。昨日(UTC)より前の日付は指定できない。有効期限を設けない場合はnull
+     * 付与したポイントの有効期限(この日まで使える)。昨日(UTC)より前の日付は指定できない。有効期限を設けない場合はnull。1900-01-01 から 2999-12-31 まで
      * @nullable
      */
   expiryDate: string | null;

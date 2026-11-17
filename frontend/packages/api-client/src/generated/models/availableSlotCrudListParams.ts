@@ -25,7 +25,7 @@ export type AvailableSlotCrudListParams = {
   staffId?: ModelsAvailableSlotSearchRequestStaffIdParameter;
   /** 提供メニュー・施術サービスを識別するためのブランド付きUUID。 */
   serviceId: ModelsAvailableSlotSearchRequestServiceIdParameter;
-  /** 空き枠を探す日付。サロンのタイムゾーンでの日付。過去の日付には空の一覧を返す */
+  /** 空き枠を探す日付。サロンのタイムゾーンでの日付。過去の日付には空の一覧を返す。1900-01-01 から 2999-12-31 まで */
   date: ModelsAvailableSlotSearchRequestDateParameter;
   /**
    * 必要な施術時間（分）。指定しない場合はサービスの施術時間を使う

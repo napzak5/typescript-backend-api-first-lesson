@@ -11,7 +11,7 @@ import {
   pointTransactionIdSchema,
 } from '../models/point'
 import { uuidSchema } from '../shared'
-import { MAX_INTEGER, momentInUtc, nonBlankText } from './rules'
+import { calendarDate, MAX_INTEGER, momentInUtc, nonBlankText } from './rules'
 
 /**
  * Validation of the requests of the points ledger. The shapes are checked
@@ -70,7 +70,7 @@ export const pointEarnRequestSchema = z
     customerId: customerIdSchema,
     points: pointsToMove,
     ...reference,
-    expiryDate: z.iso.date().nullable(),
+    expiryDate: calendarDate.nullable(),
   })
   .check(referenceInPairs) satisfies z.ZodType<ApiPointEarnRequest>
 
@@ -124,5 +124,5 @@ export const pointExpiringSearchRequestSchema = z.strictObject({
 
 export const pointExpireRequestSchema = z.strictObject({
   customerId: customerIdSchema.nullable(),
-  processBefore: z.iso.date().nullable(),
+  processBefore: calendarDate.nullable(),
 }) satisfies z.ZodType<ApiPointExpireRequest>

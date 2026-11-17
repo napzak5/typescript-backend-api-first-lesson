@@ -537,11 +537,11 @@ namespace BeautySalon.Models {
     tags?: string[];
 
     @query
-    @doc("登録日時(createdAt)の下限による絞り込み。この日時以降に登録された顧客に一致する")
+    @doc("登録日時(createdAt)の下限による絞り込み。この日時以降に登録された顧客に一致する。UTC の日付で 1900-01-01 から 2999-12-31 まで")
     registeredFrom?: utcDateTime;
 
     @query
-    @doc("登録日時(createdAt)の上限による絞り込み。この日時以前に登録された顧客に一致する。registeredFromより前の日時は指定できない")
+    @doc("登録日時(createdAt)の上限による絞り込み。この日時以前に登録された顧客に一致する。registeredFromより前の日時は指定できない。UTC の日付で 1900-01-01 から 2999-12-31 まで")
     registeredTo?: utcDateTime;
 
     @query
