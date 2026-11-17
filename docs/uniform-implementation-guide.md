@@ -666,8 +666,7 @@ if (!mayUpdateSalon(actor, salonId.data)) {
 - The handler and the middleware never look at a role. They only pass the
   actor on.
 - A rule reads `actor.scope` (`ActorScope` in
-  `backend/packages/domain/src/models/auth.ts`), not `users.role` or
-  `users.permissions`.
+  `backend/packages/domain/src/models/auth.ts`), not `users.role`.
 - A rule about one resource compares the salon of the actor with the salon of
   the resource. When the ID in the path is enough to decide, as for a salon,
   the check comes right after the ID is parsed.

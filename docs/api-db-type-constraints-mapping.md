@@ -478,7 +478,6 @@ const salonRules: ModelRule[] = [
 
 | 機能 | TypeSpec |
 |---|---|
-| ロール、権限、ロールの割り当て、アクセス判定 | `specs/models/permission.tsp` |
 | 添付ファイル、共有リンク | `specs/models/attachment.tsp` |
 | 顧客の監査履歴・版、エクスポートジョブ、データ削除リクエスト | `specs/models/customer.tsp` の `CustomerAuditEntry*`、`CustomerExport*`、`CustomerDataDeletion*` |
 
