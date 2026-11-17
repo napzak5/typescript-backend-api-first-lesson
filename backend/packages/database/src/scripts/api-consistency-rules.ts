@@ -1138,7 +1138,8 @@ const treatmentRules: ModelRule[] = [
     model: 'Models.TreatmentPhotoResponse',
     table: 'treatmentPhotos',
     kind: 'response',
-    omittedColumns: treatmentChildManagedColumns,
+    // A photo is removed by its ID; it is shown in its record.
+    omittedColumns: ['treatmentRecordId', 'createdAt'],
   },
   {
     model: 'Models.TreatmentPhotoCreateRequest',

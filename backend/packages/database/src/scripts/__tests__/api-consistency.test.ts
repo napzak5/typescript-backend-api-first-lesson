@@ -1441,6 +1441,55 @@ describe('modelRules', () => {
     ])
   })
 
+  it('shows a photo of a treatment record with its ID, and lets the request that adds one state everything but its ID, its record and its time', () => {
+    const rules = modelRules
+      .filter(({ table }) => table === 'treatmentPhotos')
+      .map(
+        ({
+          model,
+          table,
+          kind,
+          omittedColumns,
+          embedded,
+          computed,
+          narrowed,
+          nonNullable,
+        }) => ({
+          model,
+          table,
+          kind,
+          omittedColumns,
+          embedded,
+          computed,
+          narrowed,
+          nonNullable,
+        }),
+      )
+    const none = {
+      embedded: undefined,
+      computed: undefined,
+      narrowed: undefined,
+      nonNullable: undefined,
+    }
+
+    expect(rules).toEqual([
+      {
+        model: 'Models.TreatmentPhotoResponse',
+        table: 'treatmentPhotos',
+        kind: 'response',
+        omittedColumns: ['treatmentRecordId', 'createdAt'],
+        ...none,
+      },
+      {
+        model: 'Models.TreatmentPhotoCreateRequest',
+        table: 'treatmentPhotos',
+        kind: 'create',
+        omittedColumns: ['id', 'treatmentRecordId', 'createdAt'],
+        ...none,
+      },
+    ])
+  })
+
   it('lets nothing but the stock row of a new item of a purchase order leave out the null of its column', () => {
     const nonNullable = modelRules
       .filter((modelRule) => modelRule.nonNullable !== undefined)

@@ -35,6 +35,7 @@ CREATE TYPE "public"."service_category" AS ENUM('cut', 'color', 'perm', 'treatme
 CREATE TYPE "public"."service_option_type" AS ENUM('addon', 'upgrade', 'duration_extension', 'product_choice');
 CREATE TYPE "public"."service_status" AS ENUM('active', 'inactive', 'coming_soon', 'discontinued');
 CREATE TYPE "public"."staff_level" AS ENUM('junior', 'stylist', 'senior', 'expert', 'director');
+CREATE TYPE "public"."treatment_photo_type" AS ENUM('before', 'during', 'after', 'other');
 CREATE TYPE "public"."two_factor_status" AS ENUM('disabled', 'pending', 'enabled');
 CREATE TYPE "public"."user_role" AS ENUM('customer', 'staff', 'manager', 'admin', 'owner');
 CREATE TABLE "booking_services" (
@@ -869,7 +870,7 @@ CREATE TABLE "treatment_materials" (
 CREATE TABLE "treatment_photos" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"treatmentRecordId" uuid NOT NULL,
-	"photoType" varchar(20) NOT NULL,
+	"photoType" "treatment_photo_type" NOT NULL,
 	"photoUrl" varchar(500) NOT NULL,
 	"thumbnailUrl" varchar(500),
 	"angle" varchar(50),
@@ -877,7 +878,10 @@ CREATE TABLE "treatment_photos" (
 	"isPublic" boolean DEFAULT false NOT NULL,
 	"customerConsent" boolean DEFAULT false NOT NULL,
 	"sortOrder" integer DEFAULT 0 NOT NULL,
-	"createdAt" timestamp with time zone DEFAULT now() NOT NULL
+	"createdAt" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "treatment_photos_record_url_unique" UNIQUE("treatmentRecordId","photoUrl"),
+	CONSTRAINT "treatment_photos_consent" CHECK ((NOT "isPublic") OR "customerConsent"),
+	CONSTRAINT "treatment_photos_sort_order" CHECK ("sortOrder" >= 0)
 );
 
 CREATE TABLE "treatment_records" (
@@ -1111,8 +1115,6 @@ CREATE INDEX "idx_staff_skills_service_id" ON "staff_skills" USING btree ("servi
 CREATE INDEX "idx_staff_skills_staff_id" ON "staff_skills" USING btree ("staffId" uuid_ops);
 CREATE INDEX "idx_treatment_materials_product_id" ON "treatment_materials" USING btree ("productId" uuid_ops);
 CREATE INDEX "idx_treatment_materials_treatment_record_id" ON "treatment_materials" USING btree ("treatmentRecordId" uuid_ops);
-CREATE INDEX "idx_treatment_photos_photo_type" ON "treatment_photos" USING btree ("photoType" text_ops);
-CREATE INDEX "idx_treatment_photos_treatment_record_id" ON "treatment_photos" USING btree ("treatmentRecordId" uuid_ops);
 CREATE INDEX "idx_treatment_records_booking_id" ON "treatment_records" USING btree ("bookingId" uuid_ops);
 CREATE INDEX "idx_treatment_records_created_at" ON "treatment_records" USING btree ("createdAt" timestamptz_ops,"id" uuid_ops);
 CREATE INDEX "idx_treatment_records_customer_id" ON "treatment_records" USING btree ("customerId" uuid_ops);
