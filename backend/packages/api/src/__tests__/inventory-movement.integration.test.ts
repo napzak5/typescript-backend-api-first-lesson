@@ -655,6 +655,7 @@ describe('Inventory movements API', () => {
           { transactionType: 'return', quantity: 0 },
           [['quantity', 'custom']],
         ],
+        ['a purchase of nothing', { quantity: 0 }, [['quantity', 'custom']]],
         ['a purchase out', { quantity: -3 }, [['quantity', 'custom']]],
         [
           'a sale in',
@@ -692,6 +693,19 @@ describe('Inventory movements API', () => {
           [['unitCost', 'too_big']],
         ],
         [
+          'a unit cost above an integer, which is not looked at again for its total',
+          { unitCost: 2_147_483_648 },
+          [['unitCost', 'too_big']],
+        ],
+        [
+          'a purchase out at a total cost above an integer',
+          { quantity: -2, unitCost: 1_073_741_824 },
+          [
+            ['unitCost', 'too_big'],
+            ['quantity', 'custom'],
+          ],
+        ],
+        [
           'a quantity of three decimals',
           { quantity: 1.005 },
           [['quantity', 'not_multiple_of']],
@@ -700,6 +714,15 @@ describe('Inventory movements API', () => {
           'a quantity above the most',
           { quantity: 100_000_000 },
           [['quantity', 'too_big']],
+        ],
+        [
+          'a quantity below the least',
+          {
+            transactionType: 'adjustment',
+            quantity: -100_000_000,
+            reason: '数え直し',
+          },
+          [['quantity', 'too_small']],
         ],
         [
           'a quantity that is text',
@@ -751,6 +774,27 @@ describe('Inventory movements API', () => {
           ),
         ).toEqual(broken)
         expect(await everything()).toEqual(before)
+      })
+
+      it('names the largest unit cost that the quantity takes, and takes it', async () => {
+        const id = await insertStock()
+
+        const refused = await move(
+          purchase(id, { quantity: 1.01, unitCost: 2_126_221_434 }),
+        )
+        const taken = await move(
+          purchase(id, { quantity: 1.01, unitCost: 2_126_221_433 }),
+        )
+
+        expectRefused(refused, INVALID, [
+          issue(
+            'unitCost',
+            'too_big',
+            'Must be at most 2126221433: the total cost, unitCost × |quantity| rounded, has to be at most 2147483647',
+          ),
+        ])
+        expect(taken.status).toBe(200)
+        expect(taken.body.data.totalCost).toBe(2_147_483_647)
       })
 
       it.each([
@@ -908,6 +952,22 @@ describe('Inventory movements API', () => {
 
       expect(response.body.data).toEqual([])
       expect(response.body.meta).toMatchObject({ total: 0, hasMore: false })
+    })
+
+    it('has no next page after a page that holds the last movements', async () => {
+      const id = await insertStock()
+      await insertMovement(id, { createdAt: '2026-11-01T00:00:00Z' })
+      await insertMovement(id, { createdAt: '2026-11-02T00:00:00Z' })
+
+      const response = await history(id, { limit: 2 })
+
+      expect(response.body.data).toHaveLength(2)
+      expect(response.body.meta).toMatchObject({
+        total: 2,
+        hasMore: false,
+        nextCursor: null,
+      })
+      expect(response.body.links.next).toBeNull()
     })
 
     it('orders the movements of one moment by their IDs, downwards', async () => {

@@ -281,6 +281,18 @@ describe('inventoryTransactionSearchRequestSchema', () => {
     })
   })
 
+  it('takes a period of one moment, written two ways', () => {
+    expect(
+      inventoryTransactionSearchRequestSchema.parse({
+        startDate: '2026-11-01T00:00:00Z',
+        endDate: '2026-11-01T00:00:00.000Z',
+      }),
+    ).toEqual({
+      startDate: '2026-11-01T00:00:00.000Z',
+      endDate: '2026-11-01T00:00:00.000Z',
+    })
+  })
+
   it.each([
     ['a limit of 0', { limit: 0 }, ['limit:too_small']],
     ['a limit of 101', { limit: 101 }, ['limit:too_big']],
