@@ -3,6 +3,7 @@ import {
   customers,
   products,
   salons,
+  serviceCategories,
   services,
   staff,
   treatmentMaterials,
@@ -12,6 +13,7 @@ import {
 import {
   creationIssues,
   type DbNewTreatmentMaterial,
+  type DbNewTreatmentPhoto,
   type DbTreatmentMaterial,
   type DbTreatmentPhoto,
   type DomainError,
@@ -20,7 +22,12 @@ import {
   type LedgerReach,
   type NamedOfTreatment,
   type ProductId,
+  photoAdditionRefusal,
   type ServiceId,
+  type TreatmentFigures,
+  type TreatmentPhotoAddition,
+  type TreatmentPhotoId,
+  type TreatmentPhotoRemoval,
   type TreatmentRecordChange,
   type TreatmentRecordCreateCriteria,
   type TreatmentRecordCreation,
@@ -30,6 +37,7 @@ import {
   type TreatmentRecordRemoval,
   type TreatmentRecordUpdateCriteria,
   type TreatmentRecordWithDetails,
+  type TreatmentStatisticsCriteria,
   treatmentIssues,
 } from '@beauty-salon-backend/domain'
 import type { Result } from '@beauty-salon-backend/utility'
@@ -37,6 +45,7 @@ import {
   and,
   asc,
   count,
+  countDistinct,
   desc,
   eq,
   exists,
@@ -162,6 +171,125 @@ const recordOf = async (
     record,
     materials: materials.get(record.id) ?? [],
     photos: photos.get(record.id) ?? [],
+  }
+}
+
+/**
+ * The record, held with the lock of the write of its `updatedAt`, if the
+ * writer reaches it: two writes of its photos come one after the other,
+ * and the second counts what the first wrote. An update and a removal of
+ * the record wait for it, and it for them.
+ */
+const heldRecordOf = async (
+  executor: DatabaseExecutor,
+  reach: LedgerReach,
+  id: TreatmentRecordId,
+): Promise<boolean> => {
+  const [held] = await executor
+    .select({ id: treatmentRecords.id })
+    .from(treatmentRecords)
+    .where(and(eq(treatmentRecords.id, id), shownTo(executor, reach, null)))
+    .for('no key update')
+  return held !== undefined
+}
+
+/** The records of the statistics: those of the salon's bookings in the period. */
+const ofPeriod = ({
+  salonId,
+  startDate,
+  endDate,
+}: TreatmentStatisticsCriteria) =>
+  and(
+    eq(bookings.salonId, salonId),
+    startDate === null
+      ? undefined
+      : sql`${createdAt} >= ${startDate}::timestamptz`,
+    endDate === null ? undefined : sql`${createdAt} <= ${endDate}::timestamptz`,
+  )
+
+/** The most services the statistics list. */
+const TOP_SERVICES = 10
+
+const figuresOf = async (
+  tx: DatabaseExecutor,
+  criteria: TreatmentStatisticsCriteria,
+): Promise<TreatmentFigures | null> => {
+  const [salon] = await tx
+    .select({ id: salons.id })
+    .from(salons)
+    .where(and(eq(salons.id, criteria.salonId), isNull(salons.deletedAt)))
+  if (salon === undefined) {
+    return null
+  }
+
+  const [totals] = await tx
+    .select({
+      total: count(),
+      processingTimeSum:
+        sql<number>`coalesce(sum(${treatmentRecords.processingTime}), 0)`.mapWith(
+          Number,
+        ),
+      processingTimeCount: count(treatmentRecords.processingTime),
+    })
+    .from(treatmentRecords)
+    .innerJoin(bookings, eq(bookings.id, treatmentRecords.bookingId))
+    .where(ofPeriod(criteria))
+
+  // One row for each service a record of the period states.
+  const servicesOfRecords = tx
+    .select({
+      recordId: sql<string>`${treatmentRecords.id}`.as('recordId'),
+      serviceId:
+        sql<string>`jsonb_array_elements_text(${treatmentRecords.services})`.as(
+          'serviceId',
+        ),
+    })
+    .from(treatmentRecords)
+    .innerJoin(bookings, eq(bookings.id, treatmentRecords.bookingId))
+    .where(ofPeriod(criteria))
+    .as('services_of_records')
+
+  // A service without a category is of the kind other, as a service of a
+  // category of that kind; a record counts once for each kind.
+  const kind = sql`coalesce(${serviceCategories.category}, 'other')`.mapWith(
+    serviceCategories.category,
+  )
+  const byCategory = await tx
+    .select({
+      category: kind,
+      count: countDistinct(servicesOfRecords.recordId),
+    })
+    .from(servicesOfRecords)
+    .leftJoin(
+      services,
+      sql`${services.id} = ${servicesOfRecords.serviceId}::uuid`,
+    )
+    .leftJoin(serviceCategories, eq(serviceCategories.id, services.categoryId))
+    .groupBy(kind)
+    .orderBy(
+      desc(countDistinct(servicesOfRecords.recordId)),
+      sql`${kind}::text`,
+    )
+
+  const topServices = await tx
+    .select({
+      serviceId: servicesOfRecords.serviceId,
+      count: countDistinct(servicesOfRecords.recordId),
+    })
+    .from(servicesOfRecords)
+    .groupBy(servicesOfRecords.serviceId)
+    .orderBy(
+      desc(countDistinct(servicesOfRecords.recordId)),
+      asc(servicesOfRecords.serviceId),
+    )
+    .limit(TOP_SERVICES)
+
+  return {
+    total: totals?.total ?? 0,
+    processingTimeSum: totals?.processingTimeSum ?? 0,
+    processingTimeCount: totals?.processingTimeCount ?? 0,
+    byCategory,
+    topServices,
   }
 }
 
@@ -558,6 +686,105 @@ export class TreatmentRecordRepository implements ITreatmentRecordRepository {
 
         return removed.length === 0 ? { type: 'notFound' } : { type: 'removed' }
       },
+    )
+  }
+
+  async addPhotos(
+    reach: LedgerReach,
+    id: TreatmentRecordId,
+    photos: DbNewTreatmentPhoto[],
+  ): Promise<Result<TreatmentPhotoAddition, DomainError>> {
+    return attempt('Failed to add treatment photos', () =>
+      this.db.transaction(
+        async (tx): Promise<TreatmentPhotoAddition> => {
+          if (!(await heldRecordOf(tx, reach, id))) {
+            return { type: 'notFound' }
+          }
+          const held = await tx
+            .select({ photoUrl: treatmentPhotos.photoUrl })
+            .from(treatmentPhotos)
+            .where(eq(treatmentPhotos.treatmentRecordId, id))
+          const refusal = photoAdditionRefusal(
+            held.map(({ photoUrl }) => photoUrl),
+            photos,
+          )
+          if (refusal !== null) {
+            return { type: 'refused', refusal }
+          }
+
+          // The record changes at the moment the photos are added.
+          const [changed] = await tx
+            .update(treatmentRecords)
+            .set({ updatedAt: CLOCK })
+            .where(eq(treatmentRecords.id, id))
+            .returning({ at: treatmentRecords.updatedAt })
+          const added = await tx
+            .insert(treatmentPhotos)
+            .values(
+              photos.map((photo) => ({
+                ...photo,
+                treatmentRecordId: id,
+                createdAt: changed?.at ?? CLOCK,
+              })),
+            )
+            .returning()
+
+          return {
+            type: 'added',
+            recordId: id,
+            // In the order they were given; an address is of one photo.
+            photos: photos.flatMap(({ photoUrl }) =>
+              added.filter((row) => row.photoUrl === photoUrl),
+            ),
+          }
+        },
+        // An addition that waited for the record counts the photos it
+        // waited for.
+        { isolationLevel: 'read committed' },
+      ),
+    )
+  }
+
+  async removePhoto(
+    reach: LedgerReach,
+    id: TreatmentRecordId,
+    photoId: TreatmentPhotoId,
+  ): Promise<Result<TreatmentPhotoRemoval, DomainError>> {
+    return attempt('Failed to remove treatment photo', () =>
+      this.db.transaction(
+        async (tx): Promise<TreatmentPhotoRemoval> => {
+          if (!(await heldRecordOf(tx, reach, id))) {
+            return { type: 'recordNotFound' }
+          }
+          const removed = await tx
+            .delete(treatmentPhotos)
+            .where(
+              and(
+                eq(treatmentPhotos.id, photoId),
+                eq(treatmentPhotos.treatmentRecordId, id),
+              ),
+            )
+            .returning({ id: treatmentPhotos.id })
+          if (removed.length === 0) {
+            return { type: 'photoNotFound' }
+          }
+          await tx
+            .update(treatmentRecords)
+            .set({ updatedAt: CLOCK })
+            .where(eq(treatmentRecords.id, id))
+
+          return { type: 'removed' }
+        },
+        { isolationLevel: 'read committed' },
+      ),
+    )
+  }
+
+  async findFigures(
+    criteria: TreatmentStatisticsCriteria,
+  ): Promise<Result<TreatmentFigures | null, DomainError>> {
+    return attempt('Failed to count treatment records', () =>
+      this.db.transaction((tx) => figuresOf(tx, criteria), AT_ONE_MOMENT),
     )
   }
 }
