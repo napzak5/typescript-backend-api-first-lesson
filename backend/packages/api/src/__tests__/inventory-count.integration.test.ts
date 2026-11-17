@@ -810,6 +810,11 @@ describe('Inventory stock count and value report API', () => {
       })
       await insertStock({ productId: sold, ...stock('0') })
       await insertProduct({ category: 'ネイル', purchasePrice: 800 })
+      const sample = await insertProduct({
+        category: 'サンプル',
+        purchasePrice: null,
+      })
+      await insertStock({ productId: sample, ...stock('2') })
 
       const response = await valueReport()
 
@@ -817,11 +822,12 @@ describe('Inventory stock count and value report API', () => {
       expect(response.body).toEqual({
         data: {
           totalValue: 7833,
-          totalItems: 5,
+          totalItems: 6,
           categories: [
             { category: 'ヘアケア', value: 6683, itemCount: 2 },
             { category: 'カラー剤', value: 1000, itemCount: 2 },
             { category: null, value: 150, itemCount: 1 },
+            { category: 'サンプル', value: 0, itemCount: 1 },
           ],
         },
         meta: expect.objectContaining({ timestamp: expect.any(String) }),
