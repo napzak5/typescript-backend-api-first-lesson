@@ -354,6 +354,18 @@ DB にも TypeSpec にも表せない規則（空白だけの文字列を拒否�
 
 一意制約 `review_reports_review_reporter_unique`（1 つのアカウントが 1 つのレビューを通報するのは 1 回）は、通報が `ON CONFLICT DO NOTHING` で行を書き、何も書かれなければ 409 を返す規則そのものである。レビューの `reportCount` が `pending` の通報の数と等しいことは、テーブルをまたぐので、CHECK 制約では書けない。通報と却下のトランザクションが、レビューの行をロックして数え直して保証する（[レビュー](./reviews.md#同時に届いたリクエスト)）。
 
+`treatment_records`、`treatment_materials`、`treatment_photos` の CHECK 制約は、施術記録と、その使用商材と写真の 1 行で確かめられる規則である（`backend/packages/database/sql/migrations/202611171800_treatment_record_rules.sql`、`202611171900_treatment_photo_rules.sql`）。リクエストが書く値にかかるものは、スキーマが先に確かめ、違反は 400 になる。
+
+| CHECK 制約 | TypeSpec | 規則を確かめる場所 |
+|---|---|---|
+| `treatment_records_lists`（`services` は 1 件以上の配列、`techniques` と `nextRecommendedServices` は配列） | `services` に `@minItems(1)`。3 つとも null にならない配列 | スキーマの 3 つの一覧（`services` は 1〜20 件） |
+| `treatment_records_ranges`（`processingTime` は NULL か 0〜1440、`customerSatisfaction` は NULL か 1〜5） | `@minValue` と `@maxValue` | スキーマの `processingTime` と `customerSatisfaction` |
+| `treatment_materials_amounts`（`quantity` は 0 より大きい、`sortOrder` は 0 以上） | `quantity` に `@minValueExclusive(0)`。`sortOrder` はモデルにない | スキーマの `quantity`。`sortOrder` は、リポジトリが、リクエストの順に 0 から付ける |
+| `treatment_photos_consent`（`isPublic` が true なら `customerConsent` も true） | `isPublic` の `@doc` | 写真のスキーマの `.check()`（`isPublic` の `custom`、400） |
+| `treatment_photos_sort_order`（`sortOrder` は 0 以上） | `sortOrder` に `@minValue(0)` | 写真のスキーマの `sortOrder` |
+
+写真の区分 `photoType` は、列挙型 `treatment_photo_type` で、TypeSpec は `TreatmentPhotoType` である。一意制約 `treatment_records_booking_unique`（予約 1 件に施術記録は 1 件）は、作成が `ON CONFLICT DO NOTHING` で行を書き、何も書かれなければ 409 を返す規則そのものである。一意制約 `treatment_photos_record_url_unique`（施術記録 1 件に同じ URL の写真は 1 枚）は、写真の追加が、施術記録をロックしたあとに確かめる規則（409）の裏付けである。施術記録 1 件の写真が 20 枚までであることは、行をまたぐので、CHECK 制約では書けない。写真の追加が、施術記録の行をロックして数えて保証する（[施術記録](./treatments.md#同時に届いたリクエスト)）。
+
 ## `pnpm check:api-db`
 
 生成済みの OpenAPI ドキュメント（`specs/tsp-output/@typespec/openapi3/generated/openapi.yaml`）と Drizzle スキーマ（`schema.ts`）を比べ、API モデルがテーブルと食い違っていれば失敗する。DB は使わない。CI の `quality` ジョブと `make ci-check` で実行される。
@@ -444,7 +456,8 @@ const salonRules: ModelRule[] = [
 | まだ書いていない行のカラムの値だけを返すモデル（`SaleBreakdownResponse`。売上を作成すれば、その金額のカラムになる値） | 載せる。その表のルールで、ほかのカラムを `omittedColumns` に挙げる |
 | 何も書かないリクエストと、行のモデルを包むレスポンス（`SaleCalculateRequest`、`SaleCalculateResponse`、`SaleReceiptResponse`） | 載せない。包んだ行のモデル（`SaleResponse`、`SaleBreakdownResponse`）は、それぞれのルールで照合する |
 | 複数の行を書き換えるアクションのリクエストと、その結果（`InventoryStockCountRequest`、`InventoryStockCountResponse`、`PurchaseOrderReceiveRequest`、`PurchaseOrderReceivedItem`） | 載せない。プロパティ名と null 許可はカラムに合わせる（入荷の `inventoryId`、`quantity` は在庫の移動の、`deliveryNotes` は発注のカラム）。結果に包む行のモデル（`InventoryTransactionResponse`、`PurchaseOrderResponse`）は、そのルールで照合する |
-| 集計・計算結果（`ReviewSummaryResponse`、`SalesReportResponse`、`InventoryValueReportResponse`、`ReorderSuggestionResponse`、`InventoryAlertSummaryResponse` など） | 載せない |
+| 複数の行を一度に追加するリクエストと、その結果（`TreatmentPhotoBulkCreateRequest`、`TreatmentPhotoBulkCreateResponse`） | 載せない。包む行のモデル（`TreatmentPhotoCreateRequest`、`TreatmentPhotoResponse`）は、そのルールで照合する |
+| 集計・計算結果（`ReviewSummaryResponse`、`SalesReportResponse`、`InventoryValueReportResponse`、`ReorderSuggestionResponse`、`InventoryAlertSummaryResponse`、`TreatmentStatisticsResponse` など） | 載せない |
 | 保存せず、読むたびに複数の表から求めるモデル（`InventoryAlertResponse`。在庫のアラートは、商品、在庫の行、在庫の移動から求める） | 載せない。プロパティ名と null 許可は、もとのカラムに合わせる（`productId`、`inventoryId`、`lotNumber`、`expiryDate` など）。包む行のモデル（`InventoryAlertAcknowledgementResponse`）は、そのルールで照合する |
 | 行を追加するアクションのリクエストで、サーバーが決めるカラムを書かないもの（`InventoryAlertAcknowledgeRequest`。サロン、重要度、`threshold`、使用期限は、今のアラートから、確認した人と時刻は、操作者とデータベースが決める） | `create` として載せ、書かないカラムを `omittedColumns` に挙げる |
 | テーブルがまだない機能のモデル（下の表） | 載せない |
