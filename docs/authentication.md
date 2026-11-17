@@ -268,8 +268,8 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 
 | 範囲 | 対象 | 届くもの |
 |---|---|---|
-| `platform` | `admin` | すべてのサロン（予約台帳、売上台帳、在庫を含む）と、顧客台帳（顧客の好み設定を含む）、ポイント台帳、すべてのレビューの削除（`DELETE /api/v1/reviews/{id}`）とサロンからの返信の取り下げ（`POST /api/v1/reviews/{id}/respond`）、レビューの通報の一覧と却下（`/api/v1/review-reports`） |
-| `salon` | `owner`、`manager`、`staff`。`users.staffId` が指すスタッフが有効（`isActive`、未削除）で、そのサロンが未削除であること | そのサロン（予約台帳、売上台帳、在庫を含む。在庫の管理は `owner`・`manager` だけ）と、顧客台帳（顧客の好み設定を含む）、ポイント台帳（調整は `owner`・`manager` だけ）、自分のスタッフのプロフィール（`/api/v1/staff-profiles/me`）、サロンのレビューの通報と返信（`owner`・`manager` だけ。`POST /api/v1/reviews/{id}/report`、`/respond`）。範囲はロール・サロン ID・スタッフ ID を持つ |
+| `platform` | `admin` | すべてのサロン（予約台帳、売上台帳、在庫を含む）と、顧客台帳（顧客の好み設定とカルテを含む）、ポイント台帳、すべてのレビューの削除（`DELETE /api/v1/reviews/{id}`）とサロンからの返信の取り下げ（`POST /api/v1/reviews/{id}/respond`）、レビューの通報の一覧と却下（`/api/v1/review-reports`） |
+| `salon` | `owner`、`manager`、`staff`。`users.staffId` が指すスタッフが有効（`isActive`、未削除）で、そのサロンが未削除であること | そのサロン（予約台帳、売上台帳、在庫を含む。在庫の管理は `owner`・`manager` だけ）と、顧客台帳（顧客の好み設定とカルテを含む）、ポイント台帳（調整は `owner`・`manager` だけ）、自分のスタッフのプロフィール（`/api/v1/staff-profiles/me`）、サロンのレビューの通報と返信（`owner`・`manager` だけ。`POST /api/v1/reviews/{id}/report`、`/respond`）。範囲はロール・サロン ID・スタッフ ID を持つ |
 | `customer` | `customer`。範囲は `users.customerId` を持ち、プロフィールを作るまでは null | 自分のプロフィール（`/api/v1/customers/me`）、自分の好み設定（`/api/v1/customers/me/preferences`）、自分の予約（`/api/v1/customers/me/bookings`）、自分の済んだ予約へのレビューの投稿（`POST /api/v1/reviews`）と、自分のレビューの修正と削除（`PATCH`、`DELETE /api/v1/reviews/{id}`）、ほかの顧客のレビューの参考になったと通報（`POST /api/v1/reviews/{id}/helpful`、`/report`）。null の間は、プロフィールの作成だけができる |
 | `none` | `owner`、`manager`、`staff` で、`salon` の条件に当たらない（スタッフ情報が削除された `staff`、紐づけを解除された `staff` など） | 範囲を必要とするものには届かない。ログインはでき、スタッフへの招待に[参加](./staff.md#参加)できる |
 
@@ -553,14 +553,30 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 | 作成（`POST /api/v1/treatments`） | `admin`、本文の予約のサロンの `owner` / `manager` / `staff` |
 | 1 件の取得、更新（`GET`、`PATCH /api/v1/treatments/{id}`） | `admin`、施術記録のサロンの `owner` / `manager` / `staff` |
 | 削除（`DELETE /api/v1/treatments/{id}`） | `admin`、施術記録のサロンの `owner` / `manager` |
+| 施術写真の追加、削除（`POST /api/v1/treatments/{id}/photos`、`DELETE /api/v1/treatments/{id}/photos/{photoId}`） | `admin`、施術記録のサロンの `owner` / `manager` / `staff` |
+| 統計（`GET /api/v1/treatments/statistics`） | `admin`（すべてのサロン）、サロンの `owner` / `manager` / `staff`（所属サロンだけ） |
 
-- 1 段階目は、操作者だけで決まる。一覧、作成、取得、更新（`treatmentRecordReachOf`）は、予約台帳を扱える人（`admin` と、サロンの 3 つのロール）のもの。施術をしたスタッフが記録を書き、直すため。削除（`treatmentRecordRemovalReachOf`）は、予約の削除と同じく `staff` を除く。ロール `customer` のユーザー、範囲 `none` のユーザーは、ID、本文、クエリが不正でも 403
+- 1 段階目は、操作者だけで決まる。一覧、作成、取得、更新、写真の追加と削除、統計（`treatmentRecordReachOf`）は、予約台帳を扱える人（`admin` と、サロンの 3 つのロール）のもの。施術をしたスタッフが記録を書き、直すため。削除（`treatmentRecordRemovalReachOf`）は、予約の削除と同じく `staff` を除く。ロール `customer` のユーザー、範囲 `none` のユーザーは、ID、本文、クエリが不正でも 403
 - 顧客は、自分の施術の記録も読めない（403）。施術記録は、カウンセリングのメモ（`consultationNotes`）とスタッフの申し送り（`staffEvaluation`）を持つ、サロンの記録であるため。施術記録のための権限（`users.permissions`）はない
-- 2 段階目は、一覧のクエリを確かめたあとに決まる（`isWithin`）。サロンのユーザーが、ほかのサロンの `salonId` を指定すると 403
+- 2 段階目は、一覧と統計のクエリを確かめたあとに決まる（`isWithin`）。サロンのユーザーが、ほかのサロンの `salonId` を指定すると 403
 - 作成、取得、更新、削除には、比べるサロンがない。リポジトリが、操作者に届く範囲を検索の条件にするので（`shownTo`）、ほかのサロンの施術記録は見つからない（404）。存在しない施術記録と区別しない。作成でほかのサロンの予約を指定すると 400（`bookingId` の `not_found`）、一覧の `cursor` にほかのサロンの施術記録を指定すると 400（`cursor` の `not_found`）
 - 削除されたサロンの施術記録は、`admin` にも見えない（404。一覧にも入らない）
 
 規則は [施術記録](./treatments.md) にあります。
+
+### カルテの権限
+
+カルテ（`/api/v1/medical-charts`）は顧客のもので、サロンに属しません。権限は、顧客台帳と同じく**操作者だけ**で判定します（`business-logic/customer/_shared/authorization.ts` の `mayHandleCustomers`）。
+
+| オペレーション | 許可 |
+|---|---|
+| 一覧、作成、顧客のカルテの取得、更新 | `admin`、サロンの `owner` / `manager` / `staff`（所属サロンは問わない） |
+
+- 判定は最初に行う。権限のないユーザーには、ID、クエリ、本文が不正でも、顧客やカルテが存在しなくても 403 を返す
+- 顧客は、自分のカルテも読めない（403）。持病や体調（`medicalConditions`）は、スタッフが施術のために書く情報であるため。カルテのための権限（`users.permissions`）はない
+- 削除された顧客のカルテは、`admin` にも見えない（404。一覧にも入らない）
+
+規則は [カルテ](./medical-charts.md) にあります。
 
 ### レビューの権限
 
