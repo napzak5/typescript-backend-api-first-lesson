@@ -5,33 +5,35 @@
  * Comprehensive REST API for managing beauty salon operations including salons, staff, services, customers, bookings, treatments, payments, inventory, and access control. Built with TypeSpec for type-safe API-first development.
  * OpenAPI spec version: 2.0
  */
-import type { ModelsPurchaseOrderItem } from './modelsPurchaseOrderItem';
+import type { ModelsPurchaseOrderItemCreateRequest } from './modelsPurchaseOrderItemCreateRequest';
 import type { ModelsSalonId } from './modelsSalonId';
 
 /**
  * 仕入れ発注作成リクエスト - 全項目のキーが必須。null を指定できる項目は未設定を表す。
- * 作成した発注のステータスは draft になる
+ * 作成した発注のステータスは draft になる。発注番号、発注日、明細の商品の値と金額、小計、合計金額はサーバーが決める
  */
 export interface ModelsPurchaseOrderCreateRequest {
   /** 発注を行うサロン ID */
   salonId: ModelsSalonId;
   /**
-     * 仕入先名
+     * 仕入先名。空白だけの文字列は指定できない
      * @minLength 1
+     * @maxLength 255
      */
   supplier: string;
   /**
-     * 発注明細一覧。salonId のサロンの在庫を1件以上指定する
+     * 発注明細の一覧。salonId のサロンの在庫を1件以上100件以下指定する
      * @minItems 1
+     * @maxItems 100
      */
-  items: ModelsPurchaseOrderItem[];
+  items: ModelsPurchaseOrderItemCreateRequest[];
   /**
-     * 税額
+     * 税額(円)
      * @minimum 0
      */
   taxAmount: number;
   /**
-     * 送料。送料がかからない場合はnull
+     * 送料(円)。送料がかからない場合はnull
      * @minimum 0
      * @nullable
      */
@@ -42,12 +44,12 @@ export interface ModelsPurchaseOrderCreateRequest {
      */
   expectedDelivery: string | null;
   /**
-     * 支払条件。未設定の場合はnull
+     * 支払条件。未設定の場合はnull。空白だけの文字列は指定できない
      * @nullable
      */
   paymentTerms: string | null;
   /**
-     * 備考メモ。未設定の場合はnull
+     * 備考メモ。未設定の場合はnull。空白だけの文字列は指定できない
      * @nullable
      */
   notes: string | null;

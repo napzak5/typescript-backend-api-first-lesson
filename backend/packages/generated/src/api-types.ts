@@ -1961,13 +1961,13 @@ export interface paths {
         };
         /**
          * List purchase orders
-         * @description 絞り込み条件とページネーションを指定して仕入れ発注を一覧取得します。
+         * @description 絞り込み条件とページネーションを指定して仕入れ発注を一覧取得します。発注日(orderDate)の新しい順、同じ日時ならIDの順に並べます。管理者と、サロンのオーナー・マネージャー・スタッフ(所属サロンの発注)が使えます。ほかのサロンのsalonIdを指定した場合は403を、cursorが一覧できる発注を指していない場合や、endDateがstartDateより前の場合は400を返します。
          */
         get: operations["PurchaseOrderCrud_list"];
         put?: never;
         /**
          * Create a purchase order
-         * @description 仕入れ発注を draft のステータスで作成します。salonIdのサロンが存在しない場合や、明細のinventoryIdにsalonIdのサロンの在庫ではないIDを指定した場合は400を返します。
+         * @description 仕入れ発注を draft のステータスで作成します。発注番号を採番し、明細の商品コード・商品名・単位を在庫の商品から写し、金額を計算します。作成したスタッフを createdBy に記録します(管理者は null)。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合や、明細のinventoryIdにsalonIdのサロンの在庫ではないIDを指定した場合、同じ在庫を2回指定した場合、明細の金額・小計・合計金額が2147483647円を超える場合は400を返します。
          */
         post: operations["PurchaseOrderCrud_create"];
         delete?: never;
@@ -2005,7 +2005,7 @@ export interface paths {
         };
         /**
          * Get a purchase order
-         * @description IDを指定して仕入れ発注を1件取得します。
+         * @description IDを指定して仕入れ発注を1件取得します。管理者と、発注のサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンの発注は、存在しない発注と同じく404を返します。
          */
         get: operations["PurchaseOrderCrud_get"];
         put?: never;
@@ -2015,7 +2015,7 @@ export interface paths {
         head?: never;
         /**
          * Update a purchase order
-         * @description 仕入れ発注の指定した項目だけを更新します。statusで許可されていない遷移を指定した場合や、delivered・cancelledの発注を更新しようとした場合は409を返します。
+         * @description 仕入れ発注の指定した項目だけを更新します。statusで変えられるのは draft→pending、approved→ordered、ordered→shipped です。管理者と、発注のサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンの発注は404を、statusで許可されていない遷移を指定した場合や、delivered・cancelledの発注を更新しようとした場合は409を返します。
          */
         patch: operations["PurchaseOrderCrud_update"];
         trace?: never;
@@ -2031,7 +2031,7 @@ export interface paths {
         put?: never;
         /**
          * Approve a purchase order
-         * @description 承認待ち(pending)の仕入れ発注を承認し、ステータスを approved にします。approvedByのスタッフが存在しない場合は400を、発注が pending でない場合は409を返します。
+         * @description 承認待ち(pending)の仕入れ発注を承認し、ステータスを approved にします。承認したスタッフを approvedBy に(管理者は null)、承認した日時を approvedAt に記録します。管理者と、発注のサロンのオーナー・マネージャーが使えます。スタッフは403を、ほかのサロンの発注は404を、発注が pending でない場合は409を返します。本文は読みません。
          */
         post: operations["PurchaseOrderCrud_approve"];
         delete?: never;
@@ -2051,7 +2051,7 @@ export interface paths {
         put?: never;
         /**
          * Cancel a purchase order
-         * @description 仕入れ発注をキャンセルし、ステータスを cancelled にします。発注が delivered または cancelled の場合は409を返します。
+         * @description 仕入れ発注をキャンセルし、ステータスを cancelled にします。キャンセルした日時を cancelledAt に、本文の理由を cancellationReason に記録します。管理者と、発注のサロンのオーナー・マネージャーが使えます。スタッフは403を、ほかのサロンの発注は404を、発注が delivered または cancelled の場合は409を返します。
          */
         post: operations["PurchaseOrderCrud_cancel"];
         delete?: never;
@@ -7178,37 +7178,30 @@ export interface components {
             /** @description 取り扱い中か */
             isActive?: boolean;
         };
-        /** @description 仕入れ発注承認リクエスト - 全項目のキーが必須 */
-        "Models.PurchaseOrderApproveRequest": {
-            /** @description 発注を承認するスタッフ ID */
-            approvedBy: components["schemas"]["Models.StaffId"];
-            /** @description 承認時のメモ。メモがない場合はnull */
-            notes: string | null;
-        };
-        /** @description 仕入れ発注キャンセルリクエスト */
+        /** @description 仕入れ発注キャンセルリクエスト - 全項目のキーが必須 */
         "Models.PurchaseOrderCancelRequest": {
-            /** @description キャンセル理由 */
-            reason: string;
+            /** @description キャンセルの理由。空白だけの文字列は指定できない */
+            cancellationReason: string;
         };
         /**
          * @description 仕入れ発注作成リクエスト - 全項目のキーが必須。null を指定できる項目は未設定を表す。
-         *     作成した発注のステータスは draft になる
+         *     作成した発注のステータスは draft になる。発注番号、発注日、明細の商品の値と金額、小計、合計金額はサーバーが決める
          */
         "Models.PurchaseOrderCreateRequest": {
             /** @description 発注を行うサロン ID */
             salonId: components["schemas"]["Models.SalonId"];
-            /** @description 仕入先名 */
+            /** @description 仕入先名。空白だけの文字列は指定できない */
             supplier: string;
-            /** @description 発注明細一覧。salonId のサロンの在庫を1件以上指定する */
-            items: components["schemas"]["Models.PurchaseOrderItem"][];
+            /** @description 発注明細の一覧。salonId のサロンの在庫を1件以上100件以下指定する */
+            items: components["schemas"]["Models.PurchaseOrderItemCreateRequest"][];
             /**
-             * Format: double
-             * @description 税額
+             * Format: int32
+             * @description 税額(円)
              */
             taxAmount: number;
             /**
-             * Format: double
-             * @description 送料。送料がかからない場合はnull
+             * Format: int32
+             * @description 送料(円)。送料がかからない場合はnull
              */
             shippingCost: number | null;
             /**
@@ -7216,15 +7209,15 @@ export interface components {
              * @description 予定納期。未定の場合はnull
              */
             expectedDelivery: string | null;
-            /** @description 支払条件。未設定の場合はnull */
+            /** @description 支払条件。未設定の場合はnull。空白だけの文字列は指定できない */
             paymentTerms: string | null;
-            /** @description 備考メモ。未設定の場合はnull */
+            /** @description 備考メモ。未設定の場合はnull。空白だけの文字列は指定できない */
             notes: string | null;
         };
-        /** @description 仕入れ発注の明細 - 発注作成リクエストと発注レスポンスの両方で使う。全項目のキーが必須 */
+        /** @description 仕入れ発注の明細 - 発注レスポンスで使う。商品コード・商品名・単位は、発注を作成した時点の在庫の商品の値 */
         "Models.PurchaseOrderItem": {
-            /** @description 紐づく在庫 ID */
-            inventoryId: components["schemas"]["Models.InventoryId"];
+            /** @description 発注した在庫 ID。在庫を削除した場合はnull */
+            inventoryId: (string & components["schemas"]["Models.InventoryId"]) | null;
             /** @description 商品コード */
             productCode: string;
             /** @description 商品名 */
@@ -7237,16 +7230,36 @@ export interface components {
             /** @description 数量単位 */
             unit: string;
             /**
-             * Format: double
-             * @description 単価
+             * Format: int32
+             * @description 単価(円)
              */
             unitPrice: number;
             /**
-             * Format: double
-             * @description 明細ごとの金額
+             * Format: int32
+             * @description 明細の金額(円)。発注数量と単価の積を四捨五入した値
              */
             totalPrice: number;
             /** @description 備考メモ。未設定の場合はnull */
+            notes: string | null;
+        };
+        /**
+         * @description 仕入れ発注の明細の作成リクエスト - 全項目のキーが必須。
+         *     商品コード・商品名・単位は在庫の商品から、明細の金額は発注数量と単価から、サーバーが決める
+         */
+        "Models.PurchaseOrderItemCreateRequest": {
+            /** @description 発注する在庫 ID。発注の salonId のサロンの在庫を指定する。1つの発注で同じ在庫を2回指定できない */
+            inventoryId: components["schemas"]["Models.InventoryId"];
+            /**
+             * Format: double
+             * @description 発注数量。0より大きく、小数第2位まで
+             */
+            quantity: number;
+            /**
+             * Format: int32
+             * @description 単価(円)
+             */
+            unitPrice: number;
+            /** @description 備考メモ。メモがない場合はnull。空白だけの文字列は指定できない */
             notes: string | null;
         };
         /**
@@ -7271,43 +7284,43 @@ export interface components {
             /** @description 受領時のメモ。メモがない場合はnull */
             notes: string | null;
         };
-        /** @description 仕入れ発注レスポンス - 発注の基本情報と明細を返す */
+        /** @description 仕入れ発注レスポンス - 発注の基本情報と明細を返す。金額はすべて円 */
         "Models.PurchaseOrderResponse": {
             /** @description 発注 ID */
             id: components["schemas"]["Models.OrderId"];
             /** @description 発注を行うサロン ID */
             salonId: components["schemas"]["Models.SalonId"];
-            /** @description 発注番号。登録時にサーバーが採番する */
+            /** @description 発注番号。PO-XXXX-XXXX の形式で、登録時にサーバーが採番する */
             orderNumber: string;
             /** @description 仕入先名 */
             supplier: string;
             /** @description 発注ステータス区分 */
             status: components["schemas"]["Models.OrderStatusType"];
-            /** @description 発注明細の一覧 */
+            /** @description 発注明細の一覧。発注を作成したリクエストの順 */
             items: components["schemas"]["Models.PurchaseOrderItem"][];
             /**
-             * Format: double
-             * @description 税抜小計金額
+             * Format: int32
+             * @description 小計(円)。明細の金額の合計
              */
             subtotal: number;
             /**
-             * Format: double
-             * @description 税額
+             * Format: int32
+             * @description 税額(円)
              */
             taxAmount: number;
             /**
-             * Format: double
-             * @description 送料。送料がかからない場合はnull
+             * Format: int32
+             * @description 送料(円)。送料がかからない場合はnull
              */
             shippingCost: number | null;
             /**
-             * Format: double
-             * @description 発注合計金額
+             * Format: int32
+             * @description 発注合計金額(円)。小計、税額、送料の合計
              */
             totalAmount: number;
             /**
              * Format: date-time
-             * @description 発注日
+             * @description 発注日。発注を作成した日時
              */
             orderDate: string;
             /**
@@ -7317,7 +7330,7 @@ export interface components {
             expectedDelivery: string | null;
             /**
              * Format: date-time
-             * @description 実際の納品日。納品前の場合はnull
+             * @description 実際の納品日時。納品を受領する前の場合はnull
              */
             actualDelivery: string | null;
             /** @description 納品に関するメモ。未設定の場合はnull */
@@ -7326,32 +7339,40 @@ export interface components {
             paymentTerms: string | null;
             /** @description その他備考。未設定の場合はnull */
             notes: string | null;
-            /** @description 発注承認を行ったスタッフ ID。承認前の場合はnull */
+            /** @description 発注を承認したスタッフ ID。承認前の場合と、管理者が承認した場合はnull */
             approvedBy: (string & components["schemas"]["Models.StaffId"]) | null;
             /**
              * Format: date-time
-             * @description 承認日時。承認前の場合はnull
+             * @description 承認した日時。承認前の場合はnull
              */
             approvedAt: string | null;
             /**
              * Format: date-time
-             * @description レコード作成日時。
+             * @description キャンセルした日時。キャンセルしていない場合はnull
              */
-            createdAt: string;
-            /** @description レコードを作成したユーザーID。システム自動作成または匿名作成の場合はnull */
-            createdBy: string | null;
+            cancelledAt: string | null;
+            /** @description キャンセルの理由。キャンセルしていない場合はnull */
+            cancellationReason: string | null;
+            /** @description 発注を作成したスタッフ ID。管理者が作成した場合はnull */
+            createdBy: (string & components["schemas"]["Models.StaffId"]) | null;
             /**
              * Format: date-time
-             * @description レコード最終更新日時。
+             * @description レコード作成日時
+             */
+            createdAt: string;
+            /**
+             * Format: date-time
+             * @description レコード最終更新日時
              */
             updatedAt: string;
-            /** @description レコードを最後に更新したユーザーID。システム自動更新または匿名更新の場合はnull */
-            updatedBy: string | null;
         };
-        /** @description 仕入れ発注部分更新リクエスト - 指定した項目だけを更新する。null を指定できる項目は null でクリアできる */
+        /**
+         * @description 仕入れ発注部分更新リクエスト - 指定した項目だけを更新する。null を指定できる項目は null でクリアできる。
+         *     明細、仕入先、金額は変更できない
+         */
         "Models.PurchaseOrderUpdateRequest": {
             /**
-             * @description 更新後の発注ステータス。変更できるのは draft→pending、approved→ordered、ordered→shipped の遷移のみ。
+             * @description 更新後の発注ステータス。変更できるのは draft→pending、approved→ordered、ordered→shipped の遷移と、今と同じステータスだけ。
              *     approved・cancelled・delivered への遷移はそれぞれ approve・cancel・receive で行う
              */
             status?: components["schemas"]["Models.OrderStatusType"];
@@ -7360,14 +7381,9 @@ export interface components {
              * @description 更新後の予定納期。nullでクリア
              */
             expectedDelivery?: string | null;
-            /**
-             * Format: date-time
-             * @description 実際の納品日。nullでクリア
-             */
-            actualDelivery?: string | null;
-            /** @description 納品関連の備考。nullでクリア */
+            /** @description 納品関連の備考。nullでクリア。空白だけの文字列は指定できない */
             deliveryNotes?: string | null;
-            /** @description その他の備考。nullでクリア */
+            /** @description その他の備考。nullでクリア。空白だけの文字列は指定できない */
             notes?: string | null;
         };
         /** @description 発注提案 - 在庫数が最低在庫数を下回った在庫と、推奨する発注数量を返す */
@@ -10465,7 +10481,7 @@ export interface components {
         "Models.ProductSearchRequest.limit": number;
         /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
         "Models.PurchaseOrderSearchRequest.cursor": string;
-        /** @description 検索対象期間の終了日時。発注日(orderDate)がこの日時より前の発注に一致する */
+        /** @description 検索対象期間の終了日時。発注日(orderDate)がこの日時以前(この日時を含む)の発注に一致する */
         "Models.PurchaseOrderSearchRequest.endDate": string;
         /** @description 1ページあたりの取得件数上限 (1〜100) */
         "Models.PurchaseOrderSearchRequest.limit": number;
@@ -21993,7 +22009,7 @@ export interface operations {
                 supplier?: components["parameters"]["Models.PurchaseOrderSearchRequest.supplier"];
                 /** @description 検索対象期間の開始日時。発注日(orderDate)がこの日時以降の発注に一致する */
                 startDate?: components["parameters"]["Models.PurchaseOrderSearchRequest.startDate"];
-                /** @description 検索対象期間の終了日時。発注日(orderDate)がこの日時より前の発注に一致する */
+                /** @description 検索対象期間の終了日時。発注日(orderDate)がこの日時以前(この日時を含む)の発注に一致する */
                 endDate?: components["parameters"]["Models.PurchaseOrderSearchRequest.endDate"];
             };
             header?: never;
@@ -22506,11 +22522,7 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["Models.PurchaseOrderApproveRequest"];
-            };
-        };
+        requestBody?: never;
         responses: {
             /** @description The request has succeeded. */
             200: {
@@ -22574,24 +22586,6 @@ export interface operations {
             };
             /** @description The request conflicts with the current state of the server. */
             409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
-            413: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
-            415: {
                 headers: {
                     [name: string]: unknown;
                 };

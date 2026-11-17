@@ -8,11 +8,12 @@
 import type { ModelsOrderStatusType } from './modelsOrderStatusType';
 
 /**
- * 仕入れ発注部分更新リクエスト - 指定した項目だけを更新する。null を指定できる項目は null でクリアできる
+ * 仕入れ発注部分更新リクエスト - 指定した項目だけを更新する。null を指定できる項目は null でクリアできる。
+ * 明細、仕入先、金額は変更できない
  */
 export interface ModelsPurchaseOrderUpdateRequest {
   /**
-     * 更新後の発注ステータス。変更できるのは draft→pending、approved→ordered、ordered→shipped の遷移のみ。
+     * 更新後の発注ステータス。変更できるのは draft→pending、approved→ordered、ordered→shipped の遷移と、今と同じステータスだけ。
      * approved・cancelled・delivered への遷移はそれぞれ approve・cancel・receive で行う
      */
   status?: ModelsOrderStatusType;
@@ -22,17 +23,12 @@ export interface ModelsPurchaseOrderUpdateRequest {
      */
   expectedDelivery?: string | null;
   /**
-     * 実際の納品日。nullでクリア
-     * @nullable
-     */
-  actualDelivery?: string | null;
-  /**
-     * 納品関連の備考。nullでクリア
+     * 納品関連の備考。nullでクリア。空白だけの文字列は指定できない
      * @nullable
      */
   deliveryNotes?: string | null;
   /**
-     * その他の備考。nullでクリア
+     * その他の備考。nullでクリア。空白だけの文字列は指定できない
      * @nullable
      */
   notes?: string | null;

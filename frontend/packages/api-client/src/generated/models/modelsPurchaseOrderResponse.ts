@@ -11,33 +11,33 @@ import type { ModelsPurchaseOrderItem } from './modelsPurchaseOrderItem';
 import type { ModelsSalonId } from './modelsSalonId';
 
 /**
- * 仕入れ発注レスポンス - 発注の基本情報と明細を返す
+ * 仕入れ発注レスポンス - 発注の基本情報と明細を返す。金額はすべて円
  */
 export interface ModelsPurchaseOrderResponse {
   /** 発注 ID */
   id: ModelsOrderId;
   /** 発注を行うサロン ID */
   salonId: ModelsSalonId;
-  /** 発注番号。登録時にサーバーが採番する */
+  /** 発注番号。PO-XXXX-XXXX の形式で、登録時にサーバーが採番する */
   orderNumber: string;
   /** 仕入先名 */
   supplier: string;
   /** 発注ステータス区分 */
   status: ModelsOrderStatusType;
-  /** 発注明細の一覧 */
+  /** 発注明細の一覧。発注を作成したリクエストの順 */
   items: ModelsPurchaseOrderItem[];
-  /** 税抜小計金額 */
+  /** 小計(円)。明細の金額の合計 */
   subtotal: number;
-  /** 税額 */
+  /** 税額(円) */
   taxAmount: number;
   /**
-     * 送料。送料がかからない場合はnull
+     * 送料(円)。送料がかからない場合はnull
      * @nullable
      */
   shippingCost: number | null;
-  /** 発注合計金額 */
+  /** 発注合計金額(円)。小計、税額、送料の合計 */
   totalAmount: number;
-  /** 発注日 */
+  /** 発注日。発注を作成した日時 */
   orderDate: string;
   /**
      * 予定納期。未定の場合はnull
@@ -45,7 +45,7 @@ export interface ModelsPurchaseOrderResponse {
      */
   expectedDelivery: string | null;
   /**
-     * 実際の納品日。納品前の場合はnull
+     * 実際の納品日時。納品を受領する前の場合はnull
      * @nullable
      */
   actualDelivery: string | null;
@@ -65,27 +65,32 @@ export interface ModelsPurchaseOrderResponse {
      */
   notes: string | null;
   /**
-     * 発注承認を行ったスタッフ ID。承認前の場合はnull
+     * 発注を承認したスタッフ ID。承認前の場合と、管理者が承認した場合はnull
      * @nullable
      */
   approvedBy: string | null;
   /**
-     * 承認日時。承認前の場合はnull
+     * 承認した日時。承認前の場合はnull
      * @nullable
      */
   approvedAt: string | null;
-  /** レコード作成日時。 */
-  createdAt: string;
   /**
-     * レコードを作成したユーザーID。システム自動作成または匿名作成の場合はnull
+     * キャンセルした日時。キャンセルしていない場合はnull
+     * @nullable
+     */
+  cancelledAt: string | null;
+  /**
+     * キャンセルの理由。キャンセルしていない場合はnull
+     * @nullable
+     */
+  cancellationReason: string | null;
+  /**
+     * 発注を作成したスタッフ ID。管理者が作成した場合はnull
      * @nullable
      */
   createdBy: string | null;
-  /** レコード最終更新日時。 */
+  /** レコード作成日時 */
+  createdAt: string;
+  /** レコード最終更新日時 */
   updatedAt: string;
-  /**
-     * レコードを最後に更新したユーザーID。システム自動更新または匿名更新の場合はnull
-     * @nullable
-     */
-  updatedBy: string | null;
 }

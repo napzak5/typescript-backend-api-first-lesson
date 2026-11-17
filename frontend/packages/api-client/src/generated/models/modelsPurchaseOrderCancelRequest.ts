@@ -7,12 +7,12 @@
  */
 
 /**
- * 仕入れ発注キャンセルリクエスト
+ * 仕入れ発注キャンセルリクエスト - 全項目のキーが必須
  */
 export interface ModelsPurchaseOrderCancelRequest {
   /**
-     * キャンセル理由
+     * キャンセルの理由。空白だけの文字列は指定できない
      * @minLength 1
      */
-  reason: string;
+  cancellationReason: string;
 }
