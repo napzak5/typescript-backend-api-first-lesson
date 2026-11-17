@@ -91,6 +91,19 @@ export const hairType = pgEnum('hair_type', [
   'coily',
 ])
 
+export const inventoryAlertSeverity = pgEnum('inventory_alert_severity', [
+  'info',
+  'warning',
+  'critical',
+])
+
+export const inventoryAlertType = pgEnum('inventory_alert_type', [
+  'low_stock',
+  'expiring',
+  'expired',
+  'overstock',
+])
+
 export const inventoryTransactionType = pgEnum('inventory_transaction_type', [
   'purchase',
   'sale',
@@ -862,6 +875,63 @@ export const inventory = pgTable(
   ],
 )
 
+export const inventoryAlertAcknowledgements = pgTable(
+  'inventory_alert_acknowledgements',
+  {
+    id: uuid().defaultRandom().primaryKey().notNull(),
+    salonId: uuid().notNull(),
+    productId: uuid().notNull(),
+    inventoryId: uuid(),
+    alert: inventoryAlertType().notNull(),
+    severity: inventoryAlertSeverity().notNull(),
+    threshold: numeric({ precision: 10, scale: 2 }),
+    expiryDate: date(),
+    notes: text(),
+    acknowledgedBy: uuid(),
+    acknowledgedAt: timestamp({ withTimezone: true, mode: 'string' })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    check(
+      'inventory_alert_acknowledgements_severity',
+      sql`((alert <> 'low_stock'::inventory_alert_type) OR (severity = ANY (ARRAY['warning'::inventory_alert_severity, 'critical'::inventory_alert_severity]))) AND ((alert <> 'overstock'::inventory_alert_type) OR (severity = 'info'::inventory_alert_severity)) AND ((alert <> 'expiring'::inventory_alert_type) OR (severity = 'warning'::inventory_alert_severity)) AND ((alert <> 'expired'::inventory_alert_type) OR (severity = 'critical'::inventory_alert_severity))`,
+    ),
+    check(
+      'inventory_alert_acknowledgements_subject',
+      sql`((alert = ANY (ARRAY['low_stock'::inventory_alert_type, 'overstock'::inventory_alert_type])) AND ("inventoryId" IS NULL) AND ("expiryDate" IS NULL) AND (threshold IS NOT NULL) AND (threshold >= (0)::numeric)) OR ((alert = ANY (ARRAY['expiring'::inventory_alert_type, 'expired'::inventory_alert_type])) AND ("inventoryId" IS NOT NULL) AND ("expiryDate" IS NOT NULL) AND (threshold IS NULL))`,
+    ),
+    foreignKey({
+      columns: [table.inventoryId],
+      foreignColumns: [inventory.id],
+      name: 'inventory_alert_acknowledgements_inventory_id_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [table.productId],
+      foreignColumns: [products.id],
+      name: 'inventory_alert_acknowledgements_product_id_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [table.salonId],
+      foreignColumns: [salons.id],
+      name: 'inventory_alert_acknowledgements_salon_id_fk',
+    }).onDelete('cascade'),
+    index('idx_inventory_alert_acknowledgements_inventory_id').using(
+      'btree',
+      table.inventoryId.asc().nullsLast().op('uuid_ops'),
+    ),
+    index('idx_inventory_alert_acknowledgements_product_time').using(
+      'btree',
+      table.productId.asc().nullsLast().op('uuid_ops'),
+      table.acknowledgedAt.asc().nullsLast().op('timestamptz_ops'),
+    ),
+    index('idx_inventory_alert_acknowledgements_salon_id').using(
+      'btree',
+      table.salonId.asc().nullsLast().op('uuid_ops'),
+    ),
+  ],
+)
+
 export const inventoryTransactions = pgTable(
   'inventory_transactions',
   {
@@ -931,9 +1001,10 @@ export const inventoryTransactions = pgTable(
       table.createdAt.asc().nullsLast().op('timestamptz_ops'),
       table.id.asc().nullsLast().op('uuid_ops'),
     ),
-    index('idx_inventory_transactions_product_id').using(
+    index('idx_inventory_transactions_product_time').using(
       'btree',
       table.productId.asc().nullsLast().op('uuid_ops'),
+      table.createdAt.asc().nullsLast().op('timestamptz_ops'),
     ),
     index('idx_inventory_transactions_salon_id').using(
       'btree',

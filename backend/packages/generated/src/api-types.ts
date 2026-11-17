@@ -1469,11 +1469,31 @@ export interface paths {
         };
         /**
          * List active inventory alerts
-         * @description 有効な在庫アラートを、絞り込み条件とページネーションを指定して一覧取得します。salonIdのサロンが存在しない場合は400を返します。
+         * @description サロンの今出ている在庫アラートを、絞り込み条件とページネーションを指定して一覧取得します。アラートは商品、在庫の行、在庫の移動から、読むたびに求めます。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合や、cursorがサロンの商品か在庫の行を指さない場合は400を返します。
          */
         get: operations["InventoryAlertCrud_list"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/inventory-alerts/acknowledge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Acknowledge an inventory alert
+         * @description 今出ている在庫アラートを、操作者が確認したことを記録します。確認は、確認したときの状態が続くあいだだけ有効です。管理者と、商品のサロンのオーナー・マネージャー・スタッフが使えます。alertとinventoryIdの組み合わせが合わない場合は400を、商品か在庫の行が存在しないかほかのサロンのものである場合や、そのアラートが今出ていない場合は404を、アラートが確認済みの場合は409を返します。
+         */
+        post: operations["InventoryAlertCrud_acknowledge"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1489,31 +1509,11 @@ export interface paths {
         };
         /**
          * Get the inventory alert summary
-         * @description サロンの有効な在庫アラートの件数を、重要度別と確認状況別に集計して返します。salonIdのサロンが存在しない場合は400を返します。
+         * @description サロンの今出ている在庫アラートの件数を、重要度別と確認状況別に集計して返します。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合は400を返します。
          */
         get: operations["InventoryAlertCrud_getSummary"];
         put?: never;
         post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/inventory-alerts/{inventoryId}/acknowledge": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Acknowledge an inventory alert
-         * @description 在庫のアラートを確認済みにします。acknowledgedByのスタッフが存在しない場合は400を、在庫に有効なアラートがない場合は404を、アラートが確認済みの場合は409を返します。
-         */
-        post: operations["InventoryAlertCrud_acknowledge"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5548,49 +5548,100 @@ export interface components {
                 [key: string]: unknown;
             } | null;
         };
-        /** @description 在庫アラート確認リクエスト - 全項目のキーが必須 */
+        /** @description 在庫アラート確認リクエスト - 全項目のキーが必須。確認したのは操作者として記録する */
         "Models.InventoryAlertAcknowledgeRequest": {
-            /** @description アラートを確認したスタッフ ID */
-            acknowledgedBy: components["schemas"]["Models.StaffId"];
-            /** @description 確認時のメモ。メモがない場合はnull */
+            /** @description 確認するアラートの種別 */
+            alert: components["schemas"]["Models.InventoryAlertType"];
+            /** @description アラートの商品 ID */
+            productId: components["schemas"]["Models.ProductId"];
+            /** @description 在庫の行のアラート(expiring・expired)では、productId の商品の在庫 ID。商品のアラート(low_stock・overstock)では null */
+            inventoryId: (string & components["schemas"]["Models.InventoryId"]) | null;
+            /** @description 確認時のメモ。メモがない場合はnull。空白だけの文字列は指定できない */
             notes: string | null;
         };
-        /** @description 在庫に関するアラート情報 */
-        "Models.InventoryAlertResponse": {
-            /** @description 対象在庫 ID。inventoryId と同じ値 */
-            itemId: components["schemas"]["Models.InventoryId"];
-            /**
-             * Format: double
-             * @description アラートの判定に使った閾値
-             */
-            threshold: number;
-            /**
-             * Format: double
-             * @description 警告発生時の在庫数
-             */
-            currentStock: number;
-            /**
-             * Format: date-time
-             * @description 警告が発生した日時
-             */
-            triggeredAt: string;
-            /** @description 関連する在庫 ID */
-            inventoryId: components["schemas"]["Models.InventoryId"];
+        /**
+         * Format: uuid
+         * @description 在庫アラートを確認した記録を識別するブランド付きUUID。
+         */
+        "Models.InventoryAlertAcknowledgementId": string;
+        /**
+         * @description 在庫アラートの確認レスポンス - inventory_alert_acknowledgements テーブルの全カラムを返す。1行はアラートを1回確認した記録で、作成後は変更されない。
+         *     プロパティ名と null 許可は DB カラムと一致させている。商品のアラートの記録は在庫 ID と使用期限が null で閾値があり、在庫の行のアラートの記録は在庫 ID と使用期限があり閾値が null
+         */
+        "Models.InventoryAlertAcknowledgementResponse": {
+            /** @description 確認の記録 ID */
+            id: components["schemas"]["Models.InventoryAlertAcknowledgementId"];
+            /** @description サロン ID */
+            salonId: components["schemas"]["Models.SalonId"];
+            /** @description 商品 ID */
+            productId: components["schemas"]["Models.ProductId"];
+            /** @description 在庫の行のアラートの在庫 ID。商品のアラートでは null */
+            inventoryId: (string & components["schemas"]["Models.InventoryId"]) | null;
             /** @description アラート種別 */
             alert: components["schemas"]["Models.InventoryAlertType"];
-            /** @description 通知メッセージ */
-            message: string;
-            /** @description 重要度レベル */
+            /** @description 確認したときの重要度 */
             severity: components["schemas"]["Models.InventoryAlertSeverityType"];
-            /** @description 確認済みかどうか */
-            acknowledged: boolean;
-            /** @description 確認したスタッフ ID。未確認の場合はnull */
+            /**
+             * Format: double
+             * @description 確認したときの閾値。商品のアラートでは minimumStock か maximumStock、在庫の行のアラートでは null
+             */
+            threshold: number | null;
+            /**
+             * Format: date
+             * @description 確認したときの在庫の行の使用期限。商品のアラートでは null
+             */
+            expiryDate: string | null;
+            /** @description 確認時のメモ。メモがない場合はnull */
+            notes: string | null;
+            /** @description 確認したスタッフ ID。管理者が確認した場合は null */
             acknowledgedBy: (string & components["schemas"]["Models.StaffId"]) | null;
             /**
              * Format: date-time
-             * @description 確認日時。未確認の場合はnull
+             * @description 確認日時
              */
-            acknowledgedAt: string | null;
+            acknowledgedAt: string;
+        };
+        /**
+         * @description 在庫アラート - 商品、在庫の行、在庫の移動から、読むたびに求める。保存するのは確認の記録(inventory_alert_acknowledgements テーブル)だけ。
+         *     商品のアラート(low_stock・overstock)は、サロンに在庫の行がある取り扱い中の商品ごとに、在庫の行のアラート(expiring・expired)は、取り扱いをやめた商品の行も含めて在庫の行ごとに、1件ずつ出る。
+         *     確認は、確認したときの状態が続くあいだだけ有効で、次の場合は未確認に戻る。商品のアラートでは、確認したとき以後に在庫の和が条件を外れたか、重要度が確認したときより重くなったか、閾値が確認したときと違う場合。在庫の行のアラートでは、確認のあとに行の在庫が0になったか、使用期限が確認したときと違うか、重要度が確認したときより重い場合
+         */
+        "Models.InventoryAlertResponse": {
+            /** @description アラート種別 */
+            alert: components["schemas"]["Models.InventoryAlertType"];
+            /** @description 重要度 */
+            severity: components["schemas"]["Models.InventoryAlertSeverityType"];
+            /** @description サロン ID */
+            salonId: components["schemas"]["Models.SalonId"];
+            /** @description 商品 ID */
+            productId: components["schemas"]["Models.ProductId"];
+            /** @description 商品コード */
+            productCode: string;
+            /** @description 商品名 */
+            productName: string;
+            /** @description 単位 */
+            unit: string;
+            /** @description 在庫の行のアラートの在庫 ID。商品のアラートでは null */
+            inventoryId: (string & components["schemas"]["Models.InventoryId"]) | null;
+            /** @description 在庫の行のロット番号。商品のアラートと、ロット番号のない行では null */
+            lotNumber: string | null;
+            /**
+             * Format: date
+             * @description 在庫の行の使用期限。商品のアラートでは null
+             */
+            expiryDate: string | null;
+            /**
+             * Format: double
+             * @description 商品のアラートでは、サロンにあるその商品の在庫の currentStock の和。在庫の行のアラートでは、その行の currentStock
+             */
+            currentStock: number;
+            /**
+             * Format: double
+             * @description 判定に使った閾値。low_stock では minimumStock、overstock では maximumStock。在庫の行のアラートでは null
+             */
+            threshold: number | null;
+            /** @description 今も有効な確認の記録。未確認の場合は null */
+            acknowledgement: components["schemas"]["Models.InventoryAlertAcknowledgementResponse"] | null;
         };
         /**
 
@@ -5612,16 +5663,18 @@ export interface components {
 
          * critical: 重大 - 直ちに対応が必要な通知
 
+         * low_stock は在庫の和が0なら critical、それ以外は warning。overstock は info、expiring は warning、expired は critical
+
          * @enum {string}
 
          */
 
         "Models.InventoryAlertSeverityType": "info" | "warning" | "critical";
-        /** @description 在庫アラートの件数の集計 */
+        /** @description 在庫アラートの件数の集計 - サロンの今出ているアラートを数える */
         "Models.InventoryAlertSummaryResponse": {
             /**
              * Format: int32
-             * @description 有効なアラートの総数
+             * @description 今出ているアラートの総数
              */
             totalAlerts: number;
             /**
@@ -5655,19 +5708,19 @@ export interface components {
 
          *
 
-         * low_stock: 在庫僅少 - 在庫数が閾値を下回った状態
+         * low_stock: 在庫僅少 - 取り扱い中の商品の、サロンにある在庫の和が最低在庫数(minimumStock)以下の状態
 
          *
 
-         * expiring: 期限間近 - 使用期限が近づいている状態
+         * expiring: 期限間近 - 在庫のある行の使用期限が、サロンのタイムゾーンでの今日から30日後まで(両端を含む)の状態
 
          *
 
-         * expired: 期限切れ - 使用期限を過ぎた状態
+         * expired: 期限切れ - 在庫のある行の使用期限が、サロンのタイムゾーンでの今日より前の状態
 
          *
 
-         * overstock: 過剰在庫 - 在庫数が上限を超えた状態
+         * overstock: 過剰在庫 - 取り扱い中の商品の、サロンにある在庫の和が最大在庫数(maximumStock)を超えた状態
 
          * @enum {string}
 
@@ -10396,6 +10449,10 @@ export interface components {
         "Models.DailySalesGetRequest.date": string;
         /** @description 集計対象のサロン ID */
         "Models.DailySalesGetRequest.salonId": components["schemas"]["Models.SalonId"];
+        /** @description 確認済みかどうかによる絞り込み */
+        "Models.InventoryAlertSearchRequest.acknowledged": boolean;
+        /** @description アラート種別による絞り込み(完全一致) */
+        "Models.InventoryAlertSearchRequest.alert": components["schemas"]["Models.InventoryAlertType"];
         /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
         "Models.InventoryAlertSearchRequest.cursor": string;
         /** @description 1ページあたりの取得件数上限 (1〜100) */
@@ -10404,8 +10461,6 @@ export interface components {
         "Models.InventoryAlertSearchRequest.salonId": components["schemas"]["Models.SalonId"];
         /** @description 重要度による絞り込み(完全一致) */
         "Models.InventoryAlertSearchRequest.severity": components["schemas"]["Models.InventoryAlertSeverityType"];
-        /** @description アラート種別による絞り込み(完全一致) */
-        "Models.InventoryAlertSearchRequest.type": components["schemas"]["Models.InventoryAlertType"];
         /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
         "Models.InventoryExpiringSearchRequest.cursor": string;
         /** @description サロンのタイムゾーンでの今日から何日後までに使用期限を迎える在庫を対象とするか (0〜365、両端を含む)。期限切れの在庫も含む */
@@ -19213,9 +19268,11 @@ export interface operations {
                 /** @description 対象のサロン ID */
                 salonId: components["parameters"]["Models.InventoryAlertSearchRequest.salonId"];
                 /** @description アラート種別による絞り込み(完全一致) */
-                type?: components["parameters"]["Models.InventoryAlertSearchRequest.type"];
+                alert?: components["parameters"]["Models.InventoryAlertSearchRequest.alert"];
                 /** @description 重要度による絞り込み(完全一致) */
                 severity?: components["parameters"]["Models.InventoryAlertSearchRequest.severity"];
+                /** @description 確認済みかどうかによる絞り込み */
+                acknowledged?: components["parameters"]["Models.InventoryAlertSearchRequest.acknowledged"];
             };
             header?: never;
             path?: never;
@@ -19297,100 +19354,11 @@ export interface operations {
             };
         };
     };
-    InventoryAlertCrud_getSummary: {
-        parameters: {
-            query: {
-                salonId: components["schemas"]["Models.SalonId"];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description The request has succeeded. */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
-                        data: components["schemas"]["Models.InventoryAlertSummaryResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
-                        meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
-                        links: {
-                            [key: string]: string;
-                        } | null;
-                    };
-                };
-            };
-            /** @description The server could not understand the request due to invalid syntax. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /**
-             * @description 認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
-             *     ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
-             *     WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
-             */
-            401: {
-                headers: {
-                    /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
-                    "WWW-Authenticate": string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description 認証されているが、この操作を行う権限がない (403)。 */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /**
-             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
-             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
-             */
-            429: {
-                headers: {
-                    /** @description 再試行できるようになるまでの秒数。 */
-                    "Retry-After": number;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-        };
-    };
     InventoryAlertCrud_acknowledge: {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                inventoryId: components["schemas"]["Models.InventoryId"];
-            };
+            path?: never;
             cookie?: never;
         };
         requestBody: {
@@ -19479,6 +19447,93 @@ export interface operations {
             };
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
+             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+             */
+            429: {
+                headers: {
+                    /** @description 再試行できるようになるまでの秒数。 */
+                    "Retry-After": number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+        };
+    };
+    InventoryAlertCrud_getSummary: {
+        parameters: {
+            query: {
+                salonId: components["schemas"]["Models.SalonId"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The request has succeeded. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        data: components["schemas"]["Models.InventoryAlertSummaryResponse"];
+                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        meta: components["schemas"]["Models.ResponseMeta"] | null;
+                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        links: {
+                            [key: string]: string;
+                        } | null;
+                    };
+                };
+            };
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description 認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
+             *     ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
+             *     WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+             */
+            401: {
+                headers: {
+                    /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
+                    "WWW-Authenticate": string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description 認証されているが、この操作を行う権限がない (403)。 */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

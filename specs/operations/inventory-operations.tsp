@@ -357,7 +357,7 @@ namespace BeautySalon.Operations {
   @tag("Inventory Alerts")
   namespace InventoryAlertOperations {
     interface InventoryAlertCrud {
-      @doc("有効な在庫アラートを、絞り込み条件とページネーションを指定して一覧取得します。salonIdのサロンが存在しない場合は400を返します。")
+      @doc("サロンの今出ている在庫アラートを、絞り込み条件とページネーションを指定して一覧取得します。アラートは商品、在庫の行、在庫の移動から、読むたびに求めます。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合や、cursorがサロンの商品か在庫の行を指さない場合は400を返します。")
       @summary("List active inventory alerts")
       @get
       list(...InventoryAlertSearchRequest):
@@ -368,14 +368,11 @@ namespace BeautySalon.Operations {
         | ProblemResponse<400>
         | CommonErrors;
 
-      @doc("在庫のアラートを確認済みにします。acknowledgedByのスタッフが存在しない場合は400を、在庫に有効なアラートがない場合は404を、アラートが確認済みの場合は409を返します。")
+      @doc("今出ている在庫アラートを、操作者が確認したことを記録します。確認は、確認したときの状態が続くあいだだけ有効です。管理者と、商品のサロンのオーナー・マネージャー・スタッフが使えます。alertとinventoryIdの組み合わせが合わない場合は400を、商品か在庫の行が存在しないかほかのサロンのものである場合や、そのアラートが今出ていない場合は404を、アラートが確認済みの場合は409を返します。")
       @summary("Acknowledge an inventory alert")
-      @route("/{inventoryId}/acknowledge")
+      @route("/acknowledge")
       @post
-      acknowledge(
-        @path inventoryId: InventoryId,
-        @body request: InventoryAlertAcknowledgeRequest,
-      ):
+      acknowledge(@body request: InventoryAlertAcknowledgeRequest):
         | {
             @statusCode statusCode: 200;
             @body response: ApiResponse<InventoryAlertResponse>;
@@ -386,7 +383,7 @@ namespace BeautySalon.Operations {
         | RequestBodyErrors
         | CommonErrors;
 
-      @doc("サロンの有効な在庫アラートの件数を、重要度別と確認状況別に集計して返します。salonIdのサロンが存在しない場合は400を返します。")
+      @doc("サロンの今出ている在庫アラートの件数を、重要度別と確認状況別に集計して返します。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合は400を返します。")
       @summary("Get the inventory alert summary")
       @route("/summary")
       @get

@@ -5,40 +5,57 @@
  * Comprehensive REST API for managing beauty salon operations including salons, staff, services, customers, bookings, treatments, payments, inventory, and access control. Built with TypeSpec for type-safe API-first development.
  * OpenAPI spec version: 2.0
  */
+import type { ModelsInventoryAlertAcknowledgementResponse } from './modelsInventoryAlertAcknowledgementResponse';
 import type { ModelsInventoryAlertSeverityType } from './modelsInventoryAlertSeverityType';
 import type { ModelsInventoryAlertType } from './modelsInventoryAlertType';
-import type { ModelsInventoryId } from './modelsInventoryId';
+import type { ModelsProductId } from './modelsProductId';
+import type { ModelsSalonId } from './modelsSalonId';
 
 /**
- * 在庫に関するアラート情報
+ * 在庫アラート - 商品、在庫の行、在庫の移動から、読むたびに求める。保存するのは確認の記録(inventory_alert_acknowledgements テーブル)だけ。
+ * 商品のアラート(low_stock・overstock)は、サロンに在庫の行がある取り扱い中の商品ごとに、在庫の行のアラート(expiring・expired)は、取り扱いをやめた商品の行も含めて在庫の行ごとに、1件ずつ出る。
+ * 確認は、確認したときの状態が続くあいだだけ有効で、次の場合は未確認に戻る。商品のアラートでは、確認したとき以後に在庫の和が条件を外れたか、重要度が確認したときより重くなったか、閾値が確認したときと違う場合。在庫の行のアラートでは、確認のあとに行の在庫が0になったか、使用期限が確認したときと違うか、重要度が確認したときより重い場合
  */
 export interface ModelsInventoryAlertResponse {
-  /** 対象在庫 ID。inventoryId と同じ値 */
-  itemId: ModelsInventoryId;
-  /** アラートの判定に使った閾値 */
-  threshold: number;
-  /** 警告発生時の在庫数 */
-  currentStock: number;
-  /** 警告が発生した日時 */
-  triggeredAt: string;
-  /** 関連する在庫 ID */
-  inventoryId: ModelsInventoryId;
   /** アラート種別 */
   alert: ModelsInventoryAlertType;
-  /** 通知メッセージ */
-  message: string;
-  /** 重要度レベル */
+  /** 重要度 */
   severity: ModelsInventoryAlertSeverityType;
-  /** 確認済みかどうか */
-  acknowledged: boolean;
+  /** サロン ID */
+  salonId: ModelsSalonId;
+  /** 商品 ID */
+  productId: ModelsProductId;
+  /** 商品コード */
+  productCode: string;
+  /** 商品名 */
+  productName: string;
+  /** 単位 */
+  unit: string;
   /**
-     * 確認したスタッフ ID。未確認の場合はnull
+     * 在庫の行のアラートの在庫 ID。商品のアラートでは null
      * @nullable
      */
-  acknowledgedBy: string | null;
+  inventoryId: string | null;
   /**
-     * 確認日時。未確認の場合はnull
+     * 在庫の行のロット番号。商品のアラートと、ロット番号のない行では null
      * @nullable
      */
-  acknowledgedAt: string | null;
+  lotNumber: string | null;
+  /**
+     * 在庫の行の使用期限。商品のアラートでは null
+     * @nullable
+     */
+  expiryDate: string | null;
+  /** 商品のアラートでは、サロンにあるその商品の在庫の currentStock の和。在庫の行のアラートでは、その行の currentStock */
+  currentStock: number;
+  /**
+     * 判定に使った閾値。low_stock では minimumStock、overstock では maximumStock。在庫の行のアラートでは null
+     * @nullable
+     */
+  threshold: number | null;
+  /**
+     * 今も有効な確認の記録。未確認の場合は null
+     * @nullable
+     */
+  acknowledgement: ModelsInventoryAlertAcknowledgementResponse | null;
 }

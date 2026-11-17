@@ -12,6 +12,8 @@
  * info: 情報 - 対応を急がない通知
  * warning: 警告 - 早めの対応が必要な通知
  * critical: 重大 - 直ちに対応が必要な通知
+ *
+ * low_stock は在庫の和が0なら critical、それ以外は warning。overstock は info、expiring は warning、expired は critical
  */
 export type ModelsInventoryAlertSeverityType = typeof ModelsInventoryAlertSeverityType[keyof typeof ModelsInventoryAlertSeverityType];
 

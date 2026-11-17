@@ -5,12 +5,11 @@ import { type DomainError, DomainErrors, parseWith } from '../../shared'
 import { isWithin } from '../booking/_shared/authorization'
 import { inventoryReachOf } from './_shared/authorization'
 import type { InventoryUseCaseDependencies } from './_shared/dependencies'
-import { lastExpiringDayOf } from './_shared/expiry'
+import { EXPIRING_SOON_DAYS, lastExpiringDayOf } from './_shared/expiry'
 import { DEFAULT_LIMIT, type InventoryPage, pageOf } from './_shared/page'
 import { salonNotFound } from './_shared/refusals'
 
 const MESSAGE = 'Invalid expiring search'
-const DEFAULT_DAYS = 30
 
 export class ListExpiringInventoryUseCase {
   constructor(private readonly dependencies: InventoryUseCaseDependencies) {}
@@ -51,7 +50,7 @@ export class ListExpiringInventoryUseCase {
       return Result.error(DomainErrors.forbidden())
     }
     const limit = request.data.limit ?? DEFAULT_LIMIT
-    const days = request.data.days ?? DEFAULT_DAYS
+    const days = request.data.days ?? EXPIRING_SOON_DAYS
 
     const { inventoryRepository, salonRepository, clock } = this.dependencies
     const found = await salonRepository.findById(salonId)
