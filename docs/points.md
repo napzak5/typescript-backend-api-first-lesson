@@ -158,6 +158,7 @@
 | `startDate` | UTC の日時（`2026-11-01T00:00:00Z` など）。UTC の日付で 1900-01-01 から 2999-12-31 まで | この日時以降の取引（含む） |
 | `endDate` | 同上 | この日時以前の取引（含む）。`startDate` より前なら 400（`endDate` の `custom`、`message` は `Must not be earlier than startDate`） |
 
+- **取引の日時は、レスポンスに出る精度（ミリ秒）で比べます**。データベースはマイクロ秒まで記録するので、そのまま比べると、レスポンスの `createdAt` を `endDate` に書いても、その取引自身が入りません
 - 日付だけの値（`2026-11-01`）と、タイムゾーンのない日時は 400 です（`invalid_format`）
 - `limit` が数でなければ 400（`invalid_format`）、範囲外なら 400（`too_small`、`too_big`）です
 - コントラクトにないパラメーターは 400 です（`unrecognized_keys`）

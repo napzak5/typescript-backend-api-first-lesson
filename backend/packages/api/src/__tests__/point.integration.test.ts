@@ -791,6 +791,30 @@ describe('Points API', () => {
       ).toHaveLength(1)
     })
 
+    it('compares the times as the responses show them, to the millisecond', async () => {
+      // The column keeps microseconds and a response shows milliseconds:
+      // this transaction is shown at 05:00:00.000.
+      await insertTransaction('2026-11-20T05:00:00.000400Z', idOf(1))
+      const [shown] = (await historyOf(customerId)).body.data
+      const ids = async (query: Record<string, string>) =>
+        (await historyOf(customerId, query)).body.data.map(
+          ({ id }: { id: string }) => id,
+        )
+
+      expect(shown.createdAt).toBe('2026-11-20T05:00:00.000Z')
+      expect(await ids({ endDate: shown.createdAt })).toEqual([idOf(1)])
+      expect(await ids({ startDate: shown.createdAt })).toEqual([idOf(1)])
+      expect(
+        await ids({ startDate: shown.createdAt, endDate: shown.createdAt }),
+      ).toEqual([idOf(1)])
+      expect(await ids({ endDate: '2026-11-20T04:59:59.999Z' })).toEqual([])
+      expect(await ids({ startDate: '2026-11-20T05:00:00.001Z' })).toEqual([])
+      expect(
+        (await historyOf(customerId, { endDate: shown.createdAt })).body.meta
+          .total,
+      ).toBe(1)
+    })
+
     it('links the pages with the query of the request', async () => {
       await insertTransaction('2026-11-20T03:00:00.000Z', idOf(1))
       await insertTransaction('2026-11-20T04:00:00.000Z', idOf(2))
