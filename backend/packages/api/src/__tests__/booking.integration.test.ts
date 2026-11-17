@@ -629,7 +629,6 @@ describe('Bookings API', () => {
           discountAmount: 0,
           finalPrice: 6600,
           taxIncluded: true,
-          selectedOptions: null,
           isCompleted: false,
           completedAt: null,
           sortOrder: 0,
@@ -3252,9 +3251,6 @@ describe('Bookings API', () => {
           pointsEarned: null,
           cancellationFee: null,
         }),
-      ])
-      expect(await storedLines()).toEqual([
-        expect.objectContaining({ selectedOptions: null }),
       ])
     })
 

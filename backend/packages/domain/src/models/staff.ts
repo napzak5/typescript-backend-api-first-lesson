@@ -50,15 +50,13 @@ export type DbStaff = DeepRequired<typeof staff.$inferSelect>
 /**
  * Columns of `staff` that a request never writes: the database assigns `id`
  * and the timestamps, the salon comes from the path and a staff member
- * stays in it, a delete sets `deletedAt`, the login account (`userId`) is
- * not the ledger's to link, because linking writes the user as well, and
- * `awards` is a jsonb column without a defined structure.
+ * stays in it, a delete sets `deletedAt`, and the login account (`userId`)
+ * is not the ledger's to link, because linking writes the user as well.
  */
 type StaffManagedColumn =
   | 'id'
   | 'salonId'
   | 'userId'
-  | 'awards'
   | 'deletedAt'
   | 'createdAt'
   | 'updatedAt'

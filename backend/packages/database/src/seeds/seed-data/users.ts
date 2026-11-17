@@ -38,7 +38,6 @@ export async function seedUsers(
       emailVerified: true,
       failedLoginAttempts: 0,
       permissions: ['all'],
-      metadata: { createdBy: 'seed' },
     })
     .returning({ id: schema.users.id })
 
@@ -53,7 +52,6 @@ export async function seedUsers(
       emailVerified: true,
       failedLoginAttempts: 0,
       permissions: [],
-      metadata: { createdBy: 'seed' },
     })
     .returning({ id: schema.users.id })
 
@@ -68,7 +66,6 @@ export async function seedUsers(
       emailVerified: true,
       failedLoginAttempts: 0,
       permissions: ['manage_staff', 'manage_bookings', 'view_reports'],
-      metadata: { createdBy: 'seed' },
     })
     .returning({ id: schema.users.id })
 
@@ -84,7 +81,6 @@ export async function seedUsers(
         emailVerified: true,
         failedLoginAttempts: 0,
         permissions: ['view_bookings', 'manage_own_schedule'],
-        metadata: { createdBy: 'seed' },
       },
       {
         email: 'stylist2@beautysalon.jp',
@@ -94,7 +90,6 @@ export async function seedUsers(
         emailVerified: true,
         failedLoginAttempts: 0,
         permissions: ['view_bookings', 'manage_own_schedule'],
-        metadata: { createdBy: 'seed' },
       },
       {
         email: 'therapist@beautysalon.jp',
@@ -104,7 +99,6 @@ export async function seedUsers(
         emailVerified: true,
         failedLoginAttempts: 0,
         permissions: ['view_bookings', 'manage_own_schedule'],
-        metadata: { createdBy: 'seed' },
       },
     ])
     .returning({ id: schema.users.id })
@@ -121,7 +115,6 @@ export async function seedUsers(
         emailVerified: true,
         failedLoginAttempts: 0,
         permissions: [],
-        metadata: { createdBy: 'seed' },
       },
       {
         email: 'customer2@example.com',
@@ -131,7 +124,6 @@ export async function seedUsers(
         emailVerified: true,
         failedLoginAttempts: 0,
         permissions: [],
-        metadata: { createdBy: 'seed' },
       },
       {
         email: 'customer3@example.com',
@@ -141,7 +133,6 @@ export async function seedUsers(
         emailVerified: true,
         failedLoginAttempts: 0,
         permissions: [],
-        metadata: { createdBy: 'seed' },
       },
       {
         email: 'vip.customer@example.com',
@@ -151,7 +142,6 @@ export async function seedUsers(
         emailVerified: true,
         failedLoginAttempts: 0,
         permissions: [],
-        metadata: { createdBy: 'seed', vip: true },
       },
     ])
     .returning({ id: schema.users.id })

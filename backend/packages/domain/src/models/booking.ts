@@ -100,13 +100,12 @@ export type DbNewBooking = DeepRequired<
 
 /**
  * A new service line. Its booking is missing: the lines are written with
- * their booking, which has no ID before that. `selectedOptions` is a jsonb
- * column without a defined structure, which nothing writes.
+ * their booking, which has no ID before that.
  */
 export type DbNewBookingService = DeepRequired<
   Omit<
     typeof bookingServices.$inferInsert,
-    'id' | 'bookingId' | 'selectedOptions' | 'createdAt' | 'updatedAt'
+    'id' | 'bookingId' | 'createdAt' | 'updatedAt'
   >
 >
 

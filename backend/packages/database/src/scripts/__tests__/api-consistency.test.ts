@@ -759,12 +759,11 @@ describe('modelRules', () => {
     })
   })
 
-  it('lets a request for a staff member leave out what the server assigns, the salon, which the path names, the login account and the awards; the response leaves out the awards and deletedAt, the profile everything customers are not shown, and none embeds anything', () => {
+  it('lets a request for a staff member leave out what the server assigns, the salon, which the path names, and the login account; the response leaves out deletedAt, the profile everything customers are not shown, and none embeds anything', () => {
     const managed = [
       'id',
       'salonId',
       'userId',
-      'awards',
       'deletedAt',
       'createdAt',
       'updatedAt',
@@ -780,7 +779,6 @@ describe('modelRules', () => {
       'phoneNumber',
       'alternativePhone',
       'staffCode',
-      'awards',
       'hireDate',
       'employmentType',
       'baseSalary',
@@ -806,7 +804,7 @@ describe('modelRules', () => {
     expect(rules).toEqual({
       'Models.StaffResponse': {
         kind: 'response',
-        omittedColumns: ['awards', 'deletedAt'],
+        omittedColumns: ['deletedAt'],
         embedded: undefined,
         computed: undefined,
       },
@@ -923,7 +921,6 @@ describe('modelRules', () => {
       'lastLoginIp',
       'customerId',
       'staffId',
-      'metadata',
       'deletedAt',
     ]
     const rules = modelRules
@@ -1031,12 +1028,7 @@ describe('modelRules', () => {
         model: 'Models.BookingServiceResponse',
         table: 'bookingServices',
         kind: 'response',
-        omittedColumns: [
-          'bookingId',
-          'selectedOptions',
-          'createdAt',
-          'updatedAt',
-        ],
+        omittedColumns: ['bookingId', 'createdAt', 'updatedAt'],
         embedded: undefined,
         computed: undefined,
       },
@@ -1053,7 +1045,6 @@ describe('modelRules', () => {
           'discountAmount',
           'finalPrice',
           'taxIncluded',
-          'selectedOptions',
           'isCompleted',
           'completedAt',
           'sortOrder',
@@ -1105,7 +1096,6 @@ describe('modelRules', () => {
         kind: 'response',
         omittedColumns: [
           'bookingId',
-          'selectedOptions',
           'createdAt',
           'updatedAt',
           'notes',

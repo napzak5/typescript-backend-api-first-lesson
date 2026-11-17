@@ -34,7 +34,6 @@ const fullyStoredUser = (): DbUser =>
     lastLoginIp: '203.0.113.7',
     customerId: CUSTOMER_ID,
     staffId: STAFF_ID,
-    metadata: { note: 'INTERNAL-NOTE' },
     deletedAt: '2026-11-14 09:30:00+00',
   })
 
@@ -89,7 +88,6 @@ describe('UserReadMapper.toApiUser', () => {
       'emailVerificationExpiry',
       'passwordResetTokenHash',
       'passwordResetExpiry',
-      'metadata',
       'deletedAt',
     ]) {
       expect(presented).not.toContain(`"${column}"`)
@@ -100,7 +98,6 @@ describe('UserReadMapper.toApiUser', () => {
       'BACKUP-CODE-1',
       'email-verification-token',
       'password-reset-token',
-      'INTERNAL-NOTE',
     ]) {
       expect(presented).not.toContain(secret)
     }

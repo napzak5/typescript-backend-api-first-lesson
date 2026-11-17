@@ -96,8 +96,6 @@ export const dbSalon = (overrides: Partial<DbSalon> = {}): DbSalon => ({
   timezone: 'Asia/Tokyo',
   currency: 'JPY',
   taxRate: '10.00',
-  cancellationPolicy: { hours: 24 },
-  bookingPolicy: null,
   isActive: true,
   deletedAt: null,
   createdAt: '2026-11-14 18:00:00.123456+09',

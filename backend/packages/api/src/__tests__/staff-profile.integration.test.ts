@@ -1376,7 +1376,6 @@ describe('Staff profile API', () => {
           imageUrl: 'https://cdn.example.com/taro.jpg',
           yearsOfExperience: 12,
           certifications: ['美容師免許'],
-          awards: [{ name: 'Cut of the year', year: 2024 }],
           baseSalary: 300000,
           commissionRate: '12.50',
           canReceiveBookings: false,

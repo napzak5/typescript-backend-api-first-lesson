@@ -525,7 +525,6 @@ describe('Staff API', () => {
         email: 'hanako@aoyama.example.com',
         specialties: ['cut', 'color'],
         certifications: ['美容師免許'],
-        awards: [],
         commissionRate: '12.50',
         deletedAt: null,
       })
@@ -886,12 +885,11 @@ describe('Staff API', () => {
       })
     })
 
-    it('returns the columns of a row in the representation of the API: the rate as a number, the times in milliseconds, and neither the awards nor the deletion', async () => {
+    it('returns the columns of a row in the representation of the API: the rate as a number, the times in milliseconds, and not the deletion', async () => {
       const userId = (await insertUser(db, { role: 'staff' })).id
       const id = await insertStaffRow({
         userId,
         commissionRate: '7.50',
-        awards: [{ name: 'Cut of the year', year: 2024 }],
         hireDate: '2020-04-01',
         createdAt: '2026-11-10 09:00:00.123456+09',
         updatedAt: '2026-11-11 00:00:00+00',
@@ -2800,7 +2798,6 @@ describe('Staff API', () => {
           id: expect.stringMatching(UUID),
           salonId,
           userId: null,
-          awards: [],
           deletedAt: null,
           createdAt: expect.any(String),
           updatedAt: expect.any(String),

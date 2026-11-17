@@ -154,7 +154,7 @@
 - 配列（`imageUrls`、`tags`、`packageServiceIds`、`bookingRequirements`、`options`）は null になりません。何もないときは空の配列です
 - 整数の上限は、`integer` のカラムの最大値（2147483647）です
 - 配列の要素の違反は、`imageUrls.1` のように、要素の番号を付けた項目名で報告します
-- `salonId` と `requiredProducts` は、リクエストの項目ではありません（指定すると `unrecognized_keys`）。`services.requiredProducts` は構造が決まっていないカラムで、API からは読み書きしません
+- `salonId` は、リクエストの項目ではありません（指定すると `unrecognized_keys`）
 - `isActive` と `serviceStatus` は、互いに独立した属性として保存します。どの組み合わせも保存できます。これらの値と、`availability`、`allowOnlineBooking`、`bookingRequirements`、`maxBookingsPerDay`、`requiredStaffLevel` を読むのは、空き枠の一覧と、顧客が自分で入れる予約だけです。顧客が予約できる枠があるのは、`isActive` が true、`serviceStatus` が `active`、`allowOnlineBooking` が true のサービスです（[予約台帳](./bookings.md#受け付けの設定)）。`requiresConsultation` を読む処理はありません。サロンが予約台帳に入れる予約には、削除されていないサービスなら、どれでも指定できます（[予約台帳](./bookings.md#サロンが台帳に入れる予約はサロンの判断)）。顧客が自分で入れる予約は、空き枠の一覧と同じ条件を、予約を入れる時点で確かめます（[予約台帳](./bookings.md#予約を入れる)）
 - 予約の施術明細は、明細を入れた時点（予約の作成、明細の追加）のサービスの料金、割引後料金、所要時間、税込かどうか（`taxIncluded`）を写します。あとでサービスを変えても、削除しても、すでにある予約は変わりません
 

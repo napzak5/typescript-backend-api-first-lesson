@@ -6,8 +6,7 @@ import { numericSchema, timestampSchema } from './columns'
 
 /**
  * A row of `staff` → the response of the staff ledger. Property names are
- * the column names. Two columns stay behind: `deletedAt`, which no response
- * shows, and `awards`, a jsonb column without a defined structure. Two
+ * the column names. `deletedAt` stays behind: no response shows it. Two
  * kinds of column change their representation:
  * - `numeric` is read as a string and returned as a number
  * - `timestamptz` is read in PostgreSQL's text format and returned as ISO 8601
@@ -20,7 +19,7 @@ const convertedColumnsSchema = z.object({
 })
 
 const toApiStaff = (member: DbStaff): Result<ApiStaffResponse, DomainError> => {
-  const { awards, deletedAt, ...columns } = member
+  const { deletedAt, ...columns } = member
 
   return Result.mapError(
     Result.map(

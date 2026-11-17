@@ -9,7 +9,9 @@
 --            0, and selectedOptions of a line one of '[]': a column that
 --            a writer left out said "none" in another way than NULL. The
 --            defaults go, and NULL is what an amount that was not set
---            is.
+--            is. 202611181200_unused_tables_and_columns.sql drops
+--            selectedOptions, so its step is skipped where the column is
+--            gone (a database created from setup.sql).
 --          - CHECK constraints for what a row can be checked for by
 --            itself. A booking and a line end after they begin, and their
 --            duration is the minutes from the start to the end. No amount
@@ -50,7 +52,15 @@ BEGIN
     ALTER TABLE bookings ALTER COLUMN "pointsUsed" DROP DEFAULT;
     ALTER TABLE bookings ALTER COLUMN "pointsEarned" DROP DEFAULT;
     ALTER TABLE bookings ALTER COLUMN "cancellationFee" DROP DEFAULT;
-    ALTER TABLE booking_services ALTER COLUMN "selectedOptions" DROP DEFAULT;
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'booking_services'
+          AND column_name = 'selectedOptions'
+    ) THEN
+        ALTER TABLE booking_services
+            ALTER COLUMN "selectedOptions" DROP DEFAULT;
+    END IF;
 
     IF NOT EXISTS (
         SELECT 1 FROM pg_constraint

@@ -1137,7 +1137,6 @@ describe('Staff own profile API', () => {
     it('writes the given columns and the time of the change, and resolves to the columns customers are shown', async () => {
       const self = await memberOf('staff', {
         staffCode: 'STF-001',
-        awards: [{ name: 'Cut of the year', year: 2024 }],
       })
       const before = await storedStaff(self.staffId)
 

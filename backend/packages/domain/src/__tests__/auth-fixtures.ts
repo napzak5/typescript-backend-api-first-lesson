@@ -69,7 +69,6 @@ export const dbUser = (overrides: Partial<DbUser> = {}): DbUser => ({
   lastLoginIp: null,
   customerId: null,
   staffId: null,
-  metadata: {},
   deletedAt: null,
   createdAt: '2026-11-01 10:00:00+09',
   updatedAt: '2026-11-01 10:00:00+09',

@@ -217,7 +217,6 @@
 | `taxIncluded` | サービスの `taxIncluded`（料金が消費税を含むかどうか） |
 | `sortOrder` | リクエストの順（0 から）。あとから追加する明細は、最後の明細の次 |
 | `isCompleted`、`completedAt` | false、null |
-| `selectedOptions` | null（サービスのオプションは、予約のコントラクトにない） |
 
 予約（`bookings`）:
 
@@ -323,7 +322,7 @@
 | `cancellationReason` | `string \| null` | 空白だけでない。null は「理由を記録しない」 |
 
 - 開始日時の前でも後でも、キャンセルできます。来店しないと連絡があった予約は、開始日時を過ぎていてもキャンセルです。顧客が自分でキャンセルできるのは、開始日時より前だけです（[顧客によるキャンセル](#顧客によるキャンセル)）
-- **キャンセル料（`cancellationFee`）は、常に 0 です**。料金を決める規則（何日前から、何パーセントか）が定義されていないからです。`salons.cancellationPolicy` は、API が公開していないカラムで、中身の形式も決まっていません
+- **キャンセル料（`cancellationFee`）は、常に 0 です**。料金を決める規則（何日前から、何パーセントか）が定義されていないからです。規則を持つカラムもありません（形式の決まっていなかった `salons.cancellationPolicy` は、#233 で削除しました）
 - いつ、誰がキャンセルしたかは、システムが書きます。本文に `cancelledAt`、`cancelledBy`、`cancellationFee` を書くと 400（`unrecognized_keys`）です
 
 ### 施術の開始と完了
@@ -580,7 +579,7 @@
 | スタッフの `level` | サービスの `requiredStaffLevel` に満たない（`junior` < `stylist` < `senior` < `expert` < `director`） |
 
 - `by_appointment_only` は、空き枠からの予約が事前の予約なので、ほかの日と同じです。`seasonal` は、サロンが季節ごとに `serviceStatus` を切り替えます
-- サービスの `requiresConsultation`、顧客の設定と好み設定は使いません。どのスタッフがどのサービスを担当できるかの表（`staff_skills`）も使いません。サロンのスタッフは、ランクが足りれば、どのサービスも担当できるものとして扱います
+- サービスの `requiresConsultation`、顧客の設定と好み設定は使いません。どのスタッフがどのサービスを担当できるかの表もありません。サロンのスタッフは、ランクが足りれば、どのサービスも担当できるものとして扱います
 - これらの設定は、台帳に入れる予約を止めません（[サロンが台帳に入れる予約は、サロンの判断](#サロンが台帳に入れる予約はサロンの判断)）。`maxBookingsPerDay` に達した日にも、サロンは台帳から予約を入れられます
 
 規則は `business-logic/available-slot/_shared/acceptance.ts` です。
@@ -938,7 +937,7 @@
 
 マイグレーション `202611160200_bookings_rules.sql` で、次のようにしました。
 
-- 既定値をなくした（NULL 可のまま）: `bookings.depositAmount`、`pointsUsed`、`pointsEarned`、`cancellationFee`（以前は 0）、`booking_services.selectedOptions`（以前は `[]`）。設定していない値は NULL です
+- 既定値をなくした（NULL 可のまま）: `bookings.depositAmount`、`pointsUsed`、`pointsEarned`、`cancellationFee`（以前は 0）、`booking_services.selectedOptions`（以前は `[]`。のちに `202611181200_unused_tables_and_columns.sql` で削除）。設定していない値は NULL です
 - `bookings` の CHECK 制約: 終了が開始より後（`bookings_end_after_start`）、`duration` が開始から終了までの分数（`bookings_duration_is_the_span`）、金額は 0 以上（`bookings_amounts_not_negative`）、`discountAmount` は `subtotal` 以下（`bookings_discount_within_subtotal`）、`totalAmount` = `subtotal` − `discountAmount` + `taxAmount`（`bookings_total_is_the_sum`）
 - `booking_services` の CHECK 制約: 終了が開始より後（`booking_services_end_after_start`）、`duration` が開始から終了までの分数（`booking_services_duration_is_the_span`）、`discountAmount` は 0 以上で `price` 以下（`booking_services_discount_within_price`。`price` が 0 以上であることも、これで決まる）、`finalPrice` = `price` − `discountAmount`（`booking_services_final_price_is_the_difference`）、`isCompleted` と `completedAt` が合っている（`booking_services_completed_has_time`）、`sortOrder` は 0 以上（`booking_services_sort_order_not_negative`）
 - 一意制約: 1 つの予約の中で `sortOrder` は重ならない（`booking_services_order_unique`）

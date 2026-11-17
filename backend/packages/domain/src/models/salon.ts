@@ -55,14 +55,12 @@ export type DbOpeningHours = DeepRequired<typeof openingHours.$inferSelect>
 /**
  * Columns of `salons` that are never written from a request: the database
  * assigns them (`id`, timestamps), other features maintain them (`rating`,
- * `reviewCount`), or the API does not expose them yet (the policy columns).
+ * `reviewCount`), or a delete sets them (`deletedAt`).
  */
 type SalonManagedColumn =
   | 'id'
   | 'rating'
   | 'reviewCount'
-  | 'cancellationPolicy'
-  | 'bookingPolicy'
   | 'deletedAt'
   | 'createdAt'
   | 'updatedAt'
