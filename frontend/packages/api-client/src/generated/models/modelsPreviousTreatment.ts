@@ -8,20 +8,21 @@
 import type { ModelsTreatmentType } from './modelsTreatmentType';
 
 /**
- * 過去施術の履歴。カルテに含める
+ * 過去の施術 1 件。カルテの previousTreatments の要素で、medical_charts.previousTreatments (jsonb) に、この形のまま保存する
  */
 export interface ModelsPreviousTreatment {
-  /** 施術タイプ */
+  /** 施術の種類 */
   treatment: ModelsTreatmentType;
-  /** 施術日 */
+  /** 施術日。1900-01-01 から今日まで */
   date: string;
   /**
-     * 施術を受けたサロン名 - 自店での施術や不明な場合はnull
+     * 施術を受けたサロンの名前（255文字まで）。自店での施術や、サロンが分からない場合はnull
+     * @maxLength 255
      * @nullable
      */
   salonName: string | null;
   /**
-     * 施術に関するメモ - 特記事項がない通常の過去施術の場合はnull
+     * 施術についてのメモ。特記事項がない場合はnull
      * @nullable
      */
   notes: string | null;

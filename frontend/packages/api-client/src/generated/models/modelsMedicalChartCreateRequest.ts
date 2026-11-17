@@ -9,48 +9,33 @@ import type { ModelsCustomerId } from './modelsCustomerId';
 import type { ModelsPreviousTreatment } from './modelsPreviousTreatment';
 
 /**
- * カルテ新規作成リクエスト - 全項目のキーが必須。値がない項目は null を指定する。対応するテーブルはまだない
+ * カルテ新規作成リクエスト - 全項目のキーが必須。値がない項目は null か空配列を指定する
  */
 export interface ModelsMedicalChartCreateRequest {
-  /** 対象顧客 ID。カルテをまだ持たない顧客を指定する */
+  /** 対象の顧客 ID。削除されていない、カルテをまだ持たない顧客を指定する */
   customerId: ModelsCustomerId;
   /**
-     * アレルギー情報 - アレルギーがない顧客の場合はnull
-     * @nullable
+     * 過去の施術の一覧。50件まで。指定した順に保存する。記録がない場合は空配列
+     * @maxItems 50
      */
-  allergies: string[] | null;
+  previousTreatments: ModelsPreviousTreatment[];
   /**
-     * 頭皮状態 - 頭皮に問題がない健康な状態の場合はnull
-     * @nullable
-     */
-  scalpCondition: string | null;
-  /**
-     * 毛髪状態 - 毛髪に特筆すべき問題がない場合はnull
-     * @nullable
-     */
-  hairCondition: string | null;
-  /**
-     * 過去施術の履歴 - 初回来店やケミカル施術経験がない顧客の場合はnull
-     * @nullable
-     */
-  previousTreatments: ModelsPreviousTreatment[] | null;
-  /**
-     * 注意すべき体調・持病 - 健康上の問題がない顧客の場合はnull
+     * 施術の前に注意が必要な持病・体調。特にない場合はnull
      * @nullable
      */
   medicalConditions: string | null;
   /**
-     * 好みの商材 - 特定の好みがない顧客の場合はnull
-     * @nullable
+     * 好みの商材・ブランドの名前の一覧（100文字まで）。50件まで。同じ名前の繰り返しは指定できない。特にない場合は空配列
+     * @maxItems 50
      */
-  preferredProducts: string[] | null;
+  preferredProducts: string[];
   /**
-     * 避けるべき商材 - 特に避けるべき商材がない顧客の場合はnull
-     * @nullable
+     * 避ける商材・ブランドの名前の一覧（100文字まで）。50件まで。同じ名前の繰り返しは指定できない。特にない場合は空配列
+     * @maxItems 50
      */
-  avoidProducts: string[] | null;
+  avoidProducts: string[];
   /**
-     * その他メモ - 追加情報がない標準的なカルテの場合はnull
+     * 自由記述のメモ。特記事項がない場合はnull
      * @nullable
      */
   notes: string | null;

@@ -10,67 +10,34 @@ import type { ModelsMedicalChartId } from './modelsMedicalChartId';
 import type { ModelsPreviousTreatment } from './modelsPreviousTreatment';
 
 /**
- * カルテレスポンス - 顧客ごとのカルテ情報を返す。対応するテーブルはまだない
+ * カルテレスポンス - medical_charts テーブルの1行。顧客1人に1件で、施術の前に確認する情報を返す。
+ * プロパティ名と null 許可は DB カラムと一致させている。
+ * 顧客のアレルギーは customer_allergies の行で、listAllergies で取得する。ふだんの頭皮と髪は顧客台帳に、施術のときの状態は施術記録にある。
+ * medicalConditions はスタッフ向けの情報で、顧客には返さない
  */
 export interface ModelsMedicalChartResponse {
   /** カルテ ID */
   id: ModelsMedicalChartId;
-  /** 対象顧客 ID */
+  /** 対象の顧客 ID。顧客1人にカルテは1件まで */
   customerId: ModelsCustomerId;
+  /** 過去の施術の一覧（ほかのサロンでの施術や、記録を始める前の施術）。保存した順。記録がない場合は空配列 */
+  previousTreatments: ModelsPreviousTreatment[];
   /**
-     * アレルギー・敏感情報 - アレルギーがない顧客の場合はnull
-     * @nullable
-     */
-  allergies: string[] | null;
-  /**
-     * 頭皮状態のメモ - 頭皮に問題がない健康な状態の場合はnull
-     * @nullable
-     */
-  scalpCondition: string | null;
-  /**
-     * 毛髪状態のメモ - 毛髪に特筆すべき問題がない場合はnull
-     * @nullable
-     */
-  hairCondition: string | null;
-  /**
-     * 過去に実施したケミカル施術履歴 - 初回来店やケミカル施術経験がない顧客の場合はnull
-     * @nullable
-     */
-  previousTreatments: ModelsPreviousTreatment[] | null;
-  /**
-     * 注意が必要な持病・体調情報 - 健康上の問題がない顧客の場合はnull
+     * 施術の前に注意が必要な持病・体調。特にない場合はnull
      * @nullable
      */
   medicalConditions: string | null;
+  /** 好みの商材・ブランドの名前の一覧。保存した順。特にない場合は空配列 */
+  preferredProducts: string[];
+  /** 避ける商材・ブランドの名前の一覧。保存した順。特にない場合は空配列 */
+  avoidProducts: string[];
   /**
-     * 好みの商材・ブランド - 特定の好みがない顧客の場合はnull
-     * @nullable
-     */
-  preferredProducts: string[] | null;
-  /**
-     * 避けるべき商材 - 特に避けるべき商材がない顧客の場合はnull
-     * @nullable
-     */
-  avoidProducts: string[] | null;
-  /**
-     * 自由記述メモ - 追加情報がない標準的なカルテの場合はnull
+     * 自由記述のメモ。特記事項がない場合はnull
      * @nullable
      */
   notes: string | null;
-  /** 最終更新日時 */
-  lastUpdated: string;
-  /** レコード作成日時。 */
+  /** レコード作成日時 */
   createdAt: string;
-  /**
-     * レコードを作成したユーザーID。システム自動作成または匿名作成の場合はnull
-     * @nullable
-     */
-  createdBy: string | null;
-  /** レコード最終更新日時。 */
+  /** レコード最終更新日時 */
   updatedAt: string;
-  /**
-     * レコードを最後に更新したユーザーID。システム自動更新または匿名更新の場合はnull
-     * @nullable
-     */
-  updatedBy: string | null;
 }

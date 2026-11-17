@@ -7,6 +7,6 @@
  */
 
 /**
- * カルテの記載内容に対する部分一致キーワード
+ * 持病・体調、メモ、好みの商材と避ける商材の名前に対する部分一致キーワード（大文字と小文字を区別しない）
  */
 export type ModelsMedicalChartSearchRequestSearchParameter = string;

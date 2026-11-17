@@ -1683,7 +1683,7 @@ export interface paths {
         put?: never;
         /**
          * Create a medical chart
-         * @description 顧客のカルテを新規作成します。customerIdの顧客が存在しない場合は400を、顧客がすでにカルテを持つ場合は409を返します。Locationヘッダーは顧客IDによるカルテ取得のURLを指します。
+         * @description 顧客のカルテを新規作成します。customerIdの顧客が存在しないか削除されている場合は400を、顧客がすでにカルテを持つ場合は409を返します。Locationヘッダーは顧客IDによるカルテ取得のURLを指します。
          */
         post: operations["MedicalChartCrud_create"];
         delete?: never;
@@ -1701,7 +1701,7 @@ export interface paths {
         };
         /**
          * Get the medical chart of a customer
-         * @description 顧客IDを指定してカルテを取得します。顧客が存在しない場合や、顧客がカルテを持たない場合は404を返します。
+         * @description 顧客IDを指定してカルテを取得します。顧客が存在しないか削除されている場合や、顧客がカルテを持たない場合は404を返します。
          */
         get: operations["MedicalChartCrud_getByCustomer"];
         put?: never;
@@ -1747,7 +1747,7 @@ export interface paths {
         head?: never;
         /**
          * Update a medical chart
-         * @description 指定した項目だけを更新します。
+         * @description 指定した項目だけを更新します。カルテが存在しない場合や、カルテの顧客が削除されている場合は404を返します。
          */
         patch: operations["MedicalChartCrud_update"];
         trace?: never;
@@ -3564,23 +3564,6 @@ export interface components {
              * @description 署名付きURLの有効期限。
              */
             expiresAt: string;
-        };
-        /** @description 作成・更新ユーザーとタイムスタンプを保持する共通監査情報。 */
-        "Models.AuditInfo": {
-            /**
-             * Format: date-time
-             * @description レコード作成日時。
-             */
-            createdAt: string;
-            /** @description レコードを作成したユーザーID。システム自動作成または匿名作成の場合はnull */
-            createdBy: string | null;
-            /**
-             * Format: date-time
-             * @description レコード最終更新日時。
-             */
-            updatedAt: string;
-            /** @description レコードを最後に更新したユーザーID。システム自動更新または匿名更新の場合はnull */
-            updatedBy: string | null;
         };
         /** @description メールアドレス確認を完了させるリクエスト。 */
         "Models.AuthEmailVerificationConfirmRequest": {
@@ -6077,25 +6060,19 @@ export interface components {
             /** @description カテゴリ別の集計。在庫のある商品のないカテゴリは含めない。評価額の降順、同じ場合はカテゴリの昇順(カテゴリ未設定は最後) */
             categories: components["schemas"]["Models.InventoryValueReportCategory"][];
         };
-        /** @description カルテ新規作成リクエスト - 全項目のキーが必須。値がない項目は null を指定する。対応するテーブルはまだない */
+        /** @description カルテ新規作成リクエスト - 全項目のキーが必須。値がない項目は null か空配列を指定する */
         "Models.MedicalChartCreateRequest": {
-            /** @description 対象顧客 ID。カルテをまだ持たない顧客を指定する */
+            /** @description 対象の顧客 ID。削除されていない、カルテをまだ持たない顧客を指定する */
             customerId: components["schemas"]["Models.CustomerId"];
-            /** @description アレルギー情報 - アレルギーがない顧客の場合はnull */
-            allergies: string[] | null;
-            /** @description 頭皮状態 - 頭皮に問題がない健康な状態の場合はnull */
-            scalpCondition: string | null;
-            /** @description 毛髪状態 - 毛髪に特筆すべき問題がない場合はnull */
-            hairCondition: string | null;
-            /** @description 過去施術の履歴 - 初回来店やケミカル施術経験がない顧客の場合はnull */
-            previousTreatments: components["schemas"]["Models.PreviousTreatment"][] | null;
-            /** @description 注意すべき体調・持病 - 健康上の問題がない顧客の場合はnull */
+            /** @description 過去の施術の一覧。50件まで。指定した順に保存する。記録がない場合は空配列 */
+            previousTreatments: components["schemas"]["Models.PreviousTreatment"][];
+            /** @description 施術の前に注意が必要な持病・体調。特にない場合はnull */
             medicalConditions: string | null;
-            /** @description 好みの商材 - 特定の好みがない顧客の場合はnull */
-            preferredProducts: string[] | null;
-            /** @description 避けるべき商材 - 特に避けるべき商材がない顧客の場合はnull */
-            avoidProducts: string[] | null;
-            /** @description その他メモ - 追加情報がない標準的なカルテの場合はnull */
+            /** @description 好みの商材・ブランドの名前の一覧（100文字まで）。50件まで。同じ名前の繰り返しは指定できない。特にない場合は空配列 */
+            preferredProducts: string[];
+            /** @description 避ける商材・ブランドの名前の一覧（100文字まで）。50件まで。同じ名前の繰り返しは指定できない。特にない場合は空配列 */
+            avoidProducts: string[];
+            /** @description 自由記述のメモ。特記事項がない場合はnull */
             notes: string | null;
         };
         /**
@@ -6103,68 +6080,52 @@ export interface components {
          * @description カルテ（メディカルチャート）を識別するブランド付きUUID。
          */
         "Models.MedicalChartId": string;
-        /** @description カルテレスポンス - 顧客ごとのカルテ情報を返す。対応するテーブルはまだない */
+        /**
+         * @description カルテレスポンス - medical_charts テーブルの1行。顧客1人に1件で、施術の前に確認する情報を返す。
+         *     プロパティ名と null 許可は DB カラムと一致させている。
+         *     顧客のアレルギーは customer_allergies の行で、listAllergies で取得する。ふだんの頭皮と髪は顧客台帳に、施術のときの状態は施術記録にある。
+         *     medicalConditions はスタッフ向けの情報で、顧客には返さない
+         */
         "Models.MedicalChartResponse": {
             /** @description カルテ ID */
             id: components["schemas"]["Models.MedicalChartId"];
-            /** @description 対象顧客 ID */
+            /** @description 対象の顧客 ID。顧客1人にカルテは1件まで */
             customerId: components["schemas"]["Models.CustomerId"];
-            /** @description アレルギー・敏感情報 - アレルギーがない顧客の場合はnull */
-            allergies: string[] | null;
-            /** @description 頭皮状態のメモ - 頭皮に問題がない健康な状態の場合はnull */
-            scalpCondition: string | null;
-            /** @description 毛髪状態のメモ - 毛髪に特筆すべき問題がない場合はnull */
-            hairCondition: string | null;
-            /** @description 過去に実施したケミカル施術履歴 - 初回来店やケミカル施術経験がない顧客の場合はnull */
-            previousTreatments: components["schemas"]["Models.PreviousTreatment"][] | null;
-            /** @description 注意が必要な持病・体調情報 - 健康上の問題がない顧客の場合はnull */
+            /** @description 過去の施術の一覧（ほかのサロンでの施術や、記録を始める前の施術）。保存した順。記録がない場合は空配列 */
+            previousTreatments: components["schemas"]["Models.PreviousTreatment"][];
+            /** @description 施術の前に注意が必要な持病・体調。特にない場合はnull */
             medicalConditions: string | null;
-            /** @description 好みの商材・ブランド - 特定の好みがない顧客の場合はnull */
-            preferredProducts: string[] | null;
-            /** @description 避けるべき商材 - 特に避けるべき商材がない顧客の場合はnull */
-            avoidProducts: string[] | null;
-            /** @description 自由記述メモ - 追加情報がない標準的なカルテの場合はnull */
+            /** @description 好みの商材・ブランドの名前の一覧。保存した順。特にない場合は空配列 */
+            preferredProducts: string[];
+            /** @description 避ける商材・ブランドの名前の一覧。保存した順。特にない場合は空配列 */
+            avoidProducts: string[];
+            /** @description 自由記述のメモ。特記事項がない場合はnull */
             notes: string | null;
             /**
              * Format: date-time
-             * @description 最終更新日時
-             */
-            lastUpdated: string;
-            /**
-             * Format: date-time
-             * @description レコード作成日時。
+             * @description レコード作成日時
              */
             createdAt: string;
-            /** @description レコードを作成したユーザーID。システム自動作成または匿名作成の場合はnull */
-            createdBy: string | null;
             /**
              * Format: date-time
-             * @description レコード最終更新日時。
+             * @description レコード最終更新日時
              */
             updatedAt: string;
-            /** @description レコードを最後に更新したユーザーID。システム自動更新または匿名更新の場合はnull */
-            updatedBy: string | null;
         };
         /**
-         * @description カルテ部分更新リクエスト - 指定した項目だけを更新する。null を指定した項目はクリアする。対応するテーブルはまだない。
-         *     対象の顧客は変更できない
+         * @description カルテ部分更新リクエスト - 指定した項目だけを更新する。項目を1つも指定しないリクエストは受け付けない。
+         *     DB で NULL 許可のカラムは null でクリアできる。一覧の項目は、指定した一覧全体で置き換える。対象の顧客は変更できない
          */
         "Models.MedicalChartUpdateRequest": {
-            /** @description アレルギー情報 - アレルギーがない顧客の場合はnull、null指定で値をリセット可能 */
-            allergies?: string[] | null;
-            /** @description 頭皮状態 - 頭皮に問題がない健康な状態の場合はnull、null指定で値をリセット可能 */
-            scalpCondition?: string | null;
-            /** @description 毛髪状態 - 毛髪に特筆すべき問題がない場合はnull、null指定で値をリセット可能 */
-            hairCondition?: string | null;
-            /** @description 過去施術の履歴 - 初回来店やケミカル施術経験がない顧客の場合はnull、null指定で値をリセット可能 */
-            previousTreatments?: components["schemas"]["Models.PreviousTreatment"][] | null;
-            /** @description 注意すべき体調・持病 - 健康上の問題がない顧客の場合はnull、null指定で値をリセット可能 */
+            /** @description 過去の施術の一覧。50件まで。指定した順に保存する。空配列でクリア */
+            previousTreatments?: components["schemas"]["Models.PreviousTreatment"][];
+            /** @description 施術の前に注意が必要な持病・体調。nullでクリア */
             medicalConditions?: string | null;
-            /** @description 好みの商材 - 特定の好みがない顧客の場合はnull、null指定で値をリセット可能 */
-            preferredProducts?: string[] | null;
-            /** @description 避けるべき商材 - 特に避けるべき商材がない顧客の場合はnull、null指定で値をリセット可能 */
-            avoidProducts?: string[] | null;
-            /** @description その他メモ - 追加情報がない標準的なカルテの場合はnull、null指定で値をリセット可能 */
+            /** @description 好みの商材・ブランドの名前の一覧（100文字まで）。50件まで。同じ名前の繰り返しは指定できない。空配列でクリア */
+            preferredProducts?: string[];
+            /** @description 避ける商材・ブランドの名前の一覧（100文字まで）。50件まで。同じ名前の繰り返しは指定できない。空配列でクリア */
+            avoidProducts?: string[];
+            /** @description 自由記述のメモ。nullでクリア */
             notes?: string | null;
         };
         /**
@@ -6918,18 +6879,18 @@ export interface components {
              */
             referenceId: string | null;
         };
-        /** @description 過去施術の履歴。カルテに含める */
+        /** @description 過去の施術 1 件。カルテの previousTreatments の要素で、medical_charts.previousTreatments (jsonb) に、この形のまま保存する */
         "Models.PreviousTreatment": {
-            /** @description 施術タイプ */
+            /** @description 施術の種類 */
             treatment: components["schemas"]["Models.TreatmentType"];
             /**
-             * Format: date-time
-             * @description 施術日
+             * Format: date
+             * @description 施術日。1900-01-01 から今日まで
              */
             date: string;
-            /** @description 施術を受けたサロン名 - 自店での施術や不明な場合はnull */
+            /** @description 施術を受けたサロンの名前（255文字まで）。自店での施術や、サロンが分からない場合はnull */
             salonName: string | null;
-            /** @description 施術に関するメモ - 特記事項がない通常の過去施術の場合はnull */
+            /** @description 施術についてのメモ。特記事項がない場合はnull */
             notes: string | null;
         };
         /**
@@ -10609,11 +10570,11 @@ export interface components {
         "Models.InventoryValueReportRequest.salonId": components["schemas"]["Models.SalonId"];
         /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
         "Models.MedicalChartSearchRequest.cursor": string;
-        /** @description アレルギー情報の有無による絞り込み。trueの場合はアレルギー情報を持つカルテに一致する */
+        /** @description アレルギーの有無による絞り込み。trueの場合は customer_allergies に行がある顧客の、falseの場合は行がない顧客のカルテに一致する */
         "Models.MedicalChartSearchRequest.hasAllergies": boolean;
         /** @description 1ページあたりの取得件数上限 (1〜100) */
         "Models.MedicalChartSearchRequest.limit": number;
-        /** @description カルテの記載内容に対する部分一致キーワード */
+        /** @description 持病・体調、メモ、好みの商材と避ける商材の名前に対する部分一致キーワード（大文字と小文字を区別しない） */
         "Models.MedicalChartSearchRequest.search": string;
         /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
         "Models.PaymentMethodSearchRequest.cursor": string;
@@ -20609,9 +20570,9 @@ export interface operations {
                 limit?: components["parameters"]["Models.MedicalChartSearchRequest.limit"];
                 /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
                 cursor?: components["parameters"]["Models.MedicalChartSearchRequest.cursor"];
-                /** @description カルテの記載内容に対する部分一致キーワード */
+                /** @description 持病・体調、メモ、好みの商材と避ける商材の名前に対する部分一致キーワード（大文字と小文字を区別しない） */
                 search?: components["parameters"]["Models.MedicalChartSearchRequest.search"];
-                /** @description アレルギー情報の有無による絞り込み。trueの場合はアレルギー情報を持つカルテに一致する */
+                /** @description アレルギーの有無による絞り込み。trueの場合は customer_allergies に行がある顧客の、falseの場合は行がない顧客のカルテに一致する */
                 hasAllergies?: components["parameters"]["Models.MedicalChartSearchRequest.hasAllergies"];
             };
             header?: never;

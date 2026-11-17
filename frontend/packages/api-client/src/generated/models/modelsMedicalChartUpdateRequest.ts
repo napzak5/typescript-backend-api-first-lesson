@@ -8,47 +8,32 @@
 import type { ModelsPreviousTreatment } from './modelsPreviousTreatment';
 
 /**
- * カルテ部分更新リクエスト - 指定した項目だけを更新する。null を指定した項目はクリアする。対応するテーブルはまだない。
- * 対象の顧客は変更できない
+ * カルテ部分更新リクエスト - 指定した項目だけを更新する。項目を1つも指定しないリクエストは受け付けない。
+ * DB で NULL 許可のカラムは null でクリアできる。一覧の項目は、指定した一覧全体で置き換える。対象の顧客は変更できない
  */
 export interface ModelsMedicalChartUpdateRequest {
   /**
-     * アレルギー情報 - アレルギーがない顧客の場合はnull、null指定で値をリセット可能
-     * @nullable
+     * 過去の施術の一覧。50件まで。指定した順に保存する。空配列でクリア
+     * @maxItems 50
      */
-  allergies?: string[] | null;
+  previousTreatments?: ModelsPreviousTreatment[];
   /**
-     * 頭皮状態 - 頭皮に問題がない健康な状態の場合はnull、null指定で値をリセット可能
-     * @nullable
-     */
-  scalpCondition?: string | null;
-  /**
-     * 毛髪状態 - 毛髪に特筆すべき問題がない場合はnull、null指定で値をリセット可能
-     * @nullable
-     */
-  hairCondition?: string | null;
-  /**
-     * 過去施術の履歴 - 初回来店やケミカル施術経験がない顧客の場合はnull、null指定で値をリセット可能
-     * @nullable
-     */
-  previousTreatments?: ModelsPreviousTreatment[] | null;
-  /**
-     * 注意すべき体調・持病 - 健康上の問題がない顧客の場合はnull、null指定で値をリセット可能
+     * 施術の前に注意が必要な持病・体調。nullでクリア
      * @nullable
      */
   medicalConditions?: string | null;
   /**
-     * 好みの商材 - 特定の好みがない顧客の場合はnull、null指定で値をリセット可能
-     * @nullable
+     * 好みの商材・ブランドの名前の一覧（100文字まで）。50件まで。同じ名前の繰り返しは指定できない。空配列でクリア
+     * @maxItems 50
      */
-  preferredProducts?: string[] | null;
+  preferredProducts?: string[];
   /**
-     * 避けるべき商材 - 特に避けるべき商材がない顧客の場合はnull、null指定で値をリセット可能
-     * @nullable
+     * 避ける商材・ブランドの名前の一覧（100文字まで）。50件まで。同じ名前の繰り返しは指定できない。空配列でクリア
+     * @maxItems 50
      */
-  avoidProducts?: string[] | null;
+  avoidProducts?: string[];
   /**
-     * その他メモ - 追加情報がない標準的なカルテの場合はnull、null指定で値をリセット可能
+     * 自由記述のメモ。nullでクリア
      * @nullable
      */
   notes?: string | null;
