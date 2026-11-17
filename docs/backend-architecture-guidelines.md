@@ -929,7 +929,7 @@ async execute(
 - [`docs/payments.md`](./payments.md) - 支払い（支払い方法、支払いの記録と返金の規則）
 - [`docs/products.md`](./products.md) - 商品（サロンの商品の規則）
 - [`docs/inventory.md`](./inventory.md) - 在庫（サロンの在庫の行、在庫僅少、期限切れ間近の規則）
-- [`docs/purchase-orders.md`](./purchase-orders.md) - 発注（サロンの発注、明細、金額、ステータスの規則）
+- [`docs/purchase-orders.md`](./purchase-orders.md) - 発注（サロンの発注、明細、金額、ステータス、入荷、発注の提案の規則）
 - [`docs/db-driven-domain-model.md`](./db-driven-domain-model.md) - DB駆動ドメインモデル
 - [`docs/sum-types-pattern-matching.md`](./sum-types-pattern-matching.md) - Sum型とパターンマッチング
 - [`docs/type-safety-principles.md`](./type-safety-principles.md) - 型安全性の原則

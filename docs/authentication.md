@@ -506,7 +506,7 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 
 ### 発注の権限
 
-発注（`purchase_orders`）もサロンのもので、ルートはサロンの下にありません（`/api/v1/purchase-orders`）。どのサロンの発注かは、作成では本文の `salonId`、一覧ではクエリの `salonId`、取得、更新、承認、取り消しでは発注そのものが決めます。権限は、在庫と同じ 2 段階で判定します（`business-logic/purchase-order/_shared/authorization.ts`）。
+発注（`purchase_orders`）もサロンのもので、ルートはサロンの下にありません（`/api/v1/purchase-orders`）。どのサロンの発注かは、作成では本文の `salonId`、一覧と発注の提案ではクエリの `salonId`、取得、更新、承認、取り消し、入荷では発注そのものが決めます。権限は、在庫と同じ 2 段階で判定します（`business-logic/purchase-order/_shared/authorization.ts`）。
 
 | オペレーション | 許可 |
 |---|---|
@@ -514,11 +514,14 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 | 作成（`POST /api/v1/purchase-orders`） | `admin`、本文の `salonId` のサロンの `owner` / `manager` / `staff` |
 | 1 件の取得、更新（`GET`、`PATCH /api/v1/purchase-orders/{id}`） | `admin`、発注のサロンの `owner` / `manager` / `staff` |
 | 承認、取り消し（`POST /api/v1/purchase-orders/{id}/approve`、`/cancel`） | `admin`、発注のサロンの `owner` / `manager` |
+| 入荷（`POST /api/v1/purchase-orders/{id}/receive`） | `admin`、発注のサロンの `owner` / `manager` / `staff` |
+| 発注の提案（`GET /api/v1/purchase-orders/reorder-suggestions`） | `admin`、クエリの `salonId` のサロンの `owner` / `manager` / `staff` |
 
-- 1 段階目は、操作者だけで決まる。一覧、作成、取得、更新（`purchaseOrderReachOf`）は、在庫を読める人ができる。足りない商品を頼み、仕入先が発注をどうしたかを記録するのは、日々在庫を扱うスタッフであるため。承認と取り消し（`purchaseOrderApproverReachOf`）は、在庫を管理する `owner` と `manager` だけができる。承認はお金を使うことを決めるため。サロンの `staff`（承認と取り消し）、ロール `customer` のユーザー、範囲 `none` のユーザーは、ID か本文が不正でも 403
+- 1 段階目は、操作者だけで決まる。一覧、作成、取得、更新、入荷、発注の提案（`purchaseOrderReachOf`）は、在庫を読める人ができる。足りない商品を頼み、仕入先が発注をどうしたかを記録し、届いた商品を受け取るのは、日々在庫を扱うスタッフであるため。承認と取り消し（`purchaseOrderApproverReachOf`）は、在庫を管理する `owner` と `manager` だけができる。承認はお金を使うことを決めるため。サロンの `staff`（承認と取り消し）、ロール `customer` のユーザー、範囲 `none` のユーザーは、ID か本文が不正でも 403
 - 2 段階目は、本文かクエリを確かめたあとに決まる（`isWithin`）。サロンのユーザーが、ほかのサロンを指定すると、サロンが存在するかどうかにかかわらず 403
-- 取得、更新、承認、取り消しには、比べるサロンがない。リポジトリが、操作者に届く範囲を検索の条件にするので、ほかのサロンの発注は見つからない（404）。一覧のカーソルにも、同じ条件を付ける。作成の明細の在庫の行は、本文の `salonId` のサロンの行でなければ 400（`items.<n>.inventoryId` の `not_found`）
-- `createdBy` と `approvedBy` は、操作者のスタッフ ID で、`admin` では null
+- 取得、更新、承認、取り消し、入荷には、比べるサロンがない。リポジトリが、操作者に届く範囲を検索の条件にするので、ほかのサロンの発注は見つからない（404）。一覧のカーソルにも、同じ条件を付ける。作成の明細の在庫の行は、本文の `salonId` のサロンの行でなければ 400（`items.<n>.inventoryId` の `not_found`）
+- 入荷の在庫の行は、発注の明細の行でなければ 400（`items.<n>.inventoryId` の `not_found`）。発注の提案の `cursor` は、クエリの `salonId` のサロンの商品でなければ 400（`cursor` の `not_found`）
+- `createdBy` と `approvedBy`、入荷が記録する在庫の移動の `performedBy` は、操作者のスタッフ ID で、`admin` では null
 - 顧客には、発注を見せない。発注のための権限（`users.permissions`）はない
 
 規則は [発注](./purchase-orders.md) にあります。

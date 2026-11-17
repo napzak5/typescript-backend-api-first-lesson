@@ -22,3 +22,9 @@ export type ApprovePurchaseOrderResponse = JsonBody<
 export type CancelPurchaseOrderResponse = JsonBody<
   operations['PurchaseOrderCrud_cancel']['responses'][200]['content']
 >
+export type ReceivePurchaseOrderResponse = JsonBody<
+  operations['PurchaseOrderCrud_receive']['responses'][200]['content']
+>
+export type ListReorderSuggestionsResponse = JsonBody<
+  operations['PurchaseOrderCrud_listReorderSuggestions']['responses'][200]['content']
+>

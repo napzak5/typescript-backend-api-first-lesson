@@ -5,29 +5,41 @@
  * Comprehensive REST API for managing beauty salon operations including salons, staff, services, customers, bookings, treatments, payments, inventory, and access control. Built with TypeSpec for type-safe API-first development.
  * OpenAPI spec version: 2.0
  */
-import type { ModelsInventoryId } from './modelsInventoryId';
+import type { ModelsProductId } from './modelsProductId';
 
 /**
- * 発注提案 - 在庫数が最低在庫数を下回った在庫と、推奨する発注数量を返す
+ * 発注提案 - 在庫と発注中の数量の和が発注点以下の商品と、推奨する発注数量を、商品ごとに返す。
+ * 発注点は商品の reorderPoint、ない場合は minimumStock。推奨する発注数量は、maximumStock(ない場合は発注点)から在庫と発注中の数量の和を引いた値
  */
 export interface ModelsReorderSuggestionResponse {
-  /** 対象在庫 ID */
-  inventoryId: ModelsInventoryId;
+  /** 商品 ID */
+  productId: ModelsProductId;
+  /** 商品コード */
+  productCode: string;
   /** 商品名 */
   productName: string;
-  /** 現在の在庫数量 */
-  currentStock: number;
-  /** 商品の最低在庫数 */
-  minimumStock: number;
-  /** 推奨する発注数量 */
-  suggestedQuantity: number;
+  /** 単位 */
+  unit: string;
   /**
-     * 仕入先名。仕入先が登録されていない場合はnull
+     * 商品の仕入先名。仕入先が登録されていない場合はnull
      * @nullable
      */
   supplier: string | null;
+  /** サロンにあるその商品の在庫の currentStock の合計 */
+  currentStock: number;
+  /** 発注中の数量。draft・pending・approved・ordered・shipped の発注の、その商品の在庫の明細の quantity の合計 */
+  onOrderQuantity: number;
+  /** 使った発注点。商品の reorderPoint、ない場合は minimumStock */
+  reorderPoint: number;
   /**
-     * 直近の発注日。発注履歴がない場合はnull
+     * 商品の最大在庫数。最大在庫数がない場合はnull
+     * @nullable
+     */
+  maximumStock: number | null;
+  /** 推奨する発注数量。0より大きい */
+  suggestedQuantity: number;
+  /**
+     * その商品の在庫を含む、キャンセルしていない発注の最新の発注日時。ない場合はnull
      * @nullable
      */
   lastOrderDate: string | null;

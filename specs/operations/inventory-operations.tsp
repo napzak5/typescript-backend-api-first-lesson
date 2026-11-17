@@ -103,7 +103,7 @@ namespace BeautySalon.Operations {
         | ProblemResponse<400>
         | CommonErrors;
 
-      @doc("商品の在庫を新規登録します。在庫数は0で登録され、入庫は在庫移動で記録します。管理者と、salonIdのサロンのオーナー・マネージャーが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合や、productIdにsalonIdのサロンの商品ではないIDを指定した場合、lotNumberが商品のロット管理(requiresLotTracking)と合わない場合は400を、salonId・productId・lotNumberの組み合わせが既存の在庫と重複する場合は409を返します。")
+      @doc("商品の在庫を新規登録します。在庫数は0で登録され、入庫は在庫移動か発注の入荷で記録します。管理者と、salonIdのサロンのオーナー・マネージャーが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合や、productIdにsalonIdのサロンの商品ではないIDを指定した場合、lotNumberが商品のロット管理(requiresLotTracking)と合わない場合は400を、salonId・productId・lotNumberの組み合わせが既存の在庫と重複する場合は409を返します。")
       @summary("Create an inventory record")
       @post
       create(@body request: InventoryCreateRequest):
@@ -323,7 +323,7 @@ namespace BeautySalon.Operations {
         | RequestBodyErrors
         | CommonErrors;
 
-      @doc("発注済み(ordered)または発送済み(shipped)の仕入れ発注の納品を受領し、ステータスを delivered にします。受領数量は在庫移動(purchase)として記録し、在庫数を増やします。受領明細のinventoryIdが発注明細にない場合は400を、発注が ordered・shipped でない場合は409を返します。")
+      @doc("発注済み(ordered)または発送済み(shipped)の仕入れ発注の納品を受領し、ステータスを delivered に、受領した日時を actualDelivery にします。明細ごとに、受領数量を在庫移動(purchase。単価は明細の unitPrice、参照は purchase_order と発注 ID)として記録し、在庫数を増やします。管理者と、発注のサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンの発注は404を、受領明細の inventoryId が発注の明細にない場合と、受領数量が発注数量を超える場合は400を、発注が ordered・shipped でない場合と、在庫数が上限(99,999,999.99)を超える場合は409を返します。")
       @summary("Receive a purchase order")
       @route("/{id}/receive")
       @post
@@ -338,7 +338,7 @@ namespace BeautySalon.Operations {
         | RequestBodyErrors
         | CommonErrors;
 
-      @doc("在庫数が最低在庫数を下回った在庫について、推奨する発注数量を一覧取得します。salonIdのサロンが存在しない場合は400を返します。")
+      @doc("サロンの有効な商品のうち、在庫と発注中の数量の和が発注点(reorderPoint、ない場合は minimumStock)以下のものについて、推奨する発注数量を商品ごとに一覧取得します。在庫の行がない商品と、推奨する発注数量が0の商品は含みません。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合は400を返します。")
       @summary("List reorder suggestions")
       @route("/reorder-suggestions")
       @get
