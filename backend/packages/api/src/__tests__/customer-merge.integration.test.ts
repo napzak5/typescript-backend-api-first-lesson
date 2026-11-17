@@ -1072,6 +1072,36 @@ describe('Customer merge API', () => {
       })
     })
 
+    it('writes the transfers one moment after the other, so that the last one has the balance of the primary', async () => {
+      const { primaryId, secondaryId } = await pair()
+      const lots = 40
+      for (let index = 0; index < lots; index += 1) {
+        await db.insert(customerPoints).values({
+          customerId: secondaryId,
+          transactionType: 'earned',
+          points: 1,
+          balance: index + 1,
+          expiryDate: null,
+          createdAt: new Date(Date.UTC(2026, 0, 1, 0, index)).toISOString(),
+        })
+      }
+      await db
+        .update(customers)
+        .set({ loyaltyPoints: lots })
+        .where(eq(customers.id, secondaryId))
+
+      const response = await merge(merging(primaryId, secondaryId))
+
+      expect(response.body.data.loyaltyPoints).toBe(lots)
+      const transfers = await pointsOf(primaryId)
+      expect(transfers.map(({ balance }) => balance)).toEqual(
+        Array.from({ length: lots }, (_, index) => index + 1),
+      )
+      expect(new Set(transfers.map(({ createdAt }) => createdAt)).size).toBe(
+        lots,
+      )
+    })
+
     it('tells a transferred lot as expiring on the expiry date it had', async () => {
       const { primaryId, secondaryId } = await pair()
       const inAMonth = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
@@ -1270,21 +1300,22 @@ describe('Customer merge API', () => {
   })
 
   describe('requests at the same moment', () => {
-    /** Waits until a statement of another connection waits for a lock. */
-    const untilSomeoneWaits = async (
+    /** Waits until `count` statements of other connections wait for a lock. */
+    const untilWaiting = async (
       client: ReturnType<typeof getTestDbClient>,
+      count = 1,
     ): Promise<void> => {
       for (let attempt = 0; attempt < 200; attempt += 1) {
         const [activity] = await client<{ waiting: number }[]>`
           SELECT count(*)::int AS waiting FROM pg_stat_activity
           WHERE datname = current_database() AND wait_event_type = 'Lock'
         `
-        if ((activity?.waiting ?? 0) > 0) {
+        if ((activity?.waiting ?? 0) >= count) {
           return
         }
         await pause(10)
       }
-      throw new Error('Nobody waited for a lock')
+      throw new Error(`Fewer than ${count} statements waited for a lock`)
     }
 
     it('merges once of two same merges that arrive together, and refuses the other', async () => {
@@ -1322,25 +1353,28 @@ describe('Customer merge API', () => {
       expect(kept.visitCount).toBe(2)
     })
 
-    it('waits for a change of a booking of the secondary that is under way, and then gives the booking to the primary', async () => {
+    it('waits for a change of a booking of the secondary that is under way, which then writes the customer, without a deadlock, and then gives the booking to the primary', async () => {
       const { primaryId, secondaryId } = await pair()
       const bookingId = await insertBooking(secondaryId, 'confirmed')
       const client = getTestDbClient()
       const held = Promise.withResolvers<void>()
-      const mayCommit = Promise.withResolvers<void>()
+      const mayGoOn = Promise.withResolvers<void>()
+      // As a change of the status of a booking does: the booking first, and
+      // then its customer, whose visits it counts again.
       const holder = client.begin(async (tx) => {
         await tx`SELECT id FROM bookings WHERE id = ${bookingId} FOR UPDATE`
         await tx`UPDATE bookings SET "internalNotes" = 'changed' WHERE id = ${bookingId}`
         held.resolve()
-        await mayCommit.promise
+        await mayGoOn.promise
+        await tx`UPDATE customers SET "updatedAt" = clock_timestamp() WHERE id = ${secondaryId}`
       })
       await held.promise
 
       const pending = merge(merging(primaryId, secondaryId)).then(
         (response) => response,
       )
-      await untilSomeoneWaits(client)
-      mayCommit.resolve()
+      await untilWaiting(client)
+      mayGoOn.resolve()
       await holder
 
       expect((await pending).status).toBe(200)
@@ -1354,6 +1388,67 @@ describe('Customer merge API', () => {
       expect(booking).toEqual({
         customerId: primaryId,
         internalNotes: 'changed',
+      })
+    })
+
+    it('makes a change of the chart or of an allergy of the primary that arrives during the merge wait for it, and writes it over what the merge left', async () => {
+      const { primaryId, secondaryId } = await pair()
+      await insertChart(primaryId, { notes: 'ぬるめのお湯' })
+      await insertChart(secondaryId, {
+        medicalConditions: '金属アレルギーの疑い',
+      })
+      const ppd = await insertAllergy(primaryId, 'PPD', 'moderate', 'かゆみ')
+      await insertAllergy(secondaryId, 'PPD', 'life_threatening', '呼吸困難')
+      const account = await linkAccount(secondaryId)
+      const chartId = (await chartOf(primaryId))?.id
+      const client = getTestDbClient()
+      const held = Promise.withResolvers<void>()
+      const mayCommit = Promise.withResolvers<void>()
+      // The merge gives the account of the secondary to the primary: holding
+      // the account stops it after it has read the charts and the
+      // allergies, and before it writes them.
+      const holder = client.begin(async (tx) => {
+        await tx`SELECT id FROM users WHERE id = ${account.id} FOR UPDATE`
+        held.resolve()
+        await mayCommit.promise
+      })
+      await held.promise
+
+      const pending = merge(merging(primaryId, secondaryId)).then(
+        (response) => response,
+      )
+      await untilWaiting(client)
+      const changes = Promise.all([
+        request(app)
+          .patch(`/api/v1/medical-charts/${chartId}`)
+          .set('Authorization', asAdmin)
+          .send({ notes: '熱めのお湯' })
+          .then((response) => response),
+        request(app)
+          .patch(
+            `/api/v1/medical-charts/customer/${primaryId}/allergies/${ppd}`,
+          )
+          .set('Authorization', asAdmin)
+          .send({ symptoms: '腫れ' })
+          .then((response) => response),
+      ])
+      await untilWaiting(client, 3)
+      mayCommit.resolve()
+      await holder
+
+      expect((await pending).status).toBe(200)
+      expect((await changes).map(({ status }) => status)).toEqual([200, 200])
+      expect(await chartOf(primaryId)).toMatchObject({
+        medicalConditions: '金属アレルギーの疑い',
+        notes: '熱めのお湯',
+      })
+      const [allergy] = await db
+        .select()
+        .from(customerAllergies)
+        .where(eq(customerAllergies.id, ppd))
+      expect(allergy).toMatchObject({
+        severityType: 'life_threatening',
+        symptoms: '腫れ',
       })
     })
 
