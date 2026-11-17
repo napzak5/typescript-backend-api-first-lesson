@@ -10124,7 +10124,7 @@ export interface components {
              * @description 期間内の施術記録の件数
              */
             totalTreatments: number;
-            /** @description サービスのカテゴリーの区分ごとの施術件数。件数の多い順、同じ件数は区分の値の順。施術記録のない区分は載らない */
+            /** @description サービスのカテゴリーの区分ごとの施術件数。件数の多い順、同じ件数は区分の名前の順。施術記録のない区分は載らない */
             treatmentsByCategory: components["schemas"]["Models.TreatmentsByCategoryResponse"][];
             /**
              * Format: float

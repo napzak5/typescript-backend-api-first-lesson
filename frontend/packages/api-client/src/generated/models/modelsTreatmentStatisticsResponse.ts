@@ -14,7 +14,7 @@ import type { ModelsTreatmentsByServiceResponse } from './modelsTreatmentsByServ
 export interface ModelsTreatmentStatisticsResponse {
   /** 期間内の施術記録の件数 */
   totalTreatments: number;
-  /** サービスのカテゴリーの区分ごとの施術件数。件数の多い順、同じ件数は区分の値の順。施術記録のない区分は載らない */
+  /** サービスのカテゴリーの区分ごとの施術件数。件数の多い順、同じ件数は区分の名前の順。施術記録のない区分は載らない */
   treatmentsByCategory: ModelsTreatmentsByCategoryResponse[];
   /**
      * 施術時間(processingTime)のある施術記録の、施術時間の平均（分）。小数第1位に丸める。施術時間のある施術記録がなければnull
