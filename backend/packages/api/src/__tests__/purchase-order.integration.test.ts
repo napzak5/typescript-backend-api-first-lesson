@@ -1849,6 +1849,22 @@ describe('Purchase order API', () => {
         reorderPoint: '10',
       })
       await insertStock({ salonId: otherSalon, productId: foreign })
+      // Rows and an order that cross the salons, which only a direct write
+      // makes: a row of the salon's product at the other salon, a row of the
+      // other salon's product here, and an order of the other salon of a
+      // row of the salon.
+      await insertStock({
+        salonId: otherSalon,
+        productId: own.productId,
+        currentStock: '50.00',
+        availableStock: '50.00',
+      })
+      await insertStock({ productId: foreign })
+      await insertOrderOf(
+        'ordered',
+        [{ inventoryId: own.rows[0] ?? '', quantity: '3.00', unitPrice: 100 }],
+        { salonId: otherSalon },
+      )
 
       const response = await suggestions()
 
@@ -1857,12 +1873,16 @@ describe('Purchase order API', () => {
           ({
             productId,
             currentStock,
+            onOrderQuantity,
+            lastOrderDate,
           }: {
             productId: string
             currentStock: number
-          }) => [productId, currentStock],
+            onOrderQuantity: number
+            lastOrderDate: string | null
+          }) => [productId, currentStock, onOrderQuantity, lastOrderDate],
         ),
-      ).toEqual([[own.productId, 1]])
+      ).toEqual([[own.productId, 1, 0, null]])
     })
 
     it('pages forwards by the codes of the products, not by their IDs, under the path of the suggestions', async () => {
@@ -1914,6 +1934,35 @@ describe('Purchase order API', () => {
       expect(
         (await suggestions({ salonId, limit: 3 })).body.meta,
       ).toMatchObject({ total: 3, hasMore: false, nextCursor: null })
+    })
+
+    it('pages on from a product the salon deleted, by its code and then its ID', async () => {
+      const deleted = await insertProduct({
+        id: '00000000-0000-4000-8000-00000000000b',
+        productCode: 'S-2',
+        reorderPoint: '5',
+        deletedAt: '2026-11-01T00:00:00.000Z',
+      })
+      await productWith('S-1', { reorderPoint: '5' }, ['0.00'])
+      // The same code as the deleted product, and a later ID.
+      const same = await productWith(
+        'S-2',
+        { id: '00000000-0000-4000-8000-00000000000c', reorderPoint: '5' },
+        ['0.00'],
+      )
+      const after = await productWith(
+        'S-3',
+        { id: '00000000-0000-4000-8000-00000000000a', reorderPoint: '5' },
+        ['0.00'],
+      )
+
+      const response = await suggestions({ salonId, cursor: deleted })
+
+      expect(
+        response.body.data.map(
+          ({ productId }: { productId: string }) => productId,
+        ),
+      ).toEqual([same.productId, after.productId])
     })
 
     it.each(orderers)(
@@ -2211,6 +2260,83 @@ describe('Purchase order API', () => {
         `Purchase order ${id} is cancelled: ${CLOSED}`,
       )
       expect(await movements()).toEqual([])
+    })
+
+    it('takes two receipts of one row at once one after the other, each from the stock the other left', async () => {
+      const row = await insertStock()
+      const first = await insertOrderOf('shipped', [
+        { inventoryId: row, quantity: '2.00', unitPrice: 100 },
+      ])
+      const second = await insertOrderOf('shipped', [
+        { inventoryId: row, quantity: '3.00', unitPrice: 100 },
+      ])
+
+      // Both wait for the row, and go on together once it is let go.
+      const { pending } = await db.transaction(async (tx) => {
+        await holdRow(tx, row)
+        const underWay = Promise.all([
+          receive(first, {
+            items: [{ inventoryId: row, quantity: 2 }],
+            deliveryNotes: null,
+          }),
+          receive(second, {
+            items: [{ inventoryId: row, quantity: 3 }],
+            deliveryNotes: null,
+          }),
+        ]).then((responses) => responses)
+        await pause(300)
+        return { pending: underWay }
+      })
+      const responses = await pending
+
+      expect(responses.map(statusAndCode)).toEqual(['200', '200'])
+      expect((await storedRow(row))?.currentStock).toBe('5.00')
+      const [earlier, later] = (await movements()).toSorted(
+        (a, b) => Number(a.balanceAfter) - Number(b.balanceAfter),
+      )
+      expect(earlier?.balanceBefore).toBe('0.00')
+      expect(later?.balanceBefore).toBe(earlier?.balanceAfter)
+      expect(later?.balanceAfter).toBe('5.00')
+    })
+
+    it('makes a receipt hold none of its rows while it waits for the first of them by ID', async () => {
+      const low = '00000000-0000-4000-8000-0000000000a1'
+      const high = '00000000-0000-4000-8000-0000000000a2'
+      // Stored in the other order than their IDs.
+      await insertStock({ id: high })
+      await insertStock({ id: low })
+      const id = await insertOrderOf('shipped', [
+        { inventoryId: high, quantity: '1.00', unitPrice: 100 },
+        { inventoryId: low, quantity: '1.00', unitPrice: 100 },
+      ])
+
+      const { pending, highWasFree } = await db.transaction(async (tx) => {
+        await holdRow(tx, low)
+        const underWay = receive(id, {
+          items: [
+            { inventoryId: high, quantity: 1 },
+            { inventoryId: low, quantity: 1 },
+          ],
+          deliveryNotes: null,
+        }).then((response) => response)
+        await pause(300)
+        const free = await tx
+          .transaction((savepoint) =>
+            savepoint
+              .select({ id: inventory.id })
+              .from(inventory)
+              .where(eq(inventory.id, high))
+              .for('update', { noWait: true }),
+          )
+          .then(
+            () => true,
+            () => false,
+          )
+        return { pending: underWay, highWasFree: free }
+      })
+
+      expect(highWasFree).toBe(true)
+      expect((await pending).status).toBe(200)
     })
 
     it('makes a receipt wait for a movement of one of its rows, and moves the row from the stock the movement left', async () => {
