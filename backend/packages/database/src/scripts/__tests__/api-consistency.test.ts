@@ -1490,6 +1490,62 @@ describe('modelRules', () => {
     ])
   })
 
+  it('shows every column of a medical chart, lets the request that creates one state everything but its ID and times, and an update not its customer', () => {
+    const rules = modelRules
+      .filter(({ table }) => table === 'medicalCharts')
+      .map(
+        ({
+          model,
+          table,
+          kind,
+          omittedColumns,
+          embedded,
+          computed,
+          narrowed,
+          nonNullable,
+        }) => ({
+          model,
+          table,
+          kind,
+          omittedColumns,
+          embedded,
+          computed,
+          narrowed,
+          nonNullable,
+        }),
+      )
+    const none = {
+      embedded: undefined,
+      computed: undefined,
+      narrowed: undefined,
+      nonNullable: undefined,
+    }
+
+    expect(rules).toEqual([
+      {
+        model: 'Models.MedicalChartResponse',
+        table: 'medicalCharts',
+        kind: 'response',
+        omittedColumns: [],
+        ...none,
+      },
+      {
+        model: 'Models.MedicalChartCreateRequest',
+        table: 'medicalCharts',
+        kind: 'create',
+        omittedColumns: ['id', 'createdAt', 'updatedAt'],
+        ...none,
+      },
+      {
+        model: 'Models.MedicalChartUpdateRequest',
+        table: 'medicalCharts',
+        kind: 'update',
+        omittedColumns: ['id', 'createdAt', 'updatedAt', 'customerId'],
+        ...none,
+      },
+    ])
+  })
+
   it('lets nothing but the stock row of a new item of a purchase order leave out the null of its column', () => {
     const nonNullable = modelRules
       .filter((modelRule) => modelRule.nonNullable !== undefined)

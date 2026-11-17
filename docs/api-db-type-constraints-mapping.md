@@ -366,6 +366,14 @@ DB にも TypeSpec にも表せない規則（空白だけの文字列を拒否�
 
 写真の区分 `photoType` は、列挙型 `treatment_photo_type` で、TypeSpec は `TreatmentPhotoType` である。一意制約 `treatment_records_booking_unique`（予約 1 件に施術記録は 1 件）は、作成が `ON CONFLICT DO NOTHING` で行を書き、何も書かれなければ 409 を返す規則そのものである。一意制約 `treatment_photos_record_url_unique`（施術記録 1 件に同じ URL の写真は 1 枚）は、写真の追加が、施術記録をロックしたあとに確かめる規則（409）の裏付けである。施術記録 1 件の写真が 20 枚までであることは、行をまたぐので、CHECK 制約では書けない。写真の追加が、施術記録の行をロックして数えて保証する（[施術記録](./treatments.md#同時に届いたリクエスト)）。
 
+`medical_charts` の CHECK 制約は、カルテの 1 行で確かめられる規則である（`backend/packages/database/sql/migrations/202611181000_medical_charts.sql`）。
+
+| CHECK 制約 | TypeSpec | 規則を確かめる場所 |
+|---|---|---|
+| `medical_charts_lists`（`previousTreatments` は jsonb の配列、`preferredProducts` と `avoidProducts` は NULL の要素を持たない） | 3 つとも null にならない配列で、要素は null でない | スキーマの 3 つの一覧（過去の施術は 0〜50 件、名前は空白だけでない 100 文字以下の 0〜50 件） |
+
+過去の施術の要素の形（施術の種類、日付、サロン名、メモ）は、CHECK 制約では確かめない。書く前にリクエストのスキーマが、読むときに読み取りのマッパーが確かめ、合わない行は 500 になる。一意制約 `medical_charts_customer_id_unique`（顧客 1 人にカルテは 1 件）は、作成が `ON CONFLICT DO NOTHING` で行を書き、何も書かれなければ 409 を返す規則そのものである。
+
 ## `pnpm check:api-db`
 
 生成済みの OpenAPI ドキュメント（`specs/tsp-output/@typespec/openapi3/generated/openapi.yaml`）と Drizzle スキーマ（`schema.ts`）を比べ、API モデルがテーブルと食い違っていれば失敗する。DB は使わない。CI の `quality` ジョブと `make ci-check` で実行される。
@@ -447,6 +455,7 @@ const salonRules: ModelRule[] = [
 |---|---|
 | `XXXResponse`、`XXXCreateRequest`、`XXXUpdateRequest` | 載せる（`response` / `create` / `update`） |
 | 親に埋め込む子テーブルの行（`OpeningHours`、`ServiceOption`、`BookingServiceResponse` など） | 載せる。親のルールでは `embedded` にプロパティ名を書く |
+| jsonb の列に、その形のまま保存するオブジェクト（カルテの `previousTreatments` の要素の `PreviousTreatment`） | 載せない（プロパティの内側にネストしたオブジェクト）。列が配列であることは CHECK 制約が、要素の形は、書くときにリクエストのスキーマが、読むときに読み取りのマッパーが確かめる |
 | テーブルの行に、サーバーがレスポンスのたびに求める値を加えたモデル（`SessionResponse` の `current`） | 載せる。ルールの `computed` にそのプロパティ名を書く |
 | テーブルの行の一部だけを見せ、書かせるモデル（`StaffProfileResponse`、`StaffProfileUpdateRequest`、`StaffAccountResponse`、`StaffAccountUpdateRequest`、`CustomerPreferencesResponse`、`CustomerPreferencesUpdateRequest`、`CustomerBookingResponse`、`CustomerBookingServiceResponse`） | 載せる。見せないカラム、書かせないカラムを `omittedColumns` に挙げる。Enum の値の一部だけを取るプロパティは、`narrowed` にも挙げる |
 | 行を追加するアクションのリクエスト（`PointEarnRequest`、`SaleProcessRequest` など） | カラムと 1 対 1 なら `create` として載せる |
@@ -468,7 +477,6 @@ const salonRules: ModelRule[] = [
 |---|---|
 | ロール、権限、ロールの割り当て、アクセス判定 | `specs/models/permission.tsp` |
 | 添付ファイル、共有リンク | `specs/models/attachment.tsp` |
-| カルテ（medical charts） | `specs/models/treatment.tsp` の `MedicalChart*` |
 | 顧客の監査履歴・版、エクスポートジョブ、データ削除リクエスト | `specs/models/customer.tsp` の `CustomerAuditEntry*`、`CustomerExport*`、`CustomerDataDeletion*` |
 
 ### ドメインを実装するとき

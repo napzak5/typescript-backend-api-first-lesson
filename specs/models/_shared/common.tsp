@@ -292,21 +292,6 @@ namespace BeautySalon.Models {
     notes: string | null;
   }
 
-  @doc("作成・更新ユーザーとタイムスタンプを保持する共通監査情報。")
-  model AuditInfo {
-    @doc("レコード作成日時。")
-    createdAt: utcDateTime;
-
-    @doc("レコードを作成したユーザーID。システム自動作成または匿名作成の場合はnull")
-    createdBy: string | null;
-
-    @doc("レコード最終更新日時。")
-    updatedAt: utcDateTime;
-
-    @doc("レコードを最後に更新したユーザーID。システム自動更新または匿名更新の場合はnull")
-    updatedBy: string | null;
-  }
-
   @doc("期間指定や有効期間に利用する共通レンジ型。")
   model DateRange {
     @doc("期間の開始日時。")

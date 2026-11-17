@@ -184,7 +184,6 @@ export * from './modelsAttachmentSearchRequestLimitParameter';
 export * from './modelsAttachmentSearchRequestSalonIdParameter';
 export * from './modelsAttachmentUploadUrlRequest';
 export * from './modelsAttachmentUploadUrlResponse';
-export * from './modelsAuditInfo';
 export * from './modelsAuthEmailVerificationConfirmRequest';
 export * from './modelsAuthEmailVerificationSendRequest';
 export * from './modelsAuthLoginRequest';

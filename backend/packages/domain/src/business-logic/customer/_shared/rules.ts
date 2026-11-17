@@ -16,7 +16,7 @@ import {
  * time zone: the day that has begun in Japan is still tomorrow in UTC for
  * nine hours, so the day after the UTC date is let through.
  */
-const latestDateOf = (now: Date): string =>
+export const latestDateOf = (now: Date): string =>
   addDays(now, 1).toISOString().slice(0, 10)
 
 /**
