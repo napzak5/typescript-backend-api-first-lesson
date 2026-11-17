@@ -129,13 +129,13 @@ CREATE TABLE "customer_allergies" (
 	"customerId" uuid NOT NULL,
 	"allergyType" "allergy_type" NOT NULL,
 	"allergenName" varchar(255) NOT NULL,
-	"severity" integer DEFAULT 3 NOT NULL,
 	"symptoms" text,
 	"notes" text,
 	"confirmedDate" date,
 	"createdAt" timestamp with time zone DEFAULT now() NOT NULL,
 	"updatedAt" timestamp with time zone DEFAULT now() NOT NULL,
-	"severityType" "allergy_severity"
+	"severityType" "allergy_severity" NOT NULL,
+	CONSTRAINT "customer_allergies_customer_allergen_unique" UNIQUE("customerId","allergenName")
 );
 
 CREATE TABLE "customer_points" (
@@ -1035,7 +1035,6 @@ CREATE INDEX "idx_bookings_salon_start" ON "bookings" USING btree ("salonId" uui
 CREATE INDEX "idx_bookings_staff_id" ON "bookings" USING btree ("staffId" uuid_ops);
 CREATE INDEX "idx_bookings_start_time" ON "bookings" USING btree ("startTime" timestamptz_ops);
 CREATE INDEX "idx_bookings_status" ON "bookings" USING btree ("status" enum_ops);
-CREATE INDEX "idx_customer_allergies_customer_id" ON "customer_allergies" USING btree ("customerId" uuid_ops);
 CREATE INDEX "idx_customer_points_created_at" ON "customer_points" USING btree ("createdAt" timestamptz_ops);
 CREATE INDEX "idx_customer_points_customer_time" ON "customer_points" USING btree ("customerId" uuid_ops,"createdAt" timestamptz_ops,"id" uuid_ops);
 CREATE INDEX "idx_customer_points_expiry_date" ON "customer_points" USING btree ("expiryDate" date_ops);
