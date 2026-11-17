@@ -7,6 +7,7 @@ import type {
 import { serviceIdSchema } from '../models/service'
 import { staffIdSchema } from '../models/staff'
 import { minuteInUtc } from './booking.schema'
+import { calendarDate } from './rules'
 
 /**
  * Validation of the requests for the available slots of a salon. The
@@ -28,7 +29,7 @@ export const availableSlotSearchRequestSchema = z.strictObject({
     .exactOptional(),
   staffId: staffIdSchema.exactOptional(),
   serviceId: serviceIdSchema,
-  date: z.iso.date(),
+  date: calendarDate,
   duration: z.number().int().min(1).max(MAX_DURATION).exactOptional(),
 }) satisfies z.ZodType<ApiAvailableSlotSearchRequest>
 

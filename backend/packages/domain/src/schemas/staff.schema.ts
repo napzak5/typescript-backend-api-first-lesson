@@ -8,6 +8,7 @@ import {
 } from '../models/staff'
 import {
   atLeastOneProperty,
+  calendarDate,
   lowerCaseEmail,
   MAX_INTEGER,
   nonBlankText,
@@ -39,7 +40,7 @@ export const staffCreateRequestSchema = z.strictObject({
   imageUrl: z.httpUrl().max(500).nullable(),
   yearsOfExperience: z.number().int().min(0).max(100).nullable(),
   certifications: z.array(nonBlankText).check(noRepeatedEntries),
-  hireDate: z.iso.date().nullable(),
+  hireDate: calendarDate.nullable(),
   employmentType: nonBlankText.max(50).nullable(),
   baseSalary: z.number().int().min(0).max(MAX_INTEGER).nullable(),
   // The column keeps two decimal places.

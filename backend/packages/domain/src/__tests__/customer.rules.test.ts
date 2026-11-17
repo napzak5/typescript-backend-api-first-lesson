@@ -59,10 +59,8 @@ describe('customerRuleIssues', () => {
     expect(customerRuleIssues(customer, NOON)).toEqual([])
   })
 
-  it('refuses a birth date before 1900 as too small', () => {
-    expect(
-      asRules(customerRuleIssues({ birthDate: '1899-12-31' }, NOON)),
-    ).toEqual(['birthDate:too_small'])
+  it('leaves the earliest birth date to the schema, which keeps every date of a request from 1900 on', () => {
+    expect(customerRuleIssues({ birthDate: '1899-12-31' }, NOON)).toEqual([])
   })
 
   it('refuses a birth date after the date that has begun anywhere as too big', () => {
@@ -106,8 +104,12 @@ describe('customerRuleIssues', () => {
   )
 
   it('says what is wrong with the birth date in a message', () => {
-    expect(customerRuleIssues({ birthDate: '1899-12-31' }, NOON)).toEqual([
-      { field: 'birthDate', rule: 'too_small', message: expect.any(String) },
+    expect(customerRuleIssues({ birthDate: '2999-01-01' }, NOON)).toEqual([
+      {
+        field: 'birthDate',
+        rule: 'too_big',
+        message: 'Must not be in the future',
+      },
     ])
   })
 })

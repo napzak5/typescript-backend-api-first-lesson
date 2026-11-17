@@ -5,7 +5,7 @@ import type {
   ApiStaffScheduleSearchRequest,
   ApiStaffScheduleUpdateRequest,
 } from '../models/staff-schedule'
-import { nonBlankText, timeOfDay, withSeconds } from './rules'
+import { calendarDate, nonBlankText, timeOfDay, withSeconds } from './rules'
 
 /**
  * Validation of the requests for the schedule of a staff member. The
@@ -27,7 +27,7 @@ const comparable = (time: string | null): string | null =>
 const staffScheduleSchema = z
   .strictObject({
     dayOfWeek: DayOfWeekTypeSchema.nullable(),
-    date: z.iso.date().nullable(),
+    date: calendarDate.nullable(),
     startTime: timeOfDay.nullable(),
     endTime: timeOfDay.nullable(),
     breakStartTime: timeOfDay.nullable(),
@@ -177,5 +177,5 @@ export const staffScheduleUpdateRequestSchema = z
   .check(noRepeatedDays) satisfies z.ZodType<ApiStaffScheduleUpdateRequest>
 
 export const staffScheduleSearchRequestSchema = z.strictObject({
-  date: z.iso.date().exactOptional(),
+  date: calendarDate.exactOptional(),
 }) satisfies z.ZodType<ApiStaffScheduleSearchRequest>

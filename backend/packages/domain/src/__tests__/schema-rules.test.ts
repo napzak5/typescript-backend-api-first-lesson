@@ -3,9 +3,12 @@ import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
 import {
   atLeastOneProperty,
+  calendarDate,
   dayOfWeekOf,
   inTimeZone,
   MAX_INTEGER,
+  momentInUtc,
+  momentOfRequest,
   nonBlankText,
   noRepeatedEntries,
   orderedTimeSlot,
@@ -505,5 +508,128 @@ describe('orderedTimeSlot', () => {
     expect(
       rulesBrokenBy(orderedTimeSlot, { startTime: '09:00', endTime: 'noon' }),
     ).toEqual(['endTime:invalid_format'])
+  })
+})
+
+describe('calendarDate', () => {
+  it.each(['1900-01-01', '2028-02-29', '2999-12-31'])('takes %s', (date) => {
+    expect(calendarDate.safeParse(date)).toEqual({ success: true, data: date })
+  })
+
+  it.each([
+    ['the day before 1900', '1899-12-31'],
+    ['a day of the year 1', '0001-01-01'],
+    ['a day of the year 0, which PostgreSQL does not hold', '0000-12-31'],
+  ])('refuses %s as too small', (_case, date) => {
+    expect(calendarDate.safeParse(date).error?.issues).toEqual([
+      expect.objectContaining({
+        code: 'too_small',
+        path: [],
+        message: 'Must not be earlier than 1900-01-01',
+      }),
+    ])
+  })
+
+  it.each([
+    ['the day after 2999', '3000-01-01'],
+    ['the last day of the year 9999', '9999-12-31'],
+  ])('refuses %s as too big', (_case, date) => {
+    expect(calendarDate.safeParse(date).error?.issues).toEqual([
+      expect.objectContaining({
+        code: 'too_big',
+        path: [],
+        message: 'Must not be later than 2999-12-31',
+      }),
+    ])
+  })
+
+  it.each([
+    '2027-02-29',
+    '2027-13-01',
+    '27-01-01',
+    '2027-01-01T00:00:00Z',
+    '+12027-01-01',
+    '0000-02-30',
+    '3000-02-30',
+  ])('refuses %s as no day, and as nothing else', (date) => {
+    expect(calendarDate.safeParse(date).error?.issues).toEqual([
+      expect.objectContaining({ code: 'invalid_format' }),
+    ])
+  })
+
+  it('lets the checks of the object around it run', () => {
+    const period = z
+      .strictObject({ from: calendarDate, until: calendarDate })
+      .refine(({ from, until }) => from <= until, {
+        path: ['until'],
+        message: 'Must not be earlier than from',
+      })
+
+    expect(
+      rulesBrokenBy(period, { from: '3000-01-02', until: '2026-01-01' }),
+    ).toEqual(['from:too_big', 'until:custom'])
+  })
+})
+
+describe('momentOfRequest', () => {
+  it.each([
+    '1900-01-01T00:00:00Z',
+    '2026-11-17T09:30:00.5Z',
+    '2999-12-31T23:59:59.999Z',
+  ])('takes %s as it is written', (moment) => {
+    expect(momentOfRequest.safeParse(moment)).toEqual({
+      success: true,
+      data: moment,
+    })
+  })
+
+  it.each([
+    ['the last moment before 1900', '1899-12-31T23:59:59.999Z'],
+    ['a moment of the year 0', '0000-06-30T12:00:00Z'],
+  ])('refuses %s as too small', (_case, moment) => {
+    expect(momentOfRequest.safeParse(moment).error?.issues).toEqual([
+      expect.objectContaining({
+        code: 'too_small',
+        message: 'Must not be earlier than 1900-01-01',
+      }),
+    ])
+  })
+
+  it('refuses the first moment of 3000 as too big', () => {
+    expect(
+      momentOfRequest.safeParse('3000-01-01T00:00:00Z').error?.issues,
+    ).toEqual([
+      expect.objectContaining({
+        code: 'too_big',
+        message: 'Must not be later than 2999-12-31',
+      }),
+    ])
+  })
+
+  it.each(['2026-11-17T09:30:00+09:00', '2026-11-17', '0000-02-30T00:00:00Z'])(
+    'refuses %s as no moment in UTC, and as nothing else',
+    (moment) => {
+      expect(momentOfRequest.safeParse(moment).error?.issues).toEqual([
+        expect.objectContaining({ code: 'invalid_format' }),
+      ])
+    },
+  )
+})
+
+describe('momentInUtc', () => {
+  it('returns a moment in the spelling of toISOString', () => {
+    expect(momentInUtc.safeParse('1900-01-01T00:00:00Z')).toEqual({
+      success: true,
+      data: '1900-01-01T00:00:00.000Z',
+    })
+  })
+
+  it.each([
+    ['1899-12-31T23:59:59Z', 'too_small'],
+    ['3000-01-01T00:00:00Z', 'too_big'],
+  ])('refuses %s as %s', (moment, code) => {
+    expect(momentInUtc.safeParse(moment).error?.issues).toEqual([
+      expect.objectContaining({ code }),
+    ])
   })
 })

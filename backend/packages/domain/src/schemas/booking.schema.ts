@@ -19,8 +19,10 @@ import { serviceIdSchema } from '../models/service'
 import { staffIdSchema } from '../models/staff'
 import {
   atLeastOneProperty,
+  calendarDate,
   MAX_INTEGER,
   momentInUtc,
+  momentOfRequest,
   nonBlankText,
 } from './rules'
 
@@ -42,12 +44,12 @@ export const HOURS_OF_A_VISIT = 24
 const MILLISECONDS_OF_A_MINUTE = 60_000
 
 /**
- * A time of a booking: UTC, on a whole minute. It is returned in the one
+ * A time of a booking: UTC, on a whole minute, on a day a request may name
+ * (`momentOfRequest`). It is returned in the one
  * spelling `toISOString` gives, so that two times that are the same moment
  * are the same text.
  */
-export const minuteInUtc = z.iso
-  .datetime()
+export const minuteInUtc = momentOfRequest
   // What is not a time has been reported as that.
   .refine((value) => {
     const moment = parseISO(value)
@@ -161,8 +163,8 @@ const bookingSearch = z.strictObject({
   customerId: customerIdSchema.exactOptional(),
   staffId: staffIdSchema.exactOptional(),
   status: BookingStatusTypeSchema.exactOptional(),
-  bookingDateFrom: z.iso.date().exactOptional(),
-  bookingDateTo: z.iso.date().exactOptional(),
+  bookingDateFrom: calendarDate.exactOptional(),
+  bookingDateTo: calendarDate.exactOptional(),
 })
 
 /** Two dates in the same format compare as text. */

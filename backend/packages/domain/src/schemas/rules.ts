@@ -82,22 +82,63 @@ export const timeZoneName = z
     'Must be the name of a time zone, such as Asia/Tokyo',
   )
 
-/**
- * A moment something actually happened at, in UTC. It is returned in the
- * one spelling `toISOString` gives, to the millisecond.
- */
-export const momentInUtc = z.iso
-  .datetime()
-  .transform((value) => parseISO(value).toISOString())
+/** The first day that a date or a moment of a request may be on. */
+const EARLIEST_DATE = '1900-01-01'
+
+/** The last day that a date or a moment of a request may be on. */
+const LATEST_DATE = '2999-12-31'
 
 /**
- * A day of the calendar, as a `date` column holds it. PostgreSQL has no
- * year 0 (the year before 1 is 1 BC) and refuses a date of it, which the
- * ISO format allows.
+ * A date (`YYYY-MM-DD`), or a moment in UTC, lies within the days a
+ * request may name. PostgreSQL holds no day of the year 0, which the ISO
+ * format allows, nor a moment written past the year 9999; a day of the
+ * range stays within what it holds when it is turned into a day of any
+ * time zone, or into the day before or after. A moment is on the day it
+ * begins with, as it is written in UTC. What is not a date has been
+ * reported as that.
  */
-export const calendarDate = z.iso
-  .date()
-  .refine((date) => !date.startsWith('0000-'), 'Must be in the year 1 or later')
+const dayWithinRange = (context: z.core.ParsePayload<string>): void => {
+  const day = context.value.slice(0, 10)
+  if (!isValid(parseISO(day))) {
+    return
+  }
+  if (day < EARLIEST_DATE) {
+    context.issues.push({
+      code: 'too_small',
+      origin: 'date',
+      minimum: parseISO(EARLIEST_DATE).getTime(),
+      inclusive: true,
+      message: `Must not be earlier than ${EARLIEST_DATE}`,
+      input: context.value,
+      continue: true,
+    })
+  } else if (day > LATEST_DATE) {
+    context.issues.push({
+      code: 'too_big',
+      origin: 'date',
+      maximum: parseISO(LATEST_DATE).getTime(),
+      inclusive: true,
+      message: `Must not be later than ${LATEST_DATE}`,
+      input: context.value,
+      continue: true,
+    })
+  }
+}
+
+/** A moment in UTC, as the request writes it, on a day a request may name. */
+export const momentOfRequest = z.iso.datetime().check(dayWithinRange)
+
+/**
+ * A moment something actually happened at, in UTC, on a day a request may
+ * name. It is returned in the one spelling `toISOString` gives, to the
+ * millisecond.
+ */
+export const momentInUtc = momentOfRequest.transform((value) =>
+  parseISO(value).toISOString(),
+)
+
+/** A day of the calendar, as a `date` column holds it, that a request may name. */
+export const calendarDate = z.iso.date().check(dayWithinRange)
 
 /** The largest value of an `integer` column. */
 export const MAX_INTEGER = 2_147_483_647

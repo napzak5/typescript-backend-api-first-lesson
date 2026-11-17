@@ -7,6 +7,7 @@ import type {
   ApiSalesTrendsGetRequest,
 } from '../models/sales-report'
 import { salonIdSchema } from '../models/salon'
+import { calendarDate } from './rules'
 
 /**
  * Validation of the queries of the sales reports. A period is of the days
@@ -19,8 +20,8 @@ export const MAX_REPORT_DAYS = 366
 
 const period = {
   salonId: salonIdSchema,
-  startDate: z.iso.date(),
-  endDate: z.iso.date(),
+  startDate: calendarDate,
+  endDate: calendarDate,
 }
 
 /**
@@ -66,5 +67,5 @@ export const salesTrendsGetRequestSchema = z
 
 export const dailySalesGetRequestSchema = z.strictObject({
   salonId: salonIdSchema,
-  date: z.iso.date(),
+  date: calendarDate,
 }) satisfies z.ZodType<ApiDailySalesGetRequest>
