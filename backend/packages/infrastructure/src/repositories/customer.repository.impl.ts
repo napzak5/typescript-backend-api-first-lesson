@@ -14,6 +14,8 @@ import {
   type CustomerId,
   type CustomerList,
   type CustomerListCriteria,
+  type CustomerMerge,
+  type CustomerMergeRequest,
   type CustomerProfileCreation,
   type CustomerProfileWrite,
   type CustomerRestoration,
@@ -47,6 +49,8 @@ import { describeDatabaseError } from '../database/failure'
 import type { Database, DatabaseExecutor } from '../database/index'
 import { containing } from '../database/like'
 import { userNotDeleted } from './account'
+import { mergeCustomers } from './customer-merge'
+import { recordVersions } from './customer-version-record'
 import {
   customersOfUnfinishedBookings,
   hasUnfinishedBooking,
@@ -127,76 +131,6 @@ const toProfileError = (cause: unknown): DomainError =>
         describeDatabaseError(cause),
       ),
     )
-
-type NewVersion = typeof customerVersions.$inferInsert
-
-/** The values of the ledger a version keeps: every one of them, stated. */
-type LedgerValues = Required<
-  Omit<
-    NewVersion,
-    'id' | 'customerId' | 'version' | 'operation' | 'changedBy' | 'changedAt'
-  >
->
-
-const ledgerValuesOf = (row: DbCustomer): LedgerValues => ({
-  firstName: row.firstName,
-  lastName: row.lastName,
-  firstNameKana: row.firstNameKana,
-  lastNameKana: row.lastNameKana,
-  email: row.email,
-  phoneNumber: row.phoneNumber,
-  alternativePhone: row.alternativePhone,
-  postalCode: row.postalCode,
-  prefecture: row.prefecture,
-  city: row.city,
-  address: row.address,
-  building: row.building,
-  birthDate: row.birthDate,
-  gender: row.gender,
-  occupation: row.occupation,
-  membershipTier: row.membershipTier,
-  preferences: row.preferences,
-  notes: row.notes,
-  internalNotes: row.internalNotes,
-  tags: row.tags,
-  referredBy: row.referredBy,
-  referralCode: row.referralCode,
-  allowMarketing: row.allowMarketing,
-  allowSms: row.allowSms,
-  allowEmail: row.allowEmail,
-  isActive: row.isActive,
-  hairType: row.hairType,
-  hairThickness: row.hairThickness,
-  scalpCondition: row.scalpCondition,
-  customerStatus: row.customerStatus,
-})
-
-/**
- * Keeps the version that a write made of each of these customers: the
- * values of the ledger in their rows after the write, at the time the
- * write gave the row. The write holds the rows until it commits, so the
- * number after the last version of each is not taken by another write.
- */
-const recordVersions = async (
-  executor: DatabaseExecutor,
-  rows: readonly DbCustomer[],
-  operation: NewVersion['operation'],
-  changedBy: UserId,
-): Promise<void> => {
-  if (rows.length === 0) {
-    return
-  }
-  await executor.insert(customerVersions).values(
-    rows.map((row) => ({
-      customerId: row.id,
-      version: sql`(SELECT coalesce(max(${customerVersions.version}), 0) + 1 FROM ${customerVersions} WHERE ${customerVersions.customerId} = ${row.id})`,
-      operation,
-      changedBy,
-      changedAt: row.updatedAt,
-      ...ledgerValuesOf(row),
-    })),
-  )
-}
 
 /** What of a change no other customer may have; null where it does not change. */
 const uniqueValuesOf = (changes: DbCustomerChanges): UniqueValues => ({
@@ -523,6 +457,17 @@ export class CustomerRepository implements ICustomerRepository {
           if (held.deletedAt === null) {
             return { type: 'notDeleted' }
           }
+          // A deleted customer whose latest version is a merge was merged
+          // into another, who has their bookings and the rest.
+          const [latest] = await tx
+            .select({ operation: customerVersions.operation })
+            .from(customerVersions)
+            .where(eq(customerVersions.customerId, id))
+            .orderBy(desc(customerVersions.version))
+            .limit(1)
+          if (latest?.operation === 'merge') {
+            return { type: 'mergedAway' }
+          }
           // The referral code was never freed, so only the email can be
           // taken.
           restoring = { email: held.email, referralCode: null }
@@ -543,6 +488,20 @@ export class CustomerRepository implements ICustomerRepository {
 
           return { type: 'restored', customer: restored }
         }),
+    )
+  }
+
+  async merge(
+    request: CustomerMergeRequest,
+    changedBy: UserId,
+  ): Promise<Result<CustomerMerge, DomainError>> {
+    return Result.flatMap(
+      await attempt('Failed to merge customers', () =>
+        this.db.transaction((tx) => mergeCustomers(tx, request, changedBy), {
+          isolationLevel: 'read committed',
+        }),
+      ),
+      (merged) => merged,
     )
   }
 

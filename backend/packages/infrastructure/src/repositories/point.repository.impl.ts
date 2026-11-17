@@ -27,6 +27,7 @@ import { attempt } from '../database/attempt'
 import { CLOCK } from '../database/clock'
 import type { Database, DatabaseExecutor } from '../database/index'
 import { within as withinSales } from './held-sale'
+import { transactionsInOrder } from './point-transactions'
 
 /**
  * A read of the history of a customer in one snapshot: the customer, the
@@ -122,20 +123,6 @@ const transactedAt = sql`date_trunc('milliseconds', ${customerPoints.createdAt})
 /** The condition that keeps a query to a customer who is not deleted. */
 const liveCustomer = (customerId: string) =>
   and(eq(customers.id, customerId), isNull(customers.deletedAt))
-
-/**
- * Every point transaction of a customer in the order they were written,
- * which is the order in which `lotsOf` counts what is left of each earning.
- */
-const transactionsInOrder = (
-  tx: DatabaseExecutor,
-  customerId: string,
-): Promise<DbPointTransaction[]> =>
-  tx
-    .select()
-    .from(customerPoints)
-    .where(eq(customerPoints.customerId, customerId))
-    .orderBy(asc(customerPoints.createdAt), asc(customerPoints.id))
 
 /** What the expiry of one customer did. */
 type ExpiryOfOne =
