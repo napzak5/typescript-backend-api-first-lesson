@@ -513,9 +513,13 @@ describe('Customer bulk API', () => {
   })
 
   describe('PATCH /api/v1/customers/bulk', () => {
-    it('changes every customer as its item says and answers the IDs in the order of the request', async () => {
-      const [first, second] = [await stored(), await stored()]
-      const referrer = await stored()
+    it('changes every customer as its item says, marks the time of the change, and answers the IDs in the order of the request', async () => {
+      const longAgo = '2026-01-01T00:00:00+00:00'
+      const [first, second] = [
+        await stored({ updatedAt: longAgo }),
+        await stored({ updatedAt: longAgo }),
+      ]
+      const referrer = await stored({ updatedAt: longAgo })
 
       const response = await bulkUpdate({
         items: [
@@ -539,6 +543,17 @@ describe('Customer bulk API', () => {
         notes: null,
       })
       expect(two).toMatchObject({ notes: 'Window seat', tags: ['vip'] })
+      const times = Object.fromEntries(
+        (await rowsOf([first, second, referrer])).map(({ id, updatedAt }) => [
+          id,
+          Date.parse(updatedAt) > Date.parse(longAgo),
+        ]),
+      )
+      expect(times).toEqual({
+        [first]: true,
+        [second]: true,
+        [referrer]: false,
+      })
     })
 
     it('changes none when a customer is missing or deleted, and answers 404 with the first of the request', async () => {
