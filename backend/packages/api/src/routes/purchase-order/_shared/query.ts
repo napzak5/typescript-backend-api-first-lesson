@@ -8,6 +8,20 @@ const purchaseOrderSearchQuerySchema = z.looseObject({
   limit: numberParameter.exactOptional(),
 })
 
+/** The parameter of the suggestions that is not text, as its type. */
+const reorderSuggestionSearchQuerySchema = z.looseObject({
+  limit: numberParameter.exactOptional(),
+})
+
+export const decodeReorderSuggestionSearchQuery = (
+  query: unknown,
+): Result<unknown, DomainError> =>
+  parseWith(
+    reorderSuggestionSearchQuerySchema,
+    query,
+    'Invalid reorder suggestion search',
+  )
+
 export const decodePurchaseOrderSearchQuery = (
   query: unknown,
 ): Result<unknown, DomainError> =>

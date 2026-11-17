@@ -1,5 +1,6 @@
 import {
   inventory,
+  inventoryTransactions,
   products,
   purchaseOrderItems,
   purchaseOrders,
@@ -9,6 +10,7 @@ import {
   type DbPurchaseOrderChanges,
   type DbPurchaseOrderItem,
   type DomainError,
+  DomainErrors,
   type IPurchaseOrderRepository,
   type LedgerReach,
   type OrderStatusRefusal,
@@ -18,14 +20,32 @@ import {
   type PurchaseOrderId,
   type PurchaseOrderListCriteria,
   type PurchaseOrderListing,
+  type PurchaseOrderReceipt,
+  type PurchaseOrderReceiptCriteria,
   type PurchaseOrderWithItems,
+  planGoodsReceipt,
+  type ReorderSuggestionCriteria,
+  type ReorderSuggestionListing,
   refusalOfApproval,
   refusalOfCancellation,
+  refusalOfGoodsReceipt,
   refusalOfUpdate,
   type StaffId,
 } from '@beauty-salon-backend/domain'
-import type { Result } from '@beauty-salon-backend/utility'
-import { and, asc, count, desc, eq, inArray, type SQL, sql } from 'drizzle-orm'
+import { Result } from '@beauty-salon-backend/utility'
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  inArray,
+  isNull,
+  ne,
+  notInArray,
+  type SQL,
+  sql,
+} from 'drizzle-orm'
 import type {
   PgTransactionConfig,
   PgUpdateSetSource,
@@ -60,6 +80,21 @@ const orderedAt = sql`date_trunc('milliseconds', ${purchaseOrders.orderDate})`
  * are one.
  */
 const CHANGED_AT = sql`statement_timestamp()`
+
+/** The most a stock row holds, as its `numeric(10, 2)` column does. */
+const MAX_STOCK = sql`99999999.99`
+
+/** The statuses of an order that is closed: nothing of it changes, and it brings nothing more. */
+const CLOSED: DbPurchaseOrder['status'][] = ['delivered', 'cancelled']
+
+/** The kind of the movements a receipt records. */
+const PURCHASE: (typeof inventoryTransactions.$inferInsert)['transactionType'] =
+  'purchase'
+
+/** What a receipt records of a stock movement that tells where it comes from. */
+const PURCHASE_ORDER_REFERENCE = 'purchase_order'
+
+type Unwritten = { type: 'unwritten'; reason: string }
 
 /** The items of the orders by the order, each in the order of the request. */
 const itemsOf = async (
@@ -322,6 +357,320 @@ export class PurchaseOrderRepository implements IPurchaseOrderRepository {
       id,
       refusalOfCancellation,
       { status: 'cancelled', cancelledAt: CHANGED_AT, cancellationReason },
+    )
+  }
+
+  async receive(
+    reach: LedgerReach,
+    id: PurchaseOrderId,
+    { items, deliveryNotes, performedBy }: PurchaseOrderReceiptCriteria,
+  ): Promise<Result<PurchaseOrderReceipt, DomainError>> {
+    const received = await attempt('Failed to receive purchase order', () =>
+      this.db.transaction(
+        async (tx): Promise<PurchaseOrderReceipt | Unwritten> => {
+          // Held, the order is received once, and not while it is changed
+          // or cancelled; it is decided on as it is once held.
+          const [held] = await tx
+            .select({ status: purchaseOrders.status })
+            .from(purchaseOrders)
+            .where(and(eq(purchaseOrders.id, id), within(reach)))
+            .for('update')
+          if (held === undefined) {
+            return { type: 'notFound' }
+          }
+          const refusal = refusalOfGoodsReceipt(held.status)
+          if (refusal !== null) {
+            return refusal
+          }
+
+          const ordered = await tx
+            .select({
+              inventoryId: purchaseOrderItems.inventoryId,
+              quantity: purchaseOrderItems.quantity,
+              unitPrice: purchaseOrderItems.unitPrice,
+            })
+            .from(purchaseOrderItems)
+            .where(eq(purchaseOrderItems.purchaseOrderId, id))
+          const plan = planGoodsReceipt(ordered, items)
+          if (plan.type === 'refused') {
+            return { type: 'itemsRefused', refusals: plan.refusals }
+          }
+          const { movements } = plan
+          const ids = movements.map(({ inventoryId }) => inventoryId)
+          // What arrives of a stock row, as a value of the row.
+          const arriving = sql`(case ${inventory.id} ${sql.join(
+            movements.map(
+              ({ inventoryId, quantity }) =>
+                sql`when ${inventoryId}::uuid then ${quantity}::numeric`,
+            ),
+            sql` `,
+          )} end)`
+
+          // Held in the order of their IDs, as a stock count holds them; a
+          // row is moved from the stock that the movements, changes and
+          // counts it waited for left. A row deleted since the order was
+          // read is one no item is for any more.
+          const rows = await tx
+            .select({
+              id: inventory.id,
+              currentStock: inventory.currentStock,
+              overLimit: sql<boolean>`${inventory.currentStock} + ${arriving} > ${MAX_STOCK}`,
+            })
+            .from(inventory)
+            .where(inArray(inventory.id, ids))
+            .orderBy(asc(inventory.id))
+            .for('update')
+          const heldById = new Map(rows.map((row) => [row.id, row]))
+          const gone = movements.flatMap(({ inventoryId }, index) =>
+            heldById.has(inventoryId) ? [] : [index],
+          )
+          if (gone.length > 0) {
+            return {
+              type: 'itemsRefused',
+              refusals: gone.map((index) => ({ type: 'notOrdered', index })),
+            }
+          }
+          const over = movements.find(
+            ({ inventoryId }) => heldById.get(inventoryId)?.overLimit === true,
+          )
+          if (over !== undefined) {
+            return { type: 'overLimit', inventoryId: over.inventoryId }
+          }
+
+          // The moment of the receipt: when its write begins, once the
+          // order and every row of it are held. The delivery of the order,
+          // the change of each row and each purchase are of it.
+          const [delivered] = await tx
+            .update(purchaseOrders)
+            .set({
+              status: 'delivered',
+              actualDelivery: CHANGED_AT,
+              updatedAt: CHANGED_AT,
+              ...(deliveryNotes === null ? {} : { deliveryNotes }),
+            })
+            .where(eq(purchaseOrders.id, id))
+            .returning({ at: purchaseOrders.updatedAt })
+          if (delivered === undefined) {
+            return {
+              type: 'unwritten',
+              reason: `Purchase order ${id} vanished while it was held`,
+            }
+          }
+          const { at } = delivered
+
+          // The reserved stock stays, so what is available moves with what
+          // there is.
+          const moved = await tx
+            .update(inventory)
+            .set({
+              currentStock: sql`${inventory.currentStock} + ${arriving}`,
+              availableStock: sql`${inventory.availableStock} + ${arriving}`,
+              updatedAt: at,
+            })
+            .where(inArray(inventory.id, ids))
+            .returning({
+              id: inventory.id,
+              salonId: inventory.salonId,
+              productId: inventory.productId,
+              lotNumber: inventory.lotNumber,
+              expiryDate: inventory.expiryDate,
+              currentStock: inventory.currentStock,
+            })
+          const movedById = new Map(moved.map((row) => [row.id, row]))
+          const purchases: (typeof inventoryTransactions.$inferInsert)[] =
+            movements.flatMap((movement) => {
+              const row = movedById.get(movement.inventoryId)
+              const before = heldById.get(movement.inventoryId)
+              return row === undefined || before === undefined
+                ? []
+                : [
+                    {
+                      ...movement,
+                      transactionType: PURCHASE,
+                      referenceType: PURCHASE_ORDER_REFERENCE,
+                      referenceId: id,
+                      reason: null,
+                      performedBy,
+                      salonId: row.salonId,
+                      productId: row.productId,
+                      lotNumber: row.lotNumber,
+                      expiryDate: row.expiryDate,
+                      balanceBefore: before.currentStock,
+                      balanceAfter: row.currentStock,
+                      createdAt: at,
+                    },
+                  ]
+            })
+          if (purchases.length !== movements.length) {
+            return {
+              type: 'unwritten',
+              reason: `The stock rows of the receipt of purchase order ${id} were not all moved`,
+            }
+          }
+          await tx.insert(inventoryTransactions).values(purchases)
+
+          const order = await orderOf(tx, id, reach)
+          return order === null
+            ? {
+                type: 'unwritten',
+                reason: `Purchase order ${id} vanished while it was held`,
+              }
+            : { type: 'received', order }
+        },
+        { isolationLevel: 'read committed' },
+      ),
+    )
+
+    return Result.flatMap(received, (receipt) =>
+      receipt.type === 'unwritten'
+        ? Result.error(DomainErrors.database(receipt.reason, null))
+        : Result.success(receipt),
+    )
+  }
+
+  async listReorderSuggestions({
+    salonId,
+    limit,
+    after,
+  }: ReorderSuggestionCriteria): Promise<
+    Result<ReorderSuggestionListing, DomainError>
+  > {
+    return attempt('Failed to list reorder suggestions', () =>
+      this.db.transaction(async (tx): Promise<ReorderSuggestionListing> => {
+        // The stock of each product at the salon, over all its rows.
+        const stock = tx
+          .select({
+            productId: inventory.productId,
+            currentStock: sql<string>`sum(${inventory.currentStock})`.as(
+              'current_stock',
+            ),
+          })
+          .from(inventory)
+          .where(eq(inventory.salonId, salonId))
+          .groupBy(inventory.productId)
+          .as('stock')
+        // What the open orders of the salon bring of each product, by the
+        // stock rows of their items; an item whose row was deleted is of
+        // no product any more.
+        const onOrder = tx
+          .select({
+            productId: inventory.productId,
+            quantity: sql<string>`sum(${purchaseOrderItems.quantity})`.as(
+              'on_order_quantity',
+            ),
+          })
+          .from(purchaseOrderItems)
+          .innerJoin(
+            purchaseOrders,
+            eq(purchaseOrders.id, purchaseOrderItems.purchaseOrderId),
+          )
+          .innerJoin(
+            inventory,
+            eq(inventory.id, purchaseOrderItems.inventoryId),
+          )
+          .where(
+            and(
+              eq(purchaseOrders.salonId, salonId),
+              notInArray(purchaseOrders.status, CLOSED),
+            ),
+          )
+          .groupBy(inventory.productId)
+          .as('on_order')
+        // The latest order of each product that was not called off.
+        const lastOrder = tx
+          .select({
+            productId: inventory.productId,
+            orderDate: sql<string>`max(${purchaseOrders.orderDate})`.as(
+              'last_order_date',
+            ),
+          })
+          .from(purchaseOrderItems)
+          .innerJoin(
+            purchaseOrders,
+            eq(purchaseOrders.id, purchaseOrderItems.purchaseOrderId),
+          )
+          .innerJoin(
+            inventory,
+            eq(inventory.id, purchaseOrderItems.inventoryId),
+          )
+          .where(
+            and(
+              eq(purchaseOrders.salonId, salonId),
+              ne(purchaseOrders.status, 'cancelled'),
+            ),
+          )
+          .groupBy(inventory.productId)
+          .as('last_order')
+
+        const onOrderQuantity = sql`coalesce(${onOrder.quantity}, 0)`
+        const reorderPoint = sql`coalesce(${products.reorderPoint}, ${products.minimumStock})`
+        const inHand = sql`(${stock.currentStock} + ${onOrderQuantity})`
+        const suggested = sql`(coalesce(${products.maximumStock}, ${reorderPoint}) - ${inHand})`
+        const filters = and(
+          eq(products.salonId, salonId),
+          eq(products.isActive, true),
+          isNull(products.deletedAt),
+          sql`${inHand} <= ${reorderPoint}`,
+          sql`${suggested} > 0`,
+        )
+
+        // Keyset pagination on (productCode, id), from a product of the
+        // salon to say where.
+        const [cursor] =
+          after === null
+            ? []
+            : await tx
+                .select({ productCode: products.productCode })
+                .from(products)
+                .where(
+                  and(eq(products.id, after), eq(products.salonId, salonId)),
+                )
+        if (after !== null && cursor === undefined) {
+          return { type: 'cursorNotFound' }
+        }
+        const afterCursor =
+          after === null || cursor === undefined
+            ? undefined
+            : sql`(${products.productCode}, ${products.id}) > (${cursor.productCode}, ${after}::uuid)`
+
+        const found = await tx
+          .select({
+            productId: products.id,
+            productCode: products.productCode,
+            productName: products.name,
+            unit: products.unit,
+            supplier: products.supplier,
+            currentStock: sql<string>`${stock.currentStock}::text`,
+            onOrderQuantity: sql<string>`${onOrderQuantity}::text`,
+            reorderPoint: sql<string>`${reorderPoint}::text`,
+            maximumStock: products.maximumStock,
+            suggestedQuantity: sql<string>`${suggested}::text`,
+            lastOrderDate: sql<string | null>`${lastOrder.orderDate}`.mapWith(
+              purchaseOrders.orderDate,
+            ),
+          })
+          .from(products)
+          .innerJoin(stock, eq(stock.productId, products.id))
+          .leftJoin(onOrder, eq(onOrder.productId, products.id))
+          .leftJoin(lastOrder, eq(lastOrder.productId, products.id))
+          .where(and(filters, afterCursor))
+          .orderBy(asc(products.productCode), asc(products.id))
+          // One extra product tells whether another page follows.
+          .limit(limit + 1)
+        const [matching] = await tx
+          .select({ total: count() })
+          .from(products)
+          .innerJoin(stock, eq(stock.productId, products.id))
+          .leftJoin(onOrder, eq(onOrder.productId, products.id))
+          .where(filters)
+
+        return {
+          type: 'listed',
+          suggestions: found.slice(0, limit),
+          total: matching?.total ?? 0,
+          hasMore: found.length > limit,
+        }
+      }, AT_ONE_MOMENT),
     )
   }
 
