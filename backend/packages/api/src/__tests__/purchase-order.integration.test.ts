@@ -577,6 +577,33 @@ describe('Purchase order API', () => {
       ])
     })
 
+    it('keeps the items in the order of the request, not in that of their stock rows', async () => {
+      const ids = (
+        await Promise.all(Array.from({ length: 4 }, () => insertStock()))
+      )
+        .toSorted()
+        .toReversed()
+
+      const created = await create(
+        orderOf(ids.map((id, n) => itemOf(id, { quantity: n + 1 }))),
+      )
+      const read = await get(created.body.data.id)
+
+      for (const response of [created, read]) {
+        expect(
+          response.body.data.items.map(
+            ({
+              inventoryId,
+              quantity,
+            }: {
+              inventoryId: string
+              quantity: number
+            }) => [inventoryId, quantity],
+          ),
+        ).toEqual(ids.map((id, n) => [id, n + 1]))
+      }
+    })
+
     it('numbers each order with a number of its own', async () => {
       const numbers = new Set<string>()
       for (let n = 0; n < 5; n += 1) {
@@ -815,7 +842,7 @@ describe('Purchase order API', () => {
         orderDate: '2026-11-01T00:00:00.123456Z',
       })
       const late = await insertOrder('pending', {
-        orderDate: '2026-11-02T00:00:00.123Z',
+        orderDate: '2026-11-02T00:00:00.123456Z',
       })
       await insertOrder('draft', { orderDate: '2026-11-01T12:00:00Z' })
       await insertOrder('pending', {
@@ -841,6 +868,21 @@ describe('Purchase order API', () => {
           await list({ startDate: '2026-11-01T00:00:00.124Z', salonId })
         ).body.data.map(({ id }: { id: string }) => id),
       ).not.toContain(early)
+    })
+
+    it('lists an administrator the orders of the salon named, and of every salon without one', async () => {
+      const otherSalon = await insertSalon(db)
+      const ofOther = await insertOrder('pending', { salonId: otherSalon })
+      const own = await insertOrder('pending')
+
+      const named = await list({ salonId })
+      const every = await list()
+
+      expect(named.body.data.map(({ id }: { id: string }) => id)).toEqual([own])
+      expect(named.body.meta.total).toBe(1)
+      expect(
+        every.body.data.map(({ id }: { id: string }) => id).toSorted(),
+      ).toEqual([own, ofOther].toSorted())
     })
 
     it('lists a member of a salon the orders of the salon only, and refuses one who names another', async () => {
@@ -1006,17 +1048,19 @@ describe('Purchase order API', () => {
       expect(brokenRules(response)).toEqual(expected)
     })
 
-    it('answers 404 for an order of another salon to its members, and for one that is not there', async () => {
+    it('answers 404 for an order of another salon to its members, and for one that is not there, and changes nothing', async () => {
       const ofOther = await insertOrder('draft', {
         salonId: await insertSalon(db),
       })
       const { authorization } = await signedInMember('staff')
+      const before = await everything()
 
       expectProblem(
         await update(ofOther, { status: 'pending' }, authorization),
         notFound,
       )
       expectProblem(await update(UNKNOWN_ID, { status: 'pending' }), notFound)
+      expect(await everything()).toEqual(before)
     })
 
     it('refuses an ID that is no UUID before the request', async () => {
@@ -1084,12 +1128,15 @@ describe('Purchase order API', () => {
       expect(await everything()).toEqual(before)
     })
 
-    it('answers 404 for an order of another salon and for one that is not there, and refuses an ID that is no UUID', async () => {
+    it('answers 404 for an order of another salon and for one that is not there, and refuses an ID that is no UUID, changing nothing', async () => {
       const ofOther = await insertOrder('pending', {
         salonId: await insertSalon(db),
       })
+      const owner = await member('owner')()
+      const before = await everything()
 
-      expectProblem(await approve(ofOther, await member('owner')()), notFound)
+      expectProblem(await approve(ofOther, owner), notFound)
+      expect(await everything()).toEqual(before)
       expectProblem(await approve(UNKNOWN_ID), notFound)
       expectRefused(await approve('x'), INVALID_ID)
     })
@@ -1160,14 +1207,19 @@ describe('Purchase order API', () => {
       expect(brokenRules(response)).toEqual(expected)
     })
 
-    it('refuses a staff member, and answers 404 for an order that is not there', async () => {
+    it('refuses a staff member, and answers 404 for an order of another salon and for one that is not there, changing nothing', async () => {
       const id = await insertOrder()
+      const ofOther = await insertOrder('pending', {
+        salonId: await insertSalon(db),
+      })
+      const staff = await member('staff')()
+      const manager = await member('manager')()
+      const before = await everything()
 
-      expectProblem(
-        await cancel(id, undefined, await member('staff')()),
-        forbidden,
-      )
+      expectProblem(await cancel(id, undefined, staff), forbidden)
+      expectProblem(await cancel(ofOther, undefined, manager), notFound)
       expectProblem(await cancel(UNKNOWN_ID), notFound)
+      expect(await everything()).toEqual(before)
     })
   })
 
