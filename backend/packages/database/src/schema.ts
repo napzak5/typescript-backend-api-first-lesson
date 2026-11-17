@@ -1165,10 +1165,9 @@ export const products = pgTable(
     retailPrice: integer(),
     salonPrice: integer(),
     unit: varchar({ length: 20 }).notNull(),
-    minimumStock: numeric({ precision: 10, scale: 2 }).default('0'),
+    minimumStock: numeric({ precision: 10, scale: 2 }).default('0').notNull(),
     maximumStock: numeric({ precision: 10, scale: 2 }),
     reorderPoint: numeric({ precision: 10, scale: 2 }),
-    supplierId: uuid(),
     supplierProductCode: varchar({ length: 100 }),
     leadTimeDays: integer(),
     imageUrl: varchar({ length: 500 }),
@@ -1187,8 +1186,25 @@ export const products = pgTable(
     updatedAt: timestamp({ withTimezone: true, mode: 'string' })
       .defaultNow()
       .notNull(),
+    supplier: varchar({ length: 255 }),
   },
   (table) => [
+    check(
+      'products_expiry_months_positive',
+      sql`("expiryMonths" IS NULL) OR ("expiryMonths" >= 1)`,
+    ),
+    check(
+      'products_lead_time_not_negative',
+      sql`("leadTimeDays" IS NULL) OR ("leadTimeDays" >= 0)`,
+    ),
+    check(
+      'products_prices_not_negative',
+      sql`(("purchasePrice" IS NULL) OR ("purchasePrice" >= 0)) AND (("retailPrice" IS NULL) OR ("retailPrice" >= 0)) AND (("salonPrice" IS NULL) OR ("salonPrice" >= 0))`,
+    ),
+    check(
+      'products_stock_levels',
+      sql`("minimumStock" >= (0)::numeric) AND (("reorderPoint" IS NULL) OR ("reorderPoint" >= "minimumStock")) AND (("maximumStock" IS NULL) OR ("maximumStock" >= "minimumStock")) AND (("reorderPoint" IS NULL) OR ("maximumStock" IS NULL) OR ("reorderPoint" <= "maximumStock"))`,
+    ),
     foreignKey({
       columns: [table.salonId],
       foreignColumns: [salons.id],
@@ -1210,7 +1226,13 @@ export const products = pgTable(
       'btree',
       table.salonId.asc().nullsLast().op('uuid_ops'),
     ),
-    unique('products_code_salon_unique').on(table.salonId, table.productCode),
+    uniqueIndex('products_code_salon_unique')
+      .using(
+        'btree',
+        table.salonId.asc().nullsLast().op('uuid_ops'),
+        table.productCode.asc().nullsLast().op('text_ops'),
+      )
+      .where(sql`("deletedAt" IS NULL)`),
   ],
 )
 

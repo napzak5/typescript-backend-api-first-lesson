@@ -57,7 +57,8 @@ Before relying on anything, check this table.
 | Sales reports (`/api/v1/sales-reports`) | Implemented in every layer: the report of a period, the sales of a day, by staff member, by category, the trends, and the export of the sales of each day of a period as a CSV file in the response (nothing is stored): the six operations of `SalesReportCrud`. An administrator reads the reports of every salon, the owner and the managers those of their salon; the staff of a salon and a customer account are refused (403). The query names the salon, the first and the last day of the sales, both required, at most 366 days (400 otherwise). A report is counted from the sales that are not void, their lines and their payments at every request, in one read-only `REPEATABLE READ` transaction, and is stored nowhere; the summary tables (`daily_summaries`, `staff_performances`) are not used. See [Sales Reports](./sales-reports.md) (Japanese). |
 | Points (`/api/v1/points`) | Implemented in every layer: the balance of a customer, their history of point transactions (latest first, by cursor, between two moments), their points about to expire, and earning, using, adjusting and expiring points: the seven operations of `PointCrud`. The ledger is one for the whole platform, as the customer ledger is. An administrator and the owner, the managers and the staff of any salon read, earn and use points; the staff do not adjust them; a customer account is refused (403). Every movement writes a transaction with the balance after it and sets the balance of the customer (`loyaltyPoints`) to it, in one `READ COMMITTED` transaction that holds the sale or the booking it names and then the customer; the balance stays between 0 and 2,147,483,647 (409). A movement may name a sale or a booking of the customer within the reach of the actor: points are not earned on or used for a void sale or a draft, cancelled or no-show booking, and a record is earned on once and used for once (409, and a partial unique index). The points of a sale and a payment by points move no balance. What is left of an earning is counted from the transactions of the customer in the order they were written, a decrease taking the earliest expiry date first; the points about to expire include those past their expiry date that are not yet expired. The expiry is the administrators' alone (403 for the members of a salon): it writes one `expired` transaction per customer, each in a `READ COMMITTED` transaction of its own that holds the customer `FOR NO KEY UPDATE` before it reads their transactions, so a second run writes nothing. See [Points](./points.md) (Japanese). |
 | Reviews (`/api/v1/reviews`, `/api/v1/review-reports`, `/api/v1/salons/{salonId}/reviews/summary`, `/api/v1/staff/{staffId}/reviews/summary`) | Implemented in every layer: every operation of `ReviewCrud` (the list, the create, the get, the update, the delete, the mark as helpful, the report and the response of a salon), `list` and `dismiss` of `ReviewReportCrud`, `getSummary` of `SalonReviewSummary` and `getStaffSummary` of `StaffReviewSummary`. Reading is public: no token is needed or looked at. A review is written by a customer account with a profile alone (403 for an administrator and the members of a salon), for a booking of that customer that is completed (409 otherwise), once per booking (409), at the salon of the booking that is not deleted, naming no staff member or one who took the booking (400). The transaction that writes a review holds the booking `FOR SHARE` and the salon `FOR NO KEY UPDATE` in `READ COMMITTED` and counts the `rating` (the average of the overall ratings, two decimals) and the `reviewCount` of the salon again, so the reviews of a salon are written one after the other. Its author changes a review (`update`; 403 for everyone else), and its author or an administrator removes it (`delete`, physically; 403 for the members of a salon); both hold the review `FOR UPDATE` and then the salon, and count the salon again, writing it only when a figure changes. A booking with a review is not deleted (409) until the review is. A customer marks a review of another customer as helpful (`markHelpful`; 403 for an administrator, the members of a salon and the author), once: the mark is a row of `review_helpful_votes`, a second one answers the count as it is, and the `helpfulCount` of the review is counted again from the rows, with the review held `FOR NO KEY UPDATE`. A customer reports a review of another customer, and the owner or a manager of a salon one of their salon (`report`; 403 for an administrator, staff, the author and another salon), once per account (409): the report is a row of `review_reports`, the review is not hidden, and its `reportCount` is the number of pending reports, counted again with the review held `FOR NO KEY UPDATE`. The administrators list the reports oldest first and dismiss them (`ReviewReportCrud`), which counts the review again. The owner or a manager of the salon of a review writes one response to it, replaces it or takes it down (`respond`; 403 for staff, customers and another salon), and an administrator only takes one down: the response is a column of the review, written with its time only when it differs from the stored one, with the review held `FOR NO KEY UPDATE`, and the `updatedAt` of the review stays. See [Reviews](./reviews.md) (Japanese). |
-| The other domains (treatment, inventory) | Specified in TypeSpec, so their generated types exist, and the database schema has their tables and seed data. The models agree with the tables (`pnpm check:api-db`). There is no domain, repository or route code. A request to one of these routes is answered with 404. The implementation order is in GitHub issue #4. |
+| Products (`/api/v1/salons/{salonId}/products`) | Implemented in every layer: list, create, get, update and delete, the five operations of `ProductCrud`. A product is what a salon sells at its counter or uses in its treatments: a code, a name, the prices, the unit, the stock levels, the supplier and whether it is sold, used in treatments and in use. The routes are below the salon and none is public: an administrator and the owner, the managers and the staff of the salon read them, an administrator, the owner and the managers keep them, and a customer account reaches none. The stock levels lie in order, the product code is unique among the products of the salon that are not deleted, and a delete marks the product and is refused while it has stock. See [Products](./products.md) (Japanese). |
+| The other domains (treatment, and the stock, its movements and counts of the inventory) | Specified in TypeSpec, so their generated types exist, and the database schema has their tables and seed data. The models agree with the tables (`pnpm check:api-db`). There is no domain, repository or route code. A request to one of these routes is answered with 404. The implementation order is in GitHub issue #4. |
 | Attachments, roles and permissions, purchase orders, medical charts | Specified in TypeSpec only. No table exists for them yet. |
 | Email | Implemented for the mails of the authentication flows and the invitation of a staff member (confirm the address, reset the password, accept an invitation, and the notices: the password was changed, two-factor authentication was enabled, disabled or turned off by an administrator, the backup codes were replaced, a backup code was used to sign in): plain text over SMTP. Docker Compose starts Mailpit, which catches them locally. See [Email](./email.md) (Japanese). |
 | File storage | Not implemented. Docker Compose starts no service for it. |
@@ -617,6 +618,40 @@ infrastructure/src/
 
 api/src/
 └── routes/payment-method/             One *.handler.ts per operation, index.ts (router,
+                                       mounted below /salons/:salonId)
+```
+
+The products of a salon are served below the salon, like the payment
+methods, with three stock levels in order and a delete that marks a row:
+
+```
+domain/src/
+├── models/product.ts                  ProductId, API and database types; the
+│                                      columns a request writes (DbNewProduct)
+│                                      and those an update may change
+│                                      (DbProductChanges)
+├── schemas/product.schema.ts          Zod schemas of the create, the update and the
+│                                      list request; the stock levels a request
+│                                      names are in order
+├── mappers/write/product.mapper.ts    Request → columns; the stock levels as text
+├── mappers/read/product.mapper.ts     Row → response; the stock levels as numbers,
+│                                      without the time it was deleted
+├── repositories/product.repository.ts IProductRepository; what became of an update
+│                                      and of a delete is a sum type each
+│                                      (ProductUpdate, ProductRemoval)
+└── business-logic/product/            One *.usecase.ts per operation; _shared/ holds
+                                       the dependencies, who reads and who keeps
+                                       (authorization.ts) and the order of the
+                                       stock levels (stock-levels.ts)
+
+infrastructure/src/
+└── repositories/product.repository.impl.ts
+                                       The update and the delete in a transaction
+                                       that holds the row first; the delete looks
+                                       for stock and marks the row deleted
+
+api/src/
+└── routes/product/                    One *.handler.ts per operation, index.ts (router,
                                        mounted below /salons/:salonId)
 ```
 
@@ -1794,6 +1829,38 @@ of the repository names the salon. What differs:
   looks. The writers hold the row of the payment method and no other row.
 
 The rules are in [Payments](./payments.md) (Japanese).
+
+### A Product Request
+
+The products of a salon (`/api/v1/salons/{salonId}/products`,
+`business-logic/product/`) take the path of a request below a salon, as the
+payment methods do, with a permission to read (`mayReadProducts`: an
+administrator, the owner, the managers and the staff of the salon) and one
+to keep (`mayKeepProducts`: an administrator, the owner and the managers),
+both decided from the salon of the path alone. What differs:
+
+- **A rule of three properties.** `minimumStock`, `reorderPoint` and
+  `maximumStock` lie in that order among those that are set. The pure
+  functions of `_shared/stock-levels.ts` find the pairs out of order
+  (`brokenOrders`) and say under which property each is reported
+  (`stockLevelIssues`): the upper level of the pair, or the one level of it
+  that the request names. The schema checks the levels a request names;
+  `update` of the repository holds the row `FOR UPDATE` in a
+  `READ COMMITTED` transaction, applies the change to the stored levels
+  (`stockLevelsAfter`) and answers `stockLevelsOutOfOrder` instead of
+  writing.
+- **A code that is unique among the rows that are not deleted.** A partial
+  unique index (`products_code_salon_unique`) keeps the product code of a
+  salon unique, so the code of a deleted product can be given again. The
+  repository turns its violation into `alreadyExists` (409), also when two
+  requests write one code at the same moment.
+- **A delete that marks the row and looks for stock.** `delete` holds the
+  row `FOR UPDATE`, which is the lock the foreign key of a row of
+  `inventory` waits for, looks for such a row in the statement after it and
+  answers `inStock` (409) or writes `deletedAt` and `updatedAt`. A deleted
+  product is found by no operation.
+
+The rules are in [Products](./products.md) (Japanese).
 
 ### A Payment Request
 

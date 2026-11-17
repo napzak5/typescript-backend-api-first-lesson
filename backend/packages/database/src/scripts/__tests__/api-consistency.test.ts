@@ -1111,6 +1111,47 @@ describe('modelRules', () => {
     ])
   })
 
+  it('shows a product without the time it was deleted, and lets a request leave out that, what the database assigns and the salon', () => {
+    const managed = ['id', 'salonId', 'deletedAt', 'createdAt', 'updatedAt']
+    const rules = modelRules
+      .filter((modelRule) => modelRule.table === 'products')
+      .map(({ model, table, kind, omittedColumns, embedded, computed }) => ({
+        model,
+        table,
+        kind,
+        omittedColumns,
+        embedded,
+        computed,
+      }))
+
+    expect(rules).toEqual([
+      {
+        model: 'Models.ProductResponse',
+        table: 'products',
+        kind: 'response',
+        omittedColumns: ['deletedAt'],
+        embedded: undefined,
+        computed: undefined,
+      },
+      {
+        model: 'Models.ProductCreateRequest',
+        table: 'products',
+        kind: 'create',
+        omittedColumns: managed,
+        embedded: undefined,
+        computed: undefined,
+      },
+      {
+        model: 'Models.ProductUpdateRequest',
+        table: 'products',
+        kind: 'update',
+        omittedColumns: managed,
+        embedded: undefined,
+        computed: undefined,
+      },
+    ])
+  })
+
   it('narrows nothing but the role of the account of a staff member', () => {
     const narrowed = modelRules
       .filter((modelRule) => modelRule.narrowed !== undefined)

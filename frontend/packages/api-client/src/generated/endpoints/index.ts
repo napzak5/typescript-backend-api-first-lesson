@@ -11,6 +11,7 @@ export * from './payment-methods/payment-methods';
 export * from './payments/payments';
 export * from './permissions/permissions';
 export * from './points/points';
+export * from './products/products';
 export * from './purchase-orders/purchase-orders';
 export * from './reviews/reviews';
 export * from './roles-permissions/roles-permissions';

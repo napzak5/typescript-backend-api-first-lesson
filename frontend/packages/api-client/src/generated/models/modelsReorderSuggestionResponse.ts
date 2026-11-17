@@ -17,7 +17,7 @@ export interface ModelsReorderSuggestionResponse {
   productName: string;
   /** 現在の在庫数量 */
   currentStock: number;
-  /** 商品の最低在庫数。商品に未設定の場合は0 */
+  /** 商品の最低在庫数 */
   minimumStock: number;
   /** 推奨する発注数量 */
   suggestedQuantity: number;

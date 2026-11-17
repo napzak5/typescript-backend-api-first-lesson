@@ -15,6 +15,7 @@ import {
   PaymentMethodRepository,
   PaymentRepository,
   PointRepository,
+  ProductRepository,
   RandomBookingNumberIssuer,
   RandomPaymentNumberIssuer,
   RandomSaleNumberIssuer,
@@ -59,6 +60,7 @@ import {
 import { createPaymentRouter } from './routes/payment'
 import { createPaymentMethodRouter } from './routes/payment-method'
 import { createPointRouter } from './routes/point'
+import { createProductRouter } from './routes/product'
 import {
   createReviewRouter,
   createSalonReviewRouter,
@@ -195,6 +197,13 @@ export const createApp = ({
         paymentMethodRepository: new PaymentMethodRepository(database),
         salonRepository,
       },
+      authenticated,
+    ),
+  )
+  app.use(
+    `${API_BASE_PATH}/salons/:salonId/products`,
+    createProductRouter(
+      { productRepository: new ProductRepository(database), salonRepository },
       authenticated,
     ),
   )

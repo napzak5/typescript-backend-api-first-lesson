@@ -913,6 +913,18 @@ const reviewRules: ModelRule[] = [
 ]
 
 /**
+ * Columns of `products` that a request never writes. The salon comes from
+ * the path, and a product does not move to another salon.
+ */
+const productManagedColumns = [
+  'id',
+  'salonId',
+  'deletedAt',
+  'createdAt',
+  'updatedAt',
+]
+
+/**
  * Columns of `inventory` that a request never writes. The stock levels and
  * the last count change only through stock movements and stock counts.
  */
@@ -928,12 +940,30 @@ const inventoryManagedColumns = [
 ]
 
 /**
- * Inventory (the stock of a product at a salon) and its stock movements.
- * `products` has no API model: no operation creates or returns product rows.
- * Stock movements are written by actions (movement, stock count, receiving a
- * purchase order), so `inventoryTransactions` has only a response model.
+ * The products of a salon, the stock of a product at a salon and its stock
+ * movements. A deleted product is not shown. Stock movements are written by
+ * actions (movement, stock count, receiving a purchase order), so
+ * `inventoryTransactions` has only a response model.
  */
 const inventoryRules: ModelRule[] = [
+  {
+    model: 'Models.ProductResponse',
+    table: 'products',
+    kind: 'response',
+    omittedColumns: ['deletedAt'],
+  },
+  {
+    model: 'Models.ProductCreateRequest',
+    table: 'products',
+    kind: 'create',
+    omittedColumns: productManagedColumns,
+  },
+  {
+    model: 'Models.ProductUpdateRequest',
+    table: 'products',
+    kind: 'update',
+    omittedColumns: productManagedColumns,
+  },
   {
     model: 'Models.InventoryResponse',
     table: 'inventory',
