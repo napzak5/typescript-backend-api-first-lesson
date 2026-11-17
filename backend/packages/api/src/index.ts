@@ -17,8 +17,10 @@ import {
   PaymentRepository,
   PointRepository,
   ProductRepository,
+  PurchaseOrderRepository,
   RandomBookingNumberIssuer,
   RandomPaymentNumberIssuer,
+  RandomPurchaseOrderNumberIssuer,
   RandomSaleNumberIssuer,
   RandomTokenIssuer,
   ReviewReportRepository,
@@ -63,6 +65,7 @@ import { createPaymentRouter } from './routes/payment'
 import { createPaymentMethodRouter } from './routes/payment-method'
 import { createPointRouter } from './routes/point'
 import { createProductRouter } from './routes/product'
+import { createPurchaseOrderRouter } from './routes/purchase-order'
 import {
   createReviewRouter,
   createSalonReviewRouter,
@@ -216,6 +219,17 @@ export const createApp = ({
         inventoryRepository: new InventoryRepository(database),
         salonRepository,
         clock,
+      },
+      authenticated,
+    ),
+  )
+  app.use(
+    `${API_BASE_PATH}/purchase-orders`,
+    createPurchaseOrderRouter(
+      {
+        purchaseOrderRepository: new PurchaseOrderRepository(database),
+        salonRepository,
+        purchaseOrderNumberIssuer: new RandomPurchaseOrderNumberIssuer(),
       },
       authenticated,
     ),
