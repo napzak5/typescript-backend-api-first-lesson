@@ -261,6 +261,10 @@ describe('Treatment statistics API', () => {
         await insertRecord({ services: [colour, cut], processingTime: 90 })
         await insertRecord({ services: [uncategorised, extra] })
         await insertRecord({ services: [colour], processingTime: 45 })
+        await insertRecord({ services: [uncategorised] })
+        // A record written directly that names a service twice counts once
+        // for it.
+        await insertRecord({ services: [uncategorised, uncategorised] })
         // A record of another salon is not counted.
         await insertRecord({ services: [cut] }, await anotherSalon())
 
@@ -268,18 +272,18 @@ describe('Treatment statistics API', () => {
 
         expect(response.status).toBe(200)
         expect(response.body.data).toEqual({
-          totalTreatments: 4,
+          totalTreatments: 6,
           treatmentsByCategory: [
+            { category: 'other', count: 3 },
             { category: 'color', count: 2 },
             { category: 'cut', count: 2 },
-            { category: 'other', count: 1 },
           ],
           averageProcessingTime: 65.3,
           topServices: [
+            { serviceId: uncategorised, count: 3 },
             { serviceId: cut, count: 2 },
             { serviceId: colour, count: 2 },
             { serviceId: fade, count: 1 },
-            { serviceId: uncategorised, count: 1 },
             { serviceId: extra, count: 1 },
           ],
         })
