@@ -149,7 +149,7 @@ JSON として読めない本文は、ほかのルートと同じく、アクセ
 | `customerId` | `CustomerId \| null` | 削除されていない顧客。null は、顧客を記録しない売上（顧客登録のない来店、店頭での物販） |
 | `staffId` | `StaffId \| null` | 会計の担当スタッフ。`salonId` のサロンの、削除されていないスタッフ。null は「担当を記録しない」 |
 | `bookingId` | `BookingId \| null` | `salonId` のサロンの、`customerId` の顧客の予約。null は、予約のない来店 |
-| `saleTime` | `utcDateTime` | UTC（`Z`）で、秒まで書く。ミリ秒まで保存する |
+| `saleTime` | `utcDateTime` | UTC（`Z`）で、秒まで書く。ミリ秒まで保存する。UTC の日付で 1900-01-01 から 2999-12-31 まで |
 | `pointsUsed` | `int32 \| null` | 0 以上、2,147,483,647 以下。`customerId` が null なら null |
 | `pointsEarned` | `int32 \| null` | 同上 |
 | `notes` | `string \| null` | 空白だけでない |
@@ -341,7 +341,7 @@ JSON として読めない本文は、ほかのルートと同じく、アクセ
 | `customerId` | その顧客への売上（顧客の支払い履歴）。顧客を記録していない売上は、どの顧客にも一致しない |
 | `bookingId` | その予約を指す売上。取り消した売上も含む |
 | `paymentStatus` | 支払い状態が一致する |
-| `startDate` / `endDate` | 会計日（`saleDate`）がその日以降 / 以前（両端を含む）。`startDate` が `endDate` より後なら 400（`endDate` の `custom`） |
+| `startDate` / `endDate` | 会計日（`saleDate`）がその日以降 / 以前（両端を含む）。`startDate` が `endDate` より後なら 400（`endDate` の `custom`）。どちらも 1900-01-01 から 2999-12-31 まで |
 
 - `customerId` や `bookingId` に、存在しない ID を指定しても、エラーにはしません。一致する売上がないだけです
 - スタッフでの絞り込みは、ありません（表にないパラメーターは 400）

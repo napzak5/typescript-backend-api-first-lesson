@@ -126,7 +126,7 @@
 | `description` | 文字列か null。空白だけの文字列は不可 | 同左 | 同左 |
 | `referenceType` | `sale`、`booking`、null | 同左 | 同左 |
 | `referenceId` | UUID か null | 同左 | 同左 |
-| `expiryDate` | `YYYY-MM-DD` か null | キーがない | キーがない |
+| `expiryDate` | `YYYY-MM-DD`（2999-12-31 まで）か null | キーがない | キーがない |
 
 - `referenceType` と `referenceId` は、両方を指定するか、両方を null にします。片方だけなら 400 です（null にしたほうの `custom`、`message` は `Must not be null when referenceId is given` など）
 - コントラクトにないキーは 400 です（`unrecognized_keys`）。利用と調整に `expiryDate` を書いても同じです
@@ -155,7 +155,7 @@
 |---|---|---|
 | `limit` | 整数 | 1〜100。既定は 20 |
 | `cursor` | UUID | 前のページの `meta.nextCursor`。その顧客の取引の ID でなければ 400 |
-| `startDate` | UTC の日時（`2026-11-01T00:00:00Z` など） | この日時以降の取引（含む） |
+| `startDate` | UTC の日時（`2026-11-01T00:00:00Z` など）。UTC の日付で 1900-01-01 から 2999-12-31 まで | この日時以降の取引（含む） |
 | `endDate` | 同上 | この日時以前の取引（含む）。`startDate` より前なら 400（`endDate` の `custom`、`message` は `Must not be earlier than startDate`） |
 
 - 日付だけの値（`2026-11-01`）と、タイムゾーンのない日時は 400 です（`invalid_format`）
@@ -195,7 +195,7 @@
 | プロパティ | 形式 | 規則 |
 |---|---|---|
 | `customerId` | UUID か null | null なら、削除されていないすべての顧客 |
-| `processBefore` | `YYYY-MM-DD` か null | 昨日（UTC）以前。null なら昨日（UTC） |
+| `processBefore` | `YYYY-MM-DD` か null | 1900-01-01 以降で、昨日（UTC）以前。null なら昨日（UTC） |
 
 - 2 つのキーは必須です。コントラクトにないキーは 400 です（`unrecognized_keys`）
 - 失効させるポイントのある顧客ごとに、種別 `expired` のポイント取引を 1 件書き、顧客の残高を同じ数だけ減らします。取引の `points` は失効させた数の負の数で、`description`、`referenceType`、`referenceId`、`expiryDate` は null です

@@ -330,8 +330,8 @@
 
 | 項目 | 型 | 規則 |
 |---|---|---|
-| `actualStartTime` | `utcDateTime \| null` | UTC（`Z`）。null は「記録済みの値を残す」 |
-| `actualEndTime` | `utcDateTime \| null` | UTC（`Z`）。null は「記録済みの値を残す」 |
+| `actualStartTime` | `utcDateTime \| null` | UTC（`Z`）で、UTC の日付で 1900-01-01 から 2999-12-31 まで。null は「記録済みの値を残す」 |
+| `actualEndTime` | `utcDateTime \| null` | UTC（`Z`）で、UTC の日付で 1900-01-01 から 2999-12-31 まで。null は「記録済みの値を残す」 |
 
 - 施術の開始は、`actualStartTime` に操作の日時を書きます。予約の開始日時より前でも、開始できます（早く来店した顧客）
 - 完了は、本文の `actualStartTime` と `actualEndTime` のうち、null でないものを書きます。null の項目は、予約に記録済みの値を残します。開始を記録した予約を `{"actualStartTime": null, "actualEndTime": "…"}` で完了すると、開始は記録したままで、終了だけを書きます
@@ -385,7 +385,7 @@
 
 | 項目 | 型 | 規則 |
 |---|---|---|
-| `startTime` | `utcDateTime` | 新しい開始日時。UTC（`Z`）で、分単位（秒と小数は 0） |
+| `startTime` | `utcDateTime` | 新しい開始日時。UTC（`Z`）で、分単位（秒と小数は 0）。UTC の日付で 1900-01-01 から 2999-12-31 まで |
 | `staffId` | `StaffId` | 新しい担当スタッフ。予約のサロンの、削除されていないスタッフ |
 
 - 2 つとも必須です。担当スタッフを変えないときは、いまの担当スタッフを書きます。表にない項目を書くと 400（`unrecognized_keys`）です
@@ -425,7 +425,7 @@
 |---|---|---|
 | `serviceId` | `ServiceId` | 予約のサロンの、削除されていないサービス |
 | `staffId` | `StaffId \| null` | 予約のサロンの、削除されていないスタッフ。null は「担当を決めない」 |
-| `startTime` | `utcDateTime` | UTC（`Z`）で、分単位（秒と小数は 0） |
+| `startTime` | `utcDateTime` | UTC（`Z`）で、分単位（秒と小数は 0）。UTC の日付で 1900-01-01 から 2999-12-31 まで |
 | `notes` | `string \| null` | 空白だけでない |
 
 - 明細の時間と金額、料金が消費税を含むかどうかは、**追加の時点のサービスの写し**です（[システムが決める値](#システムが決める値)。作成と同じ）。あとでサービスを変えても、明細は変わりません
@@ -513,7 +513,7 @@
 | `customerId` | その顧客の予約 |
 | `staffId` | そのスタッフが担当スタッフである予約と、どれかの明細を担当している予約 |
 | `status` | ステータスが一致する |
-| `bookingDateFrom` / `bookingDateTo` | 来店日がその日以降 / 以前（両端を含む）。`bookingDateFrom` が `bookingDateTo` より後なら 400（`bookingDateTo` の `custom`） |
+| `bookingDateFrom` / `bookingDateTo` | 来店日がその日以降 / 以前（両端を含む）。`bookingDateFrom` が `bookingDateTo` より後なら 400（`bookingDateTo` の `custom`）。どちらも 1900-01-01 から 2999-12-31 まで |
 
 - `customerId` や `staffId` に、存在しない ID やほかのサロンのスタッフの ID を指定しても、エラーにはしません。一致する予約がないだけです
 - 保存されている行が API のモデルに合わないとき（マイグレーションより前の行など）は 500（データベースのエラー）です。読み出すときに検証します（`mappers/read/booking.mapper.ts`）
@@ -587,7 +587,7 @@
 
 ### 一覧
 
-- クエリは、`serviceId`（必須）、`date`（必須。`YYYY-MM-DD`。サロンのタイムゾーンでの日付）、`staffId`（指定すると、そのスタッフの枠だけ）、`duration`、`limit`（1〜100。既定は 20）、`cursor` です。ほかのパラメーターは 400 です
+- クエリは、`serviceId`（必須）、`date`（必須。`YYYY-MM-DD`。サロンのタイムゾーンでの日付。1900-01-01 から 2999-12-31 まで）、`staffId`（指定すると、そのスタッフの枠だけ）、`duration`、`limit`（1〜100。既定は 20）、`cursor` です。ほかのパラメーターは 400 です
 - 並びは、`startTime` の早い順、同じ日時の中では `staffId` の昇順です
 - `meta.total` は、その日の枠の数です（`cursor` によらない）
 - 枠には ID がないので、`cursor` は、ページの最後の枠そのもの（`<startTime>_<staffId>`）です。次のページは、その枠より後の枠から返します。カーソルの枠が、そのあいだに埋まっていても、続きを返します。この形でない `cursor` は 400 です（`cursor` の `custom`）
@@ -599,7 +599,7 @@
 
 ### 確認
 
-- 本文は、`staffId`、`serviceId`、`startTime`（UTC の分単位）です。3 つとも必須で、ほかのプロパティは 400 です
+- 本文は、`staffId`、`serviceId`、`startTime`（UTC の分単位。UTC の日付で 1900-01-01 から 2999-12-31 まで）です。3 つとも必須で、ほかのプロパティは 400 です
 - 希望する時間は、`startTime` から、サービスの `duration` のあいだです
 - `isAvailable` は、その時間に、スタッフが占有されていないことです。台帳への作成、日時の変更、明細の追加が、スタッフの占有を理由に 409 にならないことを表します
 - `conflicts` は、希望する時間に明細が重なっている予約の ID です。希望する時間にも、明細にも、スタッフの前後の空け時間を加えて比べます。早く始まる明細の予約から並べ、1 つの予約は 1 回だけ返します
@@ -655,7 +655,7 @@
 | `salonId` | `SalonId` | 削除されていないサロン |
 | `serviceId` | `ServiceId` | そのサロンの、削除されていないサービス |
 | `staffId` | `StaffId` | そのサロンの、削除されていないスタッフ |
-| `startTime` | `utcDateTime` | UTC（`Z`）で、分単位 |
+| `startTime` | `utcDateTime` | UTC（`Z`）で、分単位。UTC の日付で 1900-01-01 から 2999-12-31 まで |
 | `customerRequest` | `string \| null` | 空白だけでない |
 
 - **入れられるのは、空き枠の一覧が、その時点で返す枠だけです**。`staffId` と `startTime` が、そのサービスの、その日（サロンのタイムゾーンでの `startTime` の日付）の空き枠でなければ 409 です。サロンの営業時間、スタッフの勤務、[受け付けの設定](#受け付けの設定)、いまより後であること、スタッフの占有を、空き枠の一覧と同じ 1 つの関数（`slotsOf`）で確かめます。施術時間は、サービスの `duration` です（一覧の `duration` パラメーターにあたるものは、ありません）

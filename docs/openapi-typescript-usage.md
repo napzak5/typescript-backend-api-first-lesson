@@ -95,7 +95,7 @@ export const salonSearchRequestSchema = z.strictObject({
 }) satisfies z.ZodType<ApiSalonSearchRequest>
 ```
 
-長さの上限は DB カラムのもの、それ以外はビジネスルールです。生成型が表すのは形だけなので、値の規則はこのスキーマに書きます。`atLeastOneProperty` はプロパティが 1 つもない更新リクエストを拒否するルールで、`nonBlankText` とともに `backend/packages/domain/src/schemas/rules.ts` にあります。複数のドメインのスキーマがこのファイルから import します（ほかに、小文字にそろえて保存するメールアドレスの `lowerCaseEmail`、電話番号の `phoneNumber`、`integer` 列の最大値 `MAX_INTEGER`、同じ値を重ねて指定できない配列のための `noRepeatedEntries` があります）。
+長さの上限は DB カラムのもの、それ以外はビジネスルールです。生成型が表すのは形だけなので、値の規則はこのスキーマに書きます。`atLeastOneProperty` はプロパティが 1 つもない更新リクエストを拒否するルールで、`nonBlankText` とともに `backend/packages/domain/src/schemas/rules.ts` にあります。複数のドメインのスキーマがこのファイルから import します（ほかに、小文字にそろえて保存するメールアドレスの `lowerCaseEmail`、電話番号の `phoneNumber`、`integer` 列の最大値 `MAX_INTEGER`、同じ値を重ねて指定できない配列のための `noRepeatedEntries`、リクエストの日付と日時を 1900-01-01 から 2999-12-31 までに限る `calendarDate`、`momentOfRequest`、`momentInUtc` があります）。
 
 ### 4. enum は生成された Zod スキーマを使う
 
@@ -107,7 +107,7 @@ import { DayOfWeekTypeSchema } from '@beauty-salon-backend/generated'
 const openingHoursSchema = z
   .strictObject({
     dayOfWeek: DayOfWeekTypeSchema,
-    date: z.iso.date(),
+    date: calendarDate,
     // ...（中略）
   })
 ```
