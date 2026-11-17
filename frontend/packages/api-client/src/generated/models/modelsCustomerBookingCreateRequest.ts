@@ -20,7 +20,7 @@ export interface ModelsCustomerBookingCreateRequest {
   serviceId: ModelsServiceId;
   /** 担当するスタッフのID。空き枠の staffId を指定する */
   staffId: ModelsStaffId;
-  /** 開始日時 (UTC)。空き枠の startTime を指定する。分単位(秒と小数は0) */
+  /** 開始日時 (UTC)。空き枠の startTime を指定する。分単位(秒と小数は0)。UTC の日付で 1900-01-01 から 2999-12-31 まで */
   startTime: string;
   /**
      * サロンに伝える要望や特記事項。要望がない場合はnull

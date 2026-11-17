@@ -463,7 +463,7 @@ namespace BeautySalon.Models {
     @maxLength(100)
     lotNumber: string | null;
 
-    @doc("使用期限。期限のない場合はnull")
+    @doc("使用期限。期限のない場合はnull。1900-01-01 から 2999-12-31 まで")
     expiryDate: plainDate | null;
 
     @doc("サロン内の保管場所。未設定の場合はnull")
@@ -487,7 +487,7 @@ namespace BeautySalon.Models {
     @maxLength(100)
     lotNumber?: string | null;
 
-    @doc("使用期限。nullでクリア")
+    @doc("使用期限。nullでクリア。1900-01-01 から 2999-12-31 まで")
     expiryDate?: plainDate | null;
 
     @doc("サロン内の保管場所。nullでクリア")

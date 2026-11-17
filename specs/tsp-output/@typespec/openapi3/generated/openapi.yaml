@@ -21127,7 +21127,7 @@ components:
       name: date
       in: query
       required: true
-      description: 空き枠を探す日付。サロンのタイムゾーンでの日付。過去の日付には空の一覧を返す
+      description: 空き枠を探す日付。サロンのタイムゾーンでの日付。過去の日付には空の一覧を返す。1900-01-01 から 2999-12-31 まで
       schema:
         type: string
         format: date
@@ -21175,7 +21175,7 @@ components:
       name: bookingDateFrom
       in: query
       required: false
-      description: 来店日(bookingDate)の範囲の開始日。この日以降の予約に一致する。bookingDateTo より後の日付は指定できない
+      description: 来店日(bookingDate)の範囲の開始日。この日以降の予約に一致する。bookingDateTo より後の日付は指定できない。1900-01-01 から 2999-12-31 まで
       schema:
         type: string
         format: date
@@ -21184,7 +21184,7 @@ components:
       name: bookingDateTo
       in: query
       required: false
-      description: 来店日(bookingDate)の範囲の終了日。この日以前の予約に一致する
+      description: 来店日(bookingDate)の範囲の終了日。この日以前の予約に一致する。1900-01-01 から 2999-12-31 まで
       schema:
         type: string
         format: date
@@ -21285,7 +21285,7 @@ components:
       name: bookingDateFrom
       in: query
       required: false
-      description: 来店日(bookingDate)の範囲の開始日。この日以降の予約に一致する。bookingDateTo より後の日付は指定できない
+      description: 来店日(bookingDate)の範囲の開始日。この日以降の予約に一致する。bookingDateTo より後の日付は指定できない。1900-01-01 から 2999-12-31 まで
       schema:
         type: string
         format: date
@@ -21294,7 +21294,7 @@ components:
       name: bookingDateTo
       in: query
       required: false
-      description: 来店日(bookingDate)の範囲の終了日。この日以前の予約に一致する
+      description: 来店日(bookingDate)の範囲の終了日。この日以前の予約に一致する。1900-01-01 から 2999-12-31 まで
       schema:
         type: string
         format: date
@@ -21367,7 +21367,7 @@ components:
       name: registeredFrom
       in: query
       required: false
-      description: 登録日時(createdAt)の下限による絞り込み。この日時以降に登録された顧客に一致する
+      description: 登録日時(createdAt)の下限による絞り込み。この日時以降に登録された顧客に一致する。UTC の日付で 1900-01-01 から 2999-12-31 まで
       schema:
         type: string
         format: date-time
@@ -21376,7 +21376,7 @@ components:
       name: registeredTo
       in: query
       required: false
-      description: 登録日時(createdAt)の上限による絞り込み。この日時以前に登録された顧客に一致する。registeredFromより前の日時は指定できない
+      description: 登録日時(createdAt)の上限による絞り込み。この日時以前に登録された顧客に一致する。registeredFromより前の日時は指定できない。UTC の日付で 1900-01-01 から 2999-12-31 まで
       schema:
         type: string
         format: date-time
@@ -21404,7 +21404,7 @@ components:
       name: date
       in: query
       required: true
-      description: 集計対象の売上日(saleDate)
+      description: 集計対象の売上日(saleDate)。1900-01-01 から 2999-12-31 まで
       schema:
         type: string
         format: date
@@ -21772,7 +21772,7 @@ components:
       name: endDate
       in: query
       required: false
-      description: 取引の発生日時(createdAt)の上限。この日時以前の取引に一致する。startDate より前の日時は指定できない
+      description: 取引の発生日時(createdAt)の上限。この日時以前の取引に一致する。startDate より前の日時は指定できない。UTC の日付で 1900-01-01 から 2999-12-31 まで
       schema:
         type: string
         format: date-time
@@ -21793,7 +21793,7 @@ components:
       name: startDate
       in: query
       required: false
-      description: 取引の発生日時(createdAt)の下限。この日時以降の取引に一致する
+      description: 取引の発生日時(createdAt)の下限。この日時以降の取引に一致する。UTC の日付で 1900-01-01 から 2999-12-31 まで
       schema:
         type: string
         format: date-time
@@ -22199,7 +22199,7 @@ components:
       name: endDate
       in: query
       required: false
-      description: 売上日(saleDate)の上限。この日付以前の売上に一致する
+      description: 売上日(saleDate)の上限。この日付以前の売上に一致する。1900-01-01 から 2999-12-31 まで
       schema:
         type: string
         format: date
@@ -22236,7 +22236,7 @@ components:
       name: startDate
       in: query
       required: false
-      description: 売上日(saleDate)の下限。この日付以降の売上に一致する
+      description: 売上日(saleDate)の下限。この日付以降の売上に一致する。1900-01-01 から 2999-12-31 まで
       schema:
         type: string
         format: date
@@ -22245,7 +22245,7 @@ components:
       name: endDate
       in: query
       required: true
-      description: 期間の最後の売上日(saleDate)。startDate 以降で、期間は startDate を含めて366日まで
+      description: 期間の最後の売上日(saleDate)。startDate 以降で、期間は startDate を含めて366日まで。1900-01-01 から 2999-12-31 まで
       schema:
         type: string
         format: date
@@ -22262,7 +22262,7 @@ components:
       name: startDate
       in: query
       required: true
-      description: 期間の最初の売上日(saleDate)
+      description: 期間の最初の売上日(saleDate)。1900-01-01 から 2999-12-31 まで
       schema:
         type: string
         format: date
@@ -22512,7 +22512,7 @@ components:
       name: date
       in: query
       required: false
-      description: この日付に適用される行だけを返す。その日付の単日の行があればその行を、なければその曜日の毎週の行を返す。どちらもなければ空配列を返す
+      description: この日付に適用される行だけを返す。その日付の単日の行があればその行を、なければその曜日の毎週の行を返す。どちらもなければ空配列を返す。1900-01-01 から 2999-12-31 まで
       schema:
         type: string
         format: date
@@ -23233,7 +23233,7 @@ components:
         startTime:
           type: string
           format: date-time
-          description: 希望する施術開始日時 (UTC)。分単位で指定する(秒と小数は0)
+          description: 希望する施術開始日時 (UTC)。分単位で指定する(秒と小数は0)。UTC の日付で 1900-01-01 から 2999-12-31 まで
       description: |-
         空き状況確認リクエスト - 希望する日時・スタッフ・施術メニューの組み合わせを受け取る。キーは必須。
         希望する時間は、startTime から、サービスの施術時間(duration)のあいだ
@@ -23294,12 +23294,12 @@ components:
           type: string
           format: date-time
           nullable: true
-          description: 実際の施術開始日時 (UTC)。nullの場合は、記録済みの日時(start アクションが記録したもの)を残す
+          description: 実際の施術開始日時 (UTC)。nullの場合は、記録済みの日時(start アクションが記録したもの)を残す。UTC の日付で 1900-01-01 から 2999-12-31 まで
         actualEndTime:
           type: string
           format: date-time
           nullable: true
-          description: 実際の施術終了日時 (UTC)。実際の施術開始日時(このリクエストの値、nullの場合は記録済みの値)より後の日時を指定する。記録しない場合はnull
+          description: 実際の施術終了日時 (UTC)。実際の施術開始日時(このリクエストの値、nullの場合は記録済みの値)より後の日時を指定する。記録しない場合はnull。UTC の日付で 1900-01-01 から 2999-12-31 まで
       description: 予約完了リクエスト - 実際の施術開始・終了日時を受け取る。キーは必須で、記録しない日時は null を指定する
     Models.BookingCreateRequest:
       type: object
@@ -23384,7 +23384,7 @@ components:
         startTime:
           type: string
           format: date-time
-          description: 変更後の予約開始日時 (UTC)。分単位で指定する(秒と小数は0)
+          description: 変更後の予約開始日時 (UTC)。分単位で指定する(秒と小数は0)。UTC の日付で 1900-01-01 から 2999-12-31 まで
         staffId:
           allOf:
             - $ref: '#/components/schemas/Models.StaffId'
@@ -23588,7 +23588,7 @@ components:
         startTime:
           type: string
           format: date-time
-          description: 施術開始予定日時 (UTC)。分単位で指定する(秒と小数は0)
+          description: 施術開始予定日時 (UTC)。分単位で指定する(秒と小数は0)。UTC の日付で 1900-01-01 から 2999-12-31 まで
         notes:
           type: string
           nullable: true
@@ -23991,7 +23991,7 @@ components:
         startTime:
           type: string
           format: date-time
-          description: 開始日時 (UTC)。空き枠の startTime を指定する。分単位(秒と小数は0)
+          description: 開始日時 (UTC)。空き枠の startTime を指定する。分単位(秒と小数は0)。UTC の日付で 1900-01-01 から 2999-12-31 まで
         customerRequest:
           type: string
           nullable: true
@@ -25925,7 +25925,7 @@ components:
           type: string
           format: date
           nullable: true
-          description: 使用期限。期限のない場合はnull
+          description: 使用期限。期限のない場合はnull。1900-01-01 から 2999-12-31 まで
         location:
           type: string
           nullable: true
@@ -26305,7 +26305,7 @@ components:
           type: string
           format: date
           nullable: true
-          description: 使用期限。nullでクリア
+          description: 使用期限。nullでクリア。1900-01-01 から 2999-12-31 まで
         location:
           type: string
           nullable: true
@@ -26618,7 +26618,7 @@ components:
         date:
           type: string
           format: date
-          description: 日付
+          description: 日付。1900-01-01 から 2999-12-31 まで
         openTime:
           type: string
           nullable: true
@@ -27317,7 +27317,7 @@ components:
           type: string
           format: date
           nullable: true
-          description: 付与したポイントの有効期限(この日まで使える)。昨日(UTC)より前の日付は指定できない。有効期限を設けない場合はnull
+          description: 付与したポイントの有効期限(この日まで使える)。昨日(UTC)より前の日付は指定できない。有効期限を設けない場合はnull。1900-01-01 から 2999-12-31 まで
       description: |-
         ポイント付与リクエスト - 種別 earned のポイント取引を登録する。全項目のキーが必須。
         DB で NULL 許可のカラムのみ null を指定できる。残高はシステムが計算する
@@ -27337,7 +27337,7 @@ components:
           type: string
           format: date
           nullable: true
-          description: 有効期限がこの日付より前の獲得ポイントを失効させる。昨日(UTC)以前の日付で、null の場合は昨日(UTC)。有効期限は、その日まで使える日付で、付与は昨日(UTC)以降の有効期限を受け付けるため、どのタイムゾーンでも、有効期限の日が終わる前には失効しない
+          description: 有効期限がこの日付より前の獲得ポイントを失効させる。昨日(UTC)以前の日付で、null の場合は昨日(UTC)。有効期限は、その日まで使える日付で、付与は昨日(UTC)以降の有効期限を受け付けるため、どのタイムゾーンでも、有効期限の日が終わる前には失効しない。1900-01-01 から 2999-12-31 まで
       description: ポイント失効処理リクエスト - 有効期限を過ぎたポイントを失効させる対象を指定する。全項目のキーが必須
     Models.PointExpireResponse:
       type: object
@@ -29196,7 +29196,7 @@ components:
         saleTime:
           type: string
           format: date-time
-          description: 会計日時
+          description: 会計日時。UTC の日付で 1900-01-01 から 2999-12-31 まで
         pointsUsed:
           type: integer
           format: int32
@@ -29433,7 +29433,7 @@ components:
         saleTime:
           type: string
           format: date-time
-          description: 会計日時。変更すると saleDate も再計算する
+          description: 会計日時。変更すると saleDate も再計算する。UTC の日付で 1900-01-01 から 2999-12-31 まで
         pointsUsed:
           type: integer
           format: int32
@@ -31314,7 +31314,7 @@ components:
           type: string
           format: date
           nullable: true
-          description: 入社日。未設定の場合はnull
+          description: 入社日。未設定の場合はnull。1900-01-01 から 2999-12-31 まで
         employmentType:
           type: string
           nullable: true
@@ -31711,7 +31711,7 @@ components:
           type: string
           format: date
           nullable: true
-          description: 単日の行が適用される日付。単日の行では必須。毎週の行ではnull
+          description: 単日の行が適用される日付。単日の行では必須。毎週の行ではnull。1900-01-01 から 2999-12-31 まで
         startTime:
           type: string
           nullable: true
@@ -31864,7 +31864,7 @@ components:
           type: string
           format: date
           nullable: true
-          description: 入社日。nullでクリア
+          description: 入社日。nullでクリア。1900-01-01 から 2999-12-31 まで
         employmentType:
           type: string
           nullable: true

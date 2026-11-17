@@ -7,6 +7,6 @@
  */
 
 /**
- * 空き枠を探す日付。サロンのタイムゾーンでの日付。過去の日付には空の一覧を返す
+ * 空き枠を探す日付。サロンのタイムゾーンでの日付。過去の日付には空の一覧を返す。1900-01-01 から 2999-12-31 まで
  */
 export type ModelsAvailableSlotSearchRequestDateParameter = string;

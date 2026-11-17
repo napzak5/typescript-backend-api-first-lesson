@@ -86,7 +86,7 @@ namespace BeautySalon.Models {
     @doc("この施術を担当するスタッフのID。予約と同じサロンのスタッフを指定する。担当スタッフを決めない場合はnull(その施術は、誰の時間も確保しない)")
     staffId: StaffId | null;
 
-    @doc("施術開始予定日時 (UTC)。分単位で指定する(秒と小数は0)")
+    @doc("施術開始予定日時 (UTC)。分単位で指定する(秒と小数は0)。UTC の日付で 1900-01-01 から 2999-12-31 まで")
     startTime: utcDateTime;
 
     @doc("この施術に関するメモ。メモがない場合はnull")
@@ -280,11 +280,11 @@ namespace BeautySalon.Models {
     status?: BookingStatusType;
 
     @query
-    @doc("来店日(bookingDate)の範囲の開始日。この日以降の予約に一致する。bookingDateTo より後の日付は指定できない")
+    @doc("来店日(bookingDate)の範囲の開始日。この日以降の予約に一致する。bookingDateTo より後の日付は指定できない。1900-01-01 から 2999-12-31 まで")
     bookingDateFrom?: plainDate;
 
     @query
-    @doc("来店日(bookingDate)の範囲の終了日。この日以前の予約に一致する")
+    @doc("来店日(bookingDate)の範囲の終了日。この日以前の予約に一致する。1900-01-01 から 2999-12-31 まで")
     bookingDateTo?: plainDate;
   }
 
@@ -300,10 +300,10 @@ namespace BeautySalon.Models {
     予約完了リクエスト - 実際の施術開始・終了日時を受け取る。キーは必須で、記録しない日時は null を指定する
     """)
   model BookingCompleteRequest {
-    @doc("実際の施術開始日時 (UTC)。nullの場合は、記録済みの日時(start アクションが記録したもの)を残す")
+    @doc("実際の施術開始日時 (UTC)。nullの場合は、記録済みの日時(start アクションが記録したもの)を残す。UTC の日付で 1900-01-01 から 2999-12-31 まで")
     actualStartTime: utcDateTime | null;
 
-    @doc("実際の施術終了日時 (UTC)。実際の施術開始日時(このリクエストの値、nullの場合は記録済みの値)より後の日時を指定する。記録しない場合はnull")
+    @doc("実際の施術終了日時 (UTC)。実際の施術開始日時(このリクエストの値、nullの場合は記録済みの値)より後の日時を指定する。記録しない場合はnull。UTC の日付で 1900-01-01 から 2999-12-31 まで")
     actualEndTime: utcDateTime | null;
   }
 
@@ -311,7 +311,7 @@ namespace BeautySalon.Models {
     予約日時変更リクエスト - 変更後の開始日時と担当スタッフを受け取る。キーは必須
     """)
   model BookingRescheduleRequest {
-    @doc("変更後の予約開始日時 (UTC)。分単位で指定する(秒と小数は0)")
+    @doc("変更後の予約開始日時 (UTC)。分単位で指定する(秒と小数は0)。UTC の日付で 1900-01-01 から 2999-12-31 まで")
     startTime: utcDateTime;
 
     @doc("変更後の担当スタッフのID。予約と同じサロンのスタッフを指定する。担当を変えない場合は現在の担当スタッフのIDを指定する")
@@ -448,7 +448,7 @@ namespace BeautySalon.Models {
     @doc("担当するスタッフのID。空き枠の staffId を指定する")
     staffId: StaffId;
 
-    @doc("開始日時 (UTC)。空き枠の startTime を指定する。分単位(秒と小数は0)")
+    @doc("開始日時 (UTC)。空き枠の startTime を指定する。分単位(秒と小数は0)。UTC の日付で 1900-01-01 から 2999-12-31 まで")
     startTime: utcDateTime;
 
     @doc("サロンに伝える要望や特記事項。要望がない場合はnull")
@@ -474,11 +474,11 @@ namespace BeautySalon.Models {
     status?: BookingStatusType;
 
     @query
-    @doc("来店日(bookingDate)の範囲の開始日。この日以降の予約に一致する。bookingDateTo より後の日付は指定できない")
+    @doc("来店日(bookingDate)の範囲の開始日。この日以降の予約に一致する。bookingDateTo より後の日付は指定できない。1900-01-01 から 2999-12-31 まで")
     bookingDateFrom?: plainDate;
 
     @query
-    @doc("来店日(bookingDate)の範囲の終了日。この日以前の予約に一致する")
+    @doc("来店日(bookingDate)の範囲の終了日。この日以前の予約に一致する。1900-01-01 から 2999-12-31 まで")
     bookingDateTo?: plainDate;
   }
 
@@ -506,7 +506,7 @@ namespace BeautySalon.Models {
     serviceId: ServiceId;
 
     @query
-    @doc("空き枠を探す日付。サロンのタイムゾーンでの日付。過去の日付には空の一覧を返す")
+    @doc("空き枠を探す日付。サロンのタイムゾーンでの日付。過去の日付には空の一覧を返す。1900-01-01 から 2999-12-31 まで")
     date: plainDate;
 
     @query
@@ -542,7 +542,7 @@ namespace BeautySalon.Models {
     @doc("予約したい施術メニューのID。パスのサロンのサービスを指定する")
     serviceId: ServiceId;
 
-    @doc("希望する施術開始日時 (UTC)。分単位で指定する(秒と小数は0)")
+    @doc("希望する施術開始日時 (UTC)。分単位で指定する(秒と小数は0)。UTC の日付で 1900-01-01 から 2999-12-31 まで")
     startTime: utcDateTime;
   }
 

@@ -31,9 +31,9 @@ export type CustomerCrudListParams = {
   search?: ModelsCustomerSearchRequestSearchParameter;
   /** タグによる絞り込み。指定したタグをすべて持つ顧客に一致する */
   tags?: ModelsCustomerSearchRequestTagsParameter;
-  /** 登録日時(createdAt)の下限による絞り込み。この日時以降に登録された顧客に一致する */
+  /** 登録日時(createdAt)の下限による絞り込み。この日時以降に登録された顧客に一致する。UTC の日付で 1900-01-01 から 2999-12-31 まで */
   registeredFrom?: ModelsCustomerSearchRequestRegisteredFromParameter;
-  /** 登録日時(createdAt)の上限による絞り込み。この日時以前に登録された顧客に一致する。registeredFromより前の日時は指定できない */
+  /** 登録日時(createdAt)の上限による絞り込み。この日時以前に登録された顧客に一致する。registeredFromより前の日時は指定できない。UTC の日付で 1900-01-01 から 2999-12-31 まで */
   registeredTo?: ModelsCustomerSearchRequestRegisteredToParameter;
   /**
    * 顧客ステータス区分 - 顧客アカウントの活動状態や利用可否を表す区分

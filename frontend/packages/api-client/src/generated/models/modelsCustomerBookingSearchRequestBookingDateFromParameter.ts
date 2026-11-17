@@ -7,6 +7,6 @@
  */
 
 /**
- * 来店日(bookingDate)の範囲の開始日。この日以降の予約に一致する。bookingDateTo より後の日付は指定できない
+ * 来店日(bookingDate)の範囲の開始日。この日以降の予約に一致する。bookingDateTo より後の日付は指定できない。1900-01-01 から 2999-12-31 まで
  */
 export type ModelsCustomerBookingSearchRequestBookingDateFromParameter = string;

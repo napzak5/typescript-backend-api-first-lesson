@@ -12,8 +12,8 @@ import type { ModelsSalesReportGetRequestStartDateParameter } from './modelsSale
 export type SalesReportCrudGetByStaffParams = {
   /** サロン店舗・拠点を識別するためのブランド付きUUID。 */
   salonId: ModelsSalesReportGetRequestSalonIdParameter;
-  /** 期間の最初の売上日(saleDate) */
+  /** 期間の最初の売上日(saleDate)。1900-01-01 から 2999-12-31 まで */
   startDate: ModelsSalesReportGetRequestStartDateParameter;
-  /** 期間の最後の売上日(saleDate)。startDate 以降で、期間は startDate を含めて366日まで */
+  /** 期間の最後の売上日(saleDate)。startDate 以降で、期間は startDate を含めて366日まで。1900-01-01 から 2999-12-31 まで */
   endDate: ModelsSalesReportGetRequestEndDateParameter;
 };

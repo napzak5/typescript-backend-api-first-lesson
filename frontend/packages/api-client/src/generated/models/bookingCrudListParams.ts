@@ -41,8 +41,8 @@ export type BookingCrudListParams = {
    * no_show: 無断キャンセル - 顧客が連絡なしに来店しなかった状態(no-show アクションで、開始日時を過ぎてから記録する)
    */
   status?: ModelsBookingSearchRequestStatusParameter;
-  /** 来店日(bookingDate)の範囲の開始日。この日以降の予約に一致する。bookingDateTo より後の日付は指定できない */
+  /** 来店日(bookingDate)の範囲の開始日。この日以降の予約に一致する。bookingDateTo より後の日付は指定できない。1900-01-01 から 2999-12-31 まで */
   bookingDateFrom?: ModelsBookingSearchRequestBookingDateFromParameter;
-  /** 来店日(bookingDate)の範囲の終了日。この日以前の予約に一致する */
+  /** 来店日(bookingDate)の範囲の終了日。この日以前の予約に一致する。1900-01-01 から 2999-12-31 まで */
   bookingDateTo?: ModelsBookingSearchRequestBookingDateToParameter;
 };

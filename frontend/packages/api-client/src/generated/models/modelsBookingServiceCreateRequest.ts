@@ -19,7 +19,7 @@ export interface ModelsBookingServiceCreateRequest {
      * @nullable
      */
   staffId: string | null;
-  /** 施術開始予定日時 (UTC)。分単位で指定する(秒と小数は0) */
+  /** 施術開始予定日時 (UTC)。分単位で指定する(秒と小数は0)。UTC の日付で 1900-01-01 から 2999-12-31 まで */
   startTime: string;
   /**
      * この施術に関するメモ。メモがない場合はnull

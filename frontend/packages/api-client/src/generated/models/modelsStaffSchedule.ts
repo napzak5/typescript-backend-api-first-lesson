@@ -18,7 +18,7 @@ export interface ModelsStaffSchedule {
   /** 毎週の行が適用される曜日。毎週の行では必須。単日の行ではnull */
   dayOfWeek: ModelsDayOfWeekType | null;
   /**
-     * 単日の行が適用される日付。単日の行では必須。毎週の行ではnull
+     * 単日の行が適用される日付。単日の行では必須。毎週の行ではnull。1900-01-01 から 2999-12-31 まで
      * @nullable
      */
   date: string | null;
