@@ -10,15 +10,15 @@ import type { ModelsSalonId } from './modelsSalonId';
 
 /**
  * 在庫新規登録リクエスト - 全項目のキーが必須。DB で NULL 許可のカラムのみ null を指定できる。
- * 在庫数は0で登録され、入庫は在庫移動(movement)で記録する
+ * 在庫数は0で登録され、入庫は在庫移動(movement)で記録する。文字列は空白だけのものを指定できない
  */
 export interface ModelsInventoryCreateRequest {
-  /** 在庫を追加するサロン ID */
+  /** 在庫を追加するサロン ID。削除されていないサロンを指定する */
   salonId: ModelsSalonId;
-  /** 在庫の対象となる商品 ID。salonId のサロンの商品を指定する */
+  /** 在庫の対象となる商品 ID。salonId のサロンの、削除されていない商品を指定する */
   productId: ModelsProductId;
   /**
-     * ロット番号。同じサロン・商品の在庫の間で一意。ロット管理をしない場合はnull
+     * ロット番号。同じサロン・商品の在庫の間で一意。商品の requiresLotTracking が true なら必須、false なら null
      * @maxLength 100
      * @nullable
      */

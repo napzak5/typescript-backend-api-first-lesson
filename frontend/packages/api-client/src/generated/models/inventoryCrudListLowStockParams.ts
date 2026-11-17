@@ -22,7 +22,7 @@ export type InventoryCrudListLowStockParams = {
   /** サロン店舗・拠点を識別するためのブランド付きUUID。 */
   salonId: ModelsInventoryLowStockSearchRequestSalonIdParameter;
   /**
-   * 在庫僅少とみなす在庫数の閾値。currentStock がこの値以下の在庫に一致する。省略時は商品ごとの最低在庫数(minimumStock)を使う
+   * 在庫僅少とみなす在庫数の閾値。商品ごとに、サロンにあるその商品の在庫の currentStock の合計がこの値以下なら、その商品の在庫に一致する。省略時は商品ごとの最低在庫数(minimumStock)を使う
    * @minimum 0
    * @maximum 99999999.99
    */

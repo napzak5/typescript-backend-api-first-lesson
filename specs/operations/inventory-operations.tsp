@@ -92,7 +92,7 @@ namespace BeautySalon.Operations {
   @tag("Inventory")
   namespace InventoryOperations {
     interface InventoryCrud {
-      @doc("絞り込み条件とページネーションを指定して在庫を一覧取得します。")
+      @doc("絞り込み条件とページネーションを指定して在庫を一覧取得します。商品の商品コード、ロット番号(nullが先)、IDの順に並べます。管理者と、サロンのオーナー・マネージャー・スタッフ(所属サロンの在庫)が使えます。ほかのサロンのsalonIdを指定した場合は403を、cursorが一覧できる在庫を指していない場合は400を返します。")
       @summary("List inventory")
       @get
       list(...InventorySearchRequest):
@@ -103,7 +103,7 @@ namespace BeautySalon.Operations {
         | ProblemResponse<400>
         | CommonErrors;
 
-      @doc("商品の在庫を新規登録します。在庫数は0で登録され、入庫は在庫移動で記録します。salonIdのサロンが存在しない場合や、productIdにsalonIdのサロンの商品ではないIDを指定した場合は400を、salonId・productId・lotNumberの組み合わせが既存の在庫と重複する場合は409を返します。")
+      @doc("商品の在庫を新規登録します。在庫数は0で登録され、入庫は在庫移動で記録します。管理者と、salonIdのサロンのオーナー・マネージャーが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合や、productIdにsalonIdのサロンの商品ではないIDを指定した場合、lotNumberが商品のロット管理(requiresLotTracking)と合わない場合は400を、salonId・productId・lotNumberの組み合わせが既存の在庫と重複する場合は409を返します。")
       @summary("Create an inventory record")
       @post
       create(@body request: InventoryCreateRequest):
@@ -117,7 +117,7 @@ namespace BeautySalon.Operations {
         | RequestBodyErrors
         | CommonErrors;
 
-      @doc("IDを指定して在庫を1件取得します。")
+      @doc("IDを指定して在庫を1件取得します。管理者と、在庫のサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンの在庫は、存在しない在庫と同じく404を返します。")
       @summary("Get an inventory record")
       @get
       get(@path id: InventoryId):
@@ -129,7 +129,7 @@ namespace BeautySalon.Operations {
         | ProblemResponse<404>
         | CommonErrors;
 
-      @doc("在庫の指定した項目だけを更新します。在庫数は変更できません。lotNumberの変更で同じサロン・商品・ロット番号の在庫と重複する場合は409を返します。")
+      @doc("在庫の指定した項目だけを更新します。在庫数は変更できません。管理者と、在庫のサロンのオーナー・マネージャーが使えます。ほかのサロンの在庫は404を、lotNumberが商品のロット管理(requiresLotTracking)と合わない場合は400を、lotNumberの変更で同じサロン・商品・ロット番号の在庫と重複する場合は409を返します。")
       @summary("Update an inventory record")
       @patch
       update(@path id: InventoryId, @body request: InventoryUpdateRequest):
@@ -143,7 +143,7 @@ namespace BeautySalon.Operations {
         | RequestBodyErrors
         | CommonErrors;
 
-      @doc("在庫を削除します。この在庫の在庫移動の記録は残り、その inventoryId は null になります。")
+      @doc("在庫を削除します。この在庫の在庫移動の記録は残り、その inventoryId は null になります。管理者と、在庫のサロンのオーナー・マネージャーが使えます。ほかのサロンの在庫は404を、在庫数(currentStock)が0でない場合は409を返します。")
       @summary("Delete an inventory record")
       @delete
       delete(@path id: InventoryId):
@@ -152,9 +152,10 @@ namespace BeautySalon.Operations {
           }
         | ProblemResponse<400>
         | ProblemResponse<404>
+        | ProblemResponse<409>
         | CommonErrors;
 
-      @doc("在庫数が閾値以下の在庫を一覧取得します。閾値を省略した場合は商品ごとの最低在庫数を使います。salonIdのサロンが存在しない場合は400を返します。")
+      @doc("取り扱い中の商品のうち、サロンにある在庫数の合計が閾値以下の商品の在庫を一覧取得します。閾値を省略した場合は商品ごとの最低在庫数を使います。並びは在庫の一覧と同じです。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合は400を返します。")
       @summary("List low-stock inventory")
       @route("/low-stock")
       @get
@@ -166,7 +167,7 @@ namespace BeautySalon.Operations {
         | ProblemResponse<400>
         | CommonErrors;
 
-      @doc("指定した日数以内に使用期限を迎える在庫を、期限切れの在庫も含めて一覧取得します。salonIdのサロンが存在しない場合は400を返します。")
+      @doc("指定した日数以内に使用期限を迎える、在庫数が0より多い在庫を、期限切れの在庫も含めて、使用期限の早い順に一覧取得します。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合は400を返します。")
       @summary("List expiring inventory")
       @route("/expiring")
       @get
