@@ -11,7 +11,7 @@ using TypeSpec.OpenAPI;
 using BeautySalon.Models;
 
 namespace BeautySalon.Operations {
-  @doc("顧客台帳を管理するAPI操作群です。台帳はプラットフォーム全体で1つで、サロンごとには分かれていません。実装済みの操作は、一覧・登録・1件の取得・更新・削除と、好み設定の取得・更新です。これらは admin とサロンのスタッフ(owner / manager / staff。所属サロンは問いません)が実行でき、削除は admin と owner / manager だけが実行できます。レスポンスはスタッフ専用の項目を含むので、顧客本人(customer)には403を返します。権限は最初に確認し、権限のないユーザーにはIDや本文が不正でも403を返します。")
+  @doc("顧客台帳を管理するAPI操作群です。台帳はプラットフォーム全体で1つで、サロンごとには分かれていません。実装済みの操作は、一覧・登録・1件の取得・更新・削除と、好み設定の取得・更新、統計の取得です。これらは admin とサロンのスタッフ(owner / manager / staff。所属サロンは問いません)が実行でき、削除は admin と owner / manager だけが実行できます。統計は、admin と、salonId のサロンの owner / manager / staff が実行できます。レスポンスはスタッフ専用の項目を含むので、顧客本人(customer)には403を返します。権限は最初に確認し、権限のないユーザーにはIDや本文が不正でも403を返します。")
   @route("/api/v1/customers")
   @tag("Customers")
   namespace CustomerOperations {
@@ -198,17 +198,11 @@ namespace BeautySalon.Operations {
         | ProblemResponse<409>
         | CommonErrors;
 
-      @doc("来店頻度や売上貢献度など顧客指標を集計し、セグメント施策やVIP判定に利用します。顧客が存在しない場合は404を返します。")
+      @doc("顧客の、salonId のサロンでの、期間の予約と売上を集計します(来店の頻度、利用金額、よく受けるサービスと担当スタッフ、キャンセルの割合)。集計はリクエストのたびに予約台帳と売上台帳から行い、記録しません。salonId に自分のサロン以外を指定した場合は403を、ID とクエリが不正な場合、endDate が startDate より前の場合、期間が366日を超える場合、salonId のサロンが存在しない場合は400を、顧客が存在しない場合は404を返します。")
       @summary("Get customer statistics")
       @get
       @route("/{id}/statistics")
-      getStatistics(
-        @path id: CustomerId,
-
-        @query
-        @doc("集計対象期間（例: '7d', '1m', '3m', '1y'）。数値と単位(d: 日、m: 月、y: 年)で指定する")
-        period?: string = "1y",
-      ):
+      getStatistics(@path id: CustomerId, ...CustomerStatisticsGetRequest):
         | {
             @statusCode statusCode: 200;
             @body response: ApiResponse<CustomerStatisticsResponse>;

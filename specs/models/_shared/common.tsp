@@ -173,33 +173,6 @@ namespace BeautySalon.Models {
   }
 
   @doc("""
-    通貨コード区分 - ISO 4217準拠の通貨コード定義
-    
-    JPY: 日本円 - Japanese Yen
-    USD: 米ドル - United States Dollar
-    EUR: ユーロ - Euro
-    GBP: 英ポンド - British Pound Sterling
-    AUD: 豪ドル - Australian Dollar
-    CAD: カナダドル - Canadian Dollar
-    CNY: 中国人民元 - Chinese Yuan
-    KRW: 韓国ウォン - South Korean Won
-    SGD: シンガポールドル - Singapore Dollar
-    TWD: 台湾ドル - Taiwan Dollar
-    """)
-  enum CurrencyCodeType {
-    JPY,
-    USD,
-    EUR,
-    GBP,
-    AUD,
-    CAD,
-    CNY,
-    KRW,
-    SGD,
-    TWD,
-  }
-
-  @doc("""
     発注ステータス区分 - 商品発注の進行状態を表す区分
     
     draft: 下書き - 発注内容を作成中の状態
@@ -297,18 +270,6 @@ namespace BeautySalon.Models {
     endDate: utcDateTime;
   }
 
-  @doc("税抜・税込計算に利用する金額モデル。")
-  model Money {
-    @doc("通貨の最小単位で表現した金額値。")
-    value: int64;
-
-    @doc("使用する通貨コード。")
-    currency: CurrencyCodeType;
-
-    @doc("適用税率。税率が適用されない場合はnull")
-    taxRate: decimal | null;
-  }
-
   @doc("営業時間や休憩時間を表現する単一の時間帯スロット。")
   model TimeSlot {
     @doc("開始時刻（HH:mm形式、24時間表記）。")
@@ -334,32 +295,5 @@ namespace BeautySalon.Models {
 
     @doc("季節営業などの適用期間。通年有効の場合はnull")
     effectivePeriod: DateRange | null;
-  }
-
-  @doc("サービスメニューを一覧表示や候補選択で参照する際の要約情報。")
-  model ServiceSummary {
-    @doc("サービスメニューを識別するID。")
-    id: ServiceId;
-
-    @doc("顧客向けに表示するサービス名称。")
-    name: string;
-
-    @doc("対象サービスの予約件数。統計未計算の場合はnull")
-    bookingCount: int32 | null;
-  }
-
-  @doc("スタッフ一覧や選択候補で利用する要約情報。")
-  model StaffSummary {
-    @doc("スタッフを識別するID。")
-    id: StaffId;
-
-    @doc("スタッフの表示名。")
-    name: string;
-
-    @doc("平均評価スコア。未評価または評価データがない場合はnull")
-    rating: float32 | null;
-
-    @doc("担当した予約件数。統計未計算の場合はnull")
-    bookingCount: int32 | null;
   }
 }

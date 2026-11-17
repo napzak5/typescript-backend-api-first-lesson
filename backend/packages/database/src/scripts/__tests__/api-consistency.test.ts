@@ -640,7 +640,6 @@ describe('modelRules', () => {
       'id',
       'userId',
       'loyaltyPoints',
-      'lifetimeValue',
       'firstVisitDate',
       'lastVisitDate',
       'visitCount',
@@ -658,7 +657,6 @@ describe('modelRules', () => {
       'referredBy',
       'isActive',
       'customerStatus',
-      'lifetimeValue',
       'noShowCount',
       'cancellationCount',
     ]

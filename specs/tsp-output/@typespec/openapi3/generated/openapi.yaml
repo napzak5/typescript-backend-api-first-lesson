@@ -7236,21 +7236,16 @@ paths:
     get:
       operationId: CustomerCrud_getStatistics
       summary: Get customer statistics
-      description: 来店頻度や売上貢献度など顧客指標を集計し、セグメント施策やVIP判定に利用します。顧客が存在しない場合は404を返します。
+      description: 顧客の、salonId のサロンでの、期間の予約と売上を集計します(来店の頻度、利用金額、よく受けるサービスと担当スタッフ、キャンセルの割合)。集計はリクエストのたびに予約台帳と売上台帳から行い、記録しません。salonId に自分のサロン以外を指定した場合は403を、ID とクエリが不正な場合、endDate が startDate より前の場合、期間が366日を超える場合、salonId のサロンが存在しない場合は400を、顧客が存在しない場合は404を返します。
       parameters:
         - name: id
           in: path
           required: true
           schema:
             $ref: '#/components/schemas/Models.CustomerId'
-        - name: period
-          in: query
-          required: false
-          description: "集計対象期間（例: '7d', '1m', '3m', '1y'）。数値と単位(d: 日、m: 月、y: 年)で指定する"
-          schema:
-            type: string
-            default: 1y
-          explode: false
+        - $ref: '#/components/parameters/Models.CustomerStatisticsGetRequest.salonId'
+        - $ref: '#/components/parameters/Models.CustomerStatisticsGetRequest.startDate'
+        - $ref: '#/components/parameters/Models.CustomerStatisticsGetRequest.endDate'
       responses:
         '200':
           description: The request has succeeded.
@@ -19735,6 +19730,32 @@ components:
         type: array
         items:
           type: string
+    Models.CustomerStatisticsGetRequest.endDate:
+      name: endDate
+      in: query
+      required: true
+      description: 期間の最後の日。startDate 以降で、期間は startDate を含めて366日まで。1900-01-01 から 2999-12-31 まで
+      schema:
+        type: string
+        format: date
+      explode: false
+    Models.CustomerStatisticsGetRequest.salonId:
+      name: salonId
+      in: query
+      required: true
+      description: 集計対象のサロン ID
+      schema:
+        $ref: '#/components/schemas/Models.SalonId'
+      explode: false
+    Models.CustomerStatisticsGetRequest.startDate:
+      name: startDate
+      in: query
+      required: true
+      description: 期間の最初の日。1900-01-01 から 2999-12-31 まで
+      schema:
+        type: string
+        format: date
+      explode: false
     Models.DailySalesGetRequest.date:
       name: date
       in: query
@@ -21891,32 +21912,6 @@ components:
       type: string
       format: uuid
       description: サービスカテゴリやメニュー分類を識別するブランド付きUUID。
-    Models.CurrencyCodeType:
-      type: string
-      enum:
-        - JPY
-        - USD
-        - EUR
-        - GBP
-        - AUD
-        - CAD
-        - CNY
-        - KRW
-        - SGD
-        - TWD
-      description: |-
-        通貨コード区分 - ISO 4217準拠の通貨コード定義
-
-        JPY: 日本円 - Japanese Yen
-        USD: 米ドル - United States Dollar
-        EUR: ユーロ - Euro
-        GBP: 英ポンド - British Pound Sterling
-        AUD: 豪ドル - Australian Dollar
-        CAD: カナダドル - Canadian Dollar
-        CNY: 中国人民元 - Chinese Yuan
-        KRW: 韓国ウォン - South Korean Won
-        SGD: シンガポールドル - Singapore Dollar
-        TWD: 台湾ドル - Taiwan Dollar
     Models.CustomerAllergyCreateRequest:
       type: object
       required:
@@ -23218,7 +23213,7 @@ components:
           description: レコード最終更新日時
       description: |-
         顧客本人のプロフィールのレスポンス - customers テーブルの行のうち、本人に見せるカラムだけを返す。
-        スタッフ用の項目(internalNotes、notes、tags、customerStatus、isActive、referredBy、lifetimeValue、
+        スタッフ用の項目(internalNotes、notes、tags、customerStatus、isActive、referredBy、
         noShowCount、cancellationCount)と userId は含まない。プロパティ名と null 許可は DB カラムと一致させている
     Models.CustomerProfileUpdateRequest:
       type: object
@@ -23332,7 +23327,6 @@ components:
         - occupation
         - membershipTier
         - loyaltyPoints
-        - lifetimeValue
         - preferences
         - notes
         - internalNotes
@@ -23431,10 +23425,6 @@ components:
           type: integer
           format: int32
           description: 現在のロイヤルティポイント。ポイント取引の結果として更新され、リクエストでは変更できない
-        lifetimeValue:
-          type: integer
-          format: int32
-          description: 生涯価値。これまでの累計利用金額で、会計処理の結果として更新される
         preferences:
           type: object
           allOf:
@@ -23532,6 +23522,10 @@ components:
     Models.CustomerStatisticsResponse:
       type: object
       required:
+        - customerId
+        - salonId
+        - startDate
+        - endDate
         - totalBookings
         - totalSpent
         - averageBookingValue
@@ -23543,50 +23537,104 @@ components:
         - cancellationRate
         - noShowRate
       properties:
+        customerId:
+          allOf:
+            - $ref: '#/components/schemas/Models.CustomerId'
+          description: 対象の顧客 ID
+        salonId:
+          allOf:
+            - $ref: '#/components/schemas/Models.SalonId'
+          description: 対象サロン ID
+        startDate:
+          type: string
+          format: date
+          description: 期間の最初の日
+        endDate:
+          type: string
+          format: date
+          description: 期間の最後の日
         totalBookings:
           type: integer
           format: int32
-          description: 総予約数
+          description: 期間の予約の数。ステータスを問わない
         totalSpent:
-          allOf:
-            - $ref: '#/components/schemas/Models.Money'
-          description: 総支払額
+          type: integer
+          format: int64
+          description: 期間の、取り消していない売上の合計金額(totalAmount)の合計から、その決済取引の返金額(refundAmount)の合計を引いた額
         averageBookingValue:
-          allOf:
-            - $ref: '#/components/schemas/Models.Money'
-          description: 平均予約単価
+          type: integer
+          format: int64
+          description: totalSpent のうち予約の会計(bookingId のある売上)の額を、その売上の件数で割った額(1円未満を切り捨て)。予約の会計がなければ0
         lastVisit:
           type: string
           format: date-time
           nullable: true
-          description: 最終来店日時。来店実績がない場合はnull
+          description: 期間の完了(completed)した予約のうち、最後の予約の開始日時。なければnull
         favoriteServices:
           type: array
           items:
-            $ref: '#/components/schemas/Models.ServiceSummary'
-          description: お気に入りサービス
+            $ref: '#/components/schemas/Models.CustomerStatisticsServiceResponse'
+          description: 期間の完了した予約の施術明細のサービスの上位5件。bookingCount の多い順、同じならサービス ID の順。削除したサービスも含む
         favoriteStaff:
           type: array
           items:
-            $ref: '#/components/schemas/Models.StaffSummary'
-          description: お気に入りスタッフ
+            $ref: '#/components/schemas/Models.CustomerStatisticsStaffResponse'
+          description: 期間の完了した予約の担当スタッフの上位5人。bookingCount の多い順、同じならスタッフ ID の順。削除したスタッフも含む
         loyaltyPoints:
           type: integer
           format: int32
-          description: ロイヤルティポイント
+          description: 顧客のいまのポイントの残高。サロンと期間によらない
         customerSince:
           type: string
           format: date-time
-          description: 顧客登録日時
+          description: 顧客を台帳に登録した日時
         cancellationRate:
           type: number
           format: float
-          description: キャンセル率
+          description: cancelled の予約の数を totalBookings で割った百分率(小数第1位に四捨五入)。予約がなければ0
         noShowRate:
           type: number
           format: float
-          description: 無断キャンセル率
-      description: 顧客統計レスポンス - 来店頻度や売上貢献度などの顧客指標を集計した結果
+          description: no_show の予約の数を totalBookings で割った百分率(小数第1位に四捨五入)。予約がなければ0
+      description: 顧客統計レスポンス - 顧客の、1つのサロンでの、期間の予約と売上を集計した結果。リクエストのたびに予約台帳と売上台帳から数え、記録しない
+    Models.CustomerStatisticsServiceResponse:
+      type: object
+      required:
+        - serviceId
+        - name
+        - bookingCount
+      properties:
+        serviceId:
+          allOf:
+            - $ref: '#/components/schemas/Models.ServiceId'
+          description: サービス ID
+        name:
+          type: string
+          description: サービスのいまの名前
+        bookingCount:
+          type: integer
+          format: int32
+          description: そのサービスを施術明細に含む、期間の完了した予約の数
+      description: 顧客統計のサービス - 期間の完了した予約で受けたサービス
+    Models.CustomerStatisticsStaffResponse:
+      type: object
+      required:
+        - staffId
+        - displayName
+        - bookingCount
+      properties:
+        staffId:
+          allOf:
+            - $ref: '#/components/schemas/Models.StaffId'
+          description: スタッフ ID
+        displayName:
+          type: string
+          description: スタッフのいまの表示名
+        bookingCount:
+          type: integer
+          format: int32
+          description: そのスタッフが担当した(bookings.staffId)、期間の完了した予約の数
+      description: 顧客統計のスタッフ - 期間の完了した予約の担当スタッフ
     Models.CustomerStatusType:
       type: string
       enum:
@@ -24823,28 +24871,6 @@ components:
         gold: ゴールド会員 - 上級ランク、10%の割引や優先予約等の特典付与
         platinum: プラチナ会員 - 最上級ランク、15%の割引や特別サービス提供
         vip: VIP会員 - 特別会員、完全カスタマイズされた特別待遇を提供
-    Models.Money:
-      type: object
-      required:
-        - value
-        - currency
-        - taxRate
-      properties:
-        value:
-          type: integer
-          format: int64
-          description: 通貨の最小単位で表現した金額値。
-        currency:
-          allOf:
-            - $ref: '#/components/schemas/Models.CurrencyCodeType'
-          description: 使用する通貨コード。
-        taxRate:
-          type: number
-          allOf:
-            - $ref: '#/components/schemas/Models.decimal'
-          nullable: true
-          description: 適用税率。税率が適用されない場合はnull
-      description: 税抜・税込計算に利用する金額モデル。
     Models.OpeningHours:
       type: object
       required:
@@ -28758,26 +28784,6 @@ components:
         inactive: 一時停止 - 一時的に提供を停止しているサービス
         coming_soon: 近日公開 - 近々提供予定のサービス
         discontinued: 廃止 - 提供を終了したサービス
-    Models.ServiceSummary:
-      type: object
-      required:
-        - id
-        - name
-        - bookingCount
-      properties:
-        id:
-          allOf:
-            - $ref: '#/components/schemas/Models.ServiceId'
-          description: サービスメニューを識別するID。
-        name:
-          type: string
-          description: 顧客向けに表示するサービス名称。
-        bookingCount:
-          type: integer
-          format: int32
-          nullable: true
-          description: 対象サービスの予約件数。統計未計算の場合はnull
-      description: サービスメニューを一覧表示や候補選択で参照する際の要約情報。
     Models.ServiceUpdateRequest:
       type: object
       properties:
@@ -29678,32 +29684,6 @@ components:
         スタッフ勤務スケジュール更新リクエスト - スタッフの勤務スケジュール全体を置き換える行の一覧。
         ほかの更新リクエストと違い、指定した項目だけを変えるのではなく、一覧の全体を置き換える。空の配列を指定すると、スケジュールは空になる。
         行は、毎週の7行と1年分の単日の366行を合わせた373件まで指定できる
-    Models.StaffSummary:
-      type: object
-      required:
-        - id
-        - name
-        - rating
-        - bookingCount
-      properties:
-        id:
-          allOf:
-            - $ref: '#/components/schemas/Models.StaffId'
-          description: スタッフを識別するID。
-        name:
-          type: string
-          description: スタッフの表示名。
-        rating:
-          type: number
-          format: float
-          nullable: true
-          description: 平均評価スコア。未評価または評価データがない場合はnull
-        bookingCount:
-          type: integer
-          format: int32
-          nullable: true
-          description: 担当した予約件数。統計未計算の場合はnull
-      description: スタッフ一覧や選択候補で利用する要約情報。
     Models.StaffUpdateRequest:
       type: object
       properties:

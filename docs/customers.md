@@ -11,9 +11,9 @@
 | 台帳（`CustomerCrud`）の一覧、登録、1 件の取得、更新、削除 | 実装済み |
 | 本人のプロフィール（`CustomerProfile`）の取得、作成、更新 | 実装済み |
 | 好み設定の取得と更新（台帳の `GET` / `PATCH /{id}/preferences`、本人の `GET` / `PATCH /me/preferences`） | 実装済み |
+| [統計](#統計)（台帳の `GET /{id}/statistics`） | 実装済み |
 | 一括取得、一括登録、一括更新、一括削除、復元、統合 | 未実装 |
 | 監査履歴、版、エクスポート、データ削除要請 | 未実装。保存するテーブルがない |
-| 統計 | 未実装。予約と会計の実装が前提 |
 
 未実装のオペレーションは `CustomerCrud` のもので、コントラクトには定義がありますが、サーバーは 404 を返します。
 
@@ -34,9 +34,10 @@
 | 1 件の取得 | `GET /api/v1/customers/{id}` | 同上 |
 | 更新 | `PATCH /api/v1/customers/{id}` | 同上 |
 | 削除 | `DELETE /api/v1/customers/{id}` | `admin`、サロンの `owner` / `manager` |
+| 統計 | `GET /api/v1/customers/{id}/statistics` | `admin`、クエリのサロンの `owner` / `manager` / `staff`（[統計](#統計)） |
 
 - すべてのオペレーションに認証が要ります。台帳は公開情報ではありません
-- 権限は操作者だけで決まります（`business-logic/customer/_shared/authorization.ts` の `mayHandleCustomers` と `mayDeleteCustomers`）。サロンのロールは、どのサロンのものでも同じ扱いです
+- 権限は操作者だけで決まります（`business-logic/customer/_shared/authorization.ts` の `mayHandleCustomers` と `mayDeleteCustomers`）。サロンのロールは、どのサロンのものでも同じ扱いです。統計だけは、クエリのサロンも問います（[統計](#統計)）
 - ロール `customer` のユーザーと、ロールに必要なレコードを持たないユーザー（範囲 `none`）は、台帳のどのオペレーションも 403 です。台帳のレスポンスはスタッフ専用の項目（`internalNotes` など）を含むので、顧客本人には、自分の顧客情報も台帳からは返しません。本人には[プロフィール](#顧客本人のプロフィール)を返します
 - 削除済みの顧客は、どのオペレーションからも見えません（404）。存在しない ID と区別しません
 - ID（パスの `id`、本文の `referredBy`、クエリの `cursor`）は、英字を大文字で書いても同じ ID です。レスポンスの `data` と `meta` の ID は小文字です
@@ -96,7 +97,7 @@
 | `allowMarketing` / `allowSms` / `allowEmail` / `isActive` | 真偽値 |
 | `hairType` / `hairThickness` / `scalpCondition` | null、またはそれぞれの Enum の値 |
 
-- **リクエストで変えられない項目**: `userId`（ログインアカウントとの紐づけ）、`loyaltyPoints`、`lifetimeValue`、`firstVisitDate`、`lastVisitDate`、`visitCount`、`noShowCount`、`cancellationCount`。本文に書くと 400（`unrecognized_keys`）です。`userId` は本人がプロフィールを作ったときに決まります。来店日と 3 つの回数は、予約のステータスの操作と削除が、顧客の予約から数えます（[予約から数える値](#予約から数える値)）。`loyaltyPoints` は、ポイント台帳の付与、利用、調整、失効が書きます（[ポイント台帳](./points.md)）。`lifetimeValue` を更新するオペレーションは、まだありません。売上の作成、更新、取り消し（[売上台帳](./sales.md)）と、支払いの記録と返金（[支払い](./payments.md)）は、どちらの値も変えません
+- **リクエストで変えられない項目**: `userId`（ログインアカウントとの紐づけ）、`loyaltyPoints`、`firstVisitDate`、`lastVisitDate`、`visitCount`、`noShowCount`、`cancellationCount`。本文に書くと 400（`unrecognized_keys`）です。`userId` は本人がプロフィールを作ったときに決まります。来店日と 3 つの回数は、予約のステータスの操作と削除が、顧客の予約から数えます（[予約から数える値](#予約から数える値)）。`loyaltyPoints` は、ポイント台帳の付与、利用、調整、失効が書きます（[ポイント台帳](./points.md)）。売上の作成、更新、取り消し（[売上台帳](./sales.md)）と、支払いの記録と返金（[支払い](./payments.md)）は、どちらの値も変えません。顧客がサロンで使った金額は、保存せず、[統計](#統計)が売上から数えます（`lifetimeValue` は #236 で削除しました）
 - **生年月日の「未来」**: 日付にはタイムゾーンがありません。日本時間の今日は、UTC ではまだ前日のことがあるので、UTC の今日の翌日までを受け付けます（`business-logic/customer/_shared/rules.ts` の `customerRuleIssues`。現在時刻は依存の `clock` から受け取る）
 - **メールアドレスと紹介コードの一意性は範囲が違います**。削除した顧客のメールアドレスは、別の顧客の登録に使えます（同じ人がもう一度登録できる）。紹介コードは、人に配ったあとも出回るので、顧客を削除しても別の顧客には使い回しません
 - **紹介元**（`referredBy`）は、登録した時点の事実として保存します。紹介元の顧客があとで削除されても、値は残ります。2 人が互いを紹介元にするような循環は確認しません
@@ -152,7 +153,7 @@
 |---|---|---|
 | `firstName`、`lastName`、`firstNameKana`、`lastNameKana`、`phoneNumber`、`alternativePhone`、`postalCode`、`prefecture`、`city`、`address`、`building`、`birthDate`、`gender`、`occupation`、`preferences`、`allowMarketing`、`allowSms`、`allowEmail` | 出る | 書ける |
 | `id`、`email`、`membershipTier`、`loyaltyPoints`、`referralCode`、`firstVisitDate`、`lastVisitDate`、`visitCount`、`hairType`、`hairThickness`、`scalpCondition`、`createdAt`、`updatedAt` | 出る | 書けない |
-| `userId`、`notes`、`internalNotes`、`tags`、`referredBy`、`isActive`、`customerStatus`、`lifetimeValue`、`noShowCount`、`cancellationCount` | 出ない | 書けない |
+| `userId`、`notes`、`internalNotes`、`tags`、`referredBy`、`isActive`、`customerStatus`、`noShowCount`、`cancellationCount` | 出ない | 書けない |
 
 - 書ける項目の規則は、台帳と同じです（[項目の規則](#項目の規則)）。作成（`CustomerProfileCreateRequest`）は 18 項目すべてが必須で、台帳で null にできる項目は null にできます。更新（`CustomerProfileUpdateRequest`）は指定した項目だけを変え、空の本文 `{}` は 400 です
 - 書けない項目を本文に書くと 400（`unrecognized_keys`）です。会員ランク、ポイント、状態を本人が書き換えることはできません
@@ -275,6 +276,57 @@
 - 削除した顧客の好み設定は、台帳のルートからは 404 です。本人のルートも、プロフィールがないので 404 です。行は、顧客の行と同じく残します
 - 本人がプロフィールを作り直すと新しい顧客ができるので、好み設定は空から始まります
 
+## 統計
+
+`GET /api/v1/customers/{id}/statistics` は、顧客の、1 つのサロンでの、期間の予約と売上を集計します（来店の頻度、利用金額、よく受けるサービスと担当スタッフ、キャンセルの割合）。集計は、リクエストのたびに予約台帳と売上台帳から行い、保存しません（[売上レポート](./sales-reports.md#集計を保存しない理由)と同じ理由）。
+
+### 読める人
+
+- `admin` はすべてのサロン、サロンの `owner`・`manager`・`staff` は所属サロンの統計を読めます。統計は、顧客がサロンで使った金額を見せるので、そのサロンの売上台帳を扱う人と同じです（`business-logic/sale/_shared/authorization.ts` の `saleReachOf`。[売上台帳](./sales.md#オペレーションと権限)）。台帳のほかのオペレーションと違い、所属サロンを問います
+- ロール `customer` のユーザーと、範囲 `none` のユーザーは 403 です。ID とクエリを確かめる前に返します
+- **ほかのサロンを指定したサロンのメンバーは、サロンが存在するかどうかにかかわらず 403 です**。クエリが不正なら、その前に 400 です
+
+### 確認の順序（統計）
+
+1. アクセストークン（401）
+2. 統計を読めること（403）
+3. 顧客の `id` の形式（400）
+4. クエリ（400。`detail` は `Invalid customer statistics`）
+5. クエリのサロンの統計を読めること（403）
+6. サロンの存在（400。`salonId` の `not_found`、`message` は `Must name a salon`。削除済みのサロンも）
+7. 顧客の存在（404。削除済みの顧客も）
+
+### クエリ
+
+| パラメーター | 形式 | 規則 |
+|---|---|---|
+| `salonId` | UUID | 必須 |
+| `startDate`、`endDate` | `YYYY-MM-DD` | 必須。両端を含む。366 日まで |
+
+- 規則は、[売上レポートのクエリ](./sales-reports.md#クエリの規則)と同じです（同じスキーマ。既定値はなく、`endDate` が `startDate` より前、366 日を超える期間、存在しない日付、コントラクトにないパラメーターは 400）。「今月」や「直近 1 年」は、サロンのタイムゾーンで、クライアントが日付にして渡します
+- 予約は予約日（`bookingDate`）で、売上は会計日（`saleDate`）で期間に入れます。どちらもサロンのタイムゾーンの日付です
+
+### 値
+
+| プロパティ | 値 |
+|---|---|
+| `customerId`、`salonId`、`startDate`、`endDate` | パスとクエリの値（ID は小文字） |
+| `totalBookings` | 期間の予約の数。ステータスを問いません |
+| `cancellationRate`、`noShowRate` | `cancelled`、`no_show` の予約の数 ÷ `totalBookings` の百分率。小数第 1 位に四捨五入します。予約がなければ 0 |
+| `totalSpent` | 期間の、取り消していない売上の `totalAmount` の合計 − その決済取引の `refundAmount` の合計。売上レポートの `netSales` のうち、この顧客の分です |
+| `averageBookingValue` | そのうち予約の会計（`bookingId` のある売上）の額 ÷ その売上の件数。1 円未満を切り捨てます。予約の会計がなければ 0 |
+| `lastVisit` | 期間の `completed` の予約のうち、最後の予約の開始日時（`startTime`）。なければ null |
+| `favoriteServices` | 期間の `completed` の予約の施術明細のサービスを、そのサービスを含む予約の数（`bookingCount`）の多い順に 5 件まで。同じなら ID の順。名前はいまの名前です |
+| `favoriteStaff` | 期間の `completed` の予約の担当スタッフ（`bookings.staffId`）を、担当した予約の数（`bookingCount`）の多い順に 5 人まで。同じなら ID の順。表示名はいまの表示名です |
+| `loyaltyPoints` | 顧客のいまのポイントの残高。サロンと期間によりません |
+| `customerSince` | 顧客を台帳に登録した日時（`createdAt`） |
+
+- 金額は、サロンの通貨の整数値です（売上レポートと同じ）
+- 削除したサービスとスタッフ、無効にしたものも入ります。来店の記録だからです（[売上レポートのスタッフ別](./sales-reports.md#スタッフ別)と同じ）
+- 返金は、いつ返金したかによらず、返金した決済取引の売上の会計日の側で数えます（売上レポートと同じ）
+- 支払いがまだの売上も数えます。売上は、売った記録だからです（売上レポートと同じ）
+- 1 つの統計は、1 つの読み取り専用のトランザクション（`REPEATABLE READ`）で読みます。予約と売上は同じ時点の台帳から数え、ロックは取りません
+
 ## 同時に届いたリクエスト
 
 | 状況 | 結果 |
@@ -351,5 +403,7 @@
 | ドメイン（好み設定） | `backend/packages/domain/src/models/customer-preferences.ts`、`schemas/customer-preferences.schema.ts`、`mappers/read/customer-preferences.mapper.ts`、`repositories/customer-preferences.repository.ts`、`business-logic/customer-preferences/`（希望と回避の規則は `_shared/rules.ts`、リポジトリが断った理由をエラーに直すのは `_shared/refusals.ts`、台帳と本人に共通の流れは `_shared/preferences-of.ts`）。Write マッパーはない（リクエストのプロパティは、名前も型もカラムと同じ） |
 | ドメイン（共通） | `backend/packages/domain/src/schemas/rules.ts`（`lowerCaseEmail`、`phoneNumber`、`timeSlot` など、複数のドメインのスキーマが使う規則） |
 | インフラ | `backend/packages/infrastructure/src/repositories/customer.repository.impl.ts`、`customer-preferences.repository.impl.ts`、`database/like.ts`（キーワードを文字どおりに探す LIKE のパターン） |
-| API | `backend/packages/api/src/routes/customer/`（プロフィールは `*-customer-profile.handler.ts`）、`routes/customer-preferences/`（本人のものは `*-own-customer-preferences.handler.ts`） |
-| DB | `backend/packages/database/sql/migrations/202611150900_customers_columns.sql`、`202611151500_customers_user_unique.sql`、`202611160100_customer_preferences_columns.sql` |
+| ドメイン（統計） | `backend/packages/domain/src/models/customer-statistics.ts`、`schemas/customer-statistics.schema.ts`（売上レポートの期間の規則を使う）、`repositories/customer-statistics.repository.ts`、`business-logic/customer-statistics/`（値の計算と並びは `_shared/statistics.ts`） |
+| インフラ（統計） | `backend/packages/infrastructure/src/repositories/customer-statistics.repository.impl.ts` |
+| API | `backend/packages/api/src/routes/customer/`（プロフィールは `*-customer-profile.handler.ts`）、`routes/customer-preferences/`（本人のものは `*-own-customer-preferences.handler.ts`）、`routes/customer-statistics/` |
+| DB | `backend/packages/database/sql/migrations/202611150900_customers_columns.sql`、`202611151500_customers_user_unique.sql`、`202611160100_customer_preferences_columns.sql`、`202611181400_customers_without_lifetime_value.sql` |

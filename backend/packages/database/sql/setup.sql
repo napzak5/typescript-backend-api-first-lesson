@@ -190,7 +190,6 @@ CREATE TABLE "customers" (
 	"occupation" varchar(100),
 	"membershipTier" "membership_tier" DEFAULT 'regular' NOT NULL,
 	"loyaltyPoints" integer DEFAULT 0 NOT NULL,
-	"lifetimeValue" integer DEFAULT 0 NOT NULL,
 	"preferences" jsonb,
 	"notes" text,
 	"internalNotes" text,

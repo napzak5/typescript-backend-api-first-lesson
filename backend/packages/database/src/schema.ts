@@ -654,7 +654,6 @@ export const customers = pgTable(
     occupation: varchar({ length: 100 }),
     membershipTier: membershipTier().default('regular').notNull(),
     loyaltyPoints: integer().default(0).notNull(),
-    lifetimeValue: integer().default(0).notNull(),
     preferences: jsonb(),
     notes: text(),
     internalNotes: text(),
