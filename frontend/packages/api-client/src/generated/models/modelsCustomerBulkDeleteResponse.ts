@@ -11,6 +11,6 @@ import type { ModelsCustomerId } from './modelsCustomerId';
  * 顧客一括削除の結果 - 削除した顧客の ID 一覧を返す
  */
 export interface ModelsCustomerBulkDeleteResponse {
-  /** 削除した顧客の ID 一覧 */
+  /** 削除した顧客の ID 一覧。リクエストの ids と同じ順序で並ぶ */
   deleted: ModelsCustomerId[];
 }

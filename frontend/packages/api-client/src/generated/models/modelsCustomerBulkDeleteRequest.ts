@@ -13,7 +13,7 @@ import type { ModelsCustomerId } from './modelsCustomerId';
  */
 export interface ModelsCustomerBulkDeleteRequest {
   /**
-     * 削除する顧客の ID 一覧。1件以上100件以下で指定する
+     * 削除する顧客の ID 一覧。1件以上100件以下で指定する。同じ ID を複数回指定できない
      * @minItems 1
      * @maxItems 100
      */
