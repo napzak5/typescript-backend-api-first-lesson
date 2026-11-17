@@ -11,6 +11,7 @@ import {
   inventory,
   inventoryAlertAcknowledgements,
   inventoryTransactions,
+  medicalCharts,
   membershipTiers,
   openingHours,
   paymentMethods,
@@ -131,6 +132,7 @@ export const customersRelations = relations(customers, ({ one, many }) => ({
   customers: many(customers, {
     relationName: 'customers_referredBy_customers_id',
   }),
+  medicalCharts: many(medicalCharts),
   reviewHelpfulVotes: many(reviewHelpfulVotes),
   reviews: many(reviews),
   sales: many(sales),
@@ -194,6 +196,13 @@ export const inventoryTransactionsRelations = relations(
     }),
   }),
 )
+
+export const medicalChartsRelations = relations(medicalCharts, ({ one }) => ({
+  customer: one(customers, {
+    fields: [medicalCharts.customerId],
+    references: [customers.id],
+  }),
+}))
 
 export const membershipTiersRelations = relations(
   membershipTiers,

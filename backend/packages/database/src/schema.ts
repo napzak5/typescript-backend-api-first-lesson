@@ -1024,6 +1024,42 @@ export const inventoryTransactions = pgTable(
   ],
 )
 
+export const medicalCharts = pgTable(
+  'medical_charts',
+  {
+    id: uuid().defaultRandom().primaryKey().notNull(),
+    customerId: uuid().notNull(),
+    previousTreatments: jsonb().notNull(),
+    medicalConditions: text(),
+    preferredProducts: text().array().notNull(),
+    avoidProducts: text().array().notNull(),
+    notes: text(),
+    createdAt: timestamp({ withTimezone: true, mode: 'string' })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp({ withTimezone: true, mode: 'string' })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    check(
+      'medical_charts_lists',
+      sql`(jsonb_typeof("previousTreatments") = 'array'::text) AND (array_position("preferredProducts", NULL::text) IS NULL) AND (array_position("avoidProducts", NULL::text) IS NULL)`,
+    ),
+    foreignKey({
+      columns: [table.customerId],
+      foreignColumns: [customers.id],
+      name: 'medical_charts_customer_id_fk',
+    }).onDelete('cascade'),
+    index('idx_medical_charts_created_at').using(
+      'btree',
+      table.createdAt.asc().nullsLast().op('timestamptz_ops'),
+      table.id.asc().nullsLast().op('uuid_ops'),
+    ),
+    unique('medical_charts_customer_id_unique').on(table.customerId),
+  ],
+)
+
 export const membershipTiers = pgTable(
   'membership_tiers',
   {

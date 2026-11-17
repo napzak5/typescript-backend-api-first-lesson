@@ -4,6 +4,7 @@ import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import * as schema from '../schema'
 import { seedBookings } from './seed-data/bookings'
 import { seedCustomers } from './seed-data/customers'
+import { seedMedicalCharts } from './seed-data/medical-charts'
 import { seedMembershipTiers } from './seed-data/membership-tiers'
 import { seedOpeningHours } from './seed-data/opening-hours'
 import { seedPaymentMethods } from './seed-data/payment-methods'
@@ -63,6 +64,9 @@ export async function seed(
     const customerResult = await seedCustomers(db, {
       customerUserIds: userResult.customerUserIds,
     })
+
+    console.log('Seeding medical charts...')
+    await seedMedicalCharts(db, customerResult.customerIds)
 
     console.log('Seeding staff...')
     await seedStaff(db, salonIds, {
@@ -159,6 +163,7 @@ export async function truncateAll(
           service_categories,
           opening_hours,
           membership_tiers,
+          medical_charts,
           customer_preferences,
           customer_points,
           customer_allergies,
@@ -190,6 +195,7 @@ export async function truncateAll(
       db.delete(schema.salesDetails),
       db.delete(schema.serviceOptions),
       db.delete(schema.customerPreferences),
+      db.delete(schema.medicalCharts),
       db.delete(schema.customerPoints),
       db.delete(schema.customerAllergies),
       db.delete(schema.bookingStatusHistories),
