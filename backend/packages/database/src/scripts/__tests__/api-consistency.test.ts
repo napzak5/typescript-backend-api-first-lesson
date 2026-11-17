@@ -283,6 +283,39 @@ describe('compareModel', () => {
     expect(findings).toEqual(['enumMismatch:status'])
   })
 
+  it('accepts a property that never takes the null of its column, when the rule lists it', () => {
+    const findings = kindsOf(
+      rule({ nonNullable: ['description'] }),
+      properties({ name: {}, description: {} }),
+    )
+
+    expect(findings).toEqual([])
+  })
+
+  it('reports a property listed as never null that allows null', () => {
+    expect(
+      kindsOf(
+        rule({ nonNullable: ['description'] }),
+        properties({ name: {}, description: { nullable: true } }),
+      ),
+    ).toEqual(['nullNotNarrowed:description'])
+  })
+
+  it('reports a property listed as never null whose column is NOT NULL', () => {
+    expect(
+      kindsOf(rule({ nonNullable: ['name'] }), properties({ name: {} })),
+    ).toEqual(['nullNotNarrowed:name'])
+  })
+
+  it('lets only the properties the rule lists leave out the null of their column', () => {
+    const findings = kindsOf(
+      rule({ nonNullable: ['description'] }),
+      properties({ description: {}, deletedAt: {} }),
+    )
+
+    expect(findings).toEqual(['shouldBeNullable:deletedAt'])
+  })
+
   it('orders findings by kind and property so that the report is stable', () => {
     const findings = kindsOf(
       rule(),
@@ -331,6 +364,18 @@ describe('describeFinding', () => {
       }),
     ).toBe(
       'Models.StaffAccountResponse.role must have some of the values of the enum type of its column, and not all of them',
+    )
+  })
+
+  it('tells a property listed as never null what it and its column must be', () => {
+    expect(
+      describeFinding({
+        model: 'Models.PurchaseOrderItemCreateRequest',
+        property: 'inventoryId',
+        kind: 'nullNotNarrowed',
+      }),
+    ).toBe(
+      'Models.PurchaseOrderItemCreateRequest.inventoryId must not allow null, and its column must allow it: the model never takes the null of its column',
     )
   })
 })
@@ -1160,6 +1205,123 @@ describe('modelRules', () => {
     expect(narrowed).toEqual([
       ['Models.StaffAccountResponse', ['role']],
       ['Models.StaffAccountUpdateRequest', ['role']],
+    ])
+  })
+
+  it('shows a purchase order with its items and every column, lets the request that creates one state the salon, the supplier, the items, the tax, the shipping, the delivery date, the terms and the notes, and an update the status, the delivery date and the notes', () => {
+    const managed = [
+      'id',
+      'orderNumber',
+      'subtotal',
+      'totalAmount',
+      'orderDate',
+      'actualDelivery',
+      'approvedBy',
+      'approvedAt',
+      'cancelledAt',
+      'cancellationReason',
+      'createdBy',
+      'createdAt',
+      'updatedAt',
+    ]
+    const rules = modelRules
+      .filter(({ table }) =>
+        ['purchaseOrders', 'purchaseOrderItems'].includes(table),
+      )
+      .map(
+        ({
+          model,
+          table,
+          kind,
+          omittedColumns,
+          embedded,
+          computed,
+          narrowed,
+          nonNullable,
+        }) => ({
+          model,
+          table,
+          kind,
+          omittedColumns,
+          embedded,
+          computed,
+          narrowed,
+          nonNullable,
+        }),
+      )
+    const none = {
+      computed: undefined,
+      narrowed: undefined,
+      nonNullable: undefined,
+    }
+
+    expect(rules).toEqual([
+      {
+        model: 'Models.PurchaseOrderResponse',
+        table: 'purchaseOrders',
+        kind: 'response',
+        omittedColumns: [],
+        embedded: ['items'],
+        ...none,
+      },
+      {
+        model: 'Models.PurchaseOrderCreateRequest',
+        table: 'purchaseOrders',
+        kind: 'create',
+        omittedColumns: [...managed, 'status', 'deliveryNotes'],
+        embedded: ['items'],
+        ...none,
+      },
+      {
+        model: 'Models.PurchaseOrderUpdateRequest',
+        table: 'purchaseOrders',
+        kind: 'update',
+        omittedColumns: [
+          ...managed,
+          'salonId',
+          'supplier',
+          'taxAmount',
+          'shippingCost',
+          'paymentTerms',
+        ],
+        embedded: undefined,
+        ...none,
+      },
+      {
+        model: 'Models.PurchaseOrderItem',
+        table: 'purchaseOrderItems',
+        kind: 'response',
+        omittedColumns: ['id', 'purchaseOrderId', 'sortOrder'],
+        embedded: undefined,
+        ...none,
+      },
+      {
+        model: 'Models.PurchaseOrderItemCreateRequest',
+        table: 'purchaseOrderItems',
+        kind: 'create',
+        omittedColumns: [
+          'id',
+          'purchaseOrderId',
+          'productCode',
+          'productName',
+          'unit',
+          'totalPrice',
+          'sortOrder',
+        ],
+        embedded: undefined,
+        ...none,
+        nonNullable: ['inventoryId'],
+      },
+    ])
+  })
+
+  it('lets nothing but the stock row of a new item of a purchase order leave out the null of its column', () => {
+    const nonNullable = modelRules
+      .filter((modelRule) => modelRule.nonNullable !== undefined)
+      .map(({ model, nonNullable }) => [model, nonNullable])
+
+    expect(nonNullable).toEqual([
+      ['Models.PurchaseOrderItemCreateRequest', ['inventoryId']],
     ])
   })
 })

@@ -126,6 +126,16 @@ export const notificationType = pgEnum('notification_type', [
   'review_request',
 ])
 
+export const orderStatus = pgEnum('order_status', [
+  'draft',
+  'pending',
+  'approved',
+  'ordered',
+  'shipped',
+  'delivered',
+  'cancelled',
+])
+
 export const paymentMethod = pgEnum('payment_method', [
   'cash',
   'credit_card',
@@ -1266,6 +1276,115 @@ export const products = pgTable(
         table.productCode.asc().nullsLast().op('text_ops'),
       )
       .where(sql`("deletedAt" IS NULL)`),
+  ],
+)
+
+export const purchaseOrderItems = pgTable(
+  'purchase_order_items',
+  {
+    id: uuid().defaultRandom().primaryKey().notNull(),
+    purchaseOrderId: uuid().notNull(),
+    inventoryId: uuid(),
+    productCode: varchar({ length: 100 }).notNull(),
+    productName: varchar({ length: 255 }).notNull(),
+    quantity: numeric({ precision: 10, scale: 2 }).notNull(),
+    unit: varchar({ length: 20 }).notNull(),
+    unitPrice: integer().notNull(),
+    totalPrice: integer().notNull(),
+    notes: text(),
+    sortOrder: integer().notNull(),
+  },
+  (table) => [
+    check(
+      'purchase_order_items_amounts',
+      sql`(quantity > (0)::numeric) AND ("unitPrice" >= 0) AND ("sortOrder" >= 0) AND (("totalPrice")::numeric = round((("unitPrice")::numeric * quantity)))`,
+    ),
+    foreignKey({
+      columns: [table.inventoryId],
+      foreignColumns: [inventory.id],
+      name: 'purchase_order_items_inventory_id_fk',
+    }).onDelete('set null'),
+    foreignKey({
+      columns: [table.purchaseOrderId],
+      foreignColumns: [purchaseOrders.id],
+      name: 'purchase_order_items_purchase_order_id_fk',
+    }).onDelete('cascade'),
+    index('idx_purchase_order_items_inventory_id').using(
+      'btree',
+      table.inventoryId.asc().nullsLast().op('uuid_ops'),
+    ),
+    unique('purchase_order_items_order_inventory_unique').on(
+      table.purchaseOrderId,
+      table.inventoryId,
+    ),
+    unique('purchase_order_items_order_sort_unique').on(
+      table.purchaseOrderId,
+      table.sortOrder,
+    ),
+  ],
+)
+
+export const purchaseOrders = pgTable(
+  'purchase_orders',
+  {
+    id: uuid().defaultRandom().primaryKey().notNull(),
+    salonId: uuid().notNull(),
+    orderNumber: varchar({ length: 50 }).notNull(),
+    supplier: varchar({ length: 255 }).notNull(),
+    status: orderStatus().default('draft').notNull(),
+    subtotal: integer().notNull(),
+    taxAmount: integer().notNull(),
+    shippingCost: integer(),
+    totalAmount: integer().notNull(),
+    orderDate: timestamp({ withTimezone: true, mode: 'string' })
+      .defaultNow()
+      .notNull(),
+    expectedDelivery: timestamp({ withTimezone: true, mode: 'string' }),
+    actualDelivery: timestamp({ withTimezone: true, mode: 'string' }),
+    deliveryNotes: text(),
+    paymentTerms: text(),
+    notes: text(),
+    approvedBy: uuid(),
+    approvedAt: timestamp({ withTimezone: true, mode: 'string' }),
+    cancelledAt: timestamp({ withTimezone: true, mode: 'string' }),
+    cancellationReason: text(),
+    createdBy: uuid(),
+    createdAt: timestamp({ withTimezone: true, mode: 'string' })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp({ withTimezone: true, mode: 'string' })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    check(
+      'purchase_orders_amounts',
+      sql`(subtotal >= 0) AND ("taxAmount" >= 0) AND (("shippingCost" IS NULL) OR ("shippingCost" >= 0)) AND (("totalAmount")::bigint = (((subtotal)::bigint + ("taxAmount")::bigint) + (COALESCE("shippingCost", 0))::bigint))`,
+    ),
+    check(
+      'purchase_orders_approval',
+      sql`(("approvedBy" IS NULL) OR ("approvedAt" IS NOT NULL)) AND ((status <> ALL (ARRAY['draft'::order_status, 'pending'::order_status])) OR ("approvedAt" IS NULL)) AND ((status <> ALL (ARRAY['approved'::order_status, 'ordered'::order_status, 'shipped'::order_status, 'delivered'::order_status])) OR ("approvedAt" IS NOT NULL))`,
+    ),
+    check(
+      'purchase_orders_cancellation',
+      sql`((status = 'cancelled'::order_status) = ("cancelledAt" IS NOT NULL)) AND (("cancelledAt" IS NULL) = ("cancellationReason" IS NULL))`,
+    ),
+    check(
+      'purchase_orders_delivery',
+      sql`(status = 'delivered'::order_status) = ("actualDelivery" IS NOT NULL)`,
+    ),
+    foreignKey({
+      columns: [table.salonId],
+      foreignColumns: [salons.id],
+      name: 'purchase_orders_salon_id_fk',
+    }).onDelete('cascade'),
+    index('idx_purchase_orders_salon_order_date').using(
+      'btree',
+      table.salonId.asc().nullsLast().op('uuid_ops'),
+      table.orderDate.asc().nullsLast().op('timestamptz_ops'),
+      table.id.asc().nullsLast().op('uuid_ops'),
+    ),
+    unique('purchase_orders_order_number_unique').on(table.orderNumber),
   ],
 )
 

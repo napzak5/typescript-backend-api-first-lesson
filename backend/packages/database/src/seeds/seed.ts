@@ -139,6 +139,8 @@ export async function truncateAll(
           payment_transactions,
           sales,
           payment_methods,
+          purchase_order_items,
+          purchase_orders,
           inventory_transactions,
           inventory,
           products,
@@ -186,6 +188,7 @@ export async function truncateAll(
       db.delete(schema.bookingStatusHistories),
       db.delete(schema.reviewHelpfulVotes),
       db.delete(schema.reviewReports),
+      db.delete(schema.purchaseOrderItems),
     ])
 
     // Level 2: Tables that Level 1 tables depend on
@@ -195,6 +198,7 @@ export async function truncateAll(
       db.delete(schema.staffPerformances),
       db.delete(schema.paymentTransactions),
       db.delete(schema.inventoryTransactions),
+      db.delete(schema.purchaseOrders),
       db.delete(schema.bookingServices),
       db.delete(schema.reviews),
     ])

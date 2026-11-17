@@ -940,10 +940,32 @@ const inventoryManagedColumns = [
 ]
 
 /**
- * The products of a salon, the stock of a product at a salon and its stock
- * movements. A deleted product is not shown. Stock movements are written by
- * actions (movement, stock count, receiving a purchase order), so
- * `inventoryTransactions` has only a response model.
+ * Columns of `purchase_orders` that a request never writes: the number, the
+ * amounts the server works out, the date, and what the actions write
+ * (approval, cancellation, delivery) and who created the order.
+ */
+const purchaseOrderManagedColumns = [
+  'id',
+  'orderNumber',
+  'subtotal',
+  'totalAmount',
+  'orderDate',
+  'actualDelivery',
+  'approvedBy',
+  'approvedAt',
+  'cancelledAt',
+  'cancellationReason',
+  'createdBy',
+  'createdAt',
+  'updatedAt',
+]
+
+/**
+ * The products of a salon, the stock of a product at a salon, its stock
+ * movements and the purchase orders of a salon. A deleted product is not
+ * shown. Stock movements are written by actions (movement, stock count,
+ * receiving a purchase order), so `inventoryTransactions` has only a
+ * response model.
  */
 const inventoryRules: ModelRule[] = [
   {
@@ -988,6 +1010,59 @@ const inventoryRules: ModelRule[] = [
     table: 'inventoryTransactions',
     kind: 'response',
     omittedColumns: [],
+  },
+  {
+    model: 'Models.PurchaseOrderResponse',
+    table: 'purchaseOrders',
+    kind: 'response',
+    embedded: ['items'],
+    omittedColumns: [],
+  },
+  {
+    model: 'Models.PurchaseOrderCreateRequest',
+    table: 'purchaseOrders',
+    kind: 'create',
+    embedded: ['items'],
+    // The status of a new order is draft; delivery notes come later.
+    omittedColumns: [...purchaseOrderManagedColumns, 'status', 'deliveryNotes'],
+  },
+  {
+    // The items, the supplier and the amounts of an order are not changed.
+    model: 'Models.PurchaseOrderUpdateRequest',
+    table: 'purchaseOrders',
+    kind: 'update',
+    omittedColumns: [
+      ...purchaseOrderManagedColumns,
+      'salonId',
+      'supplier',
+      'taxAmount',
+      'shippingCost',
+      'paymentTerms',
+    ],
+  },
+  {
+    model: 'Models.PurchaseOrderItem',
+    table: 'purchaseOrderItems',
+    kind: 'response',
+    omittedColumns: ['id', 'purchaseOrderId', 'sortOrder'],
+  },
+  {
+    // The product is copied from the stock row, the total worked out, and
+    // the place is that of the request. A new item names its stock row;
+    // the column is null once the row is removed.
+    model: 'Models.PurchaseOrderItemCreateRequest',
+    table: 'purchaseOrderItems',
+    kind: 'create',
+    nonNullable: ['inventoryId'],
+    omittedColumns: [
+      'id',
+      'purchaseOrderId',
+      'productCode',
+      'productName',
+      'unit',
+      'totalPrice',
+      'sortOrder',
+    ],
   },
 ]
 
