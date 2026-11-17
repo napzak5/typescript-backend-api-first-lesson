@@ -24,7 +24,7 @@
 | 紐づいたアカウント（`StaffAccounts` の取得、ロールの変更、紐づけの解除） | 実装済み |
 | スタッフ本人によるサロンからの離脱、スタッフ本人による連絡先の変更と勤務スケジュールの変更、顧客のアカウントをスタッフのアカウントにすること、複数のサロンに属するアカウント | 未実装。コントラクトにオペレーションがない |
 
-スタッフのコントラクトに定義したオペレーションは、すべて実装済みです。`staff_skills`（担当できるサービス）と `staff_performances`（実績）は、テーブルだけがあり、コントラクトにオペレーションがありません。
+スタッフのコントラクトに定義したオペレーションは、すべて実装済みです。
 
 ## オペレーションと権限
 
@@ -117,7 +117,7 @@
 | `canReceiveBookings` / `isActive` | 真偽値 |
 
 - **リクエストで変えられない項目**: `userId`（ログインアカウントとの紐づけ）と、所属サロン（登録はパスの `salonId` が決め、あとから変えられない）。本文に `userId` や `salonId` を書くと 400（`unrecognized_keys`）です
-- **レスポンスに出さない項目**: `awards`（構造の決まっていない jsonb）と `deletedAt`。レスポンス（`StaffResponse`）は勤務スケジュールも含みません。スケジュールは[別のルート](#勤務スケジュール)で読みます
+- **レスポンスに出さない項目**: `deletedAt`。レスポンス（`StaffResponse`）は勤務スケジュールも含みません。スケジュールは[別のルート](#勤務スケジュール)で読みます
 - `isActive` と `canReceiveBookings` は、互いに独立した属性として保存します。`isActive` は、アカウントの権限（[ログインアカウントへの影響](#ログインアカウントへの影響)）と、顧客に見せるかどうか（[見せるスタッフ](#見せるスタッフ)）に効きます。サロンが予約台帳に入れる予約は、どちらの値も確かめません。無効のスタッフにも、予約を受けないスタッフにも入れられます（[予約台帳](./bookings.md#サロンが台帳に入れる予約はサロンの判断)）。空き枠の一覧は、有効（`isActive`）で、予約を受ける（`canReceiveBookings`）スタッフの枠だけを返します（[予約台帳](./bookings.md#受け付けの設定)）。顧客が自分で入れられるのは、その枠だけです
 
 ### 一意性の範囲
@@ -136,7 +136,7 @@
 
 - 論理削除です（`deletedAt` を設定し、行は残す）。削除したスタッフは、台帳とプロフィールの、一覧と取得の対象外になります
 - 削除したスタッフのメールアドレスは、別のスタッフに使えるようになります。スタッフコードは使えないままです
-- 勤務スケジュール（`staff_schedules`）、スキル（`staff_skills`）、予約などの行は残ります。削除したスタッフのスケジュールは、読むことも置き換えることもできません（404）
+- 勤務スケジュール（`staff_schedules`）、予約などの行は残ります。削除したスタッフのスケジュールは、読むことも置き換えることもできません（404）
 - そのスタッフに紐づくアカウントは、サロンへの権限を失います（[ログインアカウントへの影響](#ログインアカウントへの影響)）。`users.staffId` は、削除したスタッフを指したまま残ります。そのアカウントは、ほかのスタッフへの招待に[参加](#参加)できます
 - そのスタッフが持っている招待は、使えなくなります（[招待が使える間](#招待が使える間)）。`staff_invitations` の行は残ります
 - 顧客の好み設定（希望するスタッフ、避けるスタッフ）に保存されている、そのスタッフの ID は残ります。好み設定の取得は、そのまま返します。削除したスタッフを、あとから好み設定に指定することはできません（400。[スタッフの確認](./customers.md#スタッフの確認)）
@@ -163,7 +163,7 @@
 | | 項目 |
 |---|---|
 | 見せる（`StaffProfileResponse` の 11 項目） | `id`、`salonId`、`displayName`、`level`、`position`、`specialties`、`bio`、`imageUrl`、`yearsOfExperience`、`certifications`、`canReceiveBookings` |
-| 見せない | 氏名とその読み（`firstName`、`lastName`、`firstNameKana`、`lastNameKana`）、連絡先（`email`、`phoneNumber`、`alternativePhone`）、雇用の情報（`staffCode`、`hireDate`、`employmentType`、`baseSalary`、`commissionRate`）、予約の受け方の設定（`maxConcurrentBookings`、`bufferTimeBefore`、`bufferTimeAfter`）、`userId`、`isActive`、`createdAt`、`updatedAt`。台帳のレスポンスにも出ない `awards` と `deletedAt` |
+| 見せない | 氏名とその読み（`firstName`、`lastName`、`firstNameKana`、`lastNameKana`）、連絡先（`email`、`phoneNumber`、`alternativePhone`）、雇用の情報（`staffCode`、`hireDate`、`employmentType`、`baseSalary`、`commissionRate`）、予約の受け方の設定（`maxConcurrentBookings`、`bufferTimeBefore`、`bufferTimeAfter`）、`userId`、`isActive`、`createdAt`、`updatedAt`。台帳のレスポンスにも出ない `deletedAt` |
 
 - 名前は `displayName`（顧客に見せる名前）だけです。本名を見せるかどうかは、サロンが `displayName` に何を書くかで決まります
 - 項目名、型、null の扱いは台帳と同じです。`position`、`bio`、`imageUrl`、`yearsOfExperience` は null があり、`specialties` と `certifications` は、なければ空配列です

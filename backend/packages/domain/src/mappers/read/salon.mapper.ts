@@ -54,7 +54,7 @@ const toApiSalon = (
   salon: DbSalon,
   openingHours: DbOpeningHours[],
 ): Result<ApiSalonResponse, DomainError> => {
-  const { deletedAt, cancellationPolicy, bookingPolicy, ...columns } = salon
+  const { deletedAt, ...columns } = salon
 
   return Result.mapError(
     Result.map(

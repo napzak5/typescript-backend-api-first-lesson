@@ -19,8 +19,6 @@ CREATE TYPE "public"."inventory_alert_severity" AS ENUM('info', 'warning', 'crit
 CREATE TYPE "public"."inventory_alert_type" AS ENUM('low_stock', 'expiring', 'expired', 'overstock');
 CREATE TYPE "public"."inventory_transaction_type" AS ENUM('purchase', 'sale', 'use', 'adjustment', 'return', 'disposal', 'transfer');
 CREATE TYPE "public"."membership_tier" AS ENUM('regular', 'silver', 'gold', 'platinum', 'vip');
-CREATE TYPE "public"."notification_channel" AS ENUM('email', 'sms', 'push', 'line');
-CREATE TYPE "public"."notification_type" AS ENUM('booking_reminder', 'booking_confirmation', 'booking_change', 'promotion', 'birthday', 'points_expiry', 'review_request');
 CREATE TYPE "public"."order_status" AS ENUM('draft', 'pending', 'approved', 'ordered', 'shipped', 'delivered', 'cancelled');
 CREATE TYPE "public"."payment_method" AS ENUM('cash', 'credit_card', 'debit_card', 'e_money', 'qr_payment', 'bank_transfer', 'point');
 CREATE TYPE "public"."payment_status" AS ENUM('pending', 'processing', 'completed', 'failed', 'refunded', 'partial_refund');
@@ -49,7 +47,6 @@ CREATE TABLE "booking_services" (
 	"price" integer NOT NULL,
 	"discountAmount" integer DEFAULT 0 NOT NULL,
 	"finalPrice" integer NOT NULL,
-	"selectedOptions" jsonb,
 	"isCompleted" boolean DEFAULT false NOT NULL,
 	"completedAt" timestamp with time zone,
 	"notes" text,
@@ -226,32 +223,6 @@ CREATE TABLE "customers" (
 	CONSTRAINT "customers_visit_days_go_with_visits" CHECK ((("visitCount" = 0) = ("firstVisitDate" IS NULL)) AND (("firstVisitDate" IS NULL) = ("lastVisitDate" IS NULL)) AND (("firstVisitDate" IS NULL) OR ("firstVisitDate" <= "lastVisitDate")))
 );
 
-CREATE TABLE "daily_summaries" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"salonId" uuid NOT NULL,
-	"summaryDate" date NOT NULL,
-	"totalBookings" integer DEFAULT 0 NOT NULL,
-	"completedBookings" integer DEFAULT 0 NOT NULL,
-	"cancelledBookings" integer DEFAULT 0 NOT NULL,
-	"noShowBookings" integer DEFAULT 0 NOT NULL,
-	"uniqueCustomers" integer DEFAULT 0 NOT NULL,
-	"newCustomers" integer DEFAULT 0 NOT NULL,
-	"returningCustomers" integer DEFAULT 0 NOT NULL,
-	"totalSales" integer DEFAULT 0 NOT NULL,
-	"serviceSales" integer DEFAULT 0 NOT NULL,
-	"productSales" integer DEFAULT 0 NOT NULL,
-	"averageTicket" integer DEFAULT 0 NOT NULL,
-	"activeStaff" integer DEFAULT 0 NOT NULL,
-	"totalServiceHours" numeric(10, 2) DEFAULT '0' NOT NULL,
-	"utilizationRate" numeric(5, 2) DEFAULT '0' NOT NULL,
-	"topService" jsonb,
-	"topStaff" jsonb,
-	"topProduct" jsonb,
-	"createdAt" timestamp with time zone DEFAULT now() NOT NULL,
-	"updatedAt" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "daily_summaries_unique" UNIQUE("salonId","summaryDate")
-);
-
 CREATE TABLE "inventory" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"salonId" uuid NOT NULL,
@@ -325,46 +296,6 @@ CREATE TABLE "medical_charts" (
 	"updatedAt" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "medical_charts_customer_id_unique" UNIQUE("customerId"),
 	CONSTRAINT "medical_charts_lists" CHECK ((jsonb_typeof("previousTreatments") = 'array'::text) AND (array_position("preferredProducts", NULL::text) IS NULL) AND (array_position("avoidProducts", NULL::text) IS NULL))
-);
-
-CREATE TABLE "membership_tiers" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"salonId" uuid NOT NULL,
-	"tier" "membership_tier" NOT NULL,
-	"name" varchar(100) NOT NULL,
-	"description" text,
-	"requiredPoints" integer DEFAULT 0 NOT NULL,
-	"requiredAmount" integer DEFAULT 0 NOT NULL,
-	"discountRate" numeric(5, 2) DEFAULT '0' NOT NULL,
-	"pointMultiplier" numeric(3, 1) DEFAULT '1.0' NOT NULL,
-	"benefits" jsonb DEFAULT '[]'::jsonb,
-	"color" varchar(7),
-	"iconUrl" varchar(500),
-	"sortOrder" integer DEFAULT 0 NOT NULL,
-	"isActive" boolean DEFAULT true NOT NULL,
-	"createdAt" timestamp with time zone DEFAULT now() NOT NULL,
-	"updatedAt" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "membership_tiers_unique" UNIQUE("salonId","tier")
-);
-
-CREATE TABLE "notification_logs" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"recipientId" uuid NOT NULL,
-	"recipientType" varchar(20) NOT NULL,
-	"notificationType" "notification_type" NOT NULL,
-	"subject" varchar(255),
-	"content" text NOT NULL,
-	"templateId" varchar(100),
-	"variables" jsonb,
-	"status" varchar(20) NOT NULL,
-	"sentAt" timestamp with time zone,
-	"deliveredAt" timestamp with time zone,
-	"failedAt" timestamp with time zone,
-	"errorMessage" text,
-	"referenceType" varchar(50),
-	"referenceId" uuid,
-	"createdAt" timestamp with time zone DEFAULT now() NOT NULL,
-	"notificationChannel" "notification_channel" NOT NULL
 );
 
 CREATE TABLE "opening_hours" (
@@ -653,8 +584,6 @@ CREATE TABLE "salons" (
 	"timezone" varchar(50) DEFAULT 'Asia/Tokyo' NOT NULL,
 	"currency" varchar(3) DEFAULT 'JPY' NOT NULL,
 	"taxRate" numeric(5, 2) DEFAULT '10.00' NOT NULL,
-	"cancellationPolicy" jsonb,
-	"bookingPolicy" jsonb,
 	"isActive" boolean DEFAULT true NOT NULL,
 	"deletedAt" timestamp with time zone,
 	"createdAt" timestamp with time zone DEFAULT now() NOT NULL,
@@ -717,7 +646,6 @@ CREATE TABLE "services" (
 	"allowOnlineBooking" boolean DEFAULT true NOT NULL,
 	"isPackage" boolean DEFAULT false NOT NULL,
 	"packageServiceIds" uuid[] NOT NULL,
-	"requiredProducts" jsonb DEFAULT '[]'::jsonb,
 	"tags" text[] NOT NULL,
 	"sortOrder" integer DEFAULT 0 NOT NULL,
 	"isActive" boolean DEFAULT true NOT NULL,
@@ -768,9 +696,8 @@ CREATE TABLE "staff" (
 	"specialties" text[] NOT NULL,
 	"bio" text,
 	"imageUrl" varchar(500),
-	"yearsOfExperience" integer DEFAULT 0,
+	"yearsOfExperience" integer,
 	"certifications" text[] NOT NULL,
-	"awards" jsonb DEFAULT '[]'::jsonb,
 	"hireDate" date,
 	"employmentType" varchar(50),
 	"baseSalary" integer,
@@ -805,34 +732,6 @@ CREATE TABLE "staff_invitations" (
 	CONSTRAINT "staff_invitations_email_lower_case" CHECK ((email)::text = lower((email)::text))
 );
 
-CREATE TABLE "staff_performances" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"staffId" uuid NOT NULL,
-	"periodStart" date NOT NULL,
-	"periodEnd" date NOT NULL,
-	"periodType" varchar(20) NOT NULL,
-	"totalBookings" integer DEFAULT 0 NOT NULL,
-	"completedBookings" integer DEFAULT 0 NOT NULL,
-	"cancelledBookings" integer DEFAULT 0 NOT NULL,
-	"rebookingRate" numeric(5, 2) DEFAULT '0' NOT NULL,
-	"totalRevenue" integer DEFAULT 0 NOT NULL,
-	"serviceRevenue" integer DEFAULT 0 NOT NULL,
-	"productRevenue" integer DEFAULT 0 NOT NULL,
-	"averageTicket" integer DEFAULT 0 NOT NULL,
-	"commission" integer DEFAULT 0 NOT NULL,
-	"totalHoursWorked" numeric(10, 2) DEFAULT '0' NOT NULL,
-	"totalServiceHours" numeric(10, 2) DEFAULT '0' NOT NULL,
-	"utilizationRate" numeric(5, 2) DEFAULT '0' NOT NULL,
-	"uniqueCustomers" integer DEFAULT 0 NOT NULL,
-	"newCustomers" integer DEFAULT 0 NOT NULL,
-	"returningCustomers" integer DEFAULT 0 NOT NULL,
-	"averageRating" numeric(3, 2),
-	"reviewCount" integer DEFAULT 0 NOT NULL,
-	"createdAt" timestamp with time zone DEFAULT now() NOT NULL,
-	"updatedAt" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "staff_performances_unique" UNIQUE("staffId","periodStart","periodType")
-);
-
 CREATE TABLE "staff_schedules" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"staffId" uuid NOT NULL,
@@ -852,19 +751,6 @@ CREATE TABLE "staff_schedules" (
 	CONSTRAINT "staff_schedules_end_after_start" CHECK ("startTime" < "endTime"),
 	CONSTRAINT "staff_schedules_times_when_available" CHECK (("isAvailable" AND ("startTime" IS NOT NULL) AND ("endTime" IS NOT NULL)) OR ((NOT "isAvailable") AND ("startTime" IS NULL) AND ("endTime" IS NULL) AND ("breakStartTime" IS NULL) AND ("breakEndTime" IS NULL))),
 	CONSTRAINT "staff_schedules_weekly_or_single_day" CHECK (("isRecurring" AND ("dayOfWeek" IS NOT NULL) AND (date IS NULL)) OR ((NOT "isRecurring") AND ("dayOfWeek" IS NULL) AND (date IS NOT NULL)))
-);
-
-CREATE TABLE "staff_skills" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"staffId" uuid NOT NULL,
-	"serviceId" uuid NOT NULL,
-	"proficiencyLevel" integer DEFAULT 3 NOT NULL,
-	"certificateDate" date,
-	"certificateUrl" varchar(500),
-	"notes" text,
-	"createdAt" timestamp with time zone DEFAULT now() NOT NULL,
-	"updatedAt" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "staff_skills_unique" UNIQUE("staffId","serviceId")
 );
 
 CREATE TABLE "treatment_materials" (
@@ -944,7 +830,6 @@ CREATE TABLE "users" (
 	"lastLoginIp" varchar(50),
 	"customerId" uuid,
 	"staffId" uuid,
-	"metadata" jsonb DEFAULT '{}'::jsonb,
 	"deletedAt" timestamp with time zone,
 	"createdAt" timestamp with time zone DEFAULT now() NOT NULL,
 	"updatedAt" timestamp with time zone DEFAULT now() NOT NULL,
@@ -972,7 +857,6 @@ ALTER TABLE "customer_points" ADD CONSTRAINT "customer_points_customer_id_fk" FO
 ALTER TABLE "customer_preferences" ADD CONSTRAINT "customer_preferences_customer_id_fk" FOREIGN KEY ("customerId") REFERENCES "public"."customers"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "customer_preferences" ADD CONSTRAINT "customer_preferences_staff_id_fk" FOREIGN KEY ("preferredStaffId") REFERENCES "public"."staff"("id") ON DELETE set null ON UPDATE no action;
 ALTER TABLE "customers" ADD CONSTRAINT "customers_referred_by_fk" FOREIGN KEY ("referredBy") REFERENCES "public"."customers"("id") ON DELETE set null ON UPDATE no action;
-ALTER TABLE "daily_summaries" ADD CONSTRAINT "daily_summaries_salon_id_fk" FOREIGN KEY ("salonId") REFERENCES "public"."salons"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "inventory" ADD CONSTRAINT "inventory_product_id_fk" FOREIGN KEY ("productId") REFERENCES "public"."products"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "inventory" ADD CONSTRAINT "inventory_salon_id_fk" FOREIGN KEY ("salonId") REFERENCES "public"."salons"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "inventory_alert_acknowledgements" ADD CONSTRAINT "inventory_alert_acknowledgements_inventory_id_fk" FOREIGN KEY ("inventoryId") REFERENCES "public"."inventory"("id") ON DELETE cascade ON UPDATE no action;
@@ -982,7 +866,6 @@ ALTER TABLE "inventory_transactions" ADD CONSTRAINT "inventory_transactions_inve
 ALTER TABLE "inventory_transactions" ADD CONSTRAINT "inventory_transactions_product_id_fk" FOREIGN KEY ("productId") REFERENCES "public"."products"("id") ON DELETE restrict ON UPDATE no action;
 ALTER TABLE "inventory_transactions" ADD CONSTRAINT "inventory_transactions_salon_id_fk" FOREIGN KEY ("salonId") REFERENCES "public"."salons"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "medical_charts" ADD CONSTRAINT "medical_charts_customer_id_fk" FOREIGN KEY ("customerId") REFERENCES "public"."customers"("id") ON DELETE cascade ON UPDATE no action;
-ALTER TABLE "membership_tiers" ADD CONSTRAINT "membership_tiers_salon_id_fk" FOREIGN KEY ("salonId") REFERENCES "public"."salons"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "opening_hours" ADD CONSTRAINT "opening_hours_salon_id_fk" FOREIGN KEY ("salonId") REFERENCES "public"."salons"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "payment_methods" ADD CONSTRAINT "payment_methods_salon_id_fk" FOREIGN KEY ("salonId") REFERENCES "public"."salons"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "payment_transactions" ADD CONSTRAINT "payment_transactions_payment_method_id_fk" FOREIGN KEY ("paymentMethodId") REFERENCES "public"."payment_methods"("id") ON DELETE restrict ON UPDATE no action;
@@ -1012,9 +895,7 @@ ALTER TABLE "services" ADD CONSTRAINT "services_salon_id_fk" FOREIGN KEY ("salon
 ALTER TABLE "sessions" ADD CONSTRAINT "sessions_user_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "staff" ADD CONSTRAINT "staff_salon_id_fk" FOREIGN KEY ("salonId") REFERENCES "public"."salons"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "staff_invitations" ADD CONSTRAINT "staff_invitations_staff_id_fk" FOREIGN KEY ("staffId") REFERENCES "public"."staff"("id") ON DELETE cascade ON UPDATE no action;
-ALTER TABLE "staff_performances" ADD CONSTRAINT "staff_performances_staff_id_fk" FOREIGN KEY ("staffId") REFERENCES "public"."staff"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "staff_schedules" ADD CONSTRAINT "staff_schedules_staff_id_fk" FOREIGN KEY ("staffId") REFERENCES "public"."staff"("id") ON DELETE cascade ON UPDATE no action;
-ALTER TABLE "staff_skills" ADD CONSTRAINT "staff_skills_staff_id_fk" FOREIGN KEY ("staffId") REFERENCES "public"."staff"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "treatment_materials" ADD CONSTRAINT "treatment_materials_product_id_fk" FOREIGN KEY ("productId") REFERENCES "public"."products"("id") ON DELETE restrict ON UPDATE no action;
 ALTER TABLE "treatment_materials" ADD CONSTRAINT "treatment_materials_treatment_record_id_fk" FOREIGN KEY ("treatmentRecordId") REFERENCES "public"."treatment_records"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "treatment_photos" ADD CONSTRAINT "treatment_photos_treatment_record_id_fk" FOREIGN KEY ("treatmentRecordId") REFERENCES "public"."treatment_records"("id") ON DELETE cascade ON UPDATE no action;
@@ -1047,8 +928,6 @@ CREATE INDEX "idx_customers_membership_tier" ON "customers" USING btree ("member
 CREATE INDEX "idx_customers_phone_number" ON "customers" USING btree ("phoneNumber" text_ops);
 CREATE UNIQUE INDEX "customers_email_unique" ON "customers" USING btree ("email" text_ops) WHERE ("deletedAt" IS NULL);
 CREATE UNIQUE INDEX "customers_user_unique" ON "customers" USING btree ("userId" uuid_ops) WHERE ("deletedAt" IS NULL);
-CREATE INDEX "idx_daily_summaries_salon_id" ON "daily_summaries" USING btree ("salonId" uuid_ops);
-CREATE INDEX "idx_daily_summaries_summary_date" ON "daily_summaries" USING btree ("summaryDate" date_ops);
 CREATE INDEX "idx_inventory_expiry_date" ON "inventory" USING btree ("expiryDate" date_ops);
 CREATE INDEX "idx_inventory_lot_number" ON "inventory" USING btree ("lotNumber" text_ops);
 CREATE INDEX "idx_inventory_product_id" ON "inventory" USING btree ("productId" uuid_ops);
@@ -1063,10 +942,6 @@ CREATE INDEX "idx_inventory_transactions_product_time" ON "inventory_transaction
 CREATE INDEX "idx_inventory_transactions_salon_id" ON "inventory_transactions" USING btree ("salonId" uuid_ops);
 CREATE INDEX "idx_inventory_transactions_transaction_type" ON "inventory_transactions" USING btree ("transactionType" enum_ops);
 CREATE INDEX "idx_medical_charts_created_at" ON "medical_charts" USING btree ("createdAt" timestamptz_ops,"id" uuid_ops);
-CREATE INDEX "idx_membership_tiers_salon_id" ON "membership_tiers" USING btree ("salonId" uuid_ops);
-CREATE INDEX "idx_notification_logs_created_at" ON "notification_logs" USING btree ("createdAt" timestamptz_ops);
-CREATE INDEX "idx_notification_logs_notification_type" ON "notification_logs" USING btree ("notificationType" enum_ops);
-CREATE INDEX "idx_notification_logs_recipient_id" ON "notification_logs" USING btree ("recipientId" uuid_ops);
 CREATE INDEX "idx_opening_hours_date" ON "opening_hours" USING btree ("date" date_ops);
 CREATE INDEX "idx_opening_hours_salon_id" ON "opening_hours" USING btree ("salonId" uuid_ops);
 CREATE UNIQUE INDEX "opening_hours_salon_date_unique" ON "opening_hours" USING btree ("salonId" uuid_ops,"date" date_ops);
@@ -1118,16 +993,11 @@ CREATE INDEX "idx_staff_email" ON "staff" USING btree ("email" text_ops);
 CREATE INDEX "idx_staff_salon_id" ON "staff" USING btree ("salonId" uuid_ops);
 CREATE UNIQUE INDEX "staff_email_salon_unique" ON "staff" USING btree ("salonId" uuid_ops,"email" text_ops) WHERE ("deletedAt" IS NULL);
 CREATE UNIQUE INDEX "staff_user_unique" ON "staff" USING btree ("userId" uuid_ops) WHERE ("deletedAt" IS NULL);
-CREATE INDEX "idx_staff_performances_period_start" ON "staff_performances" USING btree ("periodStart" date_ops);
-CREATE INDEX "idx_staff_performances_period_type" ON "staff_performances" USING btree ("periodType" text_ops);
-CREATE INDEX "idx_staff_performances_staff_id" ON "staff_performances" USING btree ("staffId" uuid_ops);
 CREATE INDEX "idx_staff_schedules_date" ON "staff_schedules" USING btree ("date" date_ops);
 CREATE INDEX "idx_staff_schedules_day_of_week" ON "staff_schedules" USING btree ("dayOfWeek" enum_ops);
 CREATE INDEX "idx_staff_schedules_staff_id" ON "staff_schedules" USING btree ("staffId" uuid_ops);
 CREATE UNIQUE INDEX "staff_schedules_single_day_unique" ON "staff_schedules" USING btree ("staffId" uuid_ops,"date" date_ops) WHERE (NOT "isRecurring");
 CREATE UNIQUE INDEX "staff_schedules_weekly_unique" ON "staff_schedules" USING btree ("staffId" uuid_ops,"dayOfWeek" enum_ops) WHERE "isRecurring";
-CREATE INDEX "idx_staff_skills_service_id" ON "staff_skills" USING btree ("serviceId" uuid_ops);
-CREATE INDEX "idx_staff_skills_staff_id" ON "staff_skills" USING btree ("staffId" uuid_ops);
 CREATE INDEX "idx_treatment_materials_product_id" ON "treatment_materials" USING btree ("productId" uuid_ops);
 CREATE INDEX "idx_treatment_materials_treatment_record_id" ON "treatment_materials" USING btree ("treatmentRecordId" uuid_ops);
 CREATE INDEX "idx_treatment_records_booking_id" ON "treatment_records" USING btree ("bookingId" uuid_ops);

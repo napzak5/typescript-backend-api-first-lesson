@@ -94,7 +94,6 @@ export const dbService = (overrides: Partial<DbService> = {}): DbService => ({
   bookingRequirements: [],
   isPackage: false,
   packageServiceIds: [],
-  requiredProducts: [],
   tags: [],
   sortOrder: 10,
   serviceStatus: 'active',

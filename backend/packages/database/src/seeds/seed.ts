@@ -6,7 +6,6 @@ import { seedBookings } from './seed-data/bookings'
 import { seedCustomerAllergies } from './seed-data/customer-allergies'
 import { seedCustomers } from './seed-data/customers'
 import { seedMedicalCharts } from './seed-data/medical-charts'
-import { seedMembershipTiers } from './seed-data/membership-tiers'
 import { seedOpeningHours } from './seed-data/opening-hours'
 import { seedPaymentMethods } from './seed-data/payment-methods'
 import { seedProducts } from './seed-data/products'
@@ -79,9 +78,6 @@ export async function seed(
       managerUserId: userResult.managerUserId,
     })
 
-    console.log('Seeding membership tiers...')
-    await seedMembershipTiers(db, salonIds)
-
     console.log('Seeding service categories...')
     const categoryResult = await seedServiceCategories(db, salonIds)
 
@@ -143,9 +139,7 @@ export async function truncateAll(
           treatment_photos,
           treatment_materials,
           treatment_records,
-          staff_skills,
           staff_schedules,
-          staff_performances,
           sessions,
           review_helpful_votes,
           review_reports,
@@ -166,7 +160,6 @@ export async function truncateAll(
           services,
           service_categories,
           opening_hours,
-          membership_tiers,
           medical_charts,
           customer_preferences,
           customer_points,
@@ -174,9 +167,7 @@ export async function truncateAll(
           staff,
           users,
           customers,
-          daily_summaries,
-          salons,
-          notification_logs
+          salons
         CASCADE
       `)
       console.log('All tables truncated successfully using CASCADE')
@@ -195,7 +186,6 @@ export async function truncateAll(
     await Promise.all([
       db.delete(schema.treatmentPhotos),
       db.delete(schema.treatmentMaterials),
-      db.delete(schema.staffSkills),
       db.delete(schema.salesDetails),
       db.delete(schema.serviceOptions),
       db.delete(schema.customerPreferences),
@@ -213,7 +203,6 @@ export async function truncateAll(
     await Promise.all([
       db.delete(schema.treatmentRecords),
       db.delete(schema.staffSchedules),
-      db.delete(schema.staffPerformances),
       db.delete(schema.paymentTransactions),
       db.delete(schema.inventoryTransactions),
       db.delete(schema.purchaseOrders),
@@ -235,8 +224,6 @@ export async function truncateAll(
       db.delete(schema.products),
       db.delete(schema.services),
       db.delete(schema.openingHours),
-      db.delete(schema.membershipTiers),
-      db.delete(schema.dailySummaries),
     ])
 
     // Level 5: Category and classification tables
@@ -249,10 +236,7 @@ export async function truncateAll(
     await db.delete(schema.users)
 
     // Level 8: Root tables
-    await Promise.all([
-      db.delete(schema.salons),
-      db.delete(schema.notificationLogs),
-    ])
+    await db.delete(schema.salons)
 
     console.log('All tables truncated successfully using DELETE')
   } catch (error) {

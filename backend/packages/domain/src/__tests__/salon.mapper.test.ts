@@ -163,13 +163,7 @@ describe('SalonReadMapper.toApiSalon', () => {
     expect(result.type).toBe('success')
     expect(
       Object.keys(result.type === 'success' ? result.data : {}),
-    ).not.toEqual(
-      expect.arrayContaining([
-        'deletedAt',
-        'cancellationPolicy',
-        'bookingPolicy',
-      ]),
-    )
+    ).not.toEqual(expect.arrayContaining(['deletedAt']))
   })
 
   it('keeps a missing rating and location as null', () => {

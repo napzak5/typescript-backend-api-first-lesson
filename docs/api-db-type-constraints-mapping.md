@@ -197,6 +197,7 @@ export const SalonWriteMapper = {
 リクエストで書けるカラムと書けないカラムの扱い:
 
 - `DEFAULT` のあるカラムでも、リクエストで書けるもの（`timezone`、`currency`、`taxRate`、`isActive`）は Create で必須にする。`DbNewSalon` は `DeepRequired` で全キーが必須なので、API は DB の既定値に頼らない
+- NULL 許可のカラムには、既定値を付けない。NULL が「値がない」を表すので、値を書かなかった行に、別の意味の値（0 年、空配列）が入らないようにする。`migrations.integration.test.ts` の `202611181200_unused_tables_and_columns.sql` のテストが、マイグレーションのあとに、NULL 許可で既定値のあるカラムが 1 つもないことを確かめる。テストのデータベースは `setup.sql` から作るので、そのようなカラムを `setup.sql` に加えると、このテストが失敗する
 - DB やほかの機能が値を決めるカラム（`id`、`rating`、`reviewCount`、`createdAt`、`updatedAt` など）は Create / Update に含めない。リクエストのスキーマは `z.strictObject` なので、これらを送ると未知のプロパティとして検証エラーになる
 - 行が属するサロンを指すカラム（`service_categories.salonId`）も Create / Update に含めない。値はパスの `salonId` で決まり、あとから変えられない。`api-consistency-rules.ts` では `omittedColumns` に入れる（`serviceCategoryManagedColumns`）
 - `deletedAt`（論理削除）は API に出さない。リポジトリのメソッドが返す行と変更する行は、`deletedAt IS NULL` の行だけである。一覧のカーソルだけは、削除済みの行を指していてもよい（サロン、サービス、顧客の一覧。行が残っているので、ページの開始位置が分かる）
@@ -400,7 +401,7 @@ const salonRules: ModelRule[] = [
     table: 'salons',
     kind: 'response',
     embedded: ['openingHours'],
-    omittedColumns: ['cancellationPolicy', 'bookingPolicy', 'deletedAt'],
+    omittedColumns: ['deletedAt'],
   },
   {
     model: 'Models.SalonCreateRequest',

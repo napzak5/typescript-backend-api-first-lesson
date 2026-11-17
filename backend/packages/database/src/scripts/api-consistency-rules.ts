@@ -18,8 +18,6 @@ const salonManagedColumns = [
   'id',
   'rating',
   'reviewCount',
-  'cancellationPolicy',
-  'bookingPolicy',
   'deletedAt',
   'createdAt',
   'updatedAt',
@@ -31,7 +29,7 @@ const salonRules: ModelRule[] = [
     table: 'salons',
     kind: 'response',
     embedded: ['openingHours'],
-    omittedColumns: ['cancellationPolicy', 'bookingPolicy', 'deletedAt'],
+    omittedColumns: ['deletedAt'],
   },
   {
     model: 'Models.SalonCreateRequest',
@@ -57,12 +55,11 @@ const salonRules: ModelRule[] = [
 
 /**
  * Columns of `services` that a request never writes. The salon comes from
- * the path; `requiredProducts` is a jsonb column without a defined structure.
+ * the path.
  */
 const serviceManagedColumns = [
   'id',
   'salonId',
-  'requiredProducts',
   'deletedAt',
   'createdAt',
   'updatedAt',
@@ -86,7 +83,7 @@ const serviceRules: ModelRule[] = [
     table: 'services',
     kind: 'response',
     embedded: ['options'],
-    omittedColumns: ['requiredProducts', 'deletedAt'],
+    omittedColumns: ['deletedAt'],
   },
   {
     model: 'Models.ServiceCreateRequest',
@@ -269,8 +266,6 @@ const authRules: ModelRule[] = [
       'emailVerificationExpiry',
       'passwordResetTokenHash',
       'passwordResetExpiry',
-      // a jsonb object without a defined structure
-      'metadata',
       'deletedAt',
     ],
   },
@@ -287,14 +282,12 @@ const authRules: ModelRule[] = [
 /**
  * Columns of `staff` that a request never writes. The salon comes from the
  * path; the login account (`userId`) is not the ledger's to link, because
- * linking writes the user as well; `awards` is a jsonb column without a
- * defined structure.
+ * linking writes the user as well.
  */
 const staffManagedColumns = [
   'id',
   'salonId',
   'userId',
-  'awards',
   'deletedAt',
   'createdAt',
   'updatedAt',
@@ -314,7 +307,6 @@ const staffProfileHiddenColumns = [
   'phoneNumber',
   'alternativePhone',
   'staffCode',
-  'awards',
   'hireDate',
   'employmentType',
   'baseSalary',
@@ -351,7 +343,6 @@ const staffAccountHiddenColumns = [
   'lastLoginIp',
   'customerId',
   'staffId',
-  'metadata',
   'deletedAt',
 ]
 
@@ -365,7 +356,7 @@ const staffRules: ModelRule[] = [
     model: 'Models.StaffResponse',
     table: 'staff',
     kind: 'response',
-    omittedColumns: ['awards', 'deletedAt'],
+    omittedColumns: ['deletedAt'],
   },
   {
     // What customers are shown of a staff member: the name the salon chose
@@ -506,8 +497,7 @@ const bookingSystemColumns = [
  * Columns of `booking_services` that a request never writes: the end time,
  * the duration, the prices and whether they include the tax come from the
  * service, the order from the position of the line, completion from the
- * complete action. `selectedOptions` is a jsonb column without a defined
- * structure.
+ * complete action.
  */
 const bookingServiceSystemColumns = [
   'id',
@@ -518,7 +508,6 @@ const bookingServiceSystemColumns = [
   'discountAmount',
   'finalPrice',
   'taxIncluded',
-  'selectedOptions',
   'isCompleted',
   'completedAt',
   'sortOrder',
@@ -580,7 +569,7 @@ const bookingRules: ModelRule[] = [
     model: 'Models.BookingServiceResponse',
     table: 'bookingServices',
     kind: 'response',
-    omittedColumns: ['bookingId', 'selectedOptions', 'createdAt', 'updatedAt'],
+    omittedColumns: ['bookingId', 'createdAt', 'updatedAt'],
   },
   {
     model: 'Models.BookingServiceCreateRequest',
@@ -607,7 +596,6 @@ const bookingRules: ModelRule[] = [
     kind: 'response',
     omittedColumns: [
       'bookingId',
-      'selectedOptions',
       'createdAt',
       'updatedAt',
       // What the salon notes of the line and records of the visit.
@@ -662,8 +650,6 @@ const paymentMethodManagedColumns = [
 
 /**
  * Sales, their payments, the payment methods of a salon, and points.
- * `daily_summaries` backs no model: the daily report returns values that it
- * does not hold.
  */
 const paymentRules: ModelRule[] = [
   {

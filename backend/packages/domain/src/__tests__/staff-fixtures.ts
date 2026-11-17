@@ -66,7 +66,6 @@ export const dbStaff = (overrides: Partial<DbStaff> = {}): DbStaff => ({
   imageUrl: 'https://aoyama.example.com/staff/hanako.jpg',
   yearsOfExperience: 10,
   certifications: ['美容師免許'],
-  awards: [{ name: 'Cut of the year', year: 2024 }],
   hireDate: '2020-04-01',
   employmentType: 'full-time',
   baseSalary: 300000,
