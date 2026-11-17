@@ -78,8 +78,8 @@ describe('treatmentIssues', () => {
       nextRecommendedDate: '2026-11-19',
       nextRecommendedServices: [unknownService, colour],
       materials: [
-        { productId: unknownProduct, lotNumber: null },
         { productId: byLots, lotNumber: null },
+        { productId: unknownProduct, lotNumber: null },
         { productId: loose, lotNumber: 'LOT-1' },
       ],
     }
@@ -101,14 +101,14 @@ describe('treatmentIssues', () => {
         message: 'Must name a service of the salon of the booking',
       },
       {
-        field: 'materials.0.productId',
-        rule: 'not_found',
-        message: 'Must name a product of the salon of the booking',
-      },
-      {
-        field: 'materials.1.lotNumber',
+        field: 'materials.0.lotNumber',
         rule: 'custom',
         message: 'Must name the lot: the product is kept by lots',
+      },
+      {
+        field: 'materials.1.productId',
+        rule: 'not_found',
+        message: 'Must name a product of the salon of the booking',
       },
       {
         field: 'materials.2.lotNumber',

@@ -10,6 +10,7 @@ import { BOOKING_ID, COLOR_ID, CUT_ID } from './booking-fixtures'
 import { OTHER_PRODUCT_ID, PRODUCT_ID } from './product-fixtures'
 import {
   dbTreatmentMaterials,
+  dbTreatmentPhoto,
   dbTreatmentRecord,
   OTHER_TREATMENT_RECORD_ID,
   storedTreatmentRecord,
@@ -108,6 +109,31 @@ describe('TreatmentRecordReadMapper', () => {
         staffEvaluation: null,
         materials: [],
         photos: [],
+      },
+    })
+  })
+
+  it('shows the photos in the order they are read', () => {
+    const before = {
+      ...dbTreatmentPhoto(),
+      id: '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f5d22',
+      photoType: 'before',
+      photoUrl: 'https://images.example.com/before.jpg',
+      sortOrder: 1,
+    }
+
+    expect(
+      TreatmentRecordReadMapper.toApiTreatmentRecord({
+        ...storedTreatmentRecord(),
+        photos: [dbTreatmentPhoto(), before],
+      }),
+    ).toMatchObject({
+      type: 'success',
+      data: {
+        photos: [
+          { photoType: 'after', sortOrder: 0 },
+          { photoType: 'before', sortOrder: 1 },
+        ],
       },
     })
   })
