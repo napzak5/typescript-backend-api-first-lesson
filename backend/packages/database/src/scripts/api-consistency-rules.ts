@@ -127,14 +127,13 @@ const serviceRules: ModelRule[] = [
 
 /**
  * Columns of `customers` that a request never writes. The login link
- * (`userId`) is set by the auth domain; the points, lifetime value and visit
- * counters are maintained by other features.
+ * (`userId`) is set by the auth domain; the points and the visit counters
+ * are maintained by other features.
  */
 const customerManagedColumns = [
   'id',
   'userId',
   'loyaltyPoints',
-  'lifetimeValue',
   'firstVisitDate',
   'lastVisitDate',
   'visitCount',
@@ -156,7 +155,6 @@ const customerStaffColumns = [
   'referredBy',
   'isActive',
   'customerStatus',
-  'lifetimeValue',
   'noShowCount',
   'cancellationCount',
 ]

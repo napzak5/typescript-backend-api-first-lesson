@@ -11,6 +11,7 @@ import {
   CustomerAllergyRepository,
   CustomerPreferencesRepository,
   CustomerRepository,
+  CustomerStatisticsRepository,
   type Database,
   InventoryAlertRepository,
   InventoryRepository,
@@ -64,6 +65,7 @@ import {
   createCustomerPreferencesRouter,
   createOwnCustomerPreferencesRouter,
 } from './routes/customer-preferences'
+import { createCustomerStatisticsRouter } from './routes/customer-statistics'
 import { createInventoryRouter } from './routes/inventory'
 import { createInventoryAlertRouter } from './routes/inventory-alert'
 import { createMedicalChartRouter } from './routes/medical-chart'
@@ -336,6 +338,17 @@ export const createApp = ({
     `${API_BASE_PATH}/customers/:id/preferences`,
     createCustomerPreferencesRouter(
       customerPreferencesDependencies,
+      authenticated,
+    ),
+  )
+  app.use(
+    `${API_BASE_PATH}/customers/:id/statistics`,
+    createCustomerStatisticsRouter(
+      {
+        customerStatisticsRepository: new CustomerStatisticsRepository(
+          database,
+        ),
+      },
       authenticated,
     ),
   )

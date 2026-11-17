@@ -3376,7 +3376,7 @@ export type customerCrudGetStatisticsResponseError = (customerCrudGetStatisticsR
 export type customerCrudGetStatisticsResponse = (customerCrudGetStatisticsResponseSuccess | customerCrudGetStatisticsResponseError)
 
 export const getCustomerCrudGetStatisticsUrl = (id: ModelsCustomerId,
-    params?: CustomerCrudGetStatisticsParams,) => {
+    params: CustomerCrudGetStatisticsParams,) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -3392,11 +3392,11 @@ export const getCustomerCrudGetStatisticsUrl = (id: ModelsCustomerId,
 }
 
 /**
- * 来店頻度や売上貢献度など顧客指標を集計し、セグメント施策やVIP判定に利用します。顧客が存在しない場合は404を返します。
+ * 顧客の、salonId のサロンでの、期間の予約と売上を集計します(来店の頻度、利用金額、よく受けるサービスと担当スタッフ、キャンセルの割合)。集計はリクエストのたびに予約台帳と売上台帳から行い、記録しません。salonId に自分のサロン以外を指定した場合は403を、ID とクエリが不正な場合、endDate が startDate より前の場合、期間が366日を超える場合、salonId のサロンが存在しない場合は400を、顧客が存在しない場合は404を返します。
  * @summary Get customer statistics
  */
 export const customerCrudGetStatistics = async (id: ModelsCustomerId,
-    params?: CustomerCrudGetStatisticsParams, options?: RequestInit): Promise<customerCrudGetStatisticsResponse> => {
+    params: CustomerCrudGetStatisticsParams, options?: RequestInit): Promise<customerCrudGetStatisticsResponse> => {
 
   return customInstance<customerCrudGetStatisticsResponse>(getCustomerCrudGetStatisticsUrl(id,params),
   {
@@ -3420,7 +3420,7 @@ export const getCustomerCrudGetStatisticsQueryKey = (id: ModelsCustomerId,
 
 
 export const getCustomerCrudGetStatisticsQueryOptions = <TData = Awaited<ReturnType<typeof customerCrudGetStatistics>>, TError = ModelsProblemDetails>(id: ModelsCustomerId,
-    params?: CustomerCrudGetStatisticsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudGetStatistics>>, TError, TData>>, }
+    params: CustomerCrudGetStatisticsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudGetStatistics>>, TError, TData>>, }
 ) => {
 
 const {query: queryOptions} = options ?? {};
@@ -3443,12 +3443,12 @@ export type CustomerCrudGetStatisticsQueryError = ModelsProblemDetails
 
 
 /**
- * 来店頻度や売上貢献度など顧客指標を集計し、セグメント施策やVIP判定に利用します。顧客が存在しない場合は404を返します。
+ * 顧客の、salonId のサロンでの、期間の予約と売上を集計します(来店の頻度、利用金額、よく受けるサービスと担当スタッフ、キャンセルの割合)。集計はリクエストのたびに予約台帳と売上台帳から行い、記録しません。salonId に自分のサロン以外を指定した場合は403を、ID とクエリが不正な場合、endDate が startDate より前の場合、期間が366日を超える場合、salonId のサロンが存在しない場合は400を、顧客が存在しない場合は404を返します。
  * @summary Get customer statistics
  */
 export function useCustomerCrudGetStatistics<TData = Awaited<ReturnType<typeof customerCrudGetStatistics>>, TError = ModelsProblemDetails>(
  id: ModelsCustomerId,
-    params: undefined |  CustomerCrudGetStatisticsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudGetStatistics>>, TError, TData>> & Pick<
+    params: CustomerCrudGetStatisticsParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudGetStatistics>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof customerCrudGetStatistics>>,
           TError,
@@ -3458,12 +3458,12 @@ export function useCustomerCrudGetStatistics<TData = Awaited<ReturnType<typeof c
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 来店頻度や売上貢献度など顧客指標を集計し、セグメント施策やVIP判定に利用します。顧客が存在しない場合は404を返します。
+ * 顧客の、salonId のサロンでの、期間の予約と売上を集計します(来店の頻度、利用金額、よく受けるサービスと担当スタッフ、キャンセルの割合)。集計はリクエストのたびに予約台帳と売上台帳から行い、記録しません。salonId に自分のサロン以外を指定した場合は403を、ID とクエリが不正な場合、endDate が startDate より前の場合、期間が366日を超える場合、salonId のサロンが存在しない場合は400を、顧客が存在しない場合は404を返します。
  * @summary Get customer statistics
  */
 export function useCustomerCrudGetStatistics<TData = Awaited<ReturnType<typeof customerCrudGetStatistics>>, TError = ModelsProblemDetails>(
  id: ModelsCustomerId,
-    params?: CustomerCrudGetStatisticsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudGetStatistics>>, TError, TData>> & Pick<
+    params: CustomerCrudGetStatisticsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudGetStatistics>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof customerCrudGetStatistics>>,
           TError,
@@ -3473,21 +3473,21 @@ export function useCustomerCrudGetStatistics<TData = Awaited<ReturnType<typeof c
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 来店頻度や売上貢献度など顧客指標を集計し、セグメント施策やVIP判定に利用します。顧客が存在しない場合は404を返します。
+ * 顧客の、salonId のサロンでの、期間の予約と売上を集計します(来店の頻度、利用金額、よく受けるサービスと担当スタッフ、キャンセルの割合)。集計はリクエストのたびに予約台帳と売上台帳から行い、記録しません。salonId に自分のサロン以外を指定した場合は403を、ID とクエリが不正な場合、endDate が startDate より前の場合、期間が366日を超える場合、salonId のサロンが存在しない場合は400を、顧客が存在しない場合は404を返します。
  * @summary Get customer statistics
  */
 export function useCustomerCrudGetStatistics<TData = Awaited<ReturnType<typeof customerCrudGetStatistics>>, TError = ModelsProblemDetails>(
  id: ModelsCustomerId,
-    params?: CustomerCrudGetStatisticsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudGetStatistics>>, TError, TData>>, }
+    params: CustomerCrudGetStatisticsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudGetStatistics>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 来店頻度や売上貢献度など顧客指標を集計し、セグメント施策やVIP判定に利用します。顧客が存在しない場合は404を返します。
+ * 顧客の、salonId のサロンでの、期間の予約と売上を集計します(来店の頻度、利用金額、よく受けるサービスと担当スタッフ、キャンセルの割合)。集計はリクエストのたびに予約台帳と売上台帳から行い、記録しません。salonId に自分のサロン以外を指定した場合は403を、ID とクエリが不正な場合、endDate が startDate より前の場合、期間が366日を超える場合、salonId のサロンが存在しない場合は400を、顧客が存在しない場合は404を返します。
  * @summary Get customer statistics
  */
 export function useCustomerCrudGetStatistics<TData = Awaited<ReturnType<typeof customerCrudGetStatistics>>, TError = ModelsProblemDetails>(
  id: ModelsCustomerId,
-    params?: CustomerCrudGetStatisticsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudGetStatistics>>, TError, TData>>, }
+    params: CustomerCrudGetStatisticsParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudGetStatistics>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 

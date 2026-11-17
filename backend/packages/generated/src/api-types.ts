@@ -1305,7 +1305,7 @@ export interface paths {
         };
         /**
          * Get customer statistics
-         * @description 来店頻度や売上貢献度など顧客指標を集計し、セグメント施策やVIP判定に利用します。顧客が存在しない場合は404を返します。
+         * @description 顧客の、salonId のサロンでの、期間の予約と売上を集計します(来店の頻度、利用金額、よく受けるサービスと担当スタッフ、キャンセルの割合)。集計はリクエストのたびに予約台帳と売上台帳から行い、記録しません。salonId に自分のサロン以外を指定した場合は403を、ID とクエリが不正な場合、endDate が startDate より前の場合、期間が366日を超える場合、salonId のサロンが存在しない場合は400を、顧客が存在しない場合は404を返します。
          */
         get: operations["CustomerCrud_getStatistics"];
         put?: never;
@@ -3817,59 +3817,6 @@ export interface components {
          * @description サービスカテゴリやメニュー分類を識別するブランド付きUUID。
          */
         "Models.CategoryId": string;
-        /**
-
-         * @description
-
-         * 通貨コード区分 - ISO 4217準拠の通貨コード定義
-
-         *
-
-         *
-
-         * JPY: 日本円 - Japanese Yen
-
-         *
-
-         * USD: 米ドル - United States Dollar
-
-         *
-
-         * EUR: ユーロ - Euro
-
-         *
-
-         * GBP: 英ポンド - British Pound Sterling
-
-         *
-
-         * AUD: 豪ドル - Australian Dollar
-
-         *
-
-         * CAD: カナダドル - Canadian Dollar
-
-         *
-
-         * CNY: 中国人民元 - Chinese Yuan
-
-         *
-
-         * KRW: 韓国ウォン - South Korean Won
-
-         *
-
-         * SGD: シンガポールドル - Singapore Dollar
-
-         *
-
-         * TWD: 台湾ドル - Taiwan Dollar
-
-         * @enum {string}
-
-         */
-
-        "Models.CurrencyCodeType": "JPY" | "USD" | "EUR" | "GBP" | "AUD" | "CAD" | "CNY" | "KRW" | "SGD" | "TWD";
         /** @description 顧客アレルギー追加リクエスト - 全項目のキーが必須。値がない項目は null を指定する。対象の顧客はパスの customerId で示す */
         "Models.CustomerAllergyCreateRequest": {
             /** @description アレルギーの種類 */
@@ -4586,7 +4533,7 @@ export interface components {
         };
         /**
          * @description 顧客本人のプロフィールのレスポンス - customers テーブルの行のうち、本人に見せるカラムだけを返す。
-         *     スタッフ用の項目(internalNotes、notes、tags、customerStatus、isActive、referredBy、lifetimeValue、
+         *     スタッフ用の項目(internalNotes、notes、tags、customerStatus、isActive、referredBy、
          *     noShowCount、cancellationCount)と userId は含まない。プロパティ名と null 許可は DB カラムと一致させている
          */
         "Models.CustomerProfileResponse": {
@@ -4769,11 +4716,6 @@ export interface components {
              * @description 現在のロイヤルティポイント。ポイント取引の結果として更新され、リクエストでは変更できない
              */
             loyaltyPoints: number;
-            /**
-             * Format: int32
-             * @description 生涯価値。これまでの累計利用金額で、会計処理の結果として更新される
-             */
-            lifetimeValue: number;
             /** @description 顧客の好みや要望。未設定の場合はnull */
             preferences: components["schemas"]["Models.CustomerBasicPreferences"] | null;
             /** @description 顧客に関する備考。メモがない場合はnull */
@@ -4838,46 +4780,90 @@ export interface components {
              */
             updatedAt: string;
         };
-        /** @description 顧客統計レスポンス - 来店頻度や売上貢献度などの顧客指標を集計した結果 */
+        /** @description 顧客統計レスポンス - 顧客の、1つのサロンでの、期間の予約と売上を集計した結果。リクエストのたびに予約台帳と売上台帳から数え、記録しない */
         "Models.CustomerStatisticsResponse": {
+            /** @description 対象の顧客 ID */
+            customerId: components["schemas"]["Models.CustomerId"];
+            /** @description 対象サロン ID */
+            salonId: components["schemas"]["Models.SalonId"];
+            /**
+             * Format: date
+             * @description 期間の最初の日
+             */
+            startDate: string;
+            /**
+             * Format: date
+             * @description 期間の最後の日
+             */
+            endDate: string;
             /**
              * Format: int32
-             * @description 総予約数
+             * @description 期間の予約の数。ステータスを問わない
              */
             totalBookings: number;
-            /** @description 総支払額 */
-            totalSpent: components["schemas"]["Models.Money"];
-            /** @description 平均予約単価 */
-            averageBookingValue: components["schemas"]["Models.Money"];
+            /**
+             * Format: int64
+             * @description 期間の、取り消していない売上の合計金額(totalAmount)の合計から、その決済取引の返金額(refundAmount)の合計を引いた額
+             */
+            totalSpent: number;
+            /**
+             * Format: int64
+             * @description totalSpent のうち予約の会計(bookingId のある売上)の額を、その売上の件数で割った額(1円未満を切り捨て)。予約の会計がなければ0
+             */
+            averageBookingValue: number;
             /**
              * Format: date-time
-             * @description 最終来店日時。来店実績がない場合はnull
+             * @description 期間の完了(completed)した予約のうち、最後の予約の開始日時。なければnull
              */
             lastVisit: string | null;
-            /** @description お気に入りサービス */
-            favoriteServices: components["schemas"]["Models.ServiceSummary"][];
-            /** @description お気に入りスタッフ */
-            favoriteStaff: components["schemas"]["Models.StaffSummary"][];
+            /** @description 期間の完了した予約の施術明細のサービスの上位5件。bookingCount の多い順、同じならサービス ID の順。削除したサービスも含む */
+            favoriteServices: components["schemas"]["Models.CustomerStatisticsServiceResponse"][];
+            /** @description 期間の完了した予約の担当スタッフの上位5人。bookingCount の多い順、同じならスタッフ ID の順。削除したスタッフも含む */
+            favoriteStaff: components["schemas"]["Models.CustomerStatisticsStaffResponse"][];
             /**
              * Format: int32
-             * @description ロイヤルティポイント
+             * @description 顧客のいまのポイントの残高。サロンと期間によらない
              */
             loyaltyPoints: number;
             /**
              * Format: date-time
-             * @description 顧客登録日時
+             * @description 顧客を台帳に登録した日時
              */
             customerSince: string;
             /**
              * Format: float
-             * @description キャンセル率
+             * @description cancelled の予約の数を totalBookings で割った百分率(小数第1位に四捨五入)。予約がなければ0
              */
             cancellationRate: number;
             /**
              * Format: float
-             * @description 無断キャンセル率
+             * @description no_show の予約の数を totalBookings で割った百分率(小数第1位に四捨五入)。予約がなければ0
              */
             noShowRate: number;
+        };
+        /** @description 顧客統計のサービス - 期間の完了した予約で受けたサービス */
+        "Models.CustomerStatisticsServiceResponse": {
+            /** @description サービス ID */
+            serviceId: components["schemas"]["Models.ServiceId"];
+            /** @description サービスのいまの名前 */
+            name: string;
+            /**
+             * Format: int32
+             * @description そのサービスを施術明細に含む、期間の完了した予約の数
+             */
+            bookingCount: number;
+        };
+        /** @description 顧客統計のスタッフ - 期間の完了した予約の担当スタッフ */
+        "Models.CustomerStatisticsStaffResponse": {
+            /** @description スタッフ ID */
+            staffId: components["schemas"]["Models.StaffId"];
+            /** @description スタッフのいまの表示名 */
+            displayName: string;
+            /**
+             * Format: int32
+             * @description そのスタッフが担当した(bookings.staffId)、期間の完了した予約の数
+             */
+            bookingCount: number;
         };
         /**
 
@@ -5888,18 +5874,6 @@ export interface components {
          */
 
         "Models.MembershipTierType": "regular" | "silver" | "gold" | "platinum" | "vip";
-        /** @description 税抜・税込計算に利用する金額モデル。 */
-        "Models.Money": {
-            /**
-             * Format: int64
-             * @description 通貨の最小単位で表現した金額値。
-             */
-            value: number;
-            /** @description 使用する通貨コード。 */
-            currency: components["schemas"]["Models.CurrencyCodeType"];
-            /** @description 適用税率。税率が適用されない場合はnull */
-            taxRate: (number & components["schemas"]["Models.decimal"]) | null;
-        };
         /** @description 特定の日付の営業時間（営業日カレンダーの1日分）を表すモデル。時刻は、サロンのtimezoneでの時刻。 */
         "Models.OpeningHours": {
             /** @description dateの曜日。dateと一致している必要がある */
@@ -8624,18 +8598,6 @@ export interface components {
          */
 
         "Models.ServiceStatusType": "active" | "inactive" | "coming_soon" | "discontinued";
-        /** @description サービスメニューを一覧表示や候補選択で参照する際の要約情報。 */
-        "Models.ServiceSummary": {
-            /** @description サービスメニューを識別するID。 */
-            id: components["schemas"]["Models.ServiceId"];
-            /** @description 顧客向けに表示するサービス名称。 */
-            name: string;
-            /**
-             * Format: int32
-             * @description 対象サービスの予約件数。統計未計算の場合はnull
-             */
-            bookingCount: number | null;
-        };
         /** @description サービス部分更新リクエスト - 指定した項目だけを更新する。DB で NULL 許可のカラムは null でクリアできる */
         "Models.ServiceUpdateRequest": {
             /** @description 所属するサービスカテゴリの ID。同じサロンのカテゴリを指定する。nullでクリア */
@@ -9199,23 +9161,6 @@ export interface components {
          *     行は、毎週の7行と1年分の単日の366行を合わせた373件まで指定できる
          */
         "Models.StaffScheduleUpdateRequest": components["schemas"]["Models.StaffSchedule"][];
-        /** @description スタッフ一覧や選択候補で利用する要約情報。 */
-        "Models.StaffSummary": {
-            /** @description スタッフを識別するID。 */
-            id: components["schemas"]["Models.StaffId"];
-            /** @description スタッフの表示名。 */
-            name: string;
-            /**
-             * Format: float
-             * @description 平均評価スコア。未評価または評価データがない場合はnull
-             */
-            rating: number | null;
-            /**
-             * Format: int32
-             * @description 担当した予約件数。統計未計算の場合はnull
-             */
-            bookingCount: number | null;
-        };
         /**
          * @description スタッフ部分更新リクエスト - 指定した項目だけを更新する。DB で NULL 許可のカラムは null でクリアできる。
          *     項目を1つも指定しないリクエストは受け付けない。所属サロンと、ログインアカウントとの紐づけ(userId)は変更できない
@@ -9945,6 +9890,12 @@ export interface components {
         "Models.CustomerSearchRequest.search": string;
         /** @description タグによる絞り込み。指定したタグをすべて持つ顧客に一致する */
         "Models.CustomerSearchRequest.tags": string[];
+        /** @description 期間の最後の日。startDate 以降で、期間は startDate を含めて366日まで。1900-01-01 から 2999-12-31 まで */
+        "Models.CustomerStatisticsGetRequest.endDate": string;
+        /** @description 集計対象のサロン ID */
+        "Models.CustomerStatisticsGetRequest.salonId": components["schemas"]["Models.SalonId"];
+        /** @description 期間の最初の日。1900-01-01 から 2999-12-31 まで */
+        "Models.CustomerStatisticsGetRequest.startDate": string;
         /** @description 集計対象の売上日(saleDate)。1900-01-01 から 2999-12-31 まで */
         "Models.DailySalesGetRequest.date": string;
         /** @description 集計対象のサロン ID */
@@ -17800,9 +17751,13 @@ export interface operations {
     };
     CustomerCrud_getStatistics: {
         parameters: {
-            query?: {
-                /** @description 集計対象期間（例: '7d', '1m', '3m', '1y'）。数値と単位(d: 日、m: 月、y: 年)で指定する */
-                period?: string;
+            query: {
+                /** @description 集計対象のサロン ID */
+                salonId: components["parameters"]["Models.CustomerStatisticsGetRequest.salonId"];
+                /** @description 期間の最初の日。1900-01-01 から 2999-12-31 まで */
+                startDate: components["parameters"]["Models.CustomerStatisticsGetRequest.startDate"];
+                /** @description 期間の最後の日。startDate 以降で、期間は startDate を含めて366日まで。1900-01-01 から 2999-12-31 まで */
+                endDate: components["parameters"]["Models.CustomerStatisticsGetRequest.endDate"];
             };
             header?: never;
             path: {

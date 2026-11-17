@@ -12,13 +12,15 @@ import { calendarDate } from './rules'
 /**
  * Validation of the queries of the sales reports. A period is of the days
  * of the sales (`saleDate`), both of its ends included. Whether the salon
- * is there is the repository's to say.
+ * is there is the repository's to say. The statistics of a customer take
+ * the same salon and period (`customer-statistics.schema.ts`).
  */
 
 /** The most days a period of a report has. */
 export const MAX_REPORT_DAYS = 366
 
-const period = {
+/** A salon and the first and the last day of a period. */
+export const reportPeriod = {
   salonId: salonIdSchema,
   startDate: calendarDate,
   endDate: calendarDate,
@@ -30,7 +32,7 @@ const period = {
  * them is one: a date that was refused for itself says nothing of the
  * period.
  */
-const periodInOrder = (
+export const periodInOrder = (
   context: z.core.ParsePayload<{ startDate: string; endDate: string }>,
 ): void => {
   const { startDate, endDate } = context.value
@@ -58,11 +60,11 @@ const periodInOrder = (
 }
 
 export const salesReportGetRequestSchema = z
-  .strictObject(period)
+  .strictObject(reportPeriod)
   .check(periodInOrder) satisfies z.ZodType<ApiSalesReportGetRequest>
 
 export const salesTrendsGetRequestSchema = z
-  .strictObject({ ...period, period: SalesTrendPeriodTypeSchema })
+  .strictObject({ ...reportPeriod, period: SalesTrendPeriodTypeSchema })
   .check(periodInOrder) satisfies z.ZodType<ApiSalesTrendsGetRequest>
 
 export const dailySalesGetRequestSchema = z.strictObject({

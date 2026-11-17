@@ -5,35 +5,44 @@
  * Comprehensive REST API for managing beauty salon operations including salons, staff, services, customers, bookings, treatments, payments, inventory, and access control. Built with TypeSpec for type-safe API-first development.
  * OpenAPI spec version: 2.0
  */
-import type { ModelsMoney } from './modelsMoney';
-import type { ModelsServiceSummary } from './modelsServiceSummary';
-import type { ModelsStaffSummary } from './modelsStaffSummary';
+import type { ModelsCustomerId } from './modelsCustomerId';
+import type { ModelsCustomerStatisticsServiceResponse } from './modelsCustomerStatisticsServiceResponse';
+import type { ModelsCustomerStatisticsStaffResponse } from './modelsCustomerStatisticsStaffResponse';
+import type { ModelsSalonId } from './modelsSalonId';
 
 /**
- * 顧客統計レスポンス - 来店頻度や売上貢献度などの顧客指標を集計した結果
+ * 顧客統計レスポンス - 顧客の、1つのサロンでの、期間の予約と売上を集計した結果。リクエストのたびに予約台帳と売上台帳から数え、記録しない
  */
 export interface ModelsCustomerStatisticsResponse {
-  /** 総予約数 */
+  /** 対象の顧客 ID */
+  customerId: ModelsCustomerId;
+  /** 対象サロン ID */
+  salonId: ModelsSalonId;
+  /** 期間の最初の日 */
+  startDate: string;
+  /** 期間の最後の日 */
+  endDate: string;
+  /** 期間の予約の数。ステータスを問わない */
   totalBookings: number;
-  /** 総支払額 */
-  totalSpent: ModelsMoney;
-  /** 平均予約単価 */
-  averageBookingValue: ModelsMoney;
+  /** 期間の、取り消していない売上の合計金額(totalAmount)の合計から、その決済取引の返金額(refundAmount)の合計を引いた額 */
+  totalSpent: number;
+  /** totalSpent のうち予約の会計(bookingId のある売上)の額を、その売上の件数で割った額(1円未満を切り捨て)。予約の会計がなければ0 */
+  averageBookingValue: number;
   /**
-     * 最終来店日時。来店実績がない場合はnull
+     * 期間の完了(completed)した予約のうち、最後の予約の開始日時。なければnull
      * @nullable
      */
   lastVisit: string | null;
-  /** お気に入りサービス */
-  favoriteServices: ModelsServiceSummary[];
-  /** お気に入りスタッフ */
-  favoriteStaff: ModelsStaffSummary[];
-  /** ロイヤルティポイント */
+  /** 期間の完了した予約の施術明細のサービスの上位5件。bookingCount の多い順、同じならサービス ID の順。削除したサービスも含む */
+  favoriteServices: ModelsCustomerStatisticsServiceResponse[];
+  /** 期間の完了した予約の担当スタッフの上位5人。bookingCount の多い順、同じならスタッフ ID の順。削除したスタッフも含む */
+  favoriteStaff: ModelsCustomerStatisticsStaffResponse[];
+  /** 顧客のいまのポイントの残高。サロンと期間によらない */
   loyaltyPoints: number;
-  /** 顧客登録日時 */
+  /** 顧客を台帳に登録した日時 */
   customerSince: string;
-  /** キャンセル率 */
+  /** cancelled の予約の数を totalBookings で割った百分率(小数第1位に四捨五入)。予約がなければ0 */
   cancellationRate: number;
-  /** 無断キャンセル率 */
+  /** no_show の予約の数を totalBookings で割った百分率(小数第1位に四捨五入)。予約がなければ0 */
   noShowRate: number;
 }

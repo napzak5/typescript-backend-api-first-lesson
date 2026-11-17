@@ -3742,4 +3742,66 @@ describe('the migrations of this repository', () => {
       )
     })
   })
+
+  describe('202611181400_customers_without_lifetime_value.sql', () => {
+    const run = (): Promise<void> =>
+      runMigration('202611181400_customers_without_lifetime_value.sql')
+
+    /** The schema of setup.sql, which the migration brings a database to. */
+    let schemaOfSetup: string[] = []
+
+    /** The rows of the customers, by email. */
+    const customerRows = (ids: string[]): Promise<Record<string, unknown>[]> =>
+      sql<Record<string, unknown>[]>`
+        SELECT * FROM customers WHERE id = ANY(${ids}::uuid[]) ORDER BY email
+      `
+
+    /** The rows as the migration should leave them: without the lifetime value. */
+    const withoutLifetimeValue = (
+      rows: Record<string, unknown>[],
+    ): Record<string, unknown>[] =>
+      rows.map(({ lifetimeValue: _lifetimeValue, ...row }) => row)
+
+    // A database from before the migration: every customer has a lifetime
+    // value, which nothing kept up to date.
+    beforeEach(async () => {
+      await applyBaseline(sql, plan)
+      schemaOfSetup = await describeSchema()
+      await sql.unsafe(`
+        ALTER TABLE customers
+          ADD COLUMN "lifetimeValue" integer DEFAULT 0 NOT NULL;
+      `)
+    })
+
+    it('should give the database the schema of setup.sql, and keep it on a second run', async () => {
+      expect(await describeSchema()).not.toEqual(schemaOfSetup)
+
+      await run()
+      await run()
+
+      expect(await describeSchema()).toEqual(schemaOfSetup)
+    })
+
+    it('should keep every customer, with all that the row stores but the lifetime value', async () => {
+      const regular = await storeNewCustomer()
+      const newcomer = await storeNewCustomer()
+      await sql`
+        UPDATE customers SET "lifetimeValue" = 150000, "loyaltyPoints" = 120
+        WHERE id = ${regular}
+      `
+      const before = await customerRows([regular, newcomer])
+      expect(before).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ id: regular, lifetimeValue: 150000 }),
+          expect.objectContaining({ id: newcomer, lifetimeValue: 0 }),
+        ]),
+      )
+
+      await run()
+
+      expect(await customerRows([regular, newcomer])).toEqual(
+        withoutLifetimeValue(before),
+      )
+    })
+  })
 })
