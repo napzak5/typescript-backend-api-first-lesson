@@ -6,17 +6,19 @@ import {
   DeleteCustomerUseCase,
   GetCustomerUseCase,
   ListCustomersUseCase,
+  RestoreCustomerUseCase,
   UpdateCustomerUseCase,
 } from '../business-logic/customer'
 import type { Actor } from '../models/auth'
 import type {
   CustomerCreation,
   CustomerDeletion,
+  CustomerRestoration,
   CustomerUpdate,
   ICustomerRepository,
 } from '../repositories/customer.repository'
 import { type DomainError, DomainErrors } from '../shared'
-import { actors, CUSTOMER_ID } from './auth-fixtures'
+import { actors, CUSTOMER_ID, USER_ID } from './auth-fixtures'
 import {
   apiCustomer,
   customerCreateRequest,
@@ -99,6 +101,9 @@ const nothingThere = (): CustomerUseCaseDependencies =>
     delete: vi.fn(async () =>
       Result.success<CustomerDeletion>({ type: 'notFound' }),
     ),
+    restore: vi.fn(async () =>
+      Result.success<CustomerRestoration>({ type: 'notFound' }),
+    ),
   })
 
 /** The time of the clock, and the birth dates it accepts and refuses. */
@@ -149,6 +154,7 @@ describe('CreateCustomerUseCase', () => {
 
     expect(dependencies.customerRepository.create).toHaveBeenCalledWith(
       customerCreateRequest(),
+      USER_ID,
     )
     expect(repositoryCalls(dependencies)).toEqual(['create'])
     expect(result).toEqual({ type: 'success', data: apiCustomer() })
@@ -165,6 +171,7 @@ describe('CreateCustomerUseCase', () => {
 
     expect(dependencies.customerRepository.create).toHaveBeenCalledWith(
       customerCreateRequest(),
+      USER_ID,
     )
   })
 
@@ -196,7 +203,10 @@ describe('CreateCustomerUseCase', () => {
 
     await create(dependencies, request)
 
-    expect(dependencies.customerRepository.create).toHaveBeenCalledWith(request)
+    expect(dependencies.customerRepository.create).toHaveBeenCalledWith(
+      request,
+      USER_ID,
+    )
   })
 
   it.each(
@@ -216,11 +226,14 @@ describe('CreateCustomerUseCase', () => {
         customerStatus,
       })
 
-      expect(dependencies.customerRepository.create).toHaveBeenCalledWith({
-        ...customerCreateRequest(),
-        isActive,
-        customerStatus,
-      })
+      expect(dependencies.customerRepository.create).toHaveBeenCalledWith(
+        {
+          ...customerCreateRequest(),
+          isActive,
+          customerStatus,
+        },
+        USER_ID,
+      )
     },
   )
 
@@ -794,6 +807,7 @@ describe('UpdateCustomerUseCase', () => {
     expect(dependencies.customerRepository.update).toHaveBeenCalledWith(
       CUSTOMER_ID,
       { lastName: '佐藤' },
+      USER_ID,
     )
     expect(repositoryCalls(dependencies)).toEqual(['update'])
     expect(result).toEqual({
@@ -813,6 +827,7 @@ describe('UpdateCustomerUseCase', () => {
     expect(dependencies.customerRepository.update).toHaveBeenCalledWith(
       CUSTOMER_ID,
       { email: 'hanako.sato@example.com', referredBy: OTHER_CUSTOMER_ID },
+      USER_ID,
     )
   })
 
@@ -830,6 +845,7 @@ describe('UpdateCustomerUseCase', () => {
     expect(dependencies.customerRepository.update).toHaveBeenCalledWith(
       CUSTOMER_ID,
       changes,
+      USER_ID,
     )
   })
 
@@ -841,6 +857,7 @@ describe('UpdateCustomerUseCase', () => {
     expect(dependencies.customerRepository.update).toHaveBeenCalledWith(
       CUSTOMER_ID,
       customerCreateRequest(),
+      USER_ID,
     )
   })
 
@@ -1021,6 +1038,7 @@ describe('DeleteCustomerUseCase', () => {
 
     expect(dependencies.customerRepository.delete).toHaveBeenCalledWith(
       CUSTOMER_ID,
+      USER_ID,
     )
     expect(repositoryCalls(dependencies)).toEqual(['delete'])
     expect(result).toEqual({ type: 'success', data: CUSTOMER_ID })
@@ -1033,6 +1051,7 @@ describe('DeleteCustomerUseCase', () => {
 
     expect(dependencies.customerRepository.delete).toHaveBeenCalledWith(
       CUSTOMER_ID,
+      USER_ID,
     )
     expect(result).toEqual({ type: 'success', data: CUSTOMER_ID })
   })
@@ -1089,6 +1108,101 @@ describe('DeleteCustomerUseCase', () => {
   })
 })
 
+describe('RestoreCustomerUseCase', () => {
+  const restore = (dependencies: CustomerUseCaseDependencies, id: unknown) =>
+    new RestoreCustomerUseCase(dependencies).execute(actors.admin, id)
+
+  const restoring = (
+    outcome: CustomerRestoration,
+  ): Partial<ICustomerRepository> => ({
+    restore: vi.fn(async () => Result.success(outcome)),
+  })
+
+  it('restores the customer of the path as the actor, and returns it as the API presents it', async () => {
+    const dependencies = customerDependencies(
+      restoring({ type: 'restored', customer: dbCustomer({ userId: null }) }),
+    )
+
+    const result = await restore(dependencies, CUSTOMER_ID)
+
+    expect(dependencies.customerRepository.restore).toHaveBeenCalledWith(
+      CUSTOMER_ID,
+      USER_ID,
+    )
+    expect(repositoryCalls(dependencies)).toEqual(['restore'])
+    expect(result).toEqual(Result.success(apiCustomer({ userId: null })))
+  })
+
+  it('restores the customer by its lower-case ID when the path writes it in upper case', async () => {
+    const dependencies = customerDependencies()
+
+    await restore(dependencies, CUSTOMER_ID.toUpperCase())
+
+    expect(dependencies.customerRepository.restore).toHaveBeenCalledWith(
+      CUSTOMER_ID,
+      USER_ID,
+    )
+  })
+
+  it.each(malformedIds)(
+    'rejects %s as the ID without restoring anything',
+    async (_case, id) => {
+      const dependencies = customerDependencies()
+
+      const result = await restore(dependencies, id)
+
+      expect(rulesOf(result)).toEqual(['id:invalid_format'])
+      expect(repositoryCalls(dependencies)).toEqual([])
+    },
+  )
+
+  it('reports a customer that does not exist as not found with its lower-case ID', async () => {
+    const dependencies = customerDependencies(restoring({ type: 'notFound' }))
+
+    const result = await restore(dependencies, OTHER_CUSTOMER_ID.toUpperCase())
+
+    expect(result).toEqual(customerNotFound(OTHER_CUSTOMER_ID))
+  })
+
+  it('refuses to restore a customer who is not deleted as a conflict', async () => {
+    const dependencies = customerDependencies(restoring({ type: 'notDeleted' }))
+
+    const result = await restore(dependencies, CUSTOMER_ID)
+
+    expect(result).toEqual({
+      type: 'error',
+      error: {
+        type: 'conflict',
+        message: `Customer ${CUSTOMER_ID} is not deleted, so there is nothing to restore`,
+      },
+    })
+  })
+
+  it('passes on the email another customer has taken since, and a database error, of the repository', async () => {
+    const taken = await restore(
+      customerDependencies(failing('restore', emailTaken)),
+      CUSTOMER_ID,
+    )
+    const down = await restore(
+      customerDependencies(failing('restore', databaseDown)),
+      CUSTOMER_ID,
+    )
+
+    expect(taken).toEqual(emailTaken)
+    expect(down).toEqual(databaseDown)
+  })
+
+  it('reports a restored row that cannot be presented as a database error', async () => {
+    const dependencies = customerDependencies(
+      restoring({ type: 'restored', customer: corruptCustomer }),
+    )
+
+    const result = await restore(dependencies, CUSTOMER_ID)
+
+    expect(result).toEqual(storedRowIsCorrupt)
+  })
+})
+
 describe('who may keep the customer ledger', () => {
   /** What a request says; whatever a test leaves out is valid. */
   type Request = {
@@ -1132,6 +1246,12 @@ describe('who may keep the customer ledger', () => {
     actor,
     { id = CUSTOMER_ID } = {},
   ) => new DeleteCustomerUseCase(dependencies).execute(actor, id)
+
+  const restoreCustomer: Operation = (
+    dependencies,
+    actor,
+    { id = CUSTOMER_ID } = {},
+  ) => new RestoreCustomerUseCase(dependencies).execute(actor, id)
 
   /** Requests that are wrong in every way an operation can look at. */
   const wrongRequests: [string, Request][] = [
@@ -1208,6 +1328,7 @@ describe('who may keep the customer ledger', () => {
     ['read a customer', getCustomer, 'findById', staffOfAnySalon, outsiders],
     ['change a customer', updateCustomer, 'update', staffOfAnySalon, outsiders],
     ['delete a customer', deleteCustomer, 'delete', mayDelete, mayNotDelete],
+    ['restore a customer', restoreCustomer, 'restore', mayDelete, mayNotDelete],
   ])('to %s', (_operation, execute, method, allowed, refused) => {
     it.each(allowed)('lets %s do it', async (_case, actor) => {
       const dependencies = customerDependencies()

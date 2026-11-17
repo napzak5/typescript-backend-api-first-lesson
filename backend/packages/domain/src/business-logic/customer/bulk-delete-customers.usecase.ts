@@ -32,7 +32,10 @@ export class BulkDeleteCustomersUseCase {
     }
     const { ids } = request.data
 
-    const deleted = await this.dependencies.customerRepository.deleteMany(ids)
+    const deleted = await this.dependencies.customerRepository.deleteMany(
+      ids,
+      actor.userId,
+    )
     if (deleted.type === 'error') {
       return deleted
     }

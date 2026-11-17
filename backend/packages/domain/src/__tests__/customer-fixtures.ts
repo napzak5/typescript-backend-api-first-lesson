@@ -15,6 +15,7 @@ import type {
   CustomerCreation,
   CustomerDeletion,
   CustomerProfileCreation,
+  CustomerRestoration,
   CustomerUpdate,
   ICustomerRepository,
 } from '../repositories/customer.repository'
@@ -250,6 +251,12 @@ const customerRepositoryWith = (
   ),
   delete: vi.fn(async () =>
     Result.success<CustomerDeletion>({ type: 'deleted' }),
+  ),
+  restore: vi.fn(async () =>
+    Result.success<CustomerRestoration>({
+      type: 'restored',
+      customer: dbCustomer(),
+    }),
   ),
   findByIds: vi.fn(async () => Result.success([dbCustomer()])),
   createMany: vi.fn(async () =>
