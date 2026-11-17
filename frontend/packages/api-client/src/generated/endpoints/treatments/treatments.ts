@@ -1010,7 +1010,7 @@ export const getTreatmentRecordCrudAddPhotosUrl = (id: ModelsTreatmentRecordId,)
 }
 
 /**
- * 施術記録に写真を追加します。すべての写真を1つのトランザクションで追加し、1件でも追加できない場合はどの写真も追加しません。顧客の同意(customerConsent)のない写真をisPublicにした場合と、リクエストのなかで同じphotoUrlを繰り返した場合は400を返します。施術記録の写真が追加済みのものと合わせて20枚を超える場合と、施術記録に同じphotoUrlの写真がすでにある場合は409を返します。追加した写真は個別のURLを持たないため、Locationヘッダーは返しません。追加した写真は施術記録の取得結果のphotosに含まれ、施術記録のupdatedAtが更新されます。
+ * 施術記録に写真を追加します。すべての写真を1つのトランザクションで追加し、1件でも追加できない場合はどの写真も追加しません。顧客の同意(customerConsent)のない写真をisPublicにした場合と、リクエストのなかで同じphotoUrlかsortOrderを繰り返した場合は400を返します。施術記録の写真が追加済みのものと合わせて20枚を超える場合と、施術記録に同じphotoUrlの写真がすでにある場合は409を返します。追加した写真は個別のURLを持たないため、Locationヘッダーは返しません。追加した写真は施術記録の取得結果のphotosに含まれ、施術記録のupdatedAtが更新されます。
  * @summary Add photos to a treatment record
  */
 export const treatmentRecordCrudAddPhotos = async (id: ModelsTreatmentRecordId,
@@ -1078,7 +1078,7 @@ const {mutation: mutationOptions} = options ?
     export type TreatmentRecordCrudAddPhotosMutationVariables = {id: ModelsTreatmentRecordId;data: ModelsTreatmentPhotoBulkCreateRequest}
 
     /**
- * 施術記録に写真を追加します。すべての写真を1つのトランザクションで追加し、1件でも追加できない場合はどの写真も追加しません。顧客の同意(customerConsent)のない写真をisPublicにした場合と、リクエストのなかで同じphotoUrlを繰り返した場合は400を返します。施術記録の写真が追加済みのものと合わせて20枚を超える場合と、施術記録に同じphotoUrlの写真がすでにある場合は409を返します。追加した写真は個別のURLを持たないため、Locationヘッダーは返しません。追加した写真は施術記録の取得結果のphotosに含まれ、施術記録のupdatedAtが更新されます。
+ * 施術記録に写真を追加します。すべての写真を1つのトランザクションで追加し、1件でも追加できない場合はどの写真も追加しません。顧客の同意(customerConsent)のない写真をisPublicにした場合と、リクエストのなかで同じphotoUrlかsortOrderを繰り返した場合は400を返します。施術記録の写真が追加済みのものと合わせて20枚を超える場合と、施術記録に同じphotoUrlの写真がすでにある場合は409を返します。追加した写真は個別のURLを持たないため、Locationヘッダーは返しません。追加した写真は施術記録の取得結果のphotosに含まれ、施術記録のupdatedAtが更新されます。
  * @summary Add photos to a treatment record
  */
 export const useTreatmentRecordCrudAddPhotos = <TError = ModelsProblemDetails,

@@ -14,7 +14,7 @@ import type { ModelsTreatmentPhotoCreateRequest } from './modelsTreatmentPhotoCr
  */
 export interface ModelsTreatmentPhotoBulkCreateRequest {
   /**
-     * 追加する写真の一覧。1件以上20件以下で指定する。同じphotoUrlの繰り返しは指定できない
+     * 追加する写真の一覧。1件以上20件以下で指定する。同じphotoUrlと同じsortOrderの繰り返しは指定できない
      * @minItems 1
      * @maxItems 20
      */

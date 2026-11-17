@@ -148,7 +148,7 @@ namespace BeautySalon.Models {
     @doc("顧客が写真の撮影・利用に同意しているかどうか")
     customerConsent: boolean;
 
-    @doc("表示順序。小さい順に並び、同じ値の写真は追加した順に並ぶ")
+    @doc("表示順序。小さい順に並び、同じ値の写真は先に追加した写真が先に並ぶ。1回の追加のなかで同じ値は指定できない")
     @minValue(0)
     sortOrder: int32;
   }
@@ -159,7 +159,7 @@ namespace BeautySalon.Models {
     1つの施術記録の写真は、追加済みのものと合わせて20枚まで
     """)
   model TreatmentPhotoBulkCreateRequest {
-    @doc("追加する写真の一覧。1件以上20件以下で指定する。同じphotoUrlの繰り返しは指定できない")
+    @doc("追加する写真の一覧。1件以上20件以下で指定する。同じphotoUrlと同じsortOrderの繰り返しは指定できない")
     @minItems(1)
     @maxItems(20)
     photos: TreatmentPhotoCreateRequest[];

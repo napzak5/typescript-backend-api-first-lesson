@@ -42,7 +42,7 @@ export interface ModelsTreatmentPhotoCreateRequest {
   /** 顧客が写真の撮影・利用に同意しているかどうか */
   customerConsent: boolean;
   /**
-     * 表示順序。小さい順に並び、同じ値の写真は追加した順に並ぶ
+     * 表示順序。小さい順に並び、同じ値の写真は先に追加した写真が先に並ぶ。1回の追加のなかで同じ値は指定できない
      * @minimum 0
      */
   sortOrder: number;
