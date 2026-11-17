@@ -1,4 +1,4 @@
-import { PointReferenceTypeSchema } from '@beauty-salon-backend/generated'
+import { PointMovementReferenceTypeSchema } from '@beauty-salon-backend/generated'
 import { z } from 'zod'
 import { customerIdSchema } from '../models/customer'
 import {
@@ -40,7 +40,7 @@ const pointsToMove = z.number().int().min(1).max(MAX_INTEGER)
 /** The record a movement of points comes from, if any. */
 const reference = {
   description: nonBlankText.nullable(),
-  referenceType: PointReferenceTypeSchema.nullable(),
+  referenceType: PointMovementReferenceTypeSchema.nullable(),
   referenceId: uuidSchema.nullable(),
 }
 

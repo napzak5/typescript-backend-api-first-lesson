@@ -31,13 +31,16 @@ export const previousTreatmentSchema = z.strictObject({
   notes: nonBlankText.nullable(),
 }) satisfies z.ZodType<ApiPreviousTreatment>
 
+/** How many entries a list of a chart has at most. */
+export const MOST_LISTED = 50
+
 /** The treatments a customer had before, in the order the staff list them. */
-const previousTreatments = z.array(previousTreatmentSchema).max(50)
+const previousTreatments = z.array(previousTreatmentSchema).max(MOST_LISTED)
 
 /** The names of products or brands, each once. */
 const productNames = z
   .array(nonBlankText.max(100))
-  .max(50)
+  .max(MOST_LISTED)
   .check(noRepeatedEntries)
 
 export const medicalChartCreateRequestSchema = z.strictObject({

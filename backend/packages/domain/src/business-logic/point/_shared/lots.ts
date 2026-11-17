@@ -1,9 +1,10 @@
 import type { DbPointTransaction, PointWrite } from '../../../models/point'
 
 /**
- * What is left of one increase of a balance: an earning, or an adjustment
- * (or a transfer) upwards. Only an earning has an expiry date; the others,
- * the opening balances among them, never expire.
+ * What is left of one increase of a balance: an earning, an adjustment
+ * upwards, or a transfer of points to the customer. An earning may have an
+ * expiry date, and a transfer has the one of the increase it moves; the
+ * others, the opening balances among them, never expire.
  */
 export type PointLot = {
   /** The point transaction that added the points. */

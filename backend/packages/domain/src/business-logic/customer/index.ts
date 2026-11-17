@@ -1,4 +1,19 @@
+export type { CustomerMergeRequest } from '../../schemas/customer-merge.schema'
 export type { CustomerUseCaseDependencies } from './_shared/dependencies'
+export {
+  type AllergyMerge,
+  type AllergyValues,
+  allergyMergeOf,
+  type ChartList,
+  type ChartMerge,
+  type ChartValues,
+  chartMergeOf,
+  type MergeSide,
+  mergedLedgerOf,
+  type PreferencesMerge,
+  preferencesMergeOf,
+  sideOf,
+} from './_shared/merge'
 export { BatchGetCustomersUseCase } from './batch-get-customers.usecase'
 export { BulkCreateCustomersUseCase } from './bulk-create-customers.usecase'
 export { BulkDeleteCustomersUseCase } from './bulk-delete-customers.usecase'
@@ -12,6 +27,7 @@ export {
   type CustomerPage,
   ListCustomersUseCase,
 } from './list-customers.usecase'
+export { MergeCustomersUseCase } from './merge-customers.usecase'
 export { RestoreCustomerUseCase } from './restore-customer.usecase'
 export { UpdateCustomerUseCase } from './update-customer.usecase'
 export { UpdateCustomerProfileUseCase } from './update-customer-profile.usecase'

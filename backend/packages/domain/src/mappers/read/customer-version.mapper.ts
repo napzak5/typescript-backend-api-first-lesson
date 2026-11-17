@@ -44,6 +44,12 @@ const toApiCustomerVersion = (
       ),
   )
 
+/** The writes whose versions tell what they changed: an update and a merge. */
+const CHANGING: ReadonlySet<ApiCustomerVersionResponse['operation']> = new Set([
+  'update',
+  'merge',
+])
+
 /** The properties of a version that say which write it was, not what it wrote. */
 const OF_THE_WRITE = new Set([
   'id',
@@ -85,7 +91,7 @@ const toApiHistoryEntry = ({
 > =>
   Result.flatMap(toApiCustomerVersion(version), (current) =>
     Result.map(
-      previous === null || current.operation !== 'update'
+      previous === null || !CHANGING.has(current.operation)
         ? Result.success(null)
         : Result.map(toApiCustomerVersion(previous), (before) =>
             changesBetween(before, current),

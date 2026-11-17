@@ -407,6 +407,32 @@ describe('GetCustomerHistoryUseCase', () => {
       ])
     })
 
+    it('tells of a merge the values it changed, as of an update', async () => {
+      const merge = updated({ email: 'hanako@example.com', notes: null })
+      const result = await history(
+        dependenciesWith({
+          list: vi.fn(async () =>
+            Result.success(
+              listed([
+                { ...merge, version: { ...merge.version, operation: 'merge' } },
+              ]),
+            ),
+          ),
+        }),
+      )
+
+      expect(result.type === 'success' && result.data.data[0]).toMatchObject({
+        operation: 'merge',
+        changes: [
+          {
+            field: 'email',
+            oldValue: 'hanako.yamada@example.com',
+            newValue: 'hanako@example.com',
+          },
+        ],
+      })
+    })
+
     it('tells of an update that wrote the values it found that nothing changed', async () => {
       const result = await history(dependenciesWith())
 
