@@ -7,10 +7,10 @@
  */
 
 /**
- * 在庫アラートの件数の集計
+ * 在庫アラートの件数の集計 - サロンの今出ているアラートを数える
  */
 export interface ModelsInventoryAlertSummaryResponse {
-  /** 有効なアラートの総数 */
+  /** 今出ているアラートの総数 */
   totalAlerts: number;
   /** 重要度 critical のアラート数 */
   criticalAlerts: number;

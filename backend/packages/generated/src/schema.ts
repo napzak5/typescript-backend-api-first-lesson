@@ -615,6 +615,7 @@ export type HairType = z.infer<typeof HairTypeSchema>
  * warning: 警告 - 早めの対応が必要な通知
  *
  * critical: 重大 - 直ちに対応が必要な通知
+ * low_stock は在庫の和が0なら critical、それ以外は warning。overstock は info、expiring は warning、expired は critical
  */
 export const InventoryAlertSeverityTypeSchema = z.enum(['info', 'warning', 'critical'])
 /**
@@ -627,6 +628,7 @@ export const InventoryAlertSeverityTypeSchema = z.enum(['info', 'warning', 'crit
  * warning: 警告 - 早めの対応が必要な通知
  *
  * critical: 重大 - 直ちに対応が必要な通知
+ * low_stock は在庫の和が0なら critical、それ以外は warning。overstock は info、expiring は warning、expired は critical
  */
 export type InventoryAlertSeverityType = z.infer<typeof InventoryAlertSeverityTypeSchema>
 
@@ -635,13 +637,13 @@ export type InventoryAlertSeverityType = z.infer<typeof InventoryAlertSeverityTy
  * 在庫アラート種別区分 - 在庫に対して発生するアラートの種類
  *
  *
- * low_stock: 在庫僅少 - 在庫数が閾値を下回った状態
+ * low_stock: 在庫僅少 - 取り扱い中の商品の、サロンにある在庫の和が最低在庫数(minimumStock)以下の状態
  *
- * expiring: 期限間近 - 使用期限が近づいている状態
+ * expiring: 期限間近 - 在庫のある行の使用期限が、サロンのタイムゾーンでの今日から30日後まで(両端を含む)の状態
  *
- * expired: 期限切れ - 使用期限を過ぎた状態
+ * expired: 期限切れ - 在庫のある行の使用期限が、サロンのタイムゾーンでの今日より前の状態
  *
- * overstock: 過剰在庫 - 在庫数が上限を超えた状態
+ * overstock: 過剰在庫 - 取り扱い中の商品の、サロンにある在庫の和が最大在庫数(maximumStock)を超えた状態
  */
 export const InventoryAlertTypeSchema = z.enum(['low_stock', 'expiring', 'expired', 'overstock'])
 /**
@@ -649,13 +651,13 @@ export const InventoryAlertTypeSchema = z.enum(['low_stock', 'expiring', 'expire
  * 在庫アラート種別区分 - 在庫に対して発生するアラートの種類
  *
  *
- * low_stock: 在庫僅少 - 在庫数が閾値を下回った状態
+ * low_stock: 在庫僅少 - 取り扱い中の商品の、サロンにある在庫の和が最低在庫数(minimumStock)以下の状態
  *
- * expiring: 期限間近 - 使用期限が近づいている状態
+ * expiring: 期限間近 - 在庫のある行の使用期限が、サロンのタイムゾーンでの今日から30日後まで(両端を含む)の状態
  *
- * expired: 期限切れ - 使用期限を過ぎた状態
+ * expired: 期限切れ - 在庫のある行の使用期限が、サロンのタイムゾーンでの今日より前の状態
  *
- * overstock: 過剰在庫 - 在庫数が上限を超えた状態
+ * overstock: 過剰在庫 - 取り扱い中の商品の、サロンにある在庫の和が最大在庫数(maximumStock)を超えた状態
  */
 export type InventoryAlertType = z.infer<typeof InventoryAlertTypeSchema>
 

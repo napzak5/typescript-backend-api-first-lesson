@@ -5,11 +5,12 @@
  * Comprehensive REST API for managing beauty salon operations including salons, staff, services, customers, bookings, treatments, payments, inventory, and access control. Built with TypeSpec for type-safe API-first development.
  * OpenAPI spec version: 2.0
  */
+import type { ModelsInventoryAlertSearchRequestAcknowledgedParameter } from './modelsInventoryAlertSearchRequestAcknowledgedParameter';
+import type { ModelsInventoryAlertSearchRequestAlertParameter } from './modelsInventoryAlertSearchRequestAlertParameter';
 import type { ModelsInventoryAlertSearchRequestCursorParameter } from './modelsInventoryAlertSearchRequestCursorParameter';
 import type { ModelsInventoryAlertSearchRequestLimitParameter } from './modelsInventoryAlertSearchRequestLimitParameter';
 import type { ModelsInventoryAlertSearchRequestSalonIdParameter } from './modelsInventoryAlertSearchRequestSalonIdParameter';
 import type { ModelsInventoryAlertSearchRequestSeverityParameter } from './modelsInventoryAlertSearchRequestSeverityParameter';
-import type { ModelsInventoryAlertSearchRequestTypeParameter } from './modelsInventoryAlertSearchRequestTypeParameter';
 
 export type InventoryAlertCrudListParams = {
   /**
@@ -25,18 +26,22 @@ export type InventoryAlertCrudListParams = {
   /**
    * 在庫アラート種別区分 - 在庫に対して発生するアラートの種類
    *
-   * low_stock: 在庫僅少 - 在庫数が閾値を下回った状態
-   * expiring: 期限間近 - 使用期限が近づいている状態
-   * expired: 期限切れ - 使用期限を過ぎた状態
-   * overstock: 過剰在庫 - 在庫数が上限を超えた状態
+   * low_stock: 在庫僅少 - 取り扱い中の商品の、サロンにある在庫の和が最低在庫数(minimumStock)以下の状態
+   * expiring: 期限間近 - 在庫のある行の使用期限が、サロンのタイムゾーンでの今日から30日後まで(両端を含む)の状態
+   * expired: 期限切れ - 在庫のある行の使用期限が、サロンのタイムゾーンでの今日より前の状態
+   * overstock: 過剰在庫 - 取り扱い中の商品の、サロンにある在庫の和が最大在庫数(maximumStock)を超えた状態
    */
-  type?: ModelsInventoryAlertSearchRequestTypeParameter;
+  alert?: ModelsInventoryAlertSearchRequestAlertParameter;
   /**
    * アラート重要度区分 - 在庫アラートの重要度
    *
    * info: 情報 - 対応を急がない通知
    * warning: 警告 - 早めの対応が必要な通知
    * critical: 重大 - 直ちに対応が必要な通知
+   *
+   * low_stock は在庫の和が0なら critical、それ以外は warning。overstock は info、expiring は warning、expired は critical
    */
   severity?: ModelsInventoryAlertSearchRequestSeverityParameter;
+  /** 確認済みかどうかによる絞り込み */
+  acknowledged?: ModelsInventoryAlertSearchRequestAcknowledgedParameter;
 };
