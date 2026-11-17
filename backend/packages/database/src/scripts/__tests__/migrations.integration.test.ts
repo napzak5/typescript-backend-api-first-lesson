@@ -3546,4 +3546,138 @@ describe('the migrations of this repository', () => {
       ).rejects.toThrow('severityType')
     })
   })
+
+  describe('202611181200_unused_tables_and_columns.sql', () => {
+    const run = (): Promise<void> =>
+      runMigration('202611181200_unused_tables_and_columns.sql')
+
+    /** The schema of setup.sql, which the migration brings a database to. */
+    let schemaOfSetup: string[] = []
+
+    /** The columns that accept NULL and have a default, as `table.column`. */
+    const nullableWithDefault = async (): Promise<string[]> => {
+      const rows = await sql<{ name: string }[]>`
+        SELECT table_name || '.' || column_name AS name
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND is_nullable = 'YES'
+          AND column_default IS NOT NULL
+        ORDER BY 1
+      `
+      return rows.map(({ name }) => name)
+    }
+
+    /**
+     * A staff member of the salon; the years of experience are left to the
+     * column when `years` is missing. Returns the ID.
+     */
+    const storeStaff = async (
+      salonId: string,
+      years?: number | null,
+    ): Promise<string> => {
+      const id = randomUUID()
+      await sql`
+        INSERT INTO staff (
+          id, "salonId", "firstName", "lastName", "displayName", email,
+          "phoneNumber", specialties, certifications
+        )
+        VALUES (
+          ${id}, ${salonId}, 'Hanako', 'Sato', 'Hanako',
+          ${`${id}@example.com`}, '03-1234-5678', '{}', '{}'
+        )
+      `
+      if (years !== undefined) {
+        await sql`
+          UPDATE staff SET "yearsOfExperience" = ${years} WHERE id = ${id}
+        `
+      }
+      return id
+    }
+
+    const yearsOf = async (id: string): Promise<unknown> =>
+      sql`SELECT "yearsOfExperience" FROM staff WHERE id = ${id}`
+
+    // A database from before the migration: the tables and the types that
+    // nothing read, the jsonb columns without a defined structure, and a
+    // default of 0 years of experience.
+    beforeEach(async () => {
+      await applyBaseline(sql, plan)
+      schemaOfSetup = await describeSchema()
+      await sql.unsafe(`
+        CREATE TYPE notification_type AS ENUM ('booking_reminder', 'birthday');
+        CREATE TYPE notification_channel AS ENUM ('email', 'sms');
+        CREATE TABLE membership_tiers (
+          id uuid PRIMARY KEY,
+          "salonId" uuid NOT NULL REFERENCES salons (id) ON DELETE CASCADE,
+          tier membership_tier NOT NULL,
+          benefits jsonb DEFAULT '[]'::jsonb
+        );
+        CREATE TABLE staff_skills (
+          id uuid PRIMARY KEY,
+          "staffId" uuid NOT NULL REFERENCES staff (id) ON DELETE CASCADE
+        );
+        CREATE TABLE staff_performances (
+          id uuid PRIMARY KEY,
+          "staffId" uuid NOT NULL REFERENCES staff (id) ON DELETE CASCADE
+        );
+        CREATE TABLE daily_summaries (
+          id uuid PRIMARY KEY,
+          "salonId" uuid NOT NULL REFERENCES salons (id) ON DELETE CASCADE
+        );
+        CREATE TABLE notification_logs (
+          id uuid PRIMARY KEY,
+          "notificationType" notification_type NOT NULL,
+          "notificationChannel" notification_channel NOT NULL
+        );
+        ALTER TABLE services
+          ADD COLUMN "requiredProducts" jsonb DEFAULT '[]'::jsonb;
+        ALTER TABLE staff
+          ADD COLUMN awards jsonb DEFAULT '[]'::jsonb,
+          ALTER COLUMN "yearsOfExperience" SET DEFAULT 0;
+        ALTER TABLE users ADD COLUMN metadata jsonb DEFAULT '{}'::jsonb;
+        ALTER TABLE salons
+          ADD COLUMN "cancellationPolicy" jsonb,
+          ADD COLUMN "bookingPolicy" jsonb;
+        ALTER TABLE booking_services ADD COLUMN "selectedOptions" jsonb;
+      `)
+    })
+
+    it('should give the database the schema of setup.sql, and keep it on a second run', async () => {
+      expect(await describeSchema()).not.toEqual(schemaOfSetup)
+
+      await run()
+      await run()
+
+      expect(await describeSchema()).toEqual(schemaOfSetup)
+    })
+
+    it('should leave no column that accepts NULL and has a default', async () => {
+      expect(await nullableWithDefault()).toEqual([
+        'membership_tiers.benefits',
+        'services.requiredProducts',
+        'staff.awards',
+        'staff.yearsOfExperience',
+        'users.metadata',
+      ])
+
+      await run()
+
+      expect(await nullableWithDefault()).toEqual([])
+    })
+
+    it('should keep the years of experience that are stored, and leave those of a later row unstated', async () => {
+      const salonId = await storeSalon(null)
+      const twelve = await storeStaff(salonId, 12)
+      const unstated = await storeStaff(salonId, null)
+      const defaulted = await storeStaff(salonId)
+
+      await run()
+      const later = await storeStaff(salonId)
+
+      expect(await yearsOf(twelve)).toEqual([{ yearsOfExperience: 12 }])
+      expect(await yearsOf(unstated)).toEqual([{ yearsOfExperience: null }])
+      expect(await yearsOf(defaulted)).toEqual([{ yearsOfExperience: 0 }])
+      expect(await yearsOf(later)).toEqual([{ yearsOfExperience: null }])
+    })
+  })
 })

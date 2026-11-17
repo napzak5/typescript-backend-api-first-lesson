@@ -7,12 +7,10 @@ import {
   customerPoints,
   customerPreferences,
   customers,
-  dailySummaries,
   inventory,
   inventoryAlertAcknowledgements,
   inventoryTransactions,
   medicalCharts,
-  membershipTiers,
   openingHours,
   paymentMethods,
   paymentTransactions,
@@ -31,9 +29,7 @@ import {
   sessions,
   staff,
   staffInvitations,
-  staffPerformances,
   staffSchedules,
-  staffSkills,
   treatmentMaterials,
   treatmentPhotos,
   treatmentRecords,
@@ -140,13 +136,6 @@ export const customersRelations = relations(customers, ({ one, many }) => ({
   users: many(users),
 }))
 
-export const dailySummariesRelations = relations(dailySummaries, ({ one }) => ({
-  salon: one(salons, {
-    fields: [dailySummaries.salonId],
-    references: [salons.id],
-  }),
-}))
-
 export const inventoryAlertAcknowledgementsRelations = relations(
   inventoryAlertAcknowledgements,
   ({ one }) => ({
@@ -203,16 +192,6 @@ export const medicalChartsRelations = relations(medicalCharts, ({ one }) => ({
     references: [customers.id],
   }),
 }))
-
-export const membershipTiersRelations = relations(
-  membershipTiers,
-  ({ one }) => ({
-    salon: one(salons, {
-      fields: [membershipTiers.salonId],
-      references: [salons.id],
-    }),
-  }),
-)
 
 export const openingHoursRelations = relations(openingHours, ({ one }) => ({
   salon: one(salons, {
@@ -358,11 +337,9 @@ export const salesRelations = relations(sales, ({ one, many }) => ({
 
 export const salonsRelations = relations(salons, ({ many }) => ({
   bookings: many(bookings),
-  dailySummaries: many(dailySummaries),
   inventories: many(inventory),
   inventoryAlertAcknowledgements: many(inventoryAlertAcknowledgements),
   inventoryTransactions: many(inventoryTransactions),
-  membershipTiers: many(membershipTiers),
   openingHours: many(openingHours),
   paymentMethods: many(paymentMethods),
   products: many(products),
@@ -430,16 +407,6 @@ export const staffInvitationsRelations = relations(
   }),
 )
 
-export const staffPerformancesRelations = relations(
-  staffPerformances,
-  ({ one }) => ({
-    staff: one(staff, {
-      fields: [staffPerformances.staffId],
-      references: [staff.id],
-    }),
-  }),
-)
-
 export const staffRelations = relations(staff, ({ one, many }) => ({
   bookingServices: many(bookingServices),
   bookings: many(bookings),
@@ -452,9 +419,7 @@ export const staffRelations = relations(staff, ({ one, many }) => ({
     references: [salons.id],
   }),
   staffInvitations: many(staffInvitations),
-  staffPerformances: many(staffPerformances),
   staffSchedules: many(staffSchedules),
-  staffSkills: many(staffSkills),
   treatmentRecords: many(treatmentRecords),
   users: many(users),
 }))
@@ -462,13 +427,6 @@ export const staffRelations = relations(staff, ({ one, many }) => ({
 export const staffSchedulesRelations = relations(staffSchedules, ({ one }) => ({
   staff: one(staff, {
     fields: [staffSchedules.staffId],
-    references: [staff.id],
-  }),
-}))
-
-export const staffSkillsRelations = relations(staffSkills, ({ one }) => ({
-  staff: one(staff, {
-    fields: [staffSkills.staffId],
     references: [staff.id],
   }),
 }))

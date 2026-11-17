@@ -491,7 +491,6 @@ export async function seedBookings(
         discountAmount,
         finalPrice: service.price - discountAmount,
         taxIncluded: service.taxIncluded,
-        selectedOptions: null,
         isCompleted: completed,
         completedAt: completed ? endTime.toISOString() : null,
         notes: null,

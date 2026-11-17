@@ -122,23 +122,6 @@ export const membershipTier = pgEnum('membership_tier', [
   'vip',
 ])
 
-export const notificationChannel = pgEnum('notification_channel', [
-  'email',
-  'sms',
-  'push',
-  'line',
-])
-
-export const notificationType = pgEnum('notification_type', [
-  'booking_reminder',
-  'booking_confirmation',
-  'booking_change',
-  'promotion',
-  'birthday',
-  'points_expiry',
-  'review_request',
-])
-
 export const orderStatus = pgEnum('order_status', [
   'draft',
   'pending',
@@ -282,7 +265,6 @@ export const bookingServices = pgTable(
     price: integer().notNull(),
     discountAmount: integer().default(0).notNull(),
     finalPrice: integer().notNull(),
-    selectedOptions: jsonb(),
     isCompleted: boolean().default(false).notNull(),
     completedAt: timestamp({ withTimezone: true, mode: 'string' }),
     notes: text(),
@@ -762,56 +744,6 @@ export const customers = pgTable(
   ],
 )
 
-export const dailySummaries = pgTable(
-  'daily_summaries',
-  {
-    id: uuid().defaultRandom().primaryKey().notNull(),
-    salonId: uuid().notNull(),
-    summaryDate: date().notNull(),
-    totalBookings: integer().default(0).notNull(),
-    completedBookings: integer().default(0).notNull(),
-    cancelledBookings: integer().default(0).notNull(),
-    noShowBookings: integer().default(0).notNull(),
-    uniqueCustomers: integer().default(0).notNull(),
-    newCustomers: integer().default(0).notNull(),
-    returningCustomers: integer().default(0).notNull(),
-    totalSales: integer().default(0).notNull(),
-    serviceSales: integer().default(0).notNull(),
-    productSales: integer().default(0).notNull(),
-    averageTicket: integer().default(0).notNull(),
-    activeStaff: integer().default(0).notNull(),
-    totalServiceHours: numeric({ precision: 10, scale: 2 })
-      .default('0')
-      .notNull(),
-    utilizationRate: numeric({ precision: 5, scale: 2 }).default('0').notNull(),
-    topService: jsonb(),
-    topStaff: jsonb(),
-    topProduct: jsonb(),
-    createdAt: timestamp({ withTimezone: true, mode: 'string' })
-      .defaultNow()
-      .notNull(),
-    updatedAt: timestamp({ withTimezone: true, mode: 'string' })
-      .defaultNow()
-      .notNull(),
-  },
-  (table) => [
-    foreignKey({
-      columns: [table.salonId],
-      foreignColumns: [salons.id],
-      name: 'daily_summaries_salon_id_fk',
-    }).onDelete('cascade'),
-    index('idx_daily_summaries_salon_id').using(
-      'btree',
-      table.salonId.asc().nullsLast().op('uuid_ops'),
-    ),
-    index('idx_daily_summaries_summary_date').using(
-      'btree',
-      table.summaryDate.asc().nullsLast().op('date_ops'),
-    ),
-    unique('daily_summaries_unique').on(table.salonId, table.summaryDate),
-  ],
-)
-
 export const inventory = pgTable(
   'inventory',
   {
@@ -1056,85 +988,6 @@ export const medicalCharts = pgTable(
       table.id.asc().nullsLast().op('uuid_ops'),
     ),
     unique('medical_charts_customer_id_unique').on(table.customerId),
-  ],
-)
-
-export const membershipTiers = pgTable(
-  'membership_tiers',
-  {
-    id: uuid().defaultRandom().primaryKey().notNull(),
-    salonId: uuid().notNull(),
-    tier: membershipTier().notNull(),
-    name: varchar({ length: 100 }).notNull(),
-    description: text(),
-    requiredPoints: integer().default(0).notNull(),
-    requiredAmount: integer().default(0).notNull(),
-    discountRate: numeric({ precision: 5, scale: 2 }).default('0').notNull(),
-    pointMultiplier: numeric({ precision: 3, scale: 1 })
-      .default('1.0')
-      .notNull(),
-    benefits: jsonb().default([]),
-    color: varchar({ length: 7 }),
-    iconUrl: varchar({ length: 500 }),
-    sortOrder: integer().default(0).notNull(),
-    isActive: boolean().default(true).notNull(),
-    createdAt: timestamp({ withTimezone: true, mode: 'string' })
-      .defaultNow()
-      .notNull(),
-    updatedAt: timestamp({ withTimezone: true, mode: 'string' })
-      .defaultNow()
-      .notNull(),
-  },
-  (table) => [
-    foreignKey({
-      columns: [table.salonId],
-      foreignColumns: [salons.id],
-      name: 'membership_tiers_salon_id_fk',
-    }).onDelete('cascade'),
-    index('idx_membership_tiers_salon_id').using(
-      'btree',
-      table.salonId.asc().nullsLast().op('uuid_ops'),
-    ),
-    unique('membership_tiers_unique').on(table.salonId, table.tier),
-  ],
-)
-
-export const notificationLogs = pgTable(
-  'notification_logs',
-  {
-    id: uuid().defaultRandom().primaryKey().notNull(),
-    recipientId: uuid().notNull(),
-    recipientType: varchar({ length: 20 }).notNull(),
-    notificationType: notificationType().notNull(),
-    subject: varchar({ length: 255 }),
-    content: text().notNull(),
-    templateId: varchar({ length: 100 }),
-    variables: jsonb(),
-    status: varchar({ length: 20 }).notNull(),
-    sentAt: timestamp({ withTimezone: true, mode: 'string' }),
-    deliveredAt: timestamp({ withTimezone: true, mode: 'string' }),
-    failedAt: timestamp({ withTimezone: true, mode: 'string' }),
-    errorMessage: text(),
-    referenceType: varchar({ length: 50 }),
-    referenceId: uuid(),
-    createdAt: timestamp({ withTimezone: true, mode: 'string' })
-      .defaultNow()
-      .notNull(),
-    notificationChannel: notificationChannel().notNull(),
-  },
-  (table) => [
-    index('idx_notification_logs_created_at').using(
-      'btree',
-      table.createdAt.asc().nullsLast().op('timestamptz_ops'),
-    ),
-    index('idx_notification_logs_notification_type').using(
-      'btree',
-      table.notificationType.asc().nullsLast().op('enum_ops'),
-    ),
-    index('idx_notification_logs_recipient_id').using(
-      'btree',
-      table.recipientId.asc().nullsLast().op('uuid_ops'),
-    ),
   ],
 )
 
@@ -1856,8 +1709,6 @@ export const salons = pgTable(
     timezone: varchar({ length: 50 }).default('Asia/Tokyo').notNull(),
     currency: varchar({ length: 3 }).default('JPY').notNull(),
     taxRate: numeric({ precision: 5, scale: 2 }).default('10.00').notNull(),
-    cancellationPolicy: jsonb(),
-    bookingPolicy: jsonb(),
     isActive: boolean().default(true).notNull(),
     deletedAt: timestamp({ withTimezone: true, mode: 'string' }),
     createdAt: timestamp({ withTimezone: true, mode: 'string' })
@@ -2005,7 +1856,6 @@ export const services = pgTable(
     allowOnlineBooking: boolean().default(true).notNull(),
     isPackage: boolean().default(false).notNull(),
     packageServiceIds: uuid().array().notNull(),
-    requiredProducts: jsonb().default([]),
     tags: text().array().notNull(),
     sortOrder: integer().default(0).notNull(),
     isActive: boolean().default(true).notNull(),
@@ -2133,9 +1983,8 @@ export const staff = pgTable(
     specialties: text().array().notNull(),
     bio: text(),
     imageUrl: varchar({ length: 500 }),
-    yearsOfExperience: integer().default(0),
+    yearsOfExperience: integer(),
     certifications: text().array().notNull(),
-    awards: jsonb().default([]),
     hireDate: date(),
     employmentType: varchar({ length: 50 }),
     baseSalary: integer(),
@@ -2231,68 +2080,6 @@ export const staffInvitations = pgTable(
   ],
 )
 
-export const staffPerformances = pgTable(
-  'staff_performances',
-  {
-    id: uuid().defaultRandom().primaryKey().notNull(),
-    staffId: uuid().notNull(),
-    periodStart: date().notNull(),
-    periodEnd: date().notNull(),
-    periodType: varchar({ length: 20 }).notNull(),
-    totalBookings: integer().default(0).notNull(),
-    completedBookings: integer().default(0).notNull(),
-    cancelledBookings: integer().default(0).notNull(),
-    rebookingRate: numeric({ precision: 5, scale: 2 }).default('0').notNull(),
-    totalRevenue: integer().default(0).notNull(),
-    serviceRevenue: integer().default(0).notNull(),
-    productRevenue: integer().default(0).notNull(),
-    averageTicket: integer().default(0).notNull(),
-    commission: integer().default(0).notNull(),
-    totalHoursWorked: numeric({ precision: 10, scale: 2 })
-      .default('0')
-      .notNull(),
-    totalServiceHours: numeric({ precision: 10, scale: 2 })
-      .default('0')
-      .notNull(),
-    utilizationRate: numeric({ precision: 5, scale: 2 }).default('0').notNull(),
-    uniqueCustomers: integer().default(0).notNull(),
-    newCustomers: integer().default(0).notNull(),
-    returningCustomers: integer().default(0).notNull(),
-    averageRating: numeric({ precision: 3, scale: 2 }),
-    reviewCount: integer().default(0).notNull(),
-    createdAt: timestamp({ withTimezone: true, mode: 'string' })
-      .defaultNow()
-      .notNull(),
-    updatedAt: timestamp({ withTimezone: true, mode: 'string' })
-      .defaultNow()
-      .notNull(),
-  },
-  (table) => [
-    foreignKey({
-      columns: [table.staffId],
-      foreignColumns: [staff.id],
-      name: 'staff_performances_staff_id_fk',
-    }).onDelete('cascade'),
-    index('idx_staff_performances_period_start').using(
-      'btree',
-      table.periodStart.asc().nullsLast().op('date_ops'),
-    ),
-    index('idx_staff_performances_period_type').using(
-      'btree',
-      table.periodType.asc().nullsLast().op('text_ops'),
-    ),
-    index('idx_staff_performances_staff_id').using(
-      'btree',
-      table.staffId.asc().nullsLast().op('uuid_ops'),
-    ),
-    unique('staff_performances_unique').on(
-      table.staffId,
-      table.periodStart,
-      table.periodType,
-    ),
-  ],
-)
-
 export const staffSchedules = pgTable(
   'staff_schedules',
   {
@@ -2363,41 +2150,6 @@ export const staffSchedules = pgTable(
         table.dayOfWeek.asc().nullsLast().op('enum_ops'),
       )
       .where(sql`"isRecurring"`),
-  ],
-)
-
-export const staffSkills = pgTable(
-  'staff_skills',
-  {
-    id: uuid().defaultRandom().primaryKey().notNull(),
-    staffId: uuid().notNull(),
-    serviceId: uuid().notNull(),
-    proficiencyLevel: integer().default(3).notNull(),
-    certificateDate: date(),
-    certificateUrl: varchar({ length: 500 }),
-    notes: text(),
-    createdAt: timestamp({ withTimezone: true, mode: 'string' })
-      .defaultNow()
-      .notNull(),
-    updatedAt: timestamp({ withTimezone: true, mode: 'string' })
-      .defaultNow()
-      .notNull(),
-  },
-  (table) => [
-    foreignKey({
-      columns: [table.staffId],
-      foreignColumns: [staff.id],
-      name: 'staff_skills_staff_id_fk',
-    }).onDelete('cascade'),
-    index('idx_staff_skills_service_id').using(
-      'btree',
-      table.serviceId.asc().nullsLast().op('uuid_ops'),
-    ),
-    index('idx_staff_skills_staff_id').using(
-      'btree',
-      table.staffId.asc().nullsLast().op('uuid_ops'),
-    ),
-    unique('staff_skills_unique').on(table.staffId, table.serviceId),
   ],
 )
 
@@ -2576,7 +2328,6 @@ export const users = pgTable(
     lastLoginIp: varchar({ length: 50 }),
     customerId: uuid(),
     staffId: uuid(),
-    metadata: jsonb().default({}),
     deletedAt: timestamp({ withTimezone: true, mode: 'string' }),
     createdAt: timestamp({ withTimezone: true, mode: 'string' })
       .defaultNow()
