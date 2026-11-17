@@ -502,8 +502,8 @@ describe('Inventory API', () => {
       ['a shelf of 50 characters', { shelf: 'S'.repeat(50) }],
       ['text with blanks around it', { lotNumber: ' LOT-7 ', notes: ' 注意 ' }],
       ['an expiry date in the past', { expiryDate: '2020-02-29' }],
-      ['the first day of the year 1', { expiryDate: '0001-01-01' }],
-      ['the last day of the year 9999', { expiryDate: '9999-12-31' }],
+      ['the first day a request may name', { expiryDate: '1900-01-01' }],
+      ['the last day a request may name', { expiryDate: '2999-12-31' }],
     ])('takes %s, as it is', async (_case, overrides) => {
       const response = await create(stockRow(overrides))
 
@@ -700,7 +700,17 @@ describe('Inventory API', () => {
         [
           'an expiry date of the year 0',
           { expiryDate: '0000-12-31' },
-          [['expiryDate', 'custom']],
+          [['expiryDate', 'too_small']],
+        ],
+        [
+          'an expiry date before 1900',
+          { expiryDate: '1899-12-31' },
+          [['expiryDate', 'too_small']],
+        ],
+        [
+          'an expiry date after 2999',
+          { expiryDate: '3000-01-01' },
+          [['expiryDate', 'too_big']],
         ],
         [
           'an expiry date with a time',
@@ -1756,7 +1766,7 @@ describe('Inventory API', () => {
         [
           'an expiry date of the year 0',
           { expiryDate: '0000-01-01' },
-          ['expiryDate:custom'],
+          ['expiryDate:too_small'],
         ],
         [
           'a lot number of 101 characters',
