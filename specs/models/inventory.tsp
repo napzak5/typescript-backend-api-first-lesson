@@ -1023,33 +1023,31 @@ namespace BeautySalon.Models {
 
   @doc("受領した1件の発注明細")
   model PurchaseOrderReceivedItem {
-    @doc("受領した在庫 ID。発注明細の inventoryId のいずれかを指定する")
+    @doc("受領した在庫 ID。発注の明細の inventoryId のいずれかを指定する。1つの受領で同じ在庫を2回指定できない")
     inventoryId: InventoryId;
 
-    @doc("受領数量")
+    @doc("受領数量。0より大きく、その明細の発注数量以下、小数第2位まで。発注数量を超えた分は在庫移動(purchase)で記録する")
     @minValueExclusive(0)
     @maxValue(99999999.99)
-    receivedQuantity: float64;
-
-    @doc("受領時のメモ。メモがない場合はnull")
-    notes: string | null;
+    quantity: float64;
   }
 
   @doc("""
     仕入れ発注受領リクエスト - 全項目のキーが必須。
-    受領数量を在庫移動(transactionType が purchase)として記録し、在庫数を増やす
+    明細ごとに、受領数量を在庫移動(transactionType が purchase)として記録し、在庫数を増やす。書かなかった明細は受領しない
     """)
   model PurchaseOrderReceiveRequest {
-    @doc("受領した明細の一覧。1件以上を指定する")
+    @doc("受領した明細の一覧。1件以上100件以下")
     @minItems(1)
-    receivedItems: PurchaseOrderReceivedItem[];
+    @maxItems(100)
+    items: PurchaseOrderReceivedItem[];
 
-    @doc("納品に関するメモ。メモがない場合はnull")
+    @doc("納品に関するメモ。null の場合は記録済みのメモを変えない。空白だけの文字列は指定できない")
     deliveryNotes: string | null;
   }
 
   @doc("""
-    発注提案一覧リクエスト - 対象のサロンとページネーションを指定する
+    発注提案一覧リクエスト - 対象のサロンとページネーションを指定する。提案は商品コード、商品 ID の順
     """)
   model ReorderSuggestionSearchRequest {
     @query
@@ -1067,27 +1065,42 @@ namespace BeautySalon.Models {
     salonId: SalonId;
   }
 
-  @doc("発注提案 - 在庫数が最低在庫数を下回った在庫と、推奨する発注数量を返す")
+  @doc("""
+    発注提案 - 在庫と発注中の数量の和が発注点以下の商品と、推奨する発注数量を、商品ごとに返す。
+    発注点は商品の reorderPoint、ない場合は minimumStock。推奨する発注数量は、maximumStock(ない場合は発注点)から在庫と発注中の数量の和を引いた値
+    """)
   model ReorderSuggestionResponse {
-    @doc("対象在庫 ID")
-    inventoryId: InventoryId;
+    @doc("商品 ID")
+    productId: ProductId;
+
+    @doc("商品コード")
+    productCode: string;
 
     @doc("商品名")
     productName: string;
 
-    @doc("現在の在庫数量")
-    currentStock: float64;
+    @doc("単位")
+    unit: string;
 
-    @doc("商品の最低在庫数")
-    minimumStock: float64;
-
-    @doc("推奨する発注数量")
-    suggestedQuantity: float64;
-
-    @doc("仕入先名。仕入先が登録されていない場合はnull")
+    @doc("商品の仕入先名。仕入先が登録されていない場合はnull")
     supplier: string | null;
 
-    @doc("直近の発注日。発注履歴がない場合はnull")
+    @doc("サロンにあるその商品の在庫の currentStock の合計")
+    currentStock: float64;
+
+    @doc("発注中の数量。draft・pending・approved・ordered・shipped の発注の、その商品の在庫の明細の quantity の合計")
+    onOrderQuantity: float64;
+
+    @doc("使った発注点。商品の reorderPoint、ない場合は minimumStock")
+    reorderPoint: float64;
+
+    @doc("商品の最大在庫数。最大在庫数がない場合はnull")
+    maximumStock: float64 | null;
+
+    @doc("推奨する発注数量。0より大きい")
+    suggestedQuantity: float64;
+
+    @doc("その商品の在庫を含む、キャンセルしていない発注の最新の発注日時。ない場合はnull")
     lastOrderDate: utcDateTime | null;
   }
 

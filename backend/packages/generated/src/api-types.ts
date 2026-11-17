@@ -1985,7 +1985,7 @@ export interface paths {
         };
         /**
          * List reorder suggestions
-         * @description 在庫数が最低在庫数を下回った在庫について、推奨する発注数量を一覧取得します。salonIdのサロンが存在しない場合は400を返します。
+         * @description サロンの有効な商品のうち、在庫と発注中の数量の和が発注点(reorderPoint、ない場合は minimumStock)以下のものについて、推奨する発注数量を商品ごとに一覧取得します。在庫の行がない商品と、推奨する発注数量が0の商品は含みません。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合は400を返します。
          */
         get: operations["PurchaseOrderCrud_listReorderSuggestions"];
         put?: never;
@@ -2071,7 +2071,7 @@ export interface paths {
         put?: never;
         /**
          * Receive a purchase order
-         * @description 発注済み(ordered)または発送済み(shipped)の仕入れ発注の納品を受領し、ステータスを delivered にします。受領数量は在庫移動(purchase)として記録し、在庫数を増やします。受領明細のinventoryIdが発注明細にない場合は400を、発注が ordered・shipped でない場合は409を返します。
+         * @description 発注済み(ordered)または発送済み(shipped)の仕入れ発注の納品を受領し、ステータスを delivered に、受領した日時を actualDelivery にします。明細ごとに、受領数量を在庫移動(purchase。単価は明細の unitPrice、参照は purchase_order と発注 ID)として記録し、在庫数を増やします。管理者と、発注のサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンの発注は404を、受領明細の inventoryId が発注の明細にない場合と、受領数量が発注数量を超える場合は400を、発注が ordered・shipped でない場合と、在庫数が上限(99,999,999.99)を超える場合は409を返します。
          */
         post: operations["PurchaseOrderCrud_receive"];
         delete?: never;
@@ -7264,25 +7264,23 @@ export interface components {
         };
         /**
          * @description 仕入れ発注受領リクエスト - 全項目のキーが必須。
-         *     受領数量を在庫移動(transactionType が purchase)として記録し、在庫数を増やす
+         *     明細ごとに、受領数量を在庫移動(transactionType が purchase)として記録し、在庫数を増やす。書かなかった明細は受領しない
          */
         "Models.PurchaseOrderReceiveRequest": {
-            /** @description 受領した明細の一覧。1件以上を指定する */
-            receivedItems: components["schemas"]["Models.PurchaseOrderReceivedItem"][];
-            /** @description 納品に関するメモ。メモがない場合はnull */
+            /** @description 受領した明細の一覧。1件以上100件以下 */
+            items: components["schemas"]["Models.PurchaseOrderReceivedItem"][];
+            /** @description 納品に関するメモ。null の場合は記録済みのメモを変えない。空白だけの文字列は指定できない */
             deliveryNotes: string | null;
         };
         /** @description 受領した1件の発注明細 */
         "Models.PurchaseOrderReceivedItem": {
-            /** @description 受領した在庫 ID。発注明細の inventoryId のいずれかを指定する */
+            /** @description 受領した在庫 ID。発注の明細の inventoryId のいずれかを指定する。1つの受領で同じ在庫を2回指定できない */
             inventoryId: components["schemas"]["Models.InventoryId"];
             /**
              * Format: double
-             * @description 受領数量
+             * @description 受領数量。0より大きく、その明細の発注数量以下、小数第2位まで。発注数量を超えた分は在庫移動(purchase)で記録する
              */
-            receivedQuantity: number;
-            /** @description 受領時のメモ。メモがない場合はnull */
-            notes: string | null;
+            quantity: number;
         };
         /** @description 仕入れ発注レスポンス - 発注の基本情報と明細を返す。金額はすべて円 */
         "Models.PurchaseOrderResponse": {
@@ -7386,32 +7384,49 @@ export interface components {
             /** @description その他の備考。nullでクリア。空白だけの文字列は指定できない */
             notes?: string | null;
         };
-        /** @description 発注提案 - 在庫数が最低在庫数を下回った在庫と、推奨する発注数量を返す */
+        /**
+         * @description 発注提案 - 在庫と発注中の数量の和が発注点以下の商品と、推奨する発注数量を、商品ごとに返す。
+         *     発注点は商品の reorderPoint、ない場合は minimumStock。推奨する発注数量は、maximumStock(ない場合は発注点)から在庫と発注中の数量の和を引いた値
+         */
         "Models.ReorderSuggestionResponse": {
-            /** @description 対象在庫 ID */
-            inventoryId: components["schemas"]["Models.InventoryId"];
+            /** @description 商品 ID */
+            productId: components["schemas"]["Models.ProductId"];
+            /** @description 商品コード */
+            productCode: string;
             /** @description 商品名 */
             productName: string;
+            /** @description 単位 */
+            unit: string;
+            /** @description 商品の仕入先名。仕入先が登録されていない場合はnull */
+            supplier: string | null;
             /**
              * Format: double
-             * @description 現在の在庫数量
+             * @description サロンにあるその商品の在庫の currentStock の合計
              */
             currentStock: number;
             /**
              * Format: double
-             * @description 商品の最低在庫数
+             * @description 発注中の数量。draft・pending・approved・ordered・shipped の発注の、その商品の在庫の明細の quantity の合計
              */
-            minimumStock: number;
+            onOrderQuantity: number;
             /**
              * Format: double
-             * @description 推奨する発注数量
+             * @description 使った発注点。商品の reorderPoint、ない場合は minimumStock
+             */
+            reorderPoint: number;
+            /**
+             * Format: double
+             * @description 商品の最大在庫数。最大在庫数がない場合はnull
+             */
+            maximumStock: number | null;
+            /**
+             * Format: double
+             * @description 推奨する発注数量。0より大きい
              */
             suggestedQuantity: number;
-            /** @description 仕入先名。仕入先が登録されていない場合はnull */
-            supplier: string | null;
             /**
              * Format: date-time
-             * @description 直近の発注日。発注履歴がない場合はnull
+             * @description その商品の在庫を含む、キャンセルしていない発注の最新の発注日時。ない場合はnull
              */
             lastOrderDate: string | null;
         };

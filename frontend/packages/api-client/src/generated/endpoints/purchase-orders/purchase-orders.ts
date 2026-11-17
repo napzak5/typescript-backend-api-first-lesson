@@ -415,7 +415,7 @@ export const getPurchaseOrderCrudListReorderSuggestionsUrl = (params: PurchaseOr
 }
 
 /**
- * 在庫数が最低在庫数を下回った在庫について、推奨する発注数量を一覧取得します。salonIdのサロンが存在しない場合は400を返します。
+ * サロンの有効な商品のうち、在庫と発注中の数量の和が発注点(reorderPoint、ない場合は minimumStock)以下のものについて、推奨する発注数量を商品ごとに一覧取得します。在庫の行がない商品と、推奨する発注数量が0の商品は含みません。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合は400を返します。
  * @summary List reorder suggestions
  */
 export const purchaseOrderCrudListReorderSuggestions = async (params: PurchaseOrderCrudListReorderSuggestionsParams, options?: RequestInit): Promise<purchaseOrderCrudListReorderSuggestionsResponse> => {
@@ -463,7 +463,7 @@ export type PurchaseOrderCrudListReorderSuggestionsQueryError = ModelsProblemDet
 
 
 /**
- * 在庫数が最低在庫数を下回った在庫について、推奨する発注数量を一覧取得します。salonIdのサロンが存在しない場合は400を返します。
+ * サロンの有効な商品のうち、在庫と発注中の数量の和が発注点(reorderPoint、ない場合は minimumStock)以下のものについて、推奨する発注数量を商品ごとに一覧取得します。在庫の行がない商品と、推奨する発注数量が0の商品は含みません。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合は400を返します。
  * @summary List reorder suggestions
  */
 export function usePurchaseOrderCrudListReorderSuggestions<TData = Awaited<ReturnType<typeof purchaseOrderCrudListReorderSuggestions>>, TError = ModelsProblemDetails>(
@@ -477,7 +477,7 @@ export function usePurchaseOrderCrudListReorderSuggestions<TData = Awaited<Retur
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 在庫数が最低在庫数を下回った在庫について、推奨する発注数量を一覧取得します。salonIdのサロンが存在しない場合は400を返します。
+ * サロンの有効な商品のうち、在庫と発注中の数量の和が発注点(reorderPoint、ない場合は minimumStock)以下のものについて、推奨する発注数量を商品ごとに一覧取得します。在庫の行がない商品と、推奨する発注数量が0の商品は含みません。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合は400を返します。
  * @summary List reorder suggestions
  */
 export function usePurchaseOrderCrudListReorderSuggestions<TData = Awaited<ReturnType<typeof purchaseOrderCrudListReorderSuggestions>>, TError = ModelsProblemDetails>(
@@ -491,7 +491,7 @@ export function usePurchaseOrderCrudListReorderSuggestions<TData = Awaited<Retur
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 在庫数が最低在庫数を下回った在庫について、推奨する発注数量を一覧取得します。salonIdのサロンが存在しない場合は400を返します。
+ * サロンの有効な商品のうち、在庫と発注中の数量の和が発注点(reorderPoint、ない場合は minimumStock)以下のものについて、推奨する発注数量を商品ごとに一覧取得します。在庫の行がない商品と、推奨する発注数量が0の商品は含みません。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合は400を返します。
  * @summary List reorder suggestions
  */
 export function usePurchaseOrderCrudListReorderSuggestions<TData = Awaited<ReturnType<typeof purchaseOrderCrudListReorderSuggestions>>, TError = ModelsProblemDetails>(
@@ -499,7 +499,7 @@ export function usePurchaseOrderCrudListReorderSuggestions<TData = Awaited<Retur
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 在庫数が最低在庫数を下回った在庫について、推奨する発注数量を一覧取得します。salonIdのサロンが存在しない場合は400を返します。
+ * サロンの有効な商品のうち、在庫と発注中の数量の和が発注点(reorderPoint、ない場合は minimumStock)以下のものについて、推奨する発注数量を商品ごとに一覧取得します。在庫の行がない商品と、推奨する発注数量が0の商品は含みません。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合は400を返します。
  * @summary List reorder suggestions
  */
 export function usePurchaseOrderCrudListReorderSuggestions<TData = Awaited<ReturnType<typeof purchaseOrderCrudListReorderSuggestions>>, TError = ModelsProblemDetails>(
@@ -1166,7 +1166,7 @@ export const getPurchaseOrderCrudReceiveUrl = (id: ModelsOrderId,) => {
 }
 
 /**
- * 発注済み(ordered)または発送済み(shipped)の仕入れ発注の納品を受領し、ステータスを delivered にします。受領数量は在庫移動(purchase)として記録し、在庫数を増やします。受領明細のinventoryIdが発注明細にない場合は400を、発注が ordered・shipped でない場合は409を返します。
+ * 発注済み(ordered)または発送済み(shipped)の仕入れ発注の納品を受領し、ステータスを delivered に、受領した日時を actualDelivery にします。明細ごとに、受領数量を在庫移動(purchase。単価は明細の unitPrice、参照は purchase_order と発注 ID)として記録し、在庫数を増やします。管理者と、発注のサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンの発注は404を、受領明細の inventoryId が発注の明細にない場合と、受領数量が発注数量を超える場合は400を、発注が ordered・shipped でない場合と、在庫数が上限(99,999,999.99)を超える場合は409を返します。
  * @summary Receive a purchase order
  */
 export const purchaseOrderCrudReceive = async (id: ModelsOrderId,
@@ -1234,7 +1234,7 @@ const {mutation: mutationOptions} = options ?
     export type PurchaseOrderCrudReceiveMutationVariables = {id: ModelsOrderId;data: ModelsPurchaseOrderReceiveRequest}
 
     /**
- * 発注済み(ordered)または発送済み(shipped)の仕入れ発注の納品を受領し、ステータスを delivered にします。受領数量は在庫移動(purchase)として記録し、在庫数を増やします。受領明細のinventoryIdが発注明細にない場合は400を、発注が ordered・shipped でない場合は409を返します。
+ * 発注済み(ordered)または発送済み(shipped)の仕入れ発注の納品を受領し、ステータスを delivered に、受領した日時を actualDelivery にします。明細ごとに、受領数量を在庫移動(purchase。単価は明細の unitPrice、参照は purchase_order と発注 ID)として記録し、在庫数を増やします。管理者と、発注のサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンの発注は404を、受領明細の inventoryId が発注の明細にない場合と、受領数量が発注数量を超える場合は400を、発注が ordered・shipped でない場合と、在庫数が上限(99,999,999.99)を超える場合は409を返します。
  * @summary Receive a purchase order
  */
 export const usePurchaseOrderCrudReceive = <TError = ModelsProblemDetails,
