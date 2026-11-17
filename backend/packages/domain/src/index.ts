@@ -24,6 +24,7 @@ export * from './business-logic/staff-account'
 export * from './business-logic/staff-invitation'
 export * from './business-logic/staff-profile'
 export * from './business-logic/staff-schedule'
+export * from './business-logic/treatment-record'
 
 // Models
 export * from './models/auth'
@@ -50,6 +51,7 @@ export * from './models/staff-account'
 export * from './models/staff-invitation'
 export * from './models/staff-profile'
 export * from './models/staff-schedule'
+export * from './models/treatment-record'
 
 // Repositories
 export * from './repositories/available-slot.repository'
@@ -76,6 +78,7 @@ export * from './repositories/staff-account.repository'
 export * from './repositories/staff-invitation.repository'
 export * from './repositories/staff-profile.repository'
 export * from './repositories/staff-schedule.repository'
+export * from './repositories/treatment-record.repository'
 export * from './repositories/user.repository'
 
 // Services the use cases rely on
