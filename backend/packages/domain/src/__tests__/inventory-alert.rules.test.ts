@@ -97,6 +97,8 @@ describe('productAlertOf', () => {
     ['below its minimum', { stock: '3.00' }, lowStock],
     ['just below its minimum', { stock: '4.99' }, lowStock],
     ['at its minimum', { stock: '5.00' }, lowStock],
+    ['with one left', { stock: '1.00' }, lowStock],
+    ['with a hundredth left', { stock: '0.01' }, lowStock],
     ['without stock', { stock: '0.00' }, { ...lowStock, severity: 'critical' }],
     [
       'without stock at a minimum of 0',

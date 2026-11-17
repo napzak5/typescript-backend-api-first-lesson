@@ -1182,6 +1182,24 @@ describe('Inventory alert API', () => {
         })
       })
 
+      it('still holds once a product that was not carried for a while is carried again', async () => {
+        await insertStock()
+        await acknowledged(ofProduct('low_stock'))
+        const carried = (isActive: boolean) =>
+          request(app)
+            .patch(`/api/v1/salons/${salonId}/products/${productId}`)
+            .set('Authorization', asAdmin)
+            .send({ isActive })
+
+        expect((await carried(false)).status).toBe(200)
+        expect(await listed(`low_stock:${productId}`)).toBeUndefined()
+        expect((await carried(true)).status).toBe(200)
+
+        expect(
+          (await listed(`low_stock:${productId}`)).acknowledgement,
+        ).not.toBeNull()
+      })
+
       it('no longer holds for too much stock that came down to the maximum since', async () => {
         const row = await insertStock(stock('25'))
         await acknowledged(ofProduct('overstock'))
