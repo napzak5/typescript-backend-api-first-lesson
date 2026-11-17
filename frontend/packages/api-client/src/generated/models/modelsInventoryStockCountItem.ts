@@ -14,7 +14,7 @@ export interface ModelsInventoryStockCountItem {
   /** 棚卸した在庫 ID */
   inventoryId: ModelsInventoryId;
   /**
-     * 実際に数えた在庫数量
+     * 実際に数えた在庫数量。小数第2位まで
      * @minimum 0
      * @maximum 99999999.99
      */

@@ -8767,7 +8767,7 @@ paths:
     post:
       operationId: InventoryCrud_performStockCount
       summary: Perform a stock count
-      description: 棚卸で数えた在庫数量を登録します。差異のある在庫は差分を在庫移動(adjustment)として記録して在庫数を数えた値にし、すべての在庫の lastCountedAt・lastCountedBy を更新します。すべての在庫を1つのトランザクションで処理し、salonIdのサロンが存在しない場合や、itemsにsalonIdのサロンの在庫ではないIDや重複したIDを指定した場合は400を返してどの在庫も更新しません。
+      description: 棚卸で数えた在庫数量を登録します。差異のある在庫は差分を在庫移動(adjustment)として記録して currentStock を数えた値に、availableStock を数えた値から reservedStock を引いた値にし、差異のない在庫には在庫移動を記録しません。itemsのすべての在庫の lastCountedAt を棚卸の時刻に、lastCountedBy を操作したスタッフ(管理者はnull)にします。1回の棚卸の lastCountedAt・updatedAt と在庫移動の createdAt は同じ時刻です。管理者と、salonIdのサロンのオーナー・マネージャーが使えます(スタッフは403)。すべての在庫を1つのトランザクションで処理し、ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合や、itemsにsalonIdのサロンの在庫ではないIDや重複したIDを指定した場合は400を、数えた値が reservedStock を下回る在庫がある場合は409を返して、どの在庫も更新しません。
       parameters: []
       responses:
         '200':
@@ -8827,6 +8827,12 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Models.ProblemDetails'
+        '409':
+          description: The request conflicts with the current state of the server.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Models.ProblemDetails'
         '413':
           description: リクエスト本文がサイズ上限を超えている (413)。
           content:
@@ -8872,7 +8878,7 @@ paths:
     get:
       operationId: InventoryCrud_getValueReport
       summary: Get the inventory value report
-      description: サロンの在庫評価額を、商品カテゴリ別に集計して返します。salonIdのサロンが存在しない場合は400を返します。
+      description: サロンの在庫評価額を、商品カテゴリ別に集計して返します。在庫数量に商品の仕入価格を掛けた額をカテゴリごとに合計して円に四捨五入し、在庫のある商品の数を品目数として数えます。取り扱いをやめた商品も、在庫があれば数えます。並びは評価額の降順、同じ場合はカテゴリの昇順(カテゴリ未設定は最後)です。管理者と、salonIdのサロンのオーナー・マネージャーが使えます(スタッフは403)。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合は400を返します。
       parameters:
         - $ref: '#/components/parameters/Models.InventoryValueReportRequest.salonId'
         - $ref: '#/components/parameters/Models.InventoryValueReportRequest.category'
@@ -21636,7 +21642,7 @@ components:
       name: category
       in: query
       required: false
-      description: 商品カテゴリによる絞り込み(完全一致)
+      description: 商品カテゴリによる絞り込み(完全一致)。空白だけの文字列は指定できない
       schema:
         type: string
         minLength: 1
@@ -26127,7 +26133,7 @@ components:
           format: double
           minimum: 0
           maximum: 99999999.99
-          description: 実際に数えた在庫数量
+          description: 実際に数えた在庫数量。小数第2位まで
       description: 棚卸で数えた1件の在庫の数量
     Models.InventoryStockCountRequest:
       type: object
@@ -26150,7 +26156,7 @@ components:
         reason:
           type: string
           nullable: true
-          description: 棚卸の補足。差異を調整する在庫移動の reason に記録する。補足がない場合はnull
+          description: 棚卸の補足。空白だけの文字列は指定できない。差異を調整する在庫移動の reason に記録する。補足がない場合はnullで、在庫移動の reason には「棚卸しの差異」を記録する
       description: |-
         棚卸リクエスト - 数えた在庫数量を登録する。全項目のキーが必須。
         すべての在庫を1つのトランザクションで処理し、1件でも処理できない場合はどの在庫も更新しない
@@ -26339,11 +26345,11 @@ components:
         value:
           type: number
           format: double
-          description: カテゴリの在庫評価額(円)
+          description: カテゴリの在庫評価額(円)。在庫数量と仕入価格の積の合計を四捨五入した値
         itemCount:
           type: integer
           format: int32
-          description: カテゴリの在庫品目数
+          description: カテゴリの在庫品目数。在庫数量が0より多い在庫のある商品の数で、ロットが分かれていても1品目と数える
       description: 在庫評価額レポートのカテゴリ別の集計
     Models.InventoryValueReportResponse:
       type: object
@@ -26355,16 +26361,16 @@ components:
         totalValue:
           type: number
           format: double
-          description: 在庫評価額の合計(円)
+          description: 在庫評価額の合計(円)。categories の value の合計
         totalItems:
           type: integer
           format: int32
-          description: 集計した在庫品目数
+          description: 集計した在庫品目数。categories の itemCount の合計
         categories:
           type: array
           items:
             $ref: '#/components/schemas/Models.InventoryValueReportCategory'
-          description: カテゴリ別の集計
+          description: カテゴリ別の集計。在庫のある商品のないカテゴリは含めない。評価額の降順、同じ場合はカテゴリの昇順(カテゴリ未設定は最後)
       description: |-
         在庫評価額レポート - 在庫数量に商品の仕入価格(purchasePrice)を掛けた評価額を集計する。
         仕入価格が未設定の商品は評価額0として数える

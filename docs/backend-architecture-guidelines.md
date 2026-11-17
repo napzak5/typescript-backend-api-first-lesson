@@ -748,7 +748,7 @@ async execute(
 - 一意性が NULL を含みます。ロット番号のある行は一意制約（`inventory_unique`）、ロット番号のない行は部分一意インデックス（`inventory_unique_without_lot`）が守り、リポジトリが、どちらの違反も `alreadyExists`（409）にします。
 - 削除は、行を消します。リポジトリが、行を `FOR UPDATE` でロックしてから在庫数を確かめ、0 でなければ `inStock`（409）を返します。在庫の移動の記録は、外部キー（`ON DELETE SET NULL`）で残ります。
 - 期限切れ間近の一覧は、サロンのタイムゾーン（`salons.timezone`）の今日から数えます。今日を作る関数（`_shared/expiry.ts` の `lastExpiringDayOf`）は純粋で、ユースケースが、依存の `clock` とサロンのタイムゾーンを渡します。
-- `numeric` のカラム（在庫の 3 つの数）は、作成と更新のリクエストが書きません。在庫数と使える数を増減するのは、在庫の移動だけです。Read マッパーが数値にします。
+- `numeric` のカラム（在庫の 3 つの数）は、作成と更新のリクエストが書きません。在庫数と使える数を増減するのは、在庫の移動と棚卸しだけです（棚卸しも、差を在庫の移動として記録します）。Read マッパーが数値にします。
 
 在庫の移動（`POST /api/v1/inventory/movement`、`GET /api/v1/inventory/{id}/movements`）は、在庫の行の在庫数を動かす記録です。
 
@@ -757,6 +757,13 @@ async execute(
 - 金額（`totalCost`）は、`bigint` で計算します（`totalCostOf`）。単価は整数、数量は 100 倍した整数として扱い、PostgreSQL の `round` と同じく、0.5 を 0 から遠いほうに丸めます。CHECK 制約（`inventory_transactions_cost`）も同じ式で確かめます。
 - リポジトリは、在庫の行を `FOR UPDATE` でロックしてから、移動後の在庫数を確かめ（`belowReserved`、`overLimit`）、在庫の行を更新し、在庫の移動を書きます（`InventoryMovementRecording`）。移動前後の在庫数（`balanceBefore`、`balanceAfter`）は、ロックした行と更新した行の値です。
 - 履歴は、`REPEATABLE READ` の読み取り専用のトランザクションで読みます（`InventoryMovementListing`）。日時の絞り込みは、レスポンスと同じミリ秒で比べます（`date_trunc('milliseconds', …)`）。
+
+棚卸し（`POST /api/v1/inventory/stock-count`）は、1 つのリクエストで多くの在庫の行を書きます。
+
+- 全部の行を処理するか、どの行も処理しません。リポジトリは、書く前に、そのサロンの行でない行（`rowsNotFound`。リクエストの位置をすべて返す）と、数えた数が引き当てた数を下回る行（`belowReserved`）を確かめます（`InventoryStockCount`）。
+- 行は、ID の順に `FOR UPDATE` でロックします。行の重なる 2 つの棚卸しが、互いを待ち続けないためです。数えた数は、ID の `CASE` 式で行の値にし、ロックしたあとの在庫数と SQL で比べます。
+- 1 回の棚卸しは 1 つの時刻です。すべての行をロックしたあとの更新の文の `statement_timestamp()` を、行の `lastCountedAt`、`updatedAt` と、調整の在庫の移動の `createdAt` に使います。
+- 在庫評価額（`GET /api/v1/inventory/value-report`）は、1 つの SQL 文で、カテゴリごとの和を円に四捨五入します。Read マッパー（`mappers/read/inventory-report.mapper.ts`）は、合計をカテゴリの和として数え、数値で正確に表せる円（`Number.MAX_SAFE_INTEGER` まで）だけを返します。
 
 売上の支払い（`backend/packages/domain/src/business-logic/payment`、`backend/packages/api/src/routes/payment`、`backend/packages/api/src/routes/sale/process-sale.handler.ts`）は、売上台帳と同じく、ルートをサロンの下に置かず、権限は売上台帳の関数（記録は `saleReachOf`、返金は `saleVoidReachOf`）で決まります。売上台帳にないものは次の点です。
 

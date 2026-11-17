@@ -52,6 +52,14 @@ export type ApiInventoryMovementRequest =
 export type ApiInventoryTransactionSearchRequest = NonNullable<
   operations['InventoryCrud_listMovements']['parameters']['query']
 >
+export type ApiInventoryStockCountRequest =
+  components['schemas']['Models.InventoryStockCountRequest']
+export type ApiInventoryStockCountResponse =
+  components['schemas']['Models.InventoryStockCountResponse']
+export type ApiInventoryValueReportRequest =
+  operations['InventoryCrud_getValueReport']['parameters']['query']
+export type ApiInventoryValueReportResponse =
+  components['schemas']['Models.InventoryValueReportResponse']
 
 // Database types, inferred from the Drizzle schema
 export type DbInventory = DeepRequired<typeof inventory.$inferSelect>

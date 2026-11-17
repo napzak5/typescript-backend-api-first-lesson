@@ -138,6 +138,8 @@ backend/packages/api/src/
 │   │   ├── list-low-stock-inventory.handler.ts   # GET    /api/v1/inventory/low-stock
 │   │   ├── list-expiring-inventory.handler.ts    # GET    /api/v1/inventory/expiring
 │   │   ├── record-inventory-movement.handler.ts  # POST   /api/v1/inventory/movement
+│   │   ├── perform-stock-count.handler.ts        # POST   /api/v1/inventory/stock-count
+│   │   ├── get-inventory-value-report.handler.ts # GET    /api/v1/inventory/value-report
 │   │   ├── get-inventory.handler.ts              # GET    /api/v1/inventory/:id
 │   │   ├── update-inventory.handler.ts           # PATCH  /api/v1/inventory/:id
 │   │   ├── delete-inventory.handler.ts           # DELETE /api/v1/inventory/:id
