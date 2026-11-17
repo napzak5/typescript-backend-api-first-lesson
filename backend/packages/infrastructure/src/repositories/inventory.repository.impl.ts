@@ -404,11 +404,12 @@ export class InventoryRepository implements IInventoryRepository {
       () =>
         this.db.transaction(
           async (tx): Promise<InventoryUpdate | Unwritten> => {
+            // The update below waits for a delete or a stock movement of
+            // the row that is under way, and finds what it left.
             const [held] = await tx
               .select({ productId: inventory.productId })
               .from(inventory)
               .where(and(eq(inventory.id, id), within(reach)))
-              .for('update')
             if (held === undefined) {
               return { type: 'notFound' }
             }

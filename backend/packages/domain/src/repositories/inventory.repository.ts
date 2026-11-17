@@ -82,9 +82,9 @@ export type InventoryRemoval =
  * row, a missing lot number included, resolves to an `alreadyExists` error,
  * also when another request wrote it at the same moment.
  *
- * A create holds the product while it decides, so a product that is being
- * deleted or changed is read as it is once that is done. A change and a
- * removal hold the row.
+ * A create, and a change of the lot number, hold the product while they
+ * decide, so a product that is being deleted or changed is read as it is
+ * once that is done. A removal holds the row while it decides.
  */
 export interface IInventoryRepository {
   /** Adds the row with no stock. */
