@@ -90,6 +90,15 @@ export const momentInUtc = z.iso
   .datetime()
   .transform((value) => parseISO(value).toISOString())
 
+/**
+ * A day of the calendar, as a `date` column holds it. PostgreSQL has no
+ * year 0 (the year before 1 is 1 BC) and refuses a date of it, which the
+ * ISO format allows.
+ */
+export const calendarDate = z.iso
+  .date()
+  .refine((date) => !date.startsWith('0000-'), 'Must be in the year 1 or later')
+
 /** The largest value of an `integer` column. */
 export const MAX_INTEGER = 2_147_483_647
 
