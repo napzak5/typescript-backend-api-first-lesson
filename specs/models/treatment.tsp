@@ -507,128 +507,115 @@ namespace BeautySalon.Models {
   }
 
   // ============================================================================
-  // カルテ (対応するテーブルはまだない)
+  // カルテ (medical_charts)
   // ============================================================================
 
-  @doc("過去施術の履歴。カルテに含める")
+  @doc("""
+    過去の施術 1 件。カルテの previousTreatments の要素で、medical_charts.previousTreatments (jsonb) に、この形のまま保存する
+    """)
   model PreviousTreatment {
-    @doc("施術タイプ")
+    @doc("施術の種類")
     treatment: TreatmentType;
 
-    @doc("施術日")
-    date: utcDateTime;
+    @doc("施術日。1900-01-01 から今日まで")
+    date: plainDate;
 
-    @doc("施術を受けたサロン名 - 自店での施術や不明な場合はnull")
+    @doc("施術を受けたサロンの名前（255文字まで）。自店での施術や、サロンが分からない場合はnull")
+    @maxLength(255)
     salonName: string | null;
 
-    @doc("施術に関するメモ - 特記事項がない通常の過去施術の場合はnull")
+    @doc("施術についてのメモ。特記事項がない場合はnull")
     notes: string | null;
   }
 
   @doc("""
-    カルテレスポンス - 顧客ごとのカルテ情報を返す。対応するテーブルはまだない
+    カルテレスポンス - medical_charts テーブルの1行。顧客1人に1件で、施術の前に確認する情報を返す。
+    プロパティ名と null 許可は DB カラムと一致させている。
+    顧客のアレルギーは customer_allergies の行で、listAllergies で取得する。ふだんの頭皮と髪は顧客台帳に、施術のときの状態は施術記録にある。
+    medicalConditions はスタッフ向けの情報で、顧客には返さない
     """)
   model MedicalChartResponse {
     @doc("カルテ ID")
     id: MedicalChartId;
 
-    @doc("対象顧客 ID")
+    @doc("対象の顧客 ID。顧客1人にカルテは1件まで")
     customerId: CustomerId;
 
-    @doc("アレルギー・敏感情報 - アレルギーがない顧客の場合はnull")
-    allergies: string[] | null;
+    @doc("過去の施術の一覧（ほかのサロンでの施術や、記録を始める前の施術）。保存した順。記録がない場合は空配列")
+    previousTreatments: PreviousTreatment[];
 
-    @doc("頭皮状態のメモ - 頭皮に問題がない健康な状態の場合はnull")
-    scalpCondition: string | null;
-
-    @doc("毛髪状態のメモ - 毛髪に特筆すべき問題がない場合はnull")
-    hairCondition: string | null;
-
-    @doc("過去に実施したケミカル施術履歴 - 初回来店やケミカル施術経験がない顧客の場合はnull")
-    previousTreatments: PreviousTreatment[] | null;
-
-    @doc("注意が必要な持病・体調情報 - 健康上の問題がない顧客の場合はnull")
+    @doc("施術の前に注意が必要な持病・体調。特にない場合はnull")
     medicalConditions: string | null;
 
-    @doc("好みの商材・ブランド - 特定の好みがない顧客の場合はnull")
-    preferredProducts: string[] | null;
+    @doc("好みの商材・ブランドの名前の一覧。保存した順。特にない場合は空配列")
+    preferredProducts: string[];
 
-    @doc("避けるべき商材 - 特に避けるべき商材がない顧客の場合はnull")
-    avoidProducts: string[] | null;
+    @doc("避ける商材・ブランドの名前の一覧。保存した順。特にない場合は空配列")
+    avoidProducts: string[];
 
-    @doc("自由記述メモ - 追加情報がない標準的なカルテの場合はnull")
+    @doc("自由記述のメモ。特記事項がない場合はnull")
     notes: string | null;
 
-    @doc("最終更新日時")
-    lastUpdated: utcDateTime;
+    @doc("レコード作成日時")
+    createdAt: utcDateTime;
 
-    ...AuditInfo;
+    @doc("レコード最終更新日時")
+    updatedAt: utcDateTime;
   }
 
   @doc("""
-    カルテ新規作成リクエスト - 全項目のキーが必須。値がない項目は null を指定する。対応するテーブルはまだない
+    カルテ新規作成リクエスト - 全項目のキーが必須。値がない項目は null か空配列を指定する
     """)
   model MedicalChartCreateRequest {
-    @doc("対象顧客 ID。カルテをまだ持たない顧客を指定する")
+    @doc("対象の顧客 ID。削除されていない、カルテをまだ持たない顧客を指定する")
     customerId: CustomerId;
 
-    @doc("アレルギー情報 - アレルギーがない顧客の場合はnull")
-    allergies: string[] | null;
+    @doc("過去の施術の一覧。50件まで。指定した順に保存する。記録がない場合は空配列")
+    @maxItems(50)
+    previousTreatments: PreviousTreatment[];
 
-    @doc("頭皮状態 - 頭皮に問題がない健康な状態の場合はnull")
-    scalpCondition: string | null;
-
-    @doc("毛髪状態 - 毛髪に特筆すべき問題がない場合はnull")
-    hairCondition: string | null;
-
-    @doc("過去施術の履歴 - 初回来店やケミカル施術経験がない顧客の場合はnull")
-    previousTreatments: PreviousTreatment[] | null;
-
-    @doc("注意すべき体調・持病 - 健康上の問題がない顧客の場合はnull")
+    @doc("施術の前に注意が必要な持病・体調。特にない場合はnull")
     medicalConditions: string | null;
 
-    @doc("好みの商材 - 特定の好みがない顧客の場合はnull")
-    preferredProducts: string[] | null;
+    @doc("好みの商材・ブランドの名前の一覧（100文字まで）。50件まで。同じ名前の繰り返しは指定できない。特にない場合は空配列")
+    @maxItems(50)
+    preferredProducts: string[];
 
-    @doc("避けるべき商材 - 特に避けるべき商材がない顧客の場合はnull")
-    avoidProducts: string[] | null;
+    @doc("避ける商材・ブランドの名前の一覧（100文字まで）。50件まで。同じ名前の繰り返しは指定できない。特にない場合は空配列")
+    @maxItems(50)
+    avoidProducts: string[];
 
-    @doc("その他メモ - 追加情報がない標準的なカルテの場合はnull")
+    @doc("自由記述のメモ。特記事項がない場合はnull")
     notes: string | null;
   }
 
   @doc("""
-    カルテ部分更新リクエスト - 指定した項目だけを更新する。null を指定した項目はクリアする。対応するテーブルはまだない。
-    対象の顧客は変更できない
+    カルテ部分更新リクエスト - 指定した項目だけを更新する。項目を1つも指定しないリクエストは受け付けない。
+    DB で NULL 許可のカラムは null でクリアできる。一覧の項目は、指定した一覧全体で置き換える。対象の顧客は変更できない
     """)
   model MedicalChartUpdateRequest {
-    @doc("アレルギー情報 - アレルギーがない顧客の場合はnull、null指定で値をリセット可能")
-    allergies?: string[] | null;
+    @doc("過去の施術の一覧。50件まで。指定した順に保存する。空配列でクリア")
+    @maxItems(50)
+    previousTreatments?: PreviousTreatment[];
 
-    @doc("頭皮状態 - 頭皮に問題がない健康な状態の場合はnull、null指定で値をリセット可能")
-    scalpCondition?: string | null;
-
-    @doc("毛髪状態 - 毛髪に特筆すべき問題がない場合はnull、null指定で値をリセット可能")
-    hairCondition?: string | null;
-
-    @doc("過去施術の履歴 - 初回来店やケミカル施術経験がない顧客の場合はnull、null指定で値をリセット可能")
-    previousTreatments?: PreviousTreatment[] | null;
-
-    @doc("注意すべき体調・持病 - 健康上の問題がない顧客の場合はnull、null指定で値をリセット可能")
+    @doc("施術の前に注意が必要な持病・体調。nullでクリア")
     medicalConditions?: string | null;
 
-    @doc("好みの商材 - 特定の好みがない顧客の場合はnull、null指定で値をリセット可能")
-    preferredProducts?: string[] | null;
+    @doc("好みの商材・ブランドの名前の一覧（100文字まで）。50件まで。同じ名前の繰り返しは指定できない。空配列でクリア")
+    @maxItems(50)
+    preferredProducts?: string[];
 
-    @doc("避けるべき商材 - 特に避けるべき商材がない顧客の場合はnull、null指定で値をリセット可能")
-    avoidProducts?: string[] | null;
+    @doc("避ける商材・ブランドの名前の一覧（100文字まで）。50件まで。同じ名前の繰り返しは指定できない。空配列でクリア")
+    @maxItems(50)
+    avoidProducts?: string[];
 
-    @doc("その他メモ - 追加情報がない標準的なカルテの場合はnull、null指定で値をリセット可能")
+    @doc("自由記述のメモ。nullでクリア")
     notes?: string | null;
   }
 
   @doc("""
-    カルテ一覧・検索リクエスト - 絞り込み条件とページネーションを指定する。条件はすべて AND で結合する。対応するテーブルはまだない
+    カルテ一覧・検索リクエスト - 絞り込み条件とページネーションを指定する。条件はすべて AND で結合する。
+    作成日時の新しい順（同時刻は ID の降順）に返す。削除された顧客のカルテは含めない
     """)
   model MedicalChartSearchRequest {
     @query
@@ -642,13 +629,13 @@ namespace BeautySalon.Models {
     cursor?: string;
 
     @query
-    @doc("カルテの記載内容に対する部分一致キーワード")
+    @doc("持病・体調、メモ、好みの商材と避ける商材の名前に対する部分一致キーワード（大文字と小文字を区別しない）")
     @minLength(1)
     @maxLength(100)
     search?: string;
 
     @query
-    @doc("アレルギー情報の有無による絞り込み。trueの場合はアレルギー情報を持つカルテに一致する")
+    @doc("アレルギーの有無による絞り込み。trueの場合は customer_allergies に行がある顧客の、falseの場合は行がない顧客のカルテに一致する")
     hasAllergies?: boolean;
   }
 }

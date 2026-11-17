@@ -281,7 +281,7 @@ export const getMedicalChartCrudCreateUrl = () => {
 }
 
 /**
- * 顧客のカルテを新規作成します。customerIdの顧客が存在しない場合は400を、顧客がすでにカルテを持つ場合は409を返します。Locationヘッダーは顧客IDによるカルテ取得のURLを指します。
+ * 顧客のカルテを新規作成します。customerIdの顧客が存在しないか削除されている場合は400を、顧客がすでにカルテを持つ場合は409を返します。Locationヘッダーは顧客IDによるカルテ取得のURLを指します。
  * @summary Create a medical chart
  */
 export const medicalChartCrudCreate = async (modelsMedicalChartCreateRequest: ModelsMedicalChartCreateRequest, options?: RequestInit): Promise<medicalChartCrudCreateResponse> => {
@@ -348,7 +348,7 @@ const {mutation: mutationOptions} = options ?
     export type MedicalChartCrudCreateMutationVariables = {data: ModelsMedicalChartCreateRequest}
 
     /**
- * 顧客のカルテを新規作成します。customerIdの顧客が存在しない場合は400を、顧客がすでにカルテを持つ場合は409を返します。Locationヘッダーは顧客IDによるカルテ取得のURLを指します。
+ * 顧客のカルテを新規作成します。customerIdの顧客が存在しないか削除されている場合は400を、顧客がすでにカルテを持つ場合は409を返します。Locationヘッダーは顧客IDによるカルテ取得のURLを指します。
  * @summary Create a medical chart
  */
 export const useMedicalChartCrudCreate = <TError = ModelsProblemDetails,
@@ -414,7 +414,7 @@ export const getMedicalChartCrudGetByCustomerUrl = (customerId: ModelsCustomerId
 }
 
 /**
- * 顧客IDを指定してカルテを取得します。顧客が存在しない場合や、顧客がカルテを持たない場合は404を返します。
+ * 顧客IDを指定してカルテを取得します。顧客が存在しないか削除されている場合や、顧客がカルテを持たない場合は404を返します。
  * @summary Get the medical chart of a customer
  */
 export const medicalChartCrudGetByCustomer = async (customerId: ModelsCustomerId, options?: RequestInit): Promise<medicalChartCrudGetByCustomerResponse> => {
@@ -462,7 +462,7 @@ export type MedicalChartCrudGetByCustomerQueryError = ModelsProblemDetails
 
 
 /**
- * 顧客IDを指定してカルテを取得します。顧客が存在しない場合や、顧客がカルテを持たない場合は404を返します。
+ * 顧客IDを指定してカルテを取得します。顧客が存在しないか削除されている場合や、顧客がカルテを持たない場合は404を返します。
  * @summary Get the medical chart of a customer
  */
 export function useMedicalChartCrudGetByCustomer<TData = Awaited<ReturnType<typeof medicalChartCrudGetByCustomer>>, TError = ModelsProblemDetails>(
@@ -476,7 +476,7 @@ export function useMedicalChartCrudGetByCustomer<TData = Awaited<ReturnType<type
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 顧客IDを指定してカルテを取得します。顧客が存在しない場合や、顧客がカルテを持たない場合は404を返します。
+ * 顧客IDを指定してカルテを取得します。顧客が存在しないか削除されている場合や、顧客がカルテを持たない場合は404を返します。
  * @summary Get the medical chart of a customer
  */
 export function useMedicalChartCrudGetByCustomer<TData = Awaited<ReturnType<typeof medicalChartCrudGetByCustomer>>, TError = ModelsProblemDetails>(
@@ -490,7 +490,7 @@ export function useMedicalChartCrudGetByCustomer<TData = Awaited<ReturnType<type
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 顧客IDを指定してカルテを取得します。顧客が存在しない場合や、顧客がカルテを持たない場合は404を返します。
+ * 顧客IDを指定してカルテを取得します。顧客が存在しないか削除されている場合や、顧客がカルテを持たない場合は404を返します。
  * @summary Get the medical chart of a customer
  */
 export function useMedicalChartCrudGetByCustomer<TData = Awaited<ReturnType<typeof medicalChartCrudGetByCustomer>>, TError = ModelsProblemDetails>(
@@ -498,7 +498,7 @@ export function useMedicalChartCrudGetByCustomer<TData = Awaited<ReturnType<type
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 顧客IDを指定してカルテを取得します。顧客が存在しない場合や、顧客がカルテを持たない場合は404を返します。
+ * 顧客IDを指定してカルテを取得します。顧客が存在しないか削除されている場合や、顧客がカルテを持たない場合は404を返します。
  * @summary Get the medical chart of a customer
  */
 export function useMedicalChartCrudGetByCustomer<TData = Awaited<ReturnType<typeof medicalChartCrudGetByCustomer>>, TError = ModelsProblemDetails>(
@@ -753,7 +753,7 @@ export const getMedicalChartCrudUpdateUrl = (id: ModelsMedicalChartId,) => {
 }
 
 /**
- * 指定した項目だけを更新します。
+ * 指定した項目だけを更新します。カルテが存在しない場合や、カルテの顧客が削除されている場合は404を返します。
  * @summary Update a medical chart
  */
 export const medicalChartCrudUpdate = async (id: ModelsMedicalChartId,
@@ -821,7 +821,7 @@ const {mutation: mutationOptions} = options ?
     export type MedicalChartCrudUpdateMutationVariables = {id: ModelsMedicalChartId;data: ModelsMedicalChartUpdateRequest}
 
     /**
- * 指定した項目だけを更新します。
+ * 指定した項目だけを更新します。カルテが存在しない場合や、カルテの顧客が削除されている場合は404を返します。
  * @summary Update a medical chart
  */
 export const useMedicalChartCrudUpdate = <TError = ModelsProblemDetails,

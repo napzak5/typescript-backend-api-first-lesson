@@ -1098,7 +1098,13 @@ const treatmentRecordManagedColumns = ['id', 'createdAt', 'updatedAt']
 /** Columns of a child row of a treatment record that no model exposes. */
 const treatmentChildManagedColumns = ['id', 'treatmentRecordId', 'createdAt']
 
-/** Treatment records, their materials and photos, and customer allergies. */
+/** Columns of `medical_charts` that a create request never writes. */
+const medicalChartManagedColumns = ['id', 'createdAt', 'updatedAt']
+
+/**
+ * Treatment records, their materials and photos, the medical charts of the
+ * customers, and customer allergies.
+ */
 const treatmentRules: ModelRule[] = [
   {
     model: 'Models.TreatmentRecordResponse',
@@ -1146,6 +1152,25 @@ const treatmentRules: ModelRule[] = [
     table: 'treatmentPhotos',
     kind: 'create',
     omittedColumns: treatmentChildManagedColumns,
+  },
+  {
+    model: 'Models.MedicalChartResponse',
+    table: 'medicalCharts',
+    kind: 'response',
+    omittedColumns: [],
+  },
+  {
+    model: 'Models.MedicalChartCreateRequest',
+    table: 'medicalCharts',
+    kind: 'create',
+    omittedColumns: medicalChartManagedColumns,
+  },
+  {
+    model: 'Models.MedicalChartUpdateRequest',
+    table: 'medicalCharts',
+    kind: 'update',
+    // A chart is the chart of one customer.
+    omittedColumns: [...medicalChartManagedColumns, 'customerId'],
   },
   {
     model: 'Models.CustomerAllergyResponse',

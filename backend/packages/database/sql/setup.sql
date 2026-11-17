@@ -313,6 +313,20 @@ CREATE TABLE "inventory_transactions" (
 	CONSTRAINT "inventory_transactions_reference_pair" CHECK (("referenceType" IS NULL) = ("referenceId" IS NULL))
 );
 
+CREATE TABLE "medical_charts" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"customerId" uuid NOT NULL,
+	"previousTreatments" jsonb NOT NULL,
+	"medicalConditions" text,
+	"preferredProducts" text[] NOT NULL,
+	"avoidProducts" text[] NOT NULL,
+	"notes" text,
+	"createdAt" timestamp with time zone DEFAULT now() NOT NULL,
+	"updatedAt" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "medical_charts_customer_id_unique" UNIQUE("customerId"),
+	CONSTRAINT "medical_charts_lists" CHECK ((jsonb_typeof("previousTreatments") = 'array'::text) AND (array_position("preferredProducts", NULL::text) IS NULL) AND (array_position("avoidProducts", NULL::text) IS NULL))
+);
+
 CREATE TABLE "membership_tiers" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"salonId" uuid NOT NULL,
@@ -967,6 +981,7 @@ ALTER TABLE "inventory_alert_acknowledgements" ADD CONSTRAINT "inventory_alert_a
 ALTER TABLE "inventory_transactions" ADD CONSTRAINT "inventory_transactions_inventory_id_fk" FOREIGN KEY ("inventoryId") REFERENCES "public"."inventory"("id") ON DELETE set null ON UPDATE no action;
 ALTER TABLE "inventory_transactions" ADD CONSTRAINT "inventory_transactions_product_id_fk" FOREIGN KEY ("productId") REFERENCES "public"."products"("id") ON DELETE restrict ON UPDATE no action;
 ALTER TABLE "inventory_transactions" ADD CONSTRAINT "inventory_transactions_salon_id_fk" FOREIGN KEY ("salonId") REFERENCES "public"."salons"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "medical_charts" ADD CONSTRAINT "medical_charts_customer_id_fk" FOREIGN KEY ("customerId") REFERENCES "public"."customers"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "membership_tiers" ADD CONSTRAINT "membership_tiers_salon_id_fk" FOREIGN KEY ("salonId") REFERENCES "public"."salons"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "opening_hours" ADD CONSTRAINT "opening_hours_salon_id_fk" FOREIGN KEY ("salonId") REFERENCES "public"."salons"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "payment_methods" ADD CONSTRAINT "payment_methods_salon_id_fk" FOREIGN KEY ("salonId") REFERENCES "public"."salons"("id") ON DELETE cascade ON UPDATE no action;
@@ -1048,6 +1063,7 @@ CREATE INDEX "idx_inventory_transactions_inventory_time" ON "inventory_transacti
 CREATE INDEX "idx_inventory_transactions_product_time" ON "inventory_transactions" USING btree ("productId" uuid_ops,"createdAt" timestamptz_ops);
 CREATE INDEX "idx_inventory_transactions_salon_id" ON "inventory_transactions" USING btree ("salonId" uuid_ops);
 CREATE INDEX "idx_inventory_transactions_transaction_type" ON "inventory_transactions" USING btree ("transactionType" enum_ops);
+CREATE INDEX "idx_medical_charts_created_at" ON "medical_charts" USING btree ("createdAt" timestamptz_ops,"id" uuid_ops);
 CREATE INDEX "idx_membership_tiers_salon_id" ON "membership_tiers" USING btree ("salonId" uuid_ops);
 CREATE INDEX "idx_notification_logs_created_at" ON "notification_logs" USING btree ("createdAt" timestamptz_ops);
 CREATE INDEX "idx_notification_logs_notification_type" ON "notification_logs" USING btree ("notificationType" enum_ops);

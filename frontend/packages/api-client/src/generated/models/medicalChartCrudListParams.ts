@@ -20,11 +20,11 @@ export type MedicalChartCrudListParams = {
   /** 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
   cursor?: ModelsMedicalChartSearchRequestCursorParameter;
   /**
-   * カルテの記載内容に対する部分一致キーワード
+   * 持病・体調、メモ、好みの商材と避ける商材の名前に対する部分一致キーワード（大文字と小文字を区別しない）
    * @minLength 1
    * @maxLength 100
    */
   search?: ModelsMedicalChartSearchRequestSearchParameter;
-  /** アレルギー情報の有無による絞り込み。trueの場合はアレルギー情報を持つカルテに一致する */
+  /** アレルギーの有無による絞り込み。trueの場合は customer_allergies に行がある顧客の、falseの場合は行がない顧客のカルテに一致する */
   hasAllergies?: ModelsMedicalChartSearchRequestHasAllergiesParameter;
 };

@@ -14,6 +14,7 @@ import {
   InventoryAlertRepository,
   InventoryRepository,
   type Logger,
+  MedicalChartRepository,
   PaymentMethodRepository,
   PaymentRepository,
   PointRepository,
@@ -64,6 +65,7 @@ import {
 } from './routes/customer-preferences'
 import { createInventoryRouter } from './routes/inventory'
 import { createInventoryAlertRouter } from './routes/inventory-alert'
+import { createMedicalChartRouter } from './routes/medical-chart'
 import { createPaymentRouter } from './routes/payment'
 import { createPaymentMethodRouter } from './routes/payment-method'
 import { createPointRouter } from './routes/point'
@@ -404,6 +406,13 @@ export const createApp = ({
     `${API_BASE_PATH}/review-reports`,
     createReviewReportRouter(
       { reviewReportRepository: new ReviewReportRepository(database) },
+      authenticated,
+    ),
+  )
+  app.use(
+    `${API_BASE_PATH}/medical-charts`,
+    createMedicalChartRouter(
+      { medicalChartRepository: new MedicalChartRepository(database), clock },
       authenticated,
     ),
   )

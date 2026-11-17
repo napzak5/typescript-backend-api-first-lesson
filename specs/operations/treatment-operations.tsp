@@ -143,7 +143,7 @@ namespace BeautySalon.Operations {
         | ProblemResponse<400>
         | CommonErrors;
 
-      @doc("顧客のカルテを新規作成します。customerIdの顧客が存在しない場合は400を、顧客がすでにカルテを持つ場合は409を返します。Locationヘッダーは顧客IDによるカルテ取得のURLを指します。")
+      @doc("顧客のカルテを新規作成します。customerIdの顧客が存在しないか削除されている場合は400を、顧客がすでにカルテを持つ場合は409を返します。Locationヘッダーは顧客IDによるカルテ取得のURLを指します。")
       @summary("Create a medical chart")
       @post
       create(@body request: MedicalChartCreateRequest):
@@ -157,7 +157,7 @@ namespace BeautySalon.Operations {
         | RequestBodyErrors
         | CommonErrors;
 
-      @doc("顧客IDを指定してカルテを取得します。顧客が存在しない場合や、顧客がカルテを持たない場合は404を返します。")
+      @doc("顧客IDを指定してカルテを取得します。顧客が存在しないか削除されている場合や、顧客がカルテを持たない場合は404を返します。")
       @summary("Get the medical chart of a customer")
       @route("/customer/{customerId}")
       @get
@@ -170,7 +170,7 @@ namespace BeautySalon.Operations {
         | ProblemResponse<404>
         | CommonErrors;
 
-      @doc("指定した項目だけを更新します。")
+      @doc("指定した項目だけを更新します。カルテが存在しない場合や、カルテの顧客が削除されている場合は404を返します。")
       @summary("Update a medical chart")
       @patch
       update(
