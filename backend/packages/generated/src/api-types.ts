@@ -1749,7 +1749,7 @@ export interface paths {
         };
         /**
          * Get the expiring points of a customer
-         * @description 顧客の、有効期限が今日(UTC)から days 日後まで(その日を含む)の獲得ポイントのうち、使われずに残っているポイントを集計します。有効期限を過ぎて、まだ失効させていないポイントも含みます。管理者と、サロンの owner・manager・staff が実行できます(顧客のアカウントは403)。customerId の顧客が存在しない、または削除されている場合は404を、days が 1〜365 の整数でない場合は400を返します。
+         * @description 顧客の、有効期限が今日(UTC)から days 日後まで(その日を含む)の獲得ポイント(顧客の統合で、有効期限ごと移したものを含む)のうち、使われずに残っているポイントを集計します。有効期限を過ぎて、まだ失効させていないポイントも含みます。管理者と、サロンの owner・manager・staff が実行できます(顧客のアカウントは403)。customerId の顧客が存在しない、または削除されている場合は404を、days が 1〜365 の整数でない場合は400を返します。
          */
         get: operations["PointCrud_getExpiring"];
         put?: never;
@@ -1811,7 +1811,7 @@ export interface paths {
         put?: never;
         /**
          * Expire points
-         * @description 有効期限が processBefore より前の獲得ポイントのうち、使われずに残っているポイントを失効させます。失効させるポイントのある顧客ごとに、種別 expired のポイント取引を1件登録し、同じトランザクションで顧客の残高を減らします。管理者だけが実行できます(サロンのメンバーと顧客のアカウントは403)。processBefore が昨日(UTC)より後の日付の場合と、customerId に存在しない、または削除された顧客を指定した場合は400を返します。失効させたポイントは残っていないものとして数えるので、同じ processBefore で何度実行しても、2回目からは何も登録しません。
+         * @description 有効期限が processBefore より前の獲得ポイント(顧客の統合で、有効期限ごと移したものを含む)のうち、使われずに残っているポイントを失効させます。失効させるポイントのある顧客ごとに、種別 expired のポイント取引を1件登録し、同じトランザクションで顧客の残高を減らします。管理者だけが実行できます(サロンのメンバーと顧客のアカウントは403)。processBefore が昨日(UTC)より後の日付の場合と、customerId に存在しない、または削除された顧客を指定した場合は400を返します。失効させたポイントは残っていないものとして数えるので、同じ processBefore で何度実行しても、2回目からは何も登録しません。
          */
         post: operations["PointCrud_expire"];
         delete?: never;
@@ -6451,7 +6451,7 @@ export interface components {
              */
             totalPoints: number;
         };
-        /** @description 失効予定ポイントの集計結果 - 有効期限が近い獲得ポイントのうち、使われずに残っているポイントの合計と、その獲得の取引の一覧 */
+        /** @description 失効予定ポイントの集計結果 - 有効期限が近い獲得ポイント(顧客の統合で移したものを含む)のうち、使われずに残っているポイントの合計と、その取引の一覧 */
         "Models.PointExpiringResponse": {
             /** @description 対象顧客の ID */
             customerId: components["schemas"]["Models.CustomerId"];
@@ -6465,7 +6465,7 @@ export interface components {
              * @description transactions の中で最も早い有効期限。該当するポイントがない場合はnull
              */
             expirationDate: string | null;
-            /** @description 使われずに残っているポイントのある、有効期限が期間内の獲得(earned)の取引の一覧。expiryDate の昇順で、同じ日付なら登録の古い順に並ぶ。各取引の points は獲得したポイント数で、残っている数ではない */
+            /** @description 使われずに残っているポイントのある、有効期限が期間内の獲得(earned)と、顧客の統合で獲得の残りを移した移行(transferred)の取引の一覧。expiryDate の昇順で、同じ日付なら登録の古い順に並ぶ。各取引の points は獲得した、または移したポイント数で、残っている数ではない */
             transactions: components["schemas"]["Models.PointTransactionResponse"][];
         };
         /**
