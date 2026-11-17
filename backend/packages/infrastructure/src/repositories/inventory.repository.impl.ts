@@ -6,6 +6,7 @@ import {
 import {
   type DbInventory,
   type DbInventoryChanges,
+  type DbInventoryValueCategory,
   type DbNewInventory,
   type DbNewInventoryMovement,
   type DomainError,
@@ -21,9 +22,12 @@ import {
   type InventoryMovementListing,
   type InventoryMovementRecording,
   type InventoryRemoval,
+  type InventoryStockCount,
+  type InventoryStockCountCriteria,
   type InventoryUpdate,
   type LedgerReach,
   lotNumberRefusal,
+  type SalonId,
 } from '@beauty-salon-backend/domain'
 import { Result } from '@beauty-salon-backend/utility'
 import {
@@ -34,6 +38,7 @@ import {
   eq,
   getTableColumns,
   gt,
+  inArray,
   isNotNull,
   isNull,
   lte,
@@ -168,6 +173,17 @@ const recordingOf = (
   outcome.type === 'unwritten'
     ? Result.error(DomainErrors.database(outcome.reason, null))
     : Result.success(outcome)
+
+const stockCountOf = (
+  outcome: InventoryStockCount | Unwritten,
+): Result<InventoryStockCount, DomainError> =>
+  outcome.type === 'unwritten'
+    ? Result.error(DomainErrors.database(outcome.reason, null))
+    : Result.success(outcome)
+
+/** The kind of the movements a stock count records. */
+const ADJUSTMENT: (typeof inventoryTransactions.$inferInsert)['transactionType'] =
+  'adjustment'
 
 /** The most stock a row holds: its columns are `numeric(10, 2)`. */
 const MAX_STOCK = sql`99999999.99`
@@ -686,6 +702,211 @@ export class InventoryRepository implements IInventoryRepository {
           hasMore: found.length > limit,
         }
       }, AT_ONE_MOMENT),
+    )
+  }
+
+  async performStockCount({
+    salonId,
+    items,
+    reason,
+    performedBy,
+  }: InventoryStockCountCriteria): Promise<
+    Result<InventoryStockCount, DomainError>
+  > {
+    const ids = items.map(({ inventoryId }) => inventoryId)
+    // What was counted of a row of the count, as a value of the row.
+    const counted = sql`(case ${inventory.id} ${sql.join(
+      items.map(
+        ({ inventoryId, countedQuantity }) =>
+          sql`when ${inventoryId}::uuid then ${countedQuantity}::numeric`,
+      ),
+      sql` `,
+    )} end)`
+    // The moment of the count: when its write begins, once every row of it
+    // is held. Every row and every adjustment of the count are of it.
+    const countedAt = sql`statement_timestamp()`
+
+    const performed = await attempt(
+      'Failed to perform stock count',
+      undefined,
+      () =>
+        this.db.transaction(
+          async (tx): Promise<InventoryStockCount | Unwritten> => {
+            // Held in the order of their IDs: two counts that share rows
+            // take them in one order, so neither waits for a row while it
+            // holds one the other waits for. A row is compared with what
+            // was counted as it is once held, after the movements, changes
+            // and counts it waited for.
+            const held = await tx
+              .select({
+                id: inventory.id,
+                expected: inventory.currentStock,
+                counted: sql<string>`${counted}::text`,
+                difference: sql<string>`(${counted} - ${inventory.currentStock})::text`,
+                differs: sql<boolean>`${counted} <> ${inventory.currentStock}`,
+                belowReserved: sql<boolean>`${counted} < ${inventory.reservedStock}`,
+              })
+              .from(inventory)
+              .where(
+                and(inArray(inventory.id, ids), eq(inventory.salonId, salonId)),
+              )
+              .orderBy(asc(inventory.id))
+              .for('update')
+            const heldById = new Map(held.map((row) => [row.id, row]))
+            const rows = items.map(({ inventoryId }) => ({
+              inventoryId,
+              row: heldById.get(inventoryId),
+            }))
+
+            const indexes = rows.flatMap(({ row }, index) =>
+              row === undefined ? [index] : [],
+            )
+            if (indexes.length > 0) {
+              return { type: 'rowsNotFound', indexes }
+            }
+            const found = rows.flatMap(({ inventoryId, row }) =>
+              row === undefined ? [] : [{ ...row, inventoryId }],
+            )
+            const below = found.find(({ belowReserved }) => belowReserved)
+            if (below !== undefined) {
+              return { type: 'belowReserved', inventoryId: below.inventoryId }
+            }
+
+            // The reserved stock stays, so what is available is what was
+            // counted less it. A row that does not differ is written too:
+            // it was counted.
+            const written = await tx
+              .update(inventory)
+              .set({
+                currentStock: counted,
+                availableStock: sql`${counted} - ${inventory.reservedStock}`,
+                lastCountedAt: countedAt,
+                lastCountedBy: performedBy,
+                updatedAt: countedAt,
+              })
+              .where(inArray(inventory.id, ids))
+              .returning({
+                id: inventory.id,
+                salonId: inventory.salonId,
+                productId: inventory.productId,
+                lotNumber: inventory.lotNumber,
+                expiryDate: inventory.expiryDate,
+                countedAt: inventory.lastCountedAt,
+              })
+            const [first] = written
+            if (
+              written.length !== items.length ||
+              first === undefined ||
+              first.countedAt === null
+            ) {
+              return {
+                type: 'unwritten',
+                reason: `The rows of the count of salon ${salonId} were not all written`,
+              }
+            }
+            const at = first.countedAt
+
+            const differing = found.filter(({ differs }) => differs)
+            const writtenById = new Map(written.map((row) => [row.id, row]))
+            const adjustments: (typeof inventoryTransactions.$inferInsert)[] =
+              differing.flatMap(
+                ({ inventoryId, expected, counted, difference }) => {
+                  const row = writtenById.get(inventoryId)
+                  return row === undefined
+                    ? []
+                    : [
+                        {
+                          transactionType: ADJUSTMENT,
+                          quantity: difference,
+                          unitCost: null,
+                          totalCost: null,
+                          referenceType: null,
+                          referenceId: null,
+                          reason,
+                          performedBy,
+                          salonId: row.salonId,
+                          productId: row.productId,
+                          inventoryId,
+                          lotNumber: row.lotNumber,
+                          expiryDate: row.expiryDate,
+                          balanceBefore: expected,
+                          balanceAfter: counted,
+                          createdAt: at,
+                        },
+                      ]
+                },
+              )
+            const recorded =
+              adjustments.length === 0
+                ? []
+                : await tx
+                    .insert(inventoryTransactions)
+                    .values(adjustments)
+                    .returning()
+            const recordedByRow = new Map(
+              recorded.map((transaction) => [
+                transaction.inventoryId,
+                transaction,
+              ]),
+            )
+            const inOrder = differing.flatMap(
+              ({ inventoryId }) => recordedByRow.get(inventoryId) ?? [],
+            )
+            if (inOrder.length !== differing.length) {
+              return {
+                type: 'unwritten',
+                reason: `The adjustments of the count of salon ${salonId} were not all written`,
+              }
+            }
+
+            return {
+              type: 'counted',
+              adjustments: inOrder,
+              discrepancies: differing.map(
+                ({ inventoryId, expected, counted, difference }) => ({
+                  inventoryId,
+                  expected,
+                  counted,
+                  difference,
+                }),
+              ),
+            }
+          },
+          { isolationLevel: 'read committed' },
+        ),
+    )
+
+    return Result.flatMap(performed, stockCountOf)
+  }
+
+  async valueReport(
+    salonId: SalonId,
+    category: string | null,
+  ): Promise<Result<DbInventoryValueCategory[], DomainError>> {
+    // Stock times purchase price, without one at 0, rounded half up to the
+    // yen once a category is summed.
+    const value = sql`round(sum(${inventory.currentStock} * coalesce(${products.purchasePrice}, 0)))`
+
+    // One statement reads one snapshot and waits for no lock.
+    return attempt('Failed to read the value of the stock', undefined, () =>
+      this.db
+        .select({
+          category: products.category,
+          value: sql<string>`${value}::text`,
+          itemCount: sql<number>`count(distinct ${products.id})::int`,
+        })
+        .from(inventory)
+        .innerJoin(products, eq(products.id, inventory.productId))
+        .where(
+          and(
+            eq(inventory.salonId, salonId),
+            gt(inventory.currentStock, '0'),
+            category === null ? undefined : eq(products.category, category),
+          ),
+        )
+        .groupBy(products.category)
+        .orderBy(desc(value), sql`${products.category} asc nulls last`)
+        .execute(),
     )
   }
 }

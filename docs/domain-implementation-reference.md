@@ -943,6 +943,19 @@ The stock movements of a stock row (`POST /api/v1/inventory/movement` and `GET /
 | 9. Use cases | Who records a movement depends on its kind, so the reach is decided twice: `inventoryReachOf` before the body is read and `movementReachOf` once it is known. `performerOf` names the staff member who records it | `backend/packages/domain/src/business-logic/inventory/record-inventory-movement.usecase.ts`, `list-inventory-movements.usecase.ts` |
 | 12. Tests | The integration test sends eight sales of a row with a stock of five at the same moment, makes a movement wait for a change and for a delete of its row, and reads a history while a movement holds the row. The migration test checks every constraint with a raw insert and the opening adjustments of rows with and without movements | `backend/packages/api/src/__tests__/inventory-movement.integration.test.ts`, `backend/packages/database/src/scripts/__tests__/migrations.integration.test.ts` |
 
+### A Request That Writes Many Rows at One Moment: the Stock Count
+
+A stock count (`POST /api/v1/inventory/stock-count`; its rules are in [Inventory](./inventory.md#棚卸し), Japanese) sets the stock rows of a salon that it names to what was counted, all of them or none, and records an adjustment of each difference. Read it for what a request of one row does not show:
+
+| Step | What the stock count shows | Where to read it |
+|------|----------------------------|------------------|
+| 1. API contract | The request names the salon and up to 500 rows with what was counted of each; the response is the adjustments and the differences, in the order of the request | `specs/models/inventory.tsp` (`InventoryStockCountRequest`, `InventoryStockCountResponse`), `specs/operations/inventory-operations.tsp` |
+| 5. Validation schemas | A row named twice is reported where it is named again, by a `.check()` on the request | `backend/packages/domain/src/schemas/inventory.schema.ts` |
+| 7. Repository interface | `InventoryStockCount` (`counted`, `rowsNotFound` with every position, `belowReserved`) tells the use case what to answer, decided before anything is written | `backend/packages/domain/src/repositories/inventory.repository.ts` |
+| 8. Repository implementation | The rows are held `FOR UPDATE` in the order of their IDs, so two counts that share rows never wait for each other; what was counted becomes a value of each row through a `CASE` on its ID and is compared in SQL with the stock as held. Every row and every adjustment of the count is written at the `statement_timestamp()` of the update, once every row is held | `backend/packages/infrastructure/src/repositories/inventory.repository.impl.ts` |
+| 9. Use cases | The keepers count (`inventoryKeeperReachOf`), and the positions of the rows that are not of the salon become `items.<n>.inventoryId` issues | `backend/packages/domain/src/business-logic/inventory/perform-stock-count.usecase.ts` |
+| 12. Tests | The integration test makes a count wait for a change and for a delete of one of its rows, times a count that waited, and sends counts that share rows in other orders, and a count among sales of its row, at the same moment | `backend/packages/api/src/__tests__/inventory-count.integration.test.ts` |
+
 ### Rows That Belong to a Record of a Salon: the Staff Schedules
 
 A schedule says when a staff member works: the rows of `staff_schedules` of one staff member, read and replaced as a whole. Their rules are in [Staff Ledger](./staff.md#勤務スケジュール) (Japanese). They are built like the staff ledger and differ in these places:

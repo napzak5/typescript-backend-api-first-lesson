@@ -851,6 +851,11 @@ export type inventoryCrudPerformStockCountResponse403 = {
   status: 403
 }
 
+export type inventoryCrudPerformStockCountResponse409 = {
+  data: ModelsProblemDetails
+  status: 409
+}
+
 export type inventoryCrudPerformStockCountResponse413 = {
   data: ModelsProblemDetails
   status: 413
@@ -874,7 +879,7 @@ export type inventoryCrudPerformStockCountResponse500 = {
 export type inventoryCrudPerformStockCountResponseSuccess = (inventoryCrudPerformStockCountResponse200) & {
   headers: Headers;
 };
-export type inventoryCrudPerformStockCountResponseError = (inventoryCrudPerformStockCountResponse400 | inventoryCrudPerformStockCountResponse401 | inventoryCrudPerformStockCountResponse403 | inventoryCrudPerformStockCountResponse413 | inventoryCrudPerformStockCountResponse415 | inventoryCrudPerformStockCountResponse429 | inventoryCrudPerformStockCountResponse500) & {
+export type inventoryCrudPerformStockCountResponseError = (inventoryCrudPerformStockCountResponse400 | inventoryCrudPerformStockCountResponse401 | inventoryCrudPerformStockCountResponse403 | inventoryCrudPerformStockCountResponse409 | inventoryCrudPerformStockCountResponse413 | inventoryCrudPerformStockCountResponse415 | inventoryCrudPerformStockCountResponse429 | inventoryCrudPerformStockCountResponse500) & {
   headers: Headers;
 };
 
@@ -889,7 +894,7 @@ export const getInventoryCrudPerformStockCountUrl = () => {
 }
 
 /**
- * 棚卸で数えた在庫数量を登録します。差異のある在庫は差分を在庫移動(adjustment)として記録して在庫数を数えた値にし、すべての在庫の lastCountedAt・lastCountedBy を更新します。すべての在庫を1つのトランザクションで処理し、salonIdのサロンが存在しない場合や、itemsにsalonIdのサロンの在庫ではないIDや重複したIDを指定した場合は400を返してどの在庫も更新しません。
+ * 棚卸で数えた在庫数量を登録します。差異のある在庫は差分を在庫移動(adjustment)として記録して currentStock を数えた値に、availableStock を数えた値から reservedStock を引いた値にし、差異のない在庫には在庫移動を記録しません。itemsのすべての在庫の lastCountedAt を棚卸の時刻に、lastCountedBy を操作したスタッフ(管理者はnull)にします。1回の棚卸の lastCountedAt・updatedAt と在庫移動の createdAt は同じ時刻です。管理者と、salonIdのサロンのオーナー・マネージャーが使えます(スタッフは403)。すべての在庫を1つのトランザクションで処理し、ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合や、itemsにsalonIdのサロンの在庫ではないIDや重複したIDを指定した場合は400を、数えた値が reservedStock を下回る在庫がある場合は409を返して、どの在庫も更新しません。
  * @summary Perform a stock count
  */
 export const inventoryCrudPerformStockCount = async (modelsInventoryStockCountRequest: ModelsInventoryStockCountRequest, options?: RequestInit): Promise<inventoryCrudPerformStockCountResponse> => {
@@ -956,7 +961,7 @@ const {mutation: mutationOptions} = options ?
     export type InventoryCrudPerformStockCountMutationVariables = {data: ModelsInventoryStockCountRequest}
 
     /**
- * 棚卸で数えた在庫数量を登録します。差異のある在庫は差分を在庫移動(adjustment)として記録して在庫数を数えた値にし、すべての在庫の lastCountedAt・lastCountedBy を更新します。すべての在庫を1つのトランザクションで処理し、salonIdのサロンが存在しない場合や、itemsにsalonIdのサロンの在庫ではないIDや重複したIDを指定した場合は400を返してどの在庫も更新しません。
+ * 棚卸で数えた在庫数量を登録します。差異のある在庫は差分を在庫移動(adjustment)として記録して currentStock を数えた値に、availableStock を数えた値から reservedStock を引いた値にし、差異のない在庫には在庫移動を記録しません。itemsのすべての在庫の lastCountedAt を棚卸の時刻に、lastCountedBy を操作したスタッフ(管理者はnull)にします。1回の棚卸の lastCountedAt・updatedAt と在庫移動の createdAt は同じ時刻です。管理者と、salonIdのサロンのオーナー・マネージャーが使えます(スタッフは403)。すべての在庫を1つのトランザクションで処理し、ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合や、itemsにsalonIdのサロンの在庫ではないIDや重複したIDを指定した場合は400を、数えた値が reservedStock を下回る在庫がある場合は409を返して、どの在庫も更新しません。
  * @summary Perform a stock count
  */
 export const useInventoryCrudPerformStockCount = <TError = ModelsProblemDetails,
@@ -1024,7 +1029,7 @@ export const getInventoryCrudGetValueReportUrl = (params: InventoryCrudGetValueR
 }
 
 /**
- * サロンの在庫評価額を、商品カテゴリ別に集計して返します。salonIdのサロンが存在しない場合は400を返します。
+ * サロンの在庫評価額を、商品カテゴリ別に集計して返します。在庫数量に商品の仕入価格を掛けた額をカテゴリごとに合計して円に四捨五入し、在庫のある商品の数を品目数として数えます。取り扱いをやめた商品も、在庫があれば数えます。並びは評価額の降順、同じ場合はカテゴリの昇順(カテゴリ未設定は最後)です。管理者と、salonIdのサロンのオーナー・マネージャーが使えます(スタッフは403)。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合は400を返します。
  * @summary Get the inventory value report
  */
 export const inventoryCrudGetValueReport = async (params: InventoryCrudGetValueReportParams, options?: RequestInit): Promise<inventoryCrudGetValueReportResponse> => {
@@ -1072,7 +1077,7 @@ export type InventoryCrudGetValueReportQueryError = ModelsProblemDetails
 
 
 /**
- * サロンの在庫評価額を、商品カテゴリ別に集計して返します。salonIdのサロンが存在しない場合は400を返します。
+ * サロンの在庫評価額を、商品カテゴリ別に集計して返します。在庫数量に商品の仕入価格を掛けた額をカテゴリごとに合計して円に四捨五入し、在庫のある商品の数を品目数として数えます。取り扱いをやめた商品も、在庫があれば数えます。並びは評価額の降順、同じ場合はカテゴリの昇順(カテゴリ未設定は最後)です。管理者と、salonIdのサロンのオーナー・マネージャーが使えます(スタッフは403)。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合は400を返します。
  * @summary Get the inventory value report
  */
 export function useInventoryCrudGetValueReport<TData = Awaited<ReturnType<typeof inventoryCrudGetValueReport>>, TError = ModelsProblemDetails>(
@@ -1086,7 +1091,7 @@ export function useInventoryCrudGetValueReport<TData = Awaited<ReturnType<typeof
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * サロンの在庫評価額を、商品カテゴリ別に集計して返します。salonIdのサロンが存在しない場合は400を返します。
+ * サロンの在庫評価額を、商品カテゴリ別に集計して返します。在庫数量に商品の仕入価格を掛けた額をカテゴリごとに合計して円に四捨五入し、在庫のある商品の数を品目数として数えます。取り扱いをやめた商品も、在庫があれば数えます。並びは評価額の降順、同じ場合はカテゴリの昇順(カテゴリ未設定は最後)です。管理者と、salonIdのサロンのオーナー・マネージャーが使えます(スタッフは403)。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合は400を返します。
  * @summary Get the inventory value report
  */
 export function useInventoryCrudGetValueReport<TData = Awaited<ReturnType<typeof inventoryCrudGetValueReport>>, TError = ModelsProblemDetails>(
@@ -1100,7 +1105,7 @@ export function useInventoryCrudGetValueReport<TData = Awaited<ReturnType<typeof
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * サロンの在庫評価額を、商品カテゴリ別に集計して返します。salonIdのサロンが存在しない場合は400を返します。
+ * サロンの在庫評価額を、商品カテゴリ別に集計して返します。在庫数量に商品の仕入価格を掛けた額をカテゴリごとに合計して円に四捨五入し、在庫のある商品の数を品目数として数えます。取り扱いをやめた商品も、在庫があれば数えます。並びは評価額の降順、同じ場合はカテゴリの昇順(カテゴリ未設定は最後)です。管理者と、salonIdのサロンのオーナー・マネージャーが使えます(スタッフは403)。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合は400を返します。
  * @summary Get the inventory value report
  */
 export function useInventoryCrudGetValueReport<TData = Awaited<ReturnType<typeof inventoryCrudGetValueReport>>, TError = ModelsProblemDetails>(
@@ -1108,7 +1113,7 @@ export function useInventoryCrudGetValueReport<TData = Awaited<ReturnType<typeof
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * サロンの在庫評価額を、商品カテゴリ別に集計して返します。salonIdのサロンが存在しない場合は400を返します。
+ * サロンの在庫評価額を、商品カテゴリ別に集計して返します。在庫数量に商品の仕入価格を掛けた額をカテゴリごとに合計して円に四捨五入し、在庫のある商品の数を品目数として数えます。取り扱いをやめた商品も、在庫があれば数えます。並びは評価額の降順、同じ場合はカテゴリの昇順(カテゴリ未設定は最後)です。管理者と、salonIdのサロンのオーナー・マネージャーが使えます(スタッフは403)。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合は400を返します。
  * @summary Get the inventory value report
  */
 export function useInventoryCrudGetValueReport<TData = Awaited<ReturnType<typeof inventoryCrudGetValueReport>>, TError = ModelsProblemDetails>(

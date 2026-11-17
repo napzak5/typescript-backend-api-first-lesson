@@ -15,8 +15,8 @@ export interface ModelsInventoryValueReportCategory {
      * @nullable
      */
   category: string | null;
-  /** カテゴリの在庫評価額(円) */
+  /** カテゴリの在庫評価額(円)。在庫数量と仕入価格の積の合計を四捨五入した値 */
   value: number;
-  /** カテゴリの在庫品目数 */
+  /** カテゴリの在庫品目数。在庫数量が0より多い在庫のある商品の数で、ロットが分かれていても1品目と数える */
   itemCount: number;
 }

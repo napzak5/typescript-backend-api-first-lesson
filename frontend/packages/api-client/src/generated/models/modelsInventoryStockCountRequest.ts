@@ -22,7 +22,7 @@ export interface ModelsInventoryStockCountRequest {
      */
   items: ModelsInventoryStockCountItem[];
   /**
-     * 棚卸の補足。差異を調整する在庫移動の reason に記録する。補足がない場合はnull
+     * 棚卸の補足。空白だけの文字列は指定できない。差異を調整する在庫移動の reason に記録する。補足がない場合はnullで、在庫移動の reason には「棚卸しの差異」を記録する
      * @nullable
      */
   reason: string | null;

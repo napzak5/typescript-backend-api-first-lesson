@@ -211,7 +211,7 @@ namespace BeautySalon.Operations {
         | ProblemResponse<404>
         | CommonErrors;
 
-      @doc("棚卸で数えた在庫数量を登録します。差異のある在庫は差分を在庫移動(adjustment)として記録して在庫数を数えた値にし、すべての在庫の lastCountedAt・lastCountedBy を更新します。すべての在庫を1つのトランザクションで処理し、salonIdのサロンが存在しない場合や、itemsにsalonIdのサロンの在庫ではないIDや重複したIDを指定した場合は400を返してどの在庫も更新しません。")
+      @doc("棚卸で数えた在庫数量を登録します。差異のある在庫は差分を在庫移動(adjustment)として記録して currentStock を数えた値に、availableStock を数えた値から reservedStock を引いた値にし、差異のない在庫には在庫移動を記録しません。itemsのすべての在庫の lastCountedAt を棚卸の時刻に、lastCountedBy を操作したスタッフ(管理者はnull)にします。1回の棚卸の lastCountedAt・updatedAt と在庫移動の createdAt は同じ時刻です。管理者と、salonIdのサロンのオーナー・マネージャーが使えます(スタッフは403)。すべての在庫を1つのトランザクションで処理し、ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合や、itemsにsalonIdのサロンの在庫ではないIDや重複したIDを指定した場合は400を、数えた値が reservedStock を下回る在庫がある場合は409を返して、どの在庫も更新しません。")
       @summary("Perform a stock count")
       @route("/stock-count")
       @post
@@ -221,10 +221,11 @@ namespace BeautySalon.Operations {
             @body response: ApiResponse<InventoryStockCountResponse>;
           }
         | ProblemResponse<400>
+        | ProblemResponse<409>
         | RequestBodyErrors
         | CommonErrors;
 
-      @doc("サロンの在庫評価額を、商品カテゴリ別に集計して返します。salonIdのサロンが存在しない場合は400を返します。")
+      @doc("サロンの在庫評価額を、商品カテゴリ別に集計して返します。在庫数量に商品の仕入価格を掛けた額をカテゴリごとに合計して円に四捨五入し、在庫のある商品の数を品目数として数えます。取り扱いをやめた商品も、在庫があれば数えます。並びは評価額の降順、同じ場合はカテゴリの昇順(カテゴリ未設定は最後)です。管理者と、salonIdのサロンのオーナー・マネージャーが使えます(スタッフは403)。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合は400を返します。")
       @summary("Get the inventory value report")
       @route("/value-report")
       @get
