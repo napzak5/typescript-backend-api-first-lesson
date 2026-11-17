@@ -2110,6 +2110,18 @@ describe('Inventory API', () => {
 
       expectProblem(response, routeNotFound)
     })
+
+    it('takes the value report, which it does not serve, for the ID of a row', async () => {
+      const before = await everything()
+
+      const response = await request(app)
+        .get(`${PATH}/value-report`)
+        .set('Authorization', asAdmin)
+
+      expectRefused(response, INVALID_ID)
+      expect(brokenRules(response)).toEqual(['id:invalid_format'])
+      expect(await everything()).toEqual(before)
+    })
   })
 
   describe('requests at the same moment', () => {
