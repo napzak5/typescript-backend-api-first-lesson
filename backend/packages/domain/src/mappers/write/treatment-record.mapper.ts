@@ -1,8 +1,10 @@
 import type {
   DbNewTreatmentMaterial,
+  DbNewTreatmentPhoto,
   DbNewTreatmentRecord,
 } from '../../models/treatment-record'
 import type { TreatmentRecordUpdateCriteria } from '../../repositories/treatment-record.repository'
+import type { TreatmentPhotoBulkCreateRequest } from '../../schemas/treatment-photo.schema'
 import type {
   TreatmentRecordCreateRequest,
   TreatmentRecordUpdateRequest,
@@ -61,5 +63,21 @@ export const TreatmentRecordWriteMapper = {
       changes,
       materials: materials === undefined ? null : materials.map(toMaterial),
     }
+  },
+
+  /** The photos of an addition, in the order of the request. */
+  fromPhotoBulkCreateRequest(
+    request: TreatmentPhotoBulkCreateRequest,
+  ): DbNewTreatmentPhoto[] {
+    return request.photos.map((photo) => ({
+      photoType: photo.photoType,
+      photoUrl: photo.photoUrl,
+      thumbnailUrl: photo.thumbnailUrl,
+      angle: photo.angle,
+      description: photo.description,
+      isPublic: photo.isPublic,
+      customerConsent: photo.customerConsent,
+      sortOrder: photo.sortOrder,
+    }))
   },
 }

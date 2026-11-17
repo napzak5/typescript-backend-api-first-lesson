@@ -5,8 +5,13 @@ import type { SalonId } from '../models/salon'
 import type { StaffId } from '../models/staff'
 import type {
   DbNewTreatmentMaterial,
+  DbNewTreatmentPhoto,
   DbNewTreatmentRecord,
+  DbTreatmentPhoto,
   DbTreatmentRecordChanges,
+  PhotoAdditionRefusal,
+  TreatmentFigures,
+  TreatmentPhotoId,
   TreatmentRecordId,
   TreatmentRecordWithDetails,
 } from '../models/treatment-record'
@@ -80,6 +85,32 @@ export type TreatmentRecordChange =
 /** What became of a record that was to be removed. */
 export type TreatmentRecordRemoval = { type: 'removed' } | { type: 'notFound' }
 
+/** What became of photos that were to be added to a record. */
+export type TreatmentPhotoAddition =
+  /** The photos as written, in the order they were given. */
+  | { type: 'added'; recordId: TreatmentRecordId; photos: DbTreatmentPhoto[] }
+  | { type: 'notFound' }
+  /** The record does not take them (`photoAdditionRefusal`). */
+  | { type: 'refused'; refusal: PhotoAdditionRefusal }
+
+/** What became of a photo that was to be removed from a record. */
+export type TreatmentPhotoRemoval =
+  | { type: 'removed' }
+  | { type: 'recordNotFound' }
+  /** The record holds no photo of that ID. */
+  | { type: 'photoNotFound' }
+
+/** The records whose statistics are counted: those of a salon in a period. */
+export type TreatmentStatisticsCriteria = {
+  salonId: SalonId
+  /**
+   * The first and the last moment of the creation of the records, as in
+   * the filter of the list; null does not restrict the period.
+   */
+  startDate: string | null
+  endDate: string | null
+}
+
 /**
  * Persistence of the treatment records of the bookings of salons. A record
  * is of the salon of its booking; one outside the reach of the reader, or
@@ -87,9 +118,10 @@ export type TreatmentRecordRemoval = { type: 'removed' } | { type: 'notFound' }
  *
  * A creation holds the booking, so that a change of its status and its
  * removal come before or after it, and reads what the record names of the
- * salon once whatever removes those is done. An update and a removal hold
- * the record first. Times are those of the moment of the write, after the
- * waits.
+ * salon once whatever removes those is done. An update, a removal, and
+ * the addition and the removal of a photo hold the record first, so that
+ * the photos a record holds are counted once the others are written. Times
+ * are those of the moment of the write, after the waits.
  */
 export interface ITreatmentRecordRepository {
   /**
@@ -127,4 +159,30 @@ export interface ITreatmentRecordRepository {
     reach: LedgerReach,
     id: TreatmentRecordId,
   ): Promise<Result<TreatmentRecordRemoval, DomainError>>
+
+  /**
+   * Adds the photos to the record, all or none, unless it does not take
+   * them (`photoAdditionRefusal`), and writes its `updatedAt`. The photos
+   * of one addition are written at one moment.
+   */
+  addPhotos(
+    reach: LedgerReach,
+    id: TreatmentRecordId,
+    photos: DbNewTreatmentPhoto[],
+  ): Promise<Result<TreatmentPhotoAddition, DomainError>>
+
+  /** Removes a photo of the record, and writes the record's `updatedAt`. */
+  removePhoto(
+    reach: LedgerReach,
+    id: TreatmentRecordId,
+    photoId: TreatmentPhotoId,
+  ): Promise<Result<TreatmentPhotoRemoval, DomainError>>
+
+  /**
+   * What the records of the salon in the period come to; null when the
+   * salon is not there or was deleted. Counted at one moment.
+   */
+  findFigures(
+    criteria: TreatmentStatisticsCriteria,
+  ): Promise<Result<TreatmentFigures | null, DomainError>>
 }

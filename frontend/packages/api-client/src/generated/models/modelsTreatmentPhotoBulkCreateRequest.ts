@@ -9,11 +9,12 @@ import type { ModelsTreatmentPhotoCreateRequest } from './modelsTreatmentPhotoCr
 
 /**
  * 施術写真一括登録リクエスト - 1つの施術記録に複数の写真を追加する。
- * すべての写真を1つのトランザクションで追加し、1件でも追加できない場合はどの写真も追加しない
+ * すべての写真を1つのトランザクションで追加し、1件でも追加できない場合はどの写真も追加しない。
+ * 1つの施術記録の写真は、追加済みのものと合わせて20枚まで
  */
 export interface ModelsTreatmentPhotoBulkCreateRequest {
   /**
-     * 追加する写真の一覧。1件以上20件以下で指定する
+     * 追加する写真の一覧。1件以上20件以下で指定する。同じphotoUrlと同じsortOrderの繰り返しは指定できない
      * @minItems 1
      * @maxItems 20
      */

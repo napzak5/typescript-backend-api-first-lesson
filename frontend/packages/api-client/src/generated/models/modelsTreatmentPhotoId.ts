@@ -7,6 +7,6 @@
  */
 
 /**
- * 施術の区分ごとの施術件数。キーは区分の値、値は件数
+ * 施術記録の写真を識別するブランド付きUUID。
  */
-export type ModelsTreatmentStatisticsResponseTreatmentsBy = {[key: string]: number};
+export type ModelsTreatmentPhotoId = string;

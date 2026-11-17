@@ -10,6 +10,7 @@ import {
   type ApiTreatmentRecordCreateRequest,
   type ApiTreatmentRecordSearchRequest,
   type ApiTreatmentRecordUpdateRequest,
+  type ApiTreatmentStatisticsGetRequest,
   treatmentRecordIdSchema,
 } from '../models/treatment-record'
 import {
@@ -137,3 +138,16 @@ export const treatmentRecordSearchRequestSchema = z
       startDate === undefined || endDate === undefined || startDate <= endDate,
     { path: ['endDate'], message: 'Must not be earlier than startDate' },
   ) satisfies z.ZodType<ApiTreatmentRecordSearchRequest>
+
+/** The period of the statistics is that of the filter of the list. */
+export const treatmentStatisticsGetRequestSchema = z
+  .strictObject({
+    salonId: salonIdSchema,
+    startDate: momentInUtc.exactOptional(),
+    endDate: momentInUtc.exactOptional(),
+  })
+  .refine(
+    ({ startDate, endDate }) =>
+      startDate === undefined || endDate === undefined || startDate <= endDate,
+    { path: ['endDate'], message: 'Must not be earlier than startDate' },
+  ) satisfies z.ZodType<ApiTreatmentStatisticsGetRequest>

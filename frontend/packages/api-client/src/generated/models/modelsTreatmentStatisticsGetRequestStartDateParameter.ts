@@ -7,6 +7,6 @@
  */
 
 /**
- * 集計期間の開始日時。未指定の場合は期間の下限なし
+ * レコード作成日時(createdAt)がこの日時以降の施術記録を数える。未指定の場合は期間の下限なし
  */
 export type ModelsTreatmentStatisticsGetRequestStartDateParameter = string;

@@ -27,6 +27,7 @@ import type {
 import type {
   ModelsProblemDetails,
   ModelsTreatmentPhotoBulkCreateRequest,
+  ModelsTreatmentPhotoId,
   ModelsTreatmentRecordCreateRequest,
   ModelsTreatmentRecordId,
   ModelsTreatmentRecordUpdateRequest,
@@ -417,7 +418,7 @@ export const getTreatmentRecordCrudGetStatisticsUrl = (params: TreatmentRecordCr
 }
 
 /**
- * サロンの施術記録を集計した統計を取得します。salonIdのサロンが存在しない場合は400を返します。
+ * サロンの施術記録を集計した統計を取得します。salonIdのサロンが存在しない場合と削除されている場合は400を、サロンのメンバーがほかのサロンのsalonIdを指定した場合は403を返します。
  * @summary Get treatment statistics
  */
 export const treatmentRecordCrudGetStatistics = async (params: TreatmentRecordCrudGetStatisticsParams, options?: RequestInit): Promise<treatmentRecordCrudGetStatisticsResponse> => {
@@ -465,7 +466,7 @@ export type TreatmentRecordCrudGetStatisticsQueryError = ModelsProblemDetails
 
 
 /**
- * サロンの施術記録を集計した統計を取得します。salonIdのサロンが存在しない場合は400を返します。
+ * サロンの施術記録を集計した統計を取得します。salonIdのサロンが存在しない場合と削除されている場合は400を、サロンのメンバーがほかのサロンのsalonIdを指定した場合は403を返します。
  * @summary Get treatment statistics
  */
 export function useTreatmentRecordCrudGetStatistics<TData = Awaited<ReturnType<typeof treatmentRecordCrudGetStatistics>>, TError = ModelsProblemDetails>(
@@ -479,7 +480,7 @@ export function useTreatmentRecordCrudGetStatistics<TData = Awaited<ReturnType<t
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * サロンの施術記録を集計した統計を取得します。salonIdのサロンが存在しない場合は400を返します。
+ * サロンの施術記録を集計した統計を取得します。salonIdのサロンが存在しない場合と削除されている場合は400を、サロンのメンバーがほかのサロンのsalonIdを指定した場合は403を返します。
  * @summary Get treatment statistics
  */
 export function useTreatmentRecordCrudGetStatistics<TData = Awaited<ReturnType<typeof treatmentRecordCrudGetStatistics>>, TError = ModelsProblemDetails>(
@@ -493,7 +494,7 @@ export function useTreatmentRecordCrudGetStatistics<TData = Awaited<ReturnType<t
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * サロンの施術記録を集計した統計を取得します。salonIdのサロンが存在しない場合は400を返します。
+ * サロンの施術記録を集計した統計を取得します。salonIdのサロンが存在しない場合と削除されている場合は400を、サロンのメンバーがほかのサロンのsalonIdを指定した場合は403を返します。
  * @summary Get treatment statistics
  */
 export function useTreatmentRecordCrudGetStatistics<TData = Awaited<ReturnType<typeof treatmentRecordCrudGetStatistics>>, TError = ModelsProblemDetails>(
@@ -501,7 +502,7 @@ export function useTreatmentRecordCrudGetStatistics<TData = Awaited<ReturnType<t
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * サロンの施術記録を集計した統計を取得します。salonIdのサロンが存在しない場合は400を返します。
+ * サロンの施術記録を集計した統計を取得します。salonIdのサロンが存在しない場合と削除されている場合は400を、サロンのメンバーがほかのサロンのsalonIdを指定した場合は403を返します。
  * @summary Get treatment statistics
  */
 export function useTreatmentRecordCrudGetStatistics<TData = Awaited<ReturnType<typeof treatmentRecordCrudGetStatistics>>, TError = ModelsProblemDetails>(
@@ -966,6 +967,11 @@ export type treatmentRecordCrudAddPhotosResponse404 = {
   status: 404
 }
 
+export type treatmentRecordCrudAddPhotosResponse409 = {
+  data: ModelsProblemDetails
+  status: 409
+}
+
 export type treatmentRecordCrudAddPhotosResponse413 = {
   data: ModelsProblemDetails
   status: 413
@@ -989,7 +995,7 @@ export type treatmentRecordCrudAddPhotosResponse500 = {
 export type treatmentRecordCrudAddPhotosResponseSuccess = (treatmentRecordCrudAddPhotosResponse201) & {
   headers: Headers;
 };
-export type treatmentRecordCrudAddPhotosResponseError = (treatmentRecordCrudAddPhotosResponse400 | treatmentRecordCrudAddPhotosResponse401 | treatmentRecordCrudAddPhotosResponse403 | treatmentRecordCrudAddPhotosResponse404 | treatmentRecordCrudAddPhotosResponse413 | treatmentRecordCrudAddPhotosResponse415 | treatmentRecordCrudAddPhotosResponse429 | treatmentRecordCrudAddPhotosResponse500) & {
+export type treatmentRecordCrudAddPhotosResponseError = (treatmentRecordCrudAddPhotosResponse400 | treatmentRecordCrudAddPhotosResponse401 | treatmentRecordCrudAddPhotosResponse403 | treatmentRecordCrudAddPhotosResponse404 | treatmentRecordCrudAddPhotosResponse409 | treatmentRecordCrudAddPhotosResponse413 | treatmentRecordCrudAddPhotosResponse415 | treatmentRecordCrudAddPhotosResponse429 | treatmentRecordCrudAddPhotosResponse500) & {
   headers: Headers;
 };
 
@@ -1004,7 +1010,7 @@ export const getTreatmentRecordCrudAddPhotosUrl = (id: ModelsTreatmentRecordId,)
 }
 
 /**
- * 施術記録に写真を追加します。すべての写真を1つのトランザクションで追加し、1件でも追加できない場合はどの写真も追加しません。追加した写真は個別のURLを持たないため、Locationヘッダーは返しません。追加した写真は施術記録の取得結果のphotosに含まれます。
+ * 施術記録に写真を追加します。すべての写真を1つのトランザクションで追加し、1件でも追加できない場合はどの写真も追加しません。顧客の同意(customerConsent)のない写真をisPublicにした場合と、リクエストのなかで同じphotoUrlかsortOrderを繰り返した場合は400を返します。施術記録の写真が追加済みのものと合わせて20枚を超える場合と、施術記録に同じphotoUrlの写真がすでにある場合は409を返します。追加した写真は個別のURLを持たないため、Locationヘッダーは返しません。追加した写真は施術記録の取得結果のphotosに含まれ、施術記録のupdatedAtが更新されます。
  * @summary Add photos to a treatment record
  */
 export const treatmentRecordCrudAddPhotos = async (id: ModelsTreatmentRecordId,
@@ -1072,7 +1078,7 @@ const {mutation: mutationOptions} = options ?
     export type TreatmentRecordCrudAddPhotosMutationVariables = {id: ModelsTreatmentRecordId;data: ModelsTreatmentPhotoBulkCreateRequest}
 
     /**
- * 施術記録に写真を追加します。すべての写真を1つのトランザクションで追加し、1件でも追加できない場合はどの写真も追加しません。追加した写真は個別のURLを持たないため、Locationヘッダーは返しません。追加した写真は施術記録の取得結果のphotosに含まれます。
+ * 施術記録に写真を追加します。すべての写真を1つのトランザクションで追加し、1件でも追加できない場合はどの写真も追加しません。顧客の同意(customerConsent)のない写真をisPublicにした場合と、リクエストのなかで同じphotoUrlかsortOrderを繰り返した場合は400を返します。施術記録の写真が追加済みのものと合わせて20枚を超える場合と、施術記録に同じphotoUrlの写真がすでにある場合は409を返します。追加した写真は個別のURLを持たないため、Locationヘッダーは返しません。追加した写真は施術記録の取得結果のphotosに含まれ、施術記録のupdatedAtが更新されます。
  * @summary Add photos to a treatment record
  */
 export const useTreatmentRecordCrudAddPhotos = <TError = ModelsProblemDetails,
@@ -1084,4 +1090,125 @@ export const useTreatmentRecordCrudAddPhotos = <TError = ModelsProblemDetails,
         TContext
       > => {
       return useMutation(getTreatmentRecordCrudAddPhotosMutationOptions(options), queryClient);
+    }
+    export type treatmentRecordCrudRemovePhotoResponse204 = {
+  data: void
+  status: 204
+}
+
+export type treatmentRecordCrudRemovePhotoResponse400 = {
+  data: ModelsProblemDetails
+  status: 400
+}
+
+export type treatmentRecordCrudRemovePhotoResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type treatmentRecordCrudRemovePhotoResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
+export type treatmentRecordCrudRemovePhotoResponse404 = {
+  data: ModelsProblemDetails
+  status: 404
+}
+
+export type treatmentRecordCrudRemovePhotoResponse429 = {
+  data: ModelsProblemDetails
+  status: 429
+}
+
+export type treatmentRecordCrudRemovePhotoResponse500 = {
+  data: ModelsProblemDetails
+  status: 500
+}
+
+export type treatmentRecordCrudRemovePhotoResponseSuccess = (treatmentRecordCrudRemovePhotoResponse204) & {
+  headers: Headers;
+};
+export type treatmentRecordCrudRemovePhotoResponseError = (treatmentRecordCrudRemovePhotoResponse400 | treatmentRecordCrudRemovePhotoResponse401 | treatmentRecordCrudRemovePhotoResponse403 | treatmentRecordCrudRemovePhotoResponse404 | treatmentRecordCrudRemovePhotoResponse429 | treatmentRecordCrudRemovePhotoResponse500) & {
+  headers: Headers;
+};
+
+export type treatmentRecordCrudRemovePhotoResponse = (treatmentRecordCrudRemovePhotoResponseSuccess | treatmentRecordCrudRemovePhotoResponseError)
+
+export const getTreatmentRecordCrudRemovePhotoUrl = (id: ModelsTreatmentRecordId,
+    photoId: ModelsTreatmentPhotoId,) => {
+
+
+
+
+  return `/api/v1/treatments/${id}/photos/${photoId}`
+}
+
+/**
+ * 施術記録から写真を1枚削除します。誤って追加した写真を、施術記録を残したまま外すための操作です。削除すると施術記録のupdatedAtが更新されます。写真が施術記録のものでない場合は404を返します。
+ * @summary Remove a photo from a treatment record
+ */
+export const treatmentRecordCrudRemovePhoto = async (id: ModelsTreatmentRecordId,
+    photoId: ModelsTreatmentPhotoId, options?: RequestInit): Promise<treatmentRecordCrudRemovePhotoResponse> => {
+
+  return customInstance<treatmentRecordCrudRemovePhotoResponse>(getTreatmentRecordCrudRemovePhotoUrl(id,photoId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getTreatmentRecordCrudRemovePhotoMutationKey = () => ['treatmentRecordCrudRemovePhoto'] as const;
+
+export const getTreatmentRecordCrudRemovePhotoMutationOptions = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof treatmentRecordCrudRemovePhoto>>, TError,TreatmentRecordCrudRemovePhotoMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof treatmentRecordCrudRemovePhoto>>, TError,TreatmentRecordCrudRemovePhotoMutationVariables, TContext> => {
+
+const mutationKey = getTreatmentRecordCrudRemovePhotoMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof treatmentRecordCrudRemovePhoto>>, TreatmentRecordCrudRemovePhotoMutationVariables> = (props) => {
+          const {id,photoId} = props ?? {};
+
+          return  treatmentRecordCrudRemovePhoto(id,photoId,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type TreatmentRecordCrudRemovePhotoMutationResult = NonNullable<Awaited<ReturnType<typeof treatmentRecordCrudRemovePhoto>>>
+
+    export type TreatmentRecordCrudRemovePhotoMutationError = ModelsProblemDetails
+    export type TreatmentRecordCrudRemovePhotoMutationVariables = {id: ModelsTreatmentRecordId;photoId: ModelsTreatmentPhotoId}
+
+    /**
+ * 施術記録から写真を1枚削除します。誤って追加した写真を、施術記録を残したまま外すための操作です。削除すると施術記録のupdatedAtが更新されます。写真が施術記録のものでない場合は404を返します。
+ * @summary Remove a photo from a treatment record
+ */
+export const useTreatmentRecordCrudRemovePhoto = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof treatmentRecordCrudRemovePhoto>>, TError,TreatmentRecordCrudRemovePhotoMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof treatmentRecordCrudRemovePhoto>>,
+        TError,
+        TreatmentRecordCrudRemovePhotoMutationVariables,
+        TContext
+      > => {
+      return useMutation(getTreatmentRecordCrudRemovePhotoMutationOptions(options), queryClient);
     }

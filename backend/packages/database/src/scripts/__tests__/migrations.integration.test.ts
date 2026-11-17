@@ -3192,4 +3192,192 @@ describe('the migrations of this repository', () => {
       )
     })
   })
+
+  describe('202611171900_treatment_photo_rules.sql', () => {
+    const run = (): Promise<void> =>
+      runMigration('202611171900_treatment_photo_rules.sql')
+
+    /** The schema of setup.sql, which the migration brings a database to. */
+    let schemaOfSetup: string[] = []
+
+    /** A treatment record of a booking of a new salon; returns its ID. */
+    const storeRecord = async (): Promise<string> => {
+      const salonId = await storeSalon(null)
+      const customerId = await storeNewCustomer()
+      const staffId = randomUUID()
+      await sql`
+        INSERT INTO staff (
+          id, "salonId", "firstName", "lastName", "displayName", email,
+          "phoneNumber", specialties, certifications
+        )
+        VALUES (
+          ${staffId}, ${salonId}, 'Hanako', 'Sato', 'Hanako',
+          ${`${staffId}@example.com`}, '03-1234-5678', '{}', '{}'
+        )
+      `
+      const bookingId = randomUUID()
+      await sql`
+        INSERT INTO bookings (
+          id, "bookingNumber", "salonId", "customerId", "staffId",
+          "bookingDate", "startTime", "endTime", duration, subtotal,
+          "totalAmount"
+        )
+        VALUES (
+          ${bookingId}, ${`BK-${bookingId.slice(0, 8)}`}, ${salonId},
+          ${customerId}, ${staffId}, '2026-11-01',
+          '2026-11-01T01:00:00Z', '2026-11-01T02:00:00Z', 60, 0, 0
+        )
+      `
+      const id = randomUUID()
+      await sql`
+        INSERT INTO treatment_records (
+          id, "bookingId", "customerId", "staffId", services
+        )
+        VALUES (
+          ${id}, ${bookingId}, ${customerId}, ${staffId},
+          ${`["${randomUUID()}"]`}::text::jsonb
+        )
+      `
+      return id
+    }
+
+    /** What a stored photo states, beside its record. */
+    type StoredPhoto = {
+      photoType?: string
+      photoUrl?: string
+      isPublic?: boolean
+      customerConsent?: boolean
+      sortOrder?: number
+    }
+
+    /** A photo of the record; returns its ID. */
+    const storePhoto = async (
+      recordId: string,
+      {
+        photoType = 'after',
+        photoUrl = `https://images.example.com/${randomUUID()}.jpg`,
+        isPublic = false,
+        customerConsent = false,
+        sortOrder = 0,
+      }: StoredPhoto = {},
+    ): Promise<string> => {
+      const id = randomUUID()
+      await sql`
+        INSERT INTO treatment_photos (
+          id, "treatmentRecordId", "photoType", "photoUrl", "isPublic",
+          "customerConsent", "sortOrder"
+        )
+        VALUES (
+          ${id}, ${recordId}, ${photoType}, ${photoUrl}, ${isPublic},
+          ${customerConsent}, ${sortOrder}
+        )
+      `
+      return id
+    }
+
+    // A database from before the migration: the kind of a photo is any
+    // text of up to 20 characters, two indexes, and none of the rules.
+    beforeEach(async () => {
+      await applyBaseline(sql, plan)
+      schemaOfSetup = await describeSchema()
+      await sql.unsafe(`
+        ALTER TABLE treatment_photos
+          DROP CONSTRAINT treatment_photos_consent,
+          DROP CONSTRAINT treatment_photos_sort_order,
+          DROP CONSTRAINT treatment_photos_record_url_unique,
+          ALTER COLUMN "photoType" TYPE varchar(20) USING "photoType"::text;
+        DROP TYPE treatment_photo_type;
+        CREATE INDEX idx_treatment_photos_photo_type
+          ON treatment_photos USING btree ("photoType");
+        CREATE INDEX idx_treatment_photos_treatment_record_id
+          ON treatment_photos USING btree ("treatmentRecordId");
+      `)
+    })
+
+    it('should give the database the rules of setup.sql, and keep them on a second run', async () => {
+      expect(await describeSchema()).not.toEqual(schemaOfSetup)
+
+      await run()
+      await run()
+
+      expect(await describeSchema()).toEqual(schemaOfSetup)
+    })
+
+    it('should keep every photo of a known kind, and the photos of one address in two records', async () => {
+      const first = await storeRecord()
+      const second = await storeRecord()
+      const shared = 'https://images.example.com/shared.jpg'
+      const kinds = ['before', 'during', 'after', 'other']
+      for (const [sortOrder, photoType] of kinds.entries()) {
+        await storePhoto(first, { photoType, sortOrder })
+      }
+      await storePhoto(first, {
+        photoUrl: shared,
+        isPublic: true,
+        customerConsent: true,
+      })
+      await storePhoto(second, { photoUrl: shared })
+
+      await run()
+
+      expect(
+        await sql`
+          SELECT "photoType"::text AS "photoType", "sortOrder"
+          FROM treatment_photos
+          WHERE "treatmentRecordId" = ${first} AND "photoUrl" <> ${shared}
+          ORDER BY "sortOrder"
+        `,
+      ).toEqual(kinds.map((photoType, sortOrder) => ({ photoType, sortOrder })))
+      expect(
+        await sql`SELECT 1 FROM treatment_photos WHERE "photoUrl" = ${shared}`,
+      ).toHaveLength(2)
+    })
+
+    it.each<[string, (recordId: string) => Promise<unknown>, string]>([
+      [
+        'a photo of an unknown kind',
+        (recordId) => storePhoto(recordId, { photoType: 'Before' }),
+        'treatment_photo_type',
+      ],
+      [
+        'a public photo without the consent of the customer',
+        (recordId) => storePhoto(recordId, { isPublic: true }),
+        'treatment_photos_consent',
+      ],
+      [
+        'a photo before the first place',
+        (recordId) => storePhoto(recordId, { sortOrder: -1 }),
+        'treatment_photos_sort_order',
+      ],
+      [
+        'two photos of one address in a record',
+        async (recordId) => {
+          const photoUrl = 'https://images.example.com/twice.jpg'
+          await storePhoto(recordId, { photoUrl })
+          await storePhoto(recordId, { photoUrl, sortOrder: 1 })
+        },
+        'treatment_photos_record_url_unique',
+      ],
+    ])(
+      'should fail and change nothing where the database holds %s, and keep it out from then on',
+      async (_, store, rule) => {
+        const recordId = await storeRecord()
+        const kept = await storePhoto(recordId, { photoType: 'before' })
+        await store(recordId)
+        const before = await describeSchema()
+
+        await expect(run()).rejects.toThrow(rule)
+
+        expect(
+          await sql`SELECT "photoType" FROM treatment_photos WHERE id = ${kept}`,
+        ).toEqual([{ photoType: 'before' }])
+        expect(await describeSchema()).toEqual(before)
+
+        await sql`DELETE FROM treatment_photos WHERE id <> ${kept}`
+        await run()
+
+        await expect(store(recordId)).rejects.toThrow(rule)
+      },
+    )
+  })
 })

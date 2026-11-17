@@ -61,6 +61,7 @@ import {
   treatmentRecordCreateRequestSchema,
   treatmentRecordSearchRequestSchema,
   treatmentRecordUpdateRequestSchema,
+  treatmentStatisticsGetRequestSchema,
 } from '../schemas/treatment-record.schema'
 
 /** The rules a value breaks, as `path:code`; empty when it breaks none. */
@@ -371,6 +372,18 @@ const MOMENT_FIELDS: Field[] = [
   [
     'treatmentRecordSearchRequestSchema',
     treatmentRecordSearchRequestSchema,
+    (endDate) => ({ endDate }),
+    'endDate',
+  ],
+  [
+    'treatmentStatisticsGetRequestSchema',
+    treatmentStatisticsGetRequestSchema,
+    (startDate) => ({ startDate }),
+    'startDate',
+  ],
+  [
+    'treatmentStatisticsGetRequestSchema',
+    treatmentStatisticsGetRequestSchema,
     (endDate) => ({ endDate }),
     'endDate',
   ],
