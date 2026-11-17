@@ -12,7 +12,7 @@ export type InventoryCrudGetValueReportParams = {
   /** サロン店舗・拠点を識別するためのブランド付きUUID。 */
   salonId: ModelsInventoryValueReportRequestSalonIdParameter;
   /**
-   * 商品カテゴリによる絞り込み(完全一致)
+   * 商品カテゴリによる絞り込み(完全一致)。空白だけの文字列は指定できない
    * @minLength 1
    * @maxLength 100
    */

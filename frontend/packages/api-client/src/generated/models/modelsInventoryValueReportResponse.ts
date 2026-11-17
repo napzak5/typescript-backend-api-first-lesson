@@ -12,10 +12,10 @@ import type { ModelsInventoryValueReportCategory } from './modelsInventoryValueR
  * 仕入価格が未設定の商品は評価額0として数える
  */
 export interface ModelsInventoryValueReportResponse {
-  /** 在庫評価額の合計(円) */
+  /** 在庫評価額の合計(円)。categories の value の合計 */
   totalValue: number;
-  /** 集計した在庫品目数 */
+  /** 集計した在庫品目数。categories の itemCount の合計 */
   totalItems: number;
-  /** カテゴリ別の集計 */
+  /** カテゴリ別の集計。在庫のある商品のないカテゴリは含めない。評価額の降順、同じ場合はカテゴリの昇順(カテゴリ未設定は最後) */
   categories: ModelsInventoryValueReportCategory[];
 }

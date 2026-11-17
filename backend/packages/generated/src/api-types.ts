@@ -1591,7 +1591,7 @@ export interface paths {
         put?: never;
         /**
          * Perform a stock count
-         * @description 棚卸で数えた在庫数量を登録します。差異のある在庫は差分を在庫移動(adjustment)として記録して在庫数を数えた値にし、すべての在庫の lastCountedAt・lastCountedBy を更新します。すべての在庫を1つのトランザクションで処理し、salonIdのサロンが存在しない場合や、itemsにsalonIdのサロンの在庫ではないIDや重複したIDを指定した場合は400を返してどの在庫も更新しません。
+         * @description 棚卸で数えた在庫数量を登録します。差異のある在庫は差分を在庫移動(adjustment)として記録して currentStock を数えた値に、availableStock を数えた値から reservedStock を引いた値にし、差異のない在庫には在庫移動を記録しません。itemsのすべての在庫の lastCountedAt を棚卸の時刻に、lastCountedBy を操作したスタッフ(管理者はnull)にします。1回の棚卸の lastCountedAt・updatedAt と在庫移動の createdAt は同じ時刻です。管理者と、salonIdのサロンのオーナー・マネージャーが使えます(スタッフは403)。すべての在庫を1つのトランザクションで処理し、ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合や、itemsにsalonIdのサロンの在庫ではないIDや重複したIDを指定した場合は400を、数えた値が reservedStock を下回る在庫がある場合は409を返して、どの在庫も更新しません。
          */
         post: operations["InventoryCrud_performStockCount"];
         delete?: never;
@@ -1609,7 +1609,7 @@ export interface paths {
         };
         /**
          * Get the inventory value report
-         * @description サロンの在庫評価額を、商品カテゴリ別に集計して返します。salonIdのサロンが存在しない場合は400を返します。
+         * @description サロンの在庫評価額を、商品カテゴリ別に集計して返します。在庫数量に商品の仕入価格を掛けた額をカテゴリごとに合計して円に四捨五入し、在庫のある商品の数を品目数として数えます。取り扱いをやめた商品も、在庫があれば数えます。並びは評価額の降順、同じ場合はカテゴリの昇順(カテゴリ未設定は最後)です。管理者と、salonIdのサロンのオーナー・マネージャーが使えます(スタッフは403)。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合は400を返します。
          */
         get: operations["InventoryCrud_getValueReport"];
         put?: never;
@@ -5819,7 +5819,7 @@ export interface components {
             inventoryId: components["schemas"]["Models.InventoryId"];
             /**
              * Format: double
-             * @description 実際に数えた在庫数量
+             * @description 実際に数えた在庫数量。小数第2位まで
              */
             countedQuantity: number;
         };
@@ -5832,7 +5832,7 @@ export interface components {
             salonId: components["schemas"]["Models.SalonId"];
             /** @description 棚卸した在庫の一覧。salonId のサロンの在庫を1件以上500件以下で、同じ在庫を重複せずに指定する */
             items: components["schemas"]["Models.InventoryStockCountItem"][];
-            /** @description 棚卸の補足。差異を調整する在庫移動の reason に記録する。補足がない場合はnull */
+            /** @description 棚卸の補足。空白だけの文字列は指定できない。差異を調整する在庫移動の reason に記録する。補足がない場合はnullで、在庫移動の reason には「棚卸しの差異」を記録する */
             reason: string | null;
         };
         /** @description 棚卸の結果 - 記録した調整の在庫移動と、差異の一覧を返す */
@@ -5977,12 +5977,12 @@ export interface components {
             category: string | null;
             /**
              * Format: double
-             * @description カテゴリの在庫評価額(円)
+             * @description カテゴリの在庫評価額(円)。在庫数量と仕入価格の積の合計を四捨五入した値
              */
             value: number;
             /**
              * Format: int32
-             * @description カテゴリの在庫品目数
+             * @description カテゴリの在庫品目数。在庫数量が0より多い在庫のある商品の数で、ロットが分かれていても1品目と数える
              */
             itemCount: number;
         };
@@ -5993,15 +5993,15 @@ export interface components {
         "Models.InventoryValueReportResponse": {
             /**
              * Format: double
-             * @description 在庫評価額の合計(円)
+             * @description 在庫評価額の合計(円)。categories の value の合計
              */
             totalValue: number;
             /**
              * Format: int32
-             * @description 集計した在庫品目数
+             * @description 集計した在庫品目数。categories の itemCount の合計
              */
             totalItems: number;
-            /** @description カテゴリ別の集計 */
+            /** @description カテゴリ別の集計。在庫のある商品のないカテゴリは含めない。評価額の降順、同じ場合はカテゴリの昇順(カテゴリ未設定は最後) */
             categories: components["schemas"]["Models.InventoryValueReportCategory"][];
         };
         /** @description カルテ新規作成リクエスト - 全項目のキーが必須。値がない項目は null を指定する。対応するテーブルはまだない */
@@ -10411,7 +10411,7 @@ export interface components {
         "Models.InventoryTransactionSearchRequest.startDate": string;
         /** @description 在庫操作区分による絞り込み(完全一致) */
         "Models.InventoryTransactionSearchRequest.transactionType": components["schemas"]["Models.InventoryTransactionType"];
-        /** @description 商品カテゴリによる絞り込み(完全一致) */
+        /** @description 商品カテゴリによる絞り込み(完全一致)。空白だけの文字列は指定できない */
         "Models.InventoryValueReportRequest.category": string;
         /** @description 対象のサロン ID */
         "Models.InventoryValueReportRequest.salonId": components["schemas"]["Models.SalonId"];
@@ -19844,6 +19844,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
+            /** @description The request conflicts with the current state of the server. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
@@ -19892,7 +19901,7 @@ export interface operations {
             query: {
                 /** @description 対象のサロン ID */
                 salonId: components["parameters"]["Models.InventoryValueReportRequest.salonId"];
-                /** @description 商品カテゴリによる絞り込み(完全一致) */
+                /** @description 商品カテゴリによる絞り込み(完全一致)。空白だけの文字列は指定できない */
                 category?: components["parameters"]["Models.InventoryValueReportRequest.category"];
             };
             header?: never;

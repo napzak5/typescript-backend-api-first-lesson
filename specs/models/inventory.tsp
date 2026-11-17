@@ -709,7 +709,7 @@ namespace BeautySalon.Models {
     @doc("棚卸した在庫 ID")
     inventoryId: InventoryId;
 
-    @doc("実際に数えた在庫数量")
+    @doc("実際に数えた在庫数量。小数第2位まで")
     @minValue(0)
     @maxValue(99999999.99)
     countedQuantity: float64;
@@ -728,7 +728,7 @@ namespace BeautySalon.Models {
     @maxItems(500)
     items: InventoryStockCountItem[];
 
-    @doc("棚卸の補足。差異を調整する在庫移動の reason に記録する。補足がない場合はnull")
+    @doc("棚卸の補足。空白だけの文字列は指定できない。差異を調整する在庫移動の reason に記録する。補足がない場合はnullで、在庫移動の reason には「棚卸しの差異」を記録する")
     reason: string | null;
   }
 
@@ -763,7 +763,7 @@ namespace BeautySalon.Models {
     salonId: SalonId;
 
     @query
-    @doc("商品カテゴリによる絞り込み(完全一致)")
+    @doc("商品カテゴリによる絞り込み(完全一致)。空白だけの文字列は指定できない")
     @minLength(1)
     @maxLength(100)
     category?: string;
@@ -774,10 +774,10 @@ namespace BeautySalon.Models {
     @doc("商品カテゴリ。カテゴリ未設定の商品の集計の場合はnull")
     category: string | null;
 
-    @doc("カテゴリの在庫評価額(円)")
+    @doc("カテゴリの在庫評価額(円)。在庫数量と仕入価格の積の合計を四捨五入した値")
     value: float64;
 
-    @doc("カテゴリの在庫品目数")
+    @doc("カテゴリの在庫品目数。在庫数量が0より多い在庫のある商品の数で、ロットが分かれていても1品目と数える")
     itemCount: int32;
   }
 
@@ -786,13 +786,13 @@ namespace BeautySalon.Models {
     仕入価格が未設定の商品は評価額0として数える
     """)
   model InventoryValueReportResponse {
-    @doc("在庫評価額の合計(円)")
+    @doc("在庫評価額の合計(円)。categories の value の合計")
     totalValue: float64;
 
-    @doc("集計した在庫品目数")
+    @doc("集計した在庫品目数。categories の itemCount の合計")
     totalItems: int32;
 
-    @doc("カテゴリ別の集計")
+    @doc("カテゴリ別の集計。在庫のある商品のないカテゴリは含めない。評価額の降順、同じ場合はカテゴリの昇順(カテゴリ未設定は最後)")
     categories: InventoryValueReportCategory[];
   }
 
