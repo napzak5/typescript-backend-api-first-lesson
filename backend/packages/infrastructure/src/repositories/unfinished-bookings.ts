@@ -38,6 +38,19 @@ export const hasUnfinishedBooking = async (
   return found !== undefined
 }
 
+/** The customers among `ids` that a booking which is not finished refers to. */
+export const customersOfUnfinishedBookings = async (
+  executor: DatabaseExecutor,
+  ids: readonly string[],
+): Promise<string[]> => {
+  const referring = await executor
+    .selectDistinct({ customerId: bookings.customerId })
+    .from(bookings)
+    .where(and(inArray(bookings.customerId, [...ids]), unfinished))
+
+  return referring.map(({ customerId }) => customerId)
+}
+
 /** Whether one of the service lines a condition picks is of a booking that is not finished. */
 export const hasLineOfUnfinishedBooking = async (
   executor: DatabaseExecutor,

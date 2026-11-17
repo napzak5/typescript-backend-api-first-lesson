@@ -1,5 +1,9 @@
 import { bookings, customers, users } from '@beauty-salon-backend/database'
 import {
+  type CustomerBulkCreation,
+  type CustomerBulkDeletion,
+  type CustomerBulkUpdate,
+  type CustomerChange,
   type CustomerCreation,
   type CustomerDeletion,
   type CustomerId,
@@ -20,10 +24,12 @@ import { Result } from '@beauty-salon-backend/utility'
 import {
   and,
   arrayContains,
+  asc,
   count,
   desc,
   eq,
   ilike,
+  inArray,
   isNull,
   or,
   sql,
@@ -35,7 +41,10 @@ import { describeDatabaseError } from '../database/failure'
 import type { Database, DatabaseExecutor } from '../database/index'
 import { containing } from '../database/like'
 import { userNotDeleted } from './account'
-import { hasUnfinishedBooking } from './unfinished-bookings'
+import {
+  customersOfUnfinishedBookings,
+  hasUnfinishedBooking,
+} from './unfinished-bookings'
 
 const emailTaken = {
   code: '23505',
@@ -62,9 +71,9 @@ type UniqueValues = {
  * that is safe to log.
  */
 const toDomainError =
-  (message: string, unique: UniqueValues) =>
+  (message: string, unique: () => UniqueValues) =>
   (cause: unknown): DomainError =>
-    match({ cause, ...unique })
+    match({ cause, ...unique() })
       .with(
         {
           email: P.string,
@@ -86,7 +95,7 @@ const toDomainError =
 
 const attemptWrite = async <T>(
   message: string,
-  unique: UniqueValues,
+  unique: () => UniqueValues,
   run: () => Promise<T>,
 ): Promise<Result<T, DomainError>> =>
   Result.mapError(
@@ -113,7 +122,57 @@ const toProfileError = (cause: unknown): DomainError =>
       ),
     )
 
+/** What of a change no other customer may have; null where it does not change. */
+const uniqueValuesOf = (changes: DbCustomerChanges): UniqueValues => ({
+  email: changes.email ?? null,
+  referralCode: changes.referralCode ?? null,
+})
+
 const notDeleted = isNull(customers.deletedAt)
+
+/** The referrers named that are not customers, or are deleted. */
+const missingReferrers = async (
+  executor: DatabaseExecutor,
+  referrers: readonly (string | null | undefined)[],
+): Promise<string[]> => {
+  const named = [
+    ...new Set(
+      referrers.flatMap((referrer) =>
+        referrer === undefined || referrer === null ? [] : [referrer],
+      ),
+    ),
+  ]
+  if (named.length === 0) {
+    return []
+  }
+  const found = await executor
+    .select({ id: customers.id })
+    .from(customers)
+    .where(and(inArray(customers.id, named), notDeleted))
+  const foundIds = found.map(({ id }) => id)
+
+  return named.filter((id) => !foundIds.includes(id))
+}
+
+/**
+ * Locks the customers of the IDs that are not deleted, in the order of their
+ * IDs: two bulk writes that name some of the same customers wait for each
+ * other and do not deadlock. Resolves to the IDs that were not locked.
+ */
+const holdCustomers = async (
+  executor: DatabaseExecutor,
+  ids: readonly string[],
+): Promise<string[]> => {
+  const held = await executor
+    .select({ id: customers.id })
+    .from(customers)
+    .where(and(inArray(customers.id, [...ids]), notDeleted))
+    .orderBy(asc(customers.id))
+    .for('update')
+  const heldIds = held.map(({ id }) => id)
+
+  return ids.filter((id) => !heldIds.includes(id))
+}
 
 /** Whether a customer may be named as a referrer: one that is not deleted. */
 const referrerExists = async (
@@ -153,7 +212,7 @@ export class CustomerRepository implements ICustomerRepository {
 
     const created = await attemptWrite(
       'Failed to create customer',
-      { email, referralCode },
+      () => ({ email, referralCode }),
       async (): Promise<CustomerCreation | null> => {
         // A referrer who is deleted a moment later is a referrer all the
         // same, so the two statements need no transaction.
@@ -285,10 +344,7 @@ export class CustomerRepository implements ICustomerRepository {
 
     return attemptWrite(
       'Failed to update customer',
-      {
-        email: changes.email ?? null,
-        referralCode: changes.referralCode ?? null,
-      },
+      () => uniqueValuesOf(changes),
       () =>
         this.db.transaction(async (tx): Promise<CustomerUpdate> => {
           // The row is locked: a customer who is found here is not deleted
@@ -350,6 +406,127 @@ export class CustomerRepository implements ICustomerRepository {
             .update(users)
             .set({ customerId: null, updatedAt: CLOCK })
             .where(eq(users.customerId, id))
+
+          return { type: 'deleted' }
+        },
+        { isolationLevel: 'read committed' },
+      ),
+    )
+  }
+
+  async findByIds(
+    ids: readonly CustomerId[],
+  ): Promise<Result<DbCustomer[], DomainError>> {
+    return attempt('Failed to find customers', () =>
+      this.db
+        .select()
+        .from(customers)
+        .where(and(inArray(customers.id, [...ids]), notDeleted)),
+    )
+  }
+
+  async createMany(
+    rows: readonly DbNewCustomer[],
+  ): Promise<Result<CustomerBulkCreation, DomainError>> {
+    // The customer being written, for the error of a write that is refused.
+    let writing: UniqueValues = { email: null, referralCode: null }
+
+    return attemptWrite(
+      'Failed to create customers',
+      () => writing,
+      () =>
+        this.db.transaction(async (tx): Promise<CustomerBulkCreation> => {
+          const missing = await missingReferrers(
+            tx,
+            rows.map(({ referredBy }) => referredBy),
+          )
+          if (missing.length > 0) {
+            return { type: 'referrersNotFound', missing }
+          }
+
+          // One at a time: a refused write tells whose email or referral
+          // code is taken, by a customer who is there or by an earlier one.
+          const created: DbCustomer[] = []
+          for (const row of rows) {
+            writing = uniqueValuesOf(row)
+            created.push(
+              ...(await tx.insert(customers).values(row).returning()),
+            )
+          }
+          return { type: 'created', customers: created }
+        }),
+    )
+  }
+
+  async updateMany(
+    changes: readonly CustomerChange[],
+  ): Promise<Result<CustomerBulkUpdate, DomainError>> {
+    // The customer being written, for the error of a write that is refused.
+    let writing: UniqueValues = { email: null, referralCode: null }
+
+    return attemptWrite(
+      'Failed to update customers',
+      () => writing,
+      () =>
+        this.db.transaction(async (tx): Promise<CustomerBulkUpdate> => {
+          const missing = await holdCustomers(
+            tx,
+            changes.map(({ id }) => id),
+          )
+          if (missing.length > 0) {
+            return { type: 'customersNotFound', missing }
+          }
+          const missingOfReferrers = await missingReferrers(
+            tx,
+            changes.map((change) => change.changes.referredBy),
+          )
+          if (missingOfReferrers.length > 0) {
+            return { type: 'referrersNotFound', missing: missingOfReferrers }
+          }
+
+          // One at a time, in the order of the request: a refused write
+          // tells whose email or referral code is taken.
+          const updated: DbCustomer[] = []
+          for (const { id, changes: change } of changes) {
+            writing = uniqueValuesOf(change)
+            updated.push(
+              ...(await tx
+                .update(customers)
+                .set({ ...change, updatedAt: sql`now()` })
+                .where(eq(customers.id, id))
+                .returning()),
+            )
+          }
+          return { type: 'updated', customers: updated }
+        }),
+    )
+  }
+
+  async deleteMany(
+    ids: readonly CustomerId[],
+  ): Promise<Result<CustomerBulkDeletion, DomainError>> {
+    return attempt('Failed to delete customers', () =>
+      this.db.transaction(
+        async (tx): Promise<CustomerBulkDeletion> => {
+          // As for a single delete, the bookings are looked for after the
+          // customers are held, in a statement of their own.
+          const missing = await holdCustomers(tx, ids)
+          if (missing.length > 0) {
+            return { type: 'customersNotFound', missing }
+          }
+          const referred = await customersOfUnfinishedBookings(tx, ids)
+          if (referred.length > 0) {
+            return { type: 'bookingsUnfinished', customers: referred }
+          }
+
+          await tx
+            .update(customers)
+            .set({ deletedAt: CLOCK, updatedAt: CLOCK })
+            .where(inArray(customers.id, [...ids]))
+          await tx
+            .update(users)
+            .set({ customerId: null, updatedAt: CLOCK })
+            .where(inArray(users.customerId, [...ids]))
 
           return { type: 'deleted' }
         },
