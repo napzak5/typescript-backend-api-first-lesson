@@ -28,3 +28,9 @@ export type RecordInventoryMovementResponse = JsonBody<
 export type ListInventoryMovementsResponse = JsonBody<
   operations['InventoryCrud_listMovements']['responses'][200]['content']
 >
+export type PerformStockCountResponse = JsonBody<
+  operations['InventoryCrud_performStockCount']['responses'][200]['content']
+>
+export type GetInventoryValueReportResponse = JsonBody<
+  operations['InventoryCrud_getValueReport']['responses'][200]['content']
+>

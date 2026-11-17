@@ -4,10 +4,12 @@ import type { Authenticated } from '../../shared/authentication'
 import { createInventoryHandler } from './create-inventory.handler'
 import { deleteInventoryHandler } from './delete-inventory.handler'
 import { getInventoryHandler } from './get-inventory.handler'
+import { getInventoryValueReportHandler } from './get-inventory-value-report.handler'
 import { listExpiringInventoryHandler } from './list-expiring-inventory.handler'
 import { listInventoryHandler } from './list-inventory.handler'
 import { listInventoryMovementsHandler } from './list-inventory-movements.handler'
 import { listLowStockInventoryHandler } from './list-low-stock-inventory.handler'
+import { performStockCountHandler } from './perform-stock-count.handler'
 import { recordInventoryMovementHandler } from './record-inventory-movement.handler'
 import { updateInventoryHandler } from './update-inventory.handler'
 
@@ -22,14 +24,15 @@ import { updateInventoryHandler } from './update-inventory.handler'
  * - GET    /low-stock       listLowStock
  * - GET    /expiring        listExpiring
  * - POST   /movement        recordMovement
+ * - POST   /stock-count     performStockCount
+ * - GET    /value-report    getValueReport
  * - GET    /:id             get
  * - PATCH  /:id             update
  * - DELETE /:id             delete
  * - GET    /:id/movements   listMovements
  *
- * The lists with a path of their own come before `/:id`, which would take
- * their names for IDs. Stock counts and the value report are not served
- * yet: a request for them is answered as any route that is not there.
+ * The operations with a path of their own come before `/:id`, which would
+ * take their names for IDs.
  */
 export const createInventoryRouter = (
   dependencies: InventoryUseCaseDependencies,
@@ -50,6 +53,14 @@ export const createInventoryRouter = (
   router.post(
     '/movement',
     recordInventoryMovementHandler(dependencies, authenticated),
+  )
+  router.post(
+    '/stock-count',
+    performStockCountHandler(dependencies, authenticated),
+  )
+  router.get(
+    '/value-report',
+    getInventoryValueReportHandler(dependencies, authenticated),
   )
   router.get('/:id', getInventoryHandler(dependencies, authenticated))
   router.patch('/:id', updateInventoryHandler(dependencies, authenticated))
