@@ -116,9 +116,11 @@ const itemTotalsWithinInteger = (
 }
 
 /**
- * The subtotal and the total of the order fit their `integer` columns.
- * They are looked at once nothing else of the request is wrong: an amount
- * that is wrong by itself does not add up to anything.
+ * The subtotal and the total of the order fit their `integer` columns: the
+ * total does, and the subtotal is never more than the total, to which the
+ * tax and the shipping cost add nothing below zero. They are looked at once
+ * nothing else of the request is wrong: an amount that is wrong by itself
+ * does not add up to anything.
  */
 const amountsWithinInteger = (
   context: z.core.ParsePayload<StatedOrder>,
@@ -127,8 +129,8 @@ const amountsWithinInteger = (
     return
   }
   const { items, taxAmount, shippingCost } = context.value
-  const { subtotal, totalAmount } = amountsOf(items, taxAmount, shippingCost)
-  if (subtotal <= BigInt(MAX_INTEGER) && totalAmount <= BigInt(MAX_INTEGER)) {
+  const { totalAmount } = amountsOf(items, taxAmount, shippingCost)
+  if (totalAmount <= BigInt(MAX_INTEGER)) {
     return
   }
   context.issues.push({

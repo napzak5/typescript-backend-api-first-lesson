@@ -130,12 +130,15 @@ describe('ListPurchaseOrdersUseCase', () => {
     },
   )
 
-  it('passes every filter, the moments to the millisecond, and points to the next page', async () => {
+  it('passes every filter, the moments to the millisecond, and points to the next page from the last order of the page', async () => {
     const dependencies = purchaseOrderDependencies({
       list: vi.fn(async () =>
         Result.success<PurchaseOrderListing>({
           type: 'listed',
-          orders: [storedPurchaseOrder()],
+          orders: [
+            storedPurchaseOrder({ id: OTHER_PURCHASE_ORDER_ID }),
+            storedPurchaseOrder(),
+          ],
           total: 3,
           hasMore: true,
         }),
@@ -146,7 +149,7 @@ describe('ListPurchaseOrdersUseCase', () => {
       dependencies,
       actors.ofSalon('staff'),
       Result.success({
-        limit: 1,
+        limit: 2,
         cursor: OTHER_PURCHASE_ORDER_ID,
         salonId: SALON_ID,
         status: 'pending',
@@ -158,7 +161,7 @@ describe('ListPurchaseOrdersUseCase', () => {
 
     expect(dependencies.purchaseOrderRepository.list).toHaveBeenCalledWith({
       reach: { type: 'salon', salonId: SALON_ID },
-      limit: 1,
+      limit: 2,
       after: OTHER_PURCHASE_ORDER_ID,
       salonId: SALON_ID,
       status: 'pending',
@@ -171,7 +174,7 @@ describe('ListPurchaseOrdersUseCase', () => {
       data: {
         meta: {
           total: 3,
-          limit: 1,
+          limit: 2,
           hasMore: true,
           cursor: OTHER_PURCHASE_ORDER_ID,
           nextCursor: PURCHASE_ORDER_ID,
@@ -300,9 +303,13 @@ describe('GetPurchaseOrderUseCase', () => {
   it('refuses an ID that is no UUID', async () => {
     const dependencies = purchaseOrderDependencies()
 
-    expect(rulesOf(await get(dependencies, actors.admin, 'PO-1'))).toEqual([
-      'id:invalid_format',
-    ])
+    const result = await get(dependencies, actors.admin, 'PO-1')
+
+    expect(result).toMatchObject({
+      type: 'error',
+      error: { type: 'validation', message: 'Invalid purchase order ID' },
+    })
+    expect(rulesOf(result)).toEqual(['id:invalid_format'])
     expect(untouched(dependencies)).toBe(true)
   })
 

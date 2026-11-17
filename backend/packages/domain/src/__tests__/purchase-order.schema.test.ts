@@ -240,6 +240,31 @@ describe('purchaseOrderCreateRequestSchema', () => {
     ])
   })
 
+  it('reports a stock row named again and an item that comes to more than an integer, both', () => {
+    const request = purchaseOrderCreateRequest({
+      items: [
+        {
+          inventoryId: INVENTORY_ID,
+          quantity: 3,
+          unitPrice: 715_827_883,
+          notes: null,
+        },
+        {
+          inventoryId: OTHER_INVENTORY_ID,
+          quantity: 1,
+          unitPrice: 1,
+          notes: null,
+        },
+        { inventoryId: INVENTORY_ID, quantity: 1, unitPrice: 1, notes: null },
+      ],
+    })
+
+    expect(brokenBy(purchaseOrderCreateRequestSchema, request)).toEqual([
+      'items.2.inventoryId:custom',
+      'items.0.unitPrice:too_big',
+    ])
+  })
+
   it('takes an item that comes to an integer, and rounds what it comes to half up', () => {
     expect(
       brokenBy(
