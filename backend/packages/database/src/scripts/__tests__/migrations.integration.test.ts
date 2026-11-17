@@ -2859,4 +2859,337 @@ describe('the migrations of this repository', () => {
       expect(await acknowledgementsOf(stock.productId)).toEqual([id])
     })
   })
+
+  describe('202611171800_treatment_record_rules.sql', () => {
+    const run = (): Promise<void> =>
+      runMigration('202611171800_treatment_record_rules.sql')
+
+    /** The schema of setup.sql, which the migration brings a database to. */
+    let schemaOfSetup: string[] = []
+
+    type Booked = { salonId: string; bookingId: string }
+
+    /** A booking of a new salon, by a customer and a staff member of their own. */
+    const storeBooking = async (): Promise<
+      Booked & { customerId: string; staffId: string }
+    > => {
+      const salonId = await storeSalon(null)
+      const customerId = await storeNewCustomer()
+      const staffId = randomUUID()
+      await sql`
+        INSERT INTO staff (
+          id, "salonId", "firstName", "lastName", "displayName", email,
+          "phoneNumber", specialties, certifications
+        )
+        VALUES (
+          ${staffId}, ${salonId}, 'Hanako', 'Sato', 'Hanako',
+          ${`${staffId}@example.com`}, '03-1234-5678', '{}', '{}'
+        )
+      `
+      const bookingId = randomUUID()
+      await sql`
+        INSERT INTO bookings (
+          id, "bookingNumber", "salonId", "customerId", "staffId",
+          "bookingDate", "startTime", "endTime", duration, subtotal,
+          "totalAmount"
+        )
+        VALUES (
+          ${bookingId}, ${`BK-${bookingId.slice(0, 8)}`}, ${salonId},
+          ${customerId}, ${staffId}, '2026-11-01',
+          '2026-11-01T01:00:00Z', '2026-11-01T02:00:00Z', 60, 0, 0
+        )
+      `
+      return { salonId, bookingId, customerId, staffId }
+    }
+
+    /**
+     * The JSON texts of the columns of a record that the migration changes,
+     * and its numbers; NULL where a value is null.
+     */
+    type StoredRecord = {
+      services?: string
+      techniques?: string | null
+      nextRecommendedServices?: string | null
+      processingTime?: number | null
+      customerSatisfaction?: number | null
+    }
+
+    /** A treatment record of a new booking; returns its ID and the booking. */
+    const storeRecord = async ({
+      services = `["${randomUUID()}"]`,
+      techniques = '[]',
+      nextRecommendedServices = '[]',
+      processingTime = null,
+      customerSatisfaction = null,
+    }: StoredRecord = {}): Promise<{ id: string; booked: Booked }> => {
+      const { customerId, staffId, ...booked } = await storeBooking()
+      const id = randomUUID()
+      await sql`
+        INSERT INTO treatment_records (
+          id, "bookingId", "customerId", "staffId", services, techniques,
+          "nextRecommendedServices", "processingTime",
+          "customerSatisfaction"
+        )
+        VALUES (
+          ${id}, ${booked.bookingId}, ${customerId}, ${staffId},
+          ${services}::text::jsonb, ${techniques}::text::jsonb,
+          ${nextRecommendedServices}::text::jsonb, ${processingTime},
+          ${customerSatisfaction}
+        )
+      `
+      return { id, booked }
+    }
+
+    /** A product of the salon, to use as a material. */
+    const storeProduct = async (salonId: string): Promise<string> => {
+      const id = randomUUID()
+      await sql`
+        INSERT INTO products (id, "salonId", "productCode", name, unit)
+        VALUES (${id}, ${salonId}, ${`CODE-${id}`}, 'Color Cream', 'g')
+      `
+      return id
+    }
+
+    /** A material of the record, as stored before the migration. */
+    const storeMaterial = async (
+      recordId: string,
+      productId: string,
+      {
+        id = randomUUID(),
+        createdAt = '2026-11-17T03:00:00Z',
+        quantity = '30',
+      },
+    ): Promise<string> => {
+      await sql`
+        INSERT INTO treatment_materials (
+          id, "treatmentRecordId", "productId", quantity, unit, "createdAt"
+        )
+        VALUES (${id}, ${recordId}, ${productId}, ${quantity}, 'g', ${createdAt})
+      `
+      return id
+    }
+
+    // A database from before the migration: seven jsonb columns, two
+    // lists that may be missing, photos in the record, materials without
+    // an order, and none of the rules.
+    beforeEach(async () => {
+      await applyBaseline(sql, plan)
+      schemaOfSetup = await describeSchema()
+      await sql.unsafe(`
+        DROP INDEX idx_treatment_records_created_at;
+        ALTER TABLE treatment_records
+          DROP CONSTRAINT treatment_records_lists,
+          DROP CONSTRAINT treatment_records_ranges,
+          ALTER COLUMN techniques DROP NOT NULL,
+          ALTER COLUMN "nextRecommendedServices" DROP NOT NULL,
+          ALTER COLUMN "scalpCondition" TYPE jsonb USING to_jsonb("scalpCondition"),
+          ALTER COLUMN "hairCondition" TYPE jsonb USING to_jsonb("hairCondition"),
+          ALTER COLUMN "colorFormula" TYPE jsonb USING to_jsonb("colorFormula"),
+          ADD COLUMN "beforePhotos" jsonb DEFAULT '[]'::jsonb,
+          ADD COLUMN "afterPhotos" jsonb DEFAULT '[]'::jsonb;
+        ALTER TABLE treatment_materials
+          DROP CONSTRAINT treatment_materials_amounts,
+          DROP CONSTRAINT treatment_materials_record_sort_unique,
+          DROP COLUMN "sortOrder";
+      `)
+    })
+
+    it('should give the database the rules of setup.sql, and keep them on a second run', async () => {
+      expect(await describeSchema()).not.toEqual(schemaOfSetup)
+
+      await run()
+      await run()
+
+      expect(await describeSchema()).toEqual(schemaOfSetup)
+    })
+
+    it('should keep a JSON string of a state as the string, any other JSON value as its text, and a missing one as null', async () => {
+      const { id } = await storeRecord()
+      await sql`
+        UPDATE treatment_records
+        SET "scalpCondition" = '"乾燥ぎみ"'::jsonb,
+            "hairCondition" = '{"damage": "high", "porosity": 3}'::jsonb,
+            "colorFormula" = NULL
+        WHERE id = ${id}
+      `
+
+      await run()
+
+      expect(
+        await sql`
+          SELECT "scalpCondition", "hairCondition", "colorFormula"
+          FROM treatment_records WHERE id = ${id}
+        `,
+      ).toEqual([
+        {
+          scalpCondition: '乾燥ぎみ',
+          hairCondition: '{"damage": "high", "porosity": 3}',
+          colorFormula: null,
+        },
+      ])
+    })
+
+    it('should give a record without a list of techniques or of recommended services an empty list, and keep the others', async () => {
+      const service = randomUUID()
+      const missing = await storeRecord({
+        techniques: null,
+        nextRecommendedServices: null,
+      })
+      const stated = await storeRecord({
+        techniques: '["バレイヤージュ"]',
+        nextRecommendedServices: `["${service}"]`,
+      })
+
+      await run()
+
+      const listsOf = (id: string) => sql`
+        SELECT techniques, "nextRecommendedServices"
+        FROM treatment_records WHERE id = ${id}
+      `
+      expect(await listsOf(missing.id)).toEqual([
+        { techniques: [], nextRecommendedServices: [] },
+      ])
+      expect(await listsOf(stated.id)).toEqual([
+        { techniques: ['バレイヤージュ'], nextRecommendedServices: [service] },
+      ])
+    })
+
+    it('should number the materials of each record by their creation time and then their ID', async () => {
+      const first = await storeRecord()
+      const second = await storeRecord()
+      const product = await storeProduct(first.booked.salonId)
+      const other = await storeProduct(second.booked.salonId)
+      const latest = await storeMaterial(first.id, product, {
+        createdAt: '2026-11-17T03:00:02Z',
+      })
+      const earlierOfTwo = await storeMaterial(first.id, product, {
+        id: '00000000-0000-4000-8000-000000000001',
+        createdAt: '2026-11-17T03:00:01Z',
+      })
+      const laterOfTwo = await storeMaterial(first.id, product, {
+        id: 'ffffffff-ffff-4fff-bfff-ffffffffffff',
+        createdAt: '2026-11-17T03:00:01Z',
+      })
+      const ofTheOther = await storeMaterial(second.id, other, {
+        createdAt: '2026-11-17T03:00:03Z',
+      })
+
+      await run()
+
+      expect(
+        await sql`
+          SELECT id, "sortOrder" FROM treatment_materials
+          ORDER BY "treatmentRecordId" = ${first.id} DESC, "sortOrder"
+        `,
+      ).toEqual([
+        { id: earlierOfTwo, sortOrder: 0 },
+        { id: laterOfTwo, sortOrder: 1 },
+        { id: latest, sortOrder: 2 },
+        { id: ofTheOther, sortOrder: 0 },
+      ])
+    })
+
+    it('should fail and change nothing where a record breaks a rule', async () => {
+      const missing = await storeRecord({ techniques: null })
+      await storeRecord({ processingTime: 1441 })
+      const before = await describeSchema()
+
+      await expect(run()).rejects.toThrow('treatment_records_ranges')
+
+      expect(
+        await sql`SELECT techniques FROM treatment_records WHERE id = ${missing.id}`,
+      ).toEqual([{ techniques: null }])
+      expect(await describeSchema()).toEqual(before)
+    })
+
+    it.each<[string, StoredRecord, string]>([
+      [
+        'a record without services',
+        { services: '[]' },
+        'treatment_records_lists',
+      ],
+      [
+        'services that are not a list',
+        { services: '{"cut": true}' },
+        'treatment_records_lists',
+      ],
+      [
+        'techniques that are not a list',
+        { techniques: '"balayage"' },
+        'treatment_records_lists',
+      ],
+      [
+        'recommended services that are not a list',
+        { nextRecommendedServices: '{}' },
+        'treatment_records_lists',
+      ],
+      [
+        'a record without a list of techniques',
+        { techniques: null },
+        'techniques',
+      ],
+      [
+        'a record without a list of recommended services',
+        { nextRecommendedServices: null },
+        'nextRecommendedServices',
+      ],
+      [
+        'a negative processing time',
+        { processingTime: -1 },
+        'treatment_records_ranges',
+      ],
+      [
+        'a processing time above a day',
+        { processingTime: 1441 },
+        'treatment_records_ranges',
+      ],
+      [
+        'a satisfaction below 1',
+        { customerSatisfaction: 0 },
+        'treatment_records_ranges',
+      ],
+      [
+        'a satisfaction above 5',
+        { customerSatisfaction: 6 },
+        'treatment_records_ranges',
+      ],
+    ])('should keep %s out from then on', async (_, record, rule) => {
+      await run()
+
+      await expect(storeRecord(record)).rejects.toThrow(rule)
+    })
+
+    it('should take the bounds of the processing time and of the satisfaction, and records without them', async () => {
+      await run()
+
+      await storeRecord({ processingTime: 0, customerSatisfaction: 1 })
+      await storeRecord({ processingTime: 1440, customerSatisfaction: 5 })
+      await storeRecord({ techniques: '["カット", "ブロー"]' })
+
+      expect(await sql`SELECT 1 FROM treatment_records`).toHaveLength(3)
+    })
+
+    it('should keep out a material of no quantity, and a second material at the place of another in the record', async () => {
+      await run()
+      const { id, booked } = await storeRecord()
+      const product = await storeProduct(booked.salonId)
+      const material = (sortOrder: number, quantity: string) => sql`
+        INSERT INTO treatment_materials (
+          "treatmentRecordId", "productId", quantity, unit, "sortOrder"
+        )
+        VALUES (${id}, ${product}, ${quantity}, 'g', ${sortOrder})
+      `
+
+      await material(0, '0.01')
+      await expect(material(1, '0')).rejects.toThrow(
+        'treatment_materials_amounts',
+      )
+      await expect(material(-1, '1')).rejects.toThrow(
+        'treatment_materials_amounts',
+      )
+      await expect(material(0, '1')).rejects.toThrow(
+        'treatment_materials_record_sort_unique',
+      )
+    })
+  })
 })

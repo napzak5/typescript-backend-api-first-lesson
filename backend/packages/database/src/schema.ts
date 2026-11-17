@@ -2372,8 +2372,13 @@ export const treatmentMaterials = pgTable(
     createdAt: timestamp({ withTimezone: true, mode: 'string' })
       .defaultNow()
       .notNull(),
+    sortOrder: integer().notNull(),
   },
   (table) => [
+    check(
+      'treatment_materials_amounts',
+      sql`(quantity > (0)::numeric) AND ("sortOrder" >= 0)`,
+    ),
     foreignKey({
       columns: [table.productId],
       foreignColumns: [products.id],
@@ -2391,6 +2396,10 @@ export const treatmentMaterials = pgTable(
     index('idx_treatment_materials_treatment_record_id').using(
       'btree',
       table.treatmentRecordId.asc().nullsLast().op('uuid_ops'),
+    ),
+    unique('treatment_materials_record_sort_unique').on(
+      table.treatmentRecordId,
+      table.sortOrder,
     ),
   ],
 )
@@ -2437,17 +2446,15 @@ export const treatmentRecords = pgTable(
     customerId: uuid().notNull(),
     staffId: uuid().notNull(),
     services: jsonb().notNull(),
-    techniques: jsonb().default([]),
+    techniques: jsonb().default([]).notNull(),
     consultationNotes: text(),
-    scalpCondition: jsonb(),
-    hairCondition: jsonb(),
-    colorFormula: jsonb(),
+    scalpCondition: text(),
+    hairCondition: text(),
+    colorFormula: text(),
     processingTime: integer(),
-    beforePhotos: jsonb().default([]),
-    afterPhotos: jsonb().default([]),
     resultNotes: text(),
     nextRecommendedDate: date(),
-    nextRecommendedServices: jsonb().default([]),
+    nextRecommendedServices: jsonb().default([]).notNull(),
     homeCareSuggestions: text(),
     customerSatisfaction: integer(),
     staffEvaluation: text(),
@@ -2459,6 +2466,14 @@ export const treatmentRecords = pgTable(
       .notNull(),
   },
   (table) => [
+    check(
+      'treatment_records_lists',
+      sql`(jsonb_typeof(services) = 'array'::text) AND (services <> '[]'::jsonb) AND (jsonb_typeof(techniques) = 'array'::text) AND (jsonb_typeof("nextRecommendedServices") = 'array'::text)`,
+    ),
+    check(
+      'treatment_records_ranges',
+      sql`(("processingTime" IS NULL) OR (("processingTime" >= 0) AND ("processingTime" <= 1440))) AND (("customerSatisfaction" IS NULL) OR (("customerSatisfaction" >= 1) AND ("customerSatisfaction" <= 5)))`,
+    ),
     foreignKey({
       columns: [table.bookingId],
       foreignColumns: [bookings.id],
@@ -2477,6 +2492,11 @@ export const treatmentRecords = pgTable(
     index('idx_treatment_records_booking_id').using(
       'btree',
       table.bookingId.asc().nullsLast().op('uuid_ops'),
+    ),
+    index('idx_treatment_records_created_at').using(
+      'btree',
+      table.createdAt.asc().nullsLast().op('timestamptz_ops'),
+      table.id.asc().nullsLast().op('uuid_ops'),
     ),
     index('idx_treatment_records_customer_id').using(
       'btree',
