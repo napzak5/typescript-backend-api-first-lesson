@@ -444,7 +444,9 @@ const salonRules: ModelRule[] = [
 | まだ書いていない行のカラムの値だけを返すモデル（`SaleBreakdownResponse`。売上を作成すれば、その金額のカラムになる値） | 載せる。その表のルールで、ほかのカラムを `omittedColumns` に挙げる |
 | 何も書かないリクエストと、行のモデルを包むレスポンス（`SaleCalculateRequest`、`SaleCalculateResponse`、`SaleReceiptResponse`） | 載せない。包んだ行のモデル（`SaleResponse`、`SaleBreakdownResponse`）は、それぞれのルールで照合する |
 | 複数の行を書き換えるアクションのリクエストと、その結果（`InventoryStockCountRequest`、`InventoryStockCountResponse`、`PurchaseOrderReceiveRequest`、`PurchaseOrderReceivedItem`） | 載せない。プロパティ名と null 許可はカラムに合わせる（入荷の `inventoryId`、`quantity` は在庫の移動の、`deliveryNotes` は発注のカラム）。結果に包む行のモデル（`InventoryTransactionResponse`、`PurchaseOrderResponse`）は、そのルールで照合する |
-| 集計・計算結果（`ReviewSummaryResponse`、`SalesReportResponse`、`InventoryValueReportResponse`、`ReorderSuggestionResponse` など） | 載せない |
+| 集計・計算結果（`ReviewSummaryResponse`、`SalesReportResponse`、`InventoryValueReportResponse`、`ReorderSuggestionResponse`、`InventoryAlertSummaryResponse` など） | 載せない |
+| 保存せず、読むたびに複数の表から求めるモデル（`InventoryAlertResponse`。在庫のアラートは、商品、在庫の行、在庫の移動から求める） | 載せない。プロパティ名と null 許可は、もとのカラムに合わせる（`productId`、`inventoryId`、`lotNumber`、`expiryDate` など）。包む行のモデル（`InventoryAlertAcknowledgementResponse`）は、そのルールで照合する |
+| 行を追加するアクションのリクエストで、サーバーが決めるカラムを書かないもの（`InventoryAlertAcknowledgeRequest`。サロン、重要度、`threshold`、使用期限は、今のアラートから、確認した人と時刻は、操作者とデータベースが決める） | `create` として載せ、書かないカラムを `omittedColumns` に挙げる |
 | テーブルがまだない機能のモデル（下の表） | 載せない |
 
 テーブルがまだない機能は次のとおりである。これらの TypeSpec は命名・レスポンスの形・エラーの規約には従っているが、プロパティを照合する相手がない。実装するときは、先にテーブルを設計してマイグレーションを書き、モデルをルールに載せる。
@@ -453,7 +455,6 @@ const salonRules: ModelRule[] = [
 |---|---|
 | ロール、権限、ロールの割り当て、アクセス判定 | `specs/models/permission.tsp` |
 | 添付ファイル、共有リンク | `specs/models/attachment.tsp` |
-| 在庫アラート | `specs/models/inventory.tsp` の `InventoryAlert*` |
 | カルテ（medical charts） | `specs/models/treatment.tsp` の `MedicalChart*` |
 | 顧客の監査履歴・版、エクスポートジョブ、データ削除リクエスト | `specs/models/customer.tsp` の `CustomerAuditEntry*`、`CustomerExport*`、`CustomerDataDeletion*` |
 

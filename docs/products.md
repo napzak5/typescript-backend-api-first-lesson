@@ -13,7 +13,7 @@
 | 商品（`ProductCrud`）の一覧、作成、1 件の取得、更新、削除（`list`、`create`、`get`、`update`、`delete`） | 実装済み |
 | 在庫の行（`InventoryCrud` の一覧、作成、1 件の取得、更新、削除、在庫僅少、期限切れ間近）、在庫の移動（`recordMovement`、`listMovements`）、棚卸し（`performStockCount`）、在庫評価額（`getValueReport`） | 実装済み（[在庫](./inventory.md)） |
 | 発注（`PurchaseOrderCrud` の一覧、作成、1 件の取得、更新、承認、取り消し、入荷、発注の提案） | 実装済み（[発注](./purchase-orders.md)） |
-| 在庫のアラート（`InventoryAlertCrud`） | 未実装（ルートがなく、404。テーブルもない） |
+| 在庫のアラート（`InventoryAlertCrud` の一覧、確認、件数） | 実装済み（[在庫のアラート](./inventory-alerts.md)） |
 
 - 次のものは、ありません
   - 顧客に、商品を見せるルート
