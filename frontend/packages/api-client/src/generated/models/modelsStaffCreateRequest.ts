@@ -95,7 +95,7 @@ export interface ModelsStaffCreateRequest {
   /** 保有資格名の一覧 (テキスト管理)。ない場合は空配列。空白だけの要素と、同じ要素の繰り返しは指定できない */
   certifications: string[];
   /**
-     * 入社日。未設定の場合はnull
+     * 入社日。未設定の場合はnull。1900-01-01 から 2999-12-31 まで
      * @nullable
      */
   hireDate: string | null;

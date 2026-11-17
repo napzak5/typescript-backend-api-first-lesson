@@ -20,7 +20,9 @@ import {
 } from '../models/customer'
 import {
   atLeastOneProperty,
+  calendarDate,
   lowerCaseEmail,
+  momentOfRequest,
   nonBlankText,
   noRepeatedEntries,
   phoneNumber,
@@ -62,7 +64,7 @@ export const customerCreateRequestSchema = z.strictObject({
   city: nonBlankText.max(100).nullable(),
   address: nonBlankText.max(255).nullable(),
   building: nonBlankText.max(255).nullable(),
-  birthDate: z.iso.date().nullable(),
+  birthDate: calendarDate.nullable(),
   gender: CustomerGenderTypeSchema.nullable(),
   occupation: nonBlankText.max(100).nullable(),
   membershipTier: MembershipTierTypeSchema,
@@ -125,8 +127,8 @@ export const customerSearchRequestSchema = z
     cursor: customerIdSchema.exactOptional(),
     search: nonBlankText.max(100).exactOptional(),
     tags: z.array(nonBlankText).exactOptional(),
-    registeredFrom: z.iso.datetime().exactOptional(),
-    registeredTo: z.iso.datetime().exactOptional(),
+    registeredFrom: momentOfRequest.exactOptional(),
+    registeredTo: momentOfRequest.exactOptional(),
     customerStatus: CustomerStatusTypeSchema.exactOptional(),
     membershipTier: MembershipTierTypeSchema.exactOptional(),
   })

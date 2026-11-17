@@ -17,7 +17,7 @@ namespace BeautySalon.Models {
     @doc("毎週の行が適用される曜日。毎週の行では必須。単日の行ではnull")
     dayOfWeek: DayOfWeekType | null;
 
-    @doc("単日の行が適用される日付。単日の行では必須。毎週の行ではnull")
+    @doc("単日の行が適用される日付。単日の行では必須。毎週の行ではnull。1900-01-01 から 2999-12-31 まで")
     date: plainDate | null;
 
     @doc("勤務開始時刻。HH:mm:ss形式で返す（指定時はHH:mmも可）。勤務する行では必須で、endTimeより前の時刻を指定する。休みの行ではnull")
@@ -55,7 +55,7 @@ namespace BeautySalon.Models {
     """)
   model StaffScheduleSearchRequest {
     @query
-    @doc("この日付に適用される行だけを返す。その日付の単日の行があればその行を、なければその曜日の毎週の行を返す。どちらもなければ空配列を返す")
+    @doc("この日付に適用される行だけを返す。その日付の単日の行があればその行を、なければその曜日の毎週の行を返す。どちらもなければ空配列を返す。1900-01-01 から 2999-12-31 まで")
     date?: plainDate;
   }
 
@@ -225,7 +225,7 @@ namespace BeautySalon.Models {
     @doc("保有資格名の一覧 (テキスト管理)。ない場合は空配列。空白だけの要素と、同じ要素の繰り返しは指定できない")
     certifications: string[];
 
-    @doc("入社日。未設定の場合はnull")
+    @doc("入社日。未設定の場合はnull。1900-01-01 から 2999-12-31 まで")
     hireDate: plainDate | null;
 
     @doc("雇用形態(full-time など)。未設定の場合はnull")
@@ -332,7 +332,7 @@ namespace BeautySalon.Models {
     @doc("保有資格名の一覧 (テキスト管理)。指定した一覧で置き換える。空白だけの要素と、同じ要素の繰り返しは指定できない")
     certifications?: string[];
 
-    @doc("入社日。nullでクリア")
+    @doc("入社日。nullでクリア。1900-01-01 から 2999-12-31 まで")
     hireDate?: plainDate | null;
 
     @doc("雇用形態(full-time など)。nullでクリア")

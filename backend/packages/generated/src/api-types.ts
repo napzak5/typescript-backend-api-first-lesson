@@ -3727,7 +3727,7 @@ export interface components {
             serviceId: components["schemas"]["Models.ServiceId"];
             /**
              * Format: date-time
-             * @description 希望する施術開始日時 (UTC)。分単位で指定する(秒と小数は0)
+             * @description 希望する施術開始日時 (UTC)。分単位で指定する(秒と小数は0)。UTC の日付で 1900-01-01 から 2999-12-31 まで
              */
             startTime: string;
         };
@@ -3765,12 +3765,12 @@ export interface components {
         "Models.BookingCompleteRequest": {
             /**
              * Format: date-time
-             * @description 実際の施術開始日時 (UTC)。nullの場合は、記録済みの日時(start アクションが記録したもの)を残す
+             * @description 実際の施術開始日時 (UTC)。nullの場合は、記録済みの日時(start アクションが記録したもの)を残す。UTC の日付で 1900-01-01 から 2999-12-31 まで
              */
             actualStartTime: string | null;
             /**
              * Format: date-time
-             * @description 実際の施術終了日時 (UTC)。実際の施術開始日時(このリクエストの値、nullの場合は記録済みの値)より後の日時を指定する。記録しない場合はnull
+             * @description 実際の施術終了日時 (UTC)。実際の施術開始日時(このリクエストの値、nullの場合は記録済みの値)より後の日時を指定する。記録しない場合はnull。UTC の日付で 1900-01-01 から 2999-12-31 まで
              */
             actualEndTime: string | null;
         };
@@ -3841,7 +3841,7 @@ export interface components {
         "Models.BookingRescheduleRequest": {
             /**
              * Format: date-time
-             * @description 変更後の予約開始日時 (UTC)。分単位で指定する(秒と小数は0)
+             * @description 変更後の予約開始日時 (UTC)。分単位で指定する(秒と小数は0)。UTC の日付で 1900-01-01 から 2999-12-31 まで
              */
             startTime: string;
             /** @description 変更後の担当スタッフのID。予約と同じサロンのスタッフを指定する。担当を変えない場合は現在の担当スタッフのIDを指定する */
@@ -3985,7 +3985,7 @@ export interface components {
             staffId: (string & components["schemas"]["Models.StaffId"]) | null;
             /**
              * Format: date-time
-             * @description 施術開始予定日時 (UTC)。分単位で指定する(秒と小数は0)
+             * @description 施術開始予定日時 (UTC)。分単位で指定する(秒と小数は0)。UTC の日付で 1900-01-01 から 2999-12-31 まで
              */
             startTime: string;
             /** @description この施術に関するメモ。メモがない場合はnull */
@@ -4317,7 +4317,7 @@ export interface components {
             staffId: components["schemas"]["Models.StaffId"];
             /**
              * Format: date-time
-             * @description 開始日時 (UTC)。空き枠の startTime を指定する。分単位(秒と小数は0)
+             * @description 開始日時 (UTC)。空き枠の startTime を指定する。分単位(秒と小数は0)。UTC の日付で 1900-01-01 から 2999-12-31 まで
              */
             startTime: string;
             /** @description サロンに伝える要望や特記事項。要望がない場合はnull */
@@ -5687,7 +5687,7 @@ export interface components {
             lotNumber: string | null;
             /**
              * Format: date
-             * @description 使用期限。期限のない場合はnull
+             * @description 使用期限。期限のない場合はnull。1900-01-01 から 2999-12-31 まで
              */
             expiryDate: string | null;
             /** @description サロン内の保管場所。未設定の場合はnull */
@@ -5959,7 +5959,7 @@ export interface components {
             lotNumber?: string | null;
             /**
              * Format: date
-             * @description 使用期限。nullでクリア
+             * @description 使用期限。nullでクリア。1900-01-01 から 2999-12-31 まで
              */
             expiryDate?: string | null;
             /** @description サロン内の保管場所。nullでクリア */
@@ -6143,7 +6143,7 @@ export interface components {
             dayOfWeek: components["schemas"]["Models.DayOfWeekType"];
             /**
              * Format: date
-             * @description 日付
+             * @description 日付。1900-01-01 から 2999-12-31 まで
              */
             date: string;
             /** @description 開店時刻。HH:mm:ss形式で返す（指定時はHH:mmも可）。終日休業の場合はnull。時刻がある日は、isHolidayがtrueでも、その時刻のあいだ営業する */
@@ -6677,7 +6677,7 @@ export interface components {
             referenceId: string | null;
             /**
              * Format: date
-             * @description 付与したポイントの有効期限(この日まで使える)。昨日(UTC)より前の日付は指定できない。有効期限を設けない場合はnull
+             * @description 付与したポイントの有効期限(この日まで使える)。昨日(UTC)より前の日付は指定できない。有効期限を設けない場合はnull。1900-01-01 から 2999-12-31 まで
              */
             expiryDate: string | null;
         };
@@ -6687,7 +6687,7 @@ export interface components {
             customerId: (string & components["schemas"]["Models.CustomerId"]) | null;
             /**
              * Format: date
-             * @description 有効期限がこの日付より前の獲得ポイントを失効させる。昨日(UTC)以前の日付で、null の場合は昨日(UTC)。有効期限は、その日まで使える日付で、付与は昨日(UTC)以降の有効期限を受け付けるため、どのタイムゾーンでも、有効期限の日が終わる前には失効しない
+             * @description 有効期限がこの日付より前の獲得ポイントを失効させる。昨日(UTC)以前の日付で、null の場合は昨日(UTC)。有効期限は、その日まで使える日付で、付与は昨日(UTC)以降の有効期限を受け付けるため、どのタイムゾーンでも、有効期限の日が終わる前には失効しない。1900-01-01 から 2999-12-31 まで
              */
             processBefore: string | null;
         };
@@ -7931,7 +7931,7 @@ export interface components {
             bookingId: (string & components["schemas"]["Models.BookingId"]) | null;
             /**
              * Format: date-time
-             * @description 会計日時
+             * @description 会計日時。UTC の日付で 1900-01-01 から 2999-12-31 まで
              */
             saleTime: string;
             /**
@@ -8085,7 +8085,7 @@ export interface components {
             bookingId?: (string & components["schemas"]["Models.BookingId"]) | null;
             /**
              * Format: date-time
-             * @description 会計日時。変更すると saleDate も再計算する
+             * @description 会計日時。変更すると saleDate も再計算する。UTC の日付で 1900-01-01 から 2999-12-31 まで
              */
             saleTime?: string;
             /**
@@ -9312,7 +9312,7 @@ export interface components {
             certifications: string[];
             /**
              * Format: date
-             * @description 入社日。未設定の場合はnull
+             * @description 入社日。未設定の場合はnull。1900-01-01 から 2999-12-31 まで
              */
             hireDate: string | null;
             /** @description 雇用形態(full-time など)。未設定の場合はnull */
@@ -9581,7 +9581,7 @@ export interface components {
             dayOfWeek: components["schemas"]["Models.DayOfWeekType"] | null;
             /**
              * Format: date
-             * @description 単日の行が適用される日付。単日の行では必須。毎週の行ではnull
+             * @description 単日の行が適用される日付。単日の行では必須。毎週の行ではnull。1900-01-01 から 2999-12-31 まで
              */
             date: string | null;
             /** @description 勤務開始時刻。HH:mm:ss形式で返す（指定時はHH:mmも可）。勤務する行では必須で、endTimeより前の時刻を指定する。休みの行ではnull */
@@ -9664,7 +9664,7 @@ export interface components {
             certifications?: string[];
             /**
              * Format: date
-             * @description 入社日。nullでクリア
+             * @description 入社日。nullでクリア。1900-01-01 から 2999-12-31 まで
              */
             hireDate?: string | null;
             /** @description 雇用形態(full-time など)。nullでクリア */
@@ -10299,7 +10299,7 @@ export interface components {
         "Models.AttachmentSearchRequest.salonId": components["schemas"]["Models.SalonId"];
         /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する。ページの最後の枠を表す `<startTime>_<staffId>` の形で、その枠より後の枠から返す */
         "Models.AvailableSlotSearchRequest.cursor": string;
-        /** @description 空き枠を探す日付。サロンのタイムゾーンでの日付。過去の日付には空の一覧を返す */
+        /** @description 空き枠を探す日付。サロンのタイムゾーンでの日付。過去の日付には空の一覧を返す。1900-01-01 から 2999-12-31 まで */
         "Models.AvailableSlotSearchRequest.date": string;
         /** @description 必要な施術時間（分）。指定しない場合はサービスの施術時間を使う */
         "Models.AvailableSlotSearchRequest.duration": number;
@@ -10309,9 +10309,9 @@ export interface components {
         "Models.AvailableSlotSearchRequest.serviceId": components["schemas"]["Models.ServiceId"];
         /** @description 空き枠を探すスタッフのID。パスのサロンのスタッフを指定する。指定しない場合はサロンのすべてのスタッフの空き枠を返す */
         "Models.AvailableSlotSearchRequest.staffId": components["schemas"]["Models.StaffId"];
-        /** @description 来店日(bookingDate)の範囲の開始日。この日以降の予約に一致する。bookingDateTo より後の日付は指定できない */
+        /** @description 来店日(bookingDate)の範囲の開始日。この日以降の予約に一致する。bookingDateTo より後の日付は指定できない。1900-01-01 から 2999-12-31 まで */
         "Models.BookingSearchRequest.bookingDateFrom": string;
-        /** @description 来店日(bookingDate)の範囲の終了日。この日以前の予約に一致する */
+        /** @description 来店日(bookingDate)の範囲の終了日。この日以前の予約に一致する。1900-01-01 から 2999-12-31 まで */
         "Models.BookingSearchRequest.bookingDateTo": string;
         /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
         "Models.BookingSearchRequest.cursor": string;
@@ -10333,9 +10333,9 @@ export interface components {
         "Models.CustomerAuditEntrySearchRequest.cursor": string;
         /** @description 1ページあたりの取得件数上限 (1〜100) */
         "Models.CustomerAuditEntrySearchRequest.limit": number;
-        /** @description 来店日(bookingDate)の範囲の開始日。この日以降の予約に一致する。bookingDateTo より後の日付は指定できない */
+        /** @description 来店日(bookingDate)の範囲の開始日。この日以降の予約に一致する。bookingDateTo より後の日付は指定できない。1900-01-01 から 2999-12-31 まで */
         "Models.CustomerBookingSearchRequest.bookingDateFrom": string;
-        /** @description 来店日(bookingDate)の範囲の終了日。この日以前の予約に一致する */
+        /** @description 来店日(bookingDate)の範囲の終了日。この日以前の予約に一致する。1900-01-01 から 2999-12-31 まで */
         "Models.CustomerBookingSearchRequest.bookingDateTo": string;
         /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
         "Models.CustomerBookingSearchRequest.cursor": string;
@@ -10351,15 +10351,15 @@ export interface components {
         "Models.CustomerSearchRequest.limit": number;
         /** @description 会員ランクによる絞り込み(完全一致) */
         "Models.CustomerSearchRequest.membershipTier": components["schemas"]["Models.MembershipTierType"];
-        /** @description 登録日時(createdAt)の下限による絞り込み。この日時以降に登録された顧客に一致する */
+        /** @description 登録日時(createdAt)の下限による絞り込み。この日時以降に登録された顧客に一致する。UTC の日付で 1900-01-01 から 2999-12-31 まで */
         "Models.CustomerSearchRequest.registeredFrom": string;
-        /** @description 登録日時(createdAt)の上限による絞り込み。この日時以前に登録された顧客に一致する。registeredFromより前の日時は指定できない */
+        /** @description 登録日時(createdAt)の上限による絞り込み。この日時以前に登録された顧客に一致する。registeredFromより前の日時は指定できない。UTC の日付で 1900-01-01 から 2999-12-31 まで */
         "Models.CustomerSearchRequest.registeredTo": string;
         /** @description 顧客名(姓・名とそのカナ表記)、メールアドレスに対する部分一致キーワード(大文字小文字を区別しない)。数字・空白・-+()だけのキーワードは、電話番号とも数字だけを取り出して比べる */
         "Models.CustomerSearchRequest.search": string;
         /** @description タグによる絞り込み。指定したタグをすべて持つ顧客に一致する */
         "Models.CustomerSearchRequest.tags": string[];
-        /** @description 集計対象の売上日(saleDate) */
+        /** @description 集計対象の売上日(saleDate)。1900-01-01 から 2999-12-31 まで */
         "Models.DailySalesGetRequest.date": string;
         /** @description 集計対象のサロン ID */
         "Models.DailySalesGetRequest.salonId": components["schemas"]["Models.SalonId"];
@@ -10439,11 +10439,11 @@ export interface components {
         "Models.PermissionSearchRequest.resource": string;
         /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する。その顧客のポイント取引の ID でなければならない */
         "Models.PointTransactionSearchRequest.cursor": components["schemas"]["Models.PointTransactionId"];
-        /** @description 取引の発生日時(createdAt)の上限。この日時以前の取引に一致する。startDate より前の日時は指定できない */
+        /** @description 取引の発生日時(createdAt)の上限。この日時以前の取引に一致する。startDate より前の日時は指定できない。UTC の日付で 1900-01-01 から 2999-12-31 まで */
         "Models.PointTransactionSearchRequest.endDate": string;
         /** @description 1ページあたりの取得件数上限 (1〜100) */
         "Models.PointTransactionSearchRequest.limit": number;
-        /** @description 取引の発生日時(createdAt)の下限。この日時以降の取引に一致する */
+        /** @description 取引の発生日時(createdAt)の下限。この日時以降の取引に一致する。UTC の日付で 1900-01-01 から 2999-12-31 まで */
         "Models.PointTransactionSearchRequest.startDate": string;
         /** @description バーコードによる絞り込み(完全一致) */
         "Models.ProductSearchRequest.barcode": string;
@@ -10533,7 +10533,7 @@ export interface components {
         "Models.SaleSearchRequest.cursor": string;
         /** @description 顧客 ID による絞り込み(完全一致) */
         "Models.SaleSearchRequest.customerId": components["schemas"]["Models.CustomerId"];
-        /** @description 売上日(saleDate)の上限。この日付以前の売上に一致する */
+        /** @description 売上日(saleDate)の上限。この日付以前の売上に一致する。1900-01-01 から 2999-12-31 まで */
         "Models.SaleSearchRequest.endDate": string;
         /** @description 1ページあたりの取得件数上限 (1〜100) */
         "Models.SaleSearchRequest.limit": number;
@@ -10541,13 +10541,13 @@ export interface components {
         "Models.SaleSearchRequest.paymentStatus": components["schemas"]["Models.PaymentStatusType"];
         /** @description サロン ID による絞り込み(完全一致) */
         "Models.SaleSearchRequest.salonId": components["schemas"]["Models.SalonId"];
-        /** @description 売上日(saleDate)の下限。この日付以降の売上に一致する */
+        /** @description 売上日(saleDate)の下限。この日付以降の売上に一致する。1900-01-01 から 2999-12-31 まで */
         "Models.SaleSearchRequest.startDate": string;
-        /** @description 期間の最後の売上日(saleDate)。startDate 以降で、期間は startDate を含めて366日まで */
+        /** @description 期間の最後の売上日(saleDate)。startDate 以降で、期間は startDate を含めて366日まで。1900-01-01 から 2999-12-31 まで */
         "Models.SalesReportGetRequest.endDate": string;
         /** @description 集計対象のサロン ID */
         "Models.SalesReportGetRequest.salonId": components["schemas"]["Models.SalonId"];
-        /** @description 期間の最初の売上日(saleDate) */
+        /** @description 期間の最初の売上日(saleDate)。1900-01-01 から 2999-12-31 まで */
         "Models.SalesReportGetRequest.startDate": string;
         /** @description 区切りの単位 */
         "Models.SalesTrendsGetRequest.period": components["schemas"]["Models.SalesTrendPeriodType"];
@@ -10601,7 +10601,7 @@ export interface components {
         "Models.StaffProfileSearchRequest.salonId": components["schemas"]["Models.SalonId"];
         /** @description 得意分野による絞り込み。specialtiesに指定した値(完全一致)を含むスタッフに一致する */
         "Models.StaffProfileSearchRequest.specialty": string;
-        /** @description この日付に適用される行だけを返す。その日付の単日の行があればその行を、なければその曜日の毎週の行を返す。どちらもなければ空配列を返す */
+        /** @description この日付に適用される行だけを返す。その日付の単日の行があればその行を、なければその曜日の毎週の行を返す。どちらもなければ空配列を返す。1900-01-01 から 2999-12-31 まで */
         "Models.StaffScheduleSearchRequest": string;
         /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
         "Models.StaffSearchRequest.cursor": string;
@@ -14281,9 +14281,9 @@ export interface operations {
                 staffId?: components["parameters"]["Models.BookingSearchRequest.staffId"];
                 /** @description ステータスによる絞り込み(完全一致) */
                 status?: components["parameters"]["Models.BookingSearchRequest.status"];
-                /** @description 来店日(bookingDate)の範囲の開始日。この日以降の予約に一致する。bookingDateTo より後の日付は指定できない */
+                /** @description 来店日(bookingDate)の範囲の開始日。この日以降の予約に一致する。bookingDateTo より後の日付は指定できない。1900-01-01 から 2999-12-31 まで */
                 bookingDateFrom?: components["parameters"]["Models.BookingSearchRequest.bookingDateFrom"];
-                /** @description 来店日(bookingDate)の範囲の終了日。この日以前の予約に一致する */
+                /** @description 来店日(bookingDate)の範囲の終了日。この日以前の予約に一致する。1900-01-01 から 2999-12-31 まで */
                 bookingDateTo?: components["parameters"]["Models.BookingSearchRequest.bookingDateTo"];
             };
             header?: never;
@@ -15818,9 +15818,9 @@ export interface operations {
                 search?: components["parameters"]["Models.CustomerSearchRequest.search"];
                 /** @description タグによる絞り込み。指定したタグをすべて持つ顧客に一致する */
                 tags?: components["parameters"]["Models.CustomerSearchRequest.tags"];
-                /** @description 登録日時(createdAt)の下限による絞り込み。この日時以降に登録された顧客に一致する */
+                /** @description 登録日時(createdAt)の下限による絞り込み。この日時以降に登録された顧客に一致する。UTC の日付で 1900-01-01 から 2999-12-31 まで */
                 registeredFrom?: components["parameters"]["Models.CustomerSearchRequest.registeredFrom"];
-                /** @description 登録日時(createdAt)の上限による絞り込み。この日時以前に登録された顧客に一致する。registeredFromより前の日時は指定できない */
+                /** @description 登録日時(createdAt)の上限による絞り込み。この日時以前に登録された顧客に一致する。registeredFromより前の日時は指定できない。UTC の日付で 1900-01-01 から 2999-12-31 まで */
                 registeredTo?: components["parameters"]["Models.CustomerSearchRequest.registeredTo"];
                 /** @description 顧客ステータスによる絞り込み(完全一致) */
                 customerStatus?: components["parameters"]["Models.CustomerSearchRequest.customerStatus"];
@@ -16931,9 +16931,9 @@ export interface operations {
                 cursor?: components["parameters"]["Models.CustomerBookingSearchRequest.cursor"];
                 /** @description ステータスによる絞り込み(完全一致) */
                 status?: components["parameters"]["Models.CustomerBookingSearchRequest.status"];
-                /** @description 来店日(bookingDate)の範囲の開始日。この日以降の予約に一致する。bookingDateTo より後の日付は指定できない */
+                /** @description 来店日(bookingDate)の範囲の開始日。この日以降の予約に一致する。bookingDateTo より後の日付は指定できない。1900-01-01 から 2999-12-31 まで */
                 bookingDateFrom?: components["parameters"]["Models.CustomerBookingSearchRequest.bookingDateFrom"];
-                /** @description 来店日(bookingDate)の範囲の終了日。この日以前の予約に一致する */
+                /** @description 来店日(bookingDate)の範囲の終了日。この日以前の予約に一致する。1900-01-01 から 2999-12-31 まで */
                 bookingDateTo?: components["parameters"]["Models.CustomerBookingSearchRequest.bookingDateTo"];
             };
             header?: never;
@@ -21532,9 +21532,9 @@ export interface operations {
                 limit?: components["parameters"]["Models.PointTransactionSearchRequest.limit"];
                 /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する。その顧客のポイント取引の ID でなければならない */
                 cursor?: components["parameters"]["Models.PointTransactionSearchRequest.cursor"];
-                /** @description 取引の発生日時(createdAt)の下限。この日時以降の取引に一致する */
+                /** @description 取引の発生日時(createdAt)の下限。この日時以降の取引に一致する。UTC の日付で 1900-01-01 から 2999-12-31 まで */
                 startDate?: components["parameters"]["Models.PointTransactionSearchRequest.startDate"];
-                /** @description 取引の発生日時(createdAt)の上限。この日時以前の取引に一致する。startDate より前の日時は指定できない */
+                /** @description 取引の発生日時(createdAt)の上限。この日時以前の取引に一致する。startDate より前の日時は指定できない。UTC の日付で 1900-01-01 から 2999-12-31 まで */
                 endDate?: components["parameters"]["Models.PointTransactionSearchRequest.endDate"];
             };
             header?: never;
@@ -24539,9 +24539,9 @@ export interface operations {
                 bookingId?: components["parameters"]["Models.SaleSearchRequest.bookingId"];
                 /** @description 支払い状態による絞り込み(完全一致) */
                 paymentStatus?: components["parameters"]["Models.SaleSearchRequest.paymentStatus"];
-                /** @description 売上日(saleDate)の下限。この日付以降の売上に一致する */
+                /** @description 売上日(saleDate)の下限。この日付以降の売上に一致する。1900-01-01 から 2999-12-31 まで */
                 startDate?: components["parameters"]["Models.SaleSearchRequest.startDate"];
-                /** @description 売上日(saleDate)の上限。この日付以前の売上に一致する */
+                /** @description 売上日(saleDate)の上限。この日付以前の売上に一致する。1900-01-01 から 2999-12-31 まで */
                 endDate?: components["parameters"]["Models.SaleSearchRequest.endDate"];
             };
             header?: never;
@@ -24746,9 +24746,9 @@ export interface operations {
             query: {
                 /** @description 集計対象のサロン ID */
                 salonId: components["parameters"]["Models.SalesReportGetRequest.salonId"];
-                /** @description 期間の最初の売上日(saleDate) */
+                /** @description 期間の最初の売上日(saleDate)。1900-01-01 から 2999-12-31 まで */
                 startDate: components["parameters"]["Models.SalesReportGetRequest.startDate"];
-                /** @description 期間の最後の売上日(saleDate)。startDate 以降で、期間は startDate を含めて366日まで */
+                /** @description 期間の最後の売上日(saleDate)。startDate 以降で、期間は startDate を含めて366日まで。1900-01-01 から 2999-12-31 まで */
                 endDate: components["parameters"]["Models.SalesReportGetRequest.endDate"];
             };
             header?: never;
@@ -24838,9 +24838,9 @@ export interface operations {
             query: {
                 /** @description 集計対象のサロン ID */
                 salonId: components["parameters"]["Models.SalesReportGetRequest.salonId"];
-                /** @description 期間の最初の売上日(saleDate) */
+                /** @description 期間の最初の売上日(saleDate)。1900-01-01 から 2999-12-31 まで */
                 startDate: components["parameters"]["Models.SalesReportGetRequest.startDate"];
-                /** @description 期間の最後の売上日(saleDate)。startDate 以降で、期間は startDate を含めて366日まで */
+                /** @description 期間の最後の売上日(saleDate)。startDate 以降で、期間は startDate を含めて366日まで。1900-01-01 から 2999-12-31 まで */
                 endDate: components["parameters"]["Models.SalesReportGetRequest.endDate"];
             };
             header?: never;
@@ -24930,9 +24930,9 @@ export interface operations {
             query: {
                 /** @description 集計対象のサロン ID */
                 salonId: components["parameters"]["Models.SalesReportGetRequest.salonId"];
-                /** @description 期間の最初の売上日(saleDate) */
+                /** @description 期間の最初の売上日(saleDate)。1900-01-01 から 2999-12-31 まで */
                 startDate: components["parameters"]["Models.SalesReportGetRequest.startDate"];
-                /** @description 期間の最後の売上日(saleDate)。startDate 以降で、期間は startDate を含めて366日まで */
+                /** @description 期間の最後の売上日(saleDate)。startDate 以降で、期間は startDate を含めて366日まで。1900-01-01 から 2999-12-31 まで */
                 endDate: components["parameters"]["Models.SalesReportGetRequest.endDate"];
             };
             header?: never;
@@ -25022,7 +25022,7 @@ export interface operations {
             query: {
                 /** @description 集計対象のサロン ID */
                 salonId: components["parameters"]["Models.DailySalesGetRequest.salonId"];
-                /** @description 集計対象の売上日(saleDate) */
+                /** @description 集計対象の売上日(saleDate)。1900-01-01 から 2999-12-31 まで */
                 date: components["parameters"]["Models.DailySalesGetRequest.date"];
             };
             header?: never;
@@ -25112,9 +25112,9 @@ export interface operations {
             query: {
                 /** @description 集計対象のサロン ID */
                 salonId: components["parameters"]["Models.SalesReportGetRequest.salonId"];
-                /** @description 期間の最初の売上日(saleDate) */
+                /** @description 期間の最初の売上日(saleDate)。1900-01-01 から 2999-12-31 まで */
                 startDate: components["parameters"]["Models.SalesReportGetRequest.startDate"];
-                /** @description 期間の最後の売上日(saleDate)。startDate 以降で、期間は startDate を含めて366日まで */
+                /** @description 期間の最後の売上日(saleDate)。startDate 以降で、期間は startDate を含めて366日まで。1900-01-01 から 2999-12-31 まで */
                 endDate: components["parameters"]["Models.SalesReportGetRequest.endDate"];
             };
             header?: never;
@@ -25197,9 +25197,9 @@ export interface operations {
             query: {
                 /** @description 集計対象のサロン ID */
                 salonId: components["parameters"]["Models.SalesReportGetRequest.salonId"];
-                /** @description 期間の最初の売上日(saleDate) */
+                /** @description 期間の最初の売上日(saleDate)。1900-01-01 から 2999-12-31 まで */
                 startDate: components["parameters"]["Models.SalesReportGetRequest.startDate"];
-                /** @description 期間の最後の売上日(saleDate)。startDate 以降で、期間は startDate を含めて366日まで */
+                /** @description 期間の最後の売上日(saleDate)。startDate 以降で、期間は startDate を含めて366日まで。1900-01-01 から 2999-12-31 まで */
                 endDate: components["parameters"]["Models.SalesReportGetRequest.endDate"];
                 /** @description 区切りの単位 */
                 period: components["parameters"]["Models.SalesTrendsGetRequest.period"];
@@ -26472,7 +26472,7 @@ export interface operations {
                 staffId?: components["parameters"]["Models.AvailableSlotSearchRequest.staffId"];
                 /** @description 予約したい施術メニューのID。パスのサロンのサービスを指定する */
                 serviceId: components["parameters"]["Models.AvailableSlotSearchRequest.serviceId"];
-                /** @description 空き枠を探す日付。サロンのタイムゾーンでの日付。過去の日付には空の一覧を返す */
+                /** @description 空き枠を探す日付。サロンのタイムゾーンでの日付。過去の日付には空の一覧を返す。1900-01-01 から 2999-12-31 まで */
                 date: components["parameters"]["Models.AvailableSlotSearchRequest.date"];
                 /** @description 必要な施術時間（分）。指定しない場合はサービスの施術時間を使う */
                 duration?: components["parameters"]["Models.AvailableSlotSearchRequest.duration"];
@@ -30118,7 +30118,7 @@ export interface operations {
     StaffSchedules_list: {
         parameters: {
             query?: {
-                /** @description この日付に適用される行だけを返す。その日付の単日の行があればその行を、なければその曜日の毎週の行を返す。どちらもなければ空配列を返す */
+                /** @description この日付に適用される行だけを返す。その日付の単日の行があればその行を、なければその曜日の毎週の行を返す。どちらもなければ空配列を返す。1900-01-01 から 2999-12-31 まで */
                 date?: components["parameters"]["Models.StaffScheduleSearchRequest"];
             };
             header?: never;

@@ -7,6 +7,6 @@
  */
 
 /**
- * 来店日(bookingDate)の範囲の終了日。この日以前の予約に一致する
+ * 来店日(bookingDate)の範囲の終了日。この日以前の予約に一致する。1900-01-01 から 2999-12-31 まで
  */
 export type ModelsBookingSearchRequestBookingDateToParameter = string;

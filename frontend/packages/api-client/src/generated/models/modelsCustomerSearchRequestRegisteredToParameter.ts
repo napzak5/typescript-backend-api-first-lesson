@@ -7,6 +7,6 @@
  */
 
 /**
- * 登録日時(createdAt)の上限による絞り込み。この日時以前に登録された顧客に一致する。registeredFromより前の日時は指定できない
+ * 登録日時(createdAt)の上限による絞り込み。この日時以前に登録された顧客に一致する。registeredFromより前の日時は指定できない。UTC の日付で 1900-01-01 から 2999-12-31 まで
  */
 export type ModelsCustomerSearchRequestRegisteredToParameter = string;

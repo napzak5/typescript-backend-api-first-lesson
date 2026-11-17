@@ -17,6 +17,7 @@ import { staffIdSchema } from '../models/staff'
 import { uuidSchema } from '../shared'
 import {
   atLeastOneProperty,
+  calendarDate,
   MAX_INTEGER,
   momentInUtc,
   nonBlankText,
@@ -231,8 +232,8 @@ const saleSearch = z.strictObject({
   customerId: customerIdSchema.exactOptional(),
   bookingId: bookingIdSchema.exactOptional(),
   paymentStatus: PaymentStatusTypeSchema.exactOptional(),
-  startDate: z.iso.date().exactOptional(),
-  endDate: z.iso.date().exactOptional(),
+  startDate: calendarDate.exactOptional(),
+  endDate: calendarDate.exactOptional(),
 })
 
 /** Two dates in the same format compare as text. */

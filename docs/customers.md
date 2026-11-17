@@ -65,7 +65,7 @@
 |---|---|
 | `search` | 姓、名、姓のカナ、名のカナ、メールアドレスのどれかがキーワードを含む（大文字と小文字を区別しない）。キーワードが電話番号の書き方のときは、電話番号も比べる（下記） |
 | `tags` | 指定したタグをすべて持つ。複数指定するときは `tags=a&tags=b` |
-| `registeredFrom` / `registeredTo` | 登録日時がその日時以降 / 以前（両端を含む）。`registeredFrom` が `registeredTo` より後なら 400（`registeredTo` の `custom`） |
+| `registeredFrom` / `registeredTo` | 登録日時がその日時以降 / 以前（両端を含む）。`registeredFrom` が `registeredTo` より後なら 400（`registeredTo` の `custom`）。どちらも UTC の日付で 1900-01-01 から 2999-12-31 まで |
 | `customerStatus` / `membershipTier` | 値が一致する |
 
 - **電話番号での検索**: キーワードが数字、空白、`-`、`+`、`(`、`)` だけでできていて数字を含むとき、キーワードから数字だけを取り出し、電話番号（`phoneNumber`）の数字の並びに含まれるかを比べます。`090-1234`、`090 1234 5678`、`09012345678` は、どれも `090-1234-5678` と保存された顧客に一致します。国際表記（`+81-90-…`）と国内表記（`090-…`）の違いは吸収しません。判定は `business-logic/customer/_shared/search.ts` の `phoneDigitsOf` です

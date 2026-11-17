@@ -42,8 +42,8 @@ export type SaleCrudListParams = {
    * API が決済取引に書くのは completed・refunded・partial_refund だけで、売上に failed は書かない
    */
   paymentStatus?: ModelsSaleSearchRequestPaymentStatusParameter;
-  /** 売上日(saleDate)の下限。この日付以降の売上に一致する */
+  /** 売上日(saleDate)の下限。この日付以降の売上に一致する。1900-01-01 から 2999-12-31 まで */
   startDate?: ModelsSaleSearchRequestStartDateParameter;
-  /** 売上日(saleDate)の上限。この日付以前の売上に一致する */
+  /** 売上日(saleDate)の上限。この日付以前の売上に一致する。1900-01-01 から 2999-12-31 まで */
   endDate?: ModelsSaleSearchRequestEndDateParameter;
 };

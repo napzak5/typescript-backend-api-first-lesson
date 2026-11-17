@@ -10,6 +10,7 @@ import {
 } from '../models/salon'
 import {
   atLeastOneProperty,
+  calendarDate,
   dayOfWeekOf,
   nonBlankText,
   orderedTimeSlot,
@@ -29,7 +30,7 @@ import {
 const openingHoursSchema = z
   .strictObject({
     dayOfWeek: DayOfWeekTypeSchema,
-    date: z.iso.date(),
+    date: calendarDate,
     openTime: timeOfDay.nullable(),
     closeTime: timeOfDay.nullable(),
     isHoliday: z.boolean(),

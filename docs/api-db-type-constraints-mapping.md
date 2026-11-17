@@ -56,9 +56,19 @@ NULL 許可のカラムは、どの層でも null を許す形になる: `schema
 | `boolean` | `z.boolean()` | `isActive` |
 | `numeric(p, s)` | `z.number().min().max()` | `latitude`、`taxRate` |
 | `jsonb` | モデルの形を表すスキーマ（`businessHoursListSchema`） | `businessHours` |
-| `date` | `z.iso.date()` | `openingHours` の `date` |
+| `date` | `calendarDate`（`schemas/rules.ts`。`YYYY-MM-DD` で、[範囲](#リクエストの日付と日時の範囲) の中の日付） | `openingHours` の `date` |
 | `time` | `timeOfDay`（`schemas/rules.ts`。`HH:mm` または `HH:mm:ss`） | `openingHours` の `openTime` |
 | enum 型 | 生成された `DayOfWeekTypeSchema`（`@beauty-salon-backend/generated`） | `openingHours` の `dayOfWeek` |
+
+#### リクエストの日付と日時の範囲
+
+リクエストの日付（`YYYY-MM-DD`）と日時（UTC）は、すべてのドメインで 1900-01-01 から 2999-12-31 までに限る。日時は、UTC で書いた日付で比べる。範囲の前は 400（`too_small`、`Must not be earlier than 1900-01-01`）、後は 400（`too_big`、`Must not be later than 2999-12-31`）である。
+
+- 理由: Zod の `z.iso.date()` と `z.iso.datetime()` は 0 年（`0000-01-01`）を受け付けるが、PostgreSQL の `date` と `timestamp with time zone` は 0 年を持てない。1 万年以降の日時も、`toISOString()` が書く形（`+010000-01-01T00:00:00.000Z`）では読めない。どちらも、DB に渡すと 500 になる。範囲の端の日付は、サロンのタイムゾーンの日付（1888 年より前の Asia/Tokyo は +09:18:59）や前後の日に直しても、PostgreSQL が持てる範囲に収まる
+- 規則は `backend/packages/domain/src/schemas/rules.ts` の 3 つで、DB が読むリクエストの日付と日時は、すべてこれを使う: `calendarDate`（日付）、`momentOfRequest`（書かれたままの日時）、`momentInUtc`（`toISOString()` の形にそろえる日時）。予約の分単位の日時（`minuteInUtc`）は `momentOfRequest` から作る
+- 形の誤った日付（`2026-02-30`）は、`invalid_format` だけを返す
+- 対象外は、サロンの営業時間（`businessHours`、jsonb）の `effectivePeriod` である。DB は日付として読まず、コードが比べるだけなので 500 にならない。保存済みの値も読むたびに同じスキーマで確かめるので、範囲を足すと、範囲の外の値を持つサロンが読めなくなる
+- 顧客の生年月日（`birthDate`）は、この範囲に加えて、未来の日付を拒む（[顧客](./customers.md)）
 
 `integer` と `timestamp with time zone` のカラムは、Salon ではリクエストに含まれない（`reviewCount`、`createdAt` など）。Salon にないカラムの型は、サービスカテゴリーとサービスのスキーマ（`backend/packages/domain/src/schemas/service-category.schema.ts`、`backend/packages/domain/src/schemas/service.schema.ts`）が次のように検証する。
 
@@ -162,7 +172,7 @@ export const SalonWriteMapper = {
 
 `products` には、表現が変わるカラムが 3 つある。在庫の水準（`minimumStock`、`reorderPoint`、`maximumStock`）は、API では数値、`numeric(10,2)` のカラムでは文字列である。`ProductWriteMapper`（`backend/packages/domain/src/mappers/write/product.mapper.ts`）が `String(value)` で文字列にし、Read マッパー（`backend/packages/domain/src/mappers/read/product.mapper.ts`）が数値に戻す。スキーマは、小数第 3 位以下を持つ値を受け付けないので、保存で値が変わることはない。Read マッパーは、有限の数値として読めない値を、データベースのエラーにする。
 
-`inventory` の在庫の 3 つの数（`currentStock`、`availableStock`、`reservedStock`）も、API では数値、`numeric(10,2)` のカラムでは文字列である。リクエストは書かず（作成した行は 0）、Read マッパー（`backend/packages/domain/src/mappers/read/inventory.mapper.ts`）が数値にする。使用期限（`expiryDate`）は `date` のカラムで、DB も API も `YYYY-MM-DD` なので変換しない。リクエストの日付は、0001-01-01 から 9999-12-31 までに限る（`date` は 0 年を持てない）。
+`inventory` の在庫の 3 つの数（`currentStock`、`availableStock`、`reservedStock`）も、API では数値、`numeric(10,2)` のカラムでは文字列である。リクエストは書かず（作成した行は 0）、Read マッパー（`backend/packages/domain/src/mappers/read/inventory.mapper.ts`）が数値にする。使用期限（`expiryDate`）は `date` のカラムで、DB も API も `YYYY-MM-DD` なので変換しない。リクエストの日付は、ほかの日付と同じく 1900-01-01 から 2999-12-31 までに限る（[範囲](#リクエストの日付と日時の範囲)）。
 
 `time` のカラムは変換しない。DB は `HH:mm:ss` で返し、リクエストは `HH:mm` と `HH:mm:ss` のどちらも受け付ける。
 

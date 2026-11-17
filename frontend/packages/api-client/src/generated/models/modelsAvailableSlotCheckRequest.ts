@@ -17,6 +17,6 @@ export interface ModelsAvailableSlotCheckRequest {
   staffId: ModelsStaffId;
   /** 予約したい施術メニューのID。パスのサロンのサービスを指定する */
   serviceId: ModelsServiceId;
-  /** 希望する施術開始日時 (UTC)。分単位で指定する(秒と小数は0) */
+  /** 希望する施術開始日時 (UTC)。分単位で指定する(秒と小数は0)。UTC の日付で 1900-01-01 から 2999-12-31 まで */
   startTime: string;
 }

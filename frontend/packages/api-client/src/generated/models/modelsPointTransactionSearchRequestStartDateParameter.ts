@@ -7,6 +7,6 @@
  */
 
 /**
- * 取引の発生日時(createdAt)の下限。この日時以降の取引に一致する
+ * 取引の発生日時(createdAt)の下限。この日時以降の取引に一致する。UTC の日付で 1900-01-01 から 2999-12-31 まで
  */
 export type ModelsPointTransactionSearchRequestStartDateParameter = string;

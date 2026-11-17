@@ -1331,7 +1331,7 @@ describe('the order of the checks', () => {
     const result = await new UpdateCustomerUseCase(dependencies).execute(
       actors.admin,
       CUSTOMER_ID,
-      { lastName: '', birthDate: '1899-12-31', referredBy: CUSTOMER_ID },
+      { lastName: '', birthDate: '2999-01-01', referredBy: CUSTOMER_ID },
     )
 
     expect(rulesOf(result)).toEqual(['lastName:invalid_format'])
@@ -1344,10 +1344,10 @@ describe('the order of the checks', () => {
     const result = await new UpdateCustomerUseCase(dependencies).execute(
       actors.admin,
       OTHER_CUSTOMER_ID,
-      { birthDate: '1899-12-31', referredBy: REFERRER_ID },
+      { birthDate: '2999-01-01', referredBy: REFERRER_ID },
     )
 
-    expect(rulesOf(result)).toEqual(['birthDate:too_small'])
+    expect(rulesOf(result)).toEqual(['birthDate:too_big'])
     expect(repositoryCalls(dependencies)).toEqual([])
   })
 
@@ -1360,16 +1360,16 @@ describe('the order of the checks', () => {
     ).execute(actors.admin, {
       ...customerCreateRequest(),
       firstName: '',
-      birthDate: '1899-12-31',
+      birthDate: '2999-01-01',
     })
     const withBrokenRule = await new CreateCustomerUseCase(brokenRule).execute(
       actors.admin,
-      { ...customerCreateRequest(), birthDate: '1899-12-31' },
+      { ...customerCreateRequest(), birthDate: '2999-01-01' },
     )
 
     expect(rulesOf(withInvalidBody)).toEqual(['firstName:invalid_format'])
     expect(repositoryCalls(invalidBody)).toEqual([])
-    expect(rulesOf(withBrokenRule)).toEqual(['birthDate:too_small'])
+    expect(rulesOf(withBrokenRule)).toEqual(['birthDate:too_big'])
     expect(repositoryCalls(brokenRule)).toEqual([])
   })
 

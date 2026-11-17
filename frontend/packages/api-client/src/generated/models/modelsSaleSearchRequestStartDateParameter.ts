@@ -7,6 +7,6 @@
  */
 
 /**
- * 売上日(saleDate)の下限。この日付以降の売上に一致する
+ * 売上日(saleDate)の下限。この日付以降の売上に一致する。1900-01-01 から 2999-12-31 まで
  */
 export type ModelsSaleSearchRequestStartDateParameter = string;

@@ -13,7 +13,7 @@ import type { ModelsDayOfWeekType } from './modelsDayOfWeekType';
 export interface ModelsOpeningHours {
   /** dateの曜日。dateと一致している必要がある */
   dayOfWeek: ModelsDayOfWeekType;
-  /** 日付 */
+  /** 日付。1900-01-01 から 2999-12-31 まで */
   date: string;
   /**
      * 開店時刻。HH:mm:ss形式で返す（指定時はHH:mmも可）。終日休業の場合はnull。時刻がある日は、isHolidayがtrueでも、その時刻のあいだ営業する

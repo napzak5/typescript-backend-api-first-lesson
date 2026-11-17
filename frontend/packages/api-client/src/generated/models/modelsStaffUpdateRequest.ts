@@ -95,7 +95,7 @@ export interface ModelsStaffUpdateRequest {
   /** 保有資格名の一覧 (テキスト管理)。指定した一覧で置き換える。空白だけの要素と、同じ要素の繰り返しは指定できない */
   certifications?: string[];
   /**
-     * 入社日。nullでクリア
+     * 入社日。nullでクリア。1900-01-01 から 2999-12-31 まで
      * @nullable
      */
   hireDate?: string | null;
