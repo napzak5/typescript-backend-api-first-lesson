@@ -15,7 +15,7 @@ import type { ModelsScalpConditionType } from './modelsScalpConditionType';
 
 /**
  * 顧客本人のプロフィールのレスポンス - customers テーブルの行のうち、本人に見せるカラムだけを返す。
- * スタッフ用の項目(internalNotes、notes、tags、customerStatus、isActive、referredBy、lifetimeValue、
+ * スタッフ用の項目(internalNotes、notes、tags、customerStatus、isActive、referredBy、
  * noShowCount、cancellationCount)と userId は含まない。プロパティ名と null 許可は DB カラムと一致させている
  */
 export interface ModelsCustomerProfileResponse {

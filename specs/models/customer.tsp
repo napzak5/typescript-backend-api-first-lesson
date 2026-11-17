@@ -220,9 +220,6 @@ namespace BeautySalon.Models {
     @doc("現在のロイヤルティポイント。ポイント取引の結果として更新され、リクエストでは変更できない")
     loyaltyPoints: int32;
 
-    @doc("生涯価値。これまでの累計利用金額で、会計処理の結果として更新される")
-    lifetimeValue: int32;
-
     @doc("顧客の好みや要望。未設定の場合はnull")
     preferences: CustomerBasicPreferences | null;
 
@@ -559,7 +556,7 @@ namespace BeautySalon.Models {
 
   @doc("""
     顧客本人のプロフィールのレスポンス - customers テーブルの行のうち、本人に見せるカラムだけを返す。
-    スタッフ用の項目(internalNotes、notes、tags、customerStatus、isActive、referredBy、lifetimeValue、
+    スタッフ用の項目(internalNotes、notes、tags、customerStatus、isActive、referredBy、
     noShowCount、cancellationCount)と userId は含まない。プロパティ名と null 許可は DB カラムと一致させている
     """)
   model CustomerProfileResponse {
@@ -1058,43 +1055,102 @@ namespace BeautySalon.Models {
   }
 
   // ============================================================================
-  // Reports and audit (no table yet)
+  // Statistics (bookings, booking_services, sales and payment_transactions,
+  // counted at every request; no table of their own)
+  // Amounts are integers in the currency of the salon (salons.currency)
   // ============================================================================
 
   @doc("""
-    顧客統計レスポンス - 来店頻度や売上貢献度などの顧客指標を集計した結果
+    顧客統計の集計条件 - サロンと期間を指定する。予約は予約日(bookingDate)、売上は売上日(saleDate)で期間に入る。期間は両端を含み、366日まで
+    """)
+  model CustomerStatisticsGetRequest {
+    @query
+    @doc("集計対象のサロン ID")
+    salonId: SalonId;
+
+    @query
+    @doc("期間の最初の日。1900-01-01 から 2999-12-31 まで")
+    startDate: plainDate;
+
+    @query
+    @doc("期間の最後の日。startDate 以降で、期間は startDate を含めて366日まで。1900-01-01 から 2999-12-31 まで")
+    endDate: plainDate;
+  }
+
+  @doc("""
+    顧客統計レスポンス - 顧客の、1つのサロンでの、期間の予約と売上を集計した結果。リクエストのたびに予約台帳と売上台帳から数え、記録しない
     """)
   model CustomerStatisticsResponse {
-    @doc("総予約数")
+    @doc("対象の顧客 ID")
+    customerId: CustomerId;
+
+    @doc("対象サロン ID")
+    salonId: SalonId;
+
+    @doc("期間の最初の日")
+    startDate: plainDate;
+
+    @doc("期間の最後の日")
+    endDate: plainDate;
+
+    @doc("期間の予約の数。ステータスを問わない")
     totalBookings: int32;
 
-    @doc("総支払額")
-    totalSpent: Money;
+    @doc("期間の、取り消していない売上の合計金額(totalAmount)の合計から、その決済取引の返金額(refundAmount)の合計を引いた額")
+    totalSpent: int64;
 
-    @doc("平均予約単価")
-    averageBookingValue: Money;
+    @doc("totalSpent のうち予約の会計(bookingId のある売上)の額を、その売上の件数で割った額(1円未満を切り捨て)。予約の会計がなければ0")
+    averageBookingValue: int64;
 
-    @doc("最終来店日時。来店実績がない場合はnull")
+    @doc("期間の完了(completed)した予約のうち、最後の予約の開始日時。なければnull")
     lastVisit: utcDateTime | null;
 
-    @doc("お気に入りサービス")
-    favoriteServices: ServiceSummary[];
+    @doc("期間の完了した予約の施術明細のサービスの上位5件。bookingCount の多い順、同じならサービス ID の順。削除したサービスも含む")
+    favoriteServices: CustomerStatisticsServiceResponse[];
 
-    @doc("お気に入りスタッフ")
-    favoriteStaff: StaffSummary[];
+    @doc("期間の完了した予約の担当スタッフの上位5人。bookingCount の多い順、同じならスタッフ ID の順。削除したスタッフも含む")
+    favoriteStaff: CustomerStatisticsStaffResponse[];
 
-    @doc("ロイヤルティポイント")
+    @doc("顧客のいまのポイントの残高。サロンと期間によらない")
     loyaltyPoints: int32;
 
-    @doc("顧客登録日時")
+    @doc("顧客を台帳に登録した日時")
     customerSince: utcDateTime;
 
-    @doc("キャンセル率")
+    @doc("cancelled の予約の数を totalBookings で割った百分率(小数第1位に四捨五入)。予約がなければ0")
     cancellationRate: float32;
 
-    @doc("無断キャンセル率")
+    @doc("no_show の予約の数を totalBookings で割った百分率(小数第1位に四捨五入)。予約がなければ0")
     noShowRate: float32;
   }
+
+  @doc("顧客統計のサービス - 期間の完了した予約で受けたサービス")
+  model CustomerStatisticsServiceResponse {
+    @doc("サービス ID")
+    serviceId: ServiceId;
+
+    @doc("サービスのいまの名前")
+    name: string;
+
+    @doc("そのサービスを施術明細に含む、期間の完了した予約の数")
+    bookingCount: int32;
+  }
+
+  @doc("顧客統計のスタッフ - 期間の完了した予約の担当スタッフ")
+  model CustomerStatisticsStaffResponse {
+    @doc("スタッフ ID")
+    staffId: StaffId;
+
+    @doc("スタッフのいまの表示名")
+    displayName: string;
+
+    @doc("そのスタッフが担当した(bookings.staffId)、期間の完了した予約の数")
+    bookingCount: int32;
+  }
+
+  // ============================================================================
+  // Audit (no table yet)
+  // ============================================================================
 
   @doc("""
     顧客監査履歴の一覧リクエスト - ページネーションを指定する

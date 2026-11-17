@@ -8,16 +8,13 @@
 import type { ModelsServiceId } from './modelsServiceId';
 
 /**
- * サービスメニューを一覧表示や候補選択で参照する際の要約情報。
+ * 顧客統計のサービス - 期間の完了した予約で受けたサービス
  */
-export interface ModelsServiceSummary {
-  /** サービスメニューを識別するID。 */
-  id: ModelsServiceId;
-  /** 顧客向けに表示するサービス名称。 */
+export interface ModelsCustomerStatisticsServiceResponse {
+  /** サービス ID */
+  serviceId: ModelsServiceId;
+  /** サービスのいまの名前 */
   name: string;
-  /**
-     * 対象サービスの予約件数。統計未計算の場合はnull
-     * @nullable
-     */
-  bookingCount: number | null;
+  /** そのサービスを施術明細に含む、期間の完了した予約の数 */
+  bookingCount: number;
 }

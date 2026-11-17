@@ -91,8 +91,6 @@ export interface ModelsCustomerResponse {
   membershipTier: ModelsMembershipTierType;
   /** 現在のロイヤルティポイント。ポイント取引の結果として更新され、リクエストでは変更できない */
   loyaltyPoints: number;
-  /** 生涯価値。これまでの累計利用金額で、会計処理の結果として更新される */
-  lifetimeValue: number;
   /**
      * 顧客の好みや要望。未設定の場合はnull
      * @nullable
