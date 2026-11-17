@@ -127,6 +127,11 @@ describe('medicalChartCreateRequestSchema', () => {
       ['previousTreatments.0.notes:invalid_format'],
     ],
     [
+      'a treatment with a key of its own',
+      { previousTreatments: [{ ...treatment(), staff: 'Hanako' }] },
+      ['previousTreatments.0:unrecognized_keys'],
+    ],
+    [
       'a treatment without its notes',
       {
         previousTreatments: [

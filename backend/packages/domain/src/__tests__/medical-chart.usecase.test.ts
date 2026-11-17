@@ -238,6 +238,10 @@ describe('GetMedicalChartUseCase', () => {
 
     const result = await get(dependencies, actors.admin, 'customer-1')
 
+    expect(result).toMatchObject({
+      type: 'error',
+      error: { type: 'validation', message: 'Invalid customer ID' },
+    })
     expect(rulesOf(result)).toEqual(['customerId:invalid_format'])
     expect(untouched(dependencies)).toBe(true)
   })
