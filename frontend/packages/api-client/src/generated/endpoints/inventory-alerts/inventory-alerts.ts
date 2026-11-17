@@ -31,7 +31,6 @@ import type {
   InventoryAlertCrudList200,
   InventoryAlertCrudListParams,
   ModelsInventoryAlertAcknowledgeRequest,
-  ModelsInventoryId,
   ModelsProblemDetails
 } from '../../models';
 
@@ -110,7 +109,7 @@ export const getInventoryAlertCrudListUrl = (params: InventoryAlertCrudListParam
 }
 
 /**
- * 有効な在庫アラートを、絞り込み条件とページネーションを指定して一覧取得します。salonIdのサロンが存在しない場合は400を返します。
+ * サロンの今出ている在庫アラートを、絞り込み条件とページネーションを指定して一覧取得します。アラートは商品、在庫の行、在庫の移動から、読むたびに求めます。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合や、cursorがサロンの商品か在庫の行を指さない場合は400を返します。
  * @summary List active inventory alerts
  */
 export const inventoryAlertCrudList = async (params: InventoryAlertCrudListParams, options?: RequestInit): Promise<inventoryAlertCrudListResponse> => {
@@ -158,7 +157,7 @@ export type InventoryAlertCrudListQueryError = ModelsProblemDetails
 
 
 /**
- * 有効な在庫アラートを、絞り込み条件とページネーションを指定して一覧取得します。salonIdのサロンが存在しない場合は400を返します。
+ * サロンの今出ている在庫アラートを、絞り込み条件とページネーションを指定して一覧取得します。アラートは商品、在庫の行、在庫の移動から、読むたびに求めます。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合や、cursorがサロンの商品か在庫の行を指さない場合は400を返します。
  * @summary List active inventory alerts
  */
 export function useInventoryAlertCrudList<TData = Awaited<ReturnType<typeof inventoryAlertCrudList>>, TError = ModelsProblemDetails>(
@@ -172,7 +171,7 @@ export function useInventoryAlertCrudList<TData = Awaited<ReturnType<typeof inve
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 有効な在庫アラートを、絞り込み条件とページネーションを指定して一覧取得します。salonIdのサロンが存在しない場合は400を返します。
+ * サロンの今出ている在庫アラートを、絞り込み条件とページネーションを指定して一覧取得します。アラートは商品、在庫の行、在庫の移動から、読むたびに求めます。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合や、cursorがサロンの商品か在庫の行を指さない場合は400を返します。
  * @summary List active inventory alerts
  */
 export function useInventoryAlertCrudList<TData = Awaited<ReturnType<typeof inventoryAlertCrudList>>, TError = ModelsProblemDetails>(
@@ -186,7 +185,7 @@ export function useInventoryAlertCrudList<TData = Awaited<ReturnType<typeof inve
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 有効な在庫アラートを、絞り込み条件とページネーションを指定して一覧取得します。salonIdのサロンが存在しない場合は400を返します。
+ * サロンの今出ている在庫アラートを、絞り込み条件とページネーションを指定して一覧取得します。アラートは商品、在庫の行、在庫の移動から、読むたびに求めます。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合や、cursorがサロンの商品か在庫の行を指さない場合は400を返します。
  * @summary List active inventory alerts
  */
 export function useInventoryAlertCrudList<TData = Awaited<ReturnType<typeof inventoryAlertCrudList>>, TError = ModelsProblemDetails>(
@@ -194,7 +193,7 @@ export function useInventoryAlertCrudList<TData = Awaited<ReturnType<typeof inve
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 有効な在庫アラートを、絞り込み条件とページネーションを指定して一覧取得します。salonIdのサロンが存在しない場合は400を返します。
+ * サロンの今出ている在庫アラートを、絞り込み条件とページネーションを指定して一覧取得します。アラートは商品、在庫の行、在庫の移動から、読むたびに求めます。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合や、cursorがサロンの商品か在庫の行を指さない場合は400を返します。
  * @summary List active inventory alerts
  */
 export function useInventoryAlertCrudList<TData = Awaited<ReturnType<typeof inventoryAlertCrudList>>, TError = ModelsProblemDetails>(
@@ -203,165 +202,6 @@ export function useInventoryAlertCrudList<TData = Awaited<ReturnType<typeof inve
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
   const queryOptions = getInventoryAlertCrudListQueryOptions(params,options)
-
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return withQueryKey(query, queryOptions.queryKey);
-}
-
-
-
-
-
-
-export type inventoryAlertCrudGetSummaryResponse200 = {
-  data: InventoryAlertCrudGetSummary200
-  status: 200
-}
-
-export type inventoryAlertCrudGetSummaryResponse400 = {
-  data: ModelsProblemDetails
-  status: 400
-}
-
-export type inventoryAlertCrudGetSummaryResponse401 = {
-  data: ModelsProblemDetails
-  status: 401
-}
-
-export type inventoryAlertCrudGetSummaryResponse403 = {
-  data: ModelsProblemDetails
-  status: 403
-}
-
-export type inventoryAlertCrudGetSummaryResponse429 = {
-  data: ModelsProblemDetails
-  status: 429
-}
-
-export type inventoryAlertCrudGetSummaryResponse500 = {
-  data: ModelsProblemDetails
-  status: 500
-}
-
-export type inventoryAlertCrudGetSummaryResponseSuccess = (inventoryAlertCrudGetSummaryResponse200) & {
-  headers: Headers;
-};
-export type inventoryAlertCrudGetSummaryResponseError = (inventoryAlertCrudGetSummaryResponse400 | inventoryAlertCrudGetSummaryResponse401 | inventoryAlertCrudGetSummaryResponse403 | inventoryAlertCrudGetSummaryResponse429 | inventoryAlertCrudGetSummaryResponse500) & {
-  headers: Headers;
-};
-
-export type inventoryAlertCrudGetSummaryResponse = (inventoryAlertCrudGetSummaryResponseSuccess | inventoryAlertCrudGetSummaryResponseError)
-
-export const getInventoryAlertCrudGetSummaryUrl = (params: InventoryAlertCrudGetSummaryParams,) => {
-  const normalizedParams = new URLSearchParams();
-
-  Object.entries(params || {}).forEach(([key, value]) => {
-
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : String(value))
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0 ? `/api/v1/inventory-alerts/summary?${stringifiedParams}` : `/api/v1/inventory-alerts/summary`
-}
-
-/**
- * サロンの有効な在庫アラートの件数を、重要度別と確認状況別に集計して返します。salonIdのサロンが存在しない場合は400を返します。
- * @summary Get the inventory alert summary
- */
-export const inventoryAlertCrudGetSummary = async (params: InventoryAlertCrudGetSummaryParams, options?: RequestInit): Promise<inventoryAlertCrudGetSummaryResponse> => {
-
-  return customInstance<inventoryAlertCrudGetSummaryResponse>(getInventoryAlertCrudGetSummaryUrl(params),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getInventoryAlertCrudGetSummaryQueryKey = (params?: InventoryAlertCrudGetSummaryParams,) => {
-    return [
-    `/api/v1/inventory-alerts/summary`, ...(params ? [params] : [])
-    ] as const;
-    }
-
-
-export const getInventoryAlertCrudGetSummaryQueryOptions = <TData = Awaited<ReturnType<typeof inventoryAlertCrudGetSummary>>, TError = ModelsProblemDetails>(params: InventoryAlertCrudGetSummaryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryAlertCrudGetSummary>>, TError, TData>>, }
-) => {
-
-const {query: queryOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getInventoryAlertCrudGetSummaryQueryKey(params);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof inventoryAlertCrudGetSummary>>> = ({ signal }) => inventoryAlertCrudGetSummary(params, { signal });
-
-
-
-
-
-   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof inventoryAlertCrudGetSummary>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type InventoryAlertCrudGetSummaryQueryResult = NonNullable<Awaited<ReturnType<typeof inventoryAlertCrudGetSummary>>>
-export type InventoryAlertCrudGetSummaryQueryError = ModelsProblemDetails
-
-
-/**
- * サロンの有効な在庫アラートの件数を、重要度別と確認状況別に集計して返します。salonIdのサロンが存在しない場合は400を返します。
- * @summary Get the inventory alert summary
- */
-export function useInventoryAlertCrudGetSummary<TData = Awaited<ReturnType<typeof inventoryAlertCrudGetSummary>>, TError = ModelsProblemDetails>(
- params: InventoryAlertCrudGetSummaryParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryAlertCrudGetSummary>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof inventoryAlertCrudGetSummary>>,
-          TError,
-          Awaited<ReturnType<typeof inventoryAlertCrudGetSummary>>
-        > , 'initialData'
-      >, }
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * サロンの有効な在庫アラートの件数を、重要度別と確認状況別に集計して返します。salonIdのサロンが存在しない場合は400を返します。
- * @summary Get the inventory alert summary
- */
-export function useInventoryAlertCrudGetSummary<TData = Awaited<ReturnType<typeof inventoryAlertCrudGetSummary>>, TError = ModelsProblemDetails>(
- params: InventoryAlertCrudGetSummaryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryAlertCrudGetSummary>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof inventoryAlertCrudGetSummary>>,
-          TError,
-          Awaited<ReturnType<typeof inventoryAlertCrudGetSummary>>
-        > , 'initialData'
-      >, }
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * サロンの有効な在庫アラートの件数を、重要度別と確認状況別に集計して返します。salonIdのサロンが存在しない場合は400を返します。
- * @summary Get the inventory alert summary
- */
-export function useInventoryAlertCrudGetSummary<TData = Awaited<ReturnType<typeof inventoryAlertCrudGetSummary>>, TError = ModelsProblemDetails>(
- params: InventoryAlertCrudGetSummaryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryAlertCrudGetSummary>>, TError, TData>>, }
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * サロンの有効な在庫アラートの件数を、重要度別と確認状況別に集計して返します。salonIdのサロンが存在しない場合は400を返します。
- * @summary Get the inventory alert summary
- */
-export function useInventoryAlertCrudGetSummary<TData = Awaited<ReturnType<typeof inventoryAlertCrudGetSummary>>, TError = ModelsProblemDetails>(
- params: InventoryAlertCrudGetSummaryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryAlertCrudGetSummary>>, TError, TData>>, }
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-
-  const queryOptions = getInventoryAlertCrudGetSummaryQueryOptions(params,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 
@@ -432,20 +272,19 @@ export type inventoryAlertCrudAcknowledgeResponseError = (inventoryAlertCrudAckn
 
 export type inventoryAlertCrudAcknowledgeResponse = (inventoryAlertCrudAcknowledgeResponseSuccess | inventoryAlertCrudAcknowledgeResponseError)
 
-export const getInventoryAlertCrudAcknowledgeUrl = (inventoryId: ModelsInventoryId,) => {
+export const getInventoryAlertCrudAcknowledgeUrl = () => {
 
 
 
 
-  return `/api/v1/inventory-alerts/${inventoryId}/acknowledge`
+  return `/api/v1/inventory-alerts/acknowledge`
 }
 
 /**
- * 在庫のアラートを確認済みにします。acknowledgedByのスタッフが存在しない場合は400を、在庫に有効なアラートがない場合は404を、アラートが確認済みの場合は409を返します。
+ * 今出ている在庫アラートを、操作者が確認したことを記録します。確認は、確認したときの状態が続くあいだだけ有効です。管理者と、商品のサロンのオーナー・マネージャー・スタッフが使えます。alertとinventoryIdの組み合わせが合わない場合は400を、商品か在庫の行が存在しないかほかのサロンのものである場合や、そのアラートが今出ていない場合は404を、アラートが確認済みの場合は409を返します。
  * @summary Acknowledge an inventory alert
  */
-export const inventoryAlertCrudAcknowledge = async (inventoryId: ModelsInventoryId,
-    modelsInventoryAlertAcknowledgeRequest: ModelsInventoryAlertAcknowledgeRequest, options?: RequestInit): Promise<inventoryAlertCrudAcknowledgeResponse> => {
+export const inventoryAlertCrudAcknowledge = async (modelsInventoryAlertAcknowledgeRequest: ModelsInventoryAlertAcknowledgeRequest, options?: RequestInit): Promise<inventoryAlertCrudAcknowledgeResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -461,7 +300,7 @@ export const inventoryAlertCrudAcknowledge = async (inventoryId: ModelsInventory
     }
     return headers;
   };
-return customInstance<inventoryAlertCrudAcknowledgeResponse>(getInventoryAlertCrudAcknowledgeUrl(inventoryId),
+return customInstance<inventoryAlertCrudAcknowledgeResponse>(getInventoryAlertCrudAcknowledgeUrl(),
   {
     ...options,
     method: 'POST',
@@ -491,9 +330,9 @@ const {mutation: mutationOptions} = options ?
 
 
       const mutationFn: MutationFunction<Awaited<ReturnType<typeof inventoryAlertCrudAcknowledge>>, InventoryAlertCrudAcknowledgeMutationVariables> = (props) => {
-          const {inventoryId,data} = props ?? {};
+          const {data} = props ?? {};
 
-          return  inventoryAlertCrudAcknowledge(inventoryId,data,)
+          return  inventoryAlertCrudAcknowledge(data,)
         }
 
 
@@ -506,10 +345,10 @@ const {mutation: mutationOptions} = options ?
     export type InventoryAlertCrudAcknowledgeMutationResult = NonNullable<Awaited<ReturnType<typeof inventoryAlertCrudAcknowledge>>>
     export type InventoryAlertCrudAcknowledgeMutationBody = ModelsInventoryAlertAcknowledgeRequest
     export type InventoryAlertCrudAcknowledgeMutationError = ModelsProblemDetails
-    export type InventoryAlertCrudAcknowledgeMutationVariables = {inventoryId: ModelsInventoryId;data: ModelsInventoryAlertAcknowledgeRequest}
+    export type InventoryAlertCrudAcknowledgeMutationVariables = {data: ModelsInventoryAlertAcknowledgeRequest}
 
     /**
- * 在庫のアラートを確認済みにします。acknowledgedByのスタッフが存在しない場合は400を、在庫に有効なアラートがない場合は404を、アラートが確認済みの場合は409を返します。
+ * 今出ている在庫アラートを、操作者が確認したことを記録します。確認は、確認したときの状態が続くあいだだけ有効です。管理者と、商品のサロンのオーナー・マネージャー・スタッフが使えます。alertとinventoryIdの組み合わせが合わない場合は400を、商品か在庫の行が存在しないかほかのサロンのものである場合や、そのアラートが今出ていない場合は404を、アラートが確認済みの場合は409を返します。
  * @summary Acknowledge an inventory alert
  */
 export const useInventoryAlertCrudAcknowledge = <TError = ModelsProblemDetails,
@@ -522,3 +361,162 @@ export const useInventoryAlertCrudAcknowledge = <TError = ModelsProblemDetails,
       > => {
       return useMutation(getInventoryAlertCrudAcknowledgeMutationOptions(options), queryClient);
     }
+    export type inventoryAlertCrudGetSummaryResponse200 = {
+  data: InventoryAlertCrudGetSummary200
+  status: 200
+}
+
+export type inventoryAlertCrudGetSummaryResponse400 = {
+  data: ModelsProblemDetails
+  status: 400
+}
+
+export type inventoryAlertCrudGetSummaryResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type inventoryAlertCrudGetSummaryResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
+export type inventoryAlertCrudGetSummaryResponse429 = {
+  data: ModelsProblemDetails
+  status: 429
+}
+
+export type inventoryAlertCrudGetSummaryResponse500 = {
+  data: ModelsProblemDetails
+  status: 500
+}
+
+export type inventoryAlertCrudGetSummaryResponseSuccess = (inventoryAlertCrudGetSummaryResponse200) & {
+  headers: Headers;
+};
+export type inventoryAlertCrudGetSummaryResponseError = (inventoryAlertCrudGetSummaryResponse400 | inventoryAlertCrudGetSummaryResponse401 | inventoryAlertCrudGetSummaryResponse403 | inventoryAlertCrudGetSummaryResponse429 | inventoryAlertCrudGetSummaryResponse500) & {
+  headers: Headers;
+};
+
+export type inventoryAlertCrudGetSummaryResponse = (inventoryAlertCrudGetSummaryResponseSuccess | inventoryAlertCrudGetSummaryResponseError)
+
+export const getInventoryAlertCrudGetSummaryUrl = (params: InventoryAlertCrudGetSummaryParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/inventory-alerts/summary?${stringifiedParams}` : `/api/v1/inventory-alerts/summary`
+}
+
+/**
+ * サロンの今出ている在庫アラートの件数を、重要度別と確認状況別に集計して返します。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合は400を返します。
+ * @summary Get the inventory alert summary
+ */
+export const inventoryAlertCrudGetSummary = async (params: InventoryAlertCrudGetSummaryParams, options?: RequestInit): Promise<inventoryAlertCrudGetSummaryResponse> => {
+
+  return customInstance<inventoryAlertCrudGetSummaryResponse>(getInventoryAlertCrudGetSummaryUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getInventoryAlertCrudGetSummaryQueryKey = (params?: InventoryAlertCrudGetSummaryParams,) => {
+    return [
+    `/api/v1/inventory-alerts/summary`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getInventoryAlertCrudGetSummaryQueryOptions = <TData = Awaited<ReturnType<typeof inventoryAlertCrudGetSummary>>, TError = ModelsProblemDetails>(params: InventoryAlertCrudGetSummaryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryAlertCrudGetSummary>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getInventoryAlertCrudGetSummaryQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof inventoryAlertCrudGetSummary>>> = ({ signal }) => inventoryAlertCrudGetSummary(params, { signal });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof inventoryAlertCrudGetSummary>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type InventoryAlertCrudGetSummaryQueryResult = NonNullable<Awaited<ReturnType<typeof inventoryAlertCrudGetSummary>>>
+export type InventoryAlertCrudGetSummaryQueryError = ModelsProblemDetails
+
+
+/**
+ * サロンの今出ている在庫アラートの件数を、重要度別と確認状況別に集計して返します。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合は400を返します。
+ * @summary Get the inventory alert summary
+ */
+export function useInventoryAlertCrudGetSummary<TData = Awaited<ReturnType<typeof inventoryAlertCrudGetSummary>>, TError = ModelsProblemDetails>(
+ params: InventoryAlertCrudGetSummaryParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryAlertCrudGetSummary>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof inventoryAlertCrudGetSummary>>,
+          TError,
+          Awaited<ReturnType<typeof inventoryAlertCrudGetSummary>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * サロンの今出ている在庫アラートの件数を、重要度別と確認状況別に集計して返します。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合は400を返します。
+ * @summary Get the inventory alert summary
+ */
+export function useInventoryAlertCrudGetSummary<TData = Awaited<ReturnType<typeof inventoryAlertCrudGetSummary>>, TError = ModelsProblemDetails>(
+ params: InventoryAlertCrudGetSummaryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryAlertCrudGetSummary>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof inventoryAlertCrudGetSummary>>,
+          TError,
+          Awaited<ReturnType<typeof inventoryAlertCrudGetSummary>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * サロンの今出ている在庫アラートの件数を、重要度別と確認状況別に集計して返します。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合は400を返します。
+ * @summary Get the inventory alert summary
+ */
+export function useInventoryAlertCrudGetSummary<TData = Awaited<ReturnType<typeof inventoryAlertCrudGetSummary>>, TError = ModelsProblemDetails>(
+ params: InventoryAlertCrudGetSummaryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryAlertCrudGetSummary>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * サロンの今出ている在庫アラートの件数を、重要度別と確認状況別に集計して返します。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合は400を返します。
+ * @summary Get the inventory alert summary
+ */
+export function useInventoryAlertCrudGetSummary<TData = Awaited<ReturnType<typeof inventoryAlertCrudGetSummary>>, TError = ModelsProblemDetails>(
+ params: InventoryAlertCrudGetSummaryParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof inventoryAlertCrudGetSummary>>, TError, TData>>, }
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getInventoryAlertCrudGetSummaryQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+

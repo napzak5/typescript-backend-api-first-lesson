@@ -526,6 +526,23 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 
 規則は [発注](./purchase-orders.md) にあります。
 
+### 在庫のアラートの権限
+
+在庫のアラート（`/api/v1/inventory-alerts`）もサロンのもので、ルートはサロンの下にありません。どのサロンのアラートかは、一覧と件数ではクエリの `salonId`、確認では本文の `productId` の商品が決めます。権限は、在庫と同じ 2 段階で、在庫と同じ関数で判定します（`business-logic/inventory/_shared/authorization.ts` の `inventoryReachOf`）。
+
+| オペレーション | 許可 |
+|---|---|
+| 一覧、件数（`GET /api/v1/inventory-alerts`、`/summary`） | `admin`、クエリの `salonId` のサロンの `owner` / `manager` / `staff` |
+| 確認（`POST /api/v1/inventory-alerts/acknowledge`） | `admin`、本文の商品のサロンの `owner` / `manager` / `staff` |
+
+- 1 段階目は、操作者だけで決まる。在庫を読める人（`admin` と、サロンの 3 つのロール）は、アラートを読み、確認できる。足りない商品や期限の近い在庫に気づいて手を打つのは、日々在庫を扱うスタッフであるため。ロール `customer` のユーザー、範囲 `none` のユーザーは、クエリや本文が不正でも 403
+- 2 段階目は、クエリを確かめたあとに決まる（`isWithin`）。サロンのユーザーが、ほかのサロンを指定すると、サロンが存在するかどうかにかかわらず 403。存在しないサロンと削除済みのサロンは、2 段階目を通った操作者（実際には `admin`）に 400（`salonId` の `not_found`）
+- 確認には、比べるサロンがない。リポジトリが、操作者に届く範囲を検索の条件にするので、ほかのサロンの商品のアラートは見つからない（404）。存在しない商品と区別しない。一覧の `cursor` に、ほかのサロンの商品か在庫の行を指定すると 400（`cursor` の `not_found`）
+- `acknowledgedBy` は、操作者のスタッフ ID（`performerOf`）で、`admin` では null。本文には書けない
+- 顧客には、アラートを見せない。在庫のアラートのための権限（`users.permissions`）はない
+
+規則は [在庫のアラート](./inventory-alerts.md) にあります。
+
 ### レビューの権限
 
 レビューは、来店した顧客が書き、誰でも読みます。誰が投稿、修正、削除、参考になったの評価、通報、返信ができるかは、まず操作者で決まります（`business-logic/review/_shared/authorization.ts` の `reviewerOf`、`reviewRemoverOf`、`reviewReporterOf`、`reviewResponderOf`）。修正と削除では、そのあとで、レビューを書いた顧客かどうかを、参考になったでは、書いた顧客でないことを、通報では、顧客なら書いた顧客でないこと、サロンならそのサロンのレビューであることを、返信では、`admin` なら取り下げ（null）であること、サロンならそのサロンのレビューであることを確かめます。通報の一覧と却下は `admin` だけです（`business-logic/review-report/_shared/authorization.ts` の `mayHandleReviewReports`）。

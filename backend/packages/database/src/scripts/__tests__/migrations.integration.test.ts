@@ -2587,4 +2587,276 @@ describe('the migrations of this repository', () => {
       expect(await itemsOf(order)).toEqual(['0:none'])
     })
   })
+
+  describe('202611171700_inventory_alert_acknowledgements.sql', () => {
+    const run = (): Promise<void> =>
+      runMigration('202611171700_inventory_alert_acknowledgements.sql')
+
+    /** The schema of setup.sql, which the migration brings a database to. */
+    let schemaOfSetup: string[] = []
+
+    type Stock = { salonId: string; productId: string; inventoryId: string }
+
+    /** A product of a new salon and a stock row of it, without stock. */
+    const storeStock = async (): Promise<Stock> => {
+      const salonId = await storeSalon(null)
+      const productId = randomUUID()
+      const inventoryId = randomUUID()
+      await sql`
+        INSERT INTO products (id, "salonId", "productCode", name, unit)
+        VALUES (${productId}, ${salonId}, ${`CODE-${productId}`}, 'Shampoo', 'bottle')
+      `
+      await sql`
+        INSERT INTO inventory (
+          id, "salonId", "productId", "currentStock", "availableStock",
+          "expiryDate"
+        )
+        VALUES (${inventoryId}, ${salonId}, ${productId}, '0', '0', '2026-12-01')
+      `
+      return { salonId, productId, inventoryId }
+    }
+
+    type StoredAcknowledgement = {
+      inventoryId?: string | null
+      alert?: string
+      severity?: string
+      threshold?: string | null
+      expiryDate?: string | null
+      notes?: string | null
+      acknowledgedBy?: string | null
+    }
+
+    /**
+     * An acknowledgement of an alert of the stock: the low stock of the
+     * product, at a threshold of 5, by a staff member, unless said
+     * otherwise; returns its ID.
+     */
+    const storeAcknowledgement = async (
+      { salonId, productId }: Stock,
+      {
+        inventoryId = null,
+        alert = 'low_stock',
+        severity = 'warning',
+        threshold = '5',
+        expiryDate = null,
+        notes = null,
+        acknowledgedBy = randomUUID(),
+      }: StoredAcknowledgement = {},
+    ): Promise<string> => {
+      const id = randomUUID()
+      await sql`
+        INSERT INTO inventory_alert_acknowledgements (
+          id, "salonId", "productId", "inventoryId", alert, severity,
+          threshold, "expiryDate", notes, "acknowledgedBy"
+        )
+        VALUES (
+          ${id}, ${salonId}, ${productId}, ${inventoryId}, ${alert},
+          ${severity}, ${threshold}, ${expiryDate}, ${notes},
+          ${acknowledgedBy}
+        )
+      `
+      return id
+    }
+
+    /** The IDs of the acknowledgements of the product, in no order. */
+    const acknowledgementsOf = async (productId: string): Promise<string[]> => {
+      const rows = await sql<{ id: string }[]>`
+        SELECT id FROM inventory_alert_acknowledgements
+        WHERE "productId" = ${productId}
+      `
+      return rows.map(({ id }) => id).sort()
+    }
+
+    /** An alert of the stock row: it expires soon. */
+    const expiringOf = ({ inventoryId }: Stock): StoredAcknowledgement => ({
+      inventoryId,
+      alert: 'expiring',
+      severity: 'warning',
+      threshold: null,
+      expiryDate: '2026-12-01',
+    })
+
+    // A database from before the migration: neither the table nor the
+    // types, and the stock movements by their product alone.
+    beforeEach(async () => {
+      await applyBaseline(sql, plan)
+      schemaOfSetup = await describeSchema()
+      await sql.unsafe(`
+        DROP TABLE inventory_alert_acknowledgements;
+        DROP TYPE inventory_alert_type;
+        DROP TYPE inventory_alert_severity;
+        DROP INDEX idx_inventory_transactions_product_time;
+        CREATE INDEX idx_inventory_transactions_product_id
+          ON inventory_transactions USING btree ("productId");
+      `)
+    })
+
+    it('should give the database the table, the types and the indexes of setup.sql, and keep them on a second run', async () => {
+      expect(await describeSchema()).not.toEqual(schemaOfSetup)
+
+      await run()
+      await run()
+
+      expect(await describeSchema()).toEqual(schemaOfSetup)
+    })
+
+    it('should take the acknowledgements of a stock row away with it, and keep those of its product', async () => {
+      await run()
+      const stock = await storeStock()
+      const ofProduct = await storeAcknowledgement(stock)
+      await storeAcknowledgement(stock, expiringOf(stock))
+
+      await sql`DELETE FROM inventory WHERE id = ${stock.inventoryId}`
+
+      expect(await acknowledgementsOf(stock.productId)).toEqual([ofProduct])
+    })
+
+    it('should take the acknowledgements of a product away with it', async () => {
+      await run()
+      const stock = await storeStock()
+      const other = await storeStock()
+      const kept = await storeAcknowledgement(other)
+      await storeAcknowledgement(stock)
+
+      await sql`DELETE FROM inventory WHERE id = ${stock.inventoryId}`
+      await sql`DELETE FROM products WHERE id = ${stock.productId}`
+
+      expect(await acknowledgementsOf(stock.productId)).toEqual([])
+      expect(await acknowledgementsOf(other.productId)).toEqual([kept])
+    })
+
+    it('should take the acknowledgements of a salon away with it', async () => {
+      await run()
+      const stock = await storeStock()
+      await storeAcknowledgement(stock)
+      await storeAcknowledgement(stock, expiringOf(stock))
+
+      await sql`DELETE FROM salons WHERE id = ${stock.salonId}`
+
+      expect(await acknowledgementsOf(stock.productId)).toEqual([])
+    })
+
+    it('should keep an acknowledgement of a stock row that is not there out', async () => {
+      await run()
+      const stock = await storeStock()
+
+      await expect(
+        storeAcknowledgement(stock, {
+          ...expiringOf(stock),
+          inventoryId: randomUUID(),
+        }),
+      ).rejects.toThrow('inventory_alert_acknowledgements_inventory_id_fk')
+    })
+
+    it.each<[string, (stock: Stock) => StoredAcknowledgement, string]>([
+      [
+        'a low stock of a stock row',
+        ({ inventoryId }) => ({ inventoryId }),
+        'inventory_alert_acknowledgements_subject',
+      ],
+      [
+        'an overstock with an expiry date',
+        () => ({
+          alert: 'overstock',
+          severity: 'info',
+          expiryDate: '2026-12-01',
+        }),
+        'inventory_alert_acknowledgements_subject',
+      ],
+      [
+        'a low stock without a threshold',
+        () => ({ threshold: null }),
+        'inventory_alert_acknowledgements_subject',
+      ],
+      [
+        'a low stock at a threshold below zero',
+        () => ({ threshold: '-0.01' }),
+        'inventory_alert_acknowledgements_subject',
+      ],
+      [
+        'an expiring stock row of no row',
+        (stock) => ({ ...expiringOf(stock), inventoryId: null }),
+        'inventory_alert_acknowledgements_subject',
+      ],
+      [
+        'an expired stock row without an expiry date',
+        (stock) => ({
+          ...expiringOf(stock),
+          alert: 'expired',
+          severity: 'critical',
+          expiryDate: null,
+        }),
+        'inventory_alert_acknowledgements_subject',
+      ],
+      [
+        'an expiring stock row with a threshold',
+        (stock) => ({ ...expiringOf(stock), threshold: '5' }),
+        'inventory_alert_acknowledgements_subject',
+      ],
+      [
+        'a low stock of severity info',
+        () => ({ severity: 'info' }),
+        'inventory_alert_acknowledgements_severity',
+      ],
+      [
+        'an overstock of severity warning',
+        () => ({ alert: 'overstock', severity: 'warning' }),
+        'inventory_alert_acknowledgements_severity',
+      ],
+      [
+        'an expiring stock row of severity critical',
+        (stock) => ({ ...expiringOf(stock), severity: 'critical' }),
+        'inventory_alert_acknowledgements_severity',
+      ],
+      [
+        'an expired stock row of severity warning',
+        (stock) => ({ ...expiringOf(stock), alert: 'expired' }),
+        'inventory_alert_acknowledgements_severity',
+      ],
+      [
+        'an alert of another kind',
+        () => ({ alert: 'out_of_stock' }),
+        'invalid input value for enum inventory_alert_type',
+      ],
+    ])('should keep %s out', async (_, acknowledgement, rule) => {
+      await run()
+      const stock = await storeStock()
+
+      await expect(
+        storeAcknowledgement(stock, acknowledgement(stock)),
+      ).rejects.toThrow(rule)
+    })
+
+    it.each<[string, (stock: Stock) => StoredAcknowledgement]>([
+      ['a low stock of severity warning', () => ({})],
+      [
+        'a low stock of severity critical at a threshold of 0',
+        () => ({ severity: 'critical', threshold: '0' }),
+      ],
+      [
+        'an overstock',
+        () => ({ alert: 'overstock', severity: 'info', threshold: '20' }),
+      ],
+      ['an expiring stock row', (stock) => expiringOf(stock)],
+      [
+        'an expired stock row',
+        (stock) => ({
+          ...expiringOf(stock),
+          alert: 'expired',
+          severity: 'critical',
+        }),
+      ],
+      [
+        'an acknowledgement by an administrator, with notes',
+        () => ({ acknowledgedBy: null, notes: 'Ordered from the supplier' }),
+      ],
+    ])('should take %s', async (_, acknowledgement) => {
+      await run()
+      const stock = await storeStock()
+
+      const id = await storeAcknowledgement(stock, acknowledgement(stock))
+
+      expect(await acknowledgementsOf(stock.productId)).toEqual([id])
+    })
+  })
 })

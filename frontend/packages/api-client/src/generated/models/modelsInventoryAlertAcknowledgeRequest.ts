@@ -5,16 +5,24 @@
  * Comprehensive REST API for managing beauty salon operations including salons, staff, services, customers, bookings, treatments, payments, inventory, and access control. Built with TypeSpec for type-safe API-first development.
  * OpenAPI spec version: 2.0
  */
-import type { ModelsStaffId } from './modelsStaffId';
+import type { ModelsInventoryAlertType } from './modelsInventoryAlertType';
+import type { ModelsProductId } from './modelsProductId';
 
 /**
- * 在庫アラート確認リクエスト - 全項目のキーが必須
+ * 在庫アラート確認リクエスト - 全項目のキーが必須。確認したのは操作者として記録する
  */
 export interface ModelsInventoryAlertAcknowledgeRequest {
-  /** アラートを確認したスタッフ ID */
-  acknowledgedBy: ModelsStaffId;
+  /** 確認するアラートの種別 */
+  alert: ModelsInventoryAlertType;
+  /** アラートの商品 ID */
+  productId: ModelsProductId;
   /**
-     * 確認時のメモ。メモがない場合はnull
+     * 在庫の行のアラート(expiring・expired)では、productId の商品の在庫 ID。商品のアラート(low_stock・overstock)では null
+     * @nullable
+     */
+  inventoryId: string | null;
+  /**
+     * 確認時のメモ。メモがない場合はnull。空白だけの文字列は指定できない
      * @nullable
      */
   notes: string | null;

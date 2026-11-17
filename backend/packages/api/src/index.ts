@@ -11,6 +11,7 @@ import {
   CustomerPreferencesRepository,
   CustomerRepository,
   type Database,
+  InventoryAlertRepository,
   InventoryRepository,
   type Logger,
   PaymentMethodRepository,
@@ -61,6 +62,7 @@ import {
   createOwnCustomerPreferencesRouter,
 } from './routes/customer-preferences'
 import { createInventoryRouter } from './routes/inventory'
+import { createInventoryAlertRouter } from './routes/inventory-alert'
 import { createPaymentRouter } from './routes/payment'
 import { createPaymentMethodRouter } from './routes/payment-method'
 import { createPointRouter } from './routes/point'
@@ -217,6 +219,17 @@ export const createApp = ({
     createInventoryRouter(
       {
         inventoryRepository: new InventoryRepository(database),
+        salonRepository,
+        clock,
+      },
+      authenticated,
+    ),
+  )
+  app.use(
+    `${API_BASE_PATH}/inventory-alerts`,
+    createInventoryAlertRouter(
+      {
+        inventoryAlertRepository: new InventoryAlertRepository(database),
         salonRepository,
         clock,
       },
