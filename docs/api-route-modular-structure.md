@@ -137,9 +137,11 @@ backend/packages/api/src/
 │   │   ├── create-inventory.handler.ts           # POST   /api/v1/inventory
 │   │   ├── list-low-stock-inventory.handler.ts   # GET    /api/v1/inventory/low-stock
 │   │   ├── list-expiring-inventory.handler.ts    # GET    /api/v1/inventory/expiring
+│   │   ├── record-inventory-movement.handler.ts  # POST   /api/v1/inventory/movement
 │   │   ├── get-inventory.handler.ts              # GET    /api/v1/inventory/:id
 │   │   ├── update-inventory.handler.ts           # PATCH  /api/v1/inventory/:id
 │   │   ├── delete-inventory.handler.ts           # DELETE /api/v1/inventory/:id
+│   │   ├── list-inventory-movements.handler.ts   # GET    /api/v1/inventory/:id/movements
 │   │   └── index.ts                              # createInventoryRouter
 │   ├── payment/
 │   │   ├── _shared/

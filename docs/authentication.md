@@ -480,7 +480,7 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 
 ### 在庫の権限
 
-在庫（`inventory`）もサロンのもので、ルートはサロンの下にありません（`/api/v1/inventory`）。どのサロンの在庫かは、作成では本文の `salonId`、一覧、在庫僅少の一覧、期限切れ間近の一覧ではクエリの `salonId`、取得、更新、削除では在庫の行そのものが決めます。権限は、売上台帳と同じ 2 段階で判定します（`business-logic/inventory/_shared/authorization.ts`）。
+在庫（`inventory`）もサロンのもので、ルートはサロンの下にありません（`/api/v1/inventory`）。どのサロンの在庫かは、作成では本文の `salonId`、一覧、在庫僅少の一覧、期限切れ間近の一覧ではクエリの `salonId`、取得、更新、削除、在庫の移動の履歴では在庫の行そのもの、在庫の移動の記録では本文の `inventoryId` の在庫の行が決めます。権限は、売上台帳と同じ 2 段階で判定します（`business-logic/inventory/_shared/authorization.ts`）。
 
 | オペレーション | 許可 |
 |---|---|
@@ -489,11 +489,14 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 | 在庫僅少の一覧、期限切れ間近の一覧（`GET /api/v1/inventory/low-stock`、`/expiring`） | `admin`、クエリの `salonId` のサロンの `owner` / `manager` / `staff` |
 | 作成（`POST /api/v1/inventory`） | `admin`、本文の `salonId` のサロンの `owner` / `manager` |
 | 更新、削除（`PATCH`、`DELETE /api/v1/inventory/{id}`） | `admin`、在庫の行のサロンの `owner` / `manager` |
+| 在庫の移動の記録（`POST /api/v1/inventory/movement`） | `admin`、在庫の行のサロンの `owner` / `manager`。`staff` は、`purchase`、`sale`、`use`、`return` だけ |
+| 在庫の移動の履歴（`GET /api/v1/inventory/{id}/movements`） | `admin`、在庫の行のサロンの `owner` / `manager` / `staff` |
 
 - 1 段階目は、操作者だけで決まる。読むこと（`inventoryReachOf`）は、`admin` と、サロンの 3 つのロールができる。施術で商品を棚から出し、店頭で売るスタッフが、在庫を知る必要があるため。作成、更新、削除（`inventoryKeeperReachOf`）は、商品と同じく、`owner` と `manager` だけができる。サロンの `staff`、ロール `customer` のユーザー、範囲 `none` のユーザーは、本文、クエリ、ID が不正でも 403
+- 在庫の移動の記録は、区分で決まる（`movementReachOf`）。在庫を読める人は、`purchase`、`sale`、`use`、`return` を記録できる。帳簿の在庫を直す `adjustment`、帳簿から外す `disposal`、ほかのサロンに移す `transfer` は、`owner` と `manager` だけができる。区分は本文にあるので、`staff` の 3 つの区分は、本文を確かめたあとに 403。`performedBy` は、サロンのユーザーのスタッフ ID で、`admin` では null
 - 2 段階目は、本文かクエリを確かめたあとに決まる（`isWithin`）。サロンのユーザーが、ほかのサロンを指定すると、サロンが存在するかどうかにかかわらず 403。本文かクエリが不正なら、その前に 400 を返す
 - 存在しないサロンと削除済みのサロンは、2 段階目を通った操作者（実際には `admin`）に 400（`salonId` の `not_found`）。一覧の `salonId` は絞り込みで、存在しないサロンは空の一覧になる
-- 取得、更新、削除には、比べるサロンがない。リポジトリが、操作者に届く範囲を検索の条件にするので、ほかのサロンの在庫の行は見つからない（404）。存在しない ID と区別しない。一覧のカーソルにも、同じ条件を付ける
+- 取得、更新、削除、在庫の移動の記録と履歴には、比べるサロンがない。リポジトリが、操作者に届く範囲を検索の条件にするので、ほかのサロンの在庫の行は見つからない（404。在庫の移動の記録では、本文の誤りとして 400 の `inventoryId` の `not_found`）。存在しない ID と区別しない。一覧のカーソルにも、同じ条件を付ける
 - 顧客には、在庫を見せない。在庫のための権限（`users.permissions`）はない
 
 規則は [在庫](./inventory.md) にあります。

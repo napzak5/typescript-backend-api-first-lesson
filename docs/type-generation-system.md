@@ -88,9 +88,10 @@ reviews of the customers), `list` and `dismiss` of `ReviewReportCrud` (the repor
 staff member), the five of `PaymentMethodCrud` (the payment methods of a
 salon: `list`, `create`, `get`, `update` and `delete`), the five of
 `ProductCrud` (the products of a salon: `list`, `create`, `get`, `update`
-and `delete`), seven of `InventoryCrud` (the stock rows of a salon:
+and `delete`), nine of `InventoryCrud` (the stock rows of a salon:
 `list`, `create`, `get`, `update`, `delete`, `listLowStock` and
-`listExpiring`),
+`listExpiring`, and their stock movements: `recordMovement` and
+`listMovements`),
 the five
 operations of
 `StaffCrud` (the staff ledger of a salon: `list`, `create`, `get`, `update`

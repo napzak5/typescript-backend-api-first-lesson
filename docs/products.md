@@ -4,15 +4,15 @@
 
 商品は、サロンが店頭で売るもの（シャンプー、スタイリング剤など）と、施術で使うもの（カラー剤、ブリーチ剤など）の一覧です。サロンごとに持ち、管理者とサロンのスタッフが `/api/v1/salons/{salonId}/products` で扱います。顧客のアカウントは、このルートを使えません。
 
-商品の在庫（`inventory`）は [在庫](./inventory.md) にあります。在庫の移動（`inventory_transactions`）、棚卸し、発注、在庫のアラートは、まだ実装していません（[実装範囲](#実装範囲)）。
+商品の在庫（`inventory`）は [在庫](./inventory.md) にあります。在庫の移動（`inventory_transactions`）も、[在庫](./inventory.md#在庫の移動) にあります。棚卸し、発注、在庫のアラートは、まだ実装していません（[実装範囲](#実装範囲)）。
 
 ## 実装範囲
 
 | オペレーション | 状態 |
 |---|---|
 | 商品（`ProductCrud`）の一覧、作成、1 件の取得、更新、削除（`list`、`create`、`get`、`update`、`delete`） | 実装済み |
-| 在庫の行（`InventoryCrud` の一覧、作成、1 件の取得、更新、削除、在庫僅少、期限切れ間近） | 実装済み（[在庫](./inventory.md)） |
-| 在庫の移動、棚卸し、在庫評価額（`InventoryCrud` の `recordMovement`、`listMovements`、`performStockCount`、`getValueReport`） | 未実装（[在庫](./inventory.md#実装範囲)） |
+| 在庫の行（`InventoryCrud` の一覧、作成、1 件の取得、更新、削除、在庫僅少、期限切れ間近）と、在庫の移動（`recordMovement`、`listMovements`） | 実装済み（[在庫](./inventory.md)） |
+| 棚卸し、在庫評価額（`InventoryCrud` の `performStockCount`、`getValueReport`） | 未実装（[在庫](./inventory.md#実装範囲)） |
 | 発注（`PurchaseOrderCrud`）と在庫のアラート（`InventoryAlertCrud`） | 未実装（ルートがなく、404。テーブルもない） |
 
 - 次のものは、ありません
@@ -210,7 +210,7 @@ JSON として読めない本文は、ほかのルートと同じく、アクセ
 削除は、行を消さず、削除した時刻（`deletedAt`）を書きます（204。本文はない）。`updatedAt` も、削除した時刻を書きます（どちらも、データベースの `clock_timestamp()` で、マイクロ秒の単位では違うことがあります）。削除した商品は、取得、更新、削除のどれも 404 で、一覧に出ません。
 
 - **在庫のレコード（`inventory`）がある商品は、削除できません**（409。`code` は `3003`）。在庫の数は問いません。数が 0 のレコードも、ロットや保管場所の記録だからです
-- 409 の `detail` は、在庫を先に削除するか、`isActive` を false にするよう伝えます。取り扱いをやめるときは、削除ではなく、`isActive` を false にします。在庫のレコードは、在庫数が 0 なら削除できます（[在庫の削除](./inventory.md#削除)）。在庫を 0 にする在庫の移動は、まだ実装していません
+- 409 の `detail` は、在庫を先に削除するか、`isActive` を false にするよう伝えます。取り扱いをやめるときは、削除ではなく、`isActive` を false にします。在庫のレコードは、在庫の移動で在庫数を 0 にすると、削除できます（[在庫の削除](./inventory.md#削除)）
 - 行を残すのは、在庫の移動の記録（`inventory_transactions`）と、施術で使った材料の記録（`treatment_materials`）が、外部キー（`ON DELETE RESTRICT`）で商品を指し、それらの記録は、商品を削除したあとも残すからです。売上の明細は、商品を外部キーで指さず、名前と金額を持ちます
 - 削除した商品のコードは、ほかの商品が使えます（[商品コード](#商品コード)）
 - 取り扱いをやめた商品（`isActive` が false）も、削除できます
