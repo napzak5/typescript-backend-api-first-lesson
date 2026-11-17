@@ -21,7 +21,8 @@ export interface ModelsInventoryMovementRequest {
   /**
      * 操作数量。在庫数の増減量で、入庫は正、出庫は負の値で指定する。0は指定できない。小数第2位まで。
      * purchase は正、sale・use・disposal は負でなければならない。adjustment・return・transfer はどちらの符号でもよい。
-     * 保管場所や店舗の間の移動(transfer)は、移動元の在庫の負の transfer と、移動先の在庫の正の transfer の2件で記録する
+     * 店舗の間の移動(transfer)は、移動元の店舗の在庫の負の transfer と、移動先の店舗の在庫の正の transfer の2件で記録する。
+     * 店舗の中で保管場所を変えるのは在庫の更新(location・shelf)で、在庫移動ではない
      * @minimum -99999999.99
      * @maximum 99999999.99
      */

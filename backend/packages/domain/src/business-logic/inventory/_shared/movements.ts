@@ -3,9 +3,10 @@ import { match } from 'ts-pattern'
 
 /**
  * What a stock movement is held to by its kind. A movement is one change
- * of the stock of one stock row; moving stock between rows (between
- * storage places or salons) is two movements, out of the one row and into
- * the other.
+ * of the stock of one stock row; moving stock to another salon is two
+ * movements, out of the row of the one salon and into the row of the
+ * other. Within a salon a lot of a product is one row, kept in one place:
+ * moving it is a change of the row's location, not a movement.
  */
 
 /** Which way a kind of movement moves the stock. */
@@ -15,7 +16,7 @@ export type Direction = 'in' | 'out' | 'either'
  * A purchase brings stock in; a sale, a use in a treatment and a disposal
  * take it out. An adjustment puts the stock on paper right either way, a
  * return goes back to the supplier or comes back from a customer, and a
- * transfer leaves one row and comes into another.
+ * transfer leaves a salon or comes into one.
  */
 export const directionOf = (type: InventoryTransactionType): Direction =>
   match(type)

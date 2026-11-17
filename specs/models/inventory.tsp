@@ -11,10 +11,10 @@ namespace BeautySalon.Models {
     purchase: 仕入 - 仕入先から商品を受け入れた入庫
     sale: 販売 - 顧客への店頭販売による出庫
     use: 施術使用 - 施術の材料として消費した出庫
-    adjustment: 調整 - 棚卸差異や破損などの補正による増減
+    adjustment: 調整 - 棚卸差異など、帳簿の在庫数を実際の数に合わせる増減
     return: 返品 - 仕入先への返品または顧客からの返品による増減
-    disposal: 廃棄 - 期限切れや破損による廃棄
-    transfer: 移動 - ほかの保管場所・店舗との間の移動による増減
+    disposal: 廃棄 - 期限切れや破損で使えなくなった在庫を除く出庫
+    transfer: 移動 - ほかの店舗との間の移動による増減
     """)
   enum InventoryTransactionType {
     purchase,
@@ -681,7 +681,8 @@ namespace BeautySalon.Models {
     @doc("""
       操作数量。在庫数の増減量で、入庫は正、出庫は負の値で指定する。0は指定できない。小数第2位まで。
       purchase は正、sale・use・disposal は負でなければならない。adjustment・return・transfer はどちらの符号でもよい。
-      保管場所や店舗の間の移動(transfer)は、移動元の在庫の負の transfer と、移動先の在庫の正の transfer の2件で記録する
+      店舗の間の移動(transfer)は、移動元の店舗の在庫の負の transfer と、移動先の店舗の在庫の正の transfer の2件で記録する。
+      店舗の中で保管場所を変えるのは在庫の更新(location・shelf)で、在庫移動ではない
       """)
     @minValue(-99999999.99)
     @maxValue(99999999.99)
