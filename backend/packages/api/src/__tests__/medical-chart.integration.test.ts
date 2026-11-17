@@ -1036,11 +1036,6 @@ describe('Medical chart API', () => {
 
   describe('what the routes do not serve', () => {
     it.each<[string, 'get' | 'put' | 'patch' | 'delete' | 'post', string]>([
-      [
-        'the allergies of a customer, served by a later unit',
-        'get',
-        '/customer/CUSTOMER/allergies',
-      ],
       ['GET on a chart by its ID', 'get', '/ID'],
       ['DELETE on a chart', 'delete', '/ID'],
       ['PUT on a chart', 'put', '/ID'],
