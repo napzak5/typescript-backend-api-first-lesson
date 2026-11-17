@@ -30,6 +30,7 @@ export class DeleteCustomerUseCase {
 
     const deleted = await this.dependencies.customerRepository.delete(
       customerId.data,
+      actor.userId,
     )
     if (deleted.type === 'error') {
       return deleted

@@ -5,8 +5,8 @@
  * Comprehensive REST API for managing beauty salon operations including salons, staff, services, customers, bookings, treatments, payments, inventory, and access control. Built with TypeSpec for type-safe API-first development.
  * OpenAPI spec version: 2.0
  */
-import type { ModelsCustomerAuditEntrySearchRequestCursorParameter } from './modelsCustomerAuditEntrySearchRequestCursorParameter';
-import type { ModelsCustomerAuditEntrySearchRequestLimitParameter } from './modelsCustomerAuditEntrySearchRequestLimitParameter';
+import type { ModelsCustomerVersionSearchRequestCursorParameter } from './modelsCustomerVersionSearchRequestCursorParameter';
+import type { ModelsCustomerVersionSearchRequestLimitParameter } from './modelsCustomerVersionSearchRequestLimitParameter';
 
 export type CustomerCrudGetHistoryParams = {
   /**
@@ -14,7 +14,7 @@ export type CustomerCrudGetHistoryParams = {
    * @minimum 1
    * @maximum 100
    */
-  limit?: ModelsCustomerAuditEntrySearchRequestLimitParameter;
-  /** 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
-  cursor?: ModelsCustomerAuditEntrySearchRequestCursorParameter;
+  limit?: ModelsCustomerVersionSearchRequestLimitParameter;
+  /** 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor`(その顧客の版の ID)を指定する */
+  cursor?: ModelsCustomerVersionSearchRequestCursorParameter;
 };

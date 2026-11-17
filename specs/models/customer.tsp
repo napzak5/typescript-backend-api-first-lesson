@@ -127,14 +127,16 @@ namespace BeautySalon.Models {
   }
 
   @doc("""
-    顧客監査操作区分 - 監査履歴に記録される顧客レコードへの操作の種類
+    顧客の版の操作区分 - 版を作った、顧客台帳への書き込みの種類
     
-    create: 作成 - 顧客を新規登録した
-    update: 更新 - 顧客情報を更新した
-    delete: 削除 - 顧客を論理削除した
-    restore: 復元 - 論理削除された顧客を復元した
+    baseline: 記録の開始 - 版を記録する前からいた顧客の、記録を始めた時点の値。変更者はない
+    create: 登録 - 顧客を登録した(一括登録、顧客本人のプロフィールの作成を含む)
+    update: 更新 - 台帳の項目を変えた(一括更新、顧客本人のプロフィールの更新、プロフィールの作成で台帳の顧客を引き継いだときを含む)
+    delete: 削除 - 顧客を論理削除した(一括削除を含む)
+    restore: 復元 - 論理削除した顧客を台帳に戻した
     """)
-  enum CustomerAuditOperationType {
+  enum CustomerVersionOperationType {
+    baseline,
     create,
     update,
     delete,
@@ -1149,13 +1151,13 @@ namespace BeautySalon.Models {
   }
 
   // ============================================================================
-  // Audit (no table yet)
+  // Versions (customer_versions)
   // ============================================================================
 
   @doc("""
-    顧客監査履歴の一覧リクエスト - ページネーションを指定する
+    顧客の変更履歴の一覧リクエスト - ページネーションを指定する
     """)
-  model CustomerAuditEntrySearchRequest {
+  model CustomerVersionSearchRequest {
     @query
     @doc("1ページあたりの取得件数上限 (1〜100)")
     @minValue(1)
@@ -1163,63 +1165,103 @@ namespace BeautySalon.Models {
     limit?: int32 = 20;
 
     @query
-    @doc("取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する")
+    @doc("取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor`(その顧客の版の ID)を指定する")
     cursor?: string;
   }
 
-  @doc("顧客監査履歴の1項目の変更内容 - 変更されたフィールドと変更前後の値")
-  model CustomerAuditChangeResponse {
-    @doc("変更されたフィールド名")
+  @doc("変更履歴の 1 項目の変更内容 - 前の版と値の違う台帳の項目と、変更前後の値")
+  model CustomerVersionChangeResponse {
+    @doc("台帳の項目の名前(顧客のレスポンスのプロパティ名)")
     field: string;
 
-    @doc("変更前の値。値がなかった場合はnull")
+    @doc("前の版の値。顧客のレスポンスと同じ表し方。値がなかった場合はnull")
     oldValue: unknown | null;
 
-    @doc("変更後の値。値がなくなった場合はnull")
+    @doc("この版の値。顧客のレスポンスと同じ表し方。値がなくなった場合はnull")
     newValue: unknown | null;
   }
 
   @doc("""
-    顧客監査履歴レスポンス - 顧客レコードに対して、誰がいつどのような操作を行ったかを表す
+    顧客の変更履歴の 1 項目 - customer_versions の 1 行の、誰がいつどの操作をしたかと、前の版から変わった項目
     """)
-  model CustomerAuditEntryResponse {
-    @doc("監査履歴エントリのID")
-    id: string;
+  model CustomerHistoryEntryResponse {
+    @doc("版の ID")
+    id: CustomerVersionId;
 
-    @doc("操作対象の顧客ID")
-    entityId: CustomerId;
+    @doc("顧客 ID")
+    customerId: CustomerId;
 
-    @doc("操作対象のエンティティ種別")
-    entity: string;
+    @doc("版の番号。顧客ごとに 1 から数える")
+    version: int32;
 
-    @doc("実行された操作")
-    operation: CustomerAuditOperationType;
+    @doc("版を作った操作")
+    operation: CustomerVersionOperationType;
 
-    @doc("操作を実行したユーザーのID")
-    userId: UserId;
+    @doc("操作したユーザーの ID。記録を始める前の値(baseline)の場合はnull")
+    changedBy: UserId | null;
 
-    @doc("操作を実行したユーザーの表示名。記録されていない場合はnull")
-    userName: string | null;
+    @doc("操作した日時")
+    changedAt: utcDateTime;
 
-    @doc("操作元のIPアドレス。記録されていない場合はnull")
-    ipAddress: string | null;
+    @doc("前の版と値の違う台帳の項目(顧客のレスポンスのプロパティの順)。update の版のときだけ返し、ほかの操作と、前の版がない版の場合はnull")
+    changes: CustomerVersionChangeResponse[] | null;
+  }
 
-    @doc("操作元のユーザーエージェント。記録されていない場合はnull")
-    userAgent: string | null;
+  @doc("""
+    顧客の版 - customer_versions の 1 行。その版の時点の、顧客台帳の 30 項目の値。
+    来店回数やポイントなど、予約やポイントが変える値と、アカウントとの紐づけは、台帳の項目ではないので含まない
+    """)
+  model CustomerVersionResponse {
+    @doc("版の ID")
+    id: CustomerVersionId;
 
-    @doc("操作日時")
-    timestamp: utcDateTime;
+    @doc("顧客 ID")
+    customerId: CustomerId;
 
-    @doc("変更内容の一覧。変更内容を記録しない操作の場合はnull")
-    changes: CustomerAuditChangeResponse[] | null;
+    @doc("版の番号。顧客ごとに 1 から数える")
+    version: int32;
 
-    @doc("変更前のエンティティのスナップショット。作成操作の場合はnull")
-    before: unknown | null;
+    @doc("版を作った操作")
+    operation: CustomerVersionOperationType;
 
-    @doc("変更後のエンティティのスナップショット。削除操作の場合はnull")
-    after: unknown | null;
+    @doc("操作したユーザーの ID。記録を始める前の値(baseline)の場合はnull")
+    changedBy: UserId | null;
 
-    @doc("追加のメタデータ。追加情報がない場合はnull")
-    metadata: Record<unknown> | null;
+    @doc("操作した日時")
+    changedAt: utcDateTime;
+
+    ...PickProperties<
+      CustomerResponse,
+      | "firstName"
+      | "lastName"
+      | "firstNameKana"
+      | "lastNameKana"
+      | "email"
+      | "phoneNumber"
+      | "alternativePhone"
+      | "postalCode"
+      | "prefecture"
+      | "city"
+      | "address"
+      | "building"
+      | "birthDate"
+      | "gender"
+      | "occupation"
+      | "membershipTier"
+      | "preferences"
+      | "notes"
+      | "internalNotes"
+      | "tags"
+      | "referredBy"
+      | "referralCode"
+      | "allowMarketing"
+      | "allowSms"
+      | "allowEmail"
+      | "isActive"
+      | "hairType"
+      | "hairThickness"
+      | "scalpCondition"
+      | "customerStatus"
+    >;
   }
 }

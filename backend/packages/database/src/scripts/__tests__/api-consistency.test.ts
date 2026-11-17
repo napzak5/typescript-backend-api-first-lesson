@@ -484,12 +484,15 @@ describe('modelRules', () => {
     expect(models).toEqual([...new Set(models)])
   })
 
-  it('declares only that a session is the current one as worked out rather than stored', () => {
+  it('declares only that a session is the current one, and what changed in a version of a customer, as worked out rather than stored', () => {
     const computed = modelRules
       .filter((modelRule) => modelRule.computed !== undefined)
       .map(({ model, computed }) => [model, computed])
 
-    expect(computed).toEqual([['Models.SessionResponse', ['current']]])
+    expect(computed).toEqual([
+      ['Models.CustomerHistoryEntryResponse', ['changes']],
+      ['Models.SessionResponse', ['current']],
+    ])
   })
 
   it('lets a request for a service category leave out what the database assigns and the salon, which the path names, and the response nothing', () => {
@@ -721,6 +724,67 @@ describe('modelRules', () => {
         omittedColumns: [...managed, ...notTheCustomers],
         embedded: undefined,
         computed: undefined,
+      },
+    })
+  })
+
+  it('shows every column of a version, and the history only what says which write it was, with the changes it works out', () => {
+    const rules = Object.fromEntries(
+      modelRules
+        .filter((modelRule) => modelRule.table === 'customerVersions')
+        .map(
+          ({ model, kind, omittedColumns, embedded, computed, narrowed }) => [
+            model,
+            { kind, omittedColumns, embedded, computed, narrowed },
+          ],
+        ),
+    )
+
+    expect(rules).toEqual({
+      'Models.CustomerVersionResponse': {
+        kind: 'response',
+        omittedColumns: [],
+        embedded: undefined,
+        computed: undefined,
+        narrowed: undefined,
+      },
+      'Models.CustomerHistoryEntryResponse': {
+        kind: 'response',
+        omittedColumns: [
+          'firstName',
+          'lastName',
+          'firstNameKana',
+          'lastNameKana',
+          'email',
+          'phoneNumber',
+          'alternativePhone',
+          'postalCode',
+          'prefecture',
+          'city',
+          'address',
+          'building',
+          'birthDate',
+          'gender',
+          'occupation',
+          'membershipTier',
+          'preferences',
+          'notes',
+          'internalNotes',
+          'tags',
+          'referredBy',
+          'referralCode',
+          'allowMarketing',
+          'allowSms',
+          'allowEmail',
+          'isActive',
+          'hairType',
+          'hairThickness',
+          'scalpCondition',
+          'customerStatus',
+        ],
+        embedded: undefined,
+        computed: ['changes'],
+        narrowed: undefined,
       },
     })
   })

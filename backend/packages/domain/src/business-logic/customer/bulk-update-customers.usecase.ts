@@ -52,6 +52,7 @@ export class BulkUpdateCustomersUseCase {
         id,
         changes: CustomerWriteMapper.fromUpdateRequest(updates),
       })),
+      actor.userId,
     )
     if (updated.type === 'error') {
       return updated

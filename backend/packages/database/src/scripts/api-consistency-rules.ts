@@ -194,6 +194,43 @@ const customerPreferencesOmittedColumns = [
 ]
 
 /** Customers and their preferences. */
+/**
+ * Columns of `customer_versions` that are the values of the ledger: the
+ * history leaves them out, and a version shows them.
+ */
+const customerLedgerColumns = [
+  'firstName',
+  'lastName',
+  'firstNameKana',
+  'lastNameKana',
+  'email',
+  'phoneNumber',
+  'alternativePhone',
+  'postalCode',
+  'prefecture',
+  'city',
+  'address',
+  'building',
+  'birthDate',
+  'gender',
+  'occupation',
+  'membershipTier',
+  'preferences',
+  'notes',
+  'internalNotes',
+  'tags',
+  'referredBy',
+  'referralCode',
+  'allowMarketing',
+  'allowSms',
+  'allowEmail',
+  'isActive',
+  'hairType',
+  'hairThickness',
+  'scalpCondition',
+  'customerStatus',
+]
+
 const customerRules: ModelRule[] = [
   {
     model: 'Models.CustomerResponse',
@@ -230,6 +267,21 @@ const customerRules: ModelRule[] = [
     table: 'customers',
     kind: 'update',
     omittedColumns: customerProfileManagedColumns,
+  },
+  {
+    model: 'Models.CustomerVersionResponse',
+    table: 'customerVersions',
+    kind: 'response',
+    omittedColumns: [],
+  },
+  {
+    model: 'Models.CustomerHistoryEntryResponse',
+    table: 'customerVersions',
+    kind: 'response',
+    // The history tells what changed from the version before, which it
+    // works out from the two versions.
+    computed: ['changes'],
+    omittedColumns: customerLedgerColumns,
   },
   {
     model: 'Models.CustomerPreferencesResponse',

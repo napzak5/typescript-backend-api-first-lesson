@@ -13,8 +13,9 @@
 | 好み設定の取得と更新（台帳の `GET` / `PATCH /{id}/preferences`、本人の `GET` / `PATCH /me/preferences`） | 実装済み |
 | [統計](#統計)（台帳の `GET /{id}/statistics`） | 実装済み |
 | [一括の操作](#一括の操作)（一括取得、一括登録、一括更新、一括削除） | 実装済み |
-| 復元、統合 | 未実装 |
-| 監査履歴、版、エクスポート、データ削除要請 | 未実装。保存するテーブルがない |
+| [変更履歴と版](#変更履歴と版)（台帳の `GET /{id}/history`、`GET /{id}/versions/{version}`）、[復元](#復元)（`POST /{id}/restore`） | 実装済み |
+| 統合 | 未実装 |
+| エクスポート、データ削除要請 | 未実装。保存するテーブルがない |
 
 未実装のオペレーションは `CustomerCrud` のもので、コントラクトには定義がありますが、サーバーは 404 を返します。
 
@@ -38,18 +39,20 @@
 | 一括取得、一括登録、一括更新 | `POST /api/v1/customers/batch/get`、`POST` / `PATCH /api/v1/customers/bulk` | `admin`、サロンの `owner` / `manager` / `staff`（[一括の操作](#一括の操作)） |
 | 一括削除 | `DELETE /api/v1/customers/bulk` | `admin`、サロンの `owner` / `manager` |
 | 統計 | `GET /api/v1/customers/{id}/statistics` | `admin`、クエリのサロンの `owner` / `manager` / `staff`（[統計](#統計)） |
+| 変更履歴、版 | `GET /api/v1/customers/{id}/history`、`GET /api/v1/customers/{id}/versions/{version}` | `admin`、サロンの `owner` / `manager`（[変更履歴と版](#変更履歴と版)） |
+| 復元 | `POST /api/v1/customers/{id}/restore` | `admin`、サロンの `owner` / `manager`（[復元](#復元)） |
 
 - すべてのオペレーションに認証が要ります。台帳は公開情報ではありません
 - 権限は操作者だけで決まります（`business-logic/customer/_shared/authorization.ts` の `mayHandleCustomers` と `mayDeleteCustomers`）。サロンのロールは、どのサロンのものでも同じ扱いです。統計だけは、クエリのサロンも問います（[統計](#統計)）
 - ロール `customer` のユーザーと、ロールに必要なレコードを持たないユーザー（範囲 `none`）は、台帳のどのオペレーションも 403 です。台帳のレスポンスはスタッフ専用の項目（`internalNotes` など）を含むので、顧客本人には、自分の顧客情報も台帳からは返しません。本人には[プロフィール](#顧客本人のプロフィール)を返します
-- 削除済みの顧客は、どのオペレーションからも見えません（404）。存在しない ID と区別しません
+- 削除済みの顧客は、変更履歴、版、復元を除いて、どのオペレーションからも見えません（404）。存在しない ID と区別しません
 - ID（パスの `id`、本文の `referredBy`、クエリの `cursor`）は、英字を大文字で書いても同じ ID です。レスポンスの `data` と `meta` の ID は小文字です
 
 ### 確認の順序
 
 1. アクセストークン（401）
 2. 権限（403）
-3. 顧客の `id` の形式（400。取得、更新、削除）
+3. 顧客の `id` の形式（400。取得、更新、削除、復元）
 4. クエリ（400。一覧）、リクエストの本文（400。登録、更新）
 5. リクエストだけで決まる規則（400）: 生年月日の範囲、紹介元が自分自身でないこと
 6. 保存されている行で決まること: 顧客の存在（404）、紹介元の存在（400）、メールアドレスと紹介コードの一意性（409）
@@ -133,6 +136,7 @@
 - 削除した顧客の[カルテとアレルギー](./medical-charts.md#削除された顧客)も、見えなくなります。行は残します
 - **終わっていない予約がある顧客は、削除できません**（409）。ステータスが `draft`、`pending`、`confirmed`、`in_progress` の予約で、どのサロンの予約でも同じです。先に、予約を完了、キャンセル、または削除します（[予約台帳](./bookings.md#予約が参照するものの削除)）。断ったときは、アカウントとの紐づけも、そのままです
 - 終わった予約（`completed`、`cancelled`、`no_show`）は、削除を妨げません。予約に保存されている顧客の ID は残り、予約の取得は、そのまま返します。削除した顧客を、新しい予約に指定することはできません（400）
+- 削除した顧客は、[復元](#復元)できます。削除も、[版](#変更履歴と版)を 1 つ残します
 
 ## 一括の操作
 
@@ -175,6 +179,51 @@
 - 一括更新と一括削除は、対象の顧客の行を **ID の順に** `FOR UPDATE` でロックしてから、紹介元や予約を確かめ、書き込みます。同じ顧客を含む 2 つの一括更新が、逆の順に顧客を並べて同時に届いても、ロックの順が同じなので、片方がもう片方を待ちます
 - 一括削除は、1 件の削除と同じく、ロックしたあとの文で終わっていない予約を探します。顧客の行を共有ロックして書いている途中の予約の作成を待ってから探すので、終わっていない予約が、削除した顧客を指すことはありません
 - 一括取得は、ロックを取らずに 1 つの文で読みます
+
+## 変更履歴と版
+
+顧客台帳に書くたびに、書いたあとの値を 1 つの版として `customer_versions` に残します。
+
+| オペレーション | ルート | 成功 |
+|---|---|---|
+| 変更履歴 | `GET /api/v1/customers/{id}/history`（クエリ `limit`、`cursor`） | 200。新しい版から順に、版の ID、顧客の ID、版の番号、操作、変更者、日時、変更内容 |
+| 版 | `GET /api/v1/customers/{id}/versions/{version}` | 200。その版の時点の台帳の 30 項目の値と、版の番号、操作、変更者、日時。`links` は `self` と `history` |
+
+- **版を作る書き込み**は、登録（`create`）、更新（`update`）、削除（`delete`）、[復元](#復元)（`restore`）です。一括の操作は、顧客ごとに 1 つの版を作ります。顧客本人のプロフィールの作成は `create`、台帳の顧客を引き継ぐ作成と、プロフィールの更新は `update` で、変更者は本人のアカウントです
+- **台帳の項目**は、登録の本文の 30 項目です（氏名、連絡先、住所、属性、会員ランク、好み、メモ、スタッフ向けのメモ、タグ、紹介、連絡の可否、有効、髪と頭皮の状態、ステータス）。予約やポイントが変える値（来店回数、ポイントなど）と、アカウントとの紐づけ（`userId`）は台帳の項目ではないので、版に入れません。それらが変わっても版はできません
+- 断った書き込み（400、404、409）は、版を作りません
+- 版の番号は、顧客ごとに 1 から数えます。欠けも重なりもありません。変更者（`changedBy`）は操作したユーザー、日時（`changedAt`）は書き込んだあとの顧客の `updatedAt` です
+- **版を記録する前からいた顧客**には、マイグレーションが、そのときの値を版 1（操作 `baseline`、変更者 null）として残しました。シードの顧客も同じです。変更者がないのは `baseline` だけです
+- **変更内容**（`changes`）は、`update` の版で、前の版と値が違う項目の一覧です（`field`、`oldValue`、`newValue`）。値は顧客のレスポンスと同じ表し方で、並びはレスポンスのプロパティの順です。値を変えない更新は、空の一覧です。ほかの操作の版と、前の版がない版は null です
+- **削除した顧客の履歴と版も読めます**（削除を確かめて復元するため）。404 は、顧客の行がないときだけです
+- 権限は削除と同じで、`admin` と、サロンの `owner`・`manager` です。`staff` と顧客は 403 です。権限は、ID とクエリを読む前に確かめます
+- ページは、`limit`（1〜100、既定 20）と `cursor`（前のページの `meta.nextCursor`。その顧客の版の ID）で進めます。ほかの一覧と同じく、前のページへは戻れません（`prevCursor` は null）。その顧客の版を指さない `cursor` は 400（`cursor` の `not_found`）です
+- 版の番号は 1〜2147483647 の整数です。ほかは 400 です（`version` の `invalid_format`、`too_small`、`too_big`）。その番号の版がないときは 404 です（`Version <番号> of customer <ID> was not found`）
+
+### 確認の順序（変更履歴と版）
+
+| オペレーション | 順序 |
+|---|---|
+| 変更履歴 | アクセストークン（401）→ 権限（403）→ 顧客の ID（400）→ クエリ（400）→ 顧客の存在（404）→ `cursor` が顧客の版を指すこと（400） |
+| 版 | 401 → 403 → 顧客の ID（400）→ 版の番号（400）→ 顧客の存在、版の存在（404） |
+
+### 書き込みと版
+
+- 版は、顧客を書くのと同じトランザクションで書きます。書き込みが断られるか失敗すれば、版も残りません
+- 次の番号は、顧客の行をロックした（新しい顧客は、行を作った）あとに決めます。同じ顧客への書き込みが同時に届いても、1 つずつ番号が付き、番号の順は書き込んだ順です。`(customerId, version)` は一意です
+- 書き込みの時刻は、ロックできたあとのデータベースの時計（`clock_timestamp()`）です。待ったほうの書き込みが、先に書いたように記録されることはないので、版の番号の順と日時の順は一致します
+- 変更履歴のページと件数は、1 つの読み取り専用のスナップショット（`REPEATABLE READ`）で読みます
+
+## 復元
+
+- 削除した顧客を台帳に戻します（`deletedAt` を null にする）。200 で、顧客を 1 件の取得と同じ形で返し、版 `restore` を残します
+- 権限は削除と同じで、`admin` と、サロンの `owner`・`manager` です
+- 削除していない顧客は 409（`operation-not-allowed`）、顧客の行がないときは 404 です
+- **削除のあとに、同じメールアドレスの顧客が登録されていれば 409**（`already-exists`）です。どちらかのメールアドレスを変えてから、復元します。紹介コードは、削除した顧客とも重ならないので、ぶつかりません
+- **アカウントとの紐づけは戻しません**。削除で外したアカウントの紐づけ（`users.customerId`）は null のままで、顧客の `userId` も null にします。本人がプロフィールを作ると、メールアドレスで顧客を引き継ぎます（[顧客本人のプロフィール](#顧客本人のプロフィール)）。削除のあとに本人が新しいプロフィールを作っていれば、そのプロフィールが同じメールアドレスを持つので、復元は 409 です
+- 好み設定、カルテ、アレルギーは、行が残っているので、復元すると、また見えます
+- 確認の順序: アクセストークン（401）→ 権限（403）→ ID（400）→ 顧客の存在（404）→ 削除していること（409）→ メールアドレスの重複（409）
+- 同時に届いた 2 つの復元は、顧客の行のロックで 1 つずつ処理し、1 つが 200、もう 1 つが 409 です
 
 ## 顧客本人のプロフィール
 
@@ -395,12 +444,14 @@
 | 同じ顧客を含む 2 つの一括更新が、顧客を逆の順に並べて同時に届く | どちらも 200。顧客を ID の順にロックするので、片方がもう片方を待つ |
 | 一括削除と、そのうち 1 人の予約の作成が同時に届く | 1 件の削除と同じ。作成が先なら、一括削除は 409 で、どの顧客も削除しない |
 | 一括更新と、そのうち 1 人の削除が同時に届く | 削除が先なら、一括更新は 404 で、どの顧客も更新しない |
+| 同じ顧客の更新が同時に届く | どれも 200。版には 1 つずつ番号が付き、最後の版が顧客の値と同じ（[書き込みと版](#書き込みと版)） |
+| 同じ顧客の復元が同時に届く | 1 件だけが 200 で、ほかは 409 |
 
 一意性は DB の一意インデックスが決めます。更新は、対象の行をロックしてから紹介元を確認し、書き込みます。プロフィールの作成は、アカウントの行、引き継ぐ顧客の行の順にロックしてから書き込みます。
 
 予約のステータスの操作と削除が回数を数え直すときも、顧客の行をロックします。台帳の更新は、リクエストが指定した項目だけを書くので、同時に届いても、更新した項目と数え直した回数の両方が残ります。
 
-顧客の削除は、1 つのトランザクションです。顧客の行を排他ロック（`FOR UPDATE`）してから、次の文で、その顧客の終わっていない予約を探し、なければ削除の印を付けて、アカウントとの紐づけを外します。予約の作成は、顧客の行を共有ロックして書くので、削除は、書いている途中の予約を待ってから探します。`deletedAt` と `updatedAt` は、ロックできたあとのデータベースの時計（`clock_timestamp()`）です（[予約台帳](./bookings.md#同時に届いたリクエスト)）。
+顧客の削除は、1 つのトランザクションです。顧客の行を排他ロック（`FOR UPDATE`）してから、次の文で、その顧客の終わっていない予約を探し、なければ削除の印を付けて、アカウントとの紐づけを外します。予約の作成は、顧客の行を共有ロックして書くので、削除は、書いている途中の予約を待ってから探します。`deletedAt` と `updatedAt` は、ロックできたあとのデータベースの時計（`clock_timestamp()`）です（[予約台帳](./bookings.md#同時に届いたリクエスト)）。更新、一括更新、プロフィールの作成と更新、復元の `updatedAt` も同じです。
 
 好み設定の更新は、顧客の行をロックして（`FOR UPDATE`）から、スタッフを確かめ、保存されている好み設定を読み、希望と回避の規則を確かめて、行を作るか書き換えます。同じ顧客への更新は、1 件ずつ処理されます。顧客の行をロックするので、台帳の更新や削除とも順番になります。スタッフの行はロックしません。取得は、ロックを待ちません。
 
@@ -441,6 +492,13 @@
 - 来店回数、無断キャンセル回数、キャンセル回数は 0 以上（CHECK 制約 `customers_counts_not_negative`）
 - 以前の行の 5 つの値は、マイグレーションが予約から数え直します。これまでは、シードだけが書いていた値で、予約と合っていませんでした
 
+マイグレーション `202611181800_customer_versions.sql` で、版のテーブル（`customer_versions`）と列挙型 `customer_version_operation`（`baseline`、`create`、`update`、`delete`、`restore`）を作り、いた顧客すべてに版 1（`baseline`）を残しました。
+
+- 台帳の 30 項目は、`customers` のカラムと同じ型と NULL 許可で、既定値はありません（`backend/packages/database/src/__tests__/customer-versions.test.ts` が、2 つのテーブルで一致していることを確かめます）。値は、書き込んだあとの顧客の行から写すので、`customers` の CHECK 制約を写していません。`referredBy` には外部キーを付けず、版は、その時点の紹介元を持ち続けます
+- `(customerId, version)` は一意（`customer_versions_customer_version_unique`）で、変更履歴は、その一意インデックスで新しい順に読みます。番号は 1 以上（`customer_versions_version_positive`）
+- 変更者がないのは `baseline` だけ（CHECK 制約 `customer_versions_changed_by_unless_baseline`）。`changedBy` は `users` への外部キーです。ユーザーは論理削除なので、行は消えません
+- `customerId` は `ON DELETE CASCADE` です。アプリは顧客の行を物理的に消しませんが、版にも個人情報があるので、顧客の行を消すときには、版も一緒に消えます
+
 ## 実装の場所
 
 | 層 | ファイル |
@@ -454,5 +512,7 @@
 | ドメイン（統計） | `backend/packages/domain/src/models/customer-statistics.ts`、`schemas/customer-statistics.schema.ts`（売上レポートの期間の規則を使う）、`repositories/customer-statistics.repository.ts`、`business-logic/customer-statistics/`（値の計算と並びは `_shared/statistics.ts`） |
 | インフラ（統計） | `backend/packages/infrastructure/src/repositories/customer-statistics.repository.impl.ts` |
 | ドメイン（一括の操作） | `backend/packages/domain/src/schemas/customer-bulk.schema.ts`、`business-logic/customer/` の `batch-get-customers.usecase.ts`、`bulk-*-customers.usecase.ts`（エラーの位置と、リクエストの順の扱いは `_shared/bulk.ts`）、`repositories/customer.repository.ts`（`findByIds`、`createMany`、`updateMany`、`deleteMany`） |
-| API | `backend/packages/api/src/routes/customer/`（一括の操作は `batch-get-customers.handler.ts`、`bulk-*-customers.handler.ts`。プロフィールは `*-customer-profile.handler.ts`）、`routes/customer-preferences/`（本人のものは `*-own-customer-preferences.handler.ts`）、`routes/customer-statistics/` |
-| DB | `backend/packages/database/sql/migrations/202611150900_customers_columns.sql`、`202611151500_customers_user_unique.sql`、`202611160100_customer_preferences_columns.sql`、`202611181400_customers_without_lifetime_value.sql` |
+| ドメイン（変更履歴と版、復元） | `backend/packages/domain/src/models/customer-version.ts`、`schemas/customer-version.schema.ts`、`mappers/read/customer-version.mapper.ts`（変更内容の計算）、`repositories/customer-version.repository.ts`、`business-logic/customer-version/`、`business-logic/customer/restore-customer.usecase.ts`、`repositories/customer.repository.ts`（`restore`。書き込むメソッドは、変更者を受け取る） |
+| インフラ（変更履歴と版、復元） | `backend/packages/infrastructure/src/repositories/customer-version.repository.impl.ts`、`customer.repository.impl.ts`（版を書く `recordVersions`、`restore`） |
+| API | `backend/packages/api/src/routes/customer/`（一括の操作は `batch-get-customers.handler.ts`、`bulk-*-customers.handler.ts`。プロフィールは `*-customer-profile.handler.ts`。復元は `restore-customer.handler.ts`）、`routes/customer-preferences/`（本人のものは `*-own-customer-preferences.handler.ts`）、`routes/customer-statistics/`、`routes/customer-version/`（変更履歴と版） |
+| DB | `backend/packages/database/sql/migrations/202611150900_customers_columns.sql`、`202611151500_customers_user_unique.sql`、`202611160100_customer_preferences_columns.sql`、`202611181400_customers_without_lifetime_value.sql`、`202611181800_customer_versions.sql` |

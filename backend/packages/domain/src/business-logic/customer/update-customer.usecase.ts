@@ -57,6 +57,7 @@ export class UpdateCustomerUseCase {
     const updated = await customerRepository.update(
       customerId.data,
       CustomerWriteMapper.fromUpdateRequest(request.data),
+      actor.userId,
     )
     if (updated.type === 'error') {
       return updated

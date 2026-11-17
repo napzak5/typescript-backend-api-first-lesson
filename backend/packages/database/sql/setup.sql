@@ -12,6 +12,7 @@ CREATE TYPE "public"."allergy_type" AS ENUM('chemical', 'fragrance', 'metal', 'l
 CREATE TYPE "public"."booking_requirement" AS ENUM('consultation_required', 'patch_test_required', 'advance_booking_required', 'deposit_required');
 CREATE TYPE "public"."booking_status" AS ENUM('draft', 'pending', 'confirmed', 'in_progress', 'completed', 'cancelled', 'no_show');
 CREATE TYPE "public"."customer_status" AS ENUM('active', 'inactive', 'vip', 'blacklisted');
+CREATE TYPE "public"."customer_version_operation" AS ENUM('baseline', 'create', 'update', 'delete', 'restore');
 CREATE TYPE "public"."day_of_week" AS ENUM('monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday');
 CREATE TYPE "public"."hair_thickness" AS ENUM('thin', 'medium', 'thick');
 CREATE TYPE "public"."hair_type" AS ENUM('straight', 'wavy', 'curly', 'coily');
@@ -168,6 +169,48 @@ CREATE TABLE "customer_preferences" (
 	CONSTRAINT "customer_preferences_preferred_staff_not_avoided" CHECK ("preferredStaffId" <> ALL ("avoidStaffIds")),
 	CONSTRAINT "customer_preferences_style_is_an_object" CHECK (jsonb_typeof("stylePreferences") = 'object'::text),
 	CONSTRAINT "customer_preferences_time_slots_is_an_array" CHECK (jsonb_typeof("preferredTimeSlots") = 'array'::text)
+);
+
+CREATE TABLE "customer_versions" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"customerId" uuid NOT NULL,
+	"version" integer NOT NULL,
+	"operation" "customer_version_operation" NOT NULL,
+	"changedBy" uuid,
+	"changedAt" timestamp with time zone DEFAULT now() NOT NULL,
+	"firstName" varchar(100) NOT NULL,
+	"lastName" varchar(100) NOT NULL,
+	"firstNameKana" varchar(100),
+	"lastNameKana" varchar(100),
+	"email" varchar(255) NOT NULL,
+	"phoneNumber" varchar(20) NOT NULL,
+	"alternativePhone" varchar(20),
+	"postalCode" varchar(10),
+	"prefecture" varchar(50),
+	"city" varchar(100),
+	"address" varchar(255),
+	"building" varchar(255),
+	"birthDate" date,
+	"gender" varchar(20),
+	"occupation" varchar(100),
+	"membershipTier" "membership_tier" NOT NULL,
+	"preferences" jsonb,
+	"notes" text,
+	"internalNotes" text,
+	"tags" text[] NOT NULL,
+	"referredBy" uuid,
+	"referralCode" varchar(50),
+	"allowMarketing" boolean NOT NULL,
+	"allowSms" boolean NOT NULL,
+	"allowEmail" boolean NOT NULL,
+	"isActive" boolean NOT NULL,
+	"hairType" "hair_type",
+	"hairThickness" "hair_thickness",
+	"scalpCondition" "scalp_condition",
+	"customerStatus" "customer_status" NOT NULL,
+	CONSTRAINT "customer_versions_customer_version_unique" UNIQUE("customerId","version"),
+	CONSTRAINT "customer_versions_changed_by_unless_baseline" CHECK ((operation = 'baseline'::customer_version_operation) = ("changedBy" IS NULL)),
+	CONSTRAINT "customer_versions_version_positive" CHECK (version > 0)
 );
 
 CREATE TABLE "customers" (
@@ -854,6 +897,8 @@ ALTER TABLE "customer_allergies" ADD CONSTRAINT "customer_allergies_customer_id_
 ALTER TABLE "customer_points" ADD CONSTRAINT "customer_points_customer_id_fk" FOREIGN KEY ("customerId") REFERENCES "public"."customers"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "customer_preferences" ADD CONSTRAINT "customer_preferences_customer_id_fk" FOREIGN KEY ("customerId") REFERENCES "public"."customers"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "customer_preferences" ADD CONSTRAINT "customer_preferences_staff_id_fk" FOREIGN KEY ("preferredStaffId") REFERENCES "public"."staff"("id") ON DELETE set null ON UPDATE no action;
+ALTER TABLE "customer_versions" ADD CONSTRAINT "customer_versions_changed_by_fk" FOREIGN KEY ("changedBy") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "customer_versions" ADD CONSTRAINT "customer_versions_customer_id_fk" FOREIGN KEY ("customerId") REFERENCES "public"."customers"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "customers" ADD CONSTRAINT "customers_referred_by_fk" FOREIGN KEY ("referredBy") REFERENCES "public"."customers"("id") ON DELETE set null ON UPDATE no action;
 ALTER TABLE "inventory" ADD CONSTRAINT "inventory_product_id_fk" FOREIGN KEY ("productId") REFERENCES "public"."products"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "inventory" ADD CONSTRAINT "inventory_salon_id_fk" FOREIGN KEY ("salonId") REFERENCES "public"."salons"("id") ON DELETE cascade ON UPDATE no action;

@@ -7,6 +7,7 @@ import {
   customerPoints,
   customerPreferences,
   customers,
+  customerVersions,
   inventory,
   inventoryAlertAcknowledgements,
   inventoryTransactions,
@@ -115,6 +116,20 @@ export const customerPreferencesRelations = relations(
   }),
 )
 
+export const customerVersionsRelations = relations(
+  customerVersions,
+  ({ one }) => ({
+    customer: one(customers, {
+      fields: [customerVersions.customerId],
+      references: [customers.id],
+    }),
+    user: one(users, {
+      fields: [customerVersions.changedBy],
+      references: [users.id],
+    }),
+  }),
+)
+
 export const customersRelations = relations(customers, ({ one, many }) => ({
   bookings: many(bookings),
   customer: one(customers, {
@@ -125,6 +140,7 @@ export const customersRelations = relations(customers, ({ one, many }) => ({
   customerAllergies: many(customerAllergies),
   customerPoints: many(customerPoints),
   customerPreferences: many(customerPreferences),
+  customerVersions: many(customerVersions),
   customers: many(customers, {
     relationName: 'customers_referredBy_customers_id',
   }),
@@ -480,6 +496,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
     fields: [users.customerId],
     references: [customers.id],
   }),
+  customerVersions: many(customerVersions),
   sessions: many(sessions),
   staff: one(staff, {
     fields: [users.staffId],

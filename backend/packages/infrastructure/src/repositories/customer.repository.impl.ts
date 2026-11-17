@@ -1,4 +1,9 @@
-import { bookings, customers, users } from '@beauty-salon-backend/database'
+import {
+  bookings,
+  customers,
+  customerVersions,
+  users,
+} from '@beauty-salon-backend/database'
 import {
   type CustomerBulkCreation,
   type CustomerBulkDeletion,
@@ -11,6 +16,7 @@ import {
   type CustomerListCriteria,
   type CustomerProfileCreation,
   type CustomerProfileWrite,
+  type CustomerRestoration,
   type CustomerUpdate,
   type DbCustomer,
   type DbCustomerChanges,
@@ -122,6 +128,76 @@ const toProfileError = (cause: unknown): DomainError =>
       ),
     )
 
+type NewVersion = typeof customerVersions.$inferInsert
+
+/** The values of the ledger a version keeps: every one of them, stated. */
+type LedgerValues = Required<
+  Omit<
+    NewVersion,
+    'id' | 'customerId' | 'version' | 'operation' | 'changedBy' | 'changedAt'
+  >
+>
+
+const ledgerValuesOf = (row: DbCustomer): LedgerValues => ({
+  firstName: row.firstName,
+  lastName: row.lastName,
+  firstNameKana: row.firstNameKana,
+  lastNameKana: row.lastNameKana,
+  email: row.email,
+  phoneNumber: row.phoneNumber,
+  alternativePhone: row.alternativePhone,
+  postalCode: row.postalCode,
+  prefecture: row.prefecture,
+  city: row.city,
+  address: row.address,
+  building: row.building,
+  birthDate: row.birthDate,
+  gender: row.gender,
+  occupation: row.occupation,
+  membershipTier: row.membershipTier,
+  preferences: row.preferences,
+  notes: row.notes,
+  internalNotes: row.internalNotes,
+  tags: row.tags,
+  referredBy: row.referredBy,
+  referralCode: row.referralCode,
+  allowMarketing: row.allowMarketing,
+  allowSms: row.allowSms,
+  allowEmail: row.allowEmail,
+  isActive: row.isActive,
+  hairType: row.hairType,
+  hairThickness: row.hairThickness,
+  scalpCondition: row.scalpCondition,
+  customerStatus: row.customerStatus,
+})
+
+/**
+ * Keeps the version that a write made of each of these customers: the
+ * values of the ledger in their rows after the write, at the time the
+ * write gave the row. The write holds the rows until it commits, so the
+ * number after the last version of each is not taken by another write.
+ */
+const recordVersions = async (
+  executor: DatabaseExecutor,
+  rows: readonly DbCustomer[],
+  operation: NewVersion['operation'],
+  changedBy: UserId,
+): Promise<void> => {
+  if (rows.length === 0) {
+    return
+  }
+  await executor.insert(customerVersions).values(
+    rows.map((row) => ({
+      customerId: row.id,
+      version: sql`(SELECT coalesce(max(${customerVersions.version}), 0) + 1 FROM ${customerVersions} WHERE ${customerVersions.customerId} = ${row.id})`,
+      operation,
+      changedBy,
+      changedAt: row.updatedAt,
+      ...ledgerValuesOf(row),
+    })),
+  )
+}
+
 /** What of a change no other customer may have; null where it does not change. */
 const uniqueValuesOf = (changes: DbCustomerChanges): UniqueValues => ({
   email: changes.email ?? null,
@@ -207,30 +283,31 @@ export class CustomerRepository implements ICustomerRepository {
 
   async create(
     customer: DbNewCustomer,
+    changedBy: UserId,
   ): Promise<Result<CustomerCreation, DomainError>> {
     const { email, referralCode, referredBy } = customer
 
     const created = await attemptWrite(
       'Failed to create customer',
       () => ({ email, referralCode }),
-      async (): Promise<CustomerCreation | null> => {
-        // A referrer who is deleted a moment later is a referrer all the
-        // same, so the two statements need no transaction.
-        if (
-          referredBy !== null &&
-          !(await referrerExists(this.db, referredBy))
-        ) {
-          return { type: 'referrerNotFound' }
-        }
-        const [inserted] = await this.db
-          .insert(customers)
-          .values(customer)
-          .returning()
+      () =>
+        this.db.transaction(async (tx): Promise<CustomerCreation | null> => {
+          // A referrer who is deleted a moment later is a referrer all the
+          // same: the referrer is not held.
+          if (referredBy !== null && !(await referrerExists(tx, referredBy))) {
+            return { type: 'referrerNotFound' }
+          }
+          const [inserted] = await tx
+            .insert(customers)
+            .values(customer)
+            .returning()
+          if (inserted === undefined) {
+            return null
+          }
+          await recordVersions(tx, [inserted], 'create', changedBy)
 
-        return inserted === undefined
-          ? null
-          : { type: 'created', customer: inserted }
-      },
+          return { type: 'created', customer: inserted }
+        }),
     )
 
     return Result.flatMap(created, (data) =>
@@ -339,6 +416,7 @@ export class CustomerRepository implements ICustomerRepository {
   async update(
     id: CustomerId,
     changes: DbCustomerChanges,
+    changedBy: UserId,
   ): Promise<Result<CustomerUpdate, DomainError>> {
     const { referredBy } = changes
 
@@ -367,18 +445,23 @@ export class CustomerRepository implements ICustomerRepository {
 
           const [updated] = await tx
             .update(customers)
-            .set({ ...changes, updatedAt: sql`now()` })
+            .set({ ...changes, updatedAt: CLOCK })
             .where(eq(customers.id, id))
             .returning()
+          if (updated === undefined) {
+            return { type: 'notFound' }
+          }
+          await recordVersions(tx, [updated], 'update', changedBy)
 
-          return updated === undefined
-            ? { type: 'notFound' }
-            : { type: 'updated', customer: updated }
+          return { type: 'updated', customer: updated }
         }),
     )
   }
 
-  async delete(id: CustomerId): Promise<Result<CustomerDeletion, DomainError>> {
+  async delete(
+    id: CustomerId,
+    changedBy: UserId,
+  ): Promise<Result<CustomerDeletion, DomainError>> {
     return attempt('Failed to delete customer', () =>
       this.db.transaction(
         async (tx): Promise<CustomerDeletion> => {
@@ -396,10 +479,12 @@ export class CustomerRepository implements ICustomerRepository {
             return { type: 'bookingsUnfinished' }
           }
 
-          await tx
+          const deleted = await tx
             .update(customers)
             .set({ deletedAt: CLOCK, updatedAt: CLOCK })
             .where(eq(customers.id, id))
+            .returning()
+          await recordVersions(tx, deleted, 'delete', changedBy)
           // The account is without a profile from now on and may create one.
           // The deleted row keeps naming the account it was the profile of.
           await tx
@@ -411,6 +496,53 @@ export class CustomerRepository implements ICustomerRepository {
         },
         { isolationLevel: 'read committed' },
       ),
+    )
+  }
+
+  async restore(
+    id: CustomerId,
+    changedBy: UserId,
+  ): Promise<Result<CustomerRestoration, DomainError>> {
+    // The email of the customer, for the error of a restore it is refused.
+    let restoring: UniqueValues = { email: null, referralCode: null }
+
+    return attemptWrite(
+      'Failed to restore customer',
+      () => restoring,
+      () =>
+        this.db.transaction(async (tx): Promise<CustomerRestoration> => {
+          // Of two restores of a customer, the second sees the first.
+          const [held] = await tx
+            .select({ email: customers.email, deletedAt: customers.deletedAt })
+            .from(customers)
+            .where(eq(customers.id, id))
+            .for('update')
+          if (held === undefined) {
+            return { type: 'notFound' }
+          }
+          if (held.deletedAt === null) {
+            return { type: 'notDeleted' }
+          }
+          // The referral code was never freed, so only the email can be
+          // taken.
+          restoring = { email: held.email, referralCode: null }
+
+          // The account the customer was the profile of is not linked
+          // again: it may have a profile of its own by now. It takes this
+          // customer by creating its profile, as it would any entry with
+          // its email.
+          const [restored] = await tx
+            .update(customers)
+            .set({ deletedAt: null, userId: null, updatedAt: CLOCK })
+            .where(eq(customers.id, id))
+            .returning()
+          if (restored === undefined) {
+            return { type: 'notFound' }
+          }
+          await recordVersions(tx, [restored], 'restore', changedBy)
+
+          return { type: 'restored', customer: restored }
+        }),
     )
   }
 
@@ -427,6 +559,7 @@ export class CustomerRepository implements ICustomerRepository {
 
   async createMany(
     rows: readonly DbNewCustomer[],
+    changedBy: UserId,
   ): Promise<Result<CustomerBulkCreation, DomainError>> {
     // The customer being written, for the error of a write that is refused.
     let writing: UniqueValues = { email: null, referralCode: null }
@@ -453,6 +586,7 @@ export class CustomerRepository implements ICustomerRepository {
               ...(await tx.insert(customers).values(row).returning()),
             )
           }
+          await recordVersions(tx, created, 'create', changedBy)
           return { type: 'created', customers: created }
         }),
     )
@@ -460,6 +594,7 @@ export class CustomerRepository implements ICustomerRepository {
 
   async updateMany(
     changes: readonly CustomerChange[],
+    changedBy: UserId,
   ): Promise<Result<CustomerBulkUpdate, DomainError>> {
     // The customer being written, for the error of a write that is refused.
     let writing: UniqueValues = { email: null, referralCode: null }
@@ -492,11 +627,12 @@ export class CustomerRepository implements ICustomerRepository {
             updated.push(
               ...(await tx
                 .update(customers)
-                .set({ ...change, updatedAt: sql`now()` })
+                .set({ ...change, updatedAt: CLOCK })
                 .where(eq(customers.id, id))
                 .returning()),
             )
           }
+          await recordVersions(tx, updated, 'update', changedBy)
           return { type: 'updated', customers: updated }
         }),
     )
@@ -504,6 +640,7 @@ export class CustomerRepository implements ICustomerRepository {
 
   async deleteMany(
     ids: readonly CustomerId[],
+    changedBy: UserId,
   ): Promise<Result<CustomerBulkDeletion, DomainError>> {
     return attempt('Failed to delete customers', () =>
       this.db.transaction(
@@ -519,10 +656,12 @@ export class CustomerRepository implements ICustomerRepository {
             return { type: 'bookingsUnfinished', customers: referred }
           }
 
-          await tx
+          const deleted = await tx
             .update(customers)
             .set({ deletedAt: CLOCK, updatedAt: CLOCK })
             .where(inArray(customers.id, [...ids]))
+            .returning()
+          await recordVersions(tx, deleted, 'delete', changedBy)
           await tx
             .update(users)
             .set({ customerId: null, updatedAt: CLOCK })
@@ -587,15 +726,21 @@ export class CustomerRepository implements ICustomerRepository {
                   .returning()
               : await tx
                   .update(customers)
-                  .set({ ...claim, userId, updatedAt: sql`now()` })
+                  .set({ ...claim, userId, updatedAt: CLOCK })
                   .where(eq(customers.id, entry.id))
                   .returning()
           if (profile === undefined) {
             return null
           }
+          await recordVersions(
+            tx,
+            [profile],
+            entry === undefined ? 'create' : 'update',
+            userId,
+          )
           await tx
             .update(users)
-            .set({ customerId: profile.id, updatedAt: sql`now()` })
+            .set({ customerId: profile.id, updatedAt: CLOCK })
             .where(eq(users.id, userId))
 
           return { type: 'created', customer: profile }

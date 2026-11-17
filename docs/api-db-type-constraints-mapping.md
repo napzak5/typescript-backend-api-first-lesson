@@ -420,7 +420,7 @@ const salonRules: ModelRule[] = [
 | `table` | `schema.ts` でのテーブルの export 名（`salons`、`openingHours`） |
 | `kind` | `response` / `create`（全プロパティ必須）、`update`（全プロパティ Optional） |
 | `embedded` | カラムではないプロパティ（子テーブルの行を埋め込んだもの）。カラムとの照合を省く |
-| `computed` | カラムではないプロパティ（サーバーがレスポンスのたびに求め、どこにも保存しない値）。カラムとの照合を省く。`SessionResponse` の `current` に使っている |
+| `computed` | カラムではないプロパティ（サーバーがレスポンスのたびに求め、どこにも保存しない値）。カラムとの照合を省く。`SessionResponse` の `current` と、`CustomerHistoryEntryResponse` の `changes`（前の版との違い）に使っている |
 | `omittedColumns` | モデルが意図して含めないカラム。それ以外のカラムがモデルにない場合は報告される。テーブルにない名前を挙げた場合も報告される。すべてのルールが指定する（テストで確認している） |
 | `nonNullable` | カラムが NULL を許すのに、モデルでは null を取らないプロパティ。カラムが null になるのが、リクエストが書いたあとだけのときに使う。`PurchaseOrderItemCreateRequest` の `inventoryId` に使っている（新しい明細は在庫の行を必ず指し、カラムが null になるのは、行を削除したとき（`ON DELETE SET NULL`）だけ） |
 | `narrowed` | カラムの Enum 型の値の一部だけを取るプロパティ。値が、カラムの Enum の値の一部であり、すべてではないことを確かめる。`StaffAccountResponse` と `StaffAccountUpdateRequest` の `role` に使っている（カラムは `user_role`、プロパティは `SalonRoleType`）。値の範囲を DB でも限る CHECK 制約と、組で使う |
@@ -459,7 +459,7 @@ const salonRules: ModelRule[] = [
 | `XXXResponse`、`XXXCreateRequest`、`XXXUpdateRequest` | 載せる（`response` / `create` / `update`） |
 | 親に埋め込む子テーブルの行（`OpeningHours`、`ServiceOption`、`BookingServiceResponse` など） | 載せる。親のルールでは `embedded` にプロパティ名を書く |
 | jsonb の列に、その形のまま保存するオブジェクト（カルテの `previousTreatments` の要素の `PreviousTreatment`） | 載せない（プロパティの内側にネストしたオブジェクト）。列が配列であることは CHECK 制約が、要素の形は、書くときにリクエストのスキーマが、読むときに読み取りのマッパーが確かめる |
-| テーブルの行に、サーバーがレスポンスのたびに求める値を加えたモデル（`SessionResponse` の `current`） | 載せる。ルールの `computed` にそのプロパティ名を書く |
+| テーブルの行に、サーバーがレスポンスのたびに求める値を加えたモデル（`SessionResponse` の `current`、`CustomerHistoryEntryResponse` の `changes`） | 載せる。ルールの `computed` にそのプロパティ名を書く |
 | テーブルの行の一部だけを見せ、書かせるモデル（`StaffProfileResponse`、`StaffProfileUpdateRequest`、`StaffAccountResponse`、`StaffAccountUpdateRequest`、`CustomerPreferencesResponse`、`CustomerPreferencesUpdateRequest`、`CustomerBookingResponse`、`CustomerBookingServiceResponse`） | 載せる。見せないカラム、書かせないカラムを `omittedColumns` に挙げる。Enum の値の一部だけを取るプロパティは、`narrowed` にも挙げる |
 | 行を追加するアクションのリクエスト（`PointEarnRequest`、`SaleProcessRequest` など） | カラムと 1 対 1 なら `create` として載せる |
 | `XXXSearchRequest` | 載せない |
@@ -479,7 +479,7 @@ const salonRules: ModelRule[] = [
 | 機能 | TypeSpec |
 |---|---|
 | 添付ファイル、共有リンク | `specs/models/attachment.tsp` |
-| 顧客の監査履歴・版、エクスポートジョブ、データ削除リクエスト | `specs/models/customer.tsp` の `CustomerAuditEntry*`、`CustomerExport*`、`CustomerDataDeletion*` |
+| 顧客のエクスポートジョブ、データ削除リクエスト | `specs/models/customer.tsp` の `CustomerExport*`、`CustomerDataDeletion*` |
 
 ### ドメインを実装するとき
 

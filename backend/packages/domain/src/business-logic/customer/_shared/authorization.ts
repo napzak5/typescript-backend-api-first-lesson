@@ -16,7 +16,11 @@ export const mayHandleCustomers = (actor: Actor): boolean =>
     .with({ type: 'customer' }, { type: 'none' }, () => false)
     .exhaustive()
 
-/** Administrators, and the owner and the managers of any salon. */
+/**
+ * Administrators, and the owner and the managers of any salon. Those who
+ * may delete a customer also restore one, and read the history of what
+ * was written of a customer and by whom.
+ */
 export const mayDeleteCustomers = (actor: Actor): boolean =>
   match(actor.scope)
     .with(

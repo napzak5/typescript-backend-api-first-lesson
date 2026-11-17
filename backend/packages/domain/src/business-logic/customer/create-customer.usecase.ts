@@ -41,6 +41,7 @@ export class CreateCustomerUseCase {
 
     const created = await customerRepository.create(
       CustomerWriteMapper.fromCreateRequest(request.data),
+      actor.userId,
     )
     if (created.type === 'error') {
       return created

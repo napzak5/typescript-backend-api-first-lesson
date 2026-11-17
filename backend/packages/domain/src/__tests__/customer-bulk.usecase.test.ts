@@ -14,7 +14,7 @@ import type {
   ICustomerRepository,
 } from '../repositories/customer.repository'
 import { type DomainError, DomainErrors } from '../shared'
-import { actors, CUSTOMER_ID } from './auth-fixtures'
+import { actors, CUSTOMER_ID, USER_ID } from './auth-fixtures'
 import {
   apiCustomer,
   customerCreateRequest,
@@ -283,6 +283,7 @@ describe('BulkCreateCustomersUseCase', () => {
             referredBy: REFERRER_ID,
           }),
         ],
+        USER_ID,
       ],
     ])
   })
@@ -450,6 +451,7 @@ describe('BulkUpdateCustomersUseCase', () => {
             changes: { email: 'new@example.com', referredBy: REFERRER_ID },
           },
         ],
+        USER_ID,
       ],
     ])
   })
@@ -618,7 +620,7 @@ describe('BulkDeleteCustomersUseCase', () => {
 
     expect(result).toEqual(Result.success({ deleted: [THIRD_ID, CUSTOMER_ID] }))
     expect(callsOf(dependencies.customerRepository, 'deleteMany')).toEqual([
-      [[THIRD_ID, CUSTOMER_ID]],
+      [[THIRD_ID, CUSTOMER_ID], USER_ID],
     ])
   })
 
