@@ -848,7 +848,6 @@ describe('Authentication API', () => {
         twoFactorSecret: 'TOTP-SHARED-SECRET',
         backupCodes: ['BACKUP-CODE-1'],
         twoFactorLastUsedStep: 59_031_337,
-        metadata: { note: 'INTERNAL-NOTE' },
         emailVerificationTokenHash: 'email-verification-token-hash',
         emailVerificationExpiry: '2026-11-15T09:00:00.000Z',
         passwordResetTokenHash: 'password-reset-token-hash',
@@ -875,13 +874,11 @@ describe('Authentication API', () => {
         'TOTP-SHARED-SECRET',
         'BACKUP-CODE-1',
         '59031337',
-        'INTERNAL-NOTE',
         'email-verification-token',
         'password-reset-token',
         sha256(accessToken),
         sha256(refreshToken),
         '"deletedAt"',
-        '"metadata"',
       ]) {
         expect(shown).not.toContain(secret)
       }

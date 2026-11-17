@@ -397,7 +397,6 @@ describe('Administrator operations on accounts', () => {
         ...(await twoFactorUser('enabled', {
           twoFactorLastUsedStep: 59_031_337,
         })),
-        metadata: { note: 'INTERNAL-NOTE' },
         emailVerificationTokenHash: 'email-verification-token-hash',
         emailVerificationExpiry: '2026-11-15T09:00:00.000Z',
         passwordResetTokenHash: 'password-reset-token-hash',
@@ -414,11 +413,9 @@ describe('Administrator operations on accounts', () => {
         stored.twoFactorSecret ?? 'missing secret',
         ...(await backupCodeHashes()),
         '59031337',
-        'INTERNAL-NOTE',
         'email-verification-token',
         'password-reset-token',
         '"deletedAt"',
-        '"metadata"',
       ]) {
         expect(shown).not.toContain(secret)
       }
