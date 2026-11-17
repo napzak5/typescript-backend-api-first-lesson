@@ -21,7 +21,7 @@ import {
 } from '@beauty-salon-backend/domain'
 import { TreatmentRecordRepository } from '@beauty-salon-backend/infrastructure'
 import type { Result } from '@beauty-salon-backend/utility'
-import { asc, eq } from 'drizzle-orm'
+import { asc, eq, sql } from 'drizzle-orm'
 import type { Express } from 'express'
 import type { Response, Test } from 'supertest'
 import { beforeEach, describe, expect, it } from 'vitest'
@@ -1097,6 +1097,14 @@ describe('Treatment record API', () => {
       })
       expect(ids(next)).toEqual([first])
       expect(next.body.meta).toMatchObject({ hasMore: false, nextCursor: null })
+      // A page that holds every record that is left is the last one.
+      const whole = await list({ limit: 3 })
+      expect(ids(whole)).toEqual([third, second, first])
+      expect(whole.body.meta).toMatchObject({
+        total: 3,
+        hasMore: false,
+        nextCursor: null,
+      })
     })
 
     it('orders the records of one moment by their IDs, downwards, across pages', async () => {
@@ -1672,6 +1680,45 @@ describe('Treatment record API', () => {
       expect(answeredWhileHeld).toBe(false)
       expectProblem(response, notAllowed)
       expect(response.body.detail).toBe(notTreated('cancelled'))
+    })
+
+    it('makes a creation wait for a completion of the booking in progress, and writes the record when the wait is over', async () => {
+      const bookingId = await insertBooking()
+
+      const { pending, answeredWhileHeld, heldAt } = await db.transaction(
+        async (tx) => {
+          await tx
+            .select({ id: bookings.id })
+            .from(bookings)
+            .where(eq(bookings.id, bookingId))
+            .for('update')
+          const [completed] = await tx
+            .update(bookings)
+            .set({ status: 'completed', completedAt: at('02:00') })
+            .where(eq(bookings.id, bookingId))
+            .returning({ at: sql<string>`clock_timestamp()::text` })
+          const underWay = create(recordOf(bookingId)).then(
+            (response) => response,
+          )
+
+          return {
+            pending: underWay,
+            answeredWhileHeld: await answersWithin(underWay, 300),
+            heldAt: new Date(completed?.at ?? '').getTime(),
+          }
+        },
+      )
+      const response = await pending
+
+      expect(answeredWhileHeld).toBe(false)
+      expect(response.status).toBe(201)
+      // Written when the wait was over, not when the creation began.
+      expect(
+        new Date(response.body.data.createdAt).getTime() - heldAt,
+      ).toBeGreaterThanOrEqual(300)
+      expect(
+        new Date(response.body.data.updatedAt).getTime() - heldAt,
+      ).toBeGreaterThanOrEqual(300)
     })
 
     /** Holds a row as its removal does, and marks it deleted. */
