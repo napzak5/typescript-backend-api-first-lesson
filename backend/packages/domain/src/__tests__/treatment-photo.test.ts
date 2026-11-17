@@ -342,7 +342,7 @@ describe('TreatmentRecordWriteMapper.fromPhotoBulkCreateRequest', () => {
   it('writes every column of each photo as the request names it, in its order', () => {
     const request = treatmentPhotoBulkCreateRequestSchema.parse(
       additionOf(
-        { photoType: 'before', isPublic: false, customerConsent: false },
+        { photoType: 'before', isPublic: false, customerConsent: true },
         { angle: null, description: null, thumbnailUrl: null },
       ),
     )
@@ -357,7 +357,7 @@ describe('TreatmentRecordWriteMapper.fromPhotoBulkCreateRequest', () => {
         angle: 'side',
         description: '毛先まで色が入った',
         isPublic: false,
-        customerConsent: false,
+        customerConsent: true,
         sortOrder: 0,
       },
       {
