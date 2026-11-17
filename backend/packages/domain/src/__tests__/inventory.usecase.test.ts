@@ -158,7 +158,7 @@ describe('ListInventoryUseCase', () => {
     })
   })
 
-  it('names the last row as the cursor of the next page when more follow', async () => {
+  it('names the cursor it was given, and the last row as the cursor of the next page when more follow', async () => {
     const dependencies = inventoryDependencies({
       list: vi.fn(async () =>
         Result.success({
@@ -169,11 +169,22 @@ describe('ListInventoryUseCase', () => {
       ),
     })
 
-    const result = await list(dependencies, owner, query({ limit: 2 }))
+    const result = await list(
+      dependencies,
+      owner,
+      query({ limit: 2, cursor: INVENTORY_ID }),
+    )
 
     expect(result).toMatchObject({
       type: 'success',
-      data: { meta: { hasMore: true, nextCursor: OTHER_INVENTORY_ID } },
+      data: {
+        meta: {
+          limit: 2,
+          hasMore: true,
+          cursor: INVENTORY_ID,
+          nextCursor: OTHER_INVENTORY_ID,
+        },
+      },
     })
   })
 
