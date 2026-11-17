@@ -144,7 +144,7 @@ curl http://localhost:3000/api/v1/salons      # サロン一覧（認証なし�
 [サービスメニュー](./service-menu.md) を、顧客台帳、顧客本人のプロフィール、好み設定の規則は
 [顧客台帳](./customers.md) を、スタッフ台帳の規則は [スタッフ台帳](./staff.md) を、予約台帳の規則は
 [予約台帳](./bookings.md) を、売上台帳の規則は [売上台帳](./sales.md) を、支払い方法と支払いの規則は
-[支払い](./payments.md) を、商品の規則は [商品](./products.md) を、在庫の規則は [在庫](./inventory.md) を、発注の規則は [発注](./purchase-orders.md) を、在庫のアラートの規則は [在庫のアラート](./inventory-alerts.md) を、売上レポートの規則は [売上レポート](./sales-reports.md) を、ポイント台帳の規則は
+[支払い](./payments.md) を、商品の規則は [商品](./products.md) を、在庫の規則は [在庫](./inventory.md) を、発注の規則は [発注](./purchase-orders.md) を、在庫のアラートの規則は [在庫のアラート](./inventory-alerts.md) を、施術記録の規則は [施術記録](./treatments.md) を、売上レポートの規則は [売上レポート](./sales-reports.md) を、ポイント台帳の規則は
 [ポイント台帳](./points.md) を、レビューの規則は [レビュー](./reviews.md) を参照してください。
 
 ユーザー登録やパスワードの再設定で送られるメールは Mailpit（`http://localhost:8025`）に届きます。
