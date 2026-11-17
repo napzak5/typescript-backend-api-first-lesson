@@ -19,6 +19,7 @@ CREATE TYPE "public"."inventory_transaction_type" AS ENUM('purchase', 'sale', 'u
 CREATE TYPE "public"."membership_tier" AS ENUM('regular', 'silver', 'gold', 'platinum', 'vip');
 CREATE TYPE "public"."notification_channel" AS ENUM('email', 'sms', 'push', 'line');
 CREATE TYPE "public"."notification_type" AS ENUM('booking_reminder', 'booking_confirmation', 'booking_change', 'promotion', 'birthday', 'points_expiry', 'review_request');
+CREATE TYPE "public"."order_status" AS ENUM('draft', 'pending', 'approved', 'ordered', 'shipped', 'delivered', 'cancelled');
 CREATE TYPE "public"."payment_method" AS ENUM('cash', 'credit_card', 'debit_card', 'e_money', 'qr_payment', 'bank_transfer', 'point');
 CREATE TYPE "public"."payment_status" AS ENUM('pending', 'processing', 'completed', 'failed', 'refunded', 'partial_refund');
 CREATE TYPE "public"."point_transaction_type" AS ENUM('earned', 'used', 'expired', 'adjusted', 'transferred');
@@ -433,6 +434,53 @@ CREATE TABLE "products" (
 	CONSTRAINT "products_lead_time_not_negative" CHECK (("leadTimeDays" IS NULL) OR ("leadTimeDays" >= 0)),
 	CONSTRAINT "products_prices_not_negative" CHECK ((("purchasePrice" IS NULL) OR ("purchasePrice" >= 0)) AND (("retailPrice" IS NULL) OR ("retailPrice" >= 0)) AND (("salonPrice" IS NULL) OR ("salonPrice" >= 0))),
 	CONSTRAINT "products_stock_levels" CHECK (("minimumStock" >= (0)::numeric) AND (("reorderPoint" IS NULL) OR ("reorderPoint" >= "minimumStock")) AND (("maximumStock" IS NULL) OR ("maximumStock" >= "minimumStock")) AND (("reorderPoint" IS NULL) OR ("maximumStock" IS NULL) OR ("reorderPoint" <= "maximumStock")))
+);
+
+CREATE TABLE "purchase_order_items" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"purchaseOrderId" uuid NOT NULL,
+	"inventoryId" uuid,
+	"productCode" varchar(100) NOT NULL,
+	"productName" varchar(255) NOT NULL,
+	"quantity" numeric(10, 2) NOT NULL,
+	"unit" varchar(20) NOT NULL,
+	"unitPrice" integer NOT NULL,
+	"totalPrice" integer NOT NULL,
+	"notes" text,
+	"sortOrder" integer NOT NULL,
+	CONSTRAINT "purchase_order_items_order_inventory_unique" UNIQUE("purchaseOrderId","inventoryId"),
+	CONSTRAINT "purchase_order_items_order_sort_unique" UNIQUE("purchaseOrderId","sortOrder"),
+	CONSTRAINT "purchase_order_items_amounts" CHECK ((quantity > (0)::numeric) AND ("unitPrice" >= 0) AND ("sortOrder" >= 0) AND (("totalPrice")::numeric = round((("unitPrice")::numeric * quantity))))
+);
+
+CREATE TABLE "purchase_orders" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"salonId" uuid NOT NULL,
+	"orderNumber" varchar(50) NOT NULL,
+	"supplier" varchar(255) NOT NULL,
+	"status" "order_status" DEFAULT 'draft' NOT NULL,
+	"subtotal" integer NOT NULL,
+	"taxAmount" integer NOT NULL,
+	"shippingCost" integer,
+	"totalAmount" integer NOT NULL,
+	"orderDate" timestamp with time zone DEFAULT now() NOT NULL,
+	"expectedDelivery" timestamp with time zone,
+	"actualDelivery" timestamp with time zone,
+	"deliveryNotes" text,
+	"paymentTerms" text,
+	"notes" text,
+	"approvedBy" uuid,
+	"approvedAt" timestamp with time zone,
+	"cancelledAt" timestamp with time zone,
+	"cancellationReason" text,
+	"createdBy" uuid,
+	"createdAt" timestamp with time zone DEFAULT now() NOT NULL,
+	"updatedAt" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "purchase_orders_order_number_unique" UNIQUE("orderNumber"),
+	CONSTRAINT "purchase_orders_amounts" CHECK ((subtotal >= 0) AND ("taxAmount" >= 0) AND (("shippingCost" IS NULL) OR ("shippingCost" >= 0)) AND (("totalAmount")::bigint = (((subtotal)::bigint + ("taxAmount")::bigint) + (COALESCE("shippingCost", 0))::bigint))),
+	CONSTRAINT "purchase_orders_approval" CHECK ((("approvedBy" IS NULL) OR ("approvedAt" IS NOT NULL)) AND ((status <> ALL (ARRAY['draft'::order_status, 'pending'::order_status])) OR ("approvedAt" IS NULL)) AND ((status <> ALL (ARRAY['approved'::order_status, 'ordered'::order_status, 'shipped'::order_status, 'delivered'::order_status])) OR ("approvedAt" IS NOT NULL))),
+	CONSTRAINT "purchase_orders_cancellation" CHECK (((status = 'cancelled'::order_status) = ("cancelledAt" IS NOT NULL)) AND (("cancelledAt" IS NULL) = ("cancellationReason" IS NULL))),
+	CONSTRAINT "purchase_orders_delivery" CHECK ((status = 'delivered'::order_status) = ("actualDelivery" IS NOT NULL))
 );
 
 CREATE TABLE "review_helpful_votes" (
@@ -897,6 +945,9 @@ ALTER TABLE "payment_methods" ADD CONSTRAINT "payment_methods_salon_id_fk" FOREI
 ALTER TABLE "payment_transactions" ADD CONSTRAINT "payment_transactions_payment_method_id_fk" FOREIGN KEY ("paymentMethodId") REFERENCES "public"."payment_methods"("id") ON DELETE restrict ON UPDATE no action;
 ALTER TABLE "payment_transactions" ADD CONSTRAINT "payment_transactions_sale_id_fk" FOREIGN KEY ("saleId") REFERENCES "public"."sales"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "products" ADD CONSTRAINT "products_salon_id_fk" FOREIGN KEY ("salonId") REFERENCES "public"."salons"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "purchase_order_items" ADD CONSTRAINT "purchase_order_items_inventory_id_fk" FOREIGN KEY ("inventoryId") REFERENCES "public"."inventory"("id") ON DELETE set null ON UPDATE no action;
+ALTER TABLE "purchase_order_items" ADD CONSTRAINT "purchase_order_items_purchase_order_id_fk" FOREIGN KEY ("purchaseOrderId") REFERENCES "public"."purchase_orders"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "purchase_orders" ADD CONSTRAINT "purchase_orders_salon_id_fk" FOREIGN KEY ("salonId") REFERENCES "public"."salons"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "review_helpful_votes" ADD CONSTRAINT "review_helpful_votes_customer_id_fk" FOREIGN KEY ("customerId") REFERENCES "public"."customers"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "review_helpful_votes" ADD CONSTRAINT "review_helpful_votes_review_id_fk" FOREIGN KEY ("reviewId") REFERENCES "public"."reviews"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "review_reports" ADD CONSTRAINT "review_reports_review_id_fk" FOREIGN KEY ("reviewId") REFERENCES "public"."reviews"("id") ON DELETE cascade ON UPDATE no action;
@@ -983,6 +1034,8 @@ CREATE INDEX "idx_products_deleted_at" ON "products" USING btree ("deletedAt" ti
 CREATE INDEX "idx_products_product_code" ON "products" USING btree ("productCode" text_ops);
 CREATE INDEX "idx_products_salon_id" ON "products" USING btree ("salonId" uuid_ops);
 CREATE UNIQUE INDEX "products_code_salon_unique" ON "products" USING btree ("salonId" uuid_ops,"productCode" text_ops) WHERE ("deletedAt" IS NULL);
+CREATE INDEX "idx_purchase_order_items_inventory_id" ON "purchase_order_items" USING btree ("inventoryId" uuid_ops);
+CREATE INDEX "idx_purchase_orders_salon_order_date" ON "purchase_orders" USING btree ("salonId" uuid_ops,"orderDate" timestamptz_ops,"id" uuid_ops);
 CREATE INDEX "idx_review_reports_created_at" ON "review_reports" USING btree ("createdAt" timestamptz_ops,"id" uuid_ops);
 CREATE INDEX "idx_reviews_booking_id" ON "reviews" USING btree ("bookingId" uuid_ops);
 CREATE INDEX "idx_reviews_customer_id" ON "reviews" USING btree ("customerId" uuid_ops);

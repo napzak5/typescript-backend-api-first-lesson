@@ -244,7 +244,7 @@ namespace BeautySalon.Operations {
   @tag("Purchase Orders")
   namespace PurchaseOrderOperations {
     interface PurchaseOrderCrud {
-      @doc("絞り込み条件とページネーションを指定して仕入れ発注を一覧取得します。")
+      @doc("絞り込み条件とページネーションを指定して仕入れ発注を一覧取得します。発注日(orderDate)の新しい順、同じ日時ならIDの順に並べます。管理者と、サロンのオーナー・マネージャー・スタッフ(所属サロンの発注)が使えます。ほかのサロンのsalonIdを指定した場合は403を、cursorが一覧できる発注を指していない場合や、endDateがstartDateより前の場合は400を返します。")
       @summary("List purchase orders")
       @get
       list(...PurchaseOrderSearchRequest):
@@ -255,7 +255,7 @@ namespace BeautySalon.Operations {
         | ProblemResponse<400>
         | CommonErrors;
 
-      @doc("仕入れ発注を draft のステータスで作成します。salonIdのサロンが存在しない場合や、明細のinventoryIdにsalonIdのサロンの在庫ではないIDを指定した場合は400を返します。")
+      @doc("仕入れ発注を draft のステータスで作成します。発注番号を採番し、明細の商品コード・商品名・単位を在庫の商品から写し、金額を計算します。作成したスタッフを createdBy に記録します(管理者は null)。管理者と、salonIdのサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンのsalonIdを指定した場合は403を、salonIdのサロンが存在しない場合や、明細のinventoryIdにsalonIdのサロンの在庫ではないIDを指定した場合、同じ在庫を2回指定した場合、明細の金額・小計・合計金額が2147483647円を超える場合は400を返します。")
       @summary("Create a purchase order")
       @post
       create(@body request: PurchaseOrderCreateRequest):
@@ -268,7 +268,7 @@ namespace BeautySalon.Operations {
         | RequestBodyErrors
         | CommonErrors;
 
-      @doc("IDを指定して仕入れ発注を1件取得します。")
+      @doc("IDを指定して仕入れ発注を1件取得します。管理者と、発注のサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンの発注は、存在しない発注と同じく404を返します。")
       @summary("Get a purchase order")
       @get
       get(@path id: OrderId):
@@ -280,7 +280,7 @@ namespace BeautySalon.Operations {
         | ProblemResponse<404>
         | CommonErrors;
 
-      @doc("仕入れ発注の指定した項目だけを更新します。statusで許可されていない遷移を指定した場合や、delivered・cancelledの発注を更新しようとした場合は409を返します。")
+      @doc("仕入れ発注の指定した項目だけを更新します。statusで変えられるのは draft→pending、approved→ordered、ordered→shipped です。管理者と、発注のサロンのオーナー・マネージャー・スタッフが使えます。ほかのサロンの発注は404を、statusで許可されていない遷移を指定した場合や、delivered・cancelledの発注を更新しようとした場合は409を返します。")
       @summary("Update a purchase order")
       @patch
       update(@path id: OrderId, @body request: PurchaseOrderUpdateRequest):
@@ -294,11 +294,11 @@ namespace BeautySalon.Operations {
         | RequestBodyErrors
         | CommonErrors;
 
-      @doc("承認待ち(pending)の仕入れ発注を承認し、ステータスを approved にします。approvedByのスタッフが存在しない場合は400を、発注が pending でない場合は409を返します。")
+      @doc("承認待ち(pending)の仕入れ発注を承認し、ステータスを approved にします。承認したスタッフを approvedBy に(管理者は null)、承認した日時を approvedAt に記録します。管理者と、発注のサロンのオーナー・マネージャーが使えます。スタッフは403を、ほかのサロンの発注は404を、発注が pending でない場合は409を返します。本文は読みません。")
       @summary("Approve a purchase order")
       @route("/{id}/approve")
       @post
-      approve(@path id: OrderId, @body request: PurchaseOrderApproveRequest):
+      approve(@path id: OrderId):
         | {
             @statusCode statusCode: 200;
             @body response: ApiResponse<PurchaseOrderResponse>;
@@ -306,10 +306,9 @@ namespace BeautySalon.Operations {
         | ProblemResponse<400>
         | ProblemResponse<404>
         | ProblemResponse<409>
-        | RequestBodyErrors
         | CommonErrors;
 
-      @doc("仕入れ発注をキャンセルし、ステータスを cancelled にします。発注が delivered または cancelled の場合は409を返します。")
+      @doc("仕入れ発注をキャンセルし、ステータスを cancelled にします。キャンセルした日時を cancelledAt に、本文の理由を cancellationReason に記録します。管理者と、発注のサロンのオーナー・マネージャーが使えます。スタッフは403を、ほかのサロンの発注は404を、発注が delivered または cancelled の場合は409を返します。")
       @summary("Cancel a purchase order")
       @route("/{id}/cancel")
       @post

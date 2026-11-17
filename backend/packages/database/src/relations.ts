@@ -15,6 +15,8 @@ import {
   paymentMethods,
   paymentTransactions,
   products,
+  purchaseOrderItems,
+  purchaseOrders,
   reviewHelpfulVotes,
   reviewReports,
   reviews,
@@ -148,6 +150,7 @@ export const inventoryRelations = relations(inventory, ({ one, many }) => ({
     fields: [inventory.productId],
     references: [products.id],
   }),
+  purchaseOrderItems: many(purchaseOrderItems),
   salon: one(salons, {
     fields: [inventory.salonId],
     references: [salons.id],
@@ -223,6 +226,31 @@ export const productsRelations = relations(products, ({ one, many }) => ({
   }),
   treatmentMaterials: many(treatmentMaterials),
 }))
+
+export const purchaseOrderItemsRelations = relations(
+  purchaseOrderItems,
+  ({ one }) => ({
+    inventory: one(inventory, {
+      fields: [purchaseOrderItems.inventoryId],
+      references: [inventory.id],
+    }),
+    purchaseOrder: one(purchaseOrders, {
+      fields: [purchaseOrderItems.purchaseOrderId],
+      references: [purchaseOrders.id],
+    }),
+  }),
+)
+
+export const purchaseOrdersRelations = relations(
+  purchaseOrders,
+  ({ one, many }) => ({
+    purchaseOrderItems: many(purchaseOrderItems),
+    salon: one(salons, {
+      fields: [purchaseOrders.salonId],
+      references: [salons.id],
+    }),
+  }),
+)
 
 export const reviewHelpfulVotesRelations = relations(
   reviewHelpfulVotes,
@@ -307,6 +335,7 @@ export const salonsRelations = relations(salons, ({ many }) => ({
   openingHours: many(openingHours),
   paymentMethods: many(paymentMethods),
   products: many(products),
+  purchaseOrders: many(purchaseOrders),
   reviews: many(reviews),
   sales: many(sales),
   serviceCategories: many(serviceCategories),

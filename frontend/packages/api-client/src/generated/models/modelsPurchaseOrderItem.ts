@@ -5,43 +5,27 @@
  * Comprehensive REST API for managing beauty salon operations including salons, staff, services, customers, bookings, treatments, payments, inventory, and access control. Built with TypeSpec for type-safe API-first development.
  * OpenAPI spec version: 2.0
  */
-import type { ModelsInventoryId } from './modelsInventoryId';
 
 /**
- * 仕入れ発注の明細 - 発注作成リクエストと発注レスポンスの両方で使う。全項目のキーが必須
+ * 仕入れ発注の明細 - 発注レスポンスで使う。商品コード・商品名・単位は、発注を作成した時点の在庫の商品の値
  */
 export interface ModelsPurchaseOrderItem {
-  /** 紐づく在庫 ID */
-  inventoryId: ModelsInventoryId;
   /**
-     * 商品コード
-     * @minLength 1
+     * 発注した在庫 ID。在庫を削除した場合はnull
+     * @nullable
      */
+  inventoryId: string | null;
+  /** 商品コード */
   productCode: string;
-  /**
-     * 商品名
-     * @minLength 1
-     */
+  /** 商品名 */
   productName: string;
-  /**
-     * 発注数量
-     * @exclusiveMinimum 0
-     */
+  /** 発注数量 */
   quantity: number;
-  /**
-     * 数量単位
-     * @minLength 1
-     */
+  /** 数量単位 */
   unit: string;
-  /**
-     * 単価
-     * @minimum 0
-     */
+  /** 単価(円) */
   unitPrice: number;
-  /**
-     * 明細ごとの金額
-     * @minimum 0
-     */
+  /** 明細の金額(円)。発注数量と単価の積を四捨五入した値 */
   totalPrice: number;
   /**
      * 備考メモ。未設定の場合はnull

@@ -7,6 +7,6 @@
  */
 
 /**
- * 検索対象期間の終了日時。発注日(orderDate)がこの日時より前の発注に一致する
+ * 検索対象期間の終了日時。発注日(orderDate)がこの日時以前(この日時を含む)の発注に一致する
  */
 export type ModelsPurchaseOrderSearchRequestEndDateParameter = string;

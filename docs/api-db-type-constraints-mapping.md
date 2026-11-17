@@ -399,6 +399,7 @@ const salonRules: ModelRule[] = [
 | `embedded` | カラムではないプロパティ（子テーブルの行を埋め込んだもの）。カラムとの照合を省く |
 | `computed` | カラムではないプロパティ（サーバーがレスポンスのたびに求め、どこにも保存しない値）。カラムとの照合を省く。`SessionResponse` の `current` に使っている |
 | `omittedColumns` | モデルが意図して含めないカラム。それ以外のカラムがモデルにない場合は報告される。テーブルにない名前を挙げた場合も報告される。すべてのルールが指定する（テストで確認している） |
+| `nonNullable` | カラムが NULL を許すのに、モデルでは null を取らないプロパティ。カラムが null になるのが、リクエストが書いたあとだけのときに使う。`PurchaseOrderItemCreateRequest` の `inventoryId` に使っている（新しい明細は在庫の行を必ず指し、カラムが null になるのは、行を削除したとき（`ON DELETE SET NULL`）だけ） |
 | `narrowed` | カラムの Enum 型の値の一部だけを取るプロパティ。値が、カラムの Enum の値の一部であり、すべてではないことを確かめる。`StaffAccountResponse` と `StaffAccountUpdateRequest` の `role` に使っている（カラムは `user_role`、プロパティは `SalonRoleType`）。値の範囲を DB でも限る CHECK 制約と、組で使う |
 
 報告される食い違い:
@@ -412,6 +413,7 @@ const salonRules: ModelRule[] = [
 | `shouldBeOptional` | `update` のプロパティが必須になっている |
 | `shouldBeNullable` | カラムが NULL 許可なのに、API が null を許していない |
 | `shouldNotBeNullable` | カラムが `NOT NULL` なのに、API が null を許している |
+| `nullNotNarrowed` | `nonNullable` に挙げたプロパティが null を許しているか、そのカラムが `NOT NULL` である。カラムが `NOT NULL` なら、絞り込んでいないので、`nonNullable` から外す |
 | `enumMismatch` | カラムが PostgreSQL の Enum 型（またはその配列）なのに、API のプロパティが取りうる値がその Enum の値と一致しない（`narrowed` に挙げたプロパティを除く） |
 | `enumNotNarrowed` | `narrowed` に挙げたプロパティが、Enum でない、値を持たない、カラムの Enum にない値を持つ、またはカラムの Enum のすべての値を持つ。すべての値を持つなら、絞り込んでいないので、`narrowed` から外す |
 
@@ -451,7 +453,7 @@ const salonRules: ModelRule[] = [
 |---|---|
 | ロール、権限、ロールの割り当て、アクセス判定 | `specs/models/permission.tsp` |
 | 添付ファイル、共有リンク | `specs/models/attachment.tsp` |
-| 発注（purchase orders）、在庫アラート | `specs/models/inventory.tsp` の `PurchaseOrder*`、`InventoryAlert*`、`ReorderSuggestion*` |
+| 在庫アラート、発注の提案、発注の入荷 | `specs/models/inventory.tsp` の `InventoryAlert*`、`ReorderSuggestion*`、`PurchaseOrderReceive*`、`PurchaseOrderReceivedItem` |
 | カルテ（medical charts） | `specs/models/treatment.tsp` の `MedicalChart*` |
 | 顧客の監査履歴・版、エクスポートジョブ、データ削除リクエスト | `specs/models/customer.tsp` の `CustomerAuditEntry*`、`CustomerExport*`、`CustomerDataDeletion*` |
 

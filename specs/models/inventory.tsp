@@ -797,42 +797,57 @@ namespace BeautySalon.Models {
   }
 
   @doc("""
-    仕入れ発注の明細 - 発注作成リクエストと発注レスポンスの両方で使う。全項目のキーが必須
+    仕入れ発注の明細 - 発注レスポンスで使う。商品コード・商品名・単位は、発注を作成した時点の在庫の商品の値
     """)
   model PurchaseOrderItem {
-    @doc("紐づく在庫 ID")
-    inventoryId: InventoryId;
+    @doc("発注した在庫 ID。在庫を削除した場合はnull")
+    inventoryId: InventoryId | null;
 
     @doc("商品コード")
-    @minLength(1)
     productCode: string;
 
     @doc("商品名")
-    @minLength(1)
     productName: string;
 
     @doc("発注数量")
-    @minValueExclusive(0)
     quantity: float64;
 
     @doc("数量単位")
-    @minLength(1)
     unit: string;
 
-    @doc("単価")
-    @minValue(0)
-    unitPrice: float64;
+    @doc("単価(円)")
+    unitPrice: int32;
 
-    @doc("明細ごとの金額")
-    @minValue(0)
-    totalPrice: float64;
+    @doc("明細の金額(円)。発注数量と単価の積を四捨五入した値")
+    totalPrice: int32;
 
     @doc("備考メモ。未設定の場合はnull")
     notes: string | null;
   }
 
   @doc("""
-    仕入れ発注レスポンス - 発注の基本情報と明細を返す
+    仕入れ発注の明細の作成リクエスト - 全項目のキーが必須。
+    商品コード・商品名・単位は在庫の商品から、明細の金額は発注数量と単価から、サーバーが決める
+    """)
+  model PurchaseOrderItemCreateRequest {
+    @doc("発注する在庫 ID。発注の salonId のサロンの在庫を指定する。1つの発注で同じ在庫を2回指定できない")
+    inventoryId: InventoryId;
+
+    @doc("発注数量。0より大きく、小数第2位まで")
+    @minValueExclusive(0)
+    @maxValue(99999999.99)
+    quantity: float64;
+
+    @doc("単価(円)")
+    @minValue(0)
+    unitPrice: int32;
+
+    @doc("備考メモ。メモがない場合はnull。空白だけの文字列は指定できない")
+    notes: string | null;
+  }
+
+  @doc("""
+    仕入れ発注レスポンス - 発注の基本情報と明細を返す。金額はすべて円
     """)
   model PurchaseOrderResponse {
     @doc("発注 ID")
@@ -841,7 +856,7 @@ namespace BeautySalon.Models {
     @doc("発注を行うサロン ID")
     salonId: SalonId;
 
-    @doc("発注番号。登録時にサーバーが採番する")
+    @doc("発注番号。PO-XXXX-XXXX の形式で、登録時にサーバーが採番する")
     orderNumber: string;
 
     @doc("仕入先名")
@@ -850,28 +865,28 @@ namespace BeautySalon.Models {
     @doc("発注ステータス区分")
     status: OrderStatusType;
 
-    @doc("発注明細の一覧")
+    @doc("発注明細の一覧。発注を作成したリクエストの順")
     items: PurchaseOrderItem[];
 
-    @doc("税抜小計金額")
-    subtotal: float64;
+    @doc("小計(円)。明細の金額の合計")
+    subtotal: int32;
 
-    @doc("税額")
-    taxAmount: float64;
+    @doc("税額(円)")
+    taxAmount: int32;
 
-    @doc("送料。送料がかからない場合はnull")
-    shippingCost: float64 | null;
+    @doc("送料(円)。送料がかからない場合はnull")
+    shippingCost: int32 | null;
 
-    @doc("発注合計金額")
-    totalAmount: float64;
+    @doc("発注合計金額(円)。小計、税額、送料の合計")
+    totalAmount: int32;
 
-    @doc("発注日")
+    @doc("発注日。発注を作成した日時")
     orderDate: utcDateTime;
 
     @doc("予定納期。未定の場合はnull")
     expectedDelivery: utcDateTime | null;
 
-    @doc("実際の納品日。納品前の場合はnull")
+    @doc("実際の納品日時。納品を受領する前の場合はnull")
     actualDelivery: utcDateTime | null;
 
     @doc("納品に関するメモ。未設定の場合はnull")
@@ -883,55 +898,71 @@ namespace BeautySalon.Models {
     @doc("その他備考。未設定の場合はnull")
     notes: string | null;
 
-    @doc("発注承認を行ったスタッフ ID。承認前の場合はnull")
+    @doc("発注を承認したスタッフ ID。承認前の場合と、管理者が承認した場合はnull")
     approvedBy: StaffId | null;
 
-    @doc("承認日時。承認前の場合はnull")
+    @doc("承認した日時。承認前の場合はnull")
     approvedAt: utcDateTime | null;
 
-    ...AuditInfo;
+    @doc("キャンセルした日時。キャンセルしていない場合はnull")
+    cancelledAt: utcDateTime | null;
+
+    @doc("キャンセルの理由。キャンセルしていない場合はnull")
+    cancellationReason: string | null;
+
+    @doc("発注を作成したスタッフ ID。管理者が作成した場合はnull")
+    createdBy: StaffId | null;
+
+    @doc("レコード作成日時")
+    createdAt: utcDateTime;
+
+    @doc("レコード最終更新日時")
+    updatedAt: utcDateTime;
   }
 
   @doc("""
     仕入れ発注作成リクエスト - 全項目のキーが必須。null を指定できる項目は未設定を表す。
-    作成した発注のステータスは draft になる
+    作成した発注のステータスは draft になる。発注番号、発注日、明細の商品の値と金額、小計、合計金額はサーバーが決める
     """)
   model PurchaseOrderCreateRequest {
     @doc("発注を行うサロン ID")
     salonId: SalonId;
 
-    @doc("仕入先名")
+    @doc("仕入先名。空白だけの文字列は指定できない")
     @minLength(1)
+    @maxLength(255)
     supplier: string;
 
-    @doc("発注明細一覧。salonId のサロンの在庫を1件以上指定する")
+    @doc("発注明細の一覧。salonId のサロンの在庫を1件以上100件以下指定する")
     @minItems(1)
-    items: PurchaseOrderItem[];
+    @maxItems(100)
+    items: PurchaseOrderItemCreateRequest[];
 
-    @doc("税額")
+    @doc("税額(円)")
     @minValue(0)
-    taxAmount: float64;
+    taxAmount: int32;
 
-    @doc("送料。送料がかからない場合はnull")
+    @doc("送料(円)。送料がかからない場合はnull")
     @minValue(0)
-    shippingCost: float64 | null;
+    shippingCost: int32 | null;
 
     @doc("予定納期。未定の場合はnull")
     expectedDelivery: utcDateTime | null;
 
-    @doc("支払条件。未設定の場合はnull")
+    @doc("支払条件。未設定の場合はnull。空白だけの文字列は指定できない")
     paymentTerms: string | null;
 
-    @doc("備考メモ。未設定の場合はnull")
+    @doc("備考メモ。未設定の場合はnull。空白だけの文字列は指定できない")
     notes: string | null;
   }
 
   @doc("""
-    仕入れ発注部分更新リクエスト - 指定した項目だけを更新する。null を指定できる項目は null でクリアできる
+    仕入れ発注部分更新リクエスト - 指定した項目だけを更新する。null を指定できる項目は null でクリアできる。
+    明細、仕入先、金額は変更できない
     """)
   model PurchaseOrderUpdateRequest {
     @doc("""
-      更新後の発注ステータス。変更できるのは draft→pending、approved→ordered、ordered→shipped の遷移のみ。
+      更新後の発注ステータス。変更できるのは draft→pending、approved→ordered、ordered→shipped の遷移と、今と同じステータスだけ。
       approved・cancelled・delivered への遷移はそれぞれ approve・cancel・receive で行う
       """)
     status?: OrderStatusType;
@@ -939,13 +970,10 @@ namespace BeautySalon.Models {
     @doc("更新後の予定納期。nullでクリア")
     expectedDelivery?: utcDateTime | null;
 
-    @doc("実際の納品日。nullでクリア")
-    actualDelivery?: utcDateTime | null;
-
-    @doc("納品関連の備考。nullでクリア")
+    @doc("納品関連の備考。nullでクリア。空白だけの文字列は指定できない")
     deliveryNotes?: string | null;
 
-    @doc("その他の備考。nullでクリア")
+    @doc("その他の備考。nullでクリア。空白だけの文字列は指定できない")
     notes?: string | null;
   }
 
@@ -974,6 +1002,7 @@ namespace BeautySalon.Models {
     @query
     @doc("仕入先名による絞り込み(完全一致)")
     @minLength(1)
+    @maxLength(255)
     supplier?: string;
 
     @query
@@ -981,24 +1010,15 @@ namespace BeautySalon.Models {
     startDate?: utcDateTime;
 
     @query
-    @doc("検索対象期間の終了日時。発注日(orderDate)がこの日時より前の発注に一致する")
+    @doc("検索対象期間の終了日時。発注日(orderDate)がこの日時以前(この日時を含む)の発注に一致する")
     endDate?: utcDateTime;
   }
 
-  @doc("仕入れ発注承認リクエスト - 全項目のキーが必須")
-  model PurchaseOrderApproveRequest {
-    @doc("発注を承認するスタッフ ID")
-    approvedBy: StaffId;
-
-    @doc("承認時のメモ。メモがない場合はnull")
-    notes: string | null;
-  }
-
-  @doc("仕入れ発注キャンセルリクエスト")
+  @doc("仕入れ発注キャンセルリクエスト - 全項目のキーが必須")
   model PurchaseOrderCancelRequest {
-    @doc("キャンセル理由")
+    @doc("キャンセルの理由。空白だけの文字列は指定できない")
     @minLength(1)
-    reason: string;
+    cancellationReason: string;
   }
 
   @doc("受領した1件の発注明細")
