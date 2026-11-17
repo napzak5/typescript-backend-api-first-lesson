@@ -1568,6 +1568,99 @@ describe('Inventory alert API', () => {
       ).not.toBeNull()
     })
 
+    it('times an acknowledgement that waited for a movement after the movement, so that it holds on the stock the movement left', async () => {
+      const row = await insertStock(stock('8'))
+
+      const { pending, answeredWhileHeld } = await db.transaction(
+        async (tx) => {
+          await holdRow(tx, row)
+          const underWay = acknowledge(ofProduct('low_stock')).then(
+            (response) => response,
+          )
+          const answered = await answersWithin(underWay, 300)
+          // The movement is written while the acknowledgement waits for it.
+          await tx
+            .update(inventory)
+            .set(stock('3'))
+            .where(eq(inventory.id, row))
+          await tx.insert(inventoryTransactions).values({
+            salonId,
+            productId,
+            inventoryId: row,
+            transactionType: 'sale',
+            quantity: '-5',
+            balanceBefore: '8',
+            balanceAfter: '3',
+            createdAt: sql`clock_timestamp()`,
+          })
+
+          return { pending: underWay, answeredWhileHeld: answered }
+        },
+      )
+      const response = await pending
+
+      expect(answeredWhileHeld).toBe(false)
+      expect(response.status).toBe(200)
+      expect(response.body.data.acknowledgement).toMatchObject({
+        severity: 'warning',
+        threshold: 5,
+      })
+      expect(
+        (await listed(`low_stock:${productId}`)).acknowledgement,
+      ).toMatchObject({ id: response.body.data.acknowledgement.id })
+    })
+
+    it('reads the alerts and their acknowledgements at one moment', async () => {
+      await insertStock()
+      /** Whether a request came to wait for the table of the acknowledgements. */
+      const waitedFor = async (): Promise<boolean> => {
+        for (let attempt = 0; attempt < 100; attempt += 1) {
+          const [locks] = await db.execute(
+            sql`SELECT count(*)::int AS "waiting" FROM pg_locks WHERE NOT granted AND relation = 'inventory_alert_acknowledgements'::regclass`,
+          )
+          if (Number(locks?.['waiting']) > 0) {
+            return true
+          }
+          await pause(20)
+        }
+        return false
+      }
+
+      const { pending, waited } = await db.transaction(async (tx) => {
+        await tx.execute(
+          sql`LOCK TABLE ${inventoryAlertAcknowledgements} IN ACCESS EXCLUSIVE MODE`,
+        )
+        const underWay = list().then((response) => response)
+        // The list has read the alert and waits to read its acknowledgements;
+        // one is written meanwhile.
+        const blocked = await waitedFor()
+        await tx.insert(inventoryAlertAcknowledgements).values({
+          salonId,
+          productId,
+          inventoryId: null,
+          alert: 'low_stock',
+          severity: 'warning',
+          threshold: '5',
+          expiryDate: null,
+          notes: null,
+          acknowledgedBy: null,
+          acknowledgedAt: sql`clock_timestamp()`,
+        })
+
+        return { pending: underWay, waited: blocked }
+      })
+      const response = await pending
+
+      expect(waited).toBe(true)
+      expect(response.status).toBe(200)
+      expect(response.body.data).toEqual([
+        expect.objectContaining({ alert: 'low_stock', acknowledgement: null }),
+      ])
+      expect(
+        (await listed(`low_stock:${productId}`)).acknowledgement,
+      ).not.toBeNull()
+    })
+
     it('makes an acknowledgement wait for a change of the product, and decides on its new minimum', async () => {
       await insertStock()
 
@@ -1650,28 +1743,35 @@ describe('Inventory alert API', () => {
       lastExpiringDay: daysAfter(today, 30),
     })
 
-    it('works out the lowest and the highest stock since an acknowledgement exactly, moment by moment', async () => {
-      const first = await insertStock()
-      const second = await insertStock(stock('1'))
-      await acknowledged(ofProduct('low_stock'))
-      const [stored] = await storedAcknowledgements()
-      const at = (seconds: number) =>
-        sql`${stored?.acknowledgedAt}::timestamptz + make_interval(secs => ${seconds})`
-      const moved = (
+    /**
+     * A movement of a stock row of the product of the tests, or of another
+     * product, some seconds after an acknowledgement; before it when the
+     * seconds are negative.
+     */
+    const movedAfter =
+      (acknowledgedAt: string | undefined, product: string = productId) =>
+      (
         inventoryId: string,
         seconds: number,
         [balanceBefore, quantity, balanceAfter]: [string, string, string],
       ): NewMovement => ({
         salonId,
-        productId,
+        productId: product,
         inventoryId,
         transactionType: 'adjustment',
         quantity,
         balanceBefore,
         balanceAfter,
         reason: '再計算の確認',
-        createdAt: at(seconds),
+        createdAt: sql`${acknowledgedAt}::timestamptz + make_interval(secs => ${seconds})`,
       })
+
+    it('works out the lowest and the highest stock since an acknowledgement exactly, moment by moment', async () => {
+      const first = await insertStock()
+      const second = await insertStock(stock('1'))
+      await acknowledged(ofProduct('low_stock'))
+      const [stored] = await storedAcknowledgements()
+      const moved = movedAfter(stored?.acknowledgedAt)
       // The stock of the product: 4.00 at the acknowledgement; still 4.00
       // after a moment that moves 0.10 from one row to the other; 4.90,
       // 4.00 and 3.95 after the moments that follow.
@@ -1706,6 +1806,67 @@ describe('Inventory alert API', () => {
         id: stored?.id,
       })
     })
+
+    it.each<[string, [string, string, string][], string, string]>([
+      [
+        'when the stock was at its lowest then',
+        [
+          ['3.00', '0.50', '3.50'],
+          ['3.50', '0.50', '4.00'],
+        ],
+        '3.00',
+        '4.00',
+      ],
+      [
+        'when the stock was at its highest then',
+        [
+          ['3.00', '-0.50', '2.50'],
+          ['2.50', '-0.50', '2.00'],
+        ],
+        '2.00',
+        '3.00',
+      ],
+    ])(
+      'counts the stock at the acknowledgement itself %s, and only the movements of its product after it',
+      async (_case, after, lowestStock, highestStock) => {
+        const row = await insertStock()
+        const other = await insertProduct()
+        const otherRow = await insertStock({ productId: other })
+        await acknowledged(ofProduct('low_stock'))
+        const [stored] = await storedAcknowledgements()
+        const moved = movedAfter(stored?.acknowledgedAt)
+        await db.insert(inventoryTransactions).values([
+          // How the stock of the product came to be 3 before.
+          moved(row, -10, ['1.00', '2.00', '3.00']),
+          ...after.map((balances, index) => moved(row, index + 1, balances)),
+          // Another product of the salon, at the moment of the first.
+          movedAfter(stored?.acknowledgedAt, other)(otherRow, 1, [
+            '3.00',
+            '-3.00',
+            '0.00',
+          ]),
+        ])
+        await db
+          .update(inventory)
+          .set(stock(after.at(-1)?.[2] ?? '3.00'))
+          .where(eq(inventory.id, row))
+        await db
+          .update(inventory)
+          .set(stock('0'))
+          .where(eq(inventory.id, otherRow))
+
+        const facts = dataOf(await repository().listFacts(criteria()))
+
+        expect(facts.acknowledgements).toEqual([
+          {
+            type: 'product',
+            acknowledgement: expect.objectContaining({ id: stored?.id }),
+            lowestStock,
+            highestStock,
+          },
+        ])
+      },
+    )
 
     it('tells the place of a product among every product of the salon, deleted ones included', async () => {
       await db
