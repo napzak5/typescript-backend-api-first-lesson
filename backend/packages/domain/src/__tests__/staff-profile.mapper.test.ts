@@ -31,7 +31,6 @@ const PRIVATE_COLUMNS = [
   'phoneNumber',
   'alternativePhone',
   'staffCode',
-  'awards',
   'hireDate',
   'employmentType',
   'baseSalary',

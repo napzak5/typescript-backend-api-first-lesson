@@ -41,8 +41,8 @@ export type DbServiceOption = DeepRequired<typeof serviceOptions.$inferSelect>
 
 /**
  * Columns of `services` that a request never writes: the database assigns
- * `id` and the timestamps, the salon comes from the path, a delete sets
- * `deletedAt`, and `requiredProducts` has no defined structure yet.
+ * `id` and the timestamps, the salon comes from the path, and a delete sets
+ * `deletedAt`.
  *
  * Every other column has the same representation in the database as in the
  * API.
@@ -50,7 +50,6 @@ export type DbServiceOption = DeepRequired<typeof serviceOptions.$inferSelect>
 type ServiceManagedColumn =
   | 'id'
   | 'salonId'
-  | 'requiredProducts'
   | 'deletedAt'
   | 'createdAt'
   | 'updatedAt'

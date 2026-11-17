@@ -13,8 +13,8 @@ import { timestampSchema } from './columns'
 /**
  * Database rows → API response. Property names are the column names; only
  * the timestamps change their representation, from PostgreSQL's text format
- * to ISO 8601. `deletedAt` and `requiredProducts` do not go out, and an
- * option goes out without what ties it to its service.
+ * to ISO 8601. `deletedAt` does not go out, and an option goes out without
+ * what ties it to its service.
  */
 
 const convertedColumnsSchema = z.object({
@@ -48,7 +48,7 @@ const toApiService = (
   service: DbService,
   options: DbServiceOption[],
 ): Result<ApiServiceResponse, DomainError> => {
-  const { deletedAt, requiredProducts, ...columns } = service
+  const { deletedAt, ...columns } = service
 
   return Result.mapError(
     Result.map(

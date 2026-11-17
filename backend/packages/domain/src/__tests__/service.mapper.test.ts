@@ -259,12 +259,9 @@ describe('ServiceReadMapper.toApiService', () => {
     })
   })
 
-  it('has exactly the properties of ServiceResponse, also for a deleted row that lists the products it needs', () => {
+  it('has exactly the properties of ServiceResponse, also for a deleted row', () => {
     const result = ServiceReadMapper.toApiService(
-      dbService({
-        deletedAt: '2026-11-15 10:00:00+09',
-        requiredProducts: [{ name: 'Shampoo', quantity: 1 }],
-      }),
+      dbService({ deletedAt: '2026-11-15 10:00:00+09' }),
       [dbServiceOption()],
     )
 
