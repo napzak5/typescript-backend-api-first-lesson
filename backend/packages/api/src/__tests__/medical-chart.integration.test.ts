@@ -453,16 +453,18 @@ describe('Medical chart API', () => {
         ],
       ],
       [
-        'a treatment of a moment rather than a day, and one before 1900',
+        'a treatment of a moment rather than a day, one before 1900, and one at a salon of a blank name',
         {
           previousTreatments: [
             treatmentOf({ date: '2026-03-14T10:00:00Z' }),
             treatmentOf({ date: '1899-12-31' }),
+            treatmentOf({ salonName: ' ' }),
           ],
         },
         [
           'previousTreatments.0.date:invalid_format',
           'previousTreatments.1.date:too_small',
+          'previousTreatments.2.salonName:invalid_format',
         ],
       ],
       [
@@ -643,6 +645,7 @@ describe('Medical chart API', () => {
       })
 
       expectProblem(await get(customerId), databaseProblem)
+      expectProblem(await list({}), databaseProblem)
     })
   })
 
@@ -712,6 +715,11 @@ describe('Medical chart API', () => {
         ['previousTreatments.0.date:too_big'],
       ],
       ['blank notes', { notes: '  ' }, ['notes:invalid_format']],
+      [
+        'blank conditions',
+        { medicalConditions: '' },
+        ['medicalConditions:invalid_format'],
+      ],
     ])('refuses %s, and changes nothing', async (_case, body, rules) => {
       const id = await insertChart()
       const before = await everything()
@@ -923,7 +931,7 @@ describe('Medical chart API', () => {
       expect(response.body.data.map(({ id }: { id: string }) => id)).toEqual([
         kept.chart,
       ])
-      expect(response.body.meta.total).toBe(1)
+      expect(response.body.meta).toMatchObject({ total: 1, limit: 20 })
       expectProblem(cursor, badRequest)
       expect(brokenRules(cursor)).toEqual(['cursor:not_found'])
     })
@@ -932,6 +940,11 @@ describe('Medical chart API', () => {
       ['a limit of 0', { limit: '0' }, ['limit:too_small']],
       ['a limit of 101', { limit: '101' }, ['limit:too_big']],
       ['a limit that is no number', { limit: 'ten' }, ['limit:invalid_format']],
+      [
+        'a limit that is no whole number',
+        { limit: '1.5' },
+        ['limit:invalid_type'],
+      ],
       [
         'a cursor that is no UUID',
         { cursor: 'chart-1' },
