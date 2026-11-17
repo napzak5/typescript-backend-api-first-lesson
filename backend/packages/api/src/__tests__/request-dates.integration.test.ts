@@ -457,6 +457,22 @@ const MOMENT_OPERATIONS: Operation[] = [
     as: 'admin',
     field: 'endDate',
   },
+  {
+    name: 'the treatment statistics, from a moment',
+    method: 'get',
+    path: () => '/api/v1/treatments/statistics',
+    send: (startDate, { salonId }) => query({ salonId, startDate }),
+    as: 'admin',
+    field: 'startDate',
+  },
+  {
+    name: 'the treatment statistics, to a moment',
+    method: 'get',
+    path: () => '/api/v1/treatments/statistics',
+    send: (endDate, { salonId }) => query({ salonId, endDate }),
+    as: 'admin',
+    field: 'endDate',
+  },
 ]
 
 describe('the dates and moments a request may name', () => {

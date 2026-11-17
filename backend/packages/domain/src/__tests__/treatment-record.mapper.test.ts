@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { TreatmentRecordReadMapper } from '../mappers/read/treatment-record.mapper'
 import { TreatmentRecordWriteMapper } from '../mappers/write/treatment-record.mapper'
+import type { DbTreatmentPhoto } from '../models/treatment-record'
 import {
   treatmentRecordCreateRequestSchema,
   treatmentRecordUpdateRequestSchema,
@@ -13,13 +14,14 @@ import {
   dbTreatmentPhoto,
   dbTreatmentRecord,
   OTHER_TREATMENT_RECORD_ID,
+  PHOTO_ID,
   storedTreatmentRecord,
   TREATMENT_RECORD_ID,
   treatmentRecordCreateRequest,
 } from './treatment-record-fixtures'
 
 describe('TreatmentRecordReadMapper', () => {
-  it('names every column as it is, the materials in their order without their own IDs, the quantities as numbers and the times in ISO 8601', () => {
+  it('names every column as it is, the materials in their order without their own IDs, the photos with theirs, the quantities as numbers and the times in ISO 8601', () => {
     expect(
       TreatmentRecordReadMapper.toApiTreatmentRecord(storedTreatmentRecord()),
     ).toEqual({
@@ -60,6 +62,7 @@ describe('TreatmentRecordReadMapper', () => {
         ],
         photos: [
           {
+            id: PHOTO_ID,
             photoType: 'after',
             photoUrl: 'https://images.example.com/after.jpg',
             thumbnailUrl: null,
@@ -114,7 +117,7 @@ describe('TreatmentRecordReadMapper', () => {
   })
 
   it('shows the photos in the order they are read', () => {
-    const before = {
+    const before: DbTreatmentPhoto = {
       ...dbTreatmentPhoto(),
       id: '0193a5b8-7c2e-7d4f-8a1b-3c5d7e9f5d22',
       photoType: 'before',

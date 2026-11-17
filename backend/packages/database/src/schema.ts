@@ -248,6 +248,13 @@ export const staffLevel = pgEnum('staff_level', [
   'director',
 ])
 
+export const treatmentPhotoType = pgEnum('treatment_photo_type', [
+  'before',
+  'during',
+  'after',
+  'other',
+])
+
 export const twoFactorStatus = pgEnum('two_factor_status', [
   'disabled',
   'pending',
@@ -2409,7 +2416,7 @@ export const treatmentPhotos = pgTable(
   {
     id: uuid().defaultRandom().primaryKey().notNull(),
     treatmentRecordId: uuid().notNull(),
-    photoType: varchar({ length: 20 }).notNull(),
+    photoType: treatmentPhotoType().notNull(),
     photoUrl: varchar({ length: 500 }).notNull(),
     thumbnailUrl: varchar({ length: 500 }),
     angle: varchar({ length: 50 }),
@@ -2422,18 +2429,19 @@ export const treatmentPhotos = pgTable(
       .notNull(),
   },
   (table) => [
+    check(
+      'treatment_photos_consent',
+      sql`(NOT "isPublic") OR "customerConsent"`,
+    ),
+    check('treatment_photos_sort_order', sql`"sortOrder" >= 0`),
     foreignKey({
       columns: [table.treatmentRecordId],
       foreignColumns: [treatmentRecords.id],
       name: 'treatment_photos_treatment_record_id_fk',
     }).onDelete('cascade'),
-    index('idx_treatment_photos_photo_type').using(
-      'btree',
-      table.photoType.asc().nullsLast().op('text_ops'),
-    ),
-    index('idx_treatment_photos_treatment_record_id').using(
-      'btree',
-      table.treatmentRecordId.asc().nullsLast().op('uuid_ops'),
+    unique('treatment_photos_record_url_unique').on(
+      table.treatmentRecordId,
+      table.photoUrl,
     ),
   ],
 )

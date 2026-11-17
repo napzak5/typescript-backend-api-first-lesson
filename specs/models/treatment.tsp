@@ -44,6 +44,21 @@ namespace BeautySalon.Models {
   // ============================================================================
 
   @doc("""
+    施術写真種別区分 - 写真を施術のどの時点で撮ったかを表す
+    
+    before: 施術前 - 施術を始める前の状態
+    during: 施術中 - 施術の途中の状態
+    after: 施術後 - 施術を終えたあとの状態
+    other: その他 - ほかのどれにも当たらない写真
+    """)
+  enum TreatmentPhotoType {
+    before,
+    during,
+    after,
+    other,
+  }
+
+  @doc("""
     施術で使用した商材 - treatment_materials テーブルの1行。施術記録の作成・更新リクエストとレスポンスで共通に使う。
     プロパティ名と null 許可は DB カラムと一致させている。商材は指定した順に保存し、その順に返す。
     使用商材を記録しても在庫は動かない。在庫は在庫の移動（use）で記録する
@@ -75,8 +90,11 @@ namespace BeautySalon.Models {
     プロパティ名と null 許可は DB カラムと一致させている。
     """)
   model TreatmentPhotoResponse {
-    @doc("写真の種別。施術前・施術後などを表す")
-    photoType: string;
+    @doc("写真 ID")
+    id: TreatmentPhotoId;
+
+    @doc("写真の種別")
+    photoType: TreatmentPhotoType;
 
     @doc("写真の URL")
     photoUrl: string;
@@ -96,7 +114,7 @@ namespace BeautySalon.Models {
     @doc("顧客が写真の撮影・利用に同意しているかどうか")
     customerConsent: boolean;
 
-    @doc("表示順序")
+    @doc("表示順序。小さい順に並ぶ")
     sortOrder: int32;
   }
 
@@ -105,44 +123,43 @@ namespace BeautySalon.Models {
     写真を追加する施術記録はパスの id で指定する
     """)
   model TreatmentPhotoCreateRequest {
-    @doc("写真の種別。施術前・施術後などを表す")
-    @minLength(1)
-    @maxLength(20)
-    photoType: string;
+    @doc("写真の種別")
+    photoType: TreatmentPhotoType;
 
-    @doc("写真の URL")
+    @doc("写真の URL(http または https、500文字まで)。1つの施術記録に同じURLの写真は1枚だけ")
     @minLength(1)
     @maxLength(500)
     photoUrl: string;
 
-    @doc("サムネイル画像の URL。サムネイルを作成していない場合はnull")
+    @doc("サムネイル画像の URL(http または https、500文字まで)。サムネイルを作成していない場合はnull")
     @maxLength(500)
     thumbnailUrl: string | null;
 
-    @doc("撮影アングル。記録しない場合はnull")
+    @doc("撮影アングル。空白だけの文字列は指定できない。記録しない場合はnull")
     @maxLength(50)
     angle: string | null;
 
-    @doc("写真の説明。説明がない場合はnull")
+    @doc("写真の説明。空白だけの文字列は指定できない。説明がない場合はnull")
     description: string | null;
 
-    @doc("サロン外（ポートフォリオ等）に公開してよい写真かどうか")
+    @doc("サロン外（ポートフォリオ等）に公開してよい写真かどうか。true にできるのは customerConsent が true の写真だけ")
     isPublic: boolean;
 
     @doc("顧客が写真の撮影・利用に同意しているかどうか")
     customerConsent: boolean;
 
-    @doc("表示順序")
+    @doc("表示順序。小さい順に並び、同じ値の写真は先に追加した写真が先に並ぶ。1回の追加のなかで同じ値は指定できない")
     @minValue(0)
     sortOrder: int32;
   }
 
   @doc("""
     施術写真一括登録リクエスト - 1つの施術記録に複数の写真を追加する。
-    すべての写真を1つのトランザクションで追加し、1件でも追加できない場合はどの写真も追加しない
+    すべての写真を1つのトランザクションで追加し、1件でも追加できない場合はどの写真も追加しない。
+    1つの施術記録の写真は、追加済みのものと合わせて20枚まで
     """)
   model TreatmentPhotoBulkCreateRequest {
-    @doc("追加する写真の一覧。1件以上20件以下で指定する")
+    @doc("追加する写真の一覧。1件以上20件以下で指定する。同じphotoUrlと同じsortOrderの繰り返しは指定できない")
     @minItems(1)
     @maxItems(20)
     photos: TreatmentPhotoCreateRequest[];
@@ -384,7 +401,7 @@ namespace BeautySalon.Models {
   }
 
   @doc("""
-    施術統計取得リクエスト - 集計対象のサロンと期間を指定する
+    施術統計取得リクエスト - 集計対象のサロンと期間を指定する。期間は施術記録の作成日時(createdAt)で、一覧の絞り込みと同じく両端を含む
     """)
   model TreatmentStatisticsGetRequest {
     @query
@@ -392,29 +409,52 @@ namespace BeautySalon.Models {
     salonId: SalonId;
 
     @query
-    @doc("集計期間の開始日時。未指定の場合は期間の下限なし")
+    @doc("レコード作成日時(createdAt)がこの日時以降の施術記録を数える。未指定の場合は期間の下限なし")
     startDate?: utcDateTime;
 
     @query
-    @doc("集計期間の終了日時。未指定の場合は期間の上限なし")
+    @doc("レコード作成日時(createdAt)がこの日時以前の施術記録を数える。未指定の場合は期間の上限なし。startDate より前にはできない")
     endDate?: utcDateTime;
   }
 
   @doc("""
-    施術統計レスポンス - 施術記録から算出した集計値を返す。対応するテーブルはない
+    サービスのカテゴリーの区分ごとの施術件数 - 施術記録の services のサービスを、カテゴリーの区分(service_categories.category のいまの値)ごとに合わせる。カテゴリーのないサービスは other。1つの施術記録が同じ区分のサービスを2つ含んでも1件と数える
+    """)
+  model TreatmentsByCategoryResponse {
+    @doc("サービスカテゴリ区分")
+    category: ServiceCategoryType;
+
+    @doc("この区分のサービスを含む施術記録の件数")
+    count: int32;
+  }
+
+  @doc("""
+    サービスごとの施術件数 - 施術記録の services に含まれるサービスごとに合わせる。削除したサービスも載る
+    """)
+  model TreatmentsByServiceResponse {
+    @doc("サービス ID")
+    serviceId: ServiceId;
+
+    @doc("このサービスを含む施術記録の件数")
+    count: int32;
+  }
+
+  @doc("""
+    施術統計レスポンス - 期間内の施術記録から算出した集計値を返す。対応するテーブルはない
     """)
   model TreatmentStatisticsResponse {
-    @doc("期間内の施術件数")
+    @doc("期間内の施術記録の件数")
     totalTreatments: int32;
 
-    @doc("施術の区分ごとの施術件数。キーは区分の値、値は件数")
-    treatmentsBy: Record<int32>;
+    @doc("サービスのカテゴリーの区分ごとの施術件数。件数の多い順、同じ件数は区分の名前の順。施術記録のない区分は載らない")
+    treatmentsByCategory: TreatmentsByCategoryResponse[];
 
-    @doc("平均施術時間（分）")
-    averageDuration: float32;
+    @doc("施術時間(processingTime)のある施術記録の、施術時間の平均（分）。小数第1位に丸める。施術時間のある施術記録がなければnull")
+    averageProcessingTime: float32 | null;
 
-    @doc("施術件数の多いサービス ID の一覧。件数の多い順に並ぶ")
-    topServices: ServiceId[];
+    @doc("施術件数の多いサービス。上位10件。件数の多い順、同じ件数はサービス ID の順")
+    @maxItems(10)
+    topServices: TreatmentsByServiceResponse[];
   }
 
   // ============================================================================

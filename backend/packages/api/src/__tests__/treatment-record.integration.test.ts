@@ -964,25 +964,28 @@ describe('Treatment record API', () => {
             sortOrder: 0,
           },
         ])
-        await db.insert(treatmentPhotos).values([
-          {
-            treatmentRecordId: id,
-            photoType: 'after',
-            photoUrl: 'https://images.example.com/after.jpg',
-            sortOrder: 1,
-          },
-          {
-            treatmentRecordId: id,
-            photoType: 'before',
-            photoUrl: 'https://images.example.com/before.jpg',
-            thumbnailUrl: 'https://images.example.com/before-s.jpg',
-            angle: 'front',
-            description: '施術前',
-            isPublic: true,
-            customerConsent: true,
-            sortOrder: 0,
-          },
-        ])
+        const [after, before] = await db
+          .insert(treatmentPhotos)
+          .values([
+            {
+              treatmentRecordId: id,
+              photoType: 'after',
+              photoUrl: 'https://images.example.com/after.jpg',
+              sortOrder: 1,
+            },
+            {
+              treatmentRecordId: id,
+              photoType: 'before',
+              photoUrl: 'https://images.example.com/before.jpg',
+              thumbnailUrl: 'https://images.example.com/before-s.jpg',
+              angle: 'front',
+              description: '施術前',
+              isPublic: true,
+              customerConsent: true,
+              sortOrder: 0,
+            },
+          ])
+          .returning({ id: treatmentPhotos.id })
 
         const response = await get(id, authorization)
 
@@ -1008,6 +1011,7 @@ describe('Treatment record API', () => {
           ],
           photos: [
             {
+              id: before?.id,
               photoType: 'before',
               photoUrl: 'https://images.example.com/before.jpg',
               thumbnailUrl: 'https://images.example.com/before-s.jpg',
@@ -1018,6 +1022,7 @@ describe('Treatment record API', () => {
               sortOrder: 0,
             },
             {
+              id: after?.id,
               photoType: 'after',
               photoUrl: 'https://images.example.com/after.jpg',
               thumbnailUrl: null,
@@ -1594,8 +1599,6 @@ describe('Treatment record API', () => {
 
   describe('what the routes do not serve', () => {
     it.each<[string, 'get' | 'put' | 'patch' | 'delete' | 'post', string]>([
-      ['the statistics, not served yet', 'get', '/statistics'],
-      ['the photos, not served yet', 'post', '/ID/photos'],
       ['GET below a record', 'get', '/ID/materials'],
       ['PUT on a record', 'put', '/ID'],
       ['POST on a record', 'post', '/ID'],

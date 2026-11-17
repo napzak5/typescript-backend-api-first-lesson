@@ -5,14 +5,18 @@
  * Comprehensive REST API for managing beauty salon operations including salons, staff, services, customers, bookings, treatments, payments, inventory, and access control. Built with TypeSpec for type-safe API-first development.
  * OpenAPI spec version: 2.0
  */
+import type { ModelsTreatmentPhotoId } from './modelsTreatmentPhotoId';
+import type { ModelsTreatmentPhotoType } from './modelsTreatmentPhotoType';
 
 /**
  * 施術写真レスポンス - treatment_photos テーブルの1行。施術記録に読み取り専用で埋め込む。
  * プロパティ名と null 許可は DB カラムと一致させている。
  */
 export interface ModelsTreatmentPhotoResponse {
-  /** 写真の種別。施術前・施術後などを表す */
-  photoType: string;
+  /** 写真 ID */
+  id: ModelsTreatmentPhotoId;
+  /** 写真の種別 */
+  photoType: ModelsTreatmentPhotoType;
   /** 写真の URL */
   photoUrl: string;
   /**
@@ -34,6 +38,6 @@ export interface ModelsTreatmentPhotoResponse {
   isPublic: boolean;
   /** 顧客が写真の撮影・利用に同意しているかどうか */
   customerConsent: boolean;
-  /** 表示順序 */
+  /** 表示順序。小さい順に並ぶ */
   sortOrder: number;
 }

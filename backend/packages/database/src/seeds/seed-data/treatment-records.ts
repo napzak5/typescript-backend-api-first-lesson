@@ -17,6 +17,15 @@ type SeededTreatment = {
   staffEvaluation: string | null
   /** The products used, by code, and how much of each. */
   materials: { productCode: string; quantity: string; notes: string | null }[]
+  /** The photos taken, by the name of their file, in their order. */
+  photos: {
+    photoType: (typeof schema.treatmentPhotoType.enumValues)[number]
+    file: string
+    angle: string | null
+    description: string | null
+    isPublic: boolean
+    customerConsent: boolean
+  }[]
 }
 
 /**
@@ -38,6 +47,16 @@ const TREATMENTS: SeededTreatment[] = [
     customerSatisfaction: 5,
     staffEvaluation: null,
     materials: [{ productCode: 'TREAT001', quantity: '15.00', notes: null }],
+    photos: [
+      {
+        photoType: 'after',
+        file: 'after-front.jpg',
+        angle: '正面',
+        description: null,
+        isPublic: false,
+        customerConsent: true,
+      },
+    ],
   },
   {
     techniques: [],
@@ -51,6 +70,7 @@ const TREATMENTS: SeededTreatment[] = [
     customerSatisfaction: null,
     staffEvaluation: null,
     materials: [],
+    photos: [],
   },
   {
     techniques: ['ワンメイクカラー', 'レイヤーカット'],
@@ -67,6 +87,24 @@ const TREATMENTS: SeededTreatment[] = [
       { productCode: 'COLOR001', quantity: '1.00', notes: null },
       { productCode: 'DEVELOPER001', quantity: '0.50', notes: '6% を使用' },
     ],
+    photos: [
+      {
+        photoType: 'before',
+        file: 'before-side.jpg',
+        angle: '側面',
+        description: '中間から毛先の退色',
+        isPublic: false,
+        customerConsent: true,
+      },
+      {
+        photoType: 'after',
+        file: 'after-side.jpg',
+        angle: '側面',
+        description: null,
+        isPublic: true,
+        customerConsent: true,
+      },
+    ],
   },
 ]
 
@@ -74,8 +112,9 @@ const TREATMENTS: SeededTreatment[] = [
  * Treatment records of the visits of the first salon that took place, as
  * its staff would write them through the API: the services of the visit,
  * the staff member in charge, the next visit recommended four weeks after
- * the visit with its first service, and the materials with the lots of
- * the salon's stock rows. Recording a material moves no stock.
+ * the visit with its first service, the materials with the lots of the
+ * salon's stock rows, and the photos at addresses of the record. Recording
+ * a material moves no stock.
  */
 export async function seedTreatmentRecords(
   db: PostgresJsDatabase<typeof schema>,
@@ -138,7 +177,7 @@ export async function seedTreatmentRecords(
     }
     const nextVisit = new Date(`${first.bookingDate}T00:00:00Z`)
     nextVisit.setUTCDate(nextVisit.getUTCDate() + 28)
-    const { materials, ...stated } = treatment
+    const { materials, photos, ...stated } = treatment
 
     const [record] = await db
       .insert(schema.treatmentRecords)
@@ -173,6 +212,17 @@ export async function seedTreatmentRecords(
             sortOrder,
           }
         }),
+      )
+    }
+    if (photos.length > 0) {
+      await db.insert(schema.treatmentPhotos).values(
+        photos.map(({ file, ...photo }, sortOrder) => ({
+          ...photo,
+          treatmentRecordId: record.id,
+          photoUrl: `https://images.example.com/treatments/${record.id}/${file}`,
+          thumbnailUrl: null,
+          sortOrder,
+        })),
       )
     }
     written.push(record.id)
