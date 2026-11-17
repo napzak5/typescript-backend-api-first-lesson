@@ -45,7 +45,6 @@ const NOT_SHOWN_TO_THE_CUSTOMER = [
   'customerStatus',
   'internalNotes',
   'isActive',
-  'lifetimeValue',
   'noShowCount',
   'notes',
   'referredBy',

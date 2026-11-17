@@ -43,7 +43,7 @@ const sumOf = (amounts: readonly number[]): number =>
   amounts.reduce((sum, amount) => sum + amount, 0)
 
 /** Text in the order of its code points: -1, 0 or 1. */
-const compareText = (first: string, second: string): number =>
+export const compareText = (first: string, second: string): number =>
   Number(first > second) - Number(first < second)
 
 /**

@@ -45,8 +45,8 @@ export type DbCustomer = DeepRequired<typeof customers.$inferSelect>
 /**
  * Columns of `customers` that a request never writes: the database assigns
  * `id` and the timestamps, a delete sets `deletedAt`, the login account is
- * linked by the customer's own registration, and the points, the lifetime
- * value and the visit counters follow from bookings and payments.
+ * linked by the customer's own registration, the points follow from the
+ * points ledger and the visit counters from the bookings.
  *
  * Every other column has the same representation in the database as in the
  * API.
@@ -55,7 +55,6 @@ type CustomerManagedColumn =
   | 'id'
   | 'userId'
   | 'loyaltyPoints'
-  | 'lifetimeValue'
   | 'firstVisitDate'
   | 'lastVisitDate'
   | 'visitCount'
