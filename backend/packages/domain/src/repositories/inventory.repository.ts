@@ -12,6 +12,7 @@ import type {
 } from '../models/inventory'
 import type { ProductId } from '../models/product'
 import type { SalonId } from '../models/salon'
+import type { StaffId } from '../models/staff'
 import type { DomainError } from '../shared'
 
 /** Which stock rows a list returns. A null filter does not restrict the list. */
@@ -93,6 +94,54 @@ export type InventoryMovementRecording =
   | { type: 'belowReserved' }
   /** The stock would go above what a row holds, 99999999.99. */
   | { type: 'overLimit' }
+
+/** A stock count: the rows of one salon and the stock found of each. */
+export type InventoryStockCountCriteria = {
+  salonId: SalonId
+  /** The rows as the count names them, each once, in its order. */
+  items: {
+    inventoryId: InventoryId
+    /** The stock found, as the text of a `numeric` with two decimals. */
+    countedQuantity: string
+  }[]
+  /** Recorded on every adjustment of the count. */
+  reason: string
+  /** The staff member who counts; null for an administrator. */
+  performedBy: StaffId | null
+}
+
+/** A row whose stock differed from what was counted, as stored text. */
+export type DbStockCountDiscrepancy = {
+  inventoryId: string
+  /** The stock of the row before the count. */
+  expected: string
+  counted: string
+  /** counted − expected. */
+  difference: string
+}
+
+/** What became of a stock count. */
+export type InventoryStockCount =
+  | {
+      type: 'counted'
+      /** The adjustments recorded, in the order of the rows of the count. */
+      adjustments: DbInventoryTransaction[]
+      discrepancies: DbStockCountDiscrepancy[]
+    }
+  /** The positions in the count of the rows that are not of the salon. */
+  | { type: 'rowsNotFound'; indexes: number[] }
+  /** What was counted of this row is below what is reserved of it. */
+  | { type: 'belowReserved'; inventoryId: string }
+
+/** One category of the value of the stock of a salon, as summed. */
+export type DbInventoryValueCategory = {
+  /** null for the products without a category. */
+  category: string | null
+  /** Stock times purchase price, summed and rounded to the yen, as text. */
+  value: string
+  /** The products of the category that have stock. */
+  itemCount: number
+}
 
 /** What became of a stock row that was to be added. */
 export type InventoryCreation =
@@ -198,4 +247,24 @@ export interface IInventoryRepository {
     reach: LedgerReach,
     criteria: InventoryMovementListCriteria,
   ): Promise<Result<InventoryMovementListing, DomainError>>
+
+  /**
+   * Sets the stock of the rows of a count to what was counted, recording
+   * an adjustment of the difference for each row that differs, and the
+   * count on every row. All the rows or none; they are held in the order
+   * of their IDs, and the count is of one moment.
+   */
+  performStockCount(
+    criteria: InventoryStockCountCriteria,
+  ): Promise<Result<InventoryStockCount, DomainError>>
+
+  /**
+   * The value of the stock of a salon by the category of its products,
+   * in the order of value, then of category with none last. A category
+   * given limits it to that category.
+   */
+  valueReport(
+    salonId: SalonId,
+    category: string | null,
+  ): Promise<Result<DbInventoryValueCategory[], DomainError>>
 }

@@ -8,12 +8,15 @@ import type {
   DbInventoryTransaction,
 } from '../models/inventory'
 import type {
+  DbInventoryValueCategory,
+  DbStockCountDiscrepancy,
   IInventoryRepository,
   InventoryCreation,
   InventoryList,
   InventoryMovementListing,
   InventoryMovementRecording,
   InventoryRemoval,
+  InventoryStockCount,
   InventoryUpdate,
 } from '../repositories/inventory.repository'
 import type { ISalonRepository } from '../repositories/salon.repository'
@@ -109,6 +112,34 @@ const listedMovement = (): InventoryMovementListing => ({
   hasMore: false,
 })
 
+/** The adjustment of a count of the one row above that found 10 of its 12.50. */
+export const countAdjustment = (): DbInventoryTransaction =>
+  dbInventoryTransaction({
+    transactionType: 'adjustment',
+    quantity: '-2.50',
+    balanceBefore: '12.50',
+    balanceAfter: '10.00',
+    unitCost: null,
+    totalCost: null,
+    referenceType: null,
+    referenceId: null,
+    reason: '棚卸しの差異',
+  })
+
+/** What that count found of the row. */
+export const countDiscrepancy = (): DbStockCountDiscrepancy => ({
+  inventoryId: INVENTORY_ID,
+  expected: '12.50',
+  counted: '10.00',
+  difference: '-2.50',
+})
+
+const countedRow = (): InventoryStockCount => ({
+  type: 'counted',
+  adjustments: [countAdjustment()],
+  discrepancies: [countDiscrepancy()],
+})
+
 /** A list of the one row above, with no page after it. */
 export const listedRow = (): InventoryList => ({
   rows: [dbInventory()],
@@ -143,6 +174,12 @@ const inventoryRepositoryWith = (
     }),
   ),
   listMovements: vi.fn(async () => Result.success(listedMovement())),
+  performStockCount: vi.fn(async () => Result.success(countedRow())),
+  valueReport: vi.fn(async () =>
+    Result.success<DbInventoryValueCategory[]>([
+      { category: 'ヘアケア', value: '15000', itemCount: 1 },
+    ]),
+  ),
   ...overrides,
 })
 

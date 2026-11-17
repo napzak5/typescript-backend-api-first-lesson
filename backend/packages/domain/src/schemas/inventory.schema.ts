@@ -16,8 +16,10 @@ import {
   type ApiInventoryLowStockSearchRequest,
   type ApiInventoryMovementRequest,
   type ApiInventorySearchRequest,
+  type ApiInventoryStockCountRequest,
   type ApiInventoryTransactionSearchRequest,
   type ApiInventoryUpdateRequest,
+  type ApiInventoryValueReportRequest,
   inventoryIdSchema,
   inventoryTransactionIdSchema,
 } from '../models/inventory'
@@ -216,3 +218,50 @@ export const inventoryTransactionSearchRequestSchema = z
       startDate === undefined || endDate === undefined || startDate <= endDate,
     { path: ['endDate'], message: 'Must not be earlier than startDate' },
   ) satisfies z.ZodType<ApiInventoryTransactionSearchRequest>
+
+/** One stock row as counted: the stock found on the shelf. */
+const stockCountItemSchema = z.strictObject({
+  inventoryId: inventoryIdSchema,
+  countedQuantity: z.number().min(0).max(MAX_STOCK).multipleOf(0.01),
+})
+
+/**
+ * A count states each row once: a row named again is reported where it
+ * is named again. IDs are compared as the schema spells them, so one ID
+ * in other letters is the same row.
+ */
+const noRowCountedTwice = (
+  context: z.core.ParsePayload<{ items: { inventoryId: string }[] }>,
+): void => {
+  const seen = new Set<string>()
+  context.value.items.forEach(({ inventoryId }, index) => {
+    if (seen.has(inventoryId)) {
+      context.issues.push({
+        code: 'custom',
+        path: ['items', index, 'inventoryId'],
+        message: 'Must not repeat a stock row counted earlier',
+        input: inventoryId,
+        continue: true,
+      })
+    }
+    seen.add(inventoryId)
+  })
+}
+
+export const inventoryStockCountRequestSchema = z
+  .strictObject({
+    salonId: salonIdSchema,
+    items: z.array(stockCountItemSchema).min(1).max(500),
+    reason: nonBlankText.nullable(),
+  })
+  .check(noRowCountedTwice) satisfies z.ZodType<ApiInventoryStockCountRequest>
+
+/** A count that passed the rules of its own. */
+export type InventoryStockCountRequest = z.infer<
+  typeof inventoryStockCountRequestSchema
+>
+
+export const inventoryValueReportRequestSchema = z.strictObject({
+  salonId: salonIdSchema,
+  category: nonBlankText.max(100).exactOptional(),
+}) satisfies z.ZodType<ApiInventoryValueReportRequest>
