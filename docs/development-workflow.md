@@ -356,6 +356,7 @@ pnpm --filter @beauty-salon-frontend/portal-app add -D <パッケージ名>
 - 追加後に `pnpm knip` を実行すると、使われていない依存関係・ファイル・エクスポートが分かります。
 - 新しいリリースがある依存関係は `pnpm update:check` で一覧できます。
 - CI は `pnpm audit --audit-level=high` で脆弱性を確認します（`make audit`）。
+- 修正版のない勧告は、`pnpm-workspace.yaml` の `audit.ignore` に載せ、理由と外す条件をコメントに書き、イシューで追います。いま載せているのは、開発ツールからだけ入る picomatch の [GHSA-fc5q-39xc-vjpf](https://github.com/advisories/GHSA-fc5q-39xc-vjpf) です（#226）。本番の依存関係（`pnpm audit --prod`）には、除外している勧告はありません。
 
 ## バグを修正する
 
