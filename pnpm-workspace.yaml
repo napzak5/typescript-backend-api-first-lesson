@@ -31,3 +31,12 @@ overrides:
 permissions:
   taze:
     skills: false
+
+# picomatch <= 4.0.7 has a ReDoS advisory (GHSA-fc5q-39xc-vjpf) with no
+# patched release. picomatch comes in only through development tools (vite,
+# vitest, Storybook, the Tailwind Vite plugin, knip, orval), which match globs
+# written in this repository and never a pattern from a request; `pnpm audit
+# --prod` finds nothing. Remove the entry once picomatch is patched (#226).
+audit:
+  ignore:
+    - GHSA-fc5q-39xc-vjpf
