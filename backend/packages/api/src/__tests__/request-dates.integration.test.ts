@@ -260,6 +260,22 @@ const DATE_OPERATIONS: Operation[] = [
     as: 'admin',
     field: 'expiryDate',
   },
+  {
+    name: 'a new treatment record',
+    method: 'post',
+    path: () => '/api/v1/treatments',
+    send: (nextRecommendedDate) => ({ nextRecommendedDate }),
+    as: 'admin',
+    field: 'nextRecommendedDate',
+  },
+  {
+    name: 'a change of a treatment record',
+    method: 'patch',
+    path: () => `/api/v1/treatments/${UNKNOWN_ID}`,
+    send: (nextRecommendedDate) => ({ nextRecommendedDate }),
+    as: 'admin',
+    field: 'nextRecommendedDate',
+  },
 ]
 
 const MOMENT_OPERATIONS: Operation[] = [
@@ -392,6 +408,54 @@ const MOMENT_OPERATIONS: Operation[] = [
     send: (saleTime) => ({ saleTime }),
     as: 'admin',
     field: 'saleTime',
+  },
+  {
+    name: 'a new purchase order',
+    method: 'post',
+    path: () => '/api/v1/purchase-orders',
+    send: (expectedDelivery) => ({ expectedDelivery }),
+    as: 'admin',
+    field: 'expectedDelivery',
+  },
+  {
+    name: 'a change of a purchase order',
+    method: 'patch',
+    path: () => `/api/v1/purchase-orders/${UNKNOWN_ID}`,
+    send: (expectedDelivery) => ({ expectedDelivery }),
+    as: 'admin',
+    field: 'expectedDelivery',
+  },
+  {
+    name: 'the purchase orders, from a moment',
+    method: 'get',
+    path: () => '/api/v1/purchase-orders',
+    send: (startDate) => query({ startDate }),
+    as: 'admin',
+    field: 'startDate',
+  },
+  {
+    name: 'the purchase orders, to a moment',
+    method: 'get',
+    path: () => '/api/v1/purchase-orders',
+    send: (endDate) => query({ endDate }),
+    as: 'admin',
+    field: 'endDate',
+  },
+  {
+    name: 'the treatment records, from a moment',
+    method: 'get',
+    path: () => '/api/v1/treatments',
+    send: (startDate) => query({ startDate }),
+    as: 'admin',
+    field: 'startDate',
+  },
+  {
+    name: 'the treatment records, to a moment',
+    method: 'get',
+    path: () => '/api/v1/treatments',
+    send: (endDate) => query({ endDate }),
+    as: 'admin',
+    field: 'endDate',
   },
 ]
 
