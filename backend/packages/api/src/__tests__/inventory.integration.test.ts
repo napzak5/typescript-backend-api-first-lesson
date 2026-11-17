@@ -2095,7 +2095,7 @@ describe('Inventory API', () => {
       ['DELETE on the list', 'delete', ''],
       ['POST on the low-stock list', 'post', '/low-stock'],
       ['POST on the expiring list', 'post', '/expiring'],
-      ['GET below a row', 'get', '/ID/movements'],
+      ['POST on the history of a row', 'post', '/ID/movements'],
       ['POST below a row', 'post', '/ID/count'],
     ])(
       'answers 404 to %s, and changes nothing',

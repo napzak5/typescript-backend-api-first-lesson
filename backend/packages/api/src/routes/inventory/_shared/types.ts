@@ -22,3 +22,9 @@ export type ListLowStockInventoryResponse = JsonBody<
 export type ListExpiringInventoryResponse = JsonBody<
   operations['InventoryCrud_listExpiring']['responses'][200]['content']
 >
+export type RecordInventoryMovementResponse = JsonBody<
+  operations['InventoryCrud_recordMovement']['responses'][200]['content']
+>
+export type ListInventoryMovementsResponse = JsonBody<
+  operations['InventoryCrud_listMovements']['responses'][200]['content']
+>
