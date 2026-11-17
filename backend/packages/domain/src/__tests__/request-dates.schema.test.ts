@@ -22,6 +22,7 @@ import {
 } from '../schemas/customer.schema'
 import {
   inventoryCreateRequestSchema,
+  inventoryTransactionSearchRequestSchema,
   inventoryUpdateRequestSchema,
 } from '../schemas/inventory.schema'
 import {
@@ -278,6 +279,18 @@ const MOMENT_FIELDS: Field[] = [
     customerSearchRequestSchema,
     (registeredTo) => ({ registeredTo }),
     'registeredTo',
+  ],
+  [
+    'inventoryTransactionSearchRequestSchema',
+    inventoryTransactionSearchRequestSchema,
+    (startDate) => ({ startDate }),
+    'startDate',
+  ],
+  [
+    'inventoryTransactionSearchRequestSchema',
+    inventoryTransactionSearchRequestSchema,
+    (endDate) => ({ endDate }),
+    'endDate',
   ],
   [
     'pointTransactionSearchRequestSchema',

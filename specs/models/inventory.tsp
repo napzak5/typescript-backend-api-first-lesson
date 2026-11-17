@@ -11,10 +11,10 @@ namespace BeautySalon.Models {
     purchase: 仕入 - 仕入先から商品を受け入れた入庫
     sale: 販売 - 顧客への店頭販売による出庫
     use: 施術使用 - 施術の材料として消費した出庫
-    adjustment: 調整 - 棚卸差異や破損などの補正による増減
+    adjustment: 調整 - 棚卸差異など、帳簿の在庫数を実際の数に合わせる増減
     return: 返品 - 仕入先への返品または顧客からの返品による増減
-    disposal: 廃棄 - 期限切れや破損による廃棄
-    transfer: 移動 - ほかの保管場所・店舗との間の移動による増減
+    disposal: 廃棄 - 期限切れや破損で使えなくなった在庫を除く出庫
+    transfer: 移動 - ほかの店舗との間の移動による増減
     """)
   enum InventoryTransactionType {
     purchase,
@@ -632,7 +632,7 @@ namespace BeautySalon.Models {
     @doc("操作理由。未設定の場合はnull")
     reason: string | null;
 
-    @doc("操作を担当したスタッフ ID。未設定の場合はnull")
+    @doc("操作したアカウントのスタッフ ID。管理者の操作と、マイグレーションとシードが書いた開始の在庫移動ではnull")
     performedBy: StaffId | null;
 
     @doc("操作日時")
@@ -658,18 +658,18 @@ namespace BeautySalon.Models {
     transactionType?: InventoryTransactionType;
 
     @query
-    @doc("検索対象期間の開始日時。操作日時(createdAt)がこの日時以降の在庫移動に一致する")
+    @doc("検索対象期間の開始日時。操作日時(createdAt)がこの日時以降の在庫移動に一致する。UTC の日付で 1900-01-01 から 2999-12-31 まで")
     startDate?: utcDateTime;
 
     @query
-    @doc("検索対象期間の終了日時。操作日時(createdAt)がこの日時より前の在庫移動に一致する")
+    @doc("検索対象期間の終了日時。操作日時(createdAt)がこの日時以前の在庫移動に一致する。startDate より前の日時は指定できない。UTC の日付で 1900-01-01 から 2999-12-31 まで")
     endDate?: utcDateTime;
   }
 
   @doc("""
     在庫移動記録リクエスト - 1件の在庫移動(inventory_transactions の行)を記録し、対象在庫の在庫数を増減する。
     全項目のキーが必須。salonId・productId・lotNumber・expiryDate は対象在庫から、
-    balanceBefore・balanceAfter・totalCost はサーバーが設定する
+    balanceBefore・balanceAfter・totalCost はサーバーが計算して、performedBy は操作したアカウントから設定する
     """)
   model InventoryMovementRequest {
     @doc("対象在庫 ID")
@@ -679,26 +679,28 @@ namespace BeautySalon.Models {
     transactionType: InventoryTransactionType;
 
     @doc("""
-      操作数量。在庫数の増減量で、入庫は正、出庫は負の値で指定する。0は指定できない。
-      purchase は正、sale・use・disposal は負でなければならない
+      操作数量。在庫数の増減量で、入庫は正、出庫は負の値で指定する。0は指定できない。小数第2位まで。
+      purchase は正、sale・use・disposal は負でなければならない。adjustment・return・transfer はどちらの符号でもよい。
+      店舗の間の移動(transfer)は、移動元の店舗の在庫の負の transfer と、移動先の店舗の在庫の正の transfer の2件で記録する。
+      店舗の中で保管場所を変えるのは在庫の更新(location・shelf)で、在庫移動ではない
       """)
     @minValue(-99999999.99)
     @maxValue(99999999.99)
     quantity: float64;
 
-    @doc("単価(円)。未設定の場合はnull")
+    @doc("単価(円)。未設定の場合はnull。totalCost(unitCost と quantity の絶対値の積を四捨五入した値)が int32 の範囲に収まる値")
     @minValue(0)
     unitCost: int32 | null;
 
-    @doc("関連する記録の種別 (例: purchase_order、treatment_record)。関連する記録がない場合はnull")
+    @doc("関連する記録の種別 (例: purchase_order、treatment_record)。空白だけの文字列は指定できない。referenceId と両方を指定するか、両方を null にする。サーバーは指した記録があるかを確かめない")
     @maxLength(50)
     referenceType: string | null;
 
-    @doc("関連する外部参照 ID。referenceType の記録の ID。関連する記録がない場合はnull")
+    @doc("関連する外部参照 ID。referenceType の記録の ID。referenceType と両方を指定するか、両方を null にする")
     @format("uuid")
     referenceId: string | null;
 
-    @doc("操作理由。未設定の場合はnull")
+    @doc("操作理由。空白だけの文字列は指定できない。adjustment と disposal では必須(null は400)。ほかの区分で未設定の場合はnull")
     reason: string | null;
   }
 

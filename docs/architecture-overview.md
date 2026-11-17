@@ -58,8 +58,8 @@ Before relying on anything, check this table.
 | Points (`/api/v1/points`) | Implemented in every layer: the balance of a customer, their history of point transactions (latest first, by cursor, between two moments), their points about to expire, and earning, using, adjusting and expiring points: the seven operations of `PointCrud`. The ledger is one for the whole platform, as the customer ledger is. An administrator and the owner, the managers and the staff of any salon read, earn and use points; the staff do not adjust them; a customer account is refused (403). Every movement writes a transaction with the balance after it and sets the balance of the customer (`loyaltyPoints`) to it, in one `READ COMMITTED` transaction that holds the sale or the booking it names and then the customer; the balance stays between 0 and 2,147,483,647 (409). A movement may name a sale or a booking of the customer within the reach of the actor: points are not earned on or used for a void sale or a draft, cancelled or no-show booking, and a record is earned on once and used for once (409, and a partial unique index). The points of a sale and a payment by points move no balance. What is left of an earning is counted from the transactions of the customer in the order they were written, a decrease taking the earliest expiry date first; the points about to expire include those past their expiry date that are not yet expired. The expiry is the administrators' alone (403 for the members of a salon): it writes one `expired` transaction per customer, each in a `READ COMMITTED` transaction of its own that holds the customer `FOR NO KEY UPDATE` before it reads their transactions, so a second run writes nothing. See [Points](./points.md) (Japanese). |
 | Reviews (`/api/v1/reviews`, `/api/v1/review-reports`, `/api/v1/salons/{salonId}/reviews/summary`, `/api/v1/staff/{staffId}/reviews/summary`) | Implemented in every layer: every operation of `ReviewCrud` (the list, the create, the get, the update, the delete, the mark as helpful, the report and the response of a salon), `list` and `dismiss` of `ReviewReportCrud`, `getSummary` of `SalonReviewSummary` and `getStaffSummary` of `StaffReviewSummary`. Reading is public: no token is needed or looked at. A review is written by a customer account with a profile alone (403 for an administrator and the members of a salon), for a booking of that customer that is completed (409 otherwise), once per booking (409), at the salon of the booking that is not deleted, naming no staff member or one who took the booking (400). The transaction that writes a review holds the booking `FOR SHARE` and the salon `FOR NO KEY UPDATE` in `READ COMMITTED` and counts the `rating` (the average of the overall ratings, two decimals) and the `reviewCount` of the salon again, so the reviews of a salon are written one after the other. Its author changes a review (`update`; 403 for everyone else), and its author or an administrator removes it (`delete`, physically; 403 for the members of a salon); both hold the review `FOR UPDATE` and then the salon, and count the salon again, writing it only when a figure changes. A booking with a review is not deleted (409) until the review is. A customer marks a review of another customer as helpful (`markHelpful`; 403 for an administrator, the members of a salon and the author), once: the mark is a row of `review_helpful_votes`, a second one answers the count as it is, and the `helpfulCount` of the review is counted again from the rows, with the review held `FOR NO KEY UPDATE`. A customer reports a review of another customer, and the owner or a manager of a salon one of their salon (`report`; 403 for an administrator, staff, the author and another salon), once per account (409): the report is a row of `review_reports`, the review is not hidden, and its `reportCount` is the number of pending reports, counted again with the review held `FOR NO KEY UPDATE`. The administrators list the reports oldest first and dismiss them (`ReviewReportCrud`), which counts the review again. The owner or a manager of the salon of a review writes one response to it, replaces it or takes it down (`respond`; 403 for staff, customers and another salon), and an administrator only takes one down: the response is a column of the review, written with its time only when it differs from the stored one, with the review held `FOR NO KEY UPDATE`, and the `updatedAt` of the review stays. See [Reviews](./reviews.md) (Japanese). |
 | Products (`/api/v1/salons/{salonId}/products`) | Implemented in every layer: list, create, get, update and delete, the five operations of `ProductCrud`. A product is what a salon sells at its counter or uses in its treatments: a code, a name, the prices, the unit, the stock levels, the supplier and whether it is sold, used in treatments and in use. The routes are below the salon and none is public: an administrator and the owner, the managers and the staff of the salon read them, an administrator, the owner and the managers keep them, and a customer account reaches none. The stock levels lie in order, the product code is unique among the products of the salon that are not deleted, and a delete marks the product and is refused while it has stock. See [Products](./products.md) (Japanese). |
-| Stock (`/api/v1/inventory`) | Implemented in every layer: list, create, get, update and delete of the stock rows, and the lists of the low stock and of what expires soon, seven of the operations of `InventoryCrud`. A stock row is one lot of one product of a salon: how much there is, where it is kept and when it expires. The routes are not below a salon and none is public: an administrator and the owner, the managers and the staff of a salon read them, an administrator, the owner and the managers keep them, and a customer account reaches none. A product kept by lots names the lot of each row and a product that is not has one row; a row is created without stock, no request writes the stock figures, and a row that counts stock is not deleted. See [Inventory](./inventory.md) (Japanese). |
-| The other domains (treatment, and the stock movements, counts and value report of the inventory) | Specified in TypeSpec, so their generated types exist, and the database schema has their tables and seed data. The models agree with the tables (`pnpm check:api-db`). There is no domain, repository or route code. A request to one of these routes is answered with 404. The implementation order is in GitHub issue #4. |
+| Stock (`/api/v1/inventory`) | Implemented in every layer: list, create, get, update and delete of the stock rows, the lists of the low stock and of what expires soon, and the stock movements of a row and their history, nine of the operations of `InventoryCrud`. A stock row is one lot of one product of a salon: how much there is, where it is kept and when it expires. The routes are not below a salon and none is public: an administrator and the owner, the managers and the staff of a salon read them, an administrator, the owner and the managers keep them, and a customer account reaches none. A product kept by lots names the lot of each row and a product that is not has one row; a row is created without stock, only a stock movement moves its stock, and a row that counts stock is not deleted. The staff record purchases, sales, uses and returns; an adjustment, a disposal and a transfer are for an administrator, the owner and the managers. See [Inventory](./inventory.md) (Japanese). |
+| The other domains (treatment, and the stock counts and value report of the inventory) | Specified in TypeSpec, so their generated types exist, and the database schema has their tables and seed data. The models agree with the tables (`pnpm check:api-db`). There is no domain, repository or route code. A request to one of these routes is answered with 404. The implementation order is in GitHub issue #4. |
 | Attachments, roles and permissions, purchase orders, medical charts | Specified in TypeSpec only. No table exists for them yet. |
 | Email | Implemented for the mails of the authentication flows and the invitation of a staff member (confirm the address, reset the password, accept an invitation, and the notices: the password was changed, two-factor authentication was enabled, disabled or turned off by an administrator, the backup codes were replaced, a backup code was used to sign in): plain text over SMTP. Docker Compose starts Mailpit, which catches them locally. See [Email](./email.md) (Japanese). |
 | File storage | Not implemented. Docker Compose starts no service for it. |
@@ -666,27 +666,38 @@ domain/src/
 │                                      columns a create writes (DbNewInventory)
 │                                      and those an update may change
 │                                      (DbInventoryChanges)
-├── schemas/inventory.schema.ts        Zod schemas of the create, the update and the
-│                                      three lists; no request states the stock
+├── schemas/inventory.schema.ts        Zod schemas of the create, the update, the
+│                                      three lists, a stock movement and the
+│                                      history; only a movement states the stock
 ├── mappers/write/inventory.mapper.ts  Request → columns, as they are
+├── mappers/write/inventory-transaction.mapper.ts
+│                                      Movement → columns, with the total cost
 ├── mappers/read/inventory.mapper.ts   Row → response; the stock figures as numbers
+├── mappers/read/inventory-transaction.mapper.ts
+│                                      Movement → response; the quantity and the
+│                                      balances as numbers
 ├── repositories/inventory.repository.ts
 │                                      IInventoryRepository; what became of a create,
-│                                      an update and a delete is a sum type each
-│                                      (InventoryCreation, InventoryUpdate,
-│                                      InventoryRemoval)
+│                                      an update, a delete and a movement is a sum
+│                                      type each (InventoryCreation, InventoryUpdate,
+│                                      InventoryRemoval, InventoryMovementRecording)
 └── business-logic/inventory/          One *.usecase.ts per operation; _shared/ holds
-                                       the dependencies, who reads and who keeps
-                                       (authorization.ts), the lot rule (lots.ts),
-                                       the last day that expires soon (expiry.ts),
-                                       the page (page.ts) and the refusal of a
-                                       salon that is not there (refusals.ts)
+                                       the dependencies, who reads, who keeps and
+                                       who records which movement (authorization.ts),
+                                       the lot rule (lots.ts), the last day that
+                                       expires soon (expiry.ts), the rules of the
+                                       kinds of movement and the total cost
+                                       (movements.ts), the page (page.ts) and the
+                                       refusal of a salon that is not there
+                                       (refusals.ts)
 
 infrastructure/src/
 └── repositories/inventory.repository.impl.ts
                                        A create and a change of the lot hold the
                                        product while they decide; a delete holds
-                                       the row, looks at its stock and removes it
+                                       the row, looks at its stock and removes it;
+                                       a movement holds the row, moves its stock
+                                       and records the balances
 
 api/src/
 └── routes/inventory/                  One *.handler.ts per operation, index.ts (router,
@@ -1922,9 +1933,14 @@ the `salonId` of the body or of the query. What differs from the products:
   one row: `inventory_unique` keeps the rows with a lot, and the partial
   unique index `inventory_unique_without_lot` those without one. Both are
   `alreadyExists` (409).
-- **Figures that no request writes.** A row is created with no stock; the
-  stock figures and the count belong to the stock movements and counts. A
-  delete holds the row `FOR UPDATE`, answers `inStock` (409) while it
+- **Figures that only a ledger writes.** A row is created with no stock,
+  and only a stock movement moves it: the repository holds the row
+  `FOR UPDATE`, refuses a stock below what is reserved or above
+  99,999,999.99 (409), moves the row and records the movement with the
+  balances before and after, so the stock of a row is the balance after
+  its latest movement. Who records a movement depends on its kind, so the
+  reach is decided once more after the body is read (`movementReachOf`).
+  A delete holds the row `FOR UPDATE`, answers `inStock` (409) while it
   counts stock, and removes it.
 - **A day of the salon.** What expires soon is counted from today at the
   salon: `lastExpiringDayOf` of `_shared/expiry.ts` works it out from the

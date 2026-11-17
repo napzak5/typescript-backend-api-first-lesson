@@ -1753,4 +1753,415 @@ describe('the migrations of this repository', () => {
       ).toHaveLength(2)
     })
   })
+
+  describe('202611171500_inventory_transaction_rules.sql', () => {
+    const run = (): Promise<void> =>
+      runMigration('202611171500_inventory_transaction_rules.sql')
+
+    /** The schema of setup.sql, which the migration brings a database to. */
+    let schemaOfSetup: string[] = []
+
+    type StoredMovement = {
+      id?: string
+      transactionType?: string
+      quantity?: string
+      balanceBefore?: string
+      balanceAfter?: string
+      unitCost?: number | null
+      totalCost?: number | null
+      referenceType?: string | null
+      referenceId?: string | null
+      reason?: string | null
+      createdAt?: string
+    }
+
+    /** A product of the salon kept by lots; returns its ID. */
+    const storeProduct = async (salonId: string): Promise<string> => {
+      const id = randomUUID()
+      await sql`
+        INSERT INTO products (
+          id, "salonId", "productCode", name, unit, "requiresLotTracking"
+        )
+        VALUES (
+          ${id}, ${salonId}, ${`CODE-${id}`}, 'Shampoo', 'bottle', true
+        )
+      `
+      return id
+    }
+
+    /** A stock row of a new product of the salon, with the stock given. */
+    const storeStock = async (
+      salonId: string,
+      currentStock: string,
+    ): Promise<{ id: string; productId: string }> => {
+      const id = randomUUID()
+      const productId = await storeProduct(salonId)
+      await sql`
+        INSERT INTO inventory (
+          id, "salonId", "productId", "lotNumber", "expiryDate",
+          "currentStock", "availableStock", "reservedStock"
+        )
+        VALUES (
+          ${id}, ${salonId}, ${productId}, ${`LOT-${id}`}, '2027-03-31',
+          ${currentStock}, ${currentStock}, '0'
+        )
+      `
+      return { id, productId }
+    }
+
+    /**
+     * A movement of the stock row: an adjustment of 5, from 0 to 5, unless
+     * said otherwise.
+     */
+    const storeMovement = (
+      salonId: string,
+      row: { id: string; productId: string },
+      {
+        id = randomUUID(),
+        transactionType = 'adjustment',
+        quantity = '5',
+        balanceBefore = '0',
+        balanceAfter = '5',
+        unitCost = null,
+        totalCost = null,
+        referenceType = null,
+        referenceId = null,
+        reason = 'Counted',
+        createdAt = '2026-01-01T00:00:00Z',
+      }: StoredMovement = {},
+    ) => sql`
+      INSERT INTO inventory_transactions (
+        id, "salonId", "productId", "inventoryId", "transactionType",
+        quantity, "balanceBefore", "balanceAfter", "unitCost", "totalCost",
+        "referenceType", "referenceId", reason, "createdAt"
+      )
+      VALUES (
+        ${id}, ${salonId}, ${row.productId}, ${row.id}, ${transactionType},
+        ${quantity}, ${balanceBefore}, ${balanceAfter}, ${unitCost},
+        ${totalCost}, ${referenceType}, ${referenceId}, ${reason},
+        ${createdAt}
+      )
+    `
+
+    /**
+     * The movements of a stock row in the order they were written, as
+     * `type quantity before after lot expiry reason`, the lot as whether it is the row's.
+     */
+    const historyOf = async (inventoryId: string): Promise<string[]> => {
+      const rows = await sql<{ line: string }[]>`
+        SELECT concat_ws(
+          ' ', "transactionType", quantity, "balanceBefore", "balanceAfter",
+          CASE
+            WHEN "lotNumber" = 'LOT-' || "inventoryId"::text THEN 'its-lot'
+            WHEN "lotNumber" IS NULL THEN 'no-lot'
+            ELSE 'another-lot'
+          END,
+          "expiryDate", reason
+        ) AS line
+        FROM inventory_transactions
+        WHERE "inventoryId" = ${inventoryId}
+        ORDER BY "createdAt", id
+      `
+      return rows.map(({ line }) => line)
+    }
+
+    const countOfMovements = async (): Promise<number> => {
+      const [row] = await sql<{ count: number }[]>`
+        SELECT count(*)::int AS count FROM inventory_transactions
+      `
+      return row?.count ?? -1
+    }
+
+    const OPENING = '在庫移動の記録を始めた時点の在庫数'
+
+    // A database from before the migration: none of its rules, and the
+    // index on the stock row alone.
+    beforeEach(async () => {
+      await applyBaseline(sql, plan)
+      schemaOfSetup = await describeSchema()
+      await sql.unsafe(`
+        ALTER TABLE inventory_transactions
+          DROP CONSTRAINT inventory_transactions_quantity_of_type,
+          DROP CONSTRAINT inventory_transactions_balance,
+          DROP CONSTRAINT inventory_transactions_cost,
+          DROP CONSTRAINT inventory_transactions_reference_pair,
+          DROP CONSTRAINT inventory_transactions_reason_of_type;
+        DROP INDEX idx_inventory_transactions_inventory_time;
+        CREATE INDEX idx_inventory_transactions_inventory_id
+          ON inventory_transactions USING btree ("inventoryId");
+      `)
+    })
+
+    it('should give the database the rules and the index of setup.sql, and keep them on a second run', async () => {
+      expect(await describeSchema()).not.toEqual(schemaOfSetup)
+
+      await run()
+      await run()
+
+      expect(await describeSchema()).toEqual(schemaOfSetup)
+    })
+
+    it('should open each row with stock and no movement with an adjustment, once', async () => {
+      const salon = await storeSalon(null)
+      const stocked = await storeStock(salon, '20')
+      const fraction = await storeStock(salon, '2.50')
+      const empty = await storeStock(salon, '0')
+
+      await run()
+      await run()
+
+      expect(await historyOf(stocked.id)).toEqual([
+        `adjustment 20.00 0.00 20.00 its-lot 2027-03-31 ${OPENING}`,
+      ])
+      expect(await historyOf(fraction.id)).toEqual([
+        `adjustment 2.50 0.00 2.50 its-lot 2027-03-31 ${OPENING}`,
+      ])
+      expect(await historyOf(empty.id)).toEqual([])
+      const [opening] = await sql<
+        { salonId: string; productId: string; performedBy: null }[]
+      >`
+        SELECT "salonId", "productId", "performedBy"
+        FROM inventory_transactions
+        WHERE "inventoryId" = ${stocked.id}
+      `
+      expect(opening).toEqual({
+        salonId: salon,
+        productId: stocked.productId,
+        performedBy: null,
+      })
+    })
+
+    it('should adjust a row by the difference from its latest movement, either way', async () => {
+      const salon = await storeSalon(null)
+      const more = await storeStock(salon, '8')
+      await storeMovement(salon, more)
+      const less = await storeStock(salon, '4')
+      await storeMovement(salon, less, {
+        quantity: '10',
+        balanceAfter: '10',
+      })
+
+      await run()
+
+      expect(await historyOf(more.id)).toEqual([
+        'adjustment 5.00 0.00 5.00 no-lot Counted',
+        `adjustment 3.00 5.00 8.00 its-lot 2027-03-31 ${OPENING}`,
+      ])
+      expect(await historyOf(less.id)).toEqual([
+        'adjustment 10.00 0.00 10.00 no-lot Counted',
+        `adjustment -6.00 10.00 4.00 its-lot 2027-03-31 ${OPENING}`,
+      ])
+    })
+
+    it('should take the latest movement by its time, then by its ID, and leave a row that agrees with it', async () => {
+      const salon = await storeSalon(null)
+      const byTime = await storeStock(salon, '7')
+      await storeMovement(salon, byTime, {
+        quantity: '7',
+        balanceAfter: '7',
+        createdAt: '2026-02-01T00:00:00Z',
+      })
+      await storeMovement(salon, byTime, {
+        quantity: '9',
+        balanceAfter: '9',
+        createdAt: '2026-01-01T00:00:00Z',
+      })
+      const byId = await storeStock(salon, '9')
+      await storeMovement(salon, byId, {
+        id: 'ffffffff-ffff-4fff-bfff-ffffffffffff',
+        quantity: '9',
+        balanceAfter: '9',
+      })
+      await storeMovement(salon, byId, {
+        id: '00000000-0000-4000-8000-000000000000',
+        quantity: '7',
+        balanceAfter: '7',
+      })
+      const before = await countOfMovements()
+
+      await run()
+
+      expect(await countOfMovements()).toBe(before)
+    })
+
+    it('should fail and change nothing where a movement breaks a rule', async () => {
+      const salon = await storeSalon(null)
+      const row = await storeStock(salon, '20')
+      await storeMovement(salon, row, {
+        transactionType: 'purchase',
+        quantity: '-5',
+        balanceBefore: '5',
+        balanceAfter: '0',
+      })
+      const before = await describeSchema()
+
+      await expect(run()).rejects.toThrow(
+        'inventory_transactions_quantity_of_type',
+      )
+
+      expect(await describeSchema()).toEqual(before)
+      expect(await historyOf(row.id)).toHaveLength(1)
+    })
+
+    it.each<[string, string, StoredMovement]>([
+      [
+        'a movement of nothing',
+        'inventory_transactions_quantity_of_type',
+        { quantity: '0', balanceAfter: '0' },
+      ],
+      [
+        'a purchase that takes stock out',
+        'inventory_transactions_quantity_of_type',
+        {
+          transactionType: 'purchase',
+          quantity: '-1',
+          balanceBefore: '1',
+          balanceAfter: '0',
+        },
+      ],
+      ...['sale', 'use', 'disposal'].map(
+        (transactionType): [string, string, StoredMovement] => [
+          `a ${transactionType} that brings stock in`,
+          'inventory_transactions_quantity_of_type',
+          { transactionType, quantity: '1', balanceAfter: '1' },
+        ],
+      ),
+      [
+        'a balance after that is not the balance before and the quantity',
+        'inventory_transactions_balance',
+        { quantity: '5', balanceBefore: '1', balanceAfter: '5' },
+      ],
+      [
+        'a negative balance after',
+        'inventory_transactions_balance',
+        { quantity: '-6', balanceBefore: '5', balanceAfter: '-1' },
+      ],
+      [
+        'a negative balance before',
+        'inventory_transactions_balance',
+        { quantity: '6', balanceBefore: '-1', balanceAfter: '5' },
+      ],
+      [
+        'a unit cost without a total cost',
+        'inventory_transactions_cost',
+        { unitCost: 100 },
+      ],
+      [
+        'a total cost without a unit cost',
+        'inventory_transactions_cost',
+        { totalCost: 500 },
+      ],
+      [
+        'a total cost that is not the unit cost times the quantity',
+        'inventory_transactions_cost',
+        { unitCost: 100, totalCost: 499 },
+      ],
+      [
+        'a total cost of a quantity taken out that is negative',
+        'inventory_transactions_cost',
+        {
+          transactionType: 'sale',
+          quantity: '-5',
+          balanceBefore: '5',
+          balanceAfter: '0',
+          unitCost: 100,
+          totalCost: -500,
+        },
+      ],
+      [
+        'a negative unit cost',
+        'inventory_transactions_cost',
+        { unitCost: -100, totalCost: 500 },
+      ],
+      [
+        'a kind of reference without an ID',
+        'inventory_transactions_reference_pair',
+        { referenceType: 'purchase_order' },
+      ],
+      [
+        'an ID of a reference without its kind',
+        'inventory_transactions_reference_pair',
+        { referenceId: randomUUID() },
+      ],
+      [
+        'an adjustment without a reason',
+        'inventory_transactions_reason_of_type',
+        { reason: null },
+      ],
+      [
+        'a disposal without a reason',
+        'inventory_transactions_reason_of_type',
+        {
+          transactionType: 'disposal',
+          quantity: '-1',
+          balanceBefore: '1',
+          balanceAfter: '0',
+          reason: null,
+        },
+      ],
+    ])('should keep %s out from then on', async (_, constraint, movement) => {
+      await run()
+      const salon = await storeSalon(null)
+      const row = await storeStock(salon, '0')
+
+      await expect(storeMovement(salon, row, movement)).rejects.toThrow(
+        constraint,
+      )
+    })
+
+    it.each<[string, StoredMovement]>([
+      [
+        'an adjustment that takes stock out',
+        { quantity: '-5', balanceBefore: '5', balanceAfter: '0' },
+      ],
+      ...['return', 'transfer'].flatMap(
+        (transactionType): [string, StoredMovement][] => [
+          [`a ${transactionType} in`, { transactionType, reason: null }],
+          [
+            `a ${transactionType} out`,
+            {
+              transactionType,
+              quantity: '-5',
+              balanceBefore: '5',
+              balanceAfter: '0',
+              reason: null,
+            },
+          ],
+        ],
+      ),
+      [
+        'a purchase with a total cost rounded half up',
+        {
+          transactionType: 'purchase',
+          quantity: '0.50',
+          balanceAfter: '0.50',
+          unitCost: 3,
+          totalCost: 2,
+          referenceType: 'purchase_order',
+          referenceId: randomUUID(),
+          reason: null,
+        },
+      ],
+      [
+        'a use that costs nothing',
+        {
+          transactionType: 'use',
+          quantity: '-2.25',
+          balanceBefore: '2.25',
+          balanceAfter: '0',
+          unitCost: 0,
+          totalCost: 0,
+          reason: null,
+        },
+      ],
+    ])('should take %s', async (_, movement) => {
+      await run()
+      const salon = await storeSalon(null)
+      const row = await storeStock(salon, '0')
+
+      await storeMovement(salon, row, movement)
+
+      expect(await historyOf(row.id)).toHaveLength(1)
+    })
+  })
 })

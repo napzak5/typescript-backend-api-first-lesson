@@ -1,10 +1,14 @@
+import type { InventoryTransactionType } from '@beauty-salon-backend/generated'
 import type { Result } from '@beauty-salon-backend/utility'
 import type { LedgerReach } from '../models/booking'
 import type {
   DbInventory,
   DbInventoryChanges,
+  DbInventoryTransaction,
   DbNewInventory,
+  DbNewInventoryMovement,
   InventoryId,
+  InventoryTransactionId,
 } from '../models/inventory'
 import type { ProductId } from '../models/product'
 import type { SalonId } from '../models/salon'
@@ -49,6 +53,46 @@ export type InventoryList = {
   total: number
   hasMore: boolean
 }
+
+/** Which stock movements of a row a list returns. A null filter does not restrict the list. */
+export type InventoryMovementListCriteria = {
+  inventoryId: InventoryId
+  limit: number
+  /** Return the movements that follow this one; null starts from the latest. */
+  after: InventoryTransactionId | null
+  transactionType: InventoryTransactionType | null
+  /**
+   * The first and the last moment of the movements, in the spelling of
+   * `toISOString`; both are in. A movement is compared at the milliseconds
+   * a response shows of its time.
+   */
+  startDate: string | null
+  endDate: string | null
+}
+
+/** What a list of the stock movements of a row found. */
+export type InventoryMovementListing =
+  | {
+      type: 'listed'
+      transactions: DbInventoryTransaction[]
+      /** Number of movements that match, across all pages. */
+      total: number
+      hasMore: boolean
+    }
+  /** No such row within the reach, or it was deleted. */
+  | { type: 'inventoryNotFound' }
+  /** The cursor names no movement of the row. */
+  | { type: 'cursorNotFound' }
+
+/** What became of a stock movement that was to be recorded. */
+export type InventoryMovementRecording =
+  | { type: 'recorded'; transaction: DbInventoryTransaction }
+  /** No such row within the reach, or it was deleted. */
+  | { type: 'notFound' }
+  /** The stock would fall below what is reserved of it (0 when nothing is). */
+  | { type: 'belowReserved' }
+  /** The stock would go above what a row holds, 99999999.99. */
+  | { type: 'overLimit' }
 
 /** What became of a stock row that was to be added. */
 export type InventoryCreation =
@@ -134,4 +178,24 @@ export interface IInventoryRepository {
     reach: LedgerReach,
     id: InventoryId,
   ): Promise<Result<InventoryRemoval, DomainError>>
+
+  /**
+   * Moves the stock of the row by the quantity of the movement, and writes
+   * the movement with the row's salon, product, lot and expiry date, and
+   * the stock before and after it. The current and the available stock
+   * move together; what is reserved stays. Holds the row while it decides,
+   * so movements of a row, and its removal and changes, take turns, and
+   * each is decided on the stock the one before it left.
+   */
+  recordMovement(
+    reach: LedgerReach,
+    id: InventoryId,
+    movement: DbNewInventoryMovement,
+  ): Promise<Result<InventoryMovementRecording, DomainError>>
+
+  /** The movements of the row, latest first, then by their IDs downwards. */
+  listMovements(
+    reach: LedgerReach,
+    criteria: InventoryMovementListCriteria,
+  ): Promise<Result<InventoryMovementListing, DomainError>>
 }

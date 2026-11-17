@@ -7,6 +7,6 @@
  */
 
 /**
- * 検索対象期間の終了日時。操作日時(createdAt)がこの日時より前の在庫移動に一致する
+ * 検索対象期間の終了日時。操作日時(createdAt)がこの日時以前の在庫移動に一致する。startDate より前の日時は指定できない。UTC の日付で 1900-01-01 から 2999-12-31 まで
  */
 export type ModelsInventoryTransactionSearchRequestEndDateParameter = string;

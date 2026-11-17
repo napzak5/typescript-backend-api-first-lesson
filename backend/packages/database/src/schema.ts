@@ -876,6 +876,26 @@ export const inventoryTransactions = pgTable(
       .notNull(),
   },
   (table) => [
+    check(
+      'inventory_transactions_balance',
+      sql`("balanceBefore" >= (0)::numeric) AND ("balanceAfter" >= (0)::numeric) AND ("balanceAfter" = ("balanceBefore" + quantity))`,
+    ),
+    check(
+      'inventory_transactions_cost',
+      sql`(("unitCost" IS NULL) AND ("totalCost" IS NULL)) OR (("unitCost" IS NOT NULL) AND ("totalCost" IS NOT NULL) AND ("unitCost" >= 0) AND (("totalCost")::numeric = round((("unitCost")::numeric * abs(quantity)))))`,
+    ),
+    check(
+      'inventory_transactions_quantity_of_type',
+      sql`(quantity <> (0)::numeric) AND (("transactionType" <> 'purchase'::inventory_transaction_type) OR (quantity > (0)::numeric)) AND (("transactionType" <> ALL (ARRAY['sale'::inventory_transaction_type, 'use'::inventory_transaction_type, 'disposal'::inventory_transaction_type])) OR (quantity < (0)::numeric))`,
+    ),
+    check(
+      'inventory_transactions_reason_of_type',
+      sql`("transactionType" <> ALL (ARRAY['adjustment'::inventory_transaction_type, 'disposal'::inventory_transaction_type])) OR (reason IS NOT NULL)`,
+    ),
+    check(
+      'inventory_transactions_reference_pair',
+      sql`("referenceType" IS NULL) = ("referenceId" IS NULL)`,
+    ),
     foreignKey({
       columns: [table.inventoryId],
       foreignColumns: [inventory.id],
@@ -895,9 +915,11 @@ export const inventoryTransactions = pgTable(
       'btree',
       table.createdAt.asc().nullsLast().op('timestamptz_ops'),
     ),
-    index('idx_inventory_transactions_inventory_id').using(
+    index('idx_inventory_transactions_inventory_time').using(
       'btree',
       table.inventoryId.asc().nullsLast().op('uuid_ops'),
+      table.createdAt.asc().nullsLast().op('timestamptz_ops'),
+      table.id.asc().nullsLast().op('uuid_ops'),
     ),
     index('idx_inventory_transactions_product_id').using(
       'btree',

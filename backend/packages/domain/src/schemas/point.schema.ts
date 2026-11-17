@@ -11,7 +11,13 @@ import {
   pointTransactionIdSchema,
 } from '../models/point'
 import { uuidSchema } from '../shared'
-import { calendarDate, MAX_INTEGER, momentInUtc, nonBlankText } from './rules'
+import {
+  calendarDate,
+  MAX_INTEGER,
+  momentInUtc,
+  nonBlankText,
+  referenceInPairs,
+} from './rules'
 
 /**
  * Validation of the requests of the points ledger. The shapes are checked
@@ -36,33 +42,6 @@ const reference = {
   description: nonBlankText.nullable(),
   referenceType: PointReferenceTypeSchema.nullable(),
   referenceId: uuidSchema.nullable(),
-}
-
-/**
- * A reference is a kind and an ID together, or neither: an ID alone does
- * not say which table it is of. The one that is missing is reported.
- */
-const referenceInPairs = (
-  context: z.core.ParsePayload<{
-    referenceType: string | null
-    referenceId: string | null
-  }>,
-): void => {
-  const { referenceType, referenceId } = context.value
-  if ((referenceType === null) === (referenceId === null)) {
-    return
-  }
-  const [field, other] =
-    referenceType === null
-      ? ['referenceType', 'referenceId']
-      : ['referenceId', 'referenceType']
-  context.issues.push({
-    code: 'custom',
-    path: [field],
-    message: `Must not be null when ${other} is given`,
-    input: null,
-    continue: true,
-  })
 }
 
 export const pointEarnRequestSchema = z

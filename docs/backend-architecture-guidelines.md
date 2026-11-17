@@ -748,7 +748,15 @@ async execute(
 - 一意性が NULL を含みます。ロット番号のある行は一意制約（`inventory_unique`）、ロット番号のない行は部分一意インデックス（`inventory_unique_without_lot`）が守り、リポジトリが、どちらの違反も `alreadyExists`（409）にします。
 - 削除は、行を消します。リポジトリが、行を `FOR UPDATE` でロックしてから在庫数を確かめ、0 でなければ `inStock`（409）を返します。在庫の移動の記録は、外部キー（`ON DELETE SET NULL`）で残ります。
 - 期限切れ間近の一覧は、サロンのタイムゾーン（`salons.timezone`）の今日から数えます。今日を作る関数（`_shared/expiry.ts` の `lastExpiringDayOf`）は純粋で、ユースケースが、依存の `clock` とサロンのタイムゾーンを渡します。
-- `numeric` のカラム（在庫の 3 つの数）は、リクエストが書きません。Read マッパーが数値にします。
+- `numeric` のカラム（在庫の 3 つの数）は、作成と更新のリクエストが書きません。在庫数と使える数を増減するのは、在庫の移動だけです。Read マッパーが数値にします。
+
+在庫の移動（`POST /api/v1/inventory/movement`、`GET /api/v1/inventory/{id}/movements`）は、在庫の行の在庫数を動かす記録です。
+
+- 区分ごとの規則（`quantity` の符号、`reason` が要るか、管理する人だけが記録するか）は、純粋な関数（`business-logic/inventory/_shared/movements.ts` の `directionOf`、`needsReason`、`isKeepersMovement`）が、ts-pattern の網羅的な `match` で決めます。区分を足すと、3 つの関数が型エラーになります。スキーマの `.check()` と、権限の `movementReachOf` が使います。
+- 記録できるかは区分で決まり、区分は本文にあるので、権限を 2 回判定します。本文を読む前に `inventoryReachOf`、本文を確かめたあとに `movementReachOf` です。
+- 金額（`totalCost`）は、`bigint` で計算します（`totalCostOf`）。単価は整数、数量は 100 倍した整数として扱い、PostgreSQL の `round` と同じく、0.5 を 0 から遠いほうに丸めます。CHECK 制約（`inventory_transactions_cost`）も同じ式で確かめます。
+- リポジトリは、在庫の行を `FOR UPDATE` でロックしてから、移動後の在庫数を確かめ（`belowReserved`、`overLimit`）、在庫の行を更新し、在庫の移動を書きます（`InventoryMovementRecording`）。移動前後の在庫数（`balanceBefore`、`balanceAfter`）は、ロックした行と更新した行の値です。
+- 履歴は、`REPEATABLE READ` の読み取り専用のトランザクションで読みます（`InventoryMovementListing`）。日時の絞り込みは、レスポンスと同じミリ秒で比べます（`date_trunc('milliseconds', …)`）。
 
 売上の支払い（`backend/packages/domain/src/business-logic/payment`、`backend/packages/api/src/routes/payment`、`backend/packages/api/src/routes/sale/process-sale.handler.ts`）は、売上台帳と同じく、ルートをサロンの下に置かず、権限は売上台帳の関数（記録は `saleReachOf`、返金は `saleVoidReachOf`）で決まります。売上台帳にないものは次の点です。
 

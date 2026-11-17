@@ -172,7 +172,7 @@ export const SalonWriteMapper = {
 
 `products` には、表現が変わるカラムが 3 つある。在庫の水準（`minimumStock`、`reorderPoint`、`maximumStock`）は、API では数値、`numeric(10,2)` のカラムでは文字列である。`ProductWriteMapper`（`backend/packages/domain/src/mappers/write/product.mapper.ts`）が `String(value)` で文字列にし、Read マッパー（`backend/packages/domain/src/mappers/read/product.mapper.ts`）が数値に戻す。スキーマは、小数第 3 位以下を持つ値を受け付けないので、保存で値が変わることはない。Read マッパーは、有限の数値として読めない値を、データベースのエラーにする。
 
-`inventory` の在庫の 3 つの数（`currentStock`、`availableStock`、`reservedStock`）も、API では数値、`numeric(10,2)` のカラムでは文字列である。リクエストは書かず（作成した行は 0）、Read マッパー（`backend/packages/domain/src/mappers/read/inventory.mapper.ts`）が数値にする。使用期限（`expiryDate`）は `date` のカラムで、DB も API も `YYYY-MM-DD` なので変換しない。リクエストの日付は、ほかの日付と同じく 1900-01-01 から 2999-12-31 までに限る（[範囲](#リクエストの日付と日時の範囲)）。
+`inventory` の在庫の 3 つの数（`currentStock`、`availableStock`、`reservedStock`）も、API では数値、`numeric(10,2)` のカラムでは文字列である。リクエストは書かず（作成した行は 0）、Read マッパー（`backend/packages/domain/src/mappers/read/inventory.mapper.ts`）が数値にする。在庫の移動（`inventory_transactions`）の `quantity`、`balanceBefore`、`balanceAfter` も `numeric(10,2)` で、Write マッパー（`mappers/write/inventory-transaction.mapper.ts`）が `quantity` を小数 2 桁の文字列にし、Read マッパー（`mappers/read/inventory-transaction.mapper.ts`）が 3 つを数値にする。使用期限（`expiryDate`）は `date` のカラムで、DB も API も `YYYY-MM-DD` なので変換しない。リクエストの日付は、ほかの日付と同じく 1900-01-01 から 2999-12-31 までに限る（[範囲](#リクエストの日付と日時の範囲)）。
 
 `time` のカラムは変換しない。DB は `HH:mm:ss` で返し、リクエストは `HH:mm` と `HH:mm:ss` のどちらも受け付ける。
 

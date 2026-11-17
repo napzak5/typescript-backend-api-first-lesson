@@ -285,7 +285,12 @@ CREATE TABLE "inventory_transactions" (
 	"expiryDate" date,
 	"reason" text,
 	"performedBy" uuid,
-	"createdAt" timestamp with time zone DEFAULT now() NOT NULL
+	"createdAt" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "inventory_transactions_balance" CHECK (("balanceBefore" >= (0)::numeric) AND ("balanceAfter" >= (0)::numeric) AND ("balanceAfter" = ("balanceBefore" + quantity))),
+	CONSTRAINT "inventory_transactions_cost" CHECK ((("unitCost" IS NULL) AND ("totalCost" IS NULL)) OR (("unitCost" IS NOT NULL) AND ("totalCost" IS NOT NULL) AND ("unitCost" >= 0) AND (("totalCost")::numeric = round((("unitCost")::numeric * abs(quantity)))))),
+	CONSTRAINT "inventory_transactions_quantity_of_type" CHECK ((quantity <> (0)::numeric) AND (("transactionType" <> 'purchase'::inventory_transaction_type) OR (quantity > (0)::numeric)) AND (("transactionType" <> ALL (ARRAY['sale'::inventory_transaction_type, 'use'::inventory_transaction_type, 'disposal'::inventory_transaction_type])) OR (quantity < (0)::numeric))),
+	CONSTRAINT "inventory_transactions_reason_of_type" CHECK (("transactionType" <> ALL (ARRAY['adjustment'::inventory_transaction_type, 'disposal'::inventory_transaction_type])) OR (reason IS NOT NULL)),
+	CONSTRAINT "inventory_transactions_reference_pair" CHECK (("referenceType" IS NULL) = ("referenceId" IS NULL))
 );
 
 CREATE TABLE "membership_tiers" (
@@ -957,7 +962,7 @@ CREATE INDEX "idx_inventory_product_id" ON "inventory" USING btree ("productId" 
 CREATE INDEX "idx_inventory_salon_id" ON "inventory" USING btree ("salonId" uuid_ops);
 CREATE UNIQUE INDEX "inventory_unique_without_lot" ON "inventory" USING btree ("salonId" uuid_ops,"productId" uuid_ops) WHERE ("lotNumber" IS NULL);
 CREATE INDEX "idx_inventory_transactions_created_at" ON "inventory_transactions" USING btree ("createdAt" timestamptz_ops);
-CREATE INDEX "idx_inventory_transactions_inventory_id" ON "inventory_transactions" USING btree ("inventoryId" uuid_ops);
+CREATE INDEX "idx_inventory_transactions_inventory_time" ON "inventory_transactions" USING btree ("inventoryId" uuid_ops,"createdAt" timestamptz_ops,"id" uuid_ops);
 CREATE INDEX "idx_inventory_transactions_product_id" ON "inventory_transactions" USING btree ("productId" uuid_ops);
 CREATE INDEX "idx_inventory_transactions_salon_id" ON "inventory_transactions" USING btree ("salonId" uuid_ops);
 CREATE INDEX "idx_inventory_transactions_transaction_type" ON "inventory_transactions" USING btree ("transactionType" enum_ops);

@@ -272,7 +272,23 @@ export async function seedProducts(
   }
 
   if (inventory.length > 0) {
-    await db.insert(schema.inventory).values(inventory)
+    const rows = await db.insert(schema.inventory).values(inventory).returning()
+    // Each row's history begins with the stock it starts with, as the
+    // migration that began recording movements opened the rows it found.
+    await db.insert(schema.inventoryTransactions).values(
+      rows.map((row): typeof schema.inventoryTransactions.$inferInsert => ({
+        salonId: row.salonId,
+        productId: row.productId,
+        inventoryId: row.id,
+        transactionType: 'adjustment',
+        quantity: row.currentStock,
+        balanceBefore: '0.00',
+        balanceAfter: row.currentStock,
+        lotNumber: row.lotNumber,
+        expiryDate: row.expiryDate,
+        reason: '在庫移動の記録を始めた時点の在庫数',
+      })),
+    )
   }
 
   // Build product map

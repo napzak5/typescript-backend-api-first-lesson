@@ -1,8 +1,13 @@
-import { inventory, products } from '@beauty-salon-backend/database'
+import {
+  inventory,
+  inventoryTransactions,
+  products,
+} from '@beauty-salon-backend/database'
 import {
   type DbInventory,
   type DbInventoryChanges,
   type DbNewInventory,
+  type DbNewInventoryMovement,
   type DomainError,
   DomainErrors,
   type IInventoryRepository,
@@ -12,6 +17,9 @@ import {
   type InventoryList,
   type InventoryListCriteria,
   type InventoryLowStockCriteria,
+  type InventoryMovementListCriteria,
+  type InventoryMovementListing,
+  type InventoryMovementRecording,
   type InventoryRemoval,
   type InventoryUpdate,
   type LedgerReach,
@@ -22,6 +30,7 @@ import {
   and,
   asc,
   count,
+  desc,
   eq,
   getTableColumns,
   gt,
@@ -31,6 +40,7 @@ import {
   type SQL,
   sql,
 } from 'drizzle-orm'
+import type { PgTransactionConfig } from 'drizzle-orm/pg-core'
 import { match, P } from 'ts-pattern'
 import { CLOCK } from '../database/clock'
 import { describeDatabaseError } from '../database/failure'
@@ -151,6 +161,31 @@ const updateOf = (
   outcome.type === 'unwritten'
     ? Result.error(DomainErrors.database(outcome.reason, null))
     : Result.success(outcome)
+
+const recordingOf = (
+  outcome: InventoryMovementRecording | Unwritten,
+): Result<InventoryMovementRecording, DomainError> =>
+  outcome.type === 'unwritten'
+    ? Result.error(DomainErrors.database(outcome.reason, null))
+    : Result.success(outcome)
+
+/** The most stock a row holds: its columns are `numeric(10, 2)`. */
+const MAX_STOCK = sql`99999999.99`
+
+/**
+ * A history is read in one snapshot that writes nothing: the row, the
+ * cursor, the page and the count of what matches are of one moment.
+ */
+const AT_ONE_MOMENT: PgTransactionConfig = {
+  isolationLevel: 'repeatable read',
+  accessMode: 'read only',
+}
+
+/**
+ * The time of a movement as a response shows it, to the millisecond: a
+ * filter by the time a client was shown matches the movement it was shown.
+ */
+const movedAt = sql`date_trunc('milliseconds', ${inventoryTransactions.createdAt})`
 
 export class InventoryRepository implements IInventoryRepository {
   constructor(private readonly db: Database) {}
@@ -482,6 +517,175 @@ export class InventoryRepository implements IInventoryRepository {
         },
         { isolationLevel: 'read committed' },
       ),
+    )
+  }
+
+  async recordMovement(
+    reach: LedgerReach,
+    id: InventoryId,
+    movement: DbNewInventoryMovement,
+  ): Promise<Result<InventoryMovementRecording, DomainError>> {
+    const quantity = sql`${movement.quantity}::numeric`
+
+    const recorded = await attempt(
+      'Failed to record stock movement',
+      undefined,
+      () =>
+        this.db.transaction(
+          async (tx): Promise<InventoryMovementRecording | Unwritten> => {
+            // Held, the row is moved by one movement at a time, each from
+            // the stock the one before it left; its removal and its changes
+            // wait as well, and it is decided on the stock as it is then.
+            const [held] = await tx
+              .select({
+                currentStock: inventory.currentStock,
+                belowReserved: sql<boolean>`${inventory.currentStock} + ${quantity} < ${inventory.reservedStock}`,
+                overLimit: sql<boolean>`${inventory.currentStock} + ${quantity} > ${MAX_STOCK}`,
+              })
+              .from(inventory)
+              .where(and(eq(inventory.id, id), within(reach)))
+              .for('update')
+            if (held === undefined) {
+              return { type: 'notFound' }
+            }
+            if (held.belowReserved) {
+              return { type: 'belowReserved' }
+            }
+            if (held.overLimit) {
+              return { type: 'overLimit' }
+            }
+
+            // The reserved stock stays, so what is available moves with
+            // what there is.
+            const [moved] = await tx
+              .update(inventory)
+              .set({
+                currentStock: sql`${inventory.currentStock} + ${quantity}`,
+                availableStock: sql`${inventory.availableStock} + ${quantity}`,
+                updatedAt: CLOCK,
+              })
+              .where(eq(inventory.id, id))
+              .returning({
+                salonId: inventory.salonId,
+                productId: inventory.productId,
+                lotNumber: inventory.lotNumber,
+                expiryDate: inventory.expiryDate,
+                currentStock: inventory.currentStock,
+              })
+            if (moved === undefined) {
+              return {
+                type: 'unwritten',
+                reason: `Stock row ${id} vanished while it was held`,
+              }
+            }
+
+            const [transaction] = await tx
+              .insert(inventoryTransactions)
+              .values({
+                ...movement,
+                salonId: moved.salonId,
+                productId: moved.productId,
+                inventoryId: id,
+                lotNumber: moved.lotNumber,
+                expiryDate: moved.expiryDate,
+                balanceBefore: held.currentStock,
+                balanceAfter: moved.currentStock,
+                createdAt: CLOCK,
+              })
+              .returning()
+            if (transaction === undefined) {
+              return {
+                type: 'unwritten',
+                reason: `The movement of stock row ${id} was not written`,
+              }
+            }
+
+            return { type: 'recorded', transaction }
+          },
+          { isolationLevel: 'read committed' },
+        ),
+    )
+
+    return Result.flatMap(recorded, recordingOf)
+  }
+
+  async listMovements(
+    reach: LedgerReach,
+    {
+      inventoryId,
+      limit,
+      after,
+      transactionType,
+      startDate,
+      endDate,
+    }: InventoryMovementListCriteria,
+  ): Promise<Result<InventoryMovementListing, DomainError>> {
+    const filters = and(
+      eq(inventoryTransactions.inventoryId, inventoryId),
+      transactionType === null
+        ? undefined
+        : eq(inventoryTransactions.transactionType, transactionType),
+      startDate === null
+        ? undefined
+        : sql`${movedAt} >= ${startDate}::timestamptz`,
+      endDate === null ? undefined : sql`${movedAt} <= ${endDate}::timestamptz`,
+    )
+
+    return attempt('Failed to list stock movements', undefined, () =>
+      this.db.transaction(async (tx): Promise<InventoryMovementListing> => {
+        const [row] = await tx
+          .select({ id: inventory.id })
+          .from(inventory)
+          .where(and(eq(inventory.id, inventoryId), within(reach)))
+        if (row === undefined) {
+          return { type: 'inventoryNotFound' }
+        }
+
+        // Keyset pagination on (createdAt, id), downwards: the page starts
+        // after the movement the cursor names, which has to be one of the
+        // row.
+        const [cursor] =
+          after === null
+            ? []
+            : await tx
+                .select({ createdAt: inventoryTransactions.createdAt })
+                .from(inventoryTransactions)
+                .where(
+                  and(
+                    eq(inventoryTransactions.id, after),
+                    eq(inventoryTransactions.inventoryId, inventoryId),
+                  ),
+                )
+        if (after !== null && cursor === undefined) {
+          return { type: 'cursorNotFound' }
+        }
+        const afterCursor =
+          after === null || cursor === undefined
+            ? undefined
+            : sql`(${inventoryTransactions.createdAt}, ${inventoryTransactions.id}) < (${cursor.createdAt}::timestamptz, ${after}::uuid)`
+
+        const found = await tx
+          .select()
+          .from(inventoryTransactions)
+          .where(and(filters, afterCursor))
+          .orderBy(
+            desc(inventoryTransactions.createdAt),
+            desc(inventoryTransactions.id),
+          )
+          // One extra row tells whether another page follows.
+          .limit(limit + 1)
+        const [matching] = await tx
+          .select({ total: count() })
+          .from(inventoryTransactions)
+          .where(filters)
+
+        return {
+          type: 'listed',
+          transactions: found.slice(0, limit),
+          total: matching?.total ?? 0,
+          hasMore: found.length > limit,
+        }
+      }, AT_ONE_MOMENT),
     )
   }
 }

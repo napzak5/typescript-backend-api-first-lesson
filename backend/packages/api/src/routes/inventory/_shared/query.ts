@@ -34,3 +34,13 @@ export const decodeExpiringSearchQuery = (
   query: unknown,
 ): Result<unknown, DomainError> =>
   parseWith(expiringSearchQuerySchema, query, 'Invalid expiring search')
+
+/** The parameter of the history of a stock row that is not text, as its type. */
+const movementSearchQuerySchema = z.looseObject({
+  limit: numberParameter.exactOptional(),
+})
+
+export const decodeMovementSearchQuery = (
+  query: unknown,
+): Result<unknown, DomainError> =>
+  parseWith(movementSearchQuerySchema, query, 'Invalid stock movement search')

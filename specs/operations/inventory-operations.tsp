@@ -179,7 +179,7 @@ namespace BeautySalon.Operations {
         | ProblemResponse<400>
         | CommonErrors;
 
-      @doc("在庫移動を1件記録し、対象在庫の currentStock と availableStock に quantity を加算します。inventoryIdの在庫が存在しない場合や、quantityの符号が在庫操作区分と合わない場合は400を、在庫数が負になる場合は409を返します。")
+      @doc("在庫移動を1件記録し、対象在庫の currentStock と availableStock に quantity を加算します。管理者と、在庫のサロンのオーナー・マネージャーはすべての在庫操作区分を、スタッフは purchase・sale・use・return を記録できます(スタッフの adjustment・disposal・transfer は403)。inventoryIdの在庫が存在しない場合(ほかのサロンの在庫を含む)、quantityの符号が在庫操作区分と合わない場合、adjustment・disposal の reason が null の場合、referenceType と referenceId の一方だけを指定した場合、totalCost が int32 の範囲を超える場合は400を、移動後の在庫数が reservedStock を下回る場合と 99999999.99 を超える場合は409を返し、何も記録しません。")
       @summary("Record a stock movement")
       @route("/movement")
       @post
@@ -193,7 +193,7 @@ namespace BeautySalon.Operations {
         | RequestBodyErrors
         | CommonErrors;
 
-      @doc("在庫の在庫移動の履歴を、新しい順に絞り込み条件とページネーションを指定して取得します。在庫が存在しない場合は404を返します。")
+      @doc("在庫の在庫移動の履歴を、新しい順(createdAt の降順、同じなら id の降順)に、絞り込み条件とページネーションを指定して取得します。管理者と、在庫のサロンのオーナー・マネージャー・スタッフが使えます。在庫が存在しない場合(ほかのサロンの在庫を含む)は404を、endDate が startDate より前の場合や、cursor がその在庫の在庫移動でない場合は400を返します。")
       @summary("List stock movements of an inventory record")
       @route("/{id}/movements")
       @get

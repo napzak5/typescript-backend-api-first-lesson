@@ -344,6 +344,22 @@ const MOMENT_OPERATIONS: Operation[] = [
     field: 'registeredTo',
   },
   {
+    name: 'the history of a stock row, from a moment',
+    method: 'get',
+    path: () => `/api/v1/inventory/${UNKNOWN_ID}/movements`,
+    send: (startDate) => query({ startDate }),
+    as: 'admin',
+    field: 'startDate',
+  },
+  {
+    name: 'the history of a stock row, to a moment',
+    method: 'get',
+    path: () => `/api/v1/inventory/${UNKNOWN_ID}/movements`,
+    send: (endDate) => query({ endDate }),
+    as: 'admin',
+    field: 'endDate',
+  },
+  {
     name: 'the point history of a customer, from a moment',
     method: 'get',
     path: ({ customerId }) =>
