@@ -109,7 +109,7 @@ export const stockRowAcknowledgement = (
 })
 
 /** A repository that finds the product and the row above and no acknowledgement. */
-export const inventoryAlertRepositoryWith = (
+const inventoryAlertRepositoryWith = (
   overrides: Partial<IInventoryAlertRepository> = {},
 ): IInventoryAlertRepository => {
   const facts = {
