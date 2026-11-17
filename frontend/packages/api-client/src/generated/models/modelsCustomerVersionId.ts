@@ -7,6 +7,6 @@
  */
 
 /**
- * 1ページあたりの取得件数上限 (1〜100)
+ * 顧客の版（customer_versions の行）を識別するブランド付きUUID。
  */
-export type ModelsCustomerAuditEntrySearchRequestLimitParameter = number;
+export type ModelsCustomerVersionId = string;

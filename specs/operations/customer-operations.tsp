@@ -150,23 +150,23 @@ namespace BeautySalon.Operations {
         | RequestBodyErrors
         | CommonErrors;
 
-      @doc("顧客レコードに対する操作の監査履歴を新しい順に取得し、変更者や変更内容を追跡します。顧客が存在しない場合は404を返します。")
-      @summary("Get customer audit history")
+      @doc("顧客の変更履歴(顧客台帳への書き込みごとの版)を、新しい版から順に取得し、変更者、日時、前の版から変わった項目を返します。admin と owner / manager だけが実行できます。削除した顧客の履歴も取得できます。IDとクエリが不正な場合と、cursorがその顧客の版を指していない場合は400を、顧客が存在しない場合は404を返します。")
+      @summary("Get the history of a customer")
       @get
       @route("/{id}/history")
-      getHistory(@path id: CustomerId, ...CustomerAuditEntrySearchRequest):
+      getHistory(@path id: CustomerId, ...CustomerVersionSearchRequest):
         | {
             @statusCode statusCode: 200;
 
             @body
-            response: CursorPaginationResponse<CustomerAuditEntryResponse>;
+            response: CursorPaginationResponse<CustomerHistoryEntryResponse>;
           }
         | ProblemResponse<400>
         | ProblemResponse<404>
         | CommonErrors;
 
-      @doc("指定したバージョン時点の顧客情報を取得し、過去状態の確認や比較に利用します。顧客またはバージョンが存在しない場合は404を返します。")
-      @summary("Get customer version")
+      @doc("顧客の 1 つの版を取得し、その時点の顧客台帳の項目の値を返します。admin と owner / manager だけが実行できます。削除した顧客の版も取得できます。IDと版の番号が不正な場合は400を、顧客か、その番号の版が存在しない場合は404を返します。")
+      @summary("Get a version of a customer")
       @get
       @route("/{id}/versions/{version}")
       getVersion(
@@ -179,13 +179,13 @@ namespace BeautySalon.Operations {
       ):
         | {
             @statusCode statusCode: 200;
-            @body response: ApiResponse<CustomerResponse>;
+            @body response: ApiResponse<CustomerVersionResponse>;
           }
         | ProblemResponse<400>
         | ProblemResponse<404>
         | CommonErrors;
 
-      @doc("論理削除された顧客を復元し、誤削除への迅速なリカバリを可能にします。顧客が存在しない場合は404を、削除されていない顧客を指定した場合は409を返します。")
+      @doc("論理削除した顧客を台帳に戻し、版(restore)を記録します。admin と owner / manager だけが実行できます。アカウントとの紐づけは戻しません(userId は null。本人がプロフィールを作ると、メールアドレスで顧客を引き継ぎます)。IDが不正な場合は400を、顧客が存在しない場合は404を、削除されていない顧客を指定した場合と、削除のあとに同じメールアドレスの顧客が登録されている場合は409を返します。")
       @summary("Restore a deleted customer")
       @post
       @route("/{id}/restore")

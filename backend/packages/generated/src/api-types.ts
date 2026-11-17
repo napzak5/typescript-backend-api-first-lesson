@@ -1240,8 +1240,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get customer audit history
-         * @description 顧客レコードに対する操作の監査履歴を新しい順に取得し、変更者や変更内容を追跡します。顧客が存在しない場合は404を返します。
+         * Get the history of a customer
+         * @description 顧客の変更履歴(顧客台帳への書き込みごとの版)を、新しい版から順に取得し、変更者、日時、前の版から変わった項目を返します。admin と owner / manager だけが実行できます。削除した顧客の履歴も取得できます。IDとクエリが不正な場合と、cursorがその顧客の版を指していない場合は400を、顧客が存在しない場合は404を返します。
          */
         get: operations["CustomerCrud_getHistory"];
         put?: never;
@@ -1287,7 +1287,7 @@ export interface paths {
         put?: never;
         /**
          * Restore a deleted customer
-         * @description 論理削除された顧客を復元し、誤削除への迅速なリカバリを可能にします。顧客が存在しない場合は404を、削除されていない顧客を指定した場合は409を返します。
+         * @description 論理削除した顧客を台帳に戻し、版(restore)を記録します。admin と owner / manager だけが実行できます。アカウントとの紐づけは戻しません(userId は null。本人がプロフィールを作ると、メールアドレスで顧客を引き継ぎます)。IDが不正な場合は400を、顧客が存在しない場合は404を、削除されていない顧客を指定した場合と、削除のあとに同じメールアドレスの顧客が登録されている場合は409を返します。
          */
         post: operations["CustomerCrud_restore"];
         delete?: never;
@@ -1324,8 +1324,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Get customer version
-         * @description 指定したバージョン時点の顧客情報を取得し、過去状態の確認や比較に利用します。顧客またはバージョンが存在しない場合は404を返します。
+         * Get a version of a customer
+         * @description 顧客の 1 つの版を取得し、その時点の顧客台帳の項目の値を返します。admin と owner / manager だけが実行できます。削除した顧客の版も取得できます。IDと版の番号が不正な場合は400を、顧客か、その番号の版が存在しない場合は404を返します。
          */
         get: operations["CustomerCrud_getVersion"];
         put?: never;
@@ -3894,78 +3894,6 @@ export interface components {
              */
             confirmedDate?: string | null;
         };
-        /** @description 顧客監査履歴の1項目の変更内容 - 変更されたフィールドと変更前後の値 */
-        "Models.CustomerAuditChangeResponse": {
-            /** @description 変更されたフィールド名 */
-            field: string;
-            /** @description 変更前の値。値がなかった場合はnull */
-            oldValue: unknown;
-            /** @description 変更後の値。値がなくなった場合はnull */
-            newValue: unknown;
-        };
-        /** @description 顧客監査履歴レスポンス - 顧客レコードに対して、誰がいつどのような操作を行ったかを表す */
-        "Models.CustomerAuditEntryResponse": {
-            /** @description 監査履歴エントリのID */
-            id: string;
-            /** @description 操作対象の顧客ID */
-            entityId: components["schemas"]["Models.CustomerId"];
-            /** @description 操作対象のエンティティ種別 */
-            entity: string;
-            /** @description 実行された操作 */
-            operation: components["schemas"]["Models.CustomerAuditOperationType"];
-            /** @description 操作を実行したユーザーのID */
-            userId: components["schemas"]["Models.UserId"];
-            /** @description 操作を実行したユーザーの表示名。記録されていない場合はnull */
-            userName: string | null;
-            /** @description 操作元のIPアドレス。記録されていない場合はnull */
-            ipAddress: string | null;
-            /** @description 操作元のユーザーエージェント。記録されていない場合はnull */
-            userAgent: string | null;
-            /**
-             * Format: date-time
-             * @description 操作日時
-             */
-            timestamp: string;
-            /** @description 変更内容の一覧。変更内容を記録しない操作の場合はnull */
-            changes: components["schemas"]["Models.CustomerAuditChangeResponse"][] | null;
-            /** @description 変更前のエンティティのスナップショット。作成操作の場合はnull */
-            before: unknown;
-            /** @description 変更後のエンティティのスナップショット。削除操作の場合はnull */
-            after: unknown;
-            /** @description 追加のメタデータ。追加情報がない場合はnull */
-            metadata: {
-                [key: string]: unknown;
-            } | null;
-        };
-        /**
-
-         * @description
-
-         * 顧客監査操作区分 - 監査履歴に記録される顧客レコードへの操作の種類
-
-         *
-
-         *
-
-         * create: 作成 - 顧客を新規登録した
-
-         *
-
-         * update: 更新 - 顧客情報を更新した
-
-         *
-
-         * delete: 削除 - 顧客を論理削除した
-
-         *
-
-         * restore: 復元 - 論理削除された顧客を復元した
-
-         * @enum {string}
-
-         */
-
-        "Models.CustomerAuditOperationType": "create" | "update" | "delete" | "restore";
         /**
          * @description 顧客の基本的な好み - customers.preferences(jsonb) に保存する構造。
          *     スタッフ指名や時間帯などの詳細な好み設定は customer_preferences で管理する
@@ -4410,6 +4338,29 @@ export interface components {
          */
 
         "Models.CustomerGenderType": "male" | "female" | "other" | "prefer_not_to_say";
+        /** @description 顧客の変更履歴の 1 項目 - customer_versions の 1 行の、誰がいつどの操作をしたかと、前の版から変わった項目 */
+        "Models.CustomerHistoryEntryResponse": {
+            /** @description 版の ID */
+            id: components["schemas"]["Models.CustomerVersionId"];
+            /** @description 顧客 ID */
+            customerId: components["schemas"]["Models.CustomerId"];
+            /**
+             * Format: int32
+             * @description 版の番号。顧客ごとに 1 から数える
+             */
+            version: number;
+            /** @description 版を作った操作 */
+            operation: components["schemas"]["Models.CustomerVersionOperationType"];
+            /** @description 操作したユーザーの ID。記録を始める前の値(baseline)の場合はnull */
+            changedBy: (string & components["schemas"]["Models.UserId"]) | null;
+            /**
+             * Format: date-time
+             * @description 操作した日時
+             */
+            changedAt: string;
+            /** @description 前の版と値の違う台帳の項目(顧客のレスポンスのプロパティの順)。update の版のときだけ返し、ほかの操作と、前の版がない版の場合はnull */
+            changes: components["schemas"]["Models.CustomerVersionChangeResponse"][] | null;
+        };
         /**
          * Format: uuid
          * @description 顧客（来店者）を識別するためのブランド付きUUID。
@@ -4962,6 +4913,140 @@ export interface components {
             scalpCondition?: components["schemas"]["Models.ScalpConditionType"] | null;
             /** @description 顧客ステータス */
             customerStatus?: components["schemas"]["Models.CustomerStatusType"];
+        };
+        /** @description 変更履歴の 1 項目の変更内容 - 前の版と値の違う台帳の項目と、変更前後の値 */
+        "Models.CustomerVersionChangeResponse": {
+            /** @description 台帳の項目の名前(顧客のレスポンスのプロパティ名) */
+            field: string;
+            /** @description 前の版の値。顧客のレスポンスと同じ表し方。値がなかった場合はnull */
+            oldValue: unknown;
+            /** @description この版の値。顧客のレスポンスと同じ表し方。値がなくなった場合はnull */
+            newValue: unknown;
+        };
+        /**
+         * Format: uuid
+         * @description 顧客の版（customer_versions の行）を識別するブランド付きUUID。
+         */
+        "Models.CustomerVersionId": string;
+        /**
+
+         * @description
+
+         * 顧客の版の操作区分 - 版を作った、顧客台帳への書き込みの種類
+
+         *
+
+         *
+
+         * baseline: 記録の開始 - 版を記録する前からいた顧客の、記録を始めた時点の値。変更者はない
+
+         *
+
+         * create: 登録 - 顧客を登録した(一括登録、顧客本人のプロフィールの作成を含む)
+
+         *
+
+         * update: 更新 - 台帳の項目を変えた(一括更新、顧客本人のプロフィールの更新、プロフィールの作成で台帳の顧客を引き継いだときを含む)
+
+         *
+
+         * delete: 削除 - 顧客を論理削除した(一括削除を含む)
+
+         *
+
+         * restore: 復元 - 論理削除した顧客を台帳に戻した
+
+         * @enum {string}
+
+         */
+
+        "Models.CustomerVersionOperationType": "baseline" | "create" | "update" | "delete" | "restore";
+        /**
+         * @description 顧客の版 - customer_versions の 1 行。その版の時点の、顧客台帳の 30 項目の値。
+         *     来店回数やポイントなど、予約やポイントが変える値と、アカウントとの紐づけは、台帳の項目ではないので含まない
+         */
+        "Models.CustomerVersionResponse": {
+            /** @description 版の ID */
+            id: components["schemas"]["Models.CustomerVersionId"];
+            /** @description 顧客 ID */
+            customerId: components["schemas"]["Models.CustomerId"];
+            /**
+             * Format: int32
+             * @description 版の番号。顧客ごとに 1 から数える
+             */
+            version: number;
+            /** @description 版を作った操作 */
+            operation: components["schemas"]["Models.CustomerVersionOperationType"];
+            /** @description 操作したユーザーの ID。記録を始める前の値(baseline)の場合はnull */
+            changedBy: (string & components["schemas"]["Models.UserId"]) | null;
+            /**
+             * Format: date-time
+             * @description 操作した日時
+             */
+            changedAt: string;
+            /** @description 名 */
+            firstName: string;
+            /** @description 姓 */
+            lastName: string;
+            /** @description 名のカナ表記。未登録の場合はnull */
+            firstNameKana: string | null;
+            /** @description 姓のカナ表記。未登録の場合はnull */
+            lastNameKana: string | null;
+            /** @description 主要連絡先として利用するメールアドレス。小文字で保存され、削除されていない顧客の間で一意 */
+            email: string;
+            /** @description 主要連絡先として利用する電話番号 */
+            phoneNumber: string;
+            /** @description 緊急連絡用などの予備電話番号。未登録の場合はnull */
+            alternativePhone: string | null;
+            /** @description 郵便番号。未登録の場合はnull */
+            postalCode: string | null;
+            /** @description 都道府県名。未登録の場合はnull */
+            prefecture: string | null;
+            /** @description 市区町村名。未登録の場合はnull */
+            city: string | null;
+            /** @description 町名・番地。未登録の場合はnull */
+            address: string | null;
+            /** @description 建物名・部屋番号。未登録の場合はnull */
+            building: string | null;
+            /**
+             * Format: date
+             * @description 生年月日。未登録または非公開の場合はnull
+             */
+            birthDate: string | null;
+            /** @description 顧客の性別。未登録または非公開の場合はnull */
+            gender: components["schemas"]["Models.CustomerGenderType"] | null;
+            /** @description 職業。未登録の場合はnull */
+            occupation: string | null;
+            /** @description 会員ランク。顧客の現在のメンバーシップレベル */
+            membershipTier: components["schemas"]["Models.MembershipTierType"];
+            /** @description 顧客の好みや要望。未設定の場合はnull */
+            preferences: components["schemas"]["Models.CustomerBasicPreferences"] | null;
+            /** @description 顧客に関する備考。メモがない場合はnull */
+            notes: string | null;
+            /** @description スタッフ専用の内部メモ。顧客本人に見せることを想定しない情報。メモがない場合はnull */
+            internalNotes: string | null;
+            /** @description 分類用タグ。顧客をグループ化するためのラベル。タグがない場合は空配列 */
+            tags: string[];
+            /** @description 紹介元顧客ID。紹介元の顧客があとで削除されても値は残る。紹介ではない場合はnull */
+            referredBy: (string & components["schemas"]["Models.CustomerId"]) | null;
+            /** @description この顧客が他の顧客を紹介するときに使う紹介コード。削除済みを含むすべての顧客の間で一意。未発行の場合はnull */
+            referralCode: string | null;
+            /** @description マーケティング配信を許可するかどうか */
+            allowMarketing: boolean;
+            /** @description SMSでの連絡を許可するかどうか */
+            allowSms: boolean;
+            /** @description メールでの連絡を許可するかどうか */
+            allowEmail: boolean;
+            /** @description アクティブな顧客かどうか */
+            isActive: boolean;
+            /** @description 髪質タイプ。髪のクセや形状の分類。未登録の場合はnull */
+            hairType: components["schemas"]["Models.HairType"] | null;
+            /** @description 髪の太さ。一本あたりの毛髪の太さ。未登録の場合はnull */
+            hairThickness: components["schemas"]["Models.HairThicknessType"] | null;
+            /** @description 頭皮の状態。健康状態やケア必要性の分類。未登録の場合はnull */
+            scalpCondition: components["schemas"]["Models.ScalpConditionType"] | null;
+            /** @description 顧客ステータス */
+            customerStatus: components["schemas"]["Models.CustomerStatusType"];
         };
         /** @description 1日の売上 - その売上日の、取り消していない売上を集計する */
         "Models.DailySalesResponse": {
@@ -9860,10 +9945,6 @@ export interface components {
         "Models.CustomerAllergySearchRequest.cursor": string;
         /** @description 1ページあたりの取得件数上限 (1〜100) */
         "Models.CustomerAllergySearchRequest.limit": number;
-        /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
-        "Models.CustomerAuditEntrySearchRequest.cursor": string;
-        /** @description 1ページあたりの取得件数上限 (1〜100) */
-        "Models.CustomerAuditEntrySearchRequest.limit": number;
         /** @description 来店日(bookingDate)の範囲の開始日。この日以降の予約に一致する。bookingDateTo より後の日付は指定できない。1900-01-01 から 2999-12-31 まで */
         "Models.CustomerBookingSearchRequest.bookingDateFrom": string;
         /** @description 来店日(bookingDate)の範囲の終了日。この日以前の予約に一致する。1900-01-01 から 2999-12-31 まで */
@@ -9896,6 +9977,10 @@ export interface components {
         "Models.CustomerStatisticsGetRequest.salonId": components["schemas"]["Models.SalonId"];
         /** @description 期間の最初の日。1900-01-01 から 2999-12-31 まで */
         "Models.CustomerStatisticsGetRequest.startDate": string;
+        /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor`(その顧客の版の ID)を指定する */
+        "Models.CustomerVersionSearchRequest.cursor": string;
+        /** @description 1ページあたりの取得件数上限 (1〜100) */
+        "Models.CustomerVersionSearchRequest.limit": number;
         /** @description 集計対象の売上日(saleDate)。1900-01-01 から 2999-12-31 まで */
         "Models.DailySalesGetRequest.date": string;
         /** @description 集計対象のサロン ID */
@@ -17344,9 +17429,9 @@ export interface operations {
         parameters: {
             query?: {
                 /** @description 1ページあたりの取得件数上限 (1〜100) */
-                limit?: components["parameters"]["Models.CustomerAuditEntrySearchRequest.limit"];
-                /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
-                cursor?: components["parameters"]["Models.CustomerAuditEntrySearchRequest.cursor"];
+                limit?: components["parameters"]["Models.CustomerVersionSearchRequest.limit"];
+                /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor`(その顧客の版の ID)を指定する */
+                cursor?: components["parameters"]["Models.CustomerVersionSearchRequest.cursor"];
             };
             header?: never;
             path: {
@@ -17364,7 +17449,7 @@ export interface operations {
                 content: {
                     "application/json": {
                         /** @description 現在ページで取得したデータ配列。サロン一覧や予約履歴の実データを格納する。 */
-                        data: components["schemas"]["Models.CustomerAuditEntryResponse"][];
+                        data: components["schemas"]["Models.CustomerHistoryEntryResponse"][];
                         /** @description ページング状態を示すメタ情報。次ページの有無やカーソル値を含む。 */
                         meta: components["schemas"]["Models.PaginationMeta"];
                         /** @description 関連するページ遷移リンク。HATEOAS 連携や外部連携向けに利用する。 */
@@ -17882,7 +17967,7 @@ export interface operations {
                 content: {
                     "application/json": {
                         /** @description レスポンスの主体となるビジネスデータ。 */
-                        data: components["schemas"]["Models.CustomerResponse"];
+                        data: components["schemas"]["Models.CustomerVersionResponse"];
                         /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
                         /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
