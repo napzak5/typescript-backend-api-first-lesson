@@ -13,6 +13,7 @@ import { seedSalons } from './seed-data/salons'
 import { seedServiceCategories } from './seed-data/service-categories'
 import { seedServices } from './seed-data/services'
 import { seedStaff } from './seed-data/staff'
+import { seedTreatmentRecords } from './seed-data/treatment-records'
 import { seedUsers } from './seed-data/users'
 
 export interface SeedOptions {
@@ -100,6 +101,12 @@ export async function seed(
       await seedReviews(db, completedBookings, customerResult.customerIds, {
         adminUserId: userResult.adminUserId,
       })
+
+      const [firstSalonId] = salonIds
+      if (firstSalonId !== undefined) {
+        console.log('Seeding treatment records...')
+        await seedTreatmentRecords(db, completedBookings, firstSalonId)
+      }
     }
 
     console.log('Seeding completed successfully!')

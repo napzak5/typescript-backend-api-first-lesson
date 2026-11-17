@@ -115,7 +115,7 @@ export const getTreatmentRecordCrudListUrl = (params?: TreatmentRecordCrudListPa
 }
 
 /**
- * 絞り込み条件とページネーションを指定して施術記録を一覧取得します。顧客別の施術履歴やスタッフ別の施術一覧は customerId・staffId で絞り込みます。
+ * 絞り込み条件とページネーションを指定して施術記録を一覧取得します。顧客別の施術履歴やスタッフ別の施術一覧は customerId・staffId で絞り込みます。サロンのメンバーがほかのサロンの salonId を指定した場合は403を返します。
  * @summary List treatment records
  */
 export const treatmentRecordCrudList = async (params?: TreatmentRecordCrudListParams, options?: RequestInit): Promise<treatmentRecordCrudListResponse> => {
@@ -163,7 +163,7 @@ export type TreatmentRecordCrudListQueryError = ModelsProblemDetails
 
 
 /**
- * 絞り込み条件とページネーションを指定して施術記録を一覧取得します。顧客別の施術履歴やスタッフ別の施術一覧は customerId・staffId で絞り込みます。
+ * 絞り込み条件とページネーションを指定して施術記録を一覧取得します。顧客別の施術履歴やスタッフ別の施術一覧は customerId・staffId で絞り込みます。サロンのメンバーがほかのサロンの salonId を指定した場合は403を返します。
  * @summary List treatment records
  */
 export function useTreatmentRecordCrudList<TData = Awaited<ReturnType<typeof treatmentRecordCrudList>>, TError = ModelsProblemDetails>(
@@ -177,7 +177,7 @@ export function useTreatmentRecordCrudList<TData = Awaited<ReturnType<typeof tre
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 絞り込み条件とページネーションを指定して施術記録を一覧取得します。顧客別の施術履歴やスタッフ別の施術一覧は customerId・staffId で絞り込みます。
+ * 絞り込み条件とページネーションを指定して施術記録を一覧取得します。顧客別の施術履歴やスタッフ別の施術一覧は customerId・staffId で絞り込みます。サロンのメンバーがほかのサロンの salonId を指定した場合は403を返します。
  * @summary List treatment records
  */
 export function useTreatmentRecordCrudList<TData = Awaited<ReturnType<typeof treatmentRecordCrudList>>, TError = ModelsProblemDetails>(
@@ -191,7 +191,7 @@ export function useTreatmentRecordCrudList<TData = Awaited<ReturnType<typeof tre
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 絞り込み条件とページネーションを指定して施術記録を一覧取得します。顧客別の施術履歴やスタッフ別の施術一覧は customerId・staffId で絞り込みます。
+ * 絞り込み条件とページネーションを指定して施術記録を一覧取得します。顧客別の施術履歴やスタッフ別の施術一覧は customerId・staffId で絞り込みます。サロンのメンバーがほかのサロンの salonId を指定した場合は403を返します。
  * @summary List treatment records
  */
 export function useTreatmentRecordCrudList<TData = Awaited<ReturnType<typeof treatmentRecordCrudList>>, TError = ModelsProblemDetails>(
@@ -199,7 +199,7 @@ export function useTreatmentRecordCrudList<TData = Awaited<ReturnType<typeof tre
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 絞り込み条件とページネーションを指定して施術記録を一覧取得します。顧客別の施術履歴やスタッフ別の施術一覧は customerId・staffId で絞り込みます。
+ * 絞り込み条件とページネーションを指定して施術記録を一覧取得します。顧客別の施術履歴やスタッフ別の施術一覧は customerId・staffId で絞り込みます。サロンのメンバーがほかのサロンの salonId を指定した場合は403を返します。
  * @summary List treatment records
  */
 export function useTreatmentRecordCrudList<TData = Awaited<ReturnType<typeof treatmentRecordCrudList>>, TError = ModelsProblemDetails>(
@@ -282,7 +282,7 @@ export const getTreatmentRecordCrudCreateUrl = () => {
 }
 
 /**
- * 施術記録を新規登録します。bookingId・customerId・staffId・services・materialsのproductIdに存在しないIDや予約と別のサロンのものを指定した場合、およびcustomerIdが予約の顧客と一致しない場合は400を、予約に施術記録がすでにある場合は409を返します。
+ * 施術記録を新規登録します。bookingId・customerId・staffId・services・nextRecommendedServices・materialsのproductIdに存在しないIDや削除済みのもの、予約と別のサロンのものを指定した場合、customerIdが予約の顧客と一致しない場合、nextRecommendedDateが予約の日より前の場合、およびロット番号が商品のロット管理と合わない場合は400を返します。予約が施術中（in_progress）でも完了（completed）でもない場合と、予約に施術記録がすでにある場合は409を返します。
  * @summary Create a treatment record
  */
 export const treatmentRecordCrudCreate = async (modelsTreatmentRecordCreateRequest: ModelsTreatmentRecordCreateRequest, options?: RequestInit): Promise<treatmentRecordCrudCreateResponse> => {
@@ -349,7 +349,7 @@ const {mutation: mutationOptions} = options ?
     export type TreatmentRecordCrudCreateMutationVariables = {data: ModelsTreatmentRecordCreateRequest}
 
     /**
- * 施術記録を新規登録します。bookingId・customerId・staffId・services・materialsのproductIdに存在しないIDや予約と別のサロンのものを指定した場合、およびcustomerIdが予約の顧客と一致しない場合は400を、予約に施術記録がすでにある場合は409を返します。
+ * 施術記録を新規登録します。bookingId・customerId・staffId・services・nextRecommendedServices・materialsのproductIdに存在しないIDや削除済みのもの、予約と別のサロンのものを指定した場合、customerIdが予約の顧客と一致しない場合、nextRecommendedDateが予約の日より前の場合、およびロット番号が商品のロット管理と合わない場合は400を返します。予約が施術中（in_progress）でも完了（completed）でもない場合と、予約に施術記録がすでにある場合は409を返します。
  * @summary Create a treatment record
  */
 export const useTreatmentRecordCrudCreate = <TError = ModelsProblemDetails,
@@ -741,7 +741,7 @@ export const getTreatmentRecordCrudUpdateUrl = (id: ModelsTreatmentRecordId,) =>
 }
 
 /**
- * 指定した項目だけを更新します。materialsを指定した場合は使用商材の一覧全体を置き換えます。servicesやmaterialsのproductIdに存在しないIDや予約と別のサロンのものを指定した場合は400を返します。
+ * 指定した項目だけを更新します。materialsを指定した場合は使用商材の一覧全体を置き換えます。services・nextRecommendedServices・materialsのproductIdに存在しないIDや削除済みのもの、予約と別のサロンのものを指定した場合、nextRecommendedDateが予約の日より前の場合、およびロット番号が商品のロット管理と合わない場合は400を返します。
  * @summary Update a treatment record
  */
 export const treatmentRecordCrudUpdate = async (id: ModelsTreatmentRecordId,
@@ -809,7 +809,7 @@ const {mutation: mutationOptions} = options ?
     export type TreatmentRecordCrudUpdateMutationVariables = {id: ModelsTreatmentRecordId;data: ModelsTreatmentRecordUpdateRequest}
 
     /**
- * 指定した項目だけを更新します。materialsを指定した場合は使用商材の一覧全体を置き換えます。servicesやmaterialsのproductIdに存在しないIDや予約と別のサロンのものを指定した場合は400を返します。
+ * 指定した項目だけを更新します。materialsを指定した場合は使用商材の一覧全体を置き換えます。services・nextRecommendedServices・materialsのproductIdに存在しないIDや削除済みのもの、予約と別のサロンのものを指定した場合、nextRecommendedDateが予約の日より前の場合、およびロット番号が商品のロット管理と合わない場合は400を返します。
  * @summary Update a treatment record
  */
 export const useTreatmentRecordCrudUpdate = <TError = ModelsProblemDetails,
@@ -875,7 +875,7 @@ export const getTreatmentRecordCrudDeleteUrl = (id: ModelsTreatmentRecordId,) =>
 }
 
 /**
- * 施術記録を削除します。施術記録の使用商材と施術写真も削除されます。
+ * 施術記録を削除します。施術記録の使用商材と施術写真も削除されます。削除できるのは管理者と、サロンのオーナー・マネージャーです（スタッフは403）。施術記録を削除すると、予約を削除できるようになります。
  * @summary Delete a treatment record
  */
 export const treatmentRecordCrudDelete = async (id: ModelsTreatmentRecordId, options?: RequestInit): Promise<treatmentRecordCrudDeleteResponse> => {
@@ -928,7 +928,7 @@ const {mutation: mutationOptions} = options ?
     export type TreatmentRecordCrudDeleteMutationVariables = {id: ModelsTreatmentRecordId}
 
     /**
- * 施術記録を削除します。施術記録の使用商材と施術写真も削除されます。
+ * 施術記録を削除します。施術記録の使用商材と施術写真も削除されます。削除できるのは管理者と、サロンのオーナー・マネージャーです（スタッフは403）。施術記録を削除すると、予約を削除できるようになります。
  * @summary Delete a treatment record
  */
 export const useTreatmentRecordCrudDelete = <TError = ModelsProblemDetails,

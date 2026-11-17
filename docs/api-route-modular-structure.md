@@ -355,6 +355,18 @@ backend/packages/api/src/
 │   │   ├── update-own-staff-profile.handler.ts   # PATCH  /api/v1/staff-profiles/me
 │   │   ├── get-staff-profile.handler.ts          # GET    /api/v1/staff-profiles/:id
 │   │   └── index.ts                              # createStaffProfileRouter
+│   ├── treatment-record/
+│   │   ├── _shared/
+│   │   │   ├── types.ts            # TreatmentRecordParams, and the response body types
+│   │   │   ├── links.ts            # treatmentRecordLinks
+│   │   │   ├── query.ts            # decodeTreatmentRecordSearchQuery
+│   │   │   └── index.ts            # re-exports the three files above
+│   │   ├── list-treatment-records.handler.ts     # GET    /api/v1/treatments
+│   │   ├── create-treatment-record.handler.ts    # POST   /api/v1/treatments
+│   │   ├── get-treatment-record.handler.ts       # GET    /api/v1/treatments/:id
+│   │   ├── update-treatment-record.handler.ts    # PATCH  /api/v1/treatments/:id
+│   │   ├── delete-treatment-record.handler.ts    # DELETE /api/v1/treatments/:id
+│   │   └── index.ts                              # createTreatmentRecordRouter
 │   └── system/
 │       └── index.ts                # GET /api/system/alive, /api/system/ready, /api/system/health
 └── __tests__/                      # integration tests and their helpers (see Tests)
@@ -468,6 +480,8 @@ The seven handlers in `routes/inventory/` are all wrapped with `authenticated` a
 The eight handlers in `routes/purchase-order/` are wrapped with `authenticated` as well and pass the `actor` first: the list then passes the outcome of `decodePurchaseOrderSearchQuery`, the reorder suggestions that of `decodeReorderSuggestionSearchQuery`, the create `req.body`, the get and the approval `req.params.id`, and the update, the cancellation and the receipt `req.params.id` and `req.body`. The approval reads no body. The create answers 201 with a `Location` header; the receipt answers 200 with the delivered order. `GET /reorder-suggestions` is routed before `/:id`, which would take its name for an ID, and pages under its own path (`pageLinks` of `${req.baseUrl}/reorder-suggestions`).
 
 The three handlers in `routes/inventory-alert/` are wrapped with `authenticated` and pass the `actor` first: the list then passes the outcome of `decodeInventoryAlertSearchQuery`, the summary `req.query` and the acknowledgement `req.body`. An alert has no ID of its own, so no route has one: the acknowledgement names the alert in its body. The list pages under the mount path; the acknowledgement answers 200 with the alert and links the list and the summary of its salon (`inventoryAlertLinks`); the summary links itself.
+
+The five handlers in `routes/treatment-record/` are wrapped with `authenticated` and pass the `actor` first: the list then passes the outcome of `decodeTreatmentRecordSearchQuery`, the create `req.body`, the get and the delete `req.params.id`, and the update `req.params.id` and `req.body`. The create answers 201 with a `Location` header and the delete 204 without a body. The router passes `GET /statistics` on (`next('router')`) before `/:id`, which would take its name for an ID, so the statistics, which are not served yet, are answered as a route that is not there; `POST /:id/photos` has no route either.
 
 The two handlers in `routes/staff-schedule/` are wrapped as well, and both have the salon and the staff member in their path and no ID of their own. The list handler (`GET /`) passes `actor`, `req.params.salonId`, `req.params.id` and `req.query`; the update handler (`PUT /`) passes `req.body` in the place of the query. Both answer 200 with `{ data, meta, links }`, where `data` is the array of the entries of the schedule: the update replaces the whole schedule and answers with what it stored.
 

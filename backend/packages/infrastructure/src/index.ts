@@ -43,6 +43,7 @@ export { StaffAccountRepository } from './repositories/staff-account.repository.
 export { StaffInvitationRepository } from './repositories/staff-invitation.repository.impl'
 export { StaffProfileRepository } from './repositories/staff-profile.repository.impl'
 export { StaffScheduleRepository } from './repositories/staff-schedule.repository.impl'
+export { TreatmentRecordRepository } from './repositories/treatment-record.repository.impl'
 export { UserRepository } from './repositories/user.repository.impl'
 
 // Passwords, tokens and the numbers of bookings, sales, payments and

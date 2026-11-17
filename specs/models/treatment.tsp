@@ -45,13 +45,14 @@ namespace BeautySalon.Models {
 
   @doc("""
     施術で使用した商材 - treatment_materials テーブルの1行。施術記録の作成・更新リクエストとレスポンスで共通に使う。
-    プロパティ名と null 許可は DB カラムと一致させている。
+    プロパティ名と null 許可は DB カラムと一致させている。商材は指定した順に保存し、その順に返す。
+    使用商材を記録しても在庫は動かない。在庫は在庫の移動（use）で記録する
     """)
   model TreatmentMaterial {
-    @doc("使用した商品の ID。予約と同じサロンの商品を指定する")
+    @doc("使用した商品の ID。予約と同じサロンの、削除されていない商品を指定する。ロットの違う同じ商品を複数回指定できる")
     productId: ProductId;
 
-    @doc("使用量")
+    @doc("使用量。0.01単位")
     @minValueExclusive(0)
     @maxValue(99999999.99)
     quantity: float64;
@@ -61,7 +62,7 @@ namespace BeautySalon.Models {
     @maxLength(20)
     unit: string;
 
-    @doc("使用した商品のロット番号。記録しない場合はnull")
+    @doc("使用した商品のロット番号。ロットで管理する商品（requiresLotTracking）では必須、それ以外の商品ではnull")
     @maxLength(100)
     lotNumber: string | null;
 
@@ -174,8 +175,20 @@ namespace BeautySalon.Models {
     @doc("施術で提供したサービス ID 一覧")
     services: ServiceId[];
 
+    @doc("施術で使った技法の名称の一覧。記録しない場合は空配列")
+    techniques: string[];
+
     @doc("施術前のカウンセリング内容のメモ。記録しない場合はnull")
     consultationNotes: string | null;
+
+    @doc("施術のときの頭皮の状態。記録しない場合はnull")
+    scalpCondition: string | null;
+
+    @doc("施術のときの毛髪の状態。記録しない場合はnull")
+    hairCondition: string | null;
+
+    @doc("カラー剤の配合。カラーをしない施術や記録しない場合はnull")
+    colorFormula: string | null;
 
     @doc("施術の処理時間（分）。記録しない場合はnull")
     processingTime: int32 | null;
@@ -186,6 +199,9 @@ namespace BeautySalon.Models {
     @doc("次回来店の推奨日。特に提案事項がない場合はnull")
     nextRecommendedDate: plainDate | null;
 
+    @doc("次回来店時に推奨するサービス ID の一覧。提案事項がない場合は空配列")
+    nextRecommendedServices: ServiceId[];
+
     @doc("ホームケアの提案内容。提案事項がない場合はnull")
     homeCareSuggestions: string | null;
 
@@ -195,7 +211,7 @@ namespace BeautySalon.Models {
     @doc("担当スタッフによる施術の自己評価・申し送り。記録しない場合はnull")
     staffEvaluation: string | null;
 
-    @doc("施術で使用した商材の一覧。商材を使用しない施術の場合は空配列")
+    @doc("施術で使用した商材の一覧。指定した順に並ぶ。商材を使用しない施術の場合は空配列")
     materials: TreatmentMaterial[];
 
     @doc("施術写真の一覧。sortOrderの昇順で並ぶ。写真がない場合は空配列")
@@ -213,21 +229,35 @@ namespace BeautySalon.Models {
     施術写真は登録後に写真追加の操作で追加する
     """)
   model TreatmentRecordCreateRequest {
-    @doc("紐づく予約 ID。施術記録がまだない予約を指定する")
+    @doc("紐づく予約 ID。施術中（in_progress）か完了（completed）の、施術記録がまだない予約を指定する")
     bookingId: BookingId;
 
     @doc("施術を受けた顧客 ID。予約の顧客と一致している必要がある")
     customerId: CustomerId;
 
-    @doc("施術担当スタッフ ID")
+    @doc("施術担当スタッフ ID。予約と同じサロンの、削除されていないスタッフを指定する。予約の担当でなくてもよい")
     staffId: StaffId;
 
-    @doc("施術で提供したサービス ID 一覧。予約と同じサロンのサービスを1件以上指定する")
+    @doc("施術で提供したサービス ID 一覧。予約と同じサロンの、削除されていないサービスを1件以上20件以下で指定する。予約の明細にないサービスも指定できる。同じサービスの繰り返しは指定できない")
     @minItems(1)
+    @maxItems(20)
     services: ServiceId[];
+
+    @doc("施術で使った技法の名称の一覧（100文字まで）。20件まで。同じ名称の繰り返しは指定できない。記録しない場合は空配列")
+    @maxItems(20)
+    techniques: string[];
 
     @doc("施術前のカウンセリング内容のメモ。記録しない場合はnull")
     consultationNotes: string | null;
+
+    @doc("施術のときの頭皮の状態。記録しない場合はnull")
+    scalpCondition: string | null;
+
+    @doc("施術のときの毛髪の状態。記録しない場合はnull")
+    hairCondition: string | null;
+
+    @doc("カラー剤の配合。カラーをしない施術や記録しない場合はnull")
+    colorFormula: string | null;
 
     @doc("施術の処理時間（分）。記録しない場合はnull")
     @minValue(0)
@@ -237,8 +267,12 @@ namespace BeautySalon.Models {
     @doc("施術結果のメモ。特記事項がない通常施術の場合はnull")
     resultNotes: string | null;
 
-    @doc("次回来店の推奨日。特に提案事項がない場合はnull")
+    @doc("次回来店の推奨日。予約の日より前の日は指定できない。特に提案事項がない場合はnull")
     nextRecommendedDate: plainDate | null;
+
+    @doc("次回来店時に推奨するサービス ID の一覧。予約と同じサロンのサービスを20件まで指定する。同じサービスの繰り返しは指定できない。提案事項がない場合は空配列")
+    @maxItems(20)
+    nextRecommendedServices: ServiceId[];
 
     @doc("ホームケアの提案内容。提案事項がない場合はnull")
     homeCareSuggestions: string | null;
@@ -251,7 +285,8 @@ namespace BeautySalon.Models {
     @doc("担当スタッフによる施術の自己評価・申し送り。記録しない場合はnull")
     staffEvaluation: string | null;
 
-    @doc("施術で使用した商材の一覧。商材を使用しない施術の場合は空配列")
+    @doc("施術で使用した商材の一覧。50件まで。指定した順に保存する。商材を使用しない施術の場合は空配列")
+    @maxItems(50)
     materials: TreatmentMaterial[];
   }
 
@@ -260,12 +295,26 @@ namespace BeautySalon.Models {
     materials を指定した場合は使用商材の一覧全体を置き換える。予約・顧客・担当スタッフは変更できない
     """)
   model TreatmentRecordUpdateRequest {
-    @doc("施術で提供したサービス ID 一覧。予約と同じサロンのサービスを1件以上指定する")
+    @doc("施術で提供したサービス ID 一覧。予約と同じサロンの、削除されていないサービスを1件以上20件以下で指定する。同じサービスの繰り返しは指定できない")
     @minItems(1)
+    @maxItems(20)
     services?: ServiceId[];
+
+    @doc("施術で使った技法の名称の一覧（100文字まで）。20件まで。同じ名称の繰り返しは指定できない。空配列でクリア")
+    @maxItems(20)
+    techniques?: string[];
 
     @doc("施術前のカウンセリング内容のメモ。nullでクリア")
     consultationNotes?: string | null;
+
+    @doc("施術のときの頭皮の状態。nullでクリア")
+    scalpCondition?: string | null;
+
+    @doc("施術のときの毛髪の状態。nullでクリア")
+    hairCondition?: string | null;
+
+    @doc("カラー剤の配合。nullでクリア")
+    colorFormula?: string | null;
 
     @doc("施術の処理時間（分）。nullでクリア")
     @minValue(0)
@@ -275,8 +324,12 @@ namespace BeautySalon.Models {
     @doc("施術結果のメモ。nullでクリア")
     resultNotes?: string | null;
 
-    @doc("次回来店の推奨日。nullでクリア")
+    @doc("次回来店の推奨日。予約の日より前の日は指定できない。nullでクリア")
     nextRecommendedDate?: plainDate | null;
+
+    @doc("次回来店時に推奨するサービス ID の一覧。予約と同じサロンの、削除されていないサービスを20件まで指定する。同じサービスの繰り返しは指定できない。空配列でクリア")
+    @maxItems(20)
+    nextRecommendedServices?: ServiceId[];
 
     @doc("ホームケアの提案内容。nullでクリア")
     homeCareSuggestions?: string | null;
@@ -289,12 +342,14 @@ namespace BeautySalon.Models {
     @doc("担当スタッフによる施術の自己評価・申し送り。nullでクリア")
     staffEvaluation?: string | null;
 
-    @doc("施術で使用した商材の一覧。指定した場合は全件を置き換える")
+    @doc("施術で使用した商材の一覧。50件まで。指定した場合は全件を、指定した順に置き換える")
+    @maxItems(50)
     materials?: TreatmentMaterial[];
   }
 
   @doc("""
-    施術記録一覧・検索リクエスト - 絞り込み条件とページネーションを指定する。条件はすべて AND で結合する
+    施術記録一覧・検索リクエスト - 絞り込み条件とページネーションを指定する。条件はすべて AND で結合する。
+    作成日時の新しい順（同時刻は ID の降順）に返す
     """)
   model TreatmentRecordSearchRequest {
     @query
@@ -306,6 +361,10 @@ namespace BeautySalon.Models {
     @query
     @doc("取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する")
     cursor?: string;
+
+    @query
+    @doc("施術記録のサロン(予約のサロン)の ID による絞り込み(完全一致)。サロンのメンバーが省略した場合は自分のサロン")
+    salonId?: SalonId;
 
     @query
     @doc("施術を受けた顧客の ID による絞り込み(完全一致)")

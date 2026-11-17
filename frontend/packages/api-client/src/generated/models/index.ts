@@ -603,6 +603,7 @@ export * from './modelsTreatmentRecordSearchRequestCursorParameter';
 export * from './modelsTreatmentRecordSearchRequestCustomerIdParameter';
 export * from './modelsTreatmentRecordSearchRequestEndDateParameter';
 export * from './modelsTreatmentRecordSearchRequestLimitParameter';
+export * from './modelsTreatmentRecordSearchRequestSalonIdParameter';
 export * from './modelsTreatmentRecordSearchRequestStaffIdParameter';
 export * from './modelsTreatmentRecordSearchRequestStartDateParameter';
 export * from './modelsTreatmentRecordUpdateRequest';

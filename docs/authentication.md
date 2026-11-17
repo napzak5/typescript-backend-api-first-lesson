@@ -543,6 +543,25 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 
 規則は [在庫のアラート](./inventory-alerts.md) にあります。
 
+### 施術記録の権限
+
+施術記録（`/api/v1/treatments`）もサロンのもので、ルートはサロンの下にありません。`treatment_records` にサロンの列はなく、どのサロンの施術記録かは、その予約のサロンが決めます。権限は、予約台帳と同じ 2 段階で判定します（`business-logic/treatment-record/_shared/authorization.ts`）。
+
+| オペレーション | 許可 |
+|---|---|
+| 一覧（`GET /api/v1/treatments`） | `admin`（すべてのサロン）、サロンの `owner` / `manager` / `staff`（所属サロンの施術記録だけ） |
+| 作成（`POST /api/v1/treatments`） | `admin`、本文の予約のサロンの `owner` / `manager` / `staff` |
+| 1 件の取得、更新（`GET`、`PATCH /api/v1/treatments/{id}`） | `admin`、施術記録のサロンの `owner` / `manager` / `staff` |
+| 削除（`DELETE /api/v1/treatments/{id}`） | `admin`、施術記録のサロンの `owner` / `manager` |
+
+- 1 段階目は、操作者だけで決まる。一覧、作成、取得、更新（`treatmentRecordReachOf`）は、予約台帳を扱える人（`admin` と、サロンの 3 つのロール）のもの。施術をしたスタッフが記録を書き、直すため。削除（`treatmentRecordRemovalReachOf`）は、予約の削除と同じく `staff` を除く。ロール `customer` のユーザー、範囲 `none` のユーザーは、ID、本文、クエリが不正でも 403
+- 顧客は、自分の施術の記録も読めない（403）。施術記録は、カウンセリングのメモ（`consultationNotes`）とスタッフの申し送り（`staffEvaluation`）を持つ、サロンの記録であるため。施術記録のための権限（`users.permissions`）はない
+- 2 段階目は、一覧のクエリを確かめたあとに決まる（`isWithin`）。サロンのユーザーが、ほかのサロンの `salonId` を指定すると 403
+- 作成、取得、更新、削除には、比べるサロンがない。リポジトリが、操作者に届く範囲を検索の条件にするので（`shownTo`）、ほかのサロンの施術記録は見つからない（404）。存在しない施術記録と区別しない。作成でほかのサロンの予約を指定すると 400（`bookingId` の `not_found`）、一覧の `cursor` にほかのサロンの施術記録を指定すると 400（`cursor` の `not_found`）
+- 削除されたサロンの施術記録は、`admin` にも見えない（404。一覧にも入らない）
+
+規則は [施術記録](./treatments.md) にあります。
+
 ### レビューの権限
 
 レビューは、来店した顧客が書き、誰でも読みます。誰が投稿、修正、削除、参考になったの評価、通報、返信ができるかは、まず操作者で決まります（`business-logic/review/_shared/authorization.ts` の `reviewerOf`、`reviewRemoverOf`、`reviewReporterOf`、`reviewResponderOf`）。修正と削除では、そのあとで、レビューを書いた顧客かどうかを、参考になったでは、書いた顧客でないことを、通報では、顧客なら書いた顧客でないこと、サロンならそのサロンのレビューであることを、返信では、`admin` なら取り下げ（null）であること、サロンならそのサロンのレビューであることを確かめます。通報の一覧と却下は `admin` だけです（`business-logic/review-report/_shared/authorization.ts` の `mayHandleReviewReports`）。

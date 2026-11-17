@@ -9,13 +9,14 @@ import type { ModelsProductId } from './modelsProductId';
 
 /**
  * 施術で使用した商材 - treatment_materials テーブルの1行。施術記録の作成・更新リクエストとレスポンスで共通に使う。
- * プロパティ名と null 許可は DB カラムと一致させている。
+ * プロパティ名と null 許可は DB カラムと一致させている。商材は指定した順に保存し、その順に返す。
+ * 使用商材を記録しても在庫は動かない。在庫は在庫の移動（use）で記録する
  */
 export interface ModelsTreatmentMaterial {
-  /** 使用した商品の ID。予約と同じサロンの商品を指定する */
+  /** 使用した商品の ID。予約と同じサロンの、削除されていない商品を指定する。ロットの違う同じ商品を複数回指定できる */
   productId: ModelsProductId;
   /**
-     * 使用量
+     * 使用量。0.01単位
      * @maximum 99999999.99
      * @exclusiveMinimum 0
      */
@@ -27,7 +28,7 @@ export interface ModelsTreatmentMaterial {
      */
   unit: string;
   /**
-     * 使用した商品のロット番号。記録しない場合はnull
+     * 使用した商品のロット番号。ロットで管理する商品（requiresLotTracking）では必須、それ以外の商品ではnull
      * @maxLength 100
      * @nullable
      */

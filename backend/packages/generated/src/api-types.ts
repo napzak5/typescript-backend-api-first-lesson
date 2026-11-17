@@ -3157,13 +3157,13 @@ export interface paths {
         };
         /**
          * List treatment records
-         * @description 絞り込み条件とページネーションを指定して施術記録を一覧取得します。顧客別の施術履歴やスタッフ別の施術一覧は customerId・staffId で絞り込みます。
+         * @description 絞り込み条件とページネーションを指定して施術記録を一覧取得します。顧客別の施術履歴やスタッフ別の施術一覧は customerId・staffId で絞り込みます。サロンのメンバーがほかのサロンの salonId を指定した場合は403を返します。
          */
         get: operations["TreatmentRecordCrud_list"];
         put?: never;
         /**
          * Create a treatment record
-         * @description 施術記録を新規登録します。bookingId・customerId・staffId・services・materialsのproductIdに存在しないIDや予約と別のサロンのものを指定した場合、およびcustomerIdが予約の顧客と一致しない場合は400を、予約に施術記録がすでにある場合は409を返します。
+         * @description 施術記録を新規登録します。bookingId・customerId・staffId・services・nextRecommendedServices・materialsのproductIdに存在しないIDや削除済みのもの、予約と別のサロンのものを指定した場合、customerIdが予約の顧客と一致しない場合、nextRecommendedDateが予約の日より前の場合、およびロット番号が商品のロット管理と合わない場合は400を返します。予約が施術中（in_progress）でも完了（completed）でもない場合と、予約に施術記録がすでにある場合は409を返します。
          */
         post: operations["TreatmentRecordCrud_create"];
         delete?: never;
@@ -3208,14 +3208,14 @@ export interface paths {
         post?: never;
         /**
          * Delete a treatment record
-         * @description 施術記録を削除します。施術記録の使用商材と施術写真も削除されます。
+         * @description 施術記録を削除します。施術記録の使用商材と施術写真も削除されます。削除できるのは管理者と、サロンのオーナー・マネージャーです（スタッフは403）。施術記録を削除すると、予約を削除できるようになります。
          */
         delete: operations["TreatmentRecordCrud_delete"];
         options?: never;
         head?: never;
         /**
          * Update a treatment record
-         * @description 指定した項目だけを更新します。materialsを指定した場合は使用商材の一覧全体を置き換えます。servicesやmaterialsのproductIdに存在しないIDや予約と別のサロンのものを指定した場合は400を返します。
+         * @description 指定した項目だけを更新します。materialsを指定した場合は使用商材の一覧全体を置き換えます。services・nextRecommendedServices・materialsのproductIdに存在しないIDや削除済みのもの、予約と別のサロンのものを指定した場合、nextRecommendedDateが予約の日より前の場合、およびロット番号が商品のロット管理と合わない場合は400を返します。
          */
         patch: operations["TreatmentRecordCrud_update"];
         trace?: never;
@@ -9818,19 +9818,20 @@ export interface components {
         };
         /**
          * @description 施術で使用した商材 - treatment_materials テーブルの1行。施術記録の作成・更新リクエストとレスポンスで共通に使う。
-         *     プロパティ名と null 許可は DB カラムと一致させている。
+         *     プロパティ名と null 許可は DB カラムと一致させている。商材は指定した順に保存し、その順に返す。
+         *     使用商材を記録しても在庫は動かない。在庫は在庫の移動（use）で記録する
          */
         "Models.TreatmentMaterial": {
-            /** @description 使用した商品の ID。予約と同じサロンの商品を指定する */
+            /** @description 使用した商品の ID。予約と同じサロンの、削除されていない商品を指定する。ロットの違う同じ商品を複数回指定できる */
             productId: components["schemas"]["Models.ProductId"];
             /**
              * Format: double
-             * @description 使用量
+             * @description 使用量。0.01単位
              */
             quantity: number;
             /** @description 数量単位 */
             unit: string;
-            /** @description 使用した商品のロット番号。記録しない場合はnull */
+            /** @description 使用した商品のロット番号。ロットで管理する商品（requiresLotTracking）では必須、それ以外の商品ではnull */
             lotNumber: string | null;
             /** @description 備考メモ - 特記事項がない標準的な使用量の場合はnull */
             notes: string | null;
@@ -9903,16 +9904,24 @@ export interface components {
          *     施術写真は登録後に写真追加の操作で追加する
          */
         "Models.TreatmentRecordCreateRequest": {
-            /** @description 紐づく予約 ID。施術記録がまだない予約を指定する */
+            /** @description 紐づく予約 ID。施術中（in_progress）か完了（completed）の、施術記録がまだない予約を指定する */
             bookingId: components["schemas"]["Models.BookingId"];
             /** @description 施術を受けた顧客 ID。予約の顧客と一致している必要がある */
             customerId: components["schemas"]["Models.CustomerId"];
-            /** @description 施術担当スタッフ ID */
+            /** @description 施術担当スタッフ ID。予約と同じサロンの、削除されていないスタッフを指定する。予約の担当でなくてもよい */
             staffId: components["schemas"]["Models.StaffId"];
-            /** @description 施術で提供したサービス ID 一覧。予約と同じサロンのサービスを1件以上指定する */
+            /** @description 施術で提供したサービス ID 一覧。予約と同じサロンの、削除されていないサービスを1件以上20件以下で指定する。予約の明細にないサービスも指定できる。同じサービスの繰り返しは指定できない */
             services: components["schemas"]["Models.ServiceId"][];
+            /** @description 施術で使った技法の名称の一覧（100文字まで）。20件まで。同じ名称の繰り返しは指定できない。記録しない場合は空配列 */
+            techniques: string[];
             /** @description 施術前のカウンセリング内容のメモ。記録しない場合はnull */
             consultationNotes: string | null;
+            /** @description 施術のときの頭皮の状態。記録しない場合はnull */
+            scalpCondition: string | null;
+            /** @description 施術のときの毛髪の状態。記録しない場合はnull */
+            hairCondition: string | null;
+            /** @description カラー剤の配合。カラーをしない施術や記録しない場合はnull */
+            colorFormula: string | null;
             /**
              * Format: int32
              * @description 施術の処理時間（分）。記録しない場合はnull
@@ -9922,9 +9931,11 @@ export interface components {
             resultNotes: string | null;
             /**
              * Format: date
-             * @description 次回来店の推奨日。特に提案事項がない場合はnull
+             * @description 次回来店の推奨日。予約の日より前の日は指定できない。特に提案事項がない場合はnull
              */
             nextRecommendedDate: string | null;
+            /** @description 次回来店時に推奨するサービス ID の一覧。予約と同じサロンのサービスを20件まで指定する。同じサービスの繰り返しは指定できない。提案事項がない場合は空配列 */
+            nextRecommendedServices: components["schemas"]["Models.ServiceId"][];
             /** @description ホームケアの提案内容。提案事項がない場合はnull */
             homeCareSuggestions: string | null;
             /**
@@ -9934,7 +9945,7 @@ export interface components {
             customerSatisfaction: number | null;
             /** @description 担当スタッフによる施術の自己評価・申し送り。記録しない場合はnull */
             staffEvaluation: string | null;
-            /** @description 施術で使用した商材の一覧。商材を使用しない施術の場合は空配列 */
+            /** @description 施術で使用した商材の一覧。50件まで。指定した順に保存する。商材を使用しない施術の場合は空配列 */
             materials: components["schemas"]["Models.TreatmentMaterial"][];
         };
         /**
@@ -9958,8 +9969,16 @@ export interface components {
             staffId: components["schemas"]["Models.StaffId"];
             /** @description 施術で提供したサービス ID 一覧 */
             services: components["schemas"]["Models.ServiceId"][];
+            /** @description 施術で使った技法の名称の一覧。記録しない場合は空配列 */
+            techniques: string[];
             /** @description 施術前のカウンセリング内容のメモ。記録しない場合はnull */
             consultationNotes: string | null;
+            /** @description 施術のときの頭皮の状態。記録しない場合はnull */
+            scalpCondition: string | null;
+            /** @description 施術のときの毛髪の状態。記録しない場合はnull */
+            hairCondition: string | null;
+            /** @description カラー剤の配合。カラーをしない施術や記録しない場合はnull */
+            colorFormula: string | null;
             /**
              * Format: int32
              * @description 施術の処理時間（分）。記録しない場合はnull
@@ -9972,6 +9991,8 @@ export interface components {
              * @description 次回来店の推奨日。特に提案事項がない場合はnull
              */
             nextRecommendedDate: string | null;
+            /** @description 次回来店時に推奨するサービス ID の一覧。提案事項がない場合は空配列 */
+            nextRecommendedServices: components["schemas"]["Models.ServiceId"][];
             /** @description ホームケアの提案内容。提案事項がない場合はnull */
             homeCareSuggestions: string | null;
             /**
@@ -9981,7 +10002,7 @@ export interface components {
             customerSatisfaction: number | null;
             /** @description 担当スタッフによる施術の自己評価・申し送り。記録しない場合はnull */
             staffEvaluation: string | null;
-            /** @description 施術で使用した商材の一覧。商材を使用しない施術の場合は空配列 */
+            /** @description 施術で使用した商材の一覧。指定した順に並ぶ。商材を使用しない施術の場合は空配列 */
             materials: components["schemas"]["Models.TreatmentMaterial"][];
             /** @description 施術写真の一覧。sortOrderの昇順で並ぶ。写真がない場合は空配列 */
             photos: components["schemas"]["Models.TreatmentPhotoResponse"][];
@@ -10001,10 +10022,18 @@ export interface components {
          *     materials を指定した場合は使用商材の一覧全体を置き換える。予約・顧客・担当スタッフは変更できない
          */
         "Models.TreatmentRecordUpdateRequest": {
-            /** @description 施術で提供したサービス ID 一覧。予約と同じサロンのサービスを1件以上指定する */
+            /** @description 施術で提供したサービス ID 一覧。予約と同じサロンの、削除されていないサービスを1件以上20件以下で指定する。同じサービスの繰り返しは指定できない */
             services?: components["schemas"]["Models.ServiceId"][];
+            /** @description 施術で使った技法の名称の一覧（100文字まで）。20件まで。同じ名称の繰り返しは指定できない。空配列でクリア */
+            techniques?: string[];
             /** @description 施術前のカウンセリング内容のメモ。nullでクリア */
             consultationNotes?: string | null;
+            /** @description 施術のときの頭皮の状態。nullでクリア */
+            scalpCondition?: string | null;
+            /** @description 施術のときの毛髪の状態。nullでクリア */
+            hairCondition?: string | null;
+            /** @description カラー剤の配合。nullでクリア */
+            colorFormula?: string | null;
             /**
              * Format: int32
              * @description 施術の処理時間（分）。nullでクリア
@@ -10014,9 +10043,11 @@ export interface components {
             resultNotes?: string | null;
             /**
              * Format: date
-             * @description 次回来店の推奨日。nullでクリア
+             * @description 次回来店の推奨日。予約の日より前の日は指定できない。nullでクリア
              */
             nextRecommendedDate?: string | null;
+            /** @description 次回来店時に推奨するサービス ID の一覧。予約と同じサロンの、削除されていないサービスを20件まで指定する。同じサービスの繰り返しは指定できない。空配列でクリア */
+            nextRecommendedServices?: components["schemas"]["Models.ServiceId"][];
             /** @description ホームケアの提案内容。nullでクリア */
             homeCareSuggestions?: string | null;
             /**
@@ -10026,7 +10057,7 @@ export interface components {
             customerSatisfaction?: number | null;
             /** @description 担当スタッフによる施術の自己評価・申し送り。nullでクリア */
             staffEvaluation?: string | null;
-            /** @description 施術で使用した商材の一覧。指定した場合は全件を置き換える */
+            /** @description 施術で使用した商材の一覧。50件まで。指定した場合は全件を、指定した順に置き換える */
             materials?: components["schemas"]["Models.TreatmentMaterial"][];
         };
         /** @description 施術統計レスポンス - 施術記録から算出した集計値を返す。対応するテーブルはない */
@@ -10703,6 +10734,8 @@ export interface components {
         "Models.TreatmentRecordSearchRequest.endDate": string;
         /** @description 1ページあたりの取得件数上限 (1〜100) */
         "Models.TreatmentRecordSearchRequest.limit": number;
+        /** @description 施術記録のサロン(予約のサロン)の ID による絞り込み(完全一致)。サロンのメンバーが省略した場合は自分のサロン */
+        "Models.TreatmentRecordSearchRequest.salonId": components["schemas"]["Models.SalonId"];
         /** @description 施術担当スタッフの ID による絞り込み(完全一致) */
         "Models.TreatmentRecordSearchRequest.staffId": components["schemas"]["Models.StaffId"];
         /** @description レコード作成日時(createdAt)がこの日時以降の施術記録に一致する */
@@ -30983,6 +31016,8 @@ export interface operations {
                 limit?: components["parameters"]["Models.TreatmentRecordSearchRequest.limit"];
                 /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
                 cursor?: components["parameters"]["Models.TreatmentRecordSearchRequest.cursor"];
+                /** @description 施術記録のサロン(予約のサロン)の ID による絞り込み(完全一致)。サロンのメンバーが省略した場合は自分のサロン */
+                salonId?: components["parameters"]["Models.TreatmentRecordSearchRequest.salonId"];
                 /** @description 施術を受けた顧客の ID による絞り込み(完全一致) */
                 customerId?: components["parameters"]["Models.TreatmentRecordSearchRequest.customerId"];
                 /** @description 施術担当スタッフの ID による絞り込み(完全一致) */

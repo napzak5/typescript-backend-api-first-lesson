@@ -16,7 +16,7 @@ namespace BeautySalon.Operations {
   @tag("Treatments")
   namespace TreatmentOperations {
     interface TreatmentRecordCrud {
-      @doc("絞り込み条件とページネーションを指定して施術記録を一覧取得します。顧客別の施術履歴やスタッフ別の施術一覧は customerId・staffId で絞り込みます。")
+      @doc("絞り込み条件とページネーションを指定して施術記録を一覧取得します。顧客別の施術履歴やスタッフ別の施術一覧は customerId・staffId で絞り込みます。サロンのメンバーがほかのサロンの salonId を指定した場合は403を返します。")
       @summary("List treatment records")
       @get
       list(...TreatmentRecordSearchRequest):
@@ -27,7 +27,7 @@ namespace BeautySalon.Operations {
         | ProblemResponse<400>
         | CommonErrors;
 
-      @doc("施術記録を新規登録します。bookingId・customerId・staffId・services・materialsのproductIdに存在しないIDや予約と別のサロンのものを指定した場合、およびcustomerIdが予約の顧客と一致しない場合は400を、予約に施術記録がすでにある場合は409を返します。")
+      @doc("施術記録を新規登録します。bookingId・customerId・staffId・services・nextRecommendedServices・materialsのproductIdに存在しないIDや削除済みのもの、予約と別のサロンのものを指定した場合、customerIdが予約の顧客と一致しない場合、nextRecommendedDateが予約の日より前の場合、およびロット番号が商品のロット管理と合わない場合は400を返します。予約が施術中（in_progress）でも完了（completed）でもない場合と、予約に施術記録がすでにある場合は409を返します。")
       @summary("Create a treatment record")
       @post
       create(@body request: TreatmentRecordCreateRequest):
@@ -53,7 +53,7 @@ namespace BeautySalon.Operations {
         | ProblemResponse<404>
         | CommonErrors;
 
-      @doc("指定した項目だけを更新します。materialsを指定した場合は使用商材の一覧全体を置き換えます。servicesやmaterialsのproductIdに存在しないIDや予約と別のサロンのものを指定した場合は400を返します。")
+      @doc("指定した項目だけを更新します。materialsを指定した場合は使用商材の一覧全体を置き換えます。services・nextRecommendedServices・materialsのproductIdに存在しないIDや削除済みのもの、予約と別のサロンのものを指定した場合、nextRecommendedDateが予約の日より前の場合、およびロット番号が商品のロット管理と合わない場合は400を返します。")
       @summary("Update a treatment record")
       @patch
       update(
@@ -69,7 +69,7 @@ namespace BeautySalon.Operations {
         | RequestBodyErrors
         | CommonErrors;
 
-      @doc("施術記録を削除します。施術記録の使用商材と施術写真も削除されます。")
+      @doc("施術記録を削除します。施術記録の使用商材と施術写真も削除されます。削除できるのは管理者と、サロンのオーナー・マネージャーです（スタッフは403）。施術記録を削除すると、予約を削除できるようになります。")
       @summary("Delete a treatment record")
       @delete
       delete(@path id: TreatmentRecordId):
