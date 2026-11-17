@@ -670,13 +670,13 @@ export type InventoryAlertType = z.infer<typeof InventoryAlertTypeSchema>
  *
  * use: 施術使用 - 施術の材料として消費した出庫
  *
- * adjustment: 調整 - 棚卸差異や破損などの補正による増減
+ * adjustment: 調整 - 棚卸差異など、帳簿の在庫数を実際の数に合わせる増減
  *
  * return: 返品 - 仕入先への返品または顧客からの返品による増減
  *
- * disposal: 廃棄 - 期限切れや破損による廃棄
+ * disposal: 廃棄 - 期限切れや破損で使えなくなった在庫を除く出庫
  *
- * transfer: 移動 - ほかの保管場所・店舗との間の移動による増減
+ * transfer: 移動 - ほかの店舗との間の移動による増減
  */
 export const InventoryTransactionTypeSchema = z.enum(['purchase', 'sale', 'use', 'adjustment', 'return', 'disposal', 'transfer'])
 /**
@@ -690,13 +690,13 @@ export const InventoryTransactionTypeSchema = z.enum(['purchase', 'sale', 'use',
  *
  * use: 施術使用 - 施術の材料として消費した出庫
  *
- * adjustment: 調整 - 棚卸差異や破損などの補正による増減
+ * adjustment: 調整 - 棚卸差異など、帳簿の在庫数を実際の数に合わせる増減
  *
  * return: 返品 - 仕入先への返品または顧客からの返品による増減
  *
- * disposal: 廃棄 - 期限切れや破損による廃棄
+ * disposal: 廃棄 - 期限切れや破損で使えなくなった在庫を除く出庫
  *
- * transfer: 移動 - ほかの保管場所・店舗との間の移動による増減
+ * transfer: 移動 - ほかの店舗との間の移動による増減
  */
 export type InventoryTransactionType = z.infer<typeof InventoryTransactionTypeSchema>
 

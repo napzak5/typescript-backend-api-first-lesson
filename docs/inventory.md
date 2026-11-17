@@ -1,6 +1,6 @@
 # 在庫
 
-サロンの在庫（`inventory`）の規則をまとめます。コントラクトは `specs/operations/inventory-operations.tsp`（`InventoryOperations` の `InventoryCrud`）と `specs/models/inventory.tsp`、テーブルは `inventory` です。
+サロンの在庫（`inventory`）の規則をまとめます。コントラクトは `specs/operations/inventory-operations.tsp`（`InventoryOperations` の `InventoryCrud`）と `specs/models/inventory.tsp`、テーブルは `inventory` と、在庫の移動の `inventory_transactions` です。
 
 在庫の 1 行（在庫の行）は、サロンにある 1 つの商品の 1 つのロットです。どれだけあるか、どこにあるか、いつ使用期限が来るかを記録します。管理者とサロンのスタッフが `/api/v1/inventory` で扱います。顧客のアカウントは、このルートを使えません。商品そのものは [商品](./products.md) にあります。
 
@@ -10,15 +10,17 @@
 |---|---|
 | 在庫の行の一覧、作成、1 件の取得、更新、削除（`list`、`create`、`get`、`update`、`delete`） | 実装済み |
 | 在庫僅少の一覧（`listLowStock`）、期限切れ間近の一覧（`listExpiring`） | 実装済み |
-| 在庫の移動の記録と一覧（`recordMovement`、`listMovements`）、棚卸し（`performStockCount`） | 未実装（ルートがなく、404） |
+| 在庫の移動の記録と履歴（`recordMovement`、`listMovements`） | 実装済み（[在庫の移動](#在庫の移動)） |
+| 棚卸し（`performStockCount`） | 未実装（ルートがなく、404） |
 | 在庫評価額（`getValueReport`） | 未実装。`GET /api/v1/inventory/value-report` は 1 件の取得のルートが受け取り、`value-report` を在庫の ID として確かめるので、読める人には 400（`id` の `invalid_format`）です |
 | 発注（`PurchaseOrderCrud`）と在庫のアラート（`InventoryAlertCrud`） | 未実装（ルートがなく、404。テーブルもない） |
 
-- 在庫の数（`currentStock`、`availableStock`、`reservedStock`）と、棚卸しの記録（`lastCountedAt`、`lastCountedBy`）を書くのは、在庫の移動と棚卸しです。どちらもまだないので、API で作成した在庫の行の数は 0 のままです
+- 在庫数（`currentStock`）と使える数（`availableStock`）を書くのは、在庫の移動です（[在庫の移動](#在庫の移動)）。棚卸しの記録（`lastCountedAt`、`lastCountedBy`）を書くのは棚卸しで、まだないので、API で作成した在庫の行では null のままです
 - 次のものは、ありません
   - 在庫を引き当てるオペレーション。`reservedStock` は、API で作成した行では 0 です
   - 顧客に、在庫を見せるルート
   - 削除した在庫の行を戻すオペレーション。削除は行を消します（[削除](#削除)）
+  - 記録した在庫の移動を、直すか消すオペレーション。誤りは、逆向きの在庫の移動で直します（[在庫の移動](#在庫の移動)）
 
 ## 在庫の行は、1 つの商品の 1 つのロット
 
@@ -37,8 +39,8 @@
 | `lastCountedBy` | 最後に棚卸ししたスタッフの ID。棚卸ししていなければ null |
 | `notes` | メモ。なければ null |
 
-- **在庫の行は、在庫数 0 で作成します**。入庫は、在庫の移動（未実装）で記録します。作成と更新のリクエストに、在庫の数と棚卸しの記録を書くと 400 です（`unrecognized_keys`）
-- 在庫の行は、サロンと商品を変えません。更新のリクエストに `salonId` と `productId` を書くと 400 です（`unrecognized_keys`）。ほかのサロンに移すのは、在庫の移動です
+- **在庫の行は、在庫数 0 で作成します**。入庫は、在庫の移動（`purchase`）で記録します。作成と更新のリクエストに、在庫の数と棚卸しの記録を書くと 400 です（`unrecognized_keys`）
+- 在庫の行は、サロンと商品を変えません。更新のリクエストに `salonId` と `productId` を書くと 400 です（`unrecognized_keys`）。ほかのサロンに移すのは、在庫の移動（`transfer`）です。サロンの中で保管場所を変えるのは、在庫の行の更新（`location`、`shelf`）です
 - 3 つの数の関係は、CHECK 制約（`inventory_stock`）が守ります（[DB の制約](#db-の制約)）
 - 取り扱いをやめた商品（`isActive` が false）の在庫の行も、作成できます。残っている在庫を記録するためです
 
@@ -53,12 +55,15 @@
 | 削除 | `DELETE /api/v1/inventory/{id}` | `admin`、在庫の行のサロンの `owner` / `manager` |
 | 在庫僅少の一覧 | `GET /api/v1/inventory/low-stock` | `admin`、クエリの `salonId` のサロンの `owner` / `manager` / `staff` |
 | 期限切れ間近の一覧 | `GET /api/v1/inventory/expiring` | `admin`、クエリの `salonId` のサロンの `owner` / `manager` / `staff` |
+| 在庫の移動の記録 | `POST /api/v1/inventory/movement` | `admin`、本文の `inventoryId` の在庫の行のサロンの `owner` / `manager`。`staff` は、`purchase`、`sale`、`use`、`return` だけ |
+| 在庫の移動の履歴 | `GET /api/v1/inventory/{id}/movements` | `admin`、在庫の行のサロンの `owner` / `manager` / `staff` |
 
 - すべてのオペレーションに認証が要ります
-- ルートは、サロンの下にありません。どのサロンの在庫かは、作成では本文の `salonId`、一覧ではクエリの `salonId`、取得、更新、削除では在庫の行そのものが決めます。権限は、売上台帳と同じ 2 段階で判定します（`business-logic/inventory/_shared/authorization.ts`）
+- ルートは、サロンの下にありません。どのサロンの在庫かは、作成では本文の `salonId`、一覧ではクエリの `salonId`、取得、更新、削除、在庫の移動の履歴では在庫の行そのもの、在庫の移動の記録では本文の `inventoryId` の在庫の行が決めます。権限は、売上台帳と同じ 2 段階で判定します（`business-logic/inventory/_shared/authorization.ts`）
 - 1 段階目は、操作者だけで決まります。読むこと（`inventoryReachOf`）は、`admin` と、サロンの 3 つのロールができます。施術で商品を棚から出し、店頭で売るスタッフが、在庫を知る必要があるからです。作成、更新、削除（`inventoryKeeperReachOf`）は、商品と同じく、`owner` と `manager` のものです。`staff`、ロール `customer` のユーザー、範囲 `none` のユーザーは、本文、クエリ、ID が不正でも 403 です
+- **在庫の移動は、在庫を読める人が記録します。ただし、`adjustment`、`disposal`、`transfer` は、管理する人だけです**（`movementReachOf`）。スタッフが日々記録するのは、仕入れ、販売、施術での使用、返品です。帳簿の在庫を直すこと、在庫を帳簿から外すこと、ほかのサロンに移すことは、`owner` と `manager` が決めます。区分は本文にあるので、`staff` がこの 3 つを記録すると、本文を確かめたあとに 403 です（本文が不正なら、その前に 400）。ロール `customer` のユーザーと範囲 `none` のユーザーは、本文が不正でも 403 です
 - 2 段階目は、本文かクエリを確かめたあとに決まります（`isWithin`）。サロンのユーザーが、ほかのサロンを指定すると、サロンが存在するかどうかにかかわらず 403 です。本文かクエリが不正なら、その前に 400 です。不正なリクエストへの 400 は、指定したサロンについて何も伝えません
-- **ほかのサロンの在庫の行は、存在しない行と区別しません**。取得、更新、削除は 404（`detail` は `Inventory <id> was not found`）です。一覧の `cursor` に指定すると 400 です
+- **ほかのサロンの在庫の行は、存在しない行と区別しません**。取得、更新、削除、在庫の移動の履歴は 404（`detail` は `Inventory <id> was not found`）です。一覧の `cursor` に指定すると 400 です。在庫の移動の記録では、本文の誤りとして 400 です（`inventoryId` の `not_found`）
 - 在庫のための権限（`users.permissions`）はありません
 - ID（パスの `id`、本文とクエリの ID）は、英字を大文字で書いても同じ ID です。レスポンスの ID は小文字です
 
@@ -117,6 +122,25 @@
 5. サロンの存在（400。`salonId` の `not_found`）
 6. `cursor` が、そのサロンの在庫の行を指すこと（400。`cursor` の `not_found`）
 
+在庫の移動の記録:
+
+1. アクセストークン（401）
+2. 操作者が在庫を読めること（403）
+3. リクエストの本文（400。`detail` は `Invalid stock movement`）
+4. 操作者が、その区分の在庫の移動を記録できること（403。`staff` の `adjustment`、`disposal`、`transfer`）
+5. 在庫の行が、操作者に届く行であること（400。`inventoryId` の `not_found`）
+6. 移動後の在庫数が、引き当てた数（`reservedStock`）を下回らないこと（409）
+7. 移動後の在庫数が、99,999,999.99 を超えないこと（409）
+
+在庫の移動の履歴:
+
+1. アクセストークン（401）
+2. 操作者が在庫を読めること（403）
+3. パスの `id` の形式（400。`detail` は `Invalid inventory ID`）
+4. クエリ（400。`detail` は `Invalid stock movement search`）
+5. 在庫の行の存在（404）
+6. `cursor` が、その在庫の行の在庫の移動を指すこと（400。`cursor` の `not_found`）
+
 JSON として読めない本文は、ほかのルートと同じく、アクセストークンより前に 400（`code` は `2002`）です。JSON でない `Content-Type` は 415 です。
 
 ## 作成リクエストの規則
@@ -165,8 +189,8 @@ JSON として読めない本文は、ほかのルートと同じく、アクセ
 削除は、行を消します（204。本文はない）。在庫の行には、削除の印（`deletedAt`）がありません。
 
 - **在庫数（`currentStock`）が 0 でない行は、削除できません**（409。`code` は `3003`）。`detail` は `The stock row cannot be deleted: it counts stock; bring it to zero with a stock movement first` です。引き当てた数も、在庫数に含まれます
-- 在庫を 0 にするのは、在庫の移動（未実装）です。それまでは、API で作成した行（在庫数 0）だけを削除できます
-- **在庫の移動の記録（`inventory_transactions`）は、残ります**。記録が指す在庫の行（`inventoryId`）は null になり（`ON DELETE SET NULL`）、商品とロット番号は、記録に残ります
+- 在庫を 0 にするのは、在庫の移動です。使い切る（`use`、`sale`）、捨てる（`disposal`）、ほかのサロンに移す（`transfer`）、帳簿を直す（`adjustment`）のどれかです
+- **在庫の移動の記録（`inventory_transactions`）は、残ります**。記録が指す在庫の行（`inventoryId`）は null になり（`ON DELETE SET NULL`）、サロン、商品、ロット番号、使用期限は、記録に残ります。削除した行の履歴は、`GET /api/v1/inventory/{id}/movements` では読めません（404）
 - 削除した行のロット番号は、同じ商品のほかの行が使えます
 
 ## 1 件の取得と一覧
@@ -211,14 +235,95 @@ JSON として読めない本文は、ほかのルートと同じく、アクセ
 - 並びは、使用期限の昇順、同じ日の中では `id` の昇順です。`cursor` は、そのサロンの、使用期限のある在庫の行を指します。在庫が 0 になって一覧から外れた行も、カーソルにできます
 - `limit` は、在庫の一覧と同じです。表にないパラメーター（`threshold` など）は 400 です
 
+## 在庫の移動
+
+`POST /api/v1/inventory/movement` は、1 つの在庫の行の在庫数を増減し、その 1 回の操作を記録します（在庫の移動）。`GET /api/v1/inventory/{id}/movements` は、在庫の行の在庫の移動の履歴を返します。
+
+### 在庫操作区分
+
+| `transactionType` | 意味 | `quantity` | `reason` | `staff` |
+|---|---|---|---|---|
+| `purchase` | 仕入れ | 正 | 任意 | 記録できる |
+| `sale` | 店頭での販売 | 負 | 任意 | 記録できる |
+| `use` | 施術での使用 | 負 | 任意 | 記録できる |
+| `return` | 返品。仕入先に返すと負、顧客から戻ると正 | 正か負 | 任意 | 記録できる |
+| `adjustment` | 帳簿の在庫数を、実際の数に合わせる | 正か負 | 必須 | 403 |
+| `disposal` | 廃棄。期限切れ、破損など | 負 | 必須 | 403 |
+| `transfer` | ほかのサロンとの間の移動 | 正か負 | 任意 | 403 |
+
+- `quantity` は、在庫数の増減量です。0 は 400 です（`quantity` の `custom`。`Must not be 0`）。符号が区分に合わないと 400 です（`Must be above 0 for a purchase`、`Must be below 0 for a sale` など）
+- `quantity` は小数第 2 位まで、−99,999,999.99 から 99,999,999.99 までの数値です
+- **`adjustment` と `disposal` は、`reason` を書きます**。null は 400 です（`reason` の `custom`。`Must not be null: an adjustment and a disposal state why`）。どちらも、物が動いたのを見ずに在庫数を変えるか、在庫を帳簿から外すので、次に数える人が、理由を知る必要があるからです。ほかの区分では、null を書けます
+- **在庫の行は、在庫の状態（破損、期限切れなど）を持ちません**。使えなくなった在庫は、`disposal` で在庫から外し、`reason` に理由を書きます
+- **ほかのサロンへの移動は、2 件の在庫の移動です**。移動元のサロンの在庫の行に負の `transfer` を、移動先のサロンの在庫の行に正の `transfer` を、別々のリクエストで記録します。それぞれ、そのサロンの `owner` か `manager`、または `admin` が記録します。運んでいる途中の在庫は、どちらの行にも数えません
+  - 2 件を結ぶときは、2 件目の `referenceType` に `inventory_transaction`、`referenceId` に 1 件目の在庫の移動の ID を書きます。サーバーは、2 件が対になっているかを確かめません
+- サロンの中で保管場所を変えるのは、在庫の移動ではなく、在庫の行の更新（`location`、`shelf`）です。1 つの商品の 1 つのロットは、サロンの中で 1 つの行だからです
+
+### 記録リクエストの規則
+
+記録リクエスト（`InventoryMovementRequest`）は、すべてのキーが必須です。値がないものは、null を書きます。
+
+| プロパティ | 規則 |
+|---|---|
+| `inventoryId` | 在庫の行の ID |
+| `transactionType` | 在庫操作区分 |
+| `quantity` | 在庫数の増減量（[在庫操作区分](#在庫操作区分)） |
+| `unitCost` | null か、0 以上の整数。1 単位の価格（円） |
+| `referenceType` | null か、空白だけでない文字列。50 文字まで |
+| `referenceId` | null か、UUID |
+| `reason` | null か、空白だけでない文字列 |
+
+- 表にないキー（`salonId`、`balanceAfter`、`totalCost`、`performedBy` など）は 400 です（`unrecognized_keys`）。`salonId`、`productId`、`lotNumber`、`expiryDate` は在庫の行から、`balanceBefore`、`balanceAfter`、`totalCost` はサーバーが計算して、`performedBy` は操作者から書きます
+- **`totalCost` は、`unitCost` × |`quantity`| を四捨五入した円です**。0.5 は 0 から遠いほうに丸めます（PostgreSQL の `numeric` の `round` と同じ）。`unitCost` が null なら、`totalCost` も null です
+- `totalCost` が 2,147,483,647（`integer` の最大値）を超える `unitCost` は 400 です（`unitCost` の `too_big`）。`maximum` は、その `quantity` で書ける最大の `unitCost` です。`quantity` か `unitCost` が、それだけで規則に合わないときは、この規則を確かめません
+- `referenceType` と `referenceId` は、関連する記録（発注、施術の記録など）の種別と ID です。両方を書くか、両方を null にします。一方だけは 400 です（null のほうの `custom`。`Must not be null when referenceId is given` など）。**サーバーは、指した記録があるかを確かめません**
+- `performedBy` は、サロンのユーザーのスタッフ ID です。`admin` が記録した在庫の移動では null です
+
+### 在庫数の範囲
+
+- 在庫の移動は、在庫の行の `currentStock` と `availableStock` を、`quantity` だけ増減します。`reservedStock` は変えません。在庫の行の `updatedAt` も書きます
+- **移動後の在庫数が、引き当てた数（`reservedStock`）を下回る在庫の移動は 409 です**（`code` は `3003`、`detail` は `The stock of the row would fall below its reserved stock`）。引き当てた数が 0 なら、在庫数が負になる在庫の移動です
+- **移動後の在庫数が 99,999,999.99 を超える在庫の移動も 409 です**（`detail` は `The stock of the row would go above 99999999.99`）。在庫数のカラムは `numeric(10, 2)` です
+- 409 のときは、何も書きません
+- 成功すると 200 です。`data` は記録した在庫の移動で、`balanceBefore` は移動前の在庫数、`balanceAfter` は移動後の在庫数です。`salonId`、`productId`、`lotNumber`、`expiryDate` は、記録した時点の在庫の行の値です。`links` は、在庫の行（`inventory`）と、その履歴（`movements`）を指します。在庫の移動には、それだけを読むルートがありません
+- **記録した在庫の移動は、変えも消しもしません**。誤りは、逆向きの在庫の移動（`adjustment` など）で直します
+
+### 履歴
+
+- 並びは、`createdAt` の降順、同じ時刻の中では `id` の降順です（新しい順）
+- `limit` は 1〜100（既定は 20）。`cursor` は、前のページの最後の在庫の移動の ID です（`meta.nextCursor`）。その在庫の行の在庫の移動でない `cursor` は 400 です（`cursor` の `not_found`）
+- `meta.total` は、絞り込みに一致する在庫の移動の数です
+- 絞り込みは、AND で結合します
+
+| パラメーター | 一致する在庫の移動 |
+|---|---|
+| `transactionType` | その区分のもの |
+| `startDate` | `createdAt` が、その日時と同じか、あとのもの |
+| `endDate` | `createdAt` が、その日時と同じか、前のもの。`startDate` より前の日時は 400 です（`endDate` の `custom`。`Must not be earlier than startDate`） |
+
+- 日時は、`Z` で終わる UTC の ISO 8601 です（`2026-11-20T03:40:00.000Z`。ミリ秒は省けます）。時差を付けた日時と、秒のない日時は 400 です（`invalid_format`）。日付は 1900-01-01 から 2999-12-31 までです（[リクエストの日付と日時の範囲](./api-db-type-constraints-mapping.md#リクエストの日付と日時の範囲)）
+- **`createdAt` は、レスポンスと同じミリ秒までの時刻で比べます**。データベースはマイクロ秒まで記録しますが、レスポンスで見た `createdAt` を `startDate` と `endDate` に書くと、その在庫の移動に一致します
+- 表にないパラメーターは 400 です（`unrecognized_keys`）。同じパラメーターを 2 回書くと 400 です
+
+### 開始の在庫移動
+
+在庫の行の在庫数は、その行の最後の在庫の移動の `balanceAfter` と同じです。在庫の移動は、1 件ずつ、前の在庫の移動が残した在庫数から記録するので、同じであり続けます。
+
+- 在庫の移動を記録し始める前に、在庫数を書いたのはシードだけでした。マイグレーション `202611171500_inventory_transaction_rules.sql` は、在庫数が、最後の在庫の移動の `balanceAfter`（在庫の移動がなければ 0）と違う在庫の行に、差の分の `adjustment` を 1 件記録します。`reason` は `在庫移動の記録を始めた時点の在庫数`、`unitCost` と `performedBy` は null です
+- シードも、在庫の行ごとに、同じ開始の在庫移動を入れます（[シード](#シード)）
+- API で作成した在庫の行は、在庫数 0 で、在庫の移動がないので、開始の在庫移動はありません
+
 ## 同時に届いたリクエスト
 
 - **ロットの重なりは、一意制約と一意インデックスが決めます**。同じロットの作成が同時に何件も届くと、1 件が 201 で、ほかは 409 です。ロット番号のない行の作成も同じです。2 つの行を同じロットに変える更新が同時に届くと、1 件が 200 で、もう 1 件は 409 です
 - **作成は、商品の行を `FOR KEY SHARE` でロックしてから、商品を確かめます**（`READ COMMITTED` のトランザクション）。これは、商品の更新と削除がとるロック（`FOR UPDATE`）と互いに待つロックです。更新か削除の途中の商品への作成は、それを待ち、削除された商品なら 400、`requiresLotTracking` が変わった商品なら、変わったあとの規則で確かめます。商品の削除も、書いている途中の在庫の行を待ちます（[商品の同時に届いたリクエスト](./products.md#同時に届いたリクエスト)）
 - `lotNumber` を書く更新も、同じように商品をロックしてから確かめます。ほかのプロパティだけの更新は、商品を待ちません
-- **削除は、在庫の行を `FOR UPDATE` でロックしてから、在庫数を確かめます**。在庫の移動（未実装）が同じ行を書いている途中なら、それを待ち、在庫が残れば 409 です
+- **削除は、在庫の行を `FOR UPDATE` でロックしてから、在庫数を確かめます**。在庫の移動が同じ行を書いている途中なら、それを待ち、在庫が残れば 409 です
+- **在庫の移動は、在庫の行を `FOR UPDATE` でロックしてから、移動後の在庫数を確かめます**（`READ COMMITTED` のトランザクション）。同じ行の在庫の移動は 1 件ずつ、前の在庫の移動が残した在庫数から書きます。在庫が 5 の行に、1 つずつの販売が同時に 8 件届くと、5 件が 200 で、3 件は 409 です。ほかの行の在庫の移動は、待ちません
+- 在庫の移動は、更新か削除の途中の行を待ちます。削除されれば 400（`inventoryId` の `not_found`）で、何も書きません
+- 在庫の移動の `createdAt` と、在庫の行の `updatedAt` は、書いた時刻（データベースの `clock_timestamp()`）です。ロックを待った在庫の移動は、待ったあとの時刻です
 - 更新は、削除の途中の行を待ちます。削除されれば 404 で、何も書きません。同じ行の削除が同時に何件も届くと、1 件が 204 で、ほかは 404 です
-- 取得と一覧は、ロックを待ちません
+- 取得と一覧は、ロックを待ちません。在庫の移動の履歴は、1 つのスナップショット（`REPEATABLE READ` の読み取り専用のトランザクション）で、在庫の行、カーソル、ページ、件数を読みます
 
 ## DB の制約
 
@@ -230,6 +335,18 @@ JSON として読めない本文は、ほかのルートと同じく、アクセ
 
 違反する行があると、マイグレーションは失敗し、何も変えません。行を直してから、やり直します。マイグレーションは、何度適用しても同じ結果です。以前のバージョンは、在庫の行を書かないので、マイグレーションを適用したあとも動きます。新しいバージョンは、[リリースの手順](./release-workflow.md) のとおり、起動する前にマイグレーションを適用します。
 
+マイグレーション `202611171500_inventory_transaction_rules.sql` で、在庫の移動（`inventory_transactions`）に、次のものを加えました。
+
+- CHECK 制約 `inventory_transactions_quantity_of_type`: `quantity` は 0 でない。`purchase` は正、`sale`、`use`、`disposal` は負
+- CHECK 制約 `inventory_transactions_balance`: `balanceBefore` と `balanceAfter` は 0 以上、`balanceAfter` = `balanceBefore` + `quantity`
+- CHECK 制約 `inventory_transactions_cost`: `unitCost` と `totalCost` は、両方 null か、両方あって `unitCost` ≧ 0、`totalCost` = round(`unitCost` × |`quantity`|)
+- CHECK 制約 `inventory_transactions_reference_pair`: `referenceType` と `referenceId` は、両方 null か、両方ある
+- CHECK 制約 `inventory_transactions_reason_of_type`: `adjustment` と `disposal` は `reason` がある
+- インデックス `idx_inventory_transactions_inventory_time`（`inventoryId`、`createdAt`、`id`）。履歴の並びのためのもので、在庫の行だけのインデックス `idx_inventory_transactions_inventory_id` を置き換えました
+- 開始の在庫移動（[開始の在庫移動](#開始の在庫移動)）
+
+違反する在庫の移動があると、マイグレーションは失敗し、何も変えません。どのカラムが誤りかは決められないので、記録を直してから、やり直します。マイグレーションは、何度適用しても同じ結果です（開始の在庫移動は、在庫数が違う行にだけ記録します）。以前のバージョンは、在庫の移動を書かず、在庫数も変えないので、マイグレーションを適用したあとも動きます。
+
 在庫の行は、外部キーで、サロン（`inventory_salon_id_fk`）と商品（`inventory_product_id_fk`）を指します。どちらも `ON DELETE CASCADE` です。API のサロンと商品の削除は、行を残す論理削除です。在庫の移動の記録は、外部キー（`inventory_transactions_inventory_id_fk`。`ON DELETE SET NULL`）で在庫の行を指します。`lastCountedBy` は、外部キーのない UUID です。
 
 ## シード
@@ -238,15 +355,16 @@ JSON として読めない本文は、ほかのルートと同じく、アクセ
 
 - 使用期限が過ぎているので、6 行とも、期限切れ間近の一覧に出ます
 - 6 件の商品の最低在庫数は 3〜10 なので、在庫僅少の一覧には出ません。`threshold=20` を書くと、6 行とも出ます
-- 在庫があるので、削除できません（409）。その 6 件の商品も、削除できません（[商品](./products.md#シード)）
+- 在庫の行ごとに、開始の在庫移動（`adjustment`、`quantity` 20、`balanceBefore` 0、`balanceAfter` 20）を 1 件入れます（[開始の在庫移動](#開始の在庫移動)）。履歴は、その 1 件から始まります
+- 在庫があるので、削除できません（409）。在庫の移動で在庫数を 0 にすると、削除できます。その 6 件の商品は、在庫の行があるので、削除できません（[商品](./products.md#シード)）
 
 ## 実装の場所
 
 | 層 | ファイル |
 |---|---|
-| コントラクト | `specs/models/inventory.tsp`（`InventoryResponse`、`InventoryCreateRequest`、`InventoryUpdateRequest`、`InventorySearchRequest`、`InventoryLowStockSearchRequest`、`InventoryExpiringSearchRequest`）、`specs/operations/inventory-operations.tsp`（`InventoryCrud`） |
-| ドメイン | `backend/packages/domain/src/models/inventory.ts`、`schemas/inventory.schema.ts`、`mappers/read/inventory.mapper.ts`、`mappers/write/inventory.mapper.ts`、`repositories/inventory.repository.ts`、`business-logic/inventory/`（誰が読み、誰が管理するかは `_shared/authorization.ts`、ロット番号の規則は `_shared/lots.ts`、期限切れ間近の最後の日は `_shared/expiry.ts`） |
+| コントラクト | `specs/models/inventory.tsp`（`InventoryResponse`、`InventoryCreateRequest`、`InventoryUpdateRequest`、`InventorySearchRequest`、`InventoryLowStockSearchRequest`、`InventoryExpiringSearchRequest`、`InventoryMovementRequest`、`InventoryTransactionResponse`、`InventoryTransactionSearchRequest`）、`specs/operations/inventory-operations.tsp`（`InventoryCrud`） |
+| ドメイン | `backend/packages/domain/src/models/inventory.ts`、`schemas/inventory.schema.ts`、`mappers/read/inventory.mapper.ts`、`mappers/write/inventory.mapper.ts`、`mappers/read/inventory-transaction.mapper.ts`、`mappers/write/inventory-transaction.mapper.ts`、`repositories/inventory.repository.ts`、`business-logic/inventory/`（誰が読み、誰が管理し、誰がどの在庫の移動を記録するかは `_shared/authorization.ts`、ロット番号の規則は `_shared/lots.ts`、期限切れ間近の最後の日は `_shared/expiry.ts`、在庫操作区分の規則と金額は `_shared/movements.ts`） |
 | インフラ | `backend/packages/infrastructure/src/repositories/inventory.repository.impl.ts` |
 | API | `backend/packages/api/src/routes/inventory/`（`/api/v1/inventory` に取り付ける） |
-| DB | `backend/packages/database/sql/migrations/202611171400_inventory_rules.sql` |
-| テスト | `backend/packages/domain/src/__tests__/inventory.schema.test.ts`、`inventory.rules.test.ts`、`inventory.mapper.test.ts`、`inventory.usecase.test.ts`、`backend/packages/api/src/__tests__/inventory.integration.test.ts`、`backend/packages/database/src/scripts/__tests__/migrations.integration.test.ts` |
+| DB | `backend/packages/database/sql/migrations/202611171400_inventory_rules.sql`、`202611171500_inventory_transaction_rules.sql`、シードは `backend/packages/database/src/seeds/seed-data/products.ts` |
+| テスト | `backend/packages/domain/src/__tests__/inventory.schema.test.ts`、`inventory.rules.test.ts`、`inventory.mapper.test.ts`、`inventory.usecase.test.ts`、`inventory-movement.rules.test.ts`、`inventory-movement.schema.test.ts`、`inventory-movement.mapper.test.ts`、`inventory-movement.usecase.test.ts`、`backend/packages/api/src/__tests__/inventory.integration.test.ts`、`inventory-movement.integration.test.ts`、`backend/packages/database/src/scripts/__tests__/migrations.integration.test.ts` |

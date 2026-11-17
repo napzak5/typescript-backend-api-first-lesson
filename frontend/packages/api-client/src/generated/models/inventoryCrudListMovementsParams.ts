@@ -26,14 +26,14 @@ export type InventoryCrudListMovementsParams = {
    * purchase: 仕入 - 仕入先から商品を受け入れた入庫
    * sale: 販売 - 顧客への店頭販売による出庫
    * use: 施術使用 - 施術の材料として消費した出庫
-   * adjustment: 調整 - 棚卸差異や破損などの補正による増減
+   * adjustment: 調整 - 棚卸差異など、帳簿の在庫数を実際の数に合わせる増減
    * return: 返品 - 仕入先への返品または顧客からの返品による増減
-   * disposal: 廃棄 - 期限切れや破損による廃棄
-   * transfer: 移動 - ほかの保管場所・店舗との間の移動による増減
+   * disposal: 廃棄 - 期限切れや破損で使えなくなった在庫を除く出庫
+   * transfer: 移動 - ほかの店舗との間の移動による増減
    */
   transactionType?: ModelsInventoryTransactionSearchRequestTransactionTypeParameter;
-  /** 検索対象期間の開始日時。操作日時(createdAt)がこの日時以降の在庫移動に一致する */
+  /** 検索対象期間の開始日時。操作日時(createdAt)がこの日時以降の在庫移動に一致する。UTC の日付で 1900-01-01 から 2999-12-31 まで */
   startDate?: ModelsInventoryTransactionSearchRequestStartDateParameter;
-  /** 検索対象期間の終了日時。操作日時(createdAt)がこの日時より前の在庫移動に一致する */
+  /** 検索対象期間の終了日時。操作日時(createdAt)がこの日時以前の在庫移動に一致する。startDate より前の日時は指定できない。UTC の日付で 1900-01-01 から 2999-12-31 まで */
   endDate?: ModelsInventoryTransactionSearchRequestEndDateParameter;
 };

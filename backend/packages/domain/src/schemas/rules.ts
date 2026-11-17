@@ -144,6 +144,33 @@ export const calendarDate = z.iso.date().check(dayWithinRange)
 export const MAX_INTEGER = 2_147_483_647
 
 /**
+ * A reference is a kind and an ID together, or neither: an ID alone does
+ * not say which table it is of. The one that is missing is reported.
+ */
+export const referenceInPairs = (
+  context: z.core.ParsePayload<{
+    referenceType: string | null
+    referenceId: string | null
+  }>,
+): void => {
+  const { referenceType, referenceId } = context.value
+  if ((referenceType === null) === (referenceId === null)) {
+    return
+  }
+  const [field, other] =
+    referenceType === null
+      ? ['referenceType', 'referenceId']
+      : ['referenceId', 'referenceType']
+  context.issues.push({
+    code: 'custom',
+    path: [field],
+    message: `Must not be null when ${other} is given`,
+    input: null,
+    continue: true,
+  })
+}
+
+/**
  * For a list in which no entry may come twice: an entry that an earlier one
  * equals is reported under its own index.
  */
