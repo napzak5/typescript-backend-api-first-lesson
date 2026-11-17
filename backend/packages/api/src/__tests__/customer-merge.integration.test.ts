@@ -1093,6 +1093,27 @@ describe('Customer merge API', () => {
       })
     })
 
+    it('expires a transferred lot that has lapsed in a run for every customer, as the earning it was left of', async () => {
+      const { primaryId, secondaryId } = await pair()
+      await insertPoints(primaryId, [['earned', 100, null]])
+      await insertPoints(secondaryId, [['earned', 30, '2026-01-31']])
+      await merge(merging(primaryId, secondaryId))
+
+      const response = await request(app)
+        .post('/api/v1/points/expire')
+        .set('Authorization', asAdmin)
+        .send({ customerId: null, processBefore: null })
+
+      expect(response.status).toBe(200)
+      expect(response.body.data).toEqual({ processedCount: 1, totalPoints: 30 })
+      expect((await storedCustomer(primaryId)).loyaltyPoints).toBe(100)
+      expect((await pointsOf(primaryId)).at(-1)).toMatchObject({
+        transactionType: 'expired',
+        points: -30,
+        balance: 100,
+      })
+    })
+
     it('writes no transfer for a secondary without points', async () => {
       const { primaryId, secondaryId } = await pair()
       await insertPoints(primaryId, [['earned', 100, null]])
