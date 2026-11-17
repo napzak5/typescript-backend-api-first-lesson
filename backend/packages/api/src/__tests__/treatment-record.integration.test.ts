@@ -1721,6 +1721,67 @@ describe('Treatment record API', () => {
       ).toBeGreaterThanOrEqual(300)
     })
 
+    it.each<
+      [
+        string,
+        (id: string) => Test,
+        (response: Response, id: string) => unknown,
+      ]
+    >([
+      [
+        'the list',
+        () => list(),
+        (response, id) =>
+          response.body.data.find((record: { id: string }) => record.id === id)
+            ?.materials,
+      ],
+      ['the get', (id) => get(id), (response) => response.body.data.materials],
+    ])(
+      'reads a record and its materials at one moment: %s',
+      async (_case, read, materialsIn) => {
+        const id = await insertRecord()
+        /** Whether the read came to wait for the table of the materials. */
+        const waitedFor = async (): Promise<boolean> => {
+          for (let attempt = 0; attempt < 100; attempt += 1) {
+            const [locks] = await db.execute(
+              sql`SELECT count(*)::int AS "waiting" FROM pg_locks WHERE NOT granted AND relation = 'treatment_materials'::regclass`,
+            )
+            if (Number(locks?.['waiting']) > 0) {
+              return true
+            }
+            await pause(20)
+          }
+          return false
+        }
+
+        const { pending, waited } = await db.transaction(async (tx) => {
+          await tx.execute(
+            sql`LOCK TABLE ${treatmentMaterials} IN ACCESS EXCLUSIVE MODE`,
+          )
+          const underWay = read(id).then((response) => response)
+          // The read has read the record and waits to read its materials;
+          // one is written meanwhile.
+          const blocked = await waitedFor()
+          await tx.insert(treatmentMaterials).values({
+            treatmentRecordId: id,
+            productId: treatmentId,
+            quantity: '3.00',
+            unit: 'g',
+            sortOrder: 0,
+          })
+
+          return { pending: underWay, waited: blocked }
+        })
+        const response = await pending
+
+        expect(waited).toBe(true)
+        expect(response.status).toBe(200)
+        // The record as it was when the read began, without the material.
+        expect(materialsIn(response, id)).toEqual([])
+        expect((await get(id)).body.data.materials).toHaveLength(1)
+      },
+    )
+
     /** Holds a row as its removal does, and marks it deleted. */
     const removing =
       (
