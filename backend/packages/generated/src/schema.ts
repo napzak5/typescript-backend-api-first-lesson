@@ -866,31 +866,6 @@ export type PaymentStatusType = z.infer<typeof PaymentStatusTypeSchema>
 
 /**
  * @description
- * 権限適用範囲区分 - 権限が及ぶデータの範囲を表す
- *
- *
- * own: 本人 - 操作するユーザー自身に関係するデータだけに適用される
- *
- * salon: サロン - 対象サロンのデータに適用される
- *
- * all: 全体 - すべてのサロンのデータに適用される
- */
-export const PermissionScopeTypeSchema = z.enum(['own', 'salon', 'all'])
-/**
- * @description
- * 権限適用範囲区分 - 権限が及ぶデータの範囲を表す
- *
- *
- * own: 本人 - 操作するユーザー自身に関係するデータだけに適用される
- *
- * salon: サロン - 対象サロンのデータに適用される
- *
- * all: 全体 - すべてのサロンのデータに適用される
- */
-export type PermissionScopeType = z.infer<typeof PermissionScopeTypeSchema>
-
-/**
- * @description
  * ポイント取引の参照先区分 - ポイント取引のもとになった記録の種類(customer_points.referenceType)
  *
  *

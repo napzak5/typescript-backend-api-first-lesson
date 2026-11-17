@@ -63,7 +63,7 @@
 | 削除 | `DELETE /api/v1/salons/{salonId}/payment-methods/{id}` | `admin`、そのサロンの `owner` / `manager` |
 
 - すべてのオペレーションに認証が要ります
-- 誰が使えるかは、パスのサロンだけで決まります（`business-logic/payment-method/_shared/authorization.ts` の `mayReadPaymentMethods` と `mayKeepPaymentMethods`）。`admin` はすべてのサロン、サロンのユーザーは所属サロンです。支払い方法のための権限（`users.permissions`）はありません
+- 誰が使えるかは、パスのサロンだけで決まります（`business-logic/payment-method/_shared/authorization.ts` の `mayReadPaymentMethods` と `mayKeepPaymentMethods`）。`admin` はすべてのサロン、サロンのユーザーは所属サロンです
 - 読むことは、サロンの 3 つのロールができます。会計を入れるスタッフが、どの手段を受け付けるかを知る必要があるからです。設定（作成、更新、削除）は、`owner` と `manager` のものです。`staff` は、ID や本文を確かめる前に 403 です
 - **顧客のアカウントは、このルートを使えません**（403）。レスポンスは、サロンが決済代行会社に払う手数料率を含みます。ロールに必要なレコードを持たないユーザー（範囲 `none`）も 403 です
 - **ほかのサロンのユーザーは、サロンが存在するかどうかにかかわらず 403 です**。サロンを探す前に、権限を確かめます

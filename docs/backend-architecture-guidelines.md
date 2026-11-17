@@ -311,7 +311,7 @@ async execute(
   }
 ```
 
-- 判定に使うのは `actor.scope`（`ActorScope`）です。`users.role` や `users.permissions` を直接読みません。
+- 判定に使うのは `actor.scope`（`ActorScope`）です。`users.role` を直接読みません。
 - 対象が 1 つのサロンに属する操作では、操作者のサロンと対象のサロンを比べます。パスの ID だけで判定できるときは、ID を検証した直後、本文の検証や検索の前に判定します。サロンの下にあるルートでは、対象のサロンはパスの `salonId` です（[9. サロンに属するデータ](#9-サロンに属するデータ-サロンはパスで受け取る)）。
 - 操作者だけで決まる権限は、ID、クエリ、本文を見る前に判定します。顧客台帳はサロンに属さず、公開のオペレーションもないので、5 つのユースケースがすべてこの形です（`backend/packages/domain/src/business-logic/customer/_shared/authorization.ts` の `mayHandleCustomers` と `mayDeleteCustomers`）。権限のない操作者には、ID、クエリ、本文が不正でも、顧客が存在しなくても `forbidden`（403）を返します。
 - 失敗した `Result` は `result.type === 'error'` で絞り込み、そのまま返します。

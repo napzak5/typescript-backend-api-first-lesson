@@ -104,14 +104,6 @@ namespace BeautySalon.Models {
   @format("uuid")
   scalar AttachmentId extends string;
 
-  @doc("ロールベース権限管理で利用する役割IDを識別するブランド付きUUID。")
-  @format("uuid")
-  scalar RoleId extends string;
-
-  @doc("アクセス許可や操作権限を識別するブランド付きUUID。")
-  @format("uuid")
-  scalar PermissionId extends string;
-
   @doc("顧客ポイントの加算・減算履歴を識別するブランド付きUUID。")
   @format("uuid")
   scalar PointTransactionId extends string;

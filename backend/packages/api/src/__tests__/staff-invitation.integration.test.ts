@@ -1829,7 +1829,6 @@ describe('Staff invitation API', () => {
         email: INVITED,
         passwordHash: expect.stringMatching(ARGON2ID),
         role: 'manager',
-        permissions: [],
         status: 'active',
         emailVerified: true,
         emailVerificationTokenHash: null,

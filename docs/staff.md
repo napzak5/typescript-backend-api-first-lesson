@@ -525,7 +525,7 @@
 | | 項目 |
 |---|---|
 | 見せる（`StaffAccountResponse` の 8 項目） | `id`、`email`、`role`、`status`、`twoFactorStatus`、`lastLoginAt`、`createdAt`、`updatedAt` |
-| 見せない | 認証に使うもの（`passwordHash`、メールで送るトークンのハッシュと期限、`twoFactorSecret`、`backupCodes`、`twoFactorLastUsedStep`）、ログインの記録（`failedLoginAttempts`、`lockedUntil`、`lastLoginIp`）、`emailVerified`、`lastPasswordChange`、`permissions`、`metadata`、`customerId`、`staffId`、`deletedAt` |
+| 見せない | 認証に使うもの（`passwordHash`、メールで送るトークンのハッシュと期限、`twoFactorSecret`、`backupCodes`、`twoFactorLastUsedStep`）、ログインの記録（`failedLoginAttempts`、`lockedUntil`、`lastLoginIp`）、`emailVerified`、`lastPasswordChange`、`customerId`、`staffId`、`deletedAt` |
 
 - `role` は `SalonRoleType`（`owner`、`manager`、`staff`）です。スタッフを指すアカウントのロールは、DB の制約（`users_staff_needs_salon_role`）で、この 3 つに限られます
 - `email` は、アカウントのメールアドレスです。招待のあとで台帳のメールアドレス（`staff.email`）を直すと、2 つは違う値になります。サロンの側から、アカウントのメールアドレスは変えられません

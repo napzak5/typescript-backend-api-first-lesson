@@ -595,7 +595,7 @@ describe('LoginUseCase', () => {
     const dependencies = authDependencies({
       userRepository: userRepositoryWith({
         recordSuccessfulLogin: async () =>
-          Result.success(dbUser({ permissions: 'all' })),
+          Result.success(dbUser({ lastLoginAt: 'yesterday' })),
       }),
     })
 

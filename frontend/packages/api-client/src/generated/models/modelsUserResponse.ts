@@ -23,8 +23,6 @@ export interface ModelsUserResponse {
   email: string;
   /** 認証システム上での役割区分。 */
   role: ModelsUserRoleType;
-  /** ユーザーに個別に付与された権限名の一覧(例: manage_staff)。付与がない場合は空配列。認可の判定には使わない(判定は role と、所属するサロンで行う) */
-  permissions: string[];
   /** アカウントの稼働状態。 */
   status: ModelsUserAccountStatusType;
   /** メールアドレスが確認済みかどうか。 */

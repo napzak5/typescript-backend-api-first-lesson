@@ -33,7 +33,7 @@
 | 推移 | `GET /api/v1/sales-reports/trends` | `salonId`、`startDate`、`endDate`、`period` |
 | 出力（CSV） | `GET /api/v1/sales-reports/export` | `salonId`、`startDate`、`endDate` |
 
-- すべてのオペレーションに認証が要ります。許可は、6 つとも同じです: `admin` はすべてのサロン、サロンの `owner` と `manager` は所属サロン（`business-logic/sales-report/_shared/authorization.ts` の `salesReportReachOf`）。レポートのための権限（`users.permissions`）はありません
+- すべてのオペレーションに認証が要ります。許可は、6 つとも同じです: `admin` はすべてのサロン、サロンの `owner` と `manager` は所属サロン（`business-logic/sales-report/_shared/authorization.ts` の `salesReportReachOf`）
 - **サロンの `staff` は 403 です**。売上台帳は、レジに立つスタッフも扱いますが（[売上台帳](./sales.md#オペレーションと権限)）、レポートは、サロン全体の売上と、スタッフ一人ひとりの売上を見せる、経営の情報だからです
 - 顧客のアカウントと、ロールに必要なレコードを持たないユーザー（範囲 `none`）も 403 です。この 403 は、クエリを確かめる前に返します
 - **ほかのサロンを指定した `owner` / `manager` は、サロンが存在するかどうかにかかわらず 403 です**。サロンを探す前に、権限を確かめます

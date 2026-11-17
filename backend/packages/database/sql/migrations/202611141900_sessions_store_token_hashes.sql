@@ -22,6 +22,9 @@
 --          users
 --          - twoFactorStatus and permissions had a default but accepted
 --            NULL; they become NOT NULL.
+--            202611181300_users_without_permissions.sql drops
+--            permissions, so its step is skipped where the column is
+--            gone (a database created from setup.sql).
 -- Idempotent: each step is skipped once it has been applied.
 -- ====================================================================
 
@@ -60,5 +63,15 @@ DROP TYPE IF EXISTS authentication_state;
 UPDATE users SET "twoFactorStatus" = 'disabled' WHERE "twoFactorStatus" IS NULL;
 ALTER TABLE users ALTER COLUMN "twoFactorStatus" SET NOT NULL;
 
-UPDATE users SET permissions = '[]'::jsonb WHERE permissions IS NULL;
-ALTER TABLE users ALTER COLUMN permissions SET NOT NULL;
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = 'users'
+          AND column_name = 'permissions'
+    ) THEN
+        UPDATE users SET permissions = '[]'::jsonb WHERE permissions IS NULL;
+        ALTER TABLE users ALTER COLUMN permissions SET NOT NULL;
+    END IF;
+END $$;
