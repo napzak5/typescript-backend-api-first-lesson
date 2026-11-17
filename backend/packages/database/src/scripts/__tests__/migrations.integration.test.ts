@@ -1367,4 +1367,215 @@ describe('the migrations of this repository', () => {
       ).toHaveLength(1)
     })
   })
+
+  describe('202611171300_product_rules.sql', () => {
+    const run = (): Promise<void> =>
+      runMigration('202611171300_product_rules.sql')
+
+    /** The schema of setup.sql, which the migration brings a database to. */
+    let schemaOfSetup: string[] = []
+
+    type StoredProduct = {
+      productCode?: string
+      minimumStock?: string | null
+      maximumStock?: string | null
+      reorderPoint?: string | null
+      purchasePrice?: number | null
+      leadTimeDays?: number | null
+      expiryMonths?: number | null
+      deletedAt?: string | null
+    }
+
+    /** A product of the salon, with what it states of the columns named. */
+    const storeProduct = async (
+      salonId: string,
+      product: StoredProduct = {},
+    ): Promise<string> => {
+      const id = randomUUID()
+      await sql`
+        INSERT INTO products (
+          id, "salonId", "productCode", name, unit, "minimumStock",
+          "maximumStock", "reorderPoint", "purchasePrice", "leadTimeDays",
+          "expiryMonths", "deletedAt"
+        )
+        VALUES (
+          ${id}, ${salonId}, ${product.productCode ?? `CODE-${id}`},
+          'Shampoo', 'bottle',
+          ${product.minimumStock === undefined ? '0' : product.minimumStock},
+          ${product.maximumStock ?? null}, ${product.reorderPoint ?? null},
+          ${product.purchasePrice ?? null}, ${product.leadTimeDays ?? null},
+          ${product.expiryMonths ?? null}, ${product.deletedAt ?? null}
+        )
+      `
+      return id
+    }
+
+    const minimumStockOf = async (
+      id: string,
+    ): Promise<string | null | undefined> => {
+      const [row] = await sql<{ minimumStock: string | null }[]>`
+        SELECT "minimumStock"::text AS "minimumStock"
+        FROM products
+        WHERE id = ${id}
+      `
+      return row?.minimumStock
+    }
+
+    // A database from before the migration: a minimum stock that may be
+    // missing, the ID of a supplier, a product code unique among the
+    // deleted products too, and none of the rules.
+    beforeEach(async () => {
+      await applyBaseline(sql, plan)
+      schemaOfSetup = await describeSchema()
+      await sql.unsafe(`
+        DROP INDEX products_code_salon_unique;
+        ALTER TABLE products
+          DROP CONSTRAINT products_prices_not_negative,
+          DROP CONSTRAINT products_stock_levels,
+          DROP CONSTRAINT products_lead_time_not_negative,
+          DROP CONSTRAINT products_expiry_months_positive,
+          ALTER COLUMN "minimumStock" DROP NOT NULL,
+          DROP COLUMN supplier,
+          ADD COLUMN "supplierId" uuid,
+          ADD CONSTRAINT products_code_salon_unique
+            UNIQUE ("salonId", "productCode");
+      `)
+    })
+
+    it('should give the database the rules of setup.sql, and keep them on a second run', async () => {
+      expect(await describeSchema()).not.toEqual(schemaOfSetup)
+
+      await run()
+      await run()
+
+      expect(await describeSchema()).toEqual(schemaOfSetup)
+    })
+
+    it('should give a product without a minimum stock a minimum of 0 and keep the others', async () => {
+      const salon = await storeSalon(null)
+      const missing = await storeProduct(salon, { minimumStock: null })
+      const stated = await storeProduct(salon, { minimumStock: '2.50' })
+
+      await run()
+
+      expect(await minimumStockOf(missing)).toBe('0.00')
+      expect(await minimumStockOf(stated)).toBe('2.50')
+    })
+
+    it('should drop the IDs of suppliers and keep the product', async () => {
+      const salon = await storeSalon(null)
+      const id = await storeProduct(salon)
+      await sql`UPDATE products SET "supplierId" = ${randomUUID()} WHERE id = ${id}`
+
+      await run()
+
+      expect(await sql`SELECT supplier FROM products WHERE id = ${id}`).toEqual(
+        [{ supplier: null }],
+      )
+    })
+
+    it('should let the code of a deleted product be given to another, and to no two that are not deleted', async () => {
+      const salon = await storeSalon(null)
+      const other = await storeSalon(null)
+      await storeProduct(salon, {
+        productCode: 'SHMP001',
+        deletedAt: '2026-11-17T03:00:00Z',
+      })
+      await run()
+
+      await storeProduct(salon, {
+        productCode: 'SHMP001',
+        deletedAt: '2026-11-17T04:00:00Z',
+      })
+      await storeProduct(salon, { productCode: 'SHMP001' })
+      await storeProduct(other, { productCode: 'SHMP001' })
+
+      await expect(
+        storeProduct(salon, { productCode: 'SHMP001' }),
+      ).rejects.toThrow('products_code_salon_unique')
+    })
+
+    it('should fail and change nothing where a product breaks a rule', async () => {
+      const salon = await storeSalon(null)
+      const missing = await storeProduct(salon, { minimumStock: null })
+      await storeProduct(salon, { minimumStock: '10', maximumStock: '5' })
+      const before = await describeSchema()
+
+      await expect(run()).rejects.toThrow('products_stock_levels')
+
+      expect(await minimumStockOf(missing)).toBeNull()
+      expect(await describeSchema()).toEqual(before)
+    })
+
+    it.each<[string, StoredProduct, string]>([
+      [
+        'a negative price',
+        { purchasePrice: -1 },
+        'products_prices_not_negative',
+      ],
+      [
+        'a negative minimum stock',
+        { minimumStock: '-1' },
+        'products_stock_levels',
+      ],
+      [
+        'a reorder point below the minimum stock',
+        { minimumStock: '5', reorderPoint: '4' },
+        'products_stock_levels',
+      ],
+      [
+        'a maximum stock below the minimum stock',
+        { minimumStock: '5', maximumStock: '4' },
+        'products_stock_levels',
+      ],
+      [
+        'a reorder point above the maximum stock',
+        { reorderPoint: '9', maximumStock: '8' },
+        'products_stock_levels',
+      ],
+      [
+        'a negative lead time',
+        { leadTimeDays: -1 },
+        'products_lead_time_not_negative',
+      ],
+      [
+        'no months to expiry',
+        { expiryMonths: 0 },
+        'products_expiry_months_positive',
+      ],
+      [
+        'a product without a minimum stock',
+        { minimumStock: null },
+        'minimumStock',
+      ],
+    ])('should keep %s out from then on', async (_, product, rule) => {
+      await run()
+      const salon = await storeSalon(null)
+
+      await expect(storeProduct(salon, product)).rejects.toThrow(rule)
+    })
+
+    it('should take stock levels that are equal, and those without a maximum or a reorder point', async () => {
+      await run()
+      const salon = await storeSalon(null)
+
+      await storeProduct(salon, {
+        minimumStock: '5',
+        reorderPoint: '5',
+        maximumStock: '5',
+      })
+      await storeProduct(salon, { minimumStock: '5', reorderPoint: '50' })
+      await storeProduct(salon, { minimumStock: '5', maximumStock: '50' })
+      await storeProduct(salon, {
+        minimumStock: '0',
+        purchasePrice: 0,
+        leadTimeDays: 0,
+        expiryMonths: 1,
+      })
+
+      expect(
+        await sql`SELECT 1 FROM products WHERE "salonId" = ${salon}`,
+      ).toHaveLength(4)
+    })
+  })
 })
