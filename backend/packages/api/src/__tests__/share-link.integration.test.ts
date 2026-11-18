@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { attachments, shareLinks } from '@beauty-salon-backend/database'
+import { ShareLinkRepository } from '@beauty-salon-backend/infrastructure'
 import { asc, eq, sql } from 'drizzle-orm'
 import type { PgInsertValue } from 'drizzle-orm/pg-core'
 import type { Express } from 'express'
@@ -922,6 +923,27 @@ describe('Share links API', () => {
       expect(three.body.meta).toMatchObject({ total: 4, hasMore: false })
     })
 
+    it('lists the links created at the same moment by their ID downwards, in whatever order they were written', async () => {
+      const attachmentId = await uploadedAttachment()
+      const at = minutesFromNow(-20)
+      const [a = '', b = '', c = '', d = ''] = [
+        randomUUID(),
+        randomUUID(),
+        randomUUID(),
+        randomUUID(),
+      ].sort()
+      // Written neither upwards nor downwards.
+      for (const id of [b, d, a, c]) {
+        await insertLink(attachmentId, { id, createdAt: at, updatedAt: at })
+      }
+
+      const all = await list(attachmentId)
+      const afterTwo = await list(attachmentId, `?cursor=${c}`)
+
+      expect(idsIn(all)).toEqual([d, c, b, a])
+      expect(idsIn(afterTwo)).toEqual([b, a])
+    })
+
     it('lists one link when the limit is 1, and 100 when it is 100', async () => {
       const attachmentId = await uploadedAttachment()
       await insertLink(attachmentId, madeAgo(2))
@@ -1779,6 +1801,33 @@ describe('Share links API', () => {
       })
     })
 
+    it('writes what a viewer does to a link on that link, and on no other link of the file', async () => {
+      const attachmentId = await uploadedAttachment()
+      const { id, token } = await insertLink(attachmentId, withPassword())
+      const other = await insertLink(attachmentId, {
+        ...withPassword(),
+        failedAttempts: 2,
+      })
+      const before = await stored(other.id)
+
+      const wrong = await open(presenting(token, WRONG_PASSWORD))
+      const afterWrong = await stored(other.id)
+      const right = await open(presenting(token, LINK_PASSWORD))
+      const afterRight = await stored(other.id)
+      const issued = await download(downloading(token, LINK_PASSWORD))
+
+      expectProblem(wrong, passwordRequired)
+      expect(afterWrong).toEqual(before)
+      expect(right.status).toBe(200)
+      expect(afterRight).toEqual(before)
+      expect(issued.status).toBe(200)
+      expect(await stored(other.id)).toEqual(before)
+      expect(await stored(id)).toMatchObject({
+        failedAttempts: 0,
+        downloadCount: 1,
+      })
+    })
+
     it('issues no URL of a locked link, not even for its password', async () => {
       const { id, token } = await insertLink(await uploadedAttachment(), {
         ...withPassword(),
@@ -1920,6 +1969,49 @@ describe('Share links API', () => {
       expect(purged.status).toBe(200)
       expect(purged.body.data).toEqual({ purgedCount: 1 })
       expect((await everything()).map((link) => link.id)).toEqual([kept.id])
+    })
+  })
+
+  describe('ShareLinkRepository', () => {
+    const repository = () => new ShareLinkRepository(db)
+
+    it('finds a link and counts a download of it until the moment it ends, and not at that moment', async () => {
+      const { id, token } = await insertLink(await uploadedAttachment(), {
+        createdAt: '2026-11-30T00:00:00.000Z',
+        updatedAt: '2026-11-30T00:00:00.000Z',
+        expiresAt: '2026-12-01T00:00:00.000Z',
+      })
+      const justBefore = new Date('2026-11-30T23:59:59.999Z')
+      const atTheEnd = new Date('2026-12-01T00:00:00.000Z')
+
+      const found = await repository().findWorking(sha256(token), justBefore)
+      const counted = await repository().countDownload(id, justBefore)
+      const foundAtTheEnd = await repository().findWorking(
+        sha256(token),
+        atTheEnd,
+      )
+      const countedAtTheEnd = await repository().countDownload(id, atTheEnd)
+
+      expect(found).toMatchObject({
+        type: 'success',
+        data: { shareLink: { id } },
+      })
+      expect(counted).toEqual({ type: 'success', data: true })
+      expect(foundAtTheEnd).toEqual({ type: 'success', data: null })
+      expect(countedAtTheEnd).toEqual({ type: 'success', data: false })
+      expect(await stored(id)).toMatchObject({ downloadCount: 1 })
+    })
+
+    it('finds no link of an attachment that is not uploaded, and counts no download of it', async () => {
+      const { id, token } = await insertLink(await insertAttachment())
+      const now = new Date()
+
+      const found = await repository().findWorking(sha256(token), now)
+      const counted = await repository().countDownload(id, now)
+
+      expect(found).toEqual({ type: 'success', data: null })
+      expect(counted).toEqual({ type: 'success', data: false })
+      expect(await stored(id)).toMatchObject({ downloadCount: 0 })
     })
   })
 
