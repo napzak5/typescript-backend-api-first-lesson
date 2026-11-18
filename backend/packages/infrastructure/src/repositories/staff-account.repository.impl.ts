@@ -10,8 +10,9 @@ import type {
   UpdatedStaffAccount,
 } from '@beauty-salon-backend/domain'
 import type { Result } from '@beauty-salon-backend/utility'
-import { and, eq, sql } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { attempt } from '../database/attempt'
+import { CLOCK } from '../database/clock'
 import type { Database } from '../database/index'
 import { userNotDeleted } from './account'
 import { staffMemberOf } from './staff-member'
@@ -83,7 +84,7 @@ export class StaffAccountRepository implements IStaffAccountRepository {
 
         const [account] = await tx
           .update(users)
-          .set({ ...changes, updatedAt: sql`now()` })
+          .set({ ...changes, updatedAt: CLOCK })
           .where(accountOf(staffId))
           .returning(accountColumns)
 
@@ -113,7 +114,7 @@ export class StaffAccountRepository implements IStaffAccountRepository {
 
         const accounts = await tx
           .update(users)
-          .set({ staffId: null, updatedAt: sql`now()` })
+          .set({ staffId: null, updatedAt: CLOCK })
           .where(accountOf(staffId))
           .returning({ id: users.id })
         // The ledger may name an account that no user stands for any
@@ -124,7 +125,7 @@ export class StaffAccountRepository implements IStaffAccountRepository {
 
         await tx
           .update(staff)
-          .set({ userId: null, updatedAt: sql`now()` })
+          .set({ userId: null, updatedAt: CLOCK })
           .where(eq(staff.id, staffId))
 
         return { type: 'unlinked' }
