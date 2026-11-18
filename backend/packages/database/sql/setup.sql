@@ -761,6 +761,26 @@ CREATE TABLE "sessions" (
 	CONSTRAINT "sessions_token_hash_unique" UNIQUE("tokenHash")
 );
 
+CREATE TABLE "share_links" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"attachmentId" uuid NOT NULL,
+	"tokenHash" text NOT NULL,
+	"passwordHash" text,
+	"expiresAt" timestamp with time zone NOT NULL,
+	"maxDownloads" integer,
+	"downloadCount" integer DEFAULT 0 NOT NULL,
+	"failedAttempts" integer DEFAULT 0 NOT NULL,
+	"lockedUntil" timestamp with time zone,
+	"createdBy" uuid NOT NULL,
+	"createdAt" timestamp with time zone DEFAULT now() NOT NULL,
+	"updatedAt" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "share_links_token_hash_unique" UNIQUE("tokenHash"),
+	CONSTRAINT "share_links_download_count_within_limit" CHECK (("downloadCount" >= 0) AND (("maxDownloads" IS NULL) OR ("downloadCount" <= "maxDownloads"))),
+	CONSTRAINT "share_links_expires_within_limit" CHECK (("expiresAt" > "createdAt") AND ("expiresAt" <= ("createdAt" + '720:00:00'::interval))),
+	CONSTRAINT "share_links_failed_attempts_not_negative" CHECK ("failedAttempts" >= 0),
+	CONSTRAINT "share_links_max_downloads_positive" CHECK (("maxDownloads" IS NULL) OR ("maxDownloads" >= 1))
+);
+
 CREATE TABLE "staff" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"salonId" uuid NOT NULL,
@@ -983,6 +1003,8 @@ ALTER TABLE "service_options" ADD CONSTRAINT "service_options_service_id_fk" FOR
 ALTER TABLE "services" ADD CONSTRAINT "services_category_id_fk" FOREIGN KEY ("categoryId") REFERENCES "public"."service_categories"("id") ON DELETE set null ON UPDATE no action;
 ALTER TABLE "services" ADD CONSTRAINT "services_salon_id_fk" FOREIGN KEY ("salonId") REFERENCES "public"."salons"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "sessions" ADD CONSTRAINT "sessions_user_id_fk" FOREIGN KEY ("userId") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "share_links" ADD CONSTRAINT "share_links_attachment_id_fk" FOREIGN KEY ("attachmentId") REFERENCES "public"."attachments"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "share_links" ADD CONSTRAINT "share_links_created_by_fk" FOREIGN KEY ("createdBy") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
 ALTER TABLE "staff" ADD CONSTRAINT "staff_salon_id_fk" FOREIGN KEY ("salonId") REFERENCES "public"."salons"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "staff_invitations" ADD CONSTRAINT "staff_invitations_staff_id_fk" FOREIGN KEY ("staffId") REFERENCES "public"."staff"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "staff_schedules" ADD CONSTRAINT "staff_schedules_staff_id_fk" FOREIGN KEY ("staffId") REFERENCES "public"."staff"("id") ON DELETE cascade ON UPDATE no action;
@@ -1084,6 +1106,7 @@ CREATE INDEX "idx_services_salon_id" ON "services" USING btree ("salonId" uuid_o
 CREATE INDEX "idx_services_service_status" ON "services" USING btree ("serviceStatus" enum_ops);
 CREATE INDEX "idx_sessions_expires_at" ON "sessions" USING btree ("expiresAt" timestamptz_ops);
 CREATE INDEX "idx_sessions_user_id" ON "sessions" USING btree ("userId" uuid_ops);
+CREATE INDEX "idx_share_links_attachment_created" ON "share_links" USING btree ("attachmentId" uuid_ops,"createdAt" timestamptz_ops,"id" uuid_ops);
 CREATE INDEX "idx_staff_deleted_at" ON "staff" USING btree ("deletedAt" timestamptz_ops);
 CREATE INDEX "idx_staff_email" ON "staff" USING btree ("email" text_ops);
 CREATE INDEX "idx_staff_salon_id" ON "staff" USING btree ("salonId" uuid_ops);

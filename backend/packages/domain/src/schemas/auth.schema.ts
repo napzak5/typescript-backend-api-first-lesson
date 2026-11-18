@@ -21,7 +21,7 @@ import type {
   ApiAuthStaffInvitationJoinRequest,
   ApiAuthStaffInvitationVerifyRequest,
 } from '../models/staff-invitation'
-import { lowerCaseEmail } from './rules'
+import { lowerCaseEmail, passwordOf } from './rules'
 
 /**
  * Validation of authentication requests. The length limits are those of the
@@ -30,43 +30,7 @@ import { lowerCaseEmail } from './rules'
  * by the use case, which knows whose password it is.
  */
 
-const MAX_PASSWORD_LENGTH = 128
 const MIN_NEW_PASSWORD_LENGTH = 15
-
-/**
- * A password, in the one form it is hashed and compared in. The same text
- * can be typed as different sequences of code points; NFC makes them one.
- * Length counts code points, not UTF-16 units, so that a character outside
- * the basic plane counts once (NIST SP 800-63B-4, 3.1.1.2).
- */
-const passwordOf = (minimum: number) =>
-  z
-    .string()
-    .transform((value) => value.normalize('NFC'))
-    .check((context) => {
-      const length = [...context.value].length
-
-      if (length < minimum) {
-        context.issues.push({
-          code: 'too_small',
-          origin: 'string',
-          minimum,
-          inclusive: true,
-          input: context.value,
-          message: `Too small: expected string to have >=${minimum} characters`,
-        })
-      }
-      if (length > MAX_PASSWORD_LENGTH) {
-        context.issues.push({
-          code: 'too_big',
-          origin: 'string',
-          maximum: MAX_PASSWORD_LENGTH,
-          inclusive: true,
-          input: context.value,
-          message: `Too big: expected string to have <=${MAX_PASSWORD_LENGTH} characters`,
-        })
-      }
-    })
 
 /** A password a user presents to prove who they are. */
 const presentedPasswordSchema = passwordOf(1)

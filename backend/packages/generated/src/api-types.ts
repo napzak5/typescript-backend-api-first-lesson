@@ -177,14 +177,14 @@ export interface paths {
         };
         /**
          * Get a share link
-         * @description IDを指定して共有リンクを1件取得し、公開状況や有効期限、ダウンロード回数を確認します。
+         * @description 共有リンクを1件取得し、有効期限、ダウンロード回数、パスワードで保護しているかを確認します。実行できるのは、共有リンクの発行と同じ利用者です。ほかのサロンの添付ファイルの共有リンクと、削除した添付ファイルの共有リンクは404を返します。
          */
         get: operations["ShareLinkCrud_get"];
         put?: never;
         post?: never;
         /**
          * Delete a share link
-         * @description 不要になった共有リンクを失効させ、アクセス制御を適切に保ちます。失効後の共有リンクへのアクセスには404を返します。
+         * @description 共有リンクを失効します。そのトークンでのアクセスは、すぐに404になります。実行できるのは、共有リンクの発行と同じ利用者です。失効した共有リンクは404を返します。
          */
         delete: operations["ShareLinkCrud_delete"];
         options?: never;
@@ -285,13 +285,13 @@ export interface paths {
         };
         /**
          * List share links
-         * @description 対象ファイルに対して発行済みの共有リンクを一覧し、公開状況や有効期限の管理を行います。添付ファイルが存在しない場合は404を返します。
+         * @description 添付ファイルの共有リンクを、発行の新しい順に一覧します。有効期限を過ぎたものと、ダウンロード回数の上限に達したものも含みます(失効したものは含みません)。実行できるのは、共有リンクの発行と同じ利用者です。ほかのサロンの添付ファイルと削除した添付ファイルは404を返します。
          */
         get: operations["ShareLinkCrud_list"];
         put?: never;
         /**
          * Create a share link
-         * @description 施術前後の写真や資料を外部パートナーや顧客と共有するためのリンクを発行します。必要に応じてパスワード保護も適用します。添付ファイルが存在しない場合は404を返します。
+         * @description アップロード済みの添付ファイルを、アカウントを持たない人(顧客、取引先)に見せるための共有リンクを発行します。リンクのトークンは、このレスポンスにだけ含まれます(サーバーはハッシュだけを保存します)。admin と、添付ファイルのサロンの owner / manager が実行できます(staff と顧客のアカウントは403)。サロンに属さない添付ファイルの共有リンクを扱えるのは admin だけです。本文が不正な場合(過去の有効期限、30日より先の有効期限、単純すぎるパスワード)は400を、ほかのサロンの添付ファイルと削除した添付ファイルは404を、アップロード待ち(pending)の添付ファイルは409を返します。
          */
         post: operations["ShareLinkCrud_create"];
         delete?: never;
@@ -2888,40 +2888,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/share/{shareToken}": {
+    "/api/v1/share/download-url": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * Get a shared file
-         * @description 共有リンクとパスワードを確認し、公開対象ファイルのメタ情報を閲覧者に提示します。パスワード保護された共有リンクでパスワードが指定されていないか一致しない場合は401を、トークンが存在しない場合と、共有リンクが有効期限切れ・ダウンロード回数の上限到達・失効のいずれかの場合は404を返します。
-         */
-        get: operations["SharedFileCrud_get"];
+        get?: never;
         put?: never;
-        post?: never;
+        /**
+         * Issue a download URL for a shared file
+         * @description 共有リンクのトークンとパスワードを確かめて、ファイルをダウンロードするための、5分だけ有効なURLを発行し、共有リンクのダウンロード回数を1増やします。404と403を返す条件は、共有ファイルの取得と同じです。
+         */
+        post: operations["SharedFileCrud_getDownloadUrl"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/share/{shareToken}/download": {
+    "/api/v1/share/file": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * Issue a download URL for a shared file
-         * @description 共有リンク利用者が安全にファイル本体を取得できるよう、署名付きダウンロードURLを返却します。パスワード保護された共有リンクでパスワードが指定されていないか一致しない場合は401を、トークンが存在しない場合と、共有リンクが有効期限切れ・ダウンロード回数の上限到達・失効のいずれかの場合は404を返します。
-         */
-        get: operations["SharedFileCrud_getDownloadUrl"];
+        get?: never;
         put?: never;
-        post?: never;
+        /**
+         * Get a shared file
+         * @description 共有リンクのトークンとパスワードを確かめて、ファイルの名前、種類、サイズを返します。トークンが存在しない場合と、共有リンクが有効期限切れ・ダウンロード回数の上限到達・失効のいずれかの場合、添付ファイルが削除されている場合は、区別せずに404を返します。パスワードで保護している共有リンクで、パスワードがないか一致しない場合は403を返します。一致しないパスワードが5回続くと、共有リンクを15分のあいだロックし、そのあいだは正しいパスワードでも同じ403を返します。
+         */
+        post: operations["SharedFileCrud_get"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8921,24 +8921,32 @@ export interface components {
             current: boolean;
         };
         /**
-         * @description 共有リンク発行リクエスト - 添付ファイルの共有リンクを新規発行する。
+         * @description 共有リンク発行リクエスト - 添付ファイルの共有リンクを発行する。
          *     全項目のキーが必須。制限を設けない項目は null を指定する
          */
         "Models.ShareLinkCreateRequest": {
             /**
              * Format: date-time
-             * @description 共有リンクの有効期限。無期限の場合はnull。
+             * @description 共有リンクの有効期限。発行の時刻より後で、30日後まで
              */
-            expiresAt: string | null;
+            expiresAt: string;
             /**
              * Format: int32
-             * @description 許可する最大ダウンロード回数(1以上)。無制限の場合はnull。
+             * @description ダウンロード用URLを発行できる回数の上限(1以上)。制限なしの場合はnull
              */
             maxDownloads: number | null;
-            /** @description 共有リンク保護用のパスワード(8〜128文字)。パスワード保護なしの場合はnull。 */
+            /** @description 共有リンクを保護するパスワード(8〜128文字)。保護しない場合はnull。単純な並びや、よく知られた値は検証エラー */
             password: string | null;
-            /** @description アクセスを許可するメールアドレス一覧(1〜100件)。制限なしの場合はnull。 */
-            allowedEmails: string[] | null;
+        };
+        /**
+         * @description 共有リンクの発行の結果 - 発行した共有リンクと、そのトークン。
+         *     トークンは保存していないので、このレスポンスでしか得られない
+         */
+        "Models.ShareLinkCreateResponse": {
+            /** @description 発行した共有リンク */
+            shareLink: components["schemas"]["Models.ShareLinkResponse"];
+            /** @description 共有リンクのトークン。閲覧者は、これ(と、あればパスワード)でファイルにアクセスする。なくした場合は、共有リンクを失効して発行し直す */
+            token: string;
         };
         /**
          * Format: uuid
@@ -8946,55 +8954,80 @@ export interface components {
          */
         "Models.ShareLinkId": string;
         /**
-         * @description 共有リンクレスポンス - 外部共有用に発行された添付ファイルの共有リンク情報を返す。
-         *     対応するテーブルはまだない。全項目のキーが必須で、値がない項目は null を返す
+         * @description 共有リンク - share_links の行。アップロード済みの添付ファイルを、アカウントを持たない人に、期限まで見せるためのリンク。
+         *     トークンとパスワードは、ハッシュだけを保存していて、レスポンスに含めない(トークンが出るのは、発行のレスポンスの1度だけ)。
+         *     すべてのプロパティがあり、値がないものは null
          */
         "Models.ShareLinkResponse": {
-            /** @description 共有リンクを一意に識別するID。 */
+            /** @description 共有リンクの ID */
             id: components["schemas"]["Models.ShareLinkId"];
-            /** @description 共有アクセス時に利用するトークン。 */
-            token: string;
-            /** @description 共有対象の添付ファイルID。 */
+            /** @description 共有する添付ファイルの ID */
             attachmentId: components["schemas"]["Models.AttachmentId"];
             /**
              * Format: date-time
-             * @description 共有リンクの有効期限。無期限の場合はnull。
+             * @description 共有リンクの有効期限。この日時を過ぎると、リンクは使えない
              */
-            expiresAt: string | null;
+            expiresAt: string;
             /**
              * Format: int32
-             * @description 許可する最大ダウンロード回数。無制限の場合はnull。
+             * @description ダウンロード用URLを発行できる回数の上限。制限なしの場合はnull
              */
             maxDownloads: number | null;
             /**
              * Format: int32
-             * @description これまでのダウンロード累計数。
+             * @description これまでにダウンロード用URLを発行した回数。上限に達すると、リンクは使えない
              */
             downloadCount: number;
-            /** @description 共有リンクがパスワード保護されているか。 */
+            /** @description パスワードで保護しているか */
             hasPassword: boolean;
-            /** @description アクセスを許可するメールアドレス一覧。制限なしの場合はnull。 */
-            allowedEmails: string[] | null;
-            /** @description 共有リンクを作成したユーザーID。 */
+            /** @description 共有リンクを発行したユーザーの ID */
             createdBy: components["schemas"]["Models.UserId"];
             /**
              * Format: date-time
-             * @description 共有リンクを作成した日時。
+             * @description 共有リンクを発行した日時
              */
             createdAt: string;
+            /**
+             * Format: date-time
+             * @description 最後に更新した日時(ダウンロード用URLの発行や、パスワードの誤りの記録でも進む)
+             */
+            updatedAt: string;
         };
         /**
-         * @description 共有ファイルレスポンス - 共有リンクの閲覧者に示す、公開対象ファイルのメタ情報を返す。
-         *     認証なしで取得できるため、保存先のキーやアップロードしたユーザーなどの内部情報は含めない
+         * @description 共有ファイルのダウンロード用URLの発行リクエスト - 共有リンクのトークンと、パスワード、URLの表示方法を指定する。
+         *     全項目のキーが必須。パスワードがない場合は null を送る
+         */
+        "Models.SharedFileDownloadUrlRequest": {
+            /** @description 共有リンクのトークン */
+            token: string;
+            /** @description 共有リンクのパスワード(1〜128文字)。パスワードで保護していないリンクでは null */
+            password: string | null;
+            /** @description trueの場合はブラウザ内で表示するためのURLを、falseの場合は保存(ダウンロード)するためのURLを発行する */
+            inline: boolean;
+        };
+        /**
+         * @description 共有ファイルの取得リクエスト - 共有リンクのトークンと、パスワードを指定する。
+         *     トークンもパスワードも、URLやアクセスログに残らないように、リクエスト本文で送る。
+         *     全項目のキーが必須。パスワードがない場合は null を送る
+         */
+        "Models.SharedFileGetRequest": {
+            /** @description 共有リンクのトークン */
+            token: string;
+            /** @description 共有リンクのパスワード(1〜128文字)。パスワードで保護していないリンクでは null */
+            password: string | null;
+        };
+        /**
+         * @description 共有ファイル - 共有リンクの閲覧者に示す、ファイルの名前、種類、サイズ。
+         *     認証なしで取得できるので、添付ファイルのIDやアップロードしたユーザーなどの内部の値は含めない
          */
         "Models.SharedFileResponse": {
-            /** @description 利用者がアップロードした元のファイル名。 */
+            /** @description アップロードした元のファイル名。ダウンロードするときの名前になる */
             filename: string;
-            /** @description ファイルのMIMEタイプ（Content-Type）。 */
-            content: string;
+            /** @description ファイルの種類 */
+            contentType: components["schemas"]["Models.AttachmentContentType"];
             /**
              * Format: int32
-             * @description ファイルサイズ（バイト単位）。
+             * @description ファイルのサイズ(バイト)
              */
             size: number;
         };
@@ -10313,9 +10346,7 @@ export interface components {
         "Models.SessionSearchRequest.cursor": string;
         /** @description 1ページあたりの取得件数上限 (1〜100) */
         "Models.SessionSearchRequest.limit": number;
-        /** @description 共有リンクのパスワード。パスワード保護された共有リンクでは必須。パスワード保護されていない場合は省略する */
-        "Models.ShareLinkAccessRequest": string;
-        /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+        /** @description 取得開始位置を示すカーソル。同じ添付ファイルの一覧で取得した前回レスポンスの `meta.nextCursor` を指定する。その添付ファイルの共有リンクのIDでない場合は検証エラー */
         "Models.ShareLinkSearchRequest.cursor": string;
         /** @description 1ページあたりの取得件数上限 (1〜100) */
         "Models.ShareLinkSearchRequest.limit": number;
@@ -11603,7 +11634,7 @@ export interface operations {
             query?: {
                 /** @description 1ページあたりの取得件数上限 (1〜100) */
                 limit?: components["parameters"]["Models.ShareLinkSearchRequest.limit"];
-                /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+                /** @description 取得開始位置を示すカーソル。同じ添付ファイルの一覧で取得した前回レスポンスの `meta.nextCursor` を指定する。その添付ファイルの共有リンクのIDでない場合は検証エラー */
                 cursor?: components["parameters"]["Models.ShareLinkSearchRequest.cursor"];
             };
             header?: never;
@@ -11721,7 +11752,7 @@ export interface operations {
                 content: {
                     "application/json": {
                         /** @description レスポンスの主体となるビジネスデータ。 */
-                        data: components["schemas"]["Models.ShareLinkResponse"];
+                        data: components["schemas"]["Models.ShareLinkCreateResponse"];
                         /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
                         /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
@@ -11766,6 +11797,15 @@ export interface operations {
             };
             /** @description The server cannot find the requested resource. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The request conflicts with the current state of the server. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -29413,20 +29453,18 @@ export interface operations {
             };
         };
     };
-    SharedFileCrud_get: {
+    SharedFileCrud_getDownloadUrl: {
         parameters: {
-            query?: {
-                /** @description 共有リンクのパスワード。パスワード保護された共有リンクでは必須。パスワード保護されていない場合は省略する */
-                password?: components["parameters"]["Models.ShareLinkAccessRequest"];
-            };
+            query?: never;
             header?: never;
-            path: {
-                /** @description 共有リンクのトークン */
-                shareToken: string;
-            };
+            path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Models.SharedFileDownloadUrlRequest"];
+            };
+        };
         responses: {
             /** @description The request has succeeded. */
             200: {
@@ -29436,7 +29474,7 @@ export interface operations {
                 content: {
                     "application/json": {
                         /** @description レスポンスの主体となるビジネスデータ。 */
-                        data: components["schemas"]["Models.SharedFileResponse"];
+                        data: components["schemas"]["Models.AttachmentDownloadUrlResponse"];
                         /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
                         /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
@@ -29446,8 +29484,17 @@ export interface operations {
                     };
                 };
             };
-            /** @description Access is unauthorized. */
-            401: {
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description Access is forbidden. */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -29457,6 +29504,24 @@ export interface operations {
             };
             /** @description The server cannot find the requested resource. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            415: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -29489,20 +29554,18 @@ export interface operations {
             };
         };
     };
-    SharedFileCrud_getDownloadUrl: {
+    SharedFileCrud_get: {
         parameters: {
-            query?: {
-                /** @description 共有リンクのパスワード。パスワード保護された共有リンクでは必須。パスワード保護されていない場合は省略する */
-                password?: components["parameters"]["Models.ShareLinkAccessRequest"];
-            };
+            query?: never;
             header?: never;
-            path: {
-                /** @description 共有リンクのトークン */
-                shareToken: string;
-            };
+            path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Models.SharedFileGetRequest"];
+            };
+        };
         responses: {
             /** @description The request has succeeded. */
             200: {
@@ -29512,7 +29575,7 @@ export interface operations {
                 content: {
                     "application/json": {
                         /** @description レスポンスの主体となるビジネスデータ。 */
-                        data: components["schemas"]["Models.AttachmentDownloadUrlResponse"];
+                        data: components["schemas"]["Models.SharedFileResponse"];
                         /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
                         /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
@@ -29522,8 +29585,17 @@ export interface operations {
                     };
                 };
             };
-            /** @description Access is unauthorized. */
-            401: {
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description Access is forbidden. */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -29533,6 +29605,24 @@ export interface operations {
             };
             /** @description The server cannot find the requested resource. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
+            415: {
                 headers: {
                     [name: string]: unknown;
                 };

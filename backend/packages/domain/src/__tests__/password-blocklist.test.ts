@@ -63,6 +63,7 @@ describe('the passwords that are refused as too easy to guess', () => {
     ['a pangram in capitals', 'THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG.'],
     ['password and digits', 'password1234567890'],
     ['password and digits, spaced', 'Password 1234567890'],
+    ['password and other digits, dressed up', 'Passw0rd-2026-11-18!'],
     ['qwerty and digits', 'qwerty1234567890'],
     ['a zigzag over two rows', '1q2w3e4r5t6y7u8i9o0p'],
     ['a zigzag over four rows', '1qaz2wsx3edc4rfv5tgb6yhn7ujm'],
@@ -86,6 +87,7 @@ describe('the passwords that are refused as too easy to guess', () => {
       'taro.yamada.salon loves green tea',
     ],
     ['a unit of 9 characters repeated', 'violet123violet123'],
+    ['the word password among other words', 'password of the salon'],
     ['a keyboard row with other words', 'qwertyuiop and then some'],
     ['a run of letters with other words', 'abcdefghijklmnop is the alphabet'],
     [

@@ -1,6 +1,6 @@
 # 添付ファイル
 
-サロンが扱うファイル（施術の前後の写真、同意書などの書類）の規則をまとめます。コントラクトは `specs/operations/attachment-operations.tsp`（`AttachmentOperations` の `AttachmentCrud`）と `specs/models/attachment.tsp`、テーブルは `attachments` です。
+サロンが扱うファイル（施術の前後の写真、同意書などの書類）と、そのファイルをアカウントを持たない人に見せる[共有リンク](#共有リンク)の規則をまとめます。コントラクトは `specs/operations/attachment-operations.tsp`（`AttachmentOperations` の `AttachmentCrud`・`ShareLinkCrud` と、`ShareOperations` の `SharedFileCrud`）と `specs/models/attachment.tsp`、テーブルは `attachments` と `share_links` です。
 
 ファイルの中身は、S3 互換のオブジェクトストレージに置きます。**API サーバーは、ファイルの中身を受け取らず、返しません**。アップロードもダウンロードも、短時間だけ有効な署名付き URL で、クライアントがストレージと直接やりとりします。API が扱うのは、ファイルについて分かっていること（名前、種類、サイズ、状態）と、その URL の発行です。
 
@@ -15,9 +15,11 @@
 | ダウンロード用 URL の発行（`getDownloadUrl`） | 実装済み |
 | 削除（`delete`） | 実装済み |
 | 掃除（`purge`） | 実装済み |
-| 共有リンク（`ShareLinkCrud`、`SharedFileCrud`） | 未実装。テーブルもありません。サーバーは 404 を返します |
+| 共有リンクの発行・一覧・1 件の取得・失効（`ShareLinkCrud` の `create`・`list`・`get`・`delete`） | 実装済み |
+| 共有リンクでの閲覧（`SharedFileCrud` の `get`・`getDownloadUrl`） | 実装済み |
 
 - `multipart/form-data` で API サーバーにファイルを送るオペレーションはありません。アップロードは、署名付き URL の 1 通りです
+- 共有リンクを開く画面（フロントエンド）、閲覧者のメールアドレスの確認、アクセスの通知はありません（[共有リンクにないもの](#共有リンクにないもの)）
 - 添付ファイルを、予約・顧客・施術記録に紐づけるコントラクトはありません。施術記録の写真（`treatment_photos`）は URL を持つ別のもので、添付ファイルとはつながっていません（[施術写真](./treatments.md#施術写真)）
 - 画像の変換（サムネイルの生成、再エンコード）と、ウイルスの検査はしません
 - 本番のバケット、認証情報、バケットの CORS の設定、[掃除](#掃除)を定期的に呼ぶ仕組みは、本番環境の準備の範囲です
@@ -79,7 +81,7 @@
 | 削除 | `DELETE /api/v1/attachments/{attachmentId}` | `admin`、添付ファイルのサロンの `owner` / `manager`、アップロードした本人 |
 | 掃除 | `POST /api/v1/attachments/purge` | `admin` |
 
-- すべてのオペレーションに認証が要ります
+- 添付ファイルの 7 つのオペレーションには、すべて認証が要ります（共有リンクのオペレーションは、[共有リンク](#共有リンクのオペレーションと権限)にまとめます）
 - 届く範囲は、予約台帳と同じです（`business-logic/attachment/_shared/authorization.ts` の `attachmentReachOf`）。`admin` はすべてのサロン、サロンのメンバーは所属サロンだけです
 - **サロンに属さないファイル（`salonId` が null）を扱えるのは `admin` だけ**です。サロンのメンバーが `salonId: null` で発行すると 403 です
 - ロール `customer` のユーザーと、ロールに必要なレコードを持たないユーザー（範囲 `none`）は、どのオペレーションも 403 です。ID、本文、クエリが不正でも 403 です
@@ -204,7 +206,7 @@
 - ファイル名は、`Content-Disposition` に 2 通りで入れます（RFC 6266）。ASCII の名前（`filename=`。ASCII でない文字と `"`・`\`・`%` は `_`）と、UTF-8 の名前（`filename*=`。RFC 8187）です
 - `pending` の添付ファイルは 409 です
 - 発行は、ストレージに接続しません。ファイルがあるかどうかは見ません
-- URL を知っている人は、期限まで、認証なしでファイルを取得できます。URL をログに出したり、ほかの人に渡したりしないでください。期限の長い共有は、共有リンク（未実装）の役割です
+- URL を知っている人は、期限まで、認証なしでファイルを取得できます。URL をログに出したり、ほかの人に渡したりしないでください。アカウントを持たない人に見せるときは、[共有リンク](#共有リンク)を使います
 
 ## 削除
 
@@ -214,6 +216,7 @@
 - 行は消さず、削除した日時（`deletedAt`）を入れます。**アップロード用の URL が、まだ有効かもしれないため**です。削除のあとに、その URL でアップロードされたファイルは、行と一緒に[掃除](#掃除)が消します。行をすぐに消すと、そのファイルを指すものがなくなり、ストレージに残り続けます
 - 削除済みの添付ファイルは、取得、完了、ダウンロード用 URL の発行、もう一度の削除のどれも 404 で、一覧にも出ません。`admin` にも見えません
 - `pending` の添付ファイルも削除できます
+- 削除した添付ファイルの共有リンクは、すぐに使えなくなります（[添付ファイルの削除と共有リンク](#添付ファイルの削除と共有リンク)）
 
 ## 掃除
 
@@ -232,7 +235,230 @@
 - 1 件ごとに、1 つのトランザクションです。行をロックし（`FOR UPDATE`）、条件をもう一度確かめ、ストレージのファイルを消し、行を消します。ロックを待つあいだに完了したアップロードは、消しません
 - **ファイルを消せなかったら、そこで止めて 500 を返します**。それまでの分は消してあり、止まった行は残っています。もう一度呼ぶと、残りを消します
 - 何もなければ `purgedCount` は 0 です
+- 行を消すと、その添付ファイルの共有リンクの行も一緒に消えます（外部キーの `ON DELETE CASCADE`）
 - 定期的に呼ぶ仕組み（スケジューラー）は、本番環境の準備の範囲です。呼ぶ間隔は、ストレージに残るファイルを、どれだけの時間まで許すかで決めます
+
+## 共有リンク
+
+サロンが、アップロード済みの添付ファイルを、アカウントを持たない人（顧客、取引先）に見せるためのリンクです。リンクのトークンを知っている人は、期限まで、ファイルの名前・種類・サイズを見て、ダウンロードできます。テーブルは `share_links` です。
+
+```
+サロン（owner / manager）            API サーバー                    閲覧者（アカウントなし）
+    │ POST /attachments/{id}/share-links │                              │
+    │ {expiresAt, maxDownloads, password}│                              │
+    │───────────────────────────────────▶│ トークンを作り、              │
+    │ 201 {shareLink, token}             │ ハッシュだけを保存する        │
+    │◀───────────────────────────────────│                              │
+    │ トークンを渡す（API の外。パスワードは別の経路で）                 │
+    │─────────────────────────────────────────────────────────────────▶│
+    │                                    │ POST /share/file             │
+    │                                    │ {token, password}            │
+    │                                    │◀─────────────────────────────│
+    │                                    │ 200 {filename, contentType,  │
+    │                                    │      size}                   │
+    │                                    │─────────────────────────────▶│
+    │                                    │ POST /share/download-url     │
+    │                                    │ {token, password, inline}    │
+    │                                    │◀─────────────────────────────│
+    │                                    │ 200 {downloadUrl, expiresAt} │
+    │                                    │─────────────────────────────▶│
+    │                                    │        GET downloadUrl（送り先はストレージ）
+```
+
+### 共有リンクのオペレーションと権限
+
+| オペレーション | ルート | 許可 |
+|---|---|---|
+| 発行 | `POST /api/v1/attachments/{attachmentId}/share-links` | `admin`、添付ファイルのサロンの `owner` / `manager` |
+| 一覧 | `GET /api/v1/attachments/{attachmentId}/share-links` | 同上 |
+| 1 件の取得 | `GET /api/v1/attachments/share-links/{shareLinkId}` | 同上 |
+| 失効 | `DELETE /api/v1/attachments/share-links/{shareLinkId}` | 同上 |
+| ファイルの情報 | `POST /api/v1/share/file` | だれでも（認証なし） |
+| ダウンロード用 URL の発行 | `POST /api/v1/share/download-url` | だれでも（認証なし） |
+
+- **サロンの外にファイルを出すので、`staff` は発行も一覧もできません**（403）。添付ファイルの削除と同じく、予約を削除できる人（`admin`、サロンの `owner` / `manager`）が決めます（`business-logic/share-link/_shared/authorization.ts` の `shareLinkReachOf`）
+- `staff`、ロール `customer` のユーザー、ロールに必要なレコードを持たないユーザーは、管理の 4 つのオペレーションのどれも 403 です。ID、本文、クエリが不正でも 403 です
+- サロンに属さない添付ファイルの共有リンクを扱えるのは `admin` だけです
+- ほかのサロンの添付ファイルと共有リンクは、存在しないものと区別しません（404）
+- 閲覧の 2 つのオペレーションは、`Authorization` ヘッダーを見ません。サインインしていても、していなくても、同じ応答です
+
+### 共有リンクのプロパティ
+
+| プロパティ | 意味 |
+|---|---|
+| `id` | 共有リンクの ID。トークンではありません |
+| `attachmentId` | 見せる添付ファイル |
+| `expiresAt` | 有効期限。この時刻から、トークンは使えません |
+| `maxDownloads` | ダウンロード用 URL を発行する回数の上限。null は制限なし |
+| `downloadCount` | ダウンロード用 URL を発行した回数 |
+| `hasPassword` | パスワードで保護しているか |
+| `createdBy` | 発行したユーザー |
+| `createdAt`、`updatedAt` | 発行した日時、最後に更新した日時（ダウンロードの回数や、違うパスワードの回数が変わると進みます） |
+
+- `hasPassword` 以外のプロパティの名前は、`share_links` の列と同じです。`hasPassword` は列ではなく、`passwordHash` があるかどうかです（`pnpm check:api-db` の規則では `computed`）
+- **トークンのハッシュ（`tokenHash`）、パスワードのハッシュ（`passwordHash`）、違うパスワードの回数（`failedAttempts`）、ロックの期限（`lockedUntil`）は、レスポンスに出しません**
+
+### 共有リンクの発行
+
+`POST /api/v1/attachments/{attachmentId}/share-links` は、共有リンクを作り、201 と `Location`（共有リンクの URL）を返します。
+
+```json
+{
+  "data": {
+    "shareLink": {
+      "id": "…",
+      "attachmentId": "…",
+      "expiresAt": "2026-11-25T09:00:00.000Z",
+      "maxDownloads": 3,
+      "downloadCount": 0,
+      "hasPassword": true,
+      "createdBy": "…",
+      "createdAt": "…",
+      "updatedAt": "…"
+    },
+    "token": "<43 文字>"
+  },
+  "meta": { "…": "…" },
+  "links": {
+    "self": "/api/v1/attachments/share-links/<id>",
+    "list": "/api/v1/attachments/<attachmentId>/share-links",
+    "attachment": "/api/v1/attachments/<attachmentId>"
+  }
+}
+```
+
+| 本文 | 規則 |
+|---|---|
+| `expiresAt` | 必須。UTC の日時（`Z` で終わる形）。発行の時刻よりあとで、30 日後（720 時間後）まで |
+| `maxDownloads` | null（制限なし）か、1〜2,147,483,647 の整数。キーは必須です |
+| `password` | null（保護なし）か、8〜128 文字。キーは必須です |
+
+- **トークンは、このレスポンスにだけ出ます**。サーバーが作る 256 ビットの乱数（base64url で 43 文字。セッションのトークンと同じ `tokenIssuer`）で、データベースには SHA-256 のハッシュだけを保存します。データベースを読めても、使えるリンクは得られません。トークンをなくしたら、失効して、発行し直します
+- レスポンスは `Cache-Control: no-store` です
+- **有効期限は必須**です。顧客の写真や書類を、期限のないリンクで外に置かないためです。長く見せたいときは、発行し直します。30 日は 720 時間として数えます（1 日の長さは、タイムゾーンによって変わるため）
+- 有効期限を確かめる時刻と、`createdAt` に入る時刻は、同じ（アプリケーションの時計）です。テーブルの CHECK 制約（作成の 720 時間後まで）と、判定がずれません
+- **パスワードは、Argon2id のハッシュだけを保存します**（アカウントのパスワードと同じ `passwordHasher`）。NFC に正規化してから、文字数（コードポイント）を数え、ハッシュにします
+- **推測しやすいパスワードは 400 です**（`password` の `blocklisted`）。数字やアルファベットの連番、キーボードの並び、同じ文字や同じ並びの繰り返し、`password` とその変形（`Passw0rd!`、`password123`）、よく知られたパスワードです（`business-logic/auth/_shared/password-blocklist.ts` の `commonChoiceIssue`。アカウントのパスワードと同じ一覧です）
+- 下限が 8 文字で、アカウントのパスワード（15 文字）より短いのは、推測できないトークンの上に重ねるもので、試せる回数を共有リンクごとに制限しているためです（[パスワードとロック](#パスワードとロック)）
+- 共有できるのは、アップロード済み（`uploaded`）の添付ファイルだけです。`pending` は 409 です
+- 1 つの添付ファイルに、共有リンクをいくつでも発行できます。相手ごとに発行すると、相手ごとに失効できます
+- 本文の余分なキーは 400 です。トークンを指定することはできません。閲覧者のメールアドレスで絞る `allowedEmails` は、コントラクトから除きました（[共有リンクにないもの](#共有リンクにないもの)）
+
+**トークンを閲覧者に渡すのは、API の外**です（共有リンクを開く画面は、まだありません）。画面の URL でトークンを渡すときは、フラグメント（`#` のあと）に入れてください。フラグメントは、サーバーへのリクエストにも、`Referer` にも含まれません（RFC 9110 の 7.1、10.1.3）。パスやクエリに入れたトークンは、サーバーやプロキシーのログ、ブラウザーの履歴、`Referer` に残ります。
+
+### 共有リンクの一覧、1 件の取得、失効
+
+`GET /api/v1/attachments/{attachmentId}/share-links` は、その添付ファイルの共有リンクを返します。
+
+- 順序は、発行の新しい順（`createdAt`）で、同じ日時なら ID の大きい順です
+- **有効期限を過ぎたものと、ダウンロードの上限に達したものも返します**。何を、いつまで共有したかを、サロンが確かめられるようにするためです。失効したものは、行がないので返りません
+- クエリは、`limit`（1〜100。既定は 20）と `cursor`（前のページの `meta.nextCursor`）です。ほかのキーは 400 です
+- `cursor` は、そのページの最後の共有リンクの ID です。その添付ファイルの共有リンクの ID でなければ 400 です（`cursor` の `not_found`）
+- `pending` の添付ファイルは、空の一覧です（発行できないため）。削除した添付ファイルは 404 です
+
+`GET /api/v1/attachments/share-links/{shareLinkId}` は、1 件を返します。`links` は、発行と同じ 3 つです。
+
+`DELETE /api/v1/attachments/share-links/{shareLinkId}` は、共有リンクを失効します（204）。
+
+- **行を消します**。そのトークンは、次のリクエストから 404 です
+- もう一度の失効と、失効した共有リンクの取得は 404 です
+- 失効の前に発行したダウンロード用 URL は、その期限（最長 5 分）まで使えます。URL は、ストレージが署名だけで受け付けるためです
+
+### 共有リンクでの閲覧
+
+閲覧者は、トークン（と、保護されていればパスワード）を本文で送ります。
+
+```
+POST /api/v1/share/file
+{ "token": "<トークン>", "password": null }
+
+200
+{ "data": { "filename": "施術前.png", "contentType": "image/png", "size": 204800 },
+  "meta": { "…": "…" }, "links": null }
+```
+
+```
+POST /api/v1/share/download-url
+{ "token": "<トークン>", "password": null, "inline": false }
+
+200
+{ "data": { "downloadUrl": "https://<ストレージ>/…", "expiresAt": "…" },
+  "meta": { "…": "…" }, "links": null }
+```
+
+- **トークンもパスワードも、URL に入れません**。URL に入れた値は、`Referer`、サーバーやプロキシーのログ、ブラウザーの履歴に残り、HTTPS でも防げません（OWASP）。このサーバーのリクエストログも、パスを書きます。そのため、2 つのオペレーションは `GET` ではなく、本文で受け取る `POST` です。メールで送るトークン（パスワードの再設定、スタッフの招待）と同じ形です
+- 本文のキーは、どれも必須です（`password` は、保護されていなければ null。`inline` は true か false）。余分なキーは 400 です
+- 応答は、成功もエラーも `Cache-Control: no-store` です
+- ファイルの情報は、名前・種類・サイズだけです。添付ファイルの ID、サロン、アップロードした人は出しません
+- **ダウンロード用 URL は、5 分か、共有リンクの有効期限の、早いほうまで有効**です。`inline` が true なら、ブラウザーの中で表示する URL、false なら、元のファイル名で保存する URL です（[ダウンロード用 URL の発行](#ダウンロード用-url-の発行)と同じ）
+- **`downloadCount` は、ダウンロード用 URL を発行するたびに 1 増えます**。ストレージから実際に取得したかは、サーバーからは見えません。ファイルの情報を見るだけでは増えません
+- 上限の確認と加算は、1 つの UPDATE です（`countDownload`）。同時に届いたリクエストでも、上限を超えて URL を発行しません。数えられなかったリクエストは 404 で、URL を返しません
+- URL に署名してから、数えます。署名できなかった（ストレージのエラー）ときは、回数を使いません
+
+#### 開けないトークン
+
+次のどれも、**同じ 404**（`not-found`。`detail` は `Share link of the token was not found`）で、区別しません。
+
+| 理由 |
+|---|
+| そのトークンの共有リンクがない（失効したものを含む） |
+| 有効期限を過ぎた |
+| ダウンロードの上限に達した |
+| 添付ファイルが削除された |
+
+- トークンは、応答にもログにも出しません
+- 開けないトークンは、パスワードを見る前に 404 です。パスワードが違っていても、回数に数えません
+
+#### パスワードとロック
+
+パスワードで保護した共有リンクに、パスワードがない（null）か、違うパスワードを送ると、403 です。
+
+```json
+{
+  "type": "urn:beauty-salon:problem:password-required",
+  "title": "Password required",
+  "status": 403,
+  "detail": "Send the password of the share link; one that was sent was not accepted",
+  "code": "1002",
+  "errors": null,
+  "instance": "/api/v1/share/file",
+  "correlationId": "…",
+  "timestamp": "…"
+}
+```
+
+- **401 ではなく 403 です**。401 の応答は、そのリソースに使えるチャレンジを `WWW-Authenticate` で返さなければなりません（RFC 9110 の 15.5.2）。パスワードは本文で送るので、返せるチャレンジがありません。403 は、クライアントが別の認証情報でやり直してよい応答です（15.5.4）。`DomainError` の種類は `passwordRequired` です
+- **違うパスワードが 5 回続くと、共有リンクを 15 分ロックします**（アカウントのサインインと同じ回数と時間。`LOCK_THRESHOLD`、`lockEnd`）。ロックのあいだは、正しいパスワードでも同じ 403 で、回数も数えません。ロックされていることは、応答からは分かりません
+- パスワードを確かめる計算（Argon2id）は、ロックを見る前に行います。ロックされた共有リンクが、ほかより速く応答することはありません
+- パスワードのないリクエスト（null）は、推測ではないので、回数に数えません
+- 正しいパスワードで、回数は 0 に戻ります
+- ロックが切れたあと、回数は 5 のままです。次の違うパスワードで、またロックします。正しいパスワードを送るまで、1 回ごとに 15 分です
+- パスワードのない共有リンクは、パスワードが送られてきても見ません
+- 回数は、共有リンクごとです。IP アドレスごとの制限は、API 全体のレート制限が別に掛かります
+
+### 共有リンクの確認の順序
+
+| 順 | 発行 | 一覧 | 1 件の取得、失効 | 閲覧（ファイルの情報、ダウンロード用 URL） |
+|---|---|---|---|---|
+| 1 | アクセストークン（401） | 同左 | 同左 | 本文（400） |
+| 2 | 共有リンクを扱えるか（403） | 同左 | 同左 | トークンで開けるか（404） |
+| 3 | 添付ファイルの ID（400） | 同左 | 共有リンクの ID（400） | パスワード（403） |
+| 4 | 本文（400） | クエリ（400） | 共有リンクの存在（404） | ダウンロード用 URL: 回数を数えられるか（404） |
+| 5 | 添付ファイルの存在（404） | 添付ファイルの存在（404） | | |
+| 6 | 状態（409。`pending`） | カーソルがその添付ファイルのものか（400） | | |
+
+### 添付ファイルの削除と共有リンク
+
+- **添付ファイルを削除すると、その共有リンクは、すぐに使えなくなります**。閲覧のたびに、添付ファイルが削除されていないことを確かめます。管理のオペレーションからも見えません（404）
+- 共有リンクの行は、添付ファイルの行が[掃除](#掃除)で消えるときに、一緒に消えます
+- 有効期限を過ぎた共有リンクの行は、失効するか、添付ファイルが掃除されるまで残ります。期限切れの行だけを消す仕組みはありません
+
+### 共有リンクにないもの
+
+- **閲覧者のメールアドレスでの制限（`allowedEmails`）**: アカウントを持たない人のメールアドレスを確かめるには、そのアドレスにコードを送って入力させる流れが要ります。確かめられない制限を置くと、守られていると誤解させるので、コントラクトから除きました。見せる相手を絞るときは、パスワードを使い、トークンとは別の経路で伝えます
+- 共有リンクを開く画面（フロントエンド）
+- 共有リンクが使われたことの通知
+- 共有リンクの変更（期限の延長、パスワードの変更）。失効して、発行し直します
 
 ## ストレージ
 
@@ -311,10 +537,15 @@ MinIO は使いません。MinIO は、2026 年 4 月にリポジトリがアー
 | 同じ添付ファイルの削除が 2 つ | 一方が 204、もう一方は 404 です |
 | 掃除と完了 | 掃除が行をロックしているあいだ、完了は待ち、行が消えたあとに 404 を返します。完了が先なら、掃除はその行を消しません |
 | 掃除が 2 つ | 同じ行を消すのは一方だけです。件数は、それぞれが消した数です |
+| 上限まであと 1 回の共有リンクに、ダウンロード用 URL の発行が 2 つ | 一方が 200、もう一方は 404 です。`downloadCount` は上限を超えません |
+| 同じ共有リンクに、違うパスワードが同時に 5 つ | 5 つとも数え、共有リンクをロックします |
+| 共有リンクの失効と、そのトークンでの閲覧 | 失効が先なら、閲覧は 404 です |
 
 - 完了と削除は、行をロックしたまま、ストレージを呼びません。`uploaded` にする更新と、削除済みにする更新は、どちらも「`pending` で、削除していない」「削除していない」を条件にした 1 つの文なので、あとから届いたほうは、行が変わっていることに気づきます（`markUploaded`、`markDeleted`）
 - 掃除だけは、行をロックしたまま、ストレージのファイルを消します。消すと決めた行が、そのあいだに完了されないようにするためです
 - 完了と削除の時刻（`uploadedAt`、`deletedAt`、`updatedAt`）は、文が行に届いた時点のデータベースの時計（`clock_timestamp()`）で入れます。ロックを待ったあとの時刻です。掃除の条件も、同じ時計で確かめます
+- 共有リンクの回数（`downloadCount`、`failedAttempts`）は、読んだ値に足すのではなく、行の値に足す 1 つの文で更新します（`countDownload`、`recordWrongPassword`）。同時のリクエストが、互いの加算を消しません
+- 共有リンクが使えるか（有効期限、ロック）は、アプリケーションの時計で確かめます。有効期限を決めた時計と同じです
 
 ## DB の制約
 
@@ -340,6 +571,25 @@ MinIO は使いません。MinIO は、2026 年 4 月にリポジトリがアー
 - 外部キーに `ON DELETE` はありません。添付ファイルのあるサロンと、添付ファイルをアップロードしたユーザーの行は、消せません（サロンとユーザーの削除は、どちらも行を残す削除です）
 - シードに、添付ファイルはありません。ファイルの中身がストレージにないと、ダウンロードできない行になるためです
 
+`share_links`（マイグレーション `202611182200_share_links.sql`）:
+
+| 制約 | 内容 |
+|---|---|
+| `share_links_attachment_id_fk` | `attachmentId` は `attachments` の行。**`ON DELETE CASCADE`**: 添付ファイルの行を消すと、共有リンクの行も消えます |
+| `share_links_created_by_fk` | `createdBy` は `users` の行 |
+| `share_links_token_hash_unique` | `tokenHash` は一意。トークンから共有リンクを引くインデックスでもあります |
+| `share_links_expires_within_limit` | `expiresAt` は、`createdAt` よりあとで、その 720 時間後まで |
+| `share_links_max_downloads_positive` | `maxDownloads` は null か 1 以上 |
+| `share_links_download_count_within_limit` | `downloadCount` は 0 以上で、`maxDownloads` があればそれ以下 |
+| `share_links_failed_attempts_not_negative` | `failedAttempts` は 0 以上 |
+
+| インデックス | 用途 |
+|---|---|
+| `idx_share_links_attachment_created`（`attachmentId`, `createdAt`, `id`） | 添付ファイルの共有リンクの一覧 |
+
+- トークンとパスワードは、どの列にもありません。あるのはハッシュ（`tokenHash`、`passwordHash`）だけです
+- シードに、共有リンクはありません（添付ファイルがないため）
+
 ## 顧客のデータの消去との関係
 
 添付ファイルは、顧客に紐づきません。そのため、[顧客のデータの消去](./customers.md#削除の依頼)の対象ではありません。顧客の写真や書類を添付ファイルとして置いたときは、サロンが削除します。
@@ -353,7 +603,10 @@ MinIO は使いません。MinIO は、2026 年 4 月にリポジトリがアー
 | `backend/packages/api/src/__tests__/attachment.integration.test.ts` | ルートとデータベース。ストレージは、メモリーの中の代役（`InMemoryFileStorage`）です |
 | `backend/packages/infrastructure/src/storage/__tests__/s3-file-storage.integration.test.ts` | `S3FileStorage` と、本物の S3 互換のストレージ。署名付き URL で実際に送り、取得します |
 | `backend/apps/server/src/__tests__/server.integration.test.ts` | 設定からストレージまでの配線。URL が設定のエンドポイントとバケットを指すこと、ストレージに届かないときの 500 とログ |
-| `backend/packages/database/src/scripts/__tests__/migrations.integration.test.ts` | マイグレーションと制約 |
+| `backend/packages/database/src/scripts/__tests__/migrations.integration.test.ts` | マイグレーションと制約（`attachments`、`share_links`） |
+| `backend/packages/domain/src/__tests__/share-link.usecase.test.ts` | 共有リンクの 6 つのユースケース（確認の順序、有効期限の境界、パスワードの規則、ロック、署名してから数えること） |
+| `backend/packages/domain/src/__tests__/password-blocklist.test.ts` | 推測しやすいパスワードの判定 |
+| `backend/packages/api/src/__tests__/share-link.integration.test.ts` | 共有リンクのルートとデータベース。同時のダウンロードと違うパスワード、開けないトークンの応答が同じであること、ログにトークンとパスワードが出ないこと、添付ファイルの削除と掃除 |
 
 ストレージのテストは、testcontainers で SeaweedFS を起動します。**ほかの S3 互換のストレージで確かめるとき**は、5 つの環境変数で接続先を指定します。テストは、ランダムな接頭辞の下にだけファイルを置き、終わったら消します。
 
@@ -374,15 +627,15 @@ pnpm exec vitest run --config vitest.integration.config.ts src/storage
 | 層 | 場所 |
 |---|---|
 | コントラクト | `specs/models/attachment.tsp`、`specs/operations/attachment-operations.tsp` |
-| DB | `backend/packages/database/sql/migrations/202611182100_attachments.sql`、`src/schema.ts` の `attachments` |
-| API と DB の整合 | `backend/packages/database/src/scripts/api-consistency-rules.ts` の `attachmentRules` |
-| モデル、スキーマ、マッパー | `backend/packages/domain/src/models/attachment.ts`、`schemas/attachment.schema.ts`、`mappers/read/attachment.mapper.ts` |
-| 規則と権限 | `backend/packages/domain/src/business-logic/attachment/_shared/`（`file-rules.ts`、`authorization.ts`） |
-| ユースケース | `backend/packages/domain/src/business-logic/attachment/` |
+| DB | `backend/packages/database/sql/migrations/202611182100_attachments.sql`、`202611182200_share_links.sql`、`src/schema.ts` の `attachments`・`shareLinks` |
+| API と DB の整合 | `backend/packages/database/src/scripts/api-consistency-rules.ts` の `attachmentRules`、`shareLinkRules` |
+| モデル、スキーマ、マッパー | `backend/packages/domain/src/models/attachment.ts`、`schemas/attachment.schema.ts`、`mappers/read/attachment.mapper.ts`。共有リンクは `models/share-link.ts`、`schemas/share-link.schema.ts`、`mappers/read/share-link.mapper.ts` |
+| 規則と権限 | `backend/packages/domain/src/business-logic/attachment/_shared/`（`file-rules.ts`、`authorization.ts`）。共有リンクは `business-logic/share-link/_shared/`（`authorization.ts`、`link-rules.ts`、`password-check.ts`、`open-shared-file.ts`） |
+| ユースケース | `backend/packages/domain/src/business-logic/attachment/`、`business-logic/share-link/` |
 | ストレージのインターフェース | `backend/packages/domain/src/services/file-storage.ts` |
-| リポジトリ | `backend/packages/domain/src/repositories/attachment.repository.ts`、`backend/packages/infrastructure/src/repositories/attachment.repository.impl.ts` |
+| リポジトリ | `backend/packages/domain/src/repositories/attachment.repository.ts`、`backend/packages/infrastructure/src/repositories/attachment.repository.impl.ts`。共有リンクは `share-link.repository.ts`、`share-link.repository.impl.ts` |
 | ストレージの実装 | `backend/packages/infrastructure/src/storage/s3-file-storage.ts` |
-| ルート | `backend/packages/api/src/routes/attachment/` |
+| ルート | `backend/packages/api/src/routes/attachment/`、`routes/share-link/`（管理。`/attachments` に、添付ファイルのルートより先にマウント）、`routes/shared-file/`（閲覧。`/share`） |
 | 配線 | `backend/apps/server/src/server.ts`（`S3FileStorage` を作り、`createApp` に渡す） |
 
 ## 根拠
@@ -391,3 +644,9 @@ pnpm exec vitest run --config vitest.integration.config.ts src/storage
 - [Data Integrity Protections for Amazon S3（AWS SDKs and Tools）](https://docs.aws.amazon.com/sdkref/latest/guide/feature-dataintegrity.html): SDK の既定のチェックサムと `WHEN_REQUIRED`
 - [RFC 6266](https://www.rfc-editor.org/rfc/rfc6266)、[RFC 8187](https://www.rfc-editor.org/rfc/rfc8187): `Content-Disposition` のファイル名
 - [SeaweedFS](https://github.com/seaweedfs/seaweedfs)（Apache-2.0）
+- [OWASP: Information exposure through query strings in URL](https://owasp.org/www-community/vulnerabilities/Information_exposure_through_query_strings_in_url): URL のクエリに入れた値は、`Referer`、Web のログ、ブラウザーの履歴に残り、HTTPS では防げない
+- [OWASP Session Management Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html): 識別子は CSPRNG で作り、64 ビット以上のエントロピーを持たせる
+- [OWASP Forgot Password Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Forgot_Password_Cheat_Sheet.html): URL で渡すトークンは、暗号論的に安全な乱数で作り、期限を持たせ、安全な方法で保存する
+- [OWASP Password Storage Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html): Argon2id
+- [OWASP Authentication Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html): 失敗の応答は、何が違ったか、ロックされているかを区別しない
+- [RFC 9110](https://www.rfc-editor.org/rfc/rfc9110): 7.1（リクエストの対象の URI は、フラグメントを含まない）、10.1.3（`Referer` に、フラグメントを含めてはならない）、15.5.2（401 は、`WWW-Authenticate` でチャレンジを返さなければならない）、15.5.4（403 のあと、クライアントは別の認証情報でやり直してよい）

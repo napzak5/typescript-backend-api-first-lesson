@@ -5,16 +5,17 @@
  * Comprehensive REST API for managing beauty salon operations including salons, staff, services, customers, bookings, treatments, payments, inventory, and access control. Built with TypeSpec for type-safe API-first development.
  * OpenAPI spec version: 2.0
  */
+import type { ModelsAttachmentContentType } from './modelsAttachmentContentType';
 
 /**
- * 共有ファイルレスポンス - 共有リンクの閲覧者に示す、公開対象ファイルのメタ情報を返す。
- * 認証なしで取得できるため、保存先のキーやアップロードしたユーザーなどの内部情報は含めない
+ * 共有ファイル - 共有リンクの閲覧者に示す、ファイルの名前、種類、サイズ。
+ * 認証なしで取得できるので、添付ファイルのIDやアップロードしたユーザーなどの内部の値は含めない
  */
 export interface ModelsSharedFileResponse {
-  /** 利用者がアップロードした元のファイル名。 */
+  /** アップロードした元のファイル名。ダウンロードするときの名前になる */
   filename: string;
-  /** ファイルのMIMEタイプ（Content-Type）。 */
-  content: string;
-  /** ファイルサイズ（バイト単位）。 */
+  /** ファイルの種類 */
+  contentType: ModelsAttachmentContentType;
+  /** ファイルのサイズ(バイト) */
   size: number;
 }

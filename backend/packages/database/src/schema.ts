@@ -2204,6 +2204,63 @@ export const sessions = pgTable(
   ],
 )
 
+export const shareLinks = pgTable(
+  'share_links',
+  {
+    id: uuid().defaultRandom().primaryKey().notNull(),
+    attachmentId: uuid().notNull(),
+    tokenHash: text().notNull(),
+    passwordHash: text(),
+    expiresAt: timestamp({ withTimezone: true, mode: 'string' }).notNull(),
+    maxDownloads: integer(),
+    downloadCount: integer().default(0).notNull(),
+    failedAttempts: integer().default(0).notNull(),
+    lockedUntil: timestamp({ withTimezone: true, mode: 'string' }),
+    createdBy: uuid().notNull(),
+    createdAt: timestamp({ withTimezone: true, mode: 'string' })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp({ withTimezone: true, mode: 'string' })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    check(
+      'share_links_download_count_within_limit',
+      sql`("downloadCount" >= 0) AND (("maxDownloads" IS NULL) OR ("downloadCount" <= "maxDownloads"))`,
+    ),
+    check(
+      'share_links_expires_within_limit',
+      sql`("expiresAt" > "createdAt") AND ("expiresAt" <= ("createdAt" + '720:00:00'::interval))`,
+    ),
+    check(
+      'share_links_failed_attempts_not_negative',
+      sql`"failedAttempts" >= 0`,
+    ),
+    check(
+      'share_links_max_downloads_positive',
+      sql`("maxDownloads" IS NULL) OR ("maxDownloads" >= 1)`,
+    ),
+    foreignKey({
+      columns: [table.attachmentId],
+      foreignColumns: [attachments.id],
+      name: 'share_links_attachment_id_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [table.createdBy],
+      foreignColumns: [users.id],
+      name: 'share_links_created_by_fk',
+    }),
+    index('idx_share_links_attachment_created').using(
+      'btree',
+      table.attachmentId.asc().nullsLast().op('uuid_ops'),
+      table.createdAt.asc().nullsLast().op('timestamptz_ops'),
+      table.id.asc().nullsLast().op('uuid_ops'),
+    ),
+    unique('share_links_token_hash_unique').on(table.tokenHash),
+  ],
+)
+
 export const staff = pgTable(
   'staff',
   {

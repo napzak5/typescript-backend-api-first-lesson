@@ -30,6 +30,7 @@ import {
   serviceOptions,
   services,
   sessions,
+  shareLinks,
   staff,
   staffInvitations,
   staffSchedules,
@@ -39,11 +40,12 @@ import {
   users,
 } from './schema'
 
-export const attachmentsRelations = relations(attachments, ({ one }) => ({
+export const attachmentsRelations = relations(attachments, ({ one, many }) => ({
   salon: one(salons, {
     fields: [attachments.salonId],
     references: [salons.id],
   }),
+  shareLinks: many(shareLinks),
   user: one(users, {
     fields: [attachments.uploadedBy],
     references: [users.id],
@@ -453,6 +455,17 @@ export const sessionsRelations = relations(sessions, ({ one }) => ({
   }),
 }))
 
+export const shareLinksRelations = relations(shareLinks, ({ one }) => ({
+  attachment: one(attachments, {
+    fields: [shareLinks.attachmentId],
+    references: [attachments.id],
+  }),
+  user: one(users, {
+    fields: [shareLinks.createdBy],
+    references: [users.id],
+  }),
+}))
+
 export const staffInvitationsRelations = relations(
   staffInvitations,
   ({ one }) => ({
@@ -548,6 +561,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   }),
   customerVersions: many(customerVersions),
   sessions: many(sessions),
+  shareLinks: many(shareLinks),
   staff: one(staff, {
     fields: [users.staffId],
     references: [staff.id],
