@@ -244,11 +244,19 @@ DATABASE_URL=postgres://<user>:<password>@<host>:5432/<database> pnpm db:migrate
 書かれています。Docker Compose は、シェルの環境変数と、ルートに `.env` があればその内容を置換に使います。
 `.env.localhost` は置換には使われません。
 
-- `postgres` サービス: `POSTGRES_DB`、`POSTGRES_USER`、`POSTGRES_PASSWORD`、`POSTGRES_PORT`
+Compose のプロジェクト名は、`docker-compose.yml` の `name`（`beauty-salon`）で固定しています。コンテナの
+名前とホストのポートも固定なので、1 台のマシンで動くのは 1 組で、どのディレクトリから実行しても、同じ
+コンテナとボリューム（`beauty-salon_postgres18_data` など）を指します。ホストに公開するポートは、どれも
+`127.0.0.1` だけです。
+
+- `postgres` サービス: `POSTGRES_DB`、`POSTGRES_USER`、`POSTGRES_PASSWORD`、`POSTGRES_PORT`。
+  ポート（既定は 5432）を `127.0.0.1` に公開する。既定のユーザーとパスワードはリポジトリに書いて
+  あるので、ほかのマシンからは届かないようにしている
 - `mailpit` サービス: 変数を使わない。SMTP（1025）と画面（8025）を `127.0.0.1` に公開する
 - `storage` サービス（SeaweedFS）: `STORAGE_BUCKET`、`STORAGE_ACCESS_KEY_ID`、`STORAGE_SECRET_ACCESS_KEY`。
   S3 の API（8333）を `127.0.0.1` に公開し、起動のときにバケットを作る
-- `backend` サービス: `.env.localhost` の内容をコンテナの環境変数として渡したうえで、`NODE_ENV`
+- `backend` サービス: ポート（`PORT`、既定は 3000）を `127.0.0.1` に公開する。
+  `.env.localhost` の内容をコンテナの環境変数として渡したうえで、`NODE_ENV`
   （既定は `development`）、`PORT`、`DATABASE_URL`（Compose 内の `postgres` サービス宛て）、`SMTP_HOST`
   （Compose 内の `mailpit` サービス宛て）、`STORAGE_ENDPOINT`（Compose 内の `storage` サービス宛て。
   `STORAGE_PUBLIC_ENDPOINT` は `http://localhost:8333` のまま）などを上書きする
