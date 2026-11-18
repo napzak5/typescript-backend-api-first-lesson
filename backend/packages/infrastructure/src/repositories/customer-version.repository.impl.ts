@@ -9,15 +9,10 @@ import type {
 } from '@beauty-salon-backend/domain'
 import type { Result } from '@beauty-salon-backend/utility'
 import { and, count, desc, eq, lt, sql } from 'drizzle-orm'
-import { alias, type PgTransactionConfig } from 'drizzle-orm/pg-core'
+import { alias } from 'drizzle-orm/pg-core'
 import { attempt } from '../database/attempt'
 import type { Database, DatabaseExecutor } from '../database/index'
-
-/** A page and its total are read at one moment, and nothing is written. */
-const AT_ONE_MOMENT: PgTransactionConfig = {
-  isolationLevel: 'repeatable read',
-  accessMode: 'read only',
-}
+import { AT_ONE_MOMENT } from '../database/snapshot'
 
 /** The version before the one a row of the history is. */
 const previous = alias(customerVersions, 'previous')

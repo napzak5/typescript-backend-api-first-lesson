@@ -5,46 +5,27 @@
  * Comprehensive REST API for managing beauty salon operations including salons, staff, services, customers, bookings, treatments, payments, inventory, and access control. Built with TypeSpec for type-safe API-first development.
  * OpenAPI spec version: 2.0
  */
-import type { ModelsCustomerExportFormatType } from './modelsCustomerExportFormatType';
 import type { ModelsCustomerStatusType } from './modelsCustomerStatusType';
 import type { ModelsMembershipTierType } from './modelsMembershipTierType';
 
 /**
- * 顧客一覧エクスポートリクエスト - 一覧と同じ絞り込み条件に一致する顧客をファイルに出力する。
- * 全項目のキーが必須で、使わない絞り込み条件には null を指定する。条件はすべて AND で結合する
+ * 顧客台帳の CSV 出力の条件 - 一覧と同じ絞り込み条件で、意味も一覧と同じ。条件はすべて AND で結合し、指定しない条件では絞り込まない
  */
 export interface ModelsCustomerExportRequest {
-  /** エクスポート形式 */
-  format: ModelsCustomerExportFormatType;
   /**
-     * 出力する項目(CustomerResponse のプロパティ名)の一覧。nullの場合は全項目を出力する
-     * @nullable
-     */
-  exportFields: string[] | null;
-  /**
-     * 顧客名(姓・名とそのカナ表記)、メールアドレス、電話番号に対する部分一致キーワード(大文字小文字を区別しない)。nullの場合はキーワードで絞り込まない
+     * 顧客名(姓・名とそのカナ表記)、メールアドレスに対する部分一致キーワード(大文字小文字を区別しない)。数字・空白・-+()だけのキーワードは、電話番号とも数字だけを取り出して比べる
      * @minLength 1
      * @maxLength 100
-     * @nullable
      */
-  search: string | null;
-  /**
-     * タグによる絞り込み。指定したタグをすべて持つ顧客に一致する。nullの場合はタグで絞り込まない
-     * @nullable
-     */
-  tags: string[] | null;
-  /**
-     * 登録日時(createdAt)の下限による絞り込み。この日時以降に登録された顧客に一致する。nullの場合は下限なし
-     * @nullable
-     */
-  registeredFrom: string | null;
-  /**
-     * 登録日時(createdAt)の上限による絞り込み。この日時以前に登録された顧客に一致する。nullの場合は上限なし
-     * @nullable
-     */
-  registeredTo: string | null;
-  /** 顧客ステータスによる絞り込み(完全一致)。nullの場合はステータスで絞り込まない */
-  customerStatus: ModelsCustomerStatusType | null;
-  /** 会員ランクによる絞り込み(完全一致)。nullの場合は会員ランクで絞り込まない */
-  membershipTier: ModelsMembershipTierType | null;
+  search?: string;
+  /** タグによる絞り込み。指定したタグをすべて持つ顧客に一致する */
+  tags?: string[];
+  /** 登録日時(createdAt)の下限による絞り込み。この日時以降に登録された顧客に一致する。UTC の日付で 1900-01-01 から 2999-12-31 まで */
+  registeredFrom?: string;
+  /** 登録日時(createdAt)の上限による絞り込み。この日時以前に登録された顧客に一致する。registeredFromより前の日時は指定できない。UTC の日付で 1900-01-01 から 2999-12-31 まで */
+  registeredTo?: string;
+  /** 顧客ステータスによる絞り込み(完全一致) */
+  customerStatus?: ModelsCustomerStatusType;
+  /** 会員ランクによる絞り込み(完全一致) */
+  membershipTier?: ModelsMembershipTierType;
 }

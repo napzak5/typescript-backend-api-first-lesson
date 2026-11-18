@@ -11,7 +11,7 @@ using TypeSpec.OpenAPI;
 using BeautySalon.Models;
 
 namespace BeautySalon.Operations {
-  @doc("顧客台帳を管理するAPI操作群です。台帳はプラットフォーム全体で1つで、サロンごとには分かれていません。実装済みの操作は、一覧・登録・1件の取得・更新・削除、一括取得・一括登録・一括更新・一括削除と、好み設定の取得・更新、統計の取得です。これらは admin とサロンのスタッフ(owner / manager / staff。所属サロンは問いません)が実行でき、削除と一括削除は admin と owner / manager だけが実行できます。統計は、admin と、salonId のサロンの owner / manager / staff が実行できます。レスポンスはスタッフ専用の項目を含むので、顧客本人(customer)には403を返します。権限は最初に確認し、権限のないユーザーにはIDや本文が不正でも403を返します。")
+  @doc("顧客台帳を管理するAPI操作群です。台帳はプラットフォーム全体で1つで、サロンごとには分かれていません。実装済みの操作は、一覧・登録・1件の取得・更新・削除、一括取得・一括登録・一括更新・一括削除、台帳の CSV 出力、統計の取得、変更履歴と版の取得、復元、統合、顧客のデータの出力と、好み設定の取得・更新です。これらは admin とサロンのスタッフ(owner / manager / staff。所属サロンは問いません)が実行でき、削除、一括削除、CSV 出力、変更履歴と版の取得、復元、統合、顧客のデータの出力は admin と owner / manager だけが実行できます。統計は、admin と、salonId のサロンの owner / manager / staff が実行できます。レスポンスはスタッフ専用の項目を含むので、顧客本人(customer)には403を返します。権限は最初に確認し、権限のないユーザーにはIDや本文が不正でも403を返します。")
   @route("/api/v1/customers")
   @tag("Customers")
   namespace CustomerOperations {
@@ -137,17 +137,23 @@ namespace BeautySalon.Operations {
         | RequestBodyErrors
         | CommonErrors;
 
-      @doc("一覧と同じ絞り込み条件に一致する顧客を指定形式でエクスポートするジョブを受け付け、帳票出力や外部共有に活用します。")
-      @summary("Export customers")
-      @post
+      @doc("一覧と同じ絞り込み条件に一致する顧客を、1人を1行にした CSV ファイルとして返します。admin と owner / manager だけが実行できます。列は CustomerResponse のプロパティで、その順に並び、1行目は列名です。行は一覧と同じ順(登録日時の新しい順、同じならIDの降順)です。null は空のセル、真偽値は true / false、tags と preferences は JSON の文字列です。カンマ、ダブルクォート、改行を含む値はダブルクォートで囲みます。=、+、-、@、タブ、CR で始まる文字列の値には、表計算ソフトが式として読まないよう、先頭に ' を付けます。文字コードは BOM 付きの UTF-8、改行は CRLF です(RFC 4180)。ファイルは保存せず、応答の本文として返します。件数と行は1つのスナップショットで読みます。クエリが不正な場合は400を、一致する顧客が10,000人を超える場合は409を返します。")
+      @summary("Export customers as CSV")
+      @get
       @route("/export")
-      export(@body request: CustomerExportRequest):
+      export(...CustomerExportRequest):
         | {
-            @statusCode statusCode: 202;
-            @body response: ApiResponse<CustomerExportResponse>;
+            @statusCode statusCode: 200;
+            @header contentType: "text/csv";
+
+            @doc("attachment; filename=customers-<出力した日(UTC)、YYYY-MM-DD>.csv")
+            @header
+            contentDisposition: string;
+
+            @body file: string;
           }
         | ProblemResponse<400>
-        | RequestBodyErrors
+        | ProblemResponse<409>
         | CommonErrors;
 
       @doc("顧客の変更履歴(顧客台帳への書き込みごとの版)を、新しい版から順に取得し、変更者、日時、前の版から変わった項目を返します。admin と owner / manager だけが実行できます。削除した顧客の履歴も取得できます。IDとクエリが不正な場合と、cursorがその顧客の版を指していない場合は400を、顧客が存在しない場合は404を返します。")
@@ -256,22 +262,20 @@ namespace BeautySalon.Operations {
         | RequestBodyErrors
         | CommonErrors;
 
-      @doc("顧客が自身のデータを取得できるようエクスポートし、GDPR等の個人情報規制に対応します。顧客が存在しない場合は404を返します。")
-      @summary("Export customer data")
+      @doc("顧客について保有しているデータ(台帳、紐づいたアカウント、好み設定、カルテ、アレルギー、予約、売上、ポイント取引、書いたレビュー、参考になったと評価したレビュー、施術記録、台帳の版)を、1つの JSON ファイルとして返します。個人情報保護法の保有個人データの開示の請求に、電磁的記録で応えるためのものです(本人の確認はサロンが行います)。admin と owner / manager だけが実行できます。すべてを1つのスナップショットで読みます。ファイルは保存せず、応答の本文として返します。IDが不正な場合は400を、顧客が存在しない、または削除されている場合は404を返します。")
+      @summary("Export the data of a customer")
       @get
       @route("/{id}/export")
-      exportData(
-        @path id: CustomerId,
-
-        @query
-        @doc("エクスポート形式")
-        format?: CustomerDataExportFormatType = CustomerDataExportFormatType.json,
-      ):
+      exportData(@path id: CustomerId):
         | {
             @statusCode statusCode: 200;
-            @body response: bytes;
-            @header("Content-Type") content: string;
-            @header("Content-Disposition") contentDisposition: string;
+            @header contentType: "application/json";
+
+            @doc("attachment; filename=customer-<顧客の ID>.json")
+            @header
+            contentDisposition: string;
+
+            @body file: CustomerDataExportResponse;
           }
         | ProblemResponse<400>
         | ProblemResponse<404>
