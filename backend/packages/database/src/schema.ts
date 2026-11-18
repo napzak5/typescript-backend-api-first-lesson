@@ -61,6 +61,11 @@ export const bookingStatus = pgEnum('booking_status', [
   'no_show',
 ])
 
+export const customerDeletionRequestStatus = pgEnum(
+  'customer_deletion_request_status',
+  ['pending', 'cancelled', 'completed'],
+)
+
 export const customerStatus = pgEnum('customer_status', [
   'active',
   'inactive',
@@ -75,6 +80,7 @@ export const customerVersionOperation = pgEnum('customer_version_operation', [
   'delete',
   'restore',
   'merge',
+  'erase',
 ])
 
 export const dayOfWeek = pgEnum('day_of_week', [
@@ -527,6 +533,72 @@ export const customerAllergies = pgTable(
       table.customerId,
       table.allergenName,
     ),
+  ],
+)
+
+export const customerDeletionRequests = pgTable(
+  'customer_deletion_requests',
+  {
+    id: uuid().defaultRandom().primaryKey().notNull(),
+    customerId: uuid().notNull(),
+    reason: text().notNull(),
+    status: customerDeletionRequestStatus().default('pending').notNull(),
+    requestedBy: uuid().notNull(),
+    requestedAt: timestamp({ withTimezone: true, mode: 'string' }).notNull(),
+    scheduledAt: timestamp({ withTimezone: true, mode: 'string' }).notNull(),
+    cancelledBy: uuid(),
+    cancelledAt: timestamp({ withTimezone: true, mode: 'string' }),
+    completedBy: uuid(),
+    completedAt: timestamp({ withTimezone: true, mode: 'string' }),
+  },
+  (table) => [
+    check(
+      'customer_deletion_requests_cancelled_when_cancelled',
+      sql`((status = 'cancelled'::customer_deletion_request_status) = ("cancelledAt" IS NOT NULL)) AND (("cancelledAt" IS NULL) = ("cancelledBy" IS NULL))`,
+    ),
+    check(
+      'customer_deletion_requests_completed_when_completed',
+      sql`((status = 'completed'::customer_deletion_request_status) = ("completedAt" IS NOT NULL)) AND (("completedAt" IS NULL) = ("completedBy" IS NULL))`,
+    ),
+    check(
+      'customer_deletion_requests_reason_length',
+      sql`(char_length(reason) >= 1) AND (char_length(reason) <= 1000)`,
+    ),
+    check(
+      'customer_deletion_requests_scheduled_after_grace',
+      sql`"scheduledAt" = ("requestedAt" + '336:00:00'::interval)`,
+    ),
+    foreignKey({
+      columns: [table.cancelledBy],
+      foreignColumns: [users.id],
+      name: 'customer_deletion_requests_cancelled_by_fk',
+    }),
+    foreignKey({
+      columns: [table.completedBy],
+      foreignColumns: [users.id],
+      name: 'customer_deletion_requests_completed_by_fk',
+    }),
+    foreignKey({
+      columns: [table.customerId],
+      foreignColumns: [customers.id],
+      name: 'customer_deletion_requests_customer_id_fk',
+    }).onDelete('cascade'),
+    foreignKey({
+      columns: [table.requestedBy],
+      foreignColumns: [users.id],
+      name: 'customer_deletion_requests_requested_by_fk',
+    }),
+    index('idx_customer_deletion_requests_customer').using(
+      'btree',
+      table.customerId.asc().nullsLast().op('uuid_ops'),
+      table.requestedAt.asc().nullsLast().op('timestamptz_ops'),
+    ),
+    index('idx_customer_deletion_requests_due')
+      .using('btree', table.scheduledAt.asc().nullsLast().op('timestamptz_ops'))
+      .where(sql`(status = 'pending'::customer_deletion_request_status)`),
+    uniqueIndex('customer_deletion_requests_one_pending')
+      .using('btree', table.customerId.asc().nullsLast().op('uuid_ops'))
+      .where(sql`(status = 'pending'::customer_deletion_request_status)`),
   ],
 )
 

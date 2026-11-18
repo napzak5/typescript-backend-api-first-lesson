@@ -4,6 +4,7 @@ import {
   bookingStatusHistories,
   bookings,
   customerAllergies,
+  customerDeletionRequests,
   customerPoints,
   customerPreferences,
   customers,
@@ -95,6 +96,31 @@ export const customerAllergiesRelations = relations(
   }),
 )
 
+export const customerDeletionRequestsRelations = relations(
+  customerDeletionRequests,
+  ({ one }) => ({
+    customer: one(customers, {
+      fields: [customerDeletionRequests.customerId],
+      references: [customers.id],
+    }),
+    user_cancelledBy: one(users, {
+      fields: [customerDeletionRequests.cancelledBy],
+      references: [users.id],
+      relationName: 'customerDeletionRequests_cancelledBy_users_id',
+    }),
+    user_completedBy: one(users, {
+      fields: [customerDeletionRequests.completedBy],
+      references: [users.id],
+      relationName: 'customerDeletionRequests_completedBy_users_id',
+    }),
+    user_requestedBy: one(users, {
+      fields: [customerDeletionRequests.requestedBy],
+      references: [users.id],
+      relationName: 'customerDeletionRequests_requestedBy_users_id',
+    }),
+  }),
+)
+
 export const customerPointsRelations = relations(customerPoints, ({ one }) => ({
   customer: one(customers, {
     fields: [customerPoints.customerId],
@@ -138,6 +164,7 @@ export const customersRelations = relations(customers, ({ one, many }) => ({
     relationName: 'customers_referredBy_customers_id',
   }),
   customerAllergies: many(customerAllergies),
+  customerDeletionRequests: many(customerDeletionRequests),
   customerPoints: many(customerPoints),
   customerPreferences: many(customerPreferences),
   customerVersions: many(customerVersions),
@@ -495,6 +522,15 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   customer: one(customers, {
     fields: [users.customerId],
     references: [customers.id],
+  }),
+  customerDeletionRequests_cancelledBy: many(customerDeletionRequests, {
+    relationName: 'customerDeletionRequests_cancelledBy_users_id',
+  }),
+  customerDeletionRequests_completedBy: many(customerDeletionRequests, {
+    relationName: 'customerDeletionRequests_completedBy_users_id',
+  }),
+  customerDeletionRequests_requestedBy: many(customerDeletionRequests, {
+    relationName: 'customerDeletionRequests_requestedBy_users_id',
   }),
   customerVersions: many(customerVersions),
   sessions: many(sessions),

@@ -193,6 +193,24 @@ const customerPreferencesOmittedColumns = [
   'updatedAt',
 ]
 
+/**
+ * Columns of `customer_deletion_requests` that a request never writes: the
+ * customer is the one the path names, and the server keeps the state, who
+ * took, cancelled or carried out the request, and when.
+ */
+const customerDeletionRequestManagedColumns = [
+  'id',
+  'customerId',
+  'status',
+  'requestedBy',
+  'requestedAt',
+  'scheduledAt',
+  'cancelledBy',
+  'cancelledAt',
+  'completedBy',
+  'completedAt',
+]
+
 /** Customers and their preferences. */
 /**
  * Columns of `customer_versions` that are the values of the ledger: the
@@ -294,6 +312,18 @@ const customerRules: ModelRule[] = [
     table: 'customerPreferences',
     kind: 'update',
     omittedColumns: customerPreferencesOmittedColumns,
+  },
+  {
+    model: 'Models.CustomerDeletionRequestResponse',
+    table: 'customerDeletionRequests',
+    kind: 'response',
+    omittedColumns: [],
+  },
+  {
+    model: 'Models.CustomerDeletionRequestCreateRequest',
+    table: 'customerDeletionRequests',
+    kind: 'create',
+    omittedColumns: customerDeletionRequestManagedColumns,
   },
 ]
 
