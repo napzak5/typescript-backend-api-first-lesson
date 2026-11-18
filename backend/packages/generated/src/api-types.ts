@@ -995,13 +995,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
-        put?: never;
         /**
-         * Export customers
-         * @description 一覧と同じ絞り込み条件に一致する顧客を指定形式でエクスポートするジョブを受け付け、帳票出力や外部共有に活用します。
+         * Export customers as CSV
+         * @description 一覧と同じ絞り込み条件に一致する顧客を、1人を1行にした CSV ファイルとして返します。admin と owner / manager だけが実行できます。列は CustomerResponse のプロパティで、その順に並び、1行目は列名です。行は一覧と同じ順(登録日時の新しい順、同じならIDの降順)です。null は空のセル、真偽値は true / false、tags と preferences は JSON の文字列です。カンマ、ダブルクォート、改行を含む値はダブルクォートで囲みます。=、+、-、@、タブ、CR で始まる文字列の値には、表計算ソフトが式として読まないよう、先頭に ' を付けます。文字コードは BOM 付きの UTF-8、改行は CRLF です(RFC 4180)。ファイルは保存せず、応答の本文として返します。件数と行は1つのスナップショットで読みます。クエリが不正な場合は400を、一致する顧客が10,000人を超える場合は409を返します。
          */
-        post: operations["CustomerCrud_export"];
+        get: operations["CustomerCrud_export"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1220,8 +1220,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Export customer data
-         * @description 顧客が自身のデータを取得できるようエクスポートし、GDPR等の個人情報規制に対応します。顧客が存在しない場合は404を返します。
+         * Export the data of a customer
+         * @description 顧客について保有しているデータ(台帳、紐づいたアカウント、好み設定、カルテ、アレルギー、予約、売上、ポイント取引、書いたレビュー、参考になったと評価したレビュー、施術記録、台帳の版)を、1つの JSON ファイルとして返します。個人情報保護法の保有個人データの開示の請求に、電磁的記録で応えるためのものです(本人の確認はサロンが行います)。admin と owner / manager だけが実行できます。すべてを1つのスナップショットで読みます。ファイルは保存せず、応答の本文として返します。IDが不正な場合は400を、顧客が存在しない、または削除されている場合は404を返します。
          */
         get: operations["CustomerCrud_exportData"];
         put?: never;
@@ -4216,98 +4216,58 @@ export interface components {
              */
             gracePeriodDays: number;
         };
-        /**
-
-         * @description
-
-         * 顧客データエクスポート形式区分 - 顧客本人のデータを出力するファイル形式
-
-         *
-
-         *
-
-         * json: JSON - JSON形式
-
-         *
-
-         * csv: CSV - カンマ区切りテキスト
-
-         *
-
-         * pdf: PDF - PDF文書
-
-         * @enum {string}
-
-         */
-
-        "Models.CustomerDataExportFormatType": "json" | "csv" | "pdf";
-        /**
-
-         * @description
-
-         * 顧客一覧エクスポート形式区分 - 検索結果のエクスポートで出力するファイル形式
-
-         *
-
-         *
-
-         * csv: CSV - カンマ区切りテキスト
-
-         *
-
-         * json: JSON - JSON形式
-
-         *
-
-         * excel: Excel - Excelブック形式
-
-         * @enum {string}
-
-         */
-
-        "Models.CustomerExportFormatType": "csv" | "json" | "excel";
-        /**
-         * @description 顧客一覧エクスポートリクエスト - 一覧と同じ絞り込み条件に一致する顧客をファイルに出力する。
-         *     全項目のキーが必須で、使わない絞り込み条件には null を指定する。条件はすべて AND で結合する
-         */
-        "Models.CustomerExportRequest": {
-            /** @description エクスポート形式 */
-            format: components["schemas"]["Models.CustomerExportFormatType"];
-            /** @description 出力する項目(CustomerResponse のプロパティ名)の一覧。nullの場合は全項目を出力する */
-            exportFields: string[] | null;
-            /** @description 顧客名(姓・名とそのカナ表記)、メールアドレス、電話番号に対する部分一致キーワード(大文字小文字を区別しない)。nullの場合はキーワードで絞り込まない */
-            search: string | null;
-            /** @description タグによる絞り込み。指定したタグをすべて持つ顧客に一致する。nullの場合はタグで絞り込まない */
-            tags: string[] | null;
+        /** @description 顧客のデータの出力 - 顧客について保有しているデータのすべて。すべてのプロパティがあり、ないものは null か空の一覧。一覧は作成日時の古い順(同じ日時なら ID の順)で、版は番号の順。それぞれの値は、その API のレスポンスと同じ形 */
+        "Models.CustomerDataExportResponse": {
             /**
              * Format: date-time
-             * @description 登録日時(createdAt)の下限による絞り込み。この日時以降に登録された顧客に一致する。nullの場合は下限なし
+             * @description 出力した日時
              */
-            registeredFrom: string | null;
-            /**
-             * Format: date-time
-             * @description 登録日時(createdAt)の上限による絞り込み。この日時以前に登録された顧客に一致する。nullの場合は上限なし
-             */
-            registeredTo: string | null;
-            /** @description 顧客ステータスによる絞り込み(完全一致)。nullの場合はステータスで絞り込まない */
-            customerStatus: components["schemas"]["Models.CustomerStatusType"] | null;
-            /** @description 会員ランクによる絞り込み(完全一致)。nullの場合は会員ランクで絞り込まない */
-            membershipTier: components["schemas"]["Models.MembershipTierType"] | null;
+            exportedAt: string;
+            /** @description 台帳の顧客(スタッフ専用の項目を含む) */
+            customer: components["schemas"]["Models.CustomerResponse"];
+            /** @description 顧客に紐づいたログインアカウント。紐づいていない場合はnull */
+            account: components["schemas"]["Models.UserResponse"] | null;
+            /** @description 好み設定。設定がない場合はnull */
+            preferences: components["schemas"]["Models.CustomerPreferencesResponse"] | null;
+            /** @description カルテ。カルテがない場合はnull */
+            medicalChart: components["schemas"]["Models.MedicalChartResponse"] | null;
+            /** @description アレルギー */
+            allergies: components["schemas"]["Models.CustomerAllergyResponse"][];
+            /** @description 予約(明細を含む) */
+            bookings: components["schemas"]["Models.BookingResponse"][];
+            /** @description 売上(明細と支払いを含む) */
+            sales: components["schemas"]["Models.SaleResponse"][];
+            /** @description ポイント取引 */
+            pointTransactions: components["schemas"]["Models.PointTransactionResponse"][];
+            /** @description 顧客が書いたレビュー */
+            reviews: components["schemas"]["Models.ReviewResponse"][];
+            /** @description 顧客が参考になったと評価したレビューの ID */
+            helpfulReviewIds: components["schemas"]["Models.ReviewId"][];
+            /** @description 施術記録(写真の情報を含む) */
+            treatmentRecords: components["schemas"]["Models.TreatmentRecordResponse"][];
+            /** @description 台帳の版(変更履歴) */
+            versions: components["schemas"]["Models.CustomerVersionResponse"][];
         };
-        /** @description 顧客一覧エクスポートの受付結果 - 非同期で実行するエクスポートジョブの情報を返す */
-        "Models.CustomerExportResponse": {
-            /** @description エクスポートジョブのID */
-            jobId: string;
+        /** @description 顧客台帳の CSV 出力の条件 - 一覧と同じ絞り込み条件で、意味も一覧と同じ。条件はすべて AND で結合し、指定しない条件では絞り込まない */
+        "Models.CustomerExportRequest": {
+            /** @description 顧客名(姓・名とそのカナ表記)、メールアドレスに対する部分一致キーワード(大文字小文字を区別しない)。数字・空白・-+()だけのキーワードは、電話番号とも数字だけを取り出して比べる */
+            search?: string;
+            /** @description タグによる絞り込み。指定したタグをすべて持つ顧客に一致する */
+            tags?: string[];
             /**
-             * @description ジョブの状態。受付直後は常にpending
-             * @enum {string}
+             * Format: date-time
+             * @description 登録日時(createdAt)の下限による絞り込み。この日時以降に登録された顧客に一致する。UTC の日付で 1900-01-01 から 2999-12-31 まで
              */
-            status: "pending";
+            registeredFrom?: string;
             /**
-             * Format: int32
-             * @description 完了までの推定所要時間（秒）。推定できない場合はnull
+             * Format: date-time
+             * @description 登録日時(createdAt)の上限による絞り込み。この日時以前に登録された顧客に一致する。registeredFromより前の日時は指定できない。UTC の日付で 1900-01-01 から 2999-12-31 まで
              */
-            estimatedTime: number | null;
+            registeredTo?: string;
+            /** @description 顧客ステータスによる絞り込み(完全一致) */
+            customerStatus?: components["schemas"]["Models.CustomerStatusType"];
+            /** @description 会員ランクによる絞り込み(完全一致) */
+            membershipTier?: components["schemas"]["Models.MembershipTierType"];
         };
         /**
 
@@ -15609,33 +15569,35 @@ export interface operations {
     };
     CustomerCrud_export: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description 顧客名(姓・名とそのカナ表記)、メールアドレスに対する部分一致キーワード(大文字小文字を区別しない)。数字・空白・-+()だけのキーワードは、電話番号とも数字だけを取り出して比べる */
+                search?: components["parameters"]["Models.CustomerSearchRequest.search"];
+                /** @description タグによる絞り込み。指定したタグをすべて持つ顧客に一致する */
+                tags?: components["parameters"]["Models.CustomerSearchRequest.tags"];
+                /** @description 登録日時(createdAt)の下限による絞り込み。この日時以降に登録された顧客に一致する。UTC の日付で 1900-01-01 から 2999-12-31 まで */
+                registeredFrom?: components["parameters"]["Models.CustomerSearchRequest.registeredFrom"];
+                /** @description 登録日時(createdAt)の上限による絞り込み。この日時以前に登録された顧客に一致する。registeredFromより前の日時は指定できない。UTC の日付で 1900-01-01 から 2999-12-31 まで */
+                registeredTo?: components["parameters"]["Models.CustomerSearchRequest.registeredTo"];
+                /** @description 顧客ステータスによる絞り込み(完全一致) */
+                customerStatus?: components["parameters"]["Models.CustomerSearchRequest.customerStatus"];
+                /** @description 会員ランクによる絞り込み(完全一致) */
+                membershipTier?: components["parameters"]["Models.CustomerSearchRequest.membershipTier"];
+            };
             header?: never;
             path?: never;
             cookie?: never;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["Models.CustomerExportRequest"];
-            };
-        };
+        requestBody?: never;
         responses: {
-            /** @description The request has been accepted for processing, but processing has not yet completed. */
-            202: {
+            /** @description The request has succeeded. */
+            200: {
                 headers: {
+                    /** @description attachment; filename=customers-<出力した日(UTC)、YYYY-MM-DD>.csv */
+                    "content-disposition": string;
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
-                        data: components["schemas"]["Models.CustomerExportResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
-                        meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
-                        links: {
-                            [key: string]: string;
-                        } | null;
-                    };
+                    "text/csv": string;
                 };
             };
             /** @description The server could not understand the request due to invalid syntax. */
@@ -15671,17 +15633,8 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
-            413: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
-            415: {
+            /** @description The request conflicts with the current state of the server. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -17365,10 +17318,7 @@ export interface operations {
     };
     CustomerCrud_exportData: {
         parameters: {
-            query?: {
-                /** @description エクスポート形式 */
-                format?: components["schemas"]["Models.CustomerDataExportFormatType"];
-            };
+            query?: never;
             header?: never;
             path: {
                 id: components["schemas"]["Models.CustomerId"];
@@ -17380,11 +17330,12 @@ export interface operations {
             /** @description The request has succeeded. */
             200: {
                 headers: {
-                    "Content-Disposition": string;
+                    /** @description attachment; filename=customer-<顧客の ID>.json */
+                    "content-disposition": string;
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": string;
+                    "application/json": components["schemas"]["Models.CustomerDataExportResponse"];
                 };
             };
             /** @description The server could not understand the request due to invalid syntax. */

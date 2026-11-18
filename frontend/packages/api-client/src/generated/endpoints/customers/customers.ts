@@ -30,8 +30,7 @@ import type {
   CustomerCrudBulkDelete200,
   CustomerCrudBulkUpdate200,
   CustomerCrudCreate201,
-  CustomerCrudExport202,
-  CustomerCrudExportDataParams,
+  CustomerCrudExportParams,
   CustomerCrudGet200,
   CustomerCrudGetHistory200,
   CustomerCrudGetHistoryParams,
@@ -57,7 +56,7 @@ import type {
   ModelsCustomerBulkUpdateRequest,
   ModelsCustomerCreateRequest,
   ModelsCustomerDataDeletionRequest,
-  ModelsCustomerExportRequest,
+  ModelsCustomerDataExportResponse,
   ModelsCustomerId,
   ModelsCustomerMergeRequest,
   ModelsCustomerPreferencesUpdateRequest,
@@ -979,9 +978,9 @@ export const useCustomerCrudBulkDelete = <TError = ModelsProblemDetails,
       > => {
       return useMutation(getCustomerCrudBulkDeleteMutationOptions(options), queryClient);
     }
-    export type customerCrudExportResponse202 = {
-  data: CustomerCrudExport202
-  status: 202
+    export type customerCrudExportResponse200 = {
+  data: string
+  status: 200
 }
 
 export type customerCrudExportResponse400 = {
@@ -999,14 +998,9 @@ export type customerCrudExportResponse403 = {
   status: 403
 }
 
-export type customerCrudExportResponse413 = {
+export type customerCrudExportResponse409 = {
   data: ModelsProblemDetails
-  status: 413
-}
-
-export type customerCrudExportResponse415 = {
-  data: ModelsProblemDetails
-  status: 415
+  status: 409
 }
 
 export type customerCrudExportResponse429 = {
@@ -1019,49 +1013,50 @@ export type customerCrudExportResponse500 = {
   status: 500
 }
 
-export type customerCrudExportResponseSuccess = (customerCrudExportResponse202) & {
+export type customerCrudExportResponseSuccess = (customerCrudExportResponse200) & {
   headers: Headers;
 };
-export type customerCrudExportResponseError = (customerCrudExportResponse400 | customerCrudExportResponse401 | customerCrudExportResponse403 | customerCrudExportResponse413 | customerCrudExportResponse415 | customerCrudExportResponse429 | customerCrudExportResponse500) & {
+export type customerCrudExportResponseError = (customerCrudExportResponse400 | customerCrudExportResponse401 | customerCrudExportResponse403 | customerCrudExportResponse409 | customerCrudExportResponse429 | customerCrudExportResponse500) & {
   headers: Headers;
 };
 
 export type customerCrudExportResponse = (customerCrudExportResponseSuccess | customerCrudExportResponseError)
 
-export const getCustomerCrudExportUrl = () => {
+export const getCustomerCrudExportUrl = (params?: CustomerCrudExportParams,) => {
+  const normalizedParams = new URLSearchParams();
 
+  Object.entries(params || {}).forEach(([key, value]) => {
+    const explodeParameters = ["tags"];
 
+    if (Array.isArray(value) && explodeParameters.includes(key)) {
+      value.forEach((v) => {
+        normalizedParams.append(key, v === null ? 'null' : String(v));
+      });
+      return;
+    }
 
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
 
-  return `/api/v1/customers/export`
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/v1/customers/export?${stringifiedParams}` : `/api/v1/customers/export`
 }
 
 /**
- * 一覧と同じ絞り込み条件に一致する顧客を指定形式でエクスポートするジョブを受け付け、帳票出力や外部共有に活用します。
- * @summary Export customers
+ * 一覧と同じ絞り込み条件に一致する顧客を、1人を1行にした CSV ファイルとして返します。admin と owner / manager だけが実行できます。列は CustomerResponse のプロパティで、その順に並び、1行目は列名です。行は一覧と同じ順(登録日時の新しい順、同じならIDの降順)です。null は空のセル、真偽値は true / false、tags と preferences は JSON の文字列です。カンマ、ダブルクォート、改行を含む値はダブルクォートで囲みます。=、+、-、@、タブ、CR で始まる文字列の値には、表計算ソフトが式として読まないよう、先頭に ' を付けます。文字コードは BOM 付きの UTF-8、改行は CRLF です(RFC 4180)。ファイルは保存せず、応答の本文として返します。件数と行は1つのスナップショットで読みます。クエリが不正な場合は400を、一致する顧客が10,000人を超える場合は409を返します。
+ * @summary Export customers as CSV
  */
-export const customerCrudExport = async (modelsCustomerExportRequest: ModelsCustomerExportRequest, options?: RequestInit): Promise<customerCrudExportResponse> => {
+export const customerCrudExport = async (params?: CustomerCrudExportParams, options?: RequestInit): Promise<customerCrudExportResponse> => {
 
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return customInstance<customerCrudExportResponse>(getCustomerCrudExportUrl(),
+  return customInstance<customerCrudExportResponse>(getCustomerCrudExportUrl(params),
   {
     ...options,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(modelsCustomerExportRequest)
+    method: 'GET'
+
+
   }
 );}
 
@@ -1069,55 +1064,93 @@ return customInstance<customerCrudExportResponse>(getCustomerCrudExportUrl(),
 
 
 
-export const getCustomerCrudExportMutationKey = () => ['customerCrudExport'] as const;
-
-export const getCustomerCrudExportMutationOptions = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerCrudExport>>, TError,CustomerCrudExportMutationVariables, TContext>, }
-): UseMutationOptions<Awaited<ReturnType<typeof customerCrudExport>>, TError,CustomerCrudExportMutationVariables, TContext> => {
-
-const mutationKey = getCustomerCrudExportMutationKey();
-const {mutation: mutationOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof customerCrudExport>>, CustomerCrudExportMutationVariables> = (props) => {
-          const {data} = props ?? {};
-
-          return  customerCrudExport(data,)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type CustomerCrudExportMutationResult = NonNullable<Awaited<ReturnType<typeof customerCrudExport>>>
-    export type CustomerCrudExportMutationBody = ModelsCustomerExportRequest
-    export type CustomerCrudExportMutationError = ModelsProblemDetails
-    export type CustomerCrudExportMutationVariables = {data: ModelsCustomerExportRequest}
-
-    /**
- * 一覧と同じ絞り込み条件に一致する顧客を指定形式でエクスポートするジョブを受け付け、帳票出力や外部共有に活用します。
- * @summary Export customers
- */
-export const useCustomerCrudExport = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerCrudExport>>, TError,CustomerCrudExportMutationVariables, TContext>, }
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof customerCrudExport>>,
-        TError,
-        CustomerCrudExportMutationVariables,
-        TContext
-      > => {
-      return useMutation(getCustomerCrudExportMutationOptions(options), queryClient);
+export const getCustomerCrudExportQueryKey = (params?: CustomerCrudExportParams,) => {
+    return [
+    `/api/v1/customers/export`, ...(params ? [params] : [])
+    ] as const;
     }
-    export type customerProfileGetResponse200 = {
+
+
+export const getCustomerCrudExportQueryOptions = <TData = Awaited<ReturnType<typeof customerCrudExport>>, TError = ModelsProblemDetails>(params?: CustomerCrudExportParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudExport>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getCustomerCrudExportQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof customerCrudExport>>> = ({ signal }) => customerCrudExport(params, { signal });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof customerCrudExport>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type CustomerCrudExportQueryResult = NonNullable<Awaited<ReturnType<typeof customerCrudExport>>>
+export type CustomerCrudExportQueryError = ModelsProblemDetails
+
+
+/**
+ * 一覧と同じ絞り込み条件に一致する顧客を、1人を1行にした CSV ファイルとして返します。admin と owner / manager だけが実行できます。列は CustomerResponse のプロパティで、その順に並び、1行目は列名です。行は一覧と同じ順(登録日時の新しい順、同じならIDの降順)です。null は空のセル、真偽値は true / false、tags と preferences は JSON の文字列です。カンマ、ダブルクォート、改行を含む値はダブルクォートで囲みます。=、+、-、@、タブ、CR で始まる文字列の値には、表計算ソフトが式として読まないよう、先頭に ' を付けます。文字コードは BOM 付きの UTF-8、改行は CRLF です(RFC 4180)。ファイルは保存せず、応答の本文として返します。件数と行は1つのスナップショットで読みます。クエリが不正な場合は400を、一致する顧客が10,000人を超える場合は409を返します。
+ * @summary Export customers as CSV
+ */
+export function useCustomerCrudExport<TData = Awaited<ReturnType<typeof customerCrudExport>>, TError = ModelsProblemDetails>(
+ params: undefined |  CustomerCrudExportParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudExport>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof customerCrudExport>>,
+          TError,
+          Awaited<ReturnType<typeof customerCrudExport>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * 一覧と同じ絞り込み条件に一致する顧客を、1人を1行にした CSV ファイルとして返します。admin と owner / manager だけが実行できます。列は CustomerResponse のプロパティで、その順に並び、1行目は列名です。行は一覧と同じ順(登録日時の新しい順、同じならIDの降順)です。null は空のセル、真偽値は true / false、tags と preferences は JSON の文字列です。カンマ、ダブルクォート、改行を含む値はダブルクォートで囲みます。=、+、-、@、タブ、CR で始まる文字列の値には、表計算ソフトが式として読まないよう、先頭に ' を付けます。文字コードは BOM 付きの UTF-8、改行は CRLF です(RFC 4180)。ファイルは保存せず、応答の本文として返します。件数と行は1つのスナップショットで読みます。クエリが不正な場合は400を、一致する顧客が10,000人を超える場合は409を返します。
+ * @summary Export customers as CSV
+ */
+export function useCustomerCrudExport<TData = Awaited<ReturnType<typeof customerCrudExport>>, TError = ModelsProblemDetails>(
+ params?: CustomerCrudExportParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudExport>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof customerCrudExport>>,
+          TError,
+          Awaited<ReturnType<typeof customerCrudExport>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * 一覧と同じ絞り込み条件に一致する顧客を、1人を1行にした CSV ファイルとして返します。admin と owner / manager だけが実行できます。列は CustomerResponse のプロパティで、その順に並び、1行目は列名です。行は一覧と同じ順(登録日時の新しい順、同じならIDの降順)です。null は空のセル、真偽値は true / false、tags と preferences は JSON の文字列です。カンマ、ダブルクォート、改行を含む値はダブルクォートで囲みます。=、+、-、@、タブ、CR で始まる文字列の値には、表計算ソフトが式として読まないよう、先頭に ' を付けます。文字コードは BOM 付きの UTF-8、改行は CRLF です(RFC 4180)。ファイルは保存せず、応答の本文として返します。件数と行は1つのスナップショットで読みます。クエリが不正な場合は400を、一致する顧客が10,000人を超える場合は409を返します。
+ * @summary Export customers as CSV
+ */
+export function useCustomerCrudExport<TData = Awaited<ReturnType<typeof customerCrudExport>>, TError = ModelsProblemDetails>(
+ params?: CustomerCrudExportParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudExport>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * 一覧と同じ絞り込み条件に一致する顧客を、1人を1行にした CSV ファイルとして返します。admin と owner / manager だけが実行できます。列は CustomerResponse のプロパティで、その順に並び、1行目は列名です。行は一覧と同じ順(登録日時の新しい順、同じならIDの降順)です。null は空のセル、真偽値は true / false、tags と preferences は JSON の文字列です。カンマ、ダブルクォート、改行を含む値はダブルクォートで囲みます。=、+、-、@、タブ、CR で始まる文字列の値には、表計算ソフトが式として読まないよう、先頭に ' を付けます。文字コードは BOM 付きの UTF-8、改行は CRLF です(RFC 4180)。ファイルは保存せず、応答の本文として返します。件数と行は1つのスナップショットで読みます。クエリが不正な場合は400を、一致する顧客が10,000人を超える場合は409を返します。
+ * @summary Export customers as CSV
+ */
+export function useCustomerCrudExport<TData = Awaited<ReturnType<typeof customerCrudExport>>, TError = ModelsProblemDetails>(
+ params?: CustomerCrudExportParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudExport>>, TError, TData>>, }
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getCustomerCrudExportQueryOptions(params,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type customerProfileGetResponse200 = {
   data: CustomerProfileGet200
   status: 200
 }
@@ -2568,7 +2601,7 @@ export const useCustomerCrudRequestDeletion = <TError = ModelsProblemDetails,
       return useMutation(getCustomerCrudRequestDeletionMutationOptions(options), queryClient);
     }
     export type customerCrudExportDataResponse200 = {
-  data: Blob
+  data: ModelsCustomerDataExportResponse
   status: 200
 }
 
@@ -2611,30 +2644,21 @@ export type customerCrudExportDataResponseError = (customerCrudExportDataRespons
 
 export type customerCrudExportDataResponse = (customerCrudExportDataResponseSuccess | customerCrudExportDataResponseError)
 
-export const getCustomerCrudExportDataUrl = (id: ModelsCustomerId,
-    params?: CustomerCrudExportDataParams,) => {
-  const normalizedParams = new URLSearchParams();
+export const getCustomerCrudExportDataUrl = (id: ModelsCustomerId,) => {
 
-  Object.entries(params || {}).forEach(([key, value]) => {
 
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : String(value))
-    }
-  });
 
-  const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/customers/${id}/export?${stringifiedParams}` : `/api/v1/customers/${id}/export`
+  return `/api/v1/customers/${id}/export`
 }
 
 /**
- * 顧客が自身のデータを取得できるようエクスポートし、GDPR等の個人情報規制に対応します。顧客が存在しない場合は404を返します。
- * @summary Export customer data
+ * 顧客について保有しているデータ(台帳、紐づいたアカウント、好み設定、カルテ、アレルギー、予約、売上、ポイント取引、書いたレビュー、参考になったと評価したレビュー、施術記録、台帳の版)を、1つの JSON ファイルとして返します。個人情報保護法の保有個人データの開示の請求に、電磁的記録で応えるためのものです(本人の確認はサロンが行います)。admin と owner / manager だけが実行できます。すべてを1つのスナップショットで読みます。ファイルは保存せず、応答の本文として返します。IDが不正な場合は400を、顧客が存在しない、または削除されている場合は404を返します。
+ * @summary Export the data of a customer
  */
-export const customerCrudExportData = async (id: ModelsCustomerId,
-    params?: CustomerCrudExportDataParams, options?: RequestInit): Promise<customerCrudExportDataResponse> => {
+export const customerCrudExportData = async (id: ModelsCustomerId, options?: RequestInit): Promise<customerCrudExportDataResponse> => {
 
-  return customInstance<customerCrudExportDataResponse>(getCustomerCrudExportDataUrl(id,params),
+  return customInstance<customerCrudExportDataResponse>(getCustomerCrudExportDataUrl(id),
   {
     ...options,
     method: 'GET'
@@ -2647,25 +2671,23 @@ export const customerCrudExportData = async (id: ModelsCustomerId,
 
 
 
-export const getCustomerCrudExportDataQueryKey = (id: ModelsCustomerId,
-    params?: CustomerCrudExportDataParams,) => {
+export const getCustomerCrudExportDataQueryKey = (id: ModelsCustomerId,) => {
     return [
-    `/api/v1/customers/${id}/export`, ...(params ? [params] : [])
+    `/api/v1/customers/${id}/export`
     ] as const;
     }
 
 
-export const getCustomerCrudExportDataQueryOptions = <TData = Awaited<ReturnType<typeof customerCrudExportData>>, TError = ModelsProblemDetails>(id: ModelsCustomerId,
-    params?: CustomerCrudExportDataParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudExportData>>, TError, TData>>, }
+export const getCustomerCrudExportDataQueryOptions = <TData = Awaited<ReturnType<typeof customerCrudExportData>>, TError = ModelsProblemDetails>(id: ModelsCustomerId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudExportData>>, TError, TData>>, }
 ) => {
 
 const {query: queryOptions} = options ?? {};
 
-  const queryKey =  queryOptions?.queryKey ?? getCustomerCrudExportDataQueryKey(id,params);
+  const queryKey =  queryOptions?.queryKey ?? getCustomerCrudExportDataQueryKey(id);
 
 
 
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof customerCrudExportData>>> = ({ signal }) => customerCrudExportData(id,params, { signal });
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof customerCrudExportData>>> = ({ signal }) => customerCrudExportData(id, { signal });
 
 
 
@@ -2679,12 +2701,11 @@ export type CustomerCrudExportDataQueryError = ModelsProblemDetails
 
 
 /**
- * 顧客が自身のデータを取得できるようエクスポートし、GDPR等の個人情報規制に対応します。顧客が存在しない場合は404を返します。
- * @summary Export customer data
+ * 顧客について保有しているデータ(台帳、紐づいたアカウント、好み設定、カルテ、アレルギー、予約、売上、ポイント取引、書いたレビュー、参考になったと評価したレビュー、施術記録、台帳の版)を、1つの JSON ファイルとして返します。個人情報保護法の保有個人データの開示の請求に、電磁的記録で応えるためのものです(本人の確認はサロンが行います)。admin と owner / manager だけが実行できます。すべてを1つのスナップショットで読みます。ファイルは保存せず、応答の本文として返します。IDが不正な場合は400を、顧客が存在しない、または削除されている場合は404を返します。
+ * @summary Export the data of a customer
  */
 export function useCustomerCrudExportData<TData = Awaited<ReturnType<typeof customerCrudExportData>>, TError = ModelsProblemDetails>(
- id: ModelsCustomerId,
-    params: undefined |  CustomerCrudExportDataParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudExportData>>, TError, TData>> & Pick<
+ id: ModelsCustomerId, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudExportData>>, TError, TData>> & Pick<
         DefinedInitialDataOptions<
           Awaited<ReturnType<typeof customerCrudExportData>>,
           TError,
@@ -2694,12 +2715,11 @@ export function useCustomerCrudExportData<TData = Awaited<ReturnType<typeof cust
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 顧客が自身のデータを取得できるようエクスポートし、GDPR等の個人情報規制に対応します。顧客が存在しない場合は404を返します。
- * @summary Export customer data
+ * 顧客について保有しているデータ(台帳、紐づいたアカウント、好み設定、カルテ、アレルギー、予約、売上、ポイント取引、書いたレビュー、参考になったと評価したレビュー、施術記録、台帳の版)を、1つの JSON ファイルとして返します。個人情報保護法の保有個人データの開示の請求に、電磁的記録で応えるためのものです(本人の確認はサロンが行います)。admin と owner / manager だけが実行できます。すべてを1つのスナップショットで読みます。ファイルは保存せず、応答の本文として返します。IDが不正な場合は400を、顧客が存在しない、または削除されている場合は404を返します。
+ * @summary Export the data of a customer
  */
 export function useCustomerCrudExportData<TData = Awaited<ReturnType<typeof customerCrudExportData>>, TError = ModelsProblemDetails>(
- id: ModelsCustomerId,
-    params?: CustomerCrudExportDataParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudExportData>>, TError, TData>> & Pick<
+ id: ModelsCustomerId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudExportData>>, TError, TData>> & Pick<
         UndefinedInitialDataOptions<
           Awaited<ReturnType<typeof customerCrudExportData>>,
           TError,
@@ -2709,25 +2729,23 @@ export function useCustomerCrudExportData<TData = Awaited<ReturnType<typeof cust
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 顧客が自身のデータを取得できるようエクスポートし、GDPR等の個人情報規制に対応します。顧客が存在しない場合は404を返します。
- * @summary Export customer data
+ * 顧客について保有しているデータ(台帳、紐づいたアカウント、好み設定、カルテ、アレルギー、予約、売上、ポイント取引、書いたレビュー、参考になったと評価したレビュー、施術記録、台帳の版)を、1つの JSON ファイルとして返します。個人情報保護法の保有個人データの開示の請求に、電磁的記録で応えるためのものです(本人の確認はサロンが行います)。admin と owner / manager だけが実行できます。すべてを1つのスナップショットで読みます。ファイルは保存せず、応答の本文として返します。IDが不正な場合は400を、顧客が存在しない、または削除されている場合は404を返します。
+ * @summary Export the data of a customer
  */
 export function useCustomerCrudExportData<TData = Awaited<ReturnType<typeof customerCrudExportData>>, TError = ModelsProblemDetails>(
- id: ModelsCustomerId,
-    params?: CustomerCrudExportDataParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudExportData>>, TError, TData>>, }
+ id: ModelsCustomerId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudExportData>>, TError, TData>>, }
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 顧客が自身のデータを取得できるようエクスポートし、GDPR等の個人情報規制に対応します。顧客が存在しない場合は404を返します。
- * @summary Export customer data
+ * 顧客について保有しているデータ(台帳、紐づいたアカウント、好み設定、カルテ、アレルギー、予約、売上、ポイント取引、書いたレビュー、参考になったと評価したレビュー、施術記録、台帳の版)を、1つの JSON ファイルとして返します。個人情報保護法の保有個人データの開示の請求に、電磁的記録で応えるためのものです(本人の確認はサロンが行います)。admin と owner / manager だけが実行できます。すべてを1つのスナップショットで読みます。ファイルは保存せず、応答の本文として返します。IDが不正な場合は400を、顧客が存在しない、または削除されている場合は404を返します。
+ * @summary Export the data of a customer
  */
 export function useCustomerCrudExportData<TData = Awaited<ReturnType<typeof customerCrudExportData>>, TError = ModelsProblemDetails>(
- id: ModelsCustomerId,
-    params?: CustomerCrudExportDataParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudExportData>>, TError, TData>>, }
+ id: ModelsCustomerId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudExportData>>, TError, TData>>, }
  , queryClient?: QueryClient
  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
 
-  const queryOptions = getCustomerCrudExportDataQueryOptions(id,params,options)
+  const queryOptions = getCustomerCrudExportDataQueryOptions(id,options)
 
   const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
 

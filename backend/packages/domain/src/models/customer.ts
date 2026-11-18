@@ -54,6 +54,10 @@ export type ApiCustomerBulkDeleteResponse =
   components['schemas']['Models.CustomerBulkDeleteResponse']
 export type ApiCustomerMergeRequest =
   components['schemas']['Models.CustomerMergeRequest']
+export type ApiCustomerExportRequest =
+  components['schemas']['Models.CustomerExportRequest']
+export type ApiCustomerDataExportResponse =
+  components['schemas']['Models.CustomerDataExportResponse']
 
 // Database types, inferred from the Drizzle schema
 export type DbCustomer = DeepRequired<typeof customers.$inferSelect>

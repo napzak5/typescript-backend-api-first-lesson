@@ -15,9 +15,6 @@ import {
   type BookingOfSale,
   bookingToHold,
   type CalculationReferences,
-  type DbPaymentTransaction,
-  type DbSale,
-  type DbSalesDetail,
   type DomainError,
   type ISaleRepository,
   type LedgerReach,
@@ -62,6 +59,7 @@ import { attempt } from '../database/attempt'
 import { CLOCK } from '../database/clock'
 import type { Database, DatabaseExecutor } from '../database/index'
 import { type HeldSale, heldSaleOf, within } from './held-sale'
+import { salesWithDetails } from './sale-details'
 
 /**
  * The statements of a read see the database as it was at one moment: a
@@ -337,46 +335,6 @@ const written = async (
 }
 
 /**
- * The sales of the rows of a join of sales and their lines, in the order
- * the rows have, each with the payments made for it, in the order they
- * were made.
- */
-const gathered = async (
-  tx: DatabaseExecutor,
-  rows: readonly { sale: DbSale; detail: DbSalesDetail | null }[],
-): Promise<SaleWithDetails[]> => {
-  const bySale = Map.groupBy(rows, ({ sale }) => sale.id)
-  const payments: DbPaymentTransaction[] =
-    bySale.size === 0
-      ? []
-      : await tx
-          .select()
-          .from(paymentTransactions)
-          .where(inArray(paymentTransactions.saleId, [...bySale.keys()]))
-          .orderBy(
-            asc(paymentTransactions.createdAt),
-            asc(paymentTransactions.id),
-          )
-  const paymentsBySale = Map.groupBy(payments, ({ saleId }) => saleId)
-
-  return [...bySale.values()].flatMap((ofSale) => {
-    const [first] = ofSale
-
-    return first === undefined
-      ? []
-      : [
-          {
-            sale: first.sale,
-            details: ofSale.flatMap(({ detail }) =>
-              detail === null ? [] : [detail],
-            ),
-            payments: paymentsBySale.get(first.sale.id) ?? [],
-          },
-        ]
-  })
-}
-
-/**
  * What a calculation refers to, as far as it is there: the salon, the
  * service lines of the booking, the services the request adds and the
  * payment methods of the salon, in the order of `sortOrder` and of the ID.
@@ -465,7 +423,7 @@ const saleOf = async (
   id: SaleId,
   reach: LedgerReach,
 ): Promise<SaleWithDetails | null> => {
-  const [found] = await gathered(
+  const [found] = await salesWithDetails(
     tx,
     await tx
       .select({ sale: sales, detail: salesDetails })
@@ -670,7 +628,7 @@ export class SaleRepository implements ISaleRepository {
             desc(page.id),
             asc(salesDetails.sortOrder),
           )
-        const found = await gathered(
+        const found = await salesWithDetails(
           tx,
           rows.map((row) => ({ sale: row.page, detail: row.sales_details })),
         )

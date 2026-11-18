@@ -15,7 +15,8 @@
 | [一括の操作](#一括の操作)（一括取得、一括登録、一括更新、一括削除） | 実装済み |
 | [変更履歴と版](#変更履歴と版)（台帳の `GET /{id}/history`、`GET /{id}/versions/{version}`）、[復元](#復元)（`POST /{id}/restore`） | 実装済み |
 | [統合](#統合)（`POST /merge`） | 実装済み |
-| エクスポート、データ削除要請 | 未実装。保存するテーブルがない |
+| [出力](#出力)（台帳の CSV 出力 `GET /export`、顧客のデータの出力 `GET /{id}/export`） | 実装済み |
+| データ削除要請（`POST /{id}/deletion-request`） | 未実装。保存するテーブルがない |
 
 未実装のオペレーションは `CustomerCrud` のもので、コントラクトには定義がありますが、サーバーは 404 を返します。
 
@@ -42,6 +43,8 @@
 | 変更履歴、版 | `GET /api/v1/customers/{id}/history`、`GET /api/v1/customers/{id}/versions/{version}` | `admin`、サロンの `owner` / `manager`（[変更履歴と版](#変更履歴と版)） |
 | 復元 | `POST /api/v1/customers/{id}/restore` | `admin`、サロンの `owner` / `manager`（[復元](#復元)） |
 | 統合 | `POST /api/v1/customers/merge` | `admin`、サロンの `owner` / `manager`（[統合](#統合)） |
+| 台帳の CSV 出力 | `GET /api/v1/customers/export` | `admin`、サロンの `owner` / `manager`（[出力](#出力)） |
+| 顧客のデータの出力 | `GET /api/v1/customers/{id}/export` | 同上 |
 
 - すべてのオペレーションに認証が要ります。台帳は公開情報ではありません
 - 権限は操作者だけで決まります（`business-logic/customer/_shared/authorization.ts` の `mayHandleCustomers` と `mayDeleteCustomers`）。サロンのロールは、どのサロンのものでも同じ扱いです。統計だけは、クエリのサロンも問います（[統計](#統計)）
@@ -53,12 +56,12 @@
 
 1. アクセストークン（401）
 2. 権限（403）
-3. 顧客の `id` の形式（400。取得、更新、削除、復元）
-4. クエリ（400。一覧）、リクエストの本文（400。登録、更新）
+3. 顧客の `id` の形式（400。取得、更新、削除、復元、顧客のデータの出力）
+4. クエリ（400。一覧、CSV 出力）、リクエストの本文（400。登録、更新）
 5. リクエストだけで決まる規則（400）: 生年月日の範囲、紹介元が自分自身でないこと
-6. 保存されている行で決まること: 顧客の存在（404）、紹介元の存在（400）、メールアドレスと紹介コードの一意性（409）
+6. 保存されている行で決まること: 顧客の存在（404）、紹介元の存在（400）、メールアドレスと紹介コードの一意性（409）、CSV 出力で一致する顧客の人数（409）
 
-権限のないユーザーには、ID、クエリ、本文の内容が不正でも、顧客が存在しなくても 403 を返します。一覧のクエリは HTTP 層が型に直しますが、直せなかったクエリのエラーも、権限を確認したあとで返します（`ListCustomersUseCase` は、直した結果を `Result` で受け取る）。
+権限のないユーザーには、ID、クエリ、本文の内容が不正でも、顧客が存在しなくても 403 を返します。一覧と CSV 出力のクエリは HTTP 層が型に直しますが、直せなかったクエリのエラーも、権限を確認したあとで返します（`ListCustomersUseCase` と `ExportCustomersUseCase` は、直した結果を `Result` で受け取る）。
 
 読めない本文は、この順序の前に答えます。JSON として読めない本文（400、コード `2002`）、JSON でない本文（415）、100 kB を超える本文（413）は、どのルートでも、ルートに届く前にアプリケーションのミドルウェアが返すからです（[アーキテクチャ概要](./architecture-overview.md#request-flow) の Request Flow）。トークンのないリクエストでも、権限のないユーザーのリクエストでも同じです。
 
@@ -305,6 +308,61 @@
 
 統合は、ほかの書き込みと同じ順にロックします。まず、2 人のどちらかを指す予約、売上、施術記録、レビュー（と、2 人のどちらかが評価したレビュー）を、この順に、表ごとに ID の順で `FOR NO KEY UPDATE` でロックします。次に、2 人の顧客を ID の順に `FOR UPDATE` でロックします。予約のステータスの操作やポイントの増減は、予約や売上を顧客より先にロックするので、逆の順で待ち合うことはありません。顧客のあとで、カルテとアレルギーの行をロックして読み、断る理由をすべて確かめてから書き始めます。カルテとアレルギーの変更は、顧客をロックしない 1 つの文で書くので、統合が読んだ行をロックしていなければ、統合が読んでから書くまでに届いた変更を、統合が上書きして消してしまいます。好み設定の変更は、いつも顧客の行をロックしてから書くので、統合が持っている顧客のロックを待ちます。好み設定の行は、ロックせずに読みます。書き込みの時刻は、ロックを待ったあとのデータベースの時計（`clock_timestamp()`）です。
 
+## 出力
+
+台帳の CSV 出力（`GET /api/v1/customers/export`）と、1 人の顧客のデータの出力（`GET /api/v1/customers/{id}/export`）の 2 つです。どちらも、ファイルをサーバーに保存せず、応答の本文として返します（`Content-Disposition: attachment`）。
+
+- 権限は削除と同じで、`admin` と、サロンの `owner`・`manager` です。台帳の全件や、1 人の顧客について持っているすべてのデータを持ち出す操作だからです。権限は、クエリや ID を読む前に確かめます
+- **すべてを 1 つのスナップショットで読みます**（`REPEATABLE READ` の読み取り専用のトランザクション）。読んでいる途中に書かれたものは入りません。行をロックしないので、ほかの書き込みを待たせず、ほかの書き込みを待ちもしません
+- ファイルは、送る前にすべて作ります。途中で失敗したときに、途中までのファイルではなく、エラー（problem）を返すためです
+
+### 台帳の CSV 出力
+
+- クエリは一覧の絞り込み条件（`search`、`tags`、`registeredFrom`、`registeredTo`、`customerStatus`、`membershipTier`）と同じで、意味も一覧と同じです（[一覧](#一覧)）。ページはありません。`limit` と `cursor` は、ほかの知らないパラメーターと同じく 400（`unrecognized_keys`）です。削除した顧客は出しません
+- 行の順は一覧と同じで、登録日時（`createdAt`）の新しい順、同じなら ID の降順です
+- **一致する顧客が 10,000 人を超えるときは 409**（`operation-not-allowed`）で、何人が一致したかを `detail` で伝えます。条件を絞ってから、もう一度出力します。行は 10,001 人目まで読み、10,001 人目があるときだけ数えます。ファイルが 10,000 人を超えることはなく、伝える人数は行と同じスナップショットで数えるので、いつも 10,000 人より多くなります
+- ファイル名は `customers-<出力した日（UTC）>.csv`、`Content-Type` は `text/csv; charset=utf-8` です
+
+ファイルの形は RFC 4180 に従います。
+
+- 文字コードは BOM 付きの UTF-8、改行は CRLF です。BOM は、表計算ソフトがファイルを UTF-8 として読むためのものです
+- 1 行目は列名で、1 件の取得のレスポンス（`CustomerResponse`）の 40 のプロパティを、コントラクトの順に並べます。2 行目からが顧客で、1 人が 1 行です。値は、1 件の取得のレスポンスと同じです
+- `null` は空のセル、真偽値は `true` / `false`、数値はそのまま、`tags` と `preferences` は JSON の文字列です。日時は、レスポンスと同じ ISO 8601（UTC、ミリ秒まで）です
+- カンマ、ダブルクォート、CR、LF を含む値は、ダブルクォートで囲み、中のダブルクォートを 2 つにします
+- **`=`、`+`、`-`、`@`、タブ、CR で始まる文字列の値は、先頭に `'` を付けます**。表計算ソフトが値を式として実行しないようにするためです（OWASP の CSV Injection の対策）。`+81-90-1234-5678` のように `+` で始まる電話番号にも付きます。ファイルを読み込んで台帳と照らし合わせるときは、この `'` を取ります
+
+### 顧客のデータの出力
+
+1 人の顧客について保有しているデータを、1 つの JSON ファイルで返します。個人情報保護法の保有個人データの開示の請求（第 33 条）に、電磁的記録の提供で応えるためのものです。本人の確認と、請求に応じるかの判断は、サロンが行います。顧客本人は、この操作を呼べません（403）。
+
+| プロパティ | 内容 |
+|---|---|
+| `exportedAt` | ファイルを作った日時（サーバーの時計） |
+| `customer` | 台帳の顧客。1 件の取得と同じで、スタッフ専用の項目（`internalNotes` など）を含みます |
+| `account` | 顧客が紐づいているログインアカウント（`customers.userId`）。認証の `GET /api/v1/auth/me` と同じ形で、パスワードのハッシュやトークンは含みません。紐づいていなければ null |
+| `preferences` | 好み設定。行がなければ null です（好み設定の取得は、行がなくても空の好み設定を返しますが、出力では、保有していないことを null で表します） |
+| `medicalChart` | カルテ。なければ null |
+| `allergies` | アレルギー |
+| `bookings` | 予約（サービスの明細を含む） |
+| `sales` | 売上（明細と支払いを含む） |
+| `pointTransactions` | ポイント取引 |
+| `reviews` | 顧客が書いたレビュー |
+| `helpfulReviewIds` | 顧客が参考になったと評価したレビューの ID |
+| `treatmentRecords` | 施術記録（使った商品と、写真の情報を含む。写真は URL です） |
+| `versions` | 台帳の版（[変更履歴と版](#変更履歴と版)） |
+
+- それぞれの値は、その API のレスポンスと同じ形です（カルテは `GET /api/v1/medical-charts/customer/{customerId}`、予約は `GET /api/v1/bookings/{id}`、版は `GET /api/v1/customers/{id}/versions/{version}` など）
+- 一覧は、行を作った順（`createdAt` の古い順、同じなら ID の順）です。版は番号の順です
+- **削除した顧客は 404** です。ほかの読み取りと同じです。[統合](#統合)で削除した顧客のデータは、メインに移っているので、メインを出力します
+- ファイル名は `customer-<顧客の ID>.json`、`Content-Type` は `application/json; charset=utf-8` です。人が読めるよう、2 文字で字下げします
+
+### 確認の順序（出力）
+
+| 出力 | 順序 |
+|---|---|
+| 台帳の CSV 出力 | アクセストークン（401）→ 権限（403）→ クエリ（400）→ 一致する顧客の人数（409） |
+| 顧客のデータの出力 | アクセストークン（401）→ 権限（403）→ ID（400）→ 顧客の存在（404） |
+
 ## 顧客本人のプロフィール
 
 ロール `customer` のアカウントは、台帳の中の自分の顧客情報を「プロフィール」として作り、読み、直せます。プロフィールは台帳の 1 行で、スタッフが台帳で見ているものと同じ顧客です。
@@ -530,6 +588,8 @@
 | 2 人の統合が、メインとサブを逆にして同時に届く | 片方だけが 200 で、もう片方は 400。同じ順にロックするので、デッドロックしない |
 | 統合と、サブの予約の変更が同時に届く | 統合は、予約の変更が済むのを待ってから、その予約をメインのものにする。予約の変更が続けて顧客を書いても（来店回数の数え直し）、統合は顧客をまだロックしていないので、デッドロックしない |
 | 統合と、メインのカルテかアレルギーの変更が同時に届く | 統合がカルテとアレルギーを読んだあとに届いた変更は、統合が済むのを待ってから、統合後の行の上に書く。統合が変更を上書きして消すことはない |
+| CSV 出力と、顧客の登録が同時に届く | 出力は、読み始めた時点の台帳を出す。登録を待たせず、登録を待ちもしない |
+| 顧客のデータの出力と、その顧客の予約や売上の変更が同時に届く | 出力は、読み始めた時点のデータを出す。予約とその売上のように、つながった行が食い違うことはない |
 | 統合と、サブへのポイントの付与が同時に届く | 付与が先なら、付与したポイントも移す。統合が先なら、付与は 400（削除された顧客）。どちらでも、2 人の残高は最新の取引の残高と等しい |
 
 一意性は DB の一意インデックスが決めます。更新は、対象の行をロックしてから紹介元を確認し、書き込みます。プロフィールの作成は、アカウントの行、引き継ぐ顧客の行の順にロックしてから書き込みます。
@@ -598,8 +658,10 @@
 | インフラ（統計） | `backend/packages/infrastructure/src/repositories/customer-statistics.repository.impl.ts` |
 | ドメイン（一括の操作） | `backend/packages/domain/src/schemas/customer-bulk.schema.ts`、`business-logic/customer/` の `batch-get-customers.usecase.ts`、`bulk-*-customers.usecase.ts`（エラーの位置と、リクエストの順の扱いは `_shared/bulk.ts`）、`repositories/customer.repository.ts`（`findByIds`、`createMany`、`updateMany`、`deleteMany`） |
 | ドメイン（統合） | `backend/packages/domain/src/schemas/customer-merge.schema.ts`、`business-logic/customer/merge-customers.usecase.ts`、`business-logic/customer/_shared/merge.ts`（台帳の項目、好み設定、カルテ、アレルギーの決め方）、`business-logic/point/_shared/transfer.ts`（ポイントの移し方）、`repositories/customer.repository.ts`（`merge`） |
+| ドメイン（出力） | `backend/packages/domain/src/schemas/customer.schema.ts`（`customerExportRequestSchema`。絞り込み条件を一覧と共有する）、`business-logic/customer/export-customers.usecase.ts`、`export-customer-data.usecase.ts`、`business-logic/customer/_shared/export.ts`（CSV の形、ファイル名、データのレスポンスへの組み立て）、`repositories/customer.repository.ts`（`exportMatching`、`dataOf`） |
+| インフラ（出力） | `backend/packages/infrastructure/src/repositories/customer.repository.impl.ts`（`exportMatching`。絞り込み条件は一覧と共有する）、`customer-data.ts`（顧客のデータを読む）、`database/snapshot.ts`（スナップショットのトランザクションの設定）。予約、売上、施術記録のリポジトリと共有する `booking-services.ts`、`sale-details.ts`、`treatment-details.ts`（明細をまとめる） |
 | インフラ（統合） | `backend/packages/infrastructure/src/repositories/customer-merge.ts`（ロック、確認、書き込み）。ほかのリポジトリと共有する `customer-counters.ts`（来店回数の数え直し）、`review-marks.ts`（`helpfulCount` の数え直し）、`point-transactions.ts`（取引を書いた順に読む）、`customer-version-record.ts`（版を書く） |
 | ドメイン（変更履歴と版、復元） | `backend/packages/domain/src/models/customer-version.ts`、`schemas/customer-version.schema.ts`、`mappers/read/customer-version.mapper.ts`（変更内容の計算）、`repositories/customer-version.repository.ts`、`business-logic/customer-version/`、`business-logic/customer/restore-customer.usecase.ts`、`repositories/customer.repository.ts`（`restore`。書き込むメソッドは、変更者を受け取る） |
 | インフラ（変更履歴と版、復元） | `backend/packages/infrastructure/src/repositories/customer-version.repository.impl.ts`、`customer-version-record.ts`（版を書く `recordVersions`）、`customer.repository.impl.ts`（`restore`） |
-| API | `backend/packages/api/src/routes/customer/`（一括の操作は `batch-get-customers.handler.ts`、`bulk-*-customers.handler.ts`。プロフィールは `*-customer-profile.handler.ts`。復元は `restore-customer.handler.ts`、統合は `merge-customers.handler.ts`）、`routes/customer-preferences/`（本人のものは `*-own-customer-preferences.handler.ts`）、`routes/customer-statistics/`、`routes/customer-version/`（変更履歴と版） |
+| API | `backend/packages/api/src/routes/customer/`（一括の操作は `batch-get-customers.handler.ts`、`bulk-*-customers.handler.ts`。プロフィールは `*-customer-profile.handler.ts`。復元は `restore-customer.handler.ts`、統合は `merge-customers.handler.ts`、出力は `export-customers.handler.ts`、`export-customer-data.handler.ts`）、`routes/customer-preferences/`（本人のものは `*-own-customer-preferences.handler.ts`）、`routes/customer-statistics/`、`routes/customer-version/`（変更履歴と版） |
 | DB | `backend/packages/database/sql/migrations/202611150900_customers_columns.sql`、`202611151500_customers_user_unique.sql`、`202611160100_customer_preferences_columns.sql`、`202611181400_customers_without_lifetime_value.sql`、`202611181800_customer_versions.sql`、`202611181900_customer_merge.sql` |

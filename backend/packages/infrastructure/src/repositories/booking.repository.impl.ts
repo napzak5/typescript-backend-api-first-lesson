@@ -45,7 +45,6 @@ import {
   type CustomerReach,
   candidateDatesOf,
   candidateTimeOf,
-  type DbBooking,
   type DbBookingNotes,
   type DbBookingService,
   type DomainError,
@@ -88,6 +87,7 @@ import { match } from 'ts-pattern'
 import { attempt } from '../database/attempt'
 import { CLOCK } from '../database/clock'
 import type { Database, DatabaseExecutor } from '../database/index'
+import { bookingsWithServices } from './booking-services'
 import { countBookingsOf } from './customer-counters'
 import {
   calendarDaysOf,
@@ -552,32 +552,6 @@ const occupiedAmong = async (
   return occupied
 }
 
-/**
- * The bookings of the rows of a join of bookings and their service lines,
- * in the order the rows have. A booking and its lines are read by one
- * statement, so they are of one moment: a reader never meets a booking
- * that is completed with lines that are not yet.
- */
-const gathered = (
-  rows: readonly { booking: DbBooking; service: DbBookingService | null }[],
-): BookingWithServices[] =>
-  [...Map.groupBy(rows, ({ booking }) => booking.id).values()].flatMap(
-    (ofBooking) => {
-      const [first] = ofBooking
-
-      return first === undefined
-        ? []
-        : [
-            {
-              booking: first.booking,
-              services: ofBooking.flatMap(({ service }) =>
-                service === null ? [] : [service],
-              ),
-            },
-          ]
-    },
-  )
-
 /** The service lines of a booking as they are now, in their order. */
 const linesOf = (
   tx: DatabaseExecutor,
@@ -706,7 +680,7 @@ export class BookingRepository implements IBookingRepository {
     reach: BookingReach,
   ): Promise<Result<BookingWithServices | null, DomainError>> {
     return attempt('Failed to find booking', async () => {
-      const [found] = gathered(
+      const [found] = bookingsWithServices(
         await this.db
           .select({ booking: bookings, service: bookingServices })
           .from(bookings)
@@ -1293,7 +1267,7 @@ export class BookingRepository implements IBookingRepository {
           ),
         this.db.select({ total: count() }).from(bookings).where(filters),
       ])
-      const found = gathered(
+      const found = bookingsWithServices(
         rows.map((row) => ({
           booking: row.page,
           service: row.booking_services,

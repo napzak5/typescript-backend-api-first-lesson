@@ -23,7 +23,7 @@ import { CLOCK } from '../database/clock'
 import type { Database, DatabaseExecutor } from '../database/index'
 
 /** The columns that are the preferences; no other column of the row is read. */
-const preferenceColumns = {
+export const preferenceColumns = {
   preferredStaffId: customerPreferences.preferredStaffId,
   preferredTimeSlots: customerPreferences.preferredTimeSlots,
   avoidStaffIds: customerPreferences.avoidStaffIds,

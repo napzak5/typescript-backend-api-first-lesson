@@ -1,6 +1,7 @@
 import type { Result } from '@beauty-salon-backend/utility'
 import type { ChartList } from '../business-logic/customer/_shared/merge'
-import type { UserId } from '../models/auth'
+import type { DbUser, UserId } from '../models/auth'
+import type { BookingWithServices } from '../models/booking'
 import type {
   CustomerId,
   CustomerProfileWrite,
@@ -8,6 +9,14 @@ import type {
   DbCustomerChanges,
   DbNewCustomer,
 } from '../models/customer'
+import type { DbCustomerAllergy } from '../models/customer-allergy'
+import type { DbCustomerPreferences } from '../models/customer-preferences'
+import type { DbCustomerVersion } from '../models/customer-version'
+import type { DbMedicalChart } from '../models/medical-chart'
+import type { DbPointTransaction } from '../models/point'
+import type { DbReview } from '../models/review'
+import type { SaleWithDetails } from '../models/sale'
+import type { TreatmentRecordWithDetails } from '../models/treatment-record'
 import type { CustomerMergeRequest } from '../schemas/customer-merge.schema'
 import type { DomainError } from '../shared'
 
@@ -38,6 +47,38 @@ export type CustomerList = {
   /** Number of customers that match the filters, across all pages. */
   total: number
   hasMore: boolean
+}
+
+/** The filters of the list, without its page: what a CSV export takes. */
+export type CustomerFilters = Omit<CustomerListCriteria, 'limit' | 'after'>
+
+/**
+ * The customers of a CSV export, read at one moment:
+ * - `exported`: every customer who matches, in the order of the list
+ * - `tooMany`: more match than may be exported at once, and how many
+ */
+export type CustomerExport =
+  | { type: 'exported'; customers: DbCustomer[] }
+  | { type: 'tooMany'; matching: number }
+
+/**
+ * Everything held of one customer, read at one moment. Each list is in the
+ * order the rows were written, by `createdAt` and then the ID; the versions
+ * are in the order of their numbers.
+ */
+export type CustomerData = {
+  customer: DbCustomer
+  account: DbUser | null
+  preferences: DbCustomerPreferences | null
+  medicalChart: DbMedicalChart | null
+  allergies: DbCustomerAllergy[]
+  bookings: BookingWithServices[]
+  sales: SaleWithDetails[]
+  pointTransactions: DbPointTransaction[]
+  reviews: DbReview[]
+  helpfulReviewIds: string[]
+  treatmentRecords: TreatmentRecordWithDetails[]
+  versions: DbCustomerVersion[]
 }
 
 /** The customer named as the referrer does not exist, or is deleted. */
@@ -199,6 +240,22 @@ export interface ICustomerRepository {
     request: CustomerMergeRequest,
     changedBy: UserId,
   ): Promise<Result<CustomerMerge, DomainError>>
+
+  /**
+   * The customers who match the filters, in the order of the list, unless
+   * more than `most` do; then how many do, counted at the moment the
+   * customers were read.
+   */
+  exportMatching(
+    filters: CustomerFilters,
+    most: number,
+  ): Promise<Result<CustomerExport, DomainError>>
+
+  /**
+   * Everything held of a customer who is not deleted, read at one moment;
+   * null when there is no such customer.
+   */
+  dataOf(id: CustomerId): Promise<Result<CustomerData | null, DomainError>>
 
   /** The customers of these IDs that are not deleted, in no given order. */
   findByIds(

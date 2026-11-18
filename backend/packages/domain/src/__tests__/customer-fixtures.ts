@@ -14,6 +14,7 @@ import type {
   CustomerBulkUpdate,
   CustomerCreation,
   CustomerDeletion,
+  CustomerExport,
   CustomerMerge,
   CustomerProfileCreation,
   CustomerRestoration,
@@ -265,6 +266,13 @@ const customerRepositoryWith = (
       customer: dbCustomer(),
     }),
   ),
+  exportMatching: vi.fn(async () =>
+    Result.success<CustomerExport>({
+      type: 'exported',
+      customers: [dbCustomer()],
+    }),
+  ),
+  dataOf: vi.fn(async () => Result.success(null)),
   findByIds: vi.fn(async () => Result.success([dbCustomer()])),
   createMany: vi.fn(async () =>
     Result.success<CustomerBulkCreation>({

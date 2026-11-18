@@ -14,8 +14,6 @@ import {
   creationIssues,
   type DbNewTreatmentMaterial,
   type DbNewTreatmentPhoto,
-  type DbTreatmentMaterial,
-  type DbTreatmentPhoto,
   type DomainError,
   type ITreatmentRecordRepository,
   isTreated,
@@ -59,6 +57,7 @@ import { match } from 'ts-pattern'
 import { attempt } from '../database/attempt'
 import { CLOCK } from '../database/clock'
 import type { Database, DatabaseExecutor } from '../database/index'
+import { detailsOf } from './treatment-details'
 
 /** The bookings of the salons the reach covers. */
 const bookingsWithin = (reach: LedgerReach): SQL | undefined =>
@@ -103,54 +102,6 @@ const AT_ONE_MOMENT: PgTransactionConfig = {
  * filter by the time a client was shown matches the record it was shown.
  */
 const createdAt = sql`date_trunc('milliseconds', ${treatmentRecords.createdAt})`
-
-/** The materials and the photos of the records, by the record, each in its order. */
-const detailsOf = async (
-  executor: DatabaseExecutor,
-  recordIds: string[],
-): Promise<{
-  materials: Map<string, DbTreatmentMaterial[]>
-  photos: Map<string, DbTreatmentPhoto[]>
-}> => {
-  const [materialRows, photoRows] =
-    recordIds.length === 0
-      ? [[], []]
-      : [
-          await executor
-            .select()
-            .from(treatmentMaterials)
-            .where(inArray(treatmentMaterials.treatmentRecordId, recordIds))
-            .orderBy(
-              asc(treatmentMaterials.treatmentRecordId),
-              asc(treatmentMaterials.sortOrder),
-            ),
-          await executor
-            .select()
-            .from(treatmentPhotos)
-            .where(inArray(treatmentPhotos.treatmentRecordId, recordIds))
-            .orderBy(
-              asc(treatmentPhotos.treatmentRecordId),
-              asc(treatmentPhotos.sortOrder),
-              asc(treatmentPhotos.createdAt),
-              asc(treatmentPhotos.id),
-            ),
-        ]
-  const materials = new Map<string, DbTreatmentMaterial[]>()
-  for (const row of materialRows) {
-    materials.set(row.treatmentRecordId, [
-      ...(materials.get(row.treatmentRecordId) ?? []),
-      row,
-    ])
-  }
-  const photos = new Map<string, DbTreatmentPhoto[]>()
-  for (const row of photoRows) {
-    photos.set(row.treatmentRecordId, [
-      ...(photos.get(row.treatmentRecordId) ?? []),
-      row,
-    ])
-  }
-  return { materials, photos }
-}
 
 /** The record with its materials and photos, if the reader is shown it. */
 const recordOf = async (

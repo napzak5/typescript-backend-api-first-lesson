@@ -462,11 +462,11 @@ const salonRules: ModelRule[] = [
 | テーブルの行に、サーバーがレスポンスのたびに求める値を加えたモデル（`SessionResponse` の `current`、`CustomerHistoryEntryResponse` の `changes`） | 載せる。ルールの `computed` にそのプロパティ名を書く |
 | テーブルの行の一部だけを見せ、書かせるモデル（`StaffProfileResponse`、`StaffProfileUpdateRequest`、`StaffAccountResponse`、`StaffAccountUpdateRequest`、`CustomerPreferencesResponse`、`CustomerPreferencesUpdateRequest`、`CustomerBookingResponse`、`CustomerBookingServiceResponse`） | 載せる。見せないカラム、書かせないカラムを `omittedColumns` に挙げる。Enum の値の一部だけを取るプロパティは、`narrowed` にも挙げる |
 | 行を追加するアクションのリクエスト（`PointEarnRequest`、`SaleProcessRequest` など） | カラムと 1 対 1 なら `create` として載せる |
-| `XXXSearchRequest` | 載せない |
+| `XXXSearchRequest` と、その絞り込み条件だけを取るリクエスト（`CustomerExportRequest`） | 載せない |
 | 行のカラムではなく、行を決めるものを指すリクエスト（`CustomerBookingCreateRequest`。空き枠を指し、行は `planCustomerBooking` が決める） | 載せない。プロパティ名と null 許可はカラムに合わせる |
 | 既存の行の一部だけを書き換えるアクションのリクエスト（`BookingCancelRequest`、`PaymentRefundRequest` など） | 載せない。プロパティ名と null 許可はカラムに合わせる |
 | まだ書いていない行のカラムの値だけを返すモデル（`SaleBreakdownResponse`。売上を作成すれば、その金額のカラムになる値） | 載せる。その表のルールで、ほかのカラムを `omittedColumns` に挙げる |
-| 何も書かないリクエストと、行のモデルを包むレスポンス（`SaleCalculateRequest`、`SaleCalculateResponse`、`SaleReceiptResponse`） | 載せない。包んだ行のモデル（`SaleResponse`、`SaleBreakdownResponse`）は、それぞれのルールで照合する |
+| 何も書かないリクエストと、行のモデルを包むレスポンス（`SaleCalculateRequest`、`SaleCalculateResponse`、`SaleReceiptResponse`、`CustomerDataExportResponse`） | 載せない。包んだ行のモデル（`SaleResponse`、`SaleBreakdownResponse`、`CustomerResponse` など）は、それぞれのルールで照合する |
 | 複数の行を書き換えるアクションのリクエストと、その結果（`InventoryStockCountRequest`、`InventoryStockCountResponse`、`PurchaseOrderReceiveRequest`、`PurchaseOrderReceivedItem`） | 載せない。プロパティ名と null 許可はカラムに合わせる（入荷の `inventoryId`、`quantity` は在庫の移動の、`deliveryNotes` は発注のカラム）。結果に包む行のモデル（`InventoryTransactionResponse`、`PurchaseOrderResponse`）は、そのルールで照合する |
 | 複数の行を一度に追加するリクエストと、その結果（`TreatmentPhotoBulkCreateRequest`、`TreatmentPhotoBulkCreateResponse`） | 載せない。包む行のモデル（`TreatmentPhotoCreateRequest`、`TreatmentPhotoResponse`）は、そのルールで照合する |
 | 集計・計算結果（`ReviewSummaryResponse`、`SalesReportResponse`、`InventoryValueReportResponse`、`ReorderSuggestionResponse`、`InventoryAlertSummaryResponse`、`TreatmentStatisticsResponse` など） | 載せない |
@@ -479,7 +479,7 @@ const salonRules: ModelRule[] = [
 | 機能 | TypeSpec |
 |---|---|
 | 添付ファイル、共有リンク | `specs/models/attachment.tsp` |
-| 顧客のエクスポートジョブ、データ削除リクエスト | `specs/models/customer.tsp` の `CustomerExport*`、`CustomerDataDeletion*` |
+| 顧客のデータ削除リクエスト | `specs/models/customer.tsp` の `CustomerDataDeletion*` |
 
 ### ドメインを実装するとき
 
