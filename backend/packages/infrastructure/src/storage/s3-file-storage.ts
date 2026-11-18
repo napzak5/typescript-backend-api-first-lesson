@@ -157,11 +157,10 @@ export class S3FileStorage implements IFileStorage {
         }),
         {
           ...lifetimeUntil(expiresAt),
-          signableHeaders: new Set([
-            'content-type',
-            'content-length',
-            'if-none-match',
-          ]),
+          // The presigner leaves the type out of a signature unless it is
+          // named here. The length and the precondition are signed as the
+          // headers of the request they are.
+          signableHeaders: new Set(['content-type']),
         },
       ),
       // The length is not among them: a client states it by sending the
@@ -185,9 +184,7 @@ export class S3FileStorage implements IFileStorage {
         )
         .then(async ({ Body, ContentRange, ContentLength }) => ({
           size: sizeOf(ContentRange, ContentLength),
-          head: (
-            (await Body?.transformToByteArray()) ?? new Uint8Array()
-          ).subarray(0, leadingBytes),
+          head: (await Body?.transformToByteArray()) ?? new Uint8Array(),
         })),
     )
 
