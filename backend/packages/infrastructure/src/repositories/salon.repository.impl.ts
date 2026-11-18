@@ -238,7 +238,7 @@ export class SalonRepository implements ISalonRepository {
       this.db.transaction(async (tx) => {
         const [updated] = await tx
           .update(salons)
-          .set({ ...changes, updatedAt: sql`now()` })
+          .set({ ...changes, updatedAt: CLOCK })
           .where(and(eq(salons.id, id), notDeleted))
           .returning()
         if (updated === undefined) {

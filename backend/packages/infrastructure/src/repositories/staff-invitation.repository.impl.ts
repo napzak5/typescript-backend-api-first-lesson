@@ -26,6 +26,7 @@ import {
 import { Result } from '@beauty-salon-backend/utility'
 import { and, eq, gt, isNull, or, sql } from 'drizzle-orm'
 import { attempt } from '../database/attempt'
+import { CLOCK } from '../database/clock'
 import type { Database, DatabaseExecutor } from '../database/index'
 import { salonOfStaff, staffOfUser, userNotDeleted } from './account'
 import { staffMemberOf } from './staff-member'
@@ -316,7 +317,7 @@ export class StaffInvitationRepository implements IStaffInvitationRepository {
               passwordResetExpiry: null,
               failedLoginAttempts: 0,
               lockedUntil: null,
-              updatedAt: sql`now()`,
+              updatedAt: CLOCK,
             },
             setWhere: neverConfirmed,
           })
@@ -330,7 +331,7 @@ export class StaffInvitationRepository implements IStaffInvitationRepository {
         await tx.delete(sessions).where(eq(sessions.userId, created.id))
         await tx
           .update(staff)
-          .set({ userId: created.id, updatedAt: sql`now()` })
+          .set({ userId: created.id, updatedAt: CLOCK })
           .where(eq(staff.id, invitation.staffId))
         await tx
           .delete(staffInvitations)
@@ -418,19 +419,19 @@ export class StaffInvitationRepository implements IStaffInvitationRepository {
         // that is deleted keeps what it had.
         await tx
           .update(staff)
-          .set({ userId: null, updatedAt: sql`now()` })
+          .set({ userId: null, updatedAt: CLOCK })
           .where(and(eq(staff.userId, userId), isNull(staff.deletedAt)))
         await tx
           .update(users)
           .set({
             staffId: invitation.staffId,
             role: invitation.role,
-            updatedAt: sql`now()`,
+            updatedAt: CLOCK,
           })
           .where(eq(users.id, userId))
         await tx
           .update(staff)
-          .set({ userId, updatedAt: sql`now()` })
+          .set({ userId, updatedAt: CLOCK })
           .where(eq(staff.id, invitation.staffId))
         await tx
           .delete(staffInvitations)

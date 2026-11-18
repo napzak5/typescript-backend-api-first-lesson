@@ -11,6 +11,7 @@ import type {
 import type { Result } from '@beauty-salon-backend/utility'
 import { and, arrayContains, asc, count, eq, isNull, sql } from 'drizzle-orm'
 import { attempt } from '../database/attempt'
+import { CLOCK } from '../database/clock'
 import type { Database } from '../database/index'
 
 /** The columns customers are shown; no other column of `staff` is read. */
@@ -67,7 +68,7 @@ export class StaffProfileRepository implements IStaffProfileRepository {
       // is either written before that or not at all.
       const [profile] = await this.db
         .update(staff)
-        .set({ ...changes, updatedAt: sql`now()` })
+        .set({ ...changes, updatedAt: CLOCK })
         .from(salons)
         .where(and(eq(staff.id, id), salonOfStaff, shown))
         .returning(profileColumns)

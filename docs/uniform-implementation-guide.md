@@ -531,18 +531,36 @@ Logging is structured, with pino. Application code never writes to `console`.
 
 - **Timestamps** (`timestamptz` columns) are written by the database:
   `createdAt` and `updatedAt` default to `now()`, and the repository sets
-  `updatedAt` and `deletedAt` with `` sql`now()` ``. Application code does not
-  create a `Date` to store it, with one exception: a new share link is given
-  the moment its end was checked against as `createdAt` and `updatedAt`, so
-  that the rule of the use case and the CHECK constraint of the table
+  `updatedAt` and `deletedAt` of a change with `CLOCK`
+  (`backend/packages/infrastructure/src/database/clock.ts`), which is
+  `clock_timestamp()`. Application code does not create a `Date` to store
+  it, with one exception: a new share link is given the moment its end was
+  checked against as `createdAt` and `updatedAt`, so that the rule of the
+  use case and the CHECK constraint of the table
   (`share_links_expires_within_limit`) measure from the same moment.
 - `now()` is the moment the transaction began, which is before anything the
-  transaction waited for. A change that is judged by the clock, or whose
-  order is kept (the status of a booking and its history), reads
-  `clock_timestamp()` once it holds the row: the outer query reads the clock
-  of the row a subquery locks `FOR UPDATE`, and `updatedAt` and the
-  `createdAt` of the history are written with `clock_timestamp()` too. Of
-  two changes to one booking, the one that waited writes the later time.
+  transaction waited for: a change stamped with it that waited for another
+  change of the same row would be recorded as the earlier of the two. No
+  repository stamps a change with it; it is left to the defaults of a new
+  row. `clock_timestamp()` is read when the statement gets to the row: an
+  `UPDATE` that waited for a change of its row computes what it sets again
+  from the row as that change left it, and a transaction that locks the row
+  first (`FOR UPDATE`) writes once it holds it. Of two changes to one row,
+  the one that waited writes the later time.
+- A change that gives several rows one time (a stock count, the receipt
+  of a purchase order) locks its rows first and writes them with
+  `statement_timestamp()`, the moment the writing statement began, which
+  is after the wait as well.
+- An `UPDATE` that waited for a transaction that only locked the row and
+  wrote nothing to it keeps what it computed before it waited: there is no
+  other change of the row to be later than. A test that shows the
+  difference holds the row by rewriting it (`write-stamps.integration.test.ts`
+  in `backend/packages/api/src/__tests__/`), not by `SELECT … FOR UPDATE`.
+- A change that is judged by the clock, or whose order is kept (the status
+  of a booking and its history), reads `clock_timestamp()` once it holds
+  the row: the outer query reads the clock of the row a subquery locks
+  `FOR UPDATE`, and `updatedAt` and the `createdAt` of the history are
+  written with `clock_timestamp()` too.
 - Drizzle reads a `timestamptz` as text. Every read mapper converts it to
   ISO 8601 in UTC with the same schema, which uses date-fns:
 

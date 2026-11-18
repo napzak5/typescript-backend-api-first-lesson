@@ -251,7 +251,7 @@ const applyChanges = async (
 
   await tx
     .update(services)
-    .set({ ...changes, updatedAt: sql`now()` })
+    .set({ ...changes, updatedAt: CLOCK })
     .where(and(eq(services.salonId, salonId), inArray(services.id, ids)))
 
   await match(optionsChange)
