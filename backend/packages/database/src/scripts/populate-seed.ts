@@ -69,7 +69,7 @@ async function main() {
 
     console.log('')
     console.log('📊 Collecting seeding statistics...')
-    await displaySeedingStatistics(db)
+    await displaySeedingStatistics(sql)
 
     console.log('')
     console.log('✅ Database population completed successfully!')
@@ -84,123 +84,21 @@ async function main() {
 }
 
 /**
- * Display statistics of seeded records for each table
+ * Display the number of rows of every table that has rows. The tables are
+ * read from the catalog, so the list cannot fall behind the schema.
  */
-async function displaySeedingStatistics(db: ReturnType<typeof drizzle>) {
-  const statistics = []
-
-  // Count records in each table
-  const counts = await Promise.all([
-    db
-      .select()
-      .from(schema.salons)
-      .then((rows) => ({ table: 'salons', count: rows.length })),
-    db
-      .select()
-      .from(schema.users)
-      .then((rows) => ({ table: 'users', count: rows.length })),
-    db
-      .select()
-      .from(schema.customers)
-      .then((rows) => ({ table: 'customers', count: rows.length })),
-    db
-      .select()
-      .from(schema.staff)
-      .then((rows) => ({ table: 'staff', count: rows.length })),
-    db
-      .select()
-      .from(schema.serviceCategories)
-      .then((rows) => ({ table: 'service_categories', count: rows.length })),
-    db
-      .select()
-      .from(schema.services)
-      .then((rows) => ({ table: 'services', count: rows.length })),
-    db
-      .select()
-      .from(schema.openingHours)
-      .then((rows) => ({ table: 'opening_hours', count: rows.length })),
-    db
-      .select()
-      .from(schema.paymentMethods)
-      .then((rows) => ({ table: 'payment_methods', count: rows.length })),
-    db
-      .select()
-      .from(schema.products)
-      .then((rows) => ({ table: 'products', count: rows.length })),
-    db
-      .select()
-      .from(schema.inventory)
-      .then((rows) => ({ table: 'inventory', count: rows.length })),
-    db
-      .select()
-      .from(schema.bookings)
-      .then((rows) => ({ table: 'bookings', count: rows.length })),
-    db
-      .select()
-      .from(schema.bookingServices)
-      .then((rows) => ({ table: 'booking_services', count: rows.length })),
-    db
-      .select()
-      .from(schema.reviews)
-      .then((rows) => ({ table: 'reviews', count: rows.length })),
-    db
-      .select()
-      .from(schema.reviewHelpfulVotes)
-      .then((rows) => ({ table: 'review_helpful_votes', count: rows.length })),
-    db
-      .select()
-      .from(schema.reviewReports)
-      .then((rows) => ({ table: 'review_reports', count: rows.length })),
-    db
-      .select()
-      .from(schema.treatmentRecords)
-      .then((rows) => ({ table: 'treatment_records', count: rows.length })),
-    db
-      .select()
-      .from(schema.treatmentMaterials)
-      .then((rows) => ({ table: 'treatment_materials', count: rows.length })),
-    db
-      .select()
-      .from(schema.treatmentPhotos)
-      .then((rows) => ({ table: 'treatment_photos', count: rows.length })),
-    db
-      .select()
-      .from(schema.customerPoints)
-      .then((rows) => ({ table: 'customer_points', count: rows.length })),
-    db
-      .select()
-      .from(schema.customerPreferences)
-      .then((rows) => ({ table: 'customer_preferences', count: rows.length })),
-    db
-      .select()
-      .from(schema.customerAllergies)
-      .then((rows) => ({ table: 'customer_allergies', count: rows.length })),
-    db
-      .select()
-      .from(schema.customerVersions)
-      .then((rows) => ({ table: 'customer_versions', count: rows.length })),
-    db
-      .select()
-      .from(schema.customerDeletionRequests)
-      .then((rows) => ({
-        table: 'customer_deletion_requests',
-        count: rows.length,
-      })),
-    db
-      .select()
-      .from(schema.medicalCharts)
-      .then((rows) => ({ table: 'medical_charts', count: rows.length })),
-    db
-      .select()
-      .from(schema.attachments)
-      .then((rows) => ({ table: 'attachments', count: rows.length })),
-    db
-      .select()
-      .from(schema.shareLinks)
-      .then((rows) => ({ table: 'share_links', count: rows.length })),
-  ])
-
-  statistics.push(...counts)
+async function displaySeedingStatistics(sql: ReturnType<typeof postgres>) {
+  const tables = await sql<{ tablename: string }[]>`
+    select tablename from pg_tables where schemaname = 'public'
+  `
+  const statistics = await Promise.all(
+    tables.map(async ({ tablename }) => {
+      const [row] = await sql<{ count: string }[]>`
+        select count(*) as count from ${sql(tablename)}
+      `
+      return { table: tablename, count: Number(row?.count ?? 0) }
+    }),
+  )
 
   // Sort by table name for consistent display
   statistics.sort((a, b) => a.table.localeCompare(b.table))
