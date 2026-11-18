@@ -11,7 +11,7 @@
 | 顧客のアレルギー | `customer_allergies` の行。種類、アレルゲン、重篤度、症状、確認日を持ち、`/api/v1/medical-charts/customer/{customerId}/allergies` で扱う（[顧客のアレルギー](#顧客のアレルギー)）。カルテの一覧の `hasAllergies` は、この行で絞り込む |
 | ふだんの頭皮と髪 | 顧客台帳の `scalpCondition`、`hairType`、`hairThickness`（[顧客台帳](./customers.md)） |
 | 施術のときの頭皮と毛髪の状態、カラー剤の配合 | 施術記録（[施術記録](./treatments.md)） |
-| 誰がいつ書き換えたか | 持たない。変更の履歴は、顧客の監査履歴（未実装）で扱う |
+| 誰がいつ書き換えたか | 持たない。残るのは、最後に書いた時刻（`updatedAt`）だけ。顧客台帳の変更履歴（[変更履歴と版](./customers.md#変更履歴と版)）は、顧客の行の版で、カルテを含まない |
 
 ## 実装範囲
 

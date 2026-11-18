@@ -4,7 +4,7 @@
 
 商品は、サロンが店頭で売るもの（シャンプー、スタイリング剤など）と、施術で使うもの（カラー剤、ブリーチ剤など）の一覧です。サロンごとに持ち、管理者とサロンのスタッフが `/api/v1/salons/{salonId}/products` で扱います。顧客のアカウントは、このルートを使えません。
 
-商品の在庫（`inventory`）は [在庫](./inventory.md) にあります。在庫の移動（`inventory_transactions`）、棚卸し、在庫評価額も、[在庫](./inventory.md) にあります。発注は [発注](./purchase-orders.md) にあります。在庫のアラートは、まだ実装していません（[実装範囲](#実装範囲)）。
+商品の在庫（`inventory`）は [在庫](./inventory.md) にあります。在庫の移動（`inventory_transactions`）、棚卸し、在庫評価額も、[在庫](./inventory.md) にあります。発注は [発注](./purchase-orders.md) にあります。在庫のアラートは [在庫のアラート](./inventory-alerts.md) にあります。
 
 ## 実装範囲
 
