@@ -3,6 +3,7 @@ import type {
   IFileStorage,
   IMailer,
   ITwoFactorAuthenticator,
+  ShareLinkUseCaseDependencies,
   StaffInvitationUseCaseDependencies,
 } from '@beauty-salon-backend/domain'
 import {
@@ -39,6 +40,7 @@ import {
   ServiceCategoryRepository,
   ServiceRepository,
   SessionRepository,
+  ShareLinkRepository,
   StaffAccountRepository,
   StaffInvitationRepository,
   StaffProfileRepository,
@@ -92,6 +94,8 @@ import { createSalesReportRouter } from './routes/sales-report'
 import { createSalonRouter } from './routes/salon'
 import { createServiceRouter } from './routes/service'
 import { createServiceCategoryRouter } from './routes/service-category'
+import { createShareLinkRouter } from './routes/share-link'
+import { createSharedFileRouter } from './routes/shared-file'
 import { createStaffRouter } from './routes/staff'
 import { createStaffAccountRouter } from './routes/staff-account'
 import {
@@ -473,17 +477,32 @@ export const createApp = ({
     ),
   )
 
+  const attachmentRepository = new AttachmentRepository(database)
+  const shareLinkDependencies: ShareLinkUseCaseDependencies = {
+    shareLinkRepository: new ShareLinkRepository(database),
+    attachmentRepository,
+    fileStorage,
+    passwordHasher: authDependencies.passwordHasher,
+    tokenIssuer: authDependencies.tokenIssuer,
+    clock,
+  }
+  // Before the routes of the attachments, which would read `share-links`
+  // as the ID of one where a path has their shape
+  // (`/share-links/download-url`).
+  app.use(
+    `${API_BASE_PATH}/attachments`,
+    createShareLinkRouter(shareLinkDependencies, authenticated),
+  )
   app.use(
     `${API_BASE_PATH}/attachments`,
     createAttachmentRouter(
-      {
-        attachmentRepository: new AttachmentRepository(database),
-        salonRepository,
-        fileStorage,
-        clock,
-      },
+      { attachmentRepository, salonRepository, fileStorage, clock },
       authenticated,
     ),
+  )
+  app.use(
+    `${API_BASE_PATH}/share`,
+    createSharedFileRouter(shareLinkDependencies),
   )
 
   app.use(notFoundHandler)

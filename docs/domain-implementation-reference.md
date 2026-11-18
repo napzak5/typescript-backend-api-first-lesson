@@ -216,7 +216,7 @@ const salonRules: ModelRule[] = [
 - `omittedColumns` names the columns the model leaves out on purpose. Once it is given, every other column must be in the model, so leaving a column out is a decision and not an oversight.
 - `narrowed` names properties whose enum has only some of the values of the enum of their column. Without it the two sets of values have to be the same. Salon has none; the rules of the staff accounts name `role` this way ([below](#rows-of-another-domain-that-a-salon-keeps-the-staff-accounts)).
 
-The same file has one block of rules per domain. The table-backed models of every domain are listed there with `omittedColumns` and agree with their tables. Any difference fails the check; there is no list of tolerated differences. Models without a table (computed reports, action requests, and the one feature whose tables do not exist yet, the share links of the attachments) have no rule.
+The same file has one block of rules per domain. The table-backed models of every domain are listed there with `omittedColumns` and agree with their tables. Any difference fails the check; there is no list of tolerated differences. Models without a table (computed reports, action requests, and values that are not stored, such as a signed URL or the token of a share link) have no rule.
 
 When a domain changes its TypeSpec models or its tables, its block of rules changes with them, and `pnpm check:api-db` must pass before the change is committed.
 
@@ -1290,6 +1290,23 @@ The attachments (`AttachmentCrud`; their rules are in [Attachments](./attachment
 | 11. Handlers and router | Seven handlers on a plain `Router()`; the fixed paths (`/upload-url`, `/purge`) are routed before those with `/:attachmentId`. The purge answers `links: null` | `backend/packages/api/src/routes/attachment/` |
 | 12. Tests | The use cases are tested with fakes of the repository and the storage, including the order of their calls. The API tests run the routes against the database with a storage that keeps its files in memory, notes every call, fails on demand and lets a test act between two calls (`InMemoryFileStorage`). The storage itself is tested against a real S3-compatible storage, with real uploads and downloads through the signed URLs; the same tests run against another storage when `TEST_STORAGE_ENDPOINT` names one | `backend/packages/domain/src/__tests__/attachment.usecase.test.ts`, `backend/packages/api/src/__tests__/attachment.integration.test.ts`, `backend/packages/infrastructure/src/storage/__tests__/s3-file-storage.integration.test.ts` |
 
+### A Secret That Opens a Row Without an Account: the Share Links
+
+The share links (`ShareLinkCrud` and `SharedFileCrud`; their rules are in [Attachments](./attachments.md#共有リンク), Japanese) let somebody without an account see one attachment. They are the one place where a request is let in by a secret of the resource itself and not by a session.
+
+| Step | What the share links show | Where to read it |
+|------|---------------------------|------------------|
+| 1. API contract | The token and the password of a link travel in a body, so the two operations of a viewer are `POST`s although a viewer creates nothing: a URL would keep both in logs, histories and `Referer`. The create answers a model of its own (`ShareLinkCreateResponse`), because the token exists in that one response only | `specs/operations/attachment-operations.tsp`, `specs/models/attachment.tsp` |
+| 2. Database | The table stores the SHA-256 of the token and the Argon2id hash of the password, never the values. CHECK constraints hold the end of a link to 720 hours from its creation and its downloads to the limit; the foreign key to the attachment is `ON DELETE CASCADE`, so the purge of the attachments knows nothing of links | `backend/packages/database/sql/migrations/202611182200_share_links.sql` |
+| 3. Consistency rules | The response omits the hashes and the count of wrong passwords and declares `hasPassword` as `computed`; what a viewer is told of the file is a rule on `attachments` that omits all but three columns | `shareLinkRules` in `backend/packages/database/src/scripts/api-consistency-rules.ts` |
+| 4. One clock | The clock of the application decides when a link may end, is written as `createdAt`, and is what a token is checked against, so the CHECK constraint and the validation cannot disagree | `create-share-link.usecase.ts`, `_shared/link-rules.ts` |
+| 5. A limit on guesses that is reused | The lock of a link is that of an account: the same threshold and time (`LOCK_THRESHOLD`, `lockEnd`), the password hashed before the lock is looked at, a count that one statement adds to | `_shared/password-check.ts`, `recordWrongPassword` in `share-link.repository.impl.ts` |
+| 6. One answer for every reason | A token that opens nothing is the same `notFound` whether no link has it or the link has run out, issued every download or lost its attachment (`noSharedFile`). The query that finds a link (`findWorking`) holds every condition, so the use case cannot tell the reasons apart either | `_shared/open-shared-file.ts` |
+| 7. A new kind of error | A password that is not accepted is `passwordRequired` (403, code `1002`): a 401 has to carry a challenge (RFC 9110, 15.5.2), and there is none for a password in a body | `backend/packages/domain/src/shared/errors.ts`, `backend/packages/api/src/shared/problem-details.ts` |
+| 8. A count under concurrency | The URL is signed first and the download counted second, by one conditional `UPDATE` that also checks the limit; a request that is not counted answers 404 and no URL | `issue-shared-file-download-url.usecase.ts`, `countDownload` |
+| 9. Handlers and routers | Two routers: the routes of those who manage links are mounted at `/attachments` before the router of the attachments, since `share-links` is no ID of an attachment; the routes of a viewer at `/share` take no `authenticated` and are stored by no cache (`neverStored`) | `backend/packages/api/src/routes/share-link/`, `routes/shared-file/` |
+| 10. Tests | The API tests compare the whole answer of every token that opens nothing, send wrong passwords and downloads at the same moment, and read the log for tokens and passwords | `backend/packages/api/src/__tests__/share-link.integration.test.ts` |
+
 ## Data That Belongs to No Salon
 
 The customer ledger is one for the whole platform: a customer belongs to no salon, and no operation on a customer is public. Its routes are flat like those of Salon (`/api/v1/customers`), and it is built in the same twelve steps; its rules are in [Customer Ledger](./customers.md) (Japanese). Read it for what Salon, the service categories and the services do not have:
@@ -1383,6 +1400,7 @@ export type DomainError =
   | { type: 'validation'; message: string; issues: ValidationIssue[] }
   | { type: 'unauthenticated'; reason: AuthenticationFailure }
   | { type: 'forbidden' }
+  | { type: 'passwordRequired' }
   | { type: 'notFound'; entity: string; id: string }
   | { type: 'alreadyExists'; entity: string; field: string; value: string }
   | { type: 'conflict'; message: string }
@@ -1390,13 +1408,14 @@ export type DomainError =
   | { type: 'storage'; message: string; cause: unknown }
 ```
 
-Errors are built with `DomainErrors.validation`, `.unauthenticated`, `.forbidden`, `.notFound`, `.alreadyExists`, `.conflict`, `.database` and `.storage`. Where each kind comes from:
+Errors are built with `DomainErrors.validation`, `.unauthenticated`, `.forbidden`, `.passwordRequired`, `.notFound`, `.alreadyExists`, `.conflict`, `.database` and `.storage`. Where each kind comes from:
 
 | Kind | Where it is created | What the client gets |
 |------|---------------------|----------------------|
 | `validation` | `parseWith`, called by a use case (and by the query decoding of a list handler). The authentication use cases also build it themselves for what a schema cannot check: a password that is too easy to guess, a wrong current password, a mailed token that cannot be used, a code of two-factor authentication that is not accepted, a cursor of the session list that names no session of the user. The service category use cases do so for a parent that is not a category of the same salon or that is the category itself or one below it, and for a cursor that names no category of the salon. The service use cases do so for a service that would break a rule tying two of its properties together, for a category that is not of the same salon, for a member of a package that is not a service of the same salon, is a package or is the service itself, for making a package of a service that a package contains, and for a cursor that names no service of the salon; `toRefusalError` (`backend/packages/domain/src/business-logic/service/_shared/refusals.ts`) builds the ones that answer a refusal of the repository. The customer use cases do so for a birth date before 1900 or in the future, for a referrer that does not exist, is deleted or is the customer itself, and for a cursor that names no customer. The use case of the staff list does so for a cursor that names no staff member of the salon | 400 with the broken rules in `errors` |
 | `unauthenticated` | the authentication use cases only: `AuthenticateUseCase` behind `authenticated`, login and refresh, and the current-user, change-password and two-factor use cases when the user of the session no longer exists | 401 with a `WWW-Authenticate` header |
 | `forbidden` | a use case, when its permission rule refuses the actor | 403 |
+| `passwordRequired` | the use cases of the viewer of a share link, when the link has a password and the request brought none that is accepted | 403; the body does not say whether the password was missing, wrong or locked |
 | `notFound` | a use case, when the repository resolved to `null` or `false` or reported that there is no such row; `requireSalon`, when the salon in the path does not exist; a use case of a customer's own profile, when the account has no customer record | 404 |
 | `alreadyExists` | the repository, from a unique violation: the email of a salon, the email of a customer, the referral code of a customer, the email and the staff code of a staff member within a salon | 409 |
 | `conflict` | a use case, when the request is fine and what it acts on is not in a state that allows it: the use cases of two-factor authentication (enabling what is already enabled, for example), those of the administrator operations (unlocking an account that is not locked, for example), the use case that deletes a service, when a package contains the service, and the use case that creates a customer's own profile, when the account has one already, has not confirmed its email address, or the customer with its email address belongs to another account. The customer repository returns it as well, when a customer with that email address is added at the moment the profile is created. The use cases that update and delete a staff member return it for what an actor may do to every staff member but their own: deactivating or deleting the one their account belongs to | 409 |

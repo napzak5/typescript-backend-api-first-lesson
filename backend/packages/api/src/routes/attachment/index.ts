@@ -22,7 +22,9 @@ import { purgeAttachmentsHandler } from './purge-attachments.handler'
  * - GET    /:attachmentId/download-url   getDownloadUrl
  * - DELETE /:attachmentId                delete
  *
- * The share links of the contract (`ShareLinkCrud`) are not served yet.
+ * The share links of the attachments (`ShareLinkCrud`) have a router of
+ * their own (`routes/share-link/`), mounted at the same path before this
+ * one.
  */
 export const createAttachmentRouter = (
   dependencies: AttachmentUseCaseDependencies,

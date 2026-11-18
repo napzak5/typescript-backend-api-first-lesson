@@ -459,8 +459,8 @@ const salonRules: ModelRule[] = [
 | `XXXResponse`、`XXXCreateRequest`、`XXXUpdateRequest` | 載せる（`response` / `create` / `update`） |
 | 親に埋め込む子テーブルの行（`OpeningHours`、`ServiceOption`、`BookingServiceResponse` など） | 載せる。親のルールでは `embedded` にプロパティ名を書く |
 | jsonb の列に、その形のまま保存するオブジェクト（カルテの `previousTreatments` の要素の `PreviousTreatment`） | 載せない（プロパティの内側にネストしたオブジェクト）。列が配列であることは CHECK 制約が、要素の形は、書くときにリクエストのスキーマが、読むときに読み取りのマッパーが確かめる |
-| テーブルの行に、サーバーがレスポンスのたびに求める値を加えたモデル（`SessionResponse` の `current`、`CustomerHistoryEntryResponse` の `changes`） | 載せる。ルールの `computed` にそのプロパティ名を書く |
-| テーブルの行の一部だけを見せ、書かせるモデル（`StaffProfileResponse`、`StaffProfileUpdateRequest`、`StaffAccountResponse`、`StaffAccountUpdateRequest`、`CustomerPreferencesResponse`、`CustomerPreferencesUpdateRequest`、`CustomerBookingResponse`、`CustomerBookingServiceResponse`） | 載せる。見せないカラム、書かせないカラムを `omittedColumns` に挙げる。Enum の値の一部だけを取るプロパティは、`narrowed` にも挙げる |
+| テーブルの行に、サーバーがレスポンスのたびに求める値を加えたモデル（`SessionResponse` の `current`、`CustomerHistoryEntryResponse` の `changes`、`ShareLinkResponse` の `hasPassword`） | 載せる。ルールの `computed` にそのプロパティ名を書く |
+| テーブルの行の一部だけを見せ、書かせるモデル（`StaffProfileResponse`、`StaffProfileUpdateRequest`、`StaffAccountResponse`、`StaffAccountUpdateRequest`、`CustomerPreferencesResponse`、`CustomerPreferencesUpdateRequest`、`CustomerBookingResponse`、`CustomerBookingServiceResponse`、`ShareLinkResponse`、`SharedFileResponse`） | 載せる。見せないカラム、書かせないカラムを `omittedColumns` に挙げる。Enum の値の一部だけを取るプロパティは、`narrowed` にも挙げる |
 | 行を追加するアクションのリクエスト（`PointEarnRequest`、`SaleProcessRequest` など） | カラムと 1 対 1 なら `create` として載せる |
 | `XXXSearchRequest` と、その絞り込み条件だけを取るリクエスト（`CustomerExportRequest`） | 載せない |
 | 行のカラムではなく、行を決めるものを指すリクエスト（`CustomerBookingCreateRequest`。空き枠を指し、行は `planCustomerBooking` が決める） | 載せない。プロパティ名と null 許可はカラムに合わせる |
@@ -472,14 +472,11 @@ const salonRules: ModelRule[] = [
 | 集計・計算結果（`ReviewSummaryResponse`、`SalesReportResponse`、`InventoryValueReportResponse`、`ReorderSuggestionResponse`、`InventoryAlertSummaryResponse`、`TreatmentStatisticsResponse` など） | 載せない |
 | 保存せず、読むたびに複数の表から求めるモデル（`InventoryAlertResponse`。在庫のアラートは、商品、在庫の行、在庫の移動から求める） | 載せない。プロパティ名と null 許可は、もとのカラムに合わせる（`productId`、`inventoryId`、`lotNumber`、`expiryDate` など）。包む行のモデル（`InventoryAlertAcknowledgementResponse`）は、そのルールで照合する |
 | 行を追加するアクションのリクエストで、サーバーが決めるカラムを書かないもの（`InventoryAlertAcknowledgeRequest`。サロン、重要度、`threshold`、使用期限は、今のアラートから、確認した人と時刻は、操作者とデータベースが決める。`AttachmentUploadUrlRequest`。状態、アップロードした人、URL の有効期限、日時は、操作者とデータベースが決める） | `create` として載せ、書かないカラムを `omittedColumns` に挙げる |
-| 行のモデルに、保存しない値を添えるレスポンスと、保存しない値だけのレスポンス（`AttachmentUploadUrlResponse` の `uploadUrl` と `uploadHeaders`、`AttachmentDownloadUrlResponse`、`AttachmentPurgeResponse`。署名付き URL は、発行のたびに求める） | 載せない。包んだ行のモデル（`AttachmentResponse`）は、そのルールで照合する |
-| テーブルがまだない機能のモデル（下の表） | 載せない |
+| 行のモデルに、保存しない値を添えるレスポンスと、保存しない値だけのレスポンス（`AttachmentUploadUrlResponse` の `uploadUrl` と `uploadHeaders`、`AttachmentDownloadUrlResponse`、`AttachmentPurgeResponse`、`ShareLinkCreateResponse` の `token`。署名付き URL は、発行のたびに求める。共有リンクのトークンは、発行の応答にだけあり、保存するのはハッシュである） | 載せない。包んだ行のモデル（`AttachmentResponse`、`ShareLinkResponse`）は、そのルールで照合する |
+| カラムの値ではなく、そのもとになる値を受け取るリクエスト（`ShareLinkCreateRequest`。`password` は、ハッシュにして `passwordHash` に保存する。トークンのハッシュ、発行した人、日時は、サーバーが決める） | 載せない。カラムと同じ値のプロパティ（`expiresAt`、`maxDownloads`）は、名前と null 許可をカラムに合わせる |
+| 行を指す秘密の値を送るリクエスト（`SharedFileGetRequest`、`SharedFileDownloadUrlRequest`。トークンとパスワードは、どのカラムにもない。カラムにあるのは、そのハッシュである） | 載せない |
 
-テーブルがまだない機能は次のとおりである。これらの TypeSpec は命名・レスポンスの形・エラーの規約には従っているが、プロパティを照合する相手がない。実装するときは、先にテーブルを設計してマイグレーションを書き、モデルをルールに載せる。
-
-| 機能 | TypeSpec |
-|---|---|
-| 共有リンク（`ShareLinkResponse`、`ShareLinkCreateRequest` など。添付ファイルのモデルは `attachments` と照合している） | `specs/models/attachment.tsp` |
+テーブルのない機能は、コントラクトにない。すべてのオペレーションに実装があり、テーブルの行を読み書きするモデルは、すべてルールに載っている。
 
 ### ドメインを実装するとき
 

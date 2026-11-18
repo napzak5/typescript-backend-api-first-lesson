@@ -10,37 +10,30 @@ import type { ModelsShareLinkId } from './modelsShareLinkId';
 import type { ModelsUserId } from './modelsUserId';
 
 /**
- * 共有リンクレスポンス - 外部共有用に発行された添付ファイルの共有リンク情報を返す。
- * 対応するテーブルはまだない。全項目のキーが必須で、値がない項目は null を返す
+ * 共有リンク - share_links の行。アップロード済みの添付ファイルを、アカウントを持たない人に、期限まで見せるためのリンク。
+ * トークンとパスワードは、ハッシュだけを保存していて、レスポンスに含めない(トークンが出るのは、発行のレスポンスの1度だけ)。
+ * すべてのプロパティがあり、値がないものは null
  */
 export interface ModelsShareLinkResponse {
-  /** 共有リンクを一意に識別するID。 */
+  /** 共有リンクの ID */
   id: ModelsShareLinkId;
-  /** 共有アクセス時に利用するトークン。 */
-  token: string;
-  /** 共有対象の添付ファイルID。 */
+  /** 共有する添付ファイルの ID */
   attachmentId: ModelsAttachmentId;
+  /** 共有リンクの有効期限。この日時を過ぎると、リンクは使えない */
+  expiresAt: string;
   /**
-     * 共有リンクの有効期限。無期限の場合はnull。
-     * @nullable
-     */
-  expiresAt: string | null;
-  /**
-     * 許可する最大ダウンロード回数。無制限の場合はnull。
+     * ダウンロード用URLを発行できる回数の上限。制限なしの場合はnull
      * @nullable
      */
   maxDownloads: number | null;
-  /** これまでのダウンロード累計数。 */
+  /** これまでにダウンロード用URLを発行した回数。上限に達すると、リンクは使えない */
   downloadCount: number;
-  /** 共有リンクがパスワード保護されているか。 */
+  /** パスワードで保護しているか */
   hasPassword: boolean;
-  /**
-     * アクセスを許可するメールアドレス一覧。制限なしの場合はnull。
-     * @nullable
-     */
-  allowedEmails: string[] | null;
-  /** 共有リンクを作成したユーザーID。 */
+  /** 共有リンクを発行したユーザーの ID */
   createdBy: ModelsUserId;
-  /** 共有リンクを作成した日時。 */
+  /** 共有リンクを発行した日時 */
   createdAt: string;
+  /** 最後に更新した日時(ダウンロード用URLの発行や、パスワードの誤りの記録でも進む) */
+  updatedAt: string;
 }

@@ -317,6 +317,20 @@ backend/packages/api/src/
 │   │   ├── update-service.handler.ts             # PATCH  /api/v1/salons/:salonId/services/:id
 │   │   ├── delete-service.handler.ts             # DELETE /api/v1/salons/:salonId/services/:id
 │   │   └── index.ts                              # createServiceRouter
+│   ├── share-link/
+│   │   ├── _shared/
+│   │   │   └── index.ts            # SharedAttachmentParams, ShareLinkParams, the response body types, shareLinkLinks, decodeShareLinkSearchQuery
+│   │   ├── get-share-link.handler.ts             # GET    /api/v1/attachments/share-links/:shareLinkId
+│   │   ├── delete-share-link.handler.ts          # DELETE /api/v1/attachments/share-links/:shareLinkId
+│   │   ├── create-share-link.handler.ts          # POST   /api/v1/attachments/:attachmentId/share-links
+│   │   ├── list-share-links.handler.ts           # GET    /api/v1/attachments/:attachmentId/share-links
+│   │   └── index.ts                              # createShareLinkRouter
+│   ├── shared-file/
+│   │   ├── _shared/
+│   │   │   └── index.ts            # the response body types
+│   │   ├── get-shared-file.handler.ts                 # POST /api/v1/share/file
+│   │   ├── issue-shared-file-download-url.handler.ts  # POST /api/v1/share/download-url
+│   │   └── index.ts                                   # createSharedFileRouter
 │   ├── service-category/
 │   │   ├── _shared/
 │   │   │   ├── types.ts            # ServiceCategoryParams, and the response body types
@@ -512,7 +526,9 @@ The three handlers in `routes/inventory-alert/` are wrapped with `authenticated`
 
 The eight handlers in `routes/treatment-record/` are wrapped with `authenticated` and pass the `actor` first: the list then passes the outcome of `decodeTreatmentRecordSearchQuery`, the create `req.body`, the get and the delete `req.params.id`, the update and the addition of photos `req.params.id` and `req.body`, the removal of a photo `req.params.id` and `req.params.photoId`, and the statistics `req.query`, which their use case reads, so that a query that is wrong is told only to an actor who may read treatment records. The create answers 201 with a `Location` header; the addition of photos answers 201 without one, since the photos have no address of their own, and links to the record; the delete and the removal of a photo answer 204 without a body; the statistics link to themselves as they were requested (`req.originalUrl`). The router has `GET /statistics` before `/:id`, which would take its name for an ID.
 
-The seven handlers in `routes/attachment/` are wrapped with `authenticated` and pass the `actor` first: the one that issues an upload URL then passes `req.body`, the completion, the get and the delete `req.params.attachmentId`, the list the outcome of `decodeAttachmentSearchQuery`, the one that issues a download URL `req.params.attachmentId` and the outcome of `decodeAttachmentDownloadQuery`, and the purge nothing more. No handler takes or answers a file: the body of a request is JSON or empty, and a file goes between the client and the object storage through the signed URLs. The upload URL is answered with 201, a `Location` header and a `complete` link, the links of a download URL are the request itself and the attachment, the delete answers 204, and the purge has no links (`links: null`), as it is no resource. The router is a plain `Router()` mounted at `/attachments`; `/upload-url` and `/purge` are routed before the routes with `/:attachmentId`. The share links of the contract have no routes.
+The seven handlers in `routes/attachment/` are wrapped with `authenticated` and pass the `actor` first: the one that issues an upload URL then passes `req.body`, the completion, the get and the delete `req.params.attachmentId`, the list the outcome of `decodeAttachmentSearchQuery`, the one that issues a download URL `req.params.attachmentId` and the outcome of `decodeAttachmentDownloadQuery`, and the purge nothing more. No handler takes or answers a file: the body of a request is JSON or empty, and a file goes between the client and the object storage through the signed URLs. The upload URL is answered with 201, a `Location` header and a `complete` link, the links of a download URL are the request itself and the attachment, the delete answers 204, and the purge has no links (`links: null`), as it is no resource. The router is a plain `Router()` mounted at `/attachments`; `/upload-url` and `/purge` are routed before the routes with `/:attachmentId`.
+
+The share links have two routers. `routes/share-link/index.ts` exports `createShareLinkRouter(dependencies, authenticated)`, a plain `Router()` that is mounted at `/attachments` before the router of the attachments, because `share-links` is no ID of an attachment: a path that begins with it is asked of the share links first, also one that has the shape of a route of the attachments (`GET /attachments/share-links/download-url` is answered as a share link whose ID is not valid, not as the download URL of an attachment). A path the share links do not serve falls through to the attachments, so `GET /attachments/share-links` is answered as an attachment whose ID is not valid. Its four handlers are wrapped with `authenticated` and pass the `actor` first: the create then passes `req.params.attachmentId` and `req.body`, the list `req.params.attachmentId` and the outcome of `decodeShareLinkSearchQuery`, the get and the delete `req.params.shareLinkId`. The create answers 201 with `Location` and `shareLinkLinks` (itself, the list of the links of its attachment, and the attachment), and its route alone has `neverStored` in front of the handler, since its body carries the token of the link and the router is passed by the requests of the attachments as well. `routes/shared-file/index.ts` exports `createSharedFileRouter(dependencies)`, mounted at `/share`: two `POST` handlers that take no `authenticated`, pass `req.body` to their use case and answer `links: null`, behind `router.use(neverStored)`. The token of a link and its password are in the body, so neither appears in a path, which the request log writes.
 
 The eight handlers in `routes/medical-chart/` are wrapped with `authenticated` and pass the `actor` first. The four of the charts: the list then passes the outcome of `decodeMedicalChartSearchQuery`, the create `req.body`, the get `req.params.customerId` and the update `req.params.id` and `req.body`. A chart is read by its customer and changed by its own ID, and every response links it by its customer (`medicalChartLinks`): the create answers 201 with a `Location` header at `/customer/:customerId`. The four of the allergies of a customer are routed at `/customer/:customerId/allergies` and `/customer/:customerId/allergies/:allergyId`, and the router takes the dependencies of both kinds of use case (`MedicalChartUseCaseDependencies & CustomerAllergyUseCaseDependencies`): the list passes `req.params.customerId` and the outcome of `decodeCustomerAllergySearchQuery`, the add `req.params.customerId` and `req.body`, the update both IDs of the path and `req.body`, and the removal both IDs. No route reads one allergy, so the add (201) and the update (200) answer without a `Location` and link the list of the customer (`customerAllergiesPath`), and the removal answers 204 without a body.
 
@@ -995,6 +1011,7 @@ The order matters. Every request gets its ID and logger first. The probes are an
 | `unauthenticated`, reason `invalidToken` | 401 | `1004` | `invalid-token` |
 | `unauthenticated`, reason `twoFactorRequired` | 401 | `1007` | `two-factor-required` |
 | `forbidden` | 403 | `1005` | `forbidden` |
+| `passwordRequired` | 403 | `1002` | `password-required` |
 | `notFound` | 404 | `3001` | `not-found` |
 | `alreadyExists` | 409 | `3002` | `already-exists` |
 | `conflict` | 409 | `3003` | `operation-not-allowed` |

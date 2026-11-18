@@ -385,7 +385,7 @@ export const getShareLinkCrudGetUrl = (shareLinkId: ModelsShareLinkId,) => {
 }
 
 /**
- * IDを指定して共有リンクを1件取得し、公開状況や有効期限、ダウンロード回数を確認します。
+ * 共有リンクを1件取得し、有効期限、ダウンロード回数、パスワードで保護しているかを確認します。実行できるのは、共有リンクの発行と同じ利用者です。ほかのサロンの添付ファイルの共有リンクと、削除した添付ファイルの共有リンクは404を返します。
  * @summary Get a share link
  */
 export const shareLinkCrudGet = async (shareLinkId: ModelsShareLinkId, options?: RequestInit): Promise<shareLinkCrudGetResponse> => {
@@ -433,7 +433,7 @@ export type ShareLinkCrudGetQueryError = ModelsProblemDetails
 
 
 /**
- * IDを指定して共有リンクを1件取得し、公開状況や有効期限、ダウンロード回数を確認します。
+ * 共有リンクを1件取得し、有効期限、ダウンロード回数、パスワードで保護しているかを確認します。実行できるのは、共有リンクの発行と同じ利用者です。ほかのサロンの添付ファイルの共有リンクと、削除した添付ファイルの共有リンクは404を返します。
  * @summary Get a share link
  */
 export function useShareLinkCrudGet<TData = Awaited<ReturnType<typeof shareLinkCrudGet>>, TError = ModelsProblemDetails>(
@@ -447,7 +447,7 @@ export function useShareLinkCrudGet<TData = Awaited<ReturnType<typeof shareLinkC
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * IDを指定して共有リンクを1件取得し、公開状況や有効期限、ダウンロード回数を確認します。
+ * 共有リンクを1件取得し、有効期限、ダウンロード回数、パスワードで保護しているかを確認します。実行できるのは、共有リンクの発行と同じ利用者です。ほかのサロンの添付ファイルの共有リンクと、削除した添付ファイルの共有リンクは404を返します。
  * @summary Get a share link
  */
 export function useShareLinkCrudGet<TData = Awaited<ReturnType<typeof shareLinkCrudGet>>, TError = ModelsProblemDetails>(
@@ -461,7 +461,7 @@ export function useShareLinkCrudGet<TData = Awaited<ReturnType<typeof shareLinkC
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * IDを指定して共有リンクを1件取得し、公開状況や有効期限、ダウンロード回数を確認します。
+ * 共有リンクを1件取得し、有効期限、ダウンロード回数、パスワードで保護しているかを確認します。実行できるのは、共有リンクの発行と同じ利用者です。ほかのサロンの添付ファイルの共有リンクと、削除した添付ファイルの共有リンクは404を返します。
  * @summary Get a share link
  */
 export function useShareLinkCrudGet<TData = Awaited<ReturnType<typeof shareLinkCrudGet>>, TError = ModelsProblemDetails>(
@@ -469,7 +469,7 @@ export function useShareLinkCrudGet<TData = Awaited<ReturnType<typeof shareLinkC
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * IDを指定して共有リンクを1件取得し、公開状況や有効期限、ダウンロード回数を確認します。
+ * 共有リンクを1件取得し、有効期限、ダウンロード回数、パスワードで保護しているかを確認します。実行できるのは、共有リンクの発行と同じ利用者です。ほかのサロンの添付ファイルの共有リンクと、削除した添付ファイルの共有リンクは404を返します。
  * @summary Get a share link
  */
 export function useShareLinkCrudGet<TData = Awaited<ReturnType<typeof shareLinkCrudGet>>, TError = ModelsProblemDetails>(
@@ -542,7 +542,7 @@ export const getShareLinkCrudDeleteUrl = (shareLinkId: ModelsShareLinkId,) => {
 }
 
 /**
- * 不要になった共有リンクを失効させ、アクセス制御を適切に保ちます。失効後の共有リンクへのアクセスには404を返します。
+ * 共有リンクを失効します。そのトークンでのアクセスは、すぐに404になります。実行できるのは、共有リンクの発行と同じ利用者です。失効した共有リンクは404を返します。
  * @summary Delete a share link
  */
 export const shareLinkCrudDelete = async (shareLinkId: ModelsShareLinkId, options?: RequestInit): Promise<shareLinkCrudDeleteResponse> => {
@@ -595,7 +595,7 @@ const {mutation: mutationOptions} = options ?
     export type ShareLinkCrudDeleteMutationVariables = {shareLinkId: ModelsShareLinkId}
 
     /**
- * 不要になった共有リンクを失効させ、アクセス制御を適切に保ちます。失効後の共有リンクへのアクセスには404を返します。
+ * 共有リンクを失効します。そのトークンでのアクセスは、すぐに404になります。実行できるのは、共有リンクの発行と同じ利用者です。失効した共有リンクは404を返します。
  * @summary Delete a share link
  */
 export const useShareLinkCrudDelete = <TError = ModelsProblemDetails,
@@ -1348,6 +1348,11 @@ export type shareLinkCrudCreateResponse404 = {
   status: 404
 }
 
+export type shareLinkCrudCreateResponse409 = {
+  data: ModelsProblemDetails
+  status: 409
+}
+
 export type shareLinkCrudCreateResponse413 = {
   data: ModelsProblemDetails
   status: 413
@@ -1371,7 +1376,7 @@ export type shareLinkCrudCreateResponse500 = {
 export type shareLinkCrudCreateResponseSuccess = (shareLinkCrudCreateResponse201) & {
   headers: Headers;
 };
-export type shareLinkCrudCreateResponseError = (shareLinkCrudCreateResponse400 | shareLinkCrudCreateResponse401 | shareLinkCrudCreateResponse403 | shareLinkCrudCreateResponse404 | shareLinkCrudCreateResponse413 | shareLinkCrudCreateResponse415 | shareLinkCrudCreateResponse429 | shareLinkCrudCreateResponse500) & {
+export type shareLinkCrudCreateResponseError = (shareLinkCrudCreateResponse400 | shareLinkCrudCreateResponse401 | shareLinkCrudCreateResponse403 | shareLinkCrudCreateResponse404 | shareLinkCrudCreateResponse409 | shareLinkCrudCreateResponse413 | shareLinkCrudCreateResponse415 | shareLinkCrudCreateResponse429 | shareLinkCrudCreateResponse500) & {
   headers: Headers;
 };
 
@@ -1386,7 +1391,7 @@ export const getShareLinkCrudCreateUrl = (attachmentId: ModelsAttachmentId,) => 
 }
 
 /**
- * 施術前後の写真や資料を外部パートナーや顧客と共有するためのリンクを発行します。必要に応じてパスワード保護も適用します。添付ファイルが存在しない場合は404を返します。
+ * アップロード済みの添付ファイルを、アカウントを持たない人(顧客、取引先)に見せるための共有リンクを発行します。リンクのトークンは、このレスポンスにだけ含まれます(サーバーはハッシュだけを保存します)。admin と、添付ファイルのサロンの owner / manager が実行できます(staff と顧客のアカウントは403)。サロンに属さない添付ファイルの共有リンクを扱えるのは admin だけです。本文が不正な場合(過去の有効期限、30日より先の有効期限、単純すぎるパスワード)は400を、ほかのサロンの添付ファイルと削除した添付ファイルは404を、アップロード待ち(pending)の添付ファイルは409を返します。
  * @summary Create a share link
  */
 export const shareLinkCrudCreate = async (attachmentId: ModelsAttachmentId,
@@ -1454,7 +1459,7 @@ const {mutation: mutationOptions} = options ?
     export type ShareLinkCrudCreateMutationVariables = {attachmentId: ModelsAttachmentId;data: ModelsShareLinkCreateRequest}
 
     /**
- * 施術前後の写真や資料を外部パートナーや顧客と共有するためのリンクを発行します。必要に応じてパスワード保護も適用します。添付ファイルが存在しない場合は404を返します。
+ * アップロード済みの添付ファイルを、アカウントを持たない人(顧客、取引先)に見せるための共有リンクを発行します。リンクのトークンは、このレスポンスにだけ含まれます(サーバーはハッシュだけを保存します)。admin と、添付ファイルのサロンの owner / manager が実行できます(staff と顧客のアカウントは403)。サロンに属さない添付ファイルの共有リンクを扱えるのは admin だけです。本文が不正な場合(過去の有効期限、30日より先の有効期限、単純すぎるパスワード)は400を、ほかのサロンの添付ファイルと削除した添付ファイルは404を、アップロード待ち(pending)の添付ファイルは409を返します。
  * @summary Create a share link
  */
 export const useShareLinkCrudCreate = <TError = ModelsProblemDetails,
@@ -1528,7 +1533,7 @@ export const getShareLinkCrudListUrl = (attachmentId: ModelsAttachmentId,
 }
 
 /**
- * 対象ファイルに対して発行済みの共有リンクを一覧し、公開状況や有効期限の管理を行います。添付ファイルが存在しない場合は404を返します。
+ * 添付ファイルの共有リンクを、発行の新しい順に一覧します。有効期限を過ぎたものと、ダウンロード回数の上限に達したものも含みます(失効したものは含みません)。実行できるのは、共有リンクの発行と同じ利用者です。ほかのサロンの添付ファイルと削除した添付ファイルは404を返します。
  * @summary List share links
  */
 export const shareLinkCrudList = async (attachmentId: ModelsAttachmentId,
@@ -1579,7 +1584,7 @@ export type ShareLinkCrudListQueryError = ModelsProblemDetails
 
 
 /**
- * 対象ファイルに対して発行済みの共有リンクを一覧し、公開状況や有効期限の管理を行います。添付ファイルが存在しない場合は404を返します。
+ * 添付ファイルの共有リンクを、発行の新しい順に一覧します。有効期限を過ぎたものと、ダウンロード回数の上限に達したものも含みます(失効したものは含みません)。実行できるのは、共有リンクの発行と同じ利用者です。ほかのサロンの添付ファイルと削除した添付ファイルは404を返します。
  * @summary List share links
  */
 export function useShareLinkCrudList<TData = Awaited<ReturnType<typeof shareLinkCrudList>>, TError = ModelsProblemDetails>(
@@ -1594,7 +1599,7 @@ export function useShareLinkCrudList<TData = Awaited<ReturnType<typeof shareLink
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 対象ファイルに対して発行済みの共有リンクを一覧し、公開状況や有効期限の管理を行います。添付ファイルが存在しない場合は404を返します。
+ * 添付ファイルの共有リンクを、発行の新しい順に一覧します。有効期限を過ぎたものと、ダウンロード回数の上限に達したものも含みます(失効したものは含みません)。実行できるのは、共有リンクの発行と同じ利用者です。ほかのサロンの添付ファイルと削除した添付ファイルは404を返します。
  * @summary List share links
  */
 export function useShareLinkCrudList<TData = Awaited<ReturnType<typeof shareLinkCrudList>>, TError = ModelsProblemDetails>(
@@ -1609,7 +1614,7 @@ export function useShareLinkCrudList<TData = Awaited<ReturnType<typeof shareLink
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 対象ファイルに対して発行済みの共有リンクを一覧し、公開状況や有効期限の管理を行います。添付ファイルが存在しない場合は404を返します。
+ * 添付ファイルの共有リンクを、発行の新しい順に一覧します。有効期限を過ぎたものと、ダウンロード回数の上限に達したものも含みます(失効したものは含みません)。実行できるのは、共有リンクの発行と同じ利用者です。ほかのサロンの添付ファイルと削除した添付ファイルは404を返します。
  * @summary List share links
  */
 export function useShareLinkCrudList<TData = Awaited<ReturnType<typeof shareLinkCrudList>>, TError = ModelsProblemDetails>(
@@ -1618,7 +1623,7 @@ export function useShareLinkCrudList<TData = Awaited<ReturnType<typeof shareLink
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 対象ファイルに対して発行済みの共有リンクを一覧し、公開状況や有効期限の管理を行います。添付ファイルが存在しない場合は404を返します。
+ * 添付ファイルの共有リンクを、発行の新しい順に一覧します。有効期限を過ぎたものと、ダウンロード回数の上限に達したものも含みます(失効したものは含みません)。実行できるのは、共有リンクの発行と同じ利用者です。ほかのサロンの添付ファイルと削除した添付ファイルは404を返します。
  * @summary List share links
  */
 export function useShareLinkCrudList<TData = Awaited<ReturnType<typeof shareLinkCrudList>>, TError = ModelsProblemDetails>(

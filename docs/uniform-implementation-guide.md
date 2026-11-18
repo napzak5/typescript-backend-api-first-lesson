@@ -408,6 +408,7 @@ answers 503 with the body its operation defines.
 | `validation` | `parseWith` in a use case; an authentication use case, also for what a schema cannot check (a password that is too easy to guess, a wrong current password, a mailed token that cannot be used, a code of two-factor authentication that is not accepted, a cursor of the session list that names no session of the user); a service category use case, for a parent that is not a category of the same salon or that is the category itself or one below it, and for a cursor that names no category of the salon; a service use case, for a service that would break a rule tying two of its properties together, for a category that is not of the same salon, for a member of a package that is not a service of the same salon, is a package or is the service itself, for making a package of a service that a package contains, and for a cursor that names no service of the salon; a customer use case, for a birth date before 1900 or in the future, for a referrer who does not exist, is deleted or is the customer itself, and for a cursor that names no customer | 400 | `2001` |
 | `unauthenticated` | `AuthenticateUseCase` behind `authenticated`; the login and refresh use cases; the current-user, change-password and two-factor use cases, when the user of the session no longer exists | 401 | `1001` to `1004` and `1007`, by `reason` |
 | `forbidden` | A use case, when the actor may not do what is asked | 403 | `1005` |
+| `passwordRequired` | The use cases of the viewer of a share link, when the link has a password and the request brought none that is accepted: none, a wrong one, or any while the link is locked | 403 | `1002` |
 | `notFound` | A use case, when the repository finds no row; on a route below a salon, that includes a salon that does not exist and a resource that is not of the salon in the path; on the routes of a customer's own profile, an account that has no customer record | 404 | `3001` |
 | `alreadyExists` | The repository, from the name of the constraint that a write violated: the unique index on the `email` of a salon; for a customer, the unique index on `email`, which covers the customers that are not deleted, and the unique constraint on `referralCode`, which covers every customer | 409 | `3002` |
 | `conflict` | A two-factor use case or the use case of an administrator operation, when the request is fine and the state of the account does not allow it (enabling what is already enabled, or unlocking an account that is not locked, for example); the use case that deletes a service, when a package contains the service; the use case that creates a customer's own profile, when the account has one already, has not confirmed its email address, or the customer with its email address belongs to another account; the use case that creates a booking, when a staff member is occupied at that time or the time zone of the salon is not one the runtime knows; a use case that changes the status of a booking, when the status does not allow the action, when a no-show is noted before the booking has begun, or when the actual end would not be after the actual start the booking has | 409 | `3003` |
@@ -504,7 +505,7 @@ Logging is structured, with pino. Application code never writes to `console`.
 
   ```typescript
   // backend/packages/api/src/shared/responses.ts
-  if (error.type === 'database') {
+  if (error.type === 'database' || error.type === 'storage') {
     req.log.error({ cause: error.cause }, error.message)
   }
   ```
@@ -531,7 +532,10 @@ Logging is structured, with pino. Application code never writes to `console`.
 - **Timestamps** (`timestamptz` columns) are written by the database:
   `createdAt` and `updatedAt` default to `now()`, and the repository sets
   `updatedAt` and `deletedAt` with `` sql`now()` ``. Application code does not
-  create a `Date` to store it.
+  create a `Date` to store it, with one exception: a new share link is given
+  the moment its end was checked against as `createdAt` and `updatedAt`, so
+  that the rule of the use case and the CHECK constraint of the table
+  (`share_links_expires_within_limit`) measure from the same moment.
 - `now()` is the moment the transaction began, which is before anything the
   transaction waited for. A change that is judged by the clock, or whose
   order is kept (the status of a booking and its history), reads

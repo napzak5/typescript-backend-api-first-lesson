@@ -484,7 +484,7 @@ describe('modelRules', () => {
     expect(models).toEqual([...new Set(models)])
   })
 
-  it('declares only that a session is the current one, and what changed in a version of a customer, as worked out rather than stored', () => {
+  it('declares only that a session is the current one, what changed in a version of a customer, and that a share link has a password, as worked out rather than stored', () => {
     const computed = modelRules
       .filter((modelRule) => modelRule.computed !== undefined)
       .map(({ model, computed }) => [model, computed])
@@ -492,6 +492,7 @@ describe('modelRules', () => {
     expect(computed).toEqual([
       ['Models.CustomerHistoryEntryResponse', ['changes']],
       ['Models.SessionResponse', ['current']],
+      ['Models.ShareLinkResponse', ['hasPassword']],
     ])
   })
 
@@ -1695,7 +1696,7 @@ describe('modelRules', () => {
     ])
   })
 
-  it('shows an attachment without the time it was deleted, and lets the request that announces its upload state the salon, the name, the type and the size only', () => {
+  it('shows an attachment without the time it was deleted, lets the request that announces its upload state the salon, the name, the type and the size only, and tells the viewer of a share link no more of the file than these three', () => {
     const rules = modelRules
       .filter(({ table }) => table === 'attachments')
       .map(
@@ -1749,6 +1750,50 @@ describe('modelRules', () => {
           'updatedAt',
         ],
         ...none,
+      },
+      {
+        model: 'Models.SharedFileResponse',
+        table: 'attachments',
+        kind: 'response',
+        omittedColumns: [
+          'id',
+          'salonId',
+          'status',
+          'uploadedBy',
+          'uploadExpiresAt',
+          'uploadedAt',
+          'deletedAt',
+          'createdAt',
+          'updatedAt',
+        ],
+        ...none,
+      },
+    ])
+  })
+
+  it('shows a share link without the hashes of its token and its password and without the wrong passwords it took, and says in their place whether it has a password', () => {
+    const rules = modelRules
+      .filter(({ table }) => table === 'shareLinks')
+      .map(({ model, table, kind, omittedColumns, computed }) => ({
+        model,
+        table,
+        kind,
+        omittedColumns,
+        computed,
+      }))
+
+    expect(rules).toEqual([
+      {
+        model: 'Models.ShareLinkResponse',
+        table: 'shareLinks',
+        kind: 'response',
+        omittedColumns: [
+          'tokenHash',
+          'passwordHash',
+          'failedAttempts',
+          'lockedUntil',
+        ],
+        computed: ['hasPassword'],
       },
     ])
   })

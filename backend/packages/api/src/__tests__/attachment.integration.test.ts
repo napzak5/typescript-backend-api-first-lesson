@@ -2081,9 +2081,6 @@ describe('Attachments API', () => {
       ['put', `${PATH}/upload-url`],
       ['put', `${PATH}/purge`],
       ['post', `${PATH}/${UNKNOWN_ID}/share`],
-      ['get', `${PATH}/${UNKNOWN_ID}/share-links`],
-      ['get', '/api/v1/share'],
-      ['get', '/api/v1/share/some-token'],
     ])('answers 404 to %s %s, and changes nothing', async (method, path) => {
       const id = await uploaded()
       const before = await everything()

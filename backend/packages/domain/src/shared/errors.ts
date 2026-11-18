@@ -31,11 +31,16 @@ export type AuthenticationFailure =
  * object storage that failed; its `cause` is for logs as well. `forbidden`
  * means the actor is known and may not do this. `conflict` means the
  * request is fine and what it acts on is not in a state that allows it.
+ * `passwordRequired` means that what the request asks for is behind a
+ * password of its own, which nobody signs in with, and the request brought
+ * none that is accepted: none at all, a wrong one, or any while the
+ * password is locked.
  */
 export type DomainError =
   | { type: 'validation'; message: string; issues: ValidationIssue[] }
   | { type: 'unauthenticated'; reason: AuthenticationFailure }
   | { type: 'forbidden' }
+  | { type: 'passwordRequired' }
   | { type: 'notFound'; entity: string; id: string }
   | { type: 'alreadyExists'; entity: string; field: string; value: string }
   | { type: 'conflict'; message: string }
@@ -53,6 +58,10 @@ export const DomainErrors = {
 
   forbidden(): DomainError {
     return { type: 'forbidden' }
+  },
+
+  passwordRequired(): DomainError {
+    return { type: 'passwordRequired' }
   },
 
   notFound(entity: string, id: string): DomainError {

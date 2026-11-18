@@ -15,6 +15,44 @@ export const lowerCaseEmail = z
   .max(255)
   .transform((value) => value.toLowerCase())
 
+const MAX_PASSWORD_LENGTH = 128
+
+/**
+ * A password of at least `minimum` characters, in the one form it is
+ * hashed and compared in. The same text can be typed as different
+ * sequences of code points; NFC makes them one. Length counts code points,
+ * not UTF-16 units, so that a character outside the basic plane counts
+ * once (NIST SP 800-63B-4, 3.1.1.2).
+ */
+export const passwordOf = (minimum: number) =>
+  z
+    .string()
+    .transform((value) => value.normalize('NFC'))
+    .check((context) => {
+      const length = [...context.value].length
+
+      if (length < minimum) {
+        context.issues.push({
+          code: 'too_small',
+          origin: 'string',
+          minimum,
+          inclusive: true,
+          input: context.value,
+          message: `Too small: expected string to have >=${minimum} characters`,
+        })
+      }
+      if (length > MAX_PASSWORD_LENGTH) {
+        context.issues.push({
+          code: 'too_big',
+          origin: 'string',
+          maximum: MAX_PASSWORD_LENGTH,
+          inclusive: true,
+          input: context.value,
+          message: `Too big: expected string to have <=${MAX_PASSWORD_LENGTH} characters`,
+        })
+      }
+    })
+
 const MIN_PHONE_DIGITS = 10
 
 /** A phone number as people write it: digits with the usual separators. */

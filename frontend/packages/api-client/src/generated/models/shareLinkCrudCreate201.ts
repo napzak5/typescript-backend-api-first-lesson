@@ -6,7 +6,7 @@
  * OpenAPI spec version: 2.0
  */
 import type { ModelsResponseMeta } from './modelsResponseMeta';
-import type { ModelsShareLinkResponse } from './modelsShareLinkResponse';
+import type { ModelsShareLinkCreateResponse } from './modelsShareLinkCreateResponse';
 import type { ShareLinkCrudCreate201Links } from './shareLinkCrudCreate201Links';
 
 /**
@@ -15,7 +15,7 @@ import type { ShareLinkCrudCreate201Links } from './shareLinkCrudCreate201Links'
  */
 export type ShareLinkCrudCreate201 = {
   /** レスポンスの主体となるビジネスデータ。 */
-  data: ModelsShareLinkResponse;
+  data: ModelsShareLinkCreateResponse;
   /**
      * リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull
      * @nullable
