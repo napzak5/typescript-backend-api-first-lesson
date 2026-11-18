@@ -255,7 +255,7 @@ them at start-up and exits with the list of what is missing or malformed.
 | Variable | Meaning |
 |----------|---------|
 | `NODE_ENV` | `production`, `staging`, `development`, `test` or `localhost` |
-| `HOST`, `PORT` | Address and port to listen on |
+| `HOST`, `PORT` | Address and port to listen on. The files for a developer's machine (`.env.localhost`, `.env.development`, `.env.test`) listen on `127.0.0.1`, this machine only; the files given to a container listen on `0.0.0.0` |
 | `TRUST_PROXY_HOPS` | Reverse proxies in front of the server (0 = clients connect directly). The rate limit counts by client address, which is only right when this matches the deployment |
 | `DATABASE_URL` | `postgres://` connection URL |
 | `DATABASE_POOL_MAX` | Largest number of pooled connections |
