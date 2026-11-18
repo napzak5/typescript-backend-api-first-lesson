@@ -115,6 +115,28 @@ const customerRequest = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 })
 
+/** What an account sends to make its profile. */
+const profileRequest = {
+  firstName: 'Hanako',
+  lastName: 'Yamada',
+  firstNameKana: null,
+  lastNameKana: null,
+  phoneNumber: '090-1111-2222',
+  alternativePhone: null,
+  postalCode: null,
+  prefecture: null,
+  city: null,
+  address: null,
+  building: null,
+  birthDate: null,
+  gender: null,
+  occupation: null,
+  preferences: null,
+  allowMarketing: false,
+  allowSms: false,
+  allowEmail: true,
+}
+
 const statusAndCode = (response: Response): string =>
   response.status < 400
     ? String(response.status)
@@ -257,6 +279,127 @@ describe('Customer deletion request API', () => {
       .set({ userId: user.id })
       .where(eq(customers.id, customerId))
     return user
+  }
+
+  /**
+   * What a salon keeps of a customer besides the visits: preferences, a
+   * chart, an allergy, and 120 points with what they were given for.
+   */
+  const insertKept = async (customerId: string): Promise<void> => {
+    await db.insert(customerPreferences).values({
+      customerId,
+      preferredTimeSlots: [],
+      avoidStaffIds: [],
+      specialRequests: '静かな席',
+    })
+    await db.insert(medicalCharts).values({
+      customerId,
+      previousTreatments: [],
+      medicalConditions: '金属アレルギー',
+      preferredProducts: [],
+      avoidProducts: [],
+      notes: null,
+    })
+    await db.insert(customerAllergies).values({
+      customerId,
+      allergyType: 'chemical',
+      allergenName: 'PPD',
+      severityType: 'severe',
+    })
+    await db.insert(customerPoints).values({
+      customerId,
+      transactionType: 'earned',
+      points: 120,
+      balance: 120,
+      description: '誕生日のお祝い',
+      createdAt: '2026-01-01T00:00:00Z',
+    })
+    await db
+      .update(customers)
+      .set({ loyaltyPoints: 120, referralCode: `HANAKO-${nextRow()}` })
+      .where(eq(customers.id, customerId))
+  }
+
+  /**
+   * Every row that names a customer, but the reviews and the marks, which
+   * the erasure of another customer counts again or removes.
+   */
+  const everythingOf = async (customerId: string) => {
+    const ofBookings = db
+      .select({ id: bookings.id })
+      .from(bookings)
+      .where(eq(bookings.customerId, customerId))
+    const ofRecords = db
+      .select({ id: treatmentRecords.id })
+      .from(treatmentRecords)
+      .where(eq(treatmentRecords.customerId, customerId))
+    const ofAccounts = db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.customerId, customerId))
+    return {
+      customer: await storedCustomer(customerId),
+      versions: await db
+        .select()
+        .from(customerVersions)
+        .where(eq(customerVersions.customerId, customerId))
+        .orderBy(asc(customerVersions.version)),
+      accounts: await db
+        .select()
+        .from(users)
+        .where(eq(users.customerId, customerId)),
+      sessions: await db
+        .select()
+        .from(sessions)
+        .where(inArray(sessions.userId, ofAccounts)),
+      preferences: await db
+        .select()
+        .from(customerPreferences)
+        .where(eq(customerPreferences.customerId, customerId)),
+      charts: await db
+        .select()
+        .from(medicalCharts)
+        .where(eq(medicalCharts.customerId, customerId)),
+      allergies: await db
+        .select()
+        .from(customerAllergies)
+        .where(eq(customerAllergies.customerId, customerId)),
+      points: await db
+        .select()
+        .from(customerPoints)
+        .where(eq(customerPoints.customerId, customerId))
+        .orderBy(asc(customerPoints.createdAt)),
+      bookings: await db
+        .select()
+        .from(bookings)
+        .where(eq(bookings.customerId, customerId))
+        .orderBy(asc(bookings.id)),
+      lines: await db
+        .select()
+        .from(bookingServices)
+        .where(inArray(bookingServices.bookingId, ofBookings))
+        .orderBy(asc(bookingServices.id)),
+      statusChanges: await db
+        .select()
+        .from(bookingStatusHistories)
+        .where(inArray(bookingStatusHistories.bookingId, ofBookings))
+        .orderBy(asc(bookingStatusHistories.id)),
+      sales: await db
+        .select()
+        .from(sales)
+        .where(eq(sales.customerId, customerId))
+        .orderBy(asc(sales.id)),
+      records: await db
+        .select()
+        .from(treatmentRecords)
+        .where(eq(treatmentRecords.customerId, customerId))
+        .orderBy(asc(treatmentRecords.id)),
+      photos: await db
+        .select()
+        .from(treatmentPhotos)
+        .where(inArray(treatmentPhotos.treatmentRecordId, ofRecords))
+        .orderBy(asc(treatmentPhotos.id)),
+    }
   }
 
   /** A booking of a customer with what the customer and the staff wrote of it. */
@@ -763,6 +906,8 @@ describe('Customer deletion request API', () => {
       const account = await linkAccount(customerId)
       const session = await signIn(app, account.email)
       const other = await created()
+      const othersAccount = await linkAccount(other.id)
+      const othersSession = await signIn(app, othersAccount.email)
       const visit = await insertVisit(customerId)
       const othersVisit = await insertVisit(other.id)
       await db.insert(reviewHelpfulVotes).values([
@@ -773,43 +918,14 @@ describe('Customer deletion request API', () => {
         .update(reviews)
         .set({ helpfulCount: 1 })
         .where(inArray(reviews.id, [othersVisit.reviewId, visit.reviewId]))
-      await db.insert(customerPreferences).values({
-        customerId,
-        preferredTimeSlots: [],
-        avoidStaffIds: [],
-        specialRequests: '静かな席',
-      })
-      await db.insert(medicalCharts).values({
-        customerId,
-        previousTreatments: [],
-        medicalConditions: '金属アレルギー',
-        preferredProducts: [],
-        avoidProducts: [],
-        notes: null,
-      })
-      await db.insert(customerAllergies).values({
-        customerId,
-        allergyType: 'chemical',
-        allergenName: 'PPD',
-        severityType: 'severe',
-      })
-      await db.insert(customerPoints).values({
-        customerId,
-        transactionType: 'earned',
-        points: 120,
-        balance: 120,
-        description: '誕生日のお祝い',
-        createdAt: '2026-01-01T00:00:00Z',
-      })
-      await db
-        .update(customers)
-        .set({ loyaltyPoints: 120, referralCode: 'HANAKO2026' })
-        .where(eq(customers.id, customerId))
+      await insertKept(customerId)
+      await insertKept(other.id)
       await db
         .update(salons)
         .set({ rating: '3.50', reviewCount: 2 })
         .where(eq(salons.id, salonId))
       const before = await storedCustomer(customerId)
+      const othersBefore = await everythingOf(other.id)
 
       const response = await execute()
 
@@ -1035,7 +1151,16 @@ describe('Customer deletion request API', () => {
         }),
       ])
 
-      expect((await storedCustomer(other.id)).firstName).toBe('Hanako')
+      // Of the other customer nothing changed but the count of the marks
+      // on their review, and their account still signs in.
+      expect(await everythingOf(other.id)).toEqual(othersBefore)
+      expect(
+        (
+          await request(app)
+            .get('/api/v1/auth/me')
+            .set('Authorization', othersSession.authorization)
+        ).status,
+      ).toBe(200)
     })
 
     it('carries out only the requests that are due and pending, each once', async () => {
@@ -1099,6 +1224,90 @@ describe('Customer deletion request API', () => {
           .from(customerPoints)
           .where(eq(customerPoints.customerId, customerId)),
       ).toEqual([])
+    })
+
+    it('erases the account that a customer deleted before still names, when it has no profile since', async () => {
+      const { customerId } = await dueCustomer()
+      const account = await linkAccount(customerId)
+      await signIn(app, account.email)
+      await request(app)
+        .delete(`${CUSTOMERS}/${customerId}`)
+        .set('Authorization', asAdmin)
+
+      await execute()
+
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, account.id))
+      expect(user).toMatchObject({
+        email: `${account.id}@erased.invalid`,
+        status: 'deleted',
+        customerId: null,
+      })
+      expect(
+        await db.select().from(sessions).where(eq(sessions.userId, account.id)),
+      ).toEqual([])
+    })
+
+    it('leaves the account of a customer deleted before when the account has made a profile again', async () => {
+      const { customerId } = await dueCustomer()
+      const account = await linkAccount(customerId)
+      const session = await signIn(app, account.email)
+      await request(app)
+        .delete(`${CUSTOMERS}/${customerId}`)
+        .set('Authorization', asAdmin)
+      const profile = await request(app)
+        .post(`${CUSTOMERS}/me`)
+        .set('Authorization', session.authorization)
+        .send(profileRequest)
+      expect(profile.status).toBe(201)
+      const accountBefore = await db
+        .select()
+        .from(users)
+        .where(eq(users.id, account.id))
+      const profileBefore = await storedCustomer(profile.body.data.id)
+
+      const response = await execute()
+
+      expect(response.body.data).toHaveLength(1)
+      expect((await storedCustomer(customerId)).userId).toBeNull()
+      expect(
+        await db.select().from(users).where(eq(users.id, account.id)),
+      ).toEqual(accountBefore)
+      expect(await storedCustomer(profile.body.data.id)).toEqual(profileBefore)
+      expect(
+        (
+          await request(app)
+            .get('/api/v1/auth/me')
+            .set('Authorization', session.authorization)
+        ).status,
+      ).toBe(200)
+    })
+
+    it('keeps the moment an account deleted before was deleted', async () => {
+      const { customerId } = await dueCustomer()
+      const account = await insertUser(db, {
+        customerId,
+        status: 'deleted',
+        deletedAt: '2026-10-01T09:00:00Z',
+      })
+      const [before] = await db
+        .select({ deletedAt: users.deletedAt })
+        .from(users)
+        .where(eq(users.id, account.id))
+
+      await execute()
+
+      const [user] = await db
+        .select({ email: users.email, deletedAt: users.deletedAt })
+        .from(users)
+        .where(eq(users.id, account.id))
+      expect(before?.deletedAt).toEqual(expect.any(String))
+      expect(user).toEqual({
+        email: `${account.id}@erased.invalid`,
+        deletedAt: before?.deletedAt,
+      })
     })
 
     it('leaves the erased customer out of the ledger, refuses to restore it, and keeps the erasure as its one version', async () => {
@@ -1312,7 +1521,9 @@ describe('Customer deletion request API', () => {
 
     /**
      * Holds rows in a transaction of another connection, by `hold`, until
-     * `release` is called, and then runs `then` in it and commits.
+     * `release` is called, and then runs `then` in it and commits. A test
+     * releases it whether or not anything waited, so that a failure leaves
+     * no lock held.
      */
     const holding = async (
       hold: Holding,
@@ -1362,8 +1573,7 @@ describe('Customer deletion request API', () => {
       )
 
       const pending = take(customer.id).then((response) => response)
-      await untilWaiting(client)
-      await release()
+      await untilWaiting(client).finally(release)
 
       expectProblem(await pending, notFound)
       expect(await requestsOf(customer.id)).toEqual([])
@@ -1377,11 +1587,13 @@ describe('Customer deletion request API', () => {
       )
 
       const pending = take(customer.id).then((response) => response)
-      await untilWaiting(client)
-      const [moment] = await client<{ ms: number }[]>`
-        SELECT (extract(epoch FROM clock_timestamp()) * 1000)::float8 AS ms
-      `
-      await release()
+      const [moment] = await untilWaiting(client)
+        .then(
+          () => client<{ ms: number }[]>`
+            SELECT (extract(epoch FROM clock_timestamp()) * 1000)::float8 AS ms
+          `,
+        )
+        .finally(release)
       const response = await pending
 
       expect(response.status).toBe(202)
@@ -1403,8 +1615,7 @@ describe('Customer deletion request API', () => {
       )
 
       const pending = cancel(customer.id).then((response) => response)
-      await untilWaiting(client)
-      await release()
+      await untilWaiting(client).finally(release)
 
       expectProblem(await pending, notFound)
     })
@@ -1465,8 +1676,7 @@ describe('Customer deletion request API', () => {
       )
 
       const pending = execute().then((response) => response)
-      await untilWaiting(client)
-      await release()
+      await untilWaiting(client).finally(release)
 
       expect((await pending).body.data).toHaveLength(1)
       const [booking] = await db
@@ -1476,19 +1686,20 @@ describe('Customer deletion request API', () => {
       expect(booking).toEqual({ internalNotes: null })
     })
 
-    it('makes an erasure wait for a change of a treatment record of the customer in progress, and erases what it wrote', async () => {
+    it('makes an erasure wait for a writer that holds a treatment record of the customer and then the customer, as a merge does, and erases what it wrote', async () => {
       const { customerId } = await dueCustomer()
       const { recordId } = await insertVisit(customerId)
       const { client, release } = await holding(
         (tx) =>
           tx`SELECT id FROM treatment_records WHERE id = ${recordId} FOR UPDATE`,
-        (tx) =>
-          tx`UPDATE treatment_records SET "consultationNotes" = '書き足した' WHERE id = ${recordId}`,
+        async (tx) => {
+          await tx`UPDATE treatment_records SET "consultationNotes" = '書き足した' WHERE id = ${recordId}`
+          await tx`UPDATE customers SET "updatedAt" = clock_timestamp() WHERE id = ${customerId}`
+        },
       )
 
       const pending = execute().then((response) => response)
-      await untilWaiting(client)
-      await release()
+      await untilWaiting(client).finally(release)
 
       expect((await pending).body.data).toHaveLength(1)
       const [record] = await db
@@ -1517,8 +1728,7 @@ describe('Customer deletion request API', () => {
       )
 
       const pending = execute().then((response) => response)
-      await untilWaiting(client)
-      await release()
+      await untilWaiting(client).finally(release)
 
       expect((await pending).body.data).toHaveLength(1)
       const [review] = await db
@@ -1528,21 +1738,71 @@ describe('Customer deletion request API', () => {
       expect(review).toEqual({ helpfulCount: 1 })
     })
 
-    it('makes an erasure wait for a change of the customer in progress, and erases what it wrote', async () => {
+    it('makes an erasure wait for points being given to the customer in progress, erases what was written of them and forfeits them too', async () => {
       const { customerId } = await dueCustomer()
       const { client, release } = await holding(
         (tx) =>
-          tx`SELECT id FROM customers WHERE id = ${customerId} FOR UPDATE`,
-        (tx) =>
-          tx`UPDATE customers SET notes = '書き足した' WHERE id = ${customerId}`,
+          tx`SELECT id FROM customers WHERE id = ${customerId} FOR NO KEY UPDATE`,
+        async (tx) => {
+          await tx`INSERT INTO customer_points ("customerId", "transactionType", points, balance, description) VALUES (${customerId}, 'earned', 50, 50, '来店のお礼')`
+          await tx`UPDATE customers SET "loyaltyPoints" = 50, notes = '書き足した' WHERE id = ${customerId}`
+        },
       )
 
       const pending = execute().then((response) => response)
-      await untilWaiting(client)
-      await release()
+      await untilWaiting(client).finally(release)
 
       expect((await pending).body.data).toHaveLength(1)
-      expect((await storedCustomer(customerId)).notes).toBeNull()
+      expect(await storedCustomer(customerId)).toMatchObject({
+        notes: null,
+        loyaltyPoints: 0,
+      })
+      expect(
+        (
+          await db
+            .select()
+            .from(customerPoints)
+            .where(eq(customerPoints.customerId, customerId))
+            .orderBy(asc(customerPoints.createdAt))
+        ).map(
+          ({ transactionType, points, balance, description }) =>
+            `${transactionType} ${points} ${balance} ${description}`,
+        ),
+      ).toEqual(['earned 50 50 null', 'expired -50 0 データの消去による失効'])
+    })
+
+    it('makes an erasure of a customer deleted before wait for a profile that its account is making, and then leaves the account', async () => {
+      const { customerId } = await dueCustomer()
+      const account = await linkAccount(customerId)
+      await request(app)
+        .delete(`${CUSTOMERS}/${customerId}`)
+        .set('Authorization', asAdmin)
+      const again = await created()
+      const { client, release } = await holding(
+        (tx) => tx`SELECT id FROM users WHERE id = ${account.id} FOR UPDATE`,
+        async (tx) => {
+          await tx`UPDATE customers SET "userId" = ${account.id} WHERE id = ${again.id}`
+          await tx`UPDATE users SET "customerId" = ${again.id} WHERE id = ${account.id}`
+        },
+      )
+
+      const pending = execute().then((response) => response)
+      await untilWaiting(client).finally(release)
+
+      expect((await pending).body.data).toHaveLength(1)
+      const [user] = await db
+        .select({
+          email: users.email,
+          status: users.status,
+          customerId: users.customerId,
+        })
+        .from(users)
+        .where(eq(users.id, account.id))
+      expect(user).toEqual({
+        email: account.email,
+        status: 'active',
+        customerId: again.id,
+      })
     })
 
     it('makes an erasure wait for a cancelling of the request in progress, and then erases nothing', async () => {
@@ -1556,8 +1816,7 @@ describe('Customer deletion request API', () => {
       )
 
       const pending = execute().then((response) => response)
-      await untilWaiting(client)
-      await release()
+      await untilWaiting(client).finally(release)
 
       expect((await pending).body.data).toEqual([])
       expect(await storedCustomer(customerId)).toEqual(before)
@@ -1573,8 +1832,7 @@ describe('Customer deletion request API', () => {
       )
 
       const pending = execute().then((response) => response)
-      await untilWaiting(client)
-      await release()
+      await untilWaiting(client).finally(release)
 
       expect((await pending).body.data).toHaveLength(1)
       const [user] = await db
@@ -1606,8 +1864,7 @@ describe('Customer deletion request API', () => {
           conflictResolution: 'keep_primary',
         })
         .then((response) => response)
-      await untilWaiting(client)
-      await release()
+      await untilWaiting(client).finally(release)
 
       expectProblem(await pending, notAllowed)
       expect((await storedCustomer(secondary.id)).deletedAt).toBeNull()
@@ -1673,6 +1930,27 @@ describe('Customer deletion request API', () => {
         })
       },
     )
+
+    it('finds the pending requests that are due, the one that fell due first before the others', async () => {
+      const later = await dueCustomer()
+      const earlier = await dueCustomer()
+      await db
+        .update(customerDeletionRequests)
+        .set({
+          requestedAt: sql`now() - interval '340 hours'`,
+          scheduledAt: sql`now() - interval '4 hours'`,
+        })
+        .where(eq(customerDeletionRequests.id, earlier.requestId))
+      await taken((await created()).id)
+      await cancel((await dueCustomer()).customerId)
+
+      expect(
+        await new CustomerDeletionRequestRepository(db).dueRequests(),
+      ).toEqual({
+        type: 'success',
+        data: [earlier.requestId, later.requestId],
+      })
+    })
 
     it('erases nothing for a request that is not there', async () => {
       const repository = new CustomerDeletionRequestRepository(db)

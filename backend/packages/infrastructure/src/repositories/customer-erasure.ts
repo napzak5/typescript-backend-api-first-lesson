@@ -26,7 +26,7 @@ import {
   forfeitOf,
   type UserId,
 } from '@beauty-salon-backend/domain'
-import { and, asc, eq, inArray, lte, or, sql } from 'drizzle-orm'
+import { and, asc, eq, inArray, isNull, lte, or, sql } from 'drizzle-orm'
 import { CLOCK } from '../database/clock'
 import type { DatabaseExecutor } from '../database/index'
 import { recordVersions } from './customer-version-record'
@@ -120,15 +120,20 @@ export const eraseCustomerOf = async (
     return { type: 'notDue' }
   }
 
-  // The accounts: the one the customer names, and one that names the
-  // customer (a deleted customer is no longer named by its account).
+  // The accounts: one that names the customer, and the one a customer
+  // deleted before still names, unless that account has a profile again:
+  // it made that profile after the customer was deleted, and keeps it.
+  // An account is held before it is read, so a profile that it is making
+  // is seen.
   const accounts = await tx
     .select({ id: users.id })
     .from(users)
     .where(
       or(
-        customer.userId === null ? undefined : eq(users.id, customer.userId),
         eq(users.customerId, customerId),
+        customer.userId === null
+          ? undefined
+          : and(eq(users.id, customer.userId), isNull(users.customerId)),
       ),
     )
     .orderBy(asc(users.id))
