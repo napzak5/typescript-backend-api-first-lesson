@@ -1,4 +1,5 @@
 // Use cases
+export * from './business-logic/attachment'
 export * from './business-logic/auth'
 export * from './business-logic/available-slot'
 export * from './business-logic/booking'
@@ -32,6 +33,7 @@ export * from './business-logic/staff-schedule'
 export * from './business-logic/treatment-record'
 
 // Models
+export * from './models/attachment'
 export * from './models/auth'
 export * from './models/available-slot'
 export * from './models/booking'
@@ -64,6 +66,7 @@ export * from './models/staff-schedule'
 export * from './models/treatment-record'
 
 // Repositories
+export * from './repositories/attachment.repository'
 export * from './repositories/available-slot.repository'
 export * from './repositories/booking.repository'
 export * from './repositories/customer.repository'
@@ -98,6 +101,7 @@ export * from './repositories/user.repository'
 
 // Services the use cases rely on
 export * from './services/booking-number-issuer'
+export * from './services/file-storage'
 export * from './services/mailer'
 export * from './services/password-hasher'
 export * from './services/payment-number-issuer'

@@ -39,6 +39,22 @@ const isPostgresUrl = (value: string): boolean =>
 
 const smtpTlsSchema = z.enum(['implicit', 'starttls', 'none'])
 
+/** Where an object storage is reached: `https://storage.example.com`, without a path. */
+const storageEndpoint = z
+  .string()
+  .refine(
+    (value) => isOrigin(value) && /^https?:/.test(value),
+    'Must be an origin such as https://storage.example.com',
+  )
+
+/** A bucket name as S3 allows it: 3 to 63 lower-case letters, digits, dots and hyphens. */
+const bucketName = z
+  .string()
+  .regex(
+    /^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$/,
+    'Must be 3 to 63 lower-case letters, digits, dots and hyphens',
+  )
+
 /** `no-reply@example.com`, or with a display name: `Beauty Salon <no-reply@example.com>`. */
 const isSender = (value: string): boolean => {
   const address = /^[^<>]+<([^<>\s]+)>$/.exec(value)?.[1] ?? value
@@ -86,13 +102,25 @@ const variablesSchema = z.object({
     .string()
     .refine(isOrigin, 'Must be an origin such as https://example.com'),
   TWO_FACTOR_ENCRYPTION_KEY: z.string().min(32),
+  STORAGE_ENDPOINT: storageEndpoint,
+  STORAGE_PUBLIC_ENDPOINT: storageEndpoint,
+  STORAGE_REGION: z.string().min(1),
+  STORAGE_BUCKET: bucketName,
+  STORAGE_ACCESS_KEY_ID: z.string().min(1),
+  STORAGE_SECRET_ACCESS_KEY: z.string().min(1),
   LOG_LEVEL: logLevelSchema,
   LOG_FORMAT: logFormatSchema,
 })
 
 /** What a single variable cannot tell: rules that depend on the environment. */
 const deployedVariablesSchema = variablesSchema.check((context) => {
-  const { NODE_ENV, SMTP_TLS, PUBLIC_APP_URL } = context.value
+  const {
+    NODE_ENV,
+    SMTP_TLS,
+    PUBLIC_APP_URL,
+    STORAGE_ENDPOINT,
+    STORAGE_PUBLIC_ENDPOINT,
+  } = context.value
   // Only variables that are well-formed on their own are compared.
   if (context.issues.length > 0 || !isDeployed(NODE_ENV)) {
     return
@@ -114,6 +142,20 @@ const deployedVariablesSchema = variablesSchema.check((context) => {
       message: `Must use https in ${NODE_ENV}`,
       input: PUBLIC_APP_URL,
     })
+  }
+  // The files are those of customers, and their URLs carry signatures.
+  for (const [variable, endpoint] of Object.entries({
+    STORAGE_ENDPOINT,
+    STORAGE_PUBLIC_ENDPOINT,
+  })) {
+    if (!endpoint.startsWith('https://')) {
+      context.issues.push({
+        code: 'custom',
+        path: [variable],
+        message: `Must use https in ${NODE_ENV}`,
+        input: endpoint,
+      })
+    }
   }
 })
 
@@ -157,6 +199,17 @@ export type AppConfig = {
   twoFactor: {
     /** What the secrets of authenticator apps are encrypted under. */
     encryptionKey: string
+  }
+  /** The S3-compatible object storage that holds the files of the attachments. */
+  storage: {
+    /** Where the server reaches the storage. */
+    endpoint: string
+    /** Where a client reaches it: the URLs it is given name this host. */
+    publicEndpoint: string
+    region: string
+    bucket: string
+    accessKeyId: string
+    secretAccessKey: string
   }
   logging: {
     level: LogLevel
@@ -204,6 +257,14 @@ const toAppConfig = (
   publicAppUrl: variables.PUBLIC_APP_URL,
   twoFactor: {
     encryptionKey: variables.TWO_FACTOR_ENCRYPTION_KEY,
+  },
+  storage: {
+    endpoint: variables.STORAGE_ENDPOINT,
+    publicEndpoint: variables.STORAGE_PUBLIC_ENDPOINT,
+    region: variables.STORAGE_REGION,
+    bucket: variables.STORAGE_BUCKET,
+    accessKeyId: variables.STORAGE_ACCESS_KEY_ID,
+    secretAccessKey: variables.STORAGE_SECRET_ACCESS_KEY,
   },
   logging: {
     level: variables.LOG_LEVEL,

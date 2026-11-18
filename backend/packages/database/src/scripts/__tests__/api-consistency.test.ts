@@ -1695,6 +1695,64 @@ describe('modelRules', () => {
     ])
   })
 
+  it('shows an attachment without the time it was deleted, and lets the request that announces its upload state the salon, the name, the type and the size only', () => {
+    const rules = modelRules
+      .filter(({ table }) => table === 'attachments')
+      .map(
+        ({
+          model,
+          table,
+          kind,
+          omittedColumns,
+          embedded,
+          computed,
+          narrowed,
+          nonNullable,
+        }) => ({
+          model,
+          table,
+          kind,
+          omittedColumns,
+          embedded,
+          computed,
+          narrowed,
+          nonNullable,
+        }),
+      )
+    const none = {
+      embedded: undefined,
+      computed: undefined,
+      narrowed: undefined,
+      nonNullable: undefined,
+    }
+
+    expect(rules).toEqual([
+      {
+        model: 'Models.AttachmentResponse',
+        table: 'attachments',
+        kind: 'response',
+        omittedColumns: ['deletedAt'],
+        ...none,
+      },
+      {
+        model: 'Models.AttachmentUploadUrlRequest',
+        table: 'attachments',
+        kind: 'create',
+        omittedColumns: [
+          'id',
+          'status',
+          'uploadedBy',
+          'uploadExpiresAt',
+          'uploadedAt',
+          'deletedAt',
+          'createdAt',
+          'updatedAt',
+        ],
+        ...none,
+      },
+    ])
+  })
+
   it('lets nothing but the stock row of a new item of a purchase order leave out the null of its column', () => {
     const nonNullable = modelRules
       .filter((modelRule) => modelRule.nonNullable !== undefined)

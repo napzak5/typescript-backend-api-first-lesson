@@ -589,6 +589,27 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 
 規則は [カルテ](./medical-charts.md) にあります。
 
+### 添付ファイルの権限
+
+添付ファイル（`/api/v1/attachments`）はサロンのもので、ルートはサロンの下にありません。届く範囲は、予約台帳と同じです（`business-logic/attachment/_shared/authorization.ts` の `attachmentReachOf`）。
+
+| オペレーション | 許可 |
+|---|---|
+| アップロード用 URL の発行（`POST /api/v1/attachments/upload-url`） | `admin`、本文のサロンの `owner` / `manager` / `staff` |
+| アップロードの完了、1 件の取得、ダウンロード用 URL の発行（`POST /api/v1/attachments/{attachmentId}/complete`、`GET /api/v1/attachments/{attachmentId}`、`GET /api/v1/attachments/{attachmentId}/download-url`） | `admin`、添付ファイルのサロンの `owner` / `manager` / `staff` |
+| 一覧（`GET /api/v1/attachments`） | `admin`（すべてのサロンと、サロンに属さないファイル）、サロンの `owner` / `manager` / `staff`（所属サロンのファイルだけ） |
+| 削除（`DELETE /api/v1/attachments/{attachmentId}`） | `admin`、添付ファイルのサロンの `owner` / `manager`、アップロードした本人 |
+| 掃除（`POST /api/v1/attachments/purge`） | `admin` だけ |
+
+- 1 段階目は、操作者だけで決まる。ロール `customer` のユーザーと、範囲 `none` のユーザーは、ID、本文、クエリが不正でも 403
+- サロンに属さないファイル（`salonId` が null）を扱えるのは `admin` だけ。サロンのメンバーが `salonId: null` で発行すると 403
+- 2 段階目は、本文やクエリを確かめたあとに決まる（`reachesFilesOf`）。サロンのメンバーが、発行の本文や一覧のクエリで、ほかのサロンを指定すると 403
+- 完了、取得、ダウンロード用 URL の発行、削除には、比べるサロンがない。リポジトリが、操作者に届く範囲を検索の条件にするので（`within`）、ほかのサロンの添付ファイルは見つからない（404）。存在しないものと区別しない
+- 削除は、添付ファイルが見つかったあとに判定する（`mayRemoveAttachment`）。`staff` は、自分がアップロードしたものだけを削除できる。ほかの人のものは 403
+- 署名付き URL そのものには、認証がない。URL を知っている人は、期限（アップロードは 15 分、ダウンロードは 5 分）まで使える
+
+規則は [添付ファイル](./attachments.md) にあります。
+
 ### レビューの権限
 
 レビューは、来店した顧客が書き、誰でも読みます。誰が投稿、修正、削除、参考になったの評価、通報、返信ができるかは、まず操作者で決まります（`business-logic/review/_shared/authorization.ts` の `reviewerOf`、`reviewRemoverOf`、`reviewReporterOf`、`reviewResponderOf`）。修正と削除では、そのあとで、レビューを書いた顧客かどうかを、参考になったでは、書いた顧客でないことを、通報では、顧客なら書いた顧客でないこと、サロンならそのサロンのレビューであることを、返信では、`admin` なら取り下げ（null）であること、サロンならそのサロンのレビューであることを確かめます。通報の一覧と却下は `admin` だけです（`business-logic/review-report/_shared/authorization.ts` の `mayHandleReviewReports`）。

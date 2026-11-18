@@ -6,6 +6,7 @@ import {
   connectDatabase,
   type Logger,
   pingDatabase,
+  S3FileStorage,
   SmtpMailer,
   TotpAuthenticator,
 } from '@beauty-salon-backend/infrastructure'
@@ -98,11 +99,15 @@ export const startServer = async (
   // Connects when the first mail goes out: a mail server that is down
   // does not keep the API from starting.
   const mailer = new SmtpMailer(config.mail, logger)
+  // Connects when the first file is looked at: a storage that is down
+  // does not keep the API from starting either.
+  const fileStorage = new S3FileStorage(config.storage)
 
   const app = createApp({
     database: connection.database,
     logger,
     mailer,
+    fileStorage,
     twoFactorAuthenticator: new TotpAuthenticator(
       config.twoFactor.encryptionKey,
     ),
@@ -117,6 +122,7 @@ export const startServer = async (
   const listening = await listen(app, config.server)
   if (listening.type === 'error') {
     await mailer.close()
+    fileStorage.close()
     await closeDatabase()
     return Result.error({ type: 'listenFailed', error: listening.error })
   }
@@ -128,6 +134,7 @@ export const startServer = async (
     stop: async () => {
       await close(server, logger, shutdownGraceMs)
       await mailer.close()
+      fileStorage.close()
       await closeDatabase()
     },
   })

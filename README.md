@@ -73,9 +73,10 @@ For detailed architecture documentation, see [docs/architecture-overview.md](doc
 | Inventory alerts of a salon (`/api/v1/inventory-alerts`) | Implemented in every layer: the list, the acknowledgement and the summary of the alerts of the stock of a salon. An alert is worked out whenever it is read, not stored: the stock of an active product at the salon at or below its minimum (critical when there is none) or above its maximum, and a stock row with stock that expires within 30 days of today at the salon or has expired. An administrator and the owner, the managers and the staff of a salon read and acknowledge them, and a customer account does not reach them. An acknowledgement records the alert as it is and holds while that lasts: once the stock left the alert or ran out, the threshold changed or the expiry date of the row changed, the alert is to be acknowledged again. See [docs/inventory-alerts.md](docs/inventory-alerts.md) |
 | Treatment records (`/api/v1/treatments`) | Implemented in every layer, every operation of `TreatmentRecordCrud`: list, create, get, update and delete of what a salon notes of the treatment of a booking (the services given, the techniques, the condition of the scalp and the hair, the colour formula, the materials used with their amounts and lots, what is recommended for the next visit, the satisfaction of the customer and the notes of the staff), the addition and the removal of their photos, and the statistics. An administrator and the owner, the managers and the staff of the salon of the booking read and write them, an administrator, the owner and the managers remove one, and a customer account reaches none, not even the records of its own visits. A booking that is in progress or completed takes one record (409 otherwise, and for a second one); its customer is that of the booking, and its staff member, services and products are of the salon of the booking (400). Recording the materials does not move the stock. A photo is the address of a file stored elsewhere, at most 20 a record and one of an address, and a public photo needs the consent of the customer. The statistics count the records of a salon in a period by the kinds of their services and by their services. See [docs/treatments.md](docs/treatments.md) |
 | Medical charts (`/api/v1/medical-charts`) | Implemented in every layer, every operation of `MedicalChartCrud`: list, create, get by customer and update of the charts, and list, add, update and remove of the allergies of a customer. A chart is what the staff check before a treatment, one for a customer: the treatments had before at other salons, the medical conditions to heed, the products the customer prefers and those to avoid, and notes. An administrator and the owner, the managers and the staff of any salon read and write them, as they keep the customer ledger; a customer account reaches none, not even its own. A previous treatment is not after today, and the chart of a deleted customer is shown nowhere. An allergy is one for an allergen of a customer (409 for a second), with one level of severity, and the allergies are listed severest first; the staff add and change them, and an administrator, an owner or a manager removes one. See [docs/medical-charts.md](docs/medical-charts.md) |
-| The other domains | Specified in TypeSpec, with no backend code and no tables yet: the attachments and their share links |
+| Attachments (`/api/v1/attachments`) | Implemented in every layer, every operation of `AttachmentCrud`: the files a salon keeps, such as the photos of a treatment and its documents (JPEG, PNG, WebP and PDF of up to 10 MiB). The server never carries a file. It issues a URL that is signed for one upload of the announced type and size and works for 15 minutes, which the client sends the file to; the upload is completed once the server has looked at the size and the first bytes of what is stored, and a file that is not what was announced ends the attachment (409). The uploaded attachments are listed newest first, a download URL works for 5 minutes and saves the file under its name or shows it in the browser, a delete removes the file and then the attachment, and a purge removes the uploads that were never completed and the deleted rows. An administrator and the owner, the managers and the staff of the salon reach the attachments of the salon, a file of no salon is the administrators', the owner, the managers and whoever uploaded it delete one, only an administrator purges, and a customer account reaches none. See [docs/attachments.md](docs/attachments.md) |
+| The other domains | Specified in TypeSpec, with no backend code and no tables yet: the share links of the attachments |
 | Email | Implemented for the mails of the authentication flows: plain text over SMTP. Locally they are caught by Mailpit. See [docs/email.md](docs/email.md) |
-| File storage | Design documents only |
+| File storage | An S3-compatible object storage holds the files of the attachments. Locally it is SeaweedFS, started by Docker Compose; which storage production uses, its bucket, its credentials and the CORS rules of the bucket are part of preparing production. See [docs/attachments.md](docs/attachments.md) |
 | Frontend apps | Application shells; they do not call the API yet, and nothing in them signs in or sends a token. The pages that the links in the mails point at do not exist yet |
 
 ## 🚀 Quick Start
@@ -89,12 +90,15 @@ For detailed architecture documentation, see [docs/architecture-overview.md](doc
 - An SMTP server for the mails the backend sends. `make infra-up` starts
   Mailpit, which catches them, and the `SMTP_*` variables in `.env.localhost`
   point to it
+- An S3-compatible object storage for the files of the attachments.
+  `make infra-up` starts SeaweedFS with a bucket, and the `STORAGE_*`
+  variables in `.env.localhost` point to it
 
 ### Installation
 
 ```bash
 pnpm install       # Install dependencies and the pre-commit hook
-make infra-up      # Start PostgreSQL and Mailpit (the local mail catcher) in Docker
+make infra-up      # Start PostgreSQL, Mailpit (the local mail catcher) and SeaweedFS (the local file storage) in Docker
 pnpm db:fresh      # Create the schema from sql/setup.sql
 pnpm db:seed       # Insert sample data, including accounts to sign in with (optional)
 pnpm dev           # Backend on :3000, frontend apps on :3001-3003
@@ -264,14 +268,24 @@ them at start-up and exits with the list of what is missing or malformed.
 | `MAIL_FROM` | Sender of every mail: an address, or `Name <address>` |
 | `PUBLIC_APP_URL` | Origin of the web application that the links in mails point at |
 | `TWO_FACTOR_ENCRYPTION_KEY` | Key under which the secrets of authenticator apps (two-factor authentication) are encrypted in the database: 32 characters or more, random and kept secret. Changing it makes every stored secret unusable: the codes of the authenticator apps are no longer accepted |
+| `STORAGE_ENDPOINT` | Origin at which the server reaches the S3-compatible object storage that holds the files of the attachments |
+| `STORAGE_PUBLIC_ENDPOINT` | Origin at which a browser reaches the same storage: the signed upload and download URLs name it. It differs from `STORAGE_ENDPOINT` only when the server reaches the storage by a name of its own network |
+| `STORAGE_REGION`, `STORAGE_BUCKET` | Region the URLs are signed for, and the bucket of the files, which must exist: the server does not create it |
+| `STORAGE_ACCESS_KEY_ID`, `STORAGE_SECRET_ACCESS_KEY` | Credentials for the storage; the URLs are signed with the secret, so it is kept secret |
 | `LOG_LEVEL` | `fatal`, `error`, `warn`, `info`, `debug`, `trace` or `silent` |
 | `LOG_FORMAT` | `json` (one object per line) or `pretty` (for a terminal) |
 
 When `NODE_ENV` is `staging` or `production`, the server also refuses to
 start with `SMTP_TLS=none` or with a `PUBLIC_APP_URL` that does not start with
-`https://`: the mails carry tokens. The accepted values of every variable are
-in [docs/env-configuration.md](docs/env-configuration.md), and how mail is
-sent is in [docs/email.md](docs/email.md).
+`https://`: the mails carry tokens. Nor does it start with a
+`STORAGE_ENDPOINT` or a `STORAGE_PUBLIC_ENDPOINT` that does not start with
+`https://`: the files are those of customers, and their URLs carry
+signatures. The server does not connect to the storage when it starts, so a
+storage that is down or set up wrongly shows as 500 responses of the
+attachment routes, not as a failed start. The accepted values of every
+variable are in [docs/env-configuration.md](docs/env-configuration.md), how
+mail is sent is in [docs/email.md](docs/email.md), and how the files are kept
+is in [docs/attachments.md](docs/attachments.md).
 
 ### Logs and Request IDs
 
@@ -333,7 +347,8 @@ dropped.
   ```
 
   The integration tests of the infrastructure package send mail to a Mailpit
-  container, which they also start through testcontainers.
+  container and files to a SeaweedFS container, which they also start through
+  testcontainers.
 
 See [docs/testing-requirements.md](docs/testing-requirements.md) for testing guidelines.
 
@@ -374,6 +389,7 @@ The full index is [docs/README.md](docs/README.md).
 - [Products](docs/products.md) - The products of a salon: what is implemented, who reads them and who keeps them, the order of the checks, the rules of a request, the product code (unique among the products of the salon that are not deleted), the stock levels in order, a delete that marks the product and is refused while it has stock, the list and its filters, requests that arrive at the same moment, the constraints, the seed (日本語)
 - [Inventory](docs/inventory.md) - The stock of a salon: what is implemented, who reads it and who keeps it, the order of the checks, the rules of a request, the lot number (named for a product kept by lots, unique among the rows of the product), a stock row created without stock, a delete refused while the row counts stock, the list, the low stock and what expires soon, the stock movements (the kinds and their signs, who records which, the total cost, the stock kept between what is reserved and the most a row holds, the history and the opening adjustment), the stock count (all rows or none, an adjustment of each difference, one moment for the count), the value report (by category, rounded once a category is summed), requests that arrive at the same moment, the constraints, the seed (日本語)
 - [Purchase Orders](docs/purchase-orders.md) - The purchase orders of a salon: what is implemented, the items copied from their stock rows, who drafts, approves, cancels and receives, the order of the checks, the rules of a request, the amounts the server works out, the order number, the statuses and what moves them, the list, the receipt of the goods, the reorder suggestions, requests that arrive at the same moment, the constraints, the seed (日本語)
+- [Attachments](docs/attachments.md) - The files a salon keeps: what is implemented, the upload through a signed URL and its completion, which files are taken, who may do what, the order of the checks, the download URL, the delete and the purge, the storage and its settings, SeaweedFS for local development (日本語)
 - [Email](docs/email.md) - Which mails are sent, SMTP settings, Mailpit for local development (日本語)
 - [Testing Requirements](docs/testing-requirements.md)
 - [API Testing Guide](docs/api-testing-guide.md)

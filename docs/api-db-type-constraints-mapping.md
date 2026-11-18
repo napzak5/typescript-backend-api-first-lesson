@@ -471,14 +471,15 @@ const salonRules: ModelRule[] = [
 | 複数の行を一度に追加するリクエストと、その結果（`TreatmentPhotoBulkCreateRequest`、`TreatmentPhotoBulkCreateResponse`） | 載せない。包む行のモデル（`TreatmentPhotoCreateRequest`、`TreatmentPhotoResponse`）は、そのルールで照合する |
 | 集計・計算結果（`ReviewSummaryResponse`、`SalesReportResponse`、`InventoryValueReportResponse`、`ReorderSuggestionResponse`、`InventoryAlertSummaryResponse`、`TreatmentStatisticsResponse` など） | 載せない |
 | 保存せず、読むたびに複数の表から求めるモデル（`InventoryAlertResponse`。在庫のアラートは、商品、在庫の行、在庫の移動から求める） | 載せない。プロパティ名と null 許可は、もとのカラムに合わせる（`productId`、`inventoryId`、`lotNumber`、`expiryDate` など）。包む行のモデル（`InventoryAlertAcknowledgementResponse`）は、そのルールで照合する |
-| 行を追加するアクションのリクエストで、サーバーが決めるカラムを書かないもの（`InventoryAlertAcknowledgeRequest`。サロン、重要度、`threshold`、使用期限は、今のアラートから、確認した人と時刻は、操作者とデータベースが決める） | `create` として載せ、書かないカラムを `omittedColumns` に挙げる |
+| 行を追加するアクションのリクエストで、サーバーが決めるカラムを書かないもの（`InventoryAlertAcknowledgeRequest`。サロン、重要度、`threshold`、使用期限は、今のアラートから、確認した人と時刻は、操作者とデータベースが決める。`AttachmentUploadUrlRequest`。状態、アップロードした人、URL の有効期限、日時は、操作者とデータベースが決める） | `create` として載せ、書かないカラムを `omittedColumns` に挙げる |
+| 行のモデルに、保存しない値を添えるレスポンスと、保存しない値だけのレスポンス（`AttachmentUploadUrlResponse` の `uploadUrl` と `uploadHeaders`、`AttachmentDownloadUrlResponse`、`AttachmentPurgeResponse`。署名付き URL は、発行のたびに求める） | 載せない。包んだ行のモデル（`AttachmentResponse`）は、そのルールで照合する |
 | テーブルがまだない機能のモデル（下の表） | 載せない |
 
 テーブルがまだない機能は次のとおりである。これらの TypeSpec は命名・レスポンスの形・エラーの規約には従っているが、プロパティを照合する相手がない。実装するときは、先にテーブルを設計してマイグレーションを書き、モデルをルールに載せる。
 
 | 機能 | TypeSpec |
 |---|---|
-| 添付ファイル、共有リンク | `specs/models/attachment.tsp` |
+| 共有リンク（`ShareLinkResponse`、`ShareLinkCreateRequest` など。添付ファイルのモデルは `attachments` と照合している） | `specs/models/attachment.tsp` |
 
 ### ドメインを実装するとき
 

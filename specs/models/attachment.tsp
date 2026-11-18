@@ -10,63 +10,66 @@ namespace BeautySalon.Models {
   scalar ShareLinkId extends string;
 
   @doc("""
-    添付ファイルレスポンス - サロンシステムで管理するアップロード済みファイルのメタ情報を返す。
-    対応するテーブルはまだない。全項目のキーが必須で、値がない項目は null を返す
+    添付ファイルの種類(Content-Type)。受け付けるのは、この4つだけ
+    image/jpeg: JPEG 画像(拡張子 .jpg / .jpeg)
+    image/png: PNG 画像(拡張子 .png)
+    image/webp: WebP 画像(拡張子 .webp)
+    application/pdf: PDF 文書(拡張子 .pdf)
     """)
-  model AttachmentResponse {
-    @doc("添付ファイルを一意に識別するID。UUID形式。")
-    id: AttachmentId;
-
-    @doc("オブジェクトストレージでファイルを参照するための内部キー。")
-    key: string;
-
-    @doc("利用者がアップロードした元のファイル名。")
-    filename: string;
-
-    @doc("ファイルのMIMEタイプ（Content-Type）。")
-    content: string;
-
-    @doc("ファイルサイズ（バイト単位）。")
-    size: int32;
-
-    @doc("ファイルをアップロードしたユーザーID。")
-    uploadedBy: UserId;
-
-    @doc("ファイルが紐づくサロンID。全社共通ファイルやシステムファイルの場合はnull。")
-    salonId: SalonId | null;
-
-    @doc("必要に応じて付加情報を保持する任意メタデータ。追加情報が不要な場合はnull。")
-    metadata: Record<unknown> | null;
-
-    @doc("ラベリングや検索に利用するタグ情報のセット。タグ付けをしていない場合はnull。")
-    tags: Record<string> | null;
-
-    @doc("ファイルがアップロードされた日時。")
-    uploadedAt: utcDateTime;
-
-    @doc("ファイル情報が最後に更新された日時。")
-    updatedAt: utcDateTime;
+  enum AttachmentContentType {
+    jpeg: "image/jpeg",
+    png: "image/png",
+    webp: "image/webp",
+    pdf: "application/pdf",
   }
 
   @doc("""
-    添付ファイル登録リクエスト - multipart/form-data でファイル本体と属性を送り、添付ファイルを登録する。
-    multipart/form-data では null を送れないため、値がない項目はパートごと省略する
+    添付ファイルの状態
+    pending: アップロード待ち - アップロード用のURLを発行し、アップロードをまだ確かめていない。一覧に含まれず、ダウンロードできない
+    uploaded: アップロード済み - 保存先のファイルを確かめた(complete)。一覧に含まれ、ダウンロードできる
     """)
-  model AttachmentCreateRequest {
-    @doc("HTTPリクエストで送信されるファイル本体。")
-    file: HttpPart<File>;
+  enum AttachmentStatusType {
+    pending,
+    uploaded,
+  }
 
-    @doc("アップロード時に指定されたファイル名。")
-    filename: HttpPart<string>;
+  @doc("""
+    添付ファイル - attachments の行。ファイルの中身は、オブジェクトストレージにある。
+    保存先のキーは内部の値で、レスポンスに含めない。すべてのプロパティがあり、値がないものは null
+    """)
+  model AttachmentResponse {
+    @doc("添付ファイルの ID")
+    id: AttachmentId;
 
-    @doc("ファイルのContent-Type。")
-    content: HttpPart<string>;
+    @doc("ファイルが属するサロンの ID。サロンに属さないファイル(admin だけが扱える)はnull")
+    salonId: SalonId | null;
 
-    @doc("ファイルを関連付けるサロンID。全社共通ファイルの場合は省略する(レスポンスのsalonIdはnullになる)。")
-    salonId?: HttpPart<SalonId>;
+    @doc("アップロードした元のファイル名。ダウンロードするときの名前になる")
+    filename: string;
 
-    @doc("タグ情報を表すJSON文字列。タグを設定しない場合は省略する(レスポンスのtagsはnullになる)。")
-    tags?: HttpPart<string>;
+    @doc("ファイルの種類")
+    contentType: AttachmentContentType;
+
+    @doc("ファイルのサイズ(バイト)。1〜10,485,760(10 MiB)")
+    size: int32;
+
+    @doc("添付ファイルの状態")
+    status: AttachmentStatusType;
+
+    @doc("アップロード用のURLを発行したユーザーの ID")
+    uploadedBy: UserId;
+
+    @doc("アップロード用のURLの有効期限。発行の15分後")
+    uploadExpiresAt: utcDateTime;
+
+    @doc("アップロードを確かめた日時。アップロード待ち(pending)のあいだはnull")
+    uploadedAt: utcDateTime | null;
+
+    @doc("アップロード用のURLを発行した日時")
+    createdAt: utcDateTime;
+
+    @doc("最後に更新した日時")
+    updatedAt: utcDateTime;
   }
 
   @doc("""
@@ -80,47 +83,49 @@ namespace BeautySalon.Models {
     limit?: int32 = 20;
 
     @query
-    @doc("取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する")
+    @doc("取得開始位置を示すカーソル。同じ絞り込み条件で取得した前回レスポンスの `meta.nextCursor` を指定する。一覧に出る添付ファイルのIDでない場合は検証エラー")
     cursor?: string;
 
     @query
-    @doc("ファイルが紐づくサロンIDによる絞り込み(完全一致)。省略した場合はサロンで絞り込まない")
+    @doc("ファイルが属するサロンIDによる絞り込み(完全一致)。省略した場合はサロンで絞り込まない")
     salonId?: SalonId;
   }
 
   @doc("""
-    アップロード用署名付きURL発行リクエスト - 外部ストレージへ直接アップロードするための署名付きURLを要求する。
+    アップロード用URLの発行リクエスト - アップロードするファイルの名前、種類、サイズを申告する。
     全項目のキーが必須。null を指定できる項目は null を送る
     """)
   model AttachmentUploadUrlRequest {
-    @doc("アップロード予定のファイル名。")
+    @doc("アップロードするファイルの名前(1〜255文字)。制御文字と / と \\ を含められない。拡張子は、種類(contentType)に対応するものに限る(大文字と小文字は区別しない)")
     @minLength(1)
     @maxLength(255)
     filename: string;
 
-    @doc("アップロード予定ファイルのContent-Type。")
-    @minLength(1)
-    @maxLength(255)
-    content: string;
+    @doc("アップロードするファイルの種類")
+    contentType: AttachmentContentType;
 
-    @doc("アップロード予定ファイルのサイズ（バイト単位）。")
+    @doc("アップロードするファイルのサイズ(バイト)。1〜10,485,760(10 MiB)")
     @minValue(1)
+    @maxValue(10485760)
     size: int32;
 
-    @doc("ファイルをひも付けるサロンID。全社共通ファイルの場合はnull。")
+    @doc("ファイルが属するサロンの ID。サロンに属さないファイル(admin だけが作れる)はnull")
     salonId: SalonId | null;
   }
 
-  @doc("署名付きアップロードURLと関連情報を返すレスポンス。")
+  @doc("""
+    アップロード用URLの発行の結果 - アップロード待ち(pending)の添付ファイルと、ファイルの中身を送る先。
+    uploadUrl に、uploadHeaders のヘッダーを付けて、申告したサイズちょうどの本文を PUT で送る
+    """)
   model AttachmentUploadUrlResponse {
-    @doc("一時的に有効なアップロード用URL。")
+    @doc("作成した、アップロード待ち(pending)の添付ファイル")
+    attachment: AttachmentResponse;
+
+    @doc("ファイルの中身を PUT で送るURL。attachment.uploadExpiresAt まで有効で、受け付けるのは1回だけ")
     uploadUrl: string;
 
-    @doc("生成されたストレージキー。アップロード完了後の識別に使用。")
-    key: string;
-
-    @doc("署名付きURLの有効期限。")
-    expiresAt: utcDateTime;
+    @doc("PUT のリクエストに付けるヘッダー(名前と値)。署名に含まれているので、1つでも欠けたり値が違ったりすると、保存先が拒否する")
+    uploadHeaders: Record<string>;
   }
 
   @doc("ダウンロード用署名付きURL発行リクエスト - 発行するURLの表示方法を指定する")
@@ -137,6 +142,12 @@ namespace BeautySalon.Models {
 
     @doc("署名付きURLの有効期限。")
     expiresAt: utcDateTime;
+  }
+
+  @doc("完了しなかったアップロードと、削除した添付ファイルの掃除の結果")
+  model AttachmentPurgeResponse {
+    @doc("消した添付ファイルの行の数")
+    purgedCount: int32;
   }
 
   @doc("""

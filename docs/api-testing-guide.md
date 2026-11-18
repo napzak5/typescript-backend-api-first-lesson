@@ -93,6 +93,18 @@ through testcontainers, so `pnpm test:integration` for the whole workspace
 needs Docker even when `TEST_DATABASE_URL` is set. The API tests need no SMTP
 server.
 
+The integration tests of the file storage (`S3FileStorage`, in
+`backend/packages/infrastructure/src/storage/__tests__/`) upload and download
+through signed URLs against a real S3-compatible storage: a SeaweedFS container
+they start through testcontainers, or the storage that `TEST_STORAGE_ENDPOINT`,
+`TEST_STORAGE_REGION`, `TEST_STORAGE_BUCKET`, `TEST_STORAGE_ACCESS_KEY_ID` and
+`TEST_STORAGE_SECRET_ACCESS_KEY` name, where they write below a random prefix
+and remove what they wrote. The API tests need no storage: `createTestApp`
+gives the app an `InMemoryFileStorage`
+(`backend/packages/api/src/__tests__/_shared/in-memory-file-storage.ts`), which
+keeps the files in a map, notes every call in its order and fails the calls a
+test names ([Attachments](./attachments.md#テスト), Japanese).
+
 ## How a Test Gets Its Database
 
 `vitest.integration.config.ts` names `src/__tests__/_shared/setup.ts` as a
@@ -403,6 +415,7 @@ The kinds of error an endpoint test meets:
 | Already exists | 409 | `already-exists` | `3002` | `null` |
 | The state does not allow the operation (the two-factor operations) | 409 | `operation-not-allowed` | `3003` | `null` |
 | Database failure or corrupt stored data | 500 | `database` | `4003` | `null`, and `detail` is `null` too |
+| A call to the object storage of the attachments failed | 500 | `storage` | `4004` | `null`, and `detail` is `null` too |
 
 Every 401 also carries a `WWW-Authenticate` header.
 `backend/packages/api/src/shared/problem-details.ts` defines these and the

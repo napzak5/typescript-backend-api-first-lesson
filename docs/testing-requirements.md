@@ -12,7 +12,7 @@ reference for the tests of every domain that follows.
 | Kind | Command | Files | Needs |
 |------|---------|-------|-------|
 | Unit | `pnpm test` | `*.test.ts` and `*.test.tsx`, in a `__tests__` directory or beside the module | Nothing |
-| Integration | `pnpm test:integration` | `*.integration.test.ts` | A PostgreSQL: the one at `TEST_DATABASE_URL`, otherwise a container started through testcontainers (Docker). The mail delivery tests of the `infrastructure` package always need Docker: they start a Mailpit container through testcontainers |
+| Integration | `pnpm test:integration` | `*.integration.test.ts` | A PostgreSQL: the one at `TEST_DATABASE_URL`, otherwise a container started through testcontainers (Docker). The mail delivery tests and the file storage tests of the `infrastructure` package always need Docker: they start a Mailpit and a SeaweedFS container through testcontainers (the storage tests use another S3-compatible storage when `TEST_STORAGE_ENDPOINT` names one) |
 
 Both run on Vitest. Tests resolve the workspace packages they import from
 source (the export condition `@beauty-salon-backend/source`, or
@@ -44,6 +44,7 @@ What the repository does not have:
 | Permission rules: every kind of actor, allowed or refused, and the repository left untouched by a refused one | Unit, through the use cases | `describe('who may change a salon', …)` in `backend/packages/domain/src/__tests__/salon.usecase.test.ts` |
 | Password hashing, the generation of tokens, and the secrets, one-time passwords and backup codes of two-factor authentication | Unit | `backend/packages/infrastructure/src/security/__tests__/` |
 | Mail delivery (`SmtpMailer`): what reaches the SMTP server, what is logged and what is kept out of the log, a delivery that fails, closing while deliveries are under way | Unit for what needs no server; integration against a Mailpit container | `backend/packages/infrastructure/src/mail/__tests__/` |
+| File storage (`S3FileStorage`): what a signed upload URL takes and refuses (another type, another length, a second upload, a URL that ran out), what is read of a stored file, what a signed download URL answers, removal, a public endpoint of its own, a storage that refuses or cannot be reached | Integration against a SeaweedFS container, with real uploads and downloads | `backend/packages/infrastructure/src/storage/__tests__/` |
 | Pure helpers of the HTTP layer: links, query decoding, problem details, middleware | Unit | `backend/packages/api/src/routes/salon/_shared/__tests__/`, `backend/packages/api/src/routes/service-category/_shared/__tests__/`, `backend/packages/api/src/routes/service/_shared/__tests__/`, `backend/packages/api/src/shared/__tests__/`, `backend/packages/api/src/middleware/__tests__/middleware.test.ts` |
 | Every endpoint (see [Requirements per Endpoint](#requirements-per-endpoint)) | Integration | `backend/packages/api/src/__tests__/salon.integration.test.ts`, `auth.integration.test.ts`, `service-category.integration.test.ts` (routes below a salon), `service.integration.test.ts` (a bulk operation, a soft delete below a salon) |
 | The seeded accounts: one of each role signs in with `SEED_PASSWORD`, and the owner and the manager can change the first seeded salon but not the second | Integration | `describe('the seeded accounts', …)` in `backend/packages/api/src/__tests__/auth.integration.test.ts` |
@@ -201,6 +202,7 @@ pnpm test:integration    # integration tests; needs Docker (TEST_DATABASE_URL re
 
 CI runs the unit tests once and the integration tests twice: against a
 PostgreSQL service through `TEST_DATABASE_URL`, and with testcontainers; the
-mail delivery tests start their Mailpit container in both runs. How to
+mail delivery tests start their Mailpit container and the file storage tests
+their SeaweedFS container in both runs. How to
 run one package, one file or one test is in the
 [API Testing Guide](./api-testing-guide.md).

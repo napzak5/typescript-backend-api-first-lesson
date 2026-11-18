@@ -5,15 +5,18 @@
  * Comprehensive REST API for managing beauty salon operations including salons, staff, services, customers, bookings, treatments, payments, inventory, and access control. Built with TypeSpec for type-safe API-first development.
  * OpenAPI spec version: 2.0
  */
+import type { ModelsAttachmentResponse } from './modelsAttachmentResponse';
+import type { ModelsAttachmentUploadUrlResponseUploadHeaders } from './modelsAttachmentUploadUrlResponseUploadHeaders';
 
 /**
- * 署名付きアップロードURLと関連情報を返すレスポンス。
+ * アップロード用URLの発行の結果 - アップロード待ち(pending)の添付ファイルと、ファイルの中身を送る先。
+ * uploadUrl に、uploadHeaders のヘッダーを付けて、申告したサイズちょうどの本文を PUT で送る
  */
 export interface ModelsAttachmentUploadUrlResponse {
-  /** 一時的に有効なアップロード用URL。 */
+  /** 作成した、アップロード待ち(pending)の添付ファイル */
+  attachment: ModelsAttachmentResponse;
+  /** ファイルの中身を PUT で送るURL。attachment.uploadExpiresAt まで有効で、受け付けるのは1回だけ */
   uploadUrl: string;
-  /** 生成されたストレージキー。アップロード完了後の識別に使用。 */
-  key: string;
-  /** 署名付きURLの有効期限。 */
-  expiresAt: string;
+  /** PUT のリクエストに付けるヘッダー(名前と値)。署名に含まれているので、1つでも欠けたり値が違ったりすると、保存先が拒否する */
+  uploadHeaders: ModelsAttachmentUploadUrlResponseUploadHeaders;
 }

@@ -412,6 +412,7 @@ answers 503 with the body its operation defines.
 | `alreadyExists` | The repository, from the name of the constraint that a write violated: the unique index on the `email` of a salon; for a customer, the unique index on `email`, which covers the customers that are not deleted, and the unique constraint on `referralCode`, which covers every customer | 409 | `3002` |
 | `conflict` | A two-factor use case or the use case of an administrator operation, when the request is fine and the state of the account does not allow it (enabling what is already enabled, or unlocking an account that is not locked, for example); the use case that deletes a service, when a package contains the service; the use case that creates a customer's own profile, when the account has one already, has not confirmed its email address, or the customer with its email address belongs to another account; the use case that creates a booking, when a staff member is occupied at that time or the time zone of the salon is not one the runtime knows; a use case that changes the status of a booking, when the status does not allow the action, when a no-show is noted before the booking has begun, or when the actual end would not be after the actual start the booking has | 409 | `3003` |
 | `database` | The repository on an unexpected failure; the read mapper on stored data that does not match the API model | 500 | `4003` |
+| `storage` | The file storage (`S3FileStorage`), when a call to the object storage of the attachments fails or is refused | 500 | `4004` |
 | `routeNotFound` | `notFoundHandler` | 404 | `3001` |
 | `malformedBody` | The JSON body parser | 400 | `2002` |
 | `unsupportedMediaType` | `requireJsonBody`, the body parser | 415 | `2002` |
@@ -456,8 +457,9 @@ the media type `application/problem+json` (RFC 9457); a successful response is
 `application/json`. A 401 also carries a `WWW-Authenticate: Bearer` header,
 which `sendProblem` takes from `toBearerChallenge` in `problem-details.ts`.
 
-A `database` or `unexpected` error never shows its cause to the client. It is
-logged instead: `sendProblem` logs a `database` error with its cause, and
+A `database`, `storage` or `unexpected` error never shows its cause to the
+client. It is logged instead: `sendProblem` logs a `database` and a `storage`
+error with its cause, and
 `errorHandler` logs an unexpected exception with its stack.
 
 Use cases and repositories do not throw. A repository runs its queries through

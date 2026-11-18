@@ -33,6 +33,17 @@ backend/packages/api/src/
 │   │   ├── unlock-account.handler.ts             # POST /api/v1/admin/auth/unlock/:userId
 │   │   ├── reset-two-factor.handler.ts           # POST /api/v1/admin/auth/reset-two-factor/:userId
 │   │   └── index.ts                              # createAdminAuthRouter
+│   ├── attachment/
+│   │   ├── _shared/
+│   │   │   └── index.ts            # AttachmentParams, the response body types, attachmentLinks, decodeAttachmentSearchQuery, decodeAttachmentDownloadQuery
+│   │   ├── issue-attachment-upload-url.handler.ts    # POST   /api/v1/attachments/upload-url
+│   │   ├── purge-attachments.handler.ts              # POST   /api/v1/attachments/purge
+│   │   ├── complete-attachment.handler.ts            # POST   /api/v1/attachments/:attachmentId/complete
+│   │   ├── list-attachments.handler.ts               # GET    /api/v1/attachments
+│   │   ├── get-attachment.handler.ts                 # GET    /api/v1/attachments/:attachmentId
+│   │   ├── issue-attachment-download-url.handler.ts  # GET    /api/v1/attachments/:attachmentId/download-url
+│   │   ├── delete-attachment.handler.ts              # DELETE /api/v1/attachments/:attachmentId
+│   │   └── index.ts                                  # createAttachmentRouter
 │   ├── auth/
 │   │   ├── _shared/
 │   │   │   ├── types.ts            # response body types, taken from the generated operations
@@ -501,6 +512,8 @@ The three handlers in `routes/inventory-alert/` are wrapped with `authenticated`
 
 The eight handlers in `routes/treatment-record/` are wrapped with `authenticated` and pass the `actor` first: the list then passes the outcome of `decodeTreatmentRecordSearchQuery`, the create `req.body`, the get and the delete `req.params.id`, the update and the addition of photos `req.params.id` and `req.body`, the removal of a photo `req.params.id` and `req.params.photoId`, and the statistics `req.query`, which their use case reads, so that a query that is wrong is told only to an actor who may read treatment records. The create answers 201 with a `Location` header; the addition of photos answers 201 without one, since the photos have no address of their own, and links to the record; the delete and the removal of a photo answer 204 without a body; the statistics link to themselves as they were requested (`req.originalUrl`). The router has `GET /statistics` before `/:id`, which would take its name for an ID.
 
+The seven handlers in `routes/attachment/` are wrapped with `authenticated` and pass the `actor` first: the one that issues an upload URL then passes `req.body`, the completion, the get and the delete `req.params.attachmentId`, the list the outcome of `decodeAttachmentSearchQuery`, the one that issues a download URL `req.params.attachmentId` and the outcome of `decodeAttachmentDownloadQuery`, and the purge nothing more. No handler takes or answers a file: the body of a request is JSON or empty, and a file goes between the client and the object storage through the signed URLs. The upload URL is answered with 201, a `Location` header and a `complete` link, the links of a download URL are the request itself and the attachment, the delete answers 204, and the purge has no links (`links: null`), as it is no resource. The router is a plain `Router()` mounted at `/attachments`; `/upload-url` and `/purge` are routed before the routes with `/:attachmentId`. The share links of the contract have no routes.
+
 The eight handlers in `routes/medical-chart/` are wrapped with `authenticated` and pass the `actor` first. The four of the charts: the list then passes the outcome of `decodeMedicalChartSearchQuery`, the create `req.body`, the get `req.params.customerId` and the update `req.params.id` and `req.body`. A chart is read by its customer and changed by its own ID, and every response links it by its customer (`medicalChartLinks`): the create answers 201 with a `Location` header at `/customer/:customerId`. The four of the allergies of a customer are routed at `/customer/:customerId/allergies` and `/customer/:customerId/allergies/:allergyId`, and the router takes the dependencies of both kinds of use case (`MedicalChartUseCaseDependencies & CustomerAllergyUseCaseDependencies`): the list passes `req.params.customerId` and the outcome of `decodeCustomerAllergySearchQuery`, the add `req.params.customerId` and `req.body`, the update both IDs of the path and `req.body`, and the removal both IDs. No route reads one allergy, so the add (201) and the update (200) answer without a `Location` and link the list of the customer (`customerAllergiesPath`), and the removal answers 204 without a body.
 
 The two handlers in `routes/staff-schedule/` are wrapped as well, and both have the salon and the staff member in their path and no ID of their own. The list handler (`GET /`) passes `actor`, `req.params.salonId`, `req.params.id` and `req.query`; the update handler (`PUT /`) passes `req.body` in the place of the query. Both answer 200 with `{ data, meta, links }`, where `data` is the array of the entries of the schedule: the update replaces the whole schedule and answers with what it stored.
@@ -692,7 +705,7 @@ Express tries the routes in the order in which they were registered, so `/bulk` 
 
 ### Mounting in `createApp`
 
-`src/index.ts` is where repositories, the clock and `authenticated` are constructed and routers are mounted. `createApp` is given the database, the logger, the mailer, the authenticator of two-factor authentication and the settings (`AppDependencies`):
+`src/index.ts` is where repositories, the clock and `authenticated` are constructed and routers are mounted. `createApp` is given the database, the logger, the mailer, the file storage, the authenticator of two-factor authentication and the settings (`AppDependencies`):
 
 ```typescript
   app.use(requestLogging(logger))
@@ -986,6 +999,7 @@ The order matters. Every request gets its ID and logger first. The probes are an
 | `alreadyExists` | 409 | `3002` | `already-exists` |
 | `conflict` | 409 | `3003` | `operation-not-allowed` |
 | `database` | 500 | `4003` | `database` |
+| `storage` | 500 | `4004` | `storage` |
 | `routeNotFound` | 404 | `3001` | `route-not-found` |
 | `malformedBody` | 400 | `2002` | `malformed-body` |
 | `unsupportedMediaType` | 415 | `2002` | `unsupported-media-type` |
@@ -994,7 +1008,7 @@ The order matters. Every request gets its ID and logger first. The probes are an
 | `rateLimited` | 429 | `4005` | `rate-limited` |
 | `unexpected` | 500 | `4001` | `internal` |
 
-The rows down to `database` are the seven `DomainError` kinds a use case returns (`unauthenticated` has one row per `reason`); the rest are `HttpError`. A `validation` problem lists the broken rules in `errors`. In the two 500 responses `detail` is `null`, so nothing about the failure leaves the server. When each 401 is returned is in [Authentication and Authorization](./authentication.md).
+The rows down to `storage` are the eight `DomainError` kinds a use case returns (`unauthenticated` has one row per `reason`); the rest are `HttpError`. A `validation` problem lists the broken rules in `errors`. In the three 500 responses `detail` is `null`, so nothing about the failure leaves the server. When each 401 is returned is in [Authentication and Authorization](./authentication.md).
 
 ## Middleware
 
@@ -1026,7 +1040,7 @@ The rows down to `database` are the seven `DomainError` kinds a use case returns
 | `__tests__/auth.integration.test.ts` | signing in, the tokens, what the server does with an access token, and the seeded accounts |
 | `__tests__/auth-registration.integration.test.ts`, `auth-sessions.integration.test.ts`, `auth-two-factor.integration.test.ts`, `admin-auth.integration.test.ts` | the other authentication endpoints: registration, email verification and passwords; the sessions of the signed-in user; two-factor authentication; what an administrator does to accounts |
 | `__tests__/app.integration.test.ts` | request IDs, unreadable requests, a failing database, CORS, rate limit, probes, response headers |
-| `__tests__/_shared/` | `setup.ts` and `test-databases.ts` (a database for every test, copied from a template that has the schema), `test-helpers.ts` (`createTestApp`, which calls the production `createApp` with a mailer that records the mails instead of sending them and with the real `TotpAuthenticator`), `auth-helpers.ts` (inserting users and signing in) |
+| `__tests__/_shared/` | `setup.ts` and `test-databases.ts` (a database for every test, copied from a template that has the schema), `test-helpers.ts` (`createTestApp`, which calls the production `createApp` with a mailer that records the mails instead of sending them, with a file storage that keeps the files in memory (`in-memory-file-storage.ts`) and with the real `TotpAuthenticator`), `auth-helpers.ts` (inserting users and signing in) |
 
 ```bash
 pnpm --filter @beauty-salon-backend/api test              # unit tests

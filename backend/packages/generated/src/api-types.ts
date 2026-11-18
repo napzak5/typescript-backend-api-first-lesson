@@ -137,11 +137,31 @@ export interface paths {
         };
         /**
          * List attachments
-         * @description 登録済みの添付ファイルを、サロンによる絞り込みとページネーションを指定して一覧し、施術履歴の確認や資料整理に活用します。
+         * @description アップロード済み(uploaded)の添付ファイルを、アップロードを確かめた日時の新しい順に一覧します。admin はすべてのサロンとサロンに属さないファイルを、サロンのメンバーは自分のサロンのファイルを一覧できます(顧客のアカウントは403)。サロンのメンバーが salonId にほかのサロンを指定した場合は403を返します。
          */
         get: operations["AttachmentCrud_list"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/attachments/purge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Purge unfinished uploads and deleted attachments
+         * @description 完了しなかったアップロード(URLの有効期限から24時間たってもアップロード待ちのままの添付ファイル)と、削除した添付ファイル(URLの有効期限を過ぎたもの)を、保存先のファイルが残っていればそれも含めて消し、消した件数を返します。admin だけが実行できます(サロンのメンバーと顧客のアカウントは403)。途中でエラーになった場合は、そこで止めて500を返します(それまでの分は消してあり、もう一度実行すると残りを消します)。定期的に呼ぶのは運用の側です。
+         */
+        post: operations["AttachmentCrud_purge"];
         delete?: never;
         options?: never;
         head?: never;
@@ -172,26 +192,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/attachments/upload": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Upload an attachment
-         * @description スタッフが管理画面からファイル本体を直接アップロードし、予約記録や顧客カルテに紐づけるための操作です。multipart/form-dataで送信します。salonIdに存在しないサロンを指定した場合は400を、ファイルがサイズ上限を超える場合は413を返します。
-         */
-        post: operations["AttachmentCrud_uploadFile"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/attachments/upload-url": {
         parameters: {
             query?: never;
@@ -203,7 +203,7 @@ export interface paths {
         put?: never;
         /**
          * Issue an upload URL
-         * @description 顧客やスタッフがブラウザから直接クラウドストレージへアップロードできるよう、短時間だけ有効な署名付きURLを発行します。salonIdに存在しないサロンを指定した場合は400を返します。
+         * @description ファイルをオブジェクトストレージへ直接アップロードするための、15分だけ有効なURLを発行し、アップロード待ち(pending)の添付ファイルを作ります。ファイルの中身は API サーバーを通りません。admin と、そのサロンの owner / manager / staff が実行できます(顧客のアカウントは403)。サロンに属さないファイル(salonId が null)を作れるのは admin だけです。本文が不正な場合(受け付けない種類、種類に合わない拡張子、10 MiB を超えるサイズ、存在しないサロン)は400を返します。URLは、申告した種類とサイズを署名に含み、受け付けるのは1回だけです。アップロードのあと、complete で完了させます。
          */
         post: operations["AttachmentCrud_getUploadUrl"];
         delete?: never;
@@ -221,16 +221,36 @@ export interface paths {
         };
         /**
          * Get an attachment
-         * @description 指定した添付ファイルの詳細情報を取得し、プレビュー表示や関連予約の確認に用います。
+         * @description 添付ファイルを1件取得します。アップロード待ち(pending)のものも返します。ほかのサロンの添付ファイルと、削除した添付ファイルは404を返します。
          */
         get: operations["AttachmentCrud_get"];
         put?: never;
         post?: never;
         /**
          * Delete an attachment
-         * @description 不要になった添付ファイルを削除し、ストレージ容量の最適化と情報漏えいリスクの低減を図ります。
+         * @description 添付ファイルを削除します。保存先のファイルを消してから、添付ファイルを削除済みにします(一覧にも取得にも出なくなります)。admin と、そのサロンの owner / manager、アップロードした本人が実行できます。保存先のファイルを消せなかった場合は、何も変えずに500を返します(もう一度実行できます)。
          */
         delete: operations["AttachmentCrud_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/attachments/{attachmentId}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Complete an upload
+         * @description アップロードを確かめて、添付ファイルをアップロード済み(uploaded)にします。保存先のファイルのサイズと、ファイルの先頭のバイトが申告した種類の形式であることを確かめます。保存先にファイルがない場合は409を返します(アップロード待ちのままなので、アップロードしてからもう一度実行できます)。サイズや形式が申告と違う場合も409を返し、その添付ファイルを削除して、保存先のファイルを消します(アップロード用URLの発行からやり直します)。すでにアップロード済みの添付ファイルは、そのまま返します。実行できるのは、アップロード用URLの発行と同じ利用者です。ほかのサロンの添付ファイルと、削除した添付ファイルは404を返します。
+         */
+        post: operations["AttachmentCrud_complete"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -245,7 +265,7 @@ export interface paths {
         };
         /**
          * Issue a download URL
-         * @description 閲覧権限を持つ利用者がファイルを安全に取得できるよう、短時間有効なダウンロードURLを発行します。
+         * @description 添付ファイルをダウンロードするための、5分だけ有効なURLを発行します。inline=true の場合はブラウザーの中で表示するURLを、そうでなければ元のファイル名で保存するURLを発行します。アップロード待ち(pending)の添付ファイルは409を返します。
          */
         get: operations["AttachmentCrud_getDownloadUrl"];
         put?: never;
@@ -3174,21 +3194,25 @@ export interface components {
          */
 
         "Models.AllergyType": "chemical" | "fragrance" | "metal" | "latex" | "plant" | "other";
-        "Models.AttachmentCreateRequest": {
-            /**
-             * Format: binary
-             * @description HTTPリクエストで送信されるファイル本体。
-             */
-            file: string;
-            /** @description アップロード時に指定されたファイル名。 */
-            filename: string;
-            /** @description ファイルのContent-Type。 */
-            content: string;
-            /** @description ファイルを関連付けるサロンID。全社共通ファイルの場合は省略する(レスポンスのsalonIdはnullになる)。 */
-            salonId?: components["schemas"]["Models.SalonId"];
-            /** @description タグ情報を表すJSON文字列。タグを設定しない場合は省略する(レスポンスのtagsはnullになる)。 */
-            tags?: string;
-        };
+        /**
+
+         * @description
+
+         * 添付ファイルの種類(Content-Type)。受け付けるのは、この4つだけ
+
+         * image/jpeg: JPEG 画像(拡張子 .jpg / .jpeg)
+
+         * image/png: PNG 画像(拡張子 .png)
+
+         * image/webp: WebP 画像(拡張子 .webp)
+
+         * application/pdf: PDF 文書(拡張子 .pdf)
+
+         * @enum {string}
+
+         */
+
+        "Models.AttachmentContentType": "image/jpeg" | "image/png" | "image/webp" | "application/pdf";
         /** @description 添付ファイルをダウンロードするための署名付きURLを返すレスポンス。 */
         "Models.AttachmentDownloadUrlResponse": {
             /** @description 一時的に有効なダウンロード用URL。 */
@@ -3204,75 +3228,108 @@ export interface components {
          * @description 添付ファイル・画像データを識別するブランド付きUUID。
          */
         "Models.AttachmentId": string;
-        /**
-         * @description 添付ファイルレスポンス - サロンシステムで管理するアップロード済みファイルのメタ情報を返す。
-         *     対応するテーブルはまだない。全項目のキーが必須で、値がない項目は null を返す
-         */
-        "Models.AttachmentResponse": {
-            /** @description 添付ファイルを一意に識別するID。UUID形式。 */
-            id: components["schemas"]["Models.AttachmentId"];
-            /** @description オブジェクトストレージでファイルを参照するための内部キー。 */
-            key: string;
-            /** @description 利用者がアップロードした元のファイル名。 */
-            filename: string;
-            /** @description ファイルのMIMEタイプ（Content-Type）。 */
-            content: string;
+        /** @description 完了しなかったアップロードと、削除した添付ファイルの掃除の結果 */
+        "Models.AttachmentPurgeResponse": {
             /**
              * Format: int32
-             * @description ファイルサイズ（バイト単位）。
+             * @description 消した添付ファイルの行の数
+             */
+            purgedCount: number;
+        };
+        /**
+         * @description 添付ファイル - attachments の行。ファイルの中身は、オブジェクトストレージにある。
+         *     保存先のキーは内部の値で、レスポンスに含めない。すべてのプロパティがあり、値がないものは null
+         */
+        "Models.AttachmentResponse": {
+            /** @description 添付ファイルの ID */
+            id: components["schemas"]["Models.AttachmentId"];
+            /** @description ファイルが属するサロンの ID。サロンに属さないファイル(admin だけが扱える)はnull */
+            salonId: (string & components["schemas"]["Models.SalonId"]) | null;
+            /** @description アップロードした元のファイル名。ダウンロードするときの名前になる */
+            filename: string;
+            /** @description ファイルの種類 */
+            contentType: components["schemas"]["Models.AttachmentContentType"];
+            /**
+             * Format: int32
+             * @description ファイルのサイズ(バイト)。1〜10,485,760(10 MiB)
              */
             size: number;
-            /** @description ファイルをアップロードしたユーザーID。 */
+            /** @description 添付ファイルの状態 */
+            status: components["schemas"]["Models.AttachmentStatusType"];
+            /** @description アップロード用のURLを発行したユーザーの ID */
             uploadedBy: components["schemas"]["Models.UserId"];
-            /** @description ファイルが紐づくサロンID。全社共通ファイルやシステムファイルの場合はnull。 */
-            salonId: (string & components["schemas"]["Models.SalonId"]) | null;
-            /** @description 必要に応じて付加情報を保持する任意メタデータ。追加情報が不要な場合はnull。 */
-            metadata: {
-                [key: string]: unknown;
-            } | null;
-            /** @description ラベリングや検索に利用するタグ情報のセット。タグ付けをしていない場合はnull。 */
-            tags: {
-                [key: string]: string;
-            } | null;
             /**
              * Format: date-time
-             * @description ファイルがアップロードされた日時。
+             * @description アップロード用のURLの有効期限。発行の15分後
              */
-            uploadedAt: string;
+            uploadExpiresAt: string;
             /**
              * Format: date-time
-             * @description ファイル情報が最後に更新された日時。
+             * @description アップロードを確かめた日時。アップロード待ち(pending)のあいだはnull
+             */
+            uploadedAt: string | null;
+            /**
+             * Format: date-time
+             * @description アップロード用のURLを発行した日時
+             */
+            createdAt: string;
+            /**
+             * Format: date-time
+             * @description 最後に更新した日時
              */
             updatedAt: string;
         };
         /**
-         * @description アップロード用署名付きURL発行リクエスト - 外部ストレージへ直接アップロードするための署名付きURLを要求する。
+
+         * @description
+
+         * 添付ファイルの状態
+
+         *
+
+         *
+
+         * pending: アップロード待ち - アップロード用のURLを発行し、アップロードをまだ確かめていない。一覧に含まれず、ダウンロードできない
+
+         *
+
+         * uploaded: アップロード済み - 保存先のファイルを確かめた(complete)。一覧に含まれ、ダウンロードできる
+
+         * @enum {string}
+
+         */
+
+        "Models.AttachmentStatusType": "pending" | "uploaded";
+        /**
+         * @description アップロード用URLの発行リクエスト - アップロードするファイルの名前、種類、サイズを申告する。
          *     全項目のキーが必須。null を指定できる項目は null を送る
          */
         "Models.AttachmentUploadUrlRequest": {
-            /** @description アップロード予定のファイル名。 */
+            /** @description アップロードするファイルの名前(1〜255文字)。制御文字と / と \ を含められない。拡張子は、種類(contentType)に対応するものに限る(大文字と小文字は区別しない) */
             filename: string;
-            /** @description アップロード予定ファイルのContent-Type。 */
-            content: string;
+            /** @description アップロードするファイルの種類 */
+            contentType: components["schemas"]["Models.AttachmentContentType"];
             /**
              * Format: int32
-             * @description アップロード予定ファイルのサイズ（バイト単位）。
+             * @description アップロードするファイルのサイズ(バイト)。1〜10,485,760(10 MiB)
              */
             size: number;
-            /** @description ファイルをひも付けるサロンID。全社共通ファイルの場合はnull。 */
+            /** @description ファイルが属するサロンの ID。サロンに属さないファイル(admin だけが作れる)はnull */
             salonId: (string & components["schemas"]["Models.SalonId"]) | null;
         };
-        /** @description 署名付きアップロードURLと関連情報を返すレスポンス。 */
+        /**
+         * @description アップロード用URLの発行の結果 - アップロード待ち(pending)の添付ファイルと、ファイルの中身を送る先。
+         *     uploadUrl に、uploadHeaders のヘッダーを付けて、申告したサイズちょうどの本文を PUT で送る
+         */
         "Models.AttachmentUploadUrlResponse": {
-            /** @description 一時的に有効なアップロード用URL。 */
+            /** @description 作成した、アップロード待ち(pending)の添付ファイル */
+            attachment: components["schemas"]["Models.AttachmentResponse"];
+            /** @description ファイルの中身を PUT で送るURL。attachment.uploadExpiresAt まで有効で、受け付けるのは1回だけ */
             uploadUrl: string;
-            /** @description 生成されたストレージキー。アップロード完了後の識別に使用。 */
-            key: string;
-            /**
-             * Format: date-time
-             * @description 署名付きURLの有効期限。
-             */
-            expiresAt: string;
+            /** @description PUT のリクエストに付けるヘッダー(名前と値)。署名に含まれているので、1つでも欠けたり値が違ったりすると、保存先が拒否する */
+            uploadHeaders: {
+                [key: string]: string;
+            };
         };
         /** @description メールアドレス確認を完了させるリクエスト。 */
         "Models.AuthEmailVerificationConfirmRequest": {
@@ -9978,11 +10035,11 @@ export interface components {
     parameters: {
         /** @description trueの場合はブラウザ内で表示するためのURLを、falseの場合は保存(ダウンロード)するためのURLを発行する */
         "Models.AttachmentDownloadUrlRequest": boolean;
-        /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+        /** @description 取得開始位置を示すカーソル。同じ絞り込み条件で取得した前回レスポンスの `meta.nextCursor` を指定する。一覧に出る添付ファイルのIDでない場合は検証エラー */
         "Models.AttachmentSearchRequest.cursor": string;
         /** @description 1ページあたりの取得件数上限 (1〜100) */
         "Models.AttachmentSearchRequest.limit": number;
-        /** @description ファイルが紐づくサロンIDによる絞り込み(完全一致)。省略した場合はサロンで絞り込まない */
+        /** @description ファイルが属するサロンIDによる絞り込み(完全一致)。省略した場合はサロンで絞り込まない */
         "Models.AttachmentSearchRequest.salonId": components["schemas"]["Models.SalonId"];
         /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する。ページの最後の枠を表す `<startTime>_<staffId>` の形で、その枠より後の枠から返す */
         "Models.AvailableSlotSearchRequest.cursor": string;
@@ -10697,9 +10754,9 @@ export interface operations {
             query?: {
                 /** @description 1ページあたりの取得件数上限 (1〜100) */
                 limit?: components["parameters"]["Models.AttachmentSearchRequest.limit"];
-                /** @description 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+                /** @description 取得開始位置を示すカーソル。同じ絞り込み条件で取得した前回レスポンスの `meta.nextCursor` を指定する。一覧に出る添付ファイルのIDでない場合は検証エラー */
                 cursor?: components["parameters"]["Models.AttachmentSearchRequest.cursor"];
-                /** @description ファイルが紐づくサロンIDによる絞り込み(完全一致)。省略した場合はサロンで絞り込まない */
+                /** @description ファイルが属するサロンIDによる絞り込み(完全一致)。省略した場合はサロンで絞り込まない */
                 salonId?: components["parameters"]["Models.AttachmentSearchRequest.salonId"];
             };
             header?: never;
@@ -10731,6 +10788,82 @@ export interface operations {
                 };
                 content: {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description 認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
+             *     ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
+             *     WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+             */
+            401: {
+                headers: {
+                    /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
+                    "WWW-Authenticate": string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description 認証されているが、この操作を行う権限がない (403)。 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
+             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+             */
+            429: {
+                headers: {
+                    /** @description 再試行できるようになるまでの秒数。 */
+                    "Retry-After": number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+        };
+    };
+    AttachmentCrud_purge: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The request has succeeded. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        data: components["schemas"]["Models.AttachmentPurgeResponse"];
+                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        meta: components["schemas"]["Models.ResponseMeta"] | null;
+                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        links: {
+                            [key: string]: string;
+                        } | null;
+                    };
                 };
             };
             /**
@@ -10963,114 +11096,6 @@ export interface operations {
             };
         };
     };
-    AttachmentCrud_uploadFile: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "multipart/form-data": components["schemas"]["Models.AttachmentCreateRequest"];
-            };
-        };
-        responses: {
-            /** @description The request has succeeded and a new resource has been created as a result. */
-            201: {
-                headers: {
-                    Location: string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /** @description レスポンスの主体となるビジネスデータ。 */
-                        data: components["schemas"]["Models.AttachmentResponse"];
-                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
-                        meta: components["schemas"]["Models.ResponseMeta"] | null;
-                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
-                        links: {
-                            [key: string]: string;
-                        } | null;
-                    };
-                };
-            };
-            /** @description The server could not understand the request due to invalid syntax. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /**
-             * @description 認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
-             *     ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
-             *     WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
-             */
-            401: {
-                headers: {
-                    /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
-                    "WWW-Authenticate": string;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description 認証されているが、この操作を行う権限がない (403)。 */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description リクエスト本文がサイズ上限を超えている (413)。 */
-            413: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
-            415: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /**
-             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
-             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
-             */
-            429: {
-                headers: {
-                    /** @description 再試行できるようになるまでの秒数。 */
-                    "Retry-After": number;
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
-                };
-            };
-        };
-    };
     AttachmentCrud_getUploadUrl: {
         parameters: {
             query?: never;
@@ -11084,9 +11109,10 @@ export interface operations {
             };
         };
         responses: {
-            /** @description The request has succeeded. */
-            200: {
+            /** @description The request has succeeded and a new resource has been created as a result. */
+            201: {
                 headers: {
+                    Location: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -11359,6 +11385,111 @@ export interface operations {
             };
         };
     };
+    AttachmentCrud_complete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                attachmentId: components["schemas"]["Models.AttachmentId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The request has succeeded. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        data: components["schemas"]["Models.AttachmentResponse"];
+                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        meta: components["schemas"]["Models.ResponseMeta"] | null;
+                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        links: {
+                            [key: string]: string;
+                        } | null;
+                    };
+                };
+            };
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description 認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
+             *     ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
+             *     WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+             */
+            401: {
+                headers: {
+                    /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
+                    "WWW-Authenticate": string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description 認証されているが、この操作を行う権限がない (403)。 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The server cannot find the requested resource. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The request conflicts with the current state of the server. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
+             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+             */
+            429: {
+                headers: {
+                    /** @description 再試行できるようになるまでの秒数。 */
+                    "Retry-After": number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+        };
+    };
     AttachmentCrud_getDownloadUrl: {
         parameters: {
             query?: {
@@ -11426,6 +11557,15 @@ export interface operations {
             };
             /** @description The server cannot find the requested resource. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The request conflicts with the current state of the server. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

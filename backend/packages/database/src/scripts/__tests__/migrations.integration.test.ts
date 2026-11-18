@@ -383,6 +383,19 @@ describe('the migrations of this repository', () => {
     return id
   }
 
+  /** Stores a user of their own, an administrator, and returns the ID. */
+  const storeNewUser = async (): Promise<string> => {
+    const [user] = await sql<{ id: string }[]>`
+      INSERT INTO users (email, "passwordHash", role)
+      VALUES (${`${randomUUID()}@example.com`}, 'hash', 'admin')
+      RETURNING id
+    `
+    if (user === undefined) {
+      throw new Error('No user was stored')
+    }
+    return user.id
+  }
+
   type StoredReview = {
     overallRating: number
     serviceRating?: number | null
@@ -4112,19 +4125,6 @@ describe('the migrations of this repository', () => {
       `)
     })
 
-    /** A user who takes requests. */
-    const storeNewUser = async (): Promise<string> => {
-      const [user] = await sql<{ id: string }[]>`
-        INSERT INTO users (email, "passwordHash", role)
-        VALUES (${`${randomUUID()}@example.com`}, 'hash', 'admin')
-        RETURNING id
-      `
-      if (user === undefined) {
-        throw new Error('No user was stored')
-      }
-      return user.id
-    }
-
     /** A request of the customer, taken by the user, with what else is given. */
     const writeRequest = (
       customerId: string,
@@ -4282,6 +4282,283 @@ describe('the migrations of this repository', () => {
           WHERE "customerId" IN (${id}, ${other})
         `,
       ).toEqual([{ customerId: other }, { customerId: other }])
+    })
+  })
+
+  describe('202611182100_attachments.sql', () => {
+    const run = (): Promise<void> =>
+      runMigration('202611182100_attachments.sql')
+
+    /** The schema of setup.sql, which the migration brings a database to. */
+    let schemaOfSetup: string[] = []
+
+    // A database from before the migration: no attachment is recorded.
+    beforeEach(async () => {
+      await applyBaseline(sql, plan)
+      schemaOfSetup = await describeSchema()
+      await sql.unsafe(`
+        DROP TABLE attachments;
+        DROP TYPE attachment_content_type;
+        DROP TYPE attachment_status;
+      `)
+    })
+
+    /**
+     * An attachment the user announced at 2026-11-18T02:00:00Z, of the
+     * platform unless a salon is given, with what else is given.
+     */
+    const writeAttachment = (
+      by: string,
+      more: {
+        salonId?: string
+        filename?: string
+        contentType?: string
+        size?: number
+        status?: string
+        expiresAfter?: string
+        uploaded?: boolean
+        deleted?: boolean
+      } = {},
+    ) => sql<{ id: string }[]>`
+      INSERT INTO attachments (
+        "salonId", filename, "contentType", size, status, "uploadedBy",
+        "uploadExpiresAt", "uploadedAt", "deletedAt", "createdAt"
+      )
+      VALUES (
+        ${more.salonId ?? null}, ${more.filename ?? '施術前.png'},
+        ${more.contentType ?? 'image/png'}::attachment_content_type,
+        ${more.size ?? 64},
+        ${more.status ?? 'pending'}::attachment_status, ${by},
+        '2026-11-18T02:00:00Z'::timestamptz
+          + ${more.expiresAfter ?? '15 minutes'}::interval,
+        ${more.uploaded === true ? '2026-11-18T02:05:00Z' : null},
+        ${more.deleted === true ? '2026-11-18T03:00:00Z' : null},
+        '2026-11-18T02:00:00Z'
+      )
+      RETURNING id
+    `
+
+    it('should give the database the schema of setup.sql, and keep it on a second run', async () => {
+      expect(await describeSchema()).not.toEqual(schemaOfSetup)
+
+      await run()
+      await run()
+
+      expect(await describeSchema()).toEqual(schemaOfSetup)
+    })
+
+    it('should keep the attachments there are on a second run', async () => {
+      await run()
+      const user = await storeNewUser()
+      const [written] = await writeAttachment(user)
+
+      await run()
+
+      expect(await sql<{ id: string }[]>`SELECT id FROM attachments`).toEqual([
+        written,
+      ])
+    })
+
+    it('should write an attachment as a pending one with an ID of its own, of a salon or of none', async () => {
+      await run()
+      const user = await storeNewUser()
+      const salonId = await storeSalon(null)
+
+      await sql`
+        INSERT INTO attachments (
+          "salonId", filename, "contentType", size, "uploadedBy",
+          "uploadExpiresAt"
+        )
+        VALUES
+          (${salonId}, 'before.png', 'image/png', 64, ${user},
+           now() + interval '15 minutes'),
+          (NULL, '同意書.pdf', 'application/pdf', 2048, ${user},
+           now() + interval '15 minutes')
+      `
+
+      const stored = await sql<Record<string, unknown>[]>`
+        SELECT
+          id::text ~ '^[0-9a-f-]{36}$' AS "hasId", "salonId", filename,
+          "contentType"::text AS "contentType", size, status::text AS status,
+          "uploadedBy", "uploadedAt", "deletedAt",
+          "createdAt" = "updatedAt" AS "writtenAtOnce"
+        FROM attachments ORDER BY size
+      `
+      expect(stored).toEqual([
+        {
+          hasId: true,
+          salonId,
+          filename: 'before.png',
+          contentType: 'image/png',
+          size: 64,
+          status: 'pending',
+          uploadedBy: user,
+          uploadedAt: null,
+          deletedAt: null,
+          writtenAtOnce: true,
+        },
+        {
+          hasId: true,
+          salonId: null,
+          filename: '同意書.pdf',
+          contentType: 'application/pdf',
+          size: 2048,
+          status: 'pending',
+          uploadedBy: user,
+          uploadedAt: null,
+          deletedAt: null,
+          writtenAtOnce: true,
+        },
+      ])
+    })
+
+    it('should take the four kinds of file, of a byte to 10 MiB, under a name of 1 to 255 characters, and refuse the others', async () => {
+      await run()
+      const user = await storeNewUser()
+
+      for (const contentType of [
+        'image/jpeg',
+        'image/png',
+        'image/webp',
+        'application/pdf',
+      ]) {
+        await expect(
+          writeAttachment(user, { contentType }),
+        ).resolves.toHaveLength(1)
+      }
+      await expect(
+        writeAttachment(user, { contentType: 'image/gif' }),
+      ).rejects.toThrow(
+        /invalid input value for enum attachment_content_type: "image\/gif"/,
+      )
+      await expect(
+        writeAttachment(user, { contentType: 'text/html' }),
+      ).rejects.toThrow(/invalid input value for enum attachment_content_type/)
+
+      await expect(writeAttachment(user, { size: 1 })).resolves.toHaveLength(1)
+      await expect(
+        writeAttachment(user, { size: 10_485_760 }),
+      ).resolves.toHaveLength(1)
+      await expect(writeAttachment(user, { size: 0 })).rejects.toThrow(
+        /attachments_size_within_limit/,
+      )
+      await expect(writeAttachment(user, { size: -1 })).rejects.toThrow(
+        /attachments_size_within_limit/,
+      )
+      await expect(writeAttachment(user, { size: 10_485_761 })).rejects.toThrow(
+        /attachments_size_within_limit/,
+      )
+
+      await expect(
+        writeAttachment(user, { filename: 'a' }),
+      ).resolves.toHaveLength(1)
+      // Characters, not bytes: 255 of three bytes each.
+      await expect(
+        writeAttachment(user, { filename: 'あ'.repeat(255) }),
+      ).resolves.toHaveLength(1)
+      await expect(writeAttachment(user, { filename: '' })).rejects.toThrow(
+        /attachments_filename_not_empty/,
+      )
+      await expect(
+        writeAttachment(user, { filename: 'a'.repeat(256) }),
+      ).rejects.toThrow(/value too long for type character varying\(255\)/)
+    })
+
+    it('should hold the time of the upload to the status, and the end of the upload URL to after the attachment was written', async () => {
+      await run()
+      const user = await storeNewUser()
+
+      await expect(
+        writeAttachment(user, { status: 'uploaded', uploaded: true }),
+      ).resolves.toHaveLength(1)
+      await expect(
+        writeAttachment(user, { status: 'uploaded' }),
+      ).rejects.toThrow(/attachments_uploaded_when_uploaded/)
+      await expect(writeAttachment(user, { uploaded: true })).rejects.toThrow(
+        /attachments_uploaded_when_uploaded/,
+      )
+      await expect(
+        writeAttachment(user, { status: 'deleted' }),
+      ).rejects.toThrow(/invalid input value for enum attachment_status/)
+
+      // A pending and an uploaded attachment are deleted alike.
+      await expect(
+        writeAttachment(user, { deleted: true }),
+      ).resolves.toHaveLength(1)
+      await expect(
+        writeAttachment(user, {
+          status: 'uploaded',
+          uploaded: true,
+          deleted: true,
+        }),
+      ).resolves.toHaveLength(1)
+
+      await expect(
+        writeAttachment(user, { expiresAfter: '1 microsecond' }),
+      ).resolves.toHaveLength(1)
+      await expect(
+        writeAttachment(user, { expiresAfter: '0 seconds' }),
+      ).rejects.toThrow(/attachments_upload_expires_after_created/)
+      await expect(
+        writeAttachment(user, { expiresAfter: '-1 second' }),
+      ).rejects.toThrow(/attachments_upload_expires_after_created/)
+    })
+
+    it('should hold an attachment to a salon and to a user there are, and keep both while it names them', async () => {
+      await run()
+      const user = await storeNewUser()
+      const salonId = await storeSalon(null)
+
+      await expect(
+        writeAttachment(user, { salonId: randomUUID() }),
+      ).rejects.toThrow(/attachments_salon_id_fk/)
+      await expect(writeAttachment(randomUUID())).rejects.toThrow(
+        /attachments_uploaded_by_fk/,
+      )
+      const [written] = await writeAttachment(user, { salonId })
+
+      await expect(
+        sql`DELETE FROM salons WHERE id = ${salonId}`,
+      ).rejects.toThrow(/attachments_salon_id_fk/)
+      await expect(sql`DELETE FROM users WHERE id = ${user}`).rejects.toThrow(
+        /attachments_uploaded_by_fk/,
+      )
+
+      await sql`DELETE FROM attachments WHERE id = ${written?.id ?? null}`
+      await expect(
+        sql`DELETE FROM salons WHERE id = ${salonId}`,
+      ).resolves.toBeDefined()
+      await expect(
+        sql`DELETE FROM users WHERE id = ${user}`,
+      ).resolves.toBeDefined()
+    })
+
+    it('should index the uploaded attachments that are not deleted by their order in a list, and what a purge looks at by the end of its URL', async () => {
+      await run()
+
+      const indexes = await sql<{ indexname: string; indexdef: string }[]>`
+        SELECT indexname, indexdef FROM pg_indexes
+        WHERE schemaname = 'public' AND tablename = 'attachments'
+        ORDER BY indexname
+      `
+
+      expect(indexes.map(({ indexname }) => indexname)).toEqual([
+        'attachments_pkey',
+        'idx_attachments_purge',
+        'idx_attachments_salon_uploaded',
+        'idx_attachments_uploaded',
+      ])
+      const definitionOf = (name: string): string =>
+        indexes.find(({ indexname }) => indexname === name)?.indexdef ?? ''
+      expect(definitionOf('idx_attachments_salon_uploaded')).toMatch(
+        /\("salonId", "uploadedAt", id\) WHERE \(\(status = 'uploaded'::attachment_status\) AND \("deletedAt" IS NULL\)\)$/,
+      )
+      expect(definitionOf('idx_attachments_uploaded')).toMatch(
+        /\("uploadedAt", id\) WHERE \(\(status = 'uploaded'::attachment_status\) AND \("deletedAt" IS NULL\)\)$/,
+      )
+      expect(definitionOf('idx_attachments_purge')).toMatch(
+        /\("uploadExpiresAt"\) WHERE \(\(status = 'pending'::attachment_status\) OR \("deletedAt" IS NOT NULL\)\)$/,
+      )
     })
   })
 })

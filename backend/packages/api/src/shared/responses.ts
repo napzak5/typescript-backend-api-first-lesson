@@ -34,15 +34,15 @@ const PROBLEM_MEDIA_TYPE = 'application/problem+json'
 
 /**
  * Sends an error as problem details with the matching status, and a 401 with
- * its challenge. A database error is logged here, because its cause never
- * reaches the response.
+ * its challenge. A database error and an error of the object storage are
+ * logged here, because their cause never reaches the response.
  */
 export const sendProblem = (
   req: AnsweredRequest,
   res: Response<ProblemDetails>,
   error: ApiError,
 ): void => {
-  if (error.type === 'database') {
+  if (error.type === 'database' || error.type === 'storage') {
     req.log.error({ cause: error.cause }, error.message)
   }
 
