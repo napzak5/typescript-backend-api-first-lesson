@@ -95,6 +95,7 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 - ロックは新しいログインだけを止める。すでにあるセッションは使い続けられる（他人の失敗でログイン中の利用者を締め出さないため）
 - ロックは時間がたてば明ける。待たずに解除できるのは、パスワードの再設定と、管理者によるロックの解除（[管理者の操作](#管理者の操作)）
 - ログインと既存のセッションの利用ができるのは、`status` が `active` または `locked`（ロックは上のとおり新しいログインだけを止める）で、削除されていない（`deletedAt` が NULL の）ユーザーだけ。`unverified`、`inactive`、`suspended`、`deleted` のユーザーは、どちらもできない
+- 顧客のデータを[削除の依頼](./customers.md#削除の依頼)で消去すると、その顧客のアカウントは `deleted` になり、メールアドレスは `<ユーザーの ID>@erased.invalid` に置き換わり、パスワード、2 要素認証、トークン、セッションが消える。そのアカウントでは、ログインも、それまでのアクセストークンの利用もできない
 
 ## ユーザー登録
 
@@ -387,6 +388,8 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 | 顧客の変更履歴と版（`/api/v1/customers/{id}/history`、`/api/v1/customers/{id}/versions/{version}`）、復元（`POST /api/v1/customers/{id}/restore`） | `admin`、サロンの `owner` / `manager`（[変更履歴と版](./customers.md#変更履歴と版)、[復元](./customers.md#復元)） |
 | 顧客の統合（`POST /api/v1/customers/merge`） | `admin`、サロンの `owner` / `manager`（[統合](./customers.md#統合)） |
 | 台帳の CSV 出力、顧客のデータの出力（`GET /api/v1/customers/export`、`GET /api/v1/customers/{id}/export`） | `admin`、サロンの `owner` / `manager`（[出力](./customers.md#出力)） |
+| 顧客の削除の依頼の受け付け、確認、取り消し（`POST` / `GET` / `DELETE /api/v1/customers/{id}/deletion-request`） | `admin`、サロンの `owner` / `manager`（[削除の依頼](./customers.md#削除の依頼)） |
+| 顧客のデータの消去の実行（`POST /api/v1/customers/deletion-requests/execute`） | `admin` だけ |
 | 顧客の好み設定の取得、更新（`/api/v1/customers/{id}/preferences`） | `admin`、サロンの `owner` / `manager` / `staff`（所属サロンは問わない） |
 | 本人のプロフィールの取得、作成、更新（`/api/v1/customers/me`） | `customer` |
 | 本人の好み設定の取得、更新（`/api/v1/customers/me/preferences`） | プロフィールのある `customer` |

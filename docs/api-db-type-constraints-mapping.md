@@ -479,7 +479,6 @@ const salonRules: ModelRule[] = [
 | 機能 | TypeSpec |
 |---|---|
 | 添付ファイル、共有リンク | `specs/models/attachment.tsp` |
-| 顧客のデータ削除リクエスト | `specs/models/customer.tsp` の `CustomerDataDeletion*` |
 
 ### ドメインを実装するとき
 

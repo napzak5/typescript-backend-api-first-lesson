@@ -16,9 +16,9 @@
 | [変更履歴と版](#変更履歴と版)（台帳の `GET /{id}/history`、`GET /{id}/versions/{version}`）、[復元](#復元)（`POST /{id}/restore`） | 実装済み |
 | [統合](#統合)（`POST /merge`） | 実装済み |
 | [出力](#出力)（台帳の CSV 出力 `GET /export`、顧客のデータの出力 `GET /{id}/export`） | 実装済み |
-| データ削除要請（`POST /{id}/deletion-request`） | 未実装。保存するテーブルがない |
+| [削除の依頼](#削除の依頼)（`POST` / `GET` / `DELETE /{id}/deletion-request`、`POST /deletion-requests/execute`） | 実装済み |
 
-未実装のオペレーションは `CustomerCrud` のもので、コントラクトには定義がありますが、サーバーは 404 を返します。
+`CustomerCrud` のオペレーションは、すべて実装しています。
 
 ## 台帳はプラットフォームで 1 つ
 
@@ -45,21 +45,23 @@
 | 統合 | `POST /api/v1/customers/merge` | `admin`、サロンの `owner` / `manager`（[統合](#統合)） |
 | 台帳の CSV 出力 | `GET /api/v1/customers/export` | `admin`、サロンの `owner` / `manager`（[出力](#出力)） |
 | 顧客のデータの出力 | `GET /api/v1/customers/{id}/export` | 同上 |
+| 削除の依頼の受け付け、確認、取り消し | `POST` / `GET` / `DELETE /api/v1/customers/{id}/deletion-request` | `admin`、サロンの `owner` / `manager`（[削除の依頼](#削除の依頼)） |
+| 消去の実行 | `POST /api/v1/customers/deletion-requests/execute` | `admin` |
 
 - すべてのオペレーションに認証が要ります。台帳は公開情報ではありません
-- 権限は操作者だけで決まります（`business-logic/customer/_shared/authorization.ts` の `mayHandleCustomers` と `mayDeleteCustomers`）。サロンのロールは、どのサロンのものでも同じ扱いです。統計だけは、クエリのサロンも問います（[統計](#統計)）
+- 権限は操作者だけで決まります（`business-logic/customer/_shared/authorization.ts` の `mayHandleCustomers` と `mayDeleteCustomers`、消去の実行は `business-logic/customer-deletion-request/_shared/authorization.ts` の `mayEraseCustomers`）。サロンのロールは、どのサロンのものでも同じ扱いです。統計だけは、クエリのサロンも問います（[統計](#統計)）
 - ロール `customer` のユーザーと、ロールに必要なレコードを持たないユーザー（範囲 `none`）は、台帳のどのオペレーションも 403 です。台帳のレスポンスはスタッフ専用の項目（`internalNotes` など）を含むので、顧客本人には、自分の顧客情報も台帳からは返しません。本人には[プロフィール](#顧客本人のプロフィール)を返します
-- 削除済みの顧客は、変更履歴、版、復元を除いて、どのオペレーションからも見えません（404）。存在しない ID と区別しません
+- 削除済みの顧客は、変更履歴、版、復元、削除の依頼の確認と取り消しを除いて、どのオペレーションからも見えません（404）。存在しない ID と区別しません
 - ID（パスの `id`、本文の `referredBy`、クエリの `cursor`）は、英字を大文字で書いても同じ ID です。レスポンスの `data` と `meta` の ID は小文字です
 
 ### 確認の順序
 
 1. アクセストークン（401）
 2. 権限（403）
-3. 顧客の `id` の形式（400。取得、更新、削除、復元、顧客のデータの出力）
-4. クエリ（400。一覧、CSV 出力）、リクエストの本文（400。登録、更新）
+3. 顧客の `id` の形式（400。取得、更新、削除、復元、顧客のデータの出力、削除の依頼）
+4. クエリ（400。一覧、CSV 出力）、リクエストの本文（400。登録、更新、削除の依頼の受け付け）
 5. リクエストだけで決まる規則（400）: 生年月日の範囲、紹介元が自分自身でないこと
-6. 保存されている行で決まること: 顧客の存在（404）、紹介元の存在（400）、メールアドレスと紹介コードの一意性（409）、CSV 出力で一致する顧客の人数（409）
+6. 保存されている行で決まること: 顧客の存在（404）、紹介元の存在（400）、メールアドレスと紹介コードの一意性（409）、CSV 出力で一致する顧客の人数（409）、進行中の削除の依頼（409）
 
 権限のないユーザーには、ID、クエリ、本文の内容が不正でも、顧客が存在しなくても 403 を返します。一覧と CSV 出力のクエリは HTTP 層が型に直しますが、直せなかったクエリのエラーも、権限を確認したあとで返します（`ListCustomersUseCase` と `ExportCustomersUseCase` は、直した結果を `Result` で受け取る）。
 
@@ -193,7 +195,7 @@
 | 変更履歴 | `GET /api/v1/customers/{id}/history`（クエリ `limit`、`cursor`） | 200。新しい版から順に、版の ID、顧客の ID、版の番号、操作、変更者、日時、変更内容 |
 | 版 | `GET /api/v1/customers/{id}/versions/{version}` | 200。その版の時点の台帳の 30 項目の値と、版の番号、操作、変更者、日時。`links` は `self` と `history` |
 
-- **版を作る書き込み**は、登録（`create`）、更新（`update`）、削除（`delete`）、[復元](#復元)（`restore`）、[統合](#統合)（`merge`）です。統合は、2 人と、紹介元がメインに変わった顧客に版を作ります。一括の操作は、顧客ごとに 1 つの版を作ります。顧客本人のプロフィールの作成は `create`、台帳の顧客を引き継ぐ作成と、プロフィールの更新は `update` で、変更者は本人のアカウントです
+- **版を作る書き込み**は、登録（`create`）、更新（`update`）、削除（`delete`）、[復元](#復元)（`restore`）、[統合](#統合)（`merge`）、[削除の依頼](#削除の依頼)による消去（`erase`）です。消去は、その顧客のほかの版をすべて消し、`erase` の版 1 つだけを残します。統合は、2 人と、紹介元がメインに変わった顧客に版を作ります。一括の操作は、顧客ごとに 1 つの版を作ります。顧客本人のプロフィールの作成は `create`、台帳の顧客を引き継ぐ作成と、プロフィールの更新は `update` で、変更者は本人のアカウントです
 - **台帳の項目**は、登録の本文の 30 項目です（氏名、連絡先、住所、属性、会員ランク、好み、メモ、スタッフ向けのメモ、タグ、紹介、連絡の可否、有効、髪と頭皮の状態、ステータス）。予約やポイントが変える値（来店回数、ポイントなど）と、アカウントとの紐づけ（`userId`）は台帳の項目ではないので、版に入れません。それらが変わっても版はできません
 - 断った書き込み（400、404、409）は、版を作りません
 - 版の番号は、顧客ごとに 1 から数えます。欠けも重なりもありません。変更者（`changedBy`）は操作したユーザー、日時（`changedAt`）は書き込んだあとの顧客の `updatedAt` です
@@ -224,10 +226,11 @@
 - 権限は削除と同じで、`admin` と、サロンの `owner`・`manager` です
 - 削除していない顧客は 409（`operation-not-allowed`）、顧客の行がないときは 404 です
 - **[統合](#統合)で削除した顧客は 409**（`operation-not-allowed`）です。持っていたものは、統合したメインに移っています
+- **[削除の依頼](#削除の依頼)で消去した顧客は 409**（`operation-not-allowed`）です。データは消えています
 - **削除のあとに、同じメールアドレスの顧客が登録されていれば 409**（`already-exists`）です。どちらかのメールアドレスを変えてから、復元します。紹介コードは、削除した顧客とも重ならないので、ぶつかりません
 - **アカウントとの紐づけは戻しません**。削除で外したアカウントの紐づけ（`users.customerId`）は null のままで、顧客の `userId` も null にします。本人がプロフィールを作ると、メールアドレスで顧客を引き継ぎます（[顧客本人のプロフィール](#顧客本人のプロフィール)）。削除のあとに本人が新しいプロフィールを作っていれば、そのプロフィールが同じメールアドレスを持つので、復元は 409 です
 - 好み設定、カルテ、アレルギーは、行が残っているので、復元すると、また見えます
-- 確認の順序: アクセストークン（401）→ 権限（403）→ ID（400）→ 顧客の存在（404）→ 削除していること（409）→ 統合で削除していないこと（409）→ メールアドレスの重複（409）
+- 確認の順序: アクセストークン（401）→ 権限（403）→ ID（400）→ 顧客の存在（404）→ 削除していること（409）→ 統合で削除していないこと（409）→ 消去していないこと（409）→ メールアドレスの重複（409）
 - 同時に届いた 2 つの復元は、顧客の行のロックで 1 つずつ処理し、1 つが 200、もう 1 つが 409 です
 
 ## 統合
@@ -299,8 +302,9 @@
 3. 本文（400）: ID の形式、`conflictResolution`、2 つの ID が同じ顧客を指さないこと（`secondaryCustomerId` の `custom`。英字を大文字で書いた ID も同じ ID）
 4. 顧客の存在（400）: 存在しない顧客と削除した顧客を、指定した項目（`primaryCustomerId`、`secondaryCustomerId`）の `not_found` で報告します。2 人ともなら両方です。顧客をパスではなく本文で指定するので、404 ではありません
 5. 2 人とも別々のアカウントのプロフィール（409）
-6. 2 人の残高の合計（409）
-7. 合わせたカルテの一覧の件数（409）
+6. どちらかに進行中の[削除の依頼](#削除の依頼)（409）
+7. 2 人の残高の合計（409）
+8. 合わせたカルテの一覧の件数（409）
 
 409 は、どれも `operation-not-allowed`（コード `3003`）です。
 
@@ -362,6 +366,84 @@
 |---|---|
 | 台帳の CSV 出力 | アクセストークン（401）→ 権限（403）→ クエリ（400）→ 一致する顧客の人数（409） |
 | 顧客のデータの出力 | アクセストークン（401）→ 権限（403）→ ID（400）→ 顧客の存在（404） |
+
+## 削除の依頼
+
+顧客から、自分のデータを消してほしいと依頼されたときに、依頼を記録し、猶予期間のあとで消去します。個人情報保護法は、本人が保有個人データの消去を請求でき（第 35 条第 5 項・第 6 項）、事業者は利用する必要がなくなった個人データを遅滞なく消去するよう努める（第 22 条）と定めています。一方で、帳簿と取引の書類は 7 年間保存しなければなりません（法人税法施行規則第 59 条、所得税法施行規則第 63 条）。このため、**売上と、売上のもとになった予約は残し、その顧客を特定できる情報だけを消します**（匿名化）。
+
+| オペレーション | ルート | 成功 | 許可 |
+|---|---|---|---|
+| 依頼の受け付け | `POST /api/v1/customers/{id}/deletion-request` | 202。受け付けた依頼 | `admin`、サロンの `owner` / `manager` |
+| 依頼の確認 | `GET /api/v1/customers/{id}/deletion-request` | 200。その顧客の最新の依頼 | 同上 |
+| 依頼の取り消し | `DELETE /api/v1/customers/{id}/deletion-request` | 200。取り消した依頼 | 同上 |
+| 消去の実行 | `POST /api/v1/customers/deletion-requests/execute` | 200。実行した依頼の一覧 | `admin` |
+
+- 依頼は、ID、顧客、理由（`reason`）、状態（`status`。`pending`・`cancelled`・`completed`）、受け付けた人と日時（`requestedBy`、`requestedAt`）、消去の予定日時（`scheduledAt`）、取り消した人と日時（`cancelledBy`、`cancelledAt`）、実行した人と日時（`completedBy`、`completedAt`）です。`links` は、依頼の確認（`self`）と顧客（`customer`）です。実行の `links` は null です
+- 権限は、受け付け、確認、取り消しが出力と同じ `admin`・`owner`・`manager`、実行がポイントの失効（`POST /api/v1/points/expire`）と同じ `admin` だけです。依頼したのが本人かどうかの確認と、消去したことの本人への通知（第 35 条第 7 項）は、サロンが行います。顧客本人は、どのオペレーションも呼べません（403）
+- 実行を定期的に呼ぶ仕組みは、ポイントの失効と同じく、本番環境の準備の範囲です
+
+### 依頼の受け付け
+
+- 本文は理由（`reason`）だけで、1〜1,000 文字の、空白だけでない文字列です。書いたとおりに残します
+- **猶予期間は 14 日**です。消去の予定日時（`scheduledAt`）は、受け付けた時刻のちょうど 336 時間後です。猶予期間は、誤った依頼や本人の撤回に応じるためのもので、そのあいだは取り消せます
+- 依頼を受け付けても、顧客のデータは、実行するまで何も変わりません
+- **同じ顧客に進行中の依頼（`pending`）があるときは 409**（`operation-not-allowed`）で、`detail` で進行中の依頼の ID を伝えます。取り消した依頼や実行した依頼は、新しい依頼を妨げません
+- 削除した顧客と、顧客の行がないときは 404 です。削除した顧客の依頼は、復元してから受け付けます
+
+### 依頼の確認と取り消し
+
+- 確認は、その顧客の最新の依頼を、状態によらず返します。依頼がないときは 404（`Deletion request of customer <ID> was not found`）です。**削除した顧客（消去した顧客を含む）の依頼も返します**。サロンが、消去が終わったことを確かめて本人に通知するためです
+- 取り消しは、進行中の依頼を取り消します。予定日時を過ぎていても、実行する前なら取り消せます。進行中の依頼がないとき（依頼がない、取り消した、実行した）は 404（`Pending deletion request of customer <ID> was not found`）です。削除した顧客の依頼も取り消せます
+- どちらも、顧客の行がないときは 404 です
+
+### 消去の実行
+
+- 予定日時を過ぎた進行中の依頼を、予定日時の順にすべて実行し、実行した依頼を、その順に返します。過ぎた依頼がなければ、空の一覧です
+- 受け付けのあとに削除した顧客の依頼も実行します。削除した顧客も、データを持っているからです。削除の日時（`deletedAt`）は、そのまま残します
+- **依頼ごとに 1 つのトランザクションで消します**。途中の依頼でデータベースのエラーになったときは、そこで止めて 500 を返します。それまでの依頼は実行済みで、もう一度呼ぶと残りを実行します
+- 実行は、顧客をロックしてから、依頼がまだ進行中で、予定日時を過ぎていることを確かめます。同時に取り消された依頼や、同時に呼ばれたほかの実行が済ませた依頼は、何もせずに飛ばします
+
+### 消すもの・残すもの
+
+| データ | 扱い |
+|---|---|
+| 顧客台帳 | 行は残します（予約、売上、施術記録がこの行を参照するため）。姓は `消去済み`、名は `顧客`、メールアドレスは `<顧客の ID>@erased.invalid`（届かないドメイン。RFC 2606）、電話番号は `0000000000` に置き換えます（NULL にできないため）。カナ、別の電話番号、住所、生年月日、性別、職業、好み、メモ、スタッフ向けのメモ、紹介元、紹介コード、髪と頭皮の状態は null、タグは空、連絡の可否と有効はすべて false、`userId` は null にします。会員ランク、ステータス、来店回数などの予約から数える値、登録日時は残します。顧客は削除した状態になります |
+| 台帳の版 | すべて消し、操作 `erase` の版を 1 つだけ残します（番号は 1。消去したこと、実行者、日時の記録で、値は消去したあとのもの） |
+| アカウント | 顧客が指すアカウント（`customers.userId`）と、顧客を指すアカウント（`users.customerId`）の両方です。状態を `deleted` にし、メールアドレスを `<ユーザーの ID>@erased.invalid` に置き換え、パスワード、二要素認証、トークン、ログインの記録を消し、顧客との紐づけを外します。セッションを消すので、使っていたアクセストークンは、すぐに使えなくなります（401）。ロールと作成日時は残します |
+| 好み設定、カルテ、アレルギー | 行を消します |
+| 予約 | 行、明細、金額、日時は残し、顧客の要望（`customerRequest`）、スタッフのメモ（`internalNotes`）、キャンセルの理由、IP アドレス、ユーザーエージェント、明細のメモ（`booking_services.notes`）、ステータスの変更の理由（`booking_status_histories.reason`）を消します |
+| 売上（明細、支払い） | そのまま残します（7 年の保存義務） |
+| ポイント | 取引の金額と残高の履歴は残し、取引の説明（`description`）を消します。残高が残っていれば、種別 `expired`（説明 `データの消去による失効`）の取引で失効させ、残高を 0 にします |
+| 施術記録 | 行、施術の内容、使った材料は残し（在庫の記録のため）、カウンセリング、頭皮と髪の状態、カラーの配合、結果のメモ、次回のおすすめ、ホームケアの提案、満足度、スタッフの評価を消します。写真は消します |
+| 書いたレビュー | 消し（通報と、参考になったの評価も一緒に消えます）、サロンの評価（`rating`、`reviewCount`）を数え直します |
+| 参考になったの評価 | 消し、評価したレビューの `helpfulCount` を数え直します |
+| 依頼 | 状態を `completed` にし、実行した人と日時を記録します。依頼の記録（理由を含む）は消しません |
+
+- **消去した顧客は復元できません**（409、`The data of customer <ID> was erased at their request`）。最新の版が `erase` かで見分けます
+- 消去した顧客の変更履歴は、`erase` の版だけを返します
+- ほかの顧客が、消去した顧客を紹介元（`referredBy`）にしていれば、そのまま残します。指す先は、個人を特定できない行です
+
+### 進行中の依頼があるあいだ
+
+- **[統合](#統合)は、どちらかの顧客に進行中の依頼があるとき 409** です（`detail` でその顧客の ID を伝えます）。依頼の対象のデータが、別の顧客に移ってしまうからです。依頼を取り消してから統合します
+- そのほかの操作（予約、売上、台帳の更新、削除）は、いつもどおりです。消去は、実行の時点のデータを消します
+- **消去のあとに書いたものは消しません**。施術記録や予約のステータスの変更は、削除した顧客の予約にも書けるので、消去した顧客の過去の予約にも書けます。消去した顧客について個人を特定できることを書かないのは、サロンの運用です
+
+### 確認の順序（削除の依頼）
+
+| オペレーション | 順序 |
+|---|---|
+| 依頼の受け付け | アクセストークン（401）→ 権限（403）→ ID（400）→ 本文（400）→ 顧客の存在（404）→ 進行中の依頼（409） |
+| 依頼の確認 | 401 → 403 → ID（400）→ 顧客の存在、依頼の存在（404） |
+| 依頼の取り消し | 401 → 403 → ID（400）→ 顧客の存在、進行中の依頼の存在（404） |
+| 消去の実行 | 401 → 403 |
+
+### ロック（削除の依頼）
+
+- 受け付けと取り消しは、顧客の行を `FOR UPDATE` でロックしてから、進行中の依頼を確かめて書きます。同じ顧客の受け付けが同時に届いても、1 つが 202、ほかは 409 です。進行中の依頼は、顧客ごとに 1 つまで（部分一意インデックス `customer_deletion_requests_one_pending`）です
+- 受け付けの日時は、ロックできたあとのデータベースの時計（`clock_timestamp()`）で、予定日時は、その同じ時刻の 336 時間後です
+- 消去は、統合と同じ順にロックします。まず、顧客を指す予約、施術記録、レビュー（と、顧客が評価したレビュー）を、この順に、表ごとに ID の順で `FOR NO KEY UPDATE` でロックし、次に顧客の行、依頼の行、アカウントの行を `FOR UPDATE` でロックします。予約のステータスの操作やレビューの評価は、それらを顧客より先にロックするので、逆の順で待ち合うことはありません。消去は、待っていた書き込みが書いたものも消し、数え直しは、その書き込みのあとの行から数えます。書き込みの時刻は、ロックを待ったあとのデータベースの時計です
+- 統合は、2 人の顧客をロックしてから、進行中の依頼を確かめます。受け付けも顧客をロックするので、統合と受け付けは 1 つずつ処理されます
 
 ## 顧客本人のプロフィール
 
@@ -591,6 +673,13 @@
 | CSV 出力と、顧客の登録が同時に届く | 出力は、読み始めた時点の台帳を出す。登録を待たせず、登録を待ちもしない |
 | 顧客のデータの出力と、その顧客の予約や売上の変更が同時に届く | 出力は、読み始めた時点のデータを出す。予約とその売上のように、つながった行が食い違うことはない |
 | 統合と、サブへのポイントの付与が同時に届く | 付与が先なら、付与したポイントも移す。統合が先なら、付与は 400（削除された顧客）。どちらでも、2 人の残高は最新の取引の残高と等しい |
+| 同じ顧客の削除の依頼が同時に届く | 1 件だけが 202 で、ほかは 409。進行中の依頼は 1 つだけ |
+| 削除の依頼と、その顧客の削除が同時に届く | 削除が先なら、依頼は 404 |
+| 依頼の取り消しと、消去の実行が同時に届く | どちらか一方だけが効く。取り消しが先なら、実行はその依頼を飛ばし、データは残る。実行が先なら、取り消しは 404 |
+| 消去の実行が同時に 2 つ届く | 依頼は 1 回だけ実行され、どちらかの応答にだけ入る |
+| 消去の実行と、その顧客の予約、施術記録、顧客の行、アカウントへの書き込みが同時に届く | 消去は、その書き込みが済むのを待ってから、書かれたものも消す。デッドロックしない |
+| 消去の実行と、顧客が評価したレビューへのほかの顧客の評価が同時に届く | 消去は、その評価が済むのを待ってから、顧客の評価を消し、残った評価から `helpfulCount` を数え直す |
+| 統合と、どちらかの顧客の削除の依頼が同時に届く | 依頼が先なら、統合は 409。統合が先なら、サブへの依頼は 404（削除された顧客） |
 
 一意性は DB の一意インデックスが決めます。更新は、対象の行をロックしてから紹介元を確認し、書き込みます。プロフィールの作成は、アカウントの行、引き継ぐ顧客の行の順にロックしてから書き込みます。
 
@@ -644,6 +733,14 @@
 - 変更者がないのは `baseline` だけ（CHECK 制約 `customer_versions_changed_by_unless_baseline`）。`changedBy` は `users` への外部キーです。ユーザーは論理削除なので、行は消えません
 - `customerId` は `ON DELETE CASCADE` です。アプリは顧客の行を物理的に消しませんが、版にも個人情報があるので、顧客の行を消すときには、版も一緒に消えます
 
+マイグレーション `202611182000_customer_deletion_requests.sql` で、削除の依頼のテーブル（`customer_deletion_requests`）と列挙型 `customer_deletion_request_status`（`pending`、`cancelled`、`completed`）を作り、`customer_version_operation` に `erase` を加えました。
+
+- 理由は 1〜1,000 文字（CHECK 制約 `customer_deletion_requests_reason_length`）
+- 予定日時は、受け付けた日時のちょうど 336 時間後（CHECK 制約 `customer_deletion_requests_scheduled_after_grace`）。`interval '14 days'` ではなく時間で書くのは、日の足し算がセッションのタイムゾーンで変わるからです
+- 取り消した人と日時は、取り消した依頼にだけあり（`customer_deletion_requests_cancelled_when_cancelled`）、実行した人と日時は、実行した依頼にだけある（`customer_deletion_requests_completed_when_completed`）
+- 進行中の依頼は、顧客ごとに 1 つまで（部分一意インデックス `customer_deletion_requests_one_pending`）。実行が探す予定日時のインデックス（`idx_customer_deletion_requests_due`）も、進行中の依頼だけのものです
+- `customerId` は `ON DELETE CASCADE`、`requestedBy`、`cancelledBy`、`completedBy` は `users` への外部キーです
+
 ## 実装の場所
 
 | 層 | ファイル |
@@ -661,7 +758,9 @@
 | ドメイン（出力） | `backend/packages/domain/src/schemas/customer.schema.ts`（`customerExportRequestSchema`。絞り込み条件を一覧と共有する）、`business-logic/customer/export-customers.usecase.ts`、`export-customer-data.usecase.ts`、`business-logic/customer/_shared/export.ts`（CSV の形、ファイル名、データのレスポンスへの組み立て）、`repositories/customer.repository.ts`（`exportMatching`、`dataOf`） |
 | インフラ（出力） | `backend/packages/infrastructure/src/repositories/customer.repository.impl.ts`（`exportMatching`。絞り込み条件は一覧と共有する）、`customer-data.ts`（顧客のデータを読む）、`database/snapshot.ts`（スナップショットのトランザクションの設定）。予約、売上、施術記録のリポジトリと共有する `booking-services.ts`、`sale-details.ts`、`treatment-details.ts`（明細をまとめる） |
 | インフラ（統合） | `backend/packages/infrastructure/src/repositories/customer-merge.ts`（ロック、確認、書き込み）。ほかのリポジトリと共有する `customer-counters.ts`（来店回数の数え直し）、`review-marks.ts`（`helpfulCount` の数え直し）、`point-transactions.ts`（取引を書いた順に読む）、`customer-version-record.ts`（版を書く） |
+| ドメイン（削除の依頼） | `backend/packages/domain/src/models/customer-deletion-request.ts`、`schemas/customer-deletion-request.schema.ts`、`mappers/read/customer-deletion-request.mapper.ts`、`repositories/customer-deletion-request.repository.ts`、`business-logic/customer-deletion-request/`（消すもの・残すもの、猶予期間は `_shared/erasure.ts`、実行の権限は `_shared/authorization.ts`） |
+| インフラ（削除の依頼） | `backend/packages/infrastructure/src/repositories/customer-deletion-request.repository.impl.ts`、`customer-erasure.ts`（ロックと消去）。レビューのリポジトリと共有する `salon-review-counts.ts`（サロンの評価の数え直し）、`review-marks.ts` |
 | ドメイン（変更履歴と版、復元） | `backend/packages/domain/src/models/customer-version.ts`、`schemas/customer-version.schema.ts`、`mappers/read/customer-version.mapper.ts`（変更内容の計算）、`repositories/customer-version.repository.ts`、`business-logic/customer-version/`、`business-logic/customer/restore-customer.usecase.ts`、`repositories/customer.repository.ts`（`restore`。書き込むメソッドは、変更者を受け取る） |
 | インフラ（変更履歴と版、復元） | `backend/packages/infrastructure/src/repositories/customer-version.repository.impl.ts`、`customer-version-record.ts`（版を書く `recordVersions`）、`customer.repository.impl.ts`（`restore`） |
-| API | `backend/packages/api/src/routes/customer/`（一括の操作は `batch-get-customers.handler.ts`、`bulk-*-customers.handler.ts`。プロフィールは `*-customer-profile.handler.ts`。復元は `restore-customer.handler.ts`、統合は `merge-customers.handler.ts`、出力は `export-customers.handler.ts`、`export-customer-data.handler.ts`）、`routes/customer-preferences/`（本人のものは `*-own-customer-preferences.handler.ts`）、`routes/customer-statistics/`、`routes/customer-version/`（変更履歴と版） |
-| DB | `backend/packages/database/sql/migrations/202611150900_customers_columns.sql`、`202611151500_customers_user_unique.sql`、`202611160100_customer_preferences_columns.sql`、`202611181400_customers_without_lifetime_value.sql`、`202611181800_customer_versions.sql`、`202611181900_customer_merge.sql` |
+| API | `backend/packages/api/src/routes/customer/`（一括の操作は `batch-get-customers.handler.ts`、`bulk-*-customers.handler.ts`。プロフィールは `*-customer-profile.handler.ts`。復元は `restore-customer.handler.ts`、統合は `merge-customers.handler.ts`、出力は `export-customers.handler.ts`、`export-customer-data.handler.ts`）、`routes/customer-deletion-request/`（削除の依頼）、`routes/customer-preferences/`（本人のものは `*-own-customer-preferences.handler.ts`）、`routes/customer-statistics/`、`routes/customer-version/`（変更履歴と版） |
+| DB | `backend/packages/database/sql/migrations/202611150900_customers_columns.sql`、`202611151500_customers_user_unique.sql`、`202611160100_customer_preferences_columns.sql`、`202611181400_customers_without_lifetime_value.sql`、`202611181800_customer_versions.sql`、`202611181900_customer_merge.sql`、`202611182000_customer_deletion_requests.sql` |
