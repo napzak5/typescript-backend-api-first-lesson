@@ -507,6 +507,25 @@ describe('parseAppConfig', () => {
     },
   )
 
+  it.each([
+    ['STORAGE_ENDPOINT', 'ftp://storage:8333'],
+    ['STORAGE_ENDPOINT', 'ws://storage:8333'],
+    ['STORAGE_PUBLIC_ENDPOINT', 'wss://localhost:8333'],
+  ])(
+    'should reject %s=%j where http is taken too: a storage is reached by http or https',
+    (variable, value) => {
+      const result = parseAppConfig({
+        ...variables,
+        NODE_ENV: 'development',
+        [variable]: value,
+      })
+
+      expect(
+        result.type === 'error' && result.error.map((issue) => issue.variable),
+      ).toEqual([variable])
+    },
+  )
+
   it('should keep the rejected value out of the report', () => {
     const result = parseAppConfig({
       ...variables,

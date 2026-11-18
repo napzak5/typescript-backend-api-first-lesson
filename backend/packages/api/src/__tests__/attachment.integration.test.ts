@@ -1530,6 +1530,19 @@ describe('Attachments API', () => {
       expect(storage.downloads).toHaveLength(2)
     })
 
+    it('takes an ID in upper case, and names the attachment in its links as it is stored', async () => {
+      const id = await uploaded()
+
+      const response = await download(id.toUpperCase())
+
+      expect(response.status).toBe(200)
+      expect(storage.downloads.map(({ file }) => file.key)).toEqual([keyOf(id)])
+      expect(response.body.links).toEqual({
+        self: `${PATH}/${id}/download-url`,
+        attachment: `${PATH}/${id}`,
+      })
+    })
+
     it('answers 409 for an attachment that is not uploaded', async () => {
       const { id } = await announced()
       upload(id)
@@ -1636,6 +1649,22 @@ describe('Attachments API', () => {
       await remove(id)
 
       expect(whenRemoved).toEqual([null])
+    })
+
+    it('stamps the attachment as changed when it is deleted', async () => {
+      const id = await insertAttachment(uploadedAgo(60))
+      upload(id)
+
+      await remove(id)
+
+      const [row] = await db
+        .select({
+          deleted: sql<boolean>`${attachments.deletedAt} is not null`,
+          changedThen: sql<boolean>`${attachments.updatedAt} >= ${attachments.deletedAt} - interval '1 second'`,
+        })
+        .from(attachments)
+        .where(eq(attachments.id, id))
+      expect(row).toEqual({ deleted: true, changedThen: true })
     })
 
     it('answers 500 and changes nothing when the file cannot be removed, and deletes when asked again', async () => {
@@ -2145,6 +2174,36 @@ describe('Attachments API', () => {
       expect(purged.body.data).toEqual({ purgedCount: 0 })
       expect(await storedIds()).toEqual([id])
       expect(storage.files.has(keyOf(id))).toBe(true)
+    })
+
+    it('looks at an attachment again once it holds it: one that is completed while the purge removes the file of another stays', async () => {
+      // The purge takes them in the order of their IDs.
+      const [first = '', second = ''] = [
+        await insertAttachment(ranOut(24 * 60 + 1)),
+        await insertAttachment(ranOut(24 * 60 + 1)),
+      ].sort()
+      upload(first)
+      upload(second)
+      const removal = gate()
+      const reached = gate()
+      storage.beforeRemove = async () => {
+        reached.open()
+        await removal.opened
+      }
+
+      const purging = purge().then((response) => response)
+      await reached.opened
+      const completed = await complete(second)
+      removal.open()
+      const purged = await purging
+
+      expect(completed.status).toBe(200)
+      expect(purged.body.data).toEqual({ purgedCount: 1 })
+      expect(await storedIds()).toEqual([second])
+      expect(storage.files.has(keyOf(second))).toBe(true)
+      expect(storage.calls.filter((call) => call.startsWith('remove'))).toEqual(
+        [`remove ${keyOf(first)}`],
+      )
     })
 
     it('purges every attachment once when two purges run at once', async () => {
