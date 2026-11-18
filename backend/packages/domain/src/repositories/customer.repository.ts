@@ -137,6 +137,8 @@ export type CustomerRestoration =
   | { type: 'notDeleted' }
   /** A merge deleted the customer, and what they had is the other's. */
   | { type: 'mergedAway' }
+  /** The data of the customer was erased at their request. */
+  | { type: 'erased' }
 
 /** One of the two customers a merge names, as the request names them. */
 export type MergedCustomerField = 'primaryCustomerId' | 'secondaryCustomerId'
@@ -149,6 +151,8 @@ export type MergedCustomerField = 'primaryCustomerId' | 'secondaryCustomerId'
  * - `pointsBeyondLimit`: the points of both are more than a balance holds
  * - `chartTooLong`: the medical charts of both list more in `list` than a
  *   request may write
+ * - `deletionRequested`: these of the two have asked for their data to be
+ *   erased, and the request is pending
  */
 export type CustomerMerge =
   | { type: 'merged'; customer: DbCustomer }
@@ -156,6 +160,7 @@ export type CustomerMerge =
   | { type: 'accountsDiffer' }
   | { type: 'pointsBeyondLimit' }
   | { type: 'chartTooLong'; list: ChartList }
+  | { type: 'deletionRequested'; customers: string[] }
 
 /**
  * Why an account did not get a profile:
@@ -220,7 +225,7 @@ export interface ICustomerRepository {
   ): Promise<Result<CustomerDeletion, DomainError>>
   /**
    * Brings a deleted customer back to the ledger, without the account it
-   * was the profile of. An email that a customer who is not deleted has
+   * was the profile of, unless a merge deleted it or its data was erased. An email that a customer who is not deleted has
    * taken meanwhile is refused with `alreadyExists`.
    */
   restore(
@@ -234,7 +239,8 @@ export interface ICustomerRepository {
    * bookings, sales, treatment records, reviews and helpful marks, the
    * account, the points, the preferences, the medical chart and the
    * allergies, merged as `_shared/merge.ts` decides. Each of the two keeps
-   * a version of the merge.
+   * a version of the merge. A customer with a pending deletion request is
+   * not merged: the data it asked to erase would become another's.
    */
   merge(
     request: CustomerMergeRequest,
