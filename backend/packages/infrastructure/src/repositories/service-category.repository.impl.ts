@@ -17,6 +17,7 @@ import {
 import { Result } from '@beauty-salon-backend/utility'
 import { and, asc, count, eq, sql } from 'drizzle-orm'
 import { attempt } from '../database/attempt'
+import { CLOCK } from '../database/clock'
 import type { Database, DatabaseExecutor } from '../database/index'
 
 const ofSalon = (salonId: SalonId, id: string) =>
@@ -190,7 +191,7 @@ export class ServiceCategoryRepository implements IServiceCategoryRepository {
 
         const [updated] = await tx
           .update(serviceCategories)
-          .set({ ...changes, updatedAt: sql`now()` })
+          .set({ ...changes, updatedAt: CLOCK })
           .where(ofSalon(salonId, id))
           .returning()
 

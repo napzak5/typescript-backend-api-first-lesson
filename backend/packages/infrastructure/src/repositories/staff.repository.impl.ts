@@ -199,7 +199,7 @@ export class StaffRepository implements IStaffRepository {
         // is changed before the delete or not found after it.
         const [updated] = await this.db
           .update(staff)
-          .set({ ...changes, updatedAt: sql`now()` })
+          .set({ ...changes, updatedAt: CLOCK })
           .where(and(ofSalon(salonId, id), notDeleted))
           .returning()
 

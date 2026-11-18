@@ -553,7 +553,7 @@ The calendars of a page are loaded with one query for all its salons and grouped
       this.db.transaction(async (tx) => {
         const [updated] = await tx
           .update(salons)
-          .set({ ...changes, updatedAt: sql`now()` })
+          .set({ ...changes, updatedAt: CLOCK })
           .where(and(eq(salons.id, id), notDeleted))
           .returning()
         if (updated === undefined) {
@@ -577,7 +577,7 @@ The calendars of a page are loaded with one query for all its salons and grouped
 - **`replace` deletes every row of the calendar and inserts the new list.** There is no per-entry diff; `openingHours` in a `PATCH` is the whole calendar. `keep` touches nothing.
 - **`notDeleted` is part of the `where`**, so a deleted salon is not updated and the method resolves to `null`.
 - **The calendar is read back** inside the transaction (`withOpeningHours`), so the response shows what is stored: entries in date order, times with seconds.
-- **`updatedAt` is set by the database** (`now()`), not by the application clock.
+- **`updatedAt` is set by the database**, not by the application clock. `CLOCK` (`backend/packages/infrastructure/src/database/clock.ts`) is `clock_timestamp()`, the moment the statement gets to the row: an update that waited for another update of the same salon is recorded as the later of the two. `now()` is the moment the transaction began, which is before the wait, and would record it as the earlier.
 
 `create` is built the same way: insert the salon, insert the calendar with the new ID, read the calendar back. Under `noUncheckedIndexedAccess` the first of the returned rows may be `undefined`; the method turns that case into a `database` error instead of asserting it away. `delete` sets `deletedAt` and resolves to whether a row changed; the row and its calendar are kept.
 

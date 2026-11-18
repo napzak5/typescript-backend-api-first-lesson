@@ -16,6 +16,7 @@ import type {
 import type { Result } from '@beauty-salon-backend/utility'
 import { and, eq, gt, isNull, lt, ne, or, sql } from 'drizzle-orm'
 import { attempt } from '../database/attempt'
+import { CLOCK } from '../database/clock'
 import type { Database } from '../database/index'
 import {
   accountColumns,
@@ -98,7 +99,7 @@ export class UserRepository implements IUserRepository {
           // Only an active account becomes locked: a suspended one stays
           // suspended when its lock runs out.
           status: sql`case when ${reachesThreshold} and ${users.status} = 'active' then 'locked' else ${users.status} end`,
-          updatedAt: sql`now()`,
+          updatedAt: CLOCK,
         })
         .where(and(eq(users.id, id), userNotDeleted))
 
@@ -120,7 +121,7 @@ export class UserRepository implements IUserRepository {
           lastLoginAt: at,
           lastLoginIp: ipAddress,
           ...(passwordHash === null ? {} : { passwordHash }),
-          updatedAt: sql`now()`,
+          updatedAt: CLOCK,
         })
         .where(and(eq(users.id, id), userNotDeleted))
         .returning()
@@ -165,7 +166,7 @@ export class UserRepository implements IUserRepository {
           ...emailVerificationOf(emailVerification),
           failedLoginAttempts: 0,
           lockedUntil: null,
-          updatedAt: sql`now()`,
+          updatedAt: CLOCK,
         })
         .where(
           and(eq(users.id, id), eq(users.status, 'unverified'), userNotDeleted),
@@ -183,7 +184,7 @@ export class UserRepository implements IUserRepository {
     return attempt('Failed to issue email verification', async () => {
       const issued = await this.db
         .update(users)
-        .set({ ...emailVerificationOf(token), updatedAt: sql`now()` })
+        .set({ ...emailVerificationOf(token), updatedAt: CLOCK })
         .where(
           and(eq(users.id, id), eq(users.emailVerified, false), userNotDeleted),
         )
@@ -204,7 +205,7 @@ export class UserRepository implements IUserRepository {
           emailVerified: true,
           status: activeIfUnverified,
           ...noEmailVerification,
-          updatedAt: sql`now()`,
+          updatedAt: CLOCK,
         })
         .where(
           and(
@@ -229,7 +230,7 @@ export class UserRepository implements IUserRepository {
         .set({
           passwordResetTokenHash: tokenHash,
           passwordResetExpiry: expiresAt,
-          updatedAt: sql`now()`,
+          updatedAt: CLOCK,
         })
         .where(and(eq(users.id, id), userNotDeleted))
         .returning({ id: users.id })
@@ -276,7 +277,7 @@ export class UserRepository implements IUserRepository {
             failedLoginAttempts: 0,
             lockedUntil: null,
             status: sql`case when ${users.status} in ('unverified', 'locked') then 'active' else ${users.status} end`,
-            updatedAt: sql`now()`,
+            updatedAt: CLOCK,
           })
           .where(
             and(
@@ -309,7 +310,7 @@ export class UserRepository implements IUserRepository {
             lastPasswordChange: at,
             ...noPasswordReset,
             failedLoginAttempts: 0,
-            updatedAt: sql`now()`,
+            updatedAt: CLOCK,
           })
           .where(and(eq(users.id, id), userNotDeleted))
           .returning({ id: users.id })
@@ -337,7 +338,7 @@ export class UserRepository implements IUserRepository {
           twoFactorSecret: sealedSecret,
           backupCodes: backupCodeHashes,
           twoFactorLastUsedStep: null,
-          updatedAt: sql`now()`,
+          updatedAt: CLOCK,
         })
         .where(
           and(
@@ -413,7 +414,7 @@ export class UserRepository implements IUserRepository {
     return attempt('Failed to enable two-factor authentication', async () => {
       const enabled = await this.db
         .update(users)
-        .set({ twoFactorStatus: 'enabled', updatedAt: sql`now()` })
+        .set({ twoFactorStatus: 'enabled', updatedAt: CLOCK })
         .where(
           and(
             eq(users.id, id),
@@ -440,7 +441,7 @@ export class UserRepository implements IUserRepository {
           lockedUntil: null,
           // A suspended account whose guesses ran out stays suspended.
           status: sql`case when ${users.status} = 'locked' then 'active' else ${users.status} end`,
-          updatedAt: sql`now()`,
+          updatedAt: CLOCK,
         })
         .where(
           and(
@@ -462,7 +463,7 @@ export class UserRepository implements IUserRepository {
         .set({
           twoFactorStatus: 'disabled',
           ...noTwoFactor,
-          updatedAt: sql`now()`,
+          updatedAt: CLOCK,
         })
         .where(
           and(
@@ -484,7 +485,7 @@ export class UserRepository implements IUserRepository {
     return attempt('Failed to replace backup codes', async () => {
       const replaced = await this.db
         .update(users)
-        .set({ backupCodes: backupCodeHashes, updatedAt: sql`now()` })
+        .set({ backupCodes: backupCodeHashes, updatedAt: CLOCK })
         .where(
           and(
             eq(users.id, id),
