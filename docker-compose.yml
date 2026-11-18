@@ -22,7 +22,7 @@ services:
   # Catches every mail the backend sends and shows it at http://localhost:8025;
   # nothing leaves the machine. Reachable from this machine only.
   mailpit:
-    image: axllent/mailpit:v1.33.1
+    image: axllent/mailpit:v1.34.0
     container_name: beauty-salon-mail
     environment:
       # The backend always signs in to its SMTP server. Any credentials are

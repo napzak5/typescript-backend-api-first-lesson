@@ -14,19 +14,19 @@ allowBuilds:
   '@tailwindcss/oxide': false
   cpu-features: false
   esbuild: false
-  msw: false
   oxc-resolver: false
   protobufjs: false
   ssh2: false
 
 # drizzle-kit still depends on the deprecated @esbuild-kit loader, which pins an
 # esbuild release with a known dev-server advisory. archiver (through
-# testcontainers) and the Storybook docgen plugin depend on glob and minimatch
-# releases with advisories that are fixed in glob 14.0.2 and minimatch 11.0.1.
+# testcontainers) and the Storybook docgen plugin depend on glob releases with
+# advisories that are fixed in glob 14.0.2. The glob that replaces them depends
+# on minimatch ^11.0.5, later than the release (11.0.1) that fixed the
+# advisories of minimatch, so minimatch needs no entry of its own.
 overrides:
   esbuild@<=0.24.2: '>=0.25.0'
-  glob@>=9.0.0 <14.0.2: '>=14.0.2'
-  minimatch@>=7.0.0 <11.0.1: '>=11.0.1'
+  glob@>=9.0.0 <14.0.2: '>=14.0.6'
 
 permissions:
   taze:

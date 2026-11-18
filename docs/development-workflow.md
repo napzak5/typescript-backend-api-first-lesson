@@ -24,7 +24,7 @@
 | ツール | バージョン | 備考 |
 |--------|-----------|------|
 | Node.js | 26.13.1 | `.node-version` で固定。fnm など、このファイルを読むバージョンマネージャーなら自動で切り替わる |
-| pnpm | 12.18.0 | `package.json` の `packageManager` で固定 |
+| pnpm | 12.21.0 | `package.json` の `packageManager` で固定 |
 | PostgreSQL | 18 | Docker で起動する（`make infra-up`）か、手元のインスタンスを使う |
 | Docker | - | `make infra-up`、testcontainers を使う統合テスト、イメージのビルドに必要 |
 

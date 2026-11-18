@@ -85,7 +85,7 @@ For detailed architecture documentation, see [docs/architecture-overview.md](doc
 ### Prerequisites
 
 - Node.js 26.13.1 (`.node-version`)
-- pnpm 12.18.0 (`package.json#packageManager`)
+- pnpm 12.21.0 (`package.json#packageManager`)
 - PostgreSQL 18, either through Docker (`make infra-up`) or any instance that
   `DATABASE_URL` in `.env.localhost` points to
 - An SMTP server for the mails the backend sends. `make infra-up` starts

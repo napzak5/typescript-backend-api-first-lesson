@@ -73,6 +73,26 @@ import { customInstance } from '../../../mutator';
 
 
 
+const getHeaders = (...sources: (RequestInit['headers'] | Record<string, string | undefined>)[]) => {
+  const seen = new Set<string>();
+  const layers: [string, string | readonly string[]][][] = [];
+  for (const source of sources.reverse()) {
+    if (!source) continue;
+    const entries = source instanceof Headers
+      ? source.entries()
+      : Symbol.iterator in source
+        ? Array.from(source as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string])
+        : Object.entries<string | readonly string[] | undefined>(source);
+    const layer: [string, string | readonly string[]][] = [];
+    for (const [name, value] of entries) {
+      if (value !== undefined && !seen.has(name.toLowerCase())) layer.push([name, value]);
+    }
+    for (const [name] of layer) seen.add(name.toLowerCase());
+    layers.push(layer);
+  }
+  return Object.fromEntries(layers.reverse().flat()) as Extract<RequestInit['headers'], Record<string, unknown>>;
+};
+
 
 const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKey: K } => {
   const result = { queryKey } as T & { queryKey: K };
@@ -324,25 +344,11 @@ export const getCustomerCrudCreateUrl = () => {
  */
 export const customerCrudCreate = async (modelsCustomerCreateRequest: ModelsCustomerCreateRequest, options?: RequestInit): Promise<customerCrudCreateResponse> => {
 
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return customInstance<customerCrudCreateResponse>(getCustomerCrudCreateUrl(),
+  return customInstance<customerCrudCreateResponse>(getCustomerCrudCreateUrl(),
   {
     ...options,
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
     body: JSON.stringify(modelsCustomerCreateRequest)
   }
 );}
@@ -467,25 +473,11 @@ export const getCustomerCrudBatchGetUrl = () => {
  */
 export const customerCrudBatchGet = async (modelsCustomerBatchGetRequest: ModelsCustomerBatchGetRequest, options?: RequestInit): Promise<customerCrudBatchGetResponse> => {
 
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return customInstance<customerCrudBatchGetResponse>(getCustomerCrudBatchGetUrl(),
+  return customInstance<customerCrudBatchGetResponse>(getCustomerCrudBatchGetUrl(),
   {
     ...options,
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
     body: JSON.stringify(modelsCustomerBatchGetRequest)
   }
 );}
@@ -610,25 +602,11 @@ export const getCustomerCrudBulkCreateUrl = () => {
  */
 export const customerCrudBulkCreate = async (modelsCustomerBulkCreateRequest: ModelsCustomerBulkCreateRequest, options?: RequestInit): Promise<customerCrudBulkCreateResponse> => {
 
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return customInstance<customerCrudBulkCreateResponse>(getCustomerCrudBulkCreateUrl(),
+  return customInstance<customerCrudBulkCreateResponse>(getCustomerCrudBulkCreateUrl(),
   {
     ...options,
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
     body: JSON.stringify(modelsCustomerBulkCreateRequest)
   }
 );}
@@ -758,25 +736,11 @@ export const getCustomerCrudBulkUpdateUrl = () => {
  */
 export const customerCrudBulkUpdate = async (modelsCustomerBulkUpdateRequest: ModelsCustomerBulkUpdateRequest, options?: RequestInit): Promise<customerCrudBulkUpdateResponse> => {
 
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return customInstance<customerCrudBulkUpdateResponse>(getCustomerCrudBulkUpdateUrl(),
+  return customInstance<customerCrudBulkUpdateResponse>(getCustomerCrudBulkUpdateUrl(),
   {
     ...options,
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
     body: JSON.stringify(modelsCustomerBulkUpdateRequest)
   }
 );}
@@ -906,25 +870,11 @@ export const getCustomerCrudBulkDeleteUrl = () => {
  */
 export const customerCrudBulkDelete = async (modelsCustomerBulkDeleteRequest: ModelsCustomerBulkDeleteRequest, options?: RequestInit): Promise<customerCrudBulkDeleteResponse> => {
 
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return customInstance<customerCrudBulkDeleteResponse>(getCustomerCrudBulkDeleteUrl(),
+  return customInstance<customerCrudBulkDeleteResponse>(getCustomerCrudBulkDeleteUrl(),
   {
     ...options,
     method: 'DELETE',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
     body: JSON.stringify(modelsCustomerBulkDeleteRequest)
   }
 );}
@@ -1482,25 +1432,11 @@ export const getCustomerProfileCreateUrl = () => {
  */
 export const customerProfileCreate = async (modelsCustomerProfileCreateRequest: ModelsCustomerProfileCreateRequest, options?: RequestInit): Promise<customerProfileCreateResponse> => {
 
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return customInstance<customerProfileCreateResponse>(getCustomerProfileCreateUrl(),
+  return customInstance<customerProfileCreateResponse>(getCustomerProfileCreateUrl(),
   {
     ...options,
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
     body: JSON.stringify(modelsCustomerProfileCreateRequest)
   }
 );}
@@ -1625,25 +1561,11 @@ export const getCustomerProfileUpdateUrl = () => {
  */
 export const customerProfileUpdate = async (modelsCustomerProfileUpdateRequest: ModelsCustomerProfileUpdateRequest, options?: RequestInit): Promise<customerProfileUpdateResponse> => {
 
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return customInstance<customerProfileUpdateResponse>(getCustomerProfileUpdateUrl(),
+  return customInstance<customerProfileUpdateResponse>(getCustomerProfileUpdateUrl(),
   {
     ...options,
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
     body: JSON.stringify(modelsCustomerProfileUpdateRequest)
   }
 );}
@@ -1920,25 +1842,11 @@ export const getCustomerProfileUpdatePreferencesUrl = () => {
  */
 export const customerProfileUpdatePreferences = async (modelsCustomerPreferencesUpdateRequest: ModelsCustomerPreferencesUpdateRequest, options?: RequestInit): Promise<customerProfileUpdatePreferencesResponse> => {
 
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return customInstance<customerProfileUpdatePreferencesResponse>(getCustomerProfileUpdatePreferencesUrl(),
+  return customInstance<customerProfileUpdatePreferencesResponse>(getCustomerProfileUpdatePreferencesUrl(),
   {
     ...options,
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
     body: JSON.stringify(modelsCustomerPreferencesUpdateRequest)
   }
 );}
@@ -2063,25 +1971,11 @@ export const getCustomerCrudMergeUrl = () => {
  */
 export const customerCrudMerge = async (modelsCustomerMergeRequest: ModelsCustomerMergeRequest, options?: RequestInit): Promise<customerCrudMergeResponse> => {
 
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return customInstance<customerCrudMergeResponse>(getCustomerCrudMergeUrl(),
+  return customInstance<customerCrudMergeResponse>(getCustomerCrudMergeUrl(),
   {
     ...options,
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
     body: JSON.stringify(modelsCustomerMergeRequest)
   }
 );}
@@ -2369,25 +2263,11 @@ export const getCustomerCrudUpdateUrl = (id: ModelsCustomerId,) => {
 export const customerCrudUpdate = async (id: ModelsCustomerId,
     modelsCustomerUpdateRequest: ModelsCustomerUpdateRequest, options?: RequestInit): Promise<customerCrudUpdateResponse> => {
 
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return customInstance<customerCrudUpdateResponse>(getCustomerCrudUpdateUrl(id),
+  return customInstance<customerCrudUpdateResponse>(getCustomerCrudUpdateUrl(id),
   {
     ...options,
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
     body: JSON.stringify(modelsCustomerUpdateRequest)
   }
 );}
@@ -2642,25 +2522,11 @@ export const getCustomerCrudRequestDeletionUrl = (id: ModelsCustomerId,) => {
 export const customerCrudRequestDeletion = async (id: ModelsCustomerId,
     modelsCustomerDeletionRequestCreateRequest: ModelsCustomerDeletionRequestCreateRequest, options?: RequestInit): Promise<customerCrudRequestDeletionResponse> => {
 
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return customInstance<customerCrudRequestDeletionResponse>(getCustomerCrudRequestDeletionUrl(id),
+  return customInstance<customerCrudRequestDeletionResponse>(getCustomerCrudRequestDeletionUrl(id),
   {
     ...options,
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
     body: JSON.stringify(modelsCustomerDeletionRequestCreateRequest)
   }
 );}
@@ -3548,25 +3414,11 @@ export const getCustomerCrudUpdatePreferencesUrl = (id: ModelsCustomerId,) => {
 export const customerCrudUpdatePreferences = async (id: ModelsCustomerId,
     modelsCustomerPreferencesUpdateRequest: ModelsCustomerPreferencesUpdateRequest, options?: RequestInit): Promise<customerCrudUpdatePreferencesResponse> => {
 
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return customInstance<customerCrudUpdatePreferencesResponse>(getCustomerCrudUpdatePreferencesUrl(id),
+  return customInstance<customerCrudUpdatePreferencesResponse>(getCustomerCrudUpdatePreferencesUrl(id),
   {
     ...options,
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
     body: JSON.stringify(modelsCustomerPreferencesUpdateRequest)
   }
 );}

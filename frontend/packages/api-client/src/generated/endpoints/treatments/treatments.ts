@@ -45,6 +45,26 @@ import { customInstance } from '../../../mutator';
 
 
 
+const getHeaders = (...sources: (RequestInit['headers'] | Record<string, string | undefined>)[]) => {
+  const seen = new Set<string>();
+  const layers: [string, string | readonly string[]][][] = [];
+  for (const source of sources.reverse()) {
+    if (!source) continue;
+    const entries = source instanceof Headers
+      ? source.entries()
+      : Symbol.iterator in source
+        ? Array.from(source as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string])
+        : Object.entries<string | readonly string[] | undefined>(source);
+    const layer: [string, string | readonly string[]][] = [];
+    for (const [name, value] of entries) {
+      if (value !== undefined && !seen.has(name.toLowerCase())) layer.push([name, value]);
+    }
+    for (const [name] of layer) seen.add(name.toLowerCase());
+    layers.push(layer);
+  }
+  return Object.fromEntries(layers.reverse().flat()) as Extract<RequestInit['headers'], Record<string, unknown>>;
+};
+
 
 const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKey: K } => {
   const result = { queryKey } as T & { queryKey: K };
@@ -288,25 +308,11 @@ export const getTreatmentRecordCrudCreateUrl = () => {
  */
 export const treatmentRecordCrudCreate = async (modelsTreatmentRecordCreateRequest: ModelsTreatmentRecordCreateRequest, options?: RequestInit): Promise<treatmentRecordCrudCreateResponse> => {
 
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return customInstance<treatmentRecordCrudCreateResponse>(getTreatmentRecordCrudCreateUrl(),
+  return customInstance<treatmentRecordCrudCreateResponse>(getTreatmentRecordCrudCreateUrl(),
   {
     ...options,
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
     body: JSON.stringify(modelsTreatmentRecordCreateRequest)
   }
 );}
@@ -748,25 +754,11 @@ export const getTreatmentRecordCrudUpdateUrl = (id: ModelsTreatmentRecordId,) =>
 export const treatmentRecordCrudUpdate = async (id: ModelsTreatmentRecordId,
     modelsTreatmentRecordUpdateRequest: ModelsTreatmentRecordUpdateRequest, options?: RequestInit): Promise<treatmentRecordCrudUpdateResponse> => {
 
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return customInstance<treatmentRecordCrudUpdateResponse>(getTreatmentRecordCrudUpdateUrl(id),
+  return customInstance<treatmentRecordCrudUpdateResponse>(getTreatmentRecordCrudUpdateUrl(id),
   {
     ...options,
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
     body: JSON.stringify(modelsTreatmentRecordUpdateRequest)
   }
 );}
@@ -1016,25 +1008,11 @@ export const getTreatmentRecordCrudAddPhotosUrl = (id: ModelsTreatmentRecordId,)
 export const treatmentRecordCrudAddPhotos = async (id: ModelsTreatmentRecordId,
     modelsTreatmentPhotoBulkCreateRequest: ModelsTreatmentPhotoBulkCreateRequest, options?: RequestInit): Promise<treatmentRecordCrudAddPhotosResponse> => {
 
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return customInstance<treatmentRecordCrudAddPhotosResponse>(getTreatmentRecordCrudAddPhotosUrl(id),
+  return customInstance<treatmentRecordCrudAddPhotosResponse>(getTreatmentRecordCrudAddPhotosUrl(id),
   {
     ...options,
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
     body: JSON.stringify(modelsTreatmentPhotoBulkCreateRequest)
   }
 );}
