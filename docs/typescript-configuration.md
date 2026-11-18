@@ -183,6 +183,8 @@ import { startServer } from './server.js'
 | `pnpm typecheck`、各パッケージの `tsc` | なし | `dist/index.d.ts` |
 | `pnpm start:backend` | なし | `dist/index.js` |
 
+テストの `ssr.resolve.conditions` は、`@beauty-salon-backend/source`、`node`、`development|production` の 3 つです。Vite の既定にある `module` は入れていません。`module` はバンドラー向けのビルドを指す条件で、Node.js は使いません。入れると、テストだけが、サーバーの実行時とは違うファイルを読み込みます（AWS SDK では、Node.js が読み込めない、拡張子を省いた ESM のビルドを指します）。
+
 `tsc` は条件を指定していないので、依存するパッケージの型をビルド成果物から読みます。そのため `pnpm typecheck` の前にビルドが必要です（`make ci-check` と CI は `pnpm build:prod` の後に実行しています）。依存先のパッケージを変更したのに型エラーが古いままのときは、ビルドし直してください。
 
 ### フロントエンド

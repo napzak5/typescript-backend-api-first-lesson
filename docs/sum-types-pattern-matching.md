@@ -11,7 +11,7 @@
 | 型 | 定義場所 | ケース |
 |----|----------|--------|
 | `Result<T, E>` | `backend/packages/utility/src/result/result.ts` | `success` / `error` |
-| `DomainError` | `backend/packages/domain/src/shared/errors.ts` | `validation` / `unauthenticated` / `forbidden` / `notFound` / `alreadyExists` / `conflict` / `database` |
+| `DomainError` | `backend/packages/domain/src/shared/errors.ts` | `validation` / `unauthenticated` / `forbidden` / `notFound` / `alreadyExists` / `conflict` / `database` / `storage` |
 | `HttpError` | `backend/packages/api/src/shared/problem-details.ts` | `routeNotFound` / `malformedBody` / `unsupportedMediaType` / `bodyTooLarge` / `badRequest` / `rateLimited` / `unexpected` |
 | `ApiError` | 同上 | `DomainError` と `HttpError` の和 |
 | `OpeningHoursChange` | `backend/packages/domain/src/models/salon.ts` | `keep` / `replace` |
@@ -163,6 +163,7 @@ export type DomainError =
   | { type: 'alreadyExists'; entity: string; field: string; value: string }
   | { type: 'conflict'; message: string }
   | { type: 'database'; message: string; cause: unknown }
+  | { type: 'storage'; message: string; cause: unknown }
 ```
 
 値は同じファイルの `DomainErrors.validation(...)`、`DomainErrors.notFound(...)` などで作ります。
@@ -176,8 +177,9 @@ export type DomainError =
 | `alreadyExists` | リポジトリ。書き込みが一意性に違反したとき。サロンのメールアドレス、顧客のメールアドレス（削除されていない顧客の間で一意）、顧客の紹介コード（削除済みを含むすべての顧客の間で一意）、スタッフのメールアドレス（同じサロンの削除されていないスタッフの間で一意）、スタッフコード（同じサロンの、削除済みを含むすべてのスタッフの間で一意）。どれに違反したかは、違反した制約の名前で見分ける | 409 |
 | `conflict` | 2 要素認証のユースケースと、管理者の操作のユースケース。リクエストは正しいが、対象の状態がその操作を許さないとき（すでに有効なのに設定を開始する、ロックされていないアカウントのロックを解除する、など）。サービスの削除のユースケースも、パッケージに含まれているサービスについて作る。顧客、スタッフ、サービス、サロンの削除のユースケースは、終わっていない予約が参照しているときにも作る（`backend/packages/domain/src/business-logic/_shared/unfinished-bookings.ts`）。スタッフの更新と削除のユースケースは、操作者が自分のアカウントの属するスタッフ情報を無効化または削除しようとしたときに作る（`backend/packages/domain/src/business-logic/staff/_shared/refusals.ts`）。権限がないのではなく、その操作が成り立たないので、`forbidden` ではない | 409 |
 | `database` | リポジトリ（想定外のクエリ失敗）、読み取りマッパー（保存値が API モデルに合わない） | 500 |
+| `storage` | 添付ファイルの保存先（`S3FileStorage`）。オブジェクトストレージの呼び出しが失敗したとき、拒否されたとき | 500 |
 
-`database` の `cause` はログに書くためのもので、レスポンスには含めません。HTTP ステータスへの対応は次節の `toProblem` が決めています。
+`database` と `storage` の `cause` はログに書くためのもので、レスポンスには含めません。HTTP ステータスへの対応は次節の `toProblem` が決めています。
 
 ## `match` の使い方
 
@@ -249,7 +251,7 @@ const toProblem = (error: ApiError): Problem =>
       code: '3001',
       errors: null,
     }))
-    // ... alreadyExists、conflict、database、HttpError の7ケース
+    // ... alreadyExists、conflict、database、storage、HttpError の7ケース
     .exhaustive()
 ```
 
