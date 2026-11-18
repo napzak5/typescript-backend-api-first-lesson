@@ -104,6 +104,19 @@ const toProblem = (error: ApiError): Problem =>
       code: '1005',
       errors: null,
     }))
+    // 403 and not 401: the password travels in the body, so there is no
+    // challenge to send with a 401 (RFC 9110, 15.5.2), and a 403 is what
+    // tells a client that other credentials may do (15.5.4). The same for a
+    // missing password, a wrong one and a locked link.
+    .with({ type: 'passwordRequired' }, () => ({
+      type: 'urn:beauty-salon:problem:password-required',
+      title: 'Password required',
+      status: 403,
+      detail:
+        'Send the password of the share link; one that was sent was not accepted',
+      code: '1002',
+      errors: null,
+    }))
     .with({ type: 'notFound' }, ({ entity, id }) => ({
       type: 'urn:beauty-salon:problem:not-found',
       title: 'Resource not found',
