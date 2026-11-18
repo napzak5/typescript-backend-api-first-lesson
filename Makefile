@@ -136,9 +136,10 @@ db-check: ## Verify schema.ts, relations.ts and setup.sql agree (recreates the d
 
 ## Local services (Docker Compose)
 .PHONY: infra-up docker-up docker-down docker-build docker-logs docker-clean
-infra-up: ## Start PostgreSQL and the mail catcher (Mailpit) and wait until both are ready
-	$(COMPOSE) up -d --wait postgres mailpit
+infra-up: ## Start PostgreSQL, the mail catcher (Mailpit) and the file storage (SeaweedFS) and wait until they are ready
+	$(COMPOSE) up -d --wait postgres mailpit storage
 	@echo "Mails the backend sends: http://localhost:8025"
+	@echo "Files of the attachments: http://localhost:8333 (S3 API)"
 
 docker-up: ## Start every service, including the backend container (migrates the database, keeps its data)
 	$(COMPOSE) up -d

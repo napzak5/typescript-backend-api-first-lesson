@@ -25,6 +25,12 @@ const variables = {
   MAIL_FROM: 'Beauty Salon <no-reply@salon.example>',
   PUBLIC_APP_URL: 'https://salon.example',
   TWO_FACTOR_ENCRYPTION_KEY: 'Zm9yLXRoZS10ZXN0cy1vZi10aGUtY29uZmlnLXBhY2thZ2U',
+  STORAGE_ENDPOINT: 'https://storage.internal.example',
+  STORAGE_PUBLIC_ENDPOINT: 'https://files.salon.example',
+  STORAGE_REGION: 'auto',
+  STORAGE_BUCKET: 'beauty-salon-files',
+  STORAGE_ACCESS_KEY_ID: 'storage-key-id',
+  STORAGE_SECRET_ACCESS_KEY: 'hunter2',
   LOG_LEVEL: 'info',
   LOG_FORMAT: 'json',
 }
@@ -87,6 +93,14 @@ describe('parseAppConfig', () => {
         twoFactor: {
           encryptionKey: 'Zm9yLXRoZS10ZXN0cy1vZi10aGUtY29uZmlnLXBhY2thZ2U',
         },
+        storage: {
+          endpoint: 'https://storage.internal.example',
+          publicEndpoint: 'https://files.salon.example',
+          region: 'auto',
+          bucket: 'beauty-salon-files',
+          accessKeyId: 'storage-key-id',
+          secretAccessKey: 'hunter2',
+        },
         logging: { level: 'info', format: 'json' },
       },
     })
@@ -107,11 +121,21 @@ describe('parseAppConfig', () => {
     ).toEqual(variableNames)
   })
 
-  it('should read 22 variables, the key of two-factor authentication among them', () => {
+  it('should read 28 variables, the key of two-factor authentication and the six of the storage among them', () => {
     const result = parseAppConfig({})
 
-    expect(result.type === 'error' && result.error).toHaveLength(22)
+    expect(result.type === 'error' && result.error).toHaveLength(28)
     expect(variableNames).toContain('TWO_FACTOR_ENCRYPTION_KEY')
+    expect(variableNames.filter((name) => name.startsWith('STORAGE_'))).toEqual(
+      [
+        'STORAGE_ENDPOINT',
+        'STORAGE_PUBLIC_ENDPOINT',
+        'STORAGE_REGION',
+        'STORAGE_BUCKET',
+        'STORAGE_ACCESS_KEY_ID',
+        'STORAGE_SECRET_ACCESS_KEY',
+      ],
+    )
   })
 
   it.each([
@@ -158,6 +182,12 @@ describe('parseAppConfig', () => {
     'MAIL_FROM',
     'PUBLIC_APP_URL',
     'TWO_FACTOR_ENCRYPTION_KEY',
+    'STORAGE_ENDPOINT',
+    'STORAGE_PUBLIC_ENDPOINT',
+    'STORAGE_REGION',
+    'STORAGE_BUCKET',
+    'STORAGE_ACCESS_KEY_ID',
+    'STORAGE_SECRET_ACCESS_KEY',
   ])('should report a missing %s by its name', (variable) => {
     const rest = Object.fromEntries(
       Object.entries(variables).filter(([name]) => name !== variable),
@@ -200,6 +230,33 @@ describe('parseAppConfig', () => {
     // 31 characters
     ['TWO_FACTOR_ENCRYPTION_KEY', 'k'.repeat(31)],
     ['TWO_FACTOR_ENCRYPTION_KEY', 'Zm9yLXRoZS10ZXN0cy1vZi10aGUtY29'],
+    ['STORAGE_ENDPOINT', ''],
+    ['STORAGE_ENDPOINT', 'storage.example'],
+    ['STORAGE_ENDPOINT', 'https://storage.example/'],
+    ['STORAGE_ENDPOINT', 'https://storage.example/beauty-salon-files'],
+    ['STORAGE_ENDPOINT', 'https://key:secret@storage.example'],
+    ['STORAGE_ENDPOINT', 's3://beauty-salon-files'],
+    ['STORAGE_ENDPOINT', 'ftp://storage.example'],
+    ['STORAGE_PUBLIC_ENDPOINT', ''],
+    ['STORAGE_PUBLIC_ENDPOINT', 'files.salon.example'],
+    ['STORAGE_PUBLIC_ENDPOINT', 'https://files.salon.example/'],
+    ['STORAGE_PUBLIC_ENDPOINT', 'https://files.salon.example?bucket=files'],
+    ['STORAGE_PUBLIC_ENDPOINT', 'ftp://files.salon.example'],
+    ['STORAGE_REGION', ''],
+    ['STORAGE_BUCKET', ''],
+    // Two characters
+    ['STORAGE_BUCKET', 'ab'],
+    // 64 characters
+    ['STORAGE_BUCKET', 'b'.repeat(64)],
+    ['STORAGE_BUCKET', 'Beauty-Salon'],
+    ['STORAGE_BUCKET', 'beauty_salon'],
+    ['STORAGE_BUCKET', '-beauty-salon'],
+    ['STORAGE_BUCKET', 'beauty-salon-'],
+    ['STORAGE_BUCKET', '.beauty-salon'],
+    ['STORAGE_BUCKET', 'beauty-salon/files'],
+    ['STORAGE_BUCKET', 'beauty salon'],
+    ['STORAGE_ACCESS_KEY_ID', ''],
+    ['STORAGE_SECRET_ACCESS_KEY', ''],
   ])('should reject %s=%j by its name', (variable, value) => {
     const result = parseAppConfig({ ...variables, [variable]: value })
 
@@ -260,6 +317,58 @@ describe('parseAppConfig', () => {
         },
       },
     ],
+    [
+      'STORAGE_ENDPOINT',
+      'https://0123456789abcdef.r2.cloudflarestorage.com',
+      {
+        storage: expect.objectContaining({
+          endpoint: 'https://0123456789abcdef.r2.cloudflarestorage.com',
+          publicEndpoint: 'https://files.salon.example',
+        }),
+      },
+    ],
+    [
+      'STORAGE_PUBLIC_ENDPOINT',
+      'https://files.salon.example:8443',
+      {
+        storage: expect.objectContaining({
+          endpoint: 'https://storage.internal.example',
+          publicEndpoint: 'https://files.salon.example:8443',
+        }),
+      },
+    ],
+    [
+      'STORAGE_REGION',
+      'ap-northeast-1',
+      { storage: expect.objectContaining({ region: 'ap-northeast-1' }) },
+    ],
+    // Three characters
+    [
+      'STORAGE_BUCKET',
+      'abc',
+      { storage: expect.objectContaining({ bucket: 'abc' }) },
+    ],
+    // 63 characters
+    [
+      'STORAGE_BUCKET',
+      'b'.repeat(63),
+      { storage: expect.objectContaining({ bucket: 'b'.repeat(63) }) },
+    ],
+    [
+      'STORAGE_BUCKET',
+      '1.files-of.salon-2',
+      { storage: expect.objectContaining({ bucket: '1.files-of.salon-2' }) },
+    ],
+    [
+      'STORAGE_SECRET_ACCESS_KEY',
+      ' a secret with spaces, +/= and $ signs, kept as it is ',
+      {
+        storage: expect.objectContaining({
+          secretAccessKey:
+            ' a secret with spaces, +/= and $ signs, kept as it is ',
+        }),
+      },
+    ],
   ])('should accept %s=%j', (variable, value, expected) => {
     expect(parseAppConfig({ ...variables, [variable]: value })).toMatchObject({
       type: 'success',
@@ -273,6 +382,9 @@ describe('parseAppConfig', () => {
     ['MAIL_FROM', 'Sender <from-value-31337>'],
     ['PUBLIC_APP_URL', 'https://url-value-31337.example/path'],
     ['TWO_FACTOR_ENCRYPTION_KEY', 'key-value-31337-is-too-short'],
+    ['STORAGE_ENDPOINT', 'https://key:secret-31337@storage.example'],
+    ['STORAGE_PUBLIC_ENDPOINT', 'https://files-31337.example/path'],
+    ['STORAGE_BUCKET', 'Bucket-31337'],
   ])(
     'should keep the rejected value of %s out of the report',
     (variable, value) => {
@@ -319,6 +431,42 @@ describe('parseAppConfig', () => {
       ).toEqual(['PUBLIC_APP_URL', 'SMTP_TLS'])
     })
 
+    it.each(['STORAGE_ENDPOINT', 'STORAGE_PUBLIC_ENDPOINT'])(
+      'should refuse a storage whose %s is not https',
+      (variable) => {
+        const result = parseAppConfig({
+          ...deployed,
+          [variable]: 'http://storage-31337.example:8333',
+        })
+
+        expect(
+          result.type === 'error' &&
+            result.error.map((issue) => issue.variable),
+        ).toEqual([variable])
+        expect(JSON.stringify(result)).not.toContain('31337')
+      },
+    )
+
+    it('should report everything that is not encrypted at once', () => {
+      const result = parseAppConfig({
+        ...deployed,
+        SMTP_TLS: 'none',
+        PUBLIC_APP_URL: 'http://salon.example',
+        STORAGE_ENDPOINT: 'http://storage:8333',
+        STORAGE_PUBLIC_ENDPOINT: 'http://localhost:8333',
+      })
+
+      expect(
+        result.type === 'error' &&
+          result.error.map((issue) => issue.variable).sort(),
+      ).toEqual([
+        'PUBLIC_APP_URL',
+        'SMTP_TLS',
+        'STORAGE_ENDPOINT',
+        'STORAGE_PUBLIC_ENDPOINT',
+      ])
+    })
+
     it.each(['implicit', 'starttls'])(
       'should accept SMTP_TLS=%s with an https link',
       (tls) => {
@@ -334,7 +482,7 @@ describe('parseAppConfig', () => {
   })
 
   it.each(['localhost', 'development', 'test'])(
-    'should accept unencrypted mail and an http link in %s',
+    'should accept unencrypted mail, an http link and a storage reached by http in %s',
     (environment) => {
       expect(
         parseAppConfig({
@@ -342,12 +490,18 @@ describe('parseAppConfig', () => {
           NODE_ENV: environment,
           SMTP_TLS: 'none',
           PUBLIC_APP_URL: 'http://localhost:3001',
+          STORAGE_ENDPOINT: 'http://storage:8333',
+          STORAGE_PUBLIC_ENDPOINT: 'http://localhost:8333',
         }),
       ).toMatchObject({
         type: 'success',
         data: {
           mail: expect.objectContaining({ tls: 'none' }),
           publicAppUrl: 'http://localhost:3001',
+          storage: expect.objectContaining({
+            endpoint: 'http://storage:8333',
+            publicEndpoint: 'http://localhost:8333',
+          }),
         },
       })
     },
@@ -362,10 +516,12 @@ describe('parseAppConfig', () => {
     expect(JSON.stringify(result)).not.toContain('hunter2')
   })
 
-  it('should keep a valid key of two-factor authentication out of the report of another variable', () => {
+  it('should keep a valid key of two-factor authentication and the valid keys of the storage out of the report of another variable', () => {
     const result = parseAppConfig({
       ...variables,
       TWO_FACTOR_ENCRYPTION_KEY: 'key-value-31337-that-is-long-enough-to-pass',
+      STORAGE_ACCESS_KEY_ID: 'key-id-31337',
+      STORAGE_SECRET_ACCESS_KEY: 'secret-31337',
       PORT: 'abc',
     })
 
@@ -479,6 +635,49 @@ describe('environment files', () => {
       })
     })
   })
+
+  describe.each([
+    '.env.localhost',
+    '.env.development',
+    '.env.test',
+    '.env.example',
+  ])('the storage of %s', (file) => {
+    const env = readEnvFile(file)
+
+    it('should be the storage that docker compose starts by default, with its bucket and its one identity', () => {
+      expect(env).toMatchObject({
+        STORAGE_BUCKET: composeDefault('STORAGE_BUCKET'),
+        STORAGE_ACCESS_KEY_ID: composeDefault('STORAGE_ACCESS_KEY_ID'),
+        STORAGE_SECRET_ACCESS_KEY: composeDefault('STORAGE_SECRET_ACCESS_KEY'),
+      })
+      expect(composeDefault('STORAGE_BUCKET')).toBeDefined()
+      expect(composeDefault('STORAGE_ACCESS_KEY_ID')).toBeDefined()
+      expect(composeDefault('STORAGE_SECRET_ACCESS_KEY')).toBeDefined()
+    })
+
+    it('should be reached where docker compose publishes it, by the server and by a browser alike', () => {
+      expect(
+        fs.readFileSync(path.join(rootPath, 'docker-compose.yml'), 'utf8'),
+      ).toContain('"127.0.0.1:8333:8333"')
+      expect(env).toMatchObject({
+        STORAGE_ENDPOINT: 'http://localhost:8333',
+        STORAGE_PUBLIC_ENDPOINT: 'http://localhost:8333',
+      })
+    })
+  })
+
+  it.each(['.env.staging', '.env.production'])(
+    '%s should name a storage of its own, by https, and none of its keys',
+    (file) => {
+      const env = readEnvFile(file)
+
+      expect(env['STORAGE_ENDPOINT']).toMatch(/^https:\/\//)
+      expect(env['STORAGE_PUBLIC_ENDPOINT']).toMatch(/^https:\/\//)
+      expect(env['STORAGE_BUCKET']).not.toBe(composeDefault('STORAGE_BUCKET'))
+      expect(env['STORAGE_ACCESS_KEY_ID']).toMatch(/placeholder$/)
+      expect(env['STORAGE_SECRET_ACCESS_KEY']).toMatch(/placeholder$/)
+    },
+  )
 
   it.each([
     '.env.localhost',
