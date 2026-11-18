@@ -1967,7 +1967,7 @@ describe('Staff account API', () => {
     })
 
     describe('requests at the same moment', () => {
-      it('lets one of several joinings of one token link the account, and refuses the others', async () => {
+      it('lets one of several joinings of one token link the account, and refuses the others: the token is used, or the account is seen to belong to the staff member', async () => {
         const { id, authorization } = await joiner()
         for (let round = 0; round < 4; round += 1) {
           const token = await invite(invitee)
@@ -1978,9 +1978,19 @@ describe('Staff account API', () => {
             join(token, authorization),
           ])
 
-          expect(responses.map(({ status }) => status).sort()).toEqual([
-            204, 400, 400,
-          ])
+          const refused = responses.filter(({ status }) => status !== 204)
+          expect(refused).toHaveLength(2)
+          for (const response of refused) {
+            // A request whose session is read once the first has joined is
+            // told that the account has a salon, as a request that follows
+            // it is. One that is read before waits for the first, and
+            // finds the token used.
+            if (response.status === 409) {
+              expectNotAllowed(response, BELONGS)
+            } else {
+              expectTokenRefused(response)
+            }
+          }
           expect(await linkOf(id, invitee)).toEqual({
             role: 'staff',
             staffId: invitee,
