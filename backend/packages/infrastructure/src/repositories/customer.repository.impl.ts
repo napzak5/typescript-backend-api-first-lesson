@@ -10,7 +10,10 @@ import {
   type CustomerBulkUpdate,
   type CustomerChange,
   type CustomerCreation,
+  type CustomerData,
   type CustomerDeletion,
+  type CustomerExport,
+  type CustomerFilters,
   type CustomerId,
   type CustomerList,
   type CustomerListCriteria,
@@ -48,7 +51,9 @@ import { CLOCK } from '../database/clock'
 import { describeDatabaseError } from '../database/failure'
 import type { Database, DatabaseExecutor } from '../database/index'
 import { containing } from '../database/like'
+import { AT_ONE_MOMENT } from '../database/snapshot'
 import { userNotDeleted } from './account'
+import { customerDataOf } from './customer-data'
 import { mergeCustomers } from './customer-merge'
 import { recordVersions } from './customer-version-record'
 import {
@@ -212,6 +217,51 @@ const phoneNumberContaining = (digits: string) =>
  */
 const registeredAt = sql`date_trunc('milliseconds', ${customers.createdAt})`
 
+/** The customers who are not deleted and match the filters of the list. */
+const matchingFilters = ({
+  search,
+  phoneDigits,
+  tags,
+  registeredFrom,
+  registeredTo,
+  customerStatus,
+  membershipTier,
+}: CustomerFilters) => {
+  const keyword = [
+    ...(search === null
+      ? []
+      : [
+          ilike(customers.lastName, containing(search)),
+          ilike(customers.firstName, containing(search)),
+          ilike(customers.lastNameKana, containing(search)),
+          ilike(customers.firstNameKana, containing(search)),
+          ilike(customers.email, containing(search)),
+        ]),
+    ...(phoneDigits === null ? [] : [phoneNumberContaining(phoneDigits)]),
+  ]
+
+  return and(
+    notDeleted,
+    keyword.length === 0 ? undefined : or(...keyword),
+    tags.length === 0 ? undefined : arrayContains(customers.tags, tags),
+    registeredFrom === null
+      ? undefined
+      : sql`${registeredAt} >= ${registeredFrom}::timestamptz`,
+    registeredTo === null
+      ? undefined
+      : sql`${registeredAt} <= ${registeredTo}::timestamptz`,
+    customerStatus === null
+      ? undefined
+      : eq(customers.customerStatus, customerStatus),
+    membershipTier === null
+      ? undefined
+      : eq(customers.membershipTier, membershipTier),
+  )
+}
+
+/** The order of the list: the newest registration first. */
+const newestFirst = [desc(customers.createdAt), desc(customers.id)]
+
 export class CustomerRepository implements ICustomerRepository {
   constructor(private readonly db: Database) {}
 
@@ -270,44 +320,9 @@ export class CustomerRepository implements ICustomerRepository {
   async list({
     limit,
     after,
-    search,
-    phoneDigits,
-    tags,
-    registeredFrom,
-    registeredTo,
-    customerStatus,
-    membershipTier,
+    ...criteria
   }: CustomerListCriteria): Promise<Result<CustomerList | null, DomainError>> {
-    const keyword = [
-      ...(search === null
-        ? []
-        : [
-            ilike(customers.lastName, containing(search)),
-            ilike(customers.firstName, containing(search)),
-            ilike(customers.lastNameKana, containing(search)),
-            ilike(customers.firstNameKana, containing(search)),
-            ilike(customers.email, containing(search)),
-          ]),
-      ...(phoneDigits === null ? [] : [phoneNumberContaining(phoneDigits)]),
-    ]
-
-    const filters = and(
-      notDeleted,
-      keyword.length === 0 ? undefined : or(...keyword),
-      tags.length === 0 ? undefined : arrayContains(customers.tags, tags),
-      registeredFrom === null
-        ? undefined
-        : sql`${registeredAt} >= ${registeredFrom}::timestamptz`,
-      registeredTo === null
-        ? undefined
-        : sql`${registeredAt} <= ${registeredTo}::timestamptz`,
-      customerStatus === null
-        ? undefined
-        : eq(customers.customerStatus, customerStatus),
-      membershipTier === null
-        ? undefined
-        : eq(customers.membershipTier, membershipTier),
-    )
+    const filters = matchingFilters(criteria)
 
     return attempt('Failed to list customers', async () => {
       // Keyset pagination on (createdAt, id): the page starts after the
@@ -333,7 +348,7 @@ export class CustomerRepository implements ICustomerRepository {
           .select()
           .from(customers)
           .where(and(filters, afterCursor))
-          .orderBy(desc(customers.createdAt), desc(customers.id))
+          .orderBy(...newestFirst)
           // One extra row tells whether another page follows.
           .limit(limit + 1),
         this.db.select({ total: count() }).from(customers).where(filters),
@@ -502,6 +517,45 @@ export class CustomerRepository implements ICustomerRepository {
         }),
       ),
       (merged) => merged,
+    )
+  }
+
+  async exportMatching(
+    criteria: CustomerFilters,
+    most: number,
+  ): Promise<Result<CustomerExport, DomainError>> {
+    const filters = matchingFilters(criteria)
+
+    return attempt('Failed to export customers', () =>
+      this.db.transaction(async (tx): Promise<CustomerExport> => {
+        // One more customer than a file holds tells that too many match,
+        // so a file never holds more, whatever is written meanwhile.
+        const found = await tx
+          .select()
+          .from(customers)
+          .where(filters)
+          .orderBy(...newestFirst)
+          .limit(most + 1)
+        if (found.length <= most) {
+          return { type: 'exported', customers: found }
+        }
+        // Counted at the moment of the rows, so that the number told is
+        // more than a file holds.
+        const [matching] = await tx
+          .select({ total: count() })
+          .from(customers)
+          .where(filters)
+
+        return { type: 'tooMany', matching: matching?.total ?? found.length }
+      }, AT_ONE_MOMENT),
+    )
+  }
+
+  async dataOf(
+    id: CustomerId,
+  ): Promise<Result<CustomerData | null, DomainError>> {
+    return attempt('Failed to read the data of customer', () =>
+      this.db.transaction((tx) => customerDataOf(tx, id), AT_ONE_MOMENT),
     )
   }
 
