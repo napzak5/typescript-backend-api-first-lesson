@@ -6,7 +6,7 @@
  * OpenAPI spec version: 2.0
  */
 import type { CustomerCrudRequestDeletion202Links } from './customerCrudRequestDeletion202Links';
-import type { ModelsCustomerDataDeletionResponse } from './modelsCustomerDataDeletionResponse';
+import type { ModelsCustomerDeletionRequestResponse } from './modelsCustomerDeletionRequestResponse';
 import type { ModelsResponseMeta } from './modelsResponseMeta';
 
 /**
@@ -15,7 +15,7 @@ import type { ModelsResponseMeta } from './modelsResponseMeta';
  */
 export type CustomerCrudRequestDeletion202 = {
   /** レスポンスの主体となるビジネスデータ。 */
-  data: ModelsCustomerDataDeletionResponse;
+  data: ModelsCustomerDeletionRequestResponse;
   /**
      * リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull
      * @nullable

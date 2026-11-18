@@ -1,6 +1,7 @@
 import {
   bookings,
   customerAllergies,
+  customerDeletionRequests,
   customerPoints,
   customerPreferences,
   customers,
@@ -160,6 +161,24 @@ export const mergeCustomers = async (
   }
   if (primary.userId !== null && secondary.userId !== null) {
     return Result.success({ type: 'accountsDiffer' })
+  }
+  // A request is taken under a lock of its customer, which the merge holds.
+  const requested = await tx
+    .select({ customerId: customerDeletionRequests.customerId })
+    .from(customerDeletionRequests)
+    .where(
+      and(
+        inArray(customerDeletionRequests.customerId, both),
+        eq(customerDeletionRequests.status, 'pending'),
+      ),
+    )
+  if (requested.length > 0) {
+    return Result.success({
+      type: 'deletionRequested',
+      customers: both.filter((id) =>
+        requested.some(({ customerId }) => customerId === id),
+      ),
+    })
   }
 
   const transfer = planTransfer(

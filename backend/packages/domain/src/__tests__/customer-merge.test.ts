@@ -715,6 +715,17 @@ describe('MergeCustomersUseCase', () => {
     [{ type: 'accountsDiffer' }, 'accounts'],
     [{ type: 'pointsBeyondLimit' }, 'points'],
     [{ type: 'chartTooLong', list: 'avoidProducts' }, 'avoidProducts'],
+    [
+      { type: 'deletionRequested', customers: [OTHER_CUSTOMER_ID] },
+      `Customer ${OTHER_CUSTOMER_ID} asked for their data to be erased`,
+    ],
+    [
+      {
+        type: 'deletionRequested',
+        customers: [CUSTOMER_ID, OTHER_CUSTOMER_ID],
+      },
+      `Customer ${CUSTOMER_ID} and customer ${OTHER_CUSTOMER_ID} asked`,
+    ],
   ]
 
   it.each(conflicts)('refuses with a conflict: %j', async (outcome, said) => {
@@ -743,12 +754,15 @@ describe('MergeCustomersUseCase', () => {
   })
 })
 
-describe('RestoreCustomerUseCase of a customer a merge deleted', () => {
-  it('refuses it with a conflict', async () => {
+describe('RestoreCustomerUseCase of a customer that cannot come back', () => {
+  const gone: [CustomerRestoration, string][] = [
+    [{ type: 'mergedAway' }, 'merged'],
+    [{ type: 'erased' }, 'erased at their request'],
+  ]
+
+  it.each(gone)('refuses %j with a conflict', async (outcome, said) => {
     const dependencies = customerDependencies({
-      restore: vi.fn(async () =>
-        Result.success<CustomerRestoration>({ type: 'mergedAway' }),
-      ),
+      restore: vi.fn(async () => Result.success(outcome)),
     })
 
     const result = await new RestoreCustomerUseCase(dependencies).execute(
@@ -757,7 +771,7 @@ describe('RestoreCustomerUseCase of a customer a merge deleted', () => {
     )
 
     expect(result).toEqual(
-      Result.error(DomainErrors.conflict(expect.stringContaining('merged'))),
+      Result.error(DomainErrors.conflict(expect.stringContaining(said))),
     )
   })
 })

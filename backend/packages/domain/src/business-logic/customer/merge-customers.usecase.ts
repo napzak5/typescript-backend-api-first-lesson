@@ -78,6 +78,13 @@ export class MergeCustomersUseCase {
           ),
         ),
       )
+      .with({ type: 'deletionRequested' }, ({ customers }) =>
+        Result.error(
+          DomainErrors.conflict(
+            `Customer ${customers.join(' and customer ')} asked for their data to be erased; cancel the deletion request first`,
+          ),
+        ),
+      )
       .exhaustive()
   }
 }
