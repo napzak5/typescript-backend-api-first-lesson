@@ -1270,6 +1270,41 @@ const treatmentRules: ModelRule[] = [
   },
 ]
 
+/**
+ * Columns of `attachments` that a request never writes: the server keeps
+ * the state of the upload, who asked for it and until when its URL works,
+ * and when the upload was completed and the attachment deleted.
+ */
+const attachmentManagedColumns = [
+  'id',
+  'status',
+  'uploadedBy',
+  'uploadExpiresAt',
+  'uploadedAt',
+  'deletedAt',
+  'createdAt',
+  'updatedAt',
+]
+
+/** Attachments: what is known of a file that the object storage holds. */
+const attachmentRules: ModelRule[] = [
+  {
+    model: 'Models.AttachmentResponse',
+    table: 'attachments',
+    kind: 'response',
+    // A deleted attachment is never shown.
+    omittedColumns: ['deletedAt'],
+  },
+  {
+    // What a client states of a file when it asks for the URL that takes
+    // its upload: that request creates the row.
+    model: 'Models.AttachmentUploadUrlRequest',
+    table: 'attachments',
+    kind: 'create',
+    omittedColumns: attachmentManagedColumns,
+  },
+]
+
 export const modelRules: ModelRule[] = [
   ...salonRules,
   ...serviceRules,
@@ -1281,4 +1316,5 @@ export const modelRules: ModelRule[] = [
   ...reviewRules,
   ...inventoryRules,
   ...treatmentRules,
+  ...attachmentRules,
 ]

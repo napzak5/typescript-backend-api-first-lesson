@@ -1,5 +1,6 @@
 import { relations } from 'drizzle-orm/relations'
 import {
+  attachments,
   bookingServices,
   bookingStatusHistories,
   bookings,
@@ -37,6 +38,17 @@ import {
   treatmentRecords,
   users,
 } from './schema'
+
+export const attachmentsRelations = relations(attachments, ({ one }) => ({
+  salon: one(salons, {
+    fields: [attachments.salonId],
+    references: [salons.id],
+  }),
+  user: one(users, {
+    fields: [attachments.uploadedBy],
+    references: [users.id],
+  }),
+}))
 
 export const bookingServicesRelations = relations(
   bookingServices,
@@ -379,6 +391,7 @@ export const salesRelations = relations(sales, ({ one, many }) => ({
 }))
 
 export const salonsRelations = relations(salons, ({ many }) => ({
+  attachments: many(attachments),
   bookings: many(bookings),
   inventories: many(inventory),
   inventoryAlertAcknowledgements: many(inventoryAlertAcknowledgements),
@@ -519,6 +532,7 @@ export const treatmentRecordsRelations = relations(
 )
 
 export const usersRelations = relations(users, ({ one, many }) => ({
+  attachments: many(attachments),
   customer: one(customers, {
     fields: [users.customerId],
     references: [customers.id],
