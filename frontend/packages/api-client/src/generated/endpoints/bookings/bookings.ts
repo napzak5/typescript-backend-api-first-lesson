@@ -65,6 +65,26 @@ import { customInstance } from '../../../mutator';
 
 
 
+const getHeaders = (...sources: (RequestInit['headers'] | Record<string, string | undefined>)[]) => {
+  const seen = new Set<string>();
+  const layers: [string, string | readonly string[]][][] = [];
+  for (const source of sources.reverse()) {
+    if (!source) continue;
+    const entries = source instanceof Headers
+      ? source.entries()
+      : Symbol.iterator in source
+        ? Array.from(source as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string])
+        : Object.entries<string | readonly string[] | undefined>(source);
+    const layer: [string, string | readonly string[]][] = [];
+    for (const [name, value] of entries) {
+      if (value !== undefined && !seen.has(name.toLowerCase())) layer.push([name, value]);
+    }
+    for (const [name] of layer) seen.add(name.toLowerCase());
+    layers.push(layer);
+  }
+  return Object.fromEntries(layers.reverse().flat()) as Extract<RequestInit['headers'], Record<string, unknown>>;
+};
+
 
 const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKey: K } => {
   const result = { queryKey } as T & { queryKey: K };
@@ -308,25 +328,11 @@ export const getBookingCrudCreateUrl = () => {
  */
 export const bookingCrudCreate = async (modelsBookingCreateRequest: ModelsBookingCreateRequest, options?: RequestInit): Promise<bookingCrudCreateResponse> => {
 
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return customInstance<bookingCrudCreateResponse>(getBookingCrudCreateUrl(),
+  return customInstance<bookingCrudCreateResponse>(getBookingCrudCreateUrl(),
   {
     ...options,
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
     body: JSON.stringify(modelsBookingCreateRequest)
   }
 );}
@@ -457,25 +463,11 @@ export const getBookingServiceCrudCreateUrl = (bookingId: ModelsBookingId,) => {
 export const bookingServiceCrudCreate = async (bookingId: ModelsBookingId,
     modelsBookingServiceCreateRequest: ModelsBookingServiceCreateRequest, options?: RequestInit): Promise<bookingServiceCrudCreateResponse> => {
 
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return customInstance<bookingServiceCrudCreateResponse>(getBookingServiceCrudCreateUrl(bookingId),
+  return customInstance<bookingServiceCrudCreateResponse>(getBookingServiceCrudCreateUrl(bookingId),
   {
     ...options,
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
     body: JSON.stringify(modelsBookingServiceCreateRequest)
   }
 );}
@@ -1049,25 +1041,11 @@ export const getBookingCrudUpdateUrl = (id: ModelsBookingId,) => {
 export const bookingCrudUpdate = async (id: ModelsBookingId,
     modelsBookingUpdateRequest: ModelsBookingUpdateRequest, options?: RequestInit): Promise<bookingCrudUpdateResponse> => {
 
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return customInstance<bookingCrudUpdateResponse>(getBookingCrudUpdateUrl(id),
+  return customInstance<bookingCrudUpdateResponse>(getBookingCrudUpdateUrl(id),
   {
     ...options,
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
     body: JSON.stringify(modelsBookingUpdateRequest)
   }
 );}
@@ -1322,25 +1300,11 @@ export const getBookingCrudCancelUrl = (id: ModelsBookingId,) => {
 export const bookingCrudCancel = async (id: ModelsBookingId,
     modelsBookingCancelRequest: ModelsBookingCancelRequest, options?: RequestInit): Promise<bookingCrudCancelResponse> => {
 
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return customInstance<bookingCrudCancelResponse>(getBookingCrudCancelUrl(id),
+  return customInstance<bookingCrudCancelResponse>(getBookingCrudCancelUrl(id),
   {
     ...options,
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
     body: JSON.stringify(modelsBookingCancelRequest)
   }
 );}
@@ -1471,25 +1435,11 @@ export const getBookingCrudCompleteUrl = (id: ModelsBookingId,) => {
 export const bookingCrudComplete = async (id: ModelsBookingId,
     modelsBookingCompleteRequest: ModelsBookingCompleteRequest, options?: RequestInit): Promise<bookingCrudCompleteResponse> => {
 
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return customInstance<bookingCrudCompleteResponse>(getBookingCrudCompleteUrl(id),
+  return customInstance<bookingCrudCompleteResponse>(getBookingCrudCompleteUrl(id),
   {
     ...options,
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
     body: JSON.stringify(modelsBookingCompleteRequest)
   }
 );}
@@ -1868,25 +1818,11 @@ export const getBookingCrudRescheduleUrl = (id: ModelsBookingId,) => {
 export const bookingCrudReschedule = async (id: ModelsBookingId,
     modelsBookingRescheduleRequest: ModelsBookingRescheduleRequest, options?: RequestInit): Promise<bookingCrudRescheduleResponse> => {
 
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return customInstance<bookingCrudRescheduleResponse>(getBookingCrudRescheduleUrl(id),
+  return customInstance<bookingCrudRescheduleResponse>(getBookingCrudRescheduleUrl(id),
   {
     ...options,
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
     body: JSON.stringify(modelsBookingRescheduleRequest)
   }
 );}
@@ -2304,25 +2240,11 @@ export const getCustomerBookingsCreateUrl = () => {
  */
 export const customerBookingsCreate = async (modelsCustomerBookingCreateRequest: ModelsCustomerBookingCreateRequest, options?: RequestInit): Promise<customerBookingsCreateResponse> => {
 
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return customInstance<customerBookingsCreateResponse>(getCustomerBookingsCreateUrl(),
+  return customInstance<customerBookingsCreateResponse>(getCustomerBookingsCreateUrl(),
   {
     ...options,
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
     body: JSON.stringify(modelsCustomerBookingCreateRequest)
   }
 );}
@@ -2610,25 +2532,11 @@ export const getCustomerBookingsCancelUrl = (id: ModelsBookingId,) => {
 export const customerBookingsCancel = async (id: ModelsBookingId,
     modelsBookingCancelRequest: ModelsBookingCancelRequest, options?: RequestInit): Promise<customerBookingsCancelResponse> => {
 
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return customInstance<customerBookingsCancelResponse>(getCustomerBookingsCancelUrl(id),
+  return customInstance<customerBookingsCancelResponse>(getCustomerBookingsCancelUrl(id),
   {
     ...options,
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
     body: JSON.stringify(modelsBookingCancelRequest)
   }
 );}
@@ -2759,25 +2667,11 @@ export const getCustomerBookingsRescheduleUrl = (id: ModelsBookingId,) => {
 export const customerBookingsReschedule = async (id: ModelsBookingId,
     modelsBookingRescheduleRequest: ModelsBookingRescheduleRequest, options?: RequestInit): Promise<customerBookingsRescheduleResponse> => {
 
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return customInstance<customerBookingsRescheduleResponse>(getCustomerBookingsRescheduleUrl(id),
+  return customInstance<customerBookingsRescheduleResponse>(getCustomerBookingsRescheduleUrl(id),
   {
     ...options,
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
     body: JSON.stringify(modelsBookingRescheduleRequest)
   }
 );}
@@ -3080,25 +2974,11 @@ export const getAvailableSlotCrudCheckUrl = (salonId: ModelsSalonId,) => {
 export const availableSlotCrudCheck = async (salonId: ModelsSalonId,
     modelsAvailableSlotCheckRequest: ModelsAvailableSlotCheckRequest, options?: RequestInit): Promise<availableSlotCrudCheckResponse> => {
 
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return customInstance<availableSlotCrudCheckResponse>(getAvailableSlotCrudCheckUrl(salonId),
+  return customInstance<availableSlotCrudCheckResponse>(getAvailableSlotCrudCheckUrl(salonId),
   {
     ...options,
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
     body: JSON.stringify(modelsAvailableSlotCheckRequest)
   }
 );}

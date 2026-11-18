@@ -35,7 +35,7 @@
     "@beauty-salon-backend/domain": "workspace:*",
     "@beauty-salon-backend/utility": "workspace:*",
     "drizzle-orm": "^0.45.4",
-    "nodemailer": "^10.5.0",
+    "nodemailer": "^10.6.0",
     "pino": "^10.4.0",
     "pino-pretty": "^13.2.0",
     "postgres": "^4.1.1",
