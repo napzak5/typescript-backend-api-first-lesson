@@ -231,7 +231,7 @@ make ci-check                # The CI checks, in the same order (all but check:d
 # Database
 pnpm db:fresh                # Drop everything and recreate the schema
 pnpm db:migrate              # Create the schema or apply the missing migrations
-pnpm db:seed                 # Insert sample data (--if-empty: only without data); not in production
+pnpm db:seed                 # Insert sample data into a database without data (--reset: empty it first; --if-empty: skip one with data); not in production
 pnpm db:truncate             # Delete all rows, keep the schema
 pnpm db:introspect           # Regenerate schema.ts from the database
 pnpm db:generate-sql         # Regenerate sql/setup.sql from schema.ts

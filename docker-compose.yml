@@ -1,4 +1,12 @@
+# One set of services per machine: the container names and the published
+# ports are fixed, so the project name is fixed too. Wherever the repository is
+# checked out (a second clone, a git worktree), `docker compose` and the make
+# targets address the same containers and volumes.
+name: beauty-salon
+
 services:
+  # Reachable from this machine only: it starts with the user and the password
+  # written below.
   postgres:
     image: postgres:18-alpine
     container_name: beauty-salon-db
@@ -7,7 +15,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres18_data:/var/lib/postgresql
     healthcheck:
@@ -88,8 +96,9 @@ services:
       SMTP_HOST: mailpit
       # The URLs given to a browser keep naming localhost (STORAGE_PUBLIC_ENDPOINT).
       STORAGE_ENDPOINT: http://storage:8333
+    # Reachable from this machine only, like the database behind it
     ports:
-      - "${PORT:-3000}:3000"
+      - "127.0.0.1:${PORT:-3000}:3000"
     volumes:
       - ./backend:/app/backend:cached
       - backend_node_modules:/app/backend/node_modules

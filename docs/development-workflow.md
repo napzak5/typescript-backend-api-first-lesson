@@ -47,8 +47,18 @@ pnpm dev            # バックエンド :3000、フロントエンド :3001〜3
   `pnpm dev:backend`、データベースのコマンド（`pnpm db:fresh` など）、テストは、エクスポート条件
   `@beauty-salon-backend/source` によってワークスペースパッケージをソースから読みます。クローン直後でも
   動き、依存先のパッケージを変更してもビルドし直す必要はありません。
+- **`make infra-up` のサービスは、1 台のマシンに 1 組**です。`docker-compose.yml` は、Compose の
+  プロジェクト名（`beauty-salon`）、コンテナの名前、ホストのポートを固定しています。リポジトリを
+  別のディレクトリにも置いている場合（`git worktree`、2 つ目の clone）、どのディレクトリから実行しても、
+  同じコンテナとボリュームを指します。ポートは、どれも `127.0.0.1` にだけ公開するので、ほかのマシンからは
+  届きません。
 - **`make infra-up` の PostgreSQL** は `docker-compose.yml` の既定値で起動し、`.env.localhost` の
   `DATABASE_URL` はそれに合わせてあります。
+- **`pnpm db:seed` は、データのないデータベースに投入します**。決まった行を入れるので、データが
+  あるところへ足すことはできません。データがあると、何も書き込まずに終了コード 1 で終わり、
+  選択肢を表示します。入れ直すときは `pnpm db:seed --reset`（全テーブルの行を消してから投入）、
+  データがあればそのままにするときは `pnpm db:seed --if-empty` です。「データがある」は、サロンが
+  1 件以上あることです。
 - **`make infra-up` の Mailpit** は、サーバーが送るメール（メールアドレスの確認、パスワードの再設定など）を
   受け取ります。メールは外へ送られず、`http://localhost:8025` で読めます。`.env.localhost` の `SMTP_*` は
   この Mailpit に合わせてあります（[メール送信](./email.md#ローカル開発mailpit)）。
@@ -259,7 +269,7 @@ pnpm db:generate-sql
 | コマンド | 内容 |
 |----------|------|
 | `pnpm db:fresh` | すべて削除し、`sql/setup.sql` からスキーマを作り直す |
-| `pnpm db:seed` | サンプルデータを投入する（`--if-empty` を付けるとデータがないときだけ）。本番環境（`NODE_ENV=production`）では実行を拒否する |
+| `pnpm db:seed` | データのないデータベースに、サンプルデータを投入する。データがあると、何も書き込まずに失敗する。`--reset` は全テーブルの行を消してから投入し、`--if-empty` はデータがあれば何もせずに成功する。本番環境（`NODE_ENV=production`）では実行を拒否する |
 | `pnpm db:truncate` | 全テーブルの行を削除する。スキーマは残る |
 
 接続先は `DATABASE_URL` で決まります。別のデータベースを対象にするときは、コマンドの前に
@@ -465,6 +475,8 @@ Dockerfile、`backend/`、`frontend/`、`specs/`、`shared-config/`、ロック�
 | バックエンドが `Invalid configuration` を出力して終了する | 環境変数が不足しているか不正。ログの `issues` に変数名と理由が並ぶ（[環境変数設定ガイド](./env-configuration.md)） |
 | バックエンドが `Cannot start: the database is unreachable` を出力して終了する | PostgreSQL が起動していないか、`DATABASE_URL` が違う。`make infra-up` で起動する |
 | フロントエンドの開発サーバーが起動しない | ポート 3001〜3003 が使用中。各アプリは決まったポートでしか起動しない（`strictPort`） |
+| `make infra-up` が `Conflict. The container name "/beauty-salon-db" is already in use` で失敗する | 同じ名前のコンテナが、別の Compose のプロジェクトに残っている（プロジェクト名を固定する前に起動したもの。プロジェクト名は、起動したディレクトリの名前だった）。`docker rm -f beauty-salon-db beauty-salon-mail beauty-salon-storage` で消してから、`make infra-up` を実行する。前のボリュームのデータは引き継がれないので、`pnpm db:fresh` と `pnpm db:seed` で作り直す。前のボリュームは `docker volume ls` で確かめて、`docker volume rm` で消す |
+| `pnpm db:seed` が `The database already has data` で失敗する | データのあるデータベースには投入しない。`pnpm db:seed --reset` で入れ直すか、そのまま使う |
 | 添付ファイルのアップロードの完了や削除が 500 になる | SeaweedFS が起動していないか、`STORAGE_*` が違う。`make infra-up` で起動する。バックエンドのログに `Failed to read the stored file` などが、原因（`cause`）と一緒に出る（[添付ファイル](./attachments.md#ストレージのエラー)） |
 | 登録や再設定のメールが届かない | Mailpit が起動していない。`make infra-up` で起動し、`http://localhost:8025` を開く。送信に失敗すると、バックエンドのログに `Failed to deliver mail` が出る（[メール送信](./email.md)）。ログに失敗がなければ、メールを送らない場合に当たっている（すでに登録済みのアドレス、直前に送ったばかりのときなど。[認証と認可](./authentication.md)） |
 | `pnpm test:integration` がコンテナを起動できない | Docker が起動していない。`TEST_DATABASE_URL` に既存の PostgreSQL を指定すれば PostgreSQL のコンテナは不要になるが、`infrastructure` パッケージのメール送信のテストは Mailpit のコンテナを、添付ファイルの保存先のテストは SeaweedFS のコンテナを起動するので、全体の実行には Docker が必要。Docker Desktop 以外（Colima など）では、ソケットの場所を環境変数で指定する（[API テストガイド](./api-testing-guide.md#running)） |
