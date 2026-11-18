@@ -12,6 +12,7 @@ import { z } from 'zod'
 import {
   type ApiCustomerBasicPreferences,
   type ApiCustomerCreateRequest,
+  type ApiCustomerExportRequest,
   type ApiCustomerProfileCreateRequest,
   type ApiCustomerProfileUpdateRequest,
   type ApiCustomerSearchRequest,
@@ -121,26 +122,52 @@ export const customerProfileUpdateRequestSchema =
       atLeastOneProperty,
     ) satisfies z.ZodType<ApiCustomerProfileUpdateRequest>
 
+/** The filters of the list, which the CSV export takes as well. */
+const customerFilters = {
+  search: nonBlankText.max(100).exactOptional(),
+  tags: z.array(nonBlankText).exactOptional(),
+  registeredFrom: momentOfRequest.exactOptional(),
+  registeredTo: momentOfRequest.exactOptional(),
+  customerStatus: CustomerStatusTypeSchema.exactOptional(),
+  membershipTier: MembershipTierTypeSchema.exactOptional(),
+}
+
+/**
+ * The period of registration does not end before it begins. The two are
+ * compared as times: as text, the same second with and without a fraction
+ * would compare the wrong way round.
+ */
+const registeredInOrder = ({
+  registeredFrom,
+  registeredTo,
+}: {
+  registeredFrom?: string
+  registeredTo?: string
+}): boolean =>
+  registeredFrom === undefined ||
+  registeredTo === undefined ||
+  parseISO(registeredFrom) <= parseISO(registeredTo)
+
+const REGISTERED_IN_ORDER = {
+  path: ['registeredTo'],
+  message: 'Must not be earlier than registeredFrom',
+}
+
 export const customerSearchRequestSchema = z
   .strictObject({
     limit: z.number().int().min(1).max(100).exactOptional(),
     cursor: customerIdSchema.exactOptional(),
-    search: nonBlankText.max(100).exactOptional(),
-    tags: z.array(nonBlankText).exactOptional(),
-    registeredFrom: momentOfRequest.exactOptional(),
-    registeredTo: momentOfRequest.exactOptional(),
-    customerStatus: CustomerStatusTypeSchema.exactOptional(),
-    membershipTier: MembershipTierTypeSchema.exactOptional(),
+    ...customerFilters,
   })
-  // The two are compared as times: as text, the same second with and
-  // without a fraction would compare the wrong way round.
   .refine(
-    ({ registeredFrom, registeredTo }) =>
-      registeredFrom === undefined ||
-      registeredTo === undefined ||
-      parseISO(registeredFrom) <= parseISO(registeredTo),
-    {
-      path: ['registeredTo'],
-      message: 'Must not be earlier than registeredFrom',
-    },
+    registeredInOrder,
+    REGISTERED_IN_ORDER,
   ) satisfies z.ZodType<ApiCustomerSearchRequest>
+
+/** The CSV export takes the filters of the list, and no page. */
+export const customerExportRequestSchema = z
+  .strictObject(customerFilters)
+  .refine(
+    registeredInOrder,
+    REGISTERED_IN_ORDER,
+  ) satisfies z.ZodType<ApiCustomerExportRequest>

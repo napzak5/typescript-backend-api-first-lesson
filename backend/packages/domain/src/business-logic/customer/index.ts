@@ -1,5 +1,6 @@
 export type { CustomerMergeRequest } from '../../schemas/customer-merge.schema'
 export type { CustomerUseCaseDependencies } from './_shared/dependencies'
+export { type CustomerFile, MOST_EXPORTED } from './_shared/export'
 export {
   type AllergyMerge,
   type AllergyValues,
@@ -21,6 +22,8 @@ export { BulkUpdateCustomersUseCase } from './bulk-update-customers.usecase'
 export { CreateCustomerUseCase } from './create-customer.usecase'
 export { CreateCustomerProfileUseCase } from './create-customer-profile.usecase'
 export { DeleteCustomerUseCase } from './delete-customer.usecase'
+export { ExportCustomerDataUseCase } from './export-customer-data.usecase'
+export { ExportCustomersUseCase } from './export-customers.usecase'
 export { GetCustomerUseCase } from './get-customer.usecase'
 export { GetCustomerProfileUseCase } from './get-customer-profile.usecase'
 export {
