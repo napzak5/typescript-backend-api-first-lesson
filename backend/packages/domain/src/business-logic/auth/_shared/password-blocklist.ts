@@ -9,20 +9,27 @@ import type { ValidationIssue } from '../../../shared'
  * The list here is what can be told without a corpus of leaked passwords:
  * the account's own address, patterns anyone can type without thinking, and
  * a few values that are published as examples of long passwords.
+ *
+ * A password that belongs to no account, such as the one of a share link,
+ * is compared with all of it but the address.
  */
 
 /** Widely published examples and keyboard walks, as `essenceOf` leaves them. */
 const WELL_KNOWN = new Set([
   'correcthorsebatterystaple',
   'thequickbrownfoxjumpsoverthelazydog',
-  'password1234567890',
-  'password123456789',
   'qwerty1234567890',
   '1q2w3e4r5t6y7u8i9o0p',
   'q1w2e3r4t5y6u7i8o9p0',
   '1qaz2wsx3edc4rfv5tgb6yhn7ujm',
   'qazwsxedcrfvtgbyhnujm',
 ])
+
+/**
+ * The word itself, alone or with digits after it, as `essenceOf` leaves
+ * it: "password", "Passw0rd!", "password1234567890".
+ */
+const THE_WORD_ITSELF = /^passw[o0]rd\d*$/
 
 /** Rows of a QWERTY keyboard, typed one after the other. */
 const KEYBOARD_ROWS = [
@@ -68,22 +75,32 @@ const isRun = (characters: string[], step: 1 | -1): boolean =>
 const isSequence = (characters: string[]): boolean =>
   isRun(characters, 1) || isRun(characters, -1)
 
-const isBlocklisted = (password: string, email: string): boolean => {
+/** A well-known password, or a pattern anyone can type without thinking. */
+const isCommonChoice = (password: string): boolean => {
   const typed = password.toLowerCase()
   const essence = essenceOf(password)
   const characters = [...typed]
+
+  return (
+    WELL_KNOWN.has(essence) ||
+    THE_WORD_ITSELF.test(essence) ||
+    KEYBOARD_ROWS.some((row) => row.includes(typed)) ||
+    isRepetition(characters) ||
+    isSequence(characters)
+  )
+}
+
+const isBlocklisted = (password: string, email: string): boolean => {
+  const essence = essenceOf(password)
   // A password without a letter or digit has no essence to compare.
   const isSameChoiceAs = (other: string): boolean =>
     essence.length > 0 && essence === essenceOf(other)
 
   return (
-    typed === email ||
+    password.toLowerCase() === email ||
     isSameChoiceAs(email) ||
     isSameChoiceAs(email.split('@')[0] ?? '') ||
-    WELL_KNOWN.has(essence) ||
-    KEYBOARD_ROWS.some((row) => row.includes(typed)) ||
-    isRepetition(characters) ||
-    isSequence(characters)
+    isCommonChoice(password)
   )
 }
 
@@ -103,5 +120,23 @@ export const blocklistIssue = (
         rule: 'blocklisted',
         message:
           'This password is too easy to guess: it repeats the email address, is a simple pattern or is a well-known password. Choose a different one',
+      }
+    : null
+
+/**
+ * The broken rule when `password` is one that is refused for something no
+ * account owns, to be reported under `field`; null when the password may
+ * be chosen.
+ */
+export const commonChoiceIssue = (
+  field: string,
+  password: string,
+): ValidationIssue | null =>
+  isCommonChoice(password)
+    ? {
+        field,
+        rule: 'blocklisted',
+        message:
+          'This password is too easy to guess: it is a simple pattern or a well-known password. Choose a different one',
       }
     : null
