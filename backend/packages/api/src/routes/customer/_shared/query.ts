@@ -16,3 +16,13 @@ export const decodeCustomerSearchQuery = (
   query: unknown,
 ): Result<unknown, DomainError> =>
   parseWith(customerSearchQuerySchema, query, 'Invalid customer search')
+
+/** The parameters of the CSV export that are not text, as their types. */
+const customerExportQuerySchema = z.looseObject({
+  tags: listParameter.exactOptional(),
+})
+
+export const decodeCustomerExportQuery = (
+  query: unknown,
+): Result<unknown, DomainError> =>
+  parseWith(customerExportQuerySchema, query, 'Invalid customer export')
