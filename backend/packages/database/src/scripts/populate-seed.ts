@@ -172,6 +172,10 @@ async function displaySeedingStatistics(db: ReturnType<typeof drizzle>) {
       .select()
       .from(schema.attachments)
       .then((rows) => ({ table: 'attachments', count: rows.length })),
+    db
+      .select()
+      .from(schema.shareLinks)
+      .then((rows) => ({ table: 'share_links', count: rows.length })),
   ])
 
   statistics.push(...counts)

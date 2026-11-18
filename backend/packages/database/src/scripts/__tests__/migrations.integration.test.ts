@@ -4297,6 +4297,7 @@ describe('the migrations of this repository', () => {
       await applyBaseline(sql, plan)
       schemaOfSetup = await describeSchema()
       await sql.unsafe(`
+        DROP TABLE share_links;
         DROP TABLE attachments;
         DROP TYPE attachment_content_type;
         DROP TYPE attachment_status;
@@ -4338,11 +4339,12 @@ describe('the migrations of this repository', () => {
       RETURNING id
     `
 
-    it('should give the database the schema of setup.sql, and keep it on a second run', async () => {
+    it('should give the database the schema of setup.sql, with the share links added since, and keep it on a second run', async () => {
       expect(await describeSchema()).not.toEqual(schemaOfSetup)
 
       await run()
       await run()
+      await runMigration('202611182200_share_links.sql')
 
       expect(await describeSchema()).toEqual(schemaOfSetup)
     })
@@ -4558,6 +4560,263 @@ describe('the migrations of this repository', () => {
       )
       expect(definitionOf('idx_attachments_purge')).toMatch(
         /\("uploadExpiresAt"\) WHERE \(\(status = 'pending'::attachment_status\) OR \("deletedAt" IS NOT NULL\)\)$/,
+      )
+    })
+  })
+
+  describe('202611182200_share_links.sql', () => {
+    const run = (): Promise<void> =>
+      runMigration('202611182200_share_links.sql')
+
+    /** The schema of setup.sql, which the migration brings a database to. */
+    let schemaOfSetup: string[] = []
+
+    // A database from before the migration: no share link is recorded.
+    beforeEach(async () => {
+      await applyBaseline(sql, plan)
+      schemaOfSetup = await describeSchema()
+      await sql.unsafe('DROP TABLE share_links;')
+    })
+
+    /** An uploaded attachment of the platform that the user announced; returns its ID. */
+    const storeAttachment = async (by: string): Promise<string> => {
+      const [attachment] = await sql<{ id: string }[]>`
+        INSERT INTO attachments (
+          filename, "contentType", size, status, "uploadedBy",
+          "uploadExpiresAt", "uploadedAt", "createdAt"
+        )
+        VALUES (
+          'before.png', 'image/png', 64, 'uploaded', ${by},
+          '2026-11-18T01:15:00Z', '2026-11-18T01:05:00Z',
+          '2026-11-18T01:00:00Z'
+        )
+        RETURNING id
+      `
+      if (attachment === undefined) {
+        throw new Error('No attachment was stored')
+      }
+      return attachment.id
+    }
+
+    /**
+     * A link to the attachment that the user created at
+     * 2026-11-18T02:00:00Z, which works for a day unless another span is
+     * given, with what else is given.
+     */
+    const writeLink = (
+      attachmentId: string,
+      by: string,
+      more: {
+        tokenHash?: string
+        endsAfter?: string
+        maxDownloads?: number
+        downloadCount?: number
+        failedAttempts?: number
+      } = {},
+    ) => sql<{ id: string }[]>`
+      INSERT INTO share_links (
+        "attachmentId", "tokenHash", "expiresAt", "maxDownloads",
+        "downloadCount", "failedAttempts", "createdBy", "createdAt"
+      )
+      VALUES (
+        ${attachmentId}, ${more.tokenHash ?? randomUUID()},
+        '2026-11-18T02:00:00Z'::timestamptz
+          + ${more.endsAfter ?? '1 day'}::interval,
+        ${more.maxDownloads ?? null}, ${more.downloadCount ?? 0},
+        ${more.failedAttempts ?? 0}, ${by}, '2026-11-18T02:00:00Z'
+      )
+      RETURNING id
+    `
+
+    it('should give the database the schema of setup.sql, and keep it on a second run', async () => {
+      expect(await describeSchema()).not.toEqual(schemaOfSetup)
+
+      await run()
+      await run()
+
+      expect(await describeSchema()).toEqual(schemaOfSetup)
+    })
+
+    it('should keep the share links there are on a second run', async () => {
+      await run()
+      const user = await storeNewUser()
+      const [written] = await writeLink(await storeAttachment(user), user)
+
+      await run()
+
+      expect(await sql<{ id: string }[]>`SELECT id FROM share_links`).toEqual([
+        written,
+      ])
+    })
+
+    it('should write a link with an ID of its own, without a password, a limit, a download or a wrong password', async () => {
+      await run()
+      const user = await storeNewUser()
+      const attachmentId = await storeAttachment(user)
+
+      await sql`
+        INSERT INTO share_links (
+          "attachmentId", "tokenHash", "expiresAt", "createdBy"
+        )
+        VALUES (
+          ${attachmentId}, 'hash-of-a-token', now() + interval '1 hour',
+          ${user}
+        )
+      `
+
+      const stored = await sql<Record<string, unknown>[]>`
+        SELECT
+          id::text ~ '^[0-9a-f-]{36}$' AS "hasId", "attachmentId",
+          "tokenHash", "passwordHash", "maxDownloads", "downloadCount",
+          "failedAttempts", "lockedUntil", "createdBy",
+          "createdAt" = "updatedAt" AS "writtenAtOnce"
+        FROM share_links
+      `
+      expect(stored).toEqual([
+        {
+          hasId: true,
+          attachmentId,
+          tokenHash: 'hash-of-a-token',
+          passwordHash: null,
+          maxDownloads: null,
+          downloadCount: 0,
+          failedAttempts: 0,
+          lockedUntil: null,
+          createdBy: user,
+          writtenAtOnce: true,
+        },
+      ])
+    })
+
+    it('should hold the end of a link to after it was created, and to 720 hours from then at most', async () => {
+      await run()
+      const user = await storeNewUser()
+      const attachmentId = await storeAttachment(user)
+      const write = (endsAfter: string) =>
+        writeLink(attachmentId, user, { endsAfter })
+
+      await expect(write('1 microsecond')).resolves.toHaveLength(1)
+      await expect(write('720 hours')).resolves.toHaveLength(1)
+      await expect(write('0 seconds')).rejects.toThrow(
+        /share_links_expires_within_limit/,
+      )
+      await expect(write('-1 second')).rejects.toThrow(
+        /share_links_expires_within_limit/,
+      )
+      await expect(write('720 hours 1 microsecond')).rejects.toThrow(
+        /share_links_expires_within_limit/,
+      )
+      await expect(write('31 days')).rejects.toThrow(
+        /share_links_expires_within_limit/,
+      )
+    })
+
+    it('should hold the downloads of a link to its limit, the limit to one download at least, and the wrong passwords to none at least', async () => {
+      await run()
+      const user = await storeNewUser()
+      const attachmentId = await storeAttachment(user)
+      const write = (more: Parameters<typeof writeLink>[2]) =>
+        writeLink(attachmentId, user, more)
+
+      await expect(write({ maxDownloads: 1 })).resolves.toHaveLength(1)
+      await expect(write({ maxDownloads: 0 })).rejects.toThrow(
+        /share_links_max_downloads_positive/,
+      )
+
+      await expect(
+        write({ maxDownloads: 2, downloadCount: 2 }),
+      ).resolves.toHaveLength(1)
+      await expect(
+        write({ maxDownloads: 2, downloadCount: 3 }),
+      ).rejects.toThrow(/share_links_download_count_within_limit/)
+      await expect(write({ downloadCount: -1 })).rejects.toThrow(
+        /share_links_download_count_within_limit/,
+      )
+      // A link without a limit counts on.
+      await expect(write({ downloadCount: 1000 })).resolves.toHaveLength(1)
+
+      await expect(write({ failedAttempts: 5 })).resolves.toHaveLength(1)
+      await expect(write({ failedAttempts: -1 })).rejects.toThrow(
+        /share_links_failed_attempts_not_negative/,
+      )
+    })
+
+    it('should refuse a link the hash of whose token another link has', async () => {
+      await run()
+      const user = await storeNewUser()
+      const first = await storeAttachment(user)
+      const second = await storeAttachment(user)
+      await writeLink(first, user, { tokenHash: 'one-hash' })
+
+      await expect(
+        writeLink(second, user, { tokenHash: 'one-hash' }),
+      ).rejects.toThrow(/share_links_token_hash_unique/)
+      await expect(
+        writeLink(first, user, { tokenHash: 'another-hash' }),
+      ).resolves.toHaveLength(1)
+    })
+
+    it('should hold a link to an attachment and to a user there are, and keep the user while it names them', async () => {
+      await run()
+      const uploader = await storeNewUser()
+      const creator = await storeNewUser()
+      const attachmentId = await storeAttachment(uploader)
+
+      await expect(writeLink(randomUUID(), creator)).rejects.toThrow(
+        /share_links_attachment_id_fk/,
+      )
+      await expect(writeLink(attachmentId, randomUUID())).rejects.toThrow(
+        /share_links_created_by_fk/,
+      )
+      const [written] = await writeLink(attachmentId, creator)
+
+      await expect(
+        sql`DELETE FROM users WHERE id = ${creator}`,
+      ).rejects.toThrow(/share_links_created_by_fk/)
+
+      await sql`DELETE FROM share_links WHERE id = ${written?.id ?? null}`
+      await expect(
+        sql`DELETE FROM users WHERE id = ${creator}`,
+      ).resolves.toBeDefined()
+    })
+
+    it('should remove the links of an attachment with the attachment, and leave those of the others', async () => {
+      await run()
+      const user = await storeNewUser()
+      const removed = await storeAttachment(user)
+      const kept = await storeAttachment(user)
+      await writeLink(removed, user)
+      await writeLink(removed, user)
+      const [left] = await writeLink(kept, user)
+
+      await sql`DELETE FROM attachments WHERE id = ${removed}`
+
+      expect(await sql<{ id: string }[]>`SELECT id FROM share_links`).toEqual([
+        left,
+      ])
+    })
+
+    it('should index the links of an attachment by the order they are listed in, and a link by the hash of its token', async () => {
+      await run()
+
+      const indexes = await sql<{ indexname: string; indexdef: string }[]>`
+        SELECT indexname, indexdef FROM pg_indexes
+        WHERE schemaname = 'public' AND tablename = 'share_links'
+        ORDER BY indexname
+      `
+
+      expect(indexes.map(({ indexname }) => indexname)).toEqual([
+        'idx_share_links_attachment_created',
+        'share_links_pkey',
+        'share_links_token_hash_unique',
+      ])
+      const definitionOf = (name: string): string =>
+        indexes.find(({ indexname }) => indexname === name)?.indexdef ?? ''
+      expect(definitionOf('idx_share_links_attachment_created')).toMatch(
+        /\("attachmentId", "createdAt", id\)$/,
+      )
+      expect(definitionOf('share_links_token_hash_unique')).toMatch(
+        /^CREATE UNIQUE INDEX .* \("tokenHash"\)$/,
       )
     })
   })

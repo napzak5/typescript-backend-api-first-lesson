@@ -1305,6 +1305,52 @@ const attachmentRules: ModelRule[] = [
   },
 ]
 
+/**
+ * Share links: what lets somebody without an account see an attachment.
+ * The request that creates a link (`ShareLinkCreateRequest`) states a
+ * password where the table has its hash, and has no rule. The model that
+ * answers a new link with its token (`ShareLinkCreateResponse`) and the
+ * ones of a viewer's requests (`SharedFileGetRequest`,
+ * `SharedFileDownloadUrlRequest`) are backed by no table: the token is
+ * stored as a hash only. What a viewer is shown (`SharedFileResponse`)
+ * are columns of the attachment.
+ */
+const shareLinkRules: ModelRule[] = [
+  {
+    model: 'Models.ShareLinkResponse',
+    table: 'shareLinks',
+    kind: 'response',
+    // Whether the link has a password, which is stored as a hash only.
+    computed: ['hasPassword'],
+    // The hashes are never shown, and neither are the wrong passwords and
+    // the lock they lead to: a viewer is not told of them either.
+    omittedColumns: [
+      'tokenHash',
+      'passwordHash',
+      'failedAttempts',
+      'lockedUntil',
+    ],
+  },
+  {
+    // A viewer is shown what the file is and nothing else of the
+    // attachment.
+    model: 'Models.SharedFileResponse',
+    table: 'attachments',
+    kind: 'response',
+    omittedColumns: [
+      'id',
+      'salonId',
+      'status',
+      'uploadedBy',
+      'uploadExpiresAt',
+      'uploadedAt',
+      'deletedAt',
+      'createdAt',
+      'updatedAt',
+    ],
+  },
+]
+
 export const modelRules: ModelRule[] = [
   ...salonRules,
   ...serviceRules,
@@ -1317,4 +1363,5 @@ export const modelRules: ModelRule[] = [
   ...inventoryRules,
   ...treatmentRules,
   ...attachmentRules,
+  ...shareLinkRules,
 ]
