@@ -140,7 +140,7 @@ export const loadEnvFile = (): LoadedEnvFile => {
 | 変数 | 受け付ける値 | `AppConfig` | 意味 |
 |------|--------------|-------------|------|
 | `NODE_ENV` | `production`、`staging`、`development`、`test`、`localhost` | `environment` | 実行環境。ログの各行に付く |
-| `HOST` | 空でない文字列 | `server.host` | 待ち受けるアドレス |
+| `HOST` | 空でない文字列 | `server.host` | 待ち受けるアドレス。手元で起動するための設定（`.env.localhost`、`.env.development`、`.env.test`）と記入例（`.env.example`）は `127.0.0.1`（このマシンだけ）、コンテナで動かす設定（`.env.test.ci`、`.env.staging`、`.env.production`）は `0.0.0.0`（コンテナのすべてのインターフェース。外からの届き方は、ポートの公開で決まる） |
 | `PORT` | 1〜65535 | `server.port` | 待ち受けるポート |
 | `TRUST_PROXY_HOPS` | 0〜10 | `server.trustProxyHops` | サーバーの前段にあるリバースプロキシの数（0 = クライアントが直接接続する）。レート制限はクライアントのアドレスごとに数えるので、実際の構成と一致させる |
 | `DATABASE_URL` | `postgres://` または `postgresql://` の URL | `database.url` | データベースの接続 URL |
@@ -247,7 +247,8 @@ DATABASE_URL=postgres://<user>:<password>@<host>:5432/<database> pnpm db:migrate
 Compose のプロジェクト名は、`docker-compose.yml` の `name`（`beauty-salon`）で固定しています。コンテナの
 名前とホストのポートも固定なので、1 台のマシンで動くのは 1 組で、どのディレクトリから実行しても、同じ
 コンテナとボリューム（`beauty-salon_postgres18_data` など）を指します。ホストに公開するポートは、どれも
-`127.0.0.1` だけです。
+`127.0.0.1` だけです。Compose を通さずに手元で起動するバックエンド（`pnpm dev`、`pnpm dev:backend`、
+`pnpm start:backend`）も、`.env.localhost` の `HOST=127.0.0.1` で、このマシンだけで待ち受けます。
 
 - `postgres` サービス: `POSTGRES_DB`、`POSTGRES_USER`、`POSTGRES_PASSWORD`、`POSTGRES_PORT`。
   ポート（既定は 5432）を `127.0.0.1` に公開する。既定のユーザーとパスワードはリポジトリに書いて
@@ -257,7 +258,9 @@ Compose のプロジェクト名は、`docker-compose.yml` の `name`（`beauty-
   S3 の API（8333）を `127.0.0.1` に公開し、起動のときにバケットを作る
 - `backend` サービス: ポート（`PORT`、既定は 3000）を `127.0.0.1` に公開する。
   `.env.localhost` の内容をコンテナの環境変数として渡したうえで、`NODE_ENV`
-  （既定は `development`）、`PORT`、`DATABASE_URL`（Compose 内の `postgres` サービス宛て）、`SMTP_HOST`
+  （既定は `development`）、`PORT`、`HOST`（`0.0.0.0`。`.env.localhost` の `127.0.0.1` のままでは、
+  公開したポートからコンテナの中のサーバーに届かない）、`DATABASE_URL`（Compose 内の `postgres`
+  サービス宛て）、`SMTP_HOST`
   （Compose 内の `mailpit` サービス宛て）、`STORAGE_ENDPOINT`（Compose 内の `storage` サービス宛て。
   `STORAGE_PUBLIC_ENDPOINT` は `http://localhost:8333` のまま）などを上書きする
 - `migration` サービス: `DATABASE_URL` だけを受け取り、`db:migrate` と `db:seed --if-empty` を実行する
@@ -309,6 +312,11 @@ pnpm --filter @beauty-salon-backend/config run test
 
 変数の型は各アプリの `src/vite-env.d.ts` に宣言します（例: `frontend/apps/admin-app/src/vite-env.d.ts`）。
 変数を追加するときは、各アプリの `.env.<モード>` と `vite-env.d.ts` の両方を更新します。
+
+開発サーバー（`pnpm dev`）とプレビュー（`pnpm preview:frontend`）が待ち受けるアドレスは、環境変数
+ではなく、各アプリの `vite.config.ts` の `server.host`（`127.0.0.1`）で決まります。同じネットワークの
+ほかの端末から画面を開くときは、その実行だけ `--host` を付けます
+（例: `pnpm --filter @beauty-salon-frontend/portal-app dev --host`）。
 
 ### `@beauty-salon-frontend/config` パッケージ
 

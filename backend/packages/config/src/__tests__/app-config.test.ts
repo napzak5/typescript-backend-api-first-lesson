@@ -626,6 +626,27 @@ describe('environment files', () => {
     },
   )
 
+  it.each(['.env.localhost', '.env.development', '.env.test', '.env.example'])(
+    '%s should listen on this machine only, as the services of docker compose are reached',
+    (file) => {
+      expect(readEnvFile(file)).toMatchObject({ HOST: '127.0.0.1' })
+    },
+  )
+
+  it('.env.test.ci should listen on every interface of its container, where the Docker smoke test reaches it through a published port', () => {
+    expect(readEnvFile('.env.test.ci')).toMatchObject({ HOST: '0.0.0.0' })
+  })
+
+  it('docker compose should let the backend listen on every interface of its container, behind a port of this machine', () => {
+    const compose = fs.readFileSync(
+      path.join(rootPath, 'docker-compose.yml'),
+      'utf8',
+    )
+
+    expect(compose).toMatch(/^ {6}HOST: 0\.0\.0\.0$/m)
+    expect(compose).toMatch(/"127\.0\.0\.1:\$\{PORT:-3000\}:3000"/)
+  })
+
   describe.each([
     '.env.localhost',
     '.env.development',

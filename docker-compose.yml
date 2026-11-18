@@ -92,6 +92,10 @@ services:
       # Override specific values for Docker networking
       NODE_ENV: ${NODE_ENV:-development}
       PORT: ${PORT:-3000}
+      # .env.localhost listens on 127.0.0.1, which nothing outside the container
+      # reaches: here the server listens on every interface of the container,
+      # and the port below decides who reaches it
+      HOST: 0.0.0.0
       DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-beauty_salon}
       SMTP_HOST: mailpit
       # The URLs given to a browser keep naming localhost (STORAGE_PUBLIC_ENDPOINT).
