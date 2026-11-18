@@ -94,7 +94,7 @@ NULL 許可のカラムは、どの層でも null を許す形になる: `schema
 | カラムの型 | DB → API（`SalonReadMapper`） | API → DB（`SalonWriteMapper`） |
 |---|---|---|
 | `numeric` | 文字列を `number` にする | `String(value)` で文字列にする |
-| `timestamp with time zone` | PostgreSQL のテキスト形式を ISO 8601（UTC）にする | 変換なし。リクエストに含まれず、DB が `now()` で設定する |
+| `timestamp with time zone` | PostgreSQL のテキスト形式を ISO 8601（UTC）にする | 変換なし。リクエストに含まれず、DB が設定する（作成は列の既定値 `now()`、更新は `clock_timestamp()`） |
 | `jsonb` | 保存されている値を API モデルの Zod スキーマで検査する | 検証済みのリクエストの値をそのまま保存する |
 
 `jsonb` のカラムの形は DB が保証しないので、保存されている値は、読むたびに、いまの API モデルのスキーマと照合する（未知のキーも拒否する）。`jsonb` のモデルからプロパティを除くとき、名前を変えるときは、同じ変更で、保存されている値を直すマイグレーションを書く。以前の形のままの行は、読めなくなる（500）。カラムは変わらないので、`schema.ts` と `setup.sql` は変わらない。例は、曜日ごとの営業時間（`BusinessHours`）から `timezone` を除いた `202611160500_business_hours_without_time_zone.sql`。行に何をするかは、マイグレーションのテスト（`backend/packages/database/src/scripts/__tests__/migrations.integration.test.ts`）で確かめる。
