@@ -11,42 +11,40 @@ using TypeSpec.OpenAPI;
 using BeautySalon.Models;
 
 namespace BeautySalon.Operations {
-  @doc("サロン業務で扱う添付ファイルの登録・共有を統括するAPI操作群です。画像や書類を安全に保管し、スタッフと顧客の利便性を高めます。")
+  @doc("サロンが扱う添付ファイル(施術の写真や書類)と、その共有リンクのAPI操作群です。ファイルの中身はオブジェクトストレージに置き、アップロードもダウンロードも、短時間だけ有効な署名付きURLで行います。")
   @route("/api/v1/attachments")
   @tag("Attachments")
   namespace AttachmentOperations {
     interface AttachmentCrud {
-      @doc("スタッフが管理画面からファイル本体を直接アップロードし、予約記録や顧客カルテに紐づけるための操作です。multipart/form-dataで送信します。salonIdに存在しないサロンを指定した場合は400を、ファイルがサイズ上限を超える場合は413を返します。")
-      @summary("Upload an attachment")
-      @post
-      @route("/upload")
-      uploadFile(
-        @header contentType: "multipart/form-data",
-        @multipartBody request: AttachmentCreateRequest,
-      ):
-        | {
-            @statusCode statusCode: 201;
-            @header("Location") location: string;
-            @body response: ApiResponse<AttachmentResponse>;
-          }
-        | ProblemResponse<400>
-        | RequestBodyErrors
-        | CommonErrors;
-
-      @doc("顧客やスタッフがブラウザから直接クラウドストレージへアップロードできるよう、短時間だけ有効な署名付きURLを発行します。salonIdに存在しないサロンを指定した場合は400を返します。")
+      @doc("ファイルをオブジェクトストレージへ直接アップロードするための、15分だけ有効なURLを発行し、アップロード待ち(pending)の添付ファイルを作ります。ファイルの中身は API サーバーを通りません。admin と、そのサロンの owner / manager / staff が実行できます(顧客のアカウントは403)。サロンに属さないファイル(salonId が null)を作れるのは admin だけです。本文が不正な場合(受け付けない種類、種類に合わない拡張子、10 MiB を超えるサイズ、存在しないサロン)は400を返します。URLは、申告した種類とサイズを署名に含み、受け付けるのは1回だけです。アップロードのあと、complete で完了させます。")
       @summary("Issue an upload URL")
       @post
       @route("/upload-url")
       getUploadUrl(@body request: AttachmentUploadUrlRequest):
         | {
-            @statusCode statusCode: 200;
+            @statusCode statusCode: 201;
+            @header("Location") location: string;
             @body response: ApiResponse<AttachmentUploadUrlResponse>;
           }
         | ProblemResponse<400>
         | RequestBodyErrors
         | CommonErrors;
 
-      @doc("登録済みの添付ファイルを、サロンによる絞り込みとページネーションを指定して一覧し、施術履歴の確認や資料整理に活用します。")
+      @doc("アップロードを確かめて、添付ファイルをアップロード済み(uploaded)にします。保存先のファイルのサイズと、ファイルの先頭のバイトが申告した種類の形式であることを確かめます。保存先にファイルがない場合は409を返します(アップロード待ちのままなので、アップロードしてからもう一度実行できます)。サイズや形式が申告と違う場合も409を返し、その添付ファイルを削除して、保存先のファイルを消します(アップロード用URLの発行からやり直します)。すでにアップロード済みの添付ファイルは、そのまま返します。実行できるのは、アップロード用URLの発行と同じ利用者です。ほかのサロンの添付ファイルと、削除した添付ファイルは404を返します。")
+      @summary("Complete an upload")
+      @post
+      @route("/{attachmentId}/complete")
+      complete(@path attachmentId: AttachmentId):
+        | {
+            @statusCode statusCode: 200;
+            @body response: ApiResponse<AttachmentResponse>;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<404>
+        | ProblemResponse<409>
+        | CommonErrors;
+
+      @doc("アップロード済み(uploaded)の添付ファイルを、アップロードを確かめた日時の新しい順に一覧します。admin はすべてのサロンとサロンに属さないファイルを、サロンのメンバーは自分のサロンのファイルを一覧できます(顧客のアカウントは403)。サロンのメンバーが salonId にほかのサロンを指定した場合は403を返します。")
       @summary("List attachments")
       @get
       list(...AttachmentSearchRequest):
@@ -57,7 +55,7 @@ namespace BeautySalon.Operations {
         | ProblemResponse<400>
         | CommonErrors;
 
-      @doc("指定した添付ファイルの詳細情報を取得し、プレビュー表示や関連予約の確認に用います。")
+      @doc("添付ファイルを1件取得します。アップロード待ち(pending)のものも返します。ほかのサロンの添付ファイルと、削除した添付ファイルは404を返します。")
       @summary("Get an attachment")
       @get
       @route("/{attachmentId}")
@@ -70,7 +68,7 @@ namespace BeautySalon.Operations {
         | ProblemResponse<404>
         | CommonErrors;
 
-      @doc("閲覧権限を持つ利用者がファイルを安全に取得できるよう、短時間有効なダウンロードURLを発行します。")
+      @doc("添付ファイルをダウンロードするための、5分だけ有効なURLを発行します。inline=true の場合はブラウザーの中で表示するURLを、そうでなければ元のファイル名で保存するURLを発行します。アップロード待ち(pending)の添付ファイルは409を返します。")
       @summary("Issue a download URL")
       @get
       @route("/{attachmentId}/download-url")
@@ -84,9 +82,10 @@ namespace BeautySalon.Operations {
           }
         | ProblemResponse<400>
         | ProblemResponse<404>
+        | ProblemResponse<409>
         | CommonErrors;
 
-      @doc("不要になった添付ファイルを削除し、ストレージ容量の最適化と情報漏えいリスクの低減を図ります。")
+      @doc("添付ファイルを削除します。保存先のファイルを消してから、添付ファイルを削除済みにします(一覧にも取得にも出なくなります)。admin と、そのサロンの owner / manager、アップロードした本人が実行できます。保存先のファイルを消せなかった場合は、何も変えずに500を返します(もう一度実行できます)。")
       @summary("Delete an attachment")
       @delete
       @route("/{attachmentId}")
@@ -96,6 +95,17 @@ namespace BeautySalon.Operations {
           }
         | ProblemResponse<400>
         | ProblemResponse<404>
+        | CommonErrors;
+
+      @doc("完了しなかったアップロード(URLの有効期限から24時間たってもアップロード待ちのままの添付ファイル)と、削除した添付ファイル(URLの有効期限を過ぎたもの)を、保存先のファイルが残っていればそれも含めて消し、消した件数を返します。admin だけが実行できます(サロンのメンバーと顧客のアカウントは403)。途中でエラーになった場合は、そこで止めて500を返します(それまでの分は消してあり、もう一度実行すると残りを消します)。定期的に呼ぶのは運用の側です。")
+      @summary("Purge unfinished uploads and deleted attachments")
+      @post
+      @route("/purge")
+      purge():
+        | {
+            @statusCode statusCode: 200;
+            @body response: ApiResponse<AttachmentPurgeResponse>;
+          }
         | CommonErrors;
     }
 

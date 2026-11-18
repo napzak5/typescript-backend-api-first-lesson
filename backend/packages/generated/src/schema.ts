@@ -68,6 +68,46 @@ export type AllergyType = z.infer<typeof AllergyTypeSchema>
 
 /**
  * @description
+ * 添付ファイルの種類(Content-Type)。受け付けるのは、この4つだけ
+ * image/jpeg: JPEG 画像(拡張子 .jpg / .jpeg)
+ * image/png: PNG 画像(拡張子 .png)
+ * image/webp: WebP 画像(拡張子 .webp)
+ * application/pdf: PDF 文書(拡張子 .pdf)
+ */
+export const AttachmentContentTypeSchema = z.enum(['image/jpeg', 'image/png', 'image/webp', 'application/pdf'])
+/**
+ * @description
+ * 添付ファイルの種類(Content-Type)。受け付けるのは、この4つだけ
+ * image/jpeg: JPEG 画像(拡張子 .jpg / .jpeg)
+ * image/png: PNG 画像(拡張子 .png)
+ * image/webp: WebP 画像(拡張子 .webp)
+ * application/pdf: PDF 文書(拡張子 .pdf)
+ */
+export type AttachmentContentType = z.infer<typeof AttachmentContentTypeSchema>
+
+/**
+ * @description
+ * 添付ファイルの状態
+ *
+ *
+ * pending: アップロード待ち - アップロード用のURLを発行し、アップロードをまだ確かめていない。一覧に含まれず、ダウンロードできない
+ *
+ * uploaded: アップロード済み - 保存先のファイルを確かめた(complete)。一覧に含まれ、ダウンロードできる
+ */
+export const AttachmentStatusTypeSchema = z.enum(['pending', 'uploaded'])
+/**
+ * @description
+ * 添付ファイルの状態
+ *
+ *
+ * pending: アップロード待ち - アップロード用のURLを発行し、アップロードをまだ確かめていない。一覧に含まれず、ダウンロードできない
+ *
+ * uploaded: アップロード済み - 保存先のファイルを確かめた(complete)。一覧に含まれ、ダウンロードできる
+ */
+export type AttachmentStatusType = z.infer<typeof AttachmentStatusTypeSchema>
+
+/**
+ * @description
  * 予約要件タイプ区分 - サービス予約時に必要な条件や制約
  *
  *

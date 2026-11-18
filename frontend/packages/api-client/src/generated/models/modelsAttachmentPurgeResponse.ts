@@ -7,7 +7,9 @@
  */
 
 /**
- * 必要に応じて付加情報を保持する任意メタデータ。追加情報が不要な場合はnull。
- * @nullable
+ * 完了しなかったアップロードと、削除した添付ファイルの掃除の結果
  */
-export type ModelsAttachmentResponseMetadata = {[key: string]: unknown} | null;
+export interface ModelsAttachmentPurgeResponse {
+  /** 消した添付ファイルの行の数 */
+  purgedCount: number;
+}

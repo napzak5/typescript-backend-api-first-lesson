@@ -25,14 +25,14 @@ import type {
 } from '@tanstack/react-query';
 
 import type {
+  AttachmentCrudComplete200,
   AttachmentCrudGet200,
   AttachmentCrudGetDownloadUrl200,
   AttachmentCrudGetDownloadUrlParams,
-  AttachmentCrudGetUploadUrl200,
+  AttachmentCrudGetUploadUrl201,
   AttachmentCrudList200,
   AttachmentCrudListParams,
-  AttachmentCrudUploadFile201,
-  ModelsAttachmentCreateRequest,
+  AttachmentCrudPurge200,
   ModelsAttachmentId,
   ModelsAttachmentUploadUrlRequest,
   ModelsProblemDetails,
@@ -119,7 +119,7 @@ export const getAttachmentCrudListUrl = (params?: AttachmentCrudListParams,) => 
 }
 
 /**
- * 登録済みの添付ファイルを、サロンによる絞り込みとページネーションを指定して一覧し、施術履歴の確認や資料整理に活用します。
+ * アップロード済み(uploaded)の添付ファイルを、アップロードを確かめた日時の新しい順に一覧します。admin はすべてのサロンとサロンに属さないファイルを、サロンのメンバーは自分のサロンのファイルを一覧できます(顧客のアカウントは403)。サロンのメンバーが salonId にほかのサロンを指定した場合は403を返します。
  * @summary List attachments
  */
 export const attachmentCrudList = async (params?: AttachmentCrudListParams, options?: RequestInit): Promise<attachmentCrudListResponse> => {
@@ -167,7 +167,7 @@ export type AttachmentCrudListQueryError = ModelsProblemDetails
 
 
 /**
- * 登録済みの添付ファイルを、サロンによる絞り込みとページネーションを指定して一覧し、施術履歴の確認や資料整理に活用します。
+ * アップロード済み(uploaded)の添付ファイルを、アップロードを確かめた日時の新しい順に一覧します。admin はすべてのサロンとサロンに属さないファイルを、サロンのメンバーは自分のサロンのファイルを一覧できます(顧客のアカウントは403)。サロンのメンバーが salonId にほかのサロンを指定した場合は403を返します。
  * @summary List attachments
  */
 export function useAttachmentCrudList<TData = Awaited<ReturnType<typeof attachmentCrudList>>, TError = ModelsProblemDetails>(
@@ -181,7 +181,7 @@ export function useAttachmentCrudList<TData = Awaited<ReturnType<typeof attachme
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 登録済みの添付ファイルを、サロンによる絞り込みとページネーションを指定して一覧し、施術履歴の確認や資料整理に活用します。
+ * アップロード済み(uploaded)の添付ファイルを、アップロードを確かめた日時の新しい順に一覧します。admin はすべてのサロンとサロンに属さないファイルを、サロンのメンバーは自分のサロンのファイルを一覧できます(顧客のアカウントは403)。サロンのメンバーが salonId にほかのサロンを指定した場合は403を返します。
  * @summary List attachments
  */
 export function useAttachmentCrudList<TData = Awaited<ReturnType<typeof attachmentCrudList>>, TError = ModelsProblemDetails>(
@@ -195,7 +195,7 @@ export function useAttachmentCrudList<TData = Awaited<ReturnType<typeof attachme
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 登録済みの添付ファイルを、サロンによる絞り込みとページネーションを指定して一覧し、施術履歴の確認や資料整理に活用します。
+ * アップロード済み(uploaded)の添付ファイルを、アップロードを確かめた日時の新しい順に一覧します。admin はすべてのサロンとサロンに属さないファイルを、サロンのメンバーは自分のサロンのファイルを一覧できます(顧客のアカウントは403)。サロンのメンバーが salonId にほかのサロンを指定した場合は403を返します。
  * @summary List attachments
  */
 export function useAttachmentCrudList<TData = Awaited<ReturnType<typeof attachmentCrudList>>, TError = ModelsProblemDetails>(
@@ -203,7 +203,7 @@ export function useAttachmentCrudList<TData = Awaited<ReturnType<typeof attachme
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 登録済みの添付ファイルを、サロンによる絞り込みとページネーションを指定して一覧し、施術履歴の確認や資料整理に活用します。
+ * アップロード済み(uploaded)の添付ファイルを、アップロードを確かめた日時の新しい順に一覧します。admin はすべてのサロンとサロンに属さないファイルを、サロンのメンバーは自分のサロンのファイルを一覧できます(顧客のアカウントは403)。サロンのメンバーが salonId にほかのサロンを指定した場合は403を返します。
  * @summary List attachments
  */
 export function useAttachmentCrudList<TData = Awaited<ReturnType<typeof attachmentCrudList>>, TError = ModelsProblemDetails>(
@@ -223,7 +223,116 @@ export function useAttachmentCrudList<TData = Awaited<ReturnType<typeof attachme
 
 
 
-export type shareLinkCrudGetResponse200 = {
+export type attachmentCrudPurgeResponse200 = {
+  data: AttachmentCrudPurge200
+  status: 200
+}
+
+export type attachmentCrudPurgeResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type attachmentCrudPurgeResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
+export type attachmentCrudPurgeResponse429 = {
+  data: ModelsProblemDetails
+  status: 429
+}
+
+export type attachmentCrudPurgeResponse500 = {
+  data: ModelsProblemDetails
+  status: 500
+}
+
+export type attachmentCrudPurgeResponseSuccess = (attachmentCrudPurgeResponse200) & {
+  headers: Headers;
+};
+export type attachmentCrudPurgeResponseError = (attachmentCrudPurgeResponse401 | attachmentCrudPurgeResponse403 | attachmentCrudPurgeResponse429 | attachmentCrudPurgeResponse500) & {
+  headers: Headers;
+};
+
+export type attachmentCrudPurgeResponse = (attachmentCrudPurgeResponseSuccess | attachmentCrudPurgeResponseError)
+
+export const getAttachmentCrudPurgeUrl = () => {
+
+
+
+
+  return `/api/v1/attachments/purge`
+}
+
+/**
+ * 完了しなかったアップロード(URLの有効期限から24時間たってもアップロード待ちのままの添付ファイル)と、削除した添付ファイル(URLの有効期限を過ぎたもの)を、保存先のファイルが残っていればそれも含めて消し、消した件数を返します。admin だけが実行できます(サロンのメンバーと顧客のアカウントは403)。途中でエラーになった場合は、そこで止めて500を返します(それまでの分は消してあり、もう一度実行すると残りを消します)。定期的に呼ぶのは運用の側です。
+ * @summary Purge unfinished uploads and deleted attachments
+ */
+export const attachmentCrudPurge = async ( options?: RequestInit): Promise<attachmentCrudPurgeResponse> => {
+
+  return customInstance<attachmentCrudPurgeResponse>(getAttachmentCrudPurgeUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getAttachmentCrudPurgeMutationKey = () => ['attachmentCrudPurge'] as const;
+
+export const getAttachmentCrudPurgeMutationOptions = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof attachmentCrudPurge>>, TError,void, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof attachmentCrudPurge>>, TError,void, TContext> => {
+
+const mutationKey = getAttachmentCrudPurgeMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof attachmentCrudPurge>>, void> = () => {
+
+
+          return  attachmentCrudPurge()
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AttachmentCrudPurgeMutationResult = NonNullable<Awaited<ReturnType<typeof attachmentCrudPurge>>>
+
+    export type AttachmentCrudPurgeMutationError = ModelsProblemDetails
+
+
+    /**
+ * 完了しなかったアップロード(URLの有効期限から24時間たってもアップロード待ちのままの添付ファイル)と、削除した添付ファイル(URLの有効期限を過ぎたもの)を、保存先のファイルが残っていればそれも含めて消し、消した件数を返します。admin だけが実行できます(サロンのメンバーと顧客のアカウントは403)。途中でエラーになった場合は、そこで止めて500を返します(それまでの分は消してあり、もう一度実行すると残りを消します)。定期的に呼ぶのは運用の側です。
+ * @summary Purge unfinished uploads and deleted attachments
+ */
+export const useAttachmentCrudPurge = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof attachmentCrudPurge>>, TError,void, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof attachmentCrudPurge>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getAttachmentCrudPurgeMutationOptions(options), queryClient);
+    }
+    export type shareLinkCrudGetResponse200 = {
   data: ShareLinkCrudGet200
   status: 200
 }
@@ -499,143 +608,9 @@ export const useShareLinkCrudDelete = <TError = ModelsProblemDetails,
       > => {
       return useMutation(getShareLinkCrudDeleteMutationOptions(options), queryClient);
     }
-    export type attachmentCrudUploadFileResponse201 = {
-  data: AttachmentCrudUploadFile201
+    export type attachmentCrudGetUploadUrlResponse201 = {
+  data: AttachmentCrudGetUploadUrl201
   status: 201
-}
-
-export type attachmentCrudUploadFileResponse400 = {
-  data: ModelsProblemDetails
-  status: 400
-}
-
-export type attachmentCrudUploadFileResponse401 = {
-  data: ModelsProblemDetails
-  status: 401
-}
-
-export type attachmentCrudUploadFileResponse403 = {
-  data: ModelsProblemDetails
-  status: 403
-}
-
-export type attachmentCrudUploadFileResponse413 = {
-  data: ModelsProblemDetails
-  status: 413
-}
-
-export type attachmentCrudUploadFileResponse415 = {
-  data: ModelsProblemDetails
-  status: 415
-}
-
-export type attachmentCrudUploadFileResponse429 = {
-  data: ModelsProblemDetails
-  status: 429
-}
-
-export type attachmentCrudUploadFileResponse500 = {
-  data: ModelsProblemDetails
-  status: 500
-}
-
-export type attachmentCrudUploadFileResponseSuccess = (attachmentCrudUploadFileResponse201) & {
-  headers: Headers;
-};
-export type attachmentCrudUploadFileResponseError = (attachmentCrudUploadFileResponse400 | attachmentCrudUploadFileResponse401 | attachmentCrudUploadFileResponse403 | attachmentCrudUploadFileResponse413 | attachmentCrudUploadFileResponse415 | attachmentCrudUploadFileResponse429 | attachmentCrudUploadFileResponse500) & {
-  headers: Headers;
-};
-
-export type attachmentCrudUploadFileResponse = (attachmentCrudUploadFileResponseSuccess | attachmentCrudUploadFileResponseError)
-
-export const getAttachmentCrudUploadFileUrl = () => {
-
-
-
-
-  return `/api/v1/attachments/upload`
-}
-
-/**
- * スタッフが管理画面からファイル本体を直接アップロードし、予約記録や顧客カルテに紐づけるための操作です。multipart/form-dataで送信します。salonIdに存在しないサロンを指定した場合は400を、ファイルがサイズ上限を超える場合は413を返します。
- * @summary Upload an attachment
- */
-export const attachmentCrudUploadFile = async (modelsAttachmentCreateRequest: ModelsAttachmentCreateRequest, options?: RequestInit): Promise<attachmentCrudUploadFileResponse> => {
-    const formData = new FormData();
-formData.append(`file`, modelsAttachmentCreateRequest.file instanceof Blob ? modelsAttachmentCreateRequest.file : new Blob([modelsAttachmentCreateRequest.file], { type: '*/*' }));
-formData.append(`filename`, modelsAttachmentCreateRequest.filename);
-formData.append(`content`, modelsAttachmentCreateRequest.content);
-if(modelsAttachmentCreateRequest.salonId !== undefined) {
- formData.append(`salonId`, modelsAttachmentCreateRequest.salonId);
- }
-if(modelsAttachmentCreateRequest.tags !== undefined) {
- formData.append(`tags`, modelsAttachmentCreateRequest.tags);
- }
-
-  return customInstance<attachmentCrudUploadFileResponse>(getAttachmentCrudUploadFileUrl(),
-  {
-    ...options,
-    method: 'POST'
-    ,
-    body: formData
-  }
-);}
-
-
-
-
-
-export const getAttachmentCrudUploadFileMutationKey = () => ['attachmentCrudUploadFile'] as const;
-
-export const getAttachmentCrudUploadFileMutationOptions = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof attachmentCrudUploadFile>>, TError,AttachmentCrudUploadFileMutationVariables, TContext>, }
-): UseMutationOptions<Awaited<ReturnType<typeof attachmentCrudUploadFile>>, TError,AttachmentCrudUploadFileMutationVariables, TContext> => {
-
-const mutationKey = getAttachmentCrudUploadFileMutationKey();
-const {mutation: mutationOptions} = options ?
-      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
-      options
-      : {...options, mutation: {...options.mutation, mutationKey}}
-      : {mutation: { mutationKey, }};
-
-
-
-
-      const mutationFn: MutationFunction<Awaited<ReturnType<typeof attachmentCrudUploadFile>>, AttachmentCrudUploadFileMutationVariables> = (props) => {
-          const {data} = props ?? {};
-
-          return  attachmentCrudUploadFile(data,)
-        }
-
-
-
-
-
-
-  return  { mutationFn, ...mutationOptions }}
-
-    export type AttachmentCrudUploadFileMutationResult = NonNullable<Awaited<ReturnType<typeof attachmentCrudUploadFile>>>
-    export type AttachmentCrudUploadFileMutationBody = ModelsAttachmentCreateRequest
-    export type AttachmentCrudUploadFileMutationError = ModelsProblemDetails
-    export type AttachmentCrudUploadFileMutationVariables = {data: ModelsAttachmentCreateRequest}
-
-    /**
- * スタッフが管理画面からファイル本体を直接アップロードし、予約記録や顧客カルテに紐づけるための操作です。multipart/form-dataで送信します。salonIdに存在しないサロンを指定した場合は400を、ファイルがサイズ上限を超える場合は413を返します。
- * @summary Upload an attachment
- */
-export const useAttachmentCrudUploadFile = <TError = ModelsProblemDetails,
-    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof attachmentCrudUploadFile>>, TError,AttachmentCrudUploadFileMutationVariables, TContext>, }
- , queryClient?: QueryClient): UseMutationResult<
-        Awaited<ReturnType<typeof attachmentCrudUploadFile>>,
-        TError,
-        AttachmentCrudUploadFileMutationVariables,
-        TContext
-      > => {
-      return useMutation(getAttachmentCrudUploadFileMutationOptions(options), queryClient);
-    }
-    export type attachmentCrudGetUploadUrlResponse200 = {
-  data: AttachmentCrudGetUploadUrl200
-  status: 200
 }
 
 export type attachmentCrudGetUploadUrlResponse400 = {
@@ -673,7 +648,7 @@ export type attachmentCrudGetUploadUrlResponse500 = {
   status: 500
 }
 
-export type attachmentCrudGetUploadUrlResponseSuccess = (attachmentCrudGetUploadUrlResponse200) & {
+export type attachmentCrudGetUploadUrlResponseSuccess = (attachmentCrudGetUploadUrlResponse201) & {
   headers: Headers;
 };
 export type attachmentCrudGetUploadUrlResponseError = (attachmentCrudGetUploadUrlResponse400 | attachmentCrudGetUploadUrlResponse401 | attachmentCrudGetUploadUrlResponse403 | attachmentCrudGetUploadUrlResponse413 | attachmentCrudGetUploadUrlResponse415 | attachmentCrudGetUploadUrlResponse429 | attachmentCrudGetUploadUrlResponse500) & {
@@ -691,7 +666,7 @@ export const getAttachmentCrudGetUploadUrlUrl = () => {
 }
 
 /**
- * 顧客やスタッフがブラウザから直接クラウドストレージへアップロードできるよう、短時間だけ有効な署名付きURLを発行します。salonIdに存在しないサロンを指定した場合は400を返します。
+ * ファイルをオブジェクトストレージへ直接アップロードするための、15分だけ有効なURLを発行し、アップロード待ち(pending)の添付ファイルを作ります。ファイルの中身は API サーバーを通りません。admin と、そのサロンの owner / manager / staff が実行できます(顧客のアカウントは403)。サロンに属さないファイル(salonId が null)を作れるのは admin だけです。本文が不正な場合(受け付けない種類、種類に合わない拡張子、10 MiB を超えるサイズ、存在しないサロン)は400を返します。URLは、申告した種類とサイズを署名に含み、受け付けるのは1回だけです。アップロードのあと、complete で完了させます。
  * @summary Issue an upload URL
  */
 export const attachmentCrudGetUploadUrl = async (modelsAttachmentUploadUrlRequest: ModelsAttachmentUploadUrlRequest, options?: RequestInit): Promise<attachmentCrudGetUploadUrlResponse> => {
@@ -758,7 +733,7 @@ const {mutation: mutationOptions} = options ?
     export type AttachmentCrudGetUploadUrlMutationVariables = {data: ModelsAttachmentUploadUrlRequest}
 
     /**
- * 顧客やスタッフがブラウザから直接クラウドストレージへアップロードできるよう、短時間だけ有効な署名付きURLを発行します。salonIdに存在しないサロンを指定した場合は400を返します。
+ * ファイルをオブジェクトストレージへ直接アップロードするための、15分だけ有効なURLを発行し、アップロード待ち(pending)の添付ファイルを作ります。ファイルの中身は API サーバーを通りません。admin と、そのサロンの owner / manager / staff が実行できます(顧客のアカウントは403)。サロンに属さないファイル(salonId が null)を作れるのは admin だけです。本文が不正な場合(受け付けない種類、種類に合わない拡張子、10 MiB を超えるサイズ、存在しないサロン)は400を返します。URLは、申告した種類とサイズを署名に含み、受け付けるのは1回だけです。アップロードのあと、complete で完了させます。
  * @summary Issue an upload URL
  */
 export const useAttachmentCrudGetUploadUrl = <TError = ModelsProblemDetails,
@@ -824,7 +799,7 @@ export const getAttachmentCrudGetUrl = (attachmentId: ModelsAttachmentId,) => {
 }
 
 /**
- * 指定した添付ファイルの詳細情報を取得し、プレビュー表示や関連予約の確認に用います。
+ * 添付ファイルを1件取得します。アップロード待ち(pending)のものも返します。ほかのサロンの添付ファイルと、削除した添付ファイルは404を返します。
  * @summary Get an attachment
  */
 export const attachmentCrudGet = async (attachmentId: ModelsAttachmentId, options?: RequestInit): Promise<attachmentCrudGetResponse> => {
@@ -872,7 +847,7 @@ export type AttachmentCrudGetQueryError = ModelsProblemDetails
 
 
 /**
- * 指定した添付ファイルの詳細情報を取得し、プレビュー表示や関連予約の確認に用います。
+ * 添付ファイルを1件取得します。アップロード待ち(pending)のものも返します。ほかのサロンの添付ファイルと、削除した添付ファイルは404を返します。
  * @summary Get an attachment
  */
 export function useAttachmentCrudGet<TData = Awaited<ReturnType<typeof attachmentCrudGet>>, TError = ModelsProblemDetails>(
@@ -886,7 +861,7 @@ export function useAttachmentCrudGet<TData = Awaited<ReturnType<typeof attachmen
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 指定した添付ファイルの詳細情報を取得し、プレビュー表示や関連予約の確認に用います。
+ * 添付ファイルを1件取得します。アップロード待ち(pending)のものも返します。ほかのサロンの添付ファイルと、削除した添付ファイルは404を返します。
  * @summary Get an attachment
  */
 export function useAttachmentCrudGet<TData = Awaited<ReturnType<typeof attachmentCrudGet>>, TError = ModelsProblemDetails>(
@@ -900,7 +875,7 @@ export function useAttachmentCrudGet<TData = Awaited<ReturnType<typeof attachmen
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 指定した添付ファイルの詳細情報を取得し、プレビュー表示や関連予約の確認に用います。
+ * 添付ファイルを1件取得します。アップロード待ち(pending)のものも返します。ほかのサロンの添付ファイルと、削除した添付ファイルは404を返します。
  * @summary Get an attachment
  */
 export function useAttachmentCrudGet<TData = Awaited<ReturnType<typeof attachmentCrudGet>>, TError = ModelsProblemDetails>(
@@ -908,7 +883,7 @@ export function useAttachmentCrudGet<TData = Awaited<ReturnType<typeof attachmen
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 指定した添付ファイルの詳細情報を取得し、プレビュー表示や関連予約の確認に用います。
+ * 添付ファイルを1件取得します。アップロード待ち(pending)のものも返します。ほかのサロンの添付ファイルと、削除した添付ファイルは404を返します。
  * @summary Get an attachment
  */
 export function useAttachmentCrudGet<TData = Awaited<ReturnType<typeof attachmentCrudGet>>, TError = ModelsProblemDetails>(
@@ -981,7 +956,7 @@ export const getAttachmentCrudDeleteUrl = (attachmentId: ModelsAttachmentId,) =>
 }
 
 /**
- * 不要になった添付ファイルを削除し、ストレージ容量の最適化と情報漏えいリスクの低減を図ります。
+ * 添付ファイルを削除します。保存先のファイルを消してから、添付ファイルを削除済みにします(一覧にも取得にも出なくなります)。admin と、そのサロンの owner / manager、アップロードした本人が実行できます。保存先のファイルを消せなかった場合は、何も変えずに500を返します(もう一度実行できます)。
  * @summary Delete an attachment
  */
 export const attachmentCrudDelete = async (attachmentId: ModelsAttachmentId, options?: RequestInit): Promise<attachmentCrudDeleteResponse> => {
@@ -1034,7 +1009,7 @@ const {mutation: mutationOptions} = options ?
     export type AttachmentCrudDeleteMutationVariables = {attachmentId: ModelsAttachmentId}
 
     /**
- * 不要になった添付ファイルを削除し、ストレージ容量の最適化と情報漏えいリスクの低減を図ります。
+ * 添付ファイルを削除します。保存先のファイルを消してから、添付ファイルを削除済みにします(一覧にも取得にも出なくなります)。admin と、そのサロンの owner / manager、アップロードした本人が実行できます。保存先のファイルを消せなかった場合は、何も変えずに500を返します(もう一度実行できます)。
  * @summary Delete an attachment
  */
 export const useAttachmentCrudDelete = <TError = ModelsProblemDetails,
@@ -1046,6 +1021,130 @@ export const useAttachmentCrudDelete = <TError = ModelsProblemDetails,
         TContext
       > => {
       return useMutation(getAttachmentCrudDeleteMutationOptions(options), queryClient);
+    }
+    export type attachmentCrudCompleteResponse200 = {
+  data: AttachmentCrudComplete200
+  status: 200
+}
+
+export type attachmentCrudCompleteResponse400 = {
+  data: ModelsProblemDetails
+  status: 400
+}
+
+export type attachmentCrudCompleteResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type attachmentCrudCompleteResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
+export type attachmentCrudCompleteResponse404 = {
+  data: ModelsProblemDetails
+  status: 404
+}
+
+export type attachmentCrudCompleteResponse409 = {
+  data: ModelsProblemDetails
+  status: 409
+}
+
+export type attachmentCrudCompleteResponse429 = {
+  data: ModelsProblemDetails
+  status: 429
+}
+
+export type attachmentCrudCompleteResponse500 = {
+  data: ModelsProblemDetails
+  status: 500
+}
+
+export type attachmentCrudCompleteResponseSuccess = (attachmentCrudCompleteResponse200) & {
+  headers: Headers;
+};
+export type attachmentCrudCompleteResponseError = (attachmentCrudCompleteResponse400 | attachmentCrudCompleteResponse401 | attachmentCrudCompleteResponse403 | attachmentCrudCompleteResponse404 | attachmentCrudCompleteResponse409 | attachmentCrudCompleteResponse429 | attachmentCrudCompleteResponse500) & {
+  headers: Headers;
+};
+
+export type attachmentCrudCompleteResponse = (attachmentCrudCompleteResponseSuccess | attachmentCrudCompleteResponseError)
+
+export const getAttachmentCrudCompleteUrl = (attachmentId: ModelsAttachmentId,) => {
+
+
+
+
+  return `/api/v1/attachments/${attachmentId}/complete`
+}
+
+/**
+ * アップロードを確かめて、添付ファイルをアップロード済み(uploaded)にします。保存先のファイルのサイズと、ファイルの先頭のバイトが申告した種類の形式であることを確かめます。保存先にファイルがない場合は409を返します(アップロード待ちのままなので、アップロードしてからもう一度実行できます)。サイズや形式が申告と違う場合も409を返し、その添付ファイルを削除して、保存先のファイルを消します(アップロード用URLの発行からやり直します)。すでにアップロード済みの添付ファイルは、そのまま返します。実行できるのは、アップロード用URLの発行と同じ利用者です。ほかのサロンの添付ファイルと、削除した添付ファイルは404を返します。
+ * @summary Complete an upload
+ */
+export const attachmentCrudComplete = async (attachmentId: ModelsAttachmentId, options?: RequestInit): Promise<attachmentCrudCompleteResponse> => {
+
+  return customInstance<attachmentCrudCompleteResponse>(getAttachmentCrudCompleteUrl(attachmentId),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getAttachmentCrudCompleteMutationKey = () => ['attachmentCrudComplete'] as const;
+
+export const getAttachmentCrudCompleteMutationOptions = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof attachmentCrudComplete>>, TError,AttachmentCrudCompleteMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof attachmentCrudComplete>>, TError,AttachmentCrudCompleteMutationVariables, TContext> => {
+
+const mutationKey = getAttachmentCrudCompleteMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof attachmentCrudComplete>>, AttachmentCrudCompleteMutationVariables> = (props) => {
+          const {attachmentId} = props ?? {};
+
+          return  attachmentCrudComplete(attachmentId,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type AttachmentCrudCompleteMutationResult = NonNullable<Awaited<ReturnType<typeof attachmentCrudComplete>>>
+
+    export type AttachmentCrudCompleteMutationError = ModelsProblemDetails
+    export type AttachmentCrudCompleteMutationVariables = {attachmentId: ModelsAttachmentId}
+
+    /**
+ * アップロードを確かめて、添付ファイルをアップロード済み(uploaded)にします。保存先のファイルのサイズと、ファイルの先頭のバイトが申告した種類の形式であることを確かめます。保存先にファイルがない場合は409を返します(アップロード待ちのままなので、アップロードしてからもう一度実行できます)。サイズや形式が申告と違う場合も409を返し、その添付ファイルを削除して、保存先のファイルを消します(アップロード用URLの発行からやり直します)。すでにアップロード済みの添付ファイルは、そのまま返します。実行できるのは、アップロード用URLの発行と同じ利用者です。ほかのサロンの添付ファイルと、削除した添付ファイルは404を返します。
+ * @summary Complete an upload
+ */
+export const useAttachmentCrudComplete = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof attachmentCrudComplete>>, TError,AttachmentCrudCompleteMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof attachmentCrudComplete>>,
+        TError,
+        AttachmentCrudCompleteMutationVariables,
+        TContext
+      > => {
+      return useMutation(getAttachmentCrudCompleteMutationOptions(options), queryClient);
     }
     export type attachmentCrudGetDownloadUrlResponse200 = {
   data: AttachmentCrudGetDownloadUrl200
@@ -1072,6 +1171,11 @@ export type attachmentCrudGetDownloadUrlResponse404 = {
   status: 404
 }
 
+export type attachmentCrudGetDownloadUrlResponse409 = {
+  data: ModelsProblemDetails
+  status: 409
+}
+
 export type attachmentCrudGetDownloadUrlResponse429 = {
   data: ModelsProblemDetails
   status: 429
@@ -1085,7 +1189,7 @@ export type attachmentCrudGetDownloadUrlResponse500 = {
 export type attachmentCrudGetDownloadUrlResponseSuccess = (attachmentCrudGetDownloadUrlResponse200) & {
   headers: Headers;
 };
-export type attachmentCrudGetDownloadUrlResponseError = (attachmentCrudGetDownloadUrlResponse400 | attachmentCrudGetDownloadUrlResponse401 | attachmentCrudGetDownloadUrlResponse403 | attachmentCrudGetDownloadUrlResponse404 | attachmentCrudGetDownloadUrlResponse429 | attachmentCrudGetDownloadUrlResponse500) & {
+export type attachmentCrudGetDownloadUrlResponseError = (attachmentCrudGetDownloadUrlResponse400 | attachmentCrudGetDownloadUrlResponse401 | attachmentCrudGetDownloadUrlResponse403 | attachmentCrudGetDownloadUrlResponse404 | attachmentCrudGetDownloadUrlResponse409 | attachmentCrudGetDownloadUrlResponse429 | attachmentCrudGetDownloadUrlResponse500) & {
   headers: Headers;
 };
 
@@ -1108,7 +1212,7 @@ export const getAttachmentCrudGetDownloadUrlUrl = (attachmentId: ModelsAttachmen
 }
 
 /**
- * 閲覧権限を持つ利用者がファイルを安全に取得できるよう、短時間有効なダウンロードURLを発行します。
+ * 添付ファイルをダウンロードするための、5分だけ有効なURLを発行します。inline=true の場合はブラウザーの中で表示するURLを、そうでなければ元のファイル名で保存するURLを発行します。アップロード待ち(pending)の添付ファイルは409を返します。
  * @summary Issue a download URL
  */
 export const attachmentCrudGetDownloadUrl = async (attachmentId: ModelsAttachmentId,
@@ -1159,7 +1263,7 @@ export type AttachmentCrudGetDownloadUrlQueryError = ModelsProblemDetails
 
 
 /**
- * 閲覧権限を持つ利用者がファイルを安全に取得できるよう、短時間有効なダウンロードURLを発行します。
+ * 添付ファイルをダウンロードするための、5分だけ有効なURLを発行します。inline=true の場合はブラウザーの中で表示するURLを、そうでなければ元のファイル名で保存するURLを発行します。アップロード待ち(pending)の添付ファイルは409を返します。
  * @summary Issue a download URL
  */
 export function useAttachmentCrudGetDownloadUrl<TData = Awaited<ReturnType<typeof attachmentCrudGetDownloadUrl>>, TError = ModelsProblemDetails>(
@@ -1174,7 +1278,7 @@ export function useAttachmentCrudGetDownloadUrl<TData = Awaited<ReturnType<typeo
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 閲覧権限を持つ利用者がファイルを安全に取得できるよう、短時間有効なダウンロードURLを発行します。
+ * 添付ファイルをダウンロードするための、5分だけ有効なURLを発行します。inline=true の場合はブラウザーの中で表示するURLを、そうでなければ元のファイル名で保存するURLを発行します。アップロード待ち(pending)の添付ファイルは409を返します。
  * @summary Issue a download URL
  */
 export function useAttachmentCrudGetDownloadUrl<TData = Awaited<ReturnType<typeof attachmentCrudGetDownloadUrl>>, TError = ModelsProblemDetails>(
@@ -1189,7 +1293,7 @@ export function useAttachmentCrudGetDownloadUrl<TData = Awaited<ReturnType<typeo
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 閲覧権限を持つ利用者がファイルを安全に取得できるよう、短時間有効なダウンロードURLを発行します。
+ * 添付ファイルをダウンロードするための、5分だけ有効なURLを発行します。inline=true の場合はブラウザーの中で表示するURLを、そうでなければ元のファイル名で保存するURLを発行します。アップロード待ち(pending)の添付ファイルは409を返します。
  * @summary Issue a download URL
  */
 export function useAttachmentCrudGetDownloadUrl<TData = Awaited<ReturnType<typeof attachmentCrudGetDownloadUrl>>, TError = ModelsProblemDetails>(
@@ -1198,7 +1302,7 @@ export function useAttachmentCrudGetDownloadUrl<TData = Awaited<ReturnType<typeo
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 閲覧権限を持つ利用者がファイルを安全に取得できるよう、短時間有効なダウンロードURLを発行します。
+ * 添付ファイルをダウンロードするための、5分だけ有効なURLを発行します。inline=true の場合はブラウザーの中で表示するURLを、そうでなければ元のファイル名で保存するURLを発行します。アップロード待ち(pending)の添付ファイルは409を返します。
  * @summary Issue a download URL
  */
 export function useAttachmentCrudGetDownloadUrl<TData = Awaited<ReturnType<typeof attachmentCrudGetDownloadUrl>>, TError = ModelsProblemDetails>(
