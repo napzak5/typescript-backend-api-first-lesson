@@ -29,7 +29,7 @@ After your edit, each of these holds for every document you touched:
 1. Every command exists and works as described. `pnpm` scripts are in the root `package.json`, or in the package that `--filter` names; `make` targets are in the `Makefile`; flags are real.
 2. Every file path it names exists.
 3. Every code sample matches the real code and the rules of the project. Prefer a short excerpt copied from the real file, with its path, to a long invented sample, and never invent an API.
-4. It describes nothing that was removed or never built. Look at what is implemented (`backend/packages/domain/src/business-logic/`, `backend/packages/api/src/routes/`) before you describe a feature as existing. An example for a domain that is not implemented is labelled as an example of how it would follow the Salon pattern.
+4. It describes nothing that was removed or never built. Look at what is implemented (`backend/packages/domain/src/business-logic/`, `backend/packages/api/src/routes/`) before you describe a feature as existing. An example of something that is not implemented is labelled as an example.
 5. It does not contradict `CLAUDE.md`, and it names environment variables without copying values from `.env.staging` or `.env.production`.
 
 ## How you work
@@ -37,6 +37,7 @@ After your edit, each of these holds for every document you touched:
 - Find every place that states what you are correcting. The same claim usually appears in several documents, so search for the names, commands and paths involved.
 - Verify each statement against the code: open the file, read the script, check the flag. Do not carry a statement over from the old text because it sounds right.
 - Cut before you rewrite. Where a section repeats what `CLAUDE.md`, another document or the code already says, replace it with a pointer to that place.
+- What is implemented is stated in two places only: the table "Implementation Status" of `README.md` for the areas of the API, and the section 実装範囲 of the document of a domain for its operations and for what it deliberately does not do. `CLAUDE.md`, `AGENTS.md`, the agent definitions and the other documents point there and carry no list of their own; a copy goes out of date with the next change. When a change adds, removes or alters what an area does, update those two places and the rules in the document of the domain.
 - Keep the purpose and the language of each document. A Japanese document stays Japanese, an English one stays English, and code comments follow the language of the document around them.
 - Use relative links, and link only to documents that exist. When a document is renamed or removed, update every link to it and the index in `docs/README.md`.
 - Create a new document only when you are asked to, and add it to `docs/README.md`.

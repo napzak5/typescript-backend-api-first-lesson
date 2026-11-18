@@ -6,10 +6,16 @@ set-up, commands and operation of the API server are in the
 depth. When a document disagrees with the code or with `CLAUDE.md`, the
 document is wrong: fix it in the same change.
 
+What is implemented is stated once, in the table
+[Implementation Status](../README.md#implementation-status) of the README; the
+document of a domain says, under 実装範囲, which operations it has and what it
+deliberately does not do. The other documents refer to these two places
+instead of listing it again.
+
 ## 📚 Architecture & Design
-- [**Architecture Overview**](./architecture-overview.md) - The system as a whole: layers, packages, request flow, what is implemented
+- [**Architecture Overview**](./architecture-overview.md) - The system as a whole: layers, packages, request flow
 - [Backend Architecture Guidelines](./backend-architecture-guidelines.md) - How to write backend code in each layer (日本語)
-- [Domain Implementation Reference](./domain-implementation-reference.md) - The Salon domain layer by layer, as the model for a new domain
+- [Domain Implementation Reference](./domain-implementation-reference.md) - The Salon domain layer by layer, as the model for a new domain, and what every other domain does differently
 - [API Route Modular Structure](./api-route-modular-structure.md) - One handler file per endpoint in the API package
 - [Authentication and Authorization](./authentication.md) - Sessions, passwords, registration, email verification and password reset, the accounts of staff members by invitation, two-factor authentication, who may do what, how to protect an operation, the seeded accounts (日本語)
 - [Service Menu](./service-menu.md) - The service categories of a salon: who may change them, the list, the rules for each property, parent and child categories, what a delete does. The services of a salon: the rules for each property, options, packages, bulk update, what a delete does (日本語)
