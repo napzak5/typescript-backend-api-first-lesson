@@ -1,4 +1,4 @@
-import type { Mail } from '@beauty-salon-backend/domain'
+import type { IFileStorage, Mail } from '@beauty-salon-backend/domain'
 import {
   connectDatabase,
   createLogger,
@@ -11,6 +11,7 @@ import type postgres from 'postgres'
 import request, { type Response } from 'supertest'
 import { expect } from 'vitest'
 import { type AppSettings, createApp } from '../../index'
+import { InMemoryFileStorage } from './in-memory-file-storage'
 
 // Global type declarations for testing
 declare global {
@@ -70,6 +71,8 @@ export type TestAppOptions = {
   logs?: unknown[]
   /** Receives every mail the application hands over. Dropped if absent. */
   mails?: Mail[]
+  /** Holds the files of the attachments; a storage of its own if absent. */
+  fileStorage?: IFileStorage
 }
 
 /**
@@ -80,11 +83,13 @@ export function createTestApp({
   rateLimit = settings.rateLimit,
   logs,
   mails,
+  fileStorage = new InMemoryFileStorage(),
 }: TestAppOptions = {}): Express {
   return createApp({
     database,
     settings: { ...settings, rateLimit },
     mailer: { deliver: (mail) => mails?.push(mail) },
+    fileStorage,
     twoFactorAuthenticator: new TotpAuthenticator(TWO_FACTOR_ENCRYPTION_KEY),
     logger: createLogger(
       {

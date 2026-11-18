@@ -7,7 +7,6 @@
  */
 
 /**
- * ラベリングや検索に利用するタグ情報のセット。タグ付けをしていない場合はnull。
- * @nullable
+ * PUT のリクエストに付けるヘッダー(名前と値)。署名に含まれているので、1つでも欠けたり値が違ったりすると、保存先が拒否する
  */
-export type ModelsAttachmentResponseTags = {[key: string]: string} | null;
+export type ModelsAttachmentUploadUrlResponseUploadHeaders = {[key: string]: string};

@@ -5,45 +5,42 @@
  * Comprehensive REST API for managing beauty salon operations including salons, staff, services, customers, bookings, treatments, payments, inventory, and access control. Built with TypeSpec for type-safe API-first development.
  * OpenAPI spec version: 2.0
  */
+import type { ModelsAttachmentContentType } from './modelsAttachmentContentType';
 import type { ModelsAttachmentId } from './modelsAttachmentId';
-import type { ModelsAttachmentResponseMetadata } from './modelsAttachmentResponseMetadata';
-import type { ModelsAttachmentResponseTags } from './modelsAttachmentResponseTags';
+import type { ModelsAttachmentStatusType } from './modelsAttachmentStatusType';
 import type { ModelsUserId } from './modelsUserId';
 
 /**
- * 添付ファイルレスポンス - サロンシステムで管理するアップロード済みファイルのメタ情報を返す。
- * 対応するテーブルはまだない。全項目のキーが必須で、値がない項目は null を返す
+ * 添付ファイル - attachments の行。ファイルの中身は、オブジェクトストレージにある。
+ * 保存先のキーは内部の値で、レスポンスに含めない。すべてのプロパティがあり、値がないものは null
  */
 export interface ModelsAttachmentResponse {
-  /** 添付ファイルを一意に識別するID。UUID形式。 */
+  /** 添付ファイルの ID */
   id: ModelsAttachmentId;
-  /** オブジェクトストレージでファイルを参照するための内部キー。 */
-  key: string;
-  /** 利用者がアップロードした元のファイル名。 */
-  filename: string;
-  /** ファイルのMIMEタイプ（Content-Type）。 */
-  content: string;
-  /** ファイルサイズ（バイト単位）。 */
-  size: number;
-  /** ファイルをアップロードしたユーザーID。 */
-  uploadedBy: ModelsUserId;
   /**
-     * ファイルが紐づくサロンID。全社共通ファイルやシステムファイルの場合はnull。
+     * ファイルが属するサロンの ID。サロンに属さないファイル(admin だけが扱える)はnull
      * @nullable
      */
   salonId: string | null;
+  /** アップロードした元のファイル名。ダウンロードするときの名前になる */
+  filename: string;
+  /** ファイルの種類 */
+  contentType: ModelsAttachmentContentType;
+  /** ファイルのサイズ(バイト)。1〜10,485,760(10 MiB) */
+  size: number;
+  /** 添付ファイルの状態 */
+  status: ModelsAttachmentStatusType;
+  /** アップロード用のURLを発行したユーザーの ID */
+  uploadedBy: ModelsUserId;
+  /** アップロード用のURLの有効期限。発行の15分後 */
+  uploadExpiresAt: string;
   /**
-     * 必要に応じて付加情報を保持する任意メタデータ。追加情報が不要な場合はnull。
+     * アップロードを確かめた日時。アップロード待ち(pending)のあいだはnull
      * @nullable
      */
-  metadata: ModelsAttachmentResponseMetadata;
-  /**
-     * ラベリングや検索に利用するタグ情報のセット。タグ付けをしていない場合はnull。
-     * @nullable
-     */
-  tags: ModelsAttachmentResponseTags;
-  /** ファイルがアップロードされた日時。 */
-  uploadedAt: string;
-  /** ファイル情報が最後に更新された日時。 */
+  uploadedAt: string | null;
+  /** アップロード用のURLを発行した日時 */
+  createdAt: string;
+  /** 最後に更新した日時 */
   updatedAt: string;
 }

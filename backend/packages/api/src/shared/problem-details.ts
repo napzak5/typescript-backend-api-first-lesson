@@ -137,6 +137,15 @@ const toProblem = (error: ApiError): Problem =>
       code: '4003',
       errors: null,
     }))
+    // So does the cause of a failure of the object storage.
+    .with({ type: 'storage' }, () => ({
+      type: 'urn:beauty-salon:problem:storage',
+      title: 'Internal server error',
+      status: 500,
+      detail: null,
+      code: '4004',
+      errors: null,
+    }))
     .with({ type: 'routeNotFound' }, ({ method, path }) => ({
       type: 'urn:beauty-salon:problem:route-not-found',
       title: 'Route not found',

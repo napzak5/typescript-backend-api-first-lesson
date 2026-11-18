@@ -5,31 +5,29 @@
  * Comprehensive REST API for managing beauty salon operations including salons, staff, services, customers, bookings, treatments, payments, inventory, and access control. Built with TypeSpec for type-safe API-first development.
  * OpenAPI spec version: 2.0
  */
+import type { ModelsAttachmentContentType } from './modelsAttachmentContentType';
 
 /**
- * アップロード用署名付きURL発行リクエスト - 外部ストレージへ直接アップロードするための署名付きURLを要求する。
+ * アップロード用URLの発行リクエスト - アップロードするファイルの名前、種類、サイズを申告する。
  * 全項目のキーが必須。null を指定できる項目は null を送る
  */
 export interface ModelsAttachmentUploadUrlRequest {
   /**
-     * アップロード予定のファイル名。
+     * アップロードするファイルの名前(1〜255文字)。制御文字と / と \ を含められない。拡張子は、種類(contentType)に対応するものに限る(大文字と小文字は区別しない)
      * @minLength 1
      * @maxLength 255
      */
   filename: string;
+  /** アップロードするファイルの種類 */
+  contentType: ModelsAttachmentContentType;
   /**
-     * アップロード予定ファイルのContent-Type。
-     * @minLength 1
-     * @maxLength 255
-     */
-  content: string;
-  /**
-     * アップロード予定ファイルのサイズ（バイト単位）。
+     * アップロードするファイルのサイズ(バイト)。1〜10,485,760(10 MiB)
      * @minimum 1
+     * @maximum 10485760
      */
   size: number;
   /**
-     * ファイルをひも付けるサロンID。全社共通ファイルの場合はnull。
+     * ファイルが属するサロンの ID。サロンに属さないファイル(admin だけが作れる)はnull
      * @nullable
      */
   salonId: string | null;

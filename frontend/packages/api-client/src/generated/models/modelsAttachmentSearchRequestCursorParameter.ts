@@ -7,6 +7,6 @@
  */
 
 /**
- * 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する
+ * 取得開始位置を示すカーソル。同じ絞り込み条件で取得した前回レスポンスの `meta.nextCursor` を指定する。一覧に出る添付ファイルのIDでない場合は検証エラー
  */
 export type ModelsAttachmentSearchRequestCursorParameter = string;

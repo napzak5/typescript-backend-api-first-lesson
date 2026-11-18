@@ -36,6 +36,42 @@ services:
     networks:
       - beauty-salon-network
 
+  # Keeps the files of the attachments: an S3-compatible object storage
+  # (SeaweedFS, all of it in one process). Reachable from this machine only,
+  # at http://localhost:8333; the bucket is created when it starts.
+  storage:
+    image: chrislusf/seaweedfs:4.54
+    container_name: beauty-salon-storage
+    command: >
+      mini -dir=/data
+      -bucket=${STORAGE_BUCKET:-beauty-salon-dev}
+      -master.telemetry=false
+    environment:
+      # The one identity the storage knows; it may do everything.
+      AWS_ACCESS_KEY_ID: ${STORAGE_ACCESS_KEY_ID:-beauty-salon}
+      AWS_SECRET_ACCESS_KEY: ${STORAGE_SECRET_ACCESS_KEY:-beauty-salon-local-secret}
+    ports:
+      - "127.0.0.1:8333:8333"
+    volumes:
+      - storage_data:/data
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:8333/healthz",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+    networks:
+      - beauty-salon-network
+
   backend:
     build:
       context: .
@@ -50,6 +86,8 @@ services:
       PORT: ${PORT:-3000}
       DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-beauty_salon}
       SMTP_HOST: mailpit
+      # The URLs given to a browser keep naming localhost (STORAGE_PUBLIC_ENDPOINT).
+      STORAGE_ENDPOINT: http://storage:8333
     ports:
       - "${PORT:-3000}:3000"
     volumes:
@@ -60,6 +98,8 @@ services:
       postgres:
         condition: service_healthy
       mailpit:
+        condition: service_healthy
+      storage:
         condition: service_healthy
       migration:
         condition: service_completed_successfully
@@ -110,5 +150,6 @@ networks:
 
 volumes:
   postgres18_data:
+  storage_data:
   backend_node_modules:
   pnpm_store:

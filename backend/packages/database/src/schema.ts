@@ -44,6 +44,18 @@ export const allergyType = pgEnum('allergy_type', [
   'other',
 ])
 
+export const attachmentContentType = pgEnum('attachment_content_type', [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'application/pdf',
+])
+
+export const attachmentStatus = pgEnum('attachment_status', [
+  'pending',
+  'uploaded',
+])
+
 export const bookingRequirement = pgEnum('booking_requirement', [
   'consultation_required',
   'patch_test_required',
@@ -266,6 +278,86 @@ export const userRole = pgEnum('user_role', [
   'admin',
   'owner',
 ])
+
+export const attachments = pgTable(
+  'attachments',
+  {
+    id: uuid().defaultRandom().primaryKey().notNull(),
+    salonId: uuid(),
+    filename: varchar({ length: 255 }).notNull(),
+    contentType: attachmentContentType().notNull(),
+    size: integer().notNull(),
+    status: attachmentStatus().default('pending').notNull(),
+    uploadedBy: uuid().notNull(),
+    uploadExpiresAt: timestamp({
+      withTimezone: true,
+      mode: 'string',
+    }).notNull(),
+    uploadedAt: timestamp({ withTimezone: true, mode: 'string' }),
+    deletedAt: timestamp({ withTimezone: true, mode: 'string' }),
+    createdAt: timestamp({ withTimezone: true, mode: 'string' })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp({ withTimezone: true, mode: 'string' })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    check(
+      'attachments_filename_not_empty',
+      sql`char_length((filename)::text) >= 1`,
+    ),
+    check(
+      'attachments_size_within_limit',
+      sql`(size >= 1) AND (size <= 10485760)`,
+    ),
+    check(
+      'attachments_upload_expires_after_created',
+      sql`"uploadExpiresAt" > "createdAt"`,
+    ),
+    check(
+      'attachments_uploaded_when_uploaded',
+      sql`(status = 'uploaded'::attachment_status) = ("uploadedAt" IS NOT NULL)`,
+    ),
+    foreignKey({
+      columns: [table.salonId],
+      foreignColumns: [salons.id],
+      name: 'attachments_salon_id_fk',
+    }),
+    foreignKey({
+      columns: [table.uploadedBy],
+      foreignColumns: [users.id],
+      name: 'attachments_uploaded_by_fk',
+    }),
+    index('idx_attachments_purge')
+      .using(
+        'btree',
+        table.uploadExpiresAt.asc().nullsLast().op('timestamptz_ops'),
+      )
+      .where(
+        sql`((status = 'pending'::attachment_status) OR ("deletedAt" IS NOT NULL))`,
+      ),
+    index('idx_attachments_salon_uploaded')
+      .using(
+        'btree',
+        table.salonId.asc().nullsLast().op('uuid_ops'),
+        table.uploadedAt.asc().nullsLast().op('timestamptz_ops'),
+        table.id.asc().nullsLast().op('uuid_ops'),
+      )
+      .where(
+        sql`((status = 'uploaded'::attachment_status) AND ("deletedAt" IS NULL))`,
+      ),
+    index('idx_attachments_uploaded')
+      .using(
+        'btree',
+        table.uploadedAt.asc().nullsLast().op('timestamptz_ops'),
+        table.id.asc().nullsLast().op('uuid_ops'),
+      )
+      .where(
+        sql`((status = 'uploaded'::attachment_status) AND ("deletedAt" IS NULL))`,
+      ),
+  ],
+)
 
 export const bookingServices = pgTable(
   'booking_services',

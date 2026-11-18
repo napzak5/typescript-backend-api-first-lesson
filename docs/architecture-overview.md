@@ -63,9 +63,9 @@ Before relying on anything, check this table.
 | Inventory alerts (`/api/v1/inventory-alerts`) | Implemented in every layer: the list, the acknowledgement and the summary of the alerts of the stock of a salon. An alert is not stored: it is worked out of the products, the stock rows and their movements whenever it is read (the stock of a product at or below its minimum or above its maximum, a stock row that expires within 30 days or has expired). Only the acknowledgements are stored, and one holds while what it was given for lasts. The routes are not below a salon and none is public: an administrator and the owner, the managers and the staff of a salon read and acknowledge them, and a customer account reaches none. See [Inventory Alerts](./inventory-alerts.md) (Japanese). |
 | Treatment records (`/api/v1/treatments`) | Implemented in every layer: every operation of `TreatmentRecordCrud`, the list, create, get, update and delete of the records, the addition and the removal of their photos, and the statistics. A treatment record is what a salon notes of the treatment of a booking: the services given, the techniques, the condition of the scalp and the hair, the colour formula, the materials used with their amounts and lots, what is recommended for the next visit, the satisfaction of the customer and the notes of the staff. The routes are not below a salon, whose record it is through its booking, and none is public: an administrator and the owner, the managers and the staff of the salon of the booking read and write them, an administrator, the owner and the managers remove one, and a customer account reaches none. A booking that is in progress or completed takes one record; its customer is that of the booking, and its staff member, services and products are of the salon of the booking. Recording the materials does not move the stock. A photo is the address of a file stored elsewhere, at most 20 a record and one of an address; a public photo needs the consent of the customer. The statistics count the records of a salon in a period by the kinds of their services and by their services, with the average processing time. See [Treatments](./treatments.md) (Japanese). |
 | Medical charts (`/api/v1/medical-charts`) | Implemented in every layer, every operation of `MedicalChartCrud`: list, create, get by customer and update of the charts, and list, add, update and remove of the allergies of a customer. A chart is one for a customer and keeps what the staff check before a treatment: the treatments had before, the medical conditions to heed, the products preferred and avoided, and notes. The allergies are the rows of `customer_allergies`, one for an allergen of a customer and listed severest first, the usual scalp and hair the columns of the customer, and the state at a treatment the treatment record. The routes are not below a salon and none is public: an administrator and the members of any salon read and write them, as they keep the customer ledger (an allergy is removed only by an administrator, an owner or a manager), and a customer account reaches none. The chart of a deleted customer is shown nowhere. See [Medical Charts](./medical-charts.md) (Japanese). |
-| Attachments | Specified in TypeSpec only. No table exists for them yet. |
+| Attachments (`/api/v1/attachments`) | Implemented in every layer, every operation of `AttachmentCrud`: the files a salon keeps, such as the photos of a treatment and its documents (JPEG, PNG, WebP and PDF of up to 10 MiB). The server never carries a file: it issues a URL that is signed for one upload of the announced type and size (15 minutes), completes the upload once it has looked at the size and the first bytes of what is stored, lists and reads the attachments, issues a signed download URL (5 minutes), deletes an attachment with its file, and purges the uploads that were never completed and the deleted rows. An administrator and the owner, the managers and the staff of the salon reach them, a file of no salon is the administrators', the owner, the managers and whoever uploaded it delete one, only an administrator purges, and a customer account reaches none. The files are in an S3-compatible object storage behind a port of the domain (`IFileStorage`, implemented by `S3FileStorage`). The share links of the contract (`ShareLinkCrud`, `SharedFileCrud`) are specified in TypeSpec only, with no table. See [Attachments](./attachments.md) (Japanese). |
 | Email | Implemented for the mails of the authentication flows and the invitation of a staff member (confirm the address, reset the password, accept an invitation, and the notices: the password was changed, two-factor authentication was enabled, disabled or turned off by an administrator, the backup codes were replaced, a backup code was used to sign in): plain text over SMTP. Docker Compose starts Mailpit, which catches them locally. See [Email](./email.md) (Japanese). |
-| File storage | Not implemented. Docker Compose starts no service for it. |
+| File storage | An S3-compatible object storage holds the files of the attachments; the server reaches it through six `STORAGE_*` variables and does not connect to it at start-up. Docker Compose starts SeaweedFS for it locally. Which storage production uses, its bucket, its credentials and the CORS rules of the bucket are part of preparing production. See [Attachments](./attachments.md#ストレージ) (Japanese). |
 | Frontend | Three application shells and shared packages. The API client is generated, but no application calls the API yet. See [Frontend](#frontend). |
 
 ## Architecture Principles
@@ -928,7 +928,7 @@ or a mail server.
 | `config` | `loadEnvFile`, `parseAppConfig` | `utility` |
 | `database` | `schema.ts`, `relations.ts`, `sql/`, the `db:*` scripts, seeds | `config`, `utility` |
 | `domain` | Models, schemas, mappers, use cases, repository and service interfaces, `DomainError` | `database` (types), `generated`, `utility` |
-| `infrastructure` | `connectDatabase`, `pingDatabase`, the repositories (one class per repository interface of the domain: `SalonRepository`, `BookingRepository` and so on), `Argon2PasswordHasher`, `RandomTokenIssuer`, `RandomBookingNumberIssuer`, `RandomSaleNumberIssuer`, `RandomPaymentNumberIssuer`, `TotpAuthenticator`, `SmtpMailer`, `createLogger` | `database`, `domain`, `utility` |
+| `infrastructure` | `connectDatabase`, `pingDatabase`, the repositories (one class per repository interface of the domain: `SalonRepository`, `BookingRepository` and so on), `Argon2PasswordHasher`, `RandomTokenIssuer`, `RandomBookingNumberIssuer`, `RandomSaleNumberIssuer`, `RandomPaymentNumberIssuer`, `TotpAuthenticator`, `SmtpMailer`, `S3FileStorage`, `createLogger` | `database`, `domain`, `utility` |
 | `api` | `createApp`, middleware, routes, authentication of a request, problem details | `domain`, `generated`, `infrastructure`, `utility`; `database` in tests |
 | `server` (application) | Entry point and `startServer` | `api`, `config`, `domain`, `infrastructure`, `utility` |
 
@@ -1076,26 +1076,29 @@ reads the environment or ends the process.
 3. `createLogger(...)` creates the pino logger.
 4. `startServer(config, logger)` in `backend/apps/server/src/server.ts`
    connects to the database and pings it, creates the mailer (`SmtpMailer`,
-   from `config.mail`) and the authenticator of two-factor authentication
+   from `config.mail`), the file storage (`S3FileStorage`, from
+   `config.storage`) and the authenticator of two-factor authentication
    (`TotpAuthenticator`, from `config.twoFactor.encryptionKey`), builds the
    application with
-   `createApp({ database, logger, mailer, twoFactorAuthenticator, settings })`,
+   `createApp({ database, logger, mailer, fileStorage, twoFactorAuthenticator, settings })`,
    and listens. It
    returns a `Result`: the server does not start when the database is
-   unreachable or the port cannot be bound. The SMTP server is not contacted
-   at start-up; the mailer connects when a mail goes out.
+   unreachable or the port cannot be bound. The SMTP server and the object
+   storage are not contacted at start-up; the mailer connects when a mail
+   goes out, and the file storage when a file is looked at or removed.
 5. On `SIGTERM` or `SIGINT` the server stops accepting connections, lets
    requests in flight finish (for up to 10 seconds), waits for the mails
-   that are still being delivered, closes the mailer and the database
-   connections and exits with status 0.
+   that are still being delivered, closes the mailer, the connections to
+   the object storage and the database connections and exits with status 0.
 
 ### Middleware Order
 
 `createApp` in `backend/packages/api/src/index.ts` creates the repositories,
 the password hasher, the token issuer and the clock (`clock`, the current
 time of the authentication and the customer use cases) once, takes the
-mailer and the authenticator of two-factor authentication as dependencies
-(`AppDependencies.mailer`, `AppDependencies.twoFactorAuthenticator`), and
+mailer, the file storage and the authenticator of two-factor authentication
+as dependencies (`AppDependencies.mailer`, `AppDependencies.fileStorage`,
+`AppDependencies.twoFactorAuthenticator`), and
 mounts everything in this order. The order is part of the design:
 
 1. `requestLogging`: gives every request its ID (`req.id`) and logger
@@ -2282,12 +2285,13 @@ is where each one lives in the code:
 
 | Concern | Where | Notes |
 |---------|-------|-------|
-| Configuration | `backend/packages/config/src/app-config.ts` | `parseAppConfig` validates 22 variables, all required, and returns `Result<AppConfig, ConfigIssue[]>`. When `NODE_ENV` is `staging` or `production` it also refuses `SMTP_TLS=none` and a `PUBLIC_APP_URL` that does not start with `https://`. Application code receives values and does not read the environment. |
+| Configuration | `backend/packages/config/src/app-config.ts` | `parseAppConfig` validates 28 variables, all required, and returns `Result<AppConfig, ConfigIssue[]>`. When `NODE_ENV` is `staging` or `production` it also refuses `SMTP_TLS=none` and a `PUBLIC_APP_URL`, a `STORAGE_ENDPOINT` or a `STORAGE_PUBLIC_ENDPOINT` that does not start with `https://`. Application code receives values and does not read the environment. |
 | Environment files | `backend/packages/config/src/env-loader.ts` | One file per environment at the repository root: `.env.localhost`, `.env.development`, `.env.test`, `.env.staging`, `.env.production`. `.env.template` and `.env.example` are templates, and `.env.test.ci` is what CI uses as `.env.test`. A deployment sets the variables directly and needs no file. |
 | Logging | `backend/packages/infrastructure/src/logging/logger.ts`, `backend/packages/api/src/middleware/request-logging.ts` | Structured logs (pino) on standard output: one line per request, one line per failure. The line of a request that was authenticated carries the ID of the signed-in user as `userId`: `authenticated` notes it (`backend/packages/api/src/shared/signed-in-user.ts`) and the middleware puts it on the line when the request completes. The line of a request that was not authenticated has no `userId`. Headers, bodies and the values bound to a SQL statement are never logged, and so no token is. There is no `console` call in application code. |
 | Request ID | `backend/packages/api/src/middleware/request-logging.ts` | The caller's `X-Request-Id` or a new UUID. It is on every log line of the request, in the response header, and in the body as `meta.correlationId` (`correlationId` in an error). |
 | Mail | `backend/packages/domain/src/services/mailer.ts`, `backend/packages/infrastructure/src/mail/smtp-mailer.ts` | The use cases know the port `IMailer`; `SmtpMailer` (nodemailer) sends through the SMTP server of `config.mail`. `deliver` returns at once. A delivery is logged with the subject of the message, never its recipient or text, and a failed one is not retried. See [Email](./email.md). |
-| Probes | `backend/packages/api/src/routes/system/index.ts` | `GET /api/system/alive` (the process answers), `GET /api/system/ready` (200 while the database answers, otherwise 503), `GET /api/system/health` (the same check with details). Not rate limited and not written to the request log. The SMTP server is not probed. |
+| File storage | `backend/packages/domain/src/services/file-storage.ts`, `backend/packages/infrastructure/src/storage/s3-file-storage.ts` | The use cases of the attachments know the port `IFileStorage`; `S3FileStorage` (the AWS SDK for JavaScript v3) reaches the S3-compatible object storage of `config.storage`. It signs a URL for one upload of a type and a size and a URL for a download without contacting the storage, reads the size and the first bytes of a stored file, and removes one. A call that fails is a `storage` error (500, code `4004`); its cause is logged, a signed URL never is. A connection is given 5 seconds and a request 15. See [Attachments](./attachments.md#ストレージ) (Japanese). |
+| Probes | `backend/packages/api/src/routes/system/index.ts` | `GET /api/system/alive` (the process answers), `GET /api/system/ready` (200 while the database answers, otherwise 503), `GET /api/system/health` (the same check with details). Not rate limited and not written to the request log. The SMTP server and the object storage are not probed. |
 | Shutdown | `backend/apps/server/src/server.ts` | See [Start-up](#start-up). |
 
 What protects the API today: security headers, the origin allow-list, the
@@ -2311,7 +2315,7 @@ See [Authentication and Authorization](./authentication.md).
 | Command | What runs | Where the tests are |
 |---------|-----------|---------------------|
 | `pnpm test` | Unit tests (Vitest), no external services | Next to the code: in `__tests__` directories, or as `*.test.ts(x)` files beside the module |
-| `pnpm test:integration` | Tests against a real PostgreSQL: the one at `TEST_DATABASE_URL`, otherwise a testcontainers container. The tests of the infrastructure package send mail to a real SMTP server instead: a Mailpit container they start through testcontainers | `backend/packages/api/src/__tests__` (the HTTP API through the production `createApp`, one database per test), `backend/apps/server/src/__tests__` (start-up and shutdown), `backend/packages/database/src/scripts/__tests__` (the migration runner), `backend/packages/infrastructure/src/mail/__tests__` (mail delivery) |
+| `pnpm test:integration` | Tests against a real PostgreSQL: the one at `TEST_DATABASE_URL`, otherwise a testcontainers container. The tests of the infrastructure package send mail to a real SMTP server and files to a real S3-compatible storage instead: a Mailpit and a SeaweedFS container they start through testcontainers | `backend/packages/api/src/__tests__` (the HTTP API through the production `createApp`, one database per test), `backend/apps/server/src/__tests__` (start-up and shutdown), `backend/packages/database/src/scripts/__tests__` (the migration runner), `backend/packages/infrastructure/src/mail/__tests__` (mail delivery), `backend/packages/infrastructure/src/storage/__tests__` (the file storage) |
 
 There is no separate end-to-end suite: the API integration tests drive the
 production application over HTTP, and the server tests start the real server.

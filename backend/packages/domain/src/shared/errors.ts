@@ -27,9 +27,10 @@ export type AuthenticationFailure =
 /**
  * Every way a use case can fail. `database` covers both a failed query and
  * stored data that does not have the shape the schema promises; its `cause`
- * is for logs and is never sent to a client. `forbidden` means the actor is
- * known and may not do this. `conflict` means the request is fine and what
- * it acts on is not in a state that allows it.
+ * is for logs and is never sent to a client. `storage` is a call to the
+ * object storage that failed; its `cause` is for logs as well. `forbidden`
+ * means the actor is known and may not do this. `conflict` means the
+ * request is fine and what it acts on is not in a state that allows it.
  */
 export type DomainError =
   | { type: 'validation'; message: string; issues: ValidationIssue[] }
@@ -39,6 +40,7 @@ export type DomainError =
   | { type: 'alreadyExists'; entity: string; field: string; value: string }
   | { type: 'conflict'; message: string }
   | { type: 'database'; message: string; cause: unknown }
+  | { type: 'storage'; message: string; cause: unknown }
 
 export const DomainErrors = {
   validation(message: string, issues: ValidationIssue[]): DomainError {
@@ -67,5 +69,9 @@ export const DomainErrors = {
 
   database(message: string, cause: unknown): DomainError {
     return { type: 'database', message, cause }
+  },
+
+  storage(message: string, cause: unknown): DomainError {
+    return { type: 'storage', message, cause }
   },
 }

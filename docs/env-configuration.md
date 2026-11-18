@@ -8,7 +8,7 @@
 
 1. [バックエンドの設定の仕組み](#バックエンドの設定の仕組み)
 2. [どのファイルが使われるか](#どのファイルが使われるか)
-3. [サーバーが読む 22 個の変数](#サーバーが読む-22-個の変数)
+3. [サーバーが読む 28 個の変数](#サーバーが読む-28-個の変数)
 4. [サーバーが読まない変数](#サーバーが読まない変数)
 5. [データベーススクリプトとテストの接続先](#データベーススクリプトとテストの接続先)
 6. [Docker Compose](#docker-compose)
@@ -28,7 +28,7 @@
 
 原則:
 
-- サーバーが読む変数は 22 個で、**すべて必須**です。コードの中に既定値はありません。
+- サーバーが読む変数は 28 個で、**すべて必須**です。コードの中に既定値はありません。
 - 検証は起動時に 1 回だけ行い、失敗したらサーバーは起動しません。
 - 環境変数を読むのはエントリーポイント（`backend/apps/server/src/index.ts`）だけです。それ以外の
   アプリケーションコードは `process.env` を読まず、`AppConfig` の値を引数として受け取ります。
@@ -126,10 +126,13 @@ export const loadEnvFile = (): LoadedEnvFile => {
   （[データベーススクリプトとテストの接続先](#データベーススクリプトとテストの接続先)）。
 - 同じ 4 つのファイルのメールの設定（`SMTP_*`）は、`make infra-up` が起動する Mailpit を指しています
   （[メール送信](./email.md#ローカル開発mailpit)）。送ったメールは外へ出ず、<http://localhost:8025> で読めます。
+- 同じ 4 つのファイルの保存先の設定（`STORAGE_*`）は、`make infra-up` が起動する SeaweedFS を指しています
+  （[添付ファイル](./attachments.md#ローカル開発seaweedfs)）。バケットの名前と認証情報は、`docker-compose.yml` の
+  `storage` サービスの既定値と同じです。これも `config` パッケージのテストが確認します。
 - ルートの `.env` は Docker Compose も読みます。`DATABASE_URL` と `POSTGRES_*` を変えるときは、
   同じ接続先を表すようにそろえてください。
 
-## サーバーが読む 22 個の変数
+## サーバーが読む 28 個の変数
 
 `backend/packages/config/src/app-config.ts` の `variablesSchema` が定義です。数値は数字だけの文字列で
 書きます（`3000.5`、`-1`、`30s` は不正）。
@@ -156,12 +159,18 @@ export const loadEnvFile = (): LoadedEnvFile => {
 | `MAIL_FROM` | メールアドレス、または `名前 <メールアドレス>` | `mail.from` | すべてのメールの差出人 |
 | `PUBLIC_APP_URL` | オリジン 1 つ | `publicAppUrl` | メールのリンクが指す Web アプリケーションのオリジン |
 | `TWO_FACTOR_ENCRYPTION_KEY` | 32 文字以上の文字列 | `twoFactor.encryptionKey` | 2 要素認証のシークレットを暗号化して保存するための鍵 |
+| `STORAGE_ENDPOINT` | `http://` か `https://` のオリジン 1 つ | `storage.endpoint` | 添付ファイルを置く S3 互換のオブジェクトストレージに、サーバーが接続する先 |
+| `STORAGE_PUBLIC_ENDPOINT` | `http://` か `https://` のオリジン 1 つ | `storage.publicEndpoint` | 同じストレージに、ブラウザーが接続する先。アップロードとダウンロードの署名付き URL は、これを指す |
+| `STORAGE_REGION` | 空でない文字列 | `storage.region` | ストレージのリージョン。署名に使う |
+| `STORAGE_BUCKET` | 3〜63 文字の、英小文字・数字・`.`・`-`（先頭と末尾は英小文字か数字） | `storage.bucket` | ファイルを置くバケット。サーバーは作らない |
+| `STORAGE_ACCESS_KEY_ID` | 空でない文字列 | `storage.accessKeyId` | ストレージの認証情報（キー ID） |
+| `STORAGE_SECRET_ACCESS_KEY` | 空でない文字列 | `storage.secretAccessKey` | ストレージの認証情報（シークレット）。署名付き URL は、これで署名する |
 | `LOG_LEVEL` | `fatal`、`error`、`warn`、`info`、`debug`、`trace`、`silent` | `logging.level` | 出力するログの最低レベル |
 | `LOG_FORMAT` | `json`、`pretty` | `logging.format` | `json` は 1 行 1 オブジェクト、`pretty` はターミナル向け |
 
 `CORS_ORIGIN` の各要素は `https://example.com` のようなオリジンそのものでなければなりません。
-パスや末尾の `/` が付いたもの、スキームのないもの、`*` は不正です。`PUBLIC_APP_URL` も同じ形の
-オリジンです。
+パスや末尾の `/` が付いたもの、スキームのないもの、`*` は不正です。`PUBLIC_APP_URL`、
+`STORAGE_ENDPOINT`、`STORAGE_PUBLIC_ENDPOINT` も同じ形のオリジンです。
 
 `NODE_ENV` が `staging` または `production` のときは、変数どうしの組み合わせも検証します
 （`deployedVariablesSchema`）。次の値ではサーバーは起動しません。
@@ -170,8 +179,17 @@ export const loadEnvFile = (): LoadedEnvFile => {
 |------|------------|------|
 | `SMTP_TLS` | `none` | SMTP の認証情報と、メールに含まれるトークンが平文で流れる |
 | `PUBLIC_APP_URL` | `https://` で始まらないもの | メールのリンクにトークンが含まれる |
+| `STORAGE_ENDPOINT`、`STORAGE_PUBLIC_ENDPOINT` | `https://` で始まらないもの | ファイルは顧客のもので、URL は署名を含む |
 
 メールの送信の仕組みと、ローカルでのメールの確認は [メール送信](./email.md) にあります。
+
+`STORAGE_*` の 6 つは、添付ファイルの保存先です（[添付ファイル](./attachments.md#ストレージ)）。
+
+- 2 つのエンドポイントは、ふつう同じ値です。違うのは、サーバーが内部のネットワークの名前でストレージに
+  接続するときだけです（Docker Compose の `backend` サービスがその例）
+- サーバーは、起動のときにストレージへ接続しません。値が誤っていても起動し、添付ファイルのルートが
+  500 を返します。デプロイ先の値は、[ストレージのテスト](./attachments.md#テスト)で確かめられます
+- `STORAGE_SECRET_ACCESS_KEY` は秘密です。知っている人は、どのファイルの URL にも署名できます
 
 `TWO_FACTOR_ENCRYPTION_KEY` は、認証アプリのシークレットを DB に保存するときの暗号化に使います
 （[認証と認可](./authentication.md#2-要素認証)）。
@@ -187,7 +205,7 @@ export const loadEnvFile = (): LoadedEnvFile => {
 
 ## サーバーが読まない変数
 
-`.env.*` ファイルには、上の 22 個のほかに次の 5 個だけが入っています。
+`.env.*` ファイルには、上の 28 個のほかに次の 5 個だけが入っています。
 
 - **Docker Compose が使うもの**: `POSTGRES_DB`、`POSTGRES_USER`、`POSTGRES_PASSWORD`、`POSTGRES_PORT`
 - **`getDatabaseUrl()` が `DATABASE_URL` のないときに使うもの**: `POSTGRES_USER`、`POSTGRES_PASSWORD`、
@@ -195,7 +213,7 @@ export const loadEnvFile = (): LoadedEnvFile => {
 
 どのコードも読まない変数は、環境ファイルに置きません。`config` パッケージのテスト
 （`backend/packages/config/src/__tests__/app-config.test.ts`）が、すべての環境ファイルについて、
-上の 27 個以外の変数がないことを確認します。変数を増やすときは、それを読むコードと一緒に追加します
+上の 33 個以外の変数がないことを確認します。変数を増やすときは、それを読むコードと一緒に追加します
 （[変数を追加する](#変数を追加する)）。
 
 `parseAppConfig` は知らない変数を無視するので、プロセスの環境にほかの変数があってもサーバーの起動には
@@ -228,9 +246,12 @@ DATABASE_URL=postgres://<user>:<password>@<host>:5432/<database> pnpm db:migrate
 
 - `postgres` サービス: `POSTGRES_DB`、`POSTGRES_USER`、`POSTGRES_PASSWORD`、`POSTGRES_PORT`
 - `mailpit` サービス: 変数を使わない。SMTP（1025）と画面（8025）を `127.0.0.1` に公開する
+- `storage` サービス（SeaweedFS）: `STORAGE_BUCKET`、`STORAGE_ACCESS_KEY_ID`、`STORAGE_SECRET_ACCESS_KEY`。
+  S3 の API（8333）を `127.0.0.1` に公開し、起動のときにバケットを作る
 - `backend` サービス: `.env.localhost` の内容をコンテナの環境変数として渡したうえで、`NODE_ENV`
   （既定は `development`）、`PORT`、`DATABASE_URL`（Compose 内の `postgres` サービス宛て）、`SMTP_HOST`
-  （Compose 内の `mailpit` サービス宛て）などを上書きする
+  （Compose 内の `mailpit` サービス宛て）、`STORAGE_ENDPOINT`（Compose 内の `storage` サービス宛て。
+  `STORAGE_PUBLIC_ENDPOINT` は `http://localhost:8333` のまま）などを上書きする
 - `migration` サービス: `DATABASE_URL` だけを受け取り、`db:migrate` と `db:seed --if-empty` を実行する
 
 ## 変数を追加する

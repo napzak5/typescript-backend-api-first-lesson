@@ -32,7 +32,7 @@
 
 ```bash
 pnpm install        # 依存関係をインストールする。husky の pre-commit フックも設定される
-make infra-up       # PostgreSQL と Mailpit（メールの受信サーバー）を Docker で起動し、両方が使えるようになるまで待つ
+make infra-up       # PostgreSQL、Mailpit（メールの受信サーバー）、SeaweedFS（添付ファイルの保存先）を Docker で起動し、使えるようになるまで待つ
 pnpm db:fresh       # sql/setup.sql からスキーマを作成する
 pnpm db:seed        # サンプルデータを投入する（任意）。ログインできるアカウントも作る
 pnpm dev            # バックエンド :3000、フロントエンド :3001〜3003
@@ -52,10 +52,15 @@ pnpm dev            # バックエンド :3000、フロントエンド :3001〜3
 - **`make infra-up` の Mailpit** は、サーバーが送るメール（メールアドレスの確認、パスワードの再設定など）を
   受け取ります。メールは外へ送られず、`http://localhost:8025` で読めます。`.env.localhost` の `SMTP_*` は
   この Mailpit に合わせてあります（[メール送信](./email.md#ローカル開発mailpit)）。
+- **`make infra-up` の SeaweedFS** は、添付ファイルの中身を置く S3 互換のオブジェクトストレージです
+  （`http://localhost:8333`）。バケットは起動のときに作られ、`.env.localhost` の `STORAGE_*` は
+  この SeaweedFS に合わせてあります（[添付ファイル](./attachments.md#ローカル開発seaweedfs)）。
 - **Docker を使わない場合**は、PostgreSQL 18 を用意し、シェルで `DATABASE_URL` を設定します
   （プロセスの環境変数は `.env` ファイルより優先されます）。メールを受け取るには SMTP サーバーも用意し、
   `SMTP_*` を設定します。SMTP サーバーがなくてもサーバーは起動しますが、メールは届かず、送信の失敗が
-  ログに残ります。
+  ログに残ります。添付ファイルを使うには S3 互換のオブジェクトストレージも用意し、`STORAGE_*` を
+  設定します。ストレージがなくてもサーバーは起動しますが、添付ファイルのアップロードの完了と削除が
+  500 になります。
 
 ### 環境変数ファイル
 
@@ -145,7 +150,8 @@ curl http://localhost:3000/api/v1/salons      # サロン一覧（認証なし�
 [顧客台帳](./customers.md) を、スタッフ台帳の規則は [スタッフ台帳](./staff.md) を、予約台帳の規則は
 [予約台帳](./bookings.md) を、売上台帳の規則は [売上台帳](./sales.md) を、支払い方法と支払いの規則は
 [支払い](./payments.md) を、商品の規則は [商品](./products.md) を、在庫の規則は [在庫](./inventory.md) を、発注の規則は [発注](./purchase-orders.md) を、在庫のアラートの規則は [在庫のアラート](./inventory-alerts.md) を、施術記録の規則は [施術記録](./treatments.md) を、売上レポートの規則は [売上レポート](./sales-reports.md) を、ポイント台帳の規則は
-[ポイント台帳](./points.md) を、レビューの規則は [レビュー](./reviews.md) を参照してください。
+[ポイント台帳](./points.md) を、レビューの規則は [レビュー](./reviews.md) を、添付ファイルの規則は
+[添付ファイル](./attachments.md) を参照してください。
 
 ユーザー登録やパスワードの再設定で送られるメールは Mailpit（`http://localhost:8025`）に届きます。
 メールのリンクが指すページ（`/verify-email`、`/reset-password`）はフロントエンドにまだないので、
@@ -165,7 +171,9 @@ make docker-clean  # 停止してボリュームも削除する（データベ�
 `db:seed --if-empty` を実行します。空のデータベースにはスキーマとサンプルデータを作り、
 既存のデータベースには未適用のマイグレーションだけを適用するので、データは保持されます。
 バックエンドのコンテナは、同じ Compose の `mailpit` サービスにメールを送ります
-（`SMTP_HOST` が `mailpit` に上書きされる）。
+（`SMTP_HOST` が `mailpit` に上書きされる）。添付ファイルの保存先には、同じ Compose の `storage`
+サービスに接続します（`STORAGE_ENDPOINT` が `http://storage:8333` に上書きされる。ブラウザーに渡す
+URL は `http://localhost:8333` のまま）。
 
 ### ポート
 
@@ -176,6 +184,7 @@ make docker-clean  # 停止してボリュームも削除する（データベ�
 | admin / portal / dashboard の Docker イメージ | 4001 / 4002 / 4003 |
 | PostgreSQL | 5432 |
 | Mailpit（SMTP / 受け取ったメールの画面） | 1025 / 8025 |
+| SeaweedFS（添付ファイルの保存先の S3 API） | 8333 |
 
 ## TypeSpec を変更する
 
@@ -429,7 +438,7 @@ Docker イメージのビルドも行います。イメージは、手元では 
 | ジョブ | 内容 |
 |--------|------|
 | `quality` | `check:versions`、`check:generated`、`check:api-db`、`lint`、`format:check`、`build:prod`、`typecheck`、`knip`。OpenAPI ドキュメントをアーティファクトとして保存する |
-| `test` | `build:prod` のあと、データベースの用意の仕方を変えて 2 通り実行する。`external`: サービスコンテナの PostgreSQL を `TEST_DATABASE_URL` で使い、単体テスト、統合テスト、`check:db-schema` を実行する。`testcontainers`: テスト自身が PostgreSQL のコンテナを起動し、統合テストだけを実行する。メール送信の統合テストは、どちらの場合も Mailpit のコンテナを自分で起動する |
+| `test` | `build:prod` のあと、データベースの用意の仕方を変えて 2 通り実行する。`external`: サービスコンテナの PostgreSQL を `TEST_DATABASE_URL` で使い、単体テスト、統合テスト、`check:db-schema` を実行する。`testcontainers`: テスト自身が PostgreSQL のコンテナを起動し、統合テストだけを実行する。メール送信の統合テストは、どちらの場合も Mailpit のコンテナを、添付ファイルの保存先の統合テストは SeaweedFS のコンテナを、自分で起動する |
 | `build` | `pnpm build:dev`、`build:test`、`build:stg`、`build:prod` をそれぞれ実行する |
 | `security` | `pnpm audit --audit-level=high` |
 | `publish-staging-images` | `main` への push のときだけ、上の `quality`・`test`・`build` が成功したあとに `publish-images.yml` を呼び出し、staging のイメージを GitHub Container Registry に push する |
@@ -456,7 +465,8 @@ Dockerfile、`backend/`、`frontend/`、`specs/`、`shared-config/`、ロック�
 | バックエンドが `Invalid configuration` を出力して終了する | 環境変数が不足しているか不正。ログの `issues` に変数名と理由が並ぶ（[環境変数設定ガイド](./env-configuration.md)） |
 | バックエンドが `Cannot start: the database is unreachable` を出力して終了する | PostgreSQL が起動していないか、`DATABASE_URL` が違う。`make infra-up` で起動する |
 | フロントエンドの開発サーバーが起動しない | ポート 3001〜3003 が使用中。各アプリは決まったポートでしか起動しない（`strictPort`） |
+| 添付ファイルのアップロードの完了や削除が 500 になる | SeaweedFS が起動していないか、`STORAGE_*` が違う。`make infra-up` で起動する。バックエンドのログに `Failed to read the stored file` などが、原因（`cause`）と一緒に出る（[添付ファイル](./attachments.md#ストレージのエラー)） |
 | 登録や再設定のメールが届かない | Mailpit が起動していない。`make infra-up` で起動し、`http://localhost:8025` を開く。送信に失敗すると、バックエンドのログに `Failed to deliver mail` が出る（[メール送信](./email.md)）。ログに失敗がなければ、メールを送らない場合に当たっている（すでに登録済みのアドレス、直前に送ったばかりのときなど。[認証と認可](./authentication.md)） |
-| `pnpm test:integration` がコンテナを起動できない | Docker が起動していない。`TEST_DATABASE_URL` に既存の PostgreSQL を指定すれば PostgreSQL のコンテナは不要になるが、`infrastructure` パッケージのメール送信のテストは Mailpit のコンテナを起動するので、全体の実行には Docker が必要。Docker Desktop 以外（Colima など）では、ソケットの場所を環境変数で指定する（[API テストガイド](./api-testing-guide.md#running)） |
+| `pnpm test:integration` がコンテナを起動できない | Docker が起動していない。`TEST_DATABASE_URL` に既存の PostgreSQL を指定すれば PostgreSQL のコンテナは不要になるが、`infrastructure` パッケージのメール送信のテストは Mailpit のコンテナを、添付ファイルの保存先のテストは SeaweedFS のコンテナを起動するので、全体の実行には Docker が必要。Docker Desktop 以外（Colima など）では、ソケットの場所を環境変数で指定する（[API テストガイド](./api-testing-guide.md#running)） |
 | 生成された型と実装が合わない | `pnpm generate` を実行する |
 | ビルド成果物や `node_modules` が壊れている | `pnpm clean` でビルド成果物を削除する。`pnpm fresh` はビルド成果物と `node_modules` を削除して再インストールする |

@@ -1,11 +1,13 @@
 import type {
   AuthUseCaseDependencies,
+  IFileStorage,
   IMailer,
   ITwoFactorAuthenticator,
   StaffInvitationUseCaseDependencies,
 } from '@beauty-salon-backend/domain'
 import {
   Argon2PasswordHasher,
+  AttachmentRepository,
   AvailableSlotRepository,
   BookingRepository,
   CustomerAllergyRepository,
@@ -57,6 +59,7 @@ import {
 import { rateLimiting } from './middleware/rate-limiting'
 import { requestLogging } from './middleware/request-logging'
 import { createAdminAuthRouter } from './routes/admin-auth'
+import { createAttachmentRouter } from './routes/attachment'
 import { createAuthRouter } from './routes/auth'
 import { createAvailableSlotRouter } from './routes/available-slot'
 import { createBookingRouter } from './routes/booking'
@@ -111,6 +114,8 @@ export type AppDependencies = {
   logger: Logger
   /** Carries the mails of the authentication flows and the invitations of staff members. */
   mailer: IMailer
+  /** Holds the files of the attachments. */
+  fileStorage: IFileStorage
   /** Issues and checks the codes of two-factor authentication. */
   twoFactorAuthenticator: ITwoFactorAuthenticator
   settings: AppSettings
@@ -131,6 +136,7 @@ export const createApp = ({
   database,
   logger,
   mailer,
+  fileStorage,
   twoFactorAuthenticator,
   settings,
 }: AppDependencies): Express => {
@@ -463,6 +469,19 @@ export const createApp = ({
     `${API_BASE_PATH}/treatments`,
     createTreatmentRecordRouter(
       { treatmentRecordRepository: new TreatmentRecordRepository(database) },
+      authenticated,
+    ),
+  )
+
+  app.use(
+    `${API_BASE_PATH}/attachments`,
+    createAttachmentRouter(
+      {
+        attachmentRepository: new AttachmentRepository(database),
+        salonRepository,
+        fileStorage,
+        clock,
+      },
       authenticated,
     ),
   )

@@ -9,6 +9,8 @@
 CREATE TYPE "public"."account_status" AS ENUM('active', 'unverified', 'inactive', 'locked', 'suspended', 'deleted');
 CREATE TYPE "public"."allergy_severity" AS ENUM('mild', 'moderate', 'severe', 'life_threatening');
 CREATE TYPE "public"."allergy_type" AS ENUM('chemical', 'fragrance', 'metal', 'latex', 'plant', 'other');
+CREATE TYPE "public"."attachment_content_type" AS ENUM('image/jpeg', 'image/png', 'image/webp', 'application/pdf');
+CREATE TYPE "public"."attachment_status" AS ENUM('pending', 'uploaded');
 CREATE TYPE "public"."booking_requirement" AS ENUM('consultation_required', 'patch_test_required', 'advance_booking_required', 'deposit_required');
 CREATE TYPE "public"."booking_status" AS ENUM('draft', 'pending', 'confirmed', 'in_progress', 'completed', 'cancelled', 'no_show');
 CREATE TYPE "public"."customer_deletion_request_status" AS ENUM('pending', 'cancelled', 'completed');
@@ -38,6 +40,25 @@ CREATE TYPE "public"."staff_level" AS ENUM('junior', 'stylist', 'senior', 'exper
 CREATE TYPE "public"."treatment_photo_type" AS ENUM('before', 'during', 'after', 'other');
 CREATE TYPE "public"."two_factor_status" AS ENUM('disabled', 'pending', 'enabled');
 CREATE TYPE "public"."user_role" AS ENUM('customer', 'staff', 'manager', 'admin', 'owner');
+CREATE TABLE "attachments" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"salonId" uuid,
+	"filename" varchar(255) NOT NULL,
+	"contentType" "attachment_content_type" NOT NULL,
+	"size" integer NOT NULL,
+	"status" "attachment_status" DEFAULT 'pending' NOT NULL,
+	"uploadedBy" uuid NOT NULL,
+	"uploadExpiresAt" timestamp with time zone NOT NULL,
+	"uploadedAt" timestamp with time zone,
+	"deletedAt" timestamp with time zone,
+	"createdAt" timestamp with time zone DEFAULT now() NOT NULL,
+	"updatedAt" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "attachments_filename_not_empty" CHECK (char_length((filename)::text) >= 1),
+	CONSTRAINT "attachments_size_within_limit" CHECK ((size >= 1) AND (size <= 10485760)),
+	CONSTRAINT "attachments_upload_expires_after_created" CHECK ("uploadExpiresAt" > "createdAt"),
+	CONSTRAINT "attachments_uploaded_when_uploaded" CHECK ((status = 'uploaded'::attachment_status) = ("uploadedAt" IS NOT NULL))
+);
+
 CREATE TABLE "booking_services" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"bookingId" uuid NOT NULL,
@@ -906,6 +927,8 @@ CREATE TABLE "users" (
 	CONSTRAINT "users_two_factor_step_needs_secret" CHECK (("twoFactorLastUsedStep" IS NULL) OR ("twoFactorSecret" IS NOT NULL))
 );
 
+ALTER TABLE "attachments" ADD CONSTRAINT "attachments_salon_id_fk" FOREIGN KEY ("salonId") REFERENCES "public"."salons"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "attachments" ADD CONSTRAINT "attachments_uploaded_by_fk" FOREIGN KEY ("uploadedBy") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
 ALTER TABLE "booking_services" ADD CONSTRAINT "booking_services_booking_id_fk" FOREIGN KEY ("bookingId") REFERENCES "public"."bookings"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "booking_services" ADD CONSTRAINT "booking_services_service_id_fk" FOREIGN KEY ("serviceId") REFERENCES "public"."services"("id") ON DELETE restrict ON UPDATE no action;
 ALTER TABLE "booking_services" ADD CONSTRAINT "booking_services_staff_id_fk" FOREIGN KEY ("staffId") REFERENCES "public"."staff"("id") ON DELETE restrict ON UPDATE no action;
@@ -971,6 +994,9 @@ ALTER TABLE "treatment_records" ADD CONSTRAINT "treatment_records_customer_id_fk
 ALTER TABLE "treatment_records" ADD CONSTRAINT "treatment_records_staff_id_fk" FOREIGN KEY ("staffId") REFERENCES "public"."staff"("id") ON DELETE restrict ON UPDATE no action;
 ALTER TABLE "users" ADD CONSTRAINT "users_customer_id_fk" FOREIGN KEY ("customerId") REFERENCES "public"."customers"("id") ON DELETE set null ON UPDATE no action;
 ALTER TABLE "users" ADD CONSTRAINT "users_staff_id_fk" FOREIGN KEY ("staffId") REFERENCES "public"."staff"("id") ON DELETE set null ON UPDATE no action;
+CREATE INDEX "idx_attachments_purge" ON "attachments" USING btree ("uploadExpiresAt" timestamptz_ops) WHERE ((status = 'pending'::attachment_status) OR ("deletedAt" IS NOT NULL));
+CREATE INDEX "idx_attachments_salon_uploaded" ON "attachments" USING btree ("salonId" uuid_ops,"uploadedAt" timestamptz_ops,"id" uuid_ops) WHERE ((status = 'uploaded'::attachment_status) AND ("deletedAt" IS NULL));
+CREATE INDEX "idx_attachments_uploaded" ON "attachments" USING btree ("uploadedAt" timestamptz_ops,"id" uuid_ops) WHERE ((status = 'uploaded'::attachment_status) AND ("deletedAt" IS NULL));
 CREATE INDEX "idx_booking_services_booking_id" ON "booking_services" USING btree ("bookingId" uuid_ops);
 CREATE INDEX "idx_booking_services_service_id" ON "booking_services" USING btree ("serviceId" uuid_ops);
 CREATE INDEX "idx_booking_services_staff_start" ON "booking_services" USING btree ("staffId" uuid_ops,"startTime" timestamptz_ops);

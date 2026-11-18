@@ -72,6 +72,16 @@ const createConfig = (
       },
       publicAppUrl: 'https://salon.example',
       twoFactor: { encryptionKey: 'key-of-the-server-tests-and-nothing-else' },
+      // Nothing listens there either, and no test of the server stores a
+      // file.
+      storage: {
+        endpoint: 'http://127.0.0.1:1',
+        publicEndpoint: 'http://127.0.0.1:1',
+        region: 'us-east-1',
+        bucket: 'server-tests',
+        accessKeyId: 'nobody',
+        secretAccessKey: 'nothing',
+      },
       logging: { level: 'info', format: 'json' },
     },
   }
@@ -979,5 +989,151 @@ describe('the staff profiles', () => {
         problem: expect.objectContaining({ status: 401, code: '1001' }),
       })),
     )
+  })
+})
+
+describe('attachments', () => {
+  const EMAIL = 'admin@salon.example'
+  const PASSWORD = 'correct horse battery staple'
+  const ATTACHMENTS = '/api/v1/attachments'
+
+  const send = (
+    port: number,
+    path: string,
+    body: object | null,
+    accessToken: string | null = null,
+  ): Promise<Response> =>
+    fetch(`http://127.0.0.1:${port}${path}`, {
+      method: 'POST',
+      headers: {
+        ...(body === null ? {} : { 'Content-Type': 'application/json' }),
+        ...(accessToken === null
+          ? {}
+          : { Authorization: `Bearer ${accessToken}` }),
+      },
+      ...(body === null ? {} : { body: JSON.stringify(body) }),
+    })
+
+  const accessTokenOf = (body: unknown): string =>
+    match(body)
+      .with({ data: { accessToken: P.string } }, ({ data }) => data.accessToken)
+      .otherwise(() => {
+        throw new Error(`No access token in ${JSON.stringify(body)}`)
+      })
+
+  const announcedOf = (body: unknown): { id: string; uploadUrl: string } =>
+    match(body)
+      .with(
+        { data: { attachment: { id: P.string }, uploadUrl: P.string } },
+        ({ data }) => ({ id: data.attachment.id, uploadUrl: data.uploadUrl }),
+      )
+      .otherwise(() => {
+        throw new Error(`No upload URL in ${JSON.stringify(body)}`)
+      })
+
+  it.each([
+    ['GET', ATTACHMENTS],
+    ['POST', `${ATTACHMENTS}/upload-url`],
+    ['POST', `${ATTACHMENTS}/purge`],
+  ])(
+    'should answer %s %s with 401 when no access token is sent',
+    async (method, path) => {
+      const { server } = await start(createConfig().config)
+
+      const response = await fetch(`http://127.0.0.1:${server.port}${path}`, {
+        method,
+      })
+      const problem = await response.json()
+      await server.stop()
+
+      expect(response.status).toBe(401)
+      expect(problem).toMatchObject({ status: 401, code: '1001' })
+    },
+  )
+
+  it('should sign the URL of an upload for the configured storage without reaching it, and answer 500 with the cause in the log once a file is to be looked at and nothing listens there', async () => {
+    const database = await createSchemaDatabase()
+    const { config } = createConfig()
+    const { server, logs } = await start({
+      ...config,
+      database: { ...config.database, url: database.url },
+      storage: {
+        ...config.storage,
+        publicEndpoint: 'https://files.salon.example',
+        bucket: 'files-of-the-server-tests',
+        accessKeyId: 'key-id-of-the-server-tests',
+        secretAccessKey: 'secret-31337-of-the-server-tests',
+      },
+    })
+    const hashed = await new Argon2PasswordHasher().hash(PASSWORD)
+    if (hashed.type === 'error') {
+      throw new Error('Hashing the test password failed')
+    }
+    const client = postgres(database.url, { max: 1 })
+    await client`
+      INSERT INTO users (email, "passwordHash", role, status, "emailVerified")
+      VALUES (${EMAIL}, ${hashed.data}, 'admin', 'active', true)
+    `
+    await client.end()
+
+    const login = await send(server.port, '/api/v1/auth/login', {
+      email: EMAIL,
+      password: PASSWORD,
+      rememberMe: false,
+      twoFactorCode: null,
+    })
+    const accessToken = accessTokenOf(await login.json())
+    const announcement = await send(
+      server.port,
+      `${ATTACHMENTS}/upload-url`,
+      {
+        filename: 'before.png',
+        contentType: 'image/png',
+        size: 64,
+        salonId: null,
+      },
+      accessToken,
+    )
+    const announced = announcedOf(await announcement.json())
+    const completion = await send(
+      server.port,
+      `${ATTACHMENTS}/${announced.id}/complete`,
+      null,
+      accessToken,
+    )
+    const problem = await completion.json()
+    await server.stop()
+    await database.drop()
+
+    expect(announcement.status).toBe(201)
+    const signed = new URL(announced.uploadUrl)
+    expect(signed.origin).toBe('https://files.salon.example')
+    expect(signed.pathname).toBe(
+      `/files-of-the-server-tests/attachments/${announced.id}`,
+    )
+    expect(signed.searchParams.get('X-Amz-Credential')).toContain(
+      'key-id-of-the-server-tests/',
+    )
+    // Fifteen minutes from the moment the attachment was written, in the
+    // whole seconds a signature counts in: never less.
+    expect(['900', '901']).toContain(signed.searchParams.get('X-Amz-Expires'))
+
+    expect(completion.status).toBe(500)
+    expect(problem).toMatchObject({
+      type: 'urn:beauty-salon:problem:storage',
+      status: 500,
+      code: '4004',
+      detail: null,
+    })
+    expect(logs).toContainEqual(
+      expect.objectContaining({
+        level: 'error',
+        msg: 'Failed to read the stored file',
+        cause: expect.objectContaining({ status: null }),
+      }),
+    )
+    expect(JSON.stringify(logs)).not.toContain('31337')
+    expect(JSON.stringify(logs)).not.toContain('X-Amz-Signature')
+    expect(JSON.stringify(problem)).not.toContain('127.0.0.1')
   })
 })
