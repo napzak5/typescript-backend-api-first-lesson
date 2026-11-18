@@ -411,6 +411,7 @@ The kinds of error an endpoint test meets:
 | Wrong email or password (login only) | 401 | `invalid-credentials` | `1002` | `null` |
 | Right password, and the code of two-factor authentication is missing or refused (login only) | 401 | `two-factor-required` | `1007` | `null` |
 | Not allowed | 403 | `forbidden` | `1005` | `null` |
+| A share link has a password and the request brought none that is accepted (the two operations of a viewer only) | 403 | `password-required` | `1002` | `null` |
 | Not found | 404 | `not-found` | `3001` | `null` |
 | Already exists | 409 | `already-exists` | `3002` | `null` |
 | The state does not allow the operation (the two-factor operations) | 409 | `operation-not-allowed` | `3003` | `null` |

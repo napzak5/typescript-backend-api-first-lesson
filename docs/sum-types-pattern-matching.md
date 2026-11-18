@@ -159,6 +159,7 @@ export type DomainError =
   | { type: 'validation'; message: string; issues: ValidationIssue[] }
   | { type: 'unauthenticated'; reason: AuthenticationFailure }
   | { type: 'forbidden' }
+  | { type: 'passwordRequired' }
   | { type: 'notFound'; entity: string; id: string }
   | { type: 'alreadyExists'; entity: string; field: string; value: string }
   | { type: 'conflict'; message: string }
@@ -173,6 +174,7 @@ export type DomainError =
 | `validation` | `parseWith`（`backend/packages/domain/src/shared/validation.ts`）が Zod の検証結果から作る。認証のユースケースは、スキーマでは確認できない規則（推測されやすいパスワード、現在のパスワードの誤り、使えないトークン、受け付けられない 2 要素認証のコード、そのユーザーのセッションを指していないセッション一覧のカーソル）についても作る。サービスカテゴリーのユースケースも、親にできないカテゴリーを指す `parentId`（同じサロンのカテゴリーでない、またはそのカテゴリー自身かその下位のカテゴリー）と、そのサロンのカテゴリーを指していない一覧のカーソルについて作る。サービスのユースケースも、2 つの項目を結ぶ規則（`discountPrice` と `price`、`isPackage` と `packageServiceIds`）に反するサービス、同じサロンのものでないカテゴリー、パッケージの構成にできないサービス、パッケージに含まれているサービスをパッケージにする変更、そのサロンのサービスを指していない一覧のカーソルについて作る。リポジトリの拒否（`ServiceChangeRefusal`）から作る場所は、`backend/packages/domain/src/business-logic/service/_shared/refusals.ts` の `toRefusalError` の 1 か所である。顧客のユースケースも、生年月日の範囲（1900-01-01 以降で、未来の日付でない。未来かどうかは、依存の `clock` が返す現在時刻で決まる）、紹介元にできない顧客を指す `referredBy`（その顧客自身、または存在しないか削除済みの顧客）、顧客を指していない一覧のカーソルについて作る。スタッフの一覧のユースケースも、そのサロンのスタッフを指していないカーソルについて作る | 400 |
 | `unauthenticated` | 認証のユースケース（`backend/packages/domain/src/business-logic/auth/`）。有効なアクセストークンがない、ログインやトークンの再発行に失敗したとき。2 要素認証が有効なアカウントのログインで、コードがない・受け付けられないときも含む。理由は `reason` が持つ | 401 |
 | `forbidden` | ユースケース。操作者にその操作の権限がないとき | 403 |
+| `passwordRequired` | 共有リンクの閲覧のユースケース。パスワードで保護した共有リンクに、受け付けられるパスワードが届かなかったとき（ない、違う、ロック中） | 403 |
 | `notFound` | ユースケース。リポジトリが `null`（削除では `false`）を返したとき、またはリポジトリの結果が `notFound` のケースだったとき（`ServiceCategoryUpdate`、`ServiceUpdate`、`ServiceBulkUpdate`、`ServiceDeletion`、`CustomerUpdate`）。サロンの下にあるルートでは、パスのサロンが存在しないときも作る（`backend/packages/domain/src/business-logic/_shared/existing-salon.ts` の `requireSalon`） | 404 |
 | `alreadyExists` | リポジトリ。書き込みが一意性に違反したとき。サロンのメールアドレス、顧客のメールアドレス（削除されていない顧客の間で一意）、顧客の紹介コード（削除済みを含むすべての顧客の間で一意）、スタッフのメールアドレス（同じサロンの削除されていないスタッフの間で一意）、スタッフコード（同じサロンの、削除済みを含むすべてのスタッフの間で一意）。どれに違反したかは、違反した制約の名前で見分ける | 409 |
 | `conflict` | 2 要素認証のユースケースと、管理者の操作のユースケース。リクエストは正しいが、対象の状態がその操作を許さないとき（すでに有効なのに設定を開始する、ロックされていないアカウントのロックを解除する、など）。サービスの削除のユースケースも、パッケージに含まれているサービスについて作る。顧客、スタッフ、サービス、サロンの削除のユースケースは、終わっていない予約が参照しているときにも作る（`backend/packages/domain/src/business-logic/_shared/unfinished-bookings.ts`）。スタッフの更新と削除のユースケースは、操作者が自分のアカウントの属するスタッフ情報を無効化または削除しようとしたときに作る（`backend/packages/domain/src/business-logic/staff/_shared/refusals.ts`）。権限がないのではなく、その操作が成り立たないので、`forbidden` ではない | 409 |
@@ -336,11 +338,11 @@ export const toHttpError = (error: unknown): HttpError =>
 
 ### `if` で足りるとき
 
-1つのケースだけを特別に扱うなら、`type` の比較で十分です。
+1 つか 2 つのケースだけを特別に扱うなら、`type` の比較で十分です（下の例は、原因をログに書く 2 つのケース）。
 
 ```typescript
 // backend/packages/api/src/shared/responses.ts（sendProblem の冒頭）
-if (error.type === 'database') {
+if (error.type === 'database' || error.type === 'storage') {
   req.log.error({ cause: error.cause }, error.message)
 }
 ```
@@ -348,7 +350,7 @@ if (error.type === 'database') {
 使い分けは次のとおりです。
 
 - すべてのケースで違うことをする: `match(...).exhaustive()`
-- 失敗をそのまま呼び出し元へ返す、または1ケースだけ扱う: `if (x.type === '...')`
+- 失敗をそのまま呼び出し元へ返す、または 1 つか 2 つのケースだけ扱う: `if (x.type === '...')`
 - 成功値やエラーを変換するだけ: `Result.map` / `Result.mapError` / `Result.flatMap`
 
 ## ケースを追加するとき
