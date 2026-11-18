@@ -32,7 +32,7 @@
     "@beauty-salon-shared/config": "workspace:*",
     "@rslib/core": "^1.0.7",
     "@types/node": "^26.6.6",
-    "orval": "^8.47.0",
+    "orval": "^8.48.0",
     "ts-pattern": "^5.9.2",
     "typescript": "^7.0.2",
     "vitest": "^5.1.0"

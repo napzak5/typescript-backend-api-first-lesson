@@ -24,7 +24,7 @@ let smtp: Pick<SmtpSettings, 'host' | 'port'> = { host: '', port: 0 }
 let mailpit = ''
 
 beforeAll(async () => {
-  container = await new GenericContainer('axllent/mailpit:v1.33.1')
+  container = await new GenericContainer('axllent/mailpit:v1.34.0')
     .withEnvironment({
       MP_SMTP_AUTH_ACCEPT_ANY: 'true',
       MP_SMTP_AUTH_ALLOW_INSECURE: 'true',

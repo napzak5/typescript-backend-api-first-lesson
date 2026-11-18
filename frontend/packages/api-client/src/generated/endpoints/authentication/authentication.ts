@@ -57,6 +57,26 @@ import { customInstance } from '../../../mutator';
 
 
 
+const getHeaders = (...sources: (RequestInit['headers'] | Record<string, string | undefined>)[]) => {
+  const seen = new Set<string>();
+  const layers: [string, string | readonly string[]][][] = [];
+  for (const source of sources.reverse()) {
+    if (!source) continue;
+    const entries = source instanceof Headers
+      ? source.entries()
+      : Symbol.iterator in source
+        ? Array.from(source as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string])
+        : Object.entries<string | readonly string[] | undefined>(source);
+    const layer: [string, string | readonly string[]][] = [];
+    for (const [name, value] of entries) {
+      if (value !== undefined && !seen.has(name.toLowerCase())) layer.push([name, value]);
+    }
+    for (const [name] of layer) seen.add(name.toLowerCase());
+    layers.push(layer);
+  }
+  return Object.fromEntries(layers.reverse().flat()) as Extract<RequestInit['headers'], Record<string, unknown>>;
+};
+
 
 const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKey: K } => {
   const result = { queryKey } as T & { queryKey: K };
@@ -136,25 +156,11 @@ export const getAuthCrudGenerateBackupCodesUrl = () => {
  */
 export const authCrudGenerateBackupCodes = async (modelsAuthTwoFactorBackupCodesRequest: ModelsAuthTwoFactorBackupCodesRequest, options?: RequestInit): Promise<authCrudGenerateBackupCodesResponse> => {
 
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return customInstance<authCrudGenerateBackupCodesResponse>(getAuthCrudGenerateBackupCodesUrl(),
+  return customInstance<authCrudGenerateBackupCodesResponse>(getAuthCrudGenerateBackupCodesUrl(),
   {
     ...options,
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
     body: JSON.stringify(modelsAuthTwoFactorBackupCodesRequest)
   }
 );}
@@ -274,25 +280,11 @@ export const getAuthCrudDisableTwoFactorUrl = () => {
  */
 export const authCrudDisableTwoFactor = async (modelsAuthTwoFactorDisableRequest: ModelsAuthTwoFactorDisableRequest, options?: RequestInit): Promise<authCrudDisableTwoFactorResponse> => {
 
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return customInstance<authCrudDisableTwoFactorResponse>(getAuthCrudDisableTwoFactorUrl(),
+  return customInstance<authCrudDisableTwoFactorResponse>(getAuthCrudDisableTwoFactorUrl(),
   {
     ...options,
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
     body: JSON.stringify(modelsAuthTwoFactorDisableRequest)
   }
 );}
@@ -412,25 +404,11 @@ export const getAuthCrudEnableTwoFactorUrl = () => {
  */
 export const authCrudEnableTwoFactor = async (modelsAuthTwoFactorEnableRequest: ModelsAuthTwoFactorEnableRequest, options?: RequestInit): Promise<authCrudEnableTwoFactorResponse> => {
 
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return customInstance<authCrudEnableTwoFactorResponse>(getAuthCrudEnableTwoFactorUrl(),
+  return customInstance<authCrudEnableTwoFactorResponse>(getAuthCrudEnableTwoFactorUrl(),
   {
     ...options,
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
     body: JSON.stringify(modelsAuthTwoFactorEnableRequest)
   }
 );}
@@ -550,25 +528,11 @@ export const getAuthCrudVerifyTwoFactorUrl = () => {
  */
 export const authCrudVerifyTwoFactor = async (modelsAuthTwoFactorVerifyRequest: ModelsAuthTwoFactorVerifyRequest, options?: RequestInit): Promise<authCrudVerifyTwoFactorResponse> => {
 
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return customInstance<authCrudVerifyTwoFactorResponse>(getAuthCrudVerifyTwoFactorUrl(),
+  return customInstance<authCrudVerifyTwoFactorResponse>(getAuthCrudVerifyTwoFactorUrl(),
   {
     ...options,
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
     body: JSON.stringify(modelsAuthTwoFactorVerifyRequest)
   }
 );}
@@ -683,25 +647,11 @@ export const getAuthCrudChangePasswordUrl = () => {
  */
 export const authCrudChangePassword = async (modelsAuthPasswordChangeRequest: ModelsAuthPasswordChangeRequest, options?: RequestInit): Promise<authCrudChangePasswordResponse> => {
 
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return customInstance<authCrudChangePasswordResponse>(getAuthCrudChangePasswordUrl(),
+  return customInstance<authCrudChangePasswordResponse>(getAuthCrudChangePasswordUrl(),
   {
     ...options,
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
     body: JSON.stringify(modelsAuthPasswordChangeRequest)
   }
 );}
@@ -811,25 +761,11 @@ export const getAuthCrudForgotPasswordUrl = () => {
  */
 export const authCrudForgotPassword = async (modelsAuthPasswordForgotRequest: ModelsAuthPasswordForgotRequest, options?: RequestInit): Promise<authCrudForgotPasswordResponse> => {
 
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return customInstance<authCrudForgotPasswordResponse>(getAuthCrudForgotPasswordUrl(),
+  return customInstance<authCrudForgotPasswordResponse>(getAuthCrudForgotPasswordUrl(),
   {
     ...options,
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
     body: JSON.stringify(modelsAuthPasswordForgotRequest)
   }
 );}
@@ -944,25 +880,11 @@ export const getAuthCrudLoginUrl = () => {
  */
 export const authCrudLogin = async (modelsAuthLoginRequest: ModelsAuthLoginRequest, options?: RequestInit): Promise<authCrudLoginResponse> => {
 
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return customInstance<authCrudLoginResponse>(getAuthCrudLoginUrl(),
+  return customInstance<authCrudLoginResponse>(getAuthCrudLoginUrl(),
   {
     ...options,
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
     body: JSON.stringify(modelsAuthLoginRequest)
   }
 );}
@@ -1427,25 +1349,11 @@ export const getAuthCrudRefreshTokenUrl = () => {
  */
 export const authCrudRefreshToken = async (modelsAuthTokenRefreshRequest: ModelsAuthTokenRefreshRequest, options?: RequestInit): Promise<authCrudRefreshTokenResponse> => {
 
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return customInstance<authCrudRefreshTokenResponse>(getAuthCrudRefreshTokenUrl(),
+  return customInstance<authCrudRefreshTokenResponse>(getAuthCrudRefreshTokenUrl(),
   {
     ...options,
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
     body: JSON.stringify(modelsAuthTokenRefreshRequest)
   }
 );}
@@ -1555,25 +1463,11 @@ export const getAuthCrudRegisterUrl = () => {
  */
 export const authCrudRegister = async (modelsAuthRegisterRequest: ModelsAuthRegisterRequest, options?: RequestInit): Promise<authCrudRegisterResponse> => {
 
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return customInstance<authCrudRegisterResponse>(getAuthCrudRegisterUrl(),
+  return customInstance<authCrudRegisterResponse>(getAuthCrudRegisterUrl(),
   {
     ...options,
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
     body: JSON.stringify(modelsAuthRegisterRequest)
   }
 );}
@@ -1683,25 +1577,11 @@ export const getAuthCrudResetPasswordUrl = () => {
  */
 export const authCrudResetPassword = async (modelsAuthPasswordResetConfirmRequest: ModelsAuthPasswordResetConfirmRequest, options?: RequestInit): Promise<authCrudResetPasswordResponse> => {
 
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return customInstance<authCrudResetPasswordResponse>(getAuthCrudResetPasswordUrl(),
+  return customInstance<authCrudResetPasswordResponse>(getAuthCrudResetPasswordUrl(),
   {
     ...options,
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
     body: JSON.stringify(modelsAuthPasswordResetConfirmRequest)
   }
 );}
@@ -1811,25 +1691,11 @@ export const getAuthCrudVerifyResetTokenUrl = () => {
  */
 export const authCrudVerifyResetToken = async (modelsAuthPasswordResetVerifyRequest: ModelsAuthPasswordResetVerifyRequest, options?: RequestInit): Promise<authCrudVerifyResetTokenResponse> => {
 
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return customInstance<authCrudVerifyResetTokenResponse>(getAuthCrudVerifyResetTokenUrl(),
+  return customInstance<authCrudVerifyResetTokenResponse>(getAuthCrudVerifyResetTokenUrl(),
   {
     ...options,
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
     body: JSON.stringify(modelsAuthPasswordResetVerifyRequest)
   }
 );}
@@ -2212,25 +2078,11 @@ export const getAuthCrudAcceptStaffInvitationUrl = () => {
  */
 export const authCrudAcceptStaffInvitation = async (modelsAuthStaffInvitationAcceptRequest: ModelsAuthStaffInvitationAcceptRequest, options?: RequestInit): Promise<authCrudAcceptStaffInvitationResponse> => {
 
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return customInstance<authCrudAcceptStaffInvitationResponse>(getAuthCrudAcceptStaffInvitationUrl(),
+  return customInstance<authCrudAcceptStaffInvitationResponse>(getAuthCrudAcceptStaffInvitationUrl(),
   {
     ...options,
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
     body: JSON.stringify(modelsAuthStaffInvitationAcceptRequest)
   }
 );}
@@ -2355,25 +2207,11 @@ export const getAuthCrudJoinStaffInvitationUrl = () => {
  */
 export const authCrudJoinStaffInvitation = async (modelsAuthStaffInvitationJoinRequest: ModelsAuthStaffInvitationJoinRequest, options?: RequestInit): Promise<authCrudJoinStaffInvitationResponse> => {
 
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return customInstance<authCrudJoinStaffInvitationResponse>(getAuthCrudJoinStaffInvitationUrl(),
+  return customInstance<authCrudJoinStaffInvitationResponse>(getAuthCrudJoinStaffInvitationUrl(),
   {
     ...options,
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
     body: JSON.stringify(modelsAuthStaffInvitationJoinRequest)
   }
 );}
@@ -2488,25 +2326,11 @@ export const getAuthCrudVerifyStaffInvitationUrl = () => {
  */
 export const authCrudVerifyStaffInvitation = async (modelsAuthStaffInvitationVerifyRequest: ModelsAuthStaffInvitationVerifyRequest, options?: RequestInit): Promise<authCrudVerifyStaffInvitationResponse> => {
 
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return customInstance<authCrudVerifyStaffInvitationResponse>(getAuthCrudVerifyStaffInvitationUrl(),
+  return customInstance<authCrudVerifyStaffInvitationResponse>(getAuthCrudVerifyStaffInvitationUrl(),
   {
     ...options,
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
     body: JSON.stringify(modelsAuthStaffInvitationVerifyRequest)
   }
 );}
@@ -2616,25 +2440,11 @@ export const getAuthCrudConfirmEmailVerificationUrl = () => {
  */
 export const authCrudConfirmEmailVerification = async (modelsAuthEmailVerificationConfirmRequest: ModelsAuthEmailVerificationConfirmRequest, options?: RequestInit): Promise<authCrudConfirmEmailVerificationResponse> => {
 
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return customInstance<authCrudConfirmEmailVerificationResponse>(getAuthCrudConfirmEmailVerificationUrl(),
+  return customInstance<authCrudConfirmEmailVerificationResponse>(getAuthCrudConfirmEmailVerificationUrl(),
   {
     ...options,
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
     body: JSON.stringify(modelsAuthEmailVerificationConfirmRequest)
   }
 );}
@@ -2744,25 +2554,11 @@ export const getAuthCrudSendEmailVerificationUrl = () => {
  */
 export const authCrudSendEmailVerification = async (modelsAuthEmailVerificationSendRequest: ModelsAuthEmailVerificationSendRequest, options?: RequestInit): Promise<authCrudSendEmailVerificationResponse> => {
 
-    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
-    if (!h) return {};
-    if (h instanceof Headers) return Object.fromEntries(h.entries());
-    if (Symbol.iterator in h) {
-      return Object.fromEntries(
-        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
-      );
-    }
-    const headers: Record<string, string | readonly string[]> = {};
-    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
-      if (value !== undefined) headers[name] = value;
-    }
-    return headers;
-  };
-return customInstance<authCrudSendEmailVerificationResponse>(getAuthCrudSendEmailVerificationUrl(),
+  return customInstance<authCrudSendEmailVerificationResponse>(getAuthCrudSendEmailVerificationUrl(),
   {
     ...options,
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    headers: getHeaders({ 'Content-Type': 'application/json' }, options?.headers),
     body: JSON.stringify(modelsAuthEmailVerificationSendRequest)
   }
 );}

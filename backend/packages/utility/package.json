@@ -34,7 +34,7 @@
     "@beauty-salon-shared/config": "workspace:*",
     "@rslib/core": "^1.0.7",
     "@types/node": "^26.6.6",
-    "type-fest": "^5.10.0",
+    "type-fest": "^6.0.1",
     "typescript": "^7.0.2",
     "utility-types": "^3.11.0",
     "vitest": "^5.1.0"
