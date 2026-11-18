@@ -1,4 +1,3 @@
-import type { Environment } from '@beauty-salon-backend/config'
 import { sql } from 'drizzle-orm'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import * as schema from '../schema'
@@ -19,14 +18,6 @@ import { seedUsers } from './seed-data/users'
 
 export interface SeedOptions {
   /**
-   * The environment to seed for
-   */
-  environment?: Environment
-  /**
-   * Whether to include sample data
-   */
-  includeSampleData?: boolean
-  /**
    * Whether to reset the database before seeding
    */
   reset?: boolean
@@ -39,85 +30,72 @@ export async function seed(
   db: PostgresJsDatabase<typeof schema>,
   options: SeedOptions = {},
 ): Promise<void> {
-  const {
-    environment = 'development',
-    includeSampleData = true,
-    reset = false,
-  } = options
+  const { reset = false } = options
 
-  console.log(`Starting seed for environment: ${environment}`)
-
-  try {
-    if (reset) {
-      console.log('Resetting database...')
-      await truncateAll(db)
-    }
-
-    // Seed base data in order of dependencies
-    console.log('Seeding salons...')
-    const salonIds = await seedSalons(db)
-
-    console.log('Seeding users...')
-    const userResult = await seedUsers(db)
-
-    console.log('Seeding customers...')
-    const customerResult = await seedCustomers(db, {
-      customerUserIds: userResult.customerUserIds,
-    })
-
-    console.log('Seeding medical charts...')
-    await seedMedicalCharts(db, customerResult.customerIds)
-
-    console.log('Seeding customer allergies...')
-    await seedCustomerAllergies(db, customerResult.customerIds)
-
-    console.log('Seeding staff...')
-    await seedStaff(db, salonIds, {
-      staffUserIds: userResult.staffUserIds,
-      ownerUserId: userResult.ownerUserId,
-      managerUserId: userResult.managerUserId,
-    })
-
-    console.log('Seeding service categories...')
-    const categoryResult = await seedServiceCategories(db, salonIds)
-
-    console.log('Seeding services...')
-    await seedServices(db, salonIds, categoryResult)
-
-    console.log('Seeding opening hours...')
-    await seedOpeningHours(db, salonIds)
-
-    console.log('Seeding payment methods...')
-    await seedPaymentMethods(db, salonIds)
-
-    console.log('Seeding products and inventory...')
-    await seedProducts(db, salonIds)
-
-    if (includeSampleData) {
-      console.log('Seeding bookings...')
-      const completedBookings = await seedBookings(db, {
-        salonIds,
-        customerIds: customerResult.customerIds,
-        vipCustomerId: customerResult.vipCustomerId,
-      })
-
-      console.log('Seeding reviews...')
-      await seedReviews(db, completedBookings, customerResult.customerIds, {
-        adminUserId: userResult.adminUserId,
-      })
-
-      const [firstSalonId] = salonIds
-      if (firstSalonId !== undefined) {
-        console.log('Seeding treatment records...')
-        await seedTreatmentRecords(db, completedBookings, firstSalonId)
-      }
-    }
-
-    console.log('Seeding completed successfully!')
-  } catch (error) {
-    console.error('Seeding failed:', error)
-    throw error
+  if (reset) {
+    console.log('Resetting database...')
+    await truncateAll(db)
   }
+
+  // Seed base data in order of dependencies
+  console.log('Seeding salons...')
+  const salonIds = await seedSalons(db)
+
+  console.log('Seeding users...')
+  const userResult = await seedUsers(db)
+
+  console.log('Seeding customers...')
+  const customerResult = await seedCustomers(db, {
+    customerUserIds: userResult.customerUserIds,
+  })
+
+  console.log('Seeding medical charts...')
+  await seedMedicalCharts(db, customerResult.customerIds)
+
+  console.log('Seeding customer allergies...')
+  await seedCustomerAllergies(db, customerResult.customerIds)
+
+  console.log('Seeding staff...')
+  await seedStaff(db, salonIds, {
+    staffUserIds: userResult.staffUserIds,
+    ownerUserId: userResult.ownerUserId,
+    managerUserId: userResult.managerUserId,
+  })
+
+  console.log('Seeding service categories...')
+  const categoryResult = await seedServiceCategories(db, salonIds)
+
+  console.log('Seeding services...')
+  await seedServices(db, salonIds, categoryResult)
+
+  console.log('Seeding opening hours...')
+  await seedOpeningHours(db, salonIds)
+
+  console.log('Seeding payment methods...')
+  await seedPaymentMethods(db, salonIds)
+
+  console.log('Seeding products and inventory...')
+  await seedProducts(db, salonIds)
+
+  console.log('Seeding bookings...')
+  const completedBookings = await seedBookings(db, {
+    salonIds,
+    customerIds: customerResult.customerIds,
+    vipCustomerId: customerResult.vipCustomerId,
+  })
+
+  console.log('Seeding reviews...')
+  await seedReviews(db, completedBookings, customerResult.customerIds, {
+    adminUserId: userResult.adminUserId,
+  })
+
+  const [firstSalonId] = salonIds
+  if (firstSalonId !== undefined) {
+    console.log('Seeding treatment records...')
+    await seedTreatmentRecords(db, completedBookings, firstSalonId)
+  }
+
+  console.log('Seeding completed successfully!')
 }
 
 /**

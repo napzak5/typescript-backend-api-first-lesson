@@ -5,6 +5,7 @@ import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 import * as schema from '../schema'
 import { seed } from '../seeds/index'
+import { planSeed } from './seed-plan'
 
 // Load environment-specific configuration
 const environment = loadEnvConfig()
@@ -37,13 +38,34 @@ async function main() {
   const db = drizzle(sql, { schema })
 
   try {
-    if (onlyIfEmpty && (await db.$count(schema.salons)) > 0) {
+    const plan = planSeed({
+      hasData: (await db.$count(schema.salons)) > 0,
+      reset: shouldReset,
+      onlyIfEmpty,
+    })
+
+    if (plan === 'skip') {
       console.log('⏭️  The database already has data, nothing to seed')
       await sql.end()
       process.exit(0)
     }
 
-    await seed(db, { reset: shouldReset })
+    if (plan === 'refuse') {
+      console.error(
+        '❌ The database already has data, and the seed would insert the same rows again. Nothing was written.',
+      )
+      console.error('')
+      console.error(
+        '   pnpm db:seed --reset      # delete all rows, then insert the seed data',
+      )
+      console.error(
+        '   pnpm db:seed --if-empty   # leave a database with data as it is',
+      )
+      await sql.end()
+      process.exit(1)
+    }
+
+    await seed(db, { reset: plan === 'reset-and-insert' })
 
     console.log('')
     console.log('📊 Collecting seeding statistics...')
@@ -215,14 +237,17 @@ Database Population Script
 
 Usage: pnpm db:seed [options]
 
+Without an option, a database that already has data is refused: the seed
+inserts fixed rows and cannot be added to them.
+
 Options:
-  --reset, -r         Reset database before seeding
+  --reset, -r         Delete all rows before seeding
   --if-empty          Do nothing when the database already has data
   --help, -h          Show this help message
 
 Examples:
-  pnpm db:seed                    # Populate database with seed data
-  pnpm db:seed --reset            # Reset and populate database
+  pnpm db:seed                    # Populate a database without data
+  pnpm db:seed --reset            # Delete all rows, then populate
   pnpm db:seed --if-empty         # Populate only a database without data
 `)
   process.exit(0)
