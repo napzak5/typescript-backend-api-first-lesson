@@ -110,7 +110,7 @@ namespace BeautySalon.Operations {
     }
 
     interface ShareLinkCrud {
-      @doc("施術前後の写真や資料を外部パートナーや顧客と共有するためのリンクを発行します。必要に応じてパスワード保護も適用します。添付ファイルが存在しない場合は404を返します。")
+      @doc("アップロード済みの添付ファイルを、アカウントを持たない人(顧客、取引先)に見せるための共有リンクを発行します。リンクのトークンは、このレスポンスにだけ含まれます(サーバーはハッシュだけを保存します)。admin と、添付ファイルのサロンの owner / manager が実行できます(staff と顧客のアカウントは403)。サロンに属さない添付ファイルの共有リンクを扱えるのは admin だけです。本文が不正な場合(過去の有効期限、30日より先の有効期限、単純すぎるパスワード)は400を、ほかのサロンの添付ファイルと削除した添付ファイルは404を、アップロード待ち(pending)の添付ファイルは409を返します。")
       @summary("Create a share link")
       @post
       @route("/{attachmentId}/share-links")
@@ -121,14 +121,15 @@ namespace BeautySalon.Operations {
         | {
             @statusCode statusCode: 201;
             @header("Location") location: string;
-            @body response: ApiResponse<ShareLinkResponse>;
+            @body response: ApiResponse<ShareLinkCreateResponse>;
           }
         | ProblemResponse<400>
         | ProblemResponse<404>
+        | ProblemResponse<409>
         | RequestBodyErrors
         | CommonErrors;
 
-      @doc("対象ファイルに対して発行済みの共有リンクを一覧し、公開状況や有効期限の管理を行います。添付ファイルが存在しない場合は404を返します。")
+      @doc("添付ファイルの共有リンクを、発行の新しい順に一覧します。有効期限を過ぎたものと、ダウンロード回数の上限に達したものも含みます(失効したものは含みません)。実行できるのは、共有リンクの発行と同じ利用者です。ほかのサロンの添付ファイルと削除した添付ファイルは404を返します。")
       @summary("List share links")
       @get
       @route("/{attachmentId}/share-links")
@@ -141,7 +142,7 @@ namespace BeautySalon.Operations {
         | ProblemResponse<404>
         | CommonErrors;
 
-      @doc("IDを指定して共有リンクを1件取得し、公開状況や有効期限、ダウンロード回数を確認します。")
+      @doc("共有リンクを1件取得し、有効期限、ダウンロード回数、パスワードで保護しているかを確認します。実行できるのは、共有リンクの発行と同じ利用者です。ほかのサロンの添付ファイルの共有リンクと、削除した添付ファイルの共有リンクは404を返します。")
       @summary("Get a share link")
       @get
       @route("/share-links/{shareLinkId}")
@@ -154,7 +155,7 @@ namespace BeautySalon.Operations {
         | ProblemResponse<404>
         | CommonErrors;
 
-      @doc("不要になった共有リンクを失効させ、アクセス制御を適切に保ちます。失効後の共有リンクへのアクセスには404を返します。")
+      @doc("共有リンクを失効します。そのトークンでのアクセスは、すぐに404になります。実行できるのは、共有リンクの発行と同じ利用者です。失効した共有リンクは404を返します。")
       @summary("Delete a share link")
       @delete
       @route("/share-links/{shareLinkId}")
@@ -168,48 +169,40 @@ namespace BeautySalon.Operations {
     }
   }
 
-  @doc("共有リンク経由で添付ファイルへアクセスするためのAPIセットです。ゲスト利用者の利便性を確保しつつ、アクセス制御を実現します。アカウントを持たない利用者が使うため認証を必要としません。")
+  @doc("共有リンクで添付ファイルにアクセスするためのAPI操作群です。アカウントを持たない閲覧者が使うので、認証を必要としません。トークンとパスワードは、URLやアクセスログに残らないように、リクエスト本文で受け取ります。")
   @route("/api/v1/share")
   @tag("Share")
   @useAuth(NoAuth)
   namespace ShareOperations {
     interface SharedFileCrud {
-      @doc("共有リンクとパスワードを確認し、公開対象ファイルのメタ情報を閲覧者に提示します。パスワード保護された共有リンクでパスワードが指定されていないか一致しない場合は401を、トークンが存在しない場合と、共有リンクが有効期限切れ・ダウンロード回数の上限到達・失効のいずれかの場合は404を返します。")
+      @doc("共有リンクのトークンとパスワードを確かめて、ファイルの名前、種類、サイズを返します。トークンが存在しない場合と、共有リンクが有効期限切れ・ダウンロード回数の上限到達・失効のいずれかの場合、添付ファイルが削除されている場合は、区別せずに404を返します。パスワードで保護している共有リンクで、パスワードがないか一致しない場合は403を返します。一致しないパスワードが5回続くと、共有リンクを15分のあいだロックし、そのあいだは正しいパスワードでも同じ403を返します。")
       @summary("Get a shared file")
-      @get
-      @route("/{shareToken}")
-      get(
-        @doc("共有リンクのトークン")
-        @path
-        shareToken: string,
-
-        ...ShareLinkAccessRequest,
-      ):
+      @post
+      @route("/file")
+      get(@body request: SharedFileGetRequest):
         | {
             @statusCode statusCode: 200;
             @body response: ApiResponse<SharedFileResponse>;
           }
-        | ProblemResponse<401>
+        | ProblemResponse<400>
+        | ProblemResponse<403>
         | ProblemResponse<404>
+        | RequestBodyErrors
         | PublicErrors;
 
-      @doc("共有リンク利用者が安全にファイル本体を取得できるよう、署名付きダウンロードURLを返却します。パスワード保護された共有リンクでパスワードが指定されていないか一致しない場合は401を、トークンが存在しない場合と、共有リンクが有効期限切れ・ダウンロード回数の上限到達・失効のいずれかの場合は404を返します。")
+      @doc("共有リンクのトークンとパスワードを確かめて、ファイルをダウンロードするための、5分だけ有効なURLを発行し、共有リンクのダウンロード回数を1増やします。404と403を返す条件は、共有ファイルの取得と同じです。")
       @summary("Issue a download URL for a shared file")
-      @get
-      @route("/{shareToken}/download")
-      getDownloadUrl(
-        @doc("共有リンクのトークン")
-        @path
-        shareToken: string,
-
-        ...ShareLinkAccessRequest,
-      ):
+      @post
+      @route("/download-url")
+      getDownloadUrl(@body request: SharedFileDownloadUrlRequest):
         | {
             @statusCode statusCode: 200;
             @body response: ApiResponse<AttachmentDownloadUrlResponse>;
           }
-        | ProblemResponse<401>
+        | ProblemResponse<400>
+        | ProblemResponse<403>
         | ProblemResponse<404>
+        | RequestBodyErrors
         | PublicErrors;
     }
   }

@@ -6,206 +6,24 @@
  * OpenAPI spec version: 2.0
  */
 import {
-  useQuery
+  useMutation
 } from '@tanstack/react-query';
 import type {
-  DataTag,
-  DefinedInitialDataOptions,
-  DefinedUseQueryResult,
+  MutationFunction,
   QueryClient,
-  QueryFunction,
-  QueryKey,
-  UndefinedInitialDataOptions,
-  UseQueryOptions,
-  UseQueryResult
+  UseMutationOptions,
+  UseMutationResult
 } from '@tanstack/react-query';
 
 import type {
   ModelsProblemDetails,
+  ModelsSharedFileDownloadUrlRequest,
+  ModelsSharedFileGetRequest,
   SharedFileCrudGet200,
-  SharedFileCrudGetDownloadUrl200,
-  SharedFileCrudGetDownloadUrlParams,
-  SharedFileCrudGetParams
+  SharedFileCrudGetDownloadUrl200
 } from '../../models';
 
 import { customInstance } from '../../../mutator';
-
-
-
-
-const withQueryKey = <T extends object, K>(query: T, queryKey: K): T & { queryKey: K } => {
-  const result = { queryKey } as T & { queryKey: K };
-  for (const key of Object.keys(query)) {
-    // The explicit queryKey always wins, matching the previous
-    // `{ ...query, queryKey }` spread where it was set last.
-    if (key === 'queryKey') continue;
-    Object.defineProperty(result, key, {
-      enumerable: true,
-      configurable: true,
-      get: () => (query as Record<string, unknown>)[key],
-    });
-  }
-  return result;
-};
-
-export type sharedFileCrudGetResponse200 = {
-  data: SharedFileCrudGet200
-  status: 200
-}
-
-export type sharedFileCrudGetResponse401 = {
-  data: ModelsProblemDetails
-  status: 401
-}
-
-export type sharedFileCrudGetResponse404 = {
-  data: ModelsProblemDetails
-  status: 404
-}
-
-export type sharedFileCrudGetResponse429 = {
-  data: ModelsProblemDetails
-  status: 429
-}
-
-export type sharedFileCrudGetResponse500 = {
-  data: ModelsProblemDetails
-  status: 500
-}
-
-export type sharedFileCrudGetResponseSuccess = (sharedFileCrudGetResponse200) & {
-  headers: Headers;
-};
-export type sharedFileCrudGetResponseError = (sharedFileCrudGetResponse401 | sharedFileCrudGetResponse404 | sharedFileCrudGetResponse429 | sharedFileCrudGetResponse500) & {
-  headers: Headers;
-};
-
-export type sharedFileCrudGetResponse = (sharedFileCrudGetResponseSuccess | sharedFileCrudGetResponseError)
-
-export const getSharedFileCrudGetUrl = (shareToken: string,
-    params?: SharedFileCrudGetParams,) => {
-  const normalizedParams = new URLSearchParams();
-
-  Object.entries(params || {}).forEach(([key, value]) => {
-
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : String(value))
-    }
-  });
-
-  const stringifiedParams = normalizedParams.toString();
-
-  return stringifiedParams.length > 0 ? `/api/v1/share/${shareToken}?${stringifiedParams}` : `/api/v1/share/${shareToken}`
-}
-
-/**
- * 共有リンクとパスワードを確認し、公開対象ファイルのメタ情報を閲覧者に提示します。パスワード保護された共有リンクでパスワードが指定されていないか一致しない場合は401を、トークンが存在しない場合と、共有リンクが有効期限切れ・ダウンロード回数の上限到達・失効のいずれかの場合は404を返します。
- * @summary Get a shared file
- */
-export const sharedFileCrudGet = async (shareToken: string,
-    params?: SharedFileCrudGetParams, options?: RequestInit): Promise<sharedFileCrudGetResponse> => {
-
-  return customInstance<sharedFileCrudGetResponse>(getSharedFileCrudGetUrl(shareToken,params),
-  {
-    ...options,
-    method: 'GET'
-
-
-  }
-);}
-
-
-
-
-
-export const getSharedFileCrudGetQueryKey = (shareToken: string,
-    params?: SharedFileCrudGetParams,) => {
-    return [
-    `/api/v1/share/${shareToken}`, ...(params ? [params] : [])
-    ] as const;
-    }
-
-
-export const getSharedFileCrudGetQueryOptions = <TData = Awaited<ReturnType<typeof sharedFileCrudGet>>, TError = ModelsProblemDetails>(shareToken: string,
-    params?: SharedFileCrudGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof sharedFileCrudGet>>, TError, TData>>, }
-) => {
-
-const {query: queryOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getSharedFileCrudGetQueryKey(shareToken,params);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof sharedFileCrudGet>>> = ({ signal }) => sharedFileCrudGet(shareToken,params, { signal });
-
-
-
-
-
-   return  { queryKey, queryFn, enabled: shareToken !== null && shareToken !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof sharedFileCrudGet>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
-}
-
-export type SharedFileCrudGetQueryResult = NonNullable<Awaited<ReturnType<typeof sharedFileCrudGet>>>
-export type SharedFileCrudGetQueryError = ModelsProblemDetails
-
-
-/**
- * 共有リンクとパスワードを確認し、公開対象ファイルのメタ情報を閲覧者に提示します。パスワード保護された共有リンクでパスワードが指定されていないか一致しない場合は401を、トークンが存在しない場合と、共有リンクが有効期限切れ・ダウンロード回数の上限到達・失効のいずれかの場合は404を返します。
- * @summary Get a shared file
- */
-export function useSharedFileCrudGet<TData = Awaited<ReturnType<typeof sharedFileCrudGet>>, TError = ModelsProblemDetails>(
- shareToken: string,
-    params: undefined |  SharedFileCrudGetParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof sharedFileCrudGet>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof sharedFileCrudGet>>,
-          TError,
-          Awaited<ReturnType<typeof sharedFileCrudGet>>
-        > , 'initialData'
-      >, }
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * 共有リンクとパスワードを確認し、公開対象ファイルのメタ情報を閲覧者に提示します。パスワード保護された共有リンクでパスワードが指定されていないか一致しない場合は401を、トークンが存在しない場合と、共有リンクが有効期限切れ・ダウンロード回数の上限到達・失効のいずれかの場合は404を返します。
- * @summary Get a shared file
- */
-export function useSharedFileCrudGet<TData = Awaited<ReturnType<typeof sharedFileCrudGet>>, TError = ModelsProblemDetails>(
- shareToken: string,
-    params?: SharedFileCrudGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof sharedFileCrudGet>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof sharedFileCrudGet>>,
-          TError,
-          Awaited<ReturnType<typeof sharedFileCrudGet>>
-        > , 'initialData'
-      >, }
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * 共有リンクとパスワードを確認し、公開対象ファイルのメタ情報を閲覧者に提示します。パスワード保護された共有リンクでパスワードが指定されていないか一致しない場合は401を、トークンが存在しない場合と、共有リンクが有効期限切れ・ダウンロード回数の上限到達・失効のいずれかの場合は404を返します。
- * @summary Get a shared file
- */
-export function useSharedFileCrudGet<TData = Awaited<ReturnType<typeof sharedFileCrudGet>>, TError = ModelsProblemDetails>(
- shareToken: string,
-    params?: SharedFileCrudGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof sharedFileCrudGet>>, TError, TData>>, }
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * 共有リンクとパスワードを確認し、公開対象ファイルのメタ情報を閲覧者に提示します。パスワード保護された共有リンクでパスワードが指定されていないか一致しない場合は401を、トークンが存在しない場合と、共有リンクが有効期限切れ・ダウンロード回数の上限到達・失効のいずれかの場合は404を返します。
- * @summary Get a shared file
- */
-export function useSharedFileCrudGet<TData = Awaited<ReturnType<typeof sharedFileCrudGet>>, TError = ModelsProblemDetails>(
- shareToken: string,
-    params?: SharedFileCrudGetParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof sharedFileCrudGet>>, TError, TData>>, }
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-
-  const queryOptions = getSharedFileCrudGetQueryOptions(shareToken,params,options)
-
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return withQueryKey(query, queryOptions.queryKey);
-}
-
-
 
 
 
@@ -215,14 +33,29 @@ export type sharedFileCrudGetDownloadUrlResponse200 = {
   status: 200
 }
 
-export type sharedFileCrudGetDownloadUrlResponse401 = {
+export type sharedFileCrudGetDownloadUrlResponse400 = {
   data: ModelsProblemDetails
-  status: 401
+  status: 400
+}
+
+export type sharedFileCrudGetDownloadUrlResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
 }
 
 export type sharedFileCrudGetDownloadUrlResponse404 = {
   data: ModelsProblemDetails
   status: 404
+}
+
+export type sharedFileCrudGetDownloadUrlResponse413 = {
+  data: ModelsProblemDetails
+  status: 413
+}
+
+export type sharedFileCrudGetDownloadUrlResponse415 = {
+  data: ModelsProblemDetails
+  status: 415
 }
 
 export type sharedFileCrudGetDownloadUrlResponse429 = {
@@ -238,41 +71,46 @@ export type sharedFileCrudGetDownloadUrlResponse500 = {
 export type sharedFileCrudGetDownloadUrlResponseSuccess = (sharedFileCrudGetDownloadUrlResponse200) & {
   headers: Headers;
 };
-export type sharedFileCrudGetDownloadUrlResponseError = (sharedFileCrudGetDownloadUrlResponse401 | sharedFileCrudGetDownloadUrlResponse404 | sharedFileCrudGetDownloadUrlResponse429 | sharedFileCrudGetDownloadUrlResponse500) & {
+export type sharedFileCrudGetDownloadUrlResponseError = (sharedFileCrudGetDownloadUrlResponse400 | sharedFileCrudGetDownloadUrlResponse403 | sharedFileCrudGetDownloadUrlResponse404 | sharedFileCrudGetDownloadUrlResponse413 | sharedFileCrudGetDownloadUrlResponse415 | sharedFileCrudGetDownloadUrlResponse429 | sharedFileCrudGetDownloadUrlResponse500) & {
   headers: Headers;
 };
 
 export type sharedFileCrudGetDownloadUrlResponse = (sharedFileCrudGetDownloadUrlResponseSuccess | sharedFileCrudGetDownloadUrlResponseError)
 
-export const getSharedFileCrudGetDownloadUrlUrl = (shareToken: string,
-    params?: SharedFileCrudGetDownloadUrlParams,) => {
-  const normalizedParams = new URLSearchParams();
+export const getSharedFileCrudGetDownloadUrlUrl = () => {
 
-  Object.entries(params || {}).forEach(([key, value]) => {
 
-    if (value !== undefined) {
-      normalizedParams.append(key, value === null ? 'null' : String(value))
-    }
-  });
 
-  const stringifiedParams = normalizedParams.toString();
 
-  return stringifiedParams.length > 0 ? `/api/v1/share/${shareToken}/download?${stringifiedParams}` : `/api/v1/share/${shareToken}/download`
+  return `/api/v1/share/download-url`
 }
 
 /**
- * 共有リンク利用者が安全にファイル本体を取得できるよう、署名付きダウンロードURLを返却します。パスワード保護された共有リンクでパスワードが指定されていないか一致しない場合は401を、トークンが存在しない場合と、共有リンクが有効期限切れ・ダウンロード回数の上限到達・失効のいずれかの場合は404を返します。
+ * 共有リンクのトークンとパスワードを確かめて、ファイルをダウンロードするための、5分だけ有効なURLを発行し、共有リンクのダウンロード回数を1増やします。404と403を返す条件は、共有ファイルの取得と同じです。
  * @summary Issue a download URL for a shared file
  */
-export const sharedFileCrudGetDownloadUrl = async (shareToken: string,
-    params?: SharedFileCrudGetDownloadUrlParams, options?: RequestInit): Promise<sharedFileCrudGetDownloadUrlResponse> => {
+export const sharedFileCrudGetDownloadUrl = async (modelsSharedFileDownloadUrlRequest: ModelsSharedFileDownloadUrlRequest, options?: RequestInit): Promise<sharedFileCrudGetDownloadUrlResponse> => {
 
-  return customInstance<sharedFileCrudGetDownloadUrlResponse>(getSharedFileCrudGetDownloadUrlUrl(shareToken,params),
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customInstance<sharedFileCrudGetDownloadUrlResponse>(getSharedFileCrudGetDownloadUrlUrl(),
   {
     ...options,
-    method: 'GET'
-
-
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(modelsSharedFileDownloadUrlRequest)
   }
 );}
 
@@ -280,95 +118,189 @@ export const sharedFileCrudGetDownloadUrl = async (shareToken: string,
 
 
 
-export const getSharedFileCrudGetDownloadUrlQueryKey = (shareToken: string,
-    params?: SharedFileCrudGetDownloadUrlParams,) => {
-    return [
-    `/api/v1/share/${shareToken}/download`, ...(params ? [params] : [])
-    ] as const;
+export const getSharedFileCrudGetDownloadUrlMutationKey = () => ['sharedFileCrudGetDownloadUrl'] as const;
+
+export const getSharedFileCrudGetDownloadUrlMutationOptions = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sharedFileCrudGetDownloadUrl>>, TError,SharedFileCrudGetDownloadUrlMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof sharedFileCrudGetDownloadUrl>>, TError,SharedFileCrudGetDownloadUrlMutationVariables, TContext> => {
+
+const mutationKey = getSharedFileCrudGetDownloadUrlMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof sharedFileCrudGetDownloadUrl>>, SharedFileCrudGetDownloadUrlMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  sharedFileCrudGetDownloadUrl(data,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SharedFileCrudGetDownloadUrlMutationResult = NonNullable<Awaited<ReturnType<typeof sharedFileCrudGetDownloadUrl>>>
+    export type SharedFileCrudGetDownloadUrlMutationBody = ModelsSharedFileDownloadUrlRequest
+    export type SharedFileCrudGetDownloadUrlMutationError = ModelsProblemDetails
+    export type SharedFileCrudGetDownloadUrlMutationVariables = {data: ModelsSharedFileDownloadUrlRequest}
+
+    /**
+ * 共有リンクのトークンとパスワードを確かめて、ファイルをダウンロードするための、5分だけ有効なURLを発行し、共有リンクのダウンロード回数を1増やします。404と403を返す条件は、共有ファイルの取得と同じです。
+ * @summary Issue a download URL for a shared file
+ */
+export const useSharedFileCrudGetDownloadUrl = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sharedFileCrudGetDownloadUrl>>, TError,SharedFileCrudGetDownloadUrlMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof sharedFileCrudGetDownloadUrl>>,
+        TError,
+        SharedFileCrudGetDownloadUrlMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSharedFileCrudGetDownloadUrlMutationOptions(options), queryClient);
     }
-
-
-export const getSharedFileCrudGetDownloadUrlQueryOptions = <TData = Awaited<ReturnType<typeof sharedFileCrudGetDownloadUrl>>, TError = ModelsProblemDetails>(shareToken: string,
-    params?: SharedFileCrudGetDownloadUrlParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof sharedFileCrudGetDownloadUrl>>, TError, TData>>, }
-) => {
-
-const {query: queryOptions} = options ?? {};
-
-  const queryKey =  queryOptions?.queryKey ?? getSharedFileCrudGetDownloadUrlQueryKey(shareToken,params);
-
-
-
-    const queryFn: QueryFunction<Awaited<ReturnType<typeof sharedFileCrudGetDownloadUrl>>> = ({ signal }) => sharedFileCrudGetDownloadUrl(shareToken,params, { signal });
-
-
-
-
-
-   return  { queryKey, queryFn, enabled: shareToken !== null && shareToken !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof sharedFileCrudGetDownloadUrl>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+    export type sharedFileCrudGetResponse200 = {
+  data: SharedFileCrudGet200
+  status: 200
 }
 
-export type SharedFileCrudGetDownloadUrlQueryResult = NonNullable<Awaited<ReturnType<typeof sharedFileCrudGetDownloadUrl>>>
-export type SharedFileCrudGetDownloadUrlQueryError = ModelsProblemDetails
-
-
-/**
- * 共有リンク利用者が安全にファイル本体を取得できるよう、署名付きダウンロードURLを返却します。パスワード保護された共有リンクでパスワードが指定されていないか一致しない場合は401を、トークンが存在しない場合と、共有リンクが有効期限切れ・ダウンロード回数の上限到達・失効のいずれかの場合は404を返します。
- * @summary Issue a download URL for a shared file
- */
-export function useSharedFileCrudGetDownloadUrl<TData = Awaited<ReturnType<typeof sharedFileCrudGetDownloadUrl>>, TError = ModelsProblemDetails>(
- shareToken: string,
-    params: undefined |  SharedFileCrudGetDownloadUrlParams, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof sharedFileCrudGetDownloadUrl>>, TError, TData>> & Pick<
-        DefinedInitialDataOptions<
-          Awaited<ReturnType<typeof sharedFileCrudGetDownloadUrl>>,
-          TError,
-          Awaited<ReturnType<typeof sharedFileCrudGetDownloadUrl>>
-        > , 'initialData'
-      >, }
- , queryClient?: QueryClient
-  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * 共有リンク利用者が安全にファイル本体を取得できるよう、署名付きダウンロードURLを返却します。パスワード保護された共有リンクでパスワードが指定されていないか一致しない場合は401を、トークンが存在しない場合と、共有リンクが有効期限切れ・ダウンロード回数の上限到達・失効のいずれかの場合は404を返します。
- * @summary Issue a download URL for a shared file
- */
-export function useSharedFileCrudGetDownloadUrl<TData = Awaited<ReturnType<typeof sharedFileCrudGetDownloadUrl>>, TError = ModelsProblemDetails>(
- shareToken: string,
-    params?: SharedFileCrudGetDownloadUrlParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof sharedFileCrudGetDownloadUrl>>, TError, TData>> & Pick<
-        UndefinedInitialDataOptions<
-          Awaited<ReturnType<typeof sharedFileCrudGetDownloadUrl>>,
-          TError,
-          Awaited<ReturnType<typeof sharedFileCrudGetDownloadUrl>>
-        > , 'initialData'
-      >, }
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * 共有リンク利用者が安全にファイル本体を取得できるよう、署名付きダウンロードURLを返却します。パスワード保護された共有リンクでパスワードが指定されていないか一致しない場合は401を、トークンが存在しない場合と、共有リンクが有効期限切れ・ダウンロード回数の上限到達・失効のいずれかの場合は404を返します。
- * @summary Issue a download URL for a shared file
- */
-export function useSharedFileCrudGetDownloadUrl<TData = Awaited<ReturnType<typeof sharedFileCrudGetDownloadUrl>>, TError = ModelsProblemDetails>(
- shareToken: string,
-    params?: SharedFileCrudGetDownloadUrlParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof sharedFileCrudGetDownloadUrl>>, TError, TData>>, }
- , queryClient?: QueryClient
-  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
-/**
- * 共有リンク利用者が安全にファイル本体を取得できるよう、署名付きダウンロードURLを返却します。パスワード保護された共有リンクでパスワードが指定されていないか一致しない場合は401を、トークンが存在しない場合と、共有リンクが有効期限切れ・ダウンロード回数の上限到達・失効のいずれかの場合は404を返します。
- * @summary Issue a download URL for a shared file
- */
-export function useSharedFileCrudGetDownloadUrl<TData = Awaited<ReturnType<typeof sharedFileCrudGetDownloadUrl>>, TError = ModelsProblemDetails>(
- shareToken: string,
-    params?: SharedFileCrudGetDownloadUrlParams, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof sharedFileCrudGetDownloadUrl>>, TError, TData>>, }
- , queryClient?: QueryClient
- ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
-
-  const queryOptions = getSharedFileCrudGetDownloadUrlQueryOptions(shareToken,params,options)
-
-  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
-
-  return withQueryKey(query, queryOptions.queryKey);
+export type sharedFileCrudGetResponse400 = {
+  data: ModelsProblemDetails
+  status: 400
 }
 
+export type sharedFileCrudGetResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
+export type sharedFileCrudGetResponse404 = {
+  data: ModelsProblemDetails
+  status: 404
+}
+
+export type sharedFileCrudGetResponse413 = {
+  data: ModelsProblemDetails
+  status: 413
+}
+
+export type sharedFileCrudGetResponse415 = {
+  data: ModelsProblemDetails
+  status: 415
+}
+
+export type sharedFileCrudGetResponse429 = {
+  data: ModelsProblemDetails
+  status: 429
+}
+
+export type sharedFileCrudGetResponse500 = {
+  data: ModelsProblemDetails
+  status: 500
+}
+
+export type sharedFileCrudGetResponseSuccess = (sharedFileCrudGetResponse200) & {
+  headers: Headers;
+};
+export type sharedFileCrudGetResponseError = (sharedFileCrudGetResponse400 | sharedFileCrudGetResponse403 | sharedFileCrudGetResponse404 | sharedFileCrudGetResponse413 | sharedFileCrudGetResponse415 | sharedFileCrudGetResponse429 | sharedFileCrudGetResponse500) & {
+  headers: Headers;
+};
+
+export type sharedFileCrudGetResponse = (sharedFileCrudGetResponseSuccess | sharedFileCrudGetResponseError)
+
+export const getSharedFileCrudGetUrl = () => {
+
+
+
+
+  return `/api/v1/share/file`
+}
+
+/**
+ * 共有リンクのトークンとパスワードを確かめて、ファイルの名前、種類、サイズを返します。トークンが存在しない場合と、共有リンクが有効期限切れ・ダウンロード回数の上限到達・失効のいずれかの場合、添付ファイルが削除されている場合は、区別せずに404を返します。パスワードで保護している共有リンクで、パスワードがないか一致しない場合は403を返します。一致しないパスワードが5回続くと、共有リンクを15分のあいだロックし、そのあいだは正しいパスワードでも同じ403を返します。
+ * @summary Get a shared file
+ */
+export const sharedFileCrudGet = async (modelsSharedFileGetRequest: ModelsSharedFileGetRequest, options?: RequestInit): Promise<sharedFileCrudGetResponse> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customInstance<sharedFileCrudGetResponse>(getSharedFileCrudGetUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(modelsSharedFileGetRequest)
+  }
+);}
 
 
 
 
 
+export const getSharedFileCrudGetMutationKey = () => ['sharedFileCrudGet'] as const;
+
+export const getSharedFileCrudGetMutationOptions = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sharedFileCrudGet>>, TError,SharedFileCrudGetMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof sharedFileCrudGet>>, TError,SharedFileCrudGetMutationVariables, TContext> => {
+
+const mutationKey = getSharedFileCrudGetMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof sharedFileCrudGet>>, SharedFileCrudGetMutationVariables> = (props) => {
+          const {data} = props ?? {};
+
+          return  sharedFileCrudGet(data,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type SharedFileCrudGetMutationResult = NonNullable<Awaited<ReturnType<typeof sharedFileCrudGet>>>
+    export type SharedFileCrudGetMutationBody = ModelsSharedFileGetRequest
+    export type SharedFileCrudGetMutationError = ModelsProblemDetails
+    export type SharedFileCrudGetMutationVariables = {data: ModelsSharedFileGetRequest}
+
+    /**
+ * 共有リンクのトークンとパスワードを確かめて、ファイルの名前、種類、サイズを返します。トークンが存在しない場合と、共有リンクが有効期限切れ・ダウンロード回数の上限到達・失効のいずれかの場合、添付ファイルが削除されている場合は、区別せずに404を返します。パスワードで保護している共有リンクで、パスワードがないか一致しない場合は403を返します。一致しないパスワードが5回続くと、共有リンクを15分のあいだロックし、そのあいだは正しいパスワードでも同じ403を返します。
+ * @summary Get a shared file
+ */
+export const useSharedFileCrudGet = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof sharedFileCrudGet>>, TError,SharedFileCrudGetMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof sharedFileCrudGet>>,
+        TError,
+        SharedFileCrudGetMutationVariables,
+        TContext
+      > => {
+      return useMutation(getSharedFileCrudGetMutationOptions(options), queryClient);
+    }

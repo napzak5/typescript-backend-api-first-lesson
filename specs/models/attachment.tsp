@@ -151,62 +151,67 @@ namespace BeautySalon.Models {
   }
 
   @doc("""
-    共有リンクレスポンス - 外部共有用に発行された添付ファイルの共有リンク情報を返す。
-    対応するテーブルはまだない。全項目のキーが必須で、値がない項目は null を返す
+    共有リンク - share_links の行。アップロード済みの添付ファイルを、アカウントを持たない人に、期限まで見せるためのリンク。
+    トークンとパスワードは、ハッシュだけを保存していて、レスポンスに含めない(トークンが出るのは、発行のレスポンスの1度だけ)。
+    すべてのプロパティがあり、値がないものは null
     """)
   model ShareLinkResponse {
-    @doc("共有リンクを一意に識別するID。")
+    @doc("共有リンクの ID")
     id: ShareLinkId;
 
-    @doc("共有アクセス時に利用するトークン。")
-    token: string;
-
-    @doc("共有対象の添付ファイルID。")
+    @doc("共有する添付ファイルの ID")
     attachmentId: AttachmentId;
 
-    @doc("共有リンクの有効期限。無期限の場合はnull。")
-    expiresAt: utcDateTime | null;
+    @doc("共有リンクの有効期限。この日時を過ぎると、リンクは使えない")
+    expiresAt: utcDateTime;
 
-    @doc("許可する最大ダウンロード回数。無制限の場合はnull。")
+    @doc("ダウンロード用URLを発行できる回数の上限。制限なしの場合はnull")
     maxDownloads: int32 | null;
 
-    @doc("これまでのダウンロード累計数。")
+    @doc("これまでにダウンロード用URLを発行した回数。上限に達すると、リンクは使えない")
     downloadCount: int32;
 
-    @doc("共有リンクがパスワード保護されているか。")
+    @doc("パスワードで保護しているか")
     hasPassword: boolean;
 
-    @doc("アクセスを許可するメールアドレス一覧。制限なしの場合はnull。")
-    allowedEmails: string[] | null;
-
-    @doc("共有リンクを作成したユーザーID。")
+    @doc("共有リンクを発行したユーザーの ID")
     createdBy: UserId;
 
-    @doc("共有リンクを作成した日時。")
+    @doc("共有リンクを発行した日時")
     createdAt: utcDateTime;
+
+    @doc("最後に更新した日時(ダウンロード用URLの発行や、パスワードの誤りの記録でも進む)")
+    updatedAt: utcDateTime;
   }
 
   @doc("""
-    共有リンク発行リクエスト - 添付ファイルの共有リンクを新規発行する。
+    共有リンク発行リクエスト - 添付ファイルの共有リンクを発行する。
     全項目のキーが必須。制限を設けない項目は null を指定する
     """)
   model ShareLinkCreateRequest {
-    @doc("共有リンクの有効期限。無期限の場合はnull。")
-    expiresAt: utcDateTime | null;
+    @doc("共有リンクの有効期限。発行の時刻より後で、30日後まで")
+    expiresAt: utcDateTime;
 
-    @doc("許可する最大ダウンロード回数(1以上)。無制限の場合はnull。")
+    @doc("ダウンロード用URLを発行できる回数の上限(1以上)。制限なしの場合はnull")
     @minValue(1)
     maxDownloads: int32 | null;
 
-    @doc("共有リンク保護用のパスワード(8〜128文字)。パスワード保護なしの場合はnull。")
+    @doc("共有リンクを保護するパスワード(8〜128文字)。保護しない場合はnull。単純な並びや、よく知られた値は検証エラー")
     @minLength(8)
     @maxLength(128)
     password: string | null;
+  }
 
-    @doc("アクセスを許可するメールアドレス一覧(1〜100件)。制限なしの場合はnull。")
-    @minItems(1)
-    @maxItems(100)
-    allowedEmails: string[] | null;
+  @doc("""
+    共有リンクの発行の結果 - 発行した共有リンクと、そのトークン。
+    トークンは保存していないので、このレスポンスでしか得られない
+    """)
+  model ShareLinkCreateResponse {
+    @doc("発行した共有リンク")
+    shareLink: ShareLinkResponse;
+
+    @doc("共有リンクのトークン。閲覧者は、これ(と、あればパスワード)でファイルにアクセスする。なくした場合は、共有リンクを失効して発行し直す")
+    token: string;
   }
 
   @doc("""
@@ -220,31 +225,58 @@ namespace BeautySalon.Models {
     limit?: int32 = 20;
 
     @query
-    @doc("取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する")
+    @doc("取得開始位置を示すカーソル。同じ添付ファイルの一覧で取得した前回レスポンスの `meta.nextCursor` を指定する。その添付ファイルの共有リンクのIDでない場合は検証エラー")
     cursor?: string;
   }
 
   @doc("""
-    共有ファイルレスポンス - 共有リンクの閲覧者に示す、公開対象ファイルのメタ情報を返す。
-    認証なしで取得できるため、保存先のキーやアップロードしたユーザーなどの内部情報は含めない
+    共有ファイル - 共有リンクの閲覧者に示す、ファイルの名前、種類、サイズ。
+    認証なしで取得できるので、添付ファイルのIDやアップロードしたユーザーなどの内部の値は含めない
     """)
   model SharedFileResponse {
-    @doc("利用者がアップロードした元のファイル名。")
+    @doc("アップロードした元のファイル名。ダウンロードするときの名前になる")
     filename: string;
 
-    @doc("ファイルのMIMEタイプ（Content-Type）。")
-    content: string;
+    @doc("ファイルの種類")
+    contentType: AttachmentContentType;
 
-    @doc("ファイルサイズ（バイト単位）。")
+    @doc("ファイルのサイズ(バイト)")
     size: int32;
   }
 
   @doc("""
-    共有リンクアクセスリクエスト - 共有リンク経由で添付ファイルへアクセスする際の条件を指定する
+    共有ファイルの取得リクエスト - 共有リンクのトークンと、パスワードを指定する。
+    トークンもパスワードも、URLやアクセスログに残らないように、リクエスト本文で送る。
+    全項目のキーが必須。パスワードがない場合は null を送る
     """)
-  model ShareLinkAccessRequest {
-    @query
-    @doc("共有リンクのパスワード。パスワード保護された共有リンクでは必須。パスワード保護されていない場合は省略する")
-    password?: string;
+  model SharedFileGetRequest {
+    @doc("共有リンクのトークン")
+    @minLength(1)
+    @maxLength(255)
+    token: string;
+
+    @doc("共有リンクのパスワード(1〜128文字)。パスワードで保護していないリンクでは null")
+    @minLength(1)
+    @maxLength(128)
+    password: string | null;
+  }
+
+  @doc("""
+    共有ファイルのダウンロード用URLの発行リクエスト - 共有リンクのトークンと、パスワード、URLの表示方法を指定する。
+    全項目のキーが必須。パスワードがない場合は null を送る
+    """)
+  model SharedFileDownloadUrlRequest {
+    @doc("共有リンクのトークン")
+    @minLength(1)
+    @maxLength(255)
+    token: string;
+
+    @doc("共有リンクのパスワード(1〜128文字)。パスワードで保護していないリンクでは null")
+    @minLength(1)
+    @maxLength(128)
+    password: string | null;
+
+    @doc("trueの場合はブラウザ内で表示するためのURLを、falseの場合は保存(ダウンロード)するためのURLを発行する")
+    inline: boolean;
   }
 }

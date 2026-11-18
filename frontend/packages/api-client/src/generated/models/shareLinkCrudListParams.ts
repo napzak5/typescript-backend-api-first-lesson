@@ -15,6 +15,6 @@ export type ShareLinkCrudListParams = {
    * @maximum 100
    */
   limit?: ModelsShareLinkSearchRequestLimitParameter;
-  /** 取得開始位置を示すカーソル。前回レスポンスの `meta.nextCursor` を指定する */
+  /** 取得開始位置を示すカーソル。同じ添付ファイルの一覧で取得した前回レスポンスの `meta.nextCursor` を指定する。その添付ファイルの共有リンクのIDでない場合は検証エラー */
   cursor?: ModelsShareLinkSearchRequestCursorParameter;
 };

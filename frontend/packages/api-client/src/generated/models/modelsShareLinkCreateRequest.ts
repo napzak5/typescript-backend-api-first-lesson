@@ -7,33 +7,23 @@
  */
 
 /**
- * 共有リンク発行リクエスト - 添付ファイルの共有リンクを新規発行する。
+ * 共有リンク発行リクエスト - 添付ファイルの共有リンクを発行する。
  * 全項目のキーが必須。制限を設けない項目は null を指定する
  */
 export interface ModelsShareLinkCreateRequest {
+  /** 共有リンクの有効期限。発行の時刻より後で、30日後まで */
+  expiresAt: string;
   /**
-     * 共有リンクの有効期限。無期限の場合はnull。
-     * @nullable
-     */
-  expiresAt: string | null;
-  /**
-     * 許可する最大ダウンロード回数(1以上)。無制限の場合はnull。
+     * ダウンロード用URLを発行できる回数の上限(1以上)。制限なしの場合はnull
      * @minimum 1
      * @nullable
      */
   maxDownloads: number | null;
   /**
-     * 共有リンク保護用のパスワード(8〜128文字)。パスワード保護なしの場合はnull。
+     * 共有リンクを保護するパスワード(8〜128文字)。保護しない場合はnull。単純な並びや、よく知られた値は検証エラー
      * @minLength 8
      * @maxLength 128
      * @nullable
      */
   password: string | null;
-  /**
-     * アクセスを許可するメールアドレス一覧(1〜100件)。制限なしの場合はnull。
-     * @minItems 1
-     * @maxItems 100
-     * @nullable
-     */
-  allowedEmails: string[] | null;
 }
