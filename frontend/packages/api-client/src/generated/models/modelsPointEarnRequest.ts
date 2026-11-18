@@ -6,7 +6,7 @@
  * OpenAPI spec version: 2.0
  */
 import type { ModelsCustomerId } from './modelsCustomerId';
-import type { ModelsPointReferenceType } from './modelsPointReferenceType';
+import type { ModelsPointMovementReferenceType } from './modelsPointMovementReferenceType';
 
 /**
  * ポイント付与リクエスト - 種別 earned のポイント取引を登録する。全項目のキーが必須。
@@ -26,7 +26,7 @@ export interface ModelsPointEarnRequest {
      */
   description: string | null;
   /** 付与のもとになった記録の種類。referenceId と同時に指定する。参照する記録がない場合はnull */
-  referenceType: ModelsPointReferenceType | null;
+  referenceType: ModelsPointMovementReferenceType | null;
   /**
      * 付与のもとになった記録の ID。referenceType と同時に指定する。その顧客の売上・予約で、取り消した売上と、ステータスが draft・cancelled・no_show の予約は指定できない。1 つの記録に付与できるのは1回。参照する記録がない場合はnull
      * @nullable

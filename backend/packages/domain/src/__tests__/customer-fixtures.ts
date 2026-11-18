@@ -14,6 +14,7 @@ import type {
   CustomerBulkUpdate,
   CustomerCreation,
   CustomerDeletion,
+  CustomerMerge,
   CustomerProfileCreation,
   CustomerRestoration,
   CustomerUpdate,
@@ -255,6 +256,12 @@ const customerRepositoryWith = (
   restore: vi.fn(async () =>
     Result.success<CustomerRestoration>({
       type: 'restored',
+      customer: dbCustomer(),
+    }),
+  ),
+  merge: vi.fn(async () =>
+    Result.success<CustomerMerge>({
+      type: 'merged',
       customer: dbCustomer(),
     }),
   ),

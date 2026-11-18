@@ -88,11 +88,11 @@ namespace BeautySalon.Models {
   }
 
   @doc("""
-    顧客統合時の競合解決方針区分 - 2件の顧客レコードで値が異なる項目をどちらに合わせるか
+    顧客統合時の競合解決方針区分 - 2件の顧客レコードの両方が値を持ち、その値が異なる項目をどちらに合わせるか。片方だけが値を持つ項目(もう片方が null、タグは空の一覧)は、この区分に関わらず、値を持つほうの値を使う
     
     keep_primary: メイン優先 - 統合後も残す顧客(primaryCustomerId)の値を使う
     keep_secondary: サブ優先 - 統合して削除する顧客(secondaryCustomerId)の値を使う
-    keep_newest: 新しい方優先 - 最後に更新された顧客の値を使う
+    keep_newest: 新しい方優先 - updatedAt が新しい顧客の値を使う。同じ時刻ならメインの値
     """)
   enum CustomerMergeConflictResolutionType {
     keep_primary,
@@ -134,6 +134,7 @@ namespace BeautySalon.Models {
     update: 更新 - 台帳の項目を変えた(一括更新、顧客本人のプロフィールの更新、プロフィールの作成で台帳の顧客を引き継いだときを含む)
     delete: 削除 - 顧客を論理削除した(一括削除を含む)
     restore: 復元 - 論理削除した顧客を台帳に戻した
+    merge: 統合 - 2人の顧客を1人にまとめた。残した顧客(メイン)の版は統合後の値、統合して論理削除した顧客(サブ)の版は削除したときの値
     """)
   enum CustomerVersionOperationType {
     baseline,
@@ -141,6 +142,7 @@ namespace BeautySalon.Models {
     update,
     delete,
     restore,
+    merge,
   }
 
   // ============================================================================
@@ -974,13 +976,13 @@ namespace BeautySalon.Models {
     顧客統合リクエスト - 重複登録された2件の顧客レコードを1件に統合する
     """)
   model CustomerMergeRequest {
-    @doc("統合後も残すメイン顧客ID")
+    @doc("統合後も残すメイン顧客ID。削除していない顧客")
     primaryCustomerId: CustomerId;
 
-    @doc("統合して削除するサブ顧客ID。primaryCustomerId と異なる顧客を指定する")
+    @doc("統合して論理削除するサブ顧客ID。削除していない顧客で、primaryCustomerId と異なる顧客を指定する")
     secondaryCustomerId: CustomerId;
 
-    @doc("2件の顧客で値が異なる項目の優先ルール")
+    @doc("台帳の項目のうち、2件の顧客の両方が値を持ち、その値が異なる項目の優先ルール。好み設定が両方にあるときは、どちらの行を残すかにも使う(keep_newest は好み設定の updatedAt)。カルテとアレルギーには使わない")
     conflictResolution: CustomerMergeConflictResolutionType;
   }
 

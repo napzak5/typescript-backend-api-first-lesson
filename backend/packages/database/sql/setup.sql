@@ -12,7 +12,7 @@ CREATE TYPE "public"."allergy_type" AS ENUM('chemical', 'fragrance', 'metal', 'l
 CREATE TYPE "public"."booking_requirement" AS ENUM('consultation_required', 'patch_test_required', 'advance_booking_required', 'deposit_required');
 CREATE TYPE "public"."booking_status" AS ENUM('draft', 'pending', 'confirmed', 'in_progress', 'completed', 'cancelled', 'no_show');
 CREATE TYPE "public"."customer_status" AS ENUM('active', 'inactive', 'vip', 'blacklisted');
-CREATE TYPE "public"."customer_version_operation" AS ENUM('baseline', 'create', 'update', 'delete', 'restore');
+CREATE TYPE "public"."customer_version_operation" AS ENUM('baseline', 'create', 'update', 'delete', 'restore', 'merge');
 CREATE TYPE "public"."day_of_week" AS ENUM('monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday');
 CREATE TYPE "public"."hair_thickness" AS ENUM('thin', 'medium', 'thick');
 CREATE TYPE "public"."hair_type" AS ENUM('straight', 'wavy', 'curly', 'coily');
@@ -148,10 +148,11 @@ CREATE TABLE "customer_points" (
 	"expiryDate" date,
 	"createdAt" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "customer_points_balance_not_negative" CHECK (balance >= 0),
-	CONSTRAINT "customer_points_expiry_of_earned" CHECK (("expiryDate" IS NULL) OR ("transactionType" = 'earned'::point_transaction_type)),
+	CONSTRAINT "customer_points_expiry_of_earned" CHECK (("expiryDate" IS NULL) OR ("transactionType" = 'earned'::point_transaction_type) OR (("transactionType" = 'transferred'::point_transaction_type) AND (points > 0))),
 	CONSTRAINT "customer_points_points_of_type" CHECK ((("transactionType" <> 'earned'::point_transaction_type) OR (points >= 1)) AND (("transactionType" <> ALL (ARRAY['used'::point_transaction_type, 'expired'::point_transaction_type])) OR (points <= '-1'::integer)) AND (("transactionType" <> ALL (ARRAY['adjusted'::point_transaction_type, 'transferred'::point_transaction_type])) OR (points <> 0))),
 	CONSTRAINT "customer_points_reference_pair" CHECK (("referenceType" IS NULL) = ("referenceId" IS NULL)),
-	CONSTRAINT "customer_points_reference_type_known" CHECK (("referenceType" IS NULL) OR (("referenceType")::text = ANY (ARRAY['sale'::text, 'booking'::text])))
+	CONSTRAINT "customer_points_reference_type_known" CHECK (("referenceType" IS NULL) OR (("referenceType")::text = ANY (ARRAY['sale'::text, 'booking'::text, 'customer'::text]))),
+	CONSTRAINT "customer_points_transfer_names_customer" CHECK (("transactionType" = 'transferred'::point_transaction_type) = (NOT (("referenceType")::text IS DISTINCT FROM 'customer'::text)))
 );
 
 CREATE TABLE "customer_preferences" (

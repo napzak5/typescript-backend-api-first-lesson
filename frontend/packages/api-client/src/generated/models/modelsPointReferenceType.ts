@@ -11,6 +11,7 @@
  *
  * sale: 売上 - referenceId は売上の ID
  * booking: 予約 - referenceId は予約の ID
+ * customer: 顧客 - 移行(transferred)の取引だけが持つ。referenceId は、ポイントを移した相手の顧客の ID
  */
 export type ModelsPointReferenceType = typeof ModelsPointReferenceType[keyof typeof ModelsPointReferenceType];
 
@@ -18,4 +19,5 @@ export type ModelsPointReferenceType = typeof ModelsPointReferenceType[keyof typ
 export const ModelsPointReferenceType = {
   sale: 'sale',
   booking: 'booking',
+  customer: 'customer',
 } as const;

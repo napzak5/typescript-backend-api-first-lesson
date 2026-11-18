@@ -13,6 +13,11 @@ export {
   type PointRefusal,
   planPoints,
 } from './_shared/plan'
+export {
+  type PointTransferParties,
+  type PointTransferPlan,
+  planTransfer,
+} from './_shared/transfer'
 export { AdjustPointsUseCase } from './adjust-points.usecase'
 export { EarnPointsUseCase } from './earn-points.usecase'
 export { ExpirePointsUseCase } from './expire-points.usecase'

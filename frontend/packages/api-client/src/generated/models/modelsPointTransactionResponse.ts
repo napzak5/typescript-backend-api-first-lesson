@@ -38,7 +38,7 @@ export interface ModelsPointTransactionResponse {
      */
   referenceId: string | null;
   /**
-     * 獲得したポイントの有効期限。付与(earned)の取引だけが持ち、有効期限のない付与とほかの取引はnull
+     * ポイントの有効期限(この日まで使える)。付与(earned)と、メインに移した移行(transferred)の取引だけが持つ。移行の取引は、移したもとの付与の有効期限を引き継ぐ。有効期限のない付与・移行と、ほかの取引はnull
      * @nullable
      */
   expiryDate: string | null;

@@ -11,6 +11,7 @@ import { deleteCustomerHandler } from './delete-customer.handler'
 import { getCustomerHandler } from './get-customer.handler'
 import { getCustomerProfileHandler } from './get-customer-profile.handler'
 import { listCustomersHandler } from './list-customers.handler'
+import { mergeCustomersHandler } from './merge-customers.handler'
 import { restoreCustomerHandler } from './restore-customer.handler'
 import { updateCustomerHandler } from './update-customer.handler'
 import { updateCustomerProfileHandler } from './update-customer-profile.handler'
@@ -28,6 +29,7 @@ import { updateCustomerProfileHandler } from './update-customer-profile.handler'
  * - POST   /bulk       bulk create     (authenticated)
  * - PATCH  /bulk       bulk update     (authenticated)
  * - DELETE /bulk       bulk delete     (authenticated)
+ * - POST   /merge      merge           (authenticated)
  * - GET    /me         get profile     (authenticated)
  * - POST   /me         create profile  (authenticated)
  * - PATCH  /me         update profile  (authenticated)
@@ -57,6 +59,7 @@ export const createCustomerRouter = (
     '/bulk',
     bulkDeleteCustomersHandler(dependencies, authenticated),
   )
+  router.post('/merge', mergeCustomersHandler(dependencies, authenticated))
   router.get('/me', getCustomerProfileHandler(dependencies, authenticated))
   router.post('/me', createCustomerProfileHandler(dependencies, authenticated))
   router.patch('/me', updateCustomerProfileHandler(dependencies, authenticated))

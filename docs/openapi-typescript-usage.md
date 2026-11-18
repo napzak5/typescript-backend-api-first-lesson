@@ -255,7 +255,7 @@ export const createSalonHandler = (
 
 ## 他のドメインを実装するとき
 
-Salon、認証、サロンのサービスカテゴリーとサービス、顧客台帳（`CustomerCrud` の 5 つのオペレーションと、`CustomerProfile` のプロフィールの 3 つ）、顧客の好み設定（`CustomerCrud` と `CustomerProfile` の `getPreferences`・`updatePreferences`）、予約台帳（`BookingCrud` の 11 オペレーション）、スタッフ台帳（`StaffCrud` の 5 つのオペレーション）、スタッフの勤務スケジュール（`StaffSchedules`）、スタッフの招待（`StaffInvitations` と、`AuthCrud` の確認・受け入れ・参加）、スタッフのアカウント（`StaffAccounts`）、スタッフのプロフィール（`StaffProfile` と `StaffOwnProfile`）以外はこれから実装するものです。実装するときは Salon と同じ配置にします（`<domain>` はドメイン名で、サービスカテゴリーでは `service-category`、サービスでは `service`、顧客では `customer`、顧客の好み設定では `customer-preferences`、予約では `booking`、スタッフでは `staff`、スタッフの勤務スケジュールでは `staff-schedule`、スタッフの招待では `staff-invitation`、スタッフのアカウントでは `staff-account`、スタッフのプロフィールでは `staff-profile` です）。
+どのドメインのどのオペレーションに実装があるかは、[アーキテクチャ概要](./architecture-overview.md#what-is-implemented) の表にあります。まだ実装のないドメインを実装するときは、Salon と同じ配置にします（`<domain>` はドメイン名で、サービスカテゴリーでは `service-category`、サービスでは `service`、顧客では `customer`、顧客の好み設定では `customer-preferences`、予約では `booking`、スタッフでは `staff`、スタッフの勤務スケジュールでは `staff-schedule`、スタッフの招待では `staff-invitation`、スタッフのアカウントでは `staff-account`、スタッフのプロフィールでは `staff-profile` です）。
 
 - `backend/packages/domain/src/models/<domain>.ts`: 生成型の別名と DB 型
 - `backend/packages/domain/src/schemas/<domain>.schema.ts`: `satisfies z.ZodType<…>` を付けた Zod スキーマ

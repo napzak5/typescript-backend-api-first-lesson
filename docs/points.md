@@ -15,7 +15,7 @@
 - 有効期限を過ぎたポイントは、管理者が失効（`expire`）を実行するまで残高に残り、使えます（[有効期限と失効](#有効期限と失効)）
 - 次のものは、ありません
   - 失効を決まった時刻に実行する仕組み（スケジューラー）。管理者が API を呼びます
-  - 顧客の間でポイントを移すこと（種別 `transferred`）
+  - 顧客の間でポイントを移すルート。移行（種別 `transferred`）を書くのは、[顧客の統合](./customers.md#ポイント統合)だけです
   - 会員ランク（`membershipTier`）をポイントや利用額で変えること。会員ランクは、サロンが顧客台帳で決める値です（#233）
   - 1 ポイントが何円かと、売上の金額に対する付与率。付与するポイント数は、レジが決めて送ります
   - 売上や支払いと連動して、ポイントを自動で付与・利用すること（[売上と支払いとの関係](#売上と支払いとの関係)）
@@ -36,7 +36,7 @@
 | `used`（利用） | `POST /api/v1/points/use` | −1 以下。リクエストには正の数で書き、負の数で記録する | null |
 | `adjusted`（調整） | `POST /api/v1/points/adjust` | 0 以外 | null |
 | `expired`（失効） | `POST /api/v1/points/expire` | −1 以下 | null |
-| `transferred`（移行） | なし | | null |
+| `transferred`（移行） | なし（[顧客の統合](./customers.md#ポイント統合)が書く） | 0 以外。統合したサブは負、メインは正 | メインに書く正の取引は、移した付与の有効期限。負の取引は null |
 
 ## オペレーションと権限
 
@@ -124,7 +124,7 @@
 | `customerId` | UUID | UUID | UUID |
 | `points` | 1 以上、2,147,483,647 以下の整数 | 同左 | −2,147,483,648 以上、2,147,483,647 以下の、0 以外の整数 |
 | `description` | 文字列か null。空白だけの文字列は不可 | 同左 | 同左 |
-| `referenceType` | `sale`、`booking`、null | 同左 | 同左 |
+| `referenceType` | `sale`、`booking`、null（`customer` は移行だけのもので、400） | 同左 | 同左 |
 | `referenceId` | UUID か null | 同左 | 同左 |
 | `expiryDate` | `YYYY-MM-DD`（2999-12-31 まで）か null | キーがない | キーがない |
 
@@ -165,13 +165,13 @@
 
 ## 有効期限と失効
 
-有効期限（`expiryDate`）は、付与だけが持つ、そのポイントを使える最後の日です（`YYYY-MM-DD`）。有効期限が null の付与と、調整で増えたポイント（マイグレーションとシードの開始残高を含む）には、期限がありません。
+有効期限（`expiryDate`）は、付与が持つ、そのポイントを使える最後の日です（`YYYY-MM-DD`）。[顧客の統合](./customers.md#ポイント統合)で移した付与の残りは、移行の取引が、その付与の有効期限を持ちます。有効期限が null の付与と、調整で増えたポイント（マイグレーションとシードの開始残高を含む）には、期限がありません。
 
 ### 残っているポイントの数え方
 
 付与したポイントのうち、どれだけが使われずに残っているかは、取引に書きません。顧客のすべての取引を書いた順（`createdAt` の昇順、同じ時刻なら `id` の昇順）にたどって、そのつど数えます（`business-logic/point/_shared/lots.ts` の `lotsOf`）。
 
-- 残高を増やす取引（付与、正の調整）ごとに、そのポイントのまとまりができます。付与のまとまりは、付与の有効期限を持ちます
+- 残高を増やす取引（付与、正の調整、正の移行）ごとに、そのポイントのまとまりができます。付与と移行のまとまりは、その取引の有効期限を持ちます
 - 残高を減らす取引（利用、失効、負の調整）は、**その時点にあるまとまりから、有効期限の近い順に取ったもの**とします。期限のないまとまりは最後で、期限が同じなら書いた順です。期限の近いポイントから使うほうが、顧客に有利だからです
 - 後から付与したポイントが、それより前の利用で取られることはありません
 - 残ったまとまりの合計は、最新の取引の残高と等しくなります
@@ -186,12 +186,12 @@
 
 - `days` が数でなければ 400（`invalid_format`）、整数でなければ 400（`invalid_type`）、範囲外なら 400（`too_small`、`too_big`）です。コントラクトにないパラメーターは 400 です（`unrecognized_keys`）
 - `expiringPoints` は、残っているポイントの合計で、残高を超えません。`expirationDate` は、その中で最も早い有効期限で、なければ null です
-- `transactions` は、ポイントが残っている付与の取引です。有効期限の昇順で、同じ日付なら書いた順です。`points` は付与したポイント数で、残っている数ではありません
+- `transactions` は、ポイントが残っている付与と移行の取引です。有効期限の昇順で、同じ日付なら書いた順です。`points` は付与した、または移したポイント数で、残っている数ではありません
 - `links` は、このリクエストと、その顧客の残高と履歴です
 
 ### 失効
 
-`POST /api/v1/points/expire` は、有効期限が `processBefore` より前の付与のうち、残っているポイントを失効させます。
+`POST /api/v1/points/expire` は、有効期限が `processBefore` より前の付与と移行のうち、残っているポイントを失効させます。
 
 | プロパティ | 形式 | 規則 |
 |---|---|---|
@@ -203,7 +203,7 @@
 - レスポンスは `{ processedCount, totalPoints }` です。書いた失効の取引の件数（失効させた顧客の数）と、失効させたポイントの合計です。`links` は null です
 - **何度実行しても、同じポイントを二度は失効させません**。失効の取引も、まとまりからポイントを取るからです。2 回目は何も書かず、`processedCount` は 0 です
 - `processBefore` の既定と上限を昨日（UTC）にするのは、どのタイムゾーンでも、有効期限の日が終わる前に失効させないためです。失効させるのは、有効期限が一昨日（UTC）以前のポイントになります。付与の有効期限に昨日（UTC）以降を受け付けるのと同じ考え方です（[リクエストの規則](#リクエストの規則)）
-- `customerId` が null なら、削除されていない顧客のうち、残高が 1 以上で、有効期限が `processBefore` より前の付与がある顧客を、1 人ずつ処理します。残っているポイントがなければ、その顧客には何も書きません
+- `customerId` が null なら、削除されていない顧客のうち、残高が 1 以上で、有効期限が `processBefore` より前の付与か移行がある顧客を、1 人ずつ処理します。残っているポイントがなければ、その顧客には何も書きません
 - 失効を決まった時刻に実行する仕組みはありません。管理者が、たとえば毎日 1 回、2 つのキーを null にして呼びます
 
 ## 売上と支払いとの関係
@@ -233,9 +233,10 @@
 | `customers_loyalty_points_not_negative` | 残高（`loyaltyPoints`）は 0 以上 |
 | `customer_points_points_of_type` | `earned` は 1 以上、`used` と `expired` は −1 以下、`adjusted` と `transferred` は 0 以外 |
 | `customer_points_balance_not_negative` | 取引の後の残高は 0 以上 |
-| `customer_points_expiry_of_earned` | 有効期限を持つのは `earned` だけ |
+| `customer_points_expiry_of_earned` | 有効期限を持つのは、`earned` と、正の `transferred` だけ |
 | `customer_points_reference_pair` | `referenceType` と `referenceId` は、両方あるか、両方 NULL |
-| `customer_points_reference_type_known` | `referenceType` は `sale` か `booking` |
+| `customer_points_reference_type_known` | `referenceType` は `sale`、`booking`、`customer` のどれか |
+| `customer_points_transfer_names_customer` | `transferred` は、そしてそれだけが、`referenceType` に `customer` を持つ |
 | `customer_points_reference_unique`（部分一意インデックス） | 1 つの記録への `earned` は 1 件、`used` も 1 件 |
 
 - 履歴の順序のために、`idx_customer_points_customer_time`（`customerId`、`createdAt`、`id`）があります。顧客だけのインデックス（`idx_customer_points_customer_id`）は、これに置き換えました
@@ -250,6 +251,8 @@
 - 2 回目の適用では、何もしません
 - 規則に反する行が手で書かれていたら、マイグレーションは失敗し、何も変えません。どちらのカラムが正しいかは決められないので、直してから適用します
 
+`202611181900_customer_merge.sql` が、[顧客の統合](./customers.md#ポイント統合)の移行のために、`customer_points_expiry_of_earned` と `customer_points_reference_type_known` を上の内容に書き換え、`customer_points_transfer_names_customer` を足します。それまで移行を書く処理はありませんでした。参照のない移行が手で書かれていたら、マイグレーションは失敗し、何も変えません
+
 ## シード
 
 `pnpm db:seed` は、ポイントを持つ顧客（4 人。300、800、2,500、10,000 ポイント）に、残高と同じ調整を 1 件ずつ書きます（`description` は `ポイント台帳の開始残高`）。残高と最新の取引の残高は、シードの直後から一致します。
@@ -258,9 +261,9 @@
 
 | 層 | ファイル |
 |---|---|
-| コントラクト | `specs/models/payment.tsp`（`PointTransactionType`、`PointReferenceType`、`PointTransactionResponse`、`PointTransactionSearchRequest`、`PointBalanceResponse`、`PointEarnRequest`、`PointUseRequest`、`PointAdjustRequest`、`PointExpiringResponse`、`PointExpireRequest`、`PointExpireResponse`）、`specs/operations/payment-operations.tsp`（`PointCrud`） |
-| データベース | `backend/packages/database/sql/migrations/202611161000_customer_points_rules.sql`、`src/seeds/seed-data/customers.ts` |
-| ドメイン | `backend/packages/domain/src/models/point.ts`、`schemas/point.schema.ts`、`repositories/point.repository.ts`、`mappers/read/point.mapper.ts`、`business-logic/point/`（誰が使えるかは `_shared/authorization.ts`、取引の計画は `_shared/plan.ts`、残っているポイントの数え方と失効の計画は `_shared/lots.ts`、409 の内容は `_shared/refusals.ts`、付与・利用・調整に共通の流れは `_shared/record.ts`） |
+| コントラクト | `specs/models/payment.tsp`（`PointTransactionType`、`PointReferenceType`、`PointMovementReferenceType`（付与・利用・調整が参照できる種別）、`PointTransactionResponse`、`PointTransactionSearchRequest`、`PointBalanceResponse`、`PointEarnRequest`、`PointUseRequest`、`PointAdjustRequest`、`PointExpiringResponse`、`PointExpireRequest`、`PointExpireResponse`）、`specs/operations/payment-operations.tsp`（`PointCrud`） |
+| データベース | `backend/packages/database/sql/migrations/202611161000_customer_points_rules.sql`、`202611181900_customer_merge.sql`、`src/seeds/seed-data/customers.ts` |
+| ドメイン | `backend/packages/domain/src/models/point.ts`、`schemas/point.schema.ts`、`repositories/point.repository.ts`、`mappers/read/point.mapper.ts`、`business-logic/point/`（誰が使えるかは `_shared/authorization.ts`、取引の計画は `_shared/plan.ts`、残っているポイントの数え方と失効の計画は `_shared/lots.ts`、統合でのポイントの移し方は `_shared/transfer.ts`、409 の内容は `_shared/refusals.ts`、付与・利用・調整に共通の流れは `_shared/record.ts`） |
 | インフラ | `backend/packages/infrastructure/src/repositories/point.repository.impl.ts` |
 | API | `backend/packages/api/src/routes/point/`（`/api/v1/points` に取り付ける） |
-| テスト | `backend/packages/domain/src/__tests__/point.schema.test.ts`、`point.plan.test.ts`、`point.lots.test.ts`、`point.mapper.test.ts`、`point.usecase.test.ts`、`backend/packages/api/src/routes/point/_shared/__tests__/`、`backend/packages/api/src/__tests__/point.integration.test.ts`、`backend/packages/database/src/scripts/__tests__/migrations.integration.test.ts` |
+| テスト | `backend/packages/domain/src/__tests__/point.schema.test.ts`、`point.plan.test.ts`、`point.lots.test.ts`、`point.mapper.test.ts`、`point.usecase.test.ts`、`customer-merge.test.ts`（移行の計画）、`backend/packages/api/src/routes/point/_shared/__tests__/`、`backend/packages/api/src/__tests__/point.integration.test.ts`、`customer-merge.integration.test.ts`（移行）、`backend/packages/database/src/scripts/__tests__/migrations.integration.test.ts` |
