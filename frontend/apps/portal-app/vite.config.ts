@@ -15,7 +15,9 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 3001,
       strictPort: true,
-      host: true,
+      // This machine only, like the backend and the services of docker compose.
+      // `--host` opens it to the network for one run
+      host: '127.0.0.1',
     },
     build: {
       rollupOptions: {
