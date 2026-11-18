@@ -822,6 +822,10 @@ describe('Customer export API', () => {
       await db
         .insert(reviewHelpfulVotes)
         .values({ reviewId: othersReview, customerId: customer.id })
+      // The mark of another customer, on this customer's review, is theirs.
+      await db
+        .insert(reviewHelpfulVotes)
+        .values({ reviewId, customerId: other.id })
       await db.insert(customerPoints).values([
         {
           customerId: customer.id,
