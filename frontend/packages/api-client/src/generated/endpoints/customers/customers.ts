@@ -29,9 +29,12 @@ import type {
   CustomerCrudBulkCreate201,
   CustomerCrudBulkDelete200,
   CustomerCrudBulkUpdate200,
+  CustomerCrudCancelDeletionRequest200,
   CustomerCrudCreate201,
+  CustomerCrudExecuteDeletionRequests200,
   CustomerCrudExportParams,
   CustomerCrudGet200,
+  CustomerCrudGetDeletionRequest200,
   CustomerCrudGetHistory200,
   CustomerCrudGetHistoryParams,
   CustomerCrudGetPreferences200,
@@ -55,8 +58,8 @@ import type {
   ModelsCustomerBulkDeleteRequest,
   ModelsCustomerBulkUpdateRequest,
   ModelsCustomerCreateRequest,
-  ModelsCustomerDataDeletionRequest,
   ModelsCustomerDataExportResponse,
+  ModelsCustomerDeletionRequestCreateRequest,
   ModelsCustomerId,
   ModelsCustomerMergeRequest,
   ModelsCustomerPreferencesUpdateRequest,
@@ -977,6 +980,115 @@ export const useCustomerCrudBulkDelete = <TError = ModelsProblemDetails,
         TContext
       > => {
       return useMutation(getCustomerCrudBulkDeleteMutationOptions(options), queryClient);
+    }
+    export type customerCrudExecuteDeletionRequestsResponse200 = {
+  data: CustomerCrudExecuteDeletionRequests200
+  status: 200
+}
+
+export type customerCrudExecuteDeletionRequestsResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type customerCrudExecuteDeletionRequestsResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
+export type customerCrudExecuteDeletionRequestsResponse429 = {
+  data: ModelsProblemDetails
+  status: 429
+}
+
+export type customerCrudExecuteDeletionRequestsResponse500 = {
+  data: ModelsProblemDetails
+  status: 500
+}
+
+export type customerCrudExecuteDeletionRequestsResponseSuccess = (customerCrudExecuteDeletionRequestsResponse200) & {
+  headers: Headers;
+};
+export type customerCrudExecuteDeletionRequestsResponseError = (customerCrudExecuteDeletionRequestsResponse401 | customerCrudExecuteDeletionRequestsResponse403 | customerCrudExecuteDeletionRequestsResponse429 | customerCrudExecuteDeletionRequestsResponse500) & {
+  headers: Headers;
+};
+
+export type customerCrudExecuteDeletionRequestsResponse = (customerCrudExecuteDeletionRequestsResponseSuccess | customerCrudExecuteDeletionRequestsResponseError)
+
+export const getCustomerCrudExecuteDeletionRequestsUrl = () => {
+
+
+
+
+  return `/api/v1/customers/deletion-requests/execute`
+}
+
+/**
+ * 予定日時(scheduledAt)を過ぎた進行中のデータの削除の依頼を、予定日時の順にすべて実行し、実行した依頼を返します(なければ空の一覧)。admin だけが実行できます(サロンのメンバーと顧客のアカウントは403)。依頼ごとに1つのトランザクションで、顧客の氏名・連絡先・住所などの個人を特定できる項目を消して顧客を論理削除し、アカウントを削除済みにしてセッションを消し、好み設定・カルテ・アレルギー・書いたレビュー・参考になったの評価・施術記録の記述と写真・予約の要望とメモを消し、ポイントの残高を失効させ、それまでの版を消して消去(erase)の版を記録します。売上と予約の行は、帳簿書類の保存義務(7年)のために残します。依頼のあとに削除した顧客の依頼も実行します。途中の依頼でエラーになった場合は、そこで止めて500を返します(それまでの依頼は実行済みで、もう一度実行すると残りを実行します)。定期的に呼ぶのは運用の側です。
+ * @summary Execute the deletion requests that are due
+ */
+export const customerCrudExecuteDeletionRequests = async ( options?: RequestInit): Promise<customerCrudExecuteDeletionRequestsResponse> => {
+
+  return customInstance<customerCrudExecuteDeletionRequestsResponse>(getCustomerCrudExecuteDeletionRequestsUrl(),
+  {
+    ...options,
+    method: 'POST'
+
+
+  }
+);}
+
+
+
+
+
+export const getCustomerCrudExecuteDeletionRequestsMutationKey = () => ['customerCrudExecuteDeletionRequests'] as const;
+
+export const getCustomerCrudExecuteDeletionRequestsMutationOptions = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerCrudExecuteDeletionRequests>>, TError,void, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof customerCrudExecuteDeletionRequests>>, TError,void, TContext> => {
+
+const mutationKey = getCustomerCrudExecuteDeletionRequestsMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof customerCrudExecuteDeletionRequests>>, void> = () => {
+
+
+          return  customerCrudExecuteDeletionRequests()
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CustomerCrudExecuteDeletionRequestsMutationResult = NonNullable<Awaited<ReturnType<typeof customerCrudExecuteDeletionRequests>>>
+
+    export type CustomerCrudExecuteDeletionRequestsMutationError = ModelsProblemDetails
+
+
+    /**
+ * 予定日時(scheduledAt)を過ぎた進行中のデータの削除の依頼を、予定日時の順にすべて実行し、実行した依頼を返します(なければ空の一覧)。admin だけが実行できます(サロンのメンバーと顧客のアカウントは403)。依頼ごとに1つのトランザクションで、顧客の氏名・連絡先・住所などの個人を特定できる項目を消して顧客を論理削除し、アカウントを削除済みにしてセッションを消し、好み設定・カルテ・アレルギー・書いたレビュー・参考になったの評価・施術記録の記述と写真・予約の要望とメモを消し、ポイントの残高を失効させ、それまでの版を消して消去(erase)の版を記録します。売上と予約の行は、帳簿書類の保存義務(7年)のために残します。依頼のあとに削除した顧客の依頼も実行します。途中の依頼でエラーになった場合は、そこで止めて500を返します(それまでの依頼は実行済みで、もう一度実行すると残りを実行します)。定期的に呼ぶのは運用の側です。
+ * @summary Execute the deletion requests that are due
+ */
+export const useCustomerCrudExecuteDeletionRequests = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerCrudExecuteDeletionRequests>>, TError,void, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof customerCrudExecuteDeletionRequests>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getCustomerCrudExecuteDeletionRequestsMutationOptions(options), queryClient);
     }
     export type customerCrudExportResponse200 = {
   data: string
@@ -1946,7 +2058,7 @@ export const getCustomerCrudMergeUrl = () => {
 }
 
 /**
- * 重複登録された2人の顧客を1人にまとめ、統合後のメイン顧客を返します。admin と owner / manager だけが実行できます。すべてを1つのトランザクションで行い、断るときは何も変えません。台帳の項目は、両方が同じ値ならその値、片方だけが値を持つならその値、両方が異なる値なら conflictResolution で決めます。どちらかの顧客を指す紹介元は値がないものとして扱い、サブを紹介元にしていたほかの顧客はメインを紹介元にします。メインがサブの紹介コードを受け継ぐときは、サブの紹介コードを外します。サブの予約・売上・施術記録・レビューはメインのものになり、来店回数などは予約から数え直します。サブだけがアカウントに紐づいていれば、そのアカウントをメインに紐づけます。サブのポイント残高は、移行(transferred)の取引で、残っている付与ごとに同じ有効期限でメインに移します。好み設定はサブだけにあれば移し、両方にあれば conflictResolution で選んだ行の値を残します。カルテはサブだけにあれば移し、両方にあれば何も落とさずに合わせます(施術歴はメインのあとにサブのもの、製品の一覧は両方を合わせ、既往歴とメモは値が違えば空行でつなぐ)。アレルギーはサブにだけあるものを移し、両方にあるアレルゲンは重いほうの記録を残します。サブの「参考になった」はメインのものにし、自分のレビューへの投票と重複する投票は消します。2人と、紹介元がメインに変わった顧客に版(merge)を記録し、サブは論理削除します。IDが不正な場合、同じ顧客を指定した場合、存在しない顧客や削除した顧客を指定した場合は400を、両方の顧客が別々のログインアカウントに紐づいている場合と、2人のポイント残高の合計が 2,147,483,647 を超える場合、2人のカルテを合わせると施術歴か製品の一覧が50件を超える場合は409を返します。
+ * 重複登録された2人の顧客を1人にまとめ、統合後のメイン顧客を返します。admin と owner / manager だけが実行できます。すべてを1つのトランザクションで行い、断るときは何も変えません。台帳の項目は、両方が同じ値ならその値、片方だけが値を持つならその値、両方が異なる値なら conflictResolution で決めます。どちらかの顧客を指す紹介元は値がないものとして扱い、サブを紹介元にしていたほかの顧客はメインを紹介元にします。メインがサブの紹介コードを受け継ぐときは、サブの紹介コードを外します。サブの予約・売上・施術記録・レビューはメインのものになり、来店回数などは予約から数え直します。サブだけがアカウントに紐づいていれば、そのアカウントをメインに紐づけます。サブのポイント残高は、移行(transferred)の取引で、残っている付与ごとに同じ有効期限でメインに移します。好み設定はサブだけにあれば移し、両方にあれば conflictResolution で選んだ行の値を残します。カルテはサブだけにあれば移し、両方にあれば何も落とさずに合わせます(施術歴はメインのあとにサブのもの、製品の一覧は両方を合わせ、既往歴とメモは値が違えば空行でつなぐ)。アレルギーはサブにだけあるものを移し、両方にあるアレルゲンは重いほうの記録を残します。サブの「参考になった」はメインのものにし、自分のレビューへの投票と重複する投票は消します。2人と、紹介元がメインに変わった顧客に版(merge)を記録し、サブは論理削除します。IDが不正な場合、同じ顧客を指定した場合、存在しない顧客や削除した顧客を指定した場合は400を、両方の顧客が別々のログインアカウントに紐づいている場合と、どちらかの顧客に進行中のデータの削除の依頼がある場合と、2人のポイント残高の合計が 2,147,483,647 を超える場合、2人のカルテを合わせると施術歴か製品の一覧が50件を超える場合は409を返します。
  * @summary Merge customer records
  */
 export const customerCrudMerge = async (modelsCustomerMergeRequest: ModelsCustomerMergeRequest, options?: RequestInit): Promise<customerCrudMergeResponse> => {
@@ -2013,7 +2125,7 @@ const {mutation: mutationOptions} = options ?
     export type CustomerCrudMergeMutationVariables = {data: ModelsCustomerMergeRequest}
 
     /**
- * 重複登録された2人の顧客を1人にまとめ、統合後のメイン顧客を返します。admin と owner / manager だけが実行できます。すべてを1つのトランザクションで行い、断るときは何も変えません。台帳の項目は、両方が同じ値ならその値、片方だけが値を持つならその値、両方が異なる値なら conflictResolution で決めます。どちらかの顧客を指す紹介元は値がないものとして扱い、サブを紹介元にしていたほかの顧客はメインを紹介元にします。メインがサブの紹介コードを受け継ぐときは、サブの紹介コードを外します。サブの予約・売上・施術記録・レビューはメインのものになり、来店回数などは予約から数え直します。サブだけがアカウントに紐づいていれば、そのアカウントをメインに紐づけます。サブのポイント残高は、移行(transferred)の取引で、残っている付与ごとに同じ有効期限でメインに移します。好み設定はサブだけにあれば移し、両方にあれば conflictResolution で選んだ行の値を残します。カルテはサブだけにあれば移し、両方にあれば何も落とさずに合わせます(施術歴はメインのあとにサブのもの、製品の一覧は両方を合わせ、既往歴とメモは値が違えば空行でつなぐ)。アレルギーはサブにだけあるものを移し、両方にあるアレルゲンは重いほうの記録を残します。サブの「参考になった」はメインのものにし、自分のレビューへの投票と重複する投票は消します。2人と、紹介元がメインに変わった顧客に版(merge)を記録し、サブは論理削除します。IDが不正な場合、同じ顧客を指定した場合、存在しない顧客や削除した顧客を指定した場合は400を、両方の顧客が別々のログインアカウントに紐づいている場合と、2人のポイント残高の合計が 2,147,483,647 を超える場合、2人のカルテを合わせると施術歴か製品の一覧が50件を超える場合は409を返します。
+ * 重複登録された2人の顧客を1人にまとめ、統合後のメイン顧客を返します。admin と owner / manager だけが実行できます。すべてを1つのトランザクションで行い、断るときは何も変えません。台帳の項目は、両方が同じ値ならその値、片方だけが値を持つならその値、両方が異なる値なら conflictResolution で決めます。どちらかの顧客を指す紹介元は値がないものとして扱い、サブを紹介元にしていたほかの顧客はメインを紹介元にします。メインがサブの紹介コードを受け継ぐときは、サブの紹介コードを外します。サブの予約・売上・施術記録・レビューはメインのものになり、来店回数などは予約から数え直します。サブだけがアカウントに紐づいていれば、そのアカウントをメインに紐づけます。サブのポイント残高は、移行(transferred)の取引で、残っている付与ごとに同じ有効期限でメインに移します。好み設定はサブだけにあれば移し、両方にあれば conflictResolution で選んだ行の値を残します。カルテはサブだけにあれば移し、両方にあれば何も落とさずに合わせます(施術歴はメインのあとにサブのもの、製品の一覧は両方を合わせ、既往歴とメモは値が違えば空行でつなぐ)。アレルギーはサブにだけあるものを移し、両方にあるアレルゲンは重いほうの記録を残します。サブの「参考になった」はメインのものにし、自分のレビューへの投票と重複する投票は消します。2人と、紹介元がメインに変わった顧客に版(merge)を記録し、サブは論理削除します。IDが不正な場合、同じ顧客を指定した場合、存在しない顧客や削除した顧客を指定した場合は400を、両方の顧客が別々のログインアカウントに紐づいている場合と、どちらかの顧客に進行中のデータの削除の依頼がある場合と、2人のポイント残高の合計が 2,147,483,647 を超える場合、2人のカルテを合わせると施術歴か製品の一覧が50件を超える場合は409を返します。
  * @summary Merge customer records
  */
 export const useCustomerCrudMerge = <TError = ModelsProblemDetails,
@@ -2481,6 +2593,11 @@ export type customerCrudRequestDeletionResponse404 = {
   status: 404
 }
 
+export type customerCrudRequestDeletionResponse409 = {
+  data: ModelsProblemDetails
+  status: 409
+}
+
 export type customerCrudRequestDeletionResponse413 = {
   data: ModelsProblemDetails
   status: 413
@@ -2504,7 +2621,7 @@ export type customerCrudRequestDeletionResponse500 = {
 export type customerCrudRequestDeletionResponseSuccess = (customerCrudRequestDeletionResponse202) & {
   headers: Headers;
 };
-export type customerCrudRequestDeletionResponseError = (customerCrudRequestDeletionResponse400 | customerCrudRequestDeletionResponse401 | customerCrudRequestDeletionResponse403 | customerCrudRequestDeletionResponse404 | customerCrudRequestDeletionResponse413 | customerCrudRequestDeletionResponse415 | customerCrudRequestDeletionResponse429 | customerCrudRequestDeletionResponse500) & {
+export type customerCrudRequestDeletionResponseError = (customerCrudRequestDeletionResponse400 | customerCrudRequestDeletionResponse401 | customerCrudRequestDeletionResponse403 | customerCrudRequestDeletionResponse404 | customerCrudRequestDeletionResponse409 | customerCrudRequestDeletionResponse413 | customerCrudRequestDeletionResponse415 | customerCrudRequestDeletionResponse429 | customerCrudRequestDeletionResponse500) & {
   headers: Headers;
 };
 
@@ -2519,11 +2636,11 @@ export const getCustomerCrudRequestDeletionUrl = (id: ModelsCustomerId,) => {
 }
 
 /**
- * 顧客からの個人データ削除の要請を受け付け、規制に沿った消去フローを開始します。confirmedがtrueでない場合は400を、顧客が存在しない場合は404を返します。
- * @summary Request customer data deletion
+ * 顧客のデータの削除の依頼(個人情報保護法の利用停止等の請求)を受け付けて記録し、受け付けた依頼を返します。本人の確認はサロンが行います。admin と owner / manager だけが実行できます。消去は、受け付けた時刻の14日後(scheduledAt)から実行でき(executeDeletionRequests)、それまでは取り消せます。依頼のあいだも、顧客はいつもどおり扱えます。IDと本文が不正な場合は400を、顧客が存在しない、または削除されている場合は404を、その顧客に進行中の依頼がある場合は409を返します。
+ * @summary Request the deletion of the data of a customer
  */
 export const customerCrudRequestDeletion = async (id: ModelsCustomerId,
-    modelsCustomerDataDeletionRequest: ModelsCustomerDataDeletionRequest, options?: RequestInit): Promise<customerCrudRequestDeletionResponse> => {
+    modelsCustomerDeletionRequestCreateRequest: ModelsCustomerDeletionRequestCreateRequest, options?: RequestInit): Promise<customerCrudRequestDeletionResponse> => {
 
     const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
     if (!h) return {};
@@ -2544,7 +2661,7 @@ return customInstance<customerCrudRequestDeletionResponse>(getCustomerCrudReques
     ...options,
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
-    body: JSON.stringify(modelsCustomerDataDeletionRequest)
+    body: JSON.stringify(modelsCustomerDeletionRequestCreateRequest)
   }
 );}
 
@@ -2582,13 +2699,13 @@ const {mutation: mutationOptions} = options ?
   return  { mutationFn, ...mutationOptions }}
 
     export type CustomerCrudRequestDeletionMutationResult = NonNullable<Awaited<ReturnType<typeof customerCrudRequestDeletion>>>
-    export type CustomerCrudRequestDeletionMutationBody = ModelsCustomerDataDeletionRequest
+    export type CustomerCrudRequestDeletionMutationBody = ModelsCustomerDeletionRequestCreateRequest
     export type CustomerCrudRequestDeletionMutationError = ModelsProblemDetails
-    export type CustomerCrudRequestDeletionMutationVariables = {id: ModelsCustomerId;data: ModelsCustomerDataDeletionRequest}
+    export type CustomerCrudRequestDeletionMutationVariables = {id: ModelsCustomerId;data: ModelsCustomerDeletionRequestCreateRequest}
 
     /**
- * 顧客からの個人データ削除の要請を受け付け、規制に沿った消去フローを開始します。confirmedがtrueでない場合は400を、顧客が存在しない場合は404を返します。
- * @summary Request customer data deletion
+ * 顧客のデータの削除の依頼(個人情報保護法の利用停止等の請求)を受け付けて記録し、受け付けた依頼を返します。本人の確認はサロンが行います。admin と owner / manager だけが実行できます。消去は、受け付けた時刻の14日後(scheduledAt)から実行でき(executeDeletionRequests)、それまでは取り消せます。依頼のあいだも、顧客はいつもどおり扱えます。IDと本文が不正な場合は400を、顧客が存在しない、または削除されている場合は404を、その顧客に進行中の依頼がある場合は409を返します。
+ * @summary Request the deletion of the data of a customer
  */
 export const useCustomerCrudRequestDeletion = <TError = ModelsProblemDetails,
     TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerCrudRequestDeletion>>, TError,CustomerCrudRequestDeletionMutationVariables, TContext>, }
@@ -2599,6 +2716,282 @@ export const useCustomerCrudRequestDeletion = <TError = ModelsProblemDetails,
         TContext
       > => {
       return useMutation(getCustomerCrudRequestDeletionMutationOptions(options), queryClient);
+    }
+    export type customerCrudGetDeletionRequestResponse200 = {
+  data: CustomerCrudGetDeletionRequest200
+  status: 200
+}
+
+export type customerCrudGetDeletionRequestResponse400 = {
+  data: ModelsProblemDetails
+  status: 400
+}
+
+export type customerCrudGetDeletionRequestResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type customerCrudGetDeletionRequestResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
+export type customerCrudGetDeletionRequestResponse404 = {
+  data: ModelsProblemDetails
+  status: 404
+}
+
+export type customerCrudGetDeletionRequestResponse429 = {
+  data: ModelsProblemDetails
+  status: 429
+}
+
+export type customerCrudGetDeletionRequestResponse500 = {
+  data: ModelsProblemDetails
+  status: 500
+}
+
+export type customerCrudGetDeletionRequestResponseSuccess = (customerCrudGetDeletionRequestResponse200) & {
+  headers: Headers;
+};
+export type customerCrudGetDeletionRequestResponseError = (customerCrudGetDeletionRequestResponse400 | customerCrudGetDeletionRequestResponse401 | customerCrudGetDeletionRequestResponse403 | customerCrudGetDeletionRequestResponse404 | customerCrudGetDeletionRequestResponse429 | customerCrudGetDeletionRequestResponse500) & {
+  headers: Headers;
+};
+
+export type customerCrudGetDeletionRequestResponse = (customerCrudGetDeletionRequestResponseSuccess | customerCrudGetDeletionRequestResponseError)
+
+export const getCustomerCrudGetDeletionRequestUrl = (id: ModelsCustomerId,) => {
+
+
+
+
+  return `/api/v1/customers/${id}/deletion-request`
+}
+
+/**
+ * 顧客のデータの削除の依頼のうち、最新のもの(進行中、取り消し、完了のいずれか)を返します。admin と owner / manager だけが実行できます。削除した顧客と、データを消去した顧客の依頼も返します。IDが不正な場合は400を、顧客が存在しない場合と、依頼がない場合は404を返します。
+ * @summary Get the deletion request of a customer
+ */
+export const customerCrudGetDeletionRequest = async (id: ModelsCustomerId, options?: RequestInit): Promise<customerCrudGetDeletionRequestResponse> => {
+
+  return customInstance<customerCrudGetDeletionRequestResponse>(getCustomerCrudGetDeletionRequestUrl(id),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getCustomerCrudGetDeletionRequestQueryKey = (id: ModelsCustomerId,) => {
+    return [
+    `/api/v1/customers/${id}/deletion-request`
+    ] as const;
+    }
+
+
+export const getCustomerCrudGetDeletionRequestQueryOptions = <TData = Awaited<ReturnType<typeof customerCrudGetDeletionRequest>>, TError = ModelsProblemDetails>(id: ModelsCustomerId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudGetDeletionRequest>>, TError, TData>>, }
+) => {
+
+const {query: queryOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getCustomerCrudGetDeletionRequestQueryKey(id);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof customerCrudGetDeletionRequest>>> = ({ signal }) => customerCrudGetDeletionRequest(id, { signal });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: id !== null && id !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof customerCrudGetDeletionRequest>>, TError, TData> & { queryKey: DataTag<QueryKey, TData, TError> }
+}
+
+export type CustomerCrudGetDeletionRequestQueryResult = NonNullable<Awaited<ReturnType<typeof customerCrudGetDeletionRequest>>>
+export type CustomerCrudGetDeletionRequestQueryError = ModelsProblemDetails
+
+
+/**
+ * 顧客のデータの削除の依頼のうち、最新のもの(進行中、取り消し、完了のいずれか)を返します。admin と owner / manager だけが実行できます。削除した顧客と、データを消去した顧客の依頼も返します。IDが不正な場合は400を、顧客が存在しない場合と、依頼がない場合は404を返します。
+ * @summary Get the deletion request of a customer
+ */
+export function useCustomerCrudGetDeletionRequest<TData = Awaited<ReturnType<typeof customerCrudGetDeletionRequest>>, TError = ModelsProblemDetails>(
+ id: ModelsCustomerId, options: { query:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudGetDeletionRequest>>, TError, TData>> & Pick<
+        DefinedInitialDataOptions<
+          Awaited<ReturnType<typeof customerCrudGetDeletionRequest>>,
+          TError,
+          Awaited<ReturnType<typeof customerCrudGetDeletionRequest>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * 顧客のデータの削除の依頼のうち、最新のもの(進行中、取り消し、完了のいずれか)を返します。admin と owner / manager だけが実行できます。削除した顧客と、データを消去した顧客の依頼も返します。IDが不正な場合は400を、顧客が存在しない場合と、依頼がない場合は404を返します。
+ * @summary Get the deletion request of a customer
+ */
+export function useCustomerCrudGetDeletionRequest<TData = Awaited<ReturnType<typeof customerCrudGetDeletionRequest>>, TError = ModelsProblemDetails>(
+ id: ModelsCustomerId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudGetDeletionRequest>>, TError, TData>> & Pick<
+        UndefinedInitialDataOptions<
+          Awaited<ReturnType<typeof customerCrudGetDeletionRequest>>,
+          TError,
+          Awaited<ReturnType<typeof customerCrudGetDeletionRequest>>
+        > , 'initialData'
+      >, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * 顧客のデータの削除の依頼のうち、最新のもの(進行中、取り消し、完了のいずれか)を返します。admin と owner / manager だけが実行できます。削除した顧客と、データを消去した顧客の依頼も返します。IDが不正な場合は400を、顧客が存在しない場合と、依頼がない場合は404を返します。
+ * @summary Get the deletion request of a customer
+ */
+export function useCustomerCrudGetDeletionRequest<TData = Awaited<ReturnType<typeof customerCrudGetDeletionRequest>>, TError = ModelsProblemDetails>(
+ id: ModelsCustomerId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudGetDeletionRequest>>, TError, TData>>, }
+ , queryClient?: QueryClient
+  ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
+/**
+ * 顧客のデータの削除の依頼のうち、最新のもの(進行中、取り消し、完了のいずれか)を返します。admin と owner / manager だけが実行できます。削除した顧客と、データを消去した顧客の依頼も返します。IDが不正な場合は400を、顧客が存在しない場合と、依頼がない場合は404を返します。
+ * @summary Get the deletion request of a customer
+ */
+export function useCustomerCrudGetDeletionRequest<TData = Awaited<ReturnType<typeof customerCrudGetDeletionRequest>>, TError = ModelsProblemDetails>(
+ id: ModelsCustomerId, options?: { query?:Partial<UseQueryOptions<Awaited<ReturnType<typeof customerCrudGetDeletionRequest>>, TError, TData>>, }
+ , queryClient?: QueryClient
+ ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> } {
+
+  const queryOptions = getCustomerCrudGetDeletionRequestQueryOptions(id,options)
+
+  const query = useQuery(queryOptions, queryClient) as  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+export type customerCrudCancelDeletionRequestResponse200 = {
+  data: CustomerCrudCancelDeletionRequest200
+  status: 200
+}
+
+export type customerCrudCancelDeletionRequestResponse400 = {
+  data: ModelsProblemDetails
+  status: 400
+}
+
+export type customerCrudCancelDeletionRequestResponse401 = {
+  data: ModelsProblemDetails
+  status: 401
+}
+
+export type customerCrudCancelDeletionRequestResponse403 = {
+  data: ModelsProblemDetails
+  status: 403
+}
+
+export type customerCrudCancelDeletionRequestResponse404 = {
+  data: ModelsProblemDetails
+  status: 404
+}
+
+export type customerCrudCancelDeletionRequestResponse429 = {
+  data: ModelsProblemDetails
+  status: 429
+}
+
+export type customerCrudCancelDeletionRequestResponse500 = {
+  data: ModelsProblemDetails
+  status: 500
+}
+
+export type customerCrudCancelDeletionRequestResponseSuccess = (customerCrudCancelDeletionRequestResponse200) & {
+  headers: Headers;
+};
+export type customerCrudCancelDeletionRequestResponseError = (customerCrudCancelDeletionRequestResponse400 | customerCrudCancelDeletionRequestResponse401 | customerCrudCancelDeletionRequestResponse403 | customerCrudCancelDeletionRequestResponse404 | customerCrudCancelDeletionRequestResponse429 | customerCrudCancelDeletionRequestResponse500) & {
+  headers: Headers;
+};
+
+export type customerCrudCancelDeletionRequestResponse = (customerCrudCancelDeletionRequestResponseSuccess | customerCrudCancelDeletionRequestResponseError)
+
+export const getCustomerCrudCancelDeletionRequestUrl = (id: ModelsCustomerId,) => {
+
+
+
+
+  return `/api/v1/customers/${id}/deletion-request`
+}
+
+/**
+ * 顧客の進行中のデータの削除の依頼を取り消し、取り消した依頼を返します。admin と owner / manager だけが実行できます。消去を実行する前なら、予定日時を過ぎていても取り消せます。IDが不正な場合は400を、顧客が存在しない場合と、進行中の依頼がない場合は404を返します。
+ * @summary Cancel the deletion request of a customer
+ */
+export const customerCrudCancelDeletionRequest = async (id: ModelsCustomerId, options?: RequestInit): Promise<customerCrudCancelDeletionRequestResponse> => {
+
+  return customInstance<customerCrudCancelDeletionRequestResponse>(getCustomerCrudCancelDeletionRequestUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getCustomerCrudCancelDeletionRequestMutationKey = () => ['customerCrudCancelDeletionRequest'] as const;
+
+export const getCustomerCrudCancelDeletionRequestMutationOptions = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerCrudCancelDeletionRequest>>, TError,CustomerCrudCancelDeletionRequestMutationVariables, TContext>, }
+): UseMutationOptions<Awaited<ReturnType<typeof customerCrudCancelDeletionRequest>>, TError,CustomerCrudCancelDeletionRequestMutationVariables, TContext> => {
+
+const mutationKey = getCustomerCrudCancelDeletionRequestMutationKey();
+const {mutation: mutationOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof customerCrudCancelDeletionRequest>>, CustomerCrudCancelDeletionRequestMutationVariables> = (props) => {
+          const {id} = props ?? {};
+
+          return  customerCrudCancelDeletionRequest(id,)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CustomerCrudCancelDeletionRequestMutationResult = NonNullable<Awaited<ReturnType<typeof customerCrudCancelDeletionRequest>>>
+
+    export type CustomerCrudCancelDeletionRequestMutationError = ModelsProblemDetails
+    export type CustomerCrudCancelDeletionRequestMutationVariables = {id: ModelsCustomerId}
+
+    /**
+ * 顧客の進行中のデータの削除の依頼を取り消し、取り消した依頼を返します。admin と owner / manager だけが実行できます。消去を実行する前なら、予定日時を過ぎていても取り消せます。IDが不正な場合は400を、顧客が存在しない場合と、進行中の依頼がない場合は404を返します。
+ * @summary Cancel the deletion request of a customer
+ */
+export const useCustomerCrudCancelDeletionRequest = <TError = ModelsProblemDetails,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof customerCrudCancelDeletionRequest>>, TError,CustomerCrudCancelDeletionRequestMutationVariables, TContext>, }
+ , queryClient?: QueryClient): UseMutationResult<
+        Awaited<ReturnType<typeof customerCrudCancelDeletionRequest>>,
+        TError,
+        CustomerCrudCancelDeletionRequestMutationVariables,
+        TContext
+      > => {
+      return useMutation(getCustomerCrudCancelDeletionRequestMutationOptions(options), queryClient);
     }
     export type customerCrudExportDataResponse200 = {
   data: ModelsCustomerDataExportResponse
@@ -2818,7 +3211,7 @@ export const getCustomerCrudGetHistoryUrl = (id: ModelsCustomerId,
 }
 
 /**
- * 顧客の変更履歴(顧客台帳への書き込みごとの版)を、新しい版から順に取得し、変更者、日時、前の版から変わった項目を返します。admin と owner / manager だけが実行できます。削除した顧客の履歴も取得できます。IDとクエリが不正な場合と、cursorがその顧客の版を指していない場合は400を、顧客が存在しない場合は404を返します。
+ * 顧客の変更履歴(顧客台帳への書き込みごとの版)を、新しい版から順に取得し、変更者、日時、前の版から変わった項目を返します。admin と owner / manager だけが実行できます。削除した顧客の履歴も取得できます。データを消去した顧客の履歴は、消去(erase)の版だけです。IDとクエリが不正な場合と、cursorがその顧客の版を指していない場合は400を、顧客が存在しない場合は404を返します。
  * @summary Get the history of a customer
  */
 export const customerCrudGetHistory = async (id: ModelsCustomerId,
@@ -2869,7 +3262,7 @@ export type CustomerCrudGetHistoryQueryError = ModelsProblemDetails
 
 
 /**
- * 顧客の変更履歴(顧客台帳への書き込みごとの版)を、新しい版から順に取得し、変更者、日時、前の版から変わった項目を返します。admin と owner / manager だけが実行できます。削除した顧客の履歴も取得できます。IDとクエリが不正な場合と、cursorがその顧客の版を指していない場合は400を、顧客が存在しない場合は404を返します。
+ * 顧客の変更履歴(顧客台帳への書き込みごとの版)を、新しい版から順に取得し、変更者、日時、前の版から変わった項目を返します。admin と owner / manager だけが実行できます。削除した顧客の履歴も取得できます。データを消去した顧客の履歴は、消去(erase)の版だけです。IDとクエリが不正な場合と、cursorがその顧客の版を指していない場合は400を、顧客が存在しない場合は404を返します。
  * @summary Get the history of a customer
  */
 export function useCustomerCrudGetHistory<TData = Awaited<ReturnType<typeof customerCrudGetHistory>>, TError = ModelsProblemDetails>(
@@ -2884,7 +3277,7 @@ export function useCustomerCrudGetHistory<TData = Awaited<ReturnType<typeof cust
  , queryClient?: QueryClient
   ):  DefinedUseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 顧客の変更履歴(顧客台帳への書き込みごとの版)を、新しい版から順に取得し、変更者、日時、前の版から変わった項目を返します。admin と owner / manager だけが実行できます。削除した顧客の履歴も取得できます。IDとクエリが不正な場合と、cursorがその顧客の版を指していない場合は400を、顧客が存在しない場合は404を返します。
+ * 顧客の変更履歴(顧客台帳への書き込みごとの版)を、新しい版から順に取得し、変更者、日時、前の版から変わった項目を返します。admin と owner / manager だけが実行できます。削除した顧客の履歴も取得できます。データを消去した顧客の履歴は、消去(erase)の版だけです。IDとクエリが不正な場合と、cursorがその顧客の版を指していない場合は400を、顧客が存在しない場合は404を返します。
  * @summary Get the history of a customer
  */
 export function useCustomerCrudGetHistory<TData = Awaited<ReturnType<typeof customerCrudGetHistory>>, TError = ModelsProblemDetails>(
@@ -2899,7 +3292,7 @@ export function useCustomerCrudGetHistory<TData = Awaited<ReturnType<typeof cust
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 顧客の変更履歴(顧客台帳への書き込みごとの版)を、新しい版から順に取得し、変更者、日時、前の版から変わった項目を返します。admin と owner / manager だけが実行できます。削除した顧客の履歴も取得できます。IDとクエリが不正な場合と、cursorがその顧客の版を指していない場合は400を、顧客が存在しない場合は404を返します。
+ * 顧客の変更履歴(顧客台帳への書き込みごとの版)を、新しい版から順に取得し、変更者、日時、前の版から変わった項目を返します。admin と owner / manager だけが実行できます。削除した顧客の履歴も取得できます。データを消去した顧客の履歴は、消去(erase)の版だけです。IDとクエリが不正な場合と、cursorがその顧客の版を指していない場合は400を、顧客が存在しない場合は404を返します。
  * @summary Get the history of a customer
  */
 export function useCustomerCrudGetHistory<TData = Awaited<ReturnType<typeof customerCrudGetHistory>>, TError = ModelsProblemDetails>(
@@ -2908,7 +3301,7 @@ export function useCustomerCrudGetHistory<TData = Awaited<ReturnType<typeof cust
  , queryClient?: QueryClient
   ):  UseQueryResult<TData, TError> & { queryKey: DataTag<QueryKey, TData, TError> }
 /**
- * 顧客の変更履歴(顧客台帳への書き込みごとの版)を、新しい版から順に取得し、変更者、日時、前の版から変わった項目を返します。admin と owner / manager だけが実行できます。削除した顧客の履歴も取得できます。IDとクエリが不正な場合と、cursorがその顧客の版を指していない場合は400を、顧客が存在しない場合は404を返します。
+ * 顧客の変更履歴(顧客台帳への書き込みごとの版)を、新しい版から順に取得し、変更者、日時、前の版から変わった項目を返します。admin と owner / manager だけが実行できます。削除した顧客の履歴も取得できます。データを消去した顧客の履歴は、消去(erase)の版だけです。IDとクエリが不正な場合と、cursorがその顧客の版を指していない場合は400を、顧客が存在しない場合は404を返します。
  * @summary Get the history of a customer
  */
 export function useCustomerCrudGetHistory<TData = Awaited<ReturnType<typeof customerCrudGetHistory>>, TError = ModelsProblemDetails>(
@@ -3288,7 +3681,7 @@ export const getCustomerCrudRestoreUrl = (id: ModelsCustomerId,) => {
 }
 
 /**
- * 論理削除した顧客を台帳に戻し、版(restore)を記録します。admin と owner / manager だけが実行できます。アカウントとの紐づけは戻しません(userId は null。本人がプロフィールを作ると、メールアドレスで顧客を引き継ぎます)。IDが不正な場合は400を、顧客が存在しない場合は404を、削除されていない顧客を指定した場合と、統合(merge)で削除した顧客を指定した場合と、削除のあとに同じメールアドレスの顧客が登録されている場合は409を返します。
+ * 論理削除した顧客を台帳に戻し、版(restore)を記録します。admin と owner / manager だけが実行できます。アカウントとの紐づけは戻しません(userId は null。本人がプロフィールを作ると、メールアドレスで顧客を引き継ぎます)。IDが不正な場合は400を、顧客が存在しない場合は404を、削除されていない顧客を指定した場合と、統合(merge)で削除した顧客と、データを消去した顧客を指定した場合と、削除のあとに同じメールアドレスの顧客が登録されている場合は409を返します。
  * @summary Restore a deleted customer
  */
 export const customerCrudRestore = async (id: ModelsCustomerId, options?: RequestInit): Promise<customerCrudRestoreResponse> => {
@@ -3341,7 +3734,7 @@ const {mutation: mutationOptions} = options ?
     export type CustomerCrudRestoreMutationVariables = {id: ModelsCustomerId}
 
     /**
- * 論理削除した顧客を台帳に戻し、版(restore)を記録します。admin と owner / manager だけが実行できます。アカウントとの紐づけは戻しません(userId は null。本人がプロフィールを作ると、メールアドレスで顧客を引き継ぎます)。IDが不正な場合は400を、顧客が存在しない場合は404を、削除されていない顧客を指定した場合と、統合(merge)で削除した顧客を指定した場合と、削除のあとに同じメールアドレスの顧客が登録されている場合は409を返します。
+ * 論理削除した顧客を台帳に戻し、版(restore)を記録します。admin と owner / manager だけが実行できます。アカウントとの紐づけは戻しません(userId は null。本人がプロフィールを作ると、メールアドレスで顧客を引き継ぎます)。IDが不正な場合は400を、顧客が存在しない場合は404を、削除されていない顧客を指定した場合と、統合(merge)で削除した顧客と、データを消去した顧客を指定した場合と、削除のあとに同じメールアドレスの顧客が登録されている場合は409を返します。
  * @summary Restore a deleted customer
  */
 export const useCustomerCrudRestore = <TError = ModelsProblemDetails,

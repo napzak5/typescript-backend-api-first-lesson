@@ -114,6 +114,7 @@ namespace BeautySalon.Models {
     delete: 削除 - 顧客を論理削除した(一括削除を含む)
     restore: 復元 - 論理削除した顧客を台帳に戻した
     merge: 統合 - 2人の顧客を1人にまとめた。残した顧客(メイン)の版は統合後の値、統合して論理削除した顧客(サブ)の版は削除したときの値
+    erase: 消去 - データの削除の依頼を実行し、個人を特定できる項目を消した。それまでの版はすべて消し、消去したあとの値のこの版だけを残す
     """)
   enum CustomerVersionOperationType {
     baseline,
@@ -122,6 +123,19 @@ namespace BeautySalon.Models {
     delete,
     restore,
     merge,
+    erase,
+  }
+
+  @doc("""
+    顧客のデータの削除の依頼の状態
+    pending: 進行中 - 受け付けて、まだ実行も取り消しもしていない。1人の顧客に1件まで
+    cancelled: 取り消し - 実行する前に取り消した
+    completed: 完了 - 実行し、顧客のデータを消去した
+    """)
+  enum CustomerDeletionRequestStatusType {
+    pending,
+    cancelled,
+    completed,
   }
 
   // ============================================================================
@@ -966,29 +980,51 @@ namespace BeautySalon.Models {
   }
 
   @doc("""
-    顧客データ削除要請リクエスト - 顧客本人からの個人データ削除の要請を受け付ける
+    顧客のデータの削除の依頼の受け付け - 個人情報保護法の利用停止等(消去)の請求を、サロンが本人を確かめてから記録する
     """)
-  model CustomerDataDeletionRequest {
-    @doc("削除を希望する理由")
+  model CustomerDeletionRequestCreateRequest {
+    @doc("依頼の理由(本人が述べた理由など)。1〜1,000文字で、空白だけの文字列は指定できない")
     @minLength(1)
+    @maxLength(1000)
     reason: string;
-
-    @doc("削除に伴う影響を理解しているか。true 以外は受け付けない")
-    confirmed: boolean;
   }
 
   @doc("""
-    顧客データ削除要請の受付結果 - 受け付けた削除要請と削除の予定を返す
+    顧客のデータの削除の依頼 - customer_deletion_requests の行。受け付けた時刻の14日後に、消去を実行できるようになる
     """)
-  model CustomerDataDeletionResponse {
-    @doc("削除リクエストID")
-    requestId: string;
+  model CustomerDeletionRequestResponse {
+    @doc("依頼の ID")
+    id: CustomerDeletionRequestId;
 
-    @doc("予定される削除日時")
-    scheduledDate: utcDateTime;
+    @doc("データを消去する顧客の ID")
+    customerId: CustomerId;
 
-    @doc("猶予期間（日数）。この期間内であれば削除を取り消せる")
-    gracePeriodDays: int32;
+    @doc("依頼の理由")
+    reason: string;
+
+    @doc("依頼の状態")
+    status: CustomerDeletionRequestStatusType;
+
+    @doc("依頼を受け付けたユーザーの ID")
+    requestedBy: UserId;
+
+    @doc("依頼を受け付けた日時")
+    requestedAt: utcDateTime;
+
+    @doc("消去を実行できるようになる日時。受け付けた日時の14日後")
+    scheduledAt: utcDateTime;
+
+    @doc("依頼を取り消したユーザーの ID。取り消していなければnull")
+    cancelledBy: UserId | null;
+
+    @doc("依頼を取り消した日時。取り消していなければnull")
+    cancelledAt: utcDateTime | null;
+
+    @doc("消去を実行したユーザーの ID。実行していなければnull")
+    completedBy: UserId | null;
+
+    @doc("消去を実行した日時。実行していなければnull")
+    completedAt: utcDateTime | null;
   }
 
   @doc("""

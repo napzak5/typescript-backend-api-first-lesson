@@ -104,6 +104,10 @@ namespace BeautySalon.Models {
   @format("uuid")
   scalar CustomerVersionId extends string;
 
+  @doc("顧客のデータの削除の依頼（customer_deletion_requests の行）を識別するブランド付きUUID。")
+  @format("uuid")
+  scalar CustomerDeletionRequestId extends string;
+
   @doc("添付ファイル・画像データを識別するブランド付きUUID。")
   @format("uuid")
   scalar AttachmentId extends string;

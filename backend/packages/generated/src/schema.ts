@@ -155,6 +155,31 @@ export type BookingStatusType = z.infer<typeof BookingStatusTypeSchema>
 
 /**
  * @description
+ * 顧客のデータの削除の依頼の状態
+ *
+ *
+ * pending: 進行中 - 受け付けて、まだ実行も取り消しもしていない。1人の顧客に1件まで
+ *
+ * cancelled: 取り消し - 実行する前に取り消した
+ *
+ * completed: 完了 - 実行し、顧客のデータを消去した
+ */
+export const CustomerDeletionRequestStatusTypeSchema = z.enum(['pending', 'cancelled', 'completed'])
+/**
+ * @description
+ * 顧客のデータの削除の依頼の状態
+ *
+ *
+ * pending: 進行中 - 受け付けて、まだ実行も取り消しもしていない。1人の顧客に1件まで
+ *
+ * cancelled: 取り消し - 実行する前に取り消した
+ *
+ * completed: 完了 - 実行し、顧客のデータを消去した
+ */
+export type CustomerDeletionRequestStatusType = z.infer<typeof CustomerDeletionRequestStatusTypeSchema>
+
+/**
+ * @description
  * 性別区分 - 顧客の性別を表す区分（多様性に配慮した選択肢を含む）
  *
  *
@@ -252,8 +277,10 @@ export type CustomerStatusType = z.infer<typeof CustomerStatusTypeSchema>
  * restore: 復元 - 論理削除した顧客を台帳に戻した
  *
  * merge: 統合 - 2人の顧客を1人にまとめた。残した顧客(メイン)の版は統合後の値、統合して論理削除した顧客(サブ)の版は削除したときの値
+ *
+ * erase: 消去 - データの削除の依頼を実行し、個人を特定できる項目を消した。それまでの版はすべて消し、消去したあとの値のこの版だけを残す
  */
-export const CustomerVersionOperationTypeSchema = z.enum(['baseline', 'create', 'update', 'delete', 'restore', 'merge'])
+export const CustomerVersionOperationTypeSchema = z.enum(['baseline', 'create', 'update', 'delete', 'restore', 'merge', 'erase'])
 /**
  * @description
  * 顧客の版の操作区分 - 版を作った、顧客台帳への書き込みの種類
@@ -270,6 +297,8 @@ export const CustomerVersionOperationTypeSchema = z.enum(['baseline', 'create', 
  * restore: 復元 - 論理削除した顧客を台帳に戻した
  *
  * merge: 統合 - 2人の顧客を1人にまとめた。残した顧客(メイン)の版は統合後の値、統合して論理削除した顧客(サブ)の版は削除したときの値
+ *
+ * erase: 消去 - データの削除の依頼を実行し、個人を特定できる項目を消した。それまでの版はすべて消し、消去したあとの値のこの版だけを残す
  */
 export type CustomerVersionOperationType = z.infer<typeof CustomerVersionOperationTypeSchema>
 
