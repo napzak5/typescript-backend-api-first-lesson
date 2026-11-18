@@ -9,6 +9,7 @@ import {
   AvailableSlotRepository,
   BookingRepository,
   CustomerAllergyRepository,
+  CustomerDeletionRequestRepository,
   CustomerPreferencesRepository,
   CustomerRepository,
   CustomerStatisticsRepository,
@@ -62,6 +63,7 @@ import { createBookingRouter } from './routes/booking'
 import { createBookingServiceRouter } from './routes/booking-service'
 import { createCustomerRouter } from './routes/customer'
 import { createCustomerBookingRouter } from './routes/customer-booking'
+import { createCustomerDeletionRequestRouter } from './routes/customer-deletion-request'
 import {
   createCustomerPreferencesRouter,
   createOwnCustomerPreferencesRouter,
@@ -350,6 +352,18 @@ export const createApp = ({
         customerStatisticsRepository: new CustomerStatisticsRepository(
           database,
         ),
+      },
+      authenticated,
+    ),
+  )
+  // The deletion requests, below a customer and of all customers. Any other
+  // path falls through to the routers below.
+  app.use(
+    `${API_BASE_PATH}/customers`,
+    createCustomerDeletionRequestRouter(
+      {
+        customerDeletionRequestRepository:
+          new CustomerDeletionRequestRepository(database),
       },
       authenticated,
     ),

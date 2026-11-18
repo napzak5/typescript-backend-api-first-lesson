@@ -35,7 +35,7 @@
 | `earned`（付与） | `POST /api/v1/points/earn` | 1 以上 | 指定できる。null なら期限なし |
 | `used`（利用） | `POST /api/v1/points/use` | −1 以下。リクエストには正の数で書き、負の数で記録する | null |
 | `adjusted`（調整） | `POST /api/v1/points/adjust` | 0 以外 | null |
-| `expired`（失効） | `POST /api/v1/points/expire` | −1 以下 | null |
+| `expired`（失効） | `POST /api/v1/points/expire`。[顧客のデータの消去](./customers.md#消すもの残すもの)も、残高のすべてを、説明 `データの消去による失効` の取引で失効させる | −1 以下 | null |
 | `transferred`（移行） | なし（[顧客の統合](./customers.md#ポイント統合)が書く） | 0 以外。統合したサブは負、メインは正 | メインに書く正の取引は、移した付与の有効期限。負の取引は null |
 
 ## オペレーションと権限

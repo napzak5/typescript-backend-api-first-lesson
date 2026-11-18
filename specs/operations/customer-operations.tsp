@@ -11,7 +11,7 @@ using TypeSpec.OpenAPI;
 using BeautySalon.Models;
 
 namespace BeautySalon.Operations {
-  @doc("顧客台帳を管理するAPI操作群です。台帳はプラットフォーム全体で1つで、サロンごとには分かれていません。実装済みの操作は、一覧・登録・1件の取得・更新・削除、一括取得・一括登録・一括更新・一括削除、台帳の CSV 出力、統計の取得、変更履歴と版の取得、復元、統合、顧客のデータの出力と、好み設定の取得・更新です。これらは admin とサロンのスタッフ(owner / manager / staff。所属サロンは問いません)が実行でき、削除、一括削除、CSV 出力、変更履歴と版の取得、復元、統合、顧客のデータの出力は admin と owner / manager だけが実行できます。統計は、admin と、salonId のサロンの owner / manager / staff が実行できます。レスポンスはスタッフ専用の項目を含むので、顧客本人(customer)には403を返します。権限は最初に確認し、権限のないユーザーにはIDや本文が不正でも403を返します。")
+  @doc("顧客台帳を管理するAPI操作群です。台帳はプラットフォーム全体で1つで、サロンごとには分かれていません。操作は、一覧・登録・1件の取得・更新・削除、一括取得・一括登録・一括更新・一括削除、台帳の CSV 出力、統計の取得、変更履歴と版の取得、復元、統合、顧客のデータの出力、データの削除の依頼の受け付け・確認・取り消し・実行と、好み設定の取得・更新です。これらは admin とサロンのスタッフ(owner / manager / staff。所属サロンは問いません)が実行でき、削除、一括削除、CSV 出力、変更履歴と版の取得、復元、統合、顧客のデータの出力、データの削除の依頼の受け付け・確認・取り消しは admin と owner / manager だけが、削除の依頼の実行は admin だけが実行できます。統計は、admin と、salonId のサロンの owner / manager / staff が実行できます。レスポンスはスタッフ専用の項目を含むので、顧客本人(customer)には403を返します。権限は最初に確認し、権限のないユーザーにはIDや本文が不正でも403を返します。")
   @route("/api/v1/customers")
   @tag("Customers")
   namespace CustomerOperations {
@@ -156,7 +156,7 @@ namespace BeautySalon.Operations {
         | ProblemResponse<409>
         | CommonErrors;
 
-      @doc("顧客の変更履歴(顧客台帳への書き込みごとの版)を、新しい版から順に取得し、変更者、日時、前の版から変わった項目を返します。admin と owner / manager だけが実行できます。削除した顧客の履歴も取得できます。IDとクエリが不正な場合と、cursorがその顧客の版を指していない場合は400を、顧客が存在しない場合は404を返します。")
+      @doc("顧客の変更履歴(顧客台帳への書き込みごとの版)を、新しい版から順に取得し、変更者、日時、前の版から変わった項目を返します。admin と owner / manager だけが実行できます。削除した顧客の履歴も取得できます。データを消去した顧客の履歴は、消去(erase)の版だけです。IDとクエリが不正な場合と、cursorがその顧客の版を指していない場合は400を、顧客が存在しない場合は404を返します。")
       @summary("Get the history of a customer")
       @get
       @route("/{id}/history")
@@ -191,7 +191,7 @@ namespace BeautySalon.Operations {
         | ProblemResponse<404>
         | CommonErrors;
 
-      @doc("論理削除した顧客を台帳に戻し、版(restore)を記録します。admin と owner / manager だけが実行できます。アカウントとの紐づけは戻しません(userId は null。本人がプロフィールを作ると、メールアドレスで顧客を引き継ぎます)。IDが不正な場合は400を、顧客が存在しない場合は404を、削除されていない顧客を指定した場合と、統合(merge)で削除した顧客を指定した場合と、削除のあとに同じメールアドレスの顧客が登録されている場合は409を返します。")
+      @doc("論理削除した顧客を台帳に戻し、版(restore)を記録します。admin と owner / manager だけが実行できます。アカウントとの紐づけは戻しません(userId は null。本人がプロフィールを作ると、メールアドレスで顧客を引き継ぎます)。IDが不正な場合は400を、顧客が存在しない場合は404を、削除されていない顧客を指定した場合と、統合(merge)で削除した顧客と、データを消去した顧客を指定した場合と、削除のあとに同じメールアドレスの顧客が登録されている場合は409を返します。")
       @summary("Restore a deleted customer")
       @post
       @route("/{id}/restore")
@@ -248,7 +248,7 @@ namespace BeautySalon.Operations {
         | RequestBodyErrors
         | CommonErrors;
 
-      @doc("重複登録された2人の顧客を1人にまとめ、統合後のメイン顧客を返します。admin と owner / manager だけが実行できます。すべてを1つのトランザクションで行い、断るときは何も変えません。台帳の項目は、両方が同じ値ならその値、片方だけが値を持つならその値、両方が異なる値なら conflictResolution で決めます。どちらかの顧客を指す紹介元は値がないものとして扱い、サブを紹介元にしていたほかの顧客はメインを紹介元にします。メインがサブの紹介コードを受け継ぐときは、サブの紹介コードを外します。サブの予約・売上・施術記録・レビューはメインのものになり、来店回数などは予約から数え直します。サブだけがアカウントに紐づいていれば、そのアカウントをメインに紐づけます。サブのポイント残高は、移行(transferred)の取引で、残っている付与ごとに同じ有効期限でメインに移します。好み設定はサブだけにあれば移し、両方にあれば conflictResolution で選んだ行の値を残します。カルテはサブだけにあれば移し、両方にあれば何も落とさずに合わせます(施術歴はメインのあとにサブのもの、製品の一覧は両方を合わせ、既往歴とメモは値が違えば空行でつなぐ)。アレルギーはサブにだけあるものを移し、両方にあるアレルゲンは重いほうの記録を残します。サブの「参考になった」はメインのものにし、自分のレビューへの投票と重複する投票は消します。2人と、紹介元がメインに変わった顧客に版(merge)を記録し、サブは論理削除します。IDが不正な場合、同じ顧客を指定した場合、存在しない顧客や削除した顧客を指定した場合は400を、両方の顧客が別々のログインアカウントに紐づいている場合と、2人のポイント残高の合計が 2,147,483,647 を超える場合、2人のカルテを合わせると施術歴か製品の一覧が50件を超える場合は409を返します。")
+      @doc("重複登録された2人の顧客を1人にまとめ、統合後のメイン顧客を返します。admin と owner / manager だけが実行できます。すべてを1つのトランザクションで行い、断るときは何も変えません。台帳の項目は、両方が同じ値ならその値、片方だけが値を持つならその値、両方が異なる値なら conflictResolution で決めます。どちらかの顧客を指す紹介元は値がないものとして扱い、サブを紹介元にしていたほかの顧客はメインを紹介元にします。メインがサブの紹介コードを受け継ぐときは、サブの紹介コードを外します。サブの予約・売上・施術記録・レビューはメインのものになり、来店回数などは予約から数え直します。サブだけがアカウントに紐づいていれば、そのアカウントをメインに紐づけます。サブのポイント残高は、移行(transferred)の取引で、残っている付与ごとに同じ有効期限でメインに移します。好み設定はサブだけにあれば移し、両方にあれば conflictResolution で選んだ行の値を残します。カルテはサブだけにあれば移し、両方にあれば何も落とさずに合わせます(施術歴はメインのあとにサブのもの、製品の一覧は両方を合わせ、既往歴とメモは値が違えば空行でつなぐ)。アレルギーはサブにだけあるものを移し、両方にあるアレルゲンは重いほうの記録を残します。サブの「参考になった」はメインのものにし、自分のレビューへの投票と重複する投票は消します。2人と、紹介元がメインに変わった顧客に版(merge)を記録し、サブは論理削除します。IDが不正な場合、同じ顧客を指定した場合、存在しない顧客や削除した顧客を指定した場合は400を、両方の顧客が別々のログインアカウントに紐づいている場合と、どちらかの顧客に進行中のデータの削除の依頼がある場合と、2人のポイント残高の合計が 2,147,483,647 を超える場合、2人のカルテを合わせると施術歴か製品の一覧が50件を超える場合は409を返します。")
       @summary("Merge customer records")
       @post
       @route("/merge")
@@ -281,21 +281,59 @@ namespace BeautySalon.Operations {
         | ProblemResponse<404>
         | CommonErrors;
 
-      @doc("顧客からの個人データ削除の要請を受け付け、規制に沿った消去フローを開始します。confirmedがtrueでない場合は400を、顧客が存在しない場合は404を返します。")
-      @summary("Request customer data deletion")
+      @doc("顧客のデータの削除の依頼(個人情報保護法の利用停止等の請求)を受け付けて記録し、受け付けた依頼を返します。本人の確認はサロンが行います。admin と owner / manager だけが実行できます。消去は、受け付けた時刻の14日後(scheduledAt)から実行でき(executeDeletionRequests)、それまでは取り消せます。依頼のあいだも、顧客はいつもどおり扱えます。IDと本文が不正な場合は400を、顧客が存在しない、または削除されている場合は404を、その顧客に進行中の依頼がある場合は409を返します。")
+      @summary("Request the deletion of the data of a customer")
       @post
       @route("/{id}/deletion-request")
       requestDeletion(
         @path id: CustomerId,
-        @body request: CustomerDataDeletionRequest,
+        @body request: CustomerDeletionRequestCreateRequest,
       ):
         | {
             @statusCode statusCode: 202;
-            @body response: ApiResponse<CustomerDataDeletionResponse>;
+            @body response: ApiResponse<CustomerDeletionRequestResponse>;
           }
         | ProblemResponse<400>
         | ProblemResponse<404>
+        | ProblemResponse<409>
         | RequestBodyErrors
+        | CommonErrors;
+
+      @doc("顧客のデータの削除の依頼のうち、最新のもの(進行中、取り消し、完了のいずれか)を返します。admin と owner / manager だけが実行できます。削除した顧客と、データを消去した顧客の依頼も返します。IDが不正な場合は400を、顧客が存在しない場合と、依頼がない場合は404を返します。")
+      @summary("Get the deletion request of a customer")
+      @get
+      @route("/{id}/deletion-request")
+      getDeletionRequest(@path id: CustomerId):
+        | {
+            @statusCode statusCode: 200;
+            @body response: ApiResponse<CustomerDeletionRequestResponse>;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<404>
+        | CommonErrors;
+
+      @doc("顧客の進行中のデータの削除の依頼を取り消し、取り消した依頼を返します。admin と owner / manager だけが実行できます。消去を実行する前なら、予定日時を過ぎていても取り消せます。IDが不正な場合は400を、顧客が存在しない場合と、進行中の依頼がない場合は404を返します。")
+      @summary("Cancel the deletion request of a customer")
+      @delete
+      @route("/{id}/deletion-request")
+      cancelDeletionRequest(@path id: CustomerId):
+        | {
+            @statusCode statusCode: 200;
+            @body response: ApiResponse<CustomerDeletionRequestResponse>;
+          }
+        | ProblemResponse<400>
+        | ProblemResponse<404>
+        | CommonErrors;
+
+      @doc("予定日時(scheduledAt)を過ぎた進行中のデータの削除の依頼を、予定日時の順にすべて実行し、実行した依頼を返します(なければ空の一覧)。admin だけが実行できます(サロンのメンバーと顧客のアカウントは403)。依頼ごとに1つのトランザクションで、顧客の氏名・連絡先・住所などの個人を特定できる項目を消して顧客を論理削除し、顧客のアカウントを削除済みにしてセッションを消し(前に削除した顧客のアカウントが、そのあと新しいプロフィールを作っていた場合は、アカウントを残します)、好み設定・カルテ・アレルギー・書いたレビュー・参考になったの評価・施術記録の記述と写真・予約の要望とメモを消し、ポイントの残高を失効させ、それまでの版を消して消去(erase)の版を記録します。売上と予約の行は、帳簿書類の保存義務(7年)のために残します。依頼のあとに削除した顧客の依頼も実行します。途中の依頼でエラーになった場合は、そこで止めて500を返します(それまでの依頼は実行済みで、もう一度実行すると残りを実行します)。定期的に呼ぶのは運用の側です。")
+      @summary("Execute the deletion requests that are due")
+      @post
+      @route("/deletion-requests/execute")
+      executeDeletionRequests():
+        | {
+            @statusCode statusCode: 200;
+            @body response: ApiResponse<CustomerDeletionRequestResponse[]>;
+          }
         | CommonErrors;
     }
 

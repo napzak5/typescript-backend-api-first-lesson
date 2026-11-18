@@ -821,6 +821,47 @@ describe('modelRules', () => {
     })
   })
 
+  it('shows every column of a deletion request, and lets the request write only its reason', () => {
+    const rules = Object.fromEntries(
+      modelRules
+        .filter((modelRule) => modelRule.table === 'customerDeletionRequests')
+        .map(
+          ({ model, kind, omittedColumns, embedded, computed, narrowed }) => [
+            model,
+            { kind, omittedColumns, embedded, computed, narrowed },
+          ],
+        ),
+    )
+
+    expect(rules).toEqual({
+      'Models.CustomerDeletionRequestResponse': {
+        kind: 'response',
+        omittedColumns: [],
+        embedded: undefined,
+        computed: undefined,
+        narrowed: undefined,
+      },
+      'Models.CustomerDeletionRequestCreateRequest': {
+        kind: 'create',
+        omittedColumns: [
+          'id',
+          'customerId',
+          'status',
+          'requestedBy',
+          'requestedAt',
+          'scheduledAt',
+          'cancelledBy',
+          'cancelledAt',
+          'completedBy',
+          'completedAt',
+        ],
+        embedded: undefined,
+        computed: undefined,
+        narrowed: undefined,
+      },
+    })
+  })
+
   it('lets a request for a staff member leave out what the server assigns, the salon, which the path names, and the login account; the response leaves out deletedAt, the profile everything customers are not shown, and none embeds anything', () => {
     const managed = [
       'id',

@@ -18,8 +18,8 @@ export class RestoreCustomerUseCase {
    * who may delete a customer, and it is decided before the ID is read. The
    * customer comes back without the account it was the profile of: the
    * account takes it again by creating its profile. A customer who is not
-   * deleted is not restored, nor one a merge deleted, nor one whose email
-   * another customer has taken since.
+   * deleted is not restored, nor one a merge deleted, nor one whose data was
+   * erased, nor one whose email another customer has taken since.
    */
   async execute(
     actor: Actor,
@@ -60,6 +60,13 @@ export class RestoreCustomerUseCase {
         Result.error(
           DomainErrors.conflict(
             `Customer ${customerId.data} was merged into another customer, who has what it had`,
+          ),
+        ),
+      )
+      .with({ type: 'erased' }, () =>
+        Result.error(
+          DomainErrors.conflict(
+            `The data of customer ${customerId.data} was erased at their request`,
           ),
         ),
       )

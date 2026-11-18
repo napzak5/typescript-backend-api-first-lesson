@@ -7,14 +7,13 @@
  */
 
 /**
- * 顧客データ削除要請リクエスト - 顧客本人からの個人データ削除の要請を受け付ける
+ * 顧客のデータの削除の依頼の受け付け - 個人情報保護法の利用停止等(消去)の請求を、サロンが本人を確かめてから記録する
  */
-export interface ModelsCustomerDataDeletionRequest {
+export interface ModelsCustomerDeletionRequestCreateRequest {
   /**
-     * 削除を希望する理由
+     * 依頼の理由(本人が述べた理由など)。1〜1,000文字で、空白だけの文字列は指定できない
      * @minLength 1
+     * @maxLength 1000
      */
   reason: string;
-  /** 削除に伴う影響を理解しているか。true 以外は受け付けない */
-  confirmed: boolean;
 }

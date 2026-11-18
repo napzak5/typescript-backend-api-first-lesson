@@ -11,8 +11,9 @@ CREATE TYPE "public"."allergy_severity" AS ENUM('mild', 'moderate', 'severe', 'l
 CREATE TYPE "public"."allergy_type" AS ENUM('chemical', 'fragrance', 'metal', 'latex', 'plant', 'other');
 CREATE TYPE "public"."booking_requirement" AS ENUM('consultation_required', 'patch_test_required', 'advance_booking_required', 'deposit_required');
 CREATE TYPE "public"."booking_status" AS ENUM('draft', 'pending', 'confirmed', 'in_progress', 'completed', 'cancelled', 'no_show');
+CREATE TYPE "public"."customer_deletion_request_status" AS ENUM('pending', 'cancelled', 'completed');
 CREATE TYPE "public"."customer_status" AS ENUM('active', 'inactive', 'vip', 'blacklisted');
-CREATE TYPE "public"."customer_version_operation" AS ENUM('baseline', 'create', 'update', 'delete', 'restore', 'merge');
+CREATE TYPE "public"."customer_version_operation" AS ENUM('baseline', 'create', 'update', 'delete', 'restore', 'merge', 'erase');
 CREATE TYPE "public"."day_of_week" AS ENUM('monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday');
 CREATE TYPE "public"."hair_thickness" AS ENUM('thin', 'medium', 'thick');
 CREATE TYPE "public"."hair_type" AS ENUM('straight', 'wavy', 'curly', 'coily');
@@ -134,6 +135,24 @@ CREATE TABLE "customer_allergies" (
 	"updatedAt" timestamp with time zone DEFAULT now() NOT NULL,
 	"severityType" "allergy_severity" NOT NULL,
 	CONSTRAINT "customer_allergies_customer_allergen_unique" UNIQUE("customerId","allergenName")
+);
+
+CREATE TABLE "customer_deletion_requests" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"customerId" uuid NOT NULL,
+	"reason" text NOT NULL,
+	"status" "customer_deletion_request_status" DEFAULT 'pending' NOT NULL,
+	"requestedBy" uuid NOT NULL,
+	"requestedAt" timestamp with time zone NOT NULL,
+	"scheduledAt" timestamp with time zone NOT NULL,
+	"cancelledBy" uuid,
+	"cancelledAt" timestamp with time zone,
+	"completedBy" uuid,
+	"completedAt" timestamp with time zone,
+	CONSTRAINT "customer_deletion_requests_cancelled_when_cancelled" CHECK (((status = 'cancelled'::customer_deletion_request_status) = ("cancelledAt" IS NOT NULL)) AND (("cancelledAt" IS NULL) = ("cancelledBy" IS NULL))),
+	CONSTRAINT "customer_deletion_requests_completed_when_completed" CHECK (((status = 'completed'::customer_deletion_request_status) = ("completedAt" IS NOT NULL)) AND (("completedAt" IS NULL) = ("completedBy" IS NULL))),
+	CONSTRAINT "customer_deletion_requests_reason_length" CHECK ((char_length(reason) >= 1) AND (char_length(reason) <= 1000)),
+	CONSTRAINT "customer_deletion_requests_scheduled_after_grace" CHECK ("scheduledAt" = ("requestedAt" + '336:00:00'::interval))
 );
 
 CREATE TABLE "customer_points" (
@@ -895,6 +914,10 @@ ALTER TABLE "bookings" ADD CONSTRAINT "bookings_customer_id_fk" FOREIGN KEY ("cu
 ALTER TABLE "bookings" ADD CONSTRAINT "bookings_salon_id_fk" FOREIGN KEY ("salonId") REFERENCES "public"."salons"("id") ON DELETE restrict ON UPDATE no action;
 ALTER TABLE "bookings" ADD CONSTRAINT "bookings_staff_id_fk" FOREIGN KEY ("staffId") REFERENCES "public"."staff"("id") ON DELETE restrict ON UPDATE no action;
 ALTER TABLE "customer_allergies" ADD CONSTRAINT "customer_allergies_customer_id_fk" FOREIGN KEY ("customerId") REFERENCES "public"."customers"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "customer_deletion_requests" ADD CONSTRAINT "customer_deletion_requests_cancelled_by_fk" FOREIGN KEY ("cancelledBy") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "customer_deletion_requests" ADD CONSTRAINT "customer_deletion_requests_completed_by_fk" FOREIGN KEY ("completedBy") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "customer_deletion_requests" ADD CONSTRAINT "customer_deletion_requests_customer_id_fk" FOREIGN KEY ("customerId") REFERENCES "public"."customers"("id") ON DELETE cascade ON UPDATE no action;
+ALTER TABLE "customer_deletion_requests" ADD CONSTRAINT "customer_deletion_requests_requested_by_fk" FOREIGN KEY ("requestedBy") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
 ALTER TABLE "customer_points" ADD CONSTRAINT "customer_points_customer_id_fk" FOREIGN KEY ("customerId") REFERENCES "public"."customers"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "customer_preferences" ADD CONSTRAINT "customer_preferences_customer_id_fk" FOREIGN KEY ("customerId") REFERENCES "public"."customers"("id") ON DELETE cascade ON UPDATE no action;
 ALTER TABLE "customer_preferences" ADD CONSTRAINT "customer_preferences_staff_id_fk" FOREIGN KEY ("preferredStaffId") REFERENCES "public"."staff"("id") ON DELETE set null ON UPDATE no action;
@@ -960,6 +983,9 @@ CREATE INDEX "idx_bookings_salon_start" ON "bookings" USING btree ("salonId" uui
 CREATE INDEX "idx_bookings_staff_id" ON "bookings" USING btree ("staffId" uuid_ops);
 CREATE INDEX "idx_bookings_start_time" ON "bookings" USING btree ("startTime" timestamptz_ops);
 CREATE INDEX "idx_bookings_status" ON "bookings" USING btree ("status" enum_ops);
+CREATE INDEX "idx_customer_deletion_requests_customer" ON "customer_deletion_requests" USING btree ("customerId" uuid_ops,"requestedAt" timestamptz_ops);
+CREATE INDEX "idx_customer_deletion_requests_due" ON "customer_deletion_requests" USING btree ("scheduledAt" timestamptz_ops) WHERE (status = 'pending'::customer_deletion_request_status);
+CREATE UNIQUE INDEX "customer_deletion_requests_one_pending" ON "customer_deletion_requests" USING btree ("customerId" uuid_ops) WHERE (status = 'pending'::customer_deletion_request_status);
 CREATE INDEX "idx_customer_points_created_at" ON "customer_points" USING btree ("createdAt" timestamptz_ops);
 CREATE INDEX "idx_customer_points_customer_time" ON "customer_points" USING btree ("customerId" uuid_ops,"createdAt" timestamptz_ops,"id" uuid_ops);
 CREATE INDEX "idx_customer_points_expiry_date" ON "customer_points" USING btree ("expiryDate" date_ops);

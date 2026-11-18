@@ -988,6 +988,26 @@ export interface paths {
         patch: operations["CustomerCrud_bulkUpdate"];
         trace?: never;
     };
+    "/api/v1/customers/deletion-requests/execute": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Execute the deletion requests that are due
+         * @description 予定日時(scheduledAt)を過ぎた進行中のデータの削除の依頼を、予定日時の順にすべて実行し、実行した依頼を返します(なければ空の一覧)。admin だけが実行できます(サロンのメンバーと顧客のアカウントは403)。依頼ごとに1つのトランザクションで、顧客の氏名・連絡先・住所などの個人を特定できる項目を消して顧客を論理削除し、顧客のアカウントを削除済みにしてセッションを消し(前に削除した顧客のアカウントが、そのあと新しいプロフィールを作っていた場合は、アカウントを残します)、好み設定・カルテ・アレルギー・書いたレビュー・参考になったの評価・施術記録の記述と写真・予約の要望とメモを消し、ポイントの残高を失効させ、それまでの版を消して消去(erase)の版を記録します。売上と予約の行は、帳簿書類の保存義務(7年)のために残します。依頼のあとに削除した顧客の依頼も実行します。途中の依頼でエラーになった場合は、そこで止めて500を返します(それまでの依頼は実行済みで、もう一度実行すると残りを実行します)。定期的に呼ぶのは運用の側です。
+         */
+        post: operations["CustomerCrud_executeDeletionRequests"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/customers/export": {
         parameters: {
             query?: never;
@@ -1155,7 +1175,7 @@ export interface paths {
         put?: never;
         /**
          * Merge customer records
-         * @description 重複登録された2人の顧客を1人にまとめ、統合後のメイン顧客を返します。admin と owner / manager だけが実行できます。すべてを1つのトランザクションで行い、断るときは何も変えません。台帳の項目は、両方が同じ値ならその値、片方だけが値を持つならその値、両方が異なる値なら conflictResolution で決めます。どちらかの顧客を指す紹介元は値がないものとして扱い、サブを紹介元にしていたほかの顧客はメインを紹介元にします。メインがサブの紹介コードを受け継ぐときは、サブの紹介コードを外します。サブの予約・売上・施術記録・レビューはメインのものになり、来店回数などは予約から数え直します。サブだけがアカウントに紐づいていれば、そのアカウントをメインに紐づけます。サブのポイント残高は、移行(transferred)の取引で、残っている付与ごとに同じ有効期限でメインに移します。好み設定はサブだけにあれば移し、両方にあれば conflictResolution で選んだ行の値を残します。カルテはサブだけにあれば移し、両方にあれば何も落とさずに合わせます(施術歴はメインのあとにサブのもの、製品の一覧は両方を合わせ、既往歴とメモは値が違えば空行でつなぐ)。アレルギーはサブにだけあるものを移し、両方にあるアレルゲンは重いほうの記録を残します。サブの「参考になった」はメインのものにし、自分のレビューへの投票と重複する投票は消します。2人と、紹介元がメインに変わった顧客に版(merge)を記録し、サブは論理削除します。IDが不正な場合、同じ顧客を指定した場合、存在しない顧客や削除した顧客を指定した場合は400を、両方の顧客が別々のログインアカウントに紐づいている場合と、2人のポイント残高の合計が 2,147,483,647 を超える場合、2人のカルテを合わせると施術歴か製品の一覧が50件を超える場合は409を返します。
+         * @description 重複登録された2人の顧客を1人にまとめ、統合後のメイン顧客を返します。admin と owner / manager だけが実行できます。すべてを1つのトランザクションで行い、断るときは何も変えません。台帳の項目は、両方が同じ値ならその値、片方だけが値を持つならその値、両方が異なる値なら conflictResolution で決めます。どちらかの顧客を指す紹介元は値がないものとして扱い、サブを紹介元にしていたほかの顧客はメインを紹介元にします。メインがサブの紹介コードを受け継ぐときは、サブの紹介コードを外します。サブの予約・売上・施術記録・レビューはメインのものになり、来店回数などは予約から数え直します。サブだけがアカウントに紐づいていれば、そのアカウントをメインに紐づけます。サブのポイント残高は、移行(transferred)の取引で、残っている付与ごとに同じ有効期限でメインに移します。好み設定はサブだけにあれば移し、両方にあれば conflictResolution で選んだ行の値を残します。カルテはサブだけにあれば移し、両方にあれば何も落とさずに合わせます(施術歴はメインのあとにサブのもの、製品の一覧は両方を合わせ、既往歴とメモは値が違えば空行でつなぐ)。アレルギーはサブにだけあるものを移し、両方にあるアレルゲンは重いほうの記録を残します。サブの「参考になった」はメインのものにし、自分のレビューへの投票と重複する投票は消します。2人と、紹介元がメインに変わった顧客に版(merge)を記録し、サブは論理削除します。IDが不正な場合、同じ顧客を指定した場合、存在しない顧客や削除した顧客を指定した場合は400を、両方の顧客が別々のログインアカウントに紐づいている場合と、どちらかの顧客に進行中のデータの削除の依頼がある場合と、2人のポイント残高の合計が 2,147,483,647 を超える場合、2人のカルテを合わせると施術歴か製品の一覧が50件を超える場合は409を返します。
          */
         post: operations["CustomerCrud_merge"];
         delete?: never;
@@ -1199,14 +1219,22 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /**
+         * Get the deletion request of a customer
+         * @description 顧客のデータの削除の依頼のうち、最新のもの(進行中、取り消し、完了のいずれか)を返します。admin と owner / manager だけが実行できます。削除した顧客と、データを消去した顧客の依頼も返します。IDが不正な場合は400を、顧客が存在しない場合と、依頼がない場合は404を返します。
+         */
+        get: operations["CustomerCrud_getDeletionRequest"];
         put?: never;
         /**
-         * Request customer data deletion
-         * @description 顧客からの個人データ削除の要請を受け付け、規制に沿った消去フローを開始します。confirmedがtrueでない場合は400を、顧客が存在しない場合は404を返します。
+         * Request the deletion of the data of a customer
+         * @description 顧客のデータの削除の依頼(個人情報保護法の利用停止等の請求)を受け付けて記録し、受け付けた依頼を返します。本人の確認はサロンが行います。admin と owner / manager だけが実行できます。消去は、受け付けた時刻の14日後(scheduledAt)から実行でき(executeDeletionRequests)、それまでは取り消せます。依頼のあいだも、顧客はいつもどおり扱えます。IDと本文が不正な場合は400を、顧客が存在しない、または削除されている場合は404を、その顧客に進行中の依頼がある場合は409を返します。
          */
         post: operations["CustomerCrud_requestDeletion"];
-        delete?: never;
+        /**
+         * Cancel the deletion request of a customer
+         * @description 顧客の進行中のデータの削除の依頼を取り消し、取り消した依頼を返します。admin と owner / manager だけが実行できます。消去を実行する前なら、予定日時を過ぎていても取り消せます。IDが不正な場合は400を、顧客が存在しない場合と、進行中の依頼がない場合は404を返します。
+         */
+        delete: operations["CustomerCrud_cancelDeletionRequest"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1241,7 +1269,7 @@ export interface paths {
         };
         /**
          * Get the history of a customer
-         * @description 顧客の変更履歴(顧客台帳への書き込みごとの版)を、新しい版から順に取得し、変更者、日時、前の版から変わった項目を返します。admin と owner / manager だけが実行できます。削除した顧客の履歴も取得できます。IDとクエリが不正な場合と、cursorがその顧客の版を指していない場合は400を、顧客が存在しない場合は404を返します。
+         * @description 顧客の変更履歴(顧客台帳への書き込みごとの版)を、新しい版から順に取得し、変更者、日時、前の版から変わった項目を返します。admin と owner / manager だけが実行できます。削除した顧客の履歴も取得できます。データを消去した顧客の履歴は、消去(erase)の版だけです。IDとクエリが不正な場合と、cursorがその顧客の版を指していない場合は400を、顧客が存在しない場合は404を返します。
          */
         get: operations["CustomerCrud_getHistory"];
         put?: never;
@@ -1287,7 +1315,7 @@ export interface paths {
         put?: never;
         /**
          * Restore a deleted customer
-         * @description 論理削除した顧客を台帳に戻し、版(restore)を記録します。admin と owner / manager だけが実行できます。アカウントとの紐づけは戻しません(userId は null。本人がプロフィールを作ると、メールアドレスで顧客を引き継ぎます)。IDが不正な場合は400を、顧客が存在しない場合は404を、削除されていない顧客を指定した場合と、統合(merge)で削除した顧客を指定した場合と、削除のあとに同じメールアドレスの顧客が登録されている場合は409を返します。
+         * @description 論理削除した顧客を台帳に戻し、版(restore)を記録します。admin と owner / manager だけが実行できます。アカウントとの紐づけは戻しません(userId は null。本人がプロフィールを作ると、メールアドレスで顧客を引き継ぎます)。IDが不正な場合は400を、顧客が存在しない場合は404を、削除されていない顧客を指定した場合と、統合(merge)で削除した顧客と、データを消去した顧客を指定した場合と、削除のあとに同じメールアドレスの顧客が登録されている場合は409を返します。
          */
         post: operations["CustomerCrud_restore"];
         delete?: never;
@@ -4194,28 +4222,6 @@ export interface components {
             /** @description 顧客ステータス */
             customerStatus: components["schemas"]["Models.CustomerStatusType"];
         };
-        /** @description 顧客データ削除要請リクエスト - 顧客本人からの個人データ削除の要請を受け付ける */
-        "Models.CustomerDataDeletionRequest": {
-            /** @description 削除を希望する理由 */
-            reason: string;
-            /** @description 削除に伴う影響を理解しているか。true 以外は受け付けない */
-            confirmed: boolean;
-        };
-        /** @description 顧客データ削除要請の受付結果 - 受け付けた削除要請と削除の予定を返す */
-        "Models.CustomerDataDeletionResponse": {
-            /** @description 削除リクエストID */
-            requestId: string;
-            /**
-             * Format: date-time
-             * @description 予定される削除日時
-             */
-            scheduledDate: string;
-            /**
-             * Format: int32
-             * @description 猶予期間（日数）。この期間内であれば削除を取り消せる
-             */
-            gracePeriodDays: number;
-        };
         /** @description 顧客のデータの出力 - 顧客について保有しているデータのすべて。すべてのプロパティがあり、ないものは null か空の一覧。一覧は作成日時の古い順(同じ日時なら ID の順)で、版は番号の順。それぞれの値は、その API のレスポンスと同じ形 */
         "Models.CustomerDataExportResponse": {
             /**
@@ -4248,6 +4254,78 @@ export interface components {
             /** @description 台帳の版(変更履歴) */
             versions: components["schemas"]["Models.CustomerVersionResponse"][];
         };
+        /** @description 顧客のデータの削除の依頼の受け付け - 個人情報保護法の利用停止等(消去)の請求を、サロンが本人を確かめてから記録する */
+        "Models.CustomerDeletionRequestCreateRequest": {
+            /** @description 依頼の理由(本人が述べた理由など)。1〜1,000文字で、空白だけの文字列は指定できない */
+            reason: string;
+        };
+        /**
+         * Format: uuid
+         * @description 顧客のデータの削除の依頼（customer_deletion_requests の行）を識別するブランド付きUUID。
+         */
+        "Models.CustomerDeletionRequestId": string;
+        /** @description 顧客のデータの削除の依頼 - customer_deletion_requests の行。受け付けた時刻の14日後に、消去を実行できるようになる */
+        "Models.CustomerDeletionRequestResponse": {
+            /** @description 依頼の ID */
+            id: components["schemas"]["Models.CustomerDeletionRequestId"];
+            /** @description データを消去する顧客の ID */
+            customerId: components["schemas"]["Models.CustomerId"];
+            /** @description 依頼の理由 */
+            reason: string;
+            /** @description 依頼の状態 */
+            status: components["schemas"]["Models.CustomerDeletionRequestStatusType"];
+            /** @description 依頼を受け付けたユーザーの ID */
+            requestedBy: components["schemas"]["Models.UserId"];
+            /**
+             * Format: date-time
+             * @description 依頼を受け付けた日時
+             */
+            requestedAt: string;
+            /**
+             * Format: date-time
+             * @description 消去を実行できるようになる日時。受け付けた日時の14日後
+             */
+            scheduledAt: string;
+            /** @description 依頼を取り消したユーザーの ID。取り消していなければnull */
+            cancelledBy: (string & components["schemas"]["Models.UserId"]) | null;
+            /**
+             * Format: date-time
+             * @description 依頼を取り消した日時。取り消していなければnull
+             */
+            cancelledAt: string | null;
+            /** @description 消去を実行したユーザーの ID。実行していなければnull */
+            completedBy: (string & components["schemas"]["Models.UserId"]) | null;
+            /**
+             * Format: date-time
+             * @description 消去を実行した日時。実行していなければnull
+             */
+            completedAt: string | null;
+        };
+        /**
+
+         * @description
+
+         * 顧客のデータの削除の依頼の状態
+
+         *
+
+         *
+
+         * pending: 進行中 - 受け付けて、まだ実行も取り消しもしていない。1人の顧客に1件まで
+
+         *
+
+         * cancelled: 取り消し - 実行する前に取り消した
+
+         *
+
+         * completed: 完了 - 実行し、顧客のデータを消去した
+
+         * @enum {string}
+
+         */
+
+        "Models.CustomerDeletionRequestStatusType": "pending" | "cancelled" | "completed";
         /** @description 顧客台帳の CSV 出力の条件 - 一覧と同じ絞り込み条件で、意味も一覧と同じ。条件はすべて AND で結合し、指定しない条件では絞り込まない */
         "Models.CustomerExportRequest": {
             /** @description 顧客名(姓・名とそのカナ表記)、メールアドレスに対する部分一致キーワード(大文字小文字を区別しない)。数字・空白・-+()だけのキーワードは、電話番号とも数字だけを取り出して比べる */
@@ -4920,11 +4998,15 @@ export interface components {
 
          * merge: 統合 - 2人の顧客を1人にまとめた。残した顧客(メイン)の版は統合後の値、統合して論理削除した顧客(サブ)の版は削除したときの値
 
+         *
+
+         * erase: 消去 - データの削除の依頼を実行し、個人を特定できる項目を消した。それまでの版はすべて消し、消去したあとの値のこの版だけを残す
+
          * @enum {string}
 
          */
 
-        "Models.CustomerVersionOperationType": "baseline" | "create" | "update" | "delete" | "restore" | "merge";
+        "Models.CustomerVersionOperationType": "baseline" | "create" | "update" | "delete" | "restore" | "merge" | "erase";
         /**
          * @description 顧客の版 - customer_versions の 1 行。その版の時点の、顧客台帳の 30 項目の値。
          *     来店回数やポイントなど、予約やポイントが変える値と、アカウントとの紐づけは、台帳の項目ではないので含まない
@@ -15567,6 +15649,82 @@ export interface operations {
             };
         };
     };
+    CustomerCrud_executeDeletionRequests: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The request has succeeded. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        data: components["schemas"]["Models.CustomerDeletionRequestResponse"][];
+                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        meta: components["schemas"]["Models.ResponseMeta"] | null;
+                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        links: {
+                            [key: string]: string;
+                        } | null;
+                    };
+                };
+            };
+            /**
+             * @description 認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
+             *     ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
+             *     WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+             */
+            401: {
+                headers: {
+                    /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
+                    "WWW-Authenticate": string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description 認証されているが、この操作を行う権限がない (403)。 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
+             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+             */
+            429: {
+                headers: {
+                    /** @description 再試行できるようになるまでの秒数。 */
+                    "Retry-After": number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+        };
+    };
     CustomerCrud_export: {
         parameters: {
             query?: {
@@ -17198,7 +17356,7 @@ export interface operations {
             };
         };
     };
-    CustomerCrud_requestDeletion: {
+    CustomerCrud_getDeletionRequest: {
         parameters: {
             query?: never;
             header?: never;
@@ -17207,21 +17365,17 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["Models.CustomerDataDeletionRequest"];
-            };
-        };
+        requestBody?: never;
         responses: {
-            /** @description The request has been accepted for processing, but processing has not yet completed. */
-            202: {
+            /** @description The request has succeeded. */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "application/json": {
                         /** @description レスポンスの主体となるビジネスデータ。 */
-                        data: components["schemas"]["Models.CustomerDataDeletionResponse"];
+                        data: components["schemas"]["Models.CustomerDeletionRequestResponse"];
                         /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
                         meta: components["schemas"]["Models.ResponseMeta"] | null;
                         /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
@@ -17273,6 +17427,115 @@ export interface operations {
                     "application/problem+json": components["schemas"]["Models.ProblemDetails"];
                 };
             };
+            /**
+             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
+             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+             */
+            429: {
+                headers: {
+                    /** @description 再試行できるようになるまでの秒数。 */
+                    "Retry-After": number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+        };
+    };
+    CustomerCrud_requestDeletion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["schemas"]["Models.CustomerId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Models.CustomerDeletionRequestCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description The request has been accepted for processing, but processing has not yet completed. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        data: components["schemas"]["Models.CustomerDeletionRequestResponse"];
+                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        meta: components["schemas"]["Models.ResponseMeta"] | null;
+                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        links: {
+                            [key: string]: string;
+                        } | null;
+                    };
+                };
+            };
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description 認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
+             *     ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
+             *     WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+             */
+            401: {
+                headers: {
+                    /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
+                    "WWW-Authenticate": string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description 認証されているが、この操作を行う権限がない (403)。 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The server cannot find the requested resource. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The request conflicts with the current state of the server. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
             /** @description リクエスト本文がサイズ上限を超えている (413)。 */
             413: {
                 headers: {
@@ -17284,6 +17547,102 @@ export interface operations {
             };
             /** @description リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。 */
             415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description リクエスト数の上限を超えたときのエラーレスポンス (429)。
+             *     クライアントは Retry-After ヘッダーの秒数だけ待ってから再試行する。
+             */
+            429: {
+                headers: {
+                    /** @description 再試行できるようになるまでの秒数。 */
+                    "Retry-After": number;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description サーバー内部のエラー (500)。原因はレスポンスに含めず、correlationId でサーバーのログと照合する。 */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+        };
+    };
+    CustomerCrud_cancelDeletionRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: components["schemas"]["Models.CustomerId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The request has succeeded. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @description レスポンスの主体となるビジネスデータ。 */
+                        data: components["schemas"]["Models.CustomerDeletionRequestResponse"];
+                        /** @description リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull */
+                        meta: components["schemas"]["Models.ResponseMeta"] | null;
+                        /** @description 関連リソースや次アクションへのリンク情報。リンクがない場合はnull */
+                        links: {
+                            [key: string]: string;
+                        } | null;
+                    };
+                };
+            };
+            /** @description The server could not understand the request due to invalid syntax. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /**
+             * @description 認証されていない (401)。アクセストークンがない、無効、または有効期限切れ。
+             *     ログインとトークン再発行では、資格情報またはリフレッシュトークンが正しくない。
+             *     WWW-Authenticate ヘッダーに Bearer のチャレンジを付ける (RFC 9110 15.5.2、RFC 6750 3)。
+             */
+            401: {
+                headers: {
+                    /** @description Bearer のチャレンジ。アクセストークンが無効または期限切れの場合は error="invalid_token" を含む。 */
+                    "WWW-Authenticate": string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description 認証されているが、この操作を行う権限がない (403)。 */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Models.ProblemDetails"];
+                };
+            };
+            /** @description The server cannot find the requested resource. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

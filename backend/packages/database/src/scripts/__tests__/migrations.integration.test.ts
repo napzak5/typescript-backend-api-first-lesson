@@ -3843,12 +3843,13 @@ describe('the migrations of this repository', () => {
       `)
     })
 
-    it('should give the database the schema of setup.sql, with the operation the merge of customers added since, and keep it on a second run', async () => {
+    it('should give the database the schema of setup.sql, with the operations the merge and the erasure of customers added since, and keep it on a second run', async () => {
       expect(await describeSchema()).not.toEqual(schemaOfSetup)
 
       await run()
       await run()
       await runMigration('202611181900_customer_merge.sql')
+      await runMigration('202611182000_customer_deletion_requests.sql')
 
       expect(await describeSchema()).toEqual(schemaOfSetup)
     })
@@ -3985,11 +3986,12 @@ describe('the migrations of this repository', () => {
       )
     `
 
-    it('should give the database the schema of setup.sql, and keep it on a second run', async () => {
+    it('should give the database the schema of setup.sql, with the operation the erasure of customers added since, and keep it on a second run', async () => {
       expect(await describeSchema()).not.toEqual(schemaOfSetup)
 
       await run()
       await run()
+      await runMigration('202611182000_customer_deletion_requests.sql')
 
       expect(await describeSchema()).toEqual(schemaOfSetup)
     })
@@ -4075,6 +4077,211 @@ describe('the migrations of this repository', () => {
       )
 
       expect(await describeSchema()).toEqual(before)
+    })
+  })
+
+  describe('202611182000_customer_deletion_requests.sql', () => {
+    const run = (): Promise<void> =>
+      runMigration('202611182000_customer_deletion_requests.sql')
+
+    /** The schema of setup.sql, which the migration brings a database to. */
+    let schemaOfSetup: string[] = []
+
+    // A database from before the migration: no request is recorded, and no
+    // version is an erasure.
+    beforeEach(async () => {
+      await applyBaseline(sql, plan)
+      schemaOfSetup = await describeSchema()
+      await sql.unsafe(`
+        DROP TABLE customer_deletion_requests;
+        DROP TYPE customer_deletion_request_status;
+        ALTER TABLE customer_versions
+            DROP CONSTRAINT customer_versions_changed_by_unless_baseline;
+        ALTER TYPE customer_version_operation
+            RENAME TO customer_version_operation_with_erase;
+        CREATE TYPE customer_version_operation AS ENUM (
+            'baseline', 'create', 'update', 'delete', 'restore', 'merge'
+        );
+        ALTER TABLE customer_versions
+            ALTER COLUMN operation TYPE customer_version_operation
+            USING operation::text::customer_version_operation;
+        DROP TYPE customer_version_operation_with_erase;
+        ALTER TABLE customer_versions
+            ADD CONSTRAINT customer_versions_changed_by_unless_baseline
+            CHECK ((operation = 'baseline') = ("changedBy" IS NULL));
+      `)
+    })
+
+    /** A user who takes requests. */
+    const storeNewUser = async (): Promise<string> => {
+      const [user] = await sql<{ id: string }[]>`
+        INSERT INTO users (email, "passwordHash", role)
+        VALUES (${`${randomUUID()}@example.com`}, 'hash', 'admin')
+        RETURNING id
+      `
+      if (user === undefined) {
+        throw new Error('No user was stored')
+      }
+      return user.id
+    }
+
+    /** A request of the customer, taken by the user, with what else is given. */
+    const writeRequest = (
+      customerId: string,
+      by: string,
+      more: {
+        reason?: string
+        status?: string
+        scheduledAfter?: string
+        cancelled?: boolean
+        cancelledBy?: string | null
+        completed?: boolean
+        completedBy?: string | null
+      } = {},
+    ) => sql`
+      INSERT INTO customer_deletion_requests (
+        "customerId", reason, status, "requestedBy", "requestedAt",
+        "scheduledAt", "cancelledBy", "cancelledAt", "completedBy",
+        "completedAt"
+      )
+      VALUES (
+        ${customerId}, ${more.reason ?? '本人の依頼'},
+        ${more.status ?? 'pending'}::customer_deletion_request_status, ${by},
+        '2026-11-01T00:00:00Z',
+        '2026-11-01T00:00:00Z'::timestamptz
+          + ${more.scheduledAfter ?? '336 hours'}::interval,
+        ${more.cancelledBy === undefined ? (more.cancelled === true ? by : null) : more.cancelledBy},
+        ${more.cancelled === true ? '2026-11-02T00:00:00Z' : null},
+        ${more.completedBy === undefined ? (more.completed === true ? by : null) : more.completedBy},
+        ${more.completed === true ? '2026-11-15T00:00:00Z' : null}
+      )
+    `
+
+    it('should give the database the schema of setup.sql, and keep it on a second run', async () => {
+      expect(await describeSchema()).not.toEqual(schemaOfSetup)
+
+      await run()
+      await run()
+
+      expect(await describeSchema()).toEqual(schemaOfSetup)
+    })
+
+    it('should let a version be an erasure, and keep the versions there are', async () => {
+      const id = await storeNewCustomer()
+      const admin = await storeNewUser()
+      const version = (number: number, operation: string) => sql`
+        INSERT INTO customer_versions (
+          "customerId", version, operation, "changedBy", "firstName",
+          "lastName", email, "phoneNumber", "membershipTier", tags,
+          "allowMarketing", "allowSms", "allowEmail", "isActive",
+          "customerStatus"
+        )
+        VALUES (
+          ${id}, ${number}, ${operation}::customer_version_operation, ${admin},
+          'Taro', 'Suzuki', 'taro@example.com', '090-8765-4321', 'regular',
+          '{}', true, true, true, true, 'active'
+        )
+      `
+      await version(1, 'create')
+
+      await run()
+      await version(2, 'erase')
+
+      expect(
+        await sql<{ version: number; operation: string }[]>`
+          SELECT version, operation::text AS operation FROM customer_versions
+          WHERE "customerId" = ${id} ORDER BY version
+        `,
+      ).toEqual([
+        { version: 1, operation: 'create' },
+        { version: 2, operation: 'erase' },
+      ])
+    })
+
+    it('should keep one pending request a customer, with a reason, due 336 hours after it was taken, and drop the requests with their customer', async () => {
+      await run()
+      const id = await storeNewCustomer()
+      const other = await storeNewCustomer()
+      const admin = await storeNewUser()
+
+      await writeRequest(id, admin, { status: 'cancelled', cancelled: true })
+      await writeRequest(id, admin, { status: 'completed', completed: true })
+      await writeRequest(id, admin)
+      await writeRequest(other, admin)
+      await expect(writeRequest(id, admin)).rejects.toThrow(
+        /customer_deletion_requests_one_pending/,
+      )
+      await expect(
+        writeRequest(other, admin, { status: 'cancelled', cancelled: true }),
+      ).resolves.toBeDefined()
+      await expect(writeRequest(id, admin, { reason: '' })).rejects.toThrow(
+        /customer_deletion_requests_reason_length/,
+      )
+      await expect(
+        writeRequest(id, admin, {
+          status: 'cancelled',
+          cancelled: true,
+          reason: 'あ'.repeat(1001),
+        }),
+      ).rejects.toThrow(/customer_deletion_requests_reason_length/)
+      await expect(
+        writeRequest(id, admin, {
+          status: 'cancelled',
+          cancelled: true,
+          reason: 'あ'.repeat(1000),
+        }),
+      ).resolves.toBeDefined()
+      await expect(
+        writeRequest(id, admin, {
+          status: 'cancelled',
+          cancelled: true,
+          scheduledAfter: '14 days 1 second',
+        }),
+      ).rejects.toThrow(/customer_deletion_requests_scheduled_after_grace/)
+      await expect(
+        writeRequest(id, admin, { status: 'cancelled' }),
+      ).rejects.toThrow(/customer_deletion_requests_cancelled_when_cancelled/)
+      await expect(
+        writeRequest(id, admin, {
+          status: 'completed',
+          completed: true,
+          cancelled: true,
+        }),
+      ).rejects.toThrow(/customer_deletion_requests_cancelled_when_cancelled/)
+      await expect(
+        writeRequest(id, admin, {
+          status: 'cancelled',
+          cancelled: true,
+          cancelledBy: null,
+        }),
+      ).rejects.toThrow(/customer_deletion_requests_cancelled_when_cancelled/)
+      await expect(
+        writeRequest(id, admin, { status: 'completed' }),
+      ).rejects.toThrow(/customer_deletion_requests_completed_when_completed/)
+      await expect(
+        writeRequest(id, admin, {
+          status: 'cancelled',
+          cancelled: true,
+          completed: true,
+        }),
+      ).rejects.toThrow(/customer_deletion_requests_completed_when_completed/)
+      await expect(
+        writeRequest(id, admin, { completed: true, completedBy: null }),
+      ).rejects.toThrow(/customer_deletion_requests_completed_when_completed/)
+      await expect(
+        writeRequest(id, randomUUID(), {
+          status: 'cancelled',
+          cancelled: true,
+        }),
+      ).rejects.toThrow(/customer_deletion_requests_requested_by_fk/)
+
+      await sql`DELETE FROM customers WHERE id = ${id}`
+      expect(
+        await sql<{ customerId: string }[]>`
+          SELECT "customerId" FROM customer_deletion_requests
+          WHERE "customerId" IN (${id}, ${other})
+        `,
+      ).toEqual([{ customerId: other }, { customerId: other }])
     })
   })
 })

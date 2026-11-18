@@ -15,6 +15,7 @@
  * delete: 削除 - 顧客を論理削除した(一括削除を含む)
  * restore: 復元 - 論理削除した顧客を台帳に戻した
  * merge: 統合 - 2人の顧客を1人にまとめた。残した顧客(メイン)の版は統合後の値、統合して論理削除した顧客(サブ)の版は削除したときの値
+ * erase: 消去 - データの削除の依頼を実行し、個人を特定できる項目を消した。それまでの版はすべて消し、消去したあとの値のこの版だけを残す
  */
 export type ModelsCustomerVersionOperationType = typeof ModelsCustomerVersionOperationType[keyof typeof ModelsCustomerVersionOperationType];
 
@@ -26,4 +27,5 @@ export const ModelsCustomerVersionOperationType = {
   delete: 'delete',
   restore: 'restore',
   merge: 'merge',
+  erase: 'erase',
 } as const;

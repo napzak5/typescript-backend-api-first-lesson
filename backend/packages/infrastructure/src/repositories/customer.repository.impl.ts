@@ -483,6 +483,11 @@ export class CustomerRepository implements ICustomerRepository {
           if (latest?.operation === 'merge') {
             return { type: 'mergedAway' }
           }
+          // The data of a customer whose latest version is an erasure is
+          // gone.
+          if (latest?.operation === 'erase') {
+            return { type: 'erased' }
+          }
           // The referral code was never freed, so only the email can be
           // taken.
           restoring = { email: held.email, referralCode: null }
