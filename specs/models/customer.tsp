@@ -1,6 +1,11 @@
 import "@typespec/http";
 import "./_shared/common.tsp";
 import "./_shared/common-api-patterns.tsp";
+import "./auth.tsp";
+import "./booking.tsp";
+import "./payment.tsp";
+import "./review.tsp";
+import "./treatment.tsp";
 
 using TypeSpec.Http;
 using BeautySalon.Models;
@@ -98,32 +103,6 @@ namespace BeautySalon.Models {
     keep_primary,
     keep_secondary,
     keep_newest,
-  }
-
-  @doc("""
-    顧客一覧エクスポート形式区分 - 検索結果のエクスポートで出力するファイル形式
-    
-    csv: CSV - カンマ区切りテキスト
-    json: JSON - JSON形式
-    excel: Excel - Excelブック形式
-    """)
-  enum CustomerExportFormatType {
-    csv,
-    json,
-    excel,
-  }
-
-  @doc("""
-    顧客データエクスポート形式区分 - 顧客本人のデータを出力するファイル形式
-    
-    json: JSON - JSON形式
-    csv: CSV - カンマ区切りテキスト
-    pdf: PDF - PDF文書
-    """)
-  enum CustomerDataExportFormatType {
-    json,
-    csv,
-    pdf,
   }
 
   @doc("""
@@ -1013,49 +992,54 @@ namespace BeautySalon.Models {
   }
 
   @doc("""
-    顧客一覧エクスポートリクエスト - 一覧と同じ絞り込み条件に一致する顧客をファイルに出力する。
-    全項目のキーが必須で、使わない絞り込み条件には null を指定する。条件はすべて AND で結合する
+    顧客台帳の CSV 出力の条件 - 一覧と同じ絞り込み条件で、意味も一覧と同じ。条件はすべて AND で結合し、指定しない条件では絞り込まない
     """)
   model CustomerExportRequest {
-    @doc("エクスポート形式")
-    format: CustomerExportFormatType;
-
-    @doc("出力する項目(CustomerResponse のプロパティ名)の一覧。nullの場合は全項目を出力する")
-    exportFields: string[] | null;
-
-    @doc("顧客名(姓・名とそのカナ表記)、メールアドレス、電話番号に対する部分一致キーワード(大文字小文字を区別しない)。nullの場合はキーワードで絞り込まない")
-    @minLength(1)
-    @maxLength(100)
-    search: string | null;
-
-    @doc("タグによる絞り込み。指定したタグをすべて持つ顧客に一致する。nullの場合はタグで絞り込まない")
-    tags: string[] | null;
-
-    @doc("登録日時(createdAt)の下限による絞り込み。この日時以降に登録された顧客に一致する。nullの場合は下限なし")
-    registeredFrom: utcDateTime | null;
-
-    @doc("登録日時(createdAt)の上限による絞り込み。この日時以前に登録された顧客に一致する。nullの場合は上限なし")
-    registeredTo: utcDateTime | null;
-
-    @doc("顧客ステータスによる絞り込み(完全一致)。nullの場合はステータスで絞り込まない")
-    customerStatus: CustomerStatusType | null;
-
-    @doc("会員ランクによる絞り込み(完全一致)。nullの場合は会員ランクで絞り込まない")
-    membershipTier: MembershipTierType | null;
+    ...OmitProperties<CustomerSearchRequest, "limit" | "cursor">;
   }
 
   @doc("""
-    顧客一覧エクスポートの受付結果 - 非同期で実行するエクスポートジョブの情報を返す
+    顧客のデータの出力 - 顧客について保有しているデータのすべて。すべてのプロパティがあり、ないものは null か空の一覧。一覧は作成日時の古い順(同じ日時なら ID の順)で、版は番号の順。それぞれの値は、その API のレスポンスと同じ形
     """)
-  model CustomerExportResponse {
-    @doc("エクスポートジョブのID")
-    jobId: string;
+  model CustomerDataExportResponse {
+    @doc("出力した日時")
+    exportedAt: utcDateTime;
 
-    @doc("ジョブの状態。受付直後は常にpending")
-    status: "pending";
+    @doc("台帳の顧客(スタッフ専用の項目を含む)")
+    customer: CustomerResponse;
 
-    @doc("完了までの推定所要時間（秒）。推定できない場合はnull")
-    estimatedTime: int32 | null;
+    @doc("顧客に紐づいたログインアカウント。紐づいていない場合はnull")
+    account: UserResponse | null;
+
+    @doc("好み設定。設定がない場合はnull")
+    preferences: CustomerPreferencesResponse | null;
+
+    @doc("カルテ。カルテがない場合はnull")
+    medicalChart: MedicalChartResponse | null;
+
+    @doc("アレルギー")
+    allergies: CustomerAllergyResponse[];
+
+    @doc("予約(明細を含む)")
+    bookings: BookingResponse[];
+
+    @doc("売上(明細と支払いを含む)")
+    sales: SaleResponse[];
+
+    @doc("ポイント取引")
+    pointTransactions: PointTransactionResponse[];
+
+    @doc("顧客が書いたレビュー")
+    reviews: ReviewResponse[];
+
+    @doc("顧客が参考になったと評価したレビューの ID")
+    helpfulReviewIds: ReviewId[];
+
+    @doc("施術記録(写真の情報を含む)")
+    treatmentRecords: TreatmentRecordResponse[];
+
+    @doc("台帳の版(変更履歴)")
+    versions: CustomerVersionResponse[];
   }
 
   // ============================================================================

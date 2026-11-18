@@ -5043,42 +5043,30 @@ paths:
             schema:
               $ref: '#/components/schemas/Models.CustomerBulkDeleteRequest'
   /api/v1/customers/export:
-    post:
+    get:
       operationId: CustomerCrud_export
-      summary: Export customers
-      description: 一覧と同じ絞り込み条件に一致する顧客を指定形式でエクスポートするジョブを受け付け、帳票出力や外部共有に活用します。
-      parameters: []
+      summary: Export customers as CSV
+      description: 一覧と同じ絞り込み条件に一致する顧客を、1人を1行にした CSV ファイルとして返します。admin と owner / manager だけが実行できます。列は CustomerResponse のプロパティで、その順に並び、1行目は列名です。行は一覧と同じ順(登録日時の新しい順、同じならIDの降順)です。null は空のセル、真偽値は true / false、tags と preferences は JSON の文字列です。カンマ、ダブルクォート、改行を含む値はダブルクォートで囲みます。=、+、-、@、タブ、CR で始まる文字列の値には、表計算ソフトが式として読まないよう、先頭に ' を付けます。文字コードは BOM 付きの UTF-8、改行は CRLF です(RFC 4180)。ファイルは保存せず、応答の本文として返します。件数と行は1つのスナップショットで読みます。クエリが不正な場合は400を、一致する顧客が10,000人を超える場合は409を返します。
+      parameters:
+        - $ref: '#/components/parameters/Models.CustomerSearchRequest.search'
+        - $ref: '#/components/parameters/Models.CustomerSearchRequest.tags'
+        - $ref: '#/components/parameters/Models.CustomerSearchRequest.registeredFrom'
+        - $ref: '#/components/parameters/Models.CustomerSearchRequest.registeredTo'
+        - $ref: '#/components/parameters/Models.CustomerSearchRequest.customerStatus'
+        - $ref: '#/components/parameters/Models.CustomerSearchRequest.membershipTier'
       responses:
-        '202':
-          description: The request has been accepted for processing, but processing has not yet completed.
-          content:
-            application/json:
+        '200':
+          description: The request has succeeded.
+          headers:
+            content-disposition:
+              required: true
+              description: attachment; filename=customers-<出力した日(UTC)、YYYY-MM-DD>.csv
               schema:
-                type: object
-                required:
-                  - data
-                  - meta
-                  - links
-                properties:
-                  data:
-                    allOf:
-                      - $ref: '#/components/schemas/Models.CustomerExportResponse'
-                    description: レスポンスの主体となるビジネスデータ。
-                  meta:
-                    type: object
-                    allOf:
-                      - $ref: '#/components/schemas/Models.ResponseMeta'
-                    nullable: true
-                    description: リクエスト識別子やバージョン情報など共通メタデータ。メタ情報が不要な場合はnull
-                  links:
-                    type: object
-                    additionalProperties:
-                      type: string
-                    nullable: true
-                    description: 関連リソースや次アクションへのリンク情報。リンクがない場合はnull
-                description: |-
-                  API 成功レスポンスの共通ラッパーモデル。
-                  サロン検索や予約登録など多様なユースケースで応答形式を統一し、クライアント実装を簡潔に保つ。
+                type: string
+          content:
+            text/csv:
+              schema:
+                type: string
         '400':
           description: The server could not understand the request due to invalid syntax.
           content:
@@ -5106,14 +5094,8 @@ paths:
             application/problem+json:
               schema:
                 $ref: '#/components/schemas/Models.ProblemDetails'
-        '413':
-          description: リクエスト本文がサイズ上限を超えている (413)。
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/Models.ProblemDetails'
-        '415':
-          description: リクエスト本文が、オペレーションの受け付ける形式ではない (415)。JSON を受け取るオペレーションでは UTF-8 の JSON、ファイルのアップロードでは multipart/form-data だけを受け付ける。
+        '409':
+          description: The request conflicts with the current state of the server.
           content:
             application/problem+json:
               schema:
@@ -5141,12 +5123,6 @@ paths:
                 $ref: '#/components/schemas/Models.ProblemDetails'
       tags:
         - Customers
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Models.CustomerExportRequest'
   /api/v1/customers/me:
     get:
       operationId: CustomerProfile_get
@@ -6738,36 +6714,27 @@ paths:
   /api/v1/customers/{id}/export:
     get:
       operationId: CustomerCrud_exportData
-      summary: Export customer data
-      description: 顧客が自身のデータを取得できるようエクスポートし、GDPR等の個人情報規制に対応します。顧客が存在しない場合は404を返します。
+      summary: Export the data of a customer
+      description: 顧客について保有しているデータ(台帳、紐づいたアカウント、好み設定、カルテ、アレルギー、予約、売上、ポイント取引、書いたレビュー、参考になったと評価したレビュー、施術記録、台帳の版)を、1つの JSON ファイルとして返します。個人情報保護法の保有個人データの開示の請求に、電磁的記録で応えるためのものです(本人の確認はサロンが行います)。admin と owner / manager だけが実行できます。すべてを1つのスナップショットで読みます。ファイルは保存せず、応答の本文として返します。IDが不正な場合は400を、顧客が存在しない、または削除されている場合は404を返します。
       parameters:
         - name: id
           in: path
           required: true
           schema:
             $ref: '#/components/schemas/Models.CustomerId'
-        - name: format
-          in: query
-          required: false
-          description: エクスポート形式
-          schema:
-            allOf:
-              - $ref: '#/components/schemas/Models.CustomerDataExportFormatType'
-            default: json
-          explode: false
       responses:
         '200':
           description: The request has succeeded.
           headers:
-            Content-Disposition:
+            content-disposition:
               required: true
+              description: attachment; filename=customer-<顧客の ID>.json
               schema:
                 type: string
           content:
-            '*/*':
+            application/json:
               schema:
-                type: string
-                format: binary
+                $ref: '#/components/schemas/Models.CustomerDataExportResponse'
         '400':
           description: The server could not understand the request due to invalid syntax.
           content:
@@ -22598,108 +22565,120 @@ components:
           format: int32
           description: 猶予期間（日数）。この期間内であれば削除を取り消せる
       description: 顧客データ削除要請の受付結果 - 受け付けた削除要請と削除の予定を返す
-    Models.CustomerDataExportFormatType:
-      type: string
-      enum:
-        - json
-        - csv
-        - pdf
-      description: |-
-        顧客データエクスポート形式区分 - 顧客本人のデータを出力するファイル形式
-
-        json: JSON - JSON形式
-        csv: CSV - カンマ区切りテキスト
-        pdf: PDF - PDF文書
-    Models.CustomerExportFormatType:
-      type: string
-      enum:
-        - csv
-        - json
-        - excel
-      description: |-
-        顧客一覧エクスポート形式区分 - 検索結果のエクスポートで出力するファイル形式
-
-        csv: CSV - カンマ区切りテキスト
-        json: JSON - JSON形式
-        excel: Excel - Excelブック形式
-    Models.CustomerExportRequest:
+    Models.CustomerDataExportResponse:
       type: object
       required:
-        - format
-        - exportFields
-        - search
-        - tags
-        - registeredFrom
-        - registeredTo
-        - customerStatus
-        - membershipTier
+        - exportedAt
+        - customer
+        - account
+        - preferences
+        - medicalChart
+        - allergies
+        - bookings
+        - sales
+        - pointTransactions
+        - reviews
+        - helpfulReviewIds
+        - treatmentRecords
+        - versions
       properties:
-        format:
+        exportedAt:
+          type: string
+          format: date-time
+          description: 出力した日時
+        customer:
           allOf:
-            - $ref: '#/components/schemas/Models.CustomerExportFormatType'
-          description: エクスポート形式
-        exportFields:
+            - $ref: '#/components/schemas/Models.CustomerResponse'
+          description: 台帳の顧客(スタッフ専用の項目を含む)
+        account:
+          type: object
+          allOf:
+            - $ref: '#/components/schemas/Models.UserResponse'
+          nullable: true
+          description: 顧客に紐づいたログインアカウント。紐づいていない場合はnull
+        preferences:
+          type: object
+          allOf:
+            - $ref: '#/components/schemas/Models.CustomerPreferencesResponse'
+          nullable: true
+          description: 好み設定。設定がない場合はnull
+        medicalChart:
+          type: object
+          allOf:
+            - $ref: '#/components/schemas/Models.MedicalChartResponse'
+          nullable: true
+          description: カルテ。カルテがない場合はnull
+        allergies:
           type: array
           items:
-            type: string
-          nullable: true
-          description: 出力する項目(CustomerResponse のプロパティ名)の一覧。nullの場合は全項目を出力する
+            $ref: '#/components/schemas/Models.CustomerAllergyResponse'
+          description: アレルギー
+        bookings:
+          type: array
+          items:
+            $ref: '#/components/schemas/Models.BookingResponse'
+          description: 予約(明細を含む)
+        sales:
+          type: array
+          items:
+            $ref: '#/components/schemas/Models.SaleResponse'
+          description: 売上(明細と支払いを含む)
+        pointTransactions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Models.PointTransactionResponse'
+          description: ポイント取引
+        reviews:
+          type: array
+          items:
+            $ref: '#/components/schemas/Models.ReviewResponse'
+          description: 顧客が書いたレビュー
+        helpfulReviewIds:
+          type: array
+          items:
+            $ref: '#/components/schemas/Models.ReviewId'
+          description: 顧客が参考になったと評価したレビューの ID
+        treatmentRecords:
+          type: array
+          items:
+            $ref: '#/components/schemas/Models.TreatmentRecordResponse'
+          description: 施術記録(写真の情報を含む)
+        versions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Models.CustomerVersionResponse'
+          description: 台帳の版(変更履歴)
+      description: 顧客のデータの出力 - 顧客について保有しているデータのすべて。すべてのプロパティがあり、ないものは null か空の一覧。一覧は作成日時の古い順(同じ日時なら ID の順)で、版は番号の順。それぞれの値は、その API のレスポンスと同じ形
+    Models.CustomerExportRequest:
+      type: object
+      properties:
         search:
           type: string
-          nullable: true
           minLength: 1
           maxLength: 100
-          description: 顧客名(姓・名とそのカナ表記)、メールアドレス、電話番号に対する部分一致キーワード(大文字小文字を区別しない)。nullの場合はキーワードで絞り込まない
+          description: 顧客名(姓・名とそのカナ表記)、メールアドレスに対する部分一致キーワード(大文字小文字を区別しない)。数字・空白・-+()だけのキーワードは、電話番号とも数字だけを取り出して比べる
         tags:
           type: array
           items:
             type: string
-          nullable: true
-          description: タグによる絞り込み。指定したタグをすべて持つ顧客に一致する。nullの場合はタグで絞り込まない
+          description: タグによる絞り込み。指定したタグをすべて持つ顧客に一致する
         registeredFrom:
           type: string
           format: date-time
-          nullable: true
-          description: 登録日時(createdAt)の下限による絞り込み。この日時以降に登録された顧客に一致する。nullの場合は下限なし
+          description: 登録日時(createdAt)の下限による絞り込み。この日時以降に登録された顧客に一致する。UTC の日付で 1900-01-01 から 2999-12-31 まで
         registeredTo:
           type: string
           format: date-time
-          nullable: true
-          description: 登録日時(createdAt)の上限による絞り込み。この日時以前に登録された顧客に一致する。nullの場合は上限なし
+          description: 登録日時(createdAt)の上限による絞り込み。この日時以前に登録された顧客に一致する。registeredFromより前の日時は指定できない。UTC の日付で 1900-01-01 から 2999-12-31 まで
         customerStatus:
           allOf:
             - $ref: '#/components/schemas/Models.CustomerStatusType'
-          nullable: true
-          description: 顧客ステータスによる絞り込み(完全一致)。nullの場合はステータスで絞り込まない
+          description: 顧客ステータスによる絞り込み(完全一致)
         membershipTier:
           allOf:
             - $ref: '#/components/schemas/Models.MembershipTierType'
-          nullable: true
-          description: 会員ランクによる絞り込み(完全一致)。nullの場合は会員ランクで絞り込まない
-      description: |-
-        顧客一覧エクスポートリクエスト - 一覧と同じ絞り込み条件に一致する顧客をファイルに出力する。
-        全項目のキーが必須で、使わない絞り込み条件には null を指定する。条件はすべて AND で結合する
-    Models.CustomerExportResponse:
-      type: object
-      required:
-        - jobId
-        - status
-        - estimatedTime
-      properties:
-        jobId:
-          type: string
-          description: エクスポートジョブのID
-        status:
-          type: string
-          enum:
-            - pending
-          description: ジョブの状態。受付直後は常にpending
-        estimatedTime:
-          type: integer
-          format: int32
-          nullable: true
-          description: 完了までの推定所要時間（秒）。推定できない場合はnull
-      description: 顧客一覧エクスポートの受付結果 - 非同期で実行するエクスポートジョブの情報を返す
+          description: 会員ランクによる絞り込み(完全一致)
+      description: 顧客台帳の CSV 出力の条件 - 一覧と同じ絞り込み条件で、意味も一覧と同じ。条件はすべて AND で結合し、指定しない条件では絞り込まない
     Models.CustomerGenderType:
       type: string
       enum:

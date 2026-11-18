@@ -155,56 +155,6 @@ export type BookingStatusType = z.infer<typeof BookingStatusTypeSchema>
 
 /**
  * @description
- * 顧客データエクスポート形式区分 - 顧客本人のデータを出力するファイル形式
- *
- *
- * json: JSON - JSON形式
- *
- * csv: CSV - カンマ区切りテキスト
- *
- * pdf: PDF - PDF文書
- */
-export const CustomerDataExportFormatTypeSchema = z.enum(['json', 'csv', 'pdf'])
-/**
- * @description
- * 顧客データエクスポート形式区分 - 顧客本人のデータを出力するファイル形式
- *
- *
- * json: JSON - JSON形式
- *
- * csv: CSV - カンマ区切りテキスト
- *
- * pdf: PDF - PDF文書
- */
-export type CustomerDataExportFormatType = z.infer<typeof CustomerDataExportFormatTypeSchema>
-
-/**
- * @description
- * 顧客一覧エクスポート形式区分 - 検索結果のエクスポートで出力するファイル形式
- *
- *
- * csv: CSV - カンマ区切りテキスト
- *
- * json: JSON - JSON形式
- *
- * excel: Excel - Excelブック形式
- */
-export const CustomerExportFormatTypeSchema = z.enum(['csv', 'json', 'excel'])
-/**
- * @description
- * 顧客一覧エクスポート形式区分 - 検索結果のエクスポートで出力するファイル形式
- *
- *
- * csv: CSV - カンマ区切りテキスト
- *
- * json: JSON - JSON形式
- *
- * excel: Excel - Excelブック形式
- */
-export type CustomerExportFormatType = z.infer<typeof CustomerExportFormatTypeSchema>
-
-/**
- * @description
  * 性別区分 - 顧客の性別を表す区分（多様性に配慮した選択肢を含む）
  *
  *
