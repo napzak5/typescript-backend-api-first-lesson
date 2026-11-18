@@ -772,10 +772,11 @@ describe('the migrations of this repository', () => {
       `)
     })
 
-    it('should give the database the rules and the indexes of setup.sql', async () => {
+    it('should give the database the rules and the indexes of setup.sql, with the rules of a transfer the merge of customers changed since', async () => {
       expect(await describeSchema()).not.toEqual(schemaOfSetup)
 
       await run()
+      await runMigration('202611181900_customer_merge.sql')
 
       expect(await describeSchema()).toEqual(schemaOfSetup)
     })
@@ -3842,11 +3843,12 @@ describe('the migrations of this repository', () => {
       `)
     })
 
-    it('should give the database the schema of setup.sql, and keep it on a second run', async () => {
+    it('should give the database the schema of setup.sql, with the operation the merge of customers added since, and keep it on a second run', async () => {
       expect(await describeSchema()).not.toEqual(schemaOfSetup)
 
       await run()
       await run()
+      await runMigration('202611181900_customer_merge.sql')
 
       expect(await describeSchema()).toEqual(schemaOfSetup)
     })
@@ -3920,6 +3922,159 @@ describe('the migrations of this repository', () => {
       )
       await sql`DELETE FROM customers WHERE id = ${id}`
       expect(await versionsOf([id])).toEqual([])
+    })
+  })
+
+  describe('202611181900_customer_merge.sql', () => {
+    const run = (): Promise<void> =>
+      runMigration('202611181900_customer_merge.sql')
+
+    /** The schema of setup.sql, which the migration brings a database to. */
+    let schemaOfSetup: string[] = []
+
+    // A database from before the migration: no version is a merge, and no
+    // transfer of points is written.
+    beforeEach(async () => {
+      await applyBaseline(sql, plan)
+      schemaOfSetup = await describeSchema()
+      await sql.unsafe(`
+        ALTER TABLE customer_versions
+            DROP CONSTRAINT customer_versions_changed_by_unless_baseline;
+        ALTER TYPE customer_version_operation
+            RENAME TO customer_version_operation_with_merge;
+        CREATE TYPE customer_version_operation
+            AS ENUM ('baseline', 'create', 'update', 'delete', 'restore');
+        ALTER TABLE customer_versions
+            ALTER COLUMN operation TYPE customer_version_operation
+            USING operation::text::customer_version_operation;
+        DROP TYPE customer_version_operation_with_merge;
+        ALTER TABLE customer_versions
+            ADD CONSTRAINT customer_versions_changed_by_unless_baseline
+            CHECK ((operation = 'baseline') = ("changedBy" IS NULL));
+        ALTER TABLE customer_points
+            DROP CONSTRAINT customer_points_transfer_names_customer,
+            DROP CONSTRAINT customer_points_expiry_of_earned,
+            DROP CONSTRAINT customer_points_reference_type_known;
+        ALTER TABLE customer_points
+            ADD CONSTRAINT customer_points_expiry_of_earned
+            CHECK ("expiryDate" IS NULL OR "transactionType" = 'earned'),
+            ADD CONSTRAINT customer_points_reference_type_known
+            CHECK (
+                "referenceType" IS NULL
+                OR "referenceType"::text IN ('sale', 'booking')
+            );
+      `)
+    })
+
+    /** A point transaction of a customer: what it is, what it names and when it expires. */
+    const writePoints = (
+      customerId: string,
+      transactionType: string,
+      points: number,
+      referenceType: string | null,
+      expiryDate: string | null,
+    ) => sql`
+      INSERT INTO customer_points (
+        "customerId", "transactionType", points, balance, "referenceType",
+        "referenceId", "expiryDate"
+      )
+      VALUES (
+        ${customerId}, ${transactionType}::point_transaction_type, ${points},
+        100, ${referenceType},
+        ${referenceType === null ? null : randomUUID()}, ${expiryDate}
+      )
+    `
+
+    it('should give the database the schema of setup.sql, and keep it on a second run', async () => {
+      expect(await describeSchema()).not.toEqual(schemaOfSetup)
+
+      await run()
+      await run()
+
+      expect(await describeSchema()).toEqual(schemaOfSetup)
+    })
+
+    it('should let a version be a merge, and keep the versions there are', async () => {
+      const id = await storeNewCustomer()
+      await sql`
+        INSERT INTO customer_versions (
+          "customerId", version, operation, "firstName", "lastName", email,
+          "phoneNumber", "membershipTier", tags, "allowMarketing", "allowSms",
+          "allowEmail", "isActive", "customerStatus"
+        )
+        VALUES (
+          ${id}, 1, 'baseline', 'Taro', 'Suzuki', 'taro@example.com',
+          '090-8765-4321', 'regular', '{}', true, true, true, true, 'active'
+        )
+      `
+
+      await run()
+      await sql`
+        WITH admin AS (
+          INSERT INTO users (email, "passwordHash", role)
+          VALUES (${`${id}@example.com`}, 'hash', 'admin')
+          RETURNING id
+        )
+        INSERT INTO customer_versions (
+          "customerId", version, operation, "changedBy", "firstName",
+          "lastName", email, "phoneNumber", "membershipTier", tags,
+          "allowMarketing", "allowSms", "allowEmail", "isActive",
+          "customerStatus"
+        )
+        SELECT ${id}, 2, 'merge', admin.id, 'Taro', 'Suzuki',
+               'taro@example.com', '090-8765-4321', 'regular', '{}', true,
+               true, true, true, 'active'
+        FROM admin
+      `
+
+      expect(
+        await sql<{ version: number; operation: string }[]>`
+          SELECT version, operation::text AS operation FROM customer_versions
+          WHERE "customerId" = ${id} ORDER BY version
+        `,
+      ).toEqual([
+        { version: 1, operation: 'baseline' },
+        { version: 2, operation: 'merge' },
+      ])
+    })
+
+    it('should let a transfer, and only a transfer, name a customer, and only a transfer that adds points have an expiry date besides an earning', async () => {
+      const id = await storeNewCustomer()
+      await run()
+
+      await writePoints(id, 'transferred', 30, 'customer', '2027-01-31')
+      await writePoints(id, 'transferred', -30, 'customer', null)
+      await writePoints(id, 'earned', 30, 'sale', '2027-01-31')
+      await expect(
+        writePoints(id, 'transferred', 30, null, null),
+      ).rejects.toThrow(/customer_points_transfer_names_customer/)
+      await expect(
+        writePoints(id, 'transferred', 30, 'sale', null),
+      ).rejects.toThrow(/customer_points_transfer_names_customer/)
+      await expect(
+        writePoints(id, 'adjusted', 30, 'customer', null),
+      ).rejects.toThrow(/customer_points_transfer_names_customer/)
+      await expect(
+        writePoints(id, 'transferred', -30, 'customer', '2027-01-31'),
+      ).rejects.toThrow(/customer_points_expiry_of_earned/)
+      await expect(
+        writePoints(id, 'adjusted', 30, null, '2027-01-31'),
+      ).rejects.toThrow(/customer_points_expiry_of_earned/)
+      await expect(
+        writePoints(id, 'earned', 30, 'payment', null),
+      ).rejects.toThrow(/customer_points_reference_type_known/)
+    })
+
+    it('should stop, and change nothing, at a transfer written before that names no customer', async () => {
+      const id = await storeNewCustomer()
+      await writePoints(id, 'transferred', 30, null, null)
+      const before = await describeSchema()
+
+      await expect(run()).rejects.toThrow(
+        /customer_points_transfer_names_customer/,
+      )
+
+      expect(await describeSchema()).toEqual(before)
     })
   })
 })

@@ -1165,6 +1165,25 @@ describe('Points API', () => {
       expect((await storedCustomer()).loyaltyPoints).toBe(0)
     })
 
+    it('refuses a customer as the record of an earning, a use or an adjustment: only a merge transfers points', async () => {
+      const asCustomer = {
+        referenceType: 'customer',
+        referenceId: await insertCustomer(db),
+      }
+
+      const responses = [
+        await earn(earning(asCustomer)),
+        await use(using(asCustomer)),
+        await adjust(adjusting(asCustomer)),
+      ]
+
+      for (const response of responses) {
+        expectProblem(response, badRequest)
+        expect(brokenRules(response)).toEqual(['referenceType:invalid_value'])
+      }
+      expect(await storedTransactions()).toEqual([])
+    })
+
     it('refuses an expiry date before yesterday in UTC', async () => {
       const response = await earn(earning({ expiryDate: daysFromToday(-2) }))
 

@@ -14,6 +14,7 @@
  * update: 更新 - 台帳の項目を変えた(一括更新、顧客本人のプロフィールの更新、プロフィールの作成で台帳の顧客を引き継いだときを含む)
  * delete: 削除 - 顧客を論理削除した(一括削除を含む)
  * restore: 復元 - 論理削除した顧客を台帳に戻した
+ * merge: 統合 - 2人の顧客を1人にまとめた。残した顧客(メイン)の版は統合後の値、統合して論理削除した顧客(サブ)の版は削除したときの値
  */
 export type ModelsCustomerVersionOperationType = typeof ModelsCustomerVersionOperationType[keyof typeof ModelsCustomerVersionOperationType];
 
@@ -24,4 +25,5 @@ export const ModelsCustomerVersionOperationType = {
   update: 'update',
   delete: 'delete',
   restore: 'restore',
+  merge: 'merge',
 } as const;

@@ -234,26 +234,26 @@ export type CustomerGenderType = z.infer<typeof CustomerGenderTypeSchema>
 
 /**
  * @description
- * 顧客統合時の競合解決方針区分 - 2件の顧客レコードで値が異なる項目をどちらに合わせるか
+ * 顧客統合時の競合解決方針区分 - 2件の顧客レコードの両方が値を持ち、その値が異なる項目をどちらに合わせるか。片方だけが値を持つ項目(もう片方が null、タグは空の一覧)は、この区分に関わらず、値を持つほうの値を使う
  *
  *
  * keep_primary: メイン優先 - 統合後も残す顧客(primaryCustomerId)の値を使う
  *
  * keep_secondary: サブ優先 - 統合して削除する顧客(secondaryCustomerId)の値を使う
  *
- * keep_newest: 新しい方優先 - 最後に更新された顧客の値を使う
+ * keep_newest: 新しい方優先 - updatedAt が新しい顧客の値を使う。同じ時刻ならメインの値
  */
 export const CustomerMergeConflictResolutionTypeSchema = z.enum(['keep_primary', 'keep_secondary', 'keep_newest'])
 /**
  * @description
- * 顧客統合時の競合解決方針区分 - 2件の顧客レコードで値が異なる項目をどちらに合わせるか
+ * 顧客統合時の競合解決方針区分 - 2件の顧客レコードの両方が値を持ち、その値が異なる項目をどちらに合わせるか。片方だけが値を持つ項目(もう片方が null、タグは空の一覧)は、この区分に関わらず、値を持つほうの値を使う
  *
  *
  * keep_primary: メイン優先 - 統合後も残す顧客(primaryCustomerId)の値を使う
  *
  * keep_secondary: サブ優先 - 統合して削除する顧客(secondaryCustomerId)の値を使う
  *
- * keep_newest: 新しい方優先 - 最後に更新された顧客の値を使う
+ * keep_newest: 新しい方優先 - updatedAt が新しい顧客の値を使う。同じ時刻ならメインの値
  */
 export type CustomerMergeConflictResolutionType = z.infer<typeof CustomerMergeConflictResolutionTypeSchema>
 
@@ -300,8 +300,10 @@ export type CustomerStatusType = z.infer<typeof CustomerStatusTypeSchema>
  * delete: 削除 - 顧客を論理削除した(一括削除を含む)
  *
  * restore: 復元 - 論理削除した顧客を台帳に戻した
+ *
+ * merge: 統合 - 2人の顧客を1人にまとめた。残した顧客(メイン)の版は統合後の値、統合して論理削除した顧客(サブ)の版は削除したときの値
  */
-export const CustomerVersionOperationTypeSchema = z.enum(['baseline', 'create', 'update', 'delete', 'restore'])
+export const CustomerVersionOperationTypeSchema = z.enum(['baseline', 'create', 'update', 'delete', 'restore', 'merge'])
 /**
  * @description
  * 顧客の版の操作区分 - 版を作った、顧客台帳への書き込みの種類
@@ -316,6 +318,8 @@ export const CustomerVersionOperationTypeSchema = z.enum(['baseline', 'create', 
  * delete: 削除 - 顧客を論理削除した(一括削除を含む)
  *
  * restore: 復元 - 論理削除した顧客を台帳に戻した
+ *
+ * merge: 統合 - 2人の顧客を1人にまとめた。残した顧客(メイン)の版は統合後の値、統合して論理削除した顧客(サブ)の版は削除したときの値
  */
 export type CustomerVersionOperationType = z.infer<typeof CustomerVersionOperationTypeSchema>
 
@@ -817,14 +821,25 @@ export type PaymentStatusType = z.infer<typeof PaymentStatusTypeSchema>
 
 /**
  * @description
- * ポイント取引の参照先区分 - ポイント取引のもとになった記録の種類(customer_points.referenceType)
+ * ポイントの付与・利用・調整の参照先区分 - リクエストで指定できる、ポイント取引のもとになった記録の種類
  *
  *
  * sale: 売上 - referenceId は売上の ID
  *
  * booking: 予約 - referenceId は予約の ID
  */
-export const PointReferenceTypeSchema = z.enum(['sale', 'booking'])
+export const PointMovementReferenceTypeSchema = z.enum(['sale', 'booking'])
+/**
+ * @description
+ * ポイントの付与・利用・調整の参照先区分 - リクエストで指定できる、ポイント取引のもとになった記録の種類
+ *
+ *
+ * sale: 売上 - referenceId は売上の ID
+ *
+ * booking: 予約 - referenceId は予約の ID
+ */
+export type PointMovementReferenceType = z.infer<typeof PointMovementReferenceTypeSchema>
+
 /**
  * @description
  * ポイント取引の参照先区分 - ポイント取引のもとになった記録の種類(customer_points.referenceType)
@@ -833,6 +848,20 @@ export const PointReferenceTypeSchema = z.enum(['sale', 'booking'])
  * sale: 売上 - referenceId は売上の ID
  *
  * booking: 予約 - referenceId は予約の ID
+ *
+ * customer: 顧客 - 移行(transferred)の取引だけが持つ。referenceId は、ポイントを移した相手の顧客の ID
+ */
+export const PointReferenceTypeSchema = z.enum(['sale', 'booking', 'customer'])
+/**
+ * @description
+ * ポイント取引の参照先区分 - ポイント取引のもとになった記録の種類(customer_points.referenceType)
+ *
+ *
+ * sale: 売上 - referenceId は売上の ID
+ *
+ * booking: 予約 - referenceId は予約の ID
+ *
+ * customer: 顧客 - 移行(transferred)の取引だけが持つ。referenceId は、ポイントを移した相手の顧客の ID
  */
 export type PointReferenceType = z.infer<typeof PointReferenceTypeSchema>
 
@@ -849,7 +878,7 @@ export type PointReferenceType = z.infer<typeof PointReferenceTypeSchema>
  *
  * adjusted: 調整 - スタッフが手動でポイントを増減した取引
  *
- * transferred: 移行 - 別の顧客との間でポイントを移した取引
+ * transferred: 移行 - 顧客の統合で、統合して削除する顧客(サブ)の残高を、残す顧客(メイン)に移した取引。サブは残高を 0 にする負の取引、メインは残っている付与ごとの正の取引
  */
 export const PointTransactionTypeSchema = z.enum(['earned', 'used', 'expired', 'adjusted', 'transferred'])
 /**
@@ -865,7 +894,7 @@ export const PointTransactionTypeSchema = z.enum(['earned', 'used', 'expired', '
  *
  * adjusted: 調整 - スタッフが手動でポイントを増減した取引
  *
- * transferred: 移行 - 別の顧客との間でポイントを移した取引
+ * transferred: 移行 - 顧客の統合で、統合して削除する顧客(サブ)の残高を、残す顧客(メイン)に移した取引。サブは残高を 0 にする負の取引、メインは残っている付与ごとの正の取引
  */
 export type PointTransactionType = z.infer<typeof PointTransactionTypeSchema>
 

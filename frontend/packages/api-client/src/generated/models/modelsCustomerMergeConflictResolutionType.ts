@@ -7,11 +7,11 @@
  */
 
 /**
- * 顧客統合時の競合解決方針区分 - 2件の顧客レコードで値が異なる項目をどちらに合わせるか
+ * 顧客統合時の競合解決方針区分 - 2件の顧客レコードの両方が値を持ち、その値が異なる項目をどちらに合わせるか。片方だけが値を持つ項目(もう片方が null、タグは空の一覧)は、この区分に関わらず、値を持つほうの値を使う
  *
  * keep_primary: メイン優先 - 統合後も残す顧客(primaryCustomerId)の値を使う
  * keep_secondary: サブ優先 - 統合して削除する顧客(secondaryCustomerId)の値を使う
- * keep_newest: 新しい方優先 - 最後に更新された顧客の値を使う
+ * keep_newest: 新しい方優先 - updatedAt が新しい顧客の値を使う。同じ時刻ならメインの値
  */
 export type ModelsCustomerMergeConflictResolutionType = typeof ModelsCustomerMergeConflictResolutionType[keyof typeof ModelsCustomerMergeConflictResolutionType];
 

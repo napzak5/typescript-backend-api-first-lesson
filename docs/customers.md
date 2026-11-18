@@ -14,7 +14,7 @@
 | [統計](#統計)（台帳の `GET /{id}/statistics`） | 実装済み |
 | [一括の操作](#一括の操作)（一括取得、一括登録、一括更新、一括削除） | 実装済み |
 | [変更履歴と版](#変更履歴と版)（台帳の `GET /{id}/history`、`GET /{id}/versions/{version}`）、[復元](#復元)（`POST /{id}/restore`） | 実装済み |
-| 統合 | 未実装 |
+| [統合](#統合)（`POST /merge`） | 実装済み |
 | エクスポート、データ削除要請 | 未実装。保存するテーブルがない |
 
 未実装のオペレーションは `CustomerCrud` のもので、コントラクトには定義がありますが、サーバーは 404 を返します。
@@ -41,6 +41,7 @@
 | 統計 | `GET /api/v1/customers/{id}/statistics` | `admin`、クエリのサロンの `owner` / `manager` / `staff`（[統計](#統計)） |
 | 変更履歴、版 | `GET /api/v1/customers/{id}/history`、`GET /api/v1/customers/{id}/versions/{version}` | `admin`、サロンの `owner` / `manager`（[変更履歴と版](#変更履歴と版)） |
 | 復元 | `POST /api/v1/customers/{id}/restore` | `admin`、サロンの `owner` / `manager`（[復元](#復元)） |
+| 統合 | `POST /api/v1/customers/merge` | `admin`、サロンの `owner` / `manager`（[統合](#統合)） |
 
 - すべてのオペレーションに認証が要ります。台帳は公開情報ではありません
 - 権限は操作者だけで決まります（`business-logic/customer/_shared/authorization.ts` の `mayHandleCustomers` と `mayDeleteCustomers`）。サロンのロールは、どのサロンのものでも同じ扱いです。統計だけは、クエリのサロンも問います（[統計](#統計)）
@@ -189,12 +190,12 @@
 | 変更履歴 | `GET /api/v1/customers/{id}/history`（クエリ `limit`、`cursor`） | 200。新しい版から順に、版の ID、顧客の ID、版の番号、操作、変更者、日時、変更内容 |
 | 版 | `GET /api/v1/customers/{id}/versions/{version}` | 200。その版の時点の台帳の 30 項目の値と、版の番号、操作、変更者、日時。`links` は `self` と `history` |
 
-- **版を作る書き込み**は、登録（`create`）、更新（`update`）、削除（`delete`）、[復元](#復元)（`restore`）です。一括の操作は、顧客ごとに 1 つの版を作ります。顧客本人のプロフィールの作成は `create`、台帳の顧客を引き継ぐ作成と、プロフィールの更新は `update` で、変更者は本人のアカウントです
+- **版を作る書き込み**は、登録（`create`）、更新（`update`）、削除（`delete`）、[復元](#復元)（`restore`）、[統合](#統合)（`merge`）です。統合は、2 人と、紹介元がメインに変わった顧客に版を作ります。一括の操作は、顧客ごとに 1 つの版を作ります。顧客本人のプロフィールの作成は `create`、台帳の顧客を引き継ぐ作成と、プロフィールの更新は `update` で、変更者は本人のアカウントです
 - **台帳の項目**は、登録の本文の 30 項目です（氏名、連絡先、住所、属性、会員ランク、好み、メモ、スタッフ向けのメモ、タグ、紹介、連絡の可否、有効、髪と頭皮の状態、ステータス）。予約やポイントが変える値（来店回数、ポイントなど）と、アカウントとの紐づけ（`userId`）は台帳の項目ではないので、版に入れません。それらが変わっても版はできません
 - 断った書き込み（400、404、409）は、版を作りません
 - 版の番号は、顧客ごとに 1 から数えます。欠けも重なりもありません。変更者（`changedBy`）は操作したユーザー、日時（`changedAt`）は書き込んだあとの顧客の `updatedAt` です
 - **版を記録する前からいた顧客**には、マイグレーションが、そのときの値を版 1（操作 `baseline`、変更者 null）として残しました。シードの顧客も同じです。変更者がないのは `baseline` だけです
-- **変更内容**（`changes`）は、`update` の版で、前の版と値が違う項目の一覧です（`field`、`oldValue`、`newValue`）。値は顧客のレスポンスと同じ表し方で、並びはレスポンスのプロパティの順です。値を変えない更新は、空の一覧です。ほかの操作の版と、前の版がない版は null です
+- **変更内容**（`changes`）は、`update` と `merge` の版で、前の版と値が違う項目の一覧です（`field`、`oldValue`、`newValue`）。値は顧客のレスポンスと同じ表し方で、並びはレスポンスのプロパティの順です。値を変えない更新は、空の一覧です。ほかの操作の版と、前の版がない版は null です
 - **削除した顧客の履歴と版も読めます**（削除を確かめて復元するため）。404 は、顧客の行がないときだけです
 - 権限は削除と同じで、`admin` と、サロンの `owner`・`manager` です。`staff` と顧客は 403 です。権限は、ID とクエリを読む前に確かめます
 - ページは、`limit`（1〜100、既定 20）と `cursor`（前のページの `meta.nextCursor`。その顧客の版の ID）で進めます。ほかの一覧と同じく、前のページへは戻れません（`prevCursor` は null）。その顧客の版を指さない `cursor` は 400（`cursor` の `not_found`）です
@@ -219,11 +220,90 @@
 - 削除した顧客を台帳に戻します（`deletedAt` を null にする）。200 で、顧客を 1 件の取得と同じ形で返し、版 `restore` を残します
 - 権限は削除と同じで、`admin` と、サロンの `owner`・`manager` です
 - 削除していない顧客は 409（`operation-not-allowed`）、顧客の行がないときは 404 です
+- **[統合](#統合)で削除した顧客は 409**（`operation-not-allowed`）です。持っていたものは、統合したメインに移っています
 - **削除のあとに、同じメールアドレスの顧客が登録されていれば 409**（`already-exists`）です。どちらかのメールアドレスを変えてから、復元します。紹介コードは、削除した顧客とも重ならないので、ぶつかりません
 - **アカウントとの紐づけは戻しません**。削除で外したアカウントの紐づけ（`users.customerId`）は null のままで、顧客の `userId` も null にします。本人がプロフィールを作ると、メールアドレスで顧客を引き継ぎます（[顧客本人のプロフィール](#顧客本人のプロフィール)）。削除のあとに本人が新しいプロフィールを作っていれば、そのプロフィールが同じメールアドレスを持つので、復元は 409 です
 - 好み設定、カルテ、アレルギーは、行が残っているので、復元すると、また見えます
-- 確認の順序: アクセストークン（401）→ 権限（403）→ ID（400）→ 顧客の存在（404）→ 削除していること（409）→ メールアドレスの重複（409）
+- 確認の順序: アクセストークン（401）→ 権限（403）→ ID（400）→ 顧客の存在（404）→ 削除していること（409）→ 統合で削除していないこと（409）→ メールアドレスの重複（409）
 - 同時に届いた 2 つの復元は、顧客の行のロックで 1 つずつ処理し、1 つが 200、もう 1 つが 409 です
+
+## 統合
+
+重複して登録された 2 人の顧客を 1 人にまとめます（`POST /api/v1/customers/merge`）。本文は、残す顧客（メイン、`primaryCustomerId`）、メインに統合して削除する顧客（サブ、`secondaryCustomerId`）、両方が違う値を持つときにどちらを残すか（`conflictResolution`）の 3 つです。200 で、統合後のメインを 1 件の取得と同じ形で返します。`links` は `self` と `list` です。
+
+- 権限は削除と同じで、`admin` と、サロンの `owner`・`manager` です。統合はサブを削除するからです。権限は、本文を読む前に確かめます
+- **すべてを 1 つのトランザクションで行います**。断るときは、何も変えません
+- `conflictResolution` は `keep_primary`（メインの値）、`keep_secondary`（サブの値）、`keep_newest`（最後に書かれた顧客の値。`updatedAt` が同じならメイン）のどれかです
+
+### 台帳の項目（統合）
+
+台帳の 30 項目（[変更履歴と版](#変更履歴と版) と同じ項目）を、1 つずつ次のように決めます。
+
+| 2 人の値 | 統合後の値 |
+|---|---|
+| 同じ | その値 |
+| 片方だけが値を持つ（もう片方が null。`tags` は空配列も値がないものとする） | 値を持つほうの値。`conflictResolution` によらない |
+| 違う | `conflictResolution` が選んだ顧客の値 |
+
+- null にできない項目（氏名、メールアドレス、会員ランク、連絡の可否など）は、2 人とも値を持つので、違えば `conflictResolution` で決まります。`preferences`（好みのサービスとメモ）は、1 つの値として比べます
+- **紹介元**（`referredBy`）: 2 人のどちらかを指す紹介元は、値がないものとします。統合すると、自分自身を紹介元にすることになるからです
+- **メールアドレス**: サブの値を残すときも、先にサブを削除するので、一意性にぶつかりません
+- **紹介コード**: メインがサブの紹介コードを受け継ぐときは、サブの紹介コードを外します（紹介コードは、削除した顧客とも重ならないため）。受け継がないときは、サブは自分の紹介コードを持ったまま削除され、そのコードは、ほかの顧客に使えないままです
+- **予約から数える値**（[予約から数える値](#予約から数える値)）は、統合のあとの予約から、2 人とも数え直します。サブは 0 と null になります
+- `loyaltyPoints` は、[ポイント](#ポイント統合)で決まります
+
+### 顧客を指すもの（統合）
+
+| もの | 統合で |
+|---|---|
+| 予約、売上、施術記録、レビュー | サブのものは、すべてメインのものにする |
+| サブを紹介元にしている顧客 | 削除されていない顧客は、メインを紹介元にして、版（`merge`）を残す。削除済みの顧客は変えない |
+| ログインアカウント | サブだけがアカウントのプロフィールなら、そのアカウントをメインに紐づける（`users.customerId` と、メインの `userId`）。削除されたサブは、ほかの削除した顧客と同じく、アカウントの ID を持ち続ける。2 人とも別々のアカウントのプロフィールなら 409 |
+| 参考になった（`review_helpful_votes`） | サブの評価をメインのものにする。統合でメイン自身のレビューになるものへの評価（メインがサブのレビューに付けた評価、サブがメインのレビューに付けた評価）と、メインも評価していたレビューへのサブの評価は消し、そのレビューの `helpfulCount` を数え直す |
+| 好み設定 | サブだけにあれば、メインのものにする。2 人ともあれば、`conflictResolution` が選んだ行の 6 項目を残す。希望するスタッフと避けるスタッフが別々の行から来ないように、行ごと選ぶ（`keep_newest` は、好み設定の行の `updatedAt` で比べる） |
+| カルテ | サブだけにあれば、メインのものにする。2 人ともあれば、何も落とさずに合わせる（下記） |
+| アレルギー | サブにだけあるアレルゲンは、メインのものにする。2 人ともあるアレルゲンは、重いほう（`mild` < `moderate` < `severe` < `life_threatening`）の記録を残し、同じ重さならメインの記録を残す。統合でスタッフへの警告が軽くなることはない |
+| ポイント | 下記 |
+
+- アレルゲンは、名前（`allergenName`）が完全に一致するものを同じとします（大文字と小文字も区別します）
+- サブに残った好み設定、カルテ、アレルギーの行は、サブと一緒に見えなくなります
+
+**カルテを合わせる**: `conflictResolution` によらず、どちらの記録も落としません。
+
+- 施術歴（`previousTreatments`）、使いたい製品（`preferredProducts`）、避けたい製品（`avoidProducts`）は、メインのものの後に、メインにないサブのものを続けます
+- 既往歴（`medicalConditions`）とメモ（`notes`）は、片方だけなら、その値です。2 人とも違う値なら、メインの値、空行、サブの値の順につなぎます
+- 合わせた一覧が、リクエストで書ける件数（50 件）を超えるときは 409 です。どちらかのカルテを短くしてから、統合します
+
+### ポイント（統合）
+
+サブの残高を、移行（`transferred`）の取引でメインに移します（[ポイント台帳](./points.md)）。
+
+- サブには、残高を 0 にする取引を 1 件書きます（負の数、参照はメイン）
+- メインには、サブの残高を増やした取引（付与、正の調整、移行）のうち、使われずに残っているものごとに 1 件書きます（正の数、参照はサブ、その取引の有効期限）。移したポイントは、統合しなかった場合と同じ日に失効します。有効期限を過ぎて、まだ失効させていないポイントも、その日付のまま移します
+- 移行の取引の参照種別（`referenceType`）は `customer` です。移行は統合だけが書き、付与・利用・調整のリクエストは `customer` を参照できません（400）
+- サブの残高が 0 なら、取引を書きません
+- 2 人の残高の合計が 2,147,483,647 を超えるときは 409 です
+
+### 版と復元（統合）
+
+- メインとサブに、版（`merge`）を 1 つずつ残します。メインの版は統合後の値、サブの版は削除したときの値です。変更履歴の `changes` は、`update` と同じく、前の版との違いです
+- **統合で削除した顧客は、復元できません**（409）。予約やポイントなど、その顧客が持っていたものは、メインに移っているからです。削除した顧客の最新の版が `merge` かで見分けます
+
+### 確認の順序（統合）
+
+1. アクセストークン（401）
+2. 権限（403）
+3. 本文（400）: ID の形式、`conflictResolution`、2 つの ID が同じ顧客を指さないこと（`secondaryCustomerId` の `custom`。英字を大文字で書いた ID も同じ ID）
+4. 顧客の存在（400）: 存在しない顧客と削除した顧客を、指定した項目（`primaryCustomerId`、`secondaryCustomerId`）の `not_found` で報告します。2 人ともなら両方です。顧客をパスではなく本文で指定するので、404 ではありません
+5. 2 人とも別々のアカウントのプロフィール（409）
+6. 2 人の残高の合計（409）
+7. 合わせたカルテの一覧の件数（409）
+
+409 は、どれも `operation-not-allowed`（コード `3003`）です。
+
+### ロック（統合）
+
+統合は、ほかの書き込みと同じ順にロックします。まず、2 人のどちらかを指す予約、売上、施術記録、レビュー（と、2 人のどちらかが評価したレビュー）を、この順に、表ごとに ID の順で `FOR NO KEY UPDATE` でロックします。次に、2 人の顧客を ID の順に `FOR UPDATE` でロックします。予約のステータスの操作やポイントの増減は、予約や売上を顧客より先にロックするので、逆の順で待ち合うことはありません。顧客のあとで、カルテとアレルギーの行をロックして読み、断る理由をすべて確かめてから書き始めます。カルテとアレルギーの変更は、顧客をロックしない 1 つの文で書くので、統合が読んだ行をロックしていなければ、統合が読んでから書くまでに届いた変更を、統合が上書きして消してしまいます。好み設定の変更は、いつも顧客の行をロックしてから書くので、統合が持っている顧客のロックを待ちます。好み設定の行は、ロックせずに読みます。書き込みの時刻は、ロックを待ったあとのデータベースの時計（`clock_timestamp()`）です。
 
 ## 顧客本人のプロフィール
 
@@ -446,6 +526,11 @@
 | 一括更新と、そのうち 1 人の削除が同時に届く | 削除が先なら、一括更新は 404 で、どの顧客も更新しない |
 | 同じ顧客の更新が同時に届く | どれも 200。版には 1 つずつ番号が付き、最後の版が顧客の値と同じ（[書き込みと版](#書き込みと版)） |
 | 同じ顧客の復元が同時に届く | 1 件だけが 200 で、ほかは 409 |
+| 同じ 2 人の統合が同時に届く | 1 件だけが 200 で、ほかは 400（サブが削除されている） |
+| 2 人の統合が、メインとサブを逆にして同時に届く | 片方だけが 200 で、もう片方は 400。同じ順にロックするので、デッドロックしない |
+| 統合と、サブの予約の変更が同時に届く | 統合は、予約の変更が済むのを待ってから、その予約をメインのものにする。予約の変更が続けて顧客を書いても（来店回数の数え直し）、統合は顧客をまだロックしていないので、デッドロックしない |
+| 統合と、メインのカルテかアレルギーの変更が同時に届く | 統合がカルテとアレルギーを読んだあとに届いた変更は、統合が済むのを待ってから、統合後の行の上に書く。統合が変更を上書きして消すことはない |
+| 統合と、サブへのポイントの付与が同時に届く | 付与が先なら、付与したポイントも移す。統合が先なら、付与は 400（削除された顧客）。どちらでも、2 人の残高は最新の取引の残高と等しい |
 
 一意性は DB の一意インデックスが決めます。更新は、対象の行をロックしてから紹介元を確認し、書き込みます。プロフィールの作成は、アカウントの行、引き継ぐ顧客の行の順にロックしてから書き込みます。
 
@@ -492,7 +577,7 @@
 - 来店回数、無断キャンセル回数、キャンセル回数は 0 以上（CHECK 制約 `customers_counts_not_negative`）
 - 以前の行の 5 つの値は、マイグレーションが予約から数え直します。これまでは、シードだけが書いていた値で、予約と合っていませんでした
 
-マイグレーション `202611181800_customer_versions.sql` で、版のテーブル（`customer_versions`）と列挙型 `customer_version_operation`（`baseline`、`create`、`update`、`delete`、`restore`）を作り、いた顧客すべてに版 1（`baseline`）を残しました。
+マイグレーション `202611181800_customer_versions.sql` で、版のテーブル（`customer_versions`）と列挙型 `customer_version_operation`（`baseline`、`create`、`update`、`delete`、`restore`）を作り、いた顧客すべてに版 1（`baseline`）を残しました。`merge` は、マイグレーション `202611181900_customer_merge.sql` で加えました（[ポイント台帳](./points.md#db-の制約)の移行の制約も、このマイグレーションです）。
 
 - 台帳の 30 項目は、`customers` のカラムと同じ型と NULL 許可で、既定値はありません（`backend/packages/database/src/__tests__/customer-versions.test.ts` が、2 つのテーブルで一致していることを確かめます）。値は、書き込んだあとの顧客の行から写すので、`customers` の CHECK 制約を写していません。`referredBy` には外部キーを付けず、版は、その時点の紹介元を持ち続けます
 - `(customerId, version)` は一意（`customer_versions_customer_version_unique`）で、変更履歴は、その一意インデックスで新しい順に読みます。番号は 1 以上（`customer_versions_version_positive`）
@@ -512,7 +597,9 @@
 | ドメイン（統計） | `backend/packages/domain/src/models/customer-statistics.ts`、`schemas/customer-statistics.schema.ts`（売上レポートの期間の規則を使う）、`repositories/customer-statistics.repository.ts`、`business-logic/customer-statistics/`（値の計算と並びは `_shared/statistics.ts`） |
 | インフラ（統計） | `backend/packages/infrastructure/src/repositories/customer-statistics.repository.impl.ts` |
 | ドメイン（一括の操作） | `backend/packages/domain/src/schemas/customer-bulk.schema.ts`、`business-logic/customer/` の `batch-get-customers.usecase.ts`、`bulk-*-customers.usecase.ts`（エラーの位置と、リクエストの順の扱いは `_shared/bulk.ts`）、`repositories/customer.repository.ts`（`findByIds`、`createMany`、`updateMany`、`deleteMany`） |
+| ドメイン（統合） | `backend/packages/domain/src/schemas/customer-merge.schema.ts`、`business-logic/customer/merge-customers.usecase.ts`、`business-logic/customer/_shared/merge.ts`（台帳の項目、好み設定、カルテ、アレルギーの決め方）、`business-logic/point/_shared/transfer.ts`（ポイントの移し方）、`repositories/customer.repository.ts`（`merge`） |
+| インフラ（統合） | `backend/packages/infrastructure/src/repositories/customer-merge.ts`（ロック、確認、書き込み）。ほかのリポジトリと共有する `customer-counters.ts`（来店回数の数え直し）、`review-marks.ts`（`helpfulCount` の数え直し）、`point-transactions.ts`（取引を書いた順に読む）、`customer-version-record.ts`（版を書く） |
 | ドメイン（変更履歴と版、復元） | `backend/packages/domain/src/models/customer-version.ts`、`schemas/customer-version.schema.ts`、`mappers/read/customer-version.mapper.ts`（変更内容の計算）、`repositories/customer-version.repository.ts`、`business-logic/customer-version/`、`business-logic/customer/restore-customer.usecase.ts`、`repositories/customer.repository.ts`（`restore`。書き込むメソッドは、変更者を受け取る） |
-| インフラ（変更履歴と版、復元） | `backend/packages/infrastructure/src/repositories/customer-version.repository.impl.ts`、`customer.repository.impl.ts`（版を書く `recordVersions`、`restore`） |
-| API | `backend/packages/api/src/routes/customer/`（一括の操作は `batch-get-customers.handler.ts`、`bulk-*-customers.handler.ts`。プロフィールは `*-customer-profile.handler.ts`。復元は `restore-customer.handler.ts`）、`routes/customer-preferences/`（本人のものは `*-own-customer-preferences.handler.ts`）、`routes/customer-statistics/`、`routes/customer-version/`（変更履歴と版） |
-| DB | `backend/packages/database/sql/migrations/202611150900_customers_columns.sql`、`202611151500_customers_user_unique.sql`、`202611160100_customer_preferences_columns.sql`、`202611181400_customers_without_lifetime_value.sql`、`202611181800_customer_versions.sql` |
+| インフラ（変更履歴と版、復元） | `backend/packages/infrastructure/src/repositories/customer-version.repository.impl.ts`、`customer-version-record.ts`（版を書く `recordVersions`）、`customer.repository.impl.ts`（`restore`） |
+| API | `backend/packages/api/src/routes/customer/`（一括の操作は `batch-get-customers.handler.ts`、`bulk-*-customers.handler.ts`。プロフィールは `*-customer-profile.handler.ts`。復元は `restore-customer.handler.ts`、統合は `merge-customers.handler.ts`）、`routes/customer-preferences/`（本人のものは `*-own-customer-preferences.handler.ts`）、`routes/customer-statistics/`、`routes/customer-version/`（変更履歴と版） |
+| DB | `backend/packages/database/sql/migrations/202611150900_customers_columns.sql`、`202611151500_customers_user_unique.sql`、`202611160100_customer_preferences_columns.sql`、`202611181400_customers_without_lifetime_value.sql`、`202611181800_customer_versions.sql`、`202611181900_customer_merge.sql` |

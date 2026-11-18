@@ -13,7 +13,7 @@
  * used: 利用 - 支払いなどでポイントを使用した取引
  * expired: 失効 - 有効期限を過ぎたポイントを失効させた取引
  * adjusted: 調整 - スタッフが手動でポイントを増減した取引
- * transferred: 移行 - 別の顧客との間でポイントを移した取引
+ * transferred: 移行 - 顧客の統合で、統合して削除する顧客(サブ)の残高を、残す顧客(メイン)に移した取引。サブは残高を 0 にする負の取引、メインは残っている付与ごとの正の取引
  */
 export type ModelsPointTransactionType = typeof ModelsPointTransactionType[keyof typeof ModelsPointTransactionType];
 

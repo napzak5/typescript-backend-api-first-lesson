@@ -74,6 +74,7 @@ export const customerVersionOperation = pgEnum('customer_version_operation', [
   'update',
   'delete',
   'restore',
+  'merge',
 ])
 
 export const dayOfWeek = pgEnum('day_of_week', [
@@ -549,7 +550,7 @@ export const customerPoints = pgTable(
     check('customer_points_balance_not_negative', sql`balance >= 0`),
     check(
       'customer_points_expiry_of_earned',
-      sql`("expiryDate" IS NULL) OR ("transactionType" = 'earned'::point_transaction_type)`,
+      sql`("expiryDate" IS NULL) OR ("transactionType" = 'earned'::point_transaction_type) OR (("transactionType" = 'transferred'::point_transaction_type) AND (points > 0))`,
     ),
     check(
       'customer_points_points_of_type',
@@ -561,7 +562,11 @@ export const customerPoints = pgTable(
     ),
     check(
       'customer_points_reference_type_known',
-      sql`("referenceType" IS NULL) OR (("referenceType")::text = ANY (ARRAY['sale'::text, 'booking'::text]))`,
+      sql`("referenceType" IS NULL) OR (("referenceType")::text = ANY (ARRAY['sale'::text, 'booking'::text, 'customer'::text]))`,
+    ),
+    check(
+      'customer_points_transfer_names_customer',
+      sql`("transactionType" = 'transferred'::point_transaction_type) = (NOT (("referenceType")::text IS DISTINCT FROM 'customer'::text))`,
     ),
     foreignKey({
       columns: [table.customerId],

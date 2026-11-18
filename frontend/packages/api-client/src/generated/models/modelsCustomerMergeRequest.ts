@@ -12,10 +12,10 @@ import type { ModelsCustomerMergeConflictResolutionType } from './modelsCustomer
  * 顧客統合リクエスト - 重複登録された2件の顧客レコードを1件に統合する
  */
 export interface ModelsCustomerMergeRequest {
-  /** 統合後も残すメイン顧客ID */
+  /** 統合後も残すメイン顧客ID。削除していない顧客 */
   primaryCustomerId: ModelsCustomerId;
-  /** 統合して削除するサブ顧客ID。primaryCustomerId と異なる顧客を指定する */
+  /** 統合して論理削除するサブ顧客ID。削除していない顧客で、primaryCustomerId と異なる顧客を指定する */
   secondaryCustomerId: ModelsCustomerId;
-  /** 2件の顧客で値が異なる項目の優先ルール */
+  /** 台帳の項目のうち、2件の顧客の両方が値を持ち、その値が異なる項目の優先ルール。好み設定が両方にあるときは、どちらの行を残すかにも使う(keep_newest は好み設定の updatedAt)。カルテとアレルギーには使わない */
   conflictResolution: ModelsCustomerMergeConflictResolutionType;
 }

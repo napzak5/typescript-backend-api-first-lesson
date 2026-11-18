@@ -1,4 +1,5 @@
 import type { Result } from '@beauty-salon-backend/utility'
+import type { ChartList } from '../business-logic/customer/_shared/merge'
 import type { UserId } from '../models/auth'
 import type {
   CustomerId,
@@ -7,6 +8,7 @@ import type {
   DbCustomerChanges,
   DbNewCustomer,
 } from '../models/customer'
+import type { CustomerMergeRequest } from '../schemas/customer-merge.schema'
 import type { DomainError } from '../shared'
 
 /** Which customers a list returns. A null filter does not restrict the list. */
@@ -92,6 +94,27 @@ export type CustomerRestoration =
   /** No customer has the ID, deleted or not. */
   | { type: 'notFound' }
   | { type: 'notDeleted' }
+  /** A merge deleted the customer, and what they had is the other's. */
+  | { type: 'mergedAway' }
+
+/** One of the two customers a merge names, as the request names them. */
+export type MergedCustomerField = 'primaryCustomerId' | 'secondaryCustomerId'
+
+/**
+ * What became of a merge:
+ * - `merged`: the primary, as the merge left it
+ * - `customersNotFound`: these of the two are not there, or are deleted
+ * - `accountsDiffer`: each of the two is the profile of an account
+ * - `pointsBeyondLimit`: the points of both are more than a balance holds
+ * - `chartTooLong`: the medical charts of both list more in `list` than a
+ *   request may write
+ */
+export type CustomerMerge =
+  | { type: 'merged'; customer: DbCustomer }
+  | { type: 'customersNotFound'; missing: MergedCustomerField[] }
+  | { type: 'accountsDiffer' }
+  | { type: 'pointsBeyondLimit' }
+  | { type: 'chartTooLong'; list: ChartList }
 
 /**
  * Why an account did not get a profile:
@@ -163,6 +186,19 @@ export interface ICustomerRepository {
     id: CustomerId,
     changedBy: UserId,
   ): Promise<Result<CustomerRestoration, DomainError>>
+
+  /**
+   * Merges the secondary into the primary and deletes the secondary, or
+   * changes nothing. What either has is the primary's after it: their
+   * bookings, sales, treatment records, reviews and helpful marks, the
+   * account, the points, the preferences, the medical chart and the
+   * allergies, merged as `_shared/merge.ts` decides. Each of the two keeps
+   * a version of the merge.
+   */
+  merge(
+    request: CustomerMergeRequest,
+    changedBy: UserId,
+  ): Promise<Result<CustomerMerge, DomainError>>
 
   /** The customers of these IDs that are not deleted, in no given order. */
   findByIds(

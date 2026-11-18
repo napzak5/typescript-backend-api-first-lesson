@@ -27,6 +27,7 @@ import { attempt } from '../database/attempt'
 import { CLOCK } from '../database/clock'
 import type { Database, DatabaseExecutor } from '../database/index'
 import { within as withinSales } from './held-sale'
+import { transactionsInOrder } from './point-transactions'
 
 /**
  * A read of the history of a customer in one snapshot: the customer, the
@@ -122,20 +123,6 @@ const transactedAt = sql`date_trunc('milliseconds', ${customerPoints.createdAt})
 /** The condition that keeps a query to a customer who is not deleted. */
 const liveCustomer = (customerId: string) =>
   and(eq(customers.id, customerId), isNull(customers.deletedAt))
-
-/**
- * Every point transaction of a customer in the order they were written,
- * which is the order in which `lotsOf` counts what is left of each earning.
- */
-const transactionsInOrder = (
-  tx: DatabaseExecutor,
-  customerId: string,
-): Promise<DbPointTransaction[]> =>
-  tx
-    .select()
-    .from(customerPoints)
-    .where(eq(customerPoints.customerId, customerId))
-    .orderBy(asc(customerPoints.createdAt), asc(customerPoints.id))
 
 /** What the expiry of one customer did. */
 type ExpiryOfOne =
@@ -313,7 +300,7 @@ export class PointRepository implements IPointRepository {
     return attempt('Failed to expire points', async () => {
       const targets =
         customerId === null
-          ? await this.customersWithLapsedEarnings(processBefore)
+          ? await this.customersWithLapsedPoints(processBefore)
           : [customerId]
       let processedCount = 0
       let totalPoints = 0
@@ -334,11 +321,12 @@ export class PointRepository implements IPointRepository {
   }
 
   /**
-   * The customers who are not deleted, have points and have an earning
-   * whose expiry date is before `processBefore`, by ID. What is left of the
-   * earnings is counted for each of them under their lock.
+   * The customers who are not deleted, have points and have an increase
+   * whose expiry date is before `processBefore`, by ID: an earning, or a
+   * transfer of what was left of one, which keeps its expiry date. What is
+   * left of them is counted for each of them under their lock.
    */
-  private async customersWithLapsedEarnings(
+  private async customersWithLapsedPoints(
     processBefore: string,
   ): Promise<string[]> {
     const found = await this.db
@@ -347,7 +335,6 @@ export class PointRepository implements IPointRepository {
       .innerJoin(customers, eq(customers.id, customerPoints.customerId))
       .where(
         and(
-          eq(customerPoints.transactionType, 'earned'),
           lt(customerPoints.expiryDate, processBefore),
           isNull(customers.deletedAt),
           gt(customers.loyaltyPoints, 0),

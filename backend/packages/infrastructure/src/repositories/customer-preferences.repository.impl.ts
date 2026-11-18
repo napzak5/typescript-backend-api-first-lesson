@@ -17,8 +17,9 @@ import {
   noCustomerPreferences,
 } from '@beauty-salon-backend/domain'
 import { Result } from '@beauty-salon-backend/utility'
-import { and, eq, inArray, isNull, sql } from 'drizzle-orm'
+import { and, eq, inArray, isNull } from 'drizzle-orm'
 import { attempt } from '../database/attempt'
+import { CLOCK } from '../database/clock'
 import type { Database, DatabaseExecutor } from '../database/index'
 
 /** The columns that are the preferences; no other column of the row is read. */
@@ -158,7 +159,7 @@ export class CustomerPreferencesRepository
             .values({ customerId, ...after })
             .onConflictDoUpdate({
               target: customerPreferences.customerId,
-              set: { ...changes, updatedAt: sql`now()` },
+              set: { ...changes, updatedAt: CLOCK },
             })
             .returning(preferenceColumns)
 
