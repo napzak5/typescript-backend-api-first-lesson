@@ -80,7 +80,7 @@ const COLUMNS: { [Column in keyof ApiCustomerResponse]: Column } = {
 }
 
 /** The columns of the CSV file, in their order. */
-export const CUSTOMER_COLUMNS = Object.values(COLUMNS)
+const CUSTOMER_COLUMNS = Object.values(COLUMNS)
 
 /** Every line ends with CRLF, as RFC 4180 has it. */
 const LINE_END = '\r\n'
