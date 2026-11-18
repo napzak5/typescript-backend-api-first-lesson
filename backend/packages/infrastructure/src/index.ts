@@ -19,6 +19,7 @@ export {
 export { SmtpMailer, type SmtpSettings } from './mail/smtp-mailer'
 
 // Repositories
+export { AttachmentRepository } from './repositories/attachment.repository.impl'
 export { AvailableSlotRepository } from './repositories/available-slot.repository.impl'
 export { BookingRepository } from './repositories/booking.repository.impl'
 export { CustomerRepository } from './repositories/customer.repository.impl'
@@ -60,3 +61,6 @@ export { RandomPurchaseOrderNumberIssuer } from './security/random-purchase-orde
 export { RandomSaleNumberIssuer } from './security/random-sale-number-issuer'
 export { RandomTokenIssuer } from './security/random-token-issuer'
 export { TotpAuthenticator } from './security/totp-authenticator'
+
+// Files
+export { S3FileStorage, type S3Settings } from './storage/s3-file-storage'
