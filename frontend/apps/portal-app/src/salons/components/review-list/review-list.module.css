@@ -14,53 +14,6 @@
 }
 
 .review {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-2);
   padding-block: var(--space-4);
   border-block-start: 1px solid var(--color-border);
-}
-
-/*
- * The rating, the day and what is known about the review follow each other
- * like words, and go on in the next line where the line ends.
- */
-.date {
-  margin-inline-start: var(--space-3);
-  color: var(--color-text-muted);
-  font-size: var(--font-size-small);
-}
-
-.verified {
-  margin-inline-start: var(--space-3);
-}
-
-.title {
-  font-weight: var(--font-weight-bold);
-}
-
-/* What somebody wrote, with the line breaks they wrote */
-.text {
-  max-inline-size: var(--size-text-column);
-  white-space: pre-line;
-  overflow-wrap: anywhere;
-}
-
-.aside {
-  color: var(--color-text-muted);
-  font-size: var(--font-size-small);
-}
-
-.response {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-1);
-  padding: var(--space-3) var(--space-4);
-  border-inline-start: var(--space-1) solid var(--color-border);
-  background-color: var(--color-surface-subtle);
-}
-
-.responseHead {
-  font-size: var(--font-size-small);
-  font-weight: var(--font-weight-medium);
 }

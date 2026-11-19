@@ -41,6 +41,20 @@ const NO_ERRORS: FormErrors = {}
  * is moved in the commit that shows the errors, before the browser paints
  * them.
  */
+/**
+ * The first control that has an error. A group of radio buttons says its
+ * error itself and cannot take the focus: the button that is chosen does,
+ * or the first while none is, which is where the Tab key enters the group.
+ */
+const firstInvalidIn = (form: HTMLFormElement | null): HTMLElement | null => {
+  const invalid = form?.querySelector<HTMLElement>('[aria-invalid="true"]')
+
+  return invalid?.getAttribute('role') === 'radiogroup'
+    ? (invalid.querySelector<HTMLElement>('input:checked') ??
+        invalid.querySelector<HTMLElement>('input'))
+    : (invalid ?? null)
+}
+
 export const Form = ({
   children,
   submitLabel,
@@ -54,7 +68,7 @@ export const Form = ({
 
   useLayoutEffect(() => {
     if (Object.values(errors).some((error) => error !== undefined)) {
-      form.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus()
+      firstInvalidIn(form.current)?.focus()
     }
   }, [errors])
 

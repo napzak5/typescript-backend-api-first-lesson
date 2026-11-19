@@ -172,6 +172,10 @@ describe('Button', () => {
   `storybook/test`; the context of a composed story has `canvas` but no
   `userEvent`. A play function shared by stories is a constant of the type
   `NonNullable<Story['play']>`.
+- A state that only other props reach is a story of its own, not a second
+  `render` in the test: `storybook/test` has no `render`, and a test that
+  draws a component by itself leaves the catalogue without that state
+  (`WithChoiceRefused` in `form.stories.tsx`).
 
 ## Code that calls the API
 
@@ -484,8 +488,8 @@ the example to read: a customer books a time that the screen read.
   The test reads the list, changes a record on its page and goes back. A
   list that showed first what it had read before, and the new word after
   reading again, passes a test that waits for the new word, and at times
-  one that looks at the list as soon as it is there (`firstSight`, under
-  "A screen that writes what it read"). The list of the bookings is not
+  one that looks at the list as soon as it is there (`firstSight`,
+  below). The list of the bookings is not
   kept after a write, so the commit that shows it again says that the
   bookings are being read (`expectListReadAnew`).
 - **What must be read again is tested with what the application keeps.**
@@ -582,6 +586,64 @@ adds:
 - **A state of a part that a page cannot be opened in** (the part of an
   account that lost its profile after the page read it) is tested on the
   part alone, rendered inside the providers it stands in.
+
+What a customer wrote, listed with what can be done with each, changed
+and removed (`frontend/apps/portal-app/src/reviews/`) adds:
+
+- **The tests of an area may be several files with one module of
+  arrangements** (`__tests__/arrangements.tsx`: the application at an
+  address with `firstSight`, the seed data the tests name, what they ask
+  of the database and of the API, what they read on a screen). One file
+  per thing that is done (`review-writing…`, `own-reviews…`), and one for
+  who the screens are for and where they stand (`review-screens…`:
+  `describe.each` over the screens, with somebody who is not signed in,
+  an account of another role, the link of the header that is current and
+  the title of the document). Every file has an API and a database of its
+  own, so they run side by side.
+- **A record the seed data has in one state is looked for, not named.**
+  `visitToReview()` is the visit of the customer that took place and has
+  no review, `visitReviewed()` the one that has: a statement finds them,
+  and fails the test at the arrangement when the seed data has none.
+- **Who does something meanwhile asks the API in their own name**: the
+  customer in another tab (`writes`, `changes`, `removes`), the owner of
+  the salon (`answers`), an administrator (`removes(id, ADMIN)`). Each
+  asserts the status it expects, so an arrangement that the API refused
+  fails there. A statement is kept for what no request does, and its
+  comment says why (`staffIsRemoved`: the API refuses to remove a member
+  who has a booking to come).
+- **Rows in numbers follow the rules of the rows.** A visit has one
+  review, so thirteen reviews are twelve more visits with a review each
+  (`insertReviews`, one statement that inserts both), dated so that their
+  order is known.
+- **A row may hold a list.** `getAllByRole('listitem')` in a list gives
+  the items of the lists inside its rows as well (the pictures of a
+  review): the rows are the items whose parent is the list
+  (`item.parentElement === list`). A browser test finds them by what a
+  row alone has (`filter({ has: page.getByRole('heading', { level: 2 }) })`).
+- **What a change was sent with is asserted on the request**
+  (`sentWith(fetched)`, the bodies `fetch` was called with): the
+  properties that were changed and nothing else, with `toEqual`. The row
+  says what is stored; only the request says what was left out.
+- **Every screen a write shows differently is asserted at first sight**:
+  after a review was written, the list of what the customer wrote says
+  that it is being read, the page of the booking says the review without
+  reading (`expect.stringContaining` of its title, and not the sentence
+  it said before), the page of the salon and the search that found the
+  salon say nothing of what they had read (the count of its reviews is
+  one more when they have read), and the form of the same visit, opened
+  again, shows no form before the visit is read anew. Each is reached as
+  a person reaches it, through links, with the client that keeps what it
+  read (`asTheApplicationKeeps`).
+- **A removal is asserted in four places**: what is said, the row that is
+  no more, the rows that stay with their count, and the focus on the
+  heading of the screen.
+- **An error at a group of radio buttons** is asserted on the group
+  (`toHaveAccessibleDescription`) and the focus on its first button.
+- **A value too long to type is set** (`fireEvent.change` with 256
+  characters): `userEvent.type` presses every key.
+- **A parameter of a test file is never called `after` or `before`.**
+  Biome takes a call of such a name inside a test for a hook
+  (`noDuplicateTestHooks`).
 
 `App.test.tsx` of an application keeps what needs no API: what somebody who
 is not signed in sees. Everything behind the sign-in is in
@@ -714,6 +776,13 @@ test.describe('the admin application', () => {
   and Tab through its actions in their order
   (`src/own-bookings.e2e.test.ts`). The page is checked with
   `expectSoundPage` while the dialog is open, too.
+- **A dialog that has nothing to type** has the focus on its first button
+  when it opens, and Tab goes on to the one that does what was asked
+  (`src/reviews.e2e.test.ts`).
+- **A name that is part of another name is asked for whole.** `getByRole`
+  with a `name` finds every element whose name holds it: the link of a
+  salon and, in the same row, the link whose `aria-label` begins with the
+  name of the salon. `{ name, exact: true }` finds the one.
 - **What a stylesheet draws on the parts of an element** is asserted where
   it is drawn: `toHaveCSS('text-decoration-line', 'underline')` on the
   part of a link that is a box of its own, found by its text inside the
@@ -721,7 +790,9 @@ test.describe('the admin application', () => {
 - **What several files arrange** is a module beside them
   (`src/bookings.ts`: the day, a booking made through the API with the
   `request` fixture, the locators of the booking screens; `src/mypage.ts`:
-  the locators of the page of a customer and of its forms).
+  the locators of the page of a customer and of its forms). What one file
+  alone arranges stays in it (`src/reviews.e2e.test.ts`: the visits of two
+  customers, what a customer and the owner of a salon ask of the API).
 - **A form is taken through with the keyboard**
   (`src/mypage.e2e.test.ts`): Tab from control to control in the order
   they are read, Space on a box, and Enter in a control that holds text

@@ -27,6 +27,7 @@ this one: a component is not done without its stories and its test.
 | The screens of a booking in the portal: choosing the member of the staff, the day and the time, the page of a booking, the bookings of a customer, and cancelling and moving one | `frontend/apps/portal-app/src/bookings/` |
 | The page of a customer in the portal, and the form of their profile | `frontend/apps/portal-app/src/profile/` |
 | What a customer wishes for in the portal: the part of their page, and the form with the rows of time slots | `frontend/apps/portal-app/src/preferences/` |
+| The reviews of a customer in the portal: the part of the page of a visit, the form that writes a review and changes one, and the list with the dialog that removes one | `frontend/apps/portal-app/src/reviews/` |
 | The links of the header of the portal, by who is signed in | `frontend/apps/portal-app/src/navigation.ts` |
 | The catalogue (Storybook), of the components of `ui`, of `session` and of the applications | `frontend/packages/ui/.storybook/`, `pnpm --filter @beauty-salon-frontend/ui run storybook` (port 6006) |
 | The routes of an application, inside the shared frame `AppShell`, and the roles it is for | `frontend/apps/<app>/src/App.tsx` |
@@ -159,7 +160,10 @@ nobody reads is removed.
   catalogue of `ui` shows its stories under the name of the application
   (`title: 'Portal/Salons/SalonHours'`), and the models its stories show
   are in one file beside the components (`examples.ts`). It moves to `ui`
-  when a second application needs it.
+  when a second application needs it. What a second area of the same
+  application shows stays in the area it began in and is imported from
+  there: the list of what a customer wrote and the page of a booking show
+  a review with `ReviewContent` of `salons/components/`.
 - What several applications share and `ui` may not know has a package of its
   own. `@beauty-salon-frontend/session` is the one there is: it knows the API
   client and the query library, and builds its screens from `ui`. Its
@@ -317,8 +321,10 @@ shortest).
   the fields it names (`errors[].field` of the problem details) get their
   message the same way.
 - **Where to go on.** After an attempt the focus goes to the first control
-  that has an error. A message about the whole attempt is an `Alert` of the
-  tone `danger` at the top of the form, which is read at once.
+  that has an error. A group of radio buttons cannot take the focus itself:
+  it goes to the button that is chosen, or to the first (`Form` of `ui`
+  does both). A message about the whole attempt is an `Alert` of the tone
+  `danger` at the top of the form, which is read at once.
 - **Sending** is a mutation of TanStack Query (`useMutation`). While it is on
   its way the button is `pending` (`aria-busy`), and a second press does
   nothing. What must happen after a success although the screen is gone by
@@ -642,9 +648,11 @@ profile is, above, and adds what the profile does not have.
   not the rows of the form, so what the API says of a row all the same is
   said about the attempt, not at a control.
 - **A list is written a line each** in a `TextArea` whose description says
-  so. A pure function reads it (`linesOf`): without the spaces around a
-  line, without the empty lines, each value once. An error names the line
-  as the control shows it (「2 行目を確かめてください。…」).
+  so. A pure function reads it (`linesOf` in `src/lines.ts`, which the
+  forms of two areas share): without the spaces around a line, without the
+  empty lines, each value once. An error names the line as the control
+  shows it (「2 行目を確かめてください。…」, `pictureAddressesError` for
+  a list of addresses).
 - **What the form offers is read with the record, as one answer.** The
   query of the form has one function (`readOwnPreferencesToChange`): the
   record, then what its choices come from (the salons the customer has a
@@ -670,6 +678,91 @@ profile is, above, and adds what the profile does not have.
 - **A value nobody gave** is one word everywhere on the part
   (「指定なし」, `UNSET`). An address somebody else wrote is a link that
   is not loaded as a picture (`rel='noreferrer'`).
+
+### What was written is rated, listed, changed and removed
+
+The reviews of a customer are the example to read
+(`frontend/apps/portal-app/src/reviews/`: `booking-review.tsx` is the part
+of the page of a visit, `review-write-screen.tsx` the form of a new review,
+`own-reviews-screen.tsx` the list with the dialog that removes one,
+`review-change-screen.tsx` the form that changes one). They are written as
+the bookings and the profile are, above, and add what those do not have.
+
+- **What stands in the way of a form is told apart by the read.** The
+  function that reads what the form opens with answers with a sum type of
+  it (`VisitRead` in `reviews-api.ts`: the visit, or `notVisited`,
+  `reviewed`, `salonGone`, `notFound`), and the screen says each in an
+  `EmptyState` with the way on from there: to the form that changes the
+  review a visit has, to the booking that is no visit yet. The title of
+  the screen is the same for all of them.
+- **A choice that decides which controls there are is state of the form**
+  (`components/review-form/`): the member of the staff a review rates is
+  a `Select` with a value the form keeps, and the rating of the staff is
+  there while somebody is chosen. A `select` is always sent with a value,
+  so having no control is the way to send none; the function that reads
+  the `FormData` takes a missing control for nothing (`readNewReview`).
+  The other controls stay the browser's.
+- **What cannot be changed later is a sentence in the place of its
+  control.** The form takes what it is to do with the choice as a sum type
+  (`RatedStaff`: `choice` with its options, `fixed` with a name, `nobody`),
+  not as flags: whom a review rates is chosen when it is written, and the
+  form that changes it says who that is, and that it stays so.
+- **One of five is a `RadioGroup` with nothing chosen**, and the options
+  say what a number means (「5（とても満足）」). What may be left out is a
+  `Select` whose `placeholder` says so (「評価しない」).
+- **A refusal that is about the record the form is for** is no value to
+  correct (`isOfTheVisit` in `review-flow.ts`: a 409, or a 400 that names
+  a property the form has no control for). The screen reads the record
+  again and shows what it is now; when the form is gone with that, an
+  `Alert` of the tone `warning` says that nothing was written, and the
+  focus goes to the heading. A refusal of a value the form does have a
+  control for is said there, and what was typed stays (a member of the
+  staff who was removed while the form was open).
+- **Who may change a record is asked of the read where the API reads it
+  to everybody.** A review is public, and its writer alone changes it:
+  `readOwnReviewToChange` compares the customer of the review with the
+  customer of the account, and somebody else's review is not found, as an
+  address that names nothing is.
+- **A row that carries actions names them by the row.** Every review of
+  the list has 「変更する」 and 「削除する」; the `aria-label` of each
+  says of which review (`subjectOf` in `review-format.ts`: the salon and
+  the day it was posted), and ends with the text that is seen. The dialog
+  that asks names the review with the same words.
+- **A removal is asked in a dialog that has nothing to type**
+  (`components/review-removal/`): the `Dialog` of `ui` with a
+  `description` that names the record, says what goes with it and what
+  cannot be taken back, and the two buttons among its `actions`. The
+  screen keeps which record was asked about (so that the dialog names it
+  while it closes), whether the dialog is open, and what was said about
+  the attempt. What can be tried again is said in the dialog; a record
+  that was gone already is removed, for that is what was asked.
+- **The dialog is drawn where the list is drawn.** It goes with the list
+  when the list is read anew, and its button with it: the focus then goes
+  to the heading of the screen, in the layout effect of the commit that
+  shows the screen without the list, and only after an answer to what the
+  user did here (a ref).
+- **One function says what a write leaves of what was read**
+  (`afterReviewWrite` in `review-cache.ts`), and every write of the area
+  calls it. The record a page shows is written (`setQueryData`; after a
+  removal, that there is none). The lists of the writer are reset
+  (`resetQueries`): what was read of them is gone, and a list that is on
+  the screen while the write happens is told so and read anew.
+  `removeQueries` tells a list on the screen nothing; it is for what no
+  screen shows at the moment. What other screens read of what the write
+  counts anew is taken
+  away (`removeQueries`): the page of the salon, the summary of its
+  ratings, its reviews, and the results of a search, which show the
+  rating of a salon.
+- **A row that names other records reads them with the page**
+  (`readOwnReviews`): a page of the list is its reviews with the salon of
+  each and the name of the member each rates, read once per salon. One
+  of them unread is the page unread. A page is ten rows, and a record
+  with its names is one item of the cache: nothing arrives later.
+- **An address somebody wrote** (the pictures of a review) is shown as a
+  link that the page does not load, with `rel='noreferrer nofollow ugc'`,
+  each on a line of its own, in a list with a name (「写真」). A value
+  that is no address of the web is shown as text (`webAddressOf`). A test
+  that counts the rows of the outer list counts its own items alone.
 
 ## Screens and the session
 
@@ -804,7 +897,8 @@ behind it. Their screens are in `frontend/apps/portal-app/src/account/`.
   (「レディースカットを予約する」), and holds the text that is seen, so
   that somebody who speaks to the browser can say what they read. The name
   is not made with text that is hidden by a stylesheet: a browser and
-  jsdom spell such a name differently.
+  jsdom spell such a name differently. `Link` and `ButtonLink` take
+  `aria-label`, as `Button` does.
 - **A list has three states**, and a screen shows each: `LoadingIndicator`
   while it loads, `EmptyState` (or the `emptyMessage` of the table) when there
   is nothing, the rows when there are some.
