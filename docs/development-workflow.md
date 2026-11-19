@@ -169,9 +169,9 @@ curl http://localhost:3000/api/v1/salons      # サロン一覧（認証なし�
 [添付ファイル](./attachments.md) を参照してください。
 
 ユーザー登録やパスワードの再設定で送られるメールは Mailpit（`http://localhost:8025`）に届きます。
-メールのリンクが指すページ（`/verify-email`、`/reset-password`）はフロントエンドにまだないので、
-リンクの `#token=` のあとの値を API に送って続けます。手順の例は
-[メール送信](./email.md#ローカル開発mailpit) にあります。
+メールのリンクは、portal-app（`pnpm dev` で `http://localhost:3001`）の `/verify-email`、`/reset-password`、
+`/accept-staff-invitation` を開きます。画面を使わずに、リンクの `#token=` のあとの値を API に送って続ける
+手順の例は、[メール送信](./email.md#ローカル開発mailpit) にあります。
 
 ### Docker Compose で全体を起動する
 
