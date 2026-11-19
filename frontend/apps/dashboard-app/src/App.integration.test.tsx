@@ -116,6 +116,51 @@ describe('App, against the API', () => {
     expect(within(screen.getByRole('banner')).getByText(OWNER)).toBeVisible()
   })
 
+  it('should lead from the header to the security of the account, change the password there and come back to it', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    renderAt('/')
+    await signInAs(OWNER)
+    await heading(TITLE)
+
+    // Act
+    await user.click(
+      within(screen.getByRole('banner')).getByRole('link', {
+        name: 'アカウントの安全',
+      }),
+    )
+    expect(await heading('アカウントの安全')).toHaveFocus()
+    await screen.findByText('1 台の端末でサインインしています')
+    expect(await findAccessibilityViolations()).toEqual([])
+    await user.click(screen.getByRole('link', { name: 'パスワードを変更する' }))
+    expect(await heading('パスワードを変更する')).toHaveFocus()
+    await user.type(
+      screen.getByLabelText('現在のパスワード'),
+      testApi().seedPassword,
+    )
+    await user.type(
+      screen.getByLabelText('新しいパスワード'),
+      'aoi sora to shiroi kumo no aida',
+    )
+    await user.click(
+      screen.getByRole('button', { name: 'パスワードを変更する' }),
+    )
+
+    // Assert
+    expect(await heading('アカウントの安全')).toHaveFocus()
+    expect(
+      await screen.findByText(
+        'パスワードを変更しました。この端末のほかは、すべての端末でサインアウトしました。変更したことを、メールでお知らせしました。',
+      ),
+    ).toBeVisible()
+    expect(await testApi().mails()).toEqual([
+      expect.objectContaining({
+        to: OWNER,
+        subject: 'パスワードが変更されました',
+      }),
+    ])
+  })
+
   it('should sign out from the header and show the sign-in screen again', async () => {
     // Arrange
     renderAt('/')
