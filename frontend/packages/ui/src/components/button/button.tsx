@@ -2,8 +2,8 @@ import type { ComponentProps, MouseEvent } from 'react'
 import { classNames } from '../../class-names'
 import styles from './button.module.css'
 
-type ButtonVariant = 'primary' | 'secondary' | 'quiet' | 'danger'
-type ButtonSize = 'medium' | 'small'
+export type ButtonVariant = 'primary' | 'secondary' | 'quiet' | 'danger'
+export type ButtonSize = 'medium' | 'small'
 
 export type ButtonProps = ComponentProps<'button'> & {
   /** `primary` is the one main action of a view; `danger` destroys something */
@@ -27,6 +27,19 @@ const sizeClass: Record<ButtonSize, string | undefined> = {
   medium: undefined,
   small: styles['small'],
 }
+
+/** The classes of what looks like a button: a `Button`, or a link that leads to an action. */
+export const buttonClassName = (
+  variant: ButtonVariant,
+  size: ButtonSize,
+  className: string | undefined,
+): string =>
+  classNames(
+    styles['button'],
+    variantClass[variant],
+    sizeClass[size],
+    className,
+  )
 
 /**
  * A button. `type` is `button` unless it is given, so a button inside a form
@@ -54,12 +67,7 @@ export const Button = ({
     <button
       {...rest}
       type={type}
-      className={classNames(
-        styles['button'],
-        variantClass[variant],
-        sizeClass[size],
-        className,
-      )}
+      className={buttonClassName(variant, size, className)}
       aria-disabled={pending || undefined}
       aria-busy={pending || undefined}
       onClick={handleClick}

@@ -1,0 +1,38 @@
+/*
+ * The message, and the button that closes it at the end of the row. The
+ * margin keeps the content below at a distance while there is a notification,
+ * and takes no room while there is none.
+ */
+.notification {
+  display: grid;
+  margin-block-end: var(--space-6);
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-inline-start: var(--space-1) solid currentColor;
+  border-radius: var(--radius-small);
+  background-color: var(--notification-surface);
+  color: var(--notification-text);
+  font-weight: var(--font-weight-medium);
+}
+
+.info {
+  --notification-surface: var(--color-info-subtle);
+  --notification-text: var(--color-info-text);
+}
+
+.success {
+  --notification-surface: var(--color-success-subtle);
+  --notification-text: var(--color-success-text);
+}
+
+.warning {
+  --notification-surface: var(--color-warning-subtle);
+  --notification-text: var(--color-warning-text);
+}
+
+.danger {
+  --notification-surface: var(--color-danger-subtle);
+  --notification-text: var(--color-danger-text);
+}
