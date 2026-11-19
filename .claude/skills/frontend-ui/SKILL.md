@@ -25,6 +25,8 @@ this one: a component is not done without its stories and its test.
 | The screens of an account in the portal: registering, a new password, and the screens that a mailed link opens | `frontend/apps/portal-app/src/account/` |
 | The screens of the salons in the portal: the search and the page of a salon, and the components they show | `frontend/apps/portal-app/src/salons/` |
 | The screens of a booking in the portal: choosing the member of the staff, the day and the time, the page of a booking, the bookings of a customer, and cancelling and moving one | `frontend/apps/portal-app/src/bookings/` |
+| The page of a customer in the portal, and the form of their profile | `frontend/apps/portal-app/src/profile/` |
+| What a customer wishes for in the portal: the part of their page, and the form with the rows of time slots | `frontend/apps/portal-app/src/preferences/` |
 | The links of the header of the portal, by who is signed in | `frontend/apps/portal-app/src/navigation.ts` |
 | The catalogue (Storybook), of the components of `ui`, of `session` and of the applications | `frontend/packages/ui/.storybook/`, `pnpm --filter @beauty-salon-frontend/ui run storybook` (port 6006) |
 | The routes of an application, inside the shared frame `AppShell`, and the roles it is for | `frontend/apps/<app>/src/App.tsx` |
@@ -226,7 +228,11 @@ nobody reads is removed.
 - What is typed into keeps `--font-size-control` (16px): below that, iOS zooms
   the page when the control takes focus.
 - A form is a grid: `display: grid; gap: var(--space-4)`. Fields that share a
-  row are columns of it.
+  row are columns of it. A field keeps its label, its control and its
+  messages as high as they are (`align-content: start` in
+  `field.module.css`), so a field beside one that says an error is not
+  drawn out to its height: the two controls stay on one line, and the row
+  needs no `align-items` of its own.
 
 A new kind of field is built from the parts in `components/field/`: `Field`
 (the label, the mark and the messages; the control is its child function and
@@ -609,6 +615,61 @@ none).
   The address of a customer is that of the account, and then what the
   salons keep. The form has no control for it: a sentence among the
   controls of the contact says so, and whom to ask.
+
+### A form with rows, with lists, and with choices that are read
+
+What a customer wishes for is the example to read
+(`frontend/apps/portal-app/src/preferences/`: `own-preferences.tsx` is the
+part of the page, `preferences-screen.tsx` the form). It is changed as the
+profile is, above, and adds what the profile does not have.
+
+- **Rows that are added and taken away** are a component that keeps which
+  rows there are (`components/time-slot-fields/`); the browser keeps what
+  was typed, as in every control. A row has a `key` that stays with it (a
+  counter, never its index), so a row that is taken away takes its values
+  with it and the others keep theirs. The controls are named by the number
+  the row has now, counted from 0 (`preferredTimeSlots.1.startTime`), and
+  labelled by it as it is read (「時間帯 2 の開始」): no two controls of
+  the form have one name. The buttons are `type='button'`.
+- **The focus follows the press**, in a layout effect: to the first control
+  of the row that was added; to the button that adds a row after one was
+  taken away, for its own button went with it.
+- **An error names a row by its number**, and taking a row away renumbers
+  the rows after it. The errors of an attempt are shown until a row is
+  taken away, and again after the next attempt (a new `errors` object).
+- **A row that was left empty is not sent, and one that is half filled is
+  an error** at the time that is missing. The rows of the request are then
+  not the rows of the form, so what the API says of a row all the same is
+  said about the attempt, not at a control.
+- **A list is written a line each** in a `TextArea` whose description says
+  so. A pure function reads it (`linesOf`): without the spaces around a
+  line, without the empty lines, each value once. An error names the line
+  as the control shows it (「2 行目を確かめてください。…」).
+- **What the form offers is read with the record, as one answer.** The
+  query of the form has one function (`readOwnPreferencesToChange`): the
+  record, then what its choices come from (the salons the customer has a
+  booking at, the staff each of them shows, a stored member that is not
+  among them, the names of the salons). One of them unread is the form
+  unread: it never opens with half of its choices, and a choice that came
+  later would not be compared with what the form opened with.
+- **A choice that belongs to something is offered with its name**
+  (`田中 美咲（Beauty Salon Tokyo）`), in an order that does not change
+  between two reads (`staffChoicesOf`).
+- **A stored value the form cannot offer** (a member of the staff their
+  salon no longer shows) is neither shown nor sent. It stays stored until
+  the customer changes that control, and the page that shows the record
+  leaves it out.
+- **Without anything to offer, there is no control**: a sentence stands in
+  its place and says how to get one (「…サロンを予約すると選べるようにな
+  ります。」). The request then names none of those properties.
+- **A part of a page with a query of its own** (`OwnPreferences` on the
+  page of the customer) is read again whenever it is shown
+  (`staleTime: 0`), says in its own place that it could not be read, and
+  is written by the form (`setQueryData` with what the API answered), so
+  the page shows the change at once.
+- **A value nobody gave** is one word everywhere on the part
+  (「指定なし」, `UNSET`). An address somebody else wrote is a link that
+  is not loaded as a picture (`rel='noreferrer'`).
 
 ## Screens and the session
 
