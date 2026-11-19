@@ -1,6 +1,6 @@
 import { resolve } from 'node:path'
 import { defineConfig, devices } from '@playwright/test'
-import { API_ORIGIN, APPLICATIONS } from './src/applications'
+import { ADMIN, API_ORIGIN, APPLICATIONS, PORTAL } from './src/applications'
 
 const inCi = process.env['CI'] !== undefined
 
@@ -53,6 +53,9 @@ export default defineConfig({
         // The origin of the API becomes part of the build: a variable of the
         // environment comes before the `.env.test` of the application
         VITE_BACKEND_BASE_URL: API_ORIGIN,
+        // So do the addresses at which an application finds the others
+        VITE_PORTAL_APP_URL: PORTAL.origin,
+        VITE_ADMIN_APP_URL: ADMIN.origin,
         // What is tested is a production build, whatever the run is given
         NODE_ENV: 'production',
       },

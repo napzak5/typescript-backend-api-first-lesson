@@ -1,5 +1,9 @@
 import { assert } from 'vitest'
-import { type TestServer, testServerClient } from './test-server-client'
+import {
+  type TestMail,
+  type TestServer,
+  testServerClient,
+} from './test-server-client'
 
 export type TestApi = {
   /** Where the API listens: `VITE_BACKEND_BASE_URL` of the code under test */
@@ -22,6 +26,16 @@ export type TestApi = {
    * next 30 seconds, which the API takes as well.
    */
   authenticatorCode: (secret: string, stepsAhead?: 0 | 1) => Promise<string>
+  /**
+   * The mails the API handed to its mailer in this test, oldest first.
+   * Nothing is sent anywhere: this is the mailbox of everybody.
+   */
+  mails: () => Promise<TestMail[]>
+  /**
+   * The link in the last mail to `to`. The page it names is rendered at
+   * its path and fragment: `new URL(link)` gives `pathname` and `hash`.
+   */
+  mailedLink: (to: string) => Promise<string>
 }
 
 /** The API of a test file with what only the setup does to it */
@@ -39,10 +53,12 @@ export const openTestApi = async (
   server: TestServer,
 ): Promise<OpenedTestApi> => {
   const client = testServerClient(server, (message) => assert.fail(message))
-  // The code under test calls it with the `fetch` of Node.js, from any port
+  // The code under test calls it with the `fetch` of Node.js, from any port,
+  // and no test follows a link of a mail to an application
   const { id, origin, seedPassword } = await client.start({
     port: null,
     corsOrigins: [],
+    publicAppUrl: null,
   })
 
   const api: OpenedTestApi = {
@@ -50,6 +66,8 @@ export const openTestApi = async (
     seedPassword,
     query: (text, values) => client.query(id, text, values),
     authenticatorCode: client.authenticatorCode,
+    mails: () => client.mails(id),
+    mailedLink: (to) => client.mailedLink(id, to),
     reset: () => client.reset(id),
     remove: async () => {
       await client.remove(id)

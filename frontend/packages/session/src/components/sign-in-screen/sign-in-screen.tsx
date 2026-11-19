@@ -1,6 +1,6 @@
-import { PageHeader, useNotifications } from '@beauty-salon-frontend/ui'
+import { Alert, PageHeader, useNotifications } from '@beauty-salon-frontend/ui'
 import { useMutation } from '@tanstack/react-query'
-import { useState } from 'react'
+import { type ReactNode, useState } from 'react'
 import { signIn } from '../../sign-in'
 import { SignInForm } from '../sign-in-form/sign-in-form'
 import {
@@ -11,6 +11,16 @@ import {
   type SignInState,
 } from './sign-in-flow'
 
+type SignInScreenProps = {
+  /** Why the person is asked to sign in, when the screen behind has a reason of its own */
+  notice?: string | undefined
+  /**
+   * The ways on for somebody who cannot sign in: to a new account, to a new
+   * password. They are links of the application, which knows where they lead
+   */
+  help?: ReactNode
+}
+
 /**
  * The screen a person signs in on: the form, the two steps of an account
  * with two-factor authentication, and what the API said about an attempt.
@@ -19,7 +29,7 @@ import {
  * session (`useSession`) and shows something else to a person who is signed
  * in: `RequireSession` shows the screen that was asked for.
  */
-export const SignInScreen = () => {
+export const SignInScreen = ({ notice, help }: SignInScreenProps) => {
   const [state, setState] = useState<SignInState>(INITIAL_SIGN_IN_STATE)
   const { notify } = useNotifications()
   const attempt = useMutation({
@@ -46,6 +56,7 @@ export const SignInScreen = () => {
   return (
     <>
       <PageHeader title='サインイン' />
+      {notice !== undefined && <Alert tone='info'>{notice}</Alert>}
       <SignInForm
         step={state.step.type}
         message={state.message}
@@ -54,6 +65,7 @@ export const SignInScreen = () => {
         onSubmit={submit}
         onBack={() => setState(INITIAL_SIGN_IN_STATE)}
       />
+      {help}
     </>
   )
 }

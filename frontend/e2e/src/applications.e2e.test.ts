@@ -1,6 +1,5 @@
-import type { Page } from '@playwright/test'
 import { ADMIN, DASHBOARD, PORTAL } from './applications'
-import { findAccessibilityViolations, measureLayout } from './checks'
+import { expectSoundPage } from './checks'
 import { expect, test } from './fixtures'
 import {
   CUSTOMER,
@@ -11,12 +10,6 @@ import {
   signInButton,
   signOutButton,
 } from './sign-in'
-
-/** The page is accessible, nothing of it sticks out of the window, and nothing is laid out with flex. */
-const expectSoundPage = async (page: Page): Promise<void> => {
-  expect(await findAccessibilityViolations(page)).toEqual([])
-  expect(await measureLayout(page)).toEqual({ overflow: 0, flex: 0 })
-}
 
 const NOT_FOR_THIS_ACCOUNT = 'このアプリケーションは利用できません'
 

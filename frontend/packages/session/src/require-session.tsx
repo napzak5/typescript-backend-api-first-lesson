@@ -20,6 +20,13 @@ export const useSignOut = (): (() => void) => {
 export type RequireSessionProps = {
   /** The roles the screens inside are for */
   roles: readonly ModelsUserRoleType[]
+  /** Said on the sign-in screen: why the screens inside ask for an account */
+  signInNotice?: string | undefined
+  /**
+   * Shown under the sign-in form: the ways on for somebody who cannot sign
+   * in, as links of the application
+   */
+  signInHelp?: ReactNode
   children: ReactNode
 }
 
@@ -29,7 +36,12 @@ export type RequireSessionProps = {
  * asked for: after signing in, the screen of that address is what they see,
  * without having been sent anywhere.
  */
-export const RequireSession = ({ roles, children }: RequireSessionProps) => {
+export const RequireSession = ({
+  roles,
+  signInNotice,
+  signInHelp,
+  children,
+}: RequireSessionProps) => {
   const session = useSession()
   const signOutAndSay = useSignOut()
 
@@ -37,7 +49,7 @@ export const RequireSession = ({ roles, children }: RequireSessionProps) => {
     <SessionGate
       session={session}
       roles={roles}
-      signIn={<SignInScreen />}
+      signIn={<SignInScreen notice={signInNotice} help={signInHelp} />}
       onSignOut={signOutAndSay}
     >
       {children}

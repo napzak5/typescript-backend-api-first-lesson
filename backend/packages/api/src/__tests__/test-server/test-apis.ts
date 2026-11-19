@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { createServer, type Server } from 'node:http'
 import type { AddressInfo } from 'node:net'
+import type { Mail } from '@beauty-salon-backend/domain'
 import {
   createLogger,
   TotpAuthenticator,
@@ -25,15 +26,31 @@ type TestApiOptions = {
    * calls it with the `fetch` of Node.js needs none
    */
   corsOrigins: string[]
+  /**
+   * The origin the links in the mails point at: that of the application a
+   * browser test opens them in. `null` for one that leads nowhere
+   */
+  publicAppUrl: string | null
+}
+
+/** What an API is started with and keeps when its database is replaced. */
+type TestApiSettings = {
+  corsOrigins: string[]
+  publicAppUrl: string
 }
 
 /** One API: the production application on a database of its own. */
 type TestApi = {
   server: Server
   database: TestDatabase
-  corsOrigins: string[]
+  settings: TestApiSettings
+  /** The mails the application handed over since its last reset, oldest first */
+  mails: Mail[]
   app: Express
 }
+
+/** Where the links of the mails point when a test names no application. */
+const NO_APPLICATION = 'https://app.salon.example'
 
 type Listening =
   | { type: 'listening'; port: number }
@@ -61,13 +78,19 @@ export type TestApis = {
     text: string,
     values: (string | number | boolean | null)[],
   ) => Promise<QueryOutcome>
+  /**
+   * The mails the API handed over since its last reset, oldest first, or
+   * `null` for an API that is not there.
+   */
+  mails: (id: string) => Mail[] | null
   remove: (id: string) => Promise<boolean>
   close: () => Promise<void>
 }
 
 const applicationOn = (
   database: TestDatabase,
-  corsOrigins: string[],
+  { corsOrigins, publicAppUrl }: TestApiSettings,
+  deliver: (mail: Mail) => void,
 ): Express =>
   createApp({
     database: database.db,
@@ -75,9 +98,9 @@ const applicationOn = (
       trustProxyHops: 0,
       cors: { origins: corsOrigins, credentials: true, maxAgeSeconds: 600 },
       rateLimit: { windowMs: 60_000, maxRequests: 1000 },
-      publicAppUrl: 'https://app.salon.example',
+      publicAppUrl,
     },
-    mailer: { deliver: () => undefined },
+    mailer: { deliver },
     fileStorage: new InMemoryFileStorage(),
     twoFactorAuthenticator: new TotpAuthenticator(TWO_FACTOR_ENCRYPTION_KEY),
     logger: createLogger({
@@ -113,9 +136,9 @@ export const stop = (server: Server): Promise<void> =>
 
 /**
  * The APIs that the tests of the clients call. Each is the application that
- * production runs (`createApp`), with a mailer that delivers nothing and a
- * file storage in memory, on a port of its own and on a database of its own:
- * a copy of the template of `databases`.
+ * production runs (`createApp`), with a mailer that keeps the mails for the
+ * test to read and a file storage in memory, on a port of its own and on a
+ * database of its own: a copy of the template of `databases`.
  */
 export const openTestApis = (databases: TestDatabases): TestApis => {
   const apis = new Map<string, TestApi>()
@@ -126,12 +149,21 @@ export const openTestApis = (databases: TestDatabases): TestApis => {
   }
 
   return {
-    create: async ({ port, corsOrigins }) => {
+    create: async ({ port, corsOrigins, publicAppUrl }) => {
       const database = await databases.create()
+      const settings: TestApiSettings = {
+        corsOrigins,
+        publicAppUrl: publicAppUrl ?? NO_APPLICATION,
+      }
+      // Kept in the list the API has at that moment: a reset starts a new one
+      const deliver = (mail: Mail): void => {
+        api.mails.push(mail)
+      }
       const api: TestApi = {
         database,
-        corsOrigins,
-        app: applicationOn(database, corsOrigins),
+        settings,
+        mails: [],
+        app: applicationOn(database, settings, deliver),
         // Looked up for every request: a reset replaces the application
         server: createServer((request, response) => api.app(request, response)),
       }
@@ -162,11 +194,23 @@ export const openTestApis = (databases: TestDatabases): TestApis => {
         return false
       }
       const previous = api.database
+      const mails: Mail[] = []
       api.database = await databases.create()
-      api.app = applicationOn(api.database, api.corsOrigins)
+      api.mails = mails
+      // A mail of a request that the previous application still answers is
+      // not one of the next test
+      api.app = applicationOn(api.database, api.settings, (mail) => {
+        mails.push(mail)
+      })
       await previous.drop()
 
       return true
+    },
+
+    mails: (id) => {
+      const api = apis.get(id)
+
+      return api === undefined ? null : [...api.mails]
     },
 
     query: async (id, text, values) => {

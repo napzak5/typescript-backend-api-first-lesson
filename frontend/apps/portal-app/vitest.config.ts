@@ -22,5 +22,9 @@ export default defineConfig({
       // The class names of the CSS Modules, as they are written
       modules: { classNameStrategy: 'non-scoped' },
     },
+    // The origin that the API client sends its requests to
+    env: {
+      VITE_BACKEND_BASE_URL: 'http://localhost:3000',
+    },
   },
 })

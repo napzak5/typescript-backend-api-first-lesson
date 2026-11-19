@@ -14,6 +14,12 @@ export type TestApiOptions = {
    * calls it with the `fetch` of Node.js needs none
    */
   corsOrigins: string[]
+  /**
+   * The origin the links in the mails of the API point at: that of the
+   * application a browser test opens them in. `null` when the test takes
+   * the path of a link and never follows it
+   */
+  publicAppUrl: string | null
 }
 
 const startedSchema = z.object({
@@ -34,6 +40,20 @@ const rowsSchema = z.object({
 
 const codeSchema = z.object({ code: z.string() })
 
+const mailSchema = z.object({
+  to: z.string(),
+  subject: z.string(),
+  text: z.string(),
+})
+
+const mailsSchema = z.object({ mails: z.array(mailSchema) })
+
+/** A mail that the API handed to its mailer. Nothing was sent anywhere. */
+export type TestMail = z.infer<typeof mailSchema>
+
+/** The first address in a text: a mail of the API carries at most one link */
+const LINK = /https?:\/\/\S+/
+
 /**
  * What a test asks the test server of the backend for, over HTTP. It knows
  * no test runner: `fail` is how the runner at hand fails a test with a
@@ -44,6 +64,8 @@ export const testServerClient = (
   server: TestServer,
   fail: (message: string) => never,
 ) => {
+  const authorization = { Authorization: `Bearer ${server.token}` }
+
   const ask = async (
     method: 'POST' | 'DELETE',
     path: string,
@@ -51,12 +73,21 @@ export const testServerClient = (
   ): Promise<Response> =>
     fetch(`${server.origin}${path}`, {
       method,
-      headers: {
-        Authorization: `Bearer ${server.token}`,
-        'Content-Type': 'application/json',
-      },
+      headers: { ...authorization, 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     })
+
+  const mailsOf = async (id: string): Promise<TestMail[]> => {
+    const answer = await expecting(
+      200,
+      await fetch(`${server.origin}/apis/${id}/mails`, {
+        headers: authorization,
+      }),
+      'The test server gave no mails',
+    )
+
+    return mailsSchema.parse(await answer.json()).mails
+  }
 
   /** The answer when it has the status; otherwise the test fails with what the server said. */
   const expecting = async (
@@ -95,7 +126,33 @@ export const testServerClient = (
       return rowsSchema.parse(await answer.json()).rows
     },
 
-    /** Gives the API a fresh copy of the seeded database. */
+    /**
+     * The mails the API handed to its mailer since the last reset, oldest
+     * first: what the people it wrote to would find in their mailboxes.
+     */
+    mails: mailsOf,
+
+    /**
+     * The link in the last mail to `to`, as the person would press it. The
+     * test fails when there is no such mail, or no link in it.
+     */
+    mailedLink: async (id: string, to: string): Promise<string> => {
+      const mails = await mailsOf(id)
+      const link = mails
+        .filter((mail) => mail.to === to)
+        .at(-1)
+        ?.text.match(LINK)
+        ?.at(0)
+
+      return (
+        link ??
+        fail(
+          `No mail with a link to ${to}. The API wrote to: ${mails.map((mail) => `${mail.to} (${mail.subject})`).join(', ') || 'nobody'}`,
+        )
+      )
+    },
+
+    /** Gives the API a fresh copy of the seeded database, and forgets its mails. */
     reset: async (id: string): Promise<void> => {
       await expecting(
         204,

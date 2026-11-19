@@ -28,6 +28,7 @@ const LOGIN = '/api/v1/auth/login'
 /** An application whose one screen is for the roles it is given. */
 const renderApplication = (
   roles: RequireSessionProps['roles'] = ['customer'],
+  signInScreen: Pick<RequireSessionProps, 'signInNotice' | 'signInHelp'> = {},
 ) =>
   render(
     <QueryClientProvider
@@ -37,7 +38,7 @@ const renderApplication = (
     >
       <NotificationProvider>
         <AppShell title='Beauty Salon Portal' account={<SessionAccount />}>
-          <RequireSession roles={roles}>
+          <RequireSession roles={roles} {...signInScreen}>
             <PageHeader title='マイページ' />
           </RequireSession>
         </AppShell>
@@ -116,6 +117,48 @@ describe('signing in on the screen, against the API', () => {
     ).not.toBeInTheDocument()
     expect(document.title).toBe('サインイン | Beauty Salon Portal')
     expect(await findAccessibilityViolations()).toEqual([])
+  })
+
+  it('should say why an account is asked for and show the ways on of the application, as long as nobody is signed in', async () => {
+    // Arrange
+    const NOTICE = '予約の履歴は、サインインすると見られます。'
+    renderApplication(['customer'], {
+      signInNotice: NOTICE,
+      signInHelp: <a href='/forgot-password'>パスワードを忘れた場合</a>,
+    })
+    await heading('サインイン')
+    const main = screen.getByRole('main')
+    const asked = {
+      statuses: within(main)
+        .getAllByRole('status')
+        .map((status) => status.textContent)
+        .filter((text) => text !== ''),
+      // The reason comes before the form, the ways on after it
+      order: [NOTICE, 'メールアドレス', 'パスワードを忘れた場合'].map((text) =>
+        (main.textContent ?? '').indexOf(text),
+      ),
+      help: within(main)
+        .getByRole('link', { name: 'パスワードを忘れた場合' })
+        .getAttribute('href'),
+      violations: await findAccessibilityViolations(),
+    }
+
+    // Act
+    await enterCredentials(CUSTOMER)
+
+    // Assert
+    expect(await heading('マイページ')).toBeVisible()
+    expect(asked).toEqual({
+      statuses: [NOTICE],
+      order: asked.order.toSorted((one, other) => one - other),
+      help: '/forgot-password',
+      violations: [],
+    })
+    expect(asked.order).not.toContain(-1)
+    expect(screen.queryByText(NOTICE)).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('link', { name: 'パスワードを忘れた場合' }),
+    ).not.toBeInTheDocument()
   })
 
   it('should show the screen that was asked for after signing in, and say who is signed in', async () => {

@@ -19,6 +19,7 @@ describe('App', () => {
   beforeEach(() => {
     vi.stubEnv('VITE_APP_TITLE', 'Beauty Salon Portal')
     vi.stubEnv('VITE_MODE', 'production')
+    vi.stubEnv('VITE_ADMIN_APP_URL', 'https://admin.salon.example')
   })
 
   afterEach(() => {
@@ -114,6 +115,44 @@ describe('App', () => {
     ).toBeVisible()
   })
 
+  it('should show under the sign-in form the ways on for somebody who cannot sign in', () => {
+    // Act
+    renderAt('/sign-in')
+
+    // Assert
+    const main = within(screen.getByRole('main'))
+    expect(
+      main.getByRole('link', { name: 'パスワードを忘れた場合' }),
+    ).toHaveAttribute('href', '/forgot-password')
+    expect(
+      main.getByRole('link', { name: 'アカウントを登録' }),
+    ).toHaveAttribute('href', '/register')
+    expect(
+      screen
+        .getByRole('button', { name: 'サインイン' })
+        .compareDocumentPosition(
+          main.getByRole('link', { name: 'パスワードを忘れた場合' }),
+        ),
+    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
+  })
+
+  it.each([
+    ['/register', 'アカウントの登録'],
+    ['/forgot-password', 'パスワードの再設定'],
+    ['/verify-email', 'メールアドレスの確認'],
+    // The two that a mailed link opens say so to somebody who comes without one
+    ['/reset-password', 'このリンクは使えません'],
+    ['/accept-staff-invitation', 'このリンクは使えません'],
+  ])('should show the screen of an account at %s', (path, title) => {
+    // Act
+    renderAt(path)
+
+    // Assert
+    expect(screen.getByRole('heading', { level: 1, name: title })).toBeVisible()
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1)
+    expect(document.title).toBe(`${title} | Beauty Salon Portal`)
+  })
+
   it('should begin with a link that skips to the main content', () => {
     // Act
     renderAt('/')
@@ -148,18 +187,24 @@ describe('App', () => {
     expect(screen.queryByText('production')).not.toBeInTheDocument()
   })
 
-  it.each(['/', '/no-such-page', '/sign-in'])(
-    'should have no accessibility violations at %s',
-    async (path) => {
-      // Arrange
-      vi.stubEnv('VITE_MODE', 'staging')
-      renderAt(path)
+  it.each([
+    '/',
+    '/no-such-page',
+    '/sign-in',
+    '/register',
+    '/forgot-password',
+    '/verify-email',
+    '/reset-password',
+    '/accept-staff-invitation',
+  ])('should have no accessibility violations at %s', async (path) => {
+    // Arrange
+    vi.stubEnv('VITE_MODE', 'staging')
+    renderAt(path)
 
-      // Act
-      const violations = await findAccessibilityViolations()
+    // Act
+    const violations = await findAccessibilityViolations()
 
-      // Assert
-      expect(violations).toEqual([])
-    },
-  )
+    // Assert
+    expect(violations).toEqual([])
+  })
 })

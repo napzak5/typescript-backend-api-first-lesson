@@ -714,6 +714,9 @@ importers:
 
   frontend/apps/portal-app:
     dependencies:
+      '@beauty-salon-frontend/api-client':
+        specifier: workspace:*
+        version: link:../../packages/api-client
       '@beauty-salon-frontend/session':
         specifier: workspace:*
         version: link:../../packages/session
@@ -735,6 +738,12 @@ importers:
       react-router:
         specifier: ^8.5.1
         version: 8.5.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      ts-pattern:
+        specifier: ^5.9.2
+        version: 5.9.2
+      zod:
+        specifier: ^4.6.7
+        version: 4.6.7
     devDependencies:
       '@beauty-salon-frontend/testing':
         specifier: workspace:*
