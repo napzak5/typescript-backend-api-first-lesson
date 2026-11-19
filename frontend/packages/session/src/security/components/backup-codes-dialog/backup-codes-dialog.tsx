@@ -70,11 +70,17 @@ export const BackupCodesDialog = ({
           ? '新しいバックアップコードを 10 個発行します。いまのバックアップコードは、使えなくなります。'
           : undefined
       }
+      // Each button has a key of its own: React would otherwise make the
+      // button that goes back the one that closes, and the browser would
+      // draw it changing from the one look into the other
       actions={
         issued === undefined ? (
           <>
-            <Button onClick={onClose}>戻る</Button>
+            <Button key='back' onClick={onClose}>
+              戻る
+            </Button>
             <Button
+              key='issue'
               type='submit'
               form={formId}
               variant='primary'
@@ -84,7 +90,7 @@ export const BackupCodesDialog = ({
             </Button>
           </>
         ) : (
-          <Button variant='primary' onClick={onClose}>
+          <Button key='close' variant='primary' onClick={onClose}>
             閉じる
           </Button>
         )
