@@ -216,7 +216,7 @@ pnpm preview:frontend        # Serve the built frontend apps
 
 # Testing
 pnpm test                    # Unit tests
-pnpm test:integration        # Tests against PostgreSQL and an SMTP server (see Testing)
+pnpm test:integration        # Tests against PostgreSQL and an SMTP server, backend and frontend (see Testing)
 
 # Code Quality
 pnpm lint                    # Biome lint
@@ -351,6 +351,10 @@ dropped.
   The integration tests of the infrastructure package send mail to a Mailpit
   container and files to a SeaweedFS container, which they also start through
   testcontainers.
+
+  The integration tests of the frontend (`*.integration.test.tsx`) call the
+  production API from the code of the client: a test server of the backend
+  gives every test file an API on a copy of a database with the seed data.
 
 See [docs/testing-requirements.md](docs/testing-requirements.md) for testing guidelines.
 

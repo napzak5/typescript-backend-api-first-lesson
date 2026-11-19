@@ -1,5 +1,5 @@
 import { defaultClientConditions, defaultServerConditions } from 'vite'
-import { defineConfig } from 'vitest/config'
+import { configDefaults, defineConfig } from 'vitest/config'
 
 // Workspace packages are tested from source, not from their last build
 const SOURCE = '@beauty-salon-frontend/source'
@@ -16,6 +16,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: ['./vitest.setup.ts'],
+    exclude: [...configDefaults.exclude, '**/*.integration.test.*'],
     // The origin that the API client sends its requests to
     env: {
       VITE_BACKEND_BASE_URL: 'http://localhost:3000',

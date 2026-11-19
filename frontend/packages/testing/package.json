@@ -5,26 +5,33 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./setup": "./src/setup.ts"
+    "./setup": "./src/setup.ts",
+    "./api": "./src/api/index.ts",
+    "./api/setup": "./src/api/setup.ts",
+    "./api/global-setup": "./src/api/global-setup.ts"
   },
   "scripts": {
     "clean": "rm -rf *.tsbuildinfo",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:integration": "vitest run --config vitest.integration.config.ts"
   },
   "dependencies": {
     "@testing-library/jest-dom": "^7.0.1",
-    "axe-core": "^4.14.1"
+    "axe-core": "^4.14.1",
+    "zod": "^4.6.7"
   },
   "peerDependencies": {
     "vitest": "^5.1.0"
   },
   "devDependencies": {
+    "@beauty-salon-frontend/config": "workspace:*",
     "@beauty-salon-shared/config": "workspace:*",
     "@types/node": "^26.6.6",
     "jsdom": "^31.0.1",
     "typescript": "^7.0.2",
+    "vite": "^8.3.8",
     "vitest": "^5.1.0"
   }
 }

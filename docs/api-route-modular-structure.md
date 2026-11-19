@@ -1058,6 +1058,7 @@ The rows down to `storage` are the eight `DomainError` kinds a use case returns 
 | `__tests__/auth-registration.integration.test.ts`, `auth-sessions.integration.test.ts`, `auth-two-factor.integration.test.ts`, `admin-auth.integration.test.ts` | the other authentication endpoints: registration, email verification and passwords; the sessions of the signed-in user; two-factor authentication; what an administrator does to accounts |
 | `__tests__/app.integration.test.ts` | request IDs, unreadable requests, a failing database, CORS, rate limit, probes, response headers |
 | `__tests__/_shared/` | `setup.ts` and `test-databases.ts` (a database for every test, copied from a template that has the schema), `test-helpers.ts` (`createTestApp`, which calls the production `createApp` with a mailer that records the mails instead of sending them, with a file storage that keeps the files in memory (`in-memory-file-storage.ts`) and with the real `TotpAuthenticator`), `auth-helpers.ts` (inserting users and signing in) |
+| `__tests__/test-server/` | The program that the integration tests of the frontend start (`pnpm --filter @beauty-salon-backend/api run test:server`): the production `createApp` for every test file, on a port and a copy of a seeded database of its own. See the [API Testing Guide](./api-testing-guide.md#the-test-server) |
 
 ```bash
 pnpm --filter @beauty-salon-backend/api test              # unit tests

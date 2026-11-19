@@ -23,6 +23,10 @@ backend/packages/api/
     │   ├── test-helpers.ts          # createTestApp, getTestDb, request
     │   ├── auth-helpers.ts          # users, staff, salons and sessions as rows; signing in
     │   └── two-factor-helpers.ts    # one-time passwords, stored secrets, a user with two-factor authentication
+    ├── test-server/                 # what the tests of the frontend call instead of a stub (see below)
+    │   ├── main.ts                  # the program: the PostgreSQL instance, the template with the seed data
+    │   ├── test-apis.ts             # the APIs it runs: createApp on a port and a database copy each
+    │   └── control.ts               # the requests it answers: start, reset, query and remove an API
     ├── salon.integration.test.ts              # the Salon endpoints: the reference
     ├── service-category.integration.test.ts   # the service category endpoints: the reference for routes below a salon
     ├── service.integration.test.ts            # the service endpoints: a bulk operation, a soft delete below a salon, the repository called directly
@@ -38,10 +42,52 @@ Unit tests of the same package (problem details, middleware, links, query
 decoding) sit in `__tests__` directories beside the code they test and need no
 database.
 
+## The Test Server
+
+The tests of the frontend that call the API
+(`frontend/packages/*/src/**/*.integration.test.ts(x)`) run against the
+production application as well, from another process. `test-server/` is the
+program they start:
+
+```bash
+TEST_SERVER_TOKEN=<any value> pnpm --filter @beauty-salon-backend/api run test:server
+# READY http://127.0.0.1:<port>
+```
+
+- It uses the PostgreSQL at `TEST_DATABASE_URL`, or starts a container, as the
+  setup of the integration tests does. With `openTestDatabases` it builds one
+  template that has the schema and the seed data (`seedDatabase` of the
+  database package: the rows of `pnpm db:seed`).
+- It answers on the loopback address, and only requests that carry
+  `Authorization: Bearer <TEST_SERVER_TOKEN>`; the process that starts it
+  chooses the token. Every other request is answered with 401.
+
+| Request | What it does | Answer |
+|---------|--------------|--------|
+| `POST /apis` | Starts an API: `createApp` on a copy of the template, on a port of its own | 201 `{ id, origin, seedPassword }` |
+| `POST /apis/{id}/reset` | Gives the API a new copy of the template and drops the previous one | 204 |
+| `POST /apis/{id}/query` with `{ text, values }` | Runs the statement on the database of the API | 200 `{ rows }`; 400 `{ message }` when the body is not of that shape or the database refuses the statement |
+| `DELETE /apis/{id}` | Stops the API and drops its database | 204 |
+
+An unknown `id` is answered with 404.
+
+The APIs are created like `createTestApp` creates the application of a test:
+the same rate limit, a file storage in memory, the real `TotpAuthenticator`,
+and a mailer that drops the mails. No origin is allowed by CORS: the tests
+that call an API run in jsdom, where `fetch` is that of Node.js and applies
+no same-origin policy.
+
+The program stops when its standard input ends, so it does not outlive the
+process that started it, and on `SIGINT` or `SIGTERM`. It then stops the APIs,
+drops their databases and the template, and removes the container it started.
+
+How a test of the frontend uses it is in the skill
+[frontend-testing](../.claude/skills/frontend-testing/SKILL.md).
+
 ## Running
 
 ```bash
-# Every integration test of the workspace (api, server, database, infrastructure)
+# Every integration test of the workspace (api, server, database, infrastructure, and the frontend packages that call the API)
 pnpm test:integration
 
 # The API package only
@@ -132,8 +178,10 @@ beforeAll(async () => {
 
 `openTestDatabases` (`test-databases.ts`) creates a database named
 `api_test_template_<uuid>`, applies `backend/packages/database/sql/setup.sql`
-to it as it is, and closes the connection. Around each test, the setup gives
-the test a database of its own:
+to it as it is, and closes the connection. Its tables are empty: a caller
+that wants every copy to start with rows passes a function that inserts them
+into the template, which only the test server does. Around each test, the
+setup gives the test a database of its own:
 
 1. Before the test it creates a database named `api_test_<uuid>` as a copy of
    the template (`CREATE DATABASE … TEMPLATE …`) and opens a connection to it.
