@@ -19,6 +19,7 @@
     "test:ui": "vitest --ui"
   },
   "dependencies": {
+    "@beauty-salon-frontend/session": "workspace:*",
     "@beauty-salon-frontend/theme": "workspace:*",
     "@beauty-salon-frontend/ui": "workspace:*",
     "@tanstack/react-query": "^5.108.0",
