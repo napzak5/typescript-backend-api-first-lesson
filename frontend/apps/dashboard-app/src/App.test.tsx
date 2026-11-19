@@ -1,5 +1,5 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { App } from './App'
@@ -52,6 +52,31 @@ describe('App', () => {
     expect(screen.getByRole('link', { name: 'トップへ戻る' })).toHaveAttribute(
       'href',
       '/',
+    )
+  })
+
+  it('should go back to the root from that page without leaving the application', () => {
+    // Arrange
+    renderAt('/no-such-page')
+
+    // Act
+    fireEvent.click(screen.getByRole('link', { name: 'トップへ戻る' }))
+
+    // Assert
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Beauty Salon Dashboard' }),
+    ).toBeVisible()
+  })
+
+  it('should begin with a link that skips to the main content', () => {
+    // Act
+    renderAt('/')
+
+    // Assert
+    expect(screen.getAllByRole('link').at(0)).toHaveAccessibleName('本文へ移動')
+    expect(screen.getAllByRole('link').at(0)).toHaveAttribute(
+      'href',
+      `#${screen.getByRole('main').id}`,
     )
   })
 
