@@ -5,6 +5,11 @@ export type LinkComponentProps = {
   href: string
   className?: string | undefined
   'aria-current'?: 'page' | undefined
+  /**
+   * The name of a link whose text alone does not say where it leads: one
+   * of several 「予約する」 on a screen. It holds the text that is seen
+   */
+  'aria-label'?: string | undefined
   children: ReactNode
 }
 

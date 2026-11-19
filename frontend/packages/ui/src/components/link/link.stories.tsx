@@ -21,6 +21,15 @@ export const Current: Story = {
   args: { 'aria-current': 'page' },
 }
 
+/** One of several links with the same text: its name says which one it is */
+export const WithName: Story = {
+  args: {
+    href: '/services/ladies-cut/booking',
+    children: '予約する',
+    'aria-label': 'レディースカットを予約する',
+  },
+}
+
 /** Stands for the link of a router that serves the application below `/admin`. */
 const RouterLink: LinkComponent = ({ href, children, ...rest }) => (
   <a {...rest} href={`/admin${href}`}>
