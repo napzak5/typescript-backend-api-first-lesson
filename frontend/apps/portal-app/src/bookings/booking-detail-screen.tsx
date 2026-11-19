@@ -18,7 +18,7 @@ import { useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import { BookingReview } from '../reviews/booking-review'
 import { CUSTOMERS } from '../roles'
-import { readSalon, readStaff } from '../salons/salons-api'
+import { readSalon, readStaff, whyUnread } from '../salons/salons-api'
 import { UnreadNotice } from '../salons/unread-notice'
 import { SignInHelp } from '../sign-in-help'
 import { afterCancellation, readCancellation } from './booking-flow'
@@ -28,7 +28,6 @@ import {
   type OwnBookingRead,
   readOwnBooking,
   readService,
-  whyUnread,
 } from './bookings-api'
 import { BookingChanges } from './components/booking-changes/booking-changes'
 import { BookingSummary } from './components/booking-summary/booking-summary'

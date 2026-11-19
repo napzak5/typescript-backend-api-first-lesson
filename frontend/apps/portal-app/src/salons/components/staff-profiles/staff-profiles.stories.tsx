@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { staff } from '../examples'
+import { staff, staffRatings } from '../examples'
 import { StaffProfiles } from './staff-profiles'
 
 const meta: Meta<typeof StaffProfiles> = {
@@ -20,4 +20,12 @@ export const Default: Story = {}
 
 export const OnePerson: Story = {
   args: { staff: staff.slice(0, 1) },
+}
+
+/**
+ * How each was rated: somebody by many, somebody by nobody yet, and
+ * somebody of whom it is not known
+ */
+export const WithRatings: Story = {
+  args: { ratings: staffRatings },
 }

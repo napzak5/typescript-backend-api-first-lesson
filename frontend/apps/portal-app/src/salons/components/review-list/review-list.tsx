@@ -2,11 +2,28 @@ import type {
   ModelsReviewResponse,
   ModelsReviewSortType,
 } from '@beauty-salon-frontend/api-client'
-import { Alert, Button, Select } from '@beauty-salon-frontend/ui'
+import { Alert, Button, Link, Select } from '@beauty-salon-frontend/ui'
 import { type ChangeEvent, useLayoutEffect, useRef } from 'react'
 import type { More } from '../../pages'
+import { postedOf } from '../../salon-format'
 import { ReviewContent } from '../review-content/review-content'
 import styles from './review-list.module.css'
+
+/** What a customer who reads the reviews does with them. */
+export type ReviewListCustomer = {
+  /** The customer who reads: what they wrote has a link in place of the buttons */
+  customerId: string
+  /** The reviews the customer said were helpful, here */
+  helpful: ReadonlySet<string>
+  /** The review of which the customer is saying so; the answer is on its way */
+  sending: string | undefined
+  /** The address of the form that changes a review of the customer */
+  changeHref: (reviewId: string) => string
+  /** The customer found a review helpful */
+  onHelpful: (review: ModelsReviewResponse) => void
+  /** The customer wants to report a review */
+  onReport: (review: ModelsReviewResponse) => void
+}
 
 export type ReviewListProps = {
   /** The reviews that were read so far, in the order of the API; at least one */
@@ -25,6 +42,11 @@ export type ReviewListProps = {
   more: More
   /** Asks for the reviews that come next */
   onMore: () => void
+  /**
+   * The customer who reads, and what they do with the reviews. `undefined`
+   * for everybody else: they read, and the reviews have no buttons
+   */
+  customer?: ReviewListCustomer | undefined
 }
 
 const ORDERS: readonly { value: ModelsReviewSortType; label: string }[] = [
@@ -32,6 +54,59 @@ const ORDERS: readonly { value: ModelsReviewSortType; label: string }[] = [
   { value: 'rating', label: '評価の高い順' },
   { value: 'helpful', label: '参考になった順' },
 ]
+
+type ActionsProps = {
+  review: ModelsReviewResponse
+  timezone: string
+  customer: ReviewListCustomer
+}
+
+/**
+ * What the customer does with one review. Every review has the same
+ * buttons, so each is named by the review it belongs to, and the name ends
+ * with the text that is seen. A review is found helpful once: the button
+ * then says that it is pressed, and pressing it again asks for nothing.
+ */
+const Actions = ({ review, timezone, customer }: ActionsProps) => {
+  const posted = postedOf(review, timezone)
+  const pressed = customer.helpful.has(review.id)
+
+  return review.customerId === customer.customerId ? (
+    <p>
+      <Link
+        href={customer.changeHref(review.id)}
+        aria-label={`${posted}のレビューを変更する`}
+      >
+        レビューを変更する
+      </Link>
+    </p>
+  ) : (
+    <div className={styles['actions']}>
+      <Button
+        size='small'
+        aria-pressed={pressed}
+        aria-label={`${posted}のレビューが参考になった`}
+        pending={customer.sending === review.id}
+        onClick={() => {
+          if (!pressed) {
+            customer.onHelpful(review)
+          }
+        }}
+      >
+        {pressed && <span aria-hidden='true'>✓</span>}
+        参考になった
+      </Button>
+      <Button
+        size='small'
+        variant='quiet'
+        aria-label={`${posted}のレビューを通報する`}
+        onClick={() => customer.onReport(review)}
+      >
+        通報する
+      </Button>
+    </div>
+  )
+}
 
 /**
  * The reviews of a salon, in an order the reader chooses. When reviews are
@@ -46,6 +121,7 @@ export const ReviewList = ({
   onSortChange,
   more,
   onMore,
+  customer,
 }: ReviewListProps) => {
   const list = useRef<HTMLUListElement>(null)
   const shown = useRef({ sortBy, count: reviews.length })
@@ -82,9 +158,17 @@ export const ReviewList = ({
       />
       <ul className={styles['list']} ref={list} aria-label='レビュー'>
         {reviews.map((review) => (
-          // What the focus moves to when the review was added: it has no control
+          // What the focus moves to when the review was added: the review, not
+          // one of its buttons, so that it is read from its beginning
           <li key={review.id} className={styles['review']} tabIndex={-1}>
             <ReviewContent review={review} timezone={timezone} />
+            {customer !== undefined && (
+              <Actions
+                review={review}
+                timezone={timezone}
+                customer={customer}
+              />
+            )}
           </li>
         ))}
       </ul>
