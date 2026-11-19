@@ -8,6 +8,7 @@ import {
   Link,
   LoadingIndicator,
   PageHeader,
+  UnreadNotice,
   useNotifications,
   useScreenHeadingFocus,
 } from '@beauty-salon-frontend/ui'
@@ -19,7 +20,7 @@ import { whenLineOf } from '../bookings/booking-format'
 import { listHrefOf } from '../bookings/own-bookings'
 import { type FormSays, NOTHING_TO_SAY } from '../forms'
 import { CUSTOMERS } from '../roles'
-import { UnreadNotice } from '../salons/unread-notice'
+import { unreadMessageOf } from '../salons/pages'
 import { SignInHelp } from '../sign-in-help'
 import { ReviewForm } from './components/review-form/review-form'
 import { afterReviewWrite } from './review-cache'
@@ -214,8 +215,7 @@ const VisitToReview = () => {
         ))
         .with({ type: UNREAD }, (reason) => (
           <UnreadNotice
-            what='来店の内容'
-            reason={reason}
+            message={unreadMessageOf('来店の内容', reason)}
             onRetry={() => void read.refetch()}
             retrying={read.isFetching}
           />

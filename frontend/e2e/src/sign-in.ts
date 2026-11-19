@@ -17,6 +17,12 @@ export const CUSTOMER = 'customer1@example.com'
 export const NEWCOMER = 'newcomer@example.com'
 export const NEWCOMER_PASSWORD = 'a passphrase that only this test knows'
 
+/**
+ * The first screen of the admin application for a member of the staff of a
+ * salon: the bookings of their salon, today.
+ */
+export const ADMIN_START = '予約台帳'
+
 /** The heading of the screen: where the focus is after the screen changed. */
 export const heading = (page: Page, name: string): Locator =>
   page.getByRole('heading', { level: 1, name })

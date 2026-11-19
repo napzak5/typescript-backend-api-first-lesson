@@ -9,6 +9,7 @@ import {
   Link,
   LoadingIndicator,
   PageHeader,
+  UnreadNotice,
   useNotifications,
   useScreenHeadingFocus,
 } from '@beauty-salon-frontend/ui'
@@ -18,8 +19,8 @@ import { useNavigate, useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import { type FormSays, NOTHING_TO_SAY } from '../forms'
 import { CUSTOMERS } from '../roles'
+import { unreadMessageOf } from '../salons/pages'
 import { dayOf } from '../salons/salon-format'
-import { UnreadNotice } from '../salons/unread-notice'
 import { SignInHelp } from '../sign-in-help'
 import { ReviewForm } from './components/review-form/review-form'
 import { afterReviewWrite } from './review-cache'
@@ -199,8 +200,7 @@ const ReviewToChange = () => {
         ))
         .with({ type: UNREAD }, (reason) => (
           <UnreadNotice
-            what='レビュー'
-            reason={reason}
+            message={unreadMessageOf('レビュー', reason)}
             onRetry={() => void read.refetch()}
             retrying={read.isFetching}
           />

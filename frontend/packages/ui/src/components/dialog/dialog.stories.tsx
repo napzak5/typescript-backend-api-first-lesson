@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { fn } from 'storybook/test'
 import { Button } from '../button/button'
 import { Dialog } from './dialog'
@@ -74,6 +74,44 @@ export const OpenedByButton: Story = {
             args.onClose()
           }}
           actions={<Button onClick={() => setOpen(false)}>戻る</Button>}
+        />
+      </>
+    )
+  },
+}
+
+/**
+ * Closed by its answer, which changed what it asked about: the screen closes
+ * it and moves the focus to the heading of what changed, in one commit. The
+ * button that opened it went with the change, and the page behind the
+ * dialog is inert until the dialog is closed.
+ */
+export const ClosedByItsAnswer: Story = {
+  render: (args) => {
+    const [open, setOpen] = useState(true)
+    const heading = useRef<HTMLHeadingElement>(null)
+
+    useLayoutEffect(() => {
+      if (!open) {
+        heading.current?.focus()
+      }
+    }, [open])
+
+    return (
+      <>
+        <h2 ref={heading} tabIndex={-1}>
+          予約の状態
+        </h2>
+        <Dialog
+          {...args}
+          open={open}
+          onClose={() => {
+            setOpen(false)
+            args.onClose()
+          }}
+          actions={
+            <Button onClick={() => setOpen(false)}>予約を取り消す</Button>
+          }
         />
       </>
     )

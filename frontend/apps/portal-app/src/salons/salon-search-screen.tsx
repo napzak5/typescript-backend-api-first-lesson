@@ -2,16 +2,22 @@ import {
   EmptyState,
   LoadingIndicator,
   PageHeader,
+  UnreadNotice,
 } from '@beauty-salon-frontend/ui'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router'
 import { match } from 'ts-pattern'
 import { SalonResults } from './components/salon-results/salon-results'
 import { SalonSearchForm } from './components/salon-search-form/salon-search-form'
-import { cursorAfter, firstCursor, listingOf, moreOf } from './pages'
+import {
+  cursorAfter,
+  firstCursor,
+  listingOf,
+  moreOf,
+  unreadMessageOf,
+} from './pages'
 import { conditionsIn, conditionsOf, narrows, queryOf } from './salon-search'
 import { findSalons } from './salons-api'
-import { UnreadNotice } from './unread-notice'
 
 /**
  * Where a visitor looks for a salon. The conditions are in the query of the
@@ -56,8 +62,7 @@ export const SalonSearchScreen = () => {
         ))
         .with({ type: 'unread' }, ({ reason }) => (
           <UnreadNotice
-            what='サロン'
-            reason={reason}
+            message={unreadMessageOf('サロン', reason)}
             onRetry={() => void found.refetch()}
             retrying={found.isFetching}
           />

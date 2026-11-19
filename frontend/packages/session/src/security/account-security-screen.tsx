@@ -3,6 +3,7 @@ import {
   Card,
   LoadingIndicator,
   PageHeader,
+  UnreadNotice,
   useNotifications,
 } from '@beauty-salon-frontend/ui'
 import {
@@ -19,7 +20,6 @@ import { SecuritySummary } from './components/security-summary/security-summary'
 import { SessionList } from './components/session-list/session-list'
 import { SignOutEverywhere } from './components/sign-out-everywhere/sign-out-everywhere'
 import { TwoFactorStopDialog } from './components/two-factor-stop-dialog/two-factor-stop-dialog'
-import { UnreadNotice } from './components/unread-notice/unread-notice'
 import {
   type AccountRead,
   endSession,
@@ -41,6 +41,7 @@ import {
   listingOf,
   moreOf,
   NOTHING_TO_SAY,
+  unreadMessageOf,
   withoutSession,
 } from './security-flow'
 import {
@@ -249,8 +250,7 @@ const Account = ({ passwordHref, twoFactorHref, timeZone }: AccountProps) => {
     ))
     .with({ type: UNSENT }, (reason) => (
       <UnreadNotice
-        what='アカウント'
-        reason={reason}
+        message={unreadMessageOf('アカウント', reason)}
         onRetry={() => void read.refetch()}
         retrying={read.isFetching}
       />
@@ -356,8 +356,7 @@ const Sessions = ({ timeZone }: PartProps) => {
         ))
         .with({ type: 'unread' }, ({ reason }) => (
           <UnreadNotice
-            what='サインインしている端末'
-            reason={reason}
+            message={unreadMessageOf('サインインしている端末', reason)}
             onRetry={() => void read.refetch()}
             retrying={read.isFetching}
           />

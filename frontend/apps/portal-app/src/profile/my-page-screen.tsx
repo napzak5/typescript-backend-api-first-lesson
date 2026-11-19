@@ -5,12 +5,13 @@ import {
   EmptyState,
   LoadingIndicator,
   PageHeader,
+  UnreadNotice,
 } from '@beauty-salon-frontend/ui'
 import { useQuery } from '@tanstack/react-query'
 import { match, P } from 'ts-pattern'
 import { OwnPreferences } from '../preferences/own-preferences'
 import { CUSTOMERS } from '../roles'
-import { UnreadNotice } from '../salons/unread-notice'
+import { unreadMessageOf } from '../salons/pages'
 import { SECURITY_PATH } from '../security/security-screens'
 import { SignInHelp } from '../sign-in-help'
 import { MembershipDetails } from './components/membership-details/membership-details'
@@ -76,8 +77,7 @@ const OwnPage = () => {
         ))
         .with({ type: UNREAD }, (reason) => (
           <UnreadNotice
-            what='お客様の情報'
-            reason={reason}
+            message={unreadMessageOf('お客様の情報', reason)}
             onRetry={() => void read.refetch()}
             retrying={read.isFetching}
           />

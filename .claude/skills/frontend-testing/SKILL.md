@@ -158,7 +158,11 @@ describe('Button', () => {
   browser's work and are checked in a real browser. In jsdom the page
   behind an open dialog can still be found and pressed: look inside the
   dialog (`within(screen.getByRole('dialog', { name }))`), and assert that
-  it is gone with `queryByRole('dialog')`.
+  it is gone with `queryByRole('dialog')`. The Escape key is the `cancel`
+  event (`fireEvent(dialog, new Event('cancel'))`): the browser fires it,
+  closes the dialog, and fires `close` a task later. A `close` fired at a
+  dialog that is still open is one the browser never sends, and `Dialog`
+  takes it for a late one.
 - A component that is generic in its data gets a wrapper with the type filled
   in, and the stories are those of the wrapper (`BookingTable` in
   `table.stories.tsx`).
@@ -744,9 +748,47 @@ and removed (`frontend/apps/portal-app/src/reviews/`) adds:
   device is an `update` of `users` that clears the state, the secret, the
   last step that was used and the backup codes together (a check of the
   table ties them), and the screen then meets the 409 of the API.
-- **The stand-in for the dialog of jsdom gives no focus back.** That a
-  closed `Dialog` gives the focus to the button that opened it is
-  asserted in a browser test.
+- **The stand-in for the dialog of jsdom gives no focus back, and leaves
+  the page behind it as it was.** That a closed `Dialog` gives the focus
+  to the button that opened it, and that a screen moves the focus out of a
+  dialog it closed, are asserted in a browser test: in jsdom the focus
+  reaches a heading behind a dialog that is still open, which a browser
+  refuses (`admin-bookings.e2e.test.ts` found it).
+
+The bookings of a salon in the admin application
+(`frontend/apps/admin-app/src/bookings/`, two files: the start and the list
+of a day, a booking and its operations) add:
+
+- **A record in a state is a row the test writes, with what the operation
+  that led to it writes.** `arrange({ day, at, status })` of
+  `__tests__/arrangements.ts` inserts a booking and its line in one
+  statement, on a day relative to today in Tokyo
+  (`(now() at time zone 'Asia/Tokyo')::date + n`). A cancelled booking has
+  `cancelledAt`, a completed one `completedAt`, one in progress
+  `actualStartTime`: checks of the table tie them, and a statement that
+  leaves one out fails at the arrangement. The seed data has no booking
+  today, so the list of today is what the test wrote; a day the seed data
+  has (the visit nobody came to, yesterday) is asserted as the seed data
+  has it.
+- **Many rows are one statement** (`arrangeMany(day, 55)` with
+  `generate_series`), ten minutes apart, so their order is known.
+- **An account of a salon role that belongs to no salon** is the account
+  whose link to the staff was undone (`update users set "staffId" = null`).
+- **A customer who was removed** has `deletedAt`: the batch of the
+  customers is refused, the screen reads them one by one, and the test
+  asserts the name it then shows and that the row still leads to its
+  booking.
+- **The focus on the heading of a screen is asserted once the screen
+  shows what it read** (the name of the salon, the state of the booking).
+  A heading found while the screen still loads may be drawn anew when the
+  content comes, without the focus; a browser test, which waits until the
+  heading has the focus, failed where the test that looked at once passed.
+- **What an operation wrote is asserted in the row** (`storedBooking`: the
+  state, the times in UTC, who cancelled, the reason). A dialog that sends
+  nothing leaves the row as it was (`toEqual(before)`).
+- **Who changed the booking meanwhile is a statement** (the customer
+  cancelled it; the treatment began): the screen meets the real 409.
+
 
 `App.test.tsx` of an application keeps what needs no API: what somebody who
 is not signed in sees. Everything behind the sign-in is in
@@ -956,6 +998,14 @@ test.describe('the admin application', () => {
   gives the focus (`src/two-factor.e2e.test.ts`); one without a form at
   its first button. Closed, it gives the focus back to the button that
   opened it.
+- **The browser may be in another time zone than the salon.** A test
+  that says so has `test.use({ timezoneId: 'Pacific/Honolulu' })`
+  (nineteen hours behind Tokyo, most of the time another day), and asserts
+  the day of the salon, its times and the moments the API stored
+  (`src/admin-bookings.e2e.test.ts`).
+- **The first screen of the admin application is the bookings of a salon**
+  (`ADMIN_START` of `src/sign-in.ts`): a test that only signs in waits for
+  that heading.
 - The modules of `frontend/e2e/src` that are no test files are under the
   lint prohibitions of application code: no type assertion, no type guard,
   and `node:assert` in place of `throw`.

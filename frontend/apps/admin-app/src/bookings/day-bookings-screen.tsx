@@ -1,0 +1,274 @@
+import type {
+  ModelsBookingResponse,
+  ModelsSalonResponse,
+} from '@beauty-salon-frontend/api-client'
+import {
+  EmptyState,
+  LoadingIndicator,
+  PageHeader,
+  UnreadNotice,
+} from '@beauty-salon-frontend/ui'
+import { useInfiniteQuery, useQueries, useQuery } from '@tanstack/react-query'
+import { useParams, useSearchParams } from 'react-router'
+import { match, P } from 'ts-pattern'
+import { readCustomers } from '../customers/customers-api'
+import { bookingsHrefOf } from '../navigation'
+import { cursorAfter, firstCursor, listingOf, moreOf } from '../pages'
+import { FAILED, unreadMessageOf, whyUnread } from '../reading'
+import { dayAfter, dayAt, dayNameOf } from '../salon-time'
+import {
+  readServices,
+  readStaffProfiles,
+  servicesKeyOf,
+  staffProfilesKeyOf,
+} from '../salons/salons-api'
+import { OtherSalonNotice, WithSalon } from '../salons/with-salon'
+import {
+  conditionsIn,
+  conditionsOf,
+  narrows,
+  onDay,
+  queryOf,
+  wholeDay,
+} from './booking-day'
+import { bookingListsKeyOf, readDayBookings } from './bookings-api'
+import { BookingFilter } from './components/booking-filter/booking-filter'
+import { DayBookingTable } from './components/day-booking-table/day-booking-table'
+import { DaySwitch } from './components/day-switch/day-switch'
+import { customerIdsOf, moreOfRows, rowsOf } from './day-bookings'
+
+const TITLE = '予約台帳'
+
+const UNREAD = P.union('tooManyRequests', 'failed')
+
+type DayBookingsProps = {
+  salon: ModelsSalonResponse
+}
+
+/**
+ * The bookings of a salon on a day. The day, and the state and the member
+ * of the staff that narrow the list, are in the query of the address: a
+ * reload, the way back from a booking and an address that is passed on
+ * show the same list. Without a day it is today at the salon.
+ *
+ * A booking names its customer, its member of the staff and its services
+ * by their IDs: the staff and the services of the salon are read once, and
+ * the customers of each page in one request.
+ */
+const DayBookings = ({ salon }: DayBookingsProps) => {
+  const [query, setQuery] = useSearchParams()
+  const today = dayAt(new Date(), salon.timezone)
+  const conditions = conditionsIn(query, today)
+  const asked = queryOf(conditions).toString()
+  const read = useInfiniteQuery({
+    queryKey: [...bookingListsKeyOf(salon.id), asked],
+    queryFn: ({ pageParam }) =>
+      readDayBookings(salon.id, conditions, pageParam),
+    initialPageParam: firstCursor(),
+    getNextPageParam: (page) =>
+      page.type === 'forbidden' ? undefined : cursorAfter(page),
+    // Bookings are made and changed at the counter, on the phone and by the
+    // customers themselves: the list is read whenever it is shown
+    staleTime: 0,
+  })
+  const staff = useQuery({
+    queryKey: staffProfilesKeyOf(salon.id),
+    queryFn: () => readStaffProfiles(salon.id),
+  })
+  const services = useQuery({
+    queryKey: servicesKeyOf(salon.id),
+    queryFn: () => readServices(salon.id),
+  })
+  const pages = read.data?.pages ?? []
+  const pagesOfBookings = pages.flatMap((page) =>
+    page.type === 'found' ? [page.items] : [],
+  )
+  const customers = useQueries({
+    queries: pagesOfBookings.map((bookings) => {
+      const ids = customerIdsOf(bookings)
+
+      return {
+        queryKey: ['customers', 'of', ...ids],
+        queryFn: () => readCustomers(ids),
+      }
+    }),
+  })
+  const pageOf = new Map(
+    pagesOfBookings.flatMap((bookings, index) =>
+      bookings.map((booking): [string, number] => [booking.id, index]),
+    ),
+  )
+  const customersOf = (booking: ModelsBookingResponse) =>
+    customers.at(pageOf.get(booking.id) ?? -1)?.data
+  const readingCustomersAgain = customers.some((one) => one.isRefetching)
+  const readCustomersAgain = (): void => {
+    for (const one of customers) {
+      if (one.data !== undefined && one.data.type !== 'found') {
+        void one.refetch()
+      }
+    }
+  }
+
+  const hrefOf = (date: string): string =>
+    `?${queryOf(onDay(conditions, date)).toString()}`
+
+  const filter = (values: FormData): void => {
+    const next = queryOf(conditionsOf(values, today))
+    if (next.toString() === asked) {
+      // The same list again: whoever sends it wants what there is now
+      void read.refetch()
+      return
+    }
+    setQuery(next, { replace: true })
+  }
+
+  const heading = `${dayNameOf(conditions.date)}の予約`
+
+  if (pages[0]?.type === 'forbidden') {
+    return (
+      <>
+        <PageHeader title={TITLE} description={salon.name} />
+        <OtherSalonNotice />
+      </>
+    )
+  }
+  const listing =
+    read.data === undefined
+      ? undefined
+      : listingOf(
+          // A page after the first is refused only when the account was
+          // moved to another salon meanwhile: it ends the list there
+          pages.map((page) => (page.type === 'forbidden' ? FAILED : page)),
+        )
+
+  return (
+    <>
+      <PageHeader title={TITLE} description={salon.name} />
+      {match([listing, staff.data, services.data])
+        .with([P._, undefined, P._], [P._, P._, undefined], () => (
+          <LoadingIndicator label='予約を読み込んでいます' />
+        ))
+        .with(
+          [P._, { type: UNREAD }, P._],
+          [P._, P._, { type: P.union(UNREAD, 'notFound') }],
+          ([, ofStaff, ofServices]) => (
+            <UnreadNotice
+              message={unreadMessageOf(
+                'スタッフとメニュー',
+                whyUnread([ofStaff, ofServices]),
+              )}
+              onRetry={() => {
+                void staff.refetch()
+                void services.refetch()
+              }}
+              retrying={staff.isFetching || services.isFetching}
+            />
+          ),
+        )
+        .with(
+          [P._, { type: 'found' }, { type: 'found' }],
+          ([ofBookings, ofStaff, ofServices]) => (
+            <>
+              <DaySwitch
+                dayBeforeHref={hrefOf(dayAfter(conditions.date, -1))}
+                todayHref={hrefOf(today)}
+                dayAfterHref={hrefOf(dayAfter(conditions.date, 1))}
+              />
+              <BookingFilter
+                conditions={conditions}
+                staff={ofStaff.items}
+                clearHref={
+                  narrows(conditions)
+                    ? `?${queryOf(wholeDay(conditions)).toString()}`
+                    : undefined
+                }
+                onSubmit={filter}
+              />
+              {match(ofBookings)
+                .with(undefined, () => (
+                  <LoadingIndicator label='予約を読み込んでいます' />
+                ))
+                .with({ type: 'unread' }, ({ reason }) => (
+                  <UnreadNotice
+                    message={unreadMessageOf('予約', reason)}
+                    onRetry={() => void read.refetch()}
+                    retrying={read.isFetching}
+                  />
+                ))
+                .with({ type: 'listed', items: [] }, () => (
+                  <EmptyState
+                    title={
+                      narrows(conditions)
+                        ? `${heading}のうち、条件に合うものはありません`
+                        : `${heading}はありません`
+                    }
+                  />
+                ))
+                .with({ type: 'listed' }, ({ items, total, rest: pages }) => {
+                  const { rows, rest } = rowsOf(items, {
+                    staff: ofStaff.items,
+                    services: ofServices.items,
+                    customers: customersOf,
+                  })
+
+                  return match([rows, rest])
+                    .with([[], { type: 'unread' }], ([, { reason }]) => (
+                      <UnreadNotice
+                        message={unreadMessageOf('予約のお客様', reason)}
+                        onRetry={readCustomersAgain}
+                        retrying={readingCustomersAgain}
+                      />
+                    ))
+                    .with([[], P._], () => (
+                      <LoadingIndicator label='予約を読み込んでいます' />
+                    ))
+                    .otherwise(() => (
+                      <DayBookingTable
+                        // Another day, or other conditions, is another list
+                        key={asked}
+                        caption={heading}
+                        rows={rows}
+                        total={total}
+                        timezone={salon.timezone}
+                        more={moreOfRows(
+                          rest,
+                          moreOf(pages, {
+                            nextPage: read.isFetchingNextPage,
+                            again: read.isRefetching,
+                          }),
+                          readingCustomersAgain,
+                        )}
+                        onMore={() => {
+                          if (rest.type === 'unread') {
+                            readCustomersAgain()
+                            return
+                          }
+                          void (pages === 'unread'
+                            ? read.refetch()
+                            : read.fetchNextPage())
+                        }}
+                        bookingHref={({ booking }) =>
+                          `${bookingsHrefOf(salon.id)}/${booking.id}`
+                        }
+                      />
+                    ))
+                })
+                .exhaustive()}
+            </>
+          ),
+        )
+        .exhaustive()}
+    </>
+  )
+}
+
+/** The bookings of the salon of the address, a day at a time. */
+export const DayBookingsScreen = () => {
+  const { salonId = '' } = useParams()
+
+  return (
+    <WithSalon salonId={salonId} title={TITLE}>
+      {(salon) => <DayBookings key={salon.id} salon={salon} />}
+    </WithSalon>
+  )
+}

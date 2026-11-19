@@ -1,11 +1,11 @@
-import { type ReactNode, useEffect, useId, useRef } from 'react'
+import { type ReactNode, useId, useLayoutEffect, useRef } from 'react'
 import styles from './dialog.module.css'
 
 export type DialogProps = {
   open: boolean
   /**
-   * Called when the dialog has closed, whatever closed it: the Escape key, or
-   * `open` turning false. Set `open` to false here.
+   * Called once when the dialog has closed, whatever closed it: the Escape
+   * key, or `open` turning false. Set `open` to false here.
    */
   onClose: () => void
   /** What is asked or shown: the name of the dialog */
@@ -27,6 +27,12 @@ export type DialogProps = {
  * It is the `dialog` element of the browser, opened as a modal: the browser
  * keeps the focus inside, makes the rest of the page inert, closes it on the
  * Escape key and gives the focus back to what opened it.
+ *
+ * It opens and closes in the commit that changes `open`, before the layout
+ * effects of the components around it run. The rest of the page is inert
+ * while it is open, so a component that closes it and moves the focus out
+ * of it (to the heading of what the answer changed) can do so in its own
+ * layout effect.
  */
 export const Dialog = ({
   open,
@@ -37,20 +43,34 @@ export const Dialog = ({
   actions,
 }: DialogProps) => {
   const dialogRef = useRef<HTMLDialogElement>(null)
+  /** Whether the caller was told that the dialog closed, since it last opened */
+  const told = useRef(false)
   const titleId = useId()
   const descriptionId = useId()
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const dialog = dialogRef.current
     if (dialog === null || dialog.open === open) {
       return
     }
     if (open) {
+      told.current = false
       dialog.showModal()
     } else {
       dialog.close()
     }
   }, [open])
+
+  // The Escape key fires `cancel` and closes the dialog at once; `close`
+  // comes in a task of its own, after a press that opens the dialog again
+  // may have come. So the caller is told at `cancel`, and a `close` that
+  // comes while the dialog is open is one of before
+  const tell = (): void => {
+    if (!told.current) {
+      told.current = true
+      onClose()
+    }
+  }
 
   return (
     <dialog
@@ -58,7 +78,12 @@ export const Dialog = ({
       className={styles['dialog']}
       aria-labelledby={titleId}
       aria-describedby={description === undefined ? undefined : descriptionId}
-      onClose={onClose}
+      onCancel={tell}
+      onClose={(event) => {
+        if (!event.currentTarget.open) {
+          tell()
+        }
+      }}
     >
       <div className={styles['content']}>
         <h2 className={styles['title']} id={titleId}>

@@ -12,32 +12,25 @@ const retryButton = () =>
 describe('UnreadNotice', () => {
   itShouldBeAccessibleInEveryStory(stories)
 
-  it.each([
-    [
-      stories.Failed,
-      'サインインしている端末を読み込めませんでした。通信の状態を確かめて、もう一度お試しください。',
-    ],
-    [
-      stories.TooManyRequests,
-      'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
-    ],
-  ])('should say why nothing was read: %#', async (story, message) => {
+  it('should say why nothing was read, at once', async () => {
     // Act
-    await story.run()
+    await stories.Unread.run()
 
     // Assert
-    expect(screen.getByRole('alert')).toHaveTextContent(message)
+    expect(screen.getByRole('alert').textContent).toBe(
+      'メニューを読み込めませんでした。通信の状態を確かめて、もう一度お試しください。',
+    )
   })
 
   it('should ask again when its button is pressed', async () => {
     // Arrange
-    await stories.Failed.run()
+    await stories.Unread.run()
 
     // Act
     await userEvent.click(retryButton())
 
     // Assert
-    expect(stories.Failed.args.onRetry).toHaveBeenCalledTimes(1)
+    expect(stories.Unread.args.onRetry).toHaveBeenCalledTimes(1)
   })
 
   it('should show that the API is being asked again, and not ask again', async () => {

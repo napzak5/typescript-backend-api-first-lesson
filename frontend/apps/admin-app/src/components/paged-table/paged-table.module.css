@@ -1,0 +1,10 @@
+/* How many, the table, then the way to more. */
+.pagedTable {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+}
+
+.count {
+  color: var(--color-text-muted);
+}

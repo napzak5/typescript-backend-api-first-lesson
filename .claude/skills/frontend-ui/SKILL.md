@@ -1,6 +1,6 @@
 ---
 name: frontend-ui
-description: "How the frontend of this repository is styled and how its components are built: design tokens, CSS Modules, layout with CSS Grid (never flex), the shared component package @beauty-salon-frontend/ui with its form components (label, description, error), the frame of a screen (app shell, navigation, table, dialog, notifications), how a form calls the API, how a screen reads from the API (a search kept in the address, a list that goes on, the parts of a page), how a screen writes what it read (a choice kept in the address, what is offered read anew, a refusal), the screens that need a session (sign-in, roles), the screens that a mailed link opens and the Storybook. Use it before adding or changing a component, a form, a stylesheet, a token, a story or the markup of a screen under frontend/."
+description: "How the frontend of this repository is styled and how its components are built: design tokens, CSS Modules, layout with CSS Grid (never flex), the shared component package @beauty-salon-frontend/ui with its form components (label, description, error), the frame of a screen (app shell, navigation, table, dialog, notifications), how a form calls the API, how a screen reads from the API (a search kept in the address, a list that goes on, the parts of a page), how a screen writes what it read (a choice kept in the address, what is offered read anew, a refusal), the screens that need a session (sign-in, roles), the screens of a salon (the salon of the address, the clock of the salon, the operations a state allows), the screens that a mailed link opens and the Storybook. Use it before adding or changing a component, a form, a stylesheet, a token, a story or the markup of a screen under frontend/."
 ---
 
 # Frontend UI
@@ -32,6 +32,11 @@ this one: a component is not done without its stories and its test.
 | The reviews of a customer in the portal: the part of the page of a visit, the form that writes a review and changes one, and the list with the dialog that removes one; what a reader of the page of a salon does with the reviews of others (`reader-flow.ts`, the dialog that reports one) | `frontend/apps/portal-app/src/reviews/` |
 | Where a visitor signs in, and where they go on to from there | `frontend/apps/portal-app/src/sign-in-path.ts` |
 | The links of the header of the portal, by who is signed in | `frontend/apps/portal-app/src/navigation.ts` |
+| The salon of who is signed in (`useOwnSalon`), and what an account that belongs to none is told | `frontend/packages/session/src/salon/`, `src/components/no-salon-notice/` |
+| The screens of a salon in the admin application: the choice of a salon, and the salon of an address around the screens below it | `frontend/apps/admin-app/src/salons/` |
+| The bookings of a salon in the admin application: the list of a day, a booking and the operations of its state | `frontend/apps/admin-app/src/bookings/` |
+| The clock of a salon in the admin application: its day, its times of day, a moment that is typed on it | `frontend/apps/admin-app/src/salon-time.ts` |
+| The links of the header of the admin application, by the role and the salon of the address | `frontend/apps/admin-app/src/navigation.ts` |
 | The catalogue (Storybook), of the components of `ui`, of `session` and of the applications | `frontend/packages/ui/.storybook/`, `pnpm --filter @beauty-salon-frontend/ui run storybook` (port 6006) |
 | The routes of an application, inside the shared frame `AppShell`, and the roles it is for | `frontend/apps/<app>/src/App.tsx` |
 
@@ -852,6 +857,7 @@ also says that a review of somebody else was helpful, and reports one.
 | `useSession` | Who is signed in, for a screen that shows different things to different people |
 | `AccountSecurityScreen`, `PasswordChangeScreen`, `TwoFactorSetupScreen` | The security of the account of the session, the change of its password and the set-up of its second factor: screens that every application puts behind the guard, at an address of its own |
 | `PASSWORD_RULE`, `newPasswordError`, `refusedPasswordMessage` | The rule of the API for a password that is chosen, as a person is told it: for every form that chooses one |
+| `useOwnSalon`, `NoSalonNotice` | The salon of who is signed in: `platform` for `admin`, the salon of a member of the staff, or none. And what an account of a salon role that belongs to no salon is told |
 
 ```tsx
 <NotificationProvider>
@@ -885,7 +891,8 @@ also says that a review of somebody else was helpful, and reports one.
   `frontend/apps/portal-app/src/navigation.ts`): a customer of the portal
   has the search, their bookings and their page; a visitor and an account
   of another role have none, and `AppShell` is then given no `navigation`
-  (a landmark without a link says nothing). A link is the current one on
+  (a landmark without a link says nothing). The admin application gives
+  them for the salon of the address (`frontend/apps/admin-app/src/navigation.ts`). A link is the current one on
   every screen below it: the page of a salon belongs to the search, the
   page of a booking to the bookings, the form of the profile to the page
   of the customer (`isAtOrBelow`: an address that only begins with the
@@ -985,6 +992,79 @@ dashboard application at `/account/security`, which the header leads to
   takes the screen that reads it back to its loading indicator, and the
   step it showed with it.
 
+## The screens of a salon
+
+The bookings of the admin application are the example to read:
+`frontend/apps/admin-app/src/bookings/` (`day-bookings-screen.tsx` for the
+list of a day, `booking-screen.tsx` for a booking and the operations of its
+state) and `src/salons/` (the choice of a salon, the salon of an address).
+Everything of "A screen that reads from the API" and of "A screen that
+writes what it read" holds; this is what comes on top.
+
+- **The salon is in the address** (`/salons/:salonId/…`), so that a screen
+  can be passed on. A member of the staff belongs to one salon:
+  `useOwnSalon` of the session package reads it (`GET /staff-profiles/me`)
+  for `owner`, `manager` and `staff`, and says `platform` for `admin`
+  without asking. `/` replaces its entry with the bookings of the own salon
+  (`<Navigate replace>`) for a member, and is the choice of a salon for
+  `admin` (a keyword, which the API matches in the name and the
+  description). An account of a salon role that belongs to no salon (403)
+  is told so (`NoSalonNotice`), and that the invitation of an owner brings
+  it in.
+- **The salon of the address is read once, around the screens below it**
+  (`WithSalon` of `salons/with-salon.tsx`): its name is the description of
+  the `PageHeader`, and its time zone and currency go to what is shown.
+  While it is read there is the `LoadingIndicator` alone, as on a screen
+  named after what it reads: the screen inside draws its own `PageHeader`,
+  and a heading of the same title drawn anew in place of one that had the
+  focus does not take it (`useScreen` moves the focus when the title
+  changes), so the focus would be left at the top of the document. A
+  salon that is not there has a heading that says so. The API refuses a
+  member the bookings of another salon (403): the screen says that they are
+  not theirs to see and links to their own (`OtherSalonNotice`). A booking
+  of another salon under the address of this one is not found, for `admin`
+  too.
+- **The clock is the salon's.** Today is `dayAt(new Date(), salon.timezone)`,
+  and a time is the time of day there (`salon-time.ts`, with
+  `hourCycle: 'h23'`: midnight is 00:00). A `datetime-local` control is read
+  on the clock of the salon and sent in UTC (`momentOf`); a time that the
+  clock skips there is an error at the control, not a guess.
+- **A list of a day asks for that day** (`bookingDateFrom` and
+  `bookingDateTo` the same). Its conditions (`date`, `status`, `staffId`)
+  are the query of the address and replace its entry (`booking-day.ts`); a
+  day that is no day (2026-02-30, after 2999) is today. 前の日, 今日 and
+  次の日 are links of a `nav` with a name of its own.
+- **A row names what its record holds as IDs, read in bulk.** The customers
+  of a page are read in one request (`POST /customers/batch/get`,
+  `customers/customers-api.ts`). The API refuses the whole batch when one of
+  them was removed (404), and they are then read one by one. The staff and
+  the services come from the lists of the salon, read to their end. What is
+  not there is named as such (「削除された顧客」, 「一覧にないスタッフ」,
+  「削除されたメニュー」), and the row stays: its booking can still be
+  moved on.
+- **A table that goes on is `PagedTable`** (`src/components/paged-table/`):
+  how many there are and how many are shown above the table, 50 rows at a
+  time, 「さらに表示」 below it, and the focus on the link of the first row
+  that was added.
+- **What a state allows is a button of the part 「状態」**
+  (`booking-actions.ts`: `actionsOf(booking, now)`). What leaves the
+  booking open is done at once (確定, 施術の開始); what closes it for good
+  is asked first, in a `Dialog` (完了 with the times it actually took,
+  キャンセル with a reason, 無断キャンセル). What the API would refuse is
+  not offered: 無断キャンセル only once the booking has begun. A form in a
+  dialog says what is wrong before anything is sent (an end before the
+  beginning, also the one that was recorded).
+- **After an operation the answer is the booking.** It is written into the
+  query of the booking (`setQueryData`), the lists of the salon are removed
+  (`removeQueries`: no list shows the state before), a notification says
+  what was done, and the focus goes to the heading 「状態」 (`headingRef`),
+  because the button that was pressed may be gone. What can be sent again
+  is said where it was sent: on the page for 確定 and 開始, in the dialog
+  for the rest.
+- **A state changed elsewhere (409)** is said on the page, in one sentence
+  (`CHANGED_ELSEWHERE`), the dialog closes, the lists are removed and the
+  booking is read again; the focus goes to the heading 「状態」.
+
 ## Screens that a mailed link opens
 
 The API mails links to the portal (`PUBLIC_APP_URL`): `/verify-email`,
@@ -1027,6 +1107,7 @@ behind it. Their screens are in `frontend/apps/portal-app/src/account/`.
 | `Table` | A list of records |
 | `EmptyState` | What is shown where content would be, while there is none |
 | `LoadingIndicator` | What is shown where content will be, while it loads |
+| `UnreadNotice` | What is shown where content could not be read: the message the application words (`unreadMessageOf(what, reason)`), and the button that reads again |
 | `Dialog` | A question or a small form that has to be dealt with first |
 | `NotificationProvider`, `useNotifications` | The result of what the user just did |
 
@@ -1085,8 +1166,16 @@ behind it. Their screens are in `frontend/apps/portal-app/src/account/`.
   goes to the first. In a dialog with a form, the first control of the form
   stands before the actions and takes the focus. The description breaks
   a word that is longer than the dialog: it may name what somebody else
-  wrote. `onClose` is called whenever
-  it has closed; set `open` to false there. When the actions change (the
+  wrote. `onClose` is called once whenever
+  it has closed; set `open` to false there. The Escape key is heard at
+  `cancel`, at once: the browser fires `close` a task later, after which a
+  press of the same button would find the dialog still open for the
+  screen, and open nothing. It opens and closes in the
+  commit that changes `open` (`useLayoutEffect`), before the layout effects
+  of the components around it: the page behind it is inert while it is
+  open, and a screen that closes it because its answer changed what it
+  asked about moves the focus to the heading of what changed in its own
+  layout effect (the story `ClosedByItsAnswer`). When the actions change (the
   form's 「戻る」 and 「発行し直す」, then 「閉じる」 beside the new backup
   codes), each button has a `key` of its own: without one, React turns
   the button that was first into the one that is first now, and the
