@@ -1,8 +1,6 @@
-import './styles/index.css'
-
-// Components
-export * from './components/button'
-export * from './components/card'
-export * from './components/environment-banner'
-// Utility functions
-export * from './lib/utils'
+export { classNames } from './class-names'
+export { Button, type ButtonProps } from './components/button/button'
+export {
+  EnvironmentBanner,
+  type EnvironmentBannerProps,
+} from './components/environment-banner/environment-banner'

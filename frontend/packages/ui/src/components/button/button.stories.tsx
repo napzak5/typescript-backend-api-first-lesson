@@ -1,0 +1,42 @@
+import type { Meta, StoryObj } from '@storybook/react-vite'
+import { fn } from 'storybook/test'
+import { Button } from './button'
+
+const meta: Meta<typeof Button> = {
+  title: 'Components/Button',
+  component: Button,
+  args: {
+    children: '予約する',
+    onClick: fn(),
+  },
+}
+
+export default meta
+
+type Story = StoryObj<typeof meta>
+
+export const Secondary: Story = {}
+
+export const Primary: Story = {
+  args: { variant: 'primary' },
+}
+
+export const Quiet: Story = {
+  args: { variant: 'quiet', children: 'キャンセル' },
+}
+
+export const Danger: Story = {
+  args: { variant: 'danger', children: '削除する' },
+}
+
+export const Small: Story = {
+  args: { size: 'small' },
+}
+
+export const Disabled: Story = {
+  args: { variant: 'primary', disabled: true },
+}
+
+export const Pending: Story = {
+  args: { variant: 'primary', pending: true, children: '予約しています' },
+}
