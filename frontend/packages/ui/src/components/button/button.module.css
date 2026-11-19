@@ -57,6 +57,14 @@
   --button-border: transparent;
 }
 
+/* A button that says a state it switched on (`aria-pressed`), whatever its variant */
+.button[aria-pressed="true"] {
+  --button-surface: var(--color-accent-subtle);
+  --button-surface-hover: var(--color-accent-subtle);
+  --button-text: var(--color-accent-text);
+  --button-border: var(--color-accent);
+}
+
 .button {
   background-color: var(--button-surface);
   border-color: var(--button-border);

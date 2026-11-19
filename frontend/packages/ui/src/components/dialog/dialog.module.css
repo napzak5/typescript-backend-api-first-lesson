@@ -24,8 +24,10 @@
   font-size: var(--font-size-large);
 }
 
+/* The description may name what somebody else wrote: a word longer than the dialog breaks */
 .description {
   color: var(--color-text-muted);
+  overflow-wrap: anywhere;
 }
 
 .actions {

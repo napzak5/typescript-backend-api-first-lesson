@@ -1,10 +1,8 @@
-import { type FormEvent, type ReactNode, useLayoutEffect, useRef } from 'react'
+import type { FormEvent, ReactNode } from 'react'
 import { Alert } from '../alert/alert'
 import { Button } from '../button/button'
+import { type FormErrors, useErrorFocus } from './error-focus'
 import styles from './form.module.css'
-
-/** What is wrong with a value, under the name of its control. */
-export type FormErrors = Record<string, string | undefined>
 
 export type FormProps = {
   /** The controls, in the order they are filled in */
@@ -41,20 +39,6 @@ const NO_ERRORS: FormErrors = {}
  * is moved in the commit that shows the errors, before the browser paints
  * them.
  */
-/**
- * The first control that has an error. A group of radio buttons says its
- * error itself and cannot take the focus: the button that is chosen does,
- * or the first while none is, which is where the Tab key enters the group.
- */
-const firstInvalidIn = (form: HTMLFormElement | null): HTMLElement | null => {
-  const invalid = form?.querySelector<HTMLElement>('[aria-invalid="true"]')
-
-  return invalid?.getAttribute('role') === 'radiogroup'
-    ? (invalid.querySelector<HTMLElement>('input:checked') ??
-        invalid.querySelector<HTMLElement>('input'))
-    : (invalid ?? null)
-}
-
 export const Form = ({
   children,
   submitLabel,
@@ -64,13 +48,7 @@ export const Form = ({
   actions,
   onSubmit,
 }: FormProps) => {
-  const form = useRef<HTMLFormElement>(null)
-
-  useLayoutEffect(() => {
-    if (Object.values(errors).some((error) => error !== undefined)) {
-      firstInvalidIn(form.current)?.focus()
-    }
-  }, [errors])
+  const form = useErrorFocus(errors)
 
   const submit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault()
