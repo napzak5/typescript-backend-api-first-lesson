@@ -1,0 +1,167 @@
+---
+name: frontend-ui
+description: "How the frontend of this repository is styled and how its components are built: design tokens, CSS Modules, layout with CSS Grid (never flex), the shared component package @beauty-salon-frontend/ui and its Storybook. Use it before adding or changing a component, a stylesheet, a token, a story or the markup of a screen under frontend/."
+---
+
+# Frontend UI
+
+Styles are CSS Modules over design tokens, layout is CSS Grid, and components
+that more than one application uses live in one package. A check enforces the
+rules that can be checked, so a mistake fails a test instead of passing review.
+
+Tests are the subject of the skill `frontend-testing`. Read it together with
+this one: a component is not done without its stories and its test.
+
+## Where things are
+
+| What | Where |
+|------|-------|
+| Tokens (custom properties) | `frontend/packages/theme/src/tokens.css` |
+| Reset and the styles of bare elements (body, headings, links, the focus ring) | `frontend/packages/theme/src/reset.css`, `global.css` |
+| The check of the style rules | `frontend/packages/theme/src/style-rules.ts`, run by `style-rules.test.ts` over every package and app |
+| The contrast of the colour tokens | `frontend/packages/theme/src/tokens.test.ts` |
+| Shared components | `frontend/packages/ui/src/components/<name>/` |
+| The catalogue (Storybook) | `frontend/packages/ui/.storybook/`, `pnpm --filter @beauty-salon-frontend/ui run storybook` (port 6006) |
+| The frame and the routes of an application | `frontend/apps/<app>/src/App.tsx`, `App.module.css` |
+
+An application imports one stylesheet, in `src/main.tsx`:
+`@beauty-salon-frontend/theme/styles.css` (tokens, reset, bare elements). A
+component brings its own styles, so importing `Button` is all it takes.
+
+## Styling rules
+
+The name in brackets is the rule of `style-rules.ts` that fails when the rule
+is broken.
+
+1. **CSS Modules only.** A component has its styles in `<name>.module.css`
+   beside it. No Tailwind, no utility classes, no CSS-in-JS, no class name
+   written as a string in the markup (`no-tailwind`, `no-literal-class-name`).
+2. **Layout is Grid.** `display: grid` or `inline-grid`; no `flex`, no
+   `inline-flex`, no `flex-*` property, in a stylesheet or in a `style`
+   attribute (`no-flex`). The usual shapes:
+
+   | Shape | Grid |
+   |-------|------|
+   | Stack with even gaps | `display: grid; gap: var(--space-4)` |
+   | Items in a row | `display: grid; grid-auto-flow: column; justify-content: start; gap: …` |
+   | Content, then something pushed to the end | `grid-template-columns: minmax(0, 1fr) auto` |
+   | Side panel and content | `grid-template-columns: auto minmax(0, 1fr)` |
+   | Header, content that takes the rest | `grid-template-rows: auto minmax(0, 1fr)` |
+   | Centred | `display: grid; place-items: center` |
+   | Cards that wrap | `grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr))` |
+   | Label and value pairs | `grid-template-columns: max-content minmax(0, 1fr)` |
+
+   Write `minmax(0, 1fr)`, not `1fr`, for a track whose content may be long:
+   a bare `1fr` grows with its content and overflows.
+3. **A colour is a token.** No colour is written out outside `tokens.css`:
+   no hex value, no `rgb()`, no `color-mix()` (`no-raw-color`). `transparent`
+   and `currentColor` are allowed.
+4. **Components read purpose tokens.** `--color-*`, `--space-*`, `--size-*`,
+   `--radius-*`, `--shadow-*`, `--font-*`, `--line-height-*`, `--duration-*`.
+   The raw scales `--palette-*` are read by `tokens.css` alone
+   (`no-palette-token`). Spacing, radius and font size come from tokens too;
+   `0`, `1px` for a hairline and percentages are written out.
+5. **A custom property exists.** `var(--x)` names a token, or a property that
+   the same stylesheet declares, or one that the component sets in a `style`
+   attribute (`unknown-token`). A variant is a set of local properties that the
+   base class reads, as in `button.module.css`:
+
+   ```css
+   .button {
+     background-color: var(--button-surface);
+     color: var(--button-text);
+   }
+
+   .primary {
+     --button-surface: var(--color-accent);
+     --button-text: var(--color-on-accent);
+   }
+   ```
+6. **Classes and markup agree.** Every class a component reads is defined in
+   its module, and every class a module defines is read (`unknown-class`,
+   `unused-class`). The TypeScript configuration requires bracket access, and
+   several classes are joined with `classNames`:
+
+   ```tsx
+   import { classNames } from '../../class-names'
+   import styles from './button.module.css'
+
+   <button className={classNames(styles['button'], variantClass[variant], className)} />
+   ```
+7. **Class names** are camelCase and say what the element is (`.label`,
+   `.errorMessage`), or name the value of a prop (`.primary`, `.small`). A
+   state is not a class: select the attribute that already says it
+   (`:disabled`, `[aria-busy="true"]`, `[aria-current="page"]`,
+   `[data-environment="staging"]`).
+8. **Logical properties and relative units.** `inline-size`, `block-size`,
+   `margin-inline`, `padding-block`, `inset-inline-start`; `rem` for sizes.
+   Hover styles sit inside `@media (hover: hover)`.
+9. **The focus ring is global.** `global.css` draws it for `:focus-visible`.
+   A component does not remove an outline; it may move the ring with
+   `outline-offset`.
+10. **Only the theme uses cascade layers.** The reset is in the layer `reset`
+    and the styles of bare elements in `base`. The stylesheet of a component
+    is in no layer, so it wins over both in whatever order the stylesheets
+    load, and it needs no extra specificity and no `!important` to do so.
+
+### Adding a token
+
+Add the purpose token to `tokens.css`, pointing at a palette value. For a
+colour, add the pairs it is used in to `tokens.test.ts`: text on its
+background needs 4.5:1, a border of a control or a focus ring 3:1. A token
+nobody reads is removed.
+
+## Components
+
+- One directory per component: `<name>.tsx`, `<name>.module.css`,
+  `<name>.stories.tsx`, `<name>.test.tsx`. File names are kebab-case.
+- `export const Name = (props: NameProps) => …`, with `NameProps` exported.
+  A component that wraps a native element extends `ComponentProps<'element'>`,
+  passes the remaining props on and keeps a `className` it is given.
+- The element comes before ARIA: `button`, `a`, `label` with `input`, `table`,
+  `dialog`, `nav`. A control has an accessible name. What a sighted user sees
+  as a state is also an attribute (`aria-busy`, `aria-invalid`,
+  `aria-current`), and the stylesheet selects that attribute.
+- A button has `type='button'` unless it is given another type.
+- Variants are union types. Map them with a `Record<Variant, string | undefined>`
+  or match them with ts-pattern and `.exhaustive()`.
+- The rules of `CLAUDE.md` hold: no `any`, no type assertion, no type guard,
+  no `throw`; `pnpm lint` fails on them. The meta of a story is annotated
+  (`const meta: Meta<typeof Button> = { … }`), because `satisfies` is kept for
+  Zod schemas.
+- `@beauty-salon-frontend/ui` knows React and nothing else of the system: no
+  API client, no router, no query library, no text of a business domain. Text
+  comes in through props. The text of the interface is Japanese.
+- A component that one application uses stays in that application, with the
+  same four files. It moves to `ui` when a second application needs it.
+- Export a new component and its props from `frontend/packages/ui/src/index.ts`.
+
+## Adding a component
+
+1. Create the four files in `frontend/packages/ui/src/components/<name>/`.
+2. Write a story for every state worth seeing: each variant, disabled,
+   pending, empty, with an error, with long text.
+3. Write the test from the stories (`frontend-testing`).
+4. Export it from `src/index.ts`.
+5. Run the checks below and look at the stories in the catalogue.
+
+## How the package is built
+
+`pnpm --filter @beauty-salon-frontend/ui run build:prod` (rslib) writes one
+file per source file into `dist/`, with the type declarations. The stylesheet
+of a component is written beside its script, which imports it, so an
+application gets the styles of the components it uses and of no other.
+
+The build of an application reads `dist/`. Its dev server and the tests read
+the source, through the export condition `@beauty-salon-frontend/source`: a
+change of a component shows at once, and neither waits for a build.
+
+## Checks
+
+```bash
+pnpm --filter @beauty-salon-frontend/theme test   # style rules of every package and app, contrast of the tokens
+pnpm --filter @beauty-salon-frontend/ui test      # components, from their stories
+pnpm test:frontend                                # every frontend test
+pnpm lint && pnpm format:check                    # Biome, including the stylesheets
+pnpm build:prod && pnpm typecheck && pnpm knip
+```

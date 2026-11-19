@@ -78,7 +78,7 @@ For detailed architecture documentation, see [docs/architecture-overview.md](doc
 | The other domains | None: every operation of the contract is implemented |
 | Email | Implemented for the mails of the authentication flows: plain text over SMTP. Locally they are caught by Mailpit. See [docs/email.md](docs/email.md) |
 | File storage | An S3-compatible object storage holds the files of the attachments. Locally it is SeaweedFS, started by Docker Compose; which storage production uses, its bucket, its credentials and the CORS rules of the bucket are part of preparing production. See [docs/attachments.md](docs/attachments.md) |
-| Frontend apps | Application shells; they do not call the API yet, and nothing in them signs in or sends a token. The pages that the links in the mails point at do not exist yet |
+| Frontend apps | Application shells; they do not call the API yet, and nothing in them signs in or sends a token. The pages that the links in the mails point at do not exist yet. What the screens will be built from is there: design tokens, shared components in CSS Modules with their Storybook, and tests that start from the stories. See [docs/frontend-api-integration.md](docs/frontend-api-integration.md) |
 
 ## 🚀 Quick Start
 
@@ -204,6 +204,7 @@ pnpm dev:watch:portal-app    # Portal app with its packages in watch mode
 pnpm dev:watch:dashboard-app # Dashboard app with its packages in watch mode
 pnpm generate                # TypeSpec → OpenAPI → backend types + API client
 pnpm generate:watch          # Regenerate on every TypeSpec change
+pnpm --filter @beauty-salon-frontend/ui run storybook  # Component catalogue on :6006
 
 # Building
 pnpm build                   # Production build of every package
@@ -417,4 +418,6 @@ The full index is [docs/README.md](docs/README.md).
 - **Vite** - Build tool
 - **TanStack Query** - Data fetching
 - **orval** - API client generated from the OpenAPI document
-- **Tailwind CSS** - Styling
+- **CSS Modules** - Styling, over design tokens, with CSS Grid for layout
+- **Storybook** - Component catalogue; the component tests render its stories
+- **axe-core** - Accessibility checks in the tests

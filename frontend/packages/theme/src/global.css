@@ -1,0 +1,39 @@
+/*
+ * The page itself: what text looks like before a component says otherwise.
+ */
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  body {
+    min-block-size: 100dvb;
+    background-color: var(--color-surface-subtle);
+    color: var(--color-text);
+    font-family: var(--font-family);
+    font-size: var(--font-size-body);
+    font-weight: var(--font-weight-regular);
+    line-height: var(--line-height-body);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-weight: var(--font-weight-bold);
+    line-height: var(--line-height-tight);
+  }
+
+  a {
+    color: var(--color-accent-text);
+    text-underline-offset: 0.2em;
+  }
+
+  :focus-visible {
+    outline: var(--focus-ring-width) solid var(--color-focus);
+    outline-offset: var(--focus-ring-offset);
+  }
+}

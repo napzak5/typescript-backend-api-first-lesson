@@ -1,15 +1,21 @@
 import { resolve } from 'node:path'
-import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { visualizer } from 'rollup-plugin-visualizer'
-import { defineConfig } from 'vite'
+import { defaultClientConditions, defineConfig } from 'vite'
 
-export default defineConfig(({ mode }) => {
+export default defineConfig(({ command, mode }) => {
   return {
-    plugins: [react(), tailwindcss()],
+    plugins: [react()],
     resolve: {
       alias: [
         { find: '@', replacement: resolve(import.meta.dirname, './src') },
+      ],
+      // The dev server reads the workspace packages from source: a change
+      // shows at once, and no page waits for a package to be rebuilt. A build
+      // reads what the packages built.
+      conditions: [
+        ...(command === 'serve' ? ['@beauty-salon-frontend/source'] : []),
+        ...defaultClientConditions,
       ],
     },
     server: {
@@ -28,9 +34,6 @@ export default defineConfig(({ mode }) => {
             }
             if (id.includes('@tanstack/react-query')) {
               return 'react-query'
-            }
-            if (id.includes('recharts')) {
-              return 'recharts'
             }
             if (id.includes('date-fns')) {
               return 'date-fns'

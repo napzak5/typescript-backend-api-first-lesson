@@ -13,9 +13,6 @@
         "@typespec/rest",
         "@typespec/versioning"
       ]
-    },
-    "frontend/packages/ui": {
-      "ignoreDependencies": ["@beauty-salon-frontend/theme"]
     }
   }
 }

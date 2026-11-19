@@ -1,10 +1,6 @@
 import { defineConfig } from '@rslib/core'
 
 const isProduction = process.env.NODE_ENV === 'production'
-const isDevelopment = process.env.NODE_ENV === 'development'
-const isTest = process.env.NODE_ENV === 'test'
-const isStaging = process.env.NODE_ENV === 'staging'
-const isLocalhost = process.env.NODE_ENV === 'localhost'
 
 export default defineConfig({
   lib: [
@@ -12,31 +8,33 @@ export default defineConfig({
       format: 'esm',
       syntax: 'esnext',
       dts: true,
-      bundle: true,
+      // One output file per source file: a component keeps the import of its
+      // own stylesheet, so an app that imports a component gets its styles
+      bundle: false,
       output: {
         minify: isProduction,
-        sourceMap: isDevelopment || isTest || isStaging || isLocalhost,
+        sourceMap: !isProduction,
       },
     },
   ],
   source: {
     entry: {
-      index: './src/index.ts',
+      index: [
+        './src/**',
+        '!./src/**/*.test.{ts,tsx}',
+        '!./src/**/*.stories.tsx',
+      ],
     },
     tsconfigPath: './tsconfig.build.json',
   },
   output: {
+    // Without it Rslib builds for Node.js and does not handle stylesheets
+    target: 'web',
     externals: ['react', 'react-dom', 'react/jsx-runtime'],
     distPath: {
       root: 'dist',
     },
     cleanDistPath: 'auto',
-    copy: [
-      {
-        from: 'src/styles',
-        to: 'styles',
-      },
-    ],
   },
   tools: {
     swc: {
@@ -50,14 +48,4 @@ export default defineConfig({
       },
     },
   },
-  plugins: [
-    {
-      name: 'build-success',
-      setup(api) {
-        api.onAfterBuild(() => {
-          console.log('✅ @beauty-salon-frontend/ui built successfully!')
-        })
-      },
-    },
-  ],
 })

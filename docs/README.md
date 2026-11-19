@@ -56,6 +56,7 @@ instead of listing it again.
 - [TypeSpec Directory Structure](./typespec-directory-structure.md) - How `specs/` is organized
 - [OpenAPI TypeScript Usage](./openapi-typescript-usage.md) - Using the generated types in the backend
 - [Frontend API Integration](./frontend-api-integration.md) - The generated client and the frontend packages
+- [Frontend UI](../.claude/skills/frontend-ui/SKILL.md) and [Frontend Testing](../.claude/skills/frontend-testing/SKILL.md) - The skills with the rules of styling, components and frontend tests
 
 ## 🗄️ Database
 - [API-DB Type Constraints Mapping](./api-db-type-constraints-mapping.md) - How column types and constraints map to the API, and the `check:api-db` check
@@ -89,6 +90,7 @@ instead of listing it again.
 ### For Frontend Integration
 1. [Frontend API Integration](./frontend-api-integration.md)
 2. [Type Generation System](./type-generation-system.md)
+3. [Frontend UI](../.claude/skills/frontend-ui/SKILL.md) and [Frontend Testing](../.claude/skills/frontend-testing/SKILL.md)
 
 ## Contributing
 

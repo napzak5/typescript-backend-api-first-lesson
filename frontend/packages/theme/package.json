@@ -3,36 +3,23 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
-    },
-    "./styles/base": "./src/styles/base.css",
-    "./presets/tailwind": {
-      "types": "./dist/presets/tailwind.d.ts",
-      "import": "./dist/presets/tailwind.js"
-    }
+    "./styles.css": "./src/styles.css"
   },
+  "sideEffects": [
+    "**/*.css"
+  ],
   "scripts": {
-    "dev": "rslib build --watch",
-    "build:dev": "NODE_ENV=development rslib build",
-    "build:test": "NODE_ENV=test rslib build",
-    "build:stg": "NODE_ENV=staging rslib build",
-    "build:prod": "NODE_ENV=production rslib build",
-    "clean": "rm -rf dist *.tsbuildinfo",
-    "typecheck": "tsc --noEmit"
-  },
-  "dependencies": {
-    "tailwindcss-animate": "^1.0.7"
+    "clean": "rm -rf *.tsbuildinfo",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "devDependencies": {
     "@beauty-salon-shared/config": "workspace:*",
-    "@rslib/core": "^1.0.7",
     "@types/node": "^26.6.6",
-    "tailwindcss": "^4.3.5",
-    "typescript": "^7.0.2"
+    "postcss": "^8.5.33",
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.0"
   }
 }

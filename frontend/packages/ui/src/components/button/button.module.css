@@ -1,0 +1,93 @@
+/*
+ * As wide as its label: a grid item stretches by default, so the container
+ * decides the width (`justify-items`, or a column of its own).
+ */
+.button {
+  display: inline-grid;
+  grid-auto-flow: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-block-size: var(--size-control);
+  padding: 0 var(--space-4);
+  border: 1px solid transparent;
+  border-radius: var(--radius-medium);
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-tight);
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color var(--duration-short) ease,
+    border-color var(--duration-short) ease;
+}
+
+.small {
+  min-block-size: var(--size-control-small);
+  padding: 0 var(--space-3);
+  font-size: var(--font-size-small);
+}
+
+.primary {
+  --button-surface: var(--color-accent);
+  --button-surface-hover: var(--color-accent-hover);
+  --button-text: var(--color-on-accent);
+  --button-border: transparent;
+}
+
+.secondary {
+  --button-surface: var(--color-surface);
+  --button-surface-hover: var(--color-surface-sunken);
+  --button-text: var(--color-text);
+  --button-border: var(--color-border-control);
+}
+
+.quiet {
+  --button-surface: transparent;
+  --button-surface-hover: var(--color-accent-subtle);
+  --button-text: var(--color-accent-text);
+  --button-border: transparent;
+}
+
+.danger {
+  --button-surface: var(--color-danger);
+  --button-surface-hover: var(--color-danger-hover);
+  --button-text: var(--color-on-danger);
+  --button-border: transparent;
+}
+
+.button {
+  background-color: var(--button-surface);
+  border-color: var(--button-border);
+  color: var(--button-text);
+}
+
+@media (hover: hover) {
+  .button:hover {
+    background-color: var(--button-surface-hover);
+  }
+}
+
+.button:disabled,
+.button[aria-disabled="true"] {
+  background-color: var(--color-disabled-surface);
+  border-color: transparent;
+  color: var(--color-disabled);
+  cursor: not-allowed;
+}
+
+.button[aria-busy="true"]::before {
+  content: "";
+  inline-size: 1em;
+  block-size: 1em;
+  border: 2px solid currentColor;
+  border-inline-end-color: transparent;
+  border-radius: var(--radius-pill);
+  animation: turn 0.8s linear infinite;
+}
+
+@keyframes turn {
+  to {
+    rotate: 1turn;
+  }
+}

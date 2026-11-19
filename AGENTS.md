@@ -31,6 +31,7 @@ The rules that most often decide whether a change is acceptable:
 - **Files**: the files of the attachments are in an S3-compatible object storage, never in the database, and go between the client and the storage through signed URLs. Locally `make infra-up` starts SeaweedFS for it; see [docs/attachments.md](docs/attachments.md)
 - **Generated files are never edited by hand**: `specs/tsp-output/`, `backend/packages/generated/src/`, `frontend/packages/api-client/src/generated/` (from `pnpm generate`), and `backend/packages/database/src/schema.ts`, `relations.ts`, `sql/setup.sql` (from `pnpm db:introspect` and `pnpm db:generate-sql`). They are committed together with the change that caused them
 - **A migration that has been applied is never edited**: write a new file in `backend/packages/database/sql/migrations/`
+- **Frontend**: styles are CSS Modules over design tokens, layout is CSS Grid and never flex, and a component is tested from its Storybook stories, with an accessibility test for every story. The rules are the skills [frontend-ui](.claude/skills/frontend-ui/SKILL.md) and [frontend-testing](.claude/skills/frontend-testing/SKILL.md)
 
 Before reporting a task as done, run the checks CI runs:
 
@@ -60,7 +61,7 @@ The definitions are in `.claude/agents/`. The name is what a task is delegated t
 | [`senior-frontend-architect`](.claude/agents/senior-frontend-architect.md) | `frontend/` | React components and applications, state, use of the generated API client, frontend tests |
 | [`senior-ui-designer`](.claude/agents/senior-ui-designer.md) | Interface design | Layout, interaction, accessibility, the design system |
 | [`design-review-architect`](.claude/agents/design-review-architect.md) | Cross-layer review | Agreement between database, API contract, domain code and UI; compliance with `CLAUDE.md` |
-| [`documentation-specialist`](.claude/agents/documentation-specialist.md) | `docs/`, `README.md`, `CLAUDE.md`, this file, `.claude/agents/`, documents inside packages | Keeping the documentation true to the code |
+| [`documentation-specialist`](.claude/agents/documentation-specialist.md) | `docs/`, `README.md`, `CLAUDE.md`, this file, `.claude/agents/`, `.claude/skills/`, documents inside packages | Keeping the documentation true to the code |
 
 ## 🔀 Order of Work for a Feature
 

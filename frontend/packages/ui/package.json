@@ -8,16 +8,17 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
-    },
-    "./styles": "./dist/styles/index.css",
-    "./styles/index.css": "./dist/styles/index.css"
+      "@beauty-salon-frontend/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
   },
   "files": [
     "dist"
   ],
-  "sideEffects": false,
+  "sideEffects": [
+    "**/*.css"
+  ],
   "scripts": {
     "dev": "rslib build --watch",
     "build:dev": "NODE_ENV=development rslib build",
@@ -29,45 +30,34 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:ui": "vitest --ui",
     "storybook": "storybook dev -p 6006 --no-open",
     "build-storybook": "storybook build"
   },
   "dependencies": {
-    "@beauty-salon-frontend/theme": "workspace:*",
-    "@radix-ui/react-slot": "^1.5.0",
-    "class-variance-authority": "^0.7.1",
-    "clsx": "^2.1.1",
-    "react": "^19.3.1",
-    "react-dom": "^19.3.1",
-    "tailwind-merge": "^3.7.0",
     "ts-pattern": "^5.9.2"
   },
   "devDependencies": {
     "@beauty-salon-frontend/config": "workspace:*",
+    "@beauty-salon-frontend/testing": "workspace:*",
     "@beauty-salon-frontend/theme": "workspace:*",
     "@beauty-salon-shared/config": "workspace:*",
     "@rslib/core": "^1.0.7",
+    "@storybook/addon-a11y": "^10.6.7",
     "@storybook/addon-docs": "^10.6.7",
-    "@storybook/addon-onboarding": "^10.6.7",
-    "@storybook/addon-themes": "^10.6.7",
-    "@storybook/react": "^10.6.7",
     "@storybook/react-vite": "^10.6.7",
-    "@tailwindcss/vite": "^4.3.5",
     "@types/node": "^26.6.6",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
-    "@vitest/coverage-v8": "^5.1.0",
-    "@vitest/ui": "^5.1.0",
     "jsdom": "^31.0.1",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
     "storybook": "^10.6.7",
-    "tailwindcss": "^4.3.5",
     "typescript": "^7.0.2",
     "vite": "^8.3.8",
     "vitest": "^5.1.0"
   },
   "peerDependencies": {
-    "react": "^18.0.0 || ^19.0.0",
-    "react-dom": "^18.0.0 || ^19.0.0"
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
   }
 }
