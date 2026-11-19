@@ -4,6 +4,8 @@ import {
   bookingsHrefOf,
   navigationFor,
   receiptHrefOf,
+  refundHrefOf,
+  saleChangeHrefOf,
   salesHrefOf,
   salonIdIn,
 } from './navigation'
@@ -83,6 +85,8 @@ describe('navigationFor', () => {
   it.each([
     ['the ledger', SALES],
     ['the receipt of a sale', receiptHrefOf(SALON_ID, 'x')],
+    ['the change of a sale', saleChangeHrefOf(SALON_ID, 'x')],
+    ['a refund', refundHrefOf(SALON_ID, 'x', 'y')],
   ])('should mark the sales as the screen of %s', (_case, pathname) => {
     expect(navigationFor('manager', pathname)).toEqual([
       { href: BOOKINGS, label: '予約', current: false },
@@ -96,5 +100,12 @@ describe('navigationFor', () => {
 
   it('should write the address of the sales of a salon', () => {
     expect(salesHrefOf(SALON_ID)).toBe(SALES)
+  })
+
+  it('should write the addresses of the change of a sale and of the refund of its payment', () => {
+    expect([
+      saleChangeHrefOf(SALON_ID, 'sale'),
+      refundHrefOf(SALON_ID, 'sale', 'payment'),
+    ]).toEqual([`${SALES}/sale/edit`, `${SALES}/sale/payments/payment/refund`])
   })
 })

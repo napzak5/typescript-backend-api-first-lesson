@@ -55,6 +55,17 @@ export const paymentEntryHrefOf = (salonId: string, saleId: string): string =>
 export const receiptHrefOf = (salonId: string, saleId: string): string =>
   `${saleHrefOf(salonId, saleId)}/receipt`
 
+/** The screen that changes a sale: the member who took it, its time, its note. */
+export const saleChangeHrefOf = (salonId: string, saleId: string): string =>
+  `${saleHrefOf(salonId, saleId)}/edit`
+
+/** The screen that gives a payment of a sale back. */
+export const refundHrefOf = (
+  salonId: string,
+  saleId: string,
+  paymentId: string,
+): string => `${saleHrefOf(salonId, saleId)}/payments/${paymentId}/refund`
+
 /** Whether an address is that of a screen, or of one below it. */
 const isAtOrBelow = (pathname: string, screen: string): boolean =>
   pathname === screen || pathname.startsWith(`${screen}/`)

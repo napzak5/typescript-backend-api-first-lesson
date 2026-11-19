@@ -1,5 +1,6 @@
 import {
   type ModelsPaymentMethodResponse,
+  type ModelsPaymentRefundRequest,
   type ModelsPaymentResponse,
   type ModelsProblemDetails,
   type ModelsSaleCalculateRequest,
@@ -8,6 +9,9 @@ import {
   type ModelsSaleProcessRequest,
   type ModelsSaleReceiptResponse,
   type ModelsSaleResponse,
+  type ModelsSaleUpdateRequest,
+  type ModelsSaleVoidRequest,
+  paymentCrudRefund,
   paymentMethodCrudList,
   saleCrudCalculate,
   saleCrudCreate,
@@ -15,6 +19,8 @@ import {
   saleCrudGetReceipt,
   saleCrudList,
   saleCrudProcess,
+  saleCrudUpdate,
+  saleCrudVoidSale,
 } from '@beauty-salon-frontend/api-client'
 import { match, P } from 'ts-pattern'
 import * as z from 'zod/mini'
@@ -34,6 +40,8 @@ import {
 } from '../reading'
 import { type CheckoutAttempt, saleOfBooking } from './checkout'
 import type { PaymentAttempt } from './payments'
+import type { RefundAttempt } from './refunds'
+import type { SaleChangeAttempt, VoidAttempt } from './sale-changes'
 import type { LedgerConditions } from './sales-ledger'
 
 /** A value the API refused, with the rule it broke. */
@@ -82,6 +90,39 @@ export type PaymentRecording =
   | NotFound
   | Forbidden
   | Unread
+
+/**
+ * What came of changing a sale, of voiding it, and of giving a payment of
+ * it back: the sale, or the payment, as it is now.
+ */
+type SaleWrite<Written> =
+  | Written
+  | { type: 'invalid'; values: RefusedValue[] }
+  /**
+   * A change: the sale was voided, or the time zone of the salon is no
+   * name. A voiding: the sale was voided, or has a payment that was not
+   * given back. A refund: the payment was not one that was received, or
+   * was given back already. The API says which in a sentence only
+   */
+  | { type: 'conflict' }
+  | NotFound
+  | Forbidden
+  | Unread
+
+export type SaleUpdate = SaleWrite<{
+  type: 'updated'
+  sale: ModelsSaleResponse
+}>
+
+export type SaleVoiding = SaleWrite<{
+  type: 'voided'
+  sale: ModelsSaleResponse
+}>
+
+export type PaymentRefund = SaleWrite<{
+  type: 'refunded'
+  payment: ModelsPaymentResponse
+}>
 
 export type ReceiptRead =
   | { type: 'found'; receipt: ModelsSaleReceiptResponse }
@@ -292,6 +333,75 @@ export const recordPayment = async (
     .exhaustive(outsideTheContract)
 }
 
+/** Changes the properties of a sale that the request names. */
+export const updateSale = async (
+  saleId: string,
+  request: ModelsSaleUpdateRequest,
+): Promise<SaleUpdate> => {
+  const answer = await saleCrudUpdate(saleId, request).catch(() => null)
+
+  return match(answer)
+    .returnType<SaleUpdate>()
+    .with({ status: 200 }, ({ data }) => ({ type: 'updated', sale: data.data }))
+    .with({ status: 400 }, ({ data }) => ({
+      type: 'invalid',
+      values: refusedValuesOf(data),
+    }))
+    .with({ status: 409 }, () => CONFLICT)
+    .with({ status: 404 }, () => NOT_FOUND)
+    .with({ status: 403 }, () => FORBIDDEN)
+    .with({ status: P.union(413, 415) }, () => FAILED)
+    .with(UNANSWERED, unreadOf)
+    .exhaustive(outsideTheContract)
+}
+
+/** Voids a sale: it stays in the ledger, and says when and why. */
+export const voidSale = async (
+  saleId: string,
+  request: ModelsSaleVoidRequest,
+): Promise<SaleVoiding> => {
+  const answer = await saleCrudVoidSale(saleId, request).catch(() => null)
+
+  return match(answer)
+    .returnType<SaleVoiding>()
+    .with({ status: 200 }, ({ data }) => ({ type: 'voided', sale: data.data }))
+    .with({ status: 400 }, ({ data }) => ({
+      type: 'invalid',
+      values: refusedValuesOf(data),
+    }))
+    .with({ status: 409 }, () => CONFLICT)
+    .with({ status: 404 }, () => NOT_FOUND)
+    .with({ status: 403 }, () => FORBIDDEN)
+    .with({ status: P.union(413, 415) }, () => FAILED)
+    .with(UNANSWERED, unreadOf)
+    .exhaustive(outsideTheContract)
+}
+
+/** Records that a payment was given back, whole or in part. */
+export const refundPayment = async (
+  paymentId: string,
+  request: ModelsPaymentRefundRequest,
+): Promise<PaymentRefund> => {
+  const answer = await paymentCrudRefund(paymentId, request).catch(() => null)
+
+  return match(answer)
+    .returnType<PaymentRefund>()
+    .with({ status: 200 }, ({ data }) => ({
+      type: 'refunded',
+      payment: data.data,
+    }))
+    .with({ status: 400 }, ({ data }) => ({
+      type: 'invalid',
+      values: refusedValuesOf(data),
+    }))
+    .with({ status: 409 }, () => CONFLICT)
+    .with({ status: 404 }, () => NOT_FOUND)
+    .with({ status: 403 }, () => FORBIDDEN)
+    .with({ status: P.union(413, 415) }, () => FAILED)
+    .with(UNANSWERED, unreadOf)
+    .exhaustive(outsideTheContract)
+}
+
 /** The receipt of a sale, made anew every time it is asked for. */
 export const readReceipt = async (saleId: string): Promise<ReceiptRead> => {
   if (!idSchema.safeParse(saleId).success) {
@@ -405,4 +515,66 @@ export const attemptReceipt = async (
   const now = await readSale(saleId)
 
   return now.type === 'found' ? { type: 'unissued', sale: now.sale } : now
+}
+
+/**
+ * Changes a sale, and finds out why the API refused it with a conflict:
+ * the sale is read again. One that was voided meanwhile is shown as it is
+ * now; one that was not was refused for the time zone of its salon, which
+ * gives the time that was sent no day.
+ */
+export const attemptSaleChange = async (
+  saleId: string,
+  request: ModelsSaleUpdateRequest,
+): Promise<SaleChangeAttempt> => {
+  const outcome = await updateSale(saleId, request)
+  if (outcome.type !== 'conflict') {
+    return outcome
+  }
+  const now = await readSale(saleId)
+  if (now.type !== 'found') {
+    return now
+  }
+
+  return now.sale.isVoid
+    ? { type: 'refused', sale: now.sale }
+    : { type: 'undated' }
+}
+
+/**
+ * Voids a sale, and finds out why the API refused it with a conflict: the
+ * sale is read again, and shows why it is not voided.
+ */
+export const attemptVoid = async (
+  saleId: string,
+  request: ModelsSaleVoidRequest,
+): Promise<VoidAttempt> => {
+  const outcome = await voidSale(saleId, request)
+  if (outcome.type !== 'conflict') {
+    return outcome
+  }
+  const now = await readSale(saleId)
+
+  return now.type === 'found' ? { type: 'refused', sale: now.sale } : now
+}
+
+/**
+ * Gives a payment of a sale back, and finds out why the API refused it with
+ * a conflict: the sale is read again, and shows what became of the payment.
+ */
+export const attemptRefund = async (
+  saleId: string,
+  paymentId: string,
+  request: ModelsPaymentRefundRequest,
+): Promise<RefundAttempt> => {
+  const outcome = await refundPayment(paymentId, request)
+  if (outcome.type === 'refunded') {
+    return { type: 'refunded' }
+  }
+  if (outcome.type !== 'conflict') {
+    return outcome
+  }
+  const now = await readSale(saleId)
+
+  return now.type === 'found' ? { type: 'refused', sale: now.sale } : now
 }
