@@ -136,7 +136,8 @@ describe('a booking of a salon, against the API', () => {
       service: 'Full Color',
     })
     await testApi().query(
-      `update bookings set "customerRequest" = '根元を明るめに', "internalNotes" = '前回より 1 トーン上' where id = $1`,
+      `update bookings set "customerRequest" = '根元を明るめに', "internalNotes" = '前回より 1 トーン上',
+                           source = 'online', "depositAmount" = 3000 where id = $1`,
       [id],
     )
     const day = await dayFromToday(3)
@@ -158,6 +159,8 @@ describe('a booking of a salon, against the API', () => {
       ['担当', 'Mika Suzuki'],
       ['お客様の要望', '根元を明るめに'],
       ['サロン内のメモ', '前回より 1 トーン上'],
+      ['受付の経路', 'オンライン'],
+      ['予約金', '￥3,000'],
     ])
     expect(
       within(screen.getByRole('table', { name: '施術明細' }))

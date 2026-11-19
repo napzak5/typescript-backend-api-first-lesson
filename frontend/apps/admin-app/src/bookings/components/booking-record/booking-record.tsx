@@ -5,11 +5,13 @@ import type {
 import { Card, DescriptionList, Table } from '@beauty-salon-frontend/ui'
 import { customerNameOf } from '../../../customers/customers-api'
 import { dayNameOf, momentNameAt } from '../../../salon-time'
+import { NO_RECORD, sourceNameOf } from '../../booking-entry'
 import {
   amountOf,
   GONE_CUSTOMER,
   GONE_SERVICE,
   hoursOf,
+  NO_MEMBER,
   UNLISTED_STAFF,
 } from '../../booking-format'
 import { type Names, staffNameOf } from '../../day-bookings'
@@ -56,7 +58,7 @@ export const BookingRecord = ({
           },
           {
             term: 'キャンセルの理由',
-            description: booking.cancellationReason ?? '記録なし',
+            description: booking.cancellationReason ?? NO_RECORD,
           },
         ]),
     ...(booking.actualStartTime === null
@@ -119,6 +121,20 @@ export const BookingRecord = ({
               term: 'サロン内のメモ',
               description: booking.internalNotes ?? NONE,
             },
+            {
+              term: '受付の経路',
+              description:
+                booking.source === null
+                  ? NO_RECORD
+                  : sourceNameOf(booking.source),
+            },
+            {
+              term: '予約金',
+              description:
+                booking.depositAmount === null
+                  ? NO_RECORD
+                  : amountOf(booking.depositAmount, currency),
+            },
             ...happened,
           ]}
         />
@@ -139,7 +155,9 @@ export const BookingRecord = ({
               key: 'staff',
               header: '担当',
               cell: ({ staffId }) =>
-                staffNameOf(staffId, staff) ?? UNLISTED_STAFF,
+                staffId === null
+                  ? NO_MEMBER
+                  : (staffNameOf(staffId, staff) ?? UNLISTED_STAFF),
             },
             {
               key: 'hours',

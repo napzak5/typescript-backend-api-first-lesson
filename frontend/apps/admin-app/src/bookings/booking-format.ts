@@ -54,5 +54,8 @@ export const GONE_CUSTOMER = '削除された顧客'
 /** What is said of a member of the staff the salon no longer shows. */
 export const UNLISTED_STAFF = '一覧にないスタッフ'
 
+/** What is said of a line that has no member: it takes nobody's time */
+export const NO_MEMBER = '未定'
+
 /** What is said of a service that was removed. */
 export const GONE_SERVICE = '削除されたメニュー'

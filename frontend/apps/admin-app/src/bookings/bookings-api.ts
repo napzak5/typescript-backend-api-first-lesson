@@ -1,14 +1,23 @@
 import {
+  availableSlotCrudCheck,
   bookingCrudCancel,
   bookingCrudComplete,
   bookingCrudConfirm,
+  bookingCrudCreate,
+  bookingCrudDelete,
   bookingCrudGet,
   bookingCrudList,
   bookingCrudNoShow,
   bookingCrudStart,
+  bookingCrudUpdate,
+  type ModelsAvailableSlotCheckRequest,
   type ModelsBookingCancelRequest,
   type ModelsBookingCompleteRequest,
+  type ModelsBookingCreateRequest,
   type ModelsBookingResponse,
+  type ModelsBookingServiceCreateRequest,
+  type ModelsBookingUpdateRequest,
+  type ModelsProblemDetails,
 } from '@beauty-salon-frontend/api-client'
 import { match, P } from 'ts-pattern'
 import * as z from 'zod/mini'
@@ -49,6 +58,65 @@ export type StatusChange =
   | Forbidden
   | Unread
 
+/** A value the API refused, with the rule it broke. */
+export type RefusedValue = { field: string; rule: string }
+
+/** What came of creating a booking. */
+export type BookingCreation =
+  | { type: 'created'; booking: ModelsBookingResponse }
+  | { type: 'invalid'; values: RefusedValue[] }
+  /**
+   * A member of the staff is taken at a time of the booking beyond what
+   * they take at once; or the time zone of the salon is no name, which
+   * the screens of the salon could not show either. The API says which in
+   * a sentence only
+   */
+  | { type: 'conflict' }
+  | Forbidden
+  | Unread
+
+/** What came of changing what the salon wrote down on a booking. */
+export type BookingUpdate =
+  | { type: 'updated'; booking: ModelsBookingResponse }
+  | { type: 'invalid'; values: RefusedValue[] }
+  | NotFound
+  | Forbidden
+  | Unread
+
+/** What came of removing a booking from the ledger. */
+export type BookingRemoval =
+  | { type: 'deleted' }
+  /** A sale, a treatment record or a review refers to the booking: the visit took place */
+  | { type: 'referred' }
+  | NotFound
+  /** A member of the staff, who cancels a booking instead */
+  | Forbidden
+  | Unread
+
+/** Whether a member of the staff is free for a service at a time. */
+export type SlotCheck =
+  | {
+      type: 'checked'
+      /** A booking would not be refused for the member being taken */
+      isAvailable: boolean
+      /** The bookings that overlap the time, those that begin first first */
+      conflicts: string[]
+    }
+  | Unread
+
+/** What was found out about the member of the staff of a line of a booking. */
+export type LineCheck =
+  /** The line has no member: it takes nobody's time */
+  | { type: 'unassigned' }
+  /**
+   * The member is free; bookings may overlap the time still, when the
+   * member takes more than one at once
+   */
+  | { type: 'free'; overlapping: ModelsBookingResponse[] }
+  /** The member is taken by the bookings that overlap the time */
+  | { type: 'taken'; overlapping: ModelsBookingResponse[] }
+  | Unread
+
 /** How many bookings a page of the list has. */
 const BOOKINGS_PER_PAGE = 50
 
@@ -64,6 +132,19 @@ const REFUSED = P.union(
   { status: 429 },
   { status: 500 },
 )
+
+/** The same, for a request whose 400 names the values it refused */
+const UNANSWERED = P.union(
+  null,
+  { status: 401 },
+  { status: 429 },
+  { status: 500 },
+)
+
+const refusedValuesOf = ({
+  errors,
+}: Pick<ModelsProblemDetails, 'errors'>): RefusedValue[] =>
+  (errors ?? []).map(({ field, rule }) => ({ field, rule }))
 
 /** The keys of what the screens read of the bookings of a salon. */
 export const bookingListsKeyOf = (salonId: string): string[] => [
@@ -179,3 +260,126 @@ export const cancelBooking = async (
 /** Records that nobody came to a booking whose time has come. */
 export const recordNoShow = async (id: string): Promise<StatusChange> =>
   statusChangeOf(await bookingCrudNoShow(id).catch(() => null))
+
+/**
+ * Puts a booking into the ledger of a salon. The API checks that what it
+ * names belongs to the salon and that no member of the staff is taken
+ * beyond what they take at once; nothing else.
+ */
+export const createBooking = async (
+  request: ModelsBookingCreateRequest,
+): Promise<BookingCreation> => {
+  const answer = await bookingCrudCreate(request).catch(() => null)
+
+  return match(answer)
+    .returnType<BookingCreation>()
+    .with({ status: 201 }, ({ data }) => ({
+      type: 'created',
+      booking: data.data,
+    }))
+    .with({ status: 400 }, ({ data }) => ({
+      type: 'invalid',
+      values: refusedValuesOf(data),
+    }))
+    .with({ status: 409 }, () => ({ type: 'conflict' }))
+    .with({ status: 403 }, () => FORBIDDEN)
+    .with({ status: P.union(413, 415) }, () => FAILED)
+    .with(UNANSWERED, unreadOf)
+    .exhaustive(outsideTheContract)
+}
+
+/** Changes what the salon wrote down on a booking: the properties named, and no other. */
+export const updateBooking = async (
+  id: string,
+  request: ModelsBookingUpdateRequest,
+): Promise<BookingUpdate> => {
+  const answer = await bookingCrudUpdate(id, request).catch(() => null)
+
+  return match(answer)
+    .returnType<BookingUpdate>()
+    .with({ status: 200 }, ({ data }) => ({
+      type: 'updated',
+      booking: data.data,
+    }))
+    .with({ status: 400 }, ({ data }) => ({
+      type: 'invalid',
+      values: refusedValuesOf(data),
+    }))
+    .with({ status: 404 }, () => NOT_FOUND)
+    .with({ status: 403 }, () => FORBIDDEN)
+    .with({ status: P.union(413, 415) }, () => FAILED)
+    .with(UNANSWERED, unreadOf)
+    .exhaustive(outsideTheContract)
+}
+
+/** Removes a booking that should not be in the ledger, with its lines. */
+export const deleteBooking = async (id: string): Promise<BookingRemoval> => {
+  const answer = await bookingCrudDelete(id).catch(() => null)
+
+  return match(answer)
+    .returnType<BookingRemoval>()
+    .with({ status: 204 }, () => ({ type: 'deleted' }))
+    .with({ status: 409 }, () => ({ type: 'referred' }))
+    .with({ status: 404 }, () => NOT_FOUND)
+    .with({ status: 403 }, () => FORBIDDEN)
+    .with(REFUSED, unreadOf)
+    .exhaustive(outsideTheContract)
+}
+
+/**
+ * Whether a member of the staff of a salon is free for a service from a
+ * moment on. Only whether they are taken is checked, as the ledger does.
+ * A member or a service the salon no longer has is no answer a person
+ * could act on here: the form offers those the salon has.
+ */
+export const checkSlot = async (
+  salonId: string,
+  request: ModelsAvailableSlotCheckRequest,
+): Promise<SlotCheck> => {
+  const answer = await availableSlotCrudCheck(salonId, request).catch(
+    () => null,
+  )
+
+  return match(answer)
+    .returnType<SlotCheck>()
+    .with({ status: 200 }, ({ data }) => ({
+      type: 'checked',
+      isAvailable: data.data.isAvailable,
+      conflicts: data.data.conflicts,
+    }))
+    .with({ status: P.union(403, 404, 413, 415) }, () => FAILED)
+    .with(REFUSED, unreadOf)
+    .exhaustive(outsideTheContract)
+}
+
+/**
+ * Whether the member of a line is free for its service from its beginning,
+ * with the bookings that overlap it. The API names those by their IDs: each
+ * is read, and one that is gone meanwhile is left out.
+ */
+export const checkLine = async (
+  salonId: string,
+  { serviceId, staffId, startTime }: ModelsBookingServiceCreateRequest,
+): Promise<LineCheck> => {
+  if (staffId === null) {
+    return { type: 'unassigned' }
+  }
+  const check = await checkSlot(salonId, { staffId, serviceId, startTime })
+  if (check.type !== 'checked') {
+    return check
+  }
+  const reads = await Promise.all(check.conflicts.map(readBooking))
+  const unread = reads.find(
+    (read) => read.type === 'tooManyRequests' || read.type === 'failed',
+  )
+  if (unread?.type === 'tooManyRequests' || unread?.type === 'failed') {
+    return unread
+  }
+  const overlapping = reads.flatMap((read) =>
+    read.type === 'found' ? [read.booking] : [],
+  )
+
+  return check.isAvailable
+    ? { type: 'free', overlapping }
+    : { type: 'taken', overlapping }
+}

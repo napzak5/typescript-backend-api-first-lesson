@@ -12,6 +12,14 @@ export const salonIdIn = (pathname: string): string | undefined =>
 export const bookingsHrefOf = (salonId: string): string =>
   `/salons/${salonId}/bookings`
 
+/** A booking of a salon. */
+export const bookingHrefOf = (salonId: string, bookingId: string): string =>
+  `${bookingsHrefOf(salonId)}/${bookingId}`
+
+/** The screen that puts a booking into the ledger of a salon, opened on a day. */
+export const bookingEntryHrefOf = (salonId: string, date: string): string =>
+  `${bookingsHrefOf(salonId)}/new?date=${date}`
+
 /** Whether an address is that of a screen, or of one below it. */
 const isAtOrBelow = (pathname: string, screen: string): boolean =>
   pathname === screen || pathname.startsWith(`${screen}/`)

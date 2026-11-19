@@ -1,27 +1,33 @@
 import { Button, ButtonLink, TextField } from '@beauty-salon-frontend/ui'
 import { type FormEvent, useState } from 'react'
-import { LONGEST_KEYWORD } from '../../salon-choice'
-import styles from './salon-choice-form.module.css'
+import { LONGEST_KEYWORD } from '../../keyword'
+import styles from './keyword-search.module.css'
 
-export type SalonChoiceFormProps = {
+export type KeywordSearchProps = {
+  /** What is searched for, as the landmark of the search names it: 「サロンを探す」 */
+  label: string
+  /** What the keyword is looked for in, and what an empty one does */
+  description: string
   /** The keyword that is searched for: that of the address */
   keyword: string | undefined
-  /** The address of the choice without a keyword */
+  /** The address of the screen without a keyword */
   clearHref: string
-  /** Called with the values of the form when it is sent */
+  /** Called with the values of the form when it is sent: the keyword is `keyword` */
   onSubmit: (values: FormData) => void
 }
 
 /**
- * The search for a salon to choose. The field mirrors the address: it
- * shows the keyword that is searched for, and another one when the address
- * changes under it (the user went back).
+ * The search of a screen, by one keyword. The field mirrors the address:
+ * it shows the keyword that is searched for, and another one when the
+ * address changes under it (the user went back).
  */
-export const SalonChoiceForm = ({
+export const KeywordSearch = ({
+  label,
+  description,
   keyword,
   clearHref,
   onSubmit,
-}: SalonChoiceFormProps) => {
+}: KeywordSearchProps) => {
   const searched = keyword ?? ''
   const [shown, setShown] = useState({ searched, value: searched })
   if (shown.searched !== searched) {
@@ -34,7 +40,7 @@ export const SalonChoiceForm = ({
   }
 
   return (
-    <search aria-label='サロンを探す'>
+    <search aria-label={label}>
       <form className={styles['form']} onSubmit={submit}>
         <TextField
           label='キーワード'
@@ -45,7 +51,7 @@ export const SalonChoiceForm = ({
             setShown({ searched, value: event.target.value })
           }
           maxLength={LONGEST_KEYWORD}
-          description='サロンの名前か紹介文にある言葉。空欄のときは、すべてのサロンを並べます。'
+          description={description}
         />
         <div className={styles['actions']}>
           <Button type='submit' variant='primary'>
