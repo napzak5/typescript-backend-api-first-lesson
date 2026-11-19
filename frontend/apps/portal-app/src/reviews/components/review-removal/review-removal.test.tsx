@@ -73,12 +73,12 @@ describe('ReviewRemoval', () => {
     expect(stories.Asking.args.onRemove).not.toHaveBeenCalled()
   })
 
-  it('should tell its caller when the browser has closed it', async () => {
+  it('should tell its caller when the Escape key closes it', async () => {
     // Arrange
     await stories.Asking.run()
 
     // Act
-    fireEvent(dialog(), new Event('close'))
+    fireEvent(dialog(), new Event('cancel'))
 
     // Assert
     expect(stories.Asking.args.onClose).toHaveBeenCalledTimes(1)
