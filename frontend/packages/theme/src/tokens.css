@@ -106,6 +106,8 @@
   --font-family-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --font-size-small: 0.8125rem;
   --font-size-body: 0.9375rem;
+  /* What is typed into: below 16px, iOS zooms the page when the control takes focus */
+  --font-size-control: 1rem;
   --font-size-large: 1.125rem;
   --font-size-title: 1.375rem;
   --font-size-display: 1.75rem;
