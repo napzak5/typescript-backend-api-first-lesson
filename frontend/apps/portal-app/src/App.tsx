@@ -24,6 +24,8 @@ import { BookingMoveScreen } from './bookings/booking-move-screen'
 import { BookingScreen } from './bookings/booking-screen'
 import { OwnBookingsScreen } from './bookings/own-bookings-screen'
 import { navigationFor } from './navigation'
+import { MyPageScreen } from './profile/my-page-screen'
+import { ProfileScreen } from './profile/profile-screen'
 import { EVERY_ROLE } from './roles'
 import { SalonScreen } from './salons/salon-screen'
 import { SalonSearchScreen } from './salons/salon-search-screen'
@@ -94,6 +96,8 @@ export const App = () => {
               path='/bookings/:bookingId/reschedule'
               element={<BookingMoveScreen />}
             />
+            <Route path='/mypage' element={<MyPageScreen />} />
+            <Route path='/mypage/profile' element={<ProfileScreen />} />
             <Route path={SIGN_IN_PATH} element={<SignInPage />} />
             <Route path='/register' element={<RegisterScreen />} />
             <Route path='/forgot-password' element={<ForgotPasswordScreen />} />
