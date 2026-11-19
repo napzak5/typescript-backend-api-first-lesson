@@ -5,6 +5,11 @@ import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { App } from './App'
 
+/** The screens of a customer: where a service is booked, and a booking */
+const BOOKING_PATH =
+  '/salons/0b7f5c1e-3a52-4d8e-9c41-6f2e8d1a7b90/services/1a3c5e7f-9b20-4d46-8e68-0a2c4e6f8b79/booking'
+const OWN_BOOKING_PATH = '/bookings/e7092b3c-68fd-4a13-9b35-d7f902245846'
+
 const renderAt = (path: string) =>
   render(
     <QueryClientProvider client={new QueryClient()}>
@@ -133,6 +138,30 @@ describe('App', () => {
     expect(document.title).toBe(`${title} | Beauty Salon Portal`)
   })
 
+  it.each([
+    [BOOKING_PATH, '予約するには、サインインしてください。'],
+    [OWN_BOOKING_PATH, '予約を確認するには、サインインしてください。'],
+  ])(
+    'should ask for the sign-in at %s, a screen of a customer, and say what for',
+    (path, notice) => {
+      // Act
+      renderAt(path)
+
+      // Assert
+      const main = within(screen.getByRole('main'))
+      expect(
+        screen.getByRole('heading', { level: 1, name: 'サインイン' }),
+      ).toBeVisible()
+      expect(main.getByText(notice)).toBeVisible()
+      expect(
+        main.getByRole('link', { name: 'アカウントを登録' }),
+      ).toHaveAttribute('href', '/register')
+      expect(
+        main.getByRole('link', { name: 'パスワードを忘れた場合' }),
+      ).toHaveAttribute('href', '/forgot-password')
+    },
+  )
+
   it('should begin with a link that skips to the main content', () => {
     // Act
     renderAt('/sign-in')
@@ -175,6 +204,8 @@ describe('App', () => {
     '/verify-email',
     '/reset-password',
     '/accept-staff-invitation',
+    BOOKING_PATH,
+    OWN_BOOKING_PATH,
   ])('should have no accessibility violations at %s', async (path) => {
     // Arrange
     vi.stubEnv('VITE_MODE', 'staging')

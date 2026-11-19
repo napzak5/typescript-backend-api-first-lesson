@@ -1,0 +1,101 @@
+import type {
+  ModelsBookingStatusType,
+  ModelsCustomerBookingResponse,
+  ModelsServiceResponse,
+} from '@beauty-salon-frontend/api-client'
+import type { BadgeProps } from '@beauty-salon-frontend/ui'
+import { amountOf, timeOfDayAt, weekdayOf } from '../salons/salon-format'
+import { priceOf } from '../salons/salon-menu'
+
+const STATUS_NAMES: Record<ModelsBookingStatusType, string> = {
+  draft: '下書き',
+  pending: '確定待ち',
+  confirmed: '確定',
+  in_progress: '施術中',
+  completed: '完了',
+  cancelled: 'キャンセル',
+  no_show: '来店なし',
+}
+
+/** The state of a booking, in the word a customer reads. */
+export const statusNameOf = (status: ModelsBookingStatusType): string =>
+  STATUS_NAMES[status]
+
+const STATUS_TONES: Record<
+  ModelsBookingStatusType,
+  NonNullable<BadgeProps['tone']>
+> = {
+  draft: 'neutral',
+  pending: 'warning',
+  confirmed: 'success',
+  in_progress: 'info',
+  completed: 'neutral',
+  cancelled: 'neutral',
+  no_show: 'danger',
+}
+
+/** The group the state belongs to: the colour of its badge. */
+export const statusToneOf = (
+  status: ModelsBookingStatusType,
+): NonNullable<BadgeProps['tone']> => STATUS_TONES[status]
+
+const STATUS_NOTES: Record<ModelsBookingStatusType, string | undefined> = {
+  draft: 'サロンが、予約の内容を整えています。',
+  pending: 'サロンが内容を確認すると、予約が確定します。',
+  confirmed: undefined,
+  in_progress: undefined,
+  completed: undefined,
+  cancelled: undefined,
+  no_show: undefined,
+}
+
+/** What comes next, for a state whose word does not say it. */
+export const statusNoteOf = (
+  status: ModelsBookingStatusType,
+): string | undefined => STATUS_NOTES[status]
+
+/**
+ * When a booking is, at the salon: its day (「2026年11月20日金曜日」) and
+ * from when until when (「10:00〜11:00」). They are two values because a
+ * narrow screen breaks the line between them, and nowhere else.
+ */
+export const whenOf = (
+  {
+    startTime,
+    endTime,
+  }: Pick<ModelsCustomerBookingResponse, 'startTime' | 'endTime'>,
+  timezone: string,
+): { day: string; hours: string } => ({
+  day: weekdayOf(startTime, timezone),
+  hours: `${timeOfDayAt(startTime, timezone)}〜${timeOfDayAt(endTime, timezone)}`,
+})
+
+/** The price of a service in one line: 「￥5,500（税込）」, 「￥8,000〜（税別）」, 「要相談」. */
+export const priceLineOf = (
+  service: Pick<
+    ModelsServiceResponse,
+    'price' | 'discountPrice' | 'pricingStrategy' | 'taxIncluded'
+  >,
+  currency: string,
+): string => {
+  const price = priceOf(service, currency)
+
+  return price.type === 'onConsultation'
+    ? '要相談'
+    : `${price.amount}${price.orMore ? '〜' : ''}（${price.tax}）`
+}
+
+/**
+ * What a booking comes to. The tax the API names is the tax that was added
+ * to prices without it; a price that includes its tax has none to name.
+ */
+export const totalOf = (
+  {
+    totalAmount,
+    taxAmount,
+  }: Pick<ModelsCustomerBookingResponse, 'totalAmount' | 'taxAmount'>,
+  currency: string,
+): string =>
+  taxAmount > 0
+    ? `${amountOf(totalAmount, currency)}（うち消費税 ${amountOf(taxAmount, currency)}）`
+    : amountOf(totalAmount, currency)

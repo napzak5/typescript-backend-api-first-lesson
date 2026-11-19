@@ -17,7 +17,9 @@ import {
   hoursOf,
   levelNameOf,
   telephoneHrefOf,
+  timeOfDayAt,
   webAddressOf,
+  weekdayOf,
   weeklyHoursOf,
 } from './salon-format'
 
@@ -150,6 +152,45 @@ describe('dayOf', () => {
     expect(dayOf('2026-11-10T15:00:00.000Z', 'Europe/London')).toBe(
       '2026年11月10日',
     )
+  })
+})
+
+describe('weekdayOf', () => {
+  it('should write the day a moment falls on at the salon, with its day of the week', () => {
+    expect(weekdayOf('2026-11-20T01:00:00.000Z', 'Asia/Tokyo')).toBe(
+      '2026年11月20日金曜日',
+    )
+  })
+
+  it.each([
+    ['Asia/Tokyo', '2026年11月21日土曜日'],
+    ['Europe/London', '2026年11月20日金曜日'],
+    ['America/Los_Angeles', '2026年11月20日金曜日'],
+  ])('should be the day it is at a salon in %s', (timezone, day) => {
+    expect(weekdayOf('2026-11-20T15:00:00.000Z', timezone)).toBe(day)
+  })
+})
+
+describe('timeOfDayAt', () => {
+  it.each([
+    ['Asia/Tokyo', '10:00'],
+    ['Asia/Kolkata', '06:30'],
+    ['Europe/London', '01:00'],
+    ['America/Los_Angeles', '17:00'],
+  ])('should be the time of day it is at a salon in %s', (timezone, time) => {
+    expect(timeOfDayAt('2026-11-20T01:00:00.000Z', timezone)).toBe(time)
+  })
+
+  it('should write the hours and the minutes with two digits each', () => {
+    expect(timeOfDayAt('2026-11-20T00:05:00.000Z', 'Asia/Tokyo')).toBe('09:05')
+  })
+
+  it('should write midnight as 00:00, and not as the 24th hour', () => {
+    expect(timeOfDayAt('2026-11-20T15:00:00.000Z', 'Asia/Tokyo')).toBe('00:00')
+  })
+
+  it('should leave out the seconds', () => {
+    expect(timeOfDayAt('2026-11-20T01:00:59.999Z', 'Asia/Tokyo')).toBe('10:00')
   })
 })
 

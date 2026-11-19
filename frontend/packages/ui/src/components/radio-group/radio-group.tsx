@@ -11,6 +11,9 @@ export type RadioOption = {
   disabled?: boolean | undefined
 }
 
+/** One option below the other, or as many beside each other as fit. */
+export type RadioGroupLayout = 'stack' | 'columns'
+
 export type RadioGroupProps = {
   /** What is being chosen: the name of the group */
   label: string
@@ -28,14 +31,24 @@ export type RadioGroupProps = {
   error?: string | undefined
   required?: boolean | undefined
   disabled?: boolean | undefined
+  /**
+   * `columns` for many short options (the times of a day): they stand beside
+   * each other, in columns of one width, and still all in sight
+   */
+  layout?: RadioGroupLayout | undefined
   className?: string | undefined
+}
+
+const layoutClass: Record<RadioGroupLayout, string | undefined> = {
+  stack: undefined,
+  columns: styles['columns'],
 }
 
 /**
  * One choice out of a few, all of them in sight. The arrow keys move the
  * choice, as the browser does for radio buttons of one name. The label, the
  * description and the error belong to the group, not to one of its buttons.
- * For a long list, use `Select`.
+ * For a long list of long options, use `Select`.
  */
 export const RadioGroup = ({
   label,
@@ -48,6 +61,7 @@ export const RadioGroup = ({
   error,
   required = false,
   disabled = false,
+  layout = 'stack',
   className,
 }: RadioGroupProps) => {
   const id = useId()
@@ -67,7 +81,7 @@ export const RadioGroup = ({
         </span>
         {required && <RequiredMark />}
       </div>
-      <div className={styles['options']}>
+      <div className={classNames(styles['options'], layoutClass[layout])}>
         {options.map((option) => (
           <label key={option.value} className={choiceStyles['choice']}>
             <input

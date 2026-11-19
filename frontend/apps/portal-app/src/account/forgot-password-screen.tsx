@@ -2,13 +2,9 @@ import { Form, PageHeader, TextField } from '@beauty-salon-frontend/ui'
 import { useMutation } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link } from 'react-router'
+import { type FormSays, NOTHING_TO_SAY } from '../forms'
 import { requestPasswordReset } from './account-api'
-import {
-  afterRefusal,
-  type FormSays,
-  NOTHING_TO_SAY,
-  readEmail,
-} from './account-flow'
+import { afterRefusal, readEmail } from './account-flow'
 
 /**
  * Where somebody who cannot sign in asks for the mail with which a password

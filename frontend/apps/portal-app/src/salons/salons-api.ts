@@ -101,7 +101,7 @@ const unreadOf = (answer: Refused): Unread =>
 
 type ListMeta = { total: number | null; nextCursor: string | null }
 
-const pageOf = <Item>(items: Item[], meta: ListMeta): Page<Item> => ({
+export const pageOf = <Item>(items: Item[], meta: ListMeta): Page<Item> => ({
   type: 'found',
   items,
   total: meta.total,
@@ -109,14 +109,14 @@ const pageOf = <Item>(items: Item[], meta: ListMeta): Page<Item> => ({
 })
 
 /** The parameter `cursor` of a list: absent for its first page. */
-const from = (cursor: string | undefined): { cursor?: string } =>
+export const from = (cursor: string | undefined): { cursor?: string } =>
   cursor === undefined ? {} : { cursor }
 
 /**
  * Reads a list to its end, a page at a time. What stops one page stops the
  * list: half a menu is not shown as the menu.
  */
-const toTheEnd = async <Item, Stopped extends NotFound | Unread>(
+export const toTheEnd = async <Item, Stopped extends NotFound | Unread>(
   readPage: (cursor: string | undefined) => Promise<Page<Item> | Stopped>,
   cursor: string | undefined = undefined,
   read: Item[] = [],

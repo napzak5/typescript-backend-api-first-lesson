@@ -67,7 +67,16 @@ const MenuSection = ({ salon }: OfSalonProps) => {
           return groups.length === 0 ? (
             <EmptyState title='掲載中のメニューはありません' />
           ) : (
-            <ServiceMenu groups={groups} currency={salon.currency} />
+            <ServiceMenu
+              groups={groups}
+              currency={salon.currency}
+              bookingHref={
+                salon.isActive
+                  ? (service) =>
+                      `/salons/${salon.id}/services/${service.id}/booking`
+                  : undefined
+              }
+            />
           )
         })
         .with({ type: NOT_READ }, (reason) => (

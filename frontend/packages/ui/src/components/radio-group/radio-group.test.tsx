@@ -187,6 +187,36 @@ describe('RadioGroup', () => {
     expect(stories.Disabled.args.onChange).not.toHaveBeenCalled()
   })
 
+  it('should place its options one below the other unless it is asked for columns', async () => {
+    // Act
+    await stories.Default.run()
+
+    // Assert
+    const options = screen
+      .getByRole('radio', { name: '現金' })
+      .closest('label')?.parentElement
+    expect(options).toHaveClass('options')
+    expect(options).not.toHaveClass('columns')
+  })
+
+  it('should place many short options in columns, all of them in sight and in their order', async () => {
+    // Act
+    await stories.InColumns.run()
+    const group = screen.getByRole('radiogroup', { name: '開始時刻' })
+
+    // Assert
+    expect(
+      within(group).getByRole('radio', { name: '10:00' }).closest('label')
+        ?.parentElement,
+    ).toHaveClass('options', 'columns')
+    expect(
+      within(group)
+        .getAllByRole('radio')
+        .map((radio) => radio.getAttribute('value')),
+    ).toEqual(stories.InColumns.args.options?.map((option) => option.value))
+    expect(within(group).getAllByRole('radio')).toHaveLength(14)
+  })
+
   it('should keep a class its container gives it', async () => {
     // Act
     await stories.Default.run({

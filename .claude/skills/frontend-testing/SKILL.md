@@ -141,6 +141,12 @@ describe('Button', () => {
 
 - A story has no router. A link of a component is a plain `a` there: assert
   its `href`.
+- A link is found by its name, and the name of one that has an
+  `aria-label` is that label: `getByRole('link', { name:
+  'レディースカットを予約する' })`. Do not build a name from text that a
+  stylesheet hides: jsdom joins it to the text that is seen, a browser
+  puts a space between, and one of the two tests looks for a name that is
+  not there.
 - testing-library takes every `header` element for a banner, also one inside
   `main`. `PageHeader` is therefore a `div`; when a page has several regions
   of one role (`status`, `region`), look inside the one that is meant with
@@ -400,6 +406,45 @@ example to read: a search and the page of a record, rendered at an address.
 - `getAllByRole` takes one role and no pattern. What stands in a row,
   whatever its role, is `Array.from(row.children, (cell) => cell.textContent)`.
 
+### A screen that writes what it read
+
+`frontend/apps/portal-app/src/bookings/bookings.integration.test.tsx` is
+the example to read: a customer books a time that the screen read.
+
+- **The day is arranged in the database, relative to today.** What is
+  free on a day depends on the hours of the salon, on who works, and on
+  the bookings there are. The test writes the hours of one date and the
+  working hours of each member of the staff on it
+  (`openDay({ 'Hiroshi Tanaka': '10:00' })`: `opening_hours` and
+  `staff_schedules` for
+  `(now() at time zone 'Asia/Tokyo')::date + 14`, beyond the bookings of
+  the seed data), and knows from them the times the screen must offer, on
+  whatever day it runs. A date is never written out in a test.
+- **What somebody else did meanwhile is done through the API.** Between
+  the moment the screen read the times and the moment its form is sent,
+  another customer books one of them: a request with `fetch` and the
+  access token of that customer (`bookThroughApi`). The refusal the screen
+  then gets is the real one.
+- **An account in a state the seed data does not have** is made as a
+  person would make it, through the API: registered, its address confirmed
+  with the token of `testApi().mailedLink(email)`. It then signs in on the
+  screen.
+- **What was written is asserted where it is kept**: the row of
+  `bookings` (whose it is, with whom, its state and its source), besides
+  what the next screen shows.
+- **Which table to take away** for a failure is read from the repository
+  of the operation: the read of a customer's booking touches `bookings`
+  and `booking_services`, not `services`. A table that does not exist
+  fails the test at the statement.
+- **The order of a list the API sorts by ID differs from one seeded
+  database to the next.** Assert the order the screen gives it (the staff
+  by name), never the order of the answer.
+- **A date is given to its control as a value**: jsdom has no picker to
+  work, so the test sets it
+  (`fireEvent.change(control, { target: { value: date } })`), and a
+  browser test fills it (`fill(date)`). The date is the one the database
+  gave (`dayAhead`).
+
 `App.test.tsx` of an application keeps what needs no API: what somebody who
 is not signed in sees. Everything behind the sign-in is in
 `App.integration.test.tsx`, and so is a route whose screen reads from the
@@ -518,6 +563,16 @@ test.describe('the admin application', () => {
 - `selectOption` sets the value of a `select` without giving it the focus.
   A test that asserts where the focus is after a choice gives it first
   (`await control.focus()`), as a person does.
+- A path that begins on a public page and needs a session signs in on the
+  way, at the address that was asked for (`src/bookings.e2e.test.ts`): the
+  test presses the link, enters the credentials on the screen that stands
+  there, and asserts the heading of the screen it wanted. What the
+  database must hold for the path (the hours of a day) is arranged with
+  `api.query` before the page is opened, relative to today.
+- A radio button among many is found by its whole name
+  (`getByRole('radio', { name: '10:30', exact: true })`), and the keyboard
+  is taken through the group as a person takes it: Tab to the group, Space
+  for the first, the arrow keys for the next.
 - The modules of `frontend/e2e/src` that are no test files are under the
   lint prohibitions of application code: no type assertion, no type guard,
   and `node:assert` in place of `throw`.
