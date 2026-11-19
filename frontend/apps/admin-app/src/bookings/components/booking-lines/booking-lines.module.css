@@ -42,21 +42,6 @@
   grid-column: 1 / -1;
 }
 
-.check {
-  display: grid;
-  gap: var(--space-2);
-  margin: 0;
-}
-
-.verdict {
-  margin: 0;
-}
-
-.overlapping {
-  margin: 0;
-  padding-inline-start: var(--space-5);
-}
-
 .remove,
 .add {
   justify-self: start;

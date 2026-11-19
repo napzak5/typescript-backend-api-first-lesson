@@ -23,6 +23,8 @@ const meta: Meta<typeof BookingRecord> = {
     services,
     timezone: salon.timezone,
     currency: salon.currency,
+    lineHrefOf: (lineId) =>
+      `/salons/${salon.id}/bookings/d2a05e8b/services/${lineId}`,
   },
 }
 

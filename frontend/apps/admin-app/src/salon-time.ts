@@ -5,8 +5,8 @@
  */
 
 /** The first and the last day the API takes in a request */
-const EARLIEST_DAY = '1900-01-01'
-const LATEST_DAY = '2999-12-31'
+export const EARLIEST_DAY = '1900-01-01'
+export const LATEST_DAY = '2999-12-31'
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/
 

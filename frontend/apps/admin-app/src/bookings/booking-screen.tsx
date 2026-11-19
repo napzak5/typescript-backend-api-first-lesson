@@ -18,7 +18,13 @@ import { useLayoutEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import { readCustomer } from '../customers/customers-api'
-import { bookingHrefOf, bookingsHrefOf } from '../navigation'
+import {
+  bookingHrefOf,
+  bookingMoveHrefOf,
+  bookingsHrefOf,
+  lineEntryHrefOf,
+  lineHrefOf,
+} from '../navigation'
 import { NOT_FOUND, unreadMessageOf, whyUnread } from '../reading'
 import { dayNameOf, momentNameAt } from '../salon-time'
 import {
@@ -37,6 +43,7 @@ import {
 } from './booking-actions'
 import { afterRemoval } from './booking-entry'
 import { hoursOf } from './booking-format'
+import { isMovable, mayAddLine } from './booking-moves'
 import {
   type BookingRead,
   bookingKeyOf,
@@ -280,8 +287,19 @@ const BookingDetails = ({ salon, booking }: BookingDetailsProps) => {
             services={ofServices.items}
             timezone={salon.timezone}
             currency={salon.currency}
+            lineHrefOf={(lineId) => lineHrefOf(salon.id, booking.id, lineId)}
           />
           <BookingChanges
+            moveHref={
+              isMovable(booking)
+                ? bookingMoveHrefOf(salon.id, booking.id)
+                : undefined
+            }
+            lineEntryHref={
+              mayAddLine(booking)
+                ? lineEntryHrefOf(salon.id, booking.id)
+                : undefined
+            }
             notesHref={`${bookingHrefOf(salon.id, booking.id)}/edit`}
             removable={
               session.type === 'signedIn' &&

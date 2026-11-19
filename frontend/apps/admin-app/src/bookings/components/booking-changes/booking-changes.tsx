@@ -2,6 +2,10 @@ import { Alert, Button, ButtonLink, Dialog } from '@beauty-salon-frontend/ui'
 import styles from './booking-changes.module.css'
 
 export type BookingChangesProps = {
+  /** The address of the screen that moves the booking; `undefined` when it is not moved in its state */
+  moveHref?: string | undefined
+  /** The address of the screen that adds a line; `undefined` when the booking takes none */
+  lineEntryHref?: string | undefined
   /** The address of the screen that changes what the salon wrote down on the booking */
   notesHref: string
   /** The account may remove a booking: the owner, a manager, the operator of the platform */
@@ -26,12 +30,15 @@ export type BookingChangesProps = {
 }
 
 /**
- * What the salon can do with a booking beside its state: change what it
- * wrote down, on a screen of its own, and remove a booking that should not
- * be in the ledger. A removed booking is gone, so a dialog asks first, and
- * says what a removal is for; a member of the staff cancels instead.
+ * What the salon can do with a booking beside its state: move it, add a
+ * line to it, change what it wrote down, each on a screen of its own, and
+ * remove a booking that should not be in the ledger. A removed booking is
+ * gone, so a dialog asks first, and says what a removal is for; a member of
+ * the staff cancels instead.
  */
 export const BookingChanges = ({
+  moveHref,
+  lineEntryHref,
   notesHref,
   removable,
   when,
@@ -43,6 +50,16 @@ export const BookingChanges = ({
   onRemove,
 }: BookingChangesProps) => (
   <div className={styles['changes']}>
+    {moveHref !== undefined && (
+      <ButtonLink href={moveHref} variant='secondary'>
+        日時と担当を変える
+      </ButtonLink>
+    )}
+    {lineEntryHref !== undefined && (
+      <ButtonLink href={lineEntryHref} variant='secondary'>
+        施術明細を追加する
+      </ButtonLink>
+    )}
     <ButtonLink href={notesHref} variant='secondary'>
       要望とメモを変える
     </ButtonLink>

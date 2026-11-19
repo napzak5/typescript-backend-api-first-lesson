@@ -136,18 +136,28 @@ export const readNotes = (values: FormData): Read<Notes> => {
 /** Who a booking is for and when, as the form has it: the member of the booking and the lines. */
 export type Lines = Pick<ModelsBookingCreateRequest, 'staffId' | 'services'>
 
-const NOT_ON_THE_CLOCK =
+export const NOT_ON_THE_CLOCK =
   'サロンの時計で、この日にない時刻です（夏時間の始まり）。別の時刻を入力してください。'
 
-type Day = { date: string | undefined; staffId: string; timezone: string }
+/** The day of the visit, the member of the booking, and the clock the times are read on. */
+export type LineDay = {
+  /** `undefined` while the form has no day */
+  date: string | undefined
+  staffId: string
+  timezone: string
+}
 
-const readLine = (
+/**
+ * A line, from its controls, whose names `control` gives: those of a row of
+ * the form that puts a booking in, or those of the form that adds one line.
+ * It begins on the day of the visit; a line whose member is that of the
+ * booking names the member.
+ */
+export const readLine = (
   values: FormData,
-  index: number,
-  { date, staffId, timezone }: Day,
+  control: (part: keyof ModelsBookingServiceCreateRequest) => string,
+  { date, staffId, timezone }: LineDay,
 ): Read<ModelsBookingServiceCreateRequest> => {
-  const control = (part: keyof ModelsBookingServiceCreateRequest): string =>
-    lineControlOf(index, part)
   const serviceId = textOf(values, control('serviceId'))
   const time = textOf(values, control('startTime'))
   const member = textOf(values, control('staffId'))
@@ -197,7 +207,11 @@ export const readLines = (values: FormData, timezone: string): Read<Lines> => {
     SERVICE_CONTROL.test(name),
   ).length
   const lines = Array.from({ length: count }, (_, index) =>
-    readLine(values, index, { date, staffId, timezone }),
+    readLine(values, (part) => lineControlOf(index, part), {
+      date,
+      staffId,
+      timezone,
+    }),
   )
   const errors: Record<string, string> = Object.assign(
     {
@@ -306,7 +320,7 @@ export const NO_RECORD = '記録なし'
 /** What a form says about an attempt: about the whole of it, and at its controls. */
 export type FormSays = { message: string | undefined; errors: FormErrors }
 
-const TOO_MANY_REQUESTS: FormSays = {
+export const TOO_MANY_REQUESTS: FormSays = {
   message: 'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
   errors: {},
 }
@@ -348,7 +362,7 @@ const ATTEMPT_MESSAGES: Record<string, string> = {
  * What a form says of the values the API refused: at the control of each,
  * the first that names it; about the attempt for a value that has none.
  */
-const afterRefusal = (
+export const afterRefusal = (
   values: readonly RefusedValue[],
   hasControl: (field: string) => boolean,
 ): FormSays => {

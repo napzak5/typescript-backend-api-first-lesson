@@ -2,19 +2,22 @@ import type {
   ModelsBookingResponse,
   ModelsCustomerResponse,
 } from '@beauty-salon-frontend/api-client'
-import { Card, DescriptionList, Table } from '@beauty-salon-frontend/ui'
+import { Card, DescriptionList, Link, Table } from '@beauty-salon-frontend/ui'
 import { customerNameOf } from '../../../customers/customers-api'
 import { dayNameOf, momentNameAt } from '../../../salon-time'
 import { NO_RECORD, sourceNameOf } from '../../booking-entry'
 import {
   amountOf,
   GONE_CUSTOMER,
-  GONE_SERVICE,
   hoursOf,
-  NO_MEMBER,
   UNLISTED_STAFF,
 } from '../../booking-format'
-import { type Names, staffNameOf } from '../../day-bookings'
+import {
+  memberNameOf,
+  type Names,
+  serviceNameOf,
+  staffNameOf,
+} from '../../day-bookings'
 import styles from './booking-record.module.css'
 
 export type BookingRecordProps = {
@@ -30,6 +33,8 @@ export type BookingRecordProps = {
   timezone: string
   /** The currency of the salon */
   currency: string
+  /** The address of the page of a line of the booking */
+  lineHrefOf: (lineId: string) => string
 }
 
 const NONE = 'なし'
@@ -47,6 +52,7 @@ export const BookingRecord = ({
   services,
   timezone,
   currency,
+  lineHrefOf,
 }: BookingRecordProps) => {
   const happened = [
     ...(booking.cancelledAt === null
@@ -147,17 +153,16 @@ export const BookingRecord = ({
             {
               key: 'service',
               header: 'メニュー',
-              cell: ({ serviceId }) =>
-                services.find(({ id }) => id === serviceId)?.name ??
-                GONE_SERVICE,
+              cell: ({ id, serviceId }) => (
+                <Link href={lineHrefOf(id)}>
+                  {serviceNameOf(serviceId, services)}
+                </Link>
+              ),
             },
             {
               key: 'staff',
               header: '担当',
-              cell: ({ staffId }) =>
-                staffId === null
-                  ? NO_MEMBER
-                  : (staffNameOf(staffId, staff) ?? UNLISTED_STAFF),
+              cell: ({ staffId }) => memberNameOf(staffId, staff),
             },
             {
               key: 'hours',

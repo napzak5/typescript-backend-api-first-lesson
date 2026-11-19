@@ -15,14 +15,20 @@ const removeButton = (): HTMLElement =>
 describe('BookingChanges', () => {
   itShouldBeAccessibleInEveryStory(stories)
 
-  it('should lead to the change of the notes, and offer the removal', async () => {
+  it('should lead to the move, to a line that is added and to the change of the notes, and offer the removal', async () => {
     // Act
     await stories.Offered.run()
 
     // Assert
     expect(
-      screen.getByRole('link', { name: '要望とメモを変える' }),
-    ).toHaveAttribute('href', '/salons/1/bookings/2/edit')
+      screen
+        .getAllByRole('link')
+        .map((link) => [link.textContent, link.getAttribute('href')]),
+    ).toEqual([
+      ['日時と担当を変える', '/salons/1/bookings/2/reschedule'],
+      ['施術明細を追加する', '/salons/1/bookings/2/services/new'],
+      ['要望とメモを変える', '/salons/1/bookings/2/edit'],
+    ])
     expect(screen.queryByRole('dialog')).toBeNull()
 
     // Act
@@ -32,6 +38,16 @@ describe('BookingChanges', () => {
 
     // Assert
     expect(stories.Offered.args.onOpen).toHaveBeenCalledTimes(1)
+  })
+
+  it('should offer neither the move nor a line for a booking that takes neither', async () => {
+    // Act
+    await stories.Closed.run()
+
+    // Assert
+    expect(screen.getAllByRole('link').map((link) => link.textContent)).toEqual(
+      ['要望とメモを変える'],
+    )
   })
 
   it('should offer no removal to an account that may not remove', async () => {
