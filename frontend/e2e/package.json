@@ -1,0 +1,21 @@
+{
+  "name": "@beauty-salon-frontend/e2e",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "clean": "rm -rf dist test-results playwright-report *.tsbuildinfo",
+    "typecheck": "tsc --noEmit",
+    "test:e2e": "playwright test",
+    "test:e2e:install": "playwright install --only-shell chromium"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
+    "@beauty-salon-frontend/testing": "workspace:*",
+    "@beauty-salon-shared/config": "workspace:*",
+    "@playwright/test": "^1.65.1",
+    "@types/node": "^26.6.6",
+    "typescript": "^7.0.2",
+    "zod": "^4.6.7"
+  }
+}

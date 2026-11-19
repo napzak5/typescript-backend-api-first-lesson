@@ -2,9 +2,16 @@ import axe from 'axe-core'
 
 /**
  * WCAG 2.2, levels A and AA: the tags axe-core gives to the rules of each
- * version (2.0, 2.1, 2.2).
+ * version (2.0, 2.1, 2.2). The browser tests check the pages against the
+ * same rules.
  */
-const WCAG_2_2_AA = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']
+export const WCAG_2_2_AA = [
+  'wcag2a',
+  'wcag2aa',
+  'wcag21a',
+  'wcag21aa',
+  'wcag22aa',
+]
 
 /** One rule that is broken, and the elements that break it. */
 export type AccessibilityViolation = {
@@ -13,6 +20,17 @@ export type AccessibilityViolation = {
   help: string
   elements: string[]
 }
+
+/** What a failure prints of the rules that axe-core found broken. */
+export const summarizeViolations = (
+  violations: axe.Result[],
+): AccessibilityViolation[] =>
+  violations.map((violation) => ({
+    rule: violation.id,
+    impact: violation.impact ?? 'unknown',
+    help: violation.help,
+    elements: violation.nodes.map((node) => node.html),
+  }))
 
 /**
  * Runs axe-core over `root` and returns what breaks WCAG 2.2 AA; an empty
@@ -26,7 +44,7 @@ export type AccessibilityViolation = {
  * `color-contrast` is switched off: it reads the colours an element is
  * painted with, and jsdom paints nothing. The contrast of the colour tokens is
  * checked where they are defined (`theme/src/tokens.test.ts`), and the pages
- * are checked in a real browser by the end-to-end tests.
+ * are checked in a real browser by the browser tests (`frontend/e2e`).
  */
 export const findAccessibilityViolations = async (
   root: Element = document.body,
@@ -37,10 +55,5 @@ export const findAccessibilityViolations = async (
     resultTypes: ['violations'],
   })
 
-  return results.violations.map((violation) => ({
-    rule: violation.id,
-    impact: violation.impact ?? 'unknown',
-    help: violation.help,
-    elements: violation.nodes.map((node) => node.html),
-  }))
+  return summarizeViolations(results.violations)
 }

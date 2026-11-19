@@ -26,6 +26,9 @@ yarn-error.log*
 # Testing
 coverage/
 .nyc_output/
+# What a run of the browser tests leaves
+test-results/
+playwright-report/
 
 # IDE
 .idea/
