@@ -97,6 +97,22 @@ export const dayOf = (moment: string, timezone: string): string =>
     timeZone: timezone,
   }).format(new Date(moment))
 
+/** The day a moment falls on at the salon, with its day of the week: 「2026年11月20日金曜日」. */
+export const weekdayOf = (moment: string, timezone: string): string =>
+  new Intl.DateTimeFormat('ja-JP', {
+    dateStyle: 'full',
+    timeZone: timezone,
+  }).format(new Date(moment))
+
+/** The time of day it is at the salon at a moment: 「10:00」. */
+export const timeOfDayAt = (moment: string, timezone: string): string =>
+  new Intl.DateTimeFormat('ja-JP', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+    timeZone: timezone,
+  }).format(new Date(moment))
+
 /**
  * The days of the calendar of a salon from a date on, the nearest first. A
  * day that has passed is of no use to somebody who plans a visit.

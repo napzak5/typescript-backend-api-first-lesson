@@ -7,14 +7,9 @@ import {
 import { useMutation } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link } from 'react-router'
+import { type FormSays, NOTHING_TO_SAY } from '../forms'
 import { register } from './account-api'
-import {
-  afterRefusal,
-  type FormSays,
-  NOTHING_TO_SAY,
-  PASSWORD_RULE,
-  readRegistration,
-} from './account-flow'
+import { afterRefusal, PASSWORD_RULE, readRegistration } from './account-flow'
 import { VerificationSent } from './verification-sent'
 
 /**

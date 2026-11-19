@@ -41,10 +41,11 @@ describe('ServiceMenu', () => {
       [
         'レディースカット',
         'シャンプー、ブロー込み',
+        '予約する',
         '1 時間',
         '￥5,500（税込）',
       ],
-      ['キッズカット（小学生まで）', '30 分', '￥2,500（税込）'],
+      ['キッズカット（小学生まで）', '予約する', '30 分', '￥2,500（税込）'],
     ])
   })
 
@@ -57,6 +58,7 @@ describe('ServiceMenu', () => {
       [
         'フルカラー',
         '根元から毛先まで染めます。',
+        '予約する',
         '1 時間 30 分',
         '通常 ￥8,000￥7,200（税込）',
       ],
@@ -64,6 +66,7 @@ describe('ServiceMenu', () => {
         'ハイライト',
         '髪の長さと本数で、料金が変わります',
         '要カウンセリング',
+        '予約する',
         '2 時間',
         '￥12,000〜（税別）',
       ],
@@ -83,6 +86,59 @@ describe('ServiceMenu', () => {
         '2 時間 30 分',
         '要相談',
       ],
+    ])
+  })
+
+  it('should lead from a service to the screen where it is booked, by a link that names the service', async () => {
+    // Act
+    await stories.Default.run()
+
+    // Assert
+    const links = screen.getAllByRole('link')
+    expect(links.map((link) => link.getAttribute('aria-label'))).toEqual([
+      'レディースカットを予約する',
+      'キッズカット（小学生まで）を予約する',
+      'フルカラーを予約する',
+      'ハイライトを予約する',
+    ])
+    expect(links.map((link) => link.textContent)).toEqual([
+      '予約する',
+      '予約する',
+      '予約する',
+      '予約する',
+    ])
+    expect(
+      screen.getByRole('link', { name: 'レディースカットを予約する' }),
+    ).toHaveAttribute(
+      'href',
+      '/salons/0b7f5c1e-3a52-4d8e-9c41-6f2e8d1a7b90/services/1a3c5e7f-9b20-4d46-8e68-0a2c4e6f8b79/booking',
+    )
+  })
+
+  it('should lead to no booking of a service that cannot be booked online', async () => {
+    // Act
+    await stories.Default.run()
+
+    // Assert
+    expect(
+      within(screen.getByRole('list', { name: 'その他' })).queryByRole('link'),
+    ).toBeNull()
+  })
+
+  it('should lead to no booking at all when the salon takes none', async () => {
+    // Act
+    await stories.NotTakingBookings.run()
+
+    // Assert
+    expect(screen.queryByRole('link')).toBeNull()
+    expect(servicesOf('カット')).toEqual([
+      [
+        'レディースカット',
+        'シャンプー、ブロー込み',
+        '1 時間',
+        '￥5,500（税込）',
+      ],
+      ['キッズカット（小学生まで）', '30 分', '￥2,500（税込）'],
     ])
   })
 

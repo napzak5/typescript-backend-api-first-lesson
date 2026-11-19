@@ -10,14 +10,9 @@ import { useMutation } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { match, P } from 'ts-pattern'
+import { type FormSays, NOTHING_TO_SAY } from '../forms'
 import { confirmEmail, sendVerificationAgain } from './account-api'
-import {
-  afterRefusal,
-  type FormSays,
-  messageAfter,
-  NOTHING_TO_SAY,
-  readEmail,
-} from './account-flow'
+import { afterRefusal, messageAfter, readEmail } from './account-flow'
 import { useMailedToken } from './mailed-token'
 import { VerificationSent } from './verification-sent'
 

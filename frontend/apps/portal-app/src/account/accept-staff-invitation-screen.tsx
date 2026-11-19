@@ -17,6 +17,7 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { match, P } from 'ts-pattern'
+import { type FormSays, NOTHING_TO_SAY } from '../forms'
 import { EVERY_ROLE } from '../roles'
 import {
   acceptInvitation,
@@ -25,9 +26,7 @@ import {
 } from './account-api'
 import {
   afterRefusal,
-  type FormSays,
   messageAfter,
-  NOTHING_TO_SAY,
   PASSWORD_RULE,
   readNewPassword,
 } from './account-flow'

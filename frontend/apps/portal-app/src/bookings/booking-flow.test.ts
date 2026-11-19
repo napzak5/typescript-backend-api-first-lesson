@@ -1,0 +1,158 @@
+import { describe, expect, it } from 'vitest'
+import type { Time } from './booking-choice'
+import { type Asked, afterBooking, readBooking } from './booking-flow'
+
+const SALON_ID = '0b7f5c1e-3a52-4d8e-9c41-6f2e8d1a7b90'
+const SERVICE_ID = '1a3c5e7f-9b20-4d46-8e68-0a2c4e6f8b79'
+const FIRST = '6f81a3c4-e075-429b-93bd-5f7193acc0ce'
+const SECOND = '7092b4d5-f186-43ac-a4ce-60829bbdd1df'
+
+const TEN = '2026-11-24T01:00:00.000Z'
+const HALF_PAST_TEN = '2026-11-24T01:30:00.000Z'
+
+/** At 10:00 the second member of the staff is free alone; at 10:30 both are. */
+const TIMES: Time[] = [
+  { startTime: TEN, label: '10:00', staffIds: [SECOND] },
+  { startTime: HALF_PAST_TEN, label: '10:30', staffIds: [FIRST, SECOND] },
+]
+
+const ASKED: Asked = {
+  salonId: SALON_ID,
+  serviceId: SERVICE_ID,
+  staffId: undefined,
+  times: TIMES,
+}
+
+const form = (values: Record<string, string | Blob>): FormData => {
+  const data = new FormData()
+  for (const [name, value] of Object.entries(values)) {
+    data.append(name, value)
+  }
+
+  return data
+}
+
+describe('readBooking', () => {
+  it('should book the time that was chosen, at the salon and for the service of the screen', () => {
+    expect(
+      readBooking(form({ startTime: TEN, customerRequest: '' }), ASKED),
+    ).toEqual({
+      type: 'valid',
+      value: {
+        salonId: SALON_ID,
+        serviceId: SERVICE_ID,
+        staffId: SECOND,
+        startTime: TEN,
+        customerRequest: null,
+      },
+    })
+  })
+
+  it('should book with the first member of the staff who is free then, when nobody in particular was asked for', () => {
+    expect(
+      readBooking(form({ startTime: HALF_PAST_TEN }), ASKED),
+    ).toMatchObject({ value: { staffId: FIRST, startTime: HALF_PAST_TEN } })
+  })
+
+  it('should book with the member of the staff who was asked for', () => {
+    expect(
+      readBooking(form({ startTime: HALF_PAST_TEN }), {
+        ...ASKED,
+        staffId: SECOND,
+      }),
+    ).toMatchObject({ value: { staffId: SECOND } })
+  })
+
+  it('should pass on what was written for the salon, without the spaces around it', () => {
+    expect(
+      readBooking(
+        form({
+          startTime: TEN,
+          customerRequest: '  前髪は短めに。\nカラーの相談もしたいです。 \n',
+        }),
+        ASKED,
+      ),
+    ).toMatchObject({
+      value: { customerRequest: '前髪は短めに。\nカラーの相談もしたいです。' },
+    })
+  })
+
+  it.each([
+    ['nothing was written', ''],
+    ['spaces alone were written', ' \n　\t'],
+  ])('should book without a request when %s', (_case, customerRequest) => {
+    expect(
+      readBooking(form({ startTime: TEN, customerRequest }), ASKED),
+    ).toMatchObject({ value: { customerRequest: null } })
+  })
+
+  it('should book without a request when the form has no such control', () => {
+    expect(readBooking(form({ startTime: TEN }), ASKED)).toMatchObject({
+      value: { customerRequest: null },
+    })
+  })
+
+  it.each([
+    ['no time was chosen', {}],
+    ['the time is none', { startTime: '' }],
+    [
+      'the time is not among those on offer',
+      { startTime: '2026-11-24T02:00:00.000Z' },
+    ],
+    ['the time is a time of day and no moment', { startTime: '10:00' }],
+    ['the time is no text', { startTime: new Blob(['10:00']) }],
+  ])('should ask for a time, and book nothing, when %s', (_case, values) => {
+    expect(readBooking(form(values), ASKED)).toEqual({
+      type: 'invalid',
+      errors: { startTime: '開始時刻を選択してください。' },
+    })
+  })
+
+  it('should ask for a time when the day has none', () => {
+    expect(
+      readBooking(form({ startTime: TEN }), { ...ASKED, times: [] }),
+    ).toMatchObject({ type: 'invalid' })
+  })
+})
+
+describe('afterBooking', () => {
+  it('should say that the time could not be booked, without saying why, and that the times were read again', () => {
+    expect(afterBooking({ type: 'refused' })).toEqual({
+      message:
+        'この日時では、予約できませんでした。空いている時刻を読み込み直しましたので、選び直してください。予約できない状態が続くときは、サロンにお問い合わせください。',
+      errors: {},
+    })
+  })
+
+  it('should ask for the profile again when the account has none any more', () => {
+    expect(afterBooking({ type: 'noProfile' })).toEqual({
+      message:
+        'お客様の情報を読み込めませんでした。もう一度、お客様の情報を登録してください。',
+      errors: {},
+    })
+  })
+
+  it('should ask to load the page again when what was chosen is there no longer', () => {
+    expect(afterBooking({ type: 'invalid' })).toEqual({
+      message:
+        '予約できませんでした。ページを読み込み直して、もう一度お試しください。',
+      errors: {},
+    })
+  })
+
+  it('should ask to wait after too many requests', () => {
+    expect(afterBooking({ type: 'tooManyRequests' })).toEqual({
+      message:
+        'アクセスが多すぎます。しばらくしてから、もう一度お試しください。',
+      errors: {},
+    })
+  })
+
+  it('should say that nothing was sent when there was no answer to act on', () => {
+    expect(afterBooking({ type: 'failed' })).toEqual({
+      message:
+        '送信できませんでした。通信の状態を確かめて、もう一度お試しください。',
+      errors: {},
+    })
+  })
+})
