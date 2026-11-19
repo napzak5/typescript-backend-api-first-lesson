@@ -1,4 +1,6 @@
 export { keepQueriesOfOneUser } from './keep-queries-of-one-user'
-export { signIn } from './sign-in'
+export { RequireSession, type RequireSessionProps } from './require-session'
+export { SessionAccount, type SessionAccountProps } from './session-account'
+export { type SignInOutcome, signIn } from './sign-in'
 export { signOut } from './sign-out'
 export { type Session, useSession } from './use-session'

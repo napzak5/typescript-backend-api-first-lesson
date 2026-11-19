@@ -1,6 +1,6 @@
 ---
 name: frontend-testing
-description: "How frontend code of this repository is tested: stories as the entry point of component tests (composeStories from Storybook, run by Vitest in jsdom), an accessibility test for every story (axe-core), queries by role, tests of code that calls the API against the real API on a real database (*.integration.test.tsx, no stub), and the checks of the style rules and of token contrast. Use it before writing or changing a story, a *.test.tsx, a Vitest configuration or the test helpers under frontend/."
+description: "How frontend code of this repository is tested: stories as the entry point of component tests (composeStories from Storybook, run by Vitest in jsdom), an accessibility test for every story (axe-core), queries by role, tests of screens and of code that calls the API against the real API on a real database (*.integration.test.tsx, no stub), and the checks of the style rules and of token contrast. Use it before writing or changing a story, a *.test.tsx, a Vitest configuration or the test helpers under frontend/."
 ---
 
 # Frontend Testing
@@ -16,12 +16,14 @@ The styling and component rules are in the skill `frontend-ui`.
 | Subject | Test | Example |
 |---------|------|---------|
 | A component | Its stories, composed and run by Vitest in jsdom | `frontend/packages/ui/src/components/button/button.test.tsx` |
-| The frame and the routes of an application | Rendered in a `MemoryRouter` | `frontend/apps/portal-app/src/App.test.tsx` |
+| What a form does with its values and with the answer of the API | Unit tests of the pure functions | `frontend/packages/session/src/components/sign-in-screen/sign-in-flow.test.ts` |
+| The frame and the routes of an application, as somebody who is not signed in sees them | Rendered in a `MemoryRouter`; no API | `frontend/apps/portal-app/src/App.test.tsx` |
 | The style rules, for every package and app | One test in the theme package | `frontend/packages/theme/src/style-rules.test.ts` |
 | The contrast of the colour tokens | Computed from `tokens.css` | `frontend/packages/theme/src/tokens.test.ts` |
 | Modules without markup (configuration, the style rules) | Unit tests in Node | `frontend/packages/config/src/env/env.test.ts` |
 | The fetch function, the session and the generated client | In jsdom, over the real client and the real fetch function, with `fetch` itself stubbed | `frontend/packages/session/src/session.test.tsx` |
 | Code that calls the API, as it meets the real one | In jsdom, against the production application on a real PostgreSQL with the seed data; nothing is stubbed | `frontend/packages/session/src/session.integration.test.tsx` |
+| A screen, and an application with somebody signed in, worked as a user works them | The same, typed into and pressed with `@testing-library/user-event` | `frontend/packages/session/src/sign-in.integration.test.tsx`, `frontend/apps/admin-app/src/App.integration.test.tsx` |
 
 `@beauty-salon-frontend/testing` holds what the tests share: the setup
 (`@beauty-salon-frontend/testing/setup`: the matchers of jest-dom, and the
@@ -242,6 +244,64 @@ describe('the session against the API', () => {
 - Every test of a package costs a reset of the database (about a tenth of a
   second). What needs no API stays a test of the stories.
 
+### A screen
+
+A screen that calls the API is tested as its user works it: the test types
+into its controls and presses its buttons, and the requests go to the real
+API. `frontend/packages/session/src/sign-in.integration.test.tsx` is the
+example to read.
+
+```tsx
+import userEvent from '@testing-library/user-event'
+
+it('should show the screen that was asked for after signing in', async () => {
+  // Arrange
+  renderApplication()
+  const user = userEvent.setup()
+
+  // Act
+  await user.type(
+    await screen.findByRole('textbox', { name: 'メールアドレス' }),
+    'customer1@example.com',
+  )
+  await user.type(screen.getByLabelText('パスワード'), testApi().seedPassword)
+  await user.click(screen.getByRole('button', { name: 'サインイン' }))
+
+  // Assert
+  expect(
+    await screen.findByRole('heading', { level: 1, name: 'マイページ' }),
+  ).toHaveFocus()
+})
+```
+
+- Render the screen inside what it really stands in: a `QueryClientProvider`
+  with a new `QueryClient` whose queries do not retry, `NotificationProvider`,
+  and `AppShell` when the title of the document or the focus is asserted. An
+  application is rendered whole, `App` in a `MemoryRouter`.
+- `userEvent` is that of `@testing-library/user-event`, a dev dependency of
+  the package. (A test of stories takes it from `storybook/test`.)
+- Sign in on the screen when signing in is what the test is about, and with
+  `signIn(…)` of the session package when it only has to have happened.
+- Every state the screen reaches gets `findAccessibilityViolations()`: the
+  stories cover the parts, this covers the whole.
+- Assert on an element when it has been found. After the next action the
+  screen may have changed and the element is gone: two things to assert at
+  two moments are two tests, or values kept before the action.
+- A test that counts requests restores the spy (`vi.restoreAllMocks()` in
+  `afterEach`).
+- **Two-factor authentication.** A test has no authenticator app.
+  `testApi().authenticatorCode(secret)` is the code such an app shows for the
+  secret the API returned when it was set up. The API takes a code once and
+  after it only later ones: set up with the code of now, and sign in with
+  `authenticatorCode(secret, 1)` (the code of the next 30 seconds, which the
+  API takes as well) or with a backup code.
+- Run a new file a few times before trusting it: a test that waits for the
+  wrong thing passes on one run and fails on the next.
+
+`App.test.tsx` of an application keeps what needs no API: what somebody who
+is not signed in sees. Everything behind the sign-in is in
+`App.integration.test.tsx`.
+
 The test server needs a PostgreSQL: the one at `TEST_DATABASE_URL` when it is
 set (its user creates databases), otherwise a container, and so a running
 Docker daemon. When it cannot start, the run fails before the first test and
@@ -298,15 +358,27 @@ const annotations = setProjectAnnotations([preview])
 beforeAll(annotations.beforeAll)
 ```
 
+A package whose stories the catalogue of `ui` shows has no preview of its own
+and gives none (`frontend/packages/session/vitest.setup.ts`). The call is
+still needed: it is what empties the `fn()` callbacks of a story between two
+tests.
+
+```ts
+const annotations = setProjectAnnotations([])
+
+beforeAll(annotations.beforeAll)
+```
+
 A test that renders with `@testing-library/react` directly, as `App.test.tsx`
 does, needs `afterEach(cleanup)` in its `vitest.setup.ts`.
 
 A package with tests against the real API has a second configuration,
 `vitest.integration.config.ts`, and the script
 `"test:integration": "vitest run --config vitest.integration.config.ts"`
-(`frontend/packages/session`). It differs from the first in three lines, and
-`vitest.config.ts` gets `exclude: [...configDefaults.exclude, '**/*.integration.test.*']`
-so that `pnpm test` needs no database:
+(`frontend/packages/session`, and each application). It differs from the
+first in three lines, and `vitest.config.ts` gets
+`exclude: [...configDefaults.exclude, '**/*.integration.test.*']` so that
+`pnpm test` needs no database:
 
 ```ts
   test: {
@@ -316,13 +388,19 @@ so that `pnpm test` needs no database:
     globalSetup: ['@beauty-salon-frontend/testing/api/global-setup'],
     // An API for the file, a fresh database for every test
     setupFiles: [
+      '@beauty-salon-frontend/testing/setup',
       '@beauty-salon-frontend/testing/api/setup',
       './vitest.setup.ts',
     ],
+    css: {
+      // The class names of the CSS Modules, as they are written
+      modules: { classNameStrategy: 'non-scoped' },
+    },
   },
 ```
 
-`@beauty-salon-frontend/testing` is a dev dependency of such a package.
+`@beauty-salon-frontend/testing` is a dev dependency of such a package, and
+so is `@testing-library/user-event` when its tests work a screen.
 
 ## A check is shown to fail
 
@@ -339,5 +417,6 @@ pnpm test:frontend                                   # every frontend test
 pnpm test                                            # frontend and backend unit tests
 
 pnpm --filter @beauty-salon-frontend/session test:integration   # against the real API, one package
+pnpm --filter @beauty-salon-frontend/admin-app test:integration # the same for one application
 pnpm test:integration                                # every integration test, backend and frontend
 ```

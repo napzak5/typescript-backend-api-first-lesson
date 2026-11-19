@@ -126,6 +126,44 @@ describe('sessionStore', () => {
     expect(userId).toBeNull()
   })
 
+  it('should say that the session is kept', () => {
+    // Act
+    const kept = sessionStore.write(SESSION)
+
+    // Assert
+    expect(kept).toBe(true)
+  })
+
+  it('should say that the session is not kept in a browser that refuses access to its storage, and tell no listener', () => {
+    // Arrange
+    const listener = vi.fn()
+    const unsubscribe = sessionStore.subscribe(listener)
+    refuseStorage()
+
+    // Act
+    const kept = sessionStore.write(SESSION)
+
+    // Assert
+    expect(kept).toBe(false)
+    expect(listener).not.toHaveBeenCalled()
+    unsubscribe()
+  })
+
+  it('should clear the session without failing in a browser that refuses access to its storage', () => {
+    // Arrange
+    const listener = vi.fn()
+    const unsubscribe = sessionStore.subscribe(listener)
+    refuseStorage()
+
+    // Act
+    sessionStore.clear()
+
+    // Assert
+    expect(sessionStore.read()).toBeNull()
+    expect(listener).toHaveBeenCalledTimes(1)
+    unsubscribe()
+  })
+
   it('should tell its listeners when the session is written and when it is cleared', () => {
     // Arrange
     const listener = vi.fn()

@@ -21,10 +21,17 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     include: ['src/**/*.integration.test.tsx'],
+    // Starts the test server of the backend for the run, and stops it
     globalSetup: ['@beauty-salon-frontend/testing/api/global-setup'],
+    // An API for the file, a fresh database for every test
     setupFiles: [
+      '@beauty-salon-frontend/testing/setup',
       '@beauty-salon-frontend/testing/api/setup',
       './vitest.setup.ts',
     ],
+    css: {
+      // The class names of the CSS Modules, as they are written
+      modules: { classNameStrategy: 'non-scoped' },
+    },
   },
 })

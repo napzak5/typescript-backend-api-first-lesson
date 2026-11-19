@@ -35,6 +35,8 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 
 ブラウザーの側の決まり（トークンを置く場所、期限切れのあとの再発行と送り直し、複数のタブ、サインアウト）は、[フロントエンドAPI統合ガイドの「セッション」](./frontend-api-integration.md#セッション)にあります。実装は `frontend/packages/io/src/libs/session/`、`frontend/packages/io/src/libs/fetcher/fetcher.ts`、`frontend/packages/session/` です。
 
+サインインの画面（メールアドレスとパスワード、2 要素認証のコードの 2 段階）、サインインが要る画面の出し分け、アプリごとの使えるロールは、同じガイドの[「画面とサインイン」](./frontend-api-integration.md#画面とサインイン)にあります。画面が出すかどうかは表示の決まりで、操作を許すかどうかは、この文書の[認可](#認可)のとおりに API が決めます。
+
 ### 一覧と無効化
 
 ログイン中のユーザーは、自分のアカウントがどこでログインしているかを確かめ、セッションを 1 件ずつ無効にできます（OWASP Session Management Cheat Sheet: 利用者が有効なセッションの詳細を確認し、離れた場所から終了できるようにする）。1 人のユーザーが同時に持てるセッションの数に上限はありません。
@@ -738,3 +740,4 @@ curl -s http://localhost:3000/api/v1/auth/login \
 | ドメイン | `backend/packages/domain/src/models/auth.ts`（`Actor`）、`business-logic/auth/`、`business-logic/auth/_shared/actor.ts`（操作者の範囲と、どのサロンにも届かないアカウントの条件）、`business-logic/staff-invitation/`（スタッフの招待。確認、受け入れ、参加を含む）、`business-logic/staff-account/`（スタッフに紐づいたアカウント）、`repositories/{user,session,staff-invitation,staff-account}.repository.ts`、`services/`（`IPasswordHasher`、`ITokenIssuer`、`ITwoFactorAuthenticator`、`IMailer`） |
 | インフラ | `backend/packages/infrastructure/src/security/`（`Argon2PasswordHasher`、`RandomTokenIssuer`、`TotpAuthenticator`）、`mail/smtp-mailer.ts`、`repositories/{user,session,staff-invitation,staff-account}.repository.impl.ts` |
 | API | `backend/packages/api/src/shared/authentication.ts`、`shared/signed-in-user.ts`（ログ行の `userId`）、`shared/never-stored.ts`（`Cache-Control: no-store`）、`routes/auth/`、`routes/admin-auth/`、`routes/staff-invitation/`（招待された側のルーターは `/api/v1/auth/staff-invitation` にマウントする。参加のハンドラーだけが `authenticated` で包まれる）、`routes/staff-account/` |
+| フロントエンド | `frontend/packages/io/src/libs/session/`（保存と再発行）、`frontend/packages/session/src/`（`useSession`、`signIn`、`signOut`、サインインの画面 `components/sign-in-screen/` と `components/sign-in-form/`、画面の出し分け `require-session.tsx`、ヘッダーのアカウント欄 `session-account.tsx`）、各アプリの `src/App.tsx`（使えるロール） |

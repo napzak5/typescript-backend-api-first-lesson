@@ -87,13 +87,15 @@
 
   /*
    * Sizes: the height of a control, and the widths of a column of text, of a
-   * page, of a dialog and of a navigation that stands beside the content
+   * page, of a dialog, of a form with one column and of a navigation that
+   * stands beside the content
    */
   --size-control: 2.5rem;
   --size-control-small: 2rem;
   --size-text-column: 40rem;
   --size-page: 75rem;
   --size-dialog: 32rem;
+  --size-form-column: 24rem;
   --size-side-navigation: 15rem;
 
   --radius-small: 0.25rem;

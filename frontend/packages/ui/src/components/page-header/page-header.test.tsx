@@ -50,4 +50,15 @@ describe('PageHeader', () => {
     ).toHaveTextContent(/^予約台帳$/)
     expect(screen.queryByRole('link')).toBeNull()
   })
+
+  it('should leave the title of the document alone outside the frame of an application', async () => {
+    // Arrange
+    document.title = 'カタログ'
+
+    // Act
+    await stories.TitleOnly.run()
+
+    // Assert
+    expect(document.title).toBe('カタログ')
+  })
 })
