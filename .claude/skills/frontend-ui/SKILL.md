@@ -1,6 +1,6 @@
 ---
 name: frontend-ui
-description: "How the frontend of this repository is styled and how its components are built: design tokens, CSS Modules, layout with CSS Grid (never flex), the shared component package @beauty-salon-frontend/ui with its form components (label, description, error), the frame of a screen (app shell, navigation, table, dialog, notifications), how a form calls the API, how a screen reads from the API (a search kept in the address, a list that goes on, the parts of a page), how a screen writes what it read (a choice kept in the address, what is offered read anew, a refusal), the screens that need a session (sign-in, roles), the screens of a salon (the salon of the address, the clock of the salon, the operations a state allows), the screens that a mailed link opens and the Storybook. Use it before adding or changing a component, a form, a stylesheet, a token, a story or the markup of a screen under frontend/."
+description: "How the frontend of this repository is styled and how its components are built: design tokens, CSS Modules, layout with CSS Grid (never flex), the shared component package @beauty-salon-frontend/ui with its form components (label, description, error), the frame of a screen (app shell, navigation, table, dialog, notifications), how a form calls the API, how a screen reads from the API (a search kept in the address, a list that goes on, the parts of a page), how a screen writes what it read (a choice kept in the address, what is offered read anew, a refusal), the screens that need a session (sign-in, roles), the screens of a salon (the salon of the address, the clock of the salon, the operations a state allows, a bill the API works out, payments in parts, a receipt on paper), the screens that a mailed link opens and the Storybook. Use it before adding or changing a component, a form, a stylesheet, a token, a story or the markup of a screen under frontend/."
 ---
 
 # Frontend UI
@@ -35,6 +35,7 @@ this one: a component is not done without its stories and its test.
 | The salon of who is signed in (`useOwnSalon`), and what an account that belongs to none is told | `frontend/packages/session/src/salon/`, `src/components/no-salon-notice/` |
 | The screens of a salon in the admin application: the choice of a salon, and the salon of an address around the screens below it | `frontend/apps/admin-app/src/salons/` |
 | The bookings of a salon in the admin application: the list of a day, a booking and the operations of its state, a booking put in for a customer who was searched for, the change of its notes and its removal | `frontend/apps/admin-app/src/bookings/` |
+| The sales of a salon in the admin application: the checkout of a booking, the ledger of the sales, a sale with its payments, the form that records a payment, and the receipt to print | `frontend/apps/admin-app/src/sales/` |
 | A form of the admin application that searches by a keyword kept in the address (salons, customers) | `frontend/apps/admin-app/src/components/keyword-search/`, `src/keyword.ts` |
 | The clock of a salon in the admin application: its day, its times of day, a moment that is typed on it | `frontend/apps/admin-app/src/salon-time.ts` |
 | The links of the header of the admin application, by the role and the salon of the address | `frontend/apps/admin-app/src/navigation.ts` |
@@ -191,7 +192,7 @@ nobody reads is removed.
 | `PasswordField` | A password that a person chooses. Its owner may look at it (「パスワードを表示する」) |
 | `TextArea` | Several lines |
 | `Select` | One of a list. `placeholder` adds a first option without a value |
-| `RadioGroup` | One of a few choices that should all be in sight. `layout='columns'` for many short ones (the times of a day): as many columns as fit, and the arrow keys go through them in the order they are read |
+| `RadioGroup` | One of a few choices that should all be in sight. `layout='columns'` for many short ones (the times of a day): as many columns as fit, and the arrow keys go through them in the order they are read. Choices with long labels (the payment methods with what they take) stay one below the other: a label does not fit a column at 390px |
 | `Checkbox` | One thing that is so or not so |
 | `CheckboxGroup` | Several of a few choices. The chosen values are sent under one name (`formData.getAll(name)`). `layout='columns'` for many short ones |
 | `Alert` | A message about the form or the page: `info`, `success`, `warning`, `danger` |
@@ -1150,6 +1151,59 @@ writes what it read" holds; this is what comes on top.
   record is gone (`setQueryData` with `NOT_FOUND`), the lists are removed,
   and the screen leads to the list of its day.
 
+### Money: a bill the API works out, payments in parts, a receipt on paper
+
+The sales of the admin application are the example to read:
+`frontend/apps/admin-app/src/sales/` (`checkout-screen.tsx` for the sale of
+a booking, `sales-ledger-screen.tsx` for the ledger, `sale-screen.tsx` for
+a sale, `payment-entry-screen.tsx` for a payment, `receipt-screen.tsx` for
+the receipt), and the part 「会計」 of the page of a booking
+(`components/booking-sale/`).
+
+- **What belongs to a record is found from the record.** A booking has at
+  most one sale that is not voided; the part 「会計」 of its page reads the
+  sales of the booking (`GET /sales?bookingId=`, `staleTime: 0`) and shows
+  that sale, or the way to enter one in the states that take it
+  (`whyNoCheckout`), or why not. The checkout starts from the booking, at
+  an address below it (`…/bookings/:bookingId/checkout`), and the address
+  of a booking that has its sale leads to the sale.
+- **The amounts are the API's.** The screen lists what is billed (the lines
+  of the booking at the prices they copied, the services added at the
+  prices of the menu) and asks `POST /sales/calculate` whenever it
+  changes: the services added are state of the screen and part of the key
+  of the query. What the API answers is shown only when it agrees with the
+  lines on the screen (`agreesWith`: the sum of their prices and their
+  discounts); a menu that changed after it was read is said, with
+  「計算し直す」, which reads the menu again. What the request needs per
+  line and the calculation gives for the whole (the tax) is shared out by
+  the screen (`taxSharesOf` of `checkout.ts`: by the price of each line
+  that leaves the tax out, what is less than a yen dropped, the yen left
+  over one at a time from the first line), so the lines add up to the
+  total that was shown.
+- **A record a 409 may have made meanwhile is looked for.** When the API
+  refuses a sale because the booking was billed meanwhile, the screen reads
+  the sales of the booking, shows the one it finds, and says so in a
+  `warning` notification. When it refuses a payment, the sale is read
+  again and the screen says why from it (`whyNoPayment`: voided, given
+  back, paid).
+- **A choice says what it takes.** The payment methods are those the salon
+  uses (`isActive`), in its order, each labelled with what it takes at once
+  (「Credit Card（￥1,000から）」), in a `RadioGroup` one below the other. The
+  amount starts at what is left to pay; more than that, or what the chosen
+  method does not take, is said at the control before anything is sent. The
+  fields of a card are there only for a method of cards.
+- **What follows from a write is said where it leads.** After the payment
+  that makes the total, the notification says that the receipt can be
+  printed now, and the page of the sale offers it.
+- **A document that is printed** is a screen of its own, read whenever it
+  opens (the API keeps no receipt), with 「印刷する」 (`window.print()`).
+  On paper there is the document alone: `AppShell` drops its header, its
+  navigation and the link that skips to the content, the notifications
+  are not printed, and what the screen shows besides the document is in a
+  wrapper that `@media print` hides (`OnScreen` of `receipt-screen.tsx`).
+  The `PageHeader` is inside that wrapper in every state of the screen, so
+  that it stays one element and keeps the focus it took.
+
 ## Screens that a mailed link opens
 
 The API mails links to the portal (`PUBLIC_APP_URL`): `/verify-email`,
@@ -1275,6 +1329,10 @@ behind it. Their screens are in `frontend/apps/portal-app/src/account/`.
   in the form, with an `Alert`.
 - **A state is said in words.** A `Badge` holds the word (「確定」); its tone
   only groups. The current link of a `Navigation` is `aria-current="page"`.
+- **Paper is a medium of its own.** `AppShell` and the notifications have
+  rules for `@media print`; a screen that is meant to be printed hides
+  what is for the screen alone, and the browser test looks at it with
+  `page.emulateMedia({ media: 'print' })`.
 
 ## Adding a component
 

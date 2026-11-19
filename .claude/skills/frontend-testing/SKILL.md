@@ -816,6 +816,31 @@ changes and removes) add:
   the `PATCH` requests, parsed (`changesAsked`); nothing changed is no
   request at all.
 
+The sales of a salon (`frontend/apps/admin-app/src/sales/sales.integration.test.tsx`:
+the checkout of a booking, the payments and the receipt of a sale, the
+ledger) add:
+
+- **A sale is a row the test writes from its booking**
+  (`arrangeSale` of `sales/__tests__/arrangements.ts`: the lines of the
+  booking at their prices, in one statement). The seed data has no sales.
+  A sale voided or paid meanwhile is a statement (`voidSale`, `paySale`),
+  between what the screen read and what it sends: the screen meets the
+  real 409.
+- **A tax that is not in the price is a statement** on the line of the
+  booking and on the service that is added (`"taxIncluded" = false`, and a
+  price that leaves a yen over when the tax is shared): the seed data
+  prices everything with the tax in it, which leaves nothing to share.
+- **A sale the screen made is read by its booking** (`storedSaleOf`: who
+  it is for, who took it, its lines in their order with their tax), and
+  the payments by their sale (`storedPaymentsOf`).
+- **The page of a sale is waited for part by part** (`theSale`: the
+  heading, then the table of the lines): the number of the sale is below
+  the heading as soon as the sale is read, the rest once the payment
+  methods are.
+- **Printing is asked of `window.print`**, stubbed with
+  `vi.spyOn(window, 'print').mockImplementation(() => {})`: jsdom prints
+  nothing. What paper shows is a browser test.
+
 
 `App.test.tsx` of an application keeps what needs no API: what somebody who
 is not signed in sees. Everything behind the sign-in is in
@@ -1033,6 +1058,14 @@ test.describe('the admin application', () => {
 - **The first screen of the admin application is the bookings of a salon**
   (`ADMIN_START` of `src/sign-in.ts`): a test that only signs in waits for
   that heading.
+- **What is printed is looked at as a printer gets it**:
+  `page.emulateMedia({ media: 'print' })`, then the document is visible and
+  the frame, the notifications and the controls are hidden
+  (`src/admin-checkout.e2e.test.ts`). A heading that took the focus while
+  the document was read keeps it once the document is shown: asserted
+  with `toBeFocused()` after the document is there.
+- **A radio button is chosen with the keyboard**: the focus on it and
+  Space, as a person does who goes through the group with Tab.
 - The modules of `frontend/e2e/src` that are no test files are under the
   lint prohibitions of application code: no type assertion, no type guard,
   and `node:assert` in place of `throw`.
