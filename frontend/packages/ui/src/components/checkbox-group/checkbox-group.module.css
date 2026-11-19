@@ -1,0 +1,20 @@
+/*
+ * A browser sets the legend of a fieldset apart from what the fieldset lays
+ * out, so the gap below it is its own: the one a field leaves below its
+ * label.
+ */
+.legend {
+  margin-block-end: var(--space-1);
+}
+
+/* The choices, one below the other, without the gap the field leaves around them */
+.options {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* Many short options: as many columns as fit, all of one width */
+.columns {
+  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+  column-gap: var(--space-4);
+}
