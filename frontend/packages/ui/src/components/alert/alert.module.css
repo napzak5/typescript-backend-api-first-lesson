@@ -1,0 +1,34 @@
+.alert {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-4);
+  border-inline-start: var(--space-1) solid currentColor;
+  border-radius: var(--radius-small);
+  background-color: var(--alert-surface);
+  color: var(--alert-text);
+}
+
+.title {
+  font-weight: var(--font-weight-bold);
+}
+
+.info {
+  --alert-surface: var(--color-info-subtle);
+  --alert-text: var(--color-info-text);
+}
+
+.success {
+  --alert-surface: var(--color-success-subtle);
+  --alert-text: var(--color-success-text);
+}
+
+.warning {
+  --alert-surface: var(--color-warning-subtle);
+  --alert-text: var(--color-warning-text);
+}
+
+.danger {
+  --alert-surface: var(--color-danger-subtle);
+  --alert-text: var(--color-danger-text);
+}

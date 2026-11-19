@@ -100,6 +100,24 @@ describe('Button', () => {
   component. A dependency a component needs is given to it as a prop or by
   the provider it really uses.
 
+### Form controls
+
+- A control is found by its role and its label:
+  `getByRole('textbox', { name: 'お名前' })`, `'combobox'` for a select,
+  `'checkbox'`, `'radio'`, `'radiogroup'`. An input of the type `password`,
+  `date` or `time` has no role: `getByLabelText('パスワード')`.
+- What is said about a value is asserted as assistive technology hears it:
+  `toHaveAccessibleDescription('…')`, `toHaveAttribute('aria-invalid', 'true')`,
+  `toBeRequired()`.
+- `userEvent.type`, `selectOptions`, `click`, `tab` and `keyboard` act on the
+  control. The arrow keys move the choice of a radio group.
+- `userEvent` cannot press a `label` in this environment. It copies the click
+  to the control together with the `view` of the document, which under Vitest
+  is the global object of Node.js, and jsdom refuses that ("member view is not
+  of type Window"). Press a label with `fireEvent.click`: jsdom passes the
+  click on to the control, as a browser does. jsdom does not move the focus to
+  the control; that part is seen in a real browser only.
+
 ## Accessibility
 
 `findAccessibilityViolations()` runs axe-core over the document with the rules

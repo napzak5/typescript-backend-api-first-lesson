@@ -1,0 +1,6 @@
+/* Taller than a line of text, and only its height can be dragged. */
+.textArea {
+  padding-block: var(--space-2);
+  line-height: var(--line-height-body);
+  resize: vertical;
+}

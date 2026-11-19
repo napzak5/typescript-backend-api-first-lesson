@@ -1,0 +1,5 @@
+/* The choices, one below the other, without the gap the field leaves around them */
+.options {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
