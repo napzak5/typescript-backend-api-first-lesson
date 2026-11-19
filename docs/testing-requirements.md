@@ -13,21 +13,25 @@ reference for the tests of every domain that follows.
 |------|---------|-------|-------|
 | Unit | `pnpm test` | `*.test.ts` and `*.test.tsx`, in a `__tests__` directory or beside the module | Nothing |
 | Integration | `pnpm test:integration` | `*.integration.test.ts` and, in the frontend, `*.integration.test.tsx` | A PostgreSQL: the one at `TEST_DATABASE_URL`, otherwise a container started through testcontainers (Docker). The frontend tests of this kind call the API through the test server of the backend, which uses the same PostgreSQL. The mail delivery tests and the file storage tests of the `infrastructure` package always need Docker: they start a Mailpit and a SeaweedFS container through testcontainers (the storage tests use another S3-compatible storage when `TEST_STORAGE_ENDPOINT` names one) |
+| Browser | `pnpm test:e2e` | `*.e2e.test.ts` in `frontend/e2e/src` | The Chromium of Playwright (`pnpm test:e2e:install`, once), a PostgreSQL as for the integration tests, and the ports 4100 to 4103 of this machine. A run builds the three frontend applications and starts the test server of the backend |
 
-Both run on Vitest. Tests resolve the workspace packages they import from
+The unit and the integration tests run on Vitest. They resolve the workspace packages they import from
 source (the export condition `@beauty-salon-backend/source`, or
 `@beauty-salon-frontend/source` in the frontend, in the Vitest configuration),
 so they run on a fresh clone and a change in one package reaches the tests of
-another without a rebuild.
+another without a rebuild. The browser tests run on Playwright, on the
+frontend applications as they are built: `pnpm test:e2e` builds the frontend
+packages first.
+
+`CLAUDE.md` asks for end-to-end coverage of the critical paths. It has three
+parts: the API tests drive the production Express application over HTTP
+against a real database, the server tests start the real server, and the
+browser tests drive the built frontend applications against that application
+and a real database. Between them, the integration tests of the frontend call
+the same application from the code of the client.
 
 What the repository does not have:
 
-- A separate end-to-end suite. `CLAUDE.md` asks for end-to-end coverage of
-  the critical paths, and the integration tests provide it: the API tests
-  drive the production Express application over HTTP against a real database,
-  and the server tests start the real server. The integration tests of the
-  frontend call the same application from the code of the client. No test
-  drives a browser yet.
 - A coverage threshold. Coverage is not measured in CI; the requirements below
   are stated per behaviour instead of as a percentage.
 - A request mocking library, in the backend or the frontend.
@@ -74,6 +78,7 @@ show what the constraints of `services` and `service_options` refuse.
 | The session: the stored tokens, the access token on a request, the renewal after it expired (once, also for requests and tabs that find it expired together), `useSession`, signing in and out | Unit, in jsdom, over the real client and the real fetch function, with `fetch` stubbed | `frontend/packages/io/src/libs/fetcher/fetcher.session.test.ts`, `frontend/packages/session/src/session.test.tsx` |
 | Code that calls the API, against the production application on a real PostgreSQL with the seed data: the session against the real authentication endpoints, and what the tests are given (an API for each test file, a fresh copy of the database for each test, the code of an authenticator app) | Integration, in jsdom, with nothing stubbed | `frontend/packages/session/src/session.integration.test.tsx`, `frontend/packages/testing/src/api/test-api.integration.test.ts` |
 | A screen, worked as its user works it (typed into and pressed), against the same API: signing in with its two steps, what the form says about a refused attempt, the screens a session and a role open, signing out | Integration, in jsdom, with nothing stubbed | `frontend/packages/session/src/sign-in.integration.test.tsx`, `frontend/apps/admin-app/src/App.integration.test.tsx` |
+| The critical paths in a browser, on the built applications against the same API, and what only a browser shows: the layout at the width of a phone, the contrast of what is painted, the focus as the browser moves it, a reload, a second tab, a page of one origin calling the API of another | Browser test (Playwright, Chromium), with nothing stubbed | `frontend/e2e/src/sign-in.e2e.test.ts`, `frontend/e2e/src/applications.e2e.test.ts` |
 | UI components, in `ui` and in `session` | The stories of the component, composed and run in jsdom, with an accessibility test for every story | `frontend/packages/ui/src/components/button/button.test.tsx`, `frontend/packages/session/src/components/sign-in-form/sign-in-form.test.tsx` |
 | What a form does with its values and with the answer of the API | Unit, of pure functions | `frontend/packages/session/src/components/sign-in-screen/sign-in-flow.test.ts` |
 | Applications: the frame, the routes and what depends on the environment, as somebody who is not signed in sees them | Component test in a `MemoryRouter`, with an accessibility test; no API | `frontend/apps/portal-app/src/App.test.tsx` |
@@ -86,7 +91,8 @@ tested is the subject of the skill
 [frontend-testing](../.claude/skills/frontend-testing/SKILL.md). Environment
 variables are set with `vi.stubEnv`, or with `test.env` in the Vitest
 configuration of the package when every test of it needs the same value
-(`frontend/packages/api-client`). There are no browser-driven tests.
+(`frontend/packages/api-client`). The browser tests are in `frontend/e2e`;
+the same skill says what is tested there and what in jsdom.
 
 The integration tests of the frontend run against the **test server**
 (`backend/packages/api/src/__tests__/test-server/`, started with
@@ -95,7 +101,9 @@ of the tests). It creates a template database with the schema and the seed
 data, and starts an API for every test file that asks for one: the production
 `createApp` on a copy of the template and on a port of its own. After every
 test the API gets a fresh copy, so a test sees the seed data and nothing of
-another test. What a test cannot bring about through the screen or the API,
+another test. A run of the browser tests asks for one API instead: on the
+port that the applications were built for, and open to the origins of those
+applications, for a browser asks the API before a page may call it. What a test cannot bring about through the screen or the API,
 such as time having passed, it does with a statement on the database of its
 API. The server listens on the loopback address only and answers nothing
 without the token of the run; it stops, and removes its container and its
@@ -227,11 +235,14 @@ pnpm test                # every unit test (backend and frontend)
 pnpm test:backend        # unit tests of the backend packages
 pnpm test:frontend       # unit and component tests of the frontend
 pnpm test:integration    # integration tests, backend and frontend; needs Docker (TEST_DATABASE_URL replaces only the PostgreSQL container)
+pnpm test:e2e            # browser tests; needs the Chromium of `pnpm test:e2e:install` and a PostgreSQL (TEST_DATABASE_URL, or Docker)
 ```
 
 CI runs the unit tests once and the integration tests twice: against a
 PostgreSQL service through `TEST_DATABASE_URL`, and with testcontainers; the
 mail delivery tests start their Mailpit container and the file storage tests
-their SeaweedFS container in both runs. How to
+their SeaweedFS container in both runs. The browser tests run in a job of
+their own, against the PostgreSQL service; a run that fails keeps its report
+and its traces as an artifact. How to
 run one package, one file or one test is in the
 [API Testing Guide](./api-testing-guide.md).

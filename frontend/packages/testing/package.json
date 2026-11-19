@@ -8,7 +8,9 @@
     "./setup": "./src/setup.ts",
     "./api": "./src/api/index.ts",
     "./api/setup": "./src/api/setup.ts",
-    "./api/global-setup": "./src/api/global-setup.ts"
+    "./api/global-setup": "./src/api/global-setup.ts",
+    "./api/test-server": "./src/api/test-server.ts",
+    "./accessibility": "./src/accessibility.ts"
   },
   "scripts": {
     "clean": "rm -rf *.tsbuildinfo",

@@ -3,6 +3,7 @@ packages:
   - backend/apps/*
   - frontend/packages/*
   - frontend/apps/*
+  - frontend/e2e
   - shared-config
   - specs
 

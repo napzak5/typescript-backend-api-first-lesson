@@ -120,6 +120,62 @@ jobs:
         if: matrix.database == 'external'
         run: pnpm check:db-schema
 
+  # A browser on the built applications, the production API and PostgreSQL.
+  e2e:
+    name: E2E Test
+    runs-on: ubuntu-latest
+    env:
+      CI: true
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: beauty_salon_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install the browser and what it needs of the system
+        run: pnpm --filter @beauty-salon-frontend/e2e exec playwright install --with-deps --only-shell chromium
+
+      - name: Run E2E tests
+        run: pnpm test:e2e
+        env:
+          TEST_DATABASE_URL: postgres://postgres:postgres@localhost:5432/beauty_salon_test
+
+      # What the browser did in the tests that failed: `playwright show-trace`
+      - name: Upload the report and the traces of the failed tests
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-report
+          path: |
+            frontend/e2e/playwright-report
+            frontend/e2e/test-results
+          retention-days: 7
+
   build:
     name: Build
     runs-on: ubuntu-latest
@@ -158,7 +214,7 @@ jobs:
   # The images are published only for a commit on main whose checks passed.
   publish-staging-images:
     name: Publish Staging Images
-    needs: [quality, test, build]
+    needs: [quality, test, e2e, build]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     permissions:
       contents: read

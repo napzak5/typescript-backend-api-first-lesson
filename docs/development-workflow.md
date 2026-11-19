@@ -424,6 +424,7 @@ pnpm typecheck
 pnpm knip
 pnpm test
 pnpm test:integration   # Docker が必要（TEST_DATABASE_URL を設定すると PostgreSQL のコンテナは起動しない）
+pnpm test:e2e           # ブラウザーで通すテスト。先に 1 回、pnpm test:e2e:install でブラウザーを入れる
 pnpm audit --audit-level=high
 ```
 
@@ -454,9 +455,10 @@ Docker イメージのビルドも行います。イメージは、手元では 
 |--------|------|
 | `quality` | `check:versions`、`check:generated`、`check:api-db`、`lint`、`format:check`、`build:prod`、`typecheck`、`knip`。OpenAPI ドキュメントをアーティファクトとして保存する |
 | `test` | `build:prod` のあと、データベースの用意の仕方を変えて 2 通り実行する。`external`: サービスコンテナの PostgreSQL を `TEST_DATABASE_URL` で使い、単体テスト、統合テスト、`check:db-schema` を実行する。`testcontainers`: テスト自身が PostgreSQL のコンテナを起動し、統合テストだけを実行する。メール送信の統合テストは、どちらの場合も Mailpit のコンテナを、添付ファイルの保存先の統合テストは SeaweedFS のコンテナを、自分で起動する |
+| `e2e` | ブラウザーで通すテスト（`pnpm test:e2e`）。Playwright の Chromium を入れ、サービスコンテナの PostgreSQL を `TEST_DATABASE_URL` で使う。失敗したときは、レポートと、失敗したテストのトレースをアーティファクトとして保存する |
 | `build` | `pnpm build:dev`、`build:test`、`build:stg`、`build:prod` をそれぞれ実行する |
 | `security` | `pnpm audit --audit-level=high` |
-| `publish-staging-images` | `main` への push のときだけ、上の `quality`・`test`・`build` が成功したあとに `publish-images.yml` を呼び出し、staging のイメージを GitHub Container Registry に push する |
+| `publish-staging-images` | `main` への push のときだけ、上の `quality`・`test`・`e2e`・`build` が成功したあとに `publish-images.yml` を呼び出し、staging のイメージを GitHub Container Registry に push する |
 
 ### `.github/workflows/docker-validation.yml`
 
@@ -485,5 +487,7 @@ Dockerfile、`backend/`、`frontend/`、`specs/`、`shared-config/`、ロック�
 | 添付ファイルのアップロードの完了や削除が 500 になる | SeaweedFS が起動していないか、`STORAGE_*` が違う。`make infra-up` で起動する。バックエンドのログに `Failed to read the stored file` などが、原因（`cause`）と一緒に出る（[添付ファイル](./attachments.md#ストレージのエラー)） |
 | 登録や再設定のメールが届かない | Mailpit が起動していない。`make infra-up` で起動し、`http://localhost:8025` を開く。送信に失敗すると、バックエンドのログに `Failed to deliver mail` が出る（[メール送信](./email.md)）。ログに失敗がなければ、メールを送らない場合に当たっている（すでに登録済みのアドレス、直前に送ったばかりのときなど。[認証と認可](./authentication.md)） |
 | `pnpm test:integration` がコンテナを起動できない | Docker が起動していない。`TEST_DATABASE_URL` に既存の PostgreSQL を指定すれば PostgreSQL のコンテナは不要になるが、`infrastructure` パッケージのメール送信のテストは Mailpit のコンテナを、添付ファイルの保存先のテストは SeaweedFS のコンテナを起動するので、全体の実行には Docker が必要。Docker Desktop 以外（Colima など）では、ソケットの場所を環境変数で指定する（[API テストガイド](./api-testing-guide.md#running)） |
+| `pnpm test:e2e` が `Executable doesn't exist` で失敗する | Playwright のブラウザーが入っていないか、Playwright を更新した。`pnpm test:e2e:install` を実行する |
+| `pnpm test:e2e` が `is already used` または `EADDRINUSE` で失敗する | ポート 4100〜4103 のどれかが使用中。ブラウザーで通すテストは、決まったポートでしか起動しない（残っているサーバーをテストしないため）。そのポートを使っているプロセスを止める |
 | 生成された型と実装が合わない | `pnpm generate` を実行する |
 | ビルド成果物や `node_modules` が壊れている | `pnpm clean` でビルド成果物を削除する。`pnpm fresh` はビルド成果物と `node_modules` を削除して再インストールする |

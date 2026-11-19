@@ -5,6 +5,13 @@ import { z } from 'zod'
 import { stepAt, totp } from '../_shared/two-factor-helpers'
 import type { TestApis } from './test-apis'
 
+const apiSchema = z.strictObject({
+  /** The port the API listens on, or `null` for a free one */
+  port: z.union([z.int().min(1).max(65_535), z.null()]),
+  /** The origins whose pages may call the API from a browser */
+  corsOrigins: z.array(z.string().regex(/^https?:\/\/[^/]+$/)),
+})
+
 const statementSchema = z.strictObject({
   text: z.string().min(1),
   values: z.array(z.union([z.string(), z.number(), z.boolean(), z.null()])),
@@ -23,8 +30,11 @@ const digest = (text: string): Buffer =>
 /**
  * What the tests ask the test server for, over HTTP:
  *
- * - `POST /apis` starts an API and answers 201 with its `id`, its `origin`
- *   and `seedPassword`, the password of the accounts of the seed data
+ * - `POST /apis` starts an API for `{ port, corsOrigins }` and answers 201
+ *   with its `id`, its `origin` and `seedPassword`, the password of the
+ *   accounts of the seed data. `port` is the port to listen on, or `null`
+ *   for a free one; `corsOrigins` are the origins whose pages may call the
+ *   API from a browser. It answers 409 when the port is taken
  * - `POST /apis/{id}/reset` gives it a fresh database (204)
  * - `POST /apis/{id}/query` runs `{ text, values }` on its database and
  *   answers with `{ rows }`: for what a test cannot bring about through the
@@ -38,7 +48,8 @@ const digest = (text: string): Buffer =>
  * server was started with: a statement runs with the rights of the database
  * role of the tests, so only the process that started the server may send
  * one. A page in a browser cannot send that header to another origin, for
- * this application answers no preflight request.
+ * this application answers no preflight request: `corsOrigins` opens an API
+ * to the pages of the applications under test, never this application.
  */
 export const createControl = (
   apis: TestApis,
@@ -57,8 +68,21 @@ export const createControl = (
   })
   control.use(express.json())
 
-  control.post('/apis', async (_req, res) => {
-    res.status(201).json({ ...(await apis.create()), seedPassword })
+  control.post('/apis', async (req, res) => {
+    const asked = apiSchema.safeParse(req.body)
+    if (!asked.success) {
+      res.status(400).json({ issues: asked.error.issues })
+      return
+    }
+
+    match(await apis.create(asked.data))
+      .with({ type: 'created' }, ({ id, origin }) =>
+        res.status(201).json({ id, origin, seedPassword }),
+      )
+      .with({ type: 'notListening' }, ({ message }) =>
+        res.status(409).json({ message }),
+      )
+      .exhaustive()
   })
 
   control.post('/apis/:id/reset', async (req, res) => {

@@ -2291,11 +2291,13 @@ See [Authentication and Authorization](./authentication.md).
 |---------|-----------|---------------------|
 | `pnpm test` | Unit tests (Vitest), no external services | Next to the code: in `__tests__` directories, or as `*.test.ts(x)` files beside the module |
 | `pnpm test:integration` | Tests against a real PostgreSQL: the one at `TEST_DATABASE_URL`, otherwise a testcontainers container. The tests of the infrastructure package send mail to a real SMTP server and files to a real S3-compatible storage instead: a Mailpit and a SeaweedFS container they start through testcontainers | `backend/packages/api/src/__tests__` (the HTTP API through the production `createApp`, one database per test), `backend/apps/server/src/__tests__` (start-up and shutdown), `backend/packages/database/src/scripts/__tests__` (the migration runner), `backend/packages/infrastructure/src/mail/__tests__` (mail delivery), `backend/packages/infrastructure/src/storage/__tests__` (the file storage), `frontend/packages/*/src/**/*.integration.test.ts(x)` (frontend code against the production API, which the test server in `backend/packages/api/src/__tests__/test-server` starts on a copy of a seeded database for every test file) |
+| `pnpm test:e2e` | Browser tests (Playwright, Chromium) on the three frontend applications as they are built, which call the production application on a real PostgreSQL through the same test server | `frontend/e2e/src` (`*.e2e.test.ts`) |
 
-There is no separate end-to-end suite: the API integration tests drive the
+End-to-end coverage has three parts: the API integration tests drive the
 production application over HTTP, the server tests start the real server, and
-the integration tests of the frontend call that application from the code of
-the client. No test drives a browser.
+the browser tests go from a screen of a built frontend application to the
+database. Between them, the integration tests of the frontend call that
+application from the code of the client.
 Requirements and patterns are in
 [Testing Requirements](./testing-requirements.md) and the
 [API Testing Guide](./api-testing-guide.md).
@@ -2306,7 +2308,8 @@ The workflows in `.github/workflows`:
   the toolchain-version, generated-file, API–database and schema-file checks,
   lint, format check, build, type check, knip, the unit tests, the integration
   tests (once against an external PostgreSQL and once through
-  testcontainers), a build for each environment, and a dependency audit. On a
+  testcontainers), the browser tests, a build for each environment, and a
+  dependency audit. On a
   push to `main`, once the checks have passed, it calls `publish-images.yml`
   for staging. `make ci-check` runs the same checks locally, except
   `pnpm check:db-schema`, which recreates the database and therefore has a

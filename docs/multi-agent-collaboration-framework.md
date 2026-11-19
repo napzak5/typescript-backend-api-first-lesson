@@ -75,7 +75,7 @@ flowchart LR
 | 2 | テーブルと API コントラクトの設計 | `database-schema-architect`、`typespec-api-architect` | プロパティ名・NULL 可否・enum の値が両者で一致している |
 | 3 | 生成 | `database-schema-architect`、`typespec-api-architect` | `pnpm check:api-db`、`pnpm check:db-schema`、`pnpm check:generated` |
 | 4 | バックエンド | `backend-typescript-architect` | `pnpm lint`、`pnpm format:check`、`pnpm build:prod`、`pnpm typecheck`、`pnpm knip`、`pnpm test`、`pnpm test:integration` |
-| 5 | フロントエンド | `senior-ui-designer`、`senior-frontend-architect` | `pnpm lint`、`pnpm format:check`、`pnpm build:prod`、`pnpm typecheck`、`pnpm knip`、`pnpm test:frontend` |
+| 5 | フロントエンド | `senior-ui-designer`、`senior-frontend-architect` | `pnpm lint`、`pnpm format:check`、`pnpm build:prod`、`pnpm typecheck`、`pnpm knip`、`pnpm test:frontend`、画面を変えたときは `pnpm test:e2e` |
 | 6 | レビュー | `design-review-architect` | `make ci-check`、`pnpm check:db-schema` と、コマンドが見ない点の確認 |
 | 7 | ドキュメント | `documentation-specialist` | 記載したコマンド・パス・リンク・コード例をコードと照合する |
 

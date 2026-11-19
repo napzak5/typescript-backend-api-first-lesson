@@ -112,7 +112,7 @@ make docker-check-frontend   # フロントエンド 3 つだけ
 ### CI（`.github/workflows/ci.yml`）
 
 `main`・`develop` への push とプルリクエストで品質チェックを実行します（内容は
-[開発ワークフローガイド](./development-workflow.md) を参照）。`main` への push では、`quality`・`test`・
+[開発ワークフローガイド](./development-workflow.md) を参照）。`main` への push では、`quality`・`test`・`e2e`・
 `build` の各ジョブが成功したあとに、`publish-staging-images` ジョブが Publish Images を `staging` で
 呼び出します。チェックが失敗したコミットからは、イメージは作られません。
 

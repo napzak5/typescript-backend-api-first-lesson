@@ -34,6 +34,42 @@ const sessionCount = async (): Promise<number> => {
   return countSchema.parse(rows)[0].count
 }
 
+/** Asks the test server as the setup does, for what `testApi()` does not offer. */
+const ask = (method: string, path: string, body?: unknown): Promise<Response> =>
+  fetch(`${inject('testServer').origin}${path}`, {
+    method,
+    headers: {
+      Authorization: `Bearer ${inject('testServer').token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body ?? {}),
+  })
+
+const startedSchema = z.object({ id: z.string(), origin: z.string() })
+
+/** Starts another API than the one of this test file. */
+const start = async (options: {
+  port: number | null
+  corsOrigins: string[]
+}): Promise<z.infer<typeof startedSchema>> =>
+  startedSchema.parse(await (await ask('POST', '/apis', options)).json())
+
+/** Asks an API, as a browser does before a page of `origin` may sign in. */
+const preflight = (api: string, origin: string): Promise<Response> =>
+  fetch(`${api}/api/v1/auth/login`, {
+    method: 'OPTIONS',
+    headers: {
+      Origin: origin,
+      'Access-Control-Request-Method': 'POST',
+      'Access-Control-Request-Headers': 'authorization,content-type',
+    },
+  })
+
+const databaseCount = async (): Promise<number> =>
+  countSchema.parse(
+    await testApi().query('select count(*)::int as count from pg_database'),
+  )[0].count
+
 describe('the API of a test file', () => {
   it('is where the code under test looks for the API', () => {
     // Read when the configuration was loaded, as the fetch function reads it
@@ -114,6 +150,74 @@ describe('the test server', () => {
   })
 })
 
+describe('an API for the pages of a browser', () => {
+  const APPLICATION = 'http://127.0.0.1:4999'
+
+  it('listens on the port it is asked for and answers the origins it is opened to, also after a reset', async () => {
+    // A port that is free: the one of an API that is gone
+    const gone = await start({ port: null, corsOrigins: [] })
+    await ask('DELETE', `/apis/${gone.id}`)
+    const port = Number(new URL(gone.origin).port)
+
+    const api = await start({ port, corsOrigins: [APPLICATION] })
+    const allowed = await preflight(api.origin, APPLICATION)
+    const other = await preflight(api.origin, 'https://attacker.example')
+    const reset = await ask('POST', `/apis/${api.id}/reset`)
+    const allowedAfterReset = await preflight(api.origin, APPLICATION)
+    await ask('DELETE', `/apis/${api.id}`)
+
+    expect(api.origin).toBe(gone.origin)
+    expect(allowed.headers.get('Access-Control-Allow-Origin')).toBe(APPLICATION)
+    expect(allowed.headers.get('Access-Control-Allow-Headers')).toBe(
+      'authorization,content-type',
+    )
+    expect(other.headers.get('Access-Control-Allow-Origin')).toBeNull()
+    expect(reset.status).toBe(204)
+    expect(allowedAfterReset.headers.get('Access-Control-Allow-Origin')).toBe(
+      APPLICATION,
+    )
+  })
+
+  it('is not what the API of a test file is: that one answers no origin', async () => {
+    const answer = await preflight(testApi().origin, APPLICATION)
+
+    expect(answer.headers.get('Access-Control-Allow-Origin')).toBeNull()
+  })
+
+  it('is not started on a port that is taken, and leaves no database behind', async () => {
+    const taken = Number(new URL(testApi().origin).port)
+    const before = await databaseCount()
+
+    const answer = await ask('POST', '/apis', { port: taken, corsOrigins: [] })
+
+    expect(answer.status).toBe(409)
+    expect(await answer.json()).toMatchObject({
+      message: expect.stringContaining('EADDRINUSE'),
+    })
+    expect(await databaseCount()).toBe(before)
+  })
+
+  it.each([
+    ['nothing', {}],
+    ['a port that is none', { port: 70_000, corsOrigins: [] }],
+    [
+      'an address in place of an origin',
+      { port: null, corsOrigins: ['http://127.0.0.1:4999/sign-in'] },
+    ],
+    [
+      'a property it does not know',
+      { port: null, corsOrigins: [], database: 'another' },
+    ],
+  ])('is not started for %s', async (_case, options) => {
+    const before = await databaseCount()
+
+    const answer = await ask('POST', '/apis', options)
+
+    expect(answer.status).toBe(400)
+    expect(await databaseCount()).toBe(before)
+  })
+})
+
 describe('the code of an authenticator app', () => {
   const signedInSchema = z.object({
     data: z.object({ accessToken: z.string() }),
@@ -175,26 +279,8 @@ describe('the code of an authenticator app', () => {
 })
 
 describe('an API that is removed', () => {
-  const server = inject('testServer')
-
-  const ask = (
-    method: string,
-    path: string,
-    body?: unknown,
-  ): Promise<Response> =>
-    fetch(`${server.origin}${path}`, {
-      method,
-      headers: {
-        Authorization: `Bearer ${server.token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(body ?? {}),
-    })
-
   it('stops answering and leaves no database behind', async () => {
-    const other = z
-      .object({ id: z.string(), origin: z.string() })
-      .parse(await (await ask('POST', '/apis')).json())
+    const other = await start({ port: null, corsOrigins: [] })
     const named = await ask('POST', `/apis/${other.id}/query`, {
       text: 'select current_database() as name',
       values: [],

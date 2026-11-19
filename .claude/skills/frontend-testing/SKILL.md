@@ -1,6 +1,6 @@
 ---
 name: frontend-testing
-description: "How frontend code of this repository is tested: stories as the entry point of component tests (composeStories from Storybook, run by Vitest in jsdom), an accessibility test for every story (axe-core), queries by role, tests of screens and of code that calls the API against the real API on a real database (*.integration.test.tsx, no stub), and the checks of the style rules and of token contrast. Use it before writing or changing a story, a *.test.tsx, a Vitest configuration or the test helpers under frontend/."
+description: "How frontend code of this repository is tested: stories as the entry point of component tests (composeStories from Storybook, run by Vitest in jsdom), an accessibility test for every story (axe-core), queries by role, tests of screens and of code that calls the API against the real API on a real database (*.integration.test.tsx, no stub), browser tests of the built applications against the same API (Playwright, frontend/e2e, *.e2e.test.ts), and the checks of the style rules and of token contrast. Use it before writing or changing a story, a *.test.tsx, a Vitest configuration, a browser test or the test helpers under frontend/."
 ---
 
 # Frontend Testing
@@ -24,12 +24,16 @@ The styling and component rules are in the skill `frontend-ui`.
 | The fetch function, the session and the generated client | In jsdom, over the real client and the real fetch function, with `fetch` itself stubbed | `frontend/packages/session/src/session.test.tsx` |
 | Code that calls the API, as it meets the real one | In jsdom, against the production application on a real PostgreSQL with the seed data; nothing is stubbed | `frontend/packages/session/src/session.integration.test.tsx` |
 | A screen, and an application with somebody signed in, worked as a user works them | The same, typed into and pressed with `@testing-library/user-event` | `frontend/packages/session/src/sign-in.integration.test.tsx`, `frontend/apps/admin-app/src/App.integration.test.tsx` |
+| A critical path from the address bar to the database, and what only a browser shows (layout at a width, contrast, focus as the browser moves it, two tabs, a reload, CORS) | Playwright in Chromium, on the built applications and the same API; nothing is stubbed | `frontend/e2e/src/sign-in.e2e.test.ts` |
 
 `@beauty-salon-frontend/testing` holds what the tests share: the setup
 (`@beauty-salon-frontend/testing/setup`: the matchers of jest-dom, and the
 methods of the `dialog` element that jsdom lacks), `findAccessibilityViolations`
 and `itShouldBeAccessibleInEveryStory`, and the real API of the integration
-tests (`@beauty-salon-frontend/testing/api`).
+tests (`@beauty-salon-frontend/testing/api`). The browser tests take from it
+what knows no test runner: how to start the test server and what to ask it
+for (`@beauty-salon-frontend/testing/api/test-server`), and the rules of the
+accessibility check (`@beauty-salon-frontend/testing/accessibility`).
 
 ## Stories
 
@@ -307,6 +311,121 @@ set (its user creates databases), otherwise a container, and so a running
 Docker daemon. When it cannot start, the run fails before the first test and
 the reason is printed above the error.
 
+## In a browser
+
+`frontend/e2e` holds the tests that drive a real browser (Playwright,
+Chromium): the three applications as they are built, calling the production
+API on a real PostgreSQL with the seed data. Nothing is stubbed here either.
+
+### What belongs here
+
+A browser test is the slowest test, and the one that says least about where a
+fault is. A behaviour is tested here when jsdom cannot show it, or once as a
+whole path:
+
+| In a browser test | In an integration test in jsdom |
+|-------------------|---------------------------------|
+| A critical path, once, from the address bar to the database | Every state of a screen: each message, each refusal, each role |
+| What the browser lays out and paints: nothing sticks out of a narrow window, nothing is laid out with flex, the contrast of what is on the page | The accessibility rules that need no layout |
+| The focus as the browser moves it: the Tab key through a form, the heading after the screen changed | Which element has the focus after an action |
+| A reload, a second tab, the address bar | — |
+| That a page of an application may call the API at all (CORS), and that a build calls the API it was built for | — |
+
+### How a run is put together
+
+`frontend/e2e/playwright.config.ts` says it all:
+
+- `globalSetup` (`src/global-setup.ts`) starts the test server of the
+  backend, the one of the integration tests, and on it one API: on port 4100
+  and open to the origins of the three applications. After the run it stops
+  the server.
+- `webServer` builds each application with `vite build --mode test` for that
+  API into `frontend/e2e/dist/` and serves the build: the portal on port
+  4101, the admin application on 4102, the dashboard on 4103
+  (`src/applications.ts`). Everything listens on the loopback address and on
+  ports of its own, so `pnpm dev` may run at the same time.
+- One worker. The applications are built for one API, so the tests share it
+  and take their turns. After every test the API gets a fresh copy of the
+  seeded database, and Playwright gives every test a browser context of its
+  own (storage, cookies): no test sees what another one did.
+- No retries. A test that fails now and then is found and fixed; a second
+  attempt would hide it.
+
+A build reads the workspace packages as they were last built. `pnpm test:e2e`
+at the root builds them first; `playwright test` in `frontend/e2e` does not.
+
+### Writing a browser test
+
+```ts
+import { ADMIN } from './applications'
+import { findAccessibilityViolations, measureLayout } from './checks'
+import { expect, test } from './fixtures'
+import { enterCredentials, heading, STAFF } from './sign-in'
+
+test.describe('the admin application', () => {
+  test('should open for a member of the staff of a salon', async ({
+    page,
+    api,
+  }) => {
+    // Arrange
+    await page.goto(ADMIN.origin)
+
+    // Act
+    await enterCredentials(page, STAFF, api.seedPassword)
+
+    // Assert
+    await expect(heading(page, ADMIN.title)).toBeFocused()
+    expect(await findAccessibilityViolations(page)).toEqual([])
+    expect(await measureLayout(page)).toEqual({ overflow: 0, flex: 0 })
+  })
+})
+```
+
+- The file is `src/<subject>.e2e.test.ts`. `test` and `expect` come from
+  `./fixtures`, never from `@playwright/test`: the `test` of the fixtures is
+  what gives the API a fresh database after every test.
+- The fixture `api` is what `testApi()` is in an integration test: `origin`,
+  `seedPassword`, `query` and `authenticatorCode`.
+- Elements are found as a user finds them: `getByRole`, `getByLabel`,
+  `getByText`. No class name, no test ID. The locators and the steps that
+  tests share are in `src/sign-in.ts` (`heading`, `enterCredentials`,
+  `signOutButton`); the applications, their origins and their titles in
+  `src/applications.ts`.
+- Assertions on the page are the ones that wait:
+  `await expect(locator).toBeVisible()`, `toBeFocused()`, `toHaveURL()`. A
+  test never waits for an amount of time.
+- Every screen a test reaches is checked with
+  `findAccessibilityViolations(page)` and `measureLayout(page)`
+  (`src/checks.ts`): the rules of WCAG 2.2 AA with the contrast of what is
+  painted, no element wider than the window, no element laid out with flex.
+  What has to fit a phone is tested in a `describe` with
+  `test.use({ viewport: { width: 390, height: 844 } })`.
+- What no screen does yet, a test asks of the API with the `request` fixture
+  of Playwright (`setUpTwoFactor` in `src/sign-in.ts`), and checks the answer
+  with a Zod schema. What neither a screen nor the API does, such as time
+  having passed, is a statement with `api.query`.
+- The modules of `frontend/e2e/src` that are no test files are under the
+  lint prohibitions of application code: no type assertion, no type guard,
+  and `node:assert` in place of `throw`.
+
+### Running the browser tests
+
+```bash
+pnpm test:e2e:install   # once, and after Playwright was updated: its Chromium
+pnpm test:e2e           # builds the frontend packages, then runs every test
+
+# One file, on the packages as they were last built
+pnpm --filter @beauty-salon-frontend/e2e exec playwright test src/sign-in.e2e.test.ts
+# What the browser did in a test that failed
+pnpm --filter @beauty-salon-frontend/e2e exec playwright show-trace test-results/<directory of the test>/trace.zip
+```
+
+A run needs a PostgreSQL as the integration tests do (`TEST_DATABASE_URL`, or
+Docker for a container) and the ports 4100 to 4103. It refuses to start when
+one of them is taken, so that it never tests what another run left behind.
+`make ci-check` and the job "E2E Test" of CI run it; the job keeps the report
+and the traces of a failed run as an artifact.
+
 ## Accessibility
 
 `findAccessibilityViolations()` runs axe-core over the document with the rules
@@ -317,8 +436,10 @@ which rule.
 jsdom computes no layout, so the rule `color-contrast` is off there. Contrast
 is checked where the colours are defined: `tokens.test.ts` computes the ratio
 of every pair of tokens that is used as text on a background (4.5:1) or as the
-edge of a control (3:1). The accessibility panel of the catalogue shows
-contrast for a single story in a real browser.
+edge of a control (3:1). The browser tests measure it on the pages as they
+are painted (`findAccessibilityViolations(page)` of `frontend/e2e/src/checks.ts`
+runs the same rules with `color-contrast` on), and the accessibility panel of
+the catalogue shows it for a single story.
 
 ## Setting up a package or an application
 
@@ -419,4 +540,6 @@ pnpm test                                            # frontend and backend unit
 pnpm --filter @beauty-salon-frontend/session test:integration   # against the real API, one package
 pnpm --filter @beauty-salon-frontend/admin-app test:integration # the same for one application
 pnpm test:integration                                # every integration test, backend and frontend
+
+pnpm test:e2e                                        # the browser tests (see "In a browser")
 ```

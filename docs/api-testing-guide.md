@@ -44,8 +44,9 @@ database.
 
 ## The Test Server
 
-The tests of the frontend that call the API
-(`frontend/packages/*/src/**/*.integration.test.ts(x)`) run against the
+The tests of the frontend that call the API (`*.integration.test.ts(x)` in
+`frontend/packages` and `frontend/apps`, and the browser tests in
+`frontend/e2e`) run against the
 production application as well, from another process. `test-server/` is the
 program they start:
 
@@ -64,13 +65,20 @@ TEST_SERVER_TOKEN=<any value> pnpm --filter @beauty-salon-backend/api run test:s
 
 | Request | What it does | Answer |
 |---------|--------------|--------|
-| `POST /apis` | Starts an API: `createApp` on a copy of the template, on a port of its own | 201 `{ id, origin, seedPassword }` |
+| `POST /apis` with `{ port, corsOrigins }` | Starts an API: `createApp` on a copy of the template. `port` is the port to listen on, or `null` for a free one; `corsOrigins` are the origins whose pages may call the API from a browser | 201 `{ id, origin, seedPassword }`; 400 `{ issues }` when the body is not of that shape; 409 `{ message }` when the port is taken |
 | `POST /apis/{id}/reset` | Gives the API a new copy of the template and drops the previous one | 204 |
 | `POST /apis/{id}/query` with `{ text, values }` | Runs the statement on the database of the API | 200 `{ rows }`; 400 `{ message }` when the body is not of that shape or the database refuses the statement |
 | `DELETE /apis/{id}` | Stops the API and drops its database | 204 |
 | `POST /authenticator-codes` with `{ secret, stepsAhead }` | Computes the code an authenticator app shows for the secret (Base32) now (`stepsAhead: 0`) or in the next 30 seconds (`1`): a test has no such app | 200 `{ code }`; 400 `{ issues }` when the body is not of that shape |
 
 An unknown `id` is answered with 404.
+
+A test in jsdom calls its API with the `fetch` of Node.js, which asks no
+permission: it starts its API on a free port and opens it to no origin. A
+run of the browser tests starts one API, on the port that the applications
+were built for, and names the origins of the applications: a browser asks
+the API before a page of another origin may call it, as it does in
+production (`CORS_ORIGIN`). A reset keeps the port and the origins.
 
 The API takes a code of an authenticator app once, and after it only later
 ones ([Two-factor authentication](./authentication.md#2-要素認証)). A test
