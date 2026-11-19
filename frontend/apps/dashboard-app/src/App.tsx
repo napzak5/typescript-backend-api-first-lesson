@@ -1,4 +1,6 @@
 import {
+  AccountSecurityScreen,
+  PasswordChangeScreen,
   RequireSession,
   type RequireSessionProps,
   SessionAccount,
@@ -12,7 +14,7 @@ import {
   NotificationProvider,
   PageHeader,
 } from '@beauty-salon-frontend/ui'
-import { Link, Route, Routes } from 'react-router'
+import { Link, Route, Routes, useNavigate } from 'react-router'
 
 /** Who this application is for: those who run a salon, and the operator of the platform */
 const ROLES: RequireSessionProps['roles'] = ['owner', 'manager', 'admin']
@@ -41,6 +43,21 @@ const SignInHelp = () => (
   </p>
 )
 
+/** Where the screens of the security of the account are: the header leads to them */
+const SECURITY_PATH = '/account/security'
+const PASSWORD_PATH = `${SECURITY_PATH}/password`
+
+const PasswordPage = () => {
+  const navigate = useNavigate()
+
+  return (
+    <PasswordChangeScreen
+      securityHref={SECURITY_PATH}
+      onChanged={() => void navigate(SECURITY_PATH)}
+    />
+  )
+}
+
 const NotFoundPage = () => (
   <>
     <PageHeader
@@ -60,12 +77,17 @@ export const App = () => (
     <NotificationProvider>
       <AppShell
         title={import.meta.env.VITE_APP_TITLE}
-        account={<SessionAccount />}
+        account={<SessionAccount securityHref={SECURITY_PATH} />}
       >
         {/* Every screen needs a session: who is not signed in signs in here, at the address they asked for */}
         <RequireSession roles={ROLES} signInHelp={<SignInHelp />}>
           <Routes>
             <Route path='/' element={<HomePage />} />
+            <Route
+              path={SECURITY_PATH}
+              element={<AccountSecurityScreen passwordHref={PASSWORD_PATH} />}
+            />
+            <Route path={PASSWORD_PATH} element={<PasswordPage />} />
             <Route path='*' element={<NotFoundPage />} />
           </Routes>
         </RequireSession>

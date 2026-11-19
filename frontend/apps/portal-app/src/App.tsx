@@ -40,6 +40,12 @@ import { ReviewWriteScreen } from './reviews/review-write-screen'
 import { EVERY_ROLE } from './roles'
 import { SalonScreen } from './salons/salon-screen'
 import { SalonSearchScreen } from './salons/salon-search-screen'
+import {
+  OwnPasswordScreen,
+  OwnSecurityScreen,
+  PASSWORD_PATH,
+  SECURITY_PATH,
+} from './security/security-screens'
 import { SignInHelp } from './sign-in-help'
 import { pathAfterSignIn, SIGN_IN_PATH } from './sign-in-path'
 
@@ -120,6 +126,8 @@ export const App = () => {
             <Route path='/mypage/profile' element={<ProfileScreen />} />
             <Route path='/mypage/preferences' element={<PreferencesScreen />} />
             <Route path='/mypage/reviews' element={<OwnReviewsScreen />} />
+            <Route path={SECURITY_PATH} element={<OwnSecurityScreen />} />
+            <Route path={PASSWORD_PATH} element={<OwnPasswordScreen />} />
             <Route
               path='/mypage/reviews/:reviewId'
               element={<ReviewChangeScreen />}
