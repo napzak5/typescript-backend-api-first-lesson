@@ -70,6 +70,45 @@ export const whenOf = (
   hours: `${timeOfDayAt(startTime, timezone)}〜${timeOfDayAt(endTime, timezone)}`,
 })
 
+/**
+ * The day of a visit as the booking names it: 「2026年11月24日火曜日」. It
+ * is a calendar date at the salon, and is read without a time zone.
+ */
+export const visitDayOf = (bookingDate: string): string =>
+  new Intl.DateTimeFormat('ja-JP', {
+    dateStyle: 'full',
+    timeZone: 'UTC',
+  }).format(new Date(`${bookingDate}T00:00:00Z`))
+
+/**
+ * When a booking is, where its salon may be gone: as `whenOf` says it, or
+ * the day alone. Without the time zone of the salon, no time of day can be
+ * told.
+ */
+export const whenKnownOf = (
+  booking: Pick<
+    ModelsCustomerBookingResponse,
+    'bookingDate' | 'startTime' | 'endTime'
+  >,
+  timezone: string | null,
+): { day: string; hours: string | null } =>
+  timezone === null
+    ? { day: visitDayOf(booking.bookingDate), hours: null }
+    : whenOf(booking, timezone)
+
+/** The same in one line, for a sentence: 「2026年11月24日火曜日 10:30〜11:30」. */
+export const whenLineOf = (
+  booking: Pick<
+    ModelsCustomerBookingResponse,
+    'bookingDate' | 'startTime' | 'endTime'
+  >,
+  timezone: string | null,
+): string => {
+  const { day, hours } = whenKnownOf(booking, timezone)
+
+  return hours === null ? day : `${day} ${hours}`
+}
+
 /** The price of a service in one line: 「￥5,500（税込）」, 「￥8,000〜（税別）」, 「要相談」. */
 export const priceLineOf = (
   service: Pick<

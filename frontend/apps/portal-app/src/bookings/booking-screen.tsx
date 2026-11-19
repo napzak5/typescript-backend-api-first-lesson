@@ -13,11 +13,13 @@ import {
   Form,
   LoadingIndicator,
   PageHeader,
+  TextArea,
   TextField,
   useNotifications,
+  useScreenHeadingFocus,
 } from '@beauty-salon-frontend/ui'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import { type FormSays, NOTHING_TO_SAY } from '../forms'
@@ -48,6 +50,7 @@ import {
   BookingForm,
   type TimesOfDay,
 } from './components/booking-form/booking-form'
+import { OWN_BOOKING_LISTS } from './own-bookings'
 import { afterProfile, readProfile } from './profile-flow'
 
 const TITLE = '予約する'
@@ -158,7 +161,12 @@ const TimeStep = ({ salon, service, staff }: TimeStepProps) => {
   const slots = useQuery({
     queryKey: ['salons', salon.id, 'slots', service.id, queryOf(choice)],
     queryFn: () =>
-      readSlots({ salonId: salon.id, serviceId: service.id, ...choice }),
+      readSlots({
+        salonId: salon.id,
+        serviceId: service.id,
+        ...choice,
+        duration: undefined,
+      }),
     // A time is free until somebody books it: the times of a day are read
     // whenever they are shown, and never shown from memory
     staleTime: 0,
@@ -176,6 +184,7 @@ const TimeStep = ({ salon, service, staff }: TimeStepProps) => {
           type: 'found',
           booking: outcome.booking,
         })
+        queryClient.removeQueries({ queryKey: OWN_BOOKING_LISTS })
         notify({
           tone: 'success',
           message: '予約を受け付けました。',
@@ -231,11 +240,19 @@ const TimeStep = ({ salon, service, staff }: TimeStepProps) => {
           }))
           .exhaustive()}
         onRetry={() => void slots.refetch()}
+        submitLabel='この内容で予約する'
         message={says.message}
         errors={says.errors}
         pending={booking.isPending}
         onSubmit={submit}
-      />
+      >
+        <TextArea
+          label='ご要望'
+          name='customerRequest'
+          description='サロンに伝えておきたいことがあれば、ご記入ください。'
+          error={says.errors['customerRequest']}
+        />
+      </BookingForm>
     </Card>
   )
 }
@@ -250,6 +267,19 @@ const BookingSteps = ({ salon, service }: OfServiceProps) => {
     queryKey: OWN_PROFILE,
     queryFn: readOwnProfile,
   })
+  const focusHeading = useScreenHeadingFocus()
+  const step = profile.data?.type
+  const stepBefore = useRef(step)
+
+  // The form of the profile went with the button that sent it, and the
+  // times took its place: the focus goes to the heading of the screen, in
+  // the commit that shows them
+  useLayoutEffect(() => {
+    if (stepBefore.current === 'none' && step === 'found') {
+      focusHeading()
+    }
+    stepBefore.current = step
+  }, [step, focusHeading])
 
   return (
     <>

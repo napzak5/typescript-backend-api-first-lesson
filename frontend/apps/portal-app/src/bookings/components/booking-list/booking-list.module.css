@@ -1,0 +1,50 @@
+/* The heading, how many there are, the bookings, then the way to more. */
+.list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+.heading {
+  font-size: var(--font-size-title);
+}
+
+.count {
+  color: var(--color-text-muted);
+}
+
+.bookings {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+/* A booking: when it is, then where, what, and where it stands */
+.booking {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-2);
+  padding: var(--space-6);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-large);
+  background-color: var(--color-surface);
+}
+
+.when {
+  font-size: var(--font-size-large);
+}
+
+/*
+ * The day, and the hours: a line breaks between them, not inside. The
+ * underline of a link does not reach into a box of its own, so each of the
+ * two draws the one the link has.
+ */
+.whole {
+  display: inline-block;
+  text-decoration: inherit;
+}
+
+/* What a salon wrote may be long, and in any language */
+.name {
+  overflow-wrap: anywhere;
+}

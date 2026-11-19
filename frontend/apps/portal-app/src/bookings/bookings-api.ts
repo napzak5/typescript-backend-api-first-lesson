@@ -1,10 +1,16 @@
 import {
   availableSlotCrudList,
+  type CustomerBookingsListParams,
+  customerBookingsCancel,
   customerBookingsCreate,
   customerBookingsGet,
+  customerBookingsList,
+  customerBookingsReschedule,
   customerProfileCreate,
   customerProfileGet,
   type ModelsAvailableSlotResponse,
+  type ModelsBookingCancelRequest,
+  type ModelsBookingRescheduleRequest,
   type ModelsCustomerBookingCreateRequest,
   type ModelsCustomerBookingResponse,
   type ModelsCustomerProfileCreateRequest,
@@ -76,6 +82,31 @@ export type OwnBookingRead =
   | { type: 'found'; booking: ModelsCustomerBookingResponse }
   | NotFound
   | Unread
+
+export type Cancellation =
+  | { type: 'cancelled'; booking: ModelsCustomerBookingResponse }
+  /**
+   * The API does not cancel the booking, and does not say why: the salon
+   * has changed its state in the meantime, or its time has come
+   */
+  | { type: 'refused' }
+  /** The booking is no longer there */
+  | NotFound
+  | Unsent
+
+export type Move =
+  | { type: 'moved'; booking: ModelsCustomerBookingResponse }
+  /**
+   * The API does not move the booking, and does not say why: the time is no
+   * longer free, the booking can no longer be changed, or it is one the
+   * salon has to move
+   */
+  | { type: 'refused' }
+  /** The booking is no longer there */
+  | NotFound
+  /** What was chosen names somebody who is no longer there */
+  | { type: 'invalid' }
+  | Unsent
 
 type Problem<Status extends number> = {
   status: Status
@@ -220,15 +251,21 @@ export type SlotsAsked = {
   date: string
   /** `undefined` for the times of everybody */
   staffId: string | undefined
+  /**
+   * How long the visit takes, in minutes, when that is not what the
+   * service takes now: a booking that is moved keeps its length
+   */
+  duration: number | undefined
 }
 
 const readSlotsPage = async (
-  { salonId, serviceId, date, staffId }: SlotsAsked,
+  { salonId, serviceId, date, staffId, duration }: SlotsAsked,
   cursor: string | undefined,
 ): Promise<Page<ModelsAvailableSlotResponse> | Unread> => {
   const answer = await availableSlotCrudList(salonId, {
     ...from(cursor),
     ...(staffId === undefined ? {} : { staffId }),
+    ...(duration === undefined ? {} : { duration }),
     serviceId,
     date,
     limit: LARGEST_PAGE,
@@ -316,5 +353,110 @@ export const readOwnBooking = async (id: string): Promise<OwnBookingRead> => {
     .with({ status: 404 }, () => NOT_FOUND)
     .with({ status: 400 }, () => FAILED)
     .with(UNANSWERED, unansweredOf)
+    .exhaustive(outsideTheContract)
+}
+
+/** Which visits a list of bookings is asked for: from a day on, or until a day. */
+export type OwnBookingsAsked = Pick<
+  CustomerBookingsListParams,
+  'bookingDateFrom' | 'bookingDateTo'
+>
+
+/** How many bookings a page of the list has */
+const BOOKINGS_PER_PAGE = 20
+
+/** An account that has not said who its customer is has booked nothing */
+const NO_BOOKINGS: Page<ModelsCustomerBookingResponse> = {
+  type: 'found',
+  items: [],
+  total: 0,
+  nextCursor: null,
+}
+
+/**
+ * A page of the bookings of the customer of the account, the earliest visit
+ * first. The API has no other order.
+ */
+export const readOwnBookings = async (
+  asked: OwnBookingsAsked,
+  cursor: string | undefined,
+): Promise<Page<ModelsCustomerBookingResponse> | Unread> => {
+  const answer = await customerBookingsList({
+    ...from(cursor),
+    ...asked,
+    limit: BOOKINGS_PER_PAGE,
+  }).catch(() => null)
+
+  return match(answer)
+    .returnType<Page<ModelsCustomerBookingResponse> | Unread>()
+    .with({ status: 200 }, ({ data }) => pageOf(data.data, data.meta))
+    .with({ status: 404 }, () => NO_BOOKINGS)
+    .with({ status: 400 }, () => FAILED)
+    .with(UNANSWERED, unansweredOf)
+    .exhaustive(outsideTheContract)
+}
+
+/** Cancels a booking of the customer. A booking that was cancelled stays cancelled. */
+export const cancelOwnBooking = async (
+  id: string,
+  request: ModelsBookingCancelRequest,
+): Promise<Cancellation> => {
+  const answer = await customerBookingsCancel(id, request).catch(() => null)
+
+  return match(answer)
+    .returnType<Cancellation>()
+    .with({ status: 200 }, ({ data }) => ({
+      type: 'cancelled',
+      booking: data.data,
+    }))
+    .with({ status: 409 }, () => ({ type: 'refused' }))
+    .with({ status: 404 }, () => NOT_FOUND)
+    .with({ status: 429 }, () => TOO_MANY_REQUESTS)
+    .with(
+      P.union(
+        null,
+        { status: 400 },
+        { status: 401 },
+        { status: 403 },
+        { status: 413 },
+        { status: 415 },
+        { status: 500 },
+      ),
+      () => FAILED,
+    )
+    .exhaustive(outsideTheContract)
+}
+
+/**
+ * Moves a booking of the customer to another time that is free, with the
+ * same member of the staff or with another.
+ */
+export const moveOwnBooking = async (
+  id: string,
+  request: ModelsBookingRescheduleRequest,
+): Promise<Move> => {
+  const answer = await customerBookingsReschedule(id, request).catch(() => null)
+
+  return match(answer)
+    .returnType<Move>()
+    .with({ status: 200 }, ({ data }) => ({
+      type: 'moved',
+      booking: data.data,
+    }))
+    .with({ status: 409 }, () => ({ type: 'refused' }))
+    .with({ status: 404 }, () => NOT_FOUND)
+    .with({ status: 400 }, () => ({ type: 'invalid' }))
+    .with({ status: 429 }, () => TOO_MANY_REQUESTS)
+    .with(
+      P.union(
+        null,
+        { status: 401 },
+        { status: 403 },
+        { status: 413 },
+        { status: 415 },
+        { status: 500 },
+      ),
+      () => FAILED,
+    )
     .exhaustive(outsideTheContract)
 }

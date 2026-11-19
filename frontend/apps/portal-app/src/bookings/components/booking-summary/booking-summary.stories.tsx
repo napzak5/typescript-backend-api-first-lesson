@@ -50,6 +50,11 @@ export const NoShow: Story = {
   args: { booking: { ...booking, status: 'no_show' } },
 }
 
+/** The salon is no longer there: the day is told, and neither a time nor an amount */
+export const WithoutSalon: Story = {
+  args: { salon: null, serviceName: null, staffName: null },
+}
+
 /** The price of the service is without tax: the tax is added, and named */
 export const WithTaxAdded: Story = {
   args: {

@@ -69,7 +69,7 @@ const dateSchema = z.iso.date()
 const MS_OF_A_DAY = 24 * 60 * 60 * 1000
 
 /** The calendar date a number of days after a date; before it, for a negative number. */
-const daysFrom = (date: string, days: number): string =>
+export const daysFrom = (date: string, days: number): string =>
   new Date(Date.parse(`${date}T00:00:00Z`) + days * MS_OF_A_DAY)
     .toISOString()
     .slice(0, 10)

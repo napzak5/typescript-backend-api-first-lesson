@@ -1,4 +1,3 @@
-import { signIn } from '@beauty-salon-frontend/session'
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { testApi } from '@beauty-salon-frontend/testing/api'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -8,25 +7,35 @@ import { MemoryRouter, useLocation } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as z from 'zod'
 import { App } from '../App'
+import {
+  ANOTHER_CUSTOMER,
+  accessTokenOf,
+  ask,
+  bookingPathOf,
+  bookThroughApi,
+  CUSTOMER,
+  closeDay,
+  DAYS_AHEAD,
+  dayAhead,
+  giveBack,
+  HIROSHI,
+  LADIES_CUT,
+  MIKA,
+  momentAt,
+  NEWCOMER,
+  NEWCOMER_PASSWORD,
+  NOTHING,
+  openDay,
+  registerNewcomer,
+  salonId,
+  serviceId,
+  signedInAs,
+  staffId,
+  TOKYO,
+  takeAway,
+} from './__tests__/arrangements'
 
 const TITLE = 'Beauty Salon Portal'
-
-/** The salon the tests book at, and what of it they book */
-const TOKYO = 'Beauty Studio Tokyo'
-const LADIES_CUT = 'Ladies Cut'
-const HIROSHI = 'Hiroshi Tanaka'
-const MIKA = 'Mika Suzuki'
-
-/** Customers of the seed data: each has an account and a profile */
-const CUSTOMER = 'customer1@example.com'
-const ANOTHER_CUSTOMER = 'customer2@example.com'
-
-/** Somebody who registers in a test: an account without a profile */
-const NEWCOMER = 'newcomer@example.com'
-const NEWCOMER_PASSWORD = 'a passphrase that only this test knows'
-
-/** An ID that nothing has */
-const NOTHING = '00000000-0000-4000-8000-000000000000'
 
 /** The address the application is at, as the router knows it */
 let address = ''
@@ -53,217 +62,6 @@ const renderAt = (
 
 const heading = (name: string) =>
   screen.findByRole('heading', { level: 1, name })
-
-/** Signs a seeded account in before the screen opens: the sign-in is not what the test is about. */
-const signedInAs = async (
-  email: string,
-  password = testApi().seedPassword,
-): Promise<void> => {
-  const outcome = await signIn({
-    email,
-    password,
-    rememberMe: false,
-    twoFactorCode: null,
-  })
-  expect(outcome).toMatchObject({ type: 'signedIn' })
-}
-
-// --- What the tests ask of the database
-
-const idSchema = z.tuple([z.object({ id: z.uuid() })])
-
-const salonId = async (): Promise<string> => {
-  const [{ id }] = idSchema.parse(
-    await testApi().query('select id::text from salons where name = $1', [
-      TOKYO,
-    ]),
-  )
-
-  return id
-}
-
-const serviceId = async (name: string): Promise<string> => {
-  const [{ id }] = idSchema.parse(
-    await testApi().query(
-      `select services.id::text from services join salons on salons.id = services."salonId"
-       where salons.name = $1 and services.name = $2`,
-      [TOKYO, name],
-    ),
-  )
-
-  return id
-}
-
-const staffId = async (displayName: string): Promise<string> => {
-  const [{ id }] = idSchema.parse(
-    await testApi().query(
-      'select id::text from staff where "displayName" = $1',
-      [displayName],
-    ),
-  )
-
-  return id
-}
-
-const bookingPathOf = async (service = LADIES_CUT): Promise<string> =>
-  `/salons/${await salonId()}/services/${await serviceId(service)}/booking`
-
-const dateSchema = z.tuple([z.object({ date: z.iso.date() })])
-
-/** The calendar date at the salon a number of days from today. */
-const dayAhead = async (days: number): Promise<string> => {
-  const [{ date }] = dateSchema.parse(
-    await testApi().query(
-      `select ((now() at time zone 'Asia/Tokyo')::date + $1::int)::text as date`,
-      [days],
-    ),
-  )
-
-  return date
-}
-
-/** Two weeks from today: the seed data has no booking that far ahead. */
-const DAYS_AHEAD = 14
-
-/**
- * Opens the salon on the day the tests book on, from 10:00 to 13:00
- * whatever day of the week it is, and says who works then: each member of
- * the staff that is named, from their hour until 13:00, and nobody else.
- * The day is the answer.
- */
-const openDay = async (working: Record<string, string>): Promise<string> => {
-  const date = await dayAhead(DAYS_AHEAD)
-  await testApi().query(
-    `insert into opening_hours ("salonId", "dayOfWeek", date, "openTime", "closeTime")
-     select id, trim(to_char($2::date, 'day'))::day_of_week, $2::date, '10:00', '13:00'
-     from salons where name = $1
-     on conflict ("salonId", date) do update
-     set "openTime" = excluded."openTime", "closeTime" = excluded."closeTime", "isHoliday" = false`,
-    [TOKYO, date],
-  )
-  await testApi().query(
-    `delete from staff_schedules
-     where date = $2::date
-       and "staffId" in (select staff.id from staff join salons on salons.id = staff."salonId" where salons.name = $1)`,
-    [TOKYO, date],
-  )
-  await testApi().query(
-    `insert into staff_schedules ("staffId", date, "startTime", "endTime", "isRecurring", "isAvailable")
-     select staff.id, $2::date, hours.value::time,
-            case when hours.value is null then null else time '13:00' end,
-            false, hours.value is not null
-     from staff
-     join salons on salons.id = staff."salonId"
-     left join jsonb_each_text($3::jsonb) as hours(name, value) on hours.name = staff."displayName"
-     where salons.name = $1`,
-    [TOKYO, date, JSON.stringify(working)],
-  )
-
-  return date
-}
-
-/** The salon is closed on the day, as on a holiday of its calendar. */
-const closeDay = async (): Promise<string> => {
-  const date = await dayAhead(DAYS_AHEAD)
-  await testApi().query(
-    `insert into opening_hours ("salonId", "dayOfWeek", date, "openTime", "closeTime", "isHoliday")
-     select id, trim(to_char($2::date, 'day'))::day_of_week, $2::date, null, null, true
-     from salons where name = $1
-     on conflict ("salonId", date) do update
-     set "openTime" = null, "closeTime" = null, "isHoliday" = true`,
-    [TOKYO, date],
-  )
-
-  return date
-}
-
-/** The moment a time of day of a date is at the salon, as the API writes it. */
-const momentAt = (date: string, time: string): string =>
-  new Date(`${date}T${time}:00+09:00`).toISOString()
-
-/**
- * Takes a table away from the API, which then answers 500 where it reads
- * it, and gives it back: an answer that went wrong, without a stub.
- */
-const takeAway = (table: string) =>
-  testApi().query(`alter table ${table} rename to ${table}_away`)
-
-const giveBack = (table: string) =>
-  testApi().query(`alter table ${table}_away rename to ${table}`)
-
-// --- What the tests ask of the API, as a client that is no screen does
-
-const ask = (
-  path: string,
-  body: unknown,
-  accessToken = '',
-): Promise<Response> =>
-  fetch(`${testApi().origin}/api/v1${path}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(accessToken === '' ? {} : { Authorization: `Bearer ${accessToken}` }),
-    },
-    body: JSON.stringify(body),
-  })
-
-const signedInSchema = z.object({ data: z.object({ accessToken: z.string() }) })
-
-const accessTokenOf = async (
-  email: string,
-  password = testApi().seedPassword,
-): Promise<string> => {
-  const answer = await ask('/auth/login', {
-    email,
-    password,
-    rememberMe: false,
-    twoFactorCode: null,
-  })
-
-  return signedInSchema.parse(await answer.json()).data.accessToken
-}
-
-const bookedSchema = z.object({
-  data: z.object({ id: z.uuid(), bookingNumber: z.string() }),
-})
-
-/** A booking that a customer made somewhere else: in another tab, or a moment earlier. */
-const bookThroughApi = async (
-  email: string,
-  booking: { staff: string; startTime: string; customerRequest: string | null },
-): Promise<{ id: string; bookingNumber: string }> => {
-  const answer = await ask(
-    '/customers/me/bookings',
-    {
-      salonId: await salonId(),
-      serviceId: await serviceId(LADIES_CUT),
-      staffId: await staffId(booking.staff),
-      startTime: booking.startTime,
-      customerRequest: booking.customerRequest,
-    },
-    await accessTokenOf(email),
-  )
-  expect(answer.status).toBe(201)
-
-  return bookedSchema.parse(await answer.json()).data
-}
-
-/** An account whose address is confirmed, and that has not said who its customer is. */
-const registerNewcomer = async (): Promise<void> => {
-  expect(
-    (
-      await ask('/auth/register', {
-        email: NEWCOMER,
-        password: NEWCOMER_PASSWORD,
-      })
-    ).status,
-  ).toBe(204)
-  const token = new URL(await testApi().mailedLink(NEWCOMER)).hash.replace(
-    '#token=',
-    '',
-  )
-  expect((await ask('/auth/verify-email/confirm', { token })).status).toBe(204)
-}
 
 // --- The controls of the booking screen
 
@@ -429,6 +227,10 @@ describe('the screens of a booking, against the API', () => {
       expect(
         screen.getByRole('link', { name: 'サロンのページへ戻る' }),
       ).toHaveAttribute('href', `/salons/${await salonId()}`)
+      // The screen was opened by its address, by a customer who has a
+      // profile: the focus is where the browser put it
+      await staffControl()
+      expect(document.body).toHaveFocus()
     })
 
     it('should offer the members of the staff who take bookings and have the level of the service, after nobody in particular', async () => {
@@ -888,6 +690,9 @@ describe('the screens of a booking, against the API', () => {
       // Assert
       expect(await offeredTimes()).toContain('10:00')
       expect(screen.queryByRole('region', { name: 'お客様の情報' })).toBeNull()
+      // The form went with the button that sent it: the heading of the
+      // screen has the focus
+      expect(await heading('予約する')).toHaveFocus()
       expect(
         await testApi().query(
           `select customers."lastName", customers."firstName", customers."phoneNumber",
@@ -1073,7 +878,9 @@ describe('the screens of a booking, against the API', () => {
       // Assert
       expect(await heading('予約できるメニューが見つかりません')).toBeVisible()
       expect(
-        screen.getByRole('link', { name: 'サロンを探す' }),
+        within(screen.getByRole('main')).getByRole('link', {
+          name: 'サロンを探す',
+        }),
       ).toHaveAttribute('href', '/')
     })
 

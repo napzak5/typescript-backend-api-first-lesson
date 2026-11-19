@@ -2,6 +2,7 @@ import {
   createContext,
   type ReactNode,
   type RefObject,
+  useCallback,
   useContext,
   useLayoutEffect,
   useMemo,
@@ -13,6 +14,8 @@ type Screens = {
   applicationTitle: string
   /** The title of the screen that was shown last; `null` before the first one */
   shown: RefObject<string | null>
+  /** The heading of the screen that was shown last; `null` before the first one */
+  heading: RefObject<HTMLHeadingElement | null>
 }
 
 const ScreensContext = createContext<Screens | null>(null)
@@ -28,8 +31,9 @@ export const ScreensProvider = ({
   children,
 }: ScreensProviderProps) => {
   const shown = useRef<string | null>(null)
+  const heading = useRef<HTMLHeadingElement | null>(null)
   const screens = useMemo(
-    () => ({ applicationTitle, shown }),
+    () => ({ applicationTitle, shown, heading }),
     [applicationTitle],
   )
 
@@ -69,10 +73,31 @@ export const useScreen = (
 
     const previous = screens.shown.current
     screens.shown.current = title
+    screens.heading.current = heading.current
     if (previous !== null && previous !== title) {
       heading.current?.focus()
     }
   }, [screens, title])
 
   return heading
+}
+
+/**
+ * Returns what moves the focus to the heading of the screen that is shown.
+ *
+ * It is for a screen that took away what had the focus and stayed the same
+ * screen: a step that the next one replaced, a button that went with what
+ * it did. The focus would be left nowhere, and the keyboard would go on
+ * from the top of the document. Call it in the commit that shows the
+ * change (`useLayoutEffect`), as the frame does for a screen that takes
+ * the place of another.
+ *
+ * Outside the frame of an application it does nothing.
+ */
+export const useScreenHeadingFocus = (): (() => void) => {
+  const screens = useContext(ScreensContext)
+
+  return useCallback(() => {
+    screens?.heading.current?.focus()
+  }, [screens])
 }

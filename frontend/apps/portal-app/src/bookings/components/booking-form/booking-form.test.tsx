@@ -361,6 +361,32 @@ describe('BookingForm', () => {
       expect(stories.Sending.args.onSubmit).not.toHaveBeenCalled()
     })
 
+    it('should send the time alone, with the button it is given, when it is given no other control', async () => {
+      // Arrange
+      const received: [string, FormDataEntryValue][][] = []
+      await stories.Moving.run({
+        args: {
+          ...stories.Moving.args,
+          onSubmit: vi.fn((values: FormData) => {
+            received.push(Array.from(values.entries()))
+          }),
+        },
+      })
+
+      // Act
+      await userEvent.click(time('11:00'))
+      await userEvent.click(
+        screen.getByRole('button', { name: 'この日時に変更する' }),
+      )
+
+      // Assert
+      expect(received).toEqual([[['startTime', '2026-11-24T02:00:00.000Z']]])
+      expect(screen.queryByRole('textbox', { name: 'ご要望' })).toBeNull()
+      expect(
+        screen.queryByRole('button', { name: 'この内容で予約する' }),
+      ).toBeNull()
+    })
+
     it('should not send it a second time when no button is pressed, either', async () => {
       // Arrange
       await stories.Sending.run()

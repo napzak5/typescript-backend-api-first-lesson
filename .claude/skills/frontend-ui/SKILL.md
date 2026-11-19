@@ -24,7 +24,8 @@ this one: a component is not done without its stories and its test.
 | The screens of the session: sign-in, the guard of the screens that need one, the account in the header | `frontend/packages/session/src/` |
 | The screens of an account in the portal: registering, a new password, and the screens that a mailed link opens | `frontend/apps/portal-app/src/account/` |
 | The screens of the salons in the portal: the search and the page of a salon, and the components they show | `frontend/apps/portal-app/src/salons/` |
-| The screens of a booking in the portal: choosing the member of the staff, the day and the time, and the page of a booking | `frontend/apps/portal-app/src/bookings/` |
+| The screens of a booking in the portal: choosing the member of the staff, the day and the time, the page of a booking, the bookings of a customer, and cancelling and moving one | `frontend/apps/portal-app/src/bookings/` |
+| The links of the header of the portal, by who is signed in | `frontend/apps/portal-app/src/navigation.ts` |
 | The catalogue (Storybook), of the components of `ui`, of `session` and of the applications | `frontend/packages/ui/.storybook/`, `pnpm --filter @beauty-salon-frontend/ui run storybook` (port 6006) |
 | The routes of an application, inside the shared frame `AppShell`, and the roles it is for | `frontend/apps/<app>/src/App.tsx` |
 
@@ -63,7 +64,9 @@ is broken.
    follows each other like words (the tags of a salon, a rating with its
    date and a badge) is no layout: it stays in the flow of the text,
    `display: inline-block` with a margin, and goes on in the next line where
-   the line ends (`tag-list.module.css`).
+   the line ends (`tag-list.module.css`). The underline of a link does not
+   reach into such a box: inside a link it gets `text-decoration: inherit`,
+   and draws the one the link has (`booking-list.module.css`).
 3. **A colour is a token.** No colour is written out outside `tokens.css`:
    no hex value, no `rgb()`, no `color-mix()` (`no-raw-color`). `transparent`
    and `currentColor` are allowed.
@@ -367,7 +370,11 @@ list, `salon-screen.tsx` for a record with its parts).
   cursor of the API as the parameter of a page; the pure functions are in
   `pages.ts`). The next items are added below those that are there, and the
   focus moves to the first of them, in `useLayoutEffect`: the button that
-  was pressed is gone, or further down. A page that could not be read is a
+  was pressed is gone, or further down. It moves once, and after a press:
+  the button sets a ref, and the effect that sees more items moves the
+  focus when the ref is set. Items that no press asked for (the list was
+  read again, the rest of a page came later) leave the focus where it is.
+  A page that could not be read is a
   page of the query like the others: the items stay, an `Alert` below them
   says so, and the button reads again. How many there are, and how many of
   them are shown, is a paragraph with `role='status'` above the list. The
@@ -467,6 +474,78 @@ top.
   chose. Behind the guard, 401 and 403 need no outcome of their own in the
   functions that call the API: they are `failed`.
 
+### What was written is listed, changed and taken back
+
+The bookings of a customer are the example to read
+(`own-bookings-screen.tsx`, `booking-detail-screen.tsx`,
+`booking-move-screen.tsx`): the list of what the customer booked, and on the
+page of a booking the ways to move it and to cancel it.
+
+- **A list of records that somebody else changes is read whenever it is
+  shown** (`staleTime: 0`), and a write of the screen takes away what was
+  read of it: `queryClient.removeQueries({ queryKey: OWN_BOOKING_LISTS })`,
+  after a new booking, a cancellation and a move. A list that is only made
+  stale is shown from memory first, and says for a moment what the write
+  just changed. The key of the lists is no beginning of the key of a
+  record (`['own', 'booking-lists', …]` beside `['own', 'bookings', id]`):
+  what takes the lists away leaves the record that was just written.
+- **Which of two lists is shown is in the address** (`whenIn`,
+  `listHrefOf` in `own-bookings.ts`): the list somebody comes for is the
+  one without a query. The way from one to the other is two links, a
+  `Navigation` with a name of its own (「予約の時期」) whose current link
+  is `aria-current`; the heading of the list says which one it is. The
+  other list is another list, and gets `key`.
+- **A row that names other records reads each of them once.** A booking
+  names its salon and its service by their IDs. `namedBy` gives each of
+  them once, `useQueries` reads them under the keys the page of a record
+  reads them with, and `rowsOf` makes the rows: a booking is shown whole
+  or not yet, so the rows end at the first whose names are not there.
+  Names on their way are rows on their way (`moreOfRows`: the button is
+  busy); names that could not be read are rows that did not come (the
+  `Alert` below the rows, and the button reads the names again). What is
+  no longer there is read, has no name, and is said in words (「サロン
+  （掲載を終えています）」).
+- **What a record offers is decided by pure functions of the record**
+  (`isChangeable`, `isMovable`). They say what the API will allow; the API
+  decides again when it is asked. What the user cannot do themselves is
+  said in the place of its link, with whom to ask. A screen that an
+  address opens for a record it cannot change says so in place of its
+  form.
+- **What cannot be taken back is asked first**, in a `Dialog` that holds
+  the form (`components/booking-changes/`): the `form` is the content of
+  the dialog, and its button stands among the `actions`, tied to it with
+  `form={id}`. The dialog names what it is about (the day and the hours
+  of the booking). The component takes `open`, `onOpen`, `onClose`,
+  `message` and `pending`, and hands the `FormData` up; the screen
+  decides.
+- **Where a failure is said depends on what can be done about it**
+  (`afterCancellation` in `booking-flow.ts`). What can be tried again (no
+  answer, too many requests) is said in the dialog, which stays open with
+  what was typed. A refusal closes the dialog and is said on the page, in
+  an `Alert` above the record, and the record is read again: it may no
+  longer be one that can be changed. A record that is gone is read again,
+  and the screen says that there is none. Opening the dialog again takes
+  away what was said about the attempt before.
+- **Buttons that go with what they did leave the focus nowhere.** After a
+  cancellation the page is the same screen without its buttons: the focus
+  goes to the heading of the screen (`useScreenHeadingFocus()` of `ui`),
+  in the `useLayoutEffect` of the commit that shows the record as it is
+  now, and only after an answer to what the user did here (a ref). A
+  record that was read again behind the screen moves no focus. The same
+  holds for a step that the next one replaced (the profile, before the
+  times).
+- **One form for a new record and for one that is changed.** `BookingForm`
+  has no word of its own for what it does: `submitLabel` says it, and
+  what only one of the two sends (the request of a new booking) is its
+  `children`. The screen that moves a booking opens with what the booking
+  has (`moveHrefOf`: its member of the staff and its day, in the query),
+  and reads what is free for a visit as long as the booking.
+- **What a change undoes is said before it is made.** A confirmed booking
+  that is moved waits for the salon again: an `Alert` of the tone `info`
+  above the form says so. What the screen cannot show is said in a
+  sentence, too: the list of free times leaves out those that the
+  booking itself takes.
+
 ## Screens and the session
 
 | Component (`@beauty-salon-frontend/session`) | Use it for |
@@ -502,6 +581,14 @@ top.
   matches all four states; it is rendered for `signedIn` only.
 - Signing out is `SessionAccount`'s business. The screens disappear with the
   session, in every tab.
+- **The links of the header depend on who is signed in.** A pure function
+  gives them for the role and the path (`navigationFor` in
+  `frontend/apps/portal-app/src/navigation.ts`): a customer of the portal
+  has the search and their bookings; a visitor and an account of another
+  role have none, and `AppShell` is then given no `navigation` (a landmark
+  without a link says nothing). A link is the current one on every screen
+  below it: the page of a salon belongs to the search, the page of a
+  booking to the bookings.
 - **What the sign-in screen says besides the form** is the application's:
   `signInNotice` of `RequireSession` is why an account is asked for (above
   the form, where it is read first), `signInHelp` the ways on for somebody
@@ -576,7 +663,10 @@ behind it. Their screens are in `frontend/apps/portal-app/src/account/`.
   and an answer of the API is no event of the user. The screen would then be
   painted, and found by whoever waited for it, with the focus still where
   the screen before it left it. `useScreen`
-  (`ui/src/components/app-shell/screens.tsx`) is the example to read.
+  (`ui/src/components/app-shell/screens.tsx`) is the example to read. A
+  screen that stays, and takes away what had the focus, moves it to its
+  heading with `useScreenHeadingFocus()` of the same file ("What was
+  written is listed, changed and taken back").
 - **What goes somewhere is a link, what does something is a button.**
   `ButtonLink` for 「新しい予約」 that opens another screen, `Button` for
   「予約を確定する」. This package does not know the router: an application
@@ -601,8 +691,9 @@ behind it. Their screens are in `frontend/apps/portal-app/src/account/`.
   keeps the focus inside, makes the page behind inert, closes on Escape and
   gives the focus back. Give the actions in the order they are read, the one
   that changes nothing first (「戻る」, then 「予約を取り消す」): the focus
-  goes to the first. `onClose` is called whenever it has closed; set `open` to
-  false there.
+  goes to the first. In a dialog with a form, the first control of the form
+  stands before the actions and takes the focus. `onClose` is called whenever
+  it has closed; set `open` to false there.
 - **Notifications** say what was done: `notify({ tone: 'success', message:
   '予約を確定しました。' })`. The notification stays, also after the screen
   has changed, until the user closes it or the next one takes its place;

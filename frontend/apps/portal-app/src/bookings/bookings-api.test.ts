@@ -1,12 +1,17 @@
 import type {
+  ModelsBookingCancelRequest,
+  ModelsBookingRescheduleRequest,
   ModelsCustomerBookingCreateRequest,
   ModelsCustomerProfileCreateRequest,
 } from '@beauty-salon-frontend/api-client'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   book,
+  cancelOwnBooking,
   createOwnProfile,
+  moveOwnBooking,
   readOwnBooking,
+  readOwnBookings,
   readOwnProfile,
   readService,
   readSlots,
@@ -136,7 +141,19 @@ const SLOTS = {
   serviceId: SERVICE_ID,
   date: '2026-11-24',
   staffId: undefined,
+  duration: undefined,
 }
+
+const CANCELLATION: ModelsBookingCancelRequest = {
+  cancellationReason: '都合が悪くなりました',
+}
+
+const MOVE: ModelsBookingRescheduleRequest = {
+  startTime: '2026-11-25T02:00:00.000Z',
+  staffId: STAFF_ID,
+}
+
+const UPCOMING = { bookingDateFrom: '2026-11-19' }
 
 /** Every operation of the booking screens, called as a screen calls it. */
 const OPERATIONS: [string, () => Promise<{ type: string }>][] = [
@@ -146,6 +163,9 @@ const OPERATIONS: [string, () => Promise<{ type: string }>][] = [
   ['readSlots', () => readSlots(SLOTS)],
   ['book', () => book(BOOKING)],
   ['readOwnBooking', () => readOwnBooking(BOOKING_ID)],
+  ['readOwnBookings', () => readOwnBookings(UPCOMING, undefined)],
+  ['cancelOwnBooking', () => cancelOwnBooking(BOOKING_ID, CANCELLATION)],
+  ['moveOwnBooking', () => moveOwnBooking(BOOKING_ID, MOVE)],
 ]
 
 const only = (...names: string[]) =>
@@ -203,6 +223,9 @@ describe('the operations of the booking screens', () => {
       'readSlots',
       'book',
       'readOwnBooking',
+      'readOwnBookings',
+      'cancelOwnBooking',
+      'moveOwnBooking',
     ),
   )('%s', (_name, call) => {
     it.each([
@@ -218,7 +241,9 @@ describe('the operations of the booking screens', () => {
     )
   })
 
-  describe.each(only('createOwnProfile', 'book'))('%s', (_name, call) => {
+  describe.each(
+    only('createOwnProfile', 'book', 'cancelOwnBooking', 'moveOwnBooking'),
+  )('%s', (_name, call) => {
     it.each([
       ['a body that is too large', 413],
       ['a body of a type it does not read', 415],
@@ -237,6 +262,17 @@ describe('the operations of the booking screens', () => {
       expect(await call()).toEqual({ type: 'refused' })
     })
   })
+
+  describe.each(only('cancelOwnBooking', 'moveOwnBooking'))(
+    '%s',
+    (_name, call) => {
+      it('should say that there is no such booking when the API finds none', async () => {
+        answering(() => problem(404))
+
+        expect(await call()).toEqual({ type: 'notFound' })
+      })
+    },
+  )
 
   describe('readOwnProfile', () => {
     it('should hand over the profile of the answer', async () => {
@@ -352,6 +388,16 @@ describe('the operations of the booking screens', () => {
       })
       expect(asked(fetched)).toEqual([
         `GET /salons/${SALON_ID}/available-slots?serviceId=${SERVICE_ID}&date=2026-11-24&limit=100`,
+      ])
+    })
+
+    it('should ask for times of the length it is given: a booking that is moved keeps its length', async () => {
+      const fetched = answering(() => page([]))
+
+      await readSlots({ ...SLOTS, staffId: STAFF_ID, duration: 90 })
+
+      expect(asked(fetched)).toEqual([
+        `GET /salons/${SALON_ID}/available-slots?staffId=${STAFF_ID}&duration=90&serviceId=${SERVICE_ID}&date=2026-11-24&limit=100`,
       ])
     })
 
@@ -476,6 +522,119 @@ describe('the operations of the booking screens', () => {
         expect(fetched).not.toHaveBeenCalled()
       },
     )
+  })
+})
+
+describe('the operations of the screens of the bookings of a customer', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  describe('readOwnBookings', () => {
+    it('should ask for the visits from a day on, twenty at a time, and hand over the page of the answer', async () => {
+      const fetched = answering(() => page([{ id: BOOKING_ID }], 'second'))
+
+      expect(await readOwnBookings(UPCOMING, undefined)).toEqual({
+        type: 'found',
+        items: [{ id: BOOKING_ID }],
+        total: 1,
+        nextCursor: 'second',
+      })
+      expect(asked(fetched)).toEqual([
+        'GET /customers/me/bookings?bookingDateFrom=2026-11-19&limit=20',
+      ])
+    })
+
+    it('should ask for the visits until a day, from where the page before ended', async () => {
+      const fetched = answering(() => page([]))
+
+      await readOwnBookings({ bookingDateTo: '2026-11-18' }, 'second')
+
+      expect(asked(fetched)).toEqual([
+        'GET /customers/me/bookings?cursor=second&bookingDateTo=2026-11-18&limit=20',
+      ])
+    })
+
+    it('should have no booking, and not fail, for an account without a profile: nobody has booked for it', async () => {
+      answering(() => problem(404))
+
+      expect(await readOwnBookings(UPCOMING, undefined)).toEqual({
+        type: 'found',
+        items: [],
+        total: 0,
+        nextCursor: null,
+      })
+    })
+
+    it('should have failed when the API does not take what was asked for', async () => {
+      answering(() => problem(400))
+
+      expect(await readOwnBookings(UPCOMING, undefined)).toEqual({
+        type: 'failed',
+      })
+    })
+  })
+
+  describe('cancelOwnBooking', () => {
+    it('should send the reason, and hand over the booking as the API cancelled it', async () => {
+      const fetched = answering(() =>
+        record(200, { id: BOOKING_ID, status: 'cancelled' }),
+      )
+
+      expect(await cancelOwnBooking(BOOKING_ID, CANCELLATION)).toEqual({
+        type: 'cancelled',
+        booking: { id: BOOKING_ID, status: 'cancelled' },
+      })
+      expect(asked(fetched)).toEqual([
+        `POST /customers/me/bookings/${BOOKING_ID}/cancel`,
+      ])
+      expect(sent(fetched)).toMatchObject({
+        body: JSON.stringify(CANCELLATION),
+      })
+    })
+
+    it('should send that there is no reason when none was given', async () => {
+      const fetched = answering(() => record(200, { id: BOOKING_ID }))
+
+      await cancelOwnBooking(BOOKING_ID, { cancellationReason: null })
+
+      expect(sent(fetched)).toMatchObject({
+        body: '{"cancellationReason":null}',
+      })
+    })
+
+    it('should have failed when the API does not take the request: the dialog sends what the API takes', async () => {
+      answering(() => problem(400))
+
+      expect(await cancelOwnBooking(BOOKING_ID, CANCELLATION)).toEqual({
+        type: 'failed',
+      })
+    })
+  })
+
+  describe('moveOwnBooking', () => {
+    it('should send the time and the member of the staff, and hand over the booking as the API moved it', async () => {
+      const fetched = answering(() =>
+        record(200, { id: BOOKING_ID, status: 'pending' }),
+      )
+
+      expect(await moveOwnBooking(BOOKING_ID, MOVE)).toEqual({
+        type: 'moved',
+        booking: { id: BOOKING_ID, status: 'pending' },
+      })
+      expect(asked(fetched)).toEqual([
+        `POST /customers/me/bookings/${BOOKING_ID}/reschedule`,
+      ])
+      expect(sent(fetched)).toMatchObject({ body: JSON.stringify(MOVE) })
+    })
+
+    it('should say that what was chosen is not taken when the API does not take the request', async () => {
+      answering(() => problem(400, [{ field: 'staffId', rule: 'not_found' }]))
+
+      expect(await moveOwnBooking(BOOKING_ID, MOVE)).toEqual({
+        type: 'invalid',
+      })
+    })
   })
 })
 
