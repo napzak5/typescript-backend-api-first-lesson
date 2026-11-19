@@ -26,7 +26,7 @@ Start with what the repository can check by itself, and read the output, not onl
 
 - `pnpm check:api-db`: property names, nullability and required properties of the API models against the tables.
 - `pnpm check:generated`: the generated files against the TypeSpec definitions. It regenerates them and compares with the last commit, so regenerated files that are not committed are reported.
-- `pnpm lint`, `pnpm format:check`, `pnpm build:prod`, `pnpm typecheck`, `pnpm knip`, `pnpm test`, `pnpm test:integration`. `make ci-check` runs all of the above in the order of the CI workflow.
+- `pnpm lint`, `pnpm format:check`, `pnpm build:prod`, `pnpm typecheck`, `pnpm knip`, `pnpm test`, `pnpm test:integration`, `pnpm test:e2e` (the browser tests of the frontend). `make ci-check` runs all of the above in the order of the CI workflow.
 - `pnpm check:db-schema`, which `make ci-check` leaves out: `schema.ts`, `relations.ts` and `sql/setup.sql` against each other and against the last commit. It drops and recreates the database that `DATABASE_URL` names, so run it only when the caller has said that this is acceptable.
 
 Then review what those checks do not see:

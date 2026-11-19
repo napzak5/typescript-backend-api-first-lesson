@@ -19,7 +19,7 @@
 
 - 生成クライアントを使う業務の画面（いま API を呼ぶ画面は、サインインとサインアウトだけ）
 - ユーザー登録、メールアドレスの確認、パスワードの再設定、スタッフの招待の受け入れ、2 要素認証の設定、セッションの一覧の画面
-- API のモックサーバーと、実際のブラウザーを操作するテスト（画面のテストは、jsdom から実際の API を呼ぶ。[テスト](#実際の-api-と-db-を使うテストpnpm-testintegration)）
+- API のモックサーバー（画面のテストは、jsdom からも、実際のブラウザーからも、実際の API を呼ぶ。[テスト](#実際の-api-と-db-を使うテストpnpm-testintegration)）
 - 共有リンクを開く画面（サーバーには、共有リンクのオペレーションがすべてある。クライアントは OpenAPI の全オペレーションについて生成され、そのすべてに、サーバーの実装がある）
 
 ## 構成
@@ -44,10 +44,12 @@
 | `config` | `import.meta.env` を読む `env` オブジェクトと、モード判定関数（`isProductionMode` など） | `io`、`ui`（型のみ） |
 | `theme` | デザイントークン（`src/tokens.css`）、リセットと素の要素のスタイル、スタイルの規則の検査（`src/style-rules.ts`） | 3つのアプリ、`ui`（カタログとテスト） |
 | `ui` | 共有コンポーネント（`Button`、フォームの部品 `TextField`・`TextArea`・`Select`・`RadioGroup`・`Checkbox`、メッセージの `Alert`、画面の骨組みの部品 `AppShell`・`Navigation`・`PageHeader`・`Card`・`DescriptionList`・`Badge`・`Table`・`EmptyState`・`LoadingIndicator`・`Dialog`、リンクの `LinkProvider`・`ButtonLink`、通知の `NotificationProvider`・`useNotifications`、`EnvironmentBanner`）、クラス名をつなぐ `classNames`、カタログ（Storybook。`session` のストーリーも表示する） | 3つのアプリ、`session` |
-| `testing` | テストが共有するもの: jest-dom のマッチャー、jsdom にない `dialog` 要素のメソッド（`showModal`・`close`）、アクセシビリティの検査（axe-core）、ストーリーごとにその検査を宣言する関数、実際の API を使うテストの仕組み（`testing/api`） | `ui`、`session`、3つのアプリのテスト |
+| `testing` | テストが共有するもの: jest-dom のマッチャー、jsdom にない `dialog` 要素のメソッド（`showModal`・`close`）、アクセシビリティの検査（axe-core）、ストーリーごとにその検査を宣言する関数、実際の API を使うテストの仕組み（`testing/api`） | `ui`、`session`、3つのアプリのテスト、`frontend/e2e` |
 | `assets` | 画像アセット | なし |
 
 アプリが直接使っているのは `ui`、`theme`、`session` です（`ui` は `config` から型を1つ借りています）。`api-client` と `io` は、`session` を通して使われています。
+
+実際のブラウザーで通すテスト（`@beauty-salon-frontend/e2e`）は、`frontend/e2e` にあります。`testing` から、テスト用のサーバーを呼ぶコードと、アクセシビリティの検査の規則を使います。
 
 アプリのビルド（`vite build`）は、`api-client`、`io`、`session`、`config`、`ui`、`assets` を、rslib でビルドした `dist/` を通して参照します。`theme` と `testing` はビルドせず、ソースのまま参照されます。`ui` のコンポーネントは自分のスタイルシートを自分で読み込むので、アプリが読み込むスタイルシートは `theme` の 1 つだけです（`src/main.tsx`）。アプリの開発サーバーとテストは、エクスポート条件 `@beauty-salon-frontend/source` を持つパッケージ（`ui`、`io`、`config`、`api-client`、`session`）をソースから読みます。コンポーネントの変更は、パッケージのビルドを待たずに画面に出ます。`pnpm dev` は最初にフロントエンドのパッケージをビルドしてから、各パッケージの監視ビルドと各アプリの開発サーバー（とバックエンド）を起動します。テストはビルドを必要としません（[テスト](#テスト)）。
 
@@ -390,11 +392,28 @@ API を呼ぶコードは、`fetch` も API も差し替えずに、本番と同
 - `session` の `src/session.integration.test.tsx`: サインイン、誤ったパスワード、期限切れのあとの再発行（同時のリクエストで 1 回）、再発行できないセッション、API で終わったセッション、サインアウト
 - `session` の `src/sign-in.integration.test.tsx`: サインインの画面を、利用者と同じように操作する（入力して、ボタンを押す）。サインインして開こうとした画面が出ること、「サインインしたままにする」、誤ったパスワードと未登録のメールアドレス、空の欄と形の誤ったメールアドレスでは何も送らないこと、2 要素認証（認証アプリのコード、誤ったコードのあとのバックアップコード、空のコード、最初の段階へ戻る）、サインイン済みの人、ヘッダーからのサインアウト、ロールの合わないアカウント
 - 各アプリの `src/App.integration.test.tsx`: そのアプリを使えるロールと使えないロール、開こうとしたアドレスの画面がサインインのあとに出ること、画面の移動、サインアウト、サインインした状態でのアクセシビリティ
-- `testing` の `src/api/test-api.integration.test.ts`: この仕組みそのもの（シードのデータがあること、あるテストが書いたものが次のテストに残らないこと、トークンのないリクエストをテスト用のサーバーが受け付けないこと、テスト用のサーバーが返す認証アプリのコードを API が受け付けること）
+- `testing` の `src/api/test-api.integration.test.ts`: この仕組みそのもの（シードのデータがあること、あるテストが書いたものが次のテストに残らないこと、トークンのないリクエストをテスト用のサーバーが受け付けないこと、テスト用のサーバーが返す認証アプリのコードを API が受け付けること、ブラウザーから呼ぶための API が、指定したポートで待ち受け、指定したオリジンだけを許可すること）
 
 画面を操作するテストは、`@testing-library/user-event` で入力し、ボタンを押します。2 要素認証の画面のテストは、API で 2 要素認証を設定し、認証アプリのコードを `testApi().authenticatorCode(secret)` で得ます（テストには認証アプリがないため、テスト用のサーバーが計算します）。
 
-書き方は、スキル [frontend-testing](../.claude/skills/frontend-testing/SKILL.md) にあります。API のモックサーバーと、実際のブラウザーを操作するテストはありません。
+書き方は、スキル [frontend-testing](../.claude/skills/frontend-testing/SKILL.md) にあります。API のモックサーバーはありません。
+
+### 実際のブラウザーで通すテスト（`pnpm test:e2e`）
+
+`frontend/e2e` に、実際のブラウザー（Playwright の Chromium）を操作するテストがあります。ビルドした 3 つのアプリを、同じテスト用のサーバーの API と PostgreSQL に対して操作します。ここでも、何も差し替えません。ファイル名は `*.e2e.test.ts` です。
+
+- 実行のはじめに、テスト用のサーバーを起動し、その上に API を 1 つ、ポート 4100 で起動します。この API は、3 つのアプリのオリジンからの呼び出しを許可します（CORS）
+- 3 つのアプリを、その API のために `vite build --mode test` でビルドして（`VITE_BACKEND_BASE_URL` は、環境変数が `.env.test` より優先されます）、配信します。portal-app は 4101、admin-app は 4102、dashboard-app は 4103 です。どれもこのマシンだけで待ち受け、開発サーバー（3000〜3003）とは別のポートなので、`pnpm dev` と同時に動かせます
+- アプリは 1 つの API のためにビルドされるので、テストは 1 つずつ順に実行します。テストが終わるたびに、API の DB は新しい複製に替わります。ブラウザーの状態（`localStorage` など）は、テストごとに新しいものです
+- アプリのビルドは、ワークスペースのパッケージの `dist/` を読みます。`pnpm test:e2e` は、先にパッケージをビルドします
+- ブラウザーは、`pnpm test:e2e:install` で入れます（最初の 1 回と、Playwright を更新したあと）
+
+ここで確かめるのは、主要な経路の全体と、jsdom では確かめられないことです。画面の状態の 1 つ 1 つ（メッセージ、断られた試行、ロールごとの表示）は、jsdom の結合テストで確かめます。
+
+- `src/sign-in.e2e.test.ts`: 開こうとしたアドレスにサインインの画面が出て、サインインするとそのアドレスの画面が出ること、空の欄では何も送らず、最初の欄へフォーカスが移ること、誤ったパスワード、キーボードだけでのサインイン、読み込み直してもサインインが続くこと、別のタブでのサインアウトがこのタブにも及ぶこと、2 要素認証のコード
+- `src/applications.e2e.test.ts`: アプリごとの、使えるロールと使えないロール、portal-app のサインインとサインアウト、スマートフォンの幅（390px）の画面
+
+テストが開いた画面では、アクセシビリティ（WCAG 2.2 AA。ブラウザーが描画するので、色のコントラストを含む）、横にはみ出さないこと、flex で配置された要素がないことを確かめます（`src/checks.ts`）。
 
 ## 関連ドキュメント
 
