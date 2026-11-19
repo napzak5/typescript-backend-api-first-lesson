@@ -204,8 +204,10 @@ describe('the security of an account, against the API', () => {
       renderSecurity()
       await listed('1 台の端末でサインインしています')
 
-      // Assert
-      const passwordPart = screen.getByRole('region', { name: 'パスワード' })
+      // Assert: the account and the devices are read apart, either may come first
+      const passwordPart = await screen.findByRole('region', {
+        name: 'パスワード',
+      })
       // The seeded accounts have the passwords they were made with
       expect(password?.['changedAt']).toBeNull()
       expect(
