@@ -141,6 +141,25 @@ describe('Form', () => {
     expect(seen).toHaveBeenLastCalledWith(email())
   })
 
+  it('should move the focus to the first button of a group of radio buttons that has an error while none is chosen: the group takes no focus', async () => {
+    // Act
+    await stories.WithChoiceError.run()
+
+    // Assert
+    expect(screen.getByRole('radio', { name: '1 名' })).toHaveFocus()
+    expect(
+      screen.getByRole('radiogroup', { name: 'ご来店の人数' }),
+    ).toHaveAccessibleDescription('人数を選んでください。')
+  })
+
+  it('should move the focus to the chosen button of such a group, where the Tab key would enter it', async () => {
+    // Act
+    await stories.WithChoiceRefused.run()
+
+    // Assert
+    expect(screen.getByRole('radio', { name: '2 名' })).toHaveFocus()
+  })
+
   it('should move the focus past the controls that have no error', async () => {
     // Act
     await stories.WithOneError.run()

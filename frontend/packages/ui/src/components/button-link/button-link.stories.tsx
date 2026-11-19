@@ -27,3 +27,13 @@ export const Quiet: Story = {
 export const Small: Story = {
   args: { size: 'small' },
 }
+
+/** One of several links with the same text: its name says which record it leads to */
+export const Named: Story = {
+  args: {
+    size: 'small',
+    href: '/bookings/1/reschedule',
+    children: '変更する',
+    'aria-label': '11月24日の予約を変更する',
+  },
+}
