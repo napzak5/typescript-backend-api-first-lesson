@@ -1,7 +1,7 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { testApi } from '@beauty-salon-frontend/testing/api'
 import { QueryClient } from '@tanstack/react-query'
-import { screen, within } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, type MockInstance, vi } from 'vitest'
 import * as z from 'zod'
@@ -412,7 +412,7 @@ describe('what a reader does with the reviews of a salon, against the API', () =
 
       // Assert: the profile was asked for, and there is none
       await reviewList()
-      await vi.waitFor(() => {
+      await waitFor(() => {
         expect(client.getQueryData(OWN_PROFILE)).toEqual({ type: 'none' })
         expect(client.isFetching()).toBe(0)
       })
@@ -540,7 +540,7 @@ describe('what a reader does with the reviews of a salon, against the API', () =
       )
 
       // Assert
-      await vi.waitFor(async () => {
+      await waitFor(async () => {
         expect(await pressed()).toEqual(['true', 'true', 'false'])
       })
       expect(await titles()).toEqual(TOKYO_LATEST_FIRST)
@@ -602,7 +602,7 @@ describe('what a reader does with the reviews of a salon, against the API', () =
       const user = userEvent.setup()
       await reviewToActOn(review.title)
       await user.selectOptions(await order(), '参考になった順')
-      await vi.waitFor(async () => {
+      await waitFor(async () => {
         expect((await titles()).at(0)).toBe('Excellent service!')
       })
       const tied = await titles()
@@ -632,7 +632,7 @@ describe('what a reader does with the reviews of a salon, against the API', () =
       await user.selectOptions(await order(), '新しい順')
 
       // Assert
-      await vi.waitFor(async () => {
+      await waitFor(async () => {
         expect(await titles()).toEqual(TOKYO_LATEST_FIRST)
       })
       expect(helpfulIn(await reviewTitled(last))).toBe(
@@ -643,7 +643,7 @@ describe('what a reader does with the reviews of a salon, against the API', () =
       await user.selectOptions(await order(), '参考になった順')
 
       // Assert
-      await vi.waitFor(async () => {
+      await waitFor(async () => {
         expect(await titles()).toEqual([first, last, second])
       })
     })

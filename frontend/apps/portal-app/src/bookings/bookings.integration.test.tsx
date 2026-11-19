@@ -1,7 +1,13 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { testApi } from '@beauty-salon-frontend/testing/api'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, useLocation } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -570,7 +576,7 @@ describe('the screens of a booking, against the API', () => {
       expect(await screen.findByRole('alert')).toHaveTextContent(
         'この日時では、予約できませんでした。空いている時刻を読み込み直しましたので、選び直してください。予約できない状態が続くときは、サロンにお問い合わせください。',
       )
-      await vi.waitFor(async () =>
+      await waitFor(async () =>
         expect(await offeredTimes()).not.toContain('10:00'),
       )
       expect(requestControl()).toHaveValue('相談したいことがあります')
