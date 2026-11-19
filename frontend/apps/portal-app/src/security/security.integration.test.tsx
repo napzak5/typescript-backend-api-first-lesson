@@ -80,6 +80,10 @@ describe('the security of the account in the portal, against the API', () => {
       '/mypage/security/password',
       'パスワードを変更するには、サインインしてください。',
     ],
+    [
+      '/mypage/security/two-factor',
+      '2 要素認証を設定するには、サインインしてください。',
+    ],
   ])('the screen at %s', (path, notice) => {
     it('should ask somebody who is not signed in to sign in', async () => {
       // Act
@@ -134,6 +138,34 @@ describe('the security of the account in the portal, against the API', () => {
 
     // Assert
     expect(await heading('マイページ')).toHaveFocus()
+  })
+
+  it('should lead from the security of the account to the set-up of the second factor, and back', async () => {
+    // Arrange
+    await signedInAs(CUSTOMER)
+    renderAt('/mypage/security')
+    const user = userEvent.setup()
+
+    // Act
+    await user.click(
+      within(
+        await screen.findByRole('region', { name: '2 要素認証' }),
+      ).getByRole('link', { name: '2 要素認証を設定する' }),
+    )
+
+    // Assert
+    expect(await heading('2 要素認証を設定する')).toHaveFocus()
+    expect(address).toBe('/mypage/security/two-factor')
+    expect(document.title).toBe(`2 要素認証を設定する | ${TITLE}`)
+    expect(await screen.findByLabelText('パスワード')).toBeVisible()
+    expect(await findAccessibilityViolations()).toEqual([])
+
+    // Act
+    await user.click(screen.getByRole('link', { name: 'やめる' }))
+
+    // Assert
+    expect(await heading('アカウントの安全')).toHaveFocus()
+    expect(address).toBe('/mypage/security')
   })
 
   it('should lead to the security of the account from the page of an account that has no profile', async () => {

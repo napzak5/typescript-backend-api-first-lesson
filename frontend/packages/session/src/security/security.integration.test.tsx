@@ -57,7 +57,10 @@ const renderApplication = (shown: ReactNode) =>
 
 const renderSecurity = () =>
   renderApplication(
-    <AccountSecurityScreen passwordHref='/account/security/password' />,
+    <AccountSecurityScreen
+      passwordHref='/account/security/password'
+      twoFactorHref='/account/security/two-factor'
+    />,
   )
 
 const signInAs = async (email: string): Promise<void> => {
