@@ -16,6 +16,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLayoutEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
+import { BookingReview } from '../reviews/booking-review'
 import { CUSTOMERS } from '../roles'
 import { readSalon, readStaff } from '../salons/salons-api'
 import { UnreadNotice } from '../salons/unread-notice'
@@ -56,7 +57,8 @@ type BookingDetailsProps = {
  * read; what is no longer there leaves the rest as it is.
  *
  * Below it is what the customer can still do: move the booking, on a
- * screen of its own, or cancel it, after a dialog has asked.
+ * screen of its own, or cancel it, after a dialog has asked. A visit that
+ * took place has its review there instead, or the way to write one.
  */
 const BookingDetails = ({ booking }: BookingDetailsProps) => {
   const queryClient = useQueryClient()
@@ -185,6 +187,10 @@ const BookingDetails = ({ booking }: BookingDetailsProps) => {
                 />
               )}
             </Card>
+            {/* A visit that took place is written about, once */}
+            {booking.status === 'completed' && (
+              <BookingReview bookingId={booking.id} salon={found} />
+            )}
           </>
         )
       },

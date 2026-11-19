@@ -50,6 +50,16 @@ const OwnPage = () => {
               </p>
             </Card>
             <OwnPreferences />
+            <Card title='レビュー'>
+              <p>
+                来店したサロンに書いたレビューを確かめ、変更し、削除できます。
+              </p>
+              <p>
+                <ButtonLink href='/mypage/reviews' variant='secondary'>
+                  自分のレビューを見る
+                </ButtonLink>
+              </p>
+            </Card>
           </>
         ))
         .with({ type: 'none' }, () => (
@@ -79,7 +89,8 @@ const OwnPage = () => {
 /**
  * What the salons know of the customer who is signed in: what they keep of
  * a member, what the customer said about themselves, and what the customer
- * wants them to keep in mind, each with the way to change it.
+ * wants them to keep in mind, each with the way to change it; and the way
+ * to what the customer wrote about the salons.
  */
 export const MyPageScreen = () => (
   <RequireSession
