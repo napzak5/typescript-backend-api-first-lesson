@@ -23,6 +23,13 @@ import { useLayoutEffect, useRef, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import { type FormSays, NOTHING_TO_SAY } from '../forms'
+import {
+  createOwnProfile,
+  OWN_PROFILE,
+  type ProfileRead,
+  readOwnProfile,
+} from '../profile/profile-api'
+import { afterProfile, readProfile } from '../profile/profile-flow'
 import { CUSTOMERS } from '../roles'
 import { dateAt, durationOf } from '../salons/salon-format'
 import { readSalon, readStaff } from '../salons/salons-api'
@@ -38,27 +45,16 @@ import {
 } from './booking-choice'
 import { afterBooking, readBooking } from './booking-flow'
 import { priceLineOf } from './booking-format'
-import {
-  book,
-  createOwnProfile,
-  type ProfileRead,
-  readOwnProfile,
-  readService,
-  readSlots,
-} from './bookings-api'
+import { book, readService, readSlots } from './bookings-api'
 import {
   BookingForm,
   type TimesOfDay,
 } from './components/booking-form/booking-form'
 import { OWN_BOOKING_LISTS } from './own-bookings'
-import { afterProfile, readProfile } from './profile-flow'
 
 const TITLE = '予約する'
 
 const UNREAD = P.union('tooManyRequests', 'failed')
-
-/** The key under which the profile of the account is kept */
-const OWN_PROFILE = ['own', 'profile']
 
 type OfServiceProps = {
   salon: ModelsSalonResponse

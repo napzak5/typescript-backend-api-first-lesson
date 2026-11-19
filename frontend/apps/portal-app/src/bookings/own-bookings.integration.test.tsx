@@ -324,7 +324,7 @@ describe('the bookings of a customer, against the API', () => {
   })
 
   describe('the navigation of the header', () => {
-    it('should lead a customer who is signed in to the search and to their bookings, and mark the one they are at', async () => {
+    it('should lead a customer who is signed in to the search, to their bookings and to their own page, and mark the one they are at', async () => {
       // Arrange
       await signedInAs(CUSTOMER)
       renderAt('/')
@@ -344,6 +344,7 @@ describe('the bookings of a customer, against the API', () => {
       ).toEqual([
         ['サロンを探す', '/', 'page'],
         ['予約の一覧', '/bookings', null],
+        ['マイページ', '/mypage', null],
       ])
 
       // Act

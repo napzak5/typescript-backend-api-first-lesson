@@ -214,7 +214,11 @@ and not reject
 of the operations and one of the answers show that every operation reads
 every answer. Functions that read are also asked what they ask for (the
 parameters and the cursor of each request) and how they read a list to its
-end: `frontend/apps/portal-app/src/salons/salons-api.test.ts`.
+end: `frontend/apps/portal-app/src/salons/salons-api.test.ts`. The answers
+such tests make up are one module of the application
+(`frontend/apps/portal-app/src/__tests__/api-answers.ts`: `problem`,
+`record`, `page`, `answering`, and `asked` and `sent` for what a function
+asked for).
 
 ## Against the real API
 
@@ -498,6 +502,48 @@ the example to read: a customer books a time that the screen read.
   them, and the times are worked out for the time zone of the salon: the
   test then holds on every day, and in whatever time zone it runs.
 
+A form that changes a record
+(`frontend/apps/portal-app/src/profile/profile.integration.test.tsx`) is
+tested for what it must leave alone as well:
+
+- **What somebody else wrote while the form was open stays.** The test
+  opens the form, writes another column of the row with a statement
+  (`salonWrites`), sends a change of one value, and asserts the row: the
+  value that was changed, and the one the statement wrote.
+- **A form that is sent as it was opened writes nothing.** The row has
+  the `updatedAt` it had before.
+- **What a form opens with** is tested with what the application keeps
+  (`asTheApplicationKeeps`): the page reads the record, a statement
+  changes it, and the form that is opened through its link must hold what
+  is stored now. The value of a control is found with
+  `findByDisplayValue`; `findByText` does not see it.
+- **That nothing is read behind a form** is tested with the managers of
+  TanStack Query: `onlineManager.setOnline(false)` and then `true`,
+  `focusManager.setFocused(false)` and then `true`. A read that they
+  start begins a moment later, and a test cannot wait for what must not
+  happen. So the table is taken away, `fetch` is watched, and the form is
+  sent: when its failure is said, a read behind the form would have been
+  asked for long before. The requests about the record are then the one
+  of the form (`askedOfTheProfile(fetched)` is `['PATCH']`), and what was
+  typed is still there. `afterEach` puts the managers back
+  (`focusManager.setFocused(undefined)`, `onlineManager.setOnline(true)`).
+- **What a write made is asserted on the next screen without a wait.**
+  Once the heading of the page is there, the record is read with
+  `getByRole`, not `findByRole`: a page that said first that there is
+  nothing, and showed the record after reading it again, would pass a
+  test that waits.
+- **A record that is gone is made gone as the API does it.** The
+  statements are those of the repository (a customer who was removed from
+  the ledger has `deletedAt`, and the account no longer names it:
+  `users."customerId"` is `null`), not a guess at what would make the
+  read fail.
+- **A refusal the screen cannot bring about is not tested here.** A form
+  that sends nothing the API refuses never gets the answer that names a
+  value. What the form says then is tested where the answer can be made
+  up (the pure function, and the function that calls the API), and the
+  comment at the top of the integration test says what is missing from
+  it, and why.
+
 `App.test.tsx` of an application keeps what needs no API: what somebody who
 is not signed in sees. Everything behind the sign-in is in
 `App.integration.test.tsx`, and so is a route whose screen reads from the
@@ -589,7 +635,9 @@ test.describe('the admin application', () => {
 - Elements are found as a user finds them: `getByRole`, `getByLabel`,
   `getByText`. No class name, no test ID. The locators and the steps that
   tests share are in `src/sign-in.ts` (`heading`, `enterCredentials`,
-  `signOutButton`); the applications, their origins and their titles in
+  `signOutButton`, and `registerNewcomer` for an account the seed data
+  does not have: registered and confirmed through the API, without a
+  profile); the applications, their origins and their titles in
   `src/applications.ts`.
 - Assertions on the page are the ones that wait:
   `await expect(locator).toBeVisible()`, `toBeFocused()`, `toHaveURL()`. A
@@ -634,6 +682,17 @@ test.describe('the admin application', () => {
 - **What several files arrange** is a module beside them
   (`src/bookings.ts`: the day, a booking made through the API with the
   `request` fixture, the locators of the booking screens).
+- **A form is taken through with the keyboard**
+  (`src/mypage.e2e.test.ts`): Tab from control to control in the order
+  they are read, Space on a box, and Enter in a control that holds text
+  sends the form.
+- **Controls that share a row where there is room** are asserted by where
+  they are (`boundingBox()`): the same `y` at the width of a desk, the
+  same `x` and one below the other at 390px.
+- **A value no line can be broken in** is written with a statement before
+  the page is opened: a browser breaks a line at a space and after a
+  hyphen, not at an underscore. `expectSoundPage` then says whether it
+  sticks out.
 - A radio button among many is found by its whole name
   (`getByRole('radio', { name: '10:30', exact: true })`), and the keyboard
   is taken through the group as a person takes it: Tab to the group, Space

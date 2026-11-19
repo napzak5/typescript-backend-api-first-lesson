@@ -1,4 +1,9 @@
-import type { APIRequestContext, Locator, Page } from '@playwright/test'
+import {
+  type APIRequestContext,
+  expect,
+  type Locator,
+  type Page,
+} from '@playwright/test'
 import * as z from 'zod'
 import type { TestApi } from './fixtures'
 
@@ -7,6 +12,10 @@ export const OWNER = 'owner@beautysalon.jp'
 export const MANAGER = 'manager@beautysalon.jp'
 export const STAFF = 'stylist1@beautysalon.jp'
 export const CUSTOMER = 'customer1@example.com'
+
+/** Somebody who registers in a test: an account without a profile */
+export const NEWCOMER = 'newcomer@example.com'
+export const NEWCOMER_PASSWORD = 'a passphrase that only this test knows'
 
 /** The heading of the screen: where the focus is after the screen changed. */
 export const heading = (page: Page, name: string): Locator =>
@@ -63,6 +72,29 @@ export const accessTokenOf = async (
   })
 
   return signedInSchema.parse(await signedIn.json()).data.accessToken
+}
+
+/**
+ * An account whose address is confirmed, and that has not said who its
+ * customer is: registered as a client that is no screen does it.
+ */
+export const registerNewcomer = async (
+  request: APIRequestContext,
+  api: TestApi,
+): Promise<void> => {
+  const registered = await request.post(`${api.origin}/api/v1/auth/register`, {
+    data: { email: NEWCOMER, password: NEWCOMER_PASSWORD },
+  })
+  expect(registered.status()).toBe(204)
+  const token = new URL(await api.mailedLink(NEWCOMER)).hash.replace(
+    '#token=',
+    '',
+  )
+  const confirmed = await request.post(
+    `${api.origin}/api/v1/auth/verify-email/confirm`,
+    { data: { token } },
+  )
+  expect(confirmed.status()).toBe(204)
 }
 
 /**

@@ -1,0 +1,9 @@
+/* A line of an address: each on its own, as on a letter */
+.line {
+  display: block;
+}
+
+/* What a customer wrote, with the line breaks it was written with */
+.notes {
+  white-space: pre-wrap;
+}

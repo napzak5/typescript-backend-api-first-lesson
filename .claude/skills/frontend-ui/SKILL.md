@@ -178,6 +178,7 @@ nobody reads is removed.
 | `Select` | One of a list. `placeholder` adds a first option without a value |
 | `RadioGroup` | One of a few choices that should all be in sight. `layout='columns'` for many short ones (the times of a day): as many columns as fit, and the arrow keys go through them in the order they are read |
 | `Checkbox` | One thing that is so or not so |
+| `CheckboxGroup` | Several of a few choices. The chosen values are sent under one name (`formData.getAll(name)`). `layout='columns'` for many short ones |
 | `Alert` | A message about the form or the page: `info`, `success`, `warning`, `danger` |
 | `Form` | The form itself: its controls in one column, the message about the whole attempt, the button that sends it |
 
@@ -232,8 +233,9 @@ A new kind of field is built from the parts in `components/field/`: `Field`
 is handed `id`, `aria-describedby` and `aria-invalid`), `control.module.css`
 (the look of a control that holds text) and `choice.module.css` (a checkbox or
 a radio button with its label). A group of controls uses `messageAttributes`
-and `FieldMessages` directly, as `radio-group.tsx` does: the messages belong
-to the group.
+and `FieldMessages` directly, as `radio-group.tsx` and `checkbox-group.tsx`
+do: the group is a `fieldset`, its label the `legend`, and the messages
+belong to the group.
 
 ## A form that calls the API
 
@@ -454,7 +456,9 @@ top.
   An account that was just registered has no profile, and the API books
   for a customer. The screen reads the profile first and shows the form
   for it in place of the times (`ProfileStep`); creating it writes the
-  query of the profile, and the screen goes on to the times of the address.
+  query of the profile (`OWN_PROFILE` of `profile/profile-api.ts`, the key
+  every screen reads the profile under), and the screen goes on to the
+  times of the address.
 - **A part that needs several reads says one thing.** The page of a
   booking (`booking-detail-screen.tsx`) reads the salon, the service and
   the staff the booking names. While one of them is on its way the part is
@@ -546,6 +550,66 @@ page of a booking the ways to move it and to cancel it.
   sentence, too: the list of free times leaves out those that the
   booking itself takes.
 
+### A record is changed in a form
+
+The profile of a customer is the example to read
+(`frontend/apps/portal-app/src/profile/`: `my-page-screen.tsx` shows it,
+`profile-screen.tsx` changes it, and makes it for an account that has
+none).
+
+- **A change sends what was changed, and nothing else.** `PATCH` leaves a
+  property alone that the request does not name. A pure function compares
+  what the form was sent with to the record it was opened with
+  (`readProfileChange(values, shown, today)` in `profile-flow.ts`) and
+  gives the request of the properties that differ: what somebody else
+  wrote in the meantime stays, unless the user changed the same value.
+  Values are compared as they are sent (without the spaces around them,
+  nothing as `null`), so a record that is stored with a space is no
+  change. A form that is sent as it was opened asks the API for nothing:
+  the screen says so (`notify`, the tone `info`) and goes back.
+- **The form opens with what the API says now.** Its controls keep their
+  values (`defaultValue`), so what they open with is what they compare
+  to, and it does not change when a later answer arrives. The screen
+  therefore shows the form for the answer that came after it was mounted
+  (`read.isFetchedAfterMount ? read.data : undefined`), never for what
+  another screen read a while ago.
+- **Nothing is read behind an open form.** The query of the screen has
+  `refetchOnWindowFocus: false` and `refetchOnReconnect: false`: a read
+  that failed behind the form would put the notice in its place, and what
+  was typed would be gone.
+- **One form for a new record and for one that is changed**, here too:
+  `ProfileForm` takes the record or `null`, the `submitLabel` and the
+  properties of `Form`. Which of the two the screen shows is known when
+  the record is read, so **the screen has one title for every state**. A
+  title that changed after the read would be another screen to the frame,
+  which would move the focus to the heading, also on a page that was
+  just loaded.
+- **The parts of a long form are `fieldset`s with a `legend`** (a `div`
+  with `role='group'` does not pass the lint). Controls that share a row
+  do so from the width at which two of them fit (`min-width: 40rem`).
+- **A property inside another is named by its path** (`preferences.notes`),
+  as the API names it in `errors[].field`. What the API says about one
+  value of a list (`preferences.preferredServices.0`) is said at the group
+  that holds them all. What it says about a value the form has no control
+  for is a message about the attempt.
+- **A record that is gone when the change arrives** (404) is no failure
+  to try again. The screen writes into the query that there is none,
+  shows the form for a new record in the place of the other, says why in
+  an `Alert` of the tone `warning`, and moves the focus to the heading
+  (`useScreenHeadingFocus()`): the form that had the focus is gone.
+- **What a value may be is what the API takes**, read from its schema
+  and counted the same way: the lengths of the columns, the form of a
+  phone number, a day of birth from 1900 until today. Today is the day
+  it is where the browser is (`localDateOf`); it is the `max` of the date
+  control as well.
+- **A value nobody gave is said in words** on the page that shows the
+  record (「未登録」, 「未発行」, 「なし」): a name without a value looks
+  like a fault.
+- **What the user cannot change is said where it would be asked for.**
+  The address of a customer is that of the account, and then what the
+  salons keep. The form has no control for it: a sentence among the
+  controls of the contact says so, and whom to ask.
+
 ## Screens and the session
 
 | Component (`@beauty-salon-frontend/session`) | Use it for |
@@ -584,11 +648,13 @@ page of a booking the ways to move it and to cancel it.
 - **The links of the header depend on who is signed in.** A pure function
   gives them for the role and the path (`navigationFor` in
   `frontend/apps/portal-app/src/navigation.ts`): a customer of the portal
-  has the search and their bookings; a visitor and an account of another
-  role have none, and `AppShell` is then given no `navigation` (a landmark
-  without a link says nothing). A link is the current one on every screen
-  below it: the page of a salon belongs to the search, the page of a
-  booking to the bookings.
+  has the search, their bookings and their page; a visitor and an account
+  of another role have none, and `AppShell` is then given no `navigation`
+  (a landmark without a link says nothing). A link is the current one on
+  every screen below it: the page of a salon belongs to the search, the
+  page of a booking to the bookings, the form of the profile to the page
+  of the customer (`isAtOrBelow`: an address that only begins with the
+  same letters is not below).
 - **What the sign-in screen says besides the form** is the application's:
   `signInNotice` of `RequireSession` is why an account is asked for (above
   the form, where it is read first), `signInHelp` the ways on for somebody

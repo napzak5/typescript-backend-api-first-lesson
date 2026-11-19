@@ -11,6 +11,12 @@ export {
 export { Card, type CardProps } from './components/card/card'
 export { Checkbox, type CheckboxProps } from './components/checkbox/checkbox'
 export {
+  CheckboxGroup,
+  type CheckboxGroupLayout,
+  type CheckboxGroupProps,
+  type CheckboxOption,
+} from './components/checkbox-group/checkbox-group'
+export {
   DescriptionList,
   type DescriptionListItem,
   type DescriptionListProps,
