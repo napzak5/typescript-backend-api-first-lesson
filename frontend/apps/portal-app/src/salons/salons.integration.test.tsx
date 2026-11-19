@@ -1,7 +1,7 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
 import { testApi } from '@beauty-salon-frontend/testing/api'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, useLocation } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -858,7 +858,7 @@ describe('the screens of the salons, against the API', () => {
       await user.selectOptions(order, '評価の高い順')
 
       // Assert
-      await vi.waitFor(() => {
+      await waitFor(() => {
         expect(reviewTitles(reviews)).toEqual([
           'Excellent service!',
           'Satisfied with the result',
@@ -872,7 +872,7 @@ describe('the screens of the salons, against the API', () => {
       await user.selectOptions(order, '参考になった順')
 
       // Assert
-      await vi.waitFor(() => {
+      await waitFor(() => {
         expect(reviewTitles(reviews)).toEqual([
           'Good but could be better',
           'Excellent service!',
@@ -914,7 +914,7 @@ describe('the screens of the salons, against the API', () => {
       )
 
       // Assert
-      await vi.waitFor(() => {
+      await waitFor(() => {
         expect(within(list).getAllByRole('listitem')).toHaveLength(15)
       })
       expect(within(list).getAllByRole('listitem').at(10)).toHaveFocus()
@@ -1061,7 +1061,7 @@ describe('the screens of the salons, against the API', () => {
       await takeAway('reviews')
       renderAt(path)
       const reviews = await part('レビュー')
-      await vi.waitFor(() => {
+      await waitFor(() => {
         expect(
           within(reviews)
             .getAllByRole('alert')

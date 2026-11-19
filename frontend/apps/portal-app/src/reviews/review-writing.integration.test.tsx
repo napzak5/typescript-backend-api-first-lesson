@@ -829,7 +829,8 @@ describe('the review of a visit, against the API', () => {
         name: 'レビュー',
       })
       const counted = within(before).getAllByRole('listitem').length
-      await user.click(screen.getByRole('link', { name: '予約の一覧' }))
+      // The salon is public: the links of the header come with the user
+      await user.click(await screen.findByRole('link', { name: '予約の一覧' }))
       await user.click(
         await screen.findByRole('link', { name: 'これまでの予約' }),
       )
@@ -892,7 +893,8 @@ describe('the review of a visit, against the API', () => {
       expect(await ratingInResultOf(OSAKA)).toHaveAccessibleName(
         expect.stringContaining(`（${countedBefore} 件）`),
       )
-      await user.click(screen.getByRole('link', { name: '予約の一覧' }))
+      // The search is public: the links of the header come with the user
+      await user.click(await screen.findByRole('link', { name: '予約の一覧' }))
       await user.click(
         await screen.findByRole('link', { name: 'これまでの予約' }),
       )
