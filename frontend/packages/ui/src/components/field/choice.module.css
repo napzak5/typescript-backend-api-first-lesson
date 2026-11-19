@@ -1,0 +1,21 @@
+/* A checkbox or a radio button with its label beside it: one target to press. */
+.choice {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: var(--size-control-small);
+  cursor: pointer;
+}
+
+.mark {
+  inline-size: 1.125rem;
+  block-size: 1.125rem;
+  accent-color: var(--color-accent);
+  cursor: inherit;
+}
+
+.choice:has(:disabled) {
+  color: var(--color-disabled);
+  cursor: not-allowed;
+}

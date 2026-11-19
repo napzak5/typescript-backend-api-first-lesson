@@ -1,6 +1,6 @@
 ---
 name: frontend-ui
-description: "How the frontend of this repository is styled and how its components are built: design tokens, CSS Modules, layout with CSS Grid (never flex), the shared component package @beauty-salon-frontend/ui and its Storybook. Use it before adding or changing a component, a stylesheet, a token, a story or the markup of a screen under frontend/."
+description: "How the frontend of this repository is styled and how its components are built: design tokens, CSS Modules, layout with CSS Grid (never flex), the shared component package @beauty-salon-frontend/ui with its form components (label, description, error) and its Storybook. Use it before adding or changing a component, a form, a stylesheet, a token, a story or the markup of a screen under frontend/."
 ---
 
 # Frontend UI
@@ -135,6 +135,63 @@ nobody reads is removed.
 - A component that one application uses stays in that application, with the
   same four files. It moves to `ui` when a second application needs it.
 - Export a new component and its props from `frontend/packages/ui/src/index.ts`.
+
+## Form components
+
+| Component | Use it for |
+|-----------|------------|
+| `TextField` | One line. `type` is `text` (the default), `email`, `password`, `tel`, `url`, `search`, `number`, `date`, `time` or `datetime-local` |
+| `TextArea` | Several lines |
+| `Select` | One of a list. `placeholder` adds a first option without a value |
+| `RadioGroup` | One of a few choices that should all be in sight |
+| `Checkbox` | One thing that is so or not so |
+| `Alert` | A message about the form or the page: `info`, `success`, `warning`, `danger` |
+
+```tsx
+<TextField
+  label='メールアドレス'
+  name='email'
+  type='email'
+  autoComplete='email'
+  required
+  description='予約の確認をお送りします'
+  error={emailError}
+/>
+```
+
+- **Every control has a `label`.** It is the accessible name of the control
+  and the only text of the `label` element. The mark 必須 stands beside the
+  label and is hidden from assistive technology, which hears `required` from
+  the control itself. A placeholder is not a label.
+- **`description` and `error`** are shown below the control and tied to it
+  with `aria-describedby`; an `error` also sets `aria-invalid`. An error says
+  what to do (「メールアドレスの形式で入力してください」) and is text, never
+  colour alone. Pass `undefined` when there is nothing to say.
+- **Everything else goes to the native control**: `name`, `value` or
+  `defaultValue`, `onChange`, `autoComplete`, `required`, `disabled`,
+  `readOnly`, `min`, `maxLength`. A component works with a value its caller
+  keeps and with one the browser keeps, as the element does. `className` goes
+  to the root of the field, for the container to place it.
+- **The controls of the browser are used**: `select`, `input type='date'`,
+  radio buttons. They bring the keyboard, the screen reader and the pickers of
+  a phone. No dropdown or date picker is built by hand.
+- **`autoComplete`** is given for what a browser can fill in: `name`, `email`,
+  `tel`, `current-password`, `new-password`, `one-time-code`.
+- **`Alert`**: `danger` interrupts (`role="alert"`), the other tones wait
+  their turn (`role="status"`). Render it when there is something to say, not
+  empty in advance.
+- What is typed into keeps `--font-size-control` (16px): below that, iOS zooms
+  the page when the control takes focus.
+- A form is a grid: `display: grid; gap: var(--space-4)`. Fields that share a
+  row are columns of it.
+
+A new kind of field is built from the parts in `components/field/`: `Field`
+(the label, the mark and the messages; the control is its child function and
+is handed `id`, `aria-describedby` and `aria-invalid`), `control.module.css`
+(the look of a control that holds text) and `choice.module.css` (a checkbox or
+a radio button with its label). A group of controls uses `messageAttributes`
+and `FieldMessages` directly, as `radio-group.tsx` does: the messages belong
+to the group.
 
 ## Adding a component
 
