@@ -8,14 +8,20 @@ import {
   bookingCrudGet,
   bookingCrudList,
   bookingCrudNoShow,
+  bookingCrudReschedule,
   bookingCrudStart,
   bookingCrudUpdate,
+  bookingServiceCrudCreate,
+  bookingServiceCrudDelete,
+  bookingServiceCrudGet,
   type ModelsAvailableSlotCheckRequest,
   type ModelsBookingCancelRequest,
   type ModelsBookingCompleteRequest,
   type ModelsBookingCreateRequest,
+  type ModelsBookingRescheduleRequest,
   type ModelsBookingResponse,
   type ModelsBookingServiceCreateRequest,
+  type ModelsBookingServiceResponse,
   type ModelsBookingUpdateRequest,
   type ModelsProblemDetails,
 } from '@beauty-salon-frontend/api-client'
@@ -31,8 +37,19 @@ import {
   pageOf,
   type Unread,
   unreadOf,
+  whyUnread,
 } from '../reading'
 import type { DayConditions } from './booking-day'
+import {
+  type AdditionAttempt,
+  isMovable,
+  type LineRemovalAttempt,
+  lineRequestOf,
+  type MoveAttempt,
+  mayAddLine,
+  mayRemoveLine,
+  movedLines,
+} from './booking-moves'
 
 /** The account may not see the bookings of the salon: a member of another one. */
 type Forbidden = { type: 'forbidden' }
@@ -90,6 +107,53 @@ export type BookingRemoval =
   | { type: 'referred' }
   | NotFound
   /** A member of the staff, who cancels a booking instead */
+  | Forbidden
+  | Unread
+
+/** What came of moving a booking to another time, with another member of the staff perhaps. */
+export type BookingMove =
+  | { type: 'moved'; booking: ModelsBookingResponse }
+  | { type: 'invalid'; values: RefusedValue[] }
+  /**
+   * The booking is in a state that is not moved any more, or a member of
+   * the staff is taken at a time it would have, or the time zone of the
+   * salon is no name. The API says which in a sentence only
+   */
+  | { type: 'conflict' }
+  | NotFound
+  | Forbidden
+  | Unread
+
+/** What came of adding a line to a booking. */
+export type LineAddition =
+  | { type: 'added'; line: ModelsBookingServiceResponse }
+  | { type: 'invalid'; values: RefusedValue[] }
+  /**
+   * The booking is finished, or has the most lines it takes, or the line
+   * begins too long after the first, or its member is taken, or the
+   * booking cannot be summed up again. The API says which in a sentence only
+   */
+  | { type: 'conflict' }
+  | NotFound
+  | Forbidden
+  | Unread
+
+export type LineRead =
+  | { type: 'found'; line: ModelsBookingServiceResponse }
+  /** No line of the booking has the ID, or the booking is not found */
+  | NotFound
+  | Forbidden
+  | Unread
+
+/** What came of taking a line away from a booking. */
+export type LineRemoval =
+  | { type: 'deleted' }
+  /**
+   * The booking is finished, or the line is its last, or the booking
+   * cannot be summed up again without it
+   */
+  | { type: 'conflict' }
+  | NotFound
   | Forbidden
   | Unread
 
@@ -157,6 +221,13 @@ export const bookingListsKeyOf = (salonId: string): string[] => [
 export const bookingKeyOf = (bookingId: string): string[] => [
   'bookings',
   bookingId,
+]
+
+/** The key of a line of a booking. */
+export const lineKeyOf = (bookingId: string, lineId: string): string[] => [
+  ...bookingKeyOf(bookingId),
+  'services',
+  lineId,
 ]
 
 /**
@@ -327,6 +398,101 @@ export const deleteBooking = async (id: string): Promise<BookingRemoval> => {
 }
 
 /**
+ * Moves a booking: every line by as much as the booking, and the lines of
+ * its member to the new member. The API checks that the member belongs to
+ * the salon and that nobody is taken beyond what they take at once.
+ */
+export const rescheduleBooking = async (
+  id: string,
+  request: ModelsBookingRescheduleRequest,
+): Promise<BookingMove> => {
+  const answer = await bookingCrudReschedule(id, request).catch(() => null)
+
+  return match(answer)
+    .returnType<BookingMove>()
+    .with({ status: 200 }, ({ data }) => ({
+      type: 'moved',
+      booking: data.data,
+    }))
+    .with({ status: 400 }, ({ data }) => ({
+      type: 'invalid',
+      values: refusedValuesOf(data),
+    }))
+    .with({ status: 409 }, () => ({ type: 'conflict' }))
+    .with({ status: 404 }, () => NOT_FOUND)
+    .with({ status: 403 }, () => FORBIDDEN)
+    .with({ status: P.union(413, 415) }, () => FAILED)
+    .with(UNANSWERED, unreadOf)
+    .exhaustive(outsideTheContract)
+}
+
+/**
+ * Adds a line to a booking that is not finished. The API sums the booking
+ * up again: its times and its amounts are those of its lines.
+ */
+export const addBookingLine = async (
+  bookingId: string,
+  request: ModelsBookingServiceCreateRequest,
+): Promise<LineAddition> => {
+  const answer = await bookingServiceCrudCreate(bookingId, request).catch(
+    () => null,
+  )
+
+  return match(answer)
+    .returnType<LineAddition>()
+    .with({ status: 201 }, ({ data }) => ({ type: 'added', line: data.data }))
+    .with({ status: 400 }, ({ data }) => ({
+      type: 'invalid',
+      values: refusedValuesOf(data),
+    }))
+    .with({ status: 409 }, () => ({ type: 'conflict' }))
+    .with({ status: 404 }, () => NOT_FOUND)
+    .with({ status: 403 }, () => FORBIDDEN)
+    .with({ status: P.union(413, 415) }, () => FAILED)
+    .with(UNANSWERED, unreadOf)
+    .exhaustive(outsideTheContract)
+}
+
+/** A line of a booking of an address. What is no ID is not asked for, as with a booking. */
+export const readBookingLine = async (
+  bookingId: string,
+  id: string,
+): Promise<LineRead> => {
+  if (
+    !idSchema.safeParse(bookingId).success ||
+    !idSchema.safeParse(id).success
+  ) {
+    return NOT_FOUND
+  }
+  const answer = await bookingServiceCrudGet(bookingId, id).catch(() => null)
+
+  return match(answer)
+    .returnType<LineRead>()
+    .with({ status: 200 }, ({ data }) => ({ type: 'found', line: data.data }))
+    .with({ status: 404 }, () => NOT_FOUND)
+    .with({ status: 403 }, () => FORBIDDEN)
+    .with(REFUSED, unreadOf)
+    .exhaustive(outsideTheContract)
+}
+
+/** Takes a line away from a booking that is not finished and has another. */
+export const deleteBookingLine = async (
+  bookingId: string,
+  id: string,
+): Promise<LineRemoval> => {
+  const answer = await bookingServiceCrudDelete(bookingId, id).catch(() => null)
+
+  return match(answer)
+    .returnType<LineRemoval>()
+    .with({ status: 204 }, () => ({ type: 'deleted' }))
+    .with({ status: 409 }, () => ({ type: 'conflict' }))
+    .with({ status: 404 }, () => NOT_FOUND)
+    .with({ status: 403 }, () => FORBIDDEN)
+    .with(REFUSED, unreadOf)
+    .exhaustive(outsideTheContract)
+}
+
+/**
  * Whether a member of the staff of a salon is free for a service from a
  * moment on. Only whether they are taken is checked, as the ledger does.
  * A member or a service the salon no longer has is no answer a person
@@ -356,10 +522,16 @@ export const checkSlot = async (
  * Whether the member of a line is free for its service from its beginning,
  * with the bookings that overlap it. The API names those by their IDs: each
  * is read, and one that is gone meanwhile is left out.
+ *
+ * A line of a booking that is in the ledger already (moved, or added to
+ * it) overlaps the booking itself, which the API does not count against
+ * it: that booking is `excluding`, and is no other booking that overlaps.
+ * A member it alone took is free.
  */
 export const checkLine = async (
   salonId: string,
   { serviceId, staffId, startTime }: ModelsBookingServiceCreateRequest,
+  excluding?: string,
 ): Promise<LineCheck> => {
   if (staffId === null) {
     return { type: 'unassigned' }
@@ -368,7 +540,11 @@ export const checkLine = async (
   if (check.type !== 'checked') {
     return check
   }
-  const reads = await Promise.all(check.conflicts.map(readBooking))
+  const others = check.conflicts.filter((id) => id !== excluding)
+  if (others.length === 0) {
+    return { type: 'free', overlapping: [] }
+  }
+  const reads = await Promise.all(others.map(readBooking))
   const unread = reads.find(
     (read) => read.type === 'tooManyRequests' || read.type === 'failed',
   )
@@ -382,4 +558,100 @@ export const checkLine = async (
   return check.isAvailable
     ? { type: 'free', overlapping }
     : { type: 'taken', overlapping }
+}
+
+/**
+ * Moves a booking, and finds out why the API refused it when it did: the
+ * booking is read again, and in a state that is still moved, each line is
+ * checked where it would be, the booking itself left out. A member found
+ * taken is the reason; a check that could not be made leaves the reason
+ * unknown, and is said as the failure it was; with every member free, the
+ * API refused for a reason the screens cannot mend (the time zone of the
+ * salon).
+ */
+export const attemptMove = async (
+  salonId: string,
+  bookingId: string,
+  request: ModelsBookingRescheduleRequest,
+): Promise<MoveAttempt> => {
+  const outcome = await rescheduleBooking(bookingId, request)
+  if (outcome.type !== 'conflict') {
+    return outcome
+  }
+  const now = await readBooking(bookingId)
+  if (now.type !== 'found') {
+    return now
+  }
+  if (!isMovable(now.booking)) {
+    return { type: 'unmovable', booking: now.booking }
+  }
+  const checks = await Promise.all(
+    movedLines(now.booking, request).map((line) =>
+      checkLine(salonId, lineRequestOf(line), bookingId),
+    ),
+  )
+
+  if (checks.some(({ type }) => type === 'taken')) {
+    return { type: 'taken', checks }
+  }
+
+  return whyUnread(checks)
+}
+
+/**
+ * Adds a line to a booking, and finds out why the API refused it when it
+ * did: the booking is read again, and while it takes lines still, the
+ * member of the line is checked, the booking itself left out. The day of
+ * the line is checked before it is sent.
+ */
+export const attemptAddition = async (
+  salonId: string,
+  bookingId: string,
+  request: ModelsBookingServiceCreateRequest,
+): Promise<AdditionAttempt> => {
+  const outcome = await addBookingLine(bookingId, request)
+  if (outcome.type === 'added') {
+    return { type: 'added' }
+  }
+  if (outcome.type !== 'conflict') {
+    return outcome
+  }
+  const now = await readBooking(bookingId)
+  if (now.type !== 'found') {
+    return now
+  }
+  if (!mayAddLine(now.booking)) {
+    return { type: 'unaddable', booking: now.booking }
+  }
+  const check = await checkLine(salonId, request, bookingId)
+
+  return match(check)
+    .returnType<AdditionAttempt>()
+    .with({ type: 'taken' }, () => ({ type: 'taken', check }))
+    .with({ type: P.union('free', 'unassigned') }, () => ({ type: 'tooMuch' }))
+    .with({ type: P.union('tooManyRequests', 'failed') }, (unread) => unread)
+    .exhaustive()
+}
+
+/**
+ * Takes a line away, and finds out why the API refused it when it did:
+ * the booking is read again, and has changed meanwhile when the line is
+ * no longer taken away.
+ */
+export const attemptLineRemoval = async (
+  bookingId: string,
+  lineId: string,
+): Promise<LineRemovalAttempt> => {
+  const outcome = await deleteBookingLine(bookingId, lineId)
+  if (outcome.type !== 'conflict') {
+    return outcome
+  }
+  const now = await readBooking(bookingId)
+  if (now.type !== 'found') {
+    return now
+  }
+
+  return mayRemoveLine(now.booking)
+    ? { type: 'unsummed' }
+    : { type: 'refused', booking: now.booking }
 }

@@ -3,36 +3,27 @@ import type {
   ModelsBookingUpdateRequest,
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
-import {
-  ButtonLink,
-  Form,
-  LoadingIndicator,
-  PageHeader,
-  UnreadNotice,
-  useNotifications,
-} from '@beauty-salon-frontend/ui'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { ButtonLink, Form, useNotifications } from '@beauty-salon-frontend/ui'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
-import { bookingHrefOf, bookingsHrefOf } from '../navigation'
-import { NOT_FOUND, unreadMessageOf } from '../reading'
-import { dayNameOf } from '../salon-time'
-import { OtherSalonNotice, WithSalon } from '../salons/with-salon'
+import { bookingHrefOf } from '../navigation'
+import { NOT_FOUND } from '../reading'
+import { WithSalon } from '../salons/with-salon'
 import {
   afterNotesChange,
   type FormSays,
   readNotesChange,
 } from './booking-entry'
-import { hoursOf } from './booking-format'
 import {
   type BookingRead,
   bookingKeyOf,
   bookingListsKeyOf,
-  readBooking,
   updateBooking,
 } from './bookings-api'
 import { BookingNotesFields } from './components/booking-notes-fields/booking-notes-fields'
+import { WithBooking } from './with-booking'
 
 const TITLE = '要望とメモを変える'
 
@@ -108,74 +99,8 @@ const NotesChange = ({ salon, booking }: NotesChangeProps) => {
         </ButtonLink>
       }
     >
-      <p>
-        {`予約番号 ${booking.bookingNumber}（${dayNameOf(booking.bookingDate)} ${hoursOf(booking, salon.timezone)}）`}
-      </p>
       <BookingNotesFields notes={booking} errors={said.errors} />
     </Form>
-  )
-}
-
-const NotesOfSalon = ({ salon }: { salon: ModelsSalonResponse }) => {
-  const { bookingId = '' } = useParams()
-  const read = useQuery({
-    queryKey: bookingKeyOf(bookingId),
-    queryFn: () => readBooking(bookingId),
-    // The form opens with what the API says now, and nothing is read
-    // behind it
-    staleTime: 0,
-    refetchOnReconnect: false,
-  })
-  const shown = read.isFetchedAfterMount ? read.data : undefined
-
-  return (
-    match(shown)
-      .with(undefined, () => (
-        <>
-          <PageHeader title={TITLE} description={salon.name} />
-          <LoadingIndicator label='予約を読み込んでいます' />
-        </>
-      ))
-      .with(
-        { type: 'found', booking: { salonId: salon.id } },
-        ({ booking }) => (
-          <>
-            <PageHeader title={TITLE} description={salon.name} />
-            <NotesChange salon={salon} booking={booking} />
-          </>
-        ),
-      )
-      // A booking of another salon is not one of this salon's
-      .with({ type: P.union('found', 'notFound') }, () => (
-        <>
-          <PageHeader
-            title='予約が見つかりません'
-            description='アドレスが正しいか、お確かめください。削除された予約は、表示できません。'
-          />
-          <p>
-            <ButtonLink href={bookingsHrefOf(salon.id)} variant='secondary'>
-              今日の予約へ
-            </ButtonLink>
-          </p>
-        </>
-      ))
-      .with({ type: 'forbidden' }, () => (
-        <>
-          <PageHeader title={TITLE} description={salon.name} />
-          <OtherSalonNotice />
-        </>
-      ))
-      .with({ type: UNREAD }, (reason) => (
-        <>
-          <PageHeader title={TITLE} description={salon.name} />
-          <UnreadNotice
-            message={unreadMessageOf('予約', reason)}
-            onRetry={() => void read.refetch()}
-            retrying={read.isFetching}
-          />
-        </>
-      ))
-      .exhaustive()
   )
 }
 
@@ -185,7 +110,11 @@ export const BookingNotesScreen = () => {
 
   return (
     <WithSalon salonId={salonId} title={TITLE}>
-      {(salon) => <NotesOfSalon key={salon.id} salon={salon} />}
+      {(salon) => (
+        <WithBooking key={salon.id} salon={salon} title={TITLE}>
+          {(booking) => <NotesChange salon={salon} booking={booking} />}
+        </WithBooking>
+      )}
     </WithSalon>
   )
 }

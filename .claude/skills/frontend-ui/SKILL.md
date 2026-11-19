@@ -999,8 +999,10 @@ The bookings of the admin application are the example to read:
 `frontend/apps/admin-app/src/bookings/` (`day-bookings-screen.tsx` for the
 list of a day, `booking-screen.tsx` for a booking and the operations of its
 state, `booking-entry-screen.tsx` for a booking the salon puts in,
-`booking-notes-screen.tsx` for the change of what it wrote down) and
-`src/salons/` (the choice of a salon, the salon of an address).
+`booking-notes-screen.tsx` for the change of what it wrote down,
+`booking-move-screen.tsx`, `booking-line-entry-screen.tsx` and
+`booking-line-screen.tsx` for a move, a line added and a line taken away)
+and `src/salons/` (the choice of a salon, the salon of an address).
 Everything of "A screen that reads from the API" and of "A screen that
 writes what it read" holds; this is what comes on top.
 
@@ -1098,12 +1100,47 @@ writes what it read" holds; this is what comes on top.
   until a control it depends on changes (`onChange` of the `fieldset`).
   When the API refuses the booking for the same reason (409), the screen
   says so and runs the check itself.
-- **A change of some properties of a record is its own screen**
-  (`…/edit`), opened with the record read anew (`staleTime: 0`, shown once
-  `isFetchedAfterMount`). It sends what differs from what it was opened
-  with and nothing else (`readNotesChange`), so a property somebody else
-  changed meanwhile stays; when nothing differs it asks nothing, says so
-  and goes back.
+- **A change of a record is a screen of its own** (`…/edit`,
+  `…/reschedule`, `…/services/new`), opened with the record read anew:
+  `WithBooking` of `bookings/with-booking.tsx` (`staleTime: 0`, shown once
+  `isFetchedAfterMount`, nothing read behind the form), which names the
+  booking below the heading. A change of some properties sends what
+  differs from what it was opened with and nothing else
+  (`readNotesChange`), so a property somebody else changed meanwhile
+  stays; when nothing differs it asks nothing, says so and goes back.
+- **A change is offered in the states the API takes it in.** The links of
+  the page of a booking follow the same rules as the API (`isMovable`,
+  `mayAddLine`, `mayRemoveLine` of `booking-moves.ts`); a screen opened
+  at its address for a booking that does not take the change says why,
+  in a sentence of the state, and leads back (`Unchangeable`).
+- **What a change will do is shown while the values change.** The form of
+  a move hands its values over at every change (`onChange` of the
+  `fieldset`, `new FormData(event.currentTarget.form)`), and the screen
+  shows the lines where the API would put them (`movedLines`, the rule of
+  the API: every line as far as the first, the lines of the member of the
+  booking to the new member). Values that are no move show a sentence in
+  place of the lines.
+- **A 409 the API does not explain is explained after it.** A move or a
+  line is not checked before it is sent: the check of a member counts the
+  booking itself, and a member who takes more than one at once may be
+  found taken by it. After the refusal the booking is read again; in a
+  state that no longer takes the change, it is written into its query
+  (`setQueryData`) and the screen says why. Otherwise each line is checked
+  where it would be, the booking left out (`checkLine(…, excluding)`):
+  a member found taken is said under the line; a check that could not be
+  made is said as such (`whyUnread`), never as taken; with every member
+  free the refusal had another reason, and says that one. What was found
+  out goes when a value changes.
+- **A part of a record that the API does not change is added and taken
+  away.** The page of a line reads it on its own
+  (`GET /bookings/{bookingId}/services/{id}`) and says that another is
+  added and this one taken away; its removal is asked in a `Dialog`.
+  The API answers an addition with the line and a removal with nothing,
+  and sums the booking up again, so the booking is removed from the cache
+  (`removeQueries` with `exact: true`) and the page of the booking reads
+  it. A line that stays (the last one, a finished booking) says why in
+  place of the button; one that became the last meanwhile closes the
+  dialog and says it from the booking read again.
 - **A removal is offered to the roles the API lets remove** (owner, manager,
   admin: a constant of the screen; the role of `useSession`), asked in a
   `Dialog` that says what it is for and what to do instead (cancel a

@@ -9,6 +9,7 @@ import {
   Select,
   TextField,
 } from '@beauty-salon-frontend/ui'
+import { EARLIEST_DAY, LATEST_DAY } from '../../../salon-time'
 import type { LineCheck } from '../../bookings-api'
 import { BookingLines } from '../booking-lines/booking-lines'
 import { BookingNotesFields } from '../booking-notes-fields/booking-notes-fields'
@@ -37,10 +38,6 @@ export type BookingEntryFormProps = Pick<
   /** The member of the booking, the day or a line changed: what was found out is out of date */
   onLinesChange: () => void
 }
-
-/** The first and the last day the API takes */
-const EARLIEST_DAY = '1900-01-01'
-const LATEST_DAY = '2999-12-31'
 
 /**
  * A booking the salon puts into its ledger: the member of the staff and the

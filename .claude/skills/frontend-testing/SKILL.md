@@ -793,6 +793,19 @@ changes and removes) add:
   booking, with the columns it needs): the removal meets the real 409. A
   member of the staff who is taken is a booking the test writes for them,
   so the check of the members and the creation meet the real answer.
+- **A line that a test needs is a row the test writes, with the booking
+  summed up as the ledger would** (`addLine`: the booking ends with its
+  last line and costs what its lines cost), so that a move, an addition or
+  a removal sums up again from a booking the API could have written. A
+  line taken away meanwhile is a statement as well: the removal meets the
+  real 409 of the last line.
+- **A refusal the screen explains by reading again is asserted at the
+  part that explains it**: the overlapping booking under the line where
+  the move would put it, the sentence of the state of a booking that began
+  meanwhile, and the row unchanged (`storedLines`, `storedBooking`).
+  What only a fake answer brings about (a check that could not be made
+  after the refusal, every member free) is a test of the function that
+  calls the API (`bookings-api.test.ts`).
 - **A booking the screen made is read by the ID of the address it led to**
   (`storedBooking`, `storedLines` with the beginnings on the clock of the
   salon), and the count of the bookings says that a refused one made none.
