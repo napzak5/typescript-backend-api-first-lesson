@@ -1,0 +1,80 @@
+import type { ModelsReviewResponse } from '@beauty-salon-frontend/api-client'
+import { Badge, Rating } from '@beauty-salon-frontend/ui'
+import { dayOf, detailRatingsOf, webAddressOf } from '../../salon-format'
+import styles from './review-content.module.css'
+
+export type ReviewContentProps = {
+  review: ModelsReviewResponse
+  /** The time zone of the salon: a review is dated by the day it was at the salon */
+  timezone: string
+}
+
+/**
+ * What a review says: the rating and the day, what the customer wrote, the
+ * ratings in detail, the pictures, how many found it helpful, and what the
+ * salon answered. What a review does not hold is left out.
+ *
+ * A picture is the address the customer gave, as a link: the page loads
+ * nothing from a site nobody has looked at, and the link tells a search
+ * engine that it is what a user wrote.
+ */
+export const ReviewContent = ({ review, timezone }: ReviewContentProps) => {
+  const details = detailRatingsOf(review)
+
+  return (
+    <div className={styles['content']}>
+      <p>
+        <Rating value={review.overallRating} />
+        <time className={styles['date']} dateTime={review.createdAt}>
+          {dayOf(review.createdAt, timezone)}
+        </time>
+        {review.isVerified && (
+          <Badge className={styles['verified']} tone='success'>
+            来店確認済み
+          </Badge>
+        )}
+      </p>
+      {review.title !== null && (
+        <p className={styles['title']}>{review.title}</p>
+      )}
+      {review.comment !== null && (
+        <p className={styles['text']}>{review.comment}</p>
+      )}
+      {details !== null && <p className={styles['aside']}>{details}</p>}
+      {review.imageUrls.length > 0 && (
+        <ul className={styles['pictures']} aria-label='写真'>
+          {review.imageUrls.map((image) => {
+            const address = webAddressOf(image)
+
+            return (
+              <li key={image}>
+                {address === null ? (
+                  image
+                ) : (
+                  <a href={address} rel='noreferrer nofollow ugc'>
+                    {image}
+                  </a>
+                )}
+              </li>
+            )
+          })}
+        </ul>
+      )}
+      {review.helpfulCount > 0 && (
+        <p className={styles['aside']}>
+          {review.helpfulCount} 人が「参考になった」と答えています
+        </p>
+      )}
+      {review.ownerResponse !== null && (
+        <div className={styles['response']}>
+          <p className={styles['responseHead']}>
+            サロンからの返信
+            {review.ownerRespondedAt !== null &&
+              `（${dayOf(review.ownerRespondedAt, timezone)}）`}
+          </p>
+          <p className={styles['text']}>{review.ownerResponse}</p>
+        </div>
+      )}
+    </div>
+  )
+}

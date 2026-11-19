@@ -12,6 +12,11 @@ export type ButtonLinkProps = {
   size?: ButtonSize
   children: ReactNode
   className?: string | undefined
+  /**
+   * The name of the link where its text does not say enough: one of many
+   * links 「変更する」 says what it changes. It holds the text of the link
+   */
+  'aria-label'?: string | undefined
 }
 
 /**
@@ -25,8 +30,13 @@ export const ButtonLink = ({
   size = 'medium',
   children,
   className,
+  'aria-label': label,
 }: ButtonLinkProps) => (
-  <Link href={href} className={buttonClassName(variant, size, className)}>
+  <Link
+    href={href}
+    className={buttonClassName(variant, size, className)}
+    aria-label={label}
+  >
     {children}
   </Link>
 )

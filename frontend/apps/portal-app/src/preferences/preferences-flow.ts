@@ -6,9 +6,9 @@ import type {
 } from '@beauty-salon-frontend/api-client'
 import type { FormErrors } from '@beauty-salon-frontend/ui'
 import { match } from 'ts-pattern'
-import * as z from 'zod/mini'
 import type { RefusedValue } from '../behind-the-session'
 import type { FormSays, Read } from '../forms'
+import { linesOf, pictureAddressesError } from '../lines'
 import type { PreferencesUpdate } from './preferences-api'
 import type { StaffChoice } from './staff-choices'
 
@@ -36,9 +36,6 @@ export const endOf = (name: string, index: number): string =>
 
 /** How many characters the column of the way a customer likes to be talked to takes */
 export const MAX_COMMUNICATION_STYLE_LENGTH = 100
-
-/** How many characters the API takes of the address of a picture */
-const MAX_IMAGE_ADDRESS_LENGTH = 500
 
 /**
  * What the controls of the form hold: text as it was typed, and for the
@@ -140,20 +137,6 @@ const textOrNull = (text: string): string | null => {
 
   return trimmed === '' ? null : trimmed
 }
-
-/**
- * The entries of a list that is written a line each: without the spaces
- * around them, without the empty lines, and each once. (The API takes no
- * entry twice.)
- */
-export const linesOf = (text: string): string[] => [
-  ...new Set(
-    text
-      .split('\n')
-      .map((line) => line.trim())
-      .filter((line) => line !== ''),
-  ),
-]
 
 /** What a customer likes of a style; `null` when nothing of it was entered. */
 const styleOf = (entered: Entered): ModelsStylePreference | null => {
@@ -273,32 +256,10 @@ const timeSlotError = (
     : undefined
 }
 
-/** An address of the web as the API takes it for a picture. */
-const imageAddressSchema = z
-  .httpUrl()
-  .check(z.maxLength(MAX_IMAGE_ADDRESS_LENGTH))
-
-/**
- * What is wrong with the addresses of the pictures: the first line that is
- * no address the API takes, by the number a person counts it with.
- */
-const imagesError = (text: string): string | undefined => {
-  const wrong = text
-    .split('\n')
-    .map((line) => line.trim())
-    .findIndex(
-      (line) => line !== '' && !imageAddressSchema.safeParse(line).success,
-    )
-
-  return wrong === -1
-    ? undefined
-    : `${wrong + 1} 行目を確かめてください。http:// または https:// で始まる URL を、${MAX_IMAGE_ADDRESS_LENGTH} 文字以内で書いてください。`
-}
-
 /** What cannot be right of what the form was sent with, under the names of the controls. */
 const errorsOf = (entered: Entered): FormErrors => {
   const wished = entered.preferredStaffId ?? ''
-  const images = imagesError(entered.inspirationImages)
+  const images = pictureAddressesError(entered.inspirationImages)
 
   return Object.fromEntries([
     ...(wished !== '' && (entered.avoidStaffIds ?? []).includes(wished)

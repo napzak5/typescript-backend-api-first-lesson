@@ -193,29 +193,39 @@ export const webAddressOf = (url: string): string | null =>
 export const telephoneHrefOf = (phoneNumber: string): string =>
   `tel:${phoneNumber.replace(/[^\d+]/g, '')}`
 
+/** A rating of one side of a visit: a property of a review. */
+export type DetailRating =
+  | 'serviceRating'
+  | 'staffRating'
+  | 'atmosphereRating'
+  | 'cleanlinessRating'
+  | 'valueRating'
+
+/**
+ * The ratings of a review besides the overall one, with the word for each,
+ * in the order a page shows them and a form asks for them.
+ */
+export const DETAIL_RATINGS: readonly { name: DetailRating; label: string }[] =
+  [
+    { name: 'serviceRating', label: 'サービス' },
+    { name: 'staffRating', label: 'スタッフ' },
+    { name: 'atmosphereRating', label: '雰囲気' },
+    { name: 'cleanlinessRating', label: '清潔さ' },
+    { name: 'valueRating', label: '価格' },
+  ]
+
 /**
  * The ratings of a review besides the overall one, those the customer gave:
  * 「サービス 5・スタッフ 4」. `null` when there is none.
  */
 export const detailRatingsOf = (
-  review: Pick<
-    ModelsReviewResponse,
-    | 'serviceRating'
-    | 'staffRating'
-    | 'atmosphereRating'
-    | 'cleanlinessRating'
-    | 'valueRating'
-  >,
+  review: Pick<ModelsReviewResponse, DetailRating>,
 ): string | null => {
-  const given = [
-    { name: 'サービス', rating: review.serviceRating },
-    { name: 'スタッフ', rating: review.staffRating },
-    { name: '雰囲気', rating: review.atmosphereRating },
-    { name: '清潔さ', rating: review.cleanlinessRating },
-    { name: '価格', rating: review.valueRating },
-  ].flatMap(({ name, rating }) =>
-    rating === null ? [] : [`${name} ${rating}`],
-  )
+  const given = DETAIL_RATINGS.flatMap(({ name, label }) => {
+    const rating = review[name]
+
+    return rating === null ? [] : [`${label} ${rating}`]
+  })
 
   return given.length === 0 ? null : given.join('・')
 }

@@ -27,6 +27,9 @@ import { navigationFor } from './navigation'
 import { PreferencesScreen } from './preferences/preferences-screen'
 import { MyPageScreen } from './profile/my-page-screen'
 import { ProfileScreen } from './profile/profile-screen'
+import { OwnReviewsScreen } from './reviews/own-reviews-screen'
+import { ReviewChangeScreen } from './reviews/review-change-screen'
+import { ReviewWriteScreen } from './reviews/review-write-screen'
 import { EVERY_ROLE } from './roles'
 import { SalonScreen } from './salons/salon-screen'
 import { SalonSearchScreen } from './salons/salon-search-screen'
@@ -97,9 +100,18 @@ export const App = () => {
               path='/bookings/:bookingId/reschedule'
               element={<BookingMoveScreen />}
             />
+            <Route
+              path='/bookings/:bookingId/review'
+              element={<ReviewWriteScreen />}
+            />
             <Route path='/mypage' element={<MyPageScreen />} />
             <Route path='/mypage/profile' element={<ProfileScreen />} />
             <Route path='/mypage/preferences' element={<PreferencesScreen />} />
+            <Route path='/mypage/reviews' element={<OwnReviewsScreen />} />
+            <Route
+              path='/mypage/reviews/:reviewId'
+              element={<ReviewChangeScreen />}
+            />
             <Route path={SIGN_IN_PATH} element={<SignInPage />} />
             <Route path='/register' element={<RegisterScreen />} />
             <Route path='/forgot-password' element={<ForgotPasswordScreen />} />
