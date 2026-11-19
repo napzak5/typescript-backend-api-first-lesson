@@ -57,6 +57,26 @@ const formOf = (entered: Entered): FormData => {
 /** What the form opens with for somebody who has said everything, and is offered the three members of the staff. */
 const OPENED = enteredOf(preferences, staff)
 
+/** One part of a style that is left when the others were emptied: what the form holds, and what is sent of it. */
+const LEFT_OF_A_STYLE: [string, Partial<Entered>, Record<string, unknown>][] = [
+  [
+    'the length',
+    { preferredLength: 'あごのライン' },
+    { preferredLength: 'あごのライン' },
+  ],
+  ['a colour', { preferredColors: 'ピンク' }, { preferredColors: ['ピンク'] }],
+  [
+    'a style to avoid',
+    { avoidStyles: '強いパーマ' },
+    { avoidStyles: ['強いパーマ'] },
+  ],
+  [
+    'a picture',
+    { inspirationImages: 'https://images.example.com/styles/bob.jpg' },
+    { inspirationImages: ['https://images.example.com/styles/bob.jpg'] },
+  ],
+]
+
 /** What comes of the form that opened with `shown` when it is sent holding `entered`. */
 const sending = (
   entered: Entered,
@@ -598,6 +618,33 @@ describe('readPreferencesChange', () => {
         }),
       ).toEqual({ type: 'valid', value: { stylePreferences: null } })
     })
+
+    it.each(LEFT_OF_A_STYLE)(
+      'should send a style, and not that there is none, when %s alone is left of it',
+      (_case, left, sent) => {
+        expect(
+          sending({
+            ...OPENED,
+            preferredLength: '',
+            preferredColors: '',
+            avoidStyles: '',
+            inspirationImages: '',
+            ...left,
+          }),
+        ).toEqual({
+          type: 'valid',
+          value: {
+            stylePreferences: {
+              preferredLength: null,
+              preferredColors: [],
+              avoidStyles: [],
+              inspirationImages: [],
+              ...sent,
+            },
+          },
+        })
+      },
+    )
 
     it('should send a style for somebody who had none, with the lists that were not written empty', () => {
       expect(

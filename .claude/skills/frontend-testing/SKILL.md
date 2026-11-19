@@ -527,11 +527,16 @@ tested for what it must leave alone as well:
   of the form (`askedOfTheProfile(fetched)` is `['PATCH']`), and what was
   typed is still there. `afterEach` puts the managers back
   (`focusManager.setFocused(undefined)`, `onlineManager.setOnline(true)`).
-- **What a write made is asserted on the next screen without a wait.**
-  Once the heading of the page is there, the record is read with
-  `getByRole`, not `findByRole`: a page that said first that there is
-  nothing, and showed the record after reading it again, would pass a
-  test that waits.
+- **What a write made is asserted in the commit that shows the next
+  screen.** A page that showed first what it had kept (nothing, or the
+  record as it was) and the new record after reading it again would pass
+  a test that waits for the record. It would pass a test that looks
+  without waiting as well: a `findBy…` and an event of `userEvent` each
+  let time pass, enough for the answer to one request. So the component
+  beside `App` that keeps the address also keeps, from a layout effect,
+  what `main` said in the commit that showed that address (`firstSight`),
+  and the test asserts on it:
+  `expect(firstSight).toEqual(['/mypage', expect.stringContaining('お名前Sato Yuki')])`.
 - **A record that is gone is made gone as the API does it.** The
   statements are those of the repository (a customer who was removed from
   the ledger has `deletedAt`, and the account no longer names it:

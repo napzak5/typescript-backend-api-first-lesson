@@ -112,6 +112,27 @@ describe('TimeSlotFields', () => {
     ).not.toBeInTheDocument()
   })
 
+  it('should take away one row alone of two that were added: each has a key of its own', async () => {
+    // Arrange
+    await stories.Empty.run()
+    const add = screen.getByRole('button', { name: '時間帯を追加する' })
+    await userEvent.click(add)
+    await userEvent.type(screen.getByLabelText('時間帯 1 の開始'), '09:00')
+    await userEvent.click(add)
+    await userEvent.type(screen.getByLabelText('時間帯 2 の開始'), '13:00')
+
+    // Act
+    await userEvent.click(
+      screen.getByRole('button', { name: '時間帯 1 を削除する' }),
+    )
+
+    // Assert
+    expect(times()).toEqual([
+      ['preferredTimeSlots.0.startTime', '13:00'],
+      ['preferredTimeSlots.0.endTime', ''],
+    ])
+  })
+
   it('should move the focus to the button that adds a row when a row is taken away', async () => {
     // Arrange
     await stories.WithSlots.run()

@@ -10,6 +10,7 @@ import {
 } from '@tanstack/react-query'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { useLayoutEffect } from 'react'
 import { MemoryRouter, useLocation } from 'react-router'
 import {
   afterEach,
@@ -68,9 +69,20 @@ const named = (displayName: string, salon = TOKYO): string =>
 /** The address the application is at, as the router knows it */
 let address = ''
 
+/**
+ * The path of the last screen, and what the page said in the commit that
+ * showed it: before an answer of the API could arrive. A test that looks
+ * at the page after waiting for something on it looks too late: by then,
+ * a screen that showed what it had kept has read again.
+ */
+let firstSight: [string, string] = ['', '']
+
 const Address = () => {
   const { pathname, search } = useLocation()
   address = `${pathname}${search}`
+  useLayoutEffect(() => {
+    firstSight = [pathname, document.querySelector('main')?.textContent ?? '']
+  }, [pathname])
 
   return null
 }
@@ -160,6 +172,18 @@ const leaves = async (displayName: string): Promise<void> => {
     await accessTokenOf(ADMIN),
   )
   expect(answer.status).toBe(200)
+}
+
+/**
+ * A salon removes a member of its staff: what the removal does to its
+ * ledger. (The API refuses it while the member has a booking to come, so
+ * the test writes it.)
+ */
+const isRemoved = async (displayName: string): Promise<void> => {
+  await testApi().query(
+    `update staff set "deletedAt" = now() where "displayName" = $1`,
+    [displayName],
+  )
 }
 
 /** An account with a profile and without a booking: somebody who has just said who they are. */
@@ -519,11 +543,11 @@ describe('the preferences of a customer, against the API', () => {
       expect(await findAccessibilityViolations()).toEqual([])
     })
 
-    it('should leave out a member of the staff whose salon no longer shows them, and name the others', async () => {
+    it('should leave out a member of the staff who does not work at their salon at the moment, and one the salon removed, and name the others', async () => {
       // Arrange
       await prefers(await everything())
       await leaves(HIROSHI)
-      await leaves(TAKESHI)
+      await isRemoved(TAKESHI)
       await signedInAs(CUSTOMER)
 
       // Act
@@ -728,10 +752,16 @@ describe('the preferences of a customer, against the API', () => {
       // Act
       await user.click(saveButton())
 
-      // Assert: the page shows what was written as soon as it is there. A
-      // page that showed what it had read before would say for a moment
-      // that nothing is wished for
+      // Assert: the page shows what was written in the commit that shows
+      // the page. A page that showed what it had read before would say
+      // first that nothing is wished for
       expect(await heading('マイページ')).toHaveFocus()
+      expect(firstSight).toEqual([
+        '/mypage',
+        expect.stringContaining(
+          `指名したいスタッフ${named(HIROSHI)}避けたいスタッフ${named(MIKA)}、${named(TAKESHI, OSAKA)}希望する時間帯10:00〜12:00、18:00〜20:30`,
+        ),
+      ])
       expect(
         detailsIn(screen.getByRole('region', { name: '好みの設定' })),
       ).toEqual(EVERYTHING_SAID)
@@ -967,14 +997,10 @@ describe('the preferences of a customer, against the API', () => {
     })
 
     it('should say at the member who is wished for that they can no longer be chosen, when their salon removed them while the form was open', async () => {
-      // Arrange: what the removal of a member of the staff does to the
-      // ledger of the salon
+      // Arrange
       await openForm()
       const user = userEvent.setup()
-      await testApi().query(
-        `update staff set "deletedAt" = now() where "displayName" = $1`,
-        [AKIKO],
-      )
+      await isRemoved(AKIKO)
 
       // Act
       await user.selectOptions(wished(), named(AKIKO))
@@ -1115,11 +1141,12 @@ describe('the preferences of a customer, against the API', () => {
         ).getByRole('link', { name: 'マイページ' }),
       )
 
-      // Assert
+      // Assert: in the commit that shows the page, without asking
       expect(await heading('マイページ')).toHaveFocus()
-      expect(
-        screen.getByText('お客様の情報は、まだ登録されていません'),
-      ).toBeVisible()
+      expect(firstSight).toEqual([
+        '/mypage',
+        expect.stringContaining('お客様の情報は、まだ登録されていません'),
+      ])
     })
 
     it('should lead back to the page without sending what was typed', async () => {

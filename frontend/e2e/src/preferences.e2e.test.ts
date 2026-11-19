@@ -32,6 +32,7 @@ const LONG_STYLE =
   'A_fringe_that_is_cut_shorter_than_the_eyebrows_or_thinned_out_at_its_ends'
 const LONG_IMAGE =
   'https://images.example.com/styles/long_layered_cut_with_soft_curls_and_a_side_parted_fringe_for_autumn_2026.jpg'
+const IMAGE = 'https://images.example.com/styles/bob.jpg'
 const LONG_STYLE_OF_SERVICE =
   'As_little_talk_as_possible_and_a_word_before_each_step_of_the_treatment'
 const LONG_REQUESTS =
@@ -237,7 +238,7 @@ test.describe('the preferences of a customer, on a screen as narrow as a phone',
         preferredLength: 'Shoulder length',
         preferredColors: [LONG_COLOR, 'Beige'],
         avoidStyles: [LONG_STYLE],
-        inspirationImages: [LONG_IMAGE],
+        inspirationImages: [LONG_IMAGE, IMAGE],
       },
       communicationStyle: LONG_STYLE_OF_SERVICE,
       specialRequests: LONG_REQUESTS,
@@ -253,9 +254,20 @@ test.describe('the preferences of a customer, on a screen as narrow as a phone',
       '10:00〜12:00、13:30〜15:00、18:00〜20:30',
     )
     await expect(value(page, PART, '好きな色')).toContainText(LONG_COLOR)
+    const images = value(page, PART, '参考の画像').getByRole('link')
+    await expect(images).toHaveText([LONG_IMAGE, IMAGE])
+    await expect(images.first()).toHaveAttribute('href', LONG_IMAGE)
+    // Each address stands on a line of its own, below the one before
+    const first = await images.first().boundingBox()
+    const second = await images.last().boundingBox()
+    expect(first).not.toBeNull()
+    expect(second?.y).toBeGreaterThanOrEqual(
+      (first?.y ?? Number.POSITIVE_INFINITY) + (first?.height ?? 0),
+    )
+    // What was written in paragraphs keeps its line breaks
     await expect(
-      value(page, PART, '参考の画像').getByRole('link', { name: LONG_IMAGE }),
-    ).toHaveAttribute('href', LONG_IMAGE)
+      value(page, PART, '特別な要望').getByText(/首が疲れやすい/),
+    ).toHaveCSS('white-space', 'pre-wrap')
     await expect(value(page, PART, '接客の好み')).toHaveText(
       LONG_STYLE_OF_SERVICE,
     )

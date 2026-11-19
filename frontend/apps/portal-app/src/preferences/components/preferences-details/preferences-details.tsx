@@ -52,28 +52,15 @@ export const PreferencesDetails = ({
         },
         {
           term: '希望の長さ',
-          description:
-            style === null || style.preferredLength === null ? (
-              UNSET
-            ) : (
-              <span className={styles['text']}>{style.preferredLength}</span>
-            ),
+          description: style?.preferredLength ?? UNSET,
         },
         {
           term: '好きな色',
-          description: (
-            <span className={styles['text']}>
-              {listed(style?.preferredColors ?? [])}
-            </span>
-          ),
+          description: listed(style?.preferredColors ?? []),
         },
         {
           term: '避けたいスタイル',
-          description: (
-            <span className={styles['text']}>
-              {listed(style?.avoidStyles ?? [])}
-            </span>
-          ),
+          description: listed(style?.avoidStyles ?? []),
         },
         {
           term: '参考の画像',
@@ -98,14 +85,7 @@ export const PreferencesDetails = ({
         },
         {
           term: '接客の好み',
-          description:
-            preferences.communicationStyle === null ? (
-              UNSET
-            ) : (
-              <span className={styles['text']}>
-                {preferences.communicationStyle}
-              </span>
-            ),
+          description: preferences.communicationStyle ?? UNSET,
         },
         {
           term: '特別な要望',
