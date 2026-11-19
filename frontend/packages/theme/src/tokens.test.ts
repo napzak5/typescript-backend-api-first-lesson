@@ -90,6 +90,8 @@ describe('the colour tokens', () => {
     ...SURFACES.map((surface) => ['--color-focus', surface]),
     ...SURFACES.map((surface) => ['--color-accent', surface]),
     ...SURFACES.map((surface) => ['--color-danger', surface]),
+    // The edge of a button that is pressed, around its own surface
+    ['--color-accent', '--color-accent-subtle'],
   ])(
     'should let %s be seen as part of a control on %s',
     (foreground, background) => {

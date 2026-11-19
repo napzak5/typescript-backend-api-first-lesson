@@ -183,6 +183,20 @@ export const weeklyHoursOf = (
   })
 
 /**
+ * Which of the reviews of a salon one is, as a sentence and the name of a
+ * button say it: by its title and the day it was posted,
+ * 「「丁寧なカットでした」（2026年11月10日 投稿）」, or by the day alone.
+ */
+export const postedOf = (
+  { title, createdAt }: Pick<ModelsReviewResponse, 'title' | 'createdAt'>,
+  timezone: string,
+): string => {
+  const posted = `${dayOf(createdAt, timezone)} 投稿`
+
+  return title === null ? posted : `「${title}」（${posted}）`
+}
+
+/**
  * The address of a website, when it is one a link may lead to. Anything
  * else the salon wrote there is shown as text and is no link.
  */

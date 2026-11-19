@@ -176,6 +176,18 @@ describe('Button', () => {
   `render` in the test: `storybook/test` has no `render`, and a test that
   draws a component by itself leaves the catalogue without that state
   (`WithChoiceRefused` in `form.stories.tsx`).
+- What moves the focus inside a dialog is shown by a story that gets
+  there as a screen does: a dialog that is not open yet takes no focus,
+  so a story that is drawn with the errors of a form already in its args
+  shows them without the focus. The story draws the dialog open, and its
+  `play` function sends the form; a wrapper then hands over what the
+  screen would say (`Answering` in `review-report.stories.tsx`).
+- A button that is on or off is found by its state
+  (`getByRole('button', { pressed: true })`); one that was found by its
+  name is asserted on the attribute
+  (`toHaveAttribute('aria-pressed', 'true')`), and a button that is
+  neither on nor off has none. A heading that takes the focus is asserted
+  with `toHaveFocus()` and `tabindex='-1'`.
 
 ## Code that calls the API
 
@@ -644,6 +656,29 @@ and removed (`frontend/apps/portal-app/src/reviews/`) adds:
 - **A parameter of a test file is never called `after` or `before`.**
   Biome takes a call of such a name inside a test for a hook
   (`noDuplicateTestHooks`).
+- **What an account did before is asked of the API, not looked for in
+  the seed data, where the seed data does not say whose it is.** The
+  reports of the seed data are of whichever account the database returns
+  first, and differ from one seeded database to the next. A test of
+  `review-readers.integration.test.tsx` makes its own: the customer finds
+  a review helpful (`findsHelpful`), reports one (`reports`), an
+  administrator dismisses the report (`dismissesReportOf`). The review it
+  acts on is one the account has done nothing with (`untouchedBy`).
+- **Somebody who is offered nothing has nothing to wait for.** A test
+  that asserts that a reader has no buttons first waits for what decides
+  it: the name of the account in the header for a role, and for an
+  account without a profile the read of the profile, in a `QueryClient`
+  the test made (`client.getQueryData(OWN_PROFILE)`).
+- **One press changes a count by one**, so it can make or break a tie
+  and nothing else. A test of an order that must not change arranges a
+  tie, reads the order from the screen, and presses for the last of the
+  two; with the client that keeps what it read, the same test then sees
+  the order read again when it is next chosen, and the other orders never
+  as they were read before.
+- **A press that the API counts is asserted in three places**: what the
+  row says, the row of the table (who, and the count of the record), and
+  the requests (`askedOfTheReviews`: the one that wrote, and no read
+  after it).
 
 `App.test.tsx` of an application keeps what needs no API: what somebody who
 is not signed in sees. Everything behind the sign-in is in
@@ -819,7 +854,29 @@ test.describe('the admin application', () => {
 - A radio button among many is found by its whole name
   (`getByRole('radio', { name: '10:30', exact: true })`), and the keyboard
   is taken through the group as a person takes it: Tab to the group, Space
-  for the first, the arrow keys for the next.
+  for the first, the arrow keys for the next. From the first button, the
+  arrow up is the last.
+- **A form in a dialog is worked with the keyboard from where the browser
+  puts the focus**: the first control when the dialog opens, then Tab
+  through the controls to the buttons, each stop asserted
+  (`tabToTheSendButton` in `review-readers.e2e.test.ts`). After the
+  dialog closed, the focus is on the button that opened it; after a
+  second attempt that left one button, on that button; after the row
+  went, and the dialog with it, on the heading of the part, and the next
+  press of Tab is asserted too: it shows that the page behind the dialog
+  is in use again.
+- **How a state looks is asserted against the same control before it had
+  the state**: the surface of a button that is pressed is not the surface
+  it had (`surfaceOf` in `review-readers.e2e.test.ts`). A colour is never
+  written into a test, and it is read when the control has stopped
+  changing: the answer has arrived (`aria-busy` is gone: a button that
+  waits has a colour of its own) and the transitions have ended
+  (`element.getAnimations()`, each `finished`). `not.toHaveCSS` is the
+  wrong tool: an assertion that something is not so passes at the first
+  look, on a colour on the way. The pointer is moved out of the way
+  first (`page.mouse.move(0, 0)`): it stays where the last click left
+  it, a notification moves the page under it, and the control that lands
+  there has the colour of one that is pointed at.
 - The modules of `frontend/e2e/src` that are no test files are under the
   lint prohibitions of application code: no type assertion, no type guard,
   and `node:assert` in place of `throw`.

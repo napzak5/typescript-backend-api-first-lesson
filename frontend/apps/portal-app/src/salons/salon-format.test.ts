@@ -16,6 +16,7 @@ import {
   durationOf,
   hoursOf,
   levelNameOf,
+  postedOf,
   telephoneHrefOf,
   timeOfDayAt,
   webAddressOf,
@@ -325,6 +326,33 @@ describe('weeklyHoursOf', () => {
     expect(weeklyHoursOf([], 'Asia/Tokyo').map(({ hours }) => hours)).toEqual(
       Array.from({ length: 7 }, () => '定休日'),
     )
+  })
+})
+
+describe('postedOf', () => {
+  it('should name a review by its title and the day it was posted', () => {
+    expect(
+      postedOf(
+        { title: 'また行きます', createdAt: '2026-11-10T05:30:00.000Z' },
+        'Asia/Tokyo',
+      ),
+    ).toBe('「また行きます」（2026年11月10日 投稿）')
+  })
+
+  it('should name a review without a title by the day alone', () => {
+    expect(
+      postedOf(
+        { title: null, createdAt: '2026-11-10T05:30:00.000Z' },
+        'Asia/Tokyo',
+      ),
+    ).toBe('2026年11月10日 投稿')
+  })
+
+  it('should take the day where the salon is: late in the evening in Tokyo is the next day in Auckland', () => {
+    const review = { title: null, createdAt: '2026-11-10T14:30:00.000Z' }
+
+    expect(postedOf(review, 'Asia/Tokyo')).toBe('2026年11月10日 投稿')
+    expect(postedOf(review, 'Pacific/Auckland')).toBe('2026年11月11日 投稿')
   })
 })
 

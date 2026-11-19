@@ -98,18 +98,6 @@ const UNANSWERED = P.union(
   { status: 500 },
 )
 
-/**
- * Why a part of a screen that reads several things is not shown: too many
- * requests when one of them was refused for that, which waiting mends and
- * looking at the connection does not.
- */
-export const whyUnread = (
-  reads: readonly ({ type: string } | undefined)[],
-): Unread =>
-  reads.some((read) => read?.type === 'tooManyRequests')
-    ? TOO_MANY_REQUESTS
-    : FAILED
-
 const idSchema = z.uuid()
 
 const isId = (value: string): boolean => idSchema.safeParse(value).success

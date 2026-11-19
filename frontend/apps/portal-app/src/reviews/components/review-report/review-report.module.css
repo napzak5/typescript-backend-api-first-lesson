@@ -1,0 +1,6 @@
+/* What went wrong, the reason, and what there is to say about it */
+.form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}

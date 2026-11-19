@@ -255,6 +255,150 @@ describe('ReviewList', () => {
     expect(order()).toHaveFocus()
   })
 
+  describe('what a customer does with the reviews', () => {
+    const FIRST = '「思ったとおりの色になりました」（2026年11月10日 投稿）'
+    // A review without a title is named by its day alone
+    const SECOND = '2026年10月28日 投稿'
+    const THIRD = '「また行きます」（2026年10月2日 投稿）'
+
+    const helpfulButton = (subject: string): HTMLElement =>
+      screen.getByRole('button', { name: `${subject}のレビューが参考になった` })
+    const reportButton = (subject: string): HTMLElement =>
+      screen.getByRole('button', { name: `${subject}のレビューを通報する` })
+    const controlsOf = (review: HTMLElement | undefined): (string | null)[] =>
+      review === undefined
+        ? []
+        : [
+            ...within(review).queryAllByRole('button'),
+            ...within(review).queryAllByRole('link'),
+          ].map((control) => control.textContent)
+
+    it('should give the reviews no button and no link for somebody who only reads', async () => {
+      // Act
+      await stories.Complete.run()
+
+      // Assert: the one button of the list is none of a review
+      expect(listed().map(controlsOf)).toEqual([[], [], []])
+    })
+
+    it('should give every review of somebody else its two buttons, named by the review, with nothing pressed', async () => {
+      // Act
+      await stories.ForACustomer.run()
+
+      // Assert
+      expect(listed().map(controlsOf)).toEqual([
+        ['参考になった', '通報する'],
+        ['参考になった', '通報する'],
+        ['参考になった', '通報する'],
+      ])
+      for (const subject of [FIRST, SECOND, THIRD]) {
+        expect(helpfulButton(subject)).toHaveAttribute('aria-pressed', 'false')
+        expect(reportButton(subject)).not.toHaveAttribute('aria-pressed')
+      }
+    })
+
+    it('should hand over the review that was found helpful', async () => {
+      // Arrange
+      await stories.ForACustomer.run()
+
+      // Act
+      await userEvent.click(helpfulButton(SECOND))
+
+      // Assert
+      const { customer } = stories.ForACustomer.args
+      expect(customer?.onHelpful).toHaveBeenCalledTimes(1)
+      expect(customer?.onHelpful).toHaveBeenCalledWith(
+        stories.ForACustomer.args.reviews?.[1],
+      )
+      expect(customer?.onReport).not.toHaveBeenCalled()
+    })
+
+    it('should hand over the review that is to be reported', async () => {
+      // Arrange
+      await stories.ForACustomer.run()
+
+      // Act
+      await userEvent.click(reportButton(THIRD))
+
+      // Assert
+      const { customer } = stories.ForACustomer.args
+      expect(customer?.onReport).toHaveBeenCalledTimes(1)
+      expect(customer?.onReport).toHaveBeenCalledWith(
+        stories.ForACustomer.args.reviews?.[2],
+      )
+      expect(customer?.onHelpful).not.toHaveBeenCalled()
+    })
+
+    it('should press the buttons with the keyboard', async () => {
+      // Arrange
+      await stories.ForACustomer.run()
+      helpfulButton(FIRST).focus()
+
+      // Act
+      await userEvent.keyboard('{Enter}')
+      await userEvent.tab()
+      await userEvent.keyboard(' ')
+
+      // Assert
+      const { customer } = stories.ForACustomer.args
+      expect(customer?.onHelpful).toHaveBeenCalledTimes(1)
+      expect(reportButton(FIRST)).toHaveFocus()
+      expect(customer?.onReport).toHaveBeenCalledTimes(1)
+    })
+
+    it('should say that a review the customer found helpful is pressed, with a mark for the eye, and ask for nothing when it is pressed again', async () => {
+      // Arrange
+      await stories.WithHelpfulSaid.run()
+
+      // Act
+      await userEvent.click(helpfulButton(FIRST))
+
+      // Assert
+      expect(helpfulButton(FIRST)).toHaveAttribute('aria-pressed', 'true')
+      expect(helpfulButton(FIRST)).toHaveTextContent('✓参考になった')
+      expect(helpfulButton(SECOND)).toHaveAttribute('aria-pressed', 'false')
+      expect(helpfulButton(SECOND)).toHaveTextContent(/^参考になった$/)
+      expect(
+        stories.WithHelpfulSaid.args.customer?.onHelpful,
+      ).not.toHaveBeenCalled()
+    })
+
+    it('should show of which review the answer is on its way, and not ask for it a second time', async () => {
+      // Arrange
+      await stories.SayingHelpful.run()
+
+      // Act
+      await userEvent.click(helpfulButton(FIRST))
+
+      // Assert
+      expect(helpfulButton(FIRST)).toHaveAttribute('aria-busy', 'true')
+      expect(helpfulButton(SECOND)).not.toHaveAttribute('aria-busy')
+      expect(
+        stories.SayingHelpful.args.customer?.onHelpful,
+      ).not.toHaveBeenCalled()
+    })
+
+    it('should give what the customer wrote the link to the form that changes it, in place of the buttons', async () => {
+      // Act
+      await stories.WithOwnReview.run()
+
+      // Assert
+      expect(listed().map(controlsOf)).toEqual([
+        ['参考になった', '通報する'],
+        ['レビューを変更する'],
+        ['参考になった', '通報する'],
+      ])
+      expect(
+        screen.getByRole('link', {
+          name: `${SECOND}のレビューを変更する`,
+        }),
+      ).toHaveAttribute(
+        'href',
+        '/mypage/reviews/c5e7092a-46db-48f1-b913-b5d7e0023624',
+      )
+    })
+  })
+
   it('should leave the focus where it is when the list appears', async () => {
     // Act
     await stories.WithMore.run()

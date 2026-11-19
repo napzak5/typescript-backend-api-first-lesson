@@ -7,6 +7,8 @@ import {
   readReviews,
   readSalon,
   readStaff,
+  readStaffRatings,
+  whyUnread,
 } from './salons-api'
 
 /*
@@ -18,6 +20,9 @@ import {
  */
 
 const SALON_ID = '0b7f5c1e-3a52-4d8e-9c41-6f2e8d1a7b90'
+const HIROSHI = '6f81a3c4-e075-429b-93bd-5f7193acc0ce'
+const MIKA = '7092b4d5-f186-43ac-a4ce-60829bbdd1df'
+const TAKESHI = '81a3c5e6-0297-44bd-b5df-7193acce02e0'
 
 const answer = (status: number, body: unknown): Response =>
   new Response(JSON.stringify(body), {
@@ -83,6 +88,7 @@ const OPERATIONS: [string, () => Promise<{ type: string }>][] = [
   ['readMenu', () => readMenu(SALON_ID)],
   ['readStaff', () => readStaff(SALON_ID)],
   ['readReviewSummary', () => readReviewSummary(SALON_ID)],
+  ['readStaffRatings', () => readStaffRatings([HIROSHI, MIKA])],
   ['readReviews', () => readReviews(SALON_ID, 'recent', undefined)],
 ]
 
@@ -324,6 +330,101 @@ describe('the operations of the screens of the salons', () => {
     })
   })
 
+  describe('readStaffRatings', () => {
+    const RATED = {
+      averageRating: 4.6,
+      totalReviews: 23,
+      ratingDistribution: { '1': 0, '2': 0, '3': 2, '4': 5, '5': 16 },
+    }
+    const UNRATED = {
+      averageRating: null,
+      totalReviews: 0,
+      ratingDistribution: { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 },
+    }
+
+    /** The API answers for each member with what `answers` holds under their ID. */
+    const rating = (answers: Record<string, () => Response>) =>
+      answering(({ pathname }) => {
+        const [, staffId = ''] =
+          /\/staff\/([^/]+)\/reviews\/summary$/.exec(pathname) ?? []
+
+        return (answers[staffId] ?? (() => problem(404)))()
+      })
+
+    const summaryOf = (summary: unknown) => () =>
+      answer(200, { data: summary, meta: null, links: null })
+
+    it('should ask for the summary of each member once, and hand the summaries over under their IDs', async () => {
+      const fetched = rating({
+        [HIROSHI]: summaryOf(RATED),
+        [MIKA]: summaryOf(UNRATED),
+      })
+
+      expect(await readStaffRatings([HIROSHI, MIKA])).toEqual({
+        type: 'found',
+        summaries: { [HIROSHI]: RATED, [MIKA]: UNRATED },
+      })
+      expect(asked(fetched).toSorted()).toEqual(
+        [
+          `/staff/${HIROSHI}/reviews/summary`,
+          `/staff/${MIKA}/reviews/summary`,
+        ].toSorted(),
+      )
+    })
+
+    it('should ask for nothing, and have found nothing, when there is nobody', async () => {
+      const fetched = rating({})
+
+      expect(await readStaffRatings([])).toEqual({
+        type: 'found',
+        summaries: {},
+      })
+      expect(asked(fetched)).toEqual([])
+    })
+
+    it('should have no rating for a member the API does not find, and keep those of the others', async () => {
+      rating({ [HIROSHI]: summaryOf(RATED), [TAKESHI]: summaryOf(UNRATED) })
+
+      expect(await readStaffRatings([HIROSHI, MIKA, TAKESHI])).toEqual({
+        type: 'found',
+        summaries: { [HIROSHI]: RATED, [TAKESHI]: UNRATED },
+      })
+    })
+
+    it.each([
+      ['an error of the server', () => problem(500), 'failed'],
+      [
+        'no answer',
+        () => Promise.reject(new TypeError('Failed to fetch')),
+        'failed',
+      ],
+      ['too many requests', () => problem(429), 'tooManyRequests'],
+    ])(
+      'should hand over no rating at all when one member alone got %s',
+      async (_case, respond, type) => {
+        answering(({ pathname }) =>
+          pathname.includes(MIKA)
+            ? respond()
+            : answer(200, { data: RATED, meta: null, links: null }),
+        )
+
+        expect(await readStaffRatings([HIROSHI, MIKA, TAKESHI])).toEqual({
+          type,
+        })
+      },
+    )
+
+    it('should say that there were too many requests when one member got that and another got no answer', async () => {
+      answering(({ pathname }) =>
+        pathname.includes(MIKA) ? problem(429) : problem(500),
+      )
+
+      expect(await readStaffRatings([HIROSHI, MIKA])).toEqual({
+        type: 'tooManyRequests',
+      })
+    })
+  })
+
   describe('readReviews', () => {
     it.each(ORDERS)(
       'should ask for the reviews of the salon in the order %s, a page of ten',
@@ -353,5 +454,26 @@ describe('the operations of the screens of the salons', () => {
         `/reviews?cursor=a&salonId=${SALON_ID}&sortBy=helpful&limit=10`,
       ])
     })
+  })
+})
+
+describe('whyUnread', () => {
+  it('should be too many requests when one of the things that were read says so', () => {
+    expect(
+      whyUnread([
+        { type: 'found' },
+        { type: 'failed' },
+        { type: 'tooManyRequests' },
+      ]),
+    ).toEqual({ type: 'tooManyRequests' })
+  })
+
+  it.each([
+    ['one of them failed', [{ type: 'found' }, { type: 'failed' }]],
+    ['one of them names nothing', [{ type: 'notFound' }, { type: 'found' }]],
+    ['one of them is still being read', [undefined, { type: 'failed' }]],
+    ['there is nothing to go by', []],
+  ])('should be a failure when %s', (_case, reads) => {
+    expect(whyUnread(reads)).toEqual({ type: 'failed' })
   })
 })

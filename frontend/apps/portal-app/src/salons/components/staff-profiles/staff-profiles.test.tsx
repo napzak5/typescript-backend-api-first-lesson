@@ -89,6 +89,47 @@ describe('StaffProfiles', () => {
     expect(within(person).queryByRole('term')).toBeNull()
   })
 
+  it('should say nothing of how the people were rated while that is not known', async () => {
+    // Act
+    await stories.Default.run()
+
+    // Assert
+    expect(screen.queryByRole('img')).toBeNull()
+    expect(screen.queryByText('レビューは、まだありません')).toBeNull()
+  })
+
+  it('should show below the name of a person how the reviews that rate them add up', async () => {
+    // Act
+    await stories.WithRatings.run()
+    const person = personNamed('田中 ひろし')
+
+    // Assert
+    expect(within(person).getByRole('img')).toHaveAccessibleName(
+      '5 段階中 4.6（23 件）',
+    )
+    expect(
+      Array.from(person.children, (part) => part.textContent).slice(0, 3),
+    ).toEqual(['田中 ひろし', '店長・シニア・経験 12 年', '4.6（23 件）'])
+    expect(within(person).queryByText('レビューは、まだありません')).toBeNull()
+  })
+
+  it('should say of a person nobody rated that there is no review yet, and nothing of a person the ratings do not name', async () => {
+    // Act
+    await stories.WithRatings.run()
+
+    // Assert
+    expect(
+      within(personNamed('鈴木 みか')).getByText('レビューは、まだありません'),
+    ).toBeVisible()
+    expect(within(personNamed('鈴木 みか')).queryByRole('img')).toBeNull()
+    expect(within(personNamed('伊藤 たけし')).queryByRole('img')).toBeNull()
+    expect(
+      within(personNamed('伊藤 たけし')).queryByText(
+        'レビューは、まだありません',
+      ),
+    ).toBeNull()
+  })
+
   it('should show one person alone', async () => {
     // Act
     await stories.OnePerson.run()

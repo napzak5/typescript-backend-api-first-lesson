@@ -1,5 +1,6 @@
 import type {
   ModelsReviewCreateRequest,
+  ModelsReviewReportRequest,
   ModelsReviewUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -20,6 +21,8 @@ import {
   readReviewOfBooking,
   readVisitToReview,
   removeReview,
+  reportReview,
+  sayHelpful,
   writeReview,
 } from './reviews-api'
 
@@ -153,6 +156,11 @@ const REQUEST: ModelsReviewCreateRequest = {
 
 const CHANGES: ModelsReviewUpdateRequest = { overallRating: 4, comment: null }
 
+const REPORT: ModelsReviewReportRequest = {
+  reason: 'other',
+  details: '来店と関係のない内容です',
+}
+
 /** Every operation of the screens of the reviews, called as a screen calls it. */
 const OPERATIONS: [string, () => Promise<{ type: string }>][] = [
   ['readOwnReviews', () => readOwnReviews(CUSTOMER.id, undefined)],
@@ -162,10 +170,13 @@ const OPERATIONS: [string, () => Promise<{ type: string }>][] = [
   ['writeReview', () => writeReview(REQUEST)],
   ['changeReview', () => changeReview(REVIEW_ID, CHANGES)],
   ['removeReview', () => removeReview(REVIEW_ID)],
+  ['sayHelpful', () => sayHelpful(REVIEW_ID)],
+  ['reportReview', () => reportReview(REVIEW_ID, REPORT)],
 ]
 
+/** Those that send a body the API checks. */
 const WRITES: [string, () => Promise<{ type: string }>][] = OPERATIONS.filter(
-  ([name]) => name === 'writeReview' || name === 'changeReview',
+  ([name]) => ['writeReview', 'changeReview', 'reportReview'].includes(name),
 )
 
 const REFUSALS: [string, number, string][] = [
@@ -695,6 +706,59 @@ describe('the operations of the screens of the reviews', () => {
       answering(() => problem(400))
 
       expect(await removeReview(REVIEW_ID)).toEqual({ type: 'failed' })
+    })
+  })
+
+  describe('sayHelpful', () => {
+    it('should say of the review that it was helpful, sending nothing, and hand over how many say so now', async () => {
+      const fetched = answering(() => record(200, { helpfulCount: 13 }))
+
+      expect(await sayHelpful(REVIEW_ID)).toEqual({
+        type: 'counted',
+        helpfulCount: 13,
+      })
+      expect(asked(fetched)).toEqual([`POST /reviews/${REVIEW_ID}/helpful`])
+      expect(sent(fetched)).not.toHaveProperty('body')
+    })
+
+    it('should say that the review is gone when the API does not find it', async () => {
+      answering(() => problem(404))
+
+      expect(await sayHelpful(REVIEW_ID)).toEqual({ type: 'gone' })
+    })
+
+    it('should have failed when the API takes the ID of the review for none', async () => {
+      answering(() => problem(400))
+
+      expect(await sayHelpful(REVIEW_ID)).toEqual({ type: 'failed' })
+    })
+  })
+
+  describe('reportReview', () => {
+    it('should send the reason and the details, and say that the review is reported', async () => {
+      const fetched = answering(() =>
+        record(200, { id: 'r_1', reviewId: REVIEW_ID, status: 'pending' }),
+      )
+
+      expect(await reportReview(REVIEW_ID, REPORT)).toEqual({
+        type: 'reported',
+      })
+      expect(asked(fetched)).toEqual([`POST /reviews/${REVIEW_ID}/report`])
+      expect(sent(fetched)).toMatchObject({ body: JSON.stringify(REPORT) })
+    })
+
+    it('should say that the review is gone when the API does not find it', async () => {
+      answering(() => problem(404))
+
+      expect(await reportReview(REVIEW_ID, REPORT)).toEqual({ type: 'gone' })
+    })
+
+    it('should say that the account reported the review before when the API says that it conflicts', async () => {
+      answering(() => problem(409))
+
+      expect(await reportReview(REVIEW_ID, REPORT)).toEqual({
+        type: 'reportedBefore',
+      })
     })
   })
 })

@@ -13,7 +13,14 @@ import {
   NotificationProvider,
   PageHeader,
 } from '@beauty-salon-frontend/ui'
-import { Link, Navigate, Route, Routes, useLocation } from 'react-router'
+import {
+  Link,
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+  useSearchParams,
+} from 'react-router'
 import { AcceptStaffInvitationScreen } from './account/accept-staff-invitation-screen'
 import { ForgotPasswordScreen } from './account/forgot-password-screen'
 import { RegisterScreen } from './account/register-screen'
@@ -34,21 +41,26 @@ import { EVERY_ROLE } from './roles'
 import { SalonScreen } from './salons/salon-screen'
 import { SalonSearchScreen } from './salons/salon-search-screen'
 import { SignInHelp } from './sign-in-help'
-
-/** Where a visitor signs in: the screens of this application are for everybody unless they say otherwise */
-const SIGN_IN_PATH = '/sign-in'
+import { pathAfterSignIn, SIGN_IN_PATH } from './sign-in-path'
 
 /** The links that the shared components draw move within the application */
 const RouterLink: LinkComponent = ({ href, ...rest }) => (
   <Link {...rest} to={href} />
 )
 
-/** The sign-in screen, and for somebody who is signed in the way back to the start. */
-const SignInPage = () => (
-  <RequireSession roles={EVERY_ROLE} signInHelp={<SignInHelp />}>
-    <Navigate to='/' replace />
-  </RequireSession>
-)
+/**
+ * The sign-in screen, and for somebody who is signed in the way on: to the
+ * page that sent them here, or to the start.
+ */
+const SignInPage = () => {
+  const [query] = useSearchParams()
+
+  return (
+    <RequireSession roles={EVERY_ROLE} signInHelp={<SignInHelp />}>
+      <Navigate to={pathAfterSignIn(query)} replace />
+    </RequireSession>
+  )
+}
 
 const NotFoundPage = () => (
   <>

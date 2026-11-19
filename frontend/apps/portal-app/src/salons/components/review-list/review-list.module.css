@@ -13,7 +13,19 @@
   grid-template-columns: minmax(0, 1fr);
 }
 
+/* What the review says, then what its reader does with it */
 .review {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
   padding-block: var(--space-4);
   border-block-start: 1px solid var(--color-border);
+}
+
+/* The buttons of a review, beside each other */
+.actions {
+  display: grid;
+  grid-auto-flow: column;
+  justify-content: start;
+  gap: var(--space-2);
 }

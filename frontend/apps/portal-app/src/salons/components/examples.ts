@@ -282,6 +282,19 @@ export const emptyReviewSummary: ModelsReviewSummaryResponse = {
   ratingDistribution: { '1': 0, '2': 0, '3': 0, '4': 0, '5': 0 },
 }
 
+/**
+ * How the people were rated: the first by many, the second by nobody yet.
+ * Of the third nothing is known
+ */
+export const staffRatings: Record<string, ModelsReviewSummaryResponse> = {
+  '6f81a3c4-e075-429b-93bd-5f7193acc0ce': {
+    averageRating: 4.6,
+    totalReviews: 23,
+    ratingDistribution: { '1': 0, '2': 0, '3': 2, '4': 5, '5': 16 },
+  },
+  '7092b4d5-f186-43ac-a4ce-60829bbdd1df': emptyReviewSummary,
+}
+
 /** A review that holds everything a review can hold */
 export const fullReview: ModelsReviewResponse = {
   id: '92b4d6f7-13a8-45ce-86e0-82a4bddf03f1',
