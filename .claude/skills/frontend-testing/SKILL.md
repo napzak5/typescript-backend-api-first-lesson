@@ -19,7 +19,8 @@ The styling and component rules are in the skill `frontend-ui`.
 | The frame and the routes of an application | Rendered in a `MemoryRouter` | `frontend/apps/portal-app/src/App.test.tsx` |
 | The style rules, for every package and app | One test in the theme package | `frontend/packages/theme/src/style-rules.test.ts` |
 | The contrast of the colour tokens | Computed from `tokens.css` | `frontend/packages/theme/src/tokens.test.ts` |
-| Modules without markup (configuration, the fetch function, the generated client) | Unit tests in Node | `frontend/packages/io/src/libs/fetcher/fetcher.test.ts` |
+| Modules without markup (configuration, the style rules) | Unit tests in Node | `frontend/packages/config/src/env/env.test.ts` |
+| The fetch function, the session and the generated client | In jsdom, over the real client and the real fetch function, with `fetch` itself stubbed | `frontend/packages/session/src/session.test.tsx` |
 
 `@beauty-salon-frontend/testing` holds what the tests share: the setup
 (`@beauty-salon-frontend/testing/setup`: the matchers of jest-dom, and the
@@ -140,6 +141,37 @@ describe('Button', () => {
   `storybook/test`; the context of a composed story has `canvas` but no
   `userEvent`. A play function shared by stories is a constant of the type
   `NonNullable<Story['play']>`.
+
+## Code that calls the API
+
+The fetch function (`io`), the session (`session`) and the generated client
+are tested together, as they run. The test replaces `fetch` alone
+(`vi.stubGlobal('fetch', …)`) and asserts on the requests that were sent: what
+they carried, their order and their number.
+
+- The stub answers as the API does: an error is problem details with a `code`
+  of the contract. `frontend/packages/session/src/session.test.tsx` has an API
+  of two users whose tokens a test can let expire or end.
+- The session is in `localStorage`. Write it with `sessionStore.write` and
+  clear `localStorage` after each test. Another tab is a change to
+  `localStorage` followed by a `StorageEvent` on `window`.
+- A hook is rendered with `renderHook`, inside a `QueryClientProvider` with a
+  new `QueryClient` whose queries do not retry. When the test is about what
+  must never be shown, keep every value the hook returned and assert on all
+  of them.
+- An answer that has to be seen while it is on its way takes time (a
+  `setTimeout` in the stub). TanStack Query delivers its notifications in
+  batches, and an answer that resolves at once is never rendered as
+  "fetching".
+- The module of the fetch function holds the renewal that is under way. A test
+  that needs a fresh one loads the package anew (`vi.resetModules()` and a
+  dynamic `import`).
+- `frontend/packages/api-client/src/session.test.ts` compares what `io` knows
+  of the API (a path and two codes) with what is generated from the contract.
+
+This is how the code that sends the requests is tested, and nothing else. A
+screen is tested against the real API and a real database, without a stub of
+`fetch` or of the client; that harness does not exist yet (issue #276).
 
 ## Accessibility
 
