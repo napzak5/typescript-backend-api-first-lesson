@@ -1,5 +1,5 @@
 import { Alert, Button, Checkbox, TextField } from '@beauty-salon-frontend/ui'
-import { type FormEvent, useEffect, useRef } from 'react'
+import { type FormEvent, useLayoutEffect, useRef } from 'react'
 import styles from './sign-in-form.module.css'
 
 /** What is wrong with a value, under the name of its control. */
@@ -43,7 +43,8 @@ const CONTROLS: (keyof SignInFormErrors)[] = [
  *
  * The focus goes to the first control that has an error, and to the code
  * when the second step begins: the form changes without a page load, so it
- * says itself where to go on.
+ * says itself where to go on. It does so in the commit that shows the change,
+ * before the browser paints it.
  */
 export const SignInForm = ({
   step,
@@ -56,7 +57,7 @@ export const SignInForm = ({
   const form = useRef<HTMLFormElement>(null)
 
   // A new set of errors is another attempt, also when it says the same
-  useEffect(() => {
+  useLayoutEffect(() => {
     const invalid = CONTROLS.find((name) => errors[name] !== undefined)
     const next = invalid ?? (step === 'twoFactorCode' ? step : undefined)
 

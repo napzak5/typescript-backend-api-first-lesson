@@ -278,6 +278,13 @@ it('should show the screen that was asked for after signing in', async () => {
   with a new `QueryClient` whose queries do not retry, `NotificationProvider`,
   and `AppShell` when the title of the document or the focus is asserted. An
   application is rendered whole, `App` in a `MemoryRouter`.
+- The focus is asserted as soon as what it goes to is there, as above: a
+  component moves it in the commit that shows the change, so no second wait
+  is needed. A component that moves the focus has a test of just that, which
+  looks at `document.activeElement` from a layout effect around the
+  component (`ui/src/components/app-shell/app-shell.test.tsx`): after an
+  event of the user, React runs every effect before the test goes on, so a
+  test that looks afterwards cannot tell a focus that moved too late.
 - `userEvent` is that of `@testing-library/user-event`, a dev dependency of
   the package. (A test of stories takes it from `storybook/test`.)
 - Sign in on the screen when signing in is what the test is about, and with

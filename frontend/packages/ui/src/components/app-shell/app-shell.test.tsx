@@ -1,10 +1,37 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
-import { composeStories } from '@storybook/react-vite'
+import { composeStories, composeStory } from '@storybook/react-vite'
+import { useLayoutEffect, useState } from 'react'
 import { screen, userEvent, within } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+import { Button } from '../button/button'
+import { PageHeader } from '../page-header/page-header'
 import * as appShellStories from './app-shell.stories'
 
 const stories = composeStories(appShellStories)
+
+type WhatTheDocumentSays = (focused: Element | null, title: string) => void
+
+/**
+ * Two screens, and what the document says in the commit that shows each: the
+ * layout effect of a component runs after those of what it holds, and before
+ * the browser paints.
+ */
+const ScreensInCommit = ({ seen }: { seen: WhatTheDocumentSays }) => {
+  const [shown, setShown] = useState('予約台帳')
+
+  useLayoutEffect(() => {
+    seen(document.activeElement, document.title)
+  })
+
+  return (
+    <>
+      <PageHeader title={shown} />
+      <p>
+        <Button onClick={() => setShown('顧客台帳')}>顧客台帳を開く</Button>
+      </p>
+    </>
+  )
+}
 
 describe('AppShell', () => {
   itShouldBeAccessibleInEveryStory(stories)
@@ -154,6 +181,30 @@ describe('AppShell', () => {
       screen.getByRole('heading', { level: 1, name: '顧客台帳' }),
     ).toHaveFocus()
     expect(document.title).toBe('顧客台帳 | Beauty Salon Admin')
+  })
+
+  it('should have moved the focus and named the document in the commit that shows the screen, before it is painted', async () => {
+    // Arrange
+    const seen = vi.fn<WhatTheDocumentSays>()
+    const ScreenChange = composeStory(
+      {
+        ...appShellStories.ScreenChange,
+        args: { children: <ScreensInCommit seen={seen} /> },
+      },
+      appShellStories.default,
+    )
+    await ScreenChange.run()
+
+    // Act
+    await userEvent.click(
+      screen.getByRole('button', { name: '顧客台帳を開く' }),
+    )
+
+    // Assert
+    expect(seen).toHaveBeenLastCalledWith(
+      screen.getByRole('heading', { level: 1, name: '顧客台帳' }),
+      '顧客台帳 | Beauty Salon Admin',
+    )
   })
 
   it('should keep the heading out of the stops of the Tab key', async () => {
