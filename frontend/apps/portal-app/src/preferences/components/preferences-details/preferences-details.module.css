@@ -1,0 +1,16 @@
+/* What a customer wrote in a line: broken where a word is longer than the line */
+.text {
+  overflow-wrap: anywhere;
+}
+
+/* An address of a picture: each on its own line, broken where the line ends */
+.line {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+/* What a customer wrote in several lines, with the line breaks it was written with */
+.written {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
