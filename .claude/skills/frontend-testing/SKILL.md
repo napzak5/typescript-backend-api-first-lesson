@@ -756,8 +756,9 @@ and removed (`frontend/apps/portal-app/src/reviews/`) adds:
   refuses (`admin-bookings.e2e.test.ts` found it).
 
 The bookings of a salon in the admin application
-(`frontend/apps/admin-app/src/bookings/`, two files: the start and the list
-of a day, a booking and its operations) add:
+(`frontend/apps/admin-app/src/bookings/`, three files: the start and the list
+of a day, a booking and its operations, and the bookings the salon puts in,
+changes and removes) add:
 
 - **A record in a state is a row the test writes, with what the operation
   that led to it writes.** `arrange({ day, at, status })` of
@@ -788,6 +789,19 @@ of a day, a booking and its operations) add:
   nothing leaves the row as it was (`toEqual(before)`).
 - **Who changed the booking meanwhile is a statement** (the customer
   cancelled it; the treatment began): the screen meets the real 409.
+- **What refers to a record is a row the test writes** (a review of the
+  booking, with the columns it needs): the removal meets the real 409. A
+  member of the staff who is taken is a booking the test writes for them,
+  so the check of the members and the creation meet the real answer.
+- **A booking the screen made is read by the ID of the address it led to**
+  (`storedBooking`, `storedLines` with the beginnings on the clock of the
+  salon), and the count of the bookings says that a refused one made none.
+  A browser test that reads the bookings of a seeded customer leaves out
+  those that were there before it began (the seed data has bookings of
+  every customer).
+- **That only what was changed is sent is asked of `fetch`**: the bodies of
+  the `PATCH` requests, parsed (`changesAsked`); nothing changed is no
+  request at all.
 
 
 `App.test.tsx` of an application keeps what needs no API: what somebody who

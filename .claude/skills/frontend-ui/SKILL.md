@@ -34,7 +34,8 @@ this one: a component is not done without its stories and its test.
 | The links of the header of the portal, by who is signed in | `frontend/apps/portal-app/src/navigation.ts` |
 | The salon of who is signed in (`useOwnSalon`), and what an account that belongs to none is told | `frontend/packages/session/src/salon/`, `src/components/no-salon-notice/` |
 | The screens of a salon in the admin application: the choice of a salon, and the salon of an address around the screens below it | `frontend/apps/admin-app/src/salons/` |
-| The bookings of a salon in the admin application: the list of a day, a booking and the operations of its state | `frontend/apps/admin-app/src/bookings/` |
+| The bookings of a salon in the admin application: the list of a day, a booking and the operations of its state, a booking put in for a customer who was searched for, the change of its notes and its removal | `frontend/apps/admin-app/src/bookings/` |
+| A form of the admin application that searches by a keyword kept in the address (salons, customers) | `frontend/apps/admin-app/src/components/keyword-search/`, `src/keyword.ts` |
 | The clock of a salon in the admin application: its day, its times of day, a moment that is typed on it | `frontend/apps/admin-app/src/salon-time.ts` |
 | The links of the header of the admin application, by the role and the salon of the address | `frontend/apps/admin-app/src/navigation.ts` |
 | The catalogue (Storybook), of the components of `ui`, of `session` and of the applications | `frontend/packages/ui/.storybook/`, `pnpm --filter @beauty-salon-frontend/ui run storybook` (port 6006) |
@@ -997,7 +998,9 @@ dashboard application at `/account/security`, which the header leads to
 The bookings of the admin application are the example to read:
 `frontend/apps/admin-app/src/bookings/` (`day-bookings-screen.tsx` for the
 list of a day, `booking-screen.tsx` for a booking and the operations of its
-state) and `src/salons/` (the choice of a salon, the salon of an address).
+state, `booking-entry-screen.tsx` for a booking the salon puts in,
+`booking-notes-screen.tsx` for the change of what it wrote down) and
+`src/salons/` (the choice of a salon, the salon of an address).
 Everything of "A screen that reads from the API" and of "A screen that
 writes what it read" holds; this is what comes on top.
 
@@ -1064,6 +1067,51 @@ writes what it read" holds; this is what comes on top.
 - **A state changed elsewhere (409)** is said on the page, in one sentence
   (`CHANGED_ELSEWHERE`), the dialog closes, the lists are removed and the
   booking is read again; the focus goes to the heading 「状態」.
+- **A search by a keyword is `KeywordSearch`** (`src/components/keyword-search/`):
+  a `search` landmark named after what it finds, the keyword (`keywordIn`
+  of `src/keyword.ts`: trimmed, at most 100 characters, none when blank) in
+  a parameter of the address, and a link that clears it. Nothing is asked
+  of the API without a keyword where the list would be the whole ledger
+  (the customers).
+- **A screen of steps keeps its steps in the address**
+  (`booking-entry.ts`: `date`, `search`, `customerId`). Each search and the
+  choice are entries of their own (a `Link`, `setQuery` without `replace`),
+  so 戻る of the browser goes back a step; 「お客様を選び直す」 is a link to
+  the address without the choice. The step that follows a choice is keyed
+  by it, and the heading takes the focus when the choice changes. What was
+  chosen is read again (`GET /customers/{id}`): one that is gone is said,
+  with the way back.
+- **The rows of a booking are `BookingLines`**, built as the rows of time
+  slots of the portal (the component keeps the keys, the browser the
+  values, the focus follows a press, removing a row renumbers the rest and
+  hides the errors that named them). A row is named by its number
+  (「明細 2 のメニュー」); the control names are those of the request
+  (`services.1.serviceId`), so a refusal of the API lands at its control.
+  What does not change from row to row (the member of the booking, the day
+  of the visit) is asked once, above the rows; a row takes 「予約の担当と同じ」
+  or 「決めない」 beside the members.
+- **What can be found out before sending is a button of the form**, not a
+  submit: it hands `new FormData(event.currentTarget.form)` to the screen,
+  which reads what it needs (`readLines`), says what is missing at the
+  controls as a submit does, and asks the API (`checkLine` per row). What
+  was found out is shown at each row and in one sentence (`role="status"`)
+  until a control it depends on changes (`onChange` of the `fieldset`).
+  When the API refuses the booking for the same reason (409), the screen
+  says so and runs the check itself.
+- **A change of some properties of a record is its own screen**
+  (`…/edit`), opened with the record read anew (`staleTime: 0`, shown once
+  `isFetchedAfterMount`). It sends what differs from what it was opened
+  with and nothing else (`readNotesChange`), so a property somebody else
+  changed meanwhile stays; when nothing differs it asks nothing, says so
+  and goes back.
+- **A removal is offered to the roles the API lets remove** (owner, manager,
+  admin: a constant of the screen; the role of `useSession`), asked in a
+  `Dialog` that says what it is for and what to do instead (cancel a
+  booking that will not take place). A refusal for good (409: a sale, a
+  treatment record or a review refers to it) closes the dialog and is said
+  on the page; what can be sent again is said in the dialog. After it the
+  record is gone (`setQueryData` with `NOT_FOUND`), the lists are removed,
+  and the screen leads to the list of its day.
 
 ## Screens that a mailed link opens
 
