@@ -1,3 +1,4 @@
+import { PASSWORD_RULE } from '@beauty-salon-frontend/session'
 import {
   ButtonLink,
   Form,
@@ -9,7 +10,7 @@ import { useState } from 'react'
 import { match, P } from 'ts-pattern'
 import { type FormSays, NOTHING_TO_SAY } from '../forms'
 import { checkPasswordReset, resetPassword } from './account-api'
-import { afterRefusal, PASSWORD_RULE, readNewPassword } from './account-flow'
+import { afterRefusal, readNewPassword } from './account-flow'
 import { CheckingLink, LinkNotChecked, LinkUnusable } from './mailed-link'
 import { useMailedToken } from './mailed-token'
 
