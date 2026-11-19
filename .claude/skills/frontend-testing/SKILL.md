@@ -480,10 +480,14 @@ the example to read: a customer books a time that the screen read.
   more than one booking at once (`maxConcurrentBookings`). A time that
   somebody else took first is arranged with a member of the staff who
   takes one at a time.
-- **What a write changed is asserted the moment it is shown again.** The
-  test reads the list, changes a record on its page and goes back, and
-  asserts the list as soon as it is there, without a wait for the new
-  word: a wait would pass over a list that showed the old one first.
+- **What a write changed is asserted in the commit that shows it again.**
+  The test reads the list, changes a record on its page and goes back. A
+  list that showed first what it had read before, and the new word after
+  reading again, passes a test that waits for the new word, and at times
+  one that looks at the list as soon as it is there (`firstSight`, under
+  "A screen that writes what it read"). The list of the bookings is not
+  kept after a write, so the commit that shows it again says that the
+  bookings are being read (`expectListReadAnew`).
 - **What must be read again is tested with what the application keeps.**
   The `QueryClient` of a test reads everything again whenever it is shown;
   the one of an application (`main.tsx`) keeps what it read for five
@@ -530,12 +534,14 @@ tested for what it must leave alone as well:
 - **What a write made is asserted in the commit that shows the next
   screen.** A page that showed first what it had kept (nothing, or the
   record as it was) and the new record after reading it again would pass
-  a test that waits for the record. It would pass a test that looks
-  without waiting as well: a `findBy…` and an event of `userEvent` each
-  let time pass, enough for the answer to one request. So the component
-  beside `App` that keeps the address also keeps, from a layout effect,
-  what `main` said in the commit that showed that address (`firstSight`),
-  and the test asserts on it:
+  a test that waits for the record. At times it passes a test that looks
+  as soon as the heading of the page is there as well: a `findBy…` and an
+  event of `userEvent` each let a moment pass, and the answer to one
+  request can arrive in it (with the wrong change in place, it had
+  arrived in two runs of three). So the component beside `App` that keeps
+  the address also keeps, from a layout effect, what `main` said in the
+  commit that showed that address (`firstSight`), and the test asserts on
+  it:
   `expect(firstSight).toEqual(['/mypage', expect.stringContaining('お名前Sato Yuki')])`.
 - **A record that is gone is made gone as the API does it.** The
   statements are those of the repository (a customer who was removed from

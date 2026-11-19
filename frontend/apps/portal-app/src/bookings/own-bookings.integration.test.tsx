@@ -9,6 +9,7 @@ import {
   within,
 } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { useLayoutEffect } from 'react'
 import { MemoryRouter, useLocation } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import * as z from 'zod'
@@ -57,11 +58,34 @@ const STATUS_NAMES: Record<string, string> = {
 /** The address the application is at, as the router knows it */
 let address = ''
 
+/**
+ * The path of the last screen, and what the page said in the commit that
+ * showed it: before an answer of the API could arrive. A test that looks
+ * at the page after waiting for something on it looks too late: by then,
+ * a screen that showed what it had kept has read again.
+ */
+let firstSight: [string, string] = ['', '']
+
 const Address = () => {
   const { pathname, search } = useLocation()
   address = `${pathname}${search}`
+  useLayoutEffect(() => {
+    firstSight = [pathname, document.querySelector('main')?.textContent ?? '']
+  }, [pathname])
 
   return null
+}
+
+/**
+ * The list kept nothing of what it had read before the write: the commit
+ * that shows it again holds no list, it says that the bookings are being
+ * read.
+ */
+const expectListReadAnew = (): void => {
+  expect(firstSight).toEqual([
+    '/bookings',
+    expect.stringContaining('予約を読み込んでいます'),
+  ])
 }
 
 /** What the application keeps of what it read: for five minutes, it does not read again. */
@@ -558,8 +582,10 @@ describe('the bookings of a customer, against the API', () => {
         await screen.findByRole('link', { name: '予約の一覧へ' }),
       )
 
-      // Assert: what the list says as soon as it is there
+      // Assert: the list as it was read before is not shown, not even in
+      // the commit that shows the screen
       const list = await listNamed('これからの予約')
+      expectListReadAnew()
       expect(linesIn(list)).toEqual(
         (await storedBookings(CUSTOMER, 'upcoming')).map(lineOf),
       )
@@ -1007,9 +1033,10 @@ describe('the bookings of a customer, against the API', () => {
       await screen.findByText('予約をキャンセルしました。')
       await userEvent.click(screen.getByRole('link', { name: '予約の一覧へ' }))
 
-      // Assert: what the list says as soon as it is there. Nothing waits
-      // for the word, so a list that showed what it had read before fails
+      // Assert: the list as it was read before is not shown, not even in
+      // the commit that shows the screen
       const list = await listNamed('これからの予約')
+      expectListReadAnew()
       expect(linesIn(list).map((lines) => lines.at(-1))).toEqual([
         '確定待ち',
         '確定待ち',
@@ -1257,8 +1284,10 @@ describe('the bookings of a customer, against the API', () => {
         await screen.findByRole('link', { name: '予約の一覧へ' }),
       )
 
-      // Assert: what the list says as soon as it is there
+      // Assert: the list as it was read before is not shown, not even in
+      // the commit that shows the screen
       const list = await listNamed('これからの予約')
+      expectListReadAnew()
       expect(linesIn(list).at(-1)?.at(0)).toBe(
         whenOf({
           startTime: momentAt(date, '10:00'),
