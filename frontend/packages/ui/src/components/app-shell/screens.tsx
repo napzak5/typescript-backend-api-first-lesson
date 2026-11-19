@@ -3,7 +3,7 @@ import {
   type ReactNode,
   type RefObject,
   useContext,
-  useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
 } from 'react'
@@ -46,6 +46,10 @@ export const ScreensProvider = ({
  * without a load has to say so itself. The first screen of a page leaves the
  * focus alone, as the load already put it at the top.
  *
+ * Both are done in the commit that shows the screen, before the browser
+ * paints it: whoever waits for the screen finds the focus on it, and not for
+ * a moment where the screen it replaced has left it.
+ *
  * Outside the frame of an application it does nothing.
  */
 export const useScreen = (
@@ -54,7 +58,7 @@ export const useScreen = (
   const screens = useContext(ScreensContext)
   const heading = useRef<HTMLHeadingElement>(null)
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (screens === null) {
       return
     }
