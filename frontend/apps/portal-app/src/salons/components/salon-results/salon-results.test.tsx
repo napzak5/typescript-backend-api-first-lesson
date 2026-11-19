@@ -1,7 +1,7 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories, composeStory } from '@storybook/react-vite'
 import { type ReactNode, useLayoutEffect, useState } from 'react'
-import { screen, userEvent, within } from 'storybook/test'
+import { fireEvent, screen, userEvent, within } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
 import { plainSalon, salon } from '../examples'
 import { SalonResults, type SalonResultsProps } from './salon-results'
@@ -35,10 +35,11 @@ type GrowingResultsProps = SalonResultsProps & {
 }
 
 /**
- * A list that gets a salon more when its button is pressed, as the screen
- * does when the next page arrives. It hands over where the focus is in the
- * commit that shows the salon: the layout effect of a component runs after
- * those of what it holds, and before the browser paints.
+ * A list that gets two salons more when its button is pressed, as the
+ * screen does when the next page arrives, and when 「読み直す」 is: a list
+ * that is read again may come back longer. It hands over where the focus
+ * is in the commit that shows the salons: the layout effect of a component
+ * runs after those of what it holds, and before the browser paints.
  */
 const GrowingResults = ({ seen, ...props }: GrowingResultsProps) => {
   const [salons, setSalons] = useState(props.salons)
@@ -47,18 +48,20 @@ const GrowingResults = ({ seen, ...props }: GrowingResultsProps) => {
     seen(document.activeElement)
   })
 
+  const add = (): void =>
+    setSalons([
+      ...salons,
+      { ...salon, id: ADDED_ID, name: '美容室 あさひ' },
+      { ...plainSalon, id: `${ADDED_ID}-2`, name: '美容室 ゆうひ' },
+    ])
+
   return (
-    <SalonResults
-      {...props}
-      salons={salons}
-      onMore={() =>
-        setSalons([
-          ...salons,
-          { ...salon, id: ADDED_ID, name: '美容室 あさひ' },
-          { ...plainSalon, id: `${ADDED_ID}-2`, name: '美容室 ゆうひ' },
-        ])
-      }
-    />
+    <>
+      <SalonResults {...props} salons={salons} onMore={add} />
+      <button type='button' onClick={add}>
+        読み直す
+      </button>
+    </>
   )
 }
 
@@ -239,6 +242,25 @@ describe('SalonResults', () => {
       '美容室 あさひ',
       '美容室 ゆうひ',
     ])
+  })
+
+  it('should leave the focus where it is when salons come that no press asked for: the list was read again', async () => {
+    // Arrange
+    const Growing = composeStory(
+      {
+        ...salonResultsStories.WithMore,
+        render: (args) => <GrowingResults {...args} seen={() => undefined} />,
+      },
+      salonResultsStories.default,
+    )
+    await Growing.run()
+
+    // Act: an event that moves no focus
+    fireEvent.click(screen.getByRole('button', { name: '読み直す' }))
+
+    // Assert
+    expect(screen.getByRole('link', { name: '美容室 あさひ' })).toBeVisible()
+    expect(document.body).toHaveFocus()
   })
 
   it('should leave the focus where it is when the list appears', async () => {

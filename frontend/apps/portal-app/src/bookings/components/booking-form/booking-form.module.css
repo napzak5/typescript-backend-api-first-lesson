@@ -1,4 +1,4 @@
-/* One column: what went wrong, the choices, the times, the request, the button. */
+/* One column: what went wrong, the choices, the times, what is sent with them, the button. */
 .form {
   display: grid;
   grid-template-columns: minmax(0, 1fr);

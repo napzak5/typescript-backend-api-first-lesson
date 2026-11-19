@@ -1,24 +1,49 @@
-import type { ModelsCustomerBookingResponse } from '@beauty-salon-frontend/api-client'
+import type {
+  ModelsBookingCancelRequest,
+  ModelsCustomerBookingResponse,
+} from '@beauty-salon-frontend/api-client'
 import { RequireSession } from '@beauty-salon-frontend/session'
 import {
+  Alert,
   ButtonLink,
   Card,
   LoadingIndicator,
   PageHeader,
+  useNotifications,
+  useScreenHeadingFocus,
 } from '@beauty-salon-frontend/ui'
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import { CUSTOMERS } from '../roles'
 import { readSalon, readStaff } from '../salons/salons-api'
 import { UnreadNotice } from '../salons/unread-notice'
 import { SignInHelp } from '../sign-in-help'
-import { readOwnBooking, readService, whyUnread } from './bookings-api'
+import { afterCancellation, readCancellation } from './booking-flow'
+import { whenLineOf } from './booking-format'
+import {
+  cancelOwnBooking,
+  type OwnBookingRead,
+  readOwnBooking,
+  readService,
+  whyUnread,
+} from './bookings-api'
+import { BookingChanges } from './components/booking-changes/booking-changes'
 import { BookingSummary } from './components/booking-summary/booking-summary'
+import {
+  isChangeable,
+  isMovable,
+  moveHrefOf,
+  OWN_BOOKING_LISTS,
+  serviceIdOf,
+} from './own-bookings'
 
 const TITLE = '予約の内容'
 
 const UNREAD = P.union('tooManyRequests', 'failed')
+
+const GONE_OR_FOUND = P.union('found', 'notFound')
 
 type BookingDetailsProps = {
   booking: ModelsCustomerBookingResponse
@@ -28,11 +53,17 @@ type BookingDetailsProps = {
  * A booking names its salon, its service and its member of the staff by
  * their IDs. The salon says when the booking is (its time zone) and what an
  * amount is in (its currency), so nothing is shown before the salon is
- * read; a service or a member of the staff that the salon no longer shows
- * leaves the rest as it is.
+ * read; what is no longer there leaves the rest as it is.
+ *
+ * Below it is what the customer can still do: move the booking, on a
+ * screen of its own, or cancel it, after a dialog has asked.
  */
 const BookingDetails = ({ booking }: BookingDetailsProps) => {
-  const serviceId = booking.services.at(0)?.serviceId ?? ''
+  const queryClient = useQueryClient()
+  const { notify } = useNotifications()
+  const focusHeading = useScreenHeadingFocus()
+  const serviceId = serviceIdOf(booking) ?? ''
+  const own = ['own', 'bookings', booking.id]
   const salon = useQuery({
     queryKey: ['salons', booking.salonId, 'salon'],
     queryFn: () => readSalon(booking.salonId),
@@ -45,6 +76,60 @@ const BookingDetails = ({ booking }: BookingDetailsProps) => {
     queryKey: ['salons', booking.salonId, 'staff'],
     queryFn: () => readStaff(booking.salonId),
   })
+  const [asking, setAsking] = useState(false)
+  /** What went wrong with an attempt that can be made again: said in the dialog */
+  const [unsent, setUnsent] = useState<string>()
+  /** What the API refused: said on the page, where the booking is read again */
+  const [refusal, setRefusal] = useState<string>()
+  const changeable = isChangeable(booking, new Date())
+  /** The customer cancelled here, or tried to: the buttons may go with what they did */
+  const answered = useRef(false)
+
+  // The buttons went with the dialog that had the focus, and the screen is
+  // the same one: the focus goes to its heading, in the commit that shows
+  // the booking as it is now
+  useLayoutEffect(() => {
+    if (!changeable && answered.current) {
+      answered.current = false
+      focusHeading()
+    }
+  }, [changeable, focusHeading])
+
+  const cancellation = useMutation({
+    mutationFn: (request: ModelsBookingCancelRequest) =>
+      cancelOwnBooking(booking.id, request),
+    onSuccess: (outcome) => {
+      if (outcome.type === 'cancelled') {
+        const read: OwnBookingRead = { type: 'found', booking: outcome.booking }
+        answered.current = true
+        queryClient.setQueryData(own, read)
+        notify({ tone: 'success', message: '予約をキャンセルしました。' })
+        queryClient.removeQueries({ queryKey: OWN_BOOKING_LISTS })
+        return
+      }
+      match(afterCancellation(outcome))
+        .with({ type: 'again' }, ({ message }) => setUnsent(message))
+        .with({ type: 'refused' }, ({ message }) => {
+          answered.current = true
+          setAsking(false)
+          setRefusal(message)
+          void queryClient.invalidateQueries({ queryKey: own })
+        })
+        .with({ type: 'gone' }, () => {
+          void queryClient.invalidateQueries({ queryKey: own })
+        })
+        .exhaustive()
+    },
+  })
+
+  const ask = (): void => {
+    // What was said about an attempt before is said no longer
+    answered.current = false
+    setUnsent(undefined)
+    setRefusal(undefined)
+    setAsking(true)
+  }
+
   const again = (): void => {
     void salon.refetch()
     void service.refetch()
@@ -59,30 +144,53 @@ const BookingDetails = ({ booking }: BookingDetailsProps) => {
       () => <LoadingIndicator label='予約の内容を読み込んでいます' />,
     )
     .with(
-      [
-        { type: 'found' },
-        { type: P.union('found', 'notFound') },
-        { type: 'found' },
-      ],
-      ([found, ofService, ofStaff]) => (
-        <Card title={`予約番号 ${booking.bookingNumber}`}>
-          <BookingSummary
-            booking={booking}
-            salon={found.salon}
-            salonHref={`/salons/${found.salon.id}`}
-            serviceName={
-              ofService.type === 'found' ? ofService.service.name : null
-            }
-            staffName={
-              ofStaff.staff.find(({ id }) => id === booking.staffId)
-                ?.displayName ?? null
-            }
-          />
-        </Card>
-      ),
+      [{ type: GONE_OR_FOUND }, { type: GONE_OR_FOUND }, { type: 'found' }],
+      ([ofSalon, ofService, ofStaff]) => {
+        const found = ofSalon.type === 'found' ? ofSalon.salon : null
+
+        return (
+          <>
+            {refusal !== undefined && <Alert tone='danger'>{refusal}</Alert>}
+            <Card title={`予約番号 ${booking.bookingNumber}`}>
+              <BookingSummary
+                booking={booking}
+                salon={found}
+                salonHref={`/salons/${booking.salonId}`}
+                serviceName={
+                  ofService.type === 'found' ? ofService.service.name : null
+                }
+                staffName={
+                  ofStaff.staff.find(({ id }) => id === booking.staffId)
+                    ?.displayName ?? null
+                }
+              />
+              {changeable && (
+                <BookingChanges
+                  moveHref={
+                    found !== null &&
+                    ofService.type === 'found' &&
+                    isMovable(booking)
+                      ? moveHrefOf(booking)
+                      : undefined
+                  }
+                  when={whenLineOf(booking, found?.timezone ?? null)}
+                  open={asking}
+                  onOpen={ask}
+                  onClose={() => setAsking(false)}
+                  message={unsent}
+                  pending={cancellation.isPending}
+                  onCancel={(values) =>
+                    cancellation.mutate(readCancellation(values))
+                  }
+                />
+              )}
+            </Card>
+          </>
+        )
+      },
     )
     .with(
-      [{ type: P.union('notFound', 'tooManyRequests', 'failed') }, P._, P._],
+      [{ type: UNREAD }, P._, P._],
       [P._, { type: UNREAD }, P._],
       [P._, P._, { type: UNREAD }],
       (reads) => (
@@ -118,6 +226,11 @@ const OwnBooking = () => {
       <>
         <PageHeader title={TITLE} />
         <BookingDetails booking={booking} />
+        <p>
+          <ButtonLink href='/bookings' variant='secondary'>
+            予約の一覧へ
+          </ButtonLink>
+        </p>
       </>
     ))
     .with({ type: 'notFound' }, () => (
@@ -145,7 +258,11 @@ const OwnBooking = () => {
     .exhaustive()
 }
 
-/** A booking of the customer who is signed in: what was booked, when, with whom, and where it stands. */
+/**
+ * A booking of the customer who is signed in: what was booked, when, with
+ * whom, and where it stands; and, until it begins, the ways to move it or
+ * to cancel it.
+ */
 export const BookingDetailScreen = () => (
   <RequireSession
     roles={CUSTOMERS}

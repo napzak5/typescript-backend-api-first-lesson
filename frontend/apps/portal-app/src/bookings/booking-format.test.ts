@@ -7,6 +7,9 @@ import {
   statusNoteOf,
   statusToneOf,
   totalOf,
+  visitDayOf,
+  whenKnownOf,
+  whenLineOf,
   whenOf,
 } from './booking-format'
 
@@ -165,5 +168,82 @@ describe('totalOf', () => {
 
   it('should say that a booking costs nothing', () => {
     expect(totalOf({ totalAmount: 0, taxAmount: 0 }, 'JPY')).toBe('￥0')
+  })
+})
+
+describe('visitDayOf', () => {
+  it('should be the day as the booking names it, with its day of the week', () => {
+    expect(visitDayOf('2026-11-24')).toBe('2026年11月24日火曜日')
+  })
+
+  it.each([
+    ['the first day of a year', '2027-01-01', '2027年1月1日金曜日'],
+    ['the last day of a year', '2026-12-31', '2026年12月31日木曜日'],
+    ['a leap day', '2028-02-29', '2028年2月29日火曜日'],
+  ])('should read %s as that day, wherever it is read', (_case, date, day) => {
+    expect(visitDayOf(date)).toBe(day)
+  })
+})
+
+describe('whenKnownOf', () => {
+  /** 23:30 to 00:30 in Tokyo: the visit begins on the 24th there, and on the 24th in UTC as well */
+  const LATE = {
+    bookingDate: '2026-11-24',
+    startTime: '2026-11-24T14:30:00.000Z',
+    endTime: '2026-11-24T15:30:00.000Z',
+  }
+
+  it('should be the day and the hours at the salon when the time zone of the salon is known', () => {
+    expect(whenKnownOf(LATE, 'Asia/Tokyo')).toEqual({
+      day: '2026年11月24日火曜日',
+      hours: '23:30〜00:30',
+    })
+  })
+
+  it('should be the day and the hours of another salon in its time zone', () => {
+    expect(
+      whenKnownOf(
+        { ...LATE, bookingDate: '2026-11-24' },
+        'America/Los_Angeles',
+      ),
+    ).toEqual({ day: '2026年11月24日火曜日', hours: '06:30〜07:30' })
+  })
+
+  it('should be the day of the booking alone, and no hours, when the salon is no longer there', () => {
+    expect(whenKnownOf(LATE, null)).toEqual({
+      day: '2026年11月24日火曜日',
+      hours: null,
+    })
+  })
+
+  it('should take the day from the booking, not from its moment, when the salon is no longer there: a visit in the morning of Tokyo begins the day before in UTC', () => {
+    expect(
+      whenKnownOf(
+        {
+          bookingDate: '2026-11-25',
+          startTime: '2026-11-24T23:00:00.000Z',
+          endTime: '2026-11-25T00:00:00.000Z',
+        },
+        null,
+      ),
+    ).toEqual({ day: '2026年11月25日水曜日', hours: null })
+  })
+})
+
+describe('whenLineOf', () => {
+  const VISIT = {
+    bookingDate: '2026-11-24',
+    startTime: '2026-11-24T01:30:00.000Z',
+    endTime: '2026-11-24T02:30:00.000Z',
+  }
+
+  it('should be the day and the hours in one line', () => {
+    expect(whenLineOf(VISIT, 'Asia/Tokyo')).toBe(
+      '2026年11月24日火曜日 10:30〜11:30',
+    )
+  })
+
+  it('should be the day alone when the salon is no longer there', () => {
+    expect(whenLineOf(VISIT, null)).toBe('2026年11月24日火曜日')
   })
 })

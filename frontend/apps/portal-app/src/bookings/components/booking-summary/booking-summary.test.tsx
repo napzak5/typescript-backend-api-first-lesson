@@ -91,6 +91,22 @@ describe('BookingSummary', () => {
     ).toContain('お願いします。\n\nカラーの相談もしたいです。')
   })
 
+  it('should tell the day alone, and neither a time nor an amount, of a booking whose salon is no longer there', async () => {
+    // Act
+    await stories.WithoutSalon.run()
+
+    // Assert
+    expect(details()).toEqual({
+      状態: '確定待ちサロンが内容を確認すると、予約が確定します。',
+      サロン: '（掲載を終えています）',
+      メニュー: '（掲載を終えています）',
+      担当: '（掲載を終えています）',
+      日時: '2026年11月24日火曜日 （1 時間）',
+      ご要望: '前髪は、眉が隠れるくらいの長さにしたいです。',
+    })
+    expect(screen.queryByRole('link')).toBeNull()
+  })
+
   it('should say that the salon no longer shows the service and the member of the staff, and show the rest', async () => {
     // Act
     await stories.NoLongerShown.run()

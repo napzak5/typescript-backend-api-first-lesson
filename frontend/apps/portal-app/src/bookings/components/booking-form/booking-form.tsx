@@ -7,12 +7,12 @@ import {
   LoadingIndicator,
   RadioGroup,
   Select,
-  TextArea,
   TextField,
 } from '@beauty-salon-frontend/ui'
 import {
   type ChangeEvent,
   type FormEvent,
+  type ReactNode,
   useLayoutEffect,
   useRef,
 } from 'react'
@@ -45,6 +45,13 @@ export type BookingFormProps = {
   times: TimesOfDay
   /** Asks for the times again, after they could not be read */
   onRetry: () => void
+  /**
+   * What is sent with the time: the controls below the times (「ご要望」).
+   * They are there on a day without a time, too
+   */
+  children?: ReactNode
+  /** What the button that sends the form says: 「この内容で予約する」 */
+  submitLabel: string
   /** What went wrong with the attempt as a whole */
   message?: string | undefined
   /**
@@ -55,7 +62,7 @@ export type BookingFormProps = {
   errors?: FormErrors | undefined
   /** The attempt is on its way */
   pending?: boolean | undefined
-  /** The time that was chosen (`startTime`) and the request (`customerRequest`) */
+  /** The time that was chosen (`startTime`), and the values of the controls that were given */
   onSubmit: (values: FormData) => void
 }
 
@@ -65,11 +72,12 @@ const NO_ERRORS: FormErrors = {}
 const ANYBODY = ''
 
 /**
- * Where a customer books a service: with whom, on which day, at which of
- * the times that are free, and what the salon should know. The staff and
- * the day belong to whoever shows the form, which reads the times for
- * them; the time and the request are kept by the browser until the form is
- * sent. There is nothing to send while the day has no time.
+ * Where a customer chooses the time of a booking, for a new one and for
+ * one that is moved: with whom, on which day, and at which of the times
+ * that are free. The staff and the day belong to whoever shows the form,
+ * which reads the times for them; the time, and what the controls that
+ * were given hold, are kept by the browser until the form is sent. There
+ * is nothing to send while the day has no time.
  */
 export const BookingForm = ({
   staff,
@@ -78,6 +86,8 @@ export const BookingForm = ({
   onChoose,
   times,
   onRetry,
+  children,
+  submitLabel,
   message,
   errors = NO_ERRORS,
   pending = false,
@@ -196,16 +206,11 @@ export const BookingForm = ({
           />
         ))
         .exhaustive()}
-      <TextArea
-        label='ご要望'
-        name='customerRequest'
-        description='サロンに伝えておきたいことがあれば、ご記入ください。'
-        error={errors['customerRequest']}
-      />
+      {children}
       {times.type === 'listed' && times.times.length > 0 && (
         <div className={styles['actions']}>
           <Button type='submit' variant='primary' pending={pending}>
-            この内容で予約する
+            {submitLabel}
           </Button>
         </div>
       )}

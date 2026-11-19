@@ -159,7 +159,7 @@ flowchart LR
 
 - バックエンドは、コントラクトのすべてのオペレーションを実装しています。TypeSpec にだけあって、テーブルやコードのない機能はありません。何を実装しているかの一覧は、[README の Implementation Status](../README.md#implementation-status) の 1 か所にあります。ドメインごとの規則と、あえて持たないものは、それぞれのドキュメントの「実装範囲」にあります（[ドキュメントの一覧](./README.md)）。`CLAUDE.md`、`AGENTS.md`、エージェント定義は、この一覧を繰り返しません
 - 認証はサーバー側のセッションとベアラートークンで行い、認可はユースケースが操作者（`Actor`）から判定します。誰が何をできるかは、[認証と認可](./authentication.md) にあります
-- フロントエンドの 3 つのアプリケーションにある画面は、サインインと、portal-app のアカウントの画面（登録と、メールのリンクが指す `/verify-email`、`/reset-password`、`/accept-staff-invitation`）と、サロンを探す画面（`/`）、サロンの詳細の画面（`/salons/:salonId`）、顧客が予約を入れる画面（`/salons/:salonId/services/:serviceId/booking`）、予約の内容の画面（`/bookings/:bookingId`）です。そのほかの業務の画面（自分の予約の一覧と変更、マイページ、admin-app と dashboard-app の画面）は、まだありません。あるものと、ないものは、[フロントエンドAPI統合ガイド](./frontend-api-integration.md) にあります。
+- フロントエンドの 3 つのアプリケーションにある画面は、サインインと、portal-app のアカウントの画面（登録と、メールのリンクが指す `/verify-email`、`/reset-password`、`/accept-staff-invitation`）と、サロンを探す画面（`/`）、サロンの詳細の画面（`/salons/:salonId`）、顧客が予約を入れる画面（`/salons/:salonId/services/:serviceId/booking`）、予約の一覧の画面（`/bookings`）、予約の内容の画面（`/bookings/:bookingId`。キャンセルも、ここで行う）、日時の変更の画面（`/bookings/:bookingId/reschedule`）です。そのほかの業務の画面（マイページ、admin-app と dashboard-app の画面）は、まだありません。あるものと、ないものは、[フロントエンドAPI統合ガイド](./frontend-api-integration.md) にあります。
 - メールは、認証のメール（メールアドレスの確認、パスワードの再設定、スタッフアカウントへの招待と、パスワードの変更・2 要素認証の有効化と無効化・管理者による 2 要素認証のリセット・バックアップコードの再発行・バックアップコードでのログインの通知）だけを SMTP で送ります。詳細は [email.md](./email.md) を参照してください。
 - ファイルの保存先は、添付ファイルのための S3 互換のオブジェクトストレージだけです（ローカルでは、`make infra-up` が起動する SeaweedFS）。ドメインは、ポート `IFileStorage`（`backend/packages/domain/src/services/file-storage.ts`）だけを知り、実装は `S3FileStorage`（`backend/packages/infrastructure/src/storage/s3-file-storage.ts`）です。
 

@@ -1,10 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { Button } from '../button/button'
 import { ButtonLink } from '../button-link/button-link'
 import { Navigation } from '../navigation/navigation'
 import { PageHeader } from '../page-header/page-header'
 import { AppShell } from './app-shell'
+import { useScreenHeadingFocus } from './screens'
 
 const items = [
   { href: '/bookings', label: '予約台帳', current: true },
@@ -94,5 +95,44 @@ const TwoScreens = () => {
 export const ScreenChange: Story = {
   args: {
     children: <TwoScreens />,
+  },
+}
+
+const TwoSteps = () => {
+  const [registered, setRegistered] = useState(false)
+  const focusHeading = useScreenHeadingFocus()
+  const before = useRef(registered)
+
+  // In the commit that shows the next step, where the button was
+  useLayoutEffect(() => {
+    if (registered && !before.current) {
+      focusHeading()
+    }
+    before.current = registered
+  }, [registered, focusHeading])
+
+  return (
+    <>
+      <PageHeader title='予約する' />
+      {registered ? (
+        <p>日時を選んでください。</p>
+      ) : (
+        <p>
+          <Button onClick={() => setRegistered(true)}>
+            お客様の情報を登録する
+          </Button>
+        </p>
+      )}
+    </>
+  )
+}
+
+/**
+ * A step of a screen takes the place of the one that had the focus: the
+ * screen asks for the focus to go to its heading.
+ */
+export const StepChange: Story = {
+  args: {
+    children: <TwoSteps />,
   },
 }
