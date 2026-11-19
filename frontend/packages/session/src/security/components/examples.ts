@@ -1,4 +1,5 @@
 import type {
+  ModelsAuthTwoFactorSetupResponse,
   ModelsSessionResponse,
   ModelsUserResponse,
 } from '@beauty-salon-frontend/api-client'
@@ -65,3 +66,25 @@ export const unrecorded: ModelsSessionResponse = {
 
 /** The sessions as the API lists them, the latest first. */
 export const sessions: ModelsSessionResponse[] = [thisDevice, unrecorded, phone]
+
+/**
+ * What the API issues when the second factor is set up for the account:
+ * the secret, the address the authenticator app reads, and the backup codes.
+ */
+export const twoFactorSetup: ModelsAuthTwoFactorSetupResponse = {
+  secret: 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP',
+  qrCodeUrl:
+    'otpauth://totp/Beauty%20Salon:hanako%40example.com?secret=JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP&issuer=Beauty%20Salon&algorithm=SHA1&digits=6&period=30',
+  backupCodes: [
+    'K7M2-PZQX-4HDA-WN3E',
+    'B5TR-J2LC-Q6VY-XE4M',
+    'H3NW-7FKD-ZP2S-LU6A',
+    'R4QE-M7XB-T5JN-CW2K',
+    'V6LA-D3YP-G2HU-QS7F',
+    'Z2CK-W5RT-N4MX-JE3B',
+    'P7GU-S4LF-Y6QD-HA2N',
+    'E3WJ-K6ZM-R2TC-XV5P',
+    'L5DY-Q2BN-U7KS-FG4W',
+    'T6HX-A3VE-M5PL-ZR2J',
+  ],
+}
