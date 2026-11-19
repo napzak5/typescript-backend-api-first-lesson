@@ -1,10 +1,31 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
-import { composeStories } from '@storybook/react-vite'
+import { composeStories, composeStory } from '@storybook/react-vite'
+import { type ReactNode, useLayoutEffect } from 'react'
 import { screen, userEvent } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
 import * as signInFormStories from './sign-in-form.stories'
 
 const stories = composeStories(signInFormStories)
+
+type WhereTheFocusIs = (focused: Element | null) => void
+
+type InCommitProps = {
+  seen: WhereTheFocusIs
+  children: ReactNode
+}
+
+/**
+ * Hands over where the focus is in the commit that shows what it holds: the
+ * layout effect of a component runs after those of what it holds, and before
+ * the browser paints.
+ */
+const InCommit = ({ seen, children }: InCommitProps) => {
+  useLayoutEffect(() => {
+    seen(document.activeElement)
+  })
+
+  return children
+}
 
 /** Stands in for `onSubmit`, and keeps what the form handed over as pairs of name and value. */
 const receiver = () => {
@@ -117,6 +138,46 @@ describe('SignInForm', () => {
     )
     expect(email).toHaveFocus()
   })
+
+  it.each([
+    {
+      story: 'WithFieldErrors',
+      annotations: signInFormStories.WithFieldErrors,
+      control: 'メールアドレス',
+    },
+    {
+      story: 'TwoFactorCode',
+      annotations: signInFormStories.TwoFactorCode,
+      control: '認証コード',
+    },
+  ])(
+    'should have moved the focus in the commit that shows $story, before it is painted',
+    async ({ annotations, control }) => {
+      // Arrange
+      const seen = vi.fn<WhereTheFocusIs>()
+      const Story = composeStory(
+        {
+          ...annotations,
+          decorators: [
+            (Form) => (
+              <InCommit seen={seen}>
+                <Form />
+              </InCommit>
+            ),
+          ],
+        },
+        signInFormStories.default,
+      )
+
+      // Act
+      await Story.run()
+
+      // Assert
+      expect(seen).toHaveBeenLastCalledWith(
+        screen.getByRole('textbox', { name: control }),
+      )
+    },
+  )
 
   it('should announce a refusal as an alert', async () => {
     // Act

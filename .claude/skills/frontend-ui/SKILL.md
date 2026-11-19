@@ -312,6 +312,15 @@ The sign-in form is the example to read:
   screen of a page load leaves the focus where the browser put it. A screen
   needs nothing for this but its `PageHeader`, which it shows in every
   state: while its content loads, when there is none, when it failed.
+- **The focus moves in the commit that shows where it goes.** A component
+  that moves the focus when what it shows changes (the heading of another
+  screen, the first control with an error, the code of the second step) does
+  so in `useLayoutEffect`, not in `useEffect`. React may run a `useEffect` a
+  task after the commit: the router changes the screen inside a transition,
+  and an answer of the API is no event of the user. The screen would then be
+  painted, and found by whoever waited for it, with the focus still where
+  the screen before it left it. `useScreen`
+  (`ui/src/components/app-shell/screens.tsx`) is the example to read.
 - **What goes somewhere is a link, what does something is a button.**
   `ButtonLink` for 「新しい予約」 that opens another screen, `Button` for
   「予約を確定する」. This package does not know the router: an application
