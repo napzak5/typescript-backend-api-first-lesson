@@ -1,38 +1,24 @@
 import { dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { StorybookConfig } from '@storybook/react-vite'
-import { mergeConfig } from 'vite'
 
-/**
- * This function is used to resolve the absolute path of a package.
- * It is needed in projects that use Yarn PnP or are set up within a monorepo.
- */
-function getAbsolutePath(value: string): string {
-  return dirname(fileURLToPath(import.meta.resolve(`${value}/package.json`)))
-}
+/** The directory of a package, which is how Storybook finds it in a pnpm workspace. */
+const packageDirectory = (name: string): string =>
+  dirname(fileURLToPath(import.meta.resolve(`${name}/package.json`)))
 
 const config: StorybookConfig = {
-  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  stories: ['../src/**/*.stories.tsx'],
   addons: [
-    getAbsolutePath('@storybook/addon-docs'),
-    getAbsolutePath('@storybook/addon-onboarding'),
-    getAbsolutePath('@storybook/addon-themes'),
+    packageDirectory('@storybook/addon-docs'),
+    packageDirectory('@storybook/addon-a11y'),
   ],
   framework: {
-    name: getAbsolutePath('@storybook/react-vite'),
+    name: packageDirectory('@storybook/react-vite'),
     options: {},
   },
-  async viteFinal(config) {
-    // Import Tailwind Vite plugin dynamically
-    const tailwindcss = (await import('@tailwindcss/vite')).default
-
-    // Merge custom configuration into the default config
-    return mergeConfig(config, {
-      plugins: [tailwindcss()],
-      optimizeDeps: {
-        include: ['@beauty-salon-frontend/theme'],
-      },
-    })
+  core: {
+    // Nothing about this repository leaves the machine
+    disableTelemetry: true,
   },
 }
 

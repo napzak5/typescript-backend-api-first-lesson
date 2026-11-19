@@ -1,31 +1,24 @@
-import path from 'node:path'
-import react from '@vitejs/plugin-react'
+import { defaultClientConditions, defaultServerConditions } from 'vite'
 import { defineConfig } from 'vitest/config'
 
+// Workspace packages are tested from source, not from their last build
+const SOURCE = '@beauty-salon-frontend/source'
+
 export default defineConfig({
-  plugins: [react()],
-  test: {
-    coverage: {
-      provider: 'v8',
-      reporter: ['text', 'json', 'html'],
-      exclude: [
-        'node_modules/',
-        'dist/',
-        '**/*.d.ts',
-        '**/*.config.*',
-        '**/mockData.ts',
-        '**/*.spec.ts',
-        '**/*.test.ts',
-      ],
+  resolve: {
+    conditions: [SOURCE, ...defaultClientConditions],
+  },
+  ssr: {
+    resolve: {
+      conditions: [SOURCE, ...defaultServerConditions],
     },
   },
-  resolve: {
-    alias: {
-      '@': path.resolve(import.meta.dirname, 'src'),
-      '@beauty-salon-frontend/ui': path.resolve(
-        import.meta.dirname,
-        '../../packages/ui/src',
-      ),
+  test: {
+    environment: 'jsdom',
+    setupFiles: ['@beauty-salon-frontend/testing/setup', './vitest.setup.ts'],
+    css: {
+      // The class names of the CSS Modules, as they are written
+      modules: { classNameStrategy: 'non-scoped' },
     },
   },
 })

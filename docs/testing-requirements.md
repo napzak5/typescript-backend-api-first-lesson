@@ -70,14 +70,17 @@ show what the constraints of `services` and `service_options` refuse.
 |---------|------|-----------|
 | Configuration read from the environment | Unit, beside the module | `frontend/packages/config/src/env/env.test.ts` |
 | The fetch function, and the generated API client through it: the request, every status as a typed value, transport failures | Unit, with `fetch` stubbed | `frontend/packages/io/src/libs/fetcher/fetcher.test.ts`, `frontend/packages/api-client/src/salons.test.ts` |
-| UI components | Component test | `frontend/packages/ui/src/components/button.test.tsx` |
-| Applications: routes, navigation, what depends on the environment | Component test | `frontend/apps/admin-app/src/App.test.tsx` |
+| UI components | The stories of the component, composed and run in jsdom, with an accessibility test for every story | `frontend/packages/ui/src/components/button/button.test.tsx` |
+| Applications: the frame, the routes, what depends on the environment | Component test in a `MemoryRouter`, with an accessibility test | `frontend/apps/admin-app/src/App.test.tsx` |
+| The style rules (CSS Modules, Grid and no flex, tokens) in every package and application; the contrast of the colour tokens | Unit | `frontend/packages/theme/src/style-rules.test.ts`, `frontend/packages/theme/src/tokens.test.ts` |
 
-The frontend tests render with `renderToStaticMarkup` from `react-dom/server`.
-A file that needs a DOM opts in with `// @vitest-environment jsdom` on its
-first line. Environment variables are set with `vi.stubEnv`, or with `test.env`
-in the Vitest configuration of the package when every test of it needs the same
-value (`frontend/packages/api-client`). There are no browser-driven tests.
+The tests of `ui`, of `testing` and of the applications run in jsdom, the
+others in Node. How a component is tested from its stories and how
+accessibility is checked is the subject of the skill
+[frontend-testing](../.claude/skills/frontend-testing/SKILL.md). Environment
+variables are set with `vi.stubEnv`, or with `test.env` in the Vitest
+configuration of the package when every test of it needs the same value
+(`frontend/packages/api-client`). There are no browser-driven tests.
 
 ## Requirements per Endpoint
 

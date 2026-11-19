@@ -1,0 +1,10 @@
+/*
+ * The cascade layers, lowest first. The styles of a component are in no
+ * layer, so they win over both, in whatever order the stylesheets load.
+ */
+@layer reset, base;
+
+/* The tokens are what the two files after them read. */
+@import "./tokens.css";
+@import "./reset.css";
+@import "./global.css";

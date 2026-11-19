@@ -4,13 +4,14 @@
 
 ## 現状
 
-**3つのフロントエンドアプリは、現時点ではどこからも API を呼んでいません。** 各画面は `src/App.tsx` に書かれた固定のデータを表示しています。
+**3つのフロントエンドアプリは、現時点ではどこからも API を呼んでいません。** どのアプリも枠だけです。`src/App.tsx` が、アプリ名のヘッダー、「画面は準備中です。」と表示するトップページ、存在しないパスのためのページを持っています。
 
 あるもの:
 
 - OpenAPI ドキュメントから Orval が生成した API クライアント（`@beauty-salon-frontend/api-client`）。型、fetch 関数、TanStack Query のフックを含む
 - そのクライアントが HTTP 呼び出しに使う fetch ラッパー（`@beauty-salon-frontend/io` の `customInstance`）。生成コードが期待するとおりに動くことを、テストと実際のサーバーへの呼び出しで確認している
 - 各アプリの TanStack Query の初期設定（`QueryClientProvider`）
+- UI の土台: デザイントークン（`@beauty-salon-frontend/theme`）、CSS Modules で書いた共有コンポーネントとそのカタログ（`@beauty-salon-frontend/ui`、Storybook）、テストが共有する道具（`@beauty-salon-frontend/testing`）。[UI とテストの規則](#ui-とテストの規則)を参照
 - 環境変数 `VITE_BACKEND_BASE_URL`（API サーバーのオリジン）
 
 ないもの:
@@ -30,7 +31,7 @@
 | admin-app | `frontend/apps/admin-app` | 3002 |
 | dashboard-app | `frontend/apps/dashboard-app` | 3003 |
 
-いずれも Vite 8 + React 19 + react-router-dom 7 の SPA です。ワークスペースのパッケージで依存しているのは `@beauty-salon-frontend/ui` と `@beauty-salon-frontend/theme` だけです。
+いずれも Vite 8 + React 19 + react-router 8 の SPA です。ワークスペースのパッケージで依存しているのは `@beauty-salon-frontend/ui` と `@beauty-salon-frontend/theme`、それにテストのための `@beauty-salon-frontend/testing` だけです。
 
 ### 共有パッケージ（`frontend/packages/`）
 
@@ -39,13 +40,14 @@
 | `api-client` | Orval の生成物（`src/generated/`）と、その再エクスポート | なし |
 | `io` | fetch ラッパー `customInstance` | `api-client` |
 | `config` | `import.meta.env` を読む `env` オブジェクトと、モード判定関数（`isProductionMode` など） | `io`、`ui`（型のみ） |
-| `theme` | Tailwind CSS のプリセットと CSS 変数（`styles/base.css`） | 3つのアプリ、`ui` |
-| `ui` | `Button`、`Card`、`EnvironmentBanner` | 3つのアプリ |
+| `theme` | デザイントークン（`src/tokens.css`）、リセットと素の要素のスタイル、スタイルの規則の検査（`src/style-rules.ts`） | 3つのアプリ、`ui`（カタログとテスト） |
+| `ui` | 共有コンポーネント（`Button`、`EnvironmentBanner`）、クラス名をつなぐ `classNames`、カタログ（Storybook） | 3つのアプリ |
+| `testing` | テストが共有するもの: jest-dom のマッチャー、アクセシビリティの検査（axe-core）、ストーリーごとにその検査を宣言する関数 | `ui` と 3つのアプリのテスト |
 | `assets` | 画像アセット | なし |
 
 アプリが実際に使っているのは `ui` と `theme` だけです（`ui` は `config` から型を1つ借りています）。`api-client` と `io` は、どのアプリからも使われていません。
 
-各パッケージの TypeScript は rslib でビルドした `dist/` を通して参照されます。`pnpm dev` は最初にフロントエンドのパッケージをビルドしてから、各パッケージの監視ビルドと各アプリの開発サーバー（とバックエンド）を起動します。テストはビルドを必要としません（[テスト](#テスト)）。
+アプリのビルド（`vite build`）は、`api-client`、`io`、`config`、`ui`、`assets` を、rslib でビルドした `dist/` を通して参照します。`theme` と `testing` はビルドせず、ソースのまま参照されます。`ui` のコンポーネントは自分のスタイルシートを自分で読み込むので、アプリが読み込むスタイルシートは `theme` の 1 つだけです（`src/main.tsx`）。アプリの開発サーバーとテストは、エクスポート条件 `@beauty-salon-frontend/source` を持つパッケージ（`ui`、`io`、`config`）をソースから読みます。コンポーネントの変更は、パッケージのビルドを待たずに画面に出ます。`pnpm dev` は最初にフロントエンドのパッケージをビルドしてから、各パッケージの監視ビルドと各アプリの開発サーバー（とバックエンド）を起動します。テストはビルドを必要としません（[テスト](#テスト)）。
 
 ## 型の流れ（TypeSpec からコンポーネントまで）
 
@@ -178,8 +180,8 @@ const queryClient = new QueryClient({
 
 | 変数 | 使っている場所 |
 |------|----------------|
-| `VITE_MODE` | `App.tsx` の `EnvironmentBanner` と環境名の表示、`main.tsx` の Devtools の表示判定 |
-| `VITE_APP_TITLE` | `App.tsx` のヘッダー |
+| `VITE_MODE` | `App.tsx` の `EnvironmentBanner`（本番以外で、画面の隅に環境名を表示する）、`main.tsx` の Devtools の表示判定 |
+| `VITE_APP_TITLE` | `App.tsx` のヘッダーとトップページの見出し |
 | `VITE_BACKEND_BASE_URL` | API サーバーのオリジン（パスは付けない）。`config` パッケージの `env` を通して `customInstance` が使う。アプリのコードからは使われていない |
 
 - どのファイルが読まれるかは Vite のモードで決まります。開発サーバー（`pnpm dev`）と `build:dev` は `development`、`build:localhost` は `localhost`、`build:test` は `test`、`build:stg` は `staging`、`build:prod` は `production` です。3つのアプリとも、この 5 つのモードの `.env.<mode>` を持っています。
@@ -252,12 +254,25 @@ export function SalonList() {
 - `endpoints/customers/customers.ts` のフックには、すべてサーバーの実装がある。一覧、登録、1 件の取得、更新、削除の 5 つ（`useCustomerCrudList`、`useCustomerCrudCreate`、`useCustomerCrudGet`、`useCustomerCrudUpdate`、`useCustomerCrudDelete`）は、どれも `admin` か、サロンの `owner`・`manager`・`staff` のアクセストークンが必要で（削除は `staff` を除く）、フックはトークンを送らないので、フロントエンドの認証を実装するまでは 401 が返る。顧客本人のプロフィールの 3 つ（`useCustomerProfileGet`、`useCustomerProfileCreate`、`useCustomerProfileUpdate`）にも実装があり、ロール `customer` のアクセストークンが必要である。一括の操作の 4 つ（`useCustomerCrudBatchGet`、`useCustomerCrudBulkCreate`、`useCustomerCrudBulkUpdate`、`useCustomerCrudBulkDelete`）にも実装があり、どれも 100 件までを、すべてか何もしないかで扱う（一括削除は `staff` を除く。[一括の操作](./customers.md#一括の操作)）。統計の `useCustomerCrudGetStatistics(id, { salonId, startDate, endDate })` にも実装があり、`admin` か、`salonId` のサロンの `owner`・`manager`・`staff` のアクセストークンが必要である（[顧客台帳](./customers.md#統計)）。変更履歴の `useCustomerCrudGetHistory(id, { limit, cursor })`、版の `useCustomerCrudGetVersion(id, version)`、復元の `useCustomerCrudRestore`、統合の `useCustomerCrudMerge`、台帳の CSV 出力の `useCustomerCrudExport`、顧客のデータの出力の `useCustomerCrudExportData`、削除の依頼の受け付け・確認・取り消しの `useCustomerCrudRequestDeletion`、`useCustomerCrudGetDeletionRequest`、`useCustomerCrudCancelDeletionRequest` にも実装があり、`admin` か、サロンの `owner`・`manager` のアクセストークンが必要である。消去の実行の `useCustomerCrudExecuteDeletionRequests` は、`admin` のアクセストークンが必要である（[削除の依頼](./customers.md#削除の依頼)）。削除した顧客の変更履歴と版も読める（[顧客台帳](./customers.md#変更履歴と版)）。好み設定の 4 つにも実装がある。台帳を扱うユーザーのための `useCustomerCrudGetPreferences(id)` と `useCustomerCrudUpdatePreferences`、顧客本人のための `useCustomerProfileGetPreferences` と `useCustomerProfileUpdatePreferences`（引数に ID はなく、どの顧客かはトークンが決める）である。何も設定していない顧客にも、200 で空の好み設定（一覧は `[]`、ほかは null）が返るので、404 を「未設定」として扱わない。台帳のフックの 404 は顧客がいないことを、本人のフックの 404 はプロフィールをまだ作っていないことを表す。更新には変える項目だけを渡し、`stylePreferences` は 4 項目をまとめて渡す。保存されているスタッフの ID は、そのスタッフが削除されても残るので、画面は、スタッフのプロフィール（`useStaffProfileGet`）が 404 のスタッフを表示しない
 - `endpoints/staff/staff.ts` のフックのうち、サーバーに実装があるのは、台帳の一覧、登録、1 件の取得、更新、削除の 5 つ（`useStaffCrudList`、`useStaffCrudCreate`、`useStaffCrudGet`、`useStaffCrudUpdate`、`useStaffCrudDelete`）、勤務スケジュールの一覧と更新の 2 つ（`useStaffSchedulesList`、`useStaffSchedulesUpdate`）、招待の取得、作成、取り消しの 3 つ（`useStaffInvitationsGet`、`useStaffInvitationsCreate`、`useStaffInvitationsDelete`）、アカウントの取得、ロールの変更、紐づけの解除の 3 つ（`useStaffAccountsGet`、`useStaffAccountsUpdate`、`useStaffAccountsDelete`）、プロフィールの一覧と 1 件の取得の 2 つ（`useStaffProfileList`、`useStaffProfileGet`）、本人のプロフィールの取得と更新の 2 つ（`useStaffOwnProfileGet`、`useStaffOwnProfileUpdate`）で、このファイルのフックのすべてである。台帳の 5 つは、どれも `admin` か、そのサロンの `owner` のアクセストークンが必要で、レスポンスは給与と個人の連絡先を含むので、顧客に見せる画面には使わない。顧客に見せる画面は、認証なしで呼べるプロフィールの 2 つを使う。1 つのサロンのスタッフは `useStaffProfileList({ salonId })` で読む。本人のプロフィールの 2 つは、サロンに届く `owner`・`manager`・`staff` のアクセストークンが必要で、どのスタッフかはトークンが決める（引数に ID はない）。`useStaffOwnProfileUpdate` には、変える項目だけを渡す。渡せるのは `specialties`、`bio`、`imageUrl`、`yearsOfExperience`、`certifications` の 5 つで、`displayName` などの台帳の項目を渡すと 400 になる。レスポンスの `links.profile` は、顧客が同じプロフィールを読むパスである。勤務スケジュールの 2 つは、`admin` か、そのサロンの `owner`・`manager` のアクセストークンが必要で、`staff` は自分のスケジュールだけを `useStaffSchedulesList` で読める。`useStaffSchedulesUpdate` は、送った配列でスケジュール全体を置き換えるので、1 行だけを変える画面も、読んだ全体に変更を加えて送る（読んだ `data` は、そのまま本文にできる）。`useStaffSchedulesList(salonId, id, { date })` は、その日付に適用される行だけを返し、`data` は 0 個か 1 個である。スケジュールは顧客に見せる画面には使わない。招待の 3 つは、台帳と同じく `admin` か、そのサロンの `owner` のアクセストークンが必要である。`useStaffInvitationsCreate` は、スタッフに、ログインアカウントを作るためのリンクをメールで送る（本文はアカウントのロールだけで、宛先は台帳のメールアドレス）。`useStaffInvitationsGet` の 404 は、スタッフが招待を持っていないことを表す。招待されたスタッフがリンクから開く画面（`/accept-staff-invitation`）は、URL のフラグメントからトークンを取り出し、`endpoints/authentication/authentication.ts` の `useAuthCrudVerifyStaffInvitation` で招待の内容（宛先とロール）を表示する。次に何をするかは、そのレスポンスの `links` で決める。`links.accept` があれば、パスワードを尋ねて、`useAuthCrudAcceptStaffInvitation` でトークンと新しいパスワードを送る。どちらもアクセストークンは要らない。受け入れのあと、スタッフは、招待の宛先のメールアドレスとそのパスワードでログインする。`links.join` があれば、その宛先のスタッフのアカウントがすでにあるので、パスワードは尋ねず、そのアカウントでのログインを求めてから、`useAuthCrudJoinStaffInvitation` でトークンを送る（アクセストークンが要る）。参加のあと、同じアクセストークンのまま、新しいサロンの画面を開ける。409 は、ログインしているアカウントがすでにサロンに属しているか、招待の宛先と違うメールアドレスのアカウントであることを表す（`detail` で区別する）。アカウントの 3 つは、台帳と同じく `admin` か、そのサロンの `owner` のアクセストークンが必要である。`useStaffAccountsGet` の 404 は、スタッフにアカウントがないことを表す（まだ招待を受け入れていないか、紐づけを解除した）。`useStaffAccountsUpdate` の本文はロールだけで、`owner` を指定できるのは `admin` である。`useStaffAccountsDelete` は、アカウントを消さずに、スタッフとの紐づけだけを外す。ロールの変更と紐づけの解除は、そのアカウントの次のリクエストから効くので、操作した側の画面は、アカウントを読み直して表示する
 
+## UI とテストの規則
+
+スタイルは CSS Modules で書き、色や余白はデザイントークンから取り、レイアウトは CSS Grid で組みます（flex は使いません）。複数のアプリが使うコンポーネントは `ui` パッケージに置き、状態ごとにストーリーを書いて、そのストーリーからテストします。
+
+規則と手順は、次の 2 つのスキルにあります。`frontend/` 以下を変更する前に読みます。
+
+- [frontend-ui](../.claude/skills/frontend-ui/SKILL.md): トークン、CSS Modules、Grid によるレイアウト、コンポーネントの作り方
+- [frontend-testing](../.claude/skills/frontend-testing/SKILL.md): ストーリーからのテスト、アクセシビリティの検査、Vitest の設定
+
+検査できる規則は `theme` パッケージの `src/style-rules.ts` が検査するので、違反はテストの失敗になります。カタログは `pnpm --filter @beauty-salon-frontend/ui run storybook` で起動します（`http://localhost:6006`）。
+
 ## テスト
 
-フロントエンドのテストは Vitest の単体テストです（`pnpm test:frontend`）。パッケージをまたぐ import はソースから解決するので（エクスポート条件 `@beauty-salon-frontend/source`）、ビルドなしで実行できます。
+フロントエンドのテストは Vitest です（`pnpm test:frontend`）。パッケージをまたぐ import はソースから解決するので（エクスポート条件 `@beauty-salon-frontend/source`）、ビルドなしで実行できます。
 
-- 各アプリの `src/App.test.tsx`: `MemoryRouter` で画面を描画し、表示内容を検証する
-- `config` と `ui` の各パッケージ: モジュールの隣に `*.test.ts(x)`
+- `ui` のコンポーネント: ストーリー（`*.stories.tsx`）を `composeStories` で読み込み、jsdom に描画して検証する（`*.test.tsx`）。どのストーリーにも、アクセシビリティの検査（axe-core、WCAG 2.2 AA）がある
+- 各アプリの `src/App.test.tsx`: `MemoryRouter` で枠を描画し、表示内容とアクセシビリティを検証する
+- `theme` の `src/style-rules.test.ts`: すべてのパッケージとアプリのスタイルシートとコンポーネントが、スタイルの規則を守っていることを検証する。`src/tokens.test.ts`: 文字と背景、コントロールの縁に使う色のトークンの組が、必要なコントラスト比を満たすことを検証する
+- `config` と `testing` の各パッケージ: モジュールの隣に `*.test.ts`
 - `io` の `src/libs/fetcher/fetcher.test.ts`: `customInstance` を、スタブにした `fetch` に対して検証する（URL、本文、ステータスごとの戻り値、problem details、reject する条件）
 - `api-client` の `src/salons.test.ts`: 生成された Salon の関数を、実際の `customInstance` を通して検証する（リクエストの形、ステータスごとに型が絞られること、通信の失敗、TanStack Query との組み合わせ）
 
