@@ -384,7 +384,11 @@ it('should show the screen that was asked for after signing in', async () => {
   secret the API returned when it was set up. The API takes a code once and
   after it only later ones: set up with the code of now, and sign in with
   `authenticatorCode(secret, 1)` (the code of the next 30 seconds, which the
-  API takes as well) or with a backup code.
+  API takes as well) or with a backup code. A test of the screen that sets
+  it up takes the secret the screen shows (its `code`, without the spaces):
+  that the API takes the code made from it is what shows that the screen
+  showed the secret of the account. A code the API refused counts as a
+  wrong attempt until a sign-in succeeds (`failedLoginAttempts`).
 - **A link of the page that the header has as well** is found inside the
   page. A customer who is signed in has 「サロンを探す」 in the navigation
   of the header, and so has the page that leads back to the search:
@@ -715,6 +719,23 @@ and removed (`frontend/apps/portal-app/src/reviews/`) adds:
   that was full is filled again from the rows after it: 21 devices, one
   of the first page signed out, and the page shows 20 with no
   「さらに表示」, which only a list that was read again does.
+- **A wait for a text waits for the whole text.** `toHaveTextContent`
+  takes a part of it: 「21 台の端末でサインインしています」 is in
+  「21 台の端末でサインインしています（20 台を表示しています）」, and a
+  wait for the first is over before the next page came. Wait with
+  `findByText`, or compare `textContent` with `toBe`.
+- **What a screen reads with two requests comes in either order.** The
+  security of the account reads the account and the devices apart: that
+  the devices are listed says nothing of the account. Wait for each part
+  that is asserted (`findByRole`), not for one of them.
+- **A change made elsewhere is a row the test writes**, between what the
+  screen read and what it sends: the second factor turned off on another
+  device is an `update` of `users` that clears the state, the secret, the
+  last step that was used and the backup codes together (a check of the
+  table ties them), and the screen then meets the 409 of the API.
+- **The stand-in for the dialog of jsdom gives no focus back.** That a
+  closed `Dialog` gives the focus to the button that opened it is
+  asserted in a browser test.
 
 `App.test.tsx` of an application keeps what needs no API: what somebody who
 is not signed in sees. Everything behind the sign-in is in
@@ -917,7 +938,13 @@ test.describe('the admin application', () => {
   that shares nothing with `page` (`src/security.e2e.test.ts`). When its
   session was ended elsewhere, a reload shows the sign-in screen.
 - **A password that was changed is asserted at the next sign-in**: out in
-  the header, the old password refused, the new one taken.
+  the header, the old password refused, the new one taken. So is a second
+  factor that was set up: out, and in with the code of the next 30
+  seconds.
+- **A dialog with a form opens at its first control**, which the browser
+  gives the focus (`src/two-factor.e2e.test.ts`); one without a form at
+  its first button. Closed, it gives the focus back to the button that
+  opened it.
 - The modules of `frontend/e2e/src` that are no test files are under the
   lint prohibitions of application code: no type assertion, no type guard,
   and `node:assert` in place of `throw`.

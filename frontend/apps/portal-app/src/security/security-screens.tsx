@@ -2,6 +2,7 @@ import {
   AccountSecurityScreen,
   PasswordChangeScreen,
   RequireSession,
+  TwoFactorSetupScreen,
 } from '@beauty-salon-frontend/session'
 import { ButtonLink } from '@beauty-salon-frontend/ui'
 import { useNavigate } from 'react-router'
@@ -11,6 +12,7 @@ import { SignInHelp } from '../sign-in-help'
 /** Where the screens of the security of the account are: below the page of the customer. */
 export const SECURITY_PATH = '/mypage/security'
 export const PASSWORD_PATH = `${SECURITY_PATH}/password`
+export const TWO_FACTOR_PATH = `${SECURITY_PATH}/two-factor`
 
 /**
  * How the account of the customer is kept from others: the password, the
@@ -24,6 +26,7 @@ export const OwnSecurityScreen = () => (
   >
     <AccountSecurityScreen
       passwordHref={PASSWORD_PATH}
+      twoFactorHref={TWO_FACTOR_PATH}
       actions={
         <ButtonLink href='/mypage' variant='secondary'>
           マイページへ戻る
@@ -52,5 +55,16 @@ export const OwnPasswordScreen = () => (
     signInHelp={<SignInHelp />}
   >
     <OwnPassword />
+  </RequireSession>
+)
+
+/** Sets up the second factor of the account of the customer. */
+export const OwnTwoFactorScreen = () => (
+  <RequireSession
+    roles={CUSTOMERS}
+    signInNotice='2 要素認証を設定するには、サインインしてください。'
+    signInHelp={<SignInHelp />}
+  >
+    <TwoFactorSetupScreen securityHref={SECURITY_PATH} />
   </RequireSession>
 )

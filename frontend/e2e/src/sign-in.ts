@@ -98,9 +98,10 @@ export const registerNewcomer = async (
 }
 
 /**
- * Sets up two-factor authentication for an account, as its owner would: by
- * asking the API, for no screen does it yet. The secret is what
- * `api.authenticatorCode` makes the codes from.
+ * Sets up two-factor authentication for an account through the API, for a
+ * test of what comes after it: the screens that set it up are tested in
+ * `two-factor.e2e.test.ts`. The secret is what `api.authenticatorCode`
+ * makes the codes from.
  */
 export const setUpTwoFactor = async (
   request: APIRequestContext,

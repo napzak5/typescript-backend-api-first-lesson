@@ -1,0 +1,15 @@
+/* A square as wide as it may be, up to what a camera reads from a screen with ease */
+.code {
+  display: block;
+  inline-size: min(100%, 12rem);
+  block-size: auto;
+  aspect-ratio: 1;
+}
+
+.light {
+  fill: var(--color-surface);
+}
+
+.dark {
+  fill: var(--color-text);
+}

@@ -1,0 +1,7 @@
+/* What went wrong and the code; or what is said about the codes, and the codes */
+.form,
+.issued {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}

@@ -1,0 +1,6 @@
+/* The secret in groups of four: a group stays on its line, the groups wrap */
+.secret {
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-large);
+  letter-spacing: 0.05em;
+}
