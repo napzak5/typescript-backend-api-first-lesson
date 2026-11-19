@@ -272,18 +272,15 @@ const NO_BOOKINGS: Page<ModelsCustomerBookingResponse> = {
   nextCursor: null,
 }
 
-/**
- * A page of the bookings of the customer of the account, the earliest visit
- * first. The API has no other order.
- */
-export const readOwnBookings = async (
+const readOwnBookingsPage = async (
   asked: OwnBookingsAsked,
   cursor: string | undefined,
+  limit: number,
 ): Promise<Page<ModelsCustomerBookingResponse> | Unread> => {
   const answer = await customerBookingsList({
     ...from(cursor),
     ...asked,
-    limit: BOOKINGS_PER_PAGE,
+    limit,
   }).catch(() => null)
 
   return match(answer)
@@ -293,6 +290,36 @@ export const readOwnBookings = async (
     .with({ status: 400 }, () => FAILED)
     .with(UNANSWERED, unansweredOf)
     .exhaustive(outsideTheContract)
+}
+
+/**
+ * A page of the bookings of the customer of the account, the earliest visit
+ * first. The API has no other order.
+ */
+export const readOwnBookings = (
+  asked: OwnBookingsAsked,
+  cursor: string | undefined,
+): Promise<Page<ModelsCustomerBookingResponse> | Unread> =>
+  readOwnBookingsPage(asked, cursor, BOOKINGS_PER_PAGE)
+
+export type BookedSalonsRead = { type: 'found'; salonIds: string[] } | Unread
+
+/**
+ * The salons the customer of the account has a booking at, each once:
+ * visits that are to come, visits that were, and bookings that were
+ * cancelled. An account that has not said who its customer is has none.
+ */
+export const readBookedSalonIds = async (): Promise<BookedSalonsRead> => {
+  const bookings = await toTheEnd((cursor) =>
+    readOwnBookingsPage({}, cursor, LARGEST_PAGE),
+  )
+
+  return bookings.type === 'found'
+    ? {
+        type: 'found',
+        salonIds: [...new Set(bookings.items.map(({ salonId }) => salonId))],
+      }
+    : bookings
 }
 
 /** Cancels a booking of the customer. A booking that was cancelled stays cancelled. */

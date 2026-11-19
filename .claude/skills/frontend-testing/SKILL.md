@@ -480,10 +480,14 @@ the example to read: a customer books a time that the screen read.
   more than one booking at once (`maxConcurrentBookings`). A time that
   somebody else took first is arranged with a member of the staff who
   takes one at a time.
-- **What a write changed is asserted the moment it is shown again.** The
-  test reads the list, changes a record on its page and goes back, and
-  asserts the list as soon as it is there, without a wait for the new
-  word: a wait would pass over a list that showed the old one first.
+- **What a write changed is asserted in the commit that shows it again.**
+  The test reads the list, changes a record on its page and goes back. A
+  list that showed first what it had read before, and the new word after
+  reading again, passes a test that waits for the new word, and at times
+  one that looks at the list as soon as it is there (`firstSight`, under
+  "A screen that writes what it read"). The list of the bookings is not
+  kept after a write, so the commit that shows it again says that the
+  bookings are being read (`expectListReadAnew`).
 - **What must be read again is tested with what the application keeps.**
   The `QueryClient` of a test reads everything again whenever it is shown;
   the one of an application (`main.tsx`) keeps what it read for five
@@ -527,11 +531,18 @@ tested for what it must leave alone as well:
   of the form (`askedOfTheProfile(fetched)` is `['PATCH']`), and what was
   typed is still there. `afterEach` puts the managers back
   (`focusManager.setFocused(undefined)`, `onlineManager.setOnline(true)`).
-- **What a write made is asserted on the next screen without a wait.**
-  Once the heading of the page is there, the record is read with
-  `getByRole`, not `findByRole`: a page that said first that there is
-  nothing, and showed the record after reading it again, would pass a
-  test that waits.
+- **What a write made is asserted in the commit that shows the next
+  screen.** A page that showed first what it had kept (nothing, or the
+  record as it was) and the new record after reading it again would pass
+  a test that waits for the record. At times it passes a test that looks
+  as soon as the heading of the page is there as well: a `findBy…` and an
+  event of `userEvent` each let a moment pass, and the answer to one
+  request can arrive in it (with the wrong change in place, it had
+  arrived in two runs of three). So the component beside `App` that keeps
+  the address also keeps, from a layout effect, what `main` said in the
+  commit that showed that address (`firstSight`), and the test asserts on
+  it:
+  `expect(firstSight).toEqual(['/mypage', expect.stringContaining('お名前Sato Yuki')])`.
 - **A record that is gone is made gone as the API does it.** The
   statements are those of the repository (a customer who was removed from
   the ledger has `deletedAt`, and the account no longer names it:
@@ -543,6 +554,34 @@ tested for what it must leave alone as well:
   up (the pure function, and the function that calls the API), and the
   comment at the top of the integration test says what is missing from
   it, and why.
+
+A form with rows and with choices that it reads
+(`frontend/apps/portal-app/src/preferences/preferences.integration.test.tsx`)
+adds:
+
+- **What a test starts from is written as somebody writes it.** What the
+  customer said before is their own request with `fetch` and their access
+  token (`prefers`); what a salon does meanwhile is the request of an
+  administrator (`salonWrites` for its ledger of the customer, `leaves`
+  for a member of the staff it no longer shows). A statement is kept for
+  what no request does: a table that is away, a row removed in a way the
+  API refuses.
+- **What a form offers is asserted against the database**, in the order
+  the form gives it (`staffOffered`: the `order by` of the API). The seed
+  data wrote the staff at one moment, so their order is another one in
+  every database, and no order is written into the test. For the same
+  reason the first control with an error in such a group is
+  `getAllByRole('checkbox').at(0)`, not the box of a name.
+- **A refusal the screen can bring about is tested here.** The form sends
+  what was changed and nothing else, so the API compares it with what is
+  stored: a salon stores a member as one to avoid after the form opened,
+  the customer wishes for that member, and the answer names the control.
+- **The requests of a form that reads several things** are asserted with
+  their method and path (`askedOfTheApi(fetched)`): nothing behind the
+  form is `['PATCH /customers/me/preferences']`.
+- **A state of a part that a page cannot be opened in** (the part of an
+  account that lost its profile after the page read it) is tested on the
+  part alone, rendered inside the providers it stands in.
 
 `App.test.tsx` of an application keeps what needs no API: what somebody who
 is not signed in sees. Everything behind the sign-in is in
@@ -681,7 +720,8 @@ test.describe('the admin application', () => {
   link.
 - **What several files arrange** is a module beside them
   (`src/bookings.ts`: the day, a booking made through the API with the
-  `request` fixture, the locators of the booking screens).
+  `request` fixture, the locators of the booking screens; `src/mypage.ts`:
+  the locators of the page of a customer and of its forms).
 - **A form is taken through with the keyboard**
   (`src/mypage.e2e.test.ts`): Tab from control to control in the order
   they are read, Space on a box, and Enter in a control that holds text
@@ -689,6 +729,18 @@ test.describe('the admin application', () => {
 - **Controls that share a row where there is room** are asserted by where
   they are (`boundingBox()`): the same `y` at the width of a desk, the
   same `x` and one below the other at 390px.
+- **A control beside one that says an error** is asserted the same way,
+  in the state with the error: the same `y` and the same `height`
+  (`expectRowOnOneLine` in `src/preferences.e2e.test.ts`). A field that
+  is drawn out to the height of its neighbour passes every other check.
+- **Rows that are added and taken away** are worked with the keyboard
+  (`src/preferences.e2e.test.ts`): Enter on the button that adds a row and
+  the focus on the first control of the new row, Enter on the button of a
+  row and the focus on the button that adds one, and the values of the
+  rows that stay. A time is entered with `fill('18:00')`: the keys a time
+  control takes depend on the language of the browser.
+- **Enter in a `textarea` begins a line**, and in a control of one line
+  sends the form: a form with both is tested for both.
 - **A value no line can be broken in** is written with a statement before
   the page is opened: a browser breaks a line at a space and after a
   hyphen, not at an underscore. `expectSoundPage` then says whether it

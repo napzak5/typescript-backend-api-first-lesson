@@ -1,7 +1,13 @@
-/* One column: the label, the control, then what is said about the value. */
+/*
+ * One column: the label, the control, then what is said about the value.
+ * Each is as high as it is, also in a field that is made higher than its
+ * content: beside a field with an error, in a row they share, the control
+ * stays where it is and as it is.
+ */
 .field {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
+  align-content: start;
   gap: var(--space-1);
 }
 

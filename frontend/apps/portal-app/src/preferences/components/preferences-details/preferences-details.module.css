@@ -1,0 +1,14 @@
+/*
+ * The list breaks a word that is longer than a line (`DescriptionList`), so
+ * a value needs a class only for what it does besides.
+ */
+
+/* An address of a picture: each on its own line */
+.line {
+  display: block;
+}
+
+/* What a customer wrote in several lines, with the line breaks it was written with */
+.written {
+  white-space: pre-wrap;
+}

@@ -24,6 +24,7 @@ import { BookingMoveScreen } from './bookings/booking-move-screen'
 import { BookingScreen } from './bookings/booking-screen'
 import { OwnBookingsScreen } from './bookings/own-bookings-screen'
 import { navigationFor } from './navigation'
+import { PreferencesScreen } from './preferences/preferences-screen'
 import { MyPageScreen } from './profile/my-page-screen'
 import { ProfileScreen } from './profile/profile-screen'
 import { EVERY_ROLE } from './roles'
@@ -98,6 +99,7 @@ export const App = () => {
             />
             <Route path='/mypage' element={<MyPageScreen />} />
             <Route path='/mypage/profile' element={<ProfileScreen />} />
+            <Route path='/mypage/preferences' element={<PreferencesScreen />} />
             <Route path={SIGN_IN_PATH} element={<SignInPage />} />
             <Route path='/register' element={<RegisterScreen />} />
             <Route path='/forgot-password' element={<ForgotPasswordScreen />} />
