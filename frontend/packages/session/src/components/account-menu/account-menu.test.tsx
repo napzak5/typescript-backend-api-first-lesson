@@ -17,6 +17,30 @@ describe('AccountMenu', () => {
     expect(screen.getByText('hanako@example.com')).toHaveClass('user')
   })
 
+  it('should lead to the security of the account where the application has a screen for it, and nowhere else', async () => {
+    // Act
+    await stories.WithTheSecurityOfTheAccount.run()
+
+    // Assert
+    expect(
+      screen.getByRole('link', { name: 'アカウントの安全' }),
+    ).toHaveAttribute('href', '/account/security')
+    expect(
+      screen
+        .getAllByRole('link')
+        .concat(screen.getAllByRole('button'))
+        .map((control) => control.textContent),
+    ).toEqual(['アカウントの安全', 'サインアウト'])
+  })
+
+  it('should lead nowhere but out where the application gives no screen of the security of the account', async () => {
+    // Act
+    await stories.SignedIn.run()
+
+    // Assert
+    expect(screen.queryByRole('link')).not.toBeInTheDocument()
+  })
+
   it('should sign out when its button is pressed', async () => {
     // Arrange
     await stories.SignedIn.run()

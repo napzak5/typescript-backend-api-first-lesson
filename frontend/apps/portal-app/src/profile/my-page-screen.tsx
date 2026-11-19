@@ -11,6 +11,7 @@ import { match, P } from 'ts-pattern'
 import { OwnPreferences } from '../preferences/own-preferences'
 import { CUSTOMERS } from '../roles'
 import { UnreadNotice } from '../salons/unread-notice'
+import { SECURITY_PATH } from '../security/security-screens'
 import { SignInHelp } from '../sign-in-help'
 import { MembershipDetails } from './components/membership-details/membership-details'
 import { ProfileDetails } from './components/profile-details/profile-details'
@@ -82,6 +83,17 @@ const OwnPage = () => {
           />
         ))
         .exhaustive()}
+      {/* The account is there whether or not the customer said who they are */}
+      <Card title='アカウントの安全'>
+        <p>
+          パスワードの変更と、このアカウントでサインインしている端末の確認ができます。
+        </p>
+        <p>
+          <ButtonLink href={SECURITY_PATH} variant='secondary'>
+            アカウントの安全を確かめる
+          </ButtonLink>
+        </p>
+      </Card>
     </>
   )
 }
@@ -89,8 +101,9 @@ const OwnPage = () => {
 /**
  * What the salons know of the customer who is signed in: what they keep of
  * a member, what the customer said about themselves, and what the customer
- * wants them to keep in mind, each with the way to change it; and the way
- * to what the customer wrote about the salons.
+ * wants them to keep in mind, each with the way to change it; the way to
+ * what the customer wrote about the salons; and the way to the security of
+ * the account.
  */
 export const MyPageScreen = () => (
   <RequireSession

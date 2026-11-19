@@ -11,6 +11,12 @@ export type AccountMenuProps = {
    * has screens for everybody. Without it nothing is shown to them.
    */
   signInHref?: string | undefined
+  /**
+   * The screen of the security of the account (the password, the devices
+   * that are signed in), in an application that has no page of its own for
+   * the account. Without it the menu leads nowhere but out.
+   */
+  securityHref?: string | undefined
   onSignOut: () => void
 }
 
@@ -21,12 +27,18 @@ export type AccountMenuProps = {
 export const AccountMenu = ({
   session,
   signInHref,
+  securityHref,
   onSignOut,
 }: AccountMenuProps) =>
   match(session)
     .with({ type: 'signedIn' }, ({ user }) => (
       <>
         <span className={styles['user']}>{user.email}</span>
+        {securityHref !== undefined && (
+          <ButtonLink href={securityHref} variant='quiet' size='small'>
+            アカウントの安全
+          </ButtonLink>
+        )}
         <Button variant='quiet' size='small' onClick={onSignOut}>
           サインアウト
         </Button>

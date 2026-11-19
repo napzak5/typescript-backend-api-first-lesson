@@ -2,7 +2,7 @@ import type {
   ModelsSalonRoleType,
   ModelsStaffInvitationResponse,
 } from '@beauty-salon-frontend/api-client'
-import { RequireSession } from '@beauty-salon-frontend/session'
+import { PASSWORD_RULE, RequireSession } from '@beauty-salon-frontend/session'
 import {
   Alert,
   Button,
@@ -24,12 +24,7 @@ import {
   checkInvitation,
   joinInvitation,
 } from './account-api'
-import {
-  afterRefusal,
-  messageAfter,
-  PASSWORD_RULE,
-  readNewPassword,
-} from './account-flow'
+import { afterRefusal, messageAfter, readNewPassword } from './account-flow'
 import { CheckingLink, LinkNotChecked, LinkUnusable } from './mailed-link'
 import { useMailedToken } from './mailed-token'
 
