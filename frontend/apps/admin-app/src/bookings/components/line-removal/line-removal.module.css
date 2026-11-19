@@ -1,0 +1,10 @@
+/* What is said of the line, and the button that takes it away below it */
+.removal {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-3);
+}
+
+.said {
+  margin: 0;
+}

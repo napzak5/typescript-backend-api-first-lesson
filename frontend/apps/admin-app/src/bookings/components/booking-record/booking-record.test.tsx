@@ -85,6 +85,27 @@ describe('BookingRecord', () => {
     ])
   })
 
+  it('should lead from the service of each line to the page of the line', async () => {
+    // Act
+    await stories.Completed.run()
+
+    // Assert
+    expect(
+      within(screen.getByRole('table', { name: '施術明細' }))
+        .getAllByRole('link')
+        .map((link) => [link.textContent, link.getAttribute('href')]),
+    ).toEqual([
+      [
+        'カット',
+        '/salons/3b8e2f4a-6c1d-4e9b-8a7f-2d5c9e1b4a60/bookings/d2a05e8b/services/b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e',
+      ],
+      [
+        'カラー',
+        '/salons/3b8e2f4a-6c1d-4e9b-8a7f-2d5c9e1b4a60/bookings/d2a05e8b/services/a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d',
+      ],
+    ])
+  })
+
   it('should say when and why a booking was cancelled, and who is gone', async () => {
     // Act
     await stories.Cancelled.run()
