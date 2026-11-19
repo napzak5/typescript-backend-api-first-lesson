@@ -35,6 +35,10 @@ export type ProfileFormProps = Pick<
  * they are, what they like, and what a salon may send them. A control is
  * named as the property of the request is; the browser keeps the values,
  * and the form hands them over when it is sent.
+ *
+ * The address of the customer is none of them: a new profile gets the
+ * address of the account, and after that the salons keep it. The form says
+ * so where the address would be asked for.
  */
 export const ProfileForm = ({
   profile,
@@ -101,6 +105,11 @@ export const ProfileForm = ({
           defaultValue={profile?.alternativePhone ?? undefined}
           error={errors['alternativePhone']}
         />
+        <p className={styles['note']}>
+          {profile === null
+            ? 'メールアドレスは、サインインに使っているものを登録します。'
+            : `メールアドレス（${profile.email}）は、ここでは変更できません。変更するときは、サロンにお問い合わせください。`}
+        </p>
       </div>
     </fieldset>
     <fieldset className={styles['part']}>

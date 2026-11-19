@@ -605,6 +605,10 @@ none).
 - **A value nobody gave is said in words** on the page that shows the
   record (「未登録」, 「未発行」, 「なし」): a name without a value looks
   like a fault.
+- **What the user cannot change is said where it would be asked for.**
+  The address of a customer is that of the account, and then what the
+  salons keep. The form has no control for it: a sentence among the
+  controls of the contact says so, and whom to ask.
 
 ## Screens and the session
 

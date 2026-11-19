@@ -456,6 +456,11 @@ describe('the page and the profile of a customer, against the API', () => {
       expect(await text('名（フリガナ）')).toHaveValue('ユキ')
       expect(await text('電話番号')).toHaveValue('+81-90-1234-5678')
       expect(await text('予備の電話番号')).toHaveValue('')
+      expect(
+        within(screen.getByRole('group', { name: '連絡先' })).getByText(
+          `メールアドレス（${CUSTOMER}）は、ここでは変更できません。変更するときは、サロンにお問い合わせください。`,
+        ),
+      ).toBeVisible()
       expect(await text('郵便番号')).toHaveValue('153-0063')
       expect(await text('都道府県')).toHaveValue('Tokyo')
       expect(await text('市区町村')).toHaveValue('Meguro-ku')
@@ -802,6 +807,11 @@ describe('the page and the profile of a customer, against the API', () => {
         expect(control).toHaveValue('')
       }
       expect(screen.queryByRole('checkbox', { checked: true })).toBeNull()
+      expect(
+        screen.getByText(
+          'メールアドレスは、サインインに使っているものを登録します。',
+        ),
+      ).toBeVisible()
       expect(document.title).toBe(`お客様の情報 | ${TITLE}`)
       expect(
         screen.getByText(
@@ -881,6 +891,66 @@ describe('the page and the profile of a customer, against the API', () => {
         allowEmail: true,
         allowSms: false,
         allowMarketing: false,
+      })
+    })
+
+    it('should take over the customer the salons have for the address of the account: what the form says replaces what they had, and what it leaves empty stays', async () => {
+      // Arrange: somebody who came to a salon before they had an account
+      await registerNewcomer()
+      await testApi().query(
+        `insert into customers ("lastName", "firstName", email, "phoneNumber", occupation, city, tags,
+                                "membershipTier", "loyaltyPoints", "allowSms")
+         values ('Yamada', 'Hanako', $1, '03-5550-0142', 'Teacher', 'Osaka', '{}', 'silver', 300, true)`,
+        [NEWCOMER],
+      )
+      await signedInAs(NEWCOMER, NEWCOMER_PASSWORD)
+      renderAt('/mypage')
+      const user = userEvent.setup()
+
+      // Act: the page knows of no profile, and the form opens with nothing
+      // of what the salons have: the account has not said who it is
+      await user.click(
+        await screen.findByRole('link', { name: 'お客様の情報を登録する' }),
+      )
+      await screen.findByRole('button', { name: '登録する' })
+      for (const control of screen.getAllByRole('textbox')) {
+        expect(control).toHaveValue('')
+      }
+      await user.type(await text('姓'), '山田')
+      await user.type(await text('名'), '花子')
+      await user.type(await text('電話番号'), '090-5550-0199')
+      await user.type(await text('市区町村'), '渋谷区')
+      await user.click(registerButton())
+
+      // Assert
+      expect(
+        await screen.findByText('お客様の情報を登録しました。'),
+      ).toBeVisible()
+      expect(await heading('マイページ')).toHaveFocus()
+      expect(
+        detailsIn(screen.getByRole('region', { name: 'お客様の情報' })),
+      ).toMatchObject({
+        お名前: '山田 花子',
+        電話番号: '090-5550-0199',
+        住所: '渋谷区',
+        職業: 'Teacher',
+        受け取る連絡: 'なし',
+      })
+      expect(
+        detailsIn(screen.getByRole('region', { name: '会員の情報' })),
+      ).toMatchObject({
+        会員ランク: 'シルバー',
+        ポイント: '300 ポイント',
+      })
+      expect(await storedProfile(NEWCOMER)).toMatchObject({
+        lastName: '山田',
+        firstName: '花子',
+        phoneNumber: '090-5550-0199',
+        city: '渋谷区',
+        occupation: 'Teacher',
+        membershipTier: 'silver',
+        loyaltyPoints: 300,
+        allowSms: false,
       })
     })
 

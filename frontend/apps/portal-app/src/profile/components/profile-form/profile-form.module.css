@@ -21,6 +21,17 @@
   gap: var(--space-4);
 }
 
+/*
+ * What the form does not ask for, and why: said as the description of a
+ * control is, and broken where an address is longer than a line.
+ */
+.note {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  line-height: var(--line-height-tight);
+  overflow-wrap: anywhere;
+}
+
 /* Two values that are read together: one below the other, and side by side where there is room */
 .pair {
   display: grid;

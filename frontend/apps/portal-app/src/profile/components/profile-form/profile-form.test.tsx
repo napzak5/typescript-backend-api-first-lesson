@@ -136,6 +136,32 @@ describe('ProfileForm', () => {
     expect(birthDate).toHaveAttribute('max', TODAY)
   })
 
+  it('should say which address a new profile gets, and ask for none', async () => {
+    // Act
+    await stories.Empty.run()
+
+    // Assert
+    expect(
+      within(part('連絡先')).getByText(
+        'メールアドレスは、サインインに使っているものを登録します。',
+      ),
+    ).toBeVisible()
+    expect(screen.queryByRole('textbox', { name: /メールアドレス/ })).toBeNull()
+  })
+
+  it('should show the address of the profile there is, and say that it is not changed here', async () => {
+    // Act
+    await stories.Filled.run()
+
+    // Assert
+    expect(
+      within(part('連絡先')).getByText(
+        'メールアドレス（hanako.yamada@example.com）は、ここでは変更できません。変更するときは、サロンにお問い合わせください。',
+      ),
+    ).toBeVisible()
+    expect(screen.queryByRole('textbox', { name: /メールアドレス/ })).toBeNull()
+  })
+
   it('should hand over what it holds under the names of the request when it is sent', async () => {
     // Arrange
     const received: [string, FormDataEntryValue][][] = []
