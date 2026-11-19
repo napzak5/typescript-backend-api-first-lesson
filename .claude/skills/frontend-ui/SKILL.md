@@ -22,6 +22,8 @@ this one: a component is not done without its stories and its test.
 | The contrast of the colour tokens | `frontend/packages/theme/src/tokens.test.ts` |
 | Shared components | `frontend/packages/ui/src/components/<name>/` |
 | The screens of the session: sign-in, the guard of the screens that need one, the account in the header | `frontend/packages/session/src/` |
+| The screens of the security of an account (the password, the devices that are signed in), which every application puts at an address of its own, and the rule of a password that is chosen | `frontend/packages/session/src/security/` |
+| Where the portal puts them: below the page of the customer | `frontend/apps/portal-app/src/security/` |
 | The screens of an account in the portal: registering, a new password, and the screens that a mailed link opens | `frontend/apps/portal-app/src/account/` |
 | The screens of the salons in the portal: the search and the page of a salon, and the components they show | `frontend/apps/portal-app/src/salons/` |
 | The screens of a booking in the portal: choosing the member of the staff, the day and the time, the page of a booking, the bookings of a customer, and cancelling and moving one | `frontend/apps/portal-app/src/bookings/` |
@@ -846,8 +848,10 @@ also says that a review of somebody else was helpful, and reports one.
 | Component (`@beauty-salon-frontend/session`) | Use it for |
 |-----------|------------|
 | `RequireSession` | Screens for signed-in users of the `roles` it is given. Everybody else is told what stands in the way |
-| `SessionAccount` | The `account` of `AppShell`: who is signed in, and the way out. With `signInHref`, the way in for a visitor |
+| `SessionAccount` | The `account` of `AppShell`: who is signed in, and the way out. With `signInHref`, the way in for a visitor; with `securityHref`, the way to the security of the account, in an application that has no page of its own for the account |
 | `useSession` | Who is signed in, for a screen that shows different things to different people |
+| `AccountSecurityScreen`, `PasswordChangeScreen` | The security of the account of the session, and the change of its password: screens that every application puts behind the guard, at an address of its own |
+| `PASSWORD_RULE`, `newPasswordError`, `refusedPasswordMessage` | The rule of the API for a password that is chosen, as a person is told it: for every form that chooses one |
 
 ```tsx
 <NotificationProvider>
@@ -892,6 +896,58 @@ also says that a review of somebody else was helpful, and reports one.
   who cannot sign in (links, under the form). The portal offers a new
   password and a new account; the admin and the dashboard application lead
   to the portal for a new password.
+
+### The security of an account, in every application
+
+Every role has a password and devices that are signed in, so the screens
+are in the session package (`frontend/packages/session/src/security/`), and
+each application puts them at an address of its own: the portal below the
+page of the customer (`/mypage/security`, for customers), the admin and the
+dashboard application at `/account/security`, which the header leads to
+(`<SessionAccount securityHref='/account/security' />`).
+
+- **A screen of a package knows no router.** It takes the addresses it
+  leads to (`passwordHref`, `securityHref`) and what it cannot do itself as
+  a callback: `PasswordChangeScreen` calls `onChanged` after the change,
+  and the application goes back with `navigate`. `actions` is what the
+  application puts beside the heading (「マイページへ戻る」).
+- **The rule of a chosen password is said in one place.** The forms that
+  register, set a new password, accept an invitation and change the
+  password take it from the session package (`password-rule.ts`): the text
+  under the control, what is wrong before the API is asked (nothing, too
+  short, too long, counted as the API counts), and the words for a rule the
+  API named.
+- **The change asks for the current password and the new one once.** Both
+  are taken as they were typed. A new password that is the current one
+  (compared as the API compares them, both composed: `NFC`) is said at the
+  new password and not sent. A current password the API refuses is said at
+  its control, with the lock that five of them in a row bring; what was
+  typed stays.
+- **After the change the screen it goes back to reads anew.** The account
+  and its devices are taken away (`removeQueries` of `OWN_ACCOUNT_PARTS`)
+  before `onChanged`: the screen of the security shows when the password
+  was changed, and that the other devices are gone, without showing what
+  it had first.
+- **What the screen shows is read whenever it opens** (`staleTime: 0`): the
+  password is changed, and devices sign in and out, elsewhere. A moment is
+  said in the time zone of the browser (an account belongs to no salon),
+  and the browser of a device is its User-Agent as the API kept it.
+- **A device is signed out without a dialog.** Its device signs in again to
+  go on. Its row leaves the list at once (`withoutSession`, the count with
+  it), the focus goes to the heading of the part (`headingRef` of `Card`)
+  in the commit with the fewer rows, and the pages are read again behind
+  the list: the row named where the next page begins. A device that had
+  signed out in the meantime (404) is what was asked for. This device has
+  no button: it signs out in the header.
+- **A page whose cursor is gone reads the list from its start.** The list
+  goes on in pages of 20 with 「さらに表示」. When the device that ended a
+  page has signed out since, the API refuses the cursor (400 at
+  `cursor`), and the list is read again (`refetch`), as many pages as
+  there were.
+- **Signing out everywhere is asked first,** in a `Dialog` that says that
+  this device goes too. Then the session of the browser is gone, the guard
+  shows the sign-in screen in place of the screen, and a notification says
+  what happened; what went wrong is said in the dialog.
 
 ## Screens that a mailed link opens
 
