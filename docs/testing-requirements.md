@@ -180,6 +180,12 @@ a service.
   before or after the present of the running application, which reads the
   system clock: an expired token or the end of a lock in the authentication
   endpoint tests (`minutesFromNow` in `auth-helpers.ts`).
+- **Two moments are compared on one clock**: a test that asserts that a stamp
+  was written after something else happened reads the other moment from the
+  database as well (`databaseMoment` in `test-helpers.ts`, read last in the
+  transaction that held the row), and compares the two. It does not compare
+  their distance with the length of a timer of the test: a timer of Node.js
+  may fire up to a millisecond early, and such a test fails now and then.
 - **The type rules apply to backend test code**: no `any`, no `as`. Tests are
   scripts, not application code, so a helper may `throw` when its
   precondition is not met.

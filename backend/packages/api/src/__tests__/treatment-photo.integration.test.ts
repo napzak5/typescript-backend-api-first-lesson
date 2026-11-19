@@ -23,6 +23,7 @@ import {
 } from './_shared/auth-helpers'
 import {
   createTestApp,
+  databaseMoment,
   type ExpectedProblem,
   expectProblem,
   getTestDb,
@@ -883,20 +884,19 @@ describe('Treatment photo API', () => {
     it('makes an addition wait for a change of the record, and writes the photos at the moment the wait is over', async () => {
       const id = await insertRecord()
 
-      const { pending, answeredWhileHeld, heldAt } = await db.transaction(
+      const { pending, answeredWhileHeld, releasedAt } = await db.transaction(
         async (tx: Transaction) => {
-          const [changed] = await tx
+          await tx
             .update(treatmentRecords)
             .set({ resultNotes: '仕上がり良好' })
             .where(eq(treatmentRecords.id, id))
-            .returning({ at: sql<string>`clock_timestamp()::text` })
           const underWay = add(id, photosNamed('a', 'b')).then(
             (response) => response,
           )
           return {
             pending: underWay,
             answeredWhileHeld: await answersWithin(underWay, 300),
-            heldAt: new Date(changed?.at ?? '').getTime(),
+            releasedAt: await databaseMoment(tx),
           }
         },
       )
@@ -905,10 +905,10 @@ describe('Treatment photo API', () => {
       expect(answeredWhileHeld).toBe(false)
       expect(response.status).toBe(201)
       const [photo] = await storedPhotos(id)
-      expect(
-        new Date(photo?.createdAt ?? '').getTime() - heldAt,
-      ).toBeGreaterThanOrEqual(300)
-      expect((await updatedAtOf(id)) - heldAt).toBeGreaterThanOrEqual(300)
+      expect(new Date(photo?.createdAt ?? '').getTime()).toBeGreaterThanOrEqual(
+        releasedAt,
+      )
+      expect(await updatedAtOf(id)).toBeGreaterThanOrEqual(releasedAt)
     })
 
     it('makes a removal of a photo wait for a change of the record before it removes anything', async () => {

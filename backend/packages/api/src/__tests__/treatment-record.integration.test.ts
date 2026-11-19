@@ -40,6 +40,7 @@ import {
   brokenRules,
   connectUnreachableDatabase,
   createTestApp,
+  databaseMoment,
   type ExpectedProblem,
   expectProblem,
   getTestDb,
@@ -1688,18 +1689,17 @@ describe('Treatment record API', () => {
     it('makes a creation wait for a completion of the booking in progress, and writes the record when the wait is over', async () => {
       const bookingId = await insertBooking()
 
-      const { pending, answeredWhileHeld, heldAt } = await db.transaction(
+      const { pending, answeredWhileHeld, releasedAt } = await db.transaction(
         async (tx) => {
           await tx
             .select({ id: bookings.id })
             .from(bookings)
             .where(eq(bookings.id, bookingId))
             .for('update')
-          const [completed] = await tx
+          await tx
             .update(bookings)
             .set({ status: 'completed', completedAt: at('02:00') })
             .where(eq(bookings.id, bookingId))
-            .returning({ at: sql<string>`clock_timestamp()::text` })
           const underWay = create(recordOf(bookingId)).then(
             (response) => response,
           )
@@ -1707,7 +1707,7 @@ describe('Treatment record API', () => {
           return {
             pending: underWay,
             answeredWhileHeld: await answersWithin(underWay, 300),
-            heldAt: new Date(completed?.at ?? '').getTime(),
+            releasedAt: await databaseMoment(tx),
           }
         },
       )
@@ -1717,11 +1717,11 @@ describe('Treatment record API', () => {
       expect(response.status).toBe(201)
       // Written when the wait was over, not when the creation began.
       expect(
-        new Date(response.body.data.createdAt).getTime() - heldAt,
-      ).toBeGreaterThanOrEqual(300)
+        new Date(response.body.data.createdAt).getTime(),
+      ).toBeGreaterThanOrEqual(releasedAt)
       expect(
-        new Date(response.body.data.updatedAt).getTime() - heldAt,
-      ).toBeGreaterThanOrEqual(300)
+        new Date(response.body.data.updatedAt).getTime(),
+      ).toBeGreaterThanOrEqual(releasedAt)
     })
 
     it.each<
