@@ -1,0 +1,34 @@
+.frame {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-block-size: 100dvb;
+}
+
+/*
+ * The header and the content each have one column as wide as the page, in the
+ * middle, so the title starts where the content does.
+ */
+.header,
+.main {
+  display: grid;
+  grid-template-columns: minmax(0, var(--size-page));
+  justify-content: center;
+}
+
+.header {
+  padding: var(--space-3) var(--space-6);
+  border-block-end: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+}
+
+.title {
+  color: var(--color-accent-text);
+  font-size: var(--font-size-large);
+  font-weight: var(--font-weight-bold);
+}
+
+.main {
+  align-content: start;
+  gap: var(--space-4);
+  padding: var(--space-8) var(--space-6);
+}

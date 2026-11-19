@@ -1,122 +1,92 @@
-import { renderToStaticMarkup } from 'react-dom/server'
-import { MemoryRouter } from 'react-router-dom'
-import { afterEach, describe, expect, it, vi } from 'vitest'
-import App from './App'
+import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
+import { render, screen } from '@testing-library/react'
+import { MemoryRouter } from 'react-router'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { App } from './App'
 
-const renderAt = (path: string): string =>
-  renderToStaticMarkup(
+const renderAt = (path: string) =>
+  render(
     <MemoryRouter initialEntries={[path]}>
       <App />
     </MemoryRouter>,
   )
 
-describe('Portal App', () => {
+describe('App', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_APP_TITLE', 'Beauty Salon Portal')
+    vi.stubEnv('VITE_MODE', 'production')
+  })
+
   afterEach(() => {
     vi.unstubAllEnvs()
   })
 
-  it.each([
-    { path: '/', heading: 'Welcome to Beauty Salon Portal' },
-    { path: '/services', heading: 'Our Services' },
-    { path: '/appointments', heading: 'My Appointments' },
-  ])('should render the "$heading" page at $path', ({ path, heading }) => {
+  it('should show the title of the application in the header', () => {
     // Act
-    const markup = renderAt(path)
+    renderAt('/')
 
     // Assert
-    expect(markup).toContain(`>${heading}</h1>`)
+    expect(screen.getByRole('banner')).toHaveTextContent('Beauty Salon Portal')
   })
 
-  it('should render only the page that matches the current path', () => {
+  it('should show the page of the root path', () => {
     // Act
-    const markup = renderAt('/services')
+    renderAt('/')
 
     // Assert
-    expect(markup).not.toContain('>Welcome to Beauty Salon Portal</h1>')
-    expect(markup).not.toContain('>My Appointments</h1>')
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Beauty Salon Portal' }),
+    ).toBeVisible()
   })
 
-  it.each([
-    { label: 'Home', href: '/' },
-    { label: 'Services', href: '/services' },
-    { label: 'Appointments', href: '/appointments' },
-  ])(
-    'should link to $href from the "$label" navigation item',
-    ({ label, href }) => {
+  it('should say that a page does not exist and lead back to the root', () => {
+    // Act
+    renderAt('/no-such-page')
+
+    // Assert
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'ページが見つかりません' }),
+    ).toBeVisible()
+    expect(screen.getByRole('link', { name: 'トップへ戻る' })).toHaveAttribute(
+      'href',
+      '/',
+    )
+  })
+
+  it.each(['staging', 'development', 'test', 'localhost'])(
+    'should name the %s environment',
+    (mode) => {
+      // Arrange
+      vi.stubEnv('VITE_MODE', mode)
+
       // Act
-      const markup = renderAt('/')
+      renderAt('/')
 
       // Assert
-      expect(markup).toMatch(
-        new RegExp(`<a[^>]*href="${href}"[^>]*>${label}</a>`),
-      )
+      expect(screen.getByText(mode)).toBeVisible()
     },
   )
 
-  it('should offer booking on the home page', () => {
+  it('should not name the environment in production', () => {
     // Act
-    const markup = renderAt('/')
+    renderAt('/')
 
     // Assert
-    expect(markup).toContain('>Book Appointment</button>')
+    expect(screen.queryByText('production')).not.toBeInTheDocument()
   })
 
-  it.each([
-    'Hair Styling',
-    'Nail Care',
-    'Facial Treatments',
-    'Massage Therapy',
-  ])('should list the %s service', (service) => {
-    // Act
-    const markup = renderAt('/services')
+  it.each(['/', '/no-such-page'])(
+    'should have no accessibility violations at %s',
+    async (path) => {
+      // Arrange
+      vi.stubEnv('VITE_MODE', 'staging')
+      renderAt(path)
 
-    // Assert
-    expect(markup).toContain(`>${service}</div>`)
-  })
+      // Act
+      const violations = await findAccessibilityViolations()
 
-  it('should show an empty state with a call to action when there are no appointments', () => {
-    // Act
-    const markup = renderAt('/appointments')
-
-    // Assert
-    expect(markup).toContain('No appointments scheduled.')
-    expect(markup).toContain('>Schedule New Appointment</button>')
-  })
-
-  it('should show the application title from the environment in the header', () => {
-    // Arrange
-    vi.stubEnv('VITE_APP_TITLE', 'Beauty Salon Portal (QA)')
-
-    // Act
-    const markup = renderAt('/')
-
-    // Assert
-    expect(markup).toContain('>Beauty Salon Portal (QA)</h1>')
-  })
-
-  it('should show the environment banner outside production', () => {
-    // Arrange
-    vi.stubEnv('VITE_MODE', 'staging')
-
-    // Act
-    const markup = renderAt('/')
-
-    // Assert
-    expect(markup).toMatch(
-      /<div class="[^"]*bg-orange-600[^"]*">staging<\/div>/,
-    )
-    expect(markup).toContain('Environment: staging')
-  })
-
-  it('should hide the environment banner in production', () => {
-    // Arrange
-    vi.stubEnv('VITE_MODE', 'production')
-
-    // Act
-    const markup = renderAt('/')
-
-    // Assert
-    expect(markup).not.toContain('>production</div>')
-    expect(markup).toContain('Environment: production')
-  })
+      // Assert
+      expect(violations).toEqual([])
+    },
+  )
 })

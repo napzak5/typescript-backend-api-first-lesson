@@ -1,106 +1,92 @@
-import { renderToStaticMarkup } from 'react-dom/server'
-import { MemoryRouter } from 'react-router-dom'
-import { afterEach, describe, expect, it, vi } from 'vitest'
-import App from './App'
+import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
+import { render, screen } from '@testing-library/react'
+import { MemoryRouter } from 'react-router'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { App } from './App'
 
-const renderAt = (path: string): string =>
-  renderToStaticMarkup(
+const renderAt = (path: string) =>
+  render(
     <MemoryRouter initialEntries={[path]}>
       <App />
     </MemoryRouter>,
   )
 
-describe('Admin App', () => {
+describe('App', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_APP_TITLE', 'Beauty Salon Admin')
+    vi.stubEnv('VITE_MODE', 'production')
+  })
+
   afterEach(() => {
     vi.unstubAllEnvs()
   })
 
-  it.each([
-    { path: '/', heading: 'Dashboard' },
-    { path: '/appointments', heading: 'Appointment Management' },
-    { path: '/staff', heading: 'Staff Management' },
-    { path: '/services', heading: 'Service Management' },
-    { path: '/tailwind-test', heading: 'Tailwind CSS Test' },
-  ])('should render the "$heading" page at $path', ({ path, heading }) => {
+  it('should show the title of the application in the header', () => {
     // Act
-    const markup = renderAt(path)
+    renderAt('/')
 
     // Assert
-    expect(markup).toContain(`>${heading}</h1>`)
+    expect(screen.getByRole('banner')).toHaveTextContent('Beauty Salon Admin')
   })
 
-  it('should render only the page that matches the current path', () => {
+  it('should show the page of the root path', () => {
     // Act
-    const markup = renderAt('/staff')
+    renderAt('/')
 
     // Assert
-    expect(markup).not.toContain('>Appointment Management</h1>')
-    expect(markup).not.toContain('>Service Management</h1>')
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Beauty Salon Admin' }),
+    ).toBeVisible()
   })
 
-  it.each([
-    { label: 'Dashboard', href: '/' },
-    { label: 'Appointments', href: '/appointments' },
-    { label: 'Staff', href: '/staff' },
-    { label: 'Services', href: '/services' },
-  ])(
-    'should link to $href from the "$label" navigation item',
-    ({ label, href }) => {
+  it('should say that a page does not exist and lead back to the root', () => {
+    // Act
+    renderAt('/no-such-page')
+
+    // Assert
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'ページが見つかりません' }),
+    ).toBeVisible()
+    expect(screen.getByRole('link', { name: 'トップへ戻る' })).toHaveAttribute(
+      'href',
+      '/',
+    )
+  })
+
+  it.each(['staging', 'development', 'test', 'localhost'])(
+    'should name the %s environment',
+    (mode) => {
+      // Arrange
+      vi.stubEnv('VITE_MODE', mode)
+
       // Act
-      const markup = renderAt('/')
+      renderAt('/')
 
       // Assert
-      expect(markup).toMatch(
-        new RegExp(`<a[^>]*href="${href}"[^>]*><span>${label}</span></a>`),
-      )
+      expect(screen.getByText(mode)).toBeVisible()
     },
   )
 
-  it('should show the application title from the environment in the header', () => {
-    // Arrange
-    vi.stubEnv('VITE_APP_TITLE', 'Beauty Salon Admin (QA)')
-
+  it('should not name the environment in production', () => {
     // Act
-    const markup = renderAt('/')
+    renderAt('/')
 
     // Assert
-    expect(markup).toContain('>Beauty Salon Admin (QA)</h1>')
+    expect(screen.queryByText('production')).not.toBeInTheDocument()
   })
 
-  it('should show the environment banner outside production', () => {
-    // Arrange
-    vi.stubEnv('VITE_MODE', 'staging')
+  it.each(['/', '/no-such-page'])(
+    'should have no accessibility violations at %s',
+    async (path) => {
+      // Arrange
+      vi.stubEnv('VITE_MODE', 'staging')
+      renderAt(path)
 
-    // Act
-    const markup = renderAt('/')
+      // Act
+      const violations = await findAccessibilityViolations()
 
-    // Assert
-    expect(markup).toMatch(
-      /<div class="[^"]*bg-orange-600[^"]*">staging<\/div>/,
-    )
-    expect(markup).toContain('Environment: staging')
-  })
-
-  it('should hide the environment banner in production', () => {
-    // Arrange
-    vi.stubEnv('VITE_MODE', 'production')
-
-    // Act
-    const markup = renderAt('/')
-
-    // Assert
-    expect(markup).not.toContain('>production</div>')
-    expect(markup).toContain('Environment: production')
-  })
-
-  it('should list the weekly key figures on the dashboard', () => {
-    // Act
-    const markup = renderAt('/')
-
-    // Assert
-    expect(markup).toContain('Total Appointments')
-    expect(markup).toContain('Total Revenue')
-    expect(markup).toContain('Active Customers')
-    expect(markup).toContain('Staff Utilization')
-  })
+      // Assert
+      expect(violations).toEqual([])
+    },
+  )
 })
