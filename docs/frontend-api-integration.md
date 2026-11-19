@@ -41,7 +41,7 @@
 | `io` | fetch ラッパー `customInstance` | `api-client` |
 | `config` | `import.meta.env` を読む `env` オブジェクトと、モード判定関数（`isProductionMode` など） | `io`、`ui`（型のみ） |
 | `theme` | デザイントークン（`src/tokens.css`）、リセットと素の要素のスタイル、スタイルの規則の検査（`src/style-rules.ts`） | 3つのアプリ、`ui`（カタログとテスト） |
-| `ui` | 共有コンポーネント（`Button`、`EnvironmentBanner`）、クラス名をつなぐ `classNames`、カタログ（Storybook） | 3つのアプリ |
+| `ui` | 共有コンポーネント（`Button`、フォームの部品 `TextField`・`TextArea`・`Select`・`RadioGroup`・`Checkbox`、メッセージの `Alert`、`EnvironmentBanner`）、クラス名をつなぐ `classNames`、カタログ（Storybook） | 3つのアプリ |
 | `testing` | テストが共有するもの: jest-dom のマッチャー、アクセシビリティの検査（axe-core）、ストーリーごとにその検査を宣言する関数 | `ui` と 3つのアプリのテスト |
 | `assets` | 画像アセット | なし |
 
@@ -260,7 +260,7 @@ export function SalonList() {
 
 規則と手順は、次の 2 つのスキルにあります。`frontend/` 以下を変更する前に読みます。
 
-- [frontend-ui](../.claude/skills/frontend-ui/SKILL.md): トークン、CSS Modules、Grid によるレイアウト、コンポーネントの作り方
+- [frontend-ui](../.claude/skills/frontend-ui/SKILL.md): トークン、CSS Modules、Grid によるレイアウト、コンポーネントの作り方、フォームの部品の使い方
 - [frontend-testing](../.claude/skills/frontend-testing/SKILL.md): ストーリーからのテスト、アクセシビリティの検査、Vitest の設定
 
 検査できる規則は `theme` パッケージの `src/style-rules.ts` が検査するので、違反はテストの失敗になります。カタログは `pnpm --filter @beauty-salon-frontend/ui run storybook` で起動します（`http://localhost:6006`）。
