@@ -76,7 +76,8 @@ export const staff: ModelsStaffProfileResponse[] = [
   profile('8d5b0f3c-2a4e-4c9b-8f7d-6e3a9b2c4d81', '佐藤 健'),
 ]
 
-const service = (
+/** A service of an hour, with its ID, its name and its price. */
+export const service = (
   id: string,
   name: string,
   price: number,

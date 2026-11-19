@@ -1,0 +1,13 @@
+/* The link and the button one below the other, side by side where there is room */
+.changes {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-3);
+}
+
+@media (min-width: 40rem) {
+  .changes {
+    grid-auto-flow: column;
+    justify-content: start;
+  }
+}

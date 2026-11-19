@@ -1,6 +1,7 @@
 import {
   customerCrudBatchGet,
   customerCrudGet,
+  customerCrudList,
   type ModelsCustomerResponse,
 } from '@beauty-salon-frontend/api-client'
 import { match, P } from 'ts-pattern'
@@ -8,8 +9,11 @@ import * as z from 'zod/mini'
 import { outsideTheContract } from '../outside-the-contract'
 import {
   FAILED,
+  from,
   NOT_FOUND,
   type NotFound,
+  type Page,
+  pageOf,
   type Unread,
   unreadOf,
 } from '../reading'
@@ -49,6 +53,34 @@ const UNREAD = P.union(REFUSED, { status: 403 })
 const unreadOfAnswer = (
   answer: { status: 403 } | Parameters<typeof unreadOf>[0],
 ): Unread => (answer?.status === 403 ? FAILED : unreadOf(answer))
+
+export type CustomerPage = Page<ModelsCustomerResponse> | Unread
+
+/** How many customers a page of a search has. */
+const CUSTOMERS_PER_PAGE = 20
+
+/**
+ * The customers of the ledger of the platform whose names (with the
+ * kana), address of mail or phone number have the keyword, a page at a
+ * time. The ledger is one for every salon: a customer of another salon
+ * comes to this one too.
+ */
+export const findCustomers = async (
+  keyword: string,
+  cursor: string | undefined,
+): Promise<CustomerPage> => {
+  const answer = await customerCrudList({
+    search: keyword,
+    ...from(cursor),
+    limit: CUSTOMERS_PER_PAGE,
+  }).catch(() => null)
+
+  return match(answer)
+    .returnType<CustomerPage>()
+    .with({ status: 200 }, ({ data }) => pageOf(data.data, data.meta))
+    .with(UNREAD, unreadOfAnswer)
+    .exhaustive(outsideTheContract)
+}
 
 /** One customer. */
 export const readCustomer = async (id: string): Promise<CustomerRead> => {
@@ -125,3 +157,10 @@ export const customerNameOf = ({
   firstName,
 }: Pick<ModelsCustomerResponse, 'lastName' | 'firstName'>): string =>
   `${lastName} ${firstName}`
+
+/** What a customer is called in kana, when they gave it: 「ヤマダ ハナコ」; nothing otherwise. */
+export const customerKanaOf = ({
+  lastNameKana,
+  firstNameKana,
+}: Pick<ModelsCustomerResponse, 'lastNameKana' | 'firstNameKana'>): string =>
+  [lastNameKana, firstNameKana].filter((part) => part !== null).join(' ')

@@ -18,6 +18,8 @@ import {
   PageHeader,
 } from '@beauty-salon-frontend/ui'
 import { Link, Route, Routes, useLocation, useNavigate } from 'react-router'
+import { BookingEntryScreen } from './bookings/booking-entry-screen'
+import { BookingNotesScreen } from './bookings/booking-notes-screen'
 import { BookingScreen } from './bookings/booking-screen'
 import { DayBookingsScreen } from './bookings/day-bookings-screen'
 import { HomeScreen } from './home-screen'
@@ -107,8 +109,16 @@ export const App = () => {
                 element={<DayBookingsScreen />}
               />
               <Route
+                path='/salons/:salonId/bookings/new'
+                element={<BookingEntryScreen />}
+              />
+              <Route
                 path='/salons/:salonId/bookings/:bookingId'
                 element={<BookingScreen />}
+              />
+              <Route
+                path='/salons/:salonId/bookings/:bookingId/edit'
+                element={<BookingNotesScreen />}
               />
               <Route
                 path={SECURITY_PATH}

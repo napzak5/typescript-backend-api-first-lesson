@@ -7,12 +7,13 @@ import {
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router'
 import { match } from 'ts-pattern'
+import { KeywordSearch } from '../components/keyword-search/keyword-search'
+import { keywordIn, keywordOf } from '../keyword'
 import { bookingsHrefOf } from '../navigation'
 import { cursorAfter, firstCursor, listingOf, moreOf } from '../pages'
 import { unreadMessageOf } from '../reading'
-import { SalonChoiceForm } from './components/salon-choice-form/salon-choice-form'
 import { SalonChoices } from './components/salon-choices/salon-choices'
-import { keywordIn, keywordOf, queryOfKeyword } from './salon-choice'
+import { KEYWORD, queryOfKeyword } from './salon-choice'
 import { findSalons } from './salons-api'
 
 /**
@@ -22,7 +23,7 @@ import { findSalons } from './salons-api'
  */
 export const SalonChoiceScreen = () => {
   const [query, setQuery] = useSearchParams()
-  const keyword = keywordIn(query)
+  const keyword = keywordIn(query, KEYWORD)
   const found = useInfiniteQuery({
     queryKey: ['salons', 'choice', keyword ?? ''],
     queryFn: ({ pageParam }) => findSalons(keyword, pageParam),
@@ -46,7 +47,13 @@ export const SalonChoiceScreen = () => {
         title='サロンを選ぶ'
         description='予約台帳を開くサロンを選びます。'
       />
-      <SalonChoiceForm keyword={keyword} clearHref='/' onSubmit={search} />
+      <KeywordSearch
+        label='サロンを探す'
+        description='サロンの名前か紹介文にある言葉。空欄のときは、すべてのサロンを並べます。'
+        keyword={keyword}
+        clearHref='/'
+        onSubmit={search}
+      />
       {match(found.data === undefined ? undefined : listingOf(found.data.pages))
         .with(undefined, () => (
           <LoadingIndicator label='サロンを読み込んでいます' />

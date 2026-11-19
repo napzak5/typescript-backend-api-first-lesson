@@ -4,6 +4,7 @@ import type {
   ModelsBookingResponse,
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
+import { useSession } from '@beauty-salon-frontend/session'
 import {
   Alert,
   ButtonLink,
@@ -14,11 +15,11 @@ import {
 } from '@beauty-salon-frontend/ui'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useLayoutEffect, useRef, useState } from 'react'
-import { useParams } from 'react-router'
+import { useNavigate, useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import { readCustomer } from '../customers/customers-api'
-import { bookingsHrefOf } from '../navigation'
-import { unreadMessageOf, whyUnread } from '../reading'
+import { bookingHrefOf, bookingsHrefOf } from '../navigation'
+import { NOT_FOUND, unreadMessageOf, whyUnread } from '../reading'
 import { dayNameOf, momentNameAt } from '../salon-time'
 import {
   readServices,
@@ -34,6 +35,7 @@ import {
   readCancellation,
   readCompletion,
 } from './booking-actions'
+import { afterRemoval } from './booking-entry'
 import { hoursOf } from './booking-format'
 import {
   type BookingRead,
@@ -42,11 +44,13 @@ import {
   cancelBooking,
   completeBooking,
   confirmBooking,
+  deleteBooking,
   readBooking,
   recordNoShow,
   type StatusChange,
   startBooking,
 } from './bookings-api'
+import { BookingChanges } from './components/booking-changes/booking-changes'
 import { BookingRecord } from './components/booking-record/booking-record'
 import {
   type AskedAction,
@@ -77,6 +81,9 @@ const send = (id: string, operation: Operation): Promise<StatusChange> =>
 /** What is said about an attempt, and where: in the open dialog, or where the state is. */
 type Said = { where: 'dialog' | 'page'; message: string }
 
+/** Who may remove a booking from the ledger: a member of the staff cancels it instead */
+const REMOVERS: readonly string[] = ['owner', 'manager', 'admin']
+
 type BookingDetailsProps = {
   salon: ModelsSalonResponse
   booking: ModelsBookingResponse
@@ -84,15 +91,19 @@ type BookingDetailsProps = {
 
 /**
  * A booking, with its customer, its members of the staff and its services
- * by name, and what can be done to its state.
+ * by name, what can be done to its state, and the ways to change what the
+ * salon wrote down on it and to remove it.
  *
  * After an operation the booking is shown as the API answered it, the
  * lists that were read are dropped (they would show the state before), and
  * the focus goes to the heading of the state: the button that was pressed
- * may be gone.
+ * may be gone. A booking that was removed is gone from the ledger: the
+ * screen leads to the bookings of its day.
  */
 const BookingDetails = ({ salon, booking }: BookingDetailsProps) => {
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
+  const session = useSession()
   const { notify } = useNotifications()
   const customer = useQuery({
     queryKey: ['customers', booking.customerId],
@@ -108,6 +119,8 @@ const BookingDetails = ({ salon, booking }: BookingDetailsProps) => {
   })
   const [asking, setAsking] = useState<AskedAction>()
   const [said, setSaid] = useState<Said>()
+  const [removing, setRemoving] = useState(false)
+  const [removalSaid, setRemovalSaid] = useState<string>()
   const [completionErrors, setCompletionErrors] = useState<
     Record<string, string>
   >({})
@@ -170,6 +183,30 @@ const BookingDetails = ({ salon, booking }: BookingDetailsProps) => {
         })
         .exhaustive()
     },
+  })
+
+  const removal = useMutation({
+    mutationFn: () => deleteBooking(booking.id),
+    onSuccess: (outcome) =>
+      match(afterRemoval(outcome))
+        .with({ type: 'done' }, () => {
+          queryClient.removeQueries({ queryKey: bookingListsKeyOf(salon.id) })
+          queryClient.setQueryData(key, NOT_FOUND)
+          notify({ tone: 'success', message: '予約を削除しました。' })
+          void navigate(
+            `${bookingsHrefOf(salon.id)}?date=${booking.bookingDate}`,
+          )
+        })
+        .with({ type: 'again' }, ({ message }) => setRemovalSaid(message))
+        .with({ type: 'refused' }, ({ message }) => {
+          setRemoving(false)
+          setSaid({ where: 'page', message })
+        })
+        .with({ type: 'gone' }, () => {
+          setRemoving(false)
+          void queryClient.invalidateQueries({ queryKey: key })
+        })
+        .exhaustive(),
   })
 
   const act = (operation: Operation): void => {
@@ -243,6 +280,28 @@ const BookingDetails = ({ salon, booking }: BookingDetailsProps) => {
             services={ofServices.items}
             timezone={salon.timezone}
             currency={salon.currency}
+          />
+          <BookingChanges
+            notesHref={`${bookingHrefOf(salon.id, booking.id)}/edit`}
+            removable={
+              session.type === 'signedIn' &&
+              REMOVERS.includes(session.user.role)
+            }
+            when={`${dayNameOf(booking.bookingDate)} ${hoursOf(booking, salon.timezone)}`}
+            open={removing}
+            onOpen={() => {
+              // What was said about an attempt before is said no longer
+              setSaid(undefined)
+              setRemovalSaid(undefined)
+              setRemoving(true)
+            }}
+            onClose={() => setRemoving(false)}
+            message={removalSaid}
+            pending={removal.isPending}
+            onRemove={() => {
+              setRemovalSaid(undefined)
+              removal.mutate()
+            }}
           />
         </>
       ),

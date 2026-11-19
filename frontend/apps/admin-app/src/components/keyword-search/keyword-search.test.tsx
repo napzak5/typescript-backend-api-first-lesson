@@ -3,15 +3,15 @@ import { composeStories, composeStory } from '@storybook/react-vite'
 import { useState } from 'react'
 import { screen, userEvent } from 'storybook/test'
 import { describe, expect, it, vi } from 'vitest'
-import { SalonChoiceForm, type SalonChoiceFormProps } from './salon-choice-form'
-import * as salonChoiceFormStories from './salon-choice-form.stories'
+import { KeywordSearch, type KeywordSearchProps } from './keyword-search'
+import * as keywordSearchStories from './keyword-search.stories'
 
-const stories = composeStories(salonChoiceFormStories)
+const stories = composeStories(keywordSearchStories)
 
 const keyword = (): HTMLElement =>
   screen.getByRole('searchbox', { name: 'キーワード' })
 
-type UnderAnAddressProps = SalonChoiceFormProps & {
+type UnderAnAddressProps = KeywordSearchProps & {
   /** The keyword of the address that the button leads to */
   other: string | undefined
 }
@@ -25,7 +25,7 @@ const UnderAnAddress = ({ other, ...props }: UnderAnAddressProps) => {
 
   return (
     <>
-      <SalonChoiceForm {...props} keyword={keywordOfAddress} />
+      <KeywordSearch {...props} keyword={keywordOfAddress} />
       <button type='button' onClick={() => setKeyword(other)}>
         別の検索のアドレスへ
       </button>
@@ -36,16 +36,16 @@ const UnderAnAddress = ({ other, ...props }: UnderAnAddressProps) => {
 const underAnAddress = (other: string | undefined) =>
   composeStory(
     {
-      ...salonChoiceFormStories.WithKeyword,
+      ...keywordSearchStories.WithKeyword,
       render: (args) => <UnderAnAddress {...args} other={other} />,
     },
-    salonChoiceFormStories.default,
+    keywordSearchStories.default,
   )
 
-describe('SalonChoiceForm', () => {
+describe('KeywordSearch', () => {
   itShouldBeAccessibleInEveryStory(stories)
 
-  it('should be the search of the page, with no keyword yet', async () => {
+  it('should be the search of the page by its label, with no keyword yet', async () => {
     // Act
     await stories.Empty.run()
 
@@ -57,6 +57,9 @@ describe('SalonChoiceForm', () => {
       'サロンを探す',
     )
     expect(keyword()).toHaveValue('')
+    expect(keyword()).toHaveAccessibleDescription(
+      'サロンの名前か紹介文にある言葉。空欄のときは、すべてのサロンを並べます。',
+    )
     expect(keyword()).toHaveAttribute('maxLength', '100')
     expect(screen.queryByRole('link', { name: '条件をなくす' })).toBeNull()
   })
@@ -80,7 +83,7 @@ describe('SalonChoiceForm', () => {
     expect(received).toEqual([[['keyword', '表参道']]])
   })
 
-  it('should show the keyword that is searched for, and the way back to every salon', async () => {
+  it('should show the keyword that is searched for, and the way to the screen without it', async () => {
     // Act
     await stories.WithKeyword.run()
 

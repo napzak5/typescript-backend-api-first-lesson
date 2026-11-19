@@ -1,7 +1,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { answering, json, problem, UNREAD } from '../__tests__/api-answers'
 import { aCustomer, customers } from '../bookings/components/examples'
-import { customerNameOf, readCustomer, readCustomers } from './customers-api'
+import {
+  customerKanaOf,
+  customerNameOf,
+  findCustomers,
+  readCustomer,
+  readCustomers,
+} from './customers-api'
 
 /*
  * That a customer who was removed makes the request of many customers
@@ -129,6 +135,63 @@ describe('readCustomer', () => {
     // Act, Assert
     expect(await readCustomer('yamada')).toEqual({ type: 'notFound' })
     expect(fetched).not.toHaveBeenCalled()
+  })
+})
+
+describe('findCustomers', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('should ask for the customers that have the keyword, 20 at a time, after the cursor', async () => {
+    // Arrange
+    const fetched = answering(() =>
+      json(200, {
+        data: customers,
+        meta: { total: 42, nextCursor: ichiro?.id ?? null },
+        links: { self: '/api/v1/customers' },
+      }),
+    )
+
+    // Act
+    const page = await findCustomers('山田', hanako?.id)
+
+    // Assert
+    expect(page).toEqual({
+      type: 'found',
+      items: customers,
+      total: 42,
+      nextCursor: ichiro?.id,
+    })
+    const asked = new URL(String(fetched.mock.calls[0]?.[0]))
+    expect(asked.pathname).toBe('/api/v1/customers')
+    expect(Object.fromEntries(asked.searchParams)).toEqual({
+      search: '山田',
+      cursor: hanako?.id,
+      limit: '20',
+    })
+  })
+
+  it.each([
+    ...UNREAD,
+    ['a refusal of the account', () => problem(403), 'failed'],
+    ['a keyword the API does not take', () => problem(400), 'failed'],
+  ])('should say why nothing came of %s', async (_case, answer, type) => {
+    // Arrange
+    answering(answer)
+
+    // Act, Assert
+    expect(await findCustomers('山田', undefined)).toEqual({ type })
+  })
+})
+
+describe('customerKanaOf', () => {
+  it.each([
+    ['both names', aCustomer(), 'ヤマダ ハナコ'],
+    ['the family name alone', aCustomer({ firstNameKana: null }), 'ヤマダ'],
+    ['no name', aCustomer({ lastNameKana: null, firstNameKana: null }), ''],
+  ])('should write the kana of %s', (_case, customer, kana) => {
+    expect(customerKanaOf(customer)).toBe(kana)
   })
 })
 

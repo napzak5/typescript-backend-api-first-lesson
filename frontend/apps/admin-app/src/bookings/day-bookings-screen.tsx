@@ -3,6 +3,7 @@ import type {
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
 import {
+  ButtonLink,
   EmptyState,
   LoadingIndicator,
   PageHeader,
@@ -12,7 +13,7 @@ import { useInfiniteQuery, useQueries, useQuery } from '@tanstack/react-query'
 import { useParams, useSearchParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import { readCustomers } from '../customers/customers-api'
-import { bookingsHrefOf } from '../navigation'
+import { bookingEntryHrefOf, bookingHrefOf } from '../navigation'
 import { cursorAfter, firstCursor, listingOf, moreOf } from '../pages'
 import { FAILED, unreadMessageOf, whyUnread } from '../reading'
 import { dayAfter, dayAt, dayNameOf } from '../salon-time'
@@ -143,7 +144,18 @@ const DayBookings = ({ salon }: DayBookingsProps) => {
 
   return (
     <>
-      <PageHeader title={TITLE} description={salon.name} />
+      <PageHeader
+        title={TITLE}
+        description={salon.name}
+        actions={
+          <ButtonLink
+            href={bookingEntryHrefOf(salon.id, conditions.date)}
+            variant='primary'
+          >
+            予約を入れる
+          </ButtonLink>
+        }
+      />
       {match([listing, staff.data, services.data])
         .with([P._, undefined, P._], [P._, P._, undefined], () => (
           <LoadingIndicator label='予約を読み込んでいます' />
@@ -248,7 +260,7 @@ const DayBookings = ({ salon }: DayBookingsProps) => {
                             : read.fetchNextPage())
                         }}
                         bookingHref={({ booking }) =>
-                          `${bookingsHrefOf(salon.id)}/${booking.id}`
+                          bookingHrefOf(salon.id, booking.id)
                         }
                       />
                     ))

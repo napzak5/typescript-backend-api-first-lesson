@@ -1,0 +1,129 @@
+import type {
+  ModelsServiceResponse,
+  ModelsStaffProfileResponse,
+} from '@beauty-salon-frontend/api-client'
+import {
+  Button,
+  Form,
+  type FormProps,
+  Select,
+  TextField,
+} from '@beauty-salon-frontend/ui'
+import type { LineCheck } from '../../bookings-api'
+import { BookingLines } from '../booking-lines/booking-lines'
+import { BookingNotesFields } from '../booking-notes-fields/booking-notes-fields'
+import styles from './booking-entry-form.module.css'
+
+export type BookingEntryFormProps = Pick<
+  FormProps,
+  'message' | 'errors' | 'pending' | 'actions' | 'onSubmit'
+> & {
+  /** The members of the staff of the salon */
+  staff: readonly ModelsStaffProfileResponse[]
+  /** The services of the salon, those it does not take bookings for as well */
+  services: readonly ModelsServiceResponse[]
+  /** The day of the visit the form opens with */
+  date: string
+  /** The time zone of the salon: the times are those of its clock */
+  timezone: string
+  /** What was found out about the member of each line; `undefined` while nothing is */
+  checks?: readonly LineCheck[] | undefined
+  /** The members of the lines are being checked */
+  checking?: boolean | undefined
+  /** What the last check found, in a sentence */
+  checked?: string | undefined
+  /** The button that checks the members was pressed: with the values of the form */
+  onCheck: (values: FormData) => void
+  /** The member of the booking, the day or a line changed: what was found out is out of date */
+  onLinesChange: () => void
+}
+
+/** The first and the last day the API takes */
+const EARLIEST_DAY = '1900-01-01'
+const LATEST_DAY = '2999-12-31'
+
+/**
+ * A booking the salon puts into its ledger: the member of the staff and the
+ * day, the lines, and what the salon writes down. The browser keeps the
+ * values, and the form hands them over when it is sent.
+ *
+ * Whether the members of the lines are free can be found out before it is
+ * sent: the button hands the values of the form over, and what was found
+ * out is shown at each line and said in a sentence, until the member, the
+ * day or a line changes.
+ */
+export const BookingEntryForm = ({
+  staff,
+  services,
+  date,
+  timezone,
+  checks,
+  checking = false,
+  checked,
+  onCheck,
+  onLinesChange,
+  errors = {},
+  ...form
+}: BookingEntryFormProps) => (
+  <Form {...form} errors={errors} submitLabel='予約を入れる'>
+    <fieldset className={styles['part']} onChange={onLinesChange}>
+      <legend className={styles['name']}>担当と日時</legend>
+      <div className={styles['controls']}>
+        <div className={styles['pair']}>
+          <Select
+            label='担当スタッフ'
+            name='staffId'
+            options={staff.map(({ id, displayName }) => ({
+              value: id,
+              label: displayName,
+            }))}
+            placeholder='選んでください'
+            required
+            defaultValue=''
+            description='予約の担当です。明細の担当が「予約の担当と同じ」なら、この人が施術します。'
+            error={errors['staffId']}
+          />
+          <TextField
+            label='来店日'
+            name='date'
+            type='date'
+            required
+            defaultValue={date}
+            min={EARLIEST_DAY}
+            max={LATEST_DAY}
+            description='サロンの時計の日付です。明細は、この日の時刻に始まります。'
+            error={errors['date']}
+          />
+        </div>
+        <BookingLines
+          staff={staff}
+          services={services}
+          errors={errors}
+          checks={checks}
+          timezone={timezone}
+          onRowsChange={onLinesChange}
+        />
+        <div className={styles['check']}>
+          <Button
+            pending={checking}
+            onClick={(event) => {
+              const { form: values } = event.currentTarget
+              if (values !== null) {
+                onCheck(new FormData(values))
+              }
+            }}
+          >
+            担当の空きを確かめる
+          </Button>
+          <p className={styles['checked']} role='status'>
+            {checked}
+          </p>
+        </div>
+      </div>
+    </fieldset>
+    <fieldset className={styles['part']}>
+      <legend className={styles['name']}>受付の記録</legend>
+      <BookingNotesFields errors={errors} />
+    </fieldset>
+  </Form>
+)
