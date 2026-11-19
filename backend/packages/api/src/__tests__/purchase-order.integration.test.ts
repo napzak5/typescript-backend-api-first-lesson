@@ -15,7 +15,7 @@ import {
 } from '@beauty-salon-backend/domain'
 import { PurchaseOrderRepository } from '@beauty-salon-backend/infrastructure'
 import type { Result } from '@beauty-salon-backend/utility'
-import { asc, eq, sql } from 'drizzle-orm'
+import { asc, eq } from 'drizzle-orm'
 import type { Express } from 'express'
 import type { Response, Test } from 'supertest'
 import { beforeEach, describe, expect, it } from 'vitest'
@@ -33,6 +33,7 @@ import {
   brokenRules,
   connectUnreachableDatabase,
   createTestApp,
+  databaseMoment,
   type ExpectedProblem,
   expectProblem,
   getTestDb,
@@ -2348,14 +2349,13 @@ describe('Purchase order API', () => {
         { inventoryId: row, quantity: '2.00', unitPrice: 100 },
       ])
 
-      const { pending, answeredWhileHeld, heldAt } = await db.transaction(
+      const { pending, answeredWhileHeld, releasedAt } = await db.transaction(
         async (tx) => {
           await holdRow(tx, row)
-          const [moved] = await tx
+          await tx
             .update(inventory)
             .set({ currentStock: '6.00', availableStock: '6.00' })
             .where(eq(inventory.id, row))
-            .returning({ at: sql<string>`clock_timestamp()::text` })
           const underWay = receive(id, {
             items: [{ inventoryId: row, quantity: 2 }],
             deliveryNotes: null,
@@ -2364,7 +2364,7 @@ describe('Purchase order API', () => {
           return {
             pending: underWay,
             answeredWhileHeld: await answersWithin(underWay, 300),
-            heldAt: new Date(moved?.at ?? '').getTime(),
+            releasedAt: await databaseMoment(tx),
           }
         },
       )
@@ -2374,8 +2374,8 @@ describe('Purchase order API', () => {
       expect(response.status).toBe(200)
       // Written when the wait was over, not when the receipt began.
       expect(
-        new Date(response.body.data.actualDelivery).getTime() - heldAt,
-      ).toBeGreaterThanOrEqual(300)
+        new Date(response.body.data.actualDelivery).getTime(),
+      ).toBeGreaterThanOrEqual(releasedAt)
       expect(await movements()).toEqual([
         expect.objectContaining({
           balanceBefore: '6.00',
