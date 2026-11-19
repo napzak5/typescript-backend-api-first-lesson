@@ -1,0 +1,30 @@
+{
+  "name": "@beauty-salon-frontend/testing",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./setup": "./src/setup.ts"
+  },
+  "scripts": {
+    "clean": "rm -rf *.tsbuildinfo",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@testing-library/jest-dom": "^7.0.1",
+    "axe-core": "^4.14.1"
+  },
+  "peerDependencies": {
+    "vitest": "^5.1.0"
+  },
+  "devDependencies": {
+    "@beauty-salon-shared/config": "workspace:*",
+    "@types/node": "^26.6.6",
+    "jsdom": "^31.0.1",
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.0"
+  }
+}
