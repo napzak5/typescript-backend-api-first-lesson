@@ -7,6 +7,7 @@ import type {
 import type { CustomersRead } from '../customers/customers-api'
 import type { More } from '../pages'
 import type { Unread } from '../reading'
+import { GONE_SERVICE, NO_MEMBER, UNLISTED_STAFF } from './booking-format'
 
 /** What the names of the bookings are read from. */
 export type Names = {
@@ -48,6 +49,19 @@ export const staffNameOf = (
   staffId: string | null,
   staff: Names['staff'],
 ): string | null => staff.find(({ id }) => id === staffId)?.displayName ?? null
+
+/** Who does a line of a booking, by name: nobody yet, or a member the salon no longer shows. */
+export const memberNameOf = (
+  staffId: string | null,
+  staff: Names['staff'],
+): string =>
+  staffId === null ? NO_MEMBER : (staffNameOf(staffId, staff) ?? UNLISTED_STAFF)
+
+/** The service of a line of a booking, by name, or that it was removed. */
+export const serviceNameOf = (
+  serviceId: string,
+  services: Names['services'],
+): string => services.find(({ id }) => id === serviceId)?.name ?? GONE_SERVICE
 
 /** The names of the services of a booking, in its order. */
 export const serviceNamesOf = (

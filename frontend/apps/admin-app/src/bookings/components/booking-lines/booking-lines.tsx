@@ -3,22 +3,20 @@ import type {
   ModelsStaffProfileResponse,
 } from '@beauty-salon-frontend/api-client'
 import {
-  Badge,
   Button,
   type FormErrors,
   Select,
   TextField,
 } from '@beauty-salon-frontend/ui'
 import { useLayoutEffect, useRef, useState } from 'react'
-import { match } from 'ts-pattern'
 import {
   lineControlOf,
   MOST_LINES,
   NO_STAFF,
   SAME_STAFF,
 } from '../../booking-entry'
-import { hoursOf } from '../../booking-format'
 import type { LineCheck } from '../../bookings-api'
+import { LineCheckNote } from '../line-check-note/line-check-note'
 import styles from './booking-lines.module.css'
 
 export type BookingLinesProps = {
@@ -42,57 +40,21 @@ export type BookingLinesProps = {
 /** What a press did to the rows, until the focus has followed it */
 type Change = 'added' | 'removed' | undefined
 
-const serviceOptionsOf = (services: readonly ModelsServiceResponse[]) =>
+/** The services a line is for, by name and length; one the salon takes no bookings for says so. */
+export const serviceOptionsOf = (services: readonly ModelsServiceResponse[]) =>
   services.map(({ id, name, duration, isActive }) => ({
     value: id,
     label: `${name}（${duration} 分）${isActive ? '' : '（受付停止中）'}`,
   }))
 
-const staffOptionsOf = (staff: readonly ModelsStaffProfileResponse[]) => [
+/** Who does a line: the member of the booking, a member of the staff, or nobody. */
+export const staffOptionsOf = (
+  staff: readonly ModelsStaffProfileResponse[],
+) => [
   { value: SAME_STAFF, label: '予約の担当と同じ' },
   ...staff.map(({ id, displayName }) => ({ value: id, label: displayName })),
   { value: NO_STAFF, label: '決めない' },
 ]
-
-type CheckNoteProps = { check: LineCheck; timezone: string }
-
-/** What was found out about the member of a line, with the bookings that overlap it. */
-const CheckNote = ({ check, timezone }: CheckNoteProps) =>
-  match(check)
-    .with({ type: 'unassigned' }, () => (
-      <p className={styles['check']}>
-        担当を決めない明細は、誰の時間も占有しません。
-      </p>
-    ))
-    .with({ type: 'tooManyRequests' }, { type: 'failed' }, () => (
-      <p className={styles['check']}>
-        <Badge tone='warning'>空きを確かめられませんでした</Badge>
-      </p>
-    ))
-    .with({ type: 'free' }, { type: 'taken' }, ({ type, overlapping }) => (
-      <div className={styles['check']}>
-        <p className={styles['verdict']}>
-          {type === 'taken' ? (
-            <Badge tone='danger'>重なる予約があります</Badge>
-          ) : (
-            <Badge tone='success'>空いています</Badge>
-          )}
-          {type === 'free' &&
-            overlapping.length > 0 &&
-            '（同時に受けられる数の内で、重なる予約があります）'}
-        </p>
-        {overlapping.length > 0 && (
-          <ul className={styles['overlapping']}>
-            {overlapping.map((booking) => (
-              <li key={booking.id}>
-                {`${booking.bookingNumber} ${hoursOf(booking, timezone)}`}
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-    ))
-    .exhaustive()
 
 /**
  * The lines of a booking, a row each, with the buttons that add a row and
@@ -190,7 +152,11 @@ export const BookingLines = ({
                 error={said[lineControlOf(index, 'notes')]}
               />
               {check !== undefined && (
-                <CheckNote check={check} timezone={timezone} />
+                <LineCheckNote
+                  check={check}
+                  timezone={timezone}
+                  className={styles['check']}
+                />
               )}
               {rows.length > 1 && (
                 <Button
