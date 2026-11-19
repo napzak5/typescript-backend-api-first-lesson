@@ -10,8 +10,6 @@ packages:
 # Every package below ships prebuilt binaries (or only prints a banner), so
 # none of them needs to run its install script.
 allowBuilds:
-  '@parcel/watcher': false
-  '@tailwindcss/oxide': false
   cpu-features: false
   esbuild: false
   oxc-resolver: false
@@ -34,7 +32,7 @@ permissions:
 
 # picomatch <= 4.0.7 has a ReDoS advisory (GHSA-fc5q-39xc-vjpf) with no
 # patched release. picomatch comes in only through development tools (vite,
-# vitest, Storybook, the Tailwind Vite plugin, knip, orval), which match globs
+# vitest, Storybook, knip, orval), which match globs
 # written in this repository and never a pattern from a request; `pnpm audit
 # --prod` finds nothing. Remove the entry once picomatch is patched (#226).
 audit:

@@ -16,21 +16,21 @@ interface PackageGroup {
 const PACKAGE_GROUPS: readonly PackageGroup[] = [
   {
     name: 'core',
-    filter: './frontend/packages/{config,utils,validations}',
+    filter: './frontend/packages/{config,io}',
     color: 'yellow',
     description: 'Core utilities',
   },
   {
     name: 'ui',
-    filter: './frontend/packages/{theme,ui,assets}',
+    filter: './frontend/packages/{ui,assets}',
     color: 'magenta',
     description: 'UI libraries',
   },
   {
-    name: 'features',
-    filter: './frontend/packages/{stores,api-client}',
+    name: 'api-client',
+    filter: './frontend/packages/api-client',
     color: 'cyan',
-    description: 'Feature modules',
+    description: 'API client',
   },
 ] as const
 
