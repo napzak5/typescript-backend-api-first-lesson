@@ -13,6 +13,10 @@ export {
   PASSWORD_RULE,
   refusedPasswordMessage,
 } from './security/password-rule'
+export {
+  TwoFactorSetupScreen,
+  type TwoFactorSetupScreenProps,
+} from './security/two-factor-setup-screen'
 export { SessionAccount, type SessionAccountProps } from './session-account'
 export { type SignInOutcome, signIn } from './sign-in'
 export { signOut } from './sign-out'

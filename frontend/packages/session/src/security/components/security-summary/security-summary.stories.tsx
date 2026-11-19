@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import { fn } from 'storybook/test'
 import { account } from '../examples'
 import { SecuritySummary } from './security-summary'
 
@@ -8,6 +9,9 @@ const meta: Meta<typeof SecuritySummary> = {
   args: {
     user: account,
     passwordHref: '/account/security/password',
+    twoFactorHref: '/account/security/two-factor',
+    onIssueBackupCodes: fn(),
+    onStopTwoFactor: fn(),
     timeZone: 'Asia/Tokyo',
   },
 }

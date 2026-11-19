@@ -159,6 +159,57 @@ describe('App, against the API', () => {
     ])
   })
 
+  it('should set the second factor up from the security of the account, and show it on there', async () => {
+    // Arrange
+    const user = userEvent.setup()
+    renderAt('/account/security')
+    await signInAs(OWNER)
+    await heading('アカウントの安全')
+
+    // Act
+    await user.click(
+      within(
+        await screen.findByRole('region', { name: '2 要素認証' }),
+      ).getByRole('link', { name: '2 要素認証を設定する' }),
+    )
+    expect(await heading('2 要素認証を設定する')).toHaveFocus()
+    await user.type(
+      await screen.findByLabelText('パスワード'),
+      testApi().seedPassword,
+    )
+    await user.click(screen.getByRole('button', { name: '設定を始める' }))
+    const secret = (
+      within(
+        await screen.findByRole('region', { name: '認証アプリに登録する' }),
+      ).getByRole('code').textContent ?? ''
+    ).replaceAll(' ', '')
+    await user.type(
+      screen.getByLabelText('認証アプリのコード'),
+      await testApi().authenticatorCode(secret),
+    )
+    await user.click(
+      screen.getByRole('button', { name: '2 要素認証を有効にする' }),
+    )
+    expect(
+      await screen.findByRole('list', { name: 'バックアップコード' }),
+    ).toBeVisible()
+    expect(await findAccessibilityViolations()).toEqual([])
+    await user.click(
+      screen.getByRole('link', { name: 'アカウントの安全へ戻る' }),
+    )
+
+    // Assert: what was read before the set-up is not shown, not even at once
+    expect(await heading('アカウントの安全')).toHaveFocus()
+    const twoFactor = await screen.findByRole('region', { name: '2 要素認証' })
+    expect(within(twoFactor).queryByText('未設定')).toBeNull()
+    expect(within(twoFactor).getByText('有効')).toBeVisible()
+    expect(
+      within(twoFactor).getByRole('button', {
+        name: '2 要素認証を無効にする',
+      }),
+    ).toBeVisible()
+  })
+
   it('should sign out from the header and show the sign-in screen again', async () => {
     // Arrange
     renderAt('/')

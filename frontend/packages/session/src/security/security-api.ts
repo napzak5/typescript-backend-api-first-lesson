@@ -1,8 +1,15 @@
 import {
   authCrudChangePassword,
+  authCrudDisableTwoFactor,
+  authCrudEnableTwoFactor,
+  authCrudGenerateBackupCodes,
   authCrudGetCurrentUser,
   authCrudLogoutAll,
+  authCrudVerifyTwoFactor,
   type ModelsAuthPasswordChangeRequest,
+  type ModelsAuthTwoFactorDisableRequest,
+  type ModelsAuthTwoFactorSetupResponse,
+  type ModelsProblemDetails,
   type ModelsSessionResponse,
   type ModelsUserResponse,
   sessionCrudGetSessions,
@@ -13,8 +20,9 @@ import { match, P } from 'ts-pattern'
 
 /*
  * What the screens of the security of an account ask of the API: the
- * account, its sessions, a new password, and the end of sessions. None of
- * these functions rejects: what a screen tells the user is in the outcome.
+ * account, its sessions, a new password, the end of sessions, and the
+ * second factor. None of these functions rejects: what a screen tells the
+ * user is in the outcome.
  */
 
 /** Why nothing came of a request: there is nothing a person could correct. */
@@ -41,6 +49,29 @@ export type SessionEnd =
 
 export type SignOutEverywhere = { type: 'signedOut' } | Unsent
 
+/** Why a request that changes the second factor changed nothing. */
+type TwoFactorRefusal =
+  /** A password or a code the API did not take */
+  | { type: 'invalid'; values: RefusedValue[] }
+  /**
+   * The second factor is not in the state the request is for: it was set
+   * up, confirmed or turned off elsewhere in the meantime
+   */
+  | { type: 'conflict' }
+  | Unsent
+
+export type TwoFactorSetup =
+  /** The secret and the backup codes: given this once, and by no other request */
+  { type: 'issued'; setup: ModelsAuthTwoFactorSetupResponse } | TwoFactorRefusal
+
+export type TwoFactorConfirmation = { type: 'enabled' } | TwoFactorRefusal
+
+export type BackupCodesIssue =
+  | { type: 'issued'; backupCodes: string[] }
+  | TwoFactorRefusal
+
+export type TwoFactorRemoval = { type: 'disabled' } | TwoFactorRefusal
+
 /** The keys of what the screens read: whatever changes the account takes them all away. */
 export const OWN_ACCOUNT_PARTS = ['account']
 export const OWN_ACCOUNT = [...OWN_ACCOUNT_PARTS, 'user']
@@ -51,6 +82,27 @@ const FAILED: { type: 'failed' } = { type: 'failed' }
 const TOO_MANY_REQUESTS: { type: 'tooManyRequests' } = {
   type: 'tooManyRequests',
 }
+
+const CONFLICT: { type: 'conflict' } = { type: 'conflict' }
+
+/**
+ * The answers to a request with a body that say nothing a person could act
+ * on: no answer, a session that could not be renewed, a body the API did
+ * not read, an error of the server.
+ */
+const UNANSWERED = P.union(
+  null,
+  { status: 401 },
+  { status: 413 },
+  { status: 415 },
+  { status: 500 },
+)
+
+/** The values a refusal names, each with the rule it broke. */
+const refusedValuesOf = ({
+  errors,
+}: Pick<ModelsProblemDetails, 'errors'>): RefusedValue[] =>
+  (errors ?? []).map(({ field, rule }) => ({ field, rule }))
 
 /**
  * The handler of `.exhaustive()`: an answer whose status the contract does
@@ -141,19 +193,10 @@ export const changePassword = async (
     .with({ status: 204 }, () => ({ type: 'changed' }))
     .with({ status: 400 }, ({ data }) => ({
       type: 'invalid',
-      values: (data.errors ?? []).map(({ field, rule }) => ({ field, rule })),
+      values: refusedValuesOf(data),
     }))
     .with({ status: 429 }, () => TOO_MANY_REQUESTS)
-    .with(
-      P.union(
-        null,
-        { status: 401 },
-        { status: 413 },
-        { status: 415 },
-        { status: 500 },
-      ),
-      () => FAILED,
-    )
+    .with(UNANSWERED, () => FAILED)
     .exhaustive(outsideTheContract)
 }
 
@@ -189,5 +232,98 @@ export const signOutEverywhere = async (): Promise<SignOutEverywhere> => {
     })
     .with({ status: 429 }, () => TOO_MANY_REQUESTS)
     .with(P.union(null, { status: 401 }, { status: 500 }), () => FAILED)
+    .exhaustive(outsideTheContract)
+}
+
+/**
+ * Begins to set up the second factor, after the password: the API issues a
+ * secret and backup codes and puts the second factor half way. Asked again
+ * while it is half way, it issues new ones in their place.
+ */
+export const startTwoFactor = async (
+  password: string,
+): Promise<TwoFactorSetup> => {
+  const answer = await authCrudEnableTwoFactor({ password }).catch(() => null)
+
+  return match(answer)
+    .returnType<TwoFactorSetup>()
+    .with({ status: 200 }, ({ data }) => ({ type: 'issued', setup: data.data }))
+    .with({ status: 400 }, ({ data }) => ({
+      type: 'invalid',
+      values: refusedValuesOf(data),
+    }))
+    .with({ status: 409 }, () => CONFLICT)
+    .with({ status: 429 }, () => TOO_MANY_REQUESTS)
+    .with(UNANSWERED, () => FAILED)
+    .exhaustive(outsideTheContract)
+}
+
+/**
+ * Confirms the second factor with a code of the authenticator app, which
+ * shows that the app holds the secret: from then on the sign-in asks for a
+ * code. A backup code does not confirm it.
+ */
+export const confirmTwoFactor = async (
+  code: string,
+): Promise<TwoFactorConfirmation> => {
+  const answer = await authCrudVerifyTwoFactor({ code }).catch(() => null)
+
+  return match(answer)
+    .returnType<TwoFactorConfirmation>()
+    .with({ status: 204 }, () => ({ type: 'enabled' }))
+    .with({ status: 400 }, ({ data }) => ({
+      type: 'invalid',
+      values: refusedValuesOf(data),
+    }))
+    .with({ status: 409 }, () => CONFLICT)
+    .with({ status: 429 }, () => TOO_MANY_REQUESTS)
+    .with(UNANSWERED, () => FAILED)
+    .exhaustive(outsideTheContract)
+}
+
+/**
+ * Issues ten new backup codes, after a code of the authenticator app or a
+ * backup code: the codes issued before are of no use from then on.
+ */
+export const issueBackupCodes = async (
+  code: string,
+): Promise<BackupCodesIssue> => {
+  const answer = await authCrudGenerateBackupCodes({ code }).catch(() => null)
+
+  return match(answer)
+    .returnType<BackupCodesIssue>()
+    .with({ status: 200 }, ({ data }) => ({
+      type: 'issued',
+      backupCodes: data.data.backupCodes,
+    }))
+    .with({ status: 400 }, ({ data }) => ({
+      type: 'invalid',
+      values: refusedValuesOf(data),
+    }))
+    .with({ status: 409 }, () => CONFLICT)
+    .with({ status: 429 }, () => TOO_MANY_REQUESTS)
+    .with(UNANSWERED, () => FAILED)
+    .exhaustive(outsideTheContract)
+}
+
+/**
+ * Turns the second factor off, after the password and a code: the sign-in
+ * asks for the password alone from then on.
+ */
+export const stopTwoFactor = async (
+  request: ModelsAuthTwoFactorDisableRequest,
+): Promise<TwoFactorRemoval> => {
+  const answer = await authCrudDisableTwoFactor(request).catch(() => null)
+
+  return match(answer)
+    .returnType<TwoFactorRemoval>()
+    .with({ status: 204 }, () => ({ type: 'disabled' }))
+    .with({ status: 400 }, ({ data }) => ({
+      type: 'invalid',
+      values: refusedValuesOf(data),
+    }))
+    .with({ status: 409 }, () => CONFLICT)
+    .with({ status: 429 }, () => TOO_MANY_REQUESTS)
+    .with(UNANSWERED, () => FAILED)
     .exhaustive(outsideTheContract)
 }

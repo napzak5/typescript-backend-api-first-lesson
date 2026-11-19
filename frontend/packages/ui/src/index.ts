@@ -65,6 +65,7 @@ export {
   PasswordField,
   type PasswordFieldProps,
 } from './components/password-field/password-field'
+export { QrCode, type QrCodeProps } from './components/qr-code/qr-code'
 export {
   RadioGroup,
   type RadioGroupLayout,

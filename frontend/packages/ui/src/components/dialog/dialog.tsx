@@ -15,8 +15,9 @@ export type DialogProps = {
   /** A form or other content between the text and the actions */
   children?: ReactNode
   /**
-   * The buttons, in the order they are read. The focus goes to the first, so
-   * the first is the one that changes nothing: 「キャンセル」, then 「削除する」.
+   * The buttons, in the order they are read. In a dialog without a form the
+   * focus goes to the first, so the first is the one that changes nothing:
+   * 「キャンセル」, then 「削除する」. A form gets the focus at its first control
    */
   actions: ReactNode
 }

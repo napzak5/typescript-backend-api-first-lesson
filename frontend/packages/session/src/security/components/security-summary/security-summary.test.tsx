@@ -1,7 +1,7 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
-import { screen, within } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { screen, userEvent, within } from 'storybook/test'
+import { describe, expect, it, vi } from 'vitest'
 import * as securitySummaryStories from './security-summary.stories'
 
 const stories = composeStories(securitySummaryStories)
@@ -63,8 +63,55 @@ describe('SecuritySummary', () => {
       expect(
         within(twoFactor).getByText(description, { exact: false }),
       ).toBeVisible()
-      expect(within(twoFactor).queryByRole('button')).toBeNull()
-      expect(within(twoFactor).queryByRole('link')).toBeNull()
     },
   )
+
+  it.each([
+    [stories.PasswordOnly, '2 要素認証を設定する'],
+    [stories.TwoFactorPending, '設定をやり直す'],
+  ])(
+    'should lead a second factor that is not on to the screen that sets it up: %#',
+    async (story, name) => {
+      // Act
+      await story.run()
+
+      // Assert
+      const twoFactor = part('2 要素認証')
+      expect(within(twoFactor).getByRole('link', { name })).toHaveAttribute(
+        'href',
+        '/account/security/two-factor',
+      )
+      expect(within(twoFactor).getAllByRole('link')).toHaveLength(1)
+      expect(within(twoFactor).queryByRole('button')).toBeNull()
+    },
+  )
+
+  it('should offer new backup codes and the end of a second factor that is on, and lead nowhere else', async () => {
+    // Arrange
+    const onIssueBackupCodes = vi.fn()
+    const onStopTwoFactor = vi.fn()
+    await stories.TwoFactorEnabled.run({
+      args: {
+        ...stories.TwoFactorEnabled.args,
+        onIssueBackupCodes,
+        onStopTwoFactor,
+      },
+    })
+    const twoFactor = part('2 要素認証')
+
+    // Act
+    await userEvent.click(
+      within(twoFactor).getByRole('button', {
+        name: 'バックアップコードを発行し直す',
+      }),
+    )
+    await userEvent.click(
+      within(twoFactor).getByRole('button', { name: '2 要素認証を無効にする' }),
+    )
+
+    // Assert
+    expect(onIssueBackupCodes).toHaveBeenCalledTimes(1)
+    expect(onStopTwoFactor).toHaveBeenCalledTimes(1)
+    expect(within(twoFactor).queryByRole('link')).toBeNull()
+  })
 })
