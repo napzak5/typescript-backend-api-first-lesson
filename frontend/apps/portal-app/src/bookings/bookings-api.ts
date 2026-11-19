@@ -6,21 +6,22 @@ import {
   customerBookingsGet,
   customerBookingsList,
   customerBookingsReschedule,
-  customerProfileCreate,
-  customerProfileGet,
   type ModelsAvailableSlotResponse,
   type ModelsBookingCancelRequest,
   type ModelsBookingRescheduleRequest,
   type ModelsCustomerBookingCreateRequest,
   type ModelsCustomerBookingResponse,
-  type ModelsCustomerProfileCreateRequest,
-  type ModelsCustomerProfileResponse,
-  type ModelsProblemDetails,
   type ModelsServiceResponse,
   serviceCrudGet,
 } from '@beauty-salon-frontend/api-client'
 import { match, P } from 'ts-pattern'
 import * as z from 'zod/mini'
+import {
+  FAILED,
+  TOO_MANY_REQUESTS,
+  type Unsent,
+  unansweredOf,
+} from '../behind-the-session'
 import { outsideTheContract } from '../outside-the-contract'
 import {
   from,
@@ -30,31 +31,6 @@ import {
   toTheEnd,
   type Unread,
 } from '../salons/salons-api'
-
-/** A value the API does not take: the property, and the rule it broke. */
-export type RefusedValue = { field: string; rule: string }
-
-/** Why nothing came of a request to write, besides what the request itself may be refused for. */
-type Unsent =
-  | { type: 'tooManyRequests' }
-  /** No answer, or one that says nothing a person could act on */
-  | { type: 'failed' }
-
-export type ProfileRead =
-  | { type: 'found'; profile: ModelsCustomerProfileResponse }
-  /** The account has no profile yet: nobody has said who the customer is */
-  | { type: 'none' }
-  | Unread
-
-export type ProfileCreation =
-  | { type: 'created'; profile: ModelsCustomerProfileResponse }
-  | { type: 'invalid'; values: RefusedValue[] }
-  /**
-   * The account cannot have this profile: it has one, its address is not
-   * confirmed, or the customer of its address belongs to another account
-   */
-  | { type: 'refused' }
-  | Unsent
 
 export type ServiceRead =
   | { type: 'found'; service: ModelsServiceResponse }
@@ -108,32 +84,12 @@ export type Move =
   | { type: 'invalid' }
   | Unsent
 
-type Problem<Status extends number> = {
-  status: Status
-  data: ModelsProblemDetails
-}
-
 const NOT_FOUND: NotFound = { type: 'notFound' }
 
-const FAILED: { type: 'failed' } = { type: 'failed' }
-
-const TOO_MANY_REQUESTS: { type: 'tooManyRequests' } = {
-  type: 'tooManyRequests',
-}
-
 /**
- * The answers that say nothing about what was asked for, and no answer at
- * all. 401 and 403 are among them: the screens of this module stand behind
- * the guard of the session, which shows the sign-in screen when the session
- * has ended, and an account of another role never gets to them.
+ * The answers `unansweredOf` reads. (A pattern is a constant of its module:
+ * the type of one cannot be written out, so it is not exported.)
  */
-type Unanswered =
-  | Problem<401>
-  | Problem<403>
-  | Problem<429>
-  | Problem<500>
-  | null
-
 const UNANSWERED = P.union(
   null,
   { status: 401 },
@@ -141,16 +97,6 @@ const UNANSWERED = P.union(
   { status: 429 },
   { status: 500 },
 )
-
-const unansweredOf = (answer: Unanswered): Unread =>
-  match(answer)
-    .returnType<Unread>()
-    .with({ status: 429 }, () => TOO_MANY_REQUESTS)
-    .with(
-      P.union(null, { status: 401 }, { status: 403 }, { status: 500 }),
-      () => FAILED,
-    )
-    .exhaustive()
 
 /**
  * Why a part of a screen that reads several things is not shown: too many
@@ -167,53 +113,6 @@ export const whyUnread = (
 const idSchema = z.uuid()
 
 const isId = (value: string): boolean => idSchema.safeParse(value).success
-
-/** The profile of the account that is signed in: who the customer is. */
-export const readOwnProfile = async (): Promise<ProfileRead> => {
-  const answer = await customerProfileGet().catch(() => null)
-
-  return match(answer)
-    .returnType<ProfileRead>()
-    .with({ status: 200 }, ({ data }) => ({
-      type: 'found',
-      profile: data.data,
-    }))
-    .with({ status: 404 }, () => ({ type: 'none' }))
-    .with(UNANSWERED, unansweredOf)
-    .exhaustive(outsideTheContract)
-}
-
-/** Makes the account a customer: with a new record, or with the one the ledger has for its address. */
-export const createOwnProfile = async (
-  request: ModelsCustomerProfileCreateRequest,
-): Promise<ProfileCreation> => {
-  const answer = await customerProfileCreate(request).catch(() => null)
-
-  return match(answer)
-    .returnType<ProfileCreation>()
-    .with({ status: 201 }, ({ data }) => ({
-      type: 'created',
-      profile: data.data,
-    }))
-    .with({ status: 400 }, ({ data }) => ({
-      type: 'invalid',
-      values: (data.errors ?? []).map(({ field, rule }) => ({ field, rule })),
-    }))
-    .with({ status: 409 }, () => ({ type: 'refused' }))
-    .with({ status: 429 }, () => TOO_MANY_REQUESTS)
-    .with(
-      P.union(
-        null,
-        { status: 401 },
-        { status: 403 },
-        { status: 413 },
-        { status: 415 },
-        { status: 500 },
-      ),
-      () => FAILED,
-    )
-    .exhaustive(outsideTheContract)
-}
 
 /**
  * A service of a salon, by the IDs of an address. What is no ID is not

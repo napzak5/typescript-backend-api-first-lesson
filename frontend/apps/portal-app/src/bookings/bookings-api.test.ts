@@ -2,17 +2,24 @@ import type {
   ModelsBookingCancelRequest,
   ModelsBookingRescheduleRequest,
   ModelsCustomerBookingCreateRequest,
-  ModelsCustomerProfileCreateRequest,
 } from '@beauty-salon-frontend/api-client'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
+  answering,
+  asked,
+  OUTSIDE_THE_CONTRACT,
+  page,
+  pageOfAGateway,
+  problem,
+  record,
+  sent,
+} from '../__tests__/api-answers'
+import {
   book,
   cancelOwnBooking,
-  createOwnProfile,
   moveOwnBooking,
   readOwnBooking,
   readOwnBookings,
-  readOwnProfile,
   readService,
   readSlots,
   whyUnread,
@@ -30,103 +37,6 @@ const SALON_ID = '0b7f5c1e-3a52-4d8e-9c41-6f2e8d1a7b90'
 const SERVICE_ID = '1a3c5e7f-9b20-4d46-8e68-0a2c4e6f8b79'
 const STAFF_ID = '6f81a3c4-e075-429b-93bd-5f7193acc0ce'
 const BOOKING_ID = 'e7092b3c-68fd-4a13-9b35-d7f902245846'
-
-type RefusedValue = { field: string; rule: string }
-
-const answer = (status: number, body: unknown): Response =>
-  new Response(JSON.stringify(body), {
-    status,
-    headers: {
-      'Content-Type':
-        status < 300
-          ? 'application/json; charset=utf-8'
-          : 'application/problem+json; charset=utf-8',
-    },
-  })
-
-const problem = (
-  status: number,
-  errors: RefusedValue[] | null = null,
-): Response =>
-  answer(status, {
-    type: 'urn:beauty-salon:problem',
-    title: 'Problem',
-    status,
-    detail: null,
-    instance: null,
-    code: '2001',
-    errors:
-      errors?.map((error) => ({
-        ...error,
-        message: 'Invalid',
-        value: null,
-        constraint: null,
-      })) ?? null,
-    correlationId: null,
-    timestamp: '2026-11-19T00:00:00.000Z',
-  })
-
-/** One record, as the API wraps it. */
-const record = (status: number, data: unknown): Response =>
-  answer(status, { data, meta: null, links: null })
-
-/** A page of a list: its items, and the cursor of the page after it. */
-const page = (items: unknown[], nextCursor: string | null = null): Response =>
-  answer(200, {
-    data: items,
-    meta: {
-      total: items.length,
-      limit: 100,
-      hasMore: nextCursor !== null,
-      cursor: null,
-      nextCursor,
-      prevCursor: null,
-    },
-    links: null,
-  })
-
-/** Lets the API answer every request with what `respond` makes of its address. */
-const answering = (respond: (url: URL) => Response | Promise<Response>) => {
-  const fetched = vi.fn<typeof fetch>(async (input) =>
-    respond(new URL(String(input))),
-  )
-  vi.stubGlobal('fetch', fetched)
-
-  return fetched
-}
-
-/** What was asked for: the method, and the path below `/api/v1` with its query. */
-const asked = (fetched: ReturnType<typeof answering>): string[] =>
-  fetched.mock.calls.map(([input, init]) => {
-    const [, operation] = String(input).split('/api/v1')
-
-    return `${init?.method ?? 'GET'} ${decodeURIComponent(operation ?? '')}`
-  })
-
-/** What was sent with the first request. */
-const sent = (fetched: ReturnType<typeof answering>): unknown =>
-  fetched.mock.calls.at(0)?.at(1)
-
-const PROFILE: ModelsCustomerProfileCreateRequest = {
-  lastName: '山田',
-  firstName: '花子',
-  phoneNumber: '090-5550-0199',
-  lastNameKana: null,
-  firstNameKana: null,
-  alternativePhone: null,
-  postalCode: null,
-  prefecture: null,
-  city: null,
-  address: null,
-  building: null,
-  birthDate: null,
-  gender: null,
-  occupation: null,
-  preferences: null,
-  allowEmail: true,
-  allowSms: false,
-  allowMarketing: false,
-}
 
 const BOOKING: ModelsCustomerBookingCreateRequest = {
   salonId: SALON_ID,
@@ -157,8 +67,6 @@ const UPCOMING = { bookingDateFrom: '2026-11-19' }
 
 /** Every operation of the booking screens, called as a screen calls it. */
 const OPERATIONS: [string, () => Promise<{ type: string }>][] = [
-  ['readOwnProfile', () => readOwnProfile()],
-  ['createOwnProfile', () => createOwnProfile(PROFILE)],
   ['readService', () => readService(SALON_ID, SERVICE_ID)],
   ['readSlots', () => readSlots(SLOTS)],
   ['book', () => book(BOOKING)],
@@ -195,21 +103,10 @@ describe('the operations of the booking screens', () => {
       expect(await call()).toEqual({ type: 'failed' })
     })
 
-    it.each([
-      ['a gateway that does not reach the API', 502],
-      ['an API that is not there', 503],
-      ['a gateway that waited too long', 504],
-      ['a status of no meaning here', 418],
-    ])(
+    it.each(OUTSIDE_THE_CONTRACT)(
       'should have failed, and not reject, when the answer is %s: a status the contract does not name',
       async (_case, status) => {
-        answering(
-          () =>
-            new Response('<html><body>Bad Gateway</body></html>', {
-              status,
-              headers: { 'Content-Type': 'text/html' },
-            }),
-        )
+        answering(() => pageOfAGateway(status))
 
         expect(await call()).toEqual({ type: 'failed' })
       },
@@ -218,8 +115,6 @@ describe('the operations of the booking screens', () => {
 
   describe.each(
     only(
-      'readOwnProfile',
-      'createOwnProfile',
       'readSlots',
       'book',
       'readOwnBooking',
@@ -241,27 +136,28 @@ describe('the operations of the booking screens', () => {
     )
   })
 
-  describe.each(
-    only('createOwnProfile', 'book', 'cancelOwnBooking', 'moveOwnBooking'),
-  )('%s', (_name, call) => {
-    it.each([
-      ['a body that is too large', 413],
-      ['a body of a type it does not read', 415],
-    ])(
-      'should have failed when the API answers with %s',
-      async (_case, status) => {
-        answering(() => problem(status))
+  describe.each(only('book', 'cancelOwnBooking', 'moveOwnBooking'))(
+    '%s',
+    (_name, call) => {
+      it.each([
+        ['a body that is too large', 413],
+        ['a body of a type it does not read', 415],
+      ])(
+        'should have failed when the API answers with %s',
+        async (_case, status) => {
+          answering(() => problem(status))
 
-        expect(await call()).toEqual({ type: 'failed' })
-      },
-    )
+          expect(await call()).toEqual({ type: 'failed' })
+        },
+      )
 
-    it('should say that the API refused it when it answers with a conflict', async () => {
-      answering(() => problem(409))
+      it('should say that the API refused it when it answers with a conflict', async () => {
+        answering(() => problem(409))
 
-      expect(await call()).toEqual({ type: 'refused' })
-    })
-  })
+        expect(await call()).toEqual({ type: 'refused' })
+      })
+    },
+  )
 
   describe.each(only('cancelOwnBooking', 'moveOwnBooking'))(
     '%s',
@@ -273,63 +169,6 @@ describe('the operations of the booking screens', () => {
       })
     },
   )
-
-  describe('readOwnProfile', () => {
-    it('should hand over the profile of the answer', async () => {
-      const fetched = answering(() => record(200, { id: 'me' }))
-
-      expect(await readOwnProfile()).toEqual({
-        type: 'found',
-        profile: { id: 'me' },
-      })
-      expect(asked(fetched)).toEqual(['GET /customers/me'])
-    })
-
-    it('should say that the account has no profile when the API finds none', async () => {
-      answering(() => problem(404))
-
-      expect(await readOwnProfile()).toEqual({ type: 'none' })
-    })
-  })
-
-  describe('createOwnProfile', () => {
-    it('should send the profile, and hand over the one the API made of it', async () => {
-      const fetched = answering(() => record(201, { id: 'me' }))
-
-      expect(await createOwnProfile(PROFILE)).toEqual({
-        type: 'created',
-        profile: { id: 'me' },
-      })
-      expect(asked(fetched)).toEqual(['POST /customers/me'])
-      expect(sent(fetched)).toMatchObject({ body: JSON.stringify(PROFILE) })
-    })
-
-    it('should name the values that the API does not take, with the rules they broke', async () => {
-      answering(() =>
-        problem(400, [
-          { field: 'phoneNumber', rule: 'invalid_format' },
-          { field: 'lastName', rule: 'too_big' },
-        ]),
-      )
-
-      expect(await createOwnProfile(PROFILE)).toEqual({
-        type: 'invalid',
-        values: [
-          { field: 'phoneNumber', rule: 'invalid_format' },
-          { field: 'lastName', rule: 'too_big' },
-        ],
-      })
-    })
-
-    it('should name no value when the API names none', async () => {
-      answering(() => problem(400))
-
-      expect(await createOwnProfile(PROFILE)).toEqual({
-        type: 'invalid',
-        values: [],
-      })
-    })
-  })
 
   describe('readService', () => {
     it('should hand over the service of the answer', async () => {
