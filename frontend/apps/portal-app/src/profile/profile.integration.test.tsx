@@ -14,6 +14,7 @@ import {
   within,
 } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { useLayoutEffect } from 'react'
 import { MemoryRouter, useLocation } from 'react-router'
 import {
   afterEach,
@@ -55,9 +56,20 @@ const STYLIST = 'stylist1@beautysalon.jp'
 /** The address the application is at, as the router knows it */
 let address = ''
 
+/**
+ * The path of the last screen, and what the page said in the commit that
+ * showed it: before an answer of the API could arrive. A test that looks
+ * at the page after waiting for something on it looks too late: by then,
+ * a screen that showed what it had kept has read again.
+ */
+let firstSight: [string, string] = ['', '']
+
 const Address = () => {
   const { pathname, search } = useLocation()
   address = `${pathname}${search}`
+  useLayoutEffect(() => {
+    firstSight = [pathname, document.querySelector('main')?.textContent ?? '']
+  }, [pathname])
 
   return null
 }
@@ -538,6 +550,12 @@ describe('the page and the profile of a customer, against the API', () => {
       expect(statusMessages()).toContain('お客様の情報を変更しました。')
       expect(await heading('マイページ')).toHaveFocus()
       expect(address).toBe('/mypage')
+      // The page shows the profile as it is now in the commit that shows
+      // the page, not the one it had read before
+      expect(firstSight).toEqual([
+        '/mypage',
+        expect.stringContaining('お名前Sato Yuki'),
+      ])
       expect(detailsIn(await region('お客様の情報'))).toEqual({
         ...SEEDED,
         お名前: 'Sato Yuki',
@@ -850,8 +868,12 @@ describe('the page and the profile of a customer, against the API', () => {
       ).toBeVisible()
       expect(await heading('マイページ')).toHaveFocus()
       expect(address).toBe('/mypage')
-      // The page shows what was just made the moment it is there: it does
-      // not say first that nothing is registered
+      // The page shows what was just made in the commit that shows the
+      // page: it does not say first that nothing is registered
+      expect(firstSight).toEqual([
+        '/mypage',
+        expect.stringContaining('お名前山田 花子'),
+      ])
       expect(
         detailsIn(screen.getByRole('region', { name: 'お客様の情報' })),
       ).toEqual({

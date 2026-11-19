@@ -1,8 +1,8 @@
 import type { Locator, Page } from '@playwright/test'
 import { PORTAL } from './applications'
-import { part } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
+import { box, saveButton, text, value } from './mypage'
 import {
   CUSTOMER,
   enterCredentials,
@@ -31,24 +31,8 @@ const LONG_NOTES =
 const mainMenu = (page: Page): Locator =>
   page.getByRole('navigation', { name: 'メインメニュー' })
 
-/** The value that stands beside a name, in a part of the page. */
-const value = (page: Page, of: string, term: string): Locator =>
-  part(page, of)
-    .getByRole('term')
-    .filter({ hasText: new RegExp(`^${term}$`) })
-    .locator('xpath=following-sibling::dd')
-
-const text = (page: Page, name: string): Locator =>
-  page.getByRole('textbox', { name, exact: true })
-
-const box = (page: Page, name: string): Locator =>
-  page.getByRole('checkbox', { name, exact: true })
-
 const changeLink = (page: Page): Locator =>
   page.getByRole('link', { name: 'お客様の情報を変更する' })
-
-const saveButton = (page: Page): Locator =>
-  page.getByRole('button', { name: '変更を保存する' })
 
 /** A customer as the database has them. */
 const stored = (api: TestApi, email: string) =>

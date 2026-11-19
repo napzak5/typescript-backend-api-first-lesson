@@ -18,6 +18,7 @@ import {
   book,
   cancelOwnBooking,
   moveOwnBooking,
+  readBookedSalonIds,
   readOwnBooking,
   readOwnBookings,
   readService,
@@ -72,6 +73,7 @@ const OPERATIONS: [string, () => Promise<{ type: string }>][] = [
   ['book', () => book(BOOKING)],
   ['readOwnBooking', () => readOwnBooking(BOOKING_ID)],
   ['readOwnBookings', () => readOwnBookings(UPCOMING, undefined)],
+  ['readBookedSalonIds', () => readBookedSalonIds()],
   ['cancelOwnBooking', () => cancelOwnBooking(BOOKING_ID, CANCELLATION)],
   ['moveOwnBooking', () => moveOwnBooking(BOOKING_ID, MOVE)],
 ]
@@ -119,6 +121,7 @@ describe('the operations of the booking screens', () => {
       'book',
       'readOwnBooking',
       'readOwnBookings',
+      'readBookedSalonIds',
       'cancelOwnBooking',
       'moveOwnBooking',
     ),
@@ -411,6 +414,80 @@ describe('the operations of the screens of the bookings of a customer', () => {
       expect(await readOwnBookings(UPCOMING, undefined)).toEqual({
         type: 'failed',
       })
+    })
+  })
+
+  describe('readBookedSalonIds', () => {
+    it('should ask for the bookings of every day and of every status, in the largest pages, and hand over each salon once', async () => {
+      const fetched = answering(() =>
+        page([
+          { id: BOOKING_ID, salonId: SALON_ID },
+          { id: 'another', salonId: 'another salon' },
+          { id: 'a third', salonId: SALON_ID },
+        ]),
+      )
+
+      expect(await readBookedSalonIds()).toEqual({
+        type: 'found',
+        salonIds: [SALON_ID, 'another salon'],
+      })
+      expect(asked(fetched)).toEqual(['GET /customers/me/bookings?limit=100'])
+    })
+
+    it('should read the bookings to their end, a page after the other: a salon of two pages is there once', async () => {
+      const fetched = answering(({ searchParams }) => {
+        const cursor = searchParams.get('cursor')
+
+        return cursor === null
+          ? page([{ salonId: 'a' }, { salonId: 'b' }], 'second')
+          : cursor === 'second'
+            ? page([{ salonId: 'a' }], 'third')
+            : page([{ salonId: 'c' }])
+      })
+
+      expect(await readBookedSalonIds()).toEqual({
+        type: 'found',
+        salonIds: ['a', 'b', 'c'],
+      })
+      expect(asked(fetched)).toEqual([
+        'GET /customers/me/bookings?limit=100',
+        'GET /customers/me/bookings?cursor=second&limit=100',
+        'GET /customers/me/bookings?cursor=third&limit=100',
+      ])
+    })
+
+    it('should have no salon, and not those of the first pages, when a later page is not read', async () => {
+      answering(({ searchParams }) =>
+        searchParams.has('cursor')
+          ? problem(429)
+          : page([{ salonId: 'a' }], 'second'),
+      )
+
+      expect(await readBookedSalonIds()).toEqual({ type: 'tooManyRequests' })
+    })
+
+    it('should have no salon, and not fail, for somebody who has booked nowhere', async () => {
+      answering(() => page([]))
+
+      expect(await readBookedSalonIds()).toEqual({
+        type: 'found',
+        salonIds: [],
+      })
+    })
+
+    it('should have no salon, and not fail, for an account without a profile: nobody has booked for it', async () => {
+      answering(() => problem(404))
+
+      expect(await readBookedSalonIds()).toEqual({
+        type: 'found',
+        salonIds: [],
+      })
+    })
+
+    it('should have failed when the API does not take what was asked for', async () => {
+      answering(() => problem(400))
+
+      expect(await readBookedSalonIds()).toEqual({ type: 'failed' })
     })
   })
 

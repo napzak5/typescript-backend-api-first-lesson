@@ -1,0 +1,29 @@
+/* A part of the form, under its name: further from the part before it than its controls are from each other */
+.part {
+  padding-block-start: var(--space-2);
+}
+
+/*
+ * A browser sets the legend of a fieldset apart from what the fieldset
+ * lays out, so the gap below the name is the name's own.
+ */
+.name {
+  margin-block-end: var(--space-3);
+  font-size: var(--font-size-large);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
+}
+
+/* The controls of a part, one below the other */
+.controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+/* What a part is for, or why it asks for nothing: said as the description of a control is */
+.note {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  line-height: var(--line-height-tight);
+}
