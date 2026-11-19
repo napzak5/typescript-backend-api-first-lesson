@@ -33,9 +33,10 @@ const countOf = (total: number | null, shown: number): string => {
 }
 
 /**
- * The salons a search found. When salons are added to the list, the focus
- * moves to the first of them: whoever pressed 「さらに表示」 goes on reading
- * where the new salons begin.
+ * The salons a search found. When its button adds salons to the list, the
+ * focus moves to the first of them: whoever pressed 「さらに表示」 goes on
+ * reading where the new salons begin. Salons that nobody asked for (those
+ * of a list that was read again) leave the focus where it is.
  */
 export const SalonResults = ({
   salons,
@@ -47,17 +48,25 @@ export const SalonResults = ({
   const headingId = useId()
   const list = useRef<HTMLUListElement>(null)
   const shown = useRef(salons.length)
+  // Whether the button was pressed and what it asked for is yet to be shown
+  const asked = useRef(false)
 
   // In the commit that shows the added salons, before they are painted
   useLayoutEffect(() => {
-    if (salons.length > shown.current) {
+    if (asked.current && salons.length > shown.current) {
       list.current?.children
         .item(shown.current)
         ?.querySelector<HTMLAnchorElement>('a')
         ?.focus()
+      asked.current = false
     }
     shown.current = salons.length
   }, [salons.length])
+
+  const askForMore = (): void => {
+    asked.current = true
+    onMore()
+  }
 
   return (
     <section className={styles['results']} aria-labelledby={headingId}>
@@ -94,7 +103,7 @@ export const SalonResults = ({
       )}
       {more !== 'none' && (
         <p>
-          <Button onClick={onMore} pending={more === 'loading'}>
+          <Button onClick={askForMore} pending={more === 'loading'}>
             {more === 'failed' ? 'もう一度読み込む' : 'さらに表示'}
           </Button>
         </p>
