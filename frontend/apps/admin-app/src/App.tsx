@@ -27,6 +27,11 @@ import { BookingScreen } from './bookings/booking-screen'
 import { DayBookingsScreen } from './bookings/day-bookings-screen'
 import { HomeScreen } from './home-screen'
 import { navigationFor } from './navigation'
+import { CheckoutScreen } from './sales/checkout-screen'
+import { PaymentEntryScreen } from './sales/payment-entry-screen'
+import { ReceiptScreen } from './sales/receipt-screen'
+import { SaleScreen } from './sales/sale-screen'
+import { SalesLedgerScreen } from './sales/sales-ledger-screen'
 
 /** Who this application is for: the people who work at a salon, and the operator of the platform */
 const ROLES: RequireSessionProps['roles'] = [
@@ -134,6 +139,26 @@ export const App = () => {
               <Route
                 path='/salons/:salonId/bookings/:bookingId/services/:lineId'
                 element={<BookingLineScreen />}
+              />
+              <Route
+                path='/salons/:salonId/bookings/:bookingId/checkout'
+                element={<CheckoutScreen />}
+              />
+              <Route
+                path='/salons/:salonId/sales'
+                element={<SalesLedgerScreen />}
+              />
+              <Route
+                path='/salons/:salonId/sales/:saleId'
+                element={<SaleScreen />}
+              />
+              <Route
+                path='/salons/:salonId/sales/:saleId/payments/new'
+                element={<PaymentEntryScreen />}
+              />
+              <Route
+                path='/salons/:salonId/sales/:saleId/receipt'
+                element={<ReceiptScreen />}
               />
               <Route
                 path={SECURITY_PATH}

@@ -35,6 +35,26 @@ export const lineHrefOf = (
 export const bookingEntryHrefOf = (salonId: string, date: string): string =>
   `${bookingsHrefOf(salonId)}/new?date=${date}`
 
+/** The screen that enters the sale of a booking. */
+export const checkoutHrefOf = (salonId: string, bookingId: string): string =>
+  `${bookingHrefOf(salonId, bookingId)}/checkout`
+
+/** The ledger of the sales of a salon. */
+export const salesHrefOf = (salonId: string): string =>
+  `/salons/${salonId}/sales`
+
+/** A sale of a salon. */
+export const saleHrefOf = (salonId: string, saleId: string): string =>
+  `${salesHrefOf(salonId)}/${saleId}`
+
+/** The screen that records a payment of a sale. */
+export const paymentEntryHrefOf = (salonId: string, saleId: string): string =>
+  `${saleHrefOf(salonId, saleId)}/payments/new`
+
+/** The receipt of a sale. */
+export const receiptHrefOf = (salonId: string, saleId: string): string =>
+  `${saleHrefOf(salonId, saleId)}/receipt`
+
 /** Whether an address is that of a screen, or of one below it. */
 const isAtOrBelow = (pathname: string, screen: string): boolean =>
   pathname === screen || pathname.startsWith(`${screen}/`)
@@ -42,7 +62,8 @@ const isAtOrBelow = (pathname: string, screen: string): boolean =>
 const SALON_ROLES: readonly string[] = ['owner', 'manager', 'staff']
 
 /**
- * The links of the header. The screens of a salon are below its address;
+ * The links of the header: the bookings and the sales of the salon of the
+ * address. The screens of a salon are below its address;
  * an administrator chooses the salon at the start (`/`), and a member of
  * the staff is led from there to the salon they belong to. So a member who
  * is elsewhere (the security of the account) goes back to the bookings
@@ -59,6 +80,7 @@ export const navigationFor = (
       : []
   if (salonId !== undefined) {
     const bookings = bookingsHrefOf(salonId)
+    const sales = salesHrefOf(salonId)
 
     return [
       ...choice,
@@ -67,6 +89,7 @@ export const navigationFor = (
         label: '予約',
         current: isAtOrBelow(pathname, bookings),
       },
+      { href: sales, label: '売上', current: isAtOrBelow(pathname, sales) },
     ]
   }
 

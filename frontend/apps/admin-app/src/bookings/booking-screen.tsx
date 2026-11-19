@@ -22,10 +22,14 @@ import {
   bookingHrefOf,
   bookingMoveHrefOf,
   bookingsHrefOf,
+  checkoutHrefOf,
   lineEntryHrefOf,
   lineHrefOf,
+  saleHrefOf,
 } from '../navigation'
 import { NOT_FOUND, unreadMessageOf, whyUnread } from '../reading'
+import { BookingSale } from '../sales/components/booking-sale/booking-sale'
+import { readSalesOfBooking, salesOfBookingKeyOf } from '../sales/sales-api'
 import { dayNameOf, momentNameAt } from '../salon-time'
 import {
   readServices,
@@ -123,6 +127,12 @@ const BookingDetails = ({ salon, booking }: BookingDetailsProps) => {
   const services = useQuery({
     queryKey: servicesKeyOf(salon.id),
     queryFn: () => readServices(salon.id),
+  })
+  const sales = useQuery({
+    queryKey: salesOfBookingKeyOf(booking.id),
+    queryFn: () => readSalesOfBooking(salon.id, booking.id),
+    // A sale is entered at the counter: whether there is one is read whenever the page opens
+    staleTime: 0,
   })
   const [asking, setAsking] = useState<AskedAction>()
   const [said, setSaid] = useState<Said>()
@@ -288,6 +298,15 @@ const BookingDetails = ({ salon, booking }: BookingDetailsProps) => {
             timezone={salon.timezone}
             currency={salon.currency}
             lineHrefOf={(lineId) => lineHrefOf(salon.id, booking.id, lineId)}
+          />
+          <BookingSale
+            booking={booking}
+            sales={sales.data}
+            currency={salon.currency}
+            saleHref={(saleId) => saleHrefOf(salon.id, saleId)}
+            checkoutHref={checkoutHrefOf(salon.id, booking.id)}
+            onRetry={() => void sales.refetch()}
+            retrying={sales.isFetching}
           />
           <BookingChanges
             moveHref={
