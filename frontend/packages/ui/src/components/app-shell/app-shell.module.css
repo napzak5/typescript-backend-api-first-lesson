@@ -1,0 +1,115 @@
+/*
+ * Header, navigation, content. On a narrow screen they are one below the
+ * other; on a wide one the navigation stays under the header or stands
+ * beside the content, as the application chose.
+ */
+.frame {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr);
+  grid-template-areas:
+    "header"
+    "navigation"
+    "main";
+  min-block-size: 100dvb;
+}
+
+.header {
+  grid-area: header;
+  display: grid;
+  grid-template-columns: minmax(0, var(--size-page));
+  justify-content: center;
+  padding: var(--space-3) var(--space-6);
+  border-block-end: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+}
+
+.headerContent {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.title {
+  color: var(--color-accent-text);
+  font-size: var(--font-size-large);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
+}
+
+.account {
+  display: grid;
+  grid-auto-flow: column;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.navigation {
+  grid-area: navigation;
+  display: grid;
+  grid-template-columns: minmax(0, var(--size-page));
+  justify-content: center;
+  padding: var(--space-2) var(--space-6);
+  border-block-end: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+}
+
+/* One column as wide as a page, in the middle: the notification, then the content */
+.main {
+  grid-area: main;
+  display: grid;
+  grid-template-columns: minmax(0, var(--size-page));
+  align-content: start;
+  justify-content: center;
+  padding: var(--space-8) var(--space-6);
+}
+
+.content {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-6);
+}
+
+.skipLink {
+  position: absolute;
+  inset-block-start: var(--space-2);
+  inset-inline-start: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-medium);
+  background-color: var(--color-surface);
+  box-shadow: var(--shadow-raised);
+  font-weight: var(--font-weight-medium);
+}
+
+/* Out of sight until the keyboard reaches it */
+.skipLink:not(:focus-visible) {
+  inline-size: 1px;
+  block-size: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (min-width: 60rem) {
+  .navigationAtSide {
+    grid-template-columns: var(--size-side-navigation) minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-areas:
+      "header header"
+      "navigation main";
+  }
+
+  .navigationAtSide .navigation {
+    grid-template-columns: minmax(0, 1fr);
+    align-content: start;
+    padding: var(--space-6) var(--space-3);
+    border-block-end: 0;
+    border-inline-end: 1px solid var(--color-border);
+  }
+
+  .navigationAtSide .header {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

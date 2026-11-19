@@ -21,8 +21,9 @@ The styling and component rules are in the skill `frontend-ui`.
 | The contrast of the colour tokens | Computed from `tokens.css` | `frontend/packages/theme/src/tokens.test.ts` |
 | Modules without markup (configuration, the fetch function, the generated client) | Unit tests in Node | `frontend/packages/io/src/libs/fetcher/fetcher.test.ts` |
 
-`@beauty-salon-frontend/testing` holds what the tests share: the matchers of
-jest-dom (`@beauty-salon-frontend/testing/setup`), `findAccessibilityViolations`
+`@beauty-salon-frontend/testing` holds what the tests share: the setup
+(`@beauty-salon-frontend/testing/setup`: the matchers of jest-dom, and the
+methods of the `dialog` element that jsdom lacks), `findAccessibilityViolations`
 and `itShouldBeAccessibleInEveryStory`.
 
 ## Stories
@@ -117,6 +118,28 @@ describe('Button', () => {
   of type Window"). Press a label with `fireEvent.click`: jsdom passes the
   click on to the control, as a browser does. jsdom does not move the focus to
   the control; that part is seen in a real browser only.
+
+### Links, landmarks, dialogs and play functions
+
+- A story has no router. A link of a component is a plain `a` there: assert
+  its `href`.
+- testing-library takes every `header` element for a banner, also one inside
+  `main`. `PageHeader` is therefore a `div`; when a page has several regions
+  of one role (`status`, `region`), look inside the one that is meant with
+  `within(screen.getByRole('main'))`.
+- jsdom has no `showModal()` and no `close()` for the `dialog` element.
+  `@beauty-salon-frontend/testing/setup` gives it both: the `open` attribute
+  and the `close` event, which is what the test of a component asserts. The
+  focus kept inside, the inert page behind and the Escape key are the
+  browser's work and are checked in a real browser.
+- A component that is generic in its data gets a wrapper with the type filled
+  in, and the stories are those of the wrapper (`BookingTable` in
+  `table.stories.tsx`).
+- A story reaches a state that needs a step with a `play` function, and
+  `Story.run()` runs it. Inside it, use `userEvent` imported from
+  `storybook/test`; the context of a composed story has `canvas` but no
+  `userEvent`. A play function shared by stories is a constant of the type
+  `NonNullable<Story['play']>`.
 
 ## Accessibility
 

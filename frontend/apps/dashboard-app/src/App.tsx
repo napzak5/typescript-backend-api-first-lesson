@@ -1,35 +1,47 @@
-import { EnvironmentBanner } from '@beauty-salon-frontend/ui'
+import {
+  AppShell,
+  ButtonLink,
+  EnvironmentBanner,
+  type LinkComponent,
+  LinkProvider,
+  PageHeader,
+} from '@beauty-salon-frontend/ui'
 import { Link, Route, Routes } from 'react-router'
-import styles from './App.module.css'
+
+/** The links that the shared components draw move within the application */
+const RouterLink: LinkComponent = ({ href, ...rest }) => (
+  <Link {...rest} to={href} />
+)
 
 const HomePage = () => (
   <>
-    <h1>{import.meta.env.VITE_APP_TITLE}</h1>
+    <PageHeader title={import.meta.env.VITE_APP_TITLE} />
     <p>画面は準備中です。</p>
   </>
 )
 
 const NotFoundPage = () => (
   <>
-    <h1>ページが見つかりません</h1>
-    <p>アドレスが正しいか、お確かめください。</p>
+    <PageHeader
+      title='ページが見つかりません'
+      description='アドレスが正しいか、お確かめください。'
+    />
     <p>
-      <Link to='/'>トップへ戻る</Link>
+      <ButtonLink href='/' variant='secondary'>
+        トップへ戻る
+      </ButtonLink>
     </p>
   </>
 )
 
 export const App = () => (
-  <div className={styles['frame']}>
-    <header className={styles['header']}>
-      <p className={styles['title']}>{import.meta.env.VITE_APP_TITLE}</p>
-    </header>
-    <main className={styles['main']}>
+  <LinkProvider component={RouterLink}>
+    <AppShell title={import.meta.env.VITE_APP_TITLE}>
       <Routes>
         <Route path='/' element={<HomePage />} />
         <Route path='*' element={<NotFoundPage />} />
       </Routes>
-    </main>
+    </AppShell>
     <EnvironmentBanner environment={import.meta.env.VITE_MODE} />
-  </div>
+  </LinkProvider>
 )

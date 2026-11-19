@@ -1,0 +1,44 @@
+.list {
+  display: grid;
+  gap: var(--space-1);
+}
+
+/*
+ * In a row. A grid does not wrap items of different widths, so a row that is
+ * longer than the screen scrolls; the padding leaves room for the focus ring.
+ */
+.horizontal {
+  grid-auto-flow: column;
+  grid-auto-columns: max-content;
+  justify-content: start;
+  padding: var(--space-1);
+  overflow-x: auto;
+}
+
+.vertical {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.item {
+  display: grid;
+  align-items: center;
+  min-block-size: var(--size-control);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-medium);
+  color: var(--color-text);
+  font-weight: var(--font-weight-medium);
+  text-decoration: none;
+}
+
+@media (hover: hover) {
+  .item:hover {
+    background-color: var(--color-surface-sunken);
+  }
+}
+
+/* The current screen: a colour and a weight, so that colour is not the only sign */
+.item[aria-current="page"] {
+  background-color: var(--color-accent-subtle);
+  color: var(--color-accent-text);
+  font-weight: var(--font-weight-bold);
+}

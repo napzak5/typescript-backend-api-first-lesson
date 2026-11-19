@@ -1,0 +1,63 @@
+/*
+ * The table scrolls sideways in here when it is wider than the screen. Its
+ * cells do not break their lines: a date or a name in three lines is harder
+ * to read than a row that has to be scrolled.
+ */
+.frame {
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-large);
+  background-color: var(--color-surface);
+}
+
+.table {
+  inline-size: 100%;
+  font-variant-numeric: tabular-nums;
+}
+
+.caption {
+  padding: var(--space-3) var(--space-4);
+  font-weight: var(--font-weight-bold);
+  text-align: start;
+}
+
+/* Out of sight, still read */
+.captionHidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.table th,
+.table td {
+  padding: var(--space-3) var(--space-4);
+  border-block-start: 1px solid var(--color-border);
+  text-align: start;
+  vertical-align: top;
+  white-space: nowrap;
+}
+
+.table thead th {
+  background-color: var(--color-surface-subtle);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-medium);
+}
+
+.table tbody th {
+  font-weight: var(--font-weight-medium);
+}
+
+.table .end {
+  text-align: end;
+}
+
+/* The one cell of a table without rows is a sentence, and may break */
+.table .empty {
+  color: var(--color-text-muted);
+  white-space: normal;
+}

@@ -1,0 +1,36 @@
+.dialog {
+  inline-size: min(100% - var(--space-8), var(--size-dialog));
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-large);
+  background-color: var(--color-surface);
+  box-shadow: var(--shadow-overlay);
+  color: var(--color-text);
+}
+
+.dialog::backdrop {
+  background-color: var(--color-overlay);
+}
+
+/* The grid is on the content, not on the dialog: a closed dialog has to stay `display: none` */
+.content {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+  padding: var(--space-6);
+}
+
+.title {
+  font-size: var(--font-size-large);
+}
+
+.description {
+  color: var(--color-text-muted);
+}
+
+.actions {
+  display: grid;
+  grid-auto-flow: column;
+  justify-content: end;
+  gap: var(--space-3);
+}

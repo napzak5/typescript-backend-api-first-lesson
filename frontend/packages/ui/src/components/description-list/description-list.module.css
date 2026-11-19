@@ -1,0 +1,35 @@
+/*
+ * On a narrow screen a name stands above its value. On a wide one the names
+ * share one column, as wide as the longest of them, and the values the other.
+ */
+.list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3) var(--space-6);
+}
+
+.item {
+  display: grid;
+  grid-template-columns: subgrid;
+  grid-column: 1 / -1;
+}
+
+.term {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-medium);
+}
+
+.description {
+  overflow-wrap: anywhere;
+}
+
+@media (min-width: 40rem) {
+  .list {
+    grid-template-columns: max-content minmax(0, 1fr);
+  }
+
+  .term {
+    padding-block-start: 0.15em;
+  }
+}
