@@ -1,6 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { answering, json, problem, UNREAD } from '../__tests__/api-answers'
+import type { LineRemovalAttempt } from './booking-moves'
 import {
+  addBookingLine,
+  attemptAddition,
+  attemptLineRemoval,
+  attemptMove,
   cancelBooking,
   checkLine,
   checkSlot,
@@ -8,9 +13,12 @@ import {
   confirmBooking,
   createBooking,
   deleteBooking,
+  deleteBookingLine,
   readBooking,
+  readBookingLine,
   readDayBookings,
   recordNoShow,
+  rescheduleBooking,
   startBooking,
   updateBooking,
 } from './bookings-api'
@@ -25,6 +33,17 @@ import { aBooking, salon, services } from './components/examples'
  */
 
 const booking = aBooking()
+
+const LINE_ID = booking.services[0]?.id ?? ''
+
+const LINE = {
+  serviceId: services[0]?.id ?? '',
+  staffId: booking.staffId,
+  startTime: '2026-11-20T02:00:00.000Z',
+  notes: null,
+}
+
+const MOVE = { staffId: booking.staffId, startTime: '2026-11-20T03:00:00.000Z' }
 
 const OPERATIONS: [string, () => Promise<{ type: string }>][] = [
   ['confirmBooking', () => confirmBooking(booking.id)],
@@ -75,11 +94,14 @@ const WRITES: [string, () => Promise<{ type: string }>][] = [
     'updateBooking',
     () => updateBooking(booking.id, { internalNotes: '次回はカラーも' }),
   ],
+  ['rescheduleBooking', () => rescheduleBooking(booking.id, MOVE)],
+  ['addBookingLine', () => addBookingLine(booking.id, LINE)],
 ]
 
 const CHANGES: [string, () => Promise<{ type: string }>][] = [
   ...WRITES,
   ['deleteBooking', () => deleteBooking(booking.id)],
+  ['deleteBookingLine', () => deleteBookingLine(booking.id, LINE_ID)],
   ['checkSlot', () => checkSlot(salon.id, SLOT)],
 ]
 
@@ -89,6 +111,7 @@ const READS: [string, () => Promise<{ type: string }>][] = [
     () => readDayBookings(salon.id, { date: '2026-11-20' }, undefined),
   ],
   ['readBooking', () => readBooking(booking.id)],
+  ['readBookingLine', () => readBookingLine(booking.id, LINE_ID)],
 ]
 
 describe('the functions that call the API', () => {
@@ -159,6 +182,24 @@ describe('the functions that call the API', () => {
       limit: '50',
     })
   })
+
+  it.each<[string, string, string]>([
+    ['the booking', 'not-an-id', LINE_ID],
+    ['the line', booking.id, 'new'],
+  ])(
+    'should not ask for a line when the address holds no ID of %s',
+    async (_part, bookingId, lineId) => {
+      // Arrange
+      const fetched = answering(() => problem(500))
+
+      // Act
+      const read = await readBookingLine(bookingId, lineId)
+
+      // Assert
+      expect(read).toEqual({ type: 'notFound' })
+      expect(fetched).not.toHaveBeenCalled()
+    },
+  )
 
   it('should not ask for a booking whose address holds no ID', async () => {
     // Arrange
@@ -439,4 +480,180 @@ describe('the functions that call the API', () => {
       },
     )
   })
+})
+
+/** An answer of the API with the envelope of a resource. */
+const resource = (status: number, data: unknown, self: string): Response =>
+  json(status, {
+    data,
+    meta: { correlationId: null, timestamp: '2026-11-20T00:00:00.000Z' },
+    links: { self },
+  })
+
+describe('the attempts that find out why the API refused', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  const other = aBooking({
+    id: 'c1f94d7a-6e8c-4adf-8dbe-ac7e3f6a8bc5',
+    bookingNumber: 'BK-9QWE-3RTY',
+  })
+
+  /**
+   * The API, that refuses every change with 409, holds `now` as the
+   * booking, and answers the check of a member with `checked`.
+   */
+  const refusing = (
+    now: ReturnType<typeof aBooking>,
+    checked: () => Response | Promise<Response>,
+  ) =>
+    answering((request) => {
+      const { pathname } = new URL(request.url)
+      if (pathname.endsWith('/available-slots/check')) {
+        return checked()
+      }
+      if (request.method === 'GET') {
+        const id = pathname.split('/').at(-1)
+
+        return id === now.id
+          ? resource(200, now, pathname)
+          : resource(200, other, pathname)
+      }
+
+      return problem(409)
+    })
+
+  const conflicting = (ids: string[], isAvailable: boolean) => () =>
+    resource(
+      200,
+      { isAvailable, conflicts: ids },
+      `/api/v1/salons/${salon.id}/available-slots/check`,
+    )
+
+  it('should leave the booking itself out of what overlaps a line, and find the member free when only it does', async () => {
+    // Arrange
+    refusing(booking, conflicting([booking.id], false))
+
+    // Act
+    const check = await checkLine(salon.id, LINE, booking.id)
+
+    // Assert
+    expect(check).toEqual({ type: 'free', overlapping: [] })
+  })
+
+  it('attemptMove should say what was found out about every line when a member is taken where it would be', async () => {
+    // Arrange
+    refusing(booking, conflicting([booking.id, other.id], false))
+
+    // Act
+    const attempt = await attemptMove(salon.id, booking.id, MOVE)
+
+    // Assert
+    expect(attempt).toEqual({
+      type: 'taken',
+      checks: [{ type: 'taken', overlapping: [other] }],
+    })
+  })
+
+  it.each<[string, () => Response | Promise<Response>, string]>([
+    ['every member is free', conflicting([booking.id], false), 'failed'],
+    ['a member could not be checked', () => problem(429), 'tooManyRequests'],
+    ['the check did not come through', () => problem(500), 'failed'],
+  ])(
+    'attemptMove should not say a member is taken when %s',
+    async (_case, checked, type) => {
+      // Arrange
+      refusing(booking, checked)
+
+      // Act
+      const attempt = await attemptMove(salon.id, booking.id, MOVE)
+
+      // Assert
+      expect(attempt).toEqual({ type })
+    },
+  )
+
+  it('attemptMove should hand over the booking as it is now when it is no longer moved', async () => {
+    // Arrange
+    const begun = aBooking({ status: 'in_progress' })
+    const fetched = refusing(begun, conflicting([], true))
+
+    // Act
+    const attempt = await attemptMove(salon.id, booking.id, MOVE)
+
+    // Assert
+    expect(attempt).toEqual({ type: 'unmovable', booking: begun })
+    expect(
+      fetched.mock.calls.filter(([input]) =>
+        String(input).endsWith('/available-slots/check'),
+      ),
+    ).toEqual([])
+  })
+
+  it.each<[string, () => Response | Promise<Response>, string]>([
+    ['its member is free', conflicting([booking.id], false), 'tooMuch'],
+    ['its member could not be checked', () => problem(429), 'tooManyRequests'],
+    ['the check did not come through', () => problem(500), 'failed'],
+  ])(
+    'attemptAddition should say why the line was refused when %s',
+    async (_case, checked, type) => {
+      // Arrange
+      refusing(booking, checked)
+
+      // Act
+      const attempt = await attemptAddition(salon.id, booking.id, LINE)
+
+      // Assert
+      expect(attempt).toEqual({ type })
+    },
+  )
+
+  it('attemptAddition should say what overlaps the line when its member is taken', async () => {
+    // Arrange
+    refusing(booking, conflicting([other.id], false))
+
+    // Act
+    const attempt = await attemptAddition(salon.id, booking.id, LINE)
+
+    // Assert
+    expect(attempt).toEqual({
+      type: 'taken',
+      check: { type: 'taken', overlapping: [other] },
+    })
+  })
+
+  const twoLines = aBooking({
+    services: [
+      ...booking.services,
+      ...booking.services.map((line) => ({
+        ...line,
+        id: 'f4c27a0d-9b1f-4d02-9a1e-df0b6c9dbef8',
+        sortOrder: 1,
+      })),
+    ],
+  })
+  const finished = aBooking({ status: 'completed' })
+
+  it.each<[string, ReturnType<typeof aBooking>, LineRemovalAttempt]>([
+    ['a line that the booking can do without', twoLines, { type: 'unsummed' }],
+    ['the last line', booking, { type: 'refused', booking }],
+    [
+      'a line of a finished booking',
+      finished,
+      { type: 'refused', booking: finished },
+    ],
+  ])(
+    'attemptLineRemoval should tell why %s stays',
+    async (_case, now, expected) => {
+      // Arrange
+      refusing(now, conflicting([], true))
+
+      // Act
+      const attempt = await attemptLineRemoval(booking.id, LINE_ID)
+
+      // Assert
+      expect(attempt).toEqual(expected)
+    },
+  )
 })
