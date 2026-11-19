@@ -376,6 +376,13 @@ example to read: a search and the page of a record, rendered at an address.
   (`(now() at time zone 'Asia/Tokyo')::date + 1`), so that the test holds
   on every day. Rows that the seed data wrote at one moment get moments of
   their own before an order by time is asserted.
+- **What was read before is not what is read now.** A screen keeps what
+  it read, under the key of its query, and shows it again at once. A test
+  that opens one record only never sees a key that leaves the record out:
+  open a salon, then another, and assert from the moment the other is named
+  that nothing of the first is on its page; send a search, then one that
+  was read before, and assert that its results are shown as a list of its
+  own (no focus on an "added" item).
 - **What waits its turn is found by its text**:
   `expect(screen.getByText('サロンを探しています')).toHaveRole('status')`.
   The frame keeps a `status` region for the notification inside `main`,
@@ -415,7 +422,7 @@ whole path:
 | In a browser test | In an integration test in jsdom |
 |-------------------|---------------------------------|
 | A critical path, once, from the address bar to the database | Every state of a screen: each message, each refusal, each role |
-| What the browser lays out and paints: nothing sticks out of a narrow window, nothing is laid out with flex, the contrast of what is on the page | The accessibility rules that need no layout |
+| What the browser lays out and paints: nothing sticks out of a narrow window or out of the element it is in, nothing is laid out with flex, the contrast of what is on the page | The accessibility rules that need no layout |
 | The focus as the browser moves it: the Tab key through a form, the heading after the screen changed | Which element has the focus after an action |
 | A reload, a second tab, the address bar, the way back and forward | — |
 | A link that leaves the page: from a mail to the portal, from one application to another | The screen such a link opens, rendered at its path |
@@ -489,10 +496,15 @@ test.describe('the admin application', () => {
 - Every screen a test reaches is checked with `expectSoundPage(page)`
   (`src/checks.ts`), which is `findAccessibilityViolations(page)` and a
   measure of the layout: the rules of WCAG 2.2 AA with the contrast of what
-  is painted, no element wider than the window, no element laid out with
-  flex.
+  is painted, a page no wider than the window, no element that holds
+  something wider than it is without scrolling it or cutting it off, no
+  element laid out with flex. A line that does not wrap sticks out of its
+  card long before it makes the page wider, so the width of the page alone
+  says too little.
   What has to fit a phone is tested in a `describe` with
-  `test.use({ viewport: { width: 390, height: 844 } })`.
+  `test.use({ viewport: { width: 390, height: 844 } })`, on the record with
+  the longest values the seed data has (the salon whose hours have a break,
+  not the one whose hours are one time).
 - What no screen does yet, a test asks of the API with the `request` fixture
   of Playwright (`accessTokenOf` and `setUpTwoFactor` in `src/sign-in.ts`),
   and checks the answer with a Zod schema. What neither a screen nor the API

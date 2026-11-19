@@ -256,14 +256,31 @@ test.describe('the salons, on a screen as narrow as a phone', () => {
     await expectSoundPage(page)
   })
 
-  test('should fit the page of a salon into the width', async ({ page }) => {
-    // Arrange
+  test('should fit the page of a salon into the width, with hours that take more than a line', async ({
+    page,
+  }) => {
+    // Arrange: the salon in Osaka has a break at noon, which makes its hours long
     await page.goto(PORTAL.origin)
-    await results(page).getByRole('link', { name: TOKYO }).click()
+    await results(page).getByRole('link', { name: OSAKA }).click()
 
     // Act
-    await expect(heading(page, TOKYO)).toBeFocused()
-    await expectWholePage(page)
+    await expect(heading(page, OSAKA)).toBeFocused()
+    await expect(
+      part(page, '営業時間').getByRole('definition').first(),
+    ).toHaveText('09:00〜19:00（休憩 13:00〜14:00）')
+    await expect(
+      part(page, 'メニュー')
+        .getByRole('list', { name: 'Head Spa' })
+        .getByRole('listitem'),
+    ).toHaveCount(3)
+    await expect(
+      part(page, 'スタッフ').getByRole('heading', { level: 3 }),
+    ).toHaveCount(1)
+    await expect(
+      part(page, 'レビュー')
+        .getByRole('list', { name: 'レビュー' })
+        .getByRole('listitem'),
+    ).toHaveCount(2)
 
     // Assert
     await expectSoundPage(page)

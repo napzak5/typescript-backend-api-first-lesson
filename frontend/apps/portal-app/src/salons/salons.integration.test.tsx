@@ -300,6 +300,24 @@ describe('the screens of the salons, against the API', () => {
       expect(screen.queryByRole('link', { name: '条件をなくす' })).toBeNull()
     })
 
+    it('should show a search it has read before at once, and not take its salons for added ones', async () => {
+      // Arrange: every salon was read, then those of one word
+      renderAt('/')
+      await screen.findByText('2 件のサロンが見つかりました')
+      const user = userEvent.setup()
+      await user.type(keyword(), 'osaka')
+      await user.click(send())
+      await screen.findByText('1 件のサロンが見つかりました')
+
+      // Act
+      await user.click(screen.getByRole('link', { name: '条件をなくす' }))
+
+      // Assert: two salons where one was, and the focus on neither
+      await screen.findByText('2 件のサロンが見つかりました')
+      expect(namesIn(await results())).toHaveLength(2)
+      expect(document.body).toHaveFocus()
+    })
+
     it('should read the salons again when the same search is sent again', async () => {
       // Arrange
       renderAt('/')
@@ -708,6 +726,30 @@ describe('the screens of the salons, against the API', () => {
           '￥8,000〜（税別）',
         ],
       ])
+    })
+
+    it('should show the menu of the salon of the address, and nothing of the salon that was open before', async () => {
+      // Arrange: the page of one salon was read to its end
+      renderAt(await salonPathOf(TOKYO))
+      await within(await part('メニュー')).findByRole('list', {
+        name: 'Hair Color',
+      })
+      const user = userEvent.setup()
+      await user.click(screen.getByRole('link', { name: 'サロンを探す' }))
+
+      // Act
+      await user.click(
+        within(await results()).getByRole('link', { name: OSAKA }),
+      )
+
+      // Assert: from the moment the other salon is named, the menu is its own
+      await heading(OSAKA)
+      expect(screen.queryByRole('list', { name: 'Hair Color' })).toBeNull()
+      const menu = await part('メニュー')
+      await within(menu).findByRole('list', { name: 'Head Spa' })
+      expect(
+        within(menu).queryByRole('list', { name: 'Hair Color' }),
+      ).toBeNull()
     })
 
     it('should show the people of the salon, and say who takes no bookings', async () => {
