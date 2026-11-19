@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { Button } from '../button/button'
 import { PageHeader } from '../page-header/page-header'
 import * as appShellStories from './app-shell.stories'
+import { useScreenHeadingFocus } from './screens'
 
 const stories = composeStories(appShellStories)
 
@@ -16,6 +17,47 @@ type WhatTheDocumentSays = (focused: Element | null, title: string) => void
  * layout effect of a component runs after those of what it holds, and before
  * the browser paints.
  */
+/**
+ * The list of the bookings, then a booking whose button goes when it is
+ * pressed, and what the document says in every commit: the layout effects
+ * of a component run in the order they are written.
+ */
+const AScreenAfterAnother = ({ seen }: { seen: WhatTheDocumentSays }) => {
+  const [opened, setOpened] = useState(false)
+  const [cancelled, setCancelled] = useState(false)
+  const focusHeading = useScreenHeadingFocus()
+
+  useLayoutEffect(() => {
+    if (cancelled) {
+      focusHeading()
+    }
+  }, [cancelled, focusHeading])
+
+  useLayoutEffect(() => {
+    seen(document.activeElement, document.title)
+  })
+
+  return opened ? (
+    <>
+      <PageHeader title='予約の内容' />
+      {!cancelled && (
+        <p>
+          <Button onClick={() => setCancelled(true)}>
+            予約をキャンセルする
+          </Button>
+        </p>
+      )}
+    </>
+  ) : (
+    <>
+      <PageHeader title='予約の一覧' />
+      <p>
+        <Button onClick={() => setOpened(true)}>予約を開く</Button>
+      </p>
+    </>
+  )
+}
+
 const ScreensInCommit = ({ seen }: { seen: WhatTheDocumentSays }) => {
   const [shown, setShown] = useState('予約台帳')
 
@@ -204,6 +246,57 @@ describe('AppShell', () => {
     expect(seen).toHaveBeenLastCalledWith(
       screen.getByRole('heading', { level: 1, name: '顧客台帳' }),
       '顧客台帳 | Beauty Salon Admin',
+    )
+  })
+
+  it('should move the focus to the heading of the screen when the screen asks for it: a step took the place of what had the focus', async () => {
+    // Arrange
+    await stories.StepChange.run()
+
+    // Act
+    await userEvent.click(
+      screen.getByRole('button', { name: 'お客様の情報を登録する' }),
+    )
+
+    // Assert
+    expect(
+      screen.getByRole('heading', { level: 1, name: '予約する' }),
+    ).toHaveFocus()
+  })
+
+  it('should leave the focus alone until a screen asks for it', async () => {
+    // Act
+    await stories.StepChange.run()
+
+    // Assert
+    expect(document.body).toHaveFocus()
+  })
+
+  it('should move the focus for a screen that asks for it to the heading that is shown now, in the commit the screen asks in, before it is painted', async () => {
+    // Arrange
+    const seen = vi.fn<WhatTheDocumentSays>()
+    const AfterAnotherScreen = composeStory(
+      {
+        ...appShellStories.StepChange,
+        args: { children: <AScreenAfterAnother seen={seen} /> },
+      },
+      appShellStories.default,
+    )
+    await AfterAnotherScreen.run()
+    await userEvent.click(screen.getByRole('button', { name: '予約を開く' }))
+    await userEvent.tab()
+    const onTheButton = document.activeElement
+
+    // Act
+    await userEvent.click(
+      screen.getByRole('button', { name: '予約をキャンセルする' }),
+    )
+
+    // Assert
+    expect(onTheButton).toHaveAccessibleName('予約をキャンセルする')
+    expect(seen).toHaveBeenLastCalledWith(
+      screen.getByRole('heading', { level: 1, name: '予約の内容' }),
+      '予約の内容 | Beauty Salon Admin',
     )
   })
 
