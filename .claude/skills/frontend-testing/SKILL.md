@@ -304,7 +304,10 @@ describe('the session against the API', () => {
   mail to an address, and fails the test when there is none.
 - Files are kept in memory: the API of a test has no object storage.
 - The answer of the real API takes time. Wait for what appears (`findByRole`,
-  `waitFor`); never for a duration.
+  `waitFor`); never for a duration. The setup lets them wait 5 seconds, not
+  the 1 of Testing Library, and a test 30: checking a password (argon2)
+  takes more than a second on a runner that runs other tests besides. The
+  tests of the stories call no API and keep the 1 second.
 - Every test of a package costs a reset of the database (about a tenth of a
   second). What needs no API stays a test of the stories.
 
