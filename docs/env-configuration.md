@@ -300,6 +300,8 @@ pnpm --filter @beauty-salon-backend/config run test
 | `VITE_MODE` | 環境名。環境バナーの表示と、`production` 以外で React Query Devtools を出す判定に使う |
 | `VITE_APP_TITLE` | 画面に表示するアプリ名 |
 | `VITE_BACKEND_BASE_URL` | API サーバーのオリジン（パスは付けない。ローカルは `http://localhost:3000`） |
+| `VITE_ADMIN_APP_URL` | portal-app だけ。admin-app のオリジン（パスは付けない。ローカルは `http://localhost:3002`）。招待を受けたスタッフを、店舗向けの画面へ案内するリンクに使う |
+| `VITE_PORTAL_APP_URL` | admin-app と dashboard-app だけ。portal-app のオリジン（パスは付けない。ローカルは `http://localhost:3001`）。サインインの画面から、パスワードの再設定へ案内するリンクに使う |
 
 | 各アプリのスクリプト | Vite のモード | 読まれるファイル |
 |----------------------|---------------|------------------|
@@ -334,8 +336,11 @@ pnpm --filter @beauty-salon-backend/config run test
 
 現状について:
 
-- `VITE_BACKEND_BASE_URL` を使うのは `frontend/packages/io` の fetcher だけで、3 つのアプリはまだ
-  API を呼んでいません。
+- `VITE_BACKEND_BASE_URL` を使うのは `frontend/packages/io` の fetcher だけです。アプリのコードは、
+  生成クライアントを通して API を呼びます。
+- `VITE_ADMIN_APP_URL` と `VITE_PORTAL_APP_URL` は、`config` パッケージを通さず、アプリが
+  `import.meta.env` から読みます。バックエンドの `PUBLIC_APP_URL`（メールのリンクが指すアプリ）と
+  `VITE_PORTAL_APP_URL` は、同じ portal-app のオリジンです。
 - アプリの `.env.localhost`、`.env.development`、`.env.test` の `VITE_BACKEND_BASE_URL` は、
   ローカルのバックエンド（`http://localhost:3000`）を指しています。バックエンド側の
   `.env.localhost` と `.env.development` の `CORS_ORIGIN` は、3 つのアプリのオリジン

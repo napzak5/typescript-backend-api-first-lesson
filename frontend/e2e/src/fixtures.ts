@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict'
-import { testServerClient } from '@beauty-salon-frontend/testing/api/test-server'
+import {
+  type TestMail,
+  testServerClient,
+} from '@beauty-salon-frontend/testing/api/test-server'
 import { test as base } from '@playwright/test'
 import { readRun } from './run'
 
@@ -25,6 +28,16 @@ export type TestApi = {
    * next 30 seconds, which the API takes as well.
    */
   authenticatorCode: (secret: string, stepsAhead?: 0 | 1) => Promise<string>
+  /**
+   * The mails the API handed to its mailer in this test, oldest first.
+   * Nothing is sent anywhere: this is the mailbox of everybody.
+   */
+  mails: () => Promise<TestMail[]>
+  /**
+   * The link in the last mail to `to`, which leads to the portal under
+   * test: `page.goto(link)` is the person pressing it.
+   */
+  mailedLink: (to: string) => Promise<string>
 }
 
 /**
@@ -46,6 +59,8 @@ export const test = base.extend<{ api: TestApi }>({
         seedPassword: api.seedPassword,
         query: (text, values) => client.query(api.id, text, values),
         authenticatorCode: client.authenticatorCode,
+        mails: () => client.mails(api.id),
+        mailedLink: (to) => client.mailedLink(api.id, to),
       })
 
       await client.reset(api.id)

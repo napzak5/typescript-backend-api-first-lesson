@@ -6,6 +6,7 @@
 export {
   type StartedTestApi,
   type TestApiOptions,
+  type TestMail,
   type TestServer,
   testServerClient,
 } from './test-server-client'

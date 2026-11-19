@@ -2345,10 +2345,11 @@ sign-in screen with its step for the code of two-factor authentication, and
 shows it in place of a screen that needs a session: every screen of the admin
 application (for `owner`, `manager`, `staff` and `admin`) and of the dashboard
 (for `owner`, `manager` and `admin`); the portal is public. What an account
-may do is decided by the API on every request, not by the screens. No screen
-of the business exists yet, and neither do the pages that the links in the
-mails point at (`/verify-email` and `/reset-password` under
-`PUBLIC_APP_URL`).
+may do is decided by the API on every request, not by the screens. The
+portal has the screens of an account: registering, and the pages that the
+links in the mails point at (`/verify-email`, `/reset-password` and
+`/accept-staff-invitation` under `PUBLIC_APP_URL`). No screen of the
+business exists yet.
 See [Frontend API Integration](./frontend-api-integration.md).
 
 ## References

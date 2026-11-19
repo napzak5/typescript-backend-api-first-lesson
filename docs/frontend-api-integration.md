@@ -4,7 +4,7 @@
 
 ## 現状
 
-**3つのフロントエンドアプリにある画面は、サインインと、アプリの枠だけです。** 業務の画面（予約、顧客台帳、会計など）は、まだありません。API を呼ぶための土台（生成クライアント、fetch ラッパー、セッション）はあります。`src/App.tsx` が、共有の枠（`ui` の `AppShell`。アプリ名とアカウント欄のヘッダー、本文へ移動するリンク、本文）の中に、「画面は準備中です。」と表示するトップページと、存在しないパスのためのページを持ち、サインインしていない人にはサインインの画面を出します（[画面とサインイン](#画面とサインイン)）。
+**3つのフロントエンドアプリにある画面は、サインインと、portal-app のアカウントの画面（登録、メールアドレスの確認、パスワードの再設定、スタッフの招待の受け入れ）と、アプリの枠です。** 業務の画面（予約、顧客台帳、会計など）は、まだありません。API を呼ぶための土台（生成クライアント、fetch ラッパー、セッション）はあります。`src/App.tsx` が、共有の枠（`ui` の `AppShell`。アプリ名とアカウント欄のヘッダー、本文へ移動するリンク、本文）の中に、「画面は準備中です。」と表示するトップページと、存在しないパスのためのページを持ち、サインインしていない人にはサインインの画面を出します（[画面とサインイン](#画面とサインイン)）。portal-app には、そのほかにアカウントの画面があります（[アカウントの画面](#アカウントの画面)）。
 
 あるもの:
 
@@ -13,11 +13,12 @@
 - セッション: ブラウザーに保存したトークンをリクエストに付け、期限が切れたら再発行して送り直す仕組み（`io`）と、サインインしているのがだれかを返すフック、サインインとサインアウト、サインインの画面、サインインが要る画面の出し分け、ヘッダーのアカウント欄（`@beauty-salon-frontend/session`）。[セッション](#セッション)を参照
 - 各アプリの TanStack Query の初期設定（`QueryClientProvider`）
 - UI の土台: デザイントークン（`@beauty-salon-frontend/theme`）、CSS Modules で書いた共有コンポーネントとそのカタログ（`@beauty-salon-frontend/ui`、Storybook）、テストが共有する道具（`@beauty-salon-frontend/testing`）。[UI とテストの規則](#ui-とテストの規則)を参照
-- 環境変数 `VITE_BACKEND_BASE_URL`（API サーバーのオリジン）
+- アカウントの画面（portal-app の `src/account/`）: 登録、メールアドレスの確認、パスワードの再設定、スタッフの招待の受け入れ。[アカウントの画面](#アカウントの画面)を参照
+- 環境変数 `VITE_BACKEND_BASE_URL`（API サーバーのオリジン）と、ほかのアプリのオリジン（`VITE_ADMIN_APP_URL`、`VITE_PORTAL_APP_URL`）
 
 ないもの:
 
-- 生成クライアントを使う業務の画面（いま API を呼ぶ画面は、サインインとサインアウトだけ）
+- 生成クライアントを使う業務の画面（いま API を呼ぶ画面は、サインイン、サインアウトと、アカウントの画面だけ）
 - ユーザー登録、メールアドレスの確認、パスワードの再設定、スタッフの招待の受け入れ、2 要素認証の設定、セッションの一覧の画面
 - API のモックサーバー（画面のテストは、jsdom からも、実際のブラウザーからも、実際の API を呼ぶ。[テスト](#実際の-api-と-db-を使うテストpnpm-testintegration)）
 - 共有リンクを開く画面（サーバーには、共有リンクのオペレーションがすべてある。クライアントは OpenAPI の全オペレーションについて生成され、そのすべてに、サーバーの実装がある）
@@ -240,7 +241,7 @@ const ROLES: RequireSessionProps['roles'] = ['owner', 'manager', 'staff', 'admin
 
 | アプリ | 使えるロール |
 |---|---|
-| portal-app | サインインなしで見られる（いまあるトップページと、存在しないパスのページ）。サインインの画面は `/sign-in` にあり、どのロールでもサインインできる。サインインすると、トップページへ移る。顧客だけの画面は、その画面を `RequireSession roles={['customer']}` で囲む |
+| portal-app | サインインなしで見られる（いまあるのは、トップページ、[アカウントの画面](#アカウントの画面)、存在しないパスのページ）。サインインの画面は `/sign-in` にあり、どのロールでもサインインできる。サインインすると、トップページへ移る。顧客だけの画面は、その画面を `RequireSession roles={['customer']}` で囲む |
 | admin-app | `owner`、`manager`、`staff`、`admin`。すべての画面にサインインが要る |
 | dashboard-app | `owner`、`manager`、`admin`。すべての画面にサインインが要る |
 
@@ -253,6 +254,27 @@ const ROLES: RequireSessionProps['roles'] = ['owner', 'manager', 'staff', 'admin
 - **`SessionAccount`** は、ヘッダーのアカウント欄。サインインしている人のメールアドレスと、サインアウトのボタンを出す。狭い画面ではメールアドレスを隠す（読み上げには残る）。`signInHref` を渡すと、サインインしていない人にサインインの画面へのリンクを出す（portal-app）
 - **サインアウト**すると、「サインアウトしました。」と通知し、サインインが要る画面はサインインの画面に替わる。ほかのタブも同じ状態になる
 - **画面が替わったとき**は、`ui` の `AppShell` と `PageHeader` が、文書のタイトルを「画面の名前 | アプリの名前」にし、フォーカスを画面の見出し（`h1`）へ移す。サインインのあとも、サインアウトのあとも、ルートの移動でも同じ。ページを読み込んだ直後の最初の画面では、フォーカスを動かさない
+
+### アカウントの画面
+
+portal-app の `src/account/` に、サインインしていない人が使う、アカウントの画面があります。スタッフと管理者のアカウントも、パスワードの再設定は portal-app で行います（メールのリンクが指すのは、`PUBLIC_APP_URL` の 1 つのアプリだけのため）。admin-app と dashboard-app のサインインの画面は、portal-app の `/forgot-password` へのリンクを出します。
+
+| パス | 画面 | 呼ぶ API（`/api/v1/auth` の下） |
+|---|---|---|
+| `/register` | アカウントの登録（メールアドレスとパスワード）。送ったあとは、確認メールの案内と、再送のボタン | `/register`、`/verify-email/send` |
+| `/verify-email` | 確認メールのリンク先。「メールアドレスを確認する」のボタンを押すと、確認が済む。リンクが使えないとき、リンクなしで開いたときは、確認メールをもう一度送るフォーム | `/verify-email/confirm`、`/verify-email/send` |
+| `/forgot-password` | 再設定のメールの要求（メールアドレス） | `/forgot-password` |
+| `/reset-password` | 再設定のメールのリンク先。リンクが使えることを確かめてから、新しいパスワードを尋ねる | `/reset-password/verify`、`/reset-password` |
+| `/accept-staff-invitation` | 招待のメールのリンク先。招待の内容（メールアドレス、役割、期限）を示し、アカウントのない人にはパスワードを尋ね、スタッフのアカウントを持つ人にはサインインを求める | `/staff-invitation/verify`、`/staff-invitation/accept`、`/staff-invitation/join` |
+
+- **トークン**は、アドレスのフラグメント（`#token=`）から 1 回だけ読み、すぐにアドレスから取り除く（`useMailedToken`。履歴にも残さない）。読み込み直したページにはトークンがないので、メールのリンクから開くよう案内する
+- **リンクを開いただけでは、何も変えない。** トークンを消費するリクエストは、ボタンを押したときに送る。メールのリンクを利用者より先に開くソフトウェア（スキャナー、プレビュー）が、リンクを使い切らないようにするため。消費しない確認（`/reset-password/verify`、`/staff-invitation/verify`）だけは、画面を開いたときに送る
+- **アカウントがあるかどうかを、画面は言わない。** 登録と、メールの要求には、API がどちらの場合も同じ応答を返すので、そのあとの画面も同じことを言う
+- **パスワード**は `ui` の `PasswordField`。「パスワードを表示する」で見られるので、確認のための 2 つ目の欄はない。送る前に確かめるのは、長さ（15〜128 文字。API と同じく、NFC に正規化したコードポイントで数える）だけ。推測されやすいパスワードは API が断り（`errors[].rule` が `blocklisted`）、その欄にそう表示する
+- **使えないリンク**（期限切れ、使用済み、取り消し）を、API は区別しない。画面も理由を 1 つに決めず、次にできること（メールをもう一度送る、招待したサロンに伝える）を示す
+- **API を呼ぶ関数**は `account-api.ts` にある。どれも reject せず、画面が区別する結果の直和型を返す（`accepted`、`tokenRefused`、`accountExists`、`invalid`、`tooManyAttempts`、`failed` など）。フォームの値の確かめと、応答からフォームの表示を決めるのは、`account-flow.ts` の純粋な関数。フォームは `ui` の `Form`
+- **招待を受けたあと**は、admin-app へのリンクを出す（`VITE_ADMIN_APP_URL`）。セッションはアプリ（オリジン）ごとなので、admin-app ではあらためてサインインする
+- プロフィール（氏名、電話番号）の登録は、ここにはない。マイページの画面で扱う
 
 ## TanStack Query の設定
 
@@ -284,9 +306,11 @@ const queryClient = new QueryClient({
 | `VITE_MODE` | `App.tsx` の `EnvironmentBanner`（本番以外で、画面の隅に環境名を表示する）、`main.tsx` の Devtools の表示判定 |
 | `VITE_APP_TITLE` | `App.tsx` のヘッダーとトップページの見出し |
 | `VITE_BACKEND_BASE_URL` | API サーバーのオリジン（パスは付けない）。`config` パッケージの `env` を通して `customInstance` が使う。アプリのコードからは使われていない |
+| `VITE_ADMIN_APP_URL` | portal-app だけにある。admin-app のオリジン。招待を受けたあとの「店舗向けの画面を開く」のリンク先 |
+| `VITE_PORTAL_APP_URL` | admin-app と dashboard-app にある。portal-app のオリジン。サインインの画面の「パスワードを忘れた場合」のリンク先（`/forgot-password`） |
 
 - どのファイルが読まれるかは Vite のモードで決まります。開発サーバー（`pnpm dev`）と `build:dev` は `development`、`build:localhost` は `localhost`、`build:test` は `test`、`build:stg` は `staging`、`build:prod` は `production` です。3つのアプリとも、この 5 つのモードの `.env.<mode>` を持っています。
-- ローカル用の 3 つ（`localhost`、`development`、`test`）の `VITE_BACKEND_BASE_URL` は `http://localhost:3000` で、リポジトリ直下の `.env.*` の `PORT` と同じです。
+- ローカル用の 3 つ（`localhost`、`development`、`test`）の `VITE_BACKEND_BASE_URL` は `http://localhost:3000` で、リポジトリ直下の `.env.*` の `PORT` と同じです。ほかのアプリのオリジンは、開発サーバーのもの（portal-app は `http://localhost:3001`、admin-app は `http://localhost:3002`）です。
 - `config` パッケージの `env` は、設定されていない変数を `undefined` として返します。
 
 ## アプリから使う（未実装）
@@ -377,6 +401,7 @@ export function SalonList() {
 - `io` の `src/libs/fetcher/fetcher.test.ts`: `customInstance` を、スタブにした `fetch` に対して検証する（URL、本文、ステータスごとの戻り値、problem details、reject する条件）。`fetcher.session.test.ts`: セッションがあるときの動作（トークンを付けること、期限切れのあとの再発行と送り直しが 1 回ずつであること、同時のリクエストで再発行が 1 回であること、ほかのタブが先に替えたセッションを通信せずに使うこと、断られた再発行と失敗した再発行の違い）。`src/libs/session/stored-session.test.ts`: 保存、購読、ほかのタブからの変更
 - `api-client` の `src/salons.test.ts`: 生成された Salon の関数を、実際の `customInstance` を通して検証する（リクエストの形、ステータスごとに型が絞られること、通信の失敗、TanStack Query との組み合わせ）。`src/session.test.ts`: `io` が持つ再発行のパスとエラーコードが、生成されたものと同じであること
 - `session` の `src/session.test.tsx`: `useSession` を `renderHook` で描画し、`signIn`、`signOut`、`keepQueriesOfOneUser` と一緒に、実際の生成クライアントと `customInstance` を通して、スタブにした `fetch` に対して検証する。`src/components/` の部品（`SignInForm`、`SessionGate`、`AccountMenu`）は、`ui` と同じく、ストーリーから検証する。`sign-in-screen/sign-in-flow.test.ts`: フォームの値の確かめと、API の応答ごとのフォームの状態
+- portal-app の `src/account/`: `account-flow.test.ts`（フォームの値の確かめと、API が断った値ごとの表示）、`mailed-token.test.ts`（フラグメントのトークン）、`account-api.test.ts`（実際の API では起こせない応答（429、500、応答なし）と、どのオペレーションも応答を同じように読むことを、スタブにした `fetch` に対して検証する）
 
 ### 実際の API と DB を使うテスト（`pnpm test:integration`）
 
@@ -384,15 +409,16 @@ API を呼ぶコードは、`fetch` も API も差し替えずに、本番と同
 
 - テストの実行ごとに、バックエンドの**テスト用のサーバー**（`backend/packages/api/src/__tests__/test-server/`）が 1 つ起動します。スキーマとシードのデータ（`pnpm db:seed` と同じもの）を入れたテンプレートの DB を作り、テストファイルごとに、その複製を持つ API を、そのファイルだけのポートで起動します
 - テスト対象のコードは、その API を呼びます（`VITE_BACKEND_BASE_URL` が、その API のオリジンになります）。テストが終わるたびに、API の DB は新しい複製に替わり、`localStorage` と `sessionStorage` は空になります
-- テストは `testApi()`（`@beauty-salon-frontend/testing/api`）から、API のオリジン、シードのアカウントのパスワード、DB への SQL の実行を使えます。SQL は、画面からも API からも起こせないこと（トークンの期限が切れるだけの時間の経過など）のためのものです
+- テストは `testApi()`（`@beauty-salon-frontend/testing/api`）から、API のオリジン、シードのアカウントのパスワード、DB への SQL の実行、API が送ったメール（`mails()` と、ある宛先への最後のメールのリンクを返す `mailedLink(to)`）を使えます。メールは、どこにも配送されません。SQL は、画面からも API からも起こせないこと（トークンの期限が切れるだけの時間の経過など）のためのものです
 - PostgreSQL は、`TEST_DATABASE_URL` があればそれを、なければコンテナを使います（バックエンドの結合テストと同じ）
 
 いまあるのは、次のものです。
 
 - `session` の `src/session.integration.test.tsx`: サインイン、誤ったパスワード、期限切れのあとの再発行（同時のリクエストで 1 回）、再発行できないセッション、API で終わったセッション、サインアウト
 - `session` の `src/sign-in.integration.test.tsx`: サインインの画面を、利用者と同じように操作する（入力して、ボタンを押す）。サインインして開こうとした画面が出ること、「サインインしたままにする」、誤ったパスワードと未登録のメールアドレス、空の欄と形の誤ったメールアドレスでは何も送らないこと、2 要素認証（認証アプリのコード、誤ったコードのあとのバックアップコード、空のコード、最初の段階へ戻る）、サインイン済みの人、ヘッダーからのサインアウト、ロールの合わないアカウント
+- portal-app の `src/account/account.integration.test.tsx`: アカウントの画面を、メールのリンクから開いて操作する。登録と確認メールの再送、メールアドレスの確認、使用済みのリンクと期限切れのリンク、再設定の要求と新しいパスワードの設定、招待の受け入れ（アカウントを作る）と参加（サインインして受ける）、参加できないアカウント、アカウントのあるメールアドレスへの招待、取り消された招待。リンクを開いただけでは API に何も送らないこと（または、確認だけを送ること）も確かめる
 - 各アプリの `src/App.integration.test.tsx`: そのアプリを使えるロールと使えないロール、開こうとしたアドレスの画面がサインインのあとに出ること、画面の移動、サインアウト、サインインした状態でのアクセシビリティ
-- `testing` の `src/api/test-api.integration.test.ts`: この仕組みそのもの（シードのデータがあること、あるテストが書いたものが次のテストに残らないこと、トークンのないリクエストをテスト用のサーバーが受け付けないこと、テスト用のサーバーが返す認証アプリのコードを API が受け付けること、ブラウザーから呼ぶための API が、指定したポートで待ち受け、指定したオリジンだけを許可すること）
+- `testing` の `src/api/test-api.integration.test.ts`: この仕組みそのもの（シードのデータがあること、あるテストが書いたものが次のテストに残らないこと、トークンのないリクエストをテスト用のサーバーが受け付けないこと、テスト用のサーバーが返す認証アプリのコードを API が受け付けること、ブラウザーから呼ぶための API が、指定したポートで待ち受け、指定したオリジンだけを許可すること、API が送ったメールをテストが読めて、そのリンクのトークンを API が受け付けること）
 
 画面を操作するテストは、`@testing-library/user-event` で入力し、ボタンを押します。2 要素認証の画面のテストは、API で 2 要素認証を設定し、認証アプリのコードを `testApi().authenticatorCode(secret)` で得ます（テストには認証アプリがないため、テスト用のサーバーが計算します）。
 
@@ -402,8 +428,8 @@ API を呼ぶコードは、`fetch` も API も差し替えずに、本番と同
 
 `frontend/e2e` に、実際のブラウザー（Playwright の Chromium）を操作するテストがあります。ビルドした 3 つのアプリを、同じテスト用のサーバーの API と PostgreSQL に対して操作します。ここでも、何も差し替えません。ファイル名は `*.e2e.test.ts` です。
 
-- 実行のはじめに、テスト用のサーバーを起動し、その上に API を 1 つ、ポート 4100 で起動します。この API は、3 つのアプリのオリジンからの呼び出しを許可します（CORS）
-- 3 つのアプリを、その API のために `vite build --mode test` でビルドして（`VITE_BACKEND_BASE_URL` は、環境変数が `.env.test` より優先されます）、配信します。portal-app は 4101、admin-app は 4102、dashboard-app は 4103 です。どれもこのマシンだけで待ち受け、開発サーバー（3000〜3003）とは別のポートなので、`pnpm dev` と同時に動かせます
+- 実行のはじめに、テスト用のサーバーを起動し、その上に API を 1 つ、ポート 4100 で起動します。この API は、3 つのアプリのオリジンからの呼び出しを許可し（CORS）、メールのリンクを、テスト中の portal-app に向けて書きます
+- 3 つのアプリを、その API のために `vite build --mode test` でビルドして（`VITE_BACKEND_BASE_URL` と、ほかのアプリのオリジンは、環境変数が `.env.test` より優先されます）、配信します。portal-app は 4101、admin-app は 4102、dashboard-app は 4103 です。どれもこのマシンだけで待ち受け、開発サーバー（3000〜3003）とは別のポートなので、`pnpm dev` と同時に動かせます
 - アプリは 1 つの API のためにビルドされるので、テストは 1 つずつ順に実行します。テストが終わるたびに、API の DB は新しい複製に替わります。ブラウザーの状態（`localStorage` など）は、テストごとに新しいものです
 - アプリのビルドは、ワークスペースのパッケージの `dist/` を読みます。`pnpm test:e2e` は、先にパッケージをビルドします
 - ブラウザーは、`pnpm test:e2e:install` で入れます（最初の 1 回と、Playwright を更新したあと）
@@ -412,6 +438,7 @@ API を呼ぶコードは、`fetch` も API も差し替えずに、本番と同
 
 - `src/sign-in.e2e.test.ts`: 開こうとしたアドレスにサインインの画面が出て、サインインするとそのアドレスの画面が出ること、空の欄では何も送らず、最初の欄へフォーカスが移ること、誤ったパスワード、キーボードだけでのサインイン、読み込み直してもサインインが続くこと、別のタブでのサインアウトがこのタブにも及ぶこと、2 要素認証のコード
 - `src/applications.e2e.test.ts`: アプリごとの、使えるロールと使えないロール、portal-app のサインインとサインアウト、スマートフォンの幅（390px）の画面
+- `src/account.e2e.test.ts`: 登録から、メールのリンク、メールアドレスの確認、サインインまで。admin-app のサインインの画面から、portal-app での再設定、新しいパスワードでの admin-app へのサインインまで。招待のメールのリンクからアカウントを作り、admin-app にサインインするまで。使用済みのリンク、パスワードの表示、スマートフォンの幅の登録の画面
 
 テストが開いた画面では、アクセシビリティ（WCAG 2.2 AA。ブラウザーが描画するので、色のコントラストを含む）、横にはみ出さないこと、flex で配置された要素がないことを確かめます（`src/checks.ts`）。
 

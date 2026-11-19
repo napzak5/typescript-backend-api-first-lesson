@@ -19,6 +19,7 @@ describe('App', () => {
   beforeEach(() => {
     vi.stubEnv('VITE_APP_TITLE', 'Beauty Salon Admin')
     vi.stubEnv('VITE_MODE', 'production')
+    vi.stubEnv('VITE_PORTAL_APP_URL', 'https://portal.salon.example')
   })
 
   afterEach(() => {
@@ -54,6 +55,23 @@ describe('App', () => {
 
     // Assert
     expect(screen.getByRole('banner')).toHaveTextContent(/^Beauty Salon Admin$/)
+  })
+
+  it('should lead somebody who forgot the password to the portal, where a password is set anew', () => {
+    // Act
+    renderAt('/')
+
+    // Assert
+    const help = screen.getByRole('link', { name: 'パスワードを忘れた場合' })
+    expect(help).toHaveAttribute(
+      'href',
+      'https://portal.salon.example/forgot-password',
+    )
+    expect(
+      screen
+        .getByRole('button', { name: 'サインイン' })
+        .compareDocumentPosition(help),
+    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
   })
 
   it('should begin with a link that skips to the main content', () => {

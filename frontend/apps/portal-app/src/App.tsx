@@ -1,8 +1,4 @@
-import {
-  RequireSession,
-  type RequireSessionProps,
-  SessionAccount,
-} from '@beauty-salon-frontend/session'
+import { RequireSession, SessionAccount } from '@beauty-salon-frontend/session'
 import {
   AppShell,
   ButtonLink,
@@ -13,18 +9,15 @@ import {
   PageHeader,
 } from '@beauty-salon-frontend/ui'
 import { Link, Navigate, Route, Routes } from 'react-router'
+import { AcceptStaffInvitationScreen } from './account/accept-staff-invitation-screen'
+import { ForgotPasswordScreen } from './account/forgot-password-screen'
+import { RegisterScreen } from './account/register-screen'
+import { ResetPasswordScreen } from './account/reset-password-screen'
+import { VerifyEmailScreen } from './account/verify-email-screen'
+import { EVERY_ROLE } from './roles'
 
 /** Where a visitor signs in: the screens of this application are for everybody unless they say otherwise */
 const SIGN_IN_PATH = '/sign-in'
-
-/** Anybody with an account signs in here; a screen for customers alone asks for that role itself */
-const ANY_ROLE: RequireSessionProps['roles'] = [
-  'customer',
-  'staff',
-  'manager',
-  'owner',
-  'admin',
-]
 
 /** The links that the shared components draw move within the application */
 const RouterLink: LinkComponent = ({ href, ...rest }) => (
@@ -38,9 +31,22 @@ const HomePage = () => (
   </>
 )
 
+/** The ways on for somebody who cannot sign in: to a new account, to a new password. */
+const SignInHelp = () => (
+  <>
+    <p>
+      <Link to='/forgot-password'>パスワードを忘れた場合</Link>
+    </p>
+    <p>
+      はじめての方は、<Link to='/register'>アカウントを登録</Link>
+      してください。
+    </p>
+  </>
+)
+
 /** The sign-in screen, and for somebody who is signed in the way back to the start. */
 const SignInPage = () => (
-  <RequireSession roles={ANY_ROLE}>
+  <RequireSession roles={EVERY_ROLE} signInHelp={<SignInHelp />}>
     <Navigate to='/' replace />
   </RequireSession>
 )
@@ -69,6 +75,15 @@ export const App = () => (
         <Routes>
           <Route path='/' element={<HomePage />} />
           <Route path={SIGN_IN_PATH} element={<SignInPage />} />
+          <Route path='/register' element={<RegisterScreen />} />
+          <Route path='/forgot-password' element={<ForgotPasswordScreen />} />
+          {/* The addresses of the links that the API mails */}
+          <Route path='/verify-email' element={<VerifyEmailScreen />} />
+          <Route path='/reset-password' element={<ResetPasswordScreen />} />
+          <Route
+            path='/accept-staff-invitation'
+            element={<AcceptStaffInvitationScreen />}
+          />
           <Route path='*' element={<NotFoundPage />} />
         </Routes>
       </AppShell>

@@ -22,6 +22,7 @@ The styling and component rules are in the skill `frontend-ui`.
 | The contrast of the colour tokens | Computed from `tokens.css` | `frontend/packages/theme/src/tokens.test.ts` |
 | Modules without markup (configuration, the style rules) | Unit tests in Node | `frontend/packages/config/src/env/env.test.ts` |
 | The fetch function, the session and the generated client | In jsdom, over the real client and the real fetch function, with `fetch` itself stubbed | `frontend/packages/session/src/session.test.tsx` |
+| The functions of a screen that call the API, for the answers the real API cannot be made to give | The same | `frontend/apps/portal-app/src/account/account-api.test.ts` |
 | Code that calls the API, as it meets the real one | In jsdom, against the production application on a real PostgreSQL with the seed data; nothing is stubbed | `frontend/packages/session/src/session.integration.test.tsx` |
 | A screen, and an application with somebody signed in, worked as a user works them | The same, typed into and pressed with `@testing-library/user-event` | `frontend/packages/session/src/sign-in.integration.test.tsx`, `frontend/apps/admin-app/src/App.integration.test.tsx` |
 | A critical path from the address bar to the database, and what only a browser shows (layout at a width, contrast, focus as the browser moves it, two tabs, a reload, CORS) | Playwright in Chromium, on the built applications and the same API; nothing is stubbed | `frontend/e2e/src/sign-in.e2e.test.ts` |
@@ -182,6 +183,12 @@ the order and the number of requests, and answers the real API gives only
 under conditions a test cannot arrange. What a user does on a screen is
 tested against the real API.
 
+The functions of a screen that call the API are tested the same way for
+those answers alone: too many requests, an error of the server, no answer
+(`frontend/apps/portal-app/src/account/account-api.test.ts`). One table
+of the operations and one of the answers show that every operation reads
+every answer.
+
 ## Against the real API
 
 A test in a file `*.integration.test.tsx` runs the code as it is, against the
@@ -241,8 +248,11 @@ describe('the session against the API', () => {
   database only for what no screen shows.
 - A request may be watched (`vi.spyOn(globalThis, 'fetch')` without an
   implementation) to count what was sent. It is never answered by the test.
-- Mail is not delivered and files are kept in memory: the API of a test has
-  no SMTP server and no object storage.
+- **Mail** is delivered nowhere: the API of a test keeps what it would
+  send. `testApi().mails()` are the mails of this test (`to`, `subject`,
+  `text`), oldest first. `testApi().mailedLink(to)` is the link in the last
+  mail to an address, and fails the test when there is none.
+- Files are kept in memory: the API of a test has no object storage.
 - The answer of the real API takes time. Wait for what appears (`findByRole`,
   `waitFor`); never for a duration.
 - Every test of a package costs a reset of the database (about a tenth of a
@@ -300,6 +310,25 @@ it('should show the screen that was asked for after signing in', async () => {
   two moments are two tests, or values kept before the action.
 - A test that counts requests restores the spy (`vi.restoreAllMocks()` in
   `afterEach`).
+- **A screen that a mailed link opens** is rendered at the path and the
+  fragment of that link, which is the person pressing it:
+
+  ```tsx
+  const { pathname, hash } = new URL(await testApi().mailedLink(email))
+  render(
+    <MemoryRouter initialEntries={[`${pathname}${hash}`]}>
+      <App />
+    </MemoryRouter>,
+  )
+  ```
+
+  `frontend/apps/portal-app/src/account/account.integration.test.tsx` is the
+  example to read. What the test starts from (a registration, an invitation
+  by the owner of a salon) is asked of the API with `fetch`; a link that ran
+  out is a statement with `testApi().query`.
+- **That opening a screen asks the API for nothing**, or for a check alone,
+  is asserted on the watched `fetch`: the paths below `/api/v1` that were
+  asked for.
 - **Two-factor authentication.** A test has no authenticator app.
   `testApi().authenticatorCode(secret)` is the code such an app shows for the
   secret the API returned when it was set up. The API takes a code once and
@@ -336,6 +365,7 @@ whole path:
 | What the browser lays out and paints: nothing sticks out of a narrow window, nothing is laid out with flex, the contrast of what is on the page | The accessibility rules that need no layout |
 | The focus as the browser moves it: the Tab key through a form, the heading after the screen changed | Which element has the focus after an action |
 | A reload, a second tab, the address bar | — |
+| A link that leaves the page: from a mail to the portal, from one application to another | The screen such a link opens, rendered at its path |
 | That a page of an application may call the API at all (CORS), and that a build calls the API it was built for | — |
 
 ### How a run is put together
@@ -343,14 +373,15 @@ whole path:
 `frontend/e2e/playwright.config.ts` says it all:
 
 - `globalSetup` (`src/global-setup.ts`) starts the test server of the
-  backend, the one of the integration tests, and on it one API: on port 4100
-  and open to the origins of the three applications. After the run it stops
-  the server.
+  backend, the one of the integration tests, and on it one API: on port 4100,
+  open to the origins of the three applications, and writing the links of
+  its mails for the portal of the run. After the run it stops the server.
 - `webServer` builds each application with `vite build --mode test` for that
-  API into `frontend/e2e/dist/` and serves the build: the portal on port
-  4101, the admin application on 4102, the dashboard on 4103
-  (`src/applications.ts`). Everything listens on the loopback address and on
-  ports of its own, so `pnpm dev` may run at the same time.
+  API, and for the addresses of the other applications of the run, into
+  `frontend/e2e/dist/` and serves the build: the portal on port 4101, the
+  admin application on 4102, the dashboard on 4103 (`src/applications.ts`).
+  Everything listens on the loopback address and on ports of its own, so
+  `pnpm dev` may run at the same time.
 - One worker. The applications are built for one API, so the tests share it
   and take their turns. After every test the API gets a fresh copy of the
   seeded database, and Playwright gives every test a browser context of its
@@ -365,7 +396,7 @@ at the root builds them first; `playwright test` in `frontend/e2e` does not.
 
 ```ts
 import { ADMIN } from './applications'
-import { findAccessibilityViolations, measureLayout } from './checks'
+import { expectSoundPage } from './checks'
 import { expect, test } from './fixtures'
 import { enterCredentials, heading, STAFF } from './sign-in'
 
@@ -382,8 +413,7 @@ test.describe('the admin application', () => {
 
     // Assert
     await expect(heading(page, ADMIN.title)).toBeFocused()
-    expect(await findAccessibilityViolations(page)).toEqual([])
-    expect(await measureLayout(page)).toEqual({ overflow: 0, flex: 0 })
+    await expectSoundPage(page)
   })
 })
 ```
@@ -392,7 +422,9 @@ test.describe('the admin application', () => {
   `./fixtures`, never from `@playwright/test`: the `test` of the fixtures is
   what gives the API a fresh database after every test.
 - The fixture `api` is what `testApi()` is in an integration test: `origin`,
-  `seedPassword`, `query` and `authenticatorCode`.
+  `seedPassword`, `query`, `authenticatorCode`, `mails` and `mailedLink`.
+  `await page.goto(await api.mailedLink(email))` is the person pressing the
+  link of a mail (`src/account.e2e.test.ts`).
 - Elements are found as a user finds them: `getByRole`, `getByLabel`,
   `getByText`. No class name, no test ID. The locators and the steps that
   tests share are in `src/sign-in.ts` (`heading`, `enterCredentials`,
@@ -401,16 +433,17 @@ test.describe('the admin application', () => {
 - Assertions on the page are the ones that wait:
   `await expect(locator).toBeVisible()`, `toBeFocused()`, `toHaveURL()`. A
   test never waits for an amount of time.
-- Every screen a test reaches is checked with
-  `findAccessibilityViolations(page)` and `measureLayout(page)`
-  (`src/checks.ts`): the rules of WCAG 2.2 AA with the contrast of what is
-  painted, no element wider than the window, no element laid out with flex.
+- Every screen a test reaches is checked with `expectSoundPage(page)`
+  (`src/checks.ts`), which is `findAccessibilityViolations(page)` and a
+  measure of the layout: the rules of WCAG 2.2 AA with the contrast of what
+  is painted, no element wider than the window, no element laid out with
+  flex.
   What has to fit a phone is tested in a `describe` with
   `test.use({ viewport: { width: 390, height: 844 } })`.
 - What no screen does yet, a test asks of the API with the `request` fixture
-  of Playwright (`setUpTwoFactor` in `src/sign-in.ts`), and checks the answer
-  with a Zod schema. What neither a screen nor the API does, such as time
-  having passed, is a statement with `api.query`.
+  of Playwright (`accessTokenOf` and `setUpTwoFactor` in `src/sign-in.ts`),
+  and checks the answer with a Zod schema. What neither a screen nor the API
+  does, such as time having passed, is a statement with `api.query`.
 - The modules of `frontend/e2e/src` that are no test files are under the
   lint prohibitions of application code: no type assertion, no type guard,
   and `node:assert` in place of `throw`.

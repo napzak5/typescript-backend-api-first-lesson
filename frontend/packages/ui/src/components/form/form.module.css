@@ -1,0 +1,15 @@
+/* One column: what went wrong, the controls, then the actions. */
+.form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+  max-inline-size: var(--size-form-column);
+}
+
+/* The button that sends the form and, beside it, what else can be done */
+.actions {
+  display: grid;
+  grid-auto-flow: column;
+  justify-content: start;
+  gap: var(--space-3);
+}

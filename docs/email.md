@@ -47,7 +47,8 @@ API サーバーがメールを送る仕組みを説明します。いつ・誰�
 - リンクは設定値の `PUBLIC_APP_URL` から組み立てます。リクエストの `Host` ヘッダーは使いません。
 - トークンは URL のフラグメント（`#token=`）に置きます。ブラウザーはフラグメントをサーバーに送らず、
   `Referer` にも含めません。
-- リンク先のページ（`/verify-email`、`/reset-password`、`/accept-staff-invitation`）は、フロントエンドにまだありません。
+- リンク先のページ（`/verify-email`、`/reset-password`、`/accept-staff-invitation`）は、portal-app にあります
+  （[アカウントの画面](./frontend-api-integration.md#アカウントの画面)）。
 - 招待のメールは、本文にサロンの名前を含みます。サロンが決めた文字列なので、本文にだけ入れ、件名などのヘッダーには入れません。招待の規則は [スタッフのログインアカウント](./staff.md#スタッフのログインアカウント) にあります。
 - 招待のメールの文面は、宛先にアカウントがあってもなくても同じです。パスワードを設定してアカウントを作る場合と、すでにあるスタッフのアカウントでログインして参加する場合の、両方を案内します。どちらに当たるかは、リンクを開いた人にだけ、招待の確認（`/staff-invitation/verify`）が答えます。
 
@@ -152,6 +153,9 @@ curl -i -X POST http://localhost:3000/api/v1/auth/verify-email/confirm \
   -H 'Content-Type: application/json' \
   -d '{"token":"<トークン>"}'
 ```
+
+画面で試すときは、`pnpm dev` を起動して <http://localhost:3001/register> で登録し、Mailpit に届いた
+メールのリンクを開きます。
 
 ## ログ
 
