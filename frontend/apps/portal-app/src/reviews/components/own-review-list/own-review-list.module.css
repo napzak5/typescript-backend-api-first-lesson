@@ -1,0 +1,47 @@
+/* How many there are, the reviews, then the way to more. */
+.list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+.count {
+  color: var(--color-text-muted);
+}
+
+.reviews {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+/* A review: where it is of, whom it rates, what it says, and what can be done with it */
+.review {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+  padding: var(--space-6);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-large);
+  background-color: var(--color-surface);
+}
+
+/* What a salon wrote may be long, and in any language */
+.salon {
+  font-size: var(--font-size-large);
+  overflow-wrap: anywhere;
+}
+
+.staff {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  overflow-wrap: anywhere;
+}
+
+/* The way to change the review, then the way to remove it, side by side */
+.actions {
+  display: grid;
+  grid-auto-flow: column;
+  justify-content: start;
+  gap: var(--space-3);
+}
