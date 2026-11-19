@@ -166,10 +166,14 @@ const devices = (): HTMLElement[] =>
 const devicesPart = () =>
   screen.getByRole('region', { name: 'サインインしている端末' })
 
-/** Waits for the list, and for the count above it to say `count`. */
+/**
+ * Waits for the list, and for the count above it to say `count` and nothing
+ * more: the count of a list that shows part of it begins with the count of
+ * the whole list.
+ */
 const listed = async (count: string): Promise<void> => {
   await waitFor(() =>
-    expect(within(devicesPart()).getByRole('status')).toHaveTextContent(count),
+    expect(within(devicesPart()).getByRole('status').textContent).toBe(count),
   )
 }
 
