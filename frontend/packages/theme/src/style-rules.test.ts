@@ -285,7 +285,7 @@ describe('the styles of the frontend', () => {
         'packages/theme/src/tokens.css',
         'packages/ui/src/components/button/button.module.css',
         'packages/ui/src/components/button/button.tsx',
-        'apps/portal-app/src/App.module.css',
+        'packages/ui/src/components/app-shell/app-shell.module.css',
         'apps/admin-app/src/App.tsx',
       ]),
     )

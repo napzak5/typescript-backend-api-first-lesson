@@ -1,6 +1,6 @@
 ---
 name: frontend-ui
-description: "How the frontend of this repository is styled and how its components are built: design tokens, CSS Modules, layout with CSS Grid (never flex), the shared component package @beauty-salon-frontend/ui with its form components (label, description, error) and its Storybook. Use it before adding or changing a component, a form, a stylesheet, a token, a story or the markup of a screen under frontend/."
+description: "How the frontend of this repository is styled and how its components are built: design tokens, CSS Modules, layout with CSS Grid (never flex), the shared component package @beauty-salon-frontend/ui with its form components (label, description, error), the frame of a screen (app shell, navigation, table, dialog, notifications) and its Storybook. Use it before adding or changing a component, a form, a stylesheet, a token, a story or the markup of a screen under frontend/."
 ---
 
 # Frontend UI
@@ -22,7 +22,7 @@ this one: a component is not done without its stories and its test.
 | The contrast of the colour tokens | `frontend/packages/theme/src/tokens.test.ts` |
 | Shared components | `frontend/packages/ui/src/components/<name>/` |
 | The catalogue (Storybook) | `frontend/packages/ui/.storybook/`, `pnpm --filter @beauty-salon-frontend/ui run storybook` (port 6006) |
-| The frame and the routes of an application | `frontend/apps/<app>/src/App.tsx`, `App.module.css` |
+| The routes of an application, inside the shared frame `AppShell` | `frontend/apps/<app>/src/App.tsx` |
 
 An application imports one stylesheet, in `src/main.tsx`:
 `@beauty-salon-frontend/theme/styles.css` (tokens, reset, bare elements). A
@@ -52,7 +52,9 @@ is broken.
    | Label and value pairs | `grid-template-columns: max-content minmax(0, 1fr)` |
 
    Write `minmax(0, 1fr)`, not `1fr`, for a track whose content may be long:
-   a bare `1fr` grows with its content and overflows.
+   a bare `1fr` grows with its content and overflows. A grid does not wrap
+   items of different widths: a row that may not fit scrolls sideways
+   (`navigation.module.css`), or becomes a column below a width.
 3. **A colour is a token.** No colour is written out outside `tokens.css`:
    no hex value, no `rgb()`, no `color-mix()` (`no-raw-color`). `transparent`
    and `currentColor` are allowed.
@@ -95,7 +97,9 @@ is broken.
    `[data-environment="staging"]`).
 8. **Logical properties and relative units.** `inline-size`, `block-size`,
    `margin-inline`, `padding-block`, `inset-inline-start`; `rem` for sizes.
-   Hover styles sit inside `@media (hover: hover)`.
+   Hover styles sit inside `@media (hover: hover)`. A stylesheet is written
+   for a narrow screen first and widened with `@media (min-width: 40rem)` or
+   `60rem`; a media query cannot read a token, so these two are written out.
 9. **The focus ring is global.** `global.css` draws it for `:focus-visible`.
    A component does not remove an outline; it may move the ring with
    `outline-offset`.
@@ -131,7 +135,9 @@ nobody reads is removed.
   Zod schemas.
 - `@beauty-salon-frontend/ui` knows React and nothing else of the system: no
   API client, no router, no query library, no text of a business domain. Text
-  comes in through props. The text of the interface is Japanese.
+  comes in through props. The text of the interface is Japanese; the few
+  words that belong to a component itself are in it (必須, 閉じる,
+  本文へ移動, 読み込み中).
 - A component that one application uses stays in that application, with the
   same four files. It moves to `ui` when a second application needs it.
 - Export a new component and its props from `frontend/packages/ui/src/index.ts`.
@@ -192,6 +198,56 @@ is handed `id`, `aria-describedby` and `aria-invalid`), `control.module.css`
 a radio button with its label). A group of controls uses `messageAttributes`
 and `FieldMessages` directly, as `radio-group.tsx` does: the messages belong
 to the group.
+
+## The frame of a screen
+
+| Component | Use it for |
+|-----------|------------|
+| `AppShell` | The frame of an application: the link that skips to the content, the header (title, `account`), the `navigation` (under the header, or beside the content with `navigationPlacement='side'`), the main content with the notification at its top |
+| `Navigation` | The links to the screens. The application says which one is `current` |
+| `LinkProvider`, `ButtonLink` | Links that move within the application; a link that looks like a button |
+| `PageHeader` | The top of a screen: its one `h1`, a description, the actions on the whole screen |
+| `Card` | A part of a screen under its own heading (`h2`, or `h3` with `headingLevel={3}`) |
+| `DescriptionList` | The names and values of one record |
+| `Badge` | The state of a record, in a word |
+| `Table` | A list of records |
+| `EmptyState` | What is shown where content would be, while there is none |
+| `LoadingIndicator` | What is shown where content will be, while it loads |
+| `Dialog` | A question or a small form that has to be dealt with first |
+| `NotificationProvider`, `useNotifications` | The result of what the user just did |
+
+- **A screen** is a `PageHeader`, then its content; the frame gives them their
+  width and the gaps between them. One `h1` per screen, and headings go down
+  one level at a time.
+- **What goes somewhere is a link, what does something is a button.**
+  `ButtonLink` for 「新しい予約」 that opens another screen, `Button` for
+  「予約を確定する」. This package does not know the router: an application
+  gives its link once, at its root (`LinkProvider` in `App.tsx`), and the
+  components draw their links with it.
+- **A list has three states**, and a screen shows each: `LoadingIndicator`
+  while it loads, `EmptyState` (or the `emptyMessage` of the table) when there
+  is nothing, the rows when there are some.
+- **`Table`**: `caption` is its name (`captionHidden` when a heading above
+  says the same). The first column names the record; its cells are the headers
+  of their rows. `align: 'end'` for numbers and amounts. Cells stay on one
+  line, so a table that is wider than the screen scrolls inside its frame,
+  and that frame takes the focus of the keyboard: this is the one lint rule
+  the package switches off, in place, with the reason.
+- **`Dialog`** is the `dialog` element opened with `showModal()`: the browser
+  keeps the focus inside, makes the page behind inert, closes on Escape and
+  gives the focus back. Give the actions in the order they are read, the one
+  that changes nothing first (「戻る」, then 「予約を取り消す」): the focus
+  goes to the first. `onClose` is called whenever it has closed; set `open` to
+  false there.
+- **Notifications** say what was done: `notify({ tone: 'success', message:
+  '予約を確定しました。' })`. The notification stays, also after the screen
+  has changed, until the user closes it or the next one takes its place;
+  nothing disappears by itself. `NotificationProvider` stands at the root of
+  an application that notifies, above its routes, and `AppShell` shows the
+  notification at the top of the content. What went wrong with a form is said
+  in the form, with an `Alert`.
+- **A state is said in words.** A `Badge` holds the word (「確定」); its tone
+  only groups. The current link of a `Navigation` is `aria-current="page"`.
 
 ## Adding a component
 

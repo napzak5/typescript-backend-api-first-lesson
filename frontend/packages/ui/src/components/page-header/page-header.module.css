@@ -1,0 +1,33 @@
+/* On a narrow screen the actions are below the text; on a wide one, at the end of its row */
+.pageHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: end;
+  gap: var(--space-4);
+}
+
+.text {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.title {
+  font-size: var(--font-size-display);
+}
+
+.description {
+  color: var(--color-text-muted);
+}
+
+.actions {
+  display: grid;
+  grid-auto-flow: column;
+  justify-content: start;
+  gap: var(--space-3);
+}
+
+@media (min-width: 40rem) {
+  .pageHeader {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+}

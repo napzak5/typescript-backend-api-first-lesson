@@ -1,0 +1,25 @@
+.loadingIndicator {
+  display: grid;
+  grid-auto-flow: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  padding: var(--space-8) var(--space-6);
+  color: var(--color-text-muted);
+}
+
+/* The reset stops the turning for those who asked for less motion; the words stay */
+.spinner {
+  inline-size: 1.25rem;
+  block-size: 1.25rem;
+  border: 2px solid var(--color-accent);
+  border-inline-end-color: transparent;
+  border-radius: var(--radius-pill);
+  animation: turn 0.8s linear infinite;
+}
+
+@keyframes turn {
+  to {
+    rotate: 1turn;
+  }
+}

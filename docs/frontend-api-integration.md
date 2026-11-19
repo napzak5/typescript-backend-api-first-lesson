@@ -4,7 +4,7 @@
 
 ## 現状
 
-**3つのフロントエンドアプリは、現時点ではどこからも API を呼んでいません。** どのアプリも枠だけです。`src/App.tsx` が、アプリ名のヘッダー、「画面は準備中です。」と表示するトップページ、存在しないパスのためのページを持っています。
+**3つのフロントエンドアプリは、現時点ではどこからも API を呼んでいません。** どのアプリも枠だけです。`src/App.tsx` が、共有の枠（`ui` の `AppShell`。アプリ名のヘッダー、本文へ移動するリンク、本文）の中に、「画面は準備中です。」と表示するトップページと、存在しないパスのためのページを持っています。
 
 あるもの:
 
@@ -41,8 +41,8 @@
 | `io` | fetch ラッパー `customInstance` | `api-client` |
 | `config` | `import.meta.env` を読む `env` オブジェクトと、モード判定関数（`isProductionMode` など） | `io`、`ui`（型のみ） |
 | `theme` | デザイントークン（`src/tokens.css`）、リセットと素の要素のスタイル、スタイルの規則の検査（`src/style-rules.ts`） | 3つのアプリ、`ui`（カタログとテスト） |
-| `ui` | 共有コンポーネント（`Button`、フォームの部品 `TextField`・`TextArea`・`Select`・`RadioGroup`・`Checkbox`、メッセージの `Alert`、`EnvironmentBanner`）、クラス名をつなぐ `classNames`、カタログ（Storybook） | 3つのアプリ |
-| `testing` | テストが共有するもの: jest-dom のマッチャー、アクセシビリティの検査（axe-core）、ストーリーごとにその検査を宣言する関数 | `ui` と 3つのアプリのテスト |
+| `ui` | 共有コンポーネント（`Button`、フォームの部品 `TextField`・`TextArea`・`Select`・`RadioGroup`・`Checkbox`、メッセージの `Alert`、画面の骨組みの部品 `AppShell`・`Navigation`・`PageHeader`・`Card`・`DescriptionList`・`Badge`・`Table`・`EmptyState`・`LoadingIndicator`・`Dialog`、リンクの `LinkProvider`・`ButtonLink`、通知の `NotificationProvider`・`useNotifications`、`EnvironmentBanner`）、クラス名をつなぐ `classNames`、カタログ（Storybook） | 3つのアプリ |
+| `testing` | テストが共有するもの: jest-dom のマッチャー、jsdom にない `dialog` 要素のメソッド（`showModal`・`close`）、アクセシビリティの検査（axe-core）、ストーリーごとにその検査を宣言する関数 | `ui` と 3つのアプリのテスト |
 | `assets` | 画像アセット | なし |
 
 アプリが実際に使っているのは `ui` と `theme` だけです（`ui` は `config` から型を1つ借りています）。`api-client` と `io` は、どのアプリからも使われていません。
@@ -260,7 +260,7 @@ export function SalonList() {
 
 規則と手順は、次の 2 つのスキルにあります。`frontend/` 以下を変更する前に読みます。
 
-- [frontend-ui](../.claude/skills/frontend-ui/SKILL.md): トークン、CSS Modules、Grid によるレイアウト、コンポーネントの作り方、フォームの部品の使い方
+- [frontend-ui](../.claude/skills/frontend-ui/SKILL.md): トークン、CSS Modules、Grid によるレイアウト、コンポーネントの作り方、フォームの部品と画面の骨組みの部品の使い方
 - [frontend-testing](../.claude/skills/frontend-testing/SKILL.md): ストーリーからのテスト、アクセシビリティの検査、Vitest の設定
 
 検査できる規則は `theme` パッケージの `src/style-rules.ts` が検査するので、違反はテストの失敗になります。カタログは `pnpm --filter @beauty-salon-frontend/ui run storybook` で起動します（`http://localhost:6006`）。
@@ -270,7 +270,7 @@ export function SalonList() {
 フロントエンドのテストは Vitest です（`pnpm test:frontend`）。パッケージをまたぐ import はソースから解決するので（エクスポート条件 `@beauty-salon-frontend/source`）、ビルドなしで実行できます。
 
 - `ui` のコンポーネント: ストーリー（`*.stories.tsx`）を `composeStories` で読み込み、jsdom に描画して検証する（`*.test.tsx`）。どのストーリーにも、アクセシビリティの検査（axe-core、WCAG 2.2 AA）がある
-- 各アプリの `src/App.test.tsx`: `MemoryRouter` で枠を描画し、表示内容とアクセシビリティを検証する
+- 各アプリの `src/App.test.tsx`: `MemoryRouter` で枠を描画し、表示内容、共有コンポーネントのリンクがページを読み込み直さずに移動すること、アクセシビリティを検証する
 - `theme` の `src/style-rules.test.ts`: すべてのパッケージとアプリのスタイルシートとコンポーネントが、スタイルの規則を守っていることを検証する。`src/tokens.test.ts`: 文字と背景、コントロールの縁に使う色のトークンの組が、必要なコントラスト比を満たすことを検証する
 - `config` と `testing` の各パッケージ: モジュールの隣に `*.test.ts`
 - `io` の `src/libs/fetcher/fetcher.test.ts`: `customInstance` を、スタブにした `fetch` に対して検証する（URL、本文、ステータスごとの戻り値、problem details、reject する条件）
