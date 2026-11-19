@@ -16,6 +16,13 @@ export type TestApi = {
    * time having passed.
    */
   query: (text: string, values?: Value[]) => Promise<Record<string, unknown>[]>
+  /**
+   * The code that an authenticator app shows for `secret`, the one the API
+   * returned when two-factor authentication was set up. The API takes a code
+   * once and after it only later ones: `stepsAhead: 1` is the code of the
+   * next 30 seconds, which the API takes as well.
+   */
+  authenticatorCode: (secret: string, stepsAhead?: 0 | 1) => Promise<string>
 }
 
 /** The API of a test file with what only the setup does to it */
@@ -35,6 +42,8 @@ const createdSchema = z.object({
 const rowsSchema = z.object({
   rows: z.array(z.record(z.string(), z.unknown())),
 })
+
+const codeSchema = z.object({ code: z.string() })
 
 let current: TestApi | null = null
 
@@ -72,6 +81,19 @@ export const openTestApi = async (
       )
 
       return rowsSchema.parse(await answer.json()).rows
+    },
+    authenticatorCode: async (secret, stepsAhead = 0) => {
+      const answer = await ask('POST', '/authenticator-codes', {
+        secret,
+        stepsAhead,
+      })
+      assert.strictEqual(
+        answer.status,
+        200,
+        'The test server gave no code: is the secret the one the API returned?',
+      )
+
+      return codeSchema.parse(await answer.json()).code
     },
     reset: async () => {
       const answer = await ask('POST', `/apis/${id}/reset`)

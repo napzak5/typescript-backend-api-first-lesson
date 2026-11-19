@@ -1,12 +1,26 @@
 import {
+  RequireSession,
+  type RequireSessionProps,
+  SessionAccount,
+} from '@beauty-salon-frontend/session'
+import {
   AppShell,
   ButtonLink,
   EnvironmentBanner,
   type LinkComponent,
   LinkProvider,
+  NotificationProvider,
   PageHeader,
 } from '@beauty-salon-frontend/ui'
 import { Link, Route, Routes } from 'react-router'
+
+/** Who this application is for: the people who work at a salon, and the operator of the platform */
+const ROLES: RequireSessionProps['roles'] = [
+  'owner',
+  'manager',
+  'staff',
+  'admin',
+]
 
 /** The links that the shared components draw move within the application */
 const RouterLink: LinkComponent = ({ href, ...rest }) => (
@@ -36,12 +50,20 @@ const NotFoundPage = () => (
 
 export const App = () => (
   <LinkProvider component={RouterLink}>
-    <AppShell title={import.meta.env.VITE_APP_TITLE}>
-      <Routes>
-        <Route path='/' element={<HomePage />} />
-        <Route path='*' element={<NotFoundPage />} />
-      </Routes>
-    </AppShell>
+    <NotificationProvider>
+      <AppShell
+        title={import.meta.env.VITE_APP_TITLE}
+        account={<SessionAccount />}
+      >
+        {/* Every screen needs a session: who is not signed in signs in here, at the address they asked for */}
+        <RequireSession roles={ROLES}>
+          <Routes>
+            <Route path='/' element={<HomePage />} />
+            <Route path='*' element={<NotFoundPage />} />
+          </Routes>
+        </RequireSession>
+      </AppShell>
+    </NotificationProvider>
     <EnvironmentBanner environment={import.meta.env.VITE_MODE} />
   </LinkProvider>
 )

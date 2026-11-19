@@ -68,13 +68,18 @@ const json = (status: number, body: unknown): Response =>
     headers: { 'Content-Type': 'application/json; charset=utf-8' },
   })
 
-const problem = (status: number, code: string): Response =>
+const problem = (
+  status: number,
+  code: string,
+  errors: { field: string }[] | null = null,
+): Response =>
   new Response(
     JSON.stringify({
       type: 'urn:beauty-salon:problem',
       title: 'Problem',
       status,
       code,
+      errors,
     }),
     {
       status,
@@ -190,6 +195,7 @@ const signedIn = (user: ModelsUserResponse) => ({ type: 'signedIn', user })
 describe('the session of an application', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
+    vi.restoreAllMocks()
     localStorage.clear()
   })
 
@@ -490,10 +496,10 @@ describe('the session of an application', () => {
       const { result } = renderSession()
 
       // Act
-      const response = await signIn(CREDENTIALS)
+      const outcome = await signIn(CREDENTIALS)
 
       // Assert
-      expect(response.status).toBe(200)
+      expect(outcome).toEqual({ type: 'signedIn' })
       expect(sessionStore.read()).toEqual(sessionOf(HANAKO, 1))
       await waitFor(() => expect(result.current).toEqual(signedIn(HANAKO)))
       expect(sent[0]).toEqual({
@@ -505,37 +511,94 @@ describe('the session of an application', () => {
     })
 
     it.each([
-      ['1002', 'the credentials are refused'],
-      ['1007', 'a two-factor code is asked for'],
+      [401, '1002', { type: 'wrongCredentials' }],
+      [401, '1007', { type: 'twoFactorCodeRequired' }],
+      [401, '1001', { type: 'failed' }],
+      [429, '4005', { type: 'tooManyAttempts' }],
+      [500, '4001', { type: 'failed' }],
     ])(
-      'should store nothing and return the answer with code %s when %s',
-      async (code) => {
+      'should store nothing and say what the answer %i with code %s means',
+      async (status, code, expected) => {
         // Arrange
         stubApi({
           answer: (request) =>
-            request.path === LOGIN ? problem(401, code) : undefined,
+            request.path === LOGIN ? problem(status, code) : undefined,
         })
 
         // Act
-        const response = await signIn(CREDENTIALS)
+        const outcome = await signIn(CREDENTIALS)
 
         // Assert
-        expect(response).toMatchObject({ status: 401, data: { code } })
+        expect(outcome).toEqual(expected)
         expect(sessionStore.read()).toBeNull()
       },
     )
 
-    it('should reject, and store nothing, when the API cannot be reached', async () => {
+    it('should name the properties that the API does not take', async () => {
+      // Arrange
+      stubApi({
+        answer: (request) =>
+          request.path === LOGIN
+            ? problem(400, '2001', [{ field: 'email' }, { field: 'password' }])
+            : undefined,
+      })
+
+      // Act
+      const outcome = await signIn(CREDENTIALS)
+
+      // Assert
+      expect(outcome).toEqual({
+        type: 'invalid',
+        fields: ['email', 'password'],
+      })
+    })
+
+    it('should name no property when the API refuses the request without saying which', async () => {
+      // Arrange
+      stubApi({
+        answer: (request) =>
+          request.path === LOGIN ? problem(400, '2001') : undefined,
+      })
+
+      // Act
+      const outcome = await signIn(CREDENTIALS)
+
+      // Assert
+      expect(outcome).toEqual({ type: 'invalid', fields: [] })
+    })
+
+    it('should say that it failed, and store nothing, when the API cannot be reached', async () => {
       // Arrange
       stubApi({
         answer: () => Promise.reject(new TypeError('Failed to fetch')),
       })
 
       // Act
-      const attempt = signIn(CREDENTIALS)
+      const outcome = await signIn(CREDENTIALS)
 
       // Assert
-      await expect(attempt).rejects.toThrow('Failed to fetch')
+      expect(outcome).toEqual({ type: 'failed' })
+      expect(sessionStore.read()).toBeNull()
+    })
+
+    it('should say that nobody is signed in when the browser stores nothing', async () => {
+      // Arrange
+      stubApi({
+        answer: (request) =>
+          request.path === LOGIN ? issued(HANAKO, 1) : undefined,
+      })
+      vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+        throw new DOMException(
+          'The quota has been exceeded.',
+          'QuotaExceededError',
+        )
+      })
+
+      // Act
+      const outcome = await signIn(CREDENTIALS)
+
+      // Assert
+      expect(outcome).toEqual({ type: 'notStored' })
       expect(sessionStore.read()).toBeNull()
     })
   })

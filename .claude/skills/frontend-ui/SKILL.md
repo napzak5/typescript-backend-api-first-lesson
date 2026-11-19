@@ -1,6 +1,6 @@
 ---
 name: frontend-ui
-description: "How the frontend of this repository is styled and how its components are built: design tokens, CSS Modules, layout with CSS Grid (never flex), the shared component package @beauty-salon-frontend/ui with its form components (label, description, error), the frame of a screen (app shell, navigation, table, dialog, notifications) and its Storybook. Use it before adding or changing a component, a form, a stylesheet, a token, a story or the markup of a screen under frontend/."
+description: "How the frontend of this repository is styled and how its components are built: design tokens, CSS Modules, layout with CSS Grid (never flex), the shared component package @beauty-salon-frontend/ui with its form components (label, description, error), the frame of a screen (app shell, navigation, table, dialog, notifications), how a form calls the API, the screens that need a session (sign-in, roles) and the Storybook. Use it before adding or changing a component, a form, a stylesheet, a token, a story or the markup of a screen under frontend/."
 ---
 
 # Frontend UI
@@ -21,8 +21,9 @@ this one: a component is not done without its stories and its test.
 | The check of the style rules | `frontend/packages/theme/src/style-rules.ts`, run by `style-rules.test.ts` over every package and app |
 | The contrast of the colour tokens | `frontend/packages/theme/src/tokens.test.ts` |
 | Shared components | `frontend/packages/ui/src/components/<name>/` |
-| The catalogue (Storybook) | `frontend/packages/ui/.storybook/`, `pnpm --filter @beauty-salon-frontend/ui run storybook` (port 6006) |
-| The routes of an application, inside the shared frame `AppShell` | `frontend/apps/<app>/src/App.tsx` |
+| The screens of the session: sign-in, the guard of the screens that need one, the account in the header | `frontend/packages/session/src/` |
+| The catalogue (Storybook), of the components of `ui` and of `session` | `frontend/packages/ui/.storybook/`, `pnpm --filter @beauty-salon-frontend/ui run storybook` (port 6006) |
+| The routes of an application, inside the shared frame `AppShell`, and the roles it is for | `frontend/apps/<app>/src/App.tsx` |
 
 An application imports one stylesheet, in `src/main.tsx`:
 `@beauty-salon-frontend/theme/styles.css` (tokens, reset, bare elements). A
@@ -140,6 +141,14 @@ nobody reads is removed.
   本文へ移動, 読み込み中).
 - A component that one application uses stays in that application, with the
   same four files. It moves to `ui` when a second application needs it.
+- What several applications share and `ui` may not know has a package of its
+  own. `@beauty-salon-frontend/session` is the one there is: it knows the API
+  client and the query library, and builds its screens from `ui`. Its
+  components are split in two. Those that only show (`SignInForm`,
+  `SessionGate`, `AccountMenu`, in `src/components/`) take what they show as
+  props, have the four files and are in the catalogue; those that know the
+  session and the API (`SignInScreen`, `RequireSession`, `SessionAccount`)
+  hand them their props and are tested against the real API.
 - Export a new component and its props from `frontend/packages/ui/src/index.ts`.
 
 ## Form components
@@ -182,7 +191,9 @@ nobody reads is removed.
   radio buttons. They bring the keyboard, the screen reader and the pickers of
   a phone. No dropdown or date picker is built by hand.
 - **`autoComplete`** is given for what a browser can fill in: `name`, `email`,
-  `tel`, `current-password`, `new-password`, `one-time-code`.
+  `tel`, `current-password`, `new-password`, `one-time-code`. The address a
+  person signs in with is `username`, so that a password manager finds the
+  pair.
 - **`Alert`**: `danger` interrupts (`role="alert"`), the other tones wait
   their turn (`role="status"`). Render it when there is something to say, not
   empty in advance.
@@ -198,6 +209,79 @@ is handed `id`, `aria-describedby` and `aria-invalid`), `control.module.css`
 a radio button with its label). A group of controls uses `messageAttributes`
 and `FieldMessages` directly, as `radio-group.tsx` does: the messages belong
 to the group.
+
+## A form that calls the API
+
+The sign-in form is the example to read:
+`frontend/packages/session/src/components/sign-in-form/` (what is shown) and
+`sign-in-screen/` (what is done).
+
+- **Two components.** The form only shows: it takes `errors` (a message
+  under the name of each control), a `message` about the whole attempt,
+  `pending` and `onSubmit`, and it has stories for each of those states. The
+  screen around it calls the API and decides what the form says.
+- **The browser keeps the values.** The controls have a `name` and no
+  `value`; the form hands over `new FormData(form)` when it is sent. Nothing
+  is rendered again while a person types, and what the browser or a password
+  manager fills in is read like what was typed.
+- **Pure functions decide.** One reads the `FormData` into the request, or
+  into the errors of the controls (`readAttempt`); one turns the outcome of
+  the API into what the form says next (`afterAttempt`). They are tested
+  without a screen. The function that calls the API answers with a sum type
+  of the outcomes a screen tells apart (`SignInOutcome`), matched with
+  `.exhaustive()`: a new status of the contract is a type error, not a blank
+  screen.
+- **Nothing is sent that cannot be right.** A missing value and a value of
+  the wrong form are said at the control, with a message that says what to
+  do. The form is `noValidate`: the bubbles of the browser show one message
+  at a time and are not read to everyone. The server validates again, and
+  the fields it names (`errors[].field` of the problem details) get their
+  message the same way.
+- **Where to go on.** After an attempt the focus goes to the first control
+  that has an error. A message about the whole attempt is an `Alert` of the
+  tone `danger` at the top of the form, which is read at once.
+- **Sending** is a mutation of TanStack Query (`useMutation`). While it is on
+  its way the button is `pending` (`aria-busy`), and a second press does
+  nothing. What must happen after a success although the screen is gone by
+  then (a notification) is in `onSuccess` of the hook, not of the call.
+- **A message does not say more than the API does.** Signing in answers a
+  wrong address and a wrong password alike, and so does the form.
+- A form that stands alone on a screen is one column,
+  `max-inline-size: var(--size-form-column)`.
+
+## Screens and the session
+
+| Component (`@beauty-salon-frontend/session`) | Use it for |
+|-----------|------------|
+| `RequireSession` | Screens for signed-in users of the `roles` it is given. Everybody else is told what stands in the way |
+| `SessionAccount` | The `account` of `AppShell`: who is signed in, and the way out. With `signInHref`, the way in for a visitor |
+| `useSession` | Who is signed in, for a screen that shows different things to different people |
+
+```tsx
+<NotificationProvider>
+  <AppShell title={title} account={<SessionAccount />}>
+    <RequireSession roles={ROLES}>
+      <Routes>…</Routes>
+    </RequireSession>
+  </AppShell>
+</NotificationProvider>
+```
+
+- **Nobody is sent to a sign-in page.** `RequireSession` shows the sign-in
+  screen in place of its content, at the address that was asked for; after
+  signing in, the screen of that address is there. The admin and the
+  dashboard application wrap all their routes. The portal is for everybody:
+  it has the sign-in screen at `/sign-in`, and a screen for customers alone
+  wraps itself (`<RequireSession roles={['customer']}>`).
+- **The roles of an application** are a constant in its `App.tsx`: admin is
+  for `owner`, `manager`, `staff` and `admin`, the dashboard for `owner`,
+  `manager` and `admin`. An account of another role is told so and offered
+  the way out. This decides what is shown. What is allowed is decided by the
+  API, on every request.
+- A screen inside `RequireSession` reads the user with `useSession()` and
+  matches all four states; it is rendered for `signedIn` only.
+- Signing out is `SessionAccount`'s business. The screens disappear with the
+  session, in every tab.
 
 ## The frame of a screen
 
@@ -219,6 +303,15 @@ to the group.
 - **A screen** is a `PageHeader`, then its content; the frame gives them their
   width and the gaps between them. One `h1` per screen, and headings go down
   one level at a time.
+- **The title of the document and the focus follow the screen.** Inside
+  `AppShell`, `PageHeader` sets `document.title` to the title of the screen
+  and that of the application (「顧客台帳 | Beauty Salon Admin」; the title of
+  the application alone on the screen that carries it). When another screen
+  takes the place of one, the focus moves to its `h1`: a screen reader says
+  where the user is now, and the keyboard goes on from the top. The first
+  screen of a page load leaves the focus where the browser put it. A screen
+  needs nothing for this but its `PageHeader`, which it shows in every
+  state: while its content loads, when there is none, when it failed.
 - **What goes somewhere is a link, what does something is a button.**
   `ButtonLink` for 「新しい予約」 that opens another screen, `Button` for
   「予約を確定する」. This package does not know the router: an application
@@ -274,6 +367,7 @@ change of a component shows at once, and neither waits for a build.
 ```bash
 pnpm --filter @beauty-salon-frontend/theme test   # style rules of every package and app, contrast of the tokens
 pnpm --filter @beauty-salon-frontend/ui test      # components, from their stories
+pnpm --filter @beauty-salon-frontend/session test # the same for the screens of the session
 pnpm test:frontend                                # every frontend test
 pnpm lint && pnpm format:check                    # Biome, including the stylesheets
 pnpm build:prod && pnpm typecheck && pnpm knip

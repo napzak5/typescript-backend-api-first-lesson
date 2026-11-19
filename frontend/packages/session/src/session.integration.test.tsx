@@ -48,11 +48,11 @@ describe('the session against the API', () => {
 
   it('should sign a user in, keep the session and know who it is', async () => {
     // Act
-    const response = await signInAs(CUSTOMER)
+    const outcome = await signInAs(CUSTOMER)
     const { result } = renderSession()
 
     // Assert
-    expect(response.status).toBe(200)
+    expect(outcome).toEqual({ type: 'signedIn' })
     await waitFor(() =>
       expect(result.current).toMatchObject({
         type: 'signedIn',
@@ -66,11 +66,11 @@ describe('the session against the API', () => {
 
   it('should stay signed out when the password is wrong', async () => {
     // Act
-    const response = await signInAs(CUSTOMER, 'not the password')
+    const outcome = await signInAs(CUSTOMER, 'not the password')
     const { result } = renderSession()
 
     // Assert
-    expect(response).toMatchObject({ status: 401, data: { code: '1002' } })
+    expect(outcome).toEqual({ type: 'wrongCredentials' })
     expect(sessionStore.read()).toBeNull()
     expect(result.current).toEqual({ type: 'signedOut' })
     expect(await sessionsOfTheApi()).toEqual([])
