@@ -14,8 +14,8 @@ import {
 /*
  * The answers the real API gives are met in `account.integration.test.tsx`.
  * Here are the ones a test cannot bring about there (too many requests, an
- * error of the server, no answer), and that every operation reads its
- * answers alike.
+ * error of the server, no answer, a status the contract does not name), and
+ * that every operation reads its answers alike.
  */
 
 type RefusedValue = { field: string; rule: string }
@@ -126,6 +126,26 @@ describe('the operations of an account', () => {
 
       expect(await call()).toEqual({ type: 'failed' })
     })
+
+    it.each([
+      ['a gateway that does not reach the API', 502],
+      ['an API that is not there', 503],
+      ['a gateway that waited too long', 504],
+      ['a status of no meaning here', 418],
+    ])(
+      'should have failed, and not reject, when the answer is %s: a status the contract does not name',
+      async (_case, status) => {
+        answering(
+          () =>
+            new Response('<html><body>Bad Gateway</body></html>', {
+              status,
+              headers: { 'Content-Type': 'text/html' },
+            }),
+        )
+
+        expect(await call()).toEqual({ type: 'failed' })
+      },
+    )
 
     it('should name the values that the API does not take, with the rules they broke', async () => {
       answering(() =>

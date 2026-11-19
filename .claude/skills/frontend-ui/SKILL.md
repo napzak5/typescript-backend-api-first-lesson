@@ -284,6 +284,17 @@ shortest).
   calls the API (`account-api.ts`) never rejects: it answers with a sum type
   of the outcomes a screen tells apart, matched with `.exhaustive()`, so a
   new status of the contract is a type error, not a blank screen.
+- **A status outside the contract is a failure, not an exception.** The
+  fetch function resolves with every status, and a gateway in front of the
+  API answers 502, 503 or 504 when the API does not: statuses no operation
+  of the contract names. `.exhaustive()` throws on a value none of its
+  patterns takes, so the function would reject, the form would say nothing
+  and a screen that reads would wait for ever. Every match on the answer of
+  an operation therefore ends with `.exhaustive(outsideTheContract)`
+  (`frontend/apps/portal-app/src/outside-the-contract.ts`): the check of
+  the types stays, and such an answer is `failed`. A match on a value of
+  the application's own (an outcome, a variant) keeps the bare
+  `.exhaustive()`: the code makes those values.
 - **A control is named as the property of the request is.** What the API
   says about a value (`errors[].field` of the problem details) is then said
   at its control without a table of names.
@@ -322,10 +333,13 @@ list, `salon-screen.tsx` for a record with its parts).
   with a sum type of what a screen tells apart: what was `found`, `notFound`
   where the address may name nothing, and why nothing was read
   (`tooManyRequests`, `failed`). The statuses of the contract are matched
-  with `.exhaustive()`. A query of TanStack Query over such a function
+  with `.exhaustive(outsideTheContract)`, as those of a form are ("A form
+  that calls the API"). A query of TanStack Query over such a function
   always ends with data, and the screen matches on it: `undefined` is
   "still reading", and the rest are the states it shows. Nothing reads
-  `isError`, and nothing is retried behind the back of the user.
+  `isError`, and nothing is retried behind the back of the user. This
+  holds only while the function never rejects: a query that ended without
+  data would be "still reading" for good.
 - **Four states.** `LoadingIndicator` with a label that says what is read
   (「サロンを探しています」), `EmptyState`, the content, and for what could
   not be read `UnreadNotice`: an `Alert` of the tone `danger` that names

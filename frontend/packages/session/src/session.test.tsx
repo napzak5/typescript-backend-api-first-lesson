@@ -581,6 +581,32 @@ describe('the session of an application', () => {
       expect(sessionStore.read()).toBeNull()
     })
 
+    it.each([
+      ['a gateway that does not reach the API', 502],
+      ['an API that is not there', 503],
+      ['a gateway that waited too long', 504],
+      ['a status of no meaning here', 418],
+    ])(
+      'should say that it failed, and not reject, when the answer is %s: a status the contract does not name',
+      async (_case, status) => {
+        // Arrange
+        stubApi({
+          answer: () =>
+            new Response('<html><body>Bad Gateway</body></html>', {
+              status,
+              headers: { 'Content-Type': 'text/html' },
+            }),
+        })
+
+        // Act
+        const outcome = await signIn(CREDENTIALS)
+
+        // Assert
+        expect(outcome).toEqual({ type: 'failed' })
+        expect(sessionStore.read()).toBeNull()
+      },
+    )
+
     it('should say that nobody is signed in when the browser stores nothing', async () => {
       // Arrange
       stubApi({

@@ -12,8 +12,9 @@ import {
 /*
  * The answers the real API gives are met in `salons.integration.test.tsx`.
  * Here are the ones a test cannot bring about there (too many requests, no
- * answer), that every operation reads its answers alike, what each
- * operation asks for, and how a list is read to its end.
+ * answer, a status the contract does not name), that every operation reads
+ * its answers alike, what each operation asks for, and how a list is read
+ * to its end.
  */
 
 const SALON_ID = '0b7f5c1e-3a52-4d8e-9c41-6f2e8d1a7b90'
@@ -121,6 +122,26 @@ describe('the operations of the screens of the salons', () => {
 
       expect(await call()).toEqual({ type: 'failed' })
     })
+
+    it.each([
+      ['a gateway that does not reach the API', 502],
+      ['an API that is not there', 503],
+      ['a gateway that waited too long', 504],
+      ['a status of no meaning here', 418],
+    ])(
+      'should have failed, and not reject, when the answer is %s: a status the contract does not name',
+      async (_case, status) => {
+        answering(
+          () =>
+            new Response('<html><body>Bad Gateway</body></html>', {
+              status,
+              headers: { 'Content-Type': 'text/html' },
+            }),
+        )
+
+        expect(await call()).toEqual({ type: 'failed' })
+      },
+    )
   })
 
   describe.each(BELOW_A_SALON)('%s', (_name, call) => {
