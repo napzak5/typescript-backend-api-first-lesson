@@ -22,7 +22,7 @@ this one: a component is not done without its stories and its test.
 | The contrast of the colour tokens | `frontend/packages/theme/src/tokens.test.ts` |
 | Shared components | `frontend/packages/ui/src/components/<name>/` |
 | The screens of the session: sign-in, the guard of the screens that need one, the account in the header | `frontend/packages/session/src/` |
-| The screens of the security of an account (the password, the devices that are signed in), which every application puts at an address of its own, and the rule of a password that is chosen | `frontend/packages/session/src/security/` |
+| The screens of the security of an account (the password, the devices that are signed in, the second factor), which every application puts at an address of its own, and the rule of a password that is chosen | `frontend/packages/session/src/security/` |
 | Where the portal puts them: below the page of the customer | `frontend/apps/portal-app/src/security/` |
 | The screens of an account in the portal: registering, a new password, and the screens that a mailed link opens | `frontend/apps/portal-app/src/account/` |
 | The screens of the salons in the portal: the search and the page of a salon, and the components they show | `frontend/apps/portal-app/src/salons/` |
@@ -850,7 +850,7 @@ also says that a review of somebody else was helpful, and reports one.
 | `RequireSession` | Screens for signed-in users of the `roles` it is given. Everybody else is told what stands in the way |
 | `SessionAccount` | The `account` of `AppShell`: who is signed in, and the way out. With `signInHref`, the way in for a visitor; with `securityHref`, the way to the security of the account, in an application that has no page of its own for the account |
 | `useSession` | Who is signed in, for a screen that shows different things to different people |
-| `AccountSecurityScreen`, `PasswordChangeScreen` | The security of the account of the session, and the change of its password: screens that every application puts behind the guard, at an address of its own |
+| `AccountSecurityScreen`, `PasswordChangeScreen`, `TwoFactorSetupScreen` | The security of the account of the session, the change of its password and the set-up of its second factor: screens that every application puts behind the guard, at an address of its own |
 | `PASSWORD_RULE`, `newPasswordError`, `refusedPasswordMessage` | The rule of the API for a password that is chosen, as a person is told it: for every form that chooses one |
 
 ```tsx
@@ -948,6 +948,42 @@ dashboard application at `/account/security`, which the header leads to
   this device goes too. Then the session of the browser is gone, the guard
   shows the sign-in screen in place of the screen, and a notification says
   what happened; what went wrong is said in the dialog.
+- **The second factor offers what its state allows.** Off, and half way:
+  a link to the screen that sets it up (`twoFactorHref`). On: a dialog
+  that issues new backup codes, and one that turns it off, which are on
+  the screen only while it is on.
+- **What is in one answer alone is held by the screen, not the address.**
+  The secret and the backup codes are in the answer of `enable` and never
+  again, so the set-up is three steps of one address (the password, the
+  app with its code, the backup codes), held in state: a reload begins
+  anew, and the API issues new ones. The new backup codes take the place
+  of the form in the same dialog, and the focus goes to what is said of
+  them.
+- **The focus follows a step that takes the place of another.** When what
+  shows another step (or another state of the account, read anew) took
+  away what had the focus, the focus goes to the heading of what is shown
+  now (`headingRef` of `Card`), in the commit that shows it
+  (`useLayoutEffect`, `document.activeElement` back at `body`). A form in
+  a `Dialog` gets the focus at its first control from the browser.
+- **A code is read as a person types it.** Spaces go and digits of full
+  width become those of half width (`normalize('NFKC')`). A form that
+  takes the code of the app alone sends six digits and nothing else, and
+  says that a backup code does not do; one that takes a backup code too
+  sends up to the 64 characters the API reads. A wrong code, as a wrong
+  password, is said with the lock it counts towards.
+- **A QR code is drawn in the browser** (`QrCode` of the ui package): the
+  `otpauth://` address holds the secret, and no service outside is given
+  it. Under it, the secret in groups of four, for an app that cannot read
+  the code.
+- **A state changed elsewhere (409) is read anew.** A notification says
+  so, the dialog closes (the set-up goes back to its first step), and the
+  account is read again.
+- **What the API changed is shown at once, and read anew behind it.**
+  After the second factor is turned on or off, the account that was read
+  is given the state the API left it in (`withTwoFactorStatus` with
+  `setQueryData`), and then invalidated, not removed: a removed query
+  takes the screen that reads it back to its loading indicator, and the
+  step it showed with it.
 
 ## Screens that a mailed link opens
 
@@ -987,6 +1023,7 @@ behind it. Their screens are in `frontend/apps/portal-app/src/account/`.
 | `Badge` | The state of a record, in a word |
 | `TagList` | A few words about a record, as a list with a name: the features of a salon, what a member of the staff is good at |
 | `Rating` | A rating out of five: the stars, the number, and how many gave it |
+| `QrCode` | A QR code drawn from its text, as an image with a name: what an authenticator app reads. The text stays in the browser |
 | `Table` | A list of records |
 | `EmptyState` | What is shown where content would be, while there is none |
 | `LoadingIndicator` | What is shown where content will be, while it loads |
