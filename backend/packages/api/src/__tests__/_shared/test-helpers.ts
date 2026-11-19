@@ -6,6 +6,7 @@ import {
   type DatabaseConnection,
   TotpAuthenticator,
 } from '@beauty-salon-backend/infrastructure'
+import { sql } from 'drizzle-orm'
 import type { Express } from 'express'
 import type postgres from 'postgres'
 import request, { type Response } from 'supertest'
@@ -100,6 +101,23 @@ export function createTestApp({
       { write: (line) => logs?.push(JSON.parse(line)) },
     ),
   })
+}
+
+/**
+ * The moment on the clock of the database, in milliseconds. A test that holds
+ * a row reads it last in its transaction: whatever waited for the row was let
+ * through after that moment, so a stamp it wrote is not earlier. The clock of
+ * the tests does not serve for this: a timer of Node.js may fire up to a
+ * millisecond early.
+ */
+export async function databaseMoment(
+  database: Pick<Database, 'execute'>,
+): Promise<number> {
+  const [moment] = await database.execute<{ at: string }>(
+    sql`SELECT clock_timestamp()::text AS "at"`,
+  )
+
+  return new Date(moment?.at ?? '').getTime()
 }
 
 /** A database nothing listens on: every query fails at once. */

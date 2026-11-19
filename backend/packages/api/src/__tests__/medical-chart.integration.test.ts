@@ -29,6 +29,7 @@ import {
   brokenRules,
   connectUnreachableDatabase,
   createTestApp,
+  databaseMoment,
   type ExpectedProblem,
   expectProblem,
   getTestDb,
@@ -1065,32 +1066,31 @@ describe('Medical chart API', () => {
 
     /**
      * Holds a row as another writer does, and sends the request meanwhile.
-     * The hold tells the moment of the database it took the row at.
+     * Tells the moment of the database at which the hold ended: the request
+     * was let through after it.
      */
     const whileHeld = async (
-      hold: (tx: Transaction) => Promise<{ at: string }[]>,
+      hold: (tx: Transaction) => Promise<unknown>,
       call: () => Promise<Response>,
     ): Promise<{
       response: Response
       answeredWhileHeld: boolean
-      heldAt: number
+      releasedAt: number
     }> => {
-      const { pending, answeredWhileHeld, heldAt } = await db.transaction(
+      const { pending, answeredWhileHeld, releasedAt } = await db.transaction(
         async (tx) => {
-          const [held] = await hold(tx)
+          await hold(tx)
           const underWay = call().then((response) => response)
 
           return {
             pending: underWay,
             answeredWhileHeld: await answersWithin(underWay, 300),
-            heldAt: new Date(held?.at ?? '').getTime(),
+            releasedAt: await databaseMoment(tx),
           }
         },
       )
-      return { response: await pending, answeredWhileHeld, heldAt }
+      return { response: await pending, answeredWhileHeld, releasedAt }
     }
-
-    const MOMENT = { at: sql<string>`clock_timestamp()::text` }
 
     it('writes one chart of a customer when two creations arrive together', async () => {
       const responses = await Promise.all([
@@ -1111,8 +1111,7 @@ describe('Medical chart API', () => {
           tx
             .update(customers)
             .set({ deletedAt: '2026-11-01T00:00:00.000Z' })
-            .where(eq(customers.id, customerId))
-            .returning(MOMENT),
+            .where(eq(customers.id, customerId)),
         () => create(chartBodyOf(customerId)),
       )
 
@@ -1123,37 +1122,33 @@ describe('Medical chart API', () => {
     })
 
     it('makes a creation wait for a change of the customer in progress, and writes the chart at the moment it is let through', async () => {
-      const { response, answeredWhileHeld, heldAt } = await whileHeld(
+      const { response, answeredWhileHeld, releasedAt } = await whileHeld(
         (tx) =>
           tx
             .update(customers)
             .set({ notes: '変更' })
-            .where(eq(customers.id, customerId))
-            .returning(MOMENT),
+            .where(eq(customers.id, customerId)),
         () => create(chartBodyOf(customerId)),
       )
 
       expect(answeredWhileHeld).toBe(false)
       expect(response.status).toBe(201)
-      expect(
-        Date.parse(response.body.data.createdAt) - heldAt,
-      ).toBeGreaterThanOrEqual(300)
+      expect(Date.parse(response.body.data.createdAt)).toBeGreaterThanOrEqual(
+        releasedAt,
+      )
       expect(response.body.data.updatedAt).toBe(response.body.data.createdAt)
     })
 
     /** A chart of the customer of the tests, as another writer writes it. */
     const otherWriterChart = (tx: Transaction) =>
-      tx
-        .insert(medicalCharts)
-        .values({
-          customerId,
-          previousTreatments: [],
-          medicalConditions: null,
-          preferredProducts: [],
-          avoidProducts: [],
-          notes: 'other writer',
-        })
-        .returning(MOMENT)
+      tx.insert(medicalCharts).values({
+        customerId,
+        previousTreatments: [],
+        medicalConditions: null,
+        preferredProducts: [],
+        avoidProducts: [],
+        notes: 'other writer',
+      })
 
     it('makes a creation wait for a chart of the customer that another writer has not committed, and refuses it once it is written', async () => {
       const { response, answeredWhileHeld } = await whileHeld(
@@ -1208,13 +1203,12 @@ describe('Medical chart API', () => {
     it('makes a change wait for another change of the chart in progress, writes over what it left, at the moment it is let through', async () => {
       const id = await insertChart()
 
-      const { response, answeredWhileHeld, heldAt } = await whileHeld(
+      const { response, answeredWhileHeld, releasedAt } = await whileHeld(
         (tx) =>
           tx
             .update(medicalCharts)
             .set({ notes: 'first', avoidProducts: ['X'] })
-            .where(eq(medicalCharts.id, id))
-            .returning(MOMENT),
+            .where(eq(medicalCharts.id, id)),
         () => update(id, { notes: 'second' }),
       )
 
@@ -1223,9 +1217,9 @@ describe('Medical chart API', () => {
         notes: 'second',
         avoidProducts: ['X'],
       })
-      expect(
-        Date.parse(response.body.data.updatedAt) - heldAt,
-      ).toBeGreaterThanOrEqual(300)
+      expect(Date.parse(response.body.data.updatedAt)).toBeGreaterThanOrEqual(
+        releasedAt,
+      )
     })
 
     it('lists from one moment: a chart written while the list waits is in neither the page nor the count', async () => {
