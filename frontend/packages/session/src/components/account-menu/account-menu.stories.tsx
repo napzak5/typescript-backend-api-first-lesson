@@ -36,6 +36,11 @@ type Story = StoryObj<typeof meta>
 
 export const SignedIn: Story = {}
 
+/** In an application that has no page of its own for the account */
+export const WithTheSecurityOfTheAccount: Story = {
+  args: { securityHref: '/account/security' },
+}
+
 export const LongAddress: Story = {
   args: {
     session: {

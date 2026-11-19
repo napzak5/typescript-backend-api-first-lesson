@@ -411,7 +411,10 @@ describe('the page and the profile of a customer, against the API', () => {
       expect(
         await screen.findByText('お客様の情報は、まだ登録されていません'),
       ).toBeVisible()
-      expect(screen.queryByRole('region')).toBeNull()
+      // Nothing of a profile: the account alone, which every account has
+      expect(screen.getAllByRole('region')).toEqual([
+        screen.getByRole('region', { name: 'アカウントの安全' }),
+      ])
       expect(await findAccessibilityViolations()).toEqual([])
 
       // Act

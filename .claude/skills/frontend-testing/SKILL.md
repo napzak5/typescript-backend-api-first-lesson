@@ -416,7 +416,12 @@ example to read: a search and the page of a record, rendered at an address.
   where it reads the table, and the name given back lets the next request
   through: the test presses 「もう一度読み込む」 and sees the content. A
   stored value that is no value of its model (a `jsonb` column) does the
-  same for one record. The fresh database after the test undoes both.
+  same for one record. A write is refused by a trigger that raises an
+  exception (`before delete on sessions`, `before update of "passwordHash"
+  on users`: `refuse` in
+  `frontend/packages/session/src/security/security.integration.test.tsx`),
+  where taking the table away would also refuse the session of the
+  request. The fresh database after the test undoes all of them.
 - **A row with a date is written relative to today, in the database**
   (`(now() at time zone 'Asia/Tokyo')::date + 1`), so that the test holds
   on every day. Rows that the seed data wrote at one moment get moments of
@@ -679,6 +684,37 @@ and removed (`frontend/apps/portal-app/src/reviews/`) adds:
   row says, the row of the table (who, and the count of the record), and
   the requests (`askedOfTheReviews`: the one that wrote, and no read
   after it).
+- **A screen of a package that every application uses is tested in the
+  package** (`frontend/packages/session/src/security/security.integration.test.tsx`):
+  in `AppShell` and `RequireSession` as an application has them, without a
+  router. What it hands to the application is a `vi.fn()` (`onChanged`),
+  and asserted. The tests of an application add what it does with them:
+  where they are, for whom, and the ways between them
+  (`frontend/apps/portal-app/src/security/security.integration.test.tsx`,
+  the header of `App.integration.test.tsx` of the admin and the dashboard
+  application).
+- **Another device is another session of the API.** It signs in through
+  the generated client (`authCrudLogin`), which stores nothing: the
+  browser of the test stays signed in as it was. Twenty more devices are
+  rows the test writes (`insert … generate_series`), one an hour, so their
+  order is known; a device that signs out while the screen shows it is a
+  row the test deletes.
+- **"Nothing was sent" is asked of `fetch` itself**: `vi.spyOn(globalThis,
+  'fetch')`, which calls the real one, cleared once the screen has read
+  what it reads (`mockClear`), and then `not.toHaveBeenCalled()`.
+- **What the real API cannot be made to answer stays out.** A part of a
+  screen behind the session that cannot be read is not brought about by
+  taking a table away when that table also holds the sessions: the
+  request is then refused as one without a session. It is in the test of
+  the functions that call the API and in the stories. A write that fails
+  is brought about, by a trigger.
+- **A screen that reads again after a write is asserted at once and in
+  the end.** Right after the write, nothing of what was read before is on
+  the screen (`queryByText` of the old count is `null` in the commit that
+  shows the screen again); then what was read anew (`findByText`). A page
+  that was full is filled again from the rows after it: 21 devices, one
+  of the first page signed out, and the page shows 20 with no
+  「さらに表示」, which only a list that was read again does.
 
 `App.test.tsx` of an application keeps what needs no API: what somebody who
 is not signed in sees. Everything behind the sign-in is in
@@ -877,6 +913,11 @@ test.describe('the admin application', () => {
   first (`page.mouse.move(0, 0)`): it stays where the last click left
   it, a notification moves the page under it, and the control that lands
   there has the colour of one that is pointed at.
+- **Another device is another browser**: `browser.newPage()` opens one
+  that shares nothing with `page` (`src/security.e2e.test.ts`). When its
+  session was ended elsewhere, a reload shows the sign-in screen.
+- **A password that was changed is asserted at the next sign-in**: out in
+  the header, the old password refused, the new one taken.
 - The modules of `frontend/e2e/src` that are no test files are under the
   lint prohibitions of application code: no type assertion, no type guard,
   and `node:assert` in place of `throw`.

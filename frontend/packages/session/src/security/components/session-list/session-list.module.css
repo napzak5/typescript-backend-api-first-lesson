@@ -1,0 +1,41 @@
+/* How many there are, the devices, then the way to more. */
+.list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+.count {
+  color: var(--color-text-muted);
+}
+
+.sessions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+/* A device: when it signed in, what the API kept of it, and the way to sign it out */
+.session {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-large);
+  background-color: var(--color-surface);
+}
+
+/* The name, and beside it the mark of this device: a name that has no room wraps */
+.heading {
+  display: grid;
+  grid-template-columns: minmax(0, max-content) auto;
+  justify-content: start;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.name {
+  font-size: var(--font-size-body);
+  overflow-wrap: anywhere;
+}
