@@ -113,3 +113,28 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/*
+ * On paper there is the content alone, as wide as the paper: the header,
+ * the navigation and the way past them are for the screen.
+ */
+@media print {
+  .frame,
+  .navigationAtSide {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto;
+    grid-template-areas: "main";
+    min-block-size: auto;
+  }
+
+  .header,
+  .navigation,
+  .skipLink {
+    display: none;
+  }
+
+  .main {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 0;
+  }
+}

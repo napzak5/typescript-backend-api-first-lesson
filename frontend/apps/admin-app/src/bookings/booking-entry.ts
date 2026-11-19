@@ -83,7 +83,7 @@ export const lineControlOf = (
 
 const SERVICE_CONTROL = /^services\.\d+\.serviceId$/
 
-const nullIfBlank = (text: string): string | null => {
+export const nullIfBlank = (text: string): string | null => {
   const trimmed = text.trim()
 
   return trimmed === '' ? null : trimmed
@@ -97,7 +97,7 @@ const MOST_YEN = 2_147_483_647
  * so do the commas between them. Nothing is no amount; what is no whole
  * number of yen the API takes is `undefined`.
  */
-const yenOf = (text: string): number | null | undefined => {
+export const yenOf = (text: string): number | null | undefined => {
   const digits = text.normalize('NFKC').replaceAll(',', '').trim()
   if (digits === '') {
     return null

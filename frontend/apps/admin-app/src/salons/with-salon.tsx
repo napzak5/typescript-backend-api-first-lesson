@@ -67,13 +67,14 @@ export const WithSalon = ({ salonId, title, children }: WithSalonProps) => {
 }
 
 /**
- * What a member of the staff of another salon is told: the API shows the
- * bookings of a salon to its own staff. The start leads to their own salon.
+ * What a member of the staff of another salon is told: the API shows what
+ * is kept of a salon (its bookings, its sales) to its own staff. The start
+ * leads to their own salon.
  */
-export const OtherSalonNotice = () => (
+export const OtherSalonNotice = ({ what = '予約' }: { what?: string }) => (
   <>
     <p>
-      このサロンの予約は、見られません。予約を見られるのは、そのサロンのスタッフと、管理者です。
+      {`このサロンの${what}は、見られません。${what}を見られるのは、そのサロンのスタッフと、管理者です。`}
     </p>
     <p>
       <ButtonLink href='/' variant='secondary'>
