@@ -10,6 +10,9 @@ import { App } from './App'
 const TITLE = 'Beauty Salon Admin'
 const OWNER = 'owner@beautysalon.jp'
 
+/** The first screen of a member of the staff: the bookings of their salon */
+const BOOKINGS = '予約台帳'
+
 const renderAt = (path: string) =>
   render(
     <QueryClientProvider
@@ -51,22 +54,25 @@ describe('App, against the API', () => {
   })
 
   it.each([
-    ['the owner of a salon', 'owner@beautysalon.jp'],
-    ['a manager', 'manager@beautysalon.jp'],
-    ['a member of the staff', 'stylist1@beautysalon.jp'],
-    ['the operator of the platform', 'admin@beautysalon.jp'],
-  ])('should let %s in: %s', async (_, email) => {
-    // Arrange
-    renderAt('/')
+    ['the owner of a salon', 'owner@beautysalon.jp', BOOKINGS],
+    ['a manager', 'manager@beautysalon.jp', BOOKINGS],
+    ['a member of the staff', 'stylist1@beautysalon.jp', BOOKINGS],
+    ['the operator of the platform', 'admin@beautysalon.jp', 'サロンを選ぶ'],
+  ])(
+    'should let %s in: %s, at the first screen of the role',
+    async (_, email, first) => {
+      // Arrange
+      renderAt('/')
 
-    // Act
-    await signInAs(email)
+      // Act
+      await signInAs(email)
 
-    // Assert
-    expect(await heading(TITLE)).toHaveFocus()
-    expect(within(screen.getByRole('banner')).getByText(email)).toBeVisible()
-    expect(document.title).toBe(TITLE)
-  })
+      // Assert
+      expect(await heading(first)).toHaveFocus()
+      expect(within(screen.getByRole('banner')).getByText(email)).toBeVisible()
+      expect(document.title).toBe(`${first} | ${TITLE}`)
+    },
+  )
 
   it.each([['a customer', 'customer1@example.com']])(
     'should tell %s that the application is not for them: %s',
@@ -110,7 +116,7 @@ describe('App, against the API', () => {
     await userEvent.click(screen.getByRole('link', { name: 'トップへ戻る' }))
 
     // Assert
-    expect(await heading(TITLE)).toHaveFocus()
+    expect(await heading(BOOKINGS)).toHaveFocus()
     expect(within(screen.getByRole('banner')).getByText(OWNER)).toBeVisible()
   })
 
@@ -119,7 +125,7 @@ describe('App, against the API', () => {
     const user = userEvent.setup()
     renderAt('/')
     await signInAs(OWNER)
-    await heading(TITLE)
+    await heading(BOOKINGS)
 
     // Act
     await user.click(
@@ -214,7 +220,7 @@ describe('App, against the API', () => {
     // Arrange
     renderAt('/')
     await signInAs(OWNER)
-    await heading(TITLE)
+    await heading(BOOKINGS)
 
     // Act
     await userEvent.click(screen.getByRole('button', { name: 'サインアウト' }))
