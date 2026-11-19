@@ -1,6 +1,6 @@
 ---
 name: frontend-testing
-description: "How frontend code of this repository is tested: stories as the entry point of component tests (composeStories from Storybook, run by Vitest in jsdom), an accessibility test for every story (axe-core), queries by role, and the checks of the style rules and of token contrast. Use it before writing or changing a story, a *.test.tsx, a Vitest configuration or the test helpers under frontend/."
+description: "How frontend code of this repository is tested: stories as the entry point of component tests (composeStories from Storybook, run by Vitest in jsdom), an accessibility test for every story (axe-core), queries by role, tests of code that calls the API against the real API on a real database (*.integration.test.tsx, no stub), and the checks of the style rules and of token contrast. Use it before writing or changing a story, a *.test.tsx, a Vitest configuration or the test helpers under frontend/."
 ---
 
 # Frontend Testing
@@ -21,11 +21,13 @@ The styling and component rules are in the skill `frontend-ui`.
 | The contrast of the colour tokens | Computed from `tokens.css` | `frontend/packages/theme/src/tokens.test.ts` |
 | Modules without markup (configuration, the style rules) | Unit tests in Node | `frontend/packages/config/src/env/env.test.ts` |
 | The fetch function, the session and the generated client | In jsdom, over the real client and the real fetch function, with `fetch` itself stubbed | `frontend/packages/session/src/session.test.tsx` |
+| Code that calls the API, as it meets the real one | In jsdom, against the production application on a real PostgreSQL with the seed data; nothing is stubbed | `frontend/packages/session/src/session.integration.test.tsx` |
 
 `@beauty-salon-frontend/testing` holds what the tests share: the setup
 (`@beauty-salon-frontend/testing/setup`: the matchers of jest-dom, and the
 methods of the `dialog` element that jsdom lacks), `findAccessibilityViolations`
-and `itShouldBeAccessibleInEveryStory`.
+and `itShouldBeAccessibleInEveryStory`, and the real API of the integration
+tests (`@beauty-salon-frontend/testing/api`).
 
 ## Stories
 
@@ -169,9 +171,81 @@ they carried, their order and their number.
 - `frontend/packages/api-client/src/session.test.ts` compares what `io` knows
   of the API (a path and two codes) with what is generated from the contract.
 
-This is how the code that sends the requests is tested, and nothing else. A
-screen is tested against the real API and a real database, without a stub of
-`fetch` or of the client; that harness does not exist yet (issue #276).
+This is how the code that sends the requests is tested, and nothing else:
+the order and the number of requests, and answers the real API gives only
+under conditions a test cannot arrange. What a user does on a screen is
+tested against the real API.
+
+## Against the real API
+
+A test in a file `*.integration.test.tsx` runs the code as it is, against the
+production application of the backend on a real PostgreSQL. Nothing is
+replaced: not `fetch`, not the client, not a module.
+
+```tsx
+import { testApi } from '@beauty-salon-frontend/testing/api'
+import { waitFor } from '@testing-library/react'
+import { describe, expect, it } from 'vitest'
+import { signIn } from '.'
+
+describe('the session against the API', () => {
+  it('should sign a user in and know who it is', async () => {
+    // Act
+    await signIn({
+      email: 'customer1@example.com',
+      password: testApi().seedPassword,
+      rememberMe: false,
+      twoFactorCode: null,
+    })
+    // `useSession` in a `QueryClientProvider`, as in the file of the example
+    const { result } = renderSession()
+
+    // Assert
+    await waitFor(() =>
+      expect(result.current).toMatchObject({ type: 'signedIn' }),
+    )
+    expect(
+      await testApi().query('select "userId"::text as "userId" from sessions'),
+    ).toHaveLength(1)
+  })
+})
+```
+
+- The run starts one **test server**
+  (`backend/packages/api/src/__tests__/test-server/`). Every test file gets an
+  API of its own from it: the production `createApp`, on its own port and on
+  its own copy of a database that has the schema and the seed data. The code
+  under test finds it through `VITE_BACKEND_BASE_URL`, which the setup sets
+  before the file imports anything.
+- After every test the API gets a fresh copy of the seeded database, and
+  `localStorage` and `sessionStorage` are emptied. A test starts from the seed
+  data and never from what another test left.
+- The data is the seed data (`backend/packages/database/src/seeds/seed-data/`):
+  two salons, and accounts of every role (`customer1@example.com`,
+  `owner@beautysalon.jp`, `manager@beautysalon.jp`, `stylist1@beautysalon.jp`,
+  `admin@beautysalon.jp`), all with the password `testApi().seedPassword`.
+  What a test needs beyond it, it creates the way a user would: through the
+  screen or the API.
+- `testApi().query(text, values)` runs a statement on the database of the API
+  and returns its rows. It is for what neither the screen nor the API can
+  bring about (time that has passed: `update sessions set "expiresAt" = …`)
+  and for asserting what was stored. Values go in `values` (`$1`), never into
+  the text. A statement the database refuses fails the test.
+- Arrange through the API and assert on what the user sees; assert on the
+  database only for what no screen shows.
+- A request may be watched (`vi.spyOn(globalThis, 'fetch')` without an
+  implementation) to count what was sent. It is never answered by the test.
+- Mail is not delivered and files are kept in memory: the API of a test has
+  no SMTP server and no object storage.
+- The answer of the real API takes time. Wait for what appears (`findByRole`,
+  `waitFor`); never for a duration.
+- Every test of a package costs a reset of the database (about a tenth of a
+  second). What needs no API stays a test of the stories.
+
+The test server needs a PostgreSQL: the one at `TEST_DATABASE_URL` when it is
+set (its user creates databases), otherwise a container, and so a running
+Docker daemon. When it cannot start, the run fails before the first test and
+the reason is printed above the error.
 
 ## Accessibility
 
@@ -227,6 +301,29 @@ beforeAll(annotations.beforeAll)
 A test that renders with `@testing-library/react` directly, as `App.test.tsx`
 does, needs `afterEach(cleanup)` in its `vitest.setup.ts`.
 
+A package with tests against the real API has a second configuration,
+`vitest.integration.config.ts`, and the script
+`"test:integration": "vitest run --config vitest.integration.config.ts"`
+(`frontend/packages/session`). It differs from the first in three lines, and
+`vitest.config.ts` gets `exclude: [...configDefaults.exclude, '**/*.integration.test.*']`
+so that `pnpm test` needs no database:
+
+```ts
+  test: {
+    environment: 'jsdom',
+    include: ['src/**/*.integration.test.tsx'],
+    // Starts the test server of the backend for the run, and stops it
+    globalSetup: ['@beauty-salon-frontend/testing/api/global-setup'],
+    // An API for the file, a fresh database for every test
+    setupFiles: [
+      '@beauty-salon-frontend/testing/api/setup',
+      './vitest.setup.ts',
+    ],
+  },
+```
+
+`@beauty-salon-frontend/testing` is a dev dependency of such a package.
+
 ## A check is shown to fail
 
 Before relying on a new test or rule, break what it guards and see it fail:
@@ -240,4 +337,7 @@ pnpm --filter @beauty-salon-frontend/ui test         # one package
 pnpm --filter @beauty-salon-frontend/ui test:watch   # while writing
 pnpm test:frontend                                   # every frontend test
 pnpm test                                            # frontend and backend unit tests
+
+pnpm --filter @beauty-salon-frontend/session test:integration   # against the real API, one package
+pnpm test:integration                                # every integration test, backend and frontend
 ```

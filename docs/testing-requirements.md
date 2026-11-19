@@ -12,7 +12,7 @@ reference for the tests of every domain that follows.
 | Kind | Command | Files | Needs |
 |------|---------|-------|-------|
 | Unit | `pnpm test` | `*.test.ts` and `*.test.tsx`, in a `__tests__` directory or beside the module | Nothing |
-| Integration | `pnpm test:integration` | `*.integration.test.ts` | A PostgreSQL: the one at `TEST_DATABASE_URL`, otherwise a container started through testcontainers (Docker). The mail delivery tests and the file storage tests of the `infrastructure` package always need Docker: they start a Mailpit and a SeaweedFS container through testcontainers (the storage tests use another S3-compatible storage when `TEST_STORAGE_ENDPOINT` names one) |
+| Integration | `pnpm test:integration` | `*.integration.test.ts` and, in the frontend, `*.integration.test.tsx` | A PostgreSQL: the one at `TEST_DATABASE_URL`, otherwise a container started through testcontainers (Docker). The frontend tests of this kind call the API through the test server of the backend, which uses the same PostgreSQL. The mail delivery tests and the file storage tests of the `infrastructure` package always need Docker: they start a Mailpit and a SeaweedFS container through testcontainers (the storage tests use another S3-compatible storage when `TEST_STORAGE_ENDPOINT` names one) |
 
 Both run on Vitest. Tests resolve the workspace packages they import from
 source (the export condition `@beauty-salon-backend/source`, or
@@ -25,8 +25,9 @@ What the repository does not have:
 - A separate end-to-end suite. `CLAUDE.md` asks for end-to-end coverage of
   the critical paths, and the integration tests provide it: the API tests
   drive the production Express application over HTTP against a real database,
-  and the server tests start the real server. Nothing tests the frontend
-  against a running API.
+  and the server tests start the real server. The integration tests of the
+  frontend call the same application from the code of the client. No test
+  drives a browser yet.
 - A coverage threshold. Coverage is not measured in CI; the requirements below
   are stated per behaviour instead of as a percentage.
 - A request mocking library, in the backend or the frontend.
@@ -71,6 +72,7 @@ show what the constraints of `services` and `service_options` refuse.
 | Configuration read from the environment | Unit, beside the module | `frontend/packages/config/src/env/env.test.ts` |
 | The fetch function, and the generated API client through it: the request, every status as a typed value, transport failures | Unit, with `fetch` stubbed | `frontend/packages/io/src/libs/fetcher/fetcher.test.ts`, `frontend/packages/api-client/src/salons.test.ts` |
 | The session: the stored tokens, the access token on a request, the renewal after it expired (once, also for requests and tabs that find it expired together), `useSession`, signing in and out | Unit, in jsdom, over the real client and the real fetch function, with `fetch` stubbed | `frontend/packages/io/src/libs/fetcher/fetcher.session.test.ts`, `frontend/packages/session/src/session.test.tsx` |
+| Code that calls the API, against the production application on a real PostgreSQL with the seed data: the session against the real authentication endpoints, and what the tests are given (an API for each test file, a fresh copy of the database for each test) | Integration, in jsdom, with nothing stubbed | `frontend/packages/session/src/session.integration.test.tsx`, `frontend/packages/testing/src/api/test-api.integration.test.ts` |
 | UI components | The stories of the component, composed and run in jsdom, with an accessibility test for every story | `frontend/packages/ui/src/components/button/button.test.tsx` |
 | Applications: the frame, the routes, what depends on the environment | Component test in a `MemoryRouter`, with an accessibility test | `frontend/apps/admin-app/src/App.test.tsx` |
 | The style rules (CSS Modules, Grid and no flex, tokens) in every package and application; the contrast of the colour tokens | Unit | `frontend/packages/theme/src/style-rules.test.ts`, `frontend/packages/theme/src/tokens.test.ts` |
@@ -83,6 +85,19 @@ tested is the subject of the skill
 variables are set with `vi.stubEnv`, or with `test.env` in the Vitest
 configuration of the package when every test of it needs the same value
 (`frontend/packages/api-client`). There are no browser-driven tests.
+
+The integration tests of the frontend run against the **test server**
+(`backend/packages/api/src/__tests__/test-server/`, started with
+`pnpm --filter @beauty-salon-backend/api run test:server` by the global setup
+of the tests). It creates a template database with the schema and the seed
+data, and starts an API for every test file that asks for one: the production
+`createApp` on a copy of the template and on a port of its own. After every
+test the API gets a fresh copy, so a test sees the seed data and nothing of
+another test. What a test cannot bring about through the screen or the API,
+such as time having passed, it does with a statement on the database of its
+API. The server listens on the loopback address only and answers nothing
+without the token of the run; it stops, and removes its container and its
+databases, when the process that started it ends.
 
 ## Requirements per Endpoint
 
@@ -146,7 +161,8 @@ a service.
   test. The frontend tests mark the steps with comments; the backend tests
   separate them with blank lines.
 - **Independent**: no test relies on another having run. Every API test and
-  every migration test gets a database of its own.
+  every migration test gets a database of its own, and every integration test
+  of the frontend a fresh copy of the seeded database.
 - **Integration tests use the real thing**: the production `createApp`, the
   real repository, a real PostgreSQL. A failure is produced by real means — a
   database nothing listens on, a dropped column, a corrupt stored value — not
@@ -208,7 +224,7 @@ A new domain follows the Salon tests file by file:
 pnpm test                # every unit test (backend and frontend)
 pnpm test:backend        # unit tests of the backend packages
 pnpm test:frontend       # unit and component tests of the frontend
-pnpm test:integration    # integration tests; needs Docker (TEST_DATABASE_URL replaces only the PostgreSQL container)
+pnpm test:integration    # integration tests, backend and frontend; needs Docker (TEST_DATABASE_URL replaces only the PostgreSQL container)
 ```
 
 CI runs the unit tests once and the integration tests twice: against a

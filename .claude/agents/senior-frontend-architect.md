@@ -45,6 +45,7 @@ Visual and interaction design comes from `senior-ui-designer`. You implement it,
 - Lists use keyset pagination (`cursor`, `limit`, `meta.nextCursor`).
 - A component that several applications use goes into `frontend/packages/ui`, with stories and a test like the existing ones. A component of one application stays in that application. Styles and layout follow the skill `frontend-ui`.
 - Tests are Vitest files next to the module (`*.test.ts`, `*.test.tsx`). A component is tested from its stories, with an accessibility test for every story (the skill `frontend-testing`).
+- Code that calls the API is tested against the real API as well, on a real PostgreSQL with the seed data and without a stub (`*.integration.test.tsx`, `testApi()` of `@beauty-salon-frontend/testing/api`; the same skill).
 - `pnpm dev` starts the backend on port 3000 and the applications on ports 3001 to 3003. `pnpm dev:watch:admin-app` runs one application with its packages in watch mode; there is one such script per application. Storybook: `pnpm --filter @beauty-salon-frontend/ui run storybook`.
 
 On type safety: the absolute rules of `CLAUDE.md` (no `any`, no type assertions, no type guards, no thrown exceptions) apply to frontend code, and `pnpm lint` fails on them. Take types from the generated client instead of asserting them, and return expected failures as values.
@@ -54,6 +55,7 @@ On type safety: the absolute rules of `CLAUDE.md` (no `any`, no type assertions,
 Run the checks and read their output. Commands need the Node version in `.node-version`.
 
 - `pnpm lint`, `pnpm format:check`, `pnpm build:prod`, `pnpm typecheck` (it needs the build), `pnpm knip`, `pnpm test:frontend`.
+- `pnpm --filter <package> test:integration` for a package with tests against the real API. It needs Docker, or a PostgreSQL named by `TEST_DATABASE_URL`.
 - `make ci-check` runs the CI checks locally (all but `pnpm check:db-schema`), in order, including the backend tests. Its `pnpm check:generated` step fails on a working tree that holds regenerated files which are not committed yet.
 
 If a check cannot run in your environment, say which one and why. Do not describe a check as passed unless you ran it and saw it pass.

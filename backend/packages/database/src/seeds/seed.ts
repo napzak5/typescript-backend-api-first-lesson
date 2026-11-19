@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm'
-import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
+import { drizzle, type PostgresJsDatabase } from 'drizzle-orm/postgres-js'
+import type postgres from 'postgres'
 import * as schema from '../schema'
 import { seedBookings } from './seed-data/bookings'
 import { seedCustomerAllergies } from './seed-data/customer-allergies'
@@ -97,6 +98,13 @@ export async function seed(
 
   console.log('Seeding completed successfully!')
 }
+
+/**
+ * Inserts the seed data over a connection: for a caller outside this package,
+ * which has no Drizzle instance of the type that `seed` takes.
+ */
+export const seedDatabase = (client: postgres.Sql): Promise<void> =>
+  seed(drizzle(client, { schema }))
 
 /**
  * Utility function to truncate all tables

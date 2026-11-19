@@ -2289,10 +2289,12 @@ See [Authentication and Authorization](./authentication.md).
 | Command | What runs | Where the tests are |
 |---------|-----------|---------------------|
 | `pnpm test` | Unit tests (Vitest), no external services | Next to the code: in `__tests__` directories, or as `*.test.ts(x)` files beside the module |
-| `pnpm test:integration` | Tests against a real PostgreSQL: the one at `TEST_DATABASE_URL`, otherwise a testcontainers container. The tests of the infrastructure package send mail to a real SMTP server and files to a real S3-compatible storage instead: a Mailpit and a SeaweedFS container they start through testcontainers | `backend/packages/api/src/__tests__` (the HTTP API through the production `createApp`, one database per test), `backend/apps/server/src/__tests__` (start-up and shutdown), `backend/packages/database/src/scripts/__tests__` (the migration runner), `backend/packages/infrastructure/src/mail/__tests__` (mail delivery), `backend/packages/infrastructure/src/storage/__tests__` (the file storage) |
+| `pnpm test:integration` | Tests against a real PostgreSQL: the one at `TEST_DATABASE_URL`, otherwise a testcontainers container. The tests of the infrastructure package send mail to a real SMTP server and files to a real S3-compatible storage instead: a Mailpit and a SeaweedFS container they start through testcontainers | `backend/packages/api/src/__tests__` (the HTTP API through the production `createApp`, one database per test), `backend/apps/server/src/__tests__` (start-up and shutdown), `backend/packages/database/src/scripts/__tests__` (the migration runner), `backend/packages/infrastructure/src/mail/__tests__` (mail delivery), `backend/packages/infrastructure/src/storage/__tests__` (the file storage), `frontend/packages/*/src/**/*.integration.test.ts(x)` (frontend code against the production API, which the test server in `backend/packages/api/src/__tests__/test-server` starts on a copy of a seeded database for every test file) |
 
 There is no separate end-to-end suite: the API integration tests drive the
-production application over HTTP, and the server tests start the real server.
+production application over HTTP, the server tests start the real server, and
+the integration tests of the frontend call that application from the code of
+the client. No test drives a browser.
 Requirements and patterns are in
 [Testing Requirements](./testing-requirements.md) and the
 [API Testing Guide](./api-testing-guide.md).
