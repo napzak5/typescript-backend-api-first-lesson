@@ -78,7 +78,7 @@ For detailed architecture documentation, see [docs/architecture-overview.md](doc
 | The other domains | None: every operation of the contract is implemented |
 | Email | Implemented for the mails of the authentication flows: plain text over SMTP. Locally they are caught by Mailpit. See [docs/email.md](docs/email.md) |
 | File storage | An S3-compatible object storage holds the files of the attachments. Locally it is SeaweedFS, started by Docker Compose; which storage production uses, its bucket, its credentials and the CORS rules of the bucket are part of preparing production. See [docs/attachments.md](docs/attachments.md) |
-| Frontend apps | Application shells; no screen calls the API or signs in yet. The pages that the links in the mails point at do not exist yet. What the screens will be built from is there: design tokens, shared components in CSS Modules with their Storybook, tests that start from the stories, and the session (the tokens kept in the browser, sent with every request and renewed when they expire). See [docs/frontend-api-integration.md](docs/frontend-api-integration.md) |
+| Frontend apps | Application shells with signing in and out: the sign-in screen with its two-factor step, the screens of the admin and the dashboard application behind a session of the roles they are for, the account in the header. No screen of the business (bookings, customers, sales) exists yet, and neither do the pages that the links in the mails point at. What the screens will be built from is there: design tokens, shared components in CSS Modules with their Storybook, tests that start from the stories, tests of screens against the real API, and the session (the tokens kept in the browser, sent with every request and renewed when they expire). See [docs/frontend-api-integration.md](docs/frontend-api-integration.md) |
 
 ## 🚀 Quick Start
 
@@ -353,8 +353,9 @@ dropped.
   testcontainers.
 
   The integration tests of the frontend (`*.integration.test.tsx`) call the
-  production API from the code of the client: a test server of the backend
-  gives every test file an API on a copy of a database with the seed data.
+  production API from the code of the client, and from the screens as a user
+  works them: a test server of the backend gives every test file an API on a
+  copy of a database with the seed data.
 
 See [docs/testing-requirements.md](docs/testing-requirements.md) for testing guidelines.
 
