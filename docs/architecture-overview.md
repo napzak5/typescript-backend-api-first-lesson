@@ -2329,12 +2329,14 @@ application, selected with the `APP` build argument. See
 `frontend/apps` holds three Vite + React applications: `portal-app`,
 `admin-app` and `dashboard-app` (ports 3001 to 3003 under `pnpm dev`). Each is
 a shell so far. `frontend/packages` holds what they share (UI components,
-theme, configuration, assets) and the API client that orval generates
-into `frontend/packages/api-client`. The client and its fetch function
-(`frontend/packages/io`) are tested, but no application imports the client yet.
-Nothing in the frontend signs in, stores a token or sends an `Authorization`
-header, and the pages that the links in the mails point at (`/verify-email`
-and `/reset-password` under `PUBLIC_APP_URL`) do not exist yet.
+theme, configuration, assets), the API client that orval generates
+into `frontend/packages/api-client`, its fetch function
+(`frontend/packages/io`) and the session of an application
+(`frontend/packages/session`). The fetch function keeps the tokens of the
+session in the browser, sends the access token with every request and renews
+it when it has expired. No screen calls the client or signs in yet, and the
+pages that the links in the mails point at (`/verify-email` and
+`/reset-password` under `PUBLIC_APP_URL`) do not exist yet.
 See [Frontend API Integration](./frontend-api-integration.md).
 
 ## References

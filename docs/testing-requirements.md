@@ -70,13 +70,15 @@ show what the constraints of `services` and `service_options` refuse.
 |---------|------|-----------|
 | Configuration read from the environment | Unit, beside the module | `frontend/packages/config/src/env/env.test.ts` |
 | The fetch function, and the generated API client through it: the request, every status as a typed value, transport failures | Unit, with `fetch` stubbed | `frontend/packages/io/src/libs/fetcher/fetcher.test.ts`, `frontend/packages/api-client/src/salons.test.ts` |
+| The session: the stored tokens, the access token on a request, the renewal after it expired (once, also for requests and tabs that find it expired together), `useSession`, signing in and out | Unit, in jsdom, over the real client and the real fetch function, with `fetch` stubbed | `frontend/packages/io/src/libs/fetcher/fetcher.session.test.ts`, `frontend/packages/session/src/session.test.tsx` |
 | UI components | The stories of the component, composed and run in jsdom, with an accessibility test for every story | `frontend/packages/ui/src/components/button/button.test.tsx` |
 | Applications: the frame, the routes, what depends on the environment | Component test in a `MemoryRouter`, with an accessibility test | `frontend/apps/admin-app/src/App.test.tsx` |
 | The style rules (CSS Modules, Grid and no flex, tokens) in every package and application; the contrast of the colour tokens | Unit | `frontend/packages/theme/src/style-rules.test.ts`, `frontend/packages/theme/src/tokens.test.ts` |
 
-The tests of `ui`, of `testing` and of the applications run in jsdom, the
-others in Node. How a component is tested from its stories and how
-accessibility is checked is the subject of the skill
+The tests of `config` and of `theme` run in Node, the others in jsdom (the
+session is kept in `localStorage`). How a component is tested from its
+stories, how accessibility is checked and how code that calls the API is
+tested is the subject of the skill
 [frontend-testing](../.claude/skills/frontend-testing/SKILL.md). Environment
 variables are set with `vi.stubEnv`, or with `test.env` in the Vitest
 configuration of the package when every test of it needs the same value

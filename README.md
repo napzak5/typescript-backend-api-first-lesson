@@ -78,7 +78,7 @@ For detailed architecture documentation, see [docs/architecture-overview.md](doc
 | The other domains | None: every operation of the contract is implemented |
 | Email | Implemented for the mails of the authentication flows: plain text over SMTP. Locally they are caught by Mailpit. See [docs/email.md](docs/email.md) |
 | File storage | An S3-compatible object storage holds the files of the attachments. Locally it is SeaweedFS, started by Docker Compose; which storage production uses, its bucket, its credentials and the CORS rules of the bucket are part of preparing production. See [docs/attachments.md](docs/attachments.md) |
-| Frontend apps | Application shells; they do not call the API yet, and nothing in them signs in or sends a token. The pages that the links in the mails point at do not exist yet. What the screens will be built from is there: design tokens, shared components in CSS Modules with their Storybook, and tests that start from the stories. See [docs/frontend-api-integration.md](docs/frontend-api-integration.md) |
+| Frontend apps | Application shells; no screen calls the API or signs in yet. The pages that the links in the mails point at do not exist yet. What the screens will be built from is there: design tokens, shared components in CSS Modules with their Storybook, tests that start from the stories, and the session (the tokens kept in the browser, sent with every request and renewed when they expire). See [docs/frontend-api-integration.md](docs/frontend-api-integration.md) |
 
 ## 🚀 Quick Start
 
