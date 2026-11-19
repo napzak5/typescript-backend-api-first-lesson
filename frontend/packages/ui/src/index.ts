@@ -31,10 +31,10 @@ export {
   type EnvironmentBannerProps,
 } from './components/environment-banner/environment-banner'
 export {
-  Form,
   type FormErrors,
-  type FormProps,
-} from './components/form/form'
+  useErrorFocus,
+} from './components/form/error-focus'
+export { Form, type FormProps } from './components/form/form'
 export {
   Link,
   type LinkComponent,

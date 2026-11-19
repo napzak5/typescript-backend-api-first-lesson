@@ -98,6 +98,27 @@ describe('Button', () => {
     },
   )
 
+  it('should say that it is pressed, and that it is not, as the button element does', async () => {
+    // Act
+    await stories.Pressed.run()
+    const pressed = screen.getByRole('button', { pressed: true })
+    await stories.NotPressed.run()
+
+    // Assert
+    expect(pressed).toHaveAccessibleName('参考になった')
+    expect(screen.getByRole('button', { pressed: false })).toHaveAccessibleName(
+      '参考になった',
+    )
+  })
+
+  it('should say nothing of a state while it is given none', async () => {
+    // Act
+    await stories.Secondary.run()
+
+    // Assert
+    expect(screen.getByRole('button')).not.toHaveAttribute('aria-pressed')
+  })
+
   it('should keep a class its container gives it', async () => {
     // Act
     await stories.Small.run({

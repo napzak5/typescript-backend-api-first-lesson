@@ -27,7 +27,8 @@ this one: a component is not done without its stories and its test.
 | The screens of a booking in the portal: choosing the member of the staff, the day and the time, the page of a booking, the bookings of a customer, and cancelling and moving one | `frontend/apps/portal-app/src/bookings/` |
 | The page of a customer in the portal, and the form of their profile | `frontend/apps/portal-app/src/profile/` |
 | What a customer wishes for in the portal: the part of their page, and the form with the rows of time slots | `frontend/apps/portal-app/src/preferences/` |
-| The reviews of a customer in the portal: the part of the page of a visit, the form that writes a review and changes one, and the list with the dialog that removes one | `frontend/apps/portal-app/src/reviews/` |
+| The reviews of a customer in the portal: the part of the page of a visit, the form that writes a review and changes one, and the list with the dialog that removes one; what a reader of the page of a salon does with the reviews of others (`reader-flow.ts`, the dialog that reports one) | `frontend/apps/portal-app/src/reviews/` |
+| Where a visitor signs in, and where they go on to from there | `frontend/apps/portal-app/src/sign-in-path.ts` |
 | The links of the header of the portal, by who is signed in | `frontend/apps/portal-app/src/navigation.ts` |
 | The catalogue (Storybook), of the components of `ui`, of `session` and of the applications | `frontend/packages/ui/.storybook/`, `pnpm --filter @beauty-salon-frontend/ui run storybook` (port 6006) |
 | The routes of an application, inside the shared frame `AppShell`, and the roles it is for | `frontend/apps/<app>/src/App.tsx` |
@@ -751,8 +752,8 @@ the bookings and the profile are, above, and add what those do not have.
   screen shows at the moment. What other screens read of what the write
   counts anew is taken
   away (`removeQueries`): the page of the salon, the summary of its
-  ratings, its reviews, and the results of a search, which show the
-  rating of a salon.
+  ratings, its reviews, the ratings of its staff, and the results of a
+  search, which show the rating of a salon.
 - **A row that names other records reads them with the page**
   (`readOwnReviews`): a page of the list is its reviews with the salon of
   each and the name of the member each rates, read once per salon. One
@@ -763,6 +764,82 @@ the bookings and the profile are, above, and add what those do not have.
   each on a line of its own, in a list with a name (「写真」). A value
   that is no address of the web is shown as text (`webAddressOf`). A test
   that counts the rows of the outer list counts its own items alone.
+
+### A public page offers more to who is signed in
+
+The reviews on the page of a salon are the example to read
+(`ReviewsSection` and `StaffSection` in `salons/salon-screen.tsx`, with
+`reviews/reader-flow.ts`, `reviews/review-cache.ts` and
+`reviews/components/review-report/`). Everybody reads the page; a customer
+also says that a review of somebody else was helpful, and reports one.
+
+- **Who reads is a sum type, worked out by a pure function** (`readerOf`:
+  `visitor`, `customer` with the ID of the profile, `other`), from the
+  session and from what was read of the profile. The page offers by that
+  type and by nothing else. A visitor gets one sentence above the list
+  with the way in, not a button at every row that cannot be pressed. A
+  customer gets the buttons. Everybody else (an account of a salon, an
+  administrator, an account without a profile, a profile that could not
+  be read, a session that is still asked for) gets nothing more, and reads
+  all the same.
+- **The way in from a public page names the page to come back to**
+  (`signInHrefFrom(pathname)`: `/sign-in?from=…`), and the sign-in screen
+  goes on to it (`pathAfterSignIn`). An address is typed by hand and
+  passed on by others: what it names is followed only when it is a path
+  of the application (segments of letters, digits, `-` and `_`), and
+  anything else is the start. The address of another site is none the
+  router shows: when the browser refuses it, a push leaves the
+  application for it, and a replace fails.
+- **A button that is on or off says so with `aria-pressed`**, and `Button`
+  shows a pressed button in the colours of the accent. A mark for the eye
+  (`✓`) is `aria-hidden`. A pressed button that cannot be taken back stays
+  a button that can be pressed and sends nothing: a disabled button would
+  lose the focus that was on it. While its request is on its way, the
+  button of that row alone is `pending`.
+- **What the API answers to a press is written where it was read**
+  (`afterHelpfulCounted`): the count of the row is replaced in the order
+  that is on the screen, and the row stays where it is, for nothing moves
+  under somebody who reads. That list is no longer what the API would
+  answer, so it is marked to be read the next time it is asked for
+  (`invalidateQueries` with `refetchType: 'none'`), and what was read in
+  the other orders is taken away (`removeQueries`).
+- **What a customer did before is shown only when the API says it.** The
+  API does not say who found a review helpful, so the button is not
+  pressed on a page that is opened anew; pressing it again counts nobody
+  twice, and the page says what the API answered.
+- **A form in a dialog** (`components/review-report/`) is a child of the
+  `Dialog`, and its button among the `actions` sends it by the `form`
+  attribute. It takes `message`, `errors` and `pending` as `Form` does,
+  and moves the focus to the first control with an error with the hook
+  `Form` uses (`useErrorFocus` of `ui`). Every time the dialog is opened
+  it is a new form (a `key` that counts the openings): nothing that was
+  typed or said the time before is there.
+- **Where nothing can be sent any more, the form gives way to a
+  sentence** (the account reported the review before: an `Alert` of the
+  tone `info`, and one button that closes). The button that sent the form
+  went with it, so the one that is left takes the focus, in the layout
+  effect of the commit that shows it.
+- **A record that is gone while its row is on the page** (a 404 to a
+  press) is taken out of what was read, in every order (`afterReviewGone`:
+  `setQueriesData`), and what counts it is read again behind what the
+  page shows (`invalidateQueries`). `resetQueries` is not the tool where
+  a query keeps what it had as a placeholder (`keepPreviousData`): the
+  list would go on showing the row. The focus goes to the heading of the
+  part (`headingRef` of `Card`), in the layout effect of that commit. A
+  dialog that was open about the row is unmounted, not closed: a dialog
+  that closes gives the focus back to the button that opened it, and
+  keeps the page inert until it has closed.
+- **A row with actions is named by what a reader knows it by**
+  (`postedOf` in `salon-format.ts`: the title and the day,
+  「「Great experience」（2026年11月19日 投稿）」, or the day alone), in the
+  `aria-label` of each button and in the description of the dialog.
+- **Numbers the API counts one record at a time are read together**
+  (`readStaffRatings`): a request for each member of the staff, one value
+  for all of them, and one sentence when a request got no answer, with
+  the people shown all the same. The query is keyed by when the list it
+  belongs to was read (`dataUpdatedAt`), so the two are never of
+  different moments. This costs a request a row: it is for the staff of
+  one salon, not for a list that goes on.
 
 ## Screens and the session
 
@@ -849,7 +926,7 @@ behind it. Their screens are in `frontend/apps/portal-app/src/account/`.
 | `Navigation` | The links to the screens. The application says which one is `current` |
 | `LinkProvider`, `Link`, `ButtonLink` | Links that move within the application: `Link` in a text or a list, `ButtonLink` for one that looks like a button |
 | `PageHeader` | The top of a screen: its one `h1`, a description, the actions on the whole screen |
-| `Card` | A part of a screen under its own heading (`h2`, or `h3` with `headingLevel={3}`) |
+| `Card` | A part of a screen under its own heading (`h2`, or `h3` with `headingLevel={3}`). With `headingRef`, the heading takes the focus from the screen (and never from the Tab key): for a part whose content went with what had the focus |
 | `DescriptionList` | The names and values of one record |
 | `Badge` | The state of a record, in a word |
 | `TagList` | A few words about a record, as a list with a name: the features of a salon, what a member of the staff is good at |
@@ -913,7 +990,9 @@ behind it. Their screens are in `frontend/apps/portal-app/src/account/`.
   gives the focus back. Give the actions in the order they are read, the one
   that changes nothing first (「戻る」, then 「予約を取り消す」): the focus
   goes to the first. In a dialog with a form, the first control of the form
-  stands before the actions and takes the focus. `onClose` is called whenever
+  stands before the actions and takes the focus. The description breaks
+  a word that is longer than the dialog: it may name what somebody else
+  wrote. `onClose` is called whenever
   it has closed; set `open` to false there.
 - **Notifications** say what was done: `notify({ tone: 'success', message:
   '予約を確定しました。' })`. The notification stays, also after the screen

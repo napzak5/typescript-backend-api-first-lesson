@@ -354,10 +354,10 @@ const afterRefusedValues = (values: readonly RefusedValue[]): FormSays => {
       }
 }
 
-const TOO_MANY_REQUESTS =
+export const TOO_MANY_REQUESTS =
   'アクセスが多すぎます。しばらくしてから、もう一度お試しください。'
 
-const NOT_SENT =
+export const NOT_SENT =
   '送信できませんでした。通信の状態を確かめて、もう一度お試しください。'
 
 const VISIT_READ_AGAIN: FormSays = {

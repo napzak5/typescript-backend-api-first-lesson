@@ -1,6 +1,7 @@
 import {
   type ModelsCustomerBookingResponse,
   type ModelsReviewCreateRequest,
+  type ModelsReviewReportRequest,
   type ModelsReviewResponse,
   type ModelsReviewUpdateRequest,
   type ModelsSalonResponse,
@@ -9,6 +10,8 @@ import {
   reviewCrudDelete,
   reviewCrudGet,
   reviewCrudList,
+  reviewCrudMarkHelpful,
+  reviewCrudReport,
   reviewCrudUpdate,
 } from '@beauty-salon-frontend/api-client'
 import { match, P } from 'ts-pattern'
@@ -20,7 +23,7 @@ import {
   TOO_MANY_REQUESTS,
   type Unsent,
 } from '../behind-the-session'
-import { readOwnBooking, whyUnread } from '../bookings/bookings-api'
+import { readOwnBooking } from '../bookings/bookings-api'
 import { outsideTheContract } from '../outside-the-contract'
 import { readOwnProfile } from '../profile/profile-api'
 import {
@@ -31,6 +34,7 @@ import {
   readSalon,
   readStaff,
   type Unread,
+  whyUnread,
 } from '../salons/salons-api'
 import { reviewersOf } from './review-staff'
 
@@ -139,6 +143,22 @@ export type ReviewChange =
 export type ReviewRemoval =
   | { type: 'removed' }
   /** The review was gone already: what the customer asked for is so */
+  | { type: 'gone' }
+  | Unsent
+
+export type HelpfulSaying =
+  /** How many customers found the review helpful, this one among them */
+  | { type: 'counted'; helpfulCount: number }
+  /** The review is gone since the screen read it */
+  | { type: 'gone' }
+  | Unsent
+
+export type ReviewReporting =
+  | { type: 'reported' }
+  | { type: 'invalid'; values: RefusedValue[] }
+  /** The account reported the review before: an account reports a review once */
+  | { type: 'reportedBefore' }
+  /** The review is gone since the screen read it */
   | { type: 'gone' }
   | Unsent
 
@@ -458,6 +478,69 @@ export const removeReview = async (id: string): Promise<ReviewRemoval> => {
         { status: 400 },
         { status: 401 },
         { status: 403 },
+        { status: 500 },
+      ),
+      () => FAILED,
+    )
+    .exhaustive(outsideTheContract)
+}
+
+/**
+ * Says that the customer found a review helpful. A customer says so once:
+ * the API counts a second time as the first, and answers with the count
+ * there is.
+ */
+export const sayHelpful = async (id: string): Promise<HelpfulSaying> => {
+  const answer = await reviewCrudMarkHelpful(id).catch(() => null)
+
+  return match(answer)
+    .returnType<HelpfulSaying>()
+    .with({ status: 200 }, ({ data }) => ({
+      type: 'counted',
+      helpfulCount: data.data.helpfulCount,
+    }))
+    .with({ status: 404 }, () => ({ type: 'gone' }))
+    .with({ status: 429 }, () => TOO_MANY_REQUESTS)
+    .with(
+      P.union(
+        null,
+        { status: 400 },
+        { status: 401 },
+        { status: 403 },
+        { status: 500 },
+      ),
+      () => FAILED,
+    )
+    .exhaustive(outsideTheContract)
+}
+
+/**
+ * Reports a review to those who run the site. The review stays as it is:
+ * an administrator decides what becomes of it.
+ */
+export const reportReview = async (
+  id: string,
+  request: ModelsReviewReportRequest,
+): Promise<ReviewReporting> => {
+  const answer = await reviewCrudReport(id, request).catch(() => null)
+
+  return match(answer)
+    .returnType<ReviewReporting>()
+    .with({ status: 200 }, () => ({ type: 'reported' }))
+    .with({ status: 400 }, ({ data }) => ({
+      type: 'invalid',
+      values: refusedValuesOf(data),
+    }))
+    .with({ status: 404 }, () => ({ type: 'gone' }))
+    .with({ status: 409 }, () => ({ type: 'reportedBefore' }))
+    .with({ status: 429 }, () => TOO_MANY_REQUESTS)
+    .with(
+      P.union(
+        null,
+        { status: 401 },
+        { status: 403 },
+        { status: 413 },
+        { status: 415 },
         { status: 500 },
       ),
       () => FAILED,

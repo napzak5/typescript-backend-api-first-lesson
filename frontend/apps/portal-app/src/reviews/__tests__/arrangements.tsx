@@ -1,5 +1,6 @@
 import type {
   ModelsReviewCreateRequest,
+  ModelsReviewReportRequest,
   ModelsReviewUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
 import { testApi } from '@beauty-salon-frontend/testing/api'
@@ -375,6 +376,59 @@ export const answers = async (
     `/reviews/${reviewId}/respond`,
     { ownerResponse },
     email,
+  )
+  expect(answer.status).toBe(200)
+}
+
+/** A customer says somewhere else that a review was helpful. */
+export const findsHelpful = async (
+  reviewId: string,
+  email: string,
+): Promise<void> => {
+  const answer = await send(
+    'POST',
+    `/reviews/${reviewId}/helpful`,
+    undefined,
+    email,
+  )
+  expect(answer.status).toBe(200)
+}
+
+/** A customer reports a review somewhere else. */
+export const reports = async (
+  reviewId: string,
+  request: ModelsReviewReportRequest,
+  email = KENJI,
+): Promise<void> => {
+  const answer = await send(
+    'POST',
+    `/reviews/${reviewId}/report`,
+    request,
+    email,
+  )
+  expect(answer.status).toBe(200)
+}
+
+const reportSchema = z.tuple([z.object({ id: z.uuid() })])
+
+/** An administrator dismisses the report of an account about a review. */
+export const dismissesReportOf = async (
+  reviewId: string,
+  reporter = KENJI,
+): Promise<void> => {
+  const [{ id }] = reportSchema.parse(
+    await testApi().query(
+      `select reports.id::text
+       from review_reports reports join users on users.id = reports."reportedBy"
+       where reports."reviewId" = $1 and users.email = $2`,
+      [reviewId, reporter],
+    ),
+  )
+  const answer = await send(
+    'POST',
+    `/review-reports/${id}/dismiss`,
+    undefined,
+    ADMIN,
   )
   expect(answer.status).toBe(200)
 }

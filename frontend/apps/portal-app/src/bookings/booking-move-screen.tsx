@@ -21,7 +21,7 @@ import { match, P } from 'ts-pattern'
 import { type FormSays, NOTHING_TO_SAY } from '../forms'
 import { CUSTOMERS } from '../roles'
 import { dateAt } from '../salons/salon-format'
-import { readSalon, readStaff } from '../salons/salons-api'
+import { readSalon, readStaff, whyUnread } from '../salons/salons-api'
 import { UnreadNotice } from '../salons/unread-notice'
 import { SignInHelp } from '../sign-in-help'
 import {
@@ -38,7 +38,6 @@ import {
   readOwnBooking,
   readService,
   readSlots,
-  whyUnread,
 } from './bookings-api'
 import {
   BookingForm,

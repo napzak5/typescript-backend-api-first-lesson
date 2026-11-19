@@ -40,3 +40,12 @@ export const Disabled: Story = {
 export const Pending: Story = {
   args: { variant: 'primary', pending: true, children: '予約しています' },
 }
+
+/** A button that switched something on says so: `aria-pressed` */
+export const Pressed: Story = {
+  args: { 'aria-pressed': true, children: '参考になった' },
+}
+
+export const NotPressed: Story = {
+  args: { 'aria-pressed': false, children: '参考になった' },
+}

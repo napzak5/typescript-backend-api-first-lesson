@@ -14,6 +14,7 @@ import {
   serviceCategoryCrudList,
   serviceCrudList,
   staffProfileList,
+  staffReviewSummaryGetStaffSummary,
 } from '@beauty-salon-frontend/api-client'
 import { match, P } from 'ts-pattern'
 import * as z from 'zod/mini'
@@ -57,12 +58,20 @@ type MenuRead =
 
 type StaffRead = { type: 'found'; staff: ModelsStaffProfileResponse[] } | Unread
 
+/**
+ * How the members of a staff were rated, under their IDs. Somebody who was
+ * removed since the staff was read has no rating here.
+ */
+export type StaffRatings =
+  | { type: 'found'; summaries: Record<string, ModelsReviewSummaryResponse> }
+  | Unread
+
 type ReviewSummaryRead =
   | { type: 'found'; summary: ModelsReviewSummaryResponse }
   | NotFound
   | Unread
 
-type ReviewPage = Page<ModelsReviewResponse> | Unread
+export type ReviewPage = Page<ModelsReviewResponse> | Unread
 
 /** How many salons, and how many reviews, a page of the screen has. */
 const SALONS_PER_PAGE = 20
@@ -98,6 +107,18 @@ const unreadOf = (answer: Refused): Unread =>
       type: 'failed',
     }))
     .exhaustive()
+
+/**
+ * Why a part of a screen that reads several things is not shown: too many
+ * requests when one of them was refused for that, which waiting mends and
+ * looking at the connection does not.
+ */
+export const whyUnread = (
+  reads: readonly ({ type: string } | undefined)[],
+): Unread =>
+  reads.some((read) => read?.type === 'tooManyRequests')
+    ? { type: 'tooManyRequests' }
+    : { type: 'failed' }
 
 type ListMeta = { total: number | null; nextCursor: string | null }
 
@@ -274,6 +295,52 @@ export const readReviewSummary = async (
     .with({ status: 404 }, () => NOT_FOUND)
     .with(REFUSED, unreadOf)
     .exhaustive(outsideTheContract)
+}
+
+const readStaffReviewSummary = async (
+  staffId: string,
+): Promise<ReviewSummaryRead> => {
+  const answer = await staffReviewSummaryGetStaffSummary(staffId).catch(
+    () => null,
+  )
+
+  return match(answer)
+    .returnType<ReviewSummaryRead>()
+    .with({ status: 200 }, ({ data }) => ({
+      type: 'found',
+      summary: data.data,
+    }))
+    .with({ status: 404 }, () => NOT_FOUND)
+    .with(REFUSED, unreadOf)
+    .exhaustive(outsideTheContract)
+}
+
+/**
+ * How each of the people of a salon was rated: the API counts the reviews
+ * of one member at a request. One request that got no answer leaves them
+ * all unread, so that the page says once what is missing.
+ */
+export const readStaffRatings = async (
+  staffIds: readonly string[],
+): Promise<StaffRatings> => {
+  const reads = await Promise.all(staffIds.map(readStaffReviewSummary))
+
+  return reads.some(
+    ({ type }) => type === 'tooManyRequests' || type === 'failed',
+  )
+    ? whyUnread(reads)
+    : {
+        type: 'found',
+        summaries: Object.fromEntries(
+          reads.flatMap((read, index) => {
+            const staffId = staffIds[index]
+
+            return read.type === 'found' && staffId !== undefined
+              ? [[staffId, read.summary]]
+              : []
+          }),
+        ),
+      }
 }
 
 /** The reviews of a salon in the order that was chosen, a page at a time. */

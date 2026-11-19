@@ -23,7 +23,6 @@ import {
   readOwnBookings,
   readService,
   readSlots,
-  whyUnread,
 } from './bookings-api'
 
 /*
@@ -551,26 +550,5 @@ describe('the operations of the screens of the bookings of a customer', () => {
         type: 'invalid',
       })
     })
-  })
-})
-
-describe('whyUnread', () => {
-  it('should be too many requests when one of the things that were read says so', () => {
-    expect(
-      whyUnread([
-        { type: 'found' },
-        { type: 'failed' },
-        { type: 'tooManyRequests' },
-      ]),
-    ).toEqual({ type: 'tooManyRequests' })
-  })
-
-  it.each([
-    ['one of them failed', [{ type: 'found' }, { type: 'failed' }]],
-    ['one of them names nothing', [{ type: 'notFound' }, { type: 'found' }]],
-    ['one of them is still being read', [undefined, { type: 'failed' }]],
-    ['there is nothing to go by', []],
-  ])('should be a failure when %s', (_case, reads) => {
-    expect(whyUnread(reads)).toEqual({ type: 'failed' })
   })
 })
