@@ -2,10 +2,10 @@ import type {
   ModelsReviewResponse,
   ModelsReviewSortType,
 } from '@beauty-salon-frontend/api-client'
-import { Alert, Badge, Button, Rating, Select } from '@beauty-salon-frontend/ui'
+import { Alert, Button, Select } from '@beauty-salon-frontend/ui'
 import { type ChangeEvent, useLayoutEffect, useRef } from 'react'
 import type { More } from '../../pages'
-import { dayOf, detailRatingsOf } from '../../salon-format'
+import { ReviewContent } from '../review-content/review-content'
 import styles from './review-list.module.css'
 
 export type ReviewListProps = {
@@ -32,54 +32,6 @@ const ORDERS: readonly { value: ModelsReviewSortType; label: string }[] = [
   { value: 'rating', label: '評価の高い順' },
   { value: 'helpful', label: '参考になった順' },
 ]
-
-type ReviewProps = {
-  review: ModelsReviewResponse
-  timezone: string
-}
-
-const Review = ({ review, timezone }: ReviewProps) => {
-  const details = detailRatingsOf(review)
-
-  return (
-    // What the focus moves to when the review was added: it has no control
-    <li className={styles['review']} tabIndex={-1}>
-      <p>
-        <Rating value={review.overallRating} />
-        <time className={styles['date']} dateTime={review.createdAt}>
-          {dayOf(review.createdAt, timezone)}
-        </time>
-        {review.isVerified && (
-          <Badge className={styles['verified']} tone='success'>
-            来店確認済み
-          </Badge>
-        )}
-      </p>
-      {review.title !== null && (
-        <p className={styles['title']}>{review.title}</p>
-      )}
-      {review.comment !== null && (
-        <p className={styles['text']}>{review.comment}</p>
-      )}
-      {details !== null && <p className={styles['aside']}>{details}</p>}
-      {review.helpfulCount > 0 && (
-        <p className={styles['aside']}>
-          {review.helpfulCount} 人が「参考になった」と答えています
-        </p>
-      )}
-      {review.ownerResponse !== null && (
-        <div className={styles['response']}>
-          <p className={styles['responseHead']}>
-            サロンからの返信
-            {review.ownerRespondedAt !== null &&
-              `（${dayOf(review.ownerRespondedAt, timezone)}）`}
-          </p>
-          <p className={styles['text']}>{review.ownerResponse}</p>
-        </div>
-      )}
-    </li>
-  )
-}
 
 /**
  * The reviews of a salon, in an order the reader chooses. When reviews are
@@ -130,7 +82,10 @@ export const ReviewList = ({
       />
       <ul className={styles['list']} ref={list} aria-label='レビュー'>
         {reviews.map((review) => (
-          <Review key={review.id} review={review} timezone={timezone} />
+          // What the focus moves to when the review was added: it has no control
+          <li key={review.id} className={styles['review']} tabIndex={-1}>
+            <ReviewContent review={review} timezone={timezone} />
+          </li>
         ))}
       </ul>
       {more === 'failed' && (
