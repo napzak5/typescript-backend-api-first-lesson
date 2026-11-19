@@ -1,6 +1,6 @@
 ---
 name: frontend-ui
-description: "How the frontend of this repository is styled and how its components are built: design tokens, CSS Modules, layout with CSS Grid (never flex), the shared component package @beauty-salon-frontend/ui with its form components (label, description, error), the frame of a screen (app shell, navigation, table, dialog, notifications), how a form calls the API, the screens that need a session (sign-in, roles) and the Storybook. Use it before adding or changing a component, a form, a stylesheet, a token, a story or the markup of a screen under frontend/."
+description: "How the frontend of this repository is styled and how its components are built: design tokens, CSS Modules, layout with CSS Grid (never flex), the shared component package @beauty-salon-frontend/ui with its form components (label, description, error), the frame of a screen (app shell, navigation, table, dialog, notifications), how a form calls the API, the screens that need a session (sign-in, roles), the screens that a mailed link opens and the Storybook. Use it before adding or changing a component, a form, a stylesheet, a token, a story or the markup of a screen under frontend/."
 ---
 
 # Frontend UI
@@ -22,6 +22,7 @@ this one: a component is not done without its stories and its test.
 | The contrast of the colour tokens | `frontend/packages/theme/src/tokens.test.ts` |
 | Shared components | `frontend/packages/ui/src/components/<name>/` |
 | The screens of the session: sign-in, the guard of the screens that need one, the account in the header | `frontend/packages/session/src/` |
+| The screens of an account in the portal: registering, a new password, and the screens that a mailed link opens | `frontend/apps/portal-app/src/account/` |
 | The catalogue (Storybook), of the components of `ui` and of `session` | `frontend/packages/ui/.storybook/`, `pnpm --filter @beauty-salon-frontend/ui run storybook` (port 6006) |
 | The routes of an application, inside the shared frame `AppShell`, and the roles it is for | `frontend/apps/<app>/src/App.tsx` |
 
@@ -156,11 +157,13 @@ nobody reads is removed.
 | Component | Use it for |
 |-----------|------------|
 | `TextField` | One line. `type` is `text` (the default), `email`, `password`, `tel`, `url`, `search`, `number`, `date`, `time` or `datetime-local` |
+| `PasswordField` | A password that a person chooses. Its owner may look at it (「パスワードを表示する」) |
 | `TextArea` | Several lines |
 | `Select` | One of a list. `placeholder` adds a first option without a value |
 | `RadioGroup` | One of a few choices that should all be in sight |
 | `Checkbox` | One thing that is so or not so |
 | `Alert` | A message about the form or the page: `info`, `success`, `warning`, `danger` |
+| `Form` | The form itself: its controls in one column, the message about the whole attempt, the button that sends it |
 
 ```tsx
 <TextField
@@ -194,6 +197,12 @@ nobody reads is removed.
   `tel`, `current-password`, `new-password`, `one-time-code`. The address a
   person signs in with is `username`, so that a password manager finds the
   pair.
+- **A password that is chosen** is a `PasswordField` with
+  `autoComplete='new-password'`. It can be shown, so it is asked for once:
+  there is no second control to type it again. Its `description` says the
+  rule of the API. What is typed is kept as it is: nothing is trimmed,
+  capitalised or spell-checked. The password of a sign-in stays a `TextField`
+  of the type `password`.
 - **`Alert`**: `danger` interrupts (`role="alert"`), the other tones wait
   their turn (`role="status"`). Render it when there is something to say, not
   empty in advance.
@@ -212,25 +221,60 @@ to the group.
 
 ## A form that calls the API
 
-The sign-in form is the example to read:
-`frontend/packages/session/src/components/sign-in-form/` (what is shown) and
-`sign-in-screen/` (what is done).
+The screens of an account in the portal are the example to read:
+`frontend/apps/portal-app/src/account/` (`register-screen.tsx` is the
+shortest).
 
-- **Two components.** The form only shows: it takes `errors` (a message
-  under the name of each control), a `message` about the whole attempt,
-  `pending` and `onSubmit`, and it has stories for each of those states. The
-  screen around it calls the API and decides what the form says.
+```tsx
+<Form
+  submitLabel='登録する'
+  message={says.message}
+  errors={says.errors}
+  pending={registration.isPending}
+  onSubmit={submit}
+>
+  <TextField
+    label='メールアドレス'
+    name='email'
+    type='email'
+    autoComplete='username'
+    required
+    error={says.errors['email']}
+  />
+  <PasswordField
+    label='パスワード'
+    name='password'
+    autoComplete='new-password'
+    required
+    description={PASSWORD_RULE}
+    error={says.errors['password']}
+  />
+</Form>
+```
+
+- **The form shows, the screen decides.** `Form` of `ui` takes the controls
+  as its children, `errors` (a message under the name of each control), a
+  `message` about the whole attempt, `pending`, the `submitLabel` and
+  `onSubmit`, and its stories are those states. The screen around it calls
+  the API and decides what the form says. A form with steps or a layout of
+  its own is a component of its own that takes the same properties and has
+  its own stories: the sign-in form
+  (`frontend/packages/session/src/components/sign-in-form/`, with
+  `sign-in-screen/` around it).
 - **The browser keeps the values.** The controls have a `name` and no
   `value`; the form hands over `new FormData(form)` when it is sent. Nothing
   is rendered again while a person types, and what the browser or a password
   manager fills in is read like what was typed.
 - **Pure functions decide.** One reads the `FormData` into the request, or
-  into the errors of the controls (`readAttempt`); one turns the outcome of
-  the API into what the form says next (`afterAttempt`). They are tested
-  without a screen. The function that calls the API answers with a sum type
-  of the outcomes a screen tells apart (`SignInOutcome`), matched with
-  `.exhaustive()`: a new status of the contract is a type error, not a blank
-  screen.
+  into the errors of the controls (`readRegistration` in `account-flow.ts`);
+  one turns the outcome of the API into what the form says next
+  (`afterRefusal`). They are tested without a screen. The function that
+  calls the API (`account-api.ts`) never rejects: it answers with a sum type
+  of the outcomes a screen tells apart, matched with `.exhaustive()`, so a
+  new status of the contract is a type error, not a blank screen.
+- **A control is named as the property of the request is.** What the API
+  says about a value (`errors[].field` of the problem details) is then said
+  at its control without a table of names.
 - **Nothing is sent that cannot be right.** A missing value and a value of
   the wrong form are said at the control, with a message that says what to
   do. The form is `noValidate`: the bubbles of the browser show one message
@@ -246,6 +290,13 @@ The sign-in form is the example to read:
   then (a notification) is in `onSuccess` of the hook, not of the call.
 - **A message does not say more than the API does.** Signing in answers a
   wrong address and a wrong password alike, and so does the form.
+  Registering and asking for a mail are answered alike for an address with
+  an account and for one without, and the screen that follows says the same
+  to both.
+- **Only what cannot be right is checked before the API is asked**: a
+  missing value, an address that is none, a password outside the lengths the
+  API takes (counted as the API counts them). Whether a password is easy to
+  guess is the API's to say; the form says it at the control.
 - A form that stands alone on a screen is one column,
   `max-inline-size: var(--size-form-column)`.
 
@@ -271,8 +322,9 @@ The sign-in form is the example to read:
   screen in place of its content, at the address that was asked for; after
   signing in, the screen of that address is there. The admin and the
   dashboard application wrap all their routes. The portal is for everybody:
-  it has the sign-in screen at `/sign-in`, and a screen for customers alone
-  wraps itself (`<RequireSession roles={['customer']}>`).
+  it has the sign-in screen at `/sign-in` and the screens of an account
+  beside it, and a screen for customers alone wraps itself
+  (`<RequireSession roles={['customer']}>`).
 - **The roles of an application** are a constant in its `App.tsx`: admin is
   for `owner`, `manager`, `staff` and `admin`, the dashboard for `owner`,
   `manager` and `admin`. An account of another role is told so and offered
@@ -282,6 +334,37 @@ The sign-in form is the example to read:
   matches all four states; it is rendered for `signedIn` only.
 - Signing out is `SessionAccount`'s business. The screens disappear with the
   session, in every tab.
+- **What the sign-in screen says besides the form** is the application's:
+  `signInNotice` of `RequireSession` is why an account is asked for (above
+  the form, where it is read first), `signInHelp` the ways on for somebody
+  who cannot sign in (links, under the form). The portal offers a new
+  password and a new account; the admin and the dashboard application lead
+  to the portal for a new password.
+
+## Screens that a mailed link opens
+
+The API mails links to the portal (`PUBLIC_APP_URL`): `/verify-email`,
+`/reset-password` and `/accept-staff-invitation`, each with `#token=…`
+behind it. Their screens are in `frontend/apps/portal-app/src/account/`.
+
+- **The token is read once and taken out of the address**
+  (`useMailedToken`): it stays neither in the address bar nor in the
+  history. A page that is loaded again has none, and says that the link of
+  the mail opens it.
+- **Opening a link changes nothing.** Software opens the links of a mail
+  ahead of its reader. A request that uses the token up is sent when a
+  button is pressed. A check that uses nothing up may run when the screen
+  opens (`/reset-password/verify`, `/staff-invitation/verify`): a query
+  whose key has the token, with `staleTime: Number.POSITIVE_INFINITY` and
+  `gcTime: 0`.
+- **A token the API refuses is no value to correct.** The screen says that
+  the link cannot be used and shows the way to a new one (`mailed-link.tsx`).
+  It does not say why: the API does not tell an unknown token from a used or
+  an expired one.
+- **The address of another application** is a variable of the build:
+  `VITE_ADMIN_APP_URL` in the portal, `VITE_PORTAL_APP_URL` in the admin and
+  the dashboard application, in every `.env.<mode>` and in `vite-env.d.ts`.
+  A link to it is an `a` with the whole address, not a link of the router.
 
 ## The frame of a screen
 
