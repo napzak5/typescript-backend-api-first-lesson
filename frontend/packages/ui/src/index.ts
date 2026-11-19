@@ -60,6 +60,7 @@ export {
 } from './components/password-field/password-field'
 export {
   RadioGroup,
+  type RadioGroupLayout,
   type RadioGroupProps,
   type RadioOption,
 } from './components/radio-group/radio-group'

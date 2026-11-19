@@ -7,14 +7,9 @@ import {
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { match, P } from 'ts-pattern'
+import { type FormSays, NOTHING_TO_SAY } from '../forms'
 import { checkPasswordReset, resetPassword } from './account-api'
-import {
-  afterRefusal,
-  type FormSays,
-  NOTHING_TO_SAY,
-  PASSWORD_RULE,
-  readNewPassword,
-} from './account-flow'
+import { afterRefusal, PASSWORD_RULE, readNewPassword } from './account-flow'
 import { CheckingLink, LinkNotChecked, LinkUnusable } from './mailed-link'
 import { useMailedToken } from './mailed-token'
 

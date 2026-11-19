@@ -14,9 +14,12 @@ import { ForgotPasswordScreen } from './account/forgot-password-screen'
 import { RegisterScreen } from './account/register-screen'
 import { ResetPasswordScreen } from './account/reset-password-screen'
 import { VerifyEmailScreen } from './account/verify-email-screen'
+import { BookingDetailScreen } from './bookings/booking-detail-screen'
+import { BookingScreen } from './bookings/booking-screen'
 import { EVERY_ROLE } from './roles'
 import { SalonScreen } from './salons/salon-screen'
 import { SalonSearchScreen } from './salons/salon-search-screen'
+import { SignInHelp } from './sign-in-help'
 
 /** Where a visitor signs in: the screens of this application are for everybody unless they say otherwise */
 const SIGN_IN_PATH = '/sign-in'
@@ -24,19 +27,6 @@ const SIGN_IN_PATH = '/sign-in'
 /** The links that the shared components draw move within the application */
 const RouterLink: LinkComponent = ({ href, ...rest }) => (
   <Link {...rest} to={href} />
-)
-
-/** The ways on for somebody who cannot sign in: to a new account, to a new password. */
-const SignInHelp = () => (
-  <>
-    <p>
-      <Link to='/forgot-password'>パスワードを忘れた場合</Link>
-    </p>
-    <p>
-      はじめての方は、<Link to='/register'>アカウントを登録</Link>
-      してください。
-    </p>
-  </>
 )
 
 /** The sign-in screen, and for somebody who is signed in the way back to the start. */
@@ -70,6 +60,14 @@ export const App = () => (
         <Routes>
           <Route path='/' element={<SalonSearchScreen />} />
           <Route path='/salons/:salonId' element={<SalonScreen />} />
+          <Route
+            path='/salons/:salonId/services/:serviceId/booking'
+            element={<BookingScreen />}
+          />
+          <Route
+            path='/bookings/:bookingId'
+            element={<BookingDetailScreen />}
+          />
           <Route path={SIGN_IN_PATH} element={<SignInPage />} />
           <Route path='/register' element={<RegisterScreen />} />
           <Route path='/forgot-password' element={<ForgotPasswordScreen />} />

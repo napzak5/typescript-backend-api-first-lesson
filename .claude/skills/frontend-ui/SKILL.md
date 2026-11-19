@@ -1,6 +1,6 @@
 ---
 name: frontend-ui
-description: "How the frontend of this repository is styled and how its components are built: design tokens, CSS Modules, layout with CSS Grid (never flex), the shared component package @beauty-salon-frontend/ui with its form components (label, description, error), the frame of a screen (app shell, navigation, table, dialog, notifications), how a form calls the API, how a screen reads from the API (a search kept in the address, a list that goes on, the parts of a page), the screens that need a session (sign-in, roles), the screens that a mailed link opens and the Storybook. Use it before adding or changing a component, a form, a stylesheet, a token, a story or the markup of a screen under frontend/."
+description: "How the frontend of this repository is styled and how its components are built: design tokens, CSS Modules, layout with CSS Grid (never flex), the shared component package @beauty-salon-frontend/ui with its form components (label, description, error), the frame of a screen (app shell, navigation, table, dialog, notifications), how a form calls the API, how a screen reads from the API (a search kept in the address, a list that goes on, the parts of a page), how a screen writes what it read (a choice kept in the address, what is offered read anew, a refusal), the screens that need a session (sign-in, roles), the screens that a mailed link opens and the Storybook. Use it before adding or changing a component, a form, a stylesheet, a token, a story or the markup of a screen under frontend/."
 ---
 
 # Frontend UI
@@ -24,6 +24,7 @@ this one: a component is not done without its stories and its test.
 | The screens of the session: sign-in, the guard of the screens that need one, the account in the header | `frontend/packages/session/src/` |
 | The screens of an account in the portal: registering, a new password, and the screens that a mailed link opens | `frontend/apps/portal-app/src/account/` |
 | The screens of the salons in the portal: the search and the page of a salon, and the components they show | `frontend/apps/portal-app/src/salons/` |
+| The screens of a booking in the portal: choosing the member of the staff, the day and the time, and the page of a booking | `frontend/apps/portal-app/src/bookings/` |
 | The catalogue (Storybook), of the components of `ui`, of `session` and of the applications | `frontend/packages/ui/.storybook/`, `pnpm --filter @beauty-salon-frontend/ui run storybook` (port 6006) |
 | The routes of an application, inside the shared frame `AppShell`, and the roles it is for | `frontend/apps/<app>/src/App.tsx` |
 
@@ -172,7 +173,7 @@ nobody reads is removed.
 | `PasswordField` | A password that a person chooses. Its owner may look at it (「パスワードを表示する」) |
 | `TextArea` | Several lines |
 | `Select` | One of a list. `placeholder` adds a first option without a value |
-| `RadioGroup` | One of a few choices that should all be in sight |
+| `RadioGroup` | One of a few choices that should all be in sight. `layout='columns'` for many short ones (the times of a day): as many columns as fit, and the arrow keys go through them in the order they are read |
 | `Checkbox` | One thing that is so or not so |
 | `Alert` | A message about the form or the page: `info`, `success`, `warning`, `danger` |
 | `Form` | The form itself: its controls in one column, the message about the whole attempt, the button that sends it |
@@ -399,6 +400,73 @@ list, `salon-screen.tsx` for a record with its parts).
   state, and know neither the router nor the query. A link gets its
   address from a function the screen hands over (`salonHref`).
 
+## A screen that writes what it read
+
+The booking screens of the portal are the example to read:
+`frontend/apps/portal-app/src/bookings/` (`booking-screen.tsx`). A customer
+chooses a member of the staff and a day, the screen reads the times that are
+free then, and one of them is booked. Everything of "A form that calls the
+API" and of "A screen that reads from the API" holds; this is what comes on
+top.
+
+- **What decides what is read is in the address, and replaces its entry.**
+  The member of the staff and the day are the query of the address
+  (`booking-choice.ts`: `choiceIn(query, today, staff)` drops what cannot
+  be, `queryOf(choice)` writes it in one order), so a reload shows the times
+  of the same day. A choice is set with `{ replace: true }`: the way back
+  leads out of the screen, not through every day that was looked at. (A
+  search adds an entry: each search is a place to come back to.)
+- **What is offered is read whenever it is shown.** A time is free until
+  somebody books it. The query of the times has `staleTime: 0` and
+  `gcTime: 0`: a day that is shown again is read again, and never shown
+  from memory first.
+- **The form has two kinds of values.** Those that decide what it offers
+  belong to the screen and are controlled (`value`, `onChange`, handed up
+  with `onChoose`); what is sent with them (the time, the request) is kept
+  by the browser and read as `FormData`, as in every form. Such a form is a
+  component of its own (`components/booking-form/`): it takes the
+  properties of `Form` (`message`, `errors`, `pending`, `onSubmit`), moves
+  the focus to the first control with an error in the same way, and gets
+  what was read as a sum type of its own (`loading`, `listed`, `unread`),
+  with a story for each.
+- **Where nothing can be sent there is no button.** A day without a time
+  shows an `EmptyState` that says what to change, and the button that
+  sends is not rendered. What was typed stays.
+- **A refusal of what was offered reads it again.** The API answers 409
+  when the time was taken in the meantime, and does not say why. The form
+  says that the time could not be booked and that the times were read
+  again (`refetch`); the choice of the address stays.
+- **What a write made is what the next screen shows.** The outcome is
+  written into the query of the screen it leads to
+  (`queryClient.setQueryData(['own', 'bookings', id], …)`), the result is
+  said with `notify`, and the screen changes (`navigate`): the page of the
+  booking shows it at once, without a state of loading. It reads the
+  booking again behind what it shows (`staleTime: 0`): a salon confirms a
+  booking, and may change it.
+- **A step that stands in the way is part of the screen, not an address.**
+  An account that was just registered has no profile, and the API books
+  for a customer. The screen reads the profile first and shows the form
+  for it in place of the times (`ProfileStep`); creating it writes the
+  query of the profile, and the screen goes on to the times of the address.
+- **A part that needs several reads says one thing.** The page of a
+  booking (`booking-detail-screen.tsx`) reads the salon, the service and
+  the staff the booking names. While one of them is on its way the part is
+  loading; when one failed, one `UnreadNotice` says so, for the reason
+  `whyUnread(reads)` gives (too many requests when one of them was
+  refused for that), and its button reads them all again. What the salon
+  no longer shows is no failure: the name is replaced by words that say so.
+- **A day is a day at the salon.** Today is
+  `dateAt(new Date(), salon.timezone)`, it is the `min` of the date
+  control, and the label of a time is the time of day there
+  (`timeOfDayAt`). The date control is a `TextField` of the type `date`
+  with buttons for the day before and after; no calendar is built by hand.
+- **A screen for customers alone wraps itself**:
+  `<RequireSession roles={CUSTOMERS} signInNotice='…' signInHelp={…}>`
+  around the page. A link on a public page leads straight to its address;
+  whoever is not signed in signs in there and goes on with what they
+  chose. Behind the guard, 401 and 403 need no outcome of their own in the
+  functions that call the API: they are `failed`.
+
 ## Screens and the session
 
 | Component (`@beauty-salon-frontend/session`) | Use it for |
@@ -423,7 +491,8 @@ list, `salon-screen.tsx` for a record with its parts).
   dashboard application wrap all their routes. The portal is for everybody:
   it has the sign-in screen at `/sign-in` and the screens of an account
   beside it, and a screen for customers alone wraps itself
-  (`<RequireSession roles={['customer']}>`).
+  (`<RequireSession roles={CUSTOMERS}>`, with the constant of `roles.ts`;
+  `bookings/booking-screen.tsx`).
 - **The roles of an application** are a constant in its `App.tsx`: admin is
   for `owner`, `manager`, `staff` and `admin`, the dashboard for `owner`,
   `manager` and `admin`. An account of another role is told so and offered
@@ -513,6 +582,12 @@ behind it. Their screens are in `frontend/apps/portal-app/src/account/`.
   「予約を確定する」. This package does not know the router: an application
   gives its link once, at its root (`LinkProvider` in `App.tsx`), and the
   components draw their links with it.
+- **One of several links with the same text has a name of its own.** Every
+  service of a menu has the link 「予約する」; its `aria-label` says which
+  (「レディースカットを予約する」), and holds the text that is seen, so
+  that somebody who speaks to the browser can say what they read. The name
+  is not made with text that is hidden by a stylesheet: a browser and
+  jsdom spell such a name differently.
 - **A list has three states**, and a screen shows each: `LoadingIndicator`
   while it loads, `EmptyState` (or the `emptyMessage` of the table) when there
   is nothing, the rows when there are some.

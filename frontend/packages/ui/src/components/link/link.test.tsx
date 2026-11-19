@@ -42,6 +42,18 @@ describe('Link', () => {
     )
   })
 
+  it('should have the name it is given, which holds the text that is seen', async () => {
+    // Act
+    await stories.WithName.run()
+
+    // Assert
+    const link = screen.getByRole('link', {
+      name: 'レディースカットを予約する',
+    })
+    expect(link).toHaveTextContent('予約する')
+    expect(link).toHaveAttribute('href', '/services/ladies-cut/booking')
+  })
+
   it('should pass its class on to the link that is drawn', async () => {
     // Act
     await stories.WithProvider.run({

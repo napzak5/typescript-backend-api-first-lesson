@@ -56,3 +56,29 @@ export const WithUnavailableOption: Story = {
 export const Disabled: Story = {
   args: { disabled: true, defaultValue: 'cash' },
 }
+
+/** The times of a day: short, and too many for one column. */
+export const InColumns: Story = {
+  args: {
+    label: '開始時刻',
+    name: 'startTime',
+    layout: 'columns',
+    required: true,
+    options: [
+      '10:00',
+      '10:30',
+      '11:00',
+      '11:30',
+      '12:00',
+      '14:00',
+      '14:30',
+      '15:00',
+      '15:30',
+      '16:00',
+      '16:30',
+      '17:00',
+      '17:30',
+      '18:00',
+    ].map((time) => ({ value: time, label: time })),
+  },
+}

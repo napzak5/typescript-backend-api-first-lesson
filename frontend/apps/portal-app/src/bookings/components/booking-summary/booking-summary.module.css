@@ -1,0 +1,19 @@
+/* What comes next, under the word for the state */
+.note {
+  margin-block-start: var(--space-1);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+}
+
+/* The day, and the hours with their length: a line breaks between them, not inside */
+.whole {
+  display: inline-block;
+}
+
+/*
+ * What the customer wrote, with the line breaks it was written with. A word
+ * longer than the line is broken by the list the request is in.
+ */
+.request {
+  white-space: pre-wrap;
+}

@@ -1,0 +1,22 @@
+/* One column: what went wrong, the choices, the times, the request, the button. */
+.form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+  max-inline-size: var(--size-form-column);
+}
+
+/* The day, and below it the steps to the days beside it */
+.day {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-2);
+}
+
+.steps,
+.actions {
+  display: grid;
+  grid-auto-flow: column;
+  justify-content: start;
+  gap: var(--space-3);
+}

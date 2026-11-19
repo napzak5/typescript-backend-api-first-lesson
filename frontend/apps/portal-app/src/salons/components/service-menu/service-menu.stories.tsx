@@ -9,6 +9,8 @@ const meta: Meta<typeof ServiceMenu> = {
   args: {
     groups: menuOf(categories, services),
     currency: 'JPY',
+    bookingHref: ({ salonId, id }) =>
+      `/salons/${salonId}/services/${id}/booking`,
   },
 }
 
@@ -24,4 +26,9 @@ export const Default: Story = {}
 
 export const OneCategory: Story = {
   args: { groups: menuOf(categories.slice(0, 1), services.slice(0, 2)) },
+}
+
+/** The menu of a salon that takes no bookings: nothing leads to a booking */
+export const NotTakingBookings: Story = {
+  args: { bookingHref: undefined },
 }
