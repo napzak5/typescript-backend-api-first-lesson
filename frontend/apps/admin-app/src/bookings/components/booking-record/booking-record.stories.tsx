@@ -33,7 +33,7 @@ type Story = StoryObj<typeof meta>
 /** A booking that waits to be confirmed */
 export const Pending: Story = {}
 
-/** A booking that was carried out: two services, a discount, the times it actually took */
+/** A booking that was carried out: taken on the phone with a deposit, two services (one without a member), a discount, the times it actually took */
 export const Completed: Story = {
   args: {
     booking: aBooking({
@@ -44,6 +44,8 @@ export const Completed: Story = {
       taxAmount: 0,
       totalAmount: 13300,
       internalNotes: '次回はトリートメントを提案する。',
+      source: 'phone',
+      depositAmount: 2000,
       actualStartTime: moment(5),
       actualEndTime: moment(160),
       completedAt: moment(165),
@@ -51,7 +53,7 @@ export const Completed: Story = {
         {
           id: 'a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d',
           serviceId: color?.id ?? '',
-          staffId: staff[1]?.id ?? null,
+          staffId: null,
           startTime: moment(60),
           endTime: moment(150),
           duration: 90,

@@ -46,6 +46,8 @@ describe('BookingRecord', () => {
       ['担当', '田中 美咲'],
       ['お客様の要望', '前髪は、眉が隠れるくらいの長さにしたいです。'],
       ['サロン内のメモ', 'なし'],
+      ['受付の経路', '記録なし'],
+      ['予約金', '記録なし'],
     ])
     expect(linesOf()).toEqual([
       ['カット', '田中 美咲', '10:00〜11:00', '￥5,500（税込）', '未'],
@@ -58,7 +60,7 @@ describe('BookingRecord', () => {
     ])
   })
 
-  it('should show the services in the order of the booking, and what actually happened', async () => {
+  it('should show the services in the order of the booking, how the booking came, and what actually happened', async () => {
     // Act
     await stories.Completed.run()
 
@@ -67,14 +69,16 @@ describe('BookingRecord', () => {
       ['カット', '田中 美咲', '10:00〜11:00', '￥5,500（税込）', '済み'],
       [
         'カラー',
-        '佐藤 健',
+        '未定',
         '11:00〜12:30',
         '￥7,800（割引 ￥1,000）（税込）',
         '済み',
       ],
     ])
-    expect(termsOf('予約').slice(-4)).toEqual([
+    expect(termsOf('予約').slice(-6)).toEqual([
       ['サロン内のメモ', '次回はトリートメントを提案する。'],
+      ['受付の経路', '電話'],
+      ['予約金', '￥2,000'],
       ['実際の開始', '2026年11月20日（金） 10:05'],
       ['実際の終了', '2026年11月20日（金） 12:40'],
       ['完了を記録した日時', '2026年11月20日（金） 12:45'],
