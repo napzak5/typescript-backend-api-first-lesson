@@ -43,8 +43,10 @@ import { SalonSearchScreen } from './salons/salon-search-screen'
 import {
   OwnPasswordScreen,
   OwnSecurityScreen,
+  OwnTwoFactorScreen,
   PASSWORD_PATH,
   SECURITY_PATH,
+  TWO_FACTOR_PATH,
 } from './security/security-screens'
 import { SignInHelp } from './sign-in-help'
 import { pathAfterSignIn, SIGN_IN_PATH } from './sign-in-path'
@@ -128,6 +130,7 @@ export const App = () => {
             <Route path='/mypage/reviews' element={<OwnReviewsScreen />} />
             <Route path={SECURITY_PATH} element={<OwnSecurityScreen />} />
             <Route path={PASSWORD_PATH} element={<OwnPasswordScreen />} />
+            <Route path={TWO_FACTOR_PATH} element={<OwnTwoFactorScreen />} />
             <Route
               path='/mypage/reviews/:reviewId'
               element={<ReviewChangeScreen />}

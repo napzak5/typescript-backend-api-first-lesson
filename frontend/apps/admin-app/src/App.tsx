@@ -4,6 +4,7 @@ import {
   RequireSession,
   type RequireSessionProps,
   SessionAccount,
+  TwoFactorSetupScreen,
 } from '@beauty-salon-frontend/session'
 import {
   AppShell,
@@ -51,6 +52,7 @@ const SignInHelp = () => (
 /** Where the screens of the security of the account are: the header leads to them */
 const SECURITY_PATH = '/account/security'
 const PASSWORD_PATH = `${SECURITY_PATH}/password`
+const TWO_FACTOR_PATH = `${SECURITY_PATH}/two-factor`
 
 const PasswordPage = () => {
   const navigate = useNavigate()
@@ -90,9 +92,18 @@ export const App = () => (
             <Route path='/' element={<HomePage />} />
             <Route
               path={SECURITY_PATH}
-              element={<AccountSecurityScreen passwordHref={PASSWORD_PATH} />}
+              element={
+                <AccountSecurityScreen
+                  passwordHref={PASSWORD_PATH}
+                  twoFactorHref={TWO_FACTOR_PATH}
+                />
+              }
             />
             <Route path={PASSWORD_PATH} element={<PasswordPage />} />
+            <Route
+              path={TWO_FACTOR_PATH}
+              element={<TwoFactorSetupScreen securityHref={SECURITY_PATH} />}
+            />
             <Route path='*' element={<NotFoundPage />} />
           </Routes>
         </RequireSession>
