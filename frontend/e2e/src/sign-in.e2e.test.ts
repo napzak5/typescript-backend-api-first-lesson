@@ -3,6 +3,7 @@ import { ADMIN } from './applications'
 import { findAccessibilityViolations } from './checks'
 import { expect, test } from './fixtures'
 import {
+  ADMIN_START,
   emailField,
   enterCredentials,
   heading,
@@ -120,7 +121,7 @@ test.describe('signing in, in a browser', () => {
 
     // Assert
     expect(passwordIsNext).toBe(true)
-    await expect(heading(page, ADMIN.title)).toBeFocused()
+    await expect(heading(page, ADMIN_START)).toBeFocused()
   })
 
   test('should keep the user signed in when the page is loaded again', async ({
@@ -130,13 +131,13 @@ test.describe('signing in, in a browser', () => {
     // Arrange
     await page.goto(ADMIN.origin)
     await enterCredentials(page, OWNER, api.seedPassword)
-    await expect(heading(page, ADMIN.title)).toBeVisible()
+    await expect(heading(page, ADMIN_START)).toBeVisible()
 
     // Act
     await page.reload()
 
     // Assert
-    await expect(heading(page, ADMIN.title)).toBeVisible()
+    await expect(heading(page, ADMIN_START)).toBeVisible()
     await expect(signOutButton(page)).toBeVisible()
   })
 
@@ -148,10 +149,10 @@ test.describe('signing in, in a browser', () => {
     // Arrange
     await page.goto(ADMIN.origin)
     await enterCredentials(page, OWNER, api.seedPassword)
-    await expect(heading(page, ADMIN.title)).toBeVisible()
+    await expect(heading(page, ADMIN_START)).toBeVisible()
     const otherTab = await context.newPage()
     await otherTab.goto(ADMIN.origin)
-    await expect(heading(otherTab, ADMIN.title)).toBeVisible()
+    await expect(heading(otherTab, ADMIN_START)).toBeVisible()
 
     // Act
     await signOutButton(otherTab).click()
@@ -180,7 +181,7 @@ test.describe('signing in, in a browser', () => {
     await signInButton(page).click()
 
     // Assert
-    await expect(heading(page, ADMIN.title)).toBeFocused()
+    await expect(heading(page, ADMIN_START)).toBeFocused()
     expect(violations).toEqual([])
   })
 })
