@@ -14,7 +14,11 @@ const renderAt = (path: string) =>
     </QueryClientProvider>,
   )
 
-/** Nobody is signed in: what the application shows without asking the API. */
+/**
+ * Nobody is signed in: what the application shows without asking the API.
+ * The root path is not among it: it searches for salons, and is tested with
+ * the screens of the salons, against the API.
+ */
 describe('App', () => {
   beforeEach(() => {
     vi.stubEnv('VITE_APP_TITLE', 'Beauty Salon Portal')
@@ -28,21 +32,10 @@ describe('App', () => {
 
   it('should show the title of the application in the header', () => {
     // Act
-    renderAt('/')
+    renderAt('/sign-in')
 
     // Assert
     expect(screen.getByRole('banner')).toHaveTextContent('Beauty Salon Portal')
-  })
-
-  it('should show the page of the root path to somebody who is not signed in', () => {
-    // Act
-    renderAt('/')
-
-    // Assert
-    expect(
-      screen.getByRole('heading', { level: 1, name: 'Beauty Salon Portal' }),
-    ).toBeVisible()
-    expect(document.title).toBe('Beauty Salon Portal')
   })
 
   it('should say that a page does not exist and lead back to the root', () => {
@@ -59,22 +52,9 @@ describe('App', () => {
     )
   })
 
-  it('should go back to the root from that page without leaving the application', () => {
-    // Arrange
-    renderAt('/no-such-page')
-
-    // Act
-    fireEvent.click(screen.getByRole('link', { name: 'トップへ戻る' }))
-
-    // Assert
-    expect(
-      screen.getByRole('heading', { level: 1, name: 'Beauty Salon Portal' }),
-    ).toHaveFocus()
-  })
-
   it('should offer the way to sign in from the header', () => {
     // Act
-    renderAt('/')
+    renderAt('/no-such-page')
 
     // Assert
     expect(
@@ -86,7 +66,7 @@ describe('App', () => {
 
   it('should show the sign-in screen after that link is pressed', () => {
     // Arrange
-    renderAt('/')
+    renderAt('/no-such-page')
 
     // Act
     fireEvent.click(
@@ -155,7 +135,7 @@ describe('App', () => {
 
   it('should begin with a link that skips to the main content', () => {
     // Act
-    renderAt('/')
+    renderAt('/sign-in')
 
     // Assert
     expect(screen.getAllByRole('link').at(0)).toHaveAccessibleName('本文へ移動')
@@ -172,7 +152,7 @@ describe('App', () => {
       vi.stubEnv('VITE_MODE', mode)
 
       // Act
-      renderAt('/')
+      renderAt('/sign-in')
 
       // Assert
       expect(screen.getByText(mode)).toBeVisible()
@@ -181,14 +161,13 @@ describe('App', () => {
 
   it('should not name the environment in production', () => {
     // Act
-    renderAt('/')
+    renderAt('/sign-in')
 
     // Assert
     expect(screen.queryByText('production')).not.toBeInTheDocument()
   })
 
   it.each([
-    '/',
     '/no-such-page',
     '/sign-in',
     '/register',

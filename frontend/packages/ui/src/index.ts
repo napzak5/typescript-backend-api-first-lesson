@@ -29,6 +29,7 @@ export {
   type FormProps,
 } from './components/form/form'
 export {
+  Link,
   type LinkComponent,
   type LinkComponentProps,
   LinkProvider,
@@ -62,6 +63,7 @@ export {
   type RadioGroupProps,
   type RadioOption,
 } from './components/radio-group/radio-group'
+export { Rating, type RatingProps } from './components/rating/rating'
 export {
   Select,
   type SelectOption,
@@ -72,6 +74,7 @@ export {
   type TableColumn,
   type TableProps,
 } from './components/table/table'
+export { TagList, type TagListProps } from './components/tag-list/tag-list'
 export { TextArea, type TextAreaProps } from './components/text-area/text-area'
 export {
   TextField,

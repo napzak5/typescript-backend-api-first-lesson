@@ -29,6 +29,15 @@ const heading = (name: string) =>
 
 const header = () => within(screen.getByRole('banner'))
 
+/**
+ * What is said in the status messages of the content. The notification is
+ * one of them; the start, which searches for salons, has others.
+ */
+const statusMessages = (): (string | null)[] =>
+  within(screen.getByRole('main'))
+    .getAllByRole('status')
+    .map((status) => status.textContent)
+
 /** Signs in on the screen, as a seeded account. */
 const signInAs = async (email: string): Promise<void> => {
   const user = userEvent.setup()
@@ -67,9 +76,7 @@ describe('App, against the API', () => {
     expect(
       header().queryByRole('link', { name: 'サインイン' }),
     ).not.toBeInTheDocument()
-    expect(
-      within(screen.getByRole('main')).getByRole('status'),
-    ).toHaveTextContent('サインインしました。')
+    expect(statusMessages()).toContain('サインインしました。')
   })
 
   it.each([
@@ -125,9 +132,7 @@ describe('App, against the API', () => {
     ).toBeVisible()
     expect(screen.getByRole('heading', { level: 1, name: TITLE })).toBeVisible()
     expect(screen.queryByText(CUSTOMER)).not.toBeInTheDocument()
-    expect(
-      within(screen.getByRole('main')).getByRole('status'),
-    ).toHaveTextContent('サインアウトしました。')
+    expect(statusMessages()).toContain('サインアウトしました。')
     expect(await sessionCountOfTheApi()).toEqual([{ count: 0 }])
   })
 

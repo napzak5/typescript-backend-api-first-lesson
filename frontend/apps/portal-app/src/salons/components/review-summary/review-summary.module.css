@@ -1,0 +1,39 @@
+.summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+}
+
+/* The ratings share three columns: the rating, its share, how many gave it */
+.distribution {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr) max-content;
+  gap: var(--space-1) var(--space-3);
+  max-inline-size: var(--size-form-column);
+}
+
+.rating {
+  display: grid;
+  grid-template-columns: subgrid;
+  grid-column: 1 / -1;
+  align-items: center;
+  font-size: var(--font-size-small);
+}
+
+.share {
+  inline-size: 100%;
+  block-size: var(--space-2);
+}
+
+.whole {
+  fill: var(--color-border);
+}
+
+.part {
+  fill: var(--color-rating);
+}
+
+.count {
+  color: var(--color-text-muted);
+  text-align: end;
+}

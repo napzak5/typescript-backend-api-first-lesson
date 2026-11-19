@@ -1,0 +1,31 @@
+.rating {
+  display: inline-grid;
+  grid-auto-flow: column;
+  align-items: center;
+  justify-content: start;
+  gap: var(--space-1);
+  white-space: nowrap;
+}
+
+.stars {
+  inline-size: calc(var(--space-4) * 5);
+  block-size: var(--space-4);
+}
+
+.empty {
+  fill: var(--color-border);
+}
+
+.filled {
+  fill: var(--color-rating);
+}
+
+.value {
+  font-weight: var(--font-weight-medium);
+}
+
+.count,
+.none {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+}
