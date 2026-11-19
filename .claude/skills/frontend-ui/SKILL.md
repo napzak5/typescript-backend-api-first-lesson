@@ -1086,7 +1086,12 @@ behind it. Their screens are in `frontend/apps/portal-app/src/account/`.
   stands before the actions and takes the focus. The description breaks
   a word that is longer than the dialog: it may name what somebody else
   wrote. `onClose` is called whenever
-  it has closed; set `open` to false there.
+  it has closed; set `open` to false there. When the actions change (the
+  form's 「戻る」 and 「発行し直す」, then 「閉じる」 beside the new backup
+  codes), each button has a `key` of its own: without one, React turns
+  the button that was first into the one that is first now, and the
+  browser draws its colours changing from the one look into the other
+  (`transition`), with too little contrast on the way.
 - **Notifications** say what was done: `notify({ tone: 'success', message:
   '予約を確定しました。' })`. The notification stays, also after the screen
   has changed, until the user closes it or the next one takes its place;

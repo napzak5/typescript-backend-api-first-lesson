@@ -106,6 +106,21 @@ describe('BackupCodesDialog', () => {
     ).toEqual(['閉じる'])
   })
 
+  it('should close with a button of its own, not with the button that went back changed into it', async () => {
+    // Arrange: a button whose look changes is drawn in between for a while
+    await stories.IssuedByCode.run()
+    const back = within(dialog()).getByRole('button', { name: '戻る' })
+
+    // Act
+    await userEvent.type(code(), '012345{Enter}')
+
+    // Assert
+    expect(within(dialog()).getByRole('button', { name: '閉じる' })).not.toBe(
+      back,
+    )
+    expect(back).not.toBeInTheDocument()
+  })
+
   it('should move the focus to what is said of the new codes, as they take the place of the form', async () => {
     // Arrange
     await stories.IssuedByCode.run()
