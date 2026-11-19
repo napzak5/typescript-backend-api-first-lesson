@@ -29,7 +29,7 @@ export const NOT_FOUND: NotFound = { type: 'notFound' }
 
 export const FAILED: Unread = { type: 'failed' }
 
-export const TOO_MANY_REQUESTS: Unread = { type: 'tooManyRequests' }
+const TOO_MANY_REQUESTS: Unread = { type: 'tooManyRequests' }
 
 type Problem<Status extends number> = {
   status: Status

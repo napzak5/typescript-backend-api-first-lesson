@@ -26,7 +26,7 @@ import {
 import type { DayConditions } from './booking-day'
 
 /** The account may not see the bookings of the salon: a member of another one. */
-export type Forbidden = { type: 'forbidden' }
+type Forbidden = { type: 'forbidden' }
 
 export type BookingPage = Page<ModelsBookingResponse> | Forbidden | Unread
 

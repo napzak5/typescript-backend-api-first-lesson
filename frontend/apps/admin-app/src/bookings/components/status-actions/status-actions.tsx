@@ -17,7 +17,7 @@ import styles from './status-actions.module.css'
 export type AskedAction = 'complete' | 'cancel' | 'noShow'
 
 /** The operations that are done at once */
-export type DirectAction = 'confirm' | 'start'
+type DirectAction = 'confirm' | 'start'
 
 export type StatusActionsProps = {
   status: ModelsBookingStatusType

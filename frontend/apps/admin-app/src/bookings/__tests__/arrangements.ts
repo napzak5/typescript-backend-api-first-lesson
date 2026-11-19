@@ -52,9 +52,6 @@ const oneId = async (
 export const salonIdOf = (name: string): Promise<string> =>
   oneId('select id::text from salons where name = $1', [name])
 
-export const userIdOf = (email: string): Promise<string> =>
-  oneId('select id::text from users where email = $1', [email])
-
 const daySchema = z.tuple([z.object({ day: z.iso.date() })])
 
 /** The day so many days from today in Tokyo (`2026-11-20`). */

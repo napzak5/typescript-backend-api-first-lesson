@@ -29,7 +29,7 @@ export type OwnSalonState = {
 }
 
 /** The key the salon of the account is read under: what changes the account takes it away. */
-export const OWN_SALON = ['account', 'salon']
+const OWN_SALON = ['account', 'salon']
 
 const PLATFORM: OwnSalon = { type: 'platform' }
 const NONE: OwnSalonRead = { type: 'none' }
