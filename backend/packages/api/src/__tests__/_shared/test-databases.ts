@@ -13,7 +13,7 @@ export type TestDatabase = {
 }
 
 export type TestDatabases = {
-  /** A database of the test's own: the tables of the application, all empty. */
+  /** A database of the test's own: a copy of the template. */
   create: () => Promise<TestDatabase>
   close: () => Promise<void>
 }
@@ -30,10 +30,16 @@ const uniqueName = (prefix: string): string =>
  * only be copied while nothing is connected to it, so the connection that
  * builds the template is closed before the first copy.
  *
+ * The tables of the template are empty unless `fillTemplate` puts rows in
+ * them, over the connection it is given: every copy then starts with those
+ * rows.
+ *
  * The role of `instanceUrl` needs the right to create databases.
  */
 export const openTestDatabases = async (
   instanceUrl: string,
+  fillTemplate: (template: postgres.Sql) => Promise<void> = async () =>
+    undefined,
 ): Promise<TestDatabases> => {
   const admin = postgres(instanceUrl, { max: 1 })
   const urlOf = (database: string): string => {
@@ -49,6 +55,7 @@ export const openTestDatabases = async (
     onnotice: () => undefined,
   })
   await setup.unsafe(getSetupSql())
+  await fillTemplate(setup)
   await setup.end()
 
   return {
