@@ -15,7 +15,11 @@ export const json = (
     headers: { 'Content-Type': `${type}; charset=utf-8` },
   })
 
-export const problem = (status: number): Response =>
+/** A problem the API answers with, naming the values it refused when it is given them. */
+export const problem = (
+  status: number,
+  errors: { field: string; rule: string }[] | null = null,
+): Response =>
   json(
     status,
     {
@@ -25,7 +29,13 @@ export const problem = (status: number): Response =>
       detail: null,
       instance: null,
       code: '2001',
-      errors: null,
+      errors:
+        errors?.map((error) => ({
+          ...error,
+          message: 'Invalid',
+          value: null,
+          constraint: null,
+        })) ?? null,
       correlationId: null,
       timestamp: '2026-11-20T00:00:00.000Z',
     },
