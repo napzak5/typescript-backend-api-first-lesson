@@ -4,7 +4,7 @@ import {
   summarizeViolations,
   WCAG_2_2_AA,
 } from '@beauty-salon-frontend/testing/accessibility'
-import type { Page } from '@playwright/test'
+import { expect, type Page } from '@playwright/test'
 
 /**
  * What of the page breaks WCAG 2.2 AA; an empty array when nothing does, so
@@ -28,11 +28,9 @@ export const findAccessibilityViolations = async (
  * What a layout must not do, counted on the page as the browser laid it out:
  * `overflow` is by how many pixels the page is wider than the window, and
  * `flex` how many elements are laid out with flex (the layout of this
- * project is CSS Grid):
- *
- *   expect(await measureLayout(page)).toEqual({ overflow: 0, flex: 0 })
+ * project is CSS Grid).
  */
-export const measureLayout = (
+const measureLayout = (
   page: Page,
 ): Promise<{ overflow: number; flex: number }> =>
   page.evaluate(() => ({
@@ -41,3 +39,9 @@ export const measureLayout = (
       getComputedStyle(element).display.includes('flex'),
     ).length,
   }))
+
+/** The page is accessible, nothing of it sticks out of the window, and nothing is laid out with flex. */
+export const expectSoundPage = async (page: Page): Promise<void> => {
+  expect(await findAccessibilityViolations(page)).toEqual([])
+  expect(await measureLayout(page)).toEqual({ overflow: 0, flex: 0 })
+}

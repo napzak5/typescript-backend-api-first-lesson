@@ -5,11 +5,16 @@ import { z } from 'zod'
 import { stepAt, totp } from '../_shared/two-factor-helpers'
 import type { TestApis } from './test-apis'
 
+/** A scheme, a host and perhaps a port: no path, no slash at the end */
+const ORIGIN = /^https?:\/\/[^/]+$/
+
 const apiSchema = z.strictObject({
   /** The port the API listens on, or `null` for a free one */
   port: z.union([z.int().min(1).max(65_535), z.null()]),
   /** The origins whose pages may call the API from a browser */
-  corsOrigins: z.array(z.string().regex(/^https?:\/\/[^/]+$/)),
+  corsOrigins: z.array(z.string().regex(ORIGIN)),
+  /** The origin the links in the mails point at, or `null` for none */
+  publicAppUrl: z.union([z.string().regex(ORIGIN), z.null()]),
 })
 
 const statementSchema = z.strictObject({
@@ -30,12 +35,18 @@ const digest = (text: string): Buffer =>
 /**
  * What the tests ask the test server for, over HTTP:
  *
- * - `POST /apis` starts an API for `{ port, corsOrigins }` and answers 201
- *   with its `id`, its `origin` and `seedPassword`, the password of the
- *   accounts of the seed data. `port` is the port to listen on, or `null`
- *   for a free one; `corsOrigins` are the origins whose pages may call the
- *   API from a browser. It answers 409 when the port is taken
- * - `POST /apis/{id}/reset` gives it a fresh database (204)
+ * - `POST /apis` starts an API for `{ port, corsOrigins, publicAppUrl }` and
+ *   answers 201 with its `id`, its `origin` and `seedPassword`, the password
+ *   of the accounts of the seed data. `port` is the port to listen on, or
+ *   `null` for a free one; `corsOrigins` are the origins whose pages may
+ *   call the API from a browser; `publicAppUrl` is the origin the links in
+ *   its mails point at, or `null`. It answers 409 when the port is taken
+ * - `POST /apis/{id}/reset` gives it a fresh database and forgets its mails
+ *   (204)
+ * - `GET /apis/{id}/mails` answers with `{ mails }`: what the API handed to
+ *   its mailer since the last reset (`to`, `subject`, `text`), oldest
+ *   first. Nothing is sent anywhere: a test reads here the link that a
+ *   person would find in their mailbox
  * - `POST /apis/{id}/query` runs `{ text, values }` on its database and
  *   answers with `{ rows }`: for what a test cannot bring about through the
  *   API, such as time having passed
@@ -108,6 +119,15 @@ export const createControl = (
         res.status(400).json({ message }),
       )
       .exhaustive()
+  })
+
+  control.get('/apis/:id/mails', (req, res) => {
+    const mails = apis.mails(req.params.id)
+    if (mails === null) {
+      res.sendStatus(404)
+      return
+    }
+    res.json({ mails })
   })
 
   control.delete('/apis/:id', async (req, res) => {

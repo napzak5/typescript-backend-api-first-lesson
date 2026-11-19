@@ -45,6 +45,27 @@ const setUpSchema = z.object({
 })
 
 /**
+ * An access token of an account of the seed data: for what a test asks of
+ * the API without a screen, in the name of that account.
+ */
+export const accessTokenOf = async (
+  request: APIRequestContext,
+  api: TestApi,
+  email: string,
+): Promise<string> => {
+  const signedIn = await request.post(`${api.origin}/api/v1/auth/login`, {
+    data: {
+      email,
+      password: api.seedPassword,
+      rememberMe: false,
+      twoFactorCode: null,
+    },
+  })
+
+  return signedInSchema.parse(await signedIn.json()).data.accessToken
+}
+
+/**
  * Sets up two-factor authentication for an account, as its owner would: by
  * asking the API, for no screen does it yet. The secret is what
  * `api.authenticatorCode` makes the codes from.
@@ -54,15 +75,12 @@ export const setUpTwoFactor = async (
   api: TestApi,
   email: string,
 ): Promise<{ secret: string; backupCodes: string[] }> => {
-  const password = api.seedPassword
-  const signedIn = await request.post(`${api.origin}/api/v1/auth/login`, {
-    data: { email, password, rememberMe: false, twoFactorCode: null },
-  })
-  const { accessToken } = signedInSchema.parse(await signedIn.json()).data
-  const headers = { Authorization: `Bearer ${accessToken}` }
+  const headers = {
+    Authorization: `Bearer ${await accessTokenOf(request, api, email)}`,
+  }
   const setUp = await request.post(`${api.origin}/api/v1/auth/2fa/enable`, {
     headers,
-    data: { password },
+    data: { password: api.seedPassword },
   })
   const { secret, backupCodes } = setUpSchema.parse(await setUp.json()).data
   await request.post(`${api.origin}/api/v1/auth/2fa/verify`, {

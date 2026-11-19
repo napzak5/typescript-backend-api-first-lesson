@@ -29,6 +29,18 @@ const HomePage = () => (
   </>
 )
 
+/**
+ * The way on for somebody who cannot sign in. A password is set anew in the
+ * portal, where the link of the mail leads for every account.
+ */
+const SignInHelp = () => (
+  <p>
+    <a href={`${import.meta.env.VITE_PORTAL_APP_URL}/forgot-password`}>
+      パスワードを忘れた場合
+    </a>
+  </p>
+)
+
 const NotFoundPage = () => (
   <>
     <PageHeader
@@ -51,7 +63,7 @@ export const App = () => (
         account={<SessionAccount />}
       >
         {/* Every screen needs a session: who is not signed in signs in here, at the address they asked for */}
-        <RequireSession roles={ROLES}>
+        <RequireSession roles={ROLES} signInHelp={<SignInHelp />}>
           <Routes>
             <Route path='/' element={<HomePage />} />
             <Route path='*' element={<NotFoundPage />} />

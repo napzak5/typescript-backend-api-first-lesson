@@ -140,7 +140,7 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 | パスワードの再設定 | `<PUBLIC_APP_URL>/reset-password#token=<トークン>` |
 | スタッフの招待 | `<PUBLIC_APP_URL>/accept-staff-invitation#token=<トークン>` |
 
-リンク先のページは、フラグメントからトークンを取り出して API（`/verify-email/confirm`、`/reset-password`、`/staff-invitation/accept` か `/staff-invitation/join`）に送ります。招待のページは、先にトークンを `/staff-invitation/verify` に送り、応答の `links` で、パスワードを尋ねるか（`accept`）、ログインを求めるか（`join`）を決めます。このページはフロントエンドにまだありません。
+リンク先のページは、フラグメントからトークンを取り出して API（`/verify-email/confirm`、`/reset-password`、`/staff-invitation/accept` か `/staff-invitation/join`）に送ります。招待のページは、先にトークンを `/staff-invitation/verify` に送り、応答の `links` で、パスワードを尋ねるか（`accept`）、ログインを求めるか（`join`）を決めます。これらのページは portal-app にあります（[アカウントの画面](./frontend-api-integration.md#アカウントの画面)）。リンクを開いただけでは、トークンを消費するリクエストを送りません（ボタンを押したときに送ります）。メールのリンクを利用者より先に開くソフトウェアが、リンクを使い切らないようにするためです。
 
 メールの送信の仕組みは [メール送信](./email.md) にあります。
 

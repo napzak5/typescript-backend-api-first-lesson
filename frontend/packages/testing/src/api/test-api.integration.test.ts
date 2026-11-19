@@ -51,8 +51,21 @@ const startedSchema = z.object({ id: z.string(), origin: z.string() })
 const start = async (options: {
   port: number | null
   corsOrigins: string[]
+  publicAppUrl: string | null
 }): Promise<z.infer<typeof startedSchema>> =>
   startedSchema.parse(await (await ask('POST', '/apis', options)).json())
+
+/** An address that has no account, and a password the API takes. */
+const NEW_ADDRESS = 'first.visit@example.com'
+const NEW_PASSWORD = 'a salon visit every month'
+
+/** Registers at an API, as the portal does for a visitor. */
+const register = (api: string, email: string): Promise<Response> =>
+  fetch(`${api}/api/v1/auth/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password: NEW_PASSWORD }),
+  })
 
 /** Asks an API, as a browser does before a page of `origin` may sign in. */
 const preflight = (api: string, origin: string): Promise<Response> =>
@@ -155,11 +168,19 @@ describe('an API for the pages of a browser', () => {
 
   it('listens on the port it is asked for and answers the origins it is opened to, also after a reset', async () => {
     // A port that is free: the one of an API that is gone
-    const gone = await start({ port: null, corsOrigins: [] })
+    const gone = await start({
+      port: null,
+      corsOrigins: [],
+      publicAppUrl: null,
+    })
     await ask('DELETE', `/apis/${gone.id}`)
     const port = Number(new URL(gone.origin).port)
 
-    const api = await start({ port, corsOrigins: [APPLICATION] })
+    const api = await start({
+      port,
+      corsOrigins: [APPLICATION],
+      publicAppUrl: null,
+    })
     const allowed = await preflight(api.origin, APPLICATION)
     const other = await preflight(api.origin, 'https://attacker.example')
     const reset = await ask('POST', `/apis/${api.id}/reset`)
@@ -188,7 +209,11 @@ describe('an API for the pages of a browser', () => {
     const taken = Number(new URL(testApi().origin).port)
     const before = await databaseCount()
 
-    const answer = await ask('POST', '/apis', { port: taken, corsOrigins: [] })
+    const answer = await ask('POST', '/apis', {
+      port: taken,
+      corsOrigins: [],
+      publicAppUrl: null,
+    })
 
     expect(answer.status).toBe(409)
     expect(await answer.json()).toMatchObject({
@@ -199,14 +224,30 @@ describe('an API for the pages of a browser', () => {
 
   it.each([
     ['nothing', {}],
-    ['a port that is none', { port: 70_000, corsOrigins: [] }],
     [
-      'an address in place of an origin',
-      { port: null, corsOrigins: ['http://127.0.0.1:4999/sign-in'] },
+      'a port that is none',
+      { port: 70_000, corsOrigins: [], publicAppUrl: null },
     ],
     [
+      'an address in place of an origin',
+      {
+        port: null,
+        corsOrigins: ['http://127.0.0.1:4999/sign-in'],
+        publicAppUrl: null,
+      },
+    ],
+    [
+      'links that point at a page in place of an origin',
+      {
+        port: null,
+        corsOrigins: [],
+        publicAppUrl: 'http://127.0.0.1:4999/verify-email',
+      },
+    ],
+    ['no word on where its links point', { port: null, corsOrigins: [] }],
+    [
       'a property it does not know',
-      { port: null, corsOrigins: [], database: 'another' },
+      { port: null, corsOrigins: [], publicAppUrl: null, database: 'another' },
     ],
   ])('is not started for %s', async (_case, options) => {
     const before = await databaseCount()
@@ -215,6 +256,130 @@ describe('an API for the pages of a browser', () => {
 
     expect(answer.status).toBe(400)
     expect(await databaseCount()).toBe(before)
+  })
+})
+
+describe('the mails of an API', () => {
+  const mailsSchema = z.object({
+    mails: z.array(z.object({ to: z.string(), text: z.string() })),
+  })
+
+  it('are what the application handed to its mailer, by the time it has answered', async () => {
+    const answer = await register(testApi().origin, NEW_ADDRESS)
+
+    expect(answer.status).toBe(204)
+    expect(await testApi().mails()).toEqual([
+      {
+        to: NEW_ADDRESS,
+        subject: 'メールアドレスの確認',
+        text: expect.stringContaining(
+          'https://app.salon.example/verify-email#token=',
+        ),
+      },
+    ])
+  })
+
+  it('carry the link a person would press: the API takes its token', async () => {
+    await register(testApi().origin, NEW_ADDRESS)
+
+    const link = new URL(await testApi().mailedLink(NEW_ADDRESS))
+    const confirmed = await call('/api/v1/auth/verify-email/confirm', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: link.hash.replace('#token=', '') }),
+    })
+    const signedIn = await signIn(NEW_ADDRESS, NEW_PASSWORD)
+
+    expect(link.pathname).toBe('/verify-email')
+    expect(link.hash).toMatch(/^#token=[\w-]{43}$/)
+    expect(confirmed.status).toBe(204)
+    expect(signedIn.status).toBe(200)
+  })
+
+  it('hand out the link of the last mail to an address, and of no mail to somebody else', async () => {
+    const OTHER_ADDRESS = 'second.visit@example.com'
+    await register(testApi().origin, NEW_ADDRESS)
+    const first = await testApi().mailedLink(NEW_ADDRESS)
+    await register(testApi().origin, OTHER_ADDRESS)
+    const afterAnotherMail = await testApi().mailedLink(NEW_ADDRESS)
+    // The API mails an account again once a minute has passed
+    await testApi().query(
+      `update users set "emailVerificationExpiry" = "emailVerificationExpiry" - interval '2 minutes' where email = $1`,
+      [NEW_ADDRESS],
+    )
+    await call('/api/v1/auth/verify-email/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: NEW_ADDRESS }),
+    })
+    const second = await testApi().mailedLink(NEW_ADDRESS)
+
+    expect((await testApi().mails()).map((mail) => mail.to)).toEqual([
+      NEW_ADDRESS,
+      OTHER_ADDRESS,
+      NEW_ADDRESS,
+    ])
+    expect(afterAnotherMail).toBe(first)
+    expect(second).not.toBe(first)
+  })
+
+  it('are those of this test alone: the one before registered the same address', async () => {
+    expect(await testApi().mails()).toEqual([])
+  })
+
+  it('fail the test that asks for the link of a mail nobody was sent', async () => {
+    await register(testApi().origin, NEW_ADDRESS)
+
+    await expect(testApi().mailedLink('nobody@example.com')).rejects.toThrow(
+      `No mail with a link to nobody@example.com. The API wrote to: ${NEW_ADDRESS} (メールアドレスの確認)`,
+    )
+  })
+
+  it('point at the application the API was started for, also after a reset', async () => {
+    const PORTAL = 'http://127.0.0.1:4998'
+    const api = await start({
+      port: null,
+      corsOrigins: [],
+      publicAppUrl: PORTAL,
+    })
+    const mails = async (): Promise<z.infer<typeof mailsSchema>['mails']> => {
+      const answer = await fetch(
+        `${inject('testServer').origin}/apis/${api.id}/mails`,
+        { headers: { Authorization: `Bearer ${inject('testServer').token}` } },
+      )
+
+      return mailsSchema.parse(await answer.json()).mails
+    }
+
+    await register(api.origin, NEW_ADDRESS)
+    const before = await mails()
+    await ask('POST', `/apis/${api.id}/reset`)
+    const afterReset = await mails()
+    await register(api.origin, NEW_ADDRESS)
+    const again = await mails()
+    await ask('DELETE', `/apis/${api.id}`)
+
+    const mailWithLinkToPortal = [
+      {
+        to: NEW_ADDRESS,
+        text: expect.stringContaining(`${PORTAL}/verify-email#token=`),
+      },
+    ]
+    expect(before).toEqual(mailWithLinkToPortal)
+    expect(afterReset).toEqual([])
+    // The API of after the reset writes its links for the same application
+    expect(again).toEqual(mailWithLinkToPortal)
+    // The mails of one API are not those of another
+    expect(await testApi().mails()).toEqual([])
+  })
+
+  it('are not there for an API that is not there', async () => {
+    const answer = await fetch(
+      `${inject('testServer').origin}/apis/00000000-0000-4000-8000-000000000000/mails`,
+      { headers: { Authorization: `Bearer ${inject('testServer').token}` } },
+    )
+
+    expect(answer.status).toBe(404)
   })
 })
 
@@ -280,7 +445,11 @@ describe('the code of an authenticator app', () => {
 
 describe('an API that is removed', () => {
   it('stops answering and leaves no database behind', async () => {
-    const other = await start({ port: null, corsOrigins: [] })
+    const other = await start({
+      port: null,
+      corsOrigins: [],
+      publicAppUrl: null,
+    })
     const named = await ask('POST', `/apis/${other.id}/query`, {
       text: 'select current_database() as name',
       values: [],
