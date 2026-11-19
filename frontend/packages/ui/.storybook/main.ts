@@ -8,9 +8,14 @@ const packageDirectory = (name: string): string =>
   dirname(fileURLToPath(import.meta.resolve(`${name}/package.json`)))
 
 const config: StorybookConfig = {
-  // One catalogue for the components of every package: those of this one,
-  // and those the screens of the session are made of
-  stories: ['../src/**/*.stories.tsx', '../../session/src/**/*.stories.tsx'],
+  // One catalogue for the components of the whole frontend: those of this
+  // package, those the screens of the session are made of, and those that
+  // one application has for itself
+  stories: [
+    '../src/**/*.stories.tsx',
+    '../../session/src/**/*.stories.tsx',
+    '../../../apps/*/src/**/*.stories.tsx',
+  ],
   addons: [
     packageDirectory('@storybook/addon-docs'),
     packageDirectory('@storybook/addon-a11y'),

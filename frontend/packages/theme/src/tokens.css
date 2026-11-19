@@ -25,6 +25,7 @@
   --palette-green-50: #f0f8f2;
   --palette-green-700: #1e6b3a;
   --palette-amber-50: #fdf6e7;
+  --palette-amber-600: #b26a00;
   --palette-amber-800: #7a4d00;
   --palette-blue-50: #eff5fc;
   --palette-blue-700: #1d5a9e;
@@ -64,6 +65,9 @@
   --color-warning-text: var(--palette-amber-800);
   --color-info-subtle: var(--palette-blue-50);
   --color-info-text: var(--palette-blue-700);
+
+  /* The stars of a rating */
+  --color-rating: var(--palette-amber-600);
 
   /* What is not available */
   --color-disabled: var(--palette-neutral-500);

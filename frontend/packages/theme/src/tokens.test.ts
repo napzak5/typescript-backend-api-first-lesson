@@ -100,4 +100,16 @@ describe('the colour tokens', () => {
       expect(ratio).toBeGreaterThanOrEqual(3)
     },
   )
+
+  // WCAG 2.2, 1.4.11 Non-text Contrast: 3:1 for a drawing that says something
+  it.each(SURFACES.map((surface) => ['--color-rating', surface]))(
+    'should let %s be seen as a drawing on %s',
+    (foreground, background) => {
+      // Act
+      const ratio = contrast(foreground, background)
+
+      // Assert
+      expect(ratio).toBeGreaterThanOrEqual(3)
+    },
+  )
 })
