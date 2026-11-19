@@ -1,4 +1,4 @@
-import type { APIRequestContext, Locator, Page } from '@playwright/test'
+import type { Locator, Page } from '@playwright/test'
 import { PORTAL } from './applications'
 import {
   dateControl,
@@ -18,11 +18,14 @@ import {
 } from './bookings'
 import { expectSoundPage } from './checks'
 import { expect, type TestApi, test } from './fixtures'
-import { CUSTOMER, enterCredentials, heading } from './sign-in'
-
-/** Somebody who registers in a test: an account without a profile */
-const NEWCOMER = 'newcomer@example.com'
-const NEWCOMER_PASSWORD = 'a passphrase that only this test knows'
+import {
+  CUSTOMER,
+  enterCredentials,
+  heading,
+  NEWCOMER,
+  NEWCOMER_PASSWORD,
+  registerNewcomer,
+} from './sign-in'
 
 /**
  * What a customer writes for the salon: two paragraphs, and the name of a
@@ -31,26 +34,6 @@ const NEWCOMER_PASSWORD = 'a passphrase that only this test knows'
  */
 const LONG_REQUEST =
   '前回と同じ長さでお願いします。\n\n参考にしたい写真があります: natural_brown_with_soft_highlights_and_long_layers_for_autumn_2026_front_and_side.jpeg'
-
-/** An account whose address is confirmed, and that has not said who its customer is. */
-const registerNewcomer = async (
-  request: APIRequestContext,
-  api: TestApi,
-): Promise<void> => {
-  const registered = await request.post(`${api.origin}/api/v1/auth/register`, {
-    data: { email: NEWCOMER, password: NEWCOMER_PASSWORD },
-  })
-  expect(registered.status()).toBe(204)
-  const token = new URL(await api.mailedLink(NEWCOMER)).hash.replace(
-    '#token=',
-    '',
-  )
-  const confirmed = await request.post(
-    `${api.origin}/api/v1/auth/verify-email/confirm`,
-    { data: { token } },
-  )
-  expect(confirmed.status()).toBe(204)
-}
 
 const requestControl = (page: Page): Locator =>
   page.getByRole('textbox', { name: 'ご要望' })

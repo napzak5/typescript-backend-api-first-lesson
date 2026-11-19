@@ -12,12 +12,13 @@ const currentAt = (pathname: string): string[] =>
   )
 
 describe('navigationFor', () => {
-  it('should lead a customer to the search and to their bookings', () => {
+  it('should lead a customer to the search, to their bookings and to their own page', () => {
     expect(
       navigationFor('customer', '/').map(({ href, label }) => [href, label]),
     ).toEqual([
       ['/', 'サロンを探す'],
       ['/bookings', '予約の一覧'],
+      ['/mypage', 'マイページ'],
     ])
   })
 
@@ -26,9 +27,10 @@ describe('navigationFor', () => {
   })
 
   it.each<ModelsUserResponse['role']>(['staff', 'manager', 'owner', 'admin'])(
-    'should have no link for an account of the role %s: the bookings of a customer are of no use to it',
+    'should have no link for an account of the role %s: the screens of a customer are of no use to it',
     (role) => {
       expect(navigationFor(role, '/bookings')).toEqual([])
+      expect(navigationFor(role, '/mypage')).toEqual([])
     },
   )
 
@@ -47,8 +49,15 @@ describe('navigationFor', () => {
       `/bookings/${BOOKING_ID}/reschedule`,
       ['予約の一覧'],
     ],
+    ['the page of the customer', '/mypage', ['マイページ']],
+    ['the form of the profile', '/mypage/profile', ['マイページ']],
     ['the sign-in screen', '/sign-in', []],
     ['a screen that is not there', '/bookings-of-others', []],
+    [
+      'an address that only begins like the page of the customer',
+      '/mypages',
+      [],
+    ],
     ['an address that only begins like the salons', '/salons', []],
   ])('should mark the link of %s', (_case, pathname, current) => {
     expect(currentAt(pathname)).toEqual(current)

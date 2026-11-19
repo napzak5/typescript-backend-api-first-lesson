@@ -1,0 +1,5 @@
+/* The number a member looks for first */
+.points {
+  font-size: var(--font-size-large);
+  font-weight: var(--font-weight-bold);
+}

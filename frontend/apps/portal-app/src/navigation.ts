@@ -1,15 +1,19 @@
 import type { ModelsUserResponse } from '@beauty-salon-frontend/api-client'
 import type { NavigationItem } from '@beauty-salon-frontend/ui'
 
+/** Whether an address is that of a screen, or of one below it. */
+const isAtOrBelow = (pathname: string, screen: string): boolean =>
+  pathname === screen || pathname.startsWith(`${screen}/`)
+
 /**
  * The links of the header. They are for a customer who is signed in: the
- * search, and the bookings of the customer. A visitor has the search in
- * front of them and nothing else to go to, and the screens of a booking
- * are of no use to an account of another role.
+ * search, the bookings of the customer, and what the salons know of them.
+ * A visitor has the search in front of them and nothing else to go to, and
+ * the screens of a customer are of no use to an account of another role.
  *
  * A link is the current one on every screen below it: the page of a salon
  * and the screen that books belong to the search, the page of a booking to
- * the bookings.
+ * the bookings, the form of the profile to the page of the customer.
  */
 export const navigationFor = (
   role: ModelsUserResponse['role'] | undefined,
@@ -18,8 +22,6 @@ export const navigationFor = (
   if (role !== 'customer') {
     return []
   }
-  const ofBookings =
-    pathname === '/bookings' || pathname.startsWith('/bookings/')
 
   return [
     {
@@ -27,6 +29,15 @@ export const navigationFor = (
       label: 'サロンを探す',
       current: pathname === '/' || pathname.startsWith('/salons/'),
     },
-    { href: '/bookings', label: '予約の一覧', current: ofBookings },
+    {
+      href: '/bookings',
+      label: '予約の一覧',
+      current: isAtOrBelow(pathname, '/bookings'),
+    },
+    {
+      href: '/mypage',
+      label: 'マイページ',
+      current: isAtOrBelow(pathname, '/mypage'),
+    },
   ]
 }
