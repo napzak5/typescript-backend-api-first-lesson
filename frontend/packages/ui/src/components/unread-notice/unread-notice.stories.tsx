@@ -3,11 +3,11 @@ import { fn } from 'storybook/test'
 import { UnreadNotice } from './unread-notice'
 
 const meta: Meta<typeof UnreadNotice> = {
-  title: 'Session/Security/UnreadNotice',
+  title: 'Components/UnreadNotice',
   component: UnreadNotice,
   args: {
-    what: 'サインインしている端末',
-    reason: { type: 'failed' },
+    message:
+      'メニューを読み込めませんでした。通信の状態を確かめて、もう一度お試しください。',
     onRetry: fn(),
     retrying: false,
   },
@@ -17,12 +17,7 @@ export default meta
 
 type Story = StoryObj<typeof meta>
 
-/** No answer, or one that says nothing */
-export const Failed: Story = {}
-
-export const TooManyRequests: Story = {
-  args: { reason: { type: 'tooManyRequests' } },
-}
+export const Unread: Story = {}
 
 /** The API is being asked again */
 export const Retrying: Story = {

@@ -9,6 +9,7 @@ import {
   Card,
   LoadingIndicator,
   PageHeader,
+  UnreadNotice,
   useNotifications,
   useScreenHeadingFocus,
 } from '@beauty-salon-frontend/ui'
@@ -18,8 +19,8 @@ import { useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import { BookingReview } from '../reviews/booking-review'
 import { CUSTOMERS } from '../roles'
+import { unreadMessageOf } from '../salons/pages'
 import { readSalon, readStaff, whyUnread } from '../salons/salons-api'
-import { UnreadNotice } from '../salons/unread-notice'
 import { SignInHelp } from '../sign-in-help'
 import { afterCancellation, readCancellation } from './booking-flow'
 import { whenLineOf } from './booking-format'
@@ -200,8 +201,7 @@ const BookingDetails = ({ booking }: BookingDetailsProps) => {
       [P._, P._, { type: UNREAD }],
       (reads) => (
         <UnreadNotice
-          what='予約の内容'
-          reason={whyUnread(reads)}
+          message={unreadMessageOf('予約の内容', whyUnread(reads))}
           onRetry={again}
           retrying={salon.isFetching || service.isFetching || staff.isFetching}
         />
@@ -253,8 +253,7 @@ const OwnBooking = () => {
       <>
         <PageHeader title={TITLE} />
         <UnreadNotice
-          what='予約'
-          reason={reason}
+          message={unreadMessageOf('予約', reason)}
           onRetry={() => void read.refetch()}
           retrying={read.isFetching}
         />

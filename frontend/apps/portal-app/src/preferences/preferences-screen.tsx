@@ -6,6 +6,7 @@ import {
   EmptyState,
   LoadingIndicator,
   PageHeader,
+  UnreadNotice,
   useNotifications,
   useScreenHeadingFocus,
 } from '@beauty-salon-frontend/ui'
@@ -16,7 +17,7 @@ import { match, P } from 'ts-pattern'
 import { type FormSays, NOTHING_TO_SAY } from '../forms'
 import { OWN_PROFILE, type ProfileRead } from '../profile/profile-api'
 import { CUSTOMERS } from '../roles'
-import { UnreadNotice } from '../salons/unread-notice'
+import { unreadMessageOf } from '../salons/pages'
 import { SignInHelp } from '../sign-in-help'
 import { PreferencesForm } from './components/preferences-form/preferences-form'
 import {
@@ -186,8 +187,7 @@ const OwnPreferencesToChange = () => {
         ))
         .with({ type: UNREAD }, (reason) => (
           <UnreadNotice
-            what='好みの設定'
-            reason={reason}
+            message={unreadMessageOf('好みの設定', reason)}
             onRetry={() => void read.refetch()}
             retrying={read.isFetching}
           />

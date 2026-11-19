@@ -15,6 +15,7 @@ import {
   PageHeader,
   TextArea,
   TextField,
+  UnreadNotice,
   useNotifications,
   useScreenHeadingFocus,
 } from '@beauty-salon-frontend/ui'
@@ -31,9 +32,9 @@ import {
 } from '../profile/profile-api'
 import { afterProfile, readProfile } from '../profile/profile-flow'
 import { CUSTOMERS } from '../roles'
+import { unreadMessageOf } from '../salons/pages'
 import { dateAt, durationOf } from '../salons/salon-format'
 import { readSalon, readStaff } from '../salons/salons-api'
-import { UnreadNotice } from '../salons/unread-notice'
 import { SignInHelp } from '../sign-in-help'
 import {
   type Choice,
@@ -298,16 +299,14 @@ const BookingSteps = ({ salon, service }: OfServiceProps) => {
         ))
         .with([{ type: UNREAD }, P._], ([reason]) => (
           <UnreadNotice
-            what='スタッフ'
-            reason={reason}
+            message={unreadMessageOf('スタッフ', reason)}
             onRetry={() => void staff.refetch()}
             retrying={staff.isFetching}
           />
         ))
         .with([P._, { type: UNREAD }], ([, reason]) => (
           <UnreadNotice
-            what='お客様の情報'
-            reason={reason}
+            message={unreadMessageOf('お客様の情報', reason)}
             onRetry={() => void profile.refetch()}
             retrying={profile.isFetching}
           />
@@ -358,8 +357,7 @@ const BookingPage = () => {
       <>
         <PageHeader title={TITLE} />
         <UnreadNotice
-          what='サロン'
-          reason={reason}
+          message={unreadMessageOf('サロン', reason)}
           onRetry={() => void salon.refetch()}
           retrying={salon.isFetching}
         />
@@ -369,8 +367,7 @@ const BookingPage = () => {
       <>
         <PageHeader title={TITLE} />
         <UnreadNotice
-          what='メニュー'
-          reason={reason}
+          message={unreadMessageOf('メニュー', reason)}
           onRetry={() => void service.refetch()}
           retrying={service.isFetching}
         />

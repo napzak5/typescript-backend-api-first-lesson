@@ -4,6 +4,7 @@ import {
   EmptyState,
   LoadingIndicator,
   PageHeader,
+  UnreadNotice,
   useNotifications,
   useScreenHeadingFocus,
 } from '@beauty-salon-frontend/ui'
@@ -18,8 +19,13 @@ import { match, P } from 'ts-pattern'
 import { listHrefOf } from '../bookings/own-bookings'
 import { OWN_PROFILE, readOwnProfile } from '../profile/profile-api'
 import { CUSTOMERS } from '../roles'
-import { cursorAfter, firstCursor, listingOf, moreOf } from '../salons/pages'
-import { UnreadNotice } from '../salons/unread-notice'
+import {
+  cursorAfter,
+  firstCursor,
+  listingOf,
+  moreOf,
+  unreadMessageOf,
+} from '../salons/pages'
 import { SignInHelp } from '../sign-in-help'
 import { OwnReviewList } from './components/own-review-list/own-review-list'
 import { ReviewRemoval } from './components/review-removal/review-removal'
@@ -130,8 +136,7 @@ const Reviews = ({ customerId }: ReviewsProps) => {
     ))
     .with({ type: 'unread' }, ({ reason }) => (
       <UnreadNotice
-        what='レビュー'
-        reason={reason}
+        message={unreadMessageOf('レビュー', reason)}
         onRetry={() => void read.refetch()}
         retrying={read.isFetching}
       />
@@ -195,8 +200,7 @@ const OwnReviews = () => {
         .with({ type: 'none' }, () => NO_PROFILE)
         .with({ type: UNREAD }, (reason) => (
           <UnreadNotice
-            what='レビュー'
-            reason={reason}
+            message={unreadMessageOf('レビュー', reason)}
             onRetry={() => void profile.refetch()}
             retrying={profile.isFetching}
           />

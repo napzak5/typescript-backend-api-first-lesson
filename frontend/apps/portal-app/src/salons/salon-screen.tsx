@@ -13,6 +13,7 @@ import {
   Link,
   LoadingIndicator,
   PageHeader,
+  UnreadNotice,
   useNotifications,
 } from '@beauty-salon-frontend/ui'
 import {
@@ -43,7 +44,13 @@ import { SalonAbout } from './components/salon-about/salon-about'
 import { SalonHours } from './components/salon-hours/salon-hours'
 import { ServiceMenu } from './components/service-menu/service-menu'
 import { StaffProfiles } from './components/staff-profiles/staff-profiles'
-import { cursorAfter, firstCursor, listingOf, moreOf } from './pages'
+import {
+  cursorAfter,
+  firstCursor,
+  listingOf,
+  moreOf,
+  unreadMessageOf,
+} from './pages'
 import { dateAt, postedOf } from './salon-format'
 import { menuOf } from './salon-menu'
 import {
@@ -54,7 +61,6 @@ import {
   readStaff,
   readStaffRatings,
 } from './salons-api'
-import { UnreadNotice } from './unread-notice'
 
 /** The title of the screen that could not read the salon, and so not its name */
 const TITLE = 'サロンの詳細'
@@ -101,8 +107,7 @@ const MenuSection = ({ salon }: OfSalonProps) => {
         })
         .with({ type: NOT_READ }, (reason) => (
           <UnreadNotice
-            what='メニュー'
-            reason={reason}
+            message={unreadMessageOf('メニュー', reason)}
             onRetry={() => void read.refetch()}
             retrying={read.isFetching}
           />
@@ -146,8 +151,7 @@ const StaffSection = ({ salon }: OfSalonProps) => {
                 { type: P.union('tooManyRequests', 'failed') },
                 (reason) => (
                   <UnreadNotice
-                    what='スタッフの評価'
-                    reason={reason}
+                    message={unreadMessageOf('スタッフの評価', reason)}
                     onRetry={() => void ratings.refetch()}
                     retrying={ratings.isFetching}
                   />
@@ -166,8 +170,7 @@ const StaffSection = ({ salon }: OfSalonProps) => {
         ))
         .with({ type: P.union('tooManyRequests', 'failed') }, (reason) => (
           <UnreadNotice
-            what='スタッフ'
-            reason={reason}
+            message={unreadMessageOf('スタッフ', reason)}
             onRetry={() => void read.refetch()}
             retrying={read.isFetching}
           />
@@ -327,8 +330,7 @@ const ReviewsSection = ({ salon }: OfSalonProps) => {
         ))
         .with({ type: NOT_READ }, (reason) => (
           <UnreadNotice
-            what='評価'
-            reason={reason}
+            message={unreadMessageOf('評価', reason)}
             onRetry={() => void summary.refetch()}
             retrying={summary.isFetching}
           />
@@ -342,8 +344,7 @@ const ReviewsSection = ({ salon }: OfSalonProps) => {
         ))
         .with({ type: 'unread' }, ({ reason }) => (
           <UnreadNotice
-            what='レビュー'
-            reason={reason}
+            message={unreadMessageOf('レビュー', reason)}
             onRetry={() => void reviews.refetch()}
             retrying={reviews.isFetching}
           />
@@ -476,8 +477,7 @@ export const SalonScreen = () => {
         <>
           <PageHeader title={TITLE} />
           <UnreadNotice
-            what='サロン'
-            reason={reason}
+            message={unreadMessageOf('サロン', reason)}
             onRetry={() => void read.refetch()}
             retrying={read.isFetching}
           />

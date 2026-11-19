@@ -12,6 +12,7 @@ import {
   Card,
   LoadingIndicator,
   PageHeader,
+  UnreadNotice,
   useNotifications,
 } from '@beauty-salon-frontend/ui'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -20,9 +21,9 @@ import { useNavigate, useParams, useSearchParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import { type FormSays, NOTHING_TO_SAY } from '../forms'
 import { CUSTOMERS } from '../roles'
+import { unreadMessageOf } from '../salons/pages'
 import { dateAt } from '../salons/salon-format'
 import { readSalon, readStaff, whyUnread } from '../salons/salons-api'
-import { UnreadNotice } from '../salons/unread-notice'
 import { SignInHelp } from '../sign-in-help'
 import {
   type Choice,
@@ -261,8 +262,7 @@ const BookingToMove = ({ booking }: BookingToMoveProps) => {
       [P._, P._, { type: UNREAD }],
       (reads) => (
         <UnreadNotice
-          what='予約の内容'
-          reason={whyUnread(reads)}
+          message={unreadMessageOf('予約の内容', whyUnread(reads))}
           onRetry={again}
           retrying={salon.isFetching || service.isFetching || staff.isFetching}
         />
@@ -316,8 +316,7 @@ const MovePage = () => {
       <>
         <PageHeader title={TITLE} />
         <UnreadNotice
-          what='予約'
-          reason={reason}
+          message={unreadMessageOf('予約', reason)}
           onRetry={() => void read.refetch()}
           retrying={read.isFetching}
         />

@@ -5,6 +5,7 @@ import {
   ButtonLink,
   LoadingIndicator,
   PageHeader,
+  UnreadNotice,
   useNotifications,
   useScreenHeadingFocus,
 } from '@beauty-salon-frontend/ui'
@@ -14,7 +15,7 @@ import { useNavigate } from 'react-router'
 import { match, P } from 'ts-pattern'
 import { type FormSays, NOTHING_TO_SAY } from '../forms'
 import { CUSTOMERS } from '../roles'
-import { UnreadNotice } from '../salons/unread-notice'
+import { unreadMessageOf } from '../salons/pages'
 import { SignInHelp } from '../sign-in-help'
 import { ProfileForm } from './components/profile-form/profile-form'
 import {
@@ -217,8 +218,7 @@ const OwnProfile = () => {
       <>
         <PageHeader title={TITLE} />
         <UnreadNotice
-          what='お客様の情報'
-          reason={reason}
+          message={unreadMessageOf('お客様の情報', reason)}
           onRetry={() => void read.refetch()}
           retrying={read.isFetching}
         />

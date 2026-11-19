@@ -8,6 +8,7 @@ import {
   RadioGroup,
   Select,
   TextField,
+  UnreadNotice,
 } from '@beauty-salon-frontend/ui'
 import {
   type ChangeEvent,
@@ -17,9 +18,9 @@ import {
   useRef,
 } from 'react'
 import { match } from 'ts-pattern'
+import { unreadMessageOf } from '../../../salons/pages'
 import { calendarDateOf } from '../../../salons/salon-format'
 import type { Unread } from '../../../salons/salons-api'
-import { UnreadNotice } from '../../../salons/unread-notice'
 import {
   type Choice,
   dayAfter,
@@ -199,8 +200,7 @@ export const BookingForm = ({
         ))
         .with({ type: 'unread' }, ({ reason, retrying }) => (
           <UnreadNotice
-            what='空いている時刻'
-            reason={reason}
+            message={unreadMessageOf('空いている時刻', reason)}
             onRetry={onRetry}
             retrying={retrying}
           />
