@@ -16,6 +16,21 @@ export const bookingsHrefOf = (salonId: string): string =>
 export const bookingHrefOf = (salonId: string, bookingId: string): string =>
   `${bookingsHrefOf(salonId)}/${bookingId}`
 
+/** The screen that moves a booking to another time or another member of the staff. */
+export const bookingMoveHrefOf = (salonId: string, bookingId: string): string =>
+  `${bookingHrefOf(salonId, bookingId)}/reschedule`
+
+/** The screen that adds a line to a booking. */
+export const lineEntryHrefOf = (salonId: string, bookingId: string): string =>
+  `${bookingHrefOf(salonId, bookingId)}/services/new`
+
+/** A line of a booking. */
+export const lineHrefOf = (
+  salonId: string,
+  bookingId: string,
+  lineId: string,
+): string => `${bookingHrefOf(salonId, bookingId)}/services/${lineId}`
+
 /** The screen that puts a booking into the ledger of a salon, opened on a day. */
 export const bookingEntryHrefOf = (salonId: string, date: string): string =>
   `${bookingsHrefOf(salonId)}/new?date=${date}`
