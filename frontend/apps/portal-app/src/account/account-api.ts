@@ -13,6 +13,7 @@ import {
   type ModelsStaffInvitationResponse,
 } from '@beauty-salon-frontend/api-client'
 import { match, P } from 'ts-pattern'
+import { outsideTheContract } from '../outside-the-contract'
 
 /** A value the API does not take: the property, and the rule it broke. */
 export type RefusedValue = { field: string; rule: string }
@@ -124,7 +125,9 @@ const tokenRefusalOf = (answer: Refused): TokenRefused | Refusal => {
 
 /*
  * None of these functions rejects: what a screen has to tell the user is in
- * the outcome.
+ * the outcome. The statuses of the contract are matched exhaustively, so a
+ * status that is added to it is a type error here; a status from outside it
+ * (`outsideTheContract`) is a failure, not an exception.
  */
 
 /** Registers an account. A mail with a link confirms the address. */
@@ -135,7 +138,7 @@ export const register = async (
     .returnType<RequestOutcome>()
     .with({ status: 204 }, () => ACCEPTED)
     .with(REFUSED, refusalOf)
-    .exhaustive()
+    .exhaustive(outsideTheContract)
 
 /** Asks for the mail that confirms an address once more. */
 export const sendVerificationAgain = async (
@@ -145,7 +148,7 @@ export const sendVerificationAgain = async (
     .returnType<RequestOutcome>()
     .with({ status: 204 }, () => ACCEPTED)
     .with(REFUSED, refusalOf)
-    .exhaustive()
+    .exhaustive(outsideTheContract)
 
 /** Confirms the address that the token was mailed to. */
 export const confirmEmail = async (token: string): Promise<TokenOutcome> =>
@@ -153,7 +156,7 @@ export const confirmEmail = async (token: string): Promise<TokenOutcome> =>
     .returnType<TokenOutcome>()
     .with({ status: 204 }, () => ACCEPTED)
     .with(REFUSED, tokenRefusalOf)
-    .exhaustive()
+    .exhaustive(outsideTheContract)
 
 /** Asks for the mail with which a password is set anew. */
 export const requestPasswordReset = async (
@@ -163,7 +166,7 @@ export const requestPasswordReset = async (
     .returnType<RequestOutcome>()
     .with({ status: 204 }, () => ACCEPTED)
     .with(REFUSED, refusalOf)
-    .exhaustive()
+    .exhaustive(outsideTheContract)
 
 /** Asks whether the token of a password reset still works. It stays usable. */
 export const checkPasswordReset = async (
@@ -173,7 +176,7 @@ export const checkPasswordReset = async (
     .returnType<TokenOutcome>()
     .with({ status: 204 }, () => ACCEPTED)
     .with(REFUSED, tokenRefusalOf)
-    .exhaustive()
+    .exhaustive(outsideTheContract)
 
 /** Sets the password of the account that the token was mailed to. Nobody is signed in by it. */
 export const resetPassword = async (
@@ -184,7 +187,7 @@ export const resetPassword = async (
     .returnType<TokenOutcome>()
     .with({ status: 204 }, () => ACCEPTED)
     .with(REFUSED, tokenRefusalOf)
-    .exhaustive()
+    .exhaustive(outsideTheContract)
 
 /** Asks what the invitation is and which of the two ways takes it. It stays usable. */
 export const checkInvitation = async (
@@ -205,7 +208,7 @@ export const checkInvitation = async (
     .with({ status: 200 }, () => ({ type: 'failed' }))
     .with({ status: 409 }, () => ({ type: 'accountExists' }))
     .with(REFUSED, tokenRefusalOf)
-    .exhaustive()
+    .exhaustive(outsideTheContract)
 
 /** Creates the account of the invited person, with the password they chose. Nobody is signed in by it. */
 export const acceptInvitation = async (
@@ -219,7 +222,7 @@ export const acceptInvitation = async (
     .with({ status: 204 }, () => ACCEPTED)
     .with({ status: 409 }, () => ({ type: 'accountExists' }))
     .with(REFUSED, tokenRefusalOf)
-    .exhaustive()
+    .exhaustive(outsideTheContract)
 
 /** Ties the account that is signed in to the staff member of the invitation. */
 export const joinInvitation = async (
@@ -233,4 +236,4 @@ export const joinInvitation = async (
       type: 'notForThisAccount',
     }))
     .with(REFUSED, tokenRefusalOf)
-    .exhaustive()
+    .exhaustive(outsideTheContract)

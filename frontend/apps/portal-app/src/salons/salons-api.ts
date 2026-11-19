@@ -17,6 +17,7 @@ import {
 } from '@beauty-salon-frontend/api-client'
 import { match, P } from 'ts-pattern'
 import * as z from 'zod/mini'
+import { outsideTheContract } from '../outside-the-contract'
 import type { SalonConditions } from './salon-search'
 
 /** Why nothing came of a request to read: there is nothing a person could correct. */
@@ -152,7 +153,7 @@ export const findSalons = async (
     .returnType<SalonPage>()
     .with({ status: 200 }, ({ data }) => pageOf(data.data, data.meta))
     .with(REFUSED, unreadOf)
-    .exhaustive()
+    .exhaustive(outsideTheContract)
 }
 
 const salonIdSchema = z.uuid()
@@ -172,7 +173,7 @@ export const readSalon = async (id: string): Promise<SalonRead> => {
     .with({ status: 200 }, ({ data }) => ({ type: 'found', salon: data.data }))
     .with({ status: 404 }, () => NOT_FOUND)
     .with(REFUSED, unreadOf)
-    .exhaustive()
+    .exhaustive(outsideTheContract)
 }
 
 const readCategories = async (
@@ -190,7 +191,7 @@ const readCategories = async (
     .with({ status: 200 }, ({ data }) => pageOf(data.data, data.meta))
     .with({ status: 404 }, () => NOT_FOUND)
     .with(REFUSED, unreadOf)
-    .exhaustive()
+    .exhaustive(outsideTheContract)
 }
 
 const readServices = async (
@@ -208,7 +209,7 @@ const readServices = async (
     .with({ status: 200 }, ({ data }) => pageOf(data.data, data.meta))
     .with({ status: 404 }, () => NOT_FOUND)
     .with(REFUSED, unreadOf)
-    .exhaustive()
+    .exhaustive(outsideTheContract)
 }
 
 /**
@@ -248,7 +249,7 @@ const readStaffPage = async (
     .returnType<Page<ModelsStaffProfileResponse> | Unread>()
     .with({ status: 200 }, ({ data }) => pageOf(data.data, data.meta))
     .with(REFUSED, unreadOf)
-    .exhaustive()
+    .exhaustive(outsideTheContract)
 }
 
 /** The people of a salon, as the salon shows them to its customers. */
@@ -272,7 +273,7 @@ export const readReviewSummary = async (
     }))
     .with({ status: 404 }, () => NOT_FOUND)
     .with(REFUSED, unreadOf)
-    .exhaustive()
+    .exhaustive(outsideTheContract)
 }
 
 /** The reviews of a salon in the order that was chosen, a page at a time. */
@@ -292,5 +293,5 @@ export const readReviews = async (
     .returnType<ReviewPage>()
     .with({ status: 200 }, ({ data }) => pageOf(data.data, data.meta))
     .with(REFUSED, unreadOf)
-    .exhaustive()
+    .exhaustive(outsideTheContract)
 }

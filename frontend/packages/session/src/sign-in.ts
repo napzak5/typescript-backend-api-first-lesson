@@ -31,6 +31,14 @@ export type SignInOutcome =
   | { type: 'failed' }
 
 /**
+ * An answer whose status the contract does not name for the sign-in: a
+ * gateway in front of the API answers 502, 503 or 504 when the API does
+ * not, and the fetch function resolves with every status. It says nothing
+ * about the credentials, and it must not make `signIn` reject.
+ */
+const outsideTheContract = (): SignInOutcome => ({ type: 'failed' })
+
+/**
  * Signs in. When the API accepts the credentials, the session it issued is
  * stored: from then on every request carries its access token, and
  * `useSession` says that somebody is signed in.
@@ -74,5 +82,5 @@ export const signIn = async (
       ),
       () => ({ type: 'failed' }),
     )
-    .exhaustive()
+    .exhaustive(outsideTheContract)
 }

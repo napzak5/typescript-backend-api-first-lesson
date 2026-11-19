@@ -192,7 +192,10 @@ under conditions a test cannot arrange. What a user does on a screen is
 tested against the real API.
 
 The functions of a screen that call the API are tested the same way for
-those answers alone: too many requests, an error of the server, no answer
+those answers alone: too many requests, an error of the server, no answer,
+and a status the contract does not name (502, 503 and 504 of a gateway,
+with a body that is no JSON), for which the function must answer `failed`
+and not reject
 (`frontend/apps/portal-app/src/account/account-api.test.ts`). One table
 of the operations and one of the answers show that every operation reads
 every answer. Functions that read are also asked what they ask for (the

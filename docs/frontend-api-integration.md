@@ -341,7 +341,7 @@ API を読む画面の例は、portal-app の[サロンの画面](#サロンの�
 - 使うアプリの `package.json` に `@beauty-salon-frontend/api-client` と `ts-pattern` を追加する（portal-app にはある）
 - API サーバーの `CORS_ORIGIN` にそのアプリのオリジンが含まれていることを確認する。リポジトリ直下の `.env.localhost` と `.env.development` は、3つのアプリのオリジン（`http://localhost:3001`〜`3003`）を許可している
 
-画面は、生成された関数と型だけを使います。API を呼ぶ関数は、応答を `status` で分岐し、`.exhaustive()` で網羅を保証して、画面が区別する結果の直和型にして返します。通信の失敗（reject）も、その関数の中で結果の 1 つにします（`frontend/apps/portal-app/src/salons/salons-api.ts` より）。
+画面は、生成された関数と型だけを使います。API を呼ぶ関数は、応答を `status` で分岐し、`.exhaustive()` で網羅を保証して、画面が区別する結果の直和型にして返します。通信の失敗（reject）も、API 定義にないステータスの応答も、その関数の中で結果の 1 つにします（`frontend/apps/portal-app/src/salons/salons-api.ts` より）。
 
 ```ts
 const REFUSED = P.union(null, { status: 400 }, { status: 429 }, { status: 500 })
@@ -361,7 +361,7 @@ export const findSalons = async (
     .returnType<SalonPage>()
     .with({ status: 200 }, ({ data }) => pageOf(data.data, data.meta))
     .with(REFUSED, unreadOf)
-    .exhaustive()
+    .exhaustive(outsideTheContract)
 }
 ```
 
@@ -377,6 +377,8 @@ const found = useInfiniteQuery({
 ```
 
 この分岐（200 と、400・429・500、応答なし）は、現在の生成クライアントの型に対して網羅になっています。API 定義に新しいステータスが増えると、`.exhaustive()` が型エラーになって気づけます。
+
+`.exhaustive()` に渡している `outsideTheContract`（`frontend/apps/portal-app/src/outside-the-contract.ts`）は、API 定義にないステータスの応答を `{ type: 'failed' }` にする関数です。API の前に置いたゲートウェイやロードバランサーは、API に届かないときに 502、503、504 を返します。`customInstance` はどのステータスも値として返すので、この応答は分岐まで届きます。関数を渡さない `.exhaustive()` は、どのパターンにも合わない値で例外を投げます。そうなると、API を呼ぶ関数が reject し、読む画面は「読み込み中」のまま止まり、フォームは何も表示しません。関数を渡しても、型の上の網羅の検査は変わりません。
 
 - 型は生成されたものをそのまま使う。`ModelsSalonResponse` と同じ形の型を手書きしない。`any` と型アサーションも使わない
 - 登録・更新・削除は `useSalonCrudCreate` などのミューテーションフックを使い、結果も同じく `status` で分岐する。成功したら `getSalonCrudListQueryKey()` を使って一覧のキャッシュを無効化する。ただし、この 3 つはアクセストークンが必要である。トークンは、サインインしていれば `customInstance` が付ける（[セッション](#セッション)）。サインインしていなければ 401 が返る
