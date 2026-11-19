@@ -333,7 +333,21 @@ export function SalonList() {
 - `api-client` の `src/salons.test.ts`: 生成された Salon の関数を、実際の `customInstance` を通して検証する（リクエストの形、ステータスごとに型が絞られること、通信の失敗、TanStack Query との組み合わせ）。`src/session.test.ts`: `io` が持つ再発行のパスとエラーコードが、生成されたものと同じであること
 - `session` の `src/session.test.tsx`: `useSession` を `renderHook` で描画し、`signIn`、`signOut`、`keepQueriesOfOneUser` と一緒に、実際の生成クライアントと `customInstance` を通して、スタブにした `fetch` に対して検証する
 
-API のモックサーバーと、ブラウザーから API までを通すテストはありません。
+### 実際の API と DB を使うテスト（`pnpm test:integration`）
+
+API を呼ぶコードは、`fetch` も API も差し替えずに、本番と同じアプリケーション（`createApp`）と PostgreSQL に対しても確かめます。ファイル名は `*.integration.test.ts(x)` です。
+
+- テストの実行ごとに、バックエンドの**テスト用のサーバー**（`backend/packages/api/src/__tests__/test-server/`）が 1 つ起動します。スキーマとシードのデータ（`pnpm db:seed` と同じもの）を入れたテンプレートの DB を作り、テストファイルごとに、その複製を持つ API を、そのファイルだけのポートで起動します
+- テスト対象のコードは、その API を呼びます（`VITE_BACKEND_BASE_URL` が、その API のオリジンになります）。テストが終わるたびに、API の DB は新しい複製に替わり、`localStorage` と `sessionStorage` は空になります
+- テストは `testApi()`（`@beauty-salon-frontend/testing/api`）から、API のオリジン、シードのアカウントのパスワード、DB への SQL の実行を使えます。SQL は、画面からも API からも起こせないこと（トークンの期限が切れるだけの時間の経過など）のためのものです
+- PostgreSQL は、`TEST_DATABASE_URL` があればそれを、なければコンテナを使います（バックエンドの結合テストと同じ）
+
+いまあるのは、次の 2 つです。
+
+- `session` の `src/session.integration.test.tsx`: サインイン、誤ったパスワード、期限切れのあとの再発行（同時のリクエストで 1 回）、再発行できないセッション、API で終わったセッション、サインアウト
+- `testing` の `src/api/test-api.integration.test.ts`: この仕組みそのもの（シードのデータがあること、あるテストが書いたものが次のテストに残らないこと、トークンのないリクエストをテスト用のサーバーが受け付けないこと）
+
+書き方は、スキル [frontend-testing](../.claude/skills/frontend-testing/SKILL.md) にあります。API のモックサーバーと、ブラウザーを操作するテストはありません。
 
 ## 関連ドキュメント
 
