@@ -33,6 +33,8 @@ API の利用者をどう特定し、何を許可するかをまとめます。�
 
 根拠: セッション ID のエントロピーと、検証用の値だけを保存することは OWASP Session Management Cheat Sheet。不透明なトークンは長くランダムなので、保存に必要なのは SHA-256 で、パスワード用のハッシュは要りません。
 
+ブラウザーの側の決まり（トークンを置く場所、期限切れのあとの再発行と送り直し、複数のタブ、サインアウト）は、[フロントエンドAPI統合ガイドの「セッション」](./frontend-api-integration.md#セッション)にあります。実装は `frontend/packages/io/src/libs/session/`、`frontend/packages/io/src/libs/fetcher/fetcher.ts`、`frontend/packages/session/` です。
+
 ### 一覧と無効化
 
 ログイン中のユーザーは、自分のアカウントがどこでログインしているかを確かめ、セッションを 1 件ずつ無効にできます（OWASP Session Management Cheat Sheet: 利用者が有効なセッションの詳細を確認し、離れた場所から終了できるようにする）。1 人のユーザーが同時に持てるセッションの数に上限はありません。

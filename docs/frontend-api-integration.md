@@ -4,20 +4,21 @@
 
 ## 現状
 
-**3つのフロントエンドアプリは、現時点ではどこからも API を呼んでいません。** どのアプリも枠だけです。`src/App.tsx` が、共有の枠（`ui` の `AppShell`。アプリ名のヘッダー、本文へ移動するリンク、本文）の中に、「画面は準備中です。」と表示するトップページと、存在しないパスのためのページを持っています。
+**3つのフロントエンドアプリには、API を呼ぶ画面がまだありません。** どのアプリも枠だけです。API を呼ぶための土台（生成クライアント、fetch ラッパー、セッション）はあります。`src/App.tsx` が、共有の枠（`ui` の `AppShell`。アプリ名のヘッダー、本文へ移動するリンク、本文）の中に、「画面は準備中です。」と表示するトップページと、存在しないパスのためのページを持っています。
 
 あるもの:
 
 - OpenAPI ドキュメントから Orval が生成した API クライアント（`@beauty-salon-frontend/api-client`）。型、fetch 関数、TanStack Query のフックを含む
 - そのクライアントが HTTP 呼び出しに使う fetch ラッパー（`@beauty-salon-frontend/io` の `customInstance`）。生成コードが期待するとおりに動くことを、テストと実際のサーバーへの呼び出しで確認している
+- セッション: ブラウザーに保存したトークンをリクエストに付け、期限が切れたら再発行して送り直す仕組み（`io`）と、サインインしているのがだれかを返すフック、サインイン、サインアウト（`@beauty-salon-frontend/session`）。[セッション](#セッション)を参照
 - 各アプリの TanStack Query の初期設定（`QueryClientProvider`）
 - UI の土台: デザイントークン（`@beauty-salon-frontend/theme`）、CSS Modules で書いた共有コンポーネントとそのカタログ（`@beauty-salon-frontend/ui`、Storybook）、テストが共有する道具（`@beauty-salon-frontend/testing`）。[UI とテストの規則](#ui-とテストの規則)を参照
 - 環境変数 `VITE_BACKEND_BASE_URL`（API サーバーのオリジン）
 
 ないもの:
 
-- 生成クライアントを使うコンポーネント、画面、カスタムフック（アプリは `api-client` にも `io` にも依存していない）
-- 認証（バックエンドはアクセストークンを検証するが、フロントエンドにはログイン画面も、トークンを保持する場所も、`Authorization` ヘッダーを付ける仕組みもない。生成されたフックから呼べるのは、認証なしのオペレーションだけ。[fetch ラッパー](#fetch-ラッパーcustominstance)の制約を参照）
+- 生成クライアントを使う画面（アプリが `session` から呼んでいるのは、ユーザーが替わったときに取得済みのデータを消す関数だけ）
+- サインインの画面と、サインインが要る画面の出し分け。ユーザー登録、パスワードの再設定、2 要素認証の設定、セッションの一覧の画面
 - API のモックサーバーと、ブラウザーから API までを通すテスト
 - 共有リンクを開く画面（サーバーには、共有リンクのオペレーションがすべてある。クライアントは OpenAPI の全オペレーションについて生成され、そのすべてに、サーバーの実装がある）
 
@@ -31,23 +32,24 @@
 | admin-app | `frontend/apps/admin-app` | 3002 |
 | dashboard-app | `frontend/apps/dashboard-app` | 3003 |
 
-いずれも Vite 8 + React 19 + react-router 8 の SPA です。ワークスペースのパッケージで依存しているのは `@beauty-salon-frontend/ui` と `@beauty-salon-frontend/theme`、それにテストのための `@beauty-salon-frontend/testing` だけです。
+いずれも Vite 8 + React 19 + react-router 8 の SPA です。ワークスペースのパッケージで依存しているのは `@beauty-salon-frontend/ui`、`@beauty-salon-frontend/theme`、`@beauty-salon-frontend/session`、それにテストのための `@beauty-salon-frontend/testing` だけです。
 
 ### 共有パッケージ（`frontend/packages/`）
 
 | パッケージ | 役割 | 使っているもの |
 |------------|------|----------------|
-| `api-client` | Orval の生成物（`src/generated/`）と、その再エクスポート | なし |
-| `io` | fetch ラッパー `customInstance` | `api-client` |
+| `api-client` | Orval の生成物（`src/generated/`）と、その再エクスポート | `session` |
+| `io` | fetch ラッパー `customInstance` と、ブラウザーに保存するセッション `sessionStore` | `api-client`、`session` |
+| `session` | アプリのセッション: 状態を返すフック `useSession`、`signIn`、`signOut`、ユーザーが替わったときに取得済みのデータを消す `keepQueriesOfOneUser` | 3つのアプリ（`src/main.tsx`） |
 | `config` | `import.meta.env` を読む `env` オブジェクトと、モード判定関数（`isProductionMode` など） | `io`、`ui`（型のみ） |
 | `theme` | デザイントークン（`src/tokens.css`）、リセットと素の要素のスタイル、スタイルの規則の検査（`src/style-rules.ts`） | 3つのアプリ、`ui`（カタログとテスト） |
 | `ui` | 共有コンポーネント（`Button`、フォームの部品 `TextField`・`TextArea`・`Select`・`RadioGroup`・`Checkbox`、メッセージの `Alert`、画面の骨組みの部品 `AppShell`・`Navigation`・`PageHeader`・`Card`・`DescriptionList`・`Badge`・`Table`・`EmptyState`・`LoadingIndicator`・`Dialog`、リンクの `LinkProvider`・`ButtonLink`、通知の `NotificationProvider`・`useNotifications`、`EnvironmentBanner`）、クラス名をつなぐ `classNames`、カタログ（Storybook） | 3つのアプリ |
 | `testing` | テストが共有するもの: jest-dom のマッチャー、jsdom にない `dialog` 要素のメソッド（`showModal`・`close`）、アクセシビリティの検査（axe-core）、ストーリーごとにその検査を宣言する関数 | `ui` と 3つのアプリのテスト |
 | `assets` | 画像アセット | なし |
 
-アプリが実際に使っているのは `ui` と `theme` だけです（`ui` は `config` から型を1つ借りています）。`api-client` と `io` は、どのアプリからも使われていません。
+アプリが直接使っているのは `ui`、`theme`、`session` です（`ui` は `config` から型を1つ借りています）。`api-client` と `io` は、`session` を通して使われています。
 
-アプリのビルド（`vite build`）は、`api-client`、`io`、`config`、`ui`、`assets` を、rslib でビルドした `dist/` を通して参照します。`theme` と `testing` はビルドせず、ソースのまま参照されます。`ui` のコンポーネントは自分のスタイルシートを自分で読み込むので、アプリが読み込むスタイルシートは `theme` の 1 つだけです（`src/main.tsx`）。アプリの開発サーバーとテストは、エクスポート条件 `@beauty-salon-frontend/source` を持つパッケージ（`ui`、`io`、`config`）をソースから読みます。コンポーネントの変更は、パッケージのビルドを待たずに画面に出ます。`pnpm dev` は最初にフロントエンドのパッケージをビルドしてから、各パッケージの監視ビルドと各アプリの開発サーバー（とバックエンド）を起動します。テストはビルドを必要としません（[テスト](#テスト)）。
+アプリのビルド（`vite build`）は、`api-client`、`io`、`session`、`config`、`ui`、`assets` を、rslib でビルドした `dist/` を通して参照します。`theme` と `testing` はビルドせず、ソースのまま参照されます。`ui` のコンポーネントは自分のスタイルシートを自分で読み込むので、アプリが読み込むスタイルシートは `theme` の 1 つだけです（`src/main.tsx`）。アプリの開発サーバーとテストは、エクスポート条件 `@beauty-salon-frontend/source` を持つパッケージ（`ui`、`io`、`config`、`api-client`、`session`）をソースから読みます。コンポーネントの変更は、パッケージのビルドを待たずに画面に出ます。`pnpm dev` は最初にフロントエンドのパッケージをビルドしてから、各パッケージの監視ビルドと各アプリの開発サーバー（とバックエンド）を起動します。テストはビルドを必要としません（[テスト](#テスト)）。
 
 ## 型の流れ（TypeSpec からコンポーネントまで）
 
@@ -139,6 +141,7 @@ export function customInstance<T>(url: string, options: RequestInit): Promise<T>
 
 - URL は `VITE_BACKEND_BASE_URL`（API サーバーのオリジン）に、生成コードのパス（`/api/v1/salons` など）をつなげたもの
 - メソッド、ヘッダー、本文は生成コードが渡したものをそのまま送る。本文は生成コードが JSON にしているので、ここでは変換しない
+- セッションが保存されていれば、`Authorization: Bearer <アクセストークン>` を付ける。期限切れの 401 には、セッションを再発行して、同じリクエストを 1 回だけ送り直す（[セッション](#セッション)）
 - タイムアウトは 30 秒。呼び出し側が渡した `signal` があれば、それとタイムアウトのどちらでも中断される
 
 レスポンス:
@@ -151,7 +154,60 @@ export function customInstance<T>(url: string, options: RequestInit): Promise<T>
 
 - 型引数 `T` は生成コードがその操作について指定するレスポンスの型で、**実行時に本文を `T` と照合してはいません**。クライアントとサーバーが同じ OpenAPI ドキュメントから生成されていることが、型と実際の値が一致する根拠です
 - JSON 以外の本文は文字列で返します。ファイルを返す操作のうち、売上レポートと台帳の CSV は文字列、顧客のデータの出力は JSON として読んだ値です。本文は `response.text()` で読むので、台帳の CSV の先頭の BOM は取り除かれます。ファイルとして保存させるときは、BOM を付け直します。ファイル名は `Content-Disposition` にありますが、`data` には入りません。バイナリを返す操作はありません
-- `Authorization` などの共通ヘッダーを付ける仕組みはありません。生成された fetch 関数は最後の引数に `options?: RequestInit` を取るので、呼び出しごとに `headers` を渡すことはできますが、生成されたフックはこの引数にヘッダーを渡しません。そのため、実装済みのオペレーションのうちフックから呼べるのは認証なしのもの（システムのオペレーション、サロンの一覧と 1 件の取得、サービスカテゴリーの一覧と 1 件の取得、サービスの一覧と 1 件の取得、スタッフのプロフィールの一覧と 1 件の取得、ログイン、トークンの再発行、ユーザー登録、メールアドレスの確認、パスワードの再設定）だけで、それ以外は 401 になります。顧客台帳、顧客本人のプロフィール、顧客の好み設定、予約台帳、スタッフ台帳、スタッフ本人のプロフィールのオペレーションは、一覧と 1 件の取得を含めて、すべてアクセストークンが必要です。トークンの保持と付与は、フロントエンドの認証を実装するときに設計します（サーバー側の仕様は [認証と認可](./authentication.md)）
+- `Authorization` ヘッダーは、この関数が付けます。呼び出し側が渡すものではありません。サインインしている間は、認証なしのオペレーション（サロンの一覧など）にも付きます。送り先は、いつも `VITE_BACKEND_BASE_URL` の API です
+
+## セッション
+
+サーバーのセッションは、アクセストークン（15 分）とリフレッシュトークンです（[認証と認可](./authentication.md#セッション)）。この節は、ブラウザーの側の決まりです。
+
+### 保存（`io` の `sessionStore`）
+
+実装は `frontend/packages/io/src/libs/session/stored-session.ts` です。
+
+- 2 つのトークンと、その持ち主のユーザーの ID を、`localStorage` の 1 つのキー（`beauty-salon:session`）に、1 つの値として保存する。別々のキーに書くと、ほかのタブが、片方だけ新しい状態を読むことがあるため
+- 値の形はクエリ文字列で、`URLSearchParams` で読む（読めない値に例外を投げないパーサー）。3 つの値がそろっていなければ、セッションがないものとして扱う
+- `subscribe` で変更を購読できる。同じタブでの変更と、ほかのタブでの変更（`storage` イベント）の両方が伝わる。あるタブでサインアウトすると、ほかのタブもサインアウトの状態になる
+- ブラウザーが `localStorage` へのアクセスを拒むとき（サイトのデータを保存させない設定の訪問者）は、セッションがないものとして扱う。サインインの要らない呼び出しは、そのまま行える。保存はできないので、その訪問者はサインインできない
+
+`localStorage` に置く理由: API は、トークンを本文で受け渡しします（Cookie は使いません）。ページを読み込み直してもサインインが続くには、リフレッシュトークンを、スクリプトから読める場所に置く必要があります。そこに置く以上、アクセストークンをメモリだけに置いても、守れるものは増えません。備えは、トークンの側にあります。アクセストークンは 15 分で切れ、リフレッシュトークンは 1 回しか使えず、セッションは一覧から無効にできます。`rememberMe` で保存先を変えることはしません。セッションの長さは、サーバーが決めます。
+
+### 401 の扱い（`io` の `customInstance`）
+
+| API の応答 | すること |
+|---|---|
+| 401、コード `1003`（アクセストークンの期限切れ） | セッションを再発行し、同じリクエストを、新しいトークンで 1 回だけ送り直す。呼び出し側に返るのは、送り直した結果 |
+| 401、コード `1004`（トークンに対応するセッションがない） | 保存されているトークンが、送ったものと同じなら、セッションを消す（サインアウトの状態になる）。違っていれば、送ったあとに再発行で替わったトークンなので、新しいトークンで 1 回だけ送り直す |
+| そのほかの 401（ヘッダーなしの `1001`、サインインの失敗の `1002`、2 要素認証のコードの要求の `1007` など） | そのまま返す |
+
+再発行（`frontend/packages/io/src/libs/session/renew-session.ts`）:
+
+- **同時に 1 つだけ行う。** API は、リフレッシュトークンを 1 回しか受け付けず、再発行すると、それまでのトークンは使えなくなるため。同じページの中では、期限切れを受け取ったリクエストが、1 つの再発行を共有する。タブの間では、Web Locks API（`navigator.locks`）で順番に行う
+- 再発行の前に、保存されているセッションを読み直す。ほかのリクエストやタブがすでに替えていれば、通信せずにそれを使う
+- API が断ったら（401）、セッションを消す。呼び出し側には、元の 401 が返る。ただし、その時点で、保存されているセッションが別のものに替わっていれば（Web Locks のないブラウザーで、ほかのタブが先に再発行した）、消さずに、それで送り直す
+- 通信の失敗、401 以外のステータス、読めない応答では、セッションを消さない。呼び出し側には、元の 401 が返る。次のリクエストが、もう一度再発行を試みる
+- 期限の前に、先回りして再発行することはしない。期限切れの 401 を受けてから行う
+- 再発行のリクエストは、`customInstance` が自分で送る（生成クライアントが `customInstance` を呼ぶので、その逆はできない）。再発行のパスと、2 つのエラーコードは `io` が持ち、`api-client` の `src/session.test.ts` が、生成されたものと同じであることを確かめる
+- 応答から読むのは、エラーコードと、再発行の応答の 2 つのトークンとユーザーの ID だけ。形は `zod/mini` で確かめる（`zod` の全体は、アプリのバンドルに入れない）
+
+### アプリのセッション（`@beauty-salon-frontend/session`）
+
+```typescript
+// frontend/packages/session/src/use-session.ts
+export type Session =
+  | { type: 'loading' }
+  | { type: 'signedOut' }
+  | { type: 'signedIn'; user: ModelsUserResponse }
+  | { type: 'unavailable'; retry: () => void }
+
+export const useSession = (): Session
+```
+
+- **サインインしているかどうか**は、保存されているセッションから決まる。どのタブでも同じになる
+- **だれであるか**は、`GET /api/v1/auth/me` に尋ねる。尋ねるのは、ユーザーごと・ページの読み込みごとに 1 回で、フックを使うコンポーネントがいくつあっても変わらない。結果は古くならない（`staleTime` は無限）ので、あとから起きた一時的な失敗で、表示中の画面が消えることはない。ユーザーの内容を変える操作のあとは、`getAuthCrudGetCurrentUserQueryKey()` のクエリを無効にする。画面を保ったまま、取得し直す
+- `unavailable` は、セッションはあるのに、API がだれのものかを答えなかった状態（応答がない、500、429 など）。`retry` で尋ね直す
+- `signIn(request)` は、API が受け付けたら（200）セッションを保存する。戻り値は API の応答そのもので、断られたとき（401 の `1002`）、2 要素認証のコードを求められたとき（401 の `1007`）、検証エラーなどは、画面が `status` で分岐する
+- `signOut()` は、API にセッションの終了を伝えてから、ブラウザーのセッションを消す。API がエラーを返しても、届かなくても、消す（共用のパソコンでサインアウトした人が、通信の失敗でサインインしたままにならないように）。そのとき、サーバーのセッションは期限まで残る
+- `keepQueriesOfOneUser(queryClient)` は、保存されているユーザーが替わったとき（サインアウト、別の人のサインイン。ほかのタブでのものを含む）に、取得済みのデータをすべて消す。次にサインインした人に、前の人のデータを見せないため。同じユーザーのトークンの再発行では消さない。3つのアプリの `src/main.tsx` が、`QueryClient` を作ったところで呼んでいる
 
 ## TanStack Query の設定
 
@@ -170,7 +226,7 @@ const queryClient = new QueryClient({
 })
 ```
 
-`VITE_MODE` が `production` 以外のときは React Query Devtools も表示します。クエリやミューテーションを実行しているコードはまだありません。
+`VITE_MODE` が `production` 以外のときは React Query Devtools も表示します。`QueryClient` を作ったあと、`keepQueriesOfOneUser(queryClient)` を呼びます（[セッション](#アプリのセッションbeauty-salon-frontendsession)）。クエリを実行するコードは `useSession` だけで、それを使う画面はまだありません。
 
 `retry: 3` が再試行するのは、クエリが失敗（reject）したとき、つまり通信そのものが失敗したときです。API のエラー応答は値として返るので、再試行の対象になりません。
 
@@ -267,14 +323,15 @@ export function SalonList() {
 
 ## テスト
 
-フロントエンドのテストは Vitest です（`pnpm test:frontend`）。パッケージをまたぐ import はソースから解決するので（エクスポート条件 `@beauty-salon-frontend/source`）、ビルドなしで実行できます。
+フロントエンドのテストは Vitest です（`pnpm test:frontend`）。パッケージをまたぐ import はソースから解決するので（エクスポート条件 `@beauty-salon-frontend/source`）、ビルドなしで実行できます。`io`、`api-client`、`session` のテストも jsdom で実行します（セッションを `localStorage` に置くため）。
 
 - `ui` のコンポーネント: ストーリー（`*.stories.tsx`）を `composeStories` で読み込み、jsdom に描画して検証する（`*.test.tsx`）。どのストーリーにも、アクセシビリティの検査（axe-core、WCAG 2.2 AA）がある
 - 各アプリの `src/App.test.tsx`: `MemoryRouter` で枠を描画し、表示内容、共有コンポーネントのリンクがページを読み込み直さずに移動すること、アクセシビリティを検証する
 - `theme` の `src/style-rules.test.ts`: すべてのパッケージとアプリのスタイルシートとコンポーネントが、スタイルの規則を守っていることを検証する。`src/tokens.test.ts`: 文字と背景、コントロールの縁に使う色のトークンの組が、必要なコントラスト比を満たすことを検証する
 - `config` と `testing` の各パッケージ: モジュールの隣に `*.test.ts`
-- `io` の `src/libs/fetcher/fetcher.test.ts`: `customInstance` を、スタブにした `fetch` に対して検証する（URL、本文、ステータスごとの戻り値、problem details、reject する条件）
-- `api-client` の `src/salons.test.ts`: 生成された Salon の関数を、実際の `customInstance` を通して検証する（リクエストの形、ステータスごとに型が絞られること、通信の失敗、TanStack Query との組み合わせ）
+- `io` の `src/libs/fetcher/fetcher.test.ts`: `customInstance` を、スタブにした `fetch` に対して検証する（URL、本文、ステータスごとの戻り値、problem details、reject する条件）。`fetcher.session.test.ts`: セッションがあるときの動作（トークンを付けること、期限切れのあとの再発行と送り直しが 1 回ずつであること、同時のリクエストで再発行が 1 回であること、ほかのタブが先に替えたセッションを通信せずに使うこと、断られた再発行と失敗した再発行の違い）。`src/libs/session/stored-session.test.ts`: 保存、購読、ほかのタブからの変更
+- `api-client` の `src/salons.test.ts`: 生成された Salon の関数を、実際の `customInstance` を通して検証する（リクエストの形、ステータスごとに型が絞られること、通信の失敗、TanStack Query との組み合わせ）。`src/session.test.ts`: `io` が持つ再発行のパスとエラーコードが、生成されたものと同じであること
+- `session` の `src/session.test.tsx`: `useSession` を `renderHook` で描画し、`signIn`、`signOut`、`keepQueriesOfOneUser` と一緒に、実際の生成クライアントと `customInstance` を通して、スタブにした `fetch` に対して検証する
 
 API のモックサーバーと、ブラウザーから API までを通すテストはありません。
 

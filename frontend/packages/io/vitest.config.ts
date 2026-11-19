@@ -1,15 +1,20 @@
+import { defaultClientConditions, defaultServerConditions } from 'vite'
 import { defineConfig } from 'vitest/config'
 
+// Workspace packages are tested from source, not from their last build
+const SOURCE = '@beauty-salon-frontend/source'
+
 export default defineConfig({
-  // Workspace packages are tested from source, not from their last build.
+  resolve: {
+    conditions: [SOURCE, ...defaultClientConditions],
+  },
   ssr: {
     resolve: {
-      conditions: [
-        '@beauty-salon-frontend/source',
-        'module',
-        'node',
-        'development|production',
-      ],
+      conditions: [SOURCE, ...defaultServerConditions],
     },
+  },
+  test: {
+    // The package runs in a browser: it keeps the session in `localStorage`
+    environment: 'jsdom',
   },
 })

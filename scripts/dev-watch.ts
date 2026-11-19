@@ -28,9 +28,9 @@ const PACKAGE_GROUPS: readonly PackageGroup[] = [
   },
   {
     name: 'api-client',
-    filter: './frontend/packages/api-client',
+    filter: './frontend/packages/{api-client,session}',
     color: 'cyan',
-    description: 'API client',
+    description: 'API client and session',
   },
 ] as const
 

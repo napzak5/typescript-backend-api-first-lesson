@@ -216,7 +216,8 @@ const sentRequest = (fetchMock: Mock<typeof fetch>) => {
   return {
     url,
     method: init?.method,
-    headers: init?.headers,
+    // The names of headers are not case-sensitive: they are compared in lower case
+    headers: Object.fromEntries(new Headers(init?.headers)),
     body: init?.body,
   }
 }
@@ -242,6 +243,7 @@ describe('generated Salon client', () => {
       expect(sentRequest(fetchMock)).toEqual({
         url: 'http://localhost:3000/api/v1/salons?limit=20&keyword=Tokyo&features=wifi&features=parking',
         method: 'GET',
+        headers: {},
       })
     })
 
@@ -288,7 +290,7 @@ describe('generated Salon client', () => {
       expect(sentRequest(fetchMock)).toEqual({
         url: 'http://localhost:3000/api/v1/salons',
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'content-type': 'application/json' },
         body: JSON.stringify(SALON_INPUT),
       })
     })
@@ -304,8 +306,8 @@ describe('generated Salon client', () => {
 
       // Assert
       expect(sentRequest(fetchMock).headers).toEqual({
-        'Content-Type': 'application/json',
-        'X-Request-Id': 'req-1',
+        'content-type': 'application/json',
+        'x-request-id': 'req-1',
       })
     })
 
@@ -358,6 +360,7 @@ describe('generated Salon client', () => {
       expect(sentRequest(fetchMock)).toEqual({
         url: `http://localhost:3000/api/v1/salons/${SALON_ID}`,
         method: 'GET',
+        headers: {},
       })
     })
 
@@ -410,7 +413,7 @@ describe('generated Salon client', () => {
       expect(sentRequest(fetchMock)).toEqual({
         url: `http://localhost:3000/api/v1/salons/${SALON_ID}`,
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'content-type': 'application/json' },
         body: '{"name":"Salon Shibuya","building":null}',
       })
     })
@@ -465,6 +468,7 @@ describe('generated Salon client', () => {
       expect(sentRequest(fetchMock)).toEqual({
         url: `http://localhost:3000/api/v1/salons/${SALON_ID}`,
         method: 'DELETE',
+        headers: {},
       })
     })
 

@@ -89,16 +89,12 @@ describe('customInstance', () => {
       })
 
       // Assert
-      expect(fetchMock).toHaveBeenCalledWith(
-        expect.anything(),
-        expect.objectContaining({
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Request-Id': 'r_1',
-          },
-        }),
-      )
+      const [, sent] = fetchMock.mock.calls[0] ?? []
+      expect(sent?.method).toBe('PATCH')
+      expect([...new Headers(sent?.headers)]).toEqual([
+        ['content-type', 'application/json'],
+        ['x-request-id', 'r_1'],
+      ])
     })
 
     it('should send the body as it is, without encoding it a second time', async () => {

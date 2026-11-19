@@ -1,3 +1,4 @@
+import { keepQueriesOfOneUser } from '@beauty-salon-frontend/session'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { StrictMode } from 'react'
@@ -16,6 +17,9 @@ const queryClient = new QueryClient({
     },
   },
 })
+
+// What was fetched for one user is not shown to the next
+keepQueriesOfOneUser(queryClient)
 
 const rootElement = document.getElementById('root')
 if (rootElement === null) {
