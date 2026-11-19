@@ -25,23 +25,48 @@ export const findAccessibilityViolations = async (
 }
 
 /**
- * What a layout must not do, counted on the page as the browser laid it out:
- * `overflow` is by how many pixels the page is wider than the window, and
- * `flex` how many elements are laid out with flex (the layout of this
- * project is CSS Grid).
+ * What a layout must not do, measured on the page as the browser laid it out:
+ * `overflow` is by how many pixels the page is wider than the window,
+ * `spilling` names the elements that hold something wider than they are and
+ * neither scroll it nor cut it off (a line that does not wrap sticks out of
+ * its card long before it makes the page wider), and `flex` is how many
+ * elements are laid out with flex (the layout of this project is CSS Grid).
  */
 const measureLayout = (
   page: Page,
-): Promise<{ overflow: number; flex: number }> =>
-  page.evaluate(() => ({
-    overflow: document.documentElement.scrollWidth - window.innerWidth,
-    flex: [...document.querySelectorAll('*')].filter((element) =>
-      getComputedStyle(element).display.includes('flex'),
-    ).length,
-  }))
+): Promise<{ overflow: number; spilling: string[]; flex: number }> =>
+  page.evaluate(() => {
+    const elements = [...document.querySelectorAll('body *')]
 
-/** The page is accessible, nothing of it sticks out of the window, and nothing is laid out with flex. */
+    return {
+      overflow: document.documentElement.scrollWidth - window.innerWidth,
+      spilling: elements
+        .filter(
+          (element) =>
+            // An inline element has no width of its own, and a pixel is rounding
+            element.clientWidth > 0 &&
+            element.scrollWidth - element.clientWidth > 1 &&
+            getComputedStyle(element).overflowX === 'visible',
+        )
+        .map(
+          (element) =>
+            `${element.localName}.${element.getAttribute('class') ?? ''}`,
+        ),
+      flex: elements.filter((element) =>
+        getComputedStyle(element).display.includes('flex'),
+      ).length,
+    }
+  })
+
+/**
+ * The page is accessible, nothing of it sticks out of the window or out of
+ * the element it is in, and nothing is laid out with flex.
+ */
 export const expectSoundPage = async (page: Page): Promise<void> => {
   expect(await findAccessibilityViolations(page)).toEqual([])
-  expect(await measureLayout(page)).toEqual({ overflow: 0, flex: 0 })
+  expect(await measureLayout(page)).toEqual({
+    overflow: 0,
+    spilling: [],
+    flex: 0,
+  })
 }

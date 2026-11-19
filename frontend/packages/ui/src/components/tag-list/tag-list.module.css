@@ -1,0 +1,14 @@
+/*
+ * The words are inline content: they wrap where the line ends, as text does.
+ * A grid would give them columns of one width, or one line.
+ */
+.tagList {
+  display: block;
+  margin-block-end: calc(var(--space-1) * -1);
+}
+
+.item {
+  display: inline-block;
+  margin-inline-end: var(--space-2);
+  margin-block-end: var(--space-1);
+}

@@ -17,6 +17,7 @@ The styling and component rules are in the skill `frontend-ui`.
 |---------|------|---------|
 | A component | Its stories, composed and run by Vitest in jsdom | `frontend/packages/ui/src/components/button/button.test.tsx` |
 | What a form does with its values and with the answer of the API | Unit tests of the pure functions | `frontend/packages/session/src/components/sign-in-screen/sign-in-flow.test.ts` |
+| What a screen makes of its address and of what it read: the conditions of a search, dates and amounts, the pages of a list | The same | `frontend/apps/portal-app/src/salons/salon-format.test.ts` |
 | The frame and the routes of an application, as somebody who is not signed in sees them | Rendered in a `MemoryRouter`; no API | `frontend/apps/portal-app/src/App.test.tsx` |
 | The style rules, for every package and app | One test in the theme package | `frontend/packages/theme/src/style-rules.test.ts` |
 | The contrast of the colour tokens | Computed from `tokens.css` | `frontend/packages/theme/src/tokens.test.ts` |
@@ -63,6 +64,13 @@ export const Primary: Story = {
 - The meta is annotated with its type; `satisfies` is not used for it.
 - A callback is `fn()`, so a test can ask whether it was called.
 - Text is what the interface would say, in Japanese.
+- The catalogue of `ui` also shows the stories of `session` and of the
+  applications (`stories` in `frontend/packages/ui/.storybook/main.ts`). A
+  story of an application says so in its title (`Portal/Salons/SalonHours`).
+- A component that shows a model of the API takes its examples from one
+  file beside the components
+  (`frontend/apps/portal-app/src/salons/components/examples.ts`): typed as
+  the generated models, and written as a salon in Japan would write them.
 
 ## The test of a component
 
@@ -187,7 +195,9 @@ The functions of a screen that call the API are tested the same way for
 those answers alone: too many requests, an error of the server, no answer
 (`frontend/apps/portal-app/src/account/account-api.test.ts`). One table
 of the operations and one of the answers show that every operation reads
-every answer.
+every answer. Functions that read are also asked what they ask for (the
+parameters and the cursor of each request) and how they read a list to its
+end: `frontend/apps/portal-app/src/salons/salons-api.test.ts`.
 
 ## Against the real API
 
@@ -241,9 +251,12 @@ describe('the session against the API', () => {
   screen or the API.
 - `testApi().query(text, values)` runs a statement on the database of the API
   and returns its rows. It is for what neither the screen nor the API can
-  bring about (time that has passed: `update sessions set "expiresAt" = …`)
-  and for asserting what was stored. Values go in `values` (`$1`), never into
-  the text. A statement the database refuses fails the test.
+  bring about in the steps of a test (time that has passed:
+  `update sessions set "expiresAt" = …`; rows in numbers and a failure of
+  the API, under "A screen that reads") and for asserting what was stored.
+  Values go in `values` (`$1`), never into the text. A statement the
+  database refuses fails the test, and no statement drops a constraint: what
+  the database refuses, the application cannot have stored.
 - Arrange through the API and assert on what the user sees; assert on the
   database only for what no screen shows.
 - A request may be watched (`vi.spyOn(globalThis, 'fetch')` without an
@@ -338,9 +351,56 @@ it('should show the screen that was asked for after signing in', async () => {
 - Run a new file a few times before trusting it: a test that waits for the
   wrong thing passes on one run and fails on the next.
 
+### A screen that reads
+
+`frontend/apps/portal-app/src/salons/salons.integration.test.tsx` is the
+example to read: a search and the page of a record, rendered at an address.
+
+- **Render at the address** (`MemoryRouter` with `initialEntries`), with a
+  component beside `App` that keeps what `useLocation()` says. A search is
+  asserted on what is shown and on the address it wrote
+  (`/?keyword=osaka`). An address is an arrangement, too: conditions that
+  somebody typed by hand, an ID that names nothing.
+- **Rows in numbers are inserted.** The second page of a list needs more
+  rows than the seed data has, and the API creates one a request:
+  `insert into salons (…) select … from generate_series(1, $1::int)`. A row
+  that takes a whole flow (a review needs a visit that was completed) is
+  inserted together with the rows it stands on, in one statement.
+- **A failure is arranged in the database, never in the answer.**
+  `alter table reviews rename to reviews_away` makes the API answer 500
+  where it reads the table, and the name given back lets the next request
+  through: the test presses 「もう一度読み込む」 and sees the content. A
+  stored value that is no value of its model (a `jsonb` column) does the
+  same for one record. The fresh database after the test undoes both.
+- **A row with a date is written relative to today, in the database**
+  (`(now() at time zone 'Asia/Tokyo')::date + 1`), so that the test holds
+  on every day. Rows that the seed data wrote at one moment get moments of
+  their own before an order by time is asserted.
+- **What was read before is not what is read now.** A screen keeps what
+  it read, under the key of its query, and shows it again at once. A test
+  that opens one record only never sees a key that leaves the record out:
+  open a salon, then another, and assert from the moment the other is named
+  that nothing of the first is on its page; send a search, then one that
+  was read before, and assert that its results are shown as a list of its
+  own (no focus on an "added" item).
+- **What waits its turn is found by its text**:
+  `expect(screen.getByText('サロンを探しています')).toHaveRole('status')`.
+  The frame keeps a `status` region for the notification inside `main`,
+  also while it is empty, so `getByRole('status')` finds two.
+- **A part of a page** is the region of its heading
+  (`findByRole('region', { name: 'レビュー' })`). Look inside it with
+  `within`: the parts arrive one by one.
+- testing-library does not know the role of the `search` element. In jsdom,
+  assert the element and its name
+  (`expect(control.closest('search')).toHaveAttribute('aria-label', 'サロンを探す')`);
+  the browser test finds the landmark with `getByRole('search', { name })`.
+- `getAllByRole` takes one role and no pattern. What stands in a row,
+  whatever its role, is `Array.from(row.children, (cell) => cell.textContent)`.
+
 `App.test.tsx` of an application keeps what needs no API: what somebody who
 is not signed in sees. Everything behind the sign-in is in
-`App.integration.test.tsx`.
+`App.integration.test.tsx`, and so is a route whose screen reads from the
+API as soon as it opens (the root of the portal).
 
 The test server needs a PostgreSQL: the one at `TEST_DATABASE_URL` when it is
 set (its user creates databases), otherwise a container, and so a running
@@ -362,9 +422,9 @@ whole path:
 | In a browser test | In an integration test in jsdom |
 |-------------------|---------------------------------|
 | A critical path, once, from the address bar to the database | Every state of a screen: each message, each refusal, each role |
-| What the browser lays out and paints: nothing sticks out of a narrow window, nothing is laid out with flex, the contrast of what is on the page | The accessibility rules that need no layout |
+| What the browser lays out and paints: nothing sticks out of a narrow window or out of the element it is in, nothing is laid out with flex, the contrast of what is on the page | The accessibility rules that need no layout |
 | The focus as the browser moves it: the Tab key through a form, the heading after the screen changed | Which element has the focus after an action |
-| A reload, a second tab, the address bar | — |
+| A reload, a second tab, the address bar, the way back and forward | — |
 | A link that leaves the page: from a mail to the portal, from one application to another | The screen such a link opens, rendered at its path |
 | That a page of an application may call the API at all (CORS), and that a build calls the API it was built for | — |
 
@@ -436,14 +496,25 @@ test.describe('the admin application', () => {
 - Every screen a test reaches is checked with `expectSoundPage(page)`
   (`src/checks.ts`), which is `findAccessibilityViolations(page)` and a
   measure of the layout: the rules of WCAG 2.2 AA with the contrast of what
-  is painted, no element wider than the window, no element laid out with
-  flex.
+  is painted, a page no wider than the window, no element that holds
+  something wider than it is without scrolling it or cutting it off, no
+  element laid out with flex. A line that does not wrap sticks out of its
+  card long before it makes the page wider, so the width of the page alone
+  says too little.
   What has to fit a phone is tested in a `describe` with
-  `test.use({ viewport: { width: 390, height: 844 } })`.
+  `test.use({ viewport: { width: 390, height: 844 } })`, on the record with
+  the longest values the seed data has (the salon whose hours have a break,
+  not the one whose hours are one time).
 - What no screen does yet, a test asks of the API with the `request` fixture
   of Playwright (`accessTokenOf` and `setUpTwoFactor` in `src/sign-in.ts`),
   and checks the answer with a Zod schema. What neither a screen nor the API
   does, such as time having passed, is a statement with `api.query`.
+- A screen whose state is in its address is taken back, forward and
+  through a reload (`page.goBack()`, `page.reload()`, a second page of the
+  `context` at the same address): `src/salons.e2e.test.ts`.
+- `selectOption` sets the value of a `select` without giving it the focus.
+  A test that asserts where the focus is after a choice gives it first
+  (`await control.focus()`), as a person does.
 - The modules of `frontend/e2e/src` that are no test files are under the
   lint prohibitions of application code: no type assertion, no type guard,
   and `node:assert` in place of `throw`.
@@ -519,10 +590,11 @@ const annotations = setProjectAnnotations([preview])
 beforeAll(annotations.beforeAll)
 ```
 
-A package whose stories the catalogue of `ui` shows has no preview of its own
-and gives none (`frontend/packages/session/vitest.setup.ts`). The call is
-still needed: it is what empties the `fn()` callbacks of a story between two
-tests.
+A package or an application whose stories the catalogue of `ui` shows has no
+preview of its own and gives none (`frontend/packages/session/vitest.setup.ts`,
+`frontend/apps/portal-app/vitest.setup.ts`); `storybook` and
+`@storybook/react-vite` are among its dev dependencies. The call is still
+needed: it is what empties the `fn()` callbacks of a story between two tests.
 
 ```ts
 const annotations = setProjectAnnotations([])

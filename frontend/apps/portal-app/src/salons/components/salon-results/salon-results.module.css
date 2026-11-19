@@ -1,0 +1,40 @@
+/* The heading, how many there are, the salons, then the way to more. */
+.results {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+.heading {
+  font-size: var(--font-size-title);
+}
+
+.count {
+  color: var(--color-text-muted);
+}
+
+.salons {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+.salon {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-2);
+  padding: var(--space-6);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-large);
+  background-color: var(--color-surface);
+}
+
+.name {
+  font-size: var(--font-size-large);
+  overflow-wrap: anywhere;
+}
+
+.address {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+}
