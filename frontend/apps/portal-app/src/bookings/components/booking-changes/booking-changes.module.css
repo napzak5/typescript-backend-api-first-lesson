@@ -1,0 +1,28 @@
+/* What can be done: one below the other on a narrow screen, side by side on a wide one */
+.changes {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: start;
+  gap: var(--space-3);
+}
+
+/* Whom to ask, where the customer cannot move the booking: it takes the whole row */
+.note {
+  grid-column: 1 / -1;
+  color: var(--color-text-muted);
+}
+
+/* What went wrong, then the reason */
+.form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+@media (min-width: 40rem) {
+  .changes {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    justify-content: start;
+  }
+}

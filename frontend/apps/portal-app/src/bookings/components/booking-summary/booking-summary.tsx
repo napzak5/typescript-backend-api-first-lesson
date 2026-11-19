@@ -9,7 +9,7 @@ import {
   statusNoteOf,
   statusToneOf,
   totalOf,
-  whenOf,
+  whenKnownOf,
 } from '../../booking-format'
 import styles from './booking-summary.module.css'
 
@@ -17,9 +17,10 @@ export type BookingSummaryProps = {
   booking: ModelsCustomerBookingResponse
   /**
    * The salon of the booking: its name, the time zone its times are read
-   * in and the currency of its amounts
+   * in and the currency of its amounts. `null` when the salon is no longer
+   * there: the booking then has its day, and neither a time nor an amount
    */
-  salon: Pick<ModelsSalonResponse, 'name' | 'timezone' | 'currency'>
+  salon: Pick<ModelsSalonResponse, 'name' | 'timezone' | 'currency'> | null
   /** The address of the page of the salon */
   salonHref: string
   /** The name of the service; `null` when the salon no longer shows it */
@@ -43,7 +44,7 @@ export const BookingSummary = ({
   staffName,
 }: BookingSummaryProps) => {
   const note = statusNoteOf(booking.status)
-  const when = whenOf(booking, salon.timezone)
+  const when = whenKnownOf(booking, salon?.timezone ?? null)
 
   return (
     <DescriptionList
@@ -61,7 +62,12 @@ export const BookingSummary = ({
         },
         {
           term: 'サロン',
-          description: <Link href={salonHref}>{salon.name}</Link>,
+          description:
+            salon === null ? (
+              NO_LONGER_SHOWN
+            ) : (
+              <Link href={salonHref}>{salon.name}</Link>
+            ),
         },
         { term: 'メニュー', description: serviceName ?? NO_LONGER_SHOWN },
         { term: '担当', description: staffName ?? NO_LONGER_SHOWN },
@@ -76,7 +82,9 @@ export const BookingSummary = ({
             </>
           ),
         },
-        { term: '料金', description: totalOf(booking, salon.currency) },
+        ...(salon === null
+          ? []
+          : [{ term: '料金', description: totalOf(booking, salon.currency) }]),
         {
           term: 'ご要望',
           description:

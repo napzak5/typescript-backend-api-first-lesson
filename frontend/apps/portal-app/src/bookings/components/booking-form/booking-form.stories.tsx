@@ -1,3 +1,4 @@
+import { TextArea } from '@beauty-salon-frontend/ui'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { fn } from 'storybook/test'
 import { bookableStaff, DAY, TODAY, times } from '../examples'
@@ -13,6 +14,14 @@ const meta: Meta<typeof BookingForm> = {
     onChoose: fn(),
     times: { type: 'listed', times },
     onRetry: fn(),
+    children: (
+      <TextArea
+        label='ご要望'
+        name='customerRequest'
+        description='サロンに伝えておきたいことがあれば、ご記入ください。'
+      />
+    ),
+    submitLabel: 'この内容で予約する',
     onSubmit: fn(),
   },
 }
@@ -89,4 +98,13 @@ export const Refused: Story = {
 /** The booking is on its way */
 export const Sending: Story = {
   args: { pending: true },
+}
+
+/** A booking is moved: the time is all there is to send */
+export const Moving: Story = {
+  args: {
+    choice: { staffId: bookableStaff.at(0)?.id, date: DAY },
+    children: undefined,
+    submitLabel: 'この日時に変更する',
+  },
 }

@@ -1,6 +1,7 @@
 import type { ModelsCustomerBookingResponse } from '@beauty-salon-frontend/api-client'
-import { salon, staff } from '../../salons/components/examples'
+import { plainSalon, salon, staff } from '../../salons/components/examples'
 import type { Time } from '../booking-choice'
+import type { Row } from '../own-bookings'
 
 /*
  * What the stories of the booking components show: the salon, the services
@@ -81,4 +82,61 @@ export const booking: ModelsCustomerBookingResponse = {
   ],
   createdAt: '2026-11-19T03:20:00.000Z',
   updatedAt: '2026-11-19T03:20:00.000Z',
+}
+
+/** When the booking of the stories is, as a sentence names it */
+export const WHEN = '2026年11月24日火曜日 10:30〜11:30'
+
+/**
+ * The bookings of a list, the earliest visit first: the cut that waits for
+ * the salon, a colour that the salon confirmed, and a visit to another
+ * salon that was cancelled.
+ */
+export const rows: Row[] = [
+  { booking, salon, serviceName: 'レディースカット' },
+  {
+    booking: {
+      ...booking,
+      id: '0a13c5d7-9e2f-4b46-8d68-fa1c3e5072b4',
+      bookingNumber: 'BK-2R8T-W4HN',
+      bookingDate: '2026-12-08',
+      startTime: '2026-12-08T05:00:00.000Z',
+      endTime: '2026-12-08T07:00:00.000Z',
+      duration: 120,
+      status: 'confirmed',
+    },
+    salon,
+    serviceName: 'フルカラー',
+  },
+  {
+    booking: {
+      ...booking,
+      id: '1b24d6e8-af30-4c57-9e79-0b2d4f6183c5',
+      bookingNumber: 'BK-5C9V-J2PL',
+      salonId: plainSalon.id,
+      bookingDate: '2026-12-19',
+      startTime: '2026-12-19T02:00:00.000Z',
+      endTime: '2026-12-19T02:40:00.000Z',
+      duration: 40,
+      status: 'cancelled',
+      cancelledAt: '2026-11-20T00:00:00.000Z',
+    },
+    salon: plainSalon,
+    serviceName: 'カット',
+  },
+]
+
+/** A booking whose salon is no longer there: its day is all that is told of when it is */
+export const rowWithoutNames: Row = {
+  booking: {
+    ...booking,
+    id: '2c35e7f9-b041-4d68-8f8a-1c3e507294d6',
+    bookingNumber: 'BK-8F3X-M6QR',
+    bookingDate: '2026-12-22',
+    startTime: '2026-12-22T04:00:00.000Z',
+    endTime: '2026-12-22T05:00:00.000Z',
+    status: 'confirmed',
+  },
+  salon: null,
+  serviceName: null,
 }
