@@ -1,10 +1,10 @@
 # フロントエンドAPI統合ガイド（Orval）
 
-このドキュメントは、フロントエンドが API とつながるために現在リポジトリにあるものと、まだないものを説明します。コードは実ファイルからの抜粋で、コメントは省いています（「アプリから使う」の節のサンプルだけは本書のために書いたものです）。
+このドキュメントは、フロントエンドが API とつながるために現在リポジトリにあるものと、まだないものを説明します。コードは実ファイルからの抜粋で、コメントは省いています。
 
 ## 現状
 
-**3つのフロントエンドアプリにある画面は、サインインと、portal-app のアカウントの画面（登録、メールアドレスの確認、パスワードの再設定、スタッフの招待の受け入れ）と、アプリの枠です。** 業務の画面（予約、顧客台帳、会計など）は、まだありません。API を呼ぶための土台（生成クライアント、fetch ラッパー、セッション）はあります。`src/App.tsx` が、共有の枠（`ui` の `AppShell`。アプリ名とアカウント欄のヘッダー、本文へ移動するリンク、本文）の中に、「画面は準備中です。」と表示するトップページと、存在しないパスのためのページを持ち、サインインしていない人にはサインインの画面を出します（[画面とサインイン](#画面とサインイン)）。portal-app には、そのほかにアカウントの画面があります（[アカウントの画面](#アカウントの画面)）。
+**3つのフロントエンドアプリにある画面は、サインインと、portal-app のアカウントの画面（登録、メールアドレスの確認、パスワードの再設定、スタッフの招待の受け入れ）、サロンの画面（サロンを探す、サロンの詳細）と、アプリの枠です。** そのほかの業務の画面（予約、マイページ、顧客台帳、会計など）は、まだありません。API を呼ぶための土台（生成クライアント、fetch ラッパー、セッション）はあります。`src/App.tsx` が、共有の枠（`ui` の `AppShell`。アプリ名とアカウント欄のヘッダー、本文へ移動するリンク、本文）の中に、「画面は準備中です。」と表示するトップページと、存在しないパスのためのページを持ち、サインインしていない人にはサインインの画面を出します（[画面とサインイン](#画面とサインイン)）。portal-app には、そのほかにアカウントの画面があります（[アカウントの画面](#アカウントの画面)）。
 
 あるもの:
 
@@ -14,12 +14,13 @@
 - 各アプリの TanStack Query の初期設定（`QueryClientProvider`）
 - UI の土台: デザイントークン（`@beauty-salon-frontend/theme`）、CSS Modules で書いた共有コンポーネントとそのカタログ（`@beauty-salon-frontend/ui`、Storybook）、テストが共有する道具（`@beauty-salon-frontend/testing`）。[UI とテストの規則](#ui-とテストの規則)を参照
 - アカウントの画面（portal-app の `src/account/`）: 登録、メールアドレスの確認、パスワードの再設定、スタッフの招待の受け入れ。[アカウントの画面](#アカウントの画面)を参照
+- サロンの画面（portal-app の `src/salons/`）: サロンを探す画面（`/`）と、サロンの詳細の画面（`/salons/:salonId`）。[サロンの画面](#サロンの画面)を参照
 - 環境変数 `VITE_BACKEND_BASE_URL`（API サーバーのオリジン）と、ほかのアプリのオリジン（`VITE_ADMIN_APP_URL`、`VITE_PORTAL_APP_URL`）
 
 ないもの:
 
-- 生成クライアントを使う業務の画面（いま API を呼ぶ画面は、サインイン、サインアウトと、アカウントの画面だけ）
-- ユーザー登録、メールアドレスの確認、パスワードの再設定、スタッフの招待の受け入れ、2 要素認証の設定、セッションの一覧の画面
+- 予約とマイページの画面、admin-app と dashboard-app の業務の画面（いま API を呼ぶ画面は、サインイン、サインアウト、アカウントの画面、サロンの画面）
+- 2 要素認証の設定、パスワードの変更、セッションの一覧の画面
 - API のモックサーバー（画面のテストは、jsdom からも、実際のブラウザーからも、実際の API を呼ぶ。[テスト](#実際の-api-と-db-を使うテストpnpm-testintegration)）
 - 共有リンクを開く画面（サーバーには、共有リンクのオペレーションがすべてある。クライアントは OpenAPI の全オペレーションについて生成され、そのすべてに、サーバーの実装がある）
 
@@ -33,22 +34,22 @@
 | admin-app | `frontend/apps/admin-app` | 3002 |
 | dashboard-app | `frontend/apps/dashboard-app` | 3003 |
 
-いずれも Vite 8 + React 19 + react-router 8 の SPA です。ワークスペースのパッケージで依存しているのは `@beauty-salon-frontend/ui`、`@beauty-salon-frontend/theme`、`@beauty-salon-frontend/session`、それにテストのための `@beauty-salon-frontend/testing` だけです。
+いずれも Vite 8 + React 19 + react-router 8 の SPA です。ワークスペースのパッケージで依存しているのは `@beauty-salon-frontend/ui`、`@beauty-salon-frontend/theme`、`@beauty-salon-frontend/session`、それにテストのための `@beauty-salon-frontend/testing` です。portal-app は、`@beauty-salon-frontend/api-client` にも依存しています（アカウントの画面とサロンの画面が、生成された関数を呼びます）。
 
 ### 共有パッケージ（`frontend/packages/`）
 
 | パッケージ | 役割 | 使っているもの |
 |------------|------|----------------|
-| `api-client` | Orval の生成物（`src/generated/`）と、その再エクスポート | `session` |
+| `api-client` | Orval の生成物（`src/generated/`）と、その再エクスポート | `session`、portal-app |
 | `io` | fetch ラッパー `customInstance` と、ブラウザーに保存するセッション `sessionStore` | `api-client`、`session` |
 | `session` | アプリのセッション: 状態を返すフック `useSession`、`signIn`、`signOut`、ユーザーが替わったときに取得済みのデータを消す `keepQueriesOfOneUser`、サインインが要る画面を囲む `RequireSession`（サインインの画面を含む）、ヘッダーのアカウント欄 `SessionAccount` | 3つのアプリ（`src/main.tsx`、`src/App.tsx`） |
 | `config` | `import.meta.env` を読む `env` オブジェクトと、モード判定関数（`isProductionMode` など） | `io`、`ui`（型のみ） |
 | `theme` | デザイントークン（`src/tokens.css`）、リセットと素の要素のスタイル、スタイルの規則の検査（`src/style-rules.ts`） | 3つのアプリ、`ui`（カタログとテスト） |
-| `ui` | 共有コンポーネント（`Button`、フォームの部品 `TextField`・`TextArea`・`Select`・`RadioGroup`・`Checkbox`、メッセージの `Alert`、画面の骨組みの部品 `AppShell`・`Navigation`・`PageHeader`・`Card`・`DescriptionList`・`Badge`・`Table`・`EmptyState`・`LoadingIndicator`・`Dialog`、リンクの `LinkProvider`・`ButtonLink`、通知の `NotificationProvider`・`useNotifications`、`EnvironmentBanner`）、クラス名をつなぐ `classNames`、カタログ（Storybook。`session` のストーリーも表示する） | 3つのアプリ、`session` |
+| `ui` | 共有コンポーネント（`Button`、フォームの部品 `TextField`・`TextArea`・`Select`・`RadioGroup`・`Checkbox`、メッセージの `Alert`、画面の骨組みの部品 `AppShell`・`Navigation`・`PageHeader`・`Card`・`DescriptionList`・`Badge`・`Table`・`EmptyState`・`LoadingIndicator`・`Dialog`、評価の星の `Rating`、言葉の一覧の `TagList`、リンクの `LinkProvider`・`Link`・`ButtonLink`、通知の `NotificationProvider`・`useNotifications`、`EnvironmentBanner`）、クラス名をつなぐ `classNames`、カタログ（Storybook。`session` と、アプリのストーリーも表示する） | 3つのアプリ、`session` |
 | `testing` | テストが共有するもの: jest-dom のマッチャー、jsdom にない `dialog` 要素のメソッド（`showModal`・`close`）、アクセシビリティの検査（axe-core）、ストーリーごとにその検査を宣言する関数、実際の API を使うテストの仕組み（`testing/api`） | `ui`、`session`、3つのアプリのテスト、`frontend/e2e` |
 | `assets` | 画像アセット | なし |
 
-アプリが直接使っているのは `ui`、`theme`、`session` です（`ui` は `config` から型を1つ借りています）。`api-client` と `io` は、`session` を通して使われています。
+アプリが直接使っているのは `ui`、`theme`、`session` と、portal-app の `api-client` です（`ui` は `config` から型を1つ借りています）。`io` は、`api-client` と `session` を通して使われています。
 
 実際のブラウザーで通すテスト（`@beauty-salon-frontend/e2e`）は、`frontend/e2e` にあります。`testing` から、テスト用のサーバーを呼ぶコードと、アクセシビリティの検査の規則を使います。
 
@@ -69,7 +70,7 @@ frontend/packages/api-client/src/generated/
     endpoints/salons/salons.ts               useSalonCrudList() など
     │  import { ... } from '@beauty-salon-frontend/api-client'
     ▼
-アプリのコンポーネント（未実装）
+アプリの画面（portal-app の src/salons/salons-api.ts など）
 ```
 
 生成の手順、生成物がコミット対象であること、`pnpm check:generated` による検査は [Type Generation System](./type-generation-system.md) にまとめてあります。バックエンドは同じ OpenAPI ドキュメントから別の型（`@beauty-salon-backend/generated`）を生成します。
@@ -241,7 +242,7 @@ const ROLES: RequireSessionProps['roles'] = ['owner', 'manager', 'staff', 'admin
 
 | アプリ | 使えるロール |
 |---|---|
-| portal-app | サインインなしで見られる（いまあるのは、トップページ、[アカウントの画面](#アカウントの画面)、存在しないパスのページ）。サインインの画面は `/sign-in` にあり、どのロールでもサインインできる。サインインすると、トップページへ移る。顧客だけの画面は、その画面を `RequireSession roles={['customer']}` で囲む |
+| portal-app | サインインなしで見られる（いまあるのは、[サロンの画面](#サロンの画面)（トップページが、サロンを探す画面）、[アカウントの画面](#アカウントの画面)、存在しないパスのページ）。サインインの画面は `/sign-in` にあり、どのロールでもサインインできる。サインインすると、トップページへ移る。顧客だけの画面は、その画面を `RequireSession roles={['customer']}` で囲む |
 | admin-app | `owner`、`manager`、`staff`、`admin`。すべての画面にサインインが要る |
 | dashboard-app | `owner`、`manager`、`admin`。すべての画面にサインインが要る |
 
@@ -276,6 +277,24 @@ portal-app の `src/account/` に、サインインしていない人が使う�
 - **招待を受けたあと**は、admin-app へのリンクを出す（`VITE_ADMIN_APP_URL`）。セッションはアプリ（オリジン）ごとなので、admin-app ではあらためてサインインする
 - プロフィール（氏名、電話番号）の登録は、ここにはない。マイページの画面で扱う
 
+### サロンの画面
+
+portal-app の `src/salons/` に、サインインなしで見られる、サロンの画面があります。
+
+| パス | 画面 | 呼ぶ API |
+|---|---|---|
+| `/` | サロンを探す。キーワード（名前と紹介文）、都道府県、市区町村、評価（3.0 以上から 4.5 以上まで）で絞り込み、20 件ずつ表示する（「さらに表示」）。探すのは、予約を受け付けているサロンだけ（`isActive=true`） | `GET /salons` |
+| `/salons/:salonId` | サロンの詳細。サロンについて（紹介文、住所、電話番号、メールアドレス、ウェブサイト、特徴）、営業時間（曜日ごとと、日付ごと）、メニュー（カテゴリーごとのサービス、所要時間、料金）、スタッフ、レビュー（評価のまとめと、10 件ずつの一覧。並び順は、新しい順、評価の高い順、参考になった順） | `GET /salons/{id}`、`GET /salons/{salonId}/service-categories`、`GET /salons/{salonId}/services`、`GET /staff-profiles`、`GET /salons/{salonId}/reviews/summary`、`GET /reviews` |
+
+- **検索条件は、アドレスのクエリにある**（`/?keyword=cut&prefecture=東京都&minRating=4`）。読み込み直しても、サロンの画面から戻っても、アドレスを人に渡しても、同じ検索になる。API が受け付けない値（選べない評価、長すぎる文字列）と、条件でないパラメーターは、エラーにせずに捨てる（`salon-search.ts` の `conditionsIn`）。都道府県と市区町村は、API が完全一致で探すので、サロンが登録した表記と同じものを入れる
+- **API を呼ぶ関数**は `salons-api.ts` にある。どれも reject せず、画面が区別する結果の直和型を返す（`found`、`notFound`、`tooManyRequests`、`failed`）。クエリは必ず値で終わるので、画面は `isError` を見ずに、その値で分岐する。読めなかったときは、何が読めなかったかの知らせと、「もう一度読み込む」のボタンを出す
+- **一覧の続き**は `useInfiniteQuery` で読む（API のカーソルが、ページのパラメーター）。足した分の先頭へ、フォーカスを移す。続きを読めなかったときは、読めた分を残して、その下に知らせと「もう一度読み込む」を出す
+- **サロンの詳細の画面は、部分ごとに読む。** サロン、メニュー、スタッフ、評価のまとめ、レビューの一覧は、別々のクエリ。1 つが読めなくても、ほかの部分は表示される。メニューとスタッフは、最後まで読む（100 件ずつ、10 ページまで）
+- **見せないもの**: 予約を受け付けていないサロンは、検索に出ない。アドレスを知っていれば詳細は開き、「このサロンは、現在、予約を受け付けていません。」と出る。メニューに出すのは、有効（`isActive`）で、提供中（`serviceStatus` が `active`）のサービスだけ。スタッフは、API が公開するプロフィール（`/staff-profiles`）のとおり。写真は出さない
+- **日付と時刻、金額**は、ブラウザーの設定ではなく、サロンのタイムゾーン（`timezone`）と通貨（`currency`）で表示する（`salon-format.ts`）。日付ごとの営業時間は、サロンの今日からのものを、近い順に 14 件まで
+- **存在しないサロン**（ID の形でないアドレス、どのサロンのものでもない ID、削除されたサロン）は、「サロンが見つかりません」の画面になる。ID の形でないものは、API に送らない
+- **表示するだけの部品**（`components/`）は、API のモデルを props で受け取り、状態ごとのストーリーとテストを持つ。`ui` のカタログに、`Portal/Salons/…` として並ぶ。評価の星（`Rating`）、言葉の一覧（`TagList`）、文中のリンク（`Link`）は、`ui` にある
+
 ## TanStack Query の設定
 
 3つのアプリとも `src/main.tsx` で同じ設定の `QueryClient` を作り、`QueryClientProvider` でアプリ全体を包んでいます（`frontend/apps/admin-app/src/main.tsx` より）。
@@ -293,9 +312,9 @@ const queryClient = new QueryClient({
 })
 ```
 
-`VITE_MODE` が `production` 以外のときは React Query Devtools も表示します。`QueryClient` を作ったあと、`keepQueriesOfOneUser(queryClient)` を呼びます（[セッション](#アプリのセッションbeauty-salon-frontendsession)）。クエリを実行するコードは `useSession` だけです（`RequireSession` と `SessionAccount` が使います）。
+`VITE_MODE` が `production` 以外のときは React Query Devtools も表示します。`QueryClient` を作ったあと、`keepQueriesOfOneUser(queryClient)` を呼びます（[セッション](#アプリのセッションbeauty-salon-frontendsession)）。クエリを実行するのは、`useSession`（`RequireSession` と `SessionAccount` が使います）と、portal-app のアカウントの画面（リンクの確認）、サロンの画面です。
 
-`retry: 3` が再試行するのは、クエリが失敗（reject）したとき、つまり通信そのものが失敗したときです。API のエラー応答は値として返るので、再試行の対象になりません。
+`retry: 3` が再試行するのは、クエリが失敗（reject）したとき、つまり通信そのものが失敗したときです。API のエラー応答は値として返るので、再試行の対象になりません。画面の API を呼ぶ関数（`account-api.ts`、`salons-api.ts`）は、通信の失敗も値にして返すので、どの場合も再試行されません。読み直すのは、利用者が「もう一度読み込む」を押したときです。
 
 ## 環境変数（`VITE_*`）
 
@@ -304,7 +323,7 @@ const queryClient = new QueryClient({
 | 変数 | 使っている場所 |
 |------|----------------|
 | `VITE_MODE` | `App.tsx` の `EnvironmentBanner`（本番以外で、画面の隅に環境名を表示する）、`main.tsx` の Devtools の表示判定 |
-| `VITE_APP_TITLE` | `App.tsx` のヘッダーとトップページの見出し |
+| `VITE_APP_TITLE` | `App.tsx` のヘッダーとトップページの見出し（portal-app のトップページは、サロンを探す画面） |
 | `VITE_BACKEND_BASE_URL` | API サーバーのオリジン（パスは付けない）。`config` パッケージの `env` を通して `customInstance` が使う。アプリのコードからは使われていない |
 | `VITE_ADMIN_APP_URL` | portal-app だけにある。admin-app のオリジン。招待を受けたあとの「店舗向けの画面を開く」のリンク先 |
 | `VITE_PORTAL_APP_URL` | admin-app と dashboard-app にある。portal-app のオリジン。サインインの画面の「パスワードを忘れた場合」のリンク先（`/forgot-password`） |
@@ -313,48 +332,51 @@ const queryClient = new QueryClient({
 - ローカル用の 3 つ（`localhost`、`development`、`test`）の `VITE_BACKEND_BASE_URL` は `http://localhost:3000` で、リポジトリ直下の `.env.*` の `PORT` と同じです。ほかのアプリのオリジンは、開発サーバーのもの（portal-app は `http://localhost:3001`、admin-app は `http://localhost:3002`）です。
 - `config` パッケージの `env` は、設定されていない変数を `undefined` として返します。
 
-## アプリから使う（未実装）
+## アプリから使う
 
-以下は、最初の画面を API につなぐときの手順と推奨です。リポジトリにはまだ存在しません。対象は実装済みの Salon API のうち、認証なしで呼べる一覧です。
+API を読む画面の例は、portal-app の[サロンの画面](#サロンの画面)です。フォームから API に書く画面の例は、[アカウントの画面](#アカウントの画面)です。
 
 準備:
 
-- 使うアプリの `package.json` に `@beauty-salon-frontend/api-client` と `ts-pattern` を追加する
+- 使うアプリの `package.json` に `@beauty-salon-frontend/api-client` と `ts-pattern` を追加する（portal-app にはある）
 - API サーバーの `CORS_ORIGIN` にそのアプリのオリジンが含まれていることを確認する。リポジトリ直下の `.env.localhost` と `.env.development` は、3つのアプリのオリジン（`http://localhost:3001`〜`3003`）を許可している
 
-コンポーネントは生成されたフックと型だけを使います。レスポンスは `status` で分岐し、`.exhaustive()` で網羅を保証します。
+画面は、生成された関数と型だけを使います。API を呼ぶ関数は、応答を `status` で分岐し、`.exhaustive()` で網羅を保証して、画面が区別する結果の直和型にして返します。通信の失敗（reject）も、その関数の中で結果の 1 つにします（`frontend/apps/portal-app/src/salons/salons-api.ts` より）。
 
-```tsx
-import { useSalonCrudList } from '@beauty-salon-frontend/api-client'
-import { match, P } from 'ts-pattern'
+```ts
+const REFUSED = P.union(null, { status: 400 }, { status: 429 }, { status: 500 })
 
-export function SalonList() {
-  const salons = useSalonCrudList({ limit: 20 })
+export const findSalons = async (
+  conditions: SalonConditions,
+  cursor: string | undefined,
+): Promise<SalonPage> => {
+  const answer = await salonCrudList({
+    ...conditions,
+    ...from(cursor),
+    isActive: true,
+    limit: SALONS_PER_PAGE,
+  }).catch(() => null)
 
-  if (salons.isPending) {
-    return <p>読み込み中...</p>
-  }
-  if (salons.isError) {
-    // 通信そのものの失敗（ネットワーク断、タイムアウト）
-    return <p role='alert'>API に接続できませんでした</p>
-  }
-
-  return match(salons.data)
-    .with({ status: 200 }, ({ data: page }) => (
-      <ul>
-        {page.data.map((salon) => (
-          <li key={salon.id}>{salon.name}</li>
-        ))}
-      </ul>
-    ))
-    .with({ status: P.union(400, 429, 500) }, ({ data: problem }) => (
-      <p role='alert'>{problem.title}</p>
-    ))
+  return match(answer)
+    .returnType<SalonPage>()
+    .with({ status: 200 }, ({ data }) => pageOf(data.data, data.meta))
+    .with(REFUSED, unreadOf)
     .exhaustive()
 }
 ```
 
-この分岐（200 と 400・429・500）は、現在の生成クライアントの型に対して網羅になっています。API 定義に新しいステータスが増えると、`.exhaustive()` が型エラーになって気づけます。
+画面は、その関数をクエリの関数にして、結果の種類ごとに表示を決めます（`salon-search-screen.tsx` より）。
+
+```tsx
+const found = useInfiniteQuery({
+  queryKey: ['salons', 'search', searched],
+  queryFn: ({ pageParam }) => findSalons(conditions, pageParam),
+  initialPageParam: firstCursor(),
+  getNextPageParam: cursorAfter,
+})
+```
+
+この分岐（200 と、400・429・500、応答なし）は、現在の生成クライアントの型に対して網羅になっています。API 定義に新しいステータスが増えると、`.exhaustive()` が型エラーになって気づけます。
 
 - 型は生成されたものをそのまま使う。`ModelsSalonResponse` と同じ形の型を手書きしない。`any` と型アサーションも使わない
 - 登録・更新・削除は `useSalonCrudCreate` などのミューテーションフックを使い、結果も同じく `status` で分岐する。成功したら `getSalonCrudListQueryKey()` を使って一覧のキャッシュを無効化する。ただし、この 3 つはアクセストークンが必要である。トークンは、サインインしていれば `customInstance` が付ける（[セッション](#セッション)）。サインインしていなければ 401 が返る
@@ -385,7 +407,7 @@ export function SalonList() {
 
 規則と手順は、次の 2 つのスキルにあります。`frontend/` 以下を変更する前に読みます。
 
-- [frontend-ui](../.claude/skills/frontend-ui/SKILL.md): トークン、CSS Modules、Grid によるレイアウト、コンポーネントの作り方、フォームの部品と画面の骨組みの部品の使い方
+- [frontend-ui](../.claude/skills/frontend-ui/SKILL.md): トークン、CSS Modules、Grid によるレイアウト、コンポーネントの作り方、フォームの部品と画面の骨組みの部品の使い方、API を読む画面の作り方
 - [frontend-testing](../.claude/skills/frontend-testing/SKILL.md): ストーリーからのテスト、アクセシビリティの検査、Vitest の設定
 
 検査できる規則は `theme` パッケージの `src/style-rules.ts` が検査するので、違反はテストの失敗になります。カタログは `pnpm --filter @beauty-salon-frontend/ui run storybook` で起動します（`http://localhost:6006`）。
@@ -395,13 +417,14 @@ export function SalonList() {
 フロントエンドのテストは Vitest です（`pnpm test:frontend`）。パッケージをまたぐ import はソースから解決するので（エクスポート条件 `@beauty-salon-frontend/source`）、ビルドなしで実行できます。`io`、`api-client`、`session` のテストも jsdom で実行します（セッションを `localStorage` に置くため）。
 
 - `ui` のコンポーネント: ストーリー（`*.stories.tsx`）を `composeStories` で読み込み、jsdom に描画して検証する（`*.test.tsx`）。どのストーリーにも、アクセシビリティの検査（axe-core、WCAG 2.2 AA）がある
-- 各アプリの `src/App.test.tsx`: `MemoryRouter` で枠を描画し、サインインしていない人に見えるもの（admin-app と dashboard-app ではサインインの画面、portal-app ではトップページ、存在しないパスのページ、`/sign-in`）、共有コンポーネントのリンクがページを読み込み直さずに移動すること、アクセシビリティを検証する。API は呼ばない
+- 各アプリの `src/App.test.tsx`: `MemoryRouter` で枠を描画し、サインインしていない人に見えるもの（admin-app と dashboard-app ではサインインの画面、portal-app では、存在しないパスのページと `/sign-in`。トップページは API を読むので、結合テストにある）、共有コンポーネントのリンクがページを読み込み直さずに移動すること、アクセシビリティを検証する。API は呼ばない
 - `theme` の `src/style-rules.test.ts`: すべてのパッケージとアプリのスタイルシートとコンポーネントが、スタイルの規則を守っていることを検証する。`src/tokens.test.ts`: 文字と背景、コントロールの縁に使う色のトークンの組が、必要なコントラスト比を満たすことを検証する
 - `config` と `testing` の各パッケージ: モジュールの隣に `*.test.ts`
 - `io` の `src/libs/fetcher/fetcher.test.ts`: `customInstance` を、スタブにした `fetch` に対して検証する（URL、本文、ステータスごとの戻り値、problem details、reject する条件）。`fetcher.session.test.ts`: セッションがあるときの動作（トークンを付けること、期限切れのあとの再発行と送り直しが 1 回ずつであること、同時のリクエストで再発行が 1 回であること、ほかのタブが先に替えたセッションを通信せずに使うこと、断られた再発行と失敗した再発行の違い）。`src/libs/session/stored-session.test.ts`: 保存、購読、ほかのタブからの変更
 - `api-client` の `src/salons.test.ts`: 生成された Salon の関数を、実際の `customInstance` を通して検証する（リクエストの形、ステータスごとに型が絞られること、通信の失敗、TanStack Query との組み合わせ）。`src/session.test.ts`: `io` が持つ再発行のパスとエラーコードが、生成されたものと同じであること
 - `session` の `src/session.test.tsx`: `useSession` を `renderHook` で描画し、`signIn`、`signOut`、`keepQueriesOfOneUser` と一緒に、実際の生成クライアントと `customInstance` を通して、スタブにした `fetch` に対して検証する。`src/components/` の部品（`SignInForm`、`SessionGate`、`AccountMenu`）は、`ui` と同じく、ストーリーから検証する。`sign-in-screen/sign-in-flow.test.ts`: フォームの値の確かめと、API の応答ごとのフォームの状態
 - portal-app の `src/account/`: `account-flow.test.ts`（フォームの値の確かめと、API が断った値ごとの表示）、`mailed-token.test.ts`（フラグメントのトークン）、`account-api.test.ts`（実際の API では起こせない応答（429、500、応答なし）と、どのオペレーションも応答を同じように読むことを、スタブにした `fetch` に対して検証する）
+- portal-app の `src/salons/`: 純粋な関数のテスト（`salon-search.test.ts`: 検索条件とアドレス。`salon-format.test.ts`: 日付、時刻、金額、営業時間の表示。`salon-menu.test.ts`: メニューの組み立てと料金。`pages.test.ts`: 一覧のページ）、`salons-api.test.ts`（実際の API では起こせない応答、送るパラメーター、一覧を最後まで読むことを、スタブにした `fetch` に対して検証する）。`components/` の部品は、`ui` と同じく、ストーリーから検証する
 
 ### 実際の API と DB を使うテスト（`pnpm test:integration`）
 
@@ -409,7 +432,7 @@ API を呼ぶコードは、`fetch` も API も差し替えずに、本番と同
 
 - テストの実行ごとに、バックエンドの**テスト用のサーバー**（`backend/packages/api/src/__tests__/test-server/`）が 1 つ起動します。スキーマとシードのデータ（`pnpm db:seed` と同じもの）を入れたテンプレートの DB を作り、テストファイルごとに、その複製を持つ API を、そのファイルだけのポートで起動します
 - テスト対象のコードは、その API を呼びます（`VITE_BACKEND_BASE_URL` が、その API のオリジンになります）。テストが終わるたびに、API の DB は新しい複製に替わり、`localStorage` と `sessionStorage` は空になります
-- テストは `testApi()`（`@beauty-salon-frontend/testing/api`）から、API のオリジン、シードのアカウントのパスワード、DB への SQL の実行、API が送ったメール（`mails()` と、ある宛先への最後のメールのリンクを返す `mailedLink(to)`）を使えます。メールは、どこにも配送されません。SQL は、画面からも API からも起こせないこと（トークンの期限が切れるだけの時間の経過など）のためのものです
+- テストは `testApi()`（`@beauty-salon-frontend/testing/api`）から、API のオリジン、シードのアカウントのパスワード、DB への SQL の実行、API が送ったメール（`mails()` と、ある宛先への最後のメールのリンクを返す `mailedLink(to)`）を使えます。メールは、どこにも配送されません。SQL は、画面からも API からも、テストの中では起こせないこと（トークンの期限が切れるだけの時間の経過、一覧の 2 ページ目に要るだけの行、API の失敗など）のためのものです
 - PostgreSQL は、`TEST_DATABASE_URL` があればそれを、なければコンテナを使います（バックエンドの結合テストと同じ）
 
 いまあるのは、次のものです。
@@ -417,6 +440,7 @@ API を呼ぶコードは、`fetch` も API も差し替えずに、本番と同
 - `session` の `src/session.integration.test.tsx`: サインイン、誤ったパスワード、期限切れのあとの再発行（同時のリクエストで 1 回）、再発行できないセッション、API で終わったセッション、サインアウト
 - `session` の `src/sign-in.integration.test.tsx`: サインインの画面を、利用者と同じように操作する（入力して、ボタンを押す）。サインインして開こうとした画面が出ること、「サインインしたままにする」、誤ったパスワードと未登録のメールアドレス、空の欄と形の誤ったメールアドレスでは何も送らないこと、2 要素認証（認証アプリのコード、誤ったコードのあとのバックアップコード、空のコード、最初の段階へ戻る）、サインイン済みの人、ヘッダーからのサインアウト、ロールの合わないアカウント
 - portal-app の `src/account/account.integration.test.tsx`: アカウントの画面を、メールのリンクから開いて操作する。登録と確認メールの再送、メールアドレスの確認、使用済みのリンクと期限切れのリンク、再設定の要求と新しいパスワードの設定、招待の受け入れ（アカウントを作る）と参加（サインインして受ける）、参加できないアカウント、アカウントのあるメールアドレスへの招待、取り消された招待。リンクを開いただけでは API に何も送らないこと（または、確認だけを送ること）も確かめる
+- portal-app の `src/salons/salons.integration.test.tsx`: サロンを探す画面（条件ごとの検索、アドレスにある条件、同じ検索の読み直し、予約を受け付けていないサロン、続きの表示とフォーカス）と、サロンの詳細の画面（営業時間、メニュー、スタッフ、レビューの各部分、並び順、続きのレビュー、何も登録していないサロン、存在しないサロン、削除されたサロン）。API の失敗は、応答を差し替えずに、DB で起こす（テーブルの名前を一時的に変える、など）。読めなかった知らせと、「もう一度読み込む」で読み直せることを確かめる
 - 各アプリの `src/App.integration.test.tsx`: そのアプリを使えるロールと使えないロール、開こうとしたアドレスの画面がサインインのあとに出ること、画面の移動、サインアウト、サインインした状態でのアクセシビリティ
 - `testing` の `src/api/test-api.integration.test.ts`: この仕組みそのもの（シードのデータがあること、あるテストが書いたものが次のテストに残らないこと、トークンのないリクエストをテスト用のサーバーが受け付けないこと、テスト用のサーバーが返す認証アプリのコードを API が受け付けること、ブラウザーから呼ぶための API が、指定したポートで待ち受け、指定したオリジンだけを許可すること、API が送ったメールをテストが読めて、そのリンクのトークンを API が受け付けること）
 
@@ -439,6 +463,7 @@ API を呼ぶコードは、`fetch` も API も差し替えずに、本番と同
 - `src/sign-in.e2e.test.ts`: 開こうとしたアドレスにサインインの画面が出て、サインインするとそのアドレスの画面が出ること、空の欄では何も送らず、最初の欄へフォーカスが移ること、誤ったパスワード、キーボードだけでのサインイン、読み込み直してもサインインが続くこと、別のタブでのサインアウトがこのタブにも及ぶこと、2 要素認証のコード
 - `src/applications.e2e.test.ts`: アプリごとの、使えるロールと使えないロール、portal-app のサインインとサインアウト、スマートフォンの幅（390px）の画面
 - `src/account.e2e.test.ts`: 登録から、メールのリンク、メールアドレスの確認、サインインまで。admin-app のサインインの画面から、portal-app での再設定、新しいパスワードでの admin-app へのサインインまで。招待のメールのリンクからアカウントを作り、admin-app にサインインするまで。使用済みのリンク、パスワードの表示、スマートフォンの幅の登録の画面
+- `src/salons.e2e.test.ts`: サロンを探して、詳細を開くまで。戻る、進む、読み込み直しで、検索が保たれること。続きの表示とフォーカス、レビューの並び順、存在しないサロン、スマートフォンの幅の検索と詳細
 
 テストが開いた画面では、アクセシビリティ（WCAG 2.2 AA。ブラウザーが描画するので、色のコントラストを含む）、横にはみ出さないこと、flex で配置された要素がないことを確かめます（`src/checks.ts`）。
 

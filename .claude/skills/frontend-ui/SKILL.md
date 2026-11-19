@@ -1,6 +1,6 @@
 ---
 name: frontend-ui
-description: "How the frontend of this repository is styled and how its components are built: design tokens, CSS Modules, layout with CSS Grid (never flex), the shared component package @beauty-salon-frontend/ui with its form components (label, description, error), the frame of a screen (app shell, navigation, table, dialog, notifications), how a form calls the API, the screens that need a session (sign-in, roles), the screens that a mailed link opens and the Storybook. Use it before adding or changing a component, a form, a stylesheet, a token, a story or the markup of a screen under frontend/."
+description: "How the frontend of this repository is styled and how its components are built: design tokens, CSS Modules, layout with CSS Grid (never flex), the shared component package @beauty-salon-frontend/ui with its form components (label, description, error), the frame of a screen (app shell, navigation, table, dialog, notifications), how a form calls the API, how a screen reads from the API (a search kept in the address, a list that goes on, the parts of a page), the screens that need a session (sign-in, roles), the screens that a mailed link opens and the Storybook. Use it before adding or changing a component, a form, a stylesheet, a token, a story or the markup of a screen under frontend/."
 ---
 
 # Frontend UI
@@ -23,7 +23,8 @@ this one: a component is not done without its stories and its test.
 | Shared components | `frontend/packages/ui/src/components/<name>/` |
 | The screens of the session: sign-in, the guard of the screens that need one, the account in the header | `frontend/packages/session/src/` |
 | The screens of an account in the portal: registering, a new password, and the screens that a mailed link opens | `frontend/apps/portal-app/src/account/` |
-| The catalogue (Storybook), of the components of `ui` and of `session` | `frontend/packages/ui/.storybook/`, `pnpm --filter @beauty-salon-frontend/ui run storybook` (port 6006) |
+| The screens of the salons in the portal: the search and the page of a salon, and the components they show | `frontend/apps/portal-app/src/salons/` |
+| The catalogue (Storybook), of the components of `ui`, of `session` and of the applications | `frontend/packages/ui/.storybook/`, `pnpm --filter @beauty-salon-frontend/ui run storybook` (port 6006) |
 | The routes of an application, inside the shared frame `AppShell`, and the roles it is for | `frontend/apps/<app>/src/App.tsx` |
 
 An application imports one stylesheet, in `src/main.tsx`:
@@ -52,11 +53,16 @@ is broken.
    | Centred | `display: grid; place-items: center` |
    | Cards that wrap | `grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr))` |
    | Label and value pairs | `grid-template-columns: max-content minmax(0, 1fr)` |
+   | Rows that share their columns | The list is the grid; a row is `display: grid; grid-template-columns: subgrid; grid-column: 1 / -1` |
 
    Write `minmax(0, 1fr)`, not `1fr`, for a track whose content may be long:
    a bare `1fr` grows with its content and overflows. A grid does not wrap
    items of different widths: a row that may not fit scrolls sideways
-   (`navigation.module.css`), or becomes a column below a width.
+   (`navigation.module.css`), or becomes a column below a width. What
+   follows each other like words (the tags of a salon, a rating with its
+   date and a badge) is no layout: it stays in the flow of the text,
+   `display: inline-block` with a margin, and goes on in the next line where
+   the line ends (`tag-list.module.css`).
 3. **A colour is a token.** No colour is written out outside `tokens.css`:
    no hex value, no `rgb()`, no `color-mix()` (`no-raw-color`). `transparent`
    and `currentColor` are allowed.
@@ -141,7 +147,13 @@ nobody reads is removed.
   words that belong to a component itself are in it (必須, 閉じる,
   本文へ移動, 読み込み中).
 - A component that one application uses stays in that application, with the
-  same four files. It moves to `ui` when a second application needs it.
+  same four files, in `src/<area>/components/<name>/`
+  (`frontend/apps/portal-app/src/salons/components/`). It only shows: what
+  it shows comes in as props, and the screen around it reads it. The
+  catalogue of `ui` shows its stories under the name of the application
+  (`title: 'Portal/Salons/SalonHours'`), and the models its stories show
+  are in one file beside the components (`examples.ts`). It moves to `ui`
+  when a second application needs it.
 - What several applications share and `ui` may not know has a package of its
   own. `@beauty-salon-frontend/session` is the one there is: it knows the API
   client and the query library, and builds its screens from `ui`. Its
@@ -300,6 +312,79 @@ shortest).
 - A form that stands alone on a screen is one column,
   `max-inline-size: var(--size-form-column)`.
 
+## A screen that reads from the API
+
+The screens of the salons in the portal are the example to read:
+`frontend/apps/portal-app/src/salons/` (`salon-search-screen.tsx` for a
+list, `salon-screen.tsx` for a record with its parts).
+
+- **The functions that read never reject** (`salons-api.ts`). Each answers
+  with a sum type of what a screen tells apart: what was `found`, `notFound`
+  where the address may name nothing, and why nothing was read
+  (`tooManyRequests`, `failed`). The statuses of the contract are matched
+  with `.exhaustive()`. A query of TanStack Query over such a function
+  always ends with data, and the screen matches on it: `undefined` is
+  "still reading", and the rest are the states it shows. Nothing reads
+  `isError`, and nothing is retried behind the back of the user.
+- **Four states.** `LoadingIndicator` with a label that says what is read
+  (「サロンを探しています」), `EmptyState`, the content, and for what could
+  not be read `UnreadNotice`: an `Alert` of the tone `danger` that names
+  what is missing, and the button 「もう一度読み込む」, which reads again
+  (`refetch`). An empty list says that nothing meets the conditions when
+  the user narrowed it, and that there is nothing when they did not.
+- **The conditions of a search are in the address** (`useSearchParams`): a
+  reload, the way back from a record and an address that is passed on show
+  the same search. Pure functions read and write them (`salon-search.ts`):
+  `conditionsIn(query)` keeps what the API takes and drops the rest without
+  a word (an address is also typed by hand), `conditionsOf(formData)` reads
+  the form, and `queryOf(conditions)` writes them in one order, so that its
+  text is the key of the query as well. Sending the form sets the query of
+  the address; sending the same search again reads again.
+- **The form of a search keeps its values itself.** It is the one form with
+  `value` and `onChange`: it shows the conditions of the address, also
+  after the address changed without it (back, forward, 「条件をなくす」),
+  and adopts them while it renders when they are others than the last time
+  (`components/salon-search-form/`). It is given no `key`: a form that is
+  built anew takes the focus from whoever sent it. It stands in a `search`
+  element that has the name (`<search aria-label='サロンを探す'>`); the
+  `form` inside has none.
+- **A list goes on with 「さらに表示」** (`useInfiniteQuery`, with the
+  cursor of the API as the parameter of a page; the pure functions are in
+  `pages.ts`). The next items are added below those that are there, and the
+  focus moves to the first of them, in `useLayoutEffect`: the button that
+  was pressed is gone, or further down. A page that could not be read is a
+  page of the query like the others: the items stay, an `Alert` below them
+  says so, and the button reads again. How many there are, and how many of
+  them are shown, is a paragraph with `role='status'` above the list. The
+  list of another search is another list and gets the search as its `key`.
+- **Another order keeps the list** until the list in that order is there
+  (`placeholderData: keepPreviousData`): nothing blinks, and the control
+  that was changed keeps the focus.
+- **Every part of a page reads for itself.** The page of a salon is the
+  salon and, below it, the menu, the people and the reviews: each a `Card`
+  with a query of its own and its own four states. A part that cannot be
+  read says so in its place, and the rest of the page is there. A list that
+  a part shows whole is read to its end, in the largest pages the API gives
+  and in no more than ten of them (`toTheEnd`).
+- **A screen that is named after what it reads** shows the
+  `LoadingIndicator` alone while it reads, and its `PageHeader` with the
+  name when it knows it; the heading then takes the focus from the screen
+  before. When the record cannot be read or does not exist, the heading
+  says that. An ID of the address that is no ID is not asked for.
+- **What is shown is worked out by pure functions** (`salon-format.ts`,
+  `salon-menu.ts`): amounts and dates with `Intl`, in the currency and the
+  time zone of the salon and not of the browser; what a visitor is not
+  offered is left out; an address of the web becomes a link when it is
+  `http` or `https`. They are tested without a screen.
+- **What a salon wrote may be long, and in any language.** It wraps
+  (`overflow-wrap: anywhere`), and a pair of a name and a long value keeps
+  its two columns at every width (`salon-hours.module.css`) where a table
+  would scroll.
+- **The components of a screen only show** (`components/`): they take the
+  models of the API as props, have the four files and a story for every
+  state, and know neither the router nor the query. A link gets its
+  address from a function the screen hands over (`salonHref`).
+
 ## Screens and the session
 
 | Component (`@beauty-salon-frontend/session`) | Use it for |
@@ -372,11 +457,13 @@ behind it. Their screens are in `frontend/apps/portal-app/src/account/`.
 |-----------|------------|
 | `AppShell` | The frame of an application: the link that skips to the content, the header (title, `account`), the `navigation` (under the header, or beside the content with `navigationPlacement='side'`), the main content with the notification at its top |
 | `Navigation` | The links to the screens. The application says which one is `current` |
-| `LinkProvider`, `ButtonLink` | Links that move within the application; a link that looks like a button |
+| `LinkProvider`, `Link`, `ButtonLink` | Links that move within the application: `Link` in a text or a list, `ButtonLink` for one that looks like a button |
 | `PageHeader` | The top of a screen: its one `h1`, a description, the actions on the whole screen |
 | `Card` | A part of a screen under its own heading (`h2`, or `h3` with `headingLevel={3}`) |
 | `DescriptionList` | The names and values of one record |
 | `Badge` | The state of a record, in a word |
+| `TagList` | A few words about a record, as a list with a name: the features of a salon, what a member of the staff is good at |
+| `Rating` | A rating out of five: the stars, the number, and how many gave it |
 | `Table` | A list of records |
 | `EmptyState` | What is shown where content would be, while there is none |
 | `LoadingIndicator` | What is shown where content will be, while it loads |
@@ -394,7 +481,10 @@ behind it. Their screens are in `frontend/apps/portal-app/src/account/`.
   where the user is now, and the keyboard goes on from the top. The first
   screen of a page load leaves the focus where the browser put it. A screen
   needs nothing for this but its `PageHeader`, which it shows in every
-  state: while its content loads, when there is none, when it failed.
+  state: while its content loads, when there is none, when it failed. The
+  one exception is a screen that is named after what it reads (the page of
+  a salon): while it reads it has no name, and shows the `LoadingIndicator`
+  alone until it has one.
 - **The focus moves in the commit that shows where it goes.** A component
   that moves the focus when what it shows changes (the heading of another
   screen, the first control with an error, the code of the second step) does
