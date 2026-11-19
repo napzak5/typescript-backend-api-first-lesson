@@ -155,10 +155,18 @@ describe('Button', () => {
   `@beauty-salon-frontend/testing/setup` gives it both: the `open` attribute
   and the `close` event, which is what the test of a component asserts. The
   focus kept inside, the inert page behind and the Escape key are the
-  browser's work and are checked in a real browser.
+  browser's work and are checked in a real browser. In jsdom the page
+  behind an open dialog can still be found and pressed: look inside the
+  dialog (`within(screen.getByRole('dialog', { name }))`), and assert that
+  it is gone with `queryByRole('dialog')`.
 - A component that is generic in its data gets a wrapper with the type filled
   in, and the stories are those of the wrapper (`BookingTable` in
   `table.stories.tsx`).
+- A component that moves the focus after a press is also shown the change
+  that no press asked for. The wrapper of its story has a second button
+  that makes it, and the test presses that one with `fireEvent.click`,
+  which moves no focus as `userEvent.click` would: the focus must be where
+  it was (`booking-list.test.tsx`, `salon-results.test.tsx`).
 - A story reaches a state that needs a step with a `play` function, and
   `Story.run()` runs it. Inside it, use `userEvent` imported from
   `storybook/test`; the context of a composed story has `canvas` but no
@@ -357,6 +365,14 @@ it('should show the screen that was asked for after signing in', async () => {
   after it only later ones: set up with the code of now, and sign in with
   `authenticatorCode(secret, 1)` (the code of the next 30 seconds, which the
   API takes as well) or with a backup code.
+- **A link of the page that the header has as well** is found inside the
+  page. A customer who is signed in has 「サロンを探す」 in the navigation
+  of the header, and so has the page that leads back to the search:
+  `within(screen.getByRole('main')).getByRole('link', { name })`.
+- **What an `Alert` says** has its role on the element around the text
+  (`alert` for `danger`, `status` for the others): find it by the role
+  (`findByRole('alert')`), or read the texts of the regions of `main`,
+  and do not ask the element of the text for its role.
 - Run a new file a few times before trusting it: a test that waits for the
   wrong thing passes on one run and fails on the next.
 
@@ -399,6 +415,11 @@ example to read: a search and the page of a record, rendered at an address.
 - **A part of a page** is the region of its heading
   (`findByRole('region', { name: 'レビュー' })`). Look inside it with
   `within`: the parts arrive one by one.
+- **A list that grows in steps is read when it is whole.** The rows of a
+  list that reads the names of what its records name arrive as the names
+  do, and its button is busy until then: wait until no button of the list
+  is busy before the rows are counted or read
+  (`listNamed` in `own-bookings.integration.test.tsx`).
 - testing-library does not know the role of the `search` element. In jsdom,
   assert the element and its name
   (`expect(control.closest('search')).toHaveAttribute('aria-label', 'サロンを探す')`);
@@ -444,6 +465,38 @@ the example to read: a customer books a time that the screen read.
   (`fireEvent.change(control, { target: { value: date } })`), and a
   browser test fills it (`fill(date)`). The date is the one the database
   gave (`dayAhead`).
+- **What the tests of several screens arrange is one module**:
+  `src/bookings/__tests__/arrangements.ts` has the names of the seed data,
+  who is signed in, the day and a booking made through the API, for the
+  tests of the screen that books and of those that list, cancel and move.
+  The browser tests have theirs in `frontend/e2e/src/bookings.ts`.
+- **The times a screen must offer follow from the rows of the staff, too.**
+  A booking takes its member of the staff from `bufferTimeBefore` before
+  it until `bufferTimeAfter` after it, and a member of the staff may take
+  more than one booking at once (`maxConcurrentBookings`). A time that
+  somebody else took first is arranged with a member of the staff who
+  takes one at a time.
+- **What a write changed is asserted the moment it is shown again.** The
+  test reads the list, changes a record on its page and goes back, and
+  asserts the list as soon as it is there, without a wait for the new
+  word: a wait would pass over a list that showed the old one first.
+- **What must be read again is tested with what the application keeps.**
+  The `QueryClient` of a test reads everything again whenever it is shown;
+  the one of an application (`main.tsx`) keeps what it read for five
+  minutes. A screen that sets `staleTime: 0` for what somebody else
+  changes is rendered with a client that has the `staleTime` of the
+  application (`asTheApplicationKeeps` in
+  `own-bookings.integration.test.tsx`), the record is changed with a
+  statement, and the screen is shown again: it must say what is stored
+  now.
+- **What the salon did meanwhile is a statement.** The booking begins
+  while the dialog asks: `update bookings set status = 'in_progress', …`
+  between opening the dialog and confirming. The refusal the screen then
+  gets is the real one.
+- **A list is asserted against what is stored.** The rows the screen
+  must show are read from the database in the order the screen gives
+  them, and the times are worked out for the time zone of the salon: the
+  test then holds on every day, and in whatever time zone it runs.
 
 `App.test.tsx` of an application keeps what needs no API: what somebody who
 is not signed in sees. Everything behind the sign-in is in
@@ -569,6 +622,18 @@ test.describe('the admin application', () => {
   there, and asserts the heading of the screen it wanted. What the
   database must hold for the path (the hours of a day) is arranged with
   `api.query` before the page is opened, relative to today.
+- **A dialog is worked with the keyboard**: Enter on the button that opens
+  it, the first control focused, Escape, the focus back on the button,
+  and Tab through its actions in their order
+  (`src/own-bookings.e2e.test.ts`). The page is checked with
+  `expectSoundPage` while the dialog is open, too.
+- **What a stylesheet draws on the parts of an element** is asserted where
+  it is drawn: `toHaveCSS('text-decoration-line', 'underline')` on the
+  part of a link that is a box of its own, found by its text inside the
+  link.
+- **What several files arrange** is a module beside them
+  (`src/bookings.ts`: the day, a booking made through the API with the
+  `request` fixture, the locators of the booking screens).
 - A radio button among many is found by its whole name
   (`getByRole('radio', { name: '10:30', exact: true })`), and the keyboard
   is taken through the group as a person takes it: Tab to the group, Space
