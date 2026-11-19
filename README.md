@@ -78,7 +78,7 @@ For detailed architecture documentation, see [docs/architecture-overview.md](doc
 | The other domains | None: every operation of the contract is implemented |
 | Email | Implemented for the mails of the authentication flows: plain text over SMTP. Locally they are caught by Mailpit. See [docs/email.md](docs/email.md) |
 | File storage | An S3-compatible object storage holds the files of the attachments. Locally it is SeaweedFS, started by Docker Compose; which storage production uses, its bucket, its credentials and the CORS rules of the bucket are part of preparing production. See [docs/attachments.md](docs/attachments.md) |
-| Frontend apps | Application shells with signing in and out: the sign-in screen with its two-factor step, the screens of the admin and the dashboard application behind a session of the roles they are for, the account in the header. No screen of the business (bookings, customers, sales) exists yet, and neither do the pages that the links in the mails point at. What the screens will be built from is there: design tokens, shared components in CSS Modules with their Storybook, tests that start from the stories, tests of screens against the real API, and the session (the tokens kept in the browser, sent with every request and renewed when they expire). See [docs/frontend-api-integration.md](docs/frontend-api-integration.md) |
+| Frontend apps | Application shells with signing in and out: the sign-in screen with its two-factor step, the screens of the admin and the dashboard application behind a session of the roles they are for, the account in the header. No screen of the business (bookings, customers, sales) exists yet, and neither do the pages that the links in the mails point at. What the screens will be built from is there: design tokens, shared components in CSS Modules with their Storybook, tests that start from the stories, tests of screens against the real API, browser tests of the built applications against the same API, and the session (the tokens kept in the browser, sent with every request and renewed when they expire). See [docs/frontend-api-integration.md](docs/frontend-api-integration.md) |
 
 ## 🚀 Quick Start
 
@@ -144,7 +144,8 @@ accounts and their roles are listed in
 │
 ├── frontend/                   # Frontend applications
 │   ├── packages/             # Shared frontend packages
-│   └── apps/                 # Frontend applications
+│   ├── apps/                 # Frontend applications
+│   └── e2e/                  # Browser tests of the applications (Playwright)
 │
 ├── shared-config/              # Shared TypeScript configuration
 ├── scripts/                    # Repository scripts (run with node)
@@ -217,6 +218,8 @@ pnpm preview:frontend        # Serve the built frontend apps
 # Testing
 pnpm test                    # Unit tests
 pnpm test:integration        # Tests against PostgreSQL and an SMTP server, backend and frontend (see Testing)
+pnpm test:e2e                # Browser tests of the built frontend applications against the real API (see Testing)
+pnpm test:e2e:install        # The browser of those tests, once
 
 # Code Quality
 pnpm lint                    # Biome lint
@@ -356,6 +359,15 @@ dropped.
   production API from the code of the client, and from the screens as a user
   works them: a test server of the backend gives every test file an API on a
   copy of a database with the seed data.
+- **Browser tests** (`pnpm test:e2e`): Playwright drives Chromium on the three
+  frontend applications as they are built, which call the production API on
+  a PostgreSQL with the seed data (`TEST_DATABASE_URL`, or a container). The
+  tests are in `frontend/e2e`. Install the browser once, and again after an
+  update of Playwright:
+
+  ```bash
+  pnpm test:e2e:install
+  ```
 
 See [docs/testing-requirements.md](docs/testing-requirements.md) for testing guidelines.
 
@@ -416,6 +428,7 @@ The full index is [docs/README.md](docs/README.md).
 - **pino** - Structured logging
 - **nodemailer** - Mail over SMTP
 - **Vitest**, **testcontainers** - Unit and integration testing
+- **Playwright** - Browser tests
 - **Biome**, **knip** - Lint, format, unused-code detection
 
 ### Frontend

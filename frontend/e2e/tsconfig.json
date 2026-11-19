@@ -1,0 +1,10 @@
+{
+  "extends": "@beauty-salon-shared/config/tsconfig.lib.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "lib": ["ESNEXT", "DOM", "DOM.Iterable"],
+    "types": ["node"]
+  },
+  "include": ["./src/**/*", "./playwright.config.ts"],
+  "exclude": ["node_modules"]
+}

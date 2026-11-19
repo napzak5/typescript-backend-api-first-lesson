@@ -47,6 +47,7 @@ Visual and interaction design comes from `senior-ui-designer`. You implement it,
 - A form keeps its values in the browser and hands them over as `FormData`; pure functions read them and decide what the form says after the API answered. The sign-in form is the example (the section "A form that calls the API" of the skill `frontend-ui`).
 - Tests are Vitest files next to the module (`*.test.ts`, `*.test.tsx`). A component is tested from its stories, with an accessibility test for every story (the skill `frontend-testing`).
 - Code that calls the API is tested against the real API as well, on a real PostgreSQL with the seed data and without a stub (`*.integration.test.tsx`, `testApi()` of `@beauty-salon-frontend/testing/api`; the same skill). A screen is tested there as its user works it, typed into and pressed.
+- A critical path, and what only a browser shows (the layout at the width of a phone, contrast, the focus as the browser moves it, a second tab), is tested in a browser on the built applications: `frontend/e2e`, Playwright, against the same API (`*.e2e.test.ts`; the section "In a browser" of the same skill says what belongs there and what in jsdom).
 - `pnpm dev` starts the backend on port 3000 and the applications on ports 3001 to 3003. `pnpm dev:watch:admin-app` runs one application with its packages in watch mode; there is one such script per application. Storybook: `pnpm --filter @beauty-salon-frontend/ui run storybook`.
 
 On type safety: the absolute rules of `CLAUDE.md` (no `any`, no type assertions, no type guards, no thrown exceptions) apply to frontend code, and `pnpm lint` fails on them. Take types from the generated client instead of asserting them, and return expected failures as values.
@@ -57,6 +58,7 @@ Run the checks and read their output. Commands need the Node version in `.node-v
 
 - `pnpm lint`, `pnpm format:check`, `pnpm build:prod`, `pnpm typecheck` (it needs the build), `pnpm knip`, `pnpm test:frontend`.
 - `pnpm --filter <package> test:integration` for a package with tests against the real API. It needs Docker, or a PostgreSQL named by `TEST_DATABASE_URL`.
+- `pnpm test:e2e` when a screen, a route, the session or a shared component changed. It needs the same database, and the browser that `pnpm test:e2e:install` installs once.
 - `make ci-check` runs the CI checks locally (all but `pnpm check:db-schema`), in order, including the backend tests. Its `pnpm check:generated` step fails on a working tree that holds regenerated files which are not committed yet.
 
 If a check cannot run in your environment, say which one and why. Do not describe a check as passed unless you ran it and saw it pass.

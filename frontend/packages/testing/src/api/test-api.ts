@@ -1,9 +1,5 @@
 import { assert } from 'vitest'
-import * as z from 'zod'
-
-type TestServer = { origin: string; token: string }
-
-type Value = string | number | boolean | null
+import { type TestServer, testServerClient } from './test-server-client'
 
 export type TestApi = {
   /** Where the API listens: `VITE_BACKEND_BASE_URL` of the code under test */
@@ -15,7 +11,10 @@ export type TestApi = {
    * what a test cannot bring about through the screen or the API, such as
    * time having passed.
    */
-  query: (text: string, values?: Value[]) => Promise<Record<string, unknown>[]>
+  query: (
+    text: string,
+    values?: (string | number | boolean | null)[],
+  ) => Promise<Record<string, unknown>[]>
   /**
    * The code that an authenticator app shows for `secret`, the one the API
    * returned when two-factor authentication was set up. The API takes a code
@@ -33,83 +32,27 @@ type OpenedTestApi = TestApi & {
   remove: () => Promise<void>
 }
 
-const createdSchema = z.object({
-  id: z.string(),
-  origin: z.string(),
-  seedPassword: z.string(),
-})
-
-const rowsSchema = z.object({
-  rows: z.array(z.record(z.string(), z.unknown())),
-})
-
-const codeSchema = z.object({ code: z.string() })
-
 let current: TestApi | null = null
 
 /** Asks the test server for an API; it is the one that `testApi()` returns. */
 export const openTestApi = async (
   server: TestServer,
 ): Promise<OpenedTestApi> => {
-  const ask = async (
-    method: 'POST' | 'DELETE',
-    path: string,
-    body?: unknown,
-  ): Promise<Response> =>
-    fetch(`${server.origin}${path}`, {
-      method,
-      headers: {
-        Authorization: `Bearer ${server.token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(body ?? {}),
-    })
-
-  const created = await ask('POST', '/apis')
-  assert.strictEqual(created.status, 201, 'The test server started no API')
-  const { id, origin, seedPassword } = createdSchema.parse(await created.json())
+  const client = testServerClient(server, (message) => assert.fail(message))
+  // The code under test calls it with the `fetch` of Node.js, from any port
+  const { id, origin, seedPassword } = await client.start({
+    port: null,
+    corsOrigins: [],
+  })
 
   const api: OpenedTestApi = {
     origin,
     seedPassword,
-    query: async (text, values = []) => {
-      const answer = await ask('POST', `/apis/${id}/query`, { text, values })
-      assert.strictEqual(
-        answer.status,
-        200,
-        `${text}: ${await answer.clone().text()}`,
-      )
-
-      return rowsSchema.parse(await answer.json()).rows
-    },
-    authenticatorCode: async (secret, stepsAhead = 0) => {
-      const answer = await ask('POST', '/authenticator-codes', {
-        secret,
-        stepsAhead,
-      })
-      assert.strictEqual(
-        answer.status,
-        200,
-        'The test server gave no code: is the secret the one the API returned?',
-      )
-
-      return codeSchema.parse(await answer.json()).code
-    },
-    reset: async () => {
-      const answer = await ask('POST', `/apis/${id}/reset`)
-      assert.strictEqual(
-        answer.status,
-        204,
-        'The test server did not reset the API',
-      )
-    },
+    query: (text, values) => client.query(id, text, values),
+    authenticatorCode: client.authenticatorCode,
+    reset: () => client.reset(id),
     remove: async () => {
-      const answer = await ask('DELETE', `/apis/${id}`)
-      assert.strictEqual(
-        answer.status,
-        204,
-        'The test server did not remove the API',
-      )
+      await client.remove(id)
       current = null
     },
   }

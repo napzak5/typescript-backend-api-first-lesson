@@ -36,7 +36,7 @@ The rules that most often decide whether a change is acceptable:
 Before reporting a task as done, run the checks CI runs:
 
 ```bash
-make ci-check   # install, generated-file and API–DB checks, lint, format, build, typecheck, knip, unit and integration tests, audit
+make ci-check   # install, generated-file and API–DB checks, lint, format, build, typecheck, knip, unit, integration and browser tests, audit
 ```
 
 The integration tests need a PostgreSQL: the one at `TEST_DATABASE_URL` when

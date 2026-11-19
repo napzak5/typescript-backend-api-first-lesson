@@ -16,12 +16,33 @@ const TWO_FACTOR_ENCRYPTION_KEY = 'key-of-the-test-server-only'
 /** The APIs listen on this machine only. */
 export const LOOPBACK = '127.0.0.1'
 
+/** What a test asks for when it starts an API. */
+type TestApiOptions = {
+  /** The port to listen on, or `null` for a free one */
+  port: number | null
+  /**
+   * The origins whose pages may call the API from a browser. A test that
+   * calls it with the `fetch` of Node.js needs none
+   */
+  corsOrigins: string[]
+}
+
 /** One API: the production application on a database of its own. */
 type TestApi = {
   server: Server
   database: TestDatabase
+  corsOrigins: string[]
   app: Express
 }
+
+type Listening =
+  | { type: 'listening'; port: number }
+  | { type: 'refused'; message: string }
+
+type CreateOutcome =
+  | { type: 'created'; id: string; origin: string }
+  /** The port that was asked for could not be listened on */
+  | { type: 'notListening'; message: string }
 
 type QueryOutcome =
   | { type: 'rows'; rows: unknown[] }
@@ -31,7 +52,7 @@ type QueryOutcome =
 
 export type TestApis = {
   /** Starts an API on a port and a database of its own. */
-  create: () => Promise<{ id: string; origin: string }>
+  create: (options: TestApiOptions) => Promise<CreateOutcome>
   /** Gives the API a fresh database: nothing of what was done to it stays. */
   reset: (id: string) => Promise<boolean>
   /** Runs a statement on the database of the API. */
@@ -44,12 +65,15 @@ export type TestApis = {
   close: () => Promise<void>
 }
 
-const applicationOn = (database: TestDatabase): Express =>
+const applicationOn = (
+  database: TestDatabase,
+  corsOrigins: string[],
+): Express =>
   createApp({
     database: database.db,
     settings: {
       trustProxyHops: 0,
-      cors: { origins: [], credentials: true, maxAgeSeconds: 600 },
+      cors: { origins: corsOrigins, credentials: true, maxAgeSeconds: 600 },
       rateLimit: { windowMs: 60_000, maxRequests: 1000 },
       publicAppUrl: 'https://app.salon.example',
     },
@@ -63,11 +87,14 @@ const applicationOn = (database: TestDatabase): Express =>
     }),
   })
 
-/** Listens on a free port of this machine; the port it was given. */
-export const listen = (server: Server): Promise<number> =>
+/**
+ * Listens on a port of this machine, a free one unless one is named; the
+ * port it listens on. Rejects when the port is taken.
+ */
+export const listen = (server: Server, port = 0): Promise<number> =>
   new Promise((resolve, reject) => {
     server.once('error', reject)
-    server.listen(0, LOOPBACK, () => {
+    server.listen(port, LOOPBACK, () => {
       const address: AddressInfo | string | null = server.address()
       if (address === null || typeof address === 'string') {
         reject(new Error('The server listens on no port'))
@@ -99,19 +126,34 @@ export const openTestApis = (databases: TestDatabases): TestApis => {
   }
 
   return {
-    create: async () => {
+    create: async ({ port, corsOrigins }) => {
       const database = await databases.create()
       const api: TestApi = {
         database,
-        app: applicationOn(database),
+        corsOrigins,
+        app: applicationOn(database, corsOrigins),
         // Looked up for every request: a reset replaces the application
         server: createServer((request, response) => api.app(request, response)),
       }
-      const port = await listen(api.server)
+      const listening = await listen(api.server, port ?? 0).then(
+        (given): Listening => ({ type: 'listening', port: given }),
+        (error: unknown): Listening => ({
+          type: 'refused',
+          message: String(error),
+        }),
+      )
+      if (listening.type === 'refused') {
+        await database.drop()
+        return { type: 'notListening', message: listening.message }
+      }
       const id = randomUUID()
       apis.set(id, api)
 
-      return { id, origin: `http://${LOOPBACK}:${port}` }
+      return {
+        type: 'created',
+        id,
+        origin: `http://${LOOPBACK}:${listening.port}`,
+      }
     },
 
     reset: async (id) => {
@@ -121,7 +163,7 @@ export const openTestApis = (databases: TestDatabases): TestApis => {
       }
       const previous = api.database
       api.database = await databases.create()
-      api.app = applicationOn(api.database)
+      api.app = applicationOn(api.database, api.corsOrigins)
       await previous.drop()
 
       return true
