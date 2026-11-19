@@ -163,12 +163,12 @@ describe('BookingChanges', () => {
       expect(stories.Confirming.args.onCancel).not.toHaveBeenCalled()
     })
 
-    it('should tell its caller when the browser has closed it', async () => {
+    it('should tell its caller when the Escape key closes it', async () => {
       // Arrange
       await stories.Confirming.run()
 
       // Act
-      fireEvent(dialog(), new Event('close'))
+      fireEvent(dialog(), new Event('cancel'))
 
       // Assert
       expect(stories.Confirming.args.onClose).toHaveBeenCalledTimes(1)

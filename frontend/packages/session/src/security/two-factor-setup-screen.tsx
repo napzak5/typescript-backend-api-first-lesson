@@ -7,6 +7,7 @@ import {
   Card,
   LoadingIndicator,
   PageHeader,
+  UnreadNotice,
   useNotifications,
 } from '@beauty-salon-frontend/ui'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -15,7 +16,6 @@ import { match, P } from 'ts-pattern'
 import { AuthenticatorRegistration } from './components/authenticator-registration/authenticator-registration'
 import { BackupCodeList } from './components/backup-code-list/backup-code-list'
 import { TwoFactorPasswordForm } from './components/two-factor-password-form/two-factor-password-form'
-import { UnreadNotice } from './components/unread-notice/unread-notice'
 import {
   type AccountRead,
   confirmTwoFactor,
@@ -23,7 +23,7 @@ import {
   readOwnAccount,
   startTwoFactor,
 } from './security-api'
-import { type FormSays, NOTHING_TO_SAY } from './security-flow'
+import { type FormSays, NOTHING_TO_SAY, unreadMessageOf } from './security-flow'
 import {
   afterRefusal,
   CHANGED_ELSEWHERE,
@@ -235,8 +235,7 @@ export const TwoFactorSetupScreen = ({
         ))
         .with({ type: UNSENT }, (reason) => (
           <UnreadNotice
-            what='アカウント'
-            reason={reason}
+            message={unreadMessageOf('アカウント', reason)}
             onRetry={() => void read.refetch()}
             retrying={read.isFetching}
           />

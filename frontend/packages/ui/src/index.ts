@@ -89,3 +89,7 @@ export {
   TextField,
   type TextFieldProps,
 } from './components/text-field/text-field'
+export {
+  UnreadNotice,
+  type UnreadNoticeProps,
+} from './components/unread-notice/unread-notice'

@@ -5,15 +5,21 @@ import {
   LoadingIndicator,
   Navigation,
   PageHeader,
+  UnreadNotice,
 } from '@beauty-salon-frontend/ui'
 import { useInfiniteQuery, useQueries } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import { CUSTOMERS } from '../roles'
-import { cursorAfter, firstCursor, listingOf, moreOf } from '../salons/pages'
+import {
+  cursorAfter,
+  firstCursor,
+  listingOf,
+  moreOf,
+  unreadMessageOf,
+} from '../salons/pages'
 import { dateAt } from '../salons/salon-format'
 import { readSalon } from '../salons/salons-api'
-import { UnreadNotice } from '../salons/unread-notice'
 import { SignInHelp } from '../sign-in-help'
 import { readOwnBookings, readService } from './bookings-api'
 import { BookingList } from './components/booking-list/booking-list'
@@ -104,8 +110,7 @@ const Bookings = ({ when }: BookingsProps) => {
     .with(undefined, () => <LoadingIndicator label='予約を読み込んでいます' />)
     .with({ type: 'unread' }, ({ reason }) => (
       <UnreadNotice
-        what='予約'
-        reason={reason}
+        message={unreadMessageOf('予約', reason)}
         onRetry={() => void read.refetch()}
         retrying={read.isFetching}
       />
@@ -125,8 +130,7 @@ const Bookings = ({ when }: BookingsProps) => {
       match([rows, rest])
         .with([[], { type: 'unread' }], ([, { reason }]) => (
           <UnreadNotice
-            what='予約'
-            reason={reason}
+            message={unreadMessageOf('予約', reason)}
             onRetry={readNamesAgain}
             retrying={readingNamesAgain}
           />

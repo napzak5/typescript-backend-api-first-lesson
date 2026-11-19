@@ -2,6 +2,7 @@ import { ADMIN, DASHBOARD, PORTAL } from './applications'
 import { expectSoundPage } from './checks'
 import { expect, test } from './fixtures'
 import {
+  ADMIN_START,
   CUSTOMER,
   enterCredentials,
   heading,
@@ -25,8 +26,8 @@ test.describe('the admin application', () => {
     await enterCredentials(page, STAFF, api.seedPassword)
 
     // Assert
-    await expect(heading(page, ADMIN.title)).toBeFocused()
-    await expect(page).toHaveTitle(ADMIN.title)
+    await expect(heading(page, ADMIN_START)).toBeFocused()
+    await expect(page).toHaveTitle(`${ADMIN_START} | ${ADMIN.title}`)
     await expectSoundPage(page)
   })
 
@@ -171,7 +172,7 @@ test.describe('on a screen as narrow as a phone', () => {
     await enterCredentials(page, STAFF, api.seedPassword)
 
     // Assert
-    await expect(heading(page, ADMIN.title)).toBeFocused()
+    await expect(heading(page, ADMIN_START)).toBeFocused()
     await expect(signOutButton(page)).toBeVisible()
     await expectSoundPage(page)
   })

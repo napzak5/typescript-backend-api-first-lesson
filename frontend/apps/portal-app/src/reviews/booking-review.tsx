@@ -1,9 +1,14 @@
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
-import { ButtonLink, Card, LoadingIndicator } from '@beauty-salon-frontend/ui'
+import {
+  ButtonLink,
+  Card,
+  LoadingIndicator,
+  UnreadNotice,
+} from '@beauty-salon-frontend/ui'
 import { useQuery } from '@tanstack/react-query'
 import { match, P } from 'ts-pattern'
 import { ReviewContent } from '../salons/components/review-content/review-content'
-import { UnreadNotice } from '../salons/unread-notice'
+import { unreadMessageOf } from '../salons/pages'
 import { readReviewOfBooking, reviewOfBookingKey } from './reviews-api'
 
 const UNREAD = P.union('tooManyRequests', 'failed')
@@ -66,8 +71,7 @@ export const BookingReview = ({ bookingId, salon }: BookingReviewProps) => {
           ))
           .with({ type: UNREAD }, (reason) => (
             <UnreadNotice
-              what='レビュー'
-              reason={reason}
+              message={unreadMessageOf('レビュー', reason)}
               onRetry={() => void read.refetch()}
               retrying={read.isFetching}
             />

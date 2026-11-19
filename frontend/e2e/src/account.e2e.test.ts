@@ -3,6 +3,7 @@ import { ADMIN, PORTAL } from './applications'
 import { expectSoundPage } from './checks'
 import { expect, test } from './fixtures'
 import {
+  ADMIN_START,
   accessTokenOf,
   emailField,
   enterCredentials,
@@ -107,7 +108,7 @@ test.describe('the account of a visitor, in a browser', () => {
     await enterCredentials(page, OWNER, api.seedPassword)
     await expect(page.getByText(WRONG_CREDENTIALS)).toBeVisible()
     await enterCredentials(page, OWNER, PASSWORD)
-    await expect(heading(page, ADMIN.title)).toBeFocused()
+    await expect(heading(page, ADMIN_START)).toBeFocused()
     await expect(page.getByRole('banner')).toContainText(OWNER)
     expect(address).toBe(`${PORTAL.origin}/reset-password`)
   })
@@ -178,8 +179,8 @@ test.describe('the invitation of a member of the staff, in a browser', () => {
     await enterCredentials(page, INVITED, PASSWORD)
 
     // Assert
-    await expect(heading(page, ADMIN.title)).toBeFocused()
-    await expect(page).toHaveURL(`${ADMIN.origin}/`)
+    await expect(heading(page, ADMIN_START)).toBeFocused()
+    await expect(page).toHaveURL(`${ADMIN.origin}/salons/${salonId}/bookings`)
     await expect(page.getByRole('banner')).toContainText(INVITED)
     expect(invited.status()).toBe(201)
     expect(address).toBe(`${PORTAL.origin}/accept-staff-invitation`)

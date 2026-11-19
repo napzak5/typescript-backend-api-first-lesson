@@ -4,7 +4,7 @@
 
 ## 現状
 
-**3つのフロントエンドアプリにある画面は、サインインと、portal-app のアカウントの画面（登録、メールアドレスの確認、パスワードの再設定、スタッフの招待の受け入れ）、サロンの画面（サロンを探す、サロンの詳細）、予約の画面（予約する、予約の一覧、予約の内容とキャンセル、日時の変更）、マイページの画面（会員の情報とお客様の情報、その登録と変更、好みの設定）、レビューの画面（来店についてのレビューを書く、自分のレビューを見て、変更し、削除する。サロンの詳細で、ほかの人のレビューが参考になったと伝え、通報する）、3 つのアプリのアカウントの安全の画面（パスワードの変更、サインインしている端末とそのサインアウト、2 要素認証の設定とバックアップコードの発行し直しと無効化）と、アプリの枠です。** そのほかの業務の画面（顧客台帳、会計など）は、まだありません。API を呼ぶための土台（生成クライアント、fetch ラッパー、セッション）はあります。`src/App.tsx` が、共有の枠（`ui` の `AppShell`。アプリ名とアカウント欄のヘッダー、本文へ移動するリンク、本文）の中に、「画面は準備中です。」と表示するトップページと、存在しないパスのためのページを持ち、サインインしていない人にはサインインの画面を出します（[画面とサインイン](#画面とサインイン)）。portal-app には、そのほかにアカウントの画面があります（[アカウントの画面](#アカウントの画面)）。
+**3つのフロントエンドアプリにある画面は、サインインと、portal-app のアカウントの画面（登録、メールアドレスの確認、パスワードの再設定、スタッフの招待の受け入れ）、サロンの画面（サロンを探す、サロンの詳細）、予約の画面（予約する、予約の一覧、予約の内容とキャンセル、日時の変更）、マイページの画面（会員の情報とお客様の情報、その登録と変更、好みの設定）、レビューの画面（来店についてのレビューを書く、自分のレビューを見て、変更し、削除する。サロンの詳細で、ほかの人のレビューが参考になったと伝え、通報する）、3 つのアプリのアカウントの安全の画面（パスワードの変更、サインインしている端末とそのサインアウト、2 要素認証の設定とバックアップコードの発行し直しと無効化）、admin-app の予約台帳の画面（サロンを選ぶ、その日の予約の一覧、予約の内容とステータスの操作）と、アプリの枠です。** そのほかの業務の画面（予約の登録と変更、顧客台帳、会計など）は、まだありません。API を呼ぶための土台（生成クライアント、fetch ラッパー、セッション）はあります。`src/App.tsx` が、共有の枠（`ui` の `AppShell`。アプリ名とアカウント欄のヘッダー、本文へ移動するリンク、本文）の中に、画面と、存在しないパスのためのページを持ち、サインインしていない人にはサインインの画面を出します（[画面とサインイン](#画面とサインイン)）。dashboard-app のトップページは、「画面は準備中です。」と表示します。portal-app には、そのほかにアカウントの画面があります（[アカウントの画面](#アカウントの画面)）。
 
 あるもの:
 
@@ -20,11 +20,12 @@
 - 好みの設定の画面（portal-app の `src/preferences/`）: マイページの「好みの設定」の部分と、好みの設定を変更する画面（`/mypage/preferences`）。顧客のアカウントでサインインして使う。[好みの設定の画面](#好みの設定の画面)を参照
 - レビューの画面（portal-app の `src/reviews/`）: 来店が済んだ予約の内容の画面の「レビュー」の部分、レビューを書く画面（`/bookings/:bookingId/review`）、自分のレビューの一覧（`/mypage/reviews`。削除も、ここで行う）、レビューを変更する画面（`/mypage/reviews/:reviewId`）。顧客のアカウントでサインインして使う。サロンの詳細の画面では、顧客が、ほかの人のレビューが参考になったと伝え、通報する。[レビューの画面](#レビューの画面)を参照
 - アカウントの安全の画面（`session` の `src/security/`）: パスワード、2 要素認証（バックアップコードの発行し直しと無効化を含む）、サインインしている端末と、そのサインアウトの画面と、パスワードを変更する画面と、2 要素認証を設定する画面。portal-app はマイページの下（`/mypage/security`）に、admin-app と dashboard-app は `/account/security` に置き、ヘッダーからリンクする。[アカウントの安全の画面](#アカウントの安全の画面)を参照
+- 予約台帳の画面（admin-app の `src/salons/` と `src/bookings/`）: サロンを選ぶ画面（`/`。`admin` だけ。サロンのメンバーは、自分のサロンのその日の予約の一覧へ移る）、その日の予約の一覧（`/salons/:salonId/bookings`）、予約の内容とステータスの操作（`/salons/:salonId/bookings/:bookingId`）。サロンで働く人（`owner`、`manager`、`staff`）と `admin` のアカウントでサインインして使う。[予約台帳の画面](#予約台帳の画面)を参照
 - 環境変数 `VITE_BACKEND_BASE_URL`（API サーバーのオリジン）と、ほかのアプリのオリジン（`VITE_ADMIN_APP_URL`、`VITE_PORTAL_APP_URL`）
 
 ないもの:
 
-- admin-app と dashboard-app の業務の画面（いま API を呼ぶ画面は、サインイン、サインアウト、アカウントの画面、サロンの画面、予約の画面、マイページの画面、好みの設定の画面、レビューの画面、アカウントの安全の画面）
+- admin-app の予約台帳のほかの業務の画面と、dashboard-app の業務の画面（いま API を呼ぶ画面は、サインイン、サインアウト、アカウントの画面、サロンの画面、予約の画面、マイページの画面、好みの設定の画面、レビューの画面、アカウントの安全の画面、予約台帳の画面）
 - API のモックサーバー（画面のテストは、jsdom からも、実際のブラウザーからも、実際の API を呼ぶ。[テスト](#実際の-api-と-db-を使うテストpnpm-testintegration)）
 - 共有リンクを開く画面（サーバーには、共有リンクのオペレーションがすべてある。クライアントは OpenAPI の全オペレーションについて生成され、そのすべてに、サーバーの実装がある）
 
@@ -38,22 +39,22 @@
 | admin-app | `frontend/apps/admin-app` | 3002 |
 | dashboard-app | `frontend/apps/dashboard-app` | 3003 |
 
-いずれも Vite 8 + React 19 + react-router 8 の SPA です。ワークスペースのパッケージで依存しているのは `@beauty-salon-frontend/ui`、`@beauty-salon-frontend/theme`、`@beauty-salon-frontend/session`、それにテストのための `@beauty-salon-frontend/testing` です。portal-app は、`@beauty-salon-frontend/api-client` にも依存しています（アカウントの画面とサロンの画面が、生成された関数を呼びます）。
+いずれも Vite 8 + React 19 + react-router 8 の SPA です。ワークスペースのパッケージで依存しているのは `@beauty-salon-frontend/ui`、`@beauty-salon-frontend/theme`、`@beauty-salon-frontend/session`、それにテストのための `@beauty-salon-frontend/testing` です。portal-app と admin-app は、`@beauty-salon-frontend/api-client` にも依存しています（画面が、生成された関数を呼びます）。
 
 ### 共有パッケージ（`frontend/packages/`）
 
 | パッケージ | 役割 | 使っているもの |
 |------------|------|----------------|
-| `api-client` | Orval の生成物（`src/generated/`）と、その再エクスポート | `session`、portal-app |
+| `api-client` | Orval の生成物（`src/generated/`）と、その再エクスポート | `session`、portal-app、admin-app |
 | `io` | fetch ラッパー `customInstance` と、ブラウザーに保存するセッション `sessionStore` | `api-client`、`session` |
-| `session` | アプリのセッション: 状態を返すフック `useSession`、`signIn`、`signOut`、ユーザーが替わったときに取得済みのデータを消す `keepQueriesOfOneUser`、サインインが要る画面を囲む `RequireSession`（サインインの画面を含む）、ヘッダーのアカウント欄 `SessionAccount`、アカウントの安全の画面（`AccountSecurityScreen`、`PasswordChangeScreen`）と、選ぶパスワードの規則（`PASSWORD_RULE` など） | 3つのアプリ（`src/main.tsx`、`src/App.tsx`、portal-app の `src/account/` と `src/security/`） |
+| `session` | アプリのセッション: 状態を返すフック `useSession`、`signIn`、`signOut`、ユーザーが替わったときに取得済みのデータを消す `keepQueriesOfOneUser`、サインインが要る画面を囲む `RequireSession`（サインインの画面を含む）、ヘッダーのアカウント欄 `SessionAccount`、アカウントの安全の画面（`AccountSecurityScreen`、`PasswordChangeScreen`、`TwoFactorSetupScreen`）と、選ぶパスワードの規則（`PASSWORD_RULE` など）、サインインしている人の所属するサロン（`useOwnSalon`）と、どのサロンにも属していないアカウントへの知らせ（`NoSalonNotice`） | 3つのアプリ（`src/main.tsx`、`src/App.tsx`、portal-app の `src/account/` と `src/security/`） |
 | `config` | `import.meta.env` を読む `env` オブジェクトと、モード判定関数（`isProductionMode` など） | `io`、`ui`（型のみ） |
 | `theme` | デザイントークン（`src/tokens.css`）、リセットと素の要素のスタイル、スタイルの規則の検査（`src/style-rules.ts`） | 3つのアプリ、`ui`（カタログとテスト） |
-| `ui` | 共有コンポーネント（`Button`、フォームの部品 `TextField`・`TextArea`・`Select`・`RadioGroup`・`Checkbox`、メッセージの `Alert`、画面の骨組みの部品 `AppShell`・`Navigation`・`PageHeader`・`Card`・`DescriptionList`・`Badge`・`Table`・`EmptyState`・`LoadingIndicator`・`Dialog`、評価の星の `Rating`、言葉の一覧の `TagList`、リンクの `LinkProvider`・`Link`・`ButtonLink`、通知の `NotificationProvider`・`useNotifications`、`EnvironmentBanner`）、クラス名をつなぐ `classNames`、カタログ（Storybook。`session` と、アプリのストーリーも表示する） | 3つのアプリ、`session` |
+| `ui` | 共有コンポーネント（`Button`、フォームの部品 `TextField`・`TextArea`・`Select`・`RadioGroup`・`Checkbox`、メッセージの `Alert`、画面の骨組みの部品 `AppShell`・`Navigation`・`PageHeader`・`Card`・`DescriptionList`・`Badge`・`Table`・`EmptyState`・`LoadingIndicator`・`Dialog`、読めなかったことの知らせの `UnreadNotice`、QR コードの `QrCode`、評価の星の `Rating`、言葉の一覧の `TagList`、リンクの `LinkProvider`・`Link`・`ButtonLink`、通知の `NotificationProvider`・`useNotifications`、`EnvironmentBanner`）、クラス名をつなぐ `classNames`、カタログ（Storybook。`session` と、アプリのストーリーも表示する） | 3つのアプリ、`session` |
 | `testing` | テストが共有するもの: jest-dom のマッチャー、jsdom にない `dialog` 要素のメソッド（`showModal`・`close`）、アクセシビリティの検査（axe-core）、ストーリーごとにその検査を宣言する関数、実際の API を使うテストの仕組み（`testing/api`） | `ui`、`session`、3つのアプリのテスト、`frontend/e2e` |
 | `assets` | 画像アセット | なし |
 
-アプリが直接使っているのは `ui`、`theme`、`session` と、portal-app の `api-client` です（`ui` は `config` から型を1つ借りています）。`io` は、`api-client` と `session` を通して使われています。
+アプリが直接使っているのは `ui`、`theme`、`session` と、portal-app と admin-app の `api-client` です（`ui` は `config` から型を1つ借りています）。`io` は、`api-client` と `session` を通して使われています。
 
 実際のブラウザーで通すテスト（`@beauty-salon-frontend/e2e`）は、`frontend/e2e` にあります。`testing` から、テスト用のサーバーを呼ぶコードと、アクセシビリティの検査の規則を使います。
 
@@ -457,7 +458,33 @@ portal-app の `src/reviews/` に、顧客が、来店したサロンのレビ�
 - **状態が合わないとき**（409。ほかのタブや端末で、設定、確認、無効化が済んでいた）は、「2 要素認証の状態が、ほかの画面か端末で変わっていました。いまの状態を読み込み直しました。」と通知し、ダイアログを閉じて（設定の画面では、最初の段階に戻って）、アカウントを読み直す。読み直した状態でボタンがなくなると、フォーカスは「2 要素認証」の見出しへ移る（設定の画面では、替わった段階の見出しへ）
 - **変えたあと**は、読んであったアカウントの 2 要素認証の状態を、API が変えた状態に書き換えてから（`two-factor-flow.ts` の `withTwoFactorStatus`）、アカウントを読み直す。クエリを捨てると、それを読んでいる設定の画面が読み込み中に戻り、出していた段階が消えるからであり、書き換えるのは、戻った画面に、前の状態を一瞬でも出さないためである。メールは API が送る（有効にしたとき、無効にしたとき、発行し直したとき）。画面は、そのことを伝える
 - **API を呼ぶ関数**は `security-api.ts` にある（`readOwnAccount`、`readOwnSessions`、`changePassword`、`endSession`、`signOutEverywhere`、`startTwoFactor`、`confirmTwoFactor`、`issueBackupCodes`、`stopTwoFactor`）。どれも reject せず、画面が区別する結果の直和型を返す。フォームの値の確かめと、応答ごとの表示、一覧のページの組み立ては `security-flow.ts` と `two-factor-flow.ts`、日時と端末の言葉は `security-format.ts` の純粋な関数
-- **表示するだけの部品**（`src/security/components/`）は、パスワードと 2 要素認証（`SecuritySummary`）、端末の一覧（`SessionList`）、すべての端末でのサインアウト（`SignOutEverywhere`）、変更のフォーム（`PasswordChangeForm`）、読めなかった知らせ（`UnreadNotice`）、設定の段階（`TwoFactorPasswordForm`、`AuthenticatorRegistration`）、バックアップコードの一覧（`BackupCodeList`）、2 つのダイアログ（`BackupCodesDialog`、`TwoFactorStopDialog`）。`ui` のカタログに、`Session/Security/…` として並ぶ
+- **表示するだけの部品**（`src/security/components/`）は、パスワードと 2 要素認証（`SecuritySummary`）、端末の一覧（`SessionList`）、すべての端末でのサインアウト（`SignOutEverywhere`）、変更のフォーム（`PasswordChangeForm`）、設定の段階（`TwoFactorPasswordForm`、`AuthenticatorRegistration`）、バックアップコードの一覧（`BackupCodeList`）、2 つのダイアログ（`BackupCodesDialog`、`TwoFactorStopDialog`）。`ui` のカタログに、`Session/Security/…` として並ぶ
+
+### 予約台帳の画面
+
+admin-app の `src/salons/` と `src/bookings/` に、サロンで働く人と管理者が、サロンのその日の予約を見て、ステータスを進める画面があります。ロール `owner`、`manager`、`staff`、`admin` のアカウントでサインインして使います（admin-app のすべての画面と同じく、ほかのロールには、使えないことを伝えます）。決まりは、[予約台帳](./bookings.md) の「ステータスの操作」と「認可」です。
+
+| パス | 画面 | 呼ぶ API |
+|---|---|---|
+| `/` | サロンのメンバー（`owner`、`manager`、`staff`）は、所属するサロンのその日の予約の一覧へ移る（履歴を置き換える）。`admin` には、サロンを選ぶ画面。キーワード（名前と説明の部分一致）で探し、20 件ずつ表示する。行のサロンの名前が、そのサロンの予約の一覧へのリンク | `GET /staff-profiles/me`、`GET /salons` |
+| `/salons/:salonId/bookings` | その日の予約の一覧。日付、状態、担当の条件（アドレスのクエリの `date`、`status`、`staffId`）。行は、時刻（開始〜終了）、お客様の名前、担当、メニュー、状態、予約番号で、お客様の名前が、予約の内容へのリンク。開始の早い順に 50 件ずつ（「さらに表示」）。「前の日」「今日」「次の日」 | `GET /salons/{id}`、`GET /bookings`、`POST /customers/batch/get`、`GET /customers/{id}`、`GET /staff-profiles`、`GET /salons/{salonId}/services` |
+| `/salons/:salonId/bookings/:bookingId` | 予約の内容（「状態」、「予約」、「施術明細」、「金額」）と、ステータスの操作。「この日の予約へ」で、その日の一覧へ戻る | `GET /salons/{id}`、`GET /bookings/{id}`、`GET /customers/{id}`、`GET /staff-profiles`、`GET /salons/{salonId}/services`、`POST /bookings/{id}/confirm`、`POST /bookings/{id}/start`、`POST /bookings/{id}/complete`、`POST /bookings/{id}/cancel`、`POST /bookings/{id}/no-show` |
+
+- **どのサロンの画面かは、アドレスにある**（`/salons/:salonId/...`）。サロンのメンバーのサロンは、`GET /staff-profiles/me` の `salonId`（`session` の `useOwnSalon`。`admin` には、尋ねずに `platform` を返す）。サロンのロールなのに、どのサロンにも属していないアカウント（スタッフとの紐づけを解かれた人など。API は 403）には、そのことと、サロンの `owner` から招待を受けると使えることを伝える（`NoSalonNotice`）
+- **ヘッダー**には、「予約」（アドレスのサロンのその日の一覧）。`admin` には、その前に「サロンを選ぶ」（`src/navigation.ts` の `navigationFor`）。サロンの名前は、画面の見出しの説明に出す
+- **サロンは、画面の外側で 1 回読む**（`src/salons/with-salon.tsx` の `WithSalon`）。サロンの名前、タイムゾーン、通貨を、画面が使う。読んでいる間は、読み込み中の表示だけを出し、見出しは、画面が出す（同じ題の見出しを描き直すと、移ったフォーカスが失われるため）。存在しないサロンは「サロンが見つかりません」
+- **ほかのサロンのアドレス**: メンバーがほかのサロンの一覧を開くと、API は 403 を返す。画面は、そのサロンの予約は見られないことと、「自分のサロンの予約へ」のリンクを出す。ほかのサロンの予約の ID は、`admin` にも、「予約が見つかりません」と出す（アドレスのサロンの予約ではないため）
+- **日と時刻は、サロンのタイムゾーン**（ブラウザーのタイムゾーンではない。`src/salon-time.ts`）。今日は、サロンのタイムゾーンでの今日。時刻は 24 時間制。一覧は、その 1 日の予約を読む（`bookingDateFrom` と `bookingDateTo` に同じ日）。アドレスの日付が日付でないとき（2026-02-30 など）は、今日を出す
+- **絞り込み**は、状態と担当。条件は、アドレスのクエリに置き、変えると、アドレスを置き換える（`src/bookings/booking-day.ts`）。担当の選択肢は、サロンのスタッフのプロフィールの一覧のすべて
+- **一覧の行の名前**: 予約は、顧客、担当、メニューを ID で持つ。顧客は、読んだページの顧客を、`POST /customers/batch/get` で 1 度に読む。台帳から削除された顧客がいると、API は一括取得の全体を断る（404）ので、そのページの顧客を 1 人ずつ読む（`GET /customers/{id}`）。担当はサロンのスタッフのプロフィールの一覧、メニューはサロンのサービスの一覧（最後まで読む）から引く。引けない名前は、「削除された顧客」「一覧にないスタッフ」「削除されたメニュー」と出し、行は残す（削除された顧客の予約も、ステータスを変えられる）
+- **一覧は、表示するたびに読む**（`staleTime` が 0）。ステータスを変えたあとは、読んであった一覧を捨てる（`removeQueries`）。一覧へ戻ったときに、前のステータスが出ることがない
+- **予約の内容**は、予約番号、来店日、時刻、お客様の名前と電話番号、担当、お客様の要望、サロン内のメモ、キャンセル（日時、理由）、実際の開始と終了、完了の日時（「予約」）、施術明細（メニュー、担当、時刻、金額、完了）、金額（小計、割引、消費税、合計）
+- **ステータスの操作**は、予約の状態ごとに、出すボタンを決める（`src/bookings/booking-actions.ts` の `actionsOf`。API の表のとおり）。確定と施術の開始は、確かめずに行う。完了、キャンセル、無断キャンセルの記録は、元に戻せないので、ダイアログで確かめる。完了では、実際の開始と終了を、サロンの時計の日時で、任意で入力できる（UTC にして送る。空欄は `null` で、施術を始めたときに記録した開始は、そのまま残る。終了が開始より前なら、送らずにその欄に出す）。キャンセルでは、理由を任意で書ける。無断キャンセルの記録は、開始日時を過ぎた予約にだけ出す（API は、その前には断る）
+- **操作のあと**は、応答の予約で内容を置き換え、通知で伝え、フォーカスを「状態」の見出しへ移す（押したボタンは、なくなることがある）。ダイアログは、その描画の中で閉じてから、フォーカスを移す（モーダルのダイアログが開いている間は、その外へフォーカスを移せない）。送れなかった（応答がない、リクエストが多すぎる）ときは、確定と開始は画面に、ほかはダイアログの中に出す
+- **状態が合わないとき**（409。ほかの画面や端末、顧客が、予約を変えていた）は、「予約の状態が、ほかの画面か端末で変わっていました。いまの状態を読み込み直しました。」と画面に出し、ダイアログを閉じて、予約を読み直し、フォーカスを「状態」の見出しへ移す
+- **API を呼ぶ関数**は `src/salons/salons-api.ts`、`src/customers/customers-api.ts`、`src/bookings/bookings-api.ts` にある。どれも reject せず、画面が区別する結果の直和型を返す。条件とアドレス、名前の引き方、行の組み立て、ボタン、フォームの値の確かめ、応答ごとの表示は、それぞれの隣の純粋な関数
+- **表示するだけの部品**は、続きのある表（`src/components/paged-table/` の `PagedTable`）、サロンを探すフォームと結果（`SalonChoiceForm`、`SalonChoices`）、日の移動（`DaySwitch`）、絞り込み（`BookingFilter`）、その日の予約の表（`DayBookingTable`）、予約の内容（`BookingRecord`）、ステータスとその操作（`StatusActions`）。`ui` のカタログに、`Admin/…` として並ぶ
+- ここにないもの（[#265](https://github.com/napzak5/typescript-backend-api-first-lesson/issues/265) の予約台帳の後半）: 予約の登録と変更、日時の変更、施術明細の追加と削除、予約の削除
 
 ## TanStack Query の設定
 
@@ -595,6 +622,7 @@ const found = useInfiniteQuery({
 - portal-app の `src/bookings/`: 純粋な関数のテスト（`booking-choice.test.ts`: アドレスにあるスタッフと日付、選べるスタッフ、時刻の表示。`booking-flow.test.ts`: フォームの値の確かめと、API の応答ごとの表示。`booking-format.test.ts`: 状態、日時、料金の表示）、`own-bookings.test.ts`（一覧のアドレス、API に渡す日付の範囲、キャンセルと日時の変更ができる予約、名前のそろった行と、その続き）、`bookings-api.test.ts`（実際の API では起こせない応答、送るパラメーター、空き枠を最後まで読むこと）。`components/` の部品（`BookingForm`、`BookingSummary`、`BookingList`、`BookingChanges`）は、ストーリーから検証する。`src/navigation.test.ts` は、ヘッダーのリンク（ロールごとに出るもの、どの画面でどれが現在の画面か）
 - portal-app の `src/profile/`: 純粋な関数のテスト（`profile-flow.test.ts`: フォームの値の確かめ、開いたときと違う項目だけのリクエスト、API の応答ごとの表示。`profile-format.test.ts`: 会員ランク、日付、ポイント、住所の行、値のない項目の言葉）、`profile-api.test.ts`（実際の API では起こせない応答、断られた値、送るもの）。`components/` の部品（`MembershipDetails`、`ProfileDetails`、`ProfileForm`）は、ストーリーから検証する。API の関数のテストが使う、作った応答は、`src/__tests__/api-answers.ts` にある
 - portal-app の `src/preferences/`: 純粋な関数のテスト（`preferences-flow.test.ts`: フォームの値の確かめ、時間帯の行の読み方、開いたときと違う項目だけのリクエスト、API の応答ごとの表示。`staff-choices.test.ts`: 選べるスタッフの並びと表示。`preferences-format.test.ts`: 時間帯とスタッフの言葉）、`preferences-api.test.ts`（読むものの順、どれかが読めなかったとき、実際の API では起こせない応答、断られた値、送るもの）。予約のあるサロンを求める `readBookedSalonIds` のテストは、`src/bookings/bookings-api.test.ts` にある。`components/` の部品（`PreferencesDetails`、`PreferencesForm`、`TimeSlotFields`）は、ストーリーから検証する。行を足したとき、消したときのフォーカスと、消したあとに誤りを出さないことは、`time-slot-fields.test.tsx` にある。1 行に 1 つずつ書く欄の読み方と、画像の URL の確かめ（`src/lines.ts`。レビューのフォームも使う）のテストは、`src/lines.test.ts` にある
+- admin-app: 純粋な関数のテスト（`src/navigation.test.ts`: ヘッダーのリンク。`src/salon-time.test.ts`: サロンのタイムゾーンでの今日、前後の日、時刻、入力した日時を UTC にすること、時計が飛ばす時刻。`src/salons/salon-choice.test.ts`: サロンを探すキーワードとアドレス。`src/bookings/booking-day.test.ts`: 一覧の条件とアドレス。`src/bookings/booking-format.test.ts`: 状態、時刻、金額。`src/bookings/day-bookings.test.ts`: 名前の引き方と行。`src/bookings/booking-actions.test.ts`: 状態ごとのボタン、無断キャンセルを出す時刻、完了とキャンセルのフォームの値、API の応答ごとの表示）、`src/salons/salons-api.test.ts`、`src/customers/customers-api.test.ts`、`src/bookings/bookings-api.test.ts`（実際の API では起こせない応答、送るパラメーター、一括取得を断られたときに 1 人ずつ読むこと）。`components/` の部品は、ストーリーから検証する。`session` の `src/salon/own-salon.test.ts` は、所属するサロンを読む関数と、ロールごとの答え
 - portal-app の `src/reviews/`: 純粋な関数のテスト（`review-flow.test.ts`: フォームの値の確かめ、開いたときと違う項目だけのリクエスト、API の応答ごとの表示、来店そのものについて断られたかどうか。`review-staff.test.ts`: 評価できるスタッフと、その順。`review-format.test.ts`: 一覧の言葉）、`reviews-api.test.ts`（読むものの順、どれかが読めなかったとき、実際の API では起こせない応答、断られた値、送るもの、ほかの人のレビューを変更の画面に出さないこと）。`components/` の部品（`ReviewForm`、`OwnReviewList`、`ReviewRemoval`）と、`src/salons/components/` の `ReviewContent` は、ストーリーから検証する。サロンの詳細でレビューを読む人については、`reader-flow.test.ts`（だれにボタンを出すか、通報のフォームの値の確かめ、API の応答ごとの表示）、`review-cache.test.ts`（書いたあと、「参考になった」のあと、レビューが消えていたあとに、読んであった内容をどうするかを、実際の `QueryClient` で確かめる）、`reviews-api.test.ts` の `sayHelpful` と `reportReview`、部品の `ReviewReport`（`components/review-report/`）と、`src/salons/components/` の `ReviewList`、`StaffProfiles` のストーリー。サインインのあとの戻る先（`src/sign-in-path.ts`）のテストは、`src/sign-in-path.test.ts` にある
 
 ### 実際の API と DB を使うテスト（`pnpm test:integration`）
@@ -621,6 +649,7 @@ API を呼ぶコードは、`fetch` も API も差し替えずに、本番と同
 - `session` の `src/security/security.integration.test.tsx`: アカウントの安全の画面（DB の行と同じ内容であること、最後に変更した日時、2 要素認証の設定の途中と有効）、端末（API でもう 1 つサインインしておき、新しい順に 2 つ出ること、「この端末」にボタンがないこと、ほかの端末のサインアウトと DB の行、見出しへのフォーカス、その間にサインアウトしていた端末、サインアウトさせたあと、いっぱいだったページが、その後ろの端末で埋まること、21 件目の続きとフォーカス、続きの起点がサインアウトしていたときの読み直し、すべての端末でのサインアウトとダイアログ、サインアウトを DB が断ったとき）、パスワードの変更（DB のハッシュと日時が変わり、ほかのセッションが消え、このセッションが残り、メールが送られ、新しいパスワードでサインインできること、現在のパスワードの誤りと、ロックへの数え、推測されやすいパスワード、短すぎるパスワードと現在と同じパスワードでは何も送らないこと、変更を DB が断ったとき）。DB が断る書き込みは、例外を出すトリガーで起こす（セッションを持つテーブルを取り除くと、リクエストのセッションも断られるため）
 - `session` の `src/security/two-factor.integration.test.tsx`: 設定の画面（誤ったパスワードと、ロックへの数え、空のパスワードでは何も送らないこと、QR コードと、画面に出たキー（そのキーから計算したコードを API が受け付けること）、段階の見出しへのフォーカス、DB の状態、誤ったコード、6 桁でないコードでは何も送らないこと、認証アプリのコードで有効になり、DB の状態とメール、10 個のバックアップコードが出て、そのコードで 1 回だけサインインできること、すでに有効なアカウント、設定の途中のアカウントの新しいキー、その間にほかで有効になったとき、その間にリセットされたとき、DB が設定を断ったとき）と、アカウントの安全の画面の 2 要素認証（未設定と設定の途中のリンク、認証アプリのコードとバックアップコードでの発行し直しと、前のコードが使えなくなること、使ったことのあるバックアップコード、パスワードとバックアップコードでの無効化と、見出しへのフォーカス、DB の状態とメール、誤ったパスワードと誤ったコード、その間にほかで無効になったとき、DB が発行し直しを断ったとき）。コードは `testApi().authenticatorCode(secret)` で得る。API は、同じ 30 秒のコードを 1 回しか受け付けないので、2 つ目は次の 30 秒のコード（`stepsAhead: 1`）か、バックアップコードを使う
 - portal-app の `src/security/security.integration.test.tsx`: サインインしていない人とスタッフのアカウント（2 要素認証の設定の画面も）、マイページのカードからの行き来、アカウントの安全の画面から 2 要素認証の設定の画面への行き来、プロフィールのないアカウントのカード、パスワードを変えてアカウントの安全の画面に戻り、前に読んだ内容（変更していないこと、2 台の端末）を出さずに、変更した日時と、残った 1 台が出ること、「やめる」
+- admin-app の `src/bookings/day-bookings.integration.test.tsx`: 始まりの画面（ロールごとに、所属するサロンのその日の一覧へ移ることと、見出しへのフォーカス、`admin` のサロンを選ぶ画面とキーワード、どのサロンにも属していないアカウント、ほかのサロンのアドレス、存在しないサロン）と、その日の一覧（DB の行と同じ内容、名前、時刻、開始の順、ほかのサロンとほかの日の予約が出ないこと、削除された顧客、状態と担当の絞り込みとアドレス、前後の日と今日、予約のない日、条件に合う予約のない日、アドレスの日付、55 件の続きの表示とフォーカス、`admin` が見るほかのサロン）。`src/bookings/booking.integration.test.tsx`: 予約の内容（DB の行と同じ内容）と、5 つの操作（DB に書かれたステータスと日時と理由、通知、「状態」の見出しへのフォーカス、確定したあとの一覧に前の状態が出ないこと、完了の日時をサロンの時計で入力して UTC で書かれること、記録した開始より前の終了では何も送らないこと、開始日時を過ぎた予約の無断キャンセル）、ほかで変えられていたとき（画面で操作したときと、ダイアログで操作したとき）、DB が書き込みを断ったとき（画面とダイアログ）、`admin` の操作、ほかのサロンの予約と存在しない予約。予約は、テストが SQL で入れる（シードのデータには、今日の予約がない）。用意は `src/bookings/__tests__/arrangements.ts` にある
 - 各アプリの `src/App.integration.test.tsx`: そのアプリを使えるロールと使えないロール、開こうとしたアドレスの画面がサインインのあとに出ること、画面の移動、サインアウト、サインインした状態でのアクセシビリティ。admin-app と dashboard-app は、ヘッダーの「アカウントの安全」から、パスワードを変えて戻るまでと、アカウントの安全の画面から 2 要素認証を設定し、戻ると「有効」と出るまで
 - `testing` の `src/api/test-api.integration.test.ts`: この仕組みそのもの（シードのデータがあること、あるテストが書いたものが次のテストに残らないこと、トークンのないリクエストをテスト用のサーバーが受け付けないこと、テスト用のサーバーが返す認証アプリのコードを API が受け付けること、ブラウザーから呼ぶための API が、指定したポートで待ち受け、指定したオリジンだけを許可すること、API が送ったメールをテストが読めて、そのリンクのトークンを API が受け付けること）
 
@@ -652,6 +681,7 @@ API を呼ぶコードは、`fetch` も API も差し替えずに、本番と同
 - `src/review-readers.e2e.test.ts`: サロンの詳細の「サインイン」のリンクからサインインして、同じページへ戻り、キーボードだけで、レビューが参考になったと伝え、通報のダイアログで理由を選んで送り、もう一度通報して、すでに通報していると伝えられるまで（ダイアログを開いたときのフォーカス、Tab で欄からボタンへ進む順、誤りのある欄へのフォーカス、矢印での理由の選択、Escape で閉じたあとと、通報したあとのフォーカス、DB の行）。押されたボタンが、押す前と違って見えること。その間に `admin` が消したレビューを通報すると、ダイアログがなくなり、フォーカスが「レビュー」の見出しへ移って、Tab が並び順の欄へ進むこと。スマートフォンの幅の、スタッフごとの評価、改行できない長いタイトルのレビューのボタン（横に並ぶこと）とダイアログ、誤りのあるフォーム、すでに通報していたときのダイアログ、自分のレビューのリンク
 
 - `src/two-factor.e2e.test.ts`: アカウントの安全の画面から、キーボードだけで、2 要素認証を設定し（Tab で欄を進む順、段階の見出しへのフォーカス、真ん中に空白のあるコード、DB の状態）、サインアウトして、次の 30 秒のコードでサインインし直し、バックアップコードで発行し直し（ダイアログを開いたときのフォーカス、新しいコードの説明へのフォーカス、閉じたあとに、開いたボタンへフォーカスが戻ること）、パスワードと新しいバックアップコードで無効にするまで（見出しへのフォーカス、DB の状態）。スマートフォンの幅の、QR コード（欠けず、正方形で、160px 以上あること）、キー、誤りのあるコードの欄、バックアップコード、2 つのダイアログ
+- `src/admin-bookings.e2e.test.ts`: キーボードだけで、admin-app にサインインし、その日の予約の一覧から予約の内容を開いて、確定し、施術を始め、ダイアログで完了にし、一覧に戻るまで（見出しと「状態」の見出しへのフォーカス、ダイアログを開いたときのフォーカス、DB の行）。キャンセルのダイアログ（Escape で閉じたあとに、開いたボタンへフォーカスが戻ること、理由を書いてキャンセルすること）。ダイアログを開いている間に予約が変えられていたとき。ブラウザーのタイムゾーンがサロンと違うとき（`Pacific/Honolulu`。サロンの今日、時刻、サロンの時計で入力した日時が DB に UTC で書かれること）。スマートフォンの幅の、一覧、改行できない長いメモのある予約の内容、2 つのダイアログ、サロンを選ぶ画面
 - `src/security.e2e.test.ts`: マイページからアカウントの安全の画面へ移り、キーボードだけでパスワードを変え（Tab で欄を進む順、Enter での送信）、アカウントの安全の画面に戻り、サインアウトして、古いパスワードが断られ、新しいパスワードでサインインできるまで。別のブラウザーでサインインした端末をサインアウトさせ、その端末を読み込み直すとサインインの画面になること、ダイアログからすべての端末でサインアウトするまで（ダイアログを開いたときのフォーカス、ボタンの順、DB の行）。スマートフォンの幅の、改行できない長い User-Agent のある一覧、ダイアログ、誤りのあるフォーム
 
 テストが開いた画面では、アクセシビリティ（WCAG 2.2 AA。ブラウザーが描画するので、色のコントラストを含む）、ページがウィンドウより広くならないこと、要素の中身が、その要素からはみ出さないこと（スクロールする要素と、切り落とす要素を除く）、flex で配置された要素がないことを確かめます（`src/checks.ts`）。
