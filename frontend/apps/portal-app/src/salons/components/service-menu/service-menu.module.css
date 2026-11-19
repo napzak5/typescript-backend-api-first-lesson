@@ -1,0 +1,91 @@
+.menu {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-8);
+}
+
+.part {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-2);
+}
+
+.category {
+  font-size: var(--font-size-body);
+}
+
+/*
+ * On a narrow screen a service is one column: what it is, how long it
+ * takes, what it costs. On a wide one the services share three columns, so
+ * that the durations stand below each other, and the prices.
+ */
+.services {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.service {
+  display: grid;
+  grid-template-columns: subgrid;
+  grid-column: 1 / -1;
+  gap: var(--space-1) var(--space-6);
+  padding-block: var(--space-3);
+  border-block-start: 1px solid var(--color-border);
+}
+
+.what {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-1);
+}
+
+.name {
+  font-weight: var(--font-weight-medium);
+  overflow-wrap: anywhere;
+}
+
+.said {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+}
+
+/* The marks follow each other like words, and wrap where the line ends */
+.mark {
+  margin-inline-end: var(--space-2);
+}
+
+.duration {
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.price {
+  white-space: nowrap;
+}
+
+.before {
+  margin-inline-end: var(--space-2);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+  text-decoration: line-through;
+}
+
+.amount {
+  font-weight: var(--font-weight-bold);
+}
+
+.tax {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+}
+
+@media (min-width: 40rem) {
+  .services {
+    grid-template-columns: minmax(0, 1fr) max-content max-content;
+  }
+
+  .duration,
+  .price {
+    text-align: end;
+  }
+}

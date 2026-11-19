@@ -1,0 +1,49 @@
+.hours {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-6);
+}
+
+.part {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-2);
+}
+
+.title {
+  font-size: var(--font-size-body);
+}
+
+.note {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+}
+
+/*
+ * The days share two columns: the names, as wide as the longest of them,
+ * and what is said of the days, which takes the rest and wraps in it.
+ */
+.days {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  column-gap: var(--space-6);
+}
+
+.day {
+  display: grid;
+  grid-template-columns: subgrid;
+  grid-column: 1 / -1;
+  padding-block: var(--space-2);
+  border-block-start: 1px solid var(--color-border);
+}
+
+.said,
+.remarks {
+  grid-column: 2;
+  overflow-wrap: anywhere;
+}
+
+.remarks {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-small);
+}

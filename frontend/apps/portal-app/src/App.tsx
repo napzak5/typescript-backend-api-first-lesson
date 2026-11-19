@@ -15,6 +15,8 @@ import { RegisterScreen } from './account/register-screen'
 import { ResetPasswordScreen } from './account/reset-password-screen'
 import { VerifyEmailScreen } from './account/verify-email-screen'
 import { EVERY_ROLE } from './roles'
+import { SalonScreen } from './salons/salon-screen'
+import { SalonSearchScreen } from './salons/salon-search-screen'
 
 /** Where a visitor signs in: the screens of this application are for everybody unless they say otherwise */
 const SIGN_IN_PATH = '/sign-in'
@@ -22,13 +24,6 @@ const SIGN_IN_PATH = '/sign-in'
 /** The links that the shared components draw move within the application */
 const RouterLink: LinkComponent = ({ href, ...rest }) => (
   <Link {...rest} to={href} />
-)
-
-const HomePage = () => (
-  <>
-    <PageHeader title={import.meta.env.VITE_APP_TITLE} />
-    <p>画面は準備中です。</p>
-  </>
 )
 
 /** The ways on for somebody who cannot sign in: to a new account, to a new password. */
@@ -73,7 +68,8 @@ export const App = () => (
         account={<SessionAccount signInHref={SIGN_IN_PATH} />}
       >
         <Routes>
-          <Route path='/' element={<HomePage />} />
+          <Route path='/' element={<SalonSearchScreen />} />
+          <Route path='/salons/:salonId' element={<SalonScreen />} />
           <Route path={SIGN_IN_PATH} element={<SignInPage />} />
           <Route path='/register' element={<RegisterScreen />} />
           <Route path='/forgot-password' element={<ForgotPasswordScreen />} />
