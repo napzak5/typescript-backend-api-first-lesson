@@ -30,6 +30,8 @@ import { navigationFor } from './navigation'
 import { CheckoutScreen } from './sales/checkout-screen'
 import { PaymentEntryScreen } from './sales/payment-entry-screen'
 import { ReceiptScreen } from './sales/receipt-screen'
+import { RefundScreen } from './sales/refund-screen'
+import { SaleChangeScreen } from './sales/sale-change-screen'
 import { SaleScreen } from './sales/sale-screen'
 import { SalesLedgerScreen } from './sales/sales-ledger-screen'
 
@@ -159,6 +161,14 @@ export const App = () => {
               <Route
                 path='/salons/:salonId/sales/:saleId/receipt'
                 element={<ReceiptScreen />}
+              />
+              <Route
+                path='/salons/:salonId/sales/:saleId/edit'
+                element={<SaleChangeScreen />}
+              />
+              <Route
+                path='/salons/:salonId/sales/:saleId/payments/:paymentId/refund'
+                element={<RefundScreen />}
               />
               <Route
                 path={SECURITY_PATH}

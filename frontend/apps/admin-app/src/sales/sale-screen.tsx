@@ -1,30 +1,54 @@
 import type {
   ModelsPaymentMethodResponse,
   ModelsSaleResponse,
+  ModelsSaleVoidRequest,
   ModelsSalonResponse,
 } from '@beauty-salon-frontend/api-client'
+import { useSession } from '@beauty-salon-frontend/session'
 import {
   ButtonLink,
   Card,
   LoadingIndicator,
   UnreadNotice,
+  useNotifications,
 } from '@beauty-salon-frontend/ui'
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router'
 import { match, P } from 'ts-pattern'
+import type { FormSays } from '../bookings/booking-entry'
 import { readCustomer } from '../customers/customers-api'
 import {
   bookingHrefOf,
   paymentEntryHrefOf,
   receiptHrefOf,
+  refundHrefOf,
+  saleChangeHrefOf,
   salesHrefOf,
 } from '../navigation'
-import { unreadMessageOf, whyUnread } from '../reading'
+import { NOT_FOUND, unreadMessageOf, whyUnread } from '../reading'
 import { readStaffProfiles, staffProfilesKeyOf } from '../salons/salons-api'
 import { WithSalon } from '../salons/with-salon'
 import { PaymentTable } from './components/payment-table/payment-table'
 import { SaleRecord } from './components/sale-record/sale-record'
+import { SaleVoid } from './components/sale-void/sale-void'
+import { whyNoRefund } from './refunds'
+import {
+  afterVoid,
+  mayUndoSales,
+  readVoid,
+  UNDONE_BY_OTHERS,
+  whyNoVoid,
+  whyUnchangeable,
+} from './sale-changes'
 import { whyNoPayment, whyNoReceipt } from './sale-format'
+import {
+  attemptVoid,
+  type SaleRead,
+  saleKeyOf,
+  saleListsKeyOf,
+  salesOfBookingKeyOf,
+} from './sales-api'
 import { ledgerQueryOf } from './sales-ledger'
 import { WithPaymentMethods, WithSale } from './with-sale'
 
@@ -35,6 +59,8 @@ const UNREAD = P.union('tooManyRequests', 'failed')
 /** A sale names no customer when none was recorded: nothing is read for it */
 const NO_CUSTOMER: { type: 'none' } = { type: 'none' }
 
+const NOTHING_SAID: FormSays = { message: undefined, errors: {} }
+
 type SaleDetailsProps = {
   salon: ModelsSalonResponse
   sale: ModelsSaleResponse
@@ -43,12 +69,83 @@ type SaleDetailsProps = {
 
 /**
  * A sale, with its customer and its members of the staff by name, its
- * payments, and what can be done next: record a payment while something is
- * left to pay, and hand over the receipt once the total was received.
- * What cannot be done is said, with why.
+ * payments, and what can be done next: change what it records, record a
+ * payment while something is left to pay, hand over the receipt once the
+ * total was received, give a payment back, and void the sale. What cannot
+ * be done, or not by this account, is said, with why.
+ *
+ * After a voiding the sale is shown as the API answered it, the lists that
+ * were read are dropped, and the focus goes to the heading of the sale:
+ * the part that voided it is gone. A voiding refused because the sale
+ * changed meanwhile shows it as it is now, with the focus on the heading
+ * of the part that says why.
  */
 const SaleDetails = ({ salon, sale, methods }: SaleDetailsProps) => {
+  const queryClient = useQueryClient()
+  const session = useSession()
+  const { notify } = useNotifications()
+  const [voiding, setVoiding] = useState(false)
+  const [voidSaid, setVoidSaid] = useState<FormSays>(NOTHING_SAID)
+  const recordHeading = useRef<HTMLHeadingElement>(null)
+  const voidHeading = useRef<HTMLHeadingElement>(null)
+  /**
+   * The sale as the screen showed it when it was voided: the focus moves
+   * in the commit that shows the sale the API answered instead
+   */
+  const changedFrom = useRef<ModelsSaleResponse>(undefined)
+  const mayUndo = session.type === 'signedIn' && mayUndoSales(session.user.role)
+  const key = saleKeyOf(sale.id)
   const { customerId } = sale
+
+  useLayoutEffect(() => {
+    if (changedFrom.current !== undefined && changedFrom.current !== sale) {
+      changedFrom.current = undefined
+      ;(sale.isVoid ? recordHeading : voidHeading).current?.focus()
+    }
+  }, [sale])
+
+  const show = (now: ModelsSaleResponse): void => {
+    changedFrom.current = sale
+    const read: SaleRead = { type: 'found', sale: now }
+    queryClient.setQueryData(key, read)
+    queryClient.removeQueries({ queryKey: saleListsKeyOf(salon.id) })
+    if (now.bookingId !== null) {
+      queryClient.removeQueries({
+        queryKey: salesOfBookingKeyOf(now.bookingId),
+      })
+    }
+  }
+  const voidance = useMutation({
+    mutationFn: (request: ModelsSaleVoidRequest) =>
+      attemptVoid(sale.id, request),
+    onSuccess: (outcome) =>
+      match(afterVoid(outcome))
+        // The part that voided it, and its dialog, are gone with the voiding
+        .with({ type: 'done' }, ({ sale: voided }) => {
+          show(voided)
+          notify({
+            tone: 'success',
+            message:
+              voided.bookingId === null
+                ? '売上を取り消しました。'
+                : '売上を取り消しました。予約の会計を、入れ直せます。',
+          })
+        })
+        .with({ type: 'again' }, ({ message, errors }) =>
+          setVoidSaid({ message, errors }),
+        )
+        // The sale changed meanwhile: the screen shows it as it is now, and why
+        .with({ type: 'refused' }, ({ sale: now, message }) => {
+          setVoiding(false)
+          show(now)
+          notify({ tone: 'warning', message })
+        })
+        // The sale was removed meanwhile, or is no longer this account's to see
+        .with({ type: 'gone' }, () => {
+          queryClient.setQueryData(key, NOT_FOUND)
+        })
+        .exhaustive(),
+  })
   const customer = useQuery({
     queryKey: ['customers', customerId],
     queryFn: () => readCustomer(customerId ?? ''),
@@ -80,6 +177,12 @@ const SaleDetails = ({ salon, sale, methods }: SaleDetailsProps) => {
                 ? undefined
                 : bookingHrefOf(salon.id, sale.bookingId)
             }
+            changeHref={
+              whyUnchangeable(sale) === undefined
+                ? saleChangeHrefOf(salon.id, sale.id)
+                : undefined
+            }
+            headingRef={recordHeading}
           />
           <Card
             title='支払い'
@@ -99,6 +202,11 @@ const SaleDetails = ({ salon, sale, methods }: SaleDetailsProps) => {
               methods={methods}
               timezone={salon.timezone}
               currency={salon.currency}
+              refundHrefOf={(payment) =>
+                mayUndo && whyNoRefund(payment) === undefined
+                  ? refundHrefOf(salon.id, sale.id, payment.id)
+                  : undefined
+              }
             />
             {noPayment !== undefined && <p>{noPayment}</p>}
           </Card>
@@ -120,6 +228,32 @@ const SaleDetails = ({ salon, sale, methods }: SaleDetailsProps) => {
                 'レシートは、印刷してお客様に渡せます。何度でも出し直せます。'}
             </p>
           </Card>
+          {!sale.isVoid && (
+            <Card title='取り消し' headingRef={voidHeading}>
+              <SaleVoid
+                why={mayUndo ? whyNoVoid(sale) : UNDONE_BY_OTHERS}
+                subject={`売上番号 ${sale.saleNumber}`}
+                open={voiding}
+                onOpen={() => {
+                  setVoidSaid(NOTHING_SAID)
+                  setVoiding(true)
+                }}
+                onClose={() => setVoiding(false)}
+                message={voidSaid.message}
+                errors={voidSaid.errors}
+                pending={voidance.isPending}
+                onVoid={(values) => {
+                  const read = readVoid(values)
+                  if (read.type === 'invalid') {
+                    setVoidSaid({ message: undefined, errors: read.errors })
+                    return
+                  }
+                  setVoidSaid(NOTHING_SAID)
+                  voidance.mutate(read.request)
+                }}
+              />
+            </Card>
+          )}
         </>
       ),
     )
