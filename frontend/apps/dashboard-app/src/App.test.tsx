@@ -1,16 +1,20 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { App } from './App'
 
 const renderAt = (path: string) =>
   render(
-    <MemoryRouter initialEntries={[path]}>
-      <App />
-    </MemoryRouter>,
+    <QueryClientProvider client={new QueryClient()}>
+      <MemoryRouter initialEntries={[path]}>
+        <App />
+      </MemoryRouter>
+    </QueryClientProvider>,
   )
 
+/** Nobody is signed in: what the application shows without asking the API. */
 describe('App', () => {
   beforeEach(() => {
     vi.stubEnv('VITE_APP_TITLE', 'Beauty Salon Dashboard')
@@ -31,41 +35,29 @@ describe('App', () => {
     )
   })
 
-  it('should show the page of the root path', () => {
+  it.each(['/', '/no-such-page'])(
+    'should show the sign-in screen at %s to somebody who is not signed in',
+    (path) => {
+      // Act
+      renderAt(path)
+
+      // Assert
+      expect(
+        screen.getByRole('heading', { level: 1, name: 'サインイン' }),
+      ).toBeVisible()
+      expect(screen.getAllByRole('heading')).toHaveLength(1)
+      expect(document.title).toBe('サインイン | Beauty Salon Dashboard')
+    },
+  )
+
+  it('should show nothing of an account in the header to somebody who is not signed in', () => {
     // Act
     renderAt('/')
 
     // Assert
-    expect(
-      screen.getByRole('heading', { level: 1, name: 'Beauty Salon Dashboard' }),
-    ).toBeVisible()
-  })
-
-  it('should say that a page does not exist and lead back to the root', () => {
-    // Act
-    renderAt('/no-such-page')
-
-    // Assert
-    expect(
-      screen.getByRole('heading', { level: 1, name: 'ページが見つかりません' }),
-    ).toBeVisible()
-    expect(screen.getByRole('link', { name: 'トップへ戻る' })).toHaveAttribute(
-      'href',
-      '/',
+    expect(screen.getByRole('banner')).toHaveTextContent(
+      /^Beauty Salon Dashboard$/,
     )
-  })
-
-  it('should go back to the root from that page without leaving the application', () => {
-    // Arrange
-    renderAt('/no-such-page')
-
-    // Act
-    fireEvent.click(screen.getByRole('link', { name: 'トップへ戻る' }))
-
-    // Assert
-    expect(
-      screen.getByRole('heading', { level: 1, name: 'Beauty Salon Dashboard' }),
-    ).toBeVisible()
   })
 
   it('should begin with a link that skips to the main content', () => {
@@ -102,18 +94,15 @@ describe('App', () => {
     expect(screen.queryByText('production')).not.toBeInTheDocument()
   })
 
-  it.each(['/', '/no-such-page'])(
-    'should have no accessibility violations at %s',
-    async (path) => {
-      // Arrange
-      vi.stubEnv('VITE_MODE', 'staging')
-      renderAt(path)
+  it('should have no accessibility violations', async () => {
+    // Arrange
+    vi.stubEnv('VITE_MODE', 'staging')
+    renderAt('/')
 
-      // Act
-      const violations = await findAccessibilityViolations()
+    // Act
+    const violations = await findAccessibilityViolations()
 
-      // Assert
-      expect(violations).toEqual([])
-    },
-  )
+    // Assert
+    expect(violations).toEqual([])
+  })
 })

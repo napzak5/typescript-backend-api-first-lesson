@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import { useState } from 'react'
 import { Button } from '../button/button'
 import { ButtonLink } from '../button-link/button-link'
 import { Navigation } from '../navigation/navigation'
@@ -66,5 +67,32 @@ export const SignedOut: Story = {
     navigation: undefined,
     account: undefined,
     children: <PageHeader title='サインイン' />,
+  },
+}
+
+/** The screen whose heading is the name of the application: the document is named once. */
+export const HomeScreen: Story = {
+  args: {
+    children: <PageHeader title='Beauty Salon Admin' />,
+  },
+}
+
+const TwoScreens = () => {
+  const [screen, setScreen] = useState('予約台帳')
+
+  return (
+    <>
+      <PageHeader title={screen} />
+      <p>
+        <Button onClick={() => setScreen('顧客台帳')}>顧客台帳を開く</Button>
+      </p>
+    </>
+  )
+}
+
+/** One screen takes the place of another: the focus goes to the new heading. */
+export const ScreenChange: Story = {
+  args: {
+    children: <TwoScreens />,
   },
 }

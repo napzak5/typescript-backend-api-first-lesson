@@ -75,13 +75,27 @@ export const sessionStore = {
     return sessionStore.read()?.userId ?? null
   },
 
-  write(session: StoredSession): void {
-    localStorage.setItem(STORAGE_KEY, encode(session))
+  /**
+   * Keeps the session. Answers whether it is kept: a browser that lets the
+   * site store nothing refuses, and then nobody is signed in.
+   */
+  write(session: StoredSession): boolean {
+    try {
+      localStorage.setItem(STORAGE_KEY, encode(session))
+    } catch {
+      return false
+    }
     notify()
+
+    return true
   },
 
   clear(): void {
-    localStorage.removeItem(STORAGE_KEY)
+    try {
+      localStorage.removeItem(STORAGE_KEY)
+    } catch {
+      // Nothing is stored in a browser that refuses access to its storage
+    }
     notify()
   },
 

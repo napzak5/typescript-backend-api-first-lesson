@@ -1,0 +1,12 @@
+.form {
+  display: grid;
+  gap: var(--space-4);
+  max-inline-size: var(--size-form-column);
+}
+
+.actions {
+  display: grid;
+  grid-auto-flow: column;
+  justify-content: start;
+  gap: var(--space-3);
+}

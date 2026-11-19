@@ -8,7 +8,11 @@ const SEEDED_CUSTOMER = 'customer1@example.com'
 const call = (path: string, init?: RequestInit): Promise<Response> =>
   fetch(`${testApi().origin}${path}`, init)
 
-const signIn = (email: string, password: string): Promise<Response> =>
+const signIn = (
+  email: string,
+  password: string,
+  twoFactorCode: string | null = null,
+): Promise<Response> =>
   call('/api/v1/auth/login', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -16,7 +20,7 @@ const signIn = (email: string, password: string): Promise<Response> =>
       email,
       password,
       rememberMe: false,
-      twoFactorCode: null,
+      twoFactorCode,
     }),
   })
 
@@ -107,6 +111,66 @@ describe('the test server', () => {
 
     expect(answer.status).toBe(401)
     expect(answer.headers.get('Access-Control-Allow-Origin')).toBeNull()
+  })
+})
+
+describe('the code of an authenticator app', () => {
+  const signedInSchema = z.object({
+    data: z.object({ accessToken: z.string() }),
+  })
+  const setUpSchema = z.object({ data: z.object({ secret: z.string() }) })
+
+  /** Sets up two-factor authentication for the seeded customer, as its owner would. */
+  const setUpTwoFactor = async (): Promise<string> => {
+    const password = testApi().seedPassword
+    const signedIn = signedInSchema.parse(
+      await (await signIn(SEEDED_CUSTOMER, password)).json(),
+    )
+    const asOwner = (path: string, body: unknown): Promise<Response> =>
+      call(path, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${signedIn.data.accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      })
+    const setUp = await asOwner('/api/v1/auth/2fa/enable', { password })
+    const { secret } = setUpSchema.parse(await setUp.json()).data
+    const confirmed = await asOwner('/api/v1/auth/2fa/verify', {
+      code: await testApi().authenticatorCode(secret),
+    })
+    expect(confirmed.status).toBe(204)
+
+    return secret
+  }
+
+  it('is taken by the API: for the set-up, and the next one to sign in', async () => {
+    const password = testApi().seedPassword
+    const secret = await setUpTwoFactor()
+
+    const withoutCode = await signIn(SEEDED_CUSTOMER, password)
+    const withUsedCode = await signIn(
+      SEEDED_CUSTOMER,
+      password,
+      await testApi().authenticatorCode(secret),
+    )
+    const withNextCode = await signIn(
+      SEEDED_CUSTOMER,
+      password,
+      await testApi().authenticatorCode(secret, 1),
+    )
+
+    expect(withoutCode.status).toBe(401)
+    expect(await withoutCode.json()).toMatchObject({ code: '1007' })
+    expect(withUsedCode.status).toBe(401)
+    expect(withNextCode.status).toBe(200)
+  })
+
+  it('fails the test for a secret that is none', async () => {
+    await expect(testApi().authenticatorCode('not a secret')).rejects.toThrow(
+      'The test server gave no code',
+    )
   })
 })
 

@@ -1,0 +1,150 @@
+import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
+import { testApi } from '@beauty-salon-frontend/testing/api'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { render, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { MemoryRouter } from 'react-router'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { App } from './App'
+
+const TITLE = 'Beauty Salon Admin'
+const OWNER = 'owner@beautysalon.jp'
+
+const renderAt = (path: string) =>
+  render(
+    <QueryClientProvider
+      client={
+        new QueryClient({ defaultOptions: { queries: { retry: false } } })
+      }
+    >
+      <MemoryRouter initialEntries={[path]}>
+        <App />
+      </MemoryRouter>
+    </QueryClientProvider>,
+  )
+
+const heading = (name: string) =>
+  screen.findByRole('heading', { level: 1, name })
+
+/** Signs in on the screen, as a seeded account. */
+const signInAs = async (email: string): Promise<void> => {
+  const user = userEvent.setup()
+  await user.type(
+    await screen.findByRole('textbox', { name: 'メールアドレス' }),
+    email,
+  )
+  await user.type(screen.getByLabelText('パスワード'), testApi().seedPassword)
+  await user.click(screen.getByRole('button', { name: 'サインイン' }))
+}
+
+const sessionCountOfTheApi = async (): Promise<unknown> =>
+  testApi().query('select count(*)::int as count from sessions')
+
+describe('App, against the API', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_APP_TITLE', TITLE)
+    vi.stubEnv('VITE_MODE', 'production')
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+  })
+
+  it.each([
+    ['the owner of a salon', 'owner@beautysalon.jp'],
+    ['a manager', 'manager@beautysalon.jp'],
+    ['a member of the staff', 'stylist1@beautysalon.jp'],
+    ['the operator of the platform', 'admin@beautysalon.jp'],
+  ])('should let %s in: %s', async (_, email) => {
+    // Arrange
+    renderAt('/')
+
+    // Act
+    await signInAs(email)
+
+    // Assert
+    expect(await heading(TITLE)).toHaveFocus()
+    expect(within(screen.getByRole('banner')).getByText(email)).toBeVisible()
+    expect(document.title).toBe(TITLE)
+  })
+
+  it.each([['a customer', 'customer1@example.com']])(
+    'should tell %s that the application is not for them: %s',
+    async (_, email) => {
+      // Arrange
+      renderAt('/')
+
+      // Act
+      await signInAs(email)
+
+      // Assert
+      expect(
+        await heading('このアプリケーションは利用できません'),
+      ).toBeVisible()
+      expect(
+        screen.queryByRole('heading', { name: TITLE }),
+      ).not.toBeInTheDocument()
+    },
+  )
+
+  it('should show the screen of the address that was asked for after signing in', async () => {
+    // Arrange
+    renderAt('/no-such-page')
+    await heading('サインイン')
+
+    // Act
+    await signInAs(OWNER)
+
+    // Assert
+    expect(await heading('ページが見つかりません')).toBeVisible()
+    expect(document.title).toBe(`ページが見つかりません | ${TITLE}`)
+  })
+
+  it('should move between its screens without leaving the application or the session', async () => {
+    // Arrange
+    renderAt('/no-such-page')
+    await signInAs(OWNER)
+    await heading('ページが見つかりません')
+
+    // Act
+    await userEvent.click(screen.getByRole('link', { name: 'トップへ戻る' }))
+
+    // Assert
+    expect(await heading(TITLE)).toHaveFocus()
+    expect(within(screen.getByRole('banner')).getByText(OWNER)).toBeVisible()
+  })
+
+  it('should sign out from the header and show the sign-in screen again', async () => {
+    // Arrange
+    renderAt('/')
+    await signInAs(OWNER)
+    await heading(TITLE)
+
+    // Act
+    await userEvent.click(screen.getByRole('button', { name: 'サインアウト' }))
+
+    // Assert
+    expect(await heading('サインイン')).toHaveFocus()
+    expect(
+      within(screen.getByRole('main')).getByRole('status'),
+    ).toHaveTextContent('サインアウトしました。')
+    expect(await sessionCountOfTheApi()).toEqual([{ count: 0 }])
+  })
+
+  it.each(['/', '/no-such-page'])(
+    'should have no accessibility violations at %s for a signed-in user',
+    async (path) => {
+      // Arrange
+      vi.stubEnv('VITE_MODE', 'staging')
+      renderAt(path)
+      await signInAs(OWNER)
+      await screen.findByRole('button', { name: 'サインアウト' })
+
+      // Act
+      const violations = await findAccessibilityViolations()
+
+      // Assert
+      expect(violations).toEqual([])
+    },
+  )
+})

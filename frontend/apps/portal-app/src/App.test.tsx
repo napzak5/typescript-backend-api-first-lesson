@@ -1,16 +1,20 @@
 import { findAccessibilityViolations } from '@beauty-salon-frontend/testing'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { App } from './App'
 
 const renderAt = (path: string) =>
   render(
-    <MemoryRouter initialEntries={[path]}>
-      <App />
-    </MemoryRouter>,
+    <QueryClientProvider client={new QueryClient()}>
+      <MemoryRouter initialEntries={[path]}>
+        <App />
+      </MemoryRouter>
+    </QueryClientProvider>,
   )
 
+/** Nobody is signed in: what the application shows without asking the API. */
 describe('App', () => {
   beforeEach(() => {
     vi.stubEnv('VITE_APP_TITLE', 'Beauty Salon Portal')
@@ -29,7 +33,7 @@ describe('App', () => {
     expect(screen.getByRole('banner')).toHaveTextContent('Beauty Salon Portal')
   })
 
-  it('should show the page of the root path', () => {
+  it('should show the page of the root path to somebody who is not signed in', () => {
     // Act
     renderAt('/')
 
@@ -37,6 +41,7 @@ describe('App', () => {
     expect(
       screen.getByRole('heading', { level: 1, name: 'Beauty Salon Portal' }),
     ).toBeVisible()
+    expect(document.title).toBe('Beauty Salon Portal')
   })
 
   it('should say that a page does not exist and lead back to the root', () => {
@@ -63,6 +68,49 @@ describe('App', () => {
     // Assert
     expect(
       screen.getByRole('heading', { level: 1, name: 'Beauty Salon Portal' }),
+    ).toHaveFocus()
+  })
+
+  it('should offer the way to sign in from the header', () => {
+    // Act
+    renderAt('/')
+
+    // Assert
+    expect(
+      within(screen.getByRole('banner')).getByRole('link', {
+        name: 'サインイン',
+      }),
+    ).toHaveAttribute('href', '/sign-in')
+  })
+
+  it('should show the sign-in screen after that link is pressed', () => {
+    // Arrange
+    renderAt('/')
+
+    // Act
+    fireEvent.click(
+      within(screen.getByRole('banner')).getByRole('link', {
+        name: 'サインイン',
+      }),
+    )
+
+    // Assert
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'サインイン' }),
+    ).toHaveFocus()
+    expect(document.title).toBe('サインイン | Beauty Salon Portal')
+  })
+
+  it('should show the sign-in screen at its address', () => {
+    // Act
+    renderAt('/sign-in')
+
+    // Assert
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'サインイン' }),
+    ).toBeVisible()
+    expect(
+      screen.getByRole('textbox', { name: 'メールアドレス' }),
     ).toBeVisible()
   })
 
@@ -100,7 +148,7 @@ describe('App', () => {
     expect(screen.queryByText('production')).not.toBeInTheDocument()
   })
 
-  it.each(['/', '/no-such-page'])(
+  it.each(['/', '/no-such-page', '/sign-in'])(
     'should have no accessibility violations at %s',
     async (path) => {
       // Arrange

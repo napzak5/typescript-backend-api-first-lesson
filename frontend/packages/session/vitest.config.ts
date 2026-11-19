@@ -15,8 +15,12 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
-    setupFiles: ['./vitest.setup.ts'],
+    setupFiles: ['@beauty-salon-frontend/testing/setup', './vitest.setup.ts'],
     exclude: [...configDefaults.exclude, '**/*.integration.test.*'],
+    css: {
+      // The class names of the CSS Modules, as they are written
+      modules: { classNameStrategy: 'non-scoped' },
+    },
     // The origin that the API client sends its requests to
     env: {
       VITE_BACKEND_BASE_URL: 'http://localhost:3000',

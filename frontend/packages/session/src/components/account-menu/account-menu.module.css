@@ -1,0 +1,26 @@
+/*
+ * A narrow header has room for the title and for the way out: there the
+ * address is out of sight, and still read.
+ */
+.user {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Where there is room it is shown. A long address is cut short: the header keeps its one row */
+@media (min-width: 40rem) {
+  .user {
+    position: static;
+    inline-size: auto;
+    max-inline-size: 20rem;
+    block-size: auto;
+    clip-path: none;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-small);
+    text-overflow: ellipsis;
+  }
+}

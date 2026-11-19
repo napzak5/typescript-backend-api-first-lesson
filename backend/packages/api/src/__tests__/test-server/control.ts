@@ -2,11 +2,19 @@ import { createHash, timingSafeEqual } from 'node:crypto'
 import express, { type Express } from 'express'
 import { match } from 'ts-pattern'
 import { z } from 'zod'
+import { stepAt, totp } from '../_shared/two-factor-helpers'
 import type { TestApis } from './test-apis'
 
 const statementSchema = z.strictObject({
   text: z.string().min(1),
   values: z.array(z.union([z.string(), z.number(), z.boolean(), z.null()])),
+})
+
+const authenticatorSchema = z.strictObject({
+  /** The secret of the authenticator app, in Base32 */
+  secret: z.string().regex(/^[A-Z2-7]+$/),
+  /** How many steps of 30 seconds after the current one the code is for */
+  stepsAhead: z.union([z.literal(0), z.literal(1)]),
 })
 
 const digest = (text: string): Buffer =>
@@ -22,6 +30,9 @@ const digest = (text: string): Buffer =>
  *   answers with `{ rows }`: for what a test cannot bring about through the
  *   API, such as time having passed
  * - `DELETE /apis/{id}` stops it and drops its database (204)
+ * - `POST /authenticator-codes` answers `{ secret, stepsAhead }` with
+ *   `{ code }`, the code an authenticator app shows for the secret now
+ *   (`stepsAhead: 0`) or in the next 30 seconds (`1`): a test has no such app
  *
  * Every request carries `Authorization: Bearer <token>`, the token that the
  * server was started with: a statement runs with the rights of the database
@@ -77,6 +88,17 @@ export const createControl = (
 
   control.delete('/apis/:id', async (req, res) => {
     res.sendStatus((await apis.remove(req.params.id)) ? 204 : 404)
+  })
+
+  control.post('/authenticator-codes', (req, res) => {
+    const asked = authenticatorSchema.safeParse(req.body)
+    if (!asked.success) {
+      res.status(400).json({ issues: asked.error.issues })
+      return
+    }
+    const { secret, stepsAhead } = asked.data
+
+    res.json({ code: totp(secret, stepAt() + stepsAhead) })
   })
 
   return control

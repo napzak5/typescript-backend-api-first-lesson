@@ -115,4 +115,55 @@ describe('AppShell', () => {
     expect(screen.queryByRole('button')).toBeNull()
     expect(screen.getByRole('banner')).toHaveTextContent('Beauty Salon Portal')
   })
+
+  it('should name the document after the screen and the application', async () => {
+    // Act
+    await stories.NavigationInHeader.run()
+
+    // Assert
+    expect(document.title).toBe('予約台帳 | Beauty Salon Admin')
+  })
+
+  it('should name the document once when the screen is named like the application', async () => {
+    // Act
+    await stories.HomeScreen.run()
+
+    // Assert
+    expect(document.title).toBe('Beauty Salon Admin')
+  })
+
+  it('should leave the focus alone for the first screen of a page', async () => {
+    // Act
+    await stories.ScreenChange.run()
+
+    // Assert
+    expect(document.body).toHaveFocus()
+  })
+
+  it('should move the focus to the heading of a screen that takes the place of another', async () => {
+    // Arrange
+    await stories.ScreenChange.run()
+
+    // Act
+    await userEvent.click(
+      screen.getByRole('button', { name: '顧客台帳を開く' }),
+    )
+
+    // Assert
+    expect(
+      screen.getByRole('heading', { level: 1, name: '顧客台帳' }),
+    ).toHaveFocus()
+    expect(document.title).toBe('顧客台帳 | Beauty Salon Admin')
+  })
+
+  it('should keep the heading out of the stops of the Tab key', async () => {
+    // Act
+    await stories.NavigationInHeader.run()
+
+    // Assert
+    expect(screen.getByRole('heading', { level: 1 })).toHaveAttribute(
+      'tabindex',
+      '-1',
+    )
+  })
 })

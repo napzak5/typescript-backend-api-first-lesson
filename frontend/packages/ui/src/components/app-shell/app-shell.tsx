@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { classNames } from '../../class-names'
 import { NotificationOutlet } from '../notifications/notifications'
 import styles from './app-shell.module.css'
+import { ScreensProvider } from './screens'
 
 type NavigationPlacement = 'header' | 'side'
 
@@ -33,6 +34,9 @@ const MAIN_ID = 'main'
  * content. The first thing the Tab key reaches is a link that skips to the
  * content, past the header and the navigation. The notification of the
  * application (`NotificationProvider`) is shown at the top of the content.
+ *
+ * The screen inside it says what it is with a `PageHeader`: the frame names
+ * the document after it and moves the focus to it when the screen changes.
  */
 export const AppShell = ({
   title,
@@ -60,7 +64,9 @@ export const AppShell = ({
     )}
     <main className={styles['main']} id={MAIN_ID}>
       <NotificationOutlet />
-      <div className={styles['content']}>{children}</div>
+      <div className={styles['content']}>
+        <ScreensProvider applicationTitle={title}>{children}</ScreensProvider>
+      </div>
     </main>
   </div>
 )
