@@ -4,12 +4,11 @@ import {
   Form,
   type FormProps,
   Select,
-  TextArea,
   TextField,
 } from '@beauty-salon-frontend/ui'
-import { tagsTextOf } from '../../../customers/customer-ledger'
 import { EARLIEST_DAY, LATEST_DAY } from '../../../salon-time'
 import { LEVEL_OPTIONS } from '../../staff-format'
+import { IntroductionFields } from '../introduction-fields/introduction-fields'
 import styles from './staff-form.module.css'
 
 export type StaffFormProps = Pick<
@@ -202,48 +201,7 @@ export const StaffForm = ({ member, errors = {}, ...form }: StaffFormProps) => (
         <p className={styles['note']}>
           表示名、レベル、役職と一緒に、お客様に見せるスタッフの紹介です。
         </p>
-        <TextField
-          label='専門'
-          name='specialties'
-          autoComplete='off'
-          description='得意なメニューや技術を、「、」か「,」で区切って書きます。'
-          defaultValue={tagsTextOf(member?.specialties ?? [])}
-          error={errors['specialties']}
-        />
-        <TextField
-          label='資格'
-          name='certifications'
-          autoComplete='off'
-          description='「、」か「,」で区切って書きます。'
-          defaultValue={tagsTextOf(member?.certifications ?? [])}
-          error={errors['certifications']}
-        />
-        <TextField
-          label='経験年数（年）'
-          name='yearsOfExperience'
-          inputMode='numeric'
-          autoComplete='off'
-          className={styles['short']}
-          description='0 から 100 までの整数。'
-          defaultValue={numberText(member?.yearsOfExperience)}
-          error={errors['yearsOfExperience']}
-        />
-        <TextArea
-          label='紹介文'
-          name='bio'
-          rows={4}
-          defaultValue={member?.bio ?? undefined}
-          error={errors['bio']}
-        />
-        <TextField
-          label='写真の URL'
-          name='imageUrl'
-          type='url'
-          autoComplete='off'
-          description='http:// か https:// で始まる URL。500 文字まで。'
-          defaultValue={member?.imageUrl ?? undefined}
-          error={errors['imageUrl']}
-        />
+        <IntroductionFields shown={member} errors={errors} />
       </div>
     </fieldset>
     <fieldset className={styles['part']}>

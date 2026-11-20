@@ -4,7 +4,6 @@ import type {
   ModelsStaffUpdateRequest,
 } from '@beauty-salon-frontend/api-client'
 import { match } from 'ts-pattern'
-import * as z from 'zod'
 import { type Read, textOf } from '../bookings/booking-actions'
 import {
   type FormSays,
@@ -20,10 +19,17 @@ import {
   phoneError,
   tooLong,
 } from '../customers/customer-form'
-import { tagsIn } from '../customers/customer-ledger'
 import type { Forbidden, NotFound, RefusedValue, Unread } from '../reading'
 import { isDay } from '../salon-time'
 import { numberOf } from '../treatments/treatment-form'
+import {
+  controlOf,
+  introductionChangesOf,
+  optionalNumberUpTo,
+  readIntroduction,
+  shownText,
+  URL_ERROR,
+} from './introduction'
 import { LEVELS } from './staff-format'
 
 /*
@@ -35,8 +41,6 @@ import { LEVELS } from './staff-format'
 type Whole = ModelsStaffCreateRequest
 
 const LONGEST_DISPLAY_NAME = 255
-const LONGEST_URL = 500
-const MOST_YEARS = 100
 const MOST_RATE = 100
 const MOST_CONCURRENT = 10
 const MOST_BUFFER = 120
@@ -57,19 +61,13 @@ const SALARY_ERROR = '基本給は、0 以上の円の整数で入力してく�
 
 const RATE_ERROR = `歩合率は、0 から ${MOST_RATE} までの数で、小数第 2 位まで入力してください。`
 
-const YEARS_ERROR = `経験年数は、0 から ${MOST_YEARS} までの整数で入力してください。`
-
 const CONCURRENT_ERROR = `同時に担当できる予約の数は、1 から ${MOST_CONCURRENT} までの整数で入力してください。`
 
 const BUFFER_ERROR = `0 から ${MOST_BUFFER} までの分を、整数で入力してください。`
 
-const URL_ERROR = `http:// か https:// で始まる URL を、${LONGEST_URL} 文字までで入力してください。`
-
 /** What is said at the control of being active, of the member the account is linked to */
 export const OWN_RECORD_STAYS_ACTIVE =
   'ご自身のスタッフ情報は、無効にできません。無効にすると、このアカウントでサロンの画面を使えなくなります。'
-
-const webAddressSchema = z.httpUrl().check(z.maxLength(LONGEST_URL))
 
 /** A whole number from `least` to `most`; `undefined` for anything else, nothing included. */
 const wholeNumberIn = (
@@ -83,19 +81,6 @@ const wholeNumberIn = (
     number !== undefined &&
     number >= least &&
     number <= most
-    ? number
-    : undefined
-}
-
-/** A number up to `most` that may be left empty; `undefined` for what is none. */
-const optionalNumberUpTo = (
-  text: string,
-  decimals: number,
-  most: number,
-): number | null | undefined => {
-  const number = numberOf(text, decimals)
-
-  return number === null || (number !== undefined && number <= most)
     ? number
     : undefined
 }
@@ -121,12 +106,7 @@ const readWhole = (values: FormData): Read<Whole> => {
     2,
     MOST_RATE,
   )
-  const yearsOfExperience = optionalNumberUpTo(
-    text('yearsOfExperience'),
-    0,
-    MOST_YEARS,
-  )
-  const imageUrl = optional('imageUrl')
+  const introduction = readIntroduction(values)
   const maxConcurrentBookings = wholeNumberIn(
     text('maxConcurrentBookings'),
     1,
@@ -159,12 +139,6 @@ const readWhole = (values: FormData): Read<Whole> => {
       hireDate === null || isDay(hireDate) ? undefined : HIRE_DATE_OUT_OF_RANGE,
     baseSalary: baseSalary === undefined ? SALARY_ERROR : undefined,
     commissionRate: commissionRate === undefined ? RATE_ERROR : undefined,
-    yearsOfExperience:
-      yearsOfExperience === undefined ? YEARS_ERROR : undefined,
-    imageUrl:
-      imageUrl === null || webAddressSchema.safeParse(imageUrl).success
-        ? undefined
-        : URL_ERROR,
     maxConcurrentBookings:
       maxConcurrentBookings === undefined ? CONCURRENT_ERROR : undefined,
     bufferTimeBefore: bufferTimeBefore === undefined ? BUFFER_ERROR : undefined,
@@ -178,17 +152,20 @@ const readWhole = (values: FormData): Read<Whole> => {
       ),
     ),
   }
-  const errors = Object.fromEntries(
-    Object.entries(found).flatMap(([name, error]): [string, string][] =>
-      error === undefined ? [] : [[name, error]],
+  const errors = {
+    ...Object.fromEntries(
+      Object.entries(found).flatMap(([name, error]): [string, string][] =>
+        error === undefined ? [] : [[name, error]],
+      ),
     ),
-  )
+    ...(introduction.type === 'invalid' ? introduction.errors : {}),
+  }
   if (
+    introduction.type === 'invalid' ||
     Object.keys(errors).length > 0 ||
     level === undefined ||
     baseSalary === undefined ||
     commissionRate === undefined ||
-    yearsOfExperience === undefined ||
     maxConcurrentBookings === undefined ||
     bufferTimeBefore === undefined ||
     bufferTimeAfter === undefined
@@ -210,11 +187,7 @@ const readWhole = (values: FormData): Read<Whole> => {
       staffCode: optional('staffCode'),
       level,
       position: optional('position'),
-      specialties: tagsIn(textOf(values, 'specialties')),
-      bio: optional('bio'),
-      imageUrl,
-      yearsOfExperience,
-      certifications: tagsIn(textOf(values, 'certifications')),
+      ...introduction.request,
       hireDate,
       employmentType: optional('employmentType'),
       baseSalary,
@@ -231,13 +204,6 @@ const readWhole = (values: FormData): Read<Whole> => {
 /** A new member, from the form. */
 export const readStaffEntry = (values: FormData): Read<Whole> =>
   readWhole(values)
-
-/** A text of the ledger as the form reads it back: without the spaces around it, nothing as `null`. */
-const shownText = (text: string | null): string | null =>
-  nullIfBlank(text ?? '')
-
-const same = (one: unknown, other: unknown): boolean =>
-  JSON.stringify(one) === JSON.stringify(other)
 
 /**
  * The properties a form was sent with other values for than the member it
@@ -278,19 +244,7 @@ const changesOf = (
   ...(sent.position === shownText(shown.position)
     ? {}
     : { position: sent.position }),
-  ...(same(sent.specialties, shown.specialties)
-    ? {}
-    : { specialties: sent.specialties }),
-  ...(sent.bio === shownText(shown.bio) ? {} : { bio: sent.bio }),
-  ...(sent.imageUrl === shownText(shown.imageUrl)
-    ? {}
-    : { imageUrl: sent.imageUrl }),
-  ...(sent.yearsOfExperience === shown.yearsOfExperience
-    ? {}
-    : { yearsOfExperience: sent.yearsOfExperience }),
-  ...(same(sent.certifications, shown.certifications)
-    ? {}
-    : { certifications: sent.certifications }),
+  ...introductionChangesOf(sent, shown),
   ...(sent.hireDate === shown.hireDate ? {} : { hireDate: sent.hireDate }),
   ...(sent.employmentType === shownText(shown.employmentType)
     ? {}
@@ -363,10 +317,6 @@ export type StaffEntryAttempt = Exclude<
   StaffWriteAttempt,
   NotFound | { type: 'ownRecord' }
 >
-
-/** The control a value of the request is entered at: every specialty at one, every certification at one. */
-const controlOf = (field: string): string =>
-  field.replace(/^(specialties|certifications)\.\d+$/, '$1')
 
 /** The controls of the form */
 const CONTROLS: readonly string[] = [
