@@ -128,6 +128,7 @@ describe('the bookings of a salon, against the API', () => {
           ['シフト', `/salons/${salonId}/shifts`, null],
           ['メニュー', `/salons/${salonId}/menu`, null],
           ['商品', `/salons/${salonId}/products`, null],
+          ['在庫', `/salons/${salonId}/inventory`, null],
           // The staff ledger is kept by the owner of the salon alone
           ...(keepsStaffLedger
             ? [['スタッフ', `/salons/${salonId}/staff`, null]]
@@ -185,6 +186,7 @@ describe('the bookings of a salon, against the API', () => {
         ['シフト', `/salons/${osaka}/shifts`, null],
         ['メニュー', `/salons/${osaka}/menu`, null],
         ['商品', `/salons/${osaka}/products`, null],
+        ['在庫', `/salons/${osaka}/inventory`, null],
         ['スタッフ', `/salons/${osaka}/staff`, null],
         ['設定', `/salons/${osaka}/settings`, null],
       ])
