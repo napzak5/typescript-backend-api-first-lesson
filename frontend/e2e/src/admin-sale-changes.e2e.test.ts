@@ -228,6 +228,7 @@ test.describe('changing, giving back and voiding a sale, in a browser', () => {
       part(page, '会計').getByRole('link', { name: '会計を入れる' }),
     )
     await expect(heading(page, '会計を入れる')).toBeFocused()
+    await expect(part(page, '金額')).toContainText('￥5,500')
     await pressWithTheKeyboard(
       page.getByRole('button', { name: '会計を入れる' }),
     )
