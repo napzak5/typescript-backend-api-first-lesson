@@ -397,8 +397,14 @@ describe('the code of an authenticator app', () => {
   })
   const setUpSchema = z.object({ data: z.object({ secret: z.string() }) })
 
-  /** Sets up two-factor authentication for the seeded customer, as its owner would. */
-  const setUpTwoFactor = async (): Promise<string> => {
+  /**
+   * Sets up two-factor authentication for the seeded customer, as its owner
+   * would: the secret, and the code the set-up was confirmed with.
+   */
+  const setUpTwoFactor = async (): Promise<{
+    secret: string
+    usedCode: string
+  }> => {
     const password = testApi().seedPassword
     const signedIn = signedInSchema.parse(
       await (await signIn(SEEDED_CUSTOMER, password)).json(),
@@ -414,24 +420,23 @@ describe('the code of an authenticator app', () => {
       })
     const setUp = await asOwner('/api/v1/auth/2fa/enable', { password })
     const { secret } = setUpSchema.parse(await setUp.json()).data
+    const usedCode = await testApi().authenticatorCode(secret)
     const confirmed = await asOwner('/api/v1/auth/2fa/verify', {
-      code: await testApi().authenticatorCode(secret),
+      code: usedCode,
     })
     expect(confirmed.status).toBe(204)
 
-    return secret
+    return { secret, usedCode }
   }
 
   it('is taken by the API: for the set-up, and the next one to sign in', async () => {
     const password = testApi().seedPassword
-    const secret = await setUpTwoFactor()
+    const { secret, usedCode } = await setUpTwoFactor()
 
     const withoutCode = await signIn(SEEDED_CUSTOMER, password)
-    const withUsedCode = await signIn(
-      SEEDED_CUSTOMER,
-      password,
-      await testApi().authenticatorCode(secret),
-    )
+    // The very code of the set-up: asked for again, it would be that of the
+    // next 30 seconds once they have begun, which is not used yet
+    const withUsedCode = await signIn(SEEDED_CUSTOMER, password, usedCode)
     const withNextCode = await signIn(
       SEEDED_CUSTOMER,
       password,
