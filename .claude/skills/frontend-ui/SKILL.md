@@ -1829,7 +1829,8 @@ the screens of a service and of a category, `menu-api.ts`,
 ### The settings of a salon: what is shown and what is changed
 
 The settings are the example to read: `settings-screen.tsx`,
-`salon-change-screen.tsx`, `settings-format.ts` and `salon-form.ts`.
+`salon-change-screen.tsx`, `hours-change-screen.tsx`,
+`settings-format.ts`, `salon-form.ts` and `hours-form.ts`.
 
 - **A value that would change how everything else is read is shown,
   not offered** (the time zone and the currency): the form says why it
@@ -1844,6 +1845,15 @@ The settings are the example to read: `settings-screen.tsx`,
 - **Dates of a calendar are shown from today at the salon on**
   (`calendarFrom`): the past ones are history, and a table with none
   says which hours apply instead.
+- **A list the API replaces whole is sent whole, and only when it was
+  changed** (`readHoursChange`): the week and the calendar are compared
+  apart, as the form reads them, and what the form does not show (the
+  dates before today, the period of the hours of a day) is sent back
+  as it was. Before it is sent, the record is read again
+  (`attemptHoursChange`), as for the schedule of a member.
+- **What the form cannot hold is said before it is lost**: a day with
+  more hours than the form has controls for says that saving the week
+  keeps the first of them.
 
 ## Screens that a mailed link opens
 
