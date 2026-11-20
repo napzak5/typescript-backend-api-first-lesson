@@ -6,4 +6,5 @@ export {
   type AccessibilityViolation,
   findAccessibilityViolations,
 } from './accessibility'
+export { type SavedFile, savedFiles } from './saved-files'
 export { itShouldBeAccessibleInEveryStory } from './story-accessibility'

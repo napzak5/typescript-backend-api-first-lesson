@@ -1,6 +1,9 @@
 import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
+import { saveFile } from '@beauty-salon-frontend/io'
 import { useSession } from '@beauty-salon-frontend/session'
 import {
+  Alert,
+  Button,
   ButtonLink,
   EmptyState,
   type FormErrors,
@@ -43,8 +46,11 @@ import {
   withoutGone,
 } from './customer-bulk'
 import { removeCustomers, retagCustomers } from './customer-bulk-api'
+import { afterLedgerExport } from './customer-export'
+import { exportLedger } from './customer-export-api'
 import { mayKeepCustomers } from './customer-history'
 import {
+  type CustomerConditions,
   customerConditionsIn,
   customerQueryOf,
   isNarrowed,
@@ -63,6 +69,13 @@ type DialogSays = { message: string | undefined; errors: FormErrors }
 
 const NOTHING_SAID: DialogSays = { message: undefined, errors: {} }
 
+/** Why an export of the ledger saved no file, under the conditions it was asked for */
+type ExportSaid = {
+  asked: string
+  tone: 'warning' | 'danger'
+  message: string
+}
+
 type CustomerLedgerProps = {
   salon: ModelsSalonResponse
 }
@@ -79,6 +92,10 @@ type CustomerLedgerProps = {
  * away, or to be removed from the ledger, all at once. Who is chosen
  * belongs to the conditions they were chosen under: other conditions
  * choose nobody, so that nothing is written to customers out of sight.
+ *
+ * An owner or a manager exports the customers who meet the conditions as
+ * a CSV file. Why no file was saved is said under the header, and belongs
+ * to the conditions it was asked for, as the choice does.
  */
 const CustomerLedger = ({ salon }: CustomerLedgerProps) => {
   const session = useSession()
@@ -101,7 +118,8 @@ const CustomerLedger = ({ salon }: CustomerLedgerProps) => {
   const setChosen = (next: Chosen): void => setChoice({ asked, chosen: next })
   const [dialog, setDialog] = useState<ChosenDialog>('none')
   const [said, setSaid] = useState<DialogSays>(NOTHING_SAID)
-  const mayRemove =
+  const [exportSaid, setExportSaid] = useState<ExportSaid>()
+  const mayKeep =
     session.type === 'signedIn' && mayKeepCustomers(session.user.role)
   const read = useInfiniteQuery({
     queryKey: [...CUSTOMER_LISTS, 'ledger', salon.timezone, asked],
@@ -163,6 +181,26 @@ const CustomerLedger = ({ salon }: CustomerLedgerProps) => {
     onSuccess: (attempt) => after(afterRemoval(attempt, chosen)),
   })
 
+  const exporting = useMutation({
+    mutationFn: (exported: CustomerConditions) =>
+      exportLedger(exported, salon.timezone),
+    onMutate: () => setExportSaid(undefined),
+    onSuccess: (outcome, exported) =>
+      match(afterLedgerExport(outcome))
+        .with({ type: 'saved' }, ({ file, message }) => {
+          saveFile(file)
+          notify({ tone: 'success', message })
+        })
+        .with({ type: 'said' }, ({ tone, message }) =>
+          setExportSaid({
+            asked: customerQueryOf(exported).toString(),
+            tone,
+            message,
+          }),
+        )
+        .exhaustive(),
+  })
+
   const retag = (values: FormData): void =>
     match(readTagChange(values))
       .with({ type: 'invalid' }, ({ errors: wrong }) =>
@@ -194,9 +232,20 @@ const CustomerLedger = ({ salon }: CustomerLedgerProps) => {
             >
               CSV から登録する
             </ButtonLink>
+            {mayKeep && (
+              <Button
+                pending={exporting.isPending}
+                onClick={() => exporting.mutate(conditions)}
+              >
+                CSV に出力する
+              </Button>
+            )}
           </>
         }
       />
+      {exportSaid !== undefined && exportSaid.asked === asked && (
+        <Alert tone={exportSaid.tone}>{exportSaid.message}</Alert>
+      )}
       <CustomerFilter
         conditions={conditions}
         errors={errors}
@@ -236,7 +285,7 @@ const CustomerLedger = ({ salon }: CustomerLedgerProps) => {
                 id: customer.id,
                 name: customerNameOf(customer),
               }))}
-              mayRemove={mayRemove}
+              mayRemove={mayKeep}
               open={dialog}
               onOpen={(opened) => {
                 setSaid(NOTHING_SAID)

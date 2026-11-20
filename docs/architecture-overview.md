@@ -1077,7 +1077,9 @@ mounts everything in this order. The order is part of the design:
 1. `requestLogging`: gives every request its ID (`req.id`) and logger
    (`req.log`), first, so that everything after it can log and answer with
    the ID.
-2. `helmet` and `cors`: security headers, and the allowed origins.
+2. `helmet` and `cors`: security headers, and the allowed origins. A page
+   of an allowed origin may read `Content-Disposition` too, the name of
+   the file an export of the customers is saved under.
 3. The system router at `/api/system`: before the rate limit, so that probes
    are never throttled.
 4. `rateLimiting`: requests per client address and window.

@@ -1,4 +1,8 @@
-/* On a narrow screen the actions are below the text; on a wide one, at the end of its row */
+/*
+ * On a narrow screen the actions are below the text, one below the other:
+ * three of them side by side are wider than a phone. On a wide screen they
+ * are side by side, at the end of the row of the text.
+ */
 .pageHeader {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -21,13 +25,17 @@
 
 .actions {
   display: grid;
-  grid-auto-flow: column;
-  justify-content: start;
+  justify-items: start;
   gap: var(--space-3);
 }
 
 @media (min-width: 40rem) {
   .pageHeader {
     grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .actions {
+    grid-auto-flow: column;
+    justify-content: start;
   }
 }
