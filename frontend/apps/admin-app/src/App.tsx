@@ -51,6 +51,9 @@ import { RefundScreen } from './sales/refund-screen'
 import { SaleChangeScreen } from './sales/sale-change-screen'
 import { SaleScreen } from './sales/sale-screen'
 import { SalesLedgerScreen } from './sales/sales-ledger-screen'
+import { ScheduleChangeScreen } from './shifts/schedule-change-screen'
+import { ScheduleScreen } from './shifts/schedule-screen'
+import { ShiftsScreen } from './shifts/shifts-screen'
 import { StaffChangeScreen } from './staff/staff-change-screen'
 import { StaffEntryScreen } from './staff/staff-entry-screen'
 import { StaffLedgerScreen } from './staff/staff-ledger-screen'
@@ -304,6 +307,18 @@ export const App = () => {
               <Route
                 path='/salons/:salonId/staff/:staffId/edit'
                 element={<StaffChangeScreen />}
+              />
+              <Route
+                path='/salons/:salonId/shifts'
+                element={<ShiftsScreen />}
+              />
+              <Route
+                path='/salons/:salonId/shifts/:staffId'
+                element={<ScheduleScreen />}
+              />
+              <Route
+                path='/salons/:salonId/shifts/:staffId/edit'
+                element={<ScheduleChangeScreen />}
               />
               <Route
                 path={SECURITY_PATH}

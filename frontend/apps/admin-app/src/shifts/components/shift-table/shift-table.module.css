@@ -1,0 +1,22 @@
+/*
+ * The lines of what a member does on a day, one below the other. A table
+ * keeps its cells on one line; these already have several, and a line may
+ * break between its words (after 「休憩」, in a note), so that a week fits
+ * a wide screen. A table that is still too wide scrolls sideways.
+ */
+.shift {
+  display: grid;
+  gap: var(--space-1);
+  white-space: normal;
+}
+
+/* A time, and the mark of a row of a date, are not broken */
+.time,
+.once {
+  white-space: nowrap;
+}
+
+.once,
+.none {
+  color: var(--color-text-muted);
+}
