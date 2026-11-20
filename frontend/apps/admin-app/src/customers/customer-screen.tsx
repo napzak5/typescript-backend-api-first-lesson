@@ -26,6 +26,7 @@ import { useParams, useSearchParams } from 'react-router'
 import { match, P } from 'ts-pattern'
 import {
   bookingOfCustomerHrefOf,
+  chartHrefOf,
   customerChangeHrefOf,
   customerHistoryHrefOf,
   customerHrefOf,
@@ -689,6 +690,7 @@ const CustomerPage = ({ salon }: CustomerPageProps) => {
               customer.id,
             )}
             pointsHref={customerPointsHrefOf(salon.id, customer.id)}
+            chartHref={chartHrefOf(salon.id, customer.id)}
             customerHref={(customerId) => customerHrefOf(salon.id, customerId)}
           />
           {/* Another customer (the one who referred this one) is another part */}

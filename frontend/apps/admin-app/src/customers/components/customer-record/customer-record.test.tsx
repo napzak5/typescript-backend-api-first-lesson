@@ -130,7 +130,7 @@ describe('CustomerRecord', () => {
     ).not.toBeInTheDocument()
   })
 
-  it('should lead to the customer who referred this one, to a booking of the customer and to the change of the ledger', async () => {
+  it('should lead to the customer who referred this one, to a booking of the customer, to the change of the ledger and to the chart', async () => {
     // Act
     await stories.Recorded.run()
 
@@ -155,6 +155,11 @@ describe('CustomerRecord', () => {
         { name: 'ポイントの履歴' },
       ),
     ).toHaveAttribute('href', `${CUSTOMER}/${aCustomer().id}/points`)
+    expect(
+      within(screen.getByRole('region', { name: 'カルテ' })).getByRole('link', {
+        name: 'カルテを見る',
+      }),
+    ).toHaveAttribute('href', `${CUSTOMER}/${aCustomer().id}/chart`)
   })
 
   it('should say that a customer who is not active may not book by themselves', async () => {

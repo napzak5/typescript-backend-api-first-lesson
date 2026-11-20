@@ -38,6 +38,7 @@ this one: a component is not done without its stories and its test.
 | The bookings of a salon in the admin application: the list of a day, a booking and the operations of its state, a booking put in for a customer who was searched for, the change of its notes and its removal | `frontend/apps/admin-app/src/bookings/` |
 | The sales of a salon in the admin application: the checkout of a booking, the ledger of the sales, a sale with its payments, the form that records a payment, the receipt to print, the change of a sale, the refund of a payment and the voiding of a sale | `frontend/apps/admin-app/src/sales/` |
 | The ledger of the customers in the admin application: the ledger, a customer registered, shown and changed, the choice of the customer who referred another, the change of the preferences, the removal and the way back, the history and its versions, the points and their recording, the customers of a file, the merge, the exports, the requests to have the data erased | `frontend/apps/admin-app/src/customers/` |
+| The charts of the customers in the admin application: the chart, the form with the rows of the treatments had before, the search of the charts | `frontend/apps/admin-app/src/charts/` |
 | A file the API answers with, saved by the browser: its name, and the saving | `frontend/packages/io/src/libs/file/save-file.ts` (`fileNameOf`, `saveFile`) |
 | A form of the admin application that searches by a keyword kept in the address (salons, customers) | `frontend/apps/admin-app/src/components/keyword-search/`, `src/keyword.ts` |
 | The clock of a salon in the admin application: its day, its times of day, a moment that is typed on it | `frontend/apps/admin-app/src/salon-time.ts` |
@@ -659,7 +660,9 @@ have.
   the catalogue of `ui`, and `Dockerfile.frontend` copies its manifest.
 
 - **Rows that are added and taken away** are a component that keeps which
-  rows there are (`components/time-slot-fields/` of the package); the browser keeps what
+  rows there are (`components/time-slot-fields/` of the package, and the
+  treatments of `ChartForm` in the admin application, whose rows are
+  groups of four controls); the browser keeps what
   was typed, as in every control. A row has a `key` that stays with it (a
   counter, never its index), so a row that is taken away takes its values
   with it and the others keep theirs. The controls are named by the number
@@ -1508,6 +1511,41 @@ and `customer-export.ts` for the ledger and a customer saved as files).
   from what was read, not from the `detail`. The dialog and maybe its
   opener are gone: a layout effect on the refusal moves the focus to
   the heading, after the dialog closed in its own layout effect.
+
+### A record a customer has once: shown, made, changed, searched
+
+The charts of the admin application are the example to read:
+`frontend/apps/admin-app/src/charts/` (`chart-screen.tsx` for the chart,
+`chart-entry-screen.tsx` and `chart-change-screen.tsx` for the form,
+`with-chart.tsx` for the chart of the customer of the address,
+`chart-search-screen.tsx` for the search).
+
+- **A record a customer has at most once is below the customer**
+  (`/customers/:customerId/chart`), not below a list of its own: it has
+  no address of its own to the person who uses it. The page says what
+  the record is for and offers to make it when there is none (the API
+  answers 404 for none). Making it and changing it are two addresses
+  (`/new`, `/edit`), as the two requests differ; each, opened for what
+  is not so (a chart that is there, one that is not), says so and leads
+  to the other instead of a form.
+- **Made meanwhile by another account (409) is a refusal that keeps
+  what was written**: the form stays as it is, says what happened and
+  offers a link to the form that changes the record that is there, to
+  add to it.
+- **The rows of a list of several controls are the rows of the
+  preferences** (above): `ChartForm` keeps groups of four controls, named
+  by the number of the row, and its errors are hidden once a row is
+  taken away. A list the API puts in place of the one it holds is sent
+  whole when it was changed, and left out when it was not.
+- **A long text in a cell breaks its lines in a block at least 12rem
+  wide** (`.text` of `ChartTable`, `.notes` of `ChartRecord`), as the
+  values of the merge do: a cell whose text may break without a least
+  width is as narrow as a character in a table that scrolls, and its
+  row as tall as the text is long.
+- **A list of records that name their customer by ID reads the customers
+  of the page at once** (`readCustomers` of `customers-api.ts`), and a
+  customer who left the ledger between the two reads is said to have
+  left, without a link.
 
 ## Screens that a mailed link opens
 

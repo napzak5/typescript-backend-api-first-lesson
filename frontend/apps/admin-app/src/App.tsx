@@ -25,6 +25,10 @@ import { BookingMoveScreen } from './bookings/booking-move-screen'
 import { BookingNotesScreen } from './bookings/booking-notes-screen'
 import { BookingScreen } from './bookings/booking-screen'
 import { DayBookingsScreen } from './bookings/day-bookings-screen'
+import { ChartChangeScreen } from './charts/chart-change-screen'
+import { ChartEntryScreen } from './charts/chart-entry-screen'
+import { ChartScreen } from './charts/chart-screen'
+import { ChartSearchScreen } from './charts/chart-search-screen'
 import { CustomerChangeScreen } from './customers/customer-change-screen'
 import { CustomerEntryScreen } from './customers/customer-entry-screen'
 import { CustomerHistoryScreen } from './customers/customer-history-screen'
@@ -224,6 +228,22 @@ export const App = () => {
               <Route
                 path='/salons/:salonId/customers/:customerId/points/new'
                 element={<PointEntryScreen />}
+              />
+              <Route
+                path='/salons/:salonId/customers/:customerId/chart'
+                element={<ChartScreen />}
+              />
+              <Route
+                path='/salons/:salonId/customers/:customerId/chart/new'
+                element={<ChartEntryScreen />}
+              />
+              <Route
+                path='/salons/:salonId/customers/:customerId/chart/edit'
+                element={<ChartChangeScreen />}
+              />
+              <Route
+                path='/salons/:salonId/customers/charts'
+                element={<ChartSearchScreen />}
               />
               <Route
                 path={SECURITY_PATH}

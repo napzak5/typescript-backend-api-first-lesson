@@ -2,9 +2,9 @@ import {
   customerCrudMerge,
   type ModelsCustomerResponse,
   type ModelsMedicalChartResponse,
-  medicalChartCrudGetByCustomer,
 } from '@beauty-salon-frontend/api-client'
 import { match, P } from 'ts-pattern'
+import { readChart } from '../charts/charts-api'
 import { outsideTheContract } from '../outside-the-contract'
 import {
   FAILED,
@@ -73,27 +73,6 @@ const readErasureAsked = async (
       .with({ type: P.union('tooManyRequests', 'failed') }, (unread) => unread)
       .exhaustive()
   )
-}
-
-/** The chart of the customer (`GET /medical-charts/customer/{id}`); `null` for one who has none. */
-const readChart = async (
-  customerId: string,
-): Promise<
-  { type: 'read'; chart: ModelsMedicalChartResponse | null } | Unread
-> => {
-  const answer = await medicalChartCrudGetByCustomer(customerId).catch(
-    () => null,
-  )
-
-  return match(answer)
-    .returnType<
-      { type: 'read'; chart: ModelsMedicalChartResponse | null } | Unread
-    >()
-    .with({ status: 200 }, ({ data }) => ({ type: 'read', chart: data.data }))
-    .with({ status: 404 }, () => ({ type: 'read', chart: null }))
-    .with({ status: P.union(400, 403) }, () => FAILED)
-    .with(UNANSWERED, unreadOf)
-    .exhaustive(outsideTheContract)
 }
 
 /** The customer chosen to merge with, and what the merge looks at of both */

@@ -113,6 +113,24 @@ export const customerPointsHrefOf = (
   customerId: string,
 ): string => `${customerHrefOf(salonId, customerId)}/points`
 
+/** The chart of a customer: what the staff makes sure of before a treatment. */
+export const chartHrefOf = (salonId: string, customerId: string): string =>
+  `${customerHrefOf(salonId, customerId)}/chart`
+
+/** The screen that makes the chart of a customer. */
+export const chartEntryHrefOf = (salonId: string, customerId: string): string =>
+  `${chartHrefOf(salonId, customerId)}/new`
+
+/** The screen that changes the chart of a customer. */
+export const chartChangeHrefOf = (
+  salonId: string,
+  customerId: string,
+): string => `${chartHrefOf(salonId, customerId)}/edit`
+
+/** The search of the charts of the customers. */
+export const chartSearchHrefOf = (salonId: string): string =>
+  `${customersHrefOf(salonId)}/charts`
+
 /** What the screen that merges two customers searched the ledger for, and the customer chosen to merge with. */
 export type MergeChoice = {
   keyword: string | undefined
