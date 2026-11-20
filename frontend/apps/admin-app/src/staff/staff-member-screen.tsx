@@ -13,7 +13,11 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { match } from 'ts-pattern'
-import { staffChangeHrefOf, staffLedgerHrefOf } from '../navigation'
+import {
+  scheduleHrefOf,
+  staffChangeHrefOf,
+  staffLedgerHrefOf,
+} from '../navigation'
 import { NOT_FOUND } from '../reading'
 import { WithSalon } from '../salons/with-salon'
 import { StaffRecord } from './components/staff-record/staff-record'
@@ -34,7 +38,8 @@ type MemberPartProps = {
 
 /**
  * A member of the ledger, with the way to change them and to remove them
- * after a dialog has asked. The member the account is linked to is not
+ * after a dialog has asked, and the way to their schedule, which an
+ * inactive member keeps as well. The member the account is linked to is not
  * offered for removal: the account would lock itself out of the salon. A
  * removed member is gone from the ledger they were found in.
  */
@@ -114,6 +119,14 @@ const MemberPart = ({ salon, member }: MemberPartProps) => {
           </>
         }
       />
+      <p>
+        <ButtonLink
+          href={scheduleHrefOf(salon.id, member.id)}
+          variant='secondary'
+        >
+          勤務スケジュール
+        </ButtonLink>
+      </p>
       {!own && (
         <Dialog
           open={removing}
