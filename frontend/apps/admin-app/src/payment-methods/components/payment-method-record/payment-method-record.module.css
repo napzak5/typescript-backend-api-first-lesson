@@ -1,0 +1,5 @@
+/* What was written in several lines keeps its line breaks */
+.written {
+  margin: 0;
+  white-space: pre-wrap;
+}

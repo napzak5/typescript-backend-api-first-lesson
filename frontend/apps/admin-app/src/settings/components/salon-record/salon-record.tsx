@@ -2,6 +2,7 @@ import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
 import {
   Card,
   DescriptionList,
+  Link,
   Table,
   TagList,
 } from '@beauty-salon-frontend/ui'
@@ -20,6 +21,8 @@ export type SalonRecordProps = {
   salon: ModelsSalonResponse
   /** Today at the salon: the dates of the calendar before it are not shown */
   today: string
+  /** The address of the payment methods of the salon */
+  paymentMethodsHref: string
 }
 
 const writtenOrNone = (text: string | null) =>
@@ -38,9 +41,14 @@ const namesOrNone = (label: string, names: readonly string[]) =>
 /**
  * Everything a salon keeps of itself: what the customers are shown of it
  * (its name, its place, how to reach it, its photos), what it charges tax
- * at, and its hours, by the day of the week and by the date from today on.
+ * at and where its payment methods are, and its hours, by the day of the
+ * week and by the date from today on.
  */
-export const SalonRecord = ({ salon, today }: SalonRecordProps) => (
+export const SalonRecord = ({
+  salon,
+  today,
+  paymentMethodsHref,
+}: SalonRecordProps) => (
   <div className={styles['record']}>
     <Card title='サロン'>
       <DescriptionList
@@ -124,6 +132,12 @@ export const SalonRecord = ({ salon, today }: SalonRecordProps) => (
           { term: 'タイムゾーン', description: salon.timezone },
           { term: '通貨', description: salon.currency },
           { term: '税率', description: taxRateNameOf(salon.taxRate) },
+          {
+            term: '支払い方法',
+            description: (
+              <Link href={paymentMethodsHref}>支払い方法を見る</Link>
+            ),
+          },
         ]}
       />
     </Card>
