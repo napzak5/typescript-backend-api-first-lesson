@@ -69,14 +69,15 @@ export const placeNameOf = ({
       ? location
       : `${location}（棚 ${shelf}）`
 
-/** When a row was last counted, at the salon. */
+/** When a row was last counted, at the salon, and by whom when it is known. */
 export const countedNameOf = (
   lastCountedAt: string | null,
   timezone: string,
+  counter: string | undefined,
 ): string =>
   lastCountedAt === null
     ? '棚卸ししていません'
-    : momentNameAt(lastCountedAt, timezone)
+    : `${momentNameAt(lastCountedAt, timezone)}${counter === undefined ? '' : `（${counter}）`}`
 
 /**
  * The products a row may be of, in the order they were read (that of their

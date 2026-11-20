@@ -35,7 +35,7 @@ describe('StockRecord', () => {
       ['在庫数', '12 本'],
       ['引き当てた数', '0 本'],
       ['使える数', '12 本'],
-      ['最後の棚卸し', '2026年11月1日（日） 10:00'],
+      ['最後の棚卸し', '2026年11月1日（日） 10:00（佐藤 健）'],
     ])
   })
 
@@ -49,6 +49,20 @@ describe('StockRecord', () => {
       '2025年12月31日 期限切れ',
     ])
     expect(terms('在庫')[3]).toEqual(['最後の棚卸し', '棚卸ししていません'])
+  })
+
+  it.each<[keyof typeof stories]>([
+    ['CountedByAnAdministrator'],
+    ['WhileTheStaffAreRead'],
+  ])('should name nobody who counted the row in %s', async (story) => {
+    // Act
+    await stories[story].run()
+
+    // Assert
+    expect(terms('在庫')[3]).toEqual([
+      '最後の棚卸し',
+      '2026年11月1日（日） 10:00',
+    ])
   })
 
   it('should keep the lines of the notes, and say what is reserved', async () => {

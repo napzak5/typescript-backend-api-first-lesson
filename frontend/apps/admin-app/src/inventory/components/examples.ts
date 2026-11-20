@@ -1,6 +1,8 @@
 import type {
   ModelsInventoryResponse,
+  ModelsInventoryStockCountResponse,
   ModelsInventoryTransactionResponse,
+  ModelsInventoryValueReportResponse,
 } from '@beauty-salon-frontend/api-client'
 import { salon, staff } from '../../bookings/components/examples'
 import { colour, gloves, shampoo } from '../../products/components/examples'
@@ -34,7 +36,7 @@ const aStockRow = (
   ...row,
 })
 
-/** A lot of the colour, counted at the start of the month. */
+/** A lot of the colour, counted at the start of the month by a member of the staff. */
 export const colourLot: ModelsInventoryResponse = aStockRow({
   id: '5e6f7a8b-9c0d-4e1f-8a2b-3c4d5e6f7a8b',
   productId: colour.id,
@@ -45,6 +47,7 @@ export const colourLot: ModelsInventoryResponse = aStockRow({
   location: 'バックヤード',
   shelf: 'B-2',
   lastCountedAt: '2026-11-01T01:00:00.000Z',
+  lastCountedBy: staff[1]?.id ?? null,
 })
 
 /** A lot of the colour past its expiry, half of a tube left of it. */
@@ -161,3 +164,61 @@ export const MOVEMENTS_OF_THE_LOT: ModelsInventoryTransactionResponse[] = [
     createdAt: '2026-10-01T00:00:00.000Z',
   }),
 ]
+
+/** When the count of the stories was recorded */
+const COUNTED_AT = '2026-11-20T09:30:00.000Z'
+
+/**
+ * A count of the two lots of the colour and the shampoo: the lot past its
+ * expiry and the shampoo differed from the books, the other lot did not.
+ */
+export const COUNT_OF_THE_SALON: ModelsInventoryStockCountResponse = {
+  adjustments: [
+    aMovement({
+      id: 'a1b2c3d4-0006-4e6f-8a7b-9c0d1e2f3a4b',
+      inventoryId: expiredColour.id,
+      transactionType: 'adjustment',
+      quantity: -0.5,
+      balanceAfter: 2,
+      lotNumber: expiredColour.lotNumber,
+      expiryDate: expiredColour.expiryDate,
+      reason: '棚卸しの差異',
+      createdAt: COUNTED_AT,
+    }),
+    aMovement({
+      id: 'a1b2c3d4-0007-4e6f-8a7b-9c0d1e2f3a4b',
+      productId: shampooRow.productId,
+      inventoryId: shampooRow.id,
+      transactionType: 'adjustment',
+      quantity: 1,
+      balanceAfter: 9,
+      lotNumber: null,
+      expiryDate: null,
+      reason: '棚卸しの差異',
+      createdAt: COUNTED_AT,
+    }),
+  ],
+  discrepancies: [
+    {
+      inventoryId: expiredColour.id,
+      expected: 2.5,
+      counted: 2,
+      difference: -0.5,
+    },
+    { inventoryId: shampooRow.id, expected: 8, counted: 9, difference: 1 },
+  ],
+}
+
+/**
+ * The value of the stock of the salon at the purchase prices, the most
+ * valuable category first: the shampoo, 8 bottles at ￥1,500, and the two
+ * lots of the colour, 14.5 tubes at ￥800. The gloves have none left.
+ */
+export const VALUE_OF_THE_SALON: ModelsInventoryValueReportResponse = {
+  totalValue: 23_600,
+  totalItems: 2,
+  categories: [
+    { category: 'ヘアケア', itemCount: 1, value: 12_000 },
+    { category: 'ヘアカラー', itemCount: 1, value: 11_600 },
+  ],
+}

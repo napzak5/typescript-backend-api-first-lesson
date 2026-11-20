@@ -1,9 +1,11 @@
 import type {
   ModelsInventoryResponse,
   ModelsProductResponse,
+  ModelsStaffProfileResponse,
 } from '@beauty-salon-frontend/api-client'
 import { Badge, Card, DescriptionList } from '@beauty-salon-frontend/ui'
 import { NOT_RECORDED } from '../../../staff/staff-format'
+import { performerNameOf } from '../../movement-format'
 import {
   countedNameOf,
   expiryNameOf,
@@ -21,19 +23,24 @@ export type StockRecordProps = {
   today: string
   /** The time zone of the salon, which a count is said in */
   timezone: string
+  /** The staff of the salon, which name who counted the row last; none while they are read */
+  staff?:
+    | readonly Pick<ModelsStaffProfileResponse, 'id' | 'displayName'>[]
+    | undefined
 }
 
 /**
  * What a stock row keeps: the product and the lot, the expiry (marked when
  * it is past), where it is kept and what is noted of it; how much there
  * is, how much of it is reserved and how much may be used; and when it was
- * last counted.
+ * last counted, and by whom: nobody is named for an administrator.
  */
 export const StockRecord = ({
   row,
   product,
   today,
   timezone,
+  staff,
 }: StockRecordProps) => (
   <div className={styles['record']}>
     <Card title='在庫の行'>
@@ -89,7 +96,13 @@ export const StockRecord = ({
           },
           {
             term: '最後の棚卸し',
-            description: countedNameOf(row.lastCountedAt, timezone),
+            description: countedNameOf(
+              row.lastCountedAt,
+              timezone,
+              row.lastCountedBy === null || staff === undefined
+                ? undefined
+                : performerNameOf(row.lastCountedBy, staff),
+            ),
           },
         ]}
       />
