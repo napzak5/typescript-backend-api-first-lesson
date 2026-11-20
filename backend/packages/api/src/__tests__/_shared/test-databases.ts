@@ -18,8 +18,7 @@ export type TestDatabases = {
   close: () => Promise<void>
 }
 
-const uniqueName = (prefix: string): string =>
-  `${prefix}_${randomUUID().replaceAll('-', '')}`
+const uniqueHex = (): string => randomUUID().replaceAll('-', '')
 
 /**
  * Gives every test a database of its own on the instance at `instanceUrl`.
@@ -48,7 +47,12 @@ export const openTestDatabases = async (
     return url.toString()
   }
 
-  const template = uniqueName('api_test_template')
+  // The template and its copies share a mark of their own: other test
+  // servers on the same instance (all the packages, when CI runs them on
+  // one PostgreSQL) make and drop theirs meanwhile. It keeps a name within
+  // the 63 characters PostgreSQL allows
+  const prefix = `api_test_${uniqueHex().slice(0, 12)}`
+  const template = `${prefix}_template`
   await admin.unsafe(`CREATE DATABASE ${template}`)
   const setup = postgres(urlOf(template), {
     max: 1,
@@ -60,7 +64,7 @@ export const openTestDatabases = async (
 
   return {
     create: async () => {
-      const name = uniqueName('api_test')
+      const name = `${prefix}_${uniqueHex()}`
       await admin.unsafe(`CREATE DATABASE ${name} TEMPLATE ${template}`)
       const queryClient = postgres(urlOf(name))
 
