@@ -13,17 +13,25 @@ import {
   highlights,
 } from './components/examples'
 import {
+  AVAILABILITY_OPTIONS,
   availabilityNameOf,
   categoriesById,
   categoryPathOf,
   categoryStateOf,
   menuSectionsOf,
   nextDisplayOrderOf,
+  nextSortOrderOf,
+  OPTION_TYPE_OPTIONS,
   optionTypeNameOf,
+  PRICING_OPTIONS,
+  packagedChoicesOf,
+  packagesOf,
   parentChoicesOf,
   priceLineOf,
   pricingNameOf,
+  REQUIREMENT_OPTIONS,
   requirementNameOf,
+  SERVICE_STATUS_OPTIONS,
   serviceStateOf,
   serviceStatusNameOf,
 } from './menu-format'
@@ -187,5 +195,83 @@ describe('nextDisplayOrderOf', () => {
     ],
   ])('should put a new category after %s', (_, categories, order) => {
     expect(nextDisplayOrderOf(categories)).toBe(order)
+  })
+})
+
+describe('the choices of the values of a service', () => {
+  it('should offer every value of the contract, in its order, by its name', () => {
+    expect(PRICING_OPTIONS.map(({ label }) => label)).toEqual([
+      '固定価格',
+      '変動価格',
+      '段階価格',
+      '動的価格',
+      '要相談',
+    ])
+    expect(SERVICE_STATUS_OPTIONS.map(({ value }) => value)).toEqual([
+      'active',
+      'inactive',
+      'coming_soon',
+      'discontinued',
+    ])
+    expect(AVAILABILITY_OPTIONS.map(({ label }) => label)).toEqual([
+      '常時提供',
+      '平日のみ',
+      '週末のみ',
+      '予約制',
+      '季節限定',
+    ])
+    expect(REQUIREMENT_OPTIONS.map(({ value }) => value)).toEqual([
+      'consultation_required',
+      'patch_test_required',
+      'advance_booking_required',
+      'deposit_required',
+    ])
+    expect(OPTION_TYPE_OPTIONS.map(({ label }) => label)).toEqual([
+      'アドオン',
+      'アップグレード',
+      '時間延長',
+      '商品選択',
+    ])
+  })
+})
+
+describe('nextSortOrderOf', () => {
+  it('should put a new service after the last of the menu', () => {
+    expect(
+      nextSortOrderOf([aService({ sortOrder: 7 }), aService({ sortOrder: 2 })]),
+    ).toBe(8)
+  })
+
+  it('should put the first service of a menu first', () => {
+    expect(nextSortOrderOf([])).toBe(0)
+  })
+})
+
+describe('packagedChoicesOf', () => {
+  const services = [aService(), aDiscountedColour(), aPackage()]
+
+  it('should offer a new package every service that is no package', () => {
+    expect(packagedChoicesOf(services, null)).toEqual([
+      aService(),
+      aDiscountedColour(),
+    ])
+  })
+
+  it('should not offer a service as one of its own services', () => {
+    expect(packagedChoicesOf(services, aService().id)).toEqual([
+      aDiscountedColour(),
+    ])
+  })
+})
+
+describe('packagesOf', () => {
+  const services = [aService(), aDiscountedColour(), aPackage()]
+
+  it('should find the packages a service is one of the services of', () => {
+    expect(packagesOf(services, aDiscountedColour().id)).toEqual([aPackage()])
+  })
+
+  it('should find none for a service no package has', () => {
+    expect(packagesOf(services, aPackage().id)).toEqual([])
   })
 })

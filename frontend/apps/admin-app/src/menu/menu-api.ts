@@ -2,13 +2,18 @@ import {
   type ModelsServiceCategoryCreateRequest,
   type ModelsServiceCategoryResponse,
   type ModelsServiceCategoryUpdateRequest,
+  type ModelsServiceCreateRequest,
   type ModelsServiceResponse,
+  type ModelsServiceUpdateRequest,
   serviceCategoryCrudCreate,
   serviceCategoryCrudDelete,
   serviceCategoryCrudGet,
   serviceCategoryCrudList,
   serviceCategoryCrudUpdate,
+  serviceCrudCreate,
+  serviceCrudDelete,
   serviceCrudGet,
+  serviceCrudUpdate,
 } from '@beauty-salon-frontend/api-client'
 import { match, P } from 'ts-pattern'
 import { outsideTheContract } from '../outside-the-contract'
@@ -32,7 +37,7 @@ import type { ServicesRead } from '../salons/salons-api'
 /*
  * The menu of a salon: the categories it sorts its services into, and the
  * services. Everybody reads it; the owner, a manager and an administrator
- * change the categories.
+ * change it.
  */
 
 /** No answer, or one that says nothing a person could act on */
@@ -269,6 +274,100 @@ export const removeCategory = async (
   return match(answer)
     .returnType<CategoryRemoval>()
     .with({ status: 204 }, () => ({ type: 'removed' }))
+    .with({ status: P.union(400, 404) }, () => NOT_FOUND)
+    .with({ status: 403 }, () => FORBIDDEN)
+    .with(UNANSWERED, unreadOf)
+    .exhaustive(outsideTheContract)
+}
+
+/**
+ * What came of a write of a service. Not found is the salon, for a new
+ * service, and the service, for a change.
+ */
+export type ServiceWrite =
+  | { type: 'written'; service: ModelsServiceResponse }
+  | { type: 'invalid'; values: RefusedValue[] }
+  | NotFound
+  | Forbidden
+  | Unread
+
+/** Adds a service to the menu of a salon, with its options. */
+export const addService = async (
+  salonId: string,
+  request: ModelsServiceCreateRequest,
+): Promise<ServiceWrite> => {
+  const answer = await serviceCrudCreate(salonId, request).catch(() => null)
+
+  return match(answer)
+    .returnType<ServiceWrite>()
+    .with({ status: 201 }, ({ data }) => ({
+      type: 'written',
+      service: data.data,
+    }))
+    .with({ status: 400 }, ({ data }) => ({
+      type: 'invalid',
+      values: refusedValuesOf(data),
+    }))
+    .with({ status: 404 }, () => NOT_FOUND)
+    .with({ status: 403 }, () => FORBIDDEN)
+    .with({ status: P.union(413, 415) }, () => FAILED)
+    .with(UNANSWERED, unreadOf)
+    .exhaustive(outsideTheContract)
+}
+
+/**
+ * Changes the values of a service that the request names; the others stay
+ * as they are. Options that are named take the place of all of them.
+ */
+export const changeService = async (
+  salonId: string,
+  serviceId: string,
+  request: ModelsServiceUpdateRequest,
+): Promise<ServiceWrite> => {
+  const answer = await serviceCrudUpdate(salonId, serviceId, request).catch(
+    () => null,
+  )
+
+  return match(answer)
+    .returnType<ServiceWrite>()
+    .with({ status: 200 }, ({ data }) => ({
+      type: 'written',
+      service: data.data,
+    }))
+    .with({ status: 400 }, ({ data }) => ({
+      type: 'invalid',
+      values: refusedValuesOf(data),
+    }))
+    .with({ status: 404 }, () => NOT_FOUND)
+    .with({ status: 403 }, () => FORBIDDEN)
+    .with({ status: P.union(413, 415) }, () => FAILED)
+    .with(UNANSWERED, unreadOf)
+    .exhaustive(outsideTheContract)
+}
+
+/** What came of the removal of a service. */
+export type ServiceRemoval =
+  | { type: 'removed' }
+  | { type: 'inUse' }
+  | NotFound
+  | Forbidden
+  | Unread
+
+/**
+ * Removes a service from the menu. A service that a package is made of, or
+ * that a booking not over yet has a line of, stays (409). One removed
+ * meanwhile is not found.
+ */
+export const removeService = async (
+  salonId: string,
+  serviceId: string,
+): Promise<ServiceRemoval> => {
+  const answer = await serviceCrudDelete(salonId, serviceId).catch(() => null)
+
+  return match(answer)
+    .returnType<ServiceRemoval>()
+    .with({ status: 204 }, () => ({ type: 'removed' }))
+    .with({ status: 409 }, () => ({ type: 'inUse' }))
     .with({ status: P.union(400, 404) }, () => NOT_FOUND)
     .with({ status: 403 }, () => FORBIDDEN)
     .with(UNANSWERED, unreadOf)

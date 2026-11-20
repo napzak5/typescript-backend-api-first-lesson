@@ -1,13 +1,14 @@
-import type {
+import {
   ModelsBookingRequirementType,
   ModelsPricingStrategyType,
   ModelsServiceAvailabilityType,
-  ModelsServiceCategoryResponse,
+  type ModelsServiceCategoryResponse,
   ModelsServiceOptionType,
-  ModelsServiceResponse,
+  type ModelsServiceResponse,
   ModelsServiceStatusType,
 } from '@beauty-salon-frontend/api-client'
 import { amountOf } from '../bookings/booking-format'
+import type { Option } from '../customers/customer-format'
 
 /*
  * How the menu is named and ordered on the screens: the words of the values
@@ -72,6 +73,49 @@ const OPTION_NAMES: Record<ModelsServiceOptionType, string> = {
 /** What an option of a service is: 「アドオン」. */
 export const optionTypeNameOf = (type: ModelsServiceOptionType): string =>
   OPTION_NAMES[type]
+
+/** The ways a price is decided, in the order of the contract */
+export const PRICINGS: readonly ModelsPricingStrategyType[] = Object.values(
+  ModelsPricingStrategyType,
+)
+
+/** Where a service may be in its life, in the order of the contract */
+export const SERVICE_STATUSES: readonly ModelsServiceStatusType[] =
+  Object.values(ModelsServiceStatusType)
+
+/** The days a service may be given on, in the order of the contract */
+export const AVAILABILITIES: readonly ModelsServiceAvailabilityType[] =
+  Object.values(ModelsServiceAvailabilityType)
+
+/** What a booking may require, in the order of the contract */
+export const REQUIREMENTS: readonly ModelsBookingRequirementType[] =
+  Object.values(ModelsBookingRequirementType)
+
+/** The kinds of an option, in the order of the contract */
+export const OPTION_TYPES: readonly ModelsServiceOptionType[] = Object.values(
+  ModelsServiceOptionType,
+)
+
+export const PRICING_OPTIONS: readonly Option[] = PRICINGS.map((value) => ({
+  value,
+  label: PRICING_NAMES[value],
+}))
+
+export const SERVICE_STATUS_OPTIONS: readonly Option[] = SERVICE_STATUSES.map(
+  (value) => ({ value, label: STATUS_NAMES[value] }),
+)
+
+export const AVAILABILITY_OPTIONS: readonly Option[] = AVAILABILITIES.map(
+  (value) => ({ value, label: AVAILABILITY_NAMES[value] }),
+)
+
+export const REQUIREMENT_OPTIONS: readonly Option[] = REQUIREMENTS.map(
+  (value) => ({ value, label: REQUIREMENT_NAMES[value] }),
+)
+
+export const OPTION_TYPE_OPTIONS: readonly Option[] = OPTION_TYPES.map(
+  (value) => ({ value, label: OPTION_NAMES[value] }),
+)
 
 /**
  * What a service is now, in a few words: whether it is switched on, and
@@ -211,4 +255,30 @@ export const nextDisplayOrderOf = (
   categories.reduce(
     (last, { displayOrder }) => Math.max(last, displayOrder + 1),
     0,
+  )
+
+/** Where a new service goes in the order of the menu: after the last. */
+export const nextSortOrderOf = (
+  services: readonly Pick<ModelsServiceResponse, 'sortOrder'>[],
+): number =>
+  services.reduce((last, { sortOrder }) => Math.max(last, sortOrder + 1), 0)
+
+/**
+ * The services a package may be made of: those of the salon that are no
+ * package, but the service itself, in the order of the menu.
+ */
+export const packagedChoicesOf = (
+  services: readonly ModelsServiceResponse[],
+  serviceId: string | null,
+): ModelsServiceResponse[] =>
+  services.filter(({ id, isPackage }) => !isPackage && id !== serviceId)
+
+/** The packages a service is one of the services of, in the order of the menu. */
+export const packagesOf = (
+  services: readonly ModelsServiceResponse[],
+  serviceId: string,
+): ModelsServiceResponse[] =>
+  services.filter(
+    ({ isPackage, packageServiceIds }) =>
+      isPackage && packageServiceIds.includes(serviceId),
   )
