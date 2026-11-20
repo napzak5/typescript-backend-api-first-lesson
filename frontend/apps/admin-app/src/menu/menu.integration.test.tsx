@@ -176,6 +176,9 @@ describe('the menu, against the API', () => {
       screen.queryByRole('link', { name: 'サービスを足す' }),
     ).not.toBeInTheDocument()
     expect(
+      screen.queryByRole('link', { name: 'まとめて変える' }),
+    ).not.toBeInTheDocument()
+    expect(
       within(
         screen.getByRole('navigation', { name: 'メインメニュー' }),
       ).getByRole('link', { name: 'メニュー' }),
