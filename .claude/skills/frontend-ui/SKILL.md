@@ -39,7 +39,7 @@ this one: a component is not done without its stories and its test.
 | The sales of a salon in the admin application: the checkout of a booking, the ledger of the sales, a sale with its payments, the form that records a payment, the receipt to print, the change of a sale, the refund of a payment and the voiding of a sale | `frontend/apps/admin-app/src/sales/` |
 | The ledger of the customers in the admin application: the ledger, a customer registered, shown and changed, the choice of the customer who referred another, the change of the preferences, the removal and the way back, the history and its versions, the points and their recording, the customers of a file, the merge, the exports, the requests to have the data erased | `frontend/apps/admin-app/src/customers/` |
 | The charts of the customers in the admin application: the chart, the form with the rows of the treatments had before, the search of the charts, the allergies of a customer with their form and their removal | `frontend/apps/admin-app/src/charts/` |
-| The treatment records in the admin application: the list, a record with its removal, the form with the rows of the products used, the part of the page of a booking; the products of a salon, read to the end | `frontend/apps/admin-app/src/treatments/`, `src/products/products-api.ts` |
+| The treatment records in the admin application: the list, a record with its removal, the form with the rows of the products used, the part of the page of a booking, the photos of a record with their form and their removal, the statistics over a period; the products of a salon, read to the end | `frontend/apps/admin-app/src/treatments/`, `src/products/products-api.ts` |
 | A file the API answers with, saved by the browser: its name, and the saving | `frontend/packages/io/src/libs/file/save-file.ts` (`fileNameOf`, `saveFile`) |
 | A form of the admin application that searches by a keyword kept in the address (salons, customers) | `frontend/apps/admin-app/src/components/keyword-search/`, `src/keyword.ts` |
 | The clock of a salon in the admin application: its day, its times of day, a moment that is typed on it | `frontend/apps/admin-app/src/salon-time.ts` |
@@ -1621,6 +1621,44 @@ booking).
 - **What a form records but does not do is said where it is recorded**:
   the products used move no stock, and the part of the form says that
   the stock is moved on the screens of the stock.
+
+### What a record holds by address, and what a period counts
+
+The photos of a treatment record and the statistics of the records are
+the example to read: `treatment-photos-screen.tsx` with
+`components/photo-form/` for the photos added, `components/treatment-photos/`
+for the part of the page of a record, `treatment-photos.ts` for what the
+form reads and what the answers say, and `treatment-statistics-screen.tsx`
+with `components/treatment-statistics/`.
+
+- **A file the API does not keep is an address**: the API keeps the
+  address of a photo, not the photo. The form says where the photo is put
+  first, and checks the address by the rule of the API (`z.httpUrl()`: a
+  web address of a domain name, 500 characters at most), so that what the
+  API refuses is said before it is sent. The image of a photo has an
+  empty `alt`: its caption names it, says what it shows and how it may be
+  used, and the link to the photo opens it in the same tab.
+- **A limit of rows is the room left**: a record holds twenty photos. The
+  form offers as many rows as there is room for, says how many are left
+  when no more can be added, and a record that is full shows why instead
+  of the form. The rows are added and taken away as the rows of a form
+  are (focus on the first control of a row that was added, on the button
+  that adds after one was taken away).
+- **A rule of the API that ties two controls is checked on the row**: a
+  photo shown outside the salon needs the consent of the customer. Both
+  checkboxes are offered, and the one that breaks the rule is told so
+  under it, as the API would.
+- **A 409 of a list of rows says which row**: the API refuses photos at
+  an address the record holds, or more than it has room for. The screen
+  reads the record again, says under its control the row whose address
+  is held now, or how many photos the record has room for now, and checks
+  the next attempt against what it read.
+- **A count over a period is read whenever it is shown**
+  (`staleTime: 0`), its days are in the query of the address
+  (`StatisticsPeriod`, shared with the statistics of a customer), and a
+  period in which nothing was written says so instead of a table of
+  zeros. What a count counts twice (a record of two categories counts in
+  both) is said under the table.
 
 ## Screens that a mailed link opens
 

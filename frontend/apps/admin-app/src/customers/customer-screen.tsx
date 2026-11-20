@@ -233,7 +233,12 @@ const UsePart = ({ salon, customer }: PartProps) => {
         </ButtonLink>
       }
     >
-      <StatisticsPeriod period={period} errors={errors} onSubmit={count} />
+      <StatisticsPeriod
+        period={period}
+        description='366 日まで集計できます。'
+        errors={errors}
+        onSubmit={count}
+      />
       <p>{`${periodNameOf(period)}の集計`}</p>
       {match(read.data)
         .with(undefined, () => (

@@ -1,4 +1,8 @@
-import type { ModelsSalonResponse } from '@beauty-salon-frontend/api-client'
+import type {
+  ModelsSalonResponse,
+  ModelsTreatmentPhotoResponse,
+  ModelsTreatmentRecordResponse,
+} from '@beauty-salon-frontend/api-client'
 import { useSession } from '@beauty-salon-frontend/session'
 import {
   Alert,
@@ -8,27 +12,32 @@ import {
   useNotifications,
 } from '@beauty-salon-frontend/ui'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { match } from 'ts-pattern'
 import {
   bookingHrefOf,
   customerHrefOf,
   treatmentChangeHrefOf,
+  treatmentPhotosHrefOf,
   treatmentsHrefOf,
 } from '../navigation'
 import { NOT_FOUND } from '../reading'
 import { dayNameOf } from '../salon-time'
 import { WithSalon } from '../salons/with-salon'
+import { TreatmentPhotos } from './components/treatment-photos/treatment-photos'
 import { TreatmentRecord } from './components/treatment-record/treatment-record'
 import {
   afterTreatmentRemoval,
   customerCalled,
   mayRemoveTreatments,
 } from './treatment-format'
+import { afterPhotoRemoval, photoNameOf } from './treatment-photos'
 import {
   removeTreatment,
+  removeTreatmentPhoto,
   TREATMENT_LISTS,
+  type TreatmentRead,
   treatmentKeyOf,
 } from './treatments-api'
 import { type TreatmentContext, WithTreatment } from './with-treatment'
@@ -36,6 +45,93 @@ import { type TreatmentContext, WithTreatment } from './with-treatment'
 const TITLE = '施術記録の内容'
 
 type RecordPartProps = TreatmentContext & { salon: ModelsSalonResponse }
+
+type PhotosPartProps = {
+  salon: ModelsSalonResponse
+  record: ModelsTreatmentRecordResponse
+}
+
+/**
+ * The photos of a record, with the way to add some and to take one away
+ * after a dialog that asks first: whoever writes records may do both. What
+ * was taken away, or what changed meanwhile, closes the dialog: the record
+ * is read again, and the heading of the part takes the focus, as the
+ * button that was pressed is gone.
+ */
+const PhotosPart = ({ salon, record }: PhotosPartProps) => {
+  const queryClient = useQueryClient()
+  const { notify } = useNotifications()
+  const heading = useRef<HTMLHeadingElement>(null)
+  const [removing, setRemoving] = useState<ModelsTreatmentPhotoResponse>()
+  /** What went wrong with an attempt that can be made again: said in the dialog */
+  const [message, setMessage] = useState<string>()
+  /** What changed meanwhile: said under the heading */
+  const [refusal, setRefusal] = useState<string>()
+  /** How many times the dialog closed on what it changed: the heading takes the focus each time */
+  const [moves, setMoves] = useState(0)
+  const key = treatmentKeyOf(record.id)
+
+  useLayoutEffect(() => {
+    if (moves > 0) {
+      heading.current?.focus()
+    }
+  }, [moves])
+
+  const removal = useMutation({
+    mutationFn: (photo: ModelsTreatmentPhotoResponse) =>
+      removeTreatmentPhoto(record.id, photo.id),
+    onMutate: () => setMessage(undefined),
+    onSuccess: (outcome, photo) =>
+      match(afterPhotoRemoval(outcome, photoNameOf(photo)))
+        .with({ type: 'done' }, ({ message: said }) => {
+          setRemoving(undefined)
+          setRefusal(undefined)
+          setMoves((count) => count + 1)
+          const read: TreatmentRead = {
+            type: 'found',
+            record: {
+              ...record,
+              photos: record.photos.filter(({ id }) => id !== photo.id),
+            },
+          }
+          // Shown at once, and read again for the moment it was changed at
+          queryClient.setQueryData(key, read)
+          void queryClient.invalidateQueries({ queryKey: key })
+          queryClient.removeQueries({ queryKey: TREATMENT_LISTS })
+          notify({ tone: 'success', message: said })
+        })
+        .with({ type: 'again' }, ({ message: said }) => setMessage(said))
+        .with({ type: 'refused' }, ({ message: said }) => {
+          setRemoving(undefined)
+          setRefusal(said)
+          setMoves((count) => count + 1)
+          void queryClient.invalidateQueries({ queryKey: key })
+        })
+        .exhaustive(),
+  })
+
+  return (
+    <TreatmentPhotos
+      photos={record.photos}
+      addHref={treatmentPhotosHrefOf(salon.id, record.id)}
+      refusal={refusal}
+      headingRef={heading}
+      removing={removing}
+      onOpen={(photo) => {
+        setMessage(undefined)
+        setRemoving(photo)
+      }}
+      onClose={() => setRemoving(undefined)}
+      message={message}
+      pending={removal.isPending}
+      onRemove={() => {
+        if (removing !== undefined) {
+          removal.mutate(removing)
+        }
+      }}
+    />
+  )
+}
 
 /**
  * A treatment record, with the way to change it, and, for the owner, a
@@ -127,6 +223,7 @@ const RecordPart = ({
           </>
         }
       />
+      <PhotosPart salon={salon} record={record} />
       {removable && (
         <Dialog
           open={removing}

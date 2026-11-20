@@ -1,6 +1,8 @@
 import type {
   ModelsProductResponse,
+  ModelsTreatmentPhotoResponse,
   ModelsTreatmentRecordResponse,
+  ModelsTreatmentStatisticsResponse,
 } from '@beauty-salon-frontend/api-client'
 import {
   aBooking,
@@ -113,3 +115,58 @@ export const aTreatment = (
   updatedAt: '2026-11-20T03:30:00.000Z',
   ...changes,
 })
+
+/** A photo of the record of the examples, with what it changes. */
+export const aPhoto = (
+  changes: Partial<ModelsTreatmentPhotoResponse> = {},
+): ModelsTreatmentPhotoResponse => ({
+  id: 'a9c1e3f5-7b8d-4e0f-8a4c-6d8f0a2c4e79',
+  photoType: 'before',
+  photoUrl: 'https://photos.example.com/treatments/before-side.jpg',
+  thumbnailUrl: null,
+  angle: '側面',
+  description: '毛先の色落ち',
+  isPublic: false,
+  customerConsent: true,
+  sortOrder: 0,
+  ...changes,
+})
+
+/** The photos of a record, before and after the treatment */
+export const photos: ModelsTreatmentPhotoResponse[] = [
+  aPhoto(),
+  aPhoto({
+    id: 'b0d2f4a6-8c9e-4f1a-9b5d-7e9a1b3d5f80',
+    photoType: 'after',
+    photoUrl: 'https://photos.example.com/treatments/after-front.jpg',
+    thumbnailUrl: 'https://photos.example.com/treatments/after-front-small.jpg',
+    angle: '正面',
+    description: null,
+    isPublic: true,
+    sortOrder: 1,
+  }),
+  aPhoto({
+    id: 'c1e3a5b7-9d0f-4a2b-8c6e-8f0b2c4e6a91',
+    photoType: 'other',
+    photoUrl: 'https://photos.example.com/treatments/scalp.jpg',
+    angle: null,
+    description: null,
+    customerConsent: false,
+    sortOrder: 2,
+  }),
+]
+
+/** The records of a month at the salon of the examples, counted */
+export const statistics: ModelsTreatmentStatisticsResponse = {
+  totalTreatments: 12,
+  treatmentsByCategory: [
+    { category: 'cut', count: 9 },
+    { category: 'color', count: 5 },
+  ],
+  averageProcessingTime: 72.5,
+  topServices: [
+    { serviceId: cut?.id ?? '', count: 9 },
+    { serviceId: color?.id ?? '', count: 5 },
+    { serviceId: '0f1e2d3c-4b5a-4968-8778-695a4b3c2d1e', count: 1 },
+  ],
+}

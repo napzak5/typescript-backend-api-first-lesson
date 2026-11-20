@@ -88,6 +88,10 @@ const CATEGORY_NAMES: Record<ModelsServiceCategoryType, string> = {
   other: 'その他',
 }
 
+/** A kind of service: 「カラー」. */
+export const categoryNameOf = (category: ModelsServiceCategoryType): string =>
+  CATEGORY_NAMES[category]
+
 /** The kinds of service, in the order of the contract. */
 export const CATEGORIES: readonly ModelsServiceCategoryType[] = Object.values(
   ModelsServiceCategoryType,
