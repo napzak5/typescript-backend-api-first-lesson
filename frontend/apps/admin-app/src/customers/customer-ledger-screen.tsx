@@ -21,6 +21,7 @@ import { useState } from 'react'
 import { useParams, useSearchParams } from 'react-router'
 import { match } from 'ts-pattern'
 import {
+  chartSearchHrefOf,
   customerEntryHrefOf,
   customerHrefOf,
   customerImportHrefOf,
@@ -231,6 +232,9 @@ const CustomerLedger = ({ salon }: CustomerLedgerProps) => {
               variant='secondary'
             >
               CSV から登録する
+            </ButtonLink>
+            <ButtonLink href={chartSearchHrefOf(salon.id)} variant='secondary'>
+              カルテを探す
             </ButtonLink>
             {mayKeep && (
               <Button

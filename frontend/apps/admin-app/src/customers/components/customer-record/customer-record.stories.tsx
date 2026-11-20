@@ -12,6 +12,7 @@ const meta: Meta<typeof CustomerRecord> = {
     changeHref: `/salons/${salon.id}/customers/${aCustomer().id}/edit`,
     bookingHref: `/salons/${salon.id}/bookings/new?date=2026-11-20&customerId=${aCustomer().id}`,
     pointsHref: `/salons/${salon.id}/customers/${aCustomer().id}/points`,
+    chartHref: `/salons/${salon.id}/customers/${aCustomer().id}/chart`,
     customerHref: (customerId) => `/salons/${salon.id}/customers/${customerId}`,
     referrer: undefined,
   },
