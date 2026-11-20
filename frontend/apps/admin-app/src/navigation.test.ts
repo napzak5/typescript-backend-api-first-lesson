@@ -14,6 +14,7 @@ import {
   customerPreferencesHrefOf,
   customersHrefOf,
   customerVersionHrefOf,
+  hoursChangeHrefOf,
   menuHrefOf,
   navigationFor,
   pointEntryHrefOf,
@@ -394,6 +395,7 @@ describe('navigationFor', () => {
   it.each<[string, Role, string]>([
     ['the settings', 'staff', SETTINGS],
     ['the change of the information', 'manager', `${SETTINGS}/edit`],
+    ['the change of the hours', 'owner', `${SETTINGS}/hours`],
   ])(
     'should mark the settings as the screen of %s for a member (%s)',
     (_case, role, pathname) => {
@@ -406,10 +408,11 @@ describe('navigationFor', () => {
   )
 
   it('should write the addresses of the settings', () => {
-    expect([settingsHrefOf(SALON_ID), salonChangeHrefOf(SALON_ID)]).toEqual([
-      SETTINGS,
-      `${SETTINGS}/edit`,
-    ])
+    expect([
+      settingsHrefOf(SALON_ID),
+      salonChangeHrefOf(SALON_ID),
+      hoursChangeHrefOf(SALON_ID),
+    ]).toEqual([SETTINGS, `${SETTINGS}/edit`, `${SETTINGS}/hours`])
   })
 
   it('should write the addresses of the shifts', () => {

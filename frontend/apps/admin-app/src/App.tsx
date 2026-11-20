@@ -59,6 +59,7 @@ import { RefundScreen } from './sales/refund-screen'
 import { SaleChangeScreen } from './sales/sale-change-screen'
 import { SaleScreen } from './sales/sale-screen'
 import { SalesLedgerScreen } from './sales/sales-ledger-screen'
+import { HoursChangeScreen } from './settings/hours-change-screen'
 import { SalonChangeScreen } from './settings/salon-change-screen'
 import { SettingsScreen } from './settings/settings-screen'
 import { ScheduleChangeScreen } from './shifts/schedule-change-screen'
@@ -367,6 +368,10 @@ export const App = () => {
               <Route
                 path='/salons/:salonId/settings/edit'
                 element={<SalonChangeScreen />}
+              />
+              <Route
+                path='/salons/:salonId/settings/hours'
+                element={<HoursChangeScreen />}
               />
               <Route path={OWN_PROFILE_PATH} element={<OwnProfileScreen />} />
               <Route

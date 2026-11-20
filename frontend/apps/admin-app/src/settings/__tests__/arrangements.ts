@@ -60,3 +60,39 @@ export const dayOffArranged = async (
     ),
   )
 }
+
+const hoursSchema = z.tuple([z.object({ businessHours: z.unknown() })])
+
+/** The hours of the week of a salon, as the database keeps them. */
+export const storedWeekOf = async (name: string): Promise<unknown> =>
+  hoursSchema.parse(
+    await testApi().query(
+      'select "businessHours" from salons where name = $1',
+      [name],
+    ),
+  )[0].businessHours
+
+const calendarSchema = z.array(
+  z.object({
+    date: z.string(),
+    dayOfWeek: z.string(),
+    openTime: z.string().nullable(),
+    closeTime: z.string().nullable(),
+    isHoliday: z.boolean(),
+    holidayName: z.string().nullable(),
+    notes: z.string().nullable(),
+  }),
+)
+
+/** The dates of the calendar of a salon, as the database keeps them, in their order. */
+export const storedCalendarOf = async (name: string) =>
+  calendarSchema.parse(
+    await testApi().query(
+      `select o.date::text, o."dayOfWeek"::text, o."openTime"::text, o."closeTime"::text,
+         o."isHoliday", o."holidayName", o.notes
+       from opening_hours o join salons s on s.id = o."salonId"
+       where s.name = $1
+       order by o.date`,
+      [name],
+    ),
+  )

@@ -149,6 +149,10 @@ export const settingsHrefOf = (salonId: string): string =>
 export const salonChangeHrefOf = (salonId: string): string =>
   `${settingsHrefOf(salonId)}/edit`
 
+/** The screen that changes the hours of a salon: its week and its calendar. */
+export const hoursChangeHrefOf = (salonId: string): string =>
+  `${settingsHrefOf(salonId)}/hours`
+
 /** The menu of a salon: its categories and their services. */
 export const menuHrefOf = (salonId: string): string => `/salons/${salonId}/menu`
 
