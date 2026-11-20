@@ -312,7 +312,7 @@ describe('exporting customers, against the API', () => {
       // Assert
       expect(
         within(part('ご本人からの請求')).getByText(
-          'ご本人からのデータの開示の請求には、オーナーとマネージャーが応えます。',
+          'ご本人からのデータの開示と消去の請求には、オーナーとマネージャーが応えます。',
         ),
       ).toBeVisible()
       expect(

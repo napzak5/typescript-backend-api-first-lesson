@@ -1,5 +1,4 @@
 import {
-  customerCrudGetDeletionRequest,
   customerCrudMerge,
   type ModelsCustomerResponse,
   type ModelsMedicalChartResponse,
@@ -16,6 +15,7 @@ import {
   unreadOf,
   whyUnread,
 } from '../reading'
+import { readErasureRequest } from './customer-erasure-api'
 import type {
   MergeAttempt,
   MergePair,
@@ -59,22 +59,19 @@ export const mergeKeyOf = (customerId: string, otherId: string): string[] => [
 const readErasureAsked = async (
   customerId: string,
 ): Promise<{ type: 'read'; asked: boolean } | Unread> => {
-  const answer = await customerCrudGetDeletionRequest(customerId).catch(
-    () => null,
-  )
+  const read = await readErasureRequest(customerId)
 
   return (
-    match(answer)
+    match(read)
       .returnType<{ type: 'read'; asked: boolean } | Unread>()
-      .with({ status: 200 }, ({ data }) => ({
+      .with({ type: 'read' }, ({ request }) => ({
         type: 'read',
-        asked: data.data.status === 'pending',
+        asked: request?.status === 'pending',
       }))
-      .with({ status: 404 }, () => ({ type: 'read', asked: false }))
       // The screen offers the merge only to who may read the requests
-      .with({ status: P.union(400, 403) }, () => FAILED)
-      .with(UNANSWERED, unreadOf)
-      .exhaustive(outsideTheContract)
+      .with({ type: 'forbidden' }, () => FAILED)
+      .with({ type: P.union('tooManyRequests', 'failed') }, (unread) => unread)
+      .exhaustive()
   )
 }
 
