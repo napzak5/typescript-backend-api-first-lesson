@@ -92,7 +92,7 @@ const errorAt = (
  * A number as a person types it: digits of full width count. Nothing is no
  * number; what is not written as one is `undefined`.
  */
-const numberOf = (
+export const numberOf = (
   text: string,
   decimals: number,
 ): number | null | undefined => {

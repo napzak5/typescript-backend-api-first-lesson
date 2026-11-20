@@ -8,9 +8,14 @@
   background-color: var(--color-surface);
 }
 
+/*
+ * The heading, and the buttons below it on a narrow screen: beside it,
+ * they would leave the heading a few characters of width and break it
+ * between them. Where there is room, the buttons stand beside it.
+ */
 .head {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr);
   align-items: center;
   gap: var(--space-3);
 }
@@ -19,8 +24,16 @@
   font-size: var(--font-size-large);
 }
 
+/* The buttons side by side, each as wide as its words */
 .actions {
   display: grid;
   grid-auto-flow: column;
+  justify-content: start;
   gap: var(--space-2);
+}
+
+@media (min-width: 40rem) {
+  .head {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
 }

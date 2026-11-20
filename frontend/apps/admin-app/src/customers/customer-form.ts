@@ -94,9 +94,10 @@ const MAX_LENGTHS: Record<string, number> = {
 
 const UNLISTED = '選択肢から選んでください。'
 
-const tooLong = (most: number): string => `${most} 文字以内で入力してください。`
+export const tooLong = (most: number): string =>
+  `${most} 文字以内で入力してください。`
 
-const nameError = (name: string, missing: string): string | undefined =>
+export const nameError = (name: string, missing: string): string | undefined =>
   match(name.length)
     .with(0, () => missing)
     .when(
@@ -107,7 +108,7 @@ const nameError = (name: string, missing: string): string | undefined =>
 
 const emailSchema = z.email()
 
-const emailError = (email: string): string | undefined =>
+export const emailError = (email: string): string | undefined =>
   match(email)
     .with('', () => 'メールアドレスを入力してください。')
     .when(
@@ -122,15 +123,15 @@ const emailError = (email: string): string | undefined =>
     .otherwise(() => undefined)
 
 /** What the API takes for a phone number: digits with the usual separators, ten digits or more. */
-const isPhoneNumber = (text: string): boolean =>
+export const isPhoneNumber = (text: string): boolean =>
   text.length <= MAX_PHONE_LENGTH &&
   /^[\d\s\-+()]+$/.test(text) &&
   text.replace(/\D/g, '').length >= MIN_PHONE_DIGITS
 
-const PHONE_MALFORMED =
+export const PHONE_MALFORMED =
   '電話番号は、数字とハイフンで、市外局番から入力してください（例: 03-1234-5678）。'
 
-const phoneError = (phoneNumber: string): string | undefined =>
+export const phoneError = (phoneNumber: string): string | undefined =>
   match(phoneNumber)
     .with('', () => '電話番号を入力してください。')
     .when(
