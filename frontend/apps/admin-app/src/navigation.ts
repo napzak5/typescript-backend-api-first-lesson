@@ -84,6 +84,12 @@ export const customerChangeHrefOf = (
   customerId: string,
 ): string => `${customerHrefOf(salonId, customerId)}/edit`
 
+/** The screen that changes what a customer wishes for. */
+export const customerPreferencesHrefOf = (
+  salonId: string,
+  customerId: string,
+): string => `${customerHrefOf(salonId, customerId)}/preferences`
+
 /** The screen that puts a booking into the ledger of a salon for a customer, opened on a day. */
 export const bookingOfCustomerHrefOf = (
   salonId: string,

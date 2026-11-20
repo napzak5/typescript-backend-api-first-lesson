@@ -28,6 +28,7 @@ import { DayBookingsScreen } from './bookings/day-bookings-screen'
 import { CustomerChangeScreen } from './customers/customer-change-screen'
 import { CustomerEntryScreen } from './customers/customer-entry-screen'
 import { CustomerLedgerScreen } from './customers/customer-ledger-screen'
+import { CustomerPreferencesScreen } from './customers/customer-preferences-screen'
 import { CustomerScreen } from './customers/customer-screen'
 import { HomeScreen } from './home-screen'
 import { navigationFor } from './navigation'
@@ -189,6 +190,10 @@ export const App = () => {
               <Route
                 path='/salons/:salonId/customers/:customerId/edit'
                 element={<CustomerChangeScreen />}
+              />
+              <Route
+                path='/salons/:salonId/customers/:customerId/preferences'
+                element={<CustomerPreferencesScreen />}
               />
               <Route
                 path={SECURITY_PATH}

@@ -4,11 +4,18 @@ import { aCustomer } from '../bookings/components/examples'
 import {
   afterCustomerWrite,
   type CustomerWriteAttempt,
+  NO_REFERRER,
   PREFERENCE_NOTES,
   PREFERRED_SERVICES,
+  type Referrer,
   readCustomerChange,
   readCustomerEntry,
+  referrerIdOf,
+  referrerNameOf,
 } from './customer-form'
+
+/** A customer of the ledger who referred others */
+const REFERRER_ID = '7c1e4b9a-3d52-4f86-a0b7-9e2d6c8f1a45'
 
 const TODAY = '2026-11-20'
 
@@ -34,6 +41,7 @@ const FILLED: [string, string][] = [
   ['isActive', 'on'],
   ['tags', ''],
   ['referralCode', ''],
+  ['referredBy', ''],
   [PREFERENCE_NOTES, ''],
   ['hairType', ''],
   ['hairThickness', ''],
@@ -78,6 +86,7 @@ const formOfCustomer = (
       membershipTier: customer.membershipTier,
       customerStatus: customer.customerStatus,
       tags: customer.tags.join('、'),
+      referredBy: customer.referredBy ?? '',
       ...values,
     },
     checked,
@@ -124,6 +133,17 @@ describe('readCustomerEntry', () => {
         scalpCondition: null,
         customerStatus: 'active',
       },
+    })
+  })
+
+  it('should read the customer who referred the new one, as the form holds them', () => {
+    // Act
+    const read = readCustomerEntry(formOf({ referredBy: REFERRER_ID }), TODAY)
+
+    // Assert
+    expect(read).toMatchObject({
+      type: 'valid',
+      request: { referredBy: REFERRER_ID },
     })
   })
 
@@ -368,6 +388,45 @@ describe('readCustomerChange', () => {
     ).toEqual({ type: 'unchanged' })
   })
 
+  it('should send the customer who referred them when another was chosen, and nothing else', () => {
+    // Arrange
+    const referred = aCustomer({ ...customer, referredBy: REFERRER_ID })
+    const other = '2b8f5d1c-6e94-4a37-b1c0-8d4e7f2a9b63'
+
+    // Act, Assert
+    expect(
+      readCustomerChange(
+        formOfCustomer(referred, { referredBy: other }),
+        referred,
+        TODAY,
+      ),
+    ).toEqual({ type: 'valid', request: { referredBy: other } })
+  })
+
+  it('should send no referrer when the one they had was taken away', () => {
+    // Arrange
+    const referred = aCustomer({ ...customer, referredBy: REFERRER_ID })
+
+    // Act, Assert
+    expect(
+      readCustomerChange(
+        formOfCustomer(referred, { referredBy: '' }),
+        referred,
+        TODAY,
+      ),
+    ).toEqual({ type: 'valid', request: { referredBy: null } })
+  })
+
+  it('should ask for nothing when the referrer is the one the customer has', () => {
+    // Arrange
+    const referred = aCustomer({ ...customer, referredBy: REFERRER_ID })
+
+    // Act, Assert
+    expect(
+      readCustomerChange(formOfCustomer(referred), referred, TODAY),
+    ).toEqual({ type: 'unchanged' })
+  })
+
   it('should take an address of mail written in capitals as the same', () => {
     // Act, Assert
     expect(
@@ -546,8 +605,33 @@ describe('afterCustomerWrite', () => {
       },
     ],
     [
-      'a value the form has no control for',
+      'a referrer who is not in the ledger',
       { type: 'invalid', values: [{ field: 'referredBy', rule: 'not_found' }] },
+      {
+        message: undefined,
+        errors: {
+          referredBy:
+            '選んだお客様は、台帳にいません。紹介元を選び直すか、外してください。',
+        },
+      },
+    ],
+    [
+      'the customer themselves as their referrer',
+      { type: 'invalid', values: [{ field: 'referredBy', rule: 'circular' }] },
+      {
+        message: undefined,
+        errors: {
+          referredBy:
+            'お客様ご自身は、紹介元に選べません。ほかのお客様を選んでください。',
+        },
+      },
+    ],
+    [
+      'a value the form has no control for',
+      {
+        type: 'invalid',
+        values: [{ field: 'loyaltyPoints', rule: 'unrecognized_keys' }],
+      },
       {
         message: '入力した内容を確かめて、もう一度お試しください。',
         errors: {},
@@ -609,5 +693,29 @@ describe('afterCustomerWrite', () => {
       message,
       errors: {},
     })
+  })
+})
+
+describe('the referrer', () => {
+  it.each<[string, Referrer, string, string]>([
+    ['nobody', NO_REFERRER, '', 'なし'],
+    [
+      'a customer of the ledger',
+      { type: 'customer', id: REFERRER_ID, name: '山田 花子' },
+      REFERRER_ID,
+      '山田 花子 様',
+    ],
+    [
+      'a customer who was removed',
+      { type: 'gone', id: REFERRER_ID },
+      REFERRER_ID,
+      '台帳にいないお客様',
+    ],
+  ])('should hold and name %s', (_case, referrer, id, name) => {
+    // Act, Assert
+    expect([referrerIdOf(referrer), referrerNameOf(referrer)]).toEqual([
+      id,
+      name,
+    ])
   })
 })

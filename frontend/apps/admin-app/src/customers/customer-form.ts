@@ -24,6 +24,7 @@ import {
   TIERS,
 } from './customer-format'
 import { tagsIn } from './customer-ledger'
+import { customerNameOf } from './customers-api'
 
 /*
  * The form of a customer of the ledger: what it sends to register one and
@@ -37,8 +38,41 @@ export const PREFERRED_SERVICES = 'preferences.preferredServices'
 /** The control of what else a customer wants a salon to know */
 export const PREFERENCE_NOTES = 'preferences.notes'
 
-/** What the form holds: every property of a new customer but the one who referred them, which is chosen elsewhere */
-type Whole = Omit<ModelsCustomerCreateRequest, 'referredBy'>
+/** The control of the customer who referred this one: their ID, chosen from the ledger */
+export const REFERRER = 'referredBy'
+
+/** Who referred a customer, as the form shows it and sends it. */
+export type Referrer =
+  | { type: 'none' }
+  /** A customer of the ledger, by name */
+  | { type: 'customer'; id: string; name: string }
+  /** A customer who was removed from the ledger since: the ledger keeps their ID */
+  | { type: 'gone'; id: string }
+
+export const NO_REFERRER: Referrer = { type: 'none' }
+
+/** A customer of the ledger as the referrer of another, named as the ledger names them. */
+export const referrerOf = (customer: ModelsCustomerResponse): Referrer => ({
+  type: 'customer',
+  id: customer.id,
+  name: customerNameOf(customer),
+})
+
+/** What the control of the referrer holds: their ID, or nothing. */
+export const referrerIdOf = (referrer: Referrer): string =>
+  referrer.type === 'none' ? '' : referrer.id
+
+/** How a referrer is named: 「山田 花子 様」. */
+export const referrerNameOf = (referrer: Referrer): string =>
+  match(referrer)
+    .returnType<string>()
+    .with({ type: 'none' }, () => 'なし')
+    .with({ type: 'customer' }, ({ name }) => `${name} 様`)
+    .with({ type: 'gone' }, () => '台帳にいないお客様')
+    .exhaustive()
+
+/** What the form holds: every property of a customer */
+type Whole = ModelsCustomerCreateRequest
 
 const MAX_NAME_LENGTH = 100
 const MAX_EMAIL_LENGTH = 255
@@ -236,6 +270,7 @@ const readWhole = (values: FormData, today: string): Read<Whole> => {
       internalNotes: optional('internalNotes'),
       tags: tagsIn(textOf(values, 'tags')),
       referralCode: optional('referralCode'),
+      referredBy: optional(REFERRER),
       allowMarketing: values.has('allowMarketing'),
       allowSms: values.has('allowSms'),
       allowEmail: values.has('allowEmail'),
@@ -248,20 +283,11 @@ const readWhole = (values: FormData, today: string): Read<Whole> => {
   }
 }
 
-/**
- * A new customer, from the form: nobody referred them yet. Who did is
- * chosen from the ledger once they are in it.
- */
+/** A new customer, from the form. */
 export const readCustomerEntry = (
   values: FormData,
   today: string,
-): Read<ModelsCustomerCreateRequest> => {
-  const read = readWhole(values, today)
-
-  return read.type === 'invalid'
-    ? read
-    : { type: 'valid', request: { ...read.request, referredBy: null } }
-}
+): Read<ModelsCustomerCreateRequest> => readWhole(values, today)
 
 /** A text of the ledger as the form reads it back: without the spaces around it, nothing as `null`. */
 const shownText = (text: string | null): string | null =>
@@ -339,6 +365,9 @@ const changesOf = (
   ...(sent.referralCode === shownText(shown.referralCode)
     ? {}
     : { referralCode: sent.referralCode }),
+  ...(sent.referredBy === shown.referredBy
+    ? {}
+    : { referredBy: sent.referredBy }),
   ...(sent.allowMarketing === shown.allowMarketing
     ? {}
     : { allowMarketing: sent.allowMarketing }),
@@ -440,6 +469,7 @@ const CONTROLS: readonly string[] = [
   'isActive',
   'tags',
   'referralCode',
+  REFERRER,
   PREFERRED_SERVICES,
   PREFERENCE_NOTES,
   'hairType',
@@ -452,17 +482,34 @@ const CONTROLS: readonly string[] = [
   'allowMarketing',
 ]
 
-/** What is said at a control of a value the API refused. */
-const messageAt = (control: string): string =>
-  control === 'birthDate'
-    ? BIRTH_DATE_OUT_OF_RANGE
-    : 'この値は受け付けられませんでした。入力を確かめてください。'
+/**
+ * What is said at a control of a value the API refused, for the rule it
+ * broke. A referrer is a customer who is not in the ledger (removed while
+ * the form was open), or the customer themselves.
+ */
+const messageAt = (control: string, rule: string): string =>
+  match(control)
+    .with('birthDate', () => BIRTH_DATE_OUT_OF_RANGE)
+    .with(REFERRER, () =>
+      rule === 'circular'
+        ? 'お客様ご自身は、紹介元に選べません。ほかのお客様を選んでください。'
+        : '選んだお客様は、台帳にいません。紹介元を選び直すか、外してください。',
+    )
+    .otherwise(
+      () => 'この値は受け付けられませんでした。入力を確かめてください。',
+    )
 
 const DUPLICATES: Record<'email' | 'referralCode', string> = {
   email:
     'このメールアドレスのお客様が、すでに台帳にいます。台帳で探すか、別のメールアドレスを入力してください。',
   referralCode:
     'この紹介コードは、ほかのお客様が使っています（台帳から削除したお客様も含みます）。別のコードを入力してください。',
+}
+
+/** What a form of the ledger says when the API refuses the account: it no longer belongs to a salon. */
+export const CANNOT_HANDLE_CUSTOMERS: FormSays = {
+  message: 'このアカウントでは、顧客台帳を扱えません。',
+  errors: {},
 }
 
 /** Which write a form makes: the words of its failure differ. */
@@ -489,17 +536,20 @@ export const afterCustomerWrite = (
   match(outcome)
     .returnType<FormSays>()
     .with({ type: 'invalid' }, ({ values }) => {
-      const controls = values
-        .map(({ field }) => controlOf(field))
-        .filter((control) => CONTROLS.includes(control))
+      const said = values
+        .map(({ field, rule }) => ({ control: controlOf(field), rule }))
+        .filter(({ control }) => CONTROLS.includes(control))
 
       return {
         message:
-          controls.length === 0
+          said.length === 0
             ? '入力した内容を確かめて、もう一度お試しください。'
             : undefined,
+        // The first thing the API says about a control is the one to act on
         errors: Object.fromEntries(
-          controls.toReversed().map((control) => [control, messageAt(control)]),
+          said
+            .toReversed()
+            .map(({ control, rule }) => [control, messageAt(control, rule)]),
         ),
       }
     })
@@ -507,10 +557,7 @@ export const afterCustomerWrite = (
       message: undefined,
       errors: { [field]: DUPLICATES[field] },
     }))
-    .with({ type: 'forbidden' }, () => ({
-      message: 'このアカウントでは、顧客台帳を扱えません。',
-      errors: {},
-    }))
+    .with({ type: 'forbidden' }, () => CANNOT_HANDLE_CUSTOMERS)
     .with({ type: 'tooManyRequests' }, () => TOO_MANY_REQUESTS)
     .with({ type: 'failed' }, () => ({
       message: FAILED_WRITES[write],

@@ -1,11 +1,27 @@
 import type { ModelsCustomerResponse } from '@beauty-salon-frontend/api-client'
-import { Link } from '@beauty-salon-frontend/ui'
+import { Button, Link } from '@beauty-salon-frontend/ui'
+import { match } from 'ts-pattern'
 import {
   countOf,
   PagedTable,
 } from '../../../components/paged-table/paged-table'
 import type { More } from '../../../pages'
 import { customerKanaOf, customerNameOf } from '../../customers-api'
+
+/**
+ * How a customer is chosen by their name: a link that leads on (to the
+ * next step of a booking), or a button that hands the customer over (to a
+ * form that stays open). The customer the form is about is found too, and
+ * cannot be chosen: they are named as such.
+ */
+type ChooseCustomer =
+  | { type: 'link'; hrefOf: (customer: ModelsCustomerResponse) => string }
+  | {
+      type: 'button'
+      onChoose: (customer: ModelsCustomerResponse) => void
+      /** The ID of the customer who cannot be chosen; `undefined` for none */
+      excluded: string | undefined
+    }
 
 export type CustomerChoicesProps = {
   /** The customers that were read so far, in the order of the API; at least one */
@@ -15,21 +31,21 @@ export type CustomerChoicesProps = {
   more: More
   /** Asks for the customers that come next */
   onMore: () => void
-  /** Where choosing a customer leads */
-  customerHref: (customer: ModelsCustomerResponse) => string
+  /** How a customer is chosen */
+  choose: ChooseCustomer
 }
 
 /**
- * The customers that were found, to choose the one a booking is for. The
- * name leads on; the kana, the phone number and the address of mail tell
- * two customers of one name apart.
+ * The customers that were found, to choose one of: the one a booking is
+ * for, the one who referred another. The name chooses; the kana, the phone
+ * number and the address of mail tell two customers of one name apart.
  */
 export const CustomerChoices = ({
   customers,
   total,
   more,
   onMore,
-  customerHref,
+  choose,
 }: CustomerChoicesProps) => (
   <PagedTable
     caption='見つかったお客様'
@@ -37,9 +53,22 @@ export const CustomerChoices = ({
       {
         key: 'name',
         header: 'お名前',
-        cell: (customer) => (
-          <Link href={customerHref(customer)}>{customerNameOf(customer)}</Link>
-        ),
+        cell: (customer) =>
+          match(choose)
+            .with({ type: 'link' }, ({ hrefOf }) => (
+              <Link href={hrefOf(customer)}>{customerNameOf(customer)}</Link>
+            ))
+            .with(
+              { type: 'button' },
+              ({ excluded }) => customer.id === excluded,
+              () => `${customerNameOf(customer)}（このお客様）`,
+            )
+            .with({ type: 'button' }, ({ onChoose }) => (
+              <Button size='small' onClick={() => onChoose(customer)}>
+                {customerNameOf(customer)}
+              </Button>
+            ))
+            .exhaustive(),
       },
       { key: 'kana', header: 'フリガナ', cell: customerKanaOf },
       {

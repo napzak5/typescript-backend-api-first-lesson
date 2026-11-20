@@ -1,0 +1,62 @@
+{
+  "name": "@beauty-salon-frontend/preferences",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "@beauty-salon-frontend/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "scripts": {
+    "dev": "NODE_ENV=development rslib build --watch",
+    "build:dev": "NODE_ENV=development rslib build",
+    "build:test": "NODE_ENV=test rslib build",
+    "build:stg": "NODE_ENV=staging rslib build",
+    "build:prod": "NODE_ENV=production rslib build",
+    "build:watch": "NODE_ENV=development rslib build --watch",
+    "clean": "rm -rf dist *.tsbuildinfo",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@beauty-salon-frontend/api-client": "workspace:*",
+    "@beauty-salon-frontend/ui": "workspace:*",
+    "ts-pattern": "^5.9.2",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@beauty-salon-frontend/testing": "workspace:*",
+    "@beauty-salon-shared/config": "workspace:*",
+    "@rslib/core": "^1.0.7",
+    "@storybook/react-vite": "^10.6.7",
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/react": "^16.3.3",
+    "@types/node": "^26.6.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "jsdom": "^31.0.1",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "storybook": "^10.6.7",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.8",
+    "vitest": "^5.1.0"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  }
+}

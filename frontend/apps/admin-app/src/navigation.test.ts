@@ -6,6 +6,7 @@ import {
   customerChangeHrefOf,
   customerEntryHrefOf,
   customerHrefOf,
+  customerPreferencesHrefOf,
   customersHrefOf,
   navigationFor,
   receiptHrefOf,
@@ -109,6 +110,10 @@ describe('navigationFor', () => {
     ['the registration of a customer', customerEntryHrefOf(SALON_ID)],
     ['a customer', customerHrefOf(SALON_ID, 'x')],
     ['the change of a customer', customerChangeHrefOf(SALON_ID, 'x')],
+    [
+      'the change of the preferences of a customer',
+      customerPreferencesHrefOf(SALON_ID, 'x'),
+    ],
   ])('should mark the customers as the screen of %s', (_case, pathname) => {
     expect(navigationFor('staff', pathname)).toEqual([
       { href: BOOKINGS, label: '予約', current: false },
@@ -138,11 +143,13 @@ describe('navigationFor', () => {
       customerEntryHrefOf(SALON_ID),
       customerHrefOf(SALON_ID, 'customer'),
       customerChangeHrefOf(SALON_ID, 'customer'),
+      customerPreferencesHrefOf(SALON_ID, 'customer'),
     ]).toEqual([
       CUSTOMERS,
       `${CUSTOMERS}/new`,
       `${CUSTOMERS}/customer`,
       `${CUSTOMERS}/customer/edit`,
+      `${CUSTOMERS}/customer/preferences`,
     ])
   })
 

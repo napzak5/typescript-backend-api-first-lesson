@@ -12,6 +12,7 @@ const meta: Meta<typeof CustomerRecord> = {
     changeHref: `/salons/${salon.id}/customers/${aCustomer().id}/edit`,
     bookingHref: `/salons/${salon.id}/bookings/new?date=2026-11-20&customerId=${aCustomer().id}`,
     customerHref: (customerId) => `/salons/${salon.id}/customers/${customerId}`,
+    referrer: undefined,
   },
 }
 
@@ -37,6 +38,26 @@ export const Recorded: Story = {
       loyaltyPoints: 1250,
       updatedAt: '2026-11-18T05:30:00.000Z',
     },
+  },
+}
+
+/** The customer who referred this one was read, and is named */
+export const ReferrerNamed: Story = {
+  args: {
+    ...Recorded.args,
+    referrer: {
+      type: 'customer',
+      id: 'c19f4d7a-6e8c-4adf-8dbe-ac7e3f6a8bc5',
+      name: '鈴木 一郎',
+    },
+  },
+}
+
+/** The customer who referred this one was removed from the ledger */
+export const ReferrerGone: Story = {
+  args: {
+    ...Recorded.args,
+    referrer: { type: 'gone', id: 'c19f4d7a-6e8c-4adf-8dbe-ac7e3f6a8bc5' },
   },
 }
 

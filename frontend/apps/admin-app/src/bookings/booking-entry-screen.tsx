@@ -133,7 +133,10 @@ const CustomerResults = ({
         onMore={() =>
           void (rest === 'unread' ? found.refetch() : found.fetchNextPage())
         }
-        customerHref={({ id }) => hrefOf({ ...choice, customerId: id })}
+        choose={{
+          type: 'link',
+          hrefOf: ({ id }) => hrefOf({ ...choice, customerId: id }),
+        }}
       />
     ))
     .exhaustive()

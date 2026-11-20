@@ -26,6 +26,7 @@ import {
   arrangePreferences,
   customerIdOf,
   giveReferralCode,
+  referredMeanwhile,
   registeredDaysAgo,
   removeMeanwhile,
   storedCustomerCount,
@@ -135,6 +136,26 @@ const theCustomer = async (): Promise<void> => {
   await screen.findByRole('region', { name: '台帳' })
   await within(part('好み設定')).findAllByRole('term')
   await within(part('このサロンでの利用')).findAllByRole('term')
+}
+
+/** The dialog that chooses the referrer, open */
+const referrerDialog = (): HTMLElement =>
+  screen.getByRole('dialog', { name: '紹介元を選ぶ' })
+
+/** Chooses the referrer of the form: searches the ledger for a keyword in the dialog, and presses the name. */
+const chooseReferrer = async (
+  user: ReturnType<typeof userEvent.setup>,
+  keyword: string,
+  name: string,
+): Promise<void> => {
+  await user.click(screen.getByRole('button', { name: '紹介元を選ぶ' }))
+  await user.type(
+    within(referrerDialog()).getByRole('searchbox', { name: 'キーワード' }),
+    `${keyword}{Enter}`,
+  )
+  await user.click(
+    await within(referrerDialog()).findByRole('button', { name }),
+  )
 }
 
 /** The customers of the seed data, in alphabetical order */
@@ -401,6 +422,86 @@ describe('the ledger of the customers, against the API', () => {
       expect(namesIn('顧客台帳')).toEqual([...EVERYONE, '山田 花子'].toSorted())
     })
 
+    it('should register a customer with the customer who referred them, chosen from the ledger, and name the referrer on the page', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      const kenji = await customerIdOf(KENJI.email)
+      const tokyo = await openAt((salon) => `/salons/${salon}/customers/new`)
+      await heading('お客様を登録する')
+      await fillInTheNeeded(user)
+      expect(text('紹介元')).toHaveValue('なし')
+      await user.click(screen.getByRole('button', { name: '紹介元を選ぶ' }))
+      await user.type(
+        within(referrerDialog()).getByRole('searchbox', {
+          name: 'キーワード',
+        }),
+        'yamamoto{Enter}',
+      )
+      await within(referrerDialog()).findByRole('button', { name: KENJI.name })
+      expect(await findAccessibilityViolations(document.body)).toEqual([])
+
+      // Act
+      await user.click(
+        within(referrerDialog()).getByRole('button', { name: KENJI.name }),
+      )
+
+      // Assert
+      expect(text('紹介元')).toHaveValue(`${KENJI.name} 様`)
+
+      // Act
+      await user.click(screen.getByRole('button', { name: '登録する' }))
+
+      // Assert
+      await theCustomer()
+      expect((await storedCustomerOf(NEW_EMAIL)).referredBy).toBe(kenji)
+      expect(
+        await within(part('台帳')).findByRole('link', {
+          name: `${KENJI.name} 様`,
+        }),
+      ).toHaveAttribute('href', `/salons/${tokyo}/customers/${kenji}`)
+    })
+
+    it('should say that no customer has the keyword, find one registered meanwhile when it is searched again, and keep nobody as the referrer when the choice is given up', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      await openAt((salon) => `/salons/${salon}/customers/new`)
+      await heading('お客様を登録する')
+      await user.click(screen.getByRole('button', { name: '紹介元を選ぶ' }))
+      await user.type(
+        within(referrerDialog()).getByRole('searchbox', {
+          name: 'キーワード',
+        }),
+        'walk-in{Enter}',
+      )
+      expect(
+        await within(referrerDialog()).findByText(
+          'キーワードに合うお客様が見つかりませんでした',
+        ),
+      ).toBeVisible()
+
+      // Act: the same keyword, once somebody was registered meanwhile
+      await arrangeCustomers(1, 'walk-in')
+      await user.click(
+        within(referrerDialog()).getByRole('button', { name: '検索する' }),
+      )
+
+      // Assert
+      expect(
+        await within(referrerDialog()).findByRole('button', {
+          name: 'Walk In 01',
+        }),
+      ).toBeVisible()
+
+      // Act
+      await user.click(
+        within(referrerDialog()).getByRole('button', { name: 'やめる' }),
+      )
+
+      // Assert
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+      expect(text('紹介元')).toHaveValue('なし')
+    })
+
     it('should say what is missing at each control, and send nothing', async () => {
       // Arrange
       const user = userEvent.setup()
@@ -624,6 +725,50 @@ describe('the ledger of the customers, against the API', () => {
       ).toHaveTextContent(KENJI.name)
     })
 
+    it('should name the customer who referred this one, lead to their page, and say of one who was removed that they are not in the ledger', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      await referredMeanwhile(SAKURA.email, YUKI.email)
+      const [sakura, yuki] = await Promise.all([
+        customerIdOf(SAKURA.email),
+        customerIdOf(YUKI.email),
+      ])
+      const tokyo = await openAt(
+        (salon) => `/salons/${salon}/customers/${sakura}`,
+      )
+      await theCustomer()
+
+      // Act
+      await user.click(
+        await within(part('台帳')).findByRole('link', {
+          name: `${YUKI.name} 様`,
+        }),
+      )
+
+      // Assert
+      await waitFor(() =>
+        expect(address).toBe(`/salons/${tokyo}/customers/${yuki}`),
+      )
+      expect(
+        await screen.findByText('Tanaka Yuki（タナカ ユキ） 様'),
+      ).toBeVisible()
+
+      // Act
+      await removeMeanwhile(YUKI.email)
+      await user.click(screen.getByRole('link', { name: '顧客' }))
+      await theLedger()
+      await user.click(screen.getByRole('link', { name: SAKURA.name }))
+
+      // Assert
+      await theCustomer()
+      await waitFor(() =>
+        expect(describedIn('台帳')['紹介元']).toBe('台帳にいないお客様'),
+      )
+      expect(
+        within(part('台帳')).getByText('台帳にいないお客様').closest('a'),
+      ).not.toBeInTheDocument()
+    })
+
     it('should say that a customer is not found who is not in the ledger, and lead to the ledger', async () => {
       // Arrange
       const kenji = await customerIdOf(KENJI.email)
@@ -788,6 +933,117 @@ describe('the ledger of the customers, against the API', () => {
         ),
       )
       expect((await storedCustomerOf(KENJI.email)).email).toBe(KENJI.email)
+    })
+
+    it('should open with the referrer by name, send no referrer once they were taken away, and say so on the page', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      await referredMeanwhile(SAKURA.email, YUKI.email)
+      const sakura = await customerIdOf(SAKURA.email)
+      await openAt((salon) => `/salons/${salon}/customers/${sakura}/edit`)
+      await heading('台帳を直す')
+      expect(
+        await screen.findByRole('textbox', { name: '紹介元' }),
+      ).toHaveValue(`${YUKI.name} 様`)
+
+      // Act
+      await user.click(screen.getByRole('button', { name: '紹介元を外す' }))
+      await user.click(screen.getByRole('button', { name: '変更を保存する' }))
+
+      // Assert
+      await theCustomer()
+      expect(describedIn('台帳')['紹介元']).toBe('なし')
+      expect((await storedCustomerOf(SAKURA.email)).referredBy).toBeNull()
+    })
+
+    it('should not offer the customer as their own referrer, and change the referrer to the one chosen', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      const [kenji, yuki] = await Promise.all([
+        customerIdOf(KENJI.email),
+        customerIdOf(YUKI.email),
+      ])
+      await openAt((salon) => `/salons/${salon}/customers/${kenji}/edit`)
+      await heading('台帳を直す')
+      await screen.findByRole('textbox', { name: '紹介元' })
+      await user.click(screen.getByRole('button', { name: '紹介元を選ぶ' }))
+      await user.type(
+        within(referrerDialog()).getByRole('searchbox', {
+          name: 'キーワード',
+        }),
+        'example.com{Enter}',
+      )
+
+      // Assert
+      expect(
+        await within(referrerDialog()).findByText(
+          `${KENJI.name}（このお客様）`,
+        ),
+      ).toBeVisible()
+      expect(
+        within(referrerDialog()).queryByRole('button', { name: KENJI.name }),
+      ).not.toBeInTheDocument()
+
+      // Act
+      await user.click(
+        within(referrerDialog()).getByRole('button', { name: YUKI.name }),
+      )
+      await user.click(screen.getByRole('button', { name: '変更を保存する' }))
+
+      // Assert
+      await theCustomer()
+      expect((await storedCustomerOf(KENJI.email)).referredBy).toBe(yuki)
+    })
+
+    it('should keep a referrer who was removed from the ledger when something else is changed', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      await referredMeanwhile(SAKURA.email, YUKI.email)
+      const [sakura, yuki] = await Promise.all([
+        customerIdOf(SAKURA.email),
+        customerIdOf(YUKI.email),
+      ])
+      await removeMeanwhile(YUKI.email)
+      await openAt((salon) => `/salons/${salon}/customers/${sakura}/edit`)
+      await heading('台帳を直す')
+      expect(
+        await screen.findByRole('textbox', { name: '紹介元' }),
+      ).toHaveValue('台帳にいないお客様')
+
+      // Act
+      await user.type(text('備考'), '駐車場を使う')
+      await user.click(screen.getByRole('button', { name: '変更を保存する' }))
+
+      // Assert
+      await theCustomer()
+      expect(await storedCustomerOf(SAKURA.email)).toMatchObject({
+        notes: '駐車場を使う',
+        referredBy: yuki,
+      })
+    })
+
+    it('should say at the referrer that the customer chosen was removed while the form was open, and change nothing', async () => {
+      // Arrange
+      const user = userEvent.setup()
+      const kenji = await customerIdOf(KENJI.email)
+      await openAt((salon) => `/salons/${salon}/customers/${kenji}/edit`)
+      await heading('台帳を直す')
+      await screen.findByRole('textbox', { name: '紹介元' })
+      await chooseReferrer(user, 'tanaka', YUKI.name)
+      await removeMeanwhile(YUKI.email)
+
+      // Act
+      await user.click(screen.getByRole('button', { name: '変更を保存する' }))
+
+      // Assert
+      await waitFor(() => expect(text('紹介元')).toHaveFocus())
+      expect(text('紹介元')).toHaveAttribute('aria-invalid', 'true')
+      expect(text('紹介元')).toHaveAccessibleDescription(
+        expect.stringContaining(
+          '選んだお客様は、台帳にいません。紹介元を選び直すか、外してください。',
+        ),
+      )
+      expect((await storedCustomerOf(KENJI.email)).referredBy).toBeNull()
     })
 
     it('should say that the customer is gone when they were removed while the form was open', async () => {

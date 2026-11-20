@@ -1,8 +1,8 @@
 import type { ModelsCustomerPreferencesResponse } from '@beauty-salon-frontend/api-client'
+import type { StaffChoice } from '@beauty-salon-frontend/preferences'
 import { DescriptionList } from '@beauty-salon-frontend/ui'
 import { webAddressOf } from '../../../salons/salon-format'
 import { staffNamed, timeSlotOf, UNSET } from '../../preferences-format'
-import type { StaffChoice } from '../../staff-choices'
 import styles from './preferences-details.module.css'
 
 export type PreferencesDetailsProps = {
