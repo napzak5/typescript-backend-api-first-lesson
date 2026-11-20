@@ -7,6 +7,7 @@ import {
   customerEntryHrefOf,
   customerHistoryHrefOf,
   customerHrefOf,
+  customerImportHrefOf,
   customerPointsHrefOf,
   customerPreferencesHrefOf,
   customersHrefOf,
@@ -112,6 +113,7 @@ describe('navigationFor', () => {
   it.each<[string, string]>([
     ['the ledger', CUSTOMERS],
     ['the registration of a customer', customerEntryHrefOf(SALON_ID)],
+    ['the registration of a file', customerImportHrefOf(SALON_ID)],
     ['a customer', customerHrefOf(SALON_ID, 'x')],
     ['the change of a customer', customerChangeHrefOf(SALON_ID, 'x')],
     [
@@ -149,6 +151,7 @@ describe('navigationFor', () => {
     expect([
       customersHrefOf(SALON_ID),
       customerEntryHrefOf(SALON_ID),
+      customerImportHrefOf(SALON_ID),
       customerHrefOf(SALON_ID, 'customer'),
       customerChangeHrefOf(SALON_ID, 'customer'),
       customerPreferencesHrefOf(SALON_ID, 'customer'),
@@ -159,6 +162,7 @@ describe('navigationFor', () => {
     ]).toEqual([
       CUSTOMERS,
       `${CUSTOMERS}/new`,
+      `${CUSTOMERS}/import`,
       `${CUSTOMERS}/customer`,
       `${CUSTOMERS}/customer/edit`,
       `${CUSTOMERS}/customer/preferences`,

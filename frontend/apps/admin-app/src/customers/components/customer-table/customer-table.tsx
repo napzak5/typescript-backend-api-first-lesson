@@ -1,5 +1,5 @@
 import type { ModelsCustomerResponse } from '@beauty-salon-frontend/api-client'
-import { Badge, Link } from '@beauty-salon-frontend/ui'
+import { Badge, Checkbox, Link } from '@beauty-salon-frontend/ui'
 import {
   countOf,
   PagedTable,
@@ -26,12 +26,21 @@ export type CustomerTableProps = {
   onMore: () => void
   /** The address of the page of a customer */
   customerHref: (customer: ModelsCustomerResponse) => string
+  /** The customers that can be chosen, to do one thing to all of them; none when it is not given */
+  choice?: CustomerChoice | undefined
+}
+
+/** Which customers are chosen, and what is told when one is chosen or no longer */
+export type CustomerChoice = {
+  chosen: ReadonlySet<string>
+  onChoose: (customer: ModelsCustomerResponse, chosen: boolean) => void
 }
 
 /**
  * The ledger of the customers: each by name, which leads to the customer,
  * with the kana of the name, the phone number, the rank, the state, how
- * often they came and the last visit.
+ * often they came and the last visit. With a choice, each row begins with
+ * the checkbox that chooses the customer; the name still heads the row.
  */
 export const CustomerTable = ({
   caption,
@@ -40,10 +49,30 @@ export const CustomerTable = ({
   more,
   onMore,
   customerHref,
+  choice,
 }: CustomerTableProps) => (
   <PagedTable
     caption={caption}
+    rowHeader='name'
     columns={[
+      ...(choice === undefined
+        ? []
+        : [
+            {
+              key: 'chosen',
+              header: '選ぶ',
+              cell: (customer: ModelsCustomerResponse) => (
+                <Checkbox
+                  label={`${customerNameOf(customer)} 様を選ぶ`}
+                  labelHidden
+                  checked={choice.chosen.has(customer.id)}
+                  onChange={(event) =>
+                    choice.onChoose(customer, event.currentTarget.checked)
+                  }
+                />
+              ),
+            },
+          ]),
       {
         key: 'name',
         header: 'お名前',

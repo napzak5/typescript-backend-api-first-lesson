@@ -1,7 +1,7 @@
 import { itShouldBeAccessibleInEveryStory } from '@beauty-salon-frontend/testing'
 import { composeStories } from '@storybook/react-vite'
-import { screen, within } from 'storybook/test'
-import { describe, expect, it } from 'vitest'
+import { screen, userEvent, within } from 'storybook/test'
+import { describe, expect, it, vi } from 'vitest'
 import { salon } from '../../../bookings/components/examples'
 import * as customerTableStories from './customer-table.stories'
 
@@ -71,6 +71,79 @@ describe('CustomerTable', () => {
         ({ id }) => `/salons/${salon.id}/customers/${id}`,
       ),
     )
+  })
+
+  it('should offer no choice of customers unless it is given one', async () => {
+    // Act
+    await stories.Ledger.run()
+
+    // Assert
+    expect(within(table()).queryByRole('checkbox')).toBeNull()
+    expect(
+      within(table())
+        .getAllByRole('columnheader')
+        .map((header) => header.textContent),
+    ).not.toContain('選ぶ')
+  })
+
+  it('should begin each row with the checkbox that chooses the customer, and still head the row by the name', async () => {
+    // Act
+    await stories.Choosing.run()
+
+    // Assert
+    expect(
+      within(table())
+        .getAllByRole('checkbox')
+        .map((box) => [
+          box.closest('label')?.textContent,
+          box.matches(':checked'),
+        ]),
+    ).toEqual([
+      ['山田 花子 様を選ぶ', true],
+      ['鈴木 一郎 様を選ぶ', false],
+      ['佐藤 健 様を選ぶ', false],
+    ])
+    expect(
+      within(table())
+        .getAllByRole('rowheader')
+        .map((header) => header.textContent),
+    ).toEqual(['山田 花子', '鈴木 一郎', '佐藤 健'])
+    expect(within(table()).getAllByRole('columnheader')[0]?.textContent).toBe(
+      '選ぶ',
+    )
+  })
+
+  it('should tell which customer was chosen, and which no longer is', async () => {
+    // Arrange
+    const onChoose = vi.fn()
+    await stories.Choosing.run({
+      args: {
+        ...stories.Choosing.args,
+        choice: {
+          chosen: new Set([customerTableStories.ROWS[0]?.id ?? '']),
+          onChoose,
+        },
+      },
+    })
+
+    // Act
+    await userEvent.click(
+      screen.getByRole('checkbox', { name: '鈴木 一郎 様を選ぶ' }),
+    )
+    await userEvent.click(
+      screen.getByRole('checkbox', { name: '山田 花子 様を選ぶ' }),
+    )
+
+    // Assert
+    expect(
+      onChoose.mock.calls.map(([customer, chosen]) => [
+        customer.lastName,
+        chosen,
+      ]),
+    ).toEqual([
+      ['鈴木', true],
+      ['山田', false],
+    ])
   })
 
   it('should say how many customers there are and offer the rest', async () => {
