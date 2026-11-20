@@ -119,6 +119,24 @@ export const staffMemberHrefOf = (salonId: string, staffId: string): string =>
 export const staffChangeHrefOf = (salonId: string, staffId: string): string =>
   `${staffMemberHrefOf(salonId, staffId)}/edit`
 
+/** The shifts of a salon: the week of today at the salon. */
+export const shiftsHrefOf = (salonId: string): string =>
+  `/salons/${salonId}/shifts`
+
+/** The shifts of a salon in the week that begins on a Monday. */
+export const shiftWeekHrefOf = (salonId: string, monday: string): string =>
+  `${shiftsHrefOf(salonId)}?week=${monday}`
+
+/** The schedule of a member of the staff: when they work, every week and on dates. */
+export const scheduleHrefOf = (salonId: string, staffId: string): string =>
+  `${shiftsHrefOf(salonId)}/${staffId}`
+
+/** The screen that changes the schedule of a member. */
+export const scheduleChangeHrefOf = (
+  salonId: string,
+  staffId: string,
+): string => `${scheduleHrefOf(salonId, staffId)}/edit`
+
 /** The ledger of the customers, from the screens of a salon. */
 export const customersHrefOf = (salonId: string): string =>
   `/salons/${salonId}/customers`
@@ -250,9 +268,9 @@ const isAtOrBelow = (pathname: string, screen: string): boolean =>
 const SALON_ROLES: readonly string[] = ['owner', 'manager', 'staff']
 
 /**
- * The links of the header: the bookings, the sales, the customers and the
- * treatment records, from the salon of the address, and the staff ledger
- * for the roles that keep it. The screens of a salon are below its address;
+ * The links of the header: the bookings, the sales, the customers, the
+ * treatment records and the shifts, from the salon of the address, and the
+ * staff ledger for the roles that keep it. The screens of a salon are below its address;
  * an administrator chooses the salon at the start (`/`), and a member of
  * the staff is led from there to the salon they belong to. So a member who
  * is elsewhere (the security of the account) goes back to the bookings
@@ -272,6 +290,7 @@ export const navigationFor = (
     const sales = salesHrefOf(salonId)
     const customers = customersHrefOf(salonId)
     const treatments = treatmentsHrefOf(salonId)
+    const shifts = shiftsHrefOf(salonId)
     const staff = staffLedgerHrefOf(salonId)
 
     return [
@@ -291,6 +310,11 @@ export const navigationFor = (
         href: treatments,
         label: '施術記録',
         current: isAtOrBelow(pathname, treatments),
+      },
+      {
+        href: shifts,
+        label: 'シフト',
+        current: isAtOrBelow(pathname, shifts),
       },
       ...(role !== undefined && mayKeepStaffLedger(role)
         ? [
