@@ -1660,6 +1660,41 @@ with `components/treatment-statistics/`.
   zeros. What a count counts twice (a record of two categories counts in
   both) is said under the table.
 
+### A ledger that some roles keep: registered, changed, made inactive, removed
+
+The staff ledger is the example to read: `staff-ledger-screen.tsx`,
+`staff-entry-screen.tsx`, `staff-member-screen.tsx` and
+`staff-change-screen.tsx`, `with-staff-member.tsx` for the frame they
+share, `staff-api.ts`, `staff-form.ts` and `staff-format.ts`.
+
+- **A role that may not keep the ledger is told so before anything is
+  read**: the API refuses a manager and a member of the staff, so the
+  screen tells them without a request (`useKeepsStaffLedger`), and the
+  navigation has no link for them. A refusal that depends on the salon
+  (the owner of another salon) is the 403 of the API, and is told in the
+  same words.
+- **A 409 that does not say which value**: the API refuses an address of
+  mail or a staff code another member has, and does not say which. A
+  removed member keeps their code but frees their address, so the screen
+  reads the whole ledger for another member at the address (case left
+  aside), and puts the refusal under the address if there is one and
+  under the code if not; a change that sends only one of them needs no
+  reading. Two refusals of the same status are told apart by the code
+  of the problem (`3002` a value another member has, `3003` the
+  member of the account itself), never by its text.
+- **What the account may not do to itself is not offered**: the member
+  the signed-in account is linked to has no 「削除」, says why, and its
+  form refuses unchecking 「有効なスタッフ」 at that checkbox before
+  anything is sent.
+- **Two flags that sound alike say what each does**: taking bookings and
+  being active are two checkboxes, each with a description of what it
+  changes for the customers and for the account of the member, and of
+  how it is undone.
+- **A removal the API refuses for what is linked to the row** says what
+  is linked and what to do first, above the record, and the dialog of a
+  removal says what stays (the bookings and the records of the member,
+  the code) and what to do instead for a member on leave.
+
 ## Screens that a mailed link opens
 
 The API mails links to the portal (`PUBLIC_APP_URL`): `/verify-email`,
@@ -1693,7 +1728,7 @@ behind it. Their screens are in `frontend/apps/portal-app/src/account/`.
 | `Navigation` | The links to the screens. The application says which one is `current` |
 | `LinkProvider`, `Link`, `ButtonLink` | Links that move within the application: `Link` in a text or a list, `ButtonLink` for one that looks like a button |
 | `PageHeader` | The top of a screen: its one `h1`, a description, the actions on the whole screen (one below the other on a narrow screen, side by side from 40rem) |
-| `Card` | A part of a screen under its own heading (`h2`, or `h3` with `headingLevel={3}`). With `headingRef`, the heading takes the focus from the screen (and never from the Tab key): for a part whose content went with what had the focus. Its `actions` stand beside the heading at every width, so they hold one short button; two go in the body, below its text (`SalePoints`) |
+| `Card` | A part of a screen under its own heading (`h2`, or `h3` with `headingLevel={3}`). With `headingRef`, the heading takes the focus from the screen (and never from the Tab key): for a part whose content went with what had the focus. Its `actions` stand beside the heading from 40rem and below it on a narrower screen, so a heading keeps its width whatever the buttons are: one or two short buttons (「施術記録を直す」 and 「削除」); links that need a sentence before them go in the body, below its text (`SalePoints`) |
 | `DescriptionList` | The names and values of one record |
 | `Badge` | The state of a record, in a word |
 | `TagList` | A few words about a record, as a list with a name: the features of a salon, what a member of the staff is good at, the tags of a customer. A word longer than the line breaks where the line ends |
